@@ -287,6 +287,13 @@ class IndexedBufferCopyTest : public ANGLETest
 
 TEST_P(IndexedBufferCopyTest, IndexRangeBug)
 {
+    
+    if (isAMD() && getPlatformRenderer() == EGL_PLATFORM_ANGLE_TYPE_OPENGL_ANGLE)
+    {
+        std::cout << "Test disabled on AMD OpenGL." << std::endl;
+        return;
+    }
+
     unsigned char vertexData[] = { 255, 0, 0, 0, 0, 0 };
     unsigned int indexData[] = { 0, 1 };
 
@@ -401,9 +408,9 @@ TEST_P(BufferDataTestES3, BufferResizing)
 }
 
 
-ANGLE_INSTANTIATE_TEST(BufferDataTest, ES2_D3D9(), ES2_D3D11(), ES2_OPENGL());
-ANGLE_INSTANTIATE_TEST(BufferDataTestES3, ES3_D3D11());
-ANGLE_INSTANTIATE_TEST(IndexedBufferCopyTest, ES3_D3D11());
+ANGLE_INSTANTIATE_TEST(BufferDataTest, ES2_D3D9(), ES2_D3D11(), ES2_OPENGL(), ES2_OPENGLES());
+ANGLE_INSTANTIATE_TEST(BufferDataTestES3, ES3_D3D11(), ES3_OPENGL(), ES3_OPENGLES());
+ANGLE_INSTANTIATE_TEST(IndexedBufferCopyTest, ES3_D3D11(), ES3_OPENGL(), ES3_OPENGLES());
 
 #ifdef _WIN64
 

@@ -412,6 +412,9 @@ bool DynamicHLSL::generateShaderLinkHLSL(const gl::Data &data,
     const ShaderD3D *fragmentShader    = GetImplAs<ShaderD3D>(fragmentShaderGL);
     const int shaderModel              = mRenderer->getMajorShaderModel();
 
+    
+    ASSERT(shaderModel >= 4 || !programMetadata.usesViewScale());
+
     bool useInstancedPointSpriteEmulation =
         programMetadata.usesPointSize() &&
         mRenderer->getWorkarounds().useInstancedPointSpriteEmulation;
@@ -464,18 +467,43 @@ bool DynamicHLSL::generateShaderLinkHLSL(const gl::Data &data,
     
     if (shaderModel >= 4 && mRenderer->getShaderModelSuffix() == "")
     {
-        vertexStream << "    output.dx_Position.x = gl_Position.x;\n"
-                     << "    output.dx_Position.y = -gl_Position.y;\n"
-                     << "    output.dx_Position.z = (gl_Position.z + gl_Position.w) * 0.5;\n"
+        vertexStream << "    output.dx_Position.x = gl_Position.x;\n";
+
+        if (programMetadata.usesViewScale())
+        {
+            
+            
+            vertexStream << "    output.dx_Position.y = dx_ViewScale.y * gl_Position.y;\n";
+        }
+        else
+        {
+            vertexStream << "    output.dx_Position.y = - gl_Position.y;\n";
+        }
+
+        vertexStream << "    output.dx_Position.z = (gl_Position.z + gl_Position.w) * 0.5;\n"
                      << "    output.dx_Position.w = gl_Position.w;\n";
     }
     else
     {
         vertexStream << "    output.dx_Position.x = gl_Position.x * dx_ViewAdjust.z + "
-                        "dx_ViewAdjust.x * gl_Position.w;\n"
-                     << "    output.dx_Position.y = -(gl_Position.y * dx_ViewAdjust.w + "
-                        "dx_ViewAdjust.y * gl_Position.w);\n"
-                     << "    output.dx_Position.z = (gl_Position.z + gl_Position.w) * 0.5;\n"
+                        "dx_ViewAdjust.x * gl_Position.w;\n";
+
+        
+        
+        
+        if (programMetadata.usesViewScale() &&
+            (shaderModel >= 4 && mRenderer->getShaderModelSuffix() != ""))
+        {
+            vertexStream << "    output.dx_Position.y = dx_ViewScale.y * (gl_Position.y * "
+                            "dx_ViewAdjust.w + dx_ViewAdjust.y * gl_Position.w);\n";
+        }
+        else
+        {
+            vertexStream << "    output.dx_Position.y = -(gl_Position.y * dx_ViewAdjust.w + "
+                            "dx_ViewAdjust.y * gl_Position.w);\n";
+        }
+
+        vertexStream << "    output.dx_Position.z = (gl_Position.z + gl_Position.w) * 0.5;\n"
                      << "    output.dx_Position.w = gl_Position.w;\n";
     }
 
@@ -523,11 +551,26 @@ bool DynamicHLSL::generateShaderLinkHLSL(const gl::Data &data,
     if (useInstancedPointSpriteEmulation)
     {
         vertexStream << "\n"
-                     << "    gl_PointSize = clamp(gl_PointSize, minPointSize, maxPointSize);\n"
-                     << "    output.dx_Position.xyz += float3(input.spriteVertexPos.x * "
-                        "gl_PointSize / (dx_ViewCoords.x*2), input.spriteVertexPos.y * "
-                        "gl_PointSize / (dx_ViewCoords.y*2), input.spriteVertexPos.z) * "
-                        "output.dx_Position.w;\n";
+                     << "    gl_PointSize = clamp(gl_PointSize, minPointSize, maxPointSize);\n";
+
+        vertexStream << "    output.dx_Position.x += (input.spriteVertexPos.x * gl_PointSize / "
+                        "(dx_ViewCoords.x*2)) * output.dx_Position.w;";
+
+        if (programMetadata.usesViewScale())
+        {
+            
+            vertexStream << "    output.dx_Position.y += (-dx_ViewScale.y * "
+                            "input.spriteVertexPos.y * gl_PointSize / (dx_ViewCoords.y*2)) * "
+                            "output.dx_Position.w;";
+        }
+        else
+        {
+            vertexStream << "    output.dx_Position.y += (input.spriteVertexPos.y * gl_PointSize / "
+                            "(dx_ViewCoords.y*2)) * output.dx_Position.w;";
+        }
+
+        vertexStream
+            << "    output.dx_Position.z += input.spriteVertexPos.z * output.dx_Position.w;\n";
 
         if (programMetadata.usesPointCoord())
         {
@@ -604,6 +647,49 @@ bool DynamicHLSL::generateShaderLinkHLSL(const gl::Data &data,
                            "dx_ViewCoords.z;\n"
                         << "    gl_FragCoord.y = (input.gl_FragCoord.y * rhw) * dx_ViewCoords.y + "
                            "dx_ViewCoords.w;\n";
+        }
+
+        if (programMetadata.usesViewScale())
+        {
+            
+            
+            
+            
+            if (shaderModel >= 4 && mRenderer->getShaderModelSuffix() == "")
+            {
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                pixelStream
+                    << "    gl_FragCoord.y = (1.0f + dx_ViewScale.y) * gl_FragCoord.y /"
+                       "(1.0f - input.gl_FragCoord.y * rhw)  - dx_ViewScale.y * gl_FragCoord.y;\n";
+            }
         }
 
         pixelStream << "    gl_FragCoord.z = (input.gl_FragCoord.z * rhw) * dx_DepthFront.x + "
@@ -749,6 +835,7 @@ std::string DynamicHLSL::generateGeometryShaderPreamble(const VaryingPacking &va
 std::string DynamicHLSL::generateGeometryShaderHLSL(gl::PrimitiveType primitiveType,
                                                     const gl::Data &data,
                                                     const gl::Program::Data &programData,
+                                                    const bool useViewScale,
                                                     const std::string &preambleString) const
 {
     ASSERT(mRenderer->getMajorShaderModel() >= 4);
@@ -799,8 +886,14 @@ std::string DynamicHLSL::generateGeometryShaderHLSL(gl::PrimitiveType primitiveT
     {
         shaderStream << "#define ANGLE_POINT_SPRITE_SHADER\n"
                         "\n"
-                        "uniform float4 dx_ViewCoords : register(c1);\n"
-                        "\n"
+                        "uniform float4 dx_ViewCoords : register(c1);\n";
+
+        if (useViewScale)
+        {
+            shaderStream << "uniform float2 dx_ViewScale : register(c3);\n";
+        }
+
+        shaderStream << "\n"
                         "static float2 pointSpriteCorners[] = \n"
                         "{\n"
                         "    float2( 0.5f, -0.5f),\n"
@@ -870,9 +963,20 @@ std::string DynamicHLSL::generateGeometryShaderHLSL(gl::PrimitiveType primitiveT
 
         for (int corner = 0; corner < 4; corner++)
         {
-            shaderStream << "\n"
-                            "    output.dx_Position = dx_Position + float4(pointSpriteCorners["
-                         << corner << "] * viewportScale * gl_PointSize, 0.0f, 0.0f);\n";
+            if (useViewScale)
+            {
+                shaderStream << "    \n"
+                                "    output.dx_Position = dx_Position + float4(1.0f, "
+                                "-dx_ViewScale.y, 1.0f, 1.0f)"
+                                "        * float4(pointSpriteCorners["
+                             << corner << "] * viewportScale * gl_PointSize, 0.0f, 0.0f);\n";
+            }
+            else
+            {
+                shaderStream << "\n"
+                                "    output.dx_Position = dx_Position + float4(pointSpriteCorners["
+                             << corner << "] * viewportScale * gl_PointSize, 0.0f, 0.0f);\n";
+            }
 
             if (usesPointCoord)
             {

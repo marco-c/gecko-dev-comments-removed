@@ -85,6 +85,8 @@ struct Extensions
     
     
     
+    
+    
     void setTextureExtensionSupport(const TextureCapsMap &textureCaps);
 
     
@@ -115,6 +117,11 @@ struct Extensions
     
     bool mapBuffer;
     bool mapBufferRange;
+
+    
+    
+    
+    bool colorBufferHalfFloat;
 
     
     
@@ -185,6 +192,11 @@ struct Extensions
     bool timerQuery;
 
     
+    bool disjointTimerQuery;
+    GLuint queryCounterBitsTimeElapsed;
+    GLuint queryCounterBitsTimestamp;
+
+    
     bool robustness;
 
     
@@ -252,6 +264,19 @@ struct Extensions
 
     
     bool vertexArrayObject;
+
+    
+    bool debug;
+    GLuint maxDebugMessageLength;
+    GLuint maxDebugLoggedMessages;
+    GLuint maxDebugGroupStackDepth;
+    GLuint maxLabelLength;
+
+    
+    bool noError;
+
+    
+    bool lossyETCDecode;
 
     
 
@@ -414,6 +439,9 @@ struct DisplayExtensions
     bool keyedMutex;
 
     
+    bool surfaceOrientation;
+
+    
     bool postSubBuffer;
 
     
@@ -445,6 +473,15 @@ struct DisplayExtensions
 
     
     bool getAllProcAddresses;
+
+    
+    bool flexibleSurfaceCompatibility;
+
+    
+    bool directComposition;
+
+    
+    bool createContextNoError;
 };
 
 struct DeviceExtensions
@@ -491,6 +528,9 @@ struct ClientExtensions
 
     
     bool x11Visual;
+
+    
+    bool experimentalPresentPath;
 
     
     bool clientGetAllProcAddresses;

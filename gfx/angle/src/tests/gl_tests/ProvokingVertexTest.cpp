@@ -140,6 +140,15 @@ TEST_P(ProvokingVertexTest, FlatTriangle)
 
 TEST_P(ProvokingVertexTest, FlatTriWithTransformFeedback)
 {
+    
+#if defined(ANGLE_PLATFORM_APPLE)
+    if (isAMD())
+    {
+        std::cout << "Test skipped on AMD on Mac." << std::endl;
+        return;
+    }
+#endif
+
     glGenTransformFeedbacks(1, &mTransformFeedback);
     glBindTransformFeedback(GL_TRANSFORM_FEEDBACK, mTransformFeedback);
 
@@ -300,6 +309,6 @@ TEST_P(ProvokingVertexTest, FlatTriStripPrimitiveRestart)
     }
 }
 
-ANGLE_INSTANTIATE_TEST(ProvokingVertexTest, ES3_D3D11(), ES3_OPENGL());
+ANGLE_INSTANTIATE_TEST(ProvokingVertexTest, ES3_D3D11(), ES3_OPENGL(), ES3_OPENGLES());
 
 }  

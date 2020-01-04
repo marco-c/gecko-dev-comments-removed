@@ -261,6 +261,12 @@ TEST_P(ViewportTest, TripleWindowOffCenter)
 
 
 
-ANGLE_INSTANTIATE_TEST(ViewportTest, ES2_D3D9(), ES2_D3D11(), ES2_D3D11_FL9_3());
+ANGLE_INSTANTIATE_TEST(ViewportTest,
+                       ES2_D3D9(),
+                       ES2_D3D11(EGL_EXPERIMENTAL_PRESENT_PATH_COPY_ANGLE),
+                       ES2_D3D11(EGL_EXPERIMENTAL_PRESENT_PATH_FAST_ANGLE),
+                       ES2_D3D11_FL9_3(),
+                       ES2_OPENGLES(),
+                       ES3_OPENGLES());
 
 } 

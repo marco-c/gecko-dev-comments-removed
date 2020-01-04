@@ -47,7 +47,7 @@ void TranslatorHLSL::translate(TIntermNode *root, int compileOptions)
 
     
     
-    if (getOutputType() == SH_HLSL9_OUTPUT && getShaderType() == GL_VERTEX_SHADER)
+    if (getOutputType() == SH_HLSL_3_0_OUTPUT && getShaderType() == GL_VERTEX_SHADER)
     {
         sh::RewriteElseBlocks(root, getTemporaryIndex());
     }

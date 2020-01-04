@@ -134,12 +134,20 @@ class LineLoopTest : public ANGLETest
 
 TEST_P(LineLoopTest, LineLoopUByteIndices)
 {
+    
+    
+    
+    ignoreD3D11SDKLayersWarnings();
+
     static const GLubyte indices[] = { 0, 7, 6, 9, 8, 0 };
     runTest(GL_UNSIGNED_BYTE, 0, indices + 1);
 }
 
 TEST_P(LineLoopTest, LineLoopUShortIndices)
 {
+    
+    ignoreD3D11SDKLayersWarnings();
+
     static const GLushort indices[] = { 0, 7, 6, 9, 8, 0 };
     runTest(GL_UNSIGNED_SHORT, 0, indices + 1);
 }
@@ -151,12 +159,18 @@ TEST_P(LineLoopTest, LineLoopUIntIndices)
         return;
     }
 
+    
+    ignoreD3D11SDKLayersWarnings();
+
     static const GLuint indices[] = { 0, 7, 6, 9, 8, 0 };
     runTest(GL_UNSIGNED_INT, 0, indices + 1);
 }
 
 TEST_P(LineLoopTest, LineLoopUByteIndexBuffer)
 {
+    
+    ignoreD3D11SDKLayersWarnings();
+
     static const GLubyte indices[] = { 0, 7, 6, 9, 8, 0 };
 
     GLuint buf;
@@ -171,6 +185,9 @@ TEST_P(LineLoopTest, LineLoopUByteIndexBuffer)
 
 TEST_P(LineLoopTest, LineLoopUShortIndexBuffer)
 {
+    
+    ignoreD3D11SDKLayersWarnings();
+
     static const GLushort indices[] = { 0, 7, 6, 9, 8, 0 };
 
     GLuint buf;
@@ -190,6 +207,9 @@ TEST_P(LineLoopTest, LineLoopUIntIndexBuffer)
         return;
     }
 
+    
+    ignoreD3D11SDKLayersWarnings();
+
     static const GLuint indices[] = { 0, 7, 6, 9, 8, 0 };
 
     GLuint buf;
@@ -203,4 +223,4 @@ TEST_P(LineLoopTest, LineLoopUIntIndexBuffer)
 }
 
 
-ANGLE_INSTANTIATE_TEST(LineLoopTest, ES2_D3D9(), ES2_D3D11(), ES2_OPENGL());
+ANGLE_INSTANTIATE_TEST(LineLoopTest, ES2_D3D9(), ES2_D3D11(), ES2_OPENGL(), ES2_OPENGLES());
