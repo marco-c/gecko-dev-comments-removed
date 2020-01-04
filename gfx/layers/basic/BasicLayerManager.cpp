@@ -6,6 +6,7 @@
 #include <stdint.h>                     
 #include <stdlib.h>                     
 #include <sys/types.h>                  
+#include <stack>                        
 #include "BasicContainerLayer.h"        
 #include "BasicLayersImpl.h"            
 #include "GeckoProfiler.h"              
@@ -44,6 +45,8 @@
 #include "nsRect.h"                     
 #include "nsRegion.h"                   
 #include "nsTArray.h"                   
+#include "TreeTraversal.h"              
+
 class nsIWidget;
 
 namespace mozilla {
@@ -485,56 +488,71 @@ MarkLayersHidden(Layer* aLayer, const IntRect& aClipRect,
 static void
 ApplyDoubleBuffering(Layer* aLayer, const IntRect& aVisibleRect)
 {
-  BasicImplData* data = ToData(aLayer);
-  if (data->IsHidden())
-    return;
+  std::stack<IntRect> visibleRectStack;
+  visibleRectStack.push(aVisibleRect);
 
-  IntRect newVisibleRect(aVisibleRect);
-
-  {
-    const Maybe<ParentLayerIntRect>& clipRect = aLayer->GetLocalClipRect();
-    if (clipRect) {
-      IntRect cr = clipRect->ToUnknownRect();
-      
-      
-      if (aLayer->GetParent()) {
-        Matrix tr;
-        if (aLayer->GetParent()->GetEffectiveTransform().CanDraw2D(&tr)) {
-          NS_ASSERTION(!ThebesMatrix(tr).HasNonIntegerTranslation(),
-                       "Parent can only have an integer translation");
-          cr += nsIntPoint(int32_t(tr._31), int32_t(tr._32));
-        } else {
-          NS_ERROR("Parent can only have an integer translation");
+  ForEachNode<ForwardIterator>(
+      aLayer,
+      [&aLayer, &visibleRectStack](Layer* layer) {
+        BasicImplData* data = ToData(layer);
+        if (layer != aLayer) {
+          data->SetClipToVisibleRegion(true);
         }
-      }
-      newVisibleRect.IntersectRect(newVisibleRect, cr);
-    }
-  }
+        if (data->IsHidden()) {
+          return TraversalFlag::Skip;
+        }
 
-  BasicContainerLayer* container =
-    static_cast<BasicContainerLayer*>(aLayer->AsContainerLayer());
-  
-  
-  
-  if (!container) {
-    data->SetOperator(CompositionOp::OP_SOURCE);
-    data->SetDrawAtomically(true);
-  } else {
-    if (container->UseIntermediateSurface() ||
-        !container->ChildrenPartitionVisibleRegion(newVisibleRect)) {
-      
-      data->SetOperator(CompositionOp::OP_SOURCE);
-      container->ForceIntermediateSurface();
-    } else {
-      
-      
-      for (Layer* child = aLayer->GetFirstChild(); child;
-           child = child->GetNextSibling()) {
-        ToData(child)->SetClipToVisibleRegion(true);
-        ApplyDoubleBuffering(child, newVisibleRect);
+        IntRect newVisibleRect(visibleRectStack.top());
+
+        {
+          const Maybe<ParentLayerIntRect>& clipRect = layer->GetLocalClipRect();
+          if (clipRect) {
+            IntRect cr = clipRect->ToUnknownRect();
+            
+            
+            if (layer->GetParent()) {
+              Matrix tr;
+              if (layer->GetParent()->GetEffectiveTransform().CanDraw2D(&tr)) {
+                NS_ASSERTION(!ThebesMatrix(tr).HasNonIntegerTranslation(),
+                             "Parent can only have an integer translation");
+                cr += nsIntPoint(int32_t(tr._31), int32_t(tr._32));
+              } else {
+                NS_ERROR("Parent can only have an integer translation");
+              }
+            }
+            newVisibleRect.IntersectRect(newVisibleRect, cr);
+          }
+        }
+
+        BasicContainerLayer* container =
+          static_cast<BasicContainerLayer*>(layer->AsContainerLayer());
+        
+        
+        
+        if (!container) {
+          data->SetOperator(CompositionOp::OP_SOURCE);
+          data->SetDrawAtomically(true);
+          return TraversalFlag::Skip;
+        } else {
+          if (container->UseIntermediateSurface() ||
+              !container->ChildrenPartitionVisibleRegion(newVisibleRect)) {
+            
+            data->SetOperator(CompositionOp::OP_SOURCE);
+            container->ForceIntermediateSurface();
+            return TraversalFlag::Skip;
+          } else {
+            visibleRectStack.push(newVisibleRect);
+            return TraversalFlag::Continue;
+          }
+        }
+
+      },
+      [&visibleRectStack](Layer* layer)
+      {
+        visibleRectStack.pop();
+        return TraversalFlag::Continue;
       }
-    }
-  }
+  );
 }
 
 void

@@ -17,6 +17,7 @@
 #include "base/thread.h"                
 #include "gfxContext.h"                 
 #include "gfxPlatform.h"                
+#include "TreeTraversal.h"              
 #ifdef MOZ_WIDGET_GTK
 #include "gfxPlatformGtk.h"             
 #endif
@@ -1169,26 +1170,27 @@ CompositorBridgeParent::ScheduleComposition()
  void
 CompositorBridgeParent::SetShadowProperties(Layer* aLayer)
 {
-  if (Layer* maskLayer = aLayer->GetMaskLayer()) {
-    SetShadowProperties(maskLayer);
-  }
-  for (size_t i = 0; i < aLayer->GetAncestorMaskLayerCount(); i++) {
-    SetShadowProperties(aLayer->GetAncestorMaskLayerAt(i));
-  }
+  ForEachNode<ForwardIterator>(
+      aLayer,
+      [] (Layer *layer)
+      {
+        if (Layer* maskLayer = layer->GetMaskLayer()) {
+          SetShadowProperties(maskLayer);
+        }
+        for (size_t i = 0; i < layer->GetAncestorMaskLayerCount(); i++) {
+          SetShadowProperties(layer->GetAncestorMaskLayerAt(i));
+        }
 
-  
-  LayerComposite* layerComposite = aLayer->AsLayerComposite();
-  
-  layerComposite->SetShadowBaseTransform(aLayer->GetBaseTransform());
-  layerComposite->SetShadowTransformSetByAnimation(false);
-  layerComposite->SetShadowVisibleRegion(aLayer->GetVisibleRegion());
-  layerComposite->SetShadowClipRect(aLayer->GetClipRect());
-  layerComposite->SetShadowOpacity(aLayer->GetOpacity());
-
-  for (Layer* child = aLayer->GetFirstChild();
-      child; child = child->GetNextSibling()) {
-    SetShadowProperties(child);
-  }
+        
+        LayerComposite* layerComposite = layer->AsLayerComposite();
+        
+        layerComposite->SetShadowBaseTransform(layer->GetBaseTransform());
+        layerComposite->SetShadowTransformSetByAnimation(false);
+        layerComposite->SetShadowVisibleRegion(layer->GetVisibleRegion());
+        layerComposite->SetShadowClipRect(layer->GetClipRect());
+        layerComposite->SetShadowOpacity(layer->GetOpacity());
+      }
+    );
 }
 
 void

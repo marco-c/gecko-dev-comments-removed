@@ -142,10 +142,8 @@ private:
   
   
   
-  
   bool ApplyAsyncContentTransformToTree(Layer* aLayer,
                                         bool* aOutFoundRoot,
-                                        Maybe<ParentLayerIntRect>& aClipDeferredToParent,
                                         ClipPartsCache& aClipPartsCache);
   
 
@@ -194,7 +192,7 @@ private:
 
 
 
-  void AlignFixedAndStickyLayers(Layer* aLayer, Layer* aTransformedSubtreeRoot,
+  void AlignFixedAndStickyLayers(Layer* aTransformedSubtreeRoot,
                                  FrameMetrics::ViewID aTransformScrollId,
                                  const LayerToParentLayerMatrix4x4& aPreviousTransformForRoot,
                                  const LayerToParentLayerMatrix4x4& aCurrentTransformForRoot,
