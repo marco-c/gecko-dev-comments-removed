@@ -4,6 +4,8 @@
 
 "use strict";
 
+XPCOMUtils.defineLazyModuleGetter(this, "Snackbars", "resource://gre/modules/Snackbars.jsm");
+
 var PrintHelper = {
   init: function() {
     Services.obs.addObserver(this, "Print:PDF", false);
@@ -48,7 +50,7 @@ var PrintHelper = {
           
           if (stateFlags & Ci.nsIWebProgressListener.STATE_START && stateFlags & Ci.nsIWebProgressListener.STATE_IS_NETWORK) {
             
-            NativeWindow.toast.show(Strings.browser.GetStringFromName("alertPrintjobToast"), "long");
+            Snackbars.show(Strings.browser.GetStringFromName("alertPrintjobToast"), Snackbars.LENGTH_LONG);
           }
 
           

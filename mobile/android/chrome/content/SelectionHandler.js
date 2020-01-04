@@ -4,6 +4,8 @@
 
 "use strict";
 
+XPCOMUtils.defineLazyModuleGetter(this, "Snackbars", "resource://gre/modules/Snackbars.jsm");
+
 
 const PHONE_NUMBER_CONTAINERS = "td,div";
 const DEFER_CLOSE_TRIGGER_MS = 125; 
@@ -1088,7 +1090,7 @@ var SelectionHandler = {
     if (selectedText.length) {
       let clipboard = Cc["@mozilla.org/widget/clipboardhelper;1"].getService(Ci.nsIClipboardHelper);
       clipboard.copyString(selectedText);
-      NativeWindow.toast.show(Strings.browser.GetStringFromName("selectionHelper.textCopied"), "short");
+      Snackbars.show(Strings.browser.GetStringFromName("selectionHelper.textCopied"), Snackbars.LENGTH_SHORT);
     }
     this._closeSelection();
   },
