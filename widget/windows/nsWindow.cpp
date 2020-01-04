@@ -3799,15 +3799,14 @@ nsWindow::GetMaxTouchPoints() const
 
 
 
-void nsWindow::InitEvent(WidgetGUIEvent& event, nsIntPoint* aPoint)
+void nsWindow::InitEvent(WidgetGUIEvent& event, LayoutDeviceIntPoint* aPoint)
 {
   if (nullptr == aPoint) {     
     
     if (mWnd != nullptr) {
-
       DWORD pos = ::GetMessagePos();
       POINT cpos;
-      
+
       cpos.x = GET_X_LPARAM(pos);
       cpos.y = GET_Y_LPARAM(pos);
 
@@ -3818,11 +3817,9 @@ void nsWindow::InitEvent(WidgetGUIEvent& event, nsIntPoint* aPoint)
       event.refPoint.x = 0;
       event.refPoint.y = 0;
     }
-  }
-  else {  
+  } else {
     
-    event.refPoint.x = aPoint->x;
-    event.refPoint.y = aPoint->y;
+    event.refPoint = *aPoint;
   }
 
   event.time = ::GetMessageTime();
@@ -4038,15 +4035,13 @@ nsWindow::DispatchMouseEvent(EventMessage aEventMessage, WPARAM wParam,
 
   } 
 
-  nsIntPoint eventPoint;
-  eventPoint.x = GET_X_LPARAM(lParam);
-  eventPoint.y = GET_Y_LPARAM(lParam);
+  LayoutDeviceIntPoint eventPoint(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
 
   WidgetMouseEvent event(true, aEventMessage, this, WidgetMouseEvent::eReal,
                          aIsContextMenuKey ? WidgetMouseEvent::eContextMenuKey :
                                              WidgetMouseEvent::eNormal);
   if (aEventMessage == eContextMenu && aIsContextMenuKey) {
-    nsIntPoint zero(0, 0);
+    LayoutDeviceIntPoint zero(0, 0);
     InitEvent(event, &zero);
   } else {
     InitEvent(event, &eventPoint);
@@ -4060,7 +4055,7 @@ nsWindow::DispatchMouseEvent(EventMessage aEventMessage, WPARAM wParam,
   
   event.convertToPointer = true;
 
-  nsIntPoint mpScreen = eventPoint + WidgetToScreenOffsetUntyped();
+  LayoutDeviceIntPoint mpScreen = eventPoint + WidgetToScreenOffset();
 
   
   if (aEventMessage == eMouseMove) {

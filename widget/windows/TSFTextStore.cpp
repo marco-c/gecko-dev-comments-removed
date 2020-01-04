@@ -3380,9 +3380,9 @@ TSFTextStore::GetACPFromPoint(TsViewCookie vcView,
     return TS_E_NOLAYOUT;
   }
 
-  nsIntPoint ourPt(pt->x, pt->y);
+  LayoutDeviceIntPoint ourPt(pt->x, pt->y);
   
-  ourPt -= mWidget->WidgetToScreenOffsetUntyped();
+  ourPt -= mWidget->WidgetToScreenOffset();
 
   
   
