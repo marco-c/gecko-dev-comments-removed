@@ -87,6 +87,7 @@
 #include "mozilla/StateMirroring.h"
 
 #include "nsThreadUtils.h"
+#include "MediaCallbackID.h"
 #include "MediaDecoder.h"
 #include "MediaDecoderReader.h"
 #include "MediaDecoderOwner.h"
@@ -142,6 +143,9 @@ public:
                            bool aRealTime = false);
 
   nsresult Init(MediaDecoder* aDecoder);
+
+  void SetMediaDecoderReaderWrapperCallback();
+  void CancelMediaDecoderReaderWrapperCallback();
 
   
   enum State {
@@ -680,6 +684,10 @@ private:
   void OnSeekTaskRejected(SeekTaskRejectValue aValue);
 
   
+  
+  void DiscardSeekTaskIfExist();
+
+  
   int64_t mFragmentEndTime;
 
   
@@ -807,33 +815,13 @@ private:
   
   
 
-  MozPromiseRequestHolder<MediaDecoderReader::MediaDataPromise> mAudioDataRequest;
+  CallbackID mAudioCallbackID;
   MozPromiseRequestHolder<MediaDecoderReader::WaitForDataPromise> mAudioWaitRequest;
-  const char* AudioRequestStatus()
-  {
-    MOZ_ASSERT(OnTaskQueue());
-    if (mAudioDataRequest.Exists()) {
-      MOZ_DIAGNOSTIC_ASSERT(!mAudioWaitRequest.Exists());
-      return "pending";
-    } else if (mAudioWaitRequest.Exists()) {
-      return "waiting";
-    }
-    return "idle";
-  }
+  const char* AudioRequestStatus() const;
 
+  CallbackID mVideoCallbackID;
   MozPromiseRequestHolder<MediaDecoderReader::WaitForDataPromise> mVideoWaitRequest;
-  MozPromiseRequestHolder<MediaDecoderReader::MediaDataPromise> mVideoDataRequest;
-  const char* VideoRequestStatus()
-  {
-    MOZ_ASSERT(OnTaskQueue());
-    if (mVideoDataRequest.Exists()) {
-      MOZ_DIAGNOSTIC_ASSERT(!mVideoWaitRequest.Exists());
-      return "pending";
-    } else if (mVideoWaitRequest.Exists()) {
-      return "waiting";
-    }
-    return "idle";
-  }
+  const char* VideoRequestStatus() const;
 
   MozPromiseRequestHolder<MediaDecoderReader::WaitForDataPromise>& WaitRequestRef(MediaData::Type aType)
   {
