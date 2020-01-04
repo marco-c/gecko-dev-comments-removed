@@ -13,6 +13,7 @@
 #include "Layers.h"                     
 #include "LayerScope.h"                 
 #include "gfxCrashReporterUtils.h"      
+#include "gfxEnv.h"                     
 #include "gfxPlatform.h"                
 #include "gfxPrefs.h"                   
 #include "gfxRect.h"                    
@@ -104,14 +105,14 @@ CompositorOGL::CreateContext()
   }
 
 #ifdef XP_WIN
-  if (PR_GetEnv("MOZ_LAYERS_PREFER_EGL")) {
+  if (gfxEnv::LayersPreferEGL()) {
     printf_stderr("Trying GL layers...\n");
     context = gl::GLContextProviderEGL::CreateForWindow(mWidget);
   }
 #endif
 
   
-  if (!context && PR_GetEnv("MOZ_LAYERS_PREFER_OFFSCREEN")) {
+  if (!context && gfxEnv::LayersPreferOffscreen()) {
     SurfaceCaps caps = SurfaceCaps::ForRGB();
     caps.preserve = false;
     caps.bpp16 = gfxPlatform::GetPlatform()->GetOffscreenFormat() == gfxImageFormat::RGB16_565;
@@ -1388,7 +1389,7 @@ CompositorOGL::EndFrame()
   MOZ_ASSERT(mCurrentRenderTarget == mWindowRenderTarget, "Rendering target not properly restored");
 
 #ifdef MOZ_DUMP_PAINTING
-  if (gfxUtils::sDumpCompositorTextures) {
+  if (gfxEnv::DumpCompositorTextures()) {
     IntRect rect;
     if (mUseExternalSurfaceSize) {
       rect = IntRect(0, 0, mSurfaceSize.width, mSurfaceSize.height);

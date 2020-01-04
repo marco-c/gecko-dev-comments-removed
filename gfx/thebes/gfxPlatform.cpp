@@ -17,6 +17,7 @@
 
 #include "gfxPlatform.h"
 #include "gfxPrefs.h"
+#include "gfxEnv.h"
 #include "gfxTextRun.h"
 #include "gfxVR.h"
 
@@ -310,12 +311,11 @@ CrashStatsLogForwarder::CrashAction(LogReason aReason)
 #ifndef RELEASE_BUILD
   
   
-  static bool useTelemetry = getenv("MOZ_GFX_CRASH_TELEMETRY") != 0;
+  static bool useTelemetry = gfxEnv::GfxCrashTelemetry();
 #else
   
   
-  
-  static bool useTelemetry = !(getenv("MOZ_GFX_CRASH_MOZ_CRASH") != 0);
+  static bool useTelemetry = !gfxEnv::GfxCrashMozCrash();
 #endif
 
   if (useTelemetry) {

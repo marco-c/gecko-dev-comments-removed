@@ -3,6 +3,7 @@
 
 
 #include "DriverCrashGuard.h"
+#include "gfxEnv.h"
 #include "gfxPrefs.h"
 #include "nsAppDirectoryServiceDefs.h"
 #include "nsDirectoryServiceUtils.h"
@@ -71,8 +72,7 @@ DriverCrashGuard::Initialize()
   }
 
   
-  static bool sAllGuardsDisabled = !!PR_GetEnv("MOZ_DISABLE_CRASH_GUARD");
-  if (sAllGuardsDisabled) {
+  if (gfxEnv::DisableCrashGuard()) {
     return;
   }
 

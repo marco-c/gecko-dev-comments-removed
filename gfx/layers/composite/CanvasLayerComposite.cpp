@@ -6,7 +6,7 @@
 #include "CanvasLayerComposite.h"
 #include "composite/CompositableHost.h"  
 #include "gfx2DGlue.h"                  
-#include "gfxUtils.h"                   
+#include "gfxEnv.h"                     
 #include "mozilla/gfx/Matrix.h"         
 #include "mozilla/gfx/Point.h"          
 #include "mozilla/gfx/Rect.h"           
@@ -88,7 +88,7 @@ CanvasLayerComposite::RenderLayer(const IntRect& aClipRect)
   mCompositor->MakeCurrent();
 
 #ifdef MOZ_DUMP_PAINTING
-  if (gfxUtils::sDumpCompositorTextures) {
+  if (gfxEnv::DumpCompositorTextures()) {
     RefPtr<gfx::DataSourceSurface> surf = mCompositableHost->GetAsSurface();
     WriteSnapshotToDumpFile(this, surf);
   }

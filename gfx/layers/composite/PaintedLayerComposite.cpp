@@ -7,7 +7,7 @@
 #include "CompositableHost.h"           
 #include "FrameMetrics.h"               
 #include "Units.h"                      
-#include "gfxUtils.h"                   
+#include "gfxEnv.h"                     
 #include "mozilla/Assertions.h"         
 #include "mozilla/gfx/Matrix.h"         
 #include "mozilla/gfx/Point.h"          
@@ -115,7 +115,7 @@ PaintedLayerComposite::RenderLayer(const gfx::IntRect& aClipRect)
   const nsIntRegion& visibleRegion = GetEffectiveVisibleRegion();
 
 #ifdef MOZ_DUMP_PAINTING
-  if (gfxUtils::sDumpCompositorTextures) {
+  if (gfxEnv::DumpCompositorTextures()) {
     RefPtr<gfx::DataSourceSurface> surf = mBuffer->GetAsSurface();
     if (surf) {
       WriteSnapshotToDumpFile(this, surf);

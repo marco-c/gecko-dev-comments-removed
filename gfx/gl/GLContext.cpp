@@ -17,6 +17,7 @@
 #include "GLScreenBuffer.h"
 
 #include "gfxCrashReporterUtils.h"
+#include "gfxEnv.h"
 #include "gfxUtils.h"
 #include "GLContextProvider.h"
 #include "GLTextureImage.h"
@@ -637,16 +638,16 @@ GLContext::InitWithPrefix(const char *prefix, bool trygl)
 
 
 #ifdef MOZ_GL_DEBUG
-    if (PR_GetEnv("MOZ_GL_DEBUG"))
+    if (gfxEnv::GlDebug())
         sDebugMode |= DebugEnabled;
 
     
     
-    if (PR_GetEnv("MOZ_GL_DEBUG_VERBOSE"))
+    if (gfxEnv::GlDebugVerbose())
         sDebugMode |= DebugTrace;
 
     
-    if (PR_GetEnv("MOZ_GL_DEBUG_ABORT_ON_ERROR"))
+    if (gfxEnv::GlDebugAbortOnError())
         sDebugMode |= DebugAbortOnError;
 #endif
 
@@ -2582,8 +2583,7 @@ GLContext::FlushIfHeavyGLCallsSinceLastFlush()
  bool
 GLContext::ShouldDumpExts()
 {
-    static bool ret = PR_GetEnv("MOZ_GL_DUMP_EXTS");
-    return ret;
+    return gfxEnv::GlDumpExtensions();
 }
 
 bool
@@ -2613,8 +2613,7 @@ DoesStringMatch(const char* aString, const char *aWantedString)
  bool
 GLContext::ShouldSpew()
 {
-    static bool ret = PR_GetEnv("MOZ_GL_SPEW");
-    return ret;
+    return gfxEnv::GlSpew();
 }
 
 void

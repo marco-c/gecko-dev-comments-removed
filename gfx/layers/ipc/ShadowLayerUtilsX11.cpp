@@ -25,10 +25,10 @@
 #include "mozilla/layers/LayersSurfaces.h"  
 #include "mozilla/layers/ShadowLayers.h"  
 #include "mozilla/mozalloc.h"           
+#include "gfxEnv.h"
 #include "nsAutoPtr.h"                  
 #include "nsCOMPtr.h"                   
 #include "nsDebug.h"                    
-#include "prenv.h"                      
 
 using namespace mozilla::gl;
 
@@ -45,7 +45,7 @@ namespace layers {
 static bool
 UsingXCompositing()
 {
-  if (!PR_GetEnv("MOZ_LAYERS_ENABLE_XLIB_SURFACES")) {
+  if (!gfxEnv::LayersEnableXlibSurfaces()) {
       return false;
   }
   return (gfxSurfaceType::Xlib ==
