@@ -3,6 +3,9 @@
 
 
 
+
+
+
 "use strict";
 
 this.EXPORTED_SYMBOLS = [
@@ -34,19 +37,17 @@ const gStringBundle = Services.strings.createBundle(PROPERTIES_URL);
 
 
 
-
-this._ = function _(aName)
-{
+function _(name) {
   try {
     if (arguments.length == 1) {
-      return gStringBundle.GetStringFromName(aName);
+      return gStringBundle.GetStringFromName(name);
     }
     let rest = Array.prototype.slice.call(arguments, 1);
-    return gStringBundle.formatStringFromName(aName, rest, rest.length);
-  }
-  catch (ex) {
+    return gStringBundle.formatStringFromName(name, rest, rest.length);
+  } catch (ex) {
     console.error(ex);
-    throw new Error("L10N error. '" + aName + "' is missing from " + PROPERTIES_URL);
+    throw new Error("L10N error. '" + name + "' is missing from " +
+                    PROPERTIES_URL);
   }
 }
 
@@ -58,14 +59,13 @@ this._ = function _(aName)
 
 
 
-this.assert = function assert(aExpression, aMessage)
-{
-  if (!!!(aExpression)) {
-    let msg = aMessage ? "ASSERTION FAILURE:" + aMessage : "ASSERTION FAILURE";
+function assert(expression, message) {
+  if (!expression) {
+    let msg = message ? "ASSERTION FAILURE:" + message : "ASSERTION FAILURE";
     log(msg);
     throw new Error(msg);
   }
-  return aExpression;
+  return expression;
 }
 
 
@@ -81,18 +81,17 @@ this.assert = function assert(aExpression, aMessage)
 
 
 
-this.text = function text(aRoot, aSelector, aText)
-{
-  let element = aRoot.querySelector(aSelector);
+function text(root, selector, textContent) {
+  let element = root.querySelector(selector);
   if (!element) {
     return null;
   }
 
-  if (aText === undefined) {
+  if (textContent === undefined) {
     return element.textContent;
   }
-  element.textContent = aText;
-  return aText;
+  element.textContent = textContent;
+  return textContent;
 }
 
 
@@ -102,11 +101,10 @@ this.text = function text(aRoot, aSelector, aText)
 
 
 
-function forEach(aObject, aCallback)
-{
-  for (let key in aObject) {
-    if (aObject.hasOwnProperty(key)) {
-      aCallback(key, aObject[key]);
+function forEach(object, callback) {
+  for (let key in object) {
+    if (object.hasOwnProperty(key)) {
+      callback(key, object[key]);
     }
   }
 }
@@ -118,8 +116,8 @@ function forEach(aObject, aCallback)
 
 
 
-this.log = function log()
-{
+
+function log() {
   console.logStringMessage(Array.prototype.slice.call(arguments).join(" "));
 }
 
@@ -140,28 +138,30 @@ this.log = function log()
 
 
 
-this.wire = function wire(aRoot, aSelectorOrElement, aDescriptor)
-{
+
+function wire(root, selectorOrElement, descriptor) {
   let matches;
-  if (typeof(aSelectorOrElement) == "string") { 
-    matches = aRoot.querySelectorAll(aSelectorOrElement);
+  if (typeof selectorOrElement == "string") {
+    
+    matches = root.querySelectorAll(selectorOrElement);
     if (!matches.length) {
       return;
     }
   } else {
-    matches = [aSelectorOrElement]; 
+    
+    matches = [selectorOrElement];
   }
 
-  if (typeof(aDescriptor) == "function") {
-    aDescriptor = {events: {click: aDescriptor}};
+  if (typeof descriptor == "function") {
+    descriptor = {events: {click: descriptor}};
   }
 
   for (let i = 0; i < matches.length; i++) {
     let element = matches[i];
-    forEach(aDescriptor.events, function (aName, aHandler) {
-      element.addEventListener(aName, aHandler, false);
+    forEach(descriptor.events, function(name, handler) {
+      element.addEventListener(name, handler, false);
     });
-    forEach(aDescriptor.attributes, element.setAttribute);
+    forEach(descriptor.attributes, element.setAttribute);
   }
 }
 
@@ -181,10 +181,9 @@ this.wire = function wire(aRoot, aSelectorOrElement, aDescriptor)
 
 
 
-this.showFilePicker = function showFilePicker(path, toSave, parentWindow,
-                                              callback, suggestedFilename)
-{
-  if (typeof(path) == "string") {
+function showFilePicker(path, toSave, parentWindow, callback,
+                        suggestedFilename) {
+  if (typeof path == "string") {
     try {
       if (Services.io.extractScheme(path) == "file") {
         let uri = Services.io.newURI(path, null, null);
@@ -197,7 +196,8 @@ this.showFilePicker = function showFilePicker(path, toSave, parentWindow,
       return;
     }
     try {
-      let file = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsILocalFile);
+      let file =
+          Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsILocalFile);
       file.initWithPath(path);
       callback(file);
       return;
@@ -206,7 +206,8 @@ this.showFilePicker = function showFilePicker(path, toSave, parentWindow,
       return;
     }
   }
-  if (path) { 
+  if (path) {
+    
     callback(path);
     return;
   }

@@ -4,7 +4,9 @@
 
 
 
-const {Cc, Ci, Cu, Cr} = require("chrome");
+"use strict";
+
+const {Cu} = require("chrome");
 
 Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://devtools/shared/event-emitter.js");
@@ -34,7 +36,7 @@ PrefObserver.prototype = {
 
   destroy: function() {
     if (this.branch) {
-      this.branch.removeObserver('', this);
+      this.branch.removeObserver("", this);
     }
   }
 };

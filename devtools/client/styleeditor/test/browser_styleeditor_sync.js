@@ -6,6 +6,7 @@
 
 
 
+
 Services.scriptloader.loadSubScript("chrome://mochitests/content/browser/devtools/client/inspector/shared/test/head.js", this);
 
 const TESTCASE_URI = TEST_BASE_HTTP + "sync.html";
@@ -65,10 +66,6 @@ add_task(function*() {
 
   
   
-  yield ContentTask.spawn(gBrowser.selectedBrowser, {}, function*() {
-    let style = content.document.querySelector("style");
-    return style.textContent;
-  }).then((textContent) => {
-    isnot(textContent, expectedText, "changes not written back to style node");
-  });
+  let textContent = yield executeInContent("Test:GetStyleContent", null, null);
+  isnot(textContent, expectedText, "changes not written back to style node");
 });

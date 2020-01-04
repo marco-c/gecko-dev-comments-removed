@@ -2,6 +2,8 @@
 
 
 
+"use strict";
+
 
 
 
@@ -20,7 +22,7 @@ add_task(function*() {
   yield testLinkifiedConditions(mediaEditor, gBrowser.selectedTab, ui);
 });
 
-function testLinkifiedConditions(editor, tab, ui) {
+function* testLinkifiedConditions(editor, tab, ui) {
   let sidebar = editor.details.querySelector(".stylesheet-sidebar");
   let conditions = sidebar.querySelectorAll(".media-rule-condition");
   let responsiveModeToggleClass = ".media-responsive-mode-toggle";
@@ -29,7 +31,7 @@ function testLinkifiedConditions(editor, tab, ui) {
   ok(!conditions[0].querySelector(responsiveModeToggleClass),
     "There should be no links in the first media rule.");
   ok(!conditions[1].querySelector(responsiveModeToggleClass),
-    "There should be no links in the second media rule.")
+     "There should be no links in the second media rule.");
   ok(conditions[2].querySelector(responsiveModeToggleClass),
      "There should be 1 responsive mode link in the media rule");
   is(conditions[3].querySelectorAll(responsiveModeToggleClass).length, 2,
