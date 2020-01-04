@@ -3,10 +3,10 @@
 
 
 
-var {ViewHelpers} = Cu.import("resource://devtools/client/shared/widgets/ViewHelpers.jsm", {});
+const { LocalizationHelper } = require("devtools/client/shared/l10n");
 
 function test() {
-  let l10n = new ViewHelpers.L10N();
+  let l10n = new LocalizationHelper();
 
   is(l10n.numberWithDecimals(1234.56789, 2), "1,234.57",
     "The first number was properly localized.");
