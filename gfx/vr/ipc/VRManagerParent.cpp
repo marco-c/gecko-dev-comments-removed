@@ -69,7 +69,7 @@ VRManagerParent::ConnectVRManagerInParentProcess(VRManagerParent* aVRManager,
  VRManagerParent*
 VRManagerParent::CreateCrossProcess(Transport* aTransport, ProcessId aChildProcessId)
 {
-  MessageLoop* loop = mozilla::layers::CompositorBridgeParent::CompositorLoop();
+  MessageLoop* loop = mozilla::layers::CompositorThreadHolder::Loop();
   RefPtr<VRManagerParent> vmp = new VRManagerParent(loop, aTransport, aChildProcessId);
   vmp->mSelfRef = vmp;
   loop->PostTask(NewRunnableFunction(ConnectVRManagerInParentProcess,
@@ -86,7 +86,7 @@ VRManagerParent::RegisterVRManagerInCompositorThread(VRManagerParent* aVRManager
  VRManagerParent*
 VRManagerParent::CreateSameProcess()
 {
-  MessageLoop* loop = mozilla::layers::CompositorBridgeParent::CompositorLoop();
+  MessageLoop* loop = mozilla::layers::CompositorThreadHolder::Loop();
   RefPtr<VRManagerParent> vmp = new VRManagerParent(loop, nullptr, base::GetCurrentProcId());
   vmp->mCompositorThreadHolder = layers::CompositorThreadHolder::GetSingleton();
   vmp->mSelfRef = vmp;

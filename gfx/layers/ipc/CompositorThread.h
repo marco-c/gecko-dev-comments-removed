@@ -9,6 +9,7 @@
 #include "base/basictypes.h"            
 #include "base/platform_thread.h"       
 #include "base/thread.h"                
+#include "base/message_loop.h"
 #include "nsISupportsImpl.h"
 #include "ThreadSafeRefcountingWithMainThreadDestruction.h"
 
@@ -42,6 +43,8 @@ public:
 
 
   static void Shutdown();
+
+  static MessageLoop* Loop();
 
 private:
   ~CompositorThreadHolder();

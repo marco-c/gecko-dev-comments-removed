@@ -7,6 +7,7 @@
 #include "base/message_loop.h"          
 #include "mozilla/layers/CompositorBridgeParent.h"  
 #include "mozilla/layers/Effects.h"     
+#include "mozilla/layers/CompositorThread.h"
 #include "mozilla/mozalloc.h"           
 #include "gfx2DGlue.h"
 #include "nsAppRunner.h"
@@ -25,8 +26,8 @@ namespace layers {
  void
 Compositor::AssertOnCompositorThread()
 {
-  MOZ_ASSERT(!CompositorBridgeParent::CompositorLoop() ||
-             CompositorBridgeParent::CompositorLoop() == MessageLoop::current(),
+  MOZ_ASSERT(!CompositorThreadHolder::Loop() ||
+             CompositorThreadHolder::Loop() == MessageLoop::current(),
              "Can only call this from the compositor thread!");
 }
 
