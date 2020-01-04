@@ -28,6 +28,24 @@ class CacheChild final : public PCacheChild
                        , public ActorChild
 {
 public:
+  class MOZ_RAII AutoLock final
+  {
+    CacheChild* mActor;
+
+  public:
+    explicit AutoLock(CacheChild* aActor)
+      : mActor(aActor)
+    {
+      MOZ_ASSERT(mActor);
+      mActor->Lock();
+    }
+
+    ~AutoLock()
+    {
+      mActor->Unlock();
+    }
+  };
+
   CacheChild();
   ~CacheChild();
 
@@ -74,12 +92,24 @@ private:
   void
   NoteDeletedActor();
 
+  void
+  MaybeFlushDelayedDestroy();
+
+  
+  
+  void
+  Lock();
+
+  void
+  Unlock();
+
   
   
   
   Cache* MOZ_NON_OWNING_REF mListener;
   uint32_t mNumChildActors;
   bool mDelayedDestroy;
+  bool mLocked;
 
   NS_DECL_OWNINGTHREAD
 };

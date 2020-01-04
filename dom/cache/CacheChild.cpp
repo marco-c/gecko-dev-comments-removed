@@ -34,6 +34,7 @@ CacheChild::CacheChild()
   : mListener(nullptr)
   , mNumChildActors(0)
   , mDelayedDestroy(false)
+  , mLocked(false)
 {
   MOZ_COUNT_CTOR(cache::CacheChild);
 }
@@ -44,6 +45,7 @@ CacheChild::~CacheChild()
   NS_ASSERT_OWNINGTHREAD(CacheChild);
   MOZ_ASSERT(!mListener);
   MOZ_ASSERT(!mNumChildActors);
+  MOZ_ASSERT(!mLocked);
 }
 
 void
@@ -104,7 +106,8 @@ CacheChild::StartDestroy()
   
   
   
-  if (mNumChildActors) {
+  
+  if (mNumChildActors || mLocked) {
     mDelayedDestroy = true;
     return;
   }
@@ -175,9 +178,32 @@ void
 CacheChild::NoteDeletedActor()
 {
   mNumChildActors -= 1;
-  if (!mNumChildActors && mDelayedDestroy) {
+  MaybeFlushDelayedDestroy();
+}
+
+void
+CacheChild::MaybeFlushDelayedDestroy()
+{
+  if (!mNumChildActors && !mLocked && mDelayedDestroy) {
     StartDestroy();
   }
+}
+
+void
+CacheChild::Lock()
+{
+  NS_ASSERT_OWNINGTHREAD(CacheChild);
+  MOZ_ASSERT(!mLocked);
+  mLocked = true;
+}
+
+void
+CacheChild::Unlock()
+{
+  NS_ASSERT_OWNINGTHREAD(CacheChild);
+  MOZ_ASSERT(mLocked);
+  mLocked = false;
+  MaybeFlushDelayedDestroy();
 }
 
 } 
