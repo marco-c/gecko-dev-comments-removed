@@ -51,7 +51,7 @@ class DataSourceSurface;
 class ScaledFont;
 class DrawEventRecorder;
 class VsyncSource;
-class DeviceInitData;
+class ContentDeviceData;
 
 inline uint32_t
 BackendTypeBit(BackendType b)
@@ -645,10 +645,6 @@ public:
     virtual void CompositorUpdated() {}
 
     
-    
-    virtual void GetDeviceInitData(mozilla::gfx::DeviceInitData* aOut);
-
-    
     virtual bool SupportsPluginDirectBitmapDrawing() {
       return false;
     }
@@ -671,6 +667,12 @@ public:
                                     nsCString& aFailureId);
 
     const gfxSkipChars& EmptySkipChars() const { return kEmptySkipChars; }
+
+    
+
+
+
+    virtual void BuildContentDeviceData(mozilla::gfx::ContentDeviceData* aOut);
 
 protected:
     gfxPlatform();
@@ -707,7 +709,8 @@ protected:
 
 
 
-    virtual bool UpdateDeviceInitData();
+    void FetchAndImportContentDeviceData();
+    virtual void ImportContentDeviceData(const mozilla::gfx::ContentDeviceData& aData);
 
     
 
@@ -741,8 +744,6 @@ protected:
 
     static already_AddRefed<mozilla::gfx::ScaledFont>
       GetScaledFontForFontWithCairoSkia(mozilla::gfx::DrawTarget* aTarget, gfxFont* aFont);
-
-    static mozilla::gfx::DeviceInitData& GetParentDevicePrefs();
 
     int8_t  mAllowDownloadableFonts;
     int8_t  mGraphiteShapingEnabled;

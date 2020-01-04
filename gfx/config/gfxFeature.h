@@ -85,6 +85,9 @@ class FeatureState
     MOZ_ASSERT(IsInitialized());
   }
 
+  
+  void Reset();
+
  private:
   void SetFailureId(const nsACString& aFailureId);
 
