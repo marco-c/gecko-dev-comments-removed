@@ -3017,26 +3017,22 @@ nsLayoutUtils::CalculateAndSetDisplayPortMargins(nsIScrollableFrame* aScrollFram
       content, presShell, displayportMargins, 0, aRepaintMode);
 }
 
-bool
-nsLayoutUtils::GetOrMaybeCreateDisplayPort(nsDisplayListBuilder& aBuilder,
-                                           nsIFrame* aScrollFrame,
-                                           nsRect aDisplayPortBase,
-                                           nsRect* aOutDisplayport) {
+void
+nsLayoutUtils::MaybeCreateDisplayPort(nsDisplayListBuilder& aBuilder,
+                                      nsIFrame* aScrollFrame,
+                                      nsRect aDisplayPortBase) {
   nsIContent* content = aScrollFrame->GetContent();
   nsIScrollableFrame* scrollableFrame = do_QueryFrame(aScrollFrame);
   if (!content || !scrollableFrame) {
-    return false;
+    return;
   }
 
   
   
-  
   SetDisplayPortBase(content, aDisplayPortBase);
 
-  bool haveDisplayPort = GetDisplayPort(content, aOutDisplayport);
+  bool haveDisplayPort = HasDisplayPort(content);
 
-  
-  
   
   
   
@@ -3049,15 +3045,15 @@ nsLayoutUtils::GetOrMaybeCreateDisplayPort(nsDisplayListBuilder& aBuilder,
     
     if (!haveDisplayPort) {
       CalculateAndSetDisplayPortMargins(scrollableFrame, nsLayoutUtils::RepaintMode::DoNotRepaint);
-      haveDisplayPort = GetDisplayPort(content, aOutDisplayport);
-      NS_ASSERTION(haveDisplayPort, "should have a displayport after having just set it");
+#ifdef DEBUG
+      haveDisplayPort = HasDisplayPort(content);
+      MOZ_ASSERT(haveDisplayPort, "should have a displayport after having just set it");
+#endif
     }
 
     
     aBuilder.SetHaveScrollableDisplayPort();
   }
-
-  return haveDisplayPort;
 }
 
 nsIScrollableFrame*

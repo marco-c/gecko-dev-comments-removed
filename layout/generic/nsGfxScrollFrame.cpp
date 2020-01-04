@@ -3226,25 +3226,25 @@ ScrollFrameHelper::DecideScrollableLayer(nsDisplayListBuilder* aBuilder,
   if (aBuilder->IsPaintingToWindow()) {
     wasUsingDisplayPort = nsLayoutUtils::HasDisplayPort(content);
 
-    nsRect displayportBase = *aDirtyRect;
-    nsPresContext* pc = mOuter->PresContext();
-    if (mIsRoot && (pc->IsRootContentDocument() || !pc->GetParentPresContext())) {
-      displayportBase =
-        nsRect(nsPoint(0, 0), nsLayoutUtils::CalculateCompositionSizeForFrame(mOuter));
+    if (aAllowCreateDisplayPort) {
+      nsRect displayportBase = *aDirtyRect;
+      nsPresContext* pc = mOuter->PresContext();
+      if (mIsRoot && (pc->IsRootContentDocument() || !pc->GetParentPresContext())) {
+        displayportBase =
+          nsRect(nsPoint(0, 0), nsLayoutUtils::CalculateCompositionSizeForFrame(mOuter));
+      }
+
+      
+      
+      nsLayoutUtils::MaybeCreateDisplayPort(*aBuilder, mOuter, displayportBase);
     }
 
+    
+    
+    
+    MOZ_ASSERT(content->GetProperty(nsGkAtoms::DisplayPortBase));
     nsRect displayPort;
-    if (aAllowCreateDisplayPort) {
-      
-      
-      usingDisplayPort = nsLayoutUtils::GetOrMaybeCreateDisplayPort(
-            *aBuilder, mOuter, displayportBase, &displayPort);
-    } else {
-      
-      
-      MOZ_ASSERT(content->GetProperty(nsGkAtoms::DisplayPortBase));
-      usingDisplayPort = nsLayoutUtils::GetDisplayPort(content, &displayPort);
-    }
+    usingDisplayPort = nsLayoutUtils::GetDisplayPort(content, &displayPort);
 
     
     if (usingDisplayPort) {
