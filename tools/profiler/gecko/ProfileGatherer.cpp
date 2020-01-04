@@ -12,7 +12,16 @@ using mozilla::dom::Promise;
 
 namespace mozilla {
 
-NS_IMPL_ISUPPORTS0(ProfileGatherer)
+
+
+
+
+
+
+
+static const uint32_t MAX_SUBPROCESS_EXIT_PROFILES = 5;
+
+NS_IMPL_ISUPPORTS(ProfileGatherer, nsIObserver)
 
 ProfileGatherer::ProfileGatherer(GeckoSampler* aTicker)
   : mTicker(aTicker)
@@ -26,6 +35,13 @@ void
 ProfileGatherer::GatheredOOPProfile()
 {
   MOZ_ASSERT(NS_IsMainThread());
+  if (!mGathering) {
+    
+    
+    
+    return;
+  }
+
   if (NS_WARN_IF(!mPromise)) {
     
     
@@ -68,7 +84,9 @@ ProfileGatherer::Start(double aSinceTime,
 
   nsCOMPtr<nsIObserverService> os = mozilla::services::GetObserverService();
   if (os) {
-    nsresult rv = os->NotifyObservers(this, "profiler-subprocess-gather", nullptr);
+    nsresult rv = os->AddObserver(this, "profiler-subprocess", false);
+    NS_WARN_IF(NS_FAILED(rv));
+    rv = os->NotifyObservers(this, "profiler-subprocess-gather", nullptr);
     NS_WARN_IF(NS_FAILED(rv));
   }
 
@@ -89,6 +107,12 @@ ProfileGatherer::Finish()
   }
 
   UniquePtr<char[]> buf = mTicker->ToJSON(mSinceTime);
+
+  nsCOMPtr<nsIObserverService> os = mozilla::services::GetObserverService();
+  if (os) {
+    nsresult rv = os->RemoveObserver(this, "profiler-subprocess");
+    NS_WARN_IF(NS_FAILED(rv));
+  }
 
   AutoJSAPI jsapi;
   if (NS_WARN_IF(!jsapi.Init(mPromise->GlobalJSObject()))) {
@@ -143,6 +167,40 @@ ProfileGatherer::Cancel()
 
   
   mTicker = nullptr;
+}
+
+void
+ProfileGatherer::OOPExitProfile(const nsCString& aProfile)
+{
+  if (mExitProfiles.Length() >= MAX_SUBPROCESS_EXIT_PROFILES) {
+    mExitProfiles.RemoveElementAt(0);
+  }
+  mExitProfiles.AppendElement(aProfile);
+
+  
+  
+  if (mGathering) {
+    GatheredOOPProfile();
+  }
+}
+
+NS_IMETHODIMP
+ProfileGatherer::Observe(nsISupports* aSubject,
+                         const char* aTopic,
+                         const char16_t *someData)
+{
+  if (!strcmp(aTopic, "profiler-subprocess")) {
+    nsCOMPtr<nsIProfileSaveEvent> pse = do_QueryInterface(aSubject);
+    if (pse) {
+      for (size_t i = 0; i < mExitProfiles.Length(); ++i) {
+        if (!mExitProfiles[i].IsEmpty()) {
+          pse->AddSubProfile(mExitProfiles[i].get());
+        }
+      }
+      mExitProfiles.Clear();
+    }
+  }
+  return NS_OK;
 }
 
 } 

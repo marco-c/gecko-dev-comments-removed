@@ -2965,6 +2965,15 @@ ContentChild::RecvShutdown()
 
     GetIPCChannel()->SetAbortOnError(false);
 
+#ifdef MOZ_ENABLE_PROFILER_SPS
+    if (profiler_is_active()) {
+        
+        
+        
+        Unused << RecvGatherProfile();
+    }
+#endif
+
     
     
     Unused << SendFinishShutdown();
