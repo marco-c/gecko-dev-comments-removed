@@ -357,6 +357,11 @@ struct BasicTiledLayerPaintData {
   
 
 
+  bool mHasTransformAnimation : 1;
+
+  
+
+
   void ResetPaintData();
 };
 
