@@ -50,6 +50,24 @@ public:
     return GetValueAtTime(aTime, 0);
   }
 
+  template<typename TimeType>
+  void InsertEvent(const AudioTimelineEvent& aEvent)
+  {
+    if (aEvent.mType == AudioTimelineEvent::Cancel) {
+      CancelScheduledValues(aEvent.template Time<TimeType>());
+      return;
+    }
+    if (aEvent.mType == AudioTimelineEvent::Stream) {
+      mStream = aEvent.mStream;
+      return;
+    }
+    if (aEvent.mType == AudioTimelineEvent::SetValue) {
+      AudioEventTimeline::SetValue(aEvent.mValue);
+      return;
+    }
+    AudioEventTimeline::InsertEvent<TimeType>(aEvent);
+  }
+
   
   
   

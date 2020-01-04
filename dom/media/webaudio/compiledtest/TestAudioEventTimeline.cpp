@@ -9,6 +9,17 @@
 #include <sstream>
 #include <limits>
 
+
+namespace mozilla {
+class MediaStream
+{
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(MediaStream)
+private:
+  ~MediaStream() {
+  };
+};
+}
+
 using namespace mozilla;
 using namespace mozilla::dom;
 using std::numeric_limits;

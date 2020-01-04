@@ -119,7 +119,9 @@ AudioParam::Stream()
   }
 
   
-  mCallback(mNode);
+  AudioTimelineEvent event(mStream);
+
+  mCallback(mNode, event);
 
   return mStream;
 }

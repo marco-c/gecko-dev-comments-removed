@@ -22,7 +22,7 @@ class AudioNodeStream;
 
 namespace dom {
 
-class AudioParamTimeline;
+struct AudioTimelineEvent;
 
 namespace WebAudioUtils {
   
@@ -63,9 +63,9 @@ namespace WebAudioUtils {
 
 
 
-  void ConvertAudioParamToTicks(AudioParamTimeline& aParam,
-                                AudioNodeStream* aSource,
-                                AudioNodeStream* aDest);
+  void ConvertAudioTimelineEventToTicks(AudioTimelineEvent& aEvent,
+                                        AudioNodeStream* aSource,
+                                        AudioNodeStream* aDest);
 
   
 
