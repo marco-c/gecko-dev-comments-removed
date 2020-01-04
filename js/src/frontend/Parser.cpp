@@ -7587,8 +7587,11 @@ Parser<ParseHandler>::expr(InHandling inHandling, YieldHandling yieldHandling,
 
             
             
-            if (possibleError->checkForExprErrors())
-                possibleErrorInner.checkForExprErrors();
+            if (possibleError && !possibleError->checkForExprErrors())
+                return null();
+
+            
+            possibleErrorInner.checkForExprErrors();
             return null();
         }
         handler.addList(seq, pn);
