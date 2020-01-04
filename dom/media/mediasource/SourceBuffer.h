@@ -270,7 +270,6 @@ private:
   
   
   uint32_t mUpdateID;
-  int64_t mReportedOffset;
 
   MozPromiseRequestHolder<SourceBufferContentManager::AppendPromise> mPendingAppend;
   const nsCString mType;

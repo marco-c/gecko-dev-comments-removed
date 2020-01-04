@@ -366,7 +366,6 @@ protected:
   MozPromiseRequestHolder<MediaTimerPromise> mThrottledNotify;
   const TimeDuration mThrottleDuration;
   TimeStamp mLastThrottledNotify;
-  Maybe<media::Interval<int64_t>> mThrottledInterval;
 
   
   
