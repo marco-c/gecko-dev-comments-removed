@@ -313,7 +313,11 @@ public:
 
 
 
-  void DispatchEvents()  { mEventDispatcher.DispatchEvents(mPresContext); }
+  void DispatchEvents()
+  {
+    RefPtr<nsAnimationManager> kungFuDeathGrip(this);
+    mEventDispatcher.DispatchEvents(mPresContext);
+  }
   void SortEvents()      { mEventDispatcher.SortEvents(); }
   void ClearEventQueue() { mEventDispatcher.ClearEventQueue(); }
 
