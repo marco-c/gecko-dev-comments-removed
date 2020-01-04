@@ -722,3 +722,18 @@ nsDeviceContext::UpdateAppUnitsForFullZoom()
     
     mFullZoom = float(mAppUnitsPerDevPixelAtUnitFullZoom) / mAppUnitsPerDevPixel;
 }
+
+DesktopToLayoutDeviceScale
+nsDeviceContext::GetDesktopToDeviceScale()
+{
+    nsCOMPtr<nsIScreen> screen;
+    FindScreen(getter_AddRefs(screen));
+
+    if (screen) {
+        double scale;
+        screen->GetContentsScaleFactor(&scale);
+        return DesktopToLayoutDeviceScale(scale);
+    }
+
+    return DesktopToLayoutDeviceScale(1.0);
+}
