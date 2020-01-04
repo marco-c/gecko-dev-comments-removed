@@ -343,7 +343,17 @@ public:
 
   void NotifyLoadError();
 
+  
+
+
+
   void NotifyMediaTrackEnabled(MediaTrack* aTrack);
+
+  
+
+
+
+  void NotifyMediaTrackDisabled(MediaTrack* aTrack);
 
   
 

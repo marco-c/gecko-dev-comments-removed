@@ -5,7 +5,9 @@
 
 
 #include "MediaTrack.h"
+#include "AudioTrack.h"
 #include "MediaTrackList.h"
+#include "VideoTrack.h"
 
 namespace mozilla {
 namespace dom {

@@ -78,19 +78,24 @@ VideoTrack::SetEnabledInternal(bool aEnabled, int aFlags)
 
     
     list.mSelectedIndex = curIndex;
+
+    HTMLMediaElement* element = mList->GetMediaElement();
+    if (element) {
+      element->NotifyMediaTrackEnabled(this);
+    }
   } else {
     list.mSelectedIndex = -1;
+
+    HTMLMediaElement* element = mList->GetMediaElement();
+    if (element) {
+      element->NotifyMediaTrackDisabled(this);
+    }
   }
 
   
   
   if (!(aFlags & MediaTrack::FIRE_NO_EVENTS)) {
     list.CreateAndDispatchChangeEvent();
-
-    HTMLMediaElement* element = mList->GetMediaElement();
-    if (element) {
-      element->NotifyMediaTrackEnabled(this);
-    }
   }
 }
 
