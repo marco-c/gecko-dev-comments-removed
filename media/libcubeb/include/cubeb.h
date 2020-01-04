@@ -74,6 +74,48 @@ extern "C" {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 typedef struct cubeb cubeb;               
 typedef struct cubeb_stream cubeb_stream; 
 
@@ -101,6 +143,10 @@ typedef enum {
 } cubeb_sample_format;
 
 #if defined(__ANDROID__)
+
+
+
+
 typedef enum {
     CUBEB_STREAM_TYPE_VOICE_CALL = 0,
     CUBEB_STREAM_TYPE_SYSTEM = 1,
@@ -260,6 +306,12 @@ typedef struct {
 
 
 
+
+
+
+
+
+
 typedef long (* cubeb_data_callback)(cubeb_stream * stream,
                                      void * user_ptr,
                                      const void * input_buffer,
@@ -283,7 +335,11 @@ typedef void (* cubeb_device_changed_callback)(void * user_ptr);
 
 
 
-typedef void (* cubeb_device_collection_changed_callback)(cubeb * context, void * user_ptr);
+typedef void (* cubeb_device_collection_changed_callback)(cubeb * context,
+                                                          void * user_ptr);
+
+
+
 
 
 
@@ -332,7 +388,10 @@ int cubeb_get_preferred_sample_rate(cubeb * context, uint32_t * rate);
 
 
 
+
 void cubeb_destroy(cubeb * context);
+
+
 
 
 
@@ -367,6 +426,7 @@ int cubeb_stream_init(cubeb * context,
                       cubeb_data_callback data_callback,
                       cubeb_state_callback state_callback,
                       void * user_ptr);
+
 
 
 
