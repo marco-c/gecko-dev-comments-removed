@@ -3,9 +3,6 @@
 
 
 
-#define _USE_MATH_DEFINES
-#include <cmath>
-
 #include "PathHelpers.h"
 
 namespace mozilla {
@@ -278,4 +275,3 @@ MaxStrokeExtents(const StrokeOptions& aStrokeOptions,
 
 } 
 } 
-

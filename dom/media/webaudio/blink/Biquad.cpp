@@ -26,16 +26,11 @@
 
 
 
-
-
-
-#define _USE_MATH_DEFINES
-#include <math.h>
-
 #include "Biquad.h"
 
 #include <float.h>
 #include <algorithm>
+#include <math.h>
 
 namespace WebCore {
 

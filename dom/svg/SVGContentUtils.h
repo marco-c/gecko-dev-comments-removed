@@ -8,7 +8,6 @@
 #define MOZILLA_SVGCONTENTUTILS_H
 
 
-#define _USE_MATH_DEFINES
 #include <math.h>
 
 #include "mozilla/gfx/2D.h" 

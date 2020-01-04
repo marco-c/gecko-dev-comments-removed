@@ -29,7 +29,6 @@
 #include "mozilla/Assertions.h"         
 #include "mozilla/BasicEvents.h"        
 #include "mozilla/ClearOnShutdown.h"    
-#include "mozilla/Constants.h"          
 #include "mozilla/EventForwards.h"      
 #include "mozilla/Preferences.h"        
 #include "mozilla/ReentrantMonitor.h"   
