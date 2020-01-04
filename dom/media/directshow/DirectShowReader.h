@@ -56,12 +56,8 @@ public:
 
 protected:
   void NotifyDataArrivedInternal() override;
-public:
-
-  bool IsMediaSeekable() override;
 
 private:
-
   
   
   

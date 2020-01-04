@@ -85,16 +85,6 @@ public:
     NS_DispatchToMainThread(r);
   }
 
-  
-  virtual void SetMediaSeekable(bool aMediaSeekable) = 0;
-
-  void DispatchSetMediaSeekable(bool aMediaSeekable)
-  {
-    nsCOMPtr<nsIRunnable> r = NS_NewRunnableMethodWithArg<bool>(
-      this, &AbstractMediaDecoder::SetMediaSeekable, aMediaSeekable);
-    NS_DispatchToMainThread(r);
-  }
-
   virtual VideoFrameContainer* GetVideoFrameContainer() = 0;
   virtual mozilla::layers::ImageContainer* GetImageContainer() = 0;
 

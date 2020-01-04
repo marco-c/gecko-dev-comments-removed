@@ -471,7 +471,7 @@ public:
   virtual void SetElementVisibility(bool aIsVisible) {}
 
   
-  virtual void SetMediaSeekable(bool aMediaSeekable) override;
+  void SetMediaSeekable(bool aMediaSeekable);
 
   
   
@@ -804,6 +804,11 @@ private:
 
   void OnPlaybackEvent(MediaEventType aEvent);
 
+  void OnMediaNotSeekable()
+  {
+    SetMediaSeekable(false);
+  }
+
   MediaEventProducer<void> mDataArrivedEvent;
 
   
@@ -927,6 +932,7 @@ protected:
 
   MediaEventListener mOnPlaybackEvent;
   MediaEventListener mOnSeekingStart;
+  MediaEventListener mOnMediaNotSeekable;
 
 protected:
   

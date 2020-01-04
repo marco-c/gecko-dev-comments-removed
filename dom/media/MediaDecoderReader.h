@@ -239,10 +239,6 @@ public:
     return &mBuffered;
   }
 
-  
-  
-  virtual bool IsMediaSeekable() = 0;
-
   void DispatchSetStartTime(int64_t aStartTime)
   {
     RefPtr<MediaDecoderReader> self = this;
@@ -278,6 +274,9 @@ public:
   {
     return mTimedMetadataEvent;
   }
+
+  
+  MediaEventSource<void>& OnMediaNotSeekable() { return mOnMediaNotSeekable; }
 
 protected:
   virtual ~MediaDecoderReader();
@@ -368,6 +367,9 @@ protected:
 
   
   TimedMetadataEventProducer mTimedMetadataEvent;
+
+  
+  MediaEventProducer<void> mOnMediaNotSeekable;
 
 private:
   

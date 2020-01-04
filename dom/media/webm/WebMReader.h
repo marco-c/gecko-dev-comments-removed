@@ -92,8 +92,6 @@ public:
 
   virtual media::TimeIntervals GetBuffered() override;
 
-  virtual bool IsMediaSeekable() override;
-
   
   
   enum TrackType {

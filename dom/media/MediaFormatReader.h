@@ -49,11 +49,6 @@ public:
   RefPtr<SeekPromise>
   Seek(int64_t aTime, int64_t aUnused) override;
 
-  bool IsMediaSeekable() override
-  {
-    return mSeekable;
-  }
-
 protected:
   void NotifyDataArrivedInternal() override;
 
@@ -396,9 +391,6 @@ private:
   
   bool mInitDone;
   MozPromiseHolder<MetadataPromise> mMetadataPromise;
-  
-  
-  bool mSeekable;
   bool IsEncrypted()
   {
     return mIsEncrypted;
