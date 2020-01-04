@@ -341,12 +341,14 @@ IsInvalidValuePair(const PropertyValuePair& aPair)
 
 static void
 GetKeyframeListFromKeyframeSequence(JSContext* aCx,
+                                    nsIDocument* aDocument,
                                     JS::ForOfIterator& aIterator,
                                     nsTArray<Keyframe>& aResult,
                                     ErrorResult& aRv);
 
 static bool
 ConvertKeyframeSequence(JSContext* aCx,
+                        nsIDocument* aDocument,
                         JS::ForOfIterator& aIterator,
                         nsTArray<Keyframe>& aResult);
 
@@ -387,6 +389,7 @@ BuildSegmentsFromValueEntries(nsStyleContext* aStyleContext,
 
 static void
 GetKeyframeListFromPropertyIndexedKeyframe(JSContext* aCx,
+                                           nsIDocument* aDocument,
                                            JS::Handle<JS::Value> aValue,
                                            nsTArray<Keyframe>& aResult,
                                            ErrorResult& aRv);
@@ -418,6 +421,7 @@ GetCumulativeDistances(const nsTArray<ComputedKeyframeValues>& aValues,
 
  nsTArray<Keyframe>
 KeyframeUtils::GetKeyframesFromObject(JSContext* aCx,
+                                      nsIDocument* aDocument,
                                       JS::Handle<JSObject*> aFrames,
                                       ErrorResult& aRv)
 {
@@ -441,10 +445,10 @@ KeyframeUtils::GetKeyframesFromObject(JSContext* aCx,
   }
 
   if (iter.valueIsIterable()) {
-    GetKeyframeListFromKeyframeSequence(aCx, iter, keyframes, aRv);
+    GetKeyframeListFromKeyframeSequence(aCx, aDocument, iter, keyframes, aRv);
   } else {
-    GetKeyframeListFromPropertyIndexedKeyframe(aCx, objectValue, keyframes,
-                                               aRv);
+    GetKeyframeListFromPropertyIndexedKeyframe(aCx, aDocument, objectValue,
+                                               keyframes, aRv);
   }
 
   if (aRv.Failed()) {
@@ -459,14 +463,7 @@ KeyframeUtils::GetKeyframesFromObject(JSContext* aCx,
   
   
 
-  nsIDocument* doc = AnimationUtils::GetCurrentRealmDocument(aCx);
-  if (!doc) {
-    aRv.Throw(NS_ERROR_FAILURE);
-    keyframes.Clear();
-    return keyframes;
-  }
-
-  if (RequiresAdditiveAnimation(keyframes, doc)) {
+  if (RequiresAdditiveAnimation(keyframes, aDocument)) {
     aRv.Throw(NS_ERROR_DOM_ANIM_MISSING_PROPS_ERR);
     keyframes.Clear();
   }
@@ -711,8 +708,10 @@ KeyframeUtils::IsAnimatableProperty(nsCSSProperty aProperty)
 
 
 
+
 static void
 GetKeyframeListFromKeyframeSequence(JSContext* aCx,
+                                    nsIDocument* aDocument,
                                     JS::ForOfIterator& aIterator,
                                     nsTArray<Keyframe>& aResult,
                                     ErrorResult& aRv)
@@ -722,7 +721,7 @@ GetKeyframeListFromKeyframeSequence(JSContext* aCx,
 
   
   
-  if (!ConvertKeyframeSequence(aCx, aIterator, aResult)) {
+  if (!ConvertKeyframeSequence(aCx, aDocument, aIterator, aResult)) {
     aRv.Throw(NS_ERROR_FAILURE);
     aResult.Clear();
     return;
@@ -750,16 +749,12 @@ GetKeyframeListFromKeyframeSequence(JSContext* aCx,
 
 static bool
 ConvertKeyframeSequence(JSContext* aCx,
+                        nsIDocument* aDocument,
                         JS::ForOfIterator& aIterator,
                         nsTArray<Keyframe>& aResult)
 {
-  nsIDocument* doc = AnimationUtils::GetCurrentRealmDocument(aCx);
-  if (!doc) {
-    return false;
-  }
-
   JS::Rooted<JS::Value> value(aCx);
-  nsCSSParser parser(doc->CSSLoader());
+  nsCSSParser parser(aDocument->CSSLoader());
 
   for (;;) {
     bool done;
@@ -795,7 +790,7 @@ ConvertKeyframeSequence(JSContext* aCx,
 
     ErrorResult rv;
     keyframe->mTimingFunction =
-      TimingParams::ParseEasing(keyframeDict.mEasing, doc, rv);
+      TimingParams::ParseEasing(keyframeDict.mEasing, aDocument, rv);
     if (rv.MaybeSetPendingException(aCx)) {
       return false;
     }
@@ -814,7 +809,8 @@ ConvertKeyframeSequence(JSContext* aCx,
     for (PropertyValuesPair& pair : propertyValuePairs) {
       MOZ_ASSERT(pair.mValues.Length() == 1);
       keyframe->mPropertyValues.AppendElement(
-        MakePropertyValuePair(pair.mProperty, pair.mValues[0], parser, doc));
+        MakePropertyValuePair(pair.mProperty, pair.mValues[0], parser,
+                              aDocument));
 
       
       
@@ -1277,8 +1273,10 @@ BuildSegmentsFromValueEntries(nsStyleContext* aStyleContext,
 
 
 
+
 static void
 GetKeyframeListFromPropertyIndexedKeyframe(JSContext* aCx,
+                                           nsIDocument* aDocument,
                                            JS::Handle<JS::Value> aValue,
                                            nsTArray<Keyframe>& aResult,
                                            ErrorResult& aRv)
@@ -1296,15 +1294,8 @@ GetKeyframeListFromPropertyIndexedKeyframe(JSContext* aCx,
     return;
   }
 
-  
-  nsIDocument* doc = AnimationUtils::GetCurrentRealmDocument(aCx);
-  if (!doc) {
-    aRv.Throw(NS_ERROR_FAILURE);
-    return;
-  }
-
   Maybe<ComputedTimingFunction> easing =
-    TimingParams::ParseEasing(keyframeDict.mEasing, doc, aRv);
+    TimingParams::ParseEasing(keyframeDict.mEasing, aDocument, aRv);
   if (aRv.Failed()) {
     return;
   }
@@ -1319,7 +1310,7 @@ GetKeyframeListFromPropertyIndexedKeyframe(JSContext* aCx,
   }
 
   
-  nsCSSParser parser(doc->CSSLoader());
+  nsCSSParser parser(aDocument->CSSLoader());
   nsClassHashtable<nsFloatHashKey, Keyframe> processedKeyframes;
   for (const PropertyValuesPair& pair : propertyValuesPairs) {
     size_t count = pair.mValues.Length();
@@ -1346,7 +1337,7 @@ GetKeyframeListFromPropertyIndexedKeyframe(JSContext* aCx,
         keyframe->mComputedOffset = offset;
       }
       keyframe->mPropertyValues.AppendElement(
-        MakePropertyValuePair(pair.mProperty, stringValue, parser, doc));
+        MakePropertyValuePair(pair.mProperty, stringValue, parser, aDocument));
     }
   }
 

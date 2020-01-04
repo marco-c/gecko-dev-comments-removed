@@ -51,8 +51,10 @@ public:
 
 
 
+
   static nsTArray<Keyframe>
   GetKeyframesFromObject(JSContext* aCx,
+                         nsIDocument* aDocument,
                          JS::Handle<JSObject*> aFrames,
                          ErrorResult& aRv);
 
