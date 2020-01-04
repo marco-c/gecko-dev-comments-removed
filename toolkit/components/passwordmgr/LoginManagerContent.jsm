@@ -1153,37 +1153,26 @@ var LoginUtils = {
 
 
 
-
-  _getPasswordOrigin : function (uriString, allowJS) {
+  _getPasswordOrigin(uriString, allowJS) {
     var realm = "";
     try {
       var uri = Services.io.newURI(uriString, null, null);
 
       if (allowJS && uri.scheme == "javascript")
-        return "javascript:"
+        return "javascript:";
 
-      realm = uri.scheme + "://" + uri.host;
-
-      
-      
-      var port = uri.port;
-      if (port != -1) {
-        var handler = Services.io.getProtocolHandler(uri.scheme);
-        if (port != handler.defaultPort)
-          realm += ":" + port;
-      }
-
+      realm = uri.scheme + "://" + uri.hostPort;
     } catch (e) {
       
       
-      log("Couldn't parse origin for", uriString);
+      log("Couldn't parse origin for", uriString, e);
       realm = null;
     }
 
     return realm;
   },
 
-  _getActionOrigin : function (form) {
+  _getActionOrigin(form) {
     var uriString = form.action;
 
     

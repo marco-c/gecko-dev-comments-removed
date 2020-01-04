@@ -798,19 +798,11 @@ var PromptUtils = {
     aAuthInfo.password = password;
   },
 
-  getFormattedHostname : function pu_getFormattedHostname(uri) {
-    let scheme = uri.scheme;
-    let hostname = scheme + "://" + uri.host;
+  
 
-    
-    
-    let port = uri.port;
-    if (port != -1) {
-      let handler = Services.io.getProtocolHandler(scheme);
-      if (port != handler.defaultPort)
-        hostname += ":" + port;
-    }
-    return hostname;
+
+  getFormattedHostname : function pu_getFormattedHostname(uri) {
+    return uri.scheme + "://" + uri.hostPort;
   },
 
   fireDialogEvent: function(aDomWin, aEventName) {

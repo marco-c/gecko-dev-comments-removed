@@ -400,38 +400,6 @@ LoginManagerPrompter.prototype = {
     }
     return username.replace(/['"]/g, "");
   },
-
-  
-
-
-
-
-
-
-
-  _getFormattedHostname : function (aURI) {
-    var uri;
-    if (aURI instanceof Ci.nsIURI) {
-      uri = aURI;
-    } else {
-      uri = Services.io.newURI(aURI, null, null);
-    }
-    var scheme = uri.scheme;
-
-    var hostname = scheme + "://" + uri.host;
-
-    
-    
-    let port = uri.port;
-    if (port != -1) {
-      var handler = Services.io.getProtocolHandler(scheme);
-    if (port != handler.defaultPort)
-      hostname += ":" + port;
-    }
-
-    return hostname;
-  },
-
 }; 
 
 

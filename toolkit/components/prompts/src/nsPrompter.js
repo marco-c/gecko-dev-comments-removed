@@ -205,20 +205,10 @@ var PromptUtilsTemp = {
     },
 
     
+
+
     getFormattedHostname : function (uri) {
-        let scheme = uri.scheme;
-        let hostname = scheme + "://" + uri.host;
-
-        
-        
-        let port = uri.port;
-        if (port != -1) {
-            let handler = Services.io.getProtocolHandler(scheme);
-            if (port != handler.defaultPort)
-                hostname += ":" + port;
-        }
-
-        return hostname;
+        return uri.scheme + "://" + uri.hostPort;
     },
 
     
