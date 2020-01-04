@@ -292,32 +292,30 @@ public:
   }
 };
 
-} 
 
 
 
 
 
-
-class MOZ_STACK_CLASS nsAutoInsertContainerSelNotify
+class MOZ_STACK_CLASS AutoInsertContainerSelNotify final
 {
-  private:
-    mozilla::RangeUpdater& mRU;
+private:
+  RangeUpdater& mRangeUpdater;
 
-  public:
-    explicit nsAutoInsertContainerSelNotify(
-               mozilla::RangeUpdater& aRangeUpdater) :
-    mRU(aRangeUpdater)
-    {
-      mRU.WillInsertContainer();
-    }
+public:
+  explicit AutoInsertContainerSelNotify(RangeUpdater& aRangeUpdater)
+    : mRangeUpdater(aRangeUpdater)
+  {
+    mRangeUpdater.WillInsertContainer();
+  }
 
-    ~nsAutoInsertContainerSelNotify()
-    {
-      mRU.DidInsertContainer();
-    }
+  ~AutoInsertContainerSelNotify()
+  {
+    mRangeUpdater.DidInsertContainer();
+  }
 };
 
+} 
 
 
 

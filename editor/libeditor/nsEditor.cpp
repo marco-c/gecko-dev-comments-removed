@@ -1663,7 +1663,7 @@ nsEditor::InsertContainerAbove(nsIContent* aNode,
   }
 
   
-  nsAutoInsertContainerSelNotify selNotify(mRangeUpdater);
+  AutoInsertContainerSelNotify selNotify(mRangeUpdater);
 
   
   res = DeleteNode(aNode);
