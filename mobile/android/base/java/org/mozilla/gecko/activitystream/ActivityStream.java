@@ -26,6 +26,6 @@ public class ActivityStream {
 
 
     public static boolean isHomePanel() {
-        return false;
+        return true;
     }
 }
