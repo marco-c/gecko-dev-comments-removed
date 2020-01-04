@@ -466,11 +466,12 @@ class TypeProperty extends Entry {
 
 
 class CallEntry extends Entry {
-  constructor(namespaceName, name, parameters) {
+  constructor(namespaceName, name, parameters, allowAmbiguousOptionalArguments) {
     super();
     this.namespaceName = namespaceName;
     this.name = name;
     this.parameters = parameters;
+    this.allowAmbiguousOptionalArguments = allowAmbiguousOptionalArguments;
   }
 
   throwError(global, msg) {
@@ -519,9 +520,15 @@ class CallEntry extends Entry {
       return check(parameterIndex + 1, argIndex + 1);
     };
 
-    let success = check(0, 0);
-    if (!success) {
-      this.throwError(global, "Incorrect argument types");
+    if (this.allowAmbiguousOptionalArguments) {
+      
+      
+      return args;
+    } else {
+      let success = check(0, 0);
+      if (!success) {
+        this.throwError(global, "Incorrect argument types");
+      }
     }
 
     
@@ -544,8 +551,8 @@ class CallEntry extends Entry {
 
 
 class FunctionEntry extends CallEntry {
-  constructor(namespaceName, name, type, unsupported) {
-    super(namespaceName, name, type.parameters);
+  constructor(namespaceName, name, type, unsupported, allowAmbiguousOptionalArguments) {
+    super(namespaceName, name, type.parameters, allowAmbiguousOptionalArguments);
     this.unsupported = unsupported;
   }
 
@@ -738,7 +745,9 @@ this.Schemas = {
     if ("value" in prop) {
       this.register(namespaceName, name, new ValueProperty(name, prop.value));
     } else {
-      let type = this.parseType(namespaceName, prop);
+      
+      
+      let type = this.parseType(namespaceName, prop, ["optional"]);
       this.register(namespaceName, name, new TypeProperty(name, type));
     }
   },
@@ -749,8 +758,10 @@ this.Schemas = {
 
     let f = new FunctionEntry(namespaceName, fun.name,
                               this.parseType(namespaceName, fun,
-                                             ["name", "unsupported", "deprecated", "returns"]),
-                              fun.unsupported || false);
+                                             ["name", "unsupported", "deprecated", "returns",
+                                              "allowAmbiguousOptionalArguments"]),
+                              fun.unsupported || false,
+                              fun.allowAmbiguousOptionalArguments || false);
     this.register(namespaceName, fun.name, f);
   },
 
