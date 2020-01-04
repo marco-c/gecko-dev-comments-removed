@@ -161,7 +161,7 @@ HTMLLabelElement::PostHandleEvent(EventChainPostVisitor& aVisitor)
           }
           
           
-          if (mouseEvent->clickCount <= 1) {
+          if (mouseEvent->mClickCount <= 1) {
             nsIFocusManager* fm = nsFocusManager::GetFocusManager();
             if (fm) {
               

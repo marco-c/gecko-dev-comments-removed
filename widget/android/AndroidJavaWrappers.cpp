@@ -722,7 +722,7 @@ AndroidGeckoEvent::MakeMouseEvent(nsIWidget* widget)
     
     event.button = WidgetMouseEvent::eLeftButton;
     if (msg != eMouseMove) {
-        event.clickCount = 1;
+        event.mClickCount = 1;
     }
     event.mModifiers = DOMModifiers();
     event.mTime = Time();

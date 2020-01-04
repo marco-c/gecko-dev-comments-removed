@@ -1666,10 +1666,11 @@ nsListControlFrame::MouseUp(nsIDOMEvent* aMouseEvent)
         FireOnChange();
       }
 
-      mouseEvent->clickCount = 1;
+      mouseEvent->mClickCount = 1;
     } else {
       
-      mouseEvent->clickCount = IgnoreMouseEventForSelection(aMouseEvent) ? 1 : 0;
+      mouseEvent->mClickCount =
+        IgnoreMouseEventForSelection(aMouseEvent) ? 1 : 0;
     }
   } else {
     CaptureMouseEvents(false);
