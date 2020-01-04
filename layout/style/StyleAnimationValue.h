@@ -53,8 +53,9 @@ public:
 
 
 
-  static bool Add(nsCSSPropertyID aProperty, StyleAnimationValue& aDest,
-                  const StyleAnimationValue& aValueToAdd, uint32_t aCount) {
+  static MOZ_MUST_USE bool
+  Add(nsCSSPropertyID aProperty, StyleAnimationValue& aDest,
+      const StyleAnimationValue& aValueToAdd, uint32_t aCount) {
     return AddWeighted(aProperty, 1.0, aDest, aCount, aValueToAdd, aDest);
   }
 
@@ -76,10 +77,11 @@ public:
 
 
 
-  static bool ComputeDistance(nsCSSPropertyID aProperty,
-                              const StyleAnimationValue& aStartValue,
-                              const StyleAnimationValue& aEndValue,
-                              double& aDistance);
+  static MOZ_MUST_USE bool
+  ComputeDistance(nsCSSPropertyID aProperty,
+                  const StyleAnimationValue& aStartValue,
+                  const StyleAnimationValue& aEndValue,
+                  double& aDistance);
 
   
 
@@ -97,11 +99,12 @@ public:
 
 
 
-  static bool Interpolate(nsCSSPropertyID aProperty,
-                          const StyleAnimationValue& aStartValue,
-                          const StyleAnimationValue& aEndValue,
-                          double aPortion,
-                          StyleAnimationValue& aResultValue) {
+  static MOZ_MUST_USE bool
+  Interpolate(nsCSSPropertyID aProperty,
+              const StyleAnimationValue& aStartValue,
+              const StyleAnimationValue& aEndValue,
+              double aPortion,
+              StyleAnimationValue& aResultValue) {
     return AddWeighted(aProperty, 1.0 - aPortion, aStartValue,
                        aPortion, aEndValue, aResultValue);
   }
@@ -120,10 +123,11 @@ public:
 
 
 
-  static bool AddWeighted(nsCSSPropertyID aProperty,
-                          double aCoeff1, const StyleAnimationValue& aValue1,
-                          double aCoeff2, const StyleAnimationValue& aValue2,
-                          StyleAnimationValue& aResultValue);
+  static MOZ_MUST_USE bool
+  AddWeighted(nsCSSPropertyID aProperty,
+              double aCoeff1, const StyleAnimationValue& aValue1,
+              double aCoeff2, const StyleAnimationValue& aValue2,
+              StyleAnimationValue& aResultValue);
 
   
   
@@ -157,13 +161,14 @@ public:
 
 
 
-  static bool ComputeValue(nsCSSPropertyID aProperty,
-                           mozilla::dom::Element* aTargetElement,
-                           nsStyleContext* aStyleContext,
-                           const nsAString& aSpecifiedValue,
-                           bool aUseSVGMode,
-                           StyleAnimationValue& aComputedValue,
-                           bool* aIsContextSensitive = nullptr);
+  static MOZ_MUST_USE bool
+  ComputeValue(nsCSSPropertyID aProperty,
+               mozilla::dom::Element* aTargetElement,
+               nsStyleContext* aStyleContext,
+               const nsAString& aSpecifiedValue,
+               bool aUseSVGMode,
+               StyleAnimationValue& aComputedValue,
+               bool* aIsContextSensitive = nullptr);
 
   
 
@@ -175,52 +180,27 @@ public:
 
 
 
-  static bool ComputeValues(nsCSSPropertyID aProperty,
-                            mozilla::CSSEnabledState aEnabledState,
-                            mozilla::dom::Element* aTargetElement,
-                            nsStyleContext* aStyleContext,
-                            const nsAString& aSpecifiedValue,
-                            bool aUseSVGMode,
-                            nsTArray<PropertyStyleAnimationValuePair>& aResult);
+  static MOZ_MUST_USE bool
+  ComputeValues(nsCSSPropertyID aProperty,
+                mozilla::CSSEnabledState aEnabledState,
+                mozilla::dom::Element* aTargetElement,
+                nsStyleContext* aStyleContext,
+                const nsAString& aSpecifiedValue,
+                bool aUseSVGMode,
+                nsTArray<PropertyStyleAnimationValuePair>& aResult);
 
   
 
 
 
-  static bool ComputeValues(nsCSSPropertyID aProperty,
-                            mozilla::CSSEnabledState aEnabledState,
-                            mozilla::dom::Element* aTargetElement,
-                            nsStyleContext* aStyleContext,
-                            const nsCSSValue& aSpecifiedValue,
-                            bool aUseSVGMode,
-                            nsTArray<PropertyStyleAnimationValuePair>& aResult);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  static bool UncomputeValue(nsCSSPropertyID aProperty,
-                             const StyleAnimationValue& aComputedValue,
-                             nsCSSValue& aSpecifiedValue);
-  static bool UncomputeValue(nsCSSPropertyID aProperty,
-                             StyleAnimationValue&& aComputedValue,
-                             nsCSSValue& aSpecifiedValue);
-  static bool UncomputeValue(nsCSSPropertyID aProperty,
-                             const StyleAnimationValue& aComputedValue,
-                             nsAString& aSpecifiedValue);
+  static MOZ_MUST_USE bool
+  ComputeValues(nsCSSPropertyID aProperty,
+                mozilla::CSSEnabledState aEnabledState,
+                mozilla::dom::Element* aTargetElement,
+                nsStyleContext* aStyleContext,
+                const nsCSSValue& aSpecifiedValue,
+                bool aUseSVGMode,
+                nsTArray<PropertyStyleAnimationValuePair>& aResult);
 
   
 
@@ -236,9 +216,43 @@ public:
 
 
 
-  static bool ExtractComputedValue(nsCSSPropertyID aProperty,
-                                   nsStyleContext* aStyleContext,
-                                   StyleAnimationValue& aComputedValue);
+
+
+
+
+
+
+  static MOZ_MUST_USE bool
+  UncomputeValue(nsCSSPropertyID aProperty,
+                 const StyleAnimationValue& aComputedValue,
+                 nsCSSValue& aSpecifiedValue);
+  static MOZ_MUST_USE bool
+  UncomputeValue(nsCSSPropertyID aProperty,
+                 StyleAnimationValue&& aComputedValue,
+                 nsCSSValue& aSpecifiedValue);
+  static MOZ_MUST_USE bool
+  UncomputeValue(nsCSSPropertyID aProperty,
+                 const StyleAnimationValue& aComputedValue,
+                 nsAString& aSpecifiedValue);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  static MOZ_MUST_USE bool ExtractComputedValue(
+    nsCSSPropertyID aProperty,
+    nsStyleContext* aStyleContext,
+    StyleAnimationValue& aComputedValue);
 
   
 

@@ -1575,10 +1575,11 @@ GetCumulativeDistances(const nsTArray<ComputedKeyframeValues>& aValues,
         
         
         
-        StyleAnimationValue::ComputeDistance(aPacedProperty,
-                                             prevPacedValues[0].mValue,
-                                             pacedValues[0].mValue,
-                                             dist);
+        Unused <<
+          StyleAnimationValue::ComputeDistance(aPacedProperty,
+                                               prevPacedValues[0].mValue,
+                                               pacedValues[0].mValue,
+                                               dist);
       }
       cumulativeDistances[i] = cumulativeDistances[preIdx] + dist;
     }
