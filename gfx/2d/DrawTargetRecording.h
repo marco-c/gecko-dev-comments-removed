@@ -223,6 +223,35 @@ public:
 
 
 
+
+
+
+
+
+
+
+
+
+
+  virtual void PushLayer(bool aOpaque, Float aOpacity,
+                         SourceSurface* aMask,
+                         const Matrix& aMaskTransform,
+                         const IntRect& aBounds = IntRect(),
+                         bool aCopyBackground = false) override;
+
+  
+
+
+
+
+  virtual void PopLayer() override;
+
+  
+
+
+
+
+
   virtual already_AddRefed<SourceSurface> CreateSourceSurfaceFromData(unsigned char *aData,
                                                                   const IntSize &aSize,
                                                                   int32_t aStride,
@@ -285,6 +314,10 @@ public:
 
 
   virtual void *GetNativeSurface(NativeSurfaceType aType) override { return mFinalDT->GetNativeSurface(aType); }
+
+  virtual bool IsCurrentGroupOpaque() override {
+    return mFinalDT->IsCurrentGroupOpaque();
+  }
 
 private:
   Path *GetPathForPathRecording(const Path *aPath) const;
