@@ -542,12 +542,24 @@ GlyphObserver::NotifyGlyphsChanged()
       break;
     }
     f->InvalidateFrame();
+
     
     
     
     
-    
-    shell->FrameNeedsReflow(f, nsIPresShell::eResize, NS_FRAME_IS_DIRTY);
+    if (f->IsSVGText() && f->GetStateBits() & NS_FRAME_IS_NONDISPLAY) {
+      auto svgTextFrame = static_cast<SVGTextFrame*>(
+                            nsLayoutUtils::GetClosestFrameOfType(f,
+                            nsGkAtoms::svgTextFrame));
+      svgTextFrame->ScheduleReflowSVGNonDisplayText();
+    } else {
+      
+      
+      
+      
+      
+      shell->FrameNeedsReflow(f, nsIPresShell::eResize, NS_FRAME_IS_DIRTY);
+    }
   }
 }
 
