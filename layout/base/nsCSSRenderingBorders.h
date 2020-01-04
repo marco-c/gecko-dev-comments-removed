@@ -10,7 +10,6 @@
 #include "gfxRect.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/gfx/2D.h"
-#include "mozilla/gfx/BezierUtils.h"
 #include "mozilla/gfx/PathHelpers.h"
 #include "mozilla/RefPtr.h"
 #include "nsColor.h"
@@ -62,7 +61,6 @@ typedef enum {
 
 class nsCSSBorderRenderer final
 {
-  typedef mozilla::gfx::Bezier Bezier;
   typedef mozilla::gfx::ColorPattern ColorPattern;
   typedef mozilla::gfx::DrawTarget DrawTarget;
   typedef mozilla::gfx::Float Float;
@@ -170,12 +168,6 @@ private:
 
   
   
-  void GetOuterAndInnerBezier(Bezier* aOuterBezier,
-                              Bezier* aInnerBezier,
-                              mozilla::css::Corner aCorner);
-
-  
-  
   
   
   
@@ -207,25 +199,13 @@ private:
   
   void SetupDashedOptions(StrokeOptions* aStrokeOptions,
                           Float aDash[2], mozilla::css::Side aSide,
-                          Float aBorderLength, bool isCorner);
+                          Float aBorderLength);
 
   
   void DrawDashedOrDottedSide(mozilla::css::Side aSide);
 
   
   void DrawDottedSideSlow(mozilla::css::Side aSide);
-
-  
-  void DrawDashedOrDottedCorner(mozilla::css::Side aSide,
-                                mozilla::css::Corner aCorner);
-
-  
-  void DrawDottedCornerSlow(mozilla::css::Side aSide,
-                            mozilla::css::Corner aCorner);
-
-  
-  void DrawDashedCornerSlow(mozilla::css::Side aSide,
-                            mozilla::css::Corner aCorner);
 
   
   bool AllBordersSameWidth();
