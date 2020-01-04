@@ -144,7 +144,7 @@ function configureLogging() {
 
 
 function loadJSONAsync(file, options) {
-  return Task.spawn(function*() {
+  return Task.spawn(function() {
     let rawData = yield OS.File.read(file, options);
     
     let data;
