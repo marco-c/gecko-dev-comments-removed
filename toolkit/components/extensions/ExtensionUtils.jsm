@@ -148,6 +148,7 @@ class BaseContext {
     this.contextId = ++gContextId;
     this.unloaded = false;
     this.extensionId = extensionId;
+    this.jsonSandbox = null;
   }
 
   get cloneScope() {
@@ -194,6 +195,24 @@ class BaseContext {
       return false;
     }
     return true;
+  }
+
+  
+
+
+
+
+
+
+  jsonStringify(...args) {
+    if (!this.jsonSandbox) {
+      this.jsonSandbox = Cu.Sandbox(this.principal, {
+        sameZoneAs: this.cloneScope,
+        wantXrays: false,
+      });
+    }
+
+    return Cu.waiveXrays(this.jsonSandbox.JSON).stringify(...args);
   }
 
   callOnClose(obj) {
