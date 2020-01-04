@@ -308,10 +308,11 @@ function find_(container, strategy, selector, searchFn, opts) {
 
 
 
-function findByXPath(root, value, node) {
-  return root.evaluate(value, node, null,
-          Ci.nsIDOMXPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
-}
+element.findByXPath = function(root, startNode, expr) {
+  let iter = root.evaluate(expr, startNode, null,
+      Ci.nsIDOMXPathResult.FIRST_ORDERED_NODE_TYPE, null)
+  return iter.singleNodeValue;
+};
 
 
 
@@ -326,17 +327,17 @@ function findByXPath(root, value, node) {
 
 
 
-function findByXPathAll(root, value, node) {
-  let values = root.evaluate(value, node, null,
-                    Ci.nsIDOMXPathResult.ORDERED_NODE_ITERATOR_TYPE, null);
-  let elements = [];
-  let element = values.iterateNext();
-  while (element) {
-    elements.push(element);
-    element = values.iterateNext();
+element.findByXPathAll = function(root, startNode, expr) {
+  let rv = [];
+  let iter = root.evaluate(expr, startNode, null,
+      Ci.nsIDOMXPathResult.ORDERED_NODE_ITERATOR_TYPE, null);
+  let el = iter.iterateNext();
+  while (el) {
+    rv.push(el);
+    el = iter.iterateNext();
   }
-  return elements;
-}
+  return rv;
+};
 
 
 
@@ -416,13 +417,13 @@ function findElement(using, value, rootNode, startNode) {
       if (startNode.getElementById) {
         return startNode.getElementById(value);
       }
-      return findByXPath(rootNode, `.//*[@id="${value}"]`, startNode);
+      return element.findByXPath(rootNode, startNode, `.//*[@id="${value}"]`);
 
     case element.Strategy.Name:
       if (startNode.getElementsByName) {
         return startNode.getElementsByName(value)[0];
       }
-      return findByXPath(rootNode, `.//*[@name="${value}"]`, startNode);
+      return element.findByXPath(rootNode, startNode, `.//*[@name="${value}"]`);
 
     case element.Strategy.ClassName:
       
@@ -433,7 +434,7 @@ function findElement(using, value, rootNode, startNode) {
       return startNode.getElementsByTagName(value)[0];
 
     case element.Strategy.XPath:
-      return  findByXPath(rootNode, value, startNode);
+      return  element.findByXPath(rootNode, startNode, value);
 
     case element.Strategy.LinkText:
       for (let link of startNode.getElementsByTagName("a")) {
@@ -497,13 +498,13 @@ function findElements(using, value, rootNode, startNode) {
 
     
     case element.Strategy.XPath:
-      return findByXPathAll(rootNode, value, startNode);
+      return element.findByXPathAll(rootNode, startNode, value);
 
     case element.Strategy.Name:
       if (startNode.getElementsByName) {
         return startNode.getElementsByName(value);
       }
-      return findByXPathAll(rootNode, `.//*[@name="${value}"]`, startNode);
+      return element.findByXPathAll(rootNode, startNode, `.//*[@name="${value}"]`);
 
     case element.Strategy.ClassName:
       return startNode.getElementsByClassName(value);
