@@ -5300,14 +5300,14 @@ var FormAssistant = {
       return;
 
     
+    let currentElement = aInvalidElements.queryElementAt(0, Ci.nsISupports);
     if (BrowserApp.selectedBrowser.contentDocument !=
-        aFormElement.ownerDocument.defaultView.top.document)
+        currentElement.ownerDocument.defaultView.top.document)
       return;
 
     this._invalidSubmit = true;
 
     
-    let currentElement = aInvalidElements.queryElementAt(0, Ci.nsISupports);
     currentElement.focus();
   },
 
@@ -7283,7 +7283,7 @@ var Tabs = {
           if (isTopLevel && !targetURI.startsWith("about:")) {
             UITelemetry.addEvent("neterror.1", "toast", null, "usecache");
             Snackbars.show(
-              Strings.browser.GetStringFromName("networkOffline.message2"),
+              Strings.browser.GetStringFromName("networkOffline.message"),
               Snackbars.LENGTH_INDEFINITE,
               {
                 
