@@ -88,6 +88,7 @@ public class GeckoService extends Service {
     public void onCreate() {
         GeckoAppShell.ensureCrashHandling();
         GeckoAppShell.setApplicationContext(getApplicationContext());
+        GeckoThread.onResume();
 
         super.onCreate();
 
@@ -98,8 +99,13 @@ public class GeckoService extends Service {
 
     @Override 
     public void onDestroy() {
+        GeckoThread.onPause();
+
         
         
+        if (GeckoThread.isStateAtLeast(GeckoThread.State.PROFILE_READY)) {
+            GeckoThread.waitOnGecko();
+        }
 
         if (DEBUG) {
             Log.d(LOGTAG, "Destroyed");
