@@ -560,7 +560,7 @@ BufferOffset
 Assembler::haltingAlign(int alignment)
 {
     
-    return nopAlign(alignment);
+    nopAlign(alignment);
 }
 
 BufferOffset
