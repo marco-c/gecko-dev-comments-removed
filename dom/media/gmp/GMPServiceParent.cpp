@@ -719,7 +719,7 @@ GeckoMediaPluginServiceParent::UnloadPlugins()
     MutexAutoLock lock(mMutex);
     
     
-    plugins = Move(mPlugins);
+    Swap(plugins, mPlugins);
   }
 
   LOGD(("%s::%s plugins:%u including async:%u", __CLASS__, __FUNCTION__,
