@@ -69,6 +69,9 @@ using namespace mozilla::media;
 #undef SAMPLE_LOG
 #undef DECODER_WARN
 #undef DUMP_LOG
+#undef SFMT
+#undef SLOG
+#undef SWARN
 
 #define FMT(x, ...) "Decoder=%p " x, mDecoderID, ##__VA_ARGS__
 #define DECODER_LOG(...) MOZ_LOG(gMediaDecoderLog, LogLevel::Debug,   (FMT(__VA_ARGS__)))
@@ -76,6 +79,11 @@ using namespace mozilla::media;
 #define SAMPLE_LOG(...)  MOZ_LOG(gMediaSampleLog,  LogLevel::Debug,   (FMT(__VA_ARGS__)))
 #define DECODER_WARN(...) NS_WARNING(nsPrintfCString(FMT(__VA_ARGS__)).get())
 #define DUMP_LOG(...) NS_DebugBreak(NS_DEBUG_WARNING, nsPrintfCString(FMT(__VA_ARGS__)).get(), nullptr, nullptr, -1)
+
+
+#define SFMT(x, ...) "Decoder=%p state=%s " x, mMaster->mDecoderID, ToStateStr(GetState()), ##__VA_ARGS__
+#define SLOG(...) MOZ_LOG(gMediaDecoderLog, LogLevel::Debug, (SFMT(__VA_ARGS__)))
+#define SWARN(...) NS_WARNING(nsPrintfCString(SFMT(__VA_ARGS__)).get())
 
 
 
@@ -213,9 +221,20 @@ public:
   virtual void Step() {}   
   virtual State GetState() const = 0;
 
+  
+  
+  virtual bool HandleDormant(bool aDormant) { return false; }
+
 protected:
   using Master = MediaDecoderStateMachine;
   explicit StateObject(Master* aPtr) : mMaster(aPtr) {}
+  TaskQueue* OwnerThread() const { return mMaster->mTaskQueue; }
+  MediaResource* Resource() const { return mMaster->mResource; }
+  MediaDecoderReaderWrapper* Reader() const { return mMaster->mReader; }
+
+  
+  
+  void SetState(State aState) { mMaster->SetState(aState); }
 
   
   
@@ -230,13 +249,124 @@ public:
 
   void Enter() override
   {
-    mMaster->ReadMetadata();
+    MOZ_ASSERT(!mMetadataRequest.Exists());
+    SLOG("Dispatching AsyncReadMetadata");
+
+    
+    Resource()->SetReadMode(MediaCacheStream::MODE_METADATA);
+
+    
+    
+    mMetadataRequest.Begin(Reader()->ReadMetadata()
+      ->Then(OwnerThread(), __func__,
+        [this] (MetadataHolder* aMetadata) {
+          OnMetadataRead(aMetadata);
+        },
+        [this] (ReadMetadataFailureReason aReason) {
+          OnMetadataNotRead(aReason);
+        }));
+  }
+
+  void Exit() override
+  {
+    mMetadataRequest.DisconnectIfExists();
   }
 
   State GetState() const override
   {
     return DECODER_STATE_DECODING_METADATA;
   }
+
+  bool HandleDormant(bool aDormant) override
+  {
+    mPendingDormant = aDormant;
+    return true;
+  }
+
+private:
+  void OnMetadataRead(MetadataHolder* aMetadata)
+  {
+    mMetadataRequest.Complete();
+
+    if (mPendingDormant) {
+      
+      SetState(DECODER_STATE_DORMANT);
+      return;
+    }
+
+    
+    Resource()->SetReadMode(MediaCacheStream::MODE_PLAYBACK);
+
+    mMaster->mInfo = aMetadata->mInfo;
+    mMaster->mMetadataTags = aMetadata->mTags.forget();
+
+    if (mMaster->mInfo.mMetadataDuration.isSome()) {
+      mMaster->RecomputeDuration();
+    } else if (mMaster->mInfo.mUnadjustedMetadataEndTime.isSome()) {
+      RefPtr<Master> master = mMaster;
+      Reader()->AwaitStartTime()->Then(OwnerThread(), __func__,
+        [master] () {
+          NS_ENSURE_TRUE_VOID(!master->IsShutdown());
+          TimeUnit unadjusted = master->mInfo.mUnadjustedMetadataEndTime.ref();
+          TimeUnit adjustment = master->mReader->StartTime();
+          master->mInfo.mMetadataDuration.emplace(unadjusted - adjustment);
+          master->RecomputeDuration();
+        }, [master, this] () {
+          SWARN("Adjusting metadata end time failed");
+        }
+      );
+    }
+
+    if (mMaster->HasVideo()) {
+      SLOG("Video decode isAsync=%d HWAccel=%d videoQueueSize=%d",
+           Reader()->IsAsync(),
+           Reader()->VideoIsHardwareAccelerated(),
+           mMaster->GetAmpleVideoFrames());
+    }
+
+    
+    
+    
+    
+    
+    
+    bool waitingForCDM =
+#ifdef MOZ_EME
+    mMaster->mInfo.IsEncrypted() && !mMaster->mCDMProxy;
+#else
+    false;
+#endif
+
+    mMaster->mNotifyMetadataBeforeFirstFrame =
+      mMaster->mDuration.Ref().isSome() || waitingForCDM;
+
+    if (mMaster->mNotifyMetadataBeforeFirstFrame) {
+      mMaster->EnqueueLoadedMetadataEvent();
+    }
+
+    if (waitingForCDM) {
+      
+      
+      SetState(DECODER_STATE_WAIT_FOR_CDM);
+      return;
+    }
+
+    SetState(DECODER_STATE_DECODING_FIRSTFRAME);
+  }
+
+  void OnMetadataNotRead(ReadMetadataFailureReason aReason)
+  {
+    mMetadataRequest.Complete();
+    SWARN("Decode metadata failed, shutting down decoder");
+    mMaster->DecodeError();
+  }
+
+  MozPromiseRequestHolder<MediaDecoderReader::MetadataPromise> mMetadataRequest;
+
+  
+  
+  
+  bool mPendingDormant = false;
 };
 
 class MediaDecoderStateMachine::WaitForCDMState
@@ -1357,13 +1487,12 @@ MediaDecoderStateMachine::SetDormant(bool aDormant)
     return;
   }
 
-  bool wasDormant = mState == DECODER_STATE_DORMANT;
-  if (wasDormant == aDormant) {
+  if (mStateObj->HandleDormant(aDormant)) {
     return;
   }
 
-  if (mMetadataRequest.Exists()) {
-    mPendingDormant = aDormant;
+  bool wasDormant = mState == DECODER_STATE_DORMANT;
+  if (wasDormant == aDormant) {
     return;
   }
 
@@ -2593,7 +2722,6 @@ MediaDecoderStateMachine::Reset(TrackSet aTracks)
     AudioQueue().Reset();
   }
 
-  mMetadataRequest.DisconnectIfExists();
   mSeekTaskRequest.DisconnectIfExists();
 
   mPlaybackOffset = 0;
