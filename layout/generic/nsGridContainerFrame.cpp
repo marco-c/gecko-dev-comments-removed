@@ -654,7 +654,7 @@ private:
 
 
 
-struct MOZ_STACK_CLASS nsGridContainerFrame::TrackSizingFunctions
+struct nsGridContainerFrame::TrackSizingFunctions
 {
   TrackSizingFunctions(const nsStyleGridTemplate& aGridTemplate,
                        const nsStyleCoord&        aAutoMinSizing,
@@ -833,7 +833,7 @@ struct MOZ_STACK_CLASS nsGridContainerFrame::TrackSizingFunctions
 
 
 
-struct MOZ_STACK_CLASS nsGridContainerFrame::Tracks
+struct nsGridContainerFrame::Tracks
 {
   explicit Tracks(LogicalAxis aAxis) : mAxis(aAxis) {}
 
@@ -1247,6 +1247,37 @@ struct MOZ_STACK_CLASS nsGridContainerFrame::Tracks
   LogicalAxis mAxis;
 };
 
+
+
+
+
+
+
+
+
+
+
+
+struct nsGridContainerFrame::SharedGridData
+{
+  SharedGridData() : mCols(eLogicalAxisInline), mRows(eLogicalAxisBlock) {}
+  Tracks mCols;
+  Tracks mRows;
+  struct RowData {
+    nscoord mBase; 
+    nscoord mGap;  
+  };
+  nsTArray<RowData> mOriginalRowData;
+  nsTArray<GridItemInfo> mGridItems;
+  nsTArray<GridItemInfo> mAbsPosItems;
+
+  
+
+
+
+  NS_DECLARE_FRAME_PROPERTY_DELETABLE(Prop, SharedGridData)
+};
+
 struct MOZ_STACK_CLASS nsGridContainerFrame::GridReflowState
 {
   GridReflowState(nsGridContainerFrame*    aFrame,
@@ -1259,6 +1290,100 @@ struct MOZ_STACK_CLASS nsGridContainerFrame::GridReflowState
     : GridReflowState(aFrame, aRC, nullptr, aFrame->StylePosition(),
                       aFrame->GetWritingMode())
   {}
+
+  
+
+
+
+  void InitializeForContinuation(nsGridContainerFrame* aGridContainerFrame,
+                                 nscoord               aConsumedBSize)
+  {
+    MOZ_ASSERT(aGridContainerFrame->GetPrevInFlow(),
+               "don't call this on the first-in-flow");
+    MOZ_ASSERT(mGridItems.IsEmpty() && mAbsPosItems.IsEmpty(),
+               "shouldn't have any item data yet");
+
+    
+    
+    uint32_t fragment = 0;
+    nsIFrame* firstInFlow = aGridContainerFrame;
+    for (auto pif = aGridContainerFrame->GetPrevInFlow();
+         pif; pif = pif->GetPrevInFlow()) {
+      ++fragment;
+      firstInFlow = pif;
+    }
+    mSharedGridData = firstInFlow->Properties().Get(SharedGridData::Prop());
+    MOZ_ASSERT(mSharedGridData, "first-in-flow must have SharedGridData");
+
+    
+    
+    auto& rowSizes = mSharedGridData->mRows.mSizes;
+    const uint32_t numRows = rowSizes.Length();
+    mStartRow = numRows;
+    for (uint32_t row = 0, breakCount = 0; row < numRows; ++row) {
+      if (rowSizes[row].mState & TrackSize::eBreakBefore) {
+        if (fragment == ++breakCount) {
+          mStartRow = row;
+          mFragBStart = rowSizes[row].mPosition;
+          
+          const auto& origRowData = mSharedGridData->mOriginalRowData;
+          rowSizes[row].mBase = origRowData[row].mBase;
+          nscoord prevEndPos = rowSizes[row].mPosition + rowSizes[row].mBase;
+          while (++row < numRows) {
+            auto& sz = rowSizes[row];
+            const auto& orig = origRowData[row];
+            sz.mPosition = prevEndPos + orig.mGap;
+            sz.mBase = orig.mBase;
+            sz.mState &= ~TrackSize::eBreakBefore;
+            prevEndPos = sz.mPosition + sz.mBase;
+          }
+          break;
+        }
+      }
+    }
+    if (mStartRow == numRows) {
+      
+      mFragBStart = aConsumedBSize;
+    }
+
+    
+    
+    
+    
+    mCols = mSharedGridData->mCols;
+    mRows = mSharedGridData->mRows;
+
+    
+    
+    mIter.Reset();
+    for (; !mIter.AtEnd(); mIter.Next()) {
+      nsIFrame* child = *mIter;
+      nsIFrame* childFirstInFlow = child->FirstInFlow();
+      DebugOnly<size_t> len = mGridItems.Length();
+      for (auto& itemInfo : mSharedGridData->mGridItems) {
+        if (itemInfo.mFrame == childFirstInFlow) {
+          mGridItems.AppendElement(GridItemInfo(child, itemInfo.mArea));
+          break;
+        }
+      }
+      MOZ_ASSERT(mGridItems.Length() == len + 1, "can't find GridItemInfo");
+    }
+
+    
+    nsFrameList absPosChildren(aGridContainerFrame->GetChildList(
+                                 aGridContainerFrame->GetAbsoluteListID()));
+    for (auto f : absPosChildren) {
+      nsIFrame* childFirstInFlow = f->FirstInFlow();
+      DebugOnly<size_t> len = mAbsPosItems.Length();
+      for (auto& itemInfo : mSharedGridData->mAbsPosItems) {
+        if (itemInfo.mFrame == childFirstInFlow) {
+          mAbsPosItems.AppendElement(GridItemInfo(f, itemInfo.mArea));
+          break;
+        }
+      }
+      MOZ_ASSERT(mAbsPosItems.Length() == len + 1, "can't find GridItemInfo");
+    }
+  }
 
   
 
@@ -1306,6 +1431,15 @@ struct MOZ_STACK_CLASS nsGridContainerFrame::GridReflowState
   const nsHTMLReflowState* const mReflowState;
   nsRenderingContext& mRenderingContext;
   nsGridContainerFrame* const mFrame;
+  SharedGridData* mSharedGridData; 
+  
+
+
+
+
+  nscoord mFragBStart;
+  
+  uint32_t mStartRow;
   const WritingMode mWM;
 
 private:
@@ -1327,6 +1461,9 @@ private:
     , mReflowState(aReflowState)
     , mRenderingContext(aRenderingContext)
     , mFrame(aFrame)
+    , mSharedGridData(nullptr)
+    , mFragBStart(0)
+    , mStartRow(0)
     , mWM(aWM)
   {
     MOZ_ASSERT(!aReflowState || aReflowState->frame == mFrame);
@@ -3896,6 +4033,7 @@ nsGridContainerFrame::Reflow(nsPresContext*           aPresContext,
     return;
   }
 
+  auto prevInFlow = static_cast<nsGridContainerFrame*>(GetPrevInFlow());
 #ifdef DEBUG
   SanityCheckAnonymousGridItems();
 #endif 
@@ -3903,7 +4041,9 @@ nsGridContainerFrame::Reflow(nsPresContext*           aPresContext,
   LogicalMargin bp = aReflowState.ComputedLogicalBorderPadding();
   bp.ApplySkipSides(GetLogicalSkipSides());
   const nsStylePosition* stylePos = aReflowState.mStylePosition;
-  InitImplicitNamedAreas(stylePos);
+  if (!prevInFlow) {
+    InitImplicitNamedAreas(stylePos);
+  }
   GridReflowState gridReflowState(this, aReflowState);
   if (gridReflowState.mIter.ItemsAreAlreadyInOrder()) {
     AddStateBits(NS_STATE_GRID_NORMAL_FLOW_CHILDREN_IN_CSS_ORDER);
@@ -3915,79 +4055,129 @@ nsGridContainerFrame::Reflow(nsPresContext*           aPresContext,
   const WritingMode& wm = gridReflowState.mWM;
   LogicalSize computedSize(wm, computedISize, computedBSize);
 
-  
-  
-  
-  LogicalSize computedMinSize(aReflowState.ComputedMinSize());
-  const nsHTMLReflowState* cbState = aReflowState.mCBReflowState;
-  if (!stylePos->MinISize(wm).IsCoordPercentCalcUnit() ||
-      (stylePos->MinISize(wm).HasPercent() && cbState &&
-       cbState->ComputedSize(wm).ISize(wm) == NS_UNCONSTRAINEDSIZE)) {
-    computedMinSize.ISize(wm) = NS_UNCONSTRAINEDSIZE;
-  }
-  if (!stylePos->MinBSize(wm).IsCoordPercentCalcUnit() ||
-      (stylePos->MinBSize(wm).HasPercent() && cbState &&
-       cbState->ComputedSize(wm).BSize(wm) == NS_UNCONSTRAINEDSIZE)) {
-    computedMinSize.BSize(wm) = NS_UNCONSTRAINEDSIZE;
-  }
-  Grid grid;
-  grid.PlaceGridItems(gridReflowState, computedMinSize, computedSize,
-                      aReflowState.ComputedMaxSize());
+  nscoord consumedBSize = 0;
+  if (!prevInFlow) {
+    
+    
+    
+    LogicalSize computedMinSize(aReflowState.ComputedMinSize());
+    const nsHTMLReflowState* cbState = aReflowState.mCBReflowState;
+    if (!stylePos->MinISize(wm).IsCoordPercentCalcUnit() ||
+        (stylePos->MinISize(wm).HasPercent() && cbState &&
+         cbState->ComputedSize(wm).ISize(wm) == NS_UNCONSTRAINEDSIZE)) {
+      computedMinSize.ISize(wm) = NS_UNCONSTRAINEDSIZE;
+    }
+    if (!stylePos->MinBSize(wm).IsCoordPercentCalcUnit() ||
+        (stylePos->MinBSize(wm).HasPercent() && cbState &&
+         cbState->ComputedSize(wm).BSize(wm) == NS_UNCONSTRAINEDSIZE)) {
+      computedMinSize.BSize(wm) = NS_UNCONSTRAINEDSIZE;
+    }
+    Grid grid;
+    grid.PlaceGridItems(gridReflowState, computedMinSize, computedSize,
+                        aReflowState.ComputedMaxSize());
 
-  gridReflowState.mIter.Reset();
-  gridReflowState.CalculateTrackSizes(grid, computedSize,
-                                      nsLayoutUtils::PREF_ISIZE);
+    gridReflowState.mIter.Reset();
+    gridReflowState.CalculateTrackSizes(grid, computedSize,
+                                        nsLayoutUtils::PREF_ISIZE);
 
-  
-  
-  nsTArray<nscoord> colTrackSizes(gridReflowState.mCols.mSizes.Length());
-  for (const TrackSize& sz : gridReflowState.mCols.mSizes) {
-    colTrackSizes.AppendElement(sz.mBase);
+    
+    
+    nsTArray<nscoord> colTrackSizes(gridReflowState.mCols.mSizes.Length());
+    for (const TrackSize& sz : gridReflowState.mCols.mSizes) {
+      colTrackSizes.AppendElement(sz.mBase);
+    }
+    ComputedGridTrackInfo* colInfo = new ComputedGridTrackInfo(
+      gridReflowState.mColFunctions.mExplicitGridOffset,
+      gridReflowState.mColFunctions.NumExplicitTracks(),
+      Move(colTrackSizes));
+    Properties().Set(GridColTrackInfo(), colInfo);
+    
+    nsTArray<nscoord> rowTrackSizes(gridReflowState.mRows.mSizes.Length());
+    for (const TrackSize& sz : gridReflowState.mRows.mSizes) {
+      rowTrackSizes.AppendElement(sz.mBase);
+    }
+    ComputedGridTrackInfo* rowInfo = new ComputedGridTrackInfo(
+      gridReflowState.mRowFunctions.mExplicitGridOffset,
+      gridReflowState.mRowFunctions.NumExplicitTracks(),
+      Move(rowTrackSizes));
+    Properties().Set(GridRowTrackInfo(), rowInfo);
+  } else {
+    consumedBSize = GetConsumedBSize();
+    gridReflowState.InitializeForContinuation(this, consumedBSize);
   }
-  ComputedGridTrackInfo* colInfo = new ComputedGridTrackInfo(
-    gridReflowState.mColFunctions.mExplicitGridOffset,
-    gridReflowState.mColFunctions.NumExplicitTracks(),
-    Move(colTrackSizes));
-  Properties().Set(GridColTrackInfo(), colInfo);
 
-  nsTArray<nscoord> rowTrackSizes(gridReflowState.mRows.mSizes.Length());
-  for (const TrackSize& sz : gridReflowState.mRows.mSizes) {
-    rowTrackSizes.AppendElement(sz.mBase);
-  }
-  ComputedGridTrackInfo* rowInfo = new ComputedGridTrackInfo(
-    gridReflowState.mRowFunctions.mExplicitGridOffset,
-    gridReflowState.mRowFunctions.NumExplicitTracks(),
-    Move(rowTrackSizes));
-  Properties().Set(GridRowTrackInfo(), rowInfo);
-  
   nscoord bSize = 0;
   if (computedBSize == NS_AUTOHEIGHT) {
     const uint32_t numRows = gridReflowState.mRows.mSizes.Length();
-    for (uint32_t i = 0; i < numRows; ++i) {
-      bSize += gridReflowState.mRows.mSizes[i].mBase;
+    if (!prevInFlow) {
+      
+      
+      for (uint32_t i = 0; i < numRows; ++i) {
+        bSize += gridReflowState.mRows.mSizes[i].mBase;
+      }
+      bSize += gridReflowState.mRows.SumOfGridGaps();
+    } else {
+      bSize = gridReflowState.mRows.GridLineEdge(numRows,
+                                                 GridLineSide::eAfterGridGap);
     }
-    bSize += gridReflowState.mRows.SumOfGridGaps();
     bSize = NS_CSS_MINMAX(bSize,
                           aReflowState.ComputedMinBSize(),
                           aReflowState.ComputedMaxBSize());
   } else {
     bSize = computedBSize;
   }
-  bSize = std::max(bSize - GetConsumedBSize(), 0);
-  LogicalSize desiredSize(wm, computedISize + bp.IStartEnd(wm),
-                          bSize + bp.BStartEnd(wm));
-  aDesiredSize.SetSize(wm, desiredSize);
-  aDesiredSize.SetOverflowAreasToDesiredBounds();
-
+  bSize = std::max(bSize - consumedBSize, 0);
   LogicalRect contentArea(wm, bp.IStart(wm), bp.BStart(wm),
                           computedISize, bSize);
 
-  
-  gridReflowState.mCols.AlignJustifyContent(aReflowState, contentArea.Size(wm));
-  gridReflowState.mRows.AlignJustifyContent(aReflowState, contentArea.Size(wm));
+  if (!prevInFlow) {
+    
+    gridReflowState.mCols.AlignJustifyContent(aReflowState, contentArea.Size(wm));
+    gridReflowState.mRows.AlignJustifyContent(aReflowState, contentArea.Size(wm));
+  }
 
   gridReflowState.mIter.Reset(GridItemCSSOrderIterator::eIncludeAll);
   ReflowChildren(gridReflowState, contentArea, aDesiredSize, aStatus);
+
+  LogicalSize desiredSize(wm, computedISize + bp.IStartEnd(wm),
+                              bSize         + bp.BStartEnd(wm));
+  aDesiredSize.SetSize(wm, desiredSize);
+  aDesiredSize.mOverflowAreas.UnionAllWith(nsRect(0, 0,
+                                                  aDesiredSize.Width(),
+                                                  aDesiredSize.Height()));
+  if (!prevInFlow) {
+    auto sharedGridData = static_cast<SharedGridData*>(
+      Properties().Get(SharedGridData::Prop()));
+    if (!NS_FRAME_IS_FULLY_COMPLETE(aStatus)) {
+      if (!sharedGridData) {
+        sharedGridData = new SharedGridData;
+        Properties().Set(SharedGridData::Prop(), sharedGridData);
+      }
+      sharedGridData->mCols.mSizes.Clear();
+      sharedGridData->mCols.mSizes.SwapElements(gridReflowState.mCols.mSizes);
+      sharedGridData->mCols.mContentBoxSize = gridReflowState.mCols.mContentBoxSize;
+      sharedGridData->mRows.mSizes.Clear();
+      sharedGridData->mRows.mSizes.SwapElements(gridReflowState.mRows.mSizes);
+      
+      
+      auto& origRowData = sharedGridData->mOriginalRowData;
+      origRowData.ClearAndRetainStorage();
+      origRowData.SetCapacity(sharedGridData->mRows.mSizes.Length());
+      nscoord prevTrackEnd = 0;
+      for (auto& sz : sharedGridData->mRows.mSizes) {
+        SharedGridData::RowData data = {sz.mBase, sz.mPosition - prevTrackEnd};
+        origRowData.AppendElement(data);
+        prevTrackEnd = sz.mPosition + sz.mBase;
+      }
+      sharedGridData->mRows.mContentBoxSize = gridReflowState.mRows.mContentBoxSize;
+      sharedGridData->mGridItems.Clear();
+      sharedGridData->mGridItems.SwapElements(gridReflowState.mGridItems);
+      sharedGridData->mAbsPosItems.Clear();
+      sharedGridData->mAbsPosItems.SwapElements(gridReflowState.mAbsPosItems);
+    } else if (sharedGridData && !GetNextInFlow()) {
+      Properties().Delete(SharedGridData::Prop());
+    }
+  }
 
   FinishAndStoreOverflow(&aDesiredSize);
   aStatus = NS_FRAME_COMPLETE;
