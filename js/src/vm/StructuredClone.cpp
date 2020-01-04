@@ -1335,6 +1335,7 @@ JSStructuredCloneWriter::transferOwnership()
             
             
             Rooted<ArrayBufferObject*> arrayBuffer(context(), &CheckedUnwrap(obj)->as<ArrayBufferObject>());
+            JSAutoCompartment ac(context(), arrayBuffer);
             size_t nbytes = arrayBuffer->byteLength();
 
             
