@@ -375,11 +375,11 @@ BuildArgArray(const char* fmt, va_list ap, NumArgStateVector& nas)
             if (c > '9' || c < '0') {
                 if (c == '$') {         
                     if (i > 0)
-                        return false;
+                        MOZ_CRASH("Bad format string");
                     number++;
                 } else {                
                     if (number > 0)
-                        return false;
+                        MOZ_CRASH("Bad format string");
                     i = 1;
                 }
                 break;
@@ -417,7 +417,7 @@ BuildArgArray(const char* fmt, va_list ap, NumArgStateVector& nas)
         }
 
         if (!c || cn < 1 || cn > number)
-            return false;
+            MOZ_CRASH("Bad format string");
 
         
         cn--;
@@ -429,7 +429,7 @@ BuildArgArray(const char* fmt, va_list ap, NumArgStateVector& nas)
         
         if (c == '*') {
             
-            return false;
+            MOZ_CRASH("Bad format string");
         }
 
         while ((c >= '0') && (c <= '9')) {
@@ -441,7 +441,7 @@ BuildArgArray(const char* fmt, va_list ap, NumArgStateVector& nas)
             c = *p++;
             if (c == '*') {
                 
-                return false;
+                MOZ_CRASH("Bad format string");
             }
 
             while ((c >= '0') && (c <= '9')) {
@@ -527,7 +527,7 @@ BuildArgArray(const char* fmt, va_list ap, NumArgStateVector& nas)
 
         
         if (nas[cn].type == TYPE_UNKNOWN)
-            return false;
+            MOZ_CRASH("Bad format string");
     }
 
 
@@ -557,7 +557,7 @@ BuildArgArray(const char* fmt, va_list ap, NumArgStateVector& nas)
         case TYPE_INTSTR:       (void) va_arg(ap, int*);        break;
         case TYPE_DOUBLE:       (void) va_arg(ap, double);      break;
 
-        default: return false;
+        default: MOZ_CRASH();
         }
 
         cn++;
@@ -599,8 +599,7 @@ dosprintf(SprintfState* ss, const char* fmt, va_list ap)
     NumArgStateVector nas;
     if (!BuildArgArray(fmt, ap, nas)) {
         
-        MOZ_ASSERT(0);
-        return false;
+        MOZ_CRASH("Bad format string");
     }
 
     while ((c = *fmt++) != 0) {
@@ -633,7 +632,7 @@ dosprintf(SprintfState* ss, const char* fmt, va_list ap)
             }
 
             if (nas[i - 1].type == TYPE_UNKNOWN)
-                return false;
+                MOZ_CRASH("Bad format string");
 
             ap = nas[i - 1].ap;
             dolPt = fmt;
