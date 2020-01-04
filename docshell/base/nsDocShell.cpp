@@ -780,6 +780,7 @@ nsDocShell::nsDocShell()
   , mAllowKeywordFixup(false)
   , mIsOffScreenBrowser(false)
   , mIsActive(true)
+  , mDisableMetaRefreshWhenInactive(false)
   , mIsPrerendered(false)
   , mIsAppTab(false)
   , mUseGlobalHistory(false)
@@ -5630,6 +5631,10 @@ nsDocShell::Create()
     gAddedPreferencesVarCache = true;
   }
 
+  mDisableMetaRefreshWhenInactive =
+    Preferences::GetBool("browser.meta_refresh_when_inactive.disabled",
+                         mDisableMetaRefreshWhenInactive);
+
   mDeviceSizeIsPageSize =
     Preferences::GetBool("docshell.device_size_is_page_size",
                          mDeviceSizeIsPageSize);
@@ -6132,6 +6137,15 @@ nsDocShell::SetIsActiveInternal(bool aIsActive, bool aIsHidden)
     }
   }
 
+  
+  if (mDisableMetaRefreshWhenInactive) {
+    if (mIsActive) {
+      ResumeRefreshURIs();
+    } else {
+      SuspendRefreshURIs();
+    }
+  }
+
   return NS_OK;
 }
 
@@ -6593,8 +6607,7 @@ nsDocShell::RefreshURI(nsIURI* aURI, int32_t aDelay, bool aRepeat,
                       NS_ERROR_FAILURE);
   }
 
-  if (busyFlags & BUSY_FLAGS_BUSY) {
-    
+  if (busyFlags & BUSY_FLAGS_BUSY || (!mIsActive && mDisableMetaRefreshWhenInactive)) {
     
     
     mRefreshURIList->AppendElement(refreshTimer);
@@ -7549,7 +7562,8 @@ nsDocShell::EndPageLoad(nsIWebProgress* aProgress,
   }
   
   
-  RefreshURIFromQueue();
+  if (mIsActive || !mDisableMetaRefreshWhenInactive)
+    RefreshURIFromQueue();
 
   
   bool isTopFrame = true;
