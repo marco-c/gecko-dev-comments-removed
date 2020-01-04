@@ -139,7 +139,7 @@ thai_pua_shape (hb_codepoint_t u, thai_action_t action, hb_font_t *font)
   };
 
   switch (action) {
-    default: assert (false); HB_FALLTHROUGH;
+    default: assert (false); 
     case NOP: return u;
     case SD:  pua_mappings = SD_mappings; break;
     case SDL: pua_mappings = SDL_mappings; break;
@@ -315,7 +315,7 @@ preprocess_text_thai (const hb_ot_shape_plan_t *plan,
 
   buffer->clear_output ();
   unsigned int count = buffer->len;
-  for (buffer->idx = 0; buffer->idx < count && !buffer->in_error;)
+  for (buffer->idx = 0; buffer->idx < count;)
   {
     hb_codepoint_t u = buffer->cur().codepoint;
     if (likely (!IS_SARA_AM (u))) {
@@ -372,7 +372,6 @@ const hb_ot_complex_shaper_t _hb_ot_complex_shaper_thai =
   NULL, 
   NULL, 
   preprocess_text_thai,
-  NULL, 
   HB_OT_SHAPE_NORMALIZATION_MODE_DEFAULT,
   NULL, 
   NULL, 

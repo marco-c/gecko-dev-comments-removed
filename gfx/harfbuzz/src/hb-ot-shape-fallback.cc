@@ -224,7 +224,7 @@ position_mark (const hb_ot_shape_plan_t *plan,
 	pos.x_offset += base_extents.x_bearing + base_extents.width - mark_extents.width / 2 - mark_extents.x_bearing;
         break;
       }
-      HB_FALLTHROUGH;
+      
 
     default:
     case HB_UNICODE_COMBINING_CLASS_ATTACHED_BELOW:
@@ -259,7 +259,6 @@ position_mark (const hb_ot_shape_plan_t *plan,
     case HB_UNICODE_COMBINING_CLASS_BELOW_RIGHT:
       
       base_extents.height -= y_gap;
-      HB_FALLTHROUGH;
 
     case HB_UNICODE_COMBINING_CLASS_ATTACHED_BELOW_LEFT:
     case HB_UNICODE_COMBINING_CLASS_ATTACHED_BELOW:
@@ -280,7 +279,6 @@ position_mark (const hb_ot_shape_plan_t *plan,
       
       base_extents.y_bearing += y_gap;
       base_extents.height -= y_gap;
-      HB_FALLTHROUGH;
 
     case HB_UNICODE_COMBINING_CLASS_ATTACHED_ABOVE:
     case HB_UNICODE_COMBINING_CLASS_ATTACHED_ABOVE_RIGHT:
@@ -483,71 +481,4 @@ _hb_ot_shape_fallback_kern (const hb_ot_shape_plan_t *plan,
 
     idx = skippy_iter.idx;
   }
-}
-
-
-
-void
-_hb_ot_shape_fallback_spaces (const hb_ot_shape_plan_t *plan,
-			      hb_font_t *font,
-			      hb_buffer_t  *buffer)
-{
-  if (!HB_DIRECTION_IS_HORIZONTAL (buffer->props.direction))
-    return;
-
-  hb_glyph_info_t *info = buffer->info;
-  hb_glyph_position_t *pos = buffer->pos;
-  unsigned int count = buffer->len;
-  for (unsigned int i = 0; i < count; i++)
-    if (_hb_glyph_info_is_unicode_space (&info[i]) && !_hb_glyph_info_ligated (&info[i]))
-    {
-      hb_unicode_funcs_t::space_t space_type = _hb_glyph_info_get_unicode_space_fallback_type (&info[i]);
-      hb_codepoint_t glyph;
-      typedef hb_unicode_funcs_t t;
-      switch (space_type)
-      {
-	case t::NOT_SPACE: 
-	case t::SPACE:
-	  break;
-
-	case t::SPACE_EM:
-	case t::SPACE_EM_2:
-	case t::SPACE_EM_3:
-	case t::SPACE_EM_4:
-	case t::SPACE_EM_5:
-	case t::SPACE_EM_6:
-	case t::SPACE_EM_16:
-	  pos[i].x_advance = (font->x_scale + ((int) space_type)/2) / (int) space_type;
-	  break;
-
-	case t::SPACE_4_EM_18:
-	  pos[i].x_advance = font->x_scale * 4 / 18;
-	  break;
-
-	case t::SPACE_FIGURE:
-	  for (char u = '0'; u <= '9'; u++)
-	    if (font->get_glyph (u, 0, &glyph))
-	    {
-	      pos[i].x_advance = font->get_glyph_h_advance (glyph);
-	      break;
-	    }
-	  break;
-
-	case t::SPACE_PUNCTUATION:
-	  if (font->get_glyph ('.', 0, &glyph))
-	    pos[i].x_advance = font->get_glyph_h_advance (glyph);
-	  else if (font->get_glyph (',', 0, &glyph))
-	    pos[i].x_advance = font->get_glyph_h_advance (glyph);
-	  break;
-
-	case t::SPACE_NARROW:
-	  
-
-
-
-
-	  pos[i].x_advance /= 2;
-	  break;
-      }
-    }
 }

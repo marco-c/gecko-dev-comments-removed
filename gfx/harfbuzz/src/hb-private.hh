@@ -119,36 +119,6 @@ extern "C" void  hb_free_impl(void *ptr);
 #define HB_FUNC __func__
 #endif
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#if defined(__clang__) && __cplusplus >= 201103L
-   
-#  define HB_FALLTHROUGH [[clang::fallthrough]]
-#elif defined(_MSC_VER)
-   
-
-
-
-#  include <sal.h>
-#  define HB_FALLTHROUGH __fallthrough
-#else
-#  define HB_FALLTHROUGH
-#endif
-
 #if defined(_WIN32) || defined(__CYGWIN__)
    
 
@@ -240,9 +210,9 @@ static inline unsigned int ARRAY_LENGTH (const Type (&)[n]) { return n; }
 #define _ASSERT_STATIC0(_line, _cond)	_ASSERT_STATIC1 (_line, (_cond))
 #define ASSERT_STATIC(_cond)		_ASSERT_STATIC0 (__LINE__, (_cond))
 
-template <unsigned int cond> class hb_assert_constant_t {};
 
-#define ASSERT_STATIC_EXPR_ZERO(_cond) (0 * (unsigned int) sizeof (hb_assert_constant_t<_cond>))
+
+#define ASSERT_STATIC_EXPR_ZERO(_cond) (0 * sizeof (char[(_cond) ? 1 : -1]))
 
 #define _PASTE1(a,b) a##b
 #define PASTE(a,b) _PASTE1(a,b)
@@ -889,34 +859,6 @@ hb_in_ranges (T u, T lo1, T hi1, T lo2, T hi2, T lo3, T hi3)
 {
   return hb_in_range (u, lo1, hi1) || hb_in_range (u, lo2, hi2) || hb_in_range (u, lo3, hi3);
 }
-
-
-
-
-
-
-
-
-
-
-#ifdef _MSC_VER
-# pragma warning(disable:4200)
-# pragma warning(disable:4800)
-# define HB_MARK_AS_FLAG_T(flags_t)	DEFINE_ENUM_FLAG_OPERATORS (##flags_t##);
-#else
-# define HB_MARK_AS_FLAG_T(flags_t)	template <> class hb_mark_as_flags_t<flags_t> {};
-template <class T> class hb_mark_as_flags_t;
-template <class T> static inline T operator | (T l, T r)
-{ hb_mark_as_flags_t<T> unused HB_UNUSED; return T ((unsigned int) l | (unsigned int) r); }
-template <class T> static inline T operator & (T l, T r)
-{ hb_mark_as_flags_t<T> unused HB_UNUSED; return T ((unsigned int) l & (unsigned int) r); }
-template <class T> static inline T operator ~ (T r)
-{ hb_mark_as_flags_t<T> unused HB_UNUSED; return T (~(unsigned int) r); }
-template <class T> static inline T& operator |= (T &l, T r)
-{ hb_mark_as_flags_t<T> unused HB_UNUSED; l = l | r; return l; }
-template <class T> static inline T& operator &= (T& l, T r)
-{ hb_mark_as_flags_t<T> unused HB_UNUSED; l = l & r; return l; }
-#endif
 
 
 
