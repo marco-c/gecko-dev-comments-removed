@@ -108,9 +108,7 @@ pref("app.update.backgroundMaxErrors", 10);
 
 
 
-
 pref("app.update.cert.requireBuiltIn", false);
-pref("app.update.cert.checkAttributes", false);
 
 
 pref("app.update.enabled", true);
