@@ -152,21 +152,15 @@ public:
     
     bool animationFinished : 1;
 
-    
-    
-    bool error : 1;
-
     RefreshResult()
       : frameAdvanced(false)
       , animationFinished(false)
-      , error(false)
     { }
 
     void Accumulate(const RefreshResult& other)
     {
       frameAdvanced = frameAdvanced || other.frameAdvanced;
       animationFinished = animationFinished || other.animationFinished;
-      error = error || other.error;
       dirtyRect = dirtyRect.Union(other.dirtyRect);
     }
   };
