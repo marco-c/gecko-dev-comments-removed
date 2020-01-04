@@ -2446,9 +2446,13 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
     }
     
     buildingDisplayList.SetDirtyRect(dirtyRectOutsideSVGEffects);
-    
-    resultList.AppendNewToTop(
-        new (aBuilder) nsDisplayMask(aBuilder, this, &resultList, useOpacity));
+
+    if (nsSVGIntegrationUtils::UsingMaskOrClipPathForFrame(this)) {
+      
+      resultList.AppendNewToTop(
+          new (aBuilder) nsDisplayMask(aBuilder, this, &resultList, useOpacity));
+    }
+
     
     
     aBuilder->ExitSVGEffectsContents();
