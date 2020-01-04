@@ -4196,7 +4196,7 @@ pref("image.decode-immediately.enabled", false);
 pref("image.downscale-during-decode.enabled", true);
 
 
-pref("image.http.accept", "image/png,image/*;q=0.8,*/*;q=0.5");
+pref("image.http.accept", "*/*");
 
 
 
