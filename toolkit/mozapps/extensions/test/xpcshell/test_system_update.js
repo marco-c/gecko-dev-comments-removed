@@ -162,6 +162,7 @@ function* check_installed(inProfile, ...versions) {
       do_check_true(addon.isActive);
       do_check_false(addon.foreignInstall);
       do_check_true(addon.hidden);
+      do_check_true(addon.isSystem);
 
       
       let file = expectedDir.clone();
