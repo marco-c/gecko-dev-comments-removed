@@ -93,7 +93,7 @@ var ClickEventHandler = {
       
       
       if (!(this._scrollable instanceof content.HTMLSelectElement) &&
-          this._scrollable.scrollLeftMax &&
+          this._scrollable.scrollLeftMin != this._scrollable.scrollLeftMax &&
           scrollingAllowed.indexOf(overflowx) >= 0) {
         this._scrolldir = scrollVert ? "NSEW" : "EW";
         break;
