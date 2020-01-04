@@ -462,6 +462,15 @@ function waitForContextMenu(popup, button, onShown, onHidden) {
 
 
 
+function waitForClipboardPromise(setup, expected) {
+  return new Promise((resolve, reject) => {
+    SimpleTest.waitForClipboard(expected, setup, resolve, reject);
+  });
+}
+
+
+
+
 
 
 
