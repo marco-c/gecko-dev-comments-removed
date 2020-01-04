@@ -1846,7 +1846,7 @@ nsComponentManagerImpl::SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf)
   for (auto iter = mContractIDs.ConstIter(); !iter.Done(); iter.Next()) {
     
     
-    n += iter.Key().SizeOfExcludingThisMustBeUnshared(aMallocSizeOf);
+    n += iter.Key().SizeOfExcludingThisIfUnshared(aMallocSizeOf);
   }
 
   n += sStaticModules->ShallowSizeOfIncludingThis(aMallocSizeOf);

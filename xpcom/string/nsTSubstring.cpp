@@ -1001,41 +1001,25 @@ nsTSubstring_CharT::AppendFloat(double aFloat)
 }
 
 size_t
-nsTSubstring_CharT::SizeOfExcludingThisMustBeUnshared(
-    mozilla::MallocSizeOf aMallocSizeOf) const
-{
-  if (mFlags & F_SHARED) {
-    return nsStringBuffer::FromData(mData)->
-      SizeOfIncludingThisMustBeUnshared(aMallocSizeOf);
-  }
-  if (mFlags & F_OWNED) {
-    return aMallocSizeOf(mData);
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  return 0;
-}
-
-size_t
 nsTSubstring_CharT::SizeOfExcludingThisIfUnshared(
     mozilla::MallocSizeOf aMallocSizeOf) const
 {
-  
-  
   if (mFlags & F_SHARED) {
     return nsStringBuffer::FromData(mData)->
-           SizeOfIncludingThisIfUnshared(aMallocSizeOf);
+      SizeOfIncludingThisIfUnshared(aMallocSizeOf);
   }
   if (mFlags & F_OWNED) {
     return aMallocSizeOf(mData);
   }
+
+  
+  
+  
+  
+  
+  
+  
+  
   return 0;
 }
 
@@ -1053,14 +1037,6 @@ nsTSubstring_CharT::SizeOfExcludingThisEvenIfShared(
     return aMallocSizeOf(mData);
   }
   return 0;
-}
-
-size_t
-nsTSubstring_CharT::SizeOfIncludingThisMustBeUnshared(
-    mozilla::MallocSizeOf aMallocSizeOf) const
-{
-  return aMallocSizeOf(this) +
-         SizeOfExcludingThisMustBeUnshared(aMallocSizeOf);
 }
 
 size_t

@@ -143,12 +143,6 @@ public:
   
 
 
-
-  size_t SizeOfIncludingThisMustBeUnshared(mozilla::MallocSizeOf aMallocSizeOf) const;
-
-  
-
-
   size_t SizeOfIncludingThisIfUnshared(mozilla::MallocSizeOf aMallocSizeOf) const;
 
   

@@ -2462,8 +2462,7 @@ css::URLValue::SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const
 {
   size_t n = aMallocSizeOf(this);
 
-  
-  n += mString->SizeOfIncludingThisMustBeUnshared(aMallocSizeOf);
+  n += mString->SizeOfIncludingThisIfUnshared(aMallocSizeOf);
 
   
   
