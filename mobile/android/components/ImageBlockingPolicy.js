@@ -45,7 +45,7 @@ ImageBlockingPolicy.prototype = {
   
   shouldLoad: function(contentType, contentLocation, requestOrigin, node, mimeTypeGuess, extra) {
     
-    if (this._enabled() == OPTION_ALWAYS || (this._enabled() == OPTION_WIFI_ONLY && this._usingCellular())) {
+    if (this._enabled() == OPTION_NEVER || (this._enabled() == OPTION_WIFI_ONLY && this._usingCellular())) {
       if (contentType === Ci.nsIContentPolicy.TYPE_IMAGE || contentType === Ci.nsIContentPolicy.TYPE_IMAGESET) {
         
         if (!contentLocation.schemeIs("http") && !contentLocation.schemeIs("https")) {
