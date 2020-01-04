@@ -76,6 +76,8 @@ public:
     aPortIndex.AppendElement(OutputPortIndex());
   }
 
+  virtual OMX_VIDEO_CODINGTYPE CompressionFormat();
+
   
   static bool SupportsMimeType(const nsACString& aMimeType);
 
