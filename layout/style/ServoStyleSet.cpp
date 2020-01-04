@@ -7,13 +7,16 @@
 #include "mozilla/ServoStyleSet.h"
 
 #include "nsCSSAnonBoxes.h"
+#include "nsCSSPseudoElements.h"
+#include "nsStyleContext.h"
 #include "nsStyleSet.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;
 
 ServoStyleSet::ServoStyleSet()
-  : mRawSet(Servo_InitStyleSet())
+  : mPresContext(nullptr)
+  , mRawSet(Servo_InitStyleSet())
   , mBatching(0)
 {
 }
@@ -21,6 +24,7 @@ ServoStyleSet::ServoStyleSet()
 void
 ServoStyleSet::Init(nsPresContext* aPresContext)
 {
+  mPresContext = aPresContext;
 }
 
 void
@@ -69,7 +73,18 @@ already_AddRefed<nsStyleContext>
 ServoStyleSet::ResolveStyleFor(Element* aElement,
                                nsStyleContext* aParentContext)
 {
-  MOZ_CRASH("stylo: not implemented");
+  RefPtr<ServoComputedValues> computedValues = dont_AddRef(Servo_GetComputedValues(aElement));
+  MOZ_ASSERT(computedValues);
+
+  
+
+  
+  
+  bool skipFixup = false;
+
+  return NS_NewStyleContext(aParentContext, mPresContext, nullptr,
+                            CSSPseudoElementType::NotPseudo,
+                            computedValues.forget(), skipFixup);
 }
 
 already_AddRefed<nsStyleContext>
@@ -103,12 +118,20 @@ ServoStyleSet::ResolveAnonymousBoxStyle(nsIAtom* aPseudoTag,
 {
   MOZ_ASSERT(nsCSSAnonBoxes::IsAnonBox(aPseudoTag));
 
-  
-  
   MOZ_ASSERT(aFlags == 0 ||
              aFlags == nsStyleSet::eSkipParentDisplayBasedStyleFixup);
+  bool skipFixup = aFlags & nsStyleSet::eSkipParentDisplayBasedStyleFixup;
 
-  MOZ_CRASH("stylo: not implemented");
+  ServoComputedValues* parentStyle =
+    aParentContext ? aParentContext->StyleSource().AsServoComputedValues()
+                   : nullptr;
+  RefPtr<ServoComputedValues> computedValues =
+    dont_AddRef(Servo_GetComputedValuesForAnonymousBox(parentStyle, aPseudoTag));
+  MOZ_ASSERT(computedValues);
+
+  return NS_NewStyleContext(aParentContext, mPresContext, nullptr,
+                            CSSPseudoElementType::AnonBox,
+                            computedValues.forget(), skipFixup);
 }
 
 
