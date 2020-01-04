@@ -3271,6 +3271,11 @@ pref("ui.osk.on_screen_keyboard_path", "");
 
 pref("ui.osk.require_tablet_mode", true);
 
+
+
+
+pref("ui.osk.debug.keyboardDisplayReason", "");
+
 # XP_WIN
 #endif
 
