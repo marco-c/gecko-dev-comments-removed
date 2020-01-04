@@ -470,15 +470,6 @@ LogToBrowserConsole(const nsAString& aMsg)
 }
 
 bool
-IsAACCodecString(const nsAString& aCodec)
-{
-  return
-    aCodec.EqualsLiteral("mp4a.40.2") || 
-    aCodec.EqualsLiteral("mp4a.40.5") || 
-    aCodec.EqualsLiteral("mp4a.67"); 
-}
-
-bool
 ParseCodecsString(const nsAString& aCodecs, nsTArray<nsString>& aOutCodecs)
 {
   aOutCodecs.Clear();

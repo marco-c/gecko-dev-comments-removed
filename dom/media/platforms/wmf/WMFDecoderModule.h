@@ -37,6 +37,13 @@ public:
   DecoderNeedsConversion(const TrackInfo& aConfig) const override;
 
   
+  
+  
+  
+  static bool HasAAC();
+  static bool HasH264();
+
+  
   static void Init();
 
   
