@@ -64,6 +64,177 @@ function defineDOMRequestMethod(msgName) {
   };
 }
 
+function BrowserElementParentProxyCallHandler() {
+}
+
+BrowserElementParentProxyCallHandler.prototype = {
+  _frameElement: null,
+  _mm: null,
+
+  MOZBROWSER_EVENT_NAMES: Object.freeze([
+    "loadstart", "loadend", "close", "error", "firstpaint",
+    "documentfirstpaint", "audioplaybackchange",
+    "contextmenu", "securitychange", "locationchange",
+    "iconchange", "scrollareachanged", "titlechange",
+    "opensearch", "manifestchange", "metachange",
+    "resize", "selectionstatechanged", "scrollviewchange",
+    "caretstatechanged", "activitydone", "scroll", "opentab"]),
+
+  init: function(frameElement, mm) {
+    this._frameElement = frameElement;
+    this._mm = mm;
+    this.innerWindowIDSet = new Set();
+
+    mm.addMessageListener("browser-element-api:proxy-call", this);
+  },
+
+  
+  receiveMessage: function(mmMsg) {
+    let data = mmMsg.json;
+
+    let mm;
+    try {
+      mm = mmMsg.target.QueryInterface(Ci.nsIFrameLoaderOwner)
+                     .frameLoader.messageManager;
+    } catch(e) {
+      mm = mmMsg.target;
+    }
+    if (!mm.assertPermission("browser:embedded-system-app")) {
+      dump("BrowserElementParent.js: Method call " + data.methodName +
+        " from a content process with no 'browser:embedded-system-app'" +
+        " privileges.\n");
+      return;
+    }
+
+    switch (data.methodName) {
+      case '_proxyInstanceInit':
+        if (!this.innerWindowIDSet.size) {
+          this._attachEventListeners();
+        }
+        this.innerWindowIDSet.add(data.innerWindowID);
+
+        break;
+
+      case '_proxyInstanceUninit':
+        this.innerWindowIDSet.delete(data.innerWindowID);
+        if (!this.innerWindowIDSet.size) {
+          this._detachEventListeners();
+        }
+
+        break;
+
+      
+      case 'setVisible':
+      case 'setActive':
+      case 'sendMouseEvent':
+      case 'sendTouchEvent':
+      case 'goBack':
+      case 'goForward':
+      case 'reload':
+      case 'stop':
+      case 'zoom':
+      case 'setNFCFocus':
+      case 'findAll':
+      case 'findNext':
+      case 'clearMatch':
+      case 'mute':
+      case 'unmute':
+      case 'setVolume':
+        this._frameElement[data.methodName]
+          .apply(this._frameElement, data.args);
+
+        break;
+
+      
+      case 'getVisible':
+      case 'download':
+      case 'purgeHistory':
+      case 'getCanGoBack':
+      case 'getCanGoForward':
+      case 'getContentDimensions':
+      case 'setInputMethodActive':
+      case 'executeScript':
+      case 'getMuted':
+      case 'getVolume':
+        let req = this._frameElement[data.methodName]
+          .apply(this._frameElement, data.args);
+        req.onsuccess = () => {
+          this._sendToProxy({
+            domRequestId: data.domRequestId,
+            innerWindowID: data.innerWindowID,
+            result: req.result
+          });
+        };
+        req.onerror = () => {
+          this._sendToProxy({
+            domRequestId: data.domRequestId,
+            innerWindowID: data.innerWindowID,
+            err: req.error
+          });
+        };
+
+        break;
+
+      
+      case 'getActive': 
+      case 'addNextPaintListener': 
+      case 'removeNextPaintListener': 
+      case 'getScreenshot': 
+        dump("BrowserElementParentProxyCallHandler Error:" +
+          "Attempt to call unimplemented method " + data.methodName + ".\n");
+        break;
+
+      default:
+        dump("BrowserElementParentProxyCallHandler Error:" +
+          "Attempt to call non-exist method " + data.methodName + ".\n");
+        break;
+    }
+  },
+
+  
+  handleEvent: function(evt) {
+    
+    if (evt.target !== this._frameElement) {
+      return;
+    }
+
+    let detailString;
+    try {
+      detailString = JSON.stringify(evt.detail);
+    } catch (e) {
+      dump("BrowserElementParentProxyCallHandler Error:" +
+        "Event detail of " + evt.type + " can't be stingified.\n");
+      return;
+    }
+
+    this.innerWindowIDSet.forEach((innerWindowID) => {
+      this._sendToProxy({
+        eventName: evt.type,
+        innerWindowID: innerWindowID,
+        eventDetailString: detailString
+      });
+    });
+  },
+
+  _sendToProxy: function(data) {
+    this._mm.sendAsyncMessage("browser-element-api:proxy", data);
+  },
+
+  _attachEventListeners: function() {
+    this.MOZBROWSER_EVENT_NAMES.forEach(function(eventName) {
+      this._frameElement.addEventListener(
+        "mozbrowser" + eventName, this, true);
+    }, this);
+  },
+
+  _detachEventListeners: function() {
+    this.MOZBROWSER_EVENT_NAMES.forEach(function(eventName) {
+      this._frameElement.removeEventListener(
+        "mozbrowser" + eventName, this, true);
+    }, this);
+  }
+};
+
 function BrowserElementParent() {
   debug("Creating new BrowserElementParent object");
   this._domRequestCounter = 0;
@@ -77,6 +248,8 @@ function BrowserElementParent() {
   Services.obs.addObserver(this, 'oop-frameloader-crashed',  true);
   Services.obs.addObserver(this, 'copypaste-docommand',  true);
   Services.obs.addObserver(this, 'ask-children-to-execute-copypaste-command',  true);
+
+  this.proxyCallHandler = new BrowserElementParentProxyCallHandler();
 }
 
 BrowserElementParent.prototype = {
@@ -123,6 +296,9 @@ BrowserElementParent.prototype = {
     BrowserElementPromptService.mapFrameToBrowserElementParent(this._frameElement, this);
     this._setupMessageListener();
     this._registerAppManifest();
+
+    this.proxyCallHandler.init(
+      this._frameElement, this._frameLoader.messageManager);
   },
 
   _runPendingAPICall: function() {
@@ -736,7 +912,7 @@ BrowserElementParent.prototype = {
     if (!this._isAlive()) {
       return null;
     }
-    
+
     let uri = Services.io.newURI(_url, null, null);
     let url = uri.QueryInterface(Ci.nsIURL);
 
@@ -849,7 +1025,7 @@ BrowserElementParent.prototype = {
 
     debug('Using principal? ' + !!principal);
 
-    let channel = 
+    let channel =
       Services.io.newChannelFromURI2(url,
                                      null,       
                                      principal,  
@@ -872,7 +1048,7 @@ BrowserElementParent.prototype = {
     channel.loadFlags |= flags;
 
     if (channel instanceof Ci.nsIHttpChannel) {
-      debug('Setting HTTP referrer = ' + (referrer && referrer.spec)); 
+      debug('Setting HTTP referrer = ' + (referrer && referrer.spec));
       channel.referrer = referrer;
       if (channel instanceof Ci.nsIHttpChannelInternal) {
         channel.forceAllowThirdPartyCookie = true;
