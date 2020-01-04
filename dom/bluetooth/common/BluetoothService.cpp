@@ -294,28 +294,25 @@ BluetoothService::UnregisterBluetoothSignalHandler(
   }
 }
 
-PLDHashOperator
-RemoveAllSignalHandlers(const nsAString& aKey,
-                        nsAutoPtr<BluetoothSignalObserverList>& aData,
-                        void* aUserArg)
-{
-  BluetoothSignalObserver* handler =
-    static_cast<BluetoothSignalObserver*>(aUserArg);
-  aData->RemoveObserver(handler);
-  
-  
-  
-  MOZ_ASSERT(!aData->RemoveObserver(handler));
-  return aData->Length() ? PL_DHASH_NEXT : PL_DHASH_REMOVE;
-}
-
 void
 BluetoothService::UnregisterAllSignalHandlers(BluetoothSignalObserver* aHandler)
 {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(aHandler);
 
-  mBluetoothSignalObserverTable.Enumerate(RemoveAllSignalHandlers, aHandler);
+  for (auto iter = mBluetoothSignalObserverTable.Iter();
+       !iter.Done();
+       iter.Next()) {
+    nsAutoPtr<BluetoothSignalObserverList>& ol = iter.Data();
+    ol->RemoveObserver(aHandler);
+    
+    
+    
+    MOZ_ASSERT(!ol->RemoveObserver(aHandler));
+    if (ol->Length() == 0) {
+      iter.Remove();
+    }
+  }
 }
 
 void
