@@ -21,7 +21,24 @@ const DEFAULT_MAX_COUNT = 50;
 
 
 
+
+
 const snapshots = Object.create(null);
+
+
+
+
+
+
+
+const dominatorTrees = [];
+
+
+
+
+
+
+const dominatorTreeSnapshots = [];
 
 
 
@@ -76,6 +93,49 @@ workerHelper.createTask(self, "takeCensus", ({ snapshotFilePath, censusOptions, 
 
 
 
+workerHelper.createTask(self, "getCensusIndividuals", request => {
+  const {
+    dominatorTreeId,
+    indices,
+    censusBreakdown,
+    labelBreakdown,
+    maxRetainingPaths,
+    maxIndividuals,
+  } = request;
+
+  const dominatorTree = dominatorTrees[dominatorTreeId];
+  if (!dominatorTree) {
+    throw new Error(
+      `There does not exist a DominatorTree with the id ${dominatorTreeId}`);
+  }
+
+  const snapshot = dominatorTreeSnapshots[dominatorTreeId];
+  const nodeIds = CensusUtils.getCensusIndividuals(indices, censusBreakdown, snapshot);
+
+  const nodes = nodeIds
+    .sort((a, b) => dominatorTree.getRetainedSize(b) - dominatorTree.getRetainedSize(a))
+    .slice(0, maxIndividuals)
+    .map(id => {
+      const { label, shallowSize } =
+        DominatorTreeNode.getLabelAndShallowSize(id, snapshot, labelBreakdown);
+      const retainedSize = dominatorTree.getRetainedSize(id);
+      const node = new DominatorTreeNode(id, label, shallowSize, retainedSize);
+      node.moreChildrenAvailable = false;
+      return node;
+    });
+
+  DominatorTreeNode.attachShortestPaths(snapshot,
+                                        labelBreakdown,
+                                        dominatorTree.root,
+                                        nodes,
+                                        maxRetainingPaths);
+
+  return { nodes };
+});
+
+
+
+
 workerHelper.createTask(self, "takeCensusDiff", request => {
   const {
     firstSnapshotFilePath,
@@ -118,21 +178,6 @@ workerHelper.createTask(self, "getCreationTime", snapshotFilePath => {
   }
   return snapshots[snapshotFilePath].creationTime;
 });
-
-
-
-
-
-
-
-const dominatorTrees = [];
-
-
-
-
-
-
-const dominatorTreeSnapshots = [];
 
 
 

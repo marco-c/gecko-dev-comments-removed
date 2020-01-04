@@ -149,6 +149,35 @@ HeapAnalysesClient.prototype.takeCensus = function (snapshotFilePath,
 
 
 
+HeapAnalysesClient.prototype.getCensusIndividuals = function(opts) {
+  return this._worker.performTask("getCensusIndividuals", opts);
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
