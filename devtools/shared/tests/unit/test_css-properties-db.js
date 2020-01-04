@@ -3,34 +3,46 @@
 
 
 
+
 "use strict";
 
 const DOMUtils = Components.classes["@mozilla.org/inspector/dom-utils;1"]
                            .getService(Components.interfaces.inIDOMUtils);
 
-const {PSEUDO_ELEMENTS} = require("devtools/shared/css-properties-db");
+const {PSEUDO_ELEMENTS, CSS_PROPERTIES} = require("devtools/shared/css-properties-db");
+const {generateCssProperties} = require("devtools/server/actors/css-properties");
 
 function run_test() {
   
-  let foundPseudoElements = 0;
-  const platformPseudoElements = DOMUtils.getCSSPseudoElementNames();
-  const instructions = "If this assertion fails then it means that pseudo elements " +
-                       "have been added, removed, or changed on the platform and need " +
-                       "to be updated on the static client-side list of pseudo " +
-                       "elements within the devtools. " +
-                       "See devtools/shared/css-properties-db.js and " +
-                       "exports.PSEUDO_ELEMENTS for information on how to update the " +
-                       "list of pseudo elements to fix this test.";
+  deepEqual(PSEUDO_ELEMENTS, DOMUtils.getCSSPseudoElementNames(),
+            "If this assertion fails, then the client side CSS pseudo elements list in " +
+            "devtools is out of date with the pseudo elements on the platform. To fix " +
+            "this assertion open devtools/shared/css-properties-db.js and follow the " +
+            "instructions above the CSS_PSEUDO_ELEMENTS on how to re-generate the list.");
 
-  for (let element of PSEUDO_ELEMENTS) {
-    const hasElement = platformPseudoElements.includes(element);
-    ok(hasElement,
-       `"${element}" pseudo element from the client-side CSS properties database was ` +
-       `found on the platform. ${instructions}`);
-    foundPseudoElements += hasElement ? 1 : 0;
+  const propertiesErrorMessage = "If this assertion fails, then the client side CSS " +
+                                 "properties list in devtools is out of date with the " +
+                                 "CSS properties on the platform. To fix this " +
+                                 "assertion open devtools/shared/css-properties-db.js " +
+                                 "and follow the instructions above the CSS_PROPERTIES " +
+                                 "on how to re-generate the list.";
+
+  
+  
+  const platformProperties = generateCssProperties();
+  for (let propertyName in CSS_PROPERTIES) {
+    const platformProperty = platformProperties[propertyName];
+    const clientProperty = CSS_PROPERTIES[propertyName];
+    deepEqual(platformProperty, clientProperty,
+      `Client and server match for "${propertyName}". ${propertiesErrorMessage}\n`);
   }
 
-  equal(foundPseudoElements, platformPseudoElements.length,
-        `The client side CSS properties database of psuedo element names should match ` +
-        `those found on the platform. ${instructions}`);
+  
+  const platformPropertyNames = Object.keys(platformProperties).filter(
+    name => name.indexOf("-moz-osx-") === -1);
+  const clientPlatformNames = Object.keys(CSS_PROPERTIES);
+
+  deepEqual(platformPropertyNames, clientPlatformNames,
+        `The client side CSS properties database names match those found on the ` +
+        `platform. ${propertiesErrorMessage}`);
 }

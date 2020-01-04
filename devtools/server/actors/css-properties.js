@@ -67,6 +67,7 @@ function generateCssProperties() {
 
   return properties;
 }
+exports.generateCssProperties = generateCssProperties;
 
 
 
