@@ -243,3 +243,14 @@ exports.isPromise = function (p) {
 exports.isSavedFrame = function (thing) {
   return Object.prototype.toString.call(thing) === "[object SavedFrame]";
 };
+
+
+
+
+
+
+
+
+exports.flatten = function(lists) {
+  return Array.prototype.concat.apply([], lists);
+};
