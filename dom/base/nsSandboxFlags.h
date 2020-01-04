@@ -87,31 +87,26 @@ const unsigned long SANDBOXED_AUTOMATIC_FEATURES = 0x100;
 
 
 
-const unsigned long SANDBOXED_FULLSCREEN = 0x400;
-
-
-
-
-const unsigned long SANDBOXED_DOMAIN = 0x800;
+const unsigned long SANDBOXED_DOMAIN = 0x400;
 
 
 
 
 
 
-const unsigned long SANDBOXED_MODALS = 0x1000;
+const unsigned long SANDBOXED_MODALS = 0x800;
 
 
 
 
 
 
-const unsigned long SANDBOX_PROPAGATES_TO_AUXILIARY_BROWSING_CONTEXTS = 0x2000;
+const unsigned long SANDBOX_PROPAGATES_TO_AUXILIARY_BROWSING_CONTEXTS = 0x1000;
 
 
 
 
-const unsigned long SANDBOXED_ORIENTATION_LOCK = 0x4000;
+const unsigned long SANDBOXED_ORIENTATION_LOCK = 0x2000;
 
-const unsigned long SANDBOX_ALL_FLAGS = 0x7FFF;
+const unsigned long SANDBOX_ALL_FLAGS = 0x3FFF;
 #endif

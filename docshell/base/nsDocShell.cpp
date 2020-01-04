@@ -2513,10 +2513,6 @@ nsDocShell::GetFullscreenAllowed(bool* aFullscreenAllowed)
   
   *aFullscreenAllowed = false;
 
-  
-  if (mSandboxFlags & SANDBOXED_FULLSCREEN) {
-    return NS_OK;
-  }
   nsCOMPtr<nsPIDOMWindowOuter> win = GetWindow();
   if (!win) {
     return NS_OK;
