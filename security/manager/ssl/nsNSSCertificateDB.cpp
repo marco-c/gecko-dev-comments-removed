@@ -48,6 +48,10 @@
 #include "ssl.h"
 #include "plbase64.h"
 
+#ifdef XP_WIN
+#include <winsock.h> 
+#endif
+
 using namespace mozilla;
 using namespace mozilla::psm;
 using mozilla::psm::SharedSSLState;
@@ -137,42 +141,58 @@ nsNSSCertificateDB::FindCertByDBKey(const char *aDBkey, nsISupports *aToken,
     return NS_ERROR_NOT_AVAILABLE;
   }
 
-  SECItem keyItem = {siBuffer, nullptr, 0};
-  SECItem *dummy;
+  static_assert(sizeof(uint64_t) == 8, "type size sanity check");
+  static_assert(sizeof(uint32_t) == 4, "type size sanity check");
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  nsAutoCString decoded;
+  nsAutoCString tmpDBKey(aDBkey);
+  
+  tmpDBKey.StripWhitespace();
+  nsresult rv = Base64Decode(tmpDBKey, decoded);
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+  if (decoded.Length() < 16) {
+    return NS_ERROR_ILLEGAL_INPUT;
+  }
+  const char* reader = decoded.BeginReading();
+  uint64_t zeroes = *reinterpret_cast<const uint64_t*>(reader);
+  if (zeroes != 0) {
+    return NS_ERROR_ILLEGAL_INPUT;
+  }
+  reader += sizeof(uint64_t);
+  uint32_t serialNumberLen = ntohl(*reinterpret_cast<const uint32_t*>(reader));
+  reader += sizeof(uint32_t);
+  uint32_t issuerLen = ntohl(*reinterpret_cast<const uint32_t*>(reader));
+  reader += sizeof(uint32_t);
+  if (decoded.Length() != 16ULL + serialNumberLen + issuerLen) {
+    return NS_ERROR_ILLEGAL_INPUT;
+  }
   CERTIssuerAndSN issuerSN;
-  
+  issuerSN.serialNumber.len = serialNumberLen;
+  issuerSN.serialNumber.data = (unsigned char*)reader;
+  reader += serialNumberLen;
+  issuerSN.derIssuer.len = issuerLen;
+  issuerSN.derIssuer.data = (unsigned char*)reader;
+  reader += issuerLen;
+  MOZ_ASSERT(reader == decoded.EndReading());
 
-  dummy = NSSBase64_DecodeBuffer(nullptr, &keyItem, aDBkey,
-                                 (uint32_t)strlen(aDBkey)); 
-  if (!dummy || keyItem.len < NS_NSS_LONG*4) {
-    PR_FREEIF(keyItem.data);
-    return NS_ERROR_INVALID_ARG;
-  }
-
-  ScopedCERTCertificate cert;
-  
-  
-  
-
-  
-  issuerSN.serialNumber.len = NS_NSS_GET_LONG(&keyItem.data[NS_NSS_LONG*2]);
-  issuerSN.derIssuer.len = NS_NSS_GET_LONG(&keyItem.data[NS_NSS_LONG*3]);
-  if (issuerSN.serialNumber.len == 0 || issuerSN.derIssuer.len == 0
-      || issuerSN.serialNumber.len + issuerSN.derIssuer.len
-         != keyItem.len - NS_NSS_LONG*4) {
-    PR_FREEIF(keyItem.data);
-    return NS_ERROR_INVALID_ARG;
-  }
-  issuerSN.serialNumber.data= &keyItem.data[NS_NSS_LONG*4];
-  issuerSN.derIssuer.data= &keyItem.data[NS_NSS_LONG*4+
-                                              issuerSN.serialNumber.len];
-
-  cert = CERT_FindCertByIssuerAndSN(CERT_GetDefaultCertDB(), &issuerSN);
-  PR_FREEIF(keyItem.data);
+  ScopedCERTCertificate cert(
+    CERT_FindCertByIssuerAndSN(CERT_GetDefaultCertDB(), &issuerSN));
   if (cert) {
     nsCOMPtr<nsIX509Cert> nssCert = nsNSSCertificate::Create(cert.get());
-    if (!nssCert)
+    if (!nssCert) {
       return NS_ERROR_OUT_OF_MEMORY;
+    }
     nssCert.forget(_cert);
   }
   return NS_OK;
@@ -1221,12 +1241,10 @@ nsNSSCertificateDB::getCertNames(CERTCertList *certList,
        node = CERT_LIST_NEXT(node)) {
     if (getCertType(node->cert) == type) {
       RefPtr<nsNSSCertificate> pipCert(new nsNSSCertificate(node->cert));
-      char *dbkey = nullptr;
-      char *namestr = nullptr;
-      nsAutoString certstr;
-      pipCert->GetDbKey(&dbkey);
+      nsAutoCString dbkey;
+      pipCert->GetDbKey(dbkey);
       nsAutoString keystr = NS_ConvertASCIItoUTF16(dbkey);
-      PR_FREEIF(dbkey);
+      char *namestr = nullptr;
       if (type == nsIX509Cert::EMAIL_CERT) {
         namestr = node->cert->emailAddr;
       } else {
@@ -1237,6 +1255,7 @@ nsNSSCertificateDB::getCertNames(CERTCertList *certList,
         }
       }
       nsAutoString certname = NS_ConvertASCIItoUTF16(namestr ? namestr : "");
+      nsAutoString certstr;
       certstr.Append(char16_t(DELIM));
       certstr += certname;
       certstr.Append(char16_t(DELIM));
