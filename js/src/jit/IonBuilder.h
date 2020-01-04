@@ -510,6 +510,10 @@ class IonBuilder
     bool compareTrySharedStub(bool* emitted, JSOp op, MDefinition* left, MDefinition* right);
 
     
+    bool inTryDense(bool* emitted, MDefinition* obj, MDefinition* id);
+    bool inTryFold(bool* emitted, MDefinition* obj, MDefinition* id);
+
+    
     TypedObjectPrediction typedObjectPrediction(MDefinition* typedObj);
     TypedObjectPrediction typedObjectPrediction(TemporaryTypeSet* types);
     bool typedObjectHasField(MDefinition* typedObj,
@@ -732,7 +736,6 @@ class IonBuilder
     bool jsop_isnoiter();
     bool jsop_iterend();
     bool jsop_in();
-    bool jsop_in_dense(MDefinition* obj, MDefinition* id, JSValueType unboxedType);
     bool jsop_instanceof();
     bool jsop_getaliasedvar(ScopeCoordinate sc);
     bool jsop_setaliasedvar(ScopeCoordinate sc);
