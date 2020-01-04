@@ -27,9 +27,12 @@ const store = createStore(combineReducers(reducers));
 
 
 
-function DomView() {
+function DomView(localStore) {
   addEventListener("devtools/chrome/message",
     this.onMessage.bind(this), true);
+
+  
+  this.store = localStore;
 }
 
 DomView.prototype = {
@@ -40,7 +43,10 @@ DomView.prototype = {
     });
 
     
-    let provider = React.createElement(Provider, {store: store}, mainFrame);
+    let provider = React.createElement(Provider, {
+      store: this.store
+    }, mainFrame);
+
     this.mainFrame = ReactDOM.render(provider, content);
   },
 
@@ -55,4 +61,5 @@ DomView.prototype = {
 };
 
 
-new DomView();
+
+window.view = new DomView(store);
