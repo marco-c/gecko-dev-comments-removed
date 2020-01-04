@@ -282,10 +282,12 @@ const TESTS = {
   },
 
   
-  empty: {
-    updateList: [],
-    finalState: [true, null, null, null, null, null]
-  },
+  
+  
+
+
+
+
 
   
   newset: {
@@ -306,11 +308,13 @@ const TESTS = {
   },
 
   
+  
+  
   overlapping: {
     updateList: [
-      { id: "system1@tests.mozilla.org", version: "1.0", path: "system1_2.xpi" },
-      { id: "system2@tests.mozilla.org", version: "1.0", path: "system2_2.xpi" },
-      { id: "system3@tests.mozilla.org", version: "1.0", path: "system3_3.xpi" },
+      { id: "system1@tests.mozilla.org", version: "2.0", path: "system1_2.xpi" },
+      { id: "system2@tests.mozilla.org", version: "2.0", path: "system2_2.xpi" },
+      { id: "system3@tests.mozilla.org", version: "3.0", path: "system3_3.xpi" },
       { id: "system4@tests.mozilla.org", version: "1.0", path: "system4_1.xpi" }
     ],
     finalState: [true, "2.0", "2.0", "3.0", "1.0", null]
@@ -458,15 +462,16 @@ function* exec_test(setup, test) {
   yield promiseShutdownManager();
 }
 
-for (let setup of Object.keys(TEST_CONDITIONS)) {
-  for (let test of Object.keys(TESTS)) {
-    add_task(function*() {
-      do_print("Running test " + setup + " " + test);
+add_task(function*() {
+  for (let setup of Object.keys(TEST_CONDITIONS)) {
+    for (let test of Object.keys(TESTS)) {
+        do_print("Running test " + setup + " " + test);
 
-      yield exec_test(TEST_CONDITIONS[setup], TESTS[test]);
-    });
+        yield exec_test(TEST_CONDITIONS[setup], TESTS[test]);
+
+    }
   }
-}
+});
 
 
 
