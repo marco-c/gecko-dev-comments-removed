@@ -47,6 +47,24 @@ function processCSU(csuName, csu)
     }
 }
 
+
+
+function nearestAncestorMethods(csu, method)
+{
+    var key = csu + ":" + method;
+
+    if (classFunctions.has(key))
+        return new Set(classFunctions.get(key));
+
+    var functions = new Set();
+    if (superclasses.has(csu)) {
+        for (var parent of superclasses.get(csu))
+            functions.update(nearestAncestorMethods(parent, method));
+    }
+
+    return functions;
+}
+
 function findVirtualFunctions(initialCSU, field, suppressed)
 {
     var worklist = [initialCSU];
@@ -73,7 +91,15 @@ function findVirtualFunctions(initialCSU, field, suppressed)
             worklist.push(...superclasses.get(csu));
     }
 
-    worklist = [csu];
+    
+    
+
+    
+    
+    functions.update(nearestAncestorMethods(initialCSU, field));
+
+    
+    var worklist = [initialCSU];
     while (worklist.length) {
         var csu = worklist.pop();
         var key = csu + ":" + field;
