@@ -52,10 +52,10 @@ var AnimationsPanel = {
     }
 
     
-    for (let functionName of ["onPickerStarted", "onPickerStopped",
-      "refreshAnimationsUI", "toggleAll", "onTabNavigated",
-      "onTimelineDataChanged", "playPauseTimeline", "rewindTimeline",
-      "onRateChanged"]) {
+    for (let functionName of ["onKeyDown", "onPickerStarted",
+      "onPickerStopped", "refreshAnimationsUI", "onToggleAllClicked",
+      "onTabNavigated", "onTimelineDataChanged", "onTimelinePlayClicked",
+      "onTimelineRewindClicked", "onRateChanged"]) {
       this[functionName] = this[functionName].bind(this);
     }
     let hUtils = gToolbox.highlighterUtils;
@@ -114,9 +114,13 @@ var AnimationsPanel = {
     gToolbox.on("picker-started", this.onPickerStarted);
     gToolbox.on("picker-stopped", this.onPickerStopped);
 
-    this.toggleAllButtonEl.addEventListener("click", this.toggleAll);
-    this.playTimelineButtonEl.addEventListener("click", this.playPauseTimeline);
-    this.rewindTimelineButtonEl.addEventListener("click", this.rewindTimeline);
+    this.toggleAllButtonEl.addEventListener("click", this.onToggleAllClicked);
+    this.playTimelineButtonEl.addEventListener(
+      "click", this.onTimelinePlayClicked);
+    this.rewindTimelineButtonEl.addEventListener(
+      "click", this.onTimelineRewindClicked);
+
+    document.addEventListener("keydown", this.onKeyDown, false);
 
     gToolbox.target.on("navigate", this.onTabNavigated);
 
@@ -136,9 +140,13 @@ var AnimationsPanel = {
     gToolbox.off("picker-started", this.onPickerStarted);
     gToolbox.off("picker-stopped", this.onPickerStopped);
 
-    this.toggleAllButtonEl.removeEventListener("click", this.toggleAll);
-    this.playTimelineButtonEl.removeEventListener("click", this.playPauseTimeline);
-    this.rewindTimelineButtonEl.removeEventListener("click", this.rewindTimeline);
+    this.toggleAllButtonEl.removeEventListener("click", this.onToggleAllClicked);
+    this.playTimelineButtonEl.removeEventListener(
+      "click", this.onTimelinePlayClicked);
+    this.rewindTimelineButtonEl.removeEventListener(
+      "click", this.onTimelineRewindClicked);
+
+    document.removeEventListener("keydown", this.onKeyDown, false);
 
     gToolbox.target.off("navigate", this.onTabNavigated);
 
@@ -147,6 +155,22 @@ var AnimationsPanel = {
 
     if (this.rateSelectorComponent) {
       this.rateSelectorComponent.off("rate-changed", this.onRateChanged);
+    }
+  },
+
+  onKeyDown: function(event) {
+    let keyEvent = Ci.nsIDOMKeyEvent;
+
+    
+    
+    
+    if (event.keyCode === keyEvent.DOM_VK_SPACE) {
+      if (AnimationsController.animationPlayers.length > 0) {
+        this.playPauseTimeline().catch(ex => console.error(ex));
+      } else {
+        this.toggleAll().catch(ex => console.error(ex));
+      }
+      event.preventDefault();
     }
   },
 
@@ -168,12 +192,27 @@ var AnimationsPanel = {
     this.pickerButtonEl.removeAttribute("checked");
   },
 
+  onToggleAllClicked: function() {
+    this.toggleAll().catch(ex => console.error(ex));
+  },
+
+  
+
+
+
   toggleAll: Task.async(function*() {
     this.toggleAllButtonEl.classList.toggle("paused");
     yield AnimationsController.toggleAll();
   }),
 
+  onTimelinePlayClicked: function() {
+    this.playPauseTimeline().catch(ex => console.error(ex));
+  },
+
   
+
+
+
 
 
 
@@ -181,19 +220,25 @@ var AnimationsPanel = {
 
 
   playPauseTimeline: function() {
-    AnimationsController.toggleCurrentAnimations(this.timelineData.isMoving)
-                        .then(() => this.refreshAnimationsStateAndUI())
-                        .catch(e => console.error(e));
+    return AnimationsController
+      .toggleCurrentAnimations(this.timelineData.isMoving)
+      .then(() => this.refreshAnimationsStateAndUI());
+  },
+
+  onTimelineRewindClicked: function() {
+    this.rewindTimeline().catch(ex => console.error(ex));
   },
 
   
 
 
 
+
+
   rewindTimeline: function() {
-    AnimationsController.setCurrentTimeAll(0, true)
-                        .then(() => this.refreshAnimationsStateAndUI())
-                        .catch(e => console.error(e));
+    return AnimationsController
+      .setCurrentTimeAll(0, true)
+      .then(() => this.refreshAnimationsStateAndUI());
   },
 
   
@@ -203,7 +248,7 @@ var AnimationsPanel = {
   onRateChanged: function(e, rate) {
     AnimationsController.setPlaybackRateAll(rate)
                         .then(() => this.refreshAnimationsStateAndUI())
-                        .catch(e => console.error(e));
+                        .catch(ex => console.error(ex));
   },
 
   onTabNavigated: function() {
