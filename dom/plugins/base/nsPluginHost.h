@@ -386,8 +386,6 @@ private:
 
   
   bool mPluginsDisabled;
-  
-  bool mPluginsClickToPlay;
 
   
   
