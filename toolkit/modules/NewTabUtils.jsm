@@ -111,12 +111,16 @@ function LinksStorage() {
 }
 
 LinksStorage.prototype = {
-  get _version() 1,
+  get _version() {
+    return 1;
+  },
 
-  get _prefs() Object.freeze({
-    pinnedLinks: "browser.newtabpage.pinned",
-    blockedLinks: "browser.newtabpage.blocked",
-  }),
+  get _prefs() {
+    return Object.freeze({
+      pinnedLinks: "browser.newtabpage.pinned",
+      blockedLinks: "browser.newtabpage.blocked",
+    });
+  },
 
   get _storedVersion() {
     if (this.__storedVersion === undefined) {
@@ -401,16 +405,18 @@ var PinnedLinks = {
 
 
 
-
   pin: function PinnedLinks_pin(aLink, aIndex) {
     
     this.unpin(aLink);
 
     
-    let changed = this._makeHistoryLink(aLink);
+    
+    let updatePages = this._makeHistoryLink(aLink);
     this.links[aIndex] = aLink;
     this.save();
-    return changed;
+    if (updatePages) {
+      AllPages.update();
+    }
   },
 
   

@@ -134,7 +134,9 @@ this.DeferredTask.prototype = {
 
 
 
-  get isArmed() this._armed,
+  get isArmed() {
+    return this._armed;
+  },
   _armed: false,
 
   
@@ -142,7 +144,9 @@ this.DeferredTask.prototype = {
 
 
 
-  get isRunning() !!this._runningPromise,
+  get isRunning() {
+    return !!this._runningPromise;
+  },
 
   
 

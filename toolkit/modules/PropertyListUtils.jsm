@@ -259,11 +259,14 @@ BinaryPropertyListReader.prototype = {
 
 
 
-  canProcess: function BPLR_canProcess(aBuffer)
-    [String.fromCharCode(c) for each (c in new Uint8Array(aBuffer, 0, 8))].
-    join("") == "bplist00",
+  canProcess: function BPLR_canProcess(aBuffer) {
+    return [String.fromCharCode(c) for each (c in new Uint8Array(aBuffer, 0, 8))].
+           join("") == "bplist00";
+  },
 
-  get root() this._readObject(this._rootObjectIndex),
+  get root() {
+    return this._readObject(this._rootObjectIndex);
+  },
 
   _readTrailerInfo: function BPLR__readTrailer() {
     
@@ -656,7 +659,9 @@ function XMLPropertyListReader(aDOMDoc) {
 }
 
 XMLPropertyListReader.prototype = {
-  get root() this._readObject(this._plistRootElement),
+  get root() {
+    return this._readObject(this._plistRootElement);
+  },
 
   
 

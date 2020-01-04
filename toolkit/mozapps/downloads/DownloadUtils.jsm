@@ -273,7 +273,7 @@ this.DownloadUtils = {
       return [gBundle.GetStringFromName(gStr.timeUnknown), aLastSec];
 
     
-    aLastSec = gCachedLast.reduce(function(aResult, aItem)
+    aLastSec = gCachedLast.reduce((aResult, aItem) =>
       aItem[0] == aSeconds ? aItem[1] : aResult, aLastSec);
 
     

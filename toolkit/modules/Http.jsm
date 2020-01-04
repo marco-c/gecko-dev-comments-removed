@@ -9,8 +9,9 @@ const {classes: Cc, interfaces: Ci} = Components;
 
 
 
-function percentEncode(aString)
-  encodeURIComponent(aString).replace(/[!'()]/g, escape).replace(/\*/g, "%2A");
+function percentEncode(aString) {
+  return encodeURIComponent(aString).replace(/[!'()]/g, escape).replace(/\*/g, "%2A");
+}
 
 
 
@@ -86,7 +87,7 @@ function httpRequest(aUrl, aOptions) {
   if (POSTData && Array.isArray(POSTData)) {
     xhr.setRequestHeader("Content-Type",
                          "application/x-www-form-urlencoded; charset=utf-8");
-    POSTData = POSTData.map(function(p) p[0] + "=" + percentEncode(p[1]))
+    POSTData = POSTData.map(p => p[0] + "=" + percentEncode(p[1]))
                        .join("&");
   }
 
