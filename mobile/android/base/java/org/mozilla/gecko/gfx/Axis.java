@@ -188,14 +188,14 @@ abstract class Axis {
     private final SubdocumentScrollHelper mSubscroller;
 
     private int mOverscrollMode; 
-    private float mFirstTouchPos;           
-    private float mTouchPos;                
-    private float mLastTouchPos;            
-    private float mVelocity;                
-    private final float[] mRecentVelocities;
-    private int mRecentVelocityCount;       
-    private boolean mScrollingDisabled;     
-    private boolean mDisableSnap;           
+    private float mFirstTouchPos;            
+    private float mTouchPos;                 
+    private float mLastTouchPos;             
+    private float mVelocity;                 
+    private final float[] mRecentVelocities; 
+    private int mRecentVelocityCount;        
+    private boolean mScrollingDisabled;      
+    private boolean mDisableSnap;            
     private float mDisplacement;
     private long mLastFlingTime;
     private float mLastFlingVelocity;
