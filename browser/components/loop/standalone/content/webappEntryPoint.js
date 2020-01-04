@@ -19,8 +19,6 @@
 
 require("imports?require=>false!shared/libs/sdk.js");
 
-require("script!./libs/l10n-gaia-02ca67948fe8.js");
-
 
 
 
@@ -31,26 +29,61 @@ require("exports?_!shared/libs/lodash-3.9.3.js");
 
 
 
-require("script!shared/libs/backbone-1.2.1.js");
-require("script!shared/libs/react-0.12.2.js");
 
-require("script!shared/js/utils.js");
-require("script!shared/js/crypto.js");
-require("script!shared/js/mixins.js");
-require("script!shared/js/actions.js");
-require("script!shared/js/validate.js");
-require("script!shared/js/dispatcher.js");
-require("script!shared/js/otSdkDriver.js");
-require("script!shared/js/store.js");
-require("script!shared/js/activeRoomStore.js");
-require("script!shared/js/views.js");
-require("script!shared/js/urlRegExps.js");
-require("script!shared/js/textChatStore.js");
-require("script!shared/js/textChatView.js");
-require("script!shared/js/linkifiedTextView.js");
+require("expose?Backbone!imports?define=>false!shared/libs/backbone-1.2.1.js");
 
-require("script!./js/standaloneAppStore.js");
-require("script!./js/standaloneMozLoop.js");
-require("script!./js/standaloneRoomViews.js");
-require("script!./js/standaloneMetricsStore.js");
-require("script!./js/webapp.js");
+
+if (typeof __PROD__ !== "undefined") {
+  
+  
+  require("expose?React!react");
+  require("expose?React!react/addons");
+} else {
+  
+  require("shared/libs/react-0.12.2.js");
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+require("imports?loop=>window.loop!exports?loop!shared/js/utils.js");
+require("imports?this=>window,loop=>window.loop!exports?loop!shared/js/crypto.js");
+require("imports?loop=>window.loop!exports?loop!shared/js/mixins.js");
+require("imports?loop=>window.loop!exports?loop!shared/js/actions.js");
+require("imports?loop=>window.loop!exports?loop!shared/js/validate.js");
+require("imports?loop=>window.loop!exports?loop!shared/js/dispatcher.js");
+require("imports?loop=>window.loop!exports?loop!shared/js/otSdkDriver.js");
+require("imports?loop=>window.loop!exports?loop!shared/js/store.js");
+require("imports?loop=>window.loop!exports?loop!shared/js/activeRoomStore.js");
+require("imports?loop=>window.loop!exports?loop!shared/js/views.js");
+require("imports?loop=>window.loop!exports?loop!shared/js/urlRegExps.js");
+require("imports?loop=>window.loop!exports?loop!shared/js/textChatStore.js");
+require("imports?loop=>window.loop!exports?loop!shared/js/textChatView.js");
+require("imports?loop=>window.loop!exports?loop!shared/js/linkifiedTextView.js");
+
+require("imports?loop=>window.loop!exports?loop!./js/standaloneAppStore.js");
+require("imports?loop=>window.loop!exports?loop!./js/standaloneMozLoop.js");
+require("imports?loop=>window.loop!exports?loop!./js/standaloneRoomViews.js");
+require("imports?loop=>window.loop!exports?loop!./js/standaloneMetricsStore.js");
+require("imports?loop=>window.loop!exports?loop!./js/webapp.js");

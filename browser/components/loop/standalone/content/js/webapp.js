@@ -246,3 +246,10 @@ loop.webapp = (function(_, OT, mozL10n) {
     WebappRootView: WebappRootView
   };
 })(_, window.OT, navigator.mozL10n);
+
+
+
+
+if (typeof initIfReady === "function") {
+  initIfReady();
+}

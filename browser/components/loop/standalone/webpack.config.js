@@ -39,6 +39,15 @@ module.exports = {
 
   
   
+  externals: {
+    "Backbone": "Backbone",
+    "navigator.mozL10n": "navigator.mozL10n",
+    "React": "React",
+    "underscore": "_"
+  },
+
+  
+  
   
   resolve: {
     alias: {
@@ -55,6 +64,21 @@ module.exports = {
   },
 
   plugins: [
+    
+    
+    
+    
+    new webpack.IgnorePlugin(/^jquery$/),
+
+    
+    
+    
+    
+    new webpack.DefinePlugin({
+      __PROD__: JSON.stringify(JSON.parse(
+        process.env.NODE_ENV && process.env.NODE_ENV === "production"))
+    }),
+
     new webpack.optimize.UglifyJsPlugin({
       compress: {
         
