@@ -1132,7 +1132,11 @@ void nsBaseWidget::CreateCompositor(int aWidth, int aHeight)
 
   mLayerManager = lm.forget();
 
-  gfxPlatform::GetPlatform()->NotifyCompositorCreated(mLayerManager->GetCompositorBackendType());
+  if (mWindowType == eWindowType_toplevel) {
+    
+    
+    gfxPlatform::GetPlatform()->NotifyCompositorCreated(mLayerManager->GetCompositorBackendType());
+  }
 }
 
 bool nsBaseWidget::ShouldUseOffMainThreadCompositing()
