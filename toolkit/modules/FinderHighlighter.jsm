@@ -291,9 +291,9 @@ FinderHighlighter.prototype = {
     let dict = this.getForWindow(window);
     
     dict.lastIteratorParams = params;
-    this.clear(window);
     if (!this._modal)
       this.hide(window, this.finder._fastFind.getFoundRange());
+    this.clear(window);
   },
 
   
@@ -316,6 +316,12 @@ FinderHighlighter.prototype = {
     } else {
       let findSelection = controller.getSelection(Ci.nsISelectionController.SELECTION_FIND);
       findSelection.addRange(range);
+      
+      if (window != window.top) {
+        let dict = this.getForWindow(window.top);
+        if (!dict.frames.has(window))
+          dict.frames.set(window, null);
+      }
     }
 
     if (editableNode) {
@@ -360,11 +366,16 @@ FinderHighlighter.prototype = {
     if (event && event.type == "click" && event.button !== 0)
       return;
 
-    window = (window || this.finder._getWindow()).top;
+    try {
+      window = (window || this.finder._getWindow()).top;
+    } catch (ex) {
+      Cu.reportError(ex);
+      return;
+    }
     let dict = this.getForWindow(window);
 
     this._clearSelection(this.finder._getSelectionController(window), skipRange);
-    for (let frame of dict.frames)
+    for (let frame of dict.frames.keys())
       this._clearSelection(this.finder._getSelectionController(frame), skipRange);
 
     
@@ -478,6 +489,9 @@ FinderHighlighter.prototype = {
   clear(window = null) {
     if (!window) {
       
+      for (let win of gWindows.keys())
+        this.hide(win);
+      
       gWindows.clear();
       return;
     }
@@ -537,7 +551,7 @@ FinderHighlighter.prototype = {
 
   onHighlightAllChange(highlightAll) {
     this._highlightAll = highlightAll;
-    if (this._modal && !highlightAll) {
+    if (!highlightAll) {
       this.clear();
       this._scheduleRepaintOfMask(this.finder._getWindow());
     }
@@ -1006,6 +1020,9 @@ FinderHighlighter.prototype = {
 
 
   _scheduleRepaintOfMask(window, { contentChanged, scrollOnly } = { contentChanged: false, scrollOnly: false }) {
+    if (!this._modal)
+      return;
+
     window = window.top;
     let dict = this.getForWindow(window);
     let repaintFixedNodes = (scrollOnly && !!dict.dynamicRangesSet.size);

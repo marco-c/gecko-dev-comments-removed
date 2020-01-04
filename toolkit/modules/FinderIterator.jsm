@@ -536,7 +536,7 @@ this.FinderIterator = {
 
   _collectFrames(window, finder) {
     let frames = [];
-    if (!window.frames || !window.frames.length)
+    if (!("frames" in window) || !window.frames.length)
       return frames;
 
     
