@@ -714,42 +714,14 @@ nsScriptLoader::ProcessScriptElement(nsIScriptElement *aElement)
       }
       return true;
     }
-
-    if (request->IsDoneLoading()) {
+    if (request->IsDoneLoading() && ReadyToExecuteScripts()) {
+      
+      
+      
       if (aElement->GetParserCreated() == FROM_PARSER_NETWORK) {
-        
-        
-        nsresult rv = AttemptAsyncScriptCompile(request);
-        if (rv == NS_OK) {
-          
-          
-          NS_ASSERTION(!mParserBlockingRequest,
-              "There can be only one parser-blocking script at a time");
-          NS_ASSERTION(mXSLTRequests.isEmpty(),
-              "Parser-blocking scripts and XSLT scripts in the same doc!");
-          mParserBlockingRequest = request;
-          return true;
-        }
-
-        
-        
-        if (rv != NS_ERROR_FAILURE) {
-          return false;
-        }
-      }
-
-      
-      
-      
-
-      
-      
-      
-      if (aElement->GetParserCreated() == FROM_PARSER_NETWORK &&
-          ReadyToExecuteScripts()) {
         return ProcessRequest(request) == NS_ERROR_HTMLPARSER_BLOCK;
       }
-
+      
       
       
       NS_ASSERTION(!mParserBlockingRequest,
@@ -760,7 +732,7 @@ nsScriptLoader::ProcessScriptElement(nsIScriptElement *aElement)
       ProcessPendingRequestsAsync();
       return true;
     }
-
+    
     
     NS_ASSERTION(!mParserBlockingRequest,
         "There can be only one parser-blocking script at a time");
@@ -858,23 +830,6 @@ nsScriptLoader::ProcessOffThreadRequest(nsScriptLoadRequest* aRequest)
 {
   MOZ_ASSERT(aRequest->mProgress == nsScriptLoadRequest::Progress_Compiling);
   aRequest->mProgress = nsScriptLoadRequest::Progress_DoneCompiling;
-  if (aRequest == mParserBlockingRequest) {
-    if (!ReadyToExecuteScripts()) {
-      
-      
-      ProcessPendingRequestsAsync();
-      return NS_OK;
-    }
-
-    
-    mParserBlockingRequest = nullptr;
-    UnblockParser(aRequest);
-    ProcessRequest(aRequest);
-    mDocument->UnblockOnload(false);
-    ContinueParserAsync(aRequest);
-    return NS_OK;
-  }
-
   nsresult rv = ProcessRequest(aRequest);
   mDocument->UnblockOnload(false);
   return rv;
@@ -923,10 +878,9 @@ OffThreadScriptLoaderCallback(void *aToken, void *aCallbackData)
 }
 
 nsresult
-nsScriptLoader::AttemptAsyncScriptCompile(nsScriptLoadRequest* aRequest)
+nsScriptLoader::AttemptAsyncScriptParse(nsScriptLoadRequest* aRequest)
 {
-  
-  if (aRequest->mIsInline) {
+  if (!aRequest->mElement->GetScriptAsync() || aRequest->mIsInline) {
     return NS_ERROR_FAILURE;
   }
 
@@ -967,8 +921,7 @@ nsScriptLoader::AttemptAsyncScriptCompile(nsScriptLoadRequest* aRequest)
 }
 
 nsresult
-nsScriptLoader::CompileOffThreadOrProcessRequest(nsScriptLoadRequest* aRequest,
-                                                 bool* oCompiledOffThread)
+nsScriptLoader::CompileOffThreadOrProcessRequest(nsScriptLoadRequest* aRequest)
 {
   NS_ASSERTION(nsContentUtils::IsSafeToRunScript(),
                "Processing requests when running scripts is unsafe.");
@@ -977,11 +930,8 @@ nsScriptLoader::CompileOffThreadOrProcessRequest(nsScriptLoadRequest* aRequest,
   NS_ASSERTION(!aRequest->InCompilingStage(),
                "Candidate for off-thread compile is already in compiling stage.");
 
-  nsresult rv = AttemptAsyncScriptCompile(aRequest);
+  nsresult rv = AttemptAsyncScriptParse(aRequest);
   if (rv != NS_ERROR_FAILURE) {
-    if (oCompiledOffThread && rv == NS_OK) {
-      *oCompiledOffThread = true;
-    }
     return rv;
   }
 
@@ -1272,12 +1222,8 @@ nsScriptLoader::ProcessPendingRequests()
       mParserBlockingRequest->IsReadyToRun() &&
       ReadyToExecuteScripts()) {
     request.swap(mParserBlockingRequest);
-    bool offThreadCompiled = request->mProgress == nsScriptLoadRequest::Progress_DoneCompiling;
     UnblockParser(request);
     ProcessRequest(request);
-    if (offThreadCompiled) {
-      mDocument->UnblockOnload(false);
-    }
     ContinueParserAsync(request);
   }
 
@@ -1680,23 +1626,6 @@ nsScriptLoader::PrepareLoadedRequest(nsScriptLoadRequest* aRequest,
 
   
   aRequest->mProgress = nsScriptLoadRequest::Progress_DoneLoading;
-
-  
-  if (aRequest == mParserBlockingRequest) {
-    nsresult rv = AttemptAsyncScriptCompile(aRequest);
-    if (rv == NS_OK) {
-      NS_ASSERTION(aRequest->mProgress == nsScriptLoadRequest::Progress_Compiling,
-          "Request should be off-thread compiling now.");
-      return NS_OK;
-    }
-
-    
-    if (rv != NS_ERROR_FAILURE) {
-      return rv;
-    }
-
-    
-  }
 
   
   
