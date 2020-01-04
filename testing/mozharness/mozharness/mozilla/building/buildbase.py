@@ -920,14 +920,6 @@ or run without that action (ie: --no-{action})"
 
         
         
-        
-        if multiLocale and self.config.get('taskcluster_nightly'):
-            if 'UPLOAD_PATH' in mach_env:
-                mach_env['UPLOAD_PATH'] = os.path.join(mach_env['UPLOAD_PATH'],
-                                                       'en-US')
-
-        
-        
         if c.get('is_automation'):
             pst_up_cmd = ' '.join([str(i) for i in self._query_post_upload_cmd(multiLocale)])
             mach_env['POST_UPLOAD_CMD'] = pst_up_cmd
@@ -1643,34 +1635,17 @@ or run without that action (ie: --no-{action})"
         dirs = self.query_abs_dirs()
         base_work_dir = dirs['base_work_dir']
         objdir = dirs['abs_obj_dir']
-        branch = self.branch
+        branch = self.buildbot_config['properties']['branch']
 
         
         
         
-        if branch == 'try':
-            branch = 'mozilla-central'
-
-        
-        
-        
-        default_platform = self.buildbot_config['properties'].get('platform',
-                                                                  'android')
-
         multi_config_pf = self.config.get('multi_locale_config_platform',
-                                          default_platform)
-
-        
-        if self.config.get('taskcluster_nightly'):
-            multil10n_path = \
-                'build/src/testing/mozharness/scripts/multil10n.py'
-            base_work_dir = os.path.join(base_work_dir, 'workspace')
-        else:
-            multil10n_path = '%s/scripts/scripts/multil10n.py' % base_work_dir,
+                                          self.buildbot_config['properties']['platform'])
 
         cmd = [
             self.query_exe('python'),
-            multil10n_path,
+            '%s/scripts/scripts/multil10n.py' % base_work_dir,
             '--config-file',
             'multi_locale/%s_%s.json' % (branch, multi_config_pf),
             '--config-file',
@@ -2040,15 +2015,6 @@ or run without that action (ie: --no-{action})"
         
         self.generate_build_props(console_output=False,
                                   halt_on_failure=False)
-
-        
-        if self.config.get('taskcluster_nightly'):
-            env = self.query_mach_build_env(multiLocale=False)
-            props_path = os.path.join(env["UPLOAD_PATH"],
-                    'balrog_props.json')
-            self.generate_balrog_props(props_path)
-            return
-
         if not self.config.get("balrog_servers"):
             self.fatal("balrog_servers not set; skipping balrog submission.")
             return
