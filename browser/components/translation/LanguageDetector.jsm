@@ -6,32 +6,94 @@
 
 this.EXPORTED_SYMBOLS = ["LanguageDetector"];
 
+Components.utils.import("resource://gre/modules/Timer.jsm");
 Components.utils.import("resource://gre/modules/XPCOMUtils.jsm");
 
-XPCOMUtils.defineLazyModuleGetter(this, "Promise",
-                                  "resource://gre/modules/Promise.jsm");
+
+
+
+
+
+
+
+
+
+
+
+
+var LARGE_STRING = 1.5 * 1024 * 1024;
+var IDLE_TIMEOUT = 10 * 1000;
 
 const WORKER_URL = "resource:///modules/translation/cld-worker.js";
 
-var detectionQueue = [];
+var workerManager = {
+  detectionQueue: [],
 
-var workerReady = false;
-var pendingStrings = [];
+  detectLanguage(aParams) {
+    return this.workerReady.then(worker => {
+      return new Promise(resolve => {
+        this.detectionQueue.push({resolve});
+        worker.postMessage(aParams);
+      });
+    }).then(result => {
+      
+      
+      
+      
+      
+      if (aParams.text.length >= LARGE_STRING || this._idleTimeout != null)
+        this.flushWorker();
 
-XPCOMUtils.defineLazyGetter(this, "worker", () => {
-  let worker = new Worker(WORKER_URL);
-  worker.onmessage = function(aMsg) {
-    if (aMsg.data == "ready") {
-      workerReady = true;
-      for (let string of pendingStrings)
-        worker.postMessage(string);
-      pendingStrings = [];
+      return result;
+    })
+  },
+
+  _worker: null,
+  _workerReadyPromise: null,
+
+  get workerReady() {
+    if (!this._workerReadyPromise)
+      this._workerReadyPromise = new Promise(resolve => {
+        let worker = new Worker(WORKER_URL);
+        worker.onmessage = (aMsg) => {
+          if (aMsg.data == "ready")
+            resolve(worker);
+          else
+            this.detectionQueue.shift().resolve(aMsg.data);
+        };
+        this._worker = worker;
+      });
+
+    return this._workerReadyPromise;
+  },
+
+  
+  _idleTimeout: null,
+
+  
+  flushWorker() {
+    if (this._idleTimeout != null)
+      clearTimeout(this._idleTimeout);
+
+    this._idleTimeout = setTimeout(this._flushWorker.bind(this), IDLE_TIMEOUT);
+  },
+
+  
+  
+  
+  _flushWorker() {
+    if (this.detectionQueue.length)
+      this.flushWorker();
+    else {
+      if (this._worker)
+        this._worker.terminate();
+
+      this._worker = null;
+      this._workerReadyPromise = null;
+      this._idleTimeout = null;
     }
-    else
-      detectionQueue.shift().resolve(aMsg.data);
-  }
-  return worker;
-});
+  },
+};
 
 this.LanguageDetector = {
   
@@ -43,13 +105,39 @@ this.LanguageDetector = {
 
 
 
-  detectLanguage: function(aString) {
-    let deferred = Promise.defer();
-    detectionQueue.push(deferred);
-    if (worker && workerReady)
-      worker.postMessage(aString);
-    else
-      pendingStrings.push(aString);
-    return deferred.promise;
-  }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  detectLanguage: function(aParams) {
+    if (typeof aParams == "string")
+      aParams = { text: aParams };
+
+    return workerManager.detectLanguage(aParams);
+  },
 };
