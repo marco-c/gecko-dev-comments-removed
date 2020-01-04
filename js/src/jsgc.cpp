@@ -1031,7 +1031,7 @@ void
 GCRuntime::startBackgroundAllocTaskIfIdle()
 {
     AutoLockHelperThreadState helperLock;
-    if (allocTask.isRunningWithLockHeld())
+    if (allocTask.isRunning())
         return;
 
     
@@ -1178,7 +1178,6 @@ GCRuntime::GCRuntime(JSRuntime* rt) :
 #endif
     lock(nullptr),
     allocTask(rt, emptyChunks_),
-    decommitTask(rt),
     helperState(rt)
 {
     setGCMode(JSGC_MODE_GLOBAL);
@@ -1362,7 +1361,6 @@ GCRuntime::finish()
 
     helperState.finish();
     allocTask.cancel(GCParallelTask::CancelAndWait);
-    decommitTask.cancel(GCParallelTask::CancelAndWait);
 
 #ifdef JS_GC_ZEAL
     
@@ -3341,67 +3339,43 @@ GCRuntime::decommitAllWithoutUnlocking(const AutoLockGC& lock)
 }
 
 void
-GCRuntime::startDecommit()
+GCRuntime::decommitArenas(AutoLockGC& lock)
 {
-    MOZ_ASSERT(CurrentThreadCanAccessRuntime(rt));
-    MOZ_ASSERT(!decommitTask.isRunning());
+    
+    for (ChunkPool::Iter chunk(emptyChunks(lock)); !chunk.done(); chunk.next())
+        MOZ_ASSERT(!chunk->info.numArenasFreeCommitted);
 
-    BackgroundDecommitTask::ChunkVector toDecommit;
-    {
-        AutoLockGC lock(rt);
-
-        
-        for (ChunkPool::Iter chunk(emptyChunks(lock)); !chunk.done(); chunk.next())
-            MOZ_ASSERT(!chunk->info.numArenasFreeCommitted);
-
-        
-        
-        
-        
-        MOZ_ASSERT(availableChunks(lock).verify());
-        for (ChunkPool::Iter iter(availableChunks(lock)); !iter.done(); iter.next()) {
-            if (!toDecommit.append(iter.get())) {
-                
-                return onOutOfMallocMemory(lock);
-            }
+    
+    
+    
+    mozilla::Vector<Chunk*> toDecommit;
+    MOZ_ASSERT(availableChunks(lock).verify());
+    for (ChunkPool::Iter iter(availableChunks(lock)); !iter.done(); iter.next()) {
+        if (!toDecommit.append(iter.get())) {
+            
+            
+            return onOutOfMallocMemory(lock);
         }
     }
-    decommitTask.setChunksToScan(toDecommit);
 
-    if (sweepOnBackgroundThread && decommitTask.start())
-        return;
+    
+    
+    for (size_t i = toDecommit.length(); i > 1; --i) {
+        Chunk* chunk = toDecommit[i - 1];
+        MOZ_ASSERT(chunk);
 
-    decommitTask.runFromMainThread(rt);
-}
-
-void
-js::gc::BackgroundDecommitTask::setChunksToScan(ChunkVector &chunks)
-{
-    MOZ_ASSERT(CurrentThreadCanAccessRuntime(runtime));
-    MOZ_ASSERT(!isRunning());
-    MOZ_ASSERT(toDecommit.empty());
-    Swap(toDecommit, chunks);
-}
-
- void
-js::gc::BackgroundDecommitTask::run()
-{
-    AutoLockGC lock(runtime);
-
-    for (Chunk* chunk : toDecommit) {
         
         
         while (chunk->info.numArenasFreeCommitted) {
-            bool ok = chunk->decommitOneFreeArena(runtime, lock);
+            bool ok = chunk->decommitOneFreeArena(rt, lock);
 
             
             
-            
-            if (cancel_ || !ok)
-                break;
+            if ( !ok)
+                return;
         }
     }
-    toDecommit.clearAndFree();
+    MOZ_ASSERT(availableChunks(lock).verify());
 }
 
 void
@@ -3412,6 +3386,9 @@ GCRuntime::expireChunksAndArenas(bool shouldShrink, AutoLockGC& lock)
         AutoUnlockGC unlock(lock);
         FreeChunkPool(rt, toFree);
     }
+
+    if (shouldShrink)
+        decommitArenas(lock);
 }
 
 void
@@ -5721,7 +5698,6 @@ GCRuntime::endCompactPhase(JS::gcreason::Reason reason)
 void
 GCRuntime::finishCollection(JS::gcreason::Reason reason)
 {
-    assertBackgroundSweepingFinished();
     MOZ_ASSERT(marker.isDrained());
     marker.stop();
     clearBufferedGrayRoots();
@@ -5750,6 +5726,15 @@ GCRuntime::finishCollection(JS::gcreason::Reason reason)
     }
 
     lastGCTime = currentTime;
+
+    
+    
+    
+    
+    if (IsOOMReason(reason) || reason == JS::gcreason::DEBUG_GC) {
+        gcstats::AutoPhase ap(stats, gcstats::PHASE_WAIT_BACKGROUND_THREAD);
+        rt->gc.waitBackgroundSweepOrAllocEnd();
+    }
 }
 
 static const char*
@@ -5895,12 +5880,6 @@ GCRuntime::resetIncrementalGC(const char* reason)
         incrementalCollectSlice(unlimited, JS::gcreason::RESET);
 
         isCompacting = wasCompacting;
-        break;
-      }
-
-      case DECOMMIT: {
-        auto unlimited = SliceBudget::unlimited();
-        incrementalCollectSlice(unlimited, JS::gcreason::RESET);
         break;
       }
 
@@ -6165,28 +6144,13 @@ GCRuntime::incrementalCollectSlice(SliceBudget& budget, JS::gcreason::Reason rea
             endCompactPhase(reason);
         }
 
-        startDecommit();
-        incrementalState = DECOMMIT;
-
-        MOZ_FALLTHROUGH;
-
-      case DECOMMIT:
-        {
-            gcstats::AutoPhase ap(stats, gcstats::PHASE_WAIT_BACKGROUND_THREAD);
-
-            
-            if (isIncremental && decommitTask.isRunning())
-                break;
-
-            decommitTask.join();
-        }
-
         finishCollection(reason);
+
         incrementalState = NO_INCREMENTAL;
         break;
 
       default:
-        MOZ_CRASH("unexpected GC incrementalState");
+        MOZ_ASSERT(false);
     }
 }
 
@@ -6317,10 +6281,8 @@ GCRuntime::gcCycle(bool nonincrementalByAPI, SliceBudget& budget, JS::gcreason::
 
         
         
-        if (!isIncrementalGCInProgress()) {
-            assertBackgroundSweepingFinished();
-            MOZ_ASSERT(!decommitTask.isRunning());
-        }
+        if (!isIncrementalGCInProgress())
+            waitBackgroundSweepEnd();
 
         
         
@@ -6656,9 +6618,6 @@ GCRuntime::onOutOfMallocMemory()
 {
     
     allocTask.cancel(GCParallelTask::CancelAndWait);
-
-    
-    decommitTask.join();
 
     
     nursery.waitBackgroundFreeEnd();
