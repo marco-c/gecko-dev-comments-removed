@@ -200,31 +200,35 @@ AudioEventTimeline::GetValuesAtTimeHelper(TimeType aTime, float* aBuffer,
       
       MOZ_ASSERT(TimesEqual(aTime, TimeOf(mEvents[eventIndex])));
 
-      
-      if (mEvents[eventIndex].mType == AudioTimelineEvent::SetTarget) {
-        
-        
-        aBuffer[bufferIndex] = ExponentialApproach(TimeOf(mEvents[eventIndex]),
-                                                mLastComputedValue, mEvents[eventIndex].mValue,
-                                                mEvents[eventIndex].mTimeConstant, aTime);
-        continue;
+      switch (mEvents[eventIndex].mType) {
+        case AudioTimelineEvent::SetTarget:
+          
+          
+          
+          
+          mComputedValue =
+            ExponentialApproach(TimeOf(mEvents[eventIndex]),
+                                mLastComputedValue, mEvents[eventIndex].mValue,
+                                mEvents[eventIndex].mTimeConstant, aTime);
+          break;
+        case AudioTimelineEvent::SetValueCurve:
+          
+          
+          mComputedValue =
+            ExtractValueFromCurve(TimeOf(mEvents[eventIndex]),
+                                  mEvents[eventIndex].mCurve,
+                                  mEvents[eventIndex].mCurveLength,
+                                  mEvents[eventIndex].mDuration, aTime);
+          break;
+        default:
+          
+          mComputedValue = mEvents[eventIndex].mValue;
       }
-
-      
-      if (mEvents[eventIndex].mType == AudioTimelineEvent::SetValueCurve) {
-        aBuffer[bufferIndex] = ExtractValueFromCurve(TimeOf(mEvents[eventIndex]),
-                                                  mEvents[eventIndex].mCurve,
-                                                  mEvents[eventIndex].mCurveLength,
-                                                  mEvents[eventIndex].mDuration, aTime);
-        continue;
-      }
-
-      
-      aBuffer[bufferIndex] = mEvents[eventIndex].mValue;
-      continue;
+    } else {
+      mComputedValue = GetValuesAtTimeHelperInternal(aTime, previous, next);
     }
 
-    aBuffer[bufferIndex] = GetValuesAtTimeHelperInternal(aTime, previous, next);
+    aBuffer[bufferIndex] = mComputedValue;
   }
 }
 template void

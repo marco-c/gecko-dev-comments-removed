@@ -318,8 +318,9 @@ public:
   template<class TimeType>
   float GetValueAtTime(TimeType aTime)
   {
-    GetValuesAtTimeHelper(aTime, &mComputedValue, 1);
-    return mComputedValue;
+    float result;
+    GetValuesAtTimeHelper(aTime, &result, 1);
+    return result;
   }
 
   template<class TimeType>
@@ -327,7 +328,6 @@ public:
   {
     MOZ_ASSERT(aBuffer);
     GetValuesAtTimeHelper(aTime, aBuffer, aSize);
-    mComputedValue = aBuffer[aSize - 1];
   }
 
   
