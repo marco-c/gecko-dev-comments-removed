@@ -555,9 +555,15 @@ var BrowserApp = {
       
       
       
-      console.log("browser.js: loading Firefox Accounts WebChannel");
-      Cu.import("resource://gre/modules/FxAccountsWebChannel.jsm");
-      EnsureFxAccountsWebChannel();
+      
+      
+      if (ParentalControls.isAllowed(ParentalControls.MODIFY_ACCOUNTS)) {
+        console.log("browser.js: loading Firefox Accounts WebChannel");
+        Cu.import("resource://gre/modules/FxAccountsWebChannel.jsm");
+        EnsureFxAccountsWebChannel();
+      } else {
+        console.log("browser.js: not loading Firefox Accounts WebChannel; this profile cannot connect to Firefox Accounts.");
+      }
     }
 
     
@@ -1340,12 +1346,22 @@ var BrowserApp = {
     }
 
     
-    let cancelQuit = Cc["@mozilla.org/supports-PRBool;1"].createInstance(Ci.nsISupportsPRBool);
-    Services.obs.notifyObservers(cancelQuit, "quit-application-requested", "restart");
+    let lastBrowser = true;
+    let e = Services.wm.getEnumerator("navigator:browser");
+    while (e.hasMoreElements() && lastBrowser) {
+      let win = e.getNext();
+      if (!win.closed && win != window)
+        lastBrowser = false;
+    }
 
-    
-    if (cancelQuit.data) {
-      return;
+    if (lastBrowser) {
+      
+      let closingCanceled = Cc["@mozilla.org/supports-PRBool;1"].createInstance(Ci.nsISupportsPRBool);
+      Services.obs.notifyObservers(closingCanceled, "browser-lastwindow-close-requested", null);
+      if (closingCanceled.data)
+        return;
+
+      Services.obs.notifyObservers(null, "browser-lastwindow-close-granted", null);
     }
 
     
@@ -1355,8 +1371,8 @@ var BrowserApp = {
     }
 
     BrowserApp.sanitize(aClear.sanitize, function() {
-      let appStartup = Cc["@mozilla.org/toolkit/app-startup;1"].getService(Ci.nsIAppStartup);
-      appStartup.quit(Ci.nsIAppStartup.eForceQuit);
+      window.QueryInterface(Ci.nsIDOMChromeWindow).minimize();
+      window.close();
     });
   },
 
