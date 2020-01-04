@@ -1421,6 +1421,20 @@ nsSocketTransport::InitiateSocket()
 
     NetAddrToPRNetAddr(&mNetAddr, &prAddr);
 
+#ifdef XP_WIN
+    
+    
+    PRFileDesc *bottom = PR_GetIdentitiesLayer(fd, PR_NSPR_IO_LAYER);
+    if (bottom) {
+      PROsfd osfd = PR_FileDesc2NativeHandle(bottom);
+      u_long nonblocking = 1;
+      if (ioctlsocket(osfd, FIONBIO, &nonblocking) != 0) {
+        NS_WARNING("Socket could not be set non-blocking!");
+        return NS_ERROR_FAILURE;
+      }
+    }
+#endif
+
     
     
     
