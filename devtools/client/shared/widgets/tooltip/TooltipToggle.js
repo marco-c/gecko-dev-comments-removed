@@ -6,6 +6,8 @@
 
 "use strict";
 
+const {Task} = require("resource://gre/modules/Task.jsm");
+
 const DEFAULT_SHOW_DELAY = 50;
 
 
@@ -102,13 +104,11 @@ TooltipToggle.prototype = {
       this.win.clearTimeout(this.toggleTimer);
       this.toggleTimer = this.win.setTimeout(() => {
         this.isValidHoverTarget(event.target).then(target => {
-          this.tooltip.show(target);
-        }, reason => {
-          if (reason === false) {
-            
-            
+          if (target === null) {
             return;
           }
+          this.tooltip.show(target);
+        }, reason => {
           console.error("isValidHoverTarget rejected with unexpected reason:");
           console.error(reason);
         });
@@ -122,23 +122,14 @@ TooltipToggle.prototype = {
 
 
 
-  isValidHoverTarget: function (target) {
-    
-    
-    let res = this._targetNodeCb(target, this.tooltip);
-
-    
-    
-    if (res && res.then) {
-      return res.then(arg => {
-        return arg && arg.nodeName ? arg : target;
-      });
+  isValidHoverTarget: Task.async(function* (target) {
+    let res = yield this._targetNodeCb(target, this.tooltip);
+    if (res) {
+      return res.nodeName ? res : target;
     }
-    let newTarget = res && res.nodeName ? res : target;
-    return new Promise((resolve, reject) => {
-      res ? resolve(newTarget) : reject(false);
-    });
-  },
+
+    return null;
+  }),
 
   _onMouseLeave: function () {
     this.win.clearTimeout(this.toggleTimer);

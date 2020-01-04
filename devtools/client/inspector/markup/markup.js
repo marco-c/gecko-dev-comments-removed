@@ -2379,10 +2379,10 @@ MarkupElementContainer.prototype = Heritage.extend(MarkupContainer.prototype, {
 
 
 
-  isImagePreviewTarget: function (target, tooltip) {
+  isImagePreviewTarget: Task.async(function* (target, tooltip) {
     
     if (!this.isPreviewable()) {
-      return promise.reject(false);
+      return false;
     }
 
     
@@ -2391,17 +2391,20 @@ MarkupElementContainer.prototype = Heritage.extend(MarkupContainer.prototype, {
     let src = this.editor.getAttributeElement("src");
     let expectedTarget = src ? src.querySelector(".link") : this.editor.tag;
     if (target !== expectedTarget) {
-      return promise.reject(false);
+      return false;
     }
 
-    return this._getPreview().then(({data, size}) => {
+    try {
+      let {data, size} = yield this._getPreview();
       
       tooltip.setImageContent(data, size);
-    }, () => {
+    } catch (e) {
       
       tooltip.setBrokenImageContent();
-    });
-  },
+    }
+
+    return true;
+  }),
 
   copyImageDataUri: function () {
     

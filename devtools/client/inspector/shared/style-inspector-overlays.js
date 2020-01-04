@@ -360,17 +360,18 @@ TooltipsOverlay.prototype = {
 
 
 
-  _onPreviewTooltipTargetHover: function (target) {
+
+  _onPreviewTooltipTargetHover: Task.async(function* (target) {
     let nodeInfo = this.view.getNodeInfo(target);
     if (!nodeInfo) {
       
-      return promise.reject(false);
+      return false;
     }
 
     let type = this._getTooltipType(nodeInfo);
     if (!type) {
       
-      return promise.reject(false);
+      return false;
     }
 
     if (this.isRuleView && this.colorPicker.tooltip.isShown()) {
@@ -398,17 +399,19 @@ TooltipsOverlay.prototype = {
       let dim = Services.prefs.getIntPref(PREF_IMAGE_TOOLTIP_SIZE);
       
       let uri = nodeInfo.value.url;
-      return this.previewTooltip.setRelativeImageContent(uri,
+      yield this.previewTooltip.setRelativeImageContent(uri,
         inspector.inspector, dim);
+      return true;
     }
 
     if (type === TOOLTIP_FONTFAMILY_TYPE) {
-      return this.previewTooltip.setFontFamilyContent(nodeInfo.value.value,
+      yield this.previewTooltip.setFontFamilyContent(nodeInfo.value.value,
         inspector.selection.nodeFront);
+      return true;
     }
 
-    return undefined;
-  },
+    return false;
+  }),
 
   _onNewSelection: function () {
     if (this.previewTooltip) {

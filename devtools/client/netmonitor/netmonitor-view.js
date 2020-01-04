@@ -2222,10 +2222,11 @@ RequestsMenuView.prototype = Heritage.extend(WidgetMethods, {
 
 
 
-  _onHover: function (target, tooltip) {
+
+  _onHover: Task.async(function* (target, tooltip) {
     let requestItem = this.getItemForElement(target);
     if (!requestItem || !requestItem.attachment.responseContent) {
-      return null;
+      return false;
     }
 
     let hovered = requestItem.attachment;
@@ -2234,19 +2235,17 @@ RequestsMenuView.prototype = Heritage.extend(WidgetMethods, {
     if (mimeType && mimeType.includes("image/") && (
       target.classList.contains("requests-menu-icon") ||
       target.classList.contains("requests-menu-file"))) {
-      return gNetwork.getString(text).then(string => {
-        let anchor = $(".requests-menu-icon", requestItem.target);
-        let src = formDataURI(mimeType, encoding, string);
+      let string = yield gNetwork.getString(text);
+      let anchor = $(".requests-menu-icon", requestItem.target);
+      let src = formDataURI(mimeType, encoding, string);
 
-        tooltip.setImageContent(src, {
-          maxDim: REQUESTS_TOOLTIP_IMAGE_MAX_DIM
-        });
-
-        return anchor;
+      tooltip.setImageContent(src, {
+        maxDim: REQUESTS_TOOLTIP_IMAGE_MAX_DIM
       });
+      return anchor;
     }
-    return undefined;
-  },
+    return false;
+  }),
 
   
 
