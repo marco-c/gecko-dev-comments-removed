@@ -22,11 +22,3 @@ add_task(function* test_private_temp() {
   
   equal(targetFile.parent.permissions, 448);
 });
-
-
-
-
-
-var tailFile = do_get_file("tail.js");
-Services.scriptloader.loadSubScript(NetUtil.newURI(tailFile).spec);
-

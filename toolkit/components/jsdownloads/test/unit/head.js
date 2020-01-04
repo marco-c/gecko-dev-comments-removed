@@ -683,6 +683,14 @@ add_task(function test_common_initialize()
   gHttpServer = new HttpServer();
   gHttpServer.registerDirectory("/", do_get_file("../data"));
   gHttpServer.start(-1);
+  do_register_cleanup(() => {
+    return new Promise(resolve => {
+      
+      continueResponses();
+      
+      gHttpServer.stop(resolve);
+    });
+  });
 
   
   
