@@ -2920,8 +2920,10 @@ ServiceWorkerManager::LoadRegistration(
     registration = CreateNewRegistration(aRegistration.scope(), principal);
   } else {
     RefPtr<ServiceWorkerInfo> newest = registration->Newest();
+    
+    
     if (newest && newest->ScriptSpec() == aRegistration.scriptSpec() &&
-        !!registration->mActiveWorker == aRegistration.currentWorkerURL().IsEmpty()) {
+        !registration->mActiveWorker == aRegistration.currentWorkerURL().IsEmpty()) {
       
       return;
     }
