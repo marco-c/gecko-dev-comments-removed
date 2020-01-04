@@ -29,7 +29,7 @@ function runTest() {
     });
 
     
-    SimpleTest.executeSoon(function () iframe.src += '#next');
+    SimpleTest.executeSoon(() => iframe.src += '#next');
   });
 
   
