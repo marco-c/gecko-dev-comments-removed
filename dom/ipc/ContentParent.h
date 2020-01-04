@@ -563,6 +563,9 @@ public:
 
   virtual int32_t Pid() const override;
 
+  
+  void ForceTabPaint(TabParent* aTabParent, uint64_t aLayerObserverEpoch);
+
 protected:
   void OnChannelConnected(int32_t pid) override;
 

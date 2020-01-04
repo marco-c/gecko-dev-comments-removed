@@ -292,13 +292,13 @@ TabParent::TabParent(nsIContentParent* aManager,
   , mInitedByParent(false)
   , mTabId(aTabId)
   , mCreatingWindow(false)
-  , mNeedLayerTreeReadyNotification(false)
   , mCursor(nsCursor(-1))
   , mTabSetsCursor(false)
   , mHasContentOpener(false)
 #ifdef DEBUG
   , mActiveSupressDisplayportCount(0)
 #endif
+  , mLayerTreeEpoch(0)
 {
   MOZ_ASSERT(aManager);
 }
@@ -493,13 +493,6 @@ TabParent::DestroyInternal()
   if (RenderFrameParent* frame = GetRenderFrame()) {
     RemoveTabParentFromTable(frame->GetLayersId());
     frame->Destroy();
-
-    
-    
-    
-    
-    
-    mLayerUpdateObserver->TabParentDestroyed();
   }
 
   
@@ -2280,12 +2273,10 @@ TabParent::GetTabIdFrom(nsIDocShell *docShell)
 RenderFrameParent*
 TabParent::GetRenderFrame()
 {
-  if (!mLayerUpdateObserver) {
-    mLayerUpdateObserver = new LayerTreeUpdateObserver(this);
-  }
-
   PRenderFrameParent* p = LoneManagedOrNullAsserts(ManagedPRenderFrameParent());
-  return static_cast<RenderFrameParent*>(p);
+  RenderFrameParent* frame = static_cast<RenderFrameParent*>(p);
+
+  return frame;
 }
 
 bool
@@ -2636,11 +2627,6 @@ TabParent::SetRenderFrame(PRenderFrameParent* aRFParent)
   uint64_t layersId = renderFrame->GetLayersId();
   AddTabParentToTable(layersId, this);
 
-  if (mNeedLayerTreeReadyNotification) {
-    RequestNotifyLayerTreeReady();
-    mNeedLayerTreeReadyNotification = false;
-  }
-
   return true;
 }
 
@@ -2886,9 +2872,21 @@ NS_IMETHODIMP
 TabParent::SetDocShellIsActive(bool isActive)
 {
   
+  
+  mLayerTreeEpoch++;
+
+  
   mIsPrerendered &= !isActive;
   mDocShellIsActive = isActive;
-  Unused << SendSetDocShellIsActive(isActive, true);
+  Unused << SendSetDocShellIsActive(isActive, true, mLayerTreeEpoch);
+
+  
+  
+  if (isActive) {
+    ContentParent* cp = Manager()->AsContentParent();
+    cp->ForceTabPaint(this, mLayerTreeEpoch);
+  }
+
   return NS_OK;
 }
 
@@ -2912,7 +2910,7 @@ TabParent::SetDocShellIsActiveAndForeground(bool isActive)
   
   mIsPrerendered &= !isActive;
   mDocShellIsActive = isActive;
-  Unused << SendSetDocShellIsActive(isActive, false);
+  Unused << SendSetDocShellIsActive(isActive, false, mLayerTreeEpoch);
   return NS_OK;
 }
 
@@ -2973,12 +2971,13 @@ TabParent::NavigateByKey(bool aForward, bool aForDocumentNavigation)
 class LayerTreeUpdateRunnable final
   : public mozilla::Runnable
 {
-  RefPtr<LayerTreeUpdateObserver> mUpdateObserver;
+  uint64_t mLayersId;
+  uint64_t mEpoch;
   bool mActive;
 
 public:
-  explicit LayerTreeUpdateRunnable(LayerTreeUpdateObserver* aObs, bool aActive)
-    : mUpdateObserver(aObs), mActive(aActive)
+  explicit LayerTreeUpdateRunnable(uint64_t aLayersId, uint64_t aEpoch, bool aActive)
+    : mLayersId(aLayersId), mEpoch(aEpoch), mActive(aActive)
   {
     MOZ_ASSERT(!NS_IsMainThread());
   }
@@ -2986,59 +2985,37 @@ public:
 private:
   NS_IMETHOD Run() override {
     MOZ_ASSERT(NS_IsMainThread());
-    if (RefPtr<TabParent> tabParent = mUpdateObserver->GetTabParent()) {
-      tabParent->LayerTreeUpdate(mActive);
+    if (RefPtr<TabParent> tabParent = TabParent::GetTabParentFromLayersId(mLayersId)) {
+      tabParent->LayerTreeUpdate(mEpoch, mActive);
     }
     return NS_OK;
   }
 };
 
-void
-LayerTreeUpdateObserver::ObserveUpdate(uint64_t aLayersId, bool aActive)
+ void
+TabParent::ObserveLayerUpdate(uint64_t aLayersId, uint64_t aEpoch, bool aActive)
 {
   MOZ_ASSERT(!NS_IsMainThread());
 
   RefPtr<LayerTreeUpdateRunnable> runnable =
-    new LayerTreeUpdateRunnable(this, aActive);
+    new LayerTreeUpdateRunnable(aLayersId, aEpoch, aActive);
   NS_DispatchToMainThread(runnable);
 }
 
-
-bool
-TabParent::RequestNotifyLayerTreeReady()
+void
+TabParent::LayerTreeUpdate(uint64_t aEpoch, bool aActive)
 {
-  RenderFrameParent* frame = GetRenderFrame();
-  if (!frame || !frame->IsInitted()) {
-    mNeedLayerTreeReadyNotification = true;
-  } else {
-    GPUProcessManager::Get()->RequestNotifyLayerTreeReady(
-      frame->GetLayersId(),
-      mLayerUpdateObserver);
-  }
-  return true;
-}
-
-bool
-TabParent::RequestNotifyLayerTreeCleared()
-{
-  RenderFrameParent* frame = GetRenderFrame();
-  if (!frame) {
-    return false;
+  
+  
+  
+  if (aEpoch != mLayerTreeEpoch || mIsDestroyed) {
+    return;
   }
 
-  GPUProcessManager::Get()->RequestNotifyLayerTreeCleared(
-    frame->GetLayersId(),
-    mLayerUpdateObserver);
-  return true;
-}
-
-bool
-TabParent::LayerTreeUpdate(bool aActive)
-{
   nsCOMPtr<mozilla::dom::EventTarget> target = do_QueryInterface(mFrameElement);
   if (!target) {
     NS_WARNING("Could not locate target for layer tree message.");
-    return true;
+    return;
   }
 
   RefPtr<Event> event = NS_NewDOMEvent(mFrameElement, nullptr, nullptr);
@@ -3051,33 +3028,16 @@ TabParent::LayerTreeUpdate(bool aActive)
   event->WidgetEventPtr()->mFlags.mOnlyChromeDispatch = true;
   bool dummy;
   mFrameElement->DispatchEvent(event, &dummy);
-  return true;
 }
 
-void
-TabParent::SwapLayerTreeObservers(TabParent* aOther)
+bool
+TabParent::RecvForcePaintNoOp(const uint64_t& aLayerObserverEpoch)
 {
-  if (IsDestroyed() || aOther->IsDestroyed()) {
-    return;
-  }
-
-  RenderFrameParent* rfp = GetRenderFrame();
-  RenderFrameParent* otherRfp = aOther->GetRenderFrame();
-  if (!rfp || !otherRfp) {
-    return;
-  }
-
   
   
   
-  GPUProcessManager::Get()->SwapLayerTreeObservers(
-    rfp->GetLayersId(),
-    otherRfp->GetLayersId());
-
-  
-  
-  Swap(mLayerUpdateObserver, aOther->mLayerUpdateObserver);
-  mLayerUpdateObserver->SwapTabParent(aOther->mLayerUpdateObserver);
+  LayerTreeUpdate(aLayerObserverEpoch, true);
+  return true;
 }
 
 bool
