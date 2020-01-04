@@ -54,14 +54,12 @@ var iter = ""[Symbol.iterator]();
 var iterProto = Object.getPrototypeOf(iter);
 
 
-assertEq(Object.getPrototypeOf(iterProto), Object.prototype);
+
+assertEq(Object.getPrototypeOf(iterProto),
+         Object.getPrototypeOf(Object.getPrototypeOf([][Symbol.iterator]())));
 
 
 arraysEqual(Object.getOwnPropertyNames(iterProto).sort(), ["next"]);
-assertEq(iterProto.hasOwnProperty(Symbol.iterator), true);
-
-
-assertBuiltinFunction(iterProto, Symbol.iterator, 0);
 
 
 assertBuiltinFunction(iterProto, "next", 0);
