@@ -16,8 +16,9 @@
 </head>
 
 <body>
-    This test checks that we enforce all the supplied policies. This test passe if it doesn&apos;t alert fail and if the style doesn&apos;t apply.
-    Check that a SecurityPolicyViolationEvent is fired upon blocking an image.
+<p>Test passes if both style and image are blocked and a report is generated for the
+    style block from the header-supplied policy.</p>
+
     <script>
         var img = document.createElement('img');
         img.src = '../support/fail.png';
