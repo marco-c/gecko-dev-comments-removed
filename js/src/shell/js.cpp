@@ -184,6 +184,10 @@ struct ShellRuntime
 
     UniqueChars readLineBuf;
     size_t readLineBufPos;
+
+    static const uint32_t SpsProfilingMaxStackSize = 1000;
+    ProfileEntry spsProfilingStack[SpsProfilingMaxStackSize];
+    uint32_t spsProfilingStackSize;
 };
 
 struct MOZ_STACK_CLASS EnvironmentPreparer : public js::ScriptEnvironmentPreparer {
@@ -327,7 +331,8 @@ ShellRuntime::ShellRuntime(JSRuntime* rt)
 #endif 
     exitCode(0),
     quitting(false),
-    readLineBufPos(0)
+    readLineBufPos(0),
+    spsProfilingStackSize(0)
 {}
 
 static ShellRuntime*
@@ -4620,6 +4625,67 @@ IsLatin1(JSContext* cx, unsigned argc, Value* vp)
     return true;
 }
 
+static bool
+EnableSPSProfiling(JSContext* cx, unsigned argc, Value* vp)
+{
+    CallArgs args = CallArgsFromVp(argc, vp);
+
+    ShellRuntime* sr = GetShellRuntime(cx);
+
+    
+    if (cx->runtime()->spsProfiler.installed())
+        cx->runtime()->spsProfiler.enable(false);
+
+    SetRuntimeProfilingStack(cx->runtime(), sr->spsProfilingStack, &sr->spsProfilingStackSize,
+                             ShellRuntime::SpsProfilingMaxStackSize);
+    cx->runtime()->spsProfiler.enableSlowAssertions(false);
+    cx->runtime()->spsProfiler.enable(true);
+
+    args.rval().setUndefined();
+    return true;
+}
+
+static bool
+EnableSPSProfilingWithSlowAssertions(JSContext* cx, unsigned argc, Value* vp)
+{
+    CallArgs args = CallArgsFromVp(argc, vp);
+    args.rval().setUndefined();
+
+    ShellRuntime* sr = GetShellRuntime(cx);
+
+    if (cx->runtime()->spsProfiler.enabled()) {
+        
+        
+        if (cx->runtime()->spsProfiler.slowAssertionsEnabled())
+            return true;
+
+        
+        
+        cx->runtime()->spsProfiler.enable(false);
+    }
+
+    
+    if (cx->runtime()->spsProfiler.installed())
+        cx->runtime()->spsProfiler.enable(false);
+
+    SetRuntimeProfilingStack(cx->runtime(), sr->spsProfilingStack, &sr->spsProfilingStackSize,
+                             ShellRuntime::SpsProfilingMaxStackSize);
+    cx->runtime()->spsProfiler.enableSlowAssertions(true);
+    cx->runtime()->spsProfiler.enable(true);
+
+    return true;
+}
+
+static bool
+DisableSPSProfiling(JSContext* cx, unsigned argc, Value* vp)
+{
+    CallArgs args = CallArgsFromVp(argc, vp);
+    if (cx->runtime()->spsProfiler.installed())
+        cx->runtime()->spsProfiler.enable(false);
+    args.rval().setUndefined();
+    return true;
+}
+
 
 
 
@@ -5572,6 +5638,20 @@ static const JSFunctionSpecWithHelp shell_functions[] = {
     JS_FN_HELP("disableSingleStepProfiling", DisableSingleStepProfiling, 0, 0,
 "disableSingleStepProfiling()",
 "  Return the array of backtraces recorded by enableSingleStepProfiling."),
+
+    JS_FN_HELP("enableSPSProfiling", EnableSPSProfiling, 0, 0,
+"enableSPSProfiling()",
+"  Enables SPS instrumentation and corresponding assertions, with slow\n"
+"  assertions disabled.\n"),
+
+    JS_FN_HELP("enableSPSProfilingWithSlowAssertions", EnableSPSProfilingWithSlowAssertions, 0, 0,
+"enableSPSProfilingWithSlowAssertions()",
+"  Enables SPS instrumentation and corresponding assertions, with slow\n"
+"  assertions enabled.\n"),
+
+    JS_FN_HELP("disableSPSProfiling", DisableSPSProfiling, 0, 0,
+"disableSPSProfiling()",
+"  Disables SPS instrumentation"),
 
     JS_FN_HELP("isLatin1", IsLatin1, 1, 0,
 "isLatin1(s)",
