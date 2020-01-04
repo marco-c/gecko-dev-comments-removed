@@ -1100,6 +1100,44 @@ gfxFontEntry::AddSizeOfExcludingThis(MallocSizeOf aMallocSizeOf,
         aSizes->mFontTableCacheSize +=
             mFontTableCache->SizeOfIncludingThis(aMallocSizeOf);
     }
+
+    
+    if (mUVSData) {
+        aSizes->mCharMapsSize += aMallocSizeOf(mUVSData.get());
+    }
+
+    
+    
+    if (mUserFontData) {
+        aSizes->mFontTableCacheSize +=
+            mUserFontData->SizeOfIncludingThis(aMallocSizeOf);
+    }
+    if (mSVGGlyphs) {
+        aSizes->mFontTableCacheSize +=
+            mSVGGlyphs->SizeOfIncludingThis(aMallocSizeOf);
+    }
+    if (mMathTable) {
+        aSizes->mFontTableCacheSize +=
+            mMathTable->SizeOfIncludingThis(aMallocSizeOf);
+    }
+    if (mSupportedFeatures) {
+        aSizes->mFontTableCacheSize +=
+            mSupportedFeatures->ShallowSizeOfIncludingThis(aMallocSizeOf);
+    }
+    if (mFeatureInputs) {
+        aSizes->mFontTableCacheSize +=
+            mFeatureInputs->ShallowSizeOfIncludingThis(aMallocSizeOf);
+        for (auto iter = mFeatureInputs->ConstIter(); !iter.Done();
+             iter.Next()) {
+            
+            
+            aSizes->mFontTableCacheSize += 8192; 
+        }
+    }
+    
+    
+    
+    
 }
 
 void

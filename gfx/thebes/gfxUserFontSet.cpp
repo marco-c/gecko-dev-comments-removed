@@ -297,6 +297,16 @@ gfxUserFontEntry::StoreUserFontData(gfxFontEntry* aFontEntry,
     }
 }
 
+size_t
+gfxUserFontData::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const
+{
+    return aMallocSizeOf(this)
+           + mMetadata.ShallowSizeOfExcludingThis(aMallocSizeOf)
+           + mLocalName.SizeOfExcludingThisIfUnshared(aMallocSizeOf)
+           + mRealName.SizeOfExcludingThisIfUnshared(aMallocSizeOf);
+    
+}
+
 void
 gfxUserFontEntry::GetFamilyNameAndURIForLogging(nsACString& aFamilyName,
                                                 nsACString& aURI)
