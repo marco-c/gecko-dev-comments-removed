@@ -101,6 +101,9 @@ private:
   UniquePtr<AudioBufferCursor> mCursor;
   
   bool mErrored = false;
+
+  
+  Atomic<bool> mPlaybackComplete;
 };
 
 } 

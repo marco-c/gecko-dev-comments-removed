@@ -38,6 +38,7 @@ DecodedAudioDataSink::DecodedAudioDataSink(MediaQueue<MediaData>& aAudioQueue,
   , mInfo(aInfo)
   , mChannel(aChannel)
   , mPlaying(true)
+  , mPlaybackComplete(false)
 {
 }
 
@@ -119,7 +120,7 @@ DecodedAudioDataSink::SetPreservesPitch(bool aPreservesPitch)
 void
 DecodedAudioDataSink::SetPlaying(bool aPlaying)
 {
-  if (!mAudioStream || mPlaying == aPlaying) {
+  if (!mAudioStream || mPlaying == aPlaying || mPlaybackComplete) {
     return;
   }
   
@@ -291,9 +292,7 @@ void
 DecodedAudioDataSink::Drained()
 {
   SINK_LOG("Drained");
-  
-  
-  
+  mPlaybackComplete = true;
   mEndPromise.ResolveIfExists(true, __func__);
 }
 
