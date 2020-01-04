@@ -329,6 +329,11 @@ public:
   
   nsTHashtable<nsISupportsHashKey> mAllDocuments;
 
+  
+  
+  typedef nsTArray<nsCOMPtr<nsIWeakReference>> WeakDocumentList;
+  nsClassHashtable<nsCStringHashKey, WeakDocumentList> mRegisteringDocuments;
+
   bool
   IsAvailable(const OriginAttributes& aOriginAttributes, nsIURI* aURI);
 
@@ -620,6 +625,9 @@ private:
 
   void
   NotifyListenersOnUnregister(nsIServiceWorkerRegistrationInfo* aRegistration);
+
+  void
+  AddRegisteringDocument(const nsACString& aScope, nsIDocument* aDoc);
 };
 
 } 
