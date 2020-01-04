@@ -21,9 +21,6 @@ import errno
 import mercurial.extensions
 import mercurial.util
 
-testedwith = '3.7'
-minimumhgversion = '3.7'
-
 if os.name == 'nt':
     import ctypes
 
@@ -72,8 +69,14 @@ def wrap_unlink(ui):
     '''Context manager that patches the required functions that are used by
     the purge extension to remove files. When exiting the context manager
     the original functions are restored.'''
-    purgemod = mercurial.extensions.find('purge')
-    to_wrap = [(purgemod.util, 'unlink')]
+    version = mercurial.util.version()
+    if version >= '3.2':
+        
+        purgemod = mercurial.extensions.find('purge')
+        to_wrap = [(purgemod.util, 'unlink')]
+    else:
+        
+        to_wrap = [(os, 'remove')]
 
     
     
