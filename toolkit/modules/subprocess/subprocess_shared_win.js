@@ -64,12 +64,10 @@ Object.assign(win32, {
 });
 
 Object.assign(win32, {
-  CREATE_SUSPENDED: 0x00000004,
   CREATE_NEW_CONSOLE: 0x00000010,
   CREATE_UNICODE_ENVIRONMENT: 0x00000400,
-  CREATE_NO_WINDOW: 0x08000000,
-  CREATE_BREAKAWAY_FROM_JOB: 0x01000000,
   EXTENDED_STARTUPINFO_PRESENT: 0x00080000,
+  CREATE_NO_WINDOW: 0x08000000,
 
   STARTF_USESTDHANDLES: 0x0100,
 
@@ -158,13 +156,6 @@ Object.assign(win32, {
 
 
 var libc = new Library("libc", LIBC_CHOICES, {
-  AssignProcessToJobObject: [
-    win32.WINAPI,
-    win32.BOOL,
-    win32.HANDLE, 
-    win32.HANDLE, 
-  ],
-
   CloseHandle: [
     win32.WINAPI,
     win32.BOOL,
@@ -190,13 +181,6 @@ var libc = new Library("libc", LIBC_CHOICES, {
     win32.DWORD, 
     win32.DWORD, 
     win32.HANDLE, 
-  ],
-
-  CreateJobObjectW: [
-    win32.WINAPI,
-    win32.HANDLE,
-    win32.SECURITY_ATTRIBUTES.ptr, 
-    win32.LPWSTR, 
   ],
 
   CreateNamedPipeW: [
@@ -331,19 +315,6 @@ var libc = new Library("libc", LIBC_CHOICES, {
     win32.HANDLE, 
     win32.LONG, 
     win32.LONG.ptr, 
-  ],
-
-  ResumeThread: [
-    win32.WINAPI,
-    win32.DWORD,
-    win32.HANDLE, 
-  ],
-
-  TerminateJobObject: [
-    win32.WINAPI,
-    win32.BOOL,
-    win32.HANDLE, 
-    win32.UINT, 
   ],
 
   TerminateProcess: [
