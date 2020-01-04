@@ -107,7 +107,7 @@ UpdateStreamSuspended(MediaStream* aStream, bool aBlocking)
 
 class DecodedStreamData {
 public:
-  DecodedStreamData(SourceMediaStream* aStream,
+  DecodedStreamData(OutputStreamManager* aOutputStreamManager,
                     MozPromiseHolder<GenericPromise>&& aPromise);
   ~DecodedStreamData();
   int64_t GetPosition() const;
@@ -136,14 +136,16 @@ public:
 
   
   const RefPtr<SourceMediaStream> mStream;
-  RefPtr<DecodedStreamGraphListener> mListener;
+  const RefPtr<DecodedStreamGraphListener> mListener;
   bool mPlaying;
   
   
   bool mEOSVideoCompensation;
+
+  const RefPtr<OutputStreamManager> mOutputStreamManager;
 };
 
-DecodedStreamData::DecodedStreamData(SourceMediaStream* aStream,
+DecodedStreamData::DecodedStreamData(OutputStreamManager* aOutputStreamManager,
                                      MozPromiseHolder<GenericPromise>&& aPromise)
   : mAudioFramesWritten(0)
   , mNextVideoTime(-1)
@@ -152,20 +154,22 @@ DecodedStreamData::DecodedStreamData(SourceMediaStream* aStream,
   , mHaveSentFinish(false)
   , mHaveSentFinishAudio(false)
   , mHaveSentFinishVideo(false)
-  , mStream(aStream)
+  , mStream(aOutputStreamManager->Graph()->CreateSourceStream(nullptr))
+  
+  , mListener(new DecodedStreamGraphListener(mStream, Move(aPromise)))
+  
+  
   , mPlaying(true)
   , mEOSVideoCompensation(false)
+  , mOutputStreamManager(aOutputStreamManager)
 {
-  
-  mListener = new DecodedStreamGraphListener(mStream, Move(aPromise));
   mStream->AddListener(mListener);
-
-  
-  
+  mOutputStreamManager->Connect(mStream);
 }
 
 DecodedStreamData::~DecodedStreamData()
 {
+  mOutputStreamManager->Disconnect();
   mListener->Forget();
   mStream->Destroy();
 }
@@ -311,9 +315,7 @@ DecodedStream::DestroyData(UniquePtr<DecodedStreamData> aData)
   }
 
   DecodedStreamData* data = aData.release();
-  RefPtr<DecodedStream> self = this;
   nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction([=] () {
-    self->mOutputStreamManager->Disconnect();
     delete data;
   });
   AbstractThread::MainThread()->Dispatch(r.forget());
@@ -332,9 +334,7 @@ DecodedStream::CreateData(MozPromiseHolder<GenericPromise>&& aPromise)
     return;
   }
 
-  auto source = mOutputStreamManager->Graph()->CreateSourceStream(nullptr);
-  auto data = new DecodedStreamData(source, Move(aPromise));
-  mOutputStreamManager->Connect(data->mStream);
+  auto data = new DecodedStreamData(mOutputStreamManager, Move(aPromise));
 
   class R : public nsRunnable {
     typedef void(DecodedStream::*Method)(UniquePtr<DecodedStreamData>);
@@ -354,9 +354,7 @@ DecodedStream::CreateData(MozPromiseHolder<GenericPromise>&& aPromise)
       
       if (mData) {
         DecodedStreamData* data = mData.release();
-        RefPtr<DecodedStream> self = mThis.forget();
         nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction([=] () {
-          self->mOutputStreamManager->Disconnect();
           delete data;
         });
         
