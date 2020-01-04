@@ -44,18 +44,6 @@ class BlobImpl;
 class File;
 class OwningArrayBufferOrArrayBufferViewOrBlobOrString;
 
-
-
-
-
-
-
-enum BlobDirState : uint32_t {
-  eIsDir,
-  eIsNotDir,
-  eUnknownIfDir
-};
-
 class Blob : public nsIDOMBlob
            , public nsIXHRSendable
            , public nsIMutable
@@ -101,21 +89,12 @@ public:
 
   bool IsFile() const;
 
-  
-
-
-
-  bool IsDirectory() const;
-
   const nsTArray<RefPtr<BlobImpl>>* GetSubBlobImpls() const;
 
   
   
   
   already_AddRefed<File> ToFile();
-
-  
-  
 
   
   
@@ -194,7 +173,7 @@ public:
   static already_AddRefed<File>
   Create(nsISupports* aParent, const nsAString& aName,
          const nsAString& aContentType, uint64_t aLength,
-         int64_t aLastModifiedDate, BlobDirState aDirState);
+         int64_t aLastModifiedDate);
 
   
   
@@ -340,28 +319,6 @@ public:
   virtual bool IsFile() const = 0;
 
   
-
-
-
-
-
-
-
-
-
-
-
-  virtual void LookupAndCacheIsDirectory() = 0;
-  virtual void SetIsDirectory(bool aIsDir) = 0;
-  virtual bool IsDirectory() const = 0;
-
-  
-
-
-
-  virtual BlobDirState GetDirState() const = 0;
-
-  
   virtual bool MayBeClonedToOtherThreads() const
   {
     return true;
@@ -377,11 +334,9 @@ class BlobImplBase : public BlobImpl
 {
 public:
   BlobImplBase(const nsAString& aName, const nsAString& aContentType,
-               uint64_t aLength, int64_t aLastModifiedDate,
-               BlobDirState aDirState = BlobDirState::eUnknownIfDir)
+               uint64_t aLength, int64_t aLastModifiedDate)
     : mIsFile(true)
     , mImmutable(false)
-    , mDirState(aDirState)
     , mContentType(aContentType)
     , mName(aName)
     , mStart(0)
@@ -397,7 +352,6 @@ public:
                uint64_t aLength)
     : mIsFile(true)
     , mImmutable(false)
-    , mDirState(BlobDirState::eUnknownIfDir)
     , mContentType(aContentType)
     , mName(aName)
     , mStart(0)
@@ -412,7 +366,6 @@ public:
   BlobImplBase(const nsAString& aContentType, uint64_t aLength)
     : mIsFile(false)
     , mImmutable(false)
-    , mDirState(BlobDirState::eUnknownIfDir)
     , mContentType(aContentType)
     , mStart(0)
     , mLength(aLength)
@@ -427,7 +380,6 @@ public:
                uint64_t aLength)
     : mIsFile(false)
     , mImmutable(false)
-    , mDirState(BlobDirState::eUnknownIfDir)
     , mContentType(aContentType)
     , mStart(aStart)
     , mLength(aLength)
@@ -518,36 +470,6 @@ public:
     return mIsFile;
   }
 
-  virtual void LookupAndCacheIsDirectory() override
-  {
-    MOZ_ASSERT(false, "Why is this being called on a non-BlobImplFile?");
-  }
-
-  virtual void SetIsDirectory(bool aIsDir) override
-  {
-    MOZ_ASSERT(mIsFile,
-               "This should only be called when this object has been created "
-               "from an nsIFile to note that the nsIFile is a directory");
-    mDirState = aIsDir ? BlobDirState::eIsDir : BlobDirState::eIsNotDir;
-  }
-
-  
-
-
-  virtual bool IsDirectory() const override
-  {
-    MOZ_ASSERT(mDirState != BlobDirState::eUnknownIfDir,
-               "Must only be used by callers for whom the code paths are "
-               "know to call LookupAndCacheIsDirectory() or "
-               "SetIsDirectory()");
-    return mDirState == BlobDirState::eIsDir;
-  }
-
-  virtual BlobDirState GetDirState() const override
-  {
-    return mDirState;
-  }
-
   virtual bool IsSizeUnknown() const override
   {
     return mLength == UINT64_MAX;
@@ -565,7 +487,6 @@ protected:
 
   bool mIsFile;
   bool mImmutable;
-  BlobDirState mDirState;
 
   nsString mContentType;
   nsString mName;
@@ -590,8 +511,7 @@ public:
 
   BlobImplMemory(void* aMemoryBuffer, uint64_t aLength, const nsAString& aName,
                  const nsAString& aContentType, int64_t aLastModifiedDate)
-    : BlobImplBase(aName, aContentType, aLength, aLastModifiedDate,
-                   BlobDirState::eIsNotDir)
+    : BlobImplBase(aName, aContentType, aLength, aLastModifiedDate)
     , mDataOwner(new DataOwner(aMemoryBuffer, aLength))
   {
     NS_ASSERTION(mDataOwner && mDataOwner->mData, "must have data");
@@ -791,8 +711,6 @@ public:
                                  ErrorResult& aRv) override;
 
   void SetPath(const nsAString& aFullPath);
-
-  virtual void LookupAndCacheIsDirectory() override;
 
   
   virtual bool IsSizeUnknown() const override { return false; }

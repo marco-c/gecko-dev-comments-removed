@@ -20,6 +20,7 @@
 #include "mozilla/dom/HTMLFormElement.h" 
 #include "mozilla/dom/HTMLInputElementBinding.h"
 #include "mozilla/dom/Promise.h"
+#include "mozilla/dom/UnionTypes.h"
 #include "nsIFilePicker.h"
 #include "nsIContentPrefService2.h"
 #include "mozilla/Decimal.h"
@@ -220,12 +221,13 @@ public:
 
   void GetDisplayFileName(nsAString& aFileName) const;
 
-  const nsTArray<RefPtr<File>>& GetFilesInternal() const
+  const nsTArray<OwningFileOrDirectory>& GetFilesOrDirectoriesInternal() const
   {
-    return mFiles;
+    return mFilesOrDirectories;
   }
 
-  void SetFiles(const nsTArray<RefPtr<File>>& aFiles, bool aSetValueChanged);
+  void SetFilesOrDirectories(const nsTArray<OwningFileOrDirectory>& aFilesOrDirectories,
+                             bool aSetValueChanged);
   void SetFiles(nsIDOMFileList* aFiles, bool aSetValueChanged);
 
   
@@ -927,7 +929,7 @@ protected:
   
 
 
-  void AfterSetFiles(bool aSetValueChanged);
+  void AfterSetFilesOrDirectories(bool aSetValueChanged);
 
   
 
@@ -1275,7 +1277,7 @@ protected:
 
 
 
-  nsTArray<RefPtr<File>> mFiles;
+  nsTArray<OwningFileOrDirectory> mFilesOrDirectories;
 
 #ifndef MOZ_CHILD_PERMISSIONS
   
