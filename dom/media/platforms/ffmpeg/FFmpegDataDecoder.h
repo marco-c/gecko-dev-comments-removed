@@ -24,7 +24,7 @@ template <>
 class FFmpegDataDecoder<LIBAV_VER> : public MediaDataDecoder
 {
 public:
-  FFmpegDataDecoder(FFmpegLibWrapper* aLib, FlushableTaskQueue* aTaskQueue,
+  FFmpegDataDecoder(FFmpegLibWrapper* aLib, TaskQueue* aTaskQueue,
                     MediaDataDecoderCallback* aCallback,
                     AVCodecID aCodecID);
   virtual ~FFmpegDataDecoder();
@@ -67,7 +67,7 @@ private:
   virtual void ProcessDrain() = 0;
 
   static StaticMutex sMonitor;
-  const RefPtr<FlushableTaskQueue> mTaskQueue;
+  const RefPtr<TaskQueue> mTaskQueue;
   
   
   Atomic<bool> mIsFlushing;
