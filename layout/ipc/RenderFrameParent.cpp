@@ -417,7 +417,7 @@ RenderFrameParent::OwnerContentChanged(nsIContent* aContent)
   MOZ_ASSERT(mFrameLoader->GetOwnerContent() == aContent,
              "Don't build new map if owner is same!");
 
-  nsRefPtr<LayerManager> lm = GetFrom(mFrameLoader);
+  nsRefPtr<LayerManager> lm = mFrameLoader ? GetFrom(mFrameLoader) : nullptr;
   
   if (lm && lm->GetBackendType() == LayersBackend::LAYERS_CLIENT) {
     ClientLayerManager *clientManager =
