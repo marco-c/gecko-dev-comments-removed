@@ -428,12 +428,22 @@ DevToolsLoader.prototype = {
     this._chooseProvider();
     this.main("devtools/client/main");
 
-    
-    if (showToolbox) {
-      let { gBrowser } = Services.wm.getMostRecentWindow("navigator:browser");
-      let target = this.TargetFactory.forTab(gBrowser.selectedTab);
-      const { gDevTools } = this.require("resource://devtools/client/framework/gDevTools.jsm");
-      gDevTools.showToolbox(target);
+    let window = Services.wm.getMostRecentWindow(null);
+    let location = window.location.href;
+    if (location.includes("/browser.xul") && showToolbox) {
+      
+      
+      
+      
+      let {setTimeout} = Cu.import("resource://gre/modules/Timer.jsm", {});
+      setTimeout(() => {
+        let { gBrowser } = window;
+        let target = this.TargetFactory.forTab(gBrowser.selectedTab);
+        const { gDevTools } = this.require("resource://devtools/client/framework/gDevTools.jsm");
+        gDevTools.showToolbox(target);
+      }, 1000);
+    } else if (location.includes("/webide.xul")) {
+      window.location.reload();
     }
   },
 
