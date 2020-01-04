@@ -495,11 +495,11 @@ loop.store.ActiveRoomStore = function (mozL10n) {
 
         
         window.dispatchEvent(new window.CustomEvent("WebChannelMessageToChrome", { 
-          detail: { 
+          detail: JSON.stringify({ 
             id: "loop-link-clicker", 
             message: { 
               command: "checkWillOpenRoom", 
-              roomToken: this._storeState.roomToken } } }));}.
+              roomToken: this._storeState.roomToken } }) }));}.
 
 
 
@@ -621,11 +621,11 @@ loop.store.ActiveRoomStore = function (mozL10n) {
 
       
       window.dispatchEvent(new window.CustomEvent("WebChannelMessageToChrome", { 
-        detail: { 
+        detail: JSON.stringify({ 
           id: "loop-link-clicker", 
           message: { 
             command: "openRoom", 
-            roomToken: this._storeState.roomToken } } }));}, 
+            roomToken: this._storeState.roomToken } }) }));}, 
 
 
 

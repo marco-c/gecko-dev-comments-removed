@@ -71,6 +71,15 @@ var WebChannelBroker = Object.create({
       eventTarget: event.objects.eventTarget,
       principal: event.principal,
     };
+    
+    if (typeof data == "string") {
+      try {
+        data = JSON.parse(data);
+      } catch (e) {
+        Cu.reportError("Failed to parse WebChannel data as a JSON object");
+        return;
+      }
+    }
 
     if (data && data.id) {
       if (!event.principal) {

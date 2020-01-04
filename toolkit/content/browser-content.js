@@ -814,17 +814,56 @@ var FindBar = {
 };
 FindBar.init();
 
-
-addEventListener("WebChannelMessageToChrome", function (e) {
+let WebChannelMessageToChromeListener = {
   
-  let principal = e.target.nodePrincipal ? e.target.nodePrincipal : e.target.document.nodePrincipal;
+  
+  
+  URL_WHITELIST_PREF: "webchannel.allowObject.urlWhitelist",
 
-  if (e.detail) {
-    sendAsyncMessage("WebChannelMessageToChrome", e.detail, { eventTarget: e.target }, principal);
-  } else  {
-    Cu.reportError("WebChannel message failed. No message detail.");
+  
+  
+  _cachedWhitelist: [],
+  _lastWhitelistValue: "",
+
+  init() {
+    addEventListener("WebChannelMessageToChrome", e => {
+      this._onMessageToChrome(e);
+    }, true, true);
+  },
+
+  _getWhitelistedPrincipals() {
+    let whitelist = Services.prefs.getCharPref(this.URL_WHITELIST_PREF);
+    if (whitelist != this._lastWhitelistValue) {
+      let urls = whitelist.split(/\s+/);
+      this._cachedWhitelist = urls.map(origin =>
+        Services.scriptSecurityManager.createCodebasePrincipalFromOrigin(origin));
+    }
+    return this._cachedWhitelist;
+  },
+
+  _onMessageToChrome(e) {
+    
+    let principal = e.target.nodePrincipal ? e.target.nodePrincipal : e.target.document.nodePrincipal;
+
+    if (e.detail) {
+      if (typeof e.detail != 'string') {
+        
+        
+        let objectsAllowed = this._getWhitelistedPrincipals().some(whitelisted =>
+          principal.originNoSuffix == whitelisted.originNoSuffix);
+        if (!objectsAllowed) {
+          Cu.reportError("WebChannelMessageToChrome sent with an object from a non-whitelisted principal");
+          return;
+        }
+      }
+      sendAsyncMessage("WebChannelMessageToChrome", e.detail, { eventTarget: e.target }, principal);
+    } else  {
+      Cu.reportError("WebChannel message failed. No message detail.");
+    }
   }
-}, true, true);
+};
+
+WebChannelMessageToChromeListener.init();
 
 
 
