@@ -806,6 +806,8 @@ public:
 
   static Decimal StringToDecimal(const nsAString& aValue);
 
+  void UpdateEntries(const nsTArray<OwningFileOrDirectory>& aFilesOrDirectories);
+
 protected:
   virtual ~HTMLInputElement();
 
@@ -965,8 +967,6 @@ protected:
 
 
   void UpdateFileList();
-
-  void UpdateEntries(const nsTArray<OwningFileOrDirectory>& aFilesOrDirectories);
 
   
 

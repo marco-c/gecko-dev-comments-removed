@@ -330,6 +330,13 @@ public:
   virtual bool IsFile() const = 0;
 
   
+  
+  virtual bool IsDirectory() const
+  {
+    return false;
+  }
+
+  
   virtual bool MayBeClonedToOtherThreads() const
   {
     return true;
@@ -711,6 +718,8 @@ public:
                                       ErrorResult& aRv) const override;
   virtual void GetInternalStream(nsIInputStream** aInputStream,
                                  ErrorResult& aRv) override;
+
+  virtual bool IsDirectory() const override;
 
   
   virtual bool IsSizeUnknown() const override { return false; }
