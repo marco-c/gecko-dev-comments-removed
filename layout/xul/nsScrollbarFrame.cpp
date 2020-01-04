@@ -250,6 +250,9 @@ nsScrollbarFrame::MoveToNewPosition()
   int32_t maxpos = nsSliderFrame::GetMaxPosition(content);
 
   
+  int32_t oldCurpos = curpos;
+
+  
   if (mIncrement) {
     curpos += mIncrement;
   }
@@ -297,7 +300,10 @@ nsScrollbarFrame::MoveToNewPosition()
     nsITheme *theme = presContext->GetTheme();
     if (theme && theme->ThemeSupportsWidget(presContext, this, disp->mAppearance)) {
       bool repaint;
-      theme->WidgetStateChanged(this, disp->mAppearance, nsGkAtoms::curpos, &repaint);
+      nsAttrValue oldValue;
+      oldValue.SetTo(oldCurpos);
+      theme->WidgetStateChanged(this, disp->mAppearance, nsGkAtoms::curpos,
+          &repaint, &oldValue);
     }
   }
   content->UnsetAttr(kNameSpaceID_None, nsGkAtoms::smooth, false);
