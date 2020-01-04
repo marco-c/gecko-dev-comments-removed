@@ -452,7 +452,6 @@ pref("media.navigator.video.h264.level", 31);
 pref("media.navigator.video.h264.max_br", 0);
 pref("media.navigator.video.h264.max_mbps", 0);
 pref("media.peerconnection.video.h264_enabled", false);
-pref("media.peerconnection.video.vp9_enabled", true);
 pref("media.getusermedia.aec", 1);
 pref("media.getusermedia.browser.enabled", true);
 #endif
@@ -547,7 +546,6 @@ pref("media.getusermedia.screensharing.allow_on_old_platforms", false);
 pref("media.getusermedia.audiocapture.enabled", false);
 
 
-pref("media.webvtt.enabled", true);
 pref("media.webvtt.regions.enabled", false);
 
 
@@ -1100,7 +1098,7 @@ pref("print.print_edge_right", 0);
 pref("print.print_edge_bottom", 0);
 
 
-#if defined(XP_WIN) || defined(XP_MACOSX)
+#if defined(XP_WIN)
 pref("print.print_via_parent", true);
 #else
 pref("print.print_via_parent", false);
