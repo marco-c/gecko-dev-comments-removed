@@ -139,8 +139,7 @@ static inline bool
 IsCompilingAsmJS()
 {
     
-    JitContext* jctx = MaybeGetJitContext();
-    return jctx && jctx->compartment == nullptr;
+    return GetJitContext()->compartment == nullptr;
 }
 #endif
 
