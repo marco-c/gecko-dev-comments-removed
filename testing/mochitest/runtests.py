@@ -45,7 +45,9 @@ from manifestparser.filters import (
     tags,
 )
 from leaks import ShutdownLeaks, LSANLeaks
-from mochitest_options import MochitestArgumentParser, build_obj
+from mochitest_options import (
+    MochitestArgumentParser, build_obj, get_default_valgrind_suppression_files
+)
 from mozprofile import Profile, Preferences
 from mozprofile.permissions import ServerLocations
 from urllib import quote_plus as encodeURIComponent
@@ -1626,6 +1628,9 @@ class Mochitest(MochitestUtilsMixin):
                extraArgs,
                utilityPath,
                debuggerInfo=None,
+               valgrindPath=None,
+               valgrindArgs=None,
+               valgrindSuppFiles=None,
                symbolsPath=None,
                timeout=-1,
                onLaunch=None,
@@ -1642,6 +1647,11 @@ class Mochitest(MochitestUtilsMixin):
         self.message_logger.buffering = quiet
 
         
+        
+        
+        assert not(valgrindPath and debuggerInfo)
+
+        
         interactive = False
         debug_args = None
         if debuggerInfo:
@@ -1649,8 +1659,30 @@ class Mochitest(MochitestUtilsMixin):
             debug_args = [debuggerInfo.path] + debuggerInfo.args
 
         
+        if valgrindPath:
+            interactive = False
+            valgrindArgs_split = ([] if valgrindArgs is None
+                                  else valgrindArgs.split())
+            valgrindSuppFiles_split = ([] if valgrindSuppFiles is None
+                                       else valgrindSuppFiles.split(","))
+
+            valgrindSuppFiles_final = []
+            if valgrindSuppFiles is not None:
+                valgrindSuppFiles_final = ["--suppressions=" + path for path in valgrindSuppFiles.split(",")]
+
+            debug_args = ([valgrindPath]
+                          + mozdebug.get_default_valgrind_args()
+                          + valgrindArgs_split
+                          + valgrindSuppFiles_final)
+
+        
         if timeout == -1:
             timeout = self.DEFAULT_TIMEOUT
+
+        
+        if valgrindPath:
+            self.log.info("runtests.py | Running on Valgrind.  "
+                          + "Using timeout of %d seconds." % timeout)
 
         
         env = env.copy()
@@ -2121,6 +2153,29 @@ class Mochitest(MochitestUtilsMixin):
             self.mediaDevices = devices
 
         
+        valgrindPath = None
+        valgrindArgs = None
+        valgrindSuppFiles = None
+        if options.valgrind:
+            valgrindPath = options.valgrind
+        if options.valgrindArgs:
+            valgrindArgs = options.valgrindArgs
+        if options.valgrindSuppFiles:
+            valgrindSuppFiles = options.valgrindSuppFiles
+
+        if (valgrindArgs or valgrindSuppFiles) and not valgrindPath:
+            self.log.error("Specified --valgrind-args or --valgrind-supp-files,"
+                           " but not --valgrind")
+            return 1
+
+        if valgrindPath and debuggerInfo:
+            self.log.error("Can't use both --debugger and --valgrind together")
+            return 1
+
+        if valgrindPath and not valgrindSuppFiles:
+            valgrindSuppFiles = ",".join(get_default_valgrind_suppression_files())
+
+        
         
         
         self.manifest = self.buildProfile(options)
@@ -2218,6 +2273,9 @@ class Mochitest(MochitestUtilsMixin):
                                      extraArgs=options.browserArgs,
                                      utilityPath=options.utilityPath,
                                      debuggerInfo=debuggerInfo,
+                                     valgrindPath=valgrindPath,
+                                     valgrindArgs=valgrindArgs,
+                                     valgrindSuppFiles=valgrindSuppFiles,
                                      symbolsPath=options.symbolsPath,
                                      timeout=timeout,
                                      onLaunch=onLaunch,
@@ -2513,7 +2571,8 @@ class Mochitest(MochitestUtilsMixin):
 
 def run_test_harness(options):
     logger_options = {
-        key: value for key, value in vars(options).iteritems() if key.startswith('log')}
+        key: value for key, value in vars(options).iteritems()
+        if key.startswith('log') or key == 'valgrind' }
     runner = Mochitest(logger_options)
 
     options.runByDir = False
