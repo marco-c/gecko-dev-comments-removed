@@ -697,7 +697,8 @@ DrawTargetSkia::CreateSimilarDrawTarget(const IntSize &aSize, SurfaceFormat aFor
 #ifdef USE_SKIA_GPU
   if (UsingSkiaGPU()) {
     
-    if (target->InitWithGrContext(mGrContext.get(), aSize, aFormat)) {
+    
+    if (target->InitWithGrContext(mGrContext.get(), aSize, aFormat, true)) {
       return target.forget();
     }
     
@@ -731,17 +732,31 @@ DrawTargetSkia::OptimizeSourceSurface(SourceSurface *aSurface) const
       return surface.forget();
     }
 
+    SkBitmap bitmap = GetBitmapForSurface(aSurface);
+
     
     SkAutoTUnref<GrTexture> texture(
-      GrRefCachedBitmapTexture(mGrContext.get(),
-                               GetBitmapForSurface(aSurface),
-                               GrTextureParams::ClampBilerp()));
+      GrRefCachedBitmapTexture(mGrContext.get(), bitmap, GrTextureParams::ClampBilerp()));
+
+    if (texture) {
+      
+      RefPtr<SourceSurfaceSkia> surface = new SourceSurfaceSkia();
+      if (surface->InitFromGrTexture(texture, aSurface->GetSize(), aSurface->GetFormat())) {
+        return surface.forget();
+      }
+    }
+
+    
+    if (aSurface->GetType() == SurfaceType::SKIA) {
+      
+      RefPtr<SourceSurface> surface(aSurface);
+      return surface.forget();
+    }
 
     
     RefPtr<SourceSurfaceSkia> surface = new SourceSurfaceSkia();
-    if (surface->InitFromGrTexture(texture, aSurface->GetSize(), aSurface->GetFormat())) {
-      return surface.forget();
-    }
+    surface->InitFromBitmap(bitmap);
+    return surface.forget();
   }
 #endif
 
@@ -847,10 +862,30 @@ DrawTargetSkia::Init(const IntSize &aSize, SurfaceFormat aFormat)
 }
 
 #ifdef USE_SKIA_GPU
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 bool
 DrawTargetSkia::InitWithGrContext(GrContext* aGrContext,
                                   const IntSize &aSize,
-                                  SurfaceFormat aFormat)
+                                  SurfaceFormat aFormat,
+                                  bool aCached)
 {
   MOZ_ASSERT(aGrContext, "null GrContext");
 
@@ -860,7 +895,10 @@ DrawTargetSkia::InitWithGrContext(GrContext* aGrContext,
 
   
   
-  SkAutoTUnref<SkSurface> gpuSurface(SkSurface::NewRenderTarget(aGrContext, SkSurface::kNo_Budgeted, MakeSkiaImageInfo(aSize, aFormat)));
+  SkAutoTUnref<SkSurface> gpuSurface(
+    SkSurface::NewRenderTarget(aGrContext,
+                               SkSurface::Budgeted(aCached),
+                               MakeSkiaImageInfo(aSize, aFormat)));
   if (!gpuSurface) {
     return false;
   }
