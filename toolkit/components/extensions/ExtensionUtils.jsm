@@ -538,6 +538,75 @@ let IconDetails = {
   },
 };
 
+const LISTENERS = Symbol("listeners");
+
+class EventEmitter {
+  constructor() {
+    this[LISTENERS] = new Map();
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  on(event, listener) {
+    if (!this[LISTENERS].has(event)) {
+      this[LISTENERS].set(event, new Set());
+    }
+
+    this[LISTENERS].get(event).add(listener);
+  }
+
+  
+
+
+
+
+
+
+
+  off(event, listener) {
+    if (this[LISTENERS].has(event)) {
+      let set = this[LISTENERS].get(event);
+
+      set.delete(listener);
+      if (!set.size) {
+        this[LISTENERS].delete(event);
+      }
+    }
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  emit(event, ...args) {
+    let listeners = this[LISTENERS].get(event) || new Set();
+
+    let promises = Array.from(listeners, listener => {
+      return runSafeSyncWithoutClone(listener, event, ...args);
+    });
+
+    return Promise.all(promises);
+  }
+}
+
 function LocaleData(data) {
   this.defaultLocale = data.defaultLocale;
   this.selectedLocale = data.selectedLocale;
@@ -947,6 +1016,51 @@ function promiseDocumentReady(doc) {
     }, true);
   });
 }
+
+
+
+
+
+
+
+
+function promiseDocumentLoaded(doc) {
+  if (doc.readyState == "complete") {
+    return Promise.resolve(doc);
+  }
+
+  return new Promise(resolve => {
+    doc.defaultView.addEventListener("load", function onReady(event) {
+      doc.defaultView.removeEventListener("load", onReady);
+      resolve(doc);
+    });
+  });
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+function promiseObserved(topic, test = () => true) {
+  return new Promise(resolve => {
+    let observer = (subject, topic, data) => {
+      if (test(subject, data)) {
+        Services.obs.removeObserver(observer, topic);
+        resolve({subject, data});
+      }
+    };
+    Services.obs.addObserver(observer, topic, false);
+  });
+}
+
 
 
 
@@ -1406,13 +1520,16 @@ this.ExtensionUtils = {
   injectAPI,
   instanceOf,
   normalizeTime,
+  promiseDocumentLoaded,
   promiseDocumentReady,
+  promiseObserved,
   runSafe,
   runSafeSync,
   runSafeSyncWithoutClone,
   runSafeWithoutClone,
   BaseContext,
   DefaultWeakMap,
+  EventEmitter,
   EventManager,
   IconDetails,
   LocaleData,
