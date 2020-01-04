@@ -464,7 +464,7 @@ Database::Init()
   
   
 
-  rv = InitTempTriggers();
+  rv = InitTempEntities();
   NS_ENSURE_SUCCESS(rv, rv);
 
   
@@ -1015,7 +1015,7 @@ Database::InitFunctions()
 }
 
 nsresult
-Database::InitTempTriggers()
+Database::InitTempEntities()
 {
   MOZ_ASSERT(NS_IsMainThread());
 
@@ -1026,6 +1026,10 @@ Database::InitTempTriggers()
 
   
   rv = mMainConn->ExecuteSimpleSQL(CREATE_PLACES_AFTERINSERT_TRIGGER);
+  NS_ENSURE_SUCCESS(rv, rv);
+  rv = mMainConn->ExecuteSimpleSQL(CREATE_UPDATEHOSTS_TEMP);
+  NS_ENSURE_SUCCESS(rv, rv);
+  rv = mMainConn->ExecuteSimpleSQL(CREATE_UPDATEHOSTS_AFTERDELETE_TRIGGER);
   NS_ENSURE_SUCCESS(rv, rv);
   rv = mMainConn->ExecuteSimpleSQL(CREATE_PLACES_AFTERDELETE_TRIGGER);
   NS_ENSURE_SUCCESS(rv, rv);

@@ -2456,6 +2456,13 @@ nsNavHistory::CleanupPlacesOnVisitsDelete(const nsCString& aPlaceIdsQueryString)
   NS_ENSURE_SUCCESS(rv, rv);
 
   
+  
+  rv = mDB->MainConn()->ExecuteSimpleSQL(
+    NS_LITERAL_CSTRING("DELETE FROM moz_updatehosts_temp")
+  );
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  
   rv = invalidateFrecencies(aPlaceIdsQueryString);
   NS_ENSURE_SUCCESS(rv, rv);
 

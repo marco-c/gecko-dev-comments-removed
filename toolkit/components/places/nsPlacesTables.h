@@ -144,4 +144,15 @@
   ")" \
 )
 
+
+
+
+
+
+#define CREATE_UPDATEHOSTS_TEMP NS_LITERAL_CSTRING( \
+  "CREATE TEMP TABLE moz_updatehosts_temp (" \
+    "  host TEXT PRIMARY KEY " \
+  ") WITHOUT ROWID " \
+)
+
 #endif 

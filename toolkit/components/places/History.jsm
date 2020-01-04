@@ -501,8 +501,12 @@ var removePagesById = Task.async(function*(db, idList) {
   if (idList.length == 0) {
     return;
   }
+  
   yield db.execute(`DELETE FROM moz_places
                     WHERE id IN ( ${ sqlList(idList) } )`);
+  
+  
+  yield db.execute(`DELETE FROM moz_updatehosts_temp`);
 });
 
 

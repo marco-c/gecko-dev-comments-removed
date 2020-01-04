@@ -1884,16 +1884,29 @@ private:
     }
 #endif
 
-    nsCString query("DELETE FROM moz_places "
-                    "WHERE id IN (");
-    query.Append(placeIdsToRemove);
-    query.Append(')');
+    {
+      nsCString query("DELETE FROM moz_places "
+                      "WHERE id IN (");
+      query.Append(placeIdsToRemove);
+      query.Append(')');
 
-    nsCOMPtr<mozIStorageStatement> stmt = mHistory->GetStatement(query);
-    NS_ENSURE_STATE(stmt);
-    mozStorageStatementScoper scoper(stmt);
-    nsresult rv = stmt->Execute();
-    NS_ENSURE_SUCCESS(rv, rv);
+      nsCOMPtr<mozIStorageStatement> stmt = mHistory->GetStatement(query);
+      NS_ENSURE_STATE(stmt);
+      mozStorageStatementScoper scoper(stmt);
+      nsresult rv = stmt->Execute();
+      NS_ENSURE_SUCCESS(rv, rv);
+    }
+
+    {
+      
+      
+      nsAutoCString query("DELETE FROM moz_updatehosts_temp");
+      nsCOMPtr<mozIStorageStatement> stmt = mHistory->GetStatement(query);
+      NS_ENSURE_STATE(stmt);
+      mozStorageStatementScoper scoper(stmt);
+      nsresult rv = stmt->Execute();
+      NS_ENSURE_SUCCESS(rv, rv);
+    }
 
     return NS_OK;
   }

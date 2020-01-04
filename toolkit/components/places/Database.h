@@ -244,7 +244,7 @@ protected:
   
 
 
-  nsresult InitTempTriggers();
+  nsresult InitTempEntities();
 
   
 

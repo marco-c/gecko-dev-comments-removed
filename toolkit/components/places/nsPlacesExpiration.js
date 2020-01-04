@@ -242,6 +242,15 @@ const EXPIRATION_QUERIES = {
   },
 
   
+  
+  QUERY_UPDATE_HOSTS: {
+    sql: `DELETE FROM moz_updatehosts_temp`,
+    actions: ACTION.CLEAR_HISTORY | ACTION.TIMED | ACTION.TIMED_OVERLIMIT |
+             ACTION.SHUTDOWN_DIRTY | ACTION.IDLE_DIRTY | ACTION.IDLE_DAILY |
+             ACTION.DEBUG
+  },
+
+  
   QUERY_EXPIRE_FAVICONS: {
     sql: `DELETE FROM moz_favicons WHERE id IN (
             SELECT f.id FROM moz_favicons f
