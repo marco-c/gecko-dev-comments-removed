@@ -69,7 +69,7 @@ var DebuggerSocket = {};
 
 
 
-DebuggerSocket.connect = Task.async(function* (settings) {
+DebuggerSocket.connect = Task.async(function*(settings) {
   
   if (!settings.authenticator) {
     settings.authenticator = new (Authenticators.get().Client)();
@@ -109,7 +109,7 @@ DebuggerSocket.connect = Task.async(function* (settings) {
 
 
 
-var _getTransport = Task.async(function* (settings) {
+var _getTransport = Task.async(function*(settings) {
   let { host, port, encryption } = settings;
   let attempt = yield _attemptTransport(settings);
   if (attempt.transport) {
@@ -157,7 +157,7 @@ var _getTransport = Task.async(function* (settings) {
 
 
 
-var _attemptTransport = Task.async(function* (settings) {
+var _attemptTransport = Task.async(function*(settings) {
   let { authenticator } = settings;
   
   
@@ -170,7 +170,7 @@ var _attemptTransport = Task.async(function* (settings) {
     let results = yield _isInputAlive(input);
     alive = results.alive;
     certError = results.certError;
-  } catch (e) {
+  } catch(e) {
     
     
     input.close();
@@ -215,7 +215,7 @@ var _attemptTransport = Task.async(function* (settings) {
 
 
 
-var _attemptConnect = Task.async(function* ({ host, port, encryption }) {
+var _attemptConnect = Task.async(function*({ host, port, encryption }) {
   let s;
   if (encryption) {
     s = socketTransportService.createTransport(["ssl"], 1, host, port, null);
@@ -256,7 +256,7 @@ var _attemptConnect = Task.async(function* ({ host, port, encryption }) {
       }
       try {
         input = s.openInputStream(0, 0, 0);
-      } catch (e) {
+      } catch(e) {
         deferred.reject(e);
       }
       deferred.resolve({ s, input, output });
@@ -268,7 +268,7 @@ var _attemptConnect = Task.async(function* ({ host, port, encryption }) {
   
   try {
     output = s.openOutputStream(0, 0, 0);
-  } catch (e) {
+  } catch(e) {
     deferred.reject(e);
   }
 
@@ -371,7 +371,7 @@ SocketListener.prototype = {
   
 
 
-  _validateOptions: function () {
+  _validateOptions: function() {
     if (this.portOrPath === null) {
       throw new Error("Must set a port / path to listen on.");
     }
@@ -384,7 +384,7 @@ SocketListener.prototype = {
   
 
 
-  open: function () {
+  open: function() {
     this._validateOptions();
     DebuggerServer._addListener(this);
 
@@ -395,7 +395,7 @@ SocketListener.prototype = {
     }
 
     let self = this;
-    return Task.spawn(function* () {
+    return Task.spawn(function*() {
       let backlog = 4;
       self._socket = self._createSocketInstance();
       if (self.isPortBased) {
@@ -420,7 +420,7 @@ SocketListener.prototype = {
     });
   },
 
-  _advertise: function () {
+  _advertise: function() {
     if (!this.discoverable || !this.port) {
       return;
     }
@@ -435,7 +435,7 @@ SocketListener.prototype = {
     discovery.addService("devtools", advertisement);
   },
 
-  _createSocketInstance: function () {
+  _createSocketInstance: function() {
     if (this.encryption) {
       return Cc["@mozilla.org/network/tls-server-socket;1"]
              .createInstance(Ci.nsITLSServerSocket);
@@ -444,7 +444,7 @@ SocketListener.prototype = {
            .createInstance(Ci.nsIServerSocket);
   },
 
-  _setAdditionalSocketOptions: Task.async(function* () {
+  _setAdditionalSocketOptions: Task.async(function*() {
     if (this.encryption) {
       this._socket.serverCert = yield cert.local.getOrCreate();
       this._socket.setSessionCache(false);
@@ -459,7 +459,7 @@ SocketListener.prototype = {
 
 
 
-  close: function () {
+  close: function() {
     if (this.discoverable && this.port) {
       discovery.removeService("devtools");
     }
@@ -510,11 +510,11 @@ SocketListener.prototype = {
   
 
   onSocketAccepted:
-  DevToolsUtils.makeInfallible(function (socket, socketTransport) {
+  DevToolsUtils.makeInfallible(function(socket, socketTransport) {
     new ServerSocketConnection(this, socketTransport);
   }, "SocketListener.onSocketAccepted"),
 
-  onStopListening: function (socket, status) {
+  onStopListening: function(socket, status) {
     dumpn("onStopListening, status: " + status);
   }
 
@@ -594,7 +594,7 @@ ServerSocketConnection.prototype = {
   _handle() {
     dumpn("Debugging connection starting authentication on " + this.address);
     let self = this;
-    Task.spawn(function* () {
+    Task.spawn(function*() {
       self._listenForTLSHandshake();
       self._createTransport();
       yield self._awaitTLSHandshake();
@@ -675,7 +675,7 @@ ServerSocketConnection.prototype = {
 
 
 
-    if (clientStatus.tlsVersionUsed != Ci.nsITLSClientStatus.TLS_VERSION_1_2) {
+    if (clientStatus.tlsVersionUsed < Ci.nsITLSClientStatus.TLS_VERSION_1_2) {
       this._handshakeDeferred.reject(Cr.NS_ERROR_CONNECTION_REFUSED);
       return;
     }
@@ -683,7 +683,7 @@ ServerSocketConnection.prototype = {
     this._handshakeDeferred.resolve();
   },
 
-  _authenticate: Task.async(function* () {
+  _authenticate: Task.async(function*() {
     let result = yield this._listener.authenticator.authenticate({
       client: this.client,
       server: this.server,
@@ -744,7 +744,7 @@ ServerSocketConnection.prototype = {
 
 };
 
-DebuggerSocket.createListener = function () {
+DebuggerSocket.createListener = function() {
   return new SocketListener();
 };
 
