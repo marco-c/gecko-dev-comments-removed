@@ -30,6 +30,12 @@ function init(event) {
   fxButton.addEventListener("mousedown", PositionHandler);
 
   updateIndicatorState();
+
+  
+  
+  
+  let ev = new CustomEvent("AlertActive", {bubbles: true, cancelable: true});
+  document.documentElement.dispatchEvent(ev);
 }
 
 function updateIndicatorState() {
