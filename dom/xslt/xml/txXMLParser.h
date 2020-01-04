@@ -9,8 +9,6 @@
 #include "txCore.h"
 
 class txXPathNode;
-class nsIURI;
-class nsIDocument;
 
 
 
@@ -22,9 +20,7 @@ class nsIDocument;
 
 
 extern "C" nsresult
-txParseDocumentFromURI(nsIURI* aUri,
-                       nsIDocument* aLoadingDocument,
-                       nsAString& aErrMsg,
-                       txXPathNode** aResult);
+txParseDocumentFromURI(const nsAString& aHref, const txXPathNode& aLoader,
+                       nsAString& aErrMsg, txXPathNode** aResult);
 
 #endif

@@ -23,14 +23,12 @@ public:
     
 
 
-    explicit DocumentFunctionCall(nsIURI* aBaseURI)
-        : mBaseURI(aBaseURI)
-    {}
+    explicit DocumentFunctionCall(const nsAString& aBaseURI);
 
     TX_DECL_FUNCTION
 
 private:
-    nsCOMPtr<nsIURI> mBaseURI;
+    nsString mBaseURI;
 };
 
 
