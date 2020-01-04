@@ -552,8 +552,17 @@ public:
 
 
 
+  enum {
+    
+
+
+
+
+    AGR_IGNORE_BACKGROUND_ATTACHMENT_FIXED = 0x01
+  };
   static nsIFrame* GetAnimatedGeometryRootFor(nsDisplayItem* aItem,
-                                              nsDisplayListBuilder* aBuilder);
+                                              nsDisplayListBuilder* aBuilder,
+                                              uint32_t aFlags = 0);
 
   
 

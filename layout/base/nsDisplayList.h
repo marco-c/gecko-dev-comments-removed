@@ -3939,6 +3939,15 @@ public:
              mFrame->Combines3DTransformWithAncestors()));
   }
 
+  
+
+
+
+
+  bool IsReferenceFrameBoundary() {
+    return !mTransformGetter && !mIsTransformSeparator;
+  }
+
 private:
   void ComputeBounds(nsDisplayListBuilder* aBuilder);
   void SetReferenceFrameToAncestor(nsDisplayListBuilder* aBuilder);
