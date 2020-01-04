@@ -1420,8 +1420,7 @@ public:
     mXScale(1.f), mYScale(1.f),
     mAppUnitsPerDevPixel(0),
     mTranslation(0, 0),
-    mAnimatedGeometryRootPosition(0, 0),
-    mNeedsRecomputeVisibility(false) {}
+    mAnimatedGeometryRootPosition(0, 0) {}
 
   
 
@@ -1496,7 +1495,9 @@ public:
   
   
   
-  bool mNeedsRecomputeVisibility;
+  
+  
+  nsIntRegion mVisibilityComputedRegion;
 };
 
 
@@ -2339,7 +2340,7 @@ ContainerState::PreparePaintedLayerForUse(PaintedLayer* aLayer,
 
   ComputeAndSetIgnoreInvalidationRect(aLayer, aData, aAnimatedGeometryRoot, mBuilder, pixOffset);
 
-  aData->mNeedsRecomputeVisibility = true;
+  aData->mVisibilityComputedRegion.SetEmpty();
 
   
 #ifndef MOZ_WIDGET_ANDROID
@@ -5716,7 +5717,7 @@ static void DrawForcedBackgroundColor(DrawTarget& aDrawTarget,
 FrameLayerBuilder::DrawPaintedLayer(PaintedLayer* aLayer,
                                    gfxContext* aContext,
                                    const nsIntRegion& aRegionToDraw,
-                                   const nsIntRegion* aDirtyRegion,
+                                   const nsIntRegion& aDirtyRegion,
                                    DrawRegionClip aClip,
                                    const nsIntRegion& aRegionToInvalidate,
                                    void* aCallbackData)
@@ -5769,7 +5770,7 @@ FrameLayerBuilder::DrawPaintedLayer(PaintedLayer* aLayer,
   nsIntPoint offset = GetTranslationForPaintedLayer(aLayer);
   nsPresContext* presContext = entry->mContainerLayerFrame->PresContext();
 
-  if (userData->mNeedsRecomputeVisibility &&
+  if (!userData->mVisibilityComputedRegion.Contains(aDirtyRegion) &&
       !layerBuilder->GetContainingPaintedLayerData()) {
     
     
@@ -5777,13 +5778,10 @@ FrameLayerBuilder::DrawPaintedLayer(PaintedLayer* aLayer,
     
     
     int32_t appUnitsPerDevPixel = presContext->AppUnitsPerDevPixel();
-    RecomputeVisibilityForItems(entry->mItems, builder,
-                                aDirtyRegion ? *aDirtyRegion : aRegionToDraw,
+    RecomputeVisibilityForItems(entry->mItems, builder, aDirtyRegion,
                                 offset, appUnitsPerDevPixel,
                                 userData->mXScale, userData->mYScale);
-    if (aDirtyRegion) {
-      userData->mNeedsRecomputeVisibility = false;
-    }
+    userData->mVisibilityComputedRegion = aDirtyRegion;
   }
 
   nsRenderingContext rc(aContext);

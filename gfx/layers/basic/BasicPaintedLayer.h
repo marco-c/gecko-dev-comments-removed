@@ -112,7 +112,7 @@ protected:
       BasicManager()->SetTransactionIncomplete();
       return;
     }
-    aCallback(this, aContext, aExtendedRegionToDraw, &aExtendedRegionToDraw,
+    aCallback(this, aContext, aExtendedRegionToDraw, aExtendedRegionToDraw,
               aClip, aRegionToInvalidate, aCallbackData);
     
     
