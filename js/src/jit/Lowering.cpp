@@ -2475,6 +2475,17 @@ LIRGenerator::visitMonitorTypes(MMonitorTypes* ins)
     add(lir, ins);
 }
 
+
+
+static bool
+IsNonNurseryConstant(MDefinition* def)
+{
+    if (!def->isConstant())
+        return false;
+    Value v = def->toConstant()->value();
+    return !v.isMarkable() || !IsInsideNursery(v.toGCThing());
+}
+
 void
 LIRGenerator::visitPostWriteBarrier(MPostWriteBarrier* ins)
 {
@@ -2484,9 +2495,7 @@ LIRGenerator::visitPostWriteBarrier(MPostWriteBarrier* ins)
     
     
     
-    bool useConstantObject =
-        ins->object()->isConstant() &&
-        !IsInsideNursery(&ins->object()->toConstant()->value().toObject());
+    bool useConstantObject = IsNonNurseryConstant(ins->object());
 
     switch (ins->value()->type()) {
       case MIRType_Object:
@@ -3641,6 +3650,7 @@ LIRGenerator::visitSetPropertyCache(MSetPropertyCache* ins)
     
     
     bool useConstId = id->type() == MIRType_String || id->type() == MIRType_Symbol;
+    bool useConstValue = IsNonNurseryConstant(ins->value());
 
     
     
@@ -3663,7 +3673,7 @@ LIRGenerator::visitSetPropertyCache(MSetPropertyCache* ins)
     LInstruction* lir = new(alloc()) LSetPropertyCache(useRegister(ins->object()), temp(),
                                                        tempToUnboxIndex, tempD, tempF32);
     useBoxOrTypedOrConstant(lir, LSetPropertyCache::Id, id, useConstId);
-    useBoxOrTypedOrConstant(lir, LSetPropertyCache::Value, ins->value(),  true);
+    useBoxOrTypedOrConstant(lir, LSetPropertyCache::Value, ins->value(), useConstValue);
 
     add(lir, ins);
     assignSafepoint(lir, ins);
