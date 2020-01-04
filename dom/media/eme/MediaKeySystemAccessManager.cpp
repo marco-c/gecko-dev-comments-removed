@@ -118,7 +118,8 @@ MediaKeySystemAccessManager::Request(DetailedPromise* aPromise,
 
   if ((status == MediaKeySystemStatus::Cdm_not_installed ||
        status == MediaKeySystemStatus::Cdm_insufficient_version) &&
-      keySystem.EqualsLiteral("com.adobe.primetime")) {
+      (keySystem.EqualsLiteral("com.adobe.primetime") ||
+       keySystem.EqualsLiteral("com.widevine.alpha"))) {
     
     
     
