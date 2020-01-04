@@ -25,19 +25,14 @@ MainProcessSingleton.prototype = {
   },
 
   
-  
-  addSearchEngine: function({ target: browser, data: { pageURL, engineURL, iconURL, type } }) {
+  addSearchEngine: function({ target: browser, data: { pageURL, engineURL, type } }) {
     pageURL = NetUtil.newURI(pageURL);
     engineURL = NetUtil.newURI(engineURL, null, pageURL);
 
-    if (iconURL) {
-      iconURL = NetUtil.newURI(iconURL, null, pageURL);
-    }
-    else {
-      let tabbrowser = browser.getTabBrowser();
-      if (browser.mIconURL && (!tabbrowser || tabbrowser.shouldLoadFavIcon(pageURL)))
-        iconURL = NetUtil.newURI(browser.mIconURL);
-    }
+    let iconURL;
+    let tabbrowser = browser.getTabBrowser();
+    if (browser.mIconURL && (!tabbrowser || tabbrowser.shouldLoadFavIcon(pageURL)))
+      iconURL = NetUtil.newURI(browser.mIconURL);
 
     try {
       
@@ -50,7 +45,7 @@ MainProcessSingleton.prototype = {
         throw "Unsupported search icon URL: " + iconURL;
     }
     catch(ex) {
-      Cu.reportError("Invalid argument passed to window.sidebar.addSearchEngine: " + ex);
+      Cu.reportError("Invalid argument passed to window.external.AddSearchProvider: " + ex);
 
       var searchBundle = Services.strings.createBundle("chrome://global/locale/search/search.properties");
       var brandBundle = Services.strings.createBundle("chrome://branding/locale/brand.properties");

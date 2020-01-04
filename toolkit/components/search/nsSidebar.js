@@ -23,18 +23,13 @@ nsSidebar.prototype = {
   },
 
   
-  
   addSearchEngine: function(engineURL, iconURL, suggestedTitle, suggestedCategory) {
-    let dataType = SHERLOCK_FILE_EXT_REGEXP.test(engineURL) ?
-                   Ci.nsISearchEngine.DATA_TEXT :
-                   Ci.nsISearchEngine.DATA_XML;
+    if (SHERLOCK_FILE_EXT_REGEXP.test(engineURL)) {
+      Cu.reportError("Installing Sherlock search plugins is no longer supported.");
+      return;
+    }
 
-    this.mm.sendAsyncMessage("Search:AddEngine", {
-      pageURL: this.window.document.documentURIObject.spec,
-      engineURL,
-      type: dataType,
-      iconURL
-    });
+    this.AddSearchProvider(engineURL);
   },
 
   
