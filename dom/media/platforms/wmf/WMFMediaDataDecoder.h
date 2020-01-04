@@ -52,6 +52,8 @@ public:
 
   virtual TrackInfo::TrackType GetType() = 0;
 
+  virtual void ConfigurationChanged(const TrackInfo& aConfig) {}
+
 protected:
   
   RefPtr<MFTDecoder> mDecoder;
@@ -81,6 +83,8 @@ public:
 
   bool IsHardwareAccelerated(nsACString& aFailureReason) const override;
 
+  nsresult ConfigurationChanged(const TrackInfo& aConfig) override;
+
 private:
 
   
@@ -100,6 +104,10 @@ private:
   void ProcessDrain();
 
   void ProcessShutdown();
+
+  
+  
+  void ProcessConfigurationChanged(UniquePtr<TrackInfo>&& aConfig);
 
   RefPtr<FlushableTaskQueue> mTaskQueue;
   MediaDataDecoderCallback* mCallback;
