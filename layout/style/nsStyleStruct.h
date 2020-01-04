@@ -2466,7 +2466,6 @@ struct nsStyleDisplay
   
   
   RefPtr<mozilla::css::URLValue> mBinding;    
-  nsRect  mClip;                
   float   mOpacity;             
   uint8_t mDisplay;             
   uint8_t mOriginalDisplay;     
@@ -2486,7 +2485,6 @@ struct nsStyleDisplay
   uint8_t mOverflowY;           
   uint8_t mOverflowClipBox;     
   uint8_t mResize;              
-  uint8_t mClipFlags;           
   uint8_t mOrient;              
   uint8_t mMixBlendMode;        
   uint8_t mIsolation;           
@@ -3583,17 +3581,23 @@ struct nsStyleEffects
 
   nsChangeHint CalcDifference(const nsStyleEffects& aOther) const;
   static nsChangeHint MaxDifference() {
-    return nsChangeHint_UpdateOverflow |
+    return nsChangeHint_AllReflowHints |
+           nsChangeHint_UpdateOverflow |
            nsChangeHint_SchedulePaint |
-           nsChangeHint_RepaintFrame;
+           nsChangeHint_RepaintFrame |
+           nsChangeHint_NeutralChange;
   }
   static nsChangeHint DifferenceAlwaysHandledForDescendants() {
     
     
-    return nsChangeHint(0);
+    return nsChangeHint_NeedReflow |
+           nsChangeHint_ReflowChangesSizeOrPosition |
+           nsChangeHint_ClearAncestorIntrinsics;
   }
 
   RefPtr<nsCSSShadowArray> mBoxShadow; 
+  nsRect mClip;                        
+  uint8_t mClipFlags;                  
 };
 
 #endif 
