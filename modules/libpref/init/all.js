@@ -155,12 +155,6 @@ pref("dom.serviceWorkers.interception.enabled", false);
 pref("dom.serviceWorkers.interception.opaque.enabled", false);
 
 
-pref("dom.serviceWorkers.idle_timeout", 30000);
-
-
-pref("dom.serviceWorkers.idle_extended_timeout", 300000);
-
-
 pref("dom.enable_performance", true);
 
 

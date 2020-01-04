@@ -30,6 +30,7 @@ class ServiceWorker final : public DOMEventTargetHelper
   friend class ServiceWorkerManager;
 public:
   NS_DECL_ISUPPORTS_INHERITED
+  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(ServiceWorker, DOMEventTargetHelper)
 
   IMPL_EVENT_HANDLER(statechange)
   IMPL_EVENT_HANDLER(error)
@@ -52,6 +53,8 @@ public:
   void
   GetScriptURL(nsString& aURL) const;
 
+  const ServiceWorkerInfo* Info() const { return mInfo; }
+
   void
   DispatchStateChange(ServiceWorkerState aState)
   {
@@ -71,15 +74,25 @@ public:
               const Optional<Sequence<JS::Value>>& aTransferable,
               ErrorResult& aRv);
 
+  WorkerPrivate*
+  GetWorkerPrivate() const;
+
 private:
   
-  ServiceWorker(nsPIDOMWindow* aWindow, ServiceWorkerInfo* aInfo);
+  ServiceWorker(nsPIDOMWindow* aWindow, ServiceWorkerInfo* aInfo,
+                SharedWorker* aSharedWorker);
 
   
   ~ServiceWorker();
 
   ServiceWorkerState mState;
   const nsRefPtr<ServiceWorkerInfo> mInfo;
+
+  
+  
+  
+  
+  nsRefPtr<SharedWorker> mSharedWorker;
 };
 
 } 
