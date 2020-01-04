@@ -1128,6 +1128,12 @@ TEST_P(NewSdpTest, CheckMediaSectionGetBandwidth) {
 
 
 
+
+#define ID_A "1234567890abcdef"
+#define ID_B ID_A ID_A ID_A ID_A
+#define LONG_IDENTITY ID_B ID_B ID_B ID_B "xx"
+
+
 const std::string kBasicAudioVideoOffer =
 "v=0" CRLF
 "o=Mozilla-SIPUA-35.0a1 5184 0 IN IP4 0.0.0.0" CRLF
@@ -1141,7 +1147,7 @@ const std::string kBasicAudioVideoOffer =
 "a=msid-semantic:WMS stream streama" CRLF
 "a=msid-semantic:foo stream" CRLF
 "a=fingerprint:sha-256 DF:2E:AC:8A:FD:0A:8E:99:BF:5D:E8:3C:E7:FA:FB:08:3B:3C:54:1D:D7:D4:05:77:A0:72:9B:14:08:6D:0F:4C" CRLF
-"a=identity:blahblahblah foo;bar" CRLF
+"a=identity:" LONG_IDENTITY CRLF
 "a=group:BUNDLE first second" CRLF
 "a=group:BUNDLE third" CRLF
 "a=group:LS first third" CRLF
@@ -1336,7 +1342,7 @@ TEST_P(NewSdpTest, CheckIdentity) {
   ASSERT_TRUE(mSdp->GetAttributeList().HasAttribute(
         SdpAttribute::kIdentityAttribute));
   auto identity = mSdp->GetAttributeList().GetIdentity();
-  ASSERT_EQ("blahblahblah", identity) << "Wrong identity assertion";
+  ASSERT_EQ(LONG_IDENTITY, identity) << "Wrong identity assertion";
 }
 
 TEST_P(NewSdpTest, CheckNumberOfMediaSections) {
