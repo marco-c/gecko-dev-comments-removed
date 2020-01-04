@@ -734,13 +734,6 @@ nsSpeechTask::WindowVolumeChanged(float aVolume, bool aMuted)
 }
 
 NS_IMETHODIMP
-nsSpeechTask::WindowSuspendChanged(nsSuspendedTypes aSuspend)
-{
-  
-  return NS_OK;
-}
-
-NS_IMETHODIMP
 nsSpeechTask::WindowAudioCaptureChanged(bool aCapture)
 {
   
