@@ -16,15 +16,18 @@ add_task(function*() {
   let hud = yield openConsole(null);
   info("console opened");
 
-  let button = content.document.querySelector("button");
-  ok(button, "we have the button on the page");
 
   
   
   if (!Services.appinfo.browserTabsRemoteAutostart) {
     expectUncaughtException();
   }
-  EventUtils.sendMouseEvent({ type: "click" }, button, content);
+
+  ContentTask.spawn(gBrowser.selectedBrowser, {}, function*() {
+    let button = content.document.querySelector("button");
+    ok(button, "we have the button on the page");
+    button.click();
+  });
 
   let [result] = yield waitForMessages({
     webconsole: hud,
