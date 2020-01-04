@@ -58,14 +58,14 @@ def write_runtimes(data, suite, indir=here, outdir=here):
     threshold = runtimes[int(len(runtimes) * PERCENTILE)]
 
     
-    ommitted = []
+    omitted = []
     specified = indata if indata else {}
     current_tests = []
     for test, duration in data.iteritems():
         current_tests.append(test)
         duration = int(duration * 1000) if duration else 0
         if duration > 0 and duration < threshold:
-            ommitted.append(duration)
+            omitted.append(duration)
             if test in specified:
                 del specified[test]
         elif duration >= threshold and test != "automation.py":
@@ -82,7 +82,7 @@ def write_runtimes(data, suite, indir=here, outdir=here):
     for test in to_delete:
         del specified[test]
 
-    avg = int(sum(ommitted)/len(ommitted))
+    avg = int(sum(omitted)/len(omitted))
 
     results = {'excluded_test_average': avg,
                'runtimes': specified}
@@ -108,7 +108,7 @@ def cli(args=sys.argv[1:]):
     args = parser.parse_args(args)
 
     if not args.suite:
-        raise ValueError("Must specify suite with the -u argument")
+        raise ValueError("Must specify suite with the -s argument")
     if ',' in args.suite:
         raise ValueError("Passing multiple suites is not supported")
 
