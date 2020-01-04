@@ -10,6 +10,7 @@
 #include "jisx4051class.h"
 #include "nsComplexBreaker.h"
 #include "nsTArray.h"
+#include "nsUnicodeProperties.h"
 
 
 
@@ -403,105 +404,153 @@ IS_HYPHEN(char16_t u)
 }
 
 static int8_t
-GetClass(char16_t u)
+GetClass(char32_t u)
 {
-   uint16_t h = u & 0xFF00;
-   uint16_t l = u & 0x00ff;
-   int8_t c;
+  if (u < 0x10000) {
+    uint16_t h = u & 0xFF00;
+    uint16_t l = u & 0x00ff;
 
-   
-   if (0x0000 == h) {
-     c = GETCLASSFROMTABLE(gLBClass00, l);
-   } else if (0x1700 == h) {
-     c = GETCLASSFROMTABLE(gLBClass17, l);
-   } else if (NS_NeedsPlatformNativeHandling(u)) {
-     c = CLASS_COMPLEX;
-   } else if (0x0E00 == h) {
-     c = GETCLASSFROMTABLE(gLBClass0E, l);
-   } else if (0x2000 == h) {
-     c = GETCLASSFROMTABLE(gLBClass20, l);
-   } else if (0x2100 == h) {
-     c = GETCLASSFROMTABLE(gLBClass21, l);
-   } else if (0x3000 == h) {
-     c = GETCLASSFROMTABLE(gLBClass30, l);
-   } else if (((0x3200 <= u) && (u <= 0xA4CF)) || 
-              ((0xAC00 <= h) && (h <= 0xD7FF)) || 
-              ((0xf900 <= h) && (h <= 0xfaff))) {
-     c = CLASS_BREAKABLE; 
-   } else if (0xff00 == h) {
-     if (l < 0x0060) { 
-       c = GETCLASSFROMTABLE(gLBClass00, (l+0x20));
-     } else if (l < 0x00a0) {
-       switch (l) {
-         case 0x61: c = GetClass(0x3002); break;
-         case 0x62: c = GetClass(0x300c); break;
-         case 0x63: c = GetClass(0x300d); break;
-         case 0x64: c = GetClass(0x3001); break;
-         case 0x65: c = GetClass(0x30fb); break;
-         case 0x9e: c = GetClass(0x309b); break;
-         case 0x9f: c = GetClass(0x309c); break;
-         default:
-           if (IS_HALFWIDTH_IN_JISx4051_CLASS3(u))
-              c = CLASS_CLOSE; 
-           else
-              c = CLASS_BREAKABLE; 
-           break;
-       }
-     
-     } else if (l < 0x00e0) {
-       c = CLASS_CHARACTER; 
-     } else if (l < 0x00f0) {
-       static char16_t NarrowFFEx[16] = {
-         0x00A2, 0x00A3, 0x00AC, 0x00AF, 0x00A6, 0x00A5, 0x20A9, 0x0000,
-         0x2502, 0x2190, 0x2191, 0x2192, 0x2193, 0x25A0, 0x25CB, 0x0000
-       };
-       c = GetClass(NarrowFFEx[l - 0x00e0]);
-     } else {
-       c = CLASS_CHARACTER;
-     }
-   } else if (0x3100 == h) { 
-     if (l <= 0xbf) { 
+    
+    if (0x0000 == h) {
+      return GETCLASSFROMTABLE(gLBClass00, l);
+    }
+    if (0x1700 == h) {
+      return GETCLASSFROMTABLE(gLBClass17, l);
+    }
+    if (NS_NeedsPlatformNativeHandling(u)) {
+      return CLASS_COMPLEX;
+    }
+    if (0x0E00 == h) {
+      return GETCLASSFROMTABLE(gLBClass0E, l);
+    }
+    if (0x2000 == h) {
+      return GETCLASSFROMTABLE(gLBClass20, l);
+    }
+    if (0x2100 == h) {
+      return GETCLASSFROMTABLE(gLBClass21, l);
+    }
+    if (0x3000 == h) {
+      return GETCLASSFROMTABLE(gLBClass30, l);
+    }
+    if (0xff00 == h) {
+      if (l < 0x0060) { 
+        return GETCLASSFROMTABLE(gLBClass00, (l+0x20));
+      }
+      if (l < 0x00a0) { 
+        switch (l) {
+        case 0x61: return GetClass(0x3002);
+        case 0x62: return GetClass(0x300c);
+        case 0x63: return GetClass(0x300d);
+        case 0x64: return GetClass(0x3001);
+        case 0x65: return GetClass(0x30fb);
+        case 0x9e: return GetClass(0x309b);
+        case 0x9f: return GetClass(0x309c);
+        default:
+          if (IS_HALFWIDTH_IN_JISx4051_CLASS3(u)) {
+            return CLASS_CLOSE; 
+          }
+          return CLASS_BREAKABLE; 
+        }
+      }
+      if (l < 0x00e0) {
+        return CLASS_CHARACTER; 
+      }
+      if (l < 0x00f0) {
+        static char16_t NarrowFFEx[16] = {
+          0x00A2, 0x00A3, 0x00AC, 0x00AF, 0x00A6, 0x00A5, 0x20A9, 0x0000,
+          0x2502, 0x2190, 0x2191, 0x2192, 0x2193, 0x25A0, 0x25CB, 0x0000
+        };
+        return GetClass(NarrowFFEx[l - 0x00e0]);
+      }
+    } else if (0x3100 == h) { 
+      if (l <= 0xbf) { 
                       
                       
-       c = CLASS_BREAKABLE;
-     } else if (l >= 0xf0) { 
-       c = CLASS_CLOSE;
-     } else { 
-       c = CLASS_CHARACTER;
-     }
-   } else if (0x0300 == h) {
-     if (0x4F == l || (0x5C <= l && l <= 0x62))
-       c = CLASS_NON_BREAKABLE;
-     else
-       c = CLASS_CHARACTER;
-   } else if (0x0500 == h) {
-     
-     if (l == 0x8A)
-       c = GETCLASSFROMTABLE(gLBClass00, uint16_t(U_HYPHEN));
-     else
-       c = CLASS_CHARACTER;
-   } else if (0x0F00 == h) {
-     if (0x08 == l || 0x0C == l || 0x12 == l)
-       c = CLASS_NON_BREAKABLE;
-     else
-       c = CLASS_CHARACTER;
-   } else if (0x1800 == h) {
-     if (0x0E == l)
-       c = CLASS_NON_BREAKABLE;
-     else
-       c = CLASS_CHARACTER;
-   } else if (0x1600 == h) {
-     if (0x80 == l) { 
-       c = CLASS_BREAKABLE;
-     } else {
-       c = CLASS_CHARACTER;
-     }
-   } else if (u == 0xfeff) {
-     c = CLASS_NON_BREAKABLE;
-   } else {
-     c = CLASS_CHARACTER; 
-   }
-   return c;
+        return CLASS_BREAKABLE;
+      }
+      if (l >= 0xf0) { 
+        return CLASS_CLOSE;
+      }
+    } else if (0x0300 == h) {
+      if (0x4F == l || (0x5C <= l && l <= 0x62)) {
+        return CLASS_NON_BREAKABLE;
+      }
+    } else if (0x0500 == h) {
+      
+      if (l == 0x8A) {
+        return GETCLASSFROMTABLE(gLBClass00, uint16_t(U_HYPHEN));
+      }
+    } else if (0x0F00 == h) {
+      if (0x08 == l || 0x0C == l || 0x12 == l) {
+        return CLASS_NON_BREAKABLE;
+      }
+    } else if (0x1800 == h) {
+      if (0x0E == l) {
+        return CLASS_NON_BREAKABLE;
+      }
+    } else if (0x1600 == h) {
+      if (0x80 == l) { 
+        return CLASS_BREAKABLE;
+      }
+    } else if (u == 0xfeff) {
+      return CLASS_NON_BREAKABLE;
+    }
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  static const int8_t sUnicodeLineBreakToClass[] = {
+     CLASS_CHARACTER,
+     CLASS_CHARACTER,
+     CLASS_CHARACTER,
+     CLASS_CHARACTER,
+     CLASS_CHARACTER,
+     CLASS_OPEN_LIKE_CHARACTER, 
+     CLASS_CHARACTER,
+     CLASS_CHARACTER,
+     CLASS_CHARACTER,
+     CLASS_CHARACTER,
+     CLASS_BREAKABLE,
+     CLASS_CHARACTER,
+     CLASS_NON_BREAKABLE,
+     CLASS_CHARACTER,
+     CLASS_BREAKABLE,
+     CLASS_CLOSE_LIKE_CHARACTER,
+     CLASS_CHARACTER,
+     CLASS_BREAKABLE,
+     CLASS_CLOSE,
+     CLASS_CHARACTER,
+     CLASS_CHARACTER,
+     CLASS_CHARACTER,
+     CLASS_CHARACTER,
+     CLASS_CHARACTER,
+     CLASS_CHARACTER,
+     CLASS_CHARACTER,
+     CLASS_BREAKABLE,
+     CLASS_CHARACTER,
+     CLASS_BREAKABLE,
+     CLASS_CHARACTER,
+     CLASS_NON_BREAKABLE,
+     CLASS_BREAKABLE,
+     CLASS_BREAKABLE,
+     CLASS_CHARACTER,
+     CLASS_CHARACTER,
+     CLASS_CHARACTER,
+     CLASS_CLOSE_LIKE_CHARACTER,
+     CLASS_CLOSE,
+     CLASS_CHARACTER,
+     CLASS_CHARACTER
+  };
+
+  return sUnicodeLineBreakToClass[mozilla::unicode::GetLineBreakClass(u)];
 }
 
 static bool
@@ -619,10 +668,10 @@ public:
     mHasPreviousBackslash = true;
   }
 
-  char16_t GetPreviousNonHyphenCharacter() const {
+  uint32_t GetPreviousNonHyphenCharacter() const {
     return mPreviousNonHyphenCharacter;
   }
-  void NotifyNonHyphenCharacter(char16_t ch) {
+  void NotifyNonHyphenCharacter(uint32_t ch) {
     mPreviousNonHyphenCharacter = ch;
   }
 
@@ -652,7 +701,7 @@ private:
   uint32_t mIndex;
   uint32_t mLength;         
   uint32_t mLastBreakIndex;
-  char16_t mPreviousNonHyphenCharacter; 
+  uint32_t mPreviousNonHyphenCharacter; 
                                          
   bool mHasCJKChar; 
   bool mHasNonbreakableSpace; 
@@ -830,7 +879,12 @@ nsJISx4051LineBreaker::GetJISx4051Breaks(const char16_t* aChars, uint32_t aLengt
   ContextState state(aChars, aLength);
 
   for (cur = 0; cur < aLength; ++cur, state.AdvanceIndex()) {
-    char16_t ch = aChars[cur];
+    uint32_t ch = aChars[cur];
+    if (NS_IS_HIGH_SURROGATE(ch)) {
+      if (cur + 1 < aLength && NS_IS_LOW_SURROGATE(aChars[cur + 1])) {
+        ch = SURROGATE_TO_UCS4(ch, aChars[cur + 1]);
+      }
+    }
     int8_t cl;
 
     if (NEED_CONTEXTUAL_ANALYSIS(ch)) {
@@ -881,6 +935,12 @@ nsJISx4051LineBreaker::GetJISx4051Breaks(const char16_t* aChars, uint32_t aLengt
       aBreakBefore[cur] = allowBreak;
 
       cur = end - 1;
+    }
+
+    if (ch > 0xffff) {
+      ++cur;
+      aBreakBefore[cur] = false;
+      state.AdvanceIndex();
     }
   }
 }
