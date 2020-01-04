@@ -68,7 +68,7 @@ public:
 
   
   
-  double ExtraCurrentTime();
+  StreamTime ExtraCurrentTime();
 
   
   void SetIsOnlyNodeForContext(bool aIsOnlyNode);
@@ -112,8 +112,8 @@ private:
   bool mAudioChannelAgentPlaying;
 
   TimeStamp mStartedBlockingDueToBeingOnlyNode;
-  double mExtraCurrentTime;
-  double mExtraCurrentTimeSinceLastStartedBlocking;
+  StreamTime mExtraCurrentTime;
+  StreamTime mExtraCurrentTimeSinceLastStartedBlocking;
   bool mExtraCurrentTimeUpdatedSinceLastStableState;
   bool mCaptured;
 };
