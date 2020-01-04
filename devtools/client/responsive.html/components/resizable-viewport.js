@@ -78,7 +78,7 @@ module.exports = createClass({
     
     
     let deltaX = 2 * (clientX - lastClientX);
-    let deltaY = 2 * (clientY - lastClientY);
+    let deltaY = (clientY - lastClientY);
 
     if (ignoreX) {
       deltaX = 0;
