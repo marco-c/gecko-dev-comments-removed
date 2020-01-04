@@ -784,7 +784,8 @@ MediaFormatReader::UpdateReceivedNewData(TrackType aTrack)
   
   decoder.mTimeRanges = decoder.mTrackDemuxer->GetBuffered();
 
-  if (decoder.mDrainComplete || decoder.mDraining) {
+  if (decoder.mDrainComplete || decoder.mDraining ||
+      decoder.mDemuxRequest.Exists()) {
     
     
     return false;
