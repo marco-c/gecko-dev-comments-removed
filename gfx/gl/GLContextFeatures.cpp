@@ -187,6 +187,16 @@ static const FeatureInfo sFeatureInfoArr[] = {
         }
     },
     {
+        "EXT_color_buffer_float",
+        GLVersion::GL3,
+        GLESVersion::NONE,
+        GLContext::Extension_None,
+        {
+            GLContext::EXT_color_buffer_float,
+            GLContext::Extensions_End
+        }
+    },
+    {
         
         "frag_color_float",
         GLVersion::GL3,
