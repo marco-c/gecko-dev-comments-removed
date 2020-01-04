@@ -3251,6 +3251,11 @@ public:
     return StyleDisplay()->BackfaceIsHidden();
   }
 
+  
+
+
+  bool IsScrolledOutOfView();
+
 protected:
   
   nsRect           mRect;
