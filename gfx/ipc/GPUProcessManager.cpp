@@ -5,8 +5,13 @@
 
 #include "GPUProcessManager.h"
 #include "GPUProcessHost.h"
-#include "mozilla/layers/InProcessCompositorSession.h"
 #include "mozilla/StaticPtr.h"
+#include "mozilla/layers/InProcessCompositorSession.h"
+#include "mozilla/layers/RemoteCompositorSession.h"
+#include "mozilla/widget/PlatformWidgetTypes.h"
+#ifdef MOZ_WIDGET_SUPPORTS_OOP_COMPOSITING
+# include "mozilla/widget/CompositorWidgetChild.h"
+#endif
 #include "nsContentUtils.h"
 
 namespace mozilla {
@@ -159,7 +164,6 @@ GPUProcessManager::NotifyRemoteActorDestroyed(const uint64_t& aProcessToken)
   
   
   
-  MOZ_ASSERT(mProcess);
   DestroyProcess();
 }
 
@@ -186,6 +190,23 @@ GPUProcessManager::CreateTopLevelCompositor(nsIWidget* aWidget,
 {
   uint64_t layerTreeId = AllocateLayerTreeId();
 
+  if (mGPUChild) {
+    RefPtr<CompositorSession> session = CreateRemoteSession(
+      aWidget,
+      aLayerManager,
+      layerTreeId,
+      aScale,
+      aUseAPZ,
+      aUseExternalSurfaceSize,
+      aSurfaceSize);
+    if (session) {
+      return session;
+    }
+
+    
+    DisableGPUProcess("Failed to create remote compositor");
+  }
+
   return InProcessCompositorSession::Create(
     aWidget,
     aLayerManager,
@@ -194,6 +215,64 @@ GPUProcessManager::CreateTopLevelCompositor(nsIWidget* aWidget,
     aUseAPZ,
     aUseExternalSurfaceSize,
     aSurfaceSize);
+}
+
+RefPtr<CompositorSession>
+GPUProcessManager::CreateRemoteSession(nsIWidget* aWidget,
+                                       ClientLayerManager* aLayerManager,
+                                       const uint64_t& aRootLayerTreeId,
+                                       CSSToLayoutDeviceScale aScale,
+                                       bool aUseAPZ,
+                                       bool aUseExternalSurfaceSize,
+                                       const gfx::IntSize& aSurfaceSize)
+{
+#ifdef MOZ_WIDGET_SUPPORTS_OOP_COMPOSITING
+  ipc::Endpoint<PCompositorBridgeParent> parentPipe;
+  ipc::Endpoint<PCompositorBridgeChild> childPipe;
+
+  nsresult rv = PCompositorBridge::CreateEndpoints(
+    mGPUChild->OtherPid(),
+    base::GetCurrentProcId(),
+    &parentPipe,
+    &childPipe);
+  if (NS_FAILED(rv)) {
+    gfxCriticalNote << "Failed to create PCompositorBridge endpoints: " << hexa(int(rv));
+    return nullptr;
+  }
+
+  RefPtr<CompositorBridgeChild> child = CompositorBridgeChild::CreateRemote(
+    mProcessToken,
+    aLayerManager,
+    Move(childPipe));
+  if (!child) {
+    gfxCriticalNote << "Failed to create CompositorBridgeChild";
+    return nullptr;
+  }
+
+  CompositorWidgetInitData initData;
+  aWidget->GetCompositorWidgetInitData(&initData);
+
+  bool ok = mGPUChild->SendNewWidgetCompositor(
+    Move(parentPipe),
+    aScale,
+    aUseExternalSurfaceSize,
+    aSurfaceSize);
+  if (!ok)
+    return nullptr;
+
+  CompositorWidgetChild* widget = new CompositorWidgetChild(aWidget);
+  if (!child->SendPCompositorWidgetConstructor(widget, initData))
+    return nullptr;
+  if (!child->SendInitialize(aRootLayerTreeId))
+    return nullptr;
+
+  RefPtr<RemoteCompositorSession> session =
+    new RemoteCompositorSession(child, widget, aRootLayerTreeId);
+  return session.forget();
+#else
+  gfxCriticalNote << "Platform does not support out-of-process compositing";
+  return nullptr;
+#endif
 }
 
 PCompositorBridgeParent*

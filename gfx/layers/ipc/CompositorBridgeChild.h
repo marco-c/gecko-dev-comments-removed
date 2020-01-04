@@ -66,6 +66,11 @@ public:
   static PCompositorBridgeChild*
   Create(Transport* aTransport, ProcessId aOtherProcess);
 
+  static RefPtr<CompositorBridgeChild> CreateRemote(
+    const uint64_t& aProcessToken,
+    ClientLayerManager* aLayerManager,
+    Endpoint<PCompositorBridgeChild>&& aEndpoint);
+
   
 
 
@@ -297,6 +302,8 @@ private:
   MessageLoop* mMessageLoop;
 
   AutoTArray<RefPtr<TextureClientPool>,2> mTexturePools;
+
+  uint64_t mProcessToken;
 };
 
 } 

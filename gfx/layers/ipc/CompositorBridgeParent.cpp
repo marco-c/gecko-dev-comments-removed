@@ -612,6 +612,9 @@ CompositorBridgeParent::CompositorBridgeParent(CSSToLayoutDeviceScale aScale,
   , mPluginWindowsHidden(false)
 #endif
 {
+  
+  MOZ_ASSERT(NS_IsMainThread());
+  SetMessageLoopToPostDestructionTo(MessageLoop::current());
 }
 
 void
@@ -624,6 +627,7 @@ CompositorBridgeParent::InitSameProcess(widget::CompositorWidget* aWidget,
   if (aUseAPZ) {
     mApzcTreeManager = new APZCTreeManager();
   }
+  mCompositorScheduler = new CompositorVsyncScheduler(this, mWidget);
 
   
   SetOtherProcessId(base::GetCurrentProcId());
@@ -632,15 +636,30 @@ CompositorBridgeParent::InitSameProcess(widget::CompositorWidget* aWidget,
   Initialize();
 }
 
+bool
+CompositorBridgeParent::Bind(Endpoint<PCompositorBridgeParent>&& aEndpoint)
+{
+  if (!aEndpoint.Bind(this, nullptr)) {
+    return false;
+  }
+  mSelfRef = this;
+  return true;
+}
+
+bool
+CompositorBridgeParent::RecvInitialize(const uint64_t& aRootLayerTreeId)
+{
+  mRootLayerTreeID = aRootLayerTreeId;
+
+  Initialize();
+  return true;
+}
+
 void
 CompositorBridgeParent::Initialize()
 {
-  MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(CompositorThread(),
              "The compositor thread must be Initialized before instanciating a CompositorBridgeParent.");
-
-  
-  SetMessageLoopToPostDestructionTo(MessageLoop::current());
 
   mCompositorID = 0;
   
@@ -658,7 +677,6 @@ CompositorBridgeParent::Initialize()
     sIndirectLayerTrees[mRootLayerTreeID].mParent = this;
   }
 
-  mCompositorScheduler = new CompositorVsyncScheduler(this, mWidget);
   LayerScope::SetPixelScale(mScale.scale);
 }
 
@@ -1895,6 +1913,7 @@ public:
   virtual void ActorDestroy(ActorDestroyReason aWhy) override;
 
   
+  virtual bool RecvInitialize(const uint64_t& aRootLayerTreeId) override { return false; }
   virtual bool RecvRequestOverfill() override { return true; }
   virtual bool RecvWillClose() override { return true; }
   virtual bool RecvPause() override { return true; }

@@ -15,6 +15,7 @@
 #include "mozilla/layers/PLayerTransactionChild.h"
 #include "mozilla/layers/TextureClient.h"
 #include "mozilla/layers/TextureClientPool.h"
+#include "mozilla/gfx/GPUProcessManager.h"
 #include "mozilla/mozalloc.h"           
 #include "nsAutoPtr.h"
 #include "nsDebug.h"                    
@@ -126,6 +127,8 @@ CompositorBridgeChild::Destroy()
   SendWillClose();
   mCanSend = false;
 
+  
+  mProcessToken = 0;
 
   
   
@@ -207,6 +210,21 @@ CompositorBridgeChild::InitSameProcess(widget::CompositorWidget* aWidget,
 
   mCompositorBridgeParent->InitSameProcess(aWidget, aLayerTreeId, aUseAPZ);
   return mCompositorBridgeParent;
+}
+
+ RefPtr<CompositorBridgeChild>
+CompositorBridgeChild::CreateRemote(const uint64_t& aProcessToken,
+                                    ClientLayerManager* aLayerManager,
+                                    Endpoint<PCompositorBridgeChild>&& aEndpoint)
+{
+  RefPtr<CompositorBridgeChild> child = new CompositorBridgeChild(aLayerManager);
+  if (!aEndpoint.Bind(child, nullptr)) {
+    return nullptr;
+  }
+
+  child->mCanSend = true;
+  child->mProcessToken = aProcessToken;
+  return child;
 }
 
  CompositorBridgeChild*
@@ -492,6 +510,10 @@ CompositorBridgeChild::ActorDestroy(ActorDestroyReason aWhy)
     
     mCanSend = false;
     gfxCriticalNote << "Receive IPC close with reason=AbnormalShutdown";
+  }
+
+  if (mProcessToken && XRE_IsParentProcess()) {
+    GPUProcessManager::Get()->NotifyRemoteActorDestroyed(mProcessToken);
   }
 }
 
@@ -983,7 +1005,7 @@ CompositorBridgeChild::DeallocPCompositorWidgetChild(PCompositorWidgetChild* aAc
 void
 CompositorBridgeChild::ProcessingError(Result aCode, const char* aReason)
 {
-  MOZ_CRASH("Processing error in CompositorBridgeChild");
+  MOZ_RELEASE_ASSERT(aCode == MsgDropped, "Processing error in CompositorBridgeChild");
 }
 
 } 

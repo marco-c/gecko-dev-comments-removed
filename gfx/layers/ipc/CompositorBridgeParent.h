@@ -223,6 +223,12 @@ public:
                        const uint64_t& aLayerTreeId,
                        bool aUseAPZ);
 
+  
+  
+  
+  bool Bind(Endpoint<PCompositorBridgeParent>&& aEndpoint);
+
+  virtual bool RecvInitialize(const uint64_t& aRootLayerTreeId) override;
   virtual bool RecvGetFrameUniformity(FrameUniformityData* aOutData) override;
   virtual bool RecvRequestOverfill() override;
   virtual bool RecvWillClose() override;

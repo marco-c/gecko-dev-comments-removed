@@ -17,6 +17,7 @@ class CompositorWidget;
 class CompositorWidgetDelegate;
 } 
 namespace gfx {
+class GPUProcessHost;
 class GPUProcessManager;
 } 
 namespace layers {
@@ -34,6 +35,7 @@ class CompositorSession
   friend class gfx::GPUProcessManager;
 
 protected:
+  typedef gfx::GPUProcessHost GPUProcessHost;
   typedef widget::CompositorWidget CompositorWidget;
   typedef widget::CompositorWidgetDelegate CompositorWidgetDelegate;
 

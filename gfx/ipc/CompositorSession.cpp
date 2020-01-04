@@ -4,14 +4,17 @@
 
 
 #include "CompositorSession.h"
+#include "base/process_util.h"
+#include "GPUChild.h"
+#include "mozilla/gfx/Logging.h"
+#include "mozilla/gfx/GPUProcessHost.h"
 #include "mozilla/layers/CompositorBridgeChild.h"
 #include "mozilla/layers/CompositorBridgeParent.h"
-#include "mozilla/widget/PlatformWidgetTypes.h"
-#include "base/process_util.h"
 
 namespace mozilla {
 namespace layers {
 
+using namespace gfx;
 using namespace widget;
 
 
