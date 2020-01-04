@@ -8,6 +8,8 @@
 
 #include "mozilla/TelemetryHistogramEnums.h"
 
+#include "mozilla/TelemetryComms.h"
+
 
 
 
@@ -41,6 +43,9 @@ void Accumulate(const char* name, uint32_t sample);
 void Accumulate(const char* name, const nsCString& key, uint32_t sample);
 
 void AccumulateCategorical(mozilla::Telemetry::ID aId, const nsCString& aLabel);
+
+void AccumulateChild(const nsTArray<mozilla::Telemetry::Accumulation>& aAccumulations);
+void AccumulateChildKeyed(const nsTArray<mozilla::Telemetry::KeyedAccumulation>& aAccumulations);
 
 void
 ClearHistogram(mozilla::Telemetry::ID aId);
@@ -96,6 +101,8 @@ GetMapShallowSizesOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf);
 size_t
 GetHistogramSizesofIncludingThis(mozilla::MallocSizeOf aMallocSizeOf);
 
+void
+IPCTimerFired(nsITimer* aTimer, void* aClosure);
 } 
 
 #endif 
