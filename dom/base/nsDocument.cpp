@@ -5895,29 +5895,6 @@ nsDocument::RegisterUnresolvedElement(Element* aElement, nsIAtom* aTypeName)
   return NS_OK;
 }
 
-namespace {
-
-class ProcessStackRunner final : public nsIRunnable
-{
-  ~ProcessStackRunner() {}
-public:
-  explicit ProcessStackRunner(bool aIsBaseQueue = false)
-    : mIsBaseQueue(aIsBaseQueue)
-  {
-  }
-  NS_DECL_ISUPPORTS
-  NS_IMETHOD Run() override
-  {
-    nsDocument::ProcessTopElementQueue(mIsBaseQueue);
-    return NS_OK;
-  }
-  bool mIsBaseQueue;
-};
-
-NS_IMPL_ISUPPORTS(ProcessStackRunner, nsIRunnable);
-
-} 
-
 void
 nsDocument::EnqueueLifecycleCallback(nsIDocument::ElementCallbackType aType,
                                      Element* aCustomElement,
@@ -6019,10 +5996,7 @@ nsDocument::EnqueueLifecycleCallback(nsIDocument::ElementCallbackType aType,
 
     
     
-    
-    
-    
-    bool shouldPushElementQueue = nsContentUtils::MicroTaskLevel() > 0 &&
+    bool shouldPushElementQueue =
       (!lastData || lastData->mAssociatedMicroTask <
          static_cast<int32_t>(nsContentUtils::MicroTaskLevel()));
 
@@ -6045,38 +6019,21 @@ nsDocument::EnqueueLifecycleCallback(nsIDocument::ElementCallbackType aType,
       
       
       
-      nsContentUtils::AddScriptRunner(new ProcessStackRunner());
+      nsCOMPtr<nsIRunnable> runnable =
+        NS_NewRunnableFunction(&nsDocument::ProcessTopElementQueue);
+      nsContentUtils::AddScriptRunner(runnable);
     }
   }
 }
 
 
 void
-nsDocument::ProcessBaseElementQueue()
-{
-  
-  
-  if (sProcessingBaseElementQueue || !sProcessingStack) {
-    return;
-  }
-
-  MOZ_ASSERT(nsContentUtils::MicroTaskLevel() == 0);
-  sProcessingBaseElementQueue = true;
-  nsContentUtils::AddScriptRunner(new ProcessStackRunner(true));
-}
-
-
-void
-nsDocument::ProcessTopElementQueue(bool aIsBaseQueue)
+nsDocument::ProcessTopElementQueue()
 {
   MOZ_ASSERT(nsContentUtils::IsSafeToRunScript());
 
   nsTArray<nsRefPtr<CustomElementData>>& stack = *sProcessingStack;
   uint32_t firstQueue = stack.LastIndexOf((CustomElementData*) nullptr);
-
-  if (aIsBaseQueue && firstQueue != 0) {
-    return;
-  }
 
   for (uint32_t i = firstQueue + 1; i < stack.Length(); ++i) {
     
@@ -6095,7 +6052,6 @@ nsDocument::ProcessTopElementQueue(bool aIsBaseQueue)
   } else {
     
     stack.SetLength(1);
-    sProcessingBaseElementQueue = false;
   }
 }
 

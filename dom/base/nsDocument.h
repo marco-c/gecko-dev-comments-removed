@@ -1303,7 +1303,7 @@ public:
                                         mozilla::dom::LifecycleCallbackArgs* aArgs = nullptr,
                                         mozilla::dom::CustomElementDefinition* aDefinition = nullptr) override;
 
-  static void ProcessTopElementQueue(bool aIsBaseQueue = false);
+  static void ProcessTopElementQueue();
 
   void GetCustomPrototype(int32_t aNamespaceID,
                           nsIAtom* aAtom,
@@ -1600,15 +1600,9 @@ private:
   
   static mozilla::Maybe<nsTArray<nsRefPtr<mozilla::dom::CustomElementData>>> sProcessingStack;
 
-  
-  
-  static bool sProcessingBaseElementQueue;
-
   static bool CustomElementConstructor(JSContext* aCx, unsigned aArgc, JS::Value* aVp);
 
 public:
-  static void ProcessBaseElementQueue();
-
   
   
   
