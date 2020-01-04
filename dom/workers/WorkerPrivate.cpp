@@ -369,7 +369,7 @@ public:
 
 private:
   virtual bool
-  PreDispatch(WorkerPrivate* aWorkerPrivate) override
+  PreDispatch(JSContext* aCx, WorkerPrivate* aWorkerPrivate) override
   {
     
     return true;
@@ -594,7 +594,7 @@ public:
 
 private:
   virtual bool
-  PreDispatch(WorkerPrivate* aWorkerPrivate) override
+  PreDispatch(JSContext* aCx, WorkerPrivate* aWorkerPrivate) override
   {
     MOZ_CRASH("Don't call Dispatch() on CloseEventRunnable!");
   }
@@ -857,7 +857,7 @@ public:
 
 private:
   virtual bool
-  PreDispatch(WorkerPrivate* aWorkerPrivate) override
+  PreDispatch(JSContext* aCx, WorkerPrivate* aWorkerPrivate) override
   {
     aWorkerPrivate->AssertIsOnParentThread();
     
@@ -1176,7 +1176,7 @@ private:
   ~TimerRunnable() {}
 
   virtual bool
-  PreDispatch(WorkerPrivate* aWorkerPrivate) override
+  PreDispatch(JSContext* aCx, WorkerPrivate* aWorkerPrivate) override
   {
     
     return true;
@@ -1223,7 +1223,7 @@ private:
   }
 
   virtual bool
-  PreDispatch(WorkerPrivate* aWorkerPrivate) override
+  PreDispatch(JSContext* aCx, WorkerPrivate* aWorkerPrivate) override
   {
     
     return true;
@@ -1271,7 +1271,7 @@ class KillCloseEventRunnable final : public WorkerRunnable
 
   private:
     virtual bool
-    PreDispatch(WorkerPrivate* aWorkerPrivate) override
+    PreDispatch(JSContext* aCx, WorkerPrivate* aWorkerPrivate) override
     {
       
       return true;
@@ -1337,7 +1337,7 @@ private:
   }
 
   virtual bool
-  PreDispatch(WorkerPrivate* aWorkerPrivate) override
+  PreDispatch(JSContext* aCx, WorkerPrivate* aWorkerPrivate) override
   {
     MOZ_CRASH("Don't call Dispatch() on KillCloseEventRunnable!");
   }
@@ -1491,7 +1491,7 @@ public:
 
 private:
   virtual bool
-  PreDispatch(WorkerPrivate* aWorkerPrivate) override
+  PreDispatch(JSContext* aCx, WorkerPrivate* aWorkerPrivate) override
   {
     
     
@@ -1682,7 +1682,7 @@ private:
   }
 
   virtual bool
-  PreDispatch(WorkerPrivate* aWorkerPrivate) override
+  PreDispatch(JSContext* aCx, WorkerPrivate* aWorkerPrivate) override
   {
     MOZ_ASSERT_UNREACHABLE("Should never call Dispatch on this!");
     return true;

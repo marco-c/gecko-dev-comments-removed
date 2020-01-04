@@ -2500,21 +2500,20 @@ public:
   {
   }
 
-  bool WorkerRun(JSContext* aCx, WorkerPrivate* aWorkerPrivate) override
+  bool WorkerRun(JSContext* aCx, WorkerPrivate* aWorkerPrivate)
   {
     aWorkerPrivate->AssertIsOnWorkerThread();
     aWorkerPrivate->ModifyBusyCountFromWorker(aCx, true);
     return !NS_FAILED(mImpl->CancelInternal());
   }
 
-  void PostRun(JSContext* aCx, WorkerPrivate* aWorkerPrivate,
-               bool aRunResult) override
+  void PostRun(JSContext* aCx, WorkerPrivate* aWorkerPrivate, bool aRunResult)
   {
     aWorkerPrivate->ModifyBusyCountFromWorker(aCx, false);
   }
 
   bool
-  PreDispatch(WorkerPrivate* aWorkerPrivate) override
+  PreDispatch(JSContext* aCx, WorkerPrivate* aWorkerPrivate)
   {
     
     
@@ -2524,7 +2523,7 @@ public:
 
   void
   PostDispatch(JSContext* aCx, WorkerPrivate* aWorkerPrivate,
-               bool aDispatchResult) override
+               bool aDispatchResult)
   {
     
     
@@ -2673,7 +2672,7 @@ public:
   {
   }
 
-  bool WorkerRun(JSContext* aCx, WorkerPrivate* aWorkerPrivate) override
+  bool WorkerRun(JSContext* aCx, WorkerPrivate* aWorkerPrivate)
   {
     aWorkerPrivate->AssertIsOnWorkerThread();
     aWorkerPrivate->ModifyBusyCountFromWorker(aCx, true);
@@ -2687,14 +2686,13 @@ public:
     return !NS_FAILED(mEvent->Run());
   }
 
-  void PostRun(JSContext* aCx, WorkerPrivate* aWorkerPrivate,
-               bool aRunResult) override
+  void PostRun(JSContext* aCx, WorkerPrivate* aWorkerPrivate, bool aRunResult)
   {
     aWorkerPrivate->ModifyBusyCountFromWorker(aCx, false);
   }
 
   bool
-  PreDispatch(WorkerPrivate* aWorkerPrivate) override
+  PreDispatch(JSContext* aCx, WorkerPrivate* aWorkerPrivate)
   {
     
     
@@ -2705,7 +2703,7 @@ public:
 
   void
   PostDispatch(JSContext* aCx, WorkerPrivate* aWorkerPrivate,
-               bool aDispatchResult) override
+               bool aDispatchResult)
   {
     
     

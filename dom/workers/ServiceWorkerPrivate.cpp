@@ -733,7 +733,7 @@ public:
 
 private:
   bool
-  PreDispatch(WorkerPrivate* aWorkerPrivate) override
+  PreDispatch(JSContext* aCx, WorkerPrivate* aWorkerPrivate) override
   {
     
     
