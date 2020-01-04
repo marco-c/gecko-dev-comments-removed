@@ -358,7 +358,12 @@ nsTerminator::Start()
 {
   MOZ_ASSERT(!mInitialized);
   StartWatchdog();
+#if !defined(DEBUG)
+  
+  
+  
   StartWriter();
+#endif 
   mInitialized = true;
 }
 
@@ -399,7 +404,6 @@ nsTerminator::StartWatchdog()
 void
 nsTerminator::StartWriter()
 {
-
   if (!Telemetry::CanRecordExtended()) {
     return;
   }
@@ -448,7 +452,12 @@ nsTerminator::Observe(nsISupports *, const char *aTopic, const char16_t *)
   }
 
   UpdateHeartbeat(aTopic);
+#if !defined(DEBUG)
+  
+  
+  
   UpdateTelemetry();
+#endif 
   UpdateCrashReport(aTopic);
 
   
