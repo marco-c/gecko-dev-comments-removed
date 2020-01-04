@@ -361,7 +361,7 @@ pref("media.gmp.storage.version.expected", 1);
 
 
 
-pref("media.decoder-doctor.notifications-allowed", "MediaWidevineNoWMFNoSilverlight");
+pref("media.decoder-doctor.notifications-allowed", "MediaWMFNeeded, MediaWidevineNoWMFNoSilverlight");
 
 pref("media.decoder-doctor.verbose", false);
 
