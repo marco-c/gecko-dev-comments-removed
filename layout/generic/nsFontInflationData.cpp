@@ -16,8 +16,8 @@
 using namespace mozilla;
 using namespace mozilla::layout;
 
-NS_DECLARE_FRAME_PROPERTY(FontInflationDataProperty,
-                          DeleteValue<nsFontInflationData>)
+NS_DECLARE_FRAME_PROPERTY_DELETABLE(FontInflationDataProperty,
+                                    nsFontInflationData)
 
  nsFontInflationData*
 nsFontInflationData::FindFontInflationDataFor(const nsIFrame *aFrame)

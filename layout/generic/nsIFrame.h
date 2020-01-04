@@ -377,16 +377,16 @@ struct IntrinsicSize {
 
 
 template<typename T>
-static void DeleteValue(void* aPropertyValue)
+static void DeleteValue(T* aPropertyValue)
 {
-  delete static_cast<T*>(aPropertyValue);
+  delete aPropertyValue;
 }
 
 
 template<typename T>
-static void ReleaseValue(void* aPropertyValue)
+static void ReleaseValue(T* aPropertyValue)
 {
-  static_cast<T*>(aPropertyValue)->Release();
+  aPropertyValue->Release();
 }
 
 
@@ -860,22 +860,34 @@ public:
     return &descriptor;                                                             \
   }
 
+#define NS_DECLARE_FRAME_PROPERTY_WITH_DTOR(prop, type, dtor)             \
+  static const mozilla::FramePropertyDescriptor<type>* prop() {           \
+    static MOZ_CONSTEXPR auto descriptor =                                \
+      mozilla::FramePropertyDescriptor<type>::NewWithDestructor<dtor>();  \
+    return &descriptor;                                                   \
+  }
+
+#define NS_DECLARE_FRAME_PROPERTY_DELETABLE(prop, type) \
+  NS_DECLARE_FRAME_PROPERTY_WITH_DTOR(prop, type, DeleteValue)
+
+#define NS_DECLARE_FRAME_PROPERTY_RELEASABLE(prop, type) \
+  NS_DECLARE_FRAME_PROPERTY_WITH_DTOR(prop, type, ReleaseValue)
+
   NS_DECLARE_FRAME_PROPERTY(IBSplitSibling, nullptr)
   NS_DECLARE_FRAME_PROPERTY(IBSplitPrevSibling, nullptr)
 
-  NS_DECLARE_FRAME_PROPERTY(NormalPositionProperty, DeleteValue<nsPoint>)
-  NS_DECLARE_FRAME_PROPERTY(ComputedOffsetProperty, DeleteValue<nsMargin>)
+  NS_DECLARE_FRAME_PROPERTY_DELETABLE(NormalPositionProperty, nsPoint)
+  NS_DECLARE_FRAME_PROPERTY_DELETABLE(ComputedOffsetProperty, nsMargin)
 
-  NS_DECLARE_FRAME_PROPERTY(OutlineInnerRectProperty, DeleteValue<nsRect>)
-  NS_DECLARE_FRAME_PROPERTY(PreEffectsBBoxProperty, DeleteValue<nsRect>)
-  NS_DECLARE_FRAME_PROPERTY(PreTransformOverflowAreasProperty,
-                            DeleteValue<nsOverflowAreas>)
+  NS_DECLARE_FRAME_PROPERTY_DELETABLE(OutlineInnerRectProperty, nsRect)
+  NS_DECLARE_FRAME_PROPERTY_DELETABLE(PreEffectsBBoxProperty, nsRect)
+  NS_DECLARE_FRAME_PROPERTY_DELETABLE(PreTransformOverflowAreasProperty,
+                                      nsOverflowAreas)
 
   
   
   
-  NS_DECLARE_FRAME_PROPERTY(InitialOverflowProperty,
-                            DeleteValue<nsOverflowAreas>)
+  NS_DECLARE_FRAME_PROPERTY_DELETABLE(InitialOverflowProperty, nsOverflowAreas)
 
 #ifdef DEBUG
   
@@ -884,16 +896,16 @@ public:
   NS_DECLARE_FRAME_PROPERTY(DebugInitialOverflowPropertyApplied, nullptr)
 #endif
 
-  NS_DECLARE_FRAME_PROPERTY(UsedMarginProperty, DeleteValue<nsMargin>)
-  NS_DECLARE_FRAME_PROPERTY(UsedPaddingProperty, DeleteValue<nsMargin>)
-  NS_DECLARE_FRAME_PROPERTY(UsedBorderProperty, DeleteValue<nsMargin>)
+  NS_DECLARE_FRAME_PROPERTY_DELETABLE(UsedMarginProperty, nsMargin)
+  NS_DECLARE_FRAME_PROPERTY_DELETABLE(UsedPaddingProperty, nsMargin)
+  NS_DECLARE_FRAME_PROPERTY_DELETABLE(UsedBorderProperty, nsMargin)
 
   NS_DECLARE_FRAME_PROPERTY(LineBaselineOffset, nullptr)
 
-  NS_DECLARE_FRAME_PROPERTY(CachedBackgroundImage, ReleaseValue<gfxASurface>)
-  NS_DECLARE_FRAME_PROPERTY(CachedBackgroundImageDT, ReleaseValue<DrawTarget>)
+  NS_DECLARE_FRAME_PROPERTY_RELEASABLE(CachedBackgroundImage, gfxASurface)
+  NS_DECLARE_FRAME_PROPERTY_RELEASABLE(CachedBackgroundImageDT, DrawTarget)
 
-  NS_DECLARE_FRAME_PROPERTY(InvalidationRect, DeleteValue<nsRect>)
+  NS_DECLARE_FRAME_PROPERTY_DELETABLE(InvalidationRect, nsRect)
 
   NS_DECLARE_FRAME_PROPERTY(RefusedAsyncAnimationProperty, nullptr)
 
