@@ -745,6 +745,7 @@ PresShell::PresShell()
   mSelectionFlags = nsISelectionDisplay::DISPLAY_TEXT | nsISelectionDisplay::DISPLAY_IMAGES;
   mIsThemeSupportDisabled = false;
   mIsActive = true;
+  mIsHidden = false;
   
 #if defined(MOZ_WIDGET_ANDROID) && !defined(MOZ_ANDROID_APZ)
   
@@ -10403,6 +10404,10 @@ void PresShell::QueryIsActive()
   if (docshell) {
     bool isActive;
     nsresult rv = docshell->GetIsActive(&isActive);
+    
+    
+    
+    
     if (NS_SUCCEEDED(rv))
       SetIsActive(isActive);
   }
@@ -10440,6 +10445,11 @@ PresShell::SetIsActive(bool aIsActive, bool aIsHidden)
   NS_PRECONDITION(mDocument, "should only be called with a document");
 
   mIsActive = aIsActive;
+
+  
+  
+  mIsHidden |= aIsHidden;
+
   nsPresContext* presContext = GetPresContext();
   if (presContext &&
       presContext->RefreshDriver()->PresContext() == presContext) {
@@ -10479,10 +10489,14 @@ PresShell::SetIsActive(bool aIsActive, bool aIsHidden)
   
   
   
-  if (aIsHidden) {
+  if (mIsHidden) {
     if (TabChild* tab = TabChild::GetFrom(this)) {
       if (aIsActive) {
         tab->MakeVisible();
+        
+        
+        mIsHidden = false;
+
         if (!mIsZombie) {
           if (nsIFrame* root = mFrameConstructor->GetRootFrame()) {
             FrameLayerBuilder::InvalidateAllLayersForFrame(
