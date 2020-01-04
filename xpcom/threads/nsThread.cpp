@@ -62,6 +62,11 @@
 #define HAVE_SCHED_SETAFFINITY
 #endif
 
+#ifdef XP_MACOSX
+#include <mach/mach.h>
+#include <mach/thread_policy.h>
+#endif
+
 #ifdef MOZ_CANARY
 # include <unistd.h>
 # include <execinfo.h>
@@ -295,6 +300,31 @@ private:
 
 
 static void
+SetThreadAffinity(unsigned int cpu)
+{
+#ifdef HAVE_SCHED_SETAFFINITY
+  cpu_set_t cpus;
+  CPU_ZERO(&cpus);
+  CPU_SET(cpu, &cpus);
+  sched_setaffinity(0, sizeof(cpus), &cpus);
+  
+  
+#elif defined(XP_MACOSX)
+  
+  
+  
+  
+  
+  thread_affinity_policy_data_t policy;
+  policy.affinity_tag = cpu + 1;
+  MOZ_ALWAYS_TRUE(thread_policy_set(mach_thread_self(), THREAD_AFFINITY_POLICY,
+                                    &policy.affinity_tag, 1) == KERN_SUCCESS);
+#elif defined(XP_WIN)
+  MOZ_ALWAYS_TRUE(SetThreadIdealProcessor(GetCurrentThread(), cpu) != -1);
+#endif
+}
+
+static void
 SetupCurrentThreadForChaosMode()
 {
   if (!ChaosMode::isActive(ChaosFeature::ThreadScheduling)) {
@@ -321,15 +351,10 @@ SetupCurrentThreadForChaosMode()
   PR_SetThreadPriority(PR_GetCurrentThread(), PRThreadPriority(priority));
 #endif
 
-#ifdef HAVE_SCHED_SETAFFINITY
   
   if (ChaosMode::randomUint32LessThan(2)) {
-    cpu_set_t cpus;
-    CPU_ZERO(&cpus);
-    CPU_SET(0, &cpus);
-    sched_setaffinity(0, sizeof(cpus), &cpus);
+    SetThreadAffinity(0);
   }
-#endif
 }
 
  void
