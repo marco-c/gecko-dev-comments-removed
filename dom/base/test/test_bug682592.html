@@ -39,6 +39,7 @@
 */
 
 SimpleTest.waitForExplicitFinish();
+SimpleTest.requestLongerTimeout(2);
 if (navigator.platform.startsWith("Linux arm")) { /* bugs 982875, 999429 */
   SimpleTest.expectAssertions(0, 4);
 }
