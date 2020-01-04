@@ -432,7 +432,7 @@ public:
   nsTArray<nsIScrollPositionListener*> mListeners;
   nsIAtom* mLastScrollOrigin;
   nsIAtom* mLastSmoothScrollOrigin;
-  nsPoint mApzSmoothScrollDestination;
+  Maybe<nsPoint> mApzSmoothScrollDestination;
   uint32_t mScrollGeneration;
   nsRect mScrollPort;
   

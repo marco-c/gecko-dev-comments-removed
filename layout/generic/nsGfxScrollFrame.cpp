@@ -2093,6 +2093,12 @@ ScrollFrameHelper::ScrollToWithOrigin(nsPoint aScrollPosition,
 
   nsRect range = aRange ? *aRange : nsRect(aScrollPosition, nsSize(0, 0));
 
+  if (aMode != nsIScrollableFrame::SMOOTH_MSD) {
+    
+    
+    mApzSmoothScrollDestination = Nothing();
+  }
+
   if (aMode == nsIScrollableFrame::INSTANT) {
     
     
@@ -2122,8 +2128,9 @@ ScrollFrameHelper::ScrollToWithOrigin(nsPoint aScrollPosition,
         }
 
         if (nsLayoutUtils::AsyncPanZoomEnabled(mOuter)) {
-          if (mApzSmoothScrollDestination == mDestination &&
+          if (mApzSmoothScrollDestination == Some(mDestination) &&
               mScrollGeneration == sScrollGenerationCounter) {
+            
             
             
             
@@ -2145,7 +2152,7 @@ ScrollFrameHelper::ScrollToWithOrigin(nsPoint aScrollPosition,
           
           
           mLastSmoothScrollOrigin = aOrigin;
-          mApzSmoothScrollDestination = mDestination;
+          mApzSmoothScrollDestination = Some(mDestination);
           mScrollGeneration = ++sScrollGenerationCounter;
 
           if (!nsLayoutUtils::GetDisplayPort(mOuter->GetContent())) {
