@@ -11,6 +11,7 @@ def main(request, response):
                ('Pragma', 'no-cache')]
 
     content_type = ''
+    extra_body = ''
 
     if mode == 'init':
         
@@ -26,9 +27,19 @@ def main(request, response):
         
         
         content_type = 'text/html'
+        response.set_cookie('mode', 'syntax-error');
+    elif mode == 'syntax-error':
+        
+        content_type = 'application/javascript'
+        response.set_cookie('mode', 'throw-install');
+        extra_body = 'badsyntax(isbad;'
+    elif mode == 'throw-install':
+        
+        content_type = 'application/javascript'
         response.delete_cookie('mode')
+        extra_body = "addEventListener('install', function(e) { throw new Error('boom'); });"
 
     headers.append(('Content-Type', content_type))
     
-    return headers, '// %s' % (time.time())
+    return headers, '/* %s */ %s' % (time.time(), extra_body)
 
