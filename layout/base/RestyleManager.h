@@ -65,9 +65,6 @@ public:
     return mPresContext;
   }
 
-  nsCSSFrameConstructor* FrameConstructor() const
-    { return PresContext()->FrameConstructor(); }
-
   
   
   void NotifyDestroyingFrame(nsIFrame* aFrame);
@@ -138,6 +135,9 @@ public:
   }
 
 private:
+  nsCSSFrameConstructor* FrameConstructor() const
+    { return PresContext()->FrameConstructor(); }
+
   
   void ComputeAndProcessStyleChange(nsIFrame*              aFrame,
                                     nsChangeHint           aMinChange,
