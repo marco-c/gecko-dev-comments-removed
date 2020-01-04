@@ -267,6 +267,7 @@ fn recurse<T: Read>(f: &mut T, h: &BoxHeader, context: &mut MediaContext) -> byt
 
 
 
+
 pub fn read_box<T: BufRead>(f: &mut T, context: &mut MediaContext) -> byteorder::Result<()> {
     read_box_header(f).and_then(|h| {
         let mut content = limit(f, &h);
@@ -329,11 +330,10 @@ pub fn read_box<T: BufRead>(f: &mut T, context: &mut MediaContext) -> byteorder:
                     _ => None
                 };
                 
-                match track_type {
-                    Some(track_type) =>
-                         context.tracks.push(Track { track_type: track_type }),
-                    None => println!("unknown track type!"),
-                };
+                track_type.map(|track_type|
+                               context.tracks.push(Track { track_type: track_type }))
+                    .or_else(|| { println!("unknown track type!"); None } );
+                println!("  {}", hdlr);
             },
             "stsd" => {
                 let track = &context.tracks[context.tracks.len() - 1];
@@ -343,11 +343,11 @@ pub fn read_box<T: BufRead>(f: &mut T, context: &mut MediaContext) -> byteorder:
             _ => {
                 
                 println!("{} (skipped)", h);
-                try!(skip_box_content(&mut content, &h));
+                try!(skip_box_content(&mut content, &h).and(Ok(())));
             },
         };
         assert!(content.limit() == 0);
-        println!("read_box context: {}", context);
+        println!("Parse result: {}", context);
         Ok(()) 
     })
 }
@@ -373,13 +373,14 @@ pub extern fn read_box_from_buffer(buffer: *const u8, size: usize) -> i32 {
     
     let task = thread::spawn(move || {
         let mut context = MediaContext { tracks: Vec::new() };
-        loop {
-            match read_box(&mut c, &mut context) {
-                Ok(_) => {},
-                Err(byteorder::Error::UnexpectedEOF) => { break },
-                Err(e) => { panic!(e) },
-            }
-        }
+        read_box(&mut c, &mut context)
+        .or_else(|e| { match e {
+            
+            
+            byteorder::Error::UnexpectedEOF => { Ok(()) },
+            e => { Err(e) },
+        }})
+        .unwrap();
         
         
         assert!(context.tracks.len() < i32::MAX as usize);
