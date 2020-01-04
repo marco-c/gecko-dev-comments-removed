@@ -62,7 +62,8 @@ PresentationIPCService::StartSession(const nsAString& aUrl,
   return SendRequest(aCallback, StartSessionRequest(nsString(aUrl),
                                                     nsString(aSessionId),
                                                     nsString(aOrigin),
-                                                    nsString(aDeviceId)));
+                                                    nsString(aDeviceId),
+                                                    aWindowId));
 }
 
 NS_IMETHODIMP
@@ -264,7 +265,8 @@ PresentationIPCService::NotifyReceiverReady(const nsAString& aSessionId,
   
   AddRespondingSessionId(aWindowId, aSessionId);
 
-  NS_WARN_IF(!sPresentationChild->SendNotifyReceiverReady(nsString(aSessionId)));
+  NS_WARN_IF(!sPresentationChild->SendNotifyReceiverReady(nsString(aSessionId),
+                                                          aWindowId));
 
   
   
