@@ -821,7 +821,9 @@ public:
   {
   }
 
+  
   void GetAnimations(nsTArray<RefPtr<Animation>>& aAnimations);
+  void GetAnimationsUnsorted(nsTArray<RefPtr<Animation>>& aAnimations);
 
   NS_IMETHOD GetInnerHTML(nsAString& aInnerHTML);
   virtual void SetInnerHTML(const nsAString& aInnerHTML, ErrorResult& aError);

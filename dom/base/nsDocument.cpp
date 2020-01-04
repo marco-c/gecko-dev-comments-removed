@@ -10,10 +10,12 @@
 
 #include "nsDocument.h"
 
+#include "mozilla/AnimationComparator.h"
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/AutoRestore.h"
 #include "mozilla/BinarySearch.h"
 #include "mozilla/DebugOnly.h"
+#include "mozilla/EffectSet.h"
 #include "mozilla/IntegerRange.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/Likely.h"
@@ -3132,6 +3134,32 @@ nsDocument::Timeline()
   }
 
   return mDocumentTimeline;
+}
+
+void
+nsDocument::GetAnimations(nsTArray<RefPtr<Animation>>& aAnimations)
+{
+  FlushPendingNotifications(Flush_Style);
+
+  
+  
+  
+  
+  
+  
+  
+  for (nsIContent* node = nsINode::GetFirstChild();
+       node;
+       node = node->GetNextNode(this)) {
+    if (!node->IsElement()) {
+      continue;
+    }
+
+    node->AsElement()->GetAnimationsUnsorted(aAnimations);
+  }
+
+  
+  aAnimations.Sort(AnimationPtrComparator<RefPtr<Animation>>());
 }
 
 
