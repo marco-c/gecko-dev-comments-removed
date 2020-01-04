@@ -322,13 +322,12 @@ public:
   virtual nsEventStatus OnLongTap(AccessibleCaretEventHub* aContext,
                                   const nsPoint& aPoint) override
   {
-    nsEventStatus rv = nsEventStatus_eIgnore;
-
-    if (NS_SUCCEEDED(aContext->mManager->SelectWordOrShortcut(aPoint))) {
-      rv = nsEventStatus_eConsumeNoDefault;
-    }
-
-    return rv;
+    
+    
+    
+    
+    aContext->mManager->SelectWordOrShortcut(aPoint);
+    return nsEventStatus_eIgnore;
   }
 
   virtual nsEventStatus OnRelease(AccessibleCaretEventHub* aContext) override
