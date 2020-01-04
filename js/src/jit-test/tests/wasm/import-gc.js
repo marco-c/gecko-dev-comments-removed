@@ -12,8 +12,8 @@ const Instance = WebAssembly.Instance;
 
 const textToBinary = str => wasmTextToBinary(str, 'new-format');
 
-const m1 = new Module(textToBinary(`(module (func) (export "f" 0))`));
-const m2 = new Module(textToBinary(`(module (import "a" "f") (func) (export "g" 0))`));
+const m1 = new Module(textToBinary(`(module (func $f) (export "f" $f))`));
+const m2 = new Module(textToBinary(`(module (import "a" "f") (func $f) (export "g" $f))`));
 
 
 resetFinalizeCount();

@@ -54,6 +54,9 @@ extern bool
 IsExportedFunction(JSFunction* fun);
 
 extern bool
+IsExportedWasmFunction(JSFunction* fun);
+
+extern bool
 IsExportedFunction(const Value& v, MutableHandleFunction f);
 
 extern Instance&
@@ -63,7 +66,7 @@ extern WasmInstanceObject*
 ExportedFunctionToInstanceObject(JSFunction* fun);
 
 extern uint32_t
-ExportedFunctionToIndex(JSFunction* fun);
+ExportedFunctionToDefinitionIndex(JSFunction* fun);
 
 } 
 
@@ -147,6 +150,8 @@ class WasmInstanceObject : public NativeObject
                                     HandleWasmInstanceObject instanceObj,
                                     uint32_t funcIndex,
                                     MutableHandleFunction fun);
+
+    const wasm::CodeRange& getExportedFunctionCodeRange(HandleFunction fun);
 };
 
 
