@@ -550,14 +550,11 @@ var PlacesCommandHook = {
   get uniqueCurrentPages() {
     let uniquePages = {};
     let URIs = [];
-
-    gBrowser.visibleTabs.forEach(tab => {
-      let browser = tab.linkedBrowser;
-      let uri = browser.currentURI;
-      let spec = uri.spec;
+    gBrowser.visibleTabs.forEach(function (tab) {
+      let spec = tab.linkedBrowser.currentURI.spec;
       if (!tab.pinned && !(spec in uniquePages)) {
         uniquePages[spec] = null;
-        URIs.push({ uri, title: browser.contentTitle });
+        URIs.push(tab.linkedBrowser.currentURI);
       }
     });
     return URIs;
@@ -1329,8 +1326,8 @@ var BookmarkingUI = {
       return;
     }
 
-    this._initRecentBookmarks(document.getElementById("BMB_recentBookmarks"),
-                              "subviewbutton");
+    this._updateRecentBookmarks(document.getElementById("BMB_recentBookmarks"),
+                                "subviewbutton");
 
     if (!this._popupNeedsUpdate)
       return;
@@ -1365,68 +1362,7 @@ var BookmarkingUI = {
     });
   },
 
-  RECENTLY_BOOKMARKED_PREF: "browser.bookmarks.showRecentlyBookmarked",
-
-  _initRecentBookmarks(aHeaderItem, aExtraCSSClass) {
-    this._populateRecentBookmarks(aHeaderItem, aExtraCSSClass);
-
-    
-
-    let bookmarksMenu = aHeaderItem.parentNode;
-    let placesContextMenu = document.getElementById("placesContext");
-
-    let prefObserver = () => {
-      this._populateRecentBookmarks(aHeaderItem, aExtraCSSClass);
-    };
-
-    let updatePlacesContextMenu = (shouldHidePrefUI = false) => {
-      let prefEnabled = !shouldHidePrefUI && Services.prefs.getBoolPref(this.RECENTLY_BOOKMARKED_PREF);
-      document.getElementById("placesContext_showRecentlyBookmarked").hidden = shouldHidePrefUI || prefEnabled;
-      document.getElementById("placesContext_hideRecentlyBookmarked").hidden = shouldHidePrefUI || !prefEnabled;
-      document.getElementById("placesContext_recentlyBookmarkedSeparator").hidden = shouldHidePrefUI;
-    };
-
-    let onPlacesContextMenuShowing = event => {
-      if (event.target == event.currentTarget) {
-        let triggerPopup = event.target.triggerNode;
-        while (triggerPopup && triggerPopup.localName != "menupopup") {
-          triggerPopup = triggerPopup.parentNode;
-        }
-        let shouldHidePrefUI = triggerPopup != bookmarksMenu;
-        updatePlacesContextMenu(shouldHidePrefUI);
-      }
-    };
-
-    let onBookmarksMenuHidden = event => {
-      if (event.target == event.currentTarget) {
-        updatePlacesContextMenu(true);
-
-        Services.prefs.removeObserver(this.RECENTLY_BOOKMARKED_PREF, prefObserver, false);
-        placesContextMenu.removeEventListener("popupshowing", onPlacesContextMenuShowing);
-        bookmarksMenu.removeEventListener("popuphidden", onBookmarksMenuHidden);
-      }
-    };
-
-    Services.prefs.addObserver(this.RECENTLY_BOOKMARKED_PREF, prefObserver, false);
-    placesContextMenu.addEventListener("popupshowing", onPlacesContextMenuShowing);
-    bookmarksMenu.addEventListener("popuphidden", onBookmarksMenuHidden);
-  },
-
-  _populateRecentBookmarks(aHeaderItem, aExtraCSSClass = "") {
-    while (aHeaderItem.nextSibling &&
-           aHeaderItem.nextSibling.localName == "menuitem") {
-      aHeaderItem.nextSibling.remove();
-    }
-
-    let shouldShow = Services.prefs.getBoolPref(this.RECENTLY_BOOKMARKED_PREF);
-    let separator = aHeaderItem.previousSibling;
-    aHeaderItem.hidden = !shouldShow;
-    separator.hidden = !shouldShow;
-
-    if (!shouldShow) {
-      return;
-    }
-
+  _updateRecentBookmarks: function(aHeaderItem, extraCSSClass = "") {
     const kMaxResults = 5;
 
     let options = PlacesUtils.history.getNewQueryOptions();
@@ -1435,6 +1371,11 @@ var BookmarkingUI = {
     options.sortingMode = options.SORT_BY_DATEADDED_DESCENDING;
     options.maxResults = kMaxResults;
     let query = PlacesUtils.history.getNewQuery();
+
+    while (aHeaderItem.nextSibling &&
+           aHeaderItem.nextSibling.localName == "menuitem") {
+      aHeaderItem.nextSibling.remove();
+    }
 
     let onItemCommand = function (aEvent) {
       let item = aEvent.target;
@@ -1456,9 +1397,8 @@ var BookmarkingUI = {
                                  "menuitem");
       item.setAttribute("label", title || uri);
       item.setAttribute("targetURI", uri);
-      item.setAttribute("context", "hideRecentlyBookmarked");
       item.setAttribute("class", "menuitem-iconic menuitem-with-favicon bookmark-item " +
-                                 aExtraCSSClass);
+                                 extraCSSClass);
       item.addEventListener("command", onItemCommand);
       if (icon) {
         item.setAttribute("image", icon);
@@ -1467,36 +1407,6 @@ var BookmarkingUI = {
     }
     root.containerOpen = false;
     aHeaderItem.parentNode.insertBefore(fragment, aHeaderItem.nextSibling);
-    aHeaderItem.setAttribute("context", "hideRecentlyBookmarked");
-  },
-
-  showRecentlyBookmarked() {
-    Services.prefs.setBoolPref(this.RECENTLY_BOOKMARKED_PREF, true);
-  },
-
-  hideRecentlyBookmarked() {
-    Services.prefs.setBoolPref(this.RECENTLY_BOOKMARKED_PREF, false);
-  },
-
-  
-
-
-  onPageProxyStateChanged: function BUI_onPageProxyStateChanged(aState) {
-    if (!this._shouldUpdateStarState() || !this.star) {
-      return;
-    }
-
-    if (aState == "invalid") {
-      this.star.setAttribute("disabled", "true");
-      this.broadcaster.setAttribute("stardisabled", "true");
-      this.broadcaster.removeAttribute("starred");
-      this.broadcaster.setAttribute("buttontooltiptext", "");
-    }
-    else {
-      this.star.removeAttribute("disabled");
-      this.broadcaster.removeAttribute("stardisabled");
-      this._updateStar();
-    }
   },
 
   _updateCustomizationState: function BUI__updateCustomizationState() {
@@ -1615,11 +1525,6 @@ var BookmarkingUI = {
       delete this._pendingStmt;
     }
 
-    
-    if (isBlankPageURL(this._uri.spec)) {
-      return;
-    }
-
     this._pendingStmt = PlacesUtils.asyncGetBookmarkIds(this._uri, (aItemIds, aURI) => {
       
       if (!aURI.equals(this._uri)) {
@@ -1694,7 +1599,7 @@ var BookmarkingUI = {
 
     this._updateBookmarkPageMenuItem();
     PlacesCommandHook.updateBookmarkAllTabsCommand();
-    this._initRecentBookmarks(document.getElementById("menu_recentBookmarks"));
+    this._updateRecentBookmarks(document.getElementById("menu_recentBookmarks"));
   },
 
   _showBookmarkedNotification: function BUI_showBookmarkedNotification() {
