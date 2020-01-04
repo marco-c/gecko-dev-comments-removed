@@ -4825,15 +4825,14 @@ HTMLEditRules::CheckForEmptyBlock(nsINode* aStartNode,
     } else {
       if (aAction == nsIEditor::eNext) {
         
+        res = aSelection->Collapse(blockParent, offset + 1);
+        NS_ENSURE_SUCCESS(res, res);
+
+        
         nsCOMPtr<nsIContent> nextNode = mHTMLEditor->GetNextNode(blockParent,
                                                                  offset + 1, true);
-        if (nextNode) {
-          EditorDOMPoint pt = GetGoodSelPointForNode(*nextNode, aAction);
-          res = aSelection->Collapse(pt.node, pt.offset);
-          NS_ENSURE_SUCCESS(res, res);
-        } else {
-          
-          res = aSelection->Collapse(blockParent, offset + 1);
+        if (nextNode && mHTMLEditor->IsTextNode(nextNode)) {
+          res = aSelection->Collapse(nextNode, 0);
           NS_ENSURE_SUCCESS(res, res);
         }
       } else {
@@ -4841,9 +4840,8 @@ HTMLEditRules::CheckForEmptyBlock(nsINode* aStartNode,
         nsCOMPtr<nsIContent> priorNode = mHTMLEditor->GetPriorNode(blockParent,
                                                                    offset,
                                                                    true);
-        if (priorNode) {
-          EditorDOMPoint pt = GetGoodSelPointForNode(*priorNode, aAction);
-          res = aSelection->Collapse(pt.node, pt.offset);
+        if (priorNode && mHTMLEditor->IsTextNode(priorNode)) {
+          res = aSelection->Collapse(priorNode, priorNode->TextLength());
           NS_ENSURE_SUCCESS(res, res);
         } else {
           res = aSelection->Collapse(blockParent, offset + 1);
