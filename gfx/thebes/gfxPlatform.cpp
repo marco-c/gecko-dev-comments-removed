@@ -9,6 +9,7 @@
 #include "mozilla/layers/ImageBridgeChild.h"
 #include "mozilla/layers/SharedBufferManagerChild.h"
 #include "mozilla/layers/ISurfaceAllocator.h"     
+#include "mozilla/gfx/GPUProcessManager.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/Telemetry.h"
 #include "mozilla/TimeStamp.h"
@@ -591,6 +592,8 @@ gfxPlatform::Init()
     gfxPrefs::GetSingleton();
     MediaPrefs::GetSingleton();
 
+    GPUProcessManager::Initialize();
+
     auto fwd = new CrashStatsLogForwarder("GraphicsCriticalError");
     fwd->SetCircularBufferSize(gfxPrefs::GfxLoggingCrashLength());
 
@@ -838,6 +841,8 @@ gfxPlatform::Shutdown()
     
     GLContextProviderEGL::Shutdown();
 #endif
+
+    GPUProcessManager::Shutdown();
 
     
     
