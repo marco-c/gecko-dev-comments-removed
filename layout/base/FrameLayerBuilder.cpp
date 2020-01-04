@@ -2094,9 +2094,6 @@ ContainerState::GetLayerCreationHint(const nsIFrame* aAnimatedGeometryRoot)
 {
   
   
-  if (mParameters.mInLowPrecisionDisplayPort) {
-    return LayerManager::SCROLLABLE;
-  }
 
   
   

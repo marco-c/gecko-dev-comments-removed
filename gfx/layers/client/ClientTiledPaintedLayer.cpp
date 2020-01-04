@@ -417,13 +417,10 @@ ClientTiledPaintedLayer::RenderLayer()
   }
 
   if (!mContentClient) {
-#if defined(MOZ_B2G) || defined(XP_MACOSX)
     if (mCreationHint == LayerManager::NONE &&
         SingleTiledContentClient::ClientSupportsLayerSize(layerSize, ClientManager())) {
       mContentClient = new SingleTiledContentClient(this, ClientManager());
-    } else
-#endif
-    {
+    } else {
       mContentClient = new MultiTiledContentClient(this, ClientManager());
     }
 
@@ -567,7 +564,6 @@ ClientTiledPaintedLayer::RenderLayer()
 bool
 ClientTiledPaintedLayer::IsOptimizedFor(LayerManager::PaintedLayerCreationHint aHint)
 {
-#if defined(MOZ_B2G) || defined(XP_MACOSX)
   
   
   
@@ -575,9 +571,6 @@ ClientTiledPaintedLayer::IsOptimizedFor(LayerManager::PaintedLayerCreationHint a
   
   
   return aHint == GetCreationHint();
-#else
-  return true;
-#endif
 }
 
 void
