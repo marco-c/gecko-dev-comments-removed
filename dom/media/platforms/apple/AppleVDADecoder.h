@@ -81,6 +81,11 @@ public:
     return true;
   }
 
+  const char* GetDescriptionName() const override
+  {
+    return "apple VDA decoder";
+  }
+
   
   
   nsresult OutputFrame(CVPixelBufferRef aImage,

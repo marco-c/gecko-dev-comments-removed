@@ -31,6 +31,11 @@ public:
   nsresult Drain() override;
   nsresult Shutdown() override;
 
+  const char* GetDescriptionName() const override
+  {
+    return "apple CoreMedia decoder";
+  }
+
   
   const AudioInfo& mConfig;
 

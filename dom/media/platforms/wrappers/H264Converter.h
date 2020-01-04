@@ -35,6 +35,13 @@ public:
   nsresult Drain() override;
   nsresult Shutdown() override;
   bool IsHardwareAccelerated(nsACString& aFailureReason) const override;
+  const char* GetDescriptionName() const override
+  {
+    if (mDecoder) {
+      return mDecoder->GetDescriptionName();
+    }
+    return "H264Converter decoder (pending)";
+  }
 
   
   static bool IsH264(const TrackInfo& aConfig);
