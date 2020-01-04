@@ -158,8 +158,8 @@ RemoteWebProgressManager.prototype = {
   setCurrentURI: function (aURI) {
     
     
-    let webNavigation = this._browser.webNavigation;
-    webNavigation._currentURI = aURI;
+    let remoteWebNav = this._browser._remoteWebNavigationImpl;
+    remoteWebNav._currentURI = aURI;
 
     let webProgress = this.topLevelWebProgress;
     for (let p of this._progressListeners) {
@@ -221,13 +221,14 @@ RemoteWebProgressManager.prototype = {
     case "Content:LocationChange":
       let location = newURI(json.location);
       let flags = json.flags;
+      let remoteWebNav = this._browser._remoteWebNavigationImpl;
 
       
-      this._browser.webNavigation.canGoBack = json.canGoBack;
-      this._browser.webNavigation.canGoForward = json.canGoForward;
+      remoteWebNav.canGoBack = json.canGoBack;
+      remoteWebNav.canGoForward = json.canGoForward;
 
       if (isTopLevel) {
-        this._browser.webNavigation._currentURI = location;
+        remoteWebNav._currentURI = location;
         this._browser._characterSet = json.charset;
         this._browser._documentURI = newURI(json.documentURI);
         this._browser._contentTitle = json.title;
