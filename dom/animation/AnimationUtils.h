@@ -60,6 +60,13 @@ public:
 
   static bool
   IsOffscreenThrottlingEnabled();
+
+  
+
+
+
+  static bool
+  IsCoreAPIEnabled();
 };
 
 } 
