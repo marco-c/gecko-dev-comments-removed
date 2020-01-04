@@ -25,7 +25,6 @@
 #include "nsDOMCSSRGBColor.h"
 #include "nsDOMCSSValueList.h"
 #include "nsFlexContainerFrame.h"
-#include "nsGridContainerFrame.h"
 #include "nsGkAtoms.h"
 #include "nsHTMLReflowState.h"
 #include "nsStyleUtil.h"
@@ -2379,6 +2378,10 @@ CSSValue*
 nsComputedDOMStyle::GetGridTrackSize(const nsStyleCoord& aMinValue,
                                      const nsStyleCoord& aMaxValue)
 {
+  
+  
+  
+  
   if (aMinValue == aMaxValue) {
     nsROCSSPrimitiveValue *val = new nsROCSSPrimitiveValue;
     SetValueToCoord(val, aMinValue, true,
@@ -2408,8 +2411,7 @@ nsComputedDOMStyle::GetGridTrackSize(const nsStyleCoord& aMinValue,
 }
 
 CSSValue*
-nsComputedDOMStyle::GetGridTemplateColumnsRows(const nsStyleGridTemplate& aTrackList,
-                                               const nsTArray<nscoord>* aTrackSizes)
+nsComputedDOMStyle::GetGridTemplateColumnsRows(const nsStyleGridTemplate& aTrackList)
 {
   if (aTrackList.mIsSubgrid) {
     NS_ASSERTION(aTrackList.mMinTrackSizingFunctions.IsEmpty() &&
@@ -2442,31 +2444,16 @@ nsComputedDOMStyle::GetGridTemplateColumnsRows(const nsStyleGridTemplate& aTrack
   
   MOZ_ASSERT(aTrackList.mLineNameLists.Length() == numSizes + 1,
              "Unexpected number of line name lists");
-  if (aTrackSizes) {
-    for (uint32_t i = 0;; i++) {
-      const nsTArray<nsString>& lineNames = aTrackList.mLineNameLists[i];
-      if (!lineNames.IsEmpty()) {
-        valueList->AppendCSSValue(GetGridLineNames(lineNames));
-      }
-      if (i == numSizes) {
-        break;
-      }
-      nsROCSSPrimitiveValue* val = new nsROCSSPrimitiveValue;
-      val->SetAppUnits(aTrackSizes->ElementAt(i));
-      valueList->AppendCSSValue(val);
+  for (uint32_t i = 0;; i++) {
+    const nsTArray<nsString>& lineNames = aTrackList.mLineNameLists[i];
+    if (!lineNames.IsEmpty()) {
+      valueList->AppendCSSValue(GetGridLineNames(lineNames));
     }
-  } else {
-    for (uint32_t i = 0;; i++) {
-      const nsTArray<nsString>& lineNames = aTrackList.mLineNameLists[i];
-      if (!lineNames.IsEmpty()) {
-        valueList->AppendCSSValue(GetGridLineNames(lineNames));
-      }
-      if (i == numSizes) {
-        break;
-      }
-      valueList->AppendCSSValue(GetGridTrackSize(aTrackList.mMinTrackSizingFunctions[i],
-                                                 aTrackList.mMaxTrackSizingFunctions[i]));
+    if (i == numSizes) {
+      break;
     }
+    valueList->AppendCSSValue(GetGridTrackSize(aTrackList.mMinTrackSizingFunctions[i],
+                                               aTrackList.mMaxTrackSizingFunctions[i]));
   }
 
   return valueList;
@@ -2503,31 +2490,13 @@ nsComputedDOMStyle::DoGetGridAutoRows()
 CSSValue*
 nsComputedDOMStyle::DoGetGridTemplateColumns()
 {
-  const nsTArray<nscoord>* trackSizes = nullptr;
-  if (mInnerFrame) {
-    nsIFrame* gridContainerCandidate = mInnerFrame->GetContentInsertionFrame();
-    if (gridContainerCandidate &&
-        gridContainerCandidate->GetType() == nsGkAtoms::gridContainerFrame) {
-      auto gridContainer = static_cast<nsGridContainerFrame*>(gridContainerCandidate);
-      trackSizes = gridContainer->GetComputedTemplateColumns();
-    }
-  }
-  return GetGridTemplateColumnsRows(StylePosition()->mGridTemplateColumns, trackSizes);
+  return GetGridTemplateColumnsRows(StylePosition()->mGridTemplateColumns);
 }
 
 CSSValue*
 nsComputedDOMStyle::DoGetGridTemplateRows()
 {
-  const nsTArray<nscoord>* trackSizes = nullptr;
-  if (mInnerFrame) {
-    nsIFrame* gridContainerCandidate = mInnerFrame->GetContentInsertionFrame();
-    if (gridContainerCandidate &&
-        gridContainerCandidate->GetType() == nsGkAtoms::gridContainerFrame) {
-      auto gridContainer = static_cast<nsGridContainerFrame*>(gridContainerCandidate);
-      trackSizes = gridContainer->GetComputedTemplateRows();
-    }
-  }
-  return GetGridTemplateColumnsRows(StylePosition()->mGridTemplateRows, trackSizes);
+  return GetGridTemplateColumnsRows(StylePosition()->mGridTemplateRows);
 }
 
 CSSValue*
