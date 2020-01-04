@@ -329,7 +329,7 @@
 }
 
 :-moz-native-anonymous .rulers-highlighter-horizontal-labels > text {
-  text-anchor: left;
+  text-anchor: start;
 }
 
 :-moz-native-anonymous .rulers-highlighter-vertical-labels > text {
