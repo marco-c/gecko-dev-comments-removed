@@ -16,6 +16,10 @@ function setupPrefs(callback) {
   xhr.send(null);
   if (xhr.status == 200) {
     data = xhr.responseText;
+    
+    data = JSON.stringify(JSON.parse(data));
+    
+    ok(data.length <= 4000, "Data for preferences must be 4000 characters or less.");
   }
 
   SpecialPowers.pushPrefEnv({"set": [
