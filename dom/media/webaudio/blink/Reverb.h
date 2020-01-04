@@ -48,16 +48,22 @@ public:
     enum { MaxFrameSize = 256 };
 
     
-    Reverb(mozilla::ThreadSharedFloatArrayBufferList* impulseResponseBuffer, size_t impulseResponseBufferLength, size_t renderSliceSize, size_t maxFFTSize, size_t numberOfChannels, bool useBackgroundThreads, bool normalize, float sampleRate);
+    Reverb(mozilla::ThreadSharedFloatArrayBufferList* impulseResponseBuffer,
+           size_t impulseResponseBufferLength, size_t maxFFTSize,
+           size_t numberOfChannels, bool useBackgroundThreads, bool normalize,
+           float sampleRate);
 
-    void process(const mozilla::AudioBlock* sourceBus, mozilla::AudioBlock* destinationBus, size_t framesToProcess);
+    void process(const mozilla::AudioBlock* sourceBus,
+                 mozilla::AudioBlock* destinationBus);
 
     size_t impulseResponseLength() const { return m_impulseResponseLength; }
 
     size_t sizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
 
 private:
-    void initialize(const nsTArray<const float*>& impulseResponseBuffer, size_t impulseResponseBufferLength, size_t renderSliceSize, size_t maxFFTSize, size_t numberOfChannels, bool useBackgroundThreads);
+    void initialize(const nsTArray<const float*>& impulseResponseBuffer,
+                    size_t impulseResponseBufferLength, size_t maxFFTSize,
+                    size_t numberOfChannels, bool useBackgroundThreads);
 
     size_t m_impulseResponseLength;
 

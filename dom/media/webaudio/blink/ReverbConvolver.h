@@ -50,12 +50,13 @@ public:
     
     
     
-    ReverbConvolver(const float* impulseResponseData, size_t impulseResponseLength, size_t renderSliceSize, size_t maxFFTSize, size_t convolverRenderPhase, bool useBackgroundThreads);
+    ReverbConvolver(const float* impulseResponseData,
+                    size_t impulseResponseLength, size_t maxFFTSize,
+                    size_t convolverRenderPhase, bool useBackgroundThreads);
     ~ReverbConvolver();
 
-    void process(const float* sourceChannelData, size_t sourceChannelLength,
-                 float* destinationChannelData, size_t destinationChannelLength,
-                 size_t framesToProcess);
+    void process(const float* sourceChannelData,
+                 float* destinationChannelData);
 
     size_t impulseResponseLength() const { return m_impulseResponseLength; }
 
