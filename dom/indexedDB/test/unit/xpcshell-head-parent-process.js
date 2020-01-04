@@ -116,6 +116,11 @@ function expectedErrorHandler(name)
   };
 }
 
+function expectUncaughtException(expecting)
+{
+  
+}
+
 function ExpectError(name)
 {
   this._name = name;
