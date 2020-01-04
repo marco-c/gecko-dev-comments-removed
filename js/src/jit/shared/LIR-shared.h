@@ -3209,6 +3209,25 @@ class LClzI : public LInstructionHelper<1, 1, 0>
 };
 
 
+class LPopcntI : public LInstructionHelper<1, 1, 1>
+{
+  public:
+    LIR_HEADER(PopcntI)
+    explicit LPopcntI(const LAllocation& num, const LDefinition& temp) {
+        setOperand(0, num);
+        setTemp(0, temp);
+    }
+
+    MPopcnt* mir() const {
+        return mir_->toPopcnt();
+    }
+
+    const LDefinition* temp() {
+        return getTemp(0);
+    }
+};
+
+
 class LSqrtD : public LInstructionHelper<1, 1, 0>
 {
   public:
