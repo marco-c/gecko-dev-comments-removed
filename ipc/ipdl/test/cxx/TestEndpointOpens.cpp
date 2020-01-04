@@ -54,7 +54,7 @@ OpenParent(TestEndpointOpensOpenedParent* aParent,
   
   
   
-  if (!aEndpoint.Bind(aParent, nullptr)) {
+  if (!aEndpoint.Bind(aParent)) {
     fail("binding Parent");
   }
 }
@@ -156,7 +156,7 @@ OpenChild(TestEndpointOpensOpenedChild* aChild,
   
   
   
-  if (!endpoint.Bind(aChild, nullptr)) {
+  if (!endpoint.Bind(aChild)) {
     fail("binding child endpoint");
   }
 
