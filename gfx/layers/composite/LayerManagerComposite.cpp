@@ -303,8 +303,13 @@ void
 LayerManagerComposite::UpdateAndRender()
 {
   nsIntRegion invalid;
+  bool didEffectiveTransforms = false;
 
   if (mClonedLayerTreeProperties) {
+    
+    mRoot->ComputeEffectiveTransforms(gfx::Matrix4x4());
+    didEffectiveTransforms = true;
+
     
     
     
@@ -349,9 +354,11 @@ LayerManagerComposite::UpdateAndRender()
   
   InvalidateDebugOverlay(mRenderBounds);
 
-  
-  
-  mRoot->ComputeEffectiveTransforms(gfx::Matrix4x4());
+  if (!didEffectiveTransforms) {
+    
+    
+    mRoot->ComputeEffectiveTransforms(gfx::Matrix4x4());
+  }
 
   nsIntRegion opaque;
   ApplyOcclusionCulling(mRoot, opaque);
