@@ -357,10 +357,6 @@ pref("browser.helperApps.deleteTempFileOnExit", true);
 pref("browser.search.searchEnginesURL",      "https://addons.mozilla.org/%LOCALE%/firefox/search-engines/");
 
 
-pref("browser.search.loadFromJars", true);
-pref("browser.search.jarURIs", "chrome://browser/locale/searchplugins/");
-
-
 pref("browser.search.defaultenginename",      "chrome://browser-region/locale/region.properties");
 
 

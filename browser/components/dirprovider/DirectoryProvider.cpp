@@ -221,7 +221,6 @@ DirectoryProvider::GetFiles(const char *aKey, nsISimpleEnumerator* *aResult)
 
 
 
-
   nsresult rv;
 
   if (!strcmp(aKey, NS_APP_DISTRIBUTION_SEARCH_DIR_LIST)) {
@@ -245,7 +244,6 @@ DirectoryProvider::GetFiles(const char *aKey, nsISimpleEnumerator* *aResult)
     nsCOMArray<nsIFile> baseFiles;
 
     AppendFileKey(NS_APP_USER_SEARCH_DIR, dirSvc, baseFiles);
-    AppendFileKey(NS_APP_SEARCH_DIR, dirSvc, baseFiles);
 
     nsCOMPtr<nsISimpleEnumerator> baseEnum;
     rv = NS_NewArrayEnumerator(getter_AddRefs(baseEnum), baseFiles);

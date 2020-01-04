@@ -57,58 +57,46 @@ function run_test() {
 
   
   let filesToIgnore = []
-  let defaultBranch = Services.prefs.getDefaultBranch(BROWSER_SEARCH_PREF);
-
-  let loadFromJARs = false;
-  try {
-    loadFromJARs = defaultBranch.getBoolPref("loadFromJars");
-  } catch (ex) {}
-
+  let chan = NetUtil.ioService.newChannel2("resource://search-plugins/list.txt",
+                                           null, 
+                                           null, 
+                                           null, 
+                                           Services.scriptSecurityManager.getSystemPrincipal(),
+                                           null, 
+                                           Ci.nsILoadInfo.SEC_NORMAL,
+                                           Ci.nsIContentPolicy.TYPE_OTHER);
   let visibleDefaultEngines = [];
-  if (!loadFromJARs) {
-    filesToIgnore.push(getDir(NS_APP_SEARCH_DIR));
+  let sis = Cc["@mozilla.org/scriptableinputstream;1"].
+              createInstance(Ci.nsIScriptableInputStream);
+  sis.init(chan.open());
+  let list = sis.read(sis.available());
+  let names = list.split("\n").filter(n => !!n);
+  for (let name of names) {
+    if (name.endsWith(":hidden"))
+      continue;
+    visibleDefaultEngines.push(name);
+  }
+  let chromeURI = chan.URI;
+  if (chromeURI instanceof Ci.nsIJARURI) {
+    
+    let fileURI = chromeURI; 
+    while (fileURI instanceof Ci.nsIJARURI)
+      fileURI = fileURI.JARFile;
+    fileURI.QueryInterface(Ci.nsIFileURL);
+    filesToIgnore.push(fileURI.file);
   } else {
-    let rootURIPref = defaultBranch.getCharPref("jarURIs");
-    let rootURIs = rootURIPref.split(",");
-    for (let root of rootURIs) {
-      let visibleEnginesForRoot = [];
-      let listURL = root + "list.txt";
-      let chan = NetUtil.ioService.newChannelFromURI2(makeURI(listURL),
-                                                      null, 
-                                                      Services.scriptSecurityManager.getSystemPrincipal(),
-                                                      null, 
-                                                      Ci.nsILoadInfo.SEC_NORMAL,
-                                                      Ci.nsIContentPolicy.TYPE_OTHER);
-      let sis = Cc["@mozilla.org/scriptableinputstream;1"].
-                createInstance(Ci.nsIScriptableInputStream);
-      sis.init(chan.open());
-      let list = sis.read(sis.available());
-      let names = list.split("\n").filter(n => !!n);
-      for (let name of names) {
-        if (name.endsWith(":hidden"))
-          continue;
-        visibleEnginesForRoot.push(name);
-      }
-
-      let chromeReg = Cc["@mozilla.org/chrome/chrome-registry;1"].
-                        getService(Ci.nsIChromeRegistry);
-      let chromeURI = chromeReg.convertChromeURL(makeURI(root));
-      if (chromeURI instanceof Ci.nsIJARURI) {
-        
-        let fileURI = chromeURI; 
-        while (fileURI instanceof Ci.nsIJARURI)
-          fileURI = fileURI.JARFile;
-        fileURI.QueryInterface(Ci.nsIFileURL);
-        filesToIgnore.push(fileURI.file);
-      } else {
-        
-        for (let name of visibleEnginesForRoot) {
-          let uri = chromeReg.convertChromeURL(makeURI(root + name + ".xml"));
-          filesToIgnore.push(uri.QueryInterface(Ci.nsIFileURL).file);
-        }
-      }
-
-      visibleDefaultEngines = visibleDefaultEngines.concat(visibleEnginesForRoot);
+    
+    for (let name of names) {
+      let url = "resource://search-plugins/" + name + ".xml";
+      let chan = NetUtil.ioService.newChannel2(url,
+                                               null, 
+                                               null, 
+                                               null, 
+                                               Services.scriptSecurityManager.getSystemPrincipal(),
+                                               null, 
+                                               Ci.nsILoadInfo.SEC_NORMAL,
+                                               Ci.nsIContentPolicy.TYPE_OTHER);
+      filesToIgnore.push(chan.URI.QueryInterface(Ci.nsIFileURL).file);
     }
   }
 

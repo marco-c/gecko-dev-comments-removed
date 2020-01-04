@@ -286,10 +286,6 @@ pref("browser.search.suggest.enabled", false);
 pref("browser.search.suggest.prompted", false);
 
 
-pref("browser.search.loadFromJars", true);
-pref("browser.search.jarURIs", "chrome://browser/locale/searchplugins/");
-
-
 pref("browser.search.noCurrentEngine", true);
 
 

@@ -75,19 +75,15 @@ function dumpn(text)
 
 
 
-
-function configureToLoadJarEngines(loadFromJars = true)
+function configureToLoadJarEngines()
 {
   let defaultBranch = Services.prefs.getDefaultBranch(null);
 
   let url = "chrome://testsearchplugin/locale/searchplugins/";
-  defaultBranch.setCharPref("browser.search.jarURIs", url);
-
-  defaultBranch.setBoolPref("browser.search.loadFromJars", loadFromJars);
-
-  
-  
-  Services.prefs.setBoolPref("browser.search.loadFromJars", !loadFromJars)
+  let resProt = Services.io.getProtocolHandler("resource")
+                        .QueryInterface(Ci.nsIResProtocolHandler);
+  resProt.setSubstitution("search-plugins",
+                          Services.io.newURI(url, null, null));
 
   
   let dir = Services.dirsvc.get(NS_APP_SEARCH_DIR, Ci.nsIFile);
