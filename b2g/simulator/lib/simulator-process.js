@@ -21,10 +21,10 @@ const { EventEmitter } = Cu.import("resource://gre/modules/devtools/shared/event
 
 
 Subprocess.registerLogHandler(
-  function(s) console.error("subprocess: " + s.trim())
+  s => console.error("subprocess: " + s.trim())
 );
 Subprocess.registerDebugHandler(
-  function(s) console.debug("subprocess: " + s.trim())
+  s => console.debug("subprocess: " + s.trim())
 );
 
 function SimulatorProcess(options) {
@@ -38,7 +38,9 @@ function SimulatorProcess(options) {
 SimulatorProcess.prototype = {
 
   
-  get isRunning() !!this.process,
+  get isRunning() {
+    return !!this.process;
+  },
 
   
 
