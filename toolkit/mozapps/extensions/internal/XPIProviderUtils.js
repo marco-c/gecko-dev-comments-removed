@@ -42,9 +42,6 @@ const FILE_OLD_DATABASE               = "extensions.rdf";
 const FILE_XPI_ADDONS_LIST            = "extensions.ini";
 
 
-#expand const DB_SCHEMA               = __MOZ_EXTENSIONS_DB_SCHEMA__;
-
-
 const LAST_SQLITE_DB_SCHEMA           = 14;
 const PREF_DB_SCHEMA                  = "extensions.databaseSchema";
 const PREF_PENDING_OPERATIONS         = "extensions.pendingOperations";
