@@ -3,7 +3,8 @@
 requestLongerTimeout(2);
 
 add_task(function* () {
-  let win = yield BrowserTestUtils.openNewBrowserWindow();
+  let win = window.openDialog(location, "_blank", "chrome,all,dialog=no");
+  yield promiseWindowLoaded(win);
 
   
   for (let userContextId = 1; userContextId < 5; userContextId++) {
@@ -25,7 +26,8 @@ add_task(function* () {
                  "1st Window: tabs[" + i + "].userContextId should exist.");
   }
 
-  let win2 = yield BrowserTestUtils.openNewBrowserWindow();
+  let win2 = window.openDialog(location, "_blank", "chrome,all,dialog=no");
+  yield promiseWindowLoaded(win2);
 
   
   
@@ -67,8 +69,8 @@ add_task(function* () {
 });
 
 add_task(function* () {
-  let win = yield BrowserTestUtils.openNewBrowserWindow();
-  yield TabStateFlusher.flush(win.gBrowser.selectedBrowser);
+  let win = window.openDialog(location, "_blank", "chrome,all,dialog=no");
+  yield promiseWindowLoaded(win);
 
   let tab = win.gBrowser.addTab("http://example.com/", { userContextId: 1 });
   yield promiseBrowserLoaded(tab.linkedBrowser);
@@ -84,7 +86,8 @@ add_task(function* () {
                  "1st Window: tabs[" + i + "].userContextId should be " + i);
   }
 
-  let win2 = yield BrowserTestUtils.openNewBrowserWindow();
+  let win2 = window.openDialog(location, "_blank", "chrome,all,dialog=no");
+  yield promiseWindowLoaded(win2);
 
   let tab2 = win2.gBrowser.addTab("http://example.com/", { userContextId : 1 });
   yield promiseBrowserLoaded(tab2.linkedBrowser);

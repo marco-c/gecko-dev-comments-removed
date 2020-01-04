@@ -30,8 +30,6 @@ Cu.import("resource://gre/modules/FileUtils.jsm");
 Cu.import("resource://gre/modules/Task.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
-Cu.importGlobalProperties(["URL"]);
-
 var contentLog = new logging.ContentLogger();
 
 var isB2G = false;
@@ -929,19 +927,13 @@ function pollForReadyState(msg, start, callback) {
 
 function get(msg) {
   let start = new Date().getTime();
-  let requestedURL = new URL(msg.json.url).toString();
 
   
   
   
   onDOMContentLoaded = function onDOMContentLoaded(event) {
-    let correctFrame =
-      !event.originalTarget.defaultView.frameElement ||
-      event.originalTarget.defaultView.frameElement == curContainer.frame.frameElement;
-
-    let correctURL = curContainer.frame.location == requestedURL;
-
-    if (correctFrame && correctURL) {
+    if (!event.originalTarget.defaultView.frameElement ||
+        event.originalTarget.defaultView.frameElement == curContainer.frame.frameElement) {
       pollForReadyState(msg, start, () => {
         removeEventListener("DOMContentLoaded", onDOMContentLoaded, false);
       });
@@ -957,12 +949,12 @@ function get(msg) {
   }
   addEventListener("DOMContentLoaded", onDOMContentLoaded, false);
   if (isB2G) {
-    curContainer.frame.location = requestedURL;
+    curContainer.frame.location = msg.json.url;
   } else {
     
     sendSyncMessage("Marionette:switchedToFrame", { frameValue: null });
     curContainer.frame = content;
-    curContainer.frame.location = requestedURL;
+    curContainer.frame.location = msg.json.url;
   }
 }
 

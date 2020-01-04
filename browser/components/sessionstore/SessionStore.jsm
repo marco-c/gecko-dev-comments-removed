@@ -3215,18 +3215,6 @@ var SessionStoreInternal = {
     let forceOnDemand = options.forceOnDemand;
 
     
-    
-    
-    
-    
-    
-    
-    
-    if (browser.isRemoteBrowser && (!restoreImmediately || forceOnDemand)) {
-      tabbrowser.updateBrowserRemoteness(browser, false);
-    }
-
-    
     this._setWindowStateBusy(window);
 
     
