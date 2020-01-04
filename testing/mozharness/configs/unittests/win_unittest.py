@@ -1,7 +1,7 @@
 import os
 import sys
 
-# OS Specifics
+
 ABS_WORK_DIR = os.path.join(os.getcwd(), "build")
 BINARY_PATH = os.path.join(ABS_WORK_DIR, "firefox", "firefox.exe")
 INSTALLER_PATH = os.path.join(ABS_WORK_DIR, "installer.zip")
@@ -9,7 +9,7 @@ XPCSHELL_NAME = 'xpcshell.exe'
 EXE_SUFFIX = '.exe'
 DISABLE_SCREEN_SAVER = False
 ADJUST_MOUSE_AND_SCREEN = True
-#####
+
 config = {
     "buildbot_json_path": "buildprops.json",
     "exes": {
@@ -20,7 +20,7 @@ config = {
                        '%s/build/venv/scripts/mozinstall-script.py' % os.getcwd()],
         'tooltool.py': [sys.executable, 'C:/mozilla-build/tooltool.py'],
     },
-    ###
+    
     "installer_path": INSTALLER_PATH,
     "binary_path": BINARY_PATH,
     "xpcshell_name": XPCSHELL_NAME,
@@ -164,7 +164,7 @@ config = {
             "run_filename": "rungtests.py",
         },
     },
-    # local mochi suites
+    
     "all_mochitest_suites":
     {
         "plain": [],
@@ -184,12 +184,12 @@ config = {
         "jetpack-addon": ["--jetpack-addon"],
         "a11y": ["--a11y"],
     },
-    # local webapprt suites
+    
     "all_webapprt_suites": {
         "chrome": ["--webapprt-chrome", "--browser-arg=-test-mode"],
         "content": ["--webapprt-content"]
     },
-    # local reftest suites
+    
     "all_reftest_suites": {
         "reftest": {
             'options': ["--suite=reftest"],
@@ -232,13 +232,13 @@ config = {
     "all_xpcshell_suites": {
         "xpcshell": {
             'options': ["--xpcshell=%(abs_app_dir)s/" + XPCSHELL_NAME,
-                        "--manifest=tests/xpcshell/tests/all-test-dirs.list"],
+                        "--manifest=tests/xpcshell/tests/xpcshell.ini"],
             'tests': []
         },
         "xpcshell-addons": {
             'options': ["--xpcshell=%(abs_app_dir)s/" + XPCSHELL_NAME,
                         "--tag=addons",
-                        "--manifest=tests/xpcshell/tests/all-test-dirs.list"],
+                        "--manifest=tests/xpcshell/tests/xpcshell.ini"],
             'tests': []
         },
     },
@@ -256,7 +256,7 @@ config = {
     },
     "run_cmd_checks_enabled": True,
     "preflight_run_cmd_suites": [
-        # NOTE 'enabled' is only here while we have unconsolidated configs
+        
         {
             "name": "disable_screen_saver",
             "cmd": ["xset", "s", "off", "s", "reset"],
@@ -267,8 +267,8 @@ config = {
         {
             "name": "run mouse & screen adjustment script",
             "cmd": [
-                # when configs are consolidated this python path will only show
-                # for windows.
+                
+                
                 sys.executable,
                 "../scripts/external_tools/mouse_and_screen_resolution.py",
                 "--configuration-url",
