@@ -18,6 +18,7 @@ struct AnimationProperty;
 enum class CSSPseudoElementType : uint8_t;
 class ErrorResult;
 struct Keyframe;
+struct PropertyStyleAnimationValuePair;
 
 namespace dom {
 class Element;
@@ -26,6 +27,10 @@ class Element;
 
 
 namespace mozilla {
+
+
+
+using ComputedKeyframeValues = nsTArray<PropertyStyleAnimationValuePair>;
 
 
 
@@ -60,6 +65,28 @@ public:
 
 
 
+
+
+
+
+
+
+
+
+  static nsTArray<ComputedKeyframeValues>
+  GetComputedKeyframeValues(const nsTArray<Keyframe>& aKeyframes,
+                            dom::Element* aElement,
+                            nsStyleContext* aStyleContext);
+
+  
+
+
+
+
+
+
+
+
   static void ApplySpacing(nsTArray<Keyframe>& aKeyframes,
                            SpacingMode aSpacingMode);
 
@@ -75,11 +102,15 @@ public:
 
 
 
-  static nsTArray<AnimationProperty>
-  GetAnimationPropertiesFromKeyframes(nsStyleContext* aStyleContext,
-                                      dom::Element* aElement,
-                                      CSSPseudoElementType aPseudoType,
-                                      const nsTArray<Keyframe>& aFrames);
+
+
+
+
+
+  static nsTArray<AnimationProperty> GetAnimationPropertiesFromKeyframes(
+    const nsTArray<Keyframe>& aKeyframes,
+    const nsTArray<ComputedKeyframeValues>& aComputedValues,
+    nsStyleContext* aStyleContext);
 
   
 
