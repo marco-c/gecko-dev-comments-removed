@@ -9,6 +9,7 @@
 #define nsCSSParser_h___
 
 #include "mozilla/Attributes.h"
+#include "mozilla/css/Loader.h"
 
 #include "nsCSSProperty.h"
 #include "nsCSSScanner.h"
@@ -32,7 +33,6 @@ class CSSVariableValues;
 namespace css {
 class Rule;
 class Declaration;
-class Loader;
 class StyleRule;
 } 
 } 
@@ -79,13 +79,12 @@ public:
 
 
 
-
   nsresult ParseSheet(const nsAString& aInput,
                       nsIURI*          aSheetURL,
                       nsIURI*          aBaseURI,
                       nsIPrincipal*    aSheetPrincipal,
                       uint32_t         aLineNumber,
-                      bool             aAllowUnsafeRules);
+                      mozilla::css::SheetParsingMode aParsingMode);
 
   
   

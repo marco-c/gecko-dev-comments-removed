@@ -1103,7 +1103,8 @@ nsTreeSanitizer::SanitizeStyleSheet(const nsAString& aOriginal,
   
   nsCSSParser parser(nullptr, sheet);
   rv = parser.ParseSheet(aOriginal, aDocument->GetDocumentURI(), aBaseURI,
-                         aDocument->NodePrincipal(), 0, false);
+                         aDocument->NodePrincipal(), 0,
+                         mozilla::css::eAuthorSheetFeatures);
   NS_ENSURE_SUCCESS(rv, true);
   
   MOZ_ASSERT(!sheet->IsModified(),
