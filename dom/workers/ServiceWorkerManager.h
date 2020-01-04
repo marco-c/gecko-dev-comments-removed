@@ -51,9 +51,7 @@ class ServiceWorkerJobQueue;
 class ServiceWorkerManagerChild;
 class ServiceWorkerPrivate;
 
-
-
-class ServiceWorkerRegistrationInfo final : public nsISupports
+class ServiceWorkerRegistrationInfo final : public nsIServiceWorkerRegistrationInfo
 {
   uint32_t mControlledDocumentsCounter;
 
@@ -61,6 +59,7 @@ class ServiceWorkerRegistrationInfo final : public nsISupports
 
 public:
   NS_DECL_ISUPPORTS
+  NS_DECL_NSISERVICEWORKERREGISTRATIONINFO
 
   nsCString mScope;
   
