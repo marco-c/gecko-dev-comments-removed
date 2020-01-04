@@ -7,7 +7,7 @@
 #ifndef mozilla_dom_FileSystemUtils_h
 #define mozilla_dom_FileSystemUtils_h
 
-#include "nsString.h"
+class nsIFile;
 
 namespace mozilla {
 namespace dom {
@@ -25,28 +25,8 @@ public:
   
 
 
-  static void
-  LocalPathToNormalizedPath(const nsAString& aLocal, nsAString& aNorm);
-
-  
-
-
-
-  static void
-  NormalizedPathToLocalPath(const nsAString& aNorm, nsAString& aLocal);
-
-  
-
-
   static bool
   IsDescendantPath(nsIFile* aPath, nsIFile* aDescendantPath);
-
-  
-
-
-
-  static bool
-  IsDescendantPath(const nsAString& aPath, const nsAString& aDescendantPath);
 };
 
 } 

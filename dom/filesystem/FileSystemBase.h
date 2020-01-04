@@ -87,17 +87,11 @@ public:
 protected:
   virtual ~FileSystemBase();
 
-  bool
-  LocalPathToRealPath(const nsAString& aLocalPath, nsAString& aRealPath) const;
-
   
   
   
   
   nsString mLocalRootPath;
-
-  
-  nsString mNormalizedLocalRootPath;
 
   bool mShutdown;
 
