@@ -67,12 +67,10 @@ DevToolsStartup.prototype = {
   },
 
   initDevTools: function() {
-    let { require } = Cu.import("resource://devtools/shared/Loader.jsm", {});
+    let { loader } = Cu.import("resource://devtools/shared/Loader.jsm", {});
     
     
-    
-    
-    require("devtools/client/framework/devtools-browser");
+    loader.main("devtools/client/main");
   },
 
   handleConsoleFlag: function(cmdLine) {

@@ -4,13 +4,12 @@
 
 "use strict";
 
-const Services = require("Services");
-const { gDevTools } = require("devtools/client/framework/devtools");
 
 
 
 
-gDevTools.registerDefaults();
+
+
 
 Object.defineProperty(exports, "Toolbox", {
   get: () => require("devtools/client/framework/toolbox").Toolbox
@@ -19,12 +18,5 @@ Object.defineProperty(exports, "TargetFactory", {
   get: () => require("devtools/client/framework/target").TargetFactory
 });
 
-const unloadObserver = {
-  observe: function(subject) {
-    if (subject.wrappedJSObject === require("@loader/unload")) {
-      Services.obs.removeObserver(unloadObserver, "sdk:loader:destroy");
-      gDevTools.unregisterDefaults();
-    }
-  }
-};
-Services.obs.addObserver(unloadObserver, "sdk:loader:destroy", false);
+
+require("devtools/client/framework/devtools-browser");

@@ -16,7 +16,8 @@ const {Cc, Ci, Cu} = require("chrome");
 const Services = require("Services");
 const promise = require("promise");
 const Telemetry = require("devtools/client/shared/telemetry");
-const {gDevTools} = require("./devtools");
+const { gDevTools } = require("./devtools");
+const { when: unload } = require("sdk/system/unload");
 
 
 loader.lazyRequireGetter(this, "TargetFactory", "devtools/client/framework/target", true);
@@ -864,6 +865,10 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
   },
 }
 
+
+gDevTools.getToolDefinitionArray()
+         .forEach(def => gDevToolsBrowser._addToolToWindows(def));
+
 gDevTools.on("tool-registered", function(ev, toolId) {
   let toolDefinition = gDevTools._tools.get(toolId);
   gDevToolsBrowser._addToolToWindows(toolDefinition);
@@ -883,6 +888,7 @@ Services.obs.addObserver(gDevToolsBrowser.destroy, "quit-application", false);
 Services.obs.addObserver(gDevToolsBrowser, "browser-delayed-startup-finished", false);
 
 
+
 let enumerator = Services.wm.getEnumerator("navigator:browser");
 while (enumerator.hasMoreElements()) {
   let win = enumerator.getNext();
@@ -892,7 +898,6 @@ while (enumerator.hasMoreElements()) {
 }
 
 
-
-
-loader.main("devtools/client/main");
-
+unload(function () {
+  gDevToolsBrowser.destroy();
+});

@@ -10,9 +10,8 @@ var { classes: Cc, interfaces: Ci, utils: Cu } = Components;
 
 var { loader, require } = Cu.import("resource://devtools/shared/Loader.jsm", {});
 
+loader.main("devtools/client/main");
 
-
-require("devtools/client/framework/devtools-browser");
 var { gDevTools } = require("devtools/client/framework/devtools");
 var { TargetFactory } = require("devtools/client/framework/target");
 var { Toolbox } = require("devtools/client/framework/toolbox");
