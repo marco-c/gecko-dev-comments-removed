@@ -37,6 +37,11 @@ extern PRLogModuleInfo* gNesteggLog;
 
 
 
+#define MAX_LOOK_AHEAD 10000000
+
+
+
+
 static int webmdemux_read(void* aBuffer, size_t aLength, void* aUserData)
 {
   MOZ_ASSERT(aUserData);
@@ -662,20 +667,6 @@ WebMDemuxer::DemuxPacket()
   return holder;
 }
 
-int64_t
-WebMDemuxer::GetNextKeyframeTime()
-{
-  EnsureUpToDateIndex();
-  uint64_t keyframeTime;
-  uint64_t lastFrame =
-    media::TimeUnit::FromMicroseconds(mLastVideoFrameTime.refOr(0)).ToNanoseconds();
-  if (!mBufferedState->GetNextKeyframeTime(lastFrame, &keyframeTime) ||
-      keyframeTime <= lastFrame) {
-    return -1;
-  }
-  return media::TimeUnit::FromNanoseconds(keyframeTime).ToMicroseconds();
-}
-
 void
 WebMDemuxer::PushAudioPacket(NesteggPacketHolder* aItem)
 {
@@ -879,33 +870,59 @@ WebMTrackDemuxer::GetSamples(int32_t aNumSamples)
 void
 WebMTrackDemuxer::SetNextKeyFrameTime()
 {
+  if (mType != TrackInfo::kVideoTrack) {
+    return;
+  }
+
   int64_t frameTime = -1;
 
   mNextKeyframeTime.reset();
 
-  if (mType == TrackInfo::kVideoTrack) {
-    MediaRawDataQueue skipSamplesQueue;
-    bool foundKeyframe = false;
-    while (!foundKeyframe && mSamples.GetSize()) {
-      nsRefPtr<MediaRawData> sample(mSamples.PopFront());
-      if (sample->mKeyframe) {
-        frameTime = sample->mTime;
-        foundKeyframe = true;
-      }
-      skipSamplesQueue.PushFront(sample);
+  MediaRawDataQueue skipSamplesQueue;
+  nsRefPtr<MediaRawData> sample;
+  bool foundKeyframe = false;
+  while (!foundKeyframe && mSamples.GetSize()) {
+    sample = mSamples.PopFront();
+    if (sample->mKeyframe) {
+      frameTime = sample->mTime;
+      foundKeyframe = true;
     }
-    while(skipSamplesQueue.GetSize()) {
-      nsRefPtr<MediaRawData> data = skipSamplesQueue.PopFront();
-      mSamples.PushFront(data);
+    skipSamplesQueue.Push(sample);
+  }
+  Maybe<int64_t> startTime;
+  if (skipSamplesQueue.GetSize()) {
+    sample = skipSamplesQueue.PopFront();
+    startTime.emplace(sample->mTimecode);
+    skipSamplesQueue.PushFront(sample);
+  }
+  
+  while (!foundKeyframe && (sample = NextSample())) {
+    if (sample->mKeyframe) {
+      frameTime = sample->mTime;
+      foundKeyframe = true;
     }
-    if (frameTime == -1) {
-      frameTime = mParent->GetNextKeyframeTime();
+    skipSamplesQueue.Push(sample);
+    if (!startTime) {
+      startTime.emplace(sample->mTimecode);
+    } else if (!foundKeyframe &&
+               sample->mTimecode > startTime.ref() + MAX_LOOK_AHEAD) {
+      WEBM_DEBUG("Couldn't find keyframe in a reasonable time, aborting");
+      break;
     }
   }
+  
+  
+  mSamples.PushFront(skipSamplesQueue);
 
   if (frameTime != -1) {
     mNextKeyframeTime.emplace(media::TimeUnit::FromMicroseconds(frameTime));
-    WEBM_DEBUG("Next Keyframe %f", mNextKeyframeTime.value().ToSeconds());
+    WEBM_DEBUG("Next Keyframe %f (%u queued %.02fs)",
+               mNextKeyframeTime.value().ToSeconds(),
+               uint32_t(mSamples.GetSize()),
+               media::TimeUnit::FromMicroseconds(mSamples.Last()->mTimecode - mSamples.First()->mTimecode).ToSeconds());
+  } else {
+    WEBM_DEBUG("Couldn't determine next keyframe time  (%u queued)",
+               uint32_t(mSamples.GetSize()));
   }
 }
 
