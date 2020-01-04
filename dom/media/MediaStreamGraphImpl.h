@@ -41,6 +41,9 @@ struct StreamUpdate
 
 
 
+
+
+
 class ControlMessage
 {
 public:
@@ -58,6 +61,8 @@ public:
   
   
   virtual void Run() = 0;
+  
+  
   
   
   
@@ -220,6 +225,10 @@ public:
   
 
 
+  void RunMessagesInQueue();
+  
+
+
 
   void UpdateGraph(GraphTime aEndBlockingDecisions);
 
@@ -241,6 +250,14 @@ public:
   void ExtractPendingInput(SourceMediaStream* aStream,
                            GraphTime aDesiredUpToTime,
                            bool* aEnsureNextIteration);
+
+  
+
+
+
+
+
+  void RunMessageAfterProcessing(nsAutoPtr<ControlMessage> aMessage);
 
   
 

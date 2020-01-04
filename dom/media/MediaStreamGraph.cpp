@@ -1000,7 +1000,21 @@ MediaStreamGraphImpl::AllFinishedStreamsNotified()
 }
 
 void
-MediaStreamGraphImpl::UpdateGraph(GraphTime aEndBlockingDecisions)
+MediaStreamGraphImpl::RunMessageAfterProcessing(nsAutoPtr<ControlMessage> aMessage)
+{
+  MOZ_ASSERT(CurrentDriver()->OnThread());
+
+  if (mFrontMessageQueue.IsEmpty()) {
+    mFrontMessageQueue.AppendElement();
+  }
+
+  
+  MOZ_ASSERT(mFrontMessageQueue.Length() == 1);
+  mFrontMessageQueue[0].mMessages.AppendElement(Move(aMessage));
+}
+
+void
+MediaStreamGraphImpl::RunMessagesInQueue()
 {
   
   
@@ -1013,7 +1027,11 @@ MediaStreamGraphImpl::UpdateGraph(GraphTime aEndBlockingDecisions)
     }
   }
   mFrontMessageQueue.Clear();
+}
 
+void
+MediaStreamGraphImpl::UpdateGraph(GraphTime aEndBlockingDecisions)
+{
   MOZ_ASSERT(aEndBlockingDecisions >= mProcessedTime);
   
   
@@ -1204,6 +1222,9 @@ MediaStreamGraphImpl::OneIteration(GraphTime aStateEnd)
 {
   MaybeProduceMemoryReport();
 
+  
+  RunMessagesInQueue();
+
   GraphTime stateEnd = std::min(aStateEnd, mEndTime);
   UpdateGraph(stateEnd);
 
@@ -1215,6 +1236,10 @@ MediaStreamGraphImpl::OneIteration(GraphTime aStateEnd)
   mProcessedTime = stateEnd;
 
   UpdateCurrentTimeForStreams(oldProcessedTime);
+
+  
+  
+  RunMessagesInQueue();
 
   return UpdateMainThreadState();
 }
