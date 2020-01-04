@@ -3893,9 +3893,6 @@ GCRuntime::beginMarkPhase(JS::gcreason::Reason reason, AutoLockForExclusiveAcces
             
             WeakMapBase::unmarkZone(zone);
         }
-
-        if (isFull)
-            UnmarkScriptData(rt, lock);
     }
 
     markRuntime(gcmarker, MarkRuntime, lock);
@@ -5421,8 +5418,7 @@ GCRuntime::endSweepPhase(bool destroyingRuntime, AutoLockForExclusiveAccess& loc
 
 
 
-        if (isFull)
-            SweepScriptData(rt, lock);
+        SweepScriptData(rt, lock);
 
         
         if (jit::JitRuntime* jitRuntime = rt->jitRuntime()) {
