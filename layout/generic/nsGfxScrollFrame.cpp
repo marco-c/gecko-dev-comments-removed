@@ -2730,11 +2730,16 @@ ScrollFrameHelper::ScrollToImpl(nsPoint aPt, const nsRect& aRange, nsIAtom* aOri
   }
 
   ScheduleSyntheticMouseMove();
-  nsWeakFrame weakFrame(mOuter);
-  UpdateScrollbarPosition();
-  if (!weakFrame.IsAlive()) {
-    return;
+
+  { 
+    AutoScrollbarRepaintSuppression repaintSuppression(this, !schedulePaint);
+    nsWeakFrame weakFrame(mOuter);
+    UpdateScrollbarPosition();
+    if (!weakFrame.IsAlive()) {
+      return;
+    }
   }
+
   PostScrollEvent();
 
   

@@ -79,6 +79,12 @@ public:
   virtual void ScrollbarActivityStopped() const = 0;
 
   virtual bool IsScrollbarOnRight() const = 0;
+
+  
+
+
+
+  virtual bool ShouldSuppressScrollbarRepaints() const = 0;
 };
 
 #endif

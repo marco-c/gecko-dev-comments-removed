@@ -767,11 +767,10 @@ nsSliderFrame::CurrentPositionChanged()
   thumbFrame->SetRect(newThumbRect);
 
   
-  
-  nsIScrollableFrame* scrollableFrame = do_QueryFrame(GetScrollbar()->GetParent());
-  if (!gfxPrefs::APZPaintSkipping() ||
-      !scrollableFrame ||
-      scrollableFrame->LastScrollOrigin() != nsGkAtoms::apz) {
+  nsScrollbarFrame* scrollbarFrame = do_QueryFrame(scrollbarBox);
+  nsIScrollbarMediator* mediator = scrollbarFrame
+      ? scrollbarFrame->GetScrollbarMediator() : nullptr;
+  if (!mediator || !mediator->ShouldSuppressScrollbarRepaints()) {
     SchedulePaint();
   }
 

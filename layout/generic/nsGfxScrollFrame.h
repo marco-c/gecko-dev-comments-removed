@@ -441,6 +441,9 @@ public:
                     nsIScrollableFrame::ScrollUnit aUnit,
                     nsIScrollbarMediator::ScrollSnapMode aSnap
                       = nsIScrollbarMediator::DISABLE_SNAP);
+  bool ShouldSuppressScrollbarRepaints() const {
+    return mSuppressScrollbarRepaints;
+  }
 
   
   nsCOMPtr<nsIContent> mHScrollbarContent;
@@ -573,9 +576,33 @@ public:
   
   bool mZoomableByAPZ:1;
 
+  
+  bool mSuppressScrollbarRepaints:1;
+
   mozilla::layout::ScrollVelocityQueue mVelocityQueue;
 
 protected:
+  class AutoScrollbarRepaintSuppression;
+  friend class AutoScrollbarRepaintSuppression;
+  class AutoScrollbarRepaintSuppression {
+  public:
+    AutoScrollbarRepaintSuppression(ScrollFrameHelper* aHelper, bool aSuppress)
+      : mHelper(aHelper)
+      , mOldSuppressValue(aHelper->mSuppressScrollbarRepaints)
+    {
+      mHelper->mSuppressScrollbarRepaints = aSuppress;
+    }
+
+    ~AutoScrollbarRepaintSuppression()
+    {
+      mHelper->mSuppressScrollbarRepaints = mOldSuppressValue;
+    }
+
+  private:
+    ScrollFrameHelper* mHelper;
+    bool mOldSuppressValue;
+  };
+
   
 
 
@@ -959,6 +986,10 @@ public:
 
   virtual bool IsScrollbarOnRight() const override {
     return mHelper.IsScrollbarOnRight();
+  }
+
+  virtual bool ShouldSuppressScrollbarRepaints() const override {
+    return mHelper.ShouldSuppressScrollbarRepaints();
   }
 
   virtual void SetTransformingByAPZ(bool aTransforming) override {
@@ -1354,6 +1385,10 @@ public:
 
   virtual bool IsScrollbarOnRight() const override {
     return mHelper.IsScrollbarOnRight();
+  }
+
+  virtual bool ShouldSuppressScrollbarRepaints() const override {
+    return mHelper.ShouldSuppressScrollbarRepaints();
   }
 
   virtual void SetTransformingByAPZ(bool aTransforming) override {
