@@ -33,3 +33,22 @@ def get_build_vars(directory, cmd):
         cmd.log_manager.replace_terminal_handler(old_logger)
 
     return build_vars
+
+def sanitize_cflags(flags):
+    
+    
+    
+    
+    
+    
+    
+    sanitized = []
+    saw_xclang = False
+    for flag in flags:
+        if flag == '-Xclang':
+            saw_xclang = True
+        elif saw_xclang:
+            saw_xclang = False
+        else:
+            sanitized.append(flag)
+    return sanitized
