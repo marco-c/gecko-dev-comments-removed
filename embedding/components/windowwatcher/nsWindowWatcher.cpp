@@ -495,10 +495,7 @@ nsWindowWatcher::OpenWindowInternal(nsIDOMWindow* aParent,
 
   GetWindowTreeOwner(aParent, getter_AddRefs(parentTreeOwner));
 
-  
-  
-  
-  if (aUrl && !openedFromRemoteTab) {
+  if (aUrl) {
     rv = URIfromURL(aUrl, aParent, getter_AddRefs(uriToLoad));
     if (NS_FAILED(rv)) {
       return rv;
@@ -510,8 +507,6 @@ nsWindowWatcher::OpenWindowInternal(nsIDOMWindow* aParent,
   if (aName) {
     CopyUTF8toUTF16(aName, name);
     nameSpecified = true;
-  } else {
-    name.SetIsVoid(true);
   }
 
   bool featuresSpecified = false;
@@ -519,8 +514,6 @@ nsWindowWatcher::OpenWindowInternal(nsIDOMWindow* aParent,
     features.Assign(aFeatures);
     featuresSpecified = true;
     features.StripWhitespace();
-  } else {
-    features.SetIsVoid(true);
   }
 
   
