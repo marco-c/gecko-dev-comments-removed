@@ -330,7 +330,13 @@ var DocumentManager = {
   },
 
   handleEvent: function(event) {
-    let window = event.target.defaultView;
+    let window = event.currentTarget;
+    if (event.target != window.document) {
+      
+      
+      
+      return;
+    }
     window.removeEventListener(event.type, this, true);
 
     

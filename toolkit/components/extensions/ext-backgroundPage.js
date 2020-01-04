@@ -53,7 +53,11 @@ BackgroundPage.prototype = {
 
     
     
-    window.windowRoot.addEventListener("load", () => {
+    let loadListener = event => {
+      if (event.target != window.document) {
+        return;
+      }
+      event.currentTarget.removeEventListener("load", loadListener, true);
       if (this.scripts) {
         let doc = window.document;
         for (let script of this.scripts) {
@@ -74,7 +78,8 @@ BackgroundPage.prototype = {
       if (this.extension.onStartup) {
         this.extension.onStartup();
       }
-    }, true);
+    };
+    window.windowRoot.addEventListener("load", loadListener, true);
   },
 
   shutdown() {
