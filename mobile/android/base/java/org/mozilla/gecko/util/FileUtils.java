@@ -7,6 +7,8 @@ package org.mozilla.gecko.util;
 import android.util.Log;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.FilenameFilter;
@@ -101,6 +103,26 @@ public class FileUtils {
                 scanner.close();
             }
         }
+    }
+
+    
+
+
+
+
+
+
+
+    public static String readStringFromFile(final File file) throws IOException {
+        
+        
+        if (!file.exists()) {
+            throw new FileNotFoundException("Given file, " + file + ", does not exist");
+        } else if (file.length() == 0) {
+            return "";
+        }
+        final int len = (int) file.length(); 
+        return readStringFromInputStreamAndCloseStream(new FileInputStream(file), len);
     }
 
     
