@@ -53,6 +53,7 @@ class gfxContext final {
     typedef mozilla::gfx::Pattern Pattern;
     typedef mozilla::gfx::Rect Rect;
     typedef mozilla::gfx::RectCornerRadii RectCornerRadii;
+    typedef mozilla::gfx::Size Size;
 
     NS_INLINE_DECL_REFCOUNTING(gfxContext)
 
@@ -194,7 +195,7 @@ public:
 
 
 
-    gfxSize DeviceToUser(const gfxSize& size) const;
+    Size DeviceToUser(const Size& size) const;
 
     
 
@@ -213,7 +214,7 @@ public:
 
 
 
-    gfxSize UserToDevice(const gfxSize& size) const;
+    Size UserToDevice(const Size& size) const;
 
     
 
