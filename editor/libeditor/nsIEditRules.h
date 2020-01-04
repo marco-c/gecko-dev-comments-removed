@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsEditRules_h__
-#define nsEditRules_h__
+#ifndef nsIEditRules_h
+#define nsIEditRules_h
 
 #define NS_IEDITRULES_IID \
 { 0x3836386d, 0x806a, 0x488d, \
@@ -13,26 +13,29 @@
 #include "nsEditor.h" 
 
 class nsPlaintextEditor;
+
 namespace mozilla {
+
 namespace dom {
 class Selection;
 } 
-} 
 
 
 
 
 
-class nsRulesInfo
+class RulesInfo
 {
-  public:
-
-  explicit nsRulesInfo(EditAction aAction) : action(aAction) {}
-  virtual ~nsRulesInfo() {}
+public:
+  explicit RulesInfo(EditAction aAction)
+    : action(aAction)
+  {}
+  virtual ~RulesInfo() {}
 
   EditAction action;
 };
 
+} 
 
 
 
@@ -45,22 +48,22 @@ public:
 
 
 
-  NS_IMETHOD Init(nsPlaintextEditor *aEditor)=0;
+  NS_IMETHOD Init(nsPlaintextEditor* aEditor) = 0;
   NS_IMETHOD SetInitialValue(const nsAString& aValue) = 0;
-  NS_IMETHOD DetachEditor()=0;
+  NS_IMETHOD DetachEditor() = 0;
   NS_IMETHOD BeforeEdit(EditAction action,
                         nsIEditor::EDirection aDirection) = 0;
   NS_IMETHOD AfterEdit(EditAction action,
                        nsIEditor::EDirection aDirection) = 0;
-  NS_IMETHOD WillDoAction(mozilla::dom::Selection* aSelection, nsRulesInfo* aInfo,
-                          bool* aCancel, bool* aHandled) = 0;
+  NS_IMETHOD WillDoAction(mozilla::dom::Selection* aSelection,
+                          mozilla::RulesInfo* aInfo, bool* aCancel,
+                          bool* aHandled) = 0;
   NS_IMETHOD DidDoAction(mozilla::dom::Selection* aSelection,
-                         nsRulesInfo* aInfo, nsresult aResult) = 0;
-  NS_IMETHOD DocumentIsEmpty(bool *aDocumentIsEmpty)=0;
-  NS_IMETHOD DocumentModified()=0;
+                         mozilla::RulesInfo* aInfo, nsresult aResult) = 0;
+  NS_IMETHOD DocumentIsEmpty(bool* aDocumentIsEmpty) = 0;
+  NS_IMETHOD DocumentModified() = 0;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(nsIEditRules, NS_IEDITRULES_IID)
 
 #endif 
-
