@@ -457,9 +457,17 @@ BluetoothPbapManager::PullvCardListing(const ObexHeaderSet& aHeader)
 
   InfallibleTArray<BluetoothNamedValue> data;
 
-  nsString name;
-  aHeader.GetName(name);
-  AppendNamedValue(data, "name", name);
+  nsString folderName;
+  aHeader.GetName(folderName);
+
+  
+  
+  
+  nsString folderPath = mCurrentPath;
+  if (!folderName.IsEmpty()) {
+    folderPath += NS_LITERAL_STRING("/") + folderName;
+  }
+  AppendNamedValue(data, "name", folderPath);
 
   AppendNamedValueByTagId(aHeader, data, AppParameterTag::Order);
   AppendNamedValueByTagId(aHeader, data, AppParameterTag::SearchValue);
