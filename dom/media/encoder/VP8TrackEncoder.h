@@ -54,7 +54,9 @@ private:
                                          StreamTime aProcessedDuration);
 
   
-  nsresult GetEncodedPartitions(EncodedFrameContainer& aData);
+  
+  
+  bool GetEncodedPartitions(EncodedFrameContainer& aData);
 
   
   nsresult PrepareRawFrame(VideoChunk &aChunk);
