@@ -51,8 +51,6 @@ import org.mozilla.gecko.preferences.ClearOnShutdownPref;
 import org.mozilla.gecko.preferences.GeckoPreferences;
 import org.mozilla.gecko.prompts.Prompt;
 import org.mozilla.gecko.prompts.PromptListItem;
-import org.mozilla.gecko.reader.ReaderModeUtils;
-import org.mozilla.gecko.reader.ReadingListHelper;
 import org.mozilla.gecko.restrictions.Restrictable;
 import org.mozilla.gecko.restrictions.RestrictedProfileConfiguration;
 import org.mozilla.gecko.sync.repositories.android.FennecTabsRepository;
@@ -145,8 +143,8 @@ import android.widget.RelativeLayout;
 import android.widget.ViewFlipper;
 import com.keepsafe.switchboard.AsyncConfigLoader;
 import com.keepsafe.switchboard.SwitchBoard;
-import android.animation.Animator;
-import android.animation.ObjectAnimator;
+import com.nineoldandroids.animation.Animator;
+import com.nineoldandroids.animation.ObjectAnimator;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -2326,7 +2324,8 @@ public class BrowserApp extends GeckoApp
 
         mBrowserToolbar.startEditing(url, animator);
 
-        final boolean isUserSearchTerm = !TextUtils.isEmpty(selectedTab.getUserRequested());
+        final boolean isUserSearchTerm = selectedTab != null &&
+                !TextUtils.isEmpty(selectedTab.getUserRequested());
         if (isUserSearchTerm && SwitchBoard.isInExperiment(getContext(), Experiments.SEARCH_TERM)) {
             showBrowserSearchAfterAnimation(animator);
         } else {
