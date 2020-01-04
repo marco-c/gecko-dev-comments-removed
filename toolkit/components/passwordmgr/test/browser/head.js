@@ -119,3 +119,19 @@ function clickDoorhangerButton(aPopup, aButtonIndex) {
 }
 
 
+
+
+
+
+
+function* checkDoorhangerUsernamePassword(username, password) {
+  yield BrowserTestUtils.waitForCondition(() => {
+    return document.getElementById("password-notification-username").value == username;
+  }, "Wait for nsLoginManagerPrompter writeDataToUI()");
+  is(document.getElementById("password-notification-username").value, username,
+     "Check doorhanger username");
+  is(document.getElementById("password-notification-password").value, password,
+     "Check doorhanger password");
+}
+
+
