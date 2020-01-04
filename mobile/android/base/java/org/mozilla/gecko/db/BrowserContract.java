@@ -8,6 +8,8 @@ package org.mozilla.gecko.db;
 import org.mozilla.gecko.AppConstants;
 
 import android.net.Uri;
+import android.support.annotation.NonNull;
+
 import org.mozilla.gecko.annotation.RobocopTarget;
 
 @RobocopTarget
@@ -57,17 +59,73 @@ public class BrowserContract {
         AGGRESSIVE
     }
 
-    static public String getFrecencySortOrder(boolean includesBookmarks, boolean asc) {
-        final String age = "(" + Combined.DATE_LAST_VISITED + " - " + System.currentTimeMillis() + ") / 86400000";
+    
 
-        StringBuilder order = new StringBuilder(Combined.VISITS + " * MAX(1, 100 * 225 / (" + age + "*" + age + " + 225)) ");
+
+
+
+
+
+
+    static public String getCombinedFrecencySortOrder(boolean includesBookmarks, boolean ascending) {
+        final long now = System.currentTimeMillis();
+        StringBuilder order = new StringBuilder(getRemoteFrecencySQL(now) + " + " + getLocalFrecencySQL(now));
 
         if (includesBookmarks) {
             order.insert(0, "(CASE WHEN " + Combined.BOOKMARK_ID + " > -1 THEN 100 ELSE 0 END) + ");
         }
 
-        order.append(asc ? " ASC" : " DESC");
+        order.append(ascending ? " ASC" : " DESC");
         return order.toString();
+    }
+
+    
+
+
+
+
+
+
+    static public String getRemoteFrecencySQL(final long now) {
+        return getFrecencyCalculation(now, 1, 110, Combined.REMOTE_VISITS_COUNT, Combined.REMOTE_DATE_LAST_VISITED);
+    }
+
+    
+
+
+
+
+
+
+
+    static public String getLocalFrecencySQL(final long now) {
+        String visitCountExpr = "(" + Combined.LOCAL_VISITS_COUNT + " + 2)";
+        visitCountExpr = visitCountExpr + " * " + visitCountExpr;
+
+        return getFrecencyCalculation(now, 2, 225, visitCountExpr, Combined.LOCAL_DATE_LAST_VISITED);
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    static public String getFrecencyCalculation(final long now, final int minFrecency, final int multiplier, @NonNull  final String visitCountExpr, @NonNull final String lastVisitExpr) {
+        final long nowInMicroseconds = now * 1000;
+        final long microsecondsPerDay = 86400000000L;
+        final String ageExpr = "(" + nowInMicroseconds + " - " + lastVisitExpr + ") / " + microsecondsPerDay;
+
+        return visitCountExpr + " * MAX(" + minFrecency + ", 100 * " + multiplier + " / (" + ageExpr + " * " + ageExpr + " + " + multiplier + "))";
     }
 
     @RobocopTarget
@@ -245,6 +303,12 @@ public class BrowserContract {
 
         public static final String BOOKMARK_ID = "bookmark_id";
         public static final String HISTORY_ID = "history_id";
+
+        public static final String REMOTE_VISITS_COUNT = "remoteVisitCount";
+        public static final String REMOTE_DATE_LAST_VISITED = "remoteDateLastVisited";
+
+        public static final String LOCAL_VISITS_COUNT = "localVisitCount";
+        public static final String LOCAL_DATE_LAST_VISITED = "localDateLastVisited";
     }
 
     public static final class Schema {
