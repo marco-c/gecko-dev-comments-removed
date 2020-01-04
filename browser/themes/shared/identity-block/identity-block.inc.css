@@ -50,7 +50,7 @@
   
 
 
-  transition-delay: 0s, 100s, 100s;
+  transition-delay: 100s, 100s;
 }
 
 @conditionalForwardWithUrlbar@:not(:hover) > #forward-button[disabled] + #urlbar > #identity-box {
