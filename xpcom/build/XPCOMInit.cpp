@@ -926,9 +926,6 @@ ShutdownXPCOM(nsIServiceManager* aServMgr)
   
   mozilla::services::Shutdown();
 
-#ifdef DEBUG_dougt
-  fprintf(stderr, "* * * * XPCOM shutdown. Access will be denied * * * * \n");
-#endif
   
   
   NS_IF_RELEASE(aServMgr);
