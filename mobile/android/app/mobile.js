@@ -934,3 +934,9 @@ pref("consoleservice.logcat", true);
 pref("dom.vr.cardboard.enabled", true);
 
 pref("browser.tabs.showAudioPlayingIcon", true);
+
+
+#ifdef NIGHTLY_BUILD
+pref("dom.serviceWorkers.enabled", true);
+pref("dom.serviceWorkers.interception.enabled", true);
+#endif
