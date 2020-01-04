@@ -1542,7 +1542,7 @@ if ("nsIWindowsRegKey" in AM_Ci) {
 
 
 
-  function MockWindowsRegKey() {
+  var MockWindowsRegKey = function MockWindowsRegKey() {
   }
 
   MockWindowsRegKey.prototype = {
@@ -1722,6 +1722,30 @@ do_register_cleanup(function addon_cleanup() {
     Services.prefs.clearUserPref(PREF_EM_STRICT_COMPATIBILITY);
   } catch (e) {}
 });
+
+
+
+
+
+
+
+
+
+
+
+
+function createHttpServer(port = -1) {
+  let server = new HttpServer();
+  server.start(port);
+
+  do_register_cleanup(() => {
+    return new Promise(resolve => {
+      server.stop(resolve);
+    });
+  });
+
+  return server;
+}
 
 
 
@@ -1912,3 +1936,43 @@ function promiseFindAddonUpdates(addon, reason = AddonManager.UPDATE_WHEN_PERIOD
     }, reason);
   });
 }
+
+
+
+
+
+
+
+
+
+
+
+
+var promiseConsoleOutput = Task.async(function*(aTask) {
+  const DONE = "=== xpcshell test console listener done ===";
+
+  let listener, messages = [];
+  let awaitListener = new Promise(resolve => {
+    listener = msg => {
+      if (msg == DONE) {
+        resolve();
+      } else {
+        msg instanceof Components.interfaces.nsIScriptError;
+        messages.push(msg);
+      }
+    }
+  });
+
+  Services.console.registerListener(listener);
+  try {
+    let result = yield aTask();
+
+    Services.console.logStringMessage(DONE);
+    yield awaitListener;
+
+    return { messages, result };
+  }
+  finally {
+    Services.console.unregisterListener(listener);
+  }
+});
