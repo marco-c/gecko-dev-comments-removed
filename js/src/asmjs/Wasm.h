@@ -34,7 +34,9 @@ using mozilla::Move;
 
 
 
-enum class ValType : uint8_t
+
+
+enum class ValType
 {
     I32,
     I64,
