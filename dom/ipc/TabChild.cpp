@@ -509,7 +509,7 @@ TabChild::Create(nsIContentChild* aManager,
         child->mManager = aManager;
         child->SetTabId(aTabId);
         child->SetTabContext(aContext);
-        child->NotifyTabContextUpdated(true);
+        child->NotifyTabContextUpdated();
         return child.forget();
     }
 
@@ -727,7 +727,6 @@ TabChild::Init()
   }
 
   webBrowser->SetContainerWindow(this);
-  webBrowser->SetOriginAttributes(OriginAttributesRef());
   mWebNav = do_QueryInterface(webBrowser);
   NS_ASSERTION(mWebNav, "nsWebBrowser doesn't implement nsIWebNavigation?");
 
@@ -756,7 +755,7 @@ TabChild::Init()
   baseWindow->Create();
 
   
-  NotifyTabContextUpdated(false);
+  NotifyTabContextUpdated();
 
   
   
@@ -826,7 +825,7 @@ TabChild::Init()
 }
 
 void
-TabChild::NotifyTabContextUpdated(bool aIsPreallocated)
+TabChild::NotifyTabContextUpdated()
 {
   nsCOMPtr<nsIDocShell> docShell = do_GetInterface(WebNavigation());
   MOZ_ASSERT(docShell);
@@ -836,10 +835,7 @@ TabChild::NotifyTabContextUpdated(bool aIsPreallocated)
   }
 
   UpdateFrameType();
-
-  if (aIsPreallocated)  {
-    nsDocShell::Cast(docShell)->SetOriginAttributes(OriginAttributesRef());
-  }
+  nsDocShell::Cast(docShell)->SetOriginAttributes(OriginAttributesRef());
 
   
   if (!PresentationURL().IsEmpty()) {
