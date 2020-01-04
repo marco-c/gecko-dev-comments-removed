@@ -2553,12 +2553,6 @@ public:
 
   static void SetScrollbarsVisibility(nsIDocShell* aDocShell, bool aVisible);
 
-  
-
-
-
-  static void GetPresentationURL(nsIDocShell* aDocShell, nsAString& aPresentationUrl);
-
 private:
   static bool InitializeEventTable();
 
