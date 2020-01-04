@@ -350,6 +350,17 @@ public:
   
   static uint32_t ComputeMaxRefFrames(const mozilla::MediaByteBuffer* aExtraData);
 
+  enum class FrameType
+  {
+    I_FRAME,
+    OTHER,
+    INVALID,
+  };
+
+  
+  
+  static FrameType GetFrameType(const mozilla::MediaRawData* aSample);
+
 private:
   static void vui_parameters(BitReader& aBr, SPSData& aDest);
   
