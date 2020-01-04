@@ -100,16 +100,10 @@ protected:
     virtual void LockProdImpl() = 0;
     virtual void UnlockProdImpl() = 0;
 
-    virtual void ProducerAcquireImpl() {}
-    virtual void ProducerReleaseImpl() {
-        Fence();
-    }
-    virtual void ProducerReadAcquireImpl() {}
-    virtual void ProducerReadReleaseImpl() {}
-    virtual void ConsumerAcquireImpl() {
-        WaitSync();
-    }
-    virtual void ConsumerReleaseImpl() {}
+    virtual void ProducerAcquireImpl() = 0;
+    virtual void ProducerReleaseImpl() = 0;
+    virtual void ProducerReadAcquireImpl() { ProducerAcquireImpl(); }
+    virtual void ProducerReadReleaseImpl() { ProducerReleaseImpl(); }
 
 public:
     void ProducerAcquire() {
@@ -132,39 +126,7 @@ public:
         ProducerReadReleaseImpl();
         mIsProducerAcquired = false;
     }
-    void ConsumerAcquire() {
-        MOZ_ASSERT(!mIsConsumerAcquired);
-        ConsumerAcquireImpl();
-        mIsConsumerAcquired = true;
-    }
-    void ConsumerRelease() {
-        MOZ_ASSERT(mIsConsumerAcquired);
-        ConsumerReleaseImpl();
-        mIsConsumerAcquired = false;
-    }
 
-    virtual void Fence() = 0;
-    virtual bool WaitSync() = 0;
-    virtual bool PollSync() = 0;
-
-    
-    
-    void Fence_ContentThread();
-    bool WaitSync_ContentThread();
-    bool PollSync_ContentThread();
-
-protected:
-    virtual void Fence_ContentThread_Impl() {
-        Fence();
-    }
-    virtual bool WaitSync_ContentThread_Impl() {
-        return WaitSync();
-    }
-    virtual bool PollSync_ContentThread_Impl() {
-        return PollSync();
-    }
-
-public:
     
     
     
