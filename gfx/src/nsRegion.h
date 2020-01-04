@@ -21,12 +21,7 @@
 #include "nsStringGlue.h"               
 #include "xpcom-config.h"               
 #include "mozilla/Move.h"               
-
-namespace mozilla {
-namespace gfx {
-class Matrix4x4;
-} 
-} 
+#include "mozilla/gfx/MatrixFwd.h"      
 
 #include "pixman.h"
 

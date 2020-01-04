@@ -10,6 +10,7 @@
 #include "CompositableHost.h"           
 #include "mozilla/Attributes.h"         
 #include "mozilla/RefPtr.h"             
+#include "mozilla/gfx/MatrixFwd.h"      
 #include "mozilla/gfx/Point.h"          
 #include "mozilla/gfx/Rect.h"           
 #include "mozilla/gfx/Types.h"          
@@ -24,9 +25,6 @@
 #include "nscore.h"                     
 
 namespace mozilla {
-namespace gfx {
-class Matrix4x4;
-} 
 namespace layers {
 
 class Compositor;

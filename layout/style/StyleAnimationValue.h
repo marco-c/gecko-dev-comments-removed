@@ -8,6 +8,7 @@
 #ifndef mozilla_StyleAnimationValue_h_
 #define mozilla_StyleAnimationValue_h_
 
+#include "mozilla/gfx/MatrixFwd.h"
 #include "nsStringFwd.h"
 #include "nsStringBuffer.h"
 #include "nsCoord.h"
@@ -27,10 +28,6 @@ class StyleRule;
 
 namespace dom {
 class Element;
-} 
-
-namespace gfx {
-class Matrix4x4;
 } 
 
 struct PropertyStyleAnimationValuePair;

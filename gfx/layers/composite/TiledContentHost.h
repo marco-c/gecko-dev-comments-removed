@@ -15,6 +15,7 @@
 #include "mozilla/Assertions.h"         
 #include "mozilla/Attributes.h"         
 #include "mozilla/RefPtr.h"             
+#include "mozilla/gfx/MatrixFwd.h"      
 #include "mozilla/gfx/Point.h"          
 #include "mozilla/gfx/Rect.h"           
 #include "mozilla/gfx/Types.h"          
@@ -32,9 +33,6 @@
 #endif
 
 namespace mozilla {
-namespace gfx {
-class Matrix4x4;
-} 
 
 namespace layers {
 

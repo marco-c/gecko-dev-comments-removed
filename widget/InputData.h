@@ -13,6 +13,7 @@
 #include "Units.h"
 #include "mozilla/EventForwards.h"
 #include "mozilla/TimeStamp.h"
+#include "mozilla/gfx/MatrixFwd.h"
 
 template<class E> struct already_AddRefed;
 class nsIWidget;
@@ -21,10 +22,6 @@ namespace mozilla {
 
 namespace dom {
 class Touch;
-} 
-
-namespace gfx {
-class Matrix4x4;
 } 
 
 enum InputType

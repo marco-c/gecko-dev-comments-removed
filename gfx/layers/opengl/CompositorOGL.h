@@ -17,6 +17,7 @@
 #include "mozilla/RefPtr.h"             
 #include "mozilla/gfx/2D.h"             
 #include "mozilla/gfx/BaseSize.h"       
+#include "mozilla/gfx/MatrixFwd.h"      
 #include "mozilla/gfx/Point.h"          
 #include "mozilla/gfx/Rect.h"           
 #include "mozilla/gfx/Types.h"          
@@ -36,10 +37,6 @@
 class nsIWidget;
 
 namespace mozilla {
-
-namespace gfx {
-class Matrix4x4;
-} 
 
 namespace layers {
 
