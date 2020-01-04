@@ -7,6 +7,7 @@
 #define mozilla_layers_APZThreadUtils_h
 
 #include "base/message_loop.h"
+#include "mozilla/TimeStamp.h"  
 #include "nsITimer.h"
 
 class Task;
@@ -50,6 +51,12 @@ public:
 
 
   static void RunOnControllerThread(Task* aTask);
+
+  
+
+
+  static void RunDelayedTaskOnCurrentThread(Task* aTask,
+                                            const TimeDuration& aDelay);
 };
 
 
