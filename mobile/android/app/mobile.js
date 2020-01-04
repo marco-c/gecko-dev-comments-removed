@@ -611,7 +611,12 @@ pref("layers.low-precision-opacity", "1.0");
 
 
 
+#ifdef NIGHTLY_BUILD
+
+pref("layers.max-active", 3);
+#else
 pref("layers.max-active", 20);
+#endif
 
 pref("notification.feature.enabled", true);
 pref("dom.webnotifications.enabled", true);
