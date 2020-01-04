@@ -25,13 +25,11 @@ protected:
     explicit WebGLVertexArrayGL(WebGLContext* webgl);
     ~WebGLVertexArrayGL();
 
-#if defined(XP_LINUX)
     
     
     
     
     bool mIsVAO;
-#endif
 };
 
 } 
