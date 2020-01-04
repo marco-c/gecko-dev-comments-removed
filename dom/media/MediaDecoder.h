@@ -637,9 +637,6 @@ private:
   int64_t GetDownloadPosition();
 
   
-  virtual void BreakCycles();
-
-  
   void DecodeError();
 
   
@@ -814,6 +811,8 @@ private:
   {
     SetMediaSeekable(false);
   }
+
+  void FinishShutdown();
 
   MediaEventProducer<void> mDataArrivedEvent;
 

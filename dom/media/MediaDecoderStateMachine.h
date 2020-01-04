@@ -167,7 +167,7 @@ public:
   
   void DispatchSetDormant(bool aDormant);
 
-  void DispatchShutdown();
+  RefPtr<ShutdownPromise> BeginShutdown();
 
   void DispatchStartBuffering()
   {
@@ -225,7 +225,6 @@ public:
       mReader->BreakCycles();
     }
     mResource = nullptr;
-    mDecoder = nullptr;
   }
 
   TimedMetadataEventSource& TimedMetadataEvent() {
@@ -284,9 +283,9 @@ private:
 
   RefPtr<MediaDecoder::SeekPromise> Seek(SeekTarget aTarget);
 
-  void Shutdown();
+  RefPtr<ShutdownPromise> Shutdown();
 
-  void FinishShutdown();
+  RefPtr<ShutdownPromise> FinishShutdown();
 
   
   
@@ -666,16 +665,6 @@ private:
 
   void AdjustAudioThresholds();
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  RefPtr<MediaDecoder> mDecoder;
   void* const mDecoderID;
   const RefPtr<FrameStatistics> mFrameStats;
   const RefPtr<VideoFrameContainer> mVideoFrameContainer;

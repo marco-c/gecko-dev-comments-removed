@@ -615,13 +615,16 @@ MediaDecoder::Shutdown()
   
   
   if (mDecoderStateMachine) {
-    mDecoderStateMachine->DispatchShutdown();
     mTimedMetadataListener.Disconnect();
     mMetadataLoadedListener.Disconnect();
     mFirstFrameLoadedListener.Disconnect();
     mOnPlaybackEvent.Disconnect();
     mOnSeekingStart.Disconnect();
     mOnMediaNotSeekable.Disconnect();
+
+    mDecoderStateMachine->BeginShutdown()->Then(
+      AbstractThread::MainThread(), __func__, this,
+      &MediaDecoder::FinishShutdown, &MediaDecoder::FinishShutdown);
   }
 
   
@@ -666,6 +669,14 @@ MediaDecoder::OnPlaybackEvent(MediaEventType aEvent)
       Invalidate();
       break;
   }
+}
+
+void
+MediaDecoder::FinishShutdown()
+{
+  MOZ_ASSERT(NS_IsMainThread());
+  mDecoderStateMachine->BreakCycles();
+  SetStateMachine(nullptr);
 }
 
 MediaResourceCallback*
@@ -1537,13 +1548,6 @@ MediaDecoderStateMachine*
 MediaDecoder::GetStateMachine() const {
   MOZ_ASSERT(NS_IsMainThread());
   return mDecoderStateMachine;
-}
-
-
-void
-MediaDecoder::BreakCycles() {
-  MOZ_ASSERT(NS_IsMainThread());
-  SetStateMachine(nullptr);
 }
 
 void
