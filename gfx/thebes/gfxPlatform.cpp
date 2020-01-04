@@ -2492,6 +2492,12 @@ gfxPlatform::InitOpenGLConfig()
   if (!IsGfxInfoStatusOkay(nsIGfxInfo::FEATURE_OPENGL_LAYERS, &message, failureId)) {
     openGLFeature.Disable(FeatureStatus::Blacklisted, message.get(), failureId);
   }
+
+  
+  
+  if (gfxPrefs::LayersAccelerationForceEnabledDoNotUseDirectly()) {
+    openGLFeature.UserForceEnable("Force-enabled by pref");
+  }
 }
 
 bool
