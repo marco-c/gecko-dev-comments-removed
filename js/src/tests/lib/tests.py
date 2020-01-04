@@ -133,6 +133,9 @@ class RefTest(object):
         self.path = path     
         self.options = []    
         self.jitflags = []   
+        self.test_reflect_stringify = None  
+                                            
+                                            
 
     @staticmethod
     def prefix_command(path):
@@ -147,7 +150,11 @@ class RefTest(object):
     def get_command(self, prefix):
         dirname, filename = os.path.split(self.path)
         cmd = prefix + self.jitflags + self.options \
-              + RefTest.prefix_command(dirname) + ['-f', self.path]
+              + RefTest.prefix_command(dirname)
+        if self.test_reflect_stringify is not None:
+            cmd += [self.test_reflect_stringify, "--check", self.path]
+        else:
+            cmd += ["-f", self.path]
         return cmd
 
 
