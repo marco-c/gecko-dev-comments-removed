@@ -184,7 +184,8 @@ public:
 
   AudioListener* Listener();
 
-  AudioContextState State() const;
+  AudioContextState State() const { return mAudioContextState; }
+
   
   
   
