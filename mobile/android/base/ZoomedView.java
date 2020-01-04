@@ -241,7 +241,7 @@ public class ZoomedView extends FrameLayout implements LayerView.DynamicToolbarL
         touchListener = new ZoomedViewTouchListener();
         EventDispatcher.getInstance().registerGeckoThreadListener(this,
                 "Gesture:clusteredLinksClicked", "Window:Resize", "Content:LocationChange",
-                "Gesture:CloseZoomedView");
+                "Gesture:CloseZoomedView", "Browser:ZoomToPageWidth", "Browser:ZoomToRect");
     }
 
     void destroy() {
@@ -250,7 +250,7 @@ public class ZoomedView extends FrameLayout implements LayerView.DynamicToolbarL
         ThreadUtils.removeCallbacksFromUiThread(requestRenderRunnable);
         EventDispatcher.getInstance().unregisterGeckoThreadListener(this,
                 "Gesture:clusteredLinksClicked", "Window:Resize", "Content:LocationChange",
-                "Gesture:CloseZoomedView");
+                "Gesture:CloseZoomedView", "Browser:ZoomToPageWidth", "Browser:ZoomToRect");
     }
 
     
@@ -562,8 +562,13 @@ public class ZoomedView extends FrameLayout implements LayerView.DynamicToolbarL
     }
 
     public void stopZoomDisplay(boolean withAnimation) {
+        
+        
+        
+        
+        
+        shouldSetVisibleOnUpdate = false;
         if (getVisibility() == View.VISIBLE) {
-            shouldSetVisibleOnUpdate = false;
             hideZoomedView(withAnimation);
             ThreadUtils.removeCallbacksFromUiThread(requestRenderRunnable);
             if (layerView != null) {
@@ -616,7 +621,9 @@ public class ZoomedView extends FrameLayout implements LayerView.DynamicToolbarL
                         refreshZoomedViewSize(metrics);
                     } else if (event.equals("Content:LocationChange")) {
                         stopZoomDisplay(false);
-                    } else if (event.equals("Gesture:CloseZoomedView")) {
+                    } else if (event.equals("Gesture:CloseZoomedView") ||
+                            event.equals("Browser:ZoomToPageWidth") ||
+                            event.equals("Browser:ZoomToRect")) {
                         stopZoomDisplay(true);
                     }
                 } catch (JSONException e) {
