@@ -199,8 +199,7 @@ ServoRestyleManager::ContentStateChanged(nsIContent* aContent,
   nsRestyleHint restyleHint;
   ContentStateChangedInternal(aElement, aStateMask, &changeHint, &restyleHint);
 
-  
-  
+  PostRestyleEvent(aElement, restyleHint, changeHint);
   return NS_OK;
 }
 
