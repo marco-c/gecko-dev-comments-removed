@@ -53,9 +53,8 @@ public:
     
     if (!existingBackgroundChild) {
       LOG(("No existingBackgroundChild"));
-      SynchronouslyCreatePBackground();
       existingBackgroundChild =
-        ipc::BackgroundChild::GetForCurrentThread();
+        ipc::BackgroundChild::SynchronouslyCreateForCurrentThread();
       LOG(("BackgroundChild: %p", existingBackgroundChild));
     }
     
@@ -91,6 +90,7 @@ GetCamerasChild() {
       return nullptr;
     }
 
+    
     
     
     

@@ -49,6 +49,7 @@ class PBackgroundChild;
 
 
 
+
 class BackgroundChild final
 {
   friend class mozilla::dom::ContentChild;
@@ -65,6 +66,10 @@ public:
   
   static bool
   GetOrCreateForCurrentThread(nsIIPCBackgroundChildCreateCallback* aCallback);
+
+  
+  static PBackgroundChild*
+  SynchronouslyCreateForCurrentThread();
 
   static mozilla::dom::PBlobChild*
   GetOrCreateActorForBlob(PBackgroundChild* aBackgroundActor,
