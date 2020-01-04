@@ -273,7 +273,8 @@ protected:
                                       uint32_t aLength,
                                       LineBreakType aLineBreakType,
                                       bool aExpandToClusterBoundaries,
-                                      uint32_t* aNewOffset = nullptr);
+                                      uint32_t* aNewOffset = nullptr,
+                                      nsIContent** aLastTextNode = nullptr);
   
   
   nsresult AdjustCollapsedRangeMaybeIntoTextNode(nsRange* aCollapsedRange);

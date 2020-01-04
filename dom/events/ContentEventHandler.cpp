@@ -953,10 +953,14 @@ ContentEventHandler::SetRangeFromFlatTextOffset(nsRange* aRange,
                                                 uint32_t aLength,
                                                 LineBreakType aLineBreakType,
                                                 bool aExpandToClusterBoundaries,
-                                                uint32_t* aNewOffset)
+                                                uint32_t* aNewOffset,
+                                                nsIContent** aLastTextNode)
 {
   if (aNewOffset) {
     *aNewOffset = aOffset;
+  }
+  if (aLastTextNode) {
+    *aLastTextNode = nullptr;
   }
 
   
@@ -990,6 +994,11 @@ ContentEventHandler::SetRangeFromFlatTextOffset(nsRange* aRange,
       continue;
     }
     nsIContent* content = node->AsContent();
+
+    if (aLastTextNode && content->IsNodeOfType(nsINode::eTEXT)) {
+      NS_IF_RELEASE(*aLastTextNode);
+      NS_ADDREF(*aLastTextNode = content);
+    }
 
     uint32_t textLength =
       content->IsNodeOfType(nsINode::eTEXT) ?
@@ -1930,9 +1939,11 @@ ContentEventHandler::OnQueryTextRect(WidgetQueryContentEvent* aEvent)
 
   LineBreakType lineBreakType = GetLineBreakType(aEvent);
   RefPtr<nsRange> range = new nsRange(mRootContent);
+  nsCOMPtr<nsIContent> lastTextContent;
   rv = SetRangeFromFlatTextOffset(range, aEvent->mInput.mOffset,
                                   aEvent->mInput.mLength, lineBreakType, true,
-                                  &aEvent->mReply.mOffset);
+                                  &aEvent->mReply.mOffset,
+                                  getter_AddRefs(lastTextContent));
   NS_ENSURE_SUCCESS(rv, rv);
   rv = GenerateFlatTextContent(range, aEvent->mReply.mString, lineBreakType);
   NS_ENSURE_SUCCESS(rv, rv);
@@ -1952,23 +1963,20 @@ ContentEventHandler::OnQueryTextRect(WidgetQueryContentEvent* aEvent)
     return NS_ERROR_FAILURE;
   }
 
-  
-  
-  
-  bool hasSetRect = false;
-
   nsRect rect, frameRect;
   nsPoint ptOffset;
 
   
+  
+  
   if (firstFrame->GetType() == nsGkAtoms::textFrame) {
-    hasSetRect = true;
     rect.SetRect(nsPoint(0, 0), firstFrame->GetRect().Size());
     rv = ConvertToRootRelativeOffset(firstFrame, rect);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
     frameRect = rect;
+    
     firstFrame->GetPointFromOffset(firstFrame.mOffsetInNode, &ptOffset);
     if (firstFrame->GetWritingMode().IsVertical()) {
       rect.y += ptOffset.y;
@@ -1977,8 +1985,67 @@ ContentEventHandler::OnQueryTextRect(WidgetQueryContentEvent* aEvent)
       rect.x += ptOffset.x;
       rect.width -= ptOffset.x;
     }
-  } else if (firstFrame->GetType() == nsGkAtoms::brFrame) {
-    hasSetRect = true;
+  }
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  else if (firstFrame->GetType() != nsGkAtoms::brFrame && lastTextContent) {
+    int32_t length = static_cast<int32_t>(lastTextContent->Length());
+    if (NS_WARN_IF(length < 0)) {
+      return NS_ERROR_FAILURE;
+    }
+    nsIFrame* lastTextFrame = nullptr;
+    rv = GetFrameForTextRect(lastTextContent, length, true, &lastTextFrame);
+    if (NS_WARN_IF(NS_FAILED(rv)) || NS_WARN_IF(!lastTextFrame)) {
+      return NS_ERROR_FAILURE;
+    }
+    const nsRect kLastTextFrameRect = lastTextFrame->GetRect();
+    if (lastTextFrame->GetWritingMode().IsVertical()) {
+      
+      rect.SetRect(0, kLastTextFrameRect.height,
+                   kLastTextFrameRect.width, 0);
+    } else {
+      
+      rect.SetRect(kLastTextFrameRect.width, 0,
+                   0, kLastTextFrameRect.height);
+    }
+    rv = ConvertToRootRelativeOffset(lastTextFrame, rect);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+    frameRect = rect;
+  }
+  
+  
+  
+  
+  
+  
+  
+  
+  else {
     FrameRelativeRect relativeRect = GetLineBreakerRectBefore(firstFrame);
     if (NS_WARN_IF(!relativeRect.IsValid())) {
       return NS_ERROR_FAILURE;
@@ -2032,7 +2099,6 @@ ContentEventHandler::OnQueryTextRect(WidgetQueryContentEvent* aEvent)
         break;
       }
     }
-    hasSetRect = true;
     if (frame->GetType() == nsGkAtoms::textFrame) {
       frameRect.SetRect(nsPoint(0, 0), frame->GetRect().Size());
     } else {
@@ -2054,11 +2120,6 @@ ContentEventHandler::OnQueryTextRect(WidgetQueryContentEvent* aEvent)
       
       rect.UnionRect(rect, frameRect);
     }
-  }
-
-  
-  if (NS_WARN_IF(!hasSetRect)) {
-    return NS_ERROR_FAILURE;
   }
 
   
