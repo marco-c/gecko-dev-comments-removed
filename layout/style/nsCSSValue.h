@@ -106,7 +106,6 @@ struct URLValueData
   
   URLValueData(already_AddRefed<PtrHolder<nsIURI>> aURI,
                nsStringBuffer* aString,
-               already_AddRefed<PtrHolder<nsIURI>> aBaseURI,
                already_AddRefed<PtrHolder<nsIURI>> aReferrer,
                already_AddRefed<PtrHolder<nsIPrincipal>> aOriginPrincipal);
 
@@ -116,14 +115,11 @@ struct URLValueData
   
   
   
-  
-  
-  
-  bool DefinitelyEqualURIs(const URLValueData& aOther) const;
+  bool URIEquals(const URLValueData& aOther) const;
 
   
   
-  bool DefinitelyEqualURIsAndPrincipal(const URLValueData& aOther) const;
+  bool MaybeUnresolvedURIEquals(const URLValueData& aOther) const;
 
   nsIURI* GetURI() const;
 
@@ -134,9 +130,9 @@ struct URLValueData
 private:
   
   
+  
   mutable PtrHandle<nsIURI> mURI;
 public:
-  PtrHandle<nsIURI> mBaseURI;
   RefPtr<nsStringBuffer> mString;
   PtrHandle<nsIURI> mReferrer;
   PtrHandle<nsIPrincipal> mOriginPrincipal;
@@ -155,8 +151,8 @@ struct URLValue : public URLValueData
   
   URLValue(nsStringBuffer* aString, nsIURI* aBaseURI, nsIURI* aReferrer,
            nsIPrincipal* aOriginPrincipal);
-  URLValue(nsIURI* aURI, nsStringBuffer* aString, nsIURI* aBaseURI,
-           nsIURI* aReferrer, nsIPrincipal* aOriginPrincipal);
+  URLValue(nsIURI* aURI, nsStringBuffer* aString, nsIURI* aReferrer,
+           nsIPrincipal* aOriginPrincipal);
 
   
   URLValue(nsStringBuffer* aString,
@@ -186,9 +182,8 @@ struct ImageValue : public URLValueData
   
   
   
-  ImageValue(nsIURI* aURI, nsStringBuffer* aString, nsIURI* aBaseURI,
-             nsIURI* aReferrer, nsIPrincipal* aOriginPrincipal,
-             nsIDocument* aDocument);
+  ImageValue(nsIURI* aURI, nsStringBuffer* aString, nsIURI* aReferrer,
+             nsIPrincipal* aOriginPrincipal, nsIDocument* aDocument);
 
   ImageValue(const ImageValue&) = delete;
   ImageValue& operator=(const ImageValue&) = delete;
