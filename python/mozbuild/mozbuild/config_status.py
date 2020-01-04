@@ -199,4 +199,9 @@ def config_status(topobjdir='.', topsrcdir='.',
     if env.substs.get('MOZ_ARTIFACT_BUILDS', False):
         
         os.chdir(topsrcdir)
-        return subprocess.check_call([sys.executable, os.path.join(topsrcdir, 'mach'), 'artifact', 'install'])
+        return subprocess.check_call([
+            sys.executable,
+            os.path.join(topsrcdir, 'mach'),
+            '--log-no-times',
+            'artifact',
+            'install'])
