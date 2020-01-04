@@ -23,6 +23,13 @@
     left: 0;
   }
 
+  img.overflowingVertical {
+    
+
+
+    margin-top: 0;
+  }
+
   .completeRotation {
     transition: transform 0.3s ease 0s;
   }
