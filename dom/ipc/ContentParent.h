@@ -664,12 +664,6 @@ private:
   
   
   
-  void MaybeTakeCPUWakeLock(Element* aFrameElement);
-
-  
-  
-  
-  
   bool SetPriorityAndCheckIsAlive(hal::ProcessPriority aPriority);
 
   
@@ -1062,8 +1056,6 @@ private:
   virtual bool RecvSpeakerManagerGetSpeakerStatus(bool* aValue) override;
 
   virtual bool RecvSpeakerManagerForceSpeaker(const bool& aEnable) override;
-
-  virtual bool RecvSystemMessageHandled() override;
 
   
   void OnNuwaReady();
