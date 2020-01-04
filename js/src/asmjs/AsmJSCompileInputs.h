@@ -1,0 +1,46 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#ifndef jit_AsmJSCompileInputs_h
+#define jit_AsmJSCompileInputs_h
+
+namespace js {
+
+namespace jit {
+    class CompileCompartment;
+    class CompileRuntime;
+}
+
+struct ModuleCompileInputs
+{
+    jit::CompileCompartment* compartment;
+    jit::CompileRuntime* runtime;
+    bool usesSignalHandlersForOOB;
+
+    ModuleCompileInputs(jit::CompileCompartment* compartment,
+                        jit::CompileRuntime* runtime,
+                        bool usesSignalHandlersForOOB)
+      : compartment(compartment),
+        runtime(runtime),
+        usesSignalHandlersForOOB(usesSignalHandlersForOOB)
+    {}
+};
+
+} 
+
+#endif 

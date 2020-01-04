@@ -17,7 +17,6 @@
 
 
 #include "asmjs/AsmJSCompile.h"
-#include "asmjs/AsmJSGlobals.h"
 
 #include "jit/CodeGenerator.h"
 
@@ -27,101 +26,6 @@ using namespace js::wasm;
 
 using mozilla::DebugOnly;
 using mozilla::Maybe;
-
-namespace js {
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class ModuleCompiler
-{
-    ModuleCompileInputs                     compileInputs_;
-    ScopedJSDeletePtr<ModuleCompileResults> compileResults_;
-
-  public:
-    explicit ModuleCompiler(const ModuleCompileInputs& inputs)
-      : compileInputs_(inputs)
-    {}
-
-    bool init() {
-        compileResults_.reset(js_new<ModuleCompileResults>());
-        return !!compileResults_;
-    }
-
-    
-
-    MacroAssembler& masm()          { return compileResults_->masm(); }
-    Label& stackOverflowLabel()     { return compileResults_->stackOverflowLabel(); }
-    Label& asyncInterruptLabel()    { return compileResults_->asyncInterruptLabel(); }
-    Label& syncInterruptLabel()     { return compileResults_->syncInterruptLabel(); }
-    Label& onOutOfBoundsLabel()     { return compileResults_->onOutOfBoundsLabel(); }
-    Label& onConversionErrorLabel() { return compileResults_->onConversionErrorLabel(); }
-    int64_t usecBefore()            { return compileResults_->usecBefore(); }
-
-    bool usesSignalHandlersForOOB() const   { return compileInputs_.usesSignalHandlersForOOB; }
-    CompileRuntime* runtime() const         { return compileInputs_.runtime; }
-    CompileCompartment* compartment() const { return compileInputs_.compartment; }
-
-    
-
-    void finish(ScopedJSDeletePtr<ModuleCompileResults>* results) {
-        *results = compileResults_.forget();
-    }
-};
-
-} 
-
 enum class AsmType : uint8_t {
     Int32,
     Float32,
@@ -144,15 +48,13 @@ class FunctionCompiler
     typedef Vector<size_t, 4, SystemAllocPolicy> PositionStack;
     typedef Vector<Type, 4, SystemAllocPolicy> LocalVarTypes;
 
-    ModuleCompiler &         m_;
-    LifoAlloc &              lifo_;
-
+    ModuleCompileInputs      inputs_;
     const AsmFunction &      func_;
     size_t                   pc_;
 
-    TempAllocator *          alloc_;
-    MIRGraph *               graph_;
-    CompileInfo *            info_;
+    TempAllocator &          alloc_;
+    MIRGraph &               graph_;
+    const CompileInfo &      info_;
     MIRGenerator *           mirGen_;
     Maybe<JitContext>        jitContext_;
 
@@ -167,30 +69,76 @@ class FunctionCompiler
 
     LocalVarTypes            localVarTypes_;
 
+    FunctionCompileResults&  compileResults_;
+
   public:
-    FunctionCompiler(ModuleCompiler& m, const AsmFunction& func, LifoAlloc& lifo)
-      : m_(m),
-        lifo_(lifo),
+    FunctionCompiler(ModuleCompileInputs inputs, const AsmFunction& func, const CompileInfo& info,
+                     TempAllocator* alloc, MIRGraph* graph, MIRGenerator* mirGen,
+                     FunctionCompileResults& compileResults)
+      : inputs_(inputs),
         func_(func),
         pc_(0),
-        alloc_(nullptr),
-        graph_(nullptr),
-        info_(nullptr),
-        mirGen_(nullptr),
-        curBlock_(nullptr)
+        alloc_(*alloc),
+        graph_(*graph),
+        info_(info),
+        mirGen_(mirGen),
+        curBlock_(nullptr),
+        compileResults_(compileResults)
     {}
 
-    ModuleCompiler & m() const            { return m_; }
-    TempAllocator &  alloc() const        { return *alloc_; }
-    LifoAlloc &      lifo() const         { return lifo_; }
+    TempAllocator &  alloc() const        { return alloc_; }
+    MacroAssembler & masm() const         { return compileResults_.masm(); }
     RetType          returnedType() const { return func_.returnedType(); }
 
-    bool init()
+    bool init(const VarTypeVector& argTypes)
     {
-        return unlabeledBreaks_.init() &&
-               unlabeledContinues_.init() &&
-               labeledBreaks_.init() &&
-               labeledContinues_.init();
+        if (!unlabeledBreaks_.init() ||
+            !unlabeledContinues_.init() ||
+            !labeledBreaks_.init() ||
+            !labeledContinues_.init())
+        {
+            return false;
+        }
+
+        const AsmFunction::VarInitializerVector& varInitializers = func_.varInitializers();
+
+        
+        jitContext_.emplace(inputs_.runtime,  nullptr, &alloc_);
+        MOZ_ASSERT(func_.numLocals() == argTypes.length() + varInitializers.length());
+
+        if (!newBlock( nullptr, &curBlock_))
+            return false;
+
+        
+        for (ABIArgTypeIter i(argTypes); !i.done(); i++) {
+            MAsmJSParameter* ins = MAsmJSParameter::New(alloc(), *i, i.mirType());
+            curBlock_->add(ins);
+            curBlock_->initSlot(info().localSlot(i.index()), ins);
+            if (!mirGen_->ensureBallast())
+                return false;
+            localVarTypes_.append(argTypes[i.index()].toType());
+        }
+
+        unsigned firstLocalSlot = argTypes.length();
+        for (unsigned i = 0; i < varInitializers.length(); i++) {
+            const AsmJSNumLit& lit = varInitializers[i];
+            Type type = Type::Of(lit);
+            MIRType mirType = type.toMIRType();
+
+            MInstruction* ins;
+            if (lit.isSimd())
+               ins = MSimdConstant::New(alloc(), lit.simdValue(), mirType);
+            else
+               ins = MConstant::NewAsmJS(alloc(), lit.scalarValue(), mirType);
+
+            curBlock_->add(ins);
+            curBlock_->initSlot(info().localSlot(firstLocalSlot + i), ins);
+            if (!mirGen_->ensureBallast())
+                return false;
+            localVarTypes_.append(type);
+        }
+
+        return true;
     }
 
     void checkPostconditions()
@@ -206,9 +154,9 @@ class FunctionCompiler
 
     
 
-    MIRGenerator & mirGen() const     { MOZ_ASSERT(mirGen_); return *mirGen_; }
-    MIRGraph &     mirGraph() const   { MOZ_ASSERT(graph_); return *graph_; }
-    CompileInfo &  info() const       { MOZ_ASSERT(info_); return *info_; }
+    MIRGenerator &      mirGen() const     { MOZ_ASSERT(mirGen_); return *mirGen_; }
+    MIRGraph &          mirGraph() const   { return graph_; }
+    const CompileInfo & info() const       { return info_; }
 
     MDefinition* getLocalDef(unsigned slot)
     {
@@ -614,7 +562,7 @@ class FunctionCompiler
             return;
 
         CallSiteDesc callDesc(lineno, column, CallSiteDesc::Relative);
-        curBlock_->add(MAsmJSInterruptCheck::New(alloc(), &m().syncInterruptLabel(), callDesc));
+        curBlock_->add(MAsmJSInterruptCheck::New(alloc(), masm().asmSyncInterruptLabel(), callDesc));
     }
 
     MDefinition* extractSimdElement(SimdLane lane, MDefinition* base, MIRType type)
@@ -1222,79 +1170,6 @@ class FunctionCompiler
 
     bool done() const { return pc_ == func_.size(); }
     size_t pc() const { return pc_; }
-
-    bool prepareEmitMIR(const VarTypeVector& argTypes)
-    {
-        const AsmFunction::VarInitializerVector& varInitializers = func_.varInitializers();
-        size_t numLocals = func_.numLocals();
-
-        
-        alloc_  = lifo_.new_<TempAllocator>(&lifo_);
-        if (!alloc_)
-            return false;
-        jitContext_.emplace(m().runtime(),  nullptr, alloc_);
-        graph_  = lifo_.new_<MIRGraph>(alloc_);
-        if (!graph_)
-            return false;
-        MOZ_ASSERT(numLocals == argTypes.length() + varInitializers.length());
-        info_   = lifo_.new_<CompileInfo>(numLocals);
-        if (!info_)
-            return false;
-        const OptimizationInfo* optimizationInfo = js_IonOptimizations.get(Optimization_AsmJS);
-        const JitCompileOptions options;
-        mirGen_ = lifo_.new_<MIRGenerator>(m().compartment(),
-                                           options, alloc_,
-                                           graph_, info_, optimizationInfo,
-                                           &m().onOutOfBoundsLabel(),
-                                           &m().onConversionErrorLabel(),
-                                           m().usesSignalHandlersForOOB());
-        if (!mirGen_)
-            return false;
-
-        if (!newBlock( nullptr, &curBlock_))
-            return false;
-
-        
-        for (ABIArgTypeIter i(argTypes); !i.done(); i++) {
-            MAsmJSParameter* ins = MAsmJSParameter::New(alloc(), *i, i.mirType());
-            curBlock_->add(ins);
-            curBlock_->initSlot(info().localSlot(i.index()), ins);
-            if (!mirGen_->ensureBallast())
-                return false;
-            localVarTypes_.append(argTypes[i.index()].toType());
-        }
-
-        unsigned firstLocalSlot = argTypes.length();
-        for (unsigned i = 0; i < varInitializers.length(); i++) {
-            const AsmJSNumLit& lit = varInitializers[i];
-            Type type = Type::Of(lit);
-            MIRType mirType = type.toMIRType();
-
-            MInstruction* ins;
-            if (lit.isSimd())
-               ins = MSimdConstant::New(alloc(), lit.simdValue(), mirType);
-            else
-               ins = MConstant::NewAsmJS(alloc(), lit.scalarValue(), mirType);
-
-            curBlock_->add(ins);
-            curBlock_->initSlot(info().localSlot(firstLocalSlot + i), ins);
-            if (!mirGen_->ensureBallast())
-                return false;
-            localVarTypes_.append(type);
-        }
-
-        return true;
-    }
-
-    
-
-    MIRGenerator* extractMIR()
-    {
-        MOZ_ASSERT(mirGen_ != nullptr);
-        MIRGenerator* mirGen = mirGen_;
-        mirGen_ = nullptr;
-        return mirGen;
-    }
 
     
   private:
@@ -3088,94 +2963,72 @@ EmitF32X4Expr(FunctionCompiler& f, MDefinition** def)
 }
 
 bool
-js::GenerateAsmFunctionMIR(ModuleCompiler& m, LifoAlloc& lifo, AsmFunction& func, MIRGenerator** mir)
+js::CompileAsmFunction(LifoAlloc& lifo, ModuleCompileInputs inputs, const AsmFunction& func,
+                       FunctionCompileResults* results)
 {
     int64_t before = PRMJ_Now();
 
-    FunctionCompiler f(m, func, lifo);
-    if (!f.init())
-        return false;
+    TempAllocator tempAlloc(&lifo);
+    MIRGraph graph(&tempAlloc);
+    CompileInfo compileInfo(func.numLocals());
+    const OptimizationInfo* optimizationInfo = js_IonOptimizations.get(Optimization_AsmJS);
+    const JitCompileOptions options;
+    MIRGenerator mir(inputs.compartment, options, &tempAlloc, &graph, &compileInfo,
+                     optimizationInfo, results->masm().asmOnOutOfBoundsLabel(),
+                     results->masm().asmOnConversionErrorLabel(), inputs.usesSignalHandlersForOOB);
 
-    if (!f.prepareEmitMIR(func.argTypes()))
-        return false;
-
-    while (!f.done()) {
-        if (!EmitStatement(f))
+    
+    
+    {
+        FunctionCompiler f(inputs, func, compileInfo, &tempAlloc, &graph, &mir, *results);
+        if (!f.init(func.argTypes()))
             return false;
+
+        while (!f.done()) {
+            if (!EmitStatement(f))
+                return false;
+        }
+
+        f.checkPostconditions();
     }
 
-    *mir = f.extractMIR();
-    if (!*mir)
-        return false;
+    {
+        JitContext jitContext(inputs.runtime,  nullptr, &mir.alloc());
 
-    jit::SpewBeginFunction(*mir, nullptr);
+        jit::SpewBeginFunction(&mir, nullptr);
+        jit::AutoSpewEndFunction spewEndFunction(&mir);
 
-    f.checkPostconditions();
+        if (!OptimizeMIR(&mir))
+            return false;
 
-    func.accumulateCompileTime((PRMJ_Now() - before) / PRMJ_USEC_PER_MSEC);
-    return true;
-}
+        LIRGraph* lir = GenerateLIR(&mir);
+        if (!lir)
+            return false;
 
-bool
-js::GenerateAsmFunctionCode(ModuleCompiler& m, AsmFunction& func, MIRGenerator& mir, LIRGraph& lir,
-                            FunctionCompileResults* results)
-{
-    JitContext jitContext(m.runtime(),  nullptr, &mir.alloc());
+        
+        
+        
+        
+        
+        
+        
+        
+        results->masm().resetForNewCodeGenerator(mir.alloc());
 
-    int64_t before = PRMJ_Now();
+        Label entry;
+        AsmJSFunctionLabels labels(entry, *results->masm().asmStackOverflowLabel());
+        CodeGenerator codegen(&mir, lir, &results->masm());
+        if (!codegen.generateAsmJS(&labels))
+            return false;
 
-    
-    
-    
-    
-    
-    m.masm().resetForNewCodeGenerator(mir.alloc());
+        PropertyName* funcName = func.name();
+        unsigned line = func.lineno();
 
-    ScopedJSDeletePtr<CodeGenerator> codegen(js_new<CodeGenerator>(&mir, &lir, &m.masm()));
-    if (!codegen)
-        return false;
-
-    Label entry;
-    AsmJSFunctionLabels labels(entry, m.stackOverflowLabel());
-    if (!codegen->generateAsmJS(&labels))
-        return false;
-
-    func.accumulateCompileTime((PRMJ_Now() - before) / PRMJ_USEC_PER_MSEC);
-
-    PropertyName* funcName = func.name();
-    unsigned line = func.lineno();
-
-    
-    AsmJSModule::FunctionCodeRange codeRange(funcName, line, labels);
-    results->finishCodegen(func, codeRange, *codegen->extractScriptCounts());
-
-    
-    
-    
-    
-    return true;
-}
-
-bool
-js::CreateAsmModuleCompiler(ModuleCompileInputs mci, AsmModuleCompilerScope* scope)
-{
-    auto* mc = js_new<ModuleCompiler>(mci);
-    if (!mc || !mc->init())
-        return false;
-    scope->setModule(mc);
-    return true;
-}
-
-AsmModuleCompilerScope::~AsmModuleCompilerScope()
-{
-    if (m_) {
-        js_delete(m_);
-        m_ = nullptr;
+        
+        AsmJSModule::FunctionCodeRange codeRange(funcName, line, labels);
+        results->finishCodegen(codeRange, *codegen.extractScriptCounts());
     }
-}
 
-void
-js::FinishAsmModuleCompilation(ModuleCompiler& m, ScopedJSDeletePtr<ModuleCompileResults>* results)
-{
-    m.finish(results);
+    results->setCompileTime((PRMJ_Now() - before) / PRMJ_USEC_PER_MSEC);
+    return true;
 }
