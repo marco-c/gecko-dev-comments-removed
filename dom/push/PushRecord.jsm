@@ -49,10 +49,11 @@ function PushRecord(props) {
 
 PushRecord.prototype = {
   setQuota(suggestedQuota) {
-    if (this.quotaApplies() && !isNaN(suggestedQuota) && suggestedQuota >= 0) {
-      this.quota = suggestedQuota;
+    if (this.quotaApplies()) {
+      let quota = +suggestedQuota;
+      this.quota = quota >= 0 ? quota : prefs.get("maxQuotaPerSubscription");
     } else {
-      this.resetQuota();
+      this.quota = Infinity;
     }
   },
 
@@ -76,7 +77,9 @@ PushRecord.prototype = {
     if (lastVisit > this.lastPush) {
       
       
-      let daysElapsed = (Date.now() - lastVisit) / 24 / 60 / 60 / 1000;
+      
+      let daysElapsed =
+        Math.max(0, (Date.now() - lastVisit) / 24 / 60 / 60 / 1000);
       this.quota = Math.min(
         Math.round(8 * Math.pow(daysElapsed, -0.8)),
         prefs.get("maxQuotaPerSubscription")
