@@ -128,7 +128,7 @@ private:
 
 #define STYLE_STRUCT(name_, checkdata_cb_)                              \
   const nsStyle##name_ * Style##name_() {                               \
-    return mStyleContextHolder->Style##name_();                         \
+    return mStyleContext->Style##name_();                               \
   }
 #include "nsStyleStructList.h"
 #undef STYLE_STRUCT
@@ -600,7 +600,7 @@ private:
 
 
 
-  nsRefPtr<nsStyleContext> mStyleContextHolder;
+  nsRefPtr<nsStyleContext> mStyleContext;
   nsCOMPtr<nsIAtom> mPseudo;
 
   
