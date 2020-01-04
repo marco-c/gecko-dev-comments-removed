@@ -12,69 +12,78 @@ Cu.import("chrome://marionette/content/error.js");
 Cu.import("chrome://marionette/content/element.js");
 Cu.import("chrome://marionette/content/event.js");
 
-this.EXPORTED_SYMBOLS = ["interaction"];
+this.EXPORTED_SYMBOLS = ["Interactions"];
 
 
 
 
 const DISABLED_ATTRIBUTE_SUPPORTED_XUL = new Set([
-  "ARROWSCROLLBOX",
-  "BUTTON",
-  "CHECKBOX",
-  "COLORPICKER",
-  "COMMAND",
-  "DATEPICKER",
-  "DESCRIPTION",
-  "KEY",
-  "KEYSET",
-  "LABEL",
-  "LISTBOX",
-  "LISTCELL",
-  "LISTHEAD",
-  "LISTHEADER",
-  "LISTITEM",
-  "MENU",
-  "MENUITEM",
-  "MENULIST",
-  "MENUSEPARATOR",
-  "PREFERENCE",
-  "RADIO",
-  "RADIOGROUP",
-  "RICHLISTBOX",
-  "RICHLISTITEM",
-  "SCALE",
-  "TAB",
-  "TABS",
-  "TEXTBOX",
-  "TIMEPICKER",
-  "TOOLBARBUTTON",
-  "TREE",
+  'ARROWSCROLLBOX',
+  'BUTTON',
+  'CHECKBOX',
+  'COLORPICKER',
+  'COMMAND',
+  'DATEPICKER',
+  'DESCRIPTION',
+  'KEY',
+  'KEYSET',
+  'LABEL',
+  'LISTBOX',
+  'LISTCELL',
+  'LISTHEAD',
+  'LISTHEADER',
+  'LISTITEM',
+  'MENU',
+  'MENUITEM',
+  'MENULIST',
+  'MENUSEPARATOR',
+  'PREFERENCE',
+  'RADIO',
+  'RADIOGROUP',
+  'RICHLISTBOX',
+  'RICHLISTITEM',
+  'SCALE',
+  'TAB',
+  'TABS',
+  'TEXTBOX',
+  'TIMEPICKER',
+  'TOOLBARBUTTON',
+  'TREE'
 ]);
 
 
 
 
 const CHECKED_PROPERTY_SUPPORTED_XUL = new Set([
-  "BUTTON",
-  "CHECKBOX",
-  "LISTITEM",
-  "TOOLBARBUTTON",
+  'BUTTON',
+  'CHECKBOX',
+  'LISTITEM',
+  'TOOLBARBUTTON'
 ]);
 
 
 
 
 const SELECTED_PROPERTY_SUPPORTED_XUL = new Set([
-  "LISTITEM",
-  "MENU",
-  "MENUITEM",
-  "MENUSEPARATOR",
-  "RADIO",
-  "RICHLISTITEM",
-  "TAB",
+  'LISTITEM',
+  'MENU',
+  'MENUITEM',
+  'MENUSEPARATOR',
+  'RADIO',
+  'RICHLISTITEM',
+  'TAB'
 ]);
 
-this.interaction = {};
+
+
+
+
+this.Interactions = function(getCapabilies) {
+  this.accessibility = new Accessibility(getCapabilies);
+};
+
+Interactions.prototype = {
+  
 
 
 
@@ -84,37 +93,119 @@ this.interaction = {};
 
 
 
-interaction.clickElement = function(el, strict = false) {
-  let win = getWindow(el);
-  let visible = element.isVisible(el, win);
-  if (!visible) {
-    throw new ElementNotVisibleError("Element is not visible");
-  }
 
-  let a11y = accessibility.get(strict);
-  return a11y.getAccessible(el, true).then(acc => {
-    a11y.checkVisible(acc, el, visible);
-
-    if (atom.isElementEnabled(el)) {
-      a11y.checkEnabled(acc, el, true);
-      a11y.checkActionable(acc, el);
-
-      if (element.isXULElement(el)) {
-        el.click();
+  clickElement(container, elementManager, id) {
+    let el = elementManager.getKnownElement(id, container);
+    let visible = element.isVisible(el);
+    if (!visible) {
+      throw new ElementNotVisibleError('Element is not visible');
+    }
+    return this.accessibility.getAccessibleObject(el, true).then(acc => {
+      this.accessibility.checkVisible(acc, el, visible);
+      if (atom.isElementEnabled(el)) {
+        this.accessibility.checkEnabled(acc, el, true, container);
+        this.accessibility.checkActionable(acc, el);
+        if (element.isXULElement(el)) {
+          el.click();
+        } else {
+          let rects = el.getClientRects();
+          let win = el.ownerDocument.defaultView;
+          event.synthesizeMouseAtPoint(
+              rects[0].left + rects[0].width / 2,
+              rects[0].top + rects[0].height / 2,
+              {} ,
+              win);
+        }
       } else {
-        let rects = el.getClientRects();
-        event.synthesizeMouseAtPoint(
-            rects[0].left + rects[0].width / 2,
-            rects[0].top + rects[0].height / 2,
-            {} ,
-            win);
+        throw new InvalidElementStateError('Element is not enabled');
       }
+    });
+  },
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  sendKeysToElement(container, elementManager, id, value, ignoreVisibility) {
+    let el = elementManager.getKnownElement(id, container);
+    return this.accessibility.getAccessibleObject(el, true).then(acc => {
+      this.accessibility.checkActionable(acc, el);
+      event.sendKeysToElement(
+          value, el, {ignoreVisibility: false}, container.frame);
+    });
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  isElementDisplayed(container, elementManager, id) {
+    let el = elementManager.getKnownElement(id, container);
+    let displayed = atom.isElementDisplayed(el, container.frame);
+    return this.accessibility.getAccessibleObject(el).then(acc => {
+      this.accessibility.checkVisible(acc, el, displayed);
+      return displayed;
+    });
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  isElementEnabled(container, elementManager, id) {
+    let el = elementManager.getKnownElement(id, container);
+    let enabled = true;
+    if (element.isXULElement(el)) {
+      
+      if (DISABLED_ATTRIBUTE_SUPPORTED_XUL.has(el.tagName.toUpperCase())) {
+        let disabled = atom.getElementAttribute(el, 'disabled', container.frame);
+        if (disabled && disabled === 'true') {
+          enabled = false;
+        }
+      }
     } else {
-      throw new InvalidElementStateError("Element is not enabled");
+      enabled = atom.isElementEnabled(el, container.frame);
     }
-  });
-};
+    return this.accessibility.getAccessibleObject(el).then(acc => {
+      this.accessibility.checkEnabled(acc, el, enabled, container);
+      return enabled;
+    });
+  },
+
+  
 
 
 
@@ -128,106 +219,23 @@ interaction.clickElement = function(el, strict = false) {
 
 
 
-interaction.sendKeysToElement = function(el, value, ignoreVisibility, strict = false) {
-  let win = getWindow(el);
-  let a11y = accessibility.get(strict);
-  return a11y.getAccessible(el, true).then(acc => {
-    a11y.checkActionable(acc, el);
-    event.sendKeysToElement(value, el, {ignoreVisibility: false}, win);
-  });
-};
-
-
-
-
-
-
-
-
-
-
-
-
-interaction.isElementDisplayed = function(el, strict = false) {
-  let win = getWindow(el);
-  let displayed = atom.isElementDisplayed(el, win);
-
-  let a11y = accessibility.get(strict);
-  return a11y.getAccessible(el).then(acc => {
-    a11y.checkVisible(acc, el, displayed);
-    return displayed;
-  });
-};
-
-
-
-
-
-
-
-
-
-
-interaction.isElementEnabled = function(el, strict = false) {
-  let enabled = true;
-  let win = getWindow(el);
-
-  if (element.isXULElement(el)) {
-    
-    if (DISABLED_ATTRIBUTE_SUPPORTED_XUL.has(el.tagName.toUpperCase())) {
-      let disabled = atom.getElementAttribute(el, "disabled", win);
-      if (disabled && disabled === "true") {
-        enabled = false;
+  isElementSelected(container, elementManager, id) {
+    let el = elementManager.getKnownElement(id, container);
+    let selected = true;
+    if (element.isXULElement(el)) {
+      let tagName = el.tagName.toUpperCase();
+      if (CHECKED_PROPERTY_SUPPORTED_XUL.has(tagName)) {
+        selected = el.checked;
       }
+      if (SELECTED_PROPERTY_SUPPORTED_XUL.has(tagName)) {
+        selected = el.selected;
+      }
+    } else {
+      selected = atom.isElementSelected(el, container.frame);
     }
-  } else {
-    enabled = atom.isElementEnabled(el, {frame: win});
-  }
-
-  let a11y = accessibility.get(strict);
-  return a11y.getAccessible(el).then(acc => {
-    a11y.checkEnabled(acc, el, enabled);
-    return enabled;
-  });
+    return this.accessibility.getAccessibleObject(el).then(acc => {
+      this.accessibility.checkSelected(acc, el, selected);
+      return selected;
+    });
+  },
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-interaction.isElementSelected = function(el, strict = false) {
-  let selected = true;
-  let win = getWindow(el);
-
-  if (element.isXULElement(el)) {
-    let tagName = el.tagName.toUpperCase();
-    if (CHECKED_PROPERTY_SUPPORTED_XUL.has(tagName)) {
-      selected = el.checked;
-    }
-    if (SELECTED_PROPERTY_SUPPORTED_XUL.has(tagName)) {
-      selected = el.selected;
-    }
-  } else {
-    selected = atom.isElementSelected(el, win);
-  }
-
-  let a11y = accessibility.get(strict);
-  return a11y.getAccessible(el).then(acc => {
-    a11y.checkSelected(acc, el, selected);
-    return selected;
-  });
-};
-
-function getWindow(el) {
-  return el.ownerDocument.defaultView;
-}

@@ -2,88 +2,35 @@
 
 
 
-"use strict";
 
-const {classes: Cc, interfaces: Ci, utils: Cu} = Components;
 
-Cu.import("resource://gre/modules/XPCOMUtils.jsm");
-Cu.import("resource://gre/modules/Log.jsm");
 
-Cu.import("chrome://marionette/content/error.js");
+var {classes: Cc, interfaces: Ci, utils: Cu} = Components;
 
-XPCOMUtils.defineLazyModuleGetter(
-    this, "setInterval", "resource://gre/modules/Timer.jsm");
-XPCOMUtils.defineLazyModuleGetter(
-    this, "clearInterval", "resource://gre/modules/Timer.jsm");
+Cu.import('resource://gre/modules/XPCOMUtils.jsm');
+Cu.import('resource://gre/modules/Log.jsm');
 
-XPCOMUtils.defineLazyGetter(this, "retrieval",
-    () => Cc["@mozilla.org/accessibleRetrieval;1"].getService(Ci.nsIAccessibleRetrieval));
+XPCOMUtils.defineLazyModuleGetter(this, 'setInterval',
+  'resource://gre/modules/Timer.jsm');
+XPCOMUtils.defineLazyModuleGetter(this, 'clearInterval',
+  'resource://gre/modules/Timer.jsm');
+XPCOMUtils.defineLazyModuleGetter(this, 'ElementNotAccessibleError',
+  'chrome://marionette/content/error.js');
 
-this.EXPORTED_SYMBOLS = ["accessibility"];
-
-const logger = Log.repository.getLogger("Marionette");
+this.EXPORTED_SYMBOLS = ['Accessibility'];
 
 
 
 
 
-
-const GET_ACCESSIBLE_ATTEMPTS = 100;
-
-
-
-
-
-const GET_ACCESSIBLE_ATTEMPT_INTERVAL = 10;
-
-this.accessibility = {};
-
-
-
-
-
-accessibility.State = {
-  Unavailable: Ci.nsIAccessibleStates.STATE_UNAVAILABLE,
-  Focusable: Ci.nsIAccessibleStates.STATE_FOCUSABLE,
-  Selectable: Ci.nsIAccessibleStates.STATE_SELECTABLE,
-  Selected: Ci.nsIAccessibleStates.STATE_SELECTED,
+const states = {
+  unavailable: Ci.nsIAccessibleStates.STATE_UNAVAILABLE,
+  focusable: Ci.nsIAccessibleStates.STATE_FOCUSABLE,
+  selectable: Ci.nsIAccessibleStates.STATE_SELECTABLE,
+  selected: Ci.nsIAccessibleStates.STATE_SELECTED
 };
 
-
-
-
-accessibility.ActionableRoles = new Set([
-  "checkbutton",
-  "check menu item",
-  "check rich option",
-  "combobox",
-  "combobox option",
-  "entry",
-  "key",
-  "link",
-  "listbox option",
-  "listbox rich option",
-  "menuitem",
-  "option",
-  "outlineitem",
-  "pagetab",
-  "pushbutton",
-  "radiobutton",
-  "radio menu item",
-  "rowheader",
-  "slider",
-  "spinbutton",
-  "switch",
-]);
-
-
-
-
-
-
-accessibility.get = function(strict = false) {
-  return new accessibility.Checks(!!strict);
-};
+var logger = Log.repository.getLogger('Marionette');
 
 
 
@@ -92,16 +39,32 @@ accessibility.get = function(strict = false) {
 
 
 
-accessibility.Checks = class {
 
+this.Accessibility = function Accessibility(getCapabilies = () => {}) {
   
+  
+  Object.defineProperty(this, 'strict', {
+    configurable: true,
+    get: function() {
+      let capabilies = getCapabilies();
+      return !!capabilies.raisesAccessibilityExceptions;
+    }
+  });
+  
+  
+  Object.defineProperty(this, 'retrieval', {
+    configurable: true,
+    get: function() {
+      delete this.retrieval;
+      this.retrieval = Cc[
+        '@mozilla.org/accessibleRetrieval;1'].getService(
+          Ci.nsIAccessibleRetrieval);
+      return this.retrieval;
+    }
+  });
+};
 
-
-
-
-  constructor(strict) {
-    this.strict = strict;
-  }
+Accessibility.prototype = {
 
   
 
@@ -109,96 +72,108 @@ accessibility.Checks = class {
 
 
 
+  GET_ACCESSIBLE_ATTEMPTS: 100,
+
+  
+
+
+
+
+  GET_ACCESSIBLE_ATTEMPT_INTERVAL: 10,
+
+  
+
+
+
+  ACTIONABLE_ROLES: new Set([
+    'pushbutton',
+    'checkbutton',
+    'combobox',
+    'key',
+    'link',
+    'menuitem',
+    'check menu item',
+    'radio menu item',
+    'option',
+    'listbox option',
+    'listbox rich option',
+    'check rich option',
+    'combobox option',
+    'radiobutton',
+    'rowheader',
+    'switch',
+    'slider',
+    'spinbutton',
+    'pagetab',
+    'entry',
+    'outlineitem'
+  ]),
+
+  
 
 
 
 
 
 
-  getAccessible(element, mustHaveAccessible = false) {
+  getAccessibleObject(element, mustHaveAccessible = false) {
     return new Promise((resolve, reject) => {
-      let acc = retrieval.getAccessibleFor(element);
+      let acc = this.retrieval.getAccessibleFor(element);
 
-      
-      
       if (acc || !mustHaveAccessible) {
+        
+        
         resolve(acc);
-
-      
-      
       } else if (mustHaveAccessible && !this.strict) {
+        
+        
         reject();
-
-      
-      
-      
       } else {
-        let attempts = GET_ACCESSIBLE_ATTEMPTS;
+        
+        
+        let attempts = this.GET_ACCESSIBLE_ATTEMPTS;
         let intervalId = setInterval(() => {
-          let acc = retrieval.getAccessibleFor(element);
+          let acc = this.retrieval.getAccessibleFor(element);
           if (acc || --attempts <= 0) {
             clearInterval(intervalId);
-            if (acc) {
-              resolve(acc);
-            } else {
-              reject();
-            }
+            if (acc) { resolve(acc); }
+            else { reject(); }
           }
-        }, GET_ACCESSIBLE_ATTEMPT_INTERVAL);
+        }, this.GET_ACCESSIBLE_ATTEMPT_INTERVAL);
       }
     }).catch(() => this.error(
-        "Element does not have an accessible object", element));
-  };
+      'Element does not have an accessible object', element));
+  },
 
   
-
-
-
-
-
-
 
 
 
 
   isActionableRole(accessible) {
-    return accessibility.ActionableRoles.has(
-        retrieval.getStringRole(accessible.role));
-  }
+    return this.ACTIONABLE_ROLES.has(
+      this.retrieval.getStringRole(accessible.role));
+  },
 
   
-
-
-
-
-
 
 
 
 
   hasActionCount(accessible) {
     return accessible.actionCount > 0;
-  }
+  },
 
   
-
-
-
-
-
 
 
 
 
   hasValidName(accessible) {
     return accessible.name && accessible.name.trim();
-  }
+  },
 
   
-
-
-
-
 
 
 
@@ -207,20 +182,14 @@ accessibility.Checks = class {
   hasHiddenAttribute(accessible) {
     let hidden = false;
     try {
-      hidden = accessible.attributes.getStringProperty("hidden");
+      hidden = accessible.attributes.getStringProperty('hidden');
     } finally {
       
-      return hidden && hidden === "true";
+      return hidden && hidden === 'true';
     }
-  }
+  },
 
   
-
-
-
-
-
-
 
 
 
@@ -230,13 +199,9 @@ accessibility.Checks = class {
     let state = {};
     accessible.getState(state, {});
     return !!(state.value & stateToMatch);
-  }
+  },
 
   
-
-
-
-
 
 
 
@@ -249,153 +214,9 @@ accessibility.Checks = class {
       accessible = accessible.parent;
     }
     return false;
-  }
+  },
 
   
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  checkVisible(accessible, element, visible) {
-    if (!accessible) {
-      return;
-    }
-
-    let hiddenAccessibility = this.isHidden(accessible);
-
-    let message;
-    if (visible && hiddenAccessibility) {
-      message = "Element is not currently visible via the accessibility API " +
-          "and may not be manipulated by it";
-    } else if (!visible && !hiddenAccessibility) {
-      message = "Element is currently only visible via the accessibility API " +
-          "and can be manipulated by it";
-    }
-    this.error(message, element);
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-  checkEnabled(accessible, element, enabled) {
-    if (!accessible) {
-      return;
-    }
-
-    let win = element.ownerDocument.defaultView;
-    let disabledAccessibility = this.matchState(
-        accessible, accessibility.State.Unavailable);
-    let explorable = win.getComputedStyle(element)
-        .getPropertyValue("pointer-events") !== "none";
-
-    let message;
-    if (!explorable && !disabledAccessibility) {
-      message = "Element is enabled but is not explorable via the " +
-          "accessibility API";
-    } else if (enabled && disabledAccessibility) {
-      message = "Element is enabled but disabled via the accessibility API";
-    } else if (!enabled && !disabledAccessibility) {
-      message = "Element is disabled but enabled via the accessibility API";
-    }
-    this.error(message, element);
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-  checkActionable(accessible, element) {
-    if (!accessible) {
-      return;
-    }
-
-    let message;
-    if (!this.hasActionCount(accessible)) {
-      message = "Element does not support any accessible actions";
-    } else if (!this.isActionableRole(accessible)) {
-      message = "Element does not have a correct accessibility role " +
-          "and may not be manipulated via the accessibility API";
-    } else if (!this.hasValidName(accessible)) {
-      message = "Element is missing an accessible name";
-    } else if (!this.matchState(accessible, accessibility.State.Focusable)) {
-      message = "Element is not focusable via the accessibility API";
-    }
-
-    this.error(message, element);
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  checkSelected(accessible, element, selected) {
-    if (!accessible) {
-      return;
-    }
-
-    
-    if (!this.matchState(accessible, accessibility.State.Selectable)) {
-      return;
-    }
-
-    let selectedAccessibility = this.matchState(accessible, accessibility.State.Selected);
-
-    let message;
-    if (selected && !selectedAccessibility) {
-      message = "Element is selected but not selected via the accessibility API";
-    } else if (!selected && selectedAccessibility) {
-      message = "Element is not selected but selected via the accessibility API";
-    }
-    this.error(message, element);
-  }
-
-  
-
-
-
-
-
-
 
 
 
@@ -412,6 +233,107 @@ accessibility.Checks = class {
       throw new ElementNotAccessibleError(message);
     }
     logger.debug(message);
-  }
+  },
 
+  
+
+
+
+
+
+
+  checkVisible(accessible, element, visible) {
+    if (!accessible) {
+      return;
+    }
+    let hiddenAccessibility = this.isHidden(accessible);
+    let message;
+    if (visible && hiddenAccessibility) {
+      message = 'Element is not currently visible via the accessibility API ' +
+        'and may not be manipulated by it';
+    } else if (!visible && !hiddenAccessibility) {
+      message = 'Element is currently only visible via the accessibility API ' +
+        'and can be manipulated by it';
+    }
+    this.error(message, element);
+  },
+
+  
+
+
+
+
+
+
+
+  checkEnabled(accessible, element, enabled, container) {
+    if (!accessible) {
+      return;
+    }
+    let disabledAccessibility = this.matchState(accessible, states.unavailable);
+    let explorable = container.frame.document.defaultView.getComputedStyle(
+      element).getPropertyValue('pointer-events') !== 'none';
+    let message;
+
+    if (!explorable && !disabledAccessibility) {
+      message = 'Element is enabled but is not explorable via the ' +
+        'accessibility API';
+    } else if (enabled && disabledAccessibility) {
+      message = 'Element is enabled but disabled via the accessibility API';
+    } else if (!enabled && !disabledAccessibility) {
+      message = 'Element is disabled but enabled via the accessibility API';
+    }
+    this.error(message, element);
+  },
+
+  
+
+
+
+
+  checkActionable(accessible, element) {
+    if (!accessible) {
+      return;
+    }
+    let message;
+    if (!this.hasActionCount(accessible)) {
+      message = 'Element does not support any accessible actions';
+    } else if (!this.isActionableRole(accessible)) {
+      message = 'Element does not have a correct accessibility role ' +
+        'and may not be manipulated via the accessibility API';
+    } else if (!this.hasValidName(accessible)) {
+      message = 'Element is missing an accessible name';
+    } else if (!this.matchState(accessible, states.focusable)) {
+      message = 'Element is not focusable via the accessibility API';
+    }
+    this.error(message, element);
+  },
+
+  
+
+
+
+
+
+
+  checkSelected(accessible, element, selected) {
+    if (!accessible) {
+      return;
+    }
+    if (!this.matchState(accessible, states.selectable)) {
+      
+      return;
+    }
+
+    let selectedAccessibility = this.matchState(accessible, states.selected);
+    let message;
+    if (selected && !selectedAccessibility) {
+      message =
+        'Element is selected but not selected via the accessibility API';
+    } else if (!selected && selectedAccessibility) {
+      message =
+        'Element is not selected but selected via the accessibility API';
+    }
+    this.error(message, element);
+  }
 };
