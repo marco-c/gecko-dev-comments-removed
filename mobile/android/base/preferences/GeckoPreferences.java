@@ -201,44 +201,10 @@ OnSharedPreferenceChangeListener
         }
     }
 
-    private void updateTitle(String newTitle) {
-        if (newTitle != null) {
-            Log.v(LOGTAG, "Setting activity title to " + newTitle);
-            setTitle(newTitle);
-        }
-    }
-
-    private void updateTitle(int title) {
-        updateTitle(getString(title));
-    }
-
     
 
 
-
-    private void updateBreadcrumbTitle(int title) {
-        final String newTitle = getString(title);
-        showBreadCrumbs(newTitle, newTitle);
-    }
-
     private void updateTitleForPrefsResource(int res) {
-        
-        
-        
-        if (Versions.feature11Plus && isMultiPane()) {
-            int title = getIntent().getIntExtra(EXTRA_SHOW_FRAGMENT_TITLE, -1);
-            if (res == R.xml.preferences) {
-                
-                
-                
-                updateActionBarTitle(R.string.settings_title);
-            }
-
-            updateTitle(title);
-            updateBreadcrumbTitle(title);
-            return;
-        }
-
         
         
         int title = -1;
@@ -254,7 +220,7 @@ OnSharedPreferenceChangeListener
             title = R.string.pref_category_search;
         }
         if (title != -1) {
-            updateTitle(title);
+            setTitle(title);
         }
     }
 
@@ -291,7 +257,7 @@ OnSharedPreferenceChangeListener
             }
 
             
-            updateTitle(R.string.pref_header_general);
+            setTitle(R.string.pref_category_language);
 
             
             
@@ -345,7 +311,7 @@ OnSharedPreferenceChangeListener
 
                 
                 
-                updateTitle(getString(R.string.pref_header_general));
+                setTitle(R.string.pref_header_general);
             }
 
             if (onIsMultiPane()) {
