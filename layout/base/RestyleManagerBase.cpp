@@ -1116,7 +1116,7 @@ RestyleManagerBase::ProcessRestyledFrames(nsStyleChangeList& aChangeList)
           
           
           
-          if (cont->IsAbsPosContaininingBlock()) {
+          if (cont->IsAbsPosContainingBlock()) {
             if (cont->StyleDisplay()->HasTransform(cont)) {
               cont->AddStateBits(NS_FRAME_MAY_BE_TRANSFORMED);
             }

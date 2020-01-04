@@ -796,7 +796,7 @@ nsContainerFrame::SyncFrameViewProperties(nsPresContext*  aPresContext,
   int32_t zIndex = 0;
   bool    autoZIndex = false;
 
-  if (aFrame->IsAbsPosContaininingBlock()) {
+  if (aFrame->IsAbsPosContainingBlock()) {
     
     const nsStylePosition* position = aStyleContext->StylePosition();
 

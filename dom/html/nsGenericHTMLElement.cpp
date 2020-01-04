@@ -286,7 +286,7 @@ nsGenericHTMLElement::GetOffsetRect(CSSIntRect& aRect)
     parent = frame;
   }
   else {
-    const bool isPositioned = frame->IsAbsPosContaininingBlock();
+    const bool isPositioned = frame->IsAbsPosContainingBlock();
     const bool isAbsolutelyPositioned = frame->IsAbsolutelyPositioned();
     origin += frame->GetPositionIgnoringScrolling();
 
@@ -294,7 +294,7 @@ nsGenericHTMLElement::GetOffsetRect(CSSIntRect& aRect)
       content = parent->GetContent();
 
       
-      if (parent->IsAbsPosContaininingBlock()) {
+      if (parent->IsAbsPosContainingBlock()) {
         offsetParent = content;
         break;
       }
