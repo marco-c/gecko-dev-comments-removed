@@ -219,6 +219,14 @@ class JS_FRIEND_API(BaseProxyHandler)
         return true;
     }
 
+    virtual bool canNurseryAllocate() const {
+        
+
+
+
+        return false;
+    }
+
     
 
 

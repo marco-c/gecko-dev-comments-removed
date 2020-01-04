@@ -6,10 +6,69 @@
 
 
 #include "jsapi.h"
+#include "jscompartment.h"
 
 #include "js/RootingAPI.h"
 #include "js/SliceBudget.h"
 #include "jsapi-tests/tests.h"
+
+static bool
+ConstructCCW(JSContext* cx, const JSClass* globalClasp,
+             JS::HandleObject global1, JS::MutableHandleObject wrapper,
+             JS::MutableHandleObject global2, JS::MutableHandleObject wrappee)
+{
+    if (!global1) {
+        fprintf(stderr, "null initial global");
+        return false;
+    }
+
+    
+    JS::CompartmentOptions options;
+    global2.set(JS_NewGlobalObject(cx, globalClasp, nullptr,
+                                   JS::FireOnNewGlobalHook, options));
+    if (!global2) {
+        fprintf(stderr, "failed to create second global");
+        return false;
+    }
+
+    
+    if (global1->compartment() == global2->compartment()) {
+        fprintf(stderr, "second global claims to be in global1's compartment");
+        return false;
+    }
+
+    
+    if (global1->zone() == global2->zone()) {
+        fprintf(stderr, "global2 is in global1's zone");
+        return false;
+    }
+
+    
+    {
+        JSAutoCompartment ac(cx, global2);
+        wrappee.set(JS_NewPlainObject(cx));
+        if (wrappee->compartment() != global2->compartment()) {
+            fprintf(stderr, "wrappee in wrong compartment");
+            return false;
+        }
+    }
+
+    wrapper.set(wrappee);
+    if (!JS_WrapObject(cx, wrapper)) {
+        fprintf(stderr, "failed to wrap");
+        return false;
+    }
+    if (wrappee == wrapper) {
+        fprintf(stderr, "expected wrapping");
+        return false;
+    }
+    if (wrapper->compartment() != global1->compartment()) {
+        fprintf(stderr, "wrapper in wrong compartment");
+        return false;
+    }
+
+    return true;
+}
 
 class CCWTestTracer : public JS::CallbackTracer {
     void onChild(const JS::GCCellPtr& thing) override {
@@ -42,35 +101,31 @@ class CCWTestTracer : public JS::CallbackTracer {
 
 BEGIN_TEST(testTracingIncomingCCWs)
 {
+#ifdef JS_GC_ZEAL
     
+    JS_SetGCZeal(cx, 0, 100);
+#endif
+    JS_GC(cx);
 
     JS::RootedObject global1(cx, JS::CurrentGlobalOrNull(cx));
-    CHECK(global1);
-    JS::CompartmentOptions options;
-    JS::RootedObject global2(cx, JS_NewGlobalObject(cx, getGlobalClass(), nullptr,
-                                                    JS::FireOnNewGlobalHook, options));
-    CHECK(global2);
-    CHECK(global1->compartment() != global2->compartment());
+    JS::RootedObject wrapper(cx, JS::CurrentGlobalOrNull(cx));
+    JS::RootedObject global2(cx, JS::CurrentGlobalOrNull(cx));
+    JS::RootedObject wrappee(cx, JS::CurrentGlobalOrNull(cx));
+    CHECK(ConstructCCW(cx, getGlobalClass(), global1, &wrapper, &global2, &wrappee));
+    JS_GC(cx);
+    CHECK(!js::gc::IsInsideNursery(wrappee));
+    CHECK(!js::gc::IsInsideNursery(wrapper));
 
-    
-    
-
-    JS::RootedObject obj(cx, JS_NewPlainObject(cx));
-    CHECK(obj->compartment() == global1->compartment());
-
-    JSAutoCompartment ac(cx, global2);
-    JS::RootedObject wrapper(cx, obj);
-    CHECK(JS_WrapObject(cx, &wrapper));
     JS::RootedValue v(cx, JS::ObjectValue(*wrapper));
-    CHECK(JS_SetProperty(cx, global2, "ccw", v));
+    CHECK(JS_SetProperty(cx, global1, "ccw", v));
 
     
 
     JS::CompartmentSet compartments;
     CHECK(compartments.init());
-    CHECK(compartments.put(global1->compartment()));
+    CHECK(compartments.put(global2->compartment()));
 
-    void* thing = obj.get();
+    void* thing = wrappee.get();
     CCWTestTracer trc(cx, &thing, JS::TraceKind::Object);
     JS::TraceIncomingCCWs(&trc, compartments);
     CHECK(trc.numberOfThingsTraced == 1);
@@ -79,6 +134,147 @@ BEGIN_TEST(testTracingIncomingCCWs)
     return true;
 }
 END_TEST(testTracingIncomingCCWs)
+
+static size_t
+countWrappers(JSCompartment* comp)
+{
+    size_t count = 0;
+    for (JSCompartment::WrapperEnum e(comp); !e.empty(); e.popFront())
+        ++count;
+    return count;
+}
+
+BEGIN_TEST(testDeadNurseryCCW)
+{
+#ifdef JS_GC_ZEAL
+    
+    JS_SetGCZeal(cx, 0, 100);
+#endif
+    JS_GC(cx);
+
+    JS::RootedObject global1(cx, JS::CurrentGlobalOrNull(cx));
+    JS::RootedObject wrapper(cx, JS::CurrentGlobalOrNull(cx));
+    JS::RootedObject global2(cx, JS::CurrentGlobalOrNull(cx));
+    JS::RootedObject wrappee(cx, JS::CurrentGlobalOrNull(cx));
+    CHECK(ConstructCCW(cx, getGlobalClass(), global1, &wrapper, &global2, &wrappee));
+    CHECK(js::gc::IsInsideNursery(wrappee));
+    CHECK(js::gc::IsInsideNursery(wrapper));
+
+    
+    wrappee = wrapper = nullptr;
+
+    
+    CHECK(countWrappers(global1->compartment()) == 1);
+    cx->gc.evictNursery();
+    CHECK(countWrappers(global1->compartment()) == 0);
+
+    
+    JS_GC(cx);
+
+    return true;
+}
+END_TEST(testDeadNurseryCCW)
+
+BEGIN_TEST(testLiveNurseryCCW)
+{
+#ifdef JS_GC_ZEAL
+    
+    JS_SetGCZeal(cx, 0, 100);
+#endif
+    JS_GC(cx);
+
+    JS::RootedObject global1(cx, JS::CurrentGlobalOrNull(cx));
+    JS::RootedObject wrapper(cx, JS::CurrentGlobalOrNull(cx));
+    JS::RootedObject global2(cx, JS::CurrentGlobalOrNull(cx));
+    JS::RootedObject wrappee(cx, JS::CurrentGlobalOrNull(cx));
+    CHECK(ConstructCCW(cx, getGlobalClass(), global1, &wrapper, &global2, &wrappee));
+    CHECK(js::gc::IsInsideNursery(wrappee));
+    CHECK(js::gc::IsInsideNursery(wrapper));
+
+    
+    CHECK(countWrappers(global1->compartment()) == 1);
+    cx->gc.evictNursery();
+    CHECK(countWrappers(global1->compartment()) == 1);
+
+    CHECK(!js::gc::IsInsideNursery(wrappee));
+    CHECK(!js::gc::IsInsideNursery(wrapper));
+
+    
+    JS_GC(cx);
+
+    return true;
+}
+END_TEST(testLiveNurseryCCW)
+
+BEGIN_TEST(testLiveNurseryWrapperCCW)
+{
+#ifdef JS_GC_ZEAL
+    
+    JS_SetGCZeal(cx, 0, 100);
+#endif
+    JS_GC(cx);
+
+    JS::RootedObject global1(cx, JS::CurrentGlobalOrNull(cx));
+    JS::RootedObject wrapper(cx, JS::CurrentGlobalOrNull(cx));
+    JS::RootedObject global2(cx, JS::CurrentGlobalOrNull(cx));
+    JS::RootedObject wrappee(cx, JS::CurrentGlobalOrNull(cx));
+    CHECK(ConstructCCW(cx, getGlobalClass(), global1, &wrapper, &global2, &wrappee));
+    CHECK(js::gc::IsInsideNursery(wrappee));
+    CHECK(js::gc::IsInsideNursery(wrapper));
+
+    
+    
+    
+    
+    wrappee = nullptr;
+
+    
+    CHECK(countWrappers(global1->compartment()) == 1);
+    cx->gc.evictNursery();
+    CHECK(countWrappers(global1->compartment()) == 1);
+
+    CHECK(!js::gc::IsInsideNursery(wrapper));
+
+    
+    JS_GC(cx);
+
+    return true;
+}
+END_TEST(testLiveNurseryWrapperCCW)
+
+BEGIN_TEST(testLiveNurseryWrappeeCCW)
+{
+#ifdef JS_GC_ZEAL
+    
+    JS_SetGCZeal(cx, 0, 100);
+#endif
+    JS_GC(cx);
+
+    JS::RootedObject global1(cx, JS::CurrentGlobalOrNull(cx));
+    JS::RootedObject wrapper(cx, JS::CurrentGlobalOrNull(cx));
+    JS::RootedObject global2(cx, JS::CurrentGlobalOrNull(cx));
+    JS::RootedObject wrappee(cx, JS::CurrentGlobalOrNull(cx));
+    CHECK(ConstructCCW(cx, getGlobalClass(), global1, &wrapper, &global2, &wrappee));
+    CHECK(js::gc::IsInsideNursery(wrappee));
+    CHECK(js::gc::IsInsideNursery(wrapper));
+
+    
+    
+    wrapper = nullptr;
+
+    
+    CHECK(countWrappers(global1->compartment()) == 1);
+    cx->gc.evictNursery();
+    CHECK(countWrappers(global1->compartment()) == 0);
+
+    CHECK(!js::gc::IsInsideNursery(wrappee));
+
+    
+    JS_GC(cx);
+
+    return true;
+}
+END_TEST(testLiveNurseryWrappeeCCW)
 
 BEGIN_TEST(testIncrementalRoots)
 {

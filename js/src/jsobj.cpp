@@ -3692,7 +3692,8 @@ JSObject::allocKindForTenure(const js::Nursery& nursery) const
     }
 
     
-    MOZ_ASSERT(!IsProxy(this));
+    if (IsProxy(this))
+        return as<ProxyObject>().allocKindForTenure();
 
     
     if (is<UnboxedPlainObject>()) {

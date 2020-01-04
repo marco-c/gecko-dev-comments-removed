@@ -191,6 +191,11 @@ JSObject* newCCW(JS::HandleObject sourceZone, JS::HandleObject destZone)
         if (!JS_WrapObject(cx, &object))
             return nullptr;
     }
+
+    
+    
+    cx->gc.evictNursery();
+
     return object;
 }
 

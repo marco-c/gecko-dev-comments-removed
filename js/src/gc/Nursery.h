@@ -112,6 +112,20 @@ class TenuringTracer : public JSTracer
     void traceSlots(JS::Value* vp, JS::Value* end);
 };
 
+
+
+
+
+
+
+
+inline bool
+CanNurseryAllocateFinalizedClass(const js::Class* const clasp)
+{
+    MOZ_ASSERT(clasp->hasFinalize());
+    return clasp->flags & JSCLASS_SKIP_NURSERY_FINALIZE;
+}
+
 class Nursery
 {
   public:

@@ -255,12 +255,8 @@ js::Nursery::allocateObject(JSContext* cx, size_t size, size_t numDynamic, const
     MOZ_ASSERT(size >= sizeof(RelocationOverlay));
 
     
-
-
-
-
-
-    MOZ_ASSERT_IF(clasp->hasFinalize(), clasp->flags & JSCLASS_SKIP_NURSERY_FINALIZE);
+    MOZ_ASSERT_IF(clasp->hasFinalize(), CanNurseryAllocateFinalizedClass(clasp) ||
+                                        clasp->isProxy());
 
     
     JSObject* obj = static_cast<JSObject*>(allocate(size));
@@ -270,7 +266,7 @@ js::Nursery::allocateObject(JSContext* cx, size_t size, size_t numDynamic, const
     
     HeapSlot* slots = nullptr;
     if (numDynamic) {
-        MOZ_ASSERT(clasp->isNative());
+        MOZ_ASSERT(clasp->isNative() || clasp->isProxy());
         slots = static_cast<HeapSlot*>(allocateBuffer(cx->zone(), numDynamic * sizeof(HeapSlot)));
         if (!slots) {
             
@@ -700,7 +696,7 @@ js::Nursery::doCollection(JSRuntime* rt, JS::gcreason::Reason reason,
     
     maybeStartProfile(ProfileKey::SweepArrayBufferViewList);
     for (CompartmentsIter c(rt, SkipAtoms); !c.done(); c.next())
-        c->sweepAfterMinorGC();
+        c->sweepAfterMinorGC(&mover);
     maybeEndProfile(ProfileKey::SweepArrayBufferViewList);
 
     
