@@ -4,7 +4,7 @@
 
 import time
 
-from marionette_driver import By
+from marionette_driver import By, expected, Wait
 from marionette_driver.errors import MarionetteException
 
 from firefox_ui_harness.testcases import FirefoxTestCase
@@ -39,11 +39,15 @@ class TestSSLDisabledErrorPage(FirefoxTestCase):
             self.assertEquals(title.get_property('textContent'), nss_failure2title)
 
             
-            try_again_button = self.marionette.find_element(By.ID, 'errorTryAgain')
-            self.assertTrue(try_again_button.is_displayed())
-
-            
             short_description = self.marionette.find_element(By.ID, 'errorShortDescText')
             self.assertIn('SSL_ERROR_UNSUPPORTED_VERSION',
                           short_description.get_property('textContent'))
             self.assertIn('mozqa.com', short_description.get_property('textContent'))
+
+            
+            reset_button = self.marionette.find_element(By.ID, 'prefResetButton')
+            reset_button.click()
+
+            
+            Wait(self.marionette).until(expected.element_present(By.LINK_TEXT,
+                                                                 'http://quality.mozilla.org'))
