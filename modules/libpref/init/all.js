@@ -1994,6 +1994,9 @@ pref("security.mixed_content.block_display_content", false);
 pref("security.sri.enable", true);
 
 
+pref("security.ssl.enable_ocsp_must_staple", true);
+
+
 pref("security.cert_pinning.enforcement_level", 0);
 
 
