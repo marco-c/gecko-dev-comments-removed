@@ -1505,12 +1505,7 @@ CompositorOGL::GetReleaseFence()
 void
 CompositorOGL::EndFrameForExternalComposition(const gfx::Matrix& aTransform)
 {
-  
-  if (mTarget) {
-    MakeCurrent();
-    CopyToTarget(mTarget, mTargetBounds.TopLeft(), aTransform);
-    mGLContext->fBindBuffer(LOCAL_GL_ARRAY_BUFFER, 0);
-  }
+  MOZ_ASSERT(!mTarget);
   if (mTexturePool) {
     mTexturePool->EndFrame();
   }
