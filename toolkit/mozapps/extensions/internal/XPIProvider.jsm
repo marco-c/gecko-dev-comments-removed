@@ -1253,21 +1253,12 @@ function loadManifestFromRDF(aUri, aStream) {
 
 function defineSyncGUID(aAddon) {
   
-  
-  let storage = Services.storage;
-
-  
   Object.defineProperty(aAddon, "syncGUID", {
     get: () => {
       
-      
-      let rng = Cc["@mozilla.org/security/random-generator;1"].
-        createInstance(Ci.nsIRandomGenerator);
-      let bytes = rng.generateRandomBytes(9);
-      let byte_string = bytes.map(byte => String.fromCharCode(byte)).join("");
-      
-      let guid = btoa(byte_string).replace(/\+/g, '-')
-        .replace(/\//g, '_');
+      let guid = Cc["@mozilla.org/uuid-generator;1"]
+          .getService(Ci.nsIUUIDGenerator)
+          .generateUUID().toString();
 
       delete aAddon.syncGUID;
       aAddon.syncGUID = guid;
