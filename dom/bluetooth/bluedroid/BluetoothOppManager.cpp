@@ -803,7 +803,7 @@ BluetoothOppManager::ExtractPacketHeaders(const ObexHeaderSet& aHeader)
       aHeader.Has(ObexHeaderId::EndOfBody)) {
     uint8_t* bodyPtr;
     aHeader.GetBody(&bodyPtr, &mBodySegmentLength);
-    mBodySegment = bodyPtr;
+    mBodySegment.reset(bodyPtr);
   }
 }
 
@@ -934,7 +934,7 @@ BluetoothOppManager::ComposePacket(uint8_t aOpCode, UnixSocketBuffer* aMessage)
 
 
 
-    mReceivedDataBuffer = new uint8_t[mPacketLength];
+    mReceivedDataBuffer.reset(new uint8_t[mPacketLength]);
     mPutFinalFlag = (aOpCode == ObexRequestCode::PutFinal);
   }
 
