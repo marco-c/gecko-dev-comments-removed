@@ -251,8 +251,6 @@ void
 PathBuilderD2D::Arc(const Point &aOrigin, Float aRadius, Float aStartAngle,
                  Float aEndAngle, bool aAntiClockwise)
 {
-  MOZ_ASSERT(aRadius >= 0);
-
   if (aAntiClockwise && aStartAngle < aEndAngle) {
     
     
@@ -421,7 +419,7 @@ PathD2D::TransformedCopyToBuilder(const Matrix &aTransform, FillRule aFillRule) 
 
   RefPtr<PathBuilderD2D> pathBuilder = new PathBuilderD2D(sink, path, aFillRule, mBackendType);
   
-  pathBuilder->mCurrentPoint = aTransform * mEndPoint;
+  pathBuilder->mCurrentPoint = aTransform.TransformPoint(mEndPoint);
   
   if (mEndedActive) {
     pathBuilder->mFigureActive = true;

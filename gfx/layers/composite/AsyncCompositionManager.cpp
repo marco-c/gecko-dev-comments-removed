@@ -495,8 +495,8 @@ AsyncCompositionManager::AlignFixedAndStickyLayers(Layer* aTransformedSubtreeRoo
         
         
         LayerPoint transformedAnchor = ViewAs<LayerPixel>(
-            newCumulativeTransform.Inverse() *
-            (oldCumulativeTransform * offsetAnchor.ToUnknownPoint()));
+            newCumulativeTransform.Inverse().TransformPoint(
+              (oldCumulativeTransform.TransformPoint(offsetAnchor.ToUnknownPoint()))));
 
         
         

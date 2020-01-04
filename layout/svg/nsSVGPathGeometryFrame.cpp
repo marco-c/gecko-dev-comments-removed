@@ -366,7 +366,7 @@ nsSVGPathGeometryFrame::GetFrameForPoint(const gfxPoint& aPoint)
       
       
       
-      point = ToMatrix(userToOuterSVG) * point;
+      point = ToMatrix(userToOuterSVG).TransformPoint(point);
       RefPtr<PathBuilder> builder =
         path->TransformedCopyToBuilder(ToMatrix(userToOuterSVG), fillRule);
       path = builder->Finish();
