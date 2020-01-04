@@ -260,7 +260,7 @@ class Message : public Pickle {
   bool WriteFileDescriptor(const base::FileDescriptor& descriptor);
   
   
-  bool ReadFileDescriptor(void** iter, base::FileDescriptor* descriptor) const;
+  bool ReadFileDescriptor(PickleIterator* iter, base::FileDescriptor* descriptor) const;
 
 #if defined(OS_MACOSX)
   void set_fd_cookie(uint32_t cookie) {

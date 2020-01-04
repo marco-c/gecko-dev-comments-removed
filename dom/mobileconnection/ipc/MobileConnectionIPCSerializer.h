@@ -97,7 +97,7 @@ struct ParamTraits<nsIMobileCallForwardingOptions*>
   }
 
   
-  static bool Read(const Message *aMsg, void **aIter, paramType* aResult)
+  static bool Read(const Message *aMsg, PickleIterator* aIter, paramType* aResult)
   {
     
     bool isNull;
@@ -176,7 +176,7 @@ struct ParamTraits<nsIMobileNetworkInfo*>
   }
 
   
-  static bool Read(const Message *aMsg, void **aIter, paramType* aResult)
+  static bool Read(const Message *aMsg, PickleIterator* aIter, paramType* aResult)
   {
     
     bool isNull;
@@ -263,7 +263,7 @@ struct ParamTraits<nsIMobileCellInfo*>
   }
 
   
-  static bool Read(const Message *aMsg, void **aIter, paramType* aResult)
+  static bool Read(const Message *aMsg, PickleIterator* aIter, paramType* aResult)
   {
     
     bool isNull;
@@ -378,7 +378,7 @@ struct ParamTraits<nsIMobileConnectionInfo*>
   }
 
   
-  static bool Read(const Message* aMsg, void **aIter, paramType* aResult)
+  static bool Read(const Message* aMsg, PickleIterator* aIter, paramType* aResult)
   {
     
     bool isNull;
@@ -541,7 +541,7 @@ struct ParamTraits<MozCallForwardingOptions>
   }
 
   
-  static bool Read(const Message *aMsg, void **aIter, paramType* aResult)
+  static bool Read(const Message *aMsg, PickleIterator* aIter, paramType* aResult)
   {
     bool wasPassed = false;
     bool isNull = false;

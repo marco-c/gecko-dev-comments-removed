@@ -53,7 +53,7 @@ struct ParamTraits<nsIDOMGeoPositionCoords*>
   }
 
   
-  static bool Read(const Message* aMsg, void **aIter, paramType* aResult)
+  static bool Read(const Message* aMsg, PickleIterator* aIter, paramType* aResult)
   {
     
     bool isNull;
@@ -119,7 +119,7 @@ struct ParamTraits<nsIDOMGeoPosition*>
   }
 
   
-  static bool Read(const Message* aMsg, void **aIter, paramType* aResult)
+  static bool Read(const Message* aMsg, PickleIterator* aIter, paramType* aResult)
   {
     
     bool isNull;
