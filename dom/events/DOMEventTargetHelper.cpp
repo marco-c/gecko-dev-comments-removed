@@ -377,11 +377,10 @@ DOMEventTargetHelper::GetContextForEventHandlers(nsresult* aRv)
 nsresult
 DOMEventTargetHelper::WantsUntrusted(bool* aRetVal)
 {
-  nsresult rv;
-  nsIScriptContext* context = GetContextForEventHandlers(&rv);
+  nsresult rv = CheckInnerWindowCorrectness();
   NS_ENSURE_SUCCESS(rv, rv);
-  nsCOMPtr<nsIDocument> doc =
-    nsContentUtils::GetDocumentFromScriptContext(context);
+  
+  nsCOMPtr<nsIDocument> doc = GetDocumentIfCurrent();
   
   *aRetVal = (doc && !nsContentUtils::IsChromeDoc(doc)) || !NS_IsMainThread();
   return rv;
