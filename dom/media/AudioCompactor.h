@@ -41,10 +41,7 @@ public:
 
     while (aFrames > 0) {
       uint32_t samples = GetChunkSamples(aFrames, aChannels, maxSlop);
-      AlignedAudioBuffer buffer(samples);
-      if (!buffer) {
-        return false;
-      }
+      auto buffer = MakeUnique<AudioDataValue[]>(samples);
 
       
       uint32_t framesCopied = aCopyFunc(buffer.get(), samples);
