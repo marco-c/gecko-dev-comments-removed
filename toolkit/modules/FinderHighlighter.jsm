@@ -644,13 +644,13 @@ FinderHighlighter.prototype = {
       
       width = window.innerWidth + window.scrollMaxX - window.scrollMinX;
       height = window.innerHeight + window.scrollMaxY - window.scrollMinY;
-    }
 
-    let scrollbarHeight = {};
-    let scrollbarWidth = {};
-    dwu.getScrollbarSize(false, scrollbarWidth, scrollbarHeight);
-    width -= scrollbarWidth.value;
-    height -= scrollbarHeight.value;
+      let scrollbarHeight = {};
+      let scrollbarWidth = {};
+      dwu.getScrollbarSize(false, scrollbarWidth, scrollbarHeight);
+      width -= scrollbarWidth.value;
+      height -= scrollbarHeight.value;
+    }
 
     return { width, height };
   },
