@@ -1,5 +1,7 @@
 
 
+requestLongerTimeout(2);
+
 var {Promise: promise} = Cu.import("resource://gre/modules/Promise.jsm", {});
 
 const gHttpTestRoot = "http://example.com/browser/dom/base/test/";
