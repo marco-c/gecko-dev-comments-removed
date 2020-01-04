@@ -58,12 +58,12 @@ class AutoRules;
 class AutoSelectionRestorer;
 class AutoTransactionsConserveSelection;
 class ChangeAttributeTransaction;
+class CreateElementTransaction;
 class ErrorResult;
 class TextComposition;
 struct EditorDOMPoint;
 
 namespace dom {
-class CreateElementTxn;
 class DataTransfer;
 class DeleteTextTxn;
 class Element;
@@ -268,7 +268,7 @@ protected:
 
   
 
-  already_AddRefed<mozilla::dom::CreateElementTxn>
+  already_AddRefed<mozilla::CreateElementTransaction>
   CreateTxnForCreateElement(nsIAtom& aTag,
                             nsINode& aParent,
                             int32_t aPosition);

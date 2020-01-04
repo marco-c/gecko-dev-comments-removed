@@ -1,0 +1,79 @@
+
+
+
+
+
+#ifndef CreateElementTransaction_h
+#define CreateElementTransaction_h
+
+#include "EditTxn.h"
+#include "nsCOMPtr.h"
+#include "nsCycleCollectionParticipant.h"
+#include "nsISupportsImpl.h"
+
+class nsEditor;
+class nsIAtom;
+class nsIContent;
+class nsINode;
+
+
+
+
+namespace mozilla {
+
+namespace dom {
+class Element;
+} 
+
+class CreateElementTransaction final : public EditTxn
+{
+public:
+  
+
+
+
+
+
+
+
+
+
+  CreateElementTransaction(nsEditor& aEditor,
+                           nsIAtom& aTag,
+                           nsINode& aParent,
+                           int32_t aOffsetInParent);
+
+  NS_DECL_ISUPPORTS_INHERITED
+  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(CreateElementTransaction, EditTxn)
+
+  NS_DECL_EDITTXN
+
+  NS_IMETHOD RedoTransaction() override;
+
+  already_AddRefed<dom::Element> GetNewNode();
+
+protected:
+  virtual ~CreateElementTransaction();
+
+  
+  nsEditor* mEditor;
+
+  
+  nsCOMPtr<nsIAtom> mTag;
+
+  
+  nsCOMPtr<nsINode> mParent;
+
+  
+  int32_t mOffsetInParent;
+
+  
+  nsCOMPtr<dom::Element> mNewNode;
+
+  
+  nsCOMPtr<nsIContent> mRefNode;
+};
+
+} 
+
+#endif 

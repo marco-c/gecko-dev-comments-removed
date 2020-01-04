@@ -11,7 +11,7 @@
 #include <string.h>                     
 
 #include "ChangeAttributeTransaction.h" 
-#include "CreateElementTxn.h"           
+#include "CreateElementTransaction.h"   
 #include "DeleteNodeTxn.h"              
 #include "DeleteRangeTxn.h"             
 #include "DeleteTextTxn.h"              
@@ -1355,11 +1355,11 @@ nsEditor::CreateNode(nsIAtom* aTag,
 
   nsCOMPtr<Element> ret;
 
-  RefPtr<CreateElementTxn> txn =
+  RefPtr<CreateElementTransaction> transaction =
     CreateTxnForCreateElement(*aTag, *aParent, aPosition);
-  nsresult res = DoTransaction(txn);
+  nsresult res = DoTransaction(transaction);
   if (NS_SUCCEEDED(res)) {
-    ret = txn->GetNewNode();
+    ret = transaction->GetNewNode();
     MOZ_ASSERT(ret);
   }
 
@@ -4192,15 +4192,15 @@ nsEditor::CreateTxnForRemoveAttribute(Element& aElement, nsIAtom& aAttribute)
 }
 
 
-already_AddRefed<CreateElementTxn>
+already_AddRefed<CreateElementTransaction>
 nsEditor::CreateTxnForCreateElement(nsIAtom& aTag,
                                     nsINode& aParent,
                                     int32_t aPosition)
 {
-  RefPtr<CreateElementTxn> txn =
-    new CreateElementTxn(*this, aTag, aParent, aPosition);
+  RefPtr<CreateElementTransaction> transaction =
+    new CreateElementTransaction(*this, aTag, aParent, aPosition);
 
-  return txn.forget();
+  return transaction.forget();
 }
 
 
