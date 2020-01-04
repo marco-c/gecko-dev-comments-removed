@@ -687,9 +687,9 @@ private:
                                                    nsStyleContext* aNewContext);
 
   
-
-
   void RestyleUndisplayedDescendants(nsRestyleHint aChildRestyleHint);
+  bool MustCheckUndisplayedContent(nsIContent*& aUndisplayedParent);
+
   
 
 
