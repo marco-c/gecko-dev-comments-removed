@@ -2761,17 +2761,8 @@ ConvertExceptionToPromise(JSContext* cx,
   }
 
   JS_ClearPendingException(cx);
-
-  nsCOMPtr<nsIGlobalObject> globalObj =
-    do_QueryInterface(global.GetAsSupports());
-  if (!globalObj) {
-    ErrorResult rv;
-    rv.Throw(NS_ERROR_UNEXPECTED);
-    return !rv.MaybeSetPendingException(cx);
-  }
-
   ErrorResult rv;
-  RefPtr<Promise> promise = Promise::Reject(globalObj, cx, exn, rv);
+  RefPtr<Promise> promise = Promise::Reject(global, exn, rv);
   if (rv.MaybeSetPendingException(cx)) {
     
     

@@ -2979,21 +2979,6 @@ class CGCreateInterfaceObjectsMethod(CGAbstractMethod):
         else:
             unforgeableHolderSetup = None
 
-        if self.descriptor.name == "Promise":
-            speciesSetup = CGGeneric(fill(
-                """
-                JS::Rooted<JSObject*> promiseConstructor(aCx, *interfaceCache);
-                JS::Rooted<jsid> species(aCx,
-                  SYMBOL_TO_JSID(JS::GetWellKnownSymbol(aCx, JS::SymbolCode::species)));
-                if (!JS_DefinePropertyById(aCx, promiseConstructor, species, JS::UndefinedHandleValue,
-                                           JSPROP_SHARED, Promise::PromiseSpecies, nullptr)) {
-                  $*{failureCode}
-                }
-                """,
-                failureCode=failureCode))
-        else:
-            speciesSetup = None
-
         if (self.descriptor.interface.isOnGlobalProtoChain() and
             needInterfacePrototypeObject):
             makeProtoPrototypeImmutable = CGGeneric(fill(
@@ -3019,7 +3004,7 @@ class CGCreateInterfaceObjectsMethod(CGAbstractMethod):
         return CGList(
             [getParentProto, CGGeneric(getConstructorProto), initIds,
              prefCache, CGGeneric(call), defineAliases, unforgeableHolderSetup,
-             speciesSetup, makeProtoPrototypeImmutable],
+             makeProtoPrototypeImmutable],
             "\n").define()
 
 
@@ -5093,124 +5078,24 @@ def getJSToNativeConversionInfo(type, descriptorProvider, failureCode=None,
             templateBody += 'static_assert(IsRefcounted<%s>::value, "We can only store refcounted classes.");' % typeName
 
         if isPromise:
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            if isCallbackReturnValue == "JSImpl":
-                
-                
-                
-                
-                assert exceptionCode == "aRv.Throw(NS_ERROR_UNEXPECTED);\nreturn nullptr;\n"
-                getPromiseGlobal = fill(
-                    """
-                    if (!$${val}.isObject()) {
-                      aRv.ThrowTypeError<MSG_NOT_OBJECT>(NS_LITERAL_STRING("${sourceDescription}"));
-                      return nullptr;
-                    }
-                    JSObject* unwrappedVal = js::CheckedUnwrap(&$${val}.toObject());
-                    if (!unwrappedVal) {
-                      // A slight lie, but not much of one, for a dead object wrapper.
-                      aRv.ThrowTypeError<MSG_NOT_OBJECT>(NS_LITERAL_STRING("${sourceDescription}"));
-                      return nullptr;
-                    }
-                    globalObj = js::GetGlobalForObjectCrossCompartment(unwrappedVal);
-                    """,
-                    sourceDescription=sourceDescription)
-            else:
-                getPromiseGlobal = ""
-
             templateBody = fill(
                 """
-                { // Scope for our GlobalObject, ErrorResult, JSAutoCompartment,
-                  // etc.
+                { // Scope for our GlobalObject and ErrorResult
 
-                  JS::Rooted<JSObject*> globalObj(cx, JS::CurrentGlobalOrNull(cx));
-                  $*{getPromiseGlobal}
-                  JSAutoCompartment ac(cx, globalObj);
-                  GlobalObject promiseGlobal(cx, globalObj);
+                  // Might as well use CurrentGlobalOrNull here; that will at
+                  // least give us the same behavior as if the caller just called
+                  // Promise.resolve() themselves.
+                  GlobalObject promiseGlobal(cx, JS::CurrentGlobalOrNull(cx));
                   if (promiseGlobal.Failed()) {
                     $*{exceptionCode}
                   }
                   ErrorResult promiseRv;
-                  JS::Handle<JSObject*> promiseCtor =
-                    PromiseBinding::GetConstructorObjectHandle(cx, globalObj);
-                  if (!promiseCtor) {
-                    $*{exceptionCode}
-                  }
-                  JS::Rooted<JS::Value> resolveThisv(cx, JS::ObjectValue(*promiseCtor));
-                  JS::Rooted<JS::Value> resolveResult(cx);
-                  JS::Rooted<JS::Value> valueToResolve(cx, $${val});
-                  if (!JS_WrapValue(cx, &valueToResolve)) {
-                    $*{exceptionCode}
-                  }
-                  Promise::Resolve(promiseGlobal, resolveThisv, valueToResolve,
-                                   &resolveResult, promiseRv);
+                  $${declName} = Promise::Resolve(promiseGlobal, $${val}, promiseRv);
                   if (promiseRv.MaybeSetPendingException(cx)) {
-                    $*{exceptionCode}
-                  }
-                  nsresult unwrapRv = UNWRAP_OBJECT(Promise, &resolveResult.toObject(), $${declName});
-                  if (NS_FAILED(unwrapRv)) { // Quite odd
-                    promiseRv.Throw(unwrapRv);
-                    promiseRv.MaybeSetPendingException(cx);
                     $*{exceptionCode}
                   }
                 }
                 """,
-                getPromiseGlobal=getPromiseGlobal,
                 exceptionCode=exceptionCode)
         elif not descriptor.skipGen and not descriptor.interface.isConsequential() and not descriptor.interface.isExternal():
             if failureCode is not None:
@@ -7147,59 +7032,16 @@ class CGPerSignatureCall(CGThing):
         if needsCx:
             argsPre.append("cx")
 
-        
-        if (not static and
-            (descriptor.name == "Promise" or
-             descriptor.name == "MozAbortablePromise") and
-            idlNode.isMethod() and
-            idlNode.identifier.name == "then"):
-            cgThings.append(CGGeneric(dedent(
-                """
-                JS::Rooted<JSObject*> calleeGlobal(cx, xpc::XrayAwareCalleeGlobal(&args.callee()));
-                """)))
-            argsPre.append("calleeGlobal")
-
         needsUnwrap = False
         argsPost = []
         if isConstructor:
+            needsUnwrap = True
+            needsUnwrappedVar = False
+            unwrappedVar = "obj"
             if descriptor.name == "Promise" or descriptor.name == "MozAbortablePromise":
                 
                 
                 argsPost.append("desiredProto")
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-            else:
-                needsUnwrap = True
-                needsUnwrappedVar = False
-                unwrappedVar = "obj"
         elif descriptor.interface.isJSImplemented():
             if not idlNode.isStatic():
                 needsUnwrap = True
@@ -7211,11 +7053,6 @@ class CGPerSignatureCall(CGThing):
             needsUnwrap = True
             needsUnwrappedVar = True
             argsPre.append("unwrappedObj ? *unwrappedObj : obj")
-
-        if static and not isConstructor and descriptor.name == "Promise":
-            
-            
-            argsPre.append("args.thisv()")
 
         if needsUnwrap and needsUnwrappedVar:
             
@@ -9159,6 +8996,26 @@ class CGStaticMethodJitinfo(CGGeneric):
             (IDLToCIdentifier(method.identifier.name),
              CppKeywords.checkMethodName(
                  IDLToCIdentifier(method.identifier.name))))
+
+
+class CGMethodIdentityTest(CGAbstractMethod):
+    """
+    A class to generate a method-identity test for a given IDL operation.
+    """
+    def __init__(self, descriptor, method):
+        self.method = method
+        name = "Is%sMethod" % MakeNativeName(method.identifier.name)
+        CGAbstractMethod.__init__(self, descriptor, name, 'bool',
+                                  [Argument('JS::Handle<JSObject*>', 'aObj')])
+
+    def definition_body(self):
+        return dedent(
+            """
+            MOZ_ASSERT(aObj);
+            return js::IsFunctionObject(aObj) &&
+                   js::FunctionObjectIsNative(aObj) &&
+                   FUNCTION_VALUE_TO_JITINFO(JS::ObjectValue(*aObj)) == &%s_methodinfo;
+            """ % IDLToCIdentifier(self.method.identifier.name))
 
 
 def getEnumValueName(value):
@@ -11792,6 +11649,8 @@ class CGDescriptor(CGThing):
                         cgThings.append(CGMemberJITInfo(descriptor, m))
                         if props.isCrossOriginMethod:
                             crossOriginMethods.add(m.identifier.name)
+                        if m.getExtendedAttribute("MethodIdentityTestable"):
+                            cgThings.append(CGMethodIdentityTest(descriptor, m))
             
             
             elif m.isMaplikeOrSetlike():

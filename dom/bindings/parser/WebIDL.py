@@ -4805,6 +4805,7 @@ class IDLMethod(IDLInterfaceMember, IDLScope):
               identifier == "CheckAnyPermissions" or
               identifier == "CheckAllPermissions" or
               identifier == "BinaryName" or
+              identifier == "MethodIdentityTestable" or
               identifier == "StaticClassOverride"):
             
             pass

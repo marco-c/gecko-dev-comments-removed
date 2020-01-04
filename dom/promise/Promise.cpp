@@ -34,7 +34,6 @@
 #include "PromiseWorkerProxy.h"
 #include "WorkerPrivate.h"
 #include "WorkerRunnable.h"
-#include "WrapperFactory.h"
 #include "xpcpublic.h"
 #ifdef MOZ_CRASHREPORTER
 #include "nsExceptionHandler.h"
@@ -115,6 +114,11 @@ private:
   NS_DECL_OWNINGTHREAD;
 };
 
+enum {
+  SLOT_PROMISE = 0,
+  SLOT_DATA
+};
+
 
 
 
@@ -129,9 +133,9 @@ void
 LinkThenableCallables(JSContext* aCx, JS::Handle<JSObject*> aResolveFunc,
                       JS::Handle<JSObject*> aRejectFunc)
 {
-  js::SetFunctionNativeReserved(aResolveFunc, Promise::SLOT_DATA,
+  js::SetFunctionNativeReserved(aResolveFunc, SLOT_DATA,
                                 JS::ObjectValue(*aRejectFunc));
-  js::SetFunctionNativeReserved(aRejectFunc, Promise::SLOT_DATA,
+  js::SetFunctionNativeReserved(aRejectFunc, SLOT_DATA,
                                 JS::ObjectValue(*aResolveFunc));
 }
 
@@ -142,22 +146,18 @@ LinkThenableCallables(JSContext* aCx, JS::Handle<JSObject*> aResolveFunc,
 bool
 MarkAsCalledIfNotCalledBefore(JSContext* aCx, JS::Handle<JSObject*> aFunc)
 {
-  JS::Value otherFuncVal =
-    js::GetFunctionNativeReserved(aFunc, Promise::SLOT_DATA);
+  JS::Value otherFuncVal = js::GetFunctionNativeReserved(aFunc, SLOT_DATA);
 
   if (!otherFuncVal.isObject()) {
     return false;
   }
 
   JSObject* otherFuncObj = &otherFuncVal.toObject();
-  MOZ_ASSERT(js::GetFunctionNativeReserved(otherFuncObj,
-                                           Promise::SLOT_DATA).isObject());
+  MOZ_ASSERT(js::GetFunctionNativeReserved(otherFuncObj, SLOT_DATA).isObject());
 
   
-  js::SetFunctionNativeReserved(aFunc, Promise::SLOT_DATA,
-                                JS::UndefinedValue());
-  js::SetFunctionNativeReserved(otherFuncObj, Promise::SLOT_DATA,
-                                JS::UndefinedValue());
+  js::SetFunctionNativeReserved(aFunc, SLOT_DATA, JS::UndefinedValue());
+  js::SetFunctionNativeReserved(otherFuncObj, SLOT_DATA, JS::UndefinedValue());
 
   return true;
 }
@@ -165,8 +165,7 @@ MarkAsCalledIfNotCalledBefore(JSContext* aCx, JS::Handle<JSObject*> aFunc)
 Promise*
 GetPromise(JSContext* aCx, JS::Handle<JSObject*> aFunc)
 {
-  JS::Value promiseVal = js::GetFunctionNativeReserved(aFunc,
-                                                       Promise::SLOT_PROMISE);
+  JS::Value promiseVal = js::GetFunctionNativeReserved(aFunc, SLOT_PROMISE);
 
   MOZ_ASSERT(promiseVal.isObject());
 
@@ -282,103 +281,43 @@ private:
 
 
 
-
-
-
-
-
-
-
-
-
-struct MOZ_STACK_CLASS Promise::PromiseCapability
+class FastPromiseResolveThenableJob final : public nsRunnable
 {
-  explicit PromiseCapability(JSContext* aCx)
-    : mPromise(aCx)
-    , mResolve(aCx)
-    , mReject(aCx)
-  {}
+public:
+  FastPromiseResolveThenableJob(PromiseCallback* aResolveCallback,
+                                PromiseCallback* aRejectCallback,
+                                Promise* aNextPromise)
+    : mResolveCallback(aResolveCallback)
+    , mRejectCallback(aRejectCallback)
+    , mNextPromise(aNextPromise)
+  {
+    MOZ_ASSERT(aResolveCallback);
+    MOZ_ASSERT(aRejectCallback);
+    MOZ_ASSERT(aNextPromise);
+    MOZ_COUNT_CTOR(FastPromiseResolveThenableJob);
+  }
 
-  
-  
-  
-  
-  
-  void RejectWithException(JSContext* aCx, ErrorResult& aRv);
+  virtual
+  ~FastPromiseResolveThenableJob()
+  {
+    NS_ASSERT_OWNINGTHREAD(FastPromiseResolveThenableJob);
+    MOZ_COUNT_DTOR(FastPromiseResolveThenableJob);
+  }
 
-  
-  
-  
-  
-  
-  JS::Value PromiseValue() const;
-
-  
-  
-
-  
-  JS::Rooted<JS::Value> mPromise;
-  
-  JS::Rooted<JS::Value> mResolve;
-  
-  JS::Rooted<JS::Value> mReject;
-  
-  RefPtr<Promise> mNativePromise;
+protected:
+  NS_IMETHOD
+  Run() override
+  {
+    NS_ASSERT_OWNINGTHREAD(FastPromiseResolveThenableJob);
+    mNextPromise->AppendCallbacks(mResolveCallback, mRejectCallback);
+    return NS_OK;
+  }
 
 private:
-  
-  PromiseCapability(const PromiseCapability&) = delete;
-  PromiseCapability(PromiseCapability&&) = delete;
+  RefPtr<PromiseCallback> mResolveCallback;
+  RefPtr<PromiseCallback> mRejectCallback;
+  RefPtr<Promise> mNextPromise;
 };
-
-void
-Promise::PromiseCapability::RejectWithException(JSContext* aCx,
-                                                ErrorResult& aRv)
-{
-  
-  
-  
-
-  MOZ_ASSERT(!aRv.Failed());
-  MOZ_ASSERT(mNativePromise || !mPromise.isUndefined(),
-             "NewPromiseCapability didn't succeed");
-
-  JS::Rooted<JS::Value> exn(aCx);
-  if (!JS_GetPendingException(aCx, &exn)) {
-    
-    
-    aRv.ThrowUncatchableException();
-    return;
-  }
-
-  JS_ClearPendingException(aCx);
-
-  
-  
-  if (mNativePromise) {
-    mNativePromise->MaybeRejectInternal(aCx, exn);
-    return;
-  }
-
-  JS::Rooted<JS::Value> ignored(aCx);
-  if (!JS::Call(aCx, JS::UndefinedHandleValue, mReject, JS::HandleValueArray(exn),
-                &ignored)) {
-    aRv.NoteJSContextException();
-  }
-}
-
-JS::Value
-Promise::PromiseCapability::PromiseValue() const
-{
-  MOZ_ASSERT(mNativePromise || !mPromise.isUndefined(),
-             "NewPromiseCapability didn't succeed");
-
-  if (mNativePromise) {
-    return JS::ObjectValue(*mNativePromise->GetWrapper());
-  }
-
-  return mPromise;
-}
 
 
 
@@ -658,8 +597,6 @@ Promise::JSCallbackThenableRejecter(JSContext* aCx,
  JSObject*
 Promise::CreateFunction(JSContext* aCx, Promise* aPromise, int32_t aTask)
 {
-  
-  
   JSFunction* func = js::NewFunctionWithReserved(aCx, JSCallback,
                                                  1 , 0 ,
                                                  nullptr);
@@ -766,275 +703,41 @@ Promise::CallInitFunction(const GlobalObject& aGlobal,
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    MaybeReject(aRv);
+    JS::Rooted<JS::Value> value(cx);
+    DebugOnly<bool> conversionResult = ToJSValue(cx, aRv, &value);
+    MOZ_ASSERT(conversionResult);
+    MaybeRejectInternal(cx, value);
   }
 }
 
-#define GET_CAPABILITIES_EXECUTOR_RESOLVE_SLOT 0
-#define GET_CAPABILITIES_EXECUTOR_REJECT_SLOT 1
-
-namespace {
-bool
-GetCapabilitiesExecutor(JSContext* aCx, unsigned aArgc, JS::Value* aVp)
+ already_AddRefed<Promise>
+Promise::Resolve(const GlobalObject& aGlobal,
+                 JS::Handle<JS::Value> aValue, ErrorResult& aRv)
 {
   
-  
-  
-  
-  
-  JS::CallArgs args = CallArgsFromVp(aArgc, aVp);
+  if (aValue.isObject()) {
+    JS::Rooted<JSObject*> valueObj(aGlobal.Context(), &aValue.toObject());
+    Promise* nextPromise;
+    nsresult rv = UNWRAP_OBJECT(Promise, valueObj, nextPromise);
 
-  
-
-  
-  
-  
-  
-
-  
-  if (!js::GetFunctionNativeReserved(&args.callee(),
-                                     GET_CAPABILITIES_EXECUTOR_RESOLVE_SLOT).isUndefined() ||
-      !js::GetFunctionNativeReserved(&args.callee(),
-                                     GET_CAPABILITIES_EXECUTOR_REJECT_SLOT).isUndefined()) {
-    ErrorResult rv;
-    rv.ThrowTypeError<MSG_PROMISE_CAPABILITY_HAS_SOMETHING_ALREADY>();
-    return !rv.MaybeSetPendingException(aCx);
-  }
-
-  
-  js::SetFunctionNativeReserved(&args.callee(),
-                                GET_CAPABILITIES_EXECUTOR_RESOLVE_SLOT,
-                                args.get(0));
-
-  
-  js::SetFunctionNativeReserved(&args.callee(),
-                                GET_CAPABILITIES_EXECUTOR_REJECT_SLOT,
-                                args.get(1));
-
-  
-  args.rval().setUndefined();
-  return true;
-}
-} 
-
- void
-Promise::NewPromiseCapability(JSContext* aCx, nsIGlobalObject* aGlobal,
-                              JS::Handle<JS::Value> aConstructor,
-                              bool aForceCallbackCreation,
-                              PromiseCapability& aCapability,
-                              ErrorResult& aRv)
-{
-  
-  
-
-  if (!aConstructor.isObject() ||
-      !JS::IsConstructor(&aConstructor.toObject())) {
-    aRv.ThrowTypeError<MSG_ILLEGAL_PROMISE_CONSTRUCTOR>();
-    return;
-  }
-
-  
-  
-
-  
-  
-  JS::Rooted<JSObject*> global(aCx, aGlobal->GetGlobalJSObject());
-  {
-    
-    
-    
-    JS::Rooted<JSObject*> callerGlobal(aCx, JS::CurrentGlobalOrNull(aCx));
-    JSAutoCompartment ac(aCx, global);
-
-    
-    
-    JS::Rooted<JS::Value> constructorValue(aCx, aConstructor);
-    if (!MaybeWrapObjectValue(aCx, &constructorValue)) {
-      aRv.NoteJSContextException();
-      return;
-    }
-
-    JSObject* defaultCtor = PromiseBinding::GetConstructorObject(aCx, global);
-    if (!defaultCtor) {
-      aRv.NoteJSContextException();
-      return;
-    }
-    if (defaultCtor == &constructorValue.toObject()) {
-      
-      aCapability.mNativePromise = Promise::Create(aGlobal, aRv);
-      if (aForceCallbackCreation) {
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        MOZ_ASSERT(xpc::WrapperFactory::IsXrayWrapper(&aConstructor.toObject()) ||
-                   callerGlobal == global);
-        JSAutoCompartment ac2(aCx, callerGlobal);
-
-        JSObject* resolveFuncObj =
-          CreateFunction(aCx, aCapability.mNativePromise,
-                         PromiseCallback::Resolve);
-        if (!resolveFuncObj) {
-          aRv.NoteJSContextException();
-          return;
-        }
-        aCapability.mResolve.setObject(*resolveFuncObj);
-
-        JSObject* rejectFuncObj =
-          CreateFunction(aCx, aCapability.mNativePromise,
-                         PromiseCallback::Reject);
-        if (!rejectFuncObj) {
-          aRv.NoteJSContextException();
-          return;
-        }
-        aCapability.mReject.setObject(*rejectFuncObj);
-      }
-      return;
+    if (NS_SUCCEEDED(rv)) {
+      RefPtr<Promise> addRefed = nextPromise;
+      return addRefed.forget();
     }
   }
-
-  
-  
-  
-  
-  
-  JSFunction* getCapabilitiesFunc =
-    js::NewFunctionWithReserved(aCx, GetCapabilitiesExecutor,
-                                2 ,
-                                0 ,
-                                nullptr);
-  if (!getCapabilitiesFunc) {
-    aRv.Throw(NS_ERROR_OUT_OF_MEMORY);
-    return;
-  }
-
-  JS::Rooted<JSObject*> getCapabilitiesObj(aCx);
-  getCapabilitiesObj = JS_GetFunctionObject(getCapabilitiesFunc);
-
-  
-  
-  
-
-  
-  JS::Rooted<JS::Value> getCapabilities(aCx,
-                                        JS::ObjectValue(*getCapabilitiesObj));
-  JS::Rooted<JS::Value> promiseVal(aCx);
-  if (!JS::Construct(aCx, aConstructor,
-                     JS::HandleValueArray(getCapabilities),
-                     &promiseVal)) {
-    aRv.NoteJSContextException();
-    return;
-  }
-
-  
-  JS::Rooted<JS::Value> v(aCx);
-  v = js::GetFunctionNativeReserved(getCapabilitiesObj,
-                                    GET_CAPABILITIES_EXECUTOR_RESOLVE_SLOT);
-  if (!v.isObject() || !JS::IsCallable(&v.toObject())) {
-    aRv.ThrowTypeError<MSG_PROMISE_RESOLVE_FUNCTION_NOT_CALLABLE>();
-    return;
-  }
-  aCapability.mResolve = v;
-
-  
-  v = js::GetFunctionNativeReserved(getCapabilitiesObj,
-                                    GET_CAPABILITIES_EXECUTOR_REJECT_SLOT);
-  if (!v.isObject() || !JS::IsCallable(&v.toObject())) {
-    aRv.ThrowTypeError<MSG_PROMISE_REJECT_FUNCTION_NOT_CALLABLE>();
-    return;
-  }
-  aCapability.mReject = v;
-
-  
-  aCapability.mPromise = promiseVal;
-
-  
-}
-
- void
-Promise::Resolve(const GlobalObject& aGlobal, JS::Handle<JS::Value> aThisv,
-                 JS::Handle<JS::Value> aValue,
-                 JS::MutableHandle<JS::Value> aRetval, ErrorResult& aRv)
-{
-  
-  
-
-  JSContext* cx = aGlobal.Context();
 
   nsCOMPtr<nsIGlobalObject> global =
     do_QueryInterface(aGlobal.GetAsSupports());
   if (!global) {
     aRv.Throw(NS_ERROR_UNEXPECTED);
-    return;
+    return nullptr;
   }
 
-  
-  if (!aThisv.isObject()) {
-    aRv.ThrowTypeError<MSG_ILLEGAL_PROMISE_CONSTRUCTOR>();
-    return;
-  }
-
-  
-  if (aValue.isObject()) {
-    JS::Rooted<JSObject*> valueObj(cx, &aValue.toObject());
-    Promise* nextPromise;
-    nsresult rv = UNWRAP_OBJECT(Promise, valueObj, nextPromise);
-
-    if (NS_SUCCEEDED(rv)) {
-      JS::Rooted<JS::Value> constructor(cx);
-      if (!JS_GetProperty(cx, valueObj, "constructor", &constructor)) {
-        aRv.NoteJSContextException();
-        return;
-      }
-
-      
-      if (aThisv == constructor) {
-        aRetval.setObject(*valueObj);
-        return;
-      }
-    }
-  }
-
-  
-  PromiseCapability capability(cx);
-  NewPromiseCapability(cx, global, aThisv, false, capability, aRv);
-  
-  if (aRv.Failed()) {
-    return;
-  }
-
-  
-  Promise* p = capability.mNativePromise;
+  RefPtr<Promise> p = Resolve(global, aGlobal.Context(), aValue, aRv);
   if (p) {
-    p->MaybeResolveInternal(cx, aValue);
     p->mFullfillmentStack = p->mAllocationStack;
-  } else {
-    JS::Rooted<JS::Value> value(cx, aValue);
-    JS::Rooted<JS::Value> ignored(cx);
-    if (!JS::Call(cx, JS::UndefinedHandleValue ,
-                  capability.mResolve, JS::HandleValueArray(value),
-                  &ignored)) {
-      
-      aRv.NoteJSContextException();
-      return;
-    }
   }
-
-  
-  aRetval.set(capability.PromiseValue());
+  return p.forget();
 }
 
  already_AddRefed<Promise>
@@ -1050,56 +753,22 @@ Promise::Resolve(nsIGlobalObject* aGlobal, JSContext* aCx,
   return promise.forget();
 }
 
- void
-Promise::Reject(const GlobalObject& aGlobal, JS::Handle<JS::Value> aThisv,
-                JS::Handle<JS::Value> aValue,
-                JS::MutableHandle<JS::Value> aRetval, ErrorResult& aRv)
+ already_AddRefed<Promise>
+Promise::Reject(const GlobalObject& aGlobal,
+                JS::Handle<JS::Value> aValue, ErrorResult& aRv)
 {
-  
-  
-
-  JSContext* cx = aGlobal.Context();
-
   nsCOMPtr<nsIGlobalObject> global =
     do_QueryInterface(aGlobal.GetAsSupports());
   if (!global) {
     aRv.Throw(NS_ERROR_UNEXPECTED);
-    return;
+    return nullptr;
   }
 
-  
-  if (!aThisv.isObject()) {
-    aRv.ThrowTypeError<MSG_ILLEGAL_PROMISE_CONSTRUCTOR>();
-    return;
-  }
-
-  
-  PromiseCapability capability(cx);
-  NewPromiseCapability(cx, global, aThisv, false, capability, aRv);
-  
-  if (aRv.Failed()) {
-    return;
-  }
-
-  
-  Promise* p = capability.mNativePromise;
+  RefPtr<Promise> p = Reject(global, aGlobal.Context(), aValue, aRv);
   if (p) {
-    p->MaybeRejectInternal(cx, aValue);
     p->mRejectionStack = p->mAllocationStack;
-  } else {
-    JS::Rooted<JS::Value> value(cx, aValue);
-    JS::Rooted<JS::Value> ignored(cx);
-    if (!JS::Call(cx, JS::UndefinedHandleValue ,
-                  capability.mReject, JS::HandleValueArray(value),
-                  &ignored)) {
-      
-      aRv.NoteJSContextException();
-      return;
-    }
   }
-
-  
-  aRetval.set(capability.PromiseValue());
+  return p.forget();
 }
 
  already_AddRefed<Promise>
@@ -1115,236 +784,35 @@ Promise::Reject(nsIGlobalObject* aGlobal, JSContext* aCx,
   return promise.forget();
 }
 
-namespace {
-void
-SpeciesConstructor(JSContext* aCx,
-                   JS::Handle<JSObject*> promise,
-                   JS::Handle<JS::Value> defaultCtor,
-                   JS::MutableHandle<JS::Value> ctor,
-                   ErrorResult& aRv)
+already_AddRefed<Promise>
+Promise::Then(JSContext* aCx, AnyCallback* aResolveCallback,
+              AnyCallback* aRejectCallback, ErrorResult& aRv)
 {
-  
-  
-
-  
-  MOZ_ASSERT(promise);
-
-  
-  JS::Rooted<JS::Value> constructorVal(aCx);
-  if (!JS_GetProperty(aCx, promise, "constructor", &constructorVal)) {
-    
-    aRv.NoteJSContextException();
-    return;
-  }
-
-  
-  if (constructorVal.isUndefined()) {
-    ctor.set(defaultCtor);
-    return;
-  }
-
-  
-  if (!constructorVal.isObject()) {
-    aRv.ThrowTypeError<MSG_ILLEGAL_PROMISE_CONSTRUCTOR>();
-    return;
-  }
-
-  
-  JS::Rooted<jsid> species(aCx,
-    SYMBOL_TO_JSID(JS::GetWellKnownSymbol(aCx, JS::SymbolCode::species)));
-  JS::Rooted<JS::Value> speciesVal(aCx);
-  JS::Rooted<JSObject*> constructorObj(aCx, &constructorVal.toObject());
-  if (!JS_GetPropertyById(aCx, constructorObj, species, &speciesVal)) {
-    
-    aRv.NoteJSContextException();
-    return;
-  }
-
-  
-  if (speciesVal.isNullOrUndefined()) {
-    ctor.set(defaultCtor);
-    return;
-  }
-
-  
-  if (speciesVal.isObject() && JS::IsConstructor(&speciesVal.toObject())) {
-    ctor.set(speciesVal);
-    return;
-  }
-
-  
-  aRv.ThrowTypeError<MSG_ILLEGAL_PROMISE_CONSTRUCTOR>();
-}
-} 
-
-void
-Promise::Then(JSContext* aCx, JS::Handle<JSObject*> aCalleeGlobal,
-              AnyCallback* aResolveCallback, AnyCallback* aRejectCallback,
-              JS::MutableHandle<JS::Value> aRetval, ErrorResult& aRv)
-{
-  
-  
-
-  
-  JS::Rooted<JS::Value> promiseVal(aCx, JS::ObjectValue(*GetWrapper()));
-  if (!MaybeWrapObjectValue(aCx, &promiseVal)) {
-    aRv.NoteJSContextException();
-    return;
-  }
-  JS::Rooted<JSObject*> promiseObj(aCx, &promiseVal.toObject());
-  MOZ_ASSERT(promiseObj);
-
-  
-
-  
-  
-  
-  JS::Rooted<JSObject*> calleeGlobal(aCx, aCalleeGlobal);
-  JS::Rooted<JS::Value> defaultCtorVal(aCx);
-  { 
-    JSAutoCompartment ac(aCx, aCalleeGlobal);
-    JSObject* defaultCtor =
-      PromiseBinding::GetConstructorObject(aCx, calleeGlobal);
-    if (!defaultCtor) {
-      aRv.NoteJSContextException();
-      return;
-    }
-    defaultCtorVal.setObject(*defaultCtor);
-  }
-  if (!MaybeWrapObjectValue(aCx, &defaultCtorVal)) {
-    aRv.NoteJSContextException();
-    return;
-  }
-
-  JS::Rooted<JS::Value> constructor(aCx);
-  SpeciesConstructor(aCx, promiseObj, defaultCtorVal, &constructor, aRv);
+  RefPtr<Promise> promise = Create(GetParentObject(), aRv);
   if (aRv.Failed()) {
-    
-    return;
+    return nullptr;
   }
 
-  
-  GlobalObject globalObj(aCx, GetWrapper());
-  if (globalObj.Failed()) {
-    aRv.NoteJSContextException();
-    return;
-  }
-  nsCOMPtr<nsIGlobalObject> globalObject =
-    do_QueryInterface(globalObj.GetAsSupports());
-  if (!globalObject) {
-    aRv.Throw(NS_ERROR_UNEXPECTED);
-    return;
-  }
-  PromiseCapability capability(aCx);
-  NewPromiseCapability(aCx, globalObject, constructor, false, capability, aRv);
-  if (aRv.Failed()) {
-    
-    return;
-  }
-
-  
-  
-
-  
-
-  
-  
-
-  
-  
   JS::Rooted<JSObject*> global(aCx, JS::CurrentGlobalOrNull(aCx));
-  if (capability.mNativePromise) {
-    Promise* promise = capability.mNativePromise;
 
-    RefPtr<PromiseCallback> resolveCb =
-      PromiseCallback::Factory(promise, global, aResolveCallback,
-                               PromiseCallback::Resolve);
+  RefPtr<PromiseCallback> resolveCb =
+    PromiseCallback::Factory(promise, global, aResolveCallback,
+                             PromiseCallback::Resolve);
 
-    RefPtr<PromiseCallback> rejectCb =
-      PromiseCallback::Factory(promise, global, aRejectCallback,
-                               PromiseCallback::Reject);
+  RefPtr<PromiseCallback> rejectCb =
+    PromiseCallback::Factory(promise, global, aRejectCallback,
+                             PromiseCallback::Reject);
 
-    AppendCallbacks(resolveCb, rejectCb);
-  } else {
-    JS::Rooted<JSObject*> resolveObj(aCx, &capability.mResolve.toObject());
-    RefPtr<AnyCallback> resolveFunc =
-      new AnyCallback(aCx, resolveObj, GetIncumbentGlobal());
+  AppendCallbacks(resolveCb, rejectCb);
 
-    JS::Rooted<JSObject*> rejectObj(aCx, &capability.mReject.toObject());
-    RefPtr<AnyCallback> rejectFunc =
-      new AnyCallback(aCx, rejectObj, GetIncumbentGlobal());
-
-    if (!capability.mPromise.isObject()) {
-      aRv.ThrowTypeError<MSG_ILLEGAL_PROMISE_CONSTRUCTOR>();
-      return;
-    }
-    JS::Rooted<JSObject*> newPromiseObj(aCx, &capability.mPromise.toObject());
-    
-    newPromiseObj = js::CheckedUnwrap(newPromiseObj);
-    if (!newPromiseObj) {
-      
-      aRv.ThrowTypeError<MSG_ILLEGAL_PROMISE_CONSTRUCTOR>();
-      return;
-    }
-
-    RefPtr<PromiseCallback> resolveCb;
-    if (aResolveCallback) {
-      resolveCb = new WrapperPromiseCallback(global, aResolveCallback,
-                                             newPromiseObj,
-                                             resolveFunc, rejectFunc);
-    } else {
-      resolveCb = new InvokePromiseFuncCallback(global, newPromiseObj,
-                                                resolveFunc);
-    }
-
-    RefPtr<PromiseCallback> rejectCb;
-    if (aRejectCallback) {
-      rejectCb = new WrapperPromiseCallback(global, aRejectCallback,
-                                            newPromiseObj,
-                                            resolveFunc, rejectFunc);
-    } else {
-      rejectCb = new InvokePromiseFuncCallback(global, newPromiseObj,
-                                               rejectFunc);
-    }
-
-    AppendCallbacks(resolveCb, rejectCb);
-  }
-
-  aRetval.set(capability.PromiseValue());
+  return promise.forget();
 }
 
-void
-Promise::Catch(JSContext* aCx, AnyCallback* aRejectCallback,
-               JS::MutableHandle<JS::Value> aRetval,
-               ErrorResult& aRv)
+already_AddRefed<Promise>
+Promise::Catch(JSContext* aCx, AnyCallback* aRejectCallback, ErrorResult& aRv)
 {
-  
-  
-
-  
-  
-  JS::Rooted<JS::Value> promiseVal(aCx, JS::ObjectValue(*GetWrapper()));
-  if (!MaybeWrapObjectValue(aCx, &promiseVal)) {
-    aRv.NoteJSContextException();
-    return;
-  }
-  JS::Rooted<JSObject*> promiseObj(aCx, &promiseVal.toObject());
-  MOZ_ASSERT(promiseObj);
-  JS::AutoValueArray<2> callbacks(aCx);
-  callbacks[0].setUndefined();
-  if (aRejectCallback) {
-    callbacks[1].setObject(*aRejectCallback->Callable());
-    
-    if (!MaybeWrapObjectValue(aCx, callbacks[1])) {
-      aRv.NoteJSContextException();
-      return;
-    }
-  } else {
-    callbacks[1].setNull();
-  }
-  if (!JS_CallFunctionName(aCx, promiseObj, "then", callbacks, aRetval)) {
-    aRv.NoteJSContextException();
-  }
+  RefPtr<AnyCallback> resolveCb;
+  return Then(aCx, resolveCb, aRejectCallback, aRv);
 }
 
 
@@ -1486,319 +954,24 @@ NS_INTERFACE_MAP_END
 
 NS_IMPL_CYCLE_COLLECTION(AllResolveElementFunction, mCountdownHolder)
 
-static const JSClass PromiseAllDataHolderClass = {
-  "PromiseAllDataHolder", JSCLASS_HAS_RESERVED_SLOTS(3)
-};
-
-
-#define DATA_HOLDER_REMAINING_ELEMENTS_SLOT 0
-#define DATA_HOLDER_VALUES_ARRAY_SLOT 1
-#define DATA_HOLDER_RESOLVE_FUNCTION_SLOT 2
-
-
-
-
-#define RESOLVE_ELEMENT_INDEX_SLOT 0
-
-
-#define RESOLVE_ELEMENT_DATA_HOLDER_SLOT 1
-
-static bool
-PromiseAllResolveElement(JSContext* aCx, unsigned aArgc, JS::Value* aVp)
+ already_AddRefed<Promise>
+Promise::All(const GlobalObject& aGlobal,
+             const Sequence<JS::Value>& aIterable, ErrorResult& aRv)
 {
-  
-  
-  
-  
-  
-  JS::CallArgs args = CallArgsFromVp(aArgc, aVp);
-
-  
-  int32_t index =
-    js::GetFunctionNativeReserved(&args.callee(),
-                                  RESOLVE_ELEMENT_INDEX_SLOT).toInt32();
-  
-  if (index == INT32_MIN) {
-    args.rval().setUndefined();
-    return true;
-  }
-
-  
-  js::SetFunctionNativeReserved(&args.callee(),
-                                RESOLVE_ELEMENT_INDEX_SLOT,
-                                JS::Int32Value(INT32_MIN));
-
-  
-
-  
-  JS::Rooted<JSObject*> dataHolder(aCx,
-    &js::GetFunctionNativeReserved(&args.callee(),
-                                   RESOLVE_ELEMENT_DATA_HOLDER_SLOT).toObject());
-
-  JS::Rooted<JS::Value> values(aCx,
-    js::GetReservedSlot(dataHolder, DATA_HOLDER_VALUES_ARRAY_SLOT));
-
-  
-  JS::Rooted<JS::Value> resolveFunc(aCx,
-    js::GetReservedSlot(dataHolder, DATA_HOLDER_RESOLVE_FUNCTION_SLOT));
-
-  
-  int32_t remainingElements =
-    js::GetReservedSlot(dataHolder, DATA_HOLDER_REMAINING_ELEMENTS_SLOT).toInt32();
-
-  
-  JS::Rooted<JSObject*> valuesObj(aCx, &values.toObject());
-  if (!JS_DefineElement(aCx, valuesObj, index, args.get(0), JSPROP_ENUMERATE)) {
-    return false;
-  }
-
-  
-  remainingElements -= 1;
-  js::SetReservedSlot(dataHolder, DATA_HOLDER_REMAINING_ELEMENTS_SLOT,
-                      JS::Int32Value(remainingElements));
-
-  
-  if (remainingElements == 0) {
-    return JS::Call(aCx, JS::UndefinedHandleValue, resolveFunc,
-                    JS::HandleValueArray(values), args.rval());
-  }
-
-  
-  args.rval().setUndefined();
-  return true;
-}
-
-
- void
-Promise::All(const GlobalObject& aGlobal, JS::Handle<JS::Value> aThisv,
-             JS::Handle<JS::Value> aIterable,
-             JS::MutableHandle<JS::Value> aRetval, ErrorResult& aRv)
-{
-  
-  nsCOMPtr<nsIGlobalObject> global =
-    do_QueryInterface(aGlobal.GetAsSupports());
-  if (!global) {
-    aRv.Throw(NS_ERROR_UNEXPECTED);
-    return;
-  }
-
   JSContext* cx = aGlobal.Context();
 
-  
-  
+  nsTArray<RefPtr<Promise>> promiseList;
 
-  
-  PromiseCapability capability(cx);
-  NewPromiseCapability(cx, global, aThisv, true, capability, aRv);
-  
-  if (aRv.Failed()) {
-    return;
+  for (uint32_t i = 0; i < aIterable.Length(); ++i) {
+    JS::Rooted<JS::Value> value(cx, aIterable.ElementAt(i));
+    RefPtr<Promise> nextPromise = Promise::Resolve(aGlobal, value, aRv);
+
+    MOZ_ASSERT(!aRv.Failed());
+
+    promiseList.AppendElement(Move(nextPromise));
   }
 
-  MOZ_ASSERT(aThisv.isObject(), "How did NewPromiseCapability succeed?");
-  JS::Rooted<JSObject*> constructorObj(cx, &aThisv.toObject());
-
-  
-  
-  
-  aRetval.set(capability.PromiseValue());
-  if (!MaybeWrapValue(cx, aRetval)) {
-    aRv.NoteJSContextException();
-    return;
-  }
-
-  
-  
-  
-  JS::AutoValueArray<2> callbackFunctions(cx);
-  callbackFunctions[1].set(capability.mReject);
-
-  
-  JS::ForOfIterator iter(cx);
-  if (!iter.init(aIterable, JS::ForOfIterator::AllowNonIterable)) {
-    capability.RejectWithException(cx, aRv);
-    return;
-  }
-
-  if (!iter.valueIsIterable()) {
-    ThrowErrorMessage(cx, MSG_PROMISE_ARG_NOT_ITERABLE,
-                      "Argument of Promise.all");
-    capability.RejectWithException(cx, aRv);
-    return;
-  }
-
-  
-  
-
-  
-  
-  
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  JS::Rooted<JSObject*> dataHolder(cx);
-  dataHolder = JS_NewObjectWithGivenProto(cx, &PromiseAllDataHolderClass,
-                                          nullptr);
-  if (!dataHolder) {
-    capability.RejectWithException(cx, aRv);
-    return;
-  }
-
-  JS::Rooted<JSObject*> reflectorGlobal(cx, global->GetGlobalJSObject());
-  JS::Rooted<JSObject*> valuesArray(cx);
-  { 
-    JSAutoCompartment ac(cx, reflectorGlobal);
-    valuesArray = JS_NewArrayObject(cx, 0);
-  }
-  if (!valuesArray) {
-    
-    
-    capability.RejectWithException(cx, aRv);
-    return;
-  }
-
-  
-  
-  JS::Rooted<JS::Value> valuesArrayVal(cx, JS::ObjectValue(*valuesArray));
-  if (!MaybeWrapObjectValue(cx, &valuesArrayVal)) {
-    capability.RejectWithException(cx, aRv);
-    return;
-  }
-
-  js::SetReservedSlot(dataHolder, DATA_HOLDER_REMAINING_ELEMENTS_SLOT,
-                      JS::Int32Value(1));
-  js::SetReservedSlot(dataHolder, DATA_HOLDER_VALUES_ARRAY_SLOT,
-                      valuesArrayVal);
-  js::SetReservedSlot(dataHolder, DATA_HOLDER_RESOLVE_FUNCTION_SLOT,
-                      capability.mResolve);
-
-  
-  CheckedInt32 index = 0;
-
-  
-  JS::Rooted<JS::Value> nextValue(cx);
-  while (true) {
-    bool done;
-    
-    if (!iter.next(&nextValue, &done)) {
-      capability.RejectWithException(cx, aRv);
-      return;
-    }
-
-    
-    if (done) {
-      int32_t remainingCount =
-        js::GetReservedSlot(dataHolder,
-                            DATA_HOLDER_REMAINING_ELEMENTS_SLOT).toInt32();
-      remainingCount -= 1;
-      if (remainingCount == 0) {
-        JS::Rooted<JS::Value> ignored(cx);
-        if (!JS::Call(cx, JS::UndefinedHandleValue, capability.mResolve,
-                      JS::HandleValueArray(valuesArrayVal), &ignored)) {
-          capability.RejectWithException(cx, aRv);
-        }
-        return;
-      }
-      js::SetReservedSlot(dataHolder, DATA_HOLDER_REMAINING_ELEMENTS_SLOT,
-                          JS::Int32Value(remainingCount));
-      
-      return;
-    }
-
-    
-    { 
-      
-      
-      JSAutoCompartment ac(cx, valuesArray);
-      if (!JS_DefineElement(cx, valuesArray, index.value(),
-                            JS::UndefinedHandleValue, JSPROP_ENUMERATE)) {
-        
-        
-        
-        JSAutoCompartment ac2(cx, &capability.mReject.toObject());
-        capability.RejectWithException(cx, aRv);
-        return;
-      }
-    }
-
-    
-    
-    
-    JS::Rooted<JS::Value> nextPromise(cx);
-    if (!JS_CallFunctionName(cx, constructorObj, "resolve",
-                             JS::HandleValueArray(nextValue),
-                             &nextPromise)) {
-      
-      capability.RejectWithException(cx, aRv);
-      return;
-    }
-
-    
-    JS::Rooted<JSObject*> resolveElement(cx);
-    JSFunction* resolveFunc =
-      js::NewFunctionWithReserved(cx, PromiseAllResolveElement,
-                                  1 , 0 , nullptr);
-    if (!resolveFunc) {
-      capability.RejectWithException(cx, aRv);
-      return;
-    }
-
-    resolveElement = JS_GetFunctionObject(resolveFunc);
-    
-    js::SetFunctionNativeReserved(resolveElement,
-                                  RESOLVE_ELEMENT_INDEX_SLOT,
-                                  JS::Int32Value(index.value()));
-    js::SetFunctionNativeReserved(resolveElement,
-                                  RESOLVE_ELEMENT_DATA_HOLDER_SLOT,
-                                  JS::ObjectValue(*dataHolder));
-
-    
-    int32_t remainingElements =
-      js::GetReservedSlot(dataHolder, DATA_HOLDER_REMAINING_ELEMENTS_SLOT).toInt32();
-    js::SetReservedSlot(dataHolder, DATA_HOLDER_REMAINING_ELEMENTS_SLOT,
-                        JS::Int32Value(remainingElements + 1));
-
-    
-    
-    callbackFunctions[0].setObject(*resolveElement);
-    JS::Rooted<JSObject*> nextPromiseObj(cx);
-    JS::Rooted<JS::Value> ignored(cx);
-    if (!JS_ValueToObject(cx, nextPromise, &nextPromiseObj) ||
-        !JS_CallFunctionName(cx, nextPromiseObj, "then", callbackFunctions,
-                             &ignored)) {
-      
-      capability.RejectWithException(cx, aRv);
-    }
-
-    
-    index += 1;
-    if (!index.isValid()) {
-      
-      aRv.Throw(NS_ERROR_OUT_OF_MEMORY);
-      capability.RejectWithException(cx, aRv);
-    }
-  }
+  return Promise::All(aGlobal, promiseList, aRv);
 }
 
  already_AddRefed<Promise>
@@ -1856,115 +1029,47 @@ Promise::All(const GlobalObject& aGlobal,
   return promise.forget();
 }
 
- void
-Promise::Race(const GlobalObject& aGlobal, JS::Handle<JS::Value> aThisv,
-              JS::Handle<JS::Value> aIterable, JS::MutableHandle<JS::Value> aRetval,
-              ErrorResult& aRv)
+ already_AddRefed<Promise>
+Promise::Race(const GlobalObject& aGlobal,
+              const Sequence<JS::Value>& aIterable, ErrorResult& aRv)
 {
-  
   nsCOMPtr<nsIGlobalObject> global =
     do_QueryInterface(aGlobal.GetAsSupports());
   if (!global) {
     aRv.Throw(NS_ERROR_UNEXPECTED);
-    return;
+    return nullptr;
   }
 
   JSContext* cx = aGlobal.Context();
 
-  
-  
-  PromiseCapability capability(cx);
+  JS::Rooted<JSObject*> obj(cx, JS::CurrentGlobalOrNull(cx));
+  if (!obj) {
+    aRv.Throw(NS_ERROR_UNEXPECTED);
+    return nullptr;
+  }
 
-  
-  NewPromiseCapability(cx, global, aThisv, true, capability, aRv);
-  
+  RefPtr<Promise> promise = Create(global, aRv);
   if (aRv.Failed()) {
-    return;
+    return nullptr;
   }
 
-  MOZ_ASSERT(aThisv.isObject(), "How did NewPromiseCapability succeed?");
-  JS::Rooted<JSObject*> constructorObj(cx, &aThisv.toObject());
+  RefPtr<PromiseCallback> resolveCb =
+    new ResolvePromiseCallback(promise, obj);
 
-  
-  
-  
-  aRetval.set(capability.PromiseValue());
-  if (!MaybeWrapValue(cx, aRetval)) {
-    aRv.NoteJSContextException();
-    return;
+  RefPtr<PromiseCallback> rejectCb = new RejectPromiseCallback(promise, obj);
+
+  for (uint32_t i = 0; i < aIterable.Length(); ++i) {
+    JS::Rooted<JS::Value> value(cx, aIterable.ElementAt(i));
+    RefPtr<Promise> nextPromise = Promise::Resolve(aGlobal, value, aRv);
+    
+    
+    
+    
+    MOZ_ASSERT(!aRv.Failed());
+    nextPromise->AppendCallbacks(resolveCb, rejectCb);
   }
 
-  
-  JS::AutoValueArray<2> callbackFunctions(cx);
-  callbackFunctions[0].set(capability.mResolve);
-  callbackFunctions[1].set(capability.mReject);
-
-  
-  JS::ForOfIterator iter(cx);
-  if (!iter.init(aIterable, JS::ForOfIterator::AllowNonIterable)) {
-    capability.RejectWithException(cx, aRv);
-    return;
-  }
-
-  if (!iter.valueIsIterable()) {
-    ThrowErrorMessage(cx, MSG_PROMISE_ARG_NOT_ITERABLE,
-                      "Argument of Promise.race");
-    capability.RejectWithException(cx, aRv);
-    return;
-  }
-
-  
-  
-
-  
-  
-  
-  JS::Rooted<JS::Value> nextValue(cx);
-  while (true) {
-    bool done;
-    
-    if (!iter.next(&nextValue, &done)) {
-      capability.RejectWithException(cx, aRv);
-      return;
-    }
-
-    
-    if (done) {
-      
-      return;
-    }
-
-    
-    
-    
-    JS::Rooted<JS::Value> nextPromise(cx);
-    if (!JS_CallFunctionName(cx, constructorObj, "resolve",
-                             JS::HandleValueArray(nextValue), &nextPromise)) {
-      
-      capability.RejectWithException(cx, aRv);
-      return;
-    }
-
-    
-    
-    JS::Rooted<JSObject*> nextPromiseObj(cx);
-    JS::Rooted<JS::Value> ignored(cx);
-    if (!JS_ValueToObject(cx, nextPromise, &nextPromiseObj) ||
-        !JS_CallFunctionName(cx, nextPromiseObj, "then", callbackFunctions,
-                             &ignored)) {
-      
-      capability.RejectWithException(cx, aRv);
-    }
-  }
-}
-
-
-bool
-Promise::PromiseSpecies(JSContext* aCx, unsigned aArgc, JS::Value* aVp)
-{
-  JS::CallArgs args = CallArgsFromVp(aArgc, aVp);
-  args.rval().set(args.thisv());
-  return true;
+  return promise.forget();
 }
 
 void
@@ -2187,15 +1292,25 @@ Promise::ResolveInternal(JSContext* aCx,
       
       
       
-      
-      
-      
-      
-      
-      
-      
-      
-      
+      Promise* nextPromise;
+      if (PromiseBinding::IsThenMethod(thenObj) &&
+          NS_SUCCEEDED(UNWRAP_OBJECT(Promise, valueObj, nextPromise))) {
+        
+        
+        
+        
+        
+        
+        
+        
+        JS::Rooted<JSObject*> glob(aCx, GlobalJSObject());
+        RefPtr<PromiseCallback> resolveCb = new ResolvePromiseCallback(this, glob);
+        RefPtr<PromiseCallback> rejectCb = new RejectPromiseCallback(this, glob);
+        RefPtr<FastPromiseResolveThenableJob> task =
+          new FastPromiseResolveThenableJob(resolveCb, rejectCb, nextPromise);
+        DispatchToMicroTask(task);
+        return;
+      }
 
       RefPtr<PromiseInit> thenCallback =
         new PromiseInit(nullptr, thenObj, mozilla::dom::GetIncumbentGlobal());

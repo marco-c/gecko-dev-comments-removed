@@ -47,11 +47,6 @@ public:
 
 
 
-
-
-
-
-
 class WrapperPromiseCallback final : public PromiseCallback
 {
 public:
@@ -62,30 +57,18 @@ public:
   nsresult Call(JSContext* aCx,
                 JS::Handle<JS::Value> aValue) override;
 
-  Promise* GetDependentPromise() override;
+  Promise* GetDependentPromise() override
+  {
+    return mNextPromise;
+  }
 
-  
   WrapperPromiseCallback(Promise* aNextPromise, JS::Handle<JSObject*> aGlobal,
                          AnyCallback* aCallback);
-
-  
-  WrapperPromiseCallback(JS::Handle<JSObject*> aGlobal,
-                         AnyCallback* aCallback,
-                         JS::Handle<JSObject*> mNextPromiseObj,
-                         AnyCallback* aResolveFunc,
-                         AnyCallback* aRejectFunc);
 
 private:
   ~WrapperPromiseCallback();
 
-  
-  
   RefPtr<Promise> mNextPromise;
-  
-  
-  JS::Heap<JSObject*> mNextPromiseObj;
-  RefPtr<AnyCallback> mResolveFunc;
-  RefPtr<AnyCallback> mRejectFunc;
   JS::Heap<JSObject*> mGlobal;
   RefPtr<AnyCallback> mCallback;
 };
@@ -140,32 +123,6 @@ private:
 
   RefPtr<Promise> mPromise;
   JS::Heap<JSObject*> mGlobal;
-};
-
-
-
-class InvokePromiseFuncCallback final : public PromiseCallback
-{
-public:
-  NS_DECL_ISUPPORTS_INHERITED
-  NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS_INHERITED(InvokePromiseFuncCallback,
-                                                         PromiseCallback)
-
-  nsresult Call(JSContext* aCx,
-                JS::Handle<JS::Value> aValue) override;
-
-  Promise* GetDependentPromise() override;
-
-  InvokePromiseFuncCallback(JS::Handle<JSObject*> aGlobal,
-                            JS::Handle<JSObject*> aNextPromiseObj,
-                            AnyCallback* aPromiseFunc);
-
-private:
-  ~InvokePromiseFuncCallback();
-
-  JS::Heap<JSObject*> mGlobal;
-  JS::Heap<JSObject*> mNextPromiseObj;
-  RefPtr<AnyCallback> mPromiseFunc;
 };
 
 
