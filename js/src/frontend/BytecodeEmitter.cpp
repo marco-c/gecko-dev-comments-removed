@@ -2111,9 +2111,24 @@ BytecodeEmitter::checkSideEffects(ParseNode* pn, bool* answer)
       case PNK_TYPEOFEXPR:
       case PNK_VOID:
       case PNK_NOT:
-      case PNK_COMPUTED_NAME:
         MOZ_ASSERT(pn->isArity(PN_UNARY));
         return checkSideEffects(pn->pn_kid, answer);
+
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      case PNK_COMPUTED_NAME:
+        MOZ_ASSERT(pn->isArity(PN_UNARY));
+        *answer = true;
+        return true;
 
       
       case PNK_TYPEOFNAME:
