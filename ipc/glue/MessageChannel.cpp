@@ -799,11 +799,22 @@ MessageChannel::ProcessPendingRequests(int seqno, int transaction)
 
     
     for (;;) {
+        
+        
+        
+        
+        
+        if (WasTransactionCanceled(transaction)) {
+            return;
+        }
+
         mozilla::Vector<Message> toProcess;
 
         for (MessageQueue::iterator it = mPending.begin(); it != mPending.end(); ) {
             Message &msg = *it;
 
+            MOZ_ASSERT(mCurrentTransaction == transaction,
+                       "Calling ShouldDeferMessage when cancelled");
             bool defer = ShouldDeferMessage(msg);
 
             
@@ -828,15 +839,6 @@ MessageChannel::ProcessPendingRequests(int seqno, int transaction)
 
         for (auto it = toProcess.begin(); it != toProcess.end(); it++)
             ProcessPendingRequest(*it);
-
-        
-        
-        
-        
-        
-        if (WasTransactionCanceled(transaction)) {
-            return;
-        }
     }
 }
 
@@ -1015,12 +1017,15 @@ MessageChannel::Send(Message* aMsg, Message* aReply)
         
         bool canTimeOut = transaction == seqno;
         if (maybeTimedOut && canTimeOut && !ShouldContinueFromTimeout()) {
-            IPC_LOG("Timing out Send: xid=%d", transaction);
-
             
             
             
             
+            if (WasTransactionCanceled(transaction)) {
+                IPC_LOG("Other side canceled seqno=%d, xid=%d", seqno, transaction);
+                mLastSendError = SyncSendError::CancelledAfterSend;
+                return false;
+            }
             if (mRecvdErrors) {
                 mRecvdErrors--;
                 mLastSendError = SyncSendError::ReplyError;
