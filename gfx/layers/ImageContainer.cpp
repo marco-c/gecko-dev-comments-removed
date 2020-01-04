@@ -637,13 +637,6 @@ SourceSurfaceImage::GetTextureClient(CompositableClient *aClient)
     return nullptr;
   }
 
-
-
-
-#ifndef XP_WIN
-
-
-
 #ifdef MOZ_WIDGET_GONK
   RefPtr<TextureClientRecycleAllocator> recycler =
     aClient->GetTextureClientRecycler();
@@ -654,8 +647,6 @@ SourceSurfaceImage::GetTextureClient(CompositableClient *aClient)
                                 BackendSelector::Content,
                                 aClient->GetTextureFlags());
   }
-#endif
-
 #endif
   if (!textureClient) {
     
