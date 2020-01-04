@@ -295,6 +295,10 @@ js::gc::GCRuntime::traceRuntimeForMinorGC(JSTracer* trc, AutoLockForExclusiveAcc
     
     
     gcstats::AutoPhase ap(stats, gcstats::PHASE_MARK_ROOTS);
+
+    
+    jit::JitRuntime::MarkJitcodeGlobalTableUnconditionally(trc);
+
     traceRuntimeCommon(trc, TraceRuntime, lock);
 }
 
@@ -361,10 +365,6 @@ js::gc::GCRuntime::traceRuntimeCommon(JSTracer* trc, TraceOrMarkRuntime traceOrM
             jit::JitRuntime::Mark(trc, lock);
         }
     }
-
-    
-    if (rt->isHeapMinorCollecting())
-        jit::JitRuntime::MarkJitcodeGlobalTableUnconditionally(trc);
 
     
     
