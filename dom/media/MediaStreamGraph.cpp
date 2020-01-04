@@ -349,6 +349,8 @@ MediaStreamGraphImpl::UpdateStreamOrder()
       }
     }
   }
+  
+  
 
   if (!audioTrackPresent && mRealtime &&
       CurrentDriver()->AsAudioCallbackDriver()) {
@@ -356,7 +358,6 @@ MediaStreamGraphImpl::UpdateStreamOrder()
     if (CurrentDriver()->AsAudioCallbackDriver()->IsStarted()) {
       if (mLifecycleState == LIFECYCLE_RUNNING) {
         SystemClockDriver* driver = new SystemClockDriver(this);
-        mMixer.RemoveCallback(CurrentDriver()->AsAudioCallbackDriver());
         CurrentDriver()->SwitchAtNextIteration(driver);
       }
     }
@@ -374,7 +375,6 @@ MediaStreamGraphImpl::UpdateStreamOrder()
     MonitorAutoLock mon(mMonitor);
     if (mLifecycleState == LIFECYCLE_RUNNING) {
       AudioCallbackDriver* driver = new AudioCallbackDriver(this);
-      mMixer.AddCallback(driver);
       CurrentDriver()->SwitchAtNextIteration(driver);
     }
   }
@@ -640,7 +640,6 @@ MediaStreamGraphImpl::CreateOrDestroyAudioStreams(MediaStream* aStream)
         MonitorAutoLock mon(mMonitor);
         if (mLifecycleState == LIFECYCLE_RUNNING) {
           AudioCallbackDriver* driver = new AudioCallbackDriver(this);
-          mMixer.AddCallback(driver);
           CurrentDriver()->SwitchAtNextIteration(driver);
         }
       }
@@ -927,16 +926,25 @@ void
 MediaStreamGraphImpl::OpenAudioInputImpl(CubebUtils::AudioDeviceID aID,
                                          AudioDataListener *aListener)
 {
+ 
   MOZ_ASSERT(!mInputWanted);
-  mInputWanted = true;
-  mInputDeviceID = aID;
-  
-  if (CurrentDriver()->AsAudioCallbackDriver()) {
-    CurrentDriver()->SetInputListener(aListener);
-  } else {
+  if (mInputWanted) {
     
+    
+    return;
   }
+  mInputWanted = true;
+  
+  
+  mInputDeviceID = aID;
   mAudioInputs.AppendElement(aListener); 
+
+  
+  MonitorAutoLock mon(mMonitor);
+  if (mLifecycleState == LIFECYCLE_RUNNING) {
+    AudioCallbackDriver* driver = new AudioCallbackDriver(this);
+    CurrentDriver()->SwitchAtNextIteration(driver);
+  }
 }
 
 nsresult
@@ -947,7 +955,7 @@ MediaStreamGraphImpl::OpenAudioInput(CubebUtils::AudioDeviceID aID,
   if (!NS_IsMainThread()) {
     NS_DispatchToMainThread(WrapRunnable(this,
                                          &MediaStreamGraphImpl::OpenAudioInput,
-                                         aID, aListener)); 
+                                         aID, aListener));
     return NS_OK;
   }
   class Message : public ControlMessage {
@@ -960,6 +968,8 @@ MediaStreamGraphImpl::OpenAudioInput(CubebUtils::AudioDeviceID aID,
       mGraph->OpenAudioInputImpl(mID, mListener);
     }
     MediaStreamGraphImpl *mGraph;
+    
+    
     CubebUtils::AudioDeviceID mID;
     RefPtr<AudioDataListener> mListener;
   };
@@ -973,8 +983,40 @@ MediaStreamGraphImpl::CloseAudioInputImpl(AudioDataListener *aListener)
   mInputDeviceID = nullptr;
   mInputWanted = false;
   CurrentDriver()->RemoveInputListener(aListener);
-  
   mAudioInputs.RemoveElement(aListener);
+
+  
+  bool audioTrackPresent = false;
+  for (uint32_t i = 0; i < mStreams.Length(); ++i) {
+    MediaStream* stream = mStreams[i];
+    
+    if (stream->AsAudioNodeStream()) {
+      audioTrackPresent = true;
+    } else if (CurrentDriver()->AsAudioCallbackDriver()) {
+      
+      for (StreamBuffer::TrackIter tracks(stream->GetStreamBuffer(), MediaSegment::AUDIO);
+           !tracks.IsEnded(); tracks.Next()) {
+        audioTrackPresent = true;
+      }
+    }
+  }
+
+  MonitorAutoLock mon(mMonitor);
+  if (mLifecycleState == LIFECYCLE_RUNNING) {
+    GraphDriver* driver;
+    if (audioTrackPresent) {
+      
+      STREAM_LOG(LogLevel::Debug, ("CloseInput: output present (AudioCallback)"));
+
+      driver = new AudioCallbackDriver(this);
+      CurrentDriver()->SwitchAtNextIteration(driver);
+    } else if (CurrentDriver()->AsAudioCallbackDriver()) {
+      STREAM_LOG(LogLevel::Debug, ("CloseInput: no output present (SystemClockCallback)"));
+
+      driver = new SystemClockDriver(this);
+      CurrentDriver()->SwitchAtNextIteration(driver);
+    } 
+  }
 }
 
 void
@@ -1263,25 +1305,6 @@ MediaStreamGraphImpl::Process()
 
   if (CurrentDriver()->AsAudioCallbackDriver() && ticksPlayed) {
     mMixer.FinishMixing();
-  }
-
-  
-  
-  bool switching = false;
-  {
-    MonitorAutoLock lock(mMonitor);
-    switching = CurrentDriver()->Switching();
-  }
-  if (CurrentDriver()->AsAudioCallbackDriver() &&
-      switching) {
-    bool isStarted;
-    {
-      MonitorAutoLock mon(mMonitor);
-      isStarted = CurrentDriver()->AsAudioCallbackDriver()->IsStarted();
-    }
-    if (isStarted) {
-      mMixer.RemoveCallback(CurrentDriver()->AsAudioCallbackDriver());
-    }
   }
 
   if (!allBlockedForever) {
@@ -2754,7 +2777,6 @@ MediaStreamGraphImpl::MediaStreamGraphImpl(GraphDriverType aDriverRequested,
     if (aDriverRequested == AUDIO_THREAD_DRIVER) {
       AudioCallbackDriver* driver = new AudioCallbackDriver(this);
       mDriver = driver;
-      mMixer.AddCallback(driver);
     } else {
       mDriver = new SystemClockDriver(this);
     }
@@ -3160,7 +3182,6 @@ MediaStreamGraphImpl::ApplyAudioContextOperationImpl(
         driver = nextDriver->AsAudioCallbackDriver();
       } else {
         driver = new AudioCallbackDriver(this);
-        mMixer.AddCallback(driver);
         MonitorAutoLock lock(mMonitor);
         CurrentDriver()->SwitchAtNextIteration(driver);
       }
@@ -3199,7 +3220,6 @@ MediaStreamGraphImpl::ApplyAudioContextOperationImpl(
         MOZ_ASSERT(!nextDriver->AsAudioCallbackDriver());
       } else {
         driver = new SystemClockDriver(this);
-        mMixer.RemoveCallback(CurrentDriver()->AsAudioCallbackDriver());
         MonitorAutoLock lock(mMonitor);
         CurrentDriver()->SwitchAtNextIteration(driver);
       }
