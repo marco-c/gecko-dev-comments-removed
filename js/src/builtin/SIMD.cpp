@@ -715,24 +715,34 @@ struct Or {
 
 
 
+
+
+
+
+
+
 template<typename T>
 struct ShiftLeft {
     static T apply(T v, int32_t bits) {
-        return uint32_t(bits) >= sizeof(T) * 8 ? 0 : v << bits;
+        typedef typename mozilla::MakeUnsigned<T>::Type UnsignedT;
+        uint32_t maskedBits = uint32_t(bits) % (sizeof(T) * 8);
+        return UnsignedT(v) << maskedBits;
     }
 };
 template<typename T>
 struct ShiftRightArithmetic {
     static T apply(T v, int32_t bits) {
         typedef typename mozilla::MakeSigned<T>::Type SignedT;
-        uint32_t maxBits = sizeof(T) * 8;
-        return SignedT(v) >> (uint32_t(bits) >= maxBits ? maxBits - 1 : bits);
+        uint32_t maskedBits = uint32_t(bits) % (sizeof(T) * 8);
+        return SignedT(v) >> maskedBits;
     }
 };
 template<typename T>
 struct ShiftRightLogical {
     static T apply(T v, int32_t bits) {
-        return uint32_t(bits) >= sizeof(T) * 8 ? 0 : uint32_t(v) >> bits;
+        typedef typename mozilla::MakeUnsigned<T>::Type UnsignedT;
+        uint32_t maskedBits = uint32_t(bits) % (sizeof(T) * 8);
+        return UnsignedT(v) >> maskedBits;
     }
 };
 

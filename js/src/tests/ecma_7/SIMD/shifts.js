@@ -14,68 +14,68 @@ var Uint32x4 = SIMD.Uint32x4;
 
 
 function lsh8(a, b) {
-    return (b >>> 0) >= 8 ? 0 : (a << b) << 24 >> 24;
+    return (a << (b & 7)) << 24 >> 24;
 }
 function rsha8(a, b) {
-    return (a >> Math.min(b >>> 0, 7)) << 24 >> 24;
+    return (a >> (b & 7)) << 24 >> 24;
 }
 function rshl8(a, b) {
-    return (b >>> 0) >= 8 ? 0 : (a >>> b) << 24 >> 24;
+    return (a >>> (b & 7)) << 24 >> 24;
 }
 
 
 function lsh16(a, b) {
-    return (b >>> 0) >= 16 ? 0 : (a << b) << 16 >> 16;
+    return (a << (b & 15)) << 16 >> 16;
 }
 function rsha16(a, b) {
-    return (a >> Math.min(b >>> 0, 15)) << 16 >> 16;
+    return (a >> (b & 15)) << 16 >> 16;
 }
 function rshl16(a, b) {
-    return (b >>> 0) >= 16 ? 0 : (a >>> b) << 16 >> 16;
+    return (a >>> (b & 15)) << 16 >> 16;
 }
 
 
 function lsh32(a, b) {
-    return (b >>> 0) >= 32 ? 0 : (a << b) | 0;
+    return (a << (b & 31)) | 0;
 }
 function rsha32(a, b) {
-    return (a >> Math.min(b >>> 0, 31)) | 0;
+    return (a >> (b & 31)) | 0;
 }
 function rshl32(a, b) {
-    return (b >>> 0) >= 32 ? 0 : (a >>> b) | 0;
+    return (a >>> (b & 31)) | 0;
 }
 
 
 function ulsh8(a, b) {
-    return (b >>> 0) >= 8 ? 0 : (a << b) << 24 >>> 24;
+    return (a << (b & 7)) << 24 >>> 24;
 }
 function ursha8(a, b) {
-    return ((a << 24 >> 24) >> Math.min(b >>> 0, 7)) << 24 >>> 24;
+    return ((a << 24 >> 24) >> (b & 7)) << 24 >>> 24;
 }
 function urshl8(a, b) {
-    return (b >>> 0) >= 8 ? 0 : (a >>> b) << 24 >>> 24;
+    return (a >>> (b & 7)) << 24 >>> 24;
 }
 
 
 function ulsh16(a, b) {
-    return (b >>> 0) >= 16 ? 0 : (a << b) << 16 >>> 16;
+    return (a << (b & 15)) << 16 >>> 16;
 }
 function ursha16(a, b) {
-    return ((a << 16 >> 16) >> Math.min(b >>> 0, 15)) << 16 >>> 16;
+    return ((a << 16 >> 16) >> (b & 15)) << 16 >>> 16;
 }
 function urshl16(a, b) {
-    return (b >>> 0) >= 16 ? 0 : (a >>> b) << 16 >>> 16;
+    return (a >>> (b & 15)) << 16 >>> 16;
 }
 
 
 function ulsh32(a, b) {
-    return (b >>> 0) >= 32 ? 0 : (a << b) >>> 0;
+    return (a << (b & 31)) >>> 0;
 }
 function ursha32(a, b) {
-    return ((a | 0) >> Math.min(b >>> 0, 31)) >>> 0;
+    return ((a | 0) >> (b & 31)) >>> 0;
 }
 function urshl32(a, b) {
-    return (b >>> 0) >= 32 ? 0 : (a >>> b) >>> 0;
+    return (a >>> (b & 31)) >>> 0;
 }
 
 function test() {

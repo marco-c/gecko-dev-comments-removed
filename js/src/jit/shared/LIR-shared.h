@@ -578,19 +578,26 @@ class LSimdBinaryBitwiseX4 : public LInstructionHelper<1, 2, 0>
     }
 };
 
-class LSimdShift : public LInstructionHelper<1, 2, 0>
+
+
+
+class LSimdShift : public LInstructionHelper<1, 2, 1>
 {
   public:
     LIR_HEADER(SimdShift)
-    LSimdShift(const LAllocation& vec, const LAllocation& val) {
+    LSimdShift(const LAllocation& vec, const LAllocation& val, const LDefinition& temp) {
         setOperand(0, vec);
         setOperand(1, val);
+        setTemp(0, temp);
     }
     const LAllocation* vector() {
         return getOperand(0);
     }
     const LAllocation* value() {
         return getOperand(1);
+    }
+    const LDefinition* temp() {
+        return getTemp(0);
     }
     MSimdShift::Operation operation() const {
         return mir_->toSimdShift()->operation();
