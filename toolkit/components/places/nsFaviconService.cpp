@@ -12,6 +12,7 @@
 
 
 
+
 #include "nsFaviconService.h"
 
 #include "nsNavHistory.h"
@@ -435,18 +436,6 @@ nsFaviconService::GetFaviconLinkForIcon(nsIURI* aFaviconURI,
 }
 
 
-static PLDHashOperator
-ExpireFailedFaviconsCallback(nsCStringHashKey::KeyType aKey,
-                             uint32_t& aData,
-                             void* userArg)
-{
-  uint32_t* threshold = reinterpret_cast<uint32_t*>(userArg);
-  if (aData < *threshold)
-    return PL_DHASH_REMOVE;
-  return PL_DHASH_NEXT;
-}
-
-
 NS_IMETHODIMP
 nsFaviconService::AddFailedFavicon(nsIURI* aFaviconURI)
 {
@@ -464,7 +453,11 @@ nsFaviconService::AddFailedFavicon(nsIURI* aFaviconURI)
     
     uint32_t threshold = mFailedFaviconSerial -
                          MAX_FAILED_FAVICONS + FAVICON_CACHE_REDUCE_COUNT;
-    mFailedFavicons.Enumerate(ExpireFailedFaviconsCallback, &threshold);
+    for (auto iter = mFailedFavicons.Iter(); !iter.Done(); iter.Next()) {
+      if (iter.Data() < threshold) {
+        iter.Remove();
+      }
+    }
   }
   return NS_OK;
 }
