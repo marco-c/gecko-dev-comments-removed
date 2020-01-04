@@ -94,7 +94,7 @@ public:
                                  InlineMinISizeData* aData) override;
   virtual void AddInlinePrefISize(nsRenderingContext* aRenderingContext,
                                   InlinePrefISizeData* aData) override;
-  virtual nsSize GetMinSize(nsBoxLayoutState& aBoxLayoutState) override;
+  virtual nsSize GetXULMinSize(nsBoxLayoutState& aBoxLayoutState) override;
   virtual nsSize GetPrefSize(nsBoxLayoutState& aBoxLayoutState) override;
   virtual nsSize GetMaxSize(nsBoxLayoutState& aBoxLayoutState) override;
 

@@ -131,7 +131,7 @@ nsLeafBoxFrame::GetMinISize(nsRenderingContext *aRenderingContext)
   nsBoxLayoutState state(PresContext(), aRenderingContext);
 
   WritingMode wm = GetWritingMode();
-  LogicalSize minSize(wm, GetMinSize(state));
+  LogicalSize minSize(wm, GetXULMinSize(state));
 
   
   
@@ -249,7 +249,7 @@ nsLeafBoxFrame::Reflow(nsPresContext*   aPresContext,
 
   
   if (aReflowState.ComputedHeight() == 0) {
-    nsSize minSize = GetMinSize(state);
+    nsSize minSize = GetXULMinSize(state);
     computedSize.height = minSize.height - m.top - m.bottom;
   }
 
@@ -258,7 +258,7 @@ nsLeafBoxFrame::Reflow(nsPresContext*   aPresContext,
   
   if (computedSize.width == NS_INTRINSICSIZE || computedSize.height == NS_INTRINSICSIZE) {
      prefSize = GetPrefSize(state);
-     nsSize minSize = GetMinSize(state);
+     nsSize minSize = GetXULMinSize(state);
      nsSize maxSize = GetMaxSize(state);
      prefSize = BoundsCheck(minSize, prefSize, maxSize);
   }
@@ -353,9 +353,9 @@ nsLeafBoxFrame::GetPrefSize(nsBoxLayoutState& aState)
 }
 
  nsSize
-nsLeafBoxFrame::GetMinSize(nsBoxLayoutState& aState)
+nsLeafBoxFrame::GetXULMinSize(nsBoxLayoutState& aState)
 {
-    return nsBox::GetMinSize(aState);
+    return nsBox::GetXULMinSize(aState);
 }
 
  nsSize

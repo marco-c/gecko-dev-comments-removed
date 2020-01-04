@@ -2873,7 +2873,7 @@ public:
 
 
 
-  virtual nsSize GetMinSize(nsBoxLayoutState& aBoxLayoutState) = 0;
+  virtual nsSize GetXULMinSize(nsBoxLayoutState& aBoxLayoutState) = 0;
 
   
 

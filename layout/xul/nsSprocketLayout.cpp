@@ -321,7 +321,7 @@ nsSprocketLayout::Layout(nsIFrame* aBox, nsBoxLayoutState& aState)
         
         if (!(frameState & NS_STATE_AUTO_STRETCH)) {
            nsSize prefSize = child->GetPrefSize(aState);
-           nsSize minSize = child->GetMinSize(aState);
+           nsSize minSize = child->GetXULMinSize(aState);
            nsSize maxSize = child->GetMaxSize(aState);
            prefSize = nsBox::BoundsCheck(minSize, prefSize, maxSize);
        
@@ -462,7 +462,7 @@ nsSprocketLayout::Layout(nsIFrame* aBox, nsBoxLayoutState& aState)
       if (sizeChanged) {
         
         
-        nsSize minSize = child->GetMinSize(aState);
+        nsSize minSize = child->GetXULMinSize(aState);
         nsSize maxSize = child->GetMaxSize(aState);
         maxSize = nsBox::BoundsCheckMinMax(minSize, maxSize);
 
@@ -745,7 +745,7 @@ nsSprocketLayout::PopulateBoxSizes(nsIFrame* aBox, nsBoxLayoutState& aState, nsB
     
 
       pref = child->GetPrefSize(aState);
-      minSize = child->GetMinSize(aState);
+      minSize = child->GetXULMinSize(aState);
       maxSize = nsBox::BoundsCheckMinMax(minSize, child->GetMaxSize(aState));
       ascent = child->GetBoxAscent(aState);
       nsMargin margin;
@@ -1045,7 +1045,7 @@ nsSprocketLayout::ChildResized(nsIFrame* aBox,
             
             
 
-            nsSize min = aChild->GetMinSize(aState);            
+            nsSize min = aChild->GetXULMinSize(aState);            
             nsSize max = nsBox::BoundsCheckMinMax(min, aChild->GetMaxSize(aState));
             AddMargin(aChild, max);
 
@@ -1080,7 +1080,7 @@ nsSprocketLayout::ChildResized(nsIFrame* aBox,
       } 
       
       if (childActualWidth > childLayoutWidth) {
-            nsSize min = aChild->GetMinSize(aState);
+            nsSize min = aChild->GetXULMinSize(aState);
             nsSize max = nsBox::BoundsCheckMinMax(min, aChild->GetMaxSize(aState));
             
             AddMargin(aChild, max);
@@ -1360,7 +1360,7 @@ nsSprocketLayout::GetPrefSize(nsIFrame* aBox, nsBoxLayoutState& aState)
 }
 
 nsSize
-nsSprocketLayout::GetMinSize(nsIFrame* aBox, nsBoxLayoutState& aState)
+nsSprocketLayout::GetXULMinSize(nsIFrame* aBox, nsBoxLayoutState& aState)
 {
    nsSize minSize (0, 0);
    bool isHorizontal = IsHorizontal(aBox);
@@ -1382,7 +1382,7 @@ nsSprocketLayout::GetMinSize(nsIFrame* aBox, nsBoxLayoutState& aState)
        
       if (!child->IsCollapsed())
       {
-        nsSize min = child->GetMinSize(aState);
+        nsSize min = child->GetXULMinSize(aState);
         nsSize pref(0,0);
         
         
@@ -1452,7 +1452,7 @@ nsSprocketLayout::GetMaxSize(nsIFrame* aBox, nsBoxLayoutState& aState)
       if (!child->IsCollapsed())
       {
         
-        nsSize min = child->GetMinSize(aState);
+        nsSize min = child->GetXULMinSize(aState);
         nsSize max = nsBox::BoundsCheckMinMax(min, child->GetMaxSize(aState));
 
         AddMargin(child, max);

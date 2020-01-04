@@ -586,10 +586,10 @@ nsTextControlFrame::ReflowTextControlChild(nsIFrame*                aKid,
 }
 
 nsSize
-nsTextControlFrame::GetMinSize(nsBoxLayoutState& aState)
+nsTextControlFrame::GetXULMinSize(nsBoxLayoutState& aState)
 {
   
-  return nsBox::GetMinSize(aState);
+  return nsBox::GetXULMinSize(aState);
 }
 
 bool

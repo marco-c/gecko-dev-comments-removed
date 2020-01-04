@@ -406,13 +406,13 @@ nsBox::GetPrefSize(nsBoxLayoutState& aState)
   bool widthSet, heightSet;
   nsIFrame::AddCSSPrefSize(this, pref, widthSet, heightSet);
 
-  nsSize minSize = GetMinSize(aState);
+  nsSize minSize = GetXULMinSize(aState);
   nsSize maxSize = GetMaxSize(aState);
   return BoundsCheck(minSize, pref, maxSize);
 }
 
 nsSize
-nsBox::GetMinSize(nsBoxLayoutState& aState)
+nsBox::GetXULMinSize(nsBoxLayoutState& aState)
 {
   NS_ASSERTION(aState.GetRenderingContext(), "must have rendering context");
 
