@@ -91,6 +91,12 @@ AssertIsOnBackgroundThread()
 
 #endif 
 
+inline void
+AssertIsInMainProcess()
+{
+  MOZ_ASSERT(XRE_IsParentProcess());
+}
+
 } 
 } 
 
