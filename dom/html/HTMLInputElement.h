@@ -40,7 +40,6 @@ namespace dom {
 class Date;
 class File;
 class FileList;
-class GetFilesHelper;
 
 
 
@@ -704,8 +703,6 @@ public:
 
   already_AddRefed<Promise> GetFilesAndDirectories(ErrorResult& aRv);
 
-  already_AddRefed<Promise> GetFiles(bool aRecursiveFlag, ErrorResult& aRv);
-
   void ChooseDirectory(ErrorResult& aRv);
 
   
@@ -1256,8 +1253,6 @@ protected:
 
   bool IsPopupBlocked() const;
 
-  void ClearGetFilesHelpers();
-
   nsCOMPtr<nsIControllers> mControllers;
 
   
@@ -1290,9 +1285,6 @@ protected:
 
 
   nsTArray<OwningFileOrDirectory> mFilesOrDirectories;
-
-  RefPtr<GetFilesHelper> mGetFilesRecursiveHelper;
-  RefPtr<GetFilesHelper> mGetFilesNonRecursiveHelper;
 
 #ifndef MOZ_CHILD_PERMISSIONS
   
