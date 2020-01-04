@@ -26,16 +26,11 @@ class MOZ_STACK_CLASS nsViewportInfo
   public:
     nsViewportInfo(const mozilla::ScreenIntSize& aDisplaySize,
                    const mozilla::CSSToScreenScale& aDefaultZoom,
-                   bool aAllowZoom,
-                   bool aAllowDoubleTapZoom) :
+                   bool aAllowZoom) :
       mDefaultZoom(aDefaultZoom),
       mAutoSize(true),
-      mAllowZoom(aAllowZoom),
-      mAllowDoubleTapZoom(aAllowDoubleTapZoom)
+      mAllowZoom(aAllowZoom)
     {
-        
-        MOZ_ASSERT(mAllowZoom || !mAllowDoubleTapZoom);
-
         mSize = mozilla::ScreenSize(aDisplaySize) / mDefaultZoom;
         mozilla::CSSToLayoutDeviceScale pixelRatio(1.0f);
         mMinZoom = pixelRatio * kViewportMinScale;
@@ -48,19 +43,14 @@ class MOZ_STACK_CLASS nsViewportInfo
                    const mozilla::CSSToScreenScale& aMaxZoom,
                    const mozilla::CSSSize& aSize,
                    bool aAutoSize,
-                   bool aAllowZoom,
-                   bool aAllowDoubleTapZoom) :
+                   bool aAllowZoom) :
                      mDefaultZoom(aDefaultZoom),
                      mMinZoom(aMinZoom),
                      mMaxZoom(aMaxZoom),
                      mSize(aSize),
                      mAutoSize(aAutoSize),
-                     mAllowZoom(aAllowZoom),
-                     mAllowDoubleTapZoom(aAllowDoubleTapZoom)
+                     mAllowZoom(aAllowZoom)
     {
-      
-      MOZ_ASSERT(mAllowZoom || !mAllowDoubleTapZoom);
-
       ConstrainViewportValues();
     }
 
@@ -73,9 +63,6 @@ class MOZ_STACK_CLASS nsViewportInfo
 
     bool IsAutoSizeEnabled() const { return mAutoSize; }
     bool IsZoomAllowed() const { return mAllowZoom; }
-    bool IsDoubleTapZoomAllowed() const { return mAllowDoubleTapZoom; }
-
-    void SetAllowDoubleTapZoom(bool aAllowDoubleTapZoom) { mAllowDoubleTapZoom = aAllowDoubleTapZoom; }
 
   private:
 
@@ -107,11 +94,6 @@ class MOZ_STACK_CLASS nsViewportInfo
 
     
     bool mAllowZoom;
-
-    
-    
-    
-    bool mAllowDoubleTapZoom;
 };
 
 #endif
