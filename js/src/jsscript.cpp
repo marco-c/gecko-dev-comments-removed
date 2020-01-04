@@ -4027,17 +4027,11 @@ JSScript::argumentsOptimizationFailed(JSContext* cx, HandleScript script)
             continue;
         AbstractFramePtr frame = i.abstractFramePtr();
         if (frame.isFunctionFrame() && frame.script() == script) {
+            
+            AutoEnterOOMUnsafeRegion oomUnsafe;
             ArgumentsObject* argsobj = ArgumentsObject::createExpected(cx, frame);
-            if (!argsobj) {
-                
-
-
-
-
-                script->needsArgsObj_ = false;
-                return false;
-            }
-
+            if (!argsobj)
+                oomUnsafe.crash("JSScript::argumentsOptimizationFailed");
             SetFrameArgumentsObject(cx, frame, script, argsobj);
         }
     }
