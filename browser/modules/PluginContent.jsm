@@ -961,6 +961,13 @@ PluginContent.prototype = {
       
       this.hideNotificationBar("plugin-crashed");
       doc.mozNoPluginCrashedNotification = true;
+
+      
+      
+      let winUtils = this.content.QueryInterface(Ci.nsIInterfaceRequestor)
+                                 .getInterface(Ci.nsIDOMWindowUtils);
+      let event = new this.content.CustomEvent("PluginCrashReporterDisplayed", {bubbles: true});
+      winUtils.dispatchEventToChromeOnly(plugin, event);
     } else {
       
       
