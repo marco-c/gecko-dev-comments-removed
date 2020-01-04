@@ -4029,7 +4029,7 @@ BaselineCompiler::emit_JSOP_RESUME()
     masm.bind(&loopDone);
 
     
-    masm.pushValue(Address(genObj, GeneratorObject::offsetOfThisSlot()));
+    masm.pushValue(UndefinedValue());
 
     
     masm.computeEffectiveAddress(Address(BaselineFrameReg, BaselineFrame::FramePointerOffset),
