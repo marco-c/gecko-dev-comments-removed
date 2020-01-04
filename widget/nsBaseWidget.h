@@ -5,6 +5,7 @@
 #ifndef nsBaseWidget_h__
 #define nsBaseWidget_h__
 
+#include "InputData.h"
 #include "mozilla/EventForwards.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/UniquePtr.h"
@@ -558,6 +559,20 @@ protected:
 
   bool UseAPZ();
 
+  
+
+
+
+
+
+
+  mozilla::MultiTouchInput
+  UpdateSynthesizedTouchState(mozilla::MultiTouchInput* aState,
+                              uint32_t aPointerId,
+                              TouchPointerState aPointerState,
+                              LayoutDeviceIntPoint aPoint,
+                              double aPointerPressure,
+                              uint32_t aPointerOrientation);
 
 #if defined(XP_WIN)
   void UpdateScrollCapture() override;

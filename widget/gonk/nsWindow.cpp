@@ -273,53 +273,9 @@ nsWindow::SynthesizeNativeTouchPoint(uint32_t aPointerId,
         mSynthesizedTouchInput = MakeUnique<MultiTouchInput>();
     }
 
-    ScreenIntPoint pointerScreenPoint = ViewAs<ScreenPixel>(aPoint,
-        PixelCastJustification::LayoutDeviceIsScreenForBounds);
-
-    
-    
-    
-    
-    
-    MultiTouchInput inputToDispatch;
-    inputToDispatch.mInputType = MULTITOUCH_INPUT;
-
-    int32_t index = mSynthesizedTouchInput->IndexOfTouch((int32_t)aPointerId);
-    if (aPointerState == TOUCH_CONTACT) {
-        if (index >= 0) {
-            
-            SingleTouchData& point = mSynthesizedTouchInput->mTouches[index];
-            point.mScreenPoint = pointerScreenPoint;
-            point.mRotationAngle = (float)aPointerOrientation;
-            point.mForce = (float)aPointerPressure;
-            inputToDispatch.mType = MultiTouchInput::MULTITOUCH_MOVE;
-        } else {
-            
-            mSynthesizedTouchInput->mTouches.AppendElement(SingleTouchData(
-                (int32_t)aPointerId,
-                pointerScreenPoint,
-                ScreenSize(0, 0),
-                (float)aPointerOrientation,
-                (float)aPointerPressure));
-            inputToDispatch.mType = MultiTouchInput::MULTITOUCH_START;
-        }
-        inputToDispatch.mTouches = mSynthesizedTouchInput->mTouches;
-    } else {
-        MOZ_ASSERT(aPointerState == TOUCH_REMOVE || aPointerState == TOUCH_CANCEL);
-        
-        if (index >= 0) {
-            mSynthesizedTouchInput->mTouches.RemoveElementAt(index);
-        }
-        inputToDispatch.mType = (aPointerState == TOUCH_REMOVE
-            ? MultiTouchInput::MULTITOUCH_END
-            : MultiTouchInput::MULTITOUCH_CANCEL);
-        inputToDispatch.mTouches.AppendElement(SingleTouchData(
-            (int32_t)aPointerId,
-            pointerScreenPoint,
-            ScreenSize(0, 0),
-            (float)aPointerOrientation,
-            (float)aPointerPressure));
-    }
+    MultiTouchInput inputToDispatch = UpdateSynthesizedTouchState(
+        mSynthesizedTouchInput.get(), aPointerId, aPointerState,
+        aPoint, aPointerPressure, aPointerOrientation);
 
     
     
