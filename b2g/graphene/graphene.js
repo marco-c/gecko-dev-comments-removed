@@ -53,3 +53,10 @@ pref("media.useAudioChannelService", false);
 #ifdef ENABLE_MARIONETTE
 pref("b2g.is_mulet", true);
 #endif
+
+
+
+
+
+
+pref("devtools.selfxss.count", 5);
