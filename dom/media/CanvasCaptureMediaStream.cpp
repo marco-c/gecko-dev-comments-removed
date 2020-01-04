@@ -174,6 +174,30 @@ private:
 
 
 
+class AutoDriver : public OutputStreamDriver
+{
+public:
+  explicit AutoDriver(SourceMediaStream* aSourceStream,
+                      const TrackID& aTrackId)
+    : OutputStreamDriver(aSourceStream, aTrackId) {}
+
+  void NewFrame(already_AddRefed<Image> aImage) override
+  {
+    
+    
+    
+    
+
+    nsRefPtr<Image> image = aImage;
+    SetImage(image.forget());
+  }
+
+protected:
+  virtual ~AutoDriver() {}
+};
+
+
+
 NS_IMPL_CYCLE_COLLECTION_INHERITED(CanvasCaptureMediaStream, DOMMediaStream,
                                    mCanvas)
 
@@ -216,9 +240,8 @@ CanvasCaptureMediaStream::Init(const dom::Optional<double>& aFPS,
                                const TrackID& aTrackId)
 {
   if (!aFPS.WasPassed()) {
-    
-    
-    mOutputStreamDriver = new TimerDriver(GetStream()->AsSourceStream(), 30.0, aTrackId);
+    mOutputStreamDriver =
+      new AutoDriver(GetStream()->AsSourceStream(), aTrackId);
   } else if (aFPS.Value() < 0) {
     return NS_ERROR_ILLEGAL_VALUE;
   } else {
