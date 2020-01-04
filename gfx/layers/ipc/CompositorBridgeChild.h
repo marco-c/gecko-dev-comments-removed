@@ -23,7 +23,11 @@
 namespace mozilla {
 
 namespace dom {
-  class TabChild;
+class TabChild;
+} 
+
+namespace widget {
+class CompositorWidget;
 } 
 
 namespace layers {
@@ -66,7 +70,12 @@ public:
 
 
 
-  bool OpenSameProcess(CompositorBridgeParent* aParent);
+  CompositorBridgeParent* InitSameProcess(
+    widget::CompositorWidget* aWidget,
+    CSSToLayoutDeviceScale aScale,
+    bool aUseAPZ,
+    bool aUseExternalSurface,
+    const gfx::IntSize& aSurfaceSize);
 
   static CompositorBridgeChild* Get();
 
