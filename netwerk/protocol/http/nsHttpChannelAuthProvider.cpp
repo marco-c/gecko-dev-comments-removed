@@ -1290,6 +1290,13 @@ NS_IMETHODIMP nsHttpChannelAuthProvider::OnAuthCancelled(nsISupports *aContext,
             
             nsresult rv;
 
+            
+            
+            if (mProxyAuth) {
+                NS_IF_RELEASE(mProxyAuthContinuationState);
+            } else {
+                NS_IF_RELEASE(mAuthContinuationState);
+            }
             nsAutoCString creds;
             rv = GetCredentials(mRemainingChallenges.get(), mProxyAuth, creds);
             if (NS_SUCCEEDED(rv)) {
