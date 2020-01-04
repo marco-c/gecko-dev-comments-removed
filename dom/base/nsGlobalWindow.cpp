@@ -2340,6 +2340,7 @@ CreateNativeGlobalForInner(JSContext* aCx,
   if (aNewInner->GetOuterWindow()) {
     top = aNewInner->GetTopInternal();
   }
+
   JS::CompartmentOptions options;
 
   
@@ -2352,6 +2353,8 @@ CreateNativeGlobalForInner(JSContext* aCx,
   if (top && top->GetGlobalJSObject()) {
     options.creationOptions().setSameZoneAs(top->GetGlobalJSObject());
   }
+
+  xpc::InitGlobalObjectOptions(options, aPrincipal);
 
   
   bool needComponents = nsContentUtils::IsSystemPrincipal(aPrincipal) ||

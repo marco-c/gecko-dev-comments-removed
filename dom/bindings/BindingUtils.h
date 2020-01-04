@@ -3023,6 +3023,11 @@ RegisterDOMNames();
 
 
 
+
+
+
+
+
 template <class T, ProtoHandleGetter GetProto>
 JS::Handle<JSObject*>
 CreateGlobal(JSContext* aCx, T* aNative, nsWrapperCache* aCache,

@@ -3593,6 +3593,21 @@ CreateGlobalObject(JSContext* cx, const JSClass* clasp, nsIPrincipal* principal,
 
 
 
+
+
+
+
+
+
+void
+InitGlobalObjectOptions(JS::CompartmentOptions& aOptions,
+                        nsIPrincipal* aPrincipal);
+
+
+
+
+
+
 bool
 InitGlobalObject(JSContext* aJSContext, JS::Handle<JSObject*> aGlobal,
                  uint32_t aFlags);

@@ -389,12 +389,44 @@ CreateGlobalObject(JSContext* cx, const JSClass* clasp, nsIPrincipal* principal,
     return global;
 }
 
+void
+InitGlobalObjectOptions(JS::CompartmentOptions& aOptions,
+                        nsIPrincipal* aPrincipal)
+{
+    bool shouldDiscardSystemSource = ShouldDiscardSystemSource();
+    bool extraWarningsForSystemJS = ExtraWarningsForSystemJS();
+
+    bool isSystem = false;
+    if (shouldDiscardSystemSource || extraWarningsForSystemJS)
+        isSystem = nsContentUtils::IsSystemPrincipal(aPrincipal);
+
+    if (shouldDiscardSystemSource) {
+        bool discardSource = isSystem;
+        if (!discardSource) {
+            short status = aPrincipal->GetAppStatus();
+            discardSource = status == nsIPrincipal::APP_STATUS_PRIVILEGED ||
+                            status == nsIPrincipal::APP_STATUS_CERTIFIED;
+        }
+
+        aOptions.behaviors().setDiscardSource(discardSource);
+    }
+
+    if (extraWarningsForSystemJS) {
+        if (isSystem)
+            aOptions.behaviors().extraWarningsOverride().set(true);
+    }
+}
+
 bool
 InitGlobalObject(JSContext* aJSContext, JS::Handle<JSObject*> aGlobal, uint32_t aFlags)
 {
     
     
     JSAutoCompartment ac(aJSContext, aGlobal);
+
+    
+    MOZ_ASSERT(js::GetObjectClass(aGlobal)->flags & JSCLASS_DOM_GLOBAL);
+
     if (!(aFlags & nsIXPConnect::OMIT_COMPONENTS_OBJECT)) {
         
         if (!CompartmentPrivate::Get(aGlobal)->scope->AttachComponentsObject(aJSContext) ||
@@ -402,27 +434,6 @@ InitGlobalObject(JSContext* aJSContext, JS::Handle<JSObject*> aGlobal, uint32_t 
             return UnexpectedFailure(false);
         }
     }
-
-    if (ShouldDiscardSystemSource()) {
-        nsIPrincipal* prin = GetObjectPrincipal(aGlobal);
-        bool isSystem = nsContentUtils::IsSystemPrincipal(prin);
-        if (!isSystem) {
-            short status = prin->GetAppStatus();
-            isSystem = status == nsIPrincipal::APP_STATUS_PRIVILEGED ||
-                       status == nsIPrincipal::APP_STATUS_CERTIFIED;
-        }
-        JS::CompartmentBehaviorsRef(aGlobal).setDiscardSource(isSystem);
-    }
-
-    if (ExtraWarningsForSystemJS()) {
-        nsIPrincipal* prin = GetObjectPrincipal(aGlobal);
-        bool isSystem = nsContentUtils::IsSystemPrincipal(prin);
-        if (isSystem)
-            JS::CompartmentBehaviorsRef(aGlobal).extraWarningsOverride().set(true);
-    }
-
-    
-    MOZ_ASSERT(js::GetObjectClass(aGlobal)->flags & JSCLASS_DOM_GLOBAL);
 
     if (!(aFlags & nsIXPConnect::DONT_FIRE_ONNEWGLOBALHOOK))
         JS_FireOnNewGlobalObject(aJSContext, aGlobal);
@@ -447,6 +458,8 @@ nsXPConnect::InitClassesWithNewWrappedGlobal(JSContext * aJSContext,
     
     
     MOZ_ASSERT(aPrincipal);
+
+    InitGlobalObjectOptions(aOptions, aPrincipal);
 
     
     
