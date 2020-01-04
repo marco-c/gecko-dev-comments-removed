@@ -590,8 +590,6 @@ public:
   virtual bool RecvPrint(const uint64_t& aOuterWindowID,
                          const PrintData& aPrintData) override;
 
-  virtual bool RecvUpdateNativeWindowHandle(const uintptr_t& aNewHandle) override;
-
   
 
 
@@ -649,10 +647,6 @@ public:
   {
       mAPZChild = aAPZChild;
   }
-
-#if defined(XP_WIN) && defined(ACCESSIBILITY)
-  uintptr_t GetNativeWindowHandle() const { return mNativeWindowHandle; }
-#endif
 
   
   void ForcePaint(uint64_t aLayerObserverEpoch);
@@ -791,11 +785,6 @@ private:
   
   
   layers::APZChild* mAPZChild;
-
-#if defined(XP_WIN) && defined(ACCESSIBILITY)
-  
-  uintptr_t mNativeWindowHandle;
-#endif 
 
   
   uint64_t mLayerObserverEpoch;
