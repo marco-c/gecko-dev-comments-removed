@@ -1045,8 +1045,7 @@ RestyleManagerBase::ProcessRestyledFrames(nsStyleChangeList& aChangeList)
 {
   NS_ASSERTION(!nsContentUtils::IsSafeToRunScript(),
                "Someone forgot a script blocker");
-  int32_t count = aChangeList.Count();
-  if (!count)
+  if (aChangeList.IsEmpty())
     return NS_OK;
 
   PROFILER_LABEL("RestyleManager", "ProcessRestyledFrames",
@@ -1063,26 +1062,19 @@ RestyleManagerBase::ProcessRestyledFrames(nsStyleChangeList& aChangeList)
   
   
   
-  int32_t index = count;
-
-  while (0 <= --index) {
-    const nsStyleChangeData* changeData;
-    aChangeList.ChangeAt(index, &changeData);
-    if (changeData->mFrame) {
-      propTable->Set(changeData->mFrame, ChangeListProperty(), true);
+  for (const nsStyleChangeData& data : aChangeList) {
+    if (data.mFrame) {
+      propTable->Set(data.mFrame, ChangeListProperty(), true);
     }
   }
 
-  index = count;
-
   bool didUpdateCursor = false;
 
-  while (0 <= --index) {
-    nsIFrame* frame;
-    nsIContent* content;
+  for (const nsStyleChangeData& data : aChangeList) {
+    nsIFrame* frame = data.mFrame;
+    nsIContent* content = data.mContent;
+    nsChangeHint hint = data.mHint;
     bool didReflowThisFrame = false;
-    nsChangeHint hint;
-    aChangeList.ChangeAt(index, frame, content, hint);
 
     NS_ASSERTION(!(hint & nsChangeHint_AllReflowHints) ||
                  (hint & nsChangeHint_NeedReflow),
@@ -1318,23 +1310,20 @@ RestyleManagerBase::ProcessRestyledFrames(nsStyleChangeList& aChangeList)
   
   
   
-  index = count;
-  while (0 <= --index) {
-    const nsStyleChangeData* changeData;
-    aChangeList.ChangeAt(index, &changeData);
-    if (changeData->mFrame) {
-      propTable->Delete(changeData->mFrame, ChangeListProperty());
+  for (const nsStyleChangeData& data : aChangeList) {
+    if (data.mFrame) {
+      propTable->Delete(data.mFrame, ChangeListProperty());
     }
 
 #ifdef DEBUG
     
-    if (changeData->mContent) {
-      nsIFrame* frame = changeData->mContent->GetPrimaryFrame();
+    if (data.mContent) {
+      nsIFrame* frame = data.mContent->GetPrimaryFrame();
       if (frame) {
         DebugVerifyStyleTree(frame);
       }
-    } else if (!changeData->mFrame ||
-               changeData->mFrame->GetType() != nsGkAtoms::viewportFrame) {
+    } else if (!data.mFrame ||
+               data.mFrame->GetType() != nsGkAtoms::viewportFrame) {
       NS_WARNING("Unable to test style tree integrity -- no content node "
                  "(and not a viewport frame)");
     }
