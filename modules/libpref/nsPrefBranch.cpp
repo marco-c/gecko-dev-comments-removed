@@ -3,6 +3,7 @@
 
 
 
+
 #include "mozilla/dom/ContentChild.h"
 #include "nsXULAppAPI.h"
 
@@ -686,24 +687,6 @@ void nsPrefBranch::NotifyObserver(const char *newpref, void *data)
                     NS_ConvertASCIItoUTF16(suffix).get());
 }
 
-PLDHashOperator
-FreeObserverFunc(PrefCallback *aKey,
-                 nsAutoPtr<PrefCallback> &aCallback,
-                 void *aArgs)
-{
-  
-  
-  
-  
-  
-
-  nsPrefBranch *prefBranch = aCallback->GetPrefBranch();
-  const char *pref = prefBranch->getPrefName(aCallback->GetDomain().get());
-  PREF_UnregisterCallback(pref, nsPrefBranch::NotifyObserver, aCallback);
-
-  return PL_DHASH_REMOVE;
-}
-
 void nsPrefBranch::freeObserverList(void)
 {
   
@@ -711,7 +694,13 @@ void nsPrefBranch::freeObserverList(void)
   
   
   mFreeingObserverList = true;
-  mObservers.Enumerate(&FreeObserverFunc, nullptr);
+  for (auto iter = mObservers.Iter(); !iter.Done(); iter.Next()) {
+    nsAutoPtr<PrefCallback>& callback = iter.Data();
+    nsPrefBranch *prefBranch = callback->GetPrefBranch();
+    const char *pref = prefBranch->getPrefName(callback->GetDomain().get());
+    PREF_UnregisterCallback(pref, nsPrefBranch::NotifyObserver, callback);
+    iter.Remove();
+  }
   mFreeingObserverList = false;
 }
 
