@@ -149,6 +149,11 @@ public class TelemetryUploadService extends IntentService {
             return false;
         }
 
+        if (!NetworkUtils.isConnected(context)) {
+            Log.w(LOGTAG, "Network is not connected; returning");
+            return false;
+        }
+
         if (!isIntentValid(intent)) {
             Log.w(LOGTAG, "Received invalid Intent; returning");
             return false;
@@ -169,6 +174,8 @@ public class TelemetryUploadService extends IntentService {
 
 
 
+
+
     public static boolean isUploadEnabledByAppConfig(final Context context) {
         if (!TelemetryConstants.UPLOAD_ENABLED) {
             Log.d(LOGTAG, "Telemetry upload feature is compile-time disabled");
@@ -180,15 +187,12 @@ public class TelemetryUploadService extends IntentService {
             return false;
         }
 
-        if (!NetworkUtils.isBackgroundDataEnabled(context)) {
-            Log.d(LOGTAG, "Background data is disabled");
-            return false;
-        }
-
         return true;
     }
 
     
+
+
 
 
 
