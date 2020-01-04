@@ -557,7 +557,7 @@ nsHTMLDocument::StartDocumentLoad(const char* aCommand,
       mCompatMode = eCompatibility_FullStandards;
       loadAsHtml5 = false;
   }
-  
+
   
   if (loadAsHtml5 && view) {
     
@@ -567,16 +567,14 @@ nsHTMLDocument::StartDocumentLoad(const char* aCommand,
     
     bool isAbout = false;
     if (uri && NS_SUCCEEDED(uri->SchemeIs("about", &isAbout)) && isAbout) {
-      nsAutoCString str;
-      uri->GetSpec(str);
-      if (str.EqualsLiteral("about:blank")) {
-        loadAsHtml5 = false;    
+      if (uri->GetSpecOrDefault().EqualsLiteral("about:blank")) {
+        loadAsHtml5 = false;
       }
     }
   }
-  
+
   CSSLoader()->SetCompatibilityMode(mCompatMode);
-  
+
   nsresult rv = nsDocument::StartDocumentLoad(aCommand,
                                               aChannel, aLoadGroup,
                                               aContainer,
