@@ -8,7 +8,6 @@
 #define SignedCertificateTimestamp_h
 
 #include "mozilla/Vector.h"
-
 #include "pkix/Input.h"
 #include "pkix/Result.h"
 
@@ -90,6 +89,8 @@ struct SignedCertificateTimestamp
 
   Version version;
   Buffer logId;
+  
+  
   uint64_t timestamp;
   Buffer extensions;
   DigitallySigned signature;

@@ -177,8 +177,8 @@ CheckValidity(Time time, Time notBefore, Time notAfter)
 
 
 Result
-CheckSubjectPublicKeyInfo(Reader& input, TrustDomain& trustDomain,
-                          EndEntityOrCA endEntityOrCA)
+CheckSubjectPublicKeyInfoContents(Reader& input, TrustDomain& trustDomain,
+                                  EndEntityOrCA endEntityOrCA)
 {
   
   
@@ -353,6 +353,20 @@ CheckSubjectPublicKeyInfo(Reader& input, TrustDomain& trustDomain,
   }
 
   return Success;
+}
+
+Result
+CheckSubjectPublicKeyInfo(Input subjectPublicKeyInfo, TrustDomain& trustDomain,
+                          EndEntityOrCA endEntityOrCA)
+{
+  Reader spkiReader(subjectPublicKeyInfo);
+  Result rv = der::Nested(spkiReader, der::SEQUENCE, [&](Reader& r) {
+    return CheckSubjectPublicKeyInfoContents(r, trustDomain, endEntityOrCA);
+  });
+  if (rv != Success) {
+    return rv;
+  }
+  return der::End(spkiReader);
 }
 
 
@@ -968,14 +982,8 @@ CheckIssuerIndependentProperties(TrustDomain& trustDomain,
   
   
   
-  Reader spki(cert.GetSubjectPublicKeyInfo());
-  rv = der::Nested(spki, der::SEQUENCE, [&](Reader& r) {
-    return CheckSubjectPublicKeyInfo(r, trustDomain, endEntityOrCA);
-  });
-  if (rv != Success) {
-    return rv;
-  }
-  rv = der::End(spki);
+  rv = CheckSubjectPublicKeyInfo(cert.GetSubjectPublicKeyInfo(), trustDomain,
+                                 endEntityOrCA);
   if (rv != Success) {
     return rv;
   }

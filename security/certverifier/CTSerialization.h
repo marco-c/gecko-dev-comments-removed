@@ -7,6 +7,7 @@
 #ifndef CTSerialization_h
 #define CTSerialization_h
 
+#include "mozilla/Vector.h"
 #include "pkix/Input.h"
 #include "pkix/Result.h"
 #include "SignedCertificateTimestamp.h"
@@ -60,6 +61,9 @@ pkix::Result ReadSCTListItem(pkix::Reader& listReader, pkix::Input& result);
 
 pkix::Result DecodeSignedCertificateTimestamp(pkix::Reader& input,
   SignedCertificateTimestamp& output);
+
+
+pkix::Result EncodeSCTList(const Vector<pkix::Input>& scts, Buffer& output);
 
 } } 
 

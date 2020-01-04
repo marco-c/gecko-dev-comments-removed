@@ -238,6 +238,12 @@ Result VerifySignedData(TrustDomain& trustDomain,
 
 
 
+Result
+CheckSubjectPublicKeyInfo(Input subjectPublicKeyInfo, TrustDomain& trustDomain,
+                          EndEntityOrCA endEntityOrCA);
+
+
+
 
 
 

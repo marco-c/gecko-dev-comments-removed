@@ -10,6 +10,8 @@
 #include <iostream>
 
 #include "pkix/Input.h"
+#include "pkix/Time.h"
+#include "seccomon.h"
 #include "SignedCertificateTimestamp.h"
 #include "SignedTreeHead.h"
 
@@ -24,7 +26,7 @@ void GetX509CertLogEntry(LogEntry& entry);
 
 
 
-Buffer GetDerEncodedX509Cert();
+Buffer GetDEREncodedX509Cert();
 
 
 void GetPrecertLogEntry(LogEntry& entry);
@@ -66,10 +68,56 @@ Buffer GetSampleSTHTreeHeadSignature();
 void GetSampleSTHTreeHeadDecodedSignature(DigitallySigned& signature);
 
 
+Buffer GetDEREncodedTestEmbeddedCert();
+
+
+
+Buffer GetDEREncodedTestTbsCert();
+
+
+
+
+Buffer GetDEREncodedTestEmbeddedWithPreCACert();
+
+
+Buffer GetDEREncodedCACert();
+
+
+Buffer GetDEREncodedIntermediateCert();
+
+
+Buffer GetDEREncodedTestEmbeddedWithIntermediateCert();
+
+
+Buffer GetDEREncodedTestEmbeddedWithIntermediatePreCACert();
+
+
+Buffer ExtractCertSPKI(pkix::Input cert);
+Buffer ExtractCertSPKI(const Buffer& cert);
+
+
+
+void ExtractEmbeddedSCTList(pkix::Input cert, Buffer& result);
+void ExtractEmbeddedSCTList(const Buffer& cert, Buffer& result);
+
+
+
+
+
+void ExtractSCTListFromOCSPResponse(pkix::Input cert,
+                                    pkix::Input issuerSPKI,
+                                    pkix::Input encodedResponse,
+                                    pkix::Time time,
+                                    Buffer& result);
+
+
 Buffer cloneBuffer(const Buffer& buffer);
 
 
 pkix::Input InputForBuffer(const Buffer& buffer);
+
+
+pkix::Input InputForSECItem(const SECItem& item);
 
 } } 
 
