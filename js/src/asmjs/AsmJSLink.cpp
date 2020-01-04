@@ -768,6 +768,8 @@ CallAsmJS(JSContext* cx, unsigned argc, Value* vp)
         
         
         PlainObject* obj = NewBuiltinClassInstance<PlainObject>(cx);
+        if (!obj)
+            return false;
         callArgs.rval().set(ObjectValue(*obj));
         return true;
     }
