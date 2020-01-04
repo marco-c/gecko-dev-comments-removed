@@ -948,9 +948,20 @@ NetworkStatsDB.prototype = {
       let request = aStore.openCursor(range).onsuccess = function(event) {
         var cursor = event.target.result;
         if (cursor){
-          data.push({ rxBytes: cursor.value.rxBytes,
-                      txBytes: cursor.value.txBytes,
-                      date: new Date(cursor.value.timestamp + offset) });
+          
+          
+          
+          
+          
+          if (data.length == 0) {
+            data.push({ rxBytes: cursor.value.rxTotalBytes,
+                        txBytes: cursor.value.txTotalBytes,
+                        date: new Date(cursor.value.timestamp + offset) });
+          } else {
+            data.push({ rxBytes: cursor.value.rxBytes,
+                        txBytes: cursor.value.txBytes,
+                        date: new Date(cursor.value.timestamp + offset) });
+          }
           cursor.continue();
           return;
         }
@@ -981,9 +992,20 @@ NetworkStatsDB.prototype = {
               foundData.rxBytes += cursor.value.rxBytes;
               foundData.txBytes += cursor.value.txBytes;
             } else {
-              data.push({ rxBytes: cursor.value.rxBytes,
-                          txBytes: cursor.value.txBytes,
-                          date: new Date(cursor.value.timestamp + offset) });
+              
+              
+              
+              
+              
+              if (data.length == 0) {
+                data.push({ rxBytes: cursor.value.rxTotalBytes,
+                            txBytes: cursor.value.txTotalBytes,
+                            date: new Date(cursor.value.timestamp + offset) });
+              } else {
+                data.push({ rxBytes: cursor.value.rxBytes,
+                            txBytes: cursor.value.txBytes,
+                            date: new Date(cursor.value.timestamp + offset) });
+              }
             }
             cursor.continue();
             return;
