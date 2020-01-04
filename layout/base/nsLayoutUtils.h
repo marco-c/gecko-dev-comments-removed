@@ -616,6 +616,12 @@ public:
 
 
     SCROLLABLE_ALWAYS_MATCH_ROOT = 0x08,
+    
+
+
+
+
+    SCROLLABLE_FIXEDPOS_FINDS_ROOT = 0x10
   };
   
 

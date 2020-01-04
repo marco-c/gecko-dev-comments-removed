@@ -1956,6 +1956,16 @@ nsLayoutUtils::GetNearestScrollableFrame(nsIFrame* aFrame, uint32_t aFlags)
         }
       }
     }
+    if ((aFlags & SCROLLABLE_FIXEDPOS_FINDS_ROOT) &&
+        f->StyleDisplay()->mPosition == NS_STYLE_POSITION_FIXED &&
+        nsLayoutUtils::IsReallyFixedPos(f)) {
+      nsIPresShell* ps = f->PresContext()->PresShell();
+      
+      
+      if (ps->GetDocument() && ps->GetDocument()->IsRootDisplayDocument()) {
+        return ps->GetRootScrollFrameAsScrollable();
+      }
+    }
   }
   return nullptr;
 }
