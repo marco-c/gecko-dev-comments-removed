@@ -656,6 +656,7 @@ void nsDocLoader::DocLoaderIsEmpty(bool aFlushLayout)
     }
 
     NS_ASSERTION(!mIsFlushingLayout, "Someone screwed up");
+    NS_ASSERTION(mDocumentRequest, "No Document Request!");
 
     
     if (aFlushLayout && !mDontFlushLayout) {
@@ -682,7 +683,9 @@ void nsDocLoader::DocLoaderIsEmpty(bool aFlushLayout)
 
     
     
-    if (!IsBusy()) {
+    
+    
+    if (!IsBusy() && mDocumentRequest) {
       
       
       ClearInternalProgress();
@@ -692,7 +695,6 @@ void nsDocLoader::DocLoaderIsEmpty(bool aFlushLayout)
 
       nsCOMPtr<nsIRequest> docRequest = mDocumentRequest;
 
-      NS_ASSERTION(mDocumentRequest, "No Document Request!");
       mDocumentRequest = 0;
       mIsLoadingDocument = false;
 
