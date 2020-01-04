@@ -74,8 +74,10 @@ module.exports = createClass({
     }
 
     let { lastClientX, lastClientY, ignoreX, ignoreY } = this.state;
-    let deltaX = clientX - lastClientX;
-    let deltaY = clientY - lastClientY;
+    
+    
+    let deltaX = 2 * (clientX - lastClientX);
+    let deltaY = 2 * (clientY - lastClientY);
 
     if (ignoreX) {
       deltaX = 0;
