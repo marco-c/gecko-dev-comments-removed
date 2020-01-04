@@ -153,6 +153,8 @@ public:
 
   void MaybeRejectWithNull();
 
+  void MaybeRejectWithUndefined();
+
   
   
   
