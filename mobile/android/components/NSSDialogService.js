@@ -92,11 +92,6 @@ NSSDialogs.prototype = {
     }
   },
 
-  notifyCACertExists: function(aCtx) {
-    let p = this.getPrompt(this.getString("caCertExists.title"), this.getString("caCertExists.message"));
-    this.showPrompt(p);
-  },
-
   setPKCS12FilePassword: function(aCtx, aPassword) {
     
     
