@@ -407,6 +407,8 @@ protected:
 #endif
     
     bool               mIsDragPopup;
+    
+    bool               mIsX11Display;
 
 private:
     void               DestroyChildWindows();
