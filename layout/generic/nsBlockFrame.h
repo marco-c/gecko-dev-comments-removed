@@ -519,6 +519,10 @@ public:
     return false;
   }
 
+  virtual bool RenumberChildFrames(int32_t* aOrdinal,
+                                   int32_t aDepth,
+                                   int32_t aIncrement,
+                                   bool aForCounting) override;
 protected:
 
   
@@ -786,47 +790,6 @@ protected:
   
   
   bool RenumberLists(nsPresContext* aPresContext);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  static bool RenumberListsInBlock(nsPresContext* aPresContext,
-                                   nsBlockFrame* aBlockFrame,
-                                   int32_t* aOrdinal,
-                                   int32_t aDepth,
-                                   int32_t aIncrement,
-                                   bool aForCounting);
-
-  
-
-
-
-
-  static bool RenumberListsFor(nsPresContext* aPresContext, nsIFrame* aKid,
-                               int32_t* aOrdinal, int32_t aDepth,
-                               int32_t aIncrement,
-                               bool aForCounting);
-
-  static bool FrameStartsCounterScope(nsIFrame* aFrame);
 
   void ReflowBullet(nsIFrame* aBulletFrame,
                     BlockReflowInput& aState,

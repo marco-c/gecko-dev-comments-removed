@@ -3274,6 +3274,17 @@ public:
 
   bool IsScrolledOutOfView();
 
+  
+
+
+
+
+
+  virtual bool RenumberFrameAndDescendants(int32_t* aOrdinal,
+                                           int32_t aDepth,
+                                           int32_t aIncrement,
+                                           bool aForCounting) { return false; }
+
 protected:
   
   nsRect           mRect;
