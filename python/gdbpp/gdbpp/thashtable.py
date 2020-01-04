@@ -15,6 +15,13 @@ def walk_template_to_given_base(value, desired_tag_prefix):
     '''
     
     t = value.type
+    
+    
+    
+    
+    
+    
+    t = t.strip_typedefs()
     if t.tag.startswith(desired_tag_prefix):
         return value
     for f in t.fields():
@@ -48,8 +55,8 @@ class thashtable_printer(object):
         value = walk_template_to_given_base(outer_value, 'nsTHashtable<')
         self.value = value
 
-        
         self.entry_type = value.type.template_argument(0)
+
         
         
         
@@ -58,7 +65,23 @@ class thashtable_printer(object):
         
         
         
-        key_type = self.entry_type.template_argument(0)
+        self.is_table = self.entry_type.tag.startswith('nsBaseHashtableET<')
+
+        
+        
+        
+        
+        
+        
+        
+        
+
+        if self.is_table:
+            
+            key_type = self.entry_type.template_argument(0)
+        else:
+            
+            key_type = self.entry_type
         self.key_field_name = None
         for f in key_type.fields():
             
@@ -70,7 +93,6 @@ class thashtable_printer(object):
             
             self.key_field_name = f.name
             break
-
 
     def children(self):
         table = self.value['mTable']
@@ -89,12 +111,17 @@ class thashtable_printer(object):
             
             if entry['mKeyHash'] <= 1:
                 continue
+
             yield ('%d' % i, entry[key_field_name])
-            yield ('%d' % i, entry['mData'])
+            if self.is_table:
+                yield ('%d' % i, entry['mData'])
 
     def to_string(self):
         
         return str(self.outermost_type)
 
     def display_hint(self):
-        return 'map'
+        if self.is_table:
+            return 'map'
+        else:
+            return 'array'
