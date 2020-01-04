@@ -90,10 +90,16 @@ nsAboutProtocolHandler::GetFlagsForURI(nsIURI* aURI, uint32_t* aFlags)
     NS_ENSURE_SUCCESS(rv, rv);
 
     
-    if ((aboutModuleFlags & nsIAboutModule::URI_SAFE_FOR_UNTRUSTED_CONTENT) &&
-        (aboutModuleFlags & nsIAboutModule::MAKE_LINKABLE)) {
-        *aFlags = URI_NORELATIVE | URI_NOAUTH | URI_LOADABLE_BY_ANYONE |
-            URI_SAFE_TO_LOAD_IN_SECURE_CONTEXT;
+    
+    if (aboutModuleFlags & nsIAboutModule::URI_SAFE_FOR_UNTRUSTED_CONTENT) {
+        *aFlags |= URI_SAFE_TO_LOAD_IN_SECURE_CONTEXT;
+        
+        
+        if (aboutModuleFlags & nsIAboutModule::MAKE_LINKABLE) {
+            
+            *aFlags &= ~URI_DANGEROUS_TO_LOAD;
+            *aFlags |= URI_LOADABLE_BY_ANYONE;
+        }
     }
     return NS_OK;
 }
