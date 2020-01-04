@@ -1512,16 +1512,7 @@
 
  \
     macro(JSOP_NEWTARGET,  148, "newtarget", NULL,      1,  0,  1,  JOF_BYTE) \
-    \
-    
-
-
-
-
-
-
- \
-    macro(JSOP_BACKPATCH,     149,"backpatch", NULL,      5,  0,  0,  JOF_JUMP) \
+    macro(JSOP_UNUSED149,  149, "unused149", NULL,      1,  0,  0,  JOF_BYTE) \
     
 
 

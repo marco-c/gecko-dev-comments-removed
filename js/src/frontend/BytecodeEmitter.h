@@ -133,6 +133,61 @@ enum VarEmitOption {
     AnnexB,
 };
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+struct JumpTarget {
+    ptrdiff_t offset;
+};
+
+struct JumpList {
+    
+    JumpList() : offset(-1) {}
+    ptrdiff_t offset;
+
+    
+    void push(jsbytecode* code, ptrdiff_t jumpOffset);
+
+    
+    
+    void patchAll(jsbytecode* code, JumpTarget target);
+};
+
 struct BytecodeEmitter
 {
     SharedContext* const sc;      
@@ -362,8 +417,6 @@ struct BytecodeEmitter
     
     MOZ_MUST_USE bool finishTakingSrcNotes(uint32_t* out);
 
-    void setJumpOffsetAt(ptrdiff_t off);
-
     
     enum EmitLineNumberNote {
         EMIT_LINENOTE,
@@ -395,10 +448,11 @@ struct BytecodeEmitter
 
     MOZ_MUST_USE bool tryConvertFreeName(ParseNode* pn);
 
-    void popStatement();
-    void pushStatement(StmtInfoBCE* stmt, StmtType type, ptrdiff_t top);
-    void pushStatementInner(StmtInfoBCE* stmt, StmtType type, ptrdiff_t top);
-    void pushLoopStatement(LoopStmtInfo* stmt, StmtType type, ptrdiff_t top);
+    bool popStatement();
+    bool popStatement(JumpTarget breakTarget);
+    void pushStatement(StmtInfoBCE* stmt, StmtType type, JumpTarget top);
+    void pushStatementInner(StmtInfoBCE* stmt, StmtType type, JumpTarget top);
+    void pushLoopStatement(LoopStmtInfo* stmt, StmtType type, JumpTarget top);
 
     MOZ_MUST_USE bool enterNestedScope(StmtInfoBCE* stmt, ObjectBox* objbox, StmtType stmtType);
     MOZ_MUST_USE bool leaveNestedScope(StmtInfoBCE* stmt);
@@ -462,19 +516,24 @@ struct BytecodeEmitter
 
     uint32_t computeHopsToEnclosingFunction();
 
-    MOZ_MUST_USE bool emitJump(JSOp op, ptrdiff_t off, ptrdiff_t* jumpOffset = nullptr);
+    
+    MOZ_MUST_USE bool emitJumpTarget(JumpTarget* target);
+    MOZ_MUST_USE bool emitJumpNoFallthrough(JSOp op, JumpList* jump);
+    MOZ_MUST_USE bool emitJump(JSOp op, JumpList* jump);
+    MOZ_MUST_USE bool emitBackwardJump(JSOp op, JumpTarget target, JumpList* jump,
+                                       JumpTarget* fallthrough);
+    void patchJumpsToTarget(JumpList jump, JumpTarget target);
+    MOZ_MUST_USE bool emitJumpTargetAndPatch(JumpList jump);
+
     MOZ_MUST_USE bool emitCall(JSOp op, uint16_t argc, ParseNode* pn = nullptr);
 
-    MOZ_MUST_USE bool emitLoopHead(ParseNode* nextpn);
-    MOZ_MUST_USE bool emitLoopEntry(ParseNode* nextpn);
+    MOZ_MUST_USE bool emitLoopHead(ParseNode* nextpn, JumpTarget* top);
+    MOZ_MUST_USE bool emitLoopEntry(ParseNode* nextpn, JumpList entryJump);
 
-    
-    
-    
-    MOZ_MUST_USE bool emitBackPatchOp(ptrdiff_t* lastp);
-    void backPatch(ptrdiff_t last, jsbytecode* target, jsbytecode op);
+    void setContinueTarget(StmtInfoBCE* stmt, JumpTarget target);
+    void setContinueHere(StmtInfoBCE* stmt);
 
-    MOZ_MUST_USE bool emitGoto(StmtInfoBCE* toStmt, ptrdiff_t* lastp,
+    MOZ_MUST_USE bool emitGoto(StmtInfoBCE* toStmt, JumpList* jumplist,
                                SrcNoteType noteType = SRC_NULL);
 
     MOZ_MUST_USE bool emitIndex32(JSOp op, uint32_t index);
@@ -633,7 +692,7 @@ struct BytecodeEmitter
     MOZ_MUST_USE bool emitConditionalExpression(ConditionalExpression& conditional);
 
     MOZ_MUST_USE bool isRestParameter(ParseNode* pn, bool* result);
-    MOZ_MUST_USE bool emitOptimizeSpread(ParseNode* arg0, ptrdiff_t* jmp, bool* emitted);
+    MOZ_MUST_USE bool emitOptimizeSpread(ParseNode* arg0, JumpList* jmp, bool* emitted);
 
     MOZ_MUST_USE bool emitCallOrNew(ParseNode* pn);
     MOZ_MUST_USE bool emitDebugOnlyCheckSelfHosted();
