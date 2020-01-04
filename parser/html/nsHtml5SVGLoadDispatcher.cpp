@@ -21,7 +21,7 @@ nsHtml5SVGLoadDispatcher::nsHtml5SVGLoadDispatcher(nsIContent* aElement)
 NS_IMETHODIMP
 nsHtml5SVGLoadDispatcher::Run()
 {
-  WidgetEvent event(true, NS_SVG_LOAD);
+  WidgetEvent event(true, eSVGLoad);
   event.mFlags.mBubbles = false;
   
   
