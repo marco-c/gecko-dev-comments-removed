@@ -298,6 +298,43 @@ jit::PruneUnusedBranches(MIRGenerator* mir, MIRGraph& graph)
 
         
         
+        
+        if (shouldBailout) {
+            size_t p = numPred;
+            size_t predCount = 0;
+            bool isLoopExit = false;
+            while (p--) {
+                MBasicBlock* pred = block->getPredecessor(p);
+                if (pred->getHitState() == MBasicBlock::HitState::Count)
+                    predCount += pred->getHitCount();
+                isLoopExit |= pred->isLoopHeader() && pred->backedge() != *block;
+            }
+
+            
+            
+            size_t numInst = block->rbegin()->id() - block->begin()->id();
+
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            if (predCount + numInst < 75)
+                shouldBailout = false;
+
+            
+            
+            
+            if (isLoopExit)
+                shouldBailout = false;
+        }
+
+        
+        
         if (!isUnreachable && !shouldBailout)
             continue;
 
