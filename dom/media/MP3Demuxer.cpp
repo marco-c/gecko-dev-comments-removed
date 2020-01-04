@@ -404,15 +404,13 @@ MP3TrackDemuxer::FindNextFrame() {
     NS_ENSURE_TRUE(mOffset + read > mOffset, MediaByteRange(0, 0));
     mOffset += read;
     bufferEnd = buffer + read;
-    frameBeg = mParser.Parse(buffer, bufferEnd);
+    const FrameParserResult parseResults = mParser.Parse(buffer, bufferEnd);
+    frameBeg = parseResults.mBufferPos;
 
-    if (frameBeg > bufferEnd) {
-      
-      const uint32_t bytesToSkip = frameBeg - bufferEnd;
-      NS_ENSURE_TRUE(mOffset + bytesToSkip > mOffset, MediaByteRange(0, 0));
-      mOffset += bytesToSkip;
-      frameBeg = bufferEnd;
-    }
+    
+    
+    NS_ENSURE_TRUE(mOffset + parseResults.mBytesToSkip >= mOffset, MediaByteRange(0, 0));
+    mOffset += parseResults.mBytesToSkip;
   }
 
   if (frameBeg == bufferEnd || !mParser.CurrentFrame().Length()) {
@@ -613,10 +611,10 @@ FrameParser::VBRInfo() const {
   return mVBRHeader;
 }
 
-const uint8_t*
+FrameParserResult
 FrameParser::Parse(const uint8_t* aBeg, const uint8_t* aEnd) {
   if (!aBeg || !aEnd || aBeg >= aEnd) {
-    return aEnd;
+    return { aEnd, 0 };
   }
 
   if (!mID3Parser.Header().Size() && !mFirstFrame.Length()) {
@@ -626,8 +624,15 @@ FrameParser::Parse(const uint8_t* aBeg, const uint8_t* aEnd) {
     const uint8_t* id3Beg = mID3Parser.Parse(aBeg, aEnd);
     if (id3Beg != aEnd) {
       
-      aBeg = id3Beg + ID3Parser::ID3Header::SIZE + mID3Parser.Header().Size() +
-             mID3Parser.Header().FooterSize();
+      const uint32_t tagSize = ID3Parser::ID3Header::SIZE + mID3Parser.Header().Size() +
+                               mID3Parser.Header().FooterSize();
+      const uint32_t remainingBuffer = aEnd - id3Beg;
+      if (tagSize > remainingBuffer) {
+        
+        
+        return { aEnd, tagSize - remainingBuffer };
+      }
+      aBeg = id3Beg + tagSize;
     }
   }
 
@@ -642,11 +647,9 @@ FrameParser::Parse(const uint8_t* aBeg, const uint8_t* aEnd) {
     }
     
     aBeg -= FrameHeader::SIZE;
+    return { aBeg, 0 };
   }
-  
-  
-  
-  return aBeg;
+  return { aEnd, 0 };
 }
 
 

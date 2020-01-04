@@ -111,6 +111,11 @@ private:
   ID3Header mHeader;
 };
 
+struct FrameParserResult {
+  const uint8_t* mBufferPos;
+  const uint32_t mBytesToSkip;
+};
+
 
 
 
@@ -289,7 +294,7 @@ public:
   
   
   
-  const uint8_t* Parse(const uint8_t* aBeg, const uint8_t* aEnd);
+  FrameParserResult Parse(const uint8_t* aBeg, const uint8_t* aEnd);
 
   
   
