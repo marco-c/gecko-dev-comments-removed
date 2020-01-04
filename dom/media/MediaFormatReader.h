@@ -62,7 +62,7 @@ public:
   
   void ReleaseMediaResources() override;
 
-  nsresult ResetDecode() override;
+  nsresult ResetDecode(TargetQueues aQueues) override;
 
   RefPtr<ShutdownPromise> Shutdown() override;
 

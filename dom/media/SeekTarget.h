@@ -18,11 +18,13 @@ enum class MediaDecoderEventVisibility : int8_t {
 
 
 
+
 struct SeekTarget {
   enum Type {
     Invalid,
     PrevSyncPoint,
-    Accurate
+    Accurate,
+    AccurateVideoOnly,
   };
   SeekTarget()
     : mEventVisibility(MediaDecoderEventVisibility::Observable)
@@ -77,6 +79,9 @@ struct SeekTarget {
   }
   bool IsAccurate() const {
     return mType == SeekTarget::Type::Accurate;
+  }
+  bool IsVideoOnly() const {
+    return mType == SeekTarget::Type::AccurateVideoOnly;
   }
 
   MediaDecoderEventVisibility mEventVisibility;

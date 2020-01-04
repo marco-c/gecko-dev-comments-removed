@@ -73,6 +73,11 @@ public:
     CANCELED
   };
 
+  enum TargetQueues {
+    VIDEO_ONLY,
+    AUDIO_VIDEO
+  };
+
   using MetadataPromise =
     MozPromise<RefPtr<MetadataHolder>, ReadMetadataFailureReason, IsExclusive>;
   using MediaDataPromise =
@@ -125,7 +130,7 @@ public:
   
   
   
-  virtual nsresult ResetDecode();
+  virtual nsresult ResetDecode(TargetQueues aQueues = AUDIO_VIDEO);
 
   
   

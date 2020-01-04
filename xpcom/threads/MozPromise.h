@@ -785,7 +785,7 @@ public:
   
   void SetMonitor(Monitor* aMonitor) { mMonitor = aMonitor; }
 
-  bool IsEmpty()
+  bool IsEmpty() const
   {
     if (mMonitor) {
       mMonitor->AssertCurrentThreadOwns();

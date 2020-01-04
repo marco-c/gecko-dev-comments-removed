@@ -368,7 +368,7 @@ private:
 
   
   
-  void Reset();
+  void Reset(MediaDecoderReader::TargetQueues aQueues = MediaDecoderReader::AUDIO_VIDEO);
 
 protected:
   virtual ~MediaDecoderStateMachine();
@@ -513,6 +513,11 @@ protected:
   
   void InitiateSeek(SeekJob aSeekJob);
 
+  
+  
+  
+  void InitiateVideoDecodeRecoverySeek();
+
   nsresult DispatchAudioDecodeTaskIfNeeded();
 
   
@@ -594,6 +599,10 @@ protected:
   
   
   bool IsPausedAndDecoderWaiting();
+
+  
+  
+  bool IsVideoDecodeSuspended() const;
 
   
   
@@ -781,7 +790,8 @@ private:
   bool DonePrerollingVideo()
   {
     MOZ_ASSERT(OnTaskQueue());
-    return !IsVideoDecoding() ||
+    return !mIsVisible ||
+        !IsVideoDecoding() ||
         static_cast<uint32_t>(VideoQueue().GetSize()) >=
             VideoPrerollFrames() * mPlaybackRate + 1;
   }
