@@ -2618,6 +2618,16 @@ ContentPermissionPrompt.prototype = {
     var options = {
       learnMoreURL:
         Services.urlFormatter.formatURLPref("app.support.baseURL") + "push",
+      eventCallback(type) {
+        if (type == "dismissed") {
+          
+          
+          
+          
+          this.remove();
+          aRequest.cancel();
+        }
+      },
     };
 
     this._showPrompt(aRequest, message, "desktop-notification", actions,

@@ -614,7 +614,11 @@ NotificationPermissionRequest::GetElement(nsIDOMElement** aElement)
 NS_IMETHODIMP
 NotificationPermissionRequest::Cancel()
 {
-  mPermission = NotificationPermission::Denied;
+  
+  
+  
+  
+  mPermission = NotificationPermission::Default;
   return DispatchResolvePromise();
 }
 
@@ -649,6 +653,11 @@ nsresult
 NotificationPermissionRequest::ResolvePromise()
 {
   nsresult rv = NS_OK;
+  if (mPermission == NotificationPermission::Default) {
+    
+    
+    mPermission = Notification::TestPermission(mPrincipal);
+  }
   if (mCallback) {
     ErrorResult error;
     mCallback->Call(mPermission, error);
@@ -1947,10 +1956,21 @@ Notification::GetPermissionInternal(nsIPrincipal* aPrincipal,
     }
   }
 
+  return TestPermission(aPrincipal);
+}
+
+ NotificationPermission
+Notification::TestPermission(nsIPrincipal* aPrincipal)
+{
+  AssertIsOnMainThread();
+
   uint32_t permission = nsIPermissionManager::UNKNOWN_ACTION;
 
   nsCOMPtr<nsIPermissionManager> permissionManager =
     services::GetPermissionManager();
+  if (!permissionManager) {
+    return NotificationPermission::Default;
+  }
 
   permissionManager->TestExactPermissionFromPrincipal(aPrincipal,
                                                       "desktop-notification",
