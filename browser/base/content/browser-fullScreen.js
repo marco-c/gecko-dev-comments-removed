@@ -131,22 +131,7 @@ var FullScreen = {
           let topWin = event.target.ownerDocument.defaultView.top;
           browser = gBrowser.getBrowserForContentWindow(topWin);
         }
-        if (!browser || !this.enterDomFullscreen(browser)) {
-          if (document.fullscreenElement) {
-            
-            
-            
-            setTimeout(() => document.exitFullscreen(), 0);
-          }
-          break;
-        }
-        
-        
-        
-        
-        if (this._isRemoteBrowser(browser)) {
-          browser.messageManager.sendAsyncMessage("DOMFullscreen:Entered");
-        }
+        this.enterDomFullscreen(browser);
         break;
       }
       case "MozDOMFullscreen:Exited":
@@ -178,22 +163,30 @@ var FullScreen = {
   },
 
   enterDomFullscreen : function(aBrowser) {
-    if (!document.fullscreenElement)
-      return false;
-
-    
-    
-    
-    
-    if (gBrowser.selectedBrowser != aBrowser) {
-      return false;
+    if (!document.fullscreenElement) {
+      return;
     }
 
-    let focusManager = Services.focus;
-    if (focusManager.activeWindow != window) {
+    
+    
+    
+    
+    if (!aBrowser || gBrowser.selectedBrowser != aBrowser ||
+        
+        
+        Services.focus.activeWindow != window) {
       
       
-      return false;
+      setTimeout(() => document.exitFullscreen(), 0);
+      return;
+    }
+
+    
+    
+    
+    
+    if (this._isRemoteBrowser(aBrowser)) {
+      aBrowser.messageManager.sendAsyncMessage("DOMFullscreen:Entered");
     }
 
     document.documentElement.setAttribute("inDOMFullscreen", true);
@@ -211,8 +204,6 @@ var FullScreen = {
     
     
     window.addEventListener("activate", this);
-
-    return true;
   },
 
   cleanup: function () {
@@ -225,6 +216,9 @@ var FullScreen = {
   },
 
   cleanupDomFullscreen: function () {
+    window.messageManager
+          .broadcastAsyncMessage("DOMFullscreen:CleanUp");
+
     this._WarningBox.close();
     gBrowser.tabContainer.removeEventListener("TabOpen", this.exitDomFullScreen);
     gBrowser.tabContainer.removeEventListener("TabClose", this.exitDomFullScreen);
@@ -232,9 +226,6 @@ var FullScreen = {
     window.removeEventListener("activate", this);
 
     document.documentElement.removeAttribute("inDOMFullscreen");
-
-    window.messageManager
-          .broadcastAsyncMessage("DOMFullscreen:CleanUp");
   },
 
   _isRemoteBrowser: function (aBrowser) {
