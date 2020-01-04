@@ -286,11 +286,6 @@ public:
   
   bool IsPaused();
 
-  static uint32_t GetPreferredRate()
-  {
-    CubebUtils::InitPreferredSampleRate();
-    return CubebUtils::PreferredSampleRate();
-  }
   uint32_t GetRate() { return mOutRate; }
   uint32_t GetChannels() { return mChannels; }
   uint32_t GetOutChannels() { return mOutChannels; }
@@ -334,8 +329,7 @@ private:
   nsresult EnsureTimeStretcherInitializedUnlocked();
 
   
-  
-  bool IsValidAudioFormat(Chunk* aChunk);
+  bool Downmix(Chunk* aChunk);
 
   void GetUnprocessed(AudioBufferWriter& aWriter);
   void GetTimeStretched(AudioBufferWriter& aWriter);
@@ -375,8 +369,12 @@ private:
 
   StreamState mState;
   bool mIsFirst;
+  
+  bool mIsMonoAudioEnabled;
 
   DataSource& mDataSource;
+
+  UniquePtr<AudioConverter> mAudioConverter;
 };
 
 } 
