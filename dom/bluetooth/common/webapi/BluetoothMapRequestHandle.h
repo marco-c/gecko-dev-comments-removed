@@ -92,8 +92,9 @@ public:
 
 
 
-  already_AddRefed<Promise> ReplyToSendMessage(long aMasId, bool aStatus,
-                                               ErrorResult& aRv);
+
+  already_AddRefed<Promise> ReplyToSendMessage(
+    long aMasId, const nsAString& aHandleId, bool aStatus, ErrorResult& aRv);
 
   
 

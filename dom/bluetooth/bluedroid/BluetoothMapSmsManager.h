@@ -173,7 +173,9 @@ public:
 
 
 
-  bool ReplyToSendMessage(long aMasId, bool aStatus);
+
+  bool ReplyToSendMessage(
+    long aMasId, const nsAString& aHandleId , bool aStatus);
 
   
 
@@ -196,9 +198,17 @@ private:
 
   void ReplyToConnect();
   void ReplyToDisconnectOrAbort();
+
+  
+
+
+
+
+
+  bool ReplyToGetWithHeaderBody(uint8_t* aResponse, unsigned int aIndex);
   void ReplyToSetPath();
   void ReplyToPut();
-  void ReplyError(uint8_t aError);
+  void SendReply(uint8_t aResponse);
 
   void HandleNotificationRegistration(const ObexHeaderSet& aHeader);
   void HandleEventReport(const ObexHeaderSet& aHeader);
@@ -213,6 +223,7 @@ private:
     const Map::AppParametersTagId aTagId);
   void SendMasObexData(uint8_t* aData, uint8_t aOpcode, int aSize);
   void SendMnsObexData(uint8_t* aData, uint8_t aOpcode, int aSize);
+  bool StatusResponse(bool aStatus);
 
   uint8_t SetPath(uint8_t flags, const ObexHeaderSet& aHeader);
   bool CompareHeaderTarget(const ObexHeaderSet& aHeader);
@@ -224,6 +235,9 @@ private:
   void SendMnsDisconnectRequest();
   void MnsDataHandler(mozilla::ipc::UnixSocketBuffer* aMessage);
   void MasDataHandler(mozilla::ipc::UnixSocketBuffer* aMessage);
+  bool GetInputStreamFromBlob(Blob* aBlob);
+  InfallibleTArray<uint32_t> PackParameterMask(uint8_t* aData, int aSize);
+
   
 
 
@@ -239,10 +253,15 @@ private:
 
   int mLastCommand;
   
+  bool mBodyRequired;
+  
+  bool mFractionDeliverRequired;
+  
   bool mMasConnected;
   
   bool mMnsConnected;
   bool mNtfRequired;
+
   BluetoothAddress mDeviceAddress;
   unsigned int mRemoteMaxPacketLength;
 
@@ -261,6 +280,11 @@ private:
 
   int mBodySegmentLength;
   nsAutoArrayPtr<uint8_t> mBodySegment;
+
+  
+
+
+  nsCOMPtr<nsIInputStream> mDataStream;
 };
 
 END_BLUETOOTH_NAMESPACE
