@@ -214,15 +214,6 @@ public:
 
 
 
-
-  void TransformCoordinateToGecko(const ScreenIntPoint& aPoint,
-                                  LayoutDeviceIntPoint* aOutTransformedPoint);
-
-  
-
-
-
-
   void ZoomToRect(const ScrollableLayerGuid& aGuid,
                   const CSSRect& aRect);
 
@@ -393,13 +384,13 @@ public:
 
   void DispatchFling(AsyncPanZoomController* aApzc,
                      ParentLayerPoint& aVelocity,
-                     RefPtr<const OverscrollHandoffChain> aOverscrollHandoffChain,
+                     nsRefPtr<const OverscrollHandoffChain> aOverscrollHandoffChain,
                      bool aHandoff);
 
   
 
 
-  RefPtr<const OverscrollHandoffChain> BuildOverscrollHandoffChain(const RefPtr<AsyncPanZoomController>& aInitialTarget);
+  nsRefPtr<const OverscrollHandoffChain> BuildOverscrollHandoffChain(const nsRefPtr<AsyncPanZoomController>& aInitialTarget);
 
 protected:
   
@@ -420,7 +411,7 @@ public:
 
 
 
-  RefPtr<HitTestingTreeNode> GetRootNode() const;
+  nsRefPtr<HitTestingTreeNode> GetRootNode() const;
   already_AddRefed<AsyncPanZoomController> GetTargetAPZC(const ScreenPoint& aPoint,
                                                          HitTestResult* aOutHitResult);
   gfx::Matrix4x4 GetScreenToApzcTransform(const AsyncPanZoomController *aApzc) const;
@@ -509,7 +500,7 @@ protected:
   
 
 
-  RefPtr<InputQueue> mInputQueue;
+  nsRefPtr<InputQueue> mInputQueue;
 
 private:
   
@@ -520,20 +511,20 @@ private:
 
 
   mutable mozilla::Monitor mTreeLock;
-  RefPtr<HitTestingTreeNode> mRootNode;
+  nsRefPtr<HitTestingTreeNode> mRootNode;
   
 
   std::map<ScrollableLayerGuid, ZoomConstraints> mZoomConstraints;
   
 
 
-  std::map<uint64_t, RefPtr<TaskThrottler>> mPaintThrottlerMap;
+  std::map<uint64_t, nsRefPtr<TaskThrottler>> mPaintThrottlerMap;
   
 
 
 
 
-  RefPtr<AsyncPanZoomController> mApzcForInputBlock;
+  nsRefPtr<AsyncPanZoomController> mApzcForInputBlock;
   
 
 
