@@ -522,6 +522,12 @@ public:
 
 
     gfxASurface* ScreenReferenceSurface() { return mScreenReferenceSurface; }
+
+    
+
+
+
+
     mozilla::gfx::DrawTarget* ScreenReferenceDrawTarget() { return mScreenReferenceDrawTarget; }
 
     virtual mozilla::gfx::SurfaceFormat Optimal2DFormatForContent(gfxContentType aContent);
