@@ -114,9 +114,6 @@ public:
     
     if (!mHaveProducedBeforeInput) {
       UpdateOutputBlock(aOutput, 0.0);
-      
-      
-      mLastOutput.SetNull(0);
     }
     mHaveProducedBeforeInput = false;
     mBuffer.NextBlock();
@@ -159,13 +156,7 @@ public:
     if (mLeftOverData <= 0) {
       aOutput->SetNull(WEBAUDIO_BLOCK_SIZE);
     } else {
-      
-      
-      
-      
-      
-      UpdateOutputBlock(&mLastOutput, WEBAUDIO_BLOCK_SIZE);
-      *aOutput = mLastOutput;
+      UpdateOutputBlock(aOutput, WEBAUDIO_BLOCK_SIZE);
     }
     mHaveProducedBeforeInput = true;
   }
@@ -186,7 +177,6 @@ public:
     return aMallocSizeOf(this) + SizeOfExcludingThis(aMallocSizeOf);
   }
 
-  AudioChunk mLastOutput; 
   AudioNodeStream* mSource;
   AudioNodeStream* mDestination;
   AudioParamTimeline mDelay;
