@@ -67,7 +67,7 @@ function DeferredSaveTester(aDataProvider) {
     };
 
   return tester;
-};
+}
 
 
 

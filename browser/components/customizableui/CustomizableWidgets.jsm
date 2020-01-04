@@ -728,7 +728,7 @@ const CustomizableWidgets = [
         zoomResetButton.setAttribute("label", CustomizableUI.getLocalizedProperty(
           buttons[1], "label", [updateDisplay ? zoomFactor : 100]
         ));
-      };
+      }
 
       
       Services.obs.addObserver(updateZoomResetButton, "browser-fullZoom:zoomChange", false);

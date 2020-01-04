@@ -993,7 +993,7 @@ nsPlacesAutoComplete.prototype = {
         default:
           
           continue;
-      };
+      }
 
       aTokens.splice(i, 1);
     }

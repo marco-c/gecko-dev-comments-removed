@@ -270,7 +270,7 @@ function run_test() {
     
     for (let [, [fn, args]] in Iterator(gNextTestSetupTasks)) {
       yield fn.apply(this, args);
-    };
+    }
 
     
     gNextTestSetupTasks = [];

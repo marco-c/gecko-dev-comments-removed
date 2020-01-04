@@ -1,4 +1,4 @@
-;(function(){
+(function(){
 
 
 
@@ -464,7 +464,7 @@ function isArray(obj) {
 
 
 
-function EventEmitter(){};
+function EventEmitter(){}
 
 
 
@@ -502,7 +502,7 @@ EventEmitter.prototype.once = function (name, fn) {
   function on () {
     self.removeListener(name, on);
     fn.apply(this, arguments);
-  };
+  }
 
   on.listener = fn;
   this.on(name, on);
@@ -910,7 +910,7 @@ function Hook(title, fn) {
 
 
 
-function F(){};
+function F(){}
 F.prototype = Runnable.prototype;
 Hook.prototype = new F;
 Hook.prototype.constructor = Hook;
@@ -2582,7 +2582,7 @@ function Dot(runner) {
 
 
 
-function F(){};
+function F(){}
 F.prototype = Base.prototype;
 Dot.prototype = new F;
 Dot.prototype.constructor = Dot;
@@ -3370,7 +3370,7 @@ function Landing(runner) {
 
 
 
-function F(){};
+function F(){}
 F.prototype = Base.prototype;
 Landing.prototype = new F;
 Landing.prototype.constructor = Landing;
@@ -3441,7 +3441,7 @@ function List(runner) {
 
 
 
-function F(){};
+function F(){}
 F.prototype = Base.prototype;
 List.prototype = new F;
 List.prototype.constructor = List;
@@ -3590,7 +3590,7 @@ function Min(runner) {
 
 
 
-function F(){};
+function F(){}
 F.prototype = Base.prototype;
 Min.prototype = new F;
 Min.prototype.constructor = Min;
@@ -3858,7 +3858,7 @@ function write(string) {
 
 
 
-function F(){};
+function F(){}
 F.prototype = Base.prototype;
 NyanCat.prototype = new F;
 NyanCat.prototype.constructor = NyanCat;
@@ -3958,7 +3958,7 @@ function Progress(runner, options) {
 
 
 
-function F(){};
+function F(){}
 F.prototype = Base.prototype;
 Progress.prototype = new F;
 Progress.prototype.constructor = Progress;
@@ -4048,7 +4048,7 @@ function Spec(runner) {
 
 
 
-function F(){};
+function F(){}
 F.prototype = Base.prototype;
 Spec.prototype = new F;
 Spec.prototype.constructor = Spec;
@@ -4223,7 +4223,7 @@ XUnit.prototype.done = function(failures, fn) {
 
 
 
-function F(){};
+function F(){}
 F.prototype = Base.prototype;
 XUnit.prototype = new F;
 XUnit.prototype.constructor = XUnit;
@@ -4346,7 +4346,7 @@ function Runnable(title, fn) {
 
 
 
-function F(){};
+function F(){}
 F.prototype = EventEmitter.prototype;
 Runnable.prototype = new F;
 Runnable.prototype.constructor = Runnable;
@@ -4664,7 +4664,7 @@ Runner.immediately = global.setImmediate || process.nextTick;
 
 
 
-function F(){};
+function F(){}
 F.prototype = EventEmitter.prototype;
 Runner.prototype = new F;
 Runner.prototype.constructor = Runner;
@@ -5373,7 +5373,7 @@ function Suite(title, parentContext) {
 
 
 
-function F(){};
+function F(){}
 F.prototype = EventEmitter.prototype;
 Suite.prototype = new F;
 Suite.prototype.constructor = Suite;
@@ -5695,7 +5695,7 @@ function Test(title, fn) {
 
 
 
-function F(){};
+function F(){}
 F.prototype = Runnable.prototype;
 Test.prototype = new F;
 Test.prototype.constructor = Test;

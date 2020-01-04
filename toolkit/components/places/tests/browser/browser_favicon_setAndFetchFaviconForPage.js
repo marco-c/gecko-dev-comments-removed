@@ -20,7 +20,7 @@ function test() {
       windowsToClose.push(aWin);
       executeSoon(() => aCallback(aWin));
     });
-  };
+  }
 
   
   registerCleanupFunction(function() {

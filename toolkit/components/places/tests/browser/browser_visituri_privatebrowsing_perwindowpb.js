@@ -51,7 +51,7 @@ function test() {
       
       executeSoon(() => aCallback(aWin));
     });
-  };
+  }
 
    
   registerCleanupFunction(function() {

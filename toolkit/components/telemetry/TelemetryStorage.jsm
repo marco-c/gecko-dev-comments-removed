@@ -1342,7 +1342,7 @@ var TelemetryStorageImpl = {
       this._pendingPings.delete(id);
       
       throw e;
-    };
+    }
 
     return ping;
   }),

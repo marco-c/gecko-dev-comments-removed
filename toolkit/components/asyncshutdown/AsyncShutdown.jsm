@@ -466,7 +466,7 @@ function getPhase(topic) {
   });
   gPhases.set(topic, phase);
   return phase;
-};
+}
 
 
 

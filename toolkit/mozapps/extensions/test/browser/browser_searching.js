@@ -269,7 +269,7 @@ function check_results(aQuery, aSortBy, aReverseOrder, aShowLocal) {
   try {
     xpinstall_enabled = Services.prefs.getBoolPref(PREF_XPI_ENABLED);
   }
-  catch (e) {};
+  catch (e) {}
 
   
   if (xpinstall_enabled) {

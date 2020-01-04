@@ -44,7 +44,7 @@ function destroyHiddenBrowser(aFrame, aBrowser) {
 
   
   aFrame.destroy();
-};
+}
 
 
 

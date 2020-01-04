@@ -38,7 +38,7 @@ function run_test() {
       title: "Title" + i,
       visits: [new VisitInfo]
     });
-  };
+  }
   gHistory.updatePlaces(places);
 
   
