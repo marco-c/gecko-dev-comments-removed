@@ -104,7 +104,7 @@ public class SendTabDeviceListArrayAdapter extends ArrayAdapter<RemoteClient> {
 
         if (currentState != State.LIST) {
             
-            final Drawable sendTabIcon = context.getResources().getDrawable(R.drawable.shareplane);
+            final Drawable sendTabIcon = context.getResources().getDrawable(R.drawable.overlay_send_tab_icon);
             row.setText(dummyRecordName);
             row.setDrawable(sendTabIcon);
         }
