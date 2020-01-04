@@ -3524,7 +3524,8 @@ XULDocument::ExecuteScript(nsXULPrototypeScript *aScript)
     
     
     
-    JS::CloneAndExecuteScript(cx, scriptObject);
+    JS::RootedValue rval(cx);
+    JS::CloneAndExecuteScript(cx, scriptObject, &rval);
 
     return NS_OK;
 }
