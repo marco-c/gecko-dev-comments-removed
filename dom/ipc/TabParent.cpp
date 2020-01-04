@@ -606,6 +606,10 @@ TabParent::DestroyInternal()
 void
 TabParent::Destroy()
 {
+  
+  
+  mBrowserDOMWindow = nullptr;
+
   if (mIsDestroyed) {
     return;
   }

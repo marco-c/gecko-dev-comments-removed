@@ -5430,7 +5430,7 @@ ContentParent::RecvCreateWindow(PBrowserParent* aThisTab,
   
   if (openLocation == nsIBrowserDOMWindow::OPEN_NEWTAB) {
     if (NS_WARN_IF(!browserDOMWin)) {
-      *aResult = NS_ERROR_FAILURE;
+      *aResult = NS_ERROR_ABORT;
       return true;
     }
 
