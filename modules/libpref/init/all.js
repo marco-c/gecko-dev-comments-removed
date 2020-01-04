@@ -4280,6 +4280,11 @@ pref("layers.tiles.edge-padding", false);
 pref("layers.tiled-drawtarget.enabled", true);
 #endif
 
+#ifdef MOZ_WIDGET_ANDROID
+pref("layers.tiled-drawtarget.enabled", true);
+pref("layers.tiles.edge-padding", true);
+#endif
+
 
 
 pref("layers.offmainthreadcomposition.testing.enabled", false);
