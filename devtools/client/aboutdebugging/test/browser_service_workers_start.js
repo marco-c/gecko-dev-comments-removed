@@ -56,11 +56,17 @@ add_task(function* () {
   let targetElement = name.parentNode.parentNode;
 
   
-  ok(targetElement.querySelector(".debug-button"), "Found its debug button");
-  ok(!targetElement.querySelector(".start-button"), "No start button");
+  if (!targetElement.querySelector(".start-button")) {
+    
+    ok(targetElement.querySelector(".debug-button"), "Found its debug button");
 
-  
-  yield waitForMutation(targetElement, { childList: true });
+    
+    yield waitForMutation(targetElement, { childList: true });
+  } else {
+    
+    ok(!targetElement.querySelector(".debug-button"), "No debug button when " +
+      "the worker is already killed");
+  }
 
   
   let startBtn = targetElement.querySelector(".start-button");
