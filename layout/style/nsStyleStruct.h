@@ -752,7 +752,7 @@ struct nsStyleImageLayers {
   
   
   
-  AutoTArray<Layer, 1> mLayers;
+  nsStyleAutoArray<Layer> mLayers;
 
   const Layer& BottomLayer() const { return mLayers[mImageCount - 1]; }
 
