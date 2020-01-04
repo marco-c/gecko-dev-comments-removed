@@ -2208,8 +2208,11 @@ class DebugScopeProxy : public BaseProxyHandler
             *bp = true;
             return true;
         }
-        if (isThis(cx, id) && isFunctionScopeWithThis(scopeObj)) {
-            *bp = true;
+
+        
+        
+        if (isThis(cx, id)) {
+            *bp = isFunctionScopeWithThis(scopeObj);
             return true;
         }
 
