@@ -895,17 +895,10 @@ OnSharedPreferenceChangeListener
                     final String url = getResources().getString(R.string.faq_link, VERSION, OS, LOCALE);
                     ((LinkPreference) pref).setUrl(url);
                 } else if (PREFS_FEEDBACK_LINK.equals(key)) {
-                    PrefsHelper.getPref("app.feedbackURL", new PrefsHelper.PrefHandlerBase() {
-                        @Override
-                        public void prefValue(String prefName, final String value) {
-                            ThreadUtils.postToUiThread(new Runnable() {
-                                @Override
-                                public void run() {
-                                    ((LinkPreference) pref).setUrl(value);
-                                }
-                            });
-                        }
-                    });
+                    
+                    
+                    final String url = getResources().getString(R.string.feedback_link, AppConstants.MOZ_APP_VERSION, AppConstants.MOZ_UPDATE_CHANNEL);
+                    ((LinkPreference) pref).setUrl(url);
                 } else if (PREFS_DYNAMIC_TOOLBAR.equals(key)) {
                     if (DynamicToolbar.isForceDisabled()) {
                         preferences.removePreference(pref);
