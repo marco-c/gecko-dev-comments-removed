@@ -3888,7 +3888,14 @@ GCRuntime::sweepZones(FreeOp* fop, bool destroyingRuntime)
                                     !zone->hasMarkedCompartments();
             if (zoneIsDead || destroyingRuntime)
             {
+                
+                
                 zone->arenas.checkEmptyFreeLists();
+
+                
+                
+                
+                zone->arenas.checkEmptyArenaLists();
 
                 if (callback)
                     callback(zone);
@@ -3903,6 +3910,37 @@ GCRuntime::sweepZones(FreeOp* fop, bool destroyingRuntime)
         *write++ = zone;
     }
     zones.shrinkTo(write - zones.begin());
+}
+
+#ifdef DEBUG
+static const char*
+AllocKindToAscii(AllocKind kind)
+{
+    switch(kind) {
+#define MAKE_CASE(name, _) case AllocKind:: name: return #name;
+      FOR_EACH_ALLOCKIND(MAKE_CASE)
+#undef MAKE_CASE
+      case AllocKind::LIMIT: MOZ_FALLTHROUGH;
+      default: MOZ_CRASH("Unknown AllocKind in AllocKindToAscii");
+    }
+}
+#endif 
+
+void
+ArenaLists::checkEmptyArenaList(AllocKind kind)
+{
+#ifdef DEBUG
+    if (!arenaLists[kind].isEmpty()) {
+        for (Arena* current = arenaLists[kind].head(); current; current = current->next) {
+            for (ArenaCellIterUnderFinalize i(current); !i.done(); i.next()) {
+                Cell* t = i.get<Cell>();
+                MOZ_ASSERT(t->asTenured().isMarked(), "unmarked cells should have been finalized");
+                fprintf(stderr, "ERROR: GC found live Cell %p of kind %s at shutdown\n",
+                        t, AllocKindToAscii(kind));
+            }
+        }
+    }
+#endif 
 }
 
 void
