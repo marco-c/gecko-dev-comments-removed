@@ -139,6 +139,11 @@ H264Converter::CreateDecoder()
     return NS_ERROR_NOT_INITIALIZED;
   }
   UpdateConfigFromExtraData(mCurrentConfig.mExtraData);
+  if (!mNeedAVCC) {
+    
+    
+    mOriginalConfig = mCurrentConfig;
+  }
 
   mDecoder = mPDM->CreateVideoDecoder(mNeedAVCC ? mCurrentConfig : mOriginalConfig,
                                       mLayersBackend,
