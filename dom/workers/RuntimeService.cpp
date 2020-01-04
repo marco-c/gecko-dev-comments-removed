@@ -777,7 +777,7 @@ InitJSContextForWorker(WorkerPrivate* aWorkerPrivate, JSRuntime* aRuntime)
   static const JSSecurityCallbacks securityCallbacks = {
     ContentSecurityPolicyAllows
   };
-  JS_SetSecurityCallbacks(aRuntime, &securityCallbacks);
+  JS_SetSecurityCallbacks(workerCx, &securityCallbacks);
 
   
   static const JS::AsmJSCacheOps asmJSCacheOps = {
