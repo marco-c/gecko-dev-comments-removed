@@ -30,6 +30,12 @@ actions.EXPORT_SNAPSHOT_END = "export-snapshot-end";
 actions.EXPORT_SNAPSHOT_ERROR = "export-snapshot-error";
 
 
+
+actions.IMPORT_SNAPSHOT_START = "import-snapshot-start";
+actions.IMPORT_SNAPSHOT_END = "import-snapshot-end";
+actions.IMPORT_SNAPSHOT_ERROR = "import-snapshot-error";
+
+
 actions.SELECT_SNAPSHOT = "select-snapshot";
 
 
@@ -101,6 +107,7 @@ const snapshotState = exports.snapshotState = {};
 
 
 snapshotState.ERROR = "snapshot-state-error";
+snapshotState.IMPORTING = "snapshot-state-importing";
 snapshotState.SAVING = "snapshot-state-saving";
 snapshotState.SAVED = "snapshot-state-saved";
 snapshotState.READING = "snapshot-state-reading";
