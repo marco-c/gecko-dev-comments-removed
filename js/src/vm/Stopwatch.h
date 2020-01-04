@@ -314,8 +314,6 @@ struct cpuid_t {
           number_(0)
     { }
 };
-#elif defined(__linux__)
-    typedef int cpuid_t;
 #else
     typedef struct {} cpuid_t;
 #endif 
