@@ -1928,7 +1928,7 @@ protected:
       
       
       EventRegions er = aLayer->GetEventRegions();
-      IntRect scrollRect = LayerIntRect::ToUntyped(RoundedToInt(aScrollableRect * metrics.LayersPixelsPerCSSPixel()));
+      IntRect scrollRect = RoundedToInt(aScrollableRect * metrics.LayersPixelsPerCSSPixel()).ToUnknownRect();
       er.mHitRegion = nsIntRegion(IntRect(layerBound.TopLeft(), scrollRect.Size()));
       aLayer->SetEventRegions(er);
     }

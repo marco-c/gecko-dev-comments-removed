@@ -238,7 +238,7 @@ nsResizerFrame::HandleEvent(nsPresContext* aPresContext,
         
         
         
-        nsRect appUnitsRect = ToAppUnits(LayoutDevicePixel::ToUntyped(rect), aPresContext->AppUnitsPerDevPixel());
+        nsRect appUnitsRect = ToAppUnits(rect.ToUnknownRect(), aPresContext->AppUnitsPerDevPixel());
         if (appUnitsRect.width < mRect.width && mouseMove.x)
           appUnitsRect.width = mRect.width;
         if (appUnitsRect.height < mRect.height && mouseMove.y)

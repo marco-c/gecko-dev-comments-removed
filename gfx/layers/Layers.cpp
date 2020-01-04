@@ -1041,7 +1041,7 @@ Layer::GetVisibleRegionRelativeToRootLayer(nsIntRegion& aResult,
     
     
     if (layer->GetEffectiveClipRect()) {
-      aResult.AndWith(ParentLayerIntRect::ToUntyped(*layer->GetEffectiveClipRect()));
+      aResult.AndWith(layer->GetEffectiveClipRect()->ToUnknownRect());
     }
 
     
@@ -1067,7 +1067,7 @@ Layer::GetVisibleRegionRelativeToRootLayer(nsIntRegion& aResult,
       
       Maybe<ParentLayerIntRect> clipRect = sibling->GetEffectiveClipRect();
       if (clipRect) {
-        siblingVisibleRegion.AndWith(ParentLayerIntRect::ToUntyped(*clipRect));
+        siblingVisibleRegion.AndWith(clipRect->ToUnknownRect());
       }
       
       aResult.SubOut(siblingVisibleRegion);
