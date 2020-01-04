@@ -604,6 +604,10 @@ struct JSCompartment
     
 
 
+    void finishRoots();
+    
+
+
 
 
 

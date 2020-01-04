@@ -386,22 +386,6 @@ JSRuntime::destroyRuntime()
         CancelOffThreadParses(this);
 
         
-        for (CompartmentsIter comp(this, SkipAtoms); !comp.done(); comp.next()) {
-            if (WatchpointMap* wpmap = comp->watchpointMap)
-                wpmap->clear();
-        }
-
-        
-
-
-
-        for (CompartmentsIter comp(this, SkipAtoms); !comp.done(); comp.next())
-            comp->clearScriptCounts();
-
-        
-        finishAtoms();
-
-        
         gc.finishRoots();
 
         
@@ -422,12 +406,6 @@ JSRuntime::destroyRuntime()
 
     MOZ_ASSERT(ionLazyLinkListSize_ == 0);
     MOZ_ASSERT(ionLazyLinkList_.isEmpty());
-
-    
-
-
-
-    finishSelfHosting();
 
     MOZ_ASSERT(!numExclusiveThreads);
     AutoLockForExclusiveAccess lock(this);

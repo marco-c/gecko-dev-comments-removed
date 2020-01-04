@@ -785,6 +785,10 @@ js::Nursery::freeMallocedBuffers()
 void
 js::Nursery::waitBackgroundFreeEnd()
 {
+    
+    if (!isEnabled())
+        return;
+
     MOZ_ASSERT(freeMallocedBuffersTask);
     freeMallocedBuffersTask->join();
 }
