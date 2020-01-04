@@ -74,6 +74,10 @@ public:
     return mGPUChild.get();
   }
 
+  
+  
+  uint64_t GetProcessToken() const;
+
   bool IsConnected() const {
     return !!mGPUChild;
   }
@@ -114,7 +118,7 @@ private:
   LaunchPhase mLaunchPhase;
 
   UniquePtr<GPUChild> mGPUChild;
-  Listener* listener_;
+  uint64_t mProcessToken;
 
   bool mShutdownRequested;
 };

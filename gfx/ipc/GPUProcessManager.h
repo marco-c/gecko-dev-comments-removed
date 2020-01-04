@@ -12,6 +12,7 @@
 #include "mozilla/dom/ipc/IdType.h"
 #include "mozilla/gfx/GPUProcessHost.h"
 #include "mozilla/gfx/Point.h"
+#include "mozilla/ipc/TaskFactory.h"
 #include "mozilla/ipc/Transport.h"
 #include "nsIObserverService.h"
 
@@ -107,6 +108,10 @@ public:
   void OnProcessUnexpectedShutdown(GPUProcessHost* aHost) override;
 
   
+  
+  void NotifyRemoteActorDestroyed(const uint64_t& aProcessToken);
+
+  
   GPUChild* GetGPUChild() {
     return mGPUChild;
   }
@@ -141,8 +146,11 @@ private:
 
 private:
   RefPtr<Observer> mObserver;
+  ipc::TaskFactory<GPUProcessManager> mTaskFactory;
   uint64_t mNextLayerTreeId;
+
   GPUProcessHost* mProcess;
+  uint64_t mProcessToken;
   GPUChild* mGPUChild;
 };
 

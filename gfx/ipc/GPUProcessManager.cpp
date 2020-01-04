@@ -5,8 +5,8 @@
 
 #include "GPUProcessManager.h"
 #include "GPUProcessHost.h"
-#include "mozilla/StaticPtr.h"
 #include "mozilla/layers/InProcessCompositorSession.h"
+#include "mozilla/StaticPtr.h"
 #include "nsContentUtils.h"
 
 namespace mozilla {
@@ -36,7 +36,8 @@ GPUProcessManager::Shutdown()
 }
 
 GPUProcessManager::GPUProcessManager()
- : mNextLayerTreeId(0),
+ : mTaskFactory(this),
+   mNextLayerTreeId(0),
    mProcess(nullptr),
    mGPUChild(nullptr)
 {
@@ -128,6 +129,7 @@ GPUProcessManager::OnProcessLaunchComplete(GPUProcessHost* aHost)
   }
 
   mGPUChild = mProcess->GetActor();
+  mProcessToken = mProcess->GetProcessToken();
 }
 
 void
@@ -139,6 +141,29 @@ GPUProcessManager::OnProcessUnexpectedShutdown(GPUProcessHost* aHost)
 }
 
 void
+GPUProcessManager::NotifyRemoteActorDestroyed(const uint64_t& aProcessToken)
+{
+  if (!NS_IsMainThread()) {
+    RefPtr<Runnable> task = mTaskFactory.NewRunnableMethod(
+      &GPUProcessManager::NotifyRemoteActorDestroyed, aProcessToken);
+    NS_DispatchToMainThread(task.forget());
+    return;
+  }
+
+  if (mProcessToken != aProcessToken) {
+    
+    return;
+  }
+
+  
+  
+  
+  
+  MOZ_ASSERT(mProcess);
+  DestroyProcess();
+}
+
+void
 GPUProcessManager::DestroyProcess()
 {
   if (!mProcess) {
@@ -146,6 +171,7 @@ GPUProcessManager::DestroyProcess()
   }
 
   mProcess->Shutdown();
+  mProcessToken = 0;
   mProcess = nullptr;
   mGPUChild = nullptr;
 }
