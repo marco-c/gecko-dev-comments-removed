@@ -3318,7 +3318,7 @@ nsHTMLEditRules::WillRemoveList(Selection* aSelection,
     }
     else if (nsHTMLEditUtils::IsList(curNode)) 
     {
-      res = RemoveListStructure(GetAsDOMNode(curNode));
+      res = RemoveListStructure(*curNode->AsElement());
       NS_ENSURE_SUCCESS(res, res);
     }
   }
@@ -7813,46 +7813,37 @@ nsHTMLEditRules::PopListItem(nsIDOMNode *aListItem, bool *aOutOfList)
 }
 
 nsresult
-nsHTMLEditRules::RemoveListStructure(nsIDOMNode *aList)
+nsHTMLEditRules::RemoveListStructure(Element& aList)
 {
-  NS_ENSURE_ARG_POINTER(aList);
-
+  NS_ENSURE_STATE(mHTMLEditor);
+  nsCOMPtr<nsIEditor> kungFuDeathGrip(mHTMLEditor);
   nsresult res;
 
-  nsCOMPtr<nsIDOMNode> child;
-  aList->GetFirstChild(getter_AddRefs(child));
+  while (aList.GetFirstChild()) {
+    OwningNonNull<nsIContent> child = *aList.GetFirstChild();
 
-  while (child)
-  {
-    if (nsHTMLEditUtils::IsListItem(child))
-    {
-      bool bOutOfList;
-      do
-      {
-        res = PopListItem(child, &bOutOfList);
-        NS_ENSURE_SUCCESS(res, res);
-      } while (!bOutOfList);   
-    }
-    else if (nsHTMLEditUtils::IsList(child))
-    {
-      res = RemoveListStructure(child);
-      NS_ENSURE_SUCCESS(res, res);
-    }
-    else
-    {
+    if (nsHTMLEditUtils::IsListItem(child)) {
+      bool isOutOfList;
       
-      NS_ENSURE_STATE(mHTMLEditor);
+      do {
+        res = PopListItem(child->AsDOMNode(), &isOutOfList);
+        NS_ENSURE_SUCCESS(res, res);
+      } while (!isOutOfList);
+    } else if (nsHTMLEditUtils::IsList(child)) {
+      res = RemoveListStructure(*child->AsElement());
+      NS_ENSURE_SUCCESS(res, res);
+    } else {
+      
       res = mHTMLEditor->DeleteNode(child);
       NS_ENSURE_SUCCESS(res, res);
     }
-    aList->GetFirstChild(getter_AddRefs(child));
   }
+
   
-  NS_ENSURE_STATE(mHTMLEditor);
-  res = mHTMLEditor->RemoveBlockContainer(aList);
+  res = mHTMLEditor->RemoveBlockContainer(aList.AsDOMNode());
   NS_ENSURE_SUCCESS(res, res);
 
-  return res;
+  return NS_OK;
 }
 
 
