@@ -75,43 +75,62 @@ ServoRestyleManager::RecreateStyleContexts(nsIContent* aContent,
   }
 
   if (aContent->IsDirtyForServo()) {
-    nsChangeHint changeHint;
-    if (primaryFrame) {
-      changeHint = primaryFrame->StyleContext()->ConsumeStoredChangeHint();
-    } else {
+    RefPtr<ServoComputedValues> computedValues =
+      dont_AddRef(Servo_GetComputedValues(aContent));
+    MOZ_ASSERT(computedValues);
+
+    
+    
+    if (aContent->IsElement()) {
+      nsChangeHint changeHint = nsChangeHint(0);
+      Element* element = aContent->AsElement();
+
+      
+      ServoElementSnapshot* snapshot;
+      if (mModifiedElements.Get(element, &snapshot)) {
+        changeHint |= snapshot->ExplicitChangeHint();
+      }
+
       
       
       
       
-      changeHint = nsChangeHint_ReconstructFrame;
+      if (primaryFrame) {
+        changeHint |= primaryFrame->StyleContext()->ConsumeStoredChangeHint();
+      } else {
+        const nsStyleDisplay* currentDisplay =
+          Servo_GetStyleDisplay(computedValues);
+        if (currentDisplay->mDisplay != NS_STYLE_DISPLAY_NONE) {
+          changeHint |= nsChangeHint_ReconstructFrame;
+        }
+      }
+
+      
+      
+      if (changeHint) {
+        aChangeListToProcess.AppendChange(primaryFrame, element, changeHint);
+      }
     }
 
     
-    if (changeHint && aContent->IsElement()) {
-      aChangeListToProcess.AppendChange(primaryFrame, aContent, changeHint);
-    }
-
+    
     if (!primaryFrame) {
-      
-      
+      aContent->UnsetFlags(NODE_IS_DIRTY_FOR_SERVO);
       return;
     }
 
     
     
-    RefPtr<ServoComputedValues> computedValues =
-      dont_AddRef(Servo_GetComputedValues(aContent));
+    
+    
+    RefPtr<nsStyleContext> oldStyleContext = primaryFrame->StyleContext();
+    MOZ_ASSERT(oldStyleContext);
 
     
     
     RefPtr<nsStyleContext> newContext =
-      aStyleSet->GetContext(computedValues.forget(),
-                            aParentContext,
-                            nullptr,
+      aStyleSet->GetContext(computedValues.forget(), aParentContext, nullptr,
                             CSSPseudoElementType::NotPseudo);
-
-    RefPtr<nsStyleContext> oldStyleContext = primaryFrame->StyleContext();
-    MOZ_ASSERT(oldStyleContext);
 
     
     
@@ -129,7 +148,7 @@ ServoRestyleManager::RecreateStyleContexts(nsIContent* aContent,
   if (aContent->HasDirtyDescendantsForServo()) {
     MOZ_ASSERT(primaryFrame,
                "Frame construction should be scheduled, and it takes the "
-               "correct style for the children");
+               "correct style for the children, so no need to be here.");
     FlattenedChildIterator it(aContent);
     for (nsIContent* n = it.GetNextChild(); n; n = it.GetNextChild()) {
       RecreateStyleContexts(n, primaryFrame->StyleContext(),
