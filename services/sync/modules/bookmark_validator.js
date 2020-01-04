@@ -10,8 +10,105 @@ Cu.import("resource://gre/modules/PlacesUtils.jsm");
 Cu.import("resource://services-sync/util.js");
 Cu.import("resource://services-sync/bookmark_utils.js");
 
-this.EXPORTED_SYMBOLS = ["BookmarkValidator"];
+this.EXPORTED_SYMBOLS = ["BookmarkValidator", "BookmarkProblemData"];
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class BookmarkProblemData {
+  constructor() {
+    this.rootOnServer = false;
+    this.missingIDs = 0;
+
+    this.duplicates = [];
+    this.parentChildMismatches = [];
+    this.cycles = [];
+    this.orphans = [];
+    this.missingChildren = [];
+    this.multipleParents = [];
+    this.deletedParents = [];
+    this.childrenOnNonFolder = [];
+    this.duplicateChildren = [];
+    this.parentNotFolder = [];
+    this.wrongParentName = [];
+
+    this.clientMissing = [];
+    this.serverMissing = [];
+    this.serverDeleted = [];
+    this.serverUnexpected = [];
+    this.differences = [];
+    this.structuralDifferences = [];
+  }
+
+  
+
+
+
+
+
+
+  getSummary() {
+    return [
+      { name: "clientMissing", count: this.clientMissing.length },
+      { name: "serverMissing", count: this.serverMissing.length },
+      { name: "serverDeleted", count: this.serverDeleted.length },
+      { name: "serverUnexpected", count: this.serverUnexpected.length },
+
+      { name: "structuralDifferences", count: this.structuralDifferences.length },
+      { name: "differences", count: this.differences.length },
+
+      { name: "missingIDs", count: this.missingIDs },
+      { name: "rootOnServer", count: this.rootOnServer ? 1 : 0 },
+
+      { name: "duplicates", count: this.duplicates.length },
+      { name: "parentChildMismatches", count: this.parentChildMismatches.length },
+      { name: "cycles", count: this.cycles.length },
+      { name: "orphans", count: this.orphans.length },
+      { name: "missingChildren", count: this.missingChildren.length },
+      { name: "multipleParents", count: this.multipleParents.length },
+      { name: "deletedParents", count: this.deletedParents.length },
+      { name: "childrenOnNonFolder", count: this.childrenOnNonFolder.length },
+      { name: "duplicateChildren", count: this.duplicateChildren.length },
+      { name: "parentNotFolder", count: this.parentNotFolder.length },
+      { name: "wrongParentName", count: this.wrongParentName.length },
+    ];
+  }
+}
 
 class BookmarkValidator {
 
@@ -110,27 +207,6 @@ class BookmarkValidator {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
   inspectServerRecords(serverRecords) {
     let deletedItemIds = new Set();
     let idToRecord = new Map();
@@ -139,21 +215,7 @@ class BookmarkValidator {
     let folders = [];
     let problems = [];
 
-    let problemData = {
-      missingIDs: 0,
-      duplicates: [],
-      parentChildMismatches: [],
-      cycles: [],
-      orphans: [],
-      missingChildren: [],
-      multipleParents: [],
-      deletedParents: [],
-      childrenOnNonFolder: [],
-      duplicateChildren: [],
-      parentNotFolder: [],
-      wrongParentName: [],
-      rootOnServer: false
-    };
+    let problemData = new BookmarkProblemData();
 
     let resultRecords = [];
 
@@ -370,12 +432,6 @@ class BookmarkValidator {
 
 
 
-
-
-
-
-
-
   compareServerWithClient(serverRecords, clientTree) {
 
     let clientRecords = this.createClientRecordsFromTree(clientTree);
@@ -385,13 +441,6 @@ class BookmarkValidator {
     
     serverRecords = inspectionInfo.records;
     let problemData = inspectionInfo.problemData;
-
-    problemData.clientMissing = [];
-    problemData.serverMissing = [];
-    problemData.serverDeleted = [];
-    problemData.serverUnexpected = [];
-    problemData.differences = [];
-    problemData.good = [];
 
     let matches = [];
 
@@ -429,6 +478,7 @@ class BookmarkValidator {
         problemData.serverUnexpected.push(id);
       }
       let differences = [];
+      let structuralDifferences = [];
       
       if ((client.title || "") !== (server.title || "")) {
         differences.push('title');
@@ -436,7 +486,7 @@ class BookmarkValidator {
 
       if (client.parentid || server.parentid) {
         if (client.parentid !== server.parentid) {
-          differences.push('parentid');
+          structuralDifferences.push('parentid');
         }
         
         
@@ -495,7 +545,7 @@ class BookmarkValidator {
               let cl = client.childGUIDs || [];
               let sl = server.childGUIDs || [];
               if (cl.length !== sl.length || !cl.every((id, i) => sl[i] === id)) {
-                differences.push('childGUIDs');
+                structuralDifferences.push('childGUIDs');
               }
             }
             break;
@@ -504,6 +554,9 @@ class BookmarkValidator {
 
       if (differences.length) {
         problemData.differences.push({id, differences});
+      }
+      if (structuralDifferences.length) {
+        problemData.structuralDifferences.push({ id, differences: structuralDifferences });
       }
     }
     return inspectionInfo;
