@@ -6,7 +6,6 @@
 package org.mozilla.gecko.home;
 
 import org.mozilla.gecko.AppConstants;
-import org.mozilla.gecko.db.BrowserContract.SearchHistory;
 import org.mozilla.gecko.GeckoSharedPrefs;
 import org.mozilla.gecko.R;
 import org.mozilla.gecko.Telemetry;
@@ -22,8 +21,6 @@ import org.mozilla.gecko.widget.AnimatedHeightLayout;
 import org.mozilla.gecko.widget.FaviconView;
 import org.mozilla.gecko.widget.FlowLayout;
 
-import android.database.Cursor;
-import android.content.ContentResolver;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.graphics.drawable.Drawable;
@@ -37,6 +34,7 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import java.util.EnumSet;
+import java.util.List;
 
 class SearchEngineRow extends AnimatedHeightLayout {
     
@@ -247,48 +245,19 @@ class SearchEngineRow extends AnimatedHeightLayout {
 
 
 
-    private void updateFromSavedSearches(Cursor c, boolean animate, int suggestionCounter, int recycledSuggestionCount) {
-        if (c == null) {
+    private void updateFromSavedSearches(List<String> savedSuggestions, boolean animate, int suggestionCounter, int recycledSuggestionCount) {
+        if (savedSuggestions == null || savedSuggestions.isEmpty()) {
             return;
         }
-        try {
-            if (c.moveToFirst()) {
-                final int searchColumn = c.getColumnIndexOrThrow(SearchHistory.QUERY);
-                final int historyStartIndex = suggestionCounter;
-                do {
-                    final String savedSearch = c.getString(searchColumn);
-                    
-                    
-                    String telemetryTag = "history." + (suggestionCounter - historyStartIndex);
-                    bindSuggestionView(savedSearch, animate, recycledSuggestionCount, suggestionCounter, true, telemetryTag);
-                    ++suggestionCounter;
-                } while (c.moveToNext());
-            }
-        } finally {
-            c.close();
+
+        final int historyStartIndex = suggestionCounter;
+        for (String suggestion : savedSuggestions) {
+            String telemetryTag = "history." + (suggestionCounter - historyStartIndex);
+            bindSuggestionView(suggestion, animate, recycledSuggestionCount, suggestionCounter, true, telemetryTag);
+            ++suggestionCounter;
         }
+
         hideRecycledSuggestions(suggestionCounter, recycledSuggestionCount);
-    }
-
-    
-
-
-
-
-
-    private Cursor getSavedSearches(String searchTerm) {
-        if (!AppConstants.NIGHTLY_BUILD) {
-            return null;
-        }
-
-        final ContentResolver cr = getContext().getContentResolver();
-
-        String[] columns = new String[] { SearchHistory.QUERY };
-        String actualQuery = SearchHistory.QUERY + " LIKE ?";
-        String[] queryArgs = new String[] { '%' + searchTerm + '%' };
-
-        String sortOrderAndLimit = SearchHistory.DATE +" DESC LIMIT " + mMaxSavedSuggestions;
-        return cr.query(SearchHistory.CONTENT_URI, columns, actualQuery, queryArgs, sortOrderAndLimit);
     }
 
     
@@ -344,7 +313,7 @@ class SearchEngineRow extends AnimatedHeightLayout {
 
 
 
-    public void updateSuggestions(boolean searchSuggestionsEnabled, SearchEngine searchEngine, String searchTerm, boolean animate) {
+    public void updateSuggestions(boolean searchSuggestionsEnabled, SearchEngine searchEngine, List<String> searchHistorySuggestions, boolean animate) {
         mSearchEngine = searchEngine;
         
         mIconView.updateAndScaleImage(mSearchEngine.getIcon(), mSearchEngine.getEngineIdentifier());
@@ -363,25 +332,12 @@ class SearchEngineRow extends AnimatedHeightLayout {
         final boolean savedSearchesEnabled = prefs.getBoolean(GeckoPreferences.PREFS_HISTORY_SAVED_SEARCH, true);
 
         if (searchSuggestionsEnabled && savedSearchesEnabled) {
-            final Cursor c = getSavedSearches(searchTerm);
-            try {
-                final int savedSearchCount = (c != null) ? c.getCount() : 0;
-                final int suggestionViewCount = updateFromSearchEngine(animate, recycledSuggestionCount, savedSearchCount);
-                updateFromSavedSearches(c, animate, suggestionViewCount, recycledSuggestionCount);
-            } finally {
-                if (c != null) {
-                    c.close();
-                }
-            }
+            final int savedSearchCount = (searchHistorySuggestions != null) ? searchHistorySuggestions.size() : 0;
+            final int suggestionViewCount = updateFromSearchEngine(animate, recycledSuggestionCount, savedSearchCount);
+            updateFromSavedSearches(searchHistorySuggestions, animate, suggestionViewCount, recycledSuggestionCount);
+
         } else if (savedSearchesEnabled) {
-            final Cursor c = getSavedSearches(searchTerm);
-            try {
-                updateFromSavedSearches(c, animate, 0, recycledSuggestionCount);
-            } finally {
-                if (c != null) {
-                    c.close();
-                }
-            }
+            updateFromSavedSearches(searchHistorySuggestions, animate, 0, recycledSuggestionCount);
         } else if (searchSuggestionsEnabled) {
             updateFromSearchEngine(animate, recycledSuggestionCount, 0);
         }
