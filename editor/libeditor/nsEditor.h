@@ -249,6 +249,9 @@ public:
 
   void SwitchTextDirectionTo(uint32_t aDirection);
 
+  void StartWatchingDictionaryChanges();
+  void StopWatchingDictionaryChanges();
+
 protected:
   nsresult DetermineCurrentDirection();
   void FireInputEvent();
@@ -891,6 +894,7 @@ protected:
   bool mDispatchInputEvent;
   bool mIsInEditAction;   
   bool mHidingCaret;      
+  bool mObservingDictionaryUpdates;  
 
   friend bool NSCanUnload(nsISupports* serviceMgr);
   friend class nsAutoTxnsConserveSelection;
