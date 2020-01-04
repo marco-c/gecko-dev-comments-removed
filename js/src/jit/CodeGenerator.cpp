@@ -4739,7 +4739,7 @@ CodeGenerator::maybeCreateScriptCounts()
     
     
     
-    if (!GetJitContext()->runtime->profilingScripts())
+    if (!GetJitContext()->hasProfilingScripts())
         return nullptr;
 
     

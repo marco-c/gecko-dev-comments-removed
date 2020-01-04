@@ -6399,7 +6399,7 @@ js::wasm::BaselineCompileFunction(IonCompileTask* task)
 
     
 
-    JitContext jitContext(CompileRuntime::get(task->runtime()), &results.alloc());
+    JitContext jitContext(&results.alloc());
 
     
 

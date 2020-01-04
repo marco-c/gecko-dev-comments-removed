@@ -90,7 +90,7 @@ class Label : public LabelBase
         
         JitContext* context = MaybeGetJitContext();
         bool hadError = js::oom::HadSimulatedOOM() ||
-                        (context && context->runtime->hadOutOfMemory());
+                        (context && context->runtime && context->runtime->hadOutOfMemory());
         MOZ_ASSERT_IF(!hadError, !used());
 #endif
     }
