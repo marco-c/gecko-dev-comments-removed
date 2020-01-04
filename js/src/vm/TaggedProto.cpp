@@ -4,17 +4,23 @@
 
 
 
+#include "vm/TaggedProto.h"
+
+namespace js {
+
  void
-js::InternalGCMethods<TaggedProto>::preBarrier(TaggedProto& proto)
+InternalGCMethods<TaggedProto>::preBarrier(TaggedProto& proto)
 {
     InternalGCMethods<JSObject*>::preBarrier(proto.toObjectOrNull());
 }
 
  void
-js::InternalGCMethods<TaggedProto>::postBarrier(TaggedProto* vp, TaggedProto prev, TaggedProto next)
+InternalGCMethods<TaggedProto>::postBarrier(TaggedProto* vp, TaggedProto prev, TaggedProto next)
 {
     JSObject* prevObj = prev.isObject() ? prev.toObject() : nullptr;
     JSObject* nextObj = next.isObject() ? next.toObject() : nullptr;
     InternalGCMethods<JSObject*>::postBarrier(reinterpret_cast<JSObject**>(vp), prevObj,
                                               nextObj);
 }
+
+} 
