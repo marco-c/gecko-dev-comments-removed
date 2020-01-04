@@ -33,6 +33,7 @@
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/dom/Element.h"
 #include "nsHashKeys.h"
+#include "mozilla/OperatorNewExtensions.h"
 #include "mozilla/RestyleManagerHandle.h"
 #include "mozilla/RestyleManagerHandleInlines.h"
 
@@ -56,14 +57,6 @@ nsHTMLStyleSheet::HTMLColorRule::MapRuleInfoInto(nsRuleData* aRuleData)
 nsHTMLStyleSheet::HTMLColorRule::MightMapInheritedStyleData()
 {
   return true;
-}
-
- bool
-nsHTMLStyleSheet::HTMLColorRule::
-GetDiscretelyAnimatedCSSValue(nsCSSProperty aProperty, nsCSSValue* aValue)
-{
-  MOZ_ASSERT(false, "GetDiscretelyAnimatedCSSValue is not implemented yet");
-  return false;
 }
 
 #ifdef DEBUG
@@ -111,14 +104,6 @@ nsHTMLStyleSheet::TableTHRule::MightMapInheritedStyleData()
   return true;
 }
 
- bool
-nsHTMLStyleSheet::TableTHRule::
-GetDiscretelyAnimatedCSSValue(nsCSSProperty aProperty, nsCSSValue* aValue)
-{
-  MOZ_ASSERT(false, "GetDiscretelyAnimatedCSSValue is not implemented yet");
-  return false;
-}
-
  void
 nsHTMLStyleSheet::TableQuirkColorRule::MapRuleInfoInto(nsRuleData* aRuleData)
 {
@@ -138,13 +123,6 @@ nsHTMLStyleSheet::TableQuirkColorRule::MightMapInheritedStyleData()
   return true;
 }
 
- bool
-nsHTMLStyleSheet::TableQuirkColorRule::
-GetDiscretelyAnimatedCSSValue(nsCSSProperty aProperty, nsCSSValue* aValue)
-{
-  MOZ_ASSERT(false, "GetDiscretelyAnimatedCSSValue is not implemented yet");
-  return false;
-}
 
 NS_IMPL_ISUPPORTS(nsHTMLStyleSheet::LangRule, nsIStyleRule)
 
@@ -163,14 +141,6 @@ nsHTMLStyleSheet::LangRule::MapRuleInfoInto(nsRuleData* aRuleData)
 nsHTMLStyleSheet::LangRule::MightMapInheritedStyleData()
 {
   return true;
-}
-
- bool
-nsHTMLStyleSheet::LangRule::
-GetDiscretelyAnimatedCSSValue(nsCSSProperty aProperty, nsCSSValue* aValue)
-{
-  MOZ_ASSERT(false, "GetDiscretelyAnimatedCSSValue is not implemented yet");
-  return false;
 }
 
 #ifdef DEBUG
@@ -267,7 +237,7 @@ LangRuleTable_InitEntry(PLDHashEntryHdr *hdr, const void *key)
 {
   const nsString *lang = static_cast<const nsString*>(key);
 
-  LangRuleTableEntry *entry = new (hdr) LangRuleTableEntry();
+  LangRuleTableEntry *entry = new (KnownNotNull, hdr) LangRuleTableEntry();
 
   
   entry->mRule = new nsHTMLStyleSheet::LangRule(*lang);
