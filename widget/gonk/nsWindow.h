@@ -138,25 +138,6 @@ protected:
     bool mVisible;
     InputContext mInputContext;
     nsCOMPtr<nsIIdleServiceInternal> mIdleService;
-    
-    
-    
-    RefPtr<mozilla::gfx::DrawTarget> mFramebufferTarget;
-    ANativeWindowBuffer* mFramebuffer;
-    
-
-
-
-    uint8_t* mMappedBuffer;
-    
-    
-    
-    
-    
-    
-    
-    
-    RefPtr<mozilla::gfx::DrawTarget> mBackBuffer;
 
     virtual ~nsWindow();
 

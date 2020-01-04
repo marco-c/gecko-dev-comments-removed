@@ -82,8 +82,8 @@ public:
     ScreenConfiguration GetConfiguration();
     bool IsPrimaryScreen();
 
-    ANativeWindowBuffer* DequeueBuffer();
-    bool QueueBuffer(ANativeWindowBuffer* buf);
+    already_AddRefed<mozilla::gfx::DrawTarget> StartRemoteDrawing();
+    void EndRemoteDrawing();
 
 #if ANDROID_VERSION >= 17
     android::DisplaySurface* GetDisplaySurface();
@@ -122,6 +122,9 @@ public:
     nsWindow* GetMirroringWidget(); 
 
 protected:
+    ANativeWindowBuffer* DequeueBuffer();
+    bool QueueBuffer(ANativeWindowBuffer* buf);
+
     uint32_t mId;
     NotifyDisplayChangedEvent mEventVisibility;
     int32_t mColorDepth;
@@ -145,6 +148,26 @@ protected:
     hwc_surface_t mEGLSurface;
     RefPtr<mozilla::gl::GLContext> mGLContext;
     RefPtr<nsWindow> mMirroringWidget; 
+
+    
+    
+    
+    RefPtr<mozilla::gfx::DrawTarget> mFramebufferTarget;
+    ANativeWindowBuffer* mFramebuffer;
+    
+
+
+
+    uint8_t* mMappedBuffer;
+    
+    
+    
+    
+    
+    
+    
+    
+    RefPtr<mozilla::gfx::DrawTarget> mBackBuffer;
 };
 
 class nsScreenManagerGonk final : public nsIScreenManager
