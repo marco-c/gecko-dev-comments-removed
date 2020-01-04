@@ -1317,22 +1317,27 @@ this.PushService = {
       
       
       
-      return this._getByPrincipal(permission.principal)
-        .then(records => this._permissionAllowed(records));
+      return this._updateByPrincipal(
+        permission.principal,
+        record => this._permissionAllowed(record)
+      );
     } else if (isChange || (isAllow && type == "deleted")) {
       
       
-      return this._getByPrincipal(permission.principal)
-        .then(records => this._permissionDenied(records));
+      return this._updateByPrincipal(
+        permission.principal,
+        record => this._permissionDenied(record)
+      );
     }
 
     return Promise.resolve();
   },
 
-  _getByPrincipal: function(principal) {
-    return this._db.getAllByOrigin(
+  _updateByPrincipal: function(principal, updateFunc) {
+    return this._db.updateByOrigin(
       principal.URI.prePath,
-      ChromeUtils.originAttributesToSuffix(principal.originAttributes)
+      ChromeUtils.originAttributesToSuffix(principal.originAttributes),
+      updateFunc
     );
   },
 
@@ -1345,13 +1350,15 @@ this.PushService = {
 
 
 
-  _permissionDenied: function(records) {
-    return Promise.all(records.filter(record =>
+  _permissionDenied: function(record) {
+    if (!record.quotaApplies() || record.isExpired()) {
       
-      record.quotaApplies() && !record.isExpired()
-    ).map(record =>
-      this._expireRegistration(record)
-    ));
+      return null;
+    }
+    
+    this._unregisterIfConnected(record);
+    record.setQuota(0);
+    return record;
   },
 
   
@@ -1362,32 +1369,17 @@ this.PushService = {
 
 
 
-  _permissionAllowed: function(records) {
-    return Promise.all(records.map(record => {
-      if (!record.quotaApplies()) {
-        return record;
-      }
-      if (record.isExpired()) {
-        
-        
-        return this.dropRecordAndNotifyApp(record);
-      }
-      return this._db.update(record.keyID, record => {
-        record.resetQuota();
-        return record;
-      });
-    }));
-  },
-
-  _expireRegistration: function(record) {
-    
-    this._unregisterIfConnected(record);
-    return this._db.update(record.keyID, record => {
-      record.setQuota(0);
-      return record;
-    }).catch(error => {
-      debug("expireRegistration: Error dropping expired registration " +
-        record.keyID + ": " + error);
-    });
+  _permissionAllowed: function(record) {
+    if (!record.quotaApplies()) {
+      return null;
+    }
+    if (record.isExpired()) {
+      
+      
+      this._notifySubscriptionChangeObservers(record);
+      return false;
+    }
+    record.resetQuota();
+    return record;
   },
 };
