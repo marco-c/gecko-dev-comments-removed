@@ -1599,14 +1599,22 @@ or run without that action (ie: --no-{action})"
         
         
         dirs = self.query_abs_dirs()
-        self.copyfile(os.path.join(dirs['base_work_dir'], 'buildprops.json'),
-                      os.path.join(dirs['abs_work_dir'], 'buildprops.json'))
+        buildprops = os.path.join(dirs['base_work_dir'], 'buildprops.json')
+        
+        if os.path.exists(buildprops):
+            self.copyfile(
+                buildprops,
+                os.path.join(dirs['abs_work_dir'], 'buildprops.json'))
 
+        
         python = self.query_exe('python2.7')
+        default_mach_build = [python, 'mach', '--log-no-times', 'build', '-v']
+        mach_build = self.query_exe('mach-build', default=default_mach_build)
         return_code = self.run_command_m(
-            command=[python, 'mach', '--log-no-times', 'build', '-v'],
-            cwd=self.query_abs_dirs()['abs_src_dir'],
-            env=env, output_timeout=self.config.get('max_build_output_timeout', 60 * 40)
+            command=mach_build,
+            cwd=dirs['abs_src_dir'],
+            env=env,
+            output_timeout=self.config.get('max_build_output_timeout', 60 * 40)
         )
         if return_code:
             self.return_code = self.worst_level(
