@@ -1014,6 +1014,7 @@ pref("services.sync.prefs.sync.addons.ignoreUserEnabledChanges", true);
 
 
 
+pref("services.sync.prefs.sync.browser.download.useDownloadDir", true);
 pref("services.sync.prefs.sync.browser.formfill.enable", true);
 pref("services.sync.prefs.sync.browser.link.open_newwindow", true);
 pref("services.sync.prefs.sync.browser.newtabpage.enabled", true);
