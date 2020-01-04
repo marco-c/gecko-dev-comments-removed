@@ -6,7 +6,6 @@
 
 #include "vm/NativeObject-inl.h"
 
-#include "mozilla/Casting.h"
 #include "mozilla/CheckedInt.h"
 
 #include "jswatchpoint.h"
@@ -671,41 +670,22 @@ NativeObject::maybeDensifySparseElements(js::ExclusiveContext* cx, HandleNativeO
 
 
 
+
+
+
+
+
+
+
+
+
+
+
  uint32_t
 NativeObject::goodAllocated(uint32_t reqAllocated, uint32_t length = 0)
 {
-    
-    const uint32_t Mebi = 1 << 20;
-    if (reqAllocated < Mebi) {
-        uint32_t goodAmount = mozilla::AssertedCast<uint32_t>(RoundUpPow2(reqAllocated));
+    static const uint32_t Mebi = 1024 * 1024;
 
-        
-        
-        
-        
-        
-        
-        uint32_t goodCapacity = goodAmount - ObjectElements::VALUES_PER_HEADER;
-        uint32_t reqCapacity = reqAllocated - ObjectElements::VALUES_PER_HEADER;
-        if (length >= reqCapacity && goodCapacity > (length / 3) * 2)
-            goodAmount = length + ObjectElements::VALUES_PER_HEADER;
-
-        if (goodAmount < SLOT_CAPACITY_MIN)
-            goodAmount = SLOT_CAPACITY_MIN;
-
-        return goodAmount;
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     
     
     
@@ -717,22 +697,49 @@ NativeObject::goodAllocated(uint32_t reqAllocated, uint32_t length = 0)
     
     
     static const uint32_t BigBuckets[] = {
-        0x100000, 0x200000, 0x300000, 0x400000, 0x500000, 0x600000, 0x700000,
-        0x800000, 0x900000, 0xb00000, 0xd00000, 0xf00000, 0x1100000, 0x1400000,
-        0x1700000, 0x1a00000, 0x1e00000, 0x2200000, 0x2700000, 0x2c00000,
-        0x3200000, 0x3900000, 0x4100000, 0x4a00000, 0x5400000, 0x5f00000,
-        0x6b00000, 0x7900000, 0x8900000, 0x9b00000, 0xaf00000, 0xc500000,
-        0xde00000, 0xfa00000, NELEMENTS_LIMIT - 1
+        1048576, 2097152, 3145728, 4194304, 5242880, 6291456, 7340032, 8388608,
+        9437184, 11534336, 13631488, 15728640, 17825792, 20971520, 24117248,
+        27262976, 31457280, 35651584, 40894464, 46137344, 52428800, 59768832,
+        68157440, 77594624, 88080384, 99614720, 112197632, 126877696,
+        143654912, 162529280, 183500800, 206569472, 232783872, 262144000,
+        295698432, 333447168, 375390208, 422576128, 476053504, 535822336,
+        602931200, 678428672, 763363328, 858783744, 966787072, 1088421888,
+        1224736768, 1377828864, 1550843904, 1744830464, 1962934272, 2208301056,
+        2485125120, 2796552192, 3146776576, 3541041152, 3984588800, 0
     };
 
     
-    for (uint32_t b : BigBuckets) {
-        if (b >= reqAllocated)
-            return b;
+    uint32_t goodAllocated = reqAllocated;
+    if (goodAllocated < Mebi) {
+        goodAllocated = RoundUpPow2(goodAllocated);
+
+        
+        uint32_t goodCapacity = goodAllocated - ObjectElements::VALUES_PER_HEADER;
+        uint32_t reqCapacity = reqAllocated - ObjectElements::VALUES_PER_HEADER;
+        if (length >= reqCapacity && goodCapacity > (length / 3) * 2)
+            goodAllocated = length + ObjectElements::VALUES_PER_HEADER;
+
+        if (goodAllocated < SLOT_CAPACITY_MIN)
+            goodAllocated = SLOT_CAPACITY_MIN;
+
+    } else {
+        uint32_t i = 0;
+        while (true) {
+            uint32_t b = BigBuckets[i++];
+            if (b >= goodAllocated) {
+                
+                
+                goodAllocated = b;
+                break;
+            } else if (b == 0) {
+                
+                goodAllocated = 0xffffffff;
+                break;
+            }
+        }
     }
 
-    
-    return NELEMENTS_LIMIT - 1;
+    return goodAllocated;
 }
 
 bool
@@ -772,6 +779,7 @@ NativeObject::growElements(ExclusiveContext* cx, uint32_t reqCapacity)
     uint32_t newCapacity = newAllocated - ObjectElements::VALUES_PER_HEADER;
     MOZ_ASSERT(newCapacity > oldCapacity && newCapacity >= reqCapacity);
 
+    
     if (newCapacity >= NELEMENTS_LIMIT)
         return false;
 
@@ -820,7 +828,6 @@ NativeObject::shrinkElements(ExclusiveContext* cx, uint32_t reqCapacity)
 
     MOZ_ASSERT(newAllocated > ObjectElements::VALUES_PER_HEADER);
     uint32_t newCapacity = newAllocated - ObjectElements::VALUES_PER_HEADER;
-    MOZ_ASSERT(newCapacity < NELEMENTS_LIMIT);
 
     HeapSlot* oldHeaderSlots = reinterpret_cast<HeapSlot*>(getElementsHeader());
     HeapSlot* newHeaderSlots = ReallocateObjectBuffer<HeapSlot>(cx, this, oldHeaderSlots,
