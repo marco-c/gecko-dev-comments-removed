@@ -618,9 +618,19 @@ TabParent::ActorDestroy(ActorDestroyReason why)
     if (why == AbnormalShutdown && os) {
       os->NotifyObservers(NS_ISUPPORTS_CAST(nsIFrameLoader*, frameLoader),
                           "oop-frameloader-crashed", nullptr);
-      nsContentUtils::DispatchTrustedEvent(frameElement->OwnerDoc(), frameElement,
-                                           NS_LITERAL_STRING("oop-browser-crashed"),
-                                           true, true);
+      nsCOMPtr<nsIFrameLoaderOwner> owner = do_QueryInterface(frameElement);
+      if (owner) {
+        RefPtr<nsFrameLoader> currentFrameLoader = owner->GetFrameLoader();
+        
+        
+        
+        if (currentFrameLoader == frameLoader) {
+          nsContentUtils::DispatchTrustedEvent(frameElement->OwnerDoc(), frameElement,
+                                               NS_LITERAL_STRING("oop-browser-crashed"),
+                                               true, true);
+
+        }
+      }
     }
 
     mFrameLoader = nullptr;
