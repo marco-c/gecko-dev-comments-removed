@@ -575,13 +575,6 @@ private:
     return true;
   }
 
-  NS_IMETHOD Cancel() override
-  {
-    
-    Run();
-    return WorkerRunnable::Cancel();
-  }
-
   virtual void
   PostRun(JSContext* aCx, WorkerPrivate* aWorkerPrivate, bool aRunResult)
           override
@@ -1236,13 +1229,6 @@ private:
     }
 
     return true;
-  }
-
-  NS_IMETHOD Cancel() override
-  {
-    
-    Run();
-    return WorkerRunnable::Cancel();
   }
 };
 
@@ -3837,7 +3823,6 @@ WorkerPrivate::WorkerPrivate(JSContext* aCx,
   , mRunningExpiredTimeouts(false)
   , mCloseHandlerStarted(false)
   , mCloseHandlerFinished(false)
-  , mPendingEventQueueClearing(false)
   , mMemoryReporterRunning(false)
   , mBlockedForMemoryReporter(false)
   , mCancelAllPendingRunnables(false)
@@ -4666,7 +4651,6 @@ WorkerPrivate::ScheduleDeletion(WorkerRanOrNot aRanOrNot)
   AssertIsOnWorkerThread();
   MOZ_ASSERT(mChildWorkers.IsEmpty());
   MOZ_ASSERT(mSyncLoopStack.IsEmpty());
-  MOZ_ASSERT(!mPendingEventQueueClearing);
 
   ClearMainEventQueue(aRanOrNot);
 #ifdef DEBUG
@@ -4897,7 +4881,6 @@ WorkerPrivate::ClearMainEventQueue(WorkerRanOrNot aRanOrNot)
 {
   AssertIsOnWorkerThread();
 
-  MOZ_ASSERT(!mSyncLoopStack.Length());
   MOZ_ASSERT(!mCancelAllPendingRunnables);
   mCancelAllPendingRunnables = true;
 
@@ -5260,11 +5243,6 @@ WorkerPrivate::DestroySyncLoop(uint32_t aLoopIndex, nsIThreadInternal* aThread)
 
   MOZ_ALWAYS_TRUE(NS_SUCCEEDED(aThread->PopEventQueue(nestedEventTarget)));
 
-  if (!mSyncLoopStack.Length() && mPendingEventQueueClearing) {
-    ClearMainEventQueue(WorkerRan);
-    mPendingEventQueueClearing = false;
-  }
-
   return result;
 }
 
@@ -5531,13 +5509,7 @@ WorkerPrivate::NotifyInternal(JSContext* aCx, Status aStatus)
   
   
   if (previousStatus == Running) {
-    
-    
-    if (mSyncLoopStack.Length()) {
-      mPendingEventQueueClearing = true;
-    } else {
-      ClearMainEventQueue(WorkerRan);
-    }
+    ClearMainEventQueue(WorkerRan);
   }
 
   
