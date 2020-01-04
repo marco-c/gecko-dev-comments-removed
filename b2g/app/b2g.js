@@ -1002,6 +1002,9 @@ pref("layout.accessiblecaret.enabled", true);
 pref("layout.accessiblecaret.bar.enabled", true);
 
 
+pref("layout.accessiblecaret.timeout_ms", 3000);
+
+
 #ifdef MOZ_WIDGET_GONK
 pref("layout.accessiblecaret.use_long_tap_injector", false);
 #endif

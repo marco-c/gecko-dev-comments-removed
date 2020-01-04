@@ -5060,7 +5060,7 @@ pref("layout.accessiblecaret.caret_shown_when_long_tapping_on_empty_content", fa
 
 
 
-pref("layout.accessiblecaret.timeout_ms", 3000);
+pref("layout.accessiblecaret.timeout_ms", 0);
 
 
 
