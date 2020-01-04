@@ -2390,6 +2390,19 @@ JSObject::reportNotExtensible(JSContext* cx, unsigned report)
 
 
 
+
+
+
+static const bool ImmutablePrototypesEnabled = true;
+
+JS_FRIEND_API(bool)
+JS_ImmutablePrototypesEnabled()
+{
+    return ImmutablePrototypesEnabled;
+}
+
+
+
 bool
 js::SetPrototype(JSContext* cx, HandleObject obj, HandleObject proto, JS::ObjectOpResult& result)
 {
@@ -2405,9 +2418,8 @@ js::SetPrototype(JSContext* cx, HandleObject obj, HandleObject proto, JS::Object
     }
 
     
-    if (obj->nonLazyPrototypeIsImmutable()) {
+    if (obj->nonLazyPrototypeIsImmutable() && ImmutablePrototypesEnabled)
         return result.fail(JSMSG_CANT_SET_PROTO);
-    }
 
     
 
