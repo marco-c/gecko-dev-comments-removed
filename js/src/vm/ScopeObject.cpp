@@ -982,7 +982,7 @@ ClonedBlockObject::createGlobal(JSContext* cx, Handle<GlobalObject*> global)
 
     
     
-    staticLexical->setLocalOffset(UINT32_MAX);
+    staticLexical->setLocalOffsetToInvalid();
     staticLexical->initEnclosingScope(nullptr);
     Rooted<ClonedBlockObject*> lexical(cx, ClonedBlockObject::create(cx, staticLexical, global));
     if (!lexical)
@@ -1003,7 +1003,7 @@ ClonedBlockObject::createNonSyntactic(JSContext* cx, HandleObject enclosingStati
     if (!staticLexical)
         return nullptr;
 
-    staticLexical->setLocalOffset(UINT32_MAX);
+    staticLexical->setLocalOffsetToInvalid();
     staticLexical->initEnclosingScope(enclosingStatic);
     Rooted<ClonedBlockObject*> lexical(cx, ClonedBlockObject::create(cx, staticLexical,
                                                                      enclosingScope));
@@ -3340,8 +3340,12 @@ js::CheckEvalDeclarationConflicts(JSContext* cx, HandleScript script,
     
     
     while (obj != varObj) {
-        if (!CheckVarNameConflictsInScope<ClonedBlockObject>(cx, script, obj))
-            return false;
+        
+        
+        if (!obj->is<ClonedBlockObject>() || !obj->as<ClonedBlockObject>().isForCatchParameters()) {
+            if (!CheckVarNameConflictsInScope<ClonedBlockObject>(cx, script, obj))
+                return false;
+        }
         obj = obj->enclosingScope();
     }
 

@@ -4980,6 +4980,7 @@ BytecodeEmitter::emitCatch(ParseNode* pn)
     StmtInfoBCE* stmt = innermostStmt();
     MOZ_ASSERT(stmt->type == StmtType::BLOCK && stmt->isBlockScope);
     stmt->type = StmtType::CATCH;
+    stmt->staticBlock().setIsForCatchParameters();
 
     
     stmt = stmt->enclosing;
