@@ -65,7 +65,12 @@ public:
 
 
 
+#if !defined(MOZILLA_XPCOMRT_API)
   static LogModule* Get(const char* aName);
+#else
+  
+  static LogModule* Get(const char* aName) { return nullptr; }
+#endif
 
   static void Init();
 
@@ -171,9 +176,13 @@ inline bool log_test(const LogModule* module, LogLevel level) {
   return module && module->ShouldLog(level);
 }
 
+#if !defined(MOZILLA_XPCOMRT_API)
 void log_print(const LogModule* aModule,
                LogLevel aLevel,
                const char* aFmt, ...);
+#else
+inline void log_print(const LogModule* aModule, LogLevel aLevel, const char* aFmt, ...) {}
+#endif
 } 
 
 } 

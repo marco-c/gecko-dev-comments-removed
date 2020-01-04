@@ -333,8 +333,9 @@ NS_DebugBreak(uint32_t aSeverity, const char* aStr, const char* aExpr,
   if (sMultiprocessDescription) {
     PrintToBuffer("%s ", sMultiprocessDescription);
   }
-
+#if !defined(MOZILLA_XPCOMRT_API)
   PrintToBuffer("%d] ", base::GetCurrentProcId());
+#endif 
 
   PrintToBuffer("%s: ", sevString);
 
@@ -380,7 +381,7 @@ NS_DebugBreak(uint32_t aSeverity, const char* aStr, const char* aExpr,
       return;
 
     case NS_DEBUG_ABORT: {
-#if defined(MOZ_CRASHREPORTER)
+#if defined(MOZ_CRASHREPORTER) && !defined(MOZILLA_XPCOMRT_API)
       
       
       
@@ -397,7 +398,7 @@ NS_DebugBreak(uint32_t aSeverity, const char* aStr, const char* aExpr,
 #if defined(DEBUG) && defined(_WIN32)
       RealBreak();
 #endif
-#if defined(DEBUG)
+#if defined(DEBUG) && !defined(MOZILLA_XPCOMRT_API)
       nsTraceRefcnt::WalkTheStack(stderr);
 #endif
       Abort(buf.buffer);
@@ -422,11 +423,15 @@ NS_DebugBreak(uint32_t aSeverity, const char* aStr, const char* aExpr,
       return;
 
     case NS_ASSERT_STACK:
+#if !defined(MOZILLA_XPCOMRT_API)
       nsTraceRefcnt::WalkTheStack(stderr);
+#endif 
       return;
 
     case NS_ASSERT_STACK_AND_ABORT:
+#if !defined(MOZILLA_XPCOMRT_API)
       nsTraceRefcnt::WalkTheStack(stderr);
+#endif 
       
       MOZ_FALLTHROUGH;
 
@@ -598,7 +603,7 @@ NS_ErrorAccordingToNSPR()
 void
 NS_ABORT_OOM(size_t aSize)
 {
-#if defined(MOZ_CRASHREPORTER)
+#if defined(MOZ_CRASHREPORTER) && !defined(MOZILLA_XPCOMRT_API)
   CrashReporter::AnnotateOOMAllocationSize(aSize);
 #endif
   MOZ_CRASH();
