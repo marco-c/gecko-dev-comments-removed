@@ -16,6 +16,7 @@
 #include "nsIDocument.h"
 #include "mozilla/dom/HTMLDivElement.h"
 #include "mozilla/dom/TextTrack.h"
+#include "mozilla/StateWatching.h"
 
 namespace mozilla {
 namespace dom {
@@ -323,6 +324,13 @@ public:
   void SetTrack(TextTrack* aTextTrack)
   {
     mTrack = aTextTrack;
+    if (!mHaveStartedWatcher && aTextTrack) {
+      mHaveStartedWatcher = true;
+      mWatchManager.Watch(mReset, &TextTrackCue::NotifyDisplayStatesChanged);
+    } else if (mHaveStartedWatcher && !aTextTrack) {
+      mHaveStartedWatcher = false;
+      mWatchManager.Unwatch(mReset, &TextTrackCue::NotifyDisplayStatesChanged);
+    }
   }
 
   
@@ -393,11 +401,15 @@ private:
   
   
   
-  bool mReset;
+  Watchable<bool> mReset;
 
   bool mActive;
 
   static StaticRefPtr<nsIWebVTTParserWrapper> sParserWrapper;
+
+  
+  bool mHaveStartedWatcher;
+  WatchManager<TextTrackCue> mWatchManager;
 };
 
 } 
