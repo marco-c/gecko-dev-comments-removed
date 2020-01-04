@@ -8,7 +8,7 @@
 const TESTCASE_URI = TEST_BASE_HTTP + "autocomplete.html";
 const MAX_SUGGESTIONS = 15;
 
-const {getClientCssPropertiesForTests} = require("devtools/shared/fronts/css-properties");
+const {getClientCssProperties} = require("devtools/shared/fronts/css-properties");
 const {CSSProperties, CSSValues} = getCSSKeywords();
 
 
@@ -196,7 +196,7 @@ function checkState(index, sourceEditor, popup) {
 
 
 function getCSSKeywords() {
-  let cssProperties = getClientCssPropertiesForTests();
+  let cssProperties = getClientCssProperties();
   let props = {};
   let propNames = cssProperties.getNames();
   propNames.forEach(prop => {

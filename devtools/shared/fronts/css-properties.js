@@ -181,7 +181,9 @@ function getCssProperties(toolbox) {
 
 
 
-function getClientCssPropertiesForTests() {
+
+
+function getClientCssProperties() {
   return new CssProperties(normalizeCssData(CSS_PROPERTIES_DB));
 }
 
@@ -262,6 +264,6 @@ module.exports = {
   CssPropertiesFront,
   CssProperties,
   getCssProperties,
-  getClientCssPropertiesForTests,
+  getClientCssProperties,
   initCssProperties
 };
