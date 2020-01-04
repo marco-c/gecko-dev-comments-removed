@@ -73,11 +73,13 @@ MacIOSurfaceTextureHostOGL::SetCompositor(Compositor* aCompositor)
     mCompositor = nullptr;
     return;
   }
+
   CompositorOGL* glCompositor = static_cast<CompositorOGL*>(aCompositor);
-  mCompositor = glCompositor;
-  if (mTextureSource) {
-    mTextureSource->SetCompositor(glCompositor);
+  if (mCompositor != glCompositor) {
+    
+    mTextureSource = nullptr;
   }
+  mCompositor = glCompositor;
 }
 
 gfx::SurfaceFormat
