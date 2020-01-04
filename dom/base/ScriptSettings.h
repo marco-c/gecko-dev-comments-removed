@@ -291,6 +291,14 @@ public:
   
   bool StealException(JS::MutableHandle<JS::Value> aVal);
 
+  
+  
+  
+  
+  
+  
+  bool PeekException(JS::MutableHandle<JS::Value> aVal);
+
   void ClearException() {
     MOZ_ASSERT_IF(NS_IsMainThread(), CxPusherIsStackTop());
     JS_ClearPendingException(cx());
