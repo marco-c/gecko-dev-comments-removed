@@ -1,81 +1,59 @@
+"use strict";
 
 
 
 
-function test() {
-  
-  
 
-  waitForExplicitFinish();
-
-  let cs = Cc["@mozilla.org/cookiemanager;1"].getService(Ci.nsICookieManager2);
-  cs.removeAll();
-
-  
-  
-  gPrefService.setIntPref("browser.sessionstore.interval", 0);
-
+add_task(function*() {
   const testURL = "http://mochi.test:8888/browser/" +
     "browser/components/sessionstore/test/browser_423132_sample.html";
 
+  Services.cookies.removeAll();
   
-  let newWin = openDialog(location, "_blank", "chrome,all,dialog=no", "about:blank");
+  
+  yield SpecialPowers.pushPrefEnv({
+    set: [["browser.sessionstore.interval", 0]]
+  });
+
+  let win = yield BrowserTestUtils.openNewBrowserWindow();
+  let browser = win.gBrowser.selectedBrowser;
+  browser.loadURI(testURL);
+  yield BrowserTestUtils.browserLoaded(browser);
+
+  yield TabStateFlusher.flush(browser);
 
   
-  newWin.addEventListener("load", function (aEvent) {
-    newWin.removeEventListener("load", arguments.callee, false);
+  let state = ss.getWindowState(win);
 
-    
-    executeSoon(function() {
-      newWin.gBrowser.loadURI(testURL, null, null);
+  
+  let enumerator = Services.cookies.enumerator;
+  let cookie;
+  let i = 0;
+  while (enumerator.hasMoreElements()) {
+    cookie = enumerator.getNext().QueryInterface(Ci.nsICookie);
+    i++;
+  }
+  Assert.equal(i, 1, "expected one cookie");
 
-      promiseBrowserLoaded(newWin.gBrowser.selectedBrowser).then(() => {
-        let ready = () => {
-          
-          let state = ss.getWindowState(newWin);
+  
+  Services.cookies.removeAll();
 
-          
-          let e = cs.enumerator;
-          let cookie;
-          let i = 0;
-          while (e.hasMoreElements()) {
-            cookie = e.getNext().QueryInterface(Ci.nsICookie);
-            i++;
-          }
-          is(i, 1, "expected one cookie");
+  
+  ss.setWindowState(win, state, true);
 
-          
-          cs.removeAll();
+  
+  enumerator = Services.cookies.enumerator;
+  let cookie2;
+  while (enumerator.hasMoreElements()) {
+    cookie2 = enumerator.getNext().QueryInterface(Ci.nsICookie);
+    if (cookie.name == cookie2.name)
+      break;
+  }
+  is(cookie.name, cookie2.name, "cookie name successfully restored");
+  is(cookie.value, cookie2.value, "cookie value successfully restored");
+  is(cookie.path, cookie2.path, "cookie path successfully restored");
 
-          
-          ss.setWindowState(newWin, state, true);
-
-          
-          e = cs.enumerator;
-          let cookie2;
-          while (e.hasMoreElements()) {
-            cookie2 = e.getNext().QueryInterface(Ci.nsICookie);
-            if (cookie.name == cookie2.name)
-              break;
-          }
-          is(cookie.name, cookie2.name, "cookie name successfully restored");
-          is(cookie.value, cookie2.value, "cookie value successfully restored");
-          is(cookie.path, cookie2.path, "cookie path successfully restored");
-
-          
-          if (gPrefService.prefHasUserValue("browser.sessionstore.interval"))
-            gPrefService.clearUserPref("browser.sessionstore.interval");
-          cs.removeAll();
-          BrowserTestUtils.closeWindow(newWin).then(finish);
-        };
-
-        function flushAndReady() {
-          TabStateFlusher.flush(newWin.gBrowser.selectedBrowser).then(ready);
-        }
-
-        flushAndReady();
-      }, true, testURL);
-    });
-  }, false);
-}
-
+  
+  Services.cookies.removeAll();
+  yield BrowserTestUtils.closeWindow(win);
+});
