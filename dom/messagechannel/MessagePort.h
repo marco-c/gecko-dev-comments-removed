@@ -25,6 +25,7 @@ class DispatchEventRunnable;
 class MessagePortChild;
 class MessagePortIdentifier;
 class MessagePortMessage;
+class PostMessageRunnable;
 class SharedMessagePortMessage;
 
 namespace workers {
@@ -36,6 +37,7 @@ class MessagePort final : public DOMEventTargetHelper
                         , public nsIObserver
 {
   friend class DispatchEventRunnable;
+  friend class PostMessageRunnable;
 
 public:
   NS_DECL_NSIIPCBACKGROUNDCHILDCREATECALLBACK
@@ -52,6 +54,7 @@ public:
   Create(nsPIDOMWindow* aWindow, const MessagePortIdentifier& aIdentifier,
          ErrorResult& aRv);
 
+  
   static void
   ForceClose(const MessagePortIdentifier& aIdentifier);
 
@@ -77,6 +80,8 @@ public:
 
   void CloneAndDisentangle(MessagePortIdentifier& aIdentifier);
 
+  void CloseForced();
+
   
 
   void Entangled(nsTArray<MessagePortMessage>& aMessages);
@@ -98,8 +103,13 @@ private:
 
     
     
-    
     eStateEntangling,
+
+    
+    eStateEntanglingForDisentangle,
+
+    
+    eStateEntanglingForClose,
 
     
     
@@ -121,7 +131,11 @@ private:
     
     
     
-    eStateDisentangled
+    eStateDisentangled,
+
+    
+    
+    eStateDisentangledForClose
   };
 
   void Initialize(const nsID& aUUID, const nsID& aDestinationUUID,
@@ -137,6 +151,8 @@ private:
   void Disentangle();
 
   void RemoveDocFromBFCache();
+
+  void CloseInternal(bool aSoftly);
 
   
   
@@ -164,14 +180,6 @@ private:
   uint64_t mInnerID;
 
   State mState;
-
-  
-  
-  enum {
-    eNextStepNone,
-    eNextStepDisentangle,
-    eNextStepClose
-  } mNextStep;
 
   bool mMessageQueueEnabled;
 
