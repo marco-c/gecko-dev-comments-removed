@@ -112,7 +112,15 @@ var Chat = {
 
 
 
-  open: function(contentWindow, origin, title, url, mode, focus, callback) {
+
+
+
+
+
+
+
+
+  open: function(contentWindow, options, callback) {
     let chromeWindow = this.findChromeWindowForChats(contentWindow);
     if (!chromeWindow) {
       Cu.reportError("Failed to open a chat window - no host window could be found.");
@@ -121,18 +129,25 @@ var Chat = {
 
     let chatbar = chromeWindow.document.getElementById("pinnedchats");
     chatbar.hidden = false;
-    let chatbox = chatbar.openChat(origin, title, url, mode, callback);
+    if (options.remote) {
+      
+      let browser = chromeWindow.gBrowser && chromeWindow.gBrowser.selectedBrowser;
+      if (!browser || browser.getAttribute("remote") != "true") {
+        options.remote = false;
+      }
+    }
+    let chatbox = chatbar.openChat(options, callback);
     
     
     chromeWindow.getAttention();
     
     
-    if (focus === undefined) {
+    if (!("focus" in options)) {
       let dwu = chromeWindow.QueryInterface(Ci.nsIInterfaceRequestor)
                             .getInterface(Ci.nsIDOMWindowUtils);
-      focus = dwu.isHandlingUserInput;
+      options.focus = dwu.isHandlingUserInput;
     }
-    if (focus) {
+    if (options.focus) {
       chatbar.focus();
     }
     return chatbox;

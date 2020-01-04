@@ -242,6 +242,17 @@ function attachToWindow(provider, targetWindow) {
 }
 
 function hookWindowCloseForPanelClose(targetWindow) {
+  let _mozSocialDOMWindowClose;
+
+  if ("messageManager" in targetWindow) {
+    let mm = targetWindow.messageManager;
+    mm.sendAsyncMessage("Social:HookWindowCloseForPanelClose");
+    mm.addMessageListener("DOMWindowClose", _mozSocialDOMWindowClose = function() {
+      closePanel(targetWindow);
+    });
+    return;
+  }
+
   
   
   
@@ -251,21 +262,12 @@ function hookWindowCloseForPanelClose(targetWindow) {
                         .getInterface(Ci.nsIDOMWindowUtils);
   dwu.allowScriptsToClose();
 
-  targetWindow.addEventListener("DOMWindowClose", function _mozSocialDOMWindowClose(evt) {
+  targetWindow.addEventListener("DOMWindowClose", _mozSocialDOMWindowClose = function(evt) {
     let elt = targetWindow.QueryInterface(Ci.nsIInterfaceRequestor)
                 .getInterface(Ci.nsIWebNavigation)
                 .QueryInterface(Ci.nsIDocShell)
                 .chromeEventHandler;
-    while (elt) {
-      if (elt.localName == "panel") {
-        elt.hidePopup();
-        break;
-      } else if (elt.localName == "chatbox") {
-        elt.close();
-        break;
-      }
-      elt = elt.parentNode;
-    }
+    closePanel(elt);
     
     
     
@@ -275,6 +277,19 @@ function hookWindowCloseForPanelClose(targetWindow) {
     
     evt.preventDefault();
   }, true);
+}
+
+function closePanel(elt) {
+  while (elt) {
+    if (elt.localName == "panel") {
+      elt.hidePopup();
+      break;
+    } else if (elt.localName == "chatbox") {
+      elt.close();
+      break;
+    }
+    elt = elt.parentNode;
+  }
 }
 
 function schedule(callback) {
@@ -298,11 +313,15 @@ this.openChatWindow =
     return;
   }
 
-  let chatbox = Chat.open(contentWindow, provider.origin, provider.name,
-                          fullURI.spec, mode);
+  let chatbox = Chat.open(contentWindow, {
+    origin: provider.origin,
+    title: provider.name,
+    url: fullURI.spec,
+    mode: mode
+  });
   if (callback) {
     chatbox.promiseChatLoaded.then(() => {
-      callback(chatbox.contentWindow);
+      callback(chatbox);
     });
   }
 }

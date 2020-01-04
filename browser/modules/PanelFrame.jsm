@@ -81,6 +81,11 @@ var PanelFrameInternal = {
         attrs["message"] = "true";
         attrs["messagemanagergroup"] = aType;
       }
+      if (aType == "loop") {
+        attrs.message = true;
+        attrs.messagemanagergroup = "social";
+        attrs.autocompletepopup = "PopupAutoComplete";
+      }
       for (let [k, v] of Iterator(attrs)) {
         frame.setAttribute(k, v);
       }
@@ -127,6 +132,9 @@ var PanelFrame = {
     let notificationFrameId = aToolbarButton.getAttribute("notificationFrameId");
     let notificationFrame = aWindow.document.getElementById(notificationFrameId);
 
+    
+    
+    let mm = notificationFrame.QueryInterface(Ci.nsIFrameLoaderOwner).frameLoader.messageManager;
 
     
     
@@ -137,9 +145,7 @@ var PanelFrame = {
     }
 
     function dispatchPanelEvent(name) {
-      let evt = notificationFrame.contentDocument.createEvent("CustomEvent");
-      evt.initCustomEvent(name, true, true, {});
-      notificationFrame.contentDocument.documentElement.dispatchEvent(evt);
+      mm.sendAsyncMessage("Social:CustomEvent", { name: name });
     }
 
     
@@ -152,35 +158,28 @@ var PanelFrame = {
       anchorBtn.removeAttribute("open");
       if (dynamicResizer)
         dynamicResizer.stop();
-      notificationFrame.docShell.isActive = false;
+      notificationFrame.docShellIsActive = false;
       dispatchPanelEvent(aType + "FrameHide");
     });
 
     panel.addEventListener("popupshown", function onpopupshown() {
       panel.removeEventListener("popupshown", onpopupshown);
-      let initFrameShow = () => {
-        notificationFrame.docShell.isActive = true;
-        notificationFrame.docShell.isAppTab = true;
-        if (dynamicResizer)
-          dynamicResizer.start(panel, notificationFrame);
-        dispatchPanelEvent(aType + "FrameShow");
-      };
       
       
       
       
       
       anchorBtn.setAttribute("open", "true");
-      if (notificationFrame.contentDocument &&
-          notificationFrame.contentDocument.readyState == "complete") {
-        initFrameShow();
-      } else {
-        
-        notificationFrame.addEventListener("load", function panelBrowserOnload(e) {
-          notificationFrame.removeEventListener("load", panelBrowserOnload, true);
-          initFrameShow();
-        }, true);
-      }
+
+      mm.sendAsyncMessage("WaitForDOMContentLoaded");
+      mm.addMessageListener("DOMContentLoaded", function onloaded() {
+        mm.removeMessageListener("DOMContentLoaded", onloaded);
+        mm = notificationFrame.messageManager;
+        notificationFrame.docShellIsActive = true;
+        if (dynamicResizer)
+          dynamicResizer.start(panel, notificationFrame);
+        dispatchPanelEvent(aType + "FrameShow");
+      });
     });
 
     let anchor = aWindow.document.getAnonymousElementByAttribute(anchorBtn, "class", "toolbarbutton-icon");

@@ -370,7 +370,7 @@ SocialFlyout = {
     
     
     let mm = iframe.QueryInterface(Components.interfaces.nsIFrameLoaderOwner).frameLoader.messageManager;
-    mm.sendAsyncMessage("Social:SetErrorURL", null,
+    mm.sendAsyncMessage("Social:SetErrorURL",
                         { template: "about:socialerror?mode=compactInfo&origin=%{origin}" });
   },
 
@@ -512,7 +512,7 @@ SocialShare = {
     iframe.setAttribute("messagemanagergroup", "social");
     panel.lastChild.appendChild(iframe);
     let mm = iframe.QueryInterface(Components.interfaces.nsIFrameLoaderOwner).frameLoader.messageManager;
-    mm.sendAsyncMessage("Social:SetErrorURL", null,
+    mm.sendAsyncMessage("Social:SetErrorURL",
                         { template: "about:socialerror?mode=compactInfo&origin=%{origin}&url=%{url}" });
 
     this.populateProviderMenu();

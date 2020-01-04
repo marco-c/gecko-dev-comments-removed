@@ -40,13 +40,12 @@ function openChatViaWorkerMessage(port, data, callback) {
                       
                       
                       
-                      chatbar.openChat(SocialSidebar.provider.origin,
-                                       SocialSidebar.provider.name,
-                                       data,
-                                       "minimized",
-                                       function() {
-                                          callback();
-                                       });
+                      chatbar.openChat({
+                        origin: SocialSidebar.provider.origin,
+                        title: SocialSidebar.provider.name,
+                        url: data,
+                        mode: "minimized"
+                      }, function() { callback(); });
                    },
                    "No new chat appeared");
 }
