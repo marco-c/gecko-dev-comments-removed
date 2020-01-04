@@ -56,7 +56,7 @@ function* basicTest(view, name, result) {
   let onHidden = cPicker.tooltip.once("hidden");
   
   let onRuleViewChanged = waitForNEvents(view, "ruleview-changed", 2);
-  focusAndSendKey(spectrum.element.ownerDocument.defaultView, "RETURN");
+  EventUtils.sendKey("RETURN", spectrum.element.ownerDocument.defaultView);
   yield onHidden;
   yield onRuleViewChanged;
 

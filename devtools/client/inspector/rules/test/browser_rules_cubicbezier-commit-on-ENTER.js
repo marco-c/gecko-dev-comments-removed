@@ -53,7 +53,7 @@ function* testPressingEnterCommitsChanges(swatch, ruleView) {
   
   
   let onRuleViewChanged = waitForNEvents(ruleView, "ruleview-changed", 2);
-  focusAndSendKey(widget.parent.ownerDocument.defaultView, "RETURN");
+  EventUtils.sendKey("RETURN", widget.parent.ownerDocument.defaultView);
   yield onRuleViewChanged;
 
   let style = yield getComputedStyleProperty("body", null,

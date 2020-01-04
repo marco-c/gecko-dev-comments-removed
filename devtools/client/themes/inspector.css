@@ -12,44 +12,6 @@
 }
 
 
-window {
-  overflow: hidden;
-}
-
-
-.inspector-responsive-container {
-  height: 100vh;
-}
-
-
-
-.devtools-main-content {
-  
-
-
-  height: calc(100% - 1px);
-  display: flex;
-  flex-direction: column;
-  flex: 1 1 auto;
-}
-
-
-
-#inspector-splitter-box {
-  height: 100vh;
-  width: 100%;
-}
-
-
-#inspector-splitter-box .uncontrolled {
-  min-width: 275px;
-}
-
-#inspector-splitter-box .controlled.pane-collapsed {
-  visibility: collapse;
-}
-
-
 
 
 
@@ -162,9 +124,8 @@ window {
 
 #inspector-sidebar-container {
   overflow: hidden;
-  min-width: 50px;
+  min-width: 300px;
   position: relative;
-  height: 100%;
 }
 
 #inspector-sidebar {
@@ -188,16 +149,3 @@ window {
   text-align: center;
   margin: 5px;
 }
-
-
-
-#markup-box {
-  width: 100%;
-  flex: 1 1 auto;
-}
-
-#markup-box > iframe {
-  height: 100%;
-  width: 100%;
-}
-
