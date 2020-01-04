@@ -520,6 +520,11 @@ class MercurialSetupWizard(object):
         
         
         
+        c.update_mozilla_host_fingerprints()
+
+        
+        
+        
         seen_vct = set()
         for k, v in c.config.get('extensions', {}).items():
             if 'version-control-tools' not in v:
