@@ -39,7 +39,7 @@ nsGridRowLeafLayout::GetXULPrefSize(nsIFrame* aBox, nsBoxLayoutState& aState)
 {
   int32_t index = 0;
   nsGrid* grid = GetGrid(aBox, &index);
-  bool isHorizontal = IsHorizontal(aBox);
+  bool isHorizontal = IsXULHorizontal(aBox);
 
   
   
@@ -57,7 +57,7 @@ nsGridRowLeafLayout::GetXULMinSize(nsIFrame* aBox, nsBoxLayoutState& aState)
 {
   int32_t index = 0;
   nsGrid* grid = GetGrid(aBox, &index);
-  bool isHorizontal = IsHorizontal(aBox);
+  bool isHorizontal = IsXULHorizontal(aBox);
 
   if (!grid)
     return nsGridRowLayout::GetXULMinSize(aBox, aState); 
@@ -73,7 +73,7 @@ nsGridRowLeafLayout::GetXULMaxSize(nsIFrame* aBox, nsBoxLayoutState& aState)
 {
   int32_t index = 0;
   nsGrid* grid = GetGrid(aBox, &index);
-  bool isHorizontal = IsHorizontal(aBox);
+  bool isHorizontal = IsXULHorizontal(aBox);
 
   if (!grid)
     return nsGridRowLayout::GetXULMaxSize(aBox, aState); 
@@ -92,7 +92,7 @@ nsGridRowLeafLayout::ChildAddedOrRemoved(nsIFrame* aBox, nsBoxLayoutState& aStat
 {
   int32_t index = 0;
   nsGrid* grid = GetGrid(aBox, &index);
-  bool isHorizontal = IsHorizontal(aBox);
+  bool isHorizontal = IsXULHorizontal(aBox);
 
   if (grid)
     grid->CellAddedOrRemoved(aState, index, isHorizontal);
@@ -103,7 +103,7 @@ nsGridRowLeafLayout::PopulateBoxSizes(nsIFrame* aBox, nsBoxLayoutState& aState, 
 {
   int32_t index = 0;
   nsGrid* grid = GetGrid(aBox, &index);
-  bool isHorizontal = IsHorizontal(aBox);
+  bool isHorizontal = IsXULHorizontal(aBox);
 
   
   
@@ -224,7 +224,7 @@ nsGridRowLeafLayout::ComputeChildSizes(nsIFrame* aBox,
   
   
   if (aBox) {
-    bool isHorizontal = aBox->IsHorizontal();
+    bool isHorizontal = aBox->IsXULHorizontal();
 
     
     nscoord diff = 0;

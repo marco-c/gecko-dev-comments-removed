@@ -280,7 +280,7 @@ nsSplitterFrame::Init(nsIContent*       aContent,
   
   
   if (aParent && aParent->IsXULBoxFrame()) {
-    if (!aParent->IsHorizontal()) {
+    if (!aParent->IsXULHorizontal()) {
       if (!nsContentUtils::HasNonEmptyAttr(aContent, kNameSpaceID_None,
                                            nsGkAtoms::orient)) {
         aContent->SetAttr(kNameSpaceID_None, nsGkAtoms::orient,
@@ -318,7 +318,7 @@ nsSplitterFrame::GetInitialOrientation(bool& aIsHorizontal)
 {
   nsIFrame* box = nsBox::GetParentXULBox(this);
   if (box) {
-    aIsHorizontal = !box->IsHorizontal();
+    aIsHorizontal = !box->IsXULHorizontal();
   }
   else
     nsBoxFrame::GetInitialOrientation(aIsHorizontal);
@@ -444,7 +444,7 @@ nsSplitterFrameInner::MouseDrag(nsPresContext* aPresContext,
 
     
 
-    bool isHorizontal = !mOuter->IsHorizontal();
+    bool isHorizontal = !mOuter->IsXULHorizontal();
     
     nsPoint pt = nsLayoutUtils::GetEventCoordinatesRelativeTo(aEvent,
                                                               mParentBox);
@@ -644,7 +644,7 @@ nsSplitterFrameInner::MouseDown(nsIDOMEvent* aMouseEvent)
   mDidDrag = false;
 
   EnsureOrient();
-  bool isHorizontal = !mOuter->IsHorizontal();
+  bool isHorizontal = !mOuter->IsXULHorizontal();
   
   ResizeType resizeBefore = GetResizeBefore();
   ResizeType resizeAfter  = GetResizeAfter();
@@ -887,7 +887,7 @@ void
 nsSplitterFrameInner::AdjustChildren(nsPresContext* aPresContext)
 {
   EnsureOrient();
-  bool isHorizontal = !mOuter->IsHorizontal();
+  bool isHorizontal = !mOuter->IsXULHorizontal();
 
   AdjustChildren(aPresContext, mChildInfosBefore.get(),
                  mChildInfosBeforeCount, isHorizontal);
