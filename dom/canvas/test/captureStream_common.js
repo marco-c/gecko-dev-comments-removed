@@ -25,7 +25,6 @@ function CaptureStreamTestHelper(width, height) {
 CaptureStreamTestHelper.prototype = {
   
   black: { data: [0, 0, 0, 255], name: "black" },
-  blackTransparent: { data: [0, 0, 0, 0], name: "blackTransparent" },
   green: { data: [0, 255, 0, 255], name: "green" },
   red: { data: [255, 0, 0, 255], name: "red" },
 
@@ -54,60 +53,28 @@ CaptureStreamTestHelper.prototype = {
   },
 
   
-
-
-
-  getPixel: function (video, offsetX, offsetY) {
-    offsetX = offsetX || 0; 
-    offsetY = offsetY || 0; 
+  testPixel: function (video, refData, threshold) {
     var ctxout = this.cout.getContext('2d');
     ctxout.drawImage(video, 0, 0);
-    return ctxout.getImageData(offsetX, offsetY, 1, 1).data;
+    var pixel = ctxout.getImageData(0, 0, 1, 1).data;
+    return pixel.every((val, i) => Math.abs(val - refData[i]) <= threshold);
   },
 
   
 
 
 
-
-  isPixel: function (px, refColor, threshold) {
-    threshold = threshold || 0; 
-    return px.every((ch, i) => Math.abs(ch - refColor.data[i]) <= threshold);
-  },
-
-  
-
-
-
-
-  isPixelNot: function (px, refColor, threshold) {
-    if (threshold === undefined) {
-      
-      threshold = 127;
-    }
-    return px.some((ch, i) => Math.abs(ch - refColor.data[i]) > threshold);
-  },
-
-  
-
-
-
-  waitForPixel: function (video, offsetX, offsetY, test, timeout) {
+  waitForPixel: function (video, refColor, threshold, infoString) {
     return new Promise(resolve => {
-      const startTime = video.currentTime;
+      info("Testing " + video.id + " against [" + refColor.data.join(',') + "]");
       CaptureStreamTestHelper2D.prototype.clear.call(this, this.cout);
-      var ontimeupdate = () => {
-        const pixelMatch = test(this.getPixel(video, offsetX, offsetY));
-        if (!pixelMatch &&
-            (!timeout || video.currentTime < startTime + (timeout / 1000.0))) {
-          
-          
-          return;
+      video.ontimeupdate = () => {
+        if (this.testPixel(video, refColor.data, threshold)) {
+          ok(true, video.id + " " + infoString);
+          video.ontimeupdate = null;
+          resolve();
         }
-        video.removeEventListener("timeupdate", ontimeupdate);
-        resolve(pixelMatch);
       };
-      video.addEventListener("timeupdate", ontimeupdate);
     });
   },
 
@@ -116,27 +83,24 @@ CaptureStreamTestHelper.prototype = {
 
 
 
-  waitForPixelColor: function (video, refColor, threshold, infoString) {
-    info("Waiting for video " + video.id + " to match [" +
-         refColor.data.join(',') + "] - " + refColor.name +
-         " (" + infoString + ")");
-    return this.waitForPixel(video, 0, 0,
-                             px => this.isPixel(px, refColor, threshold))
-      .then(() => ok(true, video.id + " " + infoString));
-  },
-
-  
-
-
-
-
-  waitForPixelColorTimeout: function (video, refColor, threshold, timeout, infoString) {
-    info("Waiting for " + video.id + " to time out after " + timeout +
-         "ms against [" + refColor.data.join(',') + "] - " + refColor.name);
-    return this.waitForPixel(video, 0, 0,
-                             px => this.isPixel(px, refColor, threshold),
-                             timeout)
-      .then(result => ok(!result, video.id + " " + infoString));
+  waitForPixelToTimeout: function (video, refColor, threshold, timeout, infoString) {
+    return new Promise(resolve => {
+      info("Waiting for " + video.id + " to time out after " + timeout +
+           "ms against [" + refColor.data.join(',') + "] - " + refColor.name);
+      CaptureStreamTestHelper2D.prototype.clear.call(this, this.cout);
+      var startTime = video.currentTime;
+      video.ontimeupdate = () => {
+        if (this.testPixel(video, refColor.data, threshold)) {
+          ok(false, video.id + " " + infoString);
+          video.ontimeupdate = null;
+          resolve();
+        } else if (video.currentTime > startTime + (timeout / 1000.0)) {
+          ok(true, video.id + " " + infoString);
+          video.ontimeupdate = null;
+          resolve();
+        }
+      };
+    });
   },
 
   
