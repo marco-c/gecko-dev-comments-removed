@@ -1,7 +1,7 @@
-
-
-
-
+/* -*- Mode: c++; tab-width: 40; indent-tabs-mode: nil; c-basic-offset: 4; -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef nsAppShell_h__
 #define nsAppShell_h__
@@ -38,7 +38,7 @@ public:
 
         bool HasSameTypeAs(const Event* other) const
         {
-            
+            // Compare vtable addresses to determine same type.
             return *reinterpret_cast<const uintptr_t*>(this)
                     == *reinterpret_cast<const uintptr_t*>(other);
         }
@@ -107,8 +107,8 @@ public:
     void NotifyNativeEvent();
     bool ProcessNextNativeEvent(bool mayWait) override;
 
-    
-    
+    // Post a subclass of Event.
+    // e.g. PostEvent(mozilla::MakeUnique<MyEvent>());
     template<typename T, typename D>
     static void PostEvent(mozilla::UniquePtr<T, D>&& event)
     {
@@ -119,8 +119,8 @@ public:
         sAppShell->mEventQueue.Post(mozilla::Move(event));
     }
 
-    
-    
+    // Post a event that will call a lambda
+    // e.g. PostEvent([=] { /* do something */ });
     template<typename T>
     static void PostEvent(T&& lambda)
     {
@@ -134,7 +134,7 @@ public:
 
     static void PostEvent(mozilla::AndroidGeckoEvent* event);
 
-    
+    // Post a event and wait for it to finish running on the Gecko thread.
     static void SyncRunEvent(Event&& event,
                              mozilla::UniquePtr<Event>(*eventFactory)(
                                     mozilla::UniquePtr<Event>&&) = nullptr);
@@ -145,8 +145,8 @@ public:
         mBrowserApp = aBrowserApp;
     }
 
-    void GetBrowserApp(nsIAndroidBrowserApp* *aBrowserApp) {
-        *aBrowserApp = mBrowserApp;
+    nsIAndroidBrowserApp* GetBrowserApp() {
+        return mBrowserApp;
     }
 
 protected:
@@ -159,8 +159,8 @@ protected:
 
     class NativeCallbackEvent : public Event
     {
-        
-        
+        // Capturing the nsAppShell instance is safe because if the app
+        // shell is detroyed, this lambda will not be called either.
         nsAppShell* const appShell;
 
     public:
@@ -196,7 +196,7 @@ protected:
             mozilla::MonitorAutoLock lock(mMonitor);
             event->PostTo(mQueue);
             if (event->isInList()) {
-                
+                // Ownership of event object transfers to the queue.
                 mozilla::Unused << event.release();
             }
             lock.NotifyAll();
@@ -209,7 +209,7 @@ protected:
             if (mayWait && mQueue.isEmpty()) {
                 lock.Wait();
             }
-            
+            // Ownership of event object transfers to the return value.
             return mozilla::UniquePtr<Event>(mQueue.popFirst());
         }
 
@@ -224,9 +224,9 @@ protected:
     nsInterfaceHashtable<nsStringHashKey, nsIObserver> mObserversHash;
 };
 
-
-
-
+// Class that implement native JNI methods can inherit from
+// UsesGeckoThreadProxy to have the native call forwarded
+// automatically to the Gecko thread.
 class UsesGeckoThreadProxy : public mozilla::jni::UsesNativeCallProxy
 {
 public:
@@ -237,5 +237,5 @@ public:
     }
 };
 
-#endif 
+#endif // nsAppShell_h__
 
