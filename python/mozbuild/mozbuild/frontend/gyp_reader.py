@@ -7,6 +7,7 @@ from __future__ import absolute_import, unicode_literals
 import gyp
 import sys
 import os
+import types
 import mozpack.path as mozpath
 from mozpack.files import FileFinder
 from .sandbox import alphabetical_sorted
@@ -211,7 +212,17 @@ def read_from_gyp(config, path, output, vars, non_unified_sources = set()):
                     for e in extensions if e in suffix_map
                 )
                 for var in variables:
-                    context[var].extend(flags)
+                    for f in flags:
+                        
+                        
+                        
+                        if f.startswith('$(') and f.endswith(')'):
+                            f = config.substs.get(f[2:-1])
+                        
+                        if isinstance(f, types.StringTypes):
+                            context[var].append(f)
+                        elif f:
+                            context[var].extend(f)
         else:
             
             
