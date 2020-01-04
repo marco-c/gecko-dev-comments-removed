@@ -7,7 +7,6 @@ const { createStore, applyMiddleware } = require("devtools/client/shared/vendor/
 const { thunk } = require("./middleware/thunk");
 const { waitUntilService } = require("./middleware/wait-service");
 const { log } = require("./middleware/log");
-const { promise } = require("./middleware/promise");
 
 
 
@@ -21,8 +20,7 @@ const { promise } = require("./middleware/promise");
 module.exports = (opts={}) => {
   const middleware = [
     thunk,
-    waitUntilService,
-    promise,
+    waitUntilService
   ];
 
   if (opts.log) {
