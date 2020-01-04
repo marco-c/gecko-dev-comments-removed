@@ -534,6 +534,8 @@ WasmInstanceObject::create(JSContext* cx,
     obj->setReservedSlot(EXPORTS_SLOT, PrivateValue(exports.release()));
     MOZ_ASSERT(obj->isNewborn());
 
+    MOZ_ASSERT(obj->isTenured(), "assumed by WasmTableObject write barriers");
+
     
     auto* instance = cx->new_<Instance>(cx,
                                         obj,
