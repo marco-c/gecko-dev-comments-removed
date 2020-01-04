@@ -41,13 +41,7 @@ using mozilla::Move;
 using mozilla::DebugOnly;
 using mozilla::MallocSizeOf;
 
-
-
-enum ModuleKind
-{
-    Wasm,
-    AsmJS
-};
+typedef Vector<uint32_t, 0, SystemAllocPolicy> Uint32Vector;
 
 
 
@@ -575,6 +569,14 @@ struct CompileArgs
     explicit CompileArgs(ExclusiveContext* cx);
     bool operator==(CompileArgs rhs) const;
     bool operator!=(CompileArgs rhs) const { return !(*this == rhs); }
+};
+
+
+
+enum ModuleKind
+{
+    Wasm,
+    AsmJS
 };
 
 
