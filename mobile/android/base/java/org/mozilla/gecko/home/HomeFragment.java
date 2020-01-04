@@ -55,7 +55,7 @@ import android.view.View;
 
 public abstract class HomeFragment extends Fragment {
     
-    private static final String LOGTAG="GeckoHomeFragment";
+    private static final String LOGTAG = "GeckoHomeFragment";
 
     
     protected static final String SHARE_MIME_TYPE = "text/plain";
