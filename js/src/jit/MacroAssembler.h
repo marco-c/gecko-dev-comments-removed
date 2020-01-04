@@ -920,7 +920,7 @@ class MacroAssembler : public MacroAssemblerSpecific
 
     
     
-    void branchEqualTypeIfNeeded(MIRType type, MDefinition* maybeDef, Register tag, Label* label);
+    void maybeBranchTestType(MIRType type, MDefinition* maybeDef, Register tag, Label* label);
 
     template <typename T>
     inline void branchKey(Condition cond, const T& length, const Int32Key& key, Label* label);
