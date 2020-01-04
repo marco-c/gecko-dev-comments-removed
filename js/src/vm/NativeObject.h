@@ -160,7 +160,7 @@ ArraySetLength(JSContext* cx, Handle<ArrayObject*> obj, HandleId id,
 class ObjectElements
 {
   public:
-    enum Flags {
+    enum Flags: uint32_t {
         
         CONVERT_DOUBLE_ELEMENTS     = 0x1,
 
