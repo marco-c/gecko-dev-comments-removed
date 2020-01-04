@@ -1,7 +1,7 @@
 
 
 
-Cu.import("resource://services-common/moz-kinto-client.js");
+Cu.import("resource://services-common/kinto-offline-client.js");
 
 
 const Kinto = loadKinto();
