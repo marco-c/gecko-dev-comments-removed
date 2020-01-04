@@ -17,15 +17,7 @@ XPCOMUtils.defineLazyModuleGetter(this, "AddonManager",
 
 
 const MAX_UNINSTALL_TIME = 10000;
-
-
-window.addEventListener("load", function testOnLoad() {
-  window.removeEventListener("load", testOnLoad);
-  window.addEventListener("MozAfterPaint", function testOnMozAfterPaint() {
-    window.removeEventListener("MozAfterPaint", testOnMozAfterPaint);
-    setTimeout(testInit, 0);
-  });
-});
+setTimeout(testInit, 0);
 
 var sdkpath = null;
 

@@ -558,13 +558,17 @@ class MochitestArguments(ArgumentContainer):
           "help": "Enable logging of unsafe CPOW usage, which is disabled by default for tests",
           "suppress": True,
           }],
+        [["--marionette"],
+         {"default": None,
+          "help": "host:port to use when connecting to Marionette",
+          }],
     ]
 
     defaults = {
         
         
         'ignoreMissingLeaks': ["geckomediaplugin"],
-
+        'extensionsToExclude': ['specialpowers'],
         
         'webServer': '127.0.0.1',
         'httpPort': DEFAULT_PORTS['http'],
@@ -817,10 +821,6 @@ class B2GArguments(ArgumentContainer):
           "help": "Path to B2G repo or QEMU directory.",
           "suppress": True,
           }],
-        [["--marionette"],
-         {"default": None,
-          "help": "host:port to use when connecting to Marionette",
-          }],
         [["--emulator"],
          {"default": None,
           "help": "Architecture of emulator to use, x86 or arm",
@@ -914,6 +914,8 @@ class B2GArguments(ArgumentContainer):
         
         
         'extensionsToExclude': ['specialpowers'],
+        
+        'extensionsToInstall': [os.path.join(here, 'mochijar')],
         
         'defaultLeakThreshold': 5536,
     }
@@ -1066,6 +1068,10 @@ class AndroidArguments(ArgumentContainer):
 
     defaults = {
         'dm': None,
+        
+        'extensionsToExclude': [],
+        
+        'extensionsToInstall': [os.path.join(here, 'mochijar')],
         'logFile': 'mochitest.log',
         'utilityPath': None,
     }
