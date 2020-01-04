@@ -117,12 +117,10 @@ nsSVGPathGeometryElement::GetFillRule()
                                                          nullptr);
   
   if (styleContext) {
-    MOZ_ASSERT(styleContext->StyleSVG()->mFillRule ==
-                                           NS_STYLE_FILL_RULE_NONZERO ||
-               styleContext->StyleSVG()->mFillRule ==
-                                           NS_STYLE_FILL_RULE_EVENODD);
+    MOZ_ASSERT(styleContext->StyleSVG()->mFillRule == StyleFillRule::NonZero ||
+               styleContext->StyleSVG()->mFillRule == StyleFillRule::EvenOdd);
 
-    if (styleContext->StyleSVG()->mFillRule == NS_STYLE_FILL_RULE_EVENODD) {
+    if (styleContext->StyleSVG()->mFillRule == StyleFillRule::EvenOdd) {
       fillRule = FillRule::FILL_EVEN_ODD;
     }
   } else {

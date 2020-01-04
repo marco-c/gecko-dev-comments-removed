@@ -86,6 +86,12 @@ enum class StyleClipPathGeometryBox : uint8_t {
 };
 
 
+enum class StyleFillRule : uint8_t {
+  NonZero,
+  EvenOdd,
+};
+
+
 
 enum class StyleFloat : uint8_t {
   None_,
@@ -1066,10 +1072,6 @@ enum class FillMode : uint32_t;
 #define NS_STYLE_DOMINANT_BASELINE_MIDDLE            9
 #define NS_STYLE_DOMINANT_BASELINE_TEXT_AFTER_EDGE  10
 #define NS_STYLE_DOMINANT_BASELINE_TEXT_BEFORE_EDGE 11
-
-
-#define NS_STYLE_FILL_RULE_NONZERO              0
-#define NS_STYLE_FILL_RULE_EVENODD              1
 
 
 #define NS_STYLE_IMAGE_RENDERING_AUTO             0
