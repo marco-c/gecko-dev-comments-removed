@@ -1801,7 +1801,7 @@ struct DelayedDeleteContentParentTask : public Runnable
   explicit DelayedDeleteContentParentTask(ContentParent* aObj) : mObj(aObj) { }
 
   
-  NS_IMETHODIMP Run() { return NS_OK; }
+  NS_IMETHOD Run() override { return NS_OK; }
 
   RefPtr<ContentParent> mObj;
 };

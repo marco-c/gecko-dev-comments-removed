@@ -64,7 +64,7 @@ public:
         : mIsOn(on)
     {}
 
-    NS_IMETHOD Run() {
+    NS_IMETHOD Run() override {
         
         nsCOMPtr<nsIObserverService> observerService = mozilla::services::GetObserverService();
         if (observerService) {
@@ -981,7 +981,7 @@ public:
     {
     }
 
-    NS_IMETHOD Run()
+    NS_IMETHOD Run() override
     {
         nsCOMPtr<nsIObserverService> os = mozilla::services::GetObserverService();
         if (os) {

@@ -713,7 +713,7 @@ public:
   {
   }
 private:
-  NS_IMETHOD Run()
+  NS_IMETHOD Run() override
   {
     nsresult rv = mCertErrorRunnable->DispatchToMainThreadAndWait();
     

@@ -557,7 +557,7 @@ public:
   {}
 
   NS_IMETHOD
-  Run()
+  Run() override
   {
     
     MOZ_RELEASE_ASSERT(NS_IsMainThread());
@@ -664,7 +664,7 @@ public:
   {}
 
   NS_IMETHOD
-  Run()
+  Run() override
   {
     
     MOZ_RELEASE_ASSERT(NS_IsMainThread());

@@ -33,7 +33,7 @@ public:
 
   
   
-  NS_IMETHOD Run() {
+  NS_IMETHOD Run() override {
     
     nsCountedRef<nsMainThreadSourceSurfaceRef> surface;
     surface.own(mImage->GetAsSourceSurface().take());

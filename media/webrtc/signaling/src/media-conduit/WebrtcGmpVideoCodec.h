@@ -85,7 +85,7 @@ class GmpInitDoneRunnable : public Runnable
     {
     }
 
-    NS_IMETHOD Run()
+    NS_IMETHOD Run() override
     {
       if (mResult == WEBRTC_VIDEO_CODEC_OK) {
         

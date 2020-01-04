@@ -24,7 +24,7 @@ public:
     MOZ_ASSERT(!NS_IsMainThread());
   }
 
-  NS_IMETHOD Run() {
+  NS_IMETHOD Run() override {
     MOZ_ASSERT(NS_IsMainThread());
     mWorkerThread->Shutdown();
     return NS_OK;
@@ -48,7 +48,7 @@ public:
 
 
 
-  NS_IMETHOD Run()
+  NS_IMETHOD Run() override
   {
     
     nsresult rv = mProfileDir->CopyToFollowingLinks(mTargetDir, mLeafName);

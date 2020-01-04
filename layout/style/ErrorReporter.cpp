@@ -46,7 +46,7 @@ public:
   void SetPending() { mPending = true; }
 
   
-  NS_IMETHOD Run() {
+  NS_IMETHOD Run() override {
     mURI = nullptr;
     mSpec.Truncate();
     mPending = false;

@@ -42,7 +42,7 @@ private:
 NS_IMPL_ISUPPORTS0(nsFoo)
 
 class TestSuicide : public mozilla::Runnable {
-  NS_IMETHOD Run() {
+  NS_IMETHOD Run() override {
     
     if (!NS_IsMainThread()) {
       mThread = do_GetCurrentThread();

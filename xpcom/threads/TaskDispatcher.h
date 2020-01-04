@@ -174,7 +174,7 @@ private:
     public:
       explicit TaskGroupRunnable(UniquePtr<PerThreadTaskGroup>&& aTasks) : mTasks(Move(aTasks)) {}
 
-      NS_IMETHODIMP Run()
+      NS_IMETHOD Run() override
       {
         
         

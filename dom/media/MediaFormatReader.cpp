@@ -199,7 +199,7 @@ public:
     , mInitDataType(aInitDataType)
   {
   }
-  NS_IMETHOD Run() {
+  NS_IMETHOD Run() override {
     
     
     MediaDecoderOwner* owner = mDecoder->GetOwner();
