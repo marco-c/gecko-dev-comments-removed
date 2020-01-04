@@ -679,18 +679,15 @@ struct IsBaseOf
 
 namespace detail {
 
-
-
-template <typename To>
-static void ConvertibleTestHelper(To);
-
 template<typename From, typename To>
 struct ConvertibleTester
 {
 private:
-  template<typename From1, typename To1,
-           typename = decltype(ConvertibleTestHelper<To1>(DeclVal<From>()))>
-  static char test(int);
+  template<typename To1>
+  static char test_helper(To1);
+
+  template<typename From1, typename To1>
+  static decltype(test_helper<To1>(DeclVal<From1>())) test(int);
 
   template<typename From1, typename To1>
   static int test(...);
