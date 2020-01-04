@@ -18,6 +18,7 @@ import org.mozilla.apache.commons.codec.binary.Base32;
 import org.mozilla.gecko.GeckoProfile;
 import org.mozilla.gecko.R;
 import org.mozilla.gecko.Telemetry;
+import org.mozilla.gecko.annotation.RobocopTarget;
 import org.mozilla.gecko.db.BrowserContract.Bookmarks;
 import org.mozilla.gecko.db.BrowserContract.Combined;
 import org.mozilla.gecko.db.BrowserContract.Favicons;
@@ -1167,7 +1168,9 @@ public final class BrowserDatabaseHelper extends SQLiteOpenHelper {
     
     
     
-    private static String getReaderCacheFileNameForURL(String url) {
+    
+    @RobocopTarget
+    public static String getReaderCacheFileNameForURL(String url) {
         try {
             
             
