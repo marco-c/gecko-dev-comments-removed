@@ -212,7 +212,7 @@ exports.testWindowIteratorPrivateDefault = function(assert, done) {
   
   
   if (browserWindows.length > 1) {
-    for each (let tab in tabs) {
+    for (let tab of tabs) {
       assert.fail("TAB URL: " + tab.url);
     }
   }
