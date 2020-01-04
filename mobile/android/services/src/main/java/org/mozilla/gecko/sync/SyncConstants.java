@@ -54,4 +54,6 @@ public class SyncConstants {
 
   
   public static final String BACKOFF_PREF_SUFFIX_11 = "sync";
+
+  public static final String SYNC_ACCOUNT_DEPRECATED_ACTION = AppConstants.MOZ_ANDROID_SHARED_ACCOUNT_TYPE + ".accounts.SYNC_ACCOUNT_DEPRECATED_ACTION";
 }
