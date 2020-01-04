@@ -563,7 +563,12 @@ nsScriptLoader::ProcessScriptElement(nsIScriptElement *aElement)
           ourCORSMode == request->mCORSMode &&
           ourRefPolicy == request->mReferrerPolicy) {
         rv = CheckContentPolicy(mDocument, aElement, request->mURI, type, false);
-        NS_ENSURE_SUCCESS(rv, false);
+        if (NS_FAILED(rv)) {
+          
+          
+          request->Cancel();
+          return false;
+        }
       } else {
         
         request = nullptr;
