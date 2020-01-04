@@ -10,6 +10,7 @@
 #include "gfxPrefs.h"                       
 #include "mozilla/MouseEvents.h"
 #include "mozilla/SizePrintfMacros.h"       
+#include "mozilla/Telemetry.h"              
 #include "mozilla/layers/APZCTreeManager.h" 
 #include "OverscrollHandoffState.h"
 
@@ -153,6 +154,13 @@ CancelableBlockState::SetContentResponse(bool aPreventDefault)
   return true;
 }
 
+void
+CancelableBlockState::StartContentResponseTimer()
+{
+  MOZ_ASSERT(mContentResponseTimer.IsNull());
+  mContentResponseTimer = TimeStamp::Now();
+}
+
 bool
 CancelableBlockState::TimeoutContentResponse()
 {
@@ -182,6 +190,12 @@ CancelableBlockState::IsDefaultPrevented() const
 }
 
 bool
+CancelableBlockState::HasReceivedAllContentNotifications() const
+{
+  return IsTargetConfirmed() && mContentResponded;
+}
+
+bool
 CancelableBlockState::IsReadyForHandling() const
 {
   if (!IsTargetConfirmed()) {
@@ -202,6 +216,26 @@ void
 CancelableBlockState::DispatchEvent(const InputData& aEvent) const
 {
   GetTargetApzc()->HandleInputEvent(aEvent, mTransformToApzc);
+}
+
+void
+CancelableBlockState::RecordContentResponseTime()
+{
+  if (!mContentResponseTimer) {
+    
+    
+    
+    
+    
+    return;
+  }
+  if (!HasReceivedAllContentNotifications()) {
+    
+    return;
+  }
+  mozilla::Telemetry::Accumulate(mozilla::Telemetry::CONTENT_RESPONSE_DURATION,
+    (uint32_t)(TimeStamp::Now() - mContentResponseTimer).ToMilliseconds());
+  mContentResponseTimer = TimeStamp();
 }
 
 DragBlockState::DragBlockState(const RefPtr<AsyncPanZoomController>& aTargetApzc,
@@ -383,15 +417,6 @@ void
 WheelBlockState::AddEvent(const ScrollWheelInput& aEvent)
 {
   mEvents.AppendElement(aEvent);
-}
-
-bool
-WheelBlockState::IsReadyForHandling() const
-{
-  if (!CancelableBlockState::IsReadyForHandling()) {
-    return false;
-  }
-  return true;
 }
 
 bool
@@ -655,6 +680,13 @@ PanGestureBlockState::SetContentResponse(bool aPreventDefault)
 }
 
 bool
+PanGestureBlockState::HasReceivedAllContentNotifications() const
+{
+  return CancelableBlockState::HasReceivedAllContentNotifications()
+      && !mWaitingForContentResponse;
+}
+
+bool
 PanGestureBlockState::IsReadyForHandling() const
 {
   if (!CancelableBlockState::IsReadyForHandling()) {
@@ -719,6 +751,13 @@ TouchBlockState::CopyPropertiesFrom(const TouchBlockState& aOther)
     SetAllowedTouchBehaviors(aOther.mAllowedTouchBehaviors);
   }
   mTransformToApzc = aOther.mTransformToApzc;
+}
+
+bool
+TouchBlockState::HasReceivedAllContentNotifications() const
+{
+  return CancelableBlockState::HasReceivedAllContentNotifications()
+      && (!gfxPrefs::TouchActionEnabled() || mAllowedTouchBehaviorSet);
 }
 
 bool

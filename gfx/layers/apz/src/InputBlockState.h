@@ -11,6 +11,7 @@
 #include "mozilla/gfx/Matrix.h"             
 #include "mozilla/layers/APZUtils.h"        
 #include "mozilla/layers/AsyncDragMetrics.h"
+#include "mozilla/TimeStamp.h"              
 #include "nsAutoPtr.h"                      
 #include "nsTArray.h"                       
 #include "TouchCounter.h"
@@ -125,6 +126,20 @@ public:
 
 
 
+
+  void StartContentResponseTimer();
+
+  
+
+
+
+
+  void RecordContentResponseTime();
+
+  
+
+
+
   bool TimeoutContentResponse();
 
   
@@ -149,6 +164,12 @@ public:
 
 
   virtual void DispatchEvent(const InputData& aEvent) const;
+
+  
+
+
+
+  virtual bool HasReceivedAllContentNotifications() const;
 
   
 
@@ -184,6 +205,7 @@ public:
   virtual const char* Type() = 0;
 
 private:
+  TimeStamp mContentResponseTimer;
   bool mPreventDefault;
   bool mContentResponded;
   bool mContentResponseTimerExpired;
@@ -200,7 +222,6 @@ public:
                   const ScrollWheelInput& aEvent);
 
   bool SetContentResponse(bool aPreventDefault) override;
-  bool IsReadyForHandling() const override;
   bool HasEvents() const override;
   void DropEvents() override;
   void HandleEvents() override;
@@ -320,6 +341,7 @@ public:
                        const PanGestureInput& aEvent);
 
   bool SetContentResponse(bool aPreventDefault) override;
+  bool HasReceivedAllContentNotifications() const override;
   bool IsReadyForHandling() const override;
   bool HasEvents() const override;
   void DropEvents() override;
@@ -397,6 +419,12 @@ public:
 
 
   void CopyPropertiesFrom(const TouchBlockState& aOther);
+
+  
+
+
+
+  bool HasReceivedAllContentNotifications() const override;
 
   
 
