@@ -34,7 +34,7 @@ namespace mozilla {
 using namespace gfx;
 
 LazyLogModule gWebMDemuxerLog("WebMDemuxer");
-extern LazyLogModule gNesteggLog;
+LazyLogModule gNesteggLog("Nestegg");
 
 
 

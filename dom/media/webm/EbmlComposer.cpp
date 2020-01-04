@@ -4,6 +4,7 @@
 
 
 #include "EbmlComposer.h"
+#include "mozilla/UniquePtr.h"
 #include "libmkv/EbmlIDs.h"
 #include "libmkv/EbmlWriter.h"
 #include "libmkv/WebMElement.h"
@@ -22,7 +23,7 @@ void EbmlComposer::GenerateHeader()
   EbmlGlobal ebml;
   
   auto buffer = MakeUnique<uint8_t[]>(DEFAULT_HEADER_SIZE +
-                                             mCodecPrivateData.Length());
+                                      mCodecPrivateData.Length());
   ebml.buf = buffer.get();
   ebml.offset = 0;
   writeHeader(&ebml);
