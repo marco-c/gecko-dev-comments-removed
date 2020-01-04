@@ -193,6 +193,31 @@ public:
 
   void UpdateLinkState(EventStates aState);
 
+  virtual int32_t TabIndexDefault()
+  {
+    return -1;
+  }
+
+  
+
+
+  int32_t TabIndex();
+
+  
+
+
+  void SetTabIndex(int32_t aTabIndex, mozilla::ErrorResult& aError);
+
+  
+
+
+  virtual void Focus(mozilla::ErrorResult& aError);
+
+  
+
+
+  virtual void Blur(mozilla::ErrorResult& aError);
+
   
 
 
