@@ -255,9 +255,6 @@ XPCOMUtils.defineLazyModuleGetter(this, "ReaderMode",
 XPCOMUtils.defineLazyModuleGetter(this, "ReaderParent",
   "resource:///modules/ReaderParent.jsm");
 
-XPCOMUtils.defineLazyModuleGetter(this, "LoginManagerParent",
-  "resource://gre/modules/LoginManagerParent.jsm");
-
 var gInitialPages = [
   "about:blank",
   "about:newtab",
@@ -1194,10 +1191,6 @@ var gBrowserInit = {
         break;
       }
     }, false, true);
-
-    gBrowser.addEventListener("InsecureLoginFormsStateChange", function() {
-      gIdentityHandler.refreshForInsecureLoginForms();
-    });
 
     let uriToLoad = this._getUriToLoad();
     if (uriToLoad && uriToLoad != "about:blank") {
@@ -4977,10 +4970,6 @@ nsBrowserAccess.prototype = {
   isTabContentWindow: function (aWindow) {
     return gBrowser.browsers.some(browser => browser.contentWindow == aWindow);
   },
-
-  canClose() {
-    return CanCloseWindow();
-  },
 }
 
 function getTogglableToolbars() {
@@ -6446,26 +6435,6 @@ var IndexedDBPromptHelper = {
   }
 };
 
-function CanCloseWindow()
-{
-  
-  
-  if (window.skipNextCanClose) {
-    return true;
-  }
-
-  for (let browser of gBrowser.browsers) {
-    let {permitUnload, timedOut} = browser.permitUnload();
-    if (timedOut) {
-      return true;
-    }
-    if (!permitUnload) {
-      return false;
-    }
-  }
-  return true;
-}
-
 function WindowIsClosing()
 {
   if (TabView.isVisible()) {
@@ -6477,18 +6446,26 @@ function WindowIsClosing()
     return false;
 
   
-  
-  
-  
-  if (CanCloseWindow()) {
-    
-    
-    
-    window.skipNextCanClose = true;
+  if (gMultiProcessBrowser)
     return true;
+
+  for (let browser of gBrowser.browsers) {
+    let ds = browser.docShell;
+    
+    
+    
+    
+    if (ds.contentViewer && !ds.contentViewer.permitUnload(true)) {
+      
+      
+      
+      
+      window.getInterface(Ci.nsIDocShell).contentViewer.resetCloseWindow();
+      return false;
+    }
   }
 
-  return false;
+  return true;
 }
 
 
@@ -7013,26 +6990,15 @@ var gIdentityHandler = {
     }
 
     
-    this.refreshIdentityBlock();
 
-    
-    
-    
-    
-  },
-
-  
-
-
-
-  refreshForInsecureLoginForms() {
-    
-    
-    if (!this._uri) {
-      Cu.reportError("Unexpected early call to refreshForInsecureLoginForms.");
-      return;
+    if (this._identityBox) {
+      this.refreshIdentityBlock();
     }
-    this.refreshIdentityBlock();
+
+    
+    
+    
+    
   },
 
   
@@ -7071,10 +7037,6 @@ var gIdentityHandler = {
 
 
   refreshIdentityBlock() {
-    if (!this._identityBox) {
-      return;
-    }
-
     let icon_label = "";
     let tooltip = "";
     let icon_country_label = "";
@@ -7143,11 +7105,6 @@ var gIdentityHandler = {
           this._identityBox.classList.add("weakCipher");
         }
       }
-      if (LoginManagerParent.hasInsecureLoginForms(gBrowser.selectedBrowser)) {
-        
-        
-        this._identityBox.classList.add("insecureLoginForms");
-      }
       tooltip = gNavigatorBundle.getString("identity.unknown.tooltip");
     }
 
@@ -7183,12 +7140,6 @@ var gIdentityHandler = {
       connection = "secure-ev";
     } else if (this._isSecure) {
       connection = "secure";
-    }
-
-    
-    let loginforms = "secure";
-    if (LoginManagerParent.hasInsecureLoginForms(gBrowser.selectedBrowser)) {
-      loginforms = "insecure";
     }
 
     
@@ -7228,7 +7179,6 @@ var gIdentityHandler = {
     for (let id of elementIDs) {
       let element = document.getElementById(id);
       updateAttribute(element, "connection", connection);
-      updateAttribute(element, "loginforms", loginforms);
       updateAttribute(element, "ciphers", ciphers);
       updateAttribute(element, "mixedcontent", mixedcontent);
       updateAttribute(element, "isbroken", this._isBroken);
