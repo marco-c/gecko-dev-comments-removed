@@ -18,6 +18,8 @@ Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/Task.jsm");
 Cu.import("resource:///modules/MigrationUtils.jsm");
 Cu.import("resource:///modules/MSMigrationUtils.jsm");
+Cu.import("resource://gre/modules/LoginHelper.jsm");
+
 
 XPCOMUtils.defineLazyModuleGetter(this, "ctypes",
                                   "resource://gre/modules/ctypes.jsm");
@@ -29,6 +31,8 @@ XPCOMUtils.defineLazyModuleGetter(this, "WindowsRegistry",
                                   "resource://gre/modules/WindowsRegistry.jsm");
 
 Cu.importGlobalProperties(["URL"]);
+
+let CtypesKernelHelpers = MSMigrationUtils.CtypesKernelHelpers;
 
 
 
@@ -126,12 +130,19 @@ History.prototype = {
 
 
 function IE7FormPasswords () {
+  
+  this.name = "IE7FormPasswords";
 }
 
 IE7FormPasswords.prototype = {
   type: MigrationUtils.resourceTypes.PASSWORDS,
 
   get exists() {
+    
+    if (AppConstants.isPlatformAndVersionAtLeast("win", "6.2")) {
+      return false;
+    }
+
     try {
       let nsIWindowsRegKey = Ci.nsIWindowsRegKey;
       let key = Cc["@mozilla.org/windows-registry-key;1"].
@@ -171,7 +182,7 @@ IE7FormPasswords.prototype = {
 
 
   _migrateURIs(uris) {
-    this.ctypesHelpers = new MSMigrationUtils.CtypesHelpers();
+    this.ctypesKernelHelpers = new MSMigrationUtils.CtypesKernelHelpers();
     this._crypto = new OSCrypto();
     let nsIWindowsRegKey = Ci.nsIWindowsRegKey;
     let key = Cc["@mozilla.org/windows-registry-key;1"].
@@ -240,7 +251,7 @@ IE7FormPasswords.prototype = {
 
     key.close();
     this._crypto.finalize();
-    this.ctypesHelpers.finalize();
+    this.ctypesKernelHelpers.finalize();
   },
 
   _crypto: null,
@@ -250,52 +261,16 @@ IE7FormPasswords.prototype = {
 
 
   _addLogins(ieLogins) {
-    function addLogin(login, existingLogins) {
-      
-      
-      
-      if (existingLogins.some(l => login.matches(l, true))) {
-        return;
-      }
-      let isUpdate = false; 
-      for (let existingLogin of existingLogins) {
-        if (login.username == existingLogin.username && login.password != existingLogin.password) {
-          
-          
-          if (login.timePasswordChanged > existingLogin.timePasswordChanged) {
-            
-
-            
-            let propBag = Cc["@mozilla.org/hash-property-bag;1"].
-                          createInstance(Ci.nsIWritablePropertyBag);
-            propBag.setProperty("password", login.password);
-            propBag.setProperty("timePasswordChanged", login.timePasswordChanged);
-            Services.logins.modifyLogin(existingLogin, propBag);
-            
-            isUpdate = true;
-          }
-        }
-      }
-      
-      if (!isUpdate) {
-        Services.logins.addLogin(login);
-      }
-    }
-
     for (let ieLogin of ieLogins) {
       try {
-        let login = Cc["@mozilla.org/login-manager/loginInfo;1"].createInstance(Ci.nsILoginInfo);
-
-        login.init(ieLogin.url, "", null,
-                   ieLogin.username, ieLogin.password, "", "");
-        login.QueryInterface(Ci.nsILoginMetaInfo);
-        login.timeCreated = ieLogin.creation;
-        login.timeLastUsed = ieLogin.creation;
-        login.timePasswordChanged = ieLogin.creation;
         
-        
-        let existingLogins = Services.logins.findLogins({}, login.hostname, "", null);
-        addLogin(login, existingLogins);
+        let login = {
+          username: ieLogin.username,
+          password: ieLogin.password,
+          hostname: ieLogin.url,
+          timeCreated: ieLogin.creation,
+          };
+        LoginHelper.maybeImportLogin(login);
       } catch (e) {
         Cu.reportError(e);
       }
@@ -365,7 +340,7 @@ IE7FormPasswords.prototype = {
       
       
       let currentLoginItem = currentLoginItemPointer.contents;
-      let creation = this.ctypesHelpers.
+      let creation = this.ctypesKernelHelpers.
                      fileTimeToSecondsSinceEpoch(currentLoginItem.hiDateTime,
                                                  currentLoginItem.loDateTime) * 1000;
       let currentResult = {
@@ -531,6 +506,10 @@ IEProfileMigrator.prototype.getResources = function IE_getResources() {
   if (AppConstants.isPlatformAndVersionAtMost("win", "6.1")) {
     resources.push(new IE7FormPasswords());
   }
+  let windowsVaultFormPasswordsMigrator =
+    MSMigrationUtils.getWindowsVaultFormPasswordsMigrator();
+  windowsVaultFormPasswordsMigrator.name = "IEVaultFormPasswords";
+  resources.push(windowsVaultFormPasswordsMigrator);
   return [r for each (r in resources) if (r.exists)];
 };
 
