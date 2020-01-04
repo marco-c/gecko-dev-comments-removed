@@ -45,6 +45,7 @@ FormHistoryStartup.prototype = {
   },
 
   inited: false,
+  pendingQuery: null,
 
   init: function()
   {
@@ -62,7 +63,14 @@ FormHistoryStartup.prototype = {
                          getService(Ci.nsIMessageListenerManager);
     messageManager.loadFrameScript("chrome://satchel/content/formSubmitListener.js", true);
     messageManager.addMessageListener("FormHistory:FormSubmitEntries", this);
-    messageManager.addMessageListener("FormHistory:AutoCompleteSearchAsync", this);
+
+    
+    
+    
+    for (let manager of [messageManager, Services.ppmm]) {
+      manager.addMessageListener("FormHistory:AutoCompleteSearchAsync", this);
+      manager.addMessageListener("FormHistory:RemoveEntry", this);
+    }
   },
 
   receiveMessage: function(message) {
@@ -82,9 +90,58 @@ FormHistoryStartup.prototype = {
       }
 
       case "FormHistory:AutoCompleteSearchAsync": {
-        AutoCompleteE10S.search(message);
+        let { id, searchString, params } = message.data;
+
+        if (this.pendingQuery) {
+          this.pendingQuery.cancel();
+          this.pendingQuery = null;
+        }
+
+        let mm;
+        if (message.target instanceof Ci.nsIMessageListenerManager) {
+          
+          
+          mm = message.target;
+        } else {
+          
+          mm = message.target.messageManager;
+        }
+
+        let results = [];
+        let processResults = {
+          handleResult: aResult => {
+            results.push(aResult);
+          },
+          handleCompletion: aReason => {
+            
+            
+            
+            if (query == this.pendingQuery) {
+              this.pendingQuery = null;
+              if (!aReason) {
+                mm.sendAsyncMessage("FormHistory:AutoCompleteSearchResults",
+                                    { id, results });
+              }
+            }
+          }
+        };
+
+        let query = FormHistory.getAutoCompleteResults(searchString, params,
+                                                       processResults);
+        this.pendingQuery = query;
         break;
       }
+
+      case "FormHistory:RemoveEntry": {
+        let { inputName, value } = message.data;
+        FormHistory.update({
+          op: "remove",
+          fieldname: inputName,
+          value,
+        });
+        break;
+      }
+
     }
   }
 };

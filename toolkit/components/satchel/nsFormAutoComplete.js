@@ -14,8 +14,6 @@ XPCOMUtils.defineLazyModuleGetter(this, "BrowserUtils",
                                   "resource://gre/modules/BrowserUtils.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "Deprecated",
                                   "resource://gre/modules/Deprecated.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "FormHistory",
-                                  "resource://gre/modules/FormHistory.jsm");
 
 function isAutocompleteDisabled(aField) {
     if (aField.autocomplete !== "") {
@@ -24,6 +22,141 @@ function isAutocompleteDisabled(aField) {
 
     return aField.form && aField.form.autocomplete === "off";
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function FormHistoryClient({ formField, inputName }) {
+    if (formField && inputName != this.SEARCHBAR_ID) {
+        let window = formField.ownerDocument.defaultView;
+        let topDocShell = window.QueryInterface(Ci.nsIInterfaceRequestor)
+                             .getInterface(Ci.nsIDocShell)
+                             .sameTypeRootTreeItem
+                             .QueryInterface(Ci.nsIDocShell);
+        this.mm = topDocShell.QueryInterface(Ci.nsIInterfaceRequestor)
+                             .getInterface(Ci.nsIContentFrameMessageManager);
+    } else {
+        if (inputName == this.SEARCHBAR_ID) {
+          if (formField) {
+              throw new Error("FormHistoryClient constructed with both a " +
+                              "formField and an inputName. This is not " +
+                              "supported, and only empty results will be " +
+                              "returned.");
+          }
+        }
+        this.mm = Services.cpmm;
+    }
+
+    this.inputName = inputName;
+    this.id = FormHistoryClient.nextRequestID++;
+}
+
+FormHistoryClient.prototype = {
+    SEARCHBAR_ID: "searchbar-history",
+
+    
+    
+    
+    
+    
+    id: 0,
+    callback: null,
+    inputName: "",
+    mm: null,
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+    requestAutoCompleteResults(searchString, params, callback) {
+        this.mm.sendAsyncMessage("FormHistory:AutoCompleteSearchAsync", {
+            id: this.id,
+            searchString,
+            params,
+        });
+
+        this.mm.addMessageListener("FormHistory:AutoCompleteSearchResults",
+                                   this);
+        this.callback = callback;
+    },
+
+    
+
+
+
+
+    cancel() {
+        this.clearListeners();
+    },
+
+    
+
+
+
+
+
+
+
+    remove(value) {
+        this.mm.sendAsyncMessage("FormHistory:RemoveEntry", {
+            inputName: this.inputName,
+            value,
+        });
+    },
+
+    
+
+    receiveMessage(msg) {
+        let { id, results } = msg.data;
+        if (id != this.id) {
+            return;
+        }
+        if (!this.callback) {
+            Cu.reportError("FormHistoryClient received message with no " +
+                           "callback");
+            return;
+        }
+        this.callback(results);
+        this.clearListeners();
+    },
+
+    clearListeners() {
+        this.mm.removeMessageListener("FormHistory:AutoCompleteSearchResults",
+                                      this);
+        this.callback = null;
+    },
+};
+
+FormHistoryClient.nextRequestID = 1;
+
 
 function FormAutoComplete() {
     this.init();
@@ -54,7 +187,7 @@ FormAutoComplete.prototype = {
     
     
     
-    _pendingQuery       : null,
+    _pendingClient       : null,
 
     init : function() {
         
@@ -163,9 +296,11 @@ FormAutoComplete.prototype = {
             aUntrimmedSearchString = "";
         }
 
+        let client = new FormHistoryClient({ formField: aField, inputName: aInputName });
+
         
         let emptyResult = aDatalistResult ||
-                          new FormAutoCompleteResult(FormHistory, [],
+                          new FormAutoCompleteResult(client, [],
                                                      aInputName,
                                                      aUntrimmedSearchString,
                                                      null);
@@ -280,7 +415,7 @@ FormAutoComplete.prototype = {
 
             
             let result = aDatalistResult ?
-                new FormAutoCompleteResult(FormHistory, [], aInputName, aUntrimmedSearchString, null) :
+                new FormAutoCompleteResult(client, [], aInputName, aUntrimmedSearchString, null) :
                 emptyResult;
 
             let processEntry = (aEntries) => {
@@ -300,7 +435,7 @@ FormAutoComplete.prototype = {
                 }
             }
 
-            this.getAutoCompleteValues(aInputName, searchString, processEntry);
+            this.getAutoCompleteValues(client, aInputName, searchString, processEntry);
         }
     },
 
@@ -340,9 +475,9 @@ FormAutoComplete.prototype = {
     },
 
     stopAutoCompleteSearch : function () {
-        if (this._pendingQuery) {
-            this._pendingQuery.cancel();
-            this._pendingQuery = null;
+        if (this._pendingClient) {
+            this._pendingClient.cancel();
+            this._pendingClient = null;
         }
     },
 
@@ -355,7 +490,8 @@ FormAutoComplete.prototype = {
 
 
 
-    getAutoCompleteValues : function (fieldName, searchString, callback) {
+
+    getAutoCompleteValues : function (client, fieldName, searchString, callback) {
         let params = {
             agedWeight:         this._agedWeight,
             bucketSize:         this._bucketSize,
@@ -368,30 +504,11 @@ FormAutoComplete.prototype = {
         }
 
         this.stopAutoCompleteSearch();
-
-        let results = [];
-        let processResults = {
-          handleResult: aResult => {
-            results.push(aResult);
-          },
-          handleError: aError => {
-            this.log("getAutocompleteValues failed: " + aError.message);
-          },
-          handleCompletion: aReason => {
-            
-            
-            
-            if (query == this._pendingQuery) {
-              this._pendingQuery = null;
-              if (!aReason) {
-                callback(results);
-              }
-            }
-          }
-        };
-
-        let query = FormHistory.getAutoCompleteResults(searchString, params, processResults);
-        this._pendingQuery = query;
+        client.requestAutoCompleteResults(searchString, params, (entries) => {
+            this._pendingClient = null;
+            callback(entries);
+        });
+        this._pendingClient = client;
     },
 
     
@@ -422,145 +539,12 @@ FormAutoComplete.prototype = {
 }; 
 
 
-
-
-
-
-
-
-
-function FormAutoCompleteChild() {
-  this.init();
-}
-
-FormAutoCompleteChild.prototype = {
-    classID          : Components.ID("{c11c21b2-71c9-4f87-a0f8-5e13f50495fd}"),
-    QueryInterface   : XPCOMUtils.generateQI([Ci.nsIFormAutoComplete, Ci.nsISupportsWeakReference]),
-
-    _debug: false,
-    _enabled: true,
-    _pendingSearch: null,
-
-    
-
-
-
-
-
-
-    init: function() {
-      this._debug    = Services.prefs.getBoolPref("browser.formfill.debug");
-      this._enabled  = Services.prefs.getBoolPref("browser.formfill.enable");
-      this.log("init");
-    },
-
-    
-
-
-
-
-    log : function (message) {
-      if (!this._debug)
-        return;
-      dump("FormAutoCompleteChild: " + message + "\n");
-    },
-
-    autoCompleteSearchAsync : function (aInputName, aUntrimmedSearchString,
-                                        aField, aPreviousResult, aDatalistResult,
-                                        aListener) {
-      this.log("autoCompleteSearchAsync");
-
-      if (this._pendingSearch) {
-        this.stopAutoCompleteSearch();
-      }
-
-      let window = aField.ownerDocument.defaultView;
-
-      let rect = BrowserUtils.getElementBoundingScreenRect(aField);
-      let direction = window.getComputedStyle(aField).direction;
-      let mockField = {};
-      if (isAutocompleteDisabled(aField))
-          mockField.autocomplete = "off";
-      if (aField.maxLength > -1)
-          mockField.maxLength = aField.maxLength;
-
-      let datalistResult = aDatalistResult ?
-        { values: aDatalistResult.wrappedJSObject._values,
-          labels: aDatalistResult.wrappedJSObject._labels} :
-        null;
-
-      let topLevelDocshell = window.QueryInterface(Ci.nsIInterfaceRequestor)
-                                   .getInterface(Ci.nsIDocShell)
-                                   .sameTypeRootTreeItem
-                                   .QueryInterface(Ci.nsIDocShell);
-
-      let mm = topLevelDocshell.QueryInterface(Ci.nsIInterfaceRequestor)
-                               .getInterface(Ci.nsIContentFrameMessageManager);
-
-      mm.sendAsyncMessage("FormHistory:AutoCompleteSearchAsync", {
-        inputName: aInputName,
-        untrimmedSearchString: aUntrimmedSearchString,
-        mockField: mockField,
-        datalistResult: datalistResult,
-        previousSearchString: aPreviousResult && aPreviousResult.searchString.trim().toLowerCase(),
-        left: rect.left,
-        top: rect.top,
-        width: rect.width,
-        height: rect.height,
-        direction: direction,
-      });
-
-      let search = this._pendingSearch = {};
-      let searchFinished = message => {
-        mm.removeMessageListener("FormAutoComplete:AutoCompleteSearchAsyncResult", searchFinished);
-
-        
-        
-        if (search != this._pendingSearch) {
-          return;
-        }
-        this._pendingSearch = null;
-
-        let result = new FormAutoCompleteResult(
-          null,
-          Array.from(message.data.results, res => ({ text: res })),
-          null,
-          aUntrimmedSearchString,
-          mm
-        );
-        if (aListener) {
-          aListener.onSearchCompletion(result);
-        }
-      }
-
-      mm.addMessageListener("FormAutoComplete:AutoCompleteSearchAsyncResult", searchFinished);
-      this.log("autoCompleteSearchAsync message was sent");
-    },
-
-    stopAutoCompleteSearch : function () {
-      this.log("stopAutoCompleteSearch");
-      this._pendingSearch = null;
-    },
-
-    stopControllingInput(aField) {
-      let window = aField.ownerDocument.defaultView;
-      let topLevelDocshell = window.QueryInterface(Ci.nsIInterfaceRequestor)
-                                   .getInterface(Ci.nsIDocShell)
-                                   .sameTypeRootTreeItem
-                                   .QueryInterface(Ci.nsIDocShell);
-      let mm = topLevelDocshell.QueryInterface(Ci.nsIInterfaceRequestor)
-                               .getInterface(Ci.nsIContentFrameMessageManager);
-      mm.sendAsyncMessage("FormAutoComplete:Disconnect");
-    }
-}; 
-
-
-function FormAutoCompleteResult(formHistory,
+function FormAutoCompleteResult(client,
                                 entries,
                                 fieldName,
                                 searchString,
                                 messageManager) {
-    this.formHistory = formHistory;
+    this.client = client;
     this.entries = entries;
     this.fieldName = fieldName;
     this.searchString = searchString;
@@ -572,7 +556,7 @@ FormAutoCompleteResult.prototype = {
                                             Ci.nsISupportsWeakReference]),
 
     
-    formHistory : null,
+    client : null,
     entries : null,
     fieldName : null,
 
@@ -638,26 +622,9 @@ FormAutoCompleteResult.prototype = {
         let [removedEntry] = this.entries.splice(index, 1);
 
         if (removeFromDB) {
-            if (this.formHistory) {
-                this.formHistory.update({ op: "remove",
-                                          fieldname: this.fieldName,
-                                          value: removedEntry.text });
-            } else {
-                this.messageManager.sendAsyncMessage("FormAutoComplete:RemoveEntry",
-                                                     { index });
-            }
+            this.client.remove(removedEntry.text);
         }
     }
 };
 
-
-if (Services.appinfo.processType == Services.appinfo.PROCESS_TYPE_CONTENT &&
-    Services.prefs.getBoolPref("browser.tabs.remote.desktopbehavior", false)) {
-  
-  
-  let component = [FormAutoCompleteChild];
-  this.NSGetFactory = XPCOMUtils.generateNSGetFactory(component);
-} else {
-  let component = [FormAutoComplete];
-  this.NSGetFactory = XPCOMUtils.generateNSGetFactory(component);
-}
+this.NSGetFactory = XPCOMUtils.generateNSGetFactory([FormAutoComplete]);
