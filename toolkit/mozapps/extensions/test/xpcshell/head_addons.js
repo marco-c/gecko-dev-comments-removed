@@ -1285,12 +1285,7 @@ function createTempXPIFile(aData, aExtraFile) {
 
 
 function createTempWebExtensionFile(aData) {
-  if (!aData.id) {
-    const uuidGenerator = AM_Cc["@mozilla.org/uuid-generator;1"].getService(AM_Ci.nsIUUIDGenerator);
-    aData.id = uuidGenerator.generateUUID().number;
-  }
-
-  let file = Extension.generateXPI(aData.id, aData);
+  let file = Extension.generateXPI(aData);
   temp_xpis.push(file);
   return file;
 }

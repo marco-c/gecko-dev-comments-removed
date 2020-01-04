@@ -1,6 +1,6 @@
 var ExtensionTestUtils = {};
 
-ExtensionTestUtils.loadExtension = function(ext, id = null)
+ExtensionTestUtils.loadExtension = function(ext)
 {
   
   
@@ -83,7 +83,7 @@ ExtensionTestUtils.loadExtension = function(ext, id = null)
     },
   };
 
-  var extension = SpecialPowers.loadExtension(id, ext, handler);
+  var extension = SpecialPowers.loadExtension(ext, handler);
 
   registerCleanup(() => {
     if (extension.state == "pending" || extension.state == "running") {
