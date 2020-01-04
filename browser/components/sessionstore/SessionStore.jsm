@@ -778,7 +778,13 @@ var SessionStoreInternal = {
         
         let activePageData = tabData.entries[tabData.index - 1] || null;
         let uri = activePageData ? activePageData.url || null : null;
-        if (!browser.userTypedValue) {
+        
+        
+        
+        
+        
+        
+        if (!browser.userTypedValue && uri && !win.gInitialPages.includes(uri)) {
           browser.userTypedValue = uri;
         }
 
