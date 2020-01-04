@@ -152,6 +152,15 @@ struct AnimatedGeometryRoot
   AnimatedGeometryRoot* mParentAGR;
 };
 
+enum class nsDisplayListBuilderMode : uint8_t {
+  PAINTING,
+  EVENT_DELIVERY,
+  PLUGIN_GEOMETRY,
+  FRAME_VISIBILITY,
+  TRANSFORM_COMPUTATION,
+  GENERATE_GLYPH
+};
+
 
 
 
@@ -221,15 +230,9 @@ public:
 
 
 
-  enum Mode {
-    PAINTING,
-    EVENT_DELIVERY,
-    PLUGIN_GEOMETRY,
-    FRAME_VISIBILITY,
-    TRANSFORM_COMPUTATION,
-    GENERATE_GLYPH
-  };
-  nsDisplayListBuilder(nsIFrame* aReferenceFrame, Mode aMode, bool aBuildCaret);
+  nsDisplayListBuilder(nsIFrame* aReferenceFrame,
+                       nsDisplayListBuilderMode aMode,
+                       bool aBuildCaret);
   ~nsDisplayListBuilder();
 
   void SetWillComputePluginGeometry(bool aWillComputePluginGeometry)
@@ -238,9 +241,9 @@ public:
   }
   void SetForPluginGeometry()
   {
-    NS_ASSERTION(mMode == PAINTING, "Can only switch from PAINTING to PLUGIN_GEOMETRY");
+    NS_ASSERTION(mMode == nsDisplayListBuilderMode::PAINTING, "Can only switch from PAINTING to PLUGIN_GEOMETRY");
     NS_ASSERTION(mWillComputePluginGeometry, "Should have signalled this in advance");
-    mMode = PLUGIN_GEOMETRY;
+    mMode = nsDisplayListBuilderMode::PLUGIN_GEOMETRY;
   }
 
   mozilla::layers::LayerManager* GetWidgetLayerManager(nsView** aView = nullptr, bool* aAllowRetaining = nullptr);
@@ -249,25 +252,10 @@ public:
 
 
 
-  bool IsForEventDelivery() { return mMode == EVENT_DELIVERY; }
-  
-
-
-
-
-
-
-  bool IsForPluginGeometry() { return mMode == PLUGIN_GEOMETRY; }
-  
-
-
-  bool IsForPainting() { return mMode == PAINTING; }
-
-  
-
-
-
-  bool IsForFrameVisibility() { return mMode == FRAME_VISIBILITY; }
+  bool IsForEventDelivery()
+  {
+    return mMode == nsDisplayListBuilderMode::EVENT_DELIVERY;
+  }
 
   
 
@@ -275,7 +263,39 @@ public:
 
 
 
-  bool IsForGenerateGlyphPath() { return mMode == GENERATE_GLYPH; }
+
+  bool IsForPluginGeometry()
+  {
+    return mMode == nsDisplayListBuilderMode::PLUGIN_GEOMETRY;
+  }
+
+  
+
+
+  bool IsForPainting()
+  {
+    return mMode == nsDisplayListBuilderMode::PAINTING;
+  }
+
+  
+
+
+
+  bool IsForFrameVisibility()
+  {
+    return mMode == nsDisplayListBuilderMode::FRAME_VISIBILITY;
+  }
+
+  
+
+
+
+
+
+  bool IsForGenerateGlyphPath()
+  {
+    return mMode == nsDisplayListBuilderMode::GENERATE_GLYPH;
+  }
 
   bool WillComputePluginGeometry() { return mWillComputePluginGeometry; }
   
@@ -1221,7 +1241,7 @@ private:
   nsDisplayList*                 mScrollInfoItemsForHoisting;
   nsTArray<DisplayItemScrollClip*> mScrollClipsToDestroy;
   nsTArray<DisplayItemClip*>     mDisplayItemClipsToDestroy;
-  Mode                           mMode;
+  nsDisplayListBuilderMode       mMode;
   ViewID                         mCurrentScrollParentId;
   ViewID                         mCurrentScrollbarTarget;
   uint32_t                       mCurrentScrollbarFlags;
