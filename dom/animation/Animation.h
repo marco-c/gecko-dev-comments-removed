@@ -308,12 +308,8 @@ public:
 
 
 
-
-
-
   void ComposeStyle(RefPtr<AnimValuesStyleRule>& aStyleRule,
-                    nsCSSPropertySet& aSetProperties,
-                    bool& aStyleChanging);
+                    nsCSSPropertySet& aSetProperties);
 
   void NotifyEffectTimingUpdated();
 

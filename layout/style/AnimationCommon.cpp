@@ -428,10 +428,6 @@ AnimationCollection::EnsureStyleRuleFor()
     return;
   }
 
-  if (!mStyleChanging) {
-    return;
-  }
-
   
   
   nsStyleContext* styleContext = nullptr;
@@ -454,8 +450,7 @@ AnimationCollection::EnsureStyleRuleFor()
     EffectCompositor::CascadeLevel::Transitions;
   presContext->EffectCompositor()->MaybeUpdateAnimationRule(mElement,
                                                             PseudoElementType(),
-                                                            cascadeLevel,
-                                                            mStyleChanging);
+                                                            cascadeLevel);
 }
 
 void
@@ -482,7 +477,6 @@ AnimationCollection::RequestRestyle(EffectCompositor::RestyleType aRestyleType)
   
 
   if (aRestyleType == EffectCompositor::RestyleType::Layer) {
-    mStyleChanging = true;
 
     
     presContext->ClearLastStyleUpdateForAllAnimations();

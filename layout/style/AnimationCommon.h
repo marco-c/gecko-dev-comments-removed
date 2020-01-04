@@ -144,7 +144,6 @@ struct AnimationCollection : public LinkedListElement<AnimationCollection>
     , mElementProperty(aElementProperty)
     , mManager(aManager)
     , mCheckGeneration(0)
-    , mStyleChanging(true)
     , mHasPendingAnimationRestyle(false)
 #ifdef DEBUG
     , mCalledPropertyDtor(false)
@@ -252,11 +251,6 @@ public:
   uint64_t mCheckGeneration;
   
   void UpdateCheckGeneration(nsPresContext* aPresContext);
-
-  
-  
-  
-  bool mStyleChanging;
 
 private:
   

@@ -102,8 +102,7 @@ public:
   
   void MaybeUpdateAnimationRule(dom::Element* aElement,
                                 nsCSSPseudoElements::Type aPseudoType,
-                                CascadeLevel aCascadeLevel,
-                                bool& aStyleChanging);
+                                CascadeLevel aCascadeLevel);
 
   
   bool HasThrottledAnimations(dom::Element* aElement,
@@ -161,8 +160,7 @@ private:
   static void ComposeAnimationRule(dom::Element* aElement,
                                    nsCSSPseudoElements::Type aPseudoType,
                                    CascadeLevel aCascadeLevel,
-                                   TimeStamp aRefreshTime,
-                                   bool& aStyleChanging);
+                                   TimeStamp aRefreshTime);
 
   static dom::Element* GetElementToRestyle(dom::Element* aElement,
                                            nsCSSPseudoElements::Type

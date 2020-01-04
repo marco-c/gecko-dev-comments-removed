@@ -182,8 +182,7 @@ void
 EffectCompositor::MaybeUpdateAnimationRule(dom::Element* aElement,
                                            nsCSSPseudoElements::Type
                                              aPseudoType,
-                                           CascadeLevel aCascadeLevel,
-                                           bool& aStyleChanging)
+                                           CascadeLevel aCascadeLevel)
 {
   auto& elementsToRestyle = mElementsToRestyle[aCascadeLevel];
   PseudoElementHashKey key = { aElement, aPseudoType };
@@ -193,8 +192,7 @@ EffectCompositor::MaybeUpdateAnimationRule(dom::Element* aElement,
   }
 
   ComposeAnimationRule(aElement, aPseudoType, aCascadeLevel,
-                       mPresContext->RefreshDriver()->MostRecentRefresh(),
-                       aStyleChanging);
+                       mPresContext->RefreshDriver()->MostRecentRefresh());
 
   elementsToRestyle.Remove(key);
 }
@@ -360,8 +358,7 @@ EffectCompositor::GetAnimationElementAndPseudoForFrame(const nsIFrame* aFrame)
 EffectCompositor::ComposeAnimationRule(dom::Element* aElement,
                                        nsCSSPseudoElements::Type aPseudoType,
                                        CascadeLevel aCascadeLevel,
-                                       TimeStamp aRefreshTime,
-                                       bool& aStyleChanging)
+                                       TimeStamp aRefreshTime)
 {
   EffectSet* effects = EffectSet::GetEffectSet(aElement, aPseudoType);
   if (!effects) {
@@ -387,17 +384,13 @@ EffectCompositor::ComposeAnimationRule(dom::Element* aElement,
   animationRule = nullptr;
 
   
-  aStyleChanging = false;
-
-  
   
   
   
   nsCSSPropertySet properties;
 
   for (KeyframeEffectReadOnly* effect : Reversed(sortedEffectList)) {
-    effect->GetAnimation()->ComposeStyle(animationRule, properties,
-                                         aStyleChanging);
+    effect->GetAnimation()->ComposeStyle(animationRule, properties);
   }
 
   effects->UpdateAnimationRuleRefreshTime(aCascadeLevel, aRefreshTime);
