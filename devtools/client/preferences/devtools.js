@@ -216,6 +216,9 @@ pref("devtools.canvasdebugger.enabled", false);
 pref("devtools.webaudioeditor.enabled", false);
 
 
+pref("devtools.scratchpad.enabled", false);
+
+
 pref("devtools.webaudioeditor.inspectorWidth", 300);
 
 
@@ -290,10 +293,6 @@ pref("devtools.webconsole.persistlog", false);
 
 
 pref("devtools.webconsole.timestampMessages", false);
-
-
-
-pref("devtools.webconsole.autoMultiline", true);
 
 
 

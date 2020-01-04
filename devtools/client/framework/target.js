@@ -727,6 +727,10 @@ WorkerTarget.prototype = {
   destroy: function() {},
 
   hasActor: function (name) {
+    
+    if (name == "console") {
+      return true;
+    }
     return false;
   },
 
