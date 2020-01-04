@@ -9,7 +9,6 @@
 #include "mozilla/Assertions.h"
 
 #include "jsapi.h"
-#include "xpcprivate.h" 
 #include "xpcpublic.h"
 #include "nsIGlobalObject.h"
 #include "nsIDocShell.h"
@@ -340,14 +339,9 @@ AutoJSAPI::InitInternal(nsIGlobalObject* aGlobalObject, JSObject* aGlobal,
     
     
     
-    
-    JS::Rooted<JSObject*> global(JS_GetRuntime(aCx), aGlobal);
     mAutoRequest.emplace(mCx);
-    mCxPusher.emplace(mCx);
-    mAutoNullableCompartment.emplace(mCx, global);
-  } else {
-    mAutoNullableCompartment.emplace(mCx, aGlobal);
   }
+  mAutoNullableCompartment.emplace(mCx, aGlobal);
 
   ScriptSettingsStack::Push(this);
 
@@ -760,48 +754,15 @@ AutoIncumbentScript::~AutoIncumbentScript()
   ScriptSettingsStack::Pop(this);
 }
 
-AutoNoJSAPI::AutoNoJSAPI(bool aIsMainThread)
+AutoNoJSAPI::AutoNoJSAPI()
   : ScriptSettingsStackEntry(nullptr, eNoJSAPI)
 {
-  if (aIsMainThread) {
-    mCxPusher.emplace(static_cast<JSContext*>(nullptr),
-                       true);
-  }
-
   ScriptSettingsStack::Push(this);
 }
 
 AutoNoJSAPI::~AutoNoJSAPI()
 {
   ScriptSettingsStack::Pop(this);
-}
-
-danger::AutoCxPusher::AutoCxPusher(JSContext* cx, bool allowNull)
-{
-  MOZ_ASSERT_IF(!allowNull, cx);
-
-  XPCJSContextStack *stack = XPCJSRuntime::Get()->GetJSContextStack();
-  stack->Push(cx);
-
-#ifdef DEBUG
-  mPushedContext = cx;
-  mCompartmentDepthOnEntry = cx ? js::GetEnterCompartmentDepth(cx) : 0;
-#endif
-}
-
-danger::AutoCxPusher::~AutoCxPusher()
-{
-  
-  
-  
-  
-  
-  MOZ_ASSERT_IF(mPushedContext, mCompartmentDepthOnEntry ==
-                                js::GetEnterCompartmentDepth(mPushedContext));
-  
-  
-  
-  XPCJSRuntime::Get()->GetJSContextStack()->Pop();
 }
 
 } 

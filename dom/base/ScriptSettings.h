@@ -28,28 +28,6 @@ namespace mozilla {
 namespace dom {
 
 
-namespace danger {
-
-
-
-
-
-class MOZ_STACK_CLASS AutoCxPusher
-{
-public:
-  explicit AutoCxPusher(JSContext *aCx, bool aAllowNull = false);
-  ~AutoCxPusher();
-
-private:
-#ifdef DEBUG
-  JSContext* mPushedContext;
-  unsigned mCompartmentDepthOnEntry;
-#endif
-};
-
-} 
-
-
 
 
 
@@ -310,7 +288,6 @@ protected:
 
 private:
   mozilla::Maybe<JSAutoRequest> mAutoRequest;
-  mozilla::Maybe<danger::AutoCxPusher> mCxPusher;
   mozilla::Maybe<JSAutoNullableCompartment> mAutoNullableCompartment;
   JSContext *mCx;
 
@@ -423,11 +400,8 @@ private:
 
 class AutoNoJSAPI : protected ScriptSettingsStackEntry {
 public:
-  explicit AutoNoJSAPI(bool aIsMainThread = NS_IsMainThread());
+  explicit AutoNoJSAPI();
   ~AutoNoJSAPI();
-
-private:
-  mozilla::Maybe<danger::AutoCxPusher> mCxPusher;
 };
 
 } 
