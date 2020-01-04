@@ -173,7 +173,7 @@ protected:
   
   TimeDuration InitialAdvance() const {
     return mEffect ?
-           std::max(TimeDuration(), mEffect->Timing().mDelay * -1) :
+           std::max(TimeDuration(), mEffect->SpecifiedTiming().mDelay * -1) :
            TimeDuration();
   }
   

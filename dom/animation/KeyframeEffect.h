@@ -170,7 +170,7 @@ public:
   KeyframeEffectReadOnly(nsIDocument* aDocument,
                          Element* aTarget,
                          nsCSSPseudoElements::Type aPseudoType,
-                         const AnimationTiming& aTiming);
+                         const TimingParams& aTiming);
 
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS_INHERITED(KeyframeEffectReadOnly,
@@ -219,9 +219,13 @@ public:
     aRetVal.AssignLiteral("distribute");
   }
 
-  const AnimationTiming& Timing() const { return mTiming->Timing(); }
-  void SetTiming(const AnimationTiming& aTiming);
-  already_AddRefed<AnimationEffectTimingReadOnly> TimingAsObject() const override;
+  already_AddRefed<AnimationEffectTimingReadOnly> Timing() const override;
+
+  const TimingParams& SpecifiedTiming() const
+  {
+    return mTiming->AsTimingParams();
+  }
+  void SetSpecifiedTiming(const TimingParams& aTiming);
   void NotifyAnimationTimingUpdated();
 
   Nullable<TimeDuration> GetLocalTime() const;
@@ -238,14 +242,15 @@ public:
   
   static ComputedTiming
   GetComputedTimingAt(const Nullable<TimeDuration>& aLocalTime,
-                      const AnimationTiming& aTiming);
+                      const TimingParams& aTiming);
 
   
   
   ComputedTiming
-  GetComputedTiming(const AnimationTiming* aTiming = nullptr) const
+  GetComputedTiming(const TimingParams* aTiming = nullptr) const
   {
-    return GetComputedTimingAt(GetLocalTime(), aTiming ? *aTiming : Timing());
+    return GetComputedTimingAt(GetLocalTime(),
+                               aTiming ? *aTiming : SpecifiedTiming());
   }
 
   void
@@ -328,7 +333,7 @@ protected:
   
   void UpdateTargetRegistration();
 
-  static AnimationTiming ConvertKeyframeEffectOptions(
+  static TimingParams ConvertKeyframeEffectOptions(
     const UnrestrictedDoubleOrKeyframeEffectOptions& aOptions);
 
   static void BuildAnimationPropertyList(
