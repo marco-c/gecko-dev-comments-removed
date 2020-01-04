@@ -183,6 +183,12 @@ public:
                    const nsAString& aName, const nsAString& aContentType,
                    int64_t aLastModifiedDate);
 
+  
+  
+  
+  
+  
+  
   static already_AddRefed<File>
   CreateFromFile(nsISupports* aParent, nsIFile* aFile, bool aTemporary = false);
 
