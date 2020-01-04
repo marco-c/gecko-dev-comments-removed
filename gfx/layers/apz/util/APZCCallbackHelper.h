@@ -67,6 +67,9 @@ public:
     static void InitializeRootDisplayport(nsIPresShell* aPresShell);
 
     
+    static nsPresContext* GetPresContextForContent(nsIContent* aContent);
+
+    
     static nsIPresShell* GetRootContentDocumentPresShellForContent(nsIContent* aContent);
 
     
