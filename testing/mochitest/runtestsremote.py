@@ -2,12 +2,8 @@
 
 
 
-import base64
-import json
 import os
-import shutil
 import sys
-import tempfile
 import traceback
 
 sys.path.insert(
@@ -20,8 +16,6 @@ from remoteautomation import RemoteAutomation, fennecLogcatFilters
 from runtests import Mochitest, MessageLogger
 from mochitest_options import MochitestArgumentParser
 
-from manifestparser import TestManifest
-from manifestparser.filters import chunk_by_slice
 import devicemanager
 import mozinfo
 
