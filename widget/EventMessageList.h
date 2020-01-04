@@ -312,6 +312,7 @@ NS_EVENT_MESSAGE(eContentCommandDelete)
 NS_EVENT_MESSAGE(eContentCommandUndo)
 NS_EVENT_MESSAGE(eContentCommandRedo)
 NS_EVENT_MESSAGE(eContentCommandPasteTransferable)
+NS_EVENT_MESSAGE(eContentCommandLookUpDictionary)
 
 
 
