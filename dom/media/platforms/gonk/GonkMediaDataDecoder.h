@@ -7,10 +7,8 @@
 #if !defined(GonkMediaDataDecoder_h_)
 #define GonkMediaDataDecoder_h_
 #include "PlatformDecoderModule.h"
-#include <stagefright/foundation/AHandler.h>
 
 namespace android {
-struct ALooper;
 class MediaCodecProxy;
 } 
 
@@ -18,7 +16,7 @@ namespace mozilla {
 class MediaRawData;
 
 
-class GonkDecoderManager : public android::AHandler {
+class GonkDecoderManager {
 public:
   typedef TrackInfo::TrackType TrackType;
   typedef MediaDataDecoder::InitPromise InitPromise;
@@ -26,8 +24,10 @@ public:
 
   virtual ~GonkDecoderManager() {}
 
+  virtual nsRefPtr<InitPromise> Init(MediaDataDecoderCallback* aCallback) = 0;
+
   
-  nsresult Input(MediaRawData* aSample);
+  virtual nsresult Input(MediaRawData* aSample) = 0;
 
   
   
@@ -37,57 +37,26 @@ public:
   
   virtual nsresult Output(int64_t aStreamOffset,
                           nsRefPtr<MediaData>& aOutput) = 0;
-  virtual nsRefPtr<InitPromise> Init() = 0;
 
   
-  nsresult Flush();
+  virtual nsresult Flush() = 0;
 
   
   nsresult Shutdown();
 
   
-  bool HasQueuedSample();
-
-  
-  
-  void SetDecodeCallback(MediaDataDecoderCallback* aCallback)
-  {
-    mDecodeCallback = aCallback;
-  }
+  virtual bool HasQueuedSample() = 0;
 
 protected:
-  GonkDecoderManager()
-    : mMutex("GonkDecoderManager")
-    , mLastTime(0)
-    , mDecodeCallback(nullptr)
-  {}
-
-  bool InitLoopers(MediaData::Type aType);
-
-  void onMessageReceived(const android::sp<android::AMessage> &aMessage) override;
-
   nsRefPtr<MediaByteBuffer> mCodecSpecificData;
 
   nsAutoCString mMimeType;
 
   
   android::sp<android::MediaCodecProxy> mDecoder;
-  
-  android::sp<android::ALooper> mDecodeLooper;
-  
-  android::sp<android::ALooper> mTaskLooper;
 
   MozPromiseHolder<InitPromise> mInitPromise;
 
-  Mutex mMutex; 
-  
-  
-  
-  nsTArray<nsRefPtr<MediaRawData>> mQueuedSamples;
-
-  int64_t mLastTime;  
-
-  MediaDataDecoderCallback* mDecodeCallback; 
 };
 
 
@@ -132,7 +101,7 @@ private:
   RefPtr<FlushableTaskQueue> mTaskQueue;
   MediaDataDecoderCallback* mCallback;
 
-  android::sp<GonkDecoderManager> mManager;
+  nsAutoPtr<GonkDecoderManager> mManager;
 
   
   
