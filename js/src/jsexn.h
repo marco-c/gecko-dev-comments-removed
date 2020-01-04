@@ -54,25 +54,6 @@ extern bool
 ErrorToException(JSContext* cx, const char* message, JSErrorReport* reportp,
                  JSErrorCallback callback, void* userRef);
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-extern bool
-ReportUncaughtException(JSContext* cx);
-
 extern JSErrorReport*
 ErrorFromException(JSContext* cx, HandleObject obj);
 
