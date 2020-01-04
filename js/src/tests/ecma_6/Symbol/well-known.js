@@ -2,7 +2,6 @@
 
 
 var names = [
-    "isConcatSpreadable",
     "iterator",
     "match",
     "replace",
