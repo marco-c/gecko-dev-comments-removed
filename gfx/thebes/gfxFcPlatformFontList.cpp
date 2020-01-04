@@ -1318,6 +1318,8 @@ bool
 gfxFcPlatformFontList::GetStandardFamilyName(const nsAString& aFontName,
                                              nsAString& aFamilyName)
 {
+    aFamilyName.Truncate();
+
     
     
     if (aFontName.EqualsLiteral("serif") ||
@@ -1327,13 +1329,87 @@ gfxFcPlatformFontList::GetStandardFamilyName(const nsAString& aFontName,
         return true;
     }
 
-    gfxFontFamily *family = FindFamily(aFontName);
-    if (family) {
-        family->LocalizedName(aFamilyName);
+    nsAutoRef<FcPattern> pat(FcPatternCreate());
+    if (!pat) {
         return true;
     }
 
-    return false;
+    nsAutoRef<FcObjectSet> os(FcObjectSetBuild(FC_FAMILY, nullptr));
+    if (!os) {
+        return true;
+    }
+
+    
+    FcPatternAddBool(pat, FC_SCALABLE, FcTrue);
+
+    
+    NS_ConvertUTF16toUTF8 familyName(aFontName);
+    FcPatternAddString(pat, FC_FAMILY, ToFcChar8Ptr(familyName.get()));
+
+    nsAutoRef<FcFontSet> givenFS(FcFontList(nullptr, pat, os));
+    if (!givenFS) {
+        return true;
+    }
+
+    
+    
+    nsTArray<nsCString> candidates;
+    for (int i = 0; i < givenFS->nfont; i++) {
+        char* firstFamily;
+
+        if (FcPatternGetString(givenFS->fonts[i], FC_FAMILY, 0,
+                               (FcChar8 **) &firstFamily) != FcResultMatch)
+        {
+            continue;
+        }
+
+        nsDependentCString first(firstFamily);
+        if (!candidates.Contains(first)) {
+            candidates.AppendElement(first);
+
+            if (familyName.Equals(first)) {
+                aFamilyName.Assign(aFontName);
+                return true;
+            }
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    for (uint32_t j = 0; j < candidates.Length(); ++j) {
+        FcPatternDel(pat, FC_FAMILY);
+        FcPatternAddString(pat, FC_FAMILY, (FcChar8 *)candidates[j].get());
+
+        nsAutoRef<FcFontSet> candidateFS(FcFontList(nullptr, pat, os));
+        if (!candidateFS) {
+            return true;
+        }
+
+        if (candidateFS->nfont != givenFS->nfont) {
+            continue;
+        }
+
+        bool equal = true;
+        for (int i = 0; i < givenFS->nfont; ++i) {
+            if (!FcPatternEqual(candidateFS->fonts[i], givenFS->fonts[i])) {
+                equal = false;
+                break;
+            }
+        }
+        if (equal) {
+            AppendUTF8toUTF16(candidates[j], aFamilyName);
+            return true;
+        }
+    }
+
+    
+    return true;
 }
 
  FT_Library
