@@ -22,8 +22,6 @@ XPCOMUtils.defineLazyServiceGetter(this, 'PushServiceComponent',
 const serviceExports = Cu.import('resource://gre/modules/PushService.jsm', {});
 const servicePrefs = new Preferences('dom.push.');
 
-const DEFAULT_TIMEOUT = 5000;
-
 const WEBSOCKET_CLOSE_GOING_AWAY = 1001;
 
 var isParent = Cc['@mozilla.org/xre/runtime;1']
@@ -96,31 +94,6 @@ function promiseObserverNotification(topic, matchFunc) {
       resolve({subject, data});
     }, topic, false);
   });
-}
-
-
-
-
-
-
-
-
-
-
-
-function waitForPromise(promise, delay, message = 'Timed out waiting on promise') {
-  let timeoutDefer = Promise.defer();
-  let id = setTimeout(() => timeoutDefer.reject(new Error(message)), delay);
-  return Promise.race([
-    promise.then(value => {
-      clearTimeout(id);
-      return value;
-    }, error => {
-      clearTimeout(id);
-      throw error;
-    }),
-    timeoutDefer.promise
-  ]);
 }
 
 
