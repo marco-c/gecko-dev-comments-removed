@@ -3186,6 +3186,27 @@ ServiceWorkerManager::MaybeStopControlling(nsIDocument* aDoc)
 }
 
 void
+ServiceWorkerManager::MaybeCheckNavigationUpdate(nsIDocument* aDoc)
+{
+  AssertIsOnMainThread();
+  MOZ_ASSERT(aDoc);
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  RefPtr<ServiceWorkerRegistrationInfo> registration;
+  mControlledDocuments.Get(aDoc, getter_AddRefs(registration));
+  if (registration) {
+    registration->MaybeScheduleUpdate();
+  }
+}
+
+void
 ServiceWorkerManager::StartControllingADocument(ServiceWorkerRegistrationInfo* aRegistration,
                                                 nsIDocument* aDoc,
                                                 const nsAString& aDocumentId)
