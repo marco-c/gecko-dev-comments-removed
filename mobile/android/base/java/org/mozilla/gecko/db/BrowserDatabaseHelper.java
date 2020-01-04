@@ -36,7 +36,8 @@ import android.os.Build;
 import android.util.Log;
 
 
-final class BrowserDatabaseHelper extends SQLiteOpenHelper {
+
+public final class BrowserDatabaseHelper extends SQLiteOpenHelper {
     private static final String LOGTAG = "GeckoBrowserDBHelper";
 
     
