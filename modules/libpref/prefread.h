@@ -37,8 +37,14 @@ typedef void (*PrefReader)(void       *closure,
                            bool        stickyPref);
 
 
+
+
+typedef void (*PrefParseErrorReporter)(const char* message, int line, bool error);
+
+
 typedef struct PrefParseState {
     PrefReader  reader;
+    PrefParseErrorReporter reporter;
     void       *closure;
     int         state;      
     int         nextstate;  
@@ -71,7 +77,11 @@ typedef struct PrefParseState {
 
 
 
-void PREF_InitParseState(PrefParseState *ps, PrefReader reader, void *closure);
+
+
+
+void PREF_InitParseState(PrefParseState *ps, PrefReader reader,
+			 PrefParseErrorReporter reporter, void *closure);
 
 
 
