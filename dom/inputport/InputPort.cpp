@@ -4,6 +4,7 @@
 
 
 
+#include "MediaStreamGraph.h"
 #include "DOMMediaStream.h"
 #include "InputPortData.h"
 #include "InputPortListeners.h"
@@ -60,7 +61,10 @@ InputPort::Init(nsIInputPortData* aData, nsIInputPortListener* aListener, ErrorR
   mInputPortListener = static_cast<InputPortListener*>(aListener);
   mInputPortListener->RegisterInputPort(this);
 
-  mStream = DOMMediaStream::CreateSourceStream(GetOwner());
+  MediaStreamGraph* graph =
+    MediaStreamGraph::GetInstance(MediaStreamGraph::SYSTEM_THREAD_DRIVER,
+                                  AudioChannel::Normal);
+  mStream = DOMMediaStream::CreateSourceStream(GetOwner(), graph);
 }
 
 void
