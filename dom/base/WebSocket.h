@@ -82,6 +82,13 @@ public:
                                                  const Sequence<nsString>& aProtocols,
                                                  ErrorResult& rv);
 
+  static already_AddRefed<WebSocket> CreateServerWebSocket(const GlobalObject& aGlobal,
+                                                           const nsAString& aUrl,
+                                                           const Sequence<nsString>& aProtocols,
+                                                           nsITransportProvider* aTransportProvider,
+                                                           const nsAString& aNegotiatedExtensions,
+                                                           ErrorResult& rv);
+
   static already_AddRefed<WebSocket> ConstructorCommon(const GlobalObject& aGlobal,
                                                        const nsAString& aUrl,
                                                        const Sequence<nsString>& aProtocols,
