@@ -2006,13 +2006,27 @@ void
 JsepSessionImpl::SetupDefaultCodecs()
 {
   
+  
+  
+  
+  
+  
+  
+  
+  
   mSupportedCodecs.values.push_back(new JsepAudioCodecDescription(
       "109",
       "opus",
       48000,
       2,
       960,
-      16000));
+#ifdef WEBRTC_GONK
+      
+      16000 
+#else
+      40000
+#endif
+      ));
 
   mSupportedCodecs.values.push_back(new JsepAudioCodecDescription(
       "9",
