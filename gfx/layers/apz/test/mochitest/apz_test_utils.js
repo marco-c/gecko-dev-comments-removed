@@ -317,3 +317,24 @@ function getSnapshot(rect) {
 
   return getSnapshot.chromeHelper.sendSyncMessage('snapshot', JSON.stringify(rect)).toString();
 }
+
+
+
+
+
+
+
+
+
+
+function getQueryArgs() {
+  var args = {};
+  if (location.search.length > 0) {
+    var params = location.search.substr(1).split('&');
+    for (var p of params) {
+      var [k, v] = p.split('=');
+      args[k] = JSON.parse(v);
+    }
+  }
+  return args;
+}
