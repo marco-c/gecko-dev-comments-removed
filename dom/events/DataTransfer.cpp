@@ -312,11 +312,10 @@ DataTransfer::GetTypes(ErrorResult& aRv) const
   RefPtr<DOMStringList> types = new DOMStringList();
 
   const nsTArray<RefPtr<DataTransferItem>>* items = mItems->MozItemsAt(0);
-  if (!items || items->IsEmpty()) {
+  if (NS_WARN_IF(!items)) {
     return types.forget();
   }
 
-  bool addFile = false;
   for (uint32_t i = 0; i < items->Length(); i++) {
     DataTransferItem* item = items->ElementAt(i);
     MOZ_ASSERT(item);
@@ -325,20 +324,20 @@ DataTransfer::GetTypes(ErrorResult& aRv) const
       continue;
     }
 
-    nsAutoString type;
-    item->GetType(type);
-    if (NS_WARN_IF(!types->Add(type))) {
-      aRv.Throw(NS_ERROR_FAILURE);
-      return nullptr;
-    }
-
-    if (!addFile) {
-      addFile = item->Kind() == DataTransferItem::KIND_FILE;
+    if (item->Kind() == DataTransferItem::KIND_STRING) {
+      
+      nsAutoString type;
+      item->GetType(type);
+      if (NS_WARN_IF(!types->Add(type))) {
+        aRv.Throw(NS_ERROR_FAILURE);
+        return nullptr;
+      }
     }
   }
 
   
-  if (addFile && NS_WARN_IF(!types->Add(NS_LITERAL_STRING("Files")))) {
+  if (mItems->Files()->Length() > 0 &&
+      NS_WARN_IF(!types->Add(NS_LITERAL_STRING("Files")))) {
     aRv.Throw(NS_ERROR_FAILURE);
     return nullptr;
   }
