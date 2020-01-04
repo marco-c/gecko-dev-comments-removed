@@ -77,6 +77,14 @@ public:
   
   
   
+  static void SetDefaultFromPref(Feature aFeature,
+                                 const char* aPrefName,
+                                 bool aIsEnablePref,
+                                 bool aDefaultValue);
+
+  
+  
+  
   static void SetFailed(Feature aFeature,
                         FeatureStatus aStatus,
                         const char* aMessage);

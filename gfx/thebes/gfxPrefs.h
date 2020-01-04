@@ -71,6 +71,8 @@ class PreferenceAccessImpl;
 class gfxPrefs;
 class gfxPrefs final
 {
+  friend class gfxWindowsPlatform;
+
 private:
   
   PreferenceAccessImpl* mMoz2DPrefAccess;
