@@ -1565,8 +1565,6 @@ ConcreteStackFrame<SavedFrame>::constructSavedFrameStack(JSContext* cx,
 
 struct MOZ_STACK_CLASS AtomizingMatcher
 {
-    using ReturnType = JSAtom*;
-
     JSContext* cx;
     size_t     length;
 

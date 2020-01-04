@@ -169,10 +169,11 @@ struct VariantImplementation<N, T> {
       return aLhs.template as<T>() == aRhs.template as<T>();
   }
 
-  template<typename Matcher, typename ConcreteVariant,
-           typename ReturnType = typename RemoveReference<Matcher>::Type::ReturnType>
-  static ReturnType
-  match(Matcher&& aMatcher, ConcreteVariant& aV) {
+  template<typename Matcher, typename ConcreteVariant>
+  static auto
+  match(Matcher&& aMatcher, ConcreteVariant& aV)
+    -> decltype(aMatcher.match(aV.template as<T>()))
+  {
     return aMatcher.match(aV.template as<T>());
   }
 };
@@ -226,10 +227,10 @@ struct VariantImplementation<N, T, Ts...>
     }
   }
 
-  template<typename Matcher, typename ConcreteVariant,
-           typename ReturnType = typename RemoveReference<Matcher>::Type::ReturnType>
-  static ReturnType
+  template<typename Matcher, typename ConcreteVariant>
+  static auto
   match(Matcher&& aMatcher, ConcreteVariant& aV)
+    -> decltype(aMatcher.match(aV.template as<T>()))
   {
     if (aV.template is<T>()) {
       return aMatcher.match(aV.template as<T>());
@@ -558,15 +559,19 @@ public:
 
   
   template<typename Matcher>
-  typename RemoveReference<Matcher>::Type::ReturnType
-  match(Matcher&& aMatcher) const {
+  auto
+  match(Matcher&& aMatcher) const
+    -> decltype(Impl::match(aMatcher, *this))
+  {
     return Impl::match(aMatcher, *this);
   }
 
   
   template<typename Matcher>
-  typename RemoveReference<Matcher>::Type::ReturnType
-  match(Matcher&& aMatcher) {
+  auto
+  match(Matcher&& aMatcher)
+    -> decltype(Impl::match(aMatcher, *this))
+  {
     return Impl::match(aMatcher, *this);
   }
 };
