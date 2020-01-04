@@ -11,6 +11,8 @@
 
 #include "vm/TypeInference.h"
 
+#include "mozilla/BinarySearch.h"
+#include "mozilla/Casting.h"
 #include "mozilla/PodOperations.h"
 
 #include "builtin/SymbolObject.h"
@@ -519,25 +521,16 @@ TypeScript::BytecodeTypes(JSScript* script, jsbytecode* pc, uint32_t* bytecodeMa
         return typeArray + *hint;
 
     
-    size_t bottom = 0;
-    size_t top = script->nTypeSets() - 1;
-    size_t mid = bottom + (top - bottom) / 2;
-    while (mid < top) {
-        if (bytecodeMap[mid] < offset)
-            bottom = mid + 1;
-        else if (bytecodeMap[mid] > offset)
-            top = mid;
-        else
-            break;
-        mid = bottom + (top - bottom) / 2;
-    }
+    
+    
+    size_t loc;
+#ifdef DEBUG
+    bool found =
+#endif
+        mozilla::BinarySearch(bytecodeMap, 0, script->nTypeSets() - 1, offset, &loc);
 
-    
-    
-    
-    MOZ_ASSERT(bytecodeMap[mid] == offset || mid == top);
-
-    *hint = mid;
+    MOZ_ASSERT_IF(found, bytecodeMap[loc] == offset);
+    *hint = mozilla::AssertedCast<uint32_t>(loc);
     return typeArray + *hint;
 }
 
@@ -1090,4 +1083,4 @@ JSScript::ensureHasTypes(JSContext* cx)
     return types() || makeTypes(cx);
 }
 
-#endif 
+#endif
