@@ -4339,10 +4339,6 @@ EventStateManager::SetPointerLock(nsIWidget* aWidget,
   
   sIsPointerLocked = !!aElement;
 
-  if (!aWidget) {
-    return;
-  }
-
   
   WheelTransaction::EndTransaction();
 
@@ -4351,6 +4347,8 @@ EventStateManager::SetPointerLock(nsIWidget* aWidget,
     do_GetService("@mozilla.org/widget/dragservice;1");
 
   if (sIsPointerLocked) {
+    MOZ_ASSERT(aWidget, "Locking pointer requires a widget");
+
     
     mPreLockPoint = sLastRefPoint;
 
@@ -4358,8 +4356,8 @@ EventStateManager::SetPointerLock(nsIWidget* aWidget,
     
     
     sLastRefPoint = GetWindowClientRectCenter(aWidget);
-    aWidget->SynthesizeNativeMouseMove(sLastRefPoint + aWidget->WidgetToScreenOffset(),
-                                       nullptr);
+    aWidget->SynthesizeNativeMouseMove(
+      sLastRefPoint + aWidget->WidgetToScreenOffset(), nullptr);
 
     
     nsIPresShell::SetCapturingContent(aElement, CAPTURE_POINTERLOCK);
@@ -4374,8 +4372,10 @@ EventStateManager::SetPointerLock(nsIWidget* aWidget,
     
     
     sLastRefPoint = mPreLockPoint;
-    aWidget->SynthesizeNativeMouseMove(mPreLockPoint + aWidget->WidgetToScreenOffset(),
-                                       nullptr);
+    if (aWidget) {
+      aWidget->SynthesizeNativeMouseMove(
+        mPreLockPoint + aWidget->WidgetToScreenOffset(), nullptr);
+    }
 
     
     nsIPresShell::SetCapturingContent(nullptr, CAPTURE_POINTERLOCK);
