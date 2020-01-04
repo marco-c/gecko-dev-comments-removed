@@ -1538,12 +1538,13 @@ public:
 
   
   
-  template<class Item, class Allocator>
+protected:
+  template<class Item, class Allocator, typename ActualAlloc = Alloc>
   elem_type* AppendElements(nsTArray_Impl<Item, Allocator>&& aArray)
   {
     MOZ_ASSERT(&aArray != this, "argument must be different aArray");
     if (Length() == 0) {
-      SwapElements(aArray);
+      SwapElements<ActualAlloc>(aArray);
       return Elements();
     }
 
@@ -1559,6 +1560,15 @@ public:
     aArray.template ShiftData<Alloc>(0, otherLen, 0, sizeof(elem_type),
                                      MOZ_ALIGNOF(elem_type));
     return Elements() + len;
+  }
+public:
+
+  template<class Item, class Allocator, typename ActualAlloc = Alloc>
+  
+  elem_type* AppendElements(nsTArray_Impl<Item, Allocator>&& aArray,
+                            const mozilla::fallible_t&)
+  {
+    return AppendElements<Item, Allocator>(mozilla::Move(aArray));
   }
 
   
