@@ -639,6 +639,7 @@ mozJSComponentLoader::PrepareObjectForLocation(JSContext* aCx,
         
         dom::AutoEntryScript aes(holder->GetJSObject(),
                                  "component loader report global");
+        aes.TakeOwnershipOfErrorReporting();
         RootedObject global(aes.cx(), holder->GetJSObject());
         JS_FireOnNewGlobalObject(aes.cx(), global);
     }
