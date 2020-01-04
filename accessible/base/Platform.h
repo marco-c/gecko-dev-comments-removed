@@ -4,6 +4,9 @@
 
 
 
+#ifndef mozilla_a11y_Platform_h
+#define mozilla_a11y_Platform_h
+
 #include <stdint.h>
 
 class nsString;
@@ -82,3 +85,4 @@ void ProxySelectionEvent(ProxyAccessible* aTarget, ProxyAccessible* aWidget,
 } 
 } 
 
+#endif 
