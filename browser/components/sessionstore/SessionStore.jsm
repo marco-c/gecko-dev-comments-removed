@@ -1771,6 +1771,7 @@ var SessionStoreInternal = {
 
     
     
+    
     this.saveStateDelayed(aWindow);
   },
 
@@ -1781,6 +1782,7 @@ var SessionStoreInternal = {
       TabRestoreQueue.visibleToHidden(aTab);
     }
 
+    
     
     
     this.saveStateDelayed(aWindow);
@@ -2291,9 +2293,6 @@ var SessionStoreInternal = {
         
         
         
-        
-        
-        
         let options = {overwriteTabs: canOverwriteTabs, isFollowUp: true};
         this.restoreWindow(windowToUse, winState, options);
       }
@@ -2501,21 +2500,6 @@ var SessionStoreInternal = {
     
     let canOverwriteTabs = false;
 
-    
-    
-    
-    
-    let groupsData = this.getWindowValue(aWindow, "tabview-groups");
-    if (groupsData) {
-      groupsData = JSON.parse(groupsData);
-
-      
-      if (groupsData.totalNumber > 1)
-        return [false, false];
-    }
-
-    
-    
     
     
     

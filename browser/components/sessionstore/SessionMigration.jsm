@@ -36,7 +36,6 @@ var SessionMigrationInternal = {
 
 
 
-
   convertState: function(aStateObj) {
     let state = {
       selectedWindow: aStateObj.selectedWindow,
@@ -53,21 +52,8 @@ var SessionMigrationInternal = {
         tab.index = oldTab.index;
         tab.hidden = oldTab.hidden;
         tab.pinned = oldTab.pinned;
-        
-        if (oldTab.extData && "tabview-tab" in oldTab.extData) {
-          tab.extData = {"tabview-tab": oldTab.extData["tabview-tab"]};
-        }
         return tab;
       });
-      
-      
-      if (oldWin.extData) {
-        for (let k of Object.keys(oldWin.extData)) {
-          if (k.startsWith("tabview-")) {
-            win.extData[k] = oldWin.extData[k];
-          }
-        }
-      }
       win.selected = oldWin.selected;
       win._closedTabs = [];
       return win;
