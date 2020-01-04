@@ -4659,11 +4659,6 @@ PresShell::RenderDocument(const nsRect& aRect, uint32_t aFlags,
   gfxContextAutoSaveRestore save(aThebesContext);
 
   CompositionOp oldOp = aThebesContext->CurrentOp();
-  if (oldOp == CompositionOp::OP_OVER) {
-    
-    
-    aThebesContext->Clip();
-  }
 
   
   
@@ -4676,17 +4671,14 @@ PresShell::RenderDocument(const nsRect& aRect, uint32_t aFlags,
     aThebesContext->PushGroup(NS_GET_A(aBackgroundColor) == 0xff ?
                               gfxContentType::COLOR :
                               gfxContentType::COLOR_ALPHA);
-    aThebesContext->Save();
 
-    if (oldOp != CompositionOp::OP_OVER) {
-      
-      
-      
-      
-      
-      aThebesContext->Clip();
-      aThebesContext->SetOp(CompositionOp::OP_OVER);
-    }
+    
+    
+    
+    
+    
+    aThebesContext->Clip();
+    aThebesContext->SetOp(CompositionOp::OP_OVER);
   }
 
   nsDeviceContext* devCtx = mPresContext->DeviceContext();
@@ -4761,7 +4753,6 @@ PresShell::RenderDocument(const nsRect& aRect, uint32_t aFlags,
 
   
   if (needsGroup) {
-    aThebesContext->Restore();
     aThebesContext->PopGroupToSource();
     aThebesContext->Paint();
   }
