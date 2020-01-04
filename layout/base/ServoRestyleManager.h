@@ -62,9 +62,12 @@ public:
                            nsIAtom* aAttribute,
                            int32_t aModType,
                            const nsAttrValue* aNewValue);
+
+  
   void AttributeChanged(dom::Element* aElement, int32_t aNameSpaceID,
                         nsIAtom* aAttribute, int32_t aModType,
-                        const nsAttrValue* aOldValue);
+                        const nsAttrValue* aOldValue) {}
+
   nsresult ReparentStyleContext(nsIFrame* aFrame);
 
   bool HasPendingRestyles() { return !mModifiedElements.IsEmpty(); }
