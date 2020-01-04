@@ -288,7 +288,7 @@ class RemoteAutomation(Automation):
 
             
             
-            self.timeout = 4500
+            self.timeout = 5400
             
             time.sleep(1)
 
