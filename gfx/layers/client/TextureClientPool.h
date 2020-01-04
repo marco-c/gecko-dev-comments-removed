@@ -42,9 +42,7 @@ class TextureClientPool final : public TextureClientAllocator
   ~TextureClientPool();
 
 public:
-  TextureClientPool(gfx::SurfaceFormat aFormat,
-                    TextureFlags aFlags,
-                    gfx::IntSize aSize,
+  TextureClientPool(gfx::SurfaceFormat aFormat, gfx::IntSize aSize,
                     uint32_t aMaxTextureClients,
                     uint32_t aShrinkTimeoutMsec,
                     CompositableForwarder* aAllocator);
@@ -103,7 +101,6 @@ public:
   void Clear();
 
   gfx::SurfaceFormat GetFormat() { return mFormat; }
-  TextureFlags GetFlags() const { return mFlags; }
 
 private:
   
@@ -112,9 +109,6 @@ private:
 
   
   gfx::SurfaceFormat mFormat;
-
-  
-  const TextureFlags mFlags;
 
   
   gfx::IntSize mSize;
