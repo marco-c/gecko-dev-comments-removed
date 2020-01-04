@@ -160,6 +160,7 @@ GetPrefNameForFeature(int32_t aFeature)
       break;
     case nsIGfxInfo::FEATURE_VP8_HW_DECODE:
     case nsIGfxInfo::FEATURE_VP9_HW_DECODE:
+    case nsIGfxInfo::FEATURE_DX_INTEROP2:
       
       break;
     default:
