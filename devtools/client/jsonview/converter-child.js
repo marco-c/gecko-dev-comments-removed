@@ -6,26 +6,23 @@
 
 "use strict";
 
-const Cu = Components.utils;
-const Ci = Components.interfaces;
-const Cc = Components.classes;
-
-const {devtools} = Cu.import("resource://gre/modules/devtools/shared/Loader.jsm", {});
-const {Services} = Cu.import("resource://gre/modules/Services.jsm", {});
-
-let require = devtools.require;
-
+const {Cu, Cc, Ci, components} = require("chrome");
 const {Class} = require("sdk/core/heritage");
 const {Unknown} = require("sdk/platform/xpcom");
 const xpcom = require("sdk/platform/xpcom");
 const Events = require("sdk/dom/events");
 const Clipboard = require("sdk/clipboard");
 
-const NetworkHelper = require("devtools/shared/webconsole/network-helper");
-const JsonViewUtils = require("devtools/client/jsonview/utils");
+loader.lazyRequireGetter(this, "NetworkHelper",
+                               "devtools/shared/webconsole/network-helper");
+loader.lazyRequireGetter(this, "JsonViewUtils",
+                               "devtools/client/jsonview/utils");
 
-let childProcessMessageManager = Cc["@mozilla.org/childprocessmessagemanager;1"].
-  getService(Ci.nsISyncMessageSender);
+const {Services} = Cu.import("resource://gre/modules/Services.jsm", {});
+
+const childProcessMessageManager =
+  Cc["@mozilla.org/childprocessmessagemanager;1"].
+    getService(Ci.nsISyncMessageSender);
 
 
 
@@ -117,10 +114,6 @@ var Converter = Class({
       request: []
     }
 
-    if (!(aRequest instanceof Ci.nsIHttpChannel)) {
-      return;
-    }
-
     let win = NetworkHelper.getWindowForRequest(aRequest);
 
     let Locale = {
@@ -141,17 +134,21 @@ var Converter = Class({
       });
     })
 
-    aRequest.visitResponseHeaders({
-      visitHeader: function(name, value) {
-        headers.response.push({name: name, value: value});
-      }
-    });
+    
+    
+    if (aRequest instanceof Ci.nsIHttpChannel) {
+      aRequest.visitResponseHeaders({
+        visitHeader: function(name, value) {
+          headers.response.push({name: name, value: value});
+        }
+      });
 
-    aRequest.visitRequestHeaders({
-      visitHeader: function(name, value) {
-        headers.request.push({name: name, value: value});
-      }
-    });
+      aRequest.visitRequestHeaders({
+        visitHeader: function(name, value) {
+          headers.request.push({name: name, value: value});
+        }
+      });
+    }
 
     let outputDoc = "";
 
@@ -277,27 +274,36 @@ var Converter = Class({
 });
 
 
-const JSON_TYPE = "application/json";
-const CONTRACT_ID = "@mozilla.org/streamconv;1?from=" + JSON_TYPE + "&to=*/*";
+const CONTRACT_ID = "@mozilla.org/streamconv;1?from=application/json&to=*/*";
 const CLASS_ID = "{d8c9acee-dec5-11e4-8c75-1681e6b88ec1}";
-const GECKO_VIEWER = "Gecko-Content-Viewers";
 
 var service = xpcom.Service({
-  id: Components.ID(CLASS_ID),
+  id: components.ID(CLASS_ID),
   contract: CONTRACT_ID,
   Component: Converter,
   register: false,
   unregister: false
 });
 
-if (!xpcom.isRegistered(service)) {
-  xpcom.register(service);
+function register() {
+  if (!xpcom.isRegistered(service)) {
+    xpcom.register(service);
+    return true;
+  }
+
+  return false;
 }
 
+function unregister() {
+  if (xpcom.isRegistered(service)) {
+    xpcom.unregister(service);
+    return true;
+  }
 
-var categoryManager = Cc["@mozilla.org/categorymanager;1"].
-  getService(Ci.nsICategoryManager);
-categoryManager.deleteCategoryEntry(GECKO_VIEWER, JSON_TYPE, false);
+  return false;
+}
 
-categoryManager.addCategoryEntry("ext-to-type-mapping", "json",
-  JSON_TYPE, false, true);
+exports.JsonViewService = {
+  register: register,
+  unregister: unregister
+}

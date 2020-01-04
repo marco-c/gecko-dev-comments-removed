@@ -8,6 +8,15 @@
 Services.scriptloader.loadSubScript(
   "chrome://mochitests/content/browser/devtools/client/framework/test/head.js", this);
 
+const JSON_VIEW_PREF = "devtools.jsonview.enabled";
+
+
+Services.prefs.setBoolPref(JSON_VIEW_PREF, true);
+
+registerCleanupFunction(() => {
+  Services.prefs.clearUserPref(JSON_VIEW_PREF);
+});
+
 
 
 

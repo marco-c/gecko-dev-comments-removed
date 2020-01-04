@@ -6,20 +6,12 @@
 
 "use strict";
 
-const { Cu, Ci, Cc } = require("chrome");
+const {Cu, Ci, Cc} = require("chrome");
 const JsonViewUtils = require("devtools/client/jsonview/utils");
 
-Cu.import("resource://gre/modules/Services.jsm");
 
-const { makeInfallible } = require("devtools/shared/DevToolsUtils");
-
-const globalMessageManager = Cc["@mozilla.org/globalmessagemanager;1"].
-  getService(Ci.nsIMessageListenerManager);
-const parentProcessMessageManager = Cc["@mozilla.org/parentprocessmessagemanager;1"].
-  getService(Ci.nsIMessageBroadcaster);
-
-
-const JSON_VIEW_PREF = "devtools.jsonview.enabled";
+const {Services} = Cu.import("resource://gre/modules/Services.jsm", {});
+const {makeInfallible} = require("devtools/shared/DevToolsUtils");
 
 
 
@@ -31,28 +23,21 @@ var JsonView = {
     
     
     
-    if (Services.prefs.getBoolPref(JSON_VIEW_PREF)) {
-      
-      
-      
-      
-      globalMessageManager.loadFrameScript(
-        "resource:///modules/devtools/client/jsonview/converter-child.js",
-        true);
+    
+    Services.ppmm.loadProcessScript(
+      "resource:///modules/devtools/client/jsonview/converter-observer.js",
+      true);
 
-      this.onSaveListener = this.onSave.bind(this);
+    this.onSaveListener = this.onSave.bind(this);
 
-      
-      parentProcessMessageManager.addMessageListener(
-        "devtools:jsonview:save", this.onSaveListener);
-    }
+    
+    Services.ppmm.addMessageListener(
+      "devtools:jsonview:save", this.onSaveListener);
   }),
 
   destroy: makeInfallible(function() {
-    if (this.onSaveListener) {
-      parentProcessMessageManager.removeMessageListener(
-        "devtools:jsonview:save", this.onSaveListener);
-    }
+    Services.ppmm.removeMessageListener(
+      "devtools:jsonview:save", this.onSaveListener);
   }),
 
   
