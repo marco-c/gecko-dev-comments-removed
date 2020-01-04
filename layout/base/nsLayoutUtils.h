@@ -2249,14 +2249,6 @@ public:
 
 
 
-  static bool HasCurrentAnimationsForProperties(const nsIFrame* aFrame,
-                                                const nsCSSProperty* aProperties,
-                                                size_t aPropertyCount);
-
-  
-
-
-
 
   static bool HasRelevantAnimationOfProperty(const nsIFrame* aFrame,
                                              nsCSSProperty aProperty);
