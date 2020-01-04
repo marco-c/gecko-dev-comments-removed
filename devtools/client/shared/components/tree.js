@@ -553,11 +553,14 @@ module.exports = createClass({
     
     
     
-    const begin = Math.max(((this.state.scroll / this.props.itemHeight) | 0)
-                           - NUMBER_OF_OFFSCREEN_ITEMS, 0);
-    const end = begin + (2 * NUMBER_OF_OFFSCREEN_ITEMS)
-                      + ((this.state.height / this.props.itemHeight) | 0);
+    
+    const { itemHeight } = this.props;
+    const { scroll, height } = this.state;
+    const begin = Math.max(((scroll / itemHeight) | 0) - NUMBER_OF_OFFSCREEN_ITEMS, 0);
+    const end = Math.ceil((scroll + height) / itemHeight) + NUMBER_OF_OFFSCREEN_ITEMS;
     const toRender = traversal.slice(begin, end);
+    const topSpacerHeight = begin * itemHeight;
+    const bottomSpacerHeight = Math.max(traversal.length - end, 0) * itemHeight;
 
     const nodes = [
       dom.div({
@@ -565,18 +568,23 @@ module.exports = createClass({
         style: {
           padding: 0,
           margin: 0,
-          height: begin * this.props.itemHeight + "px"
+          height: topSpacerHeight + "px"
         }
       })
     ];
 
     for (let i = 0; i < toRender.length; i++) {
-      let { item, depth } = toRender[i];
+      const index = begin + i;
+      const first = index == 0;
+      const last = index == traversal.length - 1;
+      const { item, depth } = toRender[i];
       nodes.push(TreeNode({
         key: this.props.getKey(item),
-        index: begin + i,
-        item: item,
-        depth: depth,
+        index,
+        first,
+        last,
+        item,
+        depth,
         renderItem: this.props.renderItem,
         focused: this.props.focused === item,
         expanded: this.props.isExpanded(item),
@@ -584,6 +592,7 @@ module.exports = createClass({
         onExpand: this._onExpand,
         onCollapse: this._onCollapse,
         onFocus: () => this._focus(begin + i, item),
+        onFocusedNodeUnmount: () => this.refs.tree && this.refs.tree.focus(),
       }));
     }
 
@@ -592,7 +601,7 @@ module.exports = createClass({
       style: {
         padding: 0,
         margin: 0,
-        height: (traversal.length - 1 - end) * this.props.itemHeight + "px"
+        height: bottomSpacerHeight + "px"
       }
     }));
 
@@ -662,6 +671,20 @@ const TreeNode = createFactory(createClass({
     }
   },
 
+  componentWillUnmount() {
+    
+    
+    
+    
+    
+    if (this.props.focused) {
+      this.refs.button.blur();
+      if (this.props.onFocusedNodeUnmount) {
+        this.props.onFocusedNodeUnmount();
+      }
+    }
+  },
+
   _buttonAttrs: {
     ref: "button",
     style: {
@@ -687,13 +710,25 @@ const TreeNode = createFactory(createClass({
       onCollapse: this.props.onCollapse,
     });
 
-    let isOddRow = this.props.index % 2;
+    let classList = [ "tree-node", "div" ];
+    if (this.props.index % 2) {
+      classList.push("tree-node-odd");
+    }
+    if (this.props.first) {
+      classList.push("tree-node-first");
+    }
+    if (this.props.last) {
+      classList.push("tree-node-last");
+    }
+
     return dom.div(
       {
-        className: `tree-node div ${isOddRow ? "tree-node-odd" : ""}`,
+        className: classList.join(" "),
         onFocus: this.props.onFocus,
         onClick: this.props.onFocus,
         onBlur: this.props.onBlur,
+        "data-expanded": this.props.expanded ? "" : undefined,
+        "data-depth": this.props.depth,
         style: {
           padding: 0,
           margin: 0
