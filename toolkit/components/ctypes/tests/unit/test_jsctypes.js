@@ -257,7 +257,7 @@ function run_abstract_class_tests()
   do_check_throws(function() { ctypes.CType.prototype.name; }, TypeError);
   do_check_throws(function() { ctypes.CType.prototype.size; }, TypeError);
   do_check_throws(function() { ctypes.CType.prototype.ptr; }, TypeError);
-  do_check_throws(function() { ctypes.CType.prototype.array(); }, Error);
+  do_check_throws(function() { ctypes.CType.prototype.array(); }, TypeError);
 
 
   
@@ -290,8 +290,8 @@ function run_abstract_class_tests()
   
   do_check_throws(function() { ctypes.CData.prototype.value; }, TypeError);
   do_check_throws(function() { ctypes.CData.prototype.value = null; }, TypeError);
-  do_check_throws(function() { ctypes.CData.prototype.address(); }, Error);
-  do_check_throws(function() { ctypes.CData.prototype.readString(); }, Error);
+  do_check_throws(function() { ctypes.CData.prototype.address(); }, TypeError);
+  do_check_throws(function() { ctypes.CData.prototype.readString(); }, TypeError);
 
   
   
@@ -320,8 +320,8 @@ function run_Int64_tests() {
   do_check_true(ctypes.Int64.prototype.hasOwnProperty("toSource"));
 
   
-  do_check_throws(function() { ctypes.Int64.prototype.toString(); }, Error);
-  do_check_throws(function() { ctypes.Int64.prototype.toSource(); }, Error);
+  do_check_throws(function() { ctypes.Int64.prototype.toString(); }, TypeError);
+  do_check_throws(function() { ctypes.Int64.prototype.toSource(); }, TypeError);
 
   let i = ctypes.Int64(0);
   do_check_true(i.__proto__ === ctypes.Int64.prototype);
@@ -494,8 +494,8 @@ function run_UInt64_tests() {
   do_check_true(ctypes.UInt64.prototype.hasOwnProperty("toSource"));
 
   
-  do_check_throws(function() { ctypes.UInt64.prototype.toString(); }, Error);
-  do_check_throws(function() { ctypes.UInt64.prototype.toSource(); }, Error);
+  do_check_throws(function() { ctypes.UInt64.prototype.toString(); }, TypeError);
+  do_check_throws(function() { ctypes.UInt64.prototype.toSource(); }, TypeError);
 
   let i = ctypes.UInt64(0);
   do_check_true(i.__proto__ === ctypes.UInt64.prototype);
@@ -759,8 +759,8 @@ function run_basic_class_tests(t)
   
   do_check_throws(function() { t.prototype.value; }, TypeError);
   do_check_throws(function() { t.prototype.value = null; }, TypeError);
-  do_check_throws(function() { t.prototype.address(); }, Error);
-  do_check_throws(function() { t.prototype.readString(); }, Error);
+  do_check_throws(function() { t.prototype.address(); }, TypeError);
+  do_check_throws(function() { t.prototype.readString(); }, TypeError);
 
   
   
@@ -1308,7 +1308,7 @@ function run_type_ctor_class_tests(c, t, t2, props=[], fns=[], instanceProps=[],
   for (let p of props)
     do_check_throws(function() { c.prototype[p]; }, TypeError);
   for (let f of fns)
-    do_check_throws(function() { c.prototype[f](); }, Error);
+    do_check_throws(function() { c.prototype[f](); }, TypeError);
 
   
   
@@ -1345,8 +1345,8 @@ function run_type_ctor_class_tests(c, t, t2, props=[], fns=[], instanceProps=[],
     do_check_throws(function() { t.prototype[p]; }, TypeError);
   }
   for (let f of instanceFns) {
-    do_check_throws(function() { t.prototype.__proto__[f]() }, Error);
-    do_check_throws(function() { t.prototype[f]() }, Error);
+    do_check_throws(function() { t.prototype.__proto__[f]() }, TypeError);
+    do_check_throws(function() { t.prototype[f]() }, TypeError);
   }
 
   
@@ -1355,7 +1355,7 @@ function run_type_ctor_class_tests(c, t, t2, props=[], fns=[], instanceProps=[],
 
   
   for (let p of specialProps)
-    do_check_throws(function() { t.prototype[p]; }, Error);
+    do_check_throws(function() { t.prototype[p]; }, TypeError);
 
   
   if (t instanceof ctypes.FunctionType)
