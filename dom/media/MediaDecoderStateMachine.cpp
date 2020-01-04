@@ -826,14 +826,9 @@ void
 MediaDecoderStateMachine::CheckIfDecodeComplete()
 {
   MOZ_ASSERT(OnTaskQueue());
+  MOZ_ASSERT(mState == DECODER_STATE_DECODING ||
+             mState == DECODER_STATE_BUFFERING);
 
-  if (IsShutdown() ||
-      mState == DECODER_STATE_SEEKING ||
-      mState == DECODER_STATE_COMPLETED) {
-    
-    
-    return;
-  }
   if (!IsVideoDecoding() && !IsAudioDecoding()) {
     
     
