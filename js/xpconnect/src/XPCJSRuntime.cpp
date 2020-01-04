@@ -3446,7 +3446,7 @@ XPCJSRuntime::Initialize()
 #elif defined(XP_WIN)
     
     
-    const size_t kStackQuota = 900 * 1024;
+    const size_t kStackQuota = 980 * 1024;
     const size_t kTrustedScriptBuffer = (sizeof(size_t) == 8) ? 180 * 1024   
                                                               : 120 * 1024;  
     
