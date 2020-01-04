@@ -472,6 +472,19 @@ nsPartChannel::SetPreamble(const nsACString& aPreamble)
     mPreamble = aPreamble;
 }
 
+NS_IMETHODIMP
+nsPartChannel::GetOriginalResponseHeader(nsACString & aOriginalResponseHeader)
+{
+    aOriginalResponseHeader = mOriginalResponseHeader;
+    return NS_OK;
+}
+
+void
+nsPartChannel::SetOriginalResponseHeader(const nsACString& aOriginalResponseHeader)
+{
+    mOriginalResponseHeader = aOriginalResponseHeader;
+}
+
 
 NS_IMPL_ISUPPORTS(nsMultiMixedConv,
                   nsIStreamConverter,
@@ -696,8 +709,14 @@ nsMultiMixedConv::OnDataAvailable(nsIRequest *request, nsISupports *context,
         
         
         bool done = false;
+        const char* originalCursor = cursor;
         rv = ParseHeaders(channel, cursor, bufLen, &done);
         if (NS_FAILED(rv)) return rv;
+
+        
+        if (cursor > originalCursor) {
+            mOriginalResponseHeader.Append(originalCursor, cursor - originalCursor);
+        }
 
         if (done) {
             mProcessingHeaders = false;
@@ -736,9 +755,16 @@ nsMultiMixedConv::OnDataAvailable(nsIRequest *request, nsISupports *context,
             
             mNewPart = false;
             cursor = token;
-            bool done = false; 
+            bool done = false;
+            const char* originalCursor = cursor;
             rv = ParseHeaders(channel, cursor, bufLen, &done);
             if (NS_FAILED(rv)) return rv;
+
+            
+            if (cursor > originalCursor) {
+                mOriginalResponseHeader.Append(originalCursor, cursor - originalCursor);
+            }
+
             if (done) {
                 rv = SendStart(channel);
                 if (NS_FAILED(rv)) return rv;
@@ -1034,6 +1060,10 @@ nsMultiMixedConv::SendStart(nsIChannel *aChannel) {
 
     
     mPartChannel->SetPreamble(mPreamble);
+
+    
+    mPartChannel->SetOriginalResponseHeader(mOriginalResponseHeader);
+    mOriginalResponseHeader = EmptyCString();
 
     
     mPartChannel->SetResponseHead(mResponseHead.forget());

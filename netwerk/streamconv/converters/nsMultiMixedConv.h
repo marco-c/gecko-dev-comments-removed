@@ -44,6 +44,7 @@ public:
   void InitializeByteRange(int64_t aStart, int64_t aEnd);
   void SetIsLastPart() { mIsLastPart = true; }
   void SetPreamble(const nsACString& aPreamble);
+  void SetOriginalResponseHeader(const nsACString& aOriginalResponseHeader);
   nsresult SendOnStartRequest(nsISupports* aContext);
   nsresult SendOnDataAvailable(nsISupports* aContext, nsIInputStream* aStream,
                                uint64_t aOffset, uint32_t aLen);
@@ -89,6 +90,9 @@ protected:
   bool                    mIsLastPart;
 
   nsCString               mPreamble;
+
+  
+  nsCString               mOriginalResponseHeader;
 };
 
 
@@ -196,6 +200,9 @@ protected:
     
     
     nsCString           mPreamble;
+
+    
+    nsCString           mOriginalResponseHeader;
 };
 
 #endif 

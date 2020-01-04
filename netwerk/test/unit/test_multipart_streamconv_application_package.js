@@ -149,6 +149,13 @@ multipartListener.prototype.onStartRequest = function(request, context) {
   if (headerProvider) {
     headerProvider.visitResponseHeaders(this.headerListener);
   }
+
+  
+  let partChannel = request.QueryInterface(Ci.nsIMultiPartChannel);
+  if (partChannel) {
+    let originalHeader = this.test.content[this.testNum].headers.join("\r\n") + "\r\n\r\n";
+    equal(originalHeader, partChannel.originalResponseHeader, "Oringinal header check.");
+  }
 }
 
 multipartListener.prototype.onDataAvailable = function(request, context, stream, offset, count) {
