@@ -97,7 +97,7 @@ public:
     switch (aIndex) {
     case AudioBufferSourceNode::START:
       MOZ_ASSERT(!mStart, "Another START?");
-      mStart = mDestination->SecondsToNearestStreamTime(aParam);
+      mStart = aParam * mDestination->SampleRate();
       
       mBeginProcessing = mStart + 0.5;
       break;
