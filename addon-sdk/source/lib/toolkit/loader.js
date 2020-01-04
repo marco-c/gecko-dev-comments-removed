@@ -468,7 +468,25 @@ const nodeResolve = iced(function nodeResolve(id, requirer, { rootURI }) {
   
   return void 0;
 });
-Loader.nodeResolve = nodeResolve;
+
+
+Loader.nodeResolverCache = new Map();
+
+const nodeResolveWithCache = iced(function cacheNodeResolutions(id, requirer, { rootURI }) {
+  
+  let cacheKey = `${rootURI || ""}:${requirer}:${id}`;
+
+  
+  if (Loader.nodeResolverCache.has(cacheKey)) {
+    return Loader.nodeResolverCache.get(cacheKey);
+  }
+
+  
+  let result = nodeResolve(id, requirer, { rootURI });
+  Loader.nodeResolverCache.set(cacheKey, result);
+  return result;
+});
+Loader.nodeResolve = nodeResolveWithCache;
 
 
 
@@ -784,6 +802,9 @@ Loader.Module = Module;
 
 
 const unload = iced(function unload(loader, reason) {
+  
+  Loader.nodeResolverCache.clear();
+
   
   
   
