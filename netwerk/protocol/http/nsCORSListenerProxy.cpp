@@ -1236,9 +1236,7 @@ nsCORSListenerProxy::RemoveFromCorsPreflightCache(nsIURI* aURI,
 
 nsresult
 nsCORSListenerProxy::StartCORSPreflight(nsIChannel* aRequestChannel,
-                                        nsIPrincipal* aPrincipal,
                                         nsICorsPreflightCallback* aCallback,
-                                        bool aWithCredentials,
                                         nsTArray<nsCString>& aUnsafeHeaders,
                                         nsIChannel** aPreflightChannel)
 {
@@ -1264,18 +1262,16 @@ nsCORSListenerProxy::StartCORSPreflight(nsIChannel* aRequestChannel,
     return NS_ERROR_FAILURE;
   }
 
-  nsCOMPtr<nsILoadInfo> loadInfo = static_cast<mozilla::LoadInfo*>
-    (originalLoadInfo.get())->CloneForNewRequest();
-
-  nsSecurityFlags securityMode = loadInfo->GetSecurityMode();
-
-  MOZ_ASSERT(securityMode == 0 ||
-             securityMode == nsILoadInfo::SEC_REQUIRE_CORS_DATA_INHERITS,
+  MOZ_ASSERT(originalLoadInfo->GetSecurityMode() ==
+             nsILoadInfo::SEC_REQUIRE_CORS_DATA_INHERITS,
              "how did we end up here?");
+
+  nsCOMPtr<nsIPrincipal> principal = originalLoadInfo->LoadingPrincipal();
+  bool withCredentials = originalLoadInfo->GetRequireCorsWithCredentials();
 
   nsPreflightCache::CacheEntry* entry =
     sPreflightCache ?
-    sPreflightCache->GetEntry(uri, aPrincipal, aWithCredentials, false) :
+    sPreflightCache->GetEntry(uri, principal, withCredentials, false) :
     nullptr;
 
   if (entry && entry->CheckRequest(method, aUnsafeHeaders)) {
@@ -1285,6 +1281,9 @@ nsCORSListenerProxy::StartCORSPreflight(nsIChannel* aRequestChannel,
 
   
   
+
+  nsCOMPtr<nsILoadInfo> loadInfo = static_cast<mozilla::LoadInfo*>
+    (originalLoadInfo.get())->CloneForNewRequest();
 
   nsCOMPtr<nsILoadGroup> loadGroup;
   rv = aRequestChannel->GetLoadGroup(getter_AddRefs(loadGroup));
@@ -1347,24 +1346,14 @@ nsCORSListenerProxy::StartCORSPreflight(nsIChannel* aRequestChannel,
 
   
   RefPtr<nsCORSPreflightListener> preflightListener =
-    new nsCORSPreflightListener(aPrincipal, aCallback, aWithCredentials,
+    new nsCORSPreflightListener(principal, aCallback, withCredentials,
                                 method, preflightHeaders);
 
   rv = preflightChannel->SetNotificationCallbacks(preflightListener);
   NS_ENSURE_SUCCESS(rv, rv);
 
   
-  if (securityMode == nsILoadInfo::SEC_REQUIRE_CORS_DATA_INHERITS) {
-    rv = preflightChannel->AsyncOpen2(preflightListener);
-  }
-  else {
-    RefPtr<nsCORSListenerProxy> corsListener =
-      new nsCORSListenerProxy(preflightListener, aPrincipal,
-                              aWithCredentials);
-    rv = corsListener->Init(preflightChannel, DataURIHandling::Disallow);
-    NS_ENSURE_SUCCESS(rv, rv);
-    rv = preflightChannel->AsyncOpen(corsListener, nullptr);
-  }
+  rv = preflightChannel->AsyncOpen2(preflightListener);
   NS_ENSURE_SUCCESS(rv, rv);
   
   
