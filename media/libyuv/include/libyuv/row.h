@@ -180,7 +180,7 @@ extern "C" {
 
 
 
-#if defined(NDEBUG) || !(defined(_DEBUG) && defined(__i386__)) || \
+#if !((defined(_DEBUG) || defined(MOZ_PROFILING)) && defined(__i386__)) || \
     !defined(__i386__) || defined(_MSC_VER)
 
 
@@ -209,7 +209,7 @@ extern "C" {
 #define HAS_COPYROW_AVX
 #define HAS_H422TOARGBROW_AVX2
 #define HAS_I400TOARGBROW_AVX2
-#if !(defined(_DEBUG) && defined(__i386__))
+#if !((defined(_DEBUG) || defined(MOZ_PROFILING)) && defined(__i386__))
 
 
 #define HAS_I422ALPHATOARGBROW_AVX2
