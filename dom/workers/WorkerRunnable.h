@@ -75,10 +75,8 @@ public:
 
   
   
-  
-  
   bool
-  Dispatch(JSContext* aCx);
+  Dispatch();
 
   
   virtual bool

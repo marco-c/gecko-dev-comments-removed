@@ -109,8 +109,6 @@ class WorkerPrivate;
 
 
 
-
-
 class PromiseWorkerProxy : public PromiseNativeHandler
                          , public workers::WorkerFeature
                          , public StructuredCloneHolderBase
