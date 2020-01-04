@@ -6,6 +6,7 @@
 #include "mozilla/layers/CompositableClient.h"
 #include <stdint.h>                     
 #include "gfxPlatform.h"                
+#include "mozilla/layers/CompositableChild.h"
 #include "mozilla/layers/CompositableForwarder.h"
 #include "mozilla/layers/ImageBridgeChild.h"
 #include "mozilla/layers/TextureClient.h"  
@@ -25,37 +26,6 @@ namespace mozilla {
 namespace layers {
 
 using namespace mozilla::gfx;
-
-
-
-
-
-
-
-class CompositableChild : public ChildActor<PCompositableChild>
-{
-public:
-  CompositableChild()
-  : mCompositableClient(nullptr), mAsyncID(0)
-  {
-    MOZ_COUNT_CTOR(CompositableChild);
-  }
-
-  virtual ~CompositableChild()
-  {
-    MOZ_COUNT_DTOR(CompositableChild);
-  }
-
-  virtual void ActorDestroy(ActorDestroyReason) override {
-    if (mCompositableClient) {
-      mCompositableClient->mCompositableChild = nullptr;
-    }
-  }
-
-  CompositableClient* mCompositableClient;
-
-  uint64_t mAsyncID;
-};
 
 void
 RemoveTextureFromCompositableTracker::ReleaseTextureClient()
@@ -92,15 +62,14 @@ CompositableClient::InitIPDLActor(PCompositableChild* aActor, uint64_t aAsyncID)
   MOZ_ASSERT(aActor);
   CompositableChild* child = static_cast<CompositableChild*>(aActor);
   mCompositableChild = child;
-  child->mCompositableClient = this;
-  child->mAsyncID = aAsyncID;
+  child->Init(this, aAsyncID);
 }
 
  CompositableClient*
 CompositableClient::FromIPDLActor(PCompositableChild* aActor)
 {
   MOZ_ASSERT(aActor);
-  return static_cast<CompositableChild*>(aActor)->mCompositableClient;
+  return static_cast<CompositableChild*>(aActor)->GetCompositableClient();
 }
 
 CompositableClient::CompositableClient(CompositableForwarder* aForwarder,
@@ -163,7 +132,7 @@ CompositableClient::Destroy()
   if (mTextureClientRecycler) {
     mTextureClientRecycler->Destroy();
   }
-  mCompositableChild->mCompositableClient = nullptr;
+  mCompositableChild->RevokeCompositableClient();
   mCompositableChild->Destroy(mForwarder);
   mCompositableChild = nullptr;
 }
@@ -178,7 +147,7 @@ uint64_t
 CompositableClient::GetAsyncID() const
 {
   if (mCompositableChild) {
-    return mCompositableChild->mAsyncID;
+    return mCompositableChild->GetAsyncID();
   }
   return 0; 
 }
