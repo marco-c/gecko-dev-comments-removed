@@ -13,5 +13,25 @@ bound = Function.prototype.bind.call(inst, {bar:1}, 3);
 assertEq(Object.getPrototypeOf(bound), null);
 assertEq(bound(), 4);
 
+
+function toBind() { }
+
+var boundArgs = [];
+for (let i = 0; i < 5; i++) {
+    boundArgs.push(i);
+    let bound = toBind.bind(undefined, ...boundArgs);
+
+    
+    
+    bound.prototype = {};
+    class test extends bound { };
+    let passedArgs = [];
+    for (let j = 0; j < 15; j++) {
+        passedArgs.push(j);
+        assertEq(Object.getPrototypeOf(new test(...passedArgs)), test.prototype);
+    }
+}
+
+
 if (typeof reportCompare === 'function')
     reportCompare(0,0,"OK");
