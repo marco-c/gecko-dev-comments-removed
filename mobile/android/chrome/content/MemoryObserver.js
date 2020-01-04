@@ -45,6 +45,17 @@ var MemoryObserver = {
 
     
     
+    
+    if (tab.playingAudio) {
+      Messaging.sendRequest({
+        type: "Tab:AudioPlayingChange",
+        tabID: tab.id,
+        isAudioPlaying: false
+      });
+    }
+
+    
+    
     let currentURL = browser.__SS_restore ? data.entries[0].url : browser.currentURI.spec;
     let sibling = browser.nextSibling;
     let isPrivate = PrivateBrowsingUtils.isBrowserPrivate(browser);
