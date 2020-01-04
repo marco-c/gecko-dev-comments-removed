@@ -150,7 +150,7 @@ JSRuntime::JSRuntime(JSRuntime* parentRuntime)
     telemetryCallback(nullptr),
     handlingSegFault(false),
     handlingJitInterrupt_(false),
-    interruptCallback(nullptr),
+    interruptCallbackDisabled(false),
     getIncumbentGlobalCallback(nullptr),
     enqueuePromiseJobCallback(nullptr),
     enqueuePromiseJobCallbackData(nullptr),
@@ -166,7 +166,7 @@ JSRuntime::JSRuntime(JSRuntime* parentRuntime)
     localeCallbacks(nullptr),
     defaultLocale(nullptr),
     defaultVersion_(JSVERSION_DEFAULT),
-    ownerThread_(nullptr),
+    ownerThread_(js::ThisThread::GetId()),
     ownerThreadNative_(0),
     tempLifoAlloc(TEMP_LIFO_ALLOC_PRIMARY_CHUNK_SIZE),
     jitRuntime_(nullptr),
@@ -263,7 +263,7 @@ JSRuntime::JSRuntime(JSRuntime* parentRuntime)
 bool
 JSRuntime::init(uint32_t maxbytes, uint32_t maxNurseryBytes)
 {
-    ownerThread_ = PR_GetCurrentThread();
+    MOZ_ASSERT(ownerThread_ == js::ThisThread::GetId());
 
     
     
@@ -532,11 +532,16 @@ InvokeInterruptCallback(JSContext* cx)
     
     
     
-    JSInterruptCallback cb = cx->runtime()->interruptCallback;
-    if (!cb)
+    if (cx->runtime()->interruptCallbackDisabled)
         return true;
 
-    if (cb(cx)) {
+    bool stop = false;
+    for (JSInterruptCallback cb : cx->runtime()->interruptCallbacks) {
+        if (!cb(cx))
+            stop = true;
+    }
+
+    if (!stop) {
         
         
         if (cx->compartment()->isDebuggee()) {
@@ -844,7 +849,7 @@ JSRuntime::clearUsedByExclusiveThread(Zone* zone)
 bool
 js::CurrentThreadCanAccessRuntime(JSRuntime* rt)
 {
-    return rt->ownerThread_ == PR_GetCurrentThread();
+    return rt->ownerThread_ == js::ThisThread::GetId();
 }
 
 bool

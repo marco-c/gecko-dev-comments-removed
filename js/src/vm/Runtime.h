@@ -631,7 +631,9 @@ struct JSRuntime : public JS::shadow::Runtime,
         return handlingJitInterrupt_;
     }
 
-    JSInterruptCallback interruptCallback;
+    using InterruptCallbackVector = js::Vector<JSInterruptCallback, 2, js::SystemAllocPolicy>;
+    InterruptCallbackVector interruptCallbacks;
+    bool interruptCallbackDisabled;
 
     JSGetIncumbentGlobalCallback getIncumbentGlobalCallback;
     JSEnqueuePromiseJobCallback enqueuePromiseJobCallback;
@@ -690,7 +692,7 @@ struct JSRuntime : public JS::shadow::Runtime,
 
   private:
     
-    void* ownerThread_;
+    js::Thread::Id ownerThread_;
     size_t ownerThreadNative_;
     friend bool js::CurrentThreadCanAccessRuntime(JSRuntime* rt);
   public:
