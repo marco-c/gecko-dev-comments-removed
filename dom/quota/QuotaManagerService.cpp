@@ -333,12 +333,15 @@ QuotaManagerService::InitiateRequest(nsAutoPtr<PendingRequestInfo>& aInfo)
   }
 
   if (!mBackgroundActor && mPendingRequests.IsEmpty()) {
-    
-    
-
-    RefPtr<BackgroundCreateCallback> cb = new BackgroundCreateCallback(this);
-    if (NS_WARN_IF(!BackgroundChild::GetOrCreateForCurrentThread(cb))) {
-      return NS_ERROR_FAILURE;
+    if (PBackgroundChild* actor = BackgroundChild::GetForCurrentThread()) {
+      BackgroundActorCreated(actor);
+    } else {
+      
+      
+      RefPtr<BackgroundCreateCallback> cb = new BackgroundCreateCallback(this);
+      if (NS_WARN_IF(!BackgroundChild::GetOrCreateForCurrentThread(cb))) {
+        return NS_ERROR_FAILURE;
+      }
     }
   }
 
