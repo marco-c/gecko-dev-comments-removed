@@ -1,5 +1,17 @@
 "use strict";
 
+Components.utils.import("resource://testing-common/PromiseTestUtils.jsm", this);
+
+
+
+
+
+
+
+if (!TEST_UNPACKED) {
+  PromiseTestUtils.expectUncaughtRejection(/NS_ERROR_FILE_NOT_FOUND/);
+}
+
 const TOOLKIT_ID = "toolkit@mozilla.org";
 
 

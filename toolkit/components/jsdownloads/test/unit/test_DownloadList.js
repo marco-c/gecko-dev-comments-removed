@@ -348,7 +348,7 @@ add_task(function* test_history_expiration()
 
   
   yield downloadOne.start();
-  downloadTwo.start();
+  downloadTwo.start().catch(() => {});
   yield downloadTwo.cancel();
 
   
@@ -471,7 +471,7 @@ add_task(function* test_DownloadSummary()
   
   let canceledPublicDownload =
       yield promiseNewDownload(httpUrl("interruptible.txt"));
-  canceledPublicDownload.start();
+  canceledPublicDownload.start().catch(() => {});
   yield promiseDownloadMidway(canceledPublicDownload);
   yield canceledPublicDownload.cancel();
   yield publicList.add(canceledPublicDownload);
@@ -479,7 +479,7 @@ add_task(function* test_DownloadSummary()
   
   let inProgressPublicDownload =
       yield promiseNewDownload(httpUrl("interruptible.txt"));
-  inProgressPublicDownload.start();
+  inProgressPublicDownload.start().catch(() => {});
   yield promiseDownloadMidway(inProgressPublicDownload);
   yield publicList.add(inProgressPublicDownload);
 
@@ -488,7 +488,7 @@ add_task(function* test_DownloadSummary()
     source: { url: httpUrl("interruptible.txt"), isPrivate: true },
     target: getTempFile(TEST_TARGET_FILE_NAME).path,
   });
-  inProgressPrivateDownload.start();
+  inProgressPrivateDownload.start().catch(() => {});
   yield promiseDownloadMidway(inProgressPrivateDownload);
   yield privateList.add(inProgressPrivateDownload);
 

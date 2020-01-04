@@ -4,6 +4,15 @@
 'use strict';
 
 Cu.import("resource://gre/modules/Services.jsm");
+Cu.import("resource://testing-common/PromiseTestUtils.jsm");
+
+
+
+
+
+
+
+PromiseTestUtils.thisTestLeaksUncaughtRejectionsAndShouldBeFixed();
 
 const {PushDB, PushService, PushServiceHttp2} = serviceExports;
 
