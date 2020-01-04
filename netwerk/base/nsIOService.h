@@ -125,7 +125,6 @@ private:
     
     
     void NotifyAppOfflineStatus(uint32_t appId, int32_t status);
-    static PLDHashOperator EnumerateWifiAppsChangingState(const unsigned int &, int32_t, void*);
 
     nsresult NewChannelFromURIWithProxyFlagsInternal(nsIURI* aURI,
                                                      nsIURI* aProxyURI,
