@@ -12,6 +12,7 @@ assertEq(gcstate(), "none");
 
 gcslice(1000000);
 while (gcstate() == "finalize") { gcslice(1); }
+while (gcstate() == "decommit") { gcslice(1); }
 assertEq(gcstate(), "none");
 
 
@@ -23,6 +24,7 @@ gcslice(1000000);
 assertEq(gcstate(), "mark");
 gcslice(1000000);
 while (gcstate() == "finalize") { gcslice(1); }
+while (gcstate() == "decommit") { gcslice(1); }
 assertEq(gcstate(), "none");
 
 
@@ -34,6 +36,7 @@ gcslice(1);
 assertEq(gcstate(), "mark");
 gcslice(1);
 while (gcstate() == "finalize") { gcslice(1); }
+while (gcstate() == "decommit") { gcslice(1); }
 assertEq(gcstate(), "none");
 
 
@@ -45,6 +48,7 @@ gcslice(1);
 assertEq(gcstate(), "mark");
 gcslice(1);
 while (gcstate() == "finalize") { gcslice(1); }
+while (gcstate() == "decommit") { gcslice(1); }
 assertEq(gcstate(), "none");
 
 
@@ -55,4 +59,5 @@ gcslice(1000000);
 assertEq(gcstate(), "sweep");
 gcslice(1000000);
 while (gcstate() == "finalize") { gcslice(1); }
+while (gcstate() == "decommit") { gcslice(1); }
 assertEq(gcstate(), "none");
