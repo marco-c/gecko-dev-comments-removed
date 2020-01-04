@@ -645,7 +645,7 @@ nsHTMLReflowState::InitResizeFlags(nsPresContext* aPresContext, nsIAtom* aFrameT
     
     
     
-    SetBResize(mCBReflowState->IsBResize());
+    SetBResize(mCBReflowState->IsBResizeForWM(wm));
   } else if (mCBReflowState && !nsLayoutUtils::GetAsBlock(frame)) {
     
     
@@ -665,14 +665,14 @@ nsHTMLReflowState::InitResizeFlags(nsPresContext* aPresContext, nsIAtom* aFrameT
     
     
     
-    SetBResize(mCBReflowState->IsBResize());
+    SetBResize(mCBReflowState->IsBResizeForWM(wm));
     if (ComputedBSize() == NS_AUTOHEIGHT) {
       SetBResize(IsBResize() || NS_SUBTREE_DIRTY(frame));
     }
   } else if (ComputedBSize() == NS_AUTOHEIGHT) {
     if (eCompatibility_NavQuirks == aPresContext->CompatibilityMode() &&
         mCBReflowState) {
-      SetBResize(mCBReflowState->IsBResize());
+      SetBResize(mCBReflowState->IsBResizeForWM(wm));
     } else {
       SetBResize(IsIResize());
     }
