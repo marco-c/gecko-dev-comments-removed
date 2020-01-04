@@ -18,6 +18,8 @@ namespace gfx {
 struct PathOp;
 class PathRecording;
 
+const uint32_t kMagicInt = 0xc001feed;
+
 
 
 
