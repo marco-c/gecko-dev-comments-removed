@@ -77,8 +77,6 @@ function BrowserElementParent() {
   Services.obs.addObserver(this, 'oop-frameloader-crashed',  true);
   Services.obs.addObserver(this, 'copypaste-docommand',  true);
   Services.obs.addObserver(this, 'ask-children-to-execute-copypaste-command',  true);
-  Services.obs.addObserver(this, 'frameloader-message-manager-will-change',  true);
-  Services.obs.addObserver(this, 'frameloader-message-manager-changed',  true);
 }
 
 BrowserElementParent.prototype = {
@@ -1109,16 +1107,6 @@ BrowserElementParent.prototype = {
     case 'ask-children-to-execute-copypaste-command':
       if (this._isAlive() && this._frameElement == subject.wrappedJSObject) {
         this._sendAsyncMsg('copypaste-do-command', { command: data });
-      }
-      break;
-    case 'frameloader-message-manager-will-change':
-      if (this._isAlive() && subject == this._frameLoader) {
-        this._removeMessageListener();
-      }
-      break;
-    case 'frameloader-message-manager-changed':
-      if (this._isAlive() && subject == this._frameLoader) {
-        this._setupMessageListener();
       }
       break;
     default:
