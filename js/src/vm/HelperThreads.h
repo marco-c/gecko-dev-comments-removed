@@ -230,6 +230,8 @@ class GlobalHelperThreadState
                                    Handle<GlobalObject*> global,
                                    JSCompartment* dest);
 
+    void trace(JSTracer* trc);
+
   private:
     
 
@@ -490,7 +492,7 @@ struct ParseTask
     LifoAlloc alloc;
 
     
-    PersistentRootedObject exclusiveContextGlobal;
+    JSObject* exclusiveContextGlobal;
 
     
     JS::OffThreadCompileCallback callback;
@@ -499,10 +501,10 @@ struct ParseTask
     
     
     
-    PersistentRootedScript script;
+    JSScript* script;
 
     
-    PersistentRooted<ScriptSourceObject*> sourceObject;
+    ScriptSourceObject* sourceObject;
 
     
     
@@ -524,6 +526,8 @@ struct ParseTask
     }
 
     virtual ~ParseTask();
+
+    void trace(JSTracer* trc);
 };
 
 struct ScriptParseTask : public ParseTask
