@@ -7904,8 +7904,12 @@ nsDocument::GetViewportInfo(const ScreenIntSize& aDisplaySize)
   nsPIDOMWindow* win = GetWindow();
   if (win && win->IsDesktopModeViewport())
   {
-    return nsViewportInfo(aDisplaySize,
-                          defaultScale,
+    float viewportWidth = gfxPrefs::DesktopViewportWidth() / fullZoom;
+    float scaleToFit = aDisplaySize.width / viewportWidth;
+    float aspectRatio = (float)aDisplaySize.height / aDisplaySize.width;
+    ScreenSize viewportSize(viewportWidth, viewportWidth * aspectRatio);
+    return nsViewportInfo(RoundedToInt(viewportSize),
+                          CSSToScreenScale(scaleToFit),
                           false,
                            false);
   }
@@ -8060,8 +8064,7 @@ nsDocument::GetViewportInfo(const ScreenIntSize& aDisplaySize)
         
         
         
-        size.width = Preferences::GetInt("browser.viewport.desktopWidth",
-                                         kViewportDefaultScreenWidth) / fullZoom;
+        size.width = gfxPrefs::DesktopViewportWidth() / fullZoom;
       }
     }
 
