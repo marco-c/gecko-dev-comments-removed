@@ -1805,15 +1805,7 @@ class Collection {
       });
     }).then(syncResultObject => {
       syncResultObject.lastModified = changeObject.lastModified;
-      
-      if (!syncResultObject.ok) {
-        return syncResultObject;
-      }
-      
-      return this.db.saveLastModified(syncResultObject.lastModified).then(lastModified => {
-        this._lastModified = lastModified;
-        return syncResultObject;
-      });
+      return syncResultObject;
     });
   }
 
@@ -2216,7 +2208,18 @@ class Collection {
       
       const pullOpts = _extends({}, options, { exclude: result.published });
       return this.pullChanges(client, result, pullOpts);
+    }).then(syncResultObject => {
+      
+      if (!syncResultObject.ok) {
+        return syncResultObject;
+      }
+      
+      return this.db.saveLastModified(syncResultObject.lastModified).then(lastModified => {
+        this._lastModified = lastModified;
+        return syncResultObject;
+      });
     });
+
     
     return (0, _utils.pFinally)(syncPromise, () => this.api.remote = previousRemote);
   }
