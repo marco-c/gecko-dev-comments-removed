@@ -508,9 +508,6 @@ public:
   
   void SetLoadInBackground(bool aLoadInBackground);
 
-  
-  MediaDecoderOwner* GetMediaOwner() const;
-
   MediaDecoderStateMachine* GetStateMachine() const;
   void SetStateMachine(MediaDecoderStateMachine* aStateMachine);
 
