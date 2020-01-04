@@ -7,8 +7,7 @@ const { Cu, Ci, Cc } = require("chrome");
 const { defer, all } = require("promise");
 const { setTimeout, clearTimeout } = require("sdk/timers");
 const { makeInfallible } = require("devtools/shared/DevToolsUtils");
-
-const { Services } = Cu.import("resource://gre/modules/Services.jsm", {});
+const Services = require("Services");
 
 
 const trace = {

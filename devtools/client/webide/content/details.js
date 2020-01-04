@@ -3,8 +3,8 @@
 
 
 var Cu = Components.utils;
-const {Services} = Cu.import("resource://gre/modules/Services.jsm");
 const {require} = Cu.import("resource://devtools/shared/Loader.jsm", {});
+const Services = require("Services");
 const {AppManager} = require("devtools/client/webide/modules/app-manager");
 const {ProjectBuilding} = require("devtools/client/webide/modules/build");
 
