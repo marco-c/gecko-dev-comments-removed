@@ -1100,12 +1100,14 @@ DebuggerClient.prototype = {
       request.emit("json-reply", packet);
     };
 
-    this._pendingRequests.forEach((list, actor) => {
+    let pendingRequests = new Map(this._pendingRequests);
+    this._pendingRequests.clear();
+    pendingRequests.forEach((list, actor) => {
       list.forEach(request => reject("pending", request, actor));
     });
-    this._pendingRequests.clear();
-    this._activeRequests.forEach(reject.bind(null, "active"));
+    let activeRequests = new Map(this._activeRequests);
     this._activeRequests.clear();
+    activeRequests.forEach(reject.bind(null, "active"));
 
     
     
