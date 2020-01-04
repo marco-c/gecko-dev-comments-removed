@@ -102,7 +102,7 @@ private:
   
   
   
-  bool ComputeFinalWidthForCurrentViewport(int32_t *aWidth);
+  bool ComputeFinalWidthForCurrentViewport(double* aWidth);
 
   nsCOMPtr<nsINode> mOwnerNode;
   
@@ -152,7 +152,7 @@ public:
   double Density(ResponsiveImageSelector *aSelector) const;
   
   
-  double Density(int32_t aMatchingWidth) const;
+  double Density(double aMatchingWidth) const;
 
   
   bool IsComputedFromWidth() const;
