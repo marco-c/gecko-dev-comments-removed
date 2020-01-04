@@ -16,6 +16,7 @@ var FontBuilder = {
   },
 
   _allFonts: null,
+  _langGroupSupported: false,
   buildFontList: function (aLanguage, aFontType, aMenuList)
   {
     
@@ -62,6 +63,7 @@ var FontBuilder = {
 
     
     if (this._allFonts.length > fonts.length) {
+      this._langGroupSupported = true;
       
       
       
@@ -102,7 +104,10 @@ var FontBuilder = {
         return undefined;
     }
 
-    let defaultValue = aElement.firstChild.firstChild.getAttribute("value");
+    
+    
+    let defaultValue = this._langGroupSupported ?
+                       aElement.firstChild.firstChild.getAttribute("value") : "";
     let fontNameList = preference.name.replace(".name.", ".name-list.");
     let prefFontNameList = document.getElementById(fontNameList);
     if (!prefFontNameList || !prefFontNameList.value)
