@@ -584,7 +584,8 @@ JoinBoxesForSlice(nsIFrame* aFrame, const nsRect& aBorderArea,
 static bool
 IsBoxDecorationSlice(const nsStyleBorder& aStyleBorder)
 {
-  return aStyleBorder.mBoxDecorationBreak == StyleBoxDecorationBreak::Slice;
+  return aStyleBorder.mBoxDecorationBreak ==
+           NS_STYLE_BOX_DECORATION_BREAK_SLICE;
 }
 
 static nsRect
@@ -1052,8 +1053,9 @@ nsCSSRendering::PaintFocus(nsPresContext* aPresContext,
 
 
 
+typedef nsStyleImageLayers::Position::PositionCoord PositionCoord;
 static void
-ComputeObjectAnchorCoord(const Position::Coord& aCoord,
+ComputeObjectAnchorCoord(const PositionCoord& aCoord,
                          const nscoord aOriginBounds,
                          const nscoord aImageSize,
                          nscoord* aTopLeftCoord,
@@ -1075,7 +1077,7 @@ ComputeObjectAnchorCoord(const Position::Coord& aCoord,
 
 void
 nsImageRenderer::ComputeObjectAnchorPoint(
-  const Position& aPos,
+  const nsStyleImageLayers::Position& aPos,
   const nsSize& aOriginBounds,
   const nsSize& aImageSize,
   nsPoint* aTopLeft,
@@ -1696,8 +1698,11 @@ nsCSSRendering::PaintBGParams::ForAllLayers(nsPresContext& aPresCtx,
 {
   MOZ_ASSERT(aFrame);
 
-  PaintBGParams result(aPresCtx, aRenderingCtx, aDirtyRect, aBorderArea, aFrame,
-    aPaintFlags, -1, CompositionOp::OP_OVER);
+  PaintBGParams result(aPresCtx, aRenderingCtx, aDirtyRect, aBorderArea);
+
+  result.frame = aFrame;
+  result.paintFlags = aPaintFlags;
+  result.layer = -1;
 
   return result;
 }
@@ -1715,8 +1720,13 @@ nsCSSRendering::PaintBGParams::ForSingleLayer(nsPresContext& aPresCtx,
 {
   MOZ_ASSERT(aFrame && (aLayer != -1));
 
-  PaintBGParams result(aPresCtx, aRenderingCtx, aDirtyRect, aBorderArea, aFrame,
-    aPaintFlags, aLayer, aCompositionOp);
+  PaintBGParams result(aPresCtx, aRenderingCtx, aDirtyRect, aBorderArea);
+
+  result.frame = aFrame;
+  result.paintFlags = aPaintFlags;
+
+  result.layer = aLayer;
+  result.compositionOp = aCompositionOp;
 
   return result;
 }
@@ -3589,6 +3599,9 @@ nsCSSRendering::PrepareImageLayer(nsPresContext* aPresContext,
   nsBackgroundLayerState state(aForFrame, &aLayer.mImage, irFlags);
   if (!state.mImageRenderer.PrepareImage()) {
     
+    if (aOutIsTransformedFixed) {
+      *aOutIsTransformedFixed = false;
+    }
     return state;
   }
 
