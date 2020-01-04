@@ -357,9 +357,9 @@ namespace places {
     
     
     if (matchBehavior != mozIPlacesAutoComplete::MATCH_ANYWHERE_UNMODIFIED &&
+        StringBeginsWith(url, NS_LITERAL_CSTRING("javascript:")) &&
         !HAS_BEHAVIOR(JAVASCRIPT) &&
-        !StringBeginsWith(searchString, NS_LITERAL_CSTRING("javascript:")) &&
-        StringBeginsWith(url, NS_LITERAL_CSTRING("javascript:"))) {
+        !StringBeginsWith(searchString, NS_LITERAL_CSTRING("javascript:"))) {
       NS_ADDREF(*_result = new IntegerVariant(0));
       return NS_OK;
     }
