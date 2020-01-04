@@ -54,7 +54,7 @@ FileSystemUtils::IsDescendantPath(const nsAString& aPath,
 {
   
   nsAutoString prefix;
-  prefix = aPath + NS_LITERAL_STRING(FILESYSTEM_DOM_PATH_SEPARATOR);
+  prefix = aPath + NS_LITERAL_STRING(FILESYSTEM_DOM_PATH_SEPARATOR_LITERAL);
 
   
   if (aDescendantPath.Length() < prefix.Length() ||

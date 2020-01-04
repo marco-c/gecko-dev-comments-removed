@@ -12,7 +12,8 @@
 namespace mozilla {
 namespace dom {
 
-#define FILESYSTEM_DOM_PATH_SEPARATOR "/"
+#define FILESYSTEM_DOM_PATH_SEPARATOR_LITERAL "/"
+#define FILESYSTEM_DOM_PATH_SEPARATOR_CHAR '/'
 
 
 
@@ -46,8 +47,6 @@ public:
 
   static bool
   IsDescendantPath(const nsAString& aPath, const nsAString& aDescendantPath);
-
-  static const char16_t kSeparatorChar = char16_t('/');
 };
 
 } 
