@@ -291,9 +291,13 @@ FragmentOrURLToURLValue(FragmentOrURL* aUrl, nsIDocument* aDoc)
   nsString path;
   aUrl->GetSourceString(path);
   RefPtr<nsStringBuffer> uriStringBuffer = nsCSSValue::BufferFromString(path);
+  
+  
+  
   RefPtr<mozilla::css::URLValue> result =
     new mozilla::css::URLValue(aUrl->GetSourceURL(), uriStringBuffer,
-                               aDoc->GetDocumentURI(), aDoc->NodePrincipal());
+                               aUrl->GetSourceURL(), aDoc->GetDocumentURI(),
+                               aDoc->NodePrincipal());
 
   return result.forget();
 }
