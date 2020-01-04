@@ -274,12 +274,6 @@ class ArrayBufferObject : public ArrayBufferObjectMaybeShared
     void changeContents(JSContext* cx, BufferContents newContents);
 
     
-
-
-
-    static bool ensureNonInline(JSContext* cx, Handle<ArrayBufferObject*> buffer);
-
-    
     static MOZ_WARN_UNUSED_RESULT bool
     neuter(JSContext* cx, Handle<ArrayBufferObject*> buffer, BufferContents newContents);
 

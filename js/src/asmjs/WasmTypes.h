@@ -1,20 +1,20 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
- * vim: set ts=8 sts=4 et sw=4 tw=99:
- *
- * Copyright 2015 Mozilla Foundation
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #ifndef wasm_types_h
 #define wasm_types_h
@@ -41,11 +41,11 @@ using mozilla::Move;
 using mozilla::DebugOnly;
 using mozilla::MallocSizeOf;
 
-// The ValType enum represents the WebAssembly "value type", which are used to
-// specify the type of locals and parameters.
 
-// FIXME: uint8_t would make more sense for the underlying storage class, but
-// causes miscompilations in GCC (fixed in 4.8.5 and 4.9.3).
+
+
+
+
 enum class ValType
 {
     I32,
@@ -80,12 +80,12 @@ ToMIRType(ValType vt)
     MOZ_MAKE_COMPILER_ASSUME_IS_UNREACHABLE("bad type");
 }
 
-// The Val class represents a single WebAssembly value of a given value type,
-// mostly for the purpose of numeric literals and initializers. A Val does not
-// directly map to a JS value since there is not (currently) a precise
-// representation of i64 values. A Val may contain non-canonical NaNs since,
-// within WebAssembly, floats are not canonicalized. Canonicalization must
-// happen at the JS boundary.
+
+
+
+
+
+
 
 class Val
 {
@@ -132,11 +132,11 @@ class Val
     const F32x4& f32x4() const { MOZ_ASSERT(type_ == ValType::F32x4); return u.f32x4_; }
 };
 
-// The ExprType enum represents the type of a WebAssembly expression or return
-// value and may either be a value type or void. A future WebAssembly extension
-// may generalize expression types to instead be a list of value types (with
-// void represented by the empty list). For now it's easier to have a flat enum
-// and be explicit about conversions to/from value types.
+
+
+
+
+
 
 enum class ExprType : uint8_t
 {
@@ -187,15 +187,15 @@ ToMIRType(ExprType et)
     return IsVoid(et) ? jit::MIRType_None : ToMIRType(ValType(et));
 }
 
-// The Sig class represents a WebAssembly function signature which takes a list
-// of value types and returns an expression type. The engine uses two in-memory
-// representations of the argument Vector's memory (when elements do not fit
-// inline): normal malloc allocation (via SystemAllocPolicy) and allocation in
-// a LifoAlloc (via LifoAllocPolicy). The former Sig objects can have any
-// lifetime since they own the memory. The latter Sig objects must not outlive
-// the associated LifoAlloc mark/release interval (which is currently the
-// duration of module validation+compilation). Thus, long-lived objects like
-// WasmModule must use malloced allocation.
+
+
+
+
+
+
+
+
+
 
 class Sig
 {
@@ -226,32 +226,21 @@ class Sig
     const ExprType& ret() const { return ret_; }
 
     HashNumber hash() const {
-        HashNumber hn = HashNumber(ret_);
-        for (unsigned i = 0; i < args_.length(); i++)
-            hn = mozilla::AddToHash(hn, HashNumber(args_[i]));
-        return hn;
+        return AddContainerToHash(args_, HashNumber(ret_));
     }
     bool operator==(const Sig& rhs) const {
-        if (ret() != rhs.ret())
-            return false;
-        if (args().length() != rhs.args().length())
-            return false;
-        for (unsigned i = 0; i < args().length(); i++) {
-            if (arg(i) != rhs.arg(i))
-                return false;
-        }
-        return true;
+        return ret() == rhs.ret() && EqualContainers(args(), rhs.args());
     }
     bool operator!=(const Sig& rhs) const {
         return !(*this == rhs);
     }
 };
 
-// A "declared" signature is a Sig object that is created and owned by the
-// ModuleGenerator. These signature objects are read-only and have the same
-// lifetime as the ModuleGenerator. This type is useful since some uses of Sig
-// need this extended lifetime and want to statically distinguish from the
-// common stack-allocated Sig objects that get passed around.
+
+
+
+
+
 
 struct DeclaredSig : Sig
 {
@@ -264,8 +253,8 @@ struct DeclaredSig : Sig
 typedef Vector<DeclaredSig, 0, SystemAllocPolicy> DeclaredSigVector;
 typedef Vector<const DeclaredSig*, 0, SystemAllocPolicy> DeclaredSigPtrVector;
 
-// The (,Profiling,Func)Offsets classes are used to record the offsets of
-// different key points in a CodeRange during compilation.
+
+
 
 struct Offsets
 {
@@ -273,8 +262,8 @@ struct Offsets
       : begin(begin), end(end)
     {}
 
-    // These define a [begin, end) contiguous range of instructions compiled
-    // into a CodeRange.
+    
+    
     uint32_t begin;
     uint32_t end;
 
@@ -290,13 +279,13 @@ struct ProfilingOffsets : Offsets
       : Offsets(), profilingReturn(profilingReturn)
     {}
 
-    // For CodeRanges with ProfilingOffsets, 'begin' is the offset of the
-    // profiling entry.
+    
+    
     uint32_t profilingEntry() const { return begin; }
 
-    // The profiling return is the offset of the return instruction, which
-    // precedes the 'end' by a variable number of instructions due to
-    // out-of-line codegen.
+    
+    
+    
     uint32_t profilingReturn;
 
     void offsetBy(uint32_t offset) {
@@ -316,13 +305,13 @@ struct FuncOffsets : ProfilingOffsets
         profilingEpilogue(profilingEpilogue)
     {}
 
-    // Function CodeRanges have an additional non-profiling entry that comes
-    // after the profiling entry and a non-profiling epilogue that comes before
-    // the profiling epilogue.
+    
+    
+    
     uint32_t nonProfilingEntry;
 
-    // When profiling is enabled, the 'nop' at offset 'profilingJump' is
-    // overwritten to be a jump to 'profilingEpilogue'.
+    
+    
     uint32_t profilingJump;
     uint32_t profilingEpilogue;
 
@@ -334,11 +323,11 @@ struct FuncOffsets : ProfilingOffsets
     }
 };
 
-// While the frame-pointer chain allows the stack to be unwound without
-// metadata, Error.stack still needs to know the line/column of every call in
-// the chain. A CallSiteDesc describes a single callsite to which CallSite adds
-// the metadata necessary to walk up to the next frame. Lastly CallSiteAndTarget
-// adds the function index of the callee.
+
+
+
+
+
 
 class CallSiteDesc
 {
@@ -347,8 +336,8 @@ class CallSiteDesc
     uint32_t kind_ : 1;
   public:
     enum Kind {
-        Relative,  // pc-relative call
-        Register   // call *register
+        Relative,  
+        Register   
     };
     CallSiteDesc() {}
     explicit CallSiteDesc(Kind kind)
@@ -382,10 +371,10 @@ class CallSite : public CallSiteDesc
     void offsetReturnAddressBy(int32_t o) { returnAddressOffset_ += o; }
     uint32_t returnAddressOffset() const { return returnAddressOffset_; }
 
-    // The stackDepth measures the amount of stack space pushed since the
-    // function was called. In particular, this includes the pushed return
-    // address on all archs (whether or not the call instruction pushes the
-    // return address (x86/x64) or the prologue does (ARM/MIPS)).
+    
+    
+    
+    
     uint32_t stackDepth() const { return stackDepth_; }
 };
 
@@ -407,26 +396,26 @@ class CallSiteAndTarget : public CallSite
 typedef Vector<CallSite, 0, SystemAllocPolicy> CallSiteVector;
 typedef Vector<CallSiteAndTarget, 0, SystemAllocPolicy> CallSiteAndTargetVector;
 
-// Summarizes a heap access made by wasm code that needs to be patched later
-// and/or looked up by the wasm signal handlers. Different architectures need
-// to know different things (x64: offset and length, ARM: where to patch in
-// heap length, x86: where to patch in heap length and base).
+
+
+
+
 
 #if defined(JS_CODEGEN_X86)
 class HeapAccess
 {
     uint32_t insnOffset_;
-    uint8_t opLength_;  // the length of the load/store instruction
-    uint8_t cmpDelta_;  // the number of bytes from the cmp to the load/store instruction
+    uint8_t opLength_;  
+    uint8_t cmpDelta_;  
 
   public:
     HeapAccess() = default;
     static const uint32_t NoLengthCheck = UINT32_MAX;
 
-    // If 'cmp' equals 'insnOffset' or if it is not supplied then the
-    // cmpDelta_ is zero indicating that there is no length to patch.
+    
+    
     HeapAccess(uint32_t insnOffset, uint32_t after, uint32_t cmp = NoLengthCheck) {
-        mozilla::PodZero(this);  // zero padding for Valgrind
+        mozilla::PodZero(this);  
         insnOffset_ = insnOffset;
         opLength_ = after - insnOffset;
         cmpDelta_ = cmp == NoLengthCheck ? 0 : insnOffset - cmp;
@@ -447,27 +436,27 @@ class HeapAccess
 {
   public:
     enum WhatToDoOnOOB {
-        CarryOn, // loads return undefined, stores do nothing.
-        Throw    // throw a RangeError
+        CarryOn, 
+        Throw    
     };
 
   private:
     uint32_t insnOffset_;
-    uint8_t offsetWithinWholeSimdVector_; // if is this e.g. the Z of an XYZ
-    bool throwOnOOB_;                     // should we throw on OOB?
-    uint8_t cmpDelta_;                    // the number of bytes from the cmp to the load/store instruction
+    uint8_t offsetWithinWholeSimdVector_; 
+    bool throwOnOOB_;                     
+    uint8_t cmpDelta_;                    
 
   public:
     HeapAccess() = default;
     static const uint32_t NoLengthCheck = UINT32_MAX;
 
-    // If 'cmp' equals 'insnOffset' or if it is not supplied then the
-    // cmpDelta_ is zero indicating that there is no length to patch.
+    
+    
     HeapAccess(uint32_t insnOffset, WhatToDoOnOOB oob,
                uint32_t cmp = NoLengthCheck,
                uint32_t offsetWithinWholeSimdVector = 0)
     {
-        mozilla::PodZero(this);  // zero padding for Valgrind
+        mozilla::PodZero(this);  
         insnOffset_ = insnOffset;
         offsetWithinWholeSimdVector_ = offsetWithinWholeSimdVector;
         throwOnOOB_ = oob == Throw;
@@ -508,12 +497,12 @@ class HeapAccess {
 
 typedef Vector<HeapAccess, 0, SystemAllocPolicy> HeapAccessVector;
 
-// A wasm::SymbolicAddress represents a pointer to a well-known function or
-// object that is embedded in wasm code. Since wasm code is serialized and
-// later deserialized into a different address space, symbolic addresses must be
-// used for *all* pointers into the address space. The MacroAssembler records a
-// list of all SymbolicAddresses and the offsets of their use in the code for
-// later patching during static linking.
+
+
+
+
+
+
 
 enum class SymbolicAddress
 {
@@ -562,9 +551,9 @@ enum class SymbolicAddress
 void*
 AddressOf(SymbolicAddress imm, ExclusiveContext* cx);
 
-// The CompileArgs struct captures global parameters that affect all wasm code
-// generation. It also currently is the single source of truth for whether or
-// not to use signal handlers for different purposes.
+
+
+
 
 struct CompileArgs
 {
@@ -577,7 +566,7 @@ struct CompileArgs
     bool operator!=(CompileArgs rhs) const { return !(*this == rhs); }
 };
 
-// Constants:
+
 
 static const unsigned ActivationGlobalDataOffset = 0;
 static const unsigned HeapGlobalDataOffset = ActivationGlobalDataOffset + sizeof(void*);
@@ -585,7 +574,7 @@ static const unsigned NaN64GlobalDataOffset = HeapGlobalDataOffset + sizeof(void
 static const unsigned NaN32GlobalDataOffset = NaN64GlobalDataOffset + sizeof(double);
 static const unsigned InitialGlobalDataBytes = NaN32GlobalDataOffset + sizeof(float);
 
-} // namespace wasm
-} // namespace js
+} 
+} 
 
-#endif // wasm_types_h
+#endif 
