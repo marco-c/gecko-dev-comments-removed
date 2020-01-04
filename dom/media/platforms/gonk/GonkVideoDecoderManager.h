@@ -7,13 +7,11 @@
 #if !defined(GonkVideoDecoderManager_h_)
 #define GonkVideoDecoderManager_h_
 
-#include <set>
 #include "nsRect.h"
 #include "GonkMediaDataDecoder.h"
 #include "mozilla/RefPtr.h"
 #include "I420ColorConverterHelper.h"
 #include "MediaCodecProxy.h"
-#include <stagefright/foundation/AHandler.h>
 #include "GonkNativeWindow.h"
 #include "GonkNativeWindowClient.h"
 #include "mozilla/layers/FenceUtils.h"
@@ -22,7 +20,6 @@
 using namespace android;
 
 namespace android {
-struct ALooper;
 class MediaBuffer;
 struct MOZ_EXPORT AString;
 class GonkNativeWindow;
@@ -42,18 +39,12 @@ public:
   GonkVideoDecoderManager(mozilla::layers::ImageContainer* aImageContainer,
                           const VideoInfo& aConfig);
 
-  virtual ~GonkVideoDecoderManager() override;
+  virtual ~GonkVideoDecoderManager();
 
-  RefPtr<InitPromise> Init(MediaDataDecoderCallback* aCallback) override;
-
-  nsresult Input(MediaRawData* aSample) override;
+  nsRefPtr<InitPromise> Init() override;
 
   nsresult Output(int64_t aStreamOffset,
-                          RefPtr<MediaData>& aOutput) override;
-
-  nsresult Flush() override;
-
-  bool HasQueuedSample() override;
+                          nsRefPtr<MediaData>& aOutput) override;
 
   static void RecycleCallback(TextureClient* aClient, void* aClosure);
 
@@ -70,23 +61,8 @@ private:
     int32_t mCropRight = 0;
     int32_t mCropBottom = 0;
   };
-  class MessageHandler : public android::AHandler
-  {
-  public:
-    MessageHandler(GonkVideoDecoderManager *aManager);
-    ~MessageHandler();
 
-    void onMessageReceived(const android::sp<android::AMessage> &aMessage) override;
-
-  private:
-    
-    MessageHandler() = delete;
-    MessageHandler(const MessageHandler &rhs) = delete;
-    const MessageHandler &operator=(const MessageHandler &rhs) = delete;
-
-    GonkVideoDecoderManager *mManager;
-  };
-  friend class MessageHandler;
+  void onMessageReceived(const android::sp<android::AMessage> &aMessage) override;
 
   class VideoResourceListener : public android::MediaCodecProxy::CodecResourceListener
   {
@@ -119,7 +95,6 @@ private:
   
   void codecReserved();
   void codecCanceled();
-  void onMessageReceived(const sp<AMessage> &aMessage);
 
   void ReleaseAllPendingVideoBuffers();
   void PostReleaseVideoBuffer(android::MediaBuffer *aBuffer,
@@ -132,19 +107,13 @@ private:
   nsIntRect mPicture;
   nsIntSize mInitialFrame;
 
-  RefPtr<layers::ImageContainer> mImageContainer;
+  nsRefPtr<layers::ImageContainer> mImageContainer;
 
   android::MediaBuffer* mVideoBuffer;
 
-  MediaDataDecoderCallback*  mReaderCallback;
   MediaInfo mInfo;
   android::sp<VideoResourceListener> mVideoListener;
-  android::sp<MessageHandler> mHandler;
-  android::sp<ALooper> mLooper;
-  android::sp<ALooper> mManagerLooper;
   FrameInfo mFrameInfo;
-
-  int64_t mLastDecodedTime;  
 
   
   android::I420ColorConverterHelper mColorConverter;
@@ -169,16 +138,8 @@ private:
   Mutex mPendingReleaseItemsLock;
 
   
-  Monitor mMonitor;
-
   
-  
-  RefPtr<TaskQueue> mReaderTaskQueue;
-
-  
-  
-  
-  nsTArray<RefPtr<MediaRawData>> mQueueSample;
+  nsRefPtr<TaskQueue> mReaderTaskQueue;
 };
 
 } 
