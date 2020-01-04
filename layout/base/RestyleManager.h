@@ -709,7 +709,8 @@ private:
 
   
   void RestyleUndisplayedDescendants(nsRestyleHint aChildRestyleHint);
-  bool MustCheckUndisplayedContent(nsIContent*& aUndisplayedParent);
+  bool MustCheckUndisplayedContent(nsIFrame* aFrame,
+                                   nsIContent*& aUndisplayedParent);
 
   
 

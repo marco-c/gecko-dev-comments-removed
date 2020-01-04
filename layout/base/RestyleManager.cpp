@@ -2861,18 +2861,19 @@ ElementRestyler::AddPendingRestylesForDescendantsMatchingSelectors(
 }
 
 bool
-ElementRestyler::MustCheckUndisplayedContent(nsIContent*& aUndisplayedParent)
+ElementRestyler::MustCheckUndisplayedContent(nsIFrame* aFrame,
+                                             nsIContent*& aUndisplayedParent)
 {
   
   
   
-  if (mFrame->StyleContext()->GetPseudo()) {
+  if (aFrame->StyleContext()->GetPseudo()) {
     aUndisplayedParent = nullptr;
-    return mFrame == mPresContext->FrameConstructor()->
+    return aFrame == mPresContext->FrameConstructor()->
                        GetDocElementContainingBlock();
   }
 
-  aUndisplayedParent = mFrame->GetContent();
+  aUndisplayedParent = aFrame->GetContent();
   return !!aUndisplayedParent;
 }
 
@@ -2945,7 +2946,7 @@ ElementRestyler::MoveStyleContextsForChildren(nsStyleContext* aOldContext)
   
   
   nsIContent* undisplayedParent;
-  if (MustCheckUndisplayedContent(undisplayedParent)) {
+  if (MustCheckUndisplayedContent(mFrame, undisplayedParent)) {
     nsCSSFrameConstructor* fc = mPresContext->FrameConstructor();
     if (fc->GetAllUndisplayedContentIn(undisplayedParent) ||
         fc->GetAllDisplayContentsIn(undisplayedParent)) {
@@ -4249,7 +4250,7 @@ void
 ElementRestyler::RestyleUndisplayedDescendants(nsRestyleHint aChildRestyleHint)
 {
   nsIContent* undisplayedParent;
-  if (MustCheckUndisplayedContent(undisplayedParent)) {
+  if (MustCheckUndisplayedContent(mFrame, undisplayedParent)) {
     DoRestyleUndisplayedDescendants(aChildRestyleHint, undisplayedParent,
                                     mFrame->StyleContext());
   }
