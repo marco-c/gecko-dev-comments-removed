@@ -230,17 +230,12 @@ this.ContentSearch = {
     let engine = Services.search.getEngineByName(data.engineName);
     let submission = engine.getSubmission(data.searchString, "", data.searchPurpose);
     let browser = msg.target;
-    let win;
-    try {
-      win = browser.ownerDocument.defaultView;
-    }
-    catch (err) {
-      
+    let win = browser.ownerGlobal;
+    if (!win) {
       
       
       return;
     }
-
     let where = win.whereToOpenLink(data.originalEvent);
 
     
@@ -424,7 +419,7 @@ this.ContentSearch = {
   },
 
   _onMessageManageEngines: function (msg, data) {
-    let browserWin = msg.target.ownerDocument.defaultView;
+    let browserWin = msg.target.ownerGlobal;
     browserWin.openPreferences("paneSearch");
   },
 

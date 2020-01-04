@@ -1896,10 +1896,8 @@ BrowserGlue.prototype = {
 
   _showSyncStartedDoorhanger: function () {
     let bundle = Services.strings.createBundle("chrome://browser/locale/accounts.properties");
-    let productName = gBrandBundle.GetStringFromName("brandShortName");
     let title = bundle.GetStringFromName("syncStartNotification.title");
-    let body = bundle.formatStringFromName("syncStartNotification.body2",
-                                            [productName], 1);
+    let body = bundle.GetStringFromName("syncStartNotification.body");
 
     let clickCallback = (subject, topic, data) => {
       if (topic != "alertclickcallback")
@@ -2559,7 +2557,7 @@ ContentPermissionPrompt.prototype = {
   _showPrompt: function CPP_showPrompt(aRequest, aMessage, aPermission, aActions,
                                        aNotificationId, aAnchorId, aOptions) {
     var browser = this._getBrowserForRequest(aRequest);
-    var chromeWin = browser.ownerDocument.defaultView;
+    var chromeWin = browser.ownerGlobal;
     var requestPrincipal = aRequest.principal;
 
     
@@ -2762,7 +2760,7 @@ ContentPermissionPrompt.prototype = {
     }
 
     var browser = this._getBrowserForRequest(request);
-    var chromeWin = browser.ownerDocument.defaultView;
+    var chromeWin = browser.ownerGlobal;
     if (!chromeWin.PopupNotifications)
       
       

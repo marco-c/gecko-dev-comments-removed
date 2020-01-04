@@ -418,8 +418,7 @@ var FormDataListener = {
 
   handleEvent: function (event) {
     let frame = event.target &&
-                event.target.ownerDocument &&
-                event.target.ownerDocument.defaultView;
+                event.target.ownerGlobal;
 
     
     

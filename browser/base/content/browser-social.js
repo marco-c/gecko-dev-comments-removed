@@ -183,7 +183,7 @@ SocialUI = {
       return;
 
     
-    let win = linkNode.ownerDocument.defaultView;
+    let win = linkNode.ownerGlobal;
     let container = win.QueryInterface(Ci.nsIInterfaceRequestor)
                                   .getInterface(Ci.nsIWebNavigation)
                                   .QueryInterface(Ci.nsIDocShell)

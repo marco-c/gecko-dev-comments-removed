@@ -32,7 +32,7 @@ var ContentClick = {
   contentAreaClick: function (json, browser) {
     
     
-    let window = browser.ownerDocument.defaultView;
+    let window = browser.ownerGlobal;
 
     if (!json.href) {
       

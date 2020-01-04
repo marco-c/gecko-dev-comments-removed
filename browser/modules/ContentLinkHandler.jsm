@@ -43,7 +43,7 @@ this.ContentLinkHandler = {
       return;
 
     
-    let window = link.ownerDocument.defaultView;
+    let window = link.ownerGlobal;
     if (window != window.top)
       return;
 

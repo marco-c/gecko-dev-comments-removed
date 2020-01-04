@@ -368,7 +368,7 @@ function* testContextMenu(syncedTabsDeckComponent, contextSelector, triggerSelec
 
   let promisePopupShown = BrowserTestUtils.waitForEvent(contextMenu, "popupshown");
 
-  let chromeWindow = triggerElement.ownerDocument.defaultView.top;
+  let chromeWindow = triggerElement.ownerGlobal.top;
   let rect = triggerElement.getBoundingClientRect();
   let contentRect = chromeWindow.SidebarUI.browser.getBoundingClientRect();
   

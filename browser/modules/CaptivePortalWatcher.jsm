@@ -165,7 +165,7 @@ this.CaptivePortalWatcher = {
       return;
     }
 
-    let tabbrowser = tab.ownerDocument.defaultView.gBrowser;
+    let tabbrowser = tab.ownerGlobal.gBrowser;
 
     
     

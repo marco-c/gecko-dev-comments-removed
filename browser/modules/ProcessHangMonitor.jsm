@@ -347,7 +347,7 @@ var ProcessHangMonitor = {
   },
 
   handleEvent: function(event) {
-    let win = event.target.ownerDocument.defaultView;
+    let win = event.target.ownerGlobal;
 
     
     
