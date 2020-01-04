@@ -3190,21 +3190,32 @@ HttpBaseChannel::GetSecureUpgradedURI(nsIURI* aURI, nsIURI** aUpgradedURI)
   nsresult rv = aURI->Clone(getter_AddRefs(upgradedURI));
   NS_ENSURE_SUCCESS(rv,rv);
 
+  
   upgradedURI->SetScheme(NS_LITERAL_CSTRING("https"));
 
-  int32_t oldPort = -1;
-  rv = aURI->GetPort(&oldPort);
-  if (NS_FAILED(rv)) return rv;
+  
+  nsCOMPtr<nsIStandardURL> upgradedStandardURL = do_QueryInterface(upgradedURI);
+  if (upgradedStandardURL) {
+    upgradedStandardURL->SetDefaultPort(443);
+  } else {
+    
+    
+    
+    int32_t oldPort = -1;
+    rv = aURI->GetPort(&oldPort);
+    if (NS_FAILED(rv)) return rv;
 
-  
-  
-  
-  
+    
+    
+    
+    
 
-  if (oldPort == 80 || oldPort == -1)
-      upgradedURI->SetPort(-1);
-  else
-      upgradedURI->SetPort(oldPort);
+    if (oldPort == 80 || oldPort == -1) {
+        upgradedURI->SetPort(-1);
+    } else {
+        upgradedURI->SetPort(oldPort);
+    }
+  }
 
   upgradedURI.forget(aUpgradedURI);
   return NS_OK;
