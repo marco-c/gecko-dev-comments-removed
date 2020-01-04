@@ -270,6 +270,14 @@ function checkSettingsSection(data) {
 
   
   
+  if (gIsGonk) {
+    Assert.ok(!("addonCompatibilityCheckEnabled" in data.settings), "Must not be available on Gonk.");
+  } else {
+    Assert.equal(data.settings.addonCompatibilityCheckEnabled, AddonManager.checkCompatibility);
+  }
+
+  
+  
   if (gIsAndroid) {
     Assert.ok(!("isDefaultBrowser" in data.settings), "Must not be available on Android.");
   } else {
