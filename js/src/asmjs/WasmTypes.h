@@ -43,6 +43,14 @@ using mozilla::MallocSizeOf;
 
 
 
+enum ModuleKind
+{
+    Wasm,
+    AsmJS
+};
+
+
+
 
 
 
