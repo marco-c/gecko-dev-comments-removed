@@ -39,6 +39,7 @@
 #include "nsIWindowWatcher.h"
 #include "nsIDocument.h"
 #include "nsStringStream.h"
+#include "nsIExternalHelperAppService.h"
 
 using mozilla::BasePrincipal;
 using namespace mozilla::dom;
@@ -1029,8 +1030,47 @@ HttpChannelParent::OnStartRequest(nsIRequest *aRequest, nsISupports *aContext)
   }
 
   nsCOMPtr<nsIEncodedChannel> encodedChannel = do_QueryInterface(aRequest);
-  if (encodedChannel)
-    encodedChannel->SetApplyConversion(false);
+  if (encodedChannel) {
+    if (!mChannel->HaveListenerForTraceableChannel()) {
+      encodedChannel->SetApplyConversion(false);
+    } else {
+      
+      
+      
+      
+      
+      
+      
+      nsCOMPtr<nsIURI> uri;
+      chan->GetURI(getter_AddRefs(uri));
+      nsCOMPtr<nsIURL> url(do_QueryInterface(uri));
+      if (url) {
+        nsAutoCString extension;
+        url->GetFileExtension(extension);
+        if (!extension.IsEmpty()) {
+          nsCOMPtr<nsIUTF8StringEnumerator> encEnum;
+          encodedChannel->GetContentEncodings(getter_AddRefs(encEnum));
+          if (encEnum) {
+            bool hasMore;
+            nsresult rv = encEnum->HasMore(&hasMore);
+            if (NS_SUCCEEDED(rv) && hasMore) {
+              nsAutoCString encType;
+              rv = encEnum->GetNext(encType);
+              if (NS_SUCCEEDED(rv) && !encType.IsEmpty()) {
+                nsCOMPtr<nsIExternalHelperAppService> helperAppService =
+                  do_GetService("@mozilla.org/uriloader/external-helper-app-service;1");
+                MOZ_ASSERT(helperAppService);
+                bool applyConversion;
+                helperAppService->ApplyDecodingForExtension(extension, encType,
+                                                            &applyConversion);
+                encodedChannel->SetApplyConversion(applyConversion);
+              }
+            }
+          }
+        }
+      }
+    }
+  }
 
   
   
@@ -1075,7 +1115,8 @@ HttpChannelParent::OnStartRequest(nsIRequest *aRequest, nsISupports *aContext)
                           expirationTime, cachedCharset, secInfoSerialization,
                           mChannel->GetSelfAddr(), mChannel->GetPeerAddr(),
                           redirectCount,
-                          cacheKeyValue))
+                          cacheKeyValue,
+                          mChannel->HaveListenerForTraceableChannel()))
   {
     rv = NS_ERROR_UNEXPECTED;
   }
@@ -1490,11 +1531,14 @@ HttpChannelParent::StartDiversion()
   
   
   
-  nsCOMPtr<nsIStreamListener> converterListener;
-  mChannel->DoApplyContentConversions(mDivertListener,
-                                      getter_AddRefs(converterListener));
-  if (converterListener) {
-    mDivertListener = converterListener.forget();
+  
+  if (!mChannel->HaveListenerForTraceableChannel()) {
+    nsCOMPtr<nsIStreamListener> converterListener;
+    mChannel->DoApplyContentConversions(mDivertListener,
+                                        getter_AddRefs(converterListener));
+    if (converterListener) {
+      mDivertListener = converterListener.forget();
+    }
   }
 
   
