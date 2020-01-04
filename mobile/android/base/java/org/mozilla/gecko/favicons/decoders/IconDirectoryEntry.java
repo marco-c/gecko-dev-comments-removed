@@ -84,7 +84,7 @@ public class IconDirectoryEntry implements Comparable<IconDirectoryEntry> {
 
         
         int imageWidth = buffer[entryOffset] & 0xFF;
-        int imageHeight = buffer[entryOffset+1] & 0xFF;
+        int imageHeight = buffer[entryOffset + 1] & 0xFF;
 
         
         if (imageWidth == 0) {

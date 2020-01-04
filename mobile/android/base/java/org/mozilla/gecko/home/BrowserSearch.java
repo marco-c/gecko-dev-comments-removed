@@ -990,7 +990,7 @@ public class BrowserSearch extends HomeFragment
             
             final int maxSavedSuggestions = NETWORK_SUGGESTION_MAX + 1 + getContext().getResources().getInteger(R.integer.max_saved_suggestions);
 
-            final String sortOrderAndLimit = BrowserContract.SearchHistory.DATE +" DESC LIMIT " + maxSavedSuggestions;
+            final String sortOrderAndLimit = BrowserContract.SearchHistory.DATE + " DESC LIMIT " + maxSavedSuggestions;
             final Cursor result =  cr.query(BrowserContract.SearchHistory.CONTENT_URI, columns, actualQuery, queryArgs, sortOrderAndLimit);
 
             if (result == null) {
