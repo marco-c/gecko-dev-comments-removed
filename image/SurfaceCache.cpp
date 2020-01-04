@@ -227,6 +227,11 @@ private:
   const SurfaceKey   mSurfaceKey;
 };
 
+static int64_t
+AreaOfIntSize(const IntSize& aSize) {
+  return static_cast<int64_t>(aSize.width) * static_cast<int64_t>(aSize.height);
+}
+
 
 
 
@@ -327,11 +332,9 @@ public:
       
       
       
-      int64_t idealArea = static_cast<int64_t>(idealKey.Size().width) *
-        static_cast<int64_t>(idealKey.Size().height);
-      int64_t surfaceArea = aSurfaceKey.Size().width * aSurfaceKey.Size().height;
-      int64_t bestMatchArea =
-        bestMatchKey.Size().width * bestMatchKey.Size().height;
+      int64_t idealArea = AreaOfIntSize(idealKey.Size());
+      int64_t surfaceArea = AreaOfIntSize(aSurfaceKey.Size());
+      int64_t bestMatchArea = AreaOfIntSize(bestMatchKey.Size());
 
       
       if (bestMatchArea < idealArea) {
