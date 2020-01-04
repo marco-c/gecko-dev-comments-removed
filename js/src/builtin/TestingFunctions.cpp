@@ -479,10 +479,15 @@ RelazifyFunctions(JSContext* cx, unsigned argc, Value* vp)
     
     
 
+    CallArgs args = CallArgsFromVp(argc, vp);
     SetAllowRelazification(cx, true);
-    bool res = GC(cx, argc, vp);
+
+    JS::PrepareForFullGC(cx);
+    JS::GCForReason(cx, GC_SHRINK, JS::gcreason::API);
+
     SetAllowRelazification(cx, false);
-    return res;
+    args.rval().setUndefined();
+    return true;
 }
 
 static bool
