@@ -1,5 +1,3 @@
-
-
 load(libdir + 'oomTest.js');
 oomTest(function () {
     eval(`var wm = new WeakMap();
