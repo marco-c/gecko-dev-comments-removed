@@ -5,24 +5,46 @@
 "use strict";
 
 (function (factory) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   if (this.module && module.id.indexOf("event-emitter") >= 0) {
+    let console;
+    if (isWorker) {
+      console = {
+        error: () => {}
+      };
+    } else {
+      console = this.console;
+    }
     
-    factory.call(this, require, exports, module);
+    factory.call(this, require, exports, module, console);
   } else {
     
+    
+    
+    
+    
     this.isWorker = false;
+    const Cu = Components.utils;
+    let console = Cu.import("resource://gre/modules/Console.jsm", {}).console;
     
     
     
     let require = function (module) {
-      const Cu = Components.utils;
       switch (module) {
         case "devtools/shared/defer":
           return Cu.import("resource://gre/modules/Promise.jsm", {}).Promise.defer;
         case "Services":
           return Cu.import("resource://gre/modules/Services.jsm", {}).Services;
-        case "resource://gre/modules/Console.jsm":
-          return Cu.import("resource://gre/modules/Console.jsm", {});
         case "chrome":
           return {
             Cu,
@@ -31,10 +53,13 @@
       }
       return null;
     };
-    factory.call(this, require, this, { exports: this });
+    factory.call(this, require, this, { exports: this }, console);
     this.EXPORTED_SYMBOLS = ["EventEmitter"];
   }
-}).call(this, function (require, exports, module) {
+}).call(this, function (require, exports, module, console) {
+  
+  
+  
   let EventEmitter = this.EventEmitter = function () {};
   module.exports = EventEmitter;
 
@@ -44,18 +69,13 @@
   const defer = require("devtools/shared/defer");
   let loggingEnabled = true;
 
-  let console = {};
   if (!isWorker) {
-    console = require("resource://gre/modules/Console.jsm").console;
     loggingEnabled = Services.prefs.getBoolPref("devtools.dump.emit");
     Services.prefs.addObserver("devtools.dump.emit", {
       observe: () => {
         loggingEnabled = Services.prefs.getBoolPref("devtools.dump.emit");
       }
     }, false);
-  } else {
-    
-    console.error = () => {};
   }
 
   
