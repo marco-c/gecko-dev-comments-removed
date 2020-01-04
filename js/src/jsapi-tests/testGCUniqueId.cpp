@@ -18,7 +18,7 @@ MinimizeHeap(JSRuntime* rt)
     
     JS_GC(rt);
     JS_GC(rt);
-    js::gc::AutoFinishGC finish(rt);
+    js::gc::FinishGC(rt);
 }
 
 BEGIN_TEST(testGCUID)

@@ -1240,7 +1240,7 @@ GlobalHelperThreadState::mergeParseTaskCompartment(JSRuntime* rt, ParseTask* par
     
     
     
-    gc::AutoFinishGC finishGC(rt);
+    gc::FinishGC(rt);
     JS::AutoAssertNoAlloc noAlloc(rt);
 
     LeaveParseTaskZone(rt, parseTask);
