@@ -433,7 +433,7 @@ NS_IMPL_CYCLE_COLLECTING_RELEASE(nsScriptLoader)
 
 nsScriptLoader::nsScriptLoader(nsIDocument *aDocument)
   : mDocument(aDocument),
-    mBlockerCount(0),
+    mParserBlockingBlockerCount(0),
     mNumberOfProcessors(0),
     mEnabled(true),
     mDeferEnabled(false),
@@ -479,7 +479,7 @@ nsScriptLoader::~nsScriptLoader()
   
   
   for (uint32_t j = 0; j < mPendingChildLoaders.Length(); ++j) {
-    mPendingChildLoaders[j]->RemoveExecuteBlocker();
+    mPendingChildLoaders[j]->RemoveParserBlockingScriptExecutionBlocker();
   }
 }
 
@@ -1459,7 +1459,7 @@ nsScriptLoader::ProcessScriptElement(nsIScriptElement *aElement)
       return true;
     }
 
-    if (request->IsReadyToRun() && ReadyToExecuteScripts()) {
+    if (request->IsReadyToRun() && ReadyToExecuteParserBlockingScripts()) {
       
       
       
@@ -1522,7 +1522,7 @@ nsScriptLoader::ProcessScriptElement(nsIScriptElement *aElement)
   }
   request->mProgress = nsScriptLoadRequest::Progress::Ready;
   if (aElement->GetParserCreated() == FROM_PARSER_XSLT &&
-      (!ReadyToExecuteScripts() || !mXSLTRequests.isEmpty())) {
+      (!ReadyToExecuteParserBlockingScripts() || !mXSLTRequests.isEmpty())) {
     
     NS_ASSERTION(!mParserBlockingRequest,
         "Parser-blocking scripts and XSLT scripts in the same doc!");
@@ -1537,7 +1537,7 @@ nsScriptLoader::ProcessScriptElement(nsIScriptElement *aElement)
     return false;
   }
   if (aElement->GetParserCreated() == FROM_PARSER_NETWORK &&
-      !ReadyToExecuteScripts()) {
+      !ReadyToExecuteParserBlockingScripts()) {
     NS_ASSERTION(!mParserBlockingRequest,
         "There can be only one parser-blocking script at a time");
     mParserBlockingRequest = request;
@@ -1605,7 +1605,7 @@ nsScriptLoader::ProcessOffThreadRequest(nsScriptLoadRequest* aRequest)
   aRequest->SetReady();
 
   if (aRequest == mParserBlockingRequest) {
-    if (!ReadyToExecuteScripts()) {
+    if (!ReadyToExecuteParserBlockingScripts()) {
       
       
       ProcessPendingRequestsAsync();
@@ -2045,7 +2045,7 @@ nsScriptLoader::ProcessPendingRequests()
 
   if (mParserBlockingRequest &&
       mParserBlockingRequest->IsReadyToRun() &&
-      ReadyToExecuteScripts()) {
+      ReadyToExecuteParserBlockingScripts()) {
     request.swap(mParserBlockingRequest);
     UnblockParser(request);
     ProcessRequest(request);
@@ -2055,7 +2055,7 @@ nsScriptLoader::ProcessPendingRequests()
     ContinueParserAsync(request);
   }
 
-  while (ReadyToExecuteScripts() &&
+  while (ReadyToExecuteParserBlockingScripts() &&
          !mXSLTRequests.isEmpty() &&
          mXSLTRequests.getFirst()->IsReadyToRun()) {
     request = mXSLTRequests.StealFirst();
@@ -2088,10 +2088,11 @@ nsScriptLoader::ProcessPendingRequests()
     }
   }
 
-  while (!mPendingChildLoaders.IsEmpty() && ReadyToExecuteScripts()) {
+  while (!mPendingChildLoaders.IsEmpty() &&
+         ReadyToExecuteParserBlockingScripts()) {
     RefPtr<nsScriptLoader> child = mPendingChildLoaders[0];
     mPendingChildLoaders.RemoveElementAt(0);
-    child->RemoveExecuteBlocker();
+    child->RemoveParserBlockingScriptExecutionBlocker();
   }
 
   if (mDocumentParsingDone && mDocument && !mParserBlockingRequest &&
@@ -2115,19 +2116,19 @@ nsScriptLoader::ProcessPendingRequests()
 }
 
 bool
-nsScriptLoader::ReadyToExecuteScripts()
+nsScriptLoader::ReadyToExecuteParserBlockingScripts()
 {
   
   
-  if (!SelfReadyToExecuteScripts()) {
+  if (!SelfReadyToExecuteParserBlockingScripts()) {
     return false;
   }
 
   for (nsIDocument* doc = mDocument; doc; doc = doc->GetParentDocument()) {
     nsScriptLoader* ancestor = doc->ScriptLoader();
-    if (!ancestor->SelfReadyToExecuteScripts() &&
+    if (!ancestor->SelfReadyToExecuteParserBlockingScripts() &&
         ancestor->AddPendingChildLoader(this)) {
-      AddExecuteBlocker();
+      AddParserBlockingScriptExecutionBlocker();
       return false;
     }
   }
@@ -2153,7 +2154,8 @@ nsScriptLoader::ReadyToExecuteScripts()
     }
 
     nsCOMPtr<nsIDocument> doc = lastPred->GetDocument();
-    if (lastPred->IsBlocking() || !doc || (doc && !doc->ScriptLoader()->SelfReadyToExecuteScripts())) {
+    if (lastPred->IsBlocking() || !doc ||
+        !doc->ScriptLoader()->SelfReadyToExecuteParserBlockingScripts()) {
       
       
       

@@ -345,13 +345,14 @@ public:
 
 
 
-  void AddExecuteBlocker()
+
+  void AddParserBlockingScriptExecutionBlocker()
   {
-    ++mBlockerCount;
+    ++mParserBlockingBlockerCount;
   }
-  void RemoveExecuteBlocker()
+  void RemoveParserBlockingScriptExecutionBlocker()
   {
-    if (!--mBlockerCount) {
+    if (!--mParserBlockingBlockerCount) {
       ProcessPendingRequestsAsync();
     }
   }
@@ -504,14 +505,15 @@ private:
 
 
 
-  bool ReadyToExecuteScripts();
+  bool ReadyToExecuteParserBlockingScripts();
 
   
 
 
-  bool SelfReadyToExecuteScripts()
+
+  bool SelfReadyToExecuteParserBlockingScripts()
   {
-    return mEnabled && !mBlockerCount;
+    return mEnabled && !mParserBlockingBlockerCount;
   }
 
   nsresult AttemptAsyncScriptCompile(nsScriptLoadRequest* aRequest);
@@ -601,7 +603,7 @@ private:
   nsCOMPtr<nsIScriptElement> mCurrentScript;
   nsCOMPtr<nsIScriptElement> mCurrentParserInsertedScript;
   nsTArray< RefPtr<nsScriptLoader> > mPendingChildLoaders;
-  uint32_t mBlockerCount;
+  uint32_t mParserBlockingBlockerCount;
   uint32_t mNumberOfProcessors;
   bool mEnabled;
   bool mDeferEnabled;
