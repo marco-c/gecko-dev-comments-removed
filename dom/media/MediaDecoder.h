@@ -802,9 +802,6 @@ protected:
   double mDuration;
 
   
-  bool mMediaSeekable;
-
-  
 
 
 
@@ -1001,6 +998,9 @@ protected:
   
   Canonical<int64_t> mDecoderPosition;
 
+  
+  Canonical<bool> mMediaSeekable;
+
 public:
   AbstractCanonical<media::NullableTimeUnit>* CanonicalDurationOrNull() override;
   AbstractCanonical<double>* CanonicalVolume() {
@@ -1038,6 +1038,9 @@ public:
   }
   AbstractCanonical<int64_t>* CanonicalDecoderPosition() {
     return &mDecoderPosition;
+  }
+  AbstractCanonical<bool>* CanonicalMediaSeekable() {
+    return &mMediaSeekable;
   }
 };
 

@@ -1300,6 +1300,9 @@ private:
   Mirror<int64_t> mDecoderPosition;
 
   
+  Mirror<bool> mMediaSeekable;
+
+  
   
   Canonical<media::NullableTimeUnit> mDuration;
 
