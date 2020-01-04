@@ -4853,6 +4853,9 @@ pref("browser.safebrowsing.provider.mozilla.lists.mozfull.name", "mozfullName");
 pref("browser.safebrowsing.provider.mozilla.lists.mozfull.description", "mozfullDesc");
 
 
+pref("browser.safebrowsing.allowOverride", true);
+
+
 pref("snav.enabled", false);
 
 
