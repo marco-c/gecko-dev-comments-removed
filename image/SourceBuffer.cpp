@@ -103,6 +103,7 @@ SourceBuffer::CreateChunk(size_t aCapacity, bool aRoundUp )
   
   
   if (MOZ_UNLIKELY(!SurfaceCache::CanHold(finalCapacity))) {
+    NS_WARNING("SourceBuffer refused to create chunk too large for SurfaceCache");
     return Nothing();
   }
 
