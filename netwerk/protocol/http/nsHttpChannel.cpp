@@ -3207,10 +3207,8 @@ nsHttpChannel::OnCacheEntryCheck(nsICacheEntry* entry, nsIApplicationCache* appC
     else if (mLoadFlags & nsIRequest::VALIDATE_NEVER) {
         LOG(("VALIDATE_NEVER set\n"));
         
-        
-        if (mCachedResponseHead->NoStore() ||
-           (mCachedResponseHead->NoCache() && isHttps)) {
-            LOG(("Validating based on (no-store || (no-cache && ssl)) logic\n"));
+        if (mCachedResponseHead->NoStore()) {
+            LOG(("Validating based on no-store logic\n"));
             doValidation = true;
         }
         else {
