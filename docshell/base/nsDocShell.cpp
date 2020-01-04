@@ -1654,14 +1654,14 @@ nsDocShell::FirePageHideNotification(bool aIsUnload)
   if (mContentViewer && !mFiredUnloadEvent) {
     
     
-    nsCOMPtr<nsIContentViewer> kungFuDeathGrip(mContentViewer);
+    nsCOMPtr<nsIContentViewer> contentViewer(mContentViewer);
     mFiredUnloadEvent = true;
 
     if (mTiming) {
       mTiming->NotifyUnloadEventStart();
     }
 
-    mContentViewer->PageHide(aIsUnload);
+    contentViewer->PageHide(aIsUnload);
 
     if (mTiming) {
       mTiming->NotifyUnloadEventEnd();
@@ -7590,6 +7590,7 @@ nsDocShell::EndPageLoad(nsIWebProgress* aProgress,
   
   
   nsCOMPtr<nsISHEntry> loadingSHE = mLSHE;
+  mozilla::Unused << loadingSHE; 
 
   
   
@@ -8545,14 +8546,11 @@ nsDocShell::RestoreFromHistory()
   int32_t minFontSize = 0;
   float textZoom = 1.0f;
   float pageZoom = 1.0f;
-  float overrideDPPX = 0.0f;
-
   bool styleDisabled = false;
   if (oldCv && newCv) {
     oldCv->GetMinFontSize(&minFontSize);
     oldCv->GetTextZoom(&textZoom);
     oldCv->GetFullZoom(&pageZoom);
-    oldCv->GetOverrideDPPX(&overrideDPPX);
     oldCv->GetAuthorStyleDisabled(&styleDisabled);
   }
 
@@ -8785,7 +8783,6 @@ nsDocShell::RestoreFromHistory()
     newCv->SetMinFontSize(minFontSize);
     newCv->SetTextZoom(textZoom);
     newCv->SetFullZoom(pageZoom);
-    newCv->SetOverrideDPPX(overrideDPPX);
     newCv->SetAuthorStyleDisabled(styleDisabled);
   }
 
@@ -9279,7 +9276,6 @@ nsDocShell::SetupNewViewer(nsIContentViewer* aNewViewer)
   int32_t minFontSize;
   float textZoom;
   float pageZoom;
-  float overrideDPPX;
   bool styleDisabled;
   
   nsCOMPtr<nsIContentViewer> newCv;
@@ -9321,8 +9317,6 @@ nsDocShell::SetupNewViewer(nsIContentViewer* aNewViewer)
                           NS_ERROR_FAILURE);
         NS_ENSURE_SUCCESS(oldCv->GetFullZoom(&pageZoom),
                           NS_ERROR_FAILURE);
-        NS_ENSURE_SUCCESS(oldCv->GetOverrideDPPX(&overrideDPPX),
-                          NS_ERROR_FAILURE);
         NS_ENSURE_SUCCESS(oldCv->GetAuthorStyleDisabled(&styleDisabled),
                           NS_ERROR_FAILURE);
       }
@@ -9331,23 +9325,23 @@ nsDocShell::SetupNewViewer(nsIContentViewer* aNewViewer)
 
   nscolor bgcolor = NS_RGBA(0, 0, 0, 0);
   
-  nsCOMPtr<nsIContentViewer> kungfuDeathGrip = mContentViewer;
-  if (mContentViewer) {
+  nsCOMPtr<nsIContentViewer> contentViewer = mContentViewer;
+  if (contentViewer) {
     
     
-    mContentViewer->Stop();
+    contentViewer->Stop();
 
     
     
     nsCOMPtr<nsIPresShell> shell;
-    mContentViewer->GetPresShell(getter_AddRefs(shell));
+    contentViewer->GetPresShell(getter_AddRefs(shell));
 
     if (shell) {
       bgcolor = shell->GetCanvasBackground();
     }
 
-    mContentViewer->Close(mSavingOldViewer ? mOSHE.get() : nullptr);
-    aNewViewer->SetPreviousViewer(mContentViewer);
+    contentViewer->Close(mSavingOldViewer ? mOSHE.get() : nullptr);
+    aNewViewer->SetPreviousViewer(contentViewer);
   }
   if (mOSHE && (!mContentViewer || !mSavingOldViewer)) {
     
@@ -9390,8 +9384,6 @@ nsDocShell::SetupNewViewer(nsIContentViewer* aNewViewer)
     NS_ENSURE_SUCCESS(newCv->SetTextZoom(textZoom),
                       NS_ERROR_FAILURE);
     NS_ENSURE_SUCCESS(newCv->SetFullZoom(pageZoom),
-                      NS_ERROR_FAILURE);
-    NS_ENSURE_SUCCESS(newCv->SetOverrideDPPX(overrideDPPX),
                       NS_ERROR_FAILURE);
     NS_ENSURE_SUCCESS(newCv->SetAuthorStyleDisabled(styleDisabled),
                       NS_ERROR_FAILURE);
@@ -9768,13 +9760,14 @@ nsDocShell::InternalLoad(nsIURI* aURI,
     isJavaScript = false;
   }
 
+  RefPtr<nsGlobalWindow> scriptGlobal = mScriptGlobal;
+
   
   
   
   nsCOMPtr<Element> requestingElement =
-    mScriptGlobal->AsOuter()->GetFrameElementInternal();
+    scriptGlobal->AsOuter()->GetFrameElementInternal();
 
-  RefPtr<nsGlobalWindow> MMADeathGrip = mScriptGlobal;
 
   int16_t shouldLoad = nsIContentPolicy::ACCEPT;
   uint32_t contentType;
@@ -9820,7 +9813,7 @@ nsDocShell::InternalLoad(nsIURI* aURI,
 
   nsISupports* context = requestingElement;
   if (!context) {
-    context = ToSupports(mScriptGlobal);
+    context = ToSupports(scriptGlobal);
   }
 
   
@@ -10326,8 +10319,8 @@ nsDocShell::InternalLoad(nsIURI* aURI,
       
       CopyFavicon(currentURI, aURI, doc->NodePrincipal(), UsePrivateBrowsing());
 
-      RefPtr<nsGlobalWindow> win = mScriptGlobal ?
-        mScriptGlobal->GetCurrentInnerWindowInternal() : nullptr;
+      RefPtr<nsGlobalWindow> win = scriptGlobal ?
+        scriptGlobal->GetCurrentInnerWindowInternal() : nullptr;
 
       
       

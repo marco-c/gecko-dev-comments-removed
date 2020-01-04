@@ -1759,8 +1759,6 @@ nsOfflineCacheUpdate::Begin()
     }
 
     
-    nsCOMPtr<nsIURI> uri;
-
     mManifestItem = new nsOfflineManifestItem(mManifestURI,
                                               mDocumentURI,
                                               mLoadingPrincipal,
