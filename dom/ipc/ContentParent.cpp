@@ -275,10 +275,6 @@ using namespace mozilla::system;
 #include "nsThread.h"
 #endif
 
-#ifdef ACCESSIBILITY
-#include "nsAccessibilityService.h"
-#endif
-
 
 #include "Benchmark.h"
 
@@ -1705,14 +1701,15 @@ ContentParent::AllocateLayerTreeId(ContentParent* aContent,
   GPUProcessManager* gpu = GPUProcessManager::Get();
 
   *aId = gpu->AllocateLayerTreeId();
+
+  if (!aContent || !aTopLevel) {
+    return false;
+  }
+
   gpu->MapLayerTreeId(*aId, aContent->OtherPid());
 
   if (!gfxPlatform::AsyncPanZoomEnabled()) {
     return true;
-  }
-
-  if (!aContent || !aTopLevel) {
-    return false;
   }
 
   return aContent->SendNotifyLayerAllocated(aTabId, *aId);
@@ -2846,24 +2843,19 @@ ContentParent::Observe(nsISupports* aSubject,
   }
 #endif
 #ifdef ACCESSIBILITY
-  else if (aData && !strcmp(aTopic, "a11y-init-or-shutdown")) {
-    if (*aData == '1') {
-      
-      
+  
+  
+  else if (aData && (*aData == '1') &&
+       !strcmp(aTopic, "a11y-init-or-shutdown")) {
 #if !defined(XP_WIN)
-      Unused << SendActivateA11y();
+    Unused << SendActivateA11y();
 #else
-      
-      
-      if (Preferences::GetBool(kForceEnableE10sPref, false)) {
-        Unused << SendActivateA11y();
-      }
-#endif
-    } else {
-      
-      
-      Unused << SendShutdownA11y();
+    
+    
+    if (Preferences::GetBool(kForceEnableE10sPref, false)) {
+      Unused << SendActivateA11y();
     }
+#endif
   }
 #endif
   else if (!strcmp(aTopic, "app-theme-changed")) {
