@@ -2860,11 +2860,6 @@ gfxFontGroup::FindFontForChar(uint32_t aCh, uint32_t aPrevCh, uint32_t aNextCh,
     }
 
     
-    if (aRunScript == Script::UNKNOWN) {
-        return nullptr;
-    }
-
-    
     
     if (GetGeneralCategory(aCh) ==
             HB_UNICODE_GENERAL_CATEGORY_SPACE_SEPARATOR &&
