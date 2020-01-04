@@ -342,7 +342,7 @@ class nsHtml5Highlighter
     
 
 
-    nsAutoArrayPtr<nsIContent*> mHandles;
+    mozilla::UniquePtr<nsIContent*[]> mHandles;
 
     
 
@@ -352,7 +352,7 @@ class nsHtml5Highlighter
     
 
 
-    nsTArray<nsAutoArrayPtr<nsIContent*> > mOldHandles;
+    nsTArray<mozilla::UniquePtr<nsIContent*[]>> mOldHandles;
 
     
 
