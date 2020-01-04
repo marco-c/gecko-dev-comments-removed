@@ -340,21 +340,18 @@ using mozilla::gfx::PointTyped;
 
 
 
-
-
-
-
-
-
-
-
-
 StaticAutoPtr<ComputedTimingFunction> gZoomAnimationFunction;
 
 
 
 
 StaticAutoPtr<ComputedTimingFunction> gVelocityCurveFunction;
+
+
+
+
+
+static const double kDefaultEstimatedPaintDurationMs = 50;
 
 
 
@@ -2695,8 +2692,7 @@ RedistributeDisplayPortExcess(CSSSize& aDisplayPortSize,
 
 const ScreenMargin AsyncPanZoomController::CalculatePendingDisplayPort(
   const FrameMetrics& aFrameMetrics,
-  const ParentLayerPoint& aVelocity,
-  double aEstimatedPaintDuration)
+  const ParentLayerPoint& aVelocity)
 {
   if (aFrameMetrics.IsScrollInfoLayer()) {
     
@@ -2718,8 +2714,7 @@ const ScreenMargin AsyncPanZoomController::CalculatePendingDisplayPort(
 
   
   
-  float estimatedPaintDurationMillis = (float)(aEstimatedPaintDuration * 1000.0);
-  float paintFactor = (gfxPrefs::APZUsePaintDuration() ? estimatedPaintDurationMillis : 50.0f);
+  float paintFactor = kDefaultEstimatedPaintDurationMs;
   CSSRect displayPort = CSSRect(scrollOffset + (velocity * paintFactor * gfxPrefs::APZVelocityBias()),
                                 displayPortSize);
 
@@ -2831,10 +2826,7 @@ void AsyncPanZoomController::RequestContentRepaint() {
 }
 
 void AsyncPanZoomController::RequestContentRepaint(FrameMetrics& aFrameMetrics, bool aThrottled) {
-  aFrameMetrics.SetDisplayPortMargins(
-    CalculatePendingDisplayPort(aFrameMetrics,
-                                GetVelocityVector(),
-                                mPaintThrottler->AverageDuration().ToSeconds()));
+  aFrameMetrics.SetDisplayPortMargins(CalculatePendingDisplayPort(aFrameMetrics, GetVelocityVector()));
   aFrameMetrics.SetUseDisplayPortMargins();
 
   
@@ -3197,7 +3189,7 @@ void AsyncPanZoomController::NotifyLayersUpdated(const FrameMetrics& aLayerMetri
     
     
     mPaintThrottler->ClearHistory();
-    mPaintThrottler->SetMaxDurations(gfxPrefs::APZNumPaintDurationSamples());
+    mPaintThrottler->SetMaxDurations(1);
 
     CancelAnimation();
 
@@ -3445,9 +3437,7 @@ void AsyncPanZoomController::ZoomToRect(CSSRect aRect) {
 
     endZoomToMetrics.SetScrollOffset(aRect.TopLeft());
     endZoomToMetrics.SetDisplayPortMargins(
-      CalculatePendingDisplayPort(endZoomToMetrics,
-                                  ParentLayerPoint(0,0),
-                                  0));
+      CalculatePendingDisplayPort(endZoomToMetrics, ParentLayerPoint(0,0)));
     endZoomToMetrics.SetUseDisplayPortMargins();
 
     StartAnimation(new ZoomAnimation(
