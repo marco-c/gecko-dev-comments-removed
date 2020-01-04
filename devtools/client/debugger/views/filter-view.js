@@ -12,7 +12,6 @@
 
 
 
-
 function FilterView(DebuggerController, DebuggerView) {
   dumpn("FilterView was instantiated");
 
@@ -321,15 +320,15 @@ FilterView.prototype = {
     
     
     else switch (e.keyCode) {
-      case e.DOM_VK_RETURN:
+      case KeyCodes.DOM_VK_RETURN:
         var isReturnKey = true;
         
         actionToPerform = e.shiftKey ? "selectPrev" : "selectNext";
         break;
-      case e.DOM_VK_DOWN:
+      case KeyCodes.DOM_VK_DOWN:
         actionToPerform = "selectNext";
         break;
-      case e.DOM_VK_UP:
+      case KeyCodes.DOM_VK_UP:
         actionToPerform = "selectPrev";
         break;
     }

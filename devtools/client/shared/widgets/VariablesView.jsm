@@ -28,6 +28,7 @@ const { Heritage, ViewHelpers, setNamedTimeout } =
   require("devtools/client/shared/widgets/view-helpers");
 const { Task } = require("devtools/shared/task");
 const nodeConstants = require("devtools/shared/dom-node-constants");
+const {KeyCodes} = require("devtools/client/shared/keycodes");
 
 XPCOMUtils.defineLazyModuleGetter(this, "PluralForm",
   "resource://gre/modules/PluralForm.jsm");
@@ -513,10 +514,10 @@ VariablesView.prototype = {
 
   _onSearchboxKeyPress: function (e) {
     switch (e.keyCode) {
-      case e.DOM_VK_RETURN:
+      case KeyCodes.DOM_VK_RETURN:
         this._onSearchboxInput();
         return;
-      case e.DOM_VK_ESCAPE:
+      case KeyCodes.DOM_VK_ESCAPE:
         this._searchboxNode.value = "";
         this._onSearchboxInput();
         return;
@@ -826,17 +827,17 @@ VariablesView.prototype = {
     ViewHelpers.preventScrolling(e);
 
     switch (e.keyCode) {
-      case e.DOM_VK_UP:
+      case KeyCodes.DOM_VK_UP:
         
         this.focusPrevItem(true);
         return;
 
-      case e.DOM_VK_DOWN:
+      case KeyCodes.DOM_VK_DOWN:
         
         this.focusNextItem(true);
         return;
 
-      case e.DOM_VK_LEFT:
+      case KeyCodes.DOM_VK_LEFT:
         
         if (item._isExpanded && item._isArrowVisible) {
           item.collapse();
@@ -845,7 +846,7 @@ VariablesView.prototype = {
         }
         return;
 
-      case e.DOM_VK_RIGHT:
+      case KeyCodes.DOM_VK_RIGHT:
         
         if (!item._isArrowVisible) {
           return;
@@ -858,29 +859,29 @@ VariablesView.prototype = {
         }
         return;
 
-      case e.DOM_VK_PAGE_UP:
+      case KeyCodes.DOM_VK_PAGE_UP:
         
         this.focusItemAtDelta(-(this.scrollPageSize || Math.min(Math.floor(this._list.scrollHeight /
           PAGE_SIZE_SCROLL_HEIGHT_RATIO),
           PAGE_SIZE_MAX_JUMPS)));
         return;
 
-      case e.DOM_VK_PAGE_DOWN:
+      case KeyCodes.DOM_VK_PAGE_DOWN:
         
         this.focusItemAtDelta(+(this.scrollPageSize || Math.min(Math.floor(this._list.scrollHeight /
           PAGE_SIZE_SCROLL_HEIGHT_RATIO),
           PAGE_SIZE_MAX_JUMPS)));
         return;
 
-      case e.DOM_VK_HOME:
+      case KeyCodes.DOM_VK_HOME:
         this.focusFirstVisibleItem();
         return;
 
-      case e.DOM_VK_END:
+      case KeyCodes.DOM_VK_END:
         this.focusLastVisibleItem();
         return;
 
-      case e.DOM_VK_RETURN:
+      case KeyCodes.DOM_VK_RETURN:
         
         if (item instanceof Variable) {
           if (e.metaKey || e.altKey || e.shiftKey) {
@@ -891,15 +892,15 @@ VariablesView.prototype = {
         }
         return;
 
-      case e.DOM_VK_DELETE:
-      case e.DOM_VK_BACK_SPACE:
+      case KeyCodes.DOM_VK_DELETE:
+      case KeyCodes.DOM_VK_BACK_SPACE:
         
         if (item instanceof Variable) {
           item._onDelete(e);
         }
         return;
 
-      case e.DOM_VK_INSERT:
+      case KeyCodes.DOM_VK_INSERT:
         item._onAddProperty(e);
         return;
     }
@@ -909,7 +910,7 @@ VariablesView.prototype = {
 
 
   _onViewKeyDown: function (e) {
-    if (e.keyCode == e.DOM_VK_C) {
+    if (e.keyCode == KeyCodes.DOM_VK_C) {
       
       if (e.ctrlKey || e.metaKey) {
         let item = this.getFocusedItem();
@@ -1257,7 +1258,7 @@ function Scope(aView, aName, aFlags = {}) {
   this.contextMenuId = aView.contextMenuId;
   this.separatorStr = aView.separatorStr;
 
-  this._init(aName, aFlags);
+  this._init(aName.trim(), aFlags);
 }
 
 Scope.prototype = {
@@ -1822,7 +1823,7 @@ Scope.prototype = {
 
     let name = this._name = document.createElement("label");
     name.className = "plain name";
-    name.setAttribute("value", aName.trim());
+    name.setAttribute("value", aName);
     name.setAttribute("crop", "end");
 
     let title = this._title = document.createElement("hbox");
@@ -4082,13 +4083,13 @@ Editable.prototype = {
     e.stopPropagation();
 
     switch (e.keyCode) {
-      case e.DOM_VK_TAB:
+      case KeyCodes.DOM_VK_TAB:
         this._next();
         break;
-      case e.DOM_VK_RETURN:
+      case KeyCodes.DOM_VK_RETURN:
         this._save();
         break;
-      case e.DOM_VK_ESCAPE:
+      case KeyCodes.DOM_VK_ESCAPE:
         this._reset();
         break;
     }

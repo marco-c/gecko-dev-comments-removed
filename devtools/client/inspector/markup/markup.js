@@ -60,6 +60,7 @@ const nodeFilterConstants = require("devtools/shared/dom-node-filter-constants")
 const {XPCOMUtils} = require("resource://gre/modules/XPCOMUtils.jsm");
 
 const {getCssProperties} = require("devtools/shared/fronts/css-properties");
+const {KeyCodes} = require("devtools/client/shared/keycodes");
 
 const {AutocompletePopup} = require("devtools/client/shared/autocomplete-popup");
 
@@ -2273,12 +2274,12 @@ MarkupContainer.prototype = {
 
     
     
-    if (isInput && keyCode !== event.DOM_VK_TAB) {
+    if (isInput && keyCode !== KeyCodes.DOM_VK_TAB) {
       return;
     }
 
     switch (keyCode) {
-      case event.DOM_VK_TAB:
+      case KeyCodes.DOM_VK_TAB:
         
         if (isInput) {
           
@@ -2299,7 +2300,7 @@ MarkupContainer.prototype = {
           }
         }
         break;
-      case event.DOM_VK_ESCAPE:
+      case KeyCodes.DOM_VK_ESCAPE:
         this.clearFocus();
         this.markup.getContainer(this.markup._rootNode).elt.focus();
         if (this.isDragging) {

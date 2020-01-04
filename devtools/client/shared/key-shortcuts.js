@@ -7,6 +7,7 @@
 const Services = require("Services");
 const EventEmitter = require("devtools/shared/event-emitter");
 const isOSX = Services.appinfo.OS === "Darwin";
+const {KeyCodes} = require("devtools/client/shared/keycodes");
 
 
 const ElectronKeysMapping = {
@@ -139,7 +140,7 @@ KeyShortcuts.parseElectronKey = function (window, str) {
   } else if (key in ElectronKeysMapping) {
     
     key = ElectronKeysMapping[key];
-    shortcut.keyCode = window.KeyboardEvent[key];
+    shortcut.keyCode = KeyCodes[key];
     
     shortcut.keyCodeString = key;
   } else {
