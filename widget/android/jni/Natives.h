@@ -352,6 +352,9 @@ class ProxyNativeCall
     }
 
 public:
+    
+    typedef Impl TargetClass;
+
     static const bool isStatic = IsStatic;
 
     ProxyNativeCall(ProxyNativeCall&&) = default;

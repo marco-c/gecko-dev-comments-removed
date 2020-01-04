@@ -165,6 +165,7 @@ class nsWindow::GeckoViewSupport final
 {
     nsWindow& window;
 
+public:
     template<typename T>
     class WindowEvent : public nsAppShell::LambdaEvent<T>
     {
@@ -182,7 +183,7 @@ class nsWindow::GeckoViewSupport final
             const auto& thisArg = Base::lambda.GetThisArg();
 
             const auto natives = reinterpret_cast<
-                    mozilla::WeakPtr<GeckoViewSupport>*>(
+                    mozilla::WeakPtr<typename T::TargetClass>*>(
                     jni::GetNativeHandle(env, thisArg.Get()));
             jni::HandleUncaughtException(env);
 
@@ -217,7 +218,6 @@ class nsWindow::GeckoViewSupport final
         }
     };
 
-public:
     typedef GeckoView::Window::Natives<GeckoViewSupport> Base;
     typedef GeckoEditable::Natives<GeckoViewSupport> EditableBase;
 
@@ -270,14 +270,6 @@ public:
                      GeckoView::Window::Param aWindow,
                      GeckoView::Param aView, jni::Object::Param aGLController,
                      int32_t aWidth, int32_t aHeight);
-
-    
-    static void SetLayerClient(jni::Object::Param aClient)
-    {
-        MOZ_ASSERT(NS_IsMainThread());
-        AndroidBridge::Bridge()->SetLayerClient(
-                widget::GeckoLayerClient::Ref::From(aClient.Get()));
-    }
 
     
     void Close();
@@ -385,16 +377,112 @@ class nsWindow::GLControllerSupport final
 {
     nsWindow& window;
     GLController::GlobalRef mGLController;
+    GeckoLayerClient::GlobalRef mLayerClient;
+    Atomic<bool, ReleaseAcquire> mCompositorPaused;
+
+    class GLControllerEvent final : public nsAppShell::Event
+    {
+        template<class T> using LambdaEvent = nsAppShell::LambdaEvent<T>;
+        using Event = nsAppShell::Event;
+
+        
+        
+        
+        UniquePtr<Event> baseEvent;
+
+    public:
+        template<class T>
+        GLControllerEvent(T* event)
+            : baseEvent(UniquePtr<T, DefaultDelete<Event>>(event))
+        {}
+
+        void PostTo(LinkedList<Event>& queue) override
+        {
+            
+            
+            nsAppShell::Event* event = queue.getFirst();
+            while (event && event->HasSameTypeAs(this)) {
+                event = event->getNext();
+            }
+            if (event) {
+                event->setPrevious(this);
+            } else {
+                queue.insertBack(this);
+            }
+        }
+
+        void Run() override
+        {
+            MOZ_ASSERT(baseEvent);
+            baseEvent->Run();
+        }
+    };
+
+    static void SyncRunEvent(nsAppShell::Event&& event) {
+        
+        
+        MOZ_ASSERT(!NS_IsMainThread());
+        Monitor monitor("GLControllerSupport");
+        MonitorAutoLock lock(monitor);
+        bool finished = false;
+        auto callAndNotify = [&event, &monitor, &finished] {
+            event.Run();
+            MonitorAutoLock lock(monitor);
+            finished = true;
+            lock.NotifyAll();
+        };
+        nsAppShell::gAppShell->PostEvent(
+                mozilla::MakeUnique<GLControllerEvent>(
+                new nsAppShell::LambdaEvent<decltype(callAndNotify)>(
+                mozilla::Move(callAndNotify))));
+        while (!finished) {
+            lock.Wait();
+        }
+    }
 
 public:
     typedef GLController::Natives<GLControllerSupport> Base;
 
     MOZ_DECLARE_WEAKREFERENCE_TYPENAME(GLControllerSupport);
 
+    template<class Functor>
+    static void OnNativeCall(Functor&& aCall)
+    {
+        if (aCall.IsTarget(&GLControllerSupport::CreateCompositor) ||
+            aCall.IsTarget(&GLControllerSupport::PauseCompositor)) {
+
+            
+            SyncRunEvent(GeckoViewSupport::WindowEvent<Functor>(
+                    mozilla::Move(aCall)));
+            return;
+
+        } else if (aCall.IsTarget(
+                &GLControllerSupport::SyncResumeResizeCompositor)) {
+            
+            
+            
+            
+            
+            (Functor(aCall))();
+            aCall.SetTarget(&GLControllerSupport::OnResumedCompositor);
+
+        } else if (aCall.IsTarget(
+                &GLControllerSupport::SyncInvalidateAndScheduleComposite)) {
+            
+            return aCall();
+        }
+
+        nsAppShell::gAppShell->PostEvent(
+                mozilla::MakeUnique<GLControllerEvent>(
+                new GeckoViewSupport::WindowEvent<Functor>(
+                mozilla::Move(aCall))));
+    }
+
     GLControllerSupport(nsWindow* aWindow,
                         const GLController::LocalRef& aInstance)
         : window(*aWindow)
         , mGLController(aInstance)
+        , mCompositorPaused(true)
     {
         Reattach(aInstance);
     }
@@ -413,6 +501,31 @@ public:
         Base::AttachNative(aInstance, this);
     }
 
+    const GeckoLayerClient::Ref& GetLayerClient() const
+    {
+        return mLayerClient;
+    }
+
+    bool CompositorPaused() const
+    {
+        return mCompositorPaused;
+    }
+
+private:
+    void OnResumedCompositor(int32_t aWidth, int32_t aHeight)
+    {
+        
+        
+        
+        
+        
+        
+        
+        if (!mCompositorPaused) {
+            window.RedrawAll();
+        }
+    }
+
     
 
 
@@ -421,27 +534,76 @@ public:
 
     void SetLayerClient(jni::Object::Param aClient)
     {
+        const auto& layerClient = GeckoLayerClient::Ref::From(aClient);
+
+        AndroidBridge::Bridge()->SetLayerClient(layerClient);
+
         
+        
+        
+        
+        const bool resetting = !!mLayerClient;
+        mLayerClient = layerClient;
+
+        if (resetting) {
+            
+            
+            
+            if (window.mCompositorParent) {
+                window.mCompositorParent->ForceIsFirstPaint();
+            }
+        }
     }
 
     void CreateCompositor(int32_t aWidth, int32_t aHeight)
     {
-        
+        window.CreateLayerManager(aWidth, aHeight);
+        mCompositorPaused = false;
+        OnResumedCompositor(aWidth, aHeight);
     }
 
     void PauseCompositor()
     {
         
+        
+        
+        
+        if (window.mCompositorChild) {
+            window.mCompositorChild->SendPause();
+        }
+        mCompositorPaused = true;
+    }
+
+    void SyncPauseCompositor()
+    {
+        if (window.mCompositorParent) {
+            window.mCompositorParent->SchedulePauseOnCompositorThread();
+            mCompositorPaused = true;
+        }
+    }
+
+    void SyncResumeCompositor()
+    {
+        if (window.mCompositorParent &&
+                window.mCompositorParent->ScheduleResumeOnCompositorThread()) {
+            mCompositorPaused = false;
+        }
     }
 
     void SyncResumeResizeCompositor(int32_t aWidth, int32_t aHeight)
     {
-        
+        if (window.mCompositorParent && window.mCompositorParent->
+                ScheduleResumeOnCompositorThread(aWidth, aHeight)) {
+            mCompositorPaused = false;
+        }
     }
 
     void SyncInvalidateAndScheduleComposite()
     {
-        
+        if (window.mCompositorParent) {
+            window.mCompositorParent->InvalidateOnCompositorThread();
+            window.mCompositorParent->ScheduleRenderOnCompositorThread();
+        }
     }
 };
 
@@ -2744,8 +2906,8 @@ void
 nsWindow::DrawWindowUnderlay(LayerManagerComposite* aManager,
                              LayoutDeviceIntRect aRect)
 {
-    GeckoLayerClient::LocalRef client = AndroidBridge::Bridge()->GetLayerClient();
-    MOZ_ASSERT(client);
+    MOZ_ASSERT(mGLControllerSupport);
+    GeckoLayerClient::LocalRef client = mGLControllerSupport->GetLayerClient();
 
     LayerRenderer::Frame::LocalRef frame = client->CreateFrame();
     mLayerRendererFrame = frame;
@@ -2789,8 +2951,8 @@ nsWindow::DrawWindowOverlay(LayerManagerComposite* aManager,
     GLint scissorRect[4];
     gl->fGetIntegerv(LOCAL_GL_SCISSOR_BOX, scissorRect);
 
-    GeckoLayerClient::LocalRef client = AndroidBridge::Bridge()->GetLayerClient();
-    MOZ_ASSERT(client);
+    MOZ_ASSERT(mGLControllerSupport);
+    GeckoLayerClient::LocalRef client = mGLControllerSupport->GetLayerClient();
 
     client->ActivateProgram();
     mLayerRendererFrame->DrawForeground();

@@ -685,21 +685,7 @@ AndroidBridge::GetIconForExtension(const nsACString& aFileExt, uint32_t aIconSiz
 void
 AndroidBridge::SetLayerClient(GeckoLayerClient::Param jobj)
 {
-    
-    
-    
-    
-    bool resetting = (mLayerClient != nullptr);
-    __android_log_print(ANDROID_LOG_INFO, "GeckoBug1151102", "Reseting layer client: %d", resetting);
-
     mLayerClient = jobj;
-
-    if (resetting) {
-        
-        
-        
-        nsWindow::ForceIsFirstPaint();
-    }
 }
 
 void
