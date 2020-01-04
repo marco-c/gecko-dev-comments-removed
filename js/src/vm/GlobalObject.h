@@ -31,6 +31,7 @@ class StaticBlockScope;
 class ClonedBlockObject;
 
 class SimdTypeDescr;
+enum class SimdType : uint8_t;
 
 
 
@@ -444,22 +445,11 @@ class GlobalObject : public NativeObject
         return getOrCreateObject(cx, APPLICATION_SLOTS + JSProto_SIMD, initSimdObject);
     }
 
-    template<class  T>
-    static SimdTypeDescr*
-    getOrCreateSimdTypeDescr(JSContext* cx, Handle<GlobalObject*> global) {
-        RootedObject globalSimdObject(cx, global->getOrCreateSimdGlobalObject(cx));
-        if (!globalSimdObject)
-            return nullptr;
-        uint32_t typeSlotIndex = uint32_t(T::type);
-        if (globalSimdObject->as<NativeObject>().getReservedSlot(typeSlotIndex).isUndefined() &&
-            !GlobalObject::initSimdType(cx, global, typeSlotIndex))
-        {
-            return nullptr;
-        }
-        const Value& slot = globalSimdObject->as<NativeObject>().getReservedSlot(typeSlotIndex);
-        MOZ_ASSERT(slot.isObject());
-        return &slot.toObject().as<SimdTypeDescr>();
-    }
+    
+    
+    
+    static SimdTypeDescr* getOrCreateSimdTypeDescr(JSContext* cx, Handle<GlobalObject*> global,
+                                                   SimdType simdType);
 
     TypedObjectModuleObject& getTypedObjectModule() const;
 
@@ -734,7 +724,7 @@ class GlobalObject : public NativeObject
 
     
     static bool initSimdObject(JSContext* cx, Handle<GlobalObject*> global);
-    static bool initSimdType(JSContext* cx, Handle<GlobalObject*> global, uint32_t simdTypeDescrType);
+    static bool initSimdType(JSContext* cx, Handle<GlobalObject*> global, SimdType simdType);
 
     static bool initStandardClasses(JSContext* cx, Handle<GlobalObject*> global);
     static bool initSelfHostingBuiltins(JSContext* cx, Handle<GlobalObject*> global,
