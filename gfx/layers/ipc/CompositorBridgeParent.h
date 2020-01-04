@@ -48,6 +48,7 @@ class CancelableRunnable;
 namespace gfx {
 class DrawTarget;
 class GPUProcessManager;
+class GPUParent;
 } 
 
 namespace ipc {
@@ -210,6 +211,7 @@ class CompositorBridgeParent final : public PCompositorBridgeParent,
   friend class CompositorThreadHolder;
   friend class InProcessCompositorSession;
   friend class gfx::GPUProcessManager;
+  friend class gfx::GPUParent;
 
 public:
   explicit CompositorBridgeParent(CSSToLayoutDeviceScale aScale,
@@ -371,9 +373,6 @@ public:
   void NotifyShadowTreeTransaction(uint64_t aId, bool aIsFirstPaint,
       bool aScheduleComposite, uint32_t aPaintSequenceNumber,
       bool aIsRepeatTransaction, bool aHitTestUpdate);
-
-  void UpdatePaintTime(LayerTransactionParent* aLayerTree,
-                       const TimeDuration& aPaintTime) override;
 
   
 
@@ -632,8 +631,6 @@ protected:
   
   
   RefPtr<CompositorBridgeParent> mSelfRef;
-
-  TimeDuration mPaintTime;
 
 #if defined(XP_WIN) || defined(MOZ_WIDGET_GTK)
   
