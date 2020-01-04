@@ -1686,10 +1686,10 @@ struct nsStyleText {
   uint8_t mControlCharacterVisibility;  
   int32_t mTabSize;                     
 
-  nscoord mWordSpacing;                 
-  nsStyleCoord  mLetterSpacing;         
-  nsStyleCoord  mLineHeight;            
-  nsStyleCoord  mTextIndent;            
+  nsStyleCoord mWordSpacing;            
+  nsStyleCoord mLetterSpacing;          
+  nsStyleCoord mLineHeight;             
+  nsStyleCoord mTextIndent;             
 
   RefPtr<nsCSSShadowArray> mTextShadow; 
 
