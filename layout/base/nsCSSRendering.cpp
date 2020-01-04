@@ -5281,6 +5281,14 @@ nsImageRenderer::DrawBorderImageComponent(nsPresContext*       aPresContext,
     nsCOMPtr<imgIContainer> subImage;
 
     
+    
+    
+    
+    
+    
+    uint32_t drawFlags = ConvertImageRendererToDrawFlags(mFlags) |
+                           imgIContainer::FLAG_FORCE_PRESERVEASPECTRATIO_NONE;
+    
     nsIntRect srcRect(aSrc.x, aSrc.y, aSrc.width, aSrc.height);
     if (mType == eStyleImageType_Image) {
       if ((subImage = mImage->GetSubImage(aIndex)) == nullptr) {
@@ -5319,7 +5327,7 @@ nsImageRenderer::DrawBorderImageComponent(nsPresContext*       aPresContext,
                                             filter,
                                             aFill, aDirtyRect,
                                             nullptr,
-                                            ConvertImageRendererToDrawFlags(mFlags));
+                                            drawFlags);
     }
 
     nsRect tile = ComputeTile(aFill, aHFill, aVFill, aUnitSize);
@@ -5328,7 +5336,7 @@ nsImageRenderer::DrawBorderImageComponent(nsPresContext*       aPresContext,
                                     subImage,
                                     filter,
                                     tile, aFill, tile.TopLeft(), aDirtyRect,
-                                    ConvertImageRendererToDrawFlags(mFlags));
+                                    drawFlags);
   }
 
   nsRect destTile = RequiresScaling(aFill, aHFill, aVFill, aUnitSize)

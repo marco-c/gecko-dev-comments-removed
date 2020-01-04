@@ -828,15 +828,32 @@ VectorImage::Draw(gfxContext* aContext,
   AutoRestore<bool> autoRestoreIsDrawing(mIsDrawing);
   mIsDrawing = true;
 
+  Maybe<SVGImageContext> svgContext;
+  
+  
+  
+  
+  
+  if ((aFlags & FLAG_FORCE_PRESERVEASPECTRATIO_NONE) && aSVGContext.isSome()) {
+    Maybe<SVGPreserveAspectRatio> aspectRatio =
+      Some(SVGPreserveAspectRatio(SVG_PRESERVEASPECTRATIO_NONE,
+                                  SVG_MEETORSLICE_UNKNOWN));
+    svgContext =
+      Some(SVGImageContext(aSVGContext->GetViewportSize(),
+                           aspectRatio));
+  } else {
+    svgContext = aSVGContext;
+  }
+
   float animTime =
     (aWhichFrame == FRAME_FIRST) ? 0.0f
                                  : mSVGDocumentWrapper->GetCurrentTime();
-  AutoSVGRenderingState autoSVGState(aSVGContext, animTime,
+  AutoSVGRenderingState autoSVGState(svgContext, animTime,
                                      mSVGDocumentWrapper->GetRootSVGElem());
 
-  
+
   SVGDrawingParameters params(aContext, aSize, aRegion, aFilter,
-                              aSVGContext, animTime, aFlags);
+                              svgContext, animTime, aFlags);
 
   if (aFlags & FLAG_BYPASS_SURFACE_CACHE) {
     CreateSurfaceAndShow(params);
