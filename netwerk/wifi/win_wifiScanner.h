@@ -14,6 +14,8 @@ class nsWifiAccessPoint;
 
 class WindowsWifiScannerInterface {
 public:
+  virtual ~WindowsWifiScannerInterface() {}
+
   virtual nsresult GetAccessPointsFromWLAN(nsCOMArray<nsWifiAccessPoint> &accessPoints) = 0;
 };
 
