@@ -262,13 +262,13 @@ nsresult
 nsXBLWindowKeyHandler::WalkHandlers(nsIDOMKeyEvent* aKeyEvent, nsIAtom* aEventType)
 {
   bool prevent;
-  aKeyEvent->GetDefaultPrevented(&prevent);
+  aKeyEvent->AsEvent()->GetDefaultPrevented(&prevent);
   if (prevent)
     return NS_OK;
 
   bool trustedEvent = false;
   
-  aKeyEvent->GetIsTrusted(&trustedEvent);
+  aKeyEvent->AsEvent()->GetIsTrusted(&trustedEvent);
 
   if (!trustedEvent)
     return NS_OK;
@@ -281,7 +281,7 @@ nsXBLWindowKeyHandler::WalkHandlers(nsIDOMKeyEvent* aKeyEvent, nsIAtom* aEventTy
   if (!el) {
     if (mUserHandler) {
       WalkHandlersInternal(aKeyEvent, aEventType, mUserHandler, true);
-      aKeyEvent->GetDefaultPrevented(&prevent);
+      aKeyEvent->AsEvent()->GetDefaultPrevented(&prevent);
       if (prevent)
         return NS_OK; 
     }
@@ -322,14 +322,14 @@ void
 nsXBLWindowKeyHandler::HandleEventOnCapture(nsIDOMKeyEvent* aEvent)
 {
   WidgetKeyboardEvent* widgetEvent =
-    aEvent->GetInternalNSEvent()->AsKeyboardEvent();
+    aEvent->AsEvent()->GetInternalNSEvent()->AsKeyboardEvent();
 
   if (widgetEvent->mFlags.mNoCrossProcessBoundaryForwarding) {
     return;
   }
 
   nsCOMPtr<mozilla::dom::Element> originalTarget =
-    do_QueryInterface(aEvent->GetInternalNSEvent()->originalTarget);
+    do_QueryInterface(aEvent->AsEvent()->GetInternalNSEvent()->originalTarget);
   if (!EventStateManager::IsRemoteTarget(originalTarget)) {
     return;
   }
@@ -353,7 +353,7 @@ nsXBLWindowKeyHandler::HandleEventOnCapture(nsIDOMKeyEvent* aEvent)
     
     
     
-    aEvent->StopPropagation();
+    aEvent->AsEvent()->StopPropagation();
   }
 }
 
@@ -478,7 +478,7 @@ nsXBLWindowKeyHandler::WalkHandlersAndExecute(
   
   for (nsXBLPrototypeHandler *currHandler = aHandler; currHandler;
        currHandler = currHandler->GetNextHandler()) {
-    bool stopped = aKeyEvent->IsDispatchStopped();
+    bool stopped = aKeyEvent->AsEvent()->IsDispatchStopped();
     if (stopped) {
       
       return false;
@@ -552,7 +552,7 @@ nsXBLWindowKeyHandler::WalkHandlersAndExecute(
       return true;
     }
 
-    rv = currHandler->ExecuteHandler(piTarget, aKeyEvent);
+    rv = currHandler->ExecuteHandler(piTarget, aKeyEvent->AsEvent());
     if (NS_SUCCEEDED(rv)) {
       return true;
     }
@@ -565,7 +565,7 @@ nsXBLWindowKeyHandler::WalkHandlersAndExecute(
   
   if (!aIgnoreModifierState.mOS) {
     WidgetKeyboardEvent* keyEvent =
-      aKeyEvent->GetInternalNSEvent()->AsKeyboardEvent();
+      aKeyEvent->AsEvent()->GetInternalNSEvent()->AsKeyboardEvent();
     if (keyEvent && keyEvent->IsOS()) {
       IgnoreModifierState ignoreModifierState(aIgnoreModifierState);
       ignoreModifierState.mOS = true;
@@ -582,7 +582,7 @@ bool
 nsXBLWindowKeyHandler::HasHandlerForEvent(nsIDOMKeyEvent* aEvent,
                                           bool* aOutReservedForChrome)
 {
-  if (!aEvent->InternalDOMEvent()->IsTrusted()) {
+  if (!aEvent->AsEvent()->InternalDOMEvent()->IsTrusted()) {
     return false;
   }
 
@@ -596,7 +596,7 @@ nsXBLWindowKeyHandler::HasHandlerForEvent(nsIDOMKeyEvent* aEvent,
   }
 
   nsAutoString eventType;
-  aEvent->GetType(eventType);
+  aEvent->AsEvent()->GetType(eventType);
   nsCOMPtr<nsIAtom> eventTypeAtom = do_GetAtom(eventType);
   NS_ENSURE_TRUE(eventTypeAtom, false);
 

@@ -34,6 +34,7 @@
 #include "mozilla/TextEvents.h"
 #include "mozilla/dom/Element.h"        
 #include "mozilla/dom/Text.h"
+#include "mozilla/dom/Event.h"
 #include "mozilla/mozalloc.h"           
 #include "nsAString.h"                  
 #include "nsCCUncollectableMarker.h"    
@@ -4615,7 +4616,7 @@ nsEditor::HandleKeyPressEvent(nsIDOMKeyEvent* aKeyEvent)
   
 
   WidgetKeyboardEvent* nativeKeyEvent =
-    aKeyEvent->GetInternalNSEvent()->AsKeyboardEvent();
+    aKeyEvent->AsEvent()->GetInternalNSEvent()->AsKeyboardEvent();
   NS_ENSURE_TRUE(nativeKeyEvent, NS_ERROR_UNEXPECTED);
   NS_ASSERTION(nativeKeyEvent->mMessage == eKeyPress,
                "HandleKeyPressEvent gets non-keypress event");
@@ -4625,7 +4626,7 @@ nsEditor::HandleKeyPressEvent(nsIDOMKeyEvent* aKeyEvent)
     
     
     if (nativeKeyEvent->keyCode == nsIDOMKeyEvent::DOM_VK_BACK_SPACE) {
-      aKeyEvent->PreventDefault();
+      aKeyEvent->AsEvent()->PreventDefault();
     }
     return NS_OK;
   }
@@ -4636,7 +4637,7 @@ nsEditor::HandleKeyPressEvent(nsIDOMKeyEvent* aKeyEvent)
     case nsIDOMKeyEvent::DOM_VK_SHIFT:
     case nsIDOMKeyEvent::DOM_VK_CONTROL:
     case nsIDOMKeyEvent::DOM_VK_ALT:
-      aKeyEvent->PreventDefault(); 
+      aKeyEvent->AsEvent()->PreventDefault(); 
       return NS_OK;
     case nsIDOMKeyEvent::DOM_VK_BACK_SPACE:
       if (nativeKeyEvent->IsControl() || nativeKeyEvent->IsAlt() ||
@@ -4644,7 +4645,7 @@ nsEditor::HandleKeyPressEvent(nsIDOMKeyEvent* aKeyEvent)
         return NS_OK;
       }
       DeleteSelection(nsIEditor::ePrevious, nsIEditor::eStrip);
-      aKeyEvent->PreventDefault(); 
+      aKeyEvent->AsEvent()->PreventDefault(); 
       return NS_OK;
     case nsIDOMKeyEvent::DOM_VK_DELETE:
       
@@ -4656,7 +4657,7 @@ nsEditor::HandleKeyPressEvent(nsIDOMKeyEvent* aKeyEvent)
         return NS_OK;
       }
       DeleteSelection(nsIEditor::eNext, nsIEditor::eStrip);
-      aKeyEvent->PreventDefault(); 
+      aKeyEvent->AsEvent()->PreventDefault(); 
       return NS_OK;
   }
   return NS_OK;

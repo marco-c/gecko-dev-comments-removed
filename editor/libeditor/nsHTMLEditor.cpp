@@ -617,7 +617,7 @@ nsHTMLEditor::HandleKeyPressEvent(nsIDOMKeyEvent* aKeyEvent)
   }
 
   WidgetKeyboardEvent* nativeKeyEvent =
-    aKeyEvent->GetInternalNSEvent()->AsKeyboardEvent();
+    aKeyEvent->AsEvent()->GetInternalNSEvent()->AsKeyboardEvent();
   NS_ENSURE_TRUE(nativeKeyEvent, NS_ERROR_UNEXPECTED);
   NS_ASSERTION(nativeKeyEvent->mMessage == eKeyPress,
                "HandleKeyPressEvent gets non-keypress event");
@@ -676,12 +676,12 @@ nsHTMLEditor::HandleKeyPressEvent(nsIDOMKeyEvent* aKeyEvent)
       }
       NS_ENSURE_SUCCESS(rv, rv);
       if (handled) {
-        return aKeyEvent->PreventDefault(); 
+        return aKeyEvent->AsEvent()->PreventDefault(); 
       }
       if (nativeKeyEvent->IsShift()) {
         return NS_OK; 
       }
-      aKeyEvent->PreventDefault();
+      aKeyEvent->AsEvent()->PreventDefault();
       return TypedText(NS_LITERAL_STRING("\t"), eTypedText);
     }
     case nsIDOMKeyEvent::DOM_VK_RETURN:
@@ -689,7 +689,7 @@ nsHTMLEditor::HandleKeyPressEvent(nsIDOMKeyEvent* aKeyEvent)
           nativeKeyEvent->IsMeta() || nativeKeyEvent->IsOS()) {
         return NS_OK;
       }
-      aKeyEvent->PreventDefault(); 
+      aKeyEvent->AsEvent()->PreventDefault(); 
       if (nativeKeyEvent->IsShift() && !IsPlaintextEditor()) {
         
         return TypedText(EmptyString(), eTypedBR);
@@ -706,7 +706,7 @@ nsHTMLEditor::HandleKeyPressEvent(nsIDOMKeyEvent* aKeyEvent)
     
     return NS_OK;
   }
-  aKeyEvent->PreventDefault();
+  aKeyEvent->AsEvent()->PreventDefault();
   nsAutoString str(nativeKeyEvent->charCode);
   return TypedText(str, eTypedText);
 }

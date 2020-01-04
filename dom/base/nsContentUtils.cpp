@@ -4955,13 +4955,13 @@ nsContentUtils::GetAccelKeyCandidates(nsIDOMKeyEvent* aDOMKeyEvent,
   NS_PRECONDITION(aCandidates.IsEmpty(), "aCandidates must be empty");
 
   nsAutoString eventType;
-  aDOMKeyEvent->GetType(eventType);
+  aDOMKeyEvent->AsEvent()->GetType(eventType);
   
   if (!eventType.EqualsLiteral("keypress"))
     return;
 
   WidgetKeyboardEvent* nativeKeyEvent =
-    aDOMKeyEvent->GetInternalNSEvent()->AsKeyboardEvent();
+    aDOMKeyEvent->AsEvent()->GetInternalNSEvent()->AsKeyboardEvent();
   if (nativeKeyEvent) {
     NS_ASSERTION(nativeKeyEvent->mClass == eKeyboardEventClass,
                  "wrong type of native event");

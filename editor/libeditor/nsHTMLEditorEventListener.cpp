@@ -61,7 +61,7 @@ nsHTMLEditorEventListener::MouseUp(nsIDOMMouseEvent* aMouseEvent)
   nsHTMLEditor* htmlEditor = GetHTMLEditor();
 
   nsCOMPtr<nsIDOMEventTarget> target;
-  nsresult rv = aMouseEvent->GetTarget(getter_AddRefs(target));
+  nsresult rv = aMouseEvent->AsEvent()->GetTarget(getter_AddRefs(target));
   NS_ENSURE_SUCCESS(rv, rv);
   NS_ENSURE_TRUE(target, NS_ERROR_NULL_POINTER);
   nsCOMPtr<nsIDOMElement> element = do_QueryInterface(target);
@@ -80,7 +80,7 @@ nsHTMLEditorEventListener::MouseDown(nsIDOMMouseEvent* aMouseEvent)
   nsHTMLEditor* htmlEditor = GetHTMLEditor();
   
   
-  if (!htmlEditor->IsAcceptableInputEvent(aMouseEvent)) {
+  if (!htmlEditor->IsAcceptableInputEvent(aMouseEvent->AsEvent())) {
     
     
     
@@ -103,7 +103,7 @@ nsHTMLEditorEventListener::MouseDown(nsIDOMMouseEvent* aMouseEvent)
   NS_ENSURE_SUCCESS(rv, rv);
 
   nsCOMPtr<nsIDOMEventTarget> target;
-  rv = aMouseEvent->GetExplicitOriginalTarget(getter_AddRefs(target));
+  rv = aMouseEvent->AsEvent()->GetExplicitOriginalTarget(getter_AddRefs(target));
   NS_ENSURE_SUCCESS(rv, rv);
   NS_ENSURE_TRUE(target, NS_ERROR_NULL_POINTER);
   nsCOMPtr<nsIDOMElement> element = do_QueryInterface(target);
@@ -190,7 +190,7 @@ nsHTMLEditorEventListener::MouseDown(nsIDOMMouseEvent* aMouseEvent)
     
     
     if (element || isContextClick) {
-      aMouseEvent->PreventDefault();
+      aMouseEvent->AsEvent()->PreventDefault();
       return NS_OK;
     }
   } else if (!isContextClick && buttonNumber == 0 && clickCount == 1) {
@@ -198,7 +198,7 @@ nsHTMLEditorEventListener::MouseDown(nsIDOMMouseEvent* aMouseEvent)
     int32_t clientX, clientY;
     aMouseEvent->GetClientX(&clientX);
     aMouseEvent->GetClientY(&clientY);
-    htmlEditor->MouseDown(clientX, clientY, element, aMouseEvent);
+    htmlEditor->MouseDown(clientX, clientY, element, aMouseEvent->AsEvent());
   }
 
   return nsEditorEventListener::MouseDown(aMouseEvent);
@@ -208,7 +208,7 @@ nsresult
 nsHTMLEditorEventListener::MouseClick(nsIDOMMouseEvent* aMouseEvent)
 {
   nsCOMPtr<nsIDOMEventTarget> target;
-  nsresult rv = aMouseEvent->GetTarget(getter_AddRefs(target));
+  nsresult rv = aMouseEvent->AsEvent()->GetTarget(getter_AddRefs(target));
   NS_ENSURE_SUCCESS(rv, rv);
   NS_ENSURE_TRUE(target, NS_ERROR_NULL_POINTER);
   nsCOMPtr<nsIDOMElement> element = do_QueryInterface(target);
