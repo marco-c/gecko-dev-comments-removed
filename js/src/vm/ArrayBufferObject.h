@@ -10,6 +10,7 @@
 #include "jsobj.h"
 
 #include "builtin/TypedObjectConstants.h"
+#include "js/GCHashTable.h"
 #include "vm/Runtime.h"
 #include "vm/SharedMem.h"
 
@@ -501,6 +502,12 @@ class InnerViewTable
     friend class ArrayBufferObject;
 
   private:
+    struct MapGCPolicy {
+        static bool needsSweep(JSObject** key, ViewVector* value) {
+            return InnerViewTable::sweepEntry(key, *value);
+        }
+    };
+
     
     
     
@@ -509,10 +516,11 @@ class InnerViewTable
     
     
     
-    typedef HashMap<JSObject*,
-                    ViewVector,
-                    MovableCellHasher<JSObject*>,
-                    SystemAllocPolicy> Map;
+    typedef GCHashMap<JSObject*,
+                      ViewVector,
+                      MovableCellHasher<JSObject*>,
+                      SystemAllocPolicy,
+                      MapGCPolicy> Map;
 
     
     
@@ -529,7 +537,7 @@ class InnerViewTable
     bool nurseryKeysValid;
 
     
-    bool sweepEntry(JSObject** pkey, ViewVector& views);
+    static bool sweepEntry(JSObject** pkey, ViewVector& views);
 
     bool addView(JSContext* cx, ArrayBufferObject* obj, ArrayBufferViewObject* view);
     ViewVector* maybeViewsUnbarriered(ArrayBufferObject* obj);
@@ -542,8 +550,8 @@ class InnerViewTable
 
     
     
-    void sweep(JSRuntime* rt);
-    void sweepAfterMinorGC(JSRuntime* rt);
+    void sweep();
+    void sweepAfterMinorGC();
 
     bool needsSweepAfterMinorGC() {
         return !nurseryKeys.empty() || !nurseryKeysValid;
