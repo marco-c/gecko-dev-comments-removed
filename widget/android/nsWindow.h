@@ -77,6 +77,7 @@ public:
     
     
 
+    using nsBaseWidget::Create; 
     NS_IMETHOD Create(nsIWidget* aParent,
                       nsNativeWidget aNativeParent,
                       const LayoutDeviceIntRect& aRect,

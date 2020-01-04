@@ -145,7 +145,7 @@ nsresult nsWebShellWindow::Initialize(nsIXULWindow* aParent,
 
   
   
-  LayoutDeviceIntRect r(initialX, initialY, aInitialWidth, aInitialHeight);
+  DesktopIntRect deskRect(initialX, initialY, aInitialWidth, aInitialHeight);
 
   
   mWindow = do_CreateInstance(kWindowCID, &rv);
@@ -173,8 +173,10 @@ nsresult nsWebShellWindow::Initialize(nsIXULWindow* aParent,
   mWindow->SetWidgetListener(this);
   mWindow->Create((nsIWidget *)parentWidget,          
                   nullptr,                            
-                  r,                                  
+                  deskRect,                           
                   &widgetInitData);                   
+
+  LayoutDeviceIntRect r;
   mWindow->GetClientBounds(r);
   
   

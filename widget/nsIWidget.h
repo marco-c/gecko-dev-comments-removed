@@ -349,6 +349,7 @@ class nsIWidget : public nsISupports {
     typedef mozilla::LayoutDeviceIntRegion LayoutDeviceIntRegion;
     typedef mozilla::LayoutDeviceIntSize LayoutDeviceIntSize;
     typedef mozilla::ScreenIntPoint ScreenIntPoint;
+    typedef mozilla::DesktopIntRect DesktopIntRect;
 
     
     struct ThemeGeometry {
@@ -408,10 +409,32 @@ class nsIWidget : public nsISupports {
 
 
 
+
+
     NS_IMETHOD Create(nsIWidget* aParent,
                       nsNativeWidget aNativeParent,
                       const LayoutDeviceIntRect& aRect,
                       nsWidgetInitData* aInitData = nullptr) = 0;
+
+    
+
+
+
+
+
+
+
+    NS_IMETHOD Create(nsIWidget* aParent,
+                      nsNativeWidget aNativeParent,
+                      const DesktopIntRect& aRect,
+                      nsWidgetInitData* aInitData = nullptr)
+    {
+        
+        
+        mozilla::DesktopToLayoutDeviceScale scale(GetDefaultScaleInternal());
+        LayoutDeviceIntRect devPixRect = RoundedToInt(aRect * scale);
+        return Create(aParent, aNativeParent, devPixRect, aInitData);
+    }
 
     
 

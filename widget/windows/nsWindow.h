@@ -95,6 +95,7 @@ public:
   using nsWindowBase::DispatchPluginEvent;
 
   
+  using nsWindowBase::Create; 
   NS_IMETHOD              Create(nsIWidget* aParent,
                                  nsNativeWidget aNativeParent,
                                  const LayoutDeviceIntRect& aRect,
