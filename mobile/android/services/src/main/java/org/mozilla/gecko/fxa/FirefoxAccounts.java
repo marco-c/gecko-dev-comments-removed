@@ -17,7 +17,6 @@ import org.mozilla.gecko.fxa.authenticator.AndroidFxAccount;
 import org.mozilla.gecko.fxa.login.State;
 import org.mozilla.gecko.fxa.sync.FxAccountSyncAdapter;
 import org.mozilla.gecko.fxa.sync.FxAccountSyncStatusHelper;
-import org.mozilla.gecko.fxa.tasks.FxAccountCodeResender;
 import org.mozilla.gecko.sync.ThreadPool;
 import org.mozilla.gecko.sync.Utils;
 
@@ -26,7 +25,6 @@ import android.accounts.AccountManager;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.res.Resources;
-import android.os.AsyncTask;
 import android.os.Bundle;
 
 
@@ -302,27 +300,5 @@ public class FirefoxAccounts {
     final String OS = AppConstants.OS_TARGET;
     final String LOCALE = Utils.getLanguageTag(locale);
     return res.getString(R.string.fxaccount_link_old_firefox, VERSION, OS, LOCALE);
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-  public static boolean resendVerificationEmail(final Context context) {
-    final Account account = getFirefoxAccount(context);
-    if (account == null) {
-      return false;
-    }
-
-    final AndroidFxAccount fxAccount = new AndroidFxAccount(context, account);
-    FxAccountCodeResender.resendCode(context, fxAccount);
-    return true;
   }
 }

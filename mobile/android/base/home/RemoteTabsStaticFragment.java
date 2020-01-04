@@ -107,8 +107,9 @@ public class RemoteTabsStaticFragment extends HomeFragment implements OnClickLis
             final EnumSet<OnUrlOpenListener.Flags> flags = EnumSet.noneOf(OnUrlOpenListener.Flags.class);
             mUrlOpenListener.onUrlOpen(url, flags);
         } else if (id == R.id.remote_tabs_needs_verification_resend_email) {
-            
-            FirefoxAccounts.resendVerificationEmail(getActivity());
+            final Intent intent = new Intent(FxAccountConstants.ACTION_FXA_CONFIRM_ACCOUNT);
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(intent);
         } else if (id == R.id.remote_tabs_needs_verification_help) {
             
             final EnumSet<OnUrlOpenListener.Flags> flags = EnumSet.noneOf(OnUrlOpenListener.Flags.class);
