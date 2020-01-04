@@ -650,8 +650,7 @@ class GCRuntime
 
     uint64_t nextCellUniqueId() {
         MOZ_ASSERT(nextCellUniqueId_ > 0);
-        uint64_t uid = ++nextCellUniqueId_;
-        return uid;
+        return nextCellUniqueId_++;
     }
 
   public:
@@ -1031,7 +1030,7 @@ class GCRuntime
     size_t maxMallocBytes;
 
     
-    mozilla::Atomic<uint64_t, mozilla::SequentiallyConsistent> nextCellUniqueId_;
+    uint64_t nextCellUniqueId_;
 
     
 
