@@ -223,8 +223,7 @@ AutoGCRooter::trace(JSTracer* trc)
  void
 AutoGCRooter::traceAll(JSTracer* trc)
 {
-    for (AutoGCRooter* gcr = trc->runtime()->contextFromMainThread()->roots.autoGCRooters_; gcr; gcr = gcr->down)
-        gcr->trace(trc);
+    traceAllInContext(trc->runtime()->contextFromMainThread(), trc);
 }
 
  void
@@ -272,50 +271,20 @@ PropertyDescriptor::trace(JSTracer* trc)
 }
 
 void
-js::gc::GCRuntime::traceRuntimeForMajorGC(JSTracer* trc, AutoLockForExclusiveAccess& lock)
-{
-    traceRuntimeCommon(trc, MarkRuntime, lock);
-}
-
-void
-js::gc::GCRuntime::traceRuntimeForMinorGC(JSTracer* trc, AutoLockForExclusiveAccess& lock)
-{
-    traceRuntimeCommon(trc, TraceRuntime, lock);
-}
-
-void
-js::TraceRuntime(JSTracer* trc)
-{
-    MOZ_ASSERT(!trc->isMarkingTracer());
-
-    JSRuntime* rt = trc->runtime();
-    rt->gc.evictNursery();
-    AutoPrepareForTracing prep(rt->contextFromMainThread(), WithAtoms);
-    gcstats::AutoPhase ap(rt->gc.stats, gcstats::PHASE_TRACE_HEAP);
-    rt->gc.traceRuntime(trc, prep.session().lock);
-}
-
-void
-js::gc::GCRuntime::traceRuntime(JSTracer* trc, AutoLockForExclusiveAccess& lock)
-{
-    traceRuntimeCommon(trc, TraceRuntime, lock);
-}
-
-void
-js::gc::GCRuntime::traceRuntimeCommon(JSTracer* trc, TraceOrMarkRuntime traceOrMark,
-                                      AutoLockForExclusiveAccess& lock)
+js::gc::GCRuntime::markRuntime(JSTracer* trc, TraceOrMarkRuntime traceOrMark,
+                               AutoLockForExclusiveAccess& lock)
 {
     gcstats::AutoPhase ap(stats, gcstats::PHASE_MARK_ROOTS);
 
+    MOZ_ASSERT(traceOrMark == TraceRuntime || traceOrMark == MarkRuntime);
+
     MOZ_ASSERT(!rt->mainThread.suppressGC);
 
-    
     if (traceOrMark == MarkRuntime) {
         gcstats::AutoPhase ap(stats, gcstats::PHASE_MARK_CCWS);
         JSCompartment::traceIncomingCrossCompartmentEdgesForZoneGC(trc);
     }
 
-    
     {
         gcstats::AutoPhase ap(stats, gcstats::PHASE_MARK_ROOTERS);
 
@@ -334,7 +303,6 @@ js::gc::GCRuntime::traceRuntimeCommon(JSTracer* trc, TraceOrMarkRuntime traceOrM
         MarkPersistentRooted(rt, trc);
     }
 
-    
     if (!rt->isBeingDestroyed() && !rt->isHeapMinorCollecting()) {
         gcstats::AutoPhase ap(stats, gcstats::PHASE_MARK_RUNTIME_DATA);
 
@@ -346,27 +314,20 @@ js::gc::GCRuntime::traceRuntimeCommon(JSTracer* trc, TraceOrMarkRuntime traceOrM
         }
     }
 
-    
     if (rt->isHeapMinorCollecting())
         jit::JitRuntime::MarkJitcodeGlobalTableUnconditionally(trc);
 
-    
-    
     rt->contextFromMainThread()->mark(trc);
 
-    
-    
     for (CompartmentsIter c(rt, SkipAtoms); !c.done(); c.next())
         c->traceRoots(trc, traceOrMark);
 
-    
     MarkInterpreterActivations(rt, trc);
+
     jit::MarkJitActivations(rt, trc);
 
-    
     rt->spsProfiler.trace(trc);
 
-    
     if (!rt->isHeapMinorCollecting()) {
         gcstats::AutoPhase ap(stats, gcstats::PHASE_MARK_EMBEDDING);
 
@@ -388,51 +349,6 @@ js::gc::GCRuntime::traceRuntimeCommon(JSTracer* trc, TraceOrMarkRuntime traceOrM
                 (*op)(trc, grayRootTracer.data);
         }
     }
-}
-
-#ifdef DEBUG
-class AssertNoRootsTracer : public JS::CallbackTracer
-{
-    void onChild(const JS::GCCellPtr& thing) override {
-        MOZ_CRASH("There should not be any roots after finishRoots");
-    }
-
-  public:
-    AssertNoRootsTracer(JSRuntime* rt, WeakMapTraceKind weakTraceKind)
-      : JS::CallbackTracer(rt, weakTraceKind)
-    {}
-};
-#endif 
-
-void
-js::gc::GCRuntime::finishRoots()
-{
-    rt->finishAtoms();
-
-    if (rootsHash.initialized())
-        rootsHash.clear();
-
-    rt->contextFromMainThread()->roots.finishPersistentRoots();
-
-    rt->finishSelfHosting();
-
-    for (CompartmentsIter c(rt, SkipAtoms); !c.done(); c.next())
-        c->finishRoots();
-
-#ifdef DEBUG
-    
-    
-    auto prior = grayRootTracer;
-
-    AssertNoRootsTracer trc(rt, TraceWeakMapKeysValues);
-    AutoPrepareForTracing prep(rt->contextFromMainThread(), WithAtoms);
-    gcstats::AutoPhase ap(rt->gc.stats, gcstats::PHASE_TRACE_HEAP);
-    traceRuntime(&trc, prep.session().lock);
-
-    
-    
-    grayRootTracer = prior;
-#endif 
 }
 
 

@@ -206,7 +206,7 @@ gc::GCRuntime::startVerifyPreBarriers()
     incrementalState = State::MarkRoots;
 
     
-    traceRuntime(trc, prep.session().lock);
+    markRuntime(trc, TraceRuntime, prep.session().lock);
 
     VerifyNode* node;
     node = trc->curnode;
@@ -509,7 +509,7 @@ CheckHeapTracer::check(AutoLockForExclusiveAccess& lock)
 {
     
     JS::AutoSuppressGCAnalysis nogc;
-    rt->gc.traceRuntime(this, lock);
+    rt->gc.markRuntime(this, GCRuntime::TraceRuntime, lock);
 
     while (!stack.empty()) {
         WorkItem item = stack.back();
