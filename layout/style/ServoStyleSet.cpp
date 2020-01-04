@@ -76,6 +76,17 @@ ServoStyleSet::EndUpdate()
 void
 ServoStyleSet::StartStyling(nsPresContext* aPresContext)
 {
+  MOZ_ASSERT(!mStylingStarted);
+
+  
+  
+  
+  
+  nsIContent* root = mPresContext->Document()->GetRootElement();
+  if (root) {
+    root->SetIsDirtyForServo();
+  }
+
   StyleDocument( false);
   mStylingStarted = true;
 }
