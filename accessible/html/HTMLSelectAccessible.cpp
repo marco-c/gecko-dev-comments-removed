@@ -114,34 +114,11 @@ HTMLSelectListAccessible::SetCurrentItem(Accessible* aItem)
                                true);
 }
 
-
-
-
-void
-HTMLSelectListAccessible::CacheChildren()
+bool
+HTMLSelectListAccessible::IsAcceptableChild(nsIContent* aEl) const
 {
-  
-  
-  
-  
-  for (nsIContent* childContent = mContent->GetFirstChild(); childContent;
-       childContent = childContent->GetNextSibling()) {
-    if (!childContent->IsHTMLElement()) {
-      continue;
-    }
-
-    if (childContent->IsAnyOfHTMLElements(nsGkAtoms::option,
-                                          nsGkAtoms::optgroup)) {
-
-      
-      RefPtr<Accessible> accessible =
-        GetAccService()->GetOrCreateAccessible(childContent, this);
-      if (accessible)
-        AppendChild(accessible);
-    }
-  }
+  return aEl->IsAnyOfHTMLElements(nsGkAtoms::option, nsGkAtoms::optgroup);
 }
-
 
 
 

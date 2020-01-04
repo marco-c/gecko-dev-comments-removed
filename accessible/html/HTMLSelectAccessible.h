@@ -51,10 +51,7 @@ public:
   virtual Accessible* CurrentItem() override;
   virtual void SetCurrentItem(Accessible* aItem) override;
 
-protected:
-
-  
-  virtual void CacheChildren() override;
+  virtual bool IsAcceptableChild(nsIContent* aEl) const override;
 };
 
 
