@@ -960,7 +960,7 @@ enum ESClassValue {
 };
 
 
-inline bool
+bool
 Unbox(JSContext* cx, JS::HandleObject obj, JS::MutableHandleValue vp);
 
 #ifdef DEBUG
