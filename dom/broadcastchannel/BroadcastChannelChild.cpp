@@ -59,8 +59,7 @@ BroadcastChannelChild::RecvNotify(const ClonedMessageData& aData)
   nsCOMPtr<EventTarget> eventTarget = do_QueryInterface(helper);
 
   
-  
-  if (!eventTarget || mBC->IsClosed()) {
+  if (!eventTarget) {
     return true;
   }
 
