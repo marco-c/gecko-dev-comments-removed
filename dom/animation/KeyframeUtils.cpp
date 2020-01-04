@@ -505,19 +505,6 @@ KeyframeUtils::GetAnimationPropertiesFromKeyframes(
         MOZ_ASSERT(values.Length() == 1,
                    "Longhand properties should produce a single"
                    " StyleAnimationValue");
-
-        
-        
-        
-        
-        
-        if (pair.mProperty == eCSSProperty_visibility) {
-          MOZ_ASSERT(values[0].mValue.GetUnit() ==
-                      StyleAnimationValue::eUnit_Enumerated,
-                    "unexpected unit");
-          values[0].mValue.SetIntValue(values[0].mValue.GetIntValue(),
-                                       StyleAnimationValue::eUnit_Visibility);
-        }
       }
 
       for (auto& value : values) {

@@ -98,6 +98,16 @@ public:
 
   static bool ValueToString(const nsSMILValue& aValue, nsAString& aString);
 
+  
+
+
+
+
+
+
+
+  static nsCSSProperty PropertyFromValue(const nsSMILValue& aValue);
+
 private:
   
   MOZ_CONSTEXPR nsSMILCSSValueType() {}
