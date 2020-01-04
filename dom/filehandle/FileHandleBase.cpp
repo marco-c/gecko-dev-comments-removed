@@ -359,7 +359,7 @@ FileHandleBase::CheckStateAndArgumentsForRead(uint64_t aSize, ErrorResult& aRv)
 
   
   if (!aSize) {
-    aRv.ThrowTypeError(MSG_INVALID_READ_SIZE);
+    aRv.ThrowTypeError<MSG_INVALID_READ_SIZE>();
     return false;
   }
 
