@@ -367,7 +367,10 @@ nsJSUtils::ResetTimeZone()
 
 bool nsAutoJSString::init(const JS::Value &v)
 {
-  JSContext* cx = nsContentUtils::RootingCx();
+  
+  
+  
+  JSContext* cx = danger::GetJSContext();
   if (!init(cx, v)) {
     JS_ClearPendingException(cx);
     return false;
