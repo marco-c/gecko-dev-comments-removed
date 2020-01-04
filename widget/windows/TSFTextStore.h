@@ -572,7 +572,8 @@ protected:
   
   
   
-  Selection mSelection;
+  
+  Selection mSelectionForTSF;
 
   
   

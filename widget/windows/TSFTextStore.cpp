@@ -1184,7 +1184,7 @@ TSFTextStore::TSFTextStore()
   , mLock(0)
   , mLockQueued(0)
   , mHandlingKeyMessage(0)
-  , mContentForTSF(mComposition, mSelection)
+  , mContentForTSF(mComposition, mSelectionForTSF)
   , mRequestedAttrValues(false)
   , mIsRecordingActionsWithoutLock(false)
   , mHasReturnedNoLayoutError(false)
@@ -1494,7 +1494,7 @@ TSFTextStore::RequestLock(DWORD dwLockFlags,
     return E_FAIL;
   }
   if (mDestroyed &&
-      (!mContentForTSF.IsInitialized() || mSelection.IsDirty())) {
+      (!mContentForTSF.IsInitialized() || mSelectionForTSF.IsDirty())) {
     MOZ_LOG(sTextStoreLog, LogLevel::Error,
       ("TSF: 0x%p   TSFTextStore::RequestLock() FAILED due to "
        "being destroyed and no information of the contents", this));
@@ -2099,7 +2099,7 @@ TSFTextStore::GetCurrentText(nsAString& aTextContent)
 TSFTextStore::Selection&
 TSFTextStore::CurrentSelection()
 {
-  if (mSelection.IsDirty()) {
+  if (mSelectionForTSF.IsDirty()) {
     MOZ_ASSERT(!mDestroyed);
     
     
@@ -2110,22 +2110,24 @@ TSFTextStore::CurrentSelection()
     WidgetQueryContentEvent querySelection(true, eQuerySelectedText, mWidget);
     mWidget->InitEvent(querySelection);
     DispatchEvent(querySelection);
-    NS_ENSURE_TRUE(querySelection.mSucceeded, mSelection);
+    if (NS_WARN_IF(!querySelection.mSucceeded)) {
+      return mSelectionForTSF;
+    }
 
-    mSelection.SetSelection(querySelection.mReply.mOffset,
-                            querySelection.mReply.mString.Length(),
-                            querySelection.mReply.mReversed,
-                            querySelection.GetWritingMode());
+    mSelectionForTSF.SetSelection(querySelection.mReply.mOffset,
+                                  querySelection.mReply.mString.Length(),
+                                  querySelection.mReply.mReversed,
+                                  querySelection.GetWritingMode());
   }
 
   MOZ_LOG(sTextStoreLog, LogLevel::Debug,
          ("TSF: 0x%p   TSFTextStore::CurrentSelection(): "
           "acpStart=%d, acpEnd=%d (length=%d), reverted=%s",
-          this, mSelection.StartOffset(), mSelection.EndOffset(),
-          mSelection.Length(),
-          GetBoolName(mSelection.IsReversed())));
+          this, mSelectionForTSF.StartOffset(), mSelectionForTSF.EndOffset(),
+          mSelectionForTSF.Length(),
+          GetBoolName(mSelectionForTSF.IsReversed())));
 
-  return mSelection;
+  return mSelectionForTSF;
 }
 
 static HRESULT
@@ -4123,12 +4125,12 @@ TSFTextStore::RecordCompositionStartAction(ITfCompositionView* aComposition,
            ("TSF: 0x%p   TSFTextStore::RecordCompositionStartAction() "
             "succeeded: restoring the committed string as composing string, "
             "mComposition={ mStart=%ld, mString.Length()=%ld, "
-            "mSelection={ acpStart=%ld, acpEnd=%ld, style.ase=%s, "
+            "mSelectionForTSF={ acpStart=%ld, acpEnd=%ld, style.ase=%s, "
             "style.fInterimChar=%s } }",
             this, mComposition.mStart, mComposition.mString.Length(),
-            mSelection.StartOffset(), mSelection.EndOffset(),
-            GetActiveSelEndName(mSelection.ActiveSelEnd()),
-            GetBoolName(mSelection.IsInterimChar())));
+            mSelectionForTSF.StartOffset(), mSelectionForTSF.EndOffset(),
+            GetActiveSelEndName(mSelectionForTSF.ActiveSelEnd()),
+            GetBoolName(mSelectionForTSF.IsInterimChar())));
     return S_OK;
   }
 
@@ -4162,12 +4164,12 @@ TSFTextStore::RecordCompositionStartAction(ITfCompositionView* aComposition,
   MOZ_LOG(sTextStoreLog, LogLevel::Info,
          ("TSF: 0x%p   TSFTextStore::RecordCompositionStartAction() succeeded: "
           "mComposition={ mStart=%ld, mString.Length()=%ld, "
-          "mSelection={ acpStart=%ld, acpEnd=%ld, style.ase=%s, "
+          "mSelectionForTSF={ acpStart=%ld, acpEnd=%ld, style.ase=%s, "
           "style.fInterimChar=%s } }",
           this, mComposition.mStart, mComposition.mString.Length(),
-          mSelection.StartOffset(), mSelection.EndOffset(),
-          GetActiveSelEndName(mSelection.ActiveSelEnd()),
-          GetBoolName(mSelection.IsInterimChar())));
+          mSelectionForTSF.StartOffset(), mSelectionForTSF.EndOffset(),
+          GetActiveSelEndName(mSelectionForTSF.ActiveSelEnd()),
+          GetBoolName(mSelectionForTSF.IsInterimChar())));
   return S_OK;
 }
 
@@ -4698,7 +4700,7 @@ TSFTextStore::NotifyTSFOfTextChange()
   }
 
   
-  mSelection.MarkDirty();
+  mSelectionForTSF.MarkDirty();
 
   
   
@@ -4793,10 +4795,11 @@ TSFTextStore::NotifyTSFOfSelectionChange()
 
   
   
-  if (!mSelection.SetSelection(mPendingSelectionChangeData.mOffset,
-                               mPendingSelectionChangeData.Length(),
-                               mPendingSelectionChangeData.mReversed,
-                               mPendingSelectionChangeData.GetWritingMode())) {
+  if (!mSelectionForTSF.SetSelection(
+                          mPendingSelectionChangeData.mOffset,
+                          mPendingSelectionChangeData.Length(),
+                          mPendingSelectionChangeData.mReversed,
+                          mPendingSelectionChangeData.GetWritingMode())) {
     mPendingSelectionChangeData.Clear();
     MOZ_LOG(sTextStoreLog, LogLevel::Debug,
            ("TSF: 0x%p   TSFTextStore::NotifyTSFOfSelectionChange(), "
