@@ -595,6 +595,25 @@ let consoleWatcher = {
         return;
     }
 
+    if (developerHUD._telemetry) {
+      
+      if (metric.name === 'errors' || metric.name === 'warnings' || metric.name === 'reflows') {
+        let value = target.metrics.get(metric.name);
+        metric.value = (value || 0) + 1;
+        target._logHistogram(metric);
+
+        
+        metric.skipTelemetry = true;
+
+        
+        
+        
+        if (!this._watching[metric.name]) {
+          target.metrics.set(metric.name, metric.value);
+        }
+      }
+    }
+
     if (!this._watching[metric.name]) {
       return;
     }
