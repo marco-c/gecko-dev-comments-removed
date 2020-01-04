@@ -138,12 +138,16 @@ PageAction.prototype = {
   
   handleClick(window) {
     let tab = window.gBrowser.selectedTab;
-    let popup = this.tabContext.get(tab).popup;
+    let popupURL = this.tabContext.get(tab).popup;
 
     this.tabManager.addActiveTabPermission(tab);
 
-    if (popup) {
-      openPanel(this.getButton(window), popup, this.extension);
+    
+    
+    
+    
+    if (popupURL) {
+      new PanelPopup(this.extension, this.getButton(window), popupURL);
     } else {
       this.emit("click", tab);
     }

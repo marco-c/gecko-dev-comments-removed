@@ -4,6 +4,10 @@
 
 
 
+
+
+
+
 var {AppConstants} = Cu.import("resource://gre/modules/AppConstants.jsm");
 var {CustomizableUI} = Cu.import("resource:///modules/CustomizableUI.jsm");
 
@@ -39,12 +43,30 @@ var focusWindow = Task.async(function* focusWindow(win) {
   yield promise;
 });
 
+function getBrowserActionPopup(extension, win = window) {
+  return win.document.getElementById("customizationui-widget-panel");
+}
+
 function clickBrowserAction(extension, win = window) {
   let browserActionId = makeWidgetId(extension.id) + "-browser-action";
   let elem = win.document.getElementById(browserActionId);
 
   EventUtils.synthesizeMouseAtCenter(elem, {}, win);
   return new Promise(SimpleTest.executeSoon);
+}
+
+function closeBrowserAction(extension, win = window) {
+  let node = getBrowserActionPopup(extension, win);
+  if (node) {
+    node.hidePopup();
+  }
+
+  return Promise.resolve();
+}
+
+function getPageActionPopup(extension, win = window) {
+  let panelId = makeWidgetId(extension.id) + "-panel";
+  return win.document.getElementById(panelId);
 }
 
 function clickPageAction(extension, win = window) {
@@ -63,3 +85,13 @@ function clickPageAction(extension, win = window) {
   EventUtils.synthesizeMouseAtCenter(elem, {}, win);
   return new Promise(SimpleTest.executeSoon);
 }
+
+function closePageAction(extension, win = window) {
+  let node = getPageActionPopup(extension, win);
+  if (node) {
+    node.hidePopup();
+  }
+
+  return Promise.resolve();
+}
+
