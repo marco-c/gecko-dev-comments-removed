@@ -3,11 +3,11 @@
 
 "use strict";
 
-var { classes: Cc, interfaces: Ci, utils: Cu } = Components;
-
+var Cu = Components.utils;
 const loaders = Cu.import("resource://gre/modules/commonjs/toolkit/loader.js", {});
 const { devtools } = Cu.import("resource://devtools/shared/Loader.jsm", {});
 const { joinURI } = devtools.require("devtools/shared/path");
+const { assert } = devtools.require("devtools/shared/DevToolsUtils");
 const Services = devtools.require("Services");
 Cu.import("resource://gre/modules/AppConstants.jsm");
 
@@ -47,8 +47,13 @@ function clearCache() {
 
 
 
-function BrowserLoader(baseURI, window) {
-  const browserLoaderBuilder = new BrowserLoaderBuilder(baseURI, window);
+
+
+
+
+
+function BrowserLoader(options) {
+  const browserLoaderBuilder = new BrowserLoaderBuilder(options);
   return {
     loader: browserLoaderBuilder.loader,
     require: browserLoaderBuilder.require
@@ -64,16 +69,22 @@ function BrowserLoader(baseURI, window) {
 
 
 
-function BrowserLoaderBuilder(baseURI, window) {
+
+
+
+function BrowserLoaderBuilder({ baseURI, window, useOnlyShared }) {
+  assert(!!baseURI !== !!useOnlyShared,
+    "Cannot use both `baseURI` and `useOnlyShared`.");
+
   const loaderOptions = devtools.require("@loader/options");
   const dynamicPaths = {};
   const componentProxies = new Map();
   const hotReloadEnabled = Services.prefs.getBoolPref("devtools.loader.hotreload");
 
-  if(AppConstants.DEBUG || AppConstants.DEBUG_JS_MODULES) {
+  if (AppConstants.DEBUG || AppConstants.DEBUG_JS_MODULES) {
     dynamicPaths["devtools/client/shared/vendor/react"] =
       "resource://devtools/client/shared/vendor/react-dev";
-  };
+  }
 
   const opts = {
     id: "browser-loader",
@@ -87,7 +98,7 @@ function BrowserLoaderBuilder(baseURI, window) {
         return uri.startsWith(dir);
       }).length > 0;
 
-      if (!uri.startsWith(baseURI) && !isBrowserDir) {
+      if ((useOnlyShared || !uri.startsWith(baseURI)) && !isBrowserDir) {
         return devtools.require(uri);
       }
 
@@ -123,7 +134,7 @@ function BrowserLoaderBuilder(baseURI, window) {
     }
   };
 
-  if(hotReloadEnabled) {
+  if (hotReloadEnabled) {
     opts.loadModuleHook = (module, require) => {
       const { uri, exports } = module;
 
