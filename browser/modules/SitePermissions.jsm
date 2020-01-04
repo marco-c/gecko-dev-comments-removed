@@ -6,6 +6,8 @@ this.EXPORTED_SYMBOLS = [ "SitePermissions" ];
 
 Components.utils.import("resource://gre/modules/Services.jsm");
 
+const GROUP_PAGE_FUNCTIONALITY = "pagefunctionality";
+const GROUP_SYSTEM_ACCESS = "systemaccess";
 let gStringBundle =
   Services.strings.createBundle("chrome://browser/locale/sitePermissions.properties");
 
@@ -26,7 +28,32 @@ this.SitePermissions = {
 
   
 
-  listPermissions: function () {
+
+  _listPermissionsByGroup(group) {
+    let array = Object.keys(gPermissionObject).filter(p=> {
+      return gPermissionObject[p].group == group;
+    });
+    array.sort((a, b) => {
+      return this.getPermissionLabel(a).localeCompare(this.getPermissionLabel(b));
+    });
+    return array;
+  },
+
+  
+
+  listPageFunctionalityPermissions() {
+    return this._listPermissionsByGroup(GROUP_PAGE_FUNCTIONALITY);
+  },
+
+  
+
+  listSystemAccessPermissions() {
+    return this._listPermissionsByGroup(GROUP_SYSTEM_ACCESS);
+  },
+
+  
+
+  listPermissions () {
     let array = Object.keys(gPermissionObject);
     array.sort((a, b) => {
       return this.getPermissionLabel(a).localeCompare(this.getPermissionLabel(b));
@@ -141,7 +168,12 @@ let gPermissionObject = {
 
 
 
+
+
+
+
   "image": {
+    group: GROUP_PAGE_FUNCTIONALITY,
     getDefault: function () {
       return Services.prefs.getIntPref("permissions.default.image") == 2 ?
                SitePermissions.BLOCK : SitePermissions.ALLOW;
@@ -149,6 +181,7 @@ let gPermissionObject = {
   },
 
   "cookie": {
+    group: GROUP_PAGE_FUNCTIONALITY,
     states: [ SitePermissions.ALLOW, SitePermissions.SESSION, SitePermissions.BLOCK ],
     getDefault: function () {
       if (Services.prefs.getIntPref("network.cookie.cookieBehavior") == 2)
@@ -161,12 +194,19 @@ let gPermissionObject = {
     }
   },
 
-  "desktop-notification": {},
+  "desktop-notification": {
+    group: GROUP_PAGE_FUNCTIONALITY,
+  },
 
-  "camera": {},
-  "microphone": {},
+  "camera": {
+    group: GROUP_SYSTEM_ACCESS,
+  },
+  "microphone": {
+    group: GROUP_SYSTEM_ACCESS,
+  },
 
   "popup": {
+    group: GROUP_PAGE_FUNCTIONALITY,
     getDefault: function () {
       return Services.prefs.getBoolPref("dom.disable_open_during_load") ?
                SitePermissions.BLOCK : SitePermissions.ALLOW;
@@ -174,6 +214,7 @@ let gPermissionObject = {
   },
 
   "install": {
+    group: GROUP_PAGE_FUNCTIONALITY,
     getDefault: function () {
       return Services.prefs.getBoolPref("xpinstall.whitelist.required") ?
                SitePermissions.BLOCK : SitePermissions.ALLOW;
@@ -181,16 +222,21 @@ let gPermissionObject = {
   },
 
   "geo": {
+    group: GROUP_SYSTEM_ACCESS,
     exactHostMatch: true
   },
 
-  "indexedDB": {},
+  "indexedDB": {
+    group: GROUP_SYSTEM_ACCESS,
+  },
 
   "pointerLock": {
+    group: GROUP_SYSTEM_ACCESS,
     exactHostMatch: true
   },
 
   "push": {
+    group: GROUP_SYSTEM_ACCESS,
     exactHostMatch: true
   }
 };
