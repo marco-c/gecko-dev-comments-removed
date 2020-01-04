@@ -1,0 +1,13 @@
+
+
+if (!('oomTest' in this))
+    throw new Error("out of memory");
+
+
+fullcompartmentchecks(true);
+
+var dbg = new Debugger;
+dbg.onNewGlobalObject = function() {};
+oomTest(function() {
+    newGlobal();
+})

@@ -690,10 +690,10 @@ class Debugger : private mozilla::LinkedListElement<Debugger>
     JSTrapStatus fireNewGlobalObject(JSContext* cx, Handle<GlobalObject*> global, MutableHandleValue vp);
     JSTrapStatus firePromiseHook(JSContext* cx, Hook hook, HandleObject promise, MutableHandleValue vp);
 
-    JSObject* newVariantWrapper(JSContext* cx, Handle<DebuggerScriptReferent> referent) {
+    NativeObject* newVariantWrapper(JSContext* cx, Handle<DebuggerScriptReferent> referent) {
         return newDebuggerScript(cx, referent);
     }
-    JSObject* newVariantWrapper(JSContext* cx, Handle<DebuggerSourceReferent> referent) {
+    NativeObject* newVariantWrapper(JSContext* cx, Handle<DebuggerSourceReferent> referent) {
         return newDebuggerSource(cx, referent);
     }
 
@@ -715,13 +715,13 @@ class Debugger : private mozilla::LinkedListElement<Debugger>
 
 
 
-    JSObject* newDebuggerScript(JSContext* cx, Handle<DebuggerScriptReferent> referent);
+    NativeObject* newDebuggerScript(JSContext* cx, Handle<DebuggerScriptReferent> referent);
 
     
 
 
 
-    JSObject* newDebuggerSource(JSContext* cx, Handle<DebuggerSourceReferent> referent);
+    NativeObject* newDebuggerSource(JSContext* cx, Handle<DebuggerSourceReferent> referent);
 
     
 
