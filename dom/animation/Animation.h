@@ -285,6 +285,18 @@ public:
 
   virtual bool HasLowerCompositeOrderThan(const Animation& aOther) const;
 
+   
+
+
+
+
+
+
+
+
+
+  virtual bool AppliesToTransitionsLevel() const { return false; }
+
   
 
 
