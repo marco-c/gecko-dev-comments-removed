@@ -157,8 +157,6 @@ private:
   };
 
   void HandleError(HRESULT hr, Severity aSeverity = DebugAssert);
-  bool Failed(HRESULT hr, Severity aSeverity = DebugAssert);
-  bool Succeeded(HRESULT hr, Severity aSeverity = DebugAssert);
 
   
   
