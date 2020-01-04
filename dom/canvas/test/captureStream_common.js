@@ -59,11 +59,19 @@ CaptureStreamTestHelper.prototype = {
 
 
 
-  getPixel: function (video, offsetX, offsetY) {
+
+
+  getPixel: function (video, offsetX, offsetY, width, height) {
     offsetX = offsetX || 0; 
     offsetY = offsetY || 0; 
+    width = width || 0; 
+    height = height || 0; 
     var ctxout = this.cout.getContext('2d');
-    ctxout.drawImage(video, 0, 0);
+    if (width != 0 || height != 0) {
+      ctxout.drawImage(video, 0, 0, width, height);
+    } else {
+      ctxout.drawImage(video, 0, 0);
+    }
     return ctxout.getImageData(offsetX, offsetY, 1, 1).data;
   },
 
@@ -94,14 +102,14 @@ CaptureStreamTestHelper.prototype = {
 
 
 
-  waitForPixel: function (video, offsetX, offsetY, test, timeout) {
+  waitForPixel: function (video, offsetX, offsetY, test, timeout, width, height) {
     return new Promise(resolve => {
       const startTime = video.currentTime;
       CaptureStreamTestHelper2D.prototype.clear.call(this, this.cout);
       var ontimeupdate = () => {
         var pixelMatch = false;
         try {
-          pixelMatch = test(this.getPixel(video, offsetX, offsetY));
+            pixelMatch = test(this.getPixel(video, offsetX, offsetY, width, height));
         } catch (NS_ERROR_NOT_AVAILABLE) {
           info("Waiting for pixel but no video available");
         }
