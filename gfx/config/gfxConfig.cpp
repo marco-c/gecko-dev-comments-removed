@@ -10,29 +10,22 @@ namespace gfx {
 
 static gfxConfig sConfig;
 
-
-
-
- void
-gfxConfig::AssertStatusInitialized(Feature aFeature)
+ FeatureState&
+gfxConfig::GetFeature(Feature aFeature)
 {
-  sConfig.GetState(aFeature).AssertInitialized();
+  return sConfig.GetState(aFeature);
 }
 
  bool
 gfxConfig::IsEnabled(Feature aFeature)
 {
-  AssertStatusInitialized(aFeature);
-
-  FeatureStatus status = GetValue(aFeature);
-  return status == FeatureStatus::Available || status == FeatureStatus::ForceEnabled;
+  const FeatureState& state = sConfig.GetState(aFeature);
+  return state.IsEnabled();
 }
 
  bool
 gfxConfig::IsDisabledByDefault(Feature aFeature)
 {
-  AssertStatusInitialized(aFeature);
-
   const FeatureState& state = sConfig.GetState(aFeature);
   return state.DisabledByDefault();
 }
@@ -40,8 +33,6 @@ gfxConfig::IsDisabledByDefault(Feature aFeature)
  bool
 gfxConfig::IsForcedOnByUser(Feature aFeature)
 {
-  AssertStatusInitialized(aFeature);
-
   const FeatureState& state = sConfig.GetState(aFeature);
   return state.IsForcedOnByUser();
 }
@@ -49,8 +40,6 @@ gfxConfig::IsForcedOnByUser(Feature aFeature)
  FeatureStatus
 gfxConfig::GetValue(Feature aFeature)
 {
-  AssertStatusInitialized(aFeature);
-
   const FeatureState& state = sConfig.GetState(aFeature);
   return state.GetValue();
 }
@@ -62,12 +51,23 @@ gfxConfig::SetDefault(Feature aFeature,
                       const char* aDisableMessage)
 {
   FeatureState& state = sConfig.GetState(aFeature);
-  if (!aEnable) {
-    state.DisableByDefault(aDisableStatus, aDisableMessage);
-    return false;
-  }
+  return state.SetDefault(aEnable, aDisableStatus, aDisableMessage);
+}
+
+ void
+gfxConfig::DisableByDefault(Feature aFeature,
+                            FeatureStatus aDisableStatus,
+                            const char* aDisableMessage)
+{
+  FeatureState& state = sConfig.GetState(aFeature);
+  state.DisableByDefault(aDisableStatus, aDisableMessage);
+}
+
+ void
+gfxConfig::EnableByDefault(Feature aFeature)
+{
+  FeatureState& state = sConfig.GetState(aFeature);
   state.EnableByDefault();
-  return true;
 }
 
  bool
@@ -77,62 +77,42 @@ gfxConfig::InitOrUpdate(Feature aFeature,
                         const char* aDisableMessage)
 {
   FeatureState& state = sConfig.GetState(aFeature);
-  if (!state.IsInitialized()) {
-    return SetDefault(aFeature, aEnable, aDisableStatus, aDisableMessage);
-  }
-  return MaybeSetFailed(aFeature, aEnable, aDisableStatus, aDisableMessage);
+  return state.InitOrUpdate(aEnable, aDisableStatus, aDisableMessage);
 }
 
  void
 gfxConfig::SetFailed(Feature aFeature, FeatureStatus aStatus, const char* aMessage)
 {
-  AssertStatusInitialized(aFeature);
-
-  
-  
-  MOZ_ASSERT(IsFeatureStatusFailure(aStatus));
-
   FeatureState& state = sConfig.GetState(aFeature);
-  state.SetRuntime(aStatus, aMessage);
+  state.SetFailed(aStatus, aMessage);
 }
 
  void
 gfxConfig::Disable(Feature aFeature, FeatureStatus aStatus, const char* aMessage)
 {
-  AssertStatusInitialized(aFeature);
-
-  
-  
-  MOZ_ASSERT(IsFeatureStatusFailure(aStatus));
-
   FeatureState& state = sConfig.GetState(aFeature);
-  state.SetEnvironment(aStatus, aMessage);
+  state.Disable(aStatus, aMessage);
 }
 
  void
 gfxConfig::UserEnable(Feature aFeature, const char* aMessage)
 {
-  AssertStatusInitialized(aFeature);
-
   FeatureState& state = sConfig.GetState(aFeature);
-  state.SetUser(FeatureStatus::Available, aMessage);
+  state.UserEnable(aMessage);
 }
+
  void
 gfxConfig::UserForceEnable(Feature aFeature, const char* aMessage)
 {
-  AssertStatusInitialized(aFeature);
-
   FeatureState& state = sConfig.GetState(aFeature);
-  state.SetUser(FeatureStatus::ForceEnabled, aMessage);
+  state.UserForceEnable(aMessage);
 }
 
  void
 gfxConfig::UserDisable(Feature aFeature, const char* aMessage)
 {
-  AssertStatusInitialized(aFeature);
-
   FeatureState& state = sConfig.GetState(aFeature);
-  state.SetUser(FeatureStatus::Disabled, aMessage);
+  state.UserDisable(aMessage);
 }
 
  bool
