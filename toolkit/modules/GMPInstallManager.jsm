@@ -85,7 +85,7 @@ XPCOMUtils.defineLazyGetter(this, "gOSVersion", function aus_gOSVersion() {
       const DWORD = ctypes.uint32_t;
       const WCHAR = ctypes.char16_t;
       const BOOL = ctypes.int;
-  
+
       
       
       const SZCSDVERSIONLENGTH = 128;
@@ -103,7 +103,7 @@ XPCOMUtils.defineLazyGetter(this, "gOSVersion", function aus_gOSVersion() {
           {wProductType: BYTE},
           {wReserved: BYTE}
           ]);
-  
+
       
       
       const SYSTEM_INFO = new ctypes.StructType('SYSTEM_INFO',
@@ -120,7 +120,7 @@ XPCOMUtils.defineLazyGetter(this, "gOSVersion", function aus_gOSVersion() {
           {wProcessorLevel: WORD},
           {wProcessorRevision: WORD}
           ]);
-  
+
       let kernel32 = false;
       try {
         kernel32 = ctypes.open("Kernel32");
@@ -128,7 +128,7 @@ XPCOMUtils.defineLazyGetter(this, "gOSVersion", function aus_gOSVersion() {
         LOG("gOSVersion - Unable to open kernel32! " + e);
         osVersion += ".unknown (unknown)";
       }
-  
+
       if(kernel32) {
         try {
           
@@ -139,7 +139,7 @@ XPCOMUtils.defineLazyGetter(this, "gOSVersion", function aus_gOSVersion() {
                                                 OSVERSIONINFOEXW.ptr);
             let winVer = OSVERSIONINFOEXW();
             winVer.dwOSVersionInfoSize = OSVERSIONINFOEXW.size;
-  
+
             if(0 !== GetVersionEx(winVer.address())) {
               osVersion += "." + winVer.wServicePackMajor
                         +  "." + winVer.wServicePackMinor;
@@ -151,7 +151,7 @@ XPCOMUtils.defineLazyGetter(this, "gOSVersion", function aus_gOSVersion() {
             LOG("gOSVersion - error getting service pack information. Exception: " + e);
             osVersion += ".unknown";
           }
-  
+
           
           let arch = "unknown";
           try {
@@ -162,7 +162,7 @@ XPCOMUtils.defineLazyGetter(this, "gOSVersion", function aus_gOSVersion() {
             let sysInfo = SYSTEM_INFO();
             
             sysInfo.wProcessorArchitecture = 0xffff;
-  
+
             GetNativeSystemInfo(sysInfo.address());
             switch(sysInfo.wProcessorArchitecture) {
               case 9:
@@ -200,29 +200,6 @@ XPCOMUtils.defineLazyGetter(this, "gOSVersion", function aus_gOSVersion() {
 
 
 
-XPCOMUtils.defineLazyGetter(this, "gABI", function aus_gABI() {
-  let abi = null;
-  try {
-    abi = Services.appinfo.XPCOMABI;
-  }
-  catch (e) {
-    LOG("gABI - XPCOM ABI unknown: updates are not possible.");
-  }
-  if (AppConstants.platform == "macosx") {
-    
-    
-    let macutils = Cc["@mozilla.org/xpcom/mac-utils;1"].
-                   getService(Ci.nsIMacUtils);
-
-    if (macutils.isUniversalBinary)
-      abi += "-u-" + macutils.architecturesInBinary;
-  }
-  return abi;
-});
-
-
-
-
 function GMPInstallManager() {
 }
 
@@ -248,7 +225,7 @@ GMPInstallManager.prototype = {
       url.replace(/%PRODUCT%/g, Services.appinfo.name)
          .replace(/%VERSION%/g, Services.appinfo.version)
          .replace(/%BUILD_ID%/g, Services.appinfo.appBuildID)
-         .replace(/%BUILD_TARGET%/g, Services.appinfo.OS + "_" + gABI)
+         .replace(/%BUILD_TARGET%/g, Services.appinfo.OS + "_" + GMPUtils.ABI())
          .replace(/%OS_VERSION%/g, gOSVersion);
     if (/%LOCALE%/.test(url)) {
       
@@ -926,12 +903,16 @@ GMPDownloader.prototype = {
         GMPPrefs.set(GMPPrefs.KEY_PLUGIN_LAST_UPDATE, now, gmpAddon.id);
         
         
-        GMPPrefs.set(GMPPrefs.KEY_PLUGIN_VERSION, gmpAddon.version,
-                     gmpAddon.id);
-        
-        
         GMPPrefs.reset(GMPPrefs.KEY_PLUGIN_TRIAL_CREATE, gmpAddon.version,
                        gmpAddon.id);
+        
+        
+        
+        GMPPrefs.set(GMPPrefs.KEY_PLUGIN_ABI, GMPUtils.ABI(), gmpAddon.id);
+        
+        
+        GMPPrefs.set(GMPPrefs.KEY_PLUGIN_VERSION, gmpAddon.version,
+                     gmpAddon.id);
         this._deferred.resolve(extractedPaths);
       }, err => {
         this._deferred.reject(err);
