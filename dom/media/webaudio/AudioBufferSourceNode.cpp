@@ -265,17 +265,18 @@ public:
         
         
         
-        uint32_t skipFracNum = inputLatency * ratioDen;
+        int64_t skipFracNum = static_cast<int64_t>(inputLatency) * ratioDen;
         double leadTicks = mStart - *aCurrentPosition;
         if (leadTicks > 0.0) {
           
           
-          uint32_t leadSubsamples = leadTicks * ratioNum + 0.5;
+          int64_t leadSubsamples = leadTicks * ratioNum + 0.5;
           MOZ_ASSERT(leadSubsamples <= skipFracNum,
                      "mBeginProcessing is wrong?");
           skipFracNum -= leadSubsamples;
         }
-        speex_resampler_set_skip_frac_num(resampler, skipFracNum);
+        speex_resampler_set_skip_frac_num(resampler,
+                                  std::min<int64_t>(skipFracNum, UINT32_MAX));
 
         mBeginProcessing = -STREAM_TIME_MAX;
       }
