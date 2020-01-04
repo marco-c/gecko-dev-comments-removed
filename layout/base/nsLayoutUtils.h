@@ -2230,18 +2230,6 @@ public:
 
 
 
-
-
-
-  static bool GetAnimationContent(const nsIFrame* aFrame,
-                                  nsIContent* &aContentResult,
-                                  mozilla::CSSPseudoElementType
-                                    &aPseudoTypeResult);
-
-  
-
-
-
   static bool HasCurrentAnimationOfProperty(const nsIFrame* aFrame,
                                             nsCSSProperty aProperty);
 
