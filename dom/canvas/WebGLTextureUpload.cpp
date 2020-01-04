@@ -365,6 +365,13 @@ WebGLTexture::ValidateTexImageSpecification(const char* funcName, TexImageTarget
         return false;
     }
 
+    if (mTarget == LOCAL_GL_TEXTURE_CUBE_MAP &&
+        width != height)
+    {
+        mContext->ErrorInvalidValue("%s: Cube map images must be square.", funcName);
+        return false;
+    }
+
     
 
 
