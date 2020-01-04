@@ -113,6 +113,9 @@ public:
 private:
   virtual ~MetadataDecodingTask() { }
 
+  
+  Mutex mMutex;
+
   NotNull<RefPtr<Decoder>> mDecoder;
 };
 
