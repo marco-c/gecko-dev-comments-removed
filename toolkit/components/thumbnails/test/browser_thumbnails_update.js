@@ -88,6 +88,11 @@ function capIfStaleErrorResponseUpdateTest() {
   yield addTab(URL);
 
   yield captureAndCheckColor(0, 255, 0, "we have a green thumbnail");
+
+  
+  
+  yield wait(2000);
+
   
   
   
@@ -119,6 +124,11 @@ function capIfStaleGoodResponseUpdateTest() {
   let browser = gBrowser.selectedBrowser;
 
   yield captureAndCheckColor(0, 255, 0, "we have a green thumbnail");
+
+  
+  
+  yield wait(2000);
+
   
   
   
@@ -148,6 +158,11 @@ function regularCapErrorResponseUpdateTest() {
   yield addTab(URL);
   yield captureAndCheckColor(0, 255, 0, "we have a green thumbnail");
   gBrowser.removeTab(gBrowser.selectedTab);
+
+  
+  
+  yield wait(2000);
+
   
   
   yield addTab(URL);
@@ -162,6 +177,11 @@ function regularCapGoodResponseUpdateTest() {
   yield addTab(URL);
   yield captureAndCheckColor(0, 255, 0, "we have a green thumbnail");
   gBrowser.removeTab(gBrowser.selectedTab);
+
+  
+  
+  yield wait(2000);
+
   
   
   yield addTab(URL);
