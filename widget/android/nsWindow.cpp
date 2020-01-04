@@ -2007,14 +2007,14 @@ nsWindow::OnLongTapEvent(AndroidGeckoEvent *ae)
 void
 nsWindow::DispatchHitTest(const WidgetTouchEvent& aEvent)
 {
-    if (aEvent.mMessage == eTouchStart && aEvent.touches.Length() == 1) {
+    if (aEvent.mMessage == eTouchStart && aEvent.mTouches.Length() == 1) {
         
         
         
         
         WidgetMouseEvent hittest(true, eMouseHitTest, this,
                                  WidgetMouseEvent::eReal);
-        hittest.refPoint = aEvent.touches[0]->mRefPoint;
+        hittest.refPoint = aEvent.mTouches[0]->mRefPoint;
         hittest.ignoreRootScrollFrame = true;
         hittest.inputSource = nsIDOMMouseEvent::MOZ_SOURCE_TOUCH;
         nsEventStatus status;

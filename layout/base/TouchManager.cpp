@@ -67,7 +67,7 @@ EvictTouchPoint(RefPtr<dom::Touch>& aTouch,
             WidgetTouchEvent event(true, eTouchEnd, widget);
             event.widget = widget;
             event.mTime = PR_IntervalNow();
-            event.touches.AppendElement(aTouch);
+            event.mTouches.AppendElement(aTouch);
             nsEventStatus status;
             widget->DispatchEvent(&event, status);
             return;
@@ -118,7 +118,7 @@ TouchManager::PreHandleEvent(WidgetEvent* aEvent,
       
       
       
-      if (touchEvent->touches.Length() == 1) {
+      if (touchEvent->mTouches.Length() == 1) {
         WidgetTouchEvent::AutoTouchArray touches;
         AppendToTouchList(&touches);
         for (uint32_t i = 0; i < touches.Length(); ++i) {
@@ -126,8 +126,8 @@ TouchManager::PreHandleEvent(WidgetEvent* aEvent,
         }
       }
       
-      for (uint32_t i = 0; i < touchEvent->touches.Length(); ++i) {
-        dom::Touch* touch = touchEvent->touches[i];
+      for (uint32_t i = 0; i < touchEvent->mTouches.Length(); ++i) {
+        dom::Touch* touch = touchEvent->mTouches[i];
         int32_t id = touch->Identifier();
         if (!gCaptureTouchList->Get(id, nullptr)) {
           
@@ -141,7 +141,7 @@ TouchManager::PreHandleEvent(WidgetEvent* aEvent,
     case eTouchMove: {
       
       WidgetTouchEvent* touchEvent = aEvent->AsTouchEvent();
-      WidgetTouchEvent::TouchArray& touches = touchEvent->touches;
+      WidgetTouchEvent::TouchArray& touches = touchEvent->mTouches;
       bool haveChanged = false;
       for (int32_t i = touches.Length(); i; ) {
         --i;
@@ -185,9 +185,9 @@ TouchManager::PreHandleEvent(WidgetEvent* aEvent,
           
           
           
-          for (uint32_t i = 0; i < touchEvent->touches.Length(); ++i) {
-            if (touchEvent->touches[i]) {
-              touchEvent->touches[i]->mChanged = true;
+          for (uint32_t i = 0; i < touchEvent->mTouches.Length(); ++i) {
+            if (touchEvent->mTouches[i]) {
+              touchEvent->mTouches[i]->mChanged = true;
               break;
             }
           }
@@ -205,7 +205,7 @@ TouchManager::PreHandleEvent(WidgetEvent* aEvent,
       
       
       WidgetTouchEvent* touchEvent = aEvent->AsTouchEvent();
-      WidgetTouchEvent::TouchArray& touches = touchEvent->touches;
+      WidgetTouchEvent::TouchArray& touches = touchEvent->mTouches;
       for (uint32_t i = 0; i < touches.Length(); ++i) {
         dom::Touch* touch = touches[i];
         if (!touch) {

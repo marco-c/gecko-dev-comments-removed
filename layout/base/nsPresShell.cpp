@@ -6891,8 +6891,8 @@ DispatchPointerFromMouseOrTouch(PresShell* aShell,
       return NS_OK;
     }
 
-    for (uint32_t i = 0; i < touchEvent->touches.Length(); ++i) {
-      mozilla::dom::Touch* touch = touchEvent->touches[i];
+    for (uint32_t i = 0; i < touchEvent->mTouches.Length(); ++i) {
+      mozilla::dom::Touch* touch = touchEvent->mTouches[i];
       if (!touch || !touch->convertToPointer) {
         continue;
       }
@@ -7544,7 +7544,8 @@ PresShell::HandleEvent(nsIFrame* aFrame,
         
         
         nsCOMPtr<nsIContent> anyTarget;
-        if (TouchManager::gCaptureTouchList->Count() > 0 && touchEvent->touches.Length() > 1) {
+        if (TouchManager::gCaptureTouchList->Count() > 0 &&
+            touchEvent->mTouches.Length() > 1) {
           for (auto iter = TouchManager::gCaptureTouchList->Iter();
                !iter.Done();
                iter.Next()) {
@@ -7559,9 +7560,9 @@ PresShell::HandleEvent(nsIFrame* aFrame,
           }
         }
 
-        for (int32_t i = touchEvent->touches.Length(); i; ) {
+        for (int32_t i = touchEvent->mTouches.Length(); i; ) {
           --i;
-          dom::Touch* touch = touchEvent->touches[i];
+          dom::Touch* touch = touchEvent->mTouches[i];
 
           int32_t id = touch->Identifier();
           if (!TouchManager::gCaptureTouchList->Get(id, nullptr)) {
@@ -7598,7 +7599,7 @@ PresShell::HandleEvent(nsIFrame* aFrame,
               
               
               if (!newTargetFrame) {
-                touchEvent->touches.RemoveElementAt(i);
+                touchEvent->mTouches.RemoveElementAt(i);
               } else {
                 target = newTargetFrame;
                 nsCOMPtr<nsIContent> targetContent;
@@ -7728,7 +7729,7 @@ PresShell::HandleEvent(nsIFrame* aFrame,
       case eTouchEnd: {
         
         WidgetTouchEvent* touchEvent = aEvent->AsTouchEvent();
-        for (dom::Touch* touch : touchEvent->touches) {
+        for (dom::Touch* touch : touchEvent->mTouches) {
           if (!touch) {
             break;
           }
@@ -8341,7 +8342,7 @@ PresShell::DispatchTouchEventToDOM(WidgetEvent* aEvent,
   WidgetTouchEvent* touchEvent = aEvent->AsTouchEvent();
 
   
-  for (dom::Touch* touch : touchEvent->touches) {
+  for (dom::Touch* touch : touchEvent->mTouches) {
     if (!touch || !touch->mChanged) {
       continue;
     }

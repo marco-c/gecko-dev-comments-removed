@@ -1314,7 +1314,7 @@ EventStateManager::HandleCrossProcessEvent(WidgetEvent* aEvent,
     
     
     const WidgetTouchEvent::TouchArray& touches =
-      aEvent->AsTouchEvent()->touches;
+      aEvent->AsTouchEvent()->mTouches;
     for (uint32_t i = 0; i < touches.Length(); ++i) {
       Touch* touch = touches[i];
       
