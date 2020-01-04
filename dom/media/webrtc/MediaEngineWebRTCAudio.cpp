@@ -206,13 +206,13 @@ MediaEngineWebRTCMicrophoneSource::GetUUID(nsACString& aUUID)
 
 
 uint32_t MediaEngineWebRTCMicrophoneSource::GetBestFitnessDistance(
-    const nsTArray<const dom::MediaTrackConstraintSet*>& aConstraintSets,
+    const nsTArray<const NormalizedConstraintSet*>& aConstraintSets,
     const nsString& aDeviceId)
 {
   uint32_t distance = 0;
 
-  for (const MediaTrackConstraintSet* cs : aConstraintSets) {
-    distance = GetMinimumFitnessDistance(*cs, false, aDeviceId);
+  for (const auto* cs : aConstraintSets) {
+    distance = GetMinimumFitnessDistance(*cs, aDeviceId);
     break; 
   }
   return distance;
@@ -859,7 +859,7 @@ MediaEngineWebRTCAudioCaptureSource::Restart(
 
 uint32_t
 MediaEngineWebRTCAudioCaptureSource::GetBestFitnessDistance(
-    const nsTArray<const dom::MediaTrackConstraintSet*>& aConstraintSets,
+    const nsTArray<const NormalizedConstraintSet*>& aConstraintSets,
     const nsString& aDeviceId)
 {
   
