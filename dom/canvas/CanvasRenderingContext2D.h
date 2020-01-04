@@ -635,8 +635,7 @@ protected:
 
 
 
-  RenderingMode EnsureTarget(const gfx::Rect* aCoveredRect = nullptr,
-                             RenderingMode aRenderMode = RenderingMode::DefaultBackendMode);
+  RenderingMode EnsureTarget(RenderingMode aRenderMode = RenderingMode::DefaultBackendMode);
 
   
 
@@ -661,12 +660,6 @@ protected:
 
 
   mozilla::gfx::SurfaceFormat GetSurfaceFormat() const;
-
-  
-
-
-
-  bool PatternIsOpaque(Style aStyle) const;
 
   
 
