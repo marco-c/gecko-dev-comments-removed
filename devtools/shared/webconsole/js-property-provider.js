@@ -32,6 +32,10 @@ const OPEN_CLOSE_BODY = {
   "(": ")",
 };
 
+function hasArrayIndex(str) {
+  return /\[\d+\]$/.test(str);
+}
+
 
 
 
@@ -225,11 +229,24 @@ function JSPropertyProvider(aDbgObject, anEnvironment, aInputValue, aCursor)
 
   
   
-  if (anEnvironment) {
-    if (properties.length == 0) {
-      return getMatchedPropsInEnvironment(anEnvironment, matchProp);
-    }
-    obj = getVariableInEnvironment(anEnvironment, properties.shift());
+  let env = anEnvironment || obj.asEnvironment();
+
+  if (properties.length === 0) {
+    return getMatchedPropsInEnvironment(env, matchProp);
+  }
+
+  let firstProp = properties.shift().trim();
+  if (firstProp === "this") {
+    
+    
+    try {
+      obj = env.object;
+    } catch(e) { }
+  }
+  else if (hasArrayIndex(firstProp)) {
+    obj = getArrayMemberProperty(null, env, firstProp);
+  } else {
+    obj = getVariableInEnvironment(env, firstProp);
   }
 
   if (!isObjectUsable(obj)) {
@@ -244,16 +261,10 @@ function JSPropertyProvider(aDbgObject, anEnvironment, aInputValue, aCursor)
       return null;
     }
 
-    
-    
-    if (prop === "this" && obj === aDbgObject && i === 0) {
-      continue;
-    }
-
-    if (/\[\d+\]$/.test(prop)) {
+    if (hasArrayIndex(prop)) {
       
       
-      obj = getArrayMemberProperty(obj, prop);
+      obj = getArrayMemberProperty(obj, null, prop);
     }
     else {
       obj = DevToolsUtils.getProperty(obj, prop);
@@ -269,15 +280,7 @@ function JSPropertyProvider(aDbgObject, anEnvironment, aInputValue, aCursor)
     return getMatchedProps(obj, matchProp);
   }
 
-  let matchedProps = getMatchedPropsInDbgObject(obj, matchProp);
-  if (properties.length !== 0 || obj !== aDbgObject) {
-    let thisInd = matchedProps.matches.indexOf("this");
-    if (thisInd > -1) {
-      matchedProps.matches.splice(thisInd, 1)
-    }
-  }
-
-  return matchedProps;
+  return getMatchedPropsInDbgObject(obj, matchProp);
 }
 
 
@@ -292,12 +295,20 @@ function JSPropertyProvider(aDbgObject, anEnvironment, aInputValue, aCursor)
 
 
 
-function getArrayMemberProperty(aObj, aProp)
+
+
+function getArrayMemberProperty(aObj, aEnv, aProp)
 {
   
   let obj = aObj;
   let propWithoutIndices = aProp.substr(0, aProp.indexOf("["));
-  obj = DevToolsUtils.getProperty(obj, propWithoutIndices);
+
+  if (aEnv) {
+    obj = getVariableInEnvironment(aEnv, propWithoutIndices);
+  } else {
+    obj = DevToolsUtils.getProperty(obj, propWithoutIndices);
+  }
+
   if (!isObjectUsable(obj)) {
     return null;
   }
@@ -496,17 +507,7 @@ var DebuggerObjectSupport = {
 
   getProperties: function(aObj)
   {
-    let names = aObj.getOwnPropertyNames();
-    
-    
-    
-    for (let i = 0; i < names.length; i++) {
-      if (i === names.length - 1 || names[i+1] > "this") {
-        names.splice(i+1, 0, "this");
-        break;
-      }
-    }
-    return names;
+    return aObj.getOwnPropertyNames();
   },
 
   getProperty: function(aObj, aName, aRootObj)
@@ -527,13 +528,29 @@ var DebuggerEnvironmentSupport = {
 
   getProperties: function(aObj)
   {
-    return aObj.names();
+    let names = aObj.names();
+
+    
+    for (let i = 0; i < names.length; i++) {
+      if (i === names.length - 1 || names[i+1] > "this") {
+        names.splice(i+1, 0, "this");
+        break;
+      }
+    }
+
+    return names;
   },
 
   getProperty: function(aObj, aName)
   {
+    let result;
     
-    let result = aObj.getVariable(aName);
+    
+    try {
+      
+      result = aObj.getVariable(aName);
+    } catch(e) { }
+
     
     if (result === undefined || result.optimizedOut || result.missingArguments) {
       return null;
@@ -545,3 +562,5 @@ var DebuggerEnvironmentSupport = {
 
 exports.JSPropertyProvider = DevToolsUtils.makeInfallible(JSPropertyProvider);
 
+
+exports.FallibleJSPropertyProvider = JSPropertyProvider;

@@ -22,7 +22,8 @@ var test = asyncTest(function*() {
 
     yield deferred.promise;
 
-    ok(popup.itemCount > 0, "There's suggestions for '" + term + "'");
+    ok(popup.itemCount > 0,
+       "There's " + popup.itemCount + " suggestions for '" + term + "'");
   }
 
   let { jsterm } = yield openConsole();
@@ -31,14 +32,17 @@ var test = asyncTest(function*() {
   yield jsterm.execute("var testObject = {$$aaab: '', $$aaac: ''}");
 
   
-  
-  
-
-  
   yield autocomplete("Object.__d");
   yield autocomplete("testObject.$$a");
 
   
   yield autocomplete("Object.__de");
   yield autocomplete("testObject.$$aa");
+
+  
+  yield jsterm.execute("let foobar = {a: ''}; const blargh = {a: 1};");
+  yield autocomplete("foobar");
+  yield autocomplete("blargh");
+  yield autocomplete("foobar.a");
+  yield autocomplete("blargh.a");
 });
