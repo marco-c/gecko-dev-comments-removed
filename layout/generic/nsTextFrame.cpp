@@ -2381,7 +2381,7 @@ BuildTextRunsScanner::SetupBreakSinksForTextRun(gfxTextRun* aTextRun,
   
   
   nsIAtom* hyphenationLanguage =
-    styleFont->mExplicitLanguage ? styleFont->mLanguage : nullptr;
+    styleFont->mExplicitLanguage ? styleFont->mLanguage.get() : nullptr;
   
   
   
