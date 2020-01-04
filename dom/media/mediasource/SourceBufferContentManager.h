@@ -70,7 +70,7 @@ public:
   
   virtual EvictDataResult
   EvictData(media::TimeUnit aPlaybackTime,
-            uint32_t aThreshold,
+            int64_t aThreshold,
             media::TimeUnit* aBufferStartTime) = 0;
 
   
