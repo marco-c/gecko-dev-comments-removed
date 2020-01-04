@@ -7,6 +7,10 @@ function getPlatform() {
   if (navigator.platform.indexOf("Mac") == 0) {
     return "mac";
   }
+  
+  if (navigator.appVersion.indexOf("Android") >= 0) {
+    return "android"
+  }
   if (navigator.platform.indexOf("Linux") == 0) {
     return "linux";
   }
@@ -49,7 +53,9 @@ function nativeMouseDownEventMsg() {
     case "windows": return 2; 
     case "mac": return 1; 
     case "linux": return 4; 
+    case "android": return 5; 
   }
+  throw "Native mouse-down events not supported on platform " + getPlatform();
 }
 
 function nativeMouseMoveEventMsg() {
@@ -57,8 +63,9 @@ function nativeMouseMoveEventMsg() {
     case "windows": return 1; 
     case "mac": return 5; 
     case "linux": return 3; 
+    case "android": return 7; 
   }
-  throw "Native wheel events not supported on platform " + getPlatform();
+  throw "Native mouse-move events not supported on platform " + getPlatform();
 }
 
 function nativeMouseUpEventMsg() {
@@ -66,7 +73,9 @@ function nativeMouseUpEventMsg() {
     case "windows": return 4; 
     case "mac": return 2; 
     case "linux": return 7; 
+    case "android": return 6; 
   }
+  throw "Native mouse-up events not supported on platform " + getPlatform();
 }
 
 
