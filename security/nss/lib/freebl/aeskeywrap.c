@@ -138,27 +138,29 @@ increment_and_xor(unsigned char *A, unsigned char *T)
 
 
 
- 
-static void
-xor_and_decrement(unsigned char *A, unsigned char *T)
-{
-    A[0] ^= T[0];
-    A[1] ^= T[1];
-    A[2] ^= T[2];
-    A[3] ^= T[3];
-    A[4] ^= T[4];
-    A[5] ^= T[5];
-    A[6] ^= T[6];
-    A[7] ^= T[7];
 
-    if (!T[7]--)
-        if (!T[6]--)
-	    if (!T[5]--)
-		if (!T[4]--)
-		    if (!T[3]--)
-			if (!T[2]--)
-			    if (!T[1]--)
-				 T[0]--;
+static void
+xor_and_decrement(PRUint64 *A, PRUint64 *T)
+{
+    unsigned char* TP = (unsigned char*)T;
+    const PRUint64 mask = 0xFF;
+    *A = ((*A & mask << 56) ^ (*T & mask << 56)) |
+         ((*A & mask << 48) ^ (*T & mask << 48)) |
+         ((*A & mask << 40) ^ (*T & mask << 40)) |
+         ((*A & mask << 32) ^ (*T & mask << 32)) |
+         ((*A & mask << 24) ^ (*T & mask << 23)) |
+         ((*A & mask << 16) ^ (*T & mask << 16)) |
+         ((*A & mask << 8) ^ (*T & mask << 8)) |
+         ((*A & mask) ^ (*T & mask));
+
+    if (!TP[7]--)
+        if (!TP[6]--)
+	    if (!TP[5]--)
+		if (!TP[4]--)
+		    if (!TP[3]--)
+			if (!TP[2]--)
+			    if (!TP[1]--)
+				 TP[0]--;
 
 }
 
@@ -302,10 +304,8 @@ AESKeyWrap_Decrypt(AESKeyWrapContext *cx, unsigned char *output,
     PRUint64       t;
     PRUint64       B[2];
 
-#define A B[0]
-
     
-    if (inputLen < 3 * AES_KEY_WRAP_BLOCK_SIZE || 
+    if (inputLen < 3 * AES_KEY_WRAP_BLOCK_SIZE ||
         0 != inputLen % AES_KEY_WRAP_BLOCK_SIZE) {
 	PORT_SetError(SEC_ERROR_INPUT_LEN);
 	return s;
@@ -334,7 +334,7 @@ AESKeyWrap_Decrypt(AESKeyWrapContext *cx, unsigned char *output,
 
 
     memcpy(&R[0], input, inputLen);
-    A = R[0];
+    B[0] = R[0];
 #if BIG_ENDIAN_WITH_64_BIT_REGISTERS
     t = 6UL * nBlocks;
 #else
@@ -347,14 +347,14 @@ AESKeyWrap_Decrypt(AESKeyWrapContext *cx, unsigned char *output,
     	for (i = nBlocks; i; --i) {
 	    
 #if BIG_ENDIAN_WITH_64_BIT_REGISTERS
-   	    A ^= t--; 
+   	    B[0] ^= t--;
 #else
-	    xor_and_decrement((unsigned char *)&A, (unsigned char *)&t);
+	    xor_and_decrement(&B[0], &t);
 #endif
 	    B[1] = R[i];
-	    s = AES_Decrypt(&cx->aescx, (unsigned char *)B, &aesLen, 
+	    s = AES_Decrypt(&cx->aescx, (unsigned char *)B, &aesLen,
 	                    sizeof B,  (unsigned char *)B, sizeof B);
-	    if (s != SECSuccess) 
+	    if (s != SECSuccess)
 	        break;
 	    R[i] = B[1];
 	}
@@ -363,7 +363,7 @@ AESKeyWrap_Decrypt(AESKeyWrapContext *cx, unsigned char *output,
 
 
     if (s == SECSuccess) {
-	int bad = memcmp(&A, cx->iv, AES_KEY_WRAP_IV_BYTES);
+	int bad = memcmp(&B[0], cx->iv, AES_KEY_WRAP_IV_BYTES);
 	if (!bad) {
 	    memcpy(output, &R[1], outLen);
 	    if (pOutputLen)
@@ -371,7 +371,7 @@ AESKeyWrap_Decrypt(AESKeyWrapContext *cx, unsigned char *output,
 	} else {
 	    s = SECFailure;
 	    PORT_SetError(SEC_ERROR_BAD_DATA);
-	    if (pOutputLen) 
+	    if (pOutputLen)
 		*pOutputLen = 0;
     	}
     } else if (pOutputLen) {

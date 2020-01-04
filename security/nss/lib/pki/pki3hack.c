@@ -1325,15 +1325,17 @@ STAN_DeleteCertTrustMatchingSlot(NSSCertificate *c)
 {
     PRStatus nssrv = PR_SUCCESS;
 
+    unsigned int i;
+    nssPKIObject *tobject = NULL;
+    nssPKIObject *cobject = &c->object;
+
     NSSTrustDomain *td = STAN_GetDefaultTrustDomain();
     NSSTrust *nssTrust = nssTrustDomain_FindTrustForCertificate(td, c);
     if (!nssTrust) {
         return PR_FAILURE;
     }
 
-    nssPKIObject *tobject = &nssTrust->object;
-    nssPKIObject *cobject = &c->object;
-    unsigned int i;
+    tobject = &nssTrust->object;
 
     
 

@@ -9971,10 +9971,6 @@ ssl3_SendServerHello(sslSocket *ss)
     return SECSuccess;
 }
 
-static SECStatus
-ssl3_PickSignatureHashAlgorithm(sslSocket *ss,
-                                SSLSignatureAndHashAlg *out);
-
 SECStatus
 ssl_CreateDHEKeyPair(const namedGroupDef *groupDef,
                      const ssl3DHParams *params,
@@ -10137,7 +10133,7 @@ loser:
 
 
 
-static SECStatus
+SECStatus
 ssl3_PickSignatureHashAlgorithm(sslSocket *ss,
                                 SSLSignatureAndHashAlg *out)
 {
