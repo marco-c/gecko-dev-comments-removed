@@ -243,7 +243,9 @@ URLMainThread::Constructor(nsISupports* aParent, const nsAString& aURL,
   nsCOMPtr<nsIURI> uri;
   nsresult rv = NS_NewURI(getter_AddRefs(uri), aURL, nullptr, aBase,
                           nsContentUtils::GetIOService());
-  if (NS_WARN_IF(NS_FAILED(rv))) {
+  if (NS_FAILED(rv)) {
+    
+    
     aRv.ThrowTypeError<MSG_INVALID_URL>(aURL);
     return nullptr;
   }
