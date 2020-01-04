@@ -6,6 +6,8 @@
 
 #include "SandboxFilter.h"
 #include "SandboxFilterUtil.h"
+
+#include "SandboxBrokerClient.h"
 #include "SandboxInternal.h"
 #include "SandboxLogging.h"
 
@@ -52,13 +54,15 @@ namespace mozilla {
 
 class SandboxPolicyCommon : public SandboxPolicyBase
 {
-  static intptr_t BlockedSyscallTrap(const sandbox::arch_seccomp_data& aArgs,
-                                     void *aux)
-  {
+protected:
+  typedef const sandbox::arch_seccomp_data& ArgsRef;
+
+  static intptr_t BlockedSyscallTrap(ArgsRef aArgs, void *aux) {
     MOZ_ASSERT(!aux);
     return -ENOSYS;
   }
 
+private:
 #if defined(ANDROID) && ANDROID_VERSION < 16
   
   
@@ -294,8 +298,95 @@ public:
 
 
 class ContentSandboxPolicy : public SandboxPolicyCommon {
+  SandboxBrokerClient* mBroker;
+
+  
+  
+#ifdef __NR_open
+  static intptr_t OpenTrap(ArgsRef aArgs, void* aux) {
+    auto broker = static_cast<SandboxBrokerClient*>(aux);
+    auto path = reinterpret_cast<const char*>(aArgs.args[0]);
+    auto flags = static_cast<int>(aArgs.args[1]);
+    return broker->Open(path, flags);
+  }
+#endif
+
+  static intptr_t OpenAtTrap(ArgsRef aArgs, void* aux) {
+    auto broker = static_cast<SandboxBrokerClient*>(aux);
+    auto fd = static_cast<int>(aArgs.args[0]);
+    auto path = reinterpret_cast<const char*>(aArgs.args[1]);
+    auto flags = static_cast<int>(aArgs.args[2]);
+    if (fd != AT_FDCWD && path[0] != '/') {
+      SANDBOX_LOG_ERROR("unsupported fd-relative openat(%d, \"%s\", 0%o)",
+                        fd, path, flags);
+      return BlockedSyscallTrap(aArgs, nullptr);
+    }
+    return broker->Open(path, flags);
+  }
+
+#ifdef __NR_access
+  static intptr_t AccessTrap(ArgsRef aArgs, void* aux) {
+    auto broker = static_cast<SandboxBrokerClient*>(aux);
+    auto path = reinterpret_cast<const char*>(aArgs.args[0]);
+    auto mode = static_cast<int>(aArgs.args[1]);
+    return broker->Access(path, mode);
+  }
+#endif
+
+  static intptr_t AccessAtTrap(ArgsRef aArgs, void* aux) {
+    auto broker = static_cast<SandboxBrokerClient*>(aux);
+    auto fd = static_cast<int>(aArgs.args[0]);
+    auto path = reinterpret_cast<const char*>(aArgs.args[1]);
+    auto mode = static_cast<int>(aArgs.args[2]);
+    
+    
+    
+    
+    if (fd != AT_FDCWD && path[0] != '/') {
+      SANDBOX_LOG_ERROR("unsupported fd-relative faccessat(%d, \"%s\", %d)",
+                        fd, path, mode);
+      return BlockedSyscallTrap(aArgs, nullptr);
+    }
+    return broker->Access(path, mode);
+  }
+
+  static intptr_t StatTrap(ArgsRef aArgs, void* aux) {
+    auto broker = static_cast<SandboxBrokerClient*>(aux);
+    auto path = reinterpret_cast<const char*>(aArgs.args[0]);
+    auto buf = reinterpret_cast<struct stat*>(aArgs.args[1]);
+    return broker->Stat(path, buf);
+  }
+
+  static intptr_t LStatTrap(ArgsRef aArgs, void* aux) {
+    auto broker = static_cast<SandboxBrokerClient*>(aux);
+    auto path = reinterpret_cast<const char*>(aArgs.args[0]);
+    auto buf = reinterpret_cast<struct stat*>(aArgs.args[1]);
+    return broker->LStat(path, buf);
+  }
+
+  static intptr_t StatAtTrap(ArgsRef aArgs, void* aux) {
+    auto broker = static_cast<SandboxBrokerClient*>(aux);
+    auto fd = static_cast<int>(aArgs.args[0]);
+    auto path = reinterpret_cast<const char*>(aArgs.args[1]);
+    auto buf = reinterpret_cast<struct stat*>(aArgs.args[2]);
+    auto flags = static_cast<int>(aArgs.args[3]);
+    if (fd != AT_FDCWD && path[0] != '/') {
+      SANDBOX_LOG_ERROR("unsupported fd-relative fstatat(%d, \"%s\", %p, %d)",
+                        fd, path, buf, flags);
+      return BlockedSyscallTrap(aArgs, nullptr);
+    }
+    if ((flags & ~AT_SYMLINK_NOFOLLOW) != 0) {
+      SANDBOX_LOG_ERROR("unsupported flags %d in fstatat(%d, \"%s\", %p, %d)",
+                        (flags & ~AT_SYMLINK_NOFOLLOW), fd, path, buf, flags);
+      return BlockedSyscallTrap(aArgs, nullptr);
+    }
+    return (flags & AT_SYMLINK_NOFOLLOW) == 0
+      ? broker->Stat(path, buf)
+      : broker->LStat(path, buf);
+  }
+
 public:
-  ContentSandboxPolicy() { }
+  ContentSandboxPolicy(SandboxBrokerClient* aBroker):mBroker(aBroker) { }
   virtual ~ContentSandboxPolicy() { }
   virtual ResultExpr PrctlPolicy() const override {
     
@@ -358,15 +449,39 @@ public:
 #endif
 
   virtual ResultExpr EvaluateSyscall(int sysno) const override {
-    switch(sysno) {
+    if (mBroker) {
       
-    case __NR_open:
-    case __NR_openat:
-    case __NR_access:
-    case __NR_faccessat:
-    CASES_FOR_stat:
-    CASES_FOR_lstat:
-    CASES_FOR_fstatat:
+      switch (sysno) {
+      case __NR_open:
+        return Trap(OpenTrap, mBroker);
+      case __NR_openat:
+        return Trap(OpenAtTrap, mBroker);
+      case __NR_access:
+        return Trap(AccessTrap, mBroker);
+      case __NR_faccessat:
+        return Trap(AccessAtTrap, mBroker);
+      CASES_FOR_stat:
+        return Trap(StatTrap, mBroker);
+      CASES_FOR_lstat:
+        return Trap(LStatTrap, mBroker);
+      CASES_FOR_fstatat:
+        return Trap(StatAtTrap, mBroker);
+      }
+    } else {
+      
+      switch(sysno) {
+      case __NR_open:
+      case __NR_openat:
+      case __NR_access:
+      case __NR_faccessat:
+      CASES_FOR_stat:
+      CASES_FOR_lstat:
+      CASES_FOR_fstatat:
+        return Allow();
+      }
+    }
+
+    switch (sysno) {
 #ifdef DESKTOP
       
       
@@ -499,9 +614,9 @@ public:
 };
 
 UniquePtr<sandbox::bpf_dsl::Policy>
-GetContentSandboxPolicy()
+GetContentSandboxPolicy(SandboxBrokerClient* aMaybeBroker)
 {
-  return UniquePtr<sandbox::bpf_dsl::Policy>(new ContentSandboxPolicy());
+  return UniquePtr<sandbox::bpf_dsl::Policy>(new ContentSandboxPolicy(aMaybeBroker));
 }
 #endif 
 

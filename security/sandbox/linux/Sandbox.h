@@ -30,10 +30,13 @@ MOZ_SANDBOX_EXPORT void SandboxEarlyInit(GeckoProcessType aType, bool aIsNuwa);
 #ifdef MOZ_CONTENT_SANDBOX
 
 
-MOZ_SANDBOX_EXPORT void SetContentProcessSandbox();
+
+
+MOZ_SANDBOX_EXPORT void SetContentProcessSandbox(int aBrokerFd);
 #endif
 
 #ifdef MOZ_GMP_SANDBOX
+
 
 
 MOZ_SANDBOX_EXPORT void SetMediaPluginSandbox(const char *aFilePath);
