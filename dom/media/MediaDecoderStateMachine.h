@@ -168,11 +168,6 @@ public:
     OwnerThread()->Dispatch(runnable.forget());
   }
 
-  void DispatchNotifyDataArrived()
-  {
-    mReader->DispatchNotifyDataArrived();
-  }
-
   
   
   
