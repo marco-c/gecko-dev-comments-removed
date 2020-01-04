@@ -24,6 +24,10 @@ var manifestUpgrade = {
 
 function test() {
   waitForExplicitFinish();
+  PopupNotifications.panel.setAttribute("animate", "false");
+  registerCleanupFunction(function () {
+    PopupNotifications.panel.removeAttribute("animate");
+  });
 
   let prefname = getManifestPrefname(manifest);
   
@@ -189,7 +193,7 @@ var tests = {
   testDirectoryInstall: function(next) {
     AddonManager.addAddonListener(installListener(next, manifest2));
 
-    ensureEventFired(PopupNotifications.panel, "popupshown").then(() => {
+    BrowserTestUtils.waitForEvent(PopupNotifications.panel, "popupshown").then(() => {
       let panel = document.getElementById("servicesInstall-notification");
       info("servicesInstall-notification panel opened");
       panel.button.click();

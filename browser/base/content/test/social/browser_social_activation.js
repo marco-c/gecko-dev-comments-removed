@@ -14,49 +14,39 @@ var SocialService = Cu.import("resource://gre/modules/SocialService.jsm", {}).So
 
 var tabsToRemove = [];
 
-
-function removeAllProviders(callback) {
-  
-  function removeProviders() {
-    if (Social.providers.length < 1) {
-      executeSoon(function() {
-        is(Social.providers.length, 0, "all providers removed");
-        executeSoon(callback);
-      });
-      return;
-    }
-
+function removeProvider(provider) {
+  return new Promise(resolve => {
     
     
-    if (Social.providers[0].manifest) {
-      SocialService.uninstallProvider(Social.providers[0].origin, removeProviders);
+    if (provider.manifest) {
+      SocialService.uninstallProvider(provider.origin, resolve);
     } else {
-      SocialService.disableProvider(Social.providers[0].origin, removeProviders);
+      SocialService.disableProvider(provider.origin, resolve);
     }
-  }
-  removeProviders();
+  });
 }
 
 function postTestCleanup(callback) {
-  
-  for (let tab of tabsToRemove)
-    gBrowser.removeTab(tab);
-  tabsToRemove = [];
-  
-  
-  
-
-  
-  removeAllProviders(callback);
+  Task.spawn(function () {
+    
+    for (let tab of tabsToRemove) {
+      yield BrowserTestUtils.removeTab(tab);
+    }
+    tabsToRemove = [];
+    
+    while (Social.providers.length > 0) {
+      yield removeProvider(Social.providers[0]);
+    }
+  }).then(callback);
 }
 
-function addTab(url, callback) {
-  let tab = gBrowser.selectedTab = gBrowser.addTab(url, {skipAnimation: true});
-  tab.linkedBrowser.addEventListener("load", function tabLoad(event) {
-    tab.linkedBrowser.removeEventListener("load", tabLoad, true);
-    tabsToRemove.push(tab);
-    executeSoon(function() {callback(tab)});
-  }, true);
+function newTab(url) {
+  return new Promise(resolve => {
+    BrowserTestUtils.openNewForegroundTab(gBrowser, url).then(tab => {
+      tabsToRemove.push(tab);
+      resolve(tab);
+    });
+  });
 }
 
 function sendActivationEvent(tab, callback, nullManifest) {
@@ -68,33 +58,24 @@ function sendActivationEvent(tab, callback, nullManifest) {
 
 function activateProvider(domain, callback, nullManifest) {
   let activationURL = domain+"/browser/browser/base/content/test/social/social_activate_basic.html"
-  addTab(activationURL, function(tab) {
+  newTab(activationURL).then(tab => {
     sendActivationEvent(tab, callback, nullManifest);
   });
 }
 
 function activateIFrameProvider(domain, callback) {
   let activationURL = domain+"/browser/browser/base/content/test/social/social_activate_iframe.html"
-  addTab(activationURL, function(tab) {
+  newTab(activationURL).then(tab => {
     sendActivationEvent(tab, callback, false);
   });
 }
 
-function waitForProviderLoad(cb) {
-    waitForCondition(function() {
-      let sbrowser = document.getElementById("social-sidebar-browser");
-      let provider = SocialSidebar.provider;
-      let postActivation = provider && gBrowser.currentURI &&
-                            gBrowser.currentURI.spec == provider.origin + "/browser/browser/base/content/test/social/social_postActivation.html";
-
-      return postActivation && sbrowser.docShellIsActive;
-    }, function() {
-      
-      executeSoon(cb);
-    },
-    "waitForProviderLoad: provider was not loaded");
+function waitForProviderLoad(origin) {
+  return Promise.all([
+    ensureFrameLoaded(gBrowser, origin + "/browser/browser/base/content/test/social/social_postActivation.html"),
+    ensureFrameLoaded(SocialSidebar.browser)
+  ]);
 }
-
 
 function getAddonItemInList(aId, aList) {
   var item = aList.firstChild;
@@ -133,22 +114,20 @@ function clickAddonRemoveButton(tab, aCallback) {
 
 function activateOneProvider(manifest, finishActivation, aCallback) {
   let panel = document.getElementById("servicesInstall-notification");
-  PopupNotifications.panel.addEventListener("popupshown", function onpopupshown() {
-    PopupNotifications.panel.removeEventListener("popupshown", onpopupshown);
+  BrowserTestUtils.waitForEvent(PopupNotifications.panel, "popupshown").then(() => {
     ok(!panel.hidden, "servicesInstall-notification panel opened");
     if (finishActivation)
       panel.button.click();
     else
       panel.closebutton.click();
   });
-  PopupNotifications.panel.addEventListener("popuphidden", function _hidden() {
-    PopupNotifications.panel.removeEventListener("popuphidden", _hidden);
+  BrowserTestUtils.waitForEvent(PopupNotifications.panel, "popuphidden").then(() => {
     ok(panel.hidden, "servicesInstall-notification panel hidden");
     if (!finishActivation) {
       ok(panel.hidden, "activation panel is not showing");
       executeSoon(aCallback);
     } else {
-      waitForProviderLoad(function() {
+      waitForProviderLoad(manifest.origin).then(() => {
         is(SocialSidebar.provider.origin, manifest.origin, "new provider is active");
         ok(SocialSidebar.opened, "sidebar is open");
         checkSocialUI();
@@ -187,6 +166,10 @@ var gProviders = [
 
 
 function test() {
+  PopupNotifications.panel.setAttribute("animate", "false");
+  registerCleanupFunction(function () {
+    PopupNotifications.panel.removeAttribute("animate");
+  });
   waitForExplicitFinish();
   runSocialTests(tests, undefined, postTestCleanup);
 }
@@ -201,7 +184,7 @@ var tests = {
       ok(panel.hidden, "activation panel still hidden");
       checkSocialUI();
       Services.prefs.clearUserPref("social.remote-install.enabled");
-      removeAllProviders(next);
+      next();
     });
   },
   
@@ -212,7 +195,7 @@ var tests = {
       let panel = document.getElementById("servicesInstall-notification");
       ok(panel.hidden, "activation panel still hidden");
       checkSocialUI();
-      removeAllProviders(next);
+      next();
     });
   },
   
@@ -222,7 +205,7 @@ var tests = {
       
       ok(!SocialSidebar.provider, "should be no provider left after disabling");
       checkSocialUI();
-      removeAllProviders(next);
+      next();
     });
   },
   
@@ -240,7 +223,7 @@ var tests = {
           
           is(SocialSidebar.provider.origin, Social.providers[1].origin, "original provider should have been reactivated");
           checkSocialUI();
-          removeAllProviders(next);
+          next();
         });
       });
     });
@@ -248,52 +231,41 @@ var tests = {
 
   testAddonManagerDoubleInstall: function(next) {
     
-    let blanktab = gBrowser.addTab();
-    gBrowser.selectedTab = blanktab;
+    let addonsTab = gBrowser.addTab();
+    gBrowser.selectedTab = addonsTab;
     BrowserOpenAddonsMgr('addons://list/service');
-
-    is(blanktab, gBrowser.selectedTab, "Current tab should be blank tab");
-
     gBrowser.selectedBrowser.addEventListener("load", function tabLoad() {
       gBrowser.selectedBrowser.removeEventListener("load", tabLoad, true);
-      let browser = blanktab.linkedBrowser;
-      is(browser.currentURI.spec, "about:addons", "about:addons should load into blank tab.");
+      is(addonsTab.linkedBrowser.currentURI.spec, "about:addons", "about:addons should load into blank tab.");
 
       activateOneProvider(gProviders[0], true, function() {
         info("first activation completed");
         is(gBrowser.contentDocument.location.href, gProviders[0].origin + "/browser/browser/base/content/test/social/social_postActivation.html", "postActivationURL loaded");
-        gBrowser.removeTab(gBrowser.selectedTab);
-        is(gBrowser.contentDocument.location.href, gProviders[0].origin + "/browser/browser/base/content/test/social/social_activate_basic.html", "activation page selected");
-        gBrowser.removeTab(gBrowser.selectedTab);
-        tabsToRemove.pop();
-        
-        clickAddonRemoveButton(blanktab, function(addon) {
-          checkSocialUI();
-          activateOneProvider(gProviders[0], true, function() {
-            info("second activation completed");
-            is(gBrowser.contentDocument.location.href, gProviders[0].origin + "/browser/browser/base/content/test/social/social_postActivation.html", "postActivationURL loaded");
-            gBrowser.removeTab(gBrowser.selectedTab);
-
+        BrowserTestUtils.removeTab(gBrowser.selectedTab).then(() => {
+          is(gBrowser.contentDocument.location.href, gProviders[0].origin + "/browser/browser/base/content/test/social/social_activate_basic.html", "activation page selected");
+          BrowserTestUtils.removeTab(gBrowser.selectedTab).then(() => {
+            tabsToRemove.pop();
             
-            gBrowser.tabContainer.addEventListener("TabClose", function onTabClose() {
-              gBrowser.tabContainer.removeEventListener("TabClose", onTabClose);
-              AddonManager.getAddonsByTypes(["service"], function(aAddons) {
-                is(aAddons.length, 1, "there can be only one");
-                removeAllProviders(next);
+            clickAddonRemoveButton(addonsTab, function(addon) {
+              checkSocialUI();
+              activateOneProvider(gProviders[0], true, function() {
+                info("second activation completed");
+                is(gBrowser.contentDocument.location.href, gProviders[0].origin + "/browser/browser/base/content/test/social/social_postActivation.html", "postActivationURL loaded");
+                BrowserTestUtils.removeTab(gBrowser.selectedTab).then(() => {
+
+                  
+                  AddonManager.getAddonsByTypes(["service"], function(aAddons) {
+                    is(aAddons.length, 1, "there can be only one");
+
+                    let doc = addonsTab.linkedBrowser.contentDocument;
+                    let list = doc.getElementById("addon-list");
+                    is(list.childNodes.length, 1, "only one addon is displayed");
+
+                    BrowserTestUtils.removeTab(addonsTab).then(next);
+                  });
+                });
               });
             });
-
-            
-            AddonManager.getAddonsByTypes(["service"], function(aAddons) {
-              is(aAddons.length, 1, "there can be only one");
-
-              let doc = blanktab.linkedBrowser.contentDocument;
-              let list = doc.getElementById("addon-list");
-              is(list.childNodes.length, 1, "only one addon is displayed");
-
-              gBrowser.removeTab(blanktab);
-            });
-
           });
         });
       });

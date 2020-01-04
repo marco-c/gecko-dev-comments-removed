@@ -42,23 +42,23 @@ var tests = {
     }
 
     
-    ensureEventFired(menu, "popupshown").then(()=>{
+    BrowserTestUtils.waitForEvent(menu, "popupshown", true).then(()=>{
       menu.hidePopup(); 
       
       is(Social.providers[0].origin, SocialSidebar.provider.origin, "selected provider in sidebar");
       checkProviderMenu(Social.providers[0]);
 
       
-      ensureEventFired(sbrowser, "load").then(()=>{
+      BrowserTestUtils.waitForEvent(sbrowser, "load", true).then(()=>{
         checkUIStateMatchesProvider(Social.providers[1]);
 
-        ensureEventFired(sbrowser, "load").then(()=>{
+        BrowserTestUtils.waitForEvent(sbrowser, "load", true).then(()=>{
           checkUIStateMatchesProvider(Social.providers[0]);
           next();
         });
 
         
-        ensureEventFired(menu, "popupshown").then(()=>{
+        BrowserTestUtils.waitForEvent(menu, "popupshown", true).then(()=>{
           
           let el = menu.getElementsByAttribute("origin", Social.providers[0].origin);
           is(el.length, 1, "selected provider menu item exists");

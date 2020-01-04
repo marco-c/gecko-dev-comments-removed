@@ -68,7 +68,7 @@ function doTest() {
       }
     }
   }
-  ensureEventFired(browser, "load").then(() => {
+  ensureFrameLoaded(browser).then(() => {
     
     ok(!command.hidden, "toggle command should be visible");
     let mm = getGroupMessageManager("social");
