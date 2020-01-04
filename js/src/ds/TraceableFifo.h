@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
- * vim: set ts=8 sts=4 et sw=4 tw=99:
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #ifndef js_TraceableFifo_h
 #define js_TraceableFifo_h
@@ -13,27 +13,25 @@
 
 namespace js {
 
-// A TraceableFifo is a Fifo with an additional trace method that knows how to
-// visit all of the items stored in the Fifo. For Fifos that contain GC things,
-// this is usually more convenient than manually iterating and marking the
-// contents.
-//
-// Most types of GC pointers as keys and values can be traced with no extra
-// infrastructure. For structs and non-gc-pointer members, ensure that there is
-// a specialization of GCPolicy<T> with an appropriate trace method available
-// to handle the custom type. Generic helpers can be found in
-// js/public/TracingAPI.h. Generic helpers can be found in
-// js/public/TracingAPI.h.
-//
-// Note that although this Fifo's trace will deal correctly with moved items, it
-// does not itself know when to barrier or trace items. To function properly it
-// must either be used with Rooted, or barriered and traced manually.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 template <typename T,
           size_t MinInlineCapacity = 0,
           typename AllocPolicy = TempAllocPolicy>
-class TraceableFifo
-  : public js::Fifo<T, MinInlineCapacity, AllocPolicy>,
-    public JS::Traceable
+class TraceableFifo : public js::Fifo<T, MinInlineCapacity, AllocPolicy>
 {
     using Base = js::Fifo<T, MinInlineCapacity, AllocPolicy>;
 
@@ -46,11 +44,11 @@ class TraceableFifo
     TraceableFifo(const TraceableFifo&) = delete;
     TraceableFifo& operator=(const TraceableFifo&) = delete;
 
-    static void trace(TraceableFifo* tf, JSTracer* trc) {
-        for (size_t i = 0; i < tf->front_.length(); ++i)
-            GCPolicy<T>::trace(trc, &tf->front_[i], "fifo element");
-        for (size_t i = 0; i < tf->rear_.length(); ++i)
-            GCPolicy<T>::trace(trc, &tf->rear_[i], "fifo element");
+    void trace(JSTracer* trc) {
+        for (size_t i = 0; i < this->front_.length(); ++i)
+            GCPolicy<T>::trace(trc, &this->front_[i], "fifo element");
+        for (size_t i = 0; i < this->rear_.length(); ++i)
+            GCPolicy<T>::trace(trc, &this->rear_[i], "fifo element");
     }
 };
 
@@ -125,6 +123,6 @@ class HandleBase<TraceableFifo<A,B,C>>
     }
 };
 
-} // namespace js
+} 
 
-#endif // js_TraceableFifo_h
+#endif 

@@ -166,7 +166,7 @@ class YieldOffsetArray {
     }
 };
 
-class Binding : public JS::Traceable
+class Binding
 {
     
     
@@ -215,7 +215,7 @@ JS_STATIC_ASSERT(sizeof(Binding) == sizeof(uintptr_t));
 
 
 
-class Bindings : public JS::Traceable
+class Bindings
 {
     friend class BindingIter;
     friend class AliasedFormalIter;

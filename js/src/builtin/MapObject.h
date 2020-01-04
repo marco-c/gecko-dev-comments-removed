@@ -22,7 +22,7 @@ namespace js {
 
 
 
-class HashableValue : public JS::Traceable
+class HashableValue
 {
     PreBarrieredValue value;
 
@@ -43,8 +43,8 @@ class HashableValue : public JS::Traceable
     HashableValue mark(JSTracer* trc) const;
     Value get() const { return value.get(); }
 
-    static void trace(HashableValue* value, JSTracer* trc) {
-        TraceEdge(trc, &value->value, "HashableValue");
+    void trace(JSTracer* trc) {
+        TraceEdge(trc, &value, "HashableValue");
     }
 };
 

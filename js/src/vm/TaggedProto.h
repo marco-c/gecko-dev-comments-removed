@@ -14,7 +14,7 @@ namespace js {
 
 
 
-class TaggedProto : public JS::Traceable
+class TaggedProto
 {
   public:
     static JSObject * const LazyProto;
@@ -44,18 +44,13 @@ class TaggedProto : public JS::Traceable
     bool operator ==(const TaggedProto& other) const { return proto == other.proto; }
     bool operator !=(const TaggedProto& other) const { return proto != other.proto; }
 
-    static void trace(TaggedProto* protop, JSTracer* trc) {
-        TraceManuallyBarrieredEdge(trc, protop, "TaggedProto");
+    void trace(JSTracer* trc) {
+        if (isObject())
+            TraceManuallyBarrieredEdge(trc, &proto, "TaggedProto");
     }
 
   private:
     JSObject* proto;
-};
-
-template <>
-struct GCPolicy<TaggedProto>
-{
-    static TaggedProto initial() { return TaggedProto(); }
 };
 
 template <>

@@ -581,28 +581,15 @@ struct JS_PUBLIC_API(MovableCellHasher<JS::Heap<T>>)
 
 } 
 
-namespace JS {
-
-
-
-
-
-
-class Traceable
-{
-};
-
-} 
-
 namespace js {
 
 template <typename T>
 class DispatchWrapper
 {
-    static_assert(mozilla::IsBaseOf<JS::Traceable, T>::value,
+    static_assert(JS::MapTypeToRootKind<T>::kind == JS::RootKind::Traceable,
                   "DispatchWrapper is intended only for usage with a Traceable");
 
-    using TraceFn = void (*)(T*, JSTracer*);
+    using TraceFn = void (*)(JSTracer*, T*, const char*);
     TraceFn tracer;
 #if JS_BITS_PER_WORD == 32
     uint32_t padding; 
@@ -612,7 +599,7 @@ class DispatchWrapper
   public:
     template <typename U>
     MOZ_IMPLICIT DispatchWrapper(U&& initial)
-      : tracer(&T::trace),
+      : tracer(&GCPolicy<T>::trace),
         storage(mozilla::Forward<U>(initial))
     { }
 
@@ -624,10 +611,10 @@ class DispatchWrapper
 
     
     
-    static void TraceWrapped(JSTracer* trc, JS::Traceable* thingp, const char* name) {
+    static void TraceWrapped(JSTracer* trc, T* thingp, const char* name) {
         auto wrapper = reinterpret_cast<DispatchWrapper*>(
                            uintptr_t(thingp) - offsetof(DispatchWrapper, storage));
-        wrapper->tracer(&wrapper->storage, trc);
+        wrapper->tracer(trc, &wrapper->storage, name);
     }
 };
 
@@ -670,9 +657,6 @@ namespace JS {
 template <typename T>
 class MOZ_RAII Rooted : public js::RootedBase<T>
 {
-    static_assert(!mozilla::IsConvertible<T, Traceable*>::value,
-                  "Rooted takes pointer or Traceable types but not Traceable* type");
-
     
     void registerWithRootLists(js::RootLists& roots) {
         this->stack = &roots.stackRoots_[JS::MapTypeToRootKind<T>::kind];
@@ -734,7 +718,7 @@ class MOZ_RAII Rooted : public js::RootedBase<T>
 
 
     using MaybeWrapped = typename mozilla::Conditional<
-        mozilla::IsBaseOf<Traceable, T>::value,
+        MapTypeToRootKind<T>::kind == JS::RootKind::Traceable,
         js::DispatchWrapper<T>,
         T>::Type;
     MaybeWrapped ptr;
@@ -1071,7 +1055,7 @@ class PersistentRooted : public js::PersistentRootedBase<T>,
 
     
     using MaybeWrapped = typename mozilla::Conditional<
-        mozilla::IsBaseOf<Traceable, T>::value,
+        MapTypeToRootKind<T>::kind == JS::RootKind::Traceable,
         js::DispatchWrapper<T>,
         T>::Type;
 

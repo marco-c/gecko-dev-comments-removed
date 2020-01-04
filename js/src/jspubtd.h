@@ -242,6 +242,13 @@ class JS_PUBLIC_API(AutoGCRooter)
     void operator=(AutoGCRooter& ida) = delete;
 };
 
+
+
+template <>
+struct MapTypeToRootKind<void*> {
+    static const RootKind kind = RootKind::Traceable;
+};
+
 } 
 
 namespace js {

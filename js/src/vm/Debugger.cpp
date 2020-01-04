@@ -2480,7 +2480,7 @@ Debugger::markCrossCompartmentEdges(JSTracer* trc)
     
     
     
-    TenurePromotionsLog::trace(&tenurePromotionsLog, trc);
+    tenurePromotionsLog.trace(trc);
 }
 
 
@@ -2656,8 +2656,8 @@ Debugger::trace(JSTracer* trc)
         TraceEdge(trc, &frameobj, "live Debugger.Frame");
     }
 
-    AllocationsLog::trace(&allocationsLog, trc);
-    TenurePromotionsLog::trace(&tenurePromotionsLog, trc);
+    allocationsLog.trace(trc);
+    tenurePromotionsLog.trace(trc);
 
     
     scripts.trace(trc);

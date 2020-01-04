@@ -308,7 +308,7 @@ template<typename T> class ConcreteStackFrame;
 
 
 
-class StackFrame : public JS::Traceable {
+class StackFrame {
     
     mozilla::AlignedStorage2<BaseStackFrame> storage;
 
@@ -397,12 +397,6 @@ class StackFrame : public JS::Traceable {
     
     size_t sourceLength();
     size_t functionDisplayNameLength();
-
-    
-    static void trace(StackFrame* frame, JSTracer* trc) {
-        if (frame)
-            frame->trace(trc);
-    }
 
     
 
