@@ -225,7 +225,12 @@ add_task(function* testOpenPreferences() {
   }, "advanced-pane-loaded", false);
 
   info("Loading preferences pane.");
-  EventUtils.synthesizeMouseAtCenter(btn, {}, gManagerWindow);
+  
+  
+  
+  yield SimpleTest.promiseFocus();
+  yield BrowserTestUtils.synthesizeMouseAtCenter("#experiments-change-telemetry", {},
+                                                 gBrowser.selectedBrowser);
 
   yield deferred.promise;
 });
