@@ -26,6 +26,7 @@
 #include "LayersTypes.h"
 #include "mozilla/gfx/Matrix.h"
 #include "nsRegion.h"
+#include "PotentialCheckerboardDurationTracker.h"
 
 #include "base/message_loop.h"
 
@@ -1105,6 +1106,10 @@ private:
   
   
   UniquePtr<CheckerboardEvent> mCheckerboardEvent;
+  
+  
+  
+  PotentialCheckerboardDurationTracker mPotentialCheckerboardTracker;
 };
 
 } 
