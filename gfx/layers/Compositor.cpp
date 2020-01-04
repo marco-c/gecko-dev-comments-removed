@@ -369,11 +369,13 @@ Compositor::ComputeBackdropCopyRect(const gfx::Rect& aRect,
   renderBounds.MoveBy(rtOffset);
 
   
-  gfx::Rect dest = aTransform.TransformAndClipBounds(aRect, renderBounds);
+  gfx::RectDouble dest = aTransform.TransformAndClipBounds(
+    gfx::RectDouble(aRect.x, aRect.y, aRect.width, aRect.height),
+    gfx::RectDouble(renderBounds.x, renderBounds.y, renderBounds.width, renderBounds.height));
   dest -= rtOffset;
 
   
-  dest.IntersectRect(dest, gfx::Rect(0, 0, rtSize.width, rtSize.height));
+  dest.IntersectRect(dest, gfx::RectDouble(0, 0, rtSize.width, rtSize.height));
 
   
   gfx::IntRect result;
