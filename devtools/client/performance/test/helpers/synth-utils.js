@@ -6,7 +6,7 @@
 
 
 exports.synthesizeProfile = () => {
-  const { CATEGORY_MASK } = require("devtools/client/performance/modules/global");
+  const { CATEGORY_MASK } = require("devtools/client/performance/modules/categories");
   const RecordingUtils = require("devtools/shared/performance/recording-utils");
 
   return RecordingUtils.deflateProfile({

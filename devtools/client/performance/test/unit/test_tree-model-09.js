@@ -5,7 +5,7 @@
 
 
 
-var { CATEGORY_MASK } = require("devtools/client/performance/modules/global");
+var { CATEGORY_MASK } = require("devtools/client/performance/modules/categories");
 
 function run_test() {
   run_next_test();

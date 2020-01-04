@@ -6,7 +6,7 @@
 
 
 
-var { CATEGORY_MASK } = require("devtools/client/performance/modules/global");
+var { CATEGORY_MASK } = require("devtools/client/performance/modules/categories");
 
 function* spawnTest() {
   let { panel } = yield initPerformance(SIMPLE_URL);
