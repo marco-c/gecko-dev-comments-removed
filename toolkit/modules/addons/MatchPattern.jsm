@@ -175,6 +175,7 @@ MatchPattern.prototype = {
 
 
 this.MatchGlobs = function(globs) {
+  this.original = globs;
   if (globs) {
     this.regexps = Array.from(globs, (glob) => globToRegexp(glob, true));
   } else {
@@ -183,13 +184,10 @@ this.MatchGlobs = function(globs) {
 };
 
 MatchGlobs.prototype = {
-  matches(uri) {
-    let spec = uri.spec;
-    for (let regexp of this.regexps) {
-      if (regexp.test(spec)) {
-        return true;
-      }
-    }
-    return false;
+  matches(str) {
+    return this.regexps.some(regexp => regexp.test(str));
+  },
+  serialize() {
+    return this.original;
   },
 };
