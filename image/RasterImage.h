@@ -32,6 +32,7 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/MemoryReporting.h"
+#include "mozilla/NotNull.h"
 #include "mozilla/Pair.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/WeakPtr.h"
@@ -380,7 +381,7 @@ private:
 #endif
 
   
-  RefPtr<SourceBuffer>     mSourceBuffer;
+  NotNull<RefPtr<SourceBuffer>>  mSourceBuffer;
 
   
   uint32_t                   mFrameCount;
