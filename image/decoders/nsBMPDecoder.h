@@ -46,7 +46,10 @@ public:
 
     
     
-    bool HasAlphaData() const;
+    bool HasAlphaData() const { return mHaveAlphaData; }
+
+    
+    void SetHasAlphaData() { mHaveAlphaData = true; }
 
     virtual void WriteInternal(const char* aBuffer,
                                uint32_t aCount) override;
