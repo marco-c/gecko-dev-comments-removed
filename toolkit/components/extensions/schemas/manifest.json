@@ -15,22 +15,28 @@
 
           "applications": {
             "type": "object",
-            "optional": true,
             "properties": {
               "gecko": {
-                "$ref": "FirefoxSpecificProperties",
-                "optional": true
-              }
-            }
-          },
+                "type": "object",
+                "properties": {
+                  "id": { "$ref": "ExtensionID" },
 
-          "browser_specific_settings": {
-            "type": "object",
-            "optional": true,
-            "properties": {
-              "gecko": {
-                "$ref": "FirefoxSpecificProperties",
-                "optional": true
+                  "update_url": {
+                    "type": "string",
+                    "format": "url",
+                    "optional": true
+                  },
+
+                  "strict_min_version": {
+                    "type": "string",
+                    "optional": true
+                  },
+
+                  "strict_max_version": {
+                    "type": "string",
+                    "optional": true
+                  }
+                }
               }
             }
           },
@@ -143,6 +149,13 @@
             "items": { "$ref": "ContentScript" }
           },
 
+          "content_security_policy": {
+            "type": "string",
+            "optional": true,
+            "format": "contentSecurityPolicy",
+            "onError": "warn"
+          },
+
           "permissions": {
             "type": "array",
             "items": {
@@ -198,32 +211,6 @@
             "pattern": "(?i)^[a-z0-9-._]*@[a-z0-9-._]+$"
           }
         ]
-      },
-      {
-        "id": "FirefoxSpecificProperties",
-        "type": "object",
-        "properties": {
-          "id": {
-            "$ref": "ExtensionID",
-            "optional": true
-          },
-
-          "update_url": {
-            "type": "string",
-            "format": "url",
-            "optional": true
-          },
-
-          "strict_min_version": {
-            "type": "string",
-            "optional": true
-          },
-
-          "strict_max_version": {
-            "type": "string",
-            "optional": true
-          }
-        }
       },
       {
         "id": "MatchPattern",
