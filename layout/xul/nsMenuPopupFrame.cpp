@@ -1845,8 +1845,7 @@ nsMenuPopupFrame::ChangeMenuItem(nsMenuFrame* aMenuItem,
           
           
           
-          nsContentUtils::DispatchXULCommand(aMenuItem->GetContent(),
-                                             nsContentUtils::IsCallerChrome(),
+          nsContentUtils::DispatchXULCommand(aMenuItem->GetContent(),  true,
                                              nullptr, PresContext()->PresShell(),
                                              false, false, false, false);
         }
