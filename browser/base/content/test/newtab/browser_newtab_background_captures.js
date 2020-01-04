@@ -8,13 +8,12 @@
 
 const CAPTURE_PREF = "browser.pagethumbnails.capturing_disabled";
 
-function runTests() {
+add_task(function* () {
   let imports = {};
   Cu.import("resource://gre/modules/PageThumbs.jsm", imports);
 
   
-  let originalDisabledState = Services.prefs.getBoolPref(CAPTURE_PREF);
-  Services.prefs.setBoolPref(CAPTURE_PREF, true);
+  yield pushPrefs([CAPTURE_PREF, false]);
 
   
   let url = "http://example.com/";
@@ -34,30 +33,32 @@ function runTests() {
   gBrowser._createPreloadBrowser();
 
   
-  yield waitForBrowserLoad(gBrowser._preloadedBrowser);
+  if (gBrowser._preloadedBrowser.contentDocument.readyState != "complete") {
+    yield BrowserTestUtils.waitForEvent(gBrowser._preloadedBrowser, "load", true);
+  }
 
   
   BrowserOpenTab();
   let tab = gBrowser.selectedTab;
-  let doc = tab.linkedBrowser.contentDocument;
 
-  
-  Services.prefs.setBoolPref(CAPTURE_PREF, false);
-
-  
-  Services.obs.addObserver(function onCreate(subj, topic, data) {
-    if (data != url)
-      return;
-    Services.obs.removeObserver(onCreate, "page-thumbnail:create");
-    ok(true, "thumbnail created after preloaded tab was shown");
-
+  let thumbnailCreatedPromise = new Promise(resolve => {
     
-    Services.prefs.setBoolPref(CAPTURE_PREF, originalDisabledState);
-    gBrowser.removeTab(tab);
-    file.remove(false);
-    TestRunner.next();
-  }, "page-thumbnail:create", false);
+    Services.obs.addObserver(function onCreate(subj, topic, data) {
+      if (data != url)
+        return;
+      Services.obs.removeObserver(onCreate, "page-thumbnail:create");
+      ok(true, "thumbnail created after preloaded tab was shown");
 
-  info("Waiting for thumbnail capture");
-  yield true;
-}
+      resolve();
+    }, "page-thumbnail:create", false);
+  });
+
+  
+  yield pushPrefs([CAPTURE_PREF, false]);
+
+  yield thumbnailCreatedPromise;
+
+  
+  gBrowser.removeTab(tab);
+  file.remove(false);
+});
