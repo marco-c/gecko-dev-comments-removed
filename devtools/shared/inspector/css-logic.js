@@ -441,24 +441,6 @@ CssLogic.prototype = {
 
 
 
-  forSomeSheets: function (callback, scope) {
-    for (let cacheId in this._sheets) {
-      if (this._sheets[cacheId].some(callback, scope)) {
-        return true;
-      }
-    }
-    return false;
-  },
-
-  
-
-
-
-
-
-
-
-
 
 
   get ruleCount() {
@@ -698,40 +680,6 @@ CssLogic.getShortName = function (element) {
     priorSiblings++;
   }
   return element.tagName + "[" + priorSiblings + "]";
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-CssLogic.getShortNamePath = function (element) {
-  let doc = element.ownerDocument;
-  let reply = [];
-
-  if (!element) {
-    return reply;
-  }
-
-  
-  
-  do {
-    reply.unshift({
-      display: CssLogic.getShortName(element),
-      element: element
-    });
-    element = element.parentNode;
-  } while (element && element != doc.body && element != doc.head &&
-           element != doc);
-
-  return reply;
 };
 
 
@@ -1186,7 +1134,6 @@ function CssSheet(cssLogic, domSheet, index) {
 CssSheet.prototype = {
   _passId: null,
   _contentSheet: null,
-  _mediaMatches: null,
 
   
 
@@ -1207,18 +1154,6 @@ CssSheet.prototype = {
 
   get disabled() {
     return this.domSheet.disabled;
-  },
-
-  
-
-
-
-
-  get mediaMatches() {
-    if (this._mediaMatches === null) {
-      this._mediaMatches = this._cssLogic.mediaMatches(this.domSheet);
-    }
-    return this._mediaMatches;
   },
 
   
@@ -1322,68 +1257,6 @@ CssSheet.prototype = {
     }
 
     return rule;
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-  forEachRule: function (callback, scope) {
-    let ruleCount = 0;
-    let domRules = this.domSheet.cssRules;
-
-    function _iterator(domRule) {
-      if (domRule.type == CSSRule.STYLE_RULE) {
-        callback.call(scope, this.getRule(domRule));
-        ruleCount++;
-      } else if (domRule.type == CSSRule.MEDIA_RULE &&
-          domRule.cssRules && this._cssLogic.mediaMatches(domRule)) {
-        Array.prototype.forEach.call(domRule.cssRules, _iterator, this);
-      }
-    }
-
-    Array.prototype.forEach.call(domRules, _iterator, this);
-
-    this._ruleCount = ruleCount;
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  forSomeRules: function (callback, scope) {
-    let domRules = this.domSheet.cssRules;
-    function _iterator(domRule) {
-      if (domRule.type == CSSRule.STYLE_RULE) {
-        return callback.call(scope, this.getRule(domRule));
-      } else if (domRule.type == CSSRule.MEDIA_RULE &&
-          domRule.cssRules && this._cssLogic.mediaMatches(domRule)) {
-        return Array.prototype.some.call(domRule.cssRules, _iterator, this);
-      }
-      return false;
-    }
-    return Array.prototype.some.call(domRules, _iterator, this);
   },
 
   toString: function () {
@@ -1664,10 +1537,6 @@ function CssPropertyInfo(cssLogic, property, isInherited) {
 
   
   
-  this._matchedRuleCount = 0;
-
-  
-  
   
   
   this._matchedSelectors = null;
@@ -1700,22 +1569,6 @@ CssPropertyInfo.prototype = {
 
 
 
-  get matchedRuleCount() {
-    if (!this._matchedSelectors) {
-      this._findMatchedSelectors();
-    } else if (this.needRefilter) {
-      this._refilterSelectors();
-    }
-
-    return this._matchedRuleCount;
-  },
-
-  
-
-
-
-
-
 
 
   get matchedSelectors() {
@@ -1737,7 +1590,6 @@ CssPropertyInfo.prototype = {
 
   _findMatchedSelectors: function () {
     this._matchedSelectors = [];
-    this._matchedRuleCount = 0;
     this.needRefilter = false;
 
     this._cssLogic.processMatchedSelectors(this._processMatchedSelector, this);
@@ -1776,9 +1628,6 @@ CssPropertyInfo.prototype = {
       let selectorInfo = new CssSelectorInfo(selector, this.property, value,
           status);
       this._matchedSelectors.push(selectorInfo);
-      if (this._cssLogic._passId !== cssRule._passId && cssRule.sheetAllowed) {
-        this._matchedRuleCount++;
-      }
     }
   },
 
@@ -1803,7 +1652,6 @@ CssPropertyInfo.prototype = {
 
     if (this._matchedSelectors) {
       this._matchedSelectors.forEach(iterator);
-      this._matchedRuleCount = ruleCount;
     }
 
     this.needRefilter = false;
