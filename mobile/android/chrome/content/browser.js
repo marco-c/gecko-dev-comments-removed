@@ -193,6 +193,8 @@ lazilyLoadedObserverScripts.forEach(function (aScript) {
   ["Reader", [
     ["Reader:AddToList", false],
     ["Reader:ArticleGet", false],
+    ["Reader:DropdownClosed", true], 
+    ["Reader:DropdownOpened", false],
     ["Reader:FaviconRequest", false],
     ["Reader:ListStatusRequest", false],
     ["Reader:RemoveFromList", false],
@@ -4747,6 +4749,11 @@ var BrowserEventHandler = {
 
     InitLater(() => BrowserApp.deck.addEventListener("click", InputWidgetHelper, true));
     InitLater(() => BrowserApp.deck.addEventListener("click", SelectHelper, true));
+
+    
+    Messaging.addListener(() => {
+      return Reader.onBackPress(BrowserApp.selectedTab.id);
+    }, "Browser:OnBackPressed");
   },
 
   handleEvent: function(aEvent) {

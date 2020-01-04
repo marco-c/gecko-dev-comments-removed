@@ -20,6 +20,39 @@ var Reader = {
     return this._hasUsedToolbar = Services.prefs.getBoolPref("reader.has_used_toolbar");
   },
 
+  
+
+
+  _backPressListeners: [],
+  _backPressViewIds: [],
+
+  
+
+
+  _addBackPressListener: function(tabId, viewId, listener) {
+    this._backPressListeners[tabId] = listener;
+    this._backPressViewIds[viewId] = tabId;
+  },
+
+  
+
+
+  _removeBackPressListener: function(viewId) {
+    let tabId = this._backPressViewIds[viewId];
+    if (tabId != undefined) {
+      this._backPressListeners[tabId] = null;
+      delete this._backPressViewIds[viewId];
+    }
+  },
+
+  
+
+
+  onBackPress: function(tabId) {
+    let listener = this._backPressListeners[tabId];
+    return { handled: (listener ? listener() : false) };
+  },
+
   observe: function Reader_observe(aMessage, aTopic, aData) {
     switch (aTopic) {
       case "Reader:FetchContent": {
@@ -65,6 +98,29 @@ var Reader = {
           }
         });
         break;
+
+      
+      case "Reader:DropdownClosed": {
+        this._removeBackPressListener(message.data);
+        break;
+      }
+
+      
+      case "Reader:DropdownOpened": {
+        let tabId = BrowserApp.selectedTab.id;
+        this._addBackPressListener(tabId, message.data, () => {
+          
+          
+          if (message.target.messageManager) {
+            message.target.messageManager.sendAsyncMessage("Reader:CloseDropdown");
+            return true;
+          }
+          
+          return false;
+        });
+
+        break;
+      }
 
       case "Reader:FaviconRequest": {
         Messaging.sendRequestForResult({
