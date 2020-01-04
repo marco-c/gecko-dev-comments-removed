@@ -861,7 +861,6 @@ NativeKey::NativeKey(nsWindowBase* aWidget,
   , mScanCode(0)
   , mIsExtended(false)
   , mIsDeadKey(false)
-  , mIsFollowedByNonControlCharMessage(false)
   , mFakeCharMsgs(aFakeCharMsgs && aFakeCharMsgs->Length() ?
                     aFakeCharMsgs : nullptr)
 {
@@ -1064,9 +1063,9 @@ NativeKey::NativeKey(nsWindowBase* aWidget,
     keyboardLayout->ConvertNativeKeyCodeToDOMKeyCode(mOriginalVirtualKeyCode);
   
   
-  mIsFollowedByNonControlCharMessage =
-    IsKeyDownMessage() && IsFollowedByNonControlCharMessage();
-  mKeyNameIndex = mIsFollowedByNonControlCharMessage ?
+  
+  
+  mKeyNameIndex = IsFollowedByNonControlCharMessage() ?
     KEY_NAME_INDEX_USE_STRING :
     keyboardLayout->ConvertNativeKeyCodeToKeyNameIndex(mOriginalVirtualKeyCode);
   mCodeNameIndex =
@@ -2042,7 +2041,7 @@ NativeKey::NeedsToHandleWithoutFollowingCharMessages() const
   
   
   
-  if (mIsFollowedByNonControlCharMessage) {
+  if (IsFollowedByNonControlCharMessage()) {
     return false;
   }
 

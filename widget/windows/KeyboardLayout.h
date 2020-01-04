@@ -321,10 +321,6 @@ private:
   
   
   bool    mIsOverridingKeyboardLayout;
-  
-  
-  
-  bool    mIsFollowedByNonControlCharMessage;
 
   nsTArray<FakeCharMsg>* mFakeCharMsgs;
 
