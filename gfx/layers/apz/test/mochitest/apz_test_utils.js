@@ -45,59 +45,40 @@ function convertTestData(testData) {
 
 
 
-function makeNode(id) {
-  return {scrollId: id, children: []};
-}
-
-
-function findNode(root, id) {
-  if (root.scrollId == id) {
-    return root;
-  }
-  for (var i = 0; i < root.children.length; ++i) {
-    var subtreeResult = findNode(root.children[i], id);
-    if (subtreeResult != null) {
-      return subtreeResult;
-    }
-  }
-  return null;
-}
-
-
-function addLink(root, child, parent) {
-  var parentNode = findNode(root, parent);
-  if (parentNode == null) {
-    parentNode = makeNode(parent);
-    root.children.push(parentNode);
-  }
-  parentNode.children.push(makeNode(child));
-}
-
-
-
-function addRoot(root, id) {
-  root.children.push(makeNode(id));
-}
-
-
-
-
-
-
-
 function buildApzcTree(paint) {
   
   
   
-  var root = makeNode(-1);
+  var root = {scrollId: -1, children: []};
   for (var scrollId in paint) {
+    paint[scrollId].children = [];
+    paint[scrollId].scrollId = scrollId;
+  }
+  for (var scrollId in paint) {
+    var parentNode = null;
     if ("hasNoParentWithSameLayersId" in paint[scrollId]) {
-      addRoot(root, scrollId);
+      parentNode = root;
     } else if ("parentScrollId" in paint[scrollId]) {
-      addLink(root, scrollId, paint[scrollId]["parentScrollId"]);
+      parentNode = paint[paint[scrollId].parentScrollId];
     }
+    parentNode.children.push(paint[scrollId]);
   }
   return root;
+}
+
+
+
+function findRcdNode(apzcTree) {
+  if (!!apzcTree.isRootContent) { 
+    return apzcTree;
+  }
+  for (var i = 0; i < apzcTree.children.length; i++) {
+    var rcd = findRcdNode(apzcTree.children[i]);
+    if (rcd != null) {
+      return rcd;
+    }
+  }
+  return null;
 }
 
 function flushApzRepaints(aCallback, aWindow = window) {
