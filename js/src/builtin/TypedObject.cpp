@@ -1083,9 +1083,7 @@ StructTypeDescr::maybeForwardedFieldDescr(size_t index) const
 {
     ArrayObject& fieldDescrs = *MaybeForwarded(&fieldInfoObject(JS_DESCR_SLOT_STRUCT_FIELD_TYPES));
     MOZ_ASSERT(index < fieldDescrs.getDenseInitializedLength());
-    JSObject& descr =
-        *MaybeForwarded(&fieldDescrs.getDenseElement(index).toObject());
-    return descr.as<TypeDescr>();
+    return MaybeForwarded(&fieldDescrs.getDenseElement(index).toObject())->as<TypeDescr>();
 }
 
 
@@ -1659,6 +1657,7 @@ OutlineTypedObject::obj_trace(JSTracer* trc, JSObject* object)
     
     
     
+    MakeAccessibleAfterMovingGC(owner);
     MOZ_ASSERT_IF(owner->is<ArrayBufferObject>(),
                   !owner->as<ArrayBufferObject>().forInlineTypedObject());
     if (owner != oldOwner &&

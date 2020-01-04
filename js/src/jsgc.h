@@ -1086,6 +1086,18 @@ class RelocationOverlay
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
 template <typename T>
 struct MightBeForwarded
 {
@@ -1094,7 +1106,8 @@ struct MightBeForwarded
     static_assert(!mozilla::IsSame<Cell, T>::value && !mozilla::IsSame<TenuredCell, T>::value,
                   "T must not be Cell or TenuredCell");
 
-    static const bool value = mozilla::IsBaseOf<JSObject, T>::value;
+    static const bool value = mozilla::IsBaseOf<JSObject, T>::value ||
+                              mozilla::IsBaseOf<Shape, T>::value;
 };
 
 template <typename T>
@@ -1141,11 +1154,23 @@ Forwarded(const JS::Value& value)
     return DispatchTyped(ForwardedFunctor(), value);
 }
 
+inline void
+MakeAccessibleAfterMovingGC(void* anyp) {}
+
+inline void
+MakeAccessibleAfterMovingGC(JSObject* obj) {
+    if (obj->isNative())
+        obj->as<NativeObject>().updateShapeAfterMovingGC();
+}
+
 template <typename T>
 inline T
 MaybeForwarded(T t)
 {
-    return IsForwarded(t) ? Forwarded(t) : t;
+    if (IsForwarded(t))
+        t = Forwarded(t);
+    MakeAccessibleAfterMovingGC(t);
+    return t;
 }
 
 #ifdef JSGC_HASH_TABLE_CHECKS
