@@ -20,7 +20,6 @@ function test()
   printBugNumber(BUGNUMBER);
   printStatus (summary);
 
-  jit(true);
  
 
 
@@ -142,7 +141,6 @@ function test()
   }
   print(passed);
 
-  jit(false);
 
   expect = true;
   actual = passed;

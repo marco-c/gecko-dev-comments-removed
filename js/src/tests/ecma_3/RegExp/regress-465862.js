@@ -24,7 +24,6 @@ var expectedmatches = new Array();
 
 
 
-jit(true);
 
 status = inSection(1);
 string = '@';
@@ -57,7 +56,6 @@ print('`'.match(/@/i));
 expectedmatch = null;
 addThis();
 
-jit(false);
 
 
 test();

@@ -30,13 +30,11 @@ function test()
     
     
     for (z in this);
-    jit(true);
     gczeal(2);
 
     var a, b; gczeal(2); (function() { for (var p in this) { } })();
 
     gczeal(0);
-    jit(false);
   }
   reportCompare(expect, actual, summary);
 

@@ -14,7 +14,6 @@ var expect = 'No Crash';
 printBugNumber(BUGNUMBER);
 printStatus (summary);
 
-jit(true);
 
 
 
@@ -111,6 +110,5 @@ var BrowserDetect = {
 
 BrowserDetect.init();
 
-jit(false);
 
 reportCompare(expect, actual, summary);

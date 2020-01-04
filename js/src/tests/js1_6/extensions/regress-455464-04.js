@@ -23,13 +23,11 @@ else
   
   
   for (z in this);
-  jit(true);
   gczeal(2);
 
   a=b=c=d=0; this.__defineGetter__('g', gc); for each (y in this);
 
   gczeal(0);
-  jit(false);
 }
 
 reportCompare(expect, actual, summary);
