@@ -114,7 +114,7 @@ class AsmJSModule
             Which which_;
             union {
                 struct {
-                    uint32_t index_;
+                    uint32_t globalDataOffset_;
                     VarInitKind initKind_;
                     union {
                         wasm::ValType importType_;
@@ -157,9 +157,9 @@ class AsmJSModule
         Which which() const {
             return pod.which_;
         }
-        uint32_t varIndex() const {
+        uint32_t varGlobalDataOffset() const {
             MOZ_ASSERT(pod.which_ == Variable);
-            return pod.u.var.index_;
+            return pod.u.var.globalDataOffset_;
         }
         VarInitKind varInitKind() const {
             MOZ_ASSERT(pod.which_ == Variable);
@@ -259,14 +259,23 @@ class AsmJSModule
         bool clone(ExclusiveContext* cx, Global* out) const;
     };
 
+    
+    
+    
+
+    struct ExitDatum
+    {
+        uint8_t* exit;
+        jit::BaselineScript* baselineScript;
+        HeapPtrFunction fun;
+    };
+
     class Exit
     {
         unsigned ffiIndex_;
         unsigned globalDataOffset_;
         unsigned interpCodeOffset_;
         unsigned jitCodeOffset_;
-
-        friend class AsmJSModule;
 
       public:
         Exit() {}
@@ -288,6 +297,29 @@ class AsmJSModule
             MOZ_ASSERT(!jitCodeOffset_);
             jitCodeOffset_ = off;
         }
+        ExitDatum& datum(const AsmJSModule& module) const {
+            return *reinterpret_cast<ExitDatum*>(module.globalData() + globalDataOffset_);
+        }
+        void initDatum(const AsmJSModule& module) const {
+            MOZ_ASSERT(interpCodeOffset_);
+            ExitDatum& d = datum(module);
+            d.exit = module.codeBase() + interpCodeOffset_;
+            d.baselineScript = nullptr;
+            d.fun = nullptr;
+        }
+        bool isOptimized(const AsmJSModule& module) const {
+            return datum(module).exit == module.codeBase() + jitCodeOffset_;
+        }
+        void optimize(const AsmJSModule& module, jit::BaselineScript* baselineScript) const {
+            ExitDatum& d = datum(module);
+            d.exit = module.codeBase() + jitCodeOffset_;
+            d.baselineScript = baselineScript;
+        }
+        void deoptimize(const AsmJSModule& module) const {
+            ExitDatum& d = datum(module);
+            d.exit = module.codeBase() + interpCodeOffset_;
+            d.baselineScript = nullptr;
+        }
 
         size_t serializedSize() const;
         uint8_t* serialize(uint8_t* cursor) const;
@@ -301,16 +333,6 @@ class AsmJSModule
     };
 
     typedef int32_t (*CodePtr)(EntryArg* args, uint8_t* global);
-
-    
-    
-    
-    struct ExitDatum
-    {
-        uint8_t* exit;
-        jit::BaselineScript* baselineScript;
-        HeapPtrFunction fun;
-    };
 
     class ExportedFunction
     {
@@ -679,15 +701,13 @@ class AsmJSModule
 
   private:
     struct Pod {
-        size_t                            funcPtrTableAndExitBytes_;
-        size_t                            functionBytes_; 
-        size_t                            codeBytes_;     
-        size_t                            totalBytes_;    
+        uint32_t                          functionBytes_;
+        uint32_t                          codeBytes_;
+        uint32_t                          globalBytes_;
+        uint32_t                          totalBytes_;
         uint32_t                          minHeapLength_;
         uint32_t                          maxHeapLength_;
         uint32_t                          heapLengthMask_;
-        uint32_t                          numGlobalScalarVars_;
-        uint32_t                          numGlobalSimdVars_;
         uint32_t                          numFFIs_;
         uint32_t                          srcLength_;
         uint32_t                          srcLengthWithRightBrace_;
@@ -745,10 +765,7 @@ class AsmJSModule
     ~AsmJSModule();
 
     
-    bool isFinishedWithModulePrologue() const { return pod.funcPtrTableAndExitBytes_ != SIZE_MAX; }
-    bool isFinishedWithFunctionBodies() const { return pod.functionBytes_ != UINT32_MAX; }
     bool isFinished() const { return !!code_; }
-    bool isStaticallyLinked() const { return !!interruptExit_; }
     bool isDynamicallyLinked() const { return dynamicallyLinked_; }
 
     
@@ -812,17 +829,17 @@ class AsmJSModule
     
 
     void initGlobalArgumentName(PropertyName* n) {
-        MOZ_ASSERT(!isFinishedWithModulePrologue());
+        MOZ_ASSERT(!isFinished());
         MOZ_ASSERT_IF(n, n->isTenured());
         globalArgumentName_ = n;
     }
     void initImportArgumentName(PropertyName* n) {
-        MOZ_ASSERT(!isFinishedWithModulePrologue());
+        MOZ_ASSERT(!isFinished());
         MOZ_ASSERT_IF(n, n->isTenured());
         importArgumentName_ = n;
     }
     void initBufferArgumentName(PropertyName* n) {
-        MOZ_ASSERT(!isFinishedWithModulePrologue());
+        MOZ_ASSERT(!isFinished());
         MOZ_ASSERT_IF(n, n->isTenured());
         bufferArgumentName_ = n;
     }
@@ -835,36 +852,54 @@ class AsmJSModule
     PropertyName* bufferArgumentName() const {
         return bufferArgumentName_;
     }
-    bool addGlobalVarInit(const wasm::Val& v, uint32_t* globalIndex) {
-        MOZ_ASSERT(!isFinishedWithModulePrologue());
+
+    
+    
+
+  private:
+    bool allocateGlobalBytes(uint32_t bytes, uint32_t align, uint32_t* globalDataOffset) {
+        MOZ_ASSERT(!isFinished());
+        uint32_t pad = ComputeByteAlignment(pod.globalBytes_, align);
+        if (UINT32_MAX - pod.globalBytes_ < pad + bytes)
+            return false;
+        pod.globalBytes_ += pad;
+        *globalDataOffset = pod.globalBytes_;
+        pod.globalBytes_ += bytes;
+        return true;
+    }
+    bool addGlobalVar(wasm::ValType type, uint32_t* globalDataOffset) {
+        MOZ_ASSERT(!isFinished());
+        unsigned width = 0;
+        switch (type) {
+          case wasm::ValType::I32:   case wasm::ValType::F32:   width = 4;  break;
+          case wasm::ValType::I64:   case wasm::ValType::F64:   width = 8;  break;
+          case wasm::ValType::I32x4: case wasm::ValType::F32x4: width = 16; break;
+        }
+        return allocateGlobalBytes(width, width, globalDataOffset);
+    }
+  public:
+    bool addGlobalVarInit(const wasm::Val& v, uint32_t* globalDataOffset) {
+        MOZ_ASSERT(!isFinished());
+        if (!addGlobalVar(v.type(), globalDataOffset))
+            return false;
         Global g(Global::Variable, nullptr);
         g.pod.u.var.initKind_ = Global::InitConstant;
         g.pod.u.var.u.val_ = v;
-        if (v.isSimd()) {
-            if (pod.numGlobalSimdVars_ == UINT32_MAX)
-                return false;
-            *globalIndex = pod.numGlobalSimdVars_++;
-        } else {
-            if (pod.numGlobalScalarVars_ == UINT32_MAX)
-                return false;
-            *globalIndex = pod.numGlobalScalarVars_++;
-        }
-        g.pod.u.var.index_ = *globalIndex;
+        g.pod.u.var.globalDataOffset_ = *globalDataOffset;
         return globals_.append(g);
     }
-    bool addGlobalVarImport(PropertyName* name, wasm::ValType importType, uint32_t* globalIndex) {
-        MOZ_ASSERT(!isFinishedWithModulePrologue());
+    bool addGlobalVarImport(PropertyName* name, wasm::ValType importType, uint32_t* globalDataOffset) {
+        MOZ_ASSERT(!isFinished());
+        if (!addGlobalVar(importType, globalDataOffset))
+            return false;
         Global g(Global::Variable, name);
         g.pod.u.var.initKind_ = Global::InitImport;
         g.pod.u.var.u.importType_ = importType;
-        *globalIndex = IsSimdType(importType)
-                       ? pod.numGlobalSimdVars_++
-                       : pod.numGlobalScalarVars_++;
-        g.pod.u.var.index_ = *globalIndex;
+        g.pod.u.var.globalDataOffset_ = *globalDataOffset;
         return globals_.append(g);
     }
     bool addFFI(PropertyName* field, uint32_t* ffiIndex) {
-        MOZ_ASSERT(!isFinishedWithModulePrologue());
+        MOZ_ASSERT(!isFinished());
         if (pod.numFFIs_ == UINT32_MAX)
             return false;
         Global g(Global::FFI, field);
@@ -872,7 +907,7 @@ class AsmJSModule
         return globals_.append(g);
     }
     bool addArrayView(Scalar::Type vt, PropertyName* maybeField, bool isSharedView) {
-        MOZ_ASSERT(!isFinishedWithModulePrologue());
+        MOZ_ASSERT(!isFinished());
         MOZ_ASSERT(!pod.hasArrayView_ || (pod.isSharedView_ == isSharedView));
         pod.hasArrayView_ = true;
         pod.isSharedView_ = isSharedView;
@@ -881,7 +916,7 @@ class AsmJSModule
         return globals_.append(g);
     }
     bool addArrayViewCtor(Scalar::Type vt, PropertyName* field, bool isSharedView) {
-        MOZ_ASSERT(!isFinishedWithModulePrologue());
+        MOZ_ASSERT(!isFinished());
         MOZ_ASSERT(field);
         MOZ_ASSERT(!pod.isSharedView_ || isSharedView);
         pod.isSharedView_ = isSharedView;
@@ -890,42 +925,44 @@ class AsmJSModule
         return globals_.append(g);
     }
     bool addByteLength() {
-        MOZ_ASSERT(!isFinishedWithModulePrologue());
+        MOZ_ASSERT(!isFinished());
         Global g(Global::ByteLength, nullptr);
         return globals_.append(g);
     }
     bool addMathBuiltinFunction(AsmJSMathBuiltinFunction func, PropertyName* field) {
-        MOZ_ASSERT(!isFinishedWithModulePrologue());
+        MOZ_ASSERT(!isFinished());
         Global g(Global::MathBuiltinFunction, field);
         g.pod.u.mathBuiltinFunc_ = func;
         return globals_.append(g);
     }
     bool addMathBuiltinConstant(double value, PropertyName* field) {
-        MOZ_ASSERT(!isFinishedWithModulePrologue());
+        MOZ_ASSERT(!isFinished());
         Global g(Global::Constant, field);
         g.pod.u.constant.value_ = value;
         g.pod.u.constant.kind_ = Global::MathConstant;
         return globals_.append(g);
     }
     bool addAtomicsBuiltinFunction(AsmJSAtomicsBuiltinFunction func, PropertyName* field) {
-        MOZ_ASSERT(!isFinishedWithModulePrologue());
+        MOZ_ASSERT(!isFinished());
         Global g(Global::AtomicsBuiltinFunction, field);
         g.pod.u.atomicsBuiltinFunc_ = func;
         return globals_.append(g);
     }
     bool addSimdCtor(AsmJSSimdType type, PropertyName* field) {
+        MOZ_ASSERT(!isFinished());
         Global g(Global::SimdCtor, field);
         g.pod.u.simdCtorType_ = type;
         return globals_.append(g);
     }
     bool addSimdOperation(AsmJSSimdType type, AsmJSSimdOperation op, PropertyName* field) {
+        MOZ_ASSERT(!isFinished());
         Global g(Global::SimdOperation, field);
         g.pod.u.simdOp.type_ = type;
         g.pod.u.simdOp.which_ = op;
         return globals_.append(g);
     }
     bool addGlobalConstant(double value, PropertyName* name) {
-        MOZ_ASSERT(!isFinishedWithModulePrologue());
+        MOZ_ASSERT(!isFinished());
         Global g(Global::Constant, name);
         g.pod.u.constant.value_ = value;
         g.pod.u.constant.kind_ = Global::GlobalConstant;
@@ -953,18 +990,9 @@ class AsmJSModule
     }
 
     
-
-    void startFunctionBodies() {
-        MOZ_ASSERT(!isFinishedWithModulePrologue());
-        pod.funcPtrTableAndExitBytes_ = 0;
-        MOZ_ASSERT(isFinishedWithModulePrologue());
-    }
-
-    
     
 
     bool hasArrayView() const {
-        MOZ_ASSERT(isFinishedWithModulePrologue());
         return pod.hasArrayView_;
     }
     bool isSharedView() const {
@@ -972,7 +1000,7 @@ class AsmJSModule
         return pod.isSharedView_;
     }
     void addChangeHeap(uint32_t mask, uint32_t min, uint32_t max) {
-        MOZ_ASSERT(isFinishedWithModulePrologue());
+        MOZ_ASSERT(!isFinished());
         MOZ_ASSERT(!pod.hasFixedMinHeapLength_);
         MOZ_ASSERT(IsValidAsmJSHeapLength(mask + 1));
         MOZ_ASSERT(min >= RoundUpToNextValidAsmJSHeapLength(0));
@@ -984,7 +1012,7 @@ class AsmJSModule
         pod.hasFixedMinHeapLength_ = true;
     }
     bool tryRequireHeapLengthToBeAtLeast(uint32_t len) {
-        MOZ_ASSERT(isFinishedWithModulePrologue() && !isFinishedWithFunctionBodies());
+        MOZ_ASSERT(!isFinished());
         if (pod.hasFixedMinHeapLength_ && len > pod.minHeapLength_)
             return false;
         if (len > pod.maxHeapLength_)
@@ -1013,68 +1041,42 @@ class AsmJSModule
                codeRanges_.append(CodeRange(builtin, offsets));
     }
     bool addExit(unsigned ffiIndex, unsigned* exitIndex) {
-        MOZ_ASSERT(isFinishedWithModulePrologue() && !isFinishedWithFunctionBodies());
-        if (SIZE_MAX - pod.funcPtrTableAndExitBytes_ < sizeof(ExitDatum))
+        MOZ_ASSERT(!isFinished());
+        static_assert(sizeof(ExitDatum) % sizeof(void*) == 0, "word aligned");
+        uint32_t globalDataOffset;
+        if (!allocateGlobalBytes(sizeof(ExitDatum), sizeof(void*), &globalDataOffset))
             return false;
-        uint32_t globalDataOffset = globalDataBytes();
-        JS_STATIC_ASSERT(sizeof(ExitDatum) % sizeof(void*) == 0);
-        pod.funcPtrTableAndExitBytes_ += sizeof(ExitDatum);
         *exitIndex = unsigned(exits_.length());
         return exits_.append(Exit(ffiIndex, globalDataOffset));
     }
     unsigned numExits() const {
-        MOZ_ASSERT(isFinishedWithModulePrologue());
         return exits_.length();
     }
     Exit& exit(unsigned i) {
-        MOZ_ASSERT(isFinishedWithModulePrologue());
         return exits_[i];
     }
     const Exit& exit(unsigned i) const {
-        MOZ_ASSERT(isFinishedWithModulePrologue());
         return exits_[i];
     }
     bool addFuncPtrTable(unsigned numElems, uint32_t* globalDataOffset) {
-        MOZ_ASSERT(isFinishedWithModulePrologue() && !isFinished());
+        MOZ_ASSERT(!isFinished());
         MOZ_ASSERT(IsPowerOfTwo(numElems));
-        if (SIZE_MAX - pod.funcPtrTableAndExitBytes_ < numElems * sizeof(void*))
+        if (!allocateGlobalBytes(numElems * sizeof(void*), sizeof(void*), globalDataOffset))
             return false;
-        *globalDataOffset = globalDataBytes();
-        if (!funcPtrTables_.append(FuncPtrTable(*globalDataOffset, numElems)))
-            return false;
-        pod.funcPtrTableAndExitBytes_ += numElems * sizeof(void*);
-        return true;
+        return funcPtrTables_.append(FuncPtrTable(*globalDataOffset, numElems));
     }
 #if defined(MOZ_VTUNE) || defined(JS_ION_PERF)
-    bool addProfiledFunction(ProfiledFunction&& func)
-    {
-        MOZ_ASSERT(isFinishedWithModulePrologue() && !isFinishedWithFunctionBodies());
-        return profiledFunctions_.append(mozilla::Move(func));
+    bool addProfiledFunction(ProfiledFunction func) {
+        MOZ_ASSERT(!isFinished());
+        return profiledFunctions_.append(func);
     }
     unsigned numProfiledFunctions() const {
-        MOZ_ASSERT(isFinishedWithModulePrologue());
         return profiledFunctions_.length();
     }
     ProfiledFunction& profiledFunction(unsigned i) {
-        MOZ_ASSERT(isFinishedWithModulePrologue());
         return profiledFunctions_[i];
     }
 #endif
-
-    
-
-    
-    
-    void finishFunctionBodies(size_t functionBytes) {
-        MOZ_ASSERT(isFinishedWithModulePrologue() && !isFinishedWithFunctionBodies());
-        pod.functionBytes_ = functionBytes;
-        MOZ_ASSERT(isFinishedWithFunctionBodies());
-    }
-
-    
-    
-    
-    
 
     bool addExportedFunction(PropertyName* name,
                              uint32_t funcSrcBegin,
@@ -1085,7 +1087,7 @@ class AsmJSModule
         
         
         
-        MOZ_ASSERT(isFinishedWithFunctionBodies() && !isFinished());
+        MOZ_ASSERT(!isFinished());
         MOZ_ASSERT(srcStart_ < funcSrcBegin);
         MOZ_ASSERT(funcSrcBegin < funcSrcEnd);
         ExportedFunction func(name, funcSrcBegin - srcStart_, funcSrcEnd - srcStart_,
@@ -1098,7 +1100,7 @@ class AsmJSModule
                                PropertyName* maybeFieldName)
     {
         
-        MOZ_ASSERT(isFinishedWithFunctionBodies() && !isFinished());
+        MOZ_ASSERT(!isFinished());
         MOZ_ASSERT(srcStart_ < funcSrcBegin);
         MOZ_ASSERT(funcSrcBegin < funcSrcEnd);
         ExportedFunction func(name, funcSrcBegin - srcStart_, funcSrcEnd - srcStart_,
@@ -1106,15 +1108,12 @@ class AsmJSModule
         return exports_.length() < UINT32_MAX && exports_.append(mozilla::Move(func));
     }
     unsigned numExportedFunctions() const {
-        MOZ_ASSERT(isFinishedWithFunctionBodies());
         return exports_.length();
     }
     const ExportedFunction& exportedFunction(unsigned i) const {
-        MOZ_ASSERT(isFinishedWithFunctionBodies());
         return exports_[i];
     }
     ExportedFunction& exportedFunction(unsigned i) {
-        MOZ_ASSERT(isFinishedWithFunctionBodies());
         return exports_[i];
     }
 
@@ -1133,6 +1132,44 @@ class AsmJSModule
     
     
 
+    uint8_t* codeBase() const {
+        MOZ_ASSERT(isFinished());
+        MOZ_ASSERT(uintptr_t(code_) % AsmJSPageSize == 0);
+        return code_;
+    }
+    uint32_t codeBytes() const {
+        MOZ_ASSERT(isFinished());
+        return pod.codeBytes_;
+    }
+    bool containsCodePC(void* pc) const {
+        MOZ_ASSERT(isFinished());
+        return pc >= code_ && pc < (code_ + codeBytes());
+    }
+
+    
+    
+    
+    
+    
+    void setFunctionBytes(uint32_t functionBytes) {
+        MOZ_ASSERT(!isFinished());
+        MOZ_ASSERT(!pod.functionBytes_);
+        pod.functionBytes_ = functionBytes;
+    }
+    uint32_t functionBytes() const {
+        MOZ_ASSERT(isFinished());
+        return pod.functionBytes_;
+    }
+    bool containsFunctionPC(void* pc) const {
+        MOZ_ASSERT(isFinished());
+        return pc >= code_ && pc < (code_ + functionBytes());
+    }
+
+    uint32_t globalBytes() const {
+        MOZ_ASSERT(isFinished());
+        return pod.globalBytes_;
+    }
+
     unsigned numFFIs() const {
         MOZ_ASSERT(isFinished());
         return pod.numFFIs_;
@@ -1145,39 +1182,6 @@ class AsmJSModule
         MOZ_ASSERT(isFinished());
         return srcStart_ + pod.srcLengthWithRightBrace_;
     }
-    uint8_t* codeBase() const {
-        MOZ_ASSERT(isFinished());
-        MOZ_ASSERT(uintptr_t(code_) % AsmJSPageSize == 0);
-        return code_;
-    }
-    size_t functionBytes() const {
-        MOZ_ASSERT(isFinished());
-        return pod.functionBytes_;
-    }
-    size_t codeBytes() const {
-        MOZ_ASSERT(isFinished());
-        return pod.codeBytes_;
-    }
-    bool containsFunctionPC(void* pc) const {
-        MOZ_ASSERT(isFinished());
-        return pc >= code_ && pc < (code_ + functionBytes());
-    }
-    bool containsCodePC(void* pc) const {
-        MOZ_ASSERT(isFinished());
-        return pc >= code_ && pc < (code_ + codeBytes());
-    }
-  private:
-    uint8_t* interpExitTrampoline(const Exit& exit) const {
-        MOZ_ASSERT(isFinished());
-        MOZ_ASSERT(exit.interpCodeOffset_);
-        return code_ + exit.interpCodeOffset_;
-    }
-    uint8_t* jitExitTrampoline(const Exit& exit) const {
-        MOZ_ASSERT(isFinished());
-        MOZ_ASSERT(exit.jitCodeOffset_);
-        return code_ + exit.jitCodeOffset_;
-    }
-  public:
 
     
     
@@ -1195,143 +1199,49 @@ class AsmJSModule
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    size_t offsetOfGlobalData() const {
+    uint32_t offsetOfGlobalData() const {
         MOZ_ASSERT(isFinished());
         return pod.codeBytes_;
     }
     uint8_t* globalData() const {
         MOZ_ASSERT(isFinished());
-        return code_ + offsetOfGlobalData();
+        return codeBase() + offsetOfGlobalData();
     }
-    size_t globalSimdVarsOffset() const {
-        return AlignBytes( sizeof(void*) +
-                           sizeof(void*) +
-                           sizeof(double) +
-                           sizeof(float),
-                          jit::Simd128DataSize);
+    static void assertGlobalDataOffsets() {
+        static_assert(jit::AsmJSActivationGlobalDataOffset == 0,
+                     "global data goes first");
+        static_assert(jit::AsmJSHeapGlobalDataOffset == jit::AsmJSActivationGlobalDataOffset + sizeof(void*),
+                      "then an AsmJSActivation*");
+        static_assert(jit::AsmJSNaN64GlobalDataOffset == jit::AsmJSHeapGlobalDataOffset + sizeof(uint8_t*),
+                      "then a pointer to the heap");
+        static_assert(jit::AsmJSNaN32GlobalDataOffset == jit::AsmJSNaN64GlobalDataOffset + sizeof(double),
+                      "then a 32-bit NaN");
+        static_assert(sInitialGlobalDataBytes == jit::AsmJSNaN32GlobalDataOffset + sizeof(float),
+                      "then a 64-bit NaN");
     }
-    size_t globalDataBytes() const {
-        return globalSimdVarsOffset() +
-                pod.numGlobalSimdVars_ * jit::Simd128DataSize +
-                pod.numGlobalScalarVars_ * sizeof(uint64_t) +
-                pod.funcPtrTableAndExitBytes_;
-    }
-    static unsigned activationGlobalDataOffset() {
-        JS_STATIC_ASSERT(jit::AsmJSActivationGlobalDataOffset == 0);
-        return 0;
-    }
+    static const uint32_t sInitialGlobalDataBytes = jit::AsmJSNaN32GlobalDataOffset + sizeof(float);
+
     AsmJSActivation*& activation() const {
-        return *(AsmJSActivation**)(globalData() + activationGlobalDataOffset());
+        MOZ_ASSERT(isFinished());
+        return *(AsmJSActivation**)(globalData() + jit::AsmJSActivationGlobalDataOffset);
     }
     bool active() const {
         return activation() != nullptr;
-    }
-    static unsigned heapGlobalDataOffset() {
-        JS_STATIC_ASSERT(jit::AsmJSHeapGlobalDataOffset == sizeof(void*));
-        return sizeof(void*);
     }
   private:
     
     
     uint8_t*& heapDatum() const {
         MOZ_ASSERT(isFinished());
-        return *(uint8_t**)(globalData() + heapGlobalDataOffset());
+        return *(uint8_t**)(globalData() + jit::AsmJSHeapGlobalDataOffset);
     }
   public:
-    static unsigned nan64GlobalDataOffset() {
-        static_assert(jit::AsmJSNaN64GlobalDataOffset % sizeof(double) == 0,
-                      "Global data NaN should be aligned");
-        return heapGlobalDataOffset() + sizeof(void*);
-    }
-    static unsigned nan32GlobalDataOffset() {
-        static_assert(jit::AsmJSNaN32GlobalDataOffset % sizeof(double) == 0,
-                      "Global data NaN should be aligned");
-        return nan64GlobalDataOffset() + sizeof(double);
-    }
-    void initGlobalNaN() {
-        MOZ_ASSERT(jit::AsmJSNaN64GlobalDataOffset == nan64GlobalDataOffset());
-        MOZ_ASSERT(jit::AsmJSNaN32GlobalDataOffset == nan32GlobalDataOffset());
-        *(double*)(globalData() + nan64GlobalDataOffset()) = GenericNaN();
-        *(float*)(globalData() + nan32GlobalDataOffset()) = GenericNaN();
-    }
-    unsigned globalSimdVarIndexToGlobalDataOffset(unsigned i) const {
-        MOZ_ASSERT(isFinishedWithModulePrologue());
-        MOZ_ASSERT(i < pod.numGlobalSimdVars_);
-        return globalSimdVarsOffset() +
-               i * jit::Simd128DataSize;
-    }
-    unsigned globalScalarVarIndexToGlobalDataOffset(unsigned i) const {
-        MOZ_ASSERT(isFinishedWithModulePrologue());
-        MOZ_ASSERT(i < pod.numGlobalScalarVars_);
-        return globalSimdVarsOffset() +
-               pod.numGlobalSimdVars_ * jit::Simd128DataSize +
-               i * sizeof(uint64_t);
-    }
-    void* globalScalarVarIndexToGlobalDatum(unsigned i) const {
-        MOZ_ASSERT(isFinished());
-        return (void*)(globalData() + globalScalarVarIndexToGlobalDataOffset(i));
-    }
-    void* globalSimdVarIndexToGlobalDatum(unsigned i) const {
-        MOZ_ASSERT(isFinished());
-        return (void*)(globalData() + globalSimdVarIndexToGlobalDataOffset(i));
-    }
-    void* globalVarToGlobalDatum(const Global& g) const {
-        unsigned index = g.varIndex();
-        if (g.varInitKind() == Global::VarInitKind::InitConstant) {
-            return g.varInitVal().isSimd()
-                   ? globalSimdVarIndexToGlobalDatum(index)
-                   : globalScalarVarIndexToGlobalDatum(index);
-        }
-
-        MOZ_ASSERT(g.varInitKind() == Global::VarInitKind::InitImport);
-        return IsSimdType(g.varInitImportType())
-               ? globalSimdVarIndexToGlobalDatum(index)
-               : globalScalarVarIndexToGlobalDatum(index);
-    }
-    uint8_t** globalDataOffsetToFuncPtrTable(unsigned globalDataOffset) const {
-        MOZ_ASSERT(isFinished());
-        MOZ_ASSERT(globalDataOffset < globalDataBytes());
-        return (uint8_t**)(globalData() + globalDataOffset);
-    }
-    unsigned exitIndexToGlobalDataOffset(unsigned exitIndex) const {
-        MOZ_ASSERT(isFinishedWithModulePrologue());
-        return exits_[exitIndex].globalDataOffset();
-    }
-    ExitDatum& exitIndexToGlobalDatum(unsigned exitIndex) const {
-        MOZ_ASSERT(isFinished());
-        return *(ExitDatum*)(globalData() + exitIndexToGlobalDataOffset(exitIndex));
-    }
-    bool exitIsOptimized(unsigned exitIndex) const {
-        MOZ_ASSERT(isFinished());
-        ExitDatum& exitDatum = exitIndexToGlobalDatum(exitIndex);
-        return exitDatum.exit != interpExitTrampoline(exit(exitIndex));
-    }
-    void optimizeExit(unsigned exitIndex, jit::BaselineScript* baselineScript) const {
-        MOZ_ASSERT(!exitIsOptimized(exitIndex));
-        ExitDatum& exitDatum = exitIndexToGlobalDatum(exitIndex);
-        exitDatum.exit = jitExitTrampoline(exit(exitIndex));
-        exitDatum.baselineScript = baselineScript;
-    }
-    void detachJitCompilation(size_t exitIndex) const {
-        MOZ_ASSERT(isFinished());
-        ExitDatum& exitDatum = exitIndexToGlobalDatum(exitIndex);
-        exitDatum.exit = interpExitTrampoline(exit(exitIndex));
-        exitDatum.baselineScript = nullptr;
-    }
 
     
     
 
     bool addRelativeLink(RelativeLink link) {
-        MOZ_ASSERT(isFinished() && !isStaticallyLinked());
+        MOZ_ASSERT(isFinished());
         return staticLinkData_.relativeLinks.append(link);
     }
 
@@ -1362,6 +1272,7 @@ class AsmJSModule
     
     
     void setIsDynamicallyLinked(JSRuntime* rt) {
+        MOZ_ASSERT(isFinished());
         MOZ_ASSERT(!isDynamicallyLinked());
         dynamicallyLinked_ = true;
         nextLinked_ = rt->linkedAsmJSModules;
