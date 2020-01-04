@@ -164,9 +164,7 @@ LoadProperties(const nsString& aName,
   uriStr.StripWhitespace(); 
   uriStr.AppendLiteral(".properties");
   return NS_LoadPersistentPropertiesFromURISpec(getter_AddRefs(aProperties),
-                                                NS_ConvertUTF16toUTF8(uriStr),
-                                                nsContentUtils::GetSystemPrincipal(),
-                                                nsIContentPolicy::TYPE_OTHER);
+                                                NS_ConvertUTF16toUTF8(uriStr));
 }
 
 class nsPropertiesTable final : public nsGlyphTable {
