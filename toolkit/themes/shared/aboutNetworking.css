@@ -27,6 +27,8 @@ body {
   vertical-align: middle;
 }
 
+
+
 .category {
   cursor: pointer;
   
@@ -37,6 +39,12 @@ body {
 .category .category-name {
   pointer-events: none;
 }
+
+#categories hr {
+  border-top-color: rgba(255,255,255,0.15);
+}
+
+
 
 
 
@@ -84,6 +92,8 @@ body {
   min-width: 100px;
 }
 
+
+
 .main-content {
   flex: 1;
 }
@@ -97,20 +107,15 @@ body {
   width: 100%;
 }
 
-hr {
+th, td, table {
+  border-collapse: collapse;
   border: none;
-  border-bottom: 1px solid rgba(255,255,255,0.15);
+  text-align: start;
 }
 
 th {
   padding-bottom: 0.5em;
   font-size: larger;
-}
-
-th, td, table {
-  border-collapse: collapse;
-  border: none;
-  text-align: start;
 }
 
 td {
