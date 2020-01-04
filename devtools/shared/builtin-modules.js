@@ -217,6 +217,13 @@ defineLazyGetter(exports.modules, "indexedDB", () => {
   }
 });
 
+defineLazyGetter(exports.modules, "CSS", () => {
+  let sandbox
+    = Cu.Sandbox(CC("@mozilla.org/systemprincipal;1", "nsIPrincipal")(),
+                 {wantGlobalProperties: ["CSS"]});
+  return sandbox.CSS;
+});
+
 defineLazyGetter(exports.modules, "FileReader", () => {
   let sandbox
     = Cu.Sandbox(CC("@mozilla.org/systemprincipal;1", "nsIPrincipal")(),
@@ -286,9 +293,6 @@ defineLazyGetter(globals, "CSSRule", () => Ci.nsIDOMCSSRule);
 defineLazyGetter(globals, "DOMParser", () => {
   return CC("@mozilla.org/xmlextras/domparser;1", "nsIDOMParser");
 });
-defineLazyGetter(globals, "CSS", () => {
-  let sandbox
-    = Cu.Sandbox(CC("@mozilla.org/systemprincipal;1", "nsIPrincipal")(),
-                 {wantGlobalProperties: ["CSS"]});
-  return sandbox.CSS;
+defineLazyGetter(globals, "WebSocket", () => {
+  return Services.appShell.hiddenDOMWindow.WebSocket;
 });
