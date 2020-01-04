@@ -59,6 +59,10 @@ public:
   Thread() : id_(Id()) {}
 
   
+  
+  
+  
+  
   template <typename F, typename... Args>
   explicit Thread(F&& f, Args&&... args) {
     MOZ_RELEASE_ASSERT(init(mozilla::Forward<F>(f),
@@ -145,13 +149,32 @@ namespace detail {
 template <typename F, typename... Args>
 class ThreadTrampoline
 {
+  
   F f;
-  mozilla::Tuple<Args...> args;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  mozilla::Tuple<typename mozilla::Decay<Args>::Type...> args;
 
 public:
-  explicit ThreadTrampoline(F&& aF, Args&&... aArgs)
-    : f(mozilla::Forward<F>(aF)),
-      args(mozilla::Forward<Args>(aArgs)...)
+  
+  
+  
+  
+  template <typename G, typename... ArgsT>
+  explicit ThreadTrampoline(G&& aG, ArgsT&&... aArgsT)
+    : f(mozilla::Forward<F>(aG)),
+      args(mozilla::Forward<Args>(aArgsT)...)
   {
   }
 

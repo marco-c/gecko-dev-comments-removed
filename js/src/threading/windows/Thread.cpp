@@ -72,8 +72,12 @@ js::Thread::create(unsigned int (__stdcall* aMain)(void*), void* aArg)
   
   uintptr_t handle = _beginthreadex(nullptr, 0, aMain, aArg, 0,
                                     &id_.platformData()->id);
-  if (!handle)
+  if (!handle) {
+    
+    
+    id_ = Id();
     return false;
+  }
   id_.platformData()->handle = reinterpret_cast<HANDLE>(handle);
   return true;
 }

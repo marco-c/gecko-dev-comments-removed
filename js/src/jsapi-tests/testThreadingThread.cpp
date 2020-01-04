@@ -73,3 +73,22 @@ BEGIN_TEST(testThreadingThreadVectorMoveConstruct)
     return true;
 }
 END_TEST(testThreadingThreadVectorMoveConstruct)
+
+
+
+
+
+
+
+
+BEGIN_TEST(testThreadingThreadArgCopy)
+{
+    for (size_t i = 0; i < 10000; ++i) {
+        bool b = true;
+        js::Thread thread([](bool bb){MOZ_RELEASE_ASSERT(bb);}, b);
+        b = false;
+        thread.join();
+    }
+    return true;
+}
+END_TEST(testThreadingThreadArgCopy)
