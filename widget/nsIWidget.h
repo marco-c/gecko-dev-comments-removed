@@ -1419,13 +1419,6 @@ class nsIWidget : public nsISupports {
 
 
 
-    virtual nsEventStatus DispatchAPZAwareEvent(mozilla::WidgetInputEvent* aEvent) = 0;
-
-    
-
-
-
-
     virtual nsEventStatus DispatchInputEvent(mozilla::WidgetInputEvent* aEvent) = 0;
 
     
