@@ -6,17 +6,15 @@
 
 "use strict";
 
-
 define(function (require, exports, module) {
   
   const React = require("devtools/client/shared/vendor/react");
   const { createFactories } = require("./rep-utils");
   const { ObjectBox } = createFactories(require("./object-box"));
   const { Caption } = createFactories(require("./caption"));
-
+  const { PropRep } = createFactories(require("./prop-rep"));
   
   const { span } = React.DOM;
-
   
 
 
@@ -154,57 +152,10 @@ define(function (require, exports, module) {
       );
     },
   });
-
-  
-
-
-  let PropRep = React.createFactory(React.createClass({
-    displayName: "PropRep",
-
-    propTypes: {
-      object: React.PropTypes.any,
-      mode: React.PropTypes.string,
-      name: React.PropTypes.string,
-      equal: React.PropTypes.string,
-      delim: React.PropTypes.string,
-    },
-
-    render: function () {
-      let { Rep } = createFactories(require("./rep"));
-      let object = this.props.object;
-      let mode = this.props.mode;
-
-      return (
-        span({},
-          span({
-            "className": "nodeName"},
-            this.props.name
-          ),
-          span({
-            "className": "objectEqual",
-            role: "presentation"},
-            this.props.equal
-          ),
-          Rep({
-            object: object,
-            mode: mode
-          }),
-          span({
-            "className": "objectComma",
-            role: "presentation"},
-            this.props.delim
-          )
-        )
-      );
-    }
-  }));
-
   function supportsObject(object, type) {
     return true;
   }
-
   
-
   exports.Obj = {
     rep: Obj,
     supportsObject: supportsObject

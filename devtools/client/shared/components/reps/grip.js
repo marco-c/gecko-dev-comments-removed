@@ -9,15 +9,13 @@
 define(function (require, exports, module) {
   
   const React = require("devtools/client/shared/vendor/react");
-
   
   const { createFactories, isGrip } = require("./rep-utils");
   const { ObjectBox } = createFactories(require("./object-box"));
   const { Caption } = createFactories(require("./caption"));
-
+  const { PropRep } = createFactories(require("./prop-rep"));
   
   const { span } = React.DOM;
-
   
 
 
@@ -161,50 +159,11 @@ define(function (require, exports, module) {
       );
     },
   });
-
   
-
-
-  let PropRep = React.createFactory(React.createClass({
-    displayName: "PropRep",
-
-    propTypes: {
-      name: React.PropTypes.string,
-      equal: React.PropTypes.string,
-      delim: React.PropTypes.string,
-    },
-
-    render: function () {
-      let { Rep } = createFactories(require("./rep"));
-
-      return (
-        span({},
-          span({
-            "className": "nodeName"},
-            this.props.name),
-          span({
-            "className": "objectEqual",
-            role: "presentation"},
-            this.props.equal
-          ),
-          Rep(this.props),
-          span({
-            "className": "objectComma",
-            role: "presentation"},
-            this.props.delim
-          )
-        )
-      );
-    }
-  }));
-
-  
-
   function supportsObject(object, type) {
     if (!isGrip(object)) {
       return false;
     }
-
     return (object.preview && object.preview.ownProperties);
   }
 
