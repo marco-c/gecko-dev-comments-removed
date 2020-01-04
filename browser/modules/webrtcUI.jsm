@@ -432,12 +432,18 @@ function prompt(aBrowser, aRequest) {
         menupopup.appendChild(chromeDoc.createElement("menuseparator"));
 
         
+        let monitorIndex = 1;
         for (let i = 0; i < devices.length; ++i) {
           let name;
           
-          
           if (type == "screen") {
-            name = stringBundle.getString("getUserMedia.shareEntireScreen.label");
+            if (devices[i].name == "Primary Monitor") {
+              name = stringBundle.getString("getUserMedia.shareEntireScreen.label");
+            } else {
+              name = stringBundle.getFormattedString("getUserMedia.shareMonitor.label",
+                                                     [monitorIndex]);
+              ++monitorIndex;
+            }
           }
           else {
             name = devices[i].name;
