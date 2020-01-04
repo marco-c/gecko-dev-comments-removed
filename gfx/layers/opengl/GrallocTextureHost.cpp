@@ -118,7 +118,7 @@ GrallocTextureHostOGL::GrallocTextureHostOGL(TextureFlags aFlags,
     mSize = gfx::IntSize(graphicBuffer->getWidth(), graphicBuffer->getHeight());
     mCropSize = mSize;
   } else {
-    printf_stderr("gralloc buffer is nullptr");
+    printf_stderr("gralloc buffer is nullptr\n");
   }
 }
 
