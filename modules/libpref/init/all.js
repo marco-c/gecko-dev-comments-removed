@@ -5162,6 +5162,16 @@ pref("reader.has_used_toolbar", false);
 
 pref("reader.toolbar.vertical", true);
 
+#if !defined(ANDROID)
+pref("narrate.enabled", true);
+#else
+pref("narrate.enabled", false);
+#endif
+
+pref("narrate.test", false);
+pref("narrate.rate", 0);
+pref("narrate.voice", "automatic");
+
 #if defined(XP_LINUX) && defined(MOZ_GMP_SANDBOX)
 
 
