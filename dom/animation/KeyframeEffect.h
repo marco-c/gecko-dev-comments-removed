@@ -11,6 +11,7 @@
 #include "nsCycleCollectionParticipant.h"
 #include "nsIDocument.h"
 #include "nsWrapperCache.h"
+#include "mozilla/AnimationPerformanceWarning.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/ComputedTimingFunction.h" 
 #include "mozilla/LayerAnimationInfo.h"     
@@ -146,9 +147,7 @@ struct AnimationProperty
   
   bool mIsRunningOnCompositor = false;
 
-  
-  
-  Maybe<nsString> mPerformanceWarning;
+  Maybe<AnimationPerformanceWarning> mPerformanceWarning;
 
   InfallibleTArray<AnimationPropertySegment> mSegments;
 
@@ -327,8 +326,9 @@ public:
   
   
   
-  bool ShouldBlockCompositorAnimations(const nsIFrame* aFrame,
-                                       nsAString& aPerformanceWarning) const;
+  bool ShouldBlockCompositorAnimations(
+    const nsIFrame* aFrame,
+    AnimationPerformanceWarning::Type& aPerformanceWarning) const;
 
   nsIDocument* GetRenderedDocument() const;
   nsPresContext* GetPresContext() const;
@@ -336,8 +336,10 @@ public:
   
   
   
-  void SetPerformanceWarning(nsCSSProperty aProperty,
-                             const nsAString& aMessage);
+  
+  void SetPerformanceWarning(
+    nsCSSProperty aProperty,
+    const AnimationPerformanceWarning& aWarning);
 
 protected:
   KeyframeEffectReadOnly(nsIDocument* aDocument,
@@ -402,8 +404,9 @@ private:
   
   
   
-  static bool CanAnimateTransformOnCompositor(const nsIFrame* aFrame,
-                                              nsAString& aPerformanceWarning);
+  static bool CanAnimateTransformOnCompositor(
+    const nsIFrame* aFrame,
+    AnimationPerformanceWarning::Type& aPerformanceWarning);
   static bool IsGeometricProperty(const nsCSSProperty aProperty);
 
   static const TimeDuration OverflowRegionRefreshInterval();

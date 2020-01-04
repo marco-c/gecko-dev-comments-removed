@@ -30,6 +30,7 @@ namespace mozilla {
 class EffectSet;
 class RestyleTracker;
 enum class CSSPseudoElementType : uint8_t;
+struct AnimationPerformanceWarning;
 
 namespace dom {
 class Animation;
@@ -189,9 +190,10 @@ public:
 
   
   
-  static void SetPerformanceWarning(const nsIFrame* aFrame,
-                                    nsCSSProperty aProperty,
-                                    const nsAString& aMessage);
+  static void SetPerformanceWarning(
+    const nsIFrame* aFrame,
+    nsCSSProperty aProperty,
+    const AnimationPerformanceWarning& aWarning);
 
 private:
   ~EffectCompositor() = default;
