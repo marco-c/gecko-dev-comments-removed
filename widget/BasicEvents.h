@@ -110,6 +110,9 @@ public:
   bool    mOnlyChromeDispatch : 1;
   
   
+  
+  
+  
   bool    mOnlySystemGroupDispatchInContent : 1;
   
   
