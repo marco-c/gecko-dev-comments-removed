@@ -5518,9 +5518,7 @@ nsTextFrame::DrawSelectionDecorations(gfxContext* aContext,
   params.context = aContext;
   params.dirtyRect = aDirtyRect;
   params.pt = aPt;
-  params.lineSize = Size(
-      aWidth, ComputeSelectionUnderlineHeight(aTextPaintStyle.PresContext(),
-                                              aFontMetrics, aSelectionType));
+  params.lineSize.width = aWidth;
   params.ascent = aAscent;
   params.offset = aDecoration == NS_STYLE_TEXT_DECORATION_LINE_UNDERLINE ?
                   aFontMetrics.underlineOffset : aFontMetrics.maxAscent;
@@ -5533,34 +5531,42 @@ nsTextFrame::DrawSelectionDecorations(gfxContext* aContext,
                                              aFontMetrics);
 
   float relativeSize;
-  int32_t index =
-    nsTextPaintStyle::GetUnderlineStyleIndexForSelectionType(aSelectionType);
-  bool weDefineSelectionUnderline =
-    aTextPaintStyle.GetSelectionUnderlineForPaint(index, &params.color,
-                                                  &relativeSize, &params.style);
-
 
   switch (aSelectionType) {
     case SelectionType::eIMERawClause:
     case SelectionType::eIMESelectedRawClause:
     case SelectionType::eIMEConvertedClause:
-    case SelectionType::eIMESelectedClause: {
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      params.pt.x += 1.0;
-      params.lineSize.width -= 2.0;
-      if (aRangeStyle.IsDefined()) {
+    case SelectionType::eIMESelectedClause:
+    case SelectionType::eSpellCheck: {
+      int32_t index = nsTextPaintStyle::
+        GetUnderlineStyleIndexForSelectionType(aSelectionType);
+      bool weDefineSelectionUnderline =
+        aTextPaintStyle.GetSelectionUnderlineForPaint(index, &params.color,
+                                                      &relativeSize,
+                                                      &params.style);
+      params.lineSize.height =
+        ComputeSelectionUnderlineHeight(aTextPaintStyle.PresContext(),
+                                        aFontMetrics, aSelectionType);
+      bool isIMEType = aSelectionType != SelectionType::eSpellCheck;
+
+      if (isIMEType) {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        params.pt.x += 1.0;
+        params.lineSize.width -= 2.0;
+      }
+      if (isIMEType && aRangeStyle.IsDefined()) {
         
         if (aRangeStyle.IsLineStyleDefined()) {
           if (aRangeStyle.mLineStyle == TextRangeStyle::LINESTYLE_NONE) {
@@ -5600,10 +5606,6 @@ nsTextFrame::DrawSelectionDecorations(gfxContext* aContext,
       }
       break;
     }
-    case SelectionType::eSpellCheck:
-      if (!weDefineSelectionUnderline)
-        return;
-      break;
     case SelectionType::eURLStrikeout: {
       nscoord inflationMinFontSize =
         nsLayoutUtils::InflationMinFontSizeFor(this);
@@ -5613,6 +5615,9 @@ nsTextFrame::DrawSelectionDecorations(gfxContext* aContext,
         GetFirstFontMetrics(GetFontGroupForFrame(this, inflation), aVertical);
 
       relativeSize = 2.0f;
+      aTextPaintStyle.GetURLSecondaryColor(&params.color);
+      params.style = NS_STYLE_TEXT_DECORATION_STYLE_SOLID;
+      params.lineSize.height = metrics.strikeoutSize;
       params.offset = metrics.strikeoutOffset + 0.5;
       params.decoration = NS_STYLE_TEXT_DECORATION_LINE_LINE_THROUGH;
       break;
@@ -7076,7 +7081,9 @@ nsTextFrame::CombineSelectionUnderlineRect(nsPresContext* aPresContext,
   SelectionDetails *details = GetSelectionDetails();
   for (SelectionDetails *sd = details; sd; sd = sd->mNext) {
     if (sd->mStart == sd->mEnd ||
-        !(sd->mSelectionType & kRawSelectionTypesWithDecorations)) {
+        !(sd->mSelectionType & kRawSelectionTypesWithDecorations) ||
+        
+        sd->mSelectionType == SelectionType::eURLStrikeout) {
       continue;
     }
 
