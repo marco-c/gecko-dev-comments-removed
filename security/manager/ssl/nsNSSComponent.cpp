@@ -1103,6 +1103,8 @@ nsNSSComponent::InitializeNSS()
   
   setValidationOptions(true, lock);
 
+  mHttpForNSS.initTable();
+
 #ifndef MOZ_NO_SMART_CARDS
   LaunchSmartCardThreads();
 #endif

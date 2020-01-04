@@ -41,10 +41,6 @@ function run_test() {
                              "www.example.com");
   Services.prefs.setIntPref("security.OCSP.enabled", 1);
 
-  
-  
-  
-
   add_test(function() {
     clearOCSPCache();
     let ocspResponder = failingOCSPResponder();
@@ -56,13 +52,6 @@ function run_test() {
     clearOCSPCache();
     let ocspResponder = failingOCSPResponder();
     check_cert_err("empty-scheme-url", SEC_ERROR_CERT_BAD_ACCESS_LOCATION);
-    ocspResponder.stop(run_next_test);
-  });
-
-  add_test(() => {
-    clearOCSPCache();
-    let ocspResponder = failingOCSPResponder();
-    check_cert_err("ftp-url", SEC_ERROR_CERT_BAD_ACCESS_LOCATION);
     ocspResponder.stop(run_next_test);
   });
 
@@ -120,16 +109,6 @@ function run_test() {
     clearOCSPCache();
     let ocspResponder = failingOCSPResponder();
     check_cert_err("unknown-scheme", SEC_ERROR_CERT_BAD_ACCESS_LOCATION);
-    ocspResponder.stop(run_next_test);
-  });
-
-  
-  
-  
-  add_test(() => {
-    clearOCSPCache();
-    let ocspResponder = start_ocsp_responder(["user-pass"], [""]);
-    check_cert_err("user-pass", PRErrorCodeSuccess);
     ocspResponder.stop(run_next_test);
   });
 

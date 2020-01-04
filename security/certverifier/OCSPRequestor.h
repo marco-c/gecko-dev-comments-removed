@@ -13,10 +13,9 @@
 namespace mozilla { namespace psm {
 
 
-Result DoOCSPRequest(PLArenaPool* arena, const char* url,
-                     const SECItem* encodedRequest, PRIntervalTime timeout,
-                     bool useGET,
-              SECItem*& encodedResponse);
+SECItem* DoOCSPRequest(PLArenaPool* arena, const char* url,
+                       const SECItem* encodedRequest, PRIntervalTime timeout,
+                       bool useGET);
 
 } } 
 
