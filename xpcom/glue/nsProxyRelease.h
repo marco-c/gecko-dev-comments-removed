@@ -12,26 +12,81 @@
 #include "nsCOMPtr.h"
 #include "nsAutoPtr.h"
 #include "MainThreadUtils.h"
+#include "nsThreadUtils.h"
 #include "mozilla/Likely.h"
+#include "mozilla/Move.h"
 
 #ifdef XPCOM_GLUE_AVOID_NSPR
 #error NS_ProxyRelease implementation depends on NSPR.
 #endif
 
 
+template<class T>
+class nsProxyReleaseEvent : public nsRunnable
+{
+public:
+  explicit nsProxyReleaseEvent(already_AddRefed<T> aDoomed)
+  : mDoomed(aDoomed.take()) {}
+
+  NS_IMETHOD Run()
+  {
+    NS_IF_RELEASE(mDoomed);
+    return NS_OK;
+  }
+
+private:
+  T* MOZ_OWNING_REF mDoomed;
+};
+
+
+
+
+
+
+
+
+
+
 
 
 
 
 template<class T>
-inline NS_HIDDEN_(nsresult)
-NS_ProxyRelease(nsIEventTarget* aTarget, nsCOMPtr<T>& aDoomed,
+inline NS_HIDDEN_(void)
+NS_ProxyRelease(nsIEventTarget* aTarget, already_AddRefed<T> aDoomed,
                 bool aAlwaysProxy = false)
 {
-  T* raw = nullptr;
-  aDoomed.swap(raw);
-  return NS_ProxyRelease(aTarget, raw, aAlwaysProxy);
+  
+  RefPtr<T> doomed = aDoomed;
+  nsresult rv;
+
+  if (!doomed || !aTarget) {
+    return;
+  }
+
+  if (!aAlwaysProxy) {
+    bool onCurrentThread = false;
+    rv = aTarget->IsOnCurrentThread(&onCurrentThread);
+    if (NS_SUCCEEDED(rv) && onCurrentThread) {
+      return;
+    }
+  }
+
+  nsCOMPtr<nsIRunnable> ev = new nsProxyReleaseEvent<T>(doomed.forget());
+
+  rv = aTarget->Dispatch(ev, NS_DISPATCH_NORMAL);
+  if (NS_FAILED(rv)) {
+    NS_WARNING("failed to post proxy release event, leaking!");
+    
+    
+  }
 }
+
+
+
+
+
+
 
 
 
@@ -39,75 +94,8 @@ NS_ProxyRelease(nsIEventTarget* aTarget, nsCOMPtr<T>& aDoomed,
 
 
 template<class T>
-inline NS_HIDDEN_(nsresult)
-NS_ProxyRelease(nsIEventTarget* aTarget, RefPtr<T>& aDoomed,
-                bool aAlwaysProxy = false)
-{
-  T* raw = nullptr;
-  aDoomed.swap(raw);
-  return NS_ProxyRelease(aTarget, raw, aAlwaysProxy);
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-nsresult
-NS_ProxyRelease(nsIEventTarget* aTarget, nsISupports* aDoomed,
-                bool aAlwaysProxy = false);
-
-
-
-
-
-
-template<class T>
-inline NS_HIDDEN_(nsresult)
-NS_ReleaseOnMainThread(nsCOMPtr<T>& aDoomed,
-                       bool aAlwaysProxy = false)
-{
-  T* raw = nullptr;
-  aDoomed.swap(raw);
-  return NS_ReleaseOnMainThread(raw, aAlwaysProxy);
-}
-
-
-
-
-
-
-template<class T>
-inline NS_HIDDEN_(nsresult)
-NS_ReleaseOnMainThread(RefPtr<T>& aDoomed,
-                       bool aAlwaysProxy = false)
-{
-  T* raw = nullptr;
-  aDoomed.swap(raw);
-  return NS_ReleaseOnMainThread(raw, aAlwaysProxy);
-}
-
-
-
-
-
-
-
-
-
-
-
-
-inline nsresult
-NS_ReleaseOnMainThread(nsISupports* aDoomed,
+inline NS_HIDDEN_(void)
+NS_ReleaseOnMainThread(already_AddRefed<T> aDoomed,
                        bool aAlwaysProxy = false)
 {
   
@@ -115,10 +103,15 @@ NS_ReleaseOnMainThread(nsISupports* aDoomed,
   
   nsCOMPtr<nsIThread> mainThread;
   if (!NS_IsMainThread() || aAlwaysProxy) {
-    NS_GetMainThread(getter_AddRefs(mainThread));
+    nsresult rv = NS_GetMainThread(getter_AddRefs(mainThread));
+
+    if (NS_FAILED(rv)) {
+      NS_WARNING("Could not get main thread! Leaking.");
+      return;
+    }
   }
 
-  return NS_ProxyRelease(mainThread, aDoomed, aAlwaysProxy);
+  NS_ProxyRelease(mainThread, mozilla::Move(aDoomed), aAlwaysProxy);
 }
 
 
@@ -185,13 +178,7 @@ private:
     if (NS_IsMainThread()) {
       NS_IF_RELEASE(mRawPtr);
     } else if (mRawPtr) {
-      nsCOMPtr<nsIThread> mainThread;
-      NS_GetMainThread(getter_AddRefs(mainThread));
-      if (!mainThread) {
-        NS_WARNING("Couldn't get main thread! Leaking pointer.");
-        return;
-      }
-      NS_ProxyRelease(mainThread, mRawPtr);
+      NS_ReleaseOnMainThread(dont_AddRef(mRawPtr));
     }
   }
 

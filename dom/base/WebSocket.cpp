@@ -629,8 +629,8 @@ WebSocketImpl::Disconnect()
   
   RefPtr<WebSocketImpl> kungfuDeathGrip = this;
 
-  NS_ReleaseOnMainThread(mChannel);
-  NS_ReleaseOnMainThread(static_cast<nsIWebSocketEventService*>(mService.forget().take()));
+  NS_ReleaseOnMainThread(mChannel.forget());
+  NS_ReleaseOnMainThread(mService.forget());
 
   mWebSocket->DontKeepAliveAnyMore();
   mWebSocket->mImpl = nullptr;
