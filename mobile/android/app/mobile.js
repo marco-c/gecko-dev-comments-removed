@@ -625,6 +625,8 @@ pref("media.video-queue.default-size", 3);
 pref("media.android-media-codec.enabled", true);
 pref("media.android-media-codec.preferred", true);
 
+pref("media.android-remote-codec.enabled", false);
+
 
 pref("media.mediasource.enabled", true);
 
