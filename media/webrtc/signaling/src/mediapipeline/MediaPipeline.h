@@ -403,7 +403,9 @@ public:
 #if !defined(MOZILLA_EXTERNAL_LINKAGE)
   
   
-  virtual void UpdateSinkIdentity_m(nsIPrincipal* principal,
+  
+  virtual void UpdateSinkIdentity_m(dom::MediaStreamTrack* track,
+                                    nsIPrincipal* principal,
                                     const PeerIdentity* sinkIdentity);
 #endif
 
