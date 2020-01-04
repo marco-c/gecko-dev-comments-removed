@@ -425,9 +425,16 @@ ClientTiledPaintedLayer::RenderLayer()
   IntSize layerSize = mVisibleRegion.ToUnknownRegion().GetBounds().Size();
   IntSize tileSize(gfxPlatform::GetPlatform()->GetTileWidth(),
                    gfxPlatform::GetPlatform()->GetTileHeight());
+  bool isHalfTileWidthOrHeight = layerSize.width <= tileSize.width / 2 ||
+    layerSize.height <= tileSize.height / 2;
 
+  
+  
+  
   bool wantSingleTiledContentClient =
-      (mCreationHint == LayerManager::NONE || layerSize <= tileSize) &&
+      (mCreationHint == LayerManager::NONE ||
+       layerSize <= tileSize ||
+       isHalfTileWidthOrHeight) &&
       SingleTiledContentClient::ClientSupportsLayerSize(layerSize, ClientManager()) &&
       gfxPrefs::LayersSingleTileEnabled();
 
