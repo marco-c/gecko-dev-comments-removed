@@ -7,6 +7,7 @@
 #define mozilla_dom_CanvasCaptureMediaStream_h_
 
 #include "DOMMediaStream.h"
+#include "mozilla/dom/HTMLCanvasElement.h"
 #include "StreamBuffer.h"
 
 namespace mozilla {
@@ -21,60 +22,78 @@ class Image;
 namespace dom {
 class CanvasCaptureMediaStream;
 class HTMLCanvasElement;
+class OutputStreamFrameListener;
 
-class OutputStreamDriver
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class OutputStreamDriver : public FrameCaptureListener
 {
 public:
-  OutputStreamDriver(CanvasCaptureMediaStream* aDOMStream,
+  OutputStreamDriver(SourceMediaStream* aSourceStream,
                      const TrackID& aTrackId);
 
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(OutputStreamDriver);
 
-  nsresult Start();
+  
 
-  virtual void ForgetDOMStream();
 
-  virtual void RequestFrame() { }
 
-  CanvasCaptureMediaStream* DOMStream() const { return mDOMStream; }
+  void SetImage(const nsRefPtr<layers::Image>& aImage);
+
+  
+
+
+
+  virtual void Forget() {}
 
 protected:
   virtual ~OutputStreamDriver();
   class StreamListener;
 
-  
-
-
-  void AppendToTrack(StreamTime aDuration);
-  void NotifyPull(StreamTime aDesiredTime);
-
-  
-
-
-
-  void SetImage(layers::Image* aImage);
-
-  
-
-
-  virtual void StartInternal() = 0;
-
 private:
-  
-  
-  
-  CanvasCaptureMediaStream* mDOMStream;
   nsRefPtr<SourceMediaStream> mSourceStream;
-  bool mStarted;
   nsRefPtr<StreamListener> mStreamListener;
-  const TrackID mTrackId;
-
-  
-  Mutex mMutex;
-  nsRefPtr<layers::Image> mImage;
 };
 
-class CanvasCaptureMediaStream: public DOMMediaStream
+class CanvasCaptureMediaStream : public DOMMediaStream
 {
 public:
   explicit CanvasCaptureMediaStream(HTMLCanvasElement* aCanvas);
@@ -89,6 +108,7 @@ public:
   
   HTMLCanvasElement* Canvas() const { return mCanvas; }
   void RequestFrame();
+  dom::FrameCaptureListener* FrameCaptureListener();
 
   
 

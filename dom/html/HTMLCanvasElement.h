@@ -7,6 +7,7 @@
 #define mozilla_dom_HTMLCanvasElement_h
 
 #include "mozilla/Attributes.h"
+#include "mozilla/WeakPtr.h"
 #include "nsIDOMHTMLCanvasElement.h"
 #include "nsGenericHTMLElement.h"
 #include "nsGkAtoms.h"
@@ -22,6 +23,7 @@ namespace mozilla {
 
 namespace layers {
 class CanvasLayer;
+class Image;
 class LayerManager;
 } 
 namespace gfx {
@@ -34,12 +36,51 @@ class File;
 class FileCallback;
 class HTMLCanvasPrintState;
 class PrintCallback;
+class RequestedFrameRefreshObserver;
 
 enum class CanvasContextType : uint8_t {
   NoContext,
   Canvas2D,
   WebGL1,
   WebGL2
+};
+
+
+
+
+
+
+
+
+
+class FrameCaptureListener : public SupportsWeakPtr<FrameCaptureListener>
+{
+public:
+  MOZ_DECLARE_WEAKREFERENCE_TYPENAME(FrameCaptureListener)
+
+  FrameCaptureListener()
+    : mFrameCaptureRequested(false) {}
+
+  
+
+
+  void RequestFrameCapture() { mFrameCaptureRequested = true; }
+
+  
+
+
+  bool FrameCaptureRequested() const { return mFrameCaptureRequested; }
+
+  
+
+
+
+  virtual void NewFrame(already_AddRefed<layers::Image> aImage) = 0;
+
+protected:
+  virtual ~FrameCaptureListener() {}
+
+  bool mFrameCaptureRequested;
 };
 
 class HTMLCanvasElement final : public nsGenericHTMLElement,
@@ -171,6 +212,29 @@ public:
 
   virtual already_AddRefed<gfx::SourceSurface> GetSurfaceSnapshot(bool* aPremultAlpha = nullptr);
 
+  
+
+
+
+
+
+
+
+  void RegisterFrameCaptureListener(FrameCaptureListener* aListener);
+
+  
+
+
+
+  bool IsFrameCaptureRequested() const;
+
+  
+
+
+
+
+  void SetFrameCapture(already_AddRefed<gfx::SourceSurface> aSurface);
+
   virtual bool ParseAttribute(int32_t aNamespaceID,
                                 nsIAtom* aAttribute,
                                 const nsAString& aValue,
@@ -253,6 +317,8 @@ protected:
   nsRefPtr<PrintCallback> mPrintCallback;
   nsCOMPtr<nsICanvasRenderingContextInternal> mCurrentContext;
   nsRefPtr<HTMLCanvasPrintState> mPrintState;
+  nsTArray<WeakPtr<FrameCaptureListener>> mRequestedFrameListeners;
+  nsRefPtr<RequestedFrameRefreshObserver> mRequestedFrameRefreshObserver;
 
 public:
   
