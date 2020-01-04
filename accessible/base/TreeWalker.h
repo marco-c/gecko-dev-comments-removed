@@ -57,27 +57,37 @@ private:
   TreeWalker(const TreeWalker&);
   TreeWalker& operator =(const TreeWalker&);
 
+  struct ChildrenIterator {
+    ChildrenIterator(nsIContent* aNode, uint32_t aFilter) :
+      mDOMIter(aNode, aFilter), mARIAOwnsIdx(0) { }
+
+    dom::AllChildrenIterator mDOMIter;
+    uint32_t mARIAOwnsIdx;
+  };
+
+  nsIContent* Next(ChildrenIterator* aIter, Accessible** aAccessible = nullptr,
+                   bool* aSkipSubtree = nullptr);
+
   
 
 
 
 
 
-  dom::AllChildrenIterator* PushState(nsIContent* aContent)
+  ChildrenIterator* PushState(nsIContent* aContent)
   {
-    return mStateStack.AppendElement(dom::AllChildrenIterator(aContent,
-                                                              mChildFilter));
+    return mStateStack.AppendElement(ChildrenIterator(aContent, mChildFilter));
   }
 
   
 
 
-  dom::AllChildrenIterator* PopState();
+  ChildrenIterator* PopState();
 
   DocAccessible* mDoc;
   Accessible* mContext;
   nsIContent* mAnchorNode;
-  nsAutoTArray<dom::AllChildrenIterator, 20> mStateStack;
+  nsAutoTArray<ChildrenIterator, 20> mStateStack;
   int32_t mChildFilter;
   uint32_t mFlags;
 };

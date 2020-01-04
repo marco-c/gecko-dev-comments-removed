@@ -32,7 +32,7 @@ class DocManager;
 class NotificationController;
 class DocAccessibleChild;
 class RelatedAccIterator;
-template<class Class, class Arg>
+template<class Class, class ... Args>
 class TNotification;
 
 class DocAccessible : public HyperTextAccessibleWrap,
@@ -284,6 +284,22 @@ public:
   
 
 
+  Accessible* ARIAOwnedAt(Accessible* aParent, uint32_t aIndex) const
+  {
+    nsTArray<nsIContent*>* childrenEl = mARIAOwnsHash.Get(aParent);
+    if (childrenEl) {
+      nsIContent* childEl = childrenEl->SafeElementAt(aIndex);
+      Accessible* child = GetAccessible(childEl);
+      if (child && child->IsRepositioned()) {
+        return child;
+      }
+    }
+    return nullptr;
+  }
+
+  
+
+
 
 
 
@@ -406,7 +422,7 @@ protected:
 
 
 
-  void AddDependentIDsFor(dom::Element* aRelProviderElm,
+  void AddDependentIDsFor(Accessible* aRelProvider,
                           nsIAtom* aRelAttr = nullptr);
 
   
@@ -417,7 +433,7 @@ protected:
 
 
 
-  void RemoveDependentIDsFor(dom::Element* aRelProviderElm,
+  void RemoveDependentIDsFor(Accessible* aRelProvider,
                              nsIAtom* aRelAttr = nullptr);
 
   
@@ -490,6 +506,11 @@ protected:
 
   uint32_t UpdateTreeInternal(Accessible* aChild, bool aIsInsert,
                               AccReorderEvent* aReorderEvent);
+
+  
+
+
+  void ValidateARIAOwned();
 
   
 
@@ -645,6 +666,25 @@ protected:
 
 
   nsTArray<nsIContent*> mInvalidationList;
+
+  
+
+
+  nsClassHashtable<nsPtrHashKey<Accessible>, nsTArray<nsIContent*> >
+    mARIAOwnsHash;
+
+  struct ARIAOwnsPair {
+    ARIAOwnsPair(Accessible* aOwner, nsIContent* aChild) :
+      mOwner(aOwner), mChild(aChild) { }
+    ARIAOwnsPair(const ARIAOwnsPair& aPair) :
+      mOwner(aPair.mOwner), mChild(aPair.mChild) { }
+    ARIAOwnsPair& operator =(const ARIAOwnsPair& aPair)
+      { mOwner = aPair.mOwner; mChild = aPair.mChild; return *this; }
+
+    Accessible* mOwner;
+    nsIContent* mChild;
+  };
+  nsTArray<ARIAOwnsPair> mARIAOwnsInvalidationList;
 
   
 
