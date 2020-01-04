@@ -512,14 +512,6 @@ public:
 
 
 
-
-  virtual void RefreshCompartmentPrincipal() = 0;
-
-  
-
-
-
-
   virtual nsresult
   OpenNoNavigate(const nsAString& aUrl, const nsAString& aName,
                  const nsAString& aOptions, nsPIDOMWindowOuter **_retval) = 0;

@@ -480,7 +480,7 @@ public:
   bool DispatchResizeEvent(const mozilla::CSSIntSize& aSize);
 
   
-  virtual void RefreshCompartmentPrincipal() override;
+  void RefreshCompartmentPrincipal();
 
   
   friend class FullscreenTransitionTask;
