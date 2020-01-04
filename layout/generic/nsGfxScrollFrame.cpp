@@ -5359,9 +5359,12 @@ ScrollFrameHelper::SaveState() const
     pt = mRestorePos;
   }
   state->SetScrollState(pt);
-  nsIPresShell* shell = mOuter->PresContext()->PresShell();
-  state->SetResolution(shell->GetResolution());
-  state->SetScaleToResolution(shell->ScaleToResolution());
+  if (mIsRoot) {
+    
+    nsIPresShell* shell = mOuter->PresContext()->PresShell();
+    state->SetResolution(shell->GetResolution());
+    state->SetScaleToResolution(shell->ScaleToResolution());
+  }
   return state;
 }
 
@@ -5373,7 +5376,8 @@ ScrollFrameHelper::RestoreState(nsPresState* aState)
   mLastPos = mScrolledFrame ? GetLogicalScrollPosition() : nsPoint(0,0);
 
   
-  MOZ_ASSERT(mIsRoot || !aState->GetScaleToResolution());
+  MOZ_ASSERT(mIsRoot || (!aState->GetScaleToResolution() &&
+                         aState->GetResolution() == 1.0));
 
   if (mIsRoot) {
     nsIPresShell* presShell = mOuter->PresContext()->PresShell();
