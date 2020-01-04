@@ -1002,8 +1002,47 @@ public:
   }
 };
 
+
 typedef js::HashSet<LiveBlock, LiveBlock, InfallibleAllocPolicy> LiveBlockTable;
 static LiveBlockTable* gLiveBlockTable = nullptr;
+
+class AggregatedLiveBlockHashPolicy
+{
+public:
+  typedef const LiveBlock* const Lookup;
+
+  static uint32_t hash(const LiveBlock* const& aB)
+  {
+    return gOptions->IsDarkMatterMode()
+         ? mozilla::HashGeneric(aB->ReqSize(),
+                                aB->SlopSize(),
+                                aB->AllocStackTrace(),
+                                aB->ReportedOnAlloc1(),
+                                aB->ReportedOnAlloc2())
+         : mozilla::HashGeneric(aB->ReqSize(),
+                                aB->SlopSize(),
+                                aB->AllocStackTrace());
+  }
+
+  static bool match(const LiveBlock* const& aA, const LiveBlock* const& aB)
+  {
+    return gOptions->IsDarkMatterMode()
+         ? aA->ReqSize() == aB->ReqSize() &&
+           aA->SlopSize() == aB->SlopSize() &&
+           aA->AllocStackTrace() == aB->AllocStackTrace() &&
+           aA->ReportStackTrace1() == aB->ReportStackTrace1() &&
+           aA->ReportStackTrace2() == aB->ReportStackTrace2()
+         : aA->ReqSize() == aB->ReqSize() &&
+           aA->SlopSize() == aB->SlopSize() &&
+           aA->AllocStackTrace() == aB->AllocStackTrace();
+  }
+};
+
+
+
+typedef js::HashMap<const LiveBlock*, size_t, AggregatedLiveBlockHashPolicy,
+                    InfallibleAllocPolicy>
+        AggregatedLiveBlockTable;
 
 
 class DeadBlock
@@ -1068,7 +1107,7 @@ public:
 
 
 typedef js::HashMap<DeadBlock, size_t, DeadBlock, InfallibleAllocPolicy>
-  DeadBlockTable;
+        DeadBlockTable;
 static DeadBlockTable* gDeadBlockTable = nullptr;
 
 
@@ -1835,39 +1874,80 @@ AnalyzeImpl(UniquePtr<JSONWriteFunc> aWriter)
     writer.StartArrayProperty("blockList");
     {
       
-      for (auto r = gLiveBlockTable->all(); !r.empty(); r.popFront()) {
-        const LiveBlock& b = r.front();
-        b.AddStackTracesToTable(usedStackTraces);
+      auto writeLiveBlock = [&](const LiveBlock& aB, size_t aNum) {
+        aB.AddStackTracesToTable(usedStackTraces);
+
+        MOZ_ASSERT_IF(gOptions->IsScanMode(), aNum == 1);
 
         writer.StartObjectElement(writer.SingleLineStyle);
         {
           if (gOptions->IsScanMode()) {
-            writer.StringProperty("addr", sc.ToPtrString(b.Address()));
-            WriteBlockContents(writer, b);
+            writer.StringProperty("addr", sc.ToPtrString(aB.Address()));
+            WriteBlockContents(writer, aB);
           }
-          writer.IntProperty("req", b.ReqSize());
-          if (b.SlopSize() > 0) {
-            writer.IntProperty("slop", b.SlopSize());
-          }
-
-          if (b.AllocStackTrace()) {
-            writer.StringProperty("alloc", isc.ToIdString(b.AllocStackTrace()));
+          writer.IntProperty("req", aB.ReqSize());
+          if (aB.SlopSize() > 0) {
+            writer.IntProperty("slop", aB.SlopSize());
           }
 
-          if (gOptions->IsDarkMatterMode() && b.NumReports() > 0) {
+          if (aB.AllocStackTrace()) {
+            writer.StringProperty("alloc",
+                                  isc.ToIdString(aB.AllocStackTrace()));
+          }
+
+          if (gOptions->IsDarkMatterMode() && aB.NumReports() > 0) {
             writer.StartArrayProperty("reps");
             {
-              if (b.ReportStackTrace1()) {
-                writer.StringElement(isc.ToIdString(b.ReportStackTrace1()));
+              if (aB.ReportStackTrace1()) {
+                writer.StringElement(isc.ToIdString(aB.ReportStackTrace1()));
               }
-              if (b.ReportStackTrace2()) {
-                writer.StringElement(isc.ToIdString(b.ReportStackTrace2()));
+              if (aB.ReportStackTrace2()) {
+                writer.StringElement(isc.ToIdString(aB.ReportStackTrace2()));
               }
             }
             writer.EndArray();
           }
+
+          if (aNum > 1) {
+            writer.IntProperty("num", aNum);
+          }
         }
         writer.EndObject();
+      };
+
+      
+      if (!gOptions->IsScanMode()) {
+        
+        
+        AggregatedLiveBlockTable agg;
+        MOZ_ALWAYS_TRUE(agg.init(8192));
+        for (auto r = gLiveBlockTable->all(); !r.empty(); r.popFront()) {
+          const LiveBlock& b = r.front();
+          b.AddStackTracesToTable(usedStackTraces);
+
+          if (AggregatedLiveBlockTable::AddPtr p = agg.lookupForAdd(&b)) {
+            p->value() += 1;
+          } else {
+            MOZ_ALWAYS_TRUE(agg.add(p, &b, 1));
+          }
+        }
+
+        
+        for (auto r = agg.all(); !r.empty(); r.popFront()) {
+          const LiveBlock& b = *r.front().key();
+          size_t num = r.front().value();
+          writeLiveBlock(b, num);
+        }
+
+      } else {
+        
+        
+        for (auto r = gLiveBlockTable->all(); !r.empty(); r.popFront()) {
+          const LiveBlock& b = r.front();
+          b.AddStackTracesToTable(usedStackTraces);
+
+          writeLiveBlock(b, 1);
+        }
       }
 
       
