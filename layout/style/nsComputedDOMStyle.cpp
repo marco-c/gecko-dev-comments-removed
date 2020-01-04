@@ -2159,9 +2159,14 @@ nsComputedDOMStyle::DoGetImageLayerImage(const nsStyleImageLayers& aLayers)
 already_AddRefed<CSSValue>
 nsComputedDOMStyle::DoGetImageLayerPosition(const nsStyleImageLayers& aLayers)
 {
-  RefPtr<nsDOMCSSValueList> valueList = GetROCSSValueList(true);
+  if (aLayers.mPositionXCount != aLayers.mPositionYCount) {
+    
+    
+    return nullptr;
+  }
 
-  for (uint32_t i = 0, i_end = aLayers.mPositionCount; i < i_end; ++i) {
+  RefPtr<nsDOMCSSValueList> valueList = GetROCSSValueList(true);
+  for (uint32_t i = 0, i_end = aLayers.mPositionXCount; i < i_end; ++i) {
     RefPtr<nsDOMCSSValueList> itemList = GetROCSSValueList(false);
 
     SetValueToPosition(aLayers.mLayers[i].mPosition, itemList);

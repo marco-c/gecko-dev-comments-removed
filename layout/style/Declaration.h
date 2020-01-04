@@ -375,6 +375,11 @@ private:
                           nsCSSValue::Serialization aSerialization,
                           const nsCSSProperty aTable[]) const;
 
+  void GetImageLayerPositionValue(nsCSSCompressedDataBlock *data,
+                                  nsAString& aValue,
+                                  nsCSSValue::Serialization aSerialization,
+                                  const nsCSSProperty aTable[]) const;
+
 public:
   
 
