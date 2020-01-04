@@ -8,14 +8,18 @@
 #define mozilla_dom_KeyframeEffect_h
 
 #include "nsAutoPtr.h"
+#include "nsCSSProperty.h"
+#include "nsCSSValue.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsIDocument.h"
+#include "nsTArray.h"
 #include "nsWrapperCache.h"
 #include "mozilla/AnimationPerformanceWarning.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/ComputedTiming.h"
 #include "mozilla/ComputedTimingFunction.h"
 #include "mozilla/LayerAnimationInfo.h" 
+#include "mozilla/Maybe.h"
 #include "mozilla/NonOwningAnimationTarget.h"
 #include "mozilla/OwningNonNull.h"      
 #include "mozilla/StickyTimeDuration.h"
@@ -26,7 +30,6 @@
 #include "mozilla/dom/AnimationEffectTimingReadOnly.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/Nullable.h"
-
 
 struct JSContext;
 class nsCSSPropertySet;
@@ -49,6 +52,42 @@ enum class IterationCompositeOperation : uint32_t;
 enum class CompositeOperation : uint32_t;
 struct AnimationPropertyDetails;
 }
+
+
+
+
+struct PropertyValuePair
+{
+  nsCSSProperty mProperty;
+  
+  
+  
+  nsCSSValue    mValue;
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+struct Keyframe
+{
+  Maybe<double>                 mOffset;
+  double                        mComputedOffset = 0.0;
+  Maybe<ComputedTimingFunction> mTimingFunction; 
+                                                 
+  nsTArray<PropertyValuePair>   mPropertyValues;
+};
 
 struct AnimationPropertySegment
 {
