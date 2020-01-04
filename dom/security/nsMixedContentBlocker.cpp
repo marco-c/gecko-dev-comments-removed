@@ -291,7 +291,7 @@ nsMixedContentBlocker::AsyncOnChannelRedirect(nsIChannel* aOldChannel,
     return NS_OK;
   }
 
-  uint32_t contentPolicyType = loadInfo->GetContentPolicyType();
+  nsContentPolicyType contentPolicyType = loadInfo->InternalContentPolicyType();
   nsCOMPtr<nsIPrincipal> requestingPrincipal = loadInfo->LoadingPrincipal();
 
   
@@ -310,7 +310,7 @@ nsMixedContentBlocker::AsyncOnChannelRedirect(nsIChannel* aOldChannel,
   }
 
   int16_t decision = REJECT_REQUEST;
-  rv = ShouldLoad(nsContentUtils::InternalContentPolicyTypeToExternal(contentPolicyType),
+  rv = ShouldLoad(nsContentUtils::InternalContentPolicyTypeToExternalOrScript(contentPolicyType),
                   newUri,
                   requestingLocation,
                   loadInfo->LoadingNode(),
@@ -378,8 +378,16 @@ nsMixedContentBlocker::ShouldLoad(bool aHadInsecureImageRedirect,
   
   MOZ_ASSERT(NS_IsMainThread());
 
-  MOZ_ASSERT(aContentType == nsContentUtils::InternalContentPolicyTypeToExternal(aContentType),
+  MOZ_ASSERT(aContentType == nsContentUtils::InternalContentPolicyTypeToExternalOrScript(aContentType),
              "We should only see external content policy types here.");
+
+  
+  
+  
+  bool isWorkerType = aContentType == nsIContentPolicy::TYPE_INTERNAL_WORKER ||
+                      aContentType == nsIContentPolicy::TYPE_INTERNAL_SHARED_WORKER ||
+                      aContentType == nsIContentPolicy::TYPE_INTERNAL_SERVICE_WORKER;
+  aContentType = nsContentUtils::InternalContentPolicyTypeToExternal(aContentType);
 
   
   MixedContentTypes classification = eMixedScript;
@@ -622,6 +630,23 @@ nsMixedContentBlocker::ShouldLoad(bool aHadInsecureImageRedirect,
   }
   if (!parentIsHttps) {
     *aDecision = ACCEPT;
+    return NS_OK;
+  }
+
+  
+  
+  if (isWorkerType) {
+    
+    
+    
+    
+#ifdef DEBUG
+    bool isHttpsScheme = false;
+    rv = aContentLocation->SchemeIs("https", &isHttpsScheme);
+    NS_ENSURE_SUCCESS(rv, rv);
+    MOZ_ASSERT(!isHttpsScheme);
+#endif
+    *aDecision = REJECT_REQUEST;
     return NS_OK;
   }
 

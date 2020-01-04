@@ -963,6 +963,18 @@ public:
 
 
 
+  static nsContentPolicyType InternalContentPolicyTypeToExternalOrScript(nsContentPolicyType aType);
+
+  
+
+
+
+
+
+
+
+
+
 
 
 

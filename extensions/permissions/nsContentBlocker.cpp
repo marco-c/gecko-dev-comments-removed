@@ -57,7 +57,8 @@ static const char *kTypeString[] = {
                                     "", 
                                     "", 
                                     "", 
-                                    ""  
+                                    "", 
+                                    "", 
 };
 
 #define NUMBER_OF_TYPES MOZ_ARRAY_LENGTH(kTypeString)

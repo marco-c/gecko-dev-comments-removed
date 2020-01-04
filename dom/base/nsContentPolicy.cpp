@@ -23,6 +23,7 @@
 #include "nsILoadContext.h"
 #include "nsCOMArray.h"
 #include "nsContentUtils.h"
+#include "mozilla/dom/nsMixedContentBlocker.h"
 
 using mozilla::LogLevel;
 
@@ -119,6 +120,12 @@ nsContentPolicy::CheckPolicy(CPMethod          policyMethod,
     nsContentPolicyType externalType =
         nsContentUtils::InternalContentPolicyTypeToExternal(contentType);
 
+    nsContentPolicyType externalTypeOrScript =
+        nsContentUtils::InternalContentPolicyTypeToExternalOrScript(contentType);
+
+    nsCOMPtr<nsIContentPolicy> mixedContentBlocker =
+        do_GetService(NS_MIXEDCONTENTBLOCKER_CONTRACTID);
+
     
 
 
@@ -129,7 +136,15 @@ nsContentPolicy::CheckPolicy(CPMethod          policyMethod,
     int32_t count = entries.Count();
     for (int32_t i = 0; i < count; i++) {
         
-        rv = (entries[i]->*policyMethod)(externalType, contentLocation,
+        
+        
+        
+        bool isMixedContentBlocker = mixedContentBlocker == entries[i];
+        nsContentPolicyType type = externalType;
+        if (isMixedContentBlocker) {
+            type = externalTypeOrScript;
+        }
+        rv = (entries[i]->*policyMethod)(type, contentLocation,
                                          requestingLocation, requestingContext,
                                          mimeType, extra, requestPrincipal,
                                          decision);
