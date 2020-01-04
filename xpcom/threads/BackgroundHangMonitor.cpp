@@ -29,7 +29,9 @@
 #include <algorithm>
 
 
-#define BHR_BETA_MOD 2;
+
+
+#define BHR_BETA_MOD 1;
 
 
 
