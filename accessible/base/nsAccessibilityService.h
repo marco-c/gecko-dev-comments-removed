@@ -6,8 +6,6 @@
 #ifndef __nsAccessibilityService_h__
 #define __nsAccessibilityService_h__
 
-#include "nsIAccessibilityService.h"
-
 #include "mozilla/a11y/DocManager.h"
 #include "mozilla/a11y/FocusManager.h"
 #include "mozilla/a11y/Role.h"
@@ -15,7 +13,9 @@
 #include "mozilla/Preferences.h"
 
 #include "nsIObserver.h"
+#include "nsIAccessibleEvent.h"
 #include "nsIEventListenerService.h"
+#include "xpcAccessibilityService.h"
 
 class nsImageFrame;
 class nsIArray;
@@ -68,7 +68,6 @@ struct MarkupMapInfo {
 class nsAccessibilityService final : public mozilla::a11y::DocManager,
                                      public mozilla::a11y::FocusManager,
                                      public mozilla::a11y::SelectionManager,
-                                     public nsIAccessibilityService,
                                      public nsIListenerChangeListener,
                                      public nsIObserver
 {
@@ -80,16 +79,14 @@ public:
   NS_IMETHOD ListenersChanged(nsIArray* aEventChanges) override;
 
 protected:
-  virtual ~nsAccessibilityService();
+  ~nsAccessibilityService();
 
 public:
   NS_DECL_ISUPPORTS_INHERITED
-  NS_DECL_NSIACCESSIBLERETRIEVAL
   NS_DECL_NSIOBSERVER
 
-  
-  virtual Accessible* GetRootDocumentAccessible(nsIPresShell* aPresShell,
-                                                bool aCanCreate) override;
+  Accessible* GetRootDocumentAccessible(nsIPresShell* aPresShell,
+                                        bool aCanCreate);
   already_AddRefed<Accessible>
     CreatePluginAccessible(nsPluginFrame* aFrame, nsIContent* aContent,
                            Accessible* aContext);
@@ -98,10 +95,31 @@ public:
 
 
 
-  virtual Accessible* AddNativeRootAccessible(void* aAtkAccessible) override;
-  virtual void RemoveNativeRootAccessible(Accessible* aRootAccessible) override;
+  Accessible* AddNativeRootAccessible(void* aAtkAccessible);
+  void RemoveNativeRootAccessible(Accessible* aRootAccessible);
 
-  virtual bool HasAccessible(nsIDOMNode* aDOMNode) override;
+  bool HasAccessible(nsIDOMNode* aDOMNode);
+
+  
+
+
+  void GetStringRole(uint32_t aRole, nsAString& aString);
+
+  
+
+
+  void GetStringStates(uint32_t aState, uint32_t aExtraState,
+                       nsISupports **aStringStates);
+
+  
+
+
+  void GetStringEventType(uint32_t aEventType, nsAString& aString);
+
+  
+
+
+  void GetStringRelationType(uint32_t aRelationType, nsAString& aString);
 
   
   
@@ -123,7 +141,7 @@ public:
 
   void ContentRemoved(nsIPresShell* aPresShell, nsIContent* aChild);
 
-  virtual void UpdateText(nsIPresShell* aPresShell, nsIContent* aContent);
+  void UpdateText(nsIPresShell* aPresShell, nsIContent* aContent);
 
   
 
@@ -139,9 +157,9 @@ public:
   
 
 
-  virtual void UpdateListBullet(nsIPresShell* aPresShell,
-                                nsIContent* aHTMLListItemContent,
-                                bool aHasBullet);
+  void UpdateListBullet(nsIPresShell* aPresShell,
+                        nsIContent* aHTMLListItemContent,
+                        bool aHasBullet);
 
   
 
@@ -163,14 +181,14 @@ public:
   
 
 
-  virtual void PresShellActivated(nsIPresShell* aPresShell);
+  void PresShellActivated(nsIPresShell* aPresShell);
 
   
 
 
   void RecreateAccessible(nsIPresShell* aPresShell, nsIContent* aContent);
 
-  virtual void FireAccessibleEvent(uint32_t aEvent, Accessible* aTarget) override;
+  void FireAccessibleEvent(uint32_t aEvent, Accessible* aTarget);
 
   
 
@@ -178,6 +196,11 @@ public:
 
 
   static bool IsShutdown() { return gIsShutdown; }
+
+  
+
+
+  static bool IsPlatformCaller() { return gIsPlatformCaller; };
 
   
 
@@ -258,15 +281,21 @@ private:
 
   static bool gIsShutdown;
 
+  
+
+
+  static bool gIsPlatformCaller;
+
   nsDataHashtable<nsPtrHashKey<const nsIAtom>, const mozilla::a11y::MarkupMapInfo*> mMarkupMaps;
 
   friend nsAccessibilityService* GetAccService();
+  friend nsAccessibilityService* GetOrCreateAccService(bool);
+  friend bool CanShutdownAccService();
   friend mozilla::a11y::FocusManager* mozilla::a11y::FocusMgr();
   friend mozilla::a11y::SelectionManager* mozilla::a11y::SelectionMgr();
   friend mozilla::a11y::ApplicationAccessible* mozilla::a11y::ApplicationAcc();
   friend mozilla::a11y::xpcAccessibleApplication* mozilla::a11y::XPCApplicationAcc();
-
-  friend nsresult NS_GetAccessibilityService(nsIAccessibilityService** aResult);
+  friend class xpcAccessibilityService;
 };
 
 
@@ -277,6 +306,16 @@ GetAccService()
 {
   return nsAccessibilityService::gAccessibilityService;
 }
+
+
+
+
+nsAccessibilityService* GetOrCreateAccService(bool aIsPlatformCaller = true);
+
+
+
+
+bool CanShutdownAccService();
 
 
 
@@ -387,5 +426,4 @@ static const char kEventTypeNames[][40] = {
   "text value change",                       
 };
 
-#endif 
-
+#endif

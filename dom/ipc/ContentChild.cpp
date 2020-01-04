@@ -164,7 +164,7 @@
 #endif
 
 #ifdef ACCESSIBILITY
-#include "nsIAccessibilityService.h"
+#include "nsAccessibilityService.h"
 #endif
 
 #ifndef MOZ_SIMPLEPUSH
@@ -2469,8 +2469,7 @@ ContentChild::RecvActivateA11y()
 #ifdef ACCESSIBILITY
   
   
-  nsCOMPtr<nsIAccessibilityService> accService =
-    services::GetAccessibilityService();
+  GetOrCreateAccService();
 #endif
   return true;
 }
