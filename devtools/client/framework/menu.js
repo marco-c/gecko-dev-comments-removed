@@ -64,7 +64,17 @@ Menu.prototype.insert = function (pos, menuItem) {
 
 Menu.prototype.popup = function (screenX, screenY, toolbox) {
   let doc = toolbox.doc;
-  let popup = doc.createElement("menupopup");
+  let popupset = doc.querySelector("popupset");
+  
+  
+  
+  
+  let popup = popupset.querySelector("menupopup[menu-api=\"true\"]");
+  if (popup) {
+    popup.hidePopup();
+  }
+
+  popup = doc.createElement("menupopup");
   popup.setAttribute("menu-api", "true");
 
   if (this.id) {
@@ -86,7 +96,7 @@ Menu.prototype.popup = function (screenX, screenY, toolbox) {
     }
   });
 
-  doc.querySelector("popupset").appendChild(popup);
+  popupset.appendChild(popup);
   popup.openPopupAtScreen(screenX, screenY, true);
 };
 
