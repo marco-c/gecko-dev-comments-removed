@@ -1031,9 +1031,7 @@ if (!isContent) {
 }
 
 
-if (isContent) {
-  this.AsyncShutdown.contentChildShutdown = getPhase("content-child-shutdown");
-}
+
 
 
 this.AsyncShutdown.webWorkersShutdown = getPhase("web-workers-shutdown");
