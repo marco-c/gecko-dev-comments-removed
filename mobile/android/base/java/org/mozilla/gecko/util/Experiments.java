@@ -1,0 +1,13 @@
+
+
+
+
+package org.mozilla.gecko.util;
+
+
+
+
+
+public class Experiments {
+    public static final String BOOKMARKS_HISTORY_MENU = "bookmark-history-menu";
+}

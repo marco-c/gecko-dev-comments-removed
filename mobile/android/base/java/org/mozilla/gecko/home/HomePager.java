@@ -17,6 +17,7 @@ import org.mozilla.gecko.animation.PropertyAnimator;
 import org.mozilla.gecko.animation.ViewHelper;
 import org.mozilla.gecko.home.HomeAdapter.OnAddPanelListener;
 import org.mozilla.gecko.home.HomeConfig.PanelConfig;
+import org.mozilla.gecko.util.Experiments;
 import org.mozilla.gecko.util.ThreadUtils;
 
 import android.content.Context;
@@ -289,6 +290,9 @@ public class HomePager extends ViewPager {
 
 
 
+
+
+
     public void showPanel(String panelId) {
         if (!mVisible) {
             return;
@@ -525,6 +529,7 @@ public class HomePager extends ViewPager {
             Telemetry.stopUISession(mCurrentPanelSession, mCurrentPanelSessionSuffix);
             mCurrentPanelSession = null;
             mCurrentPanelSessionSuffix = null;
+            Telemetry.stopUISession(TelemetryContract.Session.EXPERIMENT, Experiments.BOOKMARKS_HISTORY_MENU);
         }
     }
 }
