@@ -1236,7 +1236,7 @@ nsBoxFrame::AttributeChanged(int32_t aNameSpaceID,
     
     if (parent && !(GetStateBits() & NS_FRAME_OUT_OF_FLOW) &&
         StyleDisplay()->mDisplay != NS_STYLE_DISPLAY_POPUP) {
-      parent->RelayoutChildAtOrdinal(this);
+      parent->XULRelayoutChildAtOrdinal(this);
       
       PresContext()->PresShell()->
         FrameNeedsReflow(parent, nsIPresShell::eStyleChange,
@@ -1936,7 +1936,7 @@ nsBoxFrame::LayoutChildAt(nsBoxLayoutState& aState, nsIFrame* aBox, const nsRect
 }
 
 nsresult
-nsBoxFrame::RelayoutChildAtOrdinal(nsIFrame* aChild)
+nsBoxFrame::XULRelayoutChildAtOrdinal(nsIFrame* aChild)
 {
   if (!SupportsOrdinalsInChildren())
     return NS_OK;
