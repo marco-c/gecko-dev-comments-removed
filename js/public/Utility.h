@@ -181,15 +181,10 @@ static inline bool ShouldFailWithOOM() { return false; }
 
 namespace js {
 
-MOZ_NORETURN MOZ_COLD void
-CrashAtUnhandlableOOM(const char* reason);
-
 
 struct MOZ_RAII AutoEnterOOMUnsafeRegion
 {
-    void crash(const char* reason) {
-        CrashAtUnhandlableOOM(reason);
-    }
+    MOZ_NORETURN MOZ_COLD void crash(const char* reason);
 
 #if defined(DEBUG) || defined(JS_OOM_BREAKPOINT)
     AutoEnterOOMUnsafeRegion()
