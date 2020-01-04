@@ -96,7 +96,7 @@ BasicCompositor::~BasicCompositor()
 }
 
 bool
-BasicCompositor::Initialize(nsCString* const out_failureReason)
+BasicCompositor::Initialize()
 {
   return mWidget ? mWidget->InitCompositor(this) : false;
 };
@@ -622,6 +622,10 @@ BasicCompositor::BeginFrame(const nsIntRegion& aInvalidRegion,
   }
 
   
+  gfxUtils::ClipToRegion(mDrawTarget,
+                         mInvalidRegion.ToUnknownRegion());
+
+  
   
   RefPtr<CompositingRenderTarget> target =
     CreateRenderTargetForWindow(mInvalidRect,
@@ -639,8 +643,10 @@ BasicCompositor::BeginFrame(const nsIntRegion& aInvalidRegion,
   
   mRenderTarget->mDrawTarget->SetTransform(Matrix::Translation(-mRenderTarget->GetOrigin()));
 
-  gfxUtils::ClipToRegion(mRenderTarget->mDrawTarget,
-                         mInvalidRegion.ToUnknownRegion());
+  if (mRenderTarget->mDrawTarget != mDrawTarget) {
+    gfxUtils::ClipToRegion(mRenderTarget->mDrawTarget,
+                           mInvalidRegion.ToUnknownRegion());
+  }
 
   if (aRenderBoundsOut) {
     *aRenderBoundsOut = rect;
@@ -675,7 +681,10 @@ BasicCompositor::EndFrame()
   }
 
   
-  mRenderTarget->mDrawTarget->PopClip();
+  mDrawTarget->PopClip();
+  if (mRenderTarget->mDrawTarget != mDrawTarget) {
+    mRenderTarget->mDrawTarget->PopClip();
+  }
 
   if (mTarget || mRenderTarget->mDrawTarget != mDrawTarget) {
     
