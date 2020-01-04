@@ -26,6 +26,9 @@ class gfxConfig
 {
 public:
   
+  static FeatureState& GetFeature(Feature aFeature);
+
+  
   
   
   
@@ -57,6 +60,10 @@ public:
                          bool aEnable,
                          FeatureStatus aDisableStatus,
                          const char* aDisableMessage);
+  static void DisableByDefault(Feature aFeature,
+                               FeatureStatus aDisableStatus,
+                               const char* aDisableMessage);
+  static void EnableByDefault(Feature aFeature);
 
   
   
@@ -142,8 +149,6 @@ private:
 
   bool UseFallbackImpl(Fallback aFallback) const;
   void EnableFallbackImpl(Fallback aFallback);
-
-  static void AssertStatusInitialized(Feature aFeature);
 
 private:
   static const size_t kNumFeatures = size_t(Feature::NumValues);
