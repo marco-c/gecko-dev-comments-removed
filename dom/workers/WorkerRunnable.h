@@ -121,12 +121,8 @@ protected:
 
   
   
-  
-  
-  
   virtual void
-  PostDispatch(JSContext* aCx, WorkerPrivate* aWorkerPrivate,
-               bool aDispatchResult);
+  PostDispatch(WorkerPrivate* aWorkerPrivate, bool aDispatchResult);
 
   
   
@@ -191,18 +187,8 @@ private:
     return true;
   }
 
-  
-  
-  
-  virtual bool
-  DispatchInternal() override final
-  {
-    return WorkerRunnable::DispatchInternal();
-  }
-
   virtual void
-  PostDispatch(JSContext* aCx, WorkerPrivate* aWorkerPrivate,
-               bool aDispatchResult) override;
+  PostDispatch(WorkerPrivate* aWorkerPrivate, bool aDispatchResult) override;
 };
 
 
@@ -258,18 +244,8 @@ private:
     return true;
   }
 
-  
-  
-  
-  virtual bool
-  DispatchInternal() override final
-  {
-    return WorkerSyncRunnable::DispatchInternal();
-  }
-
   virtual void
-  PostDispatch(JSContext* aCx, WorkerPrivate* aWorkerPrivate,
-               bool aDispatchResult) override;
+  PostDispatch(WorkerPrivate* aWorkerPrivate, bool aDispatchResult) override;
 };
 
 
@@ -303,8 +279,6 @@ private:
   virtual bool
   WorkerRun(JSContext* aCx, WorkerPrivate* aWorkerPrivate) override;
 
-  
-  
   virtual bool
   DispatchInternal() override final;
 };
@@ -337,8 +311,7 @@ private:
   }
 
   virtual void
-  PostDispatch(JSContext* aCx, WorkerPrivate* aWorkerPrivate,
-               bool aDispatchResult) override;
+  PostDispatch(WorkerPrivate* aWorkerPrivate, bool aDispatchResult) override;
 };
 
 
@@ -397,8 +370,7 @@ protected:
   }
 
   virtual void
-  PostDispatch(JSContext* aCx, WorkerPrivate* aWorkerPrivate,
-               bool aDispatchResult) override;
+  PostDispatch(WorkerPrivate* aWorkerPrivate, bool aDispatchResult) override;
 };
 
 
@@ -421,8 +393,7 @@ protected:
   PreDispatch(WorkerPrivate* aWorkerPrivate) override;
 
   virtual void
-  PostDispatch(JSContext* aCx, WorkerPrivate* aWorkerPrivate,
-               bool aDispatchResult) override;
+  PostDispatch(WorkerPrivate* aWorkerPrivate, bool aDispatchResult) override;
 
   
   

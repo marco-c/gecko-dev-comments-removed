@@ -376,8 +376,7 @@ private:
   }
 
   virtual void
-  PostDispatch(JSContext* aCx, WorkerPrivate* aWorkerPrivate,
-               bool aDispatchResult) override
+  PostDispatch(WorkerPrivate* aWorkerPrivate, bool aDispatchResult) override
   {
     
   }
@@ -608,8 +607,7 @@ private:
   }
 
   virtual void
-  PostDispatch(JSContext* aCx, WorkerPrivate* aWorkerPrivate,
-               bool aDispatchResult) override
+  PostDispatch(WorkerPrivate* aWorkerPrivate, bool aDispatchResult) override
   {
     MOZ_CRASH("Don't call Dispatch() on CloseEventRunnable!");
   }
@@ -874,8 +872,7 @@ private:
   }
 
   virtual void
-  PostDispatch(JSContext* aCx, WorkerPrivate* aWorkerPrivate,
-               bool aDispatchResult) override
+  PostDispatch(WorkerPrivate* aWorkerPrivate, bool aDispatchResult) override
   {
     aWorkerPrivate->AssertIsOnParentThread();
     if (!aDispatchResult) {
@@ -1095,8 +1092,7 @@ private:
   { }
 
   virtual void
-  PostDispatch(JSContext* aCx, WorkerPrivate* aWorkerPrivate,
-               bool aDispatchResult) override
+  PostDispatch(WorkerPrivate* aWorkerPrivate, bool aDispatchResult) override
   {
     aWorkerPrivate->AssertIsOnWorkerThread();
 
@@ -1191,8 +1187,7 @@ private:
   }
 
   virtual void
-  PostDispatch(JSContext* aCx, WorkerPrivate* aWorkerPrivate,
-               bool aDispatchResult) override
+  PostDispatch(WorkerPrivate* aWorkerPrivate, bool aDispatchResult) override
   {
     
   }
@@ -1238,8 +1233,7 @@ private:
   }
 
   virtual void
-  PostDispatch(JSContext* aCx, WorkerPrivate* aWorkerPrivate,
-               bool aDispatchResult) override
+  PostDispatch(WorkerPrivate* aWorkerPrivate, bool aDispatchResult) override
   {
     
   }
@@ -1286,8 +1280,7 @@ class KillCloseEventRunnable final : public WorkerRunnable
     }
 
     virtual void
-    PostDispatch(JSContext* aCx, WorkerPrivate* aWorkerPrivate,
-                 bool aDispatchResult) override
+    PostDispatch(WorkerPrivate* aWorkerPrivate, bool aDispatchResult) override
     {
       
     }
@@ -1351,8 +1344,7 @@ private:
   }
 
   virtual void
-  PostDispatch(JSContext* aCx, WorkerPrivate* aWorkerPrivate,
-               bool aDispatchResult) override
+  PostDispatch(WorkerPrivate* aWorkerPrivate, bool aDispatchResult) override
   {
     MOZ_CRASH("Don't call Dispatch() on KillCloseEventRunnable!");
   }
@@ -1507,8 +1499,7 @@ private:
   }
 
   virtual void
-  PostDispatch(JSContext* aCx, WorkerPrivate* aWorkerPrivate,
-                bool aDispatchResult) override
+  PostDispatch(WorkerPrivate* aWorkerPrivate, bool aDispatchResult) override
   {
     
     
@@ -1697,9 +1688,7 @@ private:
   }
 
   virtual void
-  PostDispatch(JSContext* aCx,
-               WorkerPrivate* aWorkerPrivate,
-               bool aDispatchResult) override
+  PostDispatch(WorkerPrivate* aWorkerPrivate, bool aDispatchResult) override
   {
     MOZ_ASSERT_UNREACHABLE("Should never call Dispatch on this!");
   }
