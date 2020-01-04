@@ -346,19 +346,6 @@ class AssemblerBuffer
         return BufferOffset(bufferSize);
     }
 
-    
-    void perforate() {
-        Slice* slice = newSlice(lifoAlloc_);
-        if (!slice) {
-            fail_oom();
-            return;
-        }
-
-        bufferSize += tail->length();
-        tail->setNext(slice);
-        tail = slice;
-    }
-
     class AssemblerBufferInstIterator
     {
         BufferOffset bo;
