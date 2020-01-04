@@ -4,11 +4,14 @@
 
 
 #include "nsDNSServiceDiscovery.h"
-#include <cutils/properties.h>
 #include "MDNSResponderOperator.h"
 #include "nsICancelable.h"
 #include "nsXULAppAPI.h"
 #include "private/pprio.h"
+
+#ifdef MOZ_WIDGET_GONK
+#include <cutils/properties.h>
+#endif 
 
 namespace mozilla {
 namespace net {
@@ -18,6 +21,7 @@ namespace {
 inline void
 StartService()
 {
+#ifdef MOZ_WIDGET_GONK
   char value[PROPERTY_VALUE_MAX] = { '\0' };
   property_get("init.svc.mdnsd", value, "");
 
@@ -25,11 +29,13 @@ StartService()
     return;
   }
   property_set("ctl.start", "mdnsd");
+#endif 
 }
 
 inline void
 StopService()
 {
+#ifdef MOZ_WIDGET_GONK
   char value[PROPERTY_VALUE_MAX] = { '\0' };
   property_get("init.svc.mdnsd", value, "");
 
@@ -37,6 +43,7 @@ StopService()
     return;
   }
   property_set("ctl.stop", "mdnsd");
+#endif 
 }
 
 class ServiceCounter
