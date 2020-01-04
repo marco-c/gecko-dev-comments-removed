@@ -2593,11 +2593,6 @@ public:
     return !!GetFullscreenElement();
   }
   void ExitFullscreen();
-  bool FullscreenEnabledInternal() const { return mFullscreenEnabled; }
-  void SetFullscreenEnabled(bool aEnabled)
-  {
-    mFullscreenEnabled = aEnabled;
-  }
   Element* GetMozPointerLockElement();
   void MozExitPointerLock()
   {
@@ -3058,10 +3053,6 @@ protected:
 
   
   bool mPostedFlushUserFontSet : 1;
-
-  
-  
-  bool mFullscreenEnabled : 1;
 
   enum Type {
     eUnknown, 

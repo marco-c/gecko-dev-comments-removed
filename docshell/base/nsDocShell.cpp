@@ -2556,10 +2556,6 @@ nsDocShell::GetFullscreenAllowed(bool* aFullscreenAllowed)
       
       return NS_OK;
     }
-    nsIDocument* doc = frameElement->GetUncomposedDoc();
-    if (!doc || !doc->FullscreenEnabledInternal()) {
-      return NS_OK;
-    }
   }
 
   
@@ -3835,13 +3831,6 @@ nsDocShell::IsSandboxedFrom(nsIDocShell* aTargetDocShell)
 
   
   return true;
-}
-
-void
-nsDocShell::ApplySandboxAndFullscreenFlags(nsIDocument* aDoc)
-{
-  aDoc->SetSandboxFlags(mSandboxFlags);
-  aDoc->SetFullscreenEnabled(GetFullscreenAllowed());
 }
 
 NS_IMETHODIMP
@@ -8064,7 +8053,7 @@ nsDocShell::CreateAboutBlankContentViewer(nsIPrincipal* aPrincipal,
 
       
       
-      ApplySandboxAndFullscreenFlags(blankDoc);
+      blankDoc->SetSandboxFlags(mSandboxFlags);
 
       
       docFactory->CreateInstanceForDocument(
