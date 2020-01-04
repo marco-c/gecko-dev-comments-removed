@@ -74,7 +74,7 @@ static int gFrameTreeLockCount = 0;
 struct InlineBackgroundData
 {
   InlineBackgroundData()
-      : mFrame(nullptr), mBlockFrame(nullptr)
+      : mFrame(nullptr), mLineContainer(nullptr)
   {
   }
 
@@ -86,7 +86,7 @@ struct InlineBackgroundData
   {
     mBoundingBox.SetRect(0,0,0,0);
     mContinuationPoint = mLineContinuationPoint = mUnbrokenMeasure = 0;
-    mFrame = mBlockFrame = nullptr;
+    mFrame = mLineContainer = nullptr;
     mPIStartBorderData.Reset();
   }
 
@@ -109,10 +109,10 @@ struct InlineBackgroundData
       
       
       
-      bool isRtlBlock = (mBlockFrame->StyleVisibility()->mDirection ==
+      bool isRtlBlock = (mLineContainer->StyleVisibility()->mDirection ==
                            NS_STYLE_DIRECTION_RTL);
-      nscoord curOffset = mVertical ? aFrame->GetOffsetTo(mBlockFrame).y
-                                    : aFrame->GetOffsetTo(mBlockFrame).x;
+      nscoord curOffset = mVertical ? aFrame->GetOffsetTo(mLineContainer).y
+                                    : aFrame->GetOffsetTo(mLineContainer).x;
 
       
       
@@ -120,8 +120,8 @@ struct InlineBackgroundData
       while (inlineFrame && !inlineFrame->GetNextInFlow() &&
              AreOnSameLine(aFrame, inlineFrame)) {
         nscoord frameOffset = mVertical
-          ? inlineFrame->GetOffsetTo(mBlockFrame).y
-          : inlineFrame->GetOffsetTo(mBlockFrame).x;
+          ? inlineFrame->GetOffsetTo(mLineContainer).y
+          : inlineFrame->GetOffsetTo(mLineContainer).x;
         if (isRtlBlock == (frameOffset >= curOffset)) {
           pos += mVertical
                ? inlineFrame->GetSize().height
@@ -134,8 +134,8 @@ struct InlineBackgroundData
       while (inlineFrame && !inlineFrame->GetPrevInFlow() &&
              AreOnSameLine(aFrame, inlineFrame)) {
         nscoord frameOffset = mVertical
-          ? inlineFrame->GetOffsetTo(mBlockFrame).y
-          : inlineFrame->GetOffsetTo(mBlockFrame).x;
+          ? inlineFrame->GetOffsetTo(mLineContainer).y
+          : inlineFrame->GetOffsetTo(mLineContainer).x;
         if (isRtlBlock == (frameOffset >= curOffset)) {
           pos += mVertical
                  ? inlineFrame->GetSize().height
@@ -243,7 +243,7 @@ protected:
   };
 
   nsIFrame*      mFrame;
-  nsBlockFrame*  mBlockFrame;
+  nsIFrame*      mLineContainer;
   nsRect         mBoundingBox;
   nscoord        mContinuationPoint;
   nscoord        mUnbrokenMeasure;
@@ -326,14 +326,15 @@ protected:
     mBidiEnabled = aFrame->PresContext()->BidiEnabled();
     if (mBidiEnabled) {
       
-      nsIFrame* frame = aFrame;
-      do {
-        frame = frame->GetParent();
-        mBlockFrame = do_QueryFrame(frame);
+      mLineContainer = aFrame;
+      while (mLineContainer &&
+             mLineContainer->IsFrameOfType(nsIFrame::eLineParticipant)) {
+        mLineContainer = mLineContainer->GetParent();
       }
-      while (frame && frame->IsFrameOfType(nsIFrame::eLineParticipant));
 
-      NS_ASSERTION(mBlockFrame, "Cannot find containing block.");
+      MOZ_ASSERT(mLineContainer, "Cannot find line containing frame.");
+      MOZ_ASSERT(mLineContainer != aFrame, "line container frame "
+                 "should be an ancestor of the target frame.");
     }
 
     mVertical = aFrame->GetWritingMode().IsVertical();
@@ -376,15 +377,41 @@ protected:
   }
 
   bool AreOnSameLine(nsIFrame* aFrame1, nsIFrame* aFrame2) {
-    bool isValid1, isValid2;
-    nsBlockInFlowLineIterator it1(mBlockFrame, aFrame1, &isValid1);
-    nsBlockInFlowLineIterator it2(mBlockFrame, aFrame2, &isValid2);
-    return isValid1 && isValid2 &&
+    if (nsBlockFrame* blockFrame = do_QueryFrame(mLineContainer)) {
+      bool isValid1, isValid2;
+      nsBlockInFlowLineIterator it1(blockFrame, aFrame1, &isValid1);
+      nsBlockInFlowLineIterator it2(blockFrame, aFrame2, &isValid2);
+      return isValid1 && isValid2 &&
+        
+        
+        it1.GetContainer() == it2.GetContainer() &&
+        
+        it1.GetLine() == it2.GetLine();
+    }
+    if (nsRubyTextContainerFrame* rtcFrame = do_QueryFrame(mLineContainer)) {
+      nsBlockFrame* block = nsLayoutUtils::FindNearestBlockAncestor(rtcFrame);
       
       
-      it1.GetContainer() == it2.GetContainer() &&
       
-      it1.GetLine() == it2.GetLine();
+      
+      
+      for (nsIFrame* frame = rtcFrame->FirstContinuation();
+           frame; frame = frame->GetNextContinuation()) {
+        bool isDescendant1 =
+          nsLayoutUtils::IsProperAncestorFrame(frame, aFrame1, block);
+        bool isDescendant2 =
+          nsLayoutUtils::IsProperAncestorFrame(frame, aFrame2, block);
+        if (isDescendant1 && isDescendant2) {
+          return true;
+        }
+        if (isDescendant1 || isDescendant2) {
+          return false;
+        }
+      }
+      MOZ_ASSERT_UNREACHABLE("None of the frames is a descendant of this rtc?");
+    }
+    MOZ_ASSERT_UNREACHABLE("Do we have any other type of line container?");
+    return false;
   }
 };
 
