@@ -61,6 +61,7 @@ struct Font {
 
 
 struct FontCollection {
+  uint32_t flavor;
   uint32_t header_version;
   
   std::map<uint32_t, Font::Table*> tables;

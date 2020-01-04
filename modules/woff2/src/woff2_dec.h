@@ -19,6 +19,7 @@
 
 #include <stddef.h>
 #include <inttypes.h>
+#include "./woff2_out.h"
 
 namespace woff2 {
 
@@ -30,6 +31,11 @@ size_t ComputeWOFF2FinalSize(const uint8_t *data, size_t length);
 
 bool ConvertWOFF2ToTTF(uint8_t *result, size_t result_length,
                        const uint8_t *data, size_t length);
+
+
+
+bool ConvertWOFF2ToTTF(const uint8_t *data, size_t length,
+                       WOFF2Out* out);
 
 } 
 
