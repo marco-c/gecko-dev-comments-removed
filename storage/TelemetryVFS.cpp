@@ -78,10 +78,10 @@ public:
 
 
 
-  explicit IOThreadAutoTimer(Telemetry::ID id,
+  explicit IOThreadAutoTimer(Telemetry::ID aId,
     IOInterposeObserver::Operation aOp = IOInterposeObserver::OpNone)
     : start(TimeStamp::Now()),
-      id(id),
+      id(aId),
       op(aOp)
   {
   }
