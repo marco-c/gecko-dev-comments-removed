@@ -351,6 +351,28 @@ nsContextMenu.prototype = {
                   !this.onTextInput && top.gBidiUI);
 
     
+    
+    
+    let markProviders = SocialMarks.getProviders();
+    let enablePageMarks = markProviders.length > 0 && !(this.onLink || this.onImage
+                            || this.onVideo || this.onAudio);
+    this.showItem("context-markpageMenu", enablePageMarks && markProviders.length > SocialMarks.MENU_LIMIT);
+    let enablePageMarkItems = enablePageMarks && markProviders.length <= SocialMarks.MENU_LIMIT;
+    let linkmenus = document.getElementsByClassName("context-markpage");
+    for (let m of linkmenus) {
+      m.hidden = !enablePageMarkItems;
+    }
+
+    let enableLinkMarks = markProviders.length > 0 &&
+                            ((this.onLink && !this.onMailtoLink) || this.onPlainTextLink);
+    this.showItem("context-marklinkMenu", enableLinkMarks && markProviders.length > SocialMarks.MENU_LIMIT);
+    let enableLinkMarkItems = enableLinkMarks && markProviders.length <= SocialMarks.MENU_LIMIT;
+    linkmenus = document.getElementsByClassName("context-marklink");
+    for (let m of linkmenus) {
+      m.hidden = !enableLinkMarkItems;
+    }
+
+    
     let shareButton = SocialShare.shareButton;
     let shareEnabled = shareButton && !shareButton.disabled && !this.onSocial;
     let pageShare = shareEnabled && !(this.isContentSelected ||
@@ -1051,7 +1073,12 @@ nsContextMenu.prototype = {
   },
 
   reload: function(event) {
-    BrowserReloadOrDuplicate(event);
+    if (this.onSocial) {
+      
+      Social._getProviderFromOrigin(this.browser.getAttribute("origin")).reload();
+    } else {
+      BrowserReloadOrDuplicate(event);
+    }
   },
 
   
@@ -1059,6 +1086,9 @@ nsContextMenu.prototype = {
     let inWindow = !Services.prefs.getBoolPref("view_source.tab");
     let openSelectionFn = inWindow ? null : function() {
       let tabBrowser = gBrowser;
+      
+      
+      
       
       if (!tabBrowser || !window.toolbar.visible) {
         
@@ -1707,6 +1737,10 @@ nsContextMenu.prototype = {
     mm.sendAsyncMessage("ContextMenu:BookmarkFrame", null, { target: this.target });
   },
 
+  markLink: function CM_markLink(origin) {
+    
+    SocialMarks.markLink(origin, this.linkURI ? this.linkURI.spec : null, this.target);
+  },
   shareLink: function CM_shareLink() {
     SocialShare.sharePage(null, { url: this.linkURI.spec }, this.target);
   },

@@ -551,6 +551,12 @@ const CustomizableWidgets = [
 
       
       
+      
+      win.SocialSidebar.clearProviderMenus();
+      let providerMenuSeps = menu.getElementsByClassName("social-provider-menu");
+      if (providerMenuSeps.length > 0)
+        win.SocialSidebar.populateProviderMenu(providerMenuSeps[0]);
+
       let sidebarItems = doc.getElementById("PanelUI-sidebarItems");
       clearSubview(sidebarItems);
       fillSubviewFromMenuItems([...menu.children], sidebarItems);
@@ -567,7 +573,7 @@ const CustomizableWidgets = [
       node.setAttribute("label", CustomizableUI.getLocalizedProperty(this, "label"));
       node.setAttribute("tooltiptext", CustomizableUI.getLocalizedProperty(this, "tooltiptext"));
       node.setAttribute("removable", "true");
-      node.setAttribute("observes", "Social:PageShareable");
+      node.setAttribute("observes", "Social:PageShareOrMark");
       node.setAttribute("command", "Social:SharePage");
 
       let listener = {

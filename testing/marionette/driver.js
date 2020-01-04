@@ -333,13 +333,8 @@ GeckoDriver.prototype.whenBrowserStarted = function(win, isNewSession) {
       
       
       
-      
-      
       if (mm.childCount !== 0) {
-        this.curBrowser.frameRegsPending = 0;
-        for (let i = 0; i < mm.childCount; i++) {
-          this.curBrowser.frameRegsPending += mm.getChildAt(i).childCount;
-        }
+        this.curBrowser.frameRegsPending = mm.childCount;
       }
     }
 

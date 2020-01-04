@@ -2246,6 +2246,9 @@ function BrowserViewSourceOfDocument(aArgsOrDocument) {
       }
 
       
+      
+      
+      
       if (!tabBrowser || !window.toolbar.visible) {
         
         let browserWindow = RecentWindow.getMostRecentBrowserWindow();
