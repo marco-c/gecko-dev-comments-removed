@@ -2832,9 +2832,6 @@ nsCSSRendering::PaintBackgroundWithSC(nsPresContext* aPresContext,
   NS_PRECONDITION(aForFrame,
                   "Frame is expected to be provided to PaintBackground");
 
-  
-  
-  
   DrawResult result = DrawResult::SUCCESS;
 
   
@@ -3010,15 +3007,11 @@ nsCSSRendering::PaintBackgroundWithSC(nsPresContext* aPresContext,
             ctx->SetOp(state.mCompositionOp);
           }
 
-          DrawResult resultForLayer =
+          result &=
             state.mImageRenderer.DrawBackground(aPresContext, aRenderingContext,
                                                 state.mDestArea, state.mFillArea,
                                                 state.mAnchor + paintBorderArea.TopLeft(),
                                                 clipState.mDirtyRect);
-
-          if (result == DrawResult::SUCCESS) {
-            result = resultForLayer;
-          }
 
           if (state.mCompositionOp != CompositionOp::OP_OVER) {
             ctx->SetOp(CompositionOp::OP_OVER);
