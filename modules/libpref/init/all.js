@@ -1012,6 +1012,9 @@ pref("print.print_edge_right", 0);
 pref("print.print_edge_bottom", 0);
 
 
+pref("print.print_via_parent", false);
+
+
 
 
 pref("extensions.spellcheck.inline.max-misspellings", 500);
