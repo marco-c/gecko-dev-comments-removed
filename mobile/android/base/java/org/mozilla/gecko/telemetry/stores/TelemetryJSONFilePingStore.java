@@ -126,16 +126,21 @@ public class TelemetryJSONFilePingStore extends TelemetryPingStore {
             return;
         }
 
-        final SortedSet<File> sortedFiles = new TreeSet<>(fileLastModifiedComparator);
-        sortedFiles.addAll(Arrays.asList(files));
+        
+        
+        
+        final ArrayList<File> sortedFiles = new ArrayList<>(Arrays.asList(files));
+        Collections.sort(sortedFiles, fileLastModifiedComparator);
         deleteSmallestFiles(sortedFiles, files.length - MAX_PING_COUNT);
     }
 
-    private void deleteSmallestFiles(final SortedSet<File> files, final int numFilesToRemove) {
+    private void deleteSmallestFiles(final ArrayList<File> files, final int numFilesToRemove) {
         final Iterator<File> it = files.iterator();
         int i = 0;
+
         while (i < numFilesToRemove) {
             i += 1;
+
             
             final File file = it.next(); 
             file.delete();
