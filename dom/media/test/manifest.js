@@ -154,6 +154,8 @@ var gPlayTests = [
   { name:"r11025_s16_c1_trailing.wav", type:"audio/x-wav", duration:1.0 },
   
   { name:"r16000_u8_c1_list.wav", type:"audio/x-wav", duration:4.2 },
+  
+  { name:"wavedata_s24.wav", type:"audio/x-wav", duration:1.0 },
 
   
   { name:"bug461281.ogg", type:"application/ogg", duration:2.208 },
