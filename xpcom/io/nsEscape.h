@@ -160,6 +160,15 @@ NS_EscapeURL(const nsCSubstring& aStr, uint32_t aFlags, nsCSubstring& aResult)
   }
   return aStr;
 }
+
+
+
+
+
+nsresult
+NS_EscapeURL(const nsCSubstring& aStr, uint32_t aFlags, nsCSubstring& aResult,
+             const mozilla::fallible_t&);
+
 inline const nsCSubstring&
 NS_UnescapeURL(const nsCSubstring& aStr, uint32_t aFlags, nsCSubstring& aResult)
 {
