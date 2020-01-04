@@ -853,7 +853,7 @@ nsMenuPopupFrame::ShowPopup(bool aIsContextMenu)
     mIsOpenChanged = true;
 
     
-    if (aIsContextMenu) {
+    if (mPopupType == ePopupTypeMenu) {
       nsIPresShell::SetCapturingContent(nullptr, 0);
     }
 
