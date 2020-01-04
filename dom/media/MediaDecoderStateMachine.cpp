@@ -2089,7 +2089,15 @@ MediaDecoderStateMachine::SeekCompleted()
     newCurrentTime = seekTime;
   } else if (HasAudio()) {
     MediaData* audio = AudioQueue().PeekFront();
-    newCurrentTime = audio ? audio->mTime : seekTime;
+    
+    
+    
+    
+    
+    
+    int64_t videoStart = video ? video->mTime : seekTime;
+    int64_t audioStart = audio ? audio->mTime : seekTime;
+    newCurrentTime = std::min(audioStart, videoStart);
   } else {
     newCurrentTime = video ? video->mTime : seekTime;
   }
