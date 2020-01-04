@@ -53,7 +53,7 @@ public:
   virtual nsresult Startup() { return NS_OK; };
 
   
-  virtual bool SupportsMimeType(const nsACString& aMimeType) = 0;
+  virtual bool SupportsMimeType(const nsACString& aMimeType) const = 0;
 
   enum ConversionRequired {
     kNeedNone,
