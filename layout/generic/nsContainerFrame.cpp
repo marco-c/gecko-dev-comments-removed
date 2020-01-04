@@ -1936,23 +1936,49 @@ nsContainerFrame::RenumberFrameAndDescendants(int32_t* aOrdinal,
         kidRenumberedABullet = true;
       }
     }
-  } else if (NS_STYLE_DISPLAY_BLOCK == display->mDisplay) {
+  } else if (display->mDisplay == NS_STYLE_DISPLAY_BLOCK ||
+             display->mDisplay == NS_STYLE_DISPLAY_FLEX ||
+             display->mDisplay == NS_STYLE_DISPLAY_GRID) {
     if (FrameStartsCounterScope(kid)) {
       
       
-      
     } else {
-      
-      
-      nsBlockFrame* kidBlock = nsLayoutUtils::GetAsBlock(kid);
-      if (kidBlock) {
+      nsContainerFrame* container = do_QueryFrame(kid);
+      if (container) {
         kidRenumberedABullet =
-          kidBlock->RenumberChildFrames(aOrdinal, aDepth + 1,
-                                        aIncrement, aForCounting);
+          container->RenumberChildFrames(aOrdinal, aDepth + 1,
+                                         aIncrement, aForCounting);
       }
     }
   }
   return kidRenumberedABullet;
+}
+
+bool
+nsContainerFrame::RenumberChildFrames(int32_t* aOrdinal,
+                                      int32_t aDepth,
+                                      int32_t aIncrement,
+                                      bool aForCounting)
+{
+  bool renumbered = false;
+  for (auto kid : mFrames) {
+    bool kidRenumbered =
+      kid->RenumberFrameAndDescendants(aOrdinal, aDepth, aIncrement, aForCounting);
+    if (!aForCounting && kidRenumbered) {
+      renumbered = true;
+    }
+  }
+
+  
+  
+  
+  
+  
+  if (renumbered && aDepth != 0) {
+    AddStateBits(NS_FRAME_HAS_DIRTY_CHILDREN);
+  }
+
+  return renumbered;
 }
 
 nsOverflowContinuationTracker::nsOverflowContinuationTracker(nsContainerFrame* aFrame,
