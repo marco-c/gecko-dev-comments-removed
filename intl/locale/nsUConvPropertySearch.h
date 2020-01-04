@@ -21,7 +21,7 @@ class nsUConvPropertySearch
 
 
 
-    static nsresult SearchPropertyValue(const char* aProperties[][3],
+    static nsresult SearchPropertyValue(const char* const aProperties[][3],
                                         int32_t aNumberOfProperties,
                                         const nsACString& aKey,
                                         nsACString& aValue);
