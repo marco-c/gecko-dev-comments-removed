@@ -118,6 +118,10 @@ function LocaleData(data) {
   
   
   this.messages = data.messages || new Map();
+
+  if (data.builtinMessages) {
+    this.messages.set(this.BUILTIN, data.builtinMessages);
+  }
 }
 
 LocaleData.prototype = {
@@ -132,13 +136,15 @@ LocaleData.prototype = {
     };
   },
 
+  BUILTIN: "@@BUILTIN_MESSAGES",
+
   has(locale) {
     return this.messages.has(locale);
   },
 
   
   localizeMessage(message, substitutions = [], locale = this.selectedLocale, defaultValue = "??") {
-    let locales = new Set([locale, this.defaultLocale]
+    let locales = new Set([this.BUILTIN, locale, this.defaultLocale]
                           .filter(locale => this.messages.has(locale)));
 
     
@@ -170,15 +176,7 @@ LocaleData.prototype = {
     }
 
     
-    if (message == "@@extension_id") {
-      if ("uuid" in this) {
-        
-        
-        
-        
-        return this.uuid;
-      }
-    } else if (message == "@@ui_locale") {
+    if (message == "@@ui_locale") {
       
       
       return Locale.getLocale().replace(/-/g, "_");
