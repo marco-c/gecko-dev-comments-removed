@@ -381,15 +381,6 @@ nsJSUtils::ResetTimeZone()
 
 
 
-JSObject* GetDefaultScopeFromJSContext(JSContext *cx)
-{
-  
-  
-  
-  nsIScriptContext *scx = GetScriptContextFromJSContext(cx);
-  return  scx ? scx->GetWindowProxy() : nullptr;
-}
-
 bool nsAutoJSString::init(const JS::Value &v)
 {
   JSContext* cx = nsContentUtils::RootingCxForThread();
