@@ -1351,6 +1351,10 @@ var Impl = {
         
         let sessionData = this._getSessionDataObject();
         TelemetryStorage.saveSessionData(sessionData);
+
+        
+        
+        Services.obs.notifyObservers(null, "internal-telemetry-after-subsession-split", null);
       }
     }
 
