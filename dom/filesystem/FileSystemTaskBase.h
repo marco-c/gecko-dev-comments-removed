@@ -111,10 +111,13 @@ class PBlobParent;
 
 
 
-class FileSystemTaskBase : public PFileSystemRequestChild
+
+
+
+class FileSystemTaskChildBase : public PFileSystemRequestChild
 {
 public:
-  NS_INLINE_DECL_REFCOUNTING(FileSystemTaskBase)
+  NS_INLINE_DECL_REFCOUNTING(FileSystemTaskChildBase)
 
   
 
@@ -154,10 +157,10 @@ protected:
   
 
 
-  explicit FileSystemTaskBase(FileSystemBase* aFileSystem);
+  explicit FileSystemTaskChildBase(FileSystemBase* aFileSystem);
 
   virtual
-  ~FileSystemTaskBase();
+  ~FileSystemTaskChildBase();
 
   
 
@@ -197,6 +200,7 @@ private:
   void
   SetRequestResult(const FileSystemResponseValue& aValue);
 };
+
 
 
 class FileSystemTaskParentBase : public nsRunnable
