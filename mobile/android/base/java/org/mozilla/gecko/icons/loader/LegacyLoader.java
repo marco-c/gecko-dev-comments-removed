@@ -35,6 +35,13 @@ public class LegacyLoader implements IconLoader {
             return null;
         }
 
+        if (request.getIconCount() > 1) {
+            
+            
+            
+            return null;
+        }
+
         final Bitmap bitmap = loadBitmapFromDatabase(request);
 
         if (bitmap == null) {
