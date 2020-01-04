@@ -1571,8 +1571,11 @@ nthChildGenericMatches(Element* aElement,
   
   
   
-  const int32_t n = (index - b) / a;
-  return n >= 0 && (a * n == index - b);
+  const CheckedInt<int32_t> indexMinusB = CheckedInt<int32_t>(index) - b;
+  const CheckedInt<int32_t> n = indexMinusB / a;
+  return n.isValid() &&
+         n.value() >= 0 &&
+         a * n == indexMinusB;
 }
 
 static inline bool
