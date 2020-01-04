@@ -763,12 +763,18 @@ IMEHandler::IsKeyboardPresentOnSlate()
                                           MAX_DEVICE_ID_LEN,
                                           0);
     if (status == CR_SUCCESS) {
+      static const std::wstring BT_HID_DEVICE = L"HID\\{00001124";
+      static const std::wstring BT_HOGP_DEVICE = L"HID\\{00001812";
       
       
       if (IMEHandler::WStringStartsWithCaseInsensitive(device_id,
                                                        L"ACPI") ||
           IMEHandler::WStringStartsWithCaseInsensitive(device_id,
-                                                       L"HID\\VID")) {
+                                                       L"HID\\VID") ||
+          IMEHandler::WStringStartsWithCaseInsensitive(device_id,
+                                                       BT_HID_DEVICE) ||
+          IMEHandler::WStringStartsWithCaseInsensitive(device_id,
+                                                       BT_HOGP_DEVICE)) {
         
         
         
