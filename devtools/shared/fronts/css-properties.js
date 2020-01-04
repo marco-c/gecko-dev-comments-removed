@@ -109,6 +109,15 @@ CssProperties.prototype = {
 
   getValues(property) {
     return this.properties[property] ? this.properties[property].values : [];
+  },
+
+  
+
+
+
+
+  getNames(property) {
+    return Object.keys(this.properties);
   }
 };
 
