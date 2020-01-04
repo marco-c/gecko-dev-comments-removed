@@ -141,7 +141,16 @@ DataStorage::Init(bool& aDataWillPersist)
   
   os->AddObserver(this, "last-pb-context-exited", false);
   
-  os->AddObserver(this, "profile-before-change", false);
+  
+  
+  
+  
+  
+  if (XRE_IsParentProcess()) {
+    os->AddObserver(this, "profile-before-change", false);
+  } else {
+    os->AddObserver(this, NS_XPCOM_SHUTDOWN_OBSERVER_ID, false);
+  }
 
   
   mTimerDelay = Preferences::GetInt("test.datastorage.write_timer_ms",
@@ -856,26 +865,28 @@ DataStorage::Observe(nsISupports* aSubject, const char* aTopic,
     MutexAutoLock lock(mMutex);
     mPrivateDataTable.Clear();
   } else if (strcmp(aTopic, "profile-before-change") == 0) {
-    if (XRE_IsParentProcess()) {
-      {
-        MutexAutoLock lock(mMutex);
-        rv = AsyncWriteData(lock);
-        mShuttingDown = true;
+    MOZ_ASSERT(XRE_IsParentProcess());
+    {
+      MutexAutoLock lock(mMutex);
+      rv = AsyncWriteData(lock);
+      mShuttingDown = true;
+      Unused << NS_WARN_IF(NS_FAILED(rv));
+      if (mTimer) {
+        rv = DispatchShutdownTimer(lock);
         Unused << NS_WARN_IF(NS_FAILED(rv));
-        if (mTimer) {
-          rv = DispatchShutdownTimer(lock);
-          Unused << NS_WARN_IF(NS_FAILED(rv));
-        }
-      }
-      
-      
-      
-      rv = mWorkerThread->Shutdown();
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        return rv;
       }
     }
+    
+    
+    
+    rv = mWorkerThread->Shutdown();
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
 
+    sDataStorages->Clear();
+  } else if (strcmp(aTopic, NS_XPCOM_SHUTDOWN_OBSERVER_ID) == 0) {
+    MOZ_ASSERT(!XRE_IsParentProcess());
     sDataStorages->Clear();
   } else if (strcmp(aTopic, NS_PREFBRANCH_PREFCHANGE_TOPIC_ID) == 0) {
     MutexAutoLock lock(mMutex);
