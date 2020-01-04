@@ -1,6 +1,9 @@
 
 
 
+
+
+
 "use strict";
 
 
@@ -56,7 +59,7 @@ function openLayoutView() {
     
     
     function mockHighlighter({highlighter}) {
-      highlighter.showBoxModel = function(nodeFront) {
+      highlighter.showBoxModel = function() {
         return promise.resolve();
       };
       highlighter.hideBoxModel = function() {
@@ -80,4 +83,18 @@ function openLayoutView() {
 
 function waitForUpdate(inspector) {
   return inspector.once("layoutview-updated");
+}
+
+function getStyle(testActor, selector, propertyName) {
+  return testActor.eval(`
+    content.document.querySelector("${selector}")
+                    .style.getPropertyValue("${propertyName}");
+  `);
+}
+
+function setStyle(testActor, selector, propertyName, value) {
+  return testActor.eval(`
+    content.document.querySelector("${selector}")
+                    .style.${propertyName} = "${value}";
+  `);
 }
