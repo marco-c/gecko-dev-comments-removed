@@ -347,21 +347,6 @@ private:
 
 
 
-  vCardOrderType ConvertStringToVCardOrderType(const nsAString& aString);
-
-  
-
-
-
-
-  vCardSearchKeyType ConvertStringToVCardSearchKeyType(
-    const nsAString& aString);
-
-  
-
-
-
-
   void DispatchAttributeEvent(const Sequence<nsString>& aTypes);
 
   
