@@ -4,6 +4,7 @@
 
 
 #include <MediaStreamGraphImpl.h>
+#include "mozilla/dom/AudioContext.h"
 #include "CubebUtils.h"
 
 #ifdef XP_MACOSX
