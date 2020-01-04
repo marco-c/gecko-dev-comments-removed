@@ -147,6 +147,12 @@ function ignoreEdgeAddressTaken(edge)
 }
 
 
+function isSuppressedVirtualMethod(csu, method)
+{
+    return csu == "nsISupports" && (method == "AddRef" || method == "Release");
+}
+
+
 var ignoreFunctions = {
     "ptio.c:pt_MapError" : true,
     "je_malloc_printf" : true,
