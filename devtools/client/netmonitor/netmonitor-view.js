@@ -2341,13 +2341,22 @@ RequestsMenuView.prototype = Heritage.extend(WidgetMethods, {
     el.className = "stack-trace-tooltip devtools-monospace";
 
     for (let f of stacktrace) {
-      let { functionName, filename, lineNumber, columnNumber } = f;
+      let { functionName, filename, lineNumber, columnNumber, asyncCause } = f;
+
+      if (asyncCause) {
+        
+        let asyncFrameEl = doc.createElementNS(HTML_NS, "div");
+        asyncFrameEl.className = "stack-frame stack-frame-async";
+        asyncFrameEl.textContent =
+          WEBCONSOLE_L10N.getFormatStr("stacktrace.asyncStack", asyncCause);
+        el.appendChild(asyncFrameEl);
+      }
 
       
       let sourceUrl = filename.split(" -> ").pop();
 
       let frameEl = doc.createElementNS(HTML_NS, "div");
-      frameEl.className = "stack-frame";
+      frameEl.className = "stack-frame stack-frame-call";
 
       let funcEl = doc.createElementNS(HTML_NS, "span");
       funcEl.className = "stack-frame-function-name";
