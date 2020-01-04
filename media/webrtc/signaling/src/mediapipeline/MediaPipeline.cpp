@@ -129,6 +129,17 @@ public:
 
   void QueueVideoChunk(VideoChunk& aChunk, bool aForceBlack)
   {
+    if (aChunk.IsNull()) {
+      return;
+    }
+
+    
+    int32_t serial = aChunk.mFrame.GetImage()->GetSerial();
+    if (serial == last_img_) {
+      return;
+    }
+    last_img_ = serial;
+
     
     
     
@@ -158,10 +169,6 @@ public:
     }
 #endif
 
-    if (aChunk.IsNull()) {
-      return;
-    }
-
     bool forceBlack = aForceBlack || aChunk.mFrame.GetForceBlack();
 
     if (forceBlack) {
@@ -180,13 +187,6 @@ public:
       disabled_frame_sent_ = true;
     } else {
       disabled_frame_sent_ = false;
-
-      
-      int32_t serial = aChunk.mFrame.GetImage()->GetSerial();
-      if (serial == last_img_) {
-        return;
-      }
-      last_img_ = serial;
     }
 
     ++mLength; 
