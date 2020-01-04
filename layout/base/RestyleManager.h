@@ -267,9 +267,6 @@ public:
     
     
     explicit AnimationsWithDestroyedFrame(RestyleManager* aRestyleManager);
-    ~AnimationsWithDestroyedFrame()
-    {
-    }
 
     
     
