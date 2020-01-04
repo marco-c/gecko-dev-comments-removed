@@ -17,14 +17,11 @@ AnimationTiming::operator==(const AnimationTiming& aOther) const
     durationEqual = aOther.mDuration.IsUnrestrictedDouble() &&
                     (mDuration.GetAsUnrestrictedDouble() ==
                      aOther.mDuration.GetAsUnrestrictedDouble());
-  } else if (mDuration.IsString()) {
-    durationEqual = aOther.mDuration.IsString() &&
-                    (mDuration.GetAsString() ==
-                     aOther.mDuration.GetAsString());
   } else {
     
-    durationEqual = !aOther.mDuration.IsUnrestrictedDouble() &&
-                    !aOther.mDuration.IsString();
+    
+    
+    durationEqual = !aOther.mDuration.IsUnrestrictedDouble();
   }
   return durationEqual &&
          mDelay == aOther.mDelay &&
