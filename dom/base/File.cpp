@@ -429,15 +429,6 @@ File::Create(nsISupports* aParent, const nsAString& aName,
 }
 
  already_AddRefed<File>
-File::Create(nsISupports* aParent, const nsAString& aName,
-             const nsAString& aContentType, uint64_t aLength)
-{
-  RefPtr<File> file = new File(aParent,
-    new BlobImplBase(aName, aContentType, aLength));
-  return file.forget();
-}
-
- already_AddRefed<File>
 File::CreateMemoryFile(nsISupports* aParent, void* aMemoryBuffer,
                        uint64_t aLength, const nsAString& aName,
                        const nsAString& aContentType,

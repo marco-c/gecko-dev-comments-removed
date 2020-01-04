@@ -195,10 +195,6 @@ public:
          const nsAString& aContentType, uint64_t aLength,
          int64_t aLastModifiedDate, BlobDirState aDirState);
 
-  static already_AddRefed<File>
-  Create(nsISupports* aParent, const nsAString& aName,
-         const nsAString& aContentType, uint64_t aLength);
-
   
   
   
