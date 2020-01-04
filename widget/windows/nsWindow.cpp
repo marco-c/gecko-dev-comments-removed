@@ -6881,7 +6881,8 @@ nsWindow::OnDPIChanged(int32_t x, int32_t y, int32_t width, int32_t height)
   double oldScale = mDefaultScale;
   mDefaultScale = -1.0; 
   double newScale = GetDefaultScaleInternal();
-  if (mResizeState != NOT_RESIZING) {
+
+  if (mResizeState != RESIZING) {
     
     
     
