@@ -225,24 +225,6 @@ var waitForSuccess = Task.async(function* (validatorFn, desc = "untitled") {
 
 
 
-var getFontFamilyDataURL = Task.async(function* (font, nodeFront) {
-  let fillStyle = (Services.prefs.getCharPref("devtools.theme") === "light") ?
-      "black" : "white";
-
-  let {data} = yield nodeFront.getFontFamilyDataURL(font, fillStyle);
-  let dataURL = yield data.string();
-  return dataURL;
-});
-
-
-
-
-
-
-
-
-
-
 
 
 function getRuleViewRule(view, selectorText) {

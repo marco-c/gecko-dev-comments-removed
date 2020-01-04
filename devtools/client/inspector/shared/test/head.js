@@ -3,7 +3,6 @@
 
 
 
-
 "use strict";
 
 
@@ -14,6 +13,7 @@ Services.scriptloader.loadSubScript(
 var {CssRuleView} = require("devtools/client/inspector/rules/rules");
 var {getInplaceEditorForSpan: inplaceEditor} =
   require("devtools/client/shared/inplace-editor");
+const {getColor: getThemeColor} = require("devtools/client/shared/theme");
 
 const TEST_URL_ROOT =
   "http://example.com/browser/devtools/client/inspector/shared/test/";
@@ -240,8 +240,7 @@ function waitForSuccess(validatorFn, name = "untitled") {
 
 
 var getFontFamilyDataURL = Task.async(function* (font, nodeFront) {
-  let fillStyle = (Services.prefs.getCharPref("devtools.theme") === "light") ?
-      "black" : "white";
+  let fillStyle = getThemeColor("body-color");
 
   let {data} = yield nodeFront.getFontFamilyDataURL(font, fillStyle);
   let dataURL = yield data.string();
