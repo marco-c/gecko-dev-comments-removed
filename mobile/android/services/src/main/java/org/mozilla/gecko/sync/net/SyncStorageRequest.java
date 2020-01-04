@@ -120,7 +120,9 @@ public class SyncStorageRequest implements Resource {
       SyncStorageRequestDelegate d = this.request.delegate;
       SyncStorageResponse res = new SyncStorageResponse(response);
       
-      if (res.wasSuccessful()) {
+      
+      
+      if (res.getStatusCode() == 200 || res.getStatusCode() == 202) {
         d.handleRequestSuccess(res);
       } else {
         Logger.warn(LOG_TAG, "HTTP request failed.");

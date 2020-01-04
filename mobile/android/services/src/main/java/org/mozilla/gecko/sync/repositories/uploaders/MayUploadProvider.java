@@ -1,0 +1,9 @@
+
+
+
+
+package org.mozilla.gecko.sync.repositories.uploaders;
+
+public interface MayUploadProvider {
+    boolean mayUpload();
+}

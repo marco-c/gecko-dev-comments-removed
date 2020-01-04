@@ -69,4 +69,17 @@ public class SyncStorageResponse extends SyncResponse {
 
   
 
+
+
+
+
+  public String getLastModified() {
+    if (!response.containsHeader(X_LAST_MODIFIED)) {
+      return null;
+    }
+    return response.getFirstHeader(X_LAST_MODIFIED).getValue();
+  }
+
+  
+
 }
