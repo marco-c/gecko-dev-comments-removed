@@ -72,6 +72,7 @@ typedef union {
 
 
 
+ /** <div rustbindgen private accessor="unsafe"></div> */
 class nsStyleCoord {
 public:
   
@@ -262,6 +263,7 @@ private:
 
 
 
+ /** <div rustbindgen private accessor="unsafe"></div> */
 class nsStyleSides {
 public:
   nsStyleSides();
@@ -340,6 +342,7 @@ protected:
 
 
 
+ /** <div rustbindgen private accessor="unsafe"></div> */
 class nsStyleCorners {
 public:
   nsStyleCorners();
