@@ -6874,6 +6874,10 @@ IonBuilder::compareTrySpecializedOnBaselineInspector(bool* emitted, JSOp op, MDe
     
     
 
+    
+    if (op == JSOP_STRICTEQ || op == JSOP_STRICTNE)
+        return true;
+
     MCompare::CompareType type = inspector->expectedCompareType(pc);
     if (type == MCompare::Compare_Unknown)
         return true;
