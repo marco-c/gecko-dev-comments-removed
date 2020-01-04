@@ -71,7 +71,7 @@ LoopUnroller::getReplacementDefinition(MDefinition* def)
         
         MOZ_ASSERT(def->isConstant());
 
-        MConstant* constant = MConstant::Copy(alloc, def->toConstant());
+        MConstant* constant = new(alloc) MConstant(*def->toConstant());
         oldPreheader->insertBefore(*oldPreheader->begin(), constant);
         return constant;
     }
