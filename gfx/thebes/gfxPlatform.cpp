@@ -777,7 +777,7 @@ gfxPlatform::~gfxPlatform()
 #ifdef USE_SKIA
     
     
-    SkGraphics::Term();
+    SkGraphics::PurgeFontCache();
 #endif
 
 #if MOZ_TREE_CAIRO
