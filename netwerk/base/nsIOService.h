@@ -85,6 +85,7 @@ public:
     PRIntervalTime LastConnectivityChange() { return mLastConnectivityChange; }
     PRIntervalTime LastNetworkLinkChange() { return mLastNetworkLinkChange; }
     bool IsNetTearingDown() { return mShutdown || mOfflineForProfileChange; }
+    PRIntervalTime NetTearingDownStarted() { return mNetTearingDownStarted; }
     bool IsLinkUp();
 
     
@@ -180,9 +181,12 @@ private:
     
     
     
-    mozilla::Atomic<PRIntervalTime>  mLastOfflineStateChange;
-    mozilla::Atomic<PRIntervalTime>  mLastConnectivityChange;
-    mozilla::Atomic<PRIntervalTime>  mLastNetworkLinkChange;
+    mozilla::Atomic<PRIntervalTime> mLastOfflineStateChange;
+    mozilla::Atomic<PRIntervalTime> mLastConnectivityChange;
+    mozilla::Atomic<PRIntervalTime> mLastNetworkLinkChange;
+
+    
+    mozilla::Atomic<PRIntervalTime> mNetTearingDownStarted;
 public:
     
     static uint32_t   gDefaultSegmentSize;

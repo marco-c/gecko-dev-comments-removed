@@ -1484,6 +1484,10 @@ pref("network.sts.max_time_for_events_between_two_polls", 100);
 
 
 
+pref("network.sts.max_time_for_pr_close_during_shutdown", 5000);
+
+
+
 pref("network.websocket.max-message-size", 2147483647);
 
 

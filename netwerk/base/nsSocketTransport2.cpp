@@ -1748,7 +1748,12 @@ nsSocketTransport::ReleaseFD_Locked(PRFileDesc *fd)
     SOCKET_LOG(("JIMB: ReleaseFD_Locked: mFDref = %d\n", mFDref));
 
     if (--mFDref == 0) {
-        if (PR_GetCurrentThread() == gSocketThread) {
+        if (gIOService->IsNetTearingDown() &&
+            ((PR_IntervalNow() - gIOService->NetTearingDownStarted()) >
+             gSocketTransportService->MaxTimeForPrClosePref())) {
+          
+          SOCKET_LOG(("Intentional leak"));
+        } else if (PR_GetCurrentThread() == gSocketThread) {
             SOCKET_LOG(("nsSocketTransport: calling PR_Close [this=%p]\n", this));
             PR_Close(mFD);
         } else {
