@@ -22,6 +22,7 @@ namespace css {
 class Declaration;
 } 
 namespace dom {
+class KeyframeEffectReadOnly;
 class Promise;
 } 
 
@@ -373,6 +374,9 @@ private:
   static void UpdateCascadeResults(nsStyleContext* aStyleContext,
                                    mozilla::AnimationCollection*
                                      aElementAnimations);
+  static void CopyIsRunningOnCompositor(
+    mozilla::dom::KeyframeEffectReadOnly& aSourceEffect,
+    mozilla::dom::KeyframeEffectReadOnly& aDestEffect);
 };
 
 #endif 
