@@ -648,32 +648,6 @@ nsMixedContentBlocker::ShouldLoad(bool aHadInsecureImageRedirect,
 
   
   
-  
-  
-  
-  
-  if (docShell->GetDocument()->GetBlockAllMixedContent(isPreload)) {
-    
-    nsAutoCString spec;
-    rv = aContentLocation->GetSpec(spec);
-    NS_ENSURE_SUCCESS(rv, rv);
-    NS_ConvertUTF8toUTF16 reportSpec(spec);
-
-    const char16_t* params[] = { reportSpec.get()};
-    CSP_LogLocalizedStr(MOZ_UTF16("blockAllMixedContent"),
-                        params, ArrayLength(params),
-                        EmptyString(), 
-                        EmptyString(), 
-                        0, 
-                        0, 
-                        nsIScriptError::errorFlag, "CSP",
-                        docShell->GetDocument()->InnerWindowID());
-    *aDecision = REJECT_REQUEST;
-    return NS_OK;
-  }
-
-  
-  
   if (isWorkerType) {
     
     
@@ -705,6 +679,32 @@ nsMixedContentBlocker::ShouldLoad(bool aHadInsecureImageRedirect,
   NS_ENSURE_SUCCESS(rv, rv);
   if (isHttpScheme && docShell->GetDocument()->GetUpgradeInsecureRequests(isPreload)) {
     *aDecision = ACCEPT;
+    return NS_OK;
+  }
+
+  
+  
+  
+  
+  
+  
+  if (docShell->GetDocument()->GetBlockAllMixedContent(isPreload)) {
+    
+    nsAutoCString spec;
+    rv = aContentLocation->GetSpec(spec);
+    NS_ENSURE_SUCCESS(rv, rv);
+    NS_ConvertUTF8toUTF16 reportSpec(spec);
+
+    const char16_t* params[] = { reportSpec.get()};
+    CSP_LogLocalizedStr(MOZ_UTF16("blockAllMixedContent"),
+                        params, ArrayLength(params),
+                        EmptyString(), 
+                        EmptyString(), 
+                        0, 
+                        0, 
+                        nsIScriptError::errorFlag, "CSP",
+                        docShell->GetDocument()->InnerWindowID());
+    *aDecision = REJECT_REQUEST;
     return NS_OK;
   }
 
