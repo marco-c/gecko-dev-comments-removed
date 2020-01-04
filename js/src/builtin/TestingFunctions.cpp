@@ -1601,6 +1601,13 @@ ReadSPSProfilingStack(JSContext* cx, unsigned argc, Value* vp)
     if (!stack)
         return false;
 
+    
+    
+    if (!cx->runtime()->isProfilerSamplingEnabled()) {
+      args.rval().setObject(*stack);
+      return true;
+    }
+
     RootedObject inlineStack(cx);
     RootedObject inlineFrameInfo(cx);
     RootedString frameKind(cx);
