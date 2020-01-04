@@ -4,7 +4,6 @@
 
 
 
-
 #include "mozilla/ipc/BrowserProcessSubThread.h"
 #include "chrome/common/notification_service.h"
 

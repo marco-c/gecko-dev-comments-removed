@@ -4,7 +4,6 @@
 
 
 
-
 #ifndef mozilla_ipc_SharedMemoryBasic_chromium_h
 #define mozilla_ipc_SharedMemoryBasic_chromium_h
 

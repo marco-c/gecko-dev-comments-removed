@@ -4,7 +4,6 @@
 
 
 
-
 #include <android/log.h>
 #include <errno.h>
 #include <fcntl.h>

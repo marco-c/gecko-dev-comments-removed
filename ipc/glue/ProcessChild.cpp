@@ -4,7 +4,6 @@
 
 
 
-
 #include "nsDebug.h"
 
 #ifdef XP_WIN

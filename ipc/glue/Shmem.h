@@ -4,7 +4,6 @@
 
 
 
-
 #ifndef mozilla_ipc_Shmem_h
 #define mozilla_ipc_Shmem_h
 
