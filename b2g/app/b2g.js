@@ -343,7 +343,6 @@ pref("image.mem.surfacecache.max_size_kb", 131072);
 pref("image.mem.surfacecache.size_factor", 8);  
 pref("image.mem.surfacecache.discard_factor", 2);  
 pref("image.mem.surfacecache.min_expiration_ms", 86400000); 
-pref("image.onload.decode.limit", 24); 
 
 
 
