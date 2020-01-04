@@ -228,7 +228,21 @@ nsUnknownContentTypeDialog.prototype = {
       
       
       gDownloadLastDir = this._mDownloadDir;
-      parent = Services.wm.getMostRecentWindow("");
+      let windowsEnum = Services.wm.getEnumerator("");
+      while (windowsEnum.hasMoreElements()) {
+        let someWin = windowsEnum.getNext();
+        
+        
+        
+        
+        if (someWin != this.mDialog) {
+          parent = someWin;
+        }
+      }
+      if (!parent) {
+        Cu.reportError("No candidate parent windows were found for the save filepicker." +
+                       "This should never happen.");
+      }
     }
 
     Task.spawn(function() {
