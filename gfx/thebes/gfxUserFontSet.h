@@ -466,7 +466,7 @@ public:
         mLocalRulesUsed = true;
     }
 
-    static PRLogModuleInfo* GetUserFontsLog();
+    static mozilla::LogModule* GetUserFontsLog();
 
 protected:
     
