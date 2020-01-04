@@ -165,7 +165,7 @@ public:
   bool HasRefCntOne();
 
   
-  RefPtr<nsGlobalWindow> mWindow;
+  nsRefPtr<nsGlobalWindow> mWindow;
 
   
   nsCOMPtr<nsITimer> mTimer;
@@ -445,8 +445,10 @@ public:
   virtual already_AddRefed<nsISupports> SaveWindowState() override;
   virtual nsresult RestoreWindowState(nsISupports *aState) override;
   virtual void SuspendTimeouts(uint32_t aIncrease = 1,
-                               bool aFreezeChildren = true) override;
-  virtual nsresult ResumeTimeouts(bool aThawChildren = true) override;
+                               bool aFreezeChildren = true,
+                               bool aFreezeWorkers = true) override;
+  virtual nsresult ResumeTimeouts(bool aThawChildren = true,
+                                  bool aThawWorkers = true) override;
   virtual uint32_t TimeoutSuspendCount() override;
   virtual nsresult FireDelayedDOMEvents() override;
   virtual bool IsFrozen() const override
@@ -782,7 +784,7 @@ public:
   
   void AddGamepad(uint32_t aIndex, mozilla::dom::Gamepad* aGamepad);
   void RemoveGamepad(uint32_t aIndex);
-  void GetGamepads(nsTArray<RefPtr<mozilla::dom::Gamepad> >& aGamepads);
+  void GetGamepads(nsTArray<nsRefPtr<mozilla::dom::Gamepad> >& aGamepads);
   already_AddRefed<mozilla::dom::Gamepad> GetGamepad(uint32_t aIndex);
   void SetHasSeenGamepadInput(bool aHasSeen);
   bool HasSeenGamepadInput();
@@ -801,7 +803,7 @@ public:
   void DisableGamepadUpdates();
 
   
-  bool GetVRDevices(nsTArray<RefPtr<mozilla::dom::VRDevice>>& aDevices);
+  bool GetVRDevices(nsTArray<nsRefPtr<mozilla::dom::VRDevice>>& aDevices);
 
 #define EVENT(name_, id_, type_, struct_)                                     \
   mozilla::dom::EventHandlerNonNull* GetOn##name_()                           \
@@ -1270,7 +1272,7 @@ protected:
 
   nsCOMPtr <nsIIdleService> mIdleService;
 
-  RefPtr<mozilla::dom::WakeLock> mWakeLock;
+  nsRefPtr<mozilla::dom::WakeLock> mWakeLock;
 
   static bool sIdleObserversAPIFuzzTimeDisabled;
 
@@ -1584,7 +1586,7 @@ protected:
   
   already_AddRefed<mozilla::dom::StorageEvent>
   CloneStorageEvent(const nsAString& aType,
-                    const RefPtr<mozilla::dom::StorageEvent>& aEvent,
+                    const nsRefPtr<mozilla::dom::StorageEvent>& aEvent,
                     mozilla::ErrorResult& aRv);
 
   
@@ -1731,41 +1733,41 @@ protected:
   nsCOMPtr<nsIArray>            mArguments;
 
   
-  RefPtr<DialogValueHolder> mDialogArguments;
+  nsRefPtr<DialogValueHolder> mDialogArguments;
 
   
-  RefPtr<DialogValueHolder> mReturnValue;
+  nsRefPtr<DialogValueHolder> mReturnValue;
 
-  RefPtr<mozilla::dom::Navigator> mNavigator;
-  RefPtr<nsScreen>            mScreen;
-  RefPtr<nsDOMWindowList>     mFrames;
+  nsRefPtr<mozilla::dom::Navigator> mNavigator;
+  nsRefPtr<nsScreen>            mScreen;
+  nsRefPtr<nsDOMWindowList>     mFrames;
   
-  RefPtr<mozilla::dom::BarProp> mMenubar;
-  RefPtr<mozilla::dom::BarProp> mToolbar;
-  RefPtr<mozilla::dom::BarProp> mLocationbar;
-  RefPtr<mozilla::dom::BarProp> mPersonalbar;
-  RefPtr<mozilla::dom::BarProp> mStatusbar;
-  RefPtr<mozilla::dom::BarProp> mScrollbars;
-  RefPtr<nsDOMWindowUtils>    mWindowUtils;
+  nsRefPtr<mozilla::dom::BarProp> mMenubar;
+  nsRefPtr<mozilla::dom::BarProp> mToolbar;
+  nsRefPtr<mozilla::dom::BarProp> mLocationbar;
+  nsRefPtr<mozilla::dom::BarProp> mPersonalbar;
+  nsRefPtr<mozilla::dom::BarProp> mStatusbar;
+  nsRefPtr<mozilla::dom::BarProp> mScrollbars;
+  nsRefPtr<nsDOMWindowUtils>    mWindowUtils;
   nsString                      mStatus;
   nsString                      mDefaultStatus;
-  RefPtr<nsGlobalWindowObserver> mObserver; 
-  RefPtr<mozilla::dom::Crypto>  mCrypto;
-  RefPtr<mozilla::dom::cache::CacheStorage> mCacheStorage;
-  RefPtr<mozilla::dom::Console> mConsole;
+  nsRefPtr<nsGlobalWindowObserver> mObserver; 
+  nsRefPtr<mozilla::dom::Crypto>  mCrypto;
+  nsRefPtr<mozilla::dom::cache::CacheStorage> mCacheStorage;
+  nsRefPtr<mozilla::dom::Console> mConsole;
   
   
   
   
   nsCOMPtr<nsISupports>         mExternal;
 
-  RefPtr<mozilla::dom::MozSelfSupport> mMozSelfSupport;
+  nsRefPtr<mozilla::dom::MozSelfSupport> mMozSelfSupport;
 
-  RefPtr<mozilla::dom::DOMStorage> mLocalStorage;
-  RefPtr<mozilla::dom::DOMStorage> mSessionStorage;
+  nsRefPtr<mozilla::dom::DOMStorage> mLocalStorage;
+  nsRefPtr<mozilla::dom::DOMStorage> mSessionStorage;
 
   
-  RefPtr<mozilla::EventListenerManager> mListenerManager;
+  nsRefPtr<mozilla::EventListenerManager> mListenerManager;
   
   
   
@@ -1777,13 +1779,13 @@ protected:
   nsTimeout*                    mTimeoutInsertionPoint;
   uint32_t                      mTimeoutPublicIdCounter;
   uint32_t                      mTimeoutFiringDepth;
-  RefPtr<nsLocation>          mLocation;
-  RefPtr<nsHistory>           mHistory;
+  nsRefPtr<nsLocation>          mLocation;
+  nsRefPtr<nsHistory>           mHistory;
 
   
   nsCOMPtr<nsIPrincipal> mDocumentPrincipal;
 
-  typedef nsTArray<RefPtr<mozilla::dom::StorageEvent>> nsDOMStorageEventArray;
+  typedef nsTArray<nsRefPtr<mozilla::dom::StorageEvent>> nsDOMStorageEventArray;
   nsDOMStorageEventArray mPendingStorageEvents;
 
   uint32_t mTimeoutsSuspendDepth;
@@ -1817,7 +1819,7 @@ protected:
   
   nsCOMPtr<nsIDocument> mSuspendedDoc;
 
-  RefPtr<mozilla::dom::indexedDB::IDBFactory> mIndexedDB;
+  nsRefPtr<mozilla::dom::indexedDB::IDBFactory> mIndexedDB;
 
   
   
@@ -1841,7 +1843,7 @@ protected:
 
 #ifdef MOZ_WEBSPEECH
   
-  RefPtr<mozilla::dom::SpeechSynthesis> mSpeechSynthesis;
+  nsRefPtr<mozilla::dom::SpeechSynthesis> mSpeechSynthesis;
 #endif
 
   
@@ -1850,9 +1852,9 @@ protected:
   
   bool                                       mVRDevicesInitialized;
   
-  nsTArray<RefPtr<mozilla::dom::VRDevice>> mVRDevices;
+  nsTArray<nsRefPtr<mozilla::dom::VRDevice>> mVRDevices;
   
-  RefPtr<mozilla::gfx::VRHMDInfo>          mVRHMDInfo;
+  nsRefPtr<mozilla::gfx::VRHMDInfo>          mVRHMDInfo;
 
   friend class nsDOMScriptableHelper;
   friend class nsDOMWindowUtils;
@@ -1977,7 +1979,7 @@ protected:
 inline already_AddRefed<nsGlobalWindow>
 NS_NewScriptGlobalObject(bool aIsChrome, bool aIsModalContentWindow)
 {
-  RefPtr<nsGlobalWindow> global;
+  nsRefPtr<nsGlobalWindow> global;
 
   if (aIsChrome) {
     global = nsGlobalChromeWindow::Create(nullptr);

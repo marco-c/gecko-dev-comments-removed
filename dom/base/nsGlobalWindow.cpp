@@ -13376,9 +13376,11 @@ nsGlobalWindow::RestoreWindowState(nsISupports *aState)
 
 void
 nsGlobalWindow::SuspendTimeouts(uint32_t aIncrease,
-                                bool aFreezeChildren)
+                                bool aFreezeChildren,
+                                bool aFreezeWorkers)
 {
-  FORWARD_TO_INNER_VOID(SuspendTimeouts, (aIncrease, aFreezeChildren));
+  FORWARD_TO_INNER_VOID(SuspendTimeouts,
+                        (aIncrease, aFreezeChildren, aFreezeWorkers));
 
   bool suspended = (mTimeoutsSuspendDepth != 0);
   mTimeoutsSuspendDepth += aIncrease;
@@ -13392,7 +13394,11 @@ nsGlobalWindow::SuspendTimeouts(uint32_t aIncrease,
     DisableGamepadUpdates();
 
     
-    mozilla::dom::workers::FreezeWorkersForWindow(this);
+    if (aFreezeWorkers) {
+      mozilla::dom::workers::FreezeWorkersForWindow(this);
+    } else {
+      mozilla::dom::workers::SuspendWorkersForWindow(this);
+    }
 
     TimeStamp now = TimeStamp::Now();
     for (nsTimeout *t = mTimeouts.getFirst(); t; t = t->getNext()) {
@@ -13448,7 +13454,7 @@ nsGlobalWindow::SuspendTimeouts(uint32_t aIncrease,
           continue;
         }
 
-        win->SuspendTimeouts(aIncrease, aFreezeChildren);
+        win->SuspendTimeouts(aIncrease, aFreezeChildren, aFreezeWorkers);
 
         if (inner && aFreezeChildren) {
           inner->Freeze();
@@ -13459,9 +13465,10 @@ nsGlobalWindow::SuspendTimeouts(uint32_t aIncrease,
 }
 
 nsresult
-nsGlobalWindow::ResumeTimeouts(bool aThawChildren)
+nsGlobalWindow::ResumeTimeouts(bool aThawChildren, bool aThawWorkers)
 {
-  FORWARD_TO_INNER(ResumeTimeouts, (), NS_ERROR_NOT_INITIALIZED);
+  FORWARD_TO_INNER(ResumeTimeouts, (aThawChildren, aThawWorkers),
+                   NS_ERROR_NOT_INITIALIZED);
 
   NS_ASSERTION(mTimeoutsSuspendDepth, "Mismatched calls to ResumeTimeouts!");
   --mTimeoutsSuspendDepth;
@@ -13483,7 +13490,11 @@ nsGlobalWindow::ResumeTimeouts(bool aThawChildren)
     }
 
     
-    mozilla::dom::workers::ThawWorkersForWindow(this);
+    if (aThawWorkers) {
+      mozilla::dom::workers::ThawWorkersForWindow(this);
+    } else {
+      mozilla::dom::workers::ResumeWorkersForWindow(this);
+    }
 
     
     
@@ -13562,7 +13573,7 @@ nsGlobalWindow::ResumeTimeouts(bool aThawChildren)
           inner->Thaw();
         }
 
-        rv = win->ResumeTimeouts(aThawChildren);
+        rv = win->ResumeTimeouts(aThawChildren, aThawWorkers);
         NS_ENSURE_SUCCESS(rv, rv);
       }
     }
