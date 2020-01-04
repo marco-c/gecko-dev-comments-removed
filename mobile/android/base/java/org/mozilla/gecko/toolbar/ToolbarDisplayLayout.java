@@ -265,6 +265,7 @@ public class ToolbarDisplayLayout extends ThemedLinearLayout {
             return;
         }
 
+        final boolean isHttpOrHttps = StringUtils.isHttpOrHttps(url);
         final String baseDomain = tab.getBaseDomain();
 
         String strippedURL = stripAboutReaderURL(url);
@@ -282,12 +283,15 @@ public class ToolbarDisplayLayout extends ThemedLinearLayout {
         if (siteIdentity.hasOwner()) {
             
             updateTitleFromSiteIdentity(siteIdentity);
-        } else if (!HardwareUtils.isTablet() && !TextUtils.isEmpty(baseDomain)) {
+        } else if (isHttpOrHttps && !HardwareUtils.isTablet() && !TextUtils.isEmpty(baseDomain)) {
             
             setTitle(baseDomain);
-        } else {
+        } else if (isHttpOrHttps) {
             
             updateAndColorTitleFromFullURL(strippedURL, baseDomain, tab.isPrivate());
+        } else {
+            
+            setTitle(url);
         }
     }
 
