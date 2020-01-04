@@ -13,6 +13,7 @@
 #include "nsBMPDecoder.h"
 #include "nsPNGDecoder.h"
 #include "ICOFileHeaders.h"
+#include "mozilla/gfx/2D.h"
 
 namespace mozilla {
 namespace image {
@@ -114,8 +115,8 @@ private:
   UniquePtr<uint8_t[]> mMaskBuffer;    
   char mBIHraw[bmp::InfoHeaderLength::WIN_ICO]; 
   IconDirEntry mDirEntry;              
-  IntSize mBiggestResourceSize;        
-  IntSize mBiggestResourceHotSpot;     
+  gfx::IntSize mBiggestResourceSize;   
+  gfx::IntSize mBiggestResourceHotSpot; 
   uint16_t mBiggestResourceColorDepth; 
   int32_t mBestResourceDelta;          
   uint16_t mBestResourceColorDepth;    
