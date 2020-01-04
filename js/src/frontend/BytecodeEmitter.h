@@ -233,6 +233,11 @@ struct BytecodeEmitter
     const EmitterMode emitterMode;
 
     
+    uint32_t functionBodyEndPos;
+    
+    bool functionBodyEndPosSet;
+
+    
 
 
 
@@ -242,6 +247,14 @@ struct BytecodeEmitter
                     HandleScript script, Handle<LazyScript*> lazyScript,
                     bool insideEval, HandleScript evalCaller,
                     bool insideNonGlobalEval, uint32_t lineNum, EmitterMode emitterMode = Normal);
+
+    
+    
+    BytecodeEmitter(BytecodeEmitter* parent, Parser<FullParseHandler>* parser, SharedContext* sc,
+                    HandleScript script, Handle<LazyScript*> lazyScript,
+                    bool insideEval, HandleScript evalCaller,
+                    bool insideNonGlobalEval, TokenPos bodyPosition, EmitterMode emitterMode = Normal);
+
     bool init();
     bool updateLocalsToFrameSlots();
 
@@ -301,6 +314,11 @@ struct BytecodeEmitter
     ptrdiff_t lastNoteOffset() const { return current->lastNoteOffset; }
     unsigned currentLine() const { return current->currentLine; }
     unsigned lastColumn() const { return current->lastColumn; }
+
+    void setFunctionBodyEndPos(TokenPos pos) {
+        functionBodyEndPos = pos.end;
+        functionBodyEndPosSet = true;
+    }
 
     bool reportError(ParseNode* pn, unsigned errorNumber, ...);
     bool reportStrictWarning(ParseNode* pn, unsigned errorNumber, ...);
