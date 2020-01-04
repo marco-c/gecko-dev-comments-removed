@@ -162,14 +162,18 @@ var PanelFrame = {
       dispatchPanelEvent(aType + "FrameHide");
     });
 
-    panel.addEventListener("popupshown", function onpopupshown() {
-      panel.removeEventListener("popupshown", onpopupshown);
+    panel.addEventListener("popupshowing", function onpopupshowing() {
+      panel.removeEventListener("popupshowning", onpopupshowing);
       
       
       
       
       
       anchorBtn.setAttribute("open", "true");
+    });
+
+    panel.addEventListener("popupshown", function onpopupshown() {
+      panel.removeEventListener("popupshown", onpopupshown);
 
       mm.sendAsyncMessage("WaitForDOMContentLoaded");
       mm.addMessageListener("DOMContentLoaded", function onloaded() {
