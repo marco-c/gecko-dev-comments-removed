@@ -18,6 +18,8 @@
 #include "nsReadableUtils.h"
 #include "nsSandboxFlags.h"
 
+#define DEFAULT_PORT -1
+
 static mozilla::LogModule*
 GetCspUtilsLog()
 {
@@ -437,6 +439,89 @@ nsCSPHostSrc::~nsCSPHostSrc()
 {
 }
 
+
+
+
+
+
+
+
+
+
+
+bool
+permitsPort(const nsAString& aEnforcementScheme,
+            const nsAString& aEnforcementPort,
+            nsIURI* aResourceURI)
+{
+  
+  if (aEnforcementPort.EqualsASCII("*")) {
+    return true;
+  }
+
+  int32_t resourcePort;
+  nsresult rv = aResourceURI->GetPort(&resourcePort);
+  NS_ENSURE_SUCCESS(rv, false);
+
+  
+  
+  
+  
+  if (resourcePort == DEFAULT_PORT && aEnforcementPort.IsEmpty()) {
+    return true;
+  }
+
+  
+  
+  
+  
+  
+  if (resourcePort == DEFAULT_PORT) {
+    nsAutoCString resourceScheme;
+    rv = aResourceURI->GetScheme(resourceScheme);
+    NS_ENSURE_SUCCESS(rv, false);
+    resourcePort = NS_GetDefaultPort(resourceScheme.get());
+  }
+
+  
+  
+  nsString resourcePortStr;
+  resourcePortStr.AppendInt(resourcePort);
+  if (aEnforcementPort.Equals(resourcePortStr)) {
+    return true;
+  }
+
+  
+  nsString enforcementPort(aEnforcementPort);
+  if (enforcementPort.IsEmpty()) {
+    
+    
+    MOZ_ASSERT(!aEnforcementScheme.IsEmpty(),
+               "need a scheme to query default port");
+    int32_t defaultEnforcementPort =
+      NS_GetDefaultPort(NS_ConvertUTF16toUTF8(aEnforcementScheme).get());
+    enforcementPort.Truncate();
+    enforcementPort.AppendInt(defaultEnforcementPort);
+  }
+
+  
+  if (enforcementPort.Equals(resourcePortStr)) {
+    return true;
+  }
+
+  
+  
+  
+  
+  if (enforcementPort.EqualsLiteral("80") &&
+      resourcePortStr.EqualsLiteral("443")) {
+    return true;
+  }
+
+  
+  return false;
+}
+
 bool
 nsCSPHostSrc::permits(nsIURI* aUri, const nsAString& aNonce, bool aWasRedirected,
                       bool aReportOnly, bool aUpgradeInsecure) const
@@ -503,6 +588,11 @@ nsCSPHostSrc::permits(nsIURI* aUri, const nsAString& aNonce, bool aWasRedirected
   }
 
   
+  if (!permitsPort(mScheme, mPort, aUri)) {
+    return false;
+  }
+
+  
   
   
   if (!aWasRedirected && !mPath.IsEmpty()) {
@@ -531,45 +621,6 @@ nsCSPHostSrc::permits(nsIURI* aUri, const nsAString& aNonce, bool aWasRedirected
       if (!mPath.Equals(NS_ConvertUTF8toUTF16(uriPath))) {
         return false;
       }
-    }
-  }
-
-  
-  if (mPort.EqualsASCII("*")) {
-    return true;
-  }
-
-  
-  
-  int32_t uriPort;
-  rv = aUri->GetPort(&uriPort);
-  NS_ENSURE_SUCCESS(rv, false);
-
-  nsAutoCString scheme;
-  rv = aUri->GetScheme(scheme);
-  NS_ENSURE_SUCCESS(rv, false);
-
-  uriPort = (uriPort > 0) ? uriPort : NS_GetDefaultPort(scheme.get());
-
-  
-  if (mPort.IsEmpty()) {
-    int32_t port = NS_GetDefaultPort(NS_ConvertUTF16toUTF8(mScheme).get());
-    if (port != uriPort) {
-      
-      
-      
-      
-      if (!(uriPort == NS_GetDefaultPort("https"))) {
-        return false;
-      }
-    }
-  }
-  
-  else {
-    nsString portStr;
-    portStr.AppendInt(uriPort);
-    if (!mPort.Equals(portStr)) {
-      return false;
     }
   }
 
