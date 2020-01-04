@@ -336,14 +336,15 @@ CodeGeneratorX64::emitSimdLoad(LAsmJSLoadHeap* ins)
         
         
         before = after;
-        loadSimd(type, 1, srcAddrZ, ScratchSimdReg);
+        loadSimd(type, 1, srcAddrZ, ScratchSimd128Reg);
         after = masm.size();
-        verifyHeapAccessDisassembly(before, after, true, type, 1, srcAddrZ, LFloatReg(ScratchSimdReg));
+        verifyHeapAccessDisassembly(before, after, true, type, 1, srcAddrZ,
+                                    LFloatReg(ScratchSimd128Reg));
         masm.append(AsmJSHeapAccess(before, AsmJSHeapAccess::Throw,
                                     AsmJSHeapAccess::NoLengthCheck, 8));
 
         
-        masm.vmovlhps(ScratchSimdReg, out, out);
+        masm.vmovlhps(ScratchSimd128Reg, out, out);
     } else {
         uint32_t before = masm.size();
         loadSimd(type, numElems, srcAddr, out);
@@ -483,11 +484,12 @@ CodeGeneratorX64::emitSimdStore(LAsmJSStoreHeap* ins)
         
         
         
-        masm.vmovhlps(in, ScratchSimdReg, ScratchSimdReg);
+        masm.vmovhlps(in, ScratchSimd128Reg, ScratchSimd128Reg);
         uint32_t before = masm.size();
-        storeSimd(type, 1, ScratchSimdReg, dstAddrZ);
+        storeSimd(type, 1, ScratchSimd128Reg, dstAddrZ);
         uint32_t after = masm.size();
-        verifyHeapAccessDisassembly(before, after, false, type, 1, dstAddrZ, LFloatReg(ScratchSimdReg));
+        verifyHeapAccessDisassembly(before, after, false, type, 1, dstAddrZ,
+                                    LFloatReg(ScratchSimd128Reg));
         masm.append(AsmJSHeapAccess(before, AsmJSHeapAccess::Throw, maybeCmpOffset, 8));
 
         
