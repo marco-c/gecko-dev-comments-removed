@@ -72,6 +72,9 @@ const MESSAGES = [
   
   
   "SessionStore:crashedTabRevived",
+
+  
+  "SessionStore:error",
 ];
 
 
@@ -85,6 +88,9 @@ const NOTAB_MESSAGES = new Set([
 
   
   "SessionStore:update",
+
+  
+  "SessionStore:error",
 ]);
 
 
@@ -95,6 +101,9 @@ const NOEPOCH_MESSAGES = new Set([
 
   
   "SessionStore:crashedTabRevived",
+
+  
+  "SessionStore:error",
 ]);
 
 
@@ -106,6 +115,9 @@ const CLOSED_MESSAGES = new Set([
 
   
   "SessionStore:update",
+
+  
+  "SessionStore:error",
 ]);
 
 
@@ -807,6 +819,9 @@ var SessionStoreInternal = {
         break;
       case "SessionStore:crashedTabRevived":
         this._crashedBrowsers.delete(browser.permanentKey);
+        break;
+      case "SessionStore:error":
+        this.reportInternalError(data);
         break;
       default:
         throw new Error(`received unknown message '${aMessage.name}'`);
@@ -3848,6 +3863,19 @@ var SessionStoreInternal = {
 
   resetEpoch(browser) {
     this._browserEpochs.delete(browser.permanentKey);
+  },
+
+  
+
+
+  reportInternalError(data) {
+    
+    if (data.telemetry) {
+      for (let key of Object.keys(data.telemetry)) {
+        let histogram = Telemetry.getHistogramById(key);
+        histogram.add(data.telemetry[key]);
+      }
+    }
   }
 };
 
