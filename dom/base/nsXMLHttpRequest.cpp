@@ -1553,7 +1553,9 @@ nsXMLHttpRequest::Open(const nsACString& inMethod, const nsACString& url,
     
     
     nsresult rv = CheckInnerWindowCorrectness();
-    NS_ENSURE_SUCCESS(rv, rv);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return NS_ERROR_DOM_INVALID_STATE_ERR;
+    }
   }
 
   nsCOMPtr<nsIURI> baseURI;
