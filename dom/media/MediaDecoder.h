@@ -670,11 +670,7 @@ public:
   
   nsRefPtr<CDMProxyPromise> RequestCDMProxy() const;
 
-  
-  virtual nsresult SetCDMProxy(CDMProxy* aProxy) override;
-
-  
-  virtual CDMProxy* GetCDMProxy() override;
+  void SetCDMProxy(CDMProxy* aProxy);
 #endif
 
 #ifdef MOZ_RAW
@@ -824,7 +820,6 @@ private:
   ReentrantMonitor mReentrantMonitor;
 
 #ifdef MOZ_EME
-  nsRefPtr<CDMProxy> mProxy;
   MozPromiseHolder<CDMProxyPromise> mCDMProxyPromiseHolder;
   nsRefPtr<CDMProxyPromise> mCDMProxyPromise;
 #endif

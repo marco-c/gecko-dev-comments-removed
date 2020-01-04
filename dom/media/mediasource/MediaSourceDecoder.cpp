@@ -231,28 +231,6 @@ MediaSourceDecoder::GetMozDebugReaderData(nsAString& aString)
   mDemuxer->GetMozDebugReaderData(aString);
 }
 
-#ifdef MOZ_EME
-nsresult
-MediaSourceDecoder::SetCDMProxy(CDMProxy* aProxy)
-{
-  nsresult rv = MediaDecoder::SetCDMProxy(aProxy);
-  NS_ENSURE_SUCCESS(rv, rv);
-  if (aProxy) {
-    
-    
-    
-    
-    CDMCaps::AutoLock caps(aProxy->Capabilites());
-    if (!caps.AreCapsKnown()) {
-      nsCOMPtr<nsIRunnable> task(
-        NS_NewRunnableMethod(this, &MediaDecoder::NotifyWaitingForResourcesStatusChanged));
-      caps.CallOnMainThreadWhenCapsAvailable(task);
-    }
-  }
-  return NS_OK;
-}
-#endif
-
 double
 MediaSourceDecoder::GetDuration()
 {

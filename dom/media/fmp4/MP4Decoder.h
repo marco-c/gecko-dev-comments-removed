@@ -25,10 +25,6 @@ public:
 
   virtual MediaDecoderStateMachine* CreateStateMachine() override;
 
-#ifdef MOZ_EME
-  virtual nsresult SetCDMProxy(CDMProxy* aProxy) override;
-#endif
-
   
   
   
