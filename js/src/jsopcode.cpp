@@ -2104,7 +2104,7 @@ GenerateLcovInfo(JSContext* cx, JSCompartment* comp, GenericPrinter& out)
     JSRuntime* rt = cx->runtime();
 
     
-    AutoScriptVector topScripts(cx);
+    Rooted<ScriptVector> topScripts(cx, ScriptVector(cx));
     for (ZonesIter zone(rt, SkipAtoms); !zone.done(); zone.next()) {
         for (ZoneCellIter i(zone, AllocKind::SCRIPT); !i.done(); i.next()) {
             JSScript* script = i.get<JSScript>();
@@ -2166,7 +2166,7 @@ GenerateLcovInfo(JSContext* cx, JSCompartment* comp, GenericPrinter& out)
 
         
         
-        AutoScriptVector queue(cx);
+        Rooted<ScriptVector> queue(cx, ScriptVector(cx));
         if (!queue.append(topLevel))
             return false;
 
