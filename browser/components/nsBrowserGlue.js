@@ -1141,24 +1141,19 @@ BrowserGlue.prototype = {
 
     
     
-    let win = RecentWindow.getMostRecentBrowserWindow();
-    AddonManager.getAllAddons(addons => {
-      for (let addon of addons) {
-        
-        
-        if (addon.seen !== false) {
-          continue;
-        }
+    let changedIDs = AddonManager.getStartupChanges(AddonManager.STARTUP_CHANGE_INSTALLED);
+    if (changedIDs.length > 0) {
+      let win = RecentWindow.getMostRecentBrowserWindow();
+      AddonManager.getAddonsByIDs(changedIDs, function(aAddons) {
+        aAddons.forEach(function(aAddon) {
+          
+          if (!aAddon.userDisabled || !(aAddon.permissions & AddonManager.PERM_CAN_ENABLE))
+            return;
 
-        
-        
-        if (!(addon.permissions & AddonManager.PERM_CAN_ENABLE)) {
-          continue;
-        }
-
-        win.openUILinkIn("about:newaddon?id=" + addon.id, "tab");
-      }
-    });
+          win.openUILinkIn("about:newaddon?id=" + aAddon.id, "tab");
+        })
+      });
+    }
 
     let signingRequired;
     if (AppConstants.MOZ_REQUIRE_SIGNING) {

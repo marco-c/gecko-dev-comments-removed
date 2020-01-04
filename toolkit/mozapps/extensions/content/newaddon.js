@@ -42,7 +42,7 @@ function initialize() {
     
     
     
-    if (!aAddon || !aAddon.userDisabled || aAddon.seen ||
+    if (!aAddon || !aAddon.userDisabled ||
         !(aAddon.permissions & AddonManager.PERM_CAN_ENABLE)) {
       window.close();
       return;
@@ -77,14 +77,6 @@ function initialize() {
       locationLabel.setAttribute("tooltiptext", location);
     } else {
       document.getElementById("location").hidden = true;
-    }
-
-    
-    if (document.hasFocus()) {
-      aAddon.markAsSeen();
-    }
-    else {
-      document.addEventListener("focus", () => aAddon.markAsSeen(), false);
     }
 
     var event = document.createEvent("Events");
