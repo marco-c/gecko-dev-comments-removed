@@ -2191,8 +2191,9 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
     aBuilder->AddToWillChangeBudget(this, GetSize());
   }
 
+  bool extend3DContext = Extend3DContext();
   Maybe<nsDisplayListBuilder::AutoPreserves3DContext> autoPreserves3DContext;
-  if (Extend3DContext() && !Combines3DTransformWithAncestors()) {
+  if (extend3DContext && !Combines3DTransformWithAncestors()) {
     
     
     autoPreserves3DContext.emplace(aBuilder);
@@ -2208,6 +2209,7 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
 
   bool inTransform = aBuilder->IsInTransform();
   bool isTransformed = IsTransformed();
+  bool hasPerspective = HasPerspective();
   
   
   
@@ -2221,7 +2223,7 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
                                                               this)) {
       dirtyRect = overflow;
     } else {
-      if (overflow.IsEmpty() && !Extend3DContext()) {
+      if (overflow.IsEmpty() && !extend3DContext) {
         return;
       }
 
@@ -2301,7 +2303,7 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
 
     
     
-    if (Extend3DContext()) {
+    if (extend3DContext) {
       
       
       aBuilder->MarkPreserve3DFramesForDisplayList(this);
@@ -2457,7 +2459,7 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
 
 
 
-  if (isTransformed && !resultList.IsEmpty() && Extend3DContext()) {
+  if (isTransformed && !resultList.IsEmpty() && extend3DContext) {
     
     
     nsDisplayList nonparticipants;
@@ -2491,14 +2493,14 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
 
 
 
-  bool needsLayerForMask = isTransformed && (Extend3DContext() || HasPerspective()) &&
+  bool needsLayerForMask = isTransformed && (extend3DContext || hasPerspective) &&
                            clipState.SavedStateHasRoundedCorners();
   NS_ASSERTION(!Combines3DTransformWithAncestors() || !clipState.SavedStateHasRoundedCorners(),
                "Can't support mask layers on intermediate preserve-3d frames");
 
   if (isTransformed && !resultList.IsEmpty()) {
     
-    if (!HasPerspective() && !useFixedPosition && !useStickyPosition && !needsLayerForMask) {
+    if (!hasPerspective && !useFixedPosition && !useStickyPosition && !needsLayerForMask) {
       clipState.ExitStackingContextContents(&containerItemScrollClip);
     }
     
@@ -2526,7 +2528,7 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
       resultList.AppendNewToTop(transformItem);
     }
 
-    if (HasPerspective()) {
+    if (hasPerspective) {
       if (!useFixedPosition && !useStickyPosition && !needsLayerForMask) {
         clipState.ExitStackingContextContents(&containerItemScrollClip);
       }
