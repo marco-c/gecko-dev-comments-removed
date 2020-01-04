@@ -5516,7 +5516,7 @@ nsContentUtils::SetDataTransferInEvent(WidgetDragEvent* aDragEvent)
   }
   else if (aDragEvent->mMessage == eDrop ||
            aDragEvent->mMessage == NS_DRAGDROP_DRAGDROP ||
-           aDragEvent->mMessage == NS_DRAGDROP_END) {
+           aDragEvent->mMessage == eDragEnd) {
     
     
     
