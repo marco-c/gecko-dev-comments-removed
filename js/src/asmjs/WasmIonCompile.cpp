@@ -96,6 +96,9 @@ class FunctionCompiler
 
     FuncCompileResults&        compileResults_;
 
+    
+    MAsmJSParameter*           tlsPointer_;
+
   public:
     FunctionCompiler(const ModuleGeneratorData& mg,
                      Decoder& decoder,
@@ -117,7 +120,8 @@ class FunctionCompiler
         maxStackArgBytes_(0),
         loopDepth_(0),
         blockDepth_(0),
-        compileResults_(compileResults)
+        compileResults_(compileResults),
+        tlsPointer_(nullptr)
     {}
 
     const ModuleGeneratorData& mg() const    { return mg_; }
@@ -144,6 +148,12 @@ class FunctionCompiler
             if (!mirGen_.ensureBallast())
                 return false;
         }
+
+        
+        tlsPointer_ = MAsmJSParameter::New(alloc(), ABIArg(WasmTlsReg), MIRType::Pointer);
+        curBlock_->add(tlsPointer_);
+        if (!mirGen_.ensureBallast())
+            return false;
 
         for (size_t i = args.length(); i < locals_.length(); i++) {
             MInstruction* ins = nullptr;
@@ -811,6 +821,14 @@ class FunctionCompiler
         auto* mir = MAsmJSPassStackArg::New(alloc(), arg.offsetFromArgBase(), argDef);
         curBlock_->add(mir);
         return args->stackArgs_.append(mir);
+    }
+
+    
+    bool passTlsPointer(CallArgs* args)
+    {
+        if (inDeadCode())
+            return true;
+        return args->regArgs_.append(MAsmJSCall::Arg(AnyRegister(WasmTlsReg), tlsPointer_));
     }
 
     void propagateMaxStackArgBytes(uint32_t stackBytes)
@@ -1656,8 +1674,16 @@ EmitReturn(FunctionCompiler& f)
     return true;
 }
 
+
+enum class IntraModule
+{
+    False,
+    True
+};
+
 static bool
-EmitCallArgs(FunctionCompiler& f, const Sig& sig, FunctionCompiler::CallArgs* args)
+EmitCallArgs(FunctionCompiler& f, const Sig& sig, IntraModule intraModule,
+             FunctionCompiler::CallArgs* args)
 {
     if (!f.startCallArgs(args))
         return false;
@@ -1676,6 +1702,11 @@ EmitCallArgs(FunctionCompiler& f, const Sig& sig, FunctionCompiler::CallArgs* ar
     if (!f.iter().readCallArgsEnd(numArgs))
         return false;
 
+    
+    
+    if (intraModule == IntraModule::True)
+        f.passTlsPointer(args);
+
     f.finishCallArgs(args);
     return true;
 }
@@ -1693,7 +1724,7 @@ EmitCall(FunctionCompiler& f, uint32_t callOffset)
     const Sig& sig = *f.mg().funcSigs[calleeIndex];
 
     FunctionCompiler::CallArgs args(f, lineOrBytecode);
-    if (!EmitCallArgs(f, sig, &args))
+    if (!EmitCallArgs(f, sig, IntraModule::True, &args))
         return false;
 
     if (!f.iter().readCallReturn(sig.ret()))
@@ -1723,7 +1754,7 @@ EmitCallIndirect(FunctionCompiler& f, uint32_t callOffset)
     const Sig& sig = f.mg().sigs[sigIndex];
 
     FunctionCompiler::CallArgs args(f, lineOrBytecode);
-    if (!EmitCallArgs(f, sig, &args))
+    if (!EmitCallArgs(f, sig, IntraModule::True, &args))
         return false;
 
     MDefinition* callee;
@@ -1762,7 +1793,7 @@ EmitCallImport(FunctionCompiler& f, uint32_t callOffset)
     const Sig& sig = *funcImport.sig;
 
     FunctionCompiler::CallArgs args(f, lineOrBytecode);
-    if (!EmitCallArgs(f, sig, &args))
+    if (!EmitCallArgs(f, sig, IntraModule::False, &args))
         return false;
 
     if (!f.iter().readCallReturn(sig.ret()))

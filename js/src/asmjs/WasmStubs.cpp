@@ -134,6 +134,19 @@ wasm::GenerateEntry(MacroAssembler& masm, const FuncExport& fe, bool usesHeap)
 
     
     
+#if defined(JS_CODEGEN_X86)
+    masm.loadPtr(
+      Address(masm.getStackPointer(), EntryFrameSize + masm.framePushed() + 2 * sizeof(void*)),
+      WasmTlsReg);
+#else
+    masm.movePtr(IntArgReg2, WasmTlsReg);
+#endif
+    
+    MOZ_ASSERT(WasmTlsReg != ABINonArgReg0, "TLS pointer can't be scratch reg");
+    MOZ_ASSERT(WasmTlsReg != ABINonArgReg1, "TLS pointer can't be scratch reg");
+
+    
+    
     
     
     Register argv = ABINonArgReturnReg0;

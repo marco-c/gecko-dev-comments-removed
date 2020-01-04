@@ -50,7 +50,13 @@ class Instance
     bool                                 profilingEnabled_;
     CacheableCharsVector                 funcLabels_;
 
+
     UniquePtr<GeneratedSourceMap>        maybeSourceMap_;
+
+    
+    
+    
+    TlsData                              tlsData_;
 
     
     uint8_t** addressOfMemoryBase() const;
@@ -58,6 +64,9 @@ class Instance
     const void** addressOfSigId(const SigIdDesc& sigId) const;
     FuncImportExit& funcImportToExit(const FuncImport& fi);
     MOZ_MUST_USE bool toggleProfiling(JSContext* cx);
+
+    
+    TlsData* tlsData() { return &tlsData_; }
 
     
     
@@ -74,7 +83,8 @@ class Instance
     static int32_t callImport_f64(int32_t importIndex, int32_t argc, uint64_t* argv);
 
   public:
-    Instance(UniqueCodeSegment codeSegment,
+    Instance(JSContext* cx,
+             UniqueCodeSegment codeSegment,
              const Metadata& metadata,
              const ShareableBytes* maybeBytecode,
              HandleWasmMemoryObject memory,
@@ -135,6 +145,9 @@ class Instance
 #ifdef ASMJS_MAY_USE_SIGNAL_HANDLERS
     const MemoryAccess* lookupMemoryAccess(void* pc) const;
 #endif
+
+    
+    void updateStackLimit(JSContext*);
 
     
 

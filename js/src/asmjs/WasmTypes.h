@@ -900,7 +900,27 @@ struct ExportArg
     uint64_t hi;
 };
 
-typedef int32_t (*ExportFuncPtr)(ExportArg* args, uint8_t* global);
+
+
+
+
+
+
+
+
+
+
+
+
+struct TlsData
+{
+    
+    
+    
+    void* stackLimit;
+};
+
+typedef int32_t (*ExportFuncPtr)(ExportArg* args, uint8_t* global, TlsData* tls);
 
 
 
