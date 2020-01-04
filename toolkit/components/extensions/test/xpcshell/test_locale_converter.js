@@ -123,3 +123,11 @@ add_task(function* testInvalidUUID() {
     convService.asyncConvertData(FROM_TYPE, TO_TYPE, listener, uri);
   }, expectInvalidContextException);
 });
+
+
+
+add_task(function* testEmptyStream() {
+  let stream = StringStream("");
+  let resultStream = convService.convert(stream, FROM_TYPE, TO_TYPE, URI);
+  equal(resultStream.data, "");
+});
