@@ -463,15 +463,16 @@ FMRadio::EnableAudioChannelAgent()
 NS_IMETHODIMP
 FMRadio::WindowVolumeChanged(float aVolume, bool aMuted)
 {
-  IFMRadioService::Singleton()->EnableAudio(!aMuted);
   
+  IFMRadioService::Singleton()->EnableAudio(!aMuted);
   return NS_OK;
 }
 
 NS_IMETHODIMP
 FMRadio::WindowSuspendChanged(nsSuspendedTypes aSuspend)
 {
-  
+  bool enable = (aSuspend == nsISuspendedTypes::NONE_SUSPENDED);
+  IFMRadioService::Singleton()->EnableAudio(enable);
   return NS_OK;
 }
 
