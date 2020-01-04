@@ -118,7 +118,14 @@ pub unsafe extern "C" fn mp4parse_read(context: *mut MediaContext, buffer: *cons
     let mut c = Cursor::new(b);
 
     
-    let task = std::thread::spawn(move || read_mp4(&mut c, &mut context));
+    
+    
+    let task = match std::thread::Builder::new()
+        .name("mp4parse_read isolation".to_string())
+        .spawn(move || read_mp4(&mut c, &mut context)) {
+            Ok(task) => task,
+            Err(_) => return MP4PARSE_ASSERT,
+    };
     
     
     
