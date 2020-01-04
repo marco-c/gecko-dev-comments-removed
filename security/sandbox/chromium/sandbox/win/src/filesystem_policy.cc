@@ -8,6 +8,7 @@
 
 #include "base/logging.h"
 #include "base/win/scoped_handle.h"
+#include "base/win/windows_version.h"
 #include "sandbox/win/src/ipc_tags.h"
 #include "sandbox/win/src/policy_engine_opcodes.h"
 #include "sandbox/win/src/policy_params.h"
@@ -66,18 +67,16 @@ bool FileSystemPolicy::GenerateRules(const wchar_t* name,
     return false;
   }
 
-  
-  
-  if (0 != _wcsnicmp(mod_name.c_str(), kNTObjManPrefix, kNTObjManPrefixLen)) {
+  if (!PreProcessName(mod_name, &mod_name)) {
     
-    
-    
-    if (!PreProcessName(mod_name, &mod_name)) {
-      
-      NOTREACHED();
-      return false;
-    }
+    NOTREACHED();
+    return false;
+  }
 
+  
+  
+  
+  if (_wcsnicmp(mod_name.c_str(), kNTDevicePrefix, kNTDevicePrefixLen)) {
     mod_name = FixNTPrefixForMatch(mod_name);
     name = mod_name.c_str();
   }

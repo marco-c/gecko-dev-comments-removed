@@ -17,8 +17,8 @@ namespace sandbox {
 const wchar_t kNTPrefix[] = L"\\??\\";
 const size_t kNTPrefixLen = arraysize(kNTPrefix) - 1;
 
-const wchar_t kNTObjManPrefix[] = L"\\Device\\";
-const size_t kNTObjManPrefixLen = arraysize(kNTObjManPrefix) - 1;
+const wchar_t kNTDevicePrefix[] = L"\\Device\\";
+const size_t kNTDevicePrefixLen = arraysize(kNTDevicePrefix) - 1;
 
 
 
@@ -104,6 +104,9 @@ bool ResolveRegistryName(base::string16 name, base::string16* resolved_name);
 
 bool WriteProtectedChildMemory(HANDLE child_process, void* address,
                                const void* buffer, size_t length);
+
+
+bool IsPipe(const base::string16& path);
 
 }  
 
