@@ -5335,3 +5335,10 @@ pref("dom.mozBrowserFramesEnabled", false);
 
 
 pref("layout.css.color-adjust.enabled", true);
+
+
+#ifdef RELEASE_BUILD
+pref("dom.node.rootNode.enabled", false);
+#else
+pref("dom.node.rootNode.enabled", true);
+#endif
