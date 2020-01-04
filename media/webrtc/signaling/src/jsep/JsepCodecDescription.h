@@ -172,6 +172,7 @@ class JsepAudioCodecDescription : public JsepCodecDescription {
         
         opusParams.stereo = 1;
       }
+      opusParams.useInBandFec = mFECEnabled ? 1 : 0;
       msection.SetFmtp(SdpFmtpAttributeList::Fmtp(mDefaultPt, opusParams));
     }
   }
@@ -187,6 +188,10 @@ class JsepAudioCodecDescription : public JsepCodecDescription {
 
       mMaxPlaybackRate = opusParams.maxplaybackrate;
       mForceMono = !opusParams.stereo;
+      
+      
+      
+      mFECEnabled = opusParams.useInBandFec;
     }
 
     return true;
