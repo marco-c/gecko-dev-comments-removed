@@ -1,14 +1,14 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-//
-// David Hyatt & Eric Vaughan
-// Netscape Communications
-//
-// See documentation in associated header file
-//
+
+
+
+
+
+
+
+
+
+
 
 #include "nsProgressMeterFrame.h"
 #include "nsCSSRendering.h"
@@ -55,11 +55,11 @@ nsReflowFrameRunnable::Run()
   return NS_OK;
 }
 
-//
-// NS_NewToolbarFrame
-//
-// Creates a new Toolbar frame and returns it
-//
+
+
+
+
+
 nsIFrame*
 NS_NewProgressMeterFrame (nsIPresShell* aPresShell, nsStyleContext* aContext)
 {
@@ -68,11 +68,11 @@ NS_NewProgressMeterFrame (nsIPresShell* aPresShell, nsStyleContext* aContext)
 
 NS_IMPL_FRAMEARENA_HELPERS(nsProgressMeterFrame)
 
-//
-// nsProgressMeterFrame dstr
-//
-// Cleanup, if necessary
-//
+
+
+
+
+
 nsProgressMeterFrame :: ~nsProgressMeterFrame ( )
 {
 }
@@ -104,7 +104,7 @@ public:
 };
 
 NS_IMETHODIMP
-nsProgressMeterFrame::DoLayout(nsBoxLayoutState& aState)
+nsProgressMeterFrame::DoXULLayout(nsBoxLayoutState& aState)
 {
   if (mNeedsReflowCallback) {
     nsIReflowCallback* cb = new nsAsyncProgressMeterInit(this);
@@ -113,7 +113,7 @@ nsProgressMeterFrame::DoLayout(nsBoxLayoutState& aState)
     }
     mNeedsReflowCallback = false;
   }
-  return nsBoxFrame::DoLayout(aState);
+  return nsBoxFrame::DoXULLayout(aState);
 }
 
 nsresult
@@ -129,7 +129,7 @@ nsProgressMeterFrame::AttributeChanged(int32_t aNameSpaceID,
     return rv;
   }
 
-  // did the progress change?
+  
   bool undetermined = mContent->AttrValueIs(kNameSpaceID_None, nsGkAtoms::mode,
                                             nsGkAtoms::undetermined, eCaseMatters);
   if (nsGkAtoms::mode == aAttribute ||

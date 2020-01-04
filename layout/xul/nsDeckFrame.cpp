@@ -200,7 +200,7 @@ nsDeckFrame::BuildDisplayListForChildren(nsDisplayListBuilder*   aBuilder,
 }
 
 NS_IMETHODIMP
-nsDeckFrame::DoLayout(nsBoxLayoutState& aState)
+nsDeckFrame::DoXULLayout(nsBoxLayoutState& aState)
 {
   
   
@@ -208,7 +208,7 @@ nsDeckFrame::DoLayout(nsBoxLayoutState& aState)
   aState.SetLayoutFlags(NS_FRAME_NO_SIZE_VIEW | NS_FRAME_NO_VISIBILITY);
 
   
-  nsresult rv = nsBoxFrame::DoLayout(aState);
+  nsresult rv = nsBoxFrame::DoXULLayout(aState);
 
   
   nsIFrame* box = nsBox::GetChildXULBox(this);

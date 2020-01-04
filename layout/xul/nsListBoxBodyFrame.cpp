@@ -250,12 +250,12 @@ nsListBoxBodyFrame::MarkIntrinsicISizesDirty()
 
 
 NS_IMETHODIMP
-nsListBoxBodyFrame::DoLayout(nsBoxLayoutState& aBoxLayoutState)
+nsListBoxBodyFrame::DoXULLayout(nsBoxLayoutState& aBoxLayoutState)
 {
   if (mScrolling)
     aBoxLayoutState.SetPaintingDisabled(true);
 
-  nsresult rv = nsBoxFrame::DoLayout(aBoxLayoutState);
+  nsresult rv = nsBoxFrame::DoXULLayout(aBoxLayoutState);
 
   
   

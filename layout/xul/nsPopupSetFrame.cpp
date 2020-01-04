@@ -122,10 +122,10 @@ nsPopupSetFrame::DestroyFrom(nsIFrame* aDestructRoot)
 }
 
 NS_IMETHODIMP
-nsPopupSetFrame::DoLayout(nsBoxLayoutState& aState)
+nsPopupSetFrame::DoXULLayout(nsBoxLayoutState& aState)
 {
   
-  nsresult rv = nsBoxFrame::DoLayout(aState);
+  nsresult rv = nsBoxFrame::DoXULLayout(aState);
 
   
   for (nsFrameList::Enumerator e(mPopupList); !e.AtEnd(); e.Next()) {

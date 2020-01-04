@@ -387,7 +387,7 @@ nsSliderFrame::BuildDisplayListForChildren(nsDisplayListBuilder*   aBuilder,
 }
 
 NS_IMETHODIMP
-nsSliderFrame::DoLayout(nsBoxLayoutState& aState)
+nsSliderFrame::DoXULLayout(nsBoxLayoutState& aState)
 {
   
   nsIFrame* thumbBox = nsBox::GetChildXULBox(this);
