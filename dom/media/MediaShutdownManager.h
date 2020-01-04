@@ -49,14 +49,6 @@ class MediaDecoder;
 
 
 
-
-
-
-
-
-
-
-
 class MediaShutdownManager : public nsIAsyncShutdownBlocker {
 public:
   NS_DECL_ISUPPORTS
