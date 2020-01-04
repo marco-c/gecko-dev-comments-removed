@@ -3276,12 +3276,17 @@ nsObjectLoadingContent::ShouldPlay(FallbackType &aReason, bool aIgnoreCurrentTyp
     sPrefsInitialized = true;
   }
 
-  if (XRE_IsParentProcess() &&
-      BrowserTabsRemoteAutostart()) {
-    
-    
-    aReason = eFallbackDisabled;
-    return false;
+  if (BrowserTabsRemoteAutostart()) {
+    bool shouldLoadInParent = nsPluginHost::ShouldLoadTypeInParent(mContentType);
+    bool inParent = XRE_IsParentProcess();
+
+    if (shouldLoadInParent != inParent) {
+      
+      
+      
+      aReason = eFallbackDisabled;
+      return false;
+    }
   }
 
   RefPtr<nsPluginHost> pluginHost = nsPluginHost::GetInst();

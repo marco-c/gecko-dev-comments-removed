@@ -190,6 +190,11 @@ public:
   static bool IsTypeWhitelisted(const char *aType);
 
   
+  
+  
+  static bool ShouldLoadTypeInParent(const nsACString& aMimeType);
+
+  
   enum SpecialType { eSpecialType_None,
                      
                      eSpecialType_Test,
