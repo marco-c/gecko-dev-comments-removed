@@ -238,20 +238,12 @@ class TTest(object):
                 )
 
             
-            try:
-                test_results.add(
-                    '\n'.join(pcontext.output),
-                    counter_results=(counter_management.results()
-                                     if counter_management
-                                     else None))
-            except Exception:
-                
-                
-                
-                
-                
-                
-                logging.exception("Unable to add results for cycle %d" % i)
+            test_results.add(
+                '\n'.join(pcontext.output),
+                counter_results=(counter_management.results()
+                                 if counter_management
+                                 else None)
+            )
 
             if setup.sps_profile:
                 setup.sps_profile.symbolicate(i)

@@ -184,9 +184,8 @@ class GraphserverOutput(Output):
                                              self.shortName(counter_type))
                     if not values:
                         
-                        utils.stamped_msg(
-                            "No results collected for: " + counterName,
-                            "Error"
+                        logging.error(
+                            "No results collected for: " + counterName
                         )
 
 
@@ -219,11 +218,9 @@ class GraphserverOutput(Output):
                     info['testname'] = counterName
 
                     
-                    utils.stamped_msg(
-                        "Generating results file: %s" % counterName, "Started")
+                    logging.info(
+                        "Generating results file: %s" % counterName)
                     result_strings.append(self.construct_results(vals, **info))
-                    utils.stamped_msg(
-                        "Generating results file: %s" % counterName, "Stopped")
 
         return result_strings
 
