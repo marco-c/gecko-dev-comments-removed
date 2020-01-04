@@ -4,6 +4,8 @@
 
 
 #include "LegacyMDNSDeviceProvider.h"
+
+#include "DeviceProviderHelpers.h"
 #include "MainThreadUtils.h"
 #include "mozilla/Logging.h"
 #include "mozilla/Preferences.h"
@@ -748,6 +750,21 @@ NS_IMETHODIMP
 LegacyMDNSDeviceProvider::Device::Disconnect()
 {
   
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+LegacyMDNSDeviceProvider::Device::IsRequestedUrlSupported(
+                                                 const nsAString& aRequestedUrl,
+                                                 bool* aRetVal)
+{
+  if (!aRetVal) {
+    return NS_ERROR_INVALID_POINTER;
+  }
+
+  
+  *aRetVal = DeviceProviderHelpers::IsFxTVSupportedAppUrl(aRequestedUrl);
+
   return NS_OK;
 }
 

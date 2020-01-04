@@ -4,6 +4,8 @@
 
 
 #include "MulticastDNSDeviceProvider.h"
+
+#include "DeviceProviderHelpers.h"
 #include "MainThreadUtils.h"
 #include "mozilla/Logging.h"
 #include "mozilla/Preferences.h"
@@ -1219,6 +1221,26 @@ NS_IMETHODIMP
 MulticastDNSDeviceProvider::Device::Disconnect()
 {
   
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+MulticastDNSDeviceProvider::Device::IsRequestedUrlSupported(
+                                                 const nsAString& aRequestedUrl,
+                                                 bool* aRetVal)
+{
+  MOZ_ASSERT(NS_IsMainThread());
+
+  if (!aRetVal) {
+    return NS_ERROR_INVALID_POINTER;
+  }
+
+  
+  if (DeviceProviderHelpers::IsFxTVSupportedAppUrl(aRequestedUrl) ||
+      DeviceProviderHelpers::IsCommonlySupportedScheme(aRequestedUrl)) {
+    *aRetVal = true;
+  }
+
   return NS_OK;
 }
 
