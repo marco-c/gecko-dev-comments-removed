@@ -306,13 +306,9 @@ ServoRestyleManager::ReparentStyleContext(nsIFrame* aFrame)
 ServoElementSnapshot*
 ServoRestyleManager::SnapshotForElement(Element* aElement)
 {
-  ServoElementSnapshot* snapshot = mModifiedElements.LookupOrAdd(aElement);
-  if (!snapshot->HasAny(
-        ServoElementSnapshot::Flags::HTMLElementInHTMLDocument)) {
-    snapshot->SetIsHTMLElementInHTMLDocument(
-      aElement->IsHTMLElement() && aElement->OwnerDoc()->IsHTMLDocument());
-  }
-  return snapshot;
+  
+  
+  return mModifiedElements.LookupOrAdd(aElement, aElement);
 }
 
 } 
