@@ -9,11 +9,13 @@
 
 #include "nsIHttpChannelAuthProvider.h"
 #include "nsIAuthPromptCallback.h"
+#include "nsIHttpAuthenticatorCallback.h"
 #include "nsString.h"
 #include "nsCOMPtr.h"
 #include "nsHttpAuthCache.h"
 #include "nsProxyInfo.h"
 #include "nsCRT.h"
+#include "nsICancelableRunnable.h"
 
 class nsIHttpAuthenticableChannel;
 class nsIHttpAuthenticator;
@@ -25,12 +27,14 @@ class nsHttpHandler;
 
 class nsHttpChannelAuthProvider : public nsIHttpChannelAuthProvider
                                 , public nsIAuthPromptCallback
+                                , public nsIHttpAuthenticatorCallback
 {
 public:
     NS_DECL_ISUPPORTS
     NS_DECL_NSICANCELABLE
     NS_DECL_NSIHTTPCHANNELAUTHPROVIDER
     NS_DECL_NSIAUTHPROMPTCALLBACK
+    NS_DECL_NSIHTTPAUTHENTICATORCALLBACK
 
     nsHttpChannelAuthProvider();
     static void InitializePrefs();
@@ -117,6 +121,19 @@ private:
     
     bool BlockPrompt();
 
+    
+    nsresult UpdateCache(nsIHttpAuthenticator *aAuth,
+                         const char           *aScheme,
+                         const char           *aHost,
+                         int32_t               aPort,
+                         const char           *aDirectory,
+                         const char           *aRealm,
+                         const char           *aChallenge,
+                         const nsHttpAuthIdentity &aIdent,
+                         const char           *aCreds,
+                         uint32_t              aGenerateFlags,
+                         nsISupports          *aSessionState);
+
 private:
     nsIHttpAuthenticableChannel      *mAuthChannel;  
 
@@ -160,6 +177,7 @@ private:
     
     
     static uint32_t                   sAuthAllowPref;
+    nsCOMPtr<nsICancelable>           mGenerateCredentialsCancelable;
 };
 
 } 
