@@ -20,6 +20,7 @@ class MediaEnginePhotoCallback;
 class MediaStream;
 class MediaStreamGraph;
 class MediaStreamTrackListener;
+class PeerConnectionImpl;
 class ProcessedMediaStream;
 
 namespace dom {
@@ -168,6 +169,9 @@ class MediaStreamTrack : public DOMEventTargetHelper,
   
   
   friend class mozilla::DOMMediaStream;
+
+  
+  friend class mozilla::PeerConnectionImpl;
 
 public:
   
