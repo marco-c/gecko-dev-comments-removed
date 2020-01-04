@@ -480,7 +480,10 @@ APZCCallbackHelper::DispatchSynthesizedMouseEvent(EventMessage aMsg,
     event.mClickCount = 1;
   }
   event.mModifiers = aModifiers;
-
+  
+  
+  
+  event.convertToPointer = false;
   return DispatchWidgetEvent(event);
 }
 
