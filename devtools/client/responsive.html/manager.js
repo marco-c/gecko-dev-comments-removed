@@ -86,10 +86,12 @@ const ResponsiveUIManager = exports.ResponsiveUIManager = {
 
 
 
-  closeIfNeeded: Task.async(function* (window, tab) {
+
+
+  closeIfNeeded: Task.async(function* (window, tab, options) {
     if (this.isActiveForTab(tab)) {
       let ui = this.activeTabs.get(tab);
-      let destroyed = yield ui.destroy();
+      let destroyed = yield ui.destroy(options);
       if (!destroyed) {
         
         return;
@@ -202,6 +204,11 @@ ResponsiveUI.prototype = {
   
 
 
+  destroyed: false,
+
+  
+
+
 
 
 
@@ -225,6 +232,9 @@ ResponsiveUI.prototype = {
     let toolViewportContentBrowser;
 
     
+    this.tab.linkedBrowser.addEventListener("beforeunload", this, true);
+
+    
     this.swap = swapToInnerBrowser({
       tab: this.tab,
       containerURL: TOOL_URL,
@@ -246,9 +256,6 @@ ResponsiveUI.prototype = {
 
     this.touchEventSimulator =
       new TouchEventSimulator(toolViewportContentBrowser);
-
-    
-    
   }),
 
   
@@ -258,20 +265,36 @@ ResponsiveUI.prototype = {
 
 
 
-  destroy: Task.async(function* () {
+
+
+  destroy: Task.async(function* (options) {
     if (this.destroying) {
       return false;
     }
     this.destroying = true;
 
     
-    yield this.inited;
+    
+    
+    let isBeforeUnload = options && options.reason == "beforeunload";
 
     
-    yield this.touchEventSimulator.stop();
+    if (!isBeforeUnload) {
+      yield this.inited;
+    }
+
+    this.tab.linkedBrowser.removeEventListener("beforeunload", this, true);
+    this.toolWindow.removeEventListener("message", this);
 
     
-    yield message.request(this.toolWindow, "stop-frame-script");
+    if (!isBeforeUnload) {
+      yield this.touchEventSimulator.stop();
+    }
+
+    
+    if (!isBeforeUnload) {
+      yield message.request(this.toolWindow, "stop-frame-script");
+    }
 
     
     let swap = this.swap;
@@ -285,11 +308,40 @@ ResponsiveUI.prototype = {
     
     swap.stop();
 
+    this.destroyed = true;
+
     return true;
   }),
 
   handleEvent(event) {
-    let { tab, window, toolWindow } = this;
+    let { browserWindow, tab } = this;
+
+    switch (event.type) {
+      case "message":
+        this.handleMessage(event);
+        break;
+      case "beforeunload":
+        
+        if (event.target.location != TOOL_URL) {
+          return;
+        }
+        
+        
+        
+        
+        
+        
+        
+        
+        ResponsiveUIManager.closeIfNeeded(browserWindow, tab, {
+          reason: event.type,
+        });
+        break;
+    }
+  },
+
+  handleMessage(event) {
+    let { browserWindow, tab } = this;
 
     if (event.origin !== "chrome://devtools") {
       return;
@@ -304,8 +356,7 @@ ResponsiveUI.prototype = {
         });
         break;
       case "exit":
-        toolWindow.removeEventListener(event.type, this);
-        ResponsiveUIManager.closeIfNeeded(window, tab);
+        ResponsiveUIManager.closeIfNeeded(browserWindow, tab);
         break;
       case "update-touch-simulation":
         let { enabled } = event.data;
