@@ -873,8 +873,6 @@ class ScriptSourceObject : public NativeObject
 
 enum GeneratorKind { NotGenerator, LegacyGenerator, StarGenerator };
 
-enum FunctionAsyncKind { SyncFunction, AsyncFunction };
-
 static inline unsigned
 GeneratorKindAsBits(GeneratorKind generatorKind) {
     return static_cast<unsigned>(generatorKind);
@@ -1169,8 +1167,6 @@ class JSScript : public js::gc::TenuredCell
 
     bool isDerivedClassConstructor_:1;
 
-    bool isAsync_:1;
-
     
     
   protected:
@@ -1435,12 +1431,6 @@ class JSScript : public js::gc::TenuredCell
         
         MOZ_ASSERT(!isGenerator());
         generatorKindBits_ = GeneratorKindAsBits(kind);
-    }
-
-    js::FunctionAsyncKind asyncKind() const { return isAsync_ ? js::AsyncFunction : js::SyncFunction; }
-
-    void setAsyncKind(js::FunctionAsyncKind kind) {
-        isAsync_ = kind == js::AsyncFunction;
     }
 
     void setNeedsHomeObject() {
@@ -2109,11 +2099,11 @@ class LazyScript : public gc::TenuredCell
         
         uint32_t version : 8;
 
-        uint32_t numFreeVariables : 23;
+        uint32_t numFreeVariables : 24;
         uint32_t numInnerFunctions : 20;
 
         uint32_t generatorKindBits : 2;
-        uint32_t isAsync : 1;
+
         
         
         
@@ -2225,10 +2215,6 @@ class LazyScript : public gc::TenuredCell
     }
 
     GeneratorKind generatorKind() const { return GeneratorKindFromBits(p_.generatorKindBits); }
-
-    FunctionAsyncKind asyncKind() const { return p_.isAsync ? AsyncFunction : SyncFunction; }
-
-    void setAsyncKind(FunctionAsyncKind kind) { p_.isAsync = kind == AsyncFunction; }
 
     bool isGenerator() const { return generatorKind() != NotGenerator; }
 
