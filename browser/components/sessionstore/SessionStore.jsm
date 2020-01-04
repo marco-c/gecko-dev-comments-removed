@@ -1488,22 +1488,33 @@ var SessionStoreInternal = {
 
 
   flushAllWindowsAsync: Task.async(function*(progress={}) {
-    let windowPromises = [];
+    let windowPromises = new Map();
     
     
     
     this._forEachBrowserWindow((win) => {
-      windowPromises.push(TabStateFlusher.flushWindow(win));
-      win.close();
+      windowPromises.set(win, TabStateFlusher.flushWindow(win));
+
+      
+      
+      
+      let baseWin = win.QueryInterface(Ci.nsIInterfaceRequestor)
+                       .getInterface(Ci.nsIDocShell)
+                       .QueryInterface(Ci.nsIDocShellTreeItem)
+                       .treeOwner
+                       .QueryInterface(Ci.nsIBaseWindow);
+      baseWin.visibility = false;
     });
 
-    progress.total = windowPromises.length;
+    progress.total = windowPromises.size;
+    progress.current = 0;
 
     
     
-    for (let i = 0; i < windowPromises.length; ++i) {
-      progress.current = i;
-      yield windowPromises[i];
+    for (let [win, promise] of windowPromises) {
+      yield promise;
+      this._collectWindowData(win);
+      progress.current++;
     };
 
     
