@@ -638,6 +638,20 @@ private:
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    bool mSlowScriptSecondHalf;
+
+    
+    
+    
+    
+    
     mozilla::TimeStamp mSlowScriptCheckpoint;
     
     mozilla::TimeDuration mSlowScriptActualWait;
