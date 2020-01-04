@@ -91,7 +91,8 @@ ElementPropertyTransition::UpdateStartValueFromReplacedTransition()
                                          TimeStamp::Now(),
                                          mReplacedTransition->mStartTime,
                                          mReplacedTransition->mPlaybackRate),
-    mReplacedTransition->mTiming);
+    mReplacedTransition->mTiming,
+    mReplacedTransition->mPlaybackRate);
 
   if (!computedTiming.mProgress.IsNull()) {
     double valuePosition =
@@ -353,9 +354,9 @@ nsTransitionManager::StyleContextChanged(dom::Element *aElement,
     }
 
     NS_ASSERTION((pseudoType == CSSPseudoElementType::before &&
-                  aElement->IsGeneratedContentContainerForBefore()) ||
+                  aElement->NodeInfo()->NameAtom() == nsGkAtoms::mozgeneratedcontentbefore) ||
                  (pseudoType == CSSPseudoElementType::after &&
-                  aElement->IsGeneratedContentContainerForAfter()),
+                  aElement->NodeInfo()->NameAtom() == nsGkAtoms::mozgeneratedcontentafter),
                  "Unexpected aElement coming through");
 
     
