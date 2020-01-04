@@ -528,9 +528,7 @@ public:
   
 
 
-
-  static bool ViewportHasDisplayPort(nsPresContext* aPresContext,
-                                     nsRect* aDisplayPort = nullptr);
+  static bool ViewportHasDisplayPort(nsPresContext* aPresContext);
 
   
 
