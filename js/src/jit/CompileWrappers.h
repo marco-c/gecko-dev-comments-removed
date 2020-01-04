@@ -44,6 +44,9 @@ class CompileRuntime
     const void* addressOfJitStackLimit();
 
     
+    const void* addressOfIonBailAfter();
+
+    
     const void* addressOfJSContext();
 
     

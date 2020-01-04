@@ -668,6 +668,22 @@ struct JSRuntime : public JS::shadow::Runtime,
     
     js::irregexp::RegExpStack regexpStack;
 
+#ifdef DEBUG
+  private:
+    
+    
+    uint32_t ionBailAfter_;
+
+  public:
+    void* addressOfIonBailAfter() { return &ionBailAfter_; }
+
+    
+    
+    void setIonBailAfter(uint32_t after) {
+        ionBailAfter_ = after;
+    }
+#endif
+
   private:
     friend class js::Activation;
     friend class js::ActivationIterator;
