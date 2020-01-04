@@ -1416,7 +1416,12 @@ public:
   virtual nsresult SetResolution(float aResolution) = 0;
   float GetResolution() { return mResolution.valueOr(1.0); }
   virtual float GetCumulativeResolution() = 0;
-  virtual float GetCumulativeScaleResolution() = 0;
+
+  
+
+
+
+  virtual float GetCumulativeNonRootScaleResolution() = 0;
 
   
 

@@ -2021,7 +2021,7 @@ nsLayoutUtils::GetEventCoordinatesRelativeTo(nsIWidget* aWidget,
       nsPoint pt(presContext->DevPixelsToAppUnits(aPoint.x),
                  presContext->DevPixelsToAppUnits(aPoint.y));
       pt = pt - view->ViewToWidgetOffset();
-      pt = pt.RemoveResolution(presContext->PresShell()->GetCumulativeScaleResolution());
+      pt = pt.RemoveResolution(presContext->PresShell()->GetCumulativeNonRootScaleResolution());
       return pt;
     }
   }
@@ -2060,7 +2060,7 @@ nsLayoutUtils::GetEventCoordinatesRelativeTo(nsIWidget* aWidget,
   nsIPresShell* shell = aFrame->PresContext()->PresShell();
 
   
-  widgetToView = widgetToView.RemoveResolution(shell->GetCumulativeScaleResolution());
+  widgetToView = widgetToView.RemoveResolution(shell->GetCumulativeNonRootScaleResolution());
 
   
 
@@ -2808,7 +2808,8 @@ nsLayoutUtils::TranslateViewToWidget(nsPresContext* aPresContext,
     return LayoutDeviceIntPoint(NS_UNCONSTRAINEDSIZE, NS_UNCONSTRAINEDSIZE);
   }
 
-  nsPoint pt = (aPt + viewOffset).ApplyResolution(aPresContext->PresShell()->GetCumulativeScaleResolution());
+  nsPoint pt = (aPt +
+  viewOffset).ApplyResolution(aPresContext->PresShell()->GetCumulativeNonRootScaleResolution());
   LayoutDeviceIntPoint relativeToViewWidget(aPresContext->AppUnitsToDevPixels(pt.x),
                                             aPresContext->AppUnitsToDevPixels(pt.y));
   return relativeToViewWidget + WidgetToWidgetOffset(viewWidget, aWidget);

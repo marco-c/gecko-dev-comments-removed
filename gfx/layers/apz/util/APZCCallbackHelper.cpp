@@ -415,6 +415,28 @@ APZCCallbackHelper::GetRootContentDocumentPresShellForContent(nsIContent* aConte
     return context->PresShell();
 }
 
+static nsIPresShell*
+GetRootDocumentPresShell(nsIContent* aContent)
+{
+    nsIDocument* doc = aContent->GetComposedDoc();
+    if (!doc) {
+        return nullptr;
+    }
+    nsIPresShell* shell = doc->GetShell();
+    if (!shell) {
+        return nullptr;
+    }
+    nsPresContext* context = shell->GetPresContext();
+    if (!context) {
+        return nullptr;
+    }
+    context = context->GetRootPresContext();
+    if (!context) {
+        return nullptr;
+    }
+    return context->PresShell();
+}
+
 CSSPoint
 APZCCallbackHelper::ApplyCallbackTransform(const CSSPoint& aInput,
                                            const ScrollableLayerGuid& aGuid)
@@ -423,30 +445,34 @@ APZCCallbackHelper::ApplyCallbackTransform(const CSSPoint& aInput,
     if (aGuid.mScrollId == FrameMetrics::NULL_SCROLL_ID) {
         return input;
     }
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     nsCOMPtr<nsIContent> content = nsLayoutUtils::FindContentFor(aGuid.mScrollId);
-    if (content) {
-        void* property = content->GetProperty(nsGkAtoms::apzCallbackTransform);
-        CSSPoint delta = property ? (*static_cast<CSSPoint*>(property)) : CSSPoint(0.0f, 0.0f);
-        
-        
-        
-        float resolution = 1.0f;
-        if (nsIPresShell* shell = GetRootContentDocumentPresShellForContent(content)) {
-            resolution = shell->GetResolution();
-        }
-        delta.x = delta.x * resolution;
-        delta.y = delta.y * resolution;
+    if (!content) {
+        return input;
+    }
+
+    
+    
+    
+    
+    
+    if (nsIPresShell* shell = GetRootDocumentPresShell(content)) {
+        input = input / shell->GetResolution();
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    void* property = content->GetProperty(nsGkAtoms::apzCallbackTransform);
+    if (property) {
+        CSSPoint delta = (*static_cast<CSSPoint*>(property));
         input += delta;
     }
     return input;
