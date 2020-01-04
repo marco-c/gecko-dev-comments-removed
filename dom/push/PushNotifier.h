@@ -32,7 +32,6 @@ namespace dom {
 
 
 
-
 class PushNotifier final : public nsIPushNotifier
 {
 public:
