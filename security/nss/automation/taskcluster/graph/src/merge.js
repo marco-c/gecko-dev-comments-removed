@@ -1,0 +1,10 @@
+
+
+
+
+import {recursive as merge} from "merge";
+
+
+export default function (...args) {
+  return merge(true, ...args);
+}

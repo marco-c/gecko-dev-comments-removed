@@ -1,0 +1,14 @@
+
+
+
+
+import * as try_syntax from "./try_syntax";
+import extend from "./extend";
+
+
+if (process.env.TC_PROJECT == "nss-try") {
+  try_syntax.initFilter();
+}
+
+
+extend().catch(console.error);
