@@ -375,7 +375,7 @@ enum NeedsBoundsCheck : uint8_t
 };
 
 typedef Vector<uint8_t, 0, SystemAllocPolicy> Bytecode;
-typedef UniquePtr<Bytecode, JS::DeletePolicy<Bytecode>> UniqueBytecode;
+typedef UniquePtr<Bytecode> UniqueBytecode;
 
 
 
@@ -404,7 +404,7 @@ class Encoder
             bytecode_->clear();
             return true;
         }
-        bytecode_.reset(js_new<Bytecode>());
+        bytecode_ = MakeUnique<Bytecode>();
         return !!bytecode_;
     }
 
@@ -639,7 +639,7 @@ class FuncBytecode
     unsigned generateTime() const { return generateTime_; }
 };
 
-typedef mozilla::UniquePtr<FuncBytecode, JS::DeletePolicy<FuncBytecode>> UniqueFuncBytecode;
+typedef UniquePtr<FuncBytecode> UniqueFuncBytecode;
 
 } 
 } 

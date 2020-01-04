@@ -12,7 +12,6 @@
 #include "mozilla/Atomics.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/PodOperations.h"
-#include "mozilla/UniquePtr.h"
 
 #include "jsatom.h"
 #include "jslock.h"
@@ -23,6 +22,7 @@
 #include "gc/Rooting.h"
 #include "jit/IonCode.h"
 #include "js/UbiNode.h"
+#include "js/UniquePtr.h"
 #include "vm/NativeObject.h"
 #include "vm/Shape.h"
 
@@ -630,10 +630,10 @@ class ScriptSource
     uint32_t length_;
 
     
-    mozilla::UniquePtr<char[], JS::FreePolicy> filename_;
+    UniquePtr<char[], JS::FreePolicy> filename_;
 
-    mozilla::UniquePtr<char16_t[], JS::FreePolicy> displayURL_;
-    mozilla::UniquePtr<char16_t[], JS::FreePolicy> sourceMapURL_;
+    UniquePtr<char16_t[], JS::FreePolicy> displayURL_;
+    UniquePtr<char16_t[], JS::FreePolicy> sourceMapURL_;
     bool mutedErrors_;
 
     
@@ -651,7 +651,7 @@ class ScriptSource
     
     
     
-    mozilla::UniquePtr<char[], JS::FreePolicy> introducerFilename_;
+    UniquePtr<char[], JS::FreePolicy> introducerFilename_;
 
     
     

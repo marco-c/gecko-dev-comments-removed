@@ -24,14 +24,13 @@
 using namespace mozilla;
 using namespace mozilla::dom;
 using namespace JS;
-using namespace js;
 
 namespace xpc {
 
 bool
 IsReflector(JSObject* obj)
 {
-    obj = CheckedUnwrap(obj,  false);
+    obj = js::CheckedUnwrap(obj,  false);
     if (!obj)
         return false;
     return IS_WN_REFLECTOR(obj) || dom::IsDOMObject(obj);
@@ -409,8 +408,8 @@ ExportFunction(JSContext* cx, HandleValue vfunction, HandleValue vscope, HandleV
     
     
     
-    targetScope = CheckedUnwrap(targetScope);
-    funObj = CheckedUnwrap(funObj);
+    targetScope = js::CheckedUnwrap(targetScope);
+    funObj = js::CheckedUnwrap(funObj);
     if (!targetScope || !funObj) {
         JS_ReportError(cx, "Permission denied to export function into scope");
         return false;

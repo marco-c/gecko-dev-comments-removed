@@ -323,7 +323,7 @@ class RInstructionResults
 {
     
     typedef mozilla::Vector<RelocatableValue, 1, SystemAllocPolicy> Values;
-    mozilla::UniquePtr<Values, JS::DeletePolicy<Values> > results_;
+    UniquePtr<Values> results_;
 
     
     

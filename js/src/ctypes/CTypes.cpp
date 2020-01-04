@@ -6817,7 +6817,7 @@ CClosure::Create(JSContext* cx,
   
   
   
-  mozilla::UniquePtr<uint8_t[], JS::FreePolicy> errResult;
+  UniquePtr<uint8_t[], JS::FreePolicy> errResult;
   if (!errVal.isUndefined()) {
 
     
