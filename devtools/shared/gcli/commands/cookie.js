@@ -43,11 +43,17 @@ function sanitizeHost(host) {
 
 
 
+
+
+
 function translateExpires(expires) {
   if (expires == 0) {
     return l10n.lookup("cookieListOutSession");
   }
-  return new Date(expires).toLocaleString();
+
+  let expires_msec = expires * 1000;
+
+  return (new Date(expires_msec)).toLocaleString();
 }
 
 
