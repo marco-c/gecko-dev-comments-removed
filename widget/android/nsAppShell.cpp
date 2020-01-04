@@ -89,7 +89,7 @@ public:
   NS_DECL_ISUPPORTS;
 
   nsresult Callback(const nsAString& topic, const nsAString& state) override {
-    widget::GeckoAppShell::NotifyWakeLockChanged(topic, state);
+    java::GeckoAppShell::NotifyWakeLockChanged(topic, state);
     return NS_OK;
   }
 };
@@ -100,7 +100,7 @@ StaticRefPtr<WakeLockListener> sWakeLockListener;
 
 
 class GeckoThreadSupport final
-    : public widget::GeckoThread::Natives<GeckoThreadSupport>
+    : public java::GeckoThread::Natives<GeckoThreadSupport>
     , public UsesGeckoThreadProxy
 {
     static uint32_t sPauseCount;
@@ -220,7 +220,7 @@ uint32_t GeckoThreadSupport::sPauseCount;
 
 
 class GeckoAppShellSupport final
-    : public widget::GeckoAppShell::Natives<GeckoAppShellSupport>
+    : public java::GeckoAppShell::Natives<GeckoAppShellSupport>
     , public UsesGeckoThreadProxy
 {
 public:
@@ -356,7 +356,7 @@ nsAppShell::nsAppShell()
         mozilla::ThumbnailHelper::Init();
         nsWindow::InitNatives();
 
-        widget::GeckoThread::SetState(widget::GeckoThread::State::JNI_READY());
+        java::GeckoThread::SetState(java::GeckoThread::State::JNI_READY());
     }
 
     sPowerManagerService = do_GetService(POWERMANAGERSERVICE_CONTRACTID);
@@ -458,11 +458,11 @@ nsAppShell::Observe(nsISupports* aSubject,
         if (jni::IsAvailable()) {
             
             if (Preferences::GetBool("gfx.android.rgb16.force", false)) {
-                widget::GeckoAppShell::SetScreenDepthOverride(16);
+                java::GeckoAppShell::SetScreenDepthOverride(16);
             }
 
-            widget::GeckoThread::SetState(
-                    widget::GeckoThread::State::PROFILE_READY());
+            java::GeckoThread::SetState(
+                    java::GeckoThread::State::PROFILE_READY());
 
             
             
@@ -480,16 +480,16 @@ nsAppShell::Observe(nsISupports* aSubject,
     } else if (!strcmp(aTopic, "chrome-document-loaded")) {
         if (jni::IsAvailable()) {
             
-            widget::GeckoThread::CheckAndSetState(
-                    widget::GeckoThread::State::PROFILE_READY(),
-                    widget::GeckoThread::State::RUNNING());
+            java::GeckoThread::CheckAndSetState(
+                    java::GeckoThread::State::PROFILE_READY(),
+                    java::GeckoThread::State::RUNNING());
         }
         removeObserver = true;
 
     } else if (!strcmp(aTopic, "quit-application-granted")) {
         if (jni::IsAvailable()) {
-            widget::GeckoThread::SetState(
-                    widget::GeckoThread::State::EXITING());
+            java::GeckoThread::SetState(
+                    java::GeckoThread::State::EXITING());
 
             
             
@@ -815,8 +815,7 @@ nsAppShell::LegacyGeckoEvent::Run()
                                                dom::GamepadMappingType::Standard,
                                                dom::kStandardGamepadButtons,
                                                dom::kStandardGamepadAxes);
-              widget::GeckoAppShell::GamepadAdded(curEvent->ID(),
-                                                  svc_id);
+              java::GeckoAppShell::GamepadAdded(curEvent->ID(), svc_id);
             } else if (curEvent->Action() == AndroidGeckoEvent::ACTION_GAMEPAD_REMOVED) {
               service->RemoveGamepad(curEvent->ID());
             }
