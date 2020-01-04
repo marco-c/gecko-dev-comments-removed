@@ -550,6 +550,22 @@ nsXPCWrappedJSClass::DelegatedQueryInterface(nsXPCWrappedJS* self,
     }
 
     
+    
+    
+    bool isFunc = false;
+    nsCOMPtr<nsIInterfaceInfo> info;
+    nsXPConnect::XPConnect()->GetInfoForIID(&aIID, getter_AddRefs(info));
+    if (info && NS_SUCCEEDED(info->IsFunction(&isFunc)) && isFunc) {
+        RefPtr<nsXPCWrappedJS> wrapper;
+        RootedObject obj(nsContentUtils::RootingCx(), self->GetJSObject());
+        nsresult rv = nsXPCWrappedJS::GetNewOrUsed(obj, aIID, getter_AddRefs(wrapper));
+
+        
+        *aInstancePtr = wrapper.forget().take()->GetXPTCStub();
+        return rv;
+    }
+
+    
 
     
     RootedObject jsobj(ccx, CallQueryInterfaceOnJSObject(ccx, self->GetJSObject(),
