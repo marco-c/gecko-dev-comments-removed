@@ -443,18 +443,17 @@ imgFrame::Optimize()
   }
 
   if (mOptSurface) {
+    
+    
+    
+    
     mVBuf = nullptr;
-    mVBufPtr = nullptr;
-    mImageSurface = nullptr;
   }
 
-#ifdef MOZ_WIDGET_ANDROID
   
   
-  
-  
+  mVBufPtr = nullptr;
   mImageSurface = nullptr;
-#endif
 
   return NS_OK;
 }
@@ -792,11 +791,6 @@ imgFrame::UnlockImageData()
     
     
     Optimize();
-
-    
-    
-    
-    mVBufPtr = nullptr;
   }
 
   mLockCount--;
