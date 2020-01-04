@@ -452,11 +452,11 @@ class SourceHook {
 
 
 extern JS_FRIEND_API(void)
-SetSourceHook(JSRuntime* rt, mozilla::UniquePtr<SourceHook> hook);
+SetSourceHook(JSContext* cx, mozilla::UniquePtr<SourceHook> hook);
 
 
 extern JS_FRIEND_API(mozilla::UniquePtr<SourceHook>)
-ForgetSourceHook(JSRuntime* rt);
+ForgetSourceHook(JSContext* cx);
 
 extern JS_FRIEND_API(JS::Zone*)
 GetCompartmentZone(JSCompartment* comp);

@@ -3592,7 +3592,7 @@ XPCJSRuntime::Initialize()
     
     
     UniquePtr<XPCJSSourceHook> hook(new XPCJSSourceHook);
-    js::SetSourceHook(runtime, Move(hook));
+    js::SetSourceHook(cx, Move(hook));
 
     
     
