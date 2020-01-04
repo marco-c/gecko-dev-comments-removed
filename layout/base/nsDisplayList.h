@@ -1437,8 +1437,8 @@ public:
 
 
 
-  nsRect GetClippedBoundsUpTo(nsDisplayListBuilder* aBuilder,
-                              const DisplayItemScrollClip* aIncludeScrollClipsUpTo);
+  nsRect GetScrollClippedBoundsUpTo(nsDisplayListBuilder* aBuilder,
+                                    const DisplayItemScrollClip* aIncludeScrollClipsUpTo);
 
   nsRect GetBorderRect() {
     return nsRect(ToReferenceFrame(), Frame()->GetSize());
@@ -2162,8 +2162,11 @@ public:
 
 
   nsRect GetBounds(nsDisplayListBuilder* aBuilder) const;
-  nsRect GetClippedBoundsUpTo(nsDisplayListBuilder* aBuilder,
-                              const DisplayItemScrollClip* aIncludeScrollClipsUpTo) const;
+  
+
+
+  nsRect GetScrollClippedBoundsUpTo(nsDisplayListBuilder* aBuilder,
+                                    const DisplayItemScrollClip* aIncludeScrollClipsUpTo) const;
   
 
 
@@ -3187,7 +3190,7 @@ public:
 
   virtual void UpdateBounds(nsDisplayListBuilder* aBuilder) override
   {
-    mBounds = mList.GetClippedBoundsUpTo(aBuilder, mScrollClip);
+    mBounds = mList.GetScrollClippedBoundsUpTo(aBuilder, mScrollClip);
     
     
     
