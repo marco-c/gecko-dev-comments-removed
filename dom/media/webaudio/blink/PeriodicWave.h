@@ -54,7 +54,8 @@ public:
     static already_AddRefed<PeriodicWave> create(float sampleRate,
                                                  const float* real,
                                                  const float* imag,
-                                                 size_t numberOfComponents);
+                                                 size_t numberOfComponents,
+                                                 bool disableNormalization);
 
     
     
@@ -76,7 +77,7 @@ public:
     size_t sizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
 
 private:
-    explicit PeriodicWave(float sampleRate, size_t numberOfComponents);
+    explicit PeriodicWave(float sampleRate, size_t numberOfComponents, bool disableNormalization);
     ~PeriodicWave() {}
 
     void generateBasicWaveform(mozilla::dom::OscillatorType);
@@ -108,6 +109,7 @@ private:
     void createBandLimitedTables(float fundamentalFrequency, unsigned rangeIndex);
     unsigned m_maxPartialsInBandLimitedTable;
     float m_normalizationScale;
+    bool m_disableNormalization;
     nsTArray<nsAutoPtr<AlignedAudioFloatArray> > m_bandLimitedTables;
 };
 
