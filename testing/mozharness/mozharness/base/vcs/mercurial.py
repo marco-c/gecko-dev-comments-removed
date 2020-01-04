@@ -355,6 +355,10 @@ class MercurialVCS(ScriptMixin, LogMixin, TransferMixin):
 
         self.info('ensuring %s@%s is available at %s' % (repo_url, wanted_rev, dest))
 
+        
+        self.run_command(self.hg + ['--version'])
+        self.run_command(self.hg + ['debuginstall'])
+
         share_base = c.get('vcs_share_base', os.environ.get('HG_SHARE_BASE_DIR', None))
 
         
