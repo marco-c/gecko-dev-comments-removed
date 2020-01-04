@@ -45,12 +45,9 @@ struct StructuredCloneFile
 
 struct StructuredCloneReadInfo
 {
-  nsTArray<uint8_t> mData;
+  JSStructuredCloneData mData;
   nsTArray<StructuredCloneFile> mFiles;
   IDBDatabase* mDatabase;
-
-  
-  JSAutoStructuredCloneBuffer mCloneBuffer;
 
   
   inline
