@@ -108,6 +108,7 @@ public:
   DynamicAtom(const nsAString& aString, uint32_t aHash)
   {
     mLength = aString.Length();
+    mIsStatic = false;
     RefPtr<nsStringBuffer> buf = nsStringBuffer::FromString(aString);
     if (buf) {
       mString = static_cast<char16_t*>(buf->Data());
@@ -161,10 +162,15 @@ class StaticAtom final : public nsIAtom
   
   
   
+  
   explicit StaticAtom(nsStringBuffer* aStaticBuffer)
   {
     static_assert(sizeof(DynamicAtom) >= sizeof(StaticAtom),
                   "can't safely transmute a smaller object to a bigger one");
+
+    
+    MOZ_ASSERT(!mIsStatic);
+    mIsStatic = true;
 
     char16_t* staticString = static_cast<char16_t*>(aStaticBuffer->Data());
     MOZ_ASSERT(nsCRT::strcmp(staticString, mString) == 0);
@@ -178,6 +184,7 @@ public:
   StaticAtom(nsStringBuffer* aStringBuffer, uint32_t aLength, uint32_t aHash)
   {
     mLength = aLength;
+    mIsStatic = true;
     mString = static_cast<char16_t*>(aStringBuffer->Data());
     
     
@@ -419,18 +426,6 @@ StaticAtom::ScriptableEquals(const nsAString& aString, bool* aResult)
 {
   *aResult = aString.Equals(nsDependentString(mString, mLength));
   return NS_OK;
-}
-
-NS_IMETHODIMP_(bool)
-DynamicAtom::IsStaticAtom()
-{
-  return false;
-}
-
-NS_IMETHODIMP_(bool)
-StaticAtom::IsStaticAtom()
-{
-  return true;
 }
 
 NS_IMETHODIMP_(size_t)
