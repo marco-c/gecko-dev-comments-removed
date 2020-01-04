@@ -193,6 +193,29 @@ MacroAssembler::negateDouble(FloatRegister reg)
 
 
 
+void
+MacroAssembler::rotateLeft(Imm32 count, Register input, Register dest)
+{
+    MOZ_CRASH("NYI");
+}
+void
+MacroAssembler::rotateLeft(Register count, Register input, Register dest)
+{
+    MOZ_CRASH("NYI");
+}
+void
+MacroAssembler::rotateRight(Imm32 count, Register input, Register dest)
+{
+    MOZ_CRASH("NYI");
+}
+void
+MacroAssembler::rotateRight(Register count, Register input, Register dest)
+{
+    MOZ_CRASH("NYI");
+}
+
+
+
 
 void
 MacroAssembler::branch32(Condition cond, Register lhs, Register rhs, Label* label)
