@@ -1088,11 +1088,12 @@ AnimationTimeBlock.prototype = {
     text += "\n";
 
     
-    
-    text += L10N.getStr("player.animationIterationCountLabel") + " ";
-    text += state.iterationCount ||
-            L10N.getStr("player.infiniteIterationCountText");
-    text += "\n";
+    if (state.iterationCount !== 1) {
+      text += L10N.getStr("player.animationIterationCountLabel") + " ";
+      text += state.iterationCount ||
+              L10N.getStr("player.infiniteIterationCountText");
+      text += "\n";
+    }
 
     
     if (state.playbackRate !== 1) {
