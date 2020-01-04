@@ -243,7 +243,8 @@ nsLayoutStylesheetCache::DesignModeSheet()
 void
 nsLayoutStylesheetCache::Shutdown()
 {
-  NS_IF_RELEASE(gCSSLoader);
+  gCSSLoader_Gecko = nullptr;
+  gCSSLoader_Servo = nullptr;
   gStyleCache_Gecko = nullptr;
   gStyleCache_Servo = nullptr;
 }
@@ -288,6 +289,7 @@ nsLayoutStylesheetCache::SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf
   MEASURE(mUserContentSheet);
   MEASURE(mXULSheet);
 
+  
   
   
   
@@ -406,7 +408,7 @@ nsLayoutStylesheetCache::InitFromProfile()
   LoadSheetFile(chromeFile, mUserChromeSheet, eUserSheetFeatures);
 }
 
- void
+void
 nsLayoutStylesheetCache::LoadSheetURL(const char* aURL,
                                       StyleSheetHandle::RefPtr& aSheet,
                                       SheetParsingMode aParsingMode)
@@ -735,20 +737,22 @@ nsLayoutStylesheetCache::LoadSheet(nsIURI* aURI,
     return;
   }
 
-  if (!gCSSLoader) {
-    gCSSLoader = new mozilla::css::Loader();
-    NS_IF_ADDREF(gCSSLoader);
-    if (!gCSSLoader) {
+  auto& loader = mBackendType == StyleBackendType::Gecko ?
+    gCSSLoader_Gecko :
+    gCSSLoader_Servo;
+
+  if (!loader) {
+    loader = new mozilla::css::Loader(mBackendType);
+    if (!loader) {
       ErrorLoadingBuiltinSheet(aURI, "no Loader");
       return;
     }
   }
 
-
 #ifdef MOZ_CRASHREPORTER
   nsZipArchive::sFileCorruptedReason = nullptr;
 #endif
-  nsresult rv = gCSSLoader->LoadSheetSync(aURI, aParsingMode, true, &aSheet);
+  nsresult rv = loader->LoadSheetSync(aURI, aParsingMode, true, &aSheet);
   if (NS_FAILED(rv)) {
     ErrorLoadingBuiltinSheet(aURI,
       nsPrintfCString("LoadSheetSync failed with error %x", rv).get());
@@ -759,7 +763,8 @@ nsLayoutStylesheetCache::LoadSheet(nsIURI* aURI,
 nsLayoutStylesheetCache::InvalidateSheet(StyleSheetHandle::RefPtr* aGeckoSheet,
                                          StyleSheetHandle::RefPtr* aServoSheet)
 {
-  MOZ_ASSERT(gCSSLoader, "pref changed before we loaded a sheet?");
+  MOZ_ASSERT(gCSSLoader_Gecko || gCSSLoader_Servo,
+             "pref changed before we loaded a sheet?");
 
   
   MOZ_ASSERT(!aGeckoSheet || (*aGeckoSheet)->IsGecko());
@@ -778,7 +783,12 @@ nsLayoutStylesheetCache::InvalidateSheet(StyleSheetHandle::RefPtr* aGeckoSheet,
     return;
   }
 
-  gCSSLoader->ObsoleteSheet(uri);
+  if (gCSSLoader_Gecko) {
+    gCSSLoader_Gecko->ObsoleteSheet(uri);
+  }
+  if (gCSSLoader_Servo) {
+    gCSSLoader_Servo->ObsoleteSheet(uri);
+  }
   if (aGeckoSheet) {
     *aGeckoSheet = nullptr;
   }
@@ -934,5 +944,8 @@ nsLayoutStylesheetCache::gStyleCache_Gecko;
 mozilla::StaticRefPtr<nsLayoutStylesheetCache>
 nsLayoutStylesheetCache::gStyleCache_Servo;
 
-mozilla::css::Loader*
-nsLayoutStylesheetCache::gCSSLoader = nullptr;
+mozilla::StaticRefPtr<mozilla::css::Loader>
+nsLayoutStylesheetCache::gCSSLoader_Gecko;
+
+mozilla::StaticRefPtr<mozilla::css::Loader>
+nsLayoutStylesheetCache::gCSSLoader_Servo;

@@ -211,7 +211,9 @@ nsStyleSheetService::LoadAndRegisterSheetInternal(nsIURI *aSheetURI,
       return NS_ERROR_INVALID_ARG;
   }
 
-  RefPtr<css::Loader> loader = new css::Loader();
+  
+  
+  RefPtr<css::Loader> loader = new css::Loader(StyleBackendType::Gecko);
 
   StyleSheetHandle::RefPtr sheet;
   nsresult rv = loader->LoadSheetSync(aSheetURI, parsingMode, true, &sheet);
@@ -265,7 +267,7 @@ nsStyleSheetService::PreloadSheet(nsIURI *aSheetURI, uint32_t aSheetType,
   
   
 
-  RefPtr<css::Loader> loader = new css::Loader();
+  RefPtr<css::Loader> loader = new css::Loader(StyleBackendType::Gecko);
 
   StyleSheetHandle::RefPtr sheet;
   nsresult rv = loader->LoadSheetSync(aSheetURI, parsingMode, true, &sheet);

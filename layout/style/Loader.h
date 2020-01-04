@@ -21,7 +21,9 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/CORSMode.h"
 #include "mozilla/CSSStyleSheet.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/MemoryReporting.h"
+#include "mozilla/StyleBackendType.h"
 #include "mozilla/StyleSheetHandle.h"
 #include "mozilla/net/ReferrerPolicy.h"
 
@@ -188,7 +190,7 @@ class Loader final {
   typedef mozilla::net::ReferrerPolicy ReferrerPolicy;
 
 public:
-  Loader();
+  explicit Loader(StyleBackendType aType);
   explicit Loader(nsIDocument*);
 
  private:
@@ -198,6 +200,19 @@ public:
  public:
   NS_INLINE_DECL_CYCLE_COLLECTING_NATIVE_REFCOUNTING(Loader)
   NS_DECL_CYCLE_COLLECTION_NATIVE_CLASS(Loader)
+
+  
+
+
+
+
+
+
+  StyleBackendType GetStyleBackendType() const;
+
+  void SetStyleBackendType(StyleBackendType aType) {
+    mStyleBackendType = Some(aType);
+  }
 
   void DropDocumentReference(); 
 
@@ -572,6 +587,8 @@ private:
 
   nsCompatibility   mCompatMode;
   nsString          mPreferredSheet;  
+
+  mozilla::Maybe<StyleBackendType> mStyleBackendType;
 
   bool              mEnabled; 
 
