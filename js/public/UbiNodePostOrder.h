@@ -8,6 +8,7 @@
 #define js_UbiNodePostOrder_h
 
 #include "mozilla/DebugOnly.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/Move.h"
 
 #include "jsalloc.h"
@@ -40,11 +41,22 @@ namespace ubi {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
 struct PostOrder {
   private:
     struct OriginAndEdges {
-        Node       origin;
-        EdgeVector edges;
+        Node                 origin;
+        EdgeVector           edges;
 
         OriginAndEdges(const Node& node, EdgeVector&& edges)
           : origin(node)
@@ -126,8 +138,10 @@ struct PostOrder {
     
     
     
-    template<typename Visitor>
-    bool traverse(Visitor visitor) {
+    
+    
+    template<typename NodeVisitor, typename EdgeVisitor>
+    bool traverse(NodeVisitor onNode, EdgeVisitor onEdge) {
         MOZ_ASSERT(!traversed, "Can only traverse() once!");
         traversed = true;
 
@@ -136,7 +150,7 @@ struct PostOrder {
             auto& edges = stack.back().edges;
 
             if (edges.empty()) {
-                if (!visitor(origin))
+                if (!onNode(origin))
                     return false;
                 stack.popBack();
                 continue;
@@ -145,14 +159,20 @@ struct PostOrder {
             Edge edge = mozilla::Move(edges.back());
             edges.popBack();
 
+            if (!onEdge(origin, edge))
+                return false;
+
             auto ptr = seen.lookupForAdd(edge.referent);
             
             if (ptr)
                 continue;
 
             
-            if (!seen.add(ptr, edge.referent) || !pushForTraversing(edge.referent))
+            if (!seen.add(ptr, edge.referent) ||
+                !pushForTraversing(edge.referent))
+            {
                 return false;
+            }
         }
 
         return true;
