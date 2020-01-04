@@ -71,6 +71,9 @@ function BrowserLoader(baseURI, window) {
     },
     globals: {
       
+      
+      console: window.console,
+      
       define: function(callback) {
         callback(this.require, this.exports, this.module);
         return this.exports;
