@@ -22,7 +22,7 @@ TEST_F(APZCBasicTester, Overzoom) {
 
   EXPECT_CALL(*mcc, RequestContentRepaint(_)).Times(1);
 
-  PinchWithPinchInputAndCheckStatus(apzc, 50, 50, 0.5, true);
+  PinchWithPinchInputAndCheckStatus(apzc, ScreenIntPoint(50, 50), 0.5, true);
 
   fm = apzc->GetFrameMetrics();
   EXPECT_EQ(0.8f, fm.GetZoom().ToScaleFactor().scale);
@@ -295,8 +295,8 @@ TEST_F(APZCBasicTester, OverScroll_Bug1152051b) {
   
   
   
-  TouchDown(apzc, 10, 10, mcc->Time(), nullptr);
-  TouchUp(apzc, 10, 10, mcc->Time());
+  TouchDown(apzc, ScreenIntPoint(10, 10), mcc->Time(), nullptr);
+  TouchUp(apzc, ScreenIntPoint(10, 10), mcc->Time());
 
   
   

@@ -186,18 +186,18 @@ TEST_F(APZEventRegionsTester, HitRegionImmediateResponse) {
 
   
   
-  Tap(manager, 10, 10, mcc, tapDuration);
+  Tap(manager, ScreenIntPoint(10, 10), mcc, tapDuration);
   mcc->RunThroughDelayedTasks();    
   check.Call("Tapped on left");
-  Tap(manager, 110, 110, mcc, tapDuration);
+  Tap(manager, ScreenIntPoint(110, 110), mcc, tapDuration);
   mcc->RunThroughDelayedTasks();    
   check.Call("Tapped on bottom");
-  Tap(manager, 110, 10, mcc, tapDuration);
+  Tap(manager, ScreenIntPoint(110, 10), mcc, tapDuration);
   mcc->RunThroughDelayedTasks();    
   check.Call("Tapped on root");
 
   
-  Tap(manager, 10, 110, mcc, tapDuration);
+  Tap(manager, ScreenIntPoint(10, 110), mcc, tapDuration);
   mcc->RunThroughDelayedTasks();    
   check.Call("Tap pending on d-t-c region");
   mcc->RunThroughDelayedTasks();    
@@ -205,7 +205,7 @@ TEST_F(APZEventRegionsTester, HitRegionImmediateResponse) {
 
   
   uint64_t inputBlockId = 0;
-  Tap(manager, 10, 110, mcc, tapDuration, nullptr, &inputBlockId);
+  Tap(manager, ScreenIntPoint(10, 110), mcc, tapDuration, nullptr, &inputBlockId);
   nsTArray<ScrollableLayerGuid> targets;
   targets.AppendElement(left->GetGuid());
   manager->SetTargetAPZC(inputBlockId, targets);
@@ -221,7 +221,7 @@ TEST_F(APZEventRegionsTester, HitRegionAccumulatesChildren) {
   
   
   EXPECT_CALL(*mcc, HandleSingleTap(_, _, rootApzc->GetGuid())).Times(1);
-  Tap(manager, 10, 160, mcc, TimeDuration::FromMilliseconds(100));
+  Tap(manager, ScreenIntPoint(10, 160), mcc, TimeDuration::FromMilliseconds(100));
 }
 
 TEST_F(APZEventRegionsTester, Obscuration) {
@@ -260,7 +260,7 @@ TEST_F(APZEventRegionsTester, Bug1117712) {
   
   
   uint64_t inputBlockId = 0;
-  Tap(manager, 55, 5, mcc, TimeDuration::FromMilliseconds(100), nullptr, &inputBlockId);
+  Tap(manager, ScreenIntPoint(55, 5), mcc, TimeDuration::FromMilliseconds(100), nullptr, &inputBlockId);
   
   
   EXPECT_CALL(*mcc, HandleSingleTap(CSSPoint(55, 5), 0, apzc2->GetGuid())).Times(1);
