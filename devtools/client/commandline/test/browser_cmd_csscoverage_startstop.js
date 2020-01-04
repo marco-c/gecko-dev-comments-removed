@@ -37,17 +37,18 @@ function* navigate(usage, options) {
 
   ok(usage.isRunning(), "csscoverage is running");
 
-  let load1Promise = helpers.listenOnce(options.browser, "load", true);
-
-  yield helpers.navigate(PAGE_1, options);
+  
+  options.browser.loadURI(PAGE_1);
+  
+  yield Promise.all([
+    BrowserTestUtils.browserLoaded(options.browser, false, PAGE_1),
+    BrowserTestUtils.browserLoaded(options.browser, true, PAGE_2)
+  ]);
+  is(options.browser.currentURI.spec, PAGE_1, "page 1 loaded");
 
   
-  yield load1Promise;
-  is(options.window.location.href, PAGE_1, "page 1 loaded");
-
-  
-  yield helpers.listenOnce(options.browser, "load", true);
-  is(options.window.location.href, PAGE_3, "page 3 loaded");
+  yield BrowserTestUtils.browserLoaded(options.browser, false, PAGE_3);
+  is(options.browser.currentURI.spec, PAGE_3, "page 3 loaded");
 
   let toolboxReady = gDevTools.once("toolbox-ready");
 
