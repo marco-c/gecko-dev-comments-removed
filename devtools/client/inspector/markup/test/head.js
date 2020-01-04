@@ -12,7 +12,7 @@ Services.scriptloader.loadSubScript(
 
 var {getInplaceEditorForSpan: inplaceEditor} = require("devtools/client/shared/inplace-editor");
 var clipboard = require("sdk/clipboard");
-var {ActorRegistryFront} = require("devtools/server/actors/actor-registry");
+var {ActorRegistryFront} = require("devtools/shared/fronts/actor-registry");
 
 
 

@@ -25,7 +25,7 @@
     let deferred = promise.defer();
     client.listTabs(deferred.resolve);
     let response = yield deferred.promise;
-    let { ActorRegistryFront } = require("devtools/server/actors/actor-registry");
+    let { ActorRegistryFront } = require("devtools/shared/fronts/actor-registry");
     let registryFront = ActorRegistryFront(client, response);
 
   
