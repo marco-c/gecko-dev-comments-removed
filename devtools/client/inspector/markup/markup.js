@@ -899,9 +899,9 @@ MarkupView.prototype = {
           }
 
           let isNextSiblingText = nextSibling ?
-            nextSibling.nodeType === Ci.nsIDOMNode.TEXT_NODE : false;
+            nextSibling.nodeType === nodeConstants.TEXT_NODE : false;
           let isPrevSiblingText = prevSibling ?
-            prevSibling.nodeType === Ci.nsIDOMNode.TEXT_NODE : false;
+            prevSibling.nodeType === nodeConstants.TEXT_NODE : false;
 
           
           
