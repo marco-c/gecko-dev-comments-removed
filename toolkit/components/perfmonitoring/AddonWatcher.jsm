@@ -24,11 +24,13 @@ XPCOMUtils.defineLazyServiceGetter(this, "Telemetry",
                                   Ci.nsITelemetry);
 XPCOMUtils.defineLazyModuleGetter(this, "Services",
                                   "resource://gre/modules/Services.jsm");
-
 const FILTERS = [
   {probe: "jank", field: "longestDuration"},
   {probe: "cpow", field: "totalCPOWTime"},
 ];
+
+const WAKEUP_IS_SURPRISINGLY_SLOW_FACTOR = 2;
+const THREAD_TAKES_LOTS_OF_CPU_FACTOR = .75;
 
 let AddonWatcher = {
   _previousPerformanceIndicators: {},
@@ -52,6 +54,15 @@ let AddonWatcher = {
 
   _interval: 15000,
   _ignoreList: null,
+
+  
+
+
+
+
+
+  _latestWakeup: Date.now(),
+
   
 
 
@@ -134,14 +145,62 @@ let AddonWatcher = {
 
 
 
+  _isSystemTooBusy: function(deltaT, currentSnapshot, previousSnapshot) {
+    if (deltaT <= WAKEUP_IS_SURPRISINGLY_SLOW_FACTOR * this._interval) {
+      
+      return false;
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    if (!previousSnapshot) {
+      
+      return true;
+    }
+
+    let diff = snapshot.processData.subtract(previousSnapshot.processData);
+    if (diff.totalCPUTime >= deltaT * THREAD_TAKES_LOTS_OF_CPU_FACTOR ) {
+      
+      
+      
+      
+      
+      
+      return false;
+    }
+
+    
+    
+    return true;
+  },
+
+  
+
+
+
 
 
 
 
   _checkAddons: function() {
+    let previousWakeup = this._latestWakeup;
+    let currentWakeup = this._latestWakeup = Date.now();
+
     return Task.spawn(function*() {
       try {
-        let snapshot = yield this._monitor.promiseSnapshot();
+        let previousSnapshot = this._latestSnapshot; 
+        let snapshot = this._latestSnapshot = yield this._monitor.promiseSnapshot();
+        let isSystemTooBusy = this._isSystemTooBusy(currentWakeup - previousWakeup, snapshot, previousSnapshot);
 
         let limits = {
           
@@ -174,6 +233,12 @@ let AddonWatcher = {
           if (!previous) {
             
             
+            
+            
+            
+            continue;
+          }
+          if (isSystemTooBusy) {
             
             
             
