@@ -763,6 +763,13 @@ function assertWebRTCIndicatorStatus(expected) {
 
 
 
+
+
+
+
+
+
+
 function assertMixedContentBlockingState(tabbrowser, states = {}) {
   if (!tabbrowser || !("activeLoaded" in states) ||
       !("activeBlocked" in states) || !("passiveLoaded" in states))  {
@@ -898,6 +905,12 @@ function assertMixedContentBlockingState(tabbrowser, states = {}) {
   }
 
   gIdentityHandler._identityPopup.hidden = true;
+
+  
+  
+  
+  
+  return new Promise(resolve => executeSoon(resolve));
 }
 
 function makeActionURI(action, params) {

@@ -6,553 +6,226 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-const PREF_ACTIVE = "security.mixed_content.block_active_content";
+requestLongerTimeout(2);
 
 
 
 const gHttpTestRoot1 = "https://test1.example.com/browser/browser/base/content/test/general/";
 const gHttpTestRoot2 = "https://test2.example.com/browser/browser/base/content/test/general/";
 
-var origBlockActive;
-var gTestWin = null;
-var mainTab = null;
-var curClickHandler = null;
-var curContextMenu = null;
-var curTestFunc = null;
-var curTestName = null;
-var curChildTabLink = null;
-
-
-
-registerCleanupFunction(function() {
-  
-  Services.prefs.setBoolPref(PREF_ACTIVE, origBlockActive);
-});
-requestLongerTimeout(2);
 
 
 
 
 
-function waitForCondition(condition, nextTest, errorMsg) {
-  var tries = 0;
-  var interval = setInterval(function() {
-    if (tries >= 30) {
-      ok(false, errorMsg);
-      moveOn();
+function* doTest(parentTabSpec, childTabSpec, testTaskFn, waitForMetaRefresh) {
+  yield BrowserTestUtils.withNewTab({
+    gBrowser,
+    url: parentTabSpec,
+  }, function* (browser) {
+    
+    yield assertMixedContentBlockingState(gBrowser, {
+      activeLoaded: false, activeBlocked: true, passiveLoaded: false,
+    });
+
+    
+    let promiseReloaded = BrowserTestUtils.browserLoaded(browser);
+    gIdentityHandler.disableMixedContentProtection();
+    yield promiseReloaded;
+
+    
+    let testDiv = content.document.getElementById('mctestdiv');
+    yield promiseWaitForCondition(
+      () => testDiv.innerHTML == "Mixed Content Blocker disabled");
+
+    
+    let mainDiv = content.document.createElement("div");
+    mainDiv.innerHTML =
+      '<p><a id="linkToOpenInNewTab" href="' + childTabSpec + '">Link</a></p>';
+    content.document.body.appendChild(mainDiv);
+
+    
+    for (let openFn of [simulateCtrlClick, simulateContextMenuOpenInTab]) {
+      let promiseTabLoaded = waitForSomeTabToLoad();
+      openFn(browser);
+      yield promiseTabLoaded;
+      gBrowser.selectTabAtIndex(2);
+
+      if (waitForMetaRefresh) {
+        yield waitForSomeTabToLoad();
+      }
+
+      yield testTaskFn();
+
+      gBrowser.removeCurrentTab();
     }
-    if (condition()) {
-      moveOn();
-    }
-    tries++;
-  }, 100);
-  var moveOn = function() {
-    clearInterval(interval); nextTest();
-  };
-}
-
-
-
-
-var clickHandler = function (aEvent, aFunc) {
-  gTestWin.gBrowser.removeEventListener("click", curClickHandler, true);
-  gTestWin.contentAreaClick(aEvent, true);
-  waitForSomeTabToLoad(aFunc);
-  aEvent.preventDefault();
-  aEvent.stopPropagation();
-}
-
-
-
-
-var contextMenuOpenHandler = function(aEvent, aFunc) {
-  gTestWin.document.removeEventListener("popupshown", curContextMenu, false);
-  waitForSomeTabToLoad(aFunc);
-  var openLinkInTabCommand = gTestWin.document.getElementById("context-openlinkintab");
-  openLinkInTabCommand.doCommand();
-  aEvent.target.hidePopup();
-};
-
-function setUpTest(aTestName, aIDForNextTest, aFuncForNextTest, aChildTabLink) {
-  curTestName = aTestName;
-  curTestFunc = aFuncForNextTest;
-  curChildTabLink = aChildTabLink;
-
-  mainTab = gTestWin.gBrowser.selectedTab;
-  
-  let target = gTestWin.content.document.getElementById(aIDForNextTest).href;
-  gTestWin.gBrowser.addTab(target);
-  gTestWin.gBrowser.selectTabAtIndex(1);
-  waitForSomeTabToLoad(checkPopUpNotification);
-}
-
-
-
-
-function waitForSomeTabToLoad(callback) {
-  gTestWin.gBrowser.addEventListener("load", function onLoad(event) {
-    let tab = gTestWin.gBrowser._getTabForContentWindow(event.target.defaultView.top);
-    if (tab) {
-      gTestWin.gBrowser.removeEventListener("load", onLoad, true);
-      callback();
-    }
-  }, true);
-}
-
-function checkPopUpNotification() {
-  waitForSomeTabToLoad(reloadedTabAfterDisablingMCB);
-
-  assertMixedContentBlockingState(gTestWin.gBrowser, {activeLoaded: false, activeBlocked: true, passiveLoaded: false});
-
-  
-  let {gIdentityHandler} = gTestWin.gBrowser.ownerGlobal;
-  gIdentityHandler.disableMixedContentProtection();
-}
-
-function reloadedTabAfterDisablingMCB() {
-  var expected = "Mixed Content Blocker disabled";
-  waitForCondition(
-    () => gTestWin.content.document.getElementById('mctestdiv').innerHTML == expected,
-    makeSureMCBisDisabled, "Error: Waited too long for mixed script to run in " + curTestName + "!");
-}
-
-function makeSureMCBisDisabled() {
-  var actual = gTestWin.content.document.getElementById('mctestdiv').innerHTML;
-  is(actual, "Mixed Content Blocker disabled", "OK: Made sure MCB is disabled in " + curTestName + "!");
-
-  
-  let doc = gTestWin.content.document;
-  let mainDiv = gTestWin.content.document.createElement("div");
-  mainDiv.innerHTML =
-    '<p><a id="' + curTestName + '" href="' + curChildTabLink + '">' +
-    curTestName + '</a></p>';
-  doc.body.appendChild(mainDiv);
-
-  curTestFunc();
-}
-
-
-
-function test1() {
-  curClickHandler = function (e) { clickHandler(e, test1A) };
-  gTestWin.gBrowser.addEventListener("click", curClickHandler , true);
-
-  
-  let targetElt = gTestWin.content.document.getElementById("Test1");
-  EventUtils.synthesizeMouseAtCenter(targetElt, { button: 1 }, gTestWin.content);
-}
-
-function test1A() {
-  gTestWin.gBrowser.selectTabAtIndex(2);
-
-  
-  
-  assertMixedContentBlockingState(gTestWin.gBrowser, {activeLoaded: true, activeBlocked: false, passiveLoaded: false});
-
-  var actual = gTestWin.content.document.getElementById('mctestdiv').innerHTML;
-  is(actual, "Mixed Content Blocker disabled", "OK: Executed mixed script in Test 1A");
-
-  gTestWin.gBrowser.removeCurrentTab();
-  test1B();
-}
-
-function test1B() {
-  curContextMenu = function (e) { contextMenuOpenHandler(e, test1C) };
-  gTestWin.document.addEventListener("popupshown", curContextMenu, false);
-
-  
-  let targetElt = gTestWin.content.document.getElementById("Test1");
-  
-  EventUtils.synthesizeMouseAtCenter(targetElt, { type : "contextmenu", button : 2 } , gTestWin.content);
-}
-
-function test1C() {
-  gTestWin.gBrowser.selectTabAtIndex(2);
-
-  
-  
-  assertMixedContentBlockingState(gTestWin.gBrowser, {activeLoaded: true, activeBlocked: false, passiveLoaded: false});
-
-  var actual = gTestWin.content.document.getElementById('mctestdiv').innerHTML;
-  is(actual, "Mixed Content Blocker disabled", "OK: Executed mixed script in Test 1C");
-
-  
-  gTestWin.gBrowser.removeTab(gTestWin.gBrowser.tabs[2], {animate: false});
-  gTestWin.gBrowser.removeTab(gTestWin.gBrowser.tabs[1], {animate: false});
-  gTestWin.gBrowser.selectTabAtIndex(0);
-
-  var childTabLink = gHttpTestRoot2 + "file_bug906190_2.html";
-  setUpTest("Test2", "linkForTest2", test2, childTabLink);
-}
-
-
-
-function test2() {
-  curClickHandler = function (e) { clickHandler(e, test2A) };
-  gTestWin.gBrowser.addEventListener("click", curClickHandler, true);
-
-  
-  let targetElt = gTestWin.content.document.getElementById("Test2");
-  EventUtils.synthesizeMouseAtCenter(targetElt, { button: 1 }, gTestWin.content);
-}
-
-function test2A() {
-  gTestWin.gBrowser.selectTabAtIndex(2);
-
-  
-  
-  assertMixedContentBlockingState(gTestWin.gBrowser, {activeLoaded: false, activeBlocked: true, passiveLoaded: false});
-
-  var actual = gTestWin.content.document.getElementById('mctestdiv').innerHTML;
-  is(actual, "Mixed Content Blocker enabled", "OK: Blocked mixed script in Test 2A");
-
-  gTestWin.gBrowser.removeCurrentTab();
-  test2B();
-}
-
-function test2B() {
-  curContextMenu = function (e) { contextMenuOpenHandler(e, test2C) };
-  gTestWin.document.addEventListener("popupshown", curContextMenu, false);
-
-  
-  let targetElt = gTestWin.content.document.getElementById("Test2");
-  
-  EventUtils.synthesizeMouseAtCenter(targetElt, { type : "contextmenu", button : 2 } , gTestWin.content);
-}
-
-function test2C() {
-  gTestWin.gBrowser.selectTabAtIndex(2);
-
-  
-  
-  assertMixedContentBlockingState(gTestWin.gBrowser, {activeLoaded: false, activeBlocked: true, passiveLoaded: false});
-
-  var actual = gTestWin.content.document.getElementById('mctestdiv').innerHTML;
-  is(actual, "Mixed Content Blocker enabled", "OK: Blocked mixed script in Test 2C");
-
-  
-  gTestWin.gBrowser.removeTab(gTestWin.gBrowser.tabs[2], {animate: false});
-  gTestWin.gBrowser.removeTab(gTestWin.gBrowser.tabs[1], {animate: false});
-  gTestWin.gBrowser.selectTabAtIndex(0);
-
-  
-  var childTabLink = gHttpTestRoot1 + "file_bug906190_3_4.html";
-  setUpTest("Test3", "linkForTest3", test3, childTabLink);
-}
-
-
-
-function test3() {
-  curClickHandler = function (e) { clickHandler(e, test3A) };
-  gTestWin.gBrowser.addEventListener("click", curClickHandler, true);
-  
-  let targetElt = gTestWin.content.document.getElementById("Test3");
-  EventUtils.synthesizeMouseAtCenter(targetElt, { button: 1 }, gTestWin.content);
-}
-
-function test3A() {
-  
-  waitForSomeTabToLoad(test3B);
-}
-
-function test3B() {
-  gTestWin.gBrowser.selectTabAtIndex(2);
-
-  
-  assertMixedContentBlockingState(gTestWin.gBrowser, {activeLoaded: true, activeBlocked: false, passiveLoaded: false});
-
-  var actual = gTestWin.content.document.getElementById('mctestdiv').innerHTML;
-  is(actual, "Mixed Content Blocker disabled", "OK: Executed mixed script in Test 3B");
-
-  
-  gTestWin.gBrowser.removeCurrentTab();
-  test3C();
-}
-
-function test3C() {
-  curContextMenu = function (e) { contextMenuOpenHandler(e, test3D) };
-  gTestWin.document.addEventListener("popupshown", curContextMenu, false);
-
-  
-  let targetElt = gTestWin.content.document.getElementById("Test3");
-  EventUtils.synthesizeMouseAtCenter(targetElt, { type : "contextmenu", button : 2 } , gTestWin.content);
-}
-
-function test3D() {
-  
-  waitForSomeTabToLoad(test3E);
-}
-
-function test3E() {
-  gTestWin.gBrowser.selectTabAtIndex(2);
-
-  
-  assertMixedContentBlockingState(gTestWin.gBrowser, {activeLoaded: true, activeBlocked: false, passiveLoaded: false});
-
-  var actual = gTestWin.content.document.getElementById('mctestdiv').innerHTML;
-  is(actual, "Mixed Content Blocker disabled", "OK: Executed mixed script in Test 3E");
-
-  
-  gTestWin.gBrowser.removeTab(gTestWin.gBrowser.tabs[2], {animate: false});
-  gTestWin.gBrowser.removeTab(gTestWin.gBrowser.tabs[1], {animate: false});
-  gTestWin.gBrowser.selectTabAtIndex(0);
-
-  var childTabLink = gHttpTestRoot1 + "file_bug906190_3_4.html";
-  setUpTest("Test4", "linkForTest4", test4, childTabLink);
-}
-
-
-
-function test4() {
-  curClickHandler = function (e) { clickHandler(e, test4A) };
-  gTestWin.gBrowser.addEventListener("click", curClickHandler, true);
-
-  
-  let targetElt = gTestWin.content.document.getElementById("Test4");
-  EventUtils.synthesizeMouseAtCenter(targetElt, { button: 1 }, gTestWin.content);
-}
-
-function test4A() {
-  
-  waitForSomeTabToLoad(test4B);
-}
-
-function test4B() {
-  gTestWin.gBrowser.selectTabAtIndex(2);
-
-  
-  assertMixedContentBlockingState(gTestWin.gBrowser, {activeLoaded: false, activeBlocked: true, passiveLoaded: false});
-
-  var actual = gTestWin.content.document.getElementById('mctestdiv').innerHTML;
-  is(actual, "Mixed Content Blocker enabled", "OK: Blocked mixed script in Test 4B");
-
-  
-  gTestWin.gBrowser.removeCurrentTab();
-  test4C();
-}
-
-function test4C() {
-  curContextMenu = function (e) { contextMenuOpenHandler(e, test4D) };
-  gTestWin.document.addEventListener("popupshown", curContextMenu, false);
-
-  
-  let targetElt = gTestWin.content.document.getElementById("Test4");
-  EventUtils.synthesizeMouseAtCenter(targetElt, { type : "contextmenu", button : 2 } , gTestWin.content);
-}
-
-function test4D() {
-  
-  waitForSomeTabToLoad(test4E);
-}
-
-function test4E() {
-  gTestWin.gBrowser.selectTabAtIndex(2);
-
-  
-  assertMixedContentBlockingState(gTestWin.gBrowser, {activeLoaded: false, activeBlocked: true, passiveLoaded: false});
-
-  var actual = gTestWin.content.document.getElementById('mctestdiv').innerHTML;
-  is(actual, "Mixed Content Blocker enabled", "OK: Blocked mixed script in Test 4E");
-
-  
-  gTestWin.gBrowser.removeTab(gTestWin.gBrowser.tabs[2], {animate: false});
-  gTestWin.gBrowser.removeTab(gTestWin.gBrowser.tabs[1], {animate: false});
-  gTestWin.gBrowser.selectTabAtIndex(0);
-
-  
-  var childTabLink = gHttpTestRoot1 + "file_bug906190.sjs";
-  setUpTest("Test5", "linkForTest5", test5, childTabLink);
-}
-
-
-
-function test5() {
-  curClickHandler = function (e) { clickHandler(e, test5A) };
-  gTestWin.gBrowser.addEventListener("click", curClickHandler, true);
-
-  
-  let targetElt = gTestWin.content.document.getElementById("Test5");
-  EventUtils.synthesizeMouseAtCenter(targetElt, { button: 1 }, gTestWin.content);
-}
-
-function test5A() {
-  gTestWin.gBrowser.selectTabAtIndex(2);
-
-  
-  
-  let {gIdentityHandler} = gTestWin.gBrowser.ownerGlobal;
-  todo(!gIdentityHandler._identityBox.classList.contains("mixedActiveBlocked"), "OK: Mixed Content is NOT being blocked in Test 5A!");
-
-  var actual = gTestWin.content.document.getElementById('mctestdiv').innerHTML;
-  todo_is(actual, "Mixed Content Blocker disabled", "OK: Executed mixed script in Test 5A!");
-
-  
-  gTestWin.gBrowser.removeCurrentTab();
-  test5B();
-}
-
-function test5B() {
-  curContextMenu = function (e) { contextMenuOpenHandler(e, test5C) };
-  gTestWin.document.addEventListener("popupshown", curContextMenu, false);
-
-  
-  let targetElt = gTestWin.content.document.getElementById("Test5");
-  EventUtils.synthesizeMouseAtCenter(targetElt, { type : "contextmenu", button : 2 } , gTestWin.content);
-}
-
-function test5C() {
-  
-  gTestWin.gBrowser.selectTabAtIndex(2);
-
-  let {gIdentityHandler} = gTestWin.gBrowser.ownerGlobal;
-
-  
-  
-  todo(!gIdentityHandler._identityBox.classList.contains("mixedActiveBlocked"), "OK: Mixed Content is NOT being blocked in Test 5C!");
-
-  var actual = gTestWin.content.document.getElementById('mctestdiv').innerHTML;
-  todo_is(actual, "Mixed Content Blocker disabled", "OK: Executed mixed script in Test 5C!");
-
-  
-  gTestWin.gBrowser.removeTab(gTestWin.gBrowser.tabs[2], {animate: false});
-  gTestWin.gBrowser.removeTab(gTestWin.gBrowser.tabs[1], {animate: false});
-  gTestWin.gBrowser.selectTabAtIndex(0);
-
-  
-  var childTabLink = gHttpTestRoot2 + "file_bug906190.sjs";
-  setUpTest("Test6", "linkForTest6", test6, childTabLink);
-}
-
-
-
-function test6() {
-  curClickHandler = function (e) { clickHandler(e, test6A) };
-  gTestWin.gBrowser.addEventListener("click", curClickHandler, true);
-
-  
-  let targetElt = gTestWin.content.document.getElementById("Test6");
-  EventUtils.synthesizeMouseAtCenter(targetElt, { button: 1 }, gTestWin.content);
-}
-
-function test6A() {
-  gTestWin.gBrowser.selectTabAtIndex(2);
-
-  
-  assertMixedContentBlockingState(gTestWin.gBrowser, {activeLoaded: false, activeBlocked: true, passiveLoaded: false});
-
-  var actual = gTestWin.content.document.getElementById('mctestdiv').innerHTML;
-  is(actual, "Mixed Content Blocker enabled", "OK: Blocked mixed script in Test 6A");
-
-  
-  gTestWin.gBrowser.removeCurrentTab();
-  test6B();
-}
-
-function test6B() {
-  curContextMenu = function (e) { contextMenuOpenHandler(e, test6C) };
-  gTestWin.document.addEventListener("popupshown", curContextMenu, false);
-
-  
-  let targetElt = gTestWin.content.document.getElementById("Test6");
-  EventUtils.synthesizeMouseAtCenter(targetElt, { type : "contextmenu", button : 2 } , gTestWin.content);
-}
-
-function test6C() {
-  gTestWin.gBrowser.selectTabAtIndex(2);
-
-  
-  assertMixedContentBlockingState(gTestWin.gBrowser, {activeLoaded: false, activeBlocked: true, passiveLoaded: false});
-
-  var actual = gTestWin.content.document.getElementById('mctestdiv').innerHTML;
-  is(actual, "Mixed Content Blocker enabled", "OK: Blocked mixed script in Test 6C");
-
-  gTestWin.close();
-  finish();
-}
-
-
-
-function setupTestBrowserWindow() {
-  
-  let doc = gTestWin.content.document;
-  let mainDiv = doc.createElement("div");
-  mainDiv.innerHTML =
-    '<p><a id="linkForTest1" href="'+ gHttpTestRoot1 + 'file_bug906190_1.html">Test 1</a></p>' +
-    '<p><a id="linkForTest2" href="'+ gHttpTestRoot1 + 'file_bug906190_2.html">Test 2</a></p>' +
-    '<p><a id="linkForTest3" href="'+ gHttpTestRoot1 + 'file_bug906190_1.html">Test 3</a></p>' +
-    '<p><a id="linkForTest4" href="'+ gHttpTestRoot2 + 'file_bug906190_1.html">Test 4</a></p>' +
-    '<p><a id="linkForTest5" href="'+ gHttpTestRoot1 + 'file_bug906190_1.html">Test 5</a></p>' +
-    '<p><a id="linkForTest6" href="'+ gHttpTestRoot1 + 'file_bug906190_1.html">Test 6</a></p>';
-  doc.body.appendChild(mainDiv);
-}
-
-function startTests() {
-  mainTab = gTestWin.gBrowser.selectedTab;
-  var childTabLink = gHttpTestRoot1 + "file_bug906190_2.html";
-  setUpTest("Test1", "linkForTest1", test1, childTabLink);
-}
-
-function test() {
-  
-  waitForExplicitFinish();
-
-  
-  origBlockActive = Services.prefs.getBoolPref(PREF_ACTIVE);
-  Services.prefs.setBoolPref(PREF_ACTIVE, true);
-
-  gTestWin = openDialog(location, "", "chrome,all,dialog=no", "about:blank");
-  whenDelayedStartupFinished(gTestWin, function () {
-    info("browser window opened");
-    waitForFocus(function() {
-      info("browser window focused");
-      waitForFocus(function() {
-        info("setting up browser...");
-        setupTestBrowserWindow();
-        info("running tests...");
-        executeSoon(startTests);
-      }, gTestWin.content, true);
-    }, gTestWin);
   });
 }
+
+function simulateCtrlClick(browser) {
+  BrowserTestUtils.synthesizeMouseAtCenter("#linkToOpenInNewTab",
+                                           { ctrlKey: true, metaKey: true },
+                                           browser);
+}
+
+function simulateContextMenuOpenInTab(browser) {
+  BrowserTestUtils.waitForEvent(document, "popupshown", false, event => {
+    
+    document.getElementById("context-openlinkintab").doCommand();
+    event.target.hidePopup();
+    return true;
+  });
+  BrowserTestUtils.synthesizeMouseAtCenter("#linkToOpenInNewTab",
+                                           { type: "contextmenu", button: 2 },
+                                           browser);
+}
+
+
+
+
+function waitForSomeTabToLoad() {
+  return new Promise(resolve => {
+    gBrowser.addEventListener("load", function onLoad(event) {
+      let tab = gBrowser._getTabForContentWindow(event.target.defaultView.top);
+      if (tab) {
+        gBrowser.removeEventListener("load", onLoad, true);
+        resolve();
+      }
+    }, true);
+  });
+}
+
+
+
+
+add_task(function* test_initialize() {
+  yield new Promise(resolve => SpecialPowers.pushPrefEnv({
+    "set": [["security.mixed_content.block_active_content", true]],
+  }, resolve));
+});
+
+
+
+
+
+
+
+add_task(function* test_same_origin() {
+  yield doTest(gHttpTestRoot1 + "file_bug906190_1.html",
+               gHttpTestRoot1 + "file_bug906190_2.html", function* () {
+    
+    
+    
+    yield assertMixedContentBlockingState(gBrowser, {
+      activeLoaded: true, activeBlocked: false, passiveLoaded: false,
+    });
+
+    is(content.document.getElementById('mctestdiv').innerHTML,
+       "Mixed Content Blocker disabled", "OK: Executed mixed script");
+  });
+});
+
+
+
+
+
+
+
+add_task(function* test_different_origin() {
+  yield doTest(gHttpTestRoot1 + "file_bug906190_2.html",
+               gHttpTestRoot2 + "file_bug906190_2.html", function* () {
+    
+    
+    
+    yield assertMixedContentBlockingState(gBrowser, {
+      activeLoaded: false, activeBlocked: true, passiveLoaded: false,
+    });
+
+    is(content.document.getElementById('mctestdiv').innerHTML,
+       "Mixed Content Blocker enabled", "OK: Blocked mixed script");
+  });
+});
+
+
+
+
+
+
+
+
+add_task(function* test_same_origin_metarefresh_same_origin() {
+  
+  yield doTest(gHttpTestRoot1 + "file_bug906190_1.html",
+               gHttpTestRoot1 + "file_bug906190_3_4.html", function* () {
+    
+    yield assertMixedContentBlockingState(gBrowser, {
+      activeLoaded: true, activeBlocked: false, passiveLoaded: false,
+    });
+
+    is(content.document.getElementById('mctestdiv').innerHTML,
+       "Mixed Content Blocker disabled", "OK: Executed mixed script");
+  }, true);
+});
+
+
+
+
+
+
+
+
+add_task(function* test_same_origin_metarefresh_different_origin() {
+  yield doTest(gHttpTestRoot2 + "file_bug906190_1.html",
+               gHttpTestRoot2 + "file_bug906190_3_4.html", function* () {
+    
+    yield assertMixedContentBlockingState(gBrowser, {
+      activeLoaded: false, activeBlocked: true, passiveLoaded: false,
+    });
+
+    is(content.document.getElementById('mctestdiv').innerHTML,
+       "Mixed Content Blocker enabled", "OK: Blocked mixed script");
+  }, true);
+});
+
+
+
+
+
+
+
+
+
+add_task(function* test_same_origin_302redirect_same_origin() {
+  
+  yield doTest(gHttpTestRoot1 + "file_bug906190_1.html",
+               gHttpTestRoot1 + "file_bug906190.sjs", function* () {
+    
+    
+    todo(!gIdentityHandler._identityBox.classList.contains("mixedActiveBlocked"),
+         "OK: Mixed Content is NOT being blocked");
+
+    todo_is(content.document.getElementById('mctestdiv').innerHTML,
+            "Mixed Content Blocker disabled", "OK: Executed mixed script");
+  });
+});
+
+
+
+
+
+
+
+
+add_task(function* test_same_origin_302redirect_different_origin() {
+  
+  yield doTest(gHttpTestRoot2 + "file_bug906190_1.html",
+               gHttpTestRoot2 + "file_bug906190.sjs", function* () {
+    
+    yield assertMixedContentBlockingState(gBrowser, {
+      activeLoaded: false, activeBlocked: true, passiveLoaded: false,
+    });
+
+    is(content.document.getElementById('mctestdiv').innerHTML,
+       "Mixed Content Blocker enabled", "OK: Blocked mixed script");
+  });
+});
