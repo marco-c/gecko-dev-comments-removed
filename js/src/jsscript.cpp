@@ -131,7 +131,10 @@ Bindings::initWithTemporaryStorage(ExclusiveContext* cx, MutableHandle<Bindings>
     
     
     uint32_t nslots = CallObject::RESERVED_SLOTS;
-    uint32_t aliasedBodyLevelLexicalBegin = UINT16_MAX;
+
+    
+    
+    uint32_t aliasedBodyLevelLexicalBegin = LOCALNO_LIMIT;
     for (BindingIter bi(self); bi; bi++) {
         if (bi->aliased()) {
             
