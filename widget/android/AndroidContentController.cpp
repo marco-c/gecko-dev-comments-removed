@@ -4,10 +4,13 @@
 
 
 #include "AndroidContentController.h"
-#include "mozilla/layers/APZCTreeManager.h"
-#include "base/message_loop.h"
-#include "nsWindow.h"
+
 #include "AndroidBridge.h"
+#include "base/message_loop.h"
+#include "mozilla/layers/APZCCallbackHelper.h"
+#include "mozilla/layers/APZCTreeManager.h"
+#include "nsLayoutUtils.h"
+#include "nsWindow.h"
 
 using mozilla::layers::APZCTreeManager;
 
@@ -56,9 +59,24 @@ AndroidContentController::HandleSingleTap(const CSSPoint& aPoint,
     
     
     
-    if (AndroidBridge::IsJavaUiThread()) {
-        CSSIntPoint point = RoundedToInt(aPoint);
-        nsCString data = nsPrintfCString("{ \"x\": %d, \"y\": %d }", point.x, point.y);
+    if (NS_IsMainThread()) {
+        CSSPoint point = mozilla::layers::APZCCallbackHelper::ApplyCallbackTransform(aPoint, aGuid);
+
+        nsIContent* content = nsLayoutUtils::FindContentFor(aGuid.mScrollId);
+        nsIPresShell* shell = content
+            ? mozilla::layers::APZCCallbackHelper::GetRootContentDocumentPresShellForContent(content)
+            : nullptr;
+
+        if (shell && shell->ScaleToResolution()) {
+            
+            
+            const float resolution = shell->GetResolution();
+            point.x /= resolution;
+            point.y /= resolution;
+        }
+
+        CSSIntPoint rounded = RoundedToInt(point);
+        nsCString data = nsPrintfCString("{ \"x\": %d, \"y\": %d }", rounded.x, rounded.y);
         nsAppShell::gAppShell->PostEvent(AndroidGeckoEvent::MakeBroadcastEvent(
                 NS_LITERAL_CSTRING("Gesture:SingleTap"), data));
     }
