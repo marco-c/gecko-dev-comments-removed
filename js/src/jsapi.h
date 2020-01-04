@@ -14,6 +14,7 @@
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/Range.h"
 #include "mozilla/RangedPtr.h"
+#include "mozilla/RefCounted.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/Variant.h"
 
@@ -4506,6 +4507,58 @@ AddPromiseReactions(JSContext* cx, JS::HandleObject promise,
 
 extern JS_PUBLIC_API(JSObject*)
 GetWaitForAllPromise(JSContext* cx, const JS::AutoObjectVector& promises);
+
+
+
+
+
+
+
+
+struct JS_PUBLIC_API(AsyncTask)
+{
+    AsyncTask() : user(nullptr) {}
+    virtual ~AsyncTask() {}
+
+    
+
+
+
+    virtual void finish(JSContext* cx) = 0;
+    virtual void cancel(JSContext* cx) = 0;
+
+    
+    void* user;
+};
+
+
+
+
+
+
+
+
+
+
+
+typedef bool
+(*StartAsyncTaskCallback)(JSContext* cx, AsyncTask* task);
+
+
+
+
+
+
+
+
+typedef bool
+(*FinishAsyncTaskCallback)(AsyncTask* task);
+
+
+
+
+extern JS_PUBLIC_API(void)
+SetAsyncTaskCallbacks(JSContext* cx, StartAsyncTaskCallback start, FinishAsyncTaskCallback finish);
 
 } 
 
