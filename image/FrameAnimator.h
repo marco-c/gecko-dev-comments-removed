@@ -29,7 +29,7 @@ public:
     : mCurrentAnimationFrameIndex(0)
     , mLoopRemainingCount(-1)
     , mLoopCount(-1)
-    , mFirstFrameTimeout(0)
+    , mFirstFrameTimeout(FrameTimeout::FromRawMilliseconds(0))
     , mAnimationMode(aAnimationMode)
     , mDoneDecoding(false)
   { }
@@ -91,7 +91,7 @@ public:
 
 
 
-  void SetFirstFrameTimeout(int32_t aTimeout) { mFirstFrameTimeout = aTimeout; }
+  void SetFirstFrameTimeout(FrameTimeout aTimeout) { mFirstFrameTimeout = aTimeout; }
 
 private:
   friend class FrameAnimator;
@@ -112,7 +112,7 @@ private:
   int32_t mLoopCount;
 
   
-  int32_t mFirstFrameTimeout;
+  FrameTimeout mFirstFrameTimeout;
 
   
   uint16_t mAnimationMode;
@@ -182,12 +182,7 @@ public:
   LookupResult GetCompositedFrame(uint32_t aFrameNum);
 
   
-
-
-
-
-
-  int32_t GetTimeoutForFrame(AnimationState& aState, uint32_t aFrameNum) const;
+  FrameTimeout GetTimeoutForFrame(AnimationState& aState, uint32_t aFrameNum) const;
 
   
 

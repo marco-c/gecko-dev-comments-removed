@@ -53,16 +53,116 @@ enum class Opacity : uint8_t {
 
 
 
+struct FrameTimeout
+{
+  
+
+
+
+
+  static FrameTimeout Zero() { return FrameTimeout(0); }
+
+  
+  static FrameTimeout Forever() { return FrameTimeout(-1); }
+
+  
+  static FrameTimeout FromRawMilliseconds(int32_t aRawMilliseconds)
+  {
+    
+    if (aRawMilliseconds < 0) {
+      return FrameTimeout::Forever();
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (aRawMilliseconds >= 0 && aRawMilliseconds <= 10 ) {
+      return FrameTimeout(100);
+    }
+
+    
+    return FrameTimeout(aRawMilliseconds);
+  }
+
+  bool operator==(const FrameTimeout& aOther) const
+  {
+    return mTimeout == aOther.mTimeout;
+  }
+
+  bool operator!=(const FrameTimeout& aOther) const { return !(*this == aOther); }
+
+  FrameTimeout operator+(const FrameTimeout& aOther)
+  {
+    if (*this == Forever() || aOther == Forever()) {
+      return Forever();
+    }
+
+    return FrameTimeout(mTimeout + aOther.mTimeout);
+  }
+
+  FrameTimeout& operator+=(const FrameTimeout& aOther)
+  {
+    *this = *this + aOther;
+    return *this;
+  }
+
+  
+
+
+
+  uint32_t AsMilliseconds() const
+  {
+    if (*this == Forever()) {
+      MOZ_ASSERT_UNREACHABLE("Calling AsMilliseconds() on an infinite FrameTimeout");
+      return 100;  
+    }
+
+    return uint32_t(mTimeout);
+  }
+
+  
+
+
+
+
+
+
+  int32_t AsEncodedValueDeprecated() const { return mTimeout; }
+
+private:
+  explicit FrameTimeout(int32_t aTimeout)
+    : mTimeout(aTimeout)
+  { }
+
+  int32_t mTimeout;
+};
+
+
+
+
+
+
+
+
 
 struct AnimationData
 {
   AnimationData(uint8_t* aRawData, uint32_t aPaletteDataLength,
-                int32_t aRawTimeout, const nsIntRect& aRect,
+                FrameTimeout aTimeout, const nsIntRect& aRect,
                 BlendMethod aBlendMethod, const Maybe<gfx::IntRect>& aBlendRect,
                 DisposalMethod aDisposalMethod, bool aHasAlpha)
     : mRawData(aRawData)
     , mPaletteDataLength(aPaletteDataLength)
-    , mRawTimeout(aRawTimeout)
+    , mTimeout(aTimeout)
     , mRect(aRect)
     , mBlendMethod(aBlendMethod)
     , mBlendRect(aBlendRect)
@@ -72,7 +172,7 @@ struct AnimationData
 
   uint8_t* mRawData;
   uint32_t mPaletteDataLength;
-  int32_t mRawTimeout;
+  FrameTimeout mTimeout;
   nsIntRect mRect;
   BlendMethod mBlendMethod;
   Maybe<gfx::IntRect> mBlendRect;
@@ -175,11 +275,9 @@ public:
 
 
 
-
-
   void Finish(Opacity aFrameOpacity = Opacity::SOME_TRANSPARENCY,
               DisposalMethod aDisposalMethod = DisposalMethod::KEEP,
-              int32_t aRawTimeout = 0,
+              FrameTimeout aTimeout = FrameTimeout::FromRawMilliseconds(0),
               BlendMethod aBlendMethod = BlendMethod::OVER,
               const Maybe<IntRect>& aBlendRect = Nothing());
 
@@ -313,7 +411,7 @@ private:
   int32_t mLockCount;
 
   
-  int32_t mTimeout; 
+  FrameTimeout mTimeout;
 
   DisposalMethod mDisposalMethod;
   BlendMethod    mBlendMethod;

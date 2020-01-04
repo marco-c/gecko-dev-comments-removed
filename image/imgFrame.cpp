@@ -162,7 +162,7 @@ imgFrame::imgFrame()
   : mMonitor("imgFrame")
   , mDecoded(0, 0, 0, 0)
   , mLockCount(0)
-  , mTimeout(100)
+  , mTimeout(FrameTimeout::FromRawMilliseconds(100))
   , mDisposalMethod(DisposalMethod::NOT_SPECIFIED)
   , mBlendMethod(BlendMethod::OVER)
   , mHasNoAlpha(false)
@@ -707,7 +707,8 @@ imgFrame::ImageUpdatedInternal(const nsIntRect& aUpdateRect)
 void
 imgFrame::Finish(Opacity aFrameOpacity ,
                  DisposalMethod aDisposalMethod ,
-                 int32_t aRawTimeout ,
+                 FrameTimeout aTimeout
+                   ,
                  BlendMethod aBlendMethod ,
                  const Maybe<IntRect>& aBlendRect )
 {
@@ -719,7 +720,7 @@ imgFrame::Finish(Opacity aFrameOpacity ,
   }
 
   mDisposalMethod = aDisposalMethod;
-  mTimeout = aRawTimeout;
+  mTimeout = aTimeout;
   mBlendMethod = aBlendMethod;
   mBlendRect = aBlendRect;
   ImageUpdatedInternal(GetRect());

@@ -334,7 +334,7 @@ protected:
   
   
   
-  void PostIsAnimated(int32_t aFirstFrameTimeout);
+  void PostIsAnimated(FrameTimeout aFirstFrameTimeout);
 
   
   
@@ -343,7 +343,7 @@ protected:
   
   void PostFrameStop(Opacity aFrameOpacity = Opacity::SOME_TRANSPARENCY,
                      DisposalMethod aDisposalMethod = DisposalMethod::KEEP,
-                     int32_t aTimeout = 0,
+                     FrameTimeout aTimeout = FrameTimeout::FromRawMilliseconds(0),
                      BlendMethod aBlendMethod = BlendMethod::OVER,
                      const Maybe<nsIntRect>& aBlendRect = Nothing());
 
