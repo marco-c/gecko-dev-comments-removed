@@ -17,7 +17,6 @@ from .base import Device
 from .emulator_battery import EmulatorBattery
 from .emulator_geo import EmulatorGeo
 from .emulator_screen import EmulatorScreen
-from ..utils import uses_marionette
 from ..errors import TimeoutException
 
 class ArchContext(object):
@@ -174,37 +173,6 @@ class Emulator(Device):
         
         self.userdata.close()
         shutil.rmtree(self.tmpdir)
-
-    
-    @uses_marionette
-    def wait_for_system_message(self, marionette):
-        marionette.set_script_timeout(45000)
-        
-        
-        
-        
-        print 'waiting for system-message-listener-ready...'
-        try:
-            marionette.execute_async_script("""
-waitFor(
-    function() { marionetteScriptFinished(true); },
-    function() { return isSystemMessageListenerReady(); }
-);
-            """)
-        except:
-            
-            
-            exc_name = sys.exc_info()[0].__name__
-            if exc_name != 'ScriptTimeoutException':
-                raise
-
-            print 'timed out'
-            
-            
-            
-            
-            pass
-        print '...done'
 
     def _get_telnet_response(self, command=None):
         output = []
