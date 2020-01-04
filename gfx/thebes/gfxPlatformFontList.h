@@ -120,7 +120,7 @@ public:
 
     void UpdateFontList();
 
-    void ClearLangGroupPrefFonts();
+    virtual void ClearLangGroupPrefFonts();
 
     virtual void GetFontFamilyList(nsTArray<RefPtr<gfxFontFamily> >& aFamilyArray);
 
@@ -313,6 +313,11 @@ protected:
                                 void* aUserArg);
 
     virtual void GetFontFamilyNames(nsTArray<nsString>& aFontFamilyNames);
+
+    
+    nsIAtom* GetLangGroup(nsIAtom* aLanguage);
+
+    static const char* GetGenericName(mozilla::FontFamilyType aGenericType);
 
     
     virtual void InitLoader();

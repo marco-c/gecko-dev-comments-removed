@@ -226,6 +226,13 @@ public:
 
     FcConfig* GetLastConfig() const { return mLastConfig; }
 
+    
+    void AddGenericFonts(mozilla::FontFamilyType aGenericType,
+                         nsIAtom* aLanguage,
+                         nsTArray<gfxFontFamily*>& aFamilyList) override;
+
+    void ClearLangGroupPrefFonts() override;
+
     static FT_Library GetFTLibrary();
 
 protected:
@@ -236,8 +243,11 @@ protected:
 
     
     
-    gfxFontFamily* FindGenericFamily(const nsAString& aGeneric,
-                                     nsIAtom* aLanguage);
+    PrefFontList* FindGenericFamilies(const nsAString& aGeneric,
+                                      nsIAtom* aLanguage);
+
+    
+    bool PrefFontListsUseOnlyGenerics();
 
     static void CheckFontUpdates(nsITimer *aTimer, void *aThis);
 
@@ -254,13 +264,22 @@ protected:
                     FcPattern*> mLocalNames;
 
     
-    nsRefPtrHashtable<nsCStringHashKey, gfxFontFamily> mGenericMappings;
+    nsBaseHashtable<nsCStringHashKey,
+                    nsAutoPtr<PrefFontList>,
+                    PrefFontList*> mGenericMappings;
 
     
     nsRefPtrHashtable<nsCStringHashKey, gfxFontFamily> mFcSubstituteCache;
 
     nsCOMPtr<nsITimer> mCheckFontUpdatesTimer;
     nsCountedRef<FcConfig> mLastConfig;
+
+    
+    
+    
+    
+    
+    bool mAlwaysUseFontconfigGenerics;
 
     static FT_Library sCairoFTLibrary;
 };
