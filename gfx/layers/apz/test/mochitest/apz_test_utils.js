@@ -97,3 +97,26 @@ function flushApzRepaints(aCallback, aWindow = window) {
     repaintDone();
   }
 }
+
+
+
+
+
+
+
+
+
+
+function waitForApzFlushedRepaints(aCallback) {
+  
+  waitForAllPaints(function() {
+    
+    
+    flushApzRepaints(function() {
+      
+      
+      
+      waitForAllPaints(aCallback);
+    });
+  });
+}
