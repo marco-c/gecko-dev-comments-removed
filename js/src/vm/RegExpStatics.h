@@ -46,8 +46,25 @@ class RegExpStatics
     RegExpStatics*          bufferLink;
     bool                    copied;
 
+    
+    size_t matchId;
+
+    
+
+
+
+
+
+
+    bool isRestoredFromModifiedMatch;
+
   public:
-    RegExpStatics() : bufferLink(nullptr), copied(false) { clear(); }
+    RegExpStatics()
+      : bufferLink(nullptr), copied(false),
+        matchId(0), isRestoredFromModifiedMatch(false)
+    {
+        clear();
+    }
     static RegExpStaticsObject* create(ExclusiveContext* cx, Handle<GlobalObject*> parent);
 
   private:
@@ -80,7 +97,10 @@ class RegExpStatics
     void markFlagsSet(JSContext* cx);
 
     struct InitBuffer {};
-    explicit RegExpStatics(InitBuffer) : bufferLink(nullptr), copied(false) {}
+    explicit RegExpStatics(InitBuffer)
+      : bufferLink(nullptr), copied(false),
+        matchId(0), isRestoredFromModifiedMatch(false)
+    {}
 
     friend class PreserveRegExpStatics;
     friend class AutoRegExpStaticsBuffer;
@@ -121,6 +141,8 @@ class RegExpStatics
         MOZ_ASSERT(!pendingLazyEvaluation);
         return matches;
     }
+
+    bool checkRestoredFromModifiedMatch(JSContext* cx);
 
     JSString* getPendingInput() const { return pendingInput; }
 
@@ -222,18 +244,25 @@ class PreserveRegExpStatics
 {
     RegExpStatics * const original;
     AutoRegExpStaticsBuffer buffer;
+    size_t beforeId;
 
   public:
     explicit PreserveRegExpStatics(JSContext* cx, RegExpStatics* original)
      : original(original),
-       buffer(cx)
+       buffer(cx),
+       beforeId(original->matchId)
     {}
 
     bool init(JSContext* cx) {
         return original->save(cx, &buffer.getStatics());
     }
 
-    ~PreserveRegExpStatics() { original->restore(); }
+    ~PreserveRegExpStatics() {
+        if (original->matchId != beforeId)
+            original->isRestoredFromModifiedMatch = true;
+
+        original->restore();
+    }
 };
 
 inline bool
@@ -468,6 +497,8 @@ RegExpStatics::updateLazily(JSContext* cx, JSLinearString* input,
     lazyFlags = shared->flags;
     lazyIndex = lastIndex;
     pendingLazyEvaluation = 1;
+    matchId++;
+    isRestoredFromModifiedMatch = false;
 }
 
 inline bool
@@ -480,6 +511,8 @@ RegExpStatics::updateFromMatchPairs(JSContext* cx, JSLinearString* input, MatchP
     pendingLazyEvaluation = false;
     this->lazySource = nullptr;
     this->lazyIndex = size_t(-1);
+    matchId++;
+    isRestoredFromModifiedMatch = false;
 
     BarrieredSetPair<JSString, JSLinearString>(cx->zone(),
                                                pendingInput, input,
