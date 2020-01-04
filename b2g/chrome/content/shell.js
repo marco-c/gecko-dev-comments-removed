@@ -1092,21 +1092,49 @@ window.addEventListener('ContentStart', function update_onContentStart() {
   updatePrompt.wrappedJSObject.handleContentStart(shell);
 });
 
+
+
+
+
+
+
+
+
 (function geolocationStatusTracker() {
   let gGeolocationActive = false;
+  let GPSChipOn = false;
 
   Services.obs.addObserver(function(aSubject, aTopic, aData) {
     let oldState = gGeolocationActive;
-    if (aData == "starting") {
-      gGeolocationActive = true;
-    } else if (aData == "shutdown") {
-      gGeolocationActive = false;
+    let promptWarning = false;
+    switch (aData) {
+      case "GPSStarting":
+        if (!gGeolocationActive) {
+          gGeolocationActive = true;
+          GPSChipOn = true;
+          promptWarning = true;
+        }
+        break;
+      case "GPSShutdown":
+        if (GPSChipOn) {
+          gGeolocationActive = false;
+          GPSChipOn = false;
+        }
+        break;
+      case "starting":
+        gGeolocationActive = true;
+        GPSChipOn = false;
+        break;
+      case "shutdown":
+        gGeolocationActive = false;
+        break;
     }
 
     if (gGeolocationActive != oldState) {
       shell.sendChromeEvent({
         type: 'geolocation-status',
-        active: gGeolocationActive
+        active: gGeolocationActive,
+        prompt: promptWarning
       });
     }
 }, "geolocation-device-events", false);
