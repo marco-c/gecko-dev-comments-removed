@@ -2395,10 +2395,25 @@ MFilterTypeSet::trySpecializeFloat32(TempAllocator& alloc)
 }
 
 bool
+MFilterTypeSet::canProduceFloat32() const
+{
+    
+    
+    
+    
+    return !input()->isPhi() && input()->canProduceFloat32();
+}
+
+bool
 MFilterTypeSet::canConsumeFloat32(MUse* operand) const
 {
     MOZ_ASSERT(getUseFor(0) == operand);
-    return CheckUsesAreFloat32Consumers(this);
+    
+    
+    bool allConsumerUses = true;
+    for (MUseDefIterator use(this); allConsumerUses && use; use++)
+        allConsumerUses &= !use.def()->isPhi() && use.def()->canConsumeFloat32(use.use());
+    return allConsumerUses;
 }
 
 void
