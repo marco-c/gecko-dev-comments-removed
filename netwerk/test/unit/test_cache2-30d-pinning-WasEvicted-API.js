@@ -76,7 +76,7 @@ function run_test()
       log_("after purge");
       
       
-      testingInterface.suspendCacheIOThread(8);
+      testingInterface.suspendCacheIOThread(7);
 
       log_("clearing");
       
