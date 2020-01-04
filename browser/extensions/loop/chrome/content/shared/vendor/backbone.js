@@ -9,8 +9,8 @@
 
   
   
-  var root = (typeof self == 'object' && self.self == self && self) ||
-            (typeof global == 'object' && global.global == global && global);
+  var root = (typeof self == 'object' && self.self === self && self) ||
+            (typeof global == 'object' && global.global === global && global);
 
   
   if (typeof define === 'function' && define.amd) {
@@ -23,7 +23,7 @@
   
   } else if (typeof exports !== 'undefined') {
     var _ = require('underscore'), $;
-    try { $ = require('jquery'); } catch(e) {}
+    try { $ = require('jquery'); } catch (e) {}
     factory(root, exports, _, $);
 
   
@@ -31,7 +31,7 @@
     root.Backbone = factory(root, {}, root._, (root.jQuery || root.Zepto || root.ender || root.$));
   }
 
-}(function(root, Backbone, _, $) {
+})(function(root, Backbone, _, $) {
 
   
   
@@ -41,10 +41,10 @@
   var previousBackbone = root.Backbone;
 
   
-  var slice = [].slice;
+  var slice = Array.prototype.slice;
 
   
-  Backbone.VERSION = '1.2.1';
+  Backbone.VERSION = '1.3.2';
 
   
   
@@ -70,6 +70,11 @@
 
   
   
+  
+  
+  
+  
+  
   var addMethod = function(length, method, attribute) {
     switch (length) {
       case 1: return function() {
@@ -79,10 +84,10 @@
         return _[method](this[attribute], value);
       };
       case 3: return function(iteratee, context) {
-        return _[method](this[attribute], iteratee, context);
+        return _[method](this[attribute], cb(iteratee, this), context);
       };
       case 4: return function(iteratee, defaultVal, context) {
-        return _[method](this[attribute], iteratee, defaultVal, context);
+        return _[method](this[attribute], cb(iteratee, this), defaultVal, context);
       };
       default: return function() {
         var args = slice.call(arguments);
@@ -95,6 +100,20 @@
     _.each(methods, function(length, method) {
       if (_[method]) Class.prototype[method] = addMethod(length, method, attribute);
     });
+  };
+
+  
+  var cb = function(iteratee, instance) {
+    if (_.isFunction(iteratee)) return iteratee;
+    if (_.isObject(iteratee) && !instance._isModel(iteratee)) return modelMatcher(iteratee);
+    if (_.isString(iteratee)) return function(model) { return model.get(iteratee); };
+    return iteratee;
+  };
+  var modelMatcher = function(attrs) {
+    var matcher = _.matches(attrs);
+    return function(model) {
+      return matcher(model.attributes);
+    };
   };
 
   
@@ -118,25 +137,24 @@
   
   
   
-  
-  
-  var eventsApi = function(iteratee, memo, name, callback, opts) {
+  var eventsApi = function(iteratee, events, name, callback, opts) {
     var i = 0, names;
     if (name && typeof name === 'object') {
       
       if (callback !== void 0 && 'context' in opts && opts.context === void 0) opts.context = callback;
       for (names = _.keys(name); i < names.length ; i++) {
-        memo = iteratee(memo, names[i], name[names[i]], opts);
+        events = eventsApi(iteratee, events, names[i], name[names[i]], opts);
       }
     } else if (name && eventSplitter.test(name)) {
       
       for (names = name.split(eventSplitter); i < names.length; i++) {
-        memo = iteratee(memo, names[i], callback, opts);
+        events = iteratee(events, names[i], callback, opts);
       }
     } else {
-      memo = iteratee(memo, name, callback, opts);
+      
+      events = iteratee(events, name, callback, opts);
     }
-    return memo;
+    return events;
   };
 
   
@@ -146,12 +164,11 @@
   };
 
   
-  
   var internalOn = function(obj, name, callback, context, listening) {
     obj._events = eventsApi(onApi, obj._events || {}, name, callback, {
-        context: context,
-        ctx: obj,
-        listening: listening
+      context: context,
+      ctx: obj,
+      listening: listening
     });
 
     if (listening) {
@@ -164,7 +181,8 @@
 
   
   
-  Events.listenTo =  function(obj, name, callback) {
+  
+  Events.listenTo = function(obj, name, callback) {
     if (!obj) return this;
     var id = obj._listenId || (obj._listenId = _.uniqueId('l'));
     var listeningTo = this._listeningTo || (this._listeningTo = {});
@@ -189,7 +207,7 @@
       var context = options.context, ctx = options.ctx, listening = options.listening;
       if (listening) listening.count++;
 
-      handlers.push({ callback: callback, context: context, ctx: context || ctx, listening: listening });
+      handlers.push({callback: callback, context: context, ctx: context || ctx, listening: listening});
     }
     return events;
   };
@@ -198,18 +216,18 @@
   
   
   
-  Events.off =  function(name, callback, context) {
+  Events.off = function(name, callback, context) {
     if (!this._events) return this;
     this._events = eventsApi(offApi, this._events, name, callback, {
-        context: context,
-        listeners: this._listeners
+      context: context,
+      listeners: this._listeners
     });
     return this;
   };
 
   
   
-  Events.stopListening =  function(obj, name, callback) {
+  Events.stopListening = function(obj, name, callback) {
     var listeningTo = this._listeningTo;
     if (!listeningTo) return this;
 
@@ -224,14 +242,12 @@
 
       listening.obj.off(name, callback, this);
     }
-    if (_.isEmpty(listeningTo)) this._listeningTo = void 0;
 
     return this;
   };
 
   
   var offApi = function(events, name, callback, options) {
-    
     if (!events) return;
 
     var i = 0, listening;
@@ -282,21 +298,22 @@
         delete events[name];
       }
     }
-    if (_.size(events)) return events;
+    return events;
   };
 
   
   
   
   
-  Events.once =  function(name, callback, context) {
+  Events.once = function(name, callback, context) {
     
     var events = eventsApi(onceMap, {}, name, callback, _.bind(this.off, this));
-    return this.on(events, void 0, context);
+    if (typeof name === 'string' && context == null) callback = void 0;
+    return this.on(events, callback, context);
   };
 
   
-  Events.listenToOnce =  function(obj, name, callback) {
+  Events.listenToOnce = function(obj, name, callback) {
     
     var events = eventsApi(onceMap, {}, name, callback, _.bind(this.stopListening, this, obj));
     return this.listenTo(obj, events);
@@ -319,7 +336,7 @@
   
   
   
-  Events.trigger =  function(name) {
+  Events.trigger = function(name) {
     if (!this._events) return this;
 
     var length = Math.max(0, arguments.length - 1);
@@ -331,7 +348,7 @@
   };
 
   
-  var triggerApi = function(objEvents, name, cb, args) {
+  var triggerApi = function(objEvents, name, callback, args) {
     if (objEvents) {
       var events = objEvents[name];
       var allEvents = objEvents.all;
@@ -381,7 +398,8 @@
     this.attributes = {};
     if (options.collection) this.collection = options.collection;
     if (options.parse) attrs = this.parse(attrs, options) || {};
-    attrs = _.defaults({}, attrs, _.result(this, 'defaults'));
+    var defaults = _.result(this, 'defaults');
+    attrs = _.defaults(_.extend({}, defaults, attrs), defaults);
     this.set(attrs, options);
     this.changed = {};
     this.initialize.apply(this, arguments);
@@ -477,9 +495,6 @@
       var prev    = this._previousAttributes;
 
       
-      if (this.idAttribute in attrs) this.id = attrs[this.idAttribute];
-
-      
       for (var attr in attrs) {
         val = attrs[attr];
         if (!_.isEqual(current[attr], val)) changes.push(attr);
@@ -490,6 +505,9 @@
         }
         unset ? delete current[attr] : current[attr] = val;
       }
+
+      
+      if (this.idAttribute in attrs) this.id = this.get(this.idAttribute);
 
       
       if (!silent) {
@@ -602,8 +620,8 @@
       
       if (attrs && !wait) {
         if (!this.set(attrs, options)) return false;
-      } else {
-        if (!this._validate(attrs, options)) return false;
+      } else if (!this._validate(attrs, options)) {
+        return false;
       }
 
       
@@ -697,7 +715,7 @@
 
     
     isValid: function(options) {
-      return this._validate({}, _.defaults({validate: true}, options));
+      return this._validate({}, _.extend({}, options, {validate: true}));
     },
 
     
@@ -714,8 +732,9 @@
   });
 
   
-  var modelMethods = { keys: 1, values: 1, pairs: 1, invert: 1, pick: 0,
-      omit: 0, chain: 1, isEmpty: 1 };
+  
+  var modelMethods = {keys: 1, values: 1, pairs: 1, invert: 1, pick: 0,
+      omit: 0, chain: 1, isEmpty: 1};
 
   
   addUnderscoreMethods(Model, modelMethods, 'attributes');
@@ -747,6 +766,17 @@
   var addOptions = {add: true, remove: false};
 
   
+  var splice = function(array, insert, at) {
+    at = Math.min(Math.max(at, 0), array.length);
+    var tail = Array(array.length - at);
+    var length = insert.length;
+    var i;
+    for (i = 0; i < tail.length; i++) tail[i] = array[i + at];
+    for (i = 0; i < length; i++) array[i + at] = insert[i];
+    for (i = 0; i < tail.length; i++) array[i + length + at] = tail[i];
+  };
+
+  
   _.extend(Collection.prototype, Events, {
 
     
@@ -769,6 +799,8 @@
     },
 
     
+    
+    
     add: function(models, options) {
       return this.set(models, _.extend({merge: false}, options, addOptions));
     },
@@ -777,9 +809,12 @@
     remove: function(models, options) {
       options = _.extend({}, options);
       var singular = !_.isArray(models);
-      models = singular ? [models] : _.clone(models);
+      models = singular ? [models] : models.slice();
       var removed = this._removeModels(models, options);
-      if (!options.silent && removed) this.trigger('update', this, options);
+      if (!options.silent && removed.length) {
+        options.changes = {added: [], merged: [], removed: removed};
+        this.trigger('update', this, options);
+      }
       return singular ? removed[0] : removed;
     },
 
@@ -788,83 +823,93 @@
     
     
     set: function(models, options) {
-      options = _.defaults({}, options, setOptions);
-      if (options.parse && !this._isModel(models)) models = this.parse(models, options);
+      if (models == null) return;
+
+      options = _.extend({}, setOptions, options);
+      if (options.parse && !this._isModel(models)) {
+        models = this.parse(models, options) || [];
+      }
+
       var singular = !_.isArray(models);
-      models = singular ? (models ? [models] : []) : models.slice();
-      var id, model, attrs, existing, sort;
+      models = singular ? [models] : models.slice();
+
       var at = options.at;
       if (at != null) at = +at;
+      if (at > this.length) at = this.length;
       if (at < 0) at += this.length + 1;
-      var sortable = this.comparator && (at == null) && options.sort !== false;
+
+      var set = [];
+      var toAdd = [];
+      var toMerge = [];
+      var toRemove = [];
+      var modelMap = {};
+
+      var add = options.add;
+      var merge = options.merge;
+      var remove = options.remove;
+
+      var sort = false;
+      var sortable = this.comparator && at == null && options.sort !== false;
       var sortAttr = _.isString(this.comparator) ? this.comparator : null;
-      var toAdd = [], toRemove = [], modelMap = {};
-      var add = options.add, merge = options.merge, remove = options.remove;
-      var order = !sortable && add && remove ? [] : false;
-      var orderChanged = false;
 
       
       
-      for (var i = 0; i < models.length; i++) {
-        attrs = models[i];
+      var model, i;
+      for (i = 0; i < models.length; i++) {
+        model = models[i];
 
         
         
-        if (existing = this.get(attrs)) {
-          if (remove) modelMap[existing.cid] = true;
-          if (merge && attrs !== existing) {
-            attrs = this._isModel(attrs) ? attrs.attributes : attrs;
+        var existing = this.get(model);
+        if (existing) {
+          if (merge && model !== existing) {
+            var attrs = this._isModel(model) ? model.attributes : model;
             if (options.parse) attrs = existing.parse(attrs, options);
             existing.set(attrs, options);
-            if (sortable && !sort && existing.hasChanged(sortAttr)) sort = true;
+            toMerge.push(existing);
+            if (sortable && !sort) sort = existing.hasChanged(sortAttr);
+          }
+          if (!modelMap[existing.cid]) {
+            modelMap[existing.cid] = true;
+            set.push(existing);
           }
           models[i] = existing;
 
         
         } else if (add) {
-          model = models[i] = this._prepareModel(attrs, options);
-          if (!model) continue;
-          toAdd.push(model);
-          this._addReference(model, options);
+          model = models[i] = this._prepareModel(model, options);
+          if (model) {
+            toAdd.push(model);
+            this._addReference(model, options);
+            modelMap[model.cid] = true;
+            set.push(model);
+          }
         }
-
-        
-        model = existing || model;
-        if (!model) continue;
-        id = this.modelId(model.attributes);
-        if (order && (model.isNew() || !modelMap[id])) {
-          order.push(model);
-
-          
-          orderChanged = orderChanged || !this.models[i] || model.cid !== this.models[i].cid;
-        }
-
-        modelMap[id] = true;
       }
 
       
       if (remove) {
-        for (var i = 0; i < this.length; i++) {
-          if (!modelMap[(model = this.models[i]).cid]) toRemove.push(model);
+        for (i = 0; i < this.length; i++) {
+          model = this.models[i];
+          if (!modelMap[model.cid]) toRemove.push(model);
         }
         if (toRemove.length) this._removeModels(toRemove, options);
       }
 
       
-      if (toAdd.length || orderChanged) {
+      var orderChanged = false;
+      var replace = !sortable && add && remove;
+      if (set.length && replace) {
+        orderChanged = this.length !== set.length || _.some(this.models, function(m, index) {
+          return m !== set[index];
+        });
+        this.models.length = 0;
+        splice(this.models, set, 0);
+        this.length = this.models.length;
+      } else if (toAdd.length) {
         if (sortable) sort = true;
-        this.length += toAdd.length;
-        if (at != null) {
-          for (var i = 0; i < toAdd.length; i++) {
-            this.models.splice(at + i, 0, toAdd[i]);
-          }
-        } else {
-          if (order) this.models.length = 0;
-          var orderedModels = order || toAdd;
-          for (var i = 0; i < orderedModels.length; i++) {
-            this.models.push(orderedModels[i]);
-          }
-        }
+        splice(this.models, toAdd, at == null ? this.length : at);
+        this.length = this.models.length;
       }
 
       
@@ -872,13 +917,20 @@
 
       
       if (!options.silent) {
-        var addOpts = at != null ? _.clone(options) : options;
-        for (var i = 0; i < toAdd.length; i++) {
-          if (at != null) addOpts.index = at + i;
-          (model = toAdd[i]).trigger('add', model, this, addOpts);
+        for (i = 0; i < toAdd.length; i++) {
+          if (at != null) options.index = at + i;
+          model = toAdd[i];
+          model.trigger('add', model, this, options);
         }
         if (sort || orderChanged) this.trigger('sort', this, options);
-        if (toAdd.length || toRemove.length) this.trigger('update', this, options);
+        if (toAdd.length || toRemove.length || toMerge.length) {
+          options.changes = {
+            added: toAdd,
+            removed: toRemove,
+            merged: toMerge
+          };
+          this.trigger('update', this, options);
+        }
       }
 
       
@@ -929,10 +981,17 @@
     },
 
     
+    
     get: function(obj) {
       if (obj == null) return void 0;
-      var id = this.modelId(this._isModel(obj) ? obj.attributes : obj);
-      return this._byId[obj] || this._byId[id] || this._byId[obj.cid];
+      return this._byId[obj] ||
+        this._byId[this.modelId(obj.attributes || obj)] ||
+        obj.cid && this._byId[obj.cid];
+    },
+
+    
+    has: function(obj) {
+      return this.get(obj) != null;
     },
 
     
@@ -944,10 +1003,7 @@
     
     
     where: function(attrs, first) {
-      var matches = _.matches(attrs);
-      return this[first ? 'find' : 'filter'](function(model) {
-        return matches(model.attributes);
-      });
+      return this[first ? 'find' : 'filter'](attrs);
     },
 
     
@@ -960,23 +1016,26 @@
     
     
     sort: function(options) {
-      if (!this.comparator) throw new Error('Cannot sort a set without a comparator');
+      var comparator = this.comparator;
+      if (!comparator) throw new Error('Cannot sort a set without a comparator');
       options || (options = {});
 
-      
-      if (_.isString(this.comparator) || this.comparator.length === 1) {
-        this.models = this.sortBy(this.comparator, this);
-      } else {
-        this.models.sort(_.bind(this.comparator, this));
-      }
+      var length = comparator.length;
+      if (_.isFunction(comparator)) comparator = _.bind(comparator, this);
 
+      
+      if (length === 1 || _.isString(comparator)) {
+        this.models = this.sortBy(comparator);
+      } else {
+        this.models.sort(comparator);
+      }
       if (!options.silent) this.trigger('sort', this, options);
       return this;
     },
 
     
     pluck: function(attr) {
-      return _.invoke(this.models, 'get', attr);
+      return this.map(attr + '');
     },
 
     
@@ -1007,9 +1066,9 @@
       if (!wait) this.add(model, options);
       var collection = this;
       var success = options.success;
-      options.success = function(model, resp, callbackOpts) {
-        if (wait) collection.add(model, callbackOpts);
-        if (success) success.call(callbackOpts.context, model, resp, callbackOpts);
+      options.success = function(m, resp, callbackOpts) {
+        if (wait) collection.add(m, callbackOpts);
+        if (success) success.call(callbackOpts.context, m, resp, callbackOpts);
       };
       model.save(null, options);
       return model;
@@ -1030,7 +1089,7 @@
     },
 
     
-    modelId: function (attrs) {
+    modelId: function(attrs) {
       return attrs[this.model.prototype.idAttribute || 'id'];
     },
 
@@ -1058,7 +1117,6 @@
     },
 
     
-    
     _removeModels: function(models, options) {
       var removed = [];
       for (var i = 0; i < models.length; i++) {
@@ -1069,6 +1127,12 @@
         this.models.splice(index, 1);
         this.length--;
 
+        
+        
+        delete this._byId[model.cid];
+        var id = this.modelId(model.attributes);
+        if (id != null) delete this._byId[id];
+
         if (!options.silent) {
           options.index = index;
           model.trigger('remove', model, this, options);
@@ -1077,12 +1141,12 @@
         removed.push(model);
         this._removeReference(model, options);
       }
-      return removed.length ? removed : false;
+      return removed;
     },
 
     
     
-    _isModel: function (model) {
+    _isModel: function(model) {
       return model instanceof Model;
     },
 
@@ -1108,14 +1172,16 @@
     
     
     _onModelEvent: function(event, model, collection, options) {
-      if ((event === 'add' || event === 'remove') && collection !== this) return;
-      if (event === 'destroy') this.remove(model, options);
-      if (event === 'change') {
-        var prevId = this.modelId(model.previousAttributes());
-        var id = this.modelId(model.attributes);
-        if (prevId !== id) {
-          if (prevId != null) delete this._byId[prevId];
-          if (id != null) this._byId[id] = model;
+      if (model) {
+        if ((event === 'add' || event === 'remove') && collection !== this) return;
+        if (event === 'destroy') this.remove(model, options);
+        if (event === 'change') {
+          var prevId = this.modelId(model.previousAttributes());
+          var id = this.modelId(model.attributes);
+          if (prevId !== id) {
+            if (prevId != null) delete this._byId[prevId];
+            if (id != null) this._byId[id] = model;
+          }
         }
       }
       this.trigger.apply(this, arguments);
@@ -1126,30 +1192,17 @@
   
   
   
-  var collectionMethods = { forEach: 3, each: 3, map: 3, collect: 3, reduce: 4,
-      foldl: 4, inject: 4, reduceRight: 4, foldr: 4, find: 3, detect: 3, filter: 3,
-      select: 3, reject: 3, every: 3, all: 3, some: 3, any: 3, include: 2,
-      contains: 2, invoke: 0, max: 3, min: 3, toArray: 1, size: 1, first: 3,
+  var collectionMethods = {forEach: 3, each: 3, map: 3, collect: 3, reduce: 0,
+      foldl: 0, inject: 0, reduceRight: 0, foldr: 0, find: 3, detect: 3, filter: 3,
+      select: 3, reject: 3, every: 3, all: 3, some: 3, any: 3, include: 3, includes: 3,
+      contains: 3, invoke: 0, max: 3, min: 3, toArray: 1, size: 1, first: 3,
       head: 3, take: 3, initial: 3, rest: 3, tail: 3, drop: 3, last: 3,
       without: 0, difference: 0, indexOf: 3, shuffle: 1, lastIndexOf: 3,
-      isEmpty: 1, chain: 1, sample: 3, partition: 3 };
+      isEmpty: 1, chain: 1, sample: 3, partition: 3, groupBy: 3, countBy: 3,
+      sortBy: 3, indexBy: 3, findIndex: 3, findLastIndex: 3};
 
   
   addUnderscoreMethods(Collection, collectionMethods, 'models');
-
-  
-  var attributeMethods = ['groupBy', 'countBy', 'sortBy', 'indexBy'];
-
-  
-  _.each(attributeMethods, function(method) {
-    if (!_[method]) return;
-    Collection.prototype[method] = function(value, context) {
-      var iterator = _.isFunction(value) ? value : function(model) {
-        return model.get(value);
-      };
-      return _[method](this.models, iterator, context);
-    };
-  });
 
   
   
@@ -1396,9 +1449,9 @@
   var methodMap = {
     'create': 'POST',
     'update': 'PUT',
-    'patch':  'PATCH',
+    'patch': 'PATCH',
     'delete': 'DELETE',
-    'read':   'GET'
+    'read': 'GET'
   };
 
   
@@ -1518,7 +1571,7 @@
   
   var History = Backbone.History = function() {
     this.handlers = [];
-    _.bindAll(this, 'checkUrl');
+    this.checkUrl = _.bind(this.checkUrl, this);
 
     
     if (typeof window !== 'undefined') {
@@ -1555,8 +1608,8 @@
     
     matchRoot: function() {
       var path = this.decodeFragment(this.location.pathname);
-      var root = path.slice(0, this.root.length - 1) + '/';
-      return root === this.root;
+      var rootPath = path.slice(0, this.root.length - 1) + '/';
+      return rootPath === this.root;
     },
 
     
@@ -1611,7 +1664,7 @@
       this.options          = _.extend({root: '/'}, this.options, options);
       this.root             = this.options.root;
       this._wantsHashChange = this.options.hashChange !== false;
-      this._hasHashChange   = 'onhashchange' in window;
+      this._hasHashChange   = 'onhashchange' in window && (document.documentMode === void 0 || document.documentMode > 7);
       this._useHashChange   = this._wantsHashChange && this._hasHashChange;
       this._wantsPushState  = !!this.options.pushState;
       this._hasPushState    = !!(this.history && this.history.pushState);
@@ -1628,8 +1681,8 @@
         
         
         if (!this._hasPushState && !this.atRoot()) {
-          var root = this.root.slice(0, -1) || '/';
-          this.location.replace(root + '#' + this.getPath());
+          var rootPath = this.root.slice(0, -1) || '/';
+          this.location.replace(rootPath + '#' + this.getPath());
           
           return true;
 
@@ -1658,7 +1711,7 @@
       }
 
       
-      var addEventListener = window.addEventListener || function (eventName, listener) {
+      var addEventListener = window.addEventListener || function(eventName, listener) {
         return attachEvent('on' + eventName, listener);
       };
 
@@ -1679,7 +1732,7 @@
     
     stop: function() {
       
-      var removeEventListener = window.removeEventListener || function (eventName, listener) {
+      var removeEventListener = window.removeEventListener || function(eventName, listener) {
         return detachEvent('on' + eventName, listener);
       };
 
@@ -1730,7 +1783,7 @@
       
       if (!this.matchRoot()) return false;
       fragment = this.fragment = this.getFragment(fragment);
-      return _.any(this.handlers, function(handler) {
+      return _.some(this.handlers, function(handler) {
         if (handler.route.test(fragment)) {
           handler.callback(fragment);
           return true;
@@ -1753,11 +1806,11 @@
       fragment = this.getFragment(fragment || '');
 
       
-      var root = this.root;
+      var rootPath = this.root;
       if (fragment === '' || fragment.charAt(0) === '?') {
-        root = root.slice(0, -1) || '/';
+        rootPath = rootPath.slice(0, -1) || '/';
       }
-      var url = root + fragment;
+      var url = rootPath + fragment;
 
       
       fragment = this.decodeFragment(fragment.replace(pathStripper, ''));
@@ -1773,7 +1826,7 @@
       
       } else if (this._wantsHashChange) {
         this._updateHash(this.location, fragment, options.replace);
-        if (this.iframe && (fragment !== this.getHash(this.iframe.contentWindow))) {
+        if (this.iframe && fragment !== this.getHash(this.iframe.contentWindow)) {
           var iWindow = this.iframe.contentWindow;
 
           
@@ -1836,13 +1889,8 @@
 
     
     
-    var Surrogate = function(){ this.constructor = child; };
-    Surrogate.prototype = parent.prototype;
-    child.prototype = new Surrogate;
-
-    
-    
-    if (protoProps) _.extend(child.prototype, protoProps);
+    child.prototype = _.create(parent.prototype, protoProps);
+    child.prototype.constructor = child;
 
     
     
@@ -1869,5 +1917,4 @@
   };
 
   return Backbone;
-
-}));
+});
