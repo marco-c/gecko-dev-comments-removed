@@ -15,7 +15,6 @@
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/NamedNodeMapBinding.h"
 #include "mozilla/dom/NodeInfoInlines.h"
-#include "mozilla/Telemetry.h"
 #include "nsAttrName.h"
 #include "nsContentUtils.h"
 #include "nsError.h"
@@ -271,21 +270,6 @@ nsDOMAttributeMap::SetNamedItemInternal(Attr& aAttr,
                                         ErrorResult& aError)
 {
   NS_ENSURE_TRUE(mContent, nullptr);
-
-  if (!aAttr.IsNSAware() &&
-      !mContent->IsHTMLElement() &&
-      aAttr.OwnerDoc()->IsHTMLDocument()) {
-    
-    
-    
-    
-    
-    nsIAtom* nameAtom = aAttr.NodeInfo()->NameAtom();
-    if (nsContentUtils::StringContainsASCIIUpper(nsDependentAtomString(nameAtom))) {
-        Telemetry::Accumulate(Telemetry::NONLOWERCASE_NONHTML_ATTR_NODE_SET,
-                              true);
-      }
-  }
 
   
   
