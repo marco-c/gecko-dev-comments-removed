@@ -514,9 +514,8 @@ public:
     
     
     
-    bool SetSpaceGlyphIfSimple(gfxFont *aFont, gfxContext *aContext,
-                               uint32_t aCharIndex, char16_t aSpaceChar,
-                               uint16_t aOrientation);
+    bool SetSpaceGlyphIfSimple(gfxFont *aFont, uint32_t aCharIndex,
+                               char16_t aSpaceChar, uint16_t aOrientation);
 
     
     
