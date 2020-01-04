@@ -15,14 +15,6 @@
 
 
 
-
-
-
-
-
-
-
-
 #ifndef BROTLI_DEC_PORT_H_
 #define BROTLI_DEC_PORT_H_
 
@@ -39,14 +31,6 @@
 
 #ifndef __has_feature
 #define __has_feature(x) 0
-#endif
-
-#ifdef BROTLI_BUILD_PORTABLE
-#define BROTLI_ALIGNED_READ 1
-#define BROTLI_SAFE_MEMMOVE 1
-#else
-#define BROTLI_ALIGNED_READ 0
-#define BROTLI_SAFE_MEMMOVE 0
 #endif
 
 #define BROTLI_ASAN_BUILD __has_feature(address_sanitizer)
@@ -138,7 +122,7 @@
 #define BROTLI_NOINLINE
 #endif
 
-#if BROTLI_ASAN_BUILD && !defined(BROTLI_BUILD_PORTABLE)
+#if BROTLI_ASAN_BUILD
 #define BROTLI_NO_ASAN __attribute__((no_sanitize("address"))) BROTLI_NOINLINE
 #else
 #define BROTLI_NO_ASAN

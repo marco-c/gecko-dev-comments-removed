@@ -88,7 +88,6 @@ void BrotliBuildCodeLengthsHuffmanTable(HuffmanCode* table,
     offset[bits] = symbol;
     bits++;
   });
-  
   offset[0] = 17;
 
   
@@ -103,7 +102,7 @@ void BrotliBuildCodeLengthsHuffmanTable(HuffmanCode* table,
   table_size = 1 << BROTLI_HUFFMAN_MAX_CODE_LENGTH_CODE_LENGTH;
 
   
-  if (offset[0] == 0) {
+  if (offset[BROTLI_HUFFMAN_MAX_CODE_LENGTH_CODE_LENGTH] == 0) {
     code.bits = 0;
     code.value = (uint16_t)sorted[0];
     for (key = 0; key < table_size; ++key) {
