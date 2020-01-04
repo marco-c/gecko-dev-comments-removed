@@ -36,8 +36,6 @@
 #include "nsXPCOMPrivate.h"
 #include "mozilla/ChaosMode.h"
 #include "mozilla/TimeStamp.h"
-#include "nsThreadSyncDispatch.h"
-#include "LeakRefPtr.h"
 
 #ifdef MOZ_CRASHREPORTER
 #include "nsServiceManagerUtils.h"
@@ -543,9 +541,6 @@ nsThread::PutEvent(nsIRunnable* aEvent, nsNestedEventTarget* aTarget)
 nsresult
 nsThread::PutEvent(already_AddRefed<nsIRunnable>&& aEvent, nsNestedEventTarget* aTarget)
 {
-  
-  
-  LeakRefPtr<nsIRunnable> event(Move(aEvent));
   nsCOMPtr<nsIThreadObserver> obs;
 
 #ifdef MOZ_NUWA_PROCESS
@@ -559,9 +554,11 @@ nsThread::PutEvent(already_AddRefed<nsIRunnable>&& aEvent, nsNestedEventTarget* 
     nsChainedEventQueue* queue = aTarget ? aTarget->mQueue : &mEventsRoot;
     if (!queue || (queue == &mEventsRoot && mEventsAreDoomed)) {
       NS_WARNING("An event was posted to a thread that will never run it (rejected)");
-      return NS_ERROR_UNEXPECTED;
+      nsCOMPtr<nsIRunnable> temp(aEvent);
+      nsIRunnable* temp2 = temp.forget().take(); 
+      return temp2 ? NS_ERROR_UNEXPECTED : NS_ERROR_UNEXPECTED; 
     }
-    queue->PutEvent(event.take(), lock);
+    queue->PutEvent(Move(aEvent), lock);
 
     
     
@@ -581,9 +578,7 @@ nsresult
 nsThread::DispatchInternal(already_AddRefed<nsIRunnable>&& aEvent, uint32_t aFlags,
                            nsNestedEventTarget* aTarget)
 {
-  
-  
-  LeakRefPtr<nsIRunnable> event(Move(aEvent));
+  nsCOMPtr<nsIRunnable> event(aEvent);
   if (NS_WARN_IF(!event)) {
     return NS_ERROR_INVALID_ARG;
   }
@@ -594,9 +589,8 @@ nsThread::DispatchInternal(already_AddRefed<nsIRunnable>&& aEvent, uint32_t aFla
   }
 
 #ifdef MOZ_TASK_TRACER
-  nsCOMPtr<nsIRunnable> tracedRunnable = CreateTracedRunnable(event.take());
+  nsCOMPtr<nsIRunnable> tracedRunnable = CreateTracedRunnable(event); 
   (static_cast<TracedRunnable*>(tracedRunnable.get()))->DispatchTask();
-  
   event = tracedRunnable.forget();
 #endif
 
@@ -611,14 +605,10 @@ nsThread::DispatchInternal(already_AddRefed<nsIRunnable>&& aEvent, uint32_t aFla
     
 
     nsRefPtr<nsThreadSyncDispatch> wrapper =
-      new nsThreadSyncDispatch(thread, event.take());
+      new nsThreadSyncDispatch(thread, event.forget());
     nsresult rv = PutEvent(wrapper, aTarget); 
     
     if (NS_FAILED(rv)) {
-      
-      
-      
-      wrapper.get()->Release();
       return rv;
     }
 
@@ -626,13 +616,11 @@ nsThread::DispatchInternal(already_AddRefed<nsIRunnable>&& aEvent, uint32_t aFla
     while (wrapper->IsPending()) {
       NS_ProcessNextEvent(thread, true);
     }
-    
-    
     return wrapper->Result();
   }
 
   NS_ASSERTION(aFlags == NS_DISPATCH_NORMAL, "unexpected dispatch flags");
-  return PutEvent(event.take(), aTarget);
+  return PutEvent(event.forget(), aTarget);
 }
 
 
@@ -1178,6 +1166,20 @@ nsThread::SetScriptObserver(mozilla::CycleCollectedJSRuntime* aScriptObserver)
 
   MOZ_ASSERT(!mScriptObserver);
   mScriptObserver = aScriptObserver;
+}
+
+
+
+NS_IMETHODIMP
+nsThreadSyncDispatch::Run()
+{
+  if (mSyncTask) {
+    mResult = mSyncTask->Run();
+    mSyncTask = nullptr;
+    
+    mOrigin->Dispatch(this, NS_DISPATCH_NORMAL);
+  }
+  return NS_OK;
 }
 
 
