@@ -313,12 +313,12 @@ CreateBackendIndependentTextureHost(const SurfaceDescriptor& aDesc,
 }
 
 TextureHost::TextureHost(TextureFlags aFlags)
-    : mActor(nullptr)
+    : AtomicRefCountedWithFinalize("TextureHost")
+    , mActor(nullptr)
     , mFlags(aFlags)
     , mCompositableCount(0)
     , mFwdTransactionId(0)
 {
-  MOZ_COUNT_CTOR(TextureHost);
 }
 
 TextureHost::~TextureHost()
@@ -328,7 +328,6 @@ TextureHost::~TextureHost()
   
   
   ReadUnlock();
-  MOZ_COUNT_DTOR(TextureHost);
 }
 
 void TextureHost::Finalize()
