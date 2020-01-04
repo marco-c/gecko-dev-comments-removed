@@ -310,10 +310,6 @@ private:
   MozPromiseHolder<CodedFrameProcessingPromise> mProcessingPromise;
 
   MozPromiseHolder<AppendPromise> mAppendPromise;
-  
-  
-  
-  bool mAppendRunning;
 
   
   nsTArray<TrackData*> GetTracksList();
@@ -350,8 +346,6 @@ private:
   nsMainThreadPtrHandle<MediaSourceDecoder> mParentDecoder;
 
   
-  Atomic<bool> mAbort;
-  
   Atomic<bool> mEnded;
 
   
@@ -360,7 +354,13 @@ private:
   Atomic<bool> mEvictionOccurred;
 
   
+  
   mutable Monitor mMonitor;
+  
+  Atomic<bool> mAppendRunning;
+  
+  
+  bool mSegmentParserLoopRunning;
   
   media::TimeIntervals mVideoBufferedRanges;
   media::TimeIntervals mAudioBufferedRanges;
