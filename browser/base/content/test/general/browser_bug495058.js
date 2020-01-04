@@ -15,20 +15,18 @@ add_task(function*() {
     yield BrowserTestUtils.loadURI(tab.linkedBrowser, uri);
 
     let win = gBrowser.replaceTabWithWindow(tab);
-    yield BrowserTestUtils.waitForEvent(win, "load");
-
+    yield TestUtils.topicObserved("browser-delayed-startup-finished",
+                                  subject => subject == win);
     tab = win.gBrowser.selectedTab;
 
     
     
-    let contentPainted = BrowserTestUtils.waitForEvent(tab.linkedBrowser,
-                                                       "MozAfterPaint");
-
-    let delayedStartup =
-      TestUtils.topicObserved("browser-delayed-startup-finished",
-                              subject => subject == win);
-
-    yield Promise.all([delayedStartup, contentPainted]);
+    
+    if (tab.linkedBrowser.isRemoteBrowser) {
+      yield BrowserTestUtils.waitForContentEvent(tab.linkedBrowser, "MozAfterPaint");
+    } else {
+      yield BrowserTestUtils.waitForEvent(tab.linkedBrowser, "MozAfterPaint");
+    }
 
     Assert.equal(win.gBrowser.currentURI.spec, uri, uri + ": uri loaded in detached tab");
     Assert.equal(win.document.activeElement, win.gBrowser.selectedBrowser, uri + ": browser is focused");
