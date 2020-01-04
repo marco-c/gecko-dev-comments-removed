@@ -3076,7 +3076,7 @@ nsCycleCollector::ScanIncrementalRoots()
       
       
       if (pi->mParticipant == jsParticipant) {
-        JS::GCCellPtr ptr(pi->mPointer, JS::GCThingTraceKind(pi->mPointer));
+        JS::GCCellPtr ptr(pi->mPointer, js::GCThingTraceKind(pi->mPointer));
         if (GCThingIsGrayCCThing(ptr)) {
           continue;
         }
@@ -3291,7 +3291,7 @@ nsCycleCollector::CollectWhite()
           ++numWhiteJSZones;
           zone = static_cast<JS::Zone*>(pinfo->mPointer);
         } else {
-          JS::GCCellPtr ptr(pinfo->mPointer, JS::GCThingTraceKind(pinfo->mPointer));
+          JS::GCCellPtr ptr(pinfo->mPointer, js::GCThingTraceKind(pinfo->mPointer));
           zone = JS::GetTenuredGCThingZone(ptr);
         }
         mJSRuntime->AddZoneWaitingForGC(zone);
