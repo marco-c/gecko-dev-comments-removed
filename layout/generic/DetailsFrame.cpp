@@ -54,9 +54,10 @@ DetailsFrame::SetInitialChildList(ChildListID aListID, nsFrameList& aChildList)
       
       
       for (nsIFrame* child : aChildList) {
-        auto* realFrame = nsPlaceholderFrame::GetRealFrameFor(child);
-        auto* cif = realFrame->GetContentInsertionFrame();
-        if (cif && cif->GetType() == nsGkAtoms::summaryFrame) {
+        HTMLSummaryElement* summary =
+          HTMLSummaryElement::FromContent(child->GetContent());
+
+        if (summary && summary->IsMainSummary()) {
           
           
           aChildList.RemoveFrame(child);
