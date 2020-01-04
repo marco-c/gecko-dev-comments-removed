@@ -38,8 +38,8 @@ TEST(ImageDecoders, ImageModuleAvailable)
   EXPECT_TRUE(imgTools != nullptr);
 }
 
-static void
-CheckDecoderResults(const ImageTestCase& aTestCase, Decoder* aDecoder)
+static already_AddRefed<SourceSurface>
+CheckDecoderState(const ImageTestCase& aTestCase, Decoder* aDecoder)
 {
   EXPECT_TRUE(aDecoder->GetDecodeDone());
   EXPECT_EQ(bool(aTestCase.mFlags & TEST_CASE_HAS_ERROR),
@@ -52,7 +52,7 @@ CheckDecoderResults(const ImageTestCase& aTestCase, Decoder* aDecoder)
             bool(progress & FLAG_HAS_ERROR));
 
   if (aTestCase.mFlags & TEST_CASE_HAS_ERROR) {
-    return;  
+    return nullptr;  
   }
 
   EXPECT_TRUE(bool(progress & FLAG_SIZE_AVAILABLE));
@@ -77,13 +77,28 @@ CheckDecoderResults(const ImageTestCase& aTestCase, Decoder* aDecoder)
   EXPECT_EQ(SurfaceType::DATA, surface->GetType());
   EXPECT_TRUE(surface->GetFormat() == SurfaceFormat::B8G8R8X8 ||
               surface->GetFormat() == SurfaceFormat::B8G8R8A8);
-  EXPECT_EQ(aTestCase.mSize, surface->GetSize());
+  EXPECT_EQ(aTestCase.mOutputSize, surface->GetSize());
+
+  return surface.forget();
+}
+
+static void
+CheckDecoderResults(const ImageTestCase& aTestCase, Decoder* aDecoder)
+{
+  RefPtr<SourceSurface> surface = CheckDecoderState(aTestCase, aDecoder);
+  if (!surface) {
+    return;
+  }
+
+  
   EXPECT_TRUE(IsSolidColor(surface, BGRAColor::Green(),
                            aTestCase.mFlags & TEST_CASE_IS_FUZZY ? 1 : 0));
 }
 
-static void
-CheckDecoderSingleChunk(const ImageTestCase& aTestCase)
+template <typename Func>
+void WithSingleChunkDecode(const ImageTestCase& aTestCase,
+                           const Maybe<IntSize>& aOutputSize,
+                           Func aResultChecker)
 {
   nsCOMPtr<nsIInputStream> inputStream = LoadFile(aTestCase.mPath);
   ASSERT_TRUE(inputStream != nullptr);
@@ -104,14 +119,23 @@ CheckDecoderSingleChunk(const ImageTestCase& aTestCase)
   DecoderType decoderType =
     DecoderFactory::GetDecoderType(aTestCase.mMimeType);
   RefPtr<Decoder> decoder =
-    DecoderFactory::CreateAnonymousDecoder(decoderType, sourceBuffer, Nothing(),
+    DecoderFactory::CreateAnonymousDecoder(decoderType, sourceBuffer, aOutputSize,
                                            DefaultSurfaceFlags());
   ASSERT_TRUE(decoder != nullptr);
 
   
   decoder->Decode();
+
   
-  CheckDecoderResults(aTestCase, decoder);
+  aResultChecker(decoder);
+}
+
+static void
+CheckDecoderSingleChunk(const ImageTestCase& aTestCase)
+{
+  WithSingleChunkDecode(aTestCase, Nothing(), [&](Decoder* aDecoder) {
+    CheckDecoderResults(aTestCase, aDecoder);
+  });
 }
 
 class NoResume : public IResumable
@@ -167,6 +191,32 @@ CheckDecoderMultiChunk(const ImageTestCase& aTestCase)
   CheckDecoderResults(aTestCase, decoder);
 }
 
+static void
+CheckDownscaleDuringDecode(const ImageTestCase& aTestCase)
+{
+  
+  
+  
+  IntSize outputSize(20, 20);
+
+  WithSingleChunkDecode(aTestCase, Some(outputSize), [&](Decoder* aDecoder) {
+    RefPtr<SourceSurface> surface = CheckDecoderState(aTestCase, aDecoder);
+
+    
+    
+    EXPECT_TRUE(surface != nullptr);
+
+    
+    
+    
+    
+    EXPECT_TRUE(RowsAreSolidColor(surface, 0, 4, BGRAColor::Green(),  3));
+    EXPECT_TRUE(RowsAreSolidColor(surface, 6, 3, BGRAColor::Red(),  4));
+    EXPECT_TRUE(RowsAreSolidColor(surface, 11, 3, BGRAColor::Green(),  3));
+    EXPECT_TRUE(RowsAreSolidColor(surface, 16, 4, BGRAColor::Red(),  3));
+  });
+}
+
 TEST(ImageDecoders, PNGSingleChunk)
 {
   CheckDecoderSingleChunk(GreenPNGTestCase());
@@ -175,6 +225,11 @@ TEST(ImageDecoders, PNGSingleChunk)
 TEST(ImageDecoders, PNGMultiChunk)
 {
   CheckDecoderMultiChunk(GreenPNGTestCase());
+}
+
+TEST(ImageDecoders, PNGDownscaleDuringDecode)
+{
+  CheckDownscaleDuringDecode(DownscaledPNGTestCase());
 }
 
 TEST(ImageDecoders, GIFSingleChunk)
@@ -187,6 +242,11 @@ TEST(ImageDecoders, GIFMultiChunk)
   CheckDecoderMultiChunk(GreenGIFTestCase());
 }
 
+TEST(ImageDecoders, GIFDownscaleDuringDecode)
+{
+  CheckDownscaleDuringDecode(DownscaledGIFTestCase());
+}
+
 TEST(ImageDecoders, JPGSingleChunk)
 {
   CheckDecoderSingleChunk(GreenJPGTestCase());
@@ -195,6 +255,11 @@ TEST(ImageDecoders, JPGSingleChunk)
 TEST(ImageDecoders, JPGMultiChunk)
 {
   CheckDecoderMultiChunk(GreenJPGTestCase());
+}
+
+TEST(ImageDecoders, JPGDownscaleDuringDecode)
+{
+  CheckDownscaleDuringDecode(DownscaledJPGTestCase());
 }
 
 TEST(ImageDecoders, BMPSingleChunk)
@@ -207,6 +272,11 @@ TEST(ImageDecoders, BMPMultiChunk)
   CheckDecoderMultiChunk(GreenBMPTestCase());
 }
 
+TEST(ImageDecoders, BMPDownscaleDuringDecode)
+{
+  CheckDownscaleDuringDecode(DownscaledBMPTestCase());
+}
+
 TEST(ImageDecoders, ICOSingleChunk)
 {
   CheckDecoderSingleChunk(GreenICOTestCase());
@@ -217,6 +287,11 @@ TEST(ImageDecoders, ICOMultiChunk)
   CheckDecoderMultiChunk(GreenICOTestCase());
 }
 
+TEST(ImageDecoders, ICODownscaleDuringDecode)
+{
+  CheckDownscaleDuringDecode(DownscaledICOTestCase());
+}
+
 TEST(ImageDecoders, IconSingleChunk)
 {
   CheckDecoderSingleChunk(GreenIconTestCase());
@@ -225,6 +300,11 @@ TEST(ImageDecoders, IconSingleChunk)
 TEST(ImageDecoders, IconMultiChunk)
 {
   CheckDecoderMultiChunk(GreenIconTestCase());
+}
+
+TEST(ImageDecoders, IconDownscaleDuringDecode)
+{
+  CheckDownscaleDuringDecode(DownscaledIconTestCase());
 }
 
 TEST(ImageDecoders, AnimatedGIFSingleChunk)
