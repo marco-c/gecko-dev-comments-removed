@@ -584,6 +584,7 @@ public:
                                         
                                         
     uint16_t mShrinkWrap:1; 
+    uint16_t mUseAutoBSize:1; 
     uint16_t mStaticPosIsCBOrigin:1; 
   } mFlags;
 
@@ -683,7 +684,11 @@ public:
 
     
     
-    STATIC_POS_IS_CB_ORIGIN = (1<<3),
+    COMPUTE_SIZE_USE_AUTO_BSIZE = (1<<3),
+
+    
+    
+    STATIC_POS_IS_CB_ORIGIN = (1<<4),
   };
 
   
