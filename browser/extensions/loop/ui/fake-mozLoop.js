@@ -156,8 +156,8 @@ var fakeRooms = [
     GetLoopPref: function(pref) {
       switch (pref) {
         
-        case "gettingStarted.seen":
-          return true;
+        case "gettingStarted.latestFTUVersion":
+          return 1;
       }
       return null;
     },
