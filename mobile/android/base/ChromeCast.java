@@ -86,13 +86,23 @@ class ChromeCast implements GeckoMediaPlayer {
         @Override
         public void onStatusUpdated() {
             MediaStatus mediaStatus = remoteMediaPlayer.getMediaStatus();
-            boolean isPlaying = mediaStatus.getPlayerState() == MediaStatus.PLAYER_STATE_PLAYING;
 
-            
-            if (mediaStatus.getPlayerState() == MediaStatus.PLAYER_STATE_IDLE &&
-                mediaStatus.getIdleReason() == MediaStatus.IDLE_REASON_FINISHED) {
-
-                GeckoAppShell.sendEventToGecko(GeckoEvent.createBroadcastEvent("Casting:Stop", null));
+            switch (mediaStatus.getPlayerState()) {
+            case MediaStatus.PLAYER_STATE_PLAYING:
+                GeckoAppShell.sendEventToGecko(GeckoEvent.createBroadcastEvent("MediaPlayer:Playing", null));
+                break;
+            case MediaStatus.PLAYER_STATE_PAUSED:
+                GeckoAppShell.sendEventToGecko(GeckoEvent.createBroadcastEvent("MediaPlayer:Paused", null));
+                break;
+            case MediaStatus.PLAYER_STATE_IDLE:
+                
+                if (mediaStatus.getIdleReason() == MediaStatus.IDLE_REASON_FINISHED) {
+                    GeckoAppShell.sendEventToGecko(GeckoEvent.createBroadcastEvent("Casting:Stop", null));
+                }
+                break;
+            default:
+                
+                break;
             }
         }
 
