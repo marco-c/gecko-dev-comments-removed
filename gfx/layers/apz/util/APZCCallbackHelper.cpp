@@ -41,26 +41,35 @@ static void
 AdjustDisplayPortForScrollDelta(mozilla::layers::FrameMetrics& aFrameMetrics,
                                 const CSSPoint& aActualScrollOffset)
 {
-    
-    
-    ScreenPoint shift =
-        (aFrameMetrics.GetScrollOffset() - aActualScrollOffset) *
-        aFrameMetrics.DisplayportPixelsPerCSSPixel();
-    ScreenMargin margins = aFrameMetrics.GetDisplayPortMargins();
-    margins.left -= shift.x;
-    margins.right += shift.x;
-    margins.top -= shift.y;
-    margins.bottom += shift.y;
-    aFrameMetrics.SetDisplayPortMargins(margins);
+  
+  
+  
+  
+  
+  if (aFrameMetrics.IsScrollInfoLayer()) {
+    return;
+  }
+
+  
+  
+  ScreenPoint shift =
+      (aFrameMetrics.GetScrollOffset() - aActualScrollOffset) *
+      aFrameMetrics.DisplayportPixelsPerCSSPixel();
+  ScreenMargin margins = aFrameMetrics.GetDisplayPortMargins();
+  margins.left -= shift.x;
+  margins.right += shift.x;
+  margins.top -= shift.y;
+  margins.bottom += shift.y;
+  aFrameMetrics.SetDisplayPortMargins(margins);
 }
 
 static void
 RecenterDisplayPort(mozilla::layers::FrameMetrics& aFrameMetrics)
 {
-    ScreenMargin margins = aFrameMetrics.GetDisplayPortMargins();
-    margins.right = margins.left = margins.LeftRight() / 2;
-    margins.top = margins.bottom = margins.TopBottom() / 2;
-    aFrameMetrics.SetDisplayPortMargins(margins);
+  ScreenMargin margins = aFrameMetrics.GetDisplayPortMargins();
+  margins.right = margins.left = margins.LeftRight() / 2;
+  margins.top = margins.bottom = margins.TopBottom() / 2;
+  aFrameMetrics.SetDisplayPortMargins(margins);
 }
 
 static CSSPoint
