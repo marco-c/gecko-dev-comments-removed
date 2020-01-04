@@ -231,8 +231,8 @@ nsChannelClassifier::NotifyTrackingProtectionDisabled(nsIChannel *aChannel)
     if (!docShell) {
       return NS_OK;
     }
-    nsCOMPtr<nsIDocument> doc = do_GetInterface(docShell, &rv);
-    NS_ENSURE_SUCCESS(rv, NS_OK);
+    nsCOMPtr<nsIDocument> doc = docShell->GetDocument();
+    NS_ENSURE_TRUE(doc, NS_OK);
 
     
     
@@ -543,8 +543,8 @@ nsChannelClassifier::SetBlockedTrackingContent(nsIChannel *channel)
   if (!docShell) {
     return NS_OK;
   }
-  nsCOMPtr<nsIDocument> doc = do_GetInterface(docShell, &rv);
-  NS_ENSURE_SUCCESS(rv, NS_OK);
+  nsCOMPtr<nsIDocument> doc = docShell->GetDocument();
+  NS_ENSURE_TRUE(doc, NS_OK);
 
   
   

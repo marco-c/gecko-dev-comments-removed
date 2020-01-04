@@ -87,7 +87,7 @@ public:
     NS_ASSERTION(sameTypeRoot, "No document shell root tree item from document shell tree item!");
 
     
-    nsCOMPtr<nsIDocument> rootDoc = do_GetInterface(sameTypeRoot);
+    nsCOMPtr<nsIDocument> rootDoc = sameTypeRoot->GetDocument();
     NS_ASSERTION(rootDoc, "No root document from document shell root tree item.");
 
     
@@ -764,7 +764,7 @@ nsMixedContentBlocker::ShouldLoad(bool aHadInsecureImageRedirect,
   }
 
   
-  nsCOMPtr<nsIDocument> rootDoc = do_GetInterface(sameTypeRoot);
+  nsCOMPtr<nsIDocument> rootDoc = sameTypeRoot->GetDocument();
   NS_ASSERTION(rootDoc, "No root document from document shell root tree item.");
 
   
