@@ -4814,4 +4814,5 @@ AppcacheObserver.prototype = {
   }
 };
 
-DOMApplicationRegistry.init();
+
+
