@@ -310,7 +310,7 @@ MacroAssembler::leaveExitFrame(size_t extraFrame)
 bool
 MacroAssembler::hasSelfReference() const
 {
-    return selfReferencePatch_.used();
+    return selfReferencePatch_.bound();
 }
 
 
