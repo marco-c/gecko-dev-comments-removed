@@ -2207,13 +2207,19 @@ nsImageFrame::LoadIcon(const nsAString& aSpec,
   nsLoadFlags loadFlags = nsIRequest::LOAD_NORMAL;
   nsContentPolicyType contentPolicyType = nsIContentPolicy::TYPE_INTERNAL_IMAGE;
 
+  nsCOMPtr<nsIScriptSecurityManager> ssm = nsContentUtils::GetSecurityManager();
+  NS_ENSURE_TRUE(ssm, NS_ERROR_FAILURE);
+  nsCOMPtr<nsIPrincipal> systemPrincipal;
+  ssm->GetSystemPrincipal(getter_AddRefs(systemPrincipal));
+  NS_ENSURE_TRUE(systemPrincipal, NS_ERROR_FAILURE);
+
   return il->LoadImage(realURI,     
                        nullptr,      
 
 
                        nullptr,      
                        mozilla::net::RP_Default,
-                       nullptr,      
+                       systemPrincipal, 
                        loadGroup,
                        gIconLoad,
                        nullptr,      
