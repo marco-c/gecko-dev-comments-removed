@@ -221,9 +221,11 @@ GlobalObject::resolveConstructor(JSContext* cx, Handle<GlobalObject*> global, JS
 
     
     
-    if (!StandardClassIsDependent(key)) {
+    
+    
+    if (!StandardClassIsDependent(key) && !cx->runtime()->isSelfHostingGlobal(global)) {
         if (const JSFunctionSpec* funs = clasp->spec.prototypeFunctions()) {
-            if (!JS_DefineFunctions(cx, proto, funs, DontDefineLateProperties))
+            if (!JS_DefineFunctions(cx, proto, funs))
                 return false;
         }
         if (const JSPropertySpec* props = clasp->spec.prototypeProperties()) {
@@ -231,7 +233,7 @@ GlobalObject::resolveConstructor(JSContext* cx, Handle<GlobalObject*> global, JS
                 return false;
         }
         if (const JSFunctionSpec* funs = clasp->spec.constructorFunctions()) {
-            if (!JS_DefineFunctions(cx, ctor, funs, DontDefineLateProperties))
+            if (!JS_DefineFunctions(cx, ctor, funs))
                 return false;
         }
         if (const JSPropertySpec* props = clasp->spec.constructorProperties()) {

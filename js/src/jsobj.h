@@ -992,8 +992,7 @@ enum DefineAsIntrinsic {
 
 extern bool
 DefineFunctions(JSContext* cx, HandleObject obj, const JSFunctionSpec* fs,
-                DefineAsIntrinsic intrinsic,
-                PropertyDefinitionBehavior behavior = DefineAllProperties);
+                DefineAsIntrinsic intrinsic);
 
 
 
