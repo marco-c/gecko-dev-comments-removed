@@ -19,7 +19,7 @@ loader.lazyRequireGetter(this, "gDevTools", "devtools/client/framework/devtools"
 loader.lazyRequireGetter(this, "TableWidget", "devtools/client/shared/widgets/TableWidget", true);
 loader.lazyRequireGetter(this, "ObjectClient", "devtools/shared/client/main", true);
 
-const Heritage = require("sdk/core/heritage");
+const { extend } = require("sdk/core/heritage");
 const URI = Cc["@mozilla.org/network/io-service;1"].getService(Ci.nsIIOService);
 const XHTML_NS = "http://www.w3.org/1999/xhtml";
 const XUL_NS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
@@ -62,17 +62,23 @@ const COMPAT = {
   
   
   
+  
+  
+  
   PREFERENCE_KEYS: [
     
-    [ "network", "netwarn", null, "networkinfo", ],  
-    [ "csserror", "cssparser", null, null, ],  
-    [ "exception", "jswarn", null, "jslog", ],  
-    [ "error", "warn", "info", "log", ],  
-    [ null, null, null, null, ],  
-    [ null, null, null, null, ],  
-    [ "secerror", "secwarn", null, null, ],  
-    [ "servererror", "serverwarn", "serverinfo", "serverlog", ],  
+    [ "network",     "netwarn",    null,         "networkinfo", ],  
+    [ "csserror",    "cssparser",  null,         null,          ],  
+    [ "exception",   "jswarn",     null,         "jslog",       ],  
+    [ "error",       "warn",       "info",       "log",         ],  
+    [ null,          null,         null,         null,          ],  
+    [ null,          null,         null,         null,          ],  
+    [ "secerror",    "secwarn",    null,         null,          ],  
+    [ "servererror", "serverwarn", "serverinfo", "serverlog",   ],  
   ],
+  
+  
+  
 
   
   CATEGORY_CLASS_FRAGMENTS: [ "network", "cssparser", "exception", "console",
@@ -572,7 +578,7 @@ Messages.BaseMessage.prototype = {
     }
     this.widgets.clear();
   }
-}; 
+};
 
 
 
@@ -585,9 +591,7 @@ Messages.BaseMessage.prototype = {
 
 
 
-
-Messages.NavigationMarker = function (response, timestamp)
-{
+Messages.NavigationMarker = function (response, timestamp) {
   Messages.BaseMessage.call(this);
 
   
@@ -598,14 +602,13 @@ Messages.NavigationMarker = function (response, timestamp)
   this.timestamp = timestamp;
 };
 
-Messages.NavigationMarker.prototype = Heritage.extend(Messages.BaseMessage.prototype,
-  {
+Messages.NavigationMarker.prototype = extend(Messages.BaseMessage.prototype, {
   
 
 
 
 
-    _url: null,
+  _url: null,
 
   
 
@@ -613,48 +616,47 @@ Messages.NavigationMarker.prototype = Heritage.extend(Messages.BaseMessage.proto
 
 
 
-    timestamp: 0,
+  timestamp: 0,
 
-    _categoryCompat: COMPAT.CATEGORIES.NETWORK,
-    _severityCompat: COMPAT.SEVERITIES.LOG,
-    _categoryNameCompat: "network",
-    _severityNameCompat: "info",
-    _filterKeyCompat: "networkinfo",
+  _categoryCompat: COMPAT.CATEGORIES.NETWORK,
+  _severityCompat: COMPAT.SEVERITIES.LOG,
+  _categoryNameCompat: "network",
+  _severityNameCompat: "info",
+  _filterKeyCompat: "networkinfo",
 
   
 
 
 
-    render: function ()
-  {
-      if (this.element) {
-        return this;
-      }
-
-      let url = this._url;
-      let pos = url.indexOf("?");
-      if (pos > -1) {
-        url = url.substr(0, pos);
-      }
-
-      let doc = this.output.document;
-      let urlnode = doc.createElementNS(XHTML_NS, "a");
-      urlnode.className = "url";
-      urlnode.textContent = url;
-      urlnode.title = this._url;
-      urlnode.href = this._url;
-      urlnode.draggable = false;
-      this._addLinkCallback(urlnode);
-
-      let render = Messages.BaseMessage.prototype.render.bind(this);
-      render().element.appendChild(urlnode);
-      this.element.classList.add("navigation-marker");
-      this.element.url = this._url;
-      this.element.appendChild(doc.createTextNode("\n"));
-
+  render: function () {
+    if (this.element) {
       return this;
-    },
-  }); 
+    }
+
+    let url = this._url;
+    let pos = url.indexOf("?");
+    if (pos > -1) {
+      url = url.substr(0, pos);
+    }
+
+    let doc = this.output.document;
+    let urlnode = doc.createElementNS(XHTML_NS, "a");
+    urlnode.className = "url";
+    urlnode.textContent = url;
+    urlnode.title = this._url;
+    urlnode.href = this._url;
+    urlnode.draggable = false;
+    this._addLinkCallback(urlnode);
+
+    let render = Messages.BaseMessage.prototype.render.bind(this);
+    render().element.appendChild(urlnode);
+    this.element.classList.add("navigation-marker");
+    this.element.url = this._url;
+    this.element.appendChild(doc.createTextNode("\n"));
+
+    return this;
+  },
+});
 
 
 
@@ -684,9 +686,7 @@ Messages.NavigationMarker.prototype = Heritage.extend(Messages.BaseMessage.proto
 
 
 
-
-Messages.Simple = function (message, options = {})
-{
+Messages.Simple = function (message, options = {}) {
   Messages.BaseMessage.call(this);
 
   this.category = options.category;
@@ -706,72 +706,24 @@ Messages.Simple = function (message, options = {})
   this._onClickCollapsible = this._onClickCollapsible.bind(this);
 };
 
-Messages.Simple.prototype = Heritage.extend(Messages.BaseMessage.prototype,
-  {
+Messages.Simple.prototype = extend(Messages.BaseMessage.prototype, {
   
 
 
 
-    category: null,
-
-  
-
-
-
-    severity: null,
+  category: null,
 
   
 
 
 
-    location: null,
+  severity: null,
 
   
 
 
 
-
-
-    stack: null,
-
-  
-
-
-
-    prefix: null,
-
-  
-
-
-
-    private: false,
-
-  
-
-
-
-
-    _className: null,
-
-  
-
-
-
-
-    _link: null,
-
-  
-
-
-
-
-    _linkCallback: null,
-
-  
-
-
-
-    _filterDuplicates: false,
+  location: null,
 
   
 
@@ -779,11 +731,46 @@ Messages.Simple.prototype = Heritage.extend(Messages.BaseMessage.prototype,
 
 
 
+  stack: null,
 
-    _message: null,
+  
 
-    _objectActors: null,
-    _groupDepthCompat: 0,
+
+
+  prefix: null,
+
+  
+
+
+
+  private: false,
+
+  
+
+
+
+
+  _className: null,
+
+  
+
+
+
+
+  _link: null,
+
+  
+
+
+
+
+  _linkCallback: null,
+
+  
+
+
+
+  _filterDuplicates: false,
 
   
 
@@ -791,248 +778,260 @@ Messages.Simple.prototype = Heritage.extend(Messages.BaseMessage.prototype,
 
 
 
-    timestamp: 0,
 
-    get _categoryCompat() {
-      return this.category ?
+  _message: null,
+
+  _objectActors: null,
+  _groupDepthCompat: 0,
+
+  
+
+
+
+
+
+  timestamp: 0,
+
+  get _categoryCompat() {
+    return this.category ?
            COMPAT.CATEGORIES[this.category.toUpperCase()] : null;
-    },
-    get _severityCompat() {
-      return this.severity ?
+  },
+  get _severityCompat() {
+    return this.severity ?
            COMPAT.SEVERITIES[this.severity.toUpperCase()] : null;
-    },
-    get _categoryNameCompat() {
-      return this.category ?
+  },
+  get _categoryNameCompat() {
+    return this.category ?
            COMPAT.CATEGORY_CLASS_FRAGMENTS[this._categoryCompat] : null;
-    },
-    get _severityNameCompat() {
-      return this.severity ?
+  },
+  get _severityNameCompat() {
+    return this.severity ?
            COMPAT.SEVERITY_CLASS_FRAGMENTS[this._severityCompat] : null;
-    },
+  },
 
-    get _filterKeyCompat() {
-      return this._categoryCompat !== null && this._severityCompat !== null ?
+  get _filterKeyCompat() {
+    return this._categoryCompat !== null && this._severityCompat !== null ?
            COMPAT.PREFERENCE_KEYS[this._categoryCompat][this._severityCompat] :
            null;
-    },
+  },
 
-    init: function ()
+  init: function ()
   {
-      Messages.BaseMessage.prototype.init.apply(this, arguments);
-      this._groupDepthCompat = this.output.owner.groupDepth;
-      this._initRepeatID();
+    Messages.BaseMessage.prototype.init.apply(this, arguments);
+    this._groupDepthCompat = this.output.owner.groupDepth;
+    this._initRepeatID();
+    return this;
+  },
+
+  
+
+
+
+  collapsible: false,
+
+  
+
+
+
+  get collapsed() {
+    return this.collapsible && this.element && !this.element.hasAttribute("open");
+  },
+
+  _initRepeatID: function ()
+  {
+    if (!this._filterDuplicates) {
+      return;
+    }
+
+    
+    let rid = this._repeatID;
+    delete rid.uid;
+
+    rid.category = this.category;
+    rid.severity = this.severity;
+    rid.prefix = this.prefix;
+    rid.private = this.private;
+    rid.location = this.location;
+    rid.link = this._link;
+    rid.linkCallback = this._linkCallback + "";
+    rid.className = this._className;
+    rid.groupDepth = this._groupDepthCompat;
+    rid.textContent = "";
+  },
+
+  getRepeatID: function ()
+  {
+    
+    
+    if (this._repeatID.uid) {
+      return JSON.stringify({ uid: this._repeatID.uid });
+    }
+
+    return JSON.stringify(this._repeatID);
+  },
+
+  render: function ()
+  {
+    if (this.element) {
       return this;
-    },
+    }
 
-  
+    let timestamp = new Widgets.MessageTimestamp(this, this.timestamp).render();
 
+    let icon = this.document.createElementNS(XHTML_NS, "span");
+    icon.className = "icon";
+    icon.title = l10n.getStr("severity." + this._severityNameCompat);
+    if (this.stack) {
+      icon.addEventListener("click", this._onClickCollapsible);
+    }
 
-
-    collapsible: false,
-
-  
-
-
-
-    get collapsed() {
-      return this.collapsible && this.element && !this.element.hasAttribute("open");
-    },
-
-    _initRepeatID: function ()
-  {
-      if (!this._filterDuplicates) {
-        return;
-      }
-
-    
-      let rid = this._repeatID;
-      delete rid.uid;
-
-      rid.category = this.category;
-      rid.severity = this.severity;
-      rid.prefix = this.prefix;
-      rid.private = this.private;
-      rid.location = this.location;
-      rid.link = this._link;
-      rid.linkCallback = this._linkCallback + "";
-      rid.className = this._className;
-      rid.groupDepth = this._groupDepthCompat;
-      rid.textContent = "";
-    },
-
-    getRepeatID: function ()
-  {
-    
-    
-      if (this._repeatID.uid) {
-        return JSON.stringify({ uid: this._repeatID.uid });
-      }
-
-      return JSON.stringify(this._repeatID);
-    },
-
-    render: function ()
-  {
-      if (this.element) {
-        return this;
-      }
-
-      let timestamp = new Widgets.MessageTimestamp(this, this.timestamp).render();
-
-      let icon = this.document.createElementNS(XHTML_NS, "span");
-      icon.className = "icon";
-      icon.title = l10n.getStr("severity." + this._severityNameCompat);
-      if (this.stack) {
-        icon.addEventListener("click", this._onClickCollapsible);
-      }
-
-      let prefixNode;
-      if (this.prefix) {
-        prefixNode = this.document.createElementNS(XHTML_NS, "span");
-        prefixNode.className = "prefix devtools-monospace";
-        prefixNode.textContent = this.prefix + ":";
-      }
+    let prefixNode;
+    if (this.prefix) {
+      prefixNode = this.document.createElementNS(XHTML_NS, "span");
+      prefixNode.className = "prefix devtools-monospace";
+      prefixNode.textContent = this.prefix + ":";
+    }
 
     
     
-      let indent = this._groupDepthCompat * COMPAT.GROUP_INDENT;
-      let indentNode = this.document.createElementNS(XHTML_NS, "span");
-      indentNode.className = "indent";
-      indentNode.style.width = indent + "px";
+    let indent = this._groupDepthCompat * COMPAT.GROUP_INDENT;
+    let indentNode = this.document.createElementNS(XHTML_NS, "span");
+    indentNode.className = "indent";
+    indentNode.style.width = indent + "px";
 
-      let body = this._renderBody();
-      this._repeatID.textContent += "|" + body.textContent;
+    let body = this._renderBody();
+    this._repeatID.textContent += "|" + body.textContent;
 
-      let repeatNode = this._renderRepeatNode();
-      let location = this._renderLocation();
+    let repeatNode = this._renderRepeatNode();
+    let location = this._renderLocation();
 
-      Messages.BaseMessage.prototype.render.call(this);
-      if (this._className) {
-        this.element.className += " " + this._className;
-      }
+    Messages.BaseMessage.prototype.render.call(this);
+    if (this._className) {
+      this.element.className += " " + this._className;
+    }
 
-      this.element.appendChild(timestamp.element);
-      this.element.appendChild(indentNode);
-      this.element.appendChild(icon);
-      if (prefixNode) {
-        this.element.appendChild(prefixNode);
-      }
+    this.element.appendChild(timestamp.element);
+    this.element.appendChild(indentNode);
+    this.element.appendChild(icon);
+    if (prefixNode) {
+      this.element.appendChild(prefixNode);
+    }
 
-      if (this.stack) {
-        let twisty = this.document.createElementNS(XHTML_NS, "a");
-        twisty.className = "theme-twisty";
-        twisty.href = "#";
-        twisty.title = l10n.getStr("messageToggleDetails");
-        twisty.addEventListener("click", this._onClickCollapsible);
-        this.element.appendChild(twisty);
-        this.collapsible = true;
-        this.element.setAttribute("collapsible", true);
-      }
+    if (this.stack) {
+      let twisty = this.document.createElementNS(XHTML_NS, "a");
+      twisty.className = "theme-twisty";
+      twisty.href = "#";
+      twisty.title = l10n.getStr("messageToggleDetails");
+      twisty.addEventListener("click", this._onClickCollapsible);
+      this.element.appendChild(twisty);
+      this.collapsible = true;
+      this.element.setAttribute("collapsible", true);
+    }
 
-      this.element.appendChild(body);
-      if (repeatNode) {
-        this.element.appendChild(repeatNode);
-      }
-      if (location) {
-        this.element.appendChild(location);
-      }
+    this.element.appendChild(body);
+    if (repeatNode) {
+      this.element.appendChild(repeatNode);
+    }
+    if (location) {
+      this.element.appendChild(location);
+    }
 
-      this.element.appendChild(this.document.createTextNode("\n"));
+    this.element.appendChild(this.document.createTextNode("\n"));
 
-      this.element.clipboardText = this.element.textContent;
+    this.element.clipboardText = this.element.textContent;
 
-      if (this.private) {
-        this.element.setAttribute("private", true);
-      }
+    if (this.private) {
+      this.element.setAttribute("private", true);
+    }
 
     
     
-      this.element._objectActors = this._objectActors;
-      this._objectActors = null;
+    this.element._objectActors = this._objectActors;
+    this._objectActors = null;
 
-      return this;
-    },
+    return this;
+  },
 
   
 
 
 
 
-    _renderBody: function ()
+  _renderBody: function ()
   {
-      let body = this.document.createElementNS(XHTML_NS, "span");
-      body.className = "message-body-wrapper message-body devtools-monospace";
+    let body = this.document.createElementNS(XHTML_NS, "span");
+    body.className = "message-body-wrapper message-body devtools-monospace";
 
-      let bodyInner = this.document.createElementNS(XHTML_NS, "span");
-      body.appendChild(bodyInner);
+    let bodyInner = this.document.createElementNS(XHTML_NS, "span");
+    body.appendChild(bodyInner);
 
-      let anchor, container = bodyInner;
-      if (this._link || this._linkCallback) {
-        container = anchor = this.document.createElementNS(XHTML_NS, "a");
-        anchor.href = this._link || "#";
-        anchor.draggable = false;
-        this._addLinkCallback(anchor, this._linkCallback);
-        bodyInner.appendChild(anchor);
-      }
+    let anchor, container = bodyInner;
+    if (this._link || this._linkCallback) {
+      container = anchor = this.document.createElementNS(XHTML_NS, "a");
+      anchor.href = this._link || "#";
+      anchor.draggable = false;
+      this._addLinkCallback(anchor, this._linkCallback);
+      bodyInner.appendChild(anchor);
+    }
 
-      if (typeof this._message == "function") {
-        container.appendChild(this._message(this));
-      } else if (this._message instanceof Ci.nsIDOMNode) {
-        container.appendChild(this._message);
-      } else {
-        container.textContent = this._message;
-      }
+    if (typeof this._message == "function") {
+      container.appendChild(this._message(this));
+    } else if (this._message instanceof Ci.nsIDOMNode) {
+      container.appendChild(this._message);
+    } else {
+      container.textContent = this._message;
+    }
 
-      if (this.stack) {
-        let stack = new Widgets.Stacktrace(this, this.stack).render().element;
-        body.appendChild(this.document.createTextNode("\n"));
-        body.appendChild(stack);
-      }
+    if (this.stack) {
+      let stack = new Widgets.Stacktrace(this, this.stack).render().element;
+      body.appendChild(this.document.createTextNode("\n"));
+      body.appendChild(stack);
+    }
 
-      return body;
-    },
+    return body;
+  },
 
   
 
 
 
 
-    _renderRepeatNode: function ()
+  _renderRepeatNode: function ()
   {
-      if (!this._filterDuplicates) {
-        return null;
-      }
+    if (!this._filterDuplicates) {
+      return null;
+    }
 
-      let repeatNode = this.document.createElementNS(XHTML_NS, "span");
-      repeatNode.setAttribute("value", "1");
-      repeatNode.className = "message-repeats";
-      repeatNode.textContent = 1;
-      repeatNode._uid = this.getRepeatID();
-      return repeatNode;
-    },
+    let repeatNode = this.document.createElementNS(XHTML_NS, "span");
+    repeatNode.setAttribute("value", "1");
+    repeatNode.className = "message-repeats";
+    repeatNode.textContent = 1;
+    repeatNode._uid = this.getRepeatID();
+    return repeatNode;
+  },
 
   
 
 
 
 
-    _renderLocation: function ()
+  _renderLocation: function ()
   {
-      if (!this.location) {
-        return null;
-      }
+    if (!this.location) {
+      return null;
+    }
 
-      let {url, line, column} = this.location;
-      if (IGNORED_SOURCE_URLS.indexOf(url) != -1) {
-        return null;
-      }
+    let {url, line, column} = this.location;
+    if (IGNORED_SOURCE_URLS.indexOf(url) != -1) {
+      return null;
+    }
 
     
     
-      return this.output.owner.createLocationNode({url: url,
+    return this.output.owner.createLocationNode({url: url,
                                                  line: line,
                                                  column: column});
-    },
+  },
 
   
 
@@ -1043,27 +1042,27 @@ Messages.Simple.prototype = Heritage.extend(Messages.BaseMessage.prototype,
 
 
 
-    _onClickCollapsible: function (ev)
+  _onClickCollapsible: function (ev)
   {
-      ev.preventDefault();
-      this.toggleDetails();
-    },
+    ev.preventDefault();
+    this.toggleDetails();
+  },
 
   
 
 
-    toggleDetails: function ()
+  toggleDetails: function ()
   {
-      let twisty = this.element.querySelector(".theme-twisty");
-      if (this.element.hasAttribute("open")) {
-        this.element.removeAttribute("open");
-        twisty.removeAttribute("open");
-      } else {
-        this.element.setAttribute("open", true);
-        twisty.setAttribute("open", true);
-      }
-    },
-  }); 
+    let twisty = this.element.querySelector(".theme-twisty");
+    if (this.element.hasAttribute("open")) {
+      this.element.removeAttribute("open");
+      twisty.removeAttribute("open");
+    } else {
+      this.element.setAttribute("open", true);
+      twisty.setAttribute("open", true);
+    }
+  },
+}); 
 
 
 
@@ -1095,54 +1094,53 @@ Messages.Extended = function (messagePieces, options = {})
   this._repeatID.actors = new Set(); 
 };
 
-Messages.Extended.prototype = Heritage.extend(Messages.Simple.prototype,
-  {
+Messages.Extended.prototype = extend(Messages.Simple.prototype, {
   
 
 
 
 
-    _messagePieces: null,
+  _messagePieces: null,
 
   
 
 
 
 
-    _quoteStrings: true,
+  _quoteStrings: true,
 
-    getRepeatID: function ()
+  getRepeatID: function ()
   {
-      if (this._repeatID.uid) {
-        return JSON.stringify({ uid: this._repeatID.uid });
-      }
+    if (this._repeatID.uid) {
+      return JSON.stringify({ uid: this._repeatID.uid });
+    }
 
     
-      let actors = this._repeatID.actors;
-      this._repeatID.actors = [...actors];
-      let result = JSON.stringify(this._repeatID);
-      this._repeatID.actors = actors;
-      return result;
-    },
+    let actors = this._repeatID.actors;
+    this._repeatID.actors = [...actors];
+    let result = JSON.stringify(this._repeatID);
+    this._repeatID.actors = actors;
+    return result;
+  },
 
-    render: function ()
+  render: function ()
   {
-      let result = this.document.createDocumentFragment();
+    let result = this.document.createDocumentFragment();
 
-      for (let i = 0; i < this._messagePieces.length; i++) {
-        let separator = i > 0 ? this._renderBodyPieceSeparator() : null;
-        if (separator) {
-          result.appendChild(separator);
-        }
-
-        let piece = this._messagePieces[i];
-        result.appendChild(this._renderBodyPiece(piece));
+    for (let i = 0; i < this._messagePieces.length; i++) {
+      let separator = i > 0 ? this._renderBodyPieceSeparator() : null;
+      if (separator) {
+        result.appendChild(separator);
       }
 
-      this._message = result;
-      this._messagePieces = null;
-      return Messages.Simple.prototype.render.call(this);
-    },
+      let piece = this._messagePieces[i];
+      result.appendChild(this._renderBodyPiece(piece));
+    }
+
+    this._message = result;
+    this._messagePieces = null;
+    return Messages.Simple.prototype.render.call(this);
+  },
 
   
 
@@ -1150,28 +1148,7 @@ Messages.Extended.prototype = Heritage.extend(Messages.Simple.prototype,
 
 
 
-    _renderBodyPieceSeparator: function () { return null; },
-
-  
-
-
-
-
-
-
-
-
-    _renderBodyPiece: function (piece, options = {})
-  {
-      if (piece instanceof Ci.nsIDOMNode) {
-        return piece;
-      }
-      if (typeof piece == "function") {
-        return piece(this);
-      }
-
-      return this._renderValueGrip(piece, options);
-    },
+  _renderBodyPieceSeparator: function () { return null; },
 
   
 
@@ -1182,122 +1159,17 @@ Messages.Extended.prototype = Heritage.extend(Messages.Simple.prototype,
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-    _renderValueGrip: function (grip, options = {})
+  _renderBodyPiece: function (piece, options = {})
   {
-      let isPrimitive = VariablesView.isPrimitive({ value: grip });
-      let isActorGrip = WebConsoleUtils.isActorGrip(grip);
-      let noStringQuotes = !this._quoteStrings;
-      if ("noStringQuotes" in options) {
-        noStringQuotes = options.noStringQuotes;
-      }
+    if (piece instanceof Ci.nsIDOMNode) {
+      return piece;
+    }
+    if (typeof piece == "function") {
+      return piece(this);
+    }
 
-      if (isActorGrip) {
-        this._repeatID.actors.add(grip.actor);
-
-        if (!isPrimitive) {
-          return this._renderObjectActor(grip, options);
-        }
-        if (grip.type == "longString") {
-          let widget = new Widgets.LongString(this, grip, options).render();
-          return widget.element;
-        }
-      }
-
-      let unshortenedGrip = grip;
-      if (options.shorten) {
-        grip = this.shortenValueGrip(grip);
-      }
-
-      let result = this.document.createElementNS(XHTML_NS, "span");
-      if (isPrimitive) {
-        if (Widgets.URLString.prototype.containsURL.call(Widgets.URLString.prototype, grip)) {
-          let widget = new Widgets.URLString(this, grip, unshortenedGrip).render();
-          return widget.element;
-        }
-
-        let className = this.getClassNameForValueGrip(grip);
-        if (className) {
-          result.className = className;
-        }
-
-        result.textContent = VariablesView.getString(grip, {
-          noStringQuotes: noStringQuotes,
-          concise: options.concise,
-        });
-      } else {
-        result.textContent = grip;
-      }
-
-      return result;
-    },
-
-  
-
-
-
-
-
-
-
-
-
-    shortenValueGrip: function (grip)
-  {
-      let shortVal = grip;
-      if (typeof (grip) == "string") {
-        shortVal = grip.replace(/(\r\n|\n|\r)/gm, " ");
-        if (shortVal.length > MAX_STRING_GRIP_LENGTH) {
-          shortVal = shortVal.substring(0, MAX_STRING_GRIP_LENGTH - 1) + ELLIPSIS;
-        }
-      }
-
-      return shortVal;
-    },
-
-  
-
-
-
-
-
-
-
-    getClassNameForValueGrip: function (grip)
-  {
-      let map = {
-        "number": "cm-number",
-        "longstring": "console-string",
-        "string": "console-string",
-        "regexp": "cm-string-2",
-        "boolean": "cm-atom",
-        "-infinity": "cm-atom",
-        "infinity": "cm-atom",
-        "null": "cm-atom",
-        "undefined": "cm-comment",
-        "symbol": "cm-atom"
-      };
-
-      let className = map[typeof grip];
-      if (!className && grip && grip.type) {
-        className = map[grip.type.toLowerCase()];
-      }
-      if (!className && grip && grip.class) {
-        className = map[grip.class.toLowerCase()];
-      }
-
-      return className;
-    },
+    return this._renderValueGrip(piece, options);
+  },
 
   
 
@@ -1311,25 +1183,151 @@ Messages.Extended.prototype = Heritage.extend(Messages.Simple.prototype,
 
 
 
-    _renderObjectActor: function (objectActor, options = {})
-  {
-      let widget = Widgets.ObjectRenderers.byClass[objectActor.class];
 
-      let { preview } = objectActor;
-      if ((!widget || (widget.canRender && !widget.canRender(objectActor)))
+
+
+
+
+
+
+
+  _renderValueGrip: function (grip, options = {})
+  {
+    let isPrimitive = VariablesView.isPrimitive({ value: grip });
+    let isActorGrip = WebConsoleUtils.isActorGrip(grip);
+    let noStringQuotes = !this._quoteStrings;
+    if ("noStringQuotes" in options) {
+      noStringQuotes = options.noStringQuotes;
+    }
+
+    if (isActorGrip) {
+      this._repeatID.actors.add(grip.actor);
+
+      if (!isPrimitive) {
+        return this._renderObjectActor(grip, options);
+      }
+      if (grip.type == "longString") {
+        let widget = new Widgets.LongString(this, grip, options).render();
+        return widget.element;
+      }
+    }
+
+    let unshortenedGrip = grip;
+    if (options.shorten) {
+      grip = this.shortenValueGrip(grip);
+    }
+
+    let result = this.document.createElementNS(XHTML_NS, "span");
+    if (isPrimitive) {
+      if (Widgets.URLString.prototype.containsURL.call(Widgets.URLString.prototype, grip)) {
+        let widget = new Widgets.URLString(this, grip, unshortenedGrip).render();
+        return widget.element;
+      }
+
+      let className = this.getClassNameForValueGrip(grip);
+      if (className) {
+        result.className = className;
+      }
+
+      result.textContent = VariablesView.getString(grip, {
+        noStringQuotes: noStringQuotes,
+        concise: options.concise,
+      });
+    } else {
+      result.textContent = grip;
+    }
+
+    return result;
+  },
+
+  
+
+
+
+
+
+
+
+
+
+  shortenValueGrip: function (grip)
+  {
+    let shortVal = grip;
+    if (typeof (grip) == "string") {
+      shortVal = grip.replace(/(\r\n|\n|\r)/gm, " ");
+      if (shortVal.length > MAX_STRING_GRIP_LENGTH) {
+        shortVal = shortVal.substring(0, MAX_STRING_GRIP_LENGTH - 1) + ELLIPSIS;
+      }
+    }
+
+    return shortVal;
+  },
+
+  
+
+
+
+
+
+
+
+  getClassNameForValueGrip: function (grip)
+  {
+    let map = {
+      "number": "cm-number",
+      "longstring": "console-string",
+      "string": "console-string",
+      "regexp": "cm-string-2",
+      "boolean": "cm-atom",
+      "-infinity": "cm-atom",
+      "infinity": "cm-atom",
+      "null": "cm-atom",
+      "undefined": "cm-comment",
+      "symbol": "cm-atom"
+    };
+
+    let className = map[typeof grip];
+    if (!className && grip && grip.type) {
+      className = map[grip.type.toLowerCase()];
+    }
+    if (!className && grip && grip.class) {
+      className = map[grip.class.toLowerCase()];
+    }
+
+    return className;
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  _renderObjectActor: function (objectActor, options = {})
+  {
+    let widget = Widgets.ObjectRenderers.byClass[objectActor.class];
+
+    let { preview } = objectActor;
+    if ((!widget || (widget.canRender && !widget.canRender(objectActor)))
         && preview
         && preview.kind) {
-        widget = Widgets.ObjectRenderers.byKind[preview.kind];
-      }
+      widget = Widgets.ObjectRenderers.byKind[preview.kind];
+    }
 
-      if (!widget || (widget.canRender && !widget.canRender(objectActor))) {
-        widget = Widgets.JSObject;
-      }
+    if (!widget || (widget.canRender && !widget.canRender(objectActor))) {
+      widget = Widgets.JSObject;
+    }
 
-      let instance = new widget(this, objectActor, options).render();
-      return instance.element;
-    },
-  }); 
+    let instance = new widget(this, objectActor, options).render();
+    return instance.element;
+  },
+}); 
 
 
 
@@ -1424,111 +1422,110 @@ Messages.ConsoleGeneric = function (packet)
   this._styles = packet.styles || [];
 };
 
-Messages.ConsoleGeneric.prototype = Heritage.extend(Messages.Extended.prototype,
+Messages.ConsoleGeneric.prototype = extend(Messages.Extended.prototype, {
+  _styles: null,
+
+  _renderBodyPieceSeparator: function ()
   {
-    _styles: null,
+    return this.document.createTextNode(" ");
+  },
 
-    _renderBodyPieceSeparator: function ()
+  render: function ()
   {
-      return this.document.createTextNode(" ");
-    },
+    let msg = this.document.createElementNS(XHTML_NS, "span");
+    msg.className = "message-body devtools-monospace";
 
-    render: function ()
+    this._renderBodyPieces(msg);
+
+    let repeatNode = Messages.Simple.prototype._renderRepeatNode.call(this);
+    let location = Messages.Simple.prototype._renderLocation.call(this);
+    if (location) {
+      location.target = "jsdebugger";
+    }
+
+    let flex = this.document.createElementNS(XHTML_NS, "span");
+    flex.className = "message-flex-body";
+
+    flex.appendChild(msg);
+
+    if (repeatNode) {
+      flex.appendChild(repeatNode);
+    }
+    if (location) {
+      flex.appendChild(location);
+    }
+
+    let result = this.document.createDocumentFragment();
+    result.appendChild(flex);
+
+    this._message = result;
+    this._stacktrace = null;
+
+    Messages.Simple.prototype.render.call(this);
+
+    return this;
+  },
+
+  _renderBody: function ()
   {
-      let msg = this.document.createElementNS(XHTML_NS, "span");
-      msg.className = "message-body devtools-monospace";
+    let body = Messages.Simple.prototype._renderBody.apply(this, arguments);
+    body.classList.remove("devtools-monospace", "message-body");
+    return body;
+  },
 
-      this._renderBodyPieces(msg);
-
-      let repeatNode = Messages.Simple.prototype._renderRepeatNode.call(this);
-      let location = Messages.Simple.prototype._renderLocation.call(this);
-      if (location) {
-        location.target = "jsdebugger";
-      }
-
-      let flex = this.document.createElementNS(XHTML_NS, "span");
-      flex.className = "message-flex-body";
-
-      flex.appendChild(msg);
-
-      if (repeatNode) {
-        flex.appendChild(repeatNode);
-      }
-      if (location) {
-        flex.appendChild(location);
-      }
-
-      let result = this.document.createDocumentFragment();
-      result.appendChild(flex);
-
-      this._message = result;
-      this._stacktrace = null;
-
-      Messages.Simple.prototype.render.call(this);
-
-      return this;
-    },
-
-    _renderBody: function ()
+  _renderBodyPieces: function (container)
   {
-      let body = Messages.Simple.prototype._renderBody.apply(this, arguments);
-      body.classList.remove("devtools-monospace", "message-body");
-      return body;
-    },
+    let lastStyle = null;
+    let stylePieces = this._styles.length > 0 ? this._styles.length : 1;
 
-    _renderBodyPieces: function (container)
-  {
-      let lastStyle = null;
-      let stylePieces = this._styles.length > 0 ? this._styles.length : 1;
-
-      for (let i = 0; i < this._messagePieces.length; i++) {
+    for (let i = 0; i < this._messagePieces.length; i++) {
       
       
-        if (i >= stylePieces) {
-          container.appendChild(this._renderBodyPieceSeparator());
-        }
+      if (i >= stylePieces) {
+        container.appendChild(this._renderBodyPieceSeparator());
+      }
 
-        let piece = this._messagePieces[i];
-        let style = this._styles[i];
+      let piece = this._messagePieces[i];
+      let style = this._styles[i];
 
       
-        lastStyle = (style && typeof style == "string") ?
+      lastStyle = (style && typeof style == "string") ?
                   this.cleanupStyle(style) : null;
 
-        container.appendChild(this._renderBodyPiece(piece, lastStyle));
-      }
+      container.appendChild(this._renderBodyPiece(piece, lastStyle));
+    }
 
-      this._messagePieces = null;
-      this._styles = null;
-    },
+    this._messagePieces = null;
+    this._styles = null;
+  },
 
-    _renderBodyPiece: function (piece, style)
+  _renderBodyPiece: function (piece, style)
   {
     
-      let options = { noStringQuotes: true };
-      let elem = Messages.Extended.prototype._renderBodyPiece.call(this, piece, options);
-      let result = elem;
+    let options = { noStringQuotes: true };
+    let elem = Messages.Extended.prototype._renderBodyPiece.call(this, piece, options);
+    let result = elem;
 
-      if (style) {
-        if (elem.nodeType == Ci.nsIDOMNode.ELEMENT_NODE) {
-          elem.style = style;
-        } else {
-          let span = this.document.createElementNS(XHTML_NS, "span");
-          span.style = style;
-          span.appendChild(elem);
-          result = span;
-        }
+    if (style) {
+      if (elem.nodeType == Ci.nsIDOMNode.ELEMENT_NODE) {
+        elem.style = style;
+      } else {
+        let span = this.document.createElementNS(XHTML_NS, "span");
+        span.style = style;
+        span.appendChild(elem);
+        result = span;
       }
+    }
 
-      return result;
-    },
-
-  
-  
-    _renderLocation: function () { },
-    _renderRepeatNode: function () { },
+    return result;
+  },
 
   
+  
+  _renderLocation: function () { },
+  _renderRepeatNode: function () { },
+
+  
 
 
 
@@ -1541,38 +1538,38 @@ Messages.ConsoleGeneric.prototype = Heritage.extend(Messages.Extended.prototype,
 
 
 
-    cleanupStyle: function (style)
+  cleanupStyle: function (style)
   {
-      for (let r of RE_CLEANUP_STYLES) {
-        style = style.replace(r, "notallowed");
-      }
+    for (let r of RE_CLEANUP_STYLES) {
+      style = style.replace(r, "notallowed");
+    }
 
-      let dummy = this.output._dummyElement;
-      if (!dummy) {
-        dummy = this.output._dummyElement =
+    let dummy = this.output._dummyElement;
+    if (!dummy) {
+      dummy = this.output._dummyElement =
         this.document.createElementNS(XHTML_NS, "div");
+    }
+    dummy.style = style;
+
+    let toRemove = [];
+    for (let i = 0; i < dummy.style.length; i++) {
+      let prop = dummy.style[i];
+      if (!RE_ALLOWED_STYLES.test(prop)) {
+        toRemove.push(prop);
       }
-      dummy.style = style;
+    }
 
-      let toRemove = [];
-      for (let i = 0; i < dummy.style.length; i++) {
-        let prop = dummy.style[i];
-        if (!RE_ALLOWED_STYLES.test(prop)) {
-          toRemove.push(prop);
-        }
-      }
+    for (let prop of toRemove) {
+      dummy.style.removeProperty(prop);
+    }
 
-      for (let prop of toRemove) {
-        dummy.style.removeProperty(prop);
-      }
+    style = dummy.style.cssText;
 
-      style = dummy.style.cssText;
+    dummy.style = "";
 
-      dummy.style = "";
-
-      return style;
-    },
-  }); 
+    return style;
+  },
+}); 
 
 
 
@@ -1605,15 +1602,14 @@ Messages.ConsoleTrace = function (packet)
   this._arguments = packet.arguments;
 };
 
-Messages.ConsoleTrace.prototype = Heritage.extend(Messages.Simple.prototype,
-  {
+Messages.ConsoleTrace.prototype = extend(Messages.Simple.prototype, {
   
 
 
 
 
 
-    _stacktrace: null,
+  _stacktrace: null,
 
   
 
@@ -1623,31 +1619,31 @@ Messages.ConsoleTrace.prototype = Heritage.extend(Messages.Simple.prototype,
 
 
 
-    _arguments: null,
+  _arguments: null,
 
-    init: function ()
+  init: function ()
   {
-      let result = Messages.Simple.prototype.init.apply(this, arguments);
+    let result = Messages.Simple.prototype.init.apply(this, arguments);
 
     
-      if (Array.isArray(this._arguments)) {
-        for (let arg of this._arguments) {
-          if (WebConsoleUtils.isActorGrip(arg)) {
-            this.output._releaseObject(arg.actor);
-          }
+    if (Array.isArray(this._arguments)) {
+      for (let arg of this._arguments) {
+        if (WebConsoleUtils.isActorGrip(arg)) {
+          this.output._releaseObject(arg.actor);
         }
       }
-      this._arguments = null;
+    }
+    this._arguments = null;
 
-      return result;
-    },
+    return result;
+  },
 
-    render: function ()
+  render: function ()
   {
-      Messages.Simple.prototype.render.apply(this, arguments);
-      this.element.setAttribute("open", true);
-      return this;
-    },
+    Messages.Simple.prototype.render.apply(this, arguments);
+    this.element.setAttribute("open", true);
+    return this;
+  },
 
   
 
@@ -1655,61 +1651,61 @@ Messages.ConsoleTrace.prototype = Heritage.extend(Messages.Simple.prototype,
 
 
 
-    _renderStack: function ()
+  _renderStack: function ()
   {
-      let cmvar = this.document.createElementNS(XHTML_NS, "span");
-      cmvar.className = "cm-variable";
-      cmvar.textContent = "console";
+    let cmvar = this.document.createElementNS(XHTML_NS, "span");
+    cmvar.className = "cm-variable";
+    cmvar.textContent = "console";
 
-      let cmprop = this.document.createElementNS(XHTML_NS, "span");
-      cmprop.className = "cm-property";
-      cmprop.textContent = "trace";
+    let cmprop = this.document.createElementNS(XHTML_NS, "span");
+    cmprop.className = "cm-property";
+    cmprop.textContent = "trace";
 
-      let title = this.document.createElementNS(XHTML_NS, "span");
-      title.className = "message-body devtools-monospace";
-      title.appendChild(cmvar);
-      title.appendChild(this.document.createTextNode("."));
-      title.appendChild(cmprop);
-      title.appendChild(this.document.createTextNode("():"));
+    let title = this.document.createElementNS(XHTML_NS, "span");
+    title.className = "message-body devtools-monospace";
+    title.appendChild(cmvar);
+    title.appendChild(this.document.createTextNode("."));
+    title.appendChild(cmprop);
+    title.appendChild(this.document.createTextNode("():"));
 
-      let repeatNode = Messages.Simple.prototype._renderRepeatNode.call(this);
-      let location = Messages.Simple.prototype._renderLocation.call(this);
-      if (location) {
-        location.target = "jsdebugger";
-      }
+    let repeatNode = Messages.Simple.prototype._renderRepeatNode.call(this);
+    let location = Messages.Simple.prototype._renderLocation.call(this);
+    if (location) {
+      location.target = "jsdebugger";
+    }
 
-      let widget = new Widgets.Stacktrace(this, this._stacktrace).render();
+    let widget = new Widgets.Stacktrace(this, this._stacktrace).render();
 
-      let body = this.document.createElementNS(XHTML_NS, "span");
-      body.className = "message-flex-body";
-      body.appendChild(title);
-      if (repeatNode) {
-        body.appendChild(repeatNode);
-      }
-      if (location) {
-        body.appendChild(location);
-      }
-      body.appendChild(this.document.createTextNode("\n"));
+    let body = this.document.createElementNS(XHTML_NS, "span");
+    body.className = "message-flex-body";
+    body.appendChild(title);
+    if (repeatNode) {
+      body.appendChild(repeatNode);
+    }
+    if (location) {
+      body.appendChild(location);
+    }
+    body.appendChild(this.document.createTextNode("\n"));
 
-      let frag = this.document.createDocumentFragment();
-      frag.appendChild(body);
-      frag.appendChild(widget.element);
+    let frag = this.document.createDocumentFragment();
+    frag.appendChild(body);
+    frag.appendChild(widget.element);
 
-      return frag;
-    },
+    return frag;
+  },
 
-    _renderBody: function ()
+  _renderBody: function ()
   {
-      let body = Messages.Simple.prototype._renderBody.apply(this, arguments);
-      body.classList.remove("devtools-monospace", "message-body");
-      return body;
-    },
+    let body = Messages.Simple.prototype._renderBody.apply(this, arguments);
+    body.classList.remove("devtools-monospace", "message-body");
+    return body;
+  },
 
   
   
-    _renderLocation: function () { },
-    _renderRepeatNode: function () { },
-  }); 
+  _renderLocation: function () { },
+  _renderRepeatNode: function () { },
+}); 
 
 
 
@@ -1742,24 +1738,52 @@ Messages.ConsoleTable = function (packet)
   this._arguments = packet.arguments;
 };
 
-Messages.ConsoleTable.prototype = Heritage.extend(Messages.Extended.prototype,
+Messages.ConsoleTable.prototype = extend(Messages.Extended.prototype, {
+  
+
+
+
+
+
+
+  _arguments: null,
+
+  
+
+
+
+
+
+  _data: null,
+
+  
+
+
+
+
+
+
+  _columns: null,
+
+  
+
+
+
+
+
+
+  _populatePromise: null,
+
+  init: function ()
   {
-  
+    let result = Messages.Extended.prototype.init.apply(this, arguments);
+    this._data = [];
+    this._columns = {};
 
+    this._populatePromise = this._populateTableData();
 
-
-
-
-
-    _arguments: null,
-
-  
-
-
-
-
-
-    _data: null,
+    return result;
+  },
 
   
 
@@ -1768,51 +1792,22 @@ Messages.ConsoleTable.prototype = Heritage.extend(Messages.Extended.prototype,
 
 
 
-    _columns: null,
-
-  
 
 
-
-
-
-
-    _populatePromise: null,
-
-    init: function ()
+  _setColumns: function (columns)
   {
-      let result = Messages.Extended.prototype.init.apply(this, arguments);
-      this._data = [];
-      this._columns = {};
+    if (columns.class == "Array") {
+      let items = columns.preview.items;
 
-      this._populatePromise = this._populateTableData();
-
-      return result;
-    },
-
-  
-
-
-
-
-
-
-
-
-    _setColumns: function (columns)
-  {
-      if (columns.class == "Array") {
-        let items = columns.preview.items;
-
-        for (let item of items) {
-          if (typeof item == "string") {
-            this._columns[item] = item;
-          }
+      for (let item of items) {
+        if (typeof item == "string") {
+          this._columns[item] = item;
         }
-      } else if (typeof columns == "string" && columns) {
-        this._columns[columns] = columns;
       }
-    },
+    } else if (typeof columns == "string" && columns) {
+      this._columns[columns] = columns;
+    }
+  },
 
   
 
@@ -1822,113 +1817,87 @@ Messages.ConsoleTable.prototype = Heritage.extend(Messages.Extended.prototype,
 
 
 
-    _populateTableData: function ()
+  _populateTableData: function ()
   {
-      let deferred = promise.defer();
+    let deferred = promise.defer();
 
-      if (this._arguments.length <= 0) {
-        return;
-      }
+    if (this._arguments.length <= 0) {
+      return;
+    }
 
-      let data = this._arguments[0];
-      if (data.class != "Array" && data.class != "Object" &&
+    let data = this._arguments[0];
+    if (data.class != "Array" && data.class != "Object" &&
         data.class != "Map" && data.class != "Set" &&
         data.class != "WeakMap" && data.class != "WeakSet") {
-        return;
-      }
+      return;
+    }
 
-      let hasColumnsArg = false;
-      if (this._arguments.length > 1) {
-        if (data.class == "Object" || data.class == "Array") {
-          this._columns["_index"] = l10n.getStr("table.index");
-        } else {
-          this._columns["_index"] = l10n.getStr("table.iterationIndex");
-        }
-
-        this._setColumns(this._arguments[1]);
-        hasColumnsArg = true;
-      }
-
+    let hasColumnsArg = false;
+    if (this._arguments.length > 1) {
       if (data.class == "Object" || data.class == "Array") {
+        this._columns["_index"] = l10n.getStr("table.index");
+      } else {
+        this._columns["_index"] = l10n.getStr("table.iterationIndex");
+      }
+
+      this._setColumns(this._arguments[1]);
+      hasColumnsArg = true;
+    }
+
+    if (data.class == "Object" || data.class == "Array") {
       
       
-        this.client = new ObjectClient(this.output.owner.jsterm.hud.proxy.client,
+      this.client = new ObjectClient(this.output.owner.jsterm.hud.proxy.client,
           data);
-        this.client.getPrototypeAndProperties(aResponse => {
-          let {ownProperties} = aResponse;
-          let rowCount = 0;
-          let columnCount = 0;
+      this.client.getPrototypeAndProperties(aResponse => {
+        let {ownProperties} = aResponse;
+        let rowCount = 0;
+        let columnCount = 0;
 
-          for (let index of Object.keys(ownProperties || {})) {
+        for (let index of Object.keys(ownProperties || {})) {
           
           
-            if (data.class == "Array" && index == "length") {
-              continue;
+          if (data.class == "Array" && index == "length") {
+            continue;
+          }
+
+          if (!hasColumnsArg) {
+            this._columns["_index"] = l10n.getStr("table.index");
+          }
+
+          if (data.class == "Array") {
+            if (index == parseInt(index)) {
+              index = parseInt(index);
             }
+          }
 
-            if (!hasColumnsArg) {
-              this._columns["_index"] = l10n.getStr("table.index");
-            }
+          let property = ownProperties[index].value;
+          let item = { _index: index };
 
-            if (data.class == "Array") {
-              if (index == parseInt(index)) {
-                index = parseInt(index);
-              }
-            }
-
-            let property = ownProperties[index].value;
-            let item = { _index: index };
-
-            if (property.class == "Object" || property.class == "Array") {
-              let {preview} = property;
-              let entries = property.class == "Object" ?
+          if (property.class == "Object" || property.class == "Array") {
+            let {preview} = property;
+            let entries = property.class == "Object" ?
                 preview.ownProperties : preview.items;
 
-              for (let key of Object.keys(entries)) {
-                let value = property.class == "Object" ?
+            for (let key of Object.keys(entries)) {
+              let value = property.class == "Object" ?
                   preview.ownProperties[key].value : preview.items[key];
 
-                item[key] = this._renderValueGrip(value, { concise: true });
+              item[key] = this._renderValueGrip(value, { concise: true });
 
-                if (!hasColumnsArg && !(key in this._columns) &&
+              if (!hasColumnsArg && !(key in this._columns) &&
                   (++columnCount <= TABLE_COLUMN_MAX_ITEMS)) {
-                  this._columns[key] = key;
-                }
+                this._columns[key] = key;
               }
-            } else {
+            }
+          } else {
             
-              item["_value"] = this._renderValueGrip(property, { concise: true });
+            item["_value"] = this._renderValueGrip(property, { concise: true });
 
-              if (!hasColumnsArg && !("_value" in this._columns)) {
-                this._columns["_value"] = l10n.getStr("table.value");
-              }
-            }
-
-            this._data.push(item);
-
-            if (++rowCount == TABLE_ROW_MAX_ITEMS) {
-              break;
+            if (!hasColumnsArg && !("_value" in this._columns)) {
+              this._columns["_value"] = l10n.getStr("table.value");
             }
           }
-
-          deferred.resolve();
-        });
-      } else if (data.class == "Map" || data.class == "WeakMap") {
-        let entries = data.preview.entries;
-
-        if (!hasColumnsArg) {
-          this._columns["_index"] = l10n.getStr("table.iterationIndex");
-          this._columns["_key"] = l10n.getStr("table.key");
-          this._columns["_value"] = l10n.getStr("table.value");
-        }
-
-        let rowCount = 0;
-        for (let [key, value] of entries) {
-          let item = {
-            _index: rowCount,
-            _key: this._renderValueGrip(key, { concise: true }),
-            _value: this._renderValueGrip(value, { concise: true })
-          };
 
           this._data.push(item);
 
@@ -1938,40 +1907,66 @@ Messages.ConsoleTable.prototype = Heritage.extend(Messages.Extended.prototype,
         }
 
         deferred.resolve();
-      } else if (data.class == "Set" || data.class == "WeakSet") {
-        let entries = data.preview.items;
+      });
+    } else if (data.class == "Map" || data.class == "WeakMap") {
+      let entries = data.preview.entries;
 
-        if (!hasColumnsArg) {
-          this._columns["_index"] = l10n.getStr("table.iterationIndex");
-          this._columns["_value"] = l10n.getStr("table.value");
-        }
-
-        let rowCount = 0;
-        for (let entry of entries) {
-          let item = {
-            _index : rowCount,
-            _value: this._renderValueGrip(entry, { concise: true })
-          };
-
-          this._data.push(item);
-
-          if (++rowCount == TABLE_ROW_MAX_ITEMS) {
-            break;
-          }
-        }
-
-        deferred.resolve();
+      if (!hasColumnsArg) {
+        this._columns["_index"] = l10n.getStr("table.iterationIndex");
+        this._columns["_key"] = l10n.getStr("table.key");
+        this._columns["_value"] = l10n.getStr("table.value");
       }
 
-      return deferred.promise;
-    },
+      let rowCount = 0;
+      for (let [key, value] of entries) {
+        let item = {
+          _index: rowCount,
+          _key: this._renderValueGrip(key, { concise: true }),
+          _value: this._renderValueGrip(value, { concise: true })
+        };
 
-    render: function ()
+        this._data.push(item);
+
+        if (++rowCount == TABLE_ROW_MAX_ITEMS) {
+          break;
+        }
+      }
+
+      deferred.resolve();
+    } else if (data.class == "Set" || data.class == "WeakSet") {
+      let entries = data.preview.items;
+
+      if (!hasColumnsArg) {
+        this._columns["_index"] = l10n.getStr("table.iterationIndex");
+        this._columns["_value"] = l10n.getStr("table.value");
+      }
+
+      let rowCount = 0;
+      for (let entry of entries) {
+        let item = {
+          _index : rowCount,
+          _value: this._renderValueGrip(entry, { concise: true })
+        };
+
+        this._data.push(item);
+
+        if (++rowCount == TABLE_ROW_MAX_ITEMS) {
+          break;
+        }
+      }
+
+      deferred.resolve();
+    }
+
+    return deferred.promise;
+  },
+
+  render: function ()
   {
-      Messages.Extended.prototype.render.apply(this, arguments);
-      this.element.setAttribute("open", true);
-      return this;
-    },
+    Messages.Extended.prototype.render.apply(this, arguments);
+    this.element.setAttribute("open", true);
+    return this;
+  },
 
   
 
@@ -1979,80 +1974,80 @@ Messages.ConsoleTable.prototype = Heritage.extend(Messages.Extended.prototype,
 
 
 
-    _renderTable: function ()
+  _renderTable: function ()
   {
-      let cmvar = this.document.createElementNS(XHTML_NS, "span");
-      cmvar.className = "cm-variable";
-      cmvar.textContent = "console";
+    let cmvar = this.document.createElementNS(XHTML_NS, "span");
+    cmvar.className = "cm-variable";
+    cmvar.textContent = "console";
 
-      let cmprop = this.document.createElementNS(XHTML_NS, "span");
-      cmprop.className = "cm-property";
-      cmprop.textContent = "table";
+    let cmprop = this.document.createElementNS(XHTML_NS, "span");
+    cmprop.className = "cm-property";
+    cmprop.textContent = "table";
 
-      let title = this.document.createElementNS(XHTML_NS, "span");
-      title.className = "message-body devtools-monospace";
-      title.appendChild(cmvar);
-      title.appendChild(this.document.createTextNode("."));
-      title.appendChild(cmprop);
-      title.appendChild(this.document.createTextNode("():"));
+    let title = this.document.createElementNS(XHTML_NS, "span");
+    title.className = "message-body devtools-monospace";
+    title.appendChild(cmvar);
+    title.appendChild(this.document.createTextNode("."));
+    title.appendChild(cmprop);
+    title.appendChild(this.document.createTextNode("():"));
 
-      let repeatNode = Messages.Simple.prototype._renderRepeatNode.call(this);
-      let location = Messages.Simple.prototype._renderLocation.call(this);
-      if (location) {
-        location.target = "jsdebugger";
-      }
+    let repeatNode = Messages.Simple.prototype._renderRepeatNode.call(this);
+    let location = Messages.Simple.prototype._renderLocation.call(this);
+    if (location) {
+      location.target = "jsdebugger";
+    }
 
-      let body = this.document.createElementNS(XHTML_NS, "span");
-      body.className = "message-flex-body";
-      body.appendChild(title);
-      if (repeatNode) {
-        body.appendChild(repeatNode);
-      }
-      if (location) {
-        body.appendChild(location);
-      }
-      body.appendChild(this.document.createTextNode("\n"));
+    let body = this.document.createElementNS(XHTML_NS, "span");
+    body.className = "message-flex-body";
+    body.appendChild(title);
+    if (repeatNode) {
+      body.appendChild(repeatNode);
+    }
+    if (location) {
+      body.appendChild(location);
+    }
+    body.appendChild(this.document.createTextNode("\n"));
 
-      let result = this.document.createElementNS(XHTML_NS, "div");
-      result.appendChild(body);
+    let result = this.document.createElementNS(XHTML_NS, "div");
+    result.appendChild(body);
 
-      if (this._populatePromise) {
-        this._populatePromise.then(() => {
-          if (this._data.length > 0) {
-            let widget = new Widgets.Table(this, this._data, this._columns).render();
-            result.appendChild(widget.element);
-          }
+    if (this._populatePromise) {
+      this._populatePromise.then(() => {
+        if (this._data.length > 0) {
+          let widget = new Widgets.Table(this, this._data, this._columns).render();
+          result.appendChild(widget.element);
+        }
 
-          result.scrollIntoView();
-          this.output.owner.emit("messages-table-rendered");
+        result.scrollIntoView();
+        this.output.owner.emit("messages-table-rendered");
 
         
-          if (Array.isArray(this._arguments)) {
-            for (let arg of this._arguments) {
-              if (WebConsoleUtils.isActorGrip(arg)) {
-                this.output._releaseObject(arg.actor);
-              }
+        if (Array.isArray(this._arguments)) {
+          for (let arg of this._arguments) {
+            if (WebConsoleUtils.isActorGrip(arg)) {
+              this.output._releaseObject(arg.actor);
             }
           }
-          this._arguments = null;
-        });
-      }
+        }
+        this._arguments = null;
+      });
+    }
 
-      return result;
-    },
+    return result;
+  },
 
-    _renderBody: function ()
+  _renderBody: function ()
   {
-      let body = Messages.Simple.prototype._renderBody.apply(this, arguments);
-      body.classList.remove("devtools-monospace", "message-body");
-      return body;
-    },
+    let body = Messages.Simple.prototype._renderBody.apply(this, arguments);
+    body.classList.remove("devtools-monospace", "message-body");
+    return body;
+  },
 
   
   
-    _renderLocation: function () { },
-    _renderRepeatNode: function () { },
-  }); 
+  _renderLocation: function () { },
+  _renderRepeatNode: function () { },
+}); 
 
 var Widgets = {};
 
@@ -2185,27 +2180,26 @@ Widgets.MessageTimestamp = function (message, timestamp)
   this.timestamp = timestamp;
 };
 
-Widgets.MessageTimestamp.prototype = Heritage.extend(Widgets.BaseWidget.prototype,
-  {
+Widgets.MessageTimestamp.prototype = extend(Widgets.BaseWidget.prototype, {
   
 
 
 
-    timestamp: 0,
+  timestamp: 0,
 
-    render: function ()
+  render: function ()
   {
-      if (this.element) {
-        return this;
-      }
-
-      this.element = this.document.createElementNS(XHTML_NS, "span");
-      this.element.className = "timestamp devtools-monospace";
-      this.element.textContent = l10n.timestampString(this.timestamp) + " ";
-
+    if (this.element) {
       return this;
-    },
-  }); 
+    }
+
+    this.element = this.document.createElementNS(XHTML_NS, "span");
+    this.element.className = "timestamp devtools-monospace";
+    this.element.textContent = l10n.timestampString(this.timestamp) + " ";
+
+    return this;
+  },
+}); 
 
 
 
@@ -2227,90 +2221,53 @@ Widgets.URLString = function (message, str, unshortenedStr)
   this.unshortenedStr = unshortenedStr;
 };
 
-Widgets.URLString.prototype = Heritage.extend(Widgets.BaseWidget.prototype,
-  {
+Widgets.URLString.prototype = extend(Widgets.BaseWidget.prototype, {
   
 
 
 
-    str: "",
+  str: "",
 
-    render: function ()
+  render: function ()
   {
-      if (this.element) {
-        return this;
-      }
-
-    
-    
-      this.element = this.el("span", {
-        class: "console-string"
-      });
-      this.element.appendChild(this._renderText("\""));
-
-    
-    
-      let tokens = this.str.split(/\s+/);
-      let textStart = 0;
-      let tokenStart;
-      for (let i = 0; i < tokens.length; i++) {
-        let token = tokens[i];
-        let unshortenedToken;
-        tokenStart = this.str.indexOf(token, textStart);
-        if (this._isURL(token)) {
-        
-        
-          if (i === tokens.length - 1 && this.unshortenedStr) {
-            unshortenedToken = this.unshortenedStr.slice(tokenStart).split(/\s+/, 1)[0];
-          }
-          this.element.appendChild(this._renderText(this.str.slice(textStart, tokenStart)));
-          textStart = tokenStart + token.length;
-          this.element.appendChild(this._renderURL(token, unshortenedToken));
-        }
-      }
-
-    
-      this.element.appendChild(this._renderText(this.str.slice(textStart, this.str.length)));
-      this.element.appendChild(this._renderText("\""));
-
+    if (this.element) {
       return this;
-    },
+    }
 
-  
+    
+    
+    this.element = this.el("span", {
+      class: "console-string"
+    });
+    this.element.appendChild(this._renderText("\""));
 
-
-
-
-
-
-
-    containsURL: function (grip)
-  {
-      if (typeof grip != "string") {
-        return false;
+    
+    
+    let tokens = this.str.split(/\s+/);
+    let textStart = 0;
+    let tokenStart;
+    for (let i = 0; i < tokens.length; i++) {
+      let token = tokens[i];
+      let unshortenedToken;
+      tokenStart = this.str.indexOf(token, textStart);
+      if (this._isURL(token)) {
+        
+        
+        if (i === tokens.length - 1 && this.unshortenedStr) {
+          unshortenedToken = this.unshortenedStr.slice(tokenStart).split(/\s+/, 1)[0];
+        }
+        this.element.appendChild(this._renderText(this.str.slice(textStart, tokenStart)));
+        textStart = tokenStart + token.length;
+        this.element.appendChild(this._renderURL(token, unshortenedToken));
       }
+    }
 
-      let tokens = grip.split(/\s+/);
-      return tokens.some(this._isURL);
-    },
+    
+    this.element.appendChild(this._renderText(this.str.slice(textStart, this.str.length)));
+    this.element.appendChild(this._renderText("\""));
 
-  
-
-
-
-
-
-
-
-    _isURL: function (token) {
-      try {
-        let uri = URI.newURI(token, null, null);
-        let url = uri.QueryInterface(Ci.nsIURL);
-        return true;
-      } catch (e) {
-        return false;
-      }
-    },
+    return this;
+  },
 
   
 
@@ -2320,25 +2277,61 @@ Widgets.URLString.prototype = Heritage.extend(Widgets.BaseWidget.prototype,
 
 
 
-
-
-    _renderURL: function (url, fullUrl)
+  containsURL: function (grip)
   {
-      let unshortened = fullUrl || url;
-      let result = this.el("a", {
-        class: "url",
-        title: unshortened,
-        href: unshortened,
-        draggable: false
-      }, url);
-      this.message._addLinkCallback(result);
-      return result;
-    },
+    if (typeof grip != "string") {
+      return false;
+    }
 
-    _renderText: function (text) {
-      return this.el("span", text);
-    },
-  }); 
+    let tokens = grip.split(/\s+/);
+    return tokens.some(this._isURL);
+  },
+
+  
+
+
+
+
+
+
+
+  _isURL: function (token) {
+    try {
+      let uri = URI.newURI(token, null, null);
+      let url = uri.QueryInterface(Ci.nsIURL);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  },
+
+  
+
+
+
+
+
+
+
+
+
+  _renderURL: function (url, fullUrl)
+  {
+    let unshortened = fullUrl || url;
+    let result = this.el("a", {
+      class: "url",
+      title: unshortened,
+      href: unshortened,
+      draggable: false
+    }, url);
+    this.message._addLinkCallback(result);
+    return result;
+  },
+
+  _renderText: function (text) {
+    return this.el("span", text);
+  },
+}); 
 
 
 
@@ -2361,61 +2354,60 @@ Widgets.JSObject = function (message, objectActor, options = {})
   this._onClick = this._onClick.bind(this);
 };
 
-Widgets.JSObject.prototype = Heritage.extend(Widgets.BaseWidget.prototype,
-  {
+Widgets.JSObject.prototype = extend(Widgets.BaseWidget.prototype, {
   
 
 
 
-    objectActor: null,
+  objectActor: null,
 
-    render: function ()
+  render: function ()
   {
-      if (!this.element) {
-        this._render();
-      }
+    if (!this.element) {
+      this._render();
+    }
 
-      return this;
-    },
+    return this;
+  },
 
-    _render: function ()
+  _render: function ()
   {
-      let str = VariablesView.getString(this.objectActor, this.options);
-      let className = this.message.getClassNameForValueGrip(this.objectActor);
-      if (!className && this.objectActor.class == "Object") {
-        className = "cm-variable";
-      }
+    let str = VariablesView.getString(this.objectActor, this.options);
+    let className = this.message.getClassNameForValueGrip(this.objectActor);
+    if (!className && this.objectActor.class == "Object") {
+      className = "cm-variable";
+    }
 
-      this.element = this._anchor(str, { className: className });
-    },
+    this.element = this._anchor(str, { className: className });
+  },
 
   
 
 
-    _renderConciseObject: function ()
+  _renderConciseObject: function ()
   {
-      this.element = this._anchor(this.objectActor.class,
+    this.element = this._anchor(this.objectActor.class,
                                 { className: "cm-variable" });
-    },
+  },
 
   
 
 
-    _renderObjectPrefix: function ()
+  _renderObjectPrefix: function ()
   {
-      let { kind } = this.objectActor.preview;
-      this.element = this.el("span.kind-" + kind);
-      this._anchor(this.objectActor.class, { className: "cm-variable" });
-      this._text(" { ");
-    },
+    let { kind } = this.objectActor.preview;
+    this.element = this.el("span.kind-" + kind);
+    this._anchor(this.objectActor.class, { className: "cm-variable" });
+    this._text(" { ");
+  },
 
   
 
 
-    _renderObjectSuffix: function ()
+  _renderObjectSuffix: function ()
   {
-      this._text(" }");
-    },
+    this._text(" }");
+  },
 
   
 
@@ -2433,73 +2425,73 @@ Widgets.JSObject.prototype = Heritage.extend(Widgets.BaseWidget.prototype,
 
 
 
-    _renderObjectProperty: function (key, value, container, needsComma, valueIsText = false)
+  _renderObjectProperty: function (key, value, container, needsComma, valueIsText = false)
   {
-      if (needsComma) {
-        this._text(", ");
-      }
+    if (needsComma) {
+      this._text(", ");
+    }
 
-      container.appendChild(this.el("span.cm-property", key));
-      this._text(": ");
+    container.appendChild(this.el("span.cm-property", key));
+    this._text(": ");
 
-      if (valueIsText) {
-        this._text(value);
+    if (valueIsText) {
+      this._text(value);
+    } else {
+      let valueElem = this.message._renderValueGrip(value, { concise: true, shorten: true });
+      container.appendChild(valueElem);
+    }
+  },
+
+  
+
+
+
+
+
+
+
+
+  _renderObjectProperties: function (container, needsComma)
+  {
+    let { preview } = this.objectActor;
+    let { ownProperties, safeGetterValues } = preview;
+
+    let shown = 0;
+
+    let getValue = desc => {
+      if (desc.get) {
+        return "Getter";
+      } else if (desc.set) {
+        return "Setter";
       } else {
-        let valueElem = this.message._renderValueGrip(value, { concise: true, shorten: true });
-        container.appendChild(valueElem);
+        return desc.value;
       }
-    },
+    };
 
-  
-
-
-
-
-
-
-
-
-    _renderObjectProperties: function (container, needsComma)
-  {
-      let { preview } = this.objectActor;
-      let { ownProperties, safeGetterValues } = preview;
-
-      let shown = 0;
-
-      let getValue = desc => {
-        if (desc.get) {
-          return "Getter";
-        } else if (desc.set) {
-          return "Setter";
-        } else {
-          return desc.value;
-        }
-      };
-
-      for (let key of Object.keys(ownProperties || {})) {
-        this._renderObjectProperty(key, getValue(ownProperties[key]), container,
+    for (let key of Object.keys(ownProperties || {})) {
+      this._renderObjectProperty(key, getValue(ownProperties[key]), container,
                                  shown > 0 || needsComma,
                                  ownProperties[key].get || ownProperties[key].set);
-        shown++;
-      }
+      shown++;
+    }
 
-      let ownPropertiesShown = shown;
+    let ownPropertiesShown = shown;
 
-      for (let key of Object.keys(safeGetterValues || {})) {
-        this._renderObjectProperty(key, safeGetterValues[key].getterValue,
+    for (let key of Object.keys(safeGetterValues || {})) {
+      this._renderObjectProperty(key, safeGetterValues[key].getterValue,
                                  container, shown > 0 || needsComma);
-        shown++;
-      }
+      shown++;
+    }
 
-      if (typeof preview.ownPropertiesLength == "number" &&
+    if (typeof preview.ownPropertiesLength == "number" &&
         ownPropertiesShown < preview.ownPropertiesLength) {
-        this._text(", ");
+      this._text(", ");
 
-        let n = preview.ownPropertiesLength - ownPropertiesShown;
-        let str = VariablesView.stringifiers._getNMoreString(n);
-        this._anchor(str);
-      }
-    },
+      let n = preview.ownPropertiesLength - ownPropertiesShown;
+      let str = VariablesView.stringifiers._getNMoreString(n);
+      this._anchor(str);
+    }
+  },
 
   
 
@@ -2521,105 +2513,105 @@ Widgets.JSObject.prototype = Heritage.extend(Widgets.BaseWidget.prototype,
 
 
 
-    _anchor: function (text, options = {})
+  _anchor: function (text, options = {})
   {
-      if (!options.onClick) {
+    if (!options.onClick) {
       
       
-        options.onClick = options.href ? this._onClickAnchor : this._onClick;
-      }
+      options.onClick = options.href ? this._onClickAnchor : this._onClick;
+    }
 
-      options.onContextMenu = options.onContextMenu || this._onContextMenu;
+    options.onContextMenu = options.onContextMenu || this._onContextMenu;
 
-      let anchor = this.el("a", {
-        class: options.className,
-        draggable: false,
-        href: options.href || "#",
-      }, text);
+    let anchor = this.el("a", {
+      class: options.className,
+      draggable: false,
+      href: options.href || "#",
+    }, text);
 
-      this.message._addLinkCallback(anchor, options.onClick);
+    this.message._addLinkCallback(anchor, options.onClick);
 
-      anchor.addEventListener("contextmenu", options.onContextMenu.bind(this));
+    anchor.addEventListener("contextmenu", options.onContextMenu.bind(this));
 
-      if (options.appendTo) {
-        options.appendTo.appendChild(anchor);
-      } else if (!("appendTo" in options) && this.element) {
-        this.element.appendChild(anchor);
-      }
+    if (options.appendTo) {
+      options.appendTo.appendChild(anchor);
+    } else if (!("appendTo" in options) && this.element) {
+      this.element.appendChild(anchor);
+    }
 
-      return anchor;
-    },
+    return anchor;
+  },
 
-    openObjectInVariablesView: function ()
+  openObjectInVariablesView: function ()
   {
-      this.output.openVariablesView({
-        label: VariablesView.getString(this.objectActor, { concise: true }),
-        objectActor: this.objectActor,
-        autofocus: true,
-      });
-    },
+    this.output.openVariablesView({
+      label: VariablesView.getString(this.objectActor, { concise: true }),
+      objectActor: this.objectActor,
+      autofocus: true,
+    });
+  },
 
-    storeObjectInWindow: function ()
+  storeObjectInWindow: function ()
   {
-      let evalString = `{ let i = 0;
+    let evalString = `{ let i = 0;
       while (this.hasOwnProperty("temp" + i) && i < 1000) {
         i++;
       }
       this["temp" + i] = _self;
       "temp" + i;
     }`;
-      let options = {
-        selectedObjectActor: this.objectActor.actor,
-      };
+    let options = {
+      selectedObjectActor: this.objectActor.actor,
+    };
 
-      this.output.owner.jsterm.requestEvaluation(evalString, options).then((res) => {
-        this.output.owner.jsterm.focus();
-        this.output.owner.jsterm.setInputValue(res.result);
-      });
-    },
+    this.output.owner.jsterm.requestEvaluation(evalString, options).then((res) => {
+      this.output.owner.jsterm.focus();
+      this.output.owner.jsterm.setInputValue(res.result);
+    });
+  },
 
   
 
 
 
-    _onClick: function ()
+  _onClick: function ()
   {
-      this.openObjectInVariablesView();
-    },
+    this.openObjectInVariablesView();
+  },
 
-    _onContextMenu: function (ev) {
+  _onContextMenu: function (ev) {
     
     
     
-      let doc = ev.target.ownerDocument;
-      let cmPopup = doc.getElementById("output-contextmenu");
+    let doc = ev.target.ownerDocument;
+    let cmPopup = doc.getElementById("output-contextmenu");
 
-      let openInVarViewCmd = doc.getElementById("menu_openInVarView");
-      let openVarView = this.openObjectInVariablesView.bind(this);
-      openInVarViewCmd.addEventListener("command", openVarView);
-      openInVarViewCmd.removeAttribute("disabled");
+    let openInVarViewCmd = doc.getElementById("menu_openInVarView");
+    let openVarView = this.openObjectInVariablesView.bind(this);
+    openInVarViewCmd.addEventListener("command", openVarView);
+    openInVarViewCmd.removeAttribute("disabled");
+    cmPopup.addEventListener("popuphiding", function onPopupHiding() {
+      cmPopup.removeEventListener("popuphiding", onPopupHiding);
+      openInVarViewCmd.removeEventListener("command", openVarView);
+      openInVarViewCmd.setAttribute("disabled", "true");
+    });
+
+    
+    
+    let storeInGlobalCmd = doc.getElementById("menu_storeAsGlobal");
+    if (!this.output.webConsoleClient.traits.selectedObjectActor) {
+      storeInGlobalCmd.remove();
+    } else if (storeInGlobalCmd) {
+      let storeObjectInWindow = this.storeObjectInWindow.bind(this);
+      storeInGlobalCmd.addEventListener("command", storeObjectInWindow);
+      storeInGlobalCmd.removeAttribute("disabled");
       cmPopup.addEventListener("popuphiding", function onPopupHiding() {
         cmPopup.removeEventListener("popuphiding", onPopupHiding);
-        openInVarViewCmd.removeEventListener("command", openVarView);
-        openInVarViewCmd.setAttribute("disabled", "true");
+        storeInGlobalCmd.removeEventListener("command", storeObjectInWindow);
+        storeInGlobalCmd.setAttribute("disabled", "true");
       });
-
-    
-    
-      let storeInGlobalCmd = doc.getElementById("menu_storeAsGlobal");
-      if (!this.output.webConsoleClient.traits.selectedObjectActor) {
-        storeInGlobalCmd.remove();
-      } else if (storeInGlobalCmd) {
-        let storeObjectInWindow = this.storeObjectInWindow.bind(this);
-        storeInGlobalCmd.addEventListener("command", storeObjectInWindow);
-        storeInGlobalCmd.removeAttribute("disabled");
-        cmPopup.addEventListener("popuphiding", function onPopupHiding() {
-          cmPopup.removeEventListener("popuphiding", onPopupHiding);
-          storeInGlobalCmd.removeEventListener("command", storeObjectInWindow);
-          storeInGlobalCmd.setAttribute("disabled", "true");
-        });
-      }
-    },
+    }
+  },
 
   
 
@@ -2631,11 +2623,11 @@ Widgets.JSObject.prototype = Heritage.extend(Widgets.BaseWidget.prototype,
 
 
 
-    _text: function (str, target = this.element)
+  _text: function (str, target = this.element)
   {
-      target.appendChild(this.document.createTextNode(str));
-    },
-  }); 
+    target.appendChild(this.document.createTextNode(str));
+  },
+}); 
 
 Widgets.ObjectRenderers = {};
 Widgets.ObjectRenderers.byKind = {};
@@ -2692,7 +2684,7 @@ Widgets.ObjectRenderers.add = function (obj)
   }
 
   constructor.canRender = obj.canRender;
-  constructor.prototype = Heritage.extend(extendObj.prototype, proto);
+  constructor.prototype = extend(extendObj.prototype, proto);
 
   if (obj.byClass) {
     Widgets.ObjectRenderers.byClass[obj.byClass] = constructor;
@@ -3494,27 +3486,26 @@ Widgets.LongString = function (message, longStringActor, options)
   this._onSubstring = this._onSubstring.bind(this);
 };
 
-Widgets.LongString.prototype = Heritage.extend(Widgets.BaseWidget.prototype,
-  {
+Widgets.LongString.prototype = extend(Widgets.BaseWidget.prototype, {
   
 
 
 
-    longStringActor: null,
+  longStringActor: null,
 
-    render: function ()
+  render: function ()
   {
-      if (this.element) {
-        return this;
-      }
-
-      let result = this.element = this.document.createElementNS(XHTML_NS, "span");
-      result.className = "longString console-string";
-      this._renderString(this.longStringActor.initial);
-      result.appendChild(this._renderEllipsis());
-
+    if (this.element) {
       return this;
-    },
+    }
+
+    let result = this.element = this.document.createElementNS(XHTML_NS, "span");
+    result.className = "longString console-string";
+    this._renderString(this.longStringActor.initial);
+    result.appendChild(this._renderEllipsis());
+
+    return this;
+  },
 
   
 
@@ -3522,13 +3513,13 @@ Widgets.LongString.prototype = Heritage.extend(Widgets.BaseWidget.prototype,
 
 
 
-    _renderString: function (str)
+  _renderString: function (str)
   {
-      this.element.textContent = VariablesView.getString(str, {
-        noStringQuotes: this.noStringQuotes,
-        noEllipsis: true,
-      });
-    },
+    this.element.textContent = VariablesView.getString(str, {
+      noStringQuotes: this.noStringQuotes,
+      noEllipsis: true,
+    });
+  },
 
   
 
@@ -3536,30 +3527,30 @@ Widgets.LongString.prototype = Heritage.extend(Widgets.BaseWidget.prototype,
 
 
 
-    _renderEllipsis: function ()
+  _renderEllipsis: function ()
   {
-      let ellipsis = this.document.createElementNS(XHTML_NS, "a");
-      ellipsis.className = "longStringEllipsis";
-      ellipsis.textContent = l10n.getStr("longStringEllipsis");
-      ellipsis.href = "#";
-      ellipsis.draggable = false;
-      this.message._addLinkCallback(ellipsis, this._onClick);
+    let ellipsis = this.document.createElementNS(XHTML_NS, "a");
+    ellipsis.className = "longStringEllipsis";
+    ellipsis.textContent = l10n.getStr("longStringEllipsis");
+    ellipsis.href = "#";
+    ellipsis.draggable = false;
+    this.message._addLinkCallback(ellipsis, this._onClick);
 
-      return ellipsis;
-    },
+    return ellipsis;
+  },
 
   
 
 
 
 
-    _onClick: function ()
+  _onClick: function ()
   {
-      let longString = this.output.webConsoleClient.longString(this.longStringActor);
-      let toIndex = Math.min(longString.length, MAX_LONG_STRING_LENGTH);
+    let longString = this.output.webConsoleClient.longString(this.longStringActor);
+    let toIndex = Math.min(longString.length, MAX_LONG_STRING_LENGTH);
 
-      longString.substring(longString.initial.length, toIndex, this._onSubstring);
-    },
+    longString.substring(longString.initial.length, toIndex, this._onSubstring);
+  },
 
   
 
@@ -3568,43 +3559,43 @@ Widgets.LongString.prototype = Heritage.extend(Widgets.BaseWidget.prototype,
 
 
 
-    _onSubstring: function (response)
+  _onSubstring: function (response)
   {
-      if (response.error) {
-        console.error("LongString substring failure: " + response.error);
-        return;
-      }
+    if (response.error) {
+      console.error("LongString substring failure: " + response.error);
+      return;
+    }
 
-      this.element.lastChild.remove();
-      this.element.classList.remove("longString");
+    this.element.lastChild.remove();
+    this.element.classList.remove("longString");
 
-      this._renderString(this.longStringActor.initial + response.substring);
+    this._renderString(this.longStringActor.initial + response.substring);
 
-      this.output.owner.emit("new-messages", new Set([{
-        update: true,
-        node: this.message.element,
-        response: response,
-      }]));
+    this.output.owner.emit("new-messages", new Set([{
+      update: true,
+      node: this.message.element,
+      response: response,
+    }]));
 
-      let toIndex = Math.min(this.longStringActor.length, MAX_LONG_STRING_LENGTH);
-      if (toIndex != this.longStringActor.length) {
-        this._logWarningAboutStringTooLong();
-      }
-    },
+    let toIndex = Math.min(this.longStringActor.length, MAX_LONG_STRING_LENGTH);
+    if (toIndex != this.longStringActor.length) {
+      this._logWarningAboutStringTooLong();
+    }
+  },
 
   
 
 
 
-    _logWarningAboutStringTooLong: function ()
+  _logWarningAboutStringTooLong: function ()
   {
-      let msg = new Messages.Simple(l10n.getStr("longStringTooLong"), {
-        category: "output",
-        severity: "warning",
-      });
-      this.output.addMessage(msg);
-    },
-  }); 
+    let msg = new Messages.Simple(l10n.getStr("longStringTooLong"), {
+      category: "output",
+      severity: "warning",
+    });
+    this.output.addMessage(msg);
+  },
+}); 
 
 
 
@@ -3624,31 +3615,30 @@ Widgets.Stacktrace = function (message, stacktrace)
   this.stacktrace = stacktrace;
 };
 
-Widgets.Stacktrace.prototype = Heritage.extend(Widgets.BaseWidget.prototype,
-  {
+Widgets.Stacktrace.prototype = extend(Widgets.BaseWidget.prototype, {
   
 
 
 
-    stacktrace: null,
+  stacktrace: null,
 
-    render: function ()
+  render: function ()
   {
-      if (this.element) {
-        return this;
-      }
-
-      let result = this.element = this.document.createElementNS(XHTML_NS, "ul");
-      result.className = "stacktrace devtools-monospace";
-
-      if (this.stacktrace) {
-        for (let frame of this.stacktrace) {
-          result.appendChild(this._renderFrame(frame));
-        }
-      }
-
+    if (this.element) {
       return this;
-    },
+    }
+
+    let result = this.element = this.document.createElementNS(XHTML_NS, "ul");
+    result.className = "stacktrace devtools-monospace";
+
+    if (this.stacktrace) {
+      for (let frame of this.stacktrace) {
+        result.appendChild(this._renderFrame(frame));
+      }
+    }
+
+    return this;
+  },
 
   
 
@@ -3659,44 +3649,44 @@ Widgets.Stacktrace.prototype = Heritage.extend(Widgets.BaseWidget.prototype,
 
 
 
-    _renderFrame: function (frame)
+  _renderFrame: function (frame)
   {
-      let fn = this.document.createElementNS(XHTML_NS, "span");
-      fn.className = "function";
+    let fn = this.document.createElementNS(XHTML_NS, "span");
+    fn.className = "function";
 
-      let asyncCause = "";
-      if (frame.asyncCause) {
-        asyncCause =
+    let asyncCause = "";
+    if (frame.asyncCause) {
+      asyncCause =
         l10n.getFormatStr("stacktrace.asyncStack", [frame.asyncCause]) + " ";
-      }
+    }
 
-      if (frame.functionName) {
-        let span = this.document.createElementNS(XHTML_NS, "span");
-        span.className = "cm-variable";
-        span.textContent = asyncCause + frame.functionName;
-        fn.appendChild(span);
-        fn.appendChild(this.document.createTextNode("()"));
-      } else {
-        fn.classList.add("cm-comment");
-        fn.textContent = asyncCause + l10n.getStr("stacktrace.anonymousFunction");
-      }
+    if (frame.functionName) {
+      let span = this.document.createElementNS(XHTML_NS, "span");
+      span.className = "cm-variable";
+      span.textContent = asyncCause + frame.functionName;
+      fn.appendChild(span);
+      fn.appendChild(this.document.createTextNode("()"));
+    } else {
+      fn.classList.add("cm-comment");
+      fn.textContent = asyncCause + l10n.getStr("stacktrace.anonymousFunction");
+    }
 
-      let location = this.output.owner.createLocationNode({url: frame.filename,
+    let location = this.output.owner.createLocationNode({url: frame.filename,
                                                         line: frame.lineNumber});
 
     
     
     
-      location.classList.remove("devtools-monospace");
+    location.classList.remove("devtools-monospace");
 
-      let elem = this.document.createElementNS(XHTML_NS, "li");
-      elem.appendChild(fn);
-      elem.appendChild(location);
-      elem.appendChild(this.document.createTextNode("\n"));
+    let elem = this.document.createElementNS(XHTML_NS, "li");
+    elem.appendChild(fn);
+    elem.appendChild(location);
+    elem.appendChild(this.document.createTextNode("\n"));
 
-      return elem;
-    },
-  }); 
+    return elem;
+  },
+}); 
 
 
 
@@ -3719,42 +3709,41 @@ Widgets.Table = function (message, data, columns)
   this.columns = columns;
 };
 
-Widgets.Table.prototype = Heritage.extend(Widgets.BaseWidget.prototype,
-  {
+Widgets.Table.prototype = extend(Widgets.BaseWidget.prototype, {
   
 
 
 
-    data: null,
+  data: null,
 
   
 
 
 
 
-    columns: null,
+  columns: null,
 
-    render: function () {
-      if (this.element) {
-        return this;
-      }
-
-      let result = this.element = this.document.createElementNS(XHTML_NS, "div");
-      result.className = "consoletable devtools-monospace";
-
-      this.table = new TableWidget(result, {
-        initialColumns: this.columns,
-        uniqueId: "_index",
-        firstColumn: "_index"
-      });
-
-      for (let row of this.data) {
-        this.table.push(row);
-      }
-
+  render: function () {
+    if (this.element) {
       return this;
     }
-  }); 
+
+    let result = this.element = this.document.createElementNS(XHTML_NS, "div");
+    result.className = "consoletable devtools-monospace";
+
+    this.table = new TableWidget(result, {
+      initialColumns: this.columns,
+      uniqueId: "_index",
+      firstColumn: "_index"
+    });
+
+    for (let row of this.data) {
+      this.table.push(row);
+    }
+
+    return this;
+  }
+}); 
 
 function gSequenceId()
 {

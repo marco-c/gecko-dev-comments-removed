@@ -9,7 +9,7 @@
 const {Cc, Ci, Cu} = require("chrome");
 
 var WebConsoleUtils = require("devtools/shared/webconsole/utils").Utils;
-var Heritage = require("sdk/core/heritage");
+var { extend } = require("sdk/core/heritage");
 var {TargetFactory} = require("devtools/client/framework/target");
 var {Tools} = require("devtools/client/definitions");
 const { Task } = require("devtools/shared/task");
@@ -33,7 +33,6 @@ const BROWSER_CONSOLE_WINDOW_FEATURES = "chrome,titlebar,toolbar,centerscreen,re
 const BROWSER_CONSOLE_FILTER_PREFS_PREFIX = "devtools.browserconsole.filter.";
 
 var gHudId = 0;
-
 
 
 
@@ -638,13 +637,12 @@ function BrowserConsole()
   this._telemetry = new Telemetry();
 }
 
-BrowserConsole.prototype = Heritage.extend(WebConsole.prototype,
-  {
-    _browserConsole: true,
-    _bc_init: null,
-    _bc_destroyer: null,
+BrowserConsole.prototype = extend(WebConsole.prototype, {
+  _browserConsole: true,
+  _bc_init: null,
+  _bc_destroyer: null,
 
-    $init: WebConsole.prototype.init,
+  $init: WebConsole.prototype.init,
 
   
 
@@ -652,41 +650,41 @@ BrowserConsole.prototype = Heritage.extend(WebConsole.prototype,
 
 
 
-    init: function BC_init()
+  init: function BC_init()
   {
-      if (this._bc_init) {
-        return this._bc_init;
-      }
-
-      this.ui._filterPrefsPrefix = BROWSER_CONSOLE_FILTER_PREFS_PREFIX;
-
-      let window = this.iframeWindow;
-
-    
-    
-      let onClose = () => {
-        window.removeEventListener("unload", onClose);
-        window.removeEventListener("focus", onFocus);
-        this.destroy();
-      };
-      window.addEventListener("unload", onClose);
-
-    
-      window.document.getElementById("cmd_close").removeAttribute("disabled");
-
-      this._telemetry.toolOpened("browserconsole");
-
-    
-    
-    
-      let onFocus = () => showDoorhanger({ window, type: "deveditionpromo" });
-      window.addEventListener("focus", onFocus);
-
-      this._bc_init = this.$init();
+    if (this._bc_init) {
       return this._bc_init;
-    },
+    }
 
-    $destroy: WebConsole.prototype.destroy,
+    this.ui._filterPrefsPrefix = BROWSER_CONSOLE_FILTER_PREFS_PREFIX;
+
+    let window = this.iframeWindow;
+
+    
+    
+    let onClose = () => {
+      window.removeEventListener("unload", onClose);
+      window.removeEventListener("focus", onFocus);
+      this.destroy();
+    };
+    window.addEventListener("unload", onClose);
+
+    
+    window.document.getElementById("cmd_close").removeAttribute("disabled");
+
+    this._telemetry.toolOpened("browserconsole");
+
+    
+    
+    
+    let onFocus = () => showDoorhanger({ window, type: "deveditionpromo" });
+    window.addEventListener("focus", onFocus);
+
+    this._bc_init = this.$init();
+    return this._bc_init;
+  },
+
+  $destroy: WebConsole.prototype.destroy,
 
   
 
@@ -694,27 +692,27 @@ BrowserConsole.prototype = Heritage.extend(WebConsole.prototype,
 
 
 
-    destroy: function BC_destroy()
+  destroy: function BC_destroy()
   {
-      if (this._bc_destroyer) {
-        return this._bc_destroyer.promise;
-      }
+    if (this._bc_destroyer) {
+      return this._bc_destroyer.promise;
+    }
 
-      this._telemetry.toolClosed("browserconsole");
+    this._telemetry.toolClosed("browserconsole");
 
-      this._bc_destroyer = promise.defer();
+    this._bc_destroyer = promise.defer();
 
-      let chromeWindow = this.chromeWindow;
-      this.$destroy().then(() =>
+    let chromeWindow = this.chromeWindow;
+    this.$destroy().then(() =>
       this.target.client.close(() => {
         HUDService._browserConsoleID = null;
         chromeWindow.close();
         this._bc_destroyer.resolve(null);
       }));
 
-      return this._bc_destroyer.promise;
-    },
-  });
+    return this._bc_destroyer.promise;
+  },
+});
 
 const HUDService = new HUD_SERVICE();
 
