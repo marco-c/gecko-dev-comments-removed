@@ -31,6 +31,7 @@
 #include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/FloatingPoint.h"
 #include "mozilla/net/ReferrerPolicy.h"
+#include "mozilla/Logging.h"
 #include "nsIContentPolicy.h"
 
 #if defined(XP_WIN)
@@ -2374,6 +2375,13 @@ public:
 
 
 
+  static mozilla::LogModule* DOMDumpLog();
+
+  
+
+
+
+
 
 
 
@@ -2722,6 +2730,7 @@ private:
 #if !(defined(DEBUG) || defined(MOZ_ENABLE_JS_DUMP))
   static bool sDOMWindowDumpEnabled;
 #endif
+  static mozilla::LazyLogModule sDOMDumpLog;
 };
 
 class MOZ_RAII nsAutoScriptBlocker {

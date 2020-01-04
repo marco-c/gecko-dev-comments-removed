@@ -288,6 +288,8 @@ bool nsContentUtils::sFragmentParsingActive = false;
 bool nsContentUtils::sDOMWindowDumpEnabled;
 #endif
 
+mozilla::LazyLogModule nsContentUtils::sDOMDumpLog("Dump");
+
 
 enum AutocompleteFieldName
 {
@@ -7114,6 +7116,12 @@ nsContentUtils::DOMWindowDumpEnabled()
 #else
   return true;
 #endif
+}
+
+mozilla::LogModule*
+nsContentUtils::DOMDumpLog()
+{
+  return sDOMDumpLog;
 }
 
 bool
