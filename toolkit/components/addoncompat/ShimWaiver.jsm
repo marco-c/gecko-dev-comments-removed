@@ -1,0 +1,15 @@
+
+
+
+
+this.EXPORTED_SYMBOLS = ["ShimWaiver"];
+
+this.ShimWaiver = {
+  getProperty: function(obj, prop) {
+    let rv = obj[prop];
+    if (rv instanceof Function) {
+      rv = rv.bind(obj);
+    }
+    return rv;
+  }
+};
