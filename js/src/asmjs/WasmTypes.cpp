@@ -280,7 +280,8 @@ SignalUsage::SignalUsage()
     
     forOOB(HaveSignalHandlers() &&
            gc::SystemPageSize() <= PageSize &&
-           PageSize % gc::SystemPageSize() == 0),
+           PageSize % gc::SystemPageSize() == 0 &&
+           !JitOptions.wasmExplicitBoundsChecks),
 #else
     forOOB(false),
 #endif
