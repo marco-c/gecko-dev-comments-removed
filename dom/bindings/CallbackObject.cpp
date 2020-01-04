@@ -138,9 +138,6 @@ CallbackObject::CallSetup::CallSetup(CallbackObject* aCallback,
     
     
     
-    
-    
-    
     mRootedCallable.emplace(cx, aCallback->Callback());
   }
 

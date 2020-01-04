@@ -255,8 +255,6 @@ protected:
     Maybe<AutoEntryScript> mAutoEntryScript;
     Maybe<AutoIncumbentScript> mAutoIncumbentScript;
 
-    
-    
     Maybe<JS::Rooted<JSObject*> > mRootedCallable;
 
     
