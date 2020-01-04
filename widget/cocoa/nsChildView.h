@@ -598,6 +598,7 @@ protected:
   int mDevPixelCornerRadius;
   bool mIsCoveringTitlebar;
   bool mIsFullscreen;
+  bool mIsOpaque;
   LayoutDeviceIntRect mTitlebarRect;
 
   

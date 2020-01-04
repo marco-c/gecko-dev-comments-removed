@@ -73,6 +73,8 @@ public:
   void UpdateVibrantRegion(VibrancyType aType,
                            const LayoutDeviceIntRegion& aRegion);
 
+  bool HasVibrantRegions() { return !mVibrantRegions.IsEmpty(); }
+
   
 
 
