@@ -93,8 +93,8 @@ add_task(function* test() {
         }
 
         
-        ok(content.document.querySelector('div#viewer'), "document content has viewer UI");
-        ok('PDFJS' in content.wrappedJSObject, "window content has PDFJS object");
+        Assert.ok(content.document.querySelector("div#viewer"), "document content has viewer UI");
+        Assert.ok("PDFJS" in content.wrappedJSObject, "window content has PDFJS object");
 
         let initialWidth, previousWidth;
         initialWidth = previousWidth =
@@ -106,7 +106,7 @@ add_task(function* test() {
           if (test.action.selector) {
             
             var el = document.querySelector(test.action.selector);
-            ok(el, "Element '" + test.action.selector + "' has been found");
+            Assert.ok(el, "Element '" + test.action.selector + "' has been found");
 
             if (test.action.index){
               el.selectedIndex = test.action.index;
@@ -138,11 +138,11 @@ add_task(function* test() {
 
           
           let computedZoomValue = parseInt(((actualWidth/initialWidth).toFixed(2))*100) + "%";
-          is(computedZoomValue, zoomValue, "Content has correct zoom");
+          Assert.equal(computedZoomValue, zoomValue, "Content has correct zoom");
 
           
           let zoom = (actualWidth - previousWidth) * test.expectedZoom;
-          ok(zoom > 0, test.message);
+          Assert.ok(zoom > 0, test.message);
 
           previousWidth = actualWidth;
         }

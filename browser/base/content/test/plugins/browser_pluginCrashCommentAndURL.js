@@ -59,7 +59,7 @@ add_task(function* () {
   let crashReportStatus = TestUtils.topicObserved("crash-report-status", onSubmitStatus);
 
   
-  let crashUiVisible = yield ContentTask.spawn(gTestBrowser, config, function* (aConfig) {
+  yield ContentTask.spawn(gTestBrowser, config, function* (aConfig) {
     let doc = content.document;
     let plugin = doc.getElementById("plugin");
     let pleaseSubmit = doc.getAnonymousElementByAttribute(plugin, "anonid", "pleaseSubmit");
@@ -67,12 +67,11 @@ add_task(function* () {
     
     doc.getAnonymousElementByAttribute(plugin, "anonid", "submitURLOptIn").checked = aConfig.urlOptIn;
     submitButton.click();
-    return content.getComputedStyle(pleaseSubmit).display == "block";
+    Assert.equal(content.getComputedStyle(pleaseSubmit).display == "block",
+      aConfig.shouldSubmissionUIBeVisible, "The crash UI should be visible");
   });
 
   yield crashReportStatus;
-
-  is(crashUiVisible, config.shouldSubmissionUIBeVisible, "The crash UI should be visible");
 });
 
 add_task(function* () {
@@ -97,7 +96,7 @@ add_task(function* () {
   let crashReportStatus = TestUtils.topicObserved("crash-report-status", onSubmitStatus);
 
   
-  let crashUiVisible = yield ContentTask.spawn(gTestBrowser, config, function* (aConfig) {
+  yield ContentTask.spawn(gTestBrowser, config, function* (aConfig) {
     let doc = content.document;
     let plugin = doc.getElementById("plugin");
     let pleaseSubmit = doc.getAnonymousElementByAttribute(plugin, "anonid", "pleaseSubmit");
@@ -106,12 +105,11 @@ add_task(function* () {
     doc.getAnonymousElementByAttribute(plugin, "anonid", "submitURLOptIn").checked = aConfig.urlOptIn;
     doc.getAnonymousElementByAttribute(plugin, "anonid", "submitComment").value = aConfig.comment;
     submitButton.click();
-    return content.getComputedStyle(pleaseSubmit).display == "block";
+    Assert.equal(content.getComputedStyle(pleaseSubmit).display == "block",
+      aConfig.shouldSubmissionUIBeVisible, "The crash UI should be visible");
   });
 
   yield crashReportStatus;
-
-  is(crashUiVisible, config.shouldSubmissionUIBeVisible, "The crash UI should be visible");
 });
 
 add_task(function* () {
@@ -136,14 +134,13 @@ add_task(function* () {
   yield pluginCrashed;
 
   
-  let crashUiVisible = yield ContentTask.spawn(gTestBrowser, {}, function* () {
+  yield ContentTask.spawn(gTestBrowser, config, function* (aConfig) {
     let doc = content.document;
     let plugin = doc.getElementById("plugin");
     let pleaseSubmit = doc.getAnonymousElementByAttribute(plugin, "anonid", "pleaseSubmit");
-    return !!pleaseSubmit && content.getComputedStyle(pleaseSubmit).display == "block";
+    Assert.equal(!!pleaseSubmit && content.getComputedStyle(pleaseSubmit).display == "block",
+      aConfig.shouldSubmissionUIBeVisible, "Plugin crash UI should not be visible");
   });
-
-  is(crashUiVisible, config.shouldSubmissionUIBeVisible, "Plugin crash UI should not be visible");
 });
 
 function promisePluginCrashed() {

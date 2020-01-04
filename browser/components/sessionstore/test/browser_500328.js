@@ -43,10 +43,9 @@ function checkState(tab) {
       
       
       ContentTask.spawn(tab.linkedBrowser, aEvent.state, function(state) {
-        return Cu.waiveXrays(state).obj3.toString();
-      }).then(function(stateStr) {
-        is(stateStr, '/^a$/', "second popstate object.");
-
+        Assert.equal(Cu.waiveXrays(state).obj3.toString(),
+          "/^a$/", "second popstate object.");
+      }).then(function() {
         
         
         

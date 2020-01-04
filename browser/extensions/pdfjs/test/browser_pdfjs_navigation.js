@@ -157,8 +157,8 @@ add_task(function* test() {
 
       yield ContentTask.spawn(newTabBrowser, null, function* () {
         
-        ok(content.document.querySelector('div#viewer'), "document content has viewer UI");
-        ok('PDFJS' in content.wrappedJSObject, "window content has PDFJS object");
+        Assert.ok(content.document.querySelector("div#viewer"), "document content has viewer UI");
+        Assert.ok("PDFJS" in content.wrappedJSObject, "window content has PDFJS object");
       });
 
       yield ContentTask.spawn(newTabBrowser, null, contentSetUp);
@@ -167,7 +167,7 @@ add_task(function* test() {
 
       yield ContentTask.spawn(newTabBrowser, null, function*() {
         let pageNumber = content.document.querySelector('input#pageNumber');
-        is(pageNumber.value, pageNumber.max, "Document is left on the last page");
+        Assert.equal(pageNumber.value, pageNumber.max, "Document is left on the last page");
       });
     });
 });
@@ -255,7 +255,7 @@ function* runTests(browser) {
 
       
       var el = document.querySelector(test.action.selector);
-      ok(el, "Element '" + test.action.selector + "' has been found");
+      Assert.ok(el, "Element '" + test.action.selector + "' has been found");
 
       
       if (test.action.value)
@@ -274,7 +274,7 @@ function* runTests(browser) {
       el.dispatchEvent(ev);
 
       let pgNumber = yield deferred.promise;
-      is(pgNumber, test.expectedPage, test.message);
+      Assert.equal(pgNumber, test.expectedPage, test.message);
     }
 
     var viewer = content.wrappedJSObject.PDFViewerApplication;

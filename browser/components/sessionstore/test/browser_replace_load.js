@@ -40,13 +40,12 @@ var testSwitchToTab = Task.async(function* (url, options) {
   is(browser.currentURI.spec, url, "correct URL loaded");
 
   
-  let count = yield ContentTask.spawn(browser, null, function* () {
+  yield ContentTask.spawn(browser, null, function* () {
     let Ci = Components.interfaces;
     let webNavigation = docShell.QueryInterface(Ci.nsIWebNavigation);
     let history = webNavigation.sessionHistory.QueryInterface(Ci.nsISHistoryInternal);
-    return history && history.count;
+    Assert.equal(history && history.count, 3, "three history entries");
   });
-  is(count, 3, "three history entries");
 
   
   gBrowser.removeTab(tab);

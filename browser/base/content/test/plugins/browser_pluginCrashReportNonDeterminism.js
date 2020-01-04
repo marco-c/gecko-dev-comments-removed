@@ -143,7 +143,7 @@ add_task(function* testChromeHearsPluginCrashFirst() {
   mm.sendAsyncMessage(CRASHED_MESSAGE,
                       { pluginName: "", runID, state: "please" });
 
-  let [gotExpected, msg] = yield ContentTask.spawn(browser, {}, function* () {
+  yield ContentTask.spawn(browser, null, function* () {
     
     
     
@@ -154,7 +154,8 @@ add_task(function* testChromeHearsPluginCrashFirst() {
                                                           "submitStatus");
 
     if (statusDiv.getAttribute("status") == "please") {
-      return [false, "Did not expect plugin to be in crash report mode yet."];
+      Assert.ok(false, "Did not expect plugin to be in crash report mode yet.");
+      return;
     }
 
     
@@ -176,11 +177,9 @@ add_task(function* testChromeHearsPluginCrashFirst() {
     });
 
     plugin.dispatchEvent(event);
-    return [statusDiv.getAttribute("status") == "please",
-            "Should have been showing crash report UI"];
+    Assert.equal(statusDiv.getAttribute("status"), "please",
+      "Should have been showing crash report UI");
   });
-
-  ok(gotExpected, msg);
   yield BrowserTestUtils.closeWindow(win);
 });
 
@@ -202,7 +201,7 @@ add_task(function* testContentHearsCrashFirst() {
   let runID = yield preparePlugin(browser,
                                   Ci.nsIObjectLoadingContent.PLUGIN_CRASHED);
 
-  let [gotExpected, msg] = yield ContentTask.spawn(browser, null, function* () {
+  yield ContentTask.spawn(browser, null, function* () {
     
     
     
@@ -213,7 +212,7 @@ add_task(function* testContentHearsCrashFirst() {
                                                           "submitStatus");
 
     if (statusDiv.getAttribute("status") == "please") {
-      return [false, "Did not expect plugin to be in crash report mode yet."];
+      Assert.ok(false, "Did not expect plugin to be in crash report mode yet.");
     }
 
     let event = new content.PluginCrashedEvent("PluginCrashed", {
@@ -227,11 +226,9 @@ add_task(function* testContentHearsCrashFirst() {
 
     plugin.dispatchEvent(event);
 
-    return [statusDiv.getAttribute("status") != "please",
-            "Should not yet be showing crash report UI"];
+    Assert.notEqual(statusDiv.getAttribute("status"), "please",
+      "Should not yet be showing crash report UI");
   });
-
-  ok(gotExpected, msg);
 
   
   
@@ -239,7 +236,7 @@ add_task(function* testContentHearsCrashFirst() {
   mm.sendAsyncMessage(CRASHED_MESSAGE,
                       { pluginName: "", runID, state: "please"});
 
-  [gotExpected, msg] = yield ContentTask.spawn(browser, null, function* () {
+  yield ContentTask.spawn(browser, null, function* () {
     
     
     
@@ -249,11 +246,9 @@ add_task(function* testContentHearsCrashFirst() {
                           .getAnonymousElementByAttribute(plugin, "anonid",
                                                           "submitStatus");
 
-    return [statusDiv.getAttribute("status") == "please",
-            "Should have been showing crash report UI"];
+    Assert.equal(statusDiv.getAttribute("status"), "please",
+      "Should have been showing crash report UI");
   });
-
-  ok(gotExpected, msg);
 
   yield BrowserTestUtils.closeWindow(win);
 });

@@ -13,27 +13,21 @@ add_task(function* () {
   gBrowser.loadURI("https://nocert.example.com/");
   yield promise;
 
-  let uri = yield remote(() => {
-    return content.document.documentURI;
+  yield remote(() => {
+    
+    let uri = content.document.documentURI;
+    Assert.ok(uri.startsWith("about:certerror"), "Broken page should go to about:certerror, not about:neterror");
   });
-
-  
-  ok(uri.startsWith("about:certerror"), "Broken page should go to about:certerror, not about:neterror");
 
   let advancedDiv, advancedDivVisibility, technicalDivCollapsed;
 
-  [advancedDiv, advancedDivVisibility] = yield remote(() => {
+  yield remote(() => {
     let div = content.document.getElementById("advancedPanel");
-    if (div) {
-      return [true, div.ownerDocument.defaultView.getComputedStyle(div, "").visibility];
-    } else {
-      return [null, null];
-    }
+    
+    Assert.ok(div, "Advanced content div should exist");
+    Assert.equal(div.ownerDocument.defaultView.getComputedStyle(div, "").visibility,
+      "hidden", "Advanced content should not be visible by default");
   });
-
-  
-  ok(advancedDiv, "Advanced content div should exist");
-  is(advancedDivVisibility, "hidden", "Advanced content should not be visible by default");
 
   
   gPrefService.setBoolPref("browser.xul.error_pages.expert_bad_cert", true);
@@ -44,17 +38,12 @@ add_task(function* () {
   gBrowser.reload();
   yield promise;
 
-  [advancedDiv, advancedDivVisibility] = yield remote(() => {
+  yield remote(() => {
     let div = content.document.getElementById("advancedPanel");
-    if (div) {
-      return [true, div.ownerDocument.defaultView.getComputedStyle(div, "").visibility];
-    } else {
-      return [null, null];
-    }
+    Assert.ok(div, "Advanced content div should exist");
+    Assert.equal(div.ownerDocument.defaultView.getComputedStyle(div, "").visibility,
+      "visible", "Advanced content should be visible by default");
   });
-
-  ok(advancedDiv, "Advanced content div should exist");
-  is(advancedDivVisibility, "visible", "Advanced content should be visible by default");
 
   
   gBrowser.removeCurrentTab();
