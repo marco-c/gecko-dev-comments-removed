@@ -703,7 +703,7 @@ TileClient::DiscardBackBuffer()
 {
   if (mBackBuffer) {
     MOZ_ASSERT(mBackLock);
-    if (!mBackBuffer->ImplementsLocking() && mBackLock->GetReadCount() > 1) {
+    if (!mBackBuffer->HasSynchronization() && mBackLock->GetReadCount() > 1) {
       
       
       
