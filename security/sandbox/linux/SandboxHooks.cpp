@@ -13,6 +13,9 @@
 #include <stdlib.h>
 
 
+extern int gSeccompTsyncBroadcastSignum;
+
+
 
 
 
@@ -31,11 +34,14 @@ static int HandleSigset(int (*aRealFunc)(int, const sigset_t*, sigset_t*),
   }
 
   
-  if (aSet == NULL || aHow == SIG_UNBLOCK || !sigismember(aSet, SIGSYS))
+  if (aSet == NULL || aHow == SIG_UNBLOCK) {
     return aRealFunc(aHow, aSet, aOldSet);
+  }
 
   sigset_t newSet = *aSet;
-  if (sigdelset(&newSet, SIGSYS) != 0) {
+  if (sigdelset(&newSet, SIGSYS) != 0 ||
+     (gSeccompTsyncBroadcastSignum &&
+      sigdelset(&newSet, gSeccompTsyncBroadcastSignum) != 0)) {
     if (aUseErrno) {
       errno = ENOSYS;
       return -1;
