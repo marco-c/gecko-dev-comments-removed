@@ -193,13 +193,7 @@ nsLayoutStylesheetCache::NoScriptSheet()
   EnsureGlobal();
 
   if (!gStyleCache->mNoScriptSheet) {
-    
-    LoadSheetURL(
-#ifdef RELEASE_BUILD
-                 "data:text/css,noscript { display%3A none !important%3B }",
-#else
-                 "resource://gre-resources/noscript.css",
-#endif
+    LoadSheetURL("resource://gre-resources/noscript.css",
                  gStyleCache->mNoScriptSheet, eAgentSheetFeatures);
   }
 
@@ -212,14 +206,7 @@ nsLayoutStylesheetCache::NoFramesSheet()
   EnsureGlobal();
 
   if (!gStyleCache->mNoFramesSheet) {
-    
-    LoadSheetURL(
-#ifdef RELEASE_BUILD
-                 "data:text/css,noframes { display%3A block%3B } "
-                 "frame%2C frameset%2C iframe { display%3A none !important%3B }",
-#else
-                 "resource://gre-resources/noframes.css",
-#endif
+    LoadSheetURL("resource://gre-resources/noframes.css",
                  gStyleCache->mNoFramesSheet, eAgentSheetFeatures);
   }
 
