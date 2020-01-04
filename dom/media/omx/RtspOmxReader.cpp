@@ -87,14 +87,14 @@ void RtspOmxReader::EnsureActive() {
 }
 
 RefPtr<MediaDecoderReader::MetadataPromise>
-RtspOmxReader::AsyncReadMetadata()
+RtspOmxReader::AsyncReadMetadataInternal()
 {
   
   
   mRtspResource->DisablePlayoutDelay();
 
   RefPtr<MediaDecoderReader::MetadataPromise> p =
-    MediaOmxReader::AsyncReadMetadata();
+    MediaOmxReader::AsyncReadMetadataInternal();
 
   
   

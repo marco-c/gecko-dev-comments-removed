@@ -52,8 +52,6 @@ public:
     return mAudio.mTrackDemuxer;
   }
 
-  RefPtr<MetadataPromise> AsyncReadMetadata() override;
-
   void ReadUpdatedMetadata(MediaInfo* aInfo) override;
 
   RefPtr<SeekPromise>
@@ -442,6 +440,7 @@ private:
   
   void ReleaseMediaResourcesInternal() override;
   void DisableHardwareAccelerationInternal() override;
+  RefPtr<MetadataPromise> AsyncReadMetadataInternal() override;
 };
 
 } 

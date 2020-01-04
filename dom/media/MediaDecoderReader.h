@@ -267,6 +267,12 @@ private:
   
   virtual nsresult ReadMetadata(MediaInfo*, MetadataTags**) { MOZ_CRASH(); }
 
+  
+  
+  
+  
+  virtual RefPtr<MetadataPromise> AsyncReadMetadataInternal();
+
 protected:
   friend class TrackBuffer;
   virtual void NotifyDataArrivedInternal(uint32_t aLength, int64_t aOffset) { }
