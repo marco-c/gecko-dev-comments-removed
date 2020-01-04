@@ -169,7 +169,7 @@ public:
 
 
 
-  LayersBackend GetCompositorBackendType() const override
+  LayersBackend GetCompositorBackendType() const
   {
     return mTextureFactoryIdentifier.mParentBackend;
   }

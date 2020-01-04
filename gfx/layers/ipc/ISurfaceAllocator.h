@@ -87,12 +87,6 @@ public:
 
 
 
-  virtual LayersBackend GetCompositorBackendType() const = 0;
-
-  
-
-
-
 
   virtual bool AllocShmem(size_t aSize,
                           mozilla::ipc::SharedMemory::SharedMemoryType aType,

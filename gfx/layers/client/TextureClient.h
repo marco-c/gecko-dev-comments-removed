@@ -178,7 +178,7 @@ public:
 
   
   static already_AddRefed<TextureClient>
-  CreateForDrawing(ISurfaceAllocator* aAllocator,
+  CreateForDrawing(CompositableForwarder* aAllocator,
                    gfx::SurfaceFormat aFormat,
                    gfx::IntSize aSize,
                    BackendSelector aSelector,
