@@ -291,7 +291,7 @@ public:
 
   void ComposeStyle(nsRefPtr<AnimValuesStyleRule>& aStyleRule,
                     nsCSSPropertySet& aSetProperties,
-                    bool& aNeedsRefreshes);
+                    bool& aStyleChanging);
 
 
   

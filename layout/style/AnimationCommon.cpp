@@ -697,7 +697,7 @@ AnimationCollection::EnsureStyleRuleFor(TimeStamp aRefreshTime)
 {
   mHasPendingAnimationRestyle = false;
 
-  if (!mNeedsRefreshes) {
+  if (!mStyleChanging) {
     mStyleRuleRefreshTime = aRefreshTime;
     return;
   }
@@ -717,7 +717,7 @@ AnimationCollection::EnsureStyleRuleFor(TimeStamp aRefreshTime)
   mStyleRuleRefreshTime = aRefreshTime;
   mStyleRule = nullptr;
   
-  mNeedsRefreshes = false;
+  mStyleChanging = false;
 
   
   
@@ -726,7 +726,7 @@ AnimationCollection::EnsureStyleRuleFor(TimeStamp aRefreshTime)
   nsCSSPropertySet properties;
 
   for (size_t animIdx = mAnimations.Length(); animIdx-- != 0; ) {
-    mAnimations[animIdx]->ComposeStyle(mStyleRule, properties, mNeedsRefreshes);
+    mAnimations[animIdx]->ComposeStyle(mStyleRule, properties, mStyleChanging);
   }
 }
 
@@ -842,7 +842,7 @@ AnimationCollection::RequestRestyle(RestyleType aRestyleType)
 
   if (aRestyleType == RestyleType::Layer) {
     mStyleRuleRefreshTime = TimeStamp();
-    mNeedsRefreshes = true;
+    mStyleChanging = true;
 
     
     presContext->ClearLastStyleUpdateForAllAnimations();

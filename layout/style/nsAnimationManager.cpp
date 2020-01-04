@@ -561,7 +561,7 @@ nsAnimationManager::CheckAnimationRule(nsStyleContext* aStyleContext,
     }
   }
   collection->mAnimations.SwapElements(newAnimations);
-  collection->mNeedsRefreshes = true;
+  collection->mStyleChanging = true;
 
   
   for (size_t newAnimIdx = newAnimations.Length(); newAnimIdx-- != 0; ) {

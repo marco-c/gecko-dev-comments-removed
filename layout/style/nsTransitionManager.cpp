@@ -240,7 +240,7 @@ NS_INTERFACE_MAP_END
 void
 nsTransitionManager::StyleContextChanged(dom::Element *aElement,
                                          nsStyleContext *aOldStyleContext,
-                                         RefPtr<nsStyleContext>* aNewStyleContext )
+                                         nsRefPtr<nsStyleContext>* aNewStyleContext )
 {
   nsStyleContext* newStyleContext = *aNewStyleContext;
 
@@ -341,7 +341,7 @@ nsTransitionManager::StyleContextChanged(dom::Element *aElement,
   
   
   
-  RefPtr<nsStyleContext> afterChangeStyle;
+  nsRefPtr<nsStyleContext> afterChangeStyle;
   if (collection) {
     nsStyleSet* styleSet = mPresContext->StyleSet();
     afterChangeStyle =
@@ -487,7 +487,7 @@ nsTransitionManager::StyleContextChanged(dom::Element *aElement,
     
     collection->mStyleRuleRefreshTime = TimeStamp();
     collection->UpdateCheckGeneration(mPresContext);
-    collection->mNeedsRefreshes = true;
+    collection->mStyleChanging = true;
     TimeStamp now = mPresContext->RefreshDriver()->MostRecentRefresh();
     collection->EnsureStyleRuleFor(now);
   }
@@ -672,7 +672,7 @@ nsTransitionManager::ConsiderStartingTransition(
   timing.mDirection = NS_STYLE_ANIMATION_DIRECTION_NORMAL;
   timing.mFillMode = NS_STYLE_ANIMATION_FILL_MODE_BACKWARDS;
 
-  RefPtr<ElementPropertyTransition> pt =
+  nsRefPtr<ElementPropertyTransition> pt =
     new ElementPropertyTransition(aElement->OwnerDoc(), aElement,
                                   aNewStyleContext->GetPseudoType(), timing);
   pt->mStartForReversingTest = startForReversingTest;
@@ -689,7 +689,7 @@ nsTransitionManager::ConsiderStartingTransition(
   segment.mToKey = 1;
   segment.mTimingFunction.Init(tf);
 
-  RefPtr<CSSTransition> animation =
+  nsRefPtr<CSSTransition> animation =
     new CSSTransition(mPresContext->Document()->GetScopeObject());
   animation->SetOwningElement(
     OwningElementRef(*aElement, aNewStyleContext->GetPseudoType()));
