@@ -240,10 +240,12 @@ js::CheckTracedThing(JSTracer* trc, T* thing)
 
 
 
-    MOZ_ASSERT_IF(rt->isHeapBusy() && !zone->isGCCompacting() &&
-                  !rt->gc.isBackgroundSweeping() &&
-                  IsThingPoisoned(thing),
-                  !InFreeList(thing->asTenured().arena(), thing));
+
+
+
+
+    MOZ_ASSERT_IF(rt->isHeapBusy() && !zone->isGCCompacting() && !rt->gc.isBackgroundSweeping(),
+                  !IsThingPoisoned(thing) || !InFreeList(thing->asTenured().arena(), thing));
 #endif
 }
 
