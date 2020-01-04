@@ -9,15 +9,17 @@ function test() {
 }
 
 function testBrokenCert() {
+  if (gBrowser.contentDocument.documentURI === "about:blank")
+    return;
   window.removeEventListener("DOMContentLoaded", testBrokenCert, true);
 
   
   ok(gBrowser.contentDocument.documentURI.startsWith("about:certerror"), "Broken page should go to about:certerror, not about:neterror");
 
   
-  var expertDiv = gBrowser.contentDocument.getElementById("expertContent");
-  ok(expertDiv, "Expert content div should exist");
-  ok(expertDiv.hasAttribute("collapsed"), "Expert content should be collapsed by default");
+  var advancedDiv = gBrowser.contentDocument.getElementById("advancedPanel");
+  ok(advancedDiv, "Advanced content div should exist");
+  is_element_hidden(advancedDiv, "Advanced content should not be visible by default");
 
   
   gPrefService.setBoolPref("browser.xul.error_pages.expert_bad_cert", true);
@@ -28,10 +30,9 @@ function testBrokenCert() {
 
 function testExpertPref() {
   window.removeEventListener("DOMContentLoaded", testExpertPref, true);
-  var expertDiv = gBrowser.contentDocument.getElementById("expertContent");
-  var technicalDiv = gBrowser.contentDocument.getElementById("technicalContent");
-  ok(!expertDiv.hasAttribute("collapsed"), "Expert content should not be collapsed with the expert mode pref set");
-  ok(!technicalDiv.hasAttribute("collapsed"), "Technical content should not be collapsed with the expert mode pref set");
+  var advancedDiv = gBrowser.contentDocument.getElementById("advancedPanel");
+  ok(advancedDiv, "Advanced content div should exist");
+  is_element_visible(advancedDiv, "Advanced content should be visible by default");
 
   
   gBrowser.removeCurrentTab();
