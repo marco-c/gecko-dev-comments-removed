@@ -593,9 +593,10 @@ HTMLImageElement::BindToTree(nsIDocument* aDocument, nsIContent* aParent,
       mInDocResponsiveContent = true;
     }
 
-    bool forceLoadEvent = HTMLPictureElement::IsPictureEnabled() &&
-      aParent && aParent->IsHTMLElement(nsGkAtoms::picture);
-    QueueImageLoadTask(forceLoadEvent);
+    
+    
+    
+    QueueImageLoadTask(false);
   } else if (!InResponsiveMode() &&
              HasAttr(kNameSpaceID_None, nsGkAtoms::src)) {
     
@@ -1068,6 +1069,10 @@ HTMLImageElement::PictureSourceAdded(nsIContent *aSourceNode)
   if (!HTMLPictureElement::IsPictureEnabled()) {
     return;
   }
+
+  MOZ_ASSERT(aSourceNode == this ||
+             IsPreviousSibling(aSourceNode, this),
+             "Should not be getting notifications for non-previous-siblings");
 
   QueueImageLoadTask(true);
 }
