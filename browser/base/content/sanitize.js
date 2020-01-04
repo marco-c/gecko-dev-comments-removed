@@ -567,17 +567,28 @@ Sanitizer.prototype = {
     openWindows: {
       privateStateForNewWindow: "non-private",
       _canCloseWindow: function(aWindow) {
-        if (aWindow.CanCloseWindow()) {
+        
+        if (!aWindow.gMultiProcessBrowser) {
           
           
           
-          aWindow.skipNextCanClose = true;
-          return true;
+          
+          for (let browser of aWindow.gBrowser.browsers) {
+            let ds = browser.docShell;
+            
+            
+            
+            
+            if (ds.contentViewer && !ds.contentViewer.permitUnload(true)) {
+              return false;
+            }
+          }
         }
+        return true;
       },
       _resetAllWindowClosures: function(aWindowList) {
         for (let win of aWindowList) {
-          win.skipNextCanClose = false;
+          win.getInterface(Ci.nsIDocShell).contentViewer.resetCloseWindow();
         }
       },
       clear: Task.async(function*() {
