@@ -191,6 +191,7 @@ EffectiveAddressAnalysis::analyze()
             
             
             
+            
             if (i->isLsh())
                 AnalyzeLsh(graph_.alloc(), i->toLsh());
             else if (i->isAsmJSLoadHeap())

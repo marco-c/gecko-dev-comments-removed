@@ -126,11 +126,11 @@ MIRGenerator::needsAsmJSBoundsCheckBranch(const MAsmJSHeapAccess* access) const
 size_t
 MIRGenerator::foldableOffsetRange(const MAsmJSHeapAccess* access) const
 {
-    return foldableOffsetRange(access->needsBoundsCheck());
+    return foldableOffsetRange(access->needsBoundsCheck(), access->isAtomicAccess());
 }
 
 size_t
-MIRGenerator::foldableOffsetRange(bool accessNeedsBoundsCheck) const
+MIRGenerator::foldableOffsetRange(bool accessNeedsBoundsCheck, bool atomic) const
 {
     
     
@@ -147,7 +147,8 @@ MIRGenerator::foldableOffsetRange(bool accessNeedsBoundsCheck) const
                   "spill over, so ensure a space at the end.");
 
     
-    if (usesSignalHandlersForAsmJSOOB_)
+    
+    if (usesSignalHandlersForAsmJSOOB_ && !atomic)
         return WasmImmediateRange;
 #endif
 
