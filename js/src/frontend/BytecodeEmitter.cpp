@@ -4389,13 +4389,25 @@ BytecodeEmitter::emitVariables(ParseNode* pn, VarEmitOption emitOption)
 
 
             MOZ_ASSERT(binding->isOp(JSOP_NOP));
-            MOZ_ASSERT(emitOption != DefineVars && emitOption != AnnexB);
+            MOZ_ASSERT(emitOption != DefineVars);
+            MOZ_ASSERT_IF(emitOption == AnnexB, binding->pn_left->isKind(PNK_NAME));
 
             
-
-
-
-
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
             if (binding->pn_left->isKind(PNK_NAME)) {
                 if (!emitSingleVariable(pn, binding->pn_left, binding->pn_right, emitOption))
                     return false;
