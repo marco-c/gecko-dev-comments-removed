@@ -2,8 +2,11 @@
 
 
 
-let {classes: Cc, interfaces: Ci, utils: Cu} = Components;
+"use strict";
 
+const {classes: Cc, interfaces: Ci, utils: Cu} = Components;
+
+Cu.import("chrome://marionette/content/atoms.js");
 Cu.import("chrome://marionette/content/error.js");
 
 
@@ -299,7 +302,7 @@ ElementManager.prototype = {
 
 
   applyNamedArgs: function EM_applyNamedArgs(args) {
-    namedArgs = {};
+    let namedArgs = {};
     args.forEach(function(arg) {
       if (arg && typeof(arg['__marionetteArgs']) === 'object') {
         for (let prop in arg['__marionetteArgs']) {
@@ -592,10 +595,113 @@ ElementManager.prototype = {
     }
     return elements;
   },
-}
+};
 
 this.elements = {};
+
 elements.generateUUID = function() {
   let uuid = uuidGen.generateUUID().toString();
   return uuid.substring(1, uuid.length - 1);
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+elements.coordinates = function(node, x = undefined, y = undefined) {
+  let box = node.getBoundingClientRect();
+  if (!x) {
+    x = box.width / 2.0;
+  }
+  if (!y) {
+    y = box.height / 2.0;
+  }
+  return {
+    x: box.left + x,
+    y: box.top + y,
+  };
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+elements.inViewport = function(el, x = undefined, y = undefined) {
+  let win = el.ownerDocument.defaultView;
+  let c = elements.coordinates(el, x, y);
+  let vp = {
+    top: win.pageYOffset,
+    left: win.pageXOffset,
+    bottom: (win.pageYOffset + win.innerHeight),
+    right: (win.pageXOffset + win.innerWidth)
+  };
+
+  return (vp.left <= c.x + win.pageXOffset &&
+      c.x + win.pageXOffset <= vp.right &&
+      vp.top <= c.y + win.pageYOffset &&
+      c.y + win.pageYOffset <= vp.bottom);
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+elements.checkVisible = function(el, win, x = undefined, y = undefined) {
+  
+  let ns = atom.getElementAttribute(el, "namespaceURI", win);
+  if (ns.indexOf("there.is.only.xul") < 0 &&
+      !atom.isElementDisplayed(el, win)) {
+    return false;
+  }
+
+  if (el.tagName.toLowerCase() == "body") {
+    return true;
+  }
+
+  if (!elements.inViewport(el, x, y)) {
+    if (el.scrollIntoView) {
+      el.scrollIntoView(false);
+      if (!elements.inViewport(el)) {
+        return false;
+      }
+    } else {
+      return false;
+    }
+  }
+  return true;
+};
+
+elements.isXULElement = function(el) {
+  let ns = atom.getElementAttribute(el, "namespaceURI");
+  return ns.indexOf("there.is.only.xul") >= 0;
 };
