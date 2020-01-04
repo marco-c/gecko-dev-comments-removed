@@ -63,24 +63,6 @@ namespace TestNsDeque {
      int GetSum() { return sum; }
     
   };
-
-
-  class NumberSevenFinder: public nsDequeFunctor
-  {
-    virtual void* operator()(void* aObject) 
-    {
-      if (aObject) 
-      {
-        int value = *(int*)aObject;
-        if (value == 7)
-        {
-          return (int*)1;
-        }
-      }
-
-      return 0;
-    }
-  };
 }
 
 using namespace TestNsDeque;
@@ -201,7 +183,7 @@ TEST(NsDeque, OriginalFlaw)
 
 
 
-TEST(NsDeque, TestRemove)
+TEST(NsDeque, TestObjectAt)
 {
   nsDeque d;
   const int count = 10;
@@ -222,34 +204,6 @@ TEST(NsDeque, TestRemove)
     int t = *(int*)d.ObjectAt(i-2);
     EXPECT_EQ(i,t) << "Verify ObjectAt()";
   }
-
-  d.RemoveObjectAt(1);
-  
-  static const int t1[] = {2,4,5};
-  EXPECT_TRUE(VerifyContents(d, t1, 3)) << "verify contents t1";
-
-  d.PushFront(&ints[1]);
-  d.PushFront(&ints[0]);
-  d.PushFront(&ints[7]);
-  d.PushFront(&ints[6]);
-  
-  static const int t2[] = {6,7,0,1,2,4,5};
-  EXPECT_TRUE(VerifyContents(d, t2, 7)) << "verify contents t2";
-
-  d.RemoveObjectAt(1);
-  
-  static const int t3[] = {6,0,1,2,4,5};
-  EXPECT_TRUE(VerifyContents(d, t3, 6)) << "verify contents t3";
-
-  d.RemoveObjectAt(5);
-  
-  static const int t4[] = {6,0,1,2,4};
-  EXPECT_TRUE(VerifyContents(d, t4, 5)) << "verify contents t4";
-
-  d.RemoveObjectAt(0);
-  
-  static const int t5[] = {0,1,2,4};
-  EXPECT_TRUE(VerifyContents(d, t5, 4)) << "verify contents t5";
 }
 
 TEST(NsDeque, TestPushFront)
@@ -304,7 +258,6 @@ TEST(NsDeque,TestEmpty)
   EXPECT_EQ(nullptr, d.Peek())      <<  "Invalid operation should return nullptr";
   EXPECT_EQ(nullptr, d.PeekFront()) <<  "Invalid operation should return nullptr";
   EXPECT_EQ(nullptr, d.ObjectAt(0)) <<  "Invalid operation should return nullptr";
-  EXPECT_EQ(nullptr, d.Last())      <<  "Invalid operation should return nullptr";
 
   
   for (size_t i = 0; i < numberOfEntries; i++) {
@@ -324,7 +277,6 @@ TEST(NsDeque,TestEmpty)
   EXPECT_EQ(nullptr, d.Peek())      << "Invalid operation should return nullptr";
   EXPECT_EQ(nullptr, d.PeekFront()) <<"Invalid operation should return nullptr";
   EXPECT_EQ(nullptr, d.ObjectAt(0)) << "Invalid operation should return nullptr";
-  EXPECT_EQ(nullptr, d.Last())      <<"Invalid operation should return nullptr";
 }
 
 TEST(NsDeque,TestEmptyMethod)
@@ -347,7 +299,6 @@ TEST(NsDeque,TestEmptyMethod)
   EXPECT_EQ(nullptr, d.Peek())      << "Invalid operation should return nullptr";
   EXPECT_EQ(nullptr, d.PeekFront()) <<"Invalid operation should return nullptr";
   EXPECT_EQ(nullptr, d.ObjectAt(0)) << "Invalid operation should return nullptr";
-  EXPECT_EQ(nullptr, d.Last())      <<"Invalid operation should return nullptr";
 
   
   for (size_t i = 0; i < numberOfEntries; i++) {
@@ -364,7 +315,6 @@ TEST(NsDeque,TestEmptyMethod)
   EXPECT_EQ(nullptr, d.Peek())      << "Invalid operation should return nullptr";
   EXPECT_EQ(nullptr, d.PeekFront()) <<"Invalid operation should return nullptr";
   EXPECT_EQ(nullptr, d.ObjectAt(0)) << "Invalid operation should return nullptr";
-  EXPECT_EQ(nullptr, d.Last())      <<"Invalid operation should return nullptr";
 }
 
 TEST(NsDeque,TestEraseShouldCallDeallocator)
@@ -389,7 +339,6 @@ TEST(NsDeque,TestEraseShouldCallDeallocator)
   EXPECT_EQ(nullptr, d.Peek())      << "Invalid operation should return nullptr";
   EXPECT_EQ(nullptr, d.PeekFront()) <<"Invalid operation should return nullptr";
   EXPECT_EQ(nullptr, d.ObjectAt(0)) << "Invalid operation should return nullptr";
-  EXPECT_EQ(nullptr, d.Last())      <<"Invalid operation should return nullptr";
   
   for (size_t i=0; i < NumTestValues; i++)
   {
@@ -419,7 +368,6 @@ TEST(NsDeque,TestEmptyShouldNotCallDeallocator)
   EXPECT_EQ(nullptr, d.Peek())      << "Invalid operation should return nullptr";
   EXPECT_EQ(nullptr, d.PeekFront()) <<"Invalid operation should return nullptr";
   EXPECT_EQ(nullptr, d.ObjectAt(0)) << "Invalid operation should return nullptr";
-  EXPECT_EQ(nullptr, d.Last())      <<"Invalid operation should return nullptr";
 
   for (size_t i=0; i < NumTestValues; i++)
   {
@@ -445,10 +393,6 @@ TEST(NsDeque, TestForEachAndFirstThat)
   ForEachAdder adder;
   d.ForEach(adder);
   EXPECT_EQ(sum, adder.GetSum()) << "For each should iterate over values";
-
-  NumberSevenFinder finder;
-  const int* value = (const int*)d.FirstThat(finder);
-  EXPECT_EQ(7, *value) << "FirstThat should return value matching functor";
 
   d.Erase();
 }
