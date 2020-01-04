@@ -6074,6 +6074,8 @@ CodeGenerator::visitCreateArgumentsObject(LCreateArgumentsObject* lir)
         Register objTemp = ToRegister(lir->temp1());
         Register cxTemp = ToRegister(lir->temp2());
 
+        masm.Push(callObj);
+
         
         
         
@@ -6082,7 +6084,7 @@ CodeGenerator::visitCreateArgumentsObject(LCreateArgumentsObject* lir)
                              false);
 
         masm.moveStackPtrTo(temp);
-        masm.addPtr(Imm32(frameSize()), temp);
+        masm.addPtr(Imm32(masm.framePushed()), temp);
 
         masm.setupUnalignedABICall(cxTemp);
         masm.loadJSContext(cxTemp);
@@ -6092,10 +6094,14 @@ CodeGenerator::visitCreateArgumentsObject(LCreateArgumentsObject* lir)
         masm.passABIArg(objTemp);
 
         masm.callWithABI(JS_FUNC_TO_DATA_PTR(void*, ArgumentsObject::finishForIon));
-        masm.branchTestPtr(Assembler::Zero, ReturnReg, ReturnReg, masm.exceptionLabel());
+        masm.branchTestPtr(Assembler::Zero, ReturnReg, ReturnReg, &failure);
+
+        
+        masm.addToStackPtr(Imm32(sizeof(uintptr_t)));
         masm.jump(&done);
 
         masm.bind(&failure);
+        masm.Pop(callObj);
     }
 
     masm.moveStackPtrTo(temp);

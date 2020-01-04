@@ -384,6 +384,8 @@ ArgumentsObject::finishForIon(JSContext* cx, jit::JitFrameLayout* frame,
         reinterpret_cast<ArgumentsData*>(AllocateObjectBuffer<uint8_t>(cx, obj, numBytes));
     if (!data) {
         
+        
+        cx->recoverFromOutOfMemory();
         obj->initFixedSlot(DATA_SLOT, PrivateValue(nullptr));
         return nullptr;
     }
