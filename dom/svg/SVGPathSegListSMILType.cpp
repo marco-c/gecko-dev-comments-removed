@@ -233,7 +233,7 @@ AddWeightedPathSegs(double aCoeff1,
 
 
 
-static void
+static nsresult
 AddWeightedPathSegLists(double aCoeff1, const SVGPathDataAndInfo& aList1,
                         double aCoeff2, const SVGPathDataAndInfo& aList2,
                         SVGPathDataAndInfo& aResult)
@@ -264,8 +264,9 @@ AddWeightedPathSegLists(double aCoeff1, const SVGPathDataAndInfo& aList1,
   
   
   if (aResult.IsIdentity()) {
-    DebugOnly<bool> success = aResult.SetLength(aList2.Length());
-    MOZ_ASSERT(success, "infallible nsTArray::SetLength should succeed");
+    if (!aResult.SetLength(aList2.Length())) {
+      return NS_ERROR_OUT_OF_MEMORY;
+    }
     aResult.SetElement(aList2.Element()); 
   }
 
@@ -281,6 +282,7 @@ AddWeightedPathSegLists(double aCoeff1, const SVGPathDataAndInfo& aList1,
              iter2 == end2 &&
              resultIter == aResult.end(),
              "Very, very bad - path data corrupt");
+  return NS_OK;
 }
 
 static void
@@ -430,9 +432,7 @@ SVGPathSegListSMILType::Add(nsSMILValue& aDest,
     }
   }
 
-  AddWeightedPathSegLists(1.0, dest, aCount, valueToAdd, dest);
-
-  return NS_OK;
+  return AddWeightedPathSegLists(1.0, dest, aCount, valueToAdd, dest);
 }
 
 nsresult
@@ -483,8 +483,9 @@ SVGPathSegListSMILType::Interpolate(const nsSMILValue& aStartVal,
   if (check == eRequiresConversion) {
     
     
-    DebugOnly<bool> success = result.SetLength(end.Length());
-    MOZ_ASSERT(success, "infallible nsTArray::SetLength should succeed");
+    if (!result.SetLength(end.Length())) {
+      return NS_ERROR_OUT_OF_MEMORY;
+    }
     result.SetElement(end.Element()); 
 
     ConvertAllPathSegmentData(start.begin(), start.end(),
@@ -493,10 +494,8 @@ SVGPathSegListSMILType::Interpolate(const nsSMILValue& aStartVal,
     startListToUse = &result;
   }
 
-  AddWeightedPathSegLists(1.0 - aUnitDistance, *startListToUse,
-                          aUnitDistance, end, result);
-
-  return NS_OK;
+  return AddWeightedPathSegLists(1.0 - aUnitDistance, *startListToUse,
+                                 aUnitDistance, end, result);
 }
 
 } 
