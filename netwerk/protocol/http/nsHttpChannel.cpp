@@ -6092,7 +6092,8 @@ nsHttpChannel::OnStopRequest(nsIRequest *request, nsISupports *ctxt, nsresult st
         
         if (mDNSPrefetch && mDNSPrefetch->TimingsValid()
             && !mTransactionTimings.requestStart.IsNull()
-            && mDNSPrefetch->EndTimestamp() <= mTransactionTimings.requestStart) {
+            && !mTransactionTimings.connectStart.IsNull()
+            && mDNSPrefetch->EndTimestamp() <= mTransactionTimings.connectStart) {
             
             
             mTransactionTimings.domainLookupStart =
@@ -7023,10 +7024,11 @@ nsHttpChannel::OnLookupComplete(nsICancelable *request,
     
     
     if (mDNSPrefetch && mDNSPrefetch->TimingsValid() && mTransaction) {
+        TimeStamp connectStart = mTransaction->GetConnectStart();
         TimeStamp requestStart = mTransaction->GetRequestStart();
         
         
-        if (requestStart.IsNull() || (mDNSPrefetch->EndTimestamp() < requestStart)) {
+        if (requestStart.IsNull() && connectStart.IsNull()) {
             mTransaction->SetDomainLookupStart(mDNSPrefetch->StartTimestamp());
             mTransaction->SetDomainLookupEnd(mDNSPrefetch->EndTimestamp());
         }
