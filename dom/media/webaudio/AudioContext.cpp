@@ -126,15 +126,11 @@ AudioContext::AudioContext(nsPIDOMWindowInner* aWindow,
 nsresult
 AudioContext::Init()
 {
-  
-  
-  
   if (!mIsOffline) {
     nsresult rv = mDestination->CreateAudioChannelAgent();
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
-    mDestination->SetIsOnlyNodeForContext(true);
   }
 
   return NS_OK;
@@ -682,8 +678,7 @@ double
 AudioContext::CurrentTime() const
 {
   MediaStream* stream = Destination()->Stream();
-  return stream->StreamTimeToSeconds(stream->GetCurrentTime() +
-                                     Destination()->ExtraCurrentTime());
+  return stream->StreamTimeToSeconds(stream->GetCurrentTime());
 }
 
 void
@@ -993,13 +988,6 @@ AudioContext::RegisterNode(AudioNode* aNode)
 {
   MOZ_ASSERT(!mAllNodes.Contains(aNode));
   mAllNodes.PutEntry(aNode);
-  
-  
-  
-  
-  if (mDestination && !mIsShutDown) {
-    mDestination->SetIsOnlyNodeForContext(mAllNodes.Count() == 1);
-  }
 }
 
 void
@@ -1007,10 +995,6 @@ AudioContext::UnregisterNode(AudioNode* aNode)
 {
   MOZ_ASSERT(mAllNodes.Contains(aNode));
   mAllNodes.RemoveEntry(aNode);
-  
-  if (mDestination) {
-    mDestination->SetIsOnlyNodeForContext(mAllNodes.Count() == 1);
-  }
 }
 
 JSObject*
