@@ -271,10 +271,11 @@ GfxInfo::GetGfxDriverInfo()
 }
 
 nsresult
-GfxInfo::GetFeatureStatusImpl(int32_t aFeature, 
-                              int32_t *aStatus, 
-                              nsAString & aSuggestedDriverVersion, 
-                              const nsTArray<GfxDriverInfo>& aDriverInfo, 
+GfxInfo::GetFeatureStatusImpl(int32_t aFeature,
+                              int32_t *aStatus,
+                              nsAString & aSuggestedDriverVersion,
+                              const nsTArray<GfxDriverInfo>& aDriverInfo,
+                              nsACString& aFailureId,
                               OperatingSystem* aOS )
 
 {
@@ -292,6 +293,7 @@ GfxInfo::GetFeatureStatusImpl(int32_t aFeature,
     
     
     *aStatus = nsIGfxInfo::FEATURE_BLOCKED_DEVICE;
+    aFailureId = "FEATURE_FAILURE_OPENGL_1";
     return NS_OK;
   }
 
@@ -305,6 +307,7 @@ GfxInfo::GetFeatureStatusImpl(int32_t aFeature,
       
       if (aFeature == nsIGfxInfo::FEATURE_OPENGL_LAYERS && !mHasTextureFromPixmap) {
         *aStatus = nsIGfxInfo::FEATURE_BLOCKED_DRIVER_VERSION;
+        aFailureId = "FEATURE_FAILURE_NO_PIXMAP";
         aSuggestedDriverVersion.AssignLiteral("<Anything with EXT_texture_from_pixmap support>");
         return NS_OK;
       }
@@ -325,24 +328,29 @@ GfxInfo::GetFeatureStatusImpl(int32_t aFeature,
       if (mIsMesa) {
         if (mIsNouveau && version(mMajorVersion, mMinorVersion) < version(8,0)) {
           *aStatus = nsIGfxInfo::FEATURE_BLOCKED_DRIVER_VERSION;
+          aFailureId = "FEATURE_FAILURE_MESA_1";
           aSuggestedDriverVersion.AssignLiteral("Mesa 8.0");
         }
         else if (version(mMajorVersion, mMinorVersion, mRevisionVersion) < version(7,10,3)) {
           *aStatus = nsIGfxInfo::FEATURE_BLOCKED_DRIVER_VERSION;
+          aFailureId = "FEATURE_FAILURE_MESA_2";
           aSuggestedDriverVersion.AssignLiteral("Mesa 7.10.3");
         }
         else if (mIsOldSwrast) {
           *aStatus = nsIGfxInfo::FEATURE_BLOCKED_DRIVER_VERSION;
+          aFailureId = "FEATURE_FAILURE_SW_RAST";
         }
         else if (mIsLlvmpipe && version(mMajorVersion, mMinorVersion) < version(9, 1)) {
           
           
           *aStatus = nsIGfxInfo::FEATURE_BLOCKED_DRIVER_VERSION;
+          aFailureId = "FEATURE_FAILURE_MESA_3";
         }
         else if (aFeature == nsIGfxInfo::FEATURE_WEBGL_MSAA)
         {
           if (mIsIntel && version(mMajorVersion, mMinorVersion) < version(8,1)) {
             *aStatus = nsIGfxInfo::FEATURE_BLOCKED_DRIVER_VERSION;
+            aFailureId = "FEATURE_FAILURE_MESA_4";
             aSuggestedDriverVersion.AssignLiteral("Mesa 8.1");
           }
         }
@@ -350,6 +358,7 @@ GfxInfo::GetFeatureStatusImpl(int32_t aFeature,
       } else if (mIsNVIDIA) {
         if (version(mMajorVersion, mMinorVersion, mRevisionVersion) < version(257,21)) {
           *aStatus = nsIGfxInfo::FEATURE_BLOCKED_DRIVER_VERSION;
+          aFailureId = "FEATURE_FAILURE_OLD_NV";
           aSuggestedDriverVersion.AssignLiteral("NVIDIA 257.21");
         }
       } else if (mIsFGLRX) {
@@ -357,6 +366,7 @@ GfxInfo::GetFeatureStatusImpl(int32_t aFeature,
         
         if (version(mMajorVersion, mMinorVersion, mRevisionVersion) < version(3, 0)) {
           *aStatus = nsIGfxInfo::FEATURE_BLOCKED_DRIVER_VERSION;
+          aFailureId = "FEATURE_FAILURE_OLD_FGLRX";
           aSuggestedDriverVersion.AssignLiteral("<Something recent>");
         }
         
@@ -365,6 +375,7 @@ GfxInfo::GetFeatureStatusImpl(int32_t aFeature,
                      mOSRelease.Find("2.6.32") != -1;
         if (unknownOS || badOS) {
           *aStatus = nsIGfxInfo::FEATURE_BLOCKED_OS_VERSION;
+          aFailureId = "FEATURE_FAILURE_OLD_OS";
         }
       } else {
         
@@ -374,7 +385,7 @@ GfxInfo::GetFeatureStatusImpl(int32_t aFeature,
     }
   }
 
-  return GfxInfoBase::GetFeatureStatusImpl(aFeature, aStatus, aSuggestedDriverVersion, aDriverInfo, &os);
+  return GfxInfoBase::GetFeatureStatusImpl(aFeature, aStatus, aSuggestedDriverVersion, aDriverInfo, aFailureId, &os);
 }
 
 
