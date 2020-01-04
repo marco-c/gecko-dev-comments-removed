@@ -5,13 +5,11 @@
 #ifndef IIRFilter_h
 #define IIRFilter_h
 
-#include "platform/PlatformExport.h"
-#include "platform/audio/AudioArray.h"
-#include "wtf/Vector.h"
+typedef nsTArray<double> AudioDoubleArray;
 
 namespace blink {
 
-class PLATFORM_EXPORT IIRFilter final {
+class IIRFilter final {
 public:
     
     
@@ -48,7 +46,6 @@ private:
     
     int m_bufferIndex;
 
-    
     
     const AudioDoubleArray* m_feedback;
     const AudioDoubleArray* m_feedforward;
