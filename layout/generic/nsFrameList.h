@@ -245,6 +245,11 @@ public:
 
   bool ContainsFrame(const nsIFrame* aFrame) const;
 
+  
+
+
+
+
   int32_t GetLength() const;
 
   
