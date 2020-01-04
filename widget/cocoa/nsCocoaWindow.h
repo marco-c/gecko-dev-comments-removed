@@ -268,6 +268,7 @@ public:
     NS_IMETHOD              Enable(bool aState) override;
     virtual bool            IsEnabled() const override;
     NS_IMETHOD              SetModal(bool aState) override;
+    NS_IMETHOD              SetFakeModal(bool aState) override;
     virtual bool            IsVisible() const override;
     NS_IMETHOD              SetFocus(bool aState=false) override;
     virtual LayoutDeviceIntPoint WidgetToScreenOffset() override;
@@ -417,6 +418,7 @@ protected:
                      const IMENotification& aIMENotification) override;
 
   nsIWidget*           mParent;         
+  nsIWidget*           mAncestorLink;   
   BaseWindow*          mWindow;         
   WindowDelegate*      mDelegate;       
   RefPtr<nsMenuBarX> mMenuBar;
@@ -438,6 +440,7 @@ protected:
   bool                 mInFullScreenTransition; 
                                                 
   bool                 mModal;
+  bool                 mFakeModal;
 
   
   bool                 mSupportsNativeFullScreen;
