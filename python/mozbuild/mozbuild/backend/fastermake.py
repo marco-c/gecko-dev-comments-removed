@@ -135,8 +135,6 @@ class FasterMakeBackend(CommonBackend):
             
             
             
-            
-            
             if obj.install_target == 'dist/bin':
                 pref_dir = 'defaults/pref'
             else:
