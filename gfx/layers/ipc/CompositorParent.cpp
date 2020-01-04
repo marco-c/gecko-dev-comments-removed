@@ -75,6 +75,7 @@
 
 #ifdef MOZ_WIDGET_GONK
 #include "GeckoTouchDispatcher.h"
+#include "nsScreenManagerGonk.h"
 #endif
 
 #include "LayerScope.h"
@@ -286,13 +287,18 @@ CompositorVsyncScheduler::Observer::Destroy()
 CompositorVsyncScheduler::CompositorVsyncScheduler(CompositorParent* aCompositorParent, nsIWidget* aWidget)
   : mCompositorParent(aCompositorParent)
   , mLastCompose(TimeStamp::Now())
-  , mCurrentCompositeTask(nullptr)
   , mIsObservingVsync(false)
   , mNeedsComposite(0)
   , mVsyncNotificationsSkipped(0)
   , mCurrentCompositeTaskMonitor("CurrentCompositeTaskMonitor")
+  , mCurrentCompositeTask(nullptr)
   , mSetNeedsCompositeMonitor("SetNeedsCompositeMonitor")
   , mSetNeedsCompositeTask(nullptr)
+#ifdef MOZ_WIDGET_GONK
+  , mDisplayEnabled(false)
+  , mSetDisplayMonitor("SetDisplayMonitor")
+  , mSetDisplayTask(nullptr)
+#endif
 {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(aWidget != nullptr);
@@ -300,6 +306,9 @@ CompositorVsyncScheduler::CompositorVsyncScheduler(CompositorParent* aCompositor
   mCompositorVsyncDispatcher = aWidget->GetCompositorVsyncDispatcher();
 #ifdef MOZ_WIDGET_GONK
   GeckoTouchDispatcher::GetInstance()->SetCompositorVsyncScheduler(this);
+
+  RefPtr<nsScreenManagerGonk> screenManager = nsScreenManagerGonk::GetInstance();
+  screenManager->SetCompositorVsyncScheduler(this);
 #endif
 
   
@@ -317,6 +326,52 @@ CompositorVsyncScheduler::~CompositorVsyncScheduler()
   mCompositorVsyncDispatcher = nullptr;
 }
 
+#ifdef MOZ_WIDGET_GONK
+void
+CompositorVsyncScheduler::SetDisplay(bool aDisplayEnable)
+{
+  
+  
+  if (!CompositorParent::IsInCompositorThread()) {
+    MOZ_ASSERT(NS_IsMainThread());
+    MonitorAutoLock lock(mSetDisplayMonitor);
+    mSetDisplayTask = NewRunnableMethod(this,
+                                        &CompositorVsyncScheduler::SetDisplay,
+                                        aDisplayEnable);
+    ScheduleTask(mSetDisplayTask, 0);
+    return;
+  } else {
+    MonitorAutoLock lock(mSetDisplayMonitor);
+    mSetDisplayTask = nullptr;
+  }
+
+  if (mDisplayEnabled == aDisplayEnable) {
+    return;
+  }
+
+  mDisplayEnabled = aDisplayEnable;
+  if (!mDisplayEnabled) {
+    CancelCurrentSetNeedsCompositeTask();
+    CancelCurrentCompositeTask();
+  }
+}
+
+void
+CompositorVsyncScheduler::CancelSetDisplayTask()
+{
+  MOZ_ASSERT(CompositorParent::IsInCompositorThread());
+  MonitorAutoLock lock(mSetDisplayMonitor);
+  if (mSetDisplayTask) {
+    mSetDisplayTask->Cancel();
+    mSetDisplayTask = nullptr;
+  }
+
+  
+  
+  mDisplayEnabled = false;
+}
+#endif 
+
 void
 CompositorVsyncScheduler::Destroy()
 {
@@ -324,6 +379,10 @@ CompositorVsyncScheduler::Destroy()
   UnobserveVsync();
   mVsyncObserver->Destroy();
   mVsyncObserver = nullptr;
+
+#ifdef MOZ_WIDGET_GONK
+  CancelSetDisplayTask();
+#endif
   CancelCurrentSetNeedsCompositeTask();
   CancelCurrentCompositeTask();
 }
@@ -395,6 +454,13 @@ CompositorVsyncScheduler::SetNeedsComposite()
     MonitorAutoLock lock(mSetNeedsCompositeMonitor);
     mSetNeedsCompositeTask = nullptr;
   }
+
+#ifdef MOZ_WIDGET_GONK
+  
+  if (!mDisplayEnabled) {
+    return;
+  }
+#endif
 
   mNeedsComposite++;
   if (!mIsObservingVsync && mNeedsComposite) {

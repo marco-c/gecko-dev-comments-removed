@@ -100,6 +100,15 @@ class CompositorVsyncScheduler
 
 public:
   explicit CompositorVsyncScheduler(CompositorParent* aCompositorParent, nsIWidget* aWidget);
+
+#ifdef MOZ_WIDGET_GONK
+  
+  
+  
+  
+  void SetDisplay(bool aDisplayEnable);
+#endif
+
   bool NotifyVsync(TimeStamp aVsyncTimestamp);
   void SetNeedsComposite();
   void OnForceComposeToTarget();
@@ -126,7 +135,7 @@ public:
     return mExpectedComposeStartTime;
   }
 #endif
- 
+
 private:
   virtual ~CompositorVsyncScheduler();
 
@@ -136,6 +145,9 @@ private:
   void DispatchTouchEvents(TimeStamp aVsyncTimestamp);
   void DispatchVREvents(TimeStamp aVsyncTimestamp);
   void CancelCurrentSetNeedsCompositeTask();
+#ifdef MOZ_WIDGET_GONK
+  void CancelSetDisplayTask();
+#endif
 
   class Observer final : public VsyncObserver
   {
@@ -153,7 +165,6 @@ private:
 
   CompositorParent* mCompositorParent;
   TimeStamp mLastCompose;
-  CancelableTask* mCurrentCompositeTask;
 
 #ifdef COMPOSITOR_PERFORMANCE_WARNING
   TimeStamp mExpectedComposeStartTime;
@@ -167,9 +178,16 @@ private:
   RefPtr<CompositorVsyncScheduler::Observer> mVsyncObserver;
 
   mozilla::Monitor mCurrentCompositeTaskMonitor;
+  CancelableTask* mCurrentCompositeTask;
 
   mozilla::Monitor mSetNeedsCompositeMonitor;
   CancelableTask* mSetNeedsCompositeTask;
+
+#ifdef MOZ_WIDGET_GONK
+  bool mDisplayEnabled;
+  mozilla::Monitor mSetDisplayMonitor;
+  CancelableTask* mSetDisplayTask;
+#endif
 };
 
 class CompositorUpdateObserver
