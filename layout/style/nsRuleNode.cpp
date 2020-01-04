@@ -1317,6 +1317,7 @@ struct SetEnumValueHelper
   }
 
   DEFINE_ENUM_CLASS_SETTER(StyleBoxSizing, Content, Border)
+  DEFINE_ENUM_CLASS_SETTER(StyleFloat, None_, InlineEnd)
   DEFINE_ENUM_CLASS_SETTER(StyleFloatEdge, ContentBox, MarginBox)
   DEFINE_ENUM_CLASS_SETTER(StyleUserFocus, None_, SelectMenu)
 
@@ -6072,7 +6073,7 @@ nsRuleNode::ComputeDisplayData(void* aStartStruct,
            display->mFloat, conditions,
            SETVAL_ENUMERATED | SETVAL_UNSET_INITIAL,
            parentDisplay->mFloat,
-           NS_STYLE_FLOAT_NONE);
+           StyleFloat::None_);
   
   display->mOriginalFloat = display->mFloat;
 
@@ -6197,7 +6198,7 @@ nsRuleNode::ComputeDisplayData(void* aStartStruct,
       
       
       EnsureBlockDisplay(display->mDisplay);
-      display->mFloat = NS_STYLE_FLOAT_NONE;
+      display->mFloat = StyleFloat::None_;
 
       
       
@@ -6205,7 +6206,7 @@ nsRuleNode::ComputeDisplayData(void* aStartStruct,
       
       
       
-    } else if (display->mFloat != NS_STYLE_FLOAT_NONE) {
+    } else if (display->mFloat != StyleFloat::None_) {
       
       
       EnsureBlockDisplay(display->mDisplay);
