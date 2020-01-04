@@ -20,6 +20,7 @@
 #include "mozilla/gfx/Point.h"          
 #include "mozilla/gfx/Rect.h"           
 #include "mozilla/gfx/ScaleFactor.h"    
+#include "mozilla/layers/APZUtils.h"    
 #include "mozilla/layers/Compositor.h"  
 #include "mozilla/layers/CompositorParent.h" 
 #include "mozilla/layers/LayerMetricsWrapper.h" 
@@ -222,7 +223,7 @@ TransformClipRect(Layer* aLayer,
 
 
 static void
-SetShadowTransform(Layer* aLayer, Matrix4x4 aTransform)
+SetShadowTransform(Layer* aLayer, LayerToParentLayerMatrix4x4 aTransform)
 {
   if (ContainerLayer* c = aLayer->AsContainerLayer()) {
     aTransform.PreScale(1.0f / c->GetPreXScale(),
@@ -232,7 +233,7 @@ SetShadowTransform(Layer* aLayer, Matrix4x4 aTransform)
   aTransform.PostScale(1.0f / aLayer->GetPostXScale(),
                        1.0f / aLayer->GetPostYScale(),
                        1);
-  aLayer->AsLayerComposite()->SetShadowTransform(aTransform);
+  aLayer->AsLayerComposite()->SetShadowTransform(aTransform.ToUnknownMatrix());
 }
 
 static void
@@ -246,7 +247,7 @@ TranslateShadowLayer(Layer* aLayer,
   
   
   
-  Matrix4x4 layerTransform = aLayer->GetLocalTransform();
+  LayerToParentLayerMatrix4x4 layerTransform = aLayer->GetLocalTransformTyped();
 
   
   layerTransform.PostTranslate(aTranslation.x, aTranslation.y, 0);
@@ -384,8 +385,8 @@ void
 AsyncCompositionManager::AlignFixedAndStickyLayers(Layer* aLayer,
                                                    Layer* aTransformedSubtreeRoot,
                                                    FrameMetrics::ViewID aTransformScrollId,
-                                                   const Matrix4x4& aPreviousTransformForRoot,
-                                                   const Matrix4x4& aCurrentTransformForRoot,
+                                                   const LayerToParentLayerMatrix4x4& aPreviousTransformForRoot,
+                                                   const LayerToParentLayerMatrix4x4& aCurrentTransformForRoot,
                                                    const ScreenMargin& aFixedLayerMargins,
                                                    bool aTransformAffectsLayerClip)
 {
@@ -429,8 +430,8 @@ AsyncCompositionManager::AlignFixedAndStickyLayers(Layer* aLayer,
 
   
   
-  Matrix4x4 oldCumulativeTransform = ancestorTransform * aPreviousTransformForRoot;
-  Matrix4x4 newCumulativeTransform = ancestorTransform * aCurrentTransformForRoot;
+  Matrix4x4 oldCumulativeTransform = ancestorTransform * aPreviousTransformForRoot.ToUnknownMatrix();
+  Matrix4x4 newCumulativeTransform = ancestorTransform * aCurrentTransformForRoot.ToUnknownMatrix();
   if (newCumulativeTransform.IsSingular()) {
     return;
   }
@@ -697,10 +698,10 @@ AsyncCompositionManager::RecordShadowTransforms(Layer* aLayer)
   }
 }
 
-Matrix4x4
-AdjustForClip(const Matrix4x4& asyncTransform, Layer* aLayer)
+static AsyncTransformComponentMatrix
+AdjustForClip(const AsyncTransformComponentMatrix& asyncTransform, Layer* aLayer)
 {
-  Matrix4x4 result = asyncTransform;
+  AsyncTransformComponentMatrix result = asyncTransform;
 
   
   
@@ -801,9 +802,10 @@ AsyncCompositionManager::ApplyAsyncContentTransformToTree(Layer *aLayer,
           clipDeferredFromChildren);
   }
 
-  Matrix4x4 oldTransform = aLayer->GetTransform();
+  LayerToParentLayerMatrix4x4 oldTransform = aLayer->GetTransformTyped() *
+      AsyncTransformMatrix();
 
-  Matrix4x4 combinedAsyncTransform;
+  AsyncTransformComponentMatrix combinedAsyncTransform;
   bool hasAsyncTransform = false;
   ScreenMargin fixedLayerMargins;
 
@@ -839,9 +841,10 @@ AsyncCompositionManager::ApplyAsyncContentTransformToTree(Layer *aLayer,
     ParentLayerPoint scrollOffset;
     controller->SampleContentTransformForFrame(&asyncTransformWithoutOverscroll,
                                                scrollOffset);
-    Matrix4x4 overscrollTransform = controller->GetOverscrollTransform();
-    Matrix4x4 asyncTransform =
-      Matrix4x4(asyncTransformWithoutOverscroll) * overscrollTransform;
+    AsyncTransformComponentMatrix overscrollTransform = controller->GetOverscrollTransform();
+    AsyncTransformComponentMatrix asyncTransform =
+        AsyncTransformComponentMatrix(asyncTransformWithoutOverscroll)
+      * overscrollTransform;
 
     if (!aLayer->IsScrollInfoLayer()) {
       controller->MarkAsyncTransformAppliedToContent();
@@ -897,8 +900,7 @@ AsyncCompositionManager::ApplyAsyncContentTransformToTree(Layer *aLayer,
     
     if (asyncClip && !metrics.UsesContainerScrolling()) {
       MOZ_ASSERT(asyncTransform.Is2D());
-      asyncClip = Some(TransformBy(
-          ViewAs<ParentLayerToParentLayerMatrix4x4>(asyncTransform), *asyncClip));
+      asyncClip = Some(TransformBy(asyncTransform, *asyncClip));
     }
     aLayer->AsLayerComposite()->SetShadowClipRect(asyncClip);
 
@@ -911,8 +913,10 @@ AsyncCompositionManager::ApplyAsyncContentTransformToTree(Layer *aLayer,
     
     
     
-    Matrix4x4 transformWithoutOverscrollOrOmta = aLayer->GetTransform() *
-        AdjustForClip(asyncTransformWithoutOverscroll, aLayer);
+    LayerToParentLayerMatrix4x4 transformWithoutOverscrollOrOmta =
+        aLayer->GetTransformTyped()
+      * CompleteAsyncTransform(
+          AdjustForClip(asyncTransformWithoutOverscroll, aLayer));
 
     
     
@@ -946,7 +950,7 @@ AsyncCompositionManager::ApplyAsyncContentTransformToTree(Layer *aLayer,
     
     for (Layer* ancestorMaskLayer : ancestorMaskLayers) {
       SetShadowTransform(ancestorMaskLayer,
-          ancestorMaskLayer->GetLocalTransform() * asyncTransform);
+          ancestorMaskLayer->GetLocalTransformTyped() * asyncTransform);
     }
 
     
@@ -968,12 +972,13 @@ AsyncCompositionManager::ApplyAsyncContentTransformToTree(Layer *aLayer,
     
     
     SetShadowTransform(aLayer,
-        aLayer->GetLocalTransform() * AdjustForClip(combinedAsyncTransform, aLayer));
+        aLayer->GetLocalTransformTyped()
+      * AdjustForClip(combinedAsyncTransform, aLayer));
 
     
     if (Layer* maskLayer = aLayer->GetMaskLayer()) {
       SetShadowTransform(maskLayer,
-          maskLayer->GetLocalTransform() * combinedAsyncTransform);
+          maskLayer->GetLocalTransformTyped() * combinedAsyncTransform);
     }
 
     appliedTransform = true;
@@ -1018,13 +1023,13 @@ ApplyAsyncTransformToScrollbarForContent(Layer* aScrollbar,
   const FrameMetrics& metrics = aContent.Metrics();
   AsyncPanZoomController* apzc = aContent.GetApzc();
 
-  Matrix4x4 asyncTransform = apzc->GetCurrentAsyncTransform();
+  AsyncTransformComponentMatrix asyncTransform = apzc->GetCurrentAsyncTransform();
 
   
   
   
   
-  Matrix4x4 scrollbarTransform;
+  AsyncTransformComponentMatrix scrollbarTransform;
   if (aScrollbar->GetScrollbarDirection() == Layer::VERTICAL) {
     const ParentLayerCoord asyncScrollY = asyncTransform._42;
     const float asyncZoomY = asyncTransform._22;
@@ -1105,9 +1110,10 @@ ApplyAsyncTransformToScrollbarForContent(Layer* aScrollbar,
     scrollbarTransform.PostTranslate(xTranslation, 0, 0);
   }
 
-  Matrix4x4 transform = aScrollbar->GetLocalTransform() * scrollbarTransform;
+  LayerToParentLayerMatrix4x4 transform =
+      aScrollbar->GetLocalTransformTyped() * scrollbarTransform;
 
-  Matrix4x4 compensation;
+  AsyncTransformComponentMatrix compensation;
   
   
   
@@ -1115,9 +1121,10 @@ ApplyAsyncTransformToScrollbarForContent(Layer* aScrollbar,
   
   if (metrics.IsRootContent()) {
     compensation =
-        Matrix4x4::Scaling(metrics.GetPresShellResolution(),
-                           metrics.GetPresShellResolution(),
-                           1.0f).Inverse();
+        AsyncTransformComponentMatrix::Scaling(
+            metrics.GetPresShellResolution(),
+            metrics.GetPresShellResolution(),
+            1.0f).Inverse();
   }
   
   
@@ -1131,13 +1138,15 @@ ApplyAsyncTransformToScrollbarForContent(Layer* aScrollbar,
   
   
   if (aScrollbarIsDescendant) {
-    Matrix4x4 asyncUntransform = (asyncTransform * apzc->GetOverscrollTransform()).Inverse();
+    Matrix4x4 asyncUntransform = (asyncTransform * apzc->GetOverscrollTransform()).Inverse().ToUnknownMatrix();
     Matrix4x4 contentTransform = aContent.GetTransform();
     Matrix4x4 contentUntransform = contentTransform.Inverse();
 
-    Matrix4x4 asyncCompensation = contentTransform
-                                * asyncUntransform
-                                * contentUntransform;
+    AsyncTransformComponentMatrix asyncCompensation =
+        ViewAs<AsyncTransformComponentMatrix>(
+            contentTransform
+          * asyncUntransform
+          * contentUntransform);
 
     compensation = compensation * asyncCompensation;
 
@@ -1146,7 +1155,7 @@ ApplyAsyncTransformToScrollbarForContent(Layer* aScrollbar,
     
     
     for (Layer* ancestor = aScrollbar; ancestor != aContent.GetLayer(); ancestor = ancestor->GetParent()) {
-      TransformClipRect(ancestor, ViewAs<ParentLayerToParentLayerMatrix4x4>(asyncCompensation));
+      TransformClipRect(ancestor, asyncCompensation);
     }
   }
   transform = transform * compensation;
@@ -1235,7 +1244,8 @@ AsyncCompositionManager::TransformScrollableLayer(Layer* aLayer)
 
   
   
-  Matrix4x4 oldTransform = aLayer->GetTransform();
+  LayerToParentLayerMatrix4x4 oldTransform = aLayer->GetTransformTyped() *
+      AsyncTransformMatrix();
 
   CSSToLayerScale geckoZoom = metrics.LayersPixelsPerCSSPixel().ToScaleFactor();
 
@@ -1294,13 +1304,13 @@ AsyncCompositionManager::TransformScrollableLayer(Layer* aLayer)
 
   LayerToParentLayerScale asyncZoom = userZoom / metrics.LayersPixelsPerCSSPixel().ToScaleFactor();
   ParentLayerPoint translation = userRect.TopLeft() - geckoScroll;
-  Matrix4x4 treeTransform = AsyncTransform(asyncZoom, -translation);
+  AsyncTransformComponentMatrix treeTransform = AsyncTransform(asyncZoom, -translation);
 
   
   
   
   
-  SetShadowTransform(aLayer, aLayer->GetLocalTransform() * treeTransform);
+  SetShadowTransform(aLayer, aLayer->GetLocalTransformTyped() * treeTransform);
 
   
   
@@ -1337,8 +1347,8 @@ AsyncCompositionManager::TransformScrollableLayer(Layer* aLayer)
   
   
   AlignFixedAndStickyLayers(aLayer, aLayer, metrics.GetScrollId(), oldTransform,
-                            aLayer->GetLocalTransform(), fixedLayerMargins,
-                            false);
+                            aLayer->GetLocalTransformTyped(),
+                            fixedLayerMargins, false);
 
   ExpandRootClipRect(aLayer, fixedLayerMargins);
 }

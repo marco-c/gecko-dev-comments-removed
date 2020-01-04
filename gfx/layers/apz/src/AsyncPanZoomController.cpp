@@ -2899,10 +2899,10 @@ bool AsyncPanZoomController::UpdateAnimation(const TimeStamp& aSampleTime,
   return false;
 }
 
-Matrix4x4 AsyncPanZoomController::GetOverscrollTransform() const {
+AsyncTransformComponentMatrix AsyncPanZoomController::GetOverscrollTransform() const {
   ReentrantMonitorAutoEnter lock(mMonitor);
   if (!IsOverscrolled()) {
-    return Matrix4x4();
+    return AsyncTransformComponentMatrix();
   }
 
   
@@ -2939,7 +2939,7 @@ Matrix4x4 AsyncPanZoomController::GetOverscrollTransform() const {
   }
 
   
-  return Matrix4x4::Scaling(scaleX, scaleY, 1)
+  return AsyncTransformComponentMatrix::Scaling(scaleX, scaleY, 1)
                     .PostTranslate(translation.x, translation.y, 0);
 }
 
@@ -3033,8 +3033,9 @@ AsyncTransform AsyncPanZoomController::GetCurrentAsyncTransform() const {
     -translation);
 }
 
-Matrix4x4 AsyncPanZoomController::GetCurrentAsyncTransformWithOverscroll() const {
-  return Matrix4x4(GetCurrentAsyncTransform()) * GetOverscrollTransform();
+AsyncTransformComponentMatrix AsyncPanZoomController::GetCurrentAsyncTransformWithOverscroll() const {
+  return AsyncTransformComponentMatrix(GetCurrentAsyncTransform())
+       * GetOverscrollTransform();
 }
 
 Matrix4x4 AsyncPanZoomController::GetTransformToLastDispatchedPaint() const {

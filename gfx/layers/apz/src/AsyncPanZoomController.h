@@ -173,7 +173,7 @@ public:
 
 
 
-  Matrix4x4 GetOverscrollTransform() const;
+  AsyncTransformComponentMatrix GetOverscrollTransform() const;
 
   
 
@@ -224,7 +224,7 @@ public:
 
 
 
-  Matrix4x4 GetCurrentAsyncTransformWithOverscroll() const;
+  AsyncTransformComponentMatrix GetCurrentAsyncTransformWithOverscroll() const;
 
   
 

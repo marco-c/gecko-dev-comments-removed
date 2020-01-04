@@ -85,7 +85,7 @@ public:
   
 
   void SetHitTestData(const EventRegions& aRegions,
-                      const gfx::Matrix4x4& aTransform,
+                      const CSSTransformMatrix& aTransform,
                       const Maybe<ParentLayerIntRegion>& aClipRegion,
                       const EventRegionsOverride& aOverride);
   bool IsOutsideClip(const ParentLayerPoint& aPoint) const;
@@ -135,7 +135,7 @@ private:
 
   
 
-  gfx::Matrix4x4 mTransform;
+  CSSTransformMatrix mTransform;
 
   
 
