@@ -564,7 +564,9 @@ WidgetKeyboardEvent::GetShortcutKeyCandidates(
   
   
   
-  if (mCodeNameIndex == CODE_NAME_INDEX_Space &&
+  
+  if (mKeyNameIndex == KEY_NAME_INDEX_USE_STRING &&
+      mCodeNameIndex == CODE_NAME_INDEX_Space &&
       pseudoCharCode != static_cast<uint32_t>(' ')) {
     ShortcutKeyCandidate spaceKey(static_cast<uint32_t>(' '), false);
     aCandidates.AppendElement(spaceKey);
@@ -608,7 +610,9 @@ WidgetKeyboardEvent::GetAccessKeyCandidates(nsTArray<uint32_t>& aCandidates)
   
   
   
-  if (mCodeNameIndex == CODE_NAME_INDEX_Space &&
+  
+  if (mKeyNameIndex == KEY_NAME_INDEX_USE_STRING &&
+      mCodeNameIndex == CODE_NAME_INDEX_Space &&
       charCode != static_cast<uint32_t>(' ')) {
     aCandidates.AppendElement(static_cast<uint32_t>(' '));
   }
