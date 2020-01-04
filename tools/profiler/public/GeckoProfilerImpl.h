@@ -444,13 +444,9 @@ public:
 
       
       
-#if _MSC_VER
-      _vsnprintf(buff, SAMPLER_MAX_STRING, aFormat, args);
-      _snprintf(mDest, SAMPLER_MAX_STRING, "%s %s", aInfo, buff);
-#else
       ::vsnprintf(buff, SAMPLER_MAX_STRING, aFormat, args);
       ::snprintf(mDest, SAMPLER_MAX_STRING, "%s %s", aInfo, buff);
-#endif
+
       mHandle = mozilla_sampler_call_enter(mDest, aCategory, this, true, line);
       va_end(args);
     } else {
