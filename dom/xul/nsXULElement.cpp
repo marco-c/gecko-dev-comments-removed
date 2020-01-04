@@ -1432,7 +1432,7 @@ nsChangeHint
 nsXULElement::GetAttributeChangeHint(const nsIAtom* aAttribute,
                                      int32_t aModType) const
 {
-    nsChangeHint retval(nsChangeHint(0));
+    nsChangeHint retval(NS_STYLE_HINT_NONE);
 
     if (aAttribute == nsGkAtoms::value &&
         (aModType == nsIDOMMutationEvent::REMOVAL ||
@@ -2768,7 +2768,7 @@ NotifyOffThreadScriptCompletedRunnable::Run()
             return NS_ERROR_UNEXPECTED;
         }
         JSContext* cx = jsapi.cx();
-        script = JS::FinishOffThreadScript(cx, JS_GetRuntime(cx), mToken);
+        script = JS::FinishOffThreadScript(cx, mToken);
     }
 
     if (!sReceivers) {

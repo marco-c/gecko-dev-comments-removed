@@ -4060,13 +4060,17 @@ CanCompileOffThread(JSContext* cx, const ReadOnlyCompileOptions& options, size_t
 
 
 
+
 extern JS_PUBLIC_API(bool)
 CompileOffThread(JSContext* cx, const ReadOnlyCompileOptions& options,
                  const char16_t* chars, size_t length,
                  OffThreadCompileCallback callback, void* callbackData);
 
 extern JS_PUBLIC_API(JSScript*)
-FinishOffThreadScript(JSContext* maybecx, JSRuntime* rt, void* token);
+FinishOffThreadScript(JSContext* cx, void* token);
+
+extern JS_PUBLIC_API(void)
+CancelOffThreadScript(JSContext* cx, void* token);
 
 extern JS_PUBLIC_API(bool)
 CompileOffThreadModule(JSContext* cx, const ReadOnlyCompileOptions& options,
@@ -4074,7 +4078,10 @@ CompileOffThreadModule(JSContext* cx, const ReadOnlyCompileOptions& options,
                        OffThreadCompileCallback callback, void* callbackData);
 
 extern JS_PUBLIC_API(JSObject*)
-FinishOffThreadModule(JSContext* maybecx, JSRuntime* rt, void* token);
+FinishOffThreadModule(JSContext* cx, void* token);
+
+extern JS_PUBLIC_API(void)
+CancelOffThreadModule(JSContext* cx, void* token);
 
 
 
