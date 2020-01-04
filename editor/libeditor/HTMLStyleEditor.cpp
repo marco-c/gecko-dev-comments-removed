@@ -114,7 +114,7 @@ HTMLEditor::SetInlineProperty(nsIAtom* aProperty,
 {
   NS_ENSURE_TRUE(aProperty, NS_ERROR_NULL_POINTER);
   NS_ENSURE_TRUE(mRules, NS_ERROR_NOT_INITIALIZED);
-  nsCOMPtr<nsIEditRules> kungFuDeathGrip(mRules);
+  nsCOMPtr<nsIEditRules> rules(mRules);
   ForceCompositionEnd();
 
   RefPtr<Selection> selection = GetSelection();
@@ -136,7 +136,7 @@ HTMLEditor::SetInlineProperty(nsIAtom* aProperty,
   bool cancel, handled;
   TextRulesInfo ruleInfo(EditAction::setTextProperty);
   
-  nsresult res = mRules->WillDoAction(selection, &ruleInfo, &cancel, &handled);
+  nsresult res = rules->WillDoAction(selection, &ruleInfo, &cancel, &handled);
   NS_ENSURE_SUCCESS(res, res);
   if (!cancel && !handled) {
     
@@ -220,7 +220,7 @@ HTMLEditor::SetInlineProperty(nsIAtom* aProperty,
   }
   if (!cancel) {
     
-    return mRules->DidDoAction(selection, &ruleInfo, res);
+    return rules->DidDoAction(selection, &ruleInfo, res);
   }
   return NS_OK;
 }
@@ -1226,8 +1226,8 @@ HTMLEditor::RemoveInlinePropertyImpl(nsIAtom* aProperty,
   bool cancel, handled;
   TextRulesInfo ruleInfo(EditAction::removeTextProperty);
   
-  nsCOMPtr<nsIEditRules> kungFuDeathGrip(mRules);
-  nsresult res = mRules->WillDoAction(selection, &ruleInfo, &cancel, &handled);
+  nsCOMPtr<nsIEditRules> rules(mRules);
+  nsresult res = rules->WillDoAction(selection, &ruleInfo, &cancel, &handled);
   NS_ENSURE_SUCCESS(res, res);
   if (!cancel && !handled) {
     
@@ -1317,7 +1317,7 @@ HTMLEditor::RemoveInlinePropertyImpl(nsIAtom* aProperty,
   }
   if (!cancel) {
     
-    res = mRules->DidDoAction(selection, &ruleInfo, res);
+    res = rules->DidDoAction(selection, &ruleInfo, res);
     NS_ENSURE_SUCCESS(res, res);
   }
   return NS_OK;
