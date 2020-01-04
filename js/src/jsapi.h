@@ -5006,9 +5006,10 @@ class MOZ_STACK_CLASS JS_PUBLIC_API(AutoFilename)
 
 
 
+
 extern JS_PUBLIC_API(bool)
 DescribeScriptedCaller(JSContext* cx, AutoFilename* filename = nullptr,
-                       unsigned* lineno = nullptr);
+                       unsigned* lineno = nullptr, unsigned* column = nullptr);
 
 extern JS_PUBLIC_API(JSObject*)
 GetScriptedCallerGlobal(JSContext* cx);
