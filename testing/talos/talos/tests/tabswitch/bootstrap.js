@@ -2,10 +2,12 @@
 
 
 var { classes: Cc, interfaces: Ci, utils: Cu } = Components;
-Cu.import("resource:///modules/NewTabURL.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/Promise.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
+
+let aboutNewTabService = Cc["@mozilla.org/browser/aboutnewtab-service;1"]
+                           .getService(Ci.nsIAboutNewTabService);
 
 var aboutBlankTab = null;
 var Profiler = null;
@@ -13,7 +15,7 @@ var Profiler = null;
 var windowListener = {
   onOpenWindow: function(aWindow) {
     
-    NewTabURL.override("about:blank")
+    aboutNewTabService.newTabURL = "about:blank";
 
     
     let window = aWindow.QueryInterface(Ci.nsIInterfaceRequestor).getInterface(Ci.nsIDOMWindowInternal || Ci.nsIDOMWindow);
@@ -25,7 +27,7 @@ var windowListener = {
   },
 
   onCloseWindow: function(aWindow) {
-    NewTabURL.reset()
+    aboutNewTabService.resetNewTabURL();
   },
 
   onWindowTitleChange: function(aWindow, aTitle) {
