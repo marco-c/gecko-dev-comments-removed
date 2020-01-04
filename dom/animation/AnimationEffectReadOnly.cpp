@@ -323,13 +323,6 @@ AnimationEffectReadOnly::GetComputedTimingAsDict(
                               aRetVal);
 }
 
-void
-AnimationEffectReadOnly::SetAnimation(Animation* aAnimation)
-{
-  mAnimation = aAnimation;
-  NotifyAnimationTimingUpdated();
-}
-
 AnimationEffectReadOnly::~AnimationEffectReadOnly()
 {
   

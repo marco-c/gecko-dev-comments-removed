@@ -1220,6 +1220,32 @@ KeyframeEffectReadOnly::CalculateCumulativeChangeHint(
   }
 }
 
+void
+KeyframeEffectReadOnly::SetAnimation(Animation* aAnimation)
+{
+  if (mAnimation == aAnimation) {
+    return;
+  }
+
+  
+  RequestRestyle(EffectCompositor::RestyleType::Layer);
+
+  mAnimation = aAnimation;
+
+  
+  RequestRestyle(EffectCompositor::RestyleType::Layer);
+
+  if (mTarget) {
+    EffectSet* effectSet = EffectSet::GetEffectSet(mTarget->mElement,
+                                                   mTarget->mPseudoType);
+    if (effectSet) {
+      effectSet->MarkCascadeNeedsUpdate();
+    }
+  }
+
+  NotifyAnimationTimingUpdated();
+}
+
 bool
 KeyframeEffectReadOnly::CanIgnoreIfNotVisible() const
 {

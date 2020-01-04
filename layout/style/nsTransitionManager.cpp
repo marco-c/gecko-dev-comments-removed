@@ -798,10 +798,6 @@ nsTransitionManager::ConsiderStartingTransition(
   animation->SetTimelineNoUpdate(timeline);
   animation->SetCreationSequence(
     mPresContext->RestyleManager()->AsGecko()->GetAnimationGeneration());
-  
-  
-  
-  
   animation->SetEffectFromStyle(pt);
   animation->PlayFromStyle();
 

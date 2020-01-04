@@ -130,6 +130,7 @@ Animation::SetEffect(AnimationEffectReadOnly* aEffect)
   PostUpdate();
 }
 
+
 void
 Animation::SetEffectNoUpdate(AnimationEffectReadOnly* aEffect)
 {
@@ -138,12 +139,55 @@ Animation::SetEffectNoUpdate(AnimationEffectReadOnly* aEffect)
   if (mEffect == aEffect) {
     return;
   }
+
   if (mEffect) {
-    mEffect->SetAnimation(nullptr);
+    if (!aEffect) {
+      
+      
+      
+      ResetPendingTasks();
+    }
+
+    
+    RefPtr<AnimationEffectReadOnly> oldEffect = mEffect;
+    mEffect = nullptr;
+    oldEffect->SetAnimation(nullptr);
   }
-  mEffect = aEffect;
-  if (mEffect) {
+
+  if (aEffect) {
+    
+    RefPtr<AnimationEffectReadOnly> newEffect = aEffect;
+    Animation* prevAnim = aEffect->GetAnimation();
+    if (prevAnim) {
+      prevAnim->SetEffect(nullptr);
+    }
+
+    
+    mEffect = newEffect;
     mEffect->SetAnimation(this);
+
+    
+    
+    
+    
+    
+    
+    
+    
+    if (!mPendingReadyTime.IsNull()) {
+      mPendingReadyTime.SetNull();
+
+      nsIDocument* doc = GetRenderedDocument();
+      if (doc) {
+        PendingAnimationTracker* tracker =
+          doc->GetOrCreatePendingAnimationTracker();
+        if (mPendingState == PendingState::PlayPending) {
+          tracker->AddPlayPending(*this);
+        } else {
+          tracker->AddPausePending(*this);
+        }
+      }
+    }
   }
 
   UpdateTiming(SeekFlag::NoSeek, SyncNotifyFlag::Async);
@@ -1109,7 +1153,11 @@ Animation::UpdateEffect()
 {
   if (mEffect) {
     UpdateRelevance();
-    mEffect->NotifyAnimationTimingUpdated();
+
+    KeyframeEffectReadOnly* keyframeEffect = mEffect->AsKeyframeEffect();
+    if (keyframeEffect) {
+      keyframeEffect->NotifyAnimationTimingUpdated();
+    }
   }
 }
 
