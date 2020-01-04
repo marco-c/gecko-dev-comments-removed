@@ -48,7 +48,7 @@ struct nsStyleVisibility;
 
 
 
-#define NS_STYLE_INHERIT_MASK              0x000ffffff
+#define NS_STYLE_INHERIT_MASK              0x0007fffff
 
 
 #define NS_STYLE_INHERITED_STRUCT_MASK \
@@ -57,6 +57,7 @@ struct nsStyleVisibility;
 #define NS_STYLE_RESET_STRUCT_MASK \
   (((nsStyleStructID_size_t(1) << nsStyleStructID_Reset_Count) - 1) \
    << nsStyleStructID_Inherited_Count)
+
 
 
 
@@ -84,6 +85,7 @@ struct nsStyleVisibility;
 #define NS_STYLE_HAS_CHILD_THAT_USES_RESET_STYLE 0x400000000
 
 #define NS_STYLE_CONTEXT_TYPE_SHIFT        35
+
 
 
 #define NS_RULE_NODE_IS_ANIMATION_RULE      0x01000000
@@ -1352,6 +1354,22 @@ protected:
 };
 
 
+
+
+
+
+
+class nsStyleQuoteValues
+{
+public:
+  typedef nsTArray<std::pair<nsString, nsString>> QuotePairArray;
+  NS_INLINE_DECL_REFCOUNTING(nsStyleQuoteValues);
+  QuotePairArray mQuotePairs;
+
+private:
+  ~nsStyleQuoteValues() {}
+};
+
 struct nsStyleList
 {
   explicit nsStyleList(StyleStructContext aContext);
@@ -1382,6 +1400,11 @@ struct nsStyleList
            nsChangeHint_ClearAncestorIntrinsics;
   }
 
+  static void Shutdown() {
+    sInitialQuotes = nullptr;
+    sNoneQuotes = nullptr;
+  }
+
   imgRequestProxy* GetListStyleImage() const { return mListStyleImage; }
   void SetListStyleImage(imgRequestProxy* aReq)
   {
@@ -1410,14 +1433,27 @@ struct nsStyleList
                      CounterStyleManager()->BuildCounterStyle(aType));
   }
 
+  const nsStyleQuoteValues::QuotePairArray& GetQuotePairs() const;
+
+  void SetQuotesInherit(const nsStyleList* aOther);
+  void SetQuotesInitial();
+  void SetQuotesNone();
+  void SetQuotes(nsStyleQuoteValues::QuotePairArray&& aValues);
+
   uint8_t   mListStylePosition;         
 private:
   nsString  mListStyleType;             
   RefPtr<mozilla::CounterStyle> mCounterStyle; 
   RefPtr<imgRequestProxy> mListStyleImage; 
+  RefPtr<nsStyleQuoteValues> mQuotes;   
   nsStyleList& operator=(const nsStyleList& aOther) = delete;
 public:
   nsRect        mImageRegion;           
+
+private:
+  
+  static mozilla::StaticRefPtr<nsStyleQuoteValues> sInitialQuotes;
+  static mozilla::StaticRefPtr<nsStyleQuoteValues> sNoneQuotes;
 };
 
 struct nsStyleGridLine
@@ -2797,70 +2833,6 @@ struct nsStyleCounterData
 
 
 #define DELETE_ARRAY_IF(array)  if (array) { delete[] array; array = nullptr; }
-
-
-
-
-
-
-class nsStyleQuoteValues
-{
-public:
-  typedef nsTArray<std::pair<nsString, nsString>> QuotePairArray;
-  NS_INLINE_DECL_REFCOUNTING(nsStyleQuoteValues);
-  QuotePairArray mQuotePairs;
-
-private:
-  ~nsStyleQuoteValues() {}
-};
-
-struct nsStyleQuotes
-{
-  explicit nsStyleQuotes(StyleStructContext aContext);
-  nsStyleQuotes(const nsStyleQuotes& aQuotes);
-  ~nsStyleQuotes();
-
-  void* operator new(size_t sz, nsStyleQuotes* aSelf) CPP_THROW_NEW { return aSelf; }
-  void* operator new(size_t sz, nsPresContext* aContext) CPP_THROW_NEW {
-    return aContext->PresShell()->
-      AllocateByObjectID(mozilla::eArenaObjectID_nsStyleQuotes, sz);
-  }
-  void Destroy(nsPresContext* aContext) {
-    this->~nsStyleQuotes();
-    aContext->PresShell()->
-      FreeByObjectID(mozilla::eArenaObjectID_nsStyleQuotes, this);
-  }
-  nsChangeHint CalcDifference(const nsStyleQuotes& aOther) const;
-  static nsChangeHint MaxDifference() {
-    return NS_STYLE_HINT_FRAMECHANGE;
-  }
-  static nsChangeHint DifferenceAlwaysHandledForDescendants() {
-    
-    
-    return nsChangeHint_NeedReflow |
-           nsChangeHint_ReflowChangesSizeOrPosition |
-           nsChangeHint_ClearAncestorIntrinsics;
-  }
-
-  static void Shutdown() {
-    sInitialQuotes = nullptr;
-    sNoneQuotes = nullptr;
-  }
-
-  const nsStyleQuoteValues::QuotePairArray& GetQuotePairs() const;
-
-  void SetQuotesInherit(const nsStyleQuotes* aOther);
-  void SetQuotesInitial();
-  void SetQuotesNone();
-  void SetQuotes(nsStyleQuoteValues::QuotePairArray&& aValues);
-
-private:
-  RefPtr<nsStyleQuoteValues> mQuotes;  
-
-  
-  static mozilla::StaticRefPtr<nsStyleQuoteValues> sInitialQuotes;
-  static mozilla::StaticRefPtr<nsStyleQuoteValues> sNoneQuotes;
-};
 
 struct nsStyleContent
 {

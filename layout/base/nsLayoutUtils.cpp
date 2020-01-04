@@ -7663,7 +7663,7 @@ nsLayoutUtils::Shutdown()
   nsComputedDOMStyle::UnregisterPrefChangeCallbacks();
 
   
-  nsStyleQuotes::Shutdown();
+  nsStyleList::Shutdown();
 }
 
 
