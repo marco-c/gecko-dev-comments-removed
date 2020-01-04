@@ -18,6 +18,7 @@
 
 #include "jsapi.h"
 #include "jsfriendapi.h"
+#include "jsnum.h"
 #include "jsprf.h"
 
 #include "builtin/TypedObject.h"
@@ -1257,75 +1258,11 @@ Select(JSContext* cx, unsigned argc, Value* vp)
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-static bool
-ArgumentToIntegerIndex(JSContext* cx, JS::HandleValue v, uint64_t* index)
-{
-    
-    if (v.isInt32()) {
-        int32_t i = v.toInt32();
-        if (i >= 0) {
-            *index = i;
-            return true;
-        }
-    }
-
-    
-    double d;
-    if (!ToNumber(cx, v, &d))
-        return false;
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-    
-    if (!(0 <= d && d <= (uint64_t(1) << 53)))
-        return ErrorBadIndex(cx);
-
-    
-    
-    
-    uint64_t i(d);
-    if (d != double(i))
-        return ErrorBadIndex(cx);
-
-    *index = i;
-    return true;
-}
-
-
-
-
 static bool
 ArgumentToLaneIndex(JSContext* cx, JS::HandleValue v, unsigned limit, unsigned* lane)
 {
     uint64_t arg;
-    if (!ArgumentToIntegerIndex(cx, v, &arg))
+    if (!ToIntegerIndex(cx, v, &arg))
         return false;
     if (arg >= limit)
         return ErrorBadIndex(cx);
@@ -1352,7 +1289,7 @@ TypedArrayFromArgs(JSContext* cx, const CallArgs& args, uint32_t accessBytes,
     typedArray.set(&argobj);
 
     uint64_t index;
-    if (!ArgumentToIntegerIndex(cx, args[1], &index))
+    if (!ToIntegerIndex(cx, args[1], &index))
         return false;
 
     

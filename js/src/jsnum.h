@@ -275,6 +275,26 @@ ToInteger(JSContext* cx, HandleValue v, double* dp)
 template<typename T>
 bool ToLengthClamped(T* cx, HandleValue v, uint32_t* out, bool* overflow);
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+bool ToIntegerIndex(JSContext* cx, JS::HandleValue v, uint64_t* index);
+
 inline bool
 SafeAdd(int32_t one, int32_t two, int32_t* res)
 {
