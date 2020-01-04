@@ -86,6 +86,31 @@ struct nsID
   
 };
 
+#ifndef XPCOM_GLUE_AVOID_NSPR
+
+
+
+
+
+
+class nsIDToCString
+{
+public:
+  explicit nsIDToCString(const nsID& aID)
+  {
+    aID.ToProvidedString(mStringBytes);
+  }
+
+  const char *get() const
+  {
+    return mStringBytes;
+  }
+
+protected:
+  char mStringBytes[NSID_LENGTH];
+};
+#endif
+
 
 
 
