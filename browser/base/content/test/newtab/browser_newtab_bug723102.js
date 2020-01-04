@@ -1,19 +1,25 @@
 
 
 
-function runTests() {
+add_task(function* () {
   
   yield setLinks("0,1,2,3,4,5,6,7,8");
   setPinnedLinks("");
 
-  yield addNewTabPageTab();
+  yield* addNewTabPageTab();
   let firstTab = gBrowser.selectedTab;
 
-  yield addNewTabPageTab();
-  gBrowser.removeTab(firstTab);
+  yield* addNewTabPageTab();
+  yield BrowserTestUtils.removeTab(firstTab);
 
   ok(NewTabUtils.allPages.enabled, "page is enabled");
   NewTabUtils.allPages.enabled = false;
-  ok(getGrid().node.hasAttribute("page-disabled"), "page is disabled");
+
+  let disabled = yield ContentTask.spawn(gBrowser.selectedBrowser, {}, function* () {
+    return content.gGrid.node.hasAttribute("page-disabled");
+  });
+  ok(disabled, "page is disabled");
+
   NewTabUtils.allPages.enabled = true;
-}
+});
+
