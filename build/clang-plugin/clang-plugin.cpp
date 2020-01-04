@@ -803,6 +803,11 @@ AST_MATCHER(CallExpr, isAssertAssignmentTestFunc) {
       && method->getDeclName().isIdentifier()
       && method->getName() == assertName;
 }
+
+AST_MATCHER(CXXRecordDecl, isLambdaDecl) {
+  return Node.isLambda();
+}
+
 }
 }
 
@@ -1055,8 +1060,17 @@ DiagnosticsMatcher::DiagnosticsMatcher() {
   
   
   
-  astMatcher.addMatcher(lambdaExpr().bind("lambda"),
-                        &refCountedInsideLambdaChecker);
+  
+  
+  
+  astMatcher.addMatcher(
+      functionDecl(returns(recordType(hasDeclaration(cxxRecordDecl(isLambdaDecl()).bind("decl"))))),
+      &refCountedInsideLambdaChecker);
+  astMatcher.addMatcher(lambdaExpr().bind("lambdaExpr"), &refCountedInsideLambdaChecker);
+  astMatcher.addMatcher(
+      classTemplateSpecializationDecl(hasAnyTemplateArgument(refersToType(
+        recordType(hasDeclaration(cxxRecordDecl(isLambdaDecl()).bind("decl")))))),
+      &refCountedInsideLambdaChecker);
 
   
   
@@ -1358,13 +1372,34 @@ void DiagnosticsMatcher::NoAddRefReleaseOnReturnChecker::run(
 
 void DiagnosticsMatcher::RefCountedInsideLambdaChecker::run(
     const MatchFinder::MatchResult &Result) {
+  static DenseSet<const CXXRecordDecl*> CheckedDecls;
+
   DiagnosticsEngine &Diag = Result.Context->getDiagnostics();
   unsigned errorID = Diag.getDiagnosticIDs()->getCustomDiagID(
       DiagnosticIDs::Error,
       "Refcounted variable %0 of type %1 cannot be captured by a lambda");
   unsigned noteID = Diag.getDiagnosticIDs()->getCustomDiagID(
       DiagnosticIDs::Note, "Please consider using a smart pointer");
-  const LambdaExpr *Lambda = Result.Nodes.getNodeAs<LambdaExpr>("lambda");
+
+  const CXXRecordDecl *Lambda = Result.Nodes.getNodeAs<CXXRecordDecl>("decl");
+
+  if (const LambdaExpr *OuterLambda = Result.Nodes.getNodeAs<LambdaExpr>("lambdaExpr")) {
+    const CXXMethodDecl *OpCall = OuterLambda->getCallOperator();
+    QualType ReturnTy = OpCall->getReturnType();
+    if (const CXXRecordDecl *Record = ReturnTy->getAsCXXRecordDecl()) {
+      Lambda = Record;
+    }
+  }
+
+  if (!Lambda || !Lambda->isLambda()) {
+    return;
+  }
+
+  
+  if (CheckedDecls.count(Lambda)) {
+    return;
+  }
+  CheckedDecls.insert(Lambda);
 
   for (const LambdaCapture Capture : Lambda->captures()) {
     if (Capture.capturesVariable() && Capture.getCaptureKind() != LCK_ByRef) {
@@ -1374,6 +1409,7 @@ void DiagnosticsMatcher::RefCountedInsideLambdaChecker::run(
         Diag.Report(Capture.getLocation(), errorID) << Capture.getCapturedVar()
                                                     << Pointee;
         Diag.Report(Capture.getLocation(), noteID);
+        return;
       }
     }
   }
