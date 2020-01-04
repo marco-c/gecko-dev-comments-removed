@@ -22,7 +22,6 @@ ServoStyleSet::ServoStyleSet()
   : mPresContext(nullptr)
   , mRawSet(Servo_StyleSet_Init())
   , mBatching(0)
-  , mStylingStarted(false)
 {
 }
 
@@ -71,24 +70,6 @@ ServoStyleSet::EndUpdate()
 
   
   return NS_OK;
-}
-
-void
-ServoStyleSet::StartStyling(nsPresContext* aPresContext)
-{
-  MOZ_ASSERT(!mStylingStarted);
-
-  
-  
-  
-  
-  nsIContent* root = mPresContext->Document()->GetRootElement();
-  if (root) {
-    root->SetIsDirtyForServo();
-  }
-
-  StyleDocument( false);
-  mStylingStarted = true;
 }
 
 already_AddRefed<nsStyleContext>
@@ -485,20 +466,15 @@ void
 ServoStyleSet::StyleDocument(bool aLeaveDirtyBits)
 {
   
-  
   nsIDocument* doc = mPresContext->Document();
-  doc->UnsetHasDirtyDescendantsForServo();
-
-  
-  nsIContent* root = mPresContext->Document()->GetRootElement();
-  if (!root) {
-    return;
-  }
+  nsIContent* root = doc->GetRootElement();
+  MOZ_ASSERT(root);
 
   
   Servo_RestyleSubtree(root, mRawSet.get());
   if (!aLeaveDirtyBits) {
     ClearDirtyBits(root);
+    doc->UnsetHasDirtyDescendantsForServo();
   }
 }
 
