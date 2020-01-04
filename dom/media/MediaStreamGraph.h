@@ -1188,12 +1188,20 @@ public:
 
 
 
+
+
+
+
+
+
+
   already_AddRefed<MediaInputPort>
   AllocateInputPort(MediaStream* aStream,
                     TrackID aTrackID = TRACK_ANY,
                     TrackID aDestTrackID = TRACK_ANY,
                     uint16_t aInputNumber = 0,
-                    uint16_t aOutputNumber = 0);
+                    uint16_t aOutputNumber = 0,
+                    nsTArray<TrackID>* aBlockedTracks = nullptr);
   
 
 
