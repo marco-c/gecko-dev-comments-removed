@@ -564,9 +564,16 @@ DOMStorageCache::Clear(const DOMStorage* aStorage)
 void
 DOMStorageCache::CloneFrom(const DOMStorageCache* aThat)
 {
-  mLoaded = aThat->mLoaded;
+  
+  
+  
+  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_ASSERT(!mPersistent);
+  MOZ_ASSERT(!(bool)aThat->mLoaded);
+
+  mLoaded = false;
   mInitialized = aThat->mInitialized;
-  mPersistent = aThat->mPersistent;
+  mPersistent = false;
   mSessionOnlyDataSetActive = aThat->mSessionOnlyDataSetActive;
 
   for (uint32_t i = 0; i < kDataSetCount; ++i) {

@@ -15,6 +15,7 @@
 #include "nsHashKeys.h"
 #include "mozilla/Monitor.h"
 #include "mozilla/Telemetry.h"
+#include "mozilla/Atomics.h"
 #include "nsAutoPtr.h"
 
 namespace mozilla {
@@ -221,7 +222,8 @@ private:
   
   
   
-  bool mLoaded;
+  
+  Atomic<bool, ReleaseAcquire> mLoaded;
 
   
   nsresult mLoadResult;
