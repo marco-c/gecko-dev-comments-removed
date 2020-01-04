@@ -3293,10 +3293,6 @@ pref("intl.keyboard.per_window_layout", false);
 pref("intl.tsf.enable", true);
 
 
-
-pref("intl.tsf.force_enable", false);
-
-
 pref("intl.tsf.support_imm", true);
 
 
