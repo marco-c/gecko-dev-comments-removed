@@ -350,9 +350,6 @@ private:
   nsMainThreadPtrHandle<MediaSourceDecoder> mParentDecoder;
 
   
-  Mirror<Maybe<double>> mMediaSourceDuration;
-
-  
   Atomic<bool> mAbort;
   
   Atomic<bool> mEnded;
