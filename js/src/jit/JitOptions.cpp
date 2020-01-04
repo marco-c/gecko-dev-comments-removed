@@ -166,7 +166,7 @@ DefaultJitOptions::DefaultJitOptions()
     SET_DEFAULT(osrPcMismatchesBeforeRecompile, 6000);
 
     
-    SET_DEFAULT(smallFunctionMaxBytecodeLength_, 130);
+    SET_DEFAULT(smallFunctionMaxBytecodeLength_, 120);
 
     
     
