@@ -406,6 +406,11 @@ const Tree = module.exports = createClass({
     }
 
     
+    if (e.altKey || e.ctrlKey || e.shiftKey || e.metaKey) {
+      return;
+    }
+
+    
     
     if (e.nativeEvent && e.nativeEvent.preventDefault) {
       ViewHelpers.preventScrolling(e.nativeEvent);
