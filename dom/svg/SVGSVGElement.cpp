@@ -752,7 +752,8 @@ SVGSVGElement::BindToTree(nsIDocument* aDocument,
     
     
     
-    doc->EnsureOnDemandBuiltInUASheet(nsLayoutStylesheetCache::SVGSheet());
+    auto cache = nsLayoutStylesheetCache::For(doc->GetStyleBackendType());
+    doc->EnsureOnDemandBuiltInUASheet(cache->SVGSheet());
   }
 
   if (mTimedDocumentRoot && smilController) {

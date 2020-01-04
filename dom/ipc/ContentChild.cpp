@@ -2584,7 +2584,10 @@ static void
 PreloadSlowThings()
 {
   
-  nsLayoutStylesheetCache::UserContentSheet();
+  
+  
+  
+  nsLayoutStylesheetCache::For(StyleBackendType::Gecko)->UserContentSheet();
 
   TabChild::PreloadSlowThings();
 

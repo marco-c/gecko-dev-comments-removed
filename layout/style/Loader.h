@@ -22,6 +22,7 @@
 #include "mozilla/CORSMode.h"
 #include "mozilla/CSSStyleSheet.h"
 #include "mozilla/MemoryReporting.h"
+#include "mozilla/StyleSheetHandle.h"
 #include "mozilla/net/ReferrerPolicy.h"
 
 class nsICSSLoaderObserver;
@@ -286,7 +287,7 @@ public:
 
 
 
-  nsresult LoadChildSheet(CSSStyleSheet* aParentSheet,
+  nsresult LoadChildSheet(StyleSheetHandle aParentSheet,
                           nsIURI* aURL,
                           nsMediaList* aMedia,
                           ImportRule* aRule,
@@ -317,13 +318,13 @@ public:
   nsresult LoadSheetSync(nsIURI* aURL,
                          SheetParsingMode aParsingMode,
                          bool aUseSystemPrincipal,
-                         CSSStyleSheet** aSheet);
+                         StyleSheetHandle::RefPtr* aSheet);
 
   
 
 
 
-  nsresult LoadSheetSync(nsIURI* aURL, CSSStyleSheet** aSheet) {
+  nsresult LoadSheetSync(nsIURI* aURL, StyleSheetHandle::RefPtr* aSheet) {
     return LoadSheetSync(aURL, eAuthorSheetFeatures, false, aSheet);
   }
 
@@ -352,7 +353,7 @@ public:
                      nsIPrincipal* aOriginPrincipal,
                      const nsCString& aCharset,
                      nsICSSLoaderObserver* aObserver,
-                     CSSStyleSheet** aSheet);
+                     StyleSheetHandle::RefPtr* aSheet);
 
   
 
@@ -461,24 +462,24 @@ private:
                        const nsAString& aTitle,
                        StyleSheetState& aSheetState,
                        bool *aIsAlternate,
-                       CSSStyleSheet** aSheet);
+                       StyleSheetHandle::RefPtr* aSheet);
 
   
   
   
-  void PrepareSheet(CSSStyleSheet* aSheet,
+  void PrepareSheet(StyleSheetHandle aSheet,
                     const nsAString& aTitle,
                     const nsAString& aMediaString,
                     nsMediaList* aMediaList,
                     dom::Element* aScopeElement,
                     bool isAlternate);
 
-  nsresult InsertSheetInDoc(CSSStyleSheet* aSheet,
+  nsresult InsertSheetInDoc(StyleSheetHandle aSheet,
                             nsIContent* aLinkingContent,
                             nsIDocument* aDocument);
 
-  nsresult InsertChildSheet(CSSStyleSheet* aSheet,
-                            CSSStyleSheet* aParentSheet,
+  nsresult InsertChildSheet(StyleSheetHandle aSheet,
+                            StyleSheetHandle aParentSheet,
                             ImportRule* aParentRule);
 
   nsresult InternalLoadNonDocumentSheet(nsIURI* aURL,
@@ -487,7 +488,7 @@ private:
                                         bool aUseSystemPrincipal,
                                         nsIPrincipal* aOriginPrincipal,
                                         const nsCString& aCharset,
-                                        CSSStyleSheet** aSheet,
+                                        StyleSheetHandle::RefPtr* aSheet,
                                         nsICSSLoaderObserver* aObserver,
                                         CORSMode aCORSMode = CORS_NONE,
                                         ReferrerPolicy aReferrerPolicy = mozilla::net::RP_Default,
@@ -501,7 +502,7 @@ private:
   
   
   nsresult PostLoadEvent(nsIURI* aURI,
-                         CSSStyleSheet* aSheet,
+                         StyleSheetHandle aSheet,
                          nsICSSLoaderObserver* aObserver,
                          bool aWasAlternate,
                          nsIStyleSheetLinkingElement* aElement);
@@ -537,8 +538,9 @@ private:
                        LoadDataArray& aDatasToNotify);
 
   struct Sheets {
-    nsRefPtrHashtable<URIPrincipalReferrerPolicyAndCORSModeHashKey, CSSStyleSheet>
-                      mCompleteSheets;
+    nsBaseHashtable<URIPrincipalReferrerPolicyAndCORSModeHashKey,
+                    StyleSheetHandle::RefPtr,
+                    StyleSheetHandle> mCompleteSheets;
     nsDataHashtable<URIPrincipalReferrerPolicyAndCORSModeHashKey, SheetLoadData*>
                       mLoadingDatas; 
     nsDataHashtable<URIPrincipalReferrerPolicyAndCORSModeHashKey, SheetLoadData*>

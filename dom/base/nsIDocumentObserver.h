@@ -7,6 +7,7 @@
 #define nsIDocumentObserver_h___
 
 #include "mozilla/EventStates.h"
+#include "mozilla/StyleSheetHandle.h"
 #include "nsISupports.h"
 #include "nsIMutationObserver.h"
 
@@ -14,7 +15,6 @@ class nsIContent;
 class nsIDocument;
 
 namespace mozilla {
-class CSSStyleSheet;
 namespace css {
 class Rule;
 } 
@@ -100,7 +100,7 @@ public:
 
 
 
-  virtual void StyleSheetAdded(mozilla::CSSStyleSheet* aStyleSheet,
+  virtual void StyleSheetAdded(mozilla::StyleSheetHandle aStyleSheet,
                                bool aDocumentSheet) = 0;
 
   
@@ -113,7 +113,7 @@ public:
 
 
 
-  virtual void StyleSheetRemoved(mozilla::CSSStyleSheet* aStyleSheet,
+  virtual void StyleSheetRemoved(mozilla::StyleSheetHandle aStyleSheet,
                                  bool aDocumentSheet) = 0;
   
   
@@ -125,7 +125,7 @@ public:
 
 
 
-  virtual void StyleSheetApplicableStateChanged(mozilla::CSSStyleSheet* aStyleSheet) = 0;
+  virtual void StyleSheetApplicableStateChanged(mozilla::StyleSheetHandle aStyleSheet) = 0;
 
   
 
@@ -136,7 +136,7 @@ public:
 
 
 
-  virtual void StyleRuleChanged(mozilla::CSSStyleSheet* aStyleSheet) = 0;
+  virtual void StyleRuleChanged(mozilla::StyleSheetHandle aStyleSheet) = 0;
 
   
 
@@ -147,7 +147,7 @@ public:
 
 
 
-  virtual void StyleRuleAdded(mozilla::CSSStyleSheet* aStyleSheet) = 0;
+  virtual void StyleRuleAdded(mozilla::StyleSheetHandle aStyleSheet) = 0;
 
   
 
@@ -158,7 +158,7 @@ public:
 
 
 
-  virtual void StyleRuleRemoved(mozilla::CSSStyleSheet* aStyleSheet) = 0;
+  virtual void StyleRuleRemoved(mozilla::StyleSheetHandle aStyleSheet) = 0;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(nsIDocumentObserver, NS_IDOCUMENT_OBSERVER_IID)
@@ -186,25 +186,25 @@ NS_DEFINE_STATIC_IID_ACCESSOR(nsIDocumentObserver, NS_IDOCUMENT_OBSERVER_IID)
                                        mozilla::EventStates aStateMask) override;
 
 #define NS_DECL_NSIDOCUMENTOBSERVER_STYLESHEETADDED                          \
-    virtual void StyleSheetAdded(mozilla::CSSStyleSheet* aStyleSheet,        \
+    virtual void StyleSheetAdded(mozilla::StyleSheetHandle aStyleSheet,      \
                                  bool aDocumentSheet) override;
 
 #define NS_DECL_NSIDOCUMENTOBSERVER_STYLESHEETREMOVED                        \
-    virtual void StyleSheetRemoved(mozilla::CSSStyleSheet* aStyleSheet,      \
+    virtual void StyleSheetRemoved(mozilla::StyleSheetHandle aStyleSheet,    \
                                    bool aDocumentSheet) override;
 
 #define NS_DECL_NSIDOCUMENTOBSERVER_STYLESHEETAPPLICABLESTATECHANGED         \
     virtual void StyleSheetApplicableStateChanged(                           \
-        mozilla::CSSStyleSheet* aStyleSheet) override;
+        mozilla::StyleSheetHandle aStyleSheet) override;
 
 #define NS_DECL_NSIDOCUMENTOBSERVER_STYLERULECHANGED                         \
-    virtual void StyleRuleChanged(mozilla::CSSStyleSheet* aStyleSheet) override;
+    virtual void StyleRuleChanged(mozilla::StyleSheetHandle aStyleSheet) override;
 
 #define NS_DECL_NSIDOCUMENTOBSERVER_STYLERULEADDED                           \
-    virtual void StyleRuleAdded(mozilla::CSSStyleSheet* aStyleSheet) override;
+    virtual void StyleRuleAdded(mozilla::StyleSheetHandle aStyleSheet) override;
 
 #define NS_DECL_NSIDOCUMENTOBSERVER_STYLERULEREMOVED                         \
-    virtual void StyleRuleRemoved(mozilla::CSSStyleSheet* aStyleSheet) override;
+    virtual void StyleRuleRemoved(mozilla::StyleSheetHandle aStyleSheet) override;
 
 #define NS_DECL_NSIDOCUMENTOBSERVER                                          \
     NS_DECL_NSIDOCUMENTOBSERVER_BEGINUPDATE                                  \
@@ -262,29 +262,29 @@ NS_IMPL_NSIMUTATIONOBSERVER_CONTENT(_class)
 
 #define NS_IMPL_NSIDOCUMENTOBSERVER_STYLE_STUB(_class)                    \
 void                                                                      \
-_class::StyleSheetAdded(mozilla::CSSStyleSheet* aStyleSheet,              \
+_class::StyleSheetAdded(mozilla::StyleSheetHandle aStyleSheet,            \
                         bool aDocumentSheet)                              \
 {                                                                         \
 }                                                                         \
 void                                                                      \
-_class::StyleSheetRemoved(mozilla::CSSStyleSheet* aStyleSheet,            \
+_class::StyleSheetRemoved(mozilla::StyleSheetHandle aStyleSheet,          \
                           bool aDocumentSheet)                            \
 {                                                                         \
 }                                                                         \
 void                                                                      \
-_class::StyleSheetApplicableStateChanged(mozilla::CSSStyleSheet* aStyleSheet) \
+_class::StyleSheetApplicableStateChanged(mozilla::StyleSheetHandle aStyleSheet) \
 {                                                                         \
 }                                                                         \
 void                                                                      \
-_class::StyleRuleChanged(mozilla::CSSStyleSheet* aStyleSheet)             \
+_class::StyleRuleChanged(mozilla::StyleSheetHandle aStyleSheet)           \
 {                                                                         \
 }                                                                         \
 void                                                                      \
-_class::StyleRuleAdded(mozilla::CSSStyleSheet* aStyleSheet)               \
+_class::StyleRuleAdded(mozilla::StyleSheetHandle aStyleSheet)             \
 {                                                                         \
 }                                                                         \
 void                                                                      \
-_class::StyleRuleRemoved(mozilla::CSSStyleSheet* aStyleSheet)             \
+_class::StyleRuleRemoved(mozilla::StyleSheetHandle aStyleSheet)           \
 {                                                                         \
 }
 

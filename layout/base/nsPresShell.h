@@ -51,7 +51,6 @@ class nsPresShellEventCB;
 class nsAutoCauseReflowNotifier;
 
 namespace mozilla {
-class CSSStyleSheet;
 class EventDispatchingCallback;
 } 
 
@@ -155,12 +154,12 @@ public:
   virtual void UnsuppressPainting() override;
 
   virtual nsresult GetAgentStyleSheets(
-      nsTArray<RefPtr<mozilla::CSSStyleSheet>>& aSheets) override;
+      nsTArray<mozilla::StyleSheetHandle::RefPtr>& aSheets) override;
   virtual nsresult SetAgentStyleSheets(
-      const nsTArray<RefPtr<mozilla::CSSStyleSheet>>& aSheets) override;
+      const nsTArray<mozilla::StyleSheetHandle::RefPtr>& aSheets) override;
 
-  virtual nsresult AddOverrideStyleSheet(mozilla::CSSStyleSheet* aSheet) override;
-  virtual nsresult RemoveOverrideStyleSheet(mozilla::CSSStyleSheet* aSheet) override;
+  virtual nsresult AddOverrideStyleSheet(mozilla::StyleSheetHandle aSheet) override;
+  virtual nsresult RemoveOverrideStyleSheet(mozilla::StyleSheetHandle aSheet) override;
 
   virtual nsresult HandleEventWithTarget(
                                  mozilla::WidgetEvent* aEvent,
@@ -503,7 +502,7 @@ protected:
   void ShowEventTargetDebug();
 #endif
 
-  void RecordStyleSheetChange(mozilla::CSSStyleSheet* aStyleSheet);
+  void RecordStyleSheetChange(mozilla::StyleSheetHandle aStyleSheet);
 
   void RemovePreferenceStyles();
 
@@ -781,7 +780,7 @@ protected:
   nsPoint                   mMouseLocation;
 
   
-  RefPtr<mozilla::CSSStyleSheet> mPrefStyleSheet;
+  mozilla::StyleSheetHandle::RefPtr mPrefStyleSheet;
 
   
   

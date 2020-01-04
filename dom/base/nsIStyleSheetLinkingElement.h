@@ -8,6 +8,7 @@
 
 
 #include "nsISupports.h"
+#include "mozilla/StyleSheetHandle.h"
 
 class nsICSSLoaderObserver;
 class nsIURI;
@@ -15,10 +16,6 @@ class nsIURI;
 #define NS_ISTYLESHEETLINKINGELEMENT_IID          \
 { 0xa8b79f3b, 0x9d18, 0x4f9c, \
   { 0xb1, 0xaa, 0x8c, 0x9b, 0x1b, 0xaa, 0xac, 0xad } }
-
-namespace mozilla {
-class CSSStyleSheet;
-} 
 
 class nsIStyleSheetLinkingElement : public nsISupports {
 public:
@@ -31,14 +28,14 @@ public:
 
 
 
-  NS_IMETHOD SetStyleSheet(mozilla::CSSStyleSheet* aStyleSheet) = 0;
+  NS_IMETHOD SetStyleSheet(mozilla::StyleSheetHandle aStyleSheet) = 0;
 
   
 
 
 
 
-  NS_IMETHOD_(mozilla::CSSStyleSheet*) GetStyleSheet() = 0;
+  NS_IMETHOD_(mozilla::StyleSheetHandle) GetStyleSheet() = 0;
 
   
 

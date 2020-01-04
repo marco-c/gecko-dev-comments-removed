@@ -35,7 +35,7 @@ public:
     NS_DECL_NSISCRIPTLOADEROBSERVER
     
     
-    NS_IMETHOD StyleSheetLoaded(mozilla::CSSStyleSheet* aSheet,
+    NS_IMETHOD StyleSheetLoaded(mozilla::StyleSheetHandle aSheet,
                                 bool aWasAlternate,
                                 nsresult aStatus) override;
 

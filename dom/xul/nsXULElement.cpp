@@ -859,7 +859,8 @@ nsXULElement::BindToTree(nsIDocument* aDocument,
     
 
     if (!XULElementsRulesInMinimalXULSheet(NodeInfo()->NameAtom())) {
-      doc->EnsureOnDemandBuiltInUASheet(nsLayoutStylesheetCache::XULSheet());
+      auto cache = nsLayoutStylesheetCache::For(doc->GetStyleBackendType());
+      doc->EnsureOnDemandBuiltInUASheet(cache->XULSheet());
       
       
       

@@ -111,9 +111,9 @@ nsMathMLElement::BindToTree(nsIDocument* aDocument, nsIContent* aParent,
       
       
       
+      auto cache = nsLayoutStylesheetCache::For(doc->GetStyleBackendType());
       doc->SetMathMLEnabled();
-      doc->
-        EnsureOnDemandBuiltInUASheet(nsLayoutStylesheetCache::MathMLSheet());
+      doc->EnsureOnDemandBuiltInUASheet(cache->MathMLSheet());
 
       
       

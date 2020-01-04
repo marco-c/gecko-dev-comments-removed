@@ -17,7 +17,6 @@
 #include "nsString.h"
 #include "nsQueryObject.h"
 
-#include "mozilla/CSSStyleSheet.h"
 #include "mozilla/dom/URL.h"
 #include "nsIConsoleService.h"
 #include "nsIDocument.h"
@@ -30,12 +29,14 @@
 #include "nsIScriptError.h"
 #include "nsIWindowMediator.h"
 #include "nsIPrefService.h"
+#include "mozilla/StyleSheetHandle.h"
+#include "mozilla/StyleSheetHandleInlines.h"
 
 nsChromeRegistry* nsChromeRegistry::gChromeRegistry;
 
 
 
-using mozilla::CSSStyleSheet;
+using mozilla::StyleSheetHandle;
 using mozilla::dom::IsChromeURI;
 
 
@@ -401,19 +402,18 @@ nsresult nsChromeRegistry::RefreshWindow(nsPIDOMWindowOuter* aWindow)
   nsCOMPtr<nsIPresShell> shell = document->GetShell();
   if (shell) {
     
-    nsTArray<RefPtr<CSSStyleSheet>> agentSheets;
+    nsTArray<StyleSheetHandle::RefPtr> agentSheets;
     rv = shell->GetAgentStyleSheets(agentSheets);
     NS_ENSURE_SUCCESS(rv, rv);
 
-    nsTArray<RefPtr<CSSStyleSheet>> newAgentSheets;
-    for (CSSStyleSheet* sheet : agentSheets) {
+    nsTArray<StyleSheetHandle::RefPtr> newAgentSheets;
+    for (StyleSheetHandle sheet : agentSheets) {
       nsIURI* uri = sheet->GetSheetURI();
 
       if (IsChromeURI(uri)) {
         
-        RefPtr<CSSStyleSheet> newSheet;
-        rv = document->LoadChromeSheetSync(uri, true,
-                                           getter_AddRefs(newSheet));
+        StyleSheetHandle::RefPtr newSheet;
+        rv = document->LoadChromeSheetSync(uri, true, &newSheet);
         if (NS_FAILED(rv)) return rv;
         if (newSheet) {
           rv = newAgentSheets.AppendElement(newSheet) ? NS_OK : NS_ERROR_FAILURE;
@@ -433,27 +433,27 @@ nsresult nsChromeRegistry::RefreshWindow(nsPIDOMWindowOuter* aWindow)
   int32_t count = document->GetNumberOfStyleSheets();
 
   
-  nsTArray<RefPtr<CSSStyleSheet>> oldSheets(count);
-  nsTArray<RefPtr<CSSStyleSheet>> newSheets(count);
+  nsTArray<StyleSheetHandle::RefPtr> oldSheets(count);
+  nsTArray<StyleSheetHandle::RefPtr> newSheets(count);
 
   
   for (int32_t i = 0; i < count; i++) {
     
-    CSSStyleSheet* styleSheet = document->GetStyleSheetAt(i);
+    StyleSheetHandle styleSheet = document->GetStyleSheetAt(i);
     oldSheets.AppendElement(styleSheet);
   }
 
   
   
-  for (CSSStyleSheet* sheet : oldSheets) {
+  for (StyleSheetHandle sheet : oldSheets) {
     nsIURI* uri = sheet ? sheet->GetOriginalURI() : nullptr;
 
     if (uri && IsChromeURI(uri)) {
       
-      RefPtr<CSSStyleSheet> newSheet;
+      StyleSheetHandle::RefPtr newSheet;
       
       
-      document->LoadChromeSheetSync(uri, false, getter_AddRefs(newSheet));
+      document->LoadChromeSheetSync(uri, false, &newSheet);
       
       newSheets.AppendElement(newSheet);
     } else {
