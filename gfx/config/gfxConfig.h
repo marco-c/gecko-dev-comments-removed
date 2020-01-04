@@ -120,6 +120,12 @@ public:
   
   
   
+  static void Reenable(Feature aFeature, Fallback aFallback);
+
+  
+  
+  
+  
   static bool InitOrUpdate(Feature aFeature,
                            bool aEnable,
                            FeatureStatus aDisableStatus,

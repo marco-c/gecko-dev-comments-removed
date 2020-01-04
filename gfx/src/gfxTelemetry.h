@@ -45,7 +45,10 @@ enum class FeatureStatus
   ForceEnabled,
 
   
-  CrashedOnStartup
+  CrashedOnStartup,
+
+  
+  Broken
 };
 
 const char* FeatureStatusToString(FeatureStatus aStatus);

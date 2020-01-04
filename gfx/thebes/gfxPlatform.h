@@ -450,7 +450,6 @@ public:
     static bool OffMainThreadCompositingEnabled();
 
     static bool CanUseDirect3D9();
-    static bool CanUseDirect3D11();
     virtual bool CanUseHardwareVideoDecoding();
     static bool CanUseDirect3D11ANGLE();
 
@@ -686,7 +685,8 @@ protected:
     
 
 
-    void UpdateDeviceInitData();
+
+    virtual bool UpdateDeviceInitData();
 
     
 
