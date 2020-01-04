@@ -353,11 +353,6 @@ NextFrameSeekTask::OnVideoNotDecoded(MediaDecoderReader::NotDecodedReason aReaso
   
   if (aReason == MediaDecoderReader::WAITING_FOR_DATA) {
     mReader->WaitForData(MediaData::VIDEO_DATA);
-
-    
-    
-    
-    mNeedToStopPrerollingVideo = true;
     return;
   }
 
