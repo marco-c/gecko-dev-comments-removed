@@ -1525,7 +1525,7 @@ JS_DetachArrayBuffer(JSContext* cx, HandleObject obj)
     Rooted<ArrayBufferObject*> buffer(cx, &obj->as<ArrayBufferObject>());
 
     if (buffer->isWasm()) {
-        JS_ReportError(cx, "Cannot detach WASM ArrayBuffer");
+        JS_ReportError(cx, "Cannot detach WebAssembly ArrayBuffer");
         return false;
     }
 
@@ -1632,11 +1632,16 @@ JS_StealArrayBufferContents(JSContext* cx, HandleObject objArg)
         return nullptr;
     }
 
+    if (buffer->isWasm()) {
+        JS_ReportErrorNumber(cx, GetErrorMessage, nullptr, JSMSG_WASM_NO_TRANSFER);
+        return nullptr;
+    }
+
     
     
     
     
-    bool hasStealableContents = buffer->hasStealableContents() && buffer->hasMallocedContents();
+    bool hasStealableContents = buffer->hasStealableContents() && buffer->isPlain();
 
     AutoCompartment ac(cx, buffer);
     return ArrayBufferObject::stealContents(cx, buffer, hasStealableContents).data();
