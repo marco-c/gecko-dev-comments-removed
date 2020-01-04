@@ -1,0 +1,14 @@
+
+
+
+
+"use strict";
+
+add_task(function* capture() {
+  if (!shouldCapture()) {
+    return;
+  }
+  let sets = ["TabsInTitlebar", "Tabs", "WindowSize", "Toolbars", "LightweightThemes"];
+
+  yield TestRunner.start(sets);
+});
