@@ -1425,6 +1425,12 @@ media::TimeIntervals
 MediaDecoder::GetSeekable()
 {
   MOZ_ASSERT(NS_IsMainThread());
+
+  if (IsNaN(GetDuration())) {
+    
+    return TimeIntervals();
+  }
+
   
   
   
