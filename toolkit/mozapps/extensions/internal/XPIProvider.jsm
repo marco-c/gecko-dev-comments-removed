@@ -989,9 +989,8 @@ var loadManifestFromWebManifest = Task.async(function*(aUri) {
 
   addon.targetApplications = [{
     id: TOOLKIT_ID,
-    minVersion: (bss.strict_min_version ||
-                 AddonManagerPrivate.webExtensionsMinPlatformVersion),
-    maxVersion: bss.strict_max_version || "*",
+    minVersion: bss.strict_min_version,
+    maxVersion: bss.strict_max_version,
   }];
 
   addon.targetPlatforms = [];
@@ -3995,6 +3994,13 @@ this.XPIProvider = {
     }
     let addon = yield loadManifestFromFile(aFile, TemporaryInstallLocation);
 
+    if (!addon.isCompatible) {
+      let app = addon.matchingTargetApplication;
+      throw new Error(`Add-on ${addon.id} is not compatible with application version. ` +
+                      `add-on minVersion: ${app.minVersion}, ` +
+                      `add-on maxVersion: ${app.maxVersion}`);
+    }
+
     if (!addon.bootstrap) {
       throw new Error("Only restartless (bootstrap) add-ons"
                     + " can be temporarily installed:", addon.id);
@@ -6194,7 +6200,6 @@ AddonInstall.prototype = {
             
             let callback = AddonManagerPrivate.getUpgradeListener(this.addon.id);
             callback({
-              version: this.version,
               install: () => {
                 switch (this.state) {
                   case AddonManager.STATE_INSTALLED:
@@ -7015,6 +7020,10 @@ AddonInternal.prototype = {
     if (!app)
       return false;
 
+    
+    let minVersion = app.minVersion || "0";
+    let maxVersion = app.maxVersion || "*";
+
     if (!aAppVersion)
       aAppVersion = Services.appinfo.version;
     if (!aPlatformVersion)
@@ -7051,14 +7060,14 @@ AddonInternal.prototype = {
         minCompatVersion = XPIProvider.minCompatiblePlatformVersion;
 
       if (minCompatVersion &&
-          Services.vc.compare(minCompatVersion, app.maxVersion) > 0)
+          Services.vc.compare(minCompatVersion, maxVersion) > 0)
         return false;
 
-      return Services.vc.compare(version, app.minVersion) >= 0;
+      return Services.vc.compare(version, minVersion) >= 0;
     }
 
-    return (Services.vc.compare(version, app.minVersion) >= 0) &&
-           (Services.vc.compare(version, app.maxVersion) <= 0)
+    return (Services.vc.compare(version, minVersion) >= 0) &&
+           (Services.vc.compare(version, maxVersion) <= 0)
   },
 
   get matchingTargetApplication() {
@@ -7664,23 +7673,18 @@ AddonWrapper.prototype = {
 
 
 
-
   reload: function() {
     return new Promise((resolve) => {
       const addon = addonFor(this);
 
-      logger.debug(`reloading add-on ${addon.id}`);
-
       if (!this.temporarilyInstalled) {
-        let addonFile = addon.getResourceURI;
-        XPIProvider.updateAddonDisabledState(addon, true);
-        Services.obs.notifyObservers(addonFile, "flush-cache-entry", null);
-        XPIProvider.updateAddonDisabledState(addon, false)
-        resolve();
-      } else {
-        
-        resolve(AddonManager.installTemporaryAddon(addon._sourceBundle));
+        logger.debug(`Cannot reload add-on at ${addon._sourceBundle}`);
+        throw new Error("Only temporary add-ons can be reloaded");
       }
+
+      logger.debug(`reloading add-on ${addon.id}`);
+      
+      resolve(AddonManager.installTemporaryAddon(addon._sourceBundle));
     });
   },
 
