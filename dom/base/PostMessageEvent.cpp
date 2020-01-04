@@ -113,8 +113,11 @@ PostMessageEvent::Run()
                           false , messageData, mCallerOrigin,
                           EmptyString(), mSource);
 
+  nsTArray<nsRefPtr<MessagePortBase>> ports;
+  TakeTransferredPorts(ports);
+
   event->SetPorts(new MessagePortList(static_cast<dom::Event*>(event.get()),
-                                      GetTransferredPorts()));
+                                      ports));
 
   
   
