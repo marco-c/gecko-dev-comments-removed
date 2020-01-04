@@ -2365,27 +2365,43 @@ function BrowserViewSourceOfDocument(aArgsOrDocument) {
     args = aArgsOrDocument;
   }
 
-  let inTab = Services.prefs.getBoolPref("view_source.tab");
-  if (inTab) {
-    let viewSourceURL = `view-source:${args.URL}`;
-    let tabBrowser = gBrowser;
-    
-    
-    
-    
-    if (!tabBrowser || !window.toolbar.visible) {
+  let viewInternal = () => {
+    let inTab = Services.prefs.getBoolPref("view_source.tab");
+    if (inTab) {
+      let viewSourceURL = `view-source:${args.URL}`;
+      let tabBrowser = gBrowser;
       
-      let browserWindow = RecentWindow.getMostRecentBrowserWindow();
-      tabBrowser = browserWindow.gBrowser;
+      
+      
+      
+      if (!tabBrowser || !window.toolbar.visible) {
+        
+        let browserWindow = RecentWindow.getMostRecentBrowserWindow();
+        tabBrowser = browserWindow.gBrowser;
+      }
+      let tab = tabBrowser.loadOneTab(viewSourceURL, {
+        relatedToCurrent: true,
+        inBackground: false
+      });
+      args.viewSourceBrowser = tabBrowser.getBrowserForTab(tab);
+      top.gViewSourceUtils.viewSourceInBrowser(args);
+    } else {
+      top.gViewSourceUtils.viewSource(args);
     }
-    let tab = tabBrowser.loadOneTab(viewSourceURL, {
-      relatedToCurrent: true,
-      inBackground: false
+  }
+
+  
+  
+  if (Services.prefs.getBoolPref("view_source.editor.external")) {
+    top.gViewSourceUtils
+       .openInExternalEditor(args, null, null, null, result => {
+      if (!result) {
+        viewInternal();
+      }
     });
-    args.viewSourceBrowser = tabBrowser.getBrowserForTab(tab);
-    top.gViewSourceUtils.viewSourceInBrowser(args);
   } else {
-    top.gViewSourceUtils.viewSource(args);
+    
+    viewInternal();
   }
 }
 

@@ -15,6 +15,8 @@
 Components.utils.import("resource://gre/modules/XPCOMUtils.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "ViewSourceBrowser",
   "resource://gre/modules/ViewSourceBrowser.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "Deprecated",
+  "resource://gre/modules/Deprecated.jsm");
 
 var gViewSourceUtils = {
 
@@ -180,11 +182,63 @@ var gViewSourceUtils = {
   },
 
   
-  
-  openInExternalEditor: function(aURL, aPageDescriptor, aDocument, aLineNumber, aCallBack)
-  {
-    var data = {url: aURL, pageDescriptor: aPageDescriptor, doc: aDocument,
-                lineNumber: aLineNumber};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  openInExternalEditor: function(aArgsOrURL, aPageDescriptor, aDocument,
+                                 aLineNumber, aCallBack) {
+    let data;
+    if (typeof aArgsOrURL == "string") {
+      Deprecated.warning("The arguments you're passing to " +
+                         "openInExternalEditor are using an out-of-date API.",
+                         "https://developer.mozilla.org/en-US/Add-ons/" +
+                         "Code_snippets/View_Source_for_XUL_Applications");
+      data = {
+        url: aArgsOrURL,
+        pageDescriptor: aPageDescriptor,
+        doc: aDocument,
+        lineNumber: aLineNumber
+      };
+    } else {
+      let { URL, outerWindowID, lineNumber } = aArgsOrURL;
+      data = {
+        url: URL,
+        lineNumber
+      };
+    }
 
     try {
       var editor = this.getExternalViewSourceEditor();
@@ -197,7 +251,7 @@ var gViewSourceUtils = {
       var ios = Components.classes["@mozilla.org/network/io-service;1"]
                           .getService(Components.interfaces.nsIIOService);
       var charset = aDocument ? aDocument.characterSet : null;
-      var uri = ios.newURI(aURL, charset, null);
+      var uri = ios.newURI(data.url, charset, null);
       data.uri = uri;
 
       var path;
@@ -211,6 +265,7 @@ var gViewSourceUtils = {
         this.handleCallBack(aCallBack, true, data);
       } else {
         
+        this.viewSourceProgressListener.contentLoaded = false;
         this.viewSourceProgressListener.editor = editor;
         this.viewSourceProgressListener.callBack = aCallBack;
         this.viewSourceProgressListener.data = data;
@@ -363,6 +418,11 @@ var gViewSourceUtils = {
     },
 
     onContentLoaded: function() {
+      
+      
+      if (this.contentLoaded) {
+        return;
+      }
       try {
         if (!this.file) {
           
@@ -410,6 +470,7 @@ var gViewSourceUtils = {
                                                           this.data.lineNumber);
         this.editor.runw(false, editorArgs, editorArgs.length);
 
+        this.contentLoaded = true;
         gViewSourceUtils.handleCallBack(this.callBack, true, this.data);
       } catch (ex) {
         
