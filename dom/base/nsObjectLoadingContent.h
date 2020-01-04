@@ -448,6 +448,11 @@ class nsObjectLoadingContent : public nsImageLoadingContent
     
 
 
+    bool ShouldBlockContent();
+
+    
+
+
 
 
 
@@ -652,6 +657,9 @@ class nsObjectLoadingContent : public nsImageLoadingContent
     
     
     bool                        mActivated : 1;
+
+    
+    bool                        mContentBlockingDisabled : 1;
 
     
     bool                        mIsStopping : 1;

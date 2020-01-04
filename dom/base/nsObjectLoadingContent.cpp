@@ -132,6 +132,13 @@ IsJavaMIME(const nsACString & aMIMEType)
 }
 
 static bool
+IsFlashMIME(const nsACString & aMIMEType)
+{
+  return
+    nsPluginHost::GetSpecialType(aMIMEType) == nsPluginHost::eSpecialType_Flash;
+}
+
+static bool
 InActiveDocument(nsIContent *aContent)
 {
   if (!aContent->IsInComposedDoc()) {
@@ -465,11 +472,10 @@ private:
 
 
 static bool
-IsSuccessfulRequest(nsIRequest* aRequest)
+IsSuccessfulRequest(nsIRequest* aRequest, nsresult* aStatus)
 {
-  nsresult status;
-  nsresult rv = aRequest->GetStatus(&status);
-  if (NS_FAILED(rv) || NS_FAILED(status)) {
+  nsresult rv = aRequest->GetStatus(aStatus);
+  if (NS_FAILED(rv) || NS_FAILED(*aStatus)) {
     return false;
   }
 
@@ -719,6 +725,7 @@ nsObjectLoadingContent::nsObjectLoadingContent()
   , mInstantiating(false)
   , mNetworkCreated(true)
   , mActivated(false)
+  , mContentBlockingDisabled(false)
   , mIsStopping(false)
   , mIsLoading(false)
   , mScriptRequested(false)
@@ -1123,13 +1130,31 @@ nsObjectLoadingContent::OnStartRequest(nsIRequest *aRequest,
   nsCOMPtr<nsIChannel> chan(do_QueryInterface(aRequest));
   NS_ASSERTION(chan, "Why is our request not a channel?");
 
-  nsCOMPtr<nsIURI> uri;
+  nsresult status;
+  bool success = IsSuccessfulRequest(aRequest, &status);
 
-  if (IsSuccessfulRequest(aRequest)) {
-    chan->GetURI(getter_AddRefs(uri));
+  if (status == NS_ERROR_BLOCKED_URI) {
+    nsCOMPtr<nsIConsoleService> console(
+      do_GetService("@mozilla.org/consoleservice;1"));
+    if (console) {
+      nsCOMPtr<nsIURI> uri;
+      chan->GetURI(getter_AddRefs(uri));
+      nsAutoCString spec;
+      uri->GetSpec(spec);
+      nsString message = NS_LITERAL_STRING("Blocking ") +
+        NS_ConvertASCIItoUTF16(spec.get()) +
+        NS_LITERAL_STRING(" since it was found on an internal Firefox blocklist.");
+      console->LogStringMessage(message.get());
+    }
+    Telemetry::Accumulate(Telemetry::PLUGIN_BLOCKED_FOR_STABILITY, 1);
+    return NS_ERROR_FAILURE;
+  } else if (status == NS_ERROR_TRACKING_URI) {
+    return NS_ERROR_FAILURE;
+  } else {
+    mContentBlockingDisabled = true;
   }
 
-  if (!uri) {
+  if (!success) {
     LOG(("OBJLC [%p]: OnStartRequest: Request failed\n", this));
     
     
@@ -2281,32 +2306,6 @@ nsObjectLoadingContent::LoadObject(bool aNotify,
     }
 
     
-    if (allowLoad && Preferences::GetBool(kPrefBlockURIs)) {
-      RefPtr<nsChannelClassifier> channelClassifier = new nsChannelClassifier();
-      nsCOMPtr<nsIURIClassifier> classifier = do_GetService(NS_URICLASSIFIERSERVICE_CONTRACTID);
-      if (classifier) {
-        nsAutoCString tables;
-        Preferences::GetCString("urlclassifier.blockedTable", &tables);
-        nsAutoCString results;
-        rv = classifier->ClassifyLocalWithTables(mURI, tables, results);
-        if (NS_SUCCEEDED(rv) && !results.IsEmpty()) {
-          nsAutoCString uri;
-          mURI->GetSpec(uri);
-          nsCOMPtr<nsIConsoleService> console(
-            do_GetService("@mozilla.org/consoleservice;1"));
-          if (console) {
-            nsString message = NS_LITERAL_STRING("Blocking ") +
-              NS_ConvertASCIItoUTF16(uri) +
-              NS_LITERAL_STRING(" since it was found on an internal Firefox blocklist.");
-            console->LogStringMessage(message.get());
-          }
-          Telemetry::Accumulate(Telemetry::PLUGIN_BLOCKED_FOR_STABILITY, 1);
-          allowLoad = false;
-        }
-      }
-    }
-
-    
     if (!mIsLoading) {
       LOG(("OBJLC [%p]: We re-entered in content policy, leaving original load",
            this));
@@ -2351,6 +2350,13 @@ nsObjectLoadingContent::LoadObject(bool aNotify,
       nestedURI->GetInnerURI(getter_AddRefs(tempURI));
       nestedURI = do_QueryInterface(tempURI);
     }
+  }
+
+  
+  
+  if ((mType == eType_Null || mType == eType_Plugin) && ShouldBlockContent()) {
+    LOG(("OBJLC [%p]: Enable content blocking", this));
+    mType = eType_Loading;
   }
 
   
@@ -3361,6 +3367,20 @@ nsObjectLoadingContent::GetRunID(uint32_t* aRunID)
 static bool sPrefsInitialized;
 static uint32_t sSessionTimeoutMinutes;
 static uint32_t sPersistentTimeoutDays;
+
+bool
+nsObjectLoadingContent::ShouldBlockContent()
+{
+  if (mContentBlockingDisabled)
+    return false;
+
+  if (!IsFlashMIME(mContentType) || !Preferences::GetBool(kPrefBlockURIs)) {
+    mContentBlockingDisabled = true;
+    return false;
+  }
+
+  return true;
+}
 
 bool
 nsObjectLoadingContent::ShouldPlay(FallbackType &aReason, bool aIgnoreCurrentType)
