@@ -2057,8 +2057,8 @@ NativeSetExistingDataProperty(JSContext* cx, HandleNativeObject obj, HandleShape
 
 
 bool
-js::SetPropertyByDefining(JSContext* cx, HandleObject obj, HandleId id, HandleValue v,
-                          HandleValue receiverValue, ObjectOpResult& result)
+js::SetPropertyByDefining(JSContext* cx, HandleId id, HandleValue v, HandleValue receiverValue,
+                          ObjectOpResult& result)
 {
     
     if (!receiverValue.isObject())
@@ -2141,7 +2141,7 @@ js::SetPropertyOnProto(JSContext* cx, HandleObject obj, HandleId id, HandleValue
     RootedObject proto(cx, obj->getProto());
     if (proto)
         return SetProperty(cx, proto, id, v, receiver, result);
-    return SetPropertyByDefining(cx, obj, id, v, receiver, result);
+    return SetPropertyByDefining(cx, id, v, receiver, result);
 }
 
 
@@ -2152,8 +2152,8 @@ js::SetPropertyOnProto(JSContext* cx, HandleObject obj, HandleId id, HandleValue
 
 
 static bool
-SetNonexistentProperty(JSContext* cx, HandleNativeObject obj, HandleId id, HandleValue v,
-                       HandleValue receiver, QualifiedBool qualified, ObjectOpResult& result)
+SetNonexistentProperty(JSContext* cx, HandleId id, HandleValue v, HandleValue receiver,
+                       QualifiedBool qualified, ObjectOpResult& result)
 {
     
     MOZ_ASSERT_IF(receiver.isObject(), !receiver.toObject().is<BlockObject>());
@@ -2163,7 +2163,7 @@ SetNonexistentProperty(JSContext* cx, HandleNativeObject obj, HandleId id, Handl
             return false;
     }
 
-    return SetPropertyByDefining(cx, obj, id, v, receiver, result);
+    return SetPropertyByDefining(cx, id, v, receiver, result);
 }
 
 
@@ -2224,7 +2224,7 @@ SetExistingProperty(JSContext* cx, HandleNativeObject obj, HandleId id, HandleVa
             return SetDenseOrTypedArrayElement(cx, pobj, JSID_TO_INT(id), v, result);
 
         
-        return SetPropertyByDefining(cx, obj, id, v, receiver, result);
+        return SetPropertyByDefining(cx, id, v, receiver, result);
     }
 
     
@@ -2262,7 +2262,7 @@ SetExistingProperty(JSContext* cx, HandleNativeObject obj, HandleId id, HandleVa
 
         
         
-        return SetPropertyByDefining(cx, obj, id, v, receiver, result);
+        return SetPropertyByDefining(cx, id, v, receiver, result);
     }
 
     
@@ -2319,7 +2319,7 @@ js::NativeSetProperty(JSContext* cx, HandleNativeObject obj, HandleId id, Handle
         RootedObject proto(cx, done ? nullptr : pobj->getProto());
         if (!proto) {
             
-            return SetNonexistentProperty(cx, obj, id, v, receiver, qualified, result);
+            return SetNonexistentProperty(cx, id, v, receiver, qualified, result);
         }
 
         
@@ -2336,7 +2336,7 @@ js::NativeSetProperty(JSContext* cx, HandleNativeObject obj, HandleId id, Handle
                 if (!HasProperty(cx, proto, id, &found))
                     return false;
                 if (!found)
-                    return SetNonexistentProperty(cx, obj, id, v, receiver, qualified, result);
+                    return SetNonexistentProperty(cx, id, v, receiver, qualified, result);
             }
 
             return SetProperty(cx, proto, id, v, receiver, result);
