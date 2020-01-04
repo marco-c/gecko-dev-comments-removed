@@ -195,6 +195,12 @@ extern bool gBluetoothDebugFlag;
 
 
 
+#define MAP_GET_MESSAGE_REQ_ID               "mapgetmessagereq"
+
+
+
+
+
 #define GATT_CHARACTERISTIC_CHANGED_ID       "characteristicchanged"
 
 
