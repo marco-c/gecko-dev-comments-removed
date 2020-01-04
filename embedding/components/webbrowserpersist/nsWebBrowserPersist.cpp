@@ -2361,6 +2361,9 @@ nsWebBrowserPersist::EndDownload(nsresult aResult)
     }
 
     
+    
+    mCompleted = true;
+    
     if (mProgressListener) {
         mProgressListener->OnStateChange(nullptr, nullptr,
             nsIWebProgressListener::STATE_STOP
@@ -2374,7 +2377,6 @@ nsWebBrowserPersist::EndDownload(nsresult aResult)
     }
 
     
-    mCompleted = true;
     Cleanup();
 
     mProgressListener = nullptr;
