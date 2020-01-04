@@ -799,7 +799,7 @@ nsresult
 MediaDecoder::Seek(double aTime, SeekTarget::Type aSeekType, dom::Promise* aPromise )
 {
   MOZ_ASSERT(NS_IsMainThread());
-  NS_ENSURE_TRUE(!IsShutdown(), NS_ERROR_FAILURE);
+  MOZ_ASSERT(!IsShutdown());
 
   UpdateDormantState(false , true );
 
