@@ -140,13 +140,14 @@ public abstract class GeckoApp
     private static final String LOGTAG = "GeckoApp";
     private static final int ONE_DAY_MS = 1000*60*60*24;
 
-    public static enum StartupAction {
+    public enum StartupAction {
         NORMAL,     
         URL,        
         PREFETCH,   
         WEBAPP,     
         GUEST,      
-        RESTRICTED  
+        RESTRICTED, 
+        SHORTCUT    
     }
 
     public static final String ACTION_ALERT_CALLBACK       = "org.mozilla.gecko.ACTION_ALERT_CALLBACK";
@@ -1588,7 +1589,7 @@ public abstract class GeckoApp
             getProfile().moveSessionFile();
         }
 
-        final StartupAction startupAction = getStartupAction(passedUri);
+        final StartupAction startupAction = getStartupAction(passedUri, action);
         Telemetry.addToHistogram("FENNEC_GECKOAPP_STARTUP_ACTION", startupAction.ordinal());
 
         
@@ -2768,7 +2769,7 @@ public abstract class GeckoApp
         return new StubbedHealthRecorder();
     }
 
-    protected StartupAction getStartupAction(final String passedURL) {
+    protected StartupAction getStartupAction(final String passedURL, final String action) {
         
         return StartupAction.NORMAL;
     }
