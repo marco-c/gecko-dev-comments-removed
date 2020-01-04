@@ -398,7 +398,21 @@ OutputParser.prototype = {
     swatch.nextElementSibling.textContent = val;
   },
 
-   
+  
+
+
+  _sanitizeURL: function(url) {
+    
+    let urlTokenizer = DOMUtils.getCSSLexer(url);
+    
+    while (urlTokenizer.nextToken()) {
+      
+    }
+
+    return urlTokenizer.performEOFFixup(url, true);
+  },
+
+  
 
 
 
@@ -409,9 +423,22 @@ OutputParser.prototype = {
 
 
 
-  _appendURL: function(match, url, options={}) {
+  _appendURL: function(match, url, options) {
     if (options.urlClass) {
-      this._appendTextNode("url(\"");
+      
+      
+      
+      match = this._sanitizeURL(match);
+      
+      
+      
+      
+      
+      
+      let [, leader, , body, trailer] =
+        /^(url\([ \t\r\n\f]*(["']?))(.*?)(\2[ \t\r\n\f]*\))$/i.exec(match);
+
+      this._appendTextNode(leader);
 
       let href = url;
       if (options.baseURI) {
@@ -422,11 +449,11 @@ OutputParser.prototype = {
         target: "_blank",
         class: options.urlClass,
         href: href
-      }, url);
+      }, body);
 
-      this._appendTextNode("\")");
+      this._appendTextNode(trailer);
     } else {
-      this._appendTextNode("url(\"" + url + "\")");
+      this._appendTextNode(match);
     }
   },
 
