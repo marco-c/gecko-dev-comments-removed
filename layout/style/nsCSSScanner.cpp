@@ -931,8 +931,11 @@ nsCSSScanner::ScanNumber(nsCSSToken& aToken)
   double value = sign * (intPart + fracPart);
   if (gotE) {
     
-    
-    value *= pow(10.0, double(expSign * exponent));
+    if (value != 0.0) {
+      
+      
+      value *= pow(10.0, double(expSign * exponent));
+    }
   } else if (!gotDot) {
     
     if (sign > 0) {
@@ -958,6 +961,7 @@ nsCSSScanner::ScanNumber(nsCSSToken& aToken)
       aToken.mIntegerValid = false;
     }
   }
+  MOZ_ASSERT(!IsNaN(value), "The value should not be NaN");
   aToken.mNumber = value;
   aToken.mType = type;
   return true;
