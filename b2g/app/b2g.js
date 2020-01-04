@@ -886,9 +886,6 @@ pref("network.sntp.port", 123);
 pref("network.sntp.timeout", 30); 
 
 
-pref("dom.inter-app-communication-api.enabled", true);
-
-
 
 
 pref("b2g.adb.timeout-hours", 12);
