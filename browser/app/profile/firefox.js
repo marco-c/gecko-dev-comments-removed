@@ -1835,8 +1835,8 @@ pref("media.eme.apiVisible", true);
 
 
 
-pref("media.fragmented-mp4.gmp.aac", 2);
-pref("media.fragmented-mp4.gmp.h264", 2);
+pref("media.gmp.decoder.aac", 2);
+pref("media.gmp.decoder.h264", 2);
 
 
 
