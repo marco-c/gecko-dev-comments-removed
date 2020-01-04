@@ -99,8 +99,8 @@ AvailableMaybeSeek(nsIInputStream* aStream, uint64_t* aResult)
     
     nsCOMPtr<nsISeekableStream> seekable = do_QueryInterface(aStream);
     if (seekable) {
-      nsresult rv = seekable->Seek(nsISeekableStream::NS_SEEK_CUR, 0);
-      if (NS_SUCCEEDED(rv)) {
+      nsresult rvSeek = seekable->Seek(nsISeekableStream::NS_SEEK_CUR, 0);
+      if (NS_SUCCEEDED(rvSeek)) {
         rv = aStream->Available(aResult);
       }
     }
@@ -117,8 +117,8 @@ TellMaybeSeek(nsISeekableStream* aSeekable, int64_t* aResult)
     
     
     
-    nsresult rv = aSeekable->Seek(nsISeekableStream::NS_SEEK_CUR, 0);
-    if (NS_SUCCEEDED(rv)) {
+    nsresult rvSeek = aSeekable->Seek(nsISeekableStream::NS_SEEK_CUR, 0);
+    if (NS_SUCCEEDED(rvSeek)) {
       rv = aSeekable->Tell(aResult);
     }
   }
@@ -828,4 +828,3 @@ nsMultiplexInputStream::Clone(nsIInputStream** aClone)
   clone.forget(aClone);
   return NS_OK;
 }
-

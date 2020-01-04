@@ -603,11 +603,11 @@ xptiInterfaceEntry::GetInterfaceIsArgNumberForParam(uint16_t methodIndex,
     return NS_OK;
 }
 
-nsresult 
-xptiInterfaceEntry::IsIID(const nsIID * IID, bool *_retval)
+nsresult
+xptiInterfaceEntry::IsIID(const nsIID * iid, bool *_retval)
 {
     
-    *_retval = mIID.Equals(*IID);
+    *_retval = mIID.Equals(*iid);
     return NS_OK;
 }
 
