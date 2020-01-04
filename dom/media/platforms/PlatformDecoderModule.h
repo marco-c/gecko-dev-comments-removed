@@ -44,10 +44,6 @@ class CDMProxy;
 
 
 
-
-
-
-
 class PlatformDecoderModule {
 public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(PlatformDecoderModule)
@@ -56,7 +52,6 @@ public:
   
   static void Init();
 
-  
   
   
   
@@ -90,9 +85,6 @@ public:
     MOZ_CRASH();
   }
 
-  
-  
-  
   
   virtual bool SupportsMimeType(const nsACString& aMimeType);
 
@@ -147,6 +139,7 @@ protected:
                      FlushableTaskQueue* aAudioTaskQueue,
                      MediaDataDecoderCallback* aCallback) = 0;
 };
+
 
 
 
