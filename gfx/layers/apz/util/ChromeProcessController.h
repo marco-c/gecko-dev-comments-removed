@@ -26,6 +26,12 @@ class APZEventState;
 
 
 
+
+
+
+
+
+
 class ChromeProcessController : public mozilla::layers::GeckoContentController
 {
 protected:
