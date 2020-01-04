@@ -711,6 +711,8 @@ protected:
     nsCOMPtr<nsITimer> mTimer;
   };
 
+  nsresult PlayInternal(bool aCallerIsChrome);
+
   
 
 
