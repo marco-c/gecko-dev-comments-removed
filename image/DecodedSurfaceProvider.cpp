@@ -53,8 +53,11 @@ DecodedSurfaceProvider::DropImageReference()
 }
 
 DrawableFrameRef
-DecodedSurfaceProvider::DrawableRef()
+DecodedSurfaceProvider::DrawableRef(size_t aFrame)
 {
+  MOZ_ASSERT(aFrame == 0,
+             "Requesting an animation frame from a DecodedSurfaceProvider?");
+
   
   
   

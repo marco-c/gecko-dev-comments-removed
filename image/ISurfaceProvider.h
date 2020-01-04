@@ -65,7 +65,9 @@ protected:
   virtual ~ISurfaceProvider() { }
 
   
-  virtual DrawableFrameRef DrawableRef() = 0;
+  
+  
+  virtual DrawableFrameRef DrawableRef(size_t aFrame) = 0;
 
   
   
@@ -128,6 +130,32 @@ public:
     return *this;
   }
 
+  
+
+
+
+
+
+
+
+
+
+
+
+  nsresult Seek(size_t aFrame)
+  {
+    MOZ_ASSERT(mHaveSurface, "Trying to seek an empty DrawableSurface?");
+
+    if (!mProvider) {
+      MOZ_ASSERT_UNREACHABLE("Trying to seek a static DrawableSurface?");
+      return NS_ERROR_FAILURE;
+    }
+
+    mDrawableRef = mProvider->DrawableRef(aFrame);
+
+    return mDrawableRef ? NS_OK : NS_ERROR_FAILURE;
+  }
+
   explicit operator bool() const { return mHaveSurface; }
   imgFrame* operator->() { return DrawableRef().get(); }
 
@@ -141,9 +169,11 @@ private:
 
     
     
+    
+    
     if (!mDrawableRef) {
       MOZ_ASSERT(mProvider);
-      mDrawableRef = mProvider->DrawableRef();
+      mDrawableRef = mProvider->DrawableRef( 0);
     }
 
     MOZ_ASSERT(mDrawableRef);
@@ -157,10 +187,12 @@ private:
 
 
 
+
+
 inline DrawableSurface
 ISurfaceProvider::Surface()
 {
-  return DrawableSurface(DrawableRef());
+  return DrawableSurface(DrawableRef( 0));
 }
 
 
@@ -186,7 +218,13 @@ public:
   }
 
 protected:
-  DrawableFrameRef DrawableRef() override { return mSurface->DrawableRef(); }
+  DrawableFrameRef DrawableRef(size_t aFrame) override
+  {
+    MOZ_ASSERT(aFrame == 0,
+               "Requesting an animation frame from a SimpleSurfaceProvider?");
+    return mSurface->DrawableRef();
+  }
+
   bool IsLocked() const override { return bool(mLockRef); }
 
   void SetLocked(bool aLocked) override
