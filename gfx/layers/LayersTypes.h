@@ -7,16 +7,21 @@
 #define GFX_LAYERSTYPES_H
 
 #include <stdint.h>                     
-#include "mozilla/gfx/Point.h"          
-#include "nsRegion.h"
-
-#include "mozilla/TypedEnumBits.h"
 
 #ifdef MOZ_WIDGET_GONK
 #include <utils/RefBase.h>
+#if ANDROID_VERSION >= 21
+#include <utils/NativeHandle.h>
 #endif
+#endif
+
+#include "mozilla/gfx/Point.h"          
+#include "mozilla/TypedEnumBits.h"
+#include "nsRegion.h"
+
 #include <stdio.h>            
 #include "mozilla/Logging.h"            
+
 #ifndef MOZ_LAYERS_HAVE_LOG
 #  define MOZ_LAYERS_HAVE_LOG
 #endif
@@ -110,6 +115,14 @@ struct LayerRenderState {
 
   void SetOverlayId(const int32_t& aId)
   { mOverlayId = aId; }
+
+  android::GraphicBuffer* GetGrallocBuffer() const
+  { return mSurface.get(); }
+
+#if ANDROID_VERSION >= 21
+  android::NativeHandle* GetSidebandStream() const
+  { return mSidebandStream.get(); }
+#endif
 #endif
 
   void SetOffset(const nsIntPoint& aOffset)
@@ -133,6 +146,9 @@ struct LayerRenderState {
   
   gfx::IntSize mSize;
   TextureHost* mTexture;
+#if ANDROID_VERSION >= 21
+  android::sp<android::NativeHandle> mSidebandStream;
+#endif
 #endif
 };
 
