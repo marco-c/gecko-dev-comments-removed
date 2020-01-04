@@ -11578,20 +11578,20 @@ GetFullscreenError(nsIDocument* aDoc, bool aCallerIsChrome)
   }
 
   if (!nsContentUtils::IsFullScreenApiEnabled()) {
-    return "FullScreenDeniedDisabled";
+    return "FullscreenDeniedDisabled";
   }
   if (!aDoc->IsVisible()) {
-    return "FullScreenDeniedHidden";
+    return "FullscreenDeniedHidden";
   }
   if (HasFullScreenSubDocument(aDoc)) {
-    return "FullScreenDeniedSubDocFullScreen";
+    return "FullscreenDeniedSubDocFullScreen";
   }
 
   
   
   nsCOMPtr<nsIDocShell> docShell(aDoc->GetDocShell());
   if (!docShell || !docShell->GetFullscreenAllowed()) {
-    return "FullScreenDeniedContainerNotAllowed";
+    return "FullscreenDeniedContainerNotAllowed";
   }
 
   return nullptr;
@@ -11607,15 +11607,15 @@ nsDocument::FullscreenElementReadyCheck(Element* aElement,
     return false;
   }
   if (!aElement->IsInDoc()) {
-    DispatchFullscreenError("FullScreenDeniedNotInDocument");
+    DispatchFullscreenError("FullscreenDeniedNotInDocument");
     return false;
   }
   if (aElement->OwnerDoc() != this) {
-    DispatchFullscreenError("FullScreenDeniedMovedDocument");
+    DispatchFullscreenError("FullscreenDeniedMovedDocument");
     return false;
   }
   if (!GetWindow()) {
-    DispatchFullscreenError("FullScreenDeniedLostWindow");
+    DispatchFullscreenError("FullscreenDeniedLostWindow");
     return false;
   }
   if (const char* msg = GetFullscreenError(this, aWasCallerChrome)) {
@@ -11626,11 +11626,11 @@ nsDocument::FullscreenElementReadyCheck(Element* aElement,
       !nsContentUtils::ContentIsDescendantOf(aElement, GetFullscreenElement())) {
     
     
-    DispatchFullscreenError("FullScreenDeniedNotDescendant");
+    DispatchFullscreenError("FullscreenDeniedNotDescendant");
     return false;
   }
   if (!nsContentUtils::IsChromeDoc(this) && !IsInActiveTab(this)) {
-    DispatchFullscreenError("FullScreenDeniedNotFocusedTab");
+    DispatchFullscreenError("FullscreenDeniedNotFocusedTab");
     return false;
   }
   
@@ -11644,7 +11644,7 @@ nsDocument::FullscreenElementReadyCheck(Element* aElement,
   if (focusedElement) {
     nsCOMPtr<nsIContent> content = do_QueryInterface(focusedElement);
     if (nsContentUtils::HasPluginWithUncontrolledEventDispatch(content)) {
-      DispatchFullscreenError("FullScreenDeniedFocusedPlugin");
+      DispatchFullscreenError("FullscreenDeniedFocusedPlugin");
       return false;
     }
   }
