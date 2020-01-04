@@ -1556,10 +1556,6 @@ public:
     return !GetLocalVisibleRegion().IsEmpty() || Extend3DContext();
   }
 
-  virtual bool NeedToDrawCheckerboarding(gfx::Color* aOutCheckerboardingColor = nullptr) {
-    return false;
-  }
-
   
 
 

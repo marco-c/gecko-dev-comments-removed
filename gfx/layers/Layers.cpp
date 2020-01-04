@@ -804,7 +804,10 @@ Layer::CalculateScissorRect(const RenderTargetIntRect& aCurrentScissorRect)
     return currentClip;
   }
 
-  if (GetLocalVisibleRegion().IsEmpty() && !NeedToDrawCheckerboarding()) {
+  if (GetVisibleRegion().IsEmpty()) {
+    
+    
+    
     
     
     
