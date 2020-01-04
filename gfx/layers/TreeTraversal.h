@@ -8,7 +8,6 @@
 #define mozilla_layers_TreeTraversal_h
 
 #include <queue>
-#include <stack>
 
 namespace mozilla {
 namespace layers {
@@ -20,7 +19,118 @@ namespace layers {
 
 
 
-enum class TraversalFlag { Skip, Continue };
+
+
+
+
+enum class TraversalFlag { Skip, Continue, Abort };
+
+
+
+
+
+
+
+
+
+template <typename Node, typename PreAction, typename PostAction>
+static auto ForEachNode(Node* aRoot, const PreAction& aPreAction, const PostAction& aPostAction) ->
+typename EnableIf<IsSame<decltype(aPreAction(aRoot)), TraversalFlag>::value &&
+                  IsSame<decltype(aPostAction(aRoot)),TraversalFlag>::value, bool>::Type
+{
+  if (!aRoot) {
+    return false;
+  }
+
+  TraversalFlag result = aPreAction(aRoot);
+
+  if (result == TraversalFlag::Abort) {
+    return true;
+  }
+
+  if (result == TraversalFlag::Continue) {
+    for (Node* child = aRoot->GetLastChild();
+         child;
+         child = child->GetPrevSibling()) {
+      bool abort = ForEachNode(child, aPreAction, aPostAction);
+      if (abort) {
+        return true;
+      }
+    }
+
+    result = aPostAction(aRoot);
+
+    if (result == TraversalFlag::Abort) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+
+
+
+
+template <typename Node, typename PreAction, typename PostAction>
+static auto ForEachNode(Node* aRoot, const PreAction& aPreAction, const PostAction& aPostAction) ->
+typename EnableIf<IsSame<decltype(aPreAction(aRoot)), void>::value &&
+                  IsSame<decltype(aPostAction(aRoot)),void>::value, void>::Type
+{
+  if (!aRoot) {
+    return;
+  }
+
+  aPreAction(aRoot);
+
+  for (Node* child = aRoot->GetLastChild();
+       child;
+       child = child->GetPrevSibling()) {
+    ForEachNode(child, aPreAction, aPostAction);
+  }
+
+  aPostAction(aRoot);
+}
+
+
+
+
+template <typename Node, typename PreAction>
+auto ForEachNode(Node* aRoot, const PreAction& aPreAction) ->
+typename EnableIf<IsSame<decltype(aPreAction(aRoot)), TraversalFlag>::value, bool>::Type
+{
+  return ForEachNode(aRoot, aPreAction, [](Node* aNode){ return TraversalFlag::Continue; });
+}
+
+
+
+
+template <typename Node, typename PreAction>
+auto ForEachNode(Node* aRoot, const PreAction& aPreAction) ->
+typename EnableIf<IsSame<decltype(aPreAction(aRoot)), void>::value, void>::Type
+{
+  ForEachNode(aRoot, aPreAction, [](Node* aNode){});
+}
+
+
+
+
+template <typename Node, typename PostAction>
+auto ForEachNodePostOrder(Node* aRoot, const PostAction& aPostAction) ->
+typename EnableIf<IsSame<decltype(aPostAction(aRoot)), TraversalFlag>::value, bool>::Type
+{
+  return ForEachNode(aRoot, [](Node* aNode){ return TraversalFlag::Continue; }, aPostAction);
+}
+
+
+
+
+template <typename Node, typename PostAction>
+auto ForEachNodePostOrder(Node* aRoot, const PostAction& aPostAction) ->
+typename EnableIf<IsSame<decltype(aPostAction(aRoot)), void>::value, void>::Type
+{
+  ForEachNode(aRoot, [](Node* aNode){}, aPostAction);
+}
 
 
 
@@ -66,88 +176,42 @@ Node* BreadthFirstSearch(Node* aRoot, const Condition& aCondition)
 template <typename Node, typename Condition>
 Node* DepthFirstSearch(Node* aRoot, const Condition& aCondition)
 {
-  if (!aRoot) {
-    return nullptr;
-  }
+  Node* result = nullptr;
 
-  std::stack<Node*> stack;
-  stack.push(aRoot);
-  while (!stack.empty()) {
-    Node* node = stack.top();
-    stack.pop();
+  ForEachNode(aRoot,
+      [&aCondition, &result](Node* aNode)
+      {
+        if (aCondition(aNode)) {
+          result = aNode;
+          return TraversalFlag::Abort;
+        }
 
-    if (aCondition(node)) {
-        return node;
-    }
+        return TraversalFlag::Continue;
+      });
 
-    for (Node* child = node->GetLastChild();
-         child;
-         child = child->GetPrevSibling()) {
-      stack.push(child);
-    }
-  }
-
-  return nullptr;
+  return result;
 }
 
 
 
 
-
-
-
-
-
-template <typename Node, typename Action>
-auto ForEachNode(Node* aRoot, const Action& aAction) ->
-typename EnableIf<IsSame<decltype(aAction(aRoot)), TraversalFlag>::value, void>::Type
+template <typename Node, typename Condition>
+Node* DepthFirstSearchPostOrder(Node* aRoot, const Condition& aCondition)
 {
-  if (!aRoot) {
-    return;
-  }
+  Node* result = nullptr;
 
-  std::stack<Node*> stack;
-  stack.push(aRoot);
+  ForEachNodePostOrder(aRoot,
+      [&aCondition, &result](Node* aNode)
+      {
+        if (aCondition(aNode)) {
+          result = aNode;
+          return TraversalFlag::Abort;
+        }
 
-  while (!stack.empty()) {
-    Node* node = stack.top();
-    stack.pop();
+        return TraversalFlag::Continue;
+      });
 
-    TraversalFlag result = aAction(node);
-
-    if (result == TraversalFlag::Continue) {
-      for (Node* child = node->GetLastChild();
-           child;
-           child = child->GetPrevSibling()) {
-        stack.push(child);
-      }
-    }
-  }
-}
-
-template <typename Node, typename Action>
-auto ForEachNode(Node* aRoot, const Action& aAction) ->
-typename EnableIf<IsSame<decltype(aAction(aRoot)), void>::value, void>::Type
-{
-  if (!aRoot) {
-    return;
-  }
-
-  std::stack<Node*> stack;
-  stack.push(aRoot);
-
-  while (!stack.empty()) {
-    Node* node = stack.top();
-    stack.pop();
-
-    aAction(node);
-
-    for (Node* child = node->GetLastChild();
-         child;
-         child = child->GetPrevSibling()) {
-      stack.push(child);
-    }
-  }
+  return result;
 }
 
 }
