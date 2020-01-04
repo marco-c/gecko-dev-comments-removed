@@ -19,12 +19,12 @@ import org.mozilla.gecko.feeds.subscriptions.FeedSubscription;
 
 
 
-public class WithdrawAction extends BaseAction {
+public class WithdrawSubscriptionsAction extends FeedAction {
     private static final String LOGTAG = "FeedWithdrawAction";
 
     private Context context;
 
-    public WithdrawAction(Context context) {
+    public WithdrawSubscriptionsAction(Context context) {
         this.context = context;
     }
 

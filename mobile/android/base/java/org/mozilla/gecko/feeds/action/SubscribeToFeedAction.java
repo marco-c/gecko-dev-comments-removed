@@ -19,14 +19,14 @@ import org.mozilla.gecko.feeds.subscriptions.FeedSubscription;
 
 
 
-public class SubscribeAction extends BaseAction {
+public class SubscribeToFeedAction extends FeedAction {
     private static final String LOGTAG = "FeedSubscribeAction";
 
     public static final String EXTRA_FEED_URL = "feed_url";
 
     private Context context;
 
-    public SubscribeAction(Context context) {
+    public SubscribeToFeedAction(Context context) {
         this.context = context;
     }
 

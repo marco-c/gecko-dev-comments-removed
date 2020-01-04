@@ -23,7 +23,7 @@ import org.mozilla.gecko.feeds.knownsites.KnownSiteWordpress;
 
 
 
-public class EnrollAction extends BaseAction {
+public class EnrollSubscriptionsAction extends FeedAction {
     private static final String LOGTAG = "FeedEnrollAction";
 
     private static final KnownSite[] knownSites = {
@@ -34,7 +34,7 @@ public class EnrollAction extends BaseAction {
 
     private Context context;
 
-    public EnrollAction(Context context) {
+    public EnrollSubscriptionsAction(Context context) {
         this.context = context;
     }
 

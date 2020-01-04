@@ -40,7 +40,7 @@ import java.util.List;
 
 
 
-public class CheckAction extends BaseAction {
+public class CheckForUpdatesAction extends FeedAction {
     
 
 
@@ -50,7 +50,7 @@ public class CheckAction extends BaseAction {
 
     private Context context;
 
-    public CheckAction(Context context) {
+    public CheckForUpdatesAction(Context context) {
         this.context = context;
     }
 
