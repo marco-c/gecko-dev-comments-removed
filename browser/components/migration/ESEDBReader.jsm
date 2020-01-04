@@ -103,6 +103,9 @@ let gOpenDBs = new Map();
 
 
 let gLibs = {};
+this.ESE = ESE; 
+this.KERNEL = KERNEL; 
+this.gLibs = gLibs; 
 
 function convertESEError(errorCode) {
   switch (errorCode) {
@@ -285,7 +288,10 @@ ESEDB.prototype = {
       ESE.SetSystemParameterW(this._instanceId.address(), 0,
                               2 , 0, this.logPath);
 
+      
+      this._instanceCreated = false;
       ESE.Init(this._instanceId.address());
+      this._instanceCreated = true;
       this._sessionId = new ESE.JET_SESID();
       ESE.BeginSessionW(this._instanceId, this._sessionId.address(), null,
                         null);
