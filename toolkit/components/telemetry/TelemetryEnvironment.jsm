@@ -181,11 +181,12 @@ const PREF_UPDATE_AUTODOWNLOAD = "app.update.auto";
 const PREF_SEARCH_COHORT = "browser.search.cohort";
 const PREF_E10S_COHORT = "e10s.rollout.cohort";
 
-const EXPERIMENTS_CHANGED_TOPIC = "experiments-changed";
-const SEARCH_ENGINE_MODIFIED_TOPIC = "browser-search-engine-modified";
-const SEARCH_SERVICE_TOPIC = "browser-search-service";
 const COMPOSITOR_CREATED_TOPIC = "compositor:created";
 const DISTRIBUTION_CUSTOMIZATION_COMPLETE_TOPIC = "distribution-customization-complete";
+const EXPERIMENTS_CHANGED_TOPIC = "experiments-changed";
+const GFX_FEATURES_READY_TOPIC = "gfx-features-ready";
+const SEARCH_ENGINE_MODIFIED_TOPIC = "browser-search-engine-modified";
+const SEARCH_SERVICE_TOPIC = "browser-search-service";
 
 
 
@@ -902,20 +903,21 @@ EnvironmentCache.prototype = {
 
   _addObservers: function () {
     
-    Services.obs.addObserver(this, SEARCH_ENGINE_MODIFIED_TOPIC, false);
-    Services.obs.addObserver(this, SEARCH_SERVICE_TOPIC, false);
     Services.obs.addObserver(this, COMPOSITOR_CREATED_TOPIC, false);
     Services.obs.addObserver(this, DISTRIBUTION_CUSTOMIZATION_COMPLETE_TOPIC, false);
+    Services.obs.addObserver(this, GFX_FEATURES_READY_TOPIC, false);
+    Services.obs.addObserver(this, SEARCH_ENGINE_MODIFIED_TOPIC, false);
+    Services.obs.addObserver(this, SEARCH_SERVICE_TOPIC, false);
   },
 
   _removeObservers: function () {
-    
-    Services.obs.removeObserver(this, SEARCH_ENGINE_MODIFIED_TOPIC);
-    Services.obs.removeObserver(this, SEARCH_SERVICE_TOPIC);
     Services.obs.removeObserver(this, COMPOSITOR_CREATED_TOPIC);
     try {
       Services.obs.removeObserver(this, DISTRIBUTION_CUSTOMIZATION_COMPLETE_TOPIC);
     } catch(ex) {}
+    Services.obs.removeObserver(this, GFX_FEATURES_READY_TOPIC);
+    Services.obs.removeObserver(this, SEARCH_ENGINE_MODIFIED_TOPIC);
+    Services.obs.removeObserver(this, SEARCH_SERVICE_TOPIC);
   },
 
   observe: function (aSubject, aTopic, aData) {
@@ -935,6 +937,7 @@ EnvironmentCache.prototype = {
         
         this._updateSearchEngine();
         break;
+      case GFX_FEATURES_READY_TOPIC:
       case COMPOSITOR_CREATED_TOPIC:
         
         
