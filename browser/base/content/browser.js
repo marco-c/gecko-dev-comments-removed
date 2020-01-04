@@ -4069,11 +4069,11 @@ function updateUserContextUIVisibility()
 
 
 
-function updateUserContextUIIndicator(browser)
+function updateUserContextUIIndicator()
 {
   let hbox = document.getElementById("userContext-icons");
 
-  let userContextId = browser.getAttribute("usercontextid");
+  let userContextId = gBrowser.selectedBrowser.getAttribute("usercontextid");
   if (!userContextId) {
     hbox.hidden = true;
     return;
