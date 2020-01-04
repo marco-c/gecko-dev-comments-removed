@@ -1376,8 +1376,7 @@ class nsIWidget : public nsISupports
     
 
 
-
-    NS_IMETHOD EnableDragDrop(bool aEnable) = 0;
+    virtual void EnableDragDrop(bool aEnable) = 0;
 
     
 
