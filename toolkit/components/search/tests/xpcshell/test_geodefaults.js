@@ -84,14 +84,13 @@ add_task(function* no_request_if_prefed_off() {
 add_task(function* should_get_geo_defaults_only_once() {
   
   
-  let commitPromise = promiseAfterCache();
   
   do_check_true(Services.prefs.prefHasUserValue("browser.search.countryCode"));
   do_check_eq(Services.prefs.getCharPref("browser.search.countryCode"), "FR");
   yield asyncReInit();
   checkRequest();
   do_check_eq(Services.search.currentEngine.name, kTestEngineName);
-  yield commitPromise;
+  yield promiseAfterCache();
 
   
   let metadata = yield promiseGlobalMetadata();
@@ -110,20 +109,18 @@ add_task(function* should_get_geo_defaults_only_once() {
 
 add_task(function* should_request_when_countryCode_not_set() {
   Services.prefs.clearUserPref("browser.search.countryCode");
-  let commitPromise = promiseAfterCache();
   yield asyncReInit();
   checkRequest();
-  yield commitPromise;
+  yield promiseAfterCache();
 });
 
 add_task(function* should_recheck_if_interval_expired() {
   yield forceExpiration();
 
-  let commitPromise = promiseAfterCache();
   let date = Date.now();
   yield asyncReInit();
   checkRequest();
-  yield commitPromise;
+  yield promiseAfterCache();
 
   
   let metadata = yield promiseGlobalMetadata();
@@ -146,7 +143,9 @@ add_task(function* should_recheck_when_broken_hash() {
   yield promiseSaveGlobalMetadata(metadata);
 
   let commitPromise = promiseAfterCache();
+  let unInitPromise = waitForSearchNotification("uninit-complete");
   let reInitPromise = asyncReInit();
+  yield unInitPromise;
 
   
   
@@ -161,6 +160,14 @@ add_task(function* should_recheck_when_broken_hash() {
   
   metadata = yield promiseGlobalMetadata();
   do_check_eq(typeof metadata.searchDefaultHash, "string");
+  if (metadata.searchDefaultHash == "broken") {
+    
+    
+    
+    do_print("waiting for the cache to be saved a second time");
+    yield promiseAfterCache();
+    metadata = yield promiseGlobalMetadata();
+  }
   do_check_eq(metadata.searchDefaultHash, hash);
 
   
@@ -170,7 +177,9 @@ add_task(function* should_recheck_when_broken_hash() {
   
   yield asyncReInit();
   checkNoRequest();
+  commitPromise = promiseAfterCache();
   do_check_eq(Services.search.currentEngine.name, kTestEngineName);
+  yield commitPromise;
 });
 
 add_task(function* should_remember_cohort_id() {
