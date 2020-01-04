@@ -14,8 +14,7 @@ Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 XPCOMUtils.defineLazyServiceGetter(this, "gSessionStartup",
   "@mozilla.org/browser/sessionstartup;1", "nsISessionStartup");
 
-const PREF_NORMAL = "browser.sessionstore.privacy_level";
-const PREF_DEFERRED = "browser.sessionstore.privacy_level_deferred";
+const PREF = "browser.sessionstore.privacy_level";
 
 
 
@@ -31,25 +30,6 @@ const PRIVACY_FULL = 2;
 
 
 
-
-
-
-
-function getCurrentLevel(isPinned) {
-  let pref = PREF_NORMAL;
-
-  
-  
-  if (!isPinned && Services.startup.shuttingDown && !gSessionStartup.isAutomaticRestoreEnabled()) {
-    pref = PREF_DEFERRED;
-  }
-
-  return Services.prefs.getIntPref(pref);
-}
-
-
-
-
 var PrivacyLevel = Object.freeze({
   
 
@@ -59,9 +39,8 @@ var PrivacyLevel = Object.freeze({
 
 
 
-
-  canSave: function ({isHttps, isPinned}) {
-    let level = getCurrentLevel(isPinned);
+  canSave: function ({isHttps}) {
+    let level = Services.prefs.getIntPref(PREF);
 
     
     if (level == PRIVACY_FULL) {

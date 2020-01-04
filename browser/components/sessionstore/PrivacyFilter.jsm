@@ -20,10 +20,9 @@ XPCOMUtils.defineLazyModuleGetter(this, "PrivacyLevel",
 
 
 
-
-function checkPrivacyLevel(url, isPinned) {
+function checkPrivacyLevel(url) {
   let isHttps = url.startsWith("https:");
-  return PrivacyLevel.canSave({isHttps: isHttps, isPinned: isPinned});
+  return PrivacyLevel.canSave({isHttps});
 }
 
 
@@ -39,12 +38,11 @@ this.PrivacyFilter = Object.freeze({
 
 
 
-
-  filterSessionStorageData: function (data, isPinned) {
+  filterSessionStorageData: function (data) {
     let retval = {};
 
     for (let host of Object.keys(data)) {
-      if (checkPrivacyLevel(host, isPinned)) {
+      if (checkPrivacyLevel(host)) {
         retval[host] = data[host];
       }
     }
@@ -60,12 +58,11 @@ this.PrivacyFilter = Object.freeze({
 
 
 
-
-  filterFormData: function (data, isPinned) {
+  filterFormData: function (data) {
     
     
     
-    if (data.url && !checkPrivacyLevel(data.url, isPinned)) {
+    if (data.url && !checkPrivacyLevel(data.url)) {
       return;
     }
 
@@ -73,7 +70,7 @@ this.PrivacyFilter = Object.freeze({
 
     for (let key of Object.keys(data)) {
       if (key === "children") {
-        let recurse = child => this.filterFormData(child, isPinned);
+        let recurse = child => this.filterFormData(child);
         let children = data.children.map(recurse).filter(child => child);
 
         if (children.length) {
