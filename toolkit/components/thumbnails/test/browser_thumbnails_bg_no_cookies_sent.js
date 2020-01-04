@@ -4,23 +4,25 @@
 function* runTests() {
   
   let url = bgTestPageURL({ setGreenCookie: true });
-  let tab = gBrowser.loadOneTab(url, { inBackground: false });
+  let tab = yield BrowserTestUtils.openNewForegroundTab(gBrowser, url);
   let browser = tab.linkedBrowser;
-  yield whenLoaded(browser);
 
   
-  let greenStr = "rgb(0, 255, 0)";
-  isnot(browser.contentDocument.documentElement.style.backgroundColor,
-        greenStr,
-        "The page shouldn't be green yet.");
+  yield ContentTask.spawn(browser, null, function () {
+    Assert.notEqual(content.document.documentElement.style.backgroundColor,
+                    "rgb(0, 255, 0)",
+                    "The page shouldn't be green yet.");
+  });
 
   
   
   browser.reload();
-  yield whenLoaded(browser);
-  is(browser.contentDocument.documentElement.style.backgroundColor,
-     greenStr,
-     "The page should be green now.");
+  yield BrowserTestUtils.browserLoaded(browser);
+  yield ContentTask.spawn(browser, null, function () {
+    Assert.equal(content.document.documentElement.style.backgroundColor,
+                 "rgb(0, 255, 0)",
+                 "The page should be green now.");
+  });
 
   
   
