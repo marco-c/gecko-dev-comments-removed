@@ -3282,14 +3282,38 @@ nsIDocument::ElementFromPoint(float aX, float aY)
   return ElementFromPointHelper(aX, aY, false, true);
 }
 
+void
+nsIDocument::ElementsFromPoint(float aX, float aY,
+                               nsTArray<RefPtr<Element>>& aElements)
+{
+  ElementsFromPointHelper(aX, aY, nsIDocument::FLUSH_LAYOUT, aElements);
+}
+
 Element*
 nsDocument::ElementFromPointHelper(float aX, float aY,
                                    bool aIgnoreRootScrollFrame,
                                    bool aFlushLayout)
 {
-  
-  if (!aIgnoreRootScrollFrame && (aX < 0 || aY < 0)) {
+  nsAutoTArray<RefPtr<Element>, 1> elementArray;
+  ElementsFromPointHelper(aX, aY,
+                          ((aIgnoreRootScrollFrame ? nsIDocument::IGNORE_ROOT_SCROLL_FRAME : 0) |
+                           (aFlushLayout ? nsIDocument::FLUSH_LAYOUT : 0) |
+                           nsIDocument::IS_ELEMENT_FROM_POINT),
+                          elementArray);
+  if (elementArray.IsEmpty()) {
     return nullptr;
+  }
+  return elementArray[0];
+}
+
+void
+nsDocument::ElementsFromPointHelper(float aX, float aY,
+                                    uint32_t aFlags,
+                                    nsTArray<RefPtr<mozilla::dom::Element>>& aElements)
+{
+  
+  if (!(aFlags & nsIDocument::IGNORE_ROOT_SCROLL_FRAME) && (aX < 0 || aY < 0)) {
+    return;
   }
 
   nscoord x = nsPresContext::CSSPixelsToAppUnits(aX);
@@ -3298,32 +3322,58 @@ nsDocument::ElementFromPointHelper(float aX, float aY,
 
   
   
-  if (aFlushLayout)
+  if (aFlags & nsIDocument::FLUSH_LAYOUT) {
     FlushPendingNotifications(Flush_Layout);
+  }
 
   nsIPresShell *ps = GetShell();
   if (!ps) {
-    return nullptr;
+    return;
   }
   nsIFrame *rootFrame = ps->GetRootFrame();
 
   
   if (!rootFrame) {
-    return nullptr; 
+    return; 
   }
 
-  nsIFrame *ptFrame = nsLayoutUtils::GetFrameForPoint(rootFrame, pt,
+  nsTArray<nsIFrame*> outFrames;
+  
+  
+  nsLayoutUtils::GetFramesForArea(rootFrame, nsRect(pt, nsSize(1, 1)), outFrames,
     nsLayoutUtils::IGNORE_PAINT_SUPPRESSION | nsLayoutUtils::IGNORE_CROSS_DOC |
-    (aIgnoreRootScrollFrame ? nsLayoutUtils::IGNORE_ROOT_SCROLL_FRAME : 0));
-  if (!ptFrame) {
-    return nullptr;
+    ((aFlags & nsIDocument::IGNORE_ROOT_SCROLL_FRAME) ? nsLayoutUtils::IGNORE_ROOT_SCROLL_FRAME : 0));
+
+  
+  if (outFrames.IsEmpty()) {
+    return;
   }
 
-  nsIContent* elem = GetContentInThisDocument(ptFrame);
-  if (elem && !elem->IsElement()) {
-    elem = elem->GetParent();
+  
+  nsIContent* lastAdded = nullptr;
+
+  for (uint32_t i = 0; i < outFrames.Length(); i++) {
+    nsIContent* node = GetContentInThisDocument(outFrames[i]);
+
+    if (!node || !node->IsElement()) {
+      
+      
+      
+      if (!(aFlags & nsIDocument::IS_ELEMENT_FROM_POINT)) {
+        continue;
+      }
+      node = node->GetParent();
+    }
+    if (node && node != lastAdded) {
+      aElements.AppendElement(node->AsElement());
+      lastAdded = node;
+      
+      
+      if (aFlags & nsIDocument::IS_ELEMENT_FROM_POINT) {
+        return;
+      }
+    }
   }
-  return elem ? elem->AsElement() : nullptr;
 }
 
 nsresult
