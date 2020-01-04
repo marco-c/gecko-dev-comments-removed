@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_NonOwningAnimationTarget_h
-#define mozilla_NonOwningAnimationTarget_h
+#ifndef mozilla_AnimationTarget_h
+#define mozilla_AnimationTarget_h
 
 #include "mozilla/Attributes.h"   
 #include "nsCSSPseudoElements.h"
