@@ -11,6 +11,7 @@
 using JS::RootedObject;
 using JS::RootedScript;
 using JS::RootedString;
+using namespace js;
 
 
 
