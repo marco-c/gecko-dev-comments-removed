@@ -746,6 +746,13 @@ protected:
                          RuleDetail aRuleDetail,
                          const mozilla::RuleNodeCacheConditions aConditions);
 
+  const void*
+    ComputeEffectsData(void* aStartStruct,
+                       const nsRuleData* aRuleData,
+                       nsStyleContext* aContext, nsRuleNode* aHighestNode,
+                       RuleDetail aRuleDetail,
+                       const mozilla::RuleNodeCacheConditions aConditions);
+
   
   static void SetFontSize(nsPresContext* aPresContext,
                           const nsRuleData* aRuleData,

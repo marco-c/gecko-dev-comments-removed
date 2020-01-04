@@ -375,7 +375,6 @@ nsChangeHint nsStylePadding::CalcDifference(const nsStylePadding& aOther) const
 
 nsStyleBorder::nsStyleBorder(StyleStructContext aContext)
   : mBorderColors(nullptr),
-    mBoxShadow(nullptr),
     mBorderImageFill(NS_STYLE_BORDER_IMAGE_SLICE_NOFILL),
     mBorderImageRepeatH(NS_STYLE_BORDER_IMAGE_REPEAT_STRETCH),
     mBorderImageRepeatV(NS_STYLE_BORDER_IMAGE_REPEAT_STRETCH),
@@ -422,7 +421,6 @@ nsBorderColors::Clone(bool aDeep) const
 
 nsStyleBorder::nsStyleBorder(const nsStyleBorder& aSrc)
   : mBorderColors(nullptr),
-    mBoxShadow(aSrc.mBoxShadow),
     mBorderRadius(aSrc.mBorderRadius),
     mBorderImageSource(aSrc.mBorderImageSource),
     mBorderImageSlice(aSrc.mBorderImageSlice),
@@ -509,18 +507,6 @@ nsChangeHint nsStyleBorder::CalcDifference(const nsStyleBorder& aOther) const
       mBoxDecorationBreak != aOther.mBoxDecorationBreak)
     return NS_STYLE_HINT_REFLOW;
 
-  nsChangeHint boxShadowHint = nsChangeHint(0);
-  if (!AreShadowArraysEqual(mBoxShadow, aOther.mBoxShadow)) {
-    
-    NS_UpdateHint(boxShadowHint, nsChangeHint_UpdateOverflow);
-    NS_UpdateHint(boxShadowHint, nsChangeHint_SchedulePaint);
-    
-    
-    
-    NS_UpdateHint(boxShadowHint, nsChangeHint_RepaintFrame);
-    
-  }
-
   NS_FOR_CSS_SIDES(ix) {
     
     
@@ -528,17 +514,9 @@ nsChangeHint nsStyleBorder::CalcDifference(const nsStyleBorder& aOther) const
     
     
     if (HasVisibleStyle(ix) != aOther.HasVisibleStyle(ix)) {
-      return NS_CombineHint(boxShadowHint,
-                            nsChangeHint_RepaintFrame |
-                            nsChangeHint_BorderStyleNoneChange);
+      return nsChangeHint_RepaintFrame |
+             nsChangeHint_BorderStyleNoneChange;
     }
-  }
-
-  if (boxShadowHint) {
-    
-    
-    
-    return boxShadowHint;
   }
 
   
@@ -4014,4 +3992,43 @@ nsChangeHint
 nsStyleVariables::CalcDifference(const nsStyleVariables& aOther) const
 {
   return nsChangeHint(0);
+}
+
+
+
+
+
+nsStyleEffects::nsStyleEffects(StyleStructContext aContext)
+  : mBoxShadow(nullptr)
+{
+  MOZ_COUNT_CTOR(nsStyleEffects);
+}
+
+nsStyleEffects::nsStyleEffects(const nsStyleEffects& aSource)
+  : mBoxShadow(aSource.mBoxShadow)
+{
+  MOZ_COUNT_CTOR(nsStyleEffects);
+}
+
+nsStyleEffects::~nsStyleEffects()
+{
+  MOZ_COUNT_DTOR(nsStyleEffects);
+}
+
+nsChangeHint
+nsStyleEffects::CalcDifference(const nsStyleEffects& aOther) const
+{
+  nsChangeHint hint = nsChangeHint(0);
+
+  if (!AreShadowArraysEqual(mBoxShadow, aOther.mBoxShadow)) {
+    
+    
+    
+    
+    hint |= nsChangeHint_UpdateOverflow |
+            nsChangeHint_SchedulePaint |
+            nsChangeHint_RepaintFrame;
+  }
+
+  return hint;
 }

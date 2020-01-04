@@ -48,7 +48,7 @@ struct nsStyleVisibility;
 
 
 
-#define NS_STYLE_INHERIT_MASK              0x0007fffff
+#define NS_STYLE_INHERIT_MASK              0x000ffffff
 
 
 #define NS_STYLE_INHERITED_STRUCT_MASK \
@@ -57,7 +57,6 @@ struct nsStyleVisibility;
 #define NS_STYLE_RESET_STRUCT_MASK \
   (((nsStyleStructID_size_t(1) << nsStyleStructID_Reset_Count) - 1) \
    << nsStyleStructID_Inherited_Count)
-
 
 
 
@@ -85,7 +84,6 @@ struct nsStyleVisibility;
 #define NS_STYLE_HAS_CHILD_THAT_USES_RESET_STYLE 0x400000000
 
 #define NS_STYLE_CONTEXT_TYPE_SHIFT        35
-
 
 
 #define NS_RULE_NODE_IS_ANIMATION_RULE      0x01000000
@@ -1207,7 +1205,6 @@ struct nsStyleBorder
 
 public:
   nsBorderColors** mBorderColors;        
-  RefPtr<nsCSSShadowArray> mBoxShadow; 
 
 public:
   nsStyleCorners mBorderRadius;       
@@ -3565,6 +3562,38 @@ struct nsStyleVariables
   }
 
   mozilla::CSSVariableValues mVariables;
+};
+
+struct nsStyleEffects
+{
+  explicit nsStyleEffects(StyleStructContext aContext);
+  nsStyleEffects(const nsStyleEffects& aSource);
+  ~nsStyleEffects();
+
+  void* operator new(size_t sz, nsStyleEffects* aSelf) CPP_THROW_NEW { return aSelf; }
+  void* operator new(size_t sz, nsPresContext* aContext) CPP_THROW_NEW {
+    return aContext->PresShell()->
+      AllocateByObjectID(mozilla::eArenaObjectID_nsStyleEffects, sz);
+  }
+  void Destroy(nsPresContext* aContext) {
+    this->~nsStyleEffects();
+    aContext->PresShell()->
+      FreeByObjectID(mozilla::eArenaObjectID_nsStyleEffects, this);
+  }
+
+  nsChangeHint CalcDifference(const nsStyleEffects& aOther) const;
+  static nsChangeHint MaxDifference() {
+    return nsChangeHint_UpdateOverflow |
+           nsChangeHint_SchedulePaint |
+           nsChangeHint_RepaintFrame;
+  }
+  static nsChangeHint DifferenceAlwaysHandledForDescendants() {
+    
+    
+    return nsChangeHint(0);
+  }
+
+  RefPtr<nsCSSShadowArray> mBoxShadow; 
 };
 
 #endif 
