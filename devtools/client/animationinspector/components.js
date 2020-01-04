@@ -36,6 +36,9 @@ const MILLIS_TIME_FORMAT_MAX_DURATION = 4000;
 const TIME_GRADUATION_MIN_SPACING = 40;
 
 
+const FAST_TRACK_ICON_SIZE = 20;
+
+
 
 
 
@@ -631,7 +634,9 @@ AnimationsTimeline.prototype = {
         parent: this.animationsEl,
         nodeType: "li",
         attributes: {
-          "class": "animation"
+          "class": "animation" + (animation.state.isRunningOnCompositor
+                                  ? " fast-track"
+                                  : "")
         }
       });
 
@@ -801,6 +806,8 @@ AnimationTimeBlock.prototype = {
 
     let x = TimeScale.startTimeToDistance(start + (delay / rate), width);
     let w = TimeScale.durationToDistance(duration / rate, width);
+    let iterationW = w * (count || 1);
+    let delayW = TimeScale.durationToDistance(Math.abs(delay) / rate, width);
 
     let iterations = createNode({
       parent: this.containerEl,
@@ -809,7 +816,7 @@ AnimationTimeBlock.prototype = {
         
         
         "style": `left:${x}px;
-                  width:${w * (count || 1)}px;
+                  width:${iterationW}px;
                   background-size:${Math.max(w, 2)}px 100%;`
       }
     });
@@ -817,15 +824,17 @@ AnimationTimeBlock.prototype = {
     
     
     
+    let negativeDelayW = delay < 0 ? delayW : 0;
     createNode({
       parent: iterations,
       attributes: {
         "class": "name",
         "title": this.getTooltipText(state),
-        "style": delay < 0
-                 ? "margin-left:" +
-                   TimeScale.durationToDistance(Math.abs(delay), width) + "px"
-                 : ""
+        
+        
+        "style": "background-position:" +
+                 (iterationW - FAST_TRACK_ICON_SIZE - negativeDelayW) +
+                 "px center;margin-left:" + negativeDelayW + "px"
       },
       textContent: state.name
     });
@@ -835,9 +844,6 @@ AnimationTimeBlock.prototype = {
       
       let delayX = TimeScale.durationToDistance(
         (delay < 0 ? 0 : delay) / rate, width);
-      let delayW = TimeScale.durationToDistance(
-        Math.abs(delay) / rate, width);
-
       createNode({
         parent: iterations,
         attributes: {
@@ -864,6 +870,9 @@ AnimationTimeBlock.prototype = {
     let iterations = L10N.getStr("player.animationIterationCountLabel") + " " +
                      (state.iterationCount ||
                       L10N.getStr("player.infiniteIterationCountText"));
-    return [title, duration, iterations, delay].join("\n");
+    let compositor = state.isRunningOnCompositor
+                     ? L10N.getStr("player.runningOnCompositorTooltip")
+                     : "";
+    return [title, duration, iterations, delay, compositor].join("\n");
   }
 };
