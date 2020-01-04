@@ -260,8 +260,8 @@ public:
 
         
         
-        if (!mThat.mListener)
-            return;
+        
+        
 
         if (exitingCall)
             mThat.ExitedCall();
@@ -1942,8 +1942,7 @@ MessageChannel::DispatchOnChannelConnected()
 {
     AssertWorkerThread();
     MOZ_RELEASE_ASSERT(mPeerPidSet);
-    if (mListener)
-        mListener->OnChannelConnected(mPeerPid);
+    mListener->OnChannelConnected(mPeerPid);
 }
 
 void
@@ -2082,6 +2081,8 @@ MessageChannel::NotifyMaybeChannelError()
     
     mChannelState = ChannelError;
 
+    
+    
     
     mListener->OnChannelError();
 }
