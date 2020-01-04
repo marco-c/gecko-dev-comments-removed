@@ -4,8 +4,11 @@
 
 
 
-#include "ImageLogging.h"
+#include "ImageLogging.h"  
+
 #include "nsJPEGDecoder.h"
+
+#include <cstdint>
 
 #include "imgFrame.h"
 #include "Orientation.h"
@@ -69,6 +72,9 @@ METHODDEF(void) my_error_exit (j_common_ptr cinfo);
 nsJPEGDecoder::nsJPEGDecoder(RasterImage* aImage,
                              Decoder::DecodeStyle aDecodeStyle)
  : Decoder(aImage)
+ , mLexer(Transition::ToUnbuffered(State::FINISHED_JPEG_DATA,
+                                   State::JPEG_DATA,
+                                   SIZE_MAX))
  , mDecodeStyle(aDecodeStyle)
  , mSampleSize(0)
 {
@@ -176,34 +182,53 @@ nsJPEGDecoder::FinishInternal()
 void
 nsJPEGDecoder::WriteInternal(const char* aBuffer, uint32_t aCount)
 {
-  mSegment = (const JOCTET*)aBuffer;
-  mSegmentLen = aCount;
-
   MOZ_ASSERT(!HasError(), "Shouldn't call WriteInternal after error!");
+  MOZ_ASSERT(aBuffer);
+  MOZ_ASSERT(aCount > 0);
+
+  Maybe<TerminalState> terminalState =
+    mLexer.Lex(aBuffer, aCount, [=](State aState,
+                                    const char* aData, size_t aLength) {
+      switch (aState) {
+        case State::JPEG_DATA:
+          return ReadJPEGData(aData, aLength);
+        case State::FINISHED_JPEG_DATA:
+          return FinishedJPEGData();
+      }
+      MOZ_CRASH("Unknown State");
+    });
+
+  if (terminalState == Some(TerminalState::FAILURE)) {
+    PostDataError();
+  }
+}
+
+LexerTransition<nsJPEGDecoder::State>
+nsJPEGDecoder::ReadJPEGData(const char* aData, size_t aLength)
+{
+  mSegment = reinterpret_cast<const JOCTET*>(aData);
+  mSegmentLen = aLength;
 
   
   nsresult error_code;
   
   
-  if ((error_code = (nsresult)setjmp(mErr.setjmp_buffer)) != NS_OK) {
+  if ((error_code = static_cast<nsresult>(setjmp(mErr.setjmp_buffer))) != NS_OK) {
     if (error_code == NS_ERROR_FAILURE) {
-      PostDataError();
       
       
       mState = JPEG_SINK_NON_JPEG_TRAILER;
       MOZ_LOG(sJPEGDecoderAccountingLog, LogLevel::Debug,
              ("} (setjmp returned NS_ERROR_FAILURE)"));
-      return;
     } else {
-      
-      
       
       PostDecoderError(error_code);
       mState = JPEG_ERROR;
       MOZ_LOG(sJPEGDecoderAccountingLog, LogLevel::Debug,
              ("} (setjmp returned an error)"));
-      return;
     }
+
+    return Transition::TerminateFailure();
   }
 
   MOZ_LOG(sJPEGLog, LogLevel::Debug,
@@ -218,7 +243,7 @@ nsJPEGDecoder::WriteInternal(const char* aBuffer, uint32_t aCount)
       if (jpeg_read_header(&mInfo, TRUE) == JPEG_SUSPENDED) {
         MOZ_LOG(sJPEGDecoderAccountingLog, LogLevel::Debug,
                ("} (JPEG_SUSPENDED)"));
-        return; 
+        return Transition::ContinueUnbuffered(State::JPEG_DATA); 
       }
 
       
@@ -236,12 +261,12 @@ nsJPEGDecoder::WriteInternal(const char* aBuffer, uint32_t aCount)
       if (HasError()) {
         
         mState = JPEG_ERROR;
-        return;
+        return Transition::TerminateFailure();
       }
 
       
       if (IsMetadataDecode()) {
-        return;
+        return Transition::TerminateSuccess();
       }
 
       
@@ -284,7 +309,7 @@ nsJPEGDecoder::WriteInternal(const char* aBuffer, uint32_t aCount)
           PostDataError();
           MOZ_LOG(sJPEGDecoderAccountingLog, LogLevel::Debug,
                  ("} (unknown colorpsace (1))"));
-          return;
+          return Transition::TerminateFailure();
       }
 
       if (!mismatch) {
@@ -301,7 +326,7 @@ nsJPEGDecoder::WriteInternal(const char* aBuffer, uint32_t aCount)
             PostDataError();
             MOZ_LOG(sJPEGDecoderAccountingLog, LogLevel::Debug,
                    ("} (unknown colorpsace (2))"));
-            return;
+            return Transition::TerminateFailure();
         }
 #if 0
         
@@ -360,7 +385,7 @@ nsJPEGDecoder::WriteInternal(const char* aBuffer, uint32_t aCount)
           PostDataError();
           MOZ_LOG(sJPEGDecoderAccountingLog, LogLevel::Debug,
                  ("} (unknown colorpsace (3))"));
-          return;
+          return Transition::TerminateFailure();
       }
     }
 
@@ -378,7 +403,7 @@ nsJPEGDecoder::WriteInternal(const char* aBuffer, uint32_t aCount)
       mState = JPEG_ERROR;
       MOZ_LOG(sJPEGDecoderAccountingLog, LogLevel::Debug,
              ("} (could not initialize image frame)"));
-      return;
+      return Transition::TerminateFailure();
     }
 
     MOZ_ASSERT(mImageData, "Should have a buffer now");
@@ -389,7 +414,7 @@ nsJPEGDecoder::WriteInternal(const char* aBuffer, uint32_t aCount)
                                              false);
       if (NS_FAILED(rv)) {
         mState = JPEG_ERROR;
-        return;
+        return Transition::TerminateFailure();
       }
     }
 
@@ -420,7 +445,7 @@ nsJPEGDecoder::WriteInternal(const char* aBuffer, uint32_t aCount)
     if (jpeg_start_decompress(&mInfo) == FALSE) {
       MOZ_LOG(sJPEGDecoderAccountingLog, LogLevel::Debug,
              ("} (I/O suspension after jpeg_start_decompress())"));
-      return; 
+      return Transition::ContinueUnbuffered(State::JPEG_DATA); 
     }
 
     
@@ -440,7 +465,7 @@ nsJPEGDecoder::WriteInternal(const char* aBuffer, uint32_t aCount)
       if (suspend) {
         MOZ_LOG(sJPEGDecoderAccountingLog, LogLevel::Debug,
                ("} (I/O suspension after OutputScanlines() - SEQUENTIAL)"));
-        return; 
+        return Transition::ContinueUnbuffered(State::JPEG_DATA); 
       }
 
       
@@ -478,7 +503,7 @@ nsJPEGDecoder::WriteInternal(const char* aBuffer, uint32_t aCount)
             MOZ_LOG(sJPEGDecoderAccountingLog, LogLevel::Debug,
                    ("} (I/O suspension after jpeg_start_output() -"
                     " PROGRESSIVE)"));
-            return; 
+            return Transition::ContinueUnbuffered(State::JPEG_DATA); 
           }
         }
 
@@ -497,7 +522,7 @@ nsJPEGDecoder::WriteInternal(const char* aBuffer, uint32_t aCount)
           }
           MOZ_LOG(sJPEGDecoderAccountingLog, LogLevel::Debug,
                  ("} (I/O suspension after OutputScanlines() - PROGRESSIVE)"));
-          return; 
+          return Transition::ContinueUnbuffered(State::JPEG_DATA); 
         }
 
         if (mInfo.output_scanline == mInfo.output_height) {
@@ -505,7 +530,7 @@ nsJPEGDecoder::WriteInternal(const char* aBuffer, uint32_t aCount)
             MOZ_LOG(sJPEGDecoderAccountingLog, LogLevel::Debug,
                    ("} (I/O suspension after jpeg_finish_output() -"
                     " PROGRESSIVE)"));
-            return; 
+            return Transition::ContinueUnbuffered(State::JPEG_DATA); 
           }
 
           if (jpeg_input_complete(&mInfo) &&
@@ -533,30 +558,43 @@ nsJPEGDecoder::WriteInternal(const char* aBuffer, uint32_t aCount)
     if (jpeg_finish_decompress(&mInfo) == FALSE) {
       MOZ_LOG(sJPEGDecoderAccountingLog, LogLevel::Debug,
              ("} (I/O suspension after jpeg_finish_decompress() - DONE)"));
-      return; 
+      return Transition::ContinueUnbuffered(State::JPEG_DATA); 
     }
 
+    
     mState = JPEG_SINK_NON_JPEG_TRAILER;
 
     
-    break;
+    return Transition::TerminateSuccess();
   }
   case JPEG_SINK_NON_JPEG_TRAILER:
     MOZ_LOG(sJPEGLog, LogLevel::Debug,
            ("[this=%p] nsJPEGDecoder::ProcessData -- entering"
             " JPEG_SINK_NON_JPEG_TRAILER case\n", this));
 
-    break;
+    MOZ_ASSERT_UNREACHABLE("Should stop getting data after entering state "
+                           "JPEG_SINK_NON_JPEG_TRAILER");
+
+    return Transition::TerminateSuccess();
 
   case JPEG_ERROR:
-    MOZ_ASSERT(false,
-               "Should always return immediately after error and not re-enter "
-               "decoder");
+    MOZ_ASSERT_UNREACHABLE("Should stop getting data after entering state "
+                           "JPEG_ERROR");
+
+    return Transition::TerminateFailure();
   }
 
-  MOZ_LOG(sJPEGDecoderAccountingLog, LogLevel::Debug,
-         ("} (end of function)"));
-  return;
+  MOZ_ASSERT_UNREACHABLE("Escaped the JPEG decoder state machine");
+  return Transition::TerminateFailure();
+}
+
+LexerTransition<nsJPEGDecoder::State>
+nsJPEGDecoder::FinishedJPEGData()
+{
+  
+  
+  MOZ_ASSERT_UNREACHABLE("Read the entire address space?");
+  return Transition::TerminateFailure();
 }
 
 Orientation
