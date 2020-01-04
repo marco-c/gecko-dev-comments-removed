@@ -447,20 +447,6 @@ HTMLImageElement::AfterSetAttr(int32_t aNameSpaceID, nsIAtom* aName,
              aNameSpaceID == kNameSpaceID_None &&
              HTMLPictureElement::IsPictureEnabled()) {
     PictureSourceSizesChanged(this, attrVal.String(), aNotify);
-  } else if (aName == nsGkAtoms::crossorigin &&
-             aNameSpaceID == kNameSpaceID_None &&
-             aNotify) {
-    
-    if (InResponsiveMode()) {
-      
-      
-      QueueImageLoadTask(true);
-    } else {
-      
-      
-      
-      ForceReload(aNotify);
-    }
   }
 
   return nsGenericHTMLElement::AfterSetAttr(aNameSpaceID, aName,
@@ -526,6 +512,7 @@ HTMLImageElement::SetAttr(int32_t aNameSpaceID, nsIAtom* aName,
                           nsIAtom* aPrefix, const nsAString& aValue,
                           bool aNotify)
 {
+  bool forceReloadWithNewCORSMode = false;
   
   
   
@@ -564,10 +551,37 @@ HTMLImageElement::SetAttr(int32_t aNameSpaceID, nsIAtom* aName,
 
       mNewRequestsWillNeedAnimationReset = false;
     }
+  } else if (aNameSpaceID == kNameSpaceID_None &&
+             aName == nsGkAtoms::crossorigin &&
+             aNotify) {
+    nsAttrValue attrValue;
+    ParseCORSValue(aValue, attrValue);
+    if (GetCORSMode() != AttrValueToCORSMode(&attrValue)) {
+      
+      forceReloadWithNewCORSMode = true;
+    }
   }
 
-  return nsGenericHTMLElement::SetAttr(aNameSpaceID, aName, aPrefix, aValue,
-                                       aNotify);
+  nsresult rv = nsGenericHTMLElement::SetAttr(aNameSpaceID, aName, aPrefix,
+                                              aValue, aNotify);
+
+  
+  
+  
+  if (forceReloadWithNewCORSMode) {
+    if (InResponsiveMode()) {
+      
+      
+      QueueImageLoadTask(true);
+    } else {
+      
+      
+      
+      ForceReload(aNotify);
+    }
+  }
+
+  return rv;
 }
 
 nsresult
