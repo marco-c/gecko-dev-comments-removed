@@ -88,6 +88,8 @@ private:
   const bool mHasVideo;
   bool mDropAudioUntilNextDiscontinuity;
   bool mDropVideoUntilNextDiscontinuity;
+  bool mDoneAudioSeeking;
+  bool mDoneVideoSeeking;
 
   
   
