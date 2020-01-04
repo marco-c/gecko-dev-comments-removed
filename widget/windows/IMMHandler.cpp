@@ -703,12 +703,16 @@ IMMHandler::ProcessMessageForPlugin(nsWindow* aWindow,
     case WM_IME_CONTROL:
     case WM_IME_KEYDOWN:
     case WM_IME_KEYUP:
-    case WM_IME_REQUEST:
     case WM_IME_SELECT:
       aResult.mConsumed =
         aWindow->DispatchPluginEvent(msg, wParam, lParam, false);
       aRet = true;
       return true;
+    case WM_IME_REQUEST:
+       
+       
+       aRet = false;
+       return true;
   }
   return false;
 }
