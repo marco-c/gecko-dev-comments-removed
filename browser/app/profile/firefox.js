@@ -1481,6 +1481,9 @@ pref("browser.laterrun.enabled", false);
 pref("browser.migrate.automigrate.enabled", false);
 
 
+pref("browser.migrate.automigrate.daysToOfferUndo", 4);
+
+
 pref("dom.mozBrowserFramesEnabled", true);
 
 pref("extensions.pocket.enabled", true);

@@ -14,6 +14,9 @@ const kAutoMigrateStartedPref = "browser.migrate.automigrate.started";
 const kAutoMigrateFinishedPref = "browser.migrate.automigrate.finished";
 const kAutoMigrateBrowserPref = "browser.migrate.automigrate.browser";
 
+const kAutoMigrateLastUndoPromptDateMsPref = "browser.migrate.automigrate.lastUndoPromptDateMs";
+const kAutoMigrateDaysToOfferUndoPref = "browser.migrate.automigrate.daysToOfferUndo";
+
 const kPasswordManagerTopic = "passwordmgr-storage-changed";
 const kPasswordManagerTopicTypes = new Set([
   "addLogin",
@@ -287,6 +290,14 @@ const AutoMigrate = {
         return;
       }
 
+      
+      
+      
+      if (!this.shouldStillShowUndoPrompt()) {
+        this.removeUndoOption();
+        return;
+      }
+
       let browserName = this.getBrowserUsedForMigration();
       let message;
       if (browserName) {
@@ -316,6 +327,27 @@ const AutoMigrate = {
         message, kNotificationId, null, notificationBox.PRIORITY_INFO_HIGH, buttons
       );
     });
+  },
+
+  shouldStillShowUndoPrompt() {
+    let today = new Date();
+    
+    today = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    
+    
+    
+    
+    let previousPromptDateMsStr = Preferences.get(kAutoMigrateLastUndoPromptDateMsPref, "0");
+    let previousPromptDate = new Date(parseInt(previousPromptDateMsStr, 10));
+    if (previousPromptDate < today) {
+      let remainingDays = Preferences.get(kAutoMigrateDaysToOfferUndoPref, 4) - 1;
+      Preferences.set(kAutoMigrateDaysToOfferUndoPref, remainingDays);
+      Preferences.set(kAutoMigrateLastUndoPromptDateMsPref, today.valueOf().toString());
+      if (remainingDays <= 0) {
+        return false;
+      }
+    }
+    return true;
   },
 
   QueryInterface: XPCOMUtils.generateQI(
