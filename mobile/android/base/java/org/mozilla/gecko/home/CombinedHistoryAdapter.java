@@ -52,8 +52,9 @@ public class CombinedHistoryAdapter extends RecyclerView.Adapter<CombinedHistory
     
     private final SparseArray<SectionHeader> sectionHeaders;
 
-    public CombinedHistoryAdapter(Resources resources) {
+    public CombinedHistoryAdapter(Resources resources, int cachedRecentTabsCount) {
         super();
+        recentTabsCount = cachedRecentTabsCount;
         sectionHeaders = new SparseArray<>();
         HistorySectionsHelper.updateRecentSectionOffset(resources, sectionDateRangeArray);
         this.setHasStableIds(true);
@@ -110,6 +111,15 @@ public class CombinedHistoryAdapter extends RecyclerView.Adapter<CombinedHistory
                     @UiThread
                     @Override
                     public void run() {
+                        if (!countReliable && count <= recentTabsCount) {
+                            
+                            
+                            
+                            
+                            
+                            return;
+                        }
+
                         final boolean prevFolderVisibility = isRecentTabsFolderVisible();
                         recentTabsCount = count;
                         final boolean folderVisible = isRecentTabsFolderVisible();
