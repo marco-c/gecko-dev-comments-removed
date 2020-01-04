@@ -48,6 +48,15 @@ public:
     char mChar;
     uint64_t mInteger;
 
+    
+    
+    
+    nsDependentCSubstring mFragment;
+
+    friend class Tokenizer;
+    void AssignFragment(nsACString::const_char_iterator begin,
+                        nsACString::const_char_iterator end);
+
   public:
     Token() : mType(TOKEN_UNKNOWN), mChar(0), mInteger(0) {}
     Token(const Token& aOther);
@@ -70,6 +79,8 @@ public:
     char AsChar() const;
     nsDependentCSubstring AsString() const;
     uint64_t AsInteger() const;
+
+    nsDependentCSubstring Fragment() const { return mFragment; }
   };
 
 public:
@@ -199,6 +210,7 @@ public:
 
 
   bool ReadChar(char* aValue);
+  bool ReadChar(bool (*aClassifier)(const char aChar), char* aValue);
   bool ReadWord(nsACString& aValue);
   bool ReadWord(nsDependentCSubstring& aValue);
 
@@ -273,6 +285,7 @@ public:
 
 
   void Claim(nsACString& aResult, ClaimInclusion aInclude = EXCLUDE_LAST);
+  void Claim(nsDependentCSubstring& aResult, ClaimInclusion aInclude = EXCLUDE_LAST);
 
 protected:
   
@@ -290,13 +303,6 @@ protected:
   
   bool IsNumber(const char aInput) const;
 
-private:
-  Tokenizer() = delete;
-  Tokenizer(const Tokenizer&) = delete;
-  Tokenizer(Tokenizer&&) = delete;
-  Tokenizer(const Tokenizer&&) = delete;
-  Tokenizer &operator=(const Tokenizer&) = delete;
-
   
   bool mPastEof;
   
@@ -312,6 +318,13 @@ private:
   nsACString::const_char_iterator mRollback; 
   nsACString::const_char_iterator mCursor; 
   nsACString::const_char_iterator mEnd; 
+
+private:
+  Tokenizer() = delete;
+  Tokenizer(const Tokenizer&) = delete;
+  Tokenizer(Tokenizer&&) = delete;
+  Tokenizer(const Tokenizer&&) = delete;
+  Tokenizer &operator=(const Tokenizer&) = delete;
 };
 
 } 
