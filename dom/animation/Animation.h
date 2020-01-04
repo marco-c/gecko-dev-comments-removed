@@ -57,7 +57,7 @@ public:
     : DOMEventTargetHelper(aGlobal)
     , mPlaybackRate(1.0)
     , mPendingState(PendingState::NotPending)
-    , mSequenceNum(kUnsequenced)
+    , mAnimationIndex(kNoIndex)
     , mIsRunningOnCompositor(false)
     , mFinishedAtLastComposeStyle(false)
     , mIsRelevant(false)
@@ -405,13 +405,17 @@ protected:
   enum class PendingState { NotPending, PlayPending, PausePending };
   PendingState mPendingState;
 
-  static uint64_t sNextSequenceNum;
-  static const uint64_t kUnsequenced = UINT64_MAX;
+  static uint64_t sNextAnimationIndex;
+  static const uint64_t kNoIndex = UINT64_MAX;
 
   
   
   
-  uint64_t mSequenceNum;
+  
+  
+  
+  
+  uint64_t mAnimationIndex;
 
   bool mIsRunningOnCompositor;
   bool mFinishedAtLastComposeStyle;

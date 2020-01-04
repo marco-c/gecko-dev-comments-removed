@@ -205,8 +205,8 @@ CSSTransition::HasLowerCompositeOrderThan(const Animation& aOther) const
   }
 
   
-  if (mSequenceNum != otherTransition->mSequenceNum) {
-    return mSequenceNum < otherTransition->mSequenceNum;
+  if (mAnimationIndex != otherTransition->mAnimationIndex) {
+    return mAnimationIndex < otherTransition->mAnimationIndex;
   }
 
   
