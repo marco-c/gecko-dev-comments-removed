@@ -308,7 +308,7 @@ class MessageChannel : HasResultCodes
 
     bool ShouldContinueFromTimeout();
 
-    void CancelCurrentTransactionInternal();
+    void CancelTransaction(int transaction);
 
     
     

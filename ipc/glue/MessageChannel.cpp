@@ -602,20 +602,9 @@ MessageChannel::MaybeInterceptSpecialIOMessage(const Message& aMsg)
             return true;
         } else if (CANCEL_MESSAGE_TYPE == aMsg.type()) {
             IPC_LOG("Cancel from message");
-
-            if (aMsg.transaction_id() == mTimedOutMessageSeqno) {
-                
-                
-                
-                mTimedOutMessageSeqno = 0;
-                return true;
-            } else {
-                MOZ_RELEASE_ASSERT(mCurrentTransaction == aMsg.transaction_id());
-                CancelCurrentTransactionInternal();
-                NotifyWorkerThread();
-                IPC_LOG("Notified");
-                return true;
-            }
+            CancelTransaction(aMsg.transaction_id());
+            NotifyWorkerThread();
+            return true;
         }
     }
     return false;
@@ -945,7 +934,7 @@ MessageChannel::Send(Message* aMsg, Message* aReply)
         MOZ_ASSERT(DispatchingSyncMessage() || DispatchingAsyncMessage());
         IPC_LOG("Cancel from Send");
         CancelMessage *cancel = new CancelMessage(mCurrentTransaction);
-        CancelCurrentTransactionInternal();
+        CancelTransaction(mCurrentTransaction);
         mLink->SendMessage(cancel);
     }
 
@@ -2110,7 +2099,7 @@ MessageChannel::GetTopmostMessageRoutingId() const
 }
 
 void
-MessageChannel::CancelCurrentTransactionInternal()
+MessageChannel::CancelTransaction(int transaction)
 {
     mMonitor->AssertCurrentThreadOwns();
 
@@ -2124,20 +2113,60 @@ MessageChannel::CancelCurrentTransactionInternal()
     
     
 
-    IPC_LOG("CancelInternal: current xid=%d", mCurrentTransaction);
+    IPC_LOG("CancelTransaction: xid=%d prios=%d", transaction, mPendingSendPriorities);
 
-    MOZ_ASSERT(mCurrentTransaction);
-    mCurrentTransaction = 0;
+    
+    
+    
+    if (transaction == mTimedOutMessageSeqno) {
+        IPC_LOG("Cancelled timed out message %d", mTimedOutMessageSeqno);
+        mTimedOutMessageSeqno = 0;
 
-    mAwaitingSyncReply = false;
-    mAwaitingSyncReplyPriority = 0;
+        
+        
+        
+        
+        
+        MOZ_ASSERT_IF(mCurrentTransaction, mCurrentTransaction == transaction);
+        mCurrentTransaction = 0;
 
-    for (size_t i = 0; i < mPending.size(); i++) {
+        
+        MOZ_ASSERT(!mAwaitingSyncReply);
+    } else {
+        MOZ_ASSERT(mCurrentTransaction == transaction);
+        mCurrentTransaction = 0;
+
+        mAwaitingSyncReply = false;
+        mAwaitingSyncReplyPriority = 0;
+    }
+
+    DebugOnly<bool> foundSync = false;
+    for (MessageQueue::iterator it = mPending.begin(); it != mPending.end(); ) {
+        Message &msg = *it;
+
+        
+        
+        
+        
+        
+        
+        
+        if (msg.is_sync() && msg.priority() != IPC::Message::PRIORITY_NORMAL) {
+            MOZ_ASSERT(!foundSync);
+            MOZ_ASSERT(msg.transaction_id() != transaction);
+            IPC_LOG("Removing msg from queue seqno=%d xid=%d", msg.seqno(), msg.transaction_id());
+            foundSync = true;
+            it = mPending.erase(it);
+            continue;
+        }
+
         
         
         
         
         mWorkerLoop->PostTask(FROM_HERE, new DequeueTask(mDequeueOneTask));
+
+        it++;
     }
 
     
@@ -2161,7 +2190,7 @@ MessageChannel::CancelCurrentTransaction()
         IPC_LOG("Cancel requested: current xid=%d", mCurrentTransaction);
         MOZ_ASSERT(DispatchingSyncMessage());
         CancelMessage *cancel = new CancelMessage(mCurrentTransaction);
-        CancelCurrentTransactionInternal();
+        CancelTransaction(mCurrentTransaction);
         mLink->SendMessage(cancel);
     }
 }
