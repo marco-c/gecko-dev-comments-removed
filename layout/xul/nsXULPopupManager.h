@@ -490,6 +490,14 @@ public:
 
 
 
+  void EnableRollup(nsIContent* aPopup, bool aShouldRollup);
+
+  
+
+
+
+
+
 
   void ExecuteMenu(nsIContent* aMenu, nsXULMenuCommandEvent* aEvent);
 
