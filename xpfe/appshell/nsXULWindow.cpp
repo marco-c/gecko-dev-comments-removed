@@ -641,7 +641,7 @@ NS_IMETHODIMP nsXULWindow::GetSize(int32_t* aCX, int32_t* aCY)
 }
 
 NS_IMETHODIMP nsXULWindow::SetPositionAndSize(int32_t aX, int32_t aY, 
-   int32_t aCX, int32_t aCY, uint32_t aFlags)
+   int32_t aCX, int32_t aCY, bool aRepaint)
 {
   
 
@@ -653,7 +653,7 @@ NS_IMETHODIMP nsXULWindow::SetPositionAndSize(int32_t aX, int32_t aY,
   DesktopToLayoutDeviceScale scale = mWindow->GetDesktopToDeviceScale();
   DesktopRect rect = LayoutDeviceIntRect(aX, aY, aCX, aCY) / scale;
   nsresult rv = mWindow->Resize(rect.x, rect.y, rect.width, rect.height,
-                                !!(aFlags & nsIBaseWindow::eRepaint));
+                                aRepaint);
   NS_ENSURE_SUCCESS(rv, NS_ERROR_FAILURE);
   if (!mChromeLoaded) {
     
