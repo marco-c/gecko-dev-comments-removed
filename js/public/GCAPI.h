@@ -128,6 +128,12 @@ enum Reason {
     NUM_TELEMETRY_REASONS = 100
 };
 
+
+
+
+extern JS_PUBLIC_API(const char*)
+ExplainReason(JS::gcreason::Reason reason);
+
 } 
 
 
