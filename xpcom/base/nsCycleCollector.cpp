@@ -368,9 +368,9 @@ public:
 
   void Clear()
   {
-    Block* b = Blocks();
+    EdgeBlock* b = EdgeBlocks();
     while (b) {
-      Block* next = b->Next();
+      EdgeBlock* next = b->Next();
       delete b;
       b = next;
     }
@@ -388,27 +388,27 @@ public:
 #endif
 
 private:
-  struct Block;
+  struct EdgeBlock;
   union PtrInfoOrBlock
   {
     
     
     PtrInfo* ptrInfo;
-    Block* block;
+    EdgeBlock* block;
   };
-  struct Block
+  struct EdgeBlock
   {
-    enum { BlockSize = 16 * 1024 };
+    enum { EdgeBlockSize = 16 * 1024 };
 
-    PtrInfoOrBlock mPointers[BlockSize];
-    Block()
+    PtrInfoOrBlock mPointers[EdgeBlockSize];
+    EdgeBlock()
     {
-      mPointers[BlockSize - 2].block = nullptr; 
-      mPointers[BlockSize - 1].block = nullptr; 
+      mPointers[EdgeBlockSize - 2].block = nullptr; 
+      mPointers[EdgeBlockSize - 1].block = nullptr; 
     }
-    Block*& Next()
+    EdgeBlock*& Next()
     {
-      return mPointers[BlockSize - 1].block;
+      return mPointers[EdgeBlockSize - 1].block;
     }
     PtrInfoOrBlock* Start()
     {
@@ -416,7 +416,7 @@ private:
     }
     PtrInfoOrBlock* End()
     {
-      return &mPointers[BlockSize - 2];
+      return &mPointers[EdgeBlockSize - 2];
     }
   };
 
@@ -424,11 +424,11 @@ private:
   
   PtrInfoOrBlock mSentinelAndBlocks[2];
 
-  Block*& Blocks()
+  EdgeBlock*& EdgeBlocks()
   {
     return mSentinelAndBlocks[1].block;
   }
-  Block* Blocks() const
+  EdgeBlock* EdgeBlocks() const
   {
     return mSentinelAndBlocks[1].block;
   }
@@ -487,7 +487,7 @@ public:
     explicit Builder(EdgePool& aPool)
       : mCurrent(&aPool.mSentinelAndBlocks[0])
       , mBlockEnd(&aPool.mSentinelAndBlocks[0])
-      , mNextBlockPtr(&aPool.Blocks())
+      , mNextBlockPtr(&aPool.EdgeBlocks())
     {
     }
 
@@ -499,7 +499,7 @@ public:
     void Add(PtrInfo* aEdge)
     {
       if (mCurrent == mBlockEnd) {
-        Block* b = new Block();
+        EdgeBlock* b = new EdgeBlock();
         *mNextBlockPtr = b;
         mCurrent = b->Start();
         mBlockEnd = b->End();
@@ -511,13 +511,13 @@ public:
     
     PtrInfoOrBlock* mCurrent;
     PtrInfoOrBlock* mBlockEnd;
-    Block** mNextBlockPtr;
+    EdgeBlock** mNextBlockPtr;
   };
 
   size_t SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const
   {
     size_t n = 0;
-    Block* b = Blocks();
+    EdgeBlock* b = EdgeBlocks();
     while (b) {
       n += aMallocSizeOf(b);
       b = b->Next();
@@ -634,31 +634,31 @@ class NodePool
 private:
   
   
-  enum { BlockSize = 4 * 1024 - 2 };
+  enum { NodeBlockSize = 4 * 1024 - 2 };
 
-  struct Block
+  struct NodeBlock
   {
     
     
-    
-    Block()
+    NodeBlock()
     {
       NS_NOTREACHED("should never be called");
 
       
+      
       static_assert(
-        sizeof(Block) ==  81904 ||      
-        sizeof(Block) == 131048,        
-        "ill-sized NodePool::Block"
+        sizeof(NodeBlock) ==  81904 ||  
+        sizeof(NodeBlock) == 131048,    
+        "ill-sized NodeBlock"
       );
     }
-    ~Block()
+    ~NodeBlock()
     {
       NS_NOTREACHED("should never be called");
     }
 
-    Block* mNext;
-    PtrInfo mEntries[BlockSize + 1]; 
+    NodeBlock* mNext;
+    PtrInfo mEntries[NodeBlockSize + 1]; 
   };
 
 public:
@@ -675,9 +675,9 @@ public:
 
   void Clear()
   {
-    Block* b = mBlocks;
+    NodeBlock* b = mBlocks;
     while (b) {
-      Block* n = b->mNext;
+      NodeBlock* n = b->mNext;
       free(b);
       b = n;
     }
@@ -708,21 +708,21 @@ public:
     PtrInfo* Add(void* aPointer, nsCycleCollectionParticipant* aParticipant)
     {
       if (mNext == mBlockEnd) {
-        Block* block = static_cast<Block*>(malloc(sizeof(Block)));
+        NodeBlock* block = static_cast<NodeBlock*>(malloc(sizeof(NodeBlock)));
         if (!block) {
           return nullptr;
         }
 
         *mNextBlock = block;
         mNext = block->mEntries;
-        mBlockEnd = block->mEntries + BlockSize;
+        mBlockEnd = block->mEntries + NodeBlockSize;
         block->mNext = nullptr;
         mNextBlock = &block->mNext;
       }
       return new (mNext++) PtrInfo(aPointer, aParticipant);
     }
   private:
-    Block** mNextBlock;
+    NodeBlock** mNextBlock;
     PtrInfo*& mNext;
     PtrInfo* mBlockEnd;
   };
@@ -755,9 +755,9 @@ public:
     {
       MOZ_ASSERT(!IsDone(), "calling GetNext when done");
       if (mNext == mBlockEnd) {
-        Block* nextBlock = mCurBlock ? mCurBlock->mNext : mFirstBlock;
+        NodeBlock* nextBlock = mCurBlock ? mCurBlock->mNext : mFirstBlock;
         mNext = nextBlock->mEntries;
-        mBlockEnd = mNext + BlockSize;
+        mBlockEnd = mNext + NodeBlockSize;
         mCurBlock = nextBlock;
       }
       return mNext++;
@@ -765,8 +765,8 @@ public:
   private:
     
     
-    Block*& mFirstBlock;
-    Block* mCurBlock;
+    NodeBlock*& mFirstBlock;
+    NodeBlock* mCurBlock;
     
     
     PtrInfo* mNext;
@@ -779,7 +779,7 @@ public:
     
     
     size_t n = 0;
-    Block* b = mBlocks;
+    NodeBlock* b = mBlocks;
     while (b) {
       n += aMallocSizeOf(b);
       b = b->mNext;
@@ -788,7 +788,7 @@ public:
   }
 
 private:
-  Block* mBlocks;
+  NodeBlock* mBlocks;
   PtrInfo* mLast;
 };
 
@@ -992,9 +992,9 @@ class nsCycleCollector;
 struct nsPurpleBuffer
 {
 private:
-  struct Block
+  struct PurpleBlock
   {
-    Block* mNext;
+    PurpleBlock* mNext;
     
     
     
@@ -1002,13 +1002,13 @@ private:
     
     nsPurpleBufferEntry mEntries[1365];
 
-    Block() : mNext(nullptr)
+    PurpleBlock() : mNext(nullptr)
     {
       
       static_assert(
-        sizeof(Block) == 16384 ||       
-        sizeof(Block) == 32768,         
-        "ill-sized nsPurpleBuffer::Block"
+        sizeof(PurpleBlock) == 16384 ||       
+        sizeof(PurpleBlock) == 32768,         
+        "ill-sized nsPurpleBuffer::PurpleBlock"
       );
     }
 
@@ -1028,7 +1028,7 @@ private:
   
 
   uint32_t mCount;
-  Block mFirstBlock;
+  PurpleBlock mFirstBlock;
   nsPurpleBufferEntry* mFreeList;
 
 public:
@@ -1045,7 +1045,7 @@ public:
   template<class PurpleVisitor>
   void VisitEntries(PurpleVisitor& aVisitor)
   {
-    for (Block* b = &mFirstBlock; b; b = b->mNext) {
+    for (PurpleBlock* b = &mFirstBlock; b; b = b->mNext) {
       b->VisitEntries(*this, aVisitor);
     }
   }
@@ -1057,7 +1057,7 @@ public:
     StartBlock(&mFirstBlock);
   }
 
-  void StartBlock(Block* aBlock)
+  void StartBlock(PurpleBlock* aBlock)
   {
     MOZ_ASSERT(!mFreeList, "should not have free list");
 
@@ -1077,12 +1077,12 @@ public:
     if (mCount > 0) {
       UnmarkRemainingPurple(&mFirstBlock);
     }
-    Block* b = mFirstBlock.mNext;
+    PurpleBlock* b = mFirstBlock.mNext;
     while (b) {
       if (mCount > 0) {
         UnmarkRemainingPurple(b);
       }
-      Block* next = b->mNext;
+      PurpleBlock* next = b->mNext;
       delete b;
       b = next;
     }
@@ -1103,7 +1103,7 @@ public:
     }
   };
 
-  void UnmarkRemainingPurple(Block* aBlock)
+  void UnmarkRemainingPurple(PurpleBlock* aBlock)
   {
     UnmarkRemainingPurpleVisitor visitor;
     aBlock->VisitEntries(*this, visitor);
@@ -1126,7 +1126,7 @@ public:
   MOZ_ALWAYS_INLINE nsPurpleBufferEntry* NewEntry()
   {
     if (MOZ_UNLIKELY(!mFreeList)) {
-      Block* b = new Block;
+      PurpleBlock* b = new PurpleBlock;
       StartBlock(b);
 
       
@@ -1177,7 +1177,7 @@ public:
     size_t n = 0;
 
     
-    const Block* block = mFirstBlock.mNext;
+    const PurpleBlock* block = mFirstBlock.mNext;
     while (block) {
       n += aMallocSizeOf(block);
       block = block->mNext;
