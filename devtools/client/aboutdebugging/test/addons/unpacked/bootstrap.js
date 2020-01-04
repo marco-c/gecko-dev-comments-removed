@@ -7,6 +7,13 @@
 "use strict";
 
 Components.utils.import("resource://gre/modules/Services.jsm");
+
+
+
+function myBootstrapAddonFunction() { 
+  Services.obs.notifyObservers(null, "addon-console-works", null);
+}
+
 function startup() {
   Services.obs.notifyObservers(null, "test-devtools", null);
 }
