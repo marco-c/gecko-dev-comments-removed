@@ -18,6 +18,7 @@
 
 class nsIPrincipal;
 class nsIDOMWindow;
+class nsPIDOMWindow;
 
 namespace mozilla {
 namespace dom {
@@ -122,7 +123,7 @@ public:
   
   
   
-  static bool CanUseStorage(DOMStorage* aStorage = nullptr);
+  static bool CanUseStorage(nsPIDOMWindow* aWindow, DOMStorage* aStorage = nullptr);
 
   bool IsPrivate() const { return mIsPrivate; }
   bool IsSessionOnly() const { return mIsSessionOnly; }
