@@ -6927,6 +6927,13 @@ var gIdentityHandler = {
     return this._state & Ci.nsIWebProgressListener.STATE_LOADED_MIXED_DISPLAY_CONTENT;
   },
 
+  get _hasInsecureLoginForms() {
+    
+    
+    return LoginManagerParent.hasInsecureLoginForms(gBrowser.selectedBrowser) &&
+           Services.prefs.getBoolPref("security.insecure_password.ui.enabled");
+  },
+
   
   get _identityPopup () {
     delete this._identityPopup;
@@ -7257,7 +7264,7 @@ var gIdentityHandler = {
           this._identityBox.classList.add("weakCipher");
         }
       }
-      if (LoginManagerParent.hasInsecureLoginForms(gBrowser.selectedBrowser)) {
+      if (this._hasInsecureLoginForms) {
         
         
         this._identityBox.classList.add("insecureLoginForms");
@@ -7301,7 +7308,7 @@ var gIdentityHandler = {
 
     
     let loginforms = "secure";
-    if (LoginManagerParent.hasInsecureLoginForms(gBrowser.selectedBrowser)) {
+    if (this._hasInsecureLoginForms) {
       loginforms = "insecure";
     }
 

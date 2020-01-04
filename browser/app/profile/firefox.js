@@ -1431,6 +1431,13 @@ pref("dom.identity.enabled", false);
 pref("security.mixed_content.block_active_content", true);
 
 
+#ifdef NIGHTLY_BUILD
+pref("security.insecure_password.ui.enabled", true);
+#else
+pref("security.insecure_password.ui.enabled", false);
+#endif
+
+
 pref("security.cert_pinning.enforcement_level", 1);
 
 
@@ -1522,11 +1529,6 @@ pref("ui.key.menuAccessKeyFocuses", true);
 
 pref("media.eme.enabled", true);
 pref("media.eme.apiVisible", true);
-
-
-
-pref("media.gmp.decoder.enabled", true);
-
 
 
 
