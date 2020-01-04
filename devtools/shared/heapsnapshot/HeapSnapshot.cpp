@@ -107,7 +107,7 @@ HeapSnapshot::Create(JSContext* cx,
 
 template<typename MessageType>
 static bool
-parseMessage(ZeroCopyInputStream& stream, MessageType& message)
+parseMessage(ZeroCopyInputStream& stream, uint32_t sizeOfMessage, MessageType& message)
 {
   
   
@@ -122,16 +122,7 @@ parseMessage(ZeroCopyInputStream& stream, MessageType& message)
   
   codedStream.SetRecursionLimit(HeapSnapshot::MAX_STACK_DEPTH * 3);
 
-  
-  
-  
-  
-
-  uint32_t size = 0;
-  if (NS_WARN_IF(!codedStream.ReadVarint32(&size)))
-    return false;
-
-  auto limit = codedStream.PushLimit(size);
+  auto limit = codedStream.PushLimit(sizeOfMessage);
   if (NS_WARN_IF(!message.ParseFromCodedStream(&codedStream)) ||
       NS_WARN_IF(!codedStream.ConsumedEntireMessage()) ||
       NS_WARN_IF(codedStream.BytesUntilLimit() != 0))
@@ -391,27 +382,16 @@ HeapSnapshot::saveStackFrame(const protobuf::StackFrame& frame,
 #undef GET_STRING_OR_REF_WITH_PROP_NAMES
 #undef GET_STRING_OR_REF
 
-static inline bool
-StreamHasData(GzipInputStream& stream)
+
+
+
+
+static bool
+readSizeOfNextMessage(ZeroCopyInputStream& stream, uint32_t* sizep)
 {
-  
-  
-  
-  
-
-  const void* buf;
-  int size;
-  bool more = stream.Next(&buf, &size);
-  if (!more)
-    
-    
-    
-    return false;
-
-  
-  
-  stream.BackUp(size);
-  return true;
+  MOZ_ASSERT(sizep);
+  CodedInputStream codedStream(&stream);
+  return codedStream.ReadVarint32(sizep) && *sizep > 0;
 }
 
 bool
@@ -422,11 +402,14 @@ HeapSnapshot::init(JSContext* cx, const uint8_t* buffer, uint32_t size)
 
   ArrayInputStream stream(buffer, size);
   GzipInputStream gzipStream(&stream);
+  uint32_t sizeOfMessage = 0;
 
   
 
   protobuf::Metadata metadata;
-  if (!parseMessage(gzipStream, metadata))
+  if (NS_WARN_IF(!readSizeOfNextMessage(gzipStream, &sizeOfMessage)))
+    return false;
+  if (!parseMessage(gzipStream, sizeOfMessage, metadata))
     return false;
   if (metadata.has_timestamp())
     timestamp.emplace(metadata.timestamp());
@@ -434,7 +417,9 @@ HeapSnapshot::init(JSContext* cx, const uint8_t* buffer, uint32_t size)
   
 
   protobuf::Node root;
-  if (!parseMessage(gzipStream, root))
+  if (NS_WARN_IF(!readSizeOfNextMessage(gzipStream, &sizeOfMessage)))
+    return false;
+  if (!parseMessage(gzipStream, sizeOfMessage, root))
     return false;
 
   
@@ -453,9 +438,13 @@ HeapSnapshot::init(JSContext* cx, const uint8_t* buffer, uint32_t size)
 
   
 
-  while (StreamHasData(gzipStream)) {
+  
+  
+  
+  
+  while (readSizeOfNextMessage(gzipStream, &sizeOfMessage)) {
     protobuf::Node node;
-    if (!parseMessage(gzipStream, node))
+    if (!parseMessage(gzipStream, sizeOfMessage, node))
       return false;
     if (NS_WARN_IF(!saveNode(node, edgeReferents)))
       return false;
