@@ -155,6 +155,7 @@ public class GeckoApplication extends Application
         NotificationHelper.getInstance(context).init();
 
         MulticastDNSManager.getInstance(context).init();
+        NetworkInfoService.getInstance(context).init();
 
         
         

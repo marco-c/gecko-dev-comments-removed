@@ -1,0 +1,18 @@
+
+
+
+
+
+
+#include "nsString.h"
+#include "nsDataHashtable.h"
+
+namespace mozilla {
+namespace net {
+
+typedef nsDataHashtable<nsCStringHashKey, nsCString> AddrMapType;
+
+nsresult DoListAddresses(AddrMapType& aAddrMap);
+
+} 
+} 
