@@ -255,6 +255,32 @@ public:
                     int32_t aBaseUnicodeChar, int32_t aDomPrintableKeyValue,
                     int32_t aRepeatCount, int32_t aFlags,
                     bool aIsSynthesizedImeKey);
+
+    
+    void OnImeSynchronize();
+
+    
+    void OnImeAcknowledgeFocus();
+
+    
+    void OnImeReplaceText(int32_t start, int32_t end,
+                          jni::String::Param text, bool composing);
+
+    
+    void OnImeSetSelection(int32_t start, int32_t end);
+
+    
+    void OnImeRemoveComposition();
+
+    
+    void OnImeAddCompositionRange(int32_t start, int32_t end, int32_t rangeType,
+                                  int32_t rangeStyle, int32_t rangeLineStyle,
+                                  bool rangeBoldLine, int32_t rangeForeColor,
+                                  int32_t rangeBackColor,
+                                  int32_t rangeLineColor);
+
+    
+    void OnImeUpdateComposition(int32_t start, int32_t end);
 };
 
 nsWindow::Natives::~Natives()
@@ -1874,6 +1900,52 @@ nsWindow::SendIMEDummyKeyEvents()
     InitEvent(upEvent, nullptr);
     MOZ_ASSERT(upEvent.keyCode == 0);
     DispatchEvent(&upEvent);
+}
+
+void
+nsWindow::Natives::OnImeSynchronize()
+{
+    
+}
+
+void
+nsWindow::Natives::OnImeAcknowledgeFocus()
+{
+    
+}
+
+void
+nsWindow::Natives::OnImeReplaceText(int32_t start, int32_t end,
+                                    jni::String::Param text, bool composing)
+{
+    
+}
+
+void
+nsWindow::Natives::OnImeSetSelection(int32_t start, int32_t end)
+{
+    
+}
+
+void
+nsWindow::Natives::OnImeRemoveComposition()
+{
+    
+}
+
+void
+nsWindow::Natives::OnImeAddCompositionRange(
+        int32_t start, int32_t end, int32_t rangeType, int32_t rangeStyle,
+        int32_t rangeLineStyle, bool rangeBoldLine, int32_t rangeForeColor,
+        int32_t rangeBackColor, int32_t rangeLineColor)
+{
+    
+}
+
+void
+nsWindow::Natives::OnImeUpdateComposition(int32_t start, int32_t end)
+{
+    
 }
 
 void
