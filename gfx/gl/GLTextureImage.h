@@ -357,6 +357,17 @@ CreateBasicTextureImage(GLContext* aGL,
 
 
 
+already_AddRefed<TextureImage>
+CreateTiledTextureImage(GLContext* aGL,
+                        const gfx::IntSize& aSize,
+                        TextureImage::ContentType aContentType,
+                        TextureImage::Flags aFlags,
+                        TextureImage::ImageFormat aImageFormat);
+
+
+
+
+
 
 
 
