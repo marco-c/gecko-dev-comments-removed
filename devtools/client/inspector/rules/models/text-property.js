@@ -77,7 +77,7 @@ TextProperty.prototype = {
     
     
     
-    let dummyElement = this.rule.elementStyle.dummyElement;
+    let dummyElement = this.rule.elementStyle.ruleView.dummyElement;
     let dummyStyle = dummyElement.style;
     dummyStyle.cssText = "";
     dummyStyle.setProperty(this.name, this.value, this.priority);

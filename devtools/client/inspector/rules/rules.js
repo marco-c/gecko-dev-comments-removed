@@ -17,6 +17,8 @@ const {ELEMENT_STYLE} = require("devtools/server/actors/styles");
 const {OutputParser} = require("devtools/client/shared/output-parser");
 const {PrefObserver, PREF_ORIG_SOURCES} =
       require("devtools/client/styleeditor/utils");
+const {ElementStyle} =
+      require("devtools/client/inspector/rules/models/element-style");
 const {Rule} = require("devtools/client/inspector/rules/models/rule");
 const {
   createChild,
@@ -35,6 +37,22 @@ const {
   SELECTOR_PSEUDO_CLASS
 } = require("devtools/client/shared/css-parsing-utils");
 
+Cu.import("resource://gre/modules/XPCOMUtils.jsm");
+
+XPCOMUtils.defineLazyGetter(this, "clipboardHelper", function() {
+  return Cc["@mozilla.org/widget/clipboardhelper;1"]
+    .getService(Ci.nsIClipboardHelper);
+});
+
+XPCOMUtils.defineLazyGetter(this, "_strings", function() {
+  return Services.strings.createBundle(
+    "chrome://devtools-shared/locale/styleinspector.properties");
+});
+
+loader.lazyGetter(this, "AutocompletePopup", function() {
+  return require("devtools/client/shared/autocomplete-popup").AutocompletePopup;
+});
+
 loader.lazyRequireGetter(this, "overlays",
   "devtools/client/styleinspector/style-inspector-overlays");
 loader.lazyRequireGetter(this, "EventEmitter",
@@ -42,8 +60,6 @@ loader.lazyRequireGetter(this, "EventEmitter",
 loader.lazyRequireGetter(this, "StyleInspectorMenu",
   "devtools/client/styleinspector/style-inspector-menu");
 loader.lazyImporter(this, "Services", "resource://gre/modules/Services.jsm");
-
-Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
 const HTML_NS = "http://www.w3.org/1999/xhtml";
 const XUL_NS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
@@ -61,6 +77,40 @@ const FILTER_PROP_RE = /\s*([^:\s]*)\s*:\s*(.*?)\s*;?$/;
 const FILTER_STRICT_RE = /\s*`(.*?)`\s*$/;
 const IOService = Cc["@mozilla.org/network/io-service;1"]
                   .getService(Ci.nsIIOService);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -98,382 +148,6 @@ function createDummyDocument() {
   gDummyPromise = deferred.promise;
   return gDummyPromise;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function ElementStyle(element, store, pageStyle, showUserAgentStyles) {
-  this.element = element;
-  this.store = store || {};
-  this.pageStyle = pageStyle;
-  this.showUserAgentStyles = showUserAgentStyles;
-  this.rules = [];
-
-  
-  
-  if (!("userProperties" in this.store)) {
-    this.store.userProperties = new UserProperties();
-  }
-
-  if (!("disabled" in this.store)) {
-    this.store.disabled = new WeakMap();
-  }
-}
-
-
-exports._ElementStyle = ElementStyle;
-
-ElementStyle.prototype = {
-  
-  element: null,
-
-  
-  
-  dummyElement: null,
-
-  init: function() {
-    
-    
-    
-    this.dummyElementPromise = createDummyDocument().then(document => {
-      
-      let namespaceURI = this.element.namespaceURI ||
-          document.documentElement.namespaceURI;
-      this.dummyElement = document.createElementNS(namespaceURI,
-                                                   this.element.tagName);
-      document.documentElement.appendChild(this.dummyElement);
-      return this.dummyElement;
-    }).then(null, promiseWarn);
-    return this.dummyElementPromise;
-  },
-
-  destroy: function() {
-    if (this.destroyed) {
-      return;
-    }
-    this.destroyed = true;
-
-    for (let rule of this.rules) {
-      if (rule.editor) {
-        rule.editor.destroy();
-      }
-    }
-
-    this.dummyElement = null;
-    this.dummyElementPromise.then(dummyElement => {
-      dummyElement.remove();
-      this.dummyElementPromise = null;
-    }, console.error);
-  },
-
-  
-
-
-
-  _changed: function() {
-    if (this.onChanged) {
-      this.onChanged();
-    }
-  },
-
-  
-
-
-
-
-
-
-  populate: function() {
-    let populated = this.pageStyle.getApplied(this.element, {
-      inherited: true,
-      matchedSelectors: true,
-      filter: this.showUserAgentStyles ? "ua" : undefined,
-    }).then(entries => {
-      if (this.destroyed) {
-        return promise.resolve(undefined);
-      }
-
-      
-      return this.dummyElementPromise.then(() => {
-        if (this.populated !== populated) {
-          
-          return;
-        }
-
-        
-        
-        let existingRules = this.rules;
-
-        this.rules = [];
-
-        for (let entry of entries) {
-          this._maybeAddRule(entry, existingRules);
-        }
-
-        
-        this.markOverriddenAll();
-
-        this._sortRulesForPseudoElement();
-
-        
-        for (let r of existingRules) {
-          if (r && r.editor) {
-            r.editor.destroy();
-          }
-        }
-      });
-    }).then(null, e => {
-      
-      
-      if (this.destroyed) {
-        return promise.resolve(undefined);
-      }
-      return promiseWarn(e);
-    });
-    this.populated = populated;
-    return this.populated;
-  },
-
-  
-
-
-  _sortRulesForPseudoElement: function() {
-    this.rules = this.rules.sort((a, b) => {
-      return (a.pseudoElement || "z") > (b.pseudoElement || "z");
-    });
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-  _maybeAddRule: function(options, existingRules) {
-    
-    
-    if (options.rule &&
-        this.rules.some(rule => rule.domRule === options.rule)) {
-      return false;
-    }
-
-    if (options.system) {
-      return false;
-    }
-
-    let rule = null;
-
-    
-    
-    if (existingRules) {
-      let ruleIndex = existingRules.findIndex((r) => r.matches(options));
-      if (ruleIndex >= 0) {
-        rule = existingRules[ruleIndex];
-        rule.refresh(options);
-        existingRules.splice(ruleIndex, 1);
-      }
-    }
-
-    
-    if (!rule) {
-      rule = new Rule(this, options);
-    }
-
-    
-    if (options.inherited && !rule.hasAnyVisibleProperties()) {
-      return false;
-    }
-
-    this.rules.push(rule);
-    return true;
-  },
-
-  
-
-
-  markOverriddenAll: function() {
-    this.markOverridden();
-    for (let pseudo of PSEUDO_ELEMENTS) {
-      this.markOverridden(pseudo);
-    }
-  },
-
-  
-
-
-
-
-
-
-
-  markOverridden: function(pseudo = "") {
-    
-    
-    
-    
-    
-    let textProps = [];
-    for (let rule of this.rules) {
-      if (rule.pseudoElement === pseudo && !rule.keyframes) {
-        for (let textProp of rule.textProps.slice(0).reverse()) {
-          if (textProp.enabled) {
-            textProps.push(textProp);
-          }
-        }
-      }
-    }
-
-    
-    
-    let computedProps = [];
-    for (let textProp of textProps) {
-      computedProps = computedProps.concat(textProp.computed);
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    let taken = {};
-    for (let computedProp of computedProps) {
-      let earlier = taken[computedProp.name];
-
-      
-      
-      
-      
-      
-      if (!computedProp.textProp.isValid()) {
-        computedProp.overridden = true;
-        continue;
-      }
-      let overridden;
-      if (earlier &&
-          computedProp.priority === "important" &&
-          earlier.priority !== "important" &&
-          (earlier.textProp.rule.inherited ||
-           !computedProp.textProp.rule.inherited)) {
-        
-        
-        earlier._overriddenDirty = !earlier._overriddenDirty;
-        earlier.overridden = true;
-        overridden = false;
-      } else {
-        overridden = !!earlier;
-      }
-
-      computedProp._overriddenDirty =
-        (!!computedProp.overridden !== overridden);
-      computedProp.overridden = overridden;
-      if (!computedProp.overridden && computedProp.textProp.enabled) {
-        taken[computedProp.name] = computedProp;
-      }
-    }
-
-    
-    
-    
-    
-    for (let textProp of textProps) {
-      
-      
-      if (this._updatePropertyOverridden(textProp)) {
-        textProp.updateEditor();
-      }
-    }
-  },
-
-  
-
-
-
-
-
-
-
-
-
-  _updatePropertyOverridden: function(prop) {
-    let overridden = true;
-    let dirty = false;
-    for (let computedProp of prop.computed) {
-      if (!computedProp.overridden) {
-        overridden = false;
-      }
-      dirty = computedProp._overriddenDirty || dirty;
-      delete computedProp._overriddenDirty;
-    }
-
-    dirty = (!!prop.overridden !== overridden) || dirty;
-    prop.overridden = overridden;
-    return dirty;
-  }
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -582,6 +256,15 @@ CssRuleView.prototype = {
 
   
   _filterChangedTimeout: null,
+
+  
+  
+  _dummyElement: null,
+
+  
+  get dummyElement() {
+    return this._dummyElement;
+  },
 
   
   get searchValue() {
@@ -1076,6 +759,8 @@ CssRuleView.prototype = {
     this.isDestroyed = true;
     this.clear();
 
+    this._dummyElement = null;
+    this.dummyElementPromise = null;
     gDummyPromise = null;
 
     this._prefObserver.off(PREF_ORIG_SOURCES, this._onSourcePrefChanged);
@@ -1182,13 +867,26 @@ CssRuleView.prototype = {
       return promise.resolve(undefined);
     }
 
-    let elementStyle = new ElementStyle(element, this.store,
+    
+    
+    
+    this.dummyElementPromise = createDummyDocument().then(document => {
+      
+      let namespaceURI = this.element.namespaceURI ||
+          document.documentElement.namespaceURI;
+      this._dummyElement = document.createElementNS(namespaceURI,
+                                                   this.element.tagName);
+      document.documentElement.appendChild(this._dummyElement);
+      return this._dummyElement;
+    }).then(null, promiseWarn);
+
+    let elementStyle = new ElementStyle(element, this, this.store,
       this.pageStyle, this.showUserAgentStyles);
     this._elementStyle = elementStyle;
 
     this._startSelectingElement();
 
-    return this._elementStyle.init().then(() => {
+    return this.dummyElementPromise.then(() => {
       if (this._elementStyle === elementStyle) {
         return this._populate();
       }
@@ -3072,84 +2770,6 @@ TextPropertyEditor.prototype = {
 
 
 
-function UserProperties() {
-  this.map = new Map();
-}
-
-UserProperties.prototype = {
-  
-
-
-
-
-
-
-
-
-
-
-
-
-  getProperty: function(style, name, value) {
-    let key = this.getKey(style);
-    let entry = this.map.get(key, null);
-
-    if (entry && name in entry) {
-      return entry[name];
-    }
-    return value;
-  },
-
-  
-
-
-
-
-
-
-
-
-
-  setProperty: function(style, bame, userValue) {
-    let key = this.getKey(style, bame);
-    let entry = this.map.get(key, null);
-
-    if (entry) {
-      entry[bame] = userValue;
-    } else {
-      let props = {};
-      props[bame] = userValue;
-      this.map.set(key, props);
-    }
-  },
-
-  
-
-
-
-
-
-
-
-  contains: function(style, name) {
-    let key = this.getKey(style, name);
-    let entry = this.map.get(key, null);
-    return !!entry && name in entry;
-  },
-
-  getKey: function(style, name) {
-    return style.actorID + ":" + name;
-  },
-
-  clear: function() {
-    this.map.clear();
-  }
-};
-
-
-
-
-
 
 
 
@@ -3217,25 +2837,3 @@ function getPropertyNameAndValue(node) {
     node = node.parentNode;
   }
 }
-
-XPCOMUtils.defineLazyGetter(this, "clipboardHelper", function() {
-  return Cc["@mozilla.org/widget/clipboardhelper;1"]
-    .getService(Ci.nsIClipboardHelper);
-});
-
-XPCOMUtils.defineLazyGetter(this, "_strings", function() {
-  return Services.strings.createBundle(
-    "chrome://devtools-shared/locale/styleinspector.properties");
-});
-
-XPCOMUtils.defineLazyGetter(this, "domUtils", function() {
-  return Cc["@mozilla.org/inspector/dom-utils;1"].getService(Ci.inIDOMUtils);
-});
-
-loader.lazyGetter(this, "AutocompletePopup", function() {
-  return require("devtools/client/shared/autocomplete-popup").AutocompletePopup;
-});
-
-loader.lazyGetter(this, "PSEUDO_ELEMENTS", () => {
-  return domUtils.getCSSPseudoElementNames();
-});
