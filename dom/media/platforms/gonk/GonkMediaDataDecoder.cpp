@@ -265,8 +265,7 @@ GonkDecoderManager::onMessageReceived(const sp<AMessage> &aMessage)
 GonkMediaDataDecoder::GonkMediaDataDecoder(GonkDecoderManager* aManager,
                                            FlushableTaskQueue* aTaskQueue,
                                            MediaDataDecoderCallback* aCallback)
-  : mTaskQueue(aTaskQueue)
-  , mManager(aManager)
+  : mManager(aManager)
 {
   MOZ_COUNT_CTOR(GonkMediaDataDecoder);
   mManager->SetDecodeCallback(aCallback);
@@ -305,11 +304,6 @@ GonkMediaDataDecoder::Input(MediaRawData* aSample)
 nsresult
 GonkMediaDataDecoder::Flush()
 {
-  
-  
-  
-  
-  mTaskQueue->Flush();
   return mManager->Flush();
 }
 
