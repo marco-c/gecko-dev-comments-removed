@@ -15,8 +15,8 @@
 #include "mozilla/ipc/CrossProcessMutex.h"  
 #include "mozilla/layers/CompositorTypes.h"
 #include "mozilla/layers/ImageBridgeChild.h"  
-#include "mozilla/layers/PImageContainerChild.h"
 #include "mozilla/layers/ImageClient.h"  
+#include "mozilla/layers/ImageContainerChild.h"
 #include "mozilla/layers/LayersMessages.h"
 #include "mozilla/layers/SharedPlanarYCbCrImage.h"
 #include "mozilla/layers/SharedRGBImage.h"
@@ -102,47 +102,6 @@ BufferRecycleBin::ClearRecycledBuffers()
   }
   mRecycledBufferSize = 0;
 }
-
-
-
-
-
-
-
-
-
-
-class ImageContainerChild : public PImageContainerChild {
-public:
-  explicit ImageContainerChild(ImageContainer* aImageContainer)
-    : mLock("ImageContainerChild")
-    , mImageContainer(aImageContainer)
-    , mImageContainerReleased(false)
-    , mIPCOpen(true)
-  {}
-
-  void ForgetImageContainer()
-  {
-    MutexAutoLock lock(mLock);
-    mImageContainer = nullptr;
-  }
-
-  
-  
-  Mutex mLock;
-  ImageContainer* mImageContainer;
-  
-  
-  
-  bool mImageContainerReleased;
-  
-  
-  
-  
-  
-  
-  bool mIPCOpen;
-};
 
 
 void
@@ -858,19 +817,6 @@ PImageContainerChild*
 ImageContainer::GetPImageContainerChild()
 {
   return mIPDLChild;
-}
-
- void
-ImageContainer::NotifyComposite(const ImageCompositeNotification& aNotification)
-{
-  ImageContainerChild* child =
-      static_cast<ImageContainerChild*>(aNotification.imageContainerChild());
-  if (child) {
-    MutexAutoLock lock(child->mLock);
-    if (child->mImageContainer) {
-      child->mImageContainer->NotifyCompositeInternal(aNotification);
-    }
-  }
 }
 
 ImageContainer::ProducerID
