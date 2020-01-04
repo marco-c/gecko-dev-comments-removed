@@ -17,7 +17,7 @@
 using namespace mozilla;
 using mozilla::dom::CreateECParamsForCurve;
 
-NS_IMPL_ISUPPORTS(nsNSSU2FToken, nsINSSU2FToken)
+NS_IMPL_ISUPPORTS(nsNSSU2FToken, nsIU2FToken, nsINSSU2FToken)
 
 
 
