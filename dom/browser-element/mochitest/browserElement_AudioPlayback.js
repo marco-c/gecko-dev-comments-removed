@@ -52,10 +52,10 @@ function runTest() {
   iframe.addEventListener('mozbrowseraudioplaybackchange', (e) => {
     is(e.detail, expectedNextData, 'Audio detail should be correct')
     is(e.target, iframe, 'event target should be the first iframe')
-    if (e.detail === 'inactive') {
+    if (e.detail === 'inactive-pause') {
       SimpleTest.finish();
     }
-    expectedNextData = 'inactive';
+    expectedNextData = 'inactive-pause';
   });
 
   
