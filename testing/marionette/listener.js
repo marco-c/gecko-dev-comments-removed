@@ -17,6 +17,7 @@ Cu.import("chrome://marionette/content/elements.js");
 Cu.import("chrome://marionette/content/error.js");
 Cu.import("resource://gre/modules/FileUtils.jsm");
 Cu.import("resource://gre/modules/NetUtil.jsm");
+Cu.import("resource://gre/modules/Task.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 let utils = {};
 utils.window = content;
@@ -147,25 +148,34 @@ function emitTouchEventForIFrame(message) {
     message.force, 90);
 }
 
+
+
+
+
+
 function dispatch(fn) {
   return function(msg) {
     let id = msg.json.command_id;
-    try {
+
+    let req = Task.spawn(function*() {
       let rv;
       if (typeof msg.json == "undefined" || msg.json instanceof Array) {
-        rv = fn.apply(null, msg.json);
+        return yield fn.apply(null, msg.json);
       } else {
-        rv = fn(msg.json);
+        return yield fn(msg.json);
       }
+    });
 
+    let okOrValueResponse = rv => {
       if (typeof rv == "undefined") {
         sendOk(id);
       } else {
         sendResponse({value: rv}, id);
       }
-    } catch (e) {
-      sendError(e, id);
-    }
+    };
+
+    req.then(okOrValueResponse, err => sendError(err, id))
+        .catch(error.report);
   };
 }
 
