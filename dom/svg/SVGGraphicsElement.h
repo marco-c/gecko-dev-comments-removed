@@ -25,6 +25,8 @@ protected:
 public:
   
   NS_DECL_ISUPPORTS_INHERITED
+
+  bool IsInChromeDoc() const override;
 };
 
 } 

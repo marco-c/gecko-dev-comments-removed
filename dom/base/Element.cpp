@@ -1258,7 +1258,7 @@ Element::GetAttributeNS(const nsAString& aNamespaceURI,
                         nsAString& aReturn)
 {
   int32_t nsid =
-    nsContentUtils::NameSpaceManager()->GetNameSpaceID(aNamespaceURI);
+    nsContentUtils::NameSpaceManager()->GetNameSpaceID(aNamespaceURI, OwnerDoc());
 
   if (nsid == kNameSpaceID_Unknown) {
     
@@ -1300,7 +1300,7 @@ Element::RemoveAttributeNS(const nsAString& aNamespaceURI,
 {
   nsCOMPtr<nsIAtom> name = NS_Atomize(aLocalName);
   int32_t nsid =
-    nsContentUtils::NameSpaceManager()->GetNameSpaceID(aNamespaceURI);
+    nsContentUtils::NameSpaceManager()->GetNameSpaceID(aNamespaceURI, OwnerDoc());
 
   if (nsid == kNameSpaceID_Unknown) {
     
@@ -1377,7 +1377,7 @@ Element::HasAttributeNS(const nsAString& aNamespaceURI,
                         const nsAString& aLocalName) const
 {
   int32_t nsid =
-    nsContentUtils::NameSpaceManager()->GetNameSpaceID(aNamespaceURI);
+    nsContentUtils::NameSpaceManager()->GetNameSpaceID(aNamespaceURI, OwnerDoc());
 
   if (nsid == kNameSpaceID_Unknown) {
     

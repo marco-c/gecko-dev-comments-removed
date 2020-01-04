@@ -281,6 +281,9 @@ pref("print.shrink-to-fit.scale-limit-percent", 20);
 pref("print.use_simplify_page", false);
 
 
+pref("mathml.disabled",    false);
+
+
 pref("mathml.scale_stretchy_operators.enabled", true);
 
 
