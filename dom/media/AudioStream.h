@@ -313,7 +313,7 @@ protected:
   int64_t GetPositionInFramesUnlocked();
 
 private:
-  nsresult OpenCubeb(cubeb_stream_params &aParams);
+  nsresult OpenCubeb(cubeb_stream_params &aParams, TimeStamp aStartTime);
 
   static long DataCallback_S(cubeb_stream*, void* aThis,
                              const void* , void* aOutputBuffer,
@@ -351,9 +351,6 @@ private:
   uint32_t mOutChannels;
   AudioClock mAudioClock;
   soundtouch::SoundTouch* mTimeStretcher;
-
-  
-  TimeStamp mStartTime;
 
   
   FILE* mDumpFile;
