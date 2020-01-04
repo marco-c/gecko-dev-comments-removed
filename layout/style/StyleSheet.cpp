@@ -1,0 +1,26 @@
+
+
+
+
+
+
+#include "StyleSheet.h"
+
+namespace mozilla {
+
+StyleSheet::StyleSheet()
+  : mOwningNode(nullptr)
+  , mParsingMode(css::eUserSheetFeatures)
+  , mDisabled(false)
+{
+}
+
+StyleSheet::StyleSheet(const StyleSheet& aCopy,
+                       nsINode* aOwningNodeToUse)
+  : mOwningNode(aOwningNodeToUse)
+  , mParsingMode(aCopy.mParsingMode)
+  , mDisabled(aCopy.mDisabled)
+{
+}
+
+} 
