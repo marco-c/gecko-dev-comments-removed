@@ -1783,6 +1783,9 @@ nsWindow::CreateLayerManager(int aCompositorWidth, int aCompositorHeight)
         return;
     }
 
+    
+    gfxPlatform::GetPlatform();
+
     if (ShouldUseOffMainThreadCompositing()) {
         CreateCompositor(aCompositorWidth, aCompositorHeight);
         if (mLayerManager) {
