@@ -48,7 +48,6 @@ GraphDriver::GraphDriver(MediaStreamGraphImpl* aGraphImpl)
     mIterationEnd(0),
     mGraphImpl(aGraphImpl),
     mWaitState(WAITSTATE_RUNNING),
-    mAudioInput(nullptr),
     mCurrentTimeStamp(TimeStamp::Now()),
     mPreviousDriver(nullptr),
     mNextDriver(nullptr)
@@ -540,7 +539,6 @@ AudioCallbackDriver::AudioCallbackDriver(MediaStreamGraphImpl* aGraphImpl)
   , mSampleRate(0)
   , mIterationDurationMS(MEDIA_GRAPH_TARGET_PERIOD_MS)
   , mStarted(false)
-  , mAudioInput(nullptr)
   , mAudioChannel(aGraphImpl->AudioChannel())
   , mInCallback(false)
   , mMicrophoneActive(false)
@@ -902,8 +900,8 @@ AudioCallbackDriver::DataCallback(AudioDataValue* aInputBuffer,
   
   
   
-  mGraphImpl->NotifyOutputData(aOutputBuffer, static_cast<size_t>(aFrames),
-                               ChannelCount);
+  mGraphImpl->NotifySpeakerData(aOutputBuffer, static_cast<size_t>(aFrames),
+                                ChannelCount);
 
   
   if (aInputBuffer) {

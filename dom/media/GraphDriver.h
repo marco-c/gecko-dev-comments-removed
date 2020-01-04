@@ -193,11 +193,12 @@ public:
   virtual bool OnThread() = 0;
 
   
-  virtual void SetInputListener(AudioDataListener *aListener) {
+  
+  virtual void SetInputListener(MediaStreamListener *aListener) {
     mAudioInput = aListener;
   }
   
-  virtual void RemoveInputListener(AudioDataListener *aListener) {
+  virtual void RemoveInputListener(MediaStreamListener *aListener) {
     mAudioInput = nullptr;
   }
 
@@ -232,7 +233,7 @@ protected:
   WaitState mWaitState;
 
   
-  AudioDataListener *mAudioInput;
+  RefPtr<MediaStreamListener> mAudioInput;
 
   
   
@@ -497,7 +498,7 @@ private:
 
   bool mStarted;
   
-  RefPtr<AudioDataListener> mAudioInput;
+  RefPtr<MediaStreamListener> mAudioInput;
 
   struct AutoInCallback
   {
