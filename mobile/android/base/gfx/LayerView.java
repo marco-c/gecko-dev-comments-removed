@@ -269,6 +269,10 @@ public class LayerView extends ScrollView implements Tabs.OnTabsChangedListener 
     protected void onAttachedToWindow() {
         
         
+        setDescendantFocusability(FOCUS_BLOCK_DESCENDANTS);
+
+        
+        
         
         
         if (shouldUseTextureView()) {
