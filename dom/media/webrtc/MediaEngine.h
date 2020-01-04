@@ -122,6 +122,12 @@ public:
                            const nsString& aDeviceId) = 0;
 
   
+  virtual nsresult Config(bool aEchoOn, uint32_t aEcho,
+                          bool aAgcOn, uint32_t aAGC,
+                          bool aNoiseOn, uint32_t aNoise,
+                          int32_t aPlayoutDelay) = 0;
+
+  
 
 
   virtual bool IsFake() = 0;
@@ -210,13 +216,6 @@ public:
     , mFPS(0)
     , mMinFPS(0)
     , mFreq(0)
-    , mAecOn(false)
-    , mAgcOn(false)
-    , mNoiseOn(false)
-    , mAec(0)
-    , mAgc(0)
-    , mNoise(0)
-    , mPlayoutDelay(0)
     , mFullDuplex(false)
   {}
 
@@ -225,13 +224,6 @@ public:
   int32_t mFPS;
   int32_t mMinFPS;
   int32_t mFreq; 
-  bool mAecOn;
-  bool mAgcOn;
-  bool mNoiseOn;
-  int32_t mAec;
-  int32_t mAgc;
-  int32_t mNoise;
-  int32_t mPlayoutDelay;
   bool mFullDuplex;
 
   
