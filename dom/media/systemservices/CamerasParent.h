@@ -7,12 +7,10 @@
 #ifndef mozilla_CamerasParent_h
 #define mozilla_CamerasParent_h
 
-#include "nsIObserver.h"
 #include "mozilla/dom/ContentParent.h"
 #include "mozilla/camera/PCamerasParent.h"
 #include "mozilla/ipc/Shmem.h"
 #include "mozilla/ShmemPool.h"
-#include "mozilla/Atomics.h"
 
 
 #undef FF
@@ -75,11 +73,9 @@ public:
   bool mEngineIsRunning;
 };
 
-class CamerasParent :  public PCamerasParent,
-                       public nsIObserver
+class CamerasParent :  public PCamerasParent
 {
-  NS_DECL_THREADSAFE_ISUPPORTS
-  NS_DECL_NSIOBSERVER
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(CamerasParent);
 
 public:
   static already_AddRefed<CamerasParent> Create();
@@ -98,9 +94,7 @@ public:
   virtual void ActorDestroy(ActorDestroyReason aWhy) override;
 
   nsIThread* GetBackgroundThread() { return mPBackgroundThread; };
-  bool IsShuttingDown() { return !mChildIsAlive
-                              ||  mDestroyed
-                              || !mWebRTCAlive; };
+  bool IsShuttingDown() { return !mChildIsAlive || mDestroyed; };
   ShmemBuffer GetBuffer(size_t aSize);
 
   
@@ -122,12 +116,15 @@ protected:
   bool SetupEngine(CaptureEngine aCapEngine);
   void CloseEngines();
   bool EnsureInitialized(int aEngine);
+  void DoShutdown();
   void StopIPC();
-  void StopVideoCapture();
-  nsresult DispatchToVideoCaptureThread(nsRunnable *event);
 
   EngineHelper mEngines[CaptureEngine::MaxEngine];
   nsTArray<CallbackHelper*> mCallbacks;
+  
+  Mutex mCallbackMutex;
+  
+  Mutex mEngineMutex;
 
   
   mozilla::ShmemPool mShmemPool;
@@ -136,17 +133,11 @@ protected:
   nsCOMPtr<nsIThread> mPBackgroundThread;
 
   
-  Monitor mThreadMonitor;
-
-  
   base::Thread* mVideoCaptureThread;
 
   
   bool mChildIsAlive;
   bool mDestroyed;
-  
-  
-  mozilla::Atomic<bool> mWebRTCAlive;
 };
 
 PCamerasParent* CreateCamerasParent();
