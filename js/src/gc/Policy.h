@@ -10,6 +10,8 @@
 #define gc_Policy_h
 
 #include "mozilla/TypeTraits.h"
+#include "gc/Barrier.h"
+#include "gc/Marking.h"
 #include "js/GCPolicyAPI.h"
 
 
@@ -17,6 +19,7 @@
 
 
 
+class JSLinearString;
 namespace js {
 class AccessorShape;
 class ArgumentsObject;
