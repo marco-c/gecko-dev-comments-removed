@@ -257,8 +257,10 @@ PuppetWidget::ConfigureChildren(const nsTArray<Configuration>& aConfigurations)
 NS_IMETHODIMP
 PuppetWidget::SetFocus(bool aRaise)
 {
-  
-  
+  if (aRaise && mTabChild) {
+    mTabChild->SendRequestFocus(true);
+  }
+
   return NS_OK;
 }
 
@@ -882,7 +884,7 @@ PuppetWidget::SetCursor(imgIContainer* aCursor,
     return NS_ERROR_FAILURE;
   }
 
-  RefPtr<mozilla::gfx::DataSourceSurface> dataSurface =
+  mozilla::RefPtr<mozilla::gfx::DataSourceSurface> dataSurface =
     surface->GetDataSurface();
   size_t length;
   int32_t stride;
@@ -941,7 +943,7 @@ PuppetWidget::Paint()
         mTabChild->NotifyPainted();
       }
     } else {
-      RefPtr<gfxContext> ctx = new gfxContext(mDrawTarget);
+      nsRefPtr<gfxContext> ctx = new gfxContext(mDrawTarget);
       ctx->Rectangle(gfxRect(0,0,0,0));
       ctx->Clip();
       AutoLayerManagerSetup setupLayerManager(this, ctx,
