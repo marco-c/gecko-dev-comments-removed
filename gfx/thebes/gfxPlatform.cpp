@@ -610,10 +610,9 @@ gfxPlatform::Init()
     {
       nsAutoCString forcedPrefs;
       
-      forcedPrefs.AppendPrintf("FP(D%d%d%d",
+      forcedPrefs.AppendPrintf("FP(D%d%d",
                                gfxPrefs::Direct2DDisabled(),
-                               gfxPrefs::Direct2DForceEnabled(),
-                               gfxPrefs::DirectWriteFontRenderingForceEnabled());
+                               gfxPrefs::Direct2DForceEnabled());
       
       forcedPrefs.AppendPrintf("-L%d%d%d%d%d",
                                gfxPrefs::LayersAMDSwitchableGfxEnabled(),
@@ -1426,13 +1425,14 @@ gfxPlatform::CreateSimilarSoftwareDrawTarget(DrawTarget* aDT,
   return dt.forget();
 }
 
- already_AddRefed<DrawTarget>
+already_AddRefed<DrawTarget>
 gfxPlatform::CreateDrawTargetForData(unsigned char* aData, const IntSize& aSize, int32_t aStride, SurfaceFormat aFormat)
 {
-  BackendType backendType = gfxVars::ContentBackend();
-  NS_ASSERTION(backendType != BackendType::NONE, "No backend.");
+  NS_ASSERTION(mContentBackend != BackendType::NONE, "No backend.");
 
-  if (!Factory::DoesBackendSupportDataDrawtarget(backendType)) {
+  BackendType backendType = mContentBackend;
+
+  if (!Factory::DoesBackendSupportDataDrawtarget(mContentBackend)) {
     backendType = BackendType::CAIRO;
   }
 
@@ -2355,6 +2355,12 @@ gfxPlatform::AsyncPanZoomEnabled()
 #else
   return gfxPrefs::AsyncPanZoomEnabledDoNotUseDirectly();
 #endif
+}
+
+ bool
+gfxPlatform::UseProgressivePaint()
+{
+  return gfxPrefs::ProgressivePaintDoNotUseDirectly();
 }
 
  bool
