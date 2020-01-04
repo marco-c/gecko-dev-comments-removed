@@ -29,6 +29,15 @@ struct FrameStatisticsData
   
   uint64_t mDroppedFrames = 0;
 
+  
+  
+  uint64_t mInterKeyframeSum_us = 0;
+  
+  size_t mInterKeyframeCount = 0;
+
+  
+  uint64_t mInterKeyFrameMax_us = 0;
+
   FrameStatisticsData() = default;
   FrameStatisticsData(uint64_t aParsed, uint64_t aDecoded, uint64_t aDropped)
     : mParsedFrames(aParsed)
@@ -43,6 +52,12 @@ struct FrameStatisticsData
     mDecodedFrames += aStats.mDecodedFrames;
     mPresentedFrames += aStats.mPresentedFrames;
     mDroppedFrames += aStats.mDroppedFrames;
+    mInterKeyframeSum_us += aStats.mInterKeyframeSum_us;
+    mInterKeyframeCount += aStats.mInterKeyframeCount;
+    
+    if (mInterKeyFrameMax_us < aStats.mInterKeyFrameMax_us) {
+      mInterKeyFrameMax_us = aStats.mInterKeyFrameMax_us;
+    }
   }
 };
 
