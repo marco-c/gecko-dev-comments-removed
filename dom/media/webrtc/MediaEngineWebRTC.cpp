@@ -44,8 +44,6 @@ GetUserMediaLog()
 
 namespace mozilla {
 
-cubeb_device_collection* AudioInputCubeb::mDevices = nullptr;
-
 MediaEngineWebRTC::MediaEngineWebRTC(MediaEnginePrefs &aPrefs)
   : mMutex("mozilla::MediaEngineWebRTC"),
     mVoiceEngine(nullptr),
@@ -328,14 +326,7 @@ MediaEngineWebRTC::EnumerateAudioDevices(dom::MediaSourceEnum aMediaSource,
       
       aASources->AppendElement(aSource.get());
     } else {
-      AudioInput* audioinput = mAudioInput;
-      if (true ) {
-        
-        
-        
-        audioinput = new mozilla::AudioInputCubeb(mVoiceEngine);
-      }
-      aSource = new MediaEngineWebRTCMicrophoneSource(mThread, mVoiceEngine, audioinput,
+      aSource = new MediaEngineWebRTCMicrophoneSource(mThread, mVoiceEngine, mAudioInput,
                                                       i, deviceName, uniqueId);
       mAudioSources.Put(uuid, aSource); 
       aASources->AppendElement(aSource);
@@ -375,7 +366,6 @@ MediaEngineWebRTC::Shutdown()
   mVoiceEngine = nullptr;
 
   mozilla::camera::Shutdown();
-  AudioInputCubeb::CleanupGlobalData();
 
   if (mThread) {
     mThread->Shutdown();
