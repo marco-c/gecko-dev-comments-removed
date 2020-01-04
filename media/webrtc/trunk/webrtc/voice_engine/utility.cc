@@ -86,7 +86,11 @@ void DownConvertToCodecFormat(const int16_t* src_data,
 
   
   
-  int destination_rate = std::min(codec_rate_hz, sample_rate_hz);
+  
+  
+  
+  
+  int destination_rate = codec_rate_hz;
 
   
   
