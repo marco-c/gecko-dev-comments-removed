@@ -4,6 +4,7 @@
 
 
 
+#include "mozilla/DebugOnly.h"
 #include "nsISupports.h"
 #include "nsIDOMNodeList.h"
 #include "nsIContentIterator.h"
@@ -933,7 +934,7 @@ void
 nsContentIterator::First()
 {
   if (mFirst) {
-    DebugOnly<nsresult> rv = PositionAt(mFirst);
+    mozilla::DebugOnly<nsresult> rv = PositionAt(mFirst);
     NS_ASSERTION(NS_SUCCEEDED(rv), "Failed to position iterator!");
   }
 
@@ -947,7 +948,7 @@ nsContentIterator::Last()
   NS_ASSERTION(mLast, "No last node!");
 
   if (mLast) {
-    DebugOnly<nsresult> rv = PositionAt(mLast);
+    mozilla::DebugOnly<nsresult> rv = PositionAt(mLast);
     NS_ASSERTION(NS_SUCCEEDED(rv), "Failed to position iterator!");
   }
 
