@@ -532,19 +532,11 @@ protected:
   
 
 
-  bool SeizeChild(Accessible* aNewParent, Accessible* aChild,
-                  int32_t aIdxInParent);
-
-  
-
-
-  void MoveChild(Accessible* aChild, int32_t aIdxInParent);
-
-  
-
-
   void PutChildrenBack(nsTArray<RefPtr<Accessible> >* aChildren,
                        uint32_t aStartIdx);
+
+  bool MoveChild(Accessible* aChild, Accessible* aNewParent,
+                 int32_t aIdxInParent);
 
   
 
