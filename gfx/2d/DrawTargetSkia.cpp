@@ -147,8 +147,15 @@ DrawTargetSkia::Snapshot()
 
 bool
 DrawTargetSkia::LockBits(uint8_t** aData, IntSize* aSize,
-                          int32_t* aStride, SurfaceFormat* aFormat)
+                         int32_t* aStride, SurfaceFormat* aFormat,
+                         IntPoint* aOrigin)
 {
+  
+  SkIPoint origin = mCanvas->getTopDevice()->getOrigin();
+  if (!aOrigin && !origin.isZero()) {
+    return false;
+  }
+
   
 
 
@@ -169,6 +176,9 @@ DrawTargetSkia::LockBits(uint8_t** aData, IntSize* aSize,
   *aSize = IntSize(info.width(), info.height());
   *aStride = int32_t(rowBytes);
   *aFormat = SkiaColorTypeToGfxFormat(info.colorType());
+  if (aOrigin) {
+    *aOrigin = IntPoint(origin.x(), origin.y());
+  }
   return true;
 }
 
