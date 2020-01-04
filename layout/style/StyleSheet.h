@@ -8,23 +8,29 @@
 #define mozilla_StyleSheet_h
 
 #include "mozilla/css/SheetParsingMode.h"
+#include "mozilla/StyleBackendType.h"
+#include "mozilla/StyleSheetInfo.h"
 
 class nsIDocument;
 class nsINode;
 
 namespace mozilla {
 
+class CSSStyleSheet;
+class ServoStyleSheet;
+
 
 
 
 class StyleSheet
 {
-public:
-  StyleSheet();
+protected:
+  explicit StyleSheet(StyleBackendType aType);
   StyleSheet(const StyleSheet& aCopy,
              nsIDocument* aDocumentToUse,
              nsINode* aOwningNodeToUse);
 
+public:
   void SetOwningNode(nsINode* aOwningNode)
   {
     mOwningNode = aOwningNode;
@@ -40,10 +46,31 @@ public:
   
   nsIDocument* GetDocument() const { return mDocument; }
 
+  
+  
+  StyleSheetInfo& SheetInfo();
+  const StyleSheetInfo& SheetInfo() const { return const_cast<StyleSheet*>(this)->SheetInfo(); };
+
+  bool IsGecko() const { return !IsServo(); }
+  bool IsServo() const
+  {
+#ifdef MOZ_STYLO
+    return mType == StyleBackendType::Servo;
+#else
+    return false;
+#endif
+  }
+
+  
+  
+  inline CSSStyleSheet& AsGecko();
+  inline ServoStyleSheet& AsServo();
+
 protected:
   nsIDocument*          mDocument; 
   nsINode*              mOwningNode; 
   css::SheetParsingMode mParsingMode;
+  StyleBackendType      mType;
   bool                  mDisabled;
 };
 
