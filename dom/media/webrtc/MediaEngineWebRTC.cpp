@@ -108,7 +108,6 @@ MediaEngineWebRTC::MediaEngineWebRTC(MediaEnginePrefs &aPrefs)
   : mMutex("mozilla::MediaEngineWebRTC"),
     mVoiceEngine(nullptr),
     mAudioInput(nullptr),
-    mAudioEngineInit(false),
     mFullDuplex(aPrefs.mFullDuplex),
     mExtendedFilter(aPrefs.mExtendedFilter),
     mDelayAgnostic(aPrefs.mDelayAgnostic)
@@ -349,11 +348,12 @@ MediaEngineWebRTC::EnumerateAudioDevices(dom::MediaSourceEnum aMediaSource,
     return;
   }
 
-  if (!mAudioEngineInit) {
-    if (ptrVoEBase->Init() < 0) {
-      return;
-    }
-    mAudioEngineInit = true;
+  
+  
+  
+  
+  if (ptrVoEBase->Init() < 0) {
+    return;
   }
 
   if (!mAudioInput) {
