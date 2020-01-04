@@ -24,11 +24,6 @@ public:
   AccCollector(Accessible* aRoot, filters::FilterFuncPtr aFilterFunc);
   virtual ~AccCollector();
 
-  
-
-
-  virtual int32_t GetIndexAt(Accessible* aAccessible);
-
 protected:
   
 
@@ -67,7 +62,10 @@ public:
   virtual ~EmbeddedObjCollector() { }
 
 public:
-  virtual int32_t GetIndexAt(Accessible* aAccessible) override;
+  
+
+
+  int32_t GetIndexAt(Accessible* aAccessible);
 
   
 
