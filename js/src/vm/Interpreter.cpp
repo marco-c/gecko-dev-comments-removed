@@ -4428,10 +4428,9 @@ js::ThrowMsgOperation(JSContext* cx, const unsigned errorNum)
 bool
 js::GetAndClearException(JSContext* cx, MutableHandleValue res)
 {
-    bool status = cx->getPendingException(res);
-    cx->clearPendingException();
-    if (!status)
+    if (!cx->getPendingException(res))
         return false;
+    cx->clearPendingException();
 
     
     return CheckForInterrupt(cx);
