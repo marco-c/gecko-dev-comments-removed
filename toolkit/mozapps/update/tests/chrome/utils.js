@@ -72,11 +72,6 @@
 
 
 
-
-
-
-
-
 'use strict';
 
 const { classes: Cc, interfaces: Ci, manager: Cm, results: Cr,
@@ -97,7 +92,6 @@ const PAGEID_MANUAL_UPDATE    = "manualUpdate";
 const PAGEID_UNSUPPORTED      = "unsupported";           
 const PAGEID_FOUND_BASIC      = "updatesfoundbasic";     
 const PAGEID_FOUND_BILLBOARD  = "updatesfoundbillboard"; 
-const PAGEID_LICENSE          = "license";               
 const PAGEID_DOWNLOADING      = "downloading";           
 const PAGEID_ERRORS           = "errors";                
 const PAGEID_ERROR_EXTRA      = "errorextra";            
@@ -184,11 +178,8 @@ this.__defineGetter__("gCallback", function() {
 
 
 this.__defineGetter__("gRemoteContent", function() {
-  switch (gTest.pageid) {
-    case PAGEID_FOUND_BILLBOARD:
+  if (gTest.pageid == PAGEID_FOUND_BILLBOARD) {
       return gWin.document.getElementById("updateMoreInfoContent");
-    case PAGEID_LICENSE:
-      return gWin.document.getElementById("licenseContent");
   }
   return null;
 });
@@ -202,13 +193,6 @@ this.__defineGetter__("gRemoteContentState", function() {
     return gRemoteContent.getAttribute("state");
   }
   return null;
-});
-
-
-
-
-this.__defineGetter__("gAcceptDeclineLicense", function() {
-  return gWin.document.getElementById("acceptDeclineLicense");
 });
 
 
@@ -563,14 +547,6 @@ function getExpectedButtonStates() {
       }
       return { extra1: { disabled: false, hidden: false },
                next  : { disabled: false, hidden: false } };
-    case PAGEID_LICENSE:
-      if (gRemoteContentState != "loaded" ||
-          gAcceptDeclineLicense.selectedIndex != 0) {
-        return { extra1: { disabled: false, hidden: false },
-                 next  : { disabled: true, hidden: false } };
-      }
-      return { extra1: { disabled: false, hidden: false },
-               next  : { disabled: false, hidden: false } };
     case PAGEID_DOWNLOADING:
       return { extra1: { disabled: false, hidden: false } };
     case PAGEID_NO_UPDATES_FOUND:
@@ -654,46 +630,6 @@ function checkRemoteContentState() {
   is(gRemoteContentState, gTest.expectedRemoteContentState, "Checking remote " +
      "content state equals " + gTest.expectedRemoteContentState + " - pageid " +
      gTest.pageid);
-}
-
-
-
-
-
-function addRadioGroupSelectListenerAndClick() {
-  debugDump("entering - TESTS[" + gTestCounter + "], pageid: " + gTest.pageid);
-
-  gAcceptDeclineLicense.addEventListener("select", radioGroupSelectListener,
-                                         false);
-  gWin.document.getElementById(gTest.radioClick).click();
-}
-
-
-
-
-function radioGroupSelectListener(aEvent) {
-  
-  if (aEvent.originalTarget.nodeName != "radiogroup") {
-    debugDump("only handles events with an originalTarget nodeName of " +
-              "|radiogroup|. aEvent.originalTarget.nodeName = " +
-              aEvent.originalTarget.nodeName);
-    return;
-  }
-
-  gAcceptDeclineLicense.removeEventListener("select", radioGroupSelectListener,
-                                            false);
-  gTestCounter++;
-  gCallback(aEvent);
-}
-
-
-
-
-
-function checkRadioGroupSelectedIndex() {
-  is(gAcceptDeclineLicense.selectedIndex, gTest.expectedRadioGroupSelectedIndex,
-     "Checking license radiogroup selectedIndex equals " +
-     gTest.expectedRadioGroupSelectedIndex);
 }
 
 
