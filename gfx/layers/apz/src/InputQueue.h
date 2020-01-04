@@ -11,6 +11,7 @@
 #include "InputData.h"
 #include "mozilla/EventForwards.h"
 #include "mozilla/RefPtr.h"
+#include "mozilla/UniquePtr.h"
 #include "nsTArray.h"
 #include "TouchCounter.h"
 
@@ -29,6 +30,7 @@ class WheelBlockState;
 class DragBlockState;
 class PanGestureBlockState;
 class AsyncDragMetrics;
+class QueuedInput;
 
 
 
@@ -185,6 +187,9 @@ private:
   
   
   nsTArray<RefPtr<CancelableBlockState>> mInputBlockQueue;
+  
+  
+  nsTArray<UniquePtr<QueuedInput>> mQueuedInputs;
 
   
   
