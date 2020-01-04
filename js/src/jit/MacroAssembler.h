@@ -321,20 +321,15 @@ class MacroAssembler : public MacroAssemblerSpecific
 
   private:
     
-    
-    
-    bool emitProfilingInstrumentation_;
-
-    
     NonAssertingLabel failureLabel_;
 
   public:
     MacroAssembler()
-      : emitProfilingInstrumentation_(false),
-        framePushed_(0)
+      : framePushed_(0),
 #ifdef DEBUG
-      , inCall_(false)
+        inCall_(false),
 #endif
+        emitProfilingInstrumentation_(false)
     {
         JitContext* jcx = GetJitContext();
         JSContext* cx = jcx->cx;
@@ -365,11 +360,11 @@ class MacroAssembler : public MacroAssemblerSpecific
     
     struct AsmJSToken {};
     explicit MacroAssembler(AsmJSToken)
-      : emitProfilingInstrumentation_(false),
-        framePushed_(0)
+      : framePushed_(0),
 #ifdef DEBUG
-      , inCall_(false)
+        inCall_(false),
 #endif
+        emitProfilingInstrumentation_(false)
     {
 #if defined(JS_CODEGEN_ARM)
         initWithAllocator();
@@ -378,10 +373,6 @@ class MacroAssembler : public MacroAssemblerSpecific
         initWithAllocator();
         armbuffer_.id = 0;
 #endif
-    }
-
-    void enableProfilingInstrumentation() {
-        emitProfilingInstrumentation_ = true;
     }
 
     void resetForNewCodeGenerator(TempAllocator& alloc);
@@ -1116,28 +1107,25 @@ class MacroAssembler : public MacroAssemblerSpecific
 
     
     uint32_t callWithExitFrame(Label* target) {
-        profilerPreCall();
+        AutoProfilerCallInstrumentation profiler(*this);
         MacroAssemblerSpecific::callWithExitFrame(target);
         uint32_t ret = currentOffset();
-        profilerPostReturn();
         return ret;
     }
 
     
     uint32_t callWithExitFrame(JitCode* target) {
-        profilerPreCall();
+        AutoProfilerCallInstrumentation profiler(*this);
         MacroAssemblerSpecific::callWithExitFrame(target);
         uint32_t ret = currentOffset();
-        profilerPostReturn();
         return ret;
     }
 
     
     uint32_t callWithExitFrame(JitCode* target, Register dynStack) {
-        profilerPreCall();
+        AutoProfilerCallInstrumentation profiler(*this);
         MacroAssemblerSpecific::callWithExitFrame(target, dynStack);
         uint32_t ret = currentOffset();
-        profilerPostReturn();
         return ret;
     }
 
@@ -1231,21 +1219,40 @@ class MacroAssembler : public MacroAssemblerSpecific
     }
 #endif 
 
+  public:
+    void enableProfilingInstrumentation() {
+        emitProfilingInstrumentation_ = true;
+    }
+
   private:
     
     
     
-    void profilerPreCall() {
-        if (!emitProfilingInstrumentation_)
-            return;
-        profilerPreCallImpl();
+    class AutoProfilerCallInstrumentation {
+        MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER;
+
+      public:
+        explicit AutoProfilerCallInstrumentation(MacroAssembler& masm
+                                                 MOZ_GUARD_OBJECT_NOTIFIER_PARAM);
+        ~AutoProfilerCallInstrumentation() {}
+    };
+    friend class AutoProfilerCallInstrumentation;
+
+    void appendProfilerCallSite(CodeOffsetLabel label) {
+        propagateOOM(profilerCallSites_.append(label));
     }
 
-    void profilerPostReturn() {
-        if (!emitProfilingInstrumentation_)
-            return;
-        profilerPostReturnImpl();
-    }
+    
+    
+    void linkProfilerCallSites(JitCode* code);
+
+    
+    
+    
+    bool emitProfilingInstrumentation_;
+
+    
+    Vector<CodeOffsetLabel, 0, SystemAllocPolicy> profilerCallSites_;
 
   public:
     void loadBaselineOrIonRaw(Register script, Register dest, Label* failure);
@@ -1558,10 +1565,6 @@ class MacroAssembler : public MacroAssemblerSpecific
         bind(&ok);
 #endif
     }
-
-    void profilerPreCallImpl();
-    void profilerPreCallImpl(Register reg, Register reg2);
-    void profilerPostReturnImpl() {}
 };
 
 static inline Assembler::DoubleCondition
