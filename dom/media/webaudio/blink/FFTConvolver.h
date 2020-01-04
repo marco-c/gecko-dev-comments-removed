@@ -41,7 +41,11 @@ using mozilla::FFTBlock;
 class FFTConvolver {
 public:
     
-    explicit FFTConvolver(size_t fftSize);
+    
+    
+    
+    
+    explicit FFTConvolver(size_t fftSize, size_t renderPhase = 0);
 
     
     
