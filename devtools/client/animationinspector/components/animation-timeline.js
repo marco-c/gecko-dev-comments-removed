@@ -357,16 +357,19 @@ AnimationsTimeline.prototype = {
   },
 
   startAnimatingScrubber: function(time) {
-    let x = TimeScale.startTimeToDistance(time);
-    this.scrubberEl.style.left = x + "%";
-
-    
-    
     let isOutOfBounds = time < TimeScale.minStartTime ||
                         time > TimeScale.maxEndTime;
     let isAllPaused = !this.isAtLeastOneAnimationPlaying();
     let hasInfinite = this.hasInfiniteAnimations();
 
+    let x = TimeScale.startTimeToDistance(time);
+    if (x > 100 && !hasInfinite) {
+      x = 100;
+    }
+    this.scrubberEl.style.left = x + "%";
+
+    
+    
     if (isAllPaused || (isOutOfBounds && !hasInfinite)) {
       this.stopAnimatingScrubber();
       this.emit("timeline-data-changed", {
