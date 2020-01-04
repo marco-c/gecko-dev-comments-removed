@@ -469,6 +469,13 @@ FMRadio::WindowVolumeChanged(float aVolume, bool aMuted)
 }
 
 NS_IMETHODIMP
+FMRadio::WindowSuspendChanged(nsSuspendedTypes aSuspend)
+{
+  
+  return NS_OK;
+}
+
+NS_IMETHODIMP
 FMRadio::WindowAudioCaptureChanged(bool aCapture)
 {
   return NS_OK;
