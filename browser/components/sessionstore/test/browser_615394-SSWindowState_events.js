@@ -61,15 +61,15 @@ function runNextTest() {
     
     
     var windowsEnum = Services.wm.getEnumerator("navigator:browser");
-    let closeWinPromises = [];
     while (windowsEnum.hasMoreElements()) {
       var currentWindow = windowsEnum.getNext();
       if (currentWindow != window) {
-        closeWinPromises.push(BrowserTestUtils.closeWindow(currentWindow));
+        currentWindow.close();
       }
     }
 
-    Promise.all(closeWinPromises).then(() => {
+    
+    executeSoon(function() {
       let currentTest = tests.shift();
       info("prepping for " + currentTest.name);
       waitForBrowserState(testState, currentTest);
@@ -319,8 +319,9 @@ function test_undoCloseWindow() {
 
   waitForBrowserState(lameMultiWindowState, function() {
     
-    BrowserTestUtils.closeWindow(newWindow).then(() => {
-      
+    newWindow.close();
+    
+    executeSoon(function() {
       reopenedWindow = ss.undoCloseWindow(0);
       reopenedWindow.addEventListener("SSWindowStateBusy", onSSWindowStateBusy, false);
       reopenedWindow.addEventListener("SSWindowStateReady", onSSWindowStateReady, false);
@@ -356,6 +357,9 @@ function test_undoCloseWindow() {
     reopenedWindow.removeEventListener("SSWindowStateReady", onSSWindowStateReady, false);
     reopenedWindow.gBrowser.tabContainer.removeEventListener("SSTabRestored", onSSTabRestored, false);
 
-    BrowserTestUtils.closeWindow(reopenedWindow).then(runNextTest);
+    reopenedWindow.close();
+
+    
+    executeSoon(runNextTest);
   }
 }

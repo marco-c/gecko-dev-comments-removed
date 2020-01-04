@@ -97,7 +97,7 @@ add_task(function () {
 
   
   
-  yield BrowserTestUtils.closeWindow(win);
+  yield promiseWindowClosed(win);
   is(ss.getClosedWindowCount(), 0, "no windows to restore");
 });
 
@@ -123,7 +123,7 @@ add_task(function () {
   is(ss.getClosedTabCount(win), 1, "there is a single tab to restore");
 
   
-  yield BrowserTestUtils.closeWindow(win);
+  yield promiseWindowClosed(win);
   is(ss.getClosedWindowCount(), 0, "no windows to restore");
 });
 

@@ -66,16 +66,13 @@ function done() {
   
   
   let windowsEnum = Services.wm.getEnumerator("navigator:browser");
-  let closeWinPromises = [];
   while (windowsEnum.hasMoreElements()) {
     let currentWindow = windowsEnum.getNext();
     if (currentWindow != window)
-      closeWinPromises.push(BrowserTestUtils.closeWindow(currentWindow));
+      currentWindow.close();
   }
 
-  Promise.all(closeWinPromises).then(() => {
-    waitForBrowserState(stateBackup, finish);
-  });
+  waitForBrowserState(stateBackup, finish);
 }
 
 
