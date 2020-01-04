@@ -599,7 +599,7 @@ public:
 
 
   static already_AddRefed<nsIURI>
-  GetMarkerURI(nsIFrame* aFrame, FragmentOrURL nsStyleSVG::* aMarker);
+  GetMarkerURI(nsIFrame* aFrame, mozilla::FragmentOrURL nsStyleSVG::* aMarker);
 
   
 
