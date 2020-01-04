@@ -6501,8 +6501,6 @@ CheckSwitch(FunctionValidator& f, ParseNode* switchStmt)
         return false;
 
     
-    if (!f.encoder().writeVarU32(defaultDepth))
-        return false;
     if (!f.encoder().writeVarU32(tableLength))
         return false;
 
@@ -6513,6 +6511,10 @@ CheckSwitch(FunctionValidator& f, ParseNode* switchStmt)
         if (!f.encoder().writeVarU32(target))
             return false;
     }
+
+    
+    if (!f.encoder().writeVarU32(defaultDepth))
+        return false;
 
     
     if (low) {
