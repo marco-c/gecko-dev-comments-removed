@@ -864,7 +864,7 @@ bool
 SimdSelectPolicy::adjustInputs(TempAllocator& alloc, MInstruction* ins)
 {
     
-    MOZ_ASSERT(ins->getOperand(0)->type() == MIRType::Bool32x4);
+    MOZ_ASSERT(IsBooleanSimdType(ins->getOperand(0)->type()));
 
     
     for (unsigned i = 1; i < 3; i++)

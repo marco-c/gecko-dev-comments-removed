@@ -3918,18 +3918,16 @@ CodeGeneratorX86Shared::visitSimdSelect(LSimdSelect* ins)
         masm.vmovaps(mask, temp);
 
     MSimdSelect* mir = ins->mir();
+    unsigned lanes = SimdTypeToLength(mir->type());
 
-    if (AssemblerX86Shared::HasAVX()) {
+    if (AssemblerX86Shared::HasAVX() && lanes == 4) {
+        
         masm.vblendvps(mask, onTrue, onFalse, output);
         return;
     }
 
     
     
-
-    
-    if (!mir->mask()->isSimdBinaryComp())
-        masm.packedRightShiftByScalarInt32x4(Imm32(31), temp);
 
     masm.bitwiseAndSimd128(Operand(temp), output);
     masm.bitwiseAndNotSimd128(Operand(onFalse), temp);
