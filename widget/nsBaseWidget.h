@@ -139,7 +139,7 @@ public:
   virtual void            ClearCachedCursor() override { mUpdateCursor = true; }
   virtual void            SetTransparencyMode(nsTransparencyMode aMode) override;
   virtual nsTransparencyMode GetTransparencyMode() override;
-  virtual void            GetWindowClipRegion(nsTArray<nsIntRect>* aRects) override;
+  virtual void            GetWindowClipRegion(nsTArray<LayoutDeviceIntRect>* aRects) override;
   NS_IMETHOD              SetWindowShadowStyle(int32_t aStyle) override;
   virtual void            SetShowsToolbarButton(bool aShow) override {}
   virtual void            SetShowsFullScreenButton(bool aShow) override {}
@@ -175,7 +175,7 @@ public:
   NS_IMETHOD              SetModal(bool aModal) override;
   virtual uint32_t        GetMaxTouchPoints() const override;
   NS_IMETHOD              SetWindowClass(const nsAString& xulWinType) override;
-  virtual nsresult        SetWindowClipRegion(const nsTArray<nsIntRect>& aRects, bool aIntersectWithExisting) override;
+  virtual nsresult        SetWindowClipRegion(const nsTArray<LayoutDeviceIntRect>& aRects, bool aIntersectWithExisting) override;
   
   
   
@@ -363,8 +363,9 @@ protected:
                                              uint64_t aInputBlockId,
                                              nsEventStatus aApzResponse);
 
-  const nsIntRegion RegionFromArray(const nsTArray<nsIntRect>& aRects);
-  void ArrayFromRegion(const nsIntRegion& aRegion, nsTArray<nsIntRect>& aRects);
+  const LayoutDeviceIntRegion RegionFromArray(const nsTArray<LayoutDeviceIntRect>& aRects);
+  void ArrayFromRegion(const LayoutDeviceIntRegion& aRegion,
+                       nsTArray<LayoutDeviceIntRect>& aRects);
 
   virtual nsIContent* GetLastRollup() override
   {
@@ -428,10 +429,10 @@ protected:
 protected:
   
   
-  bool IsWindowClipRegionEqual(const nsTArray<nsIntRect>& aRects);
+  bool IsWindowClipRegionEqual(const nsTArray<LayoutDeviceIntRect>& aRects);
 
   
-  void StoreWindowClipRegion(const nsTArray<nsIntRect>& aRects);
+  void StoreWindowClipRegion(const nsTArray<LayoutDeviceIntRect>& aRects);
 
   virtual already_AddRefed<nsIWidget>
   AllocateChildPopupWidget()
@@ -510,7 +511,7 @@ protected:
   nsIntRect         mBounds;
   CSSIntRect*       mOriginalBounds;
   
-  mozilla::UniquePtr<nsIntRect[]> mClipRects;
+  mozilla::UniquePtr<LayoutDeviceIntRect[]> mClipRects;
   uint32_t          mClipRectCount;
   nsSizeMode        mSizeMode;
   nsPopupLevel      mPopupLevel;

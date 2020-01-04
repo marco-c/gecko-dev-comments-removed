@@ -52,6 +52,9 @@ class nsPluginFrame : public nsPluginFrameSuper,
 {
 public:
   typedef mozilla::LayerState LayerState;
+  typedef mozilla::LayoutDeviceIntPoint LayoutDeviceIntPoint;
+  typedef mozilla::LayoutDeviceIntRect LayoutDeviceIntRect;
+  typedef mozilla::LayoutDeviceIntRegion LayoutDeviceIntRegion;
   typedef mozilla::layers::Layer Layer;
   typedef mozilla::layers::LayerManager LayerManager;
   typedef mozilla::layers::ImageContainer ImageContainer;
@@ -120,7 +123,7 @@ public:
 
   void SetEmptyWidgetConfiguration()
   {
-    mNextConfigurationBounds = nsIntRect(0,0,0,0);
+    mNextConfigurationBounds = LayoutDeviceIntRect(0,0,0,0);
     mNextConfigurationClipRegion.Clear();
   }
   
@@ -128,7 +131,7 @@ public:
 
   void GetWidgetConfiguration(nsTArray<nsIWidget::Configuration>* aConfigurations);
 
-  nsIntRect GetWidgetlessClipRect() {
+  LayoutDeviceIntRect GetWidgetlessClipRect() {
     return RegionFromArray(mNextConfigurationClipRegion).GetBounds();
   }
 
@@ -249,7 +252,7 @@ protected:
 
 
 
-  mozilla::LayoutDeviceIntPoint GetRemoteTabChromeOffset();
+  LayoutDeviceIntPoint GetRemoteTabChromeOffset();
 
   static void PaintPrintPlugin(nsIFrame* aFrame,
                                nsRenderingContext* aRenderingContext,
@@ -277,9 +280,10 @@ private:
   
   void UnregisterPluginForGeometryUpdates();
 
-  static const nsIntRegion RegionFromArray(const nsTArray<nsIntRect>& aRects)
+  static const LayoutDeviceIntRegion
+  RegionFromArray(const nsTArray<LayoutDeviceIntRect>& aRects)
   {
-    nsIntRegion region;
+    LayoutDeviceIntRegion region;
     for (uint32_t i = 0; i < aRects.Length(); ++i) {
       region.Or(region, aRects[i]);
     }
@@ -311,12 +315,12 @@ private:
 
 
 
-  nsIntRect                       mNextConfigurationBounds;
+  LayoutDeviceIntRect             mNextConfigurationBounds;
   
 
 
 
-  nsTArray<nsIntRect>             mNextConfigurationClipRegion;
+  nsTArray<LayoutDeviceIntRect>   mNextConfigurationClipRegion;
 
   bool mReflowCallbackPosted;
 
