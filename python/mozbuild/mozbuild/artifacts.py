@@ -49,6 +49,7 @@ import pickle
 import re
 import shutil
 import subprocess
+import tempfile
 import urlparse
 import zipfile
 
@@ -59,6 +60,8 @@ from mozbuild.util import (
     ensureParentDir,
     FileAvoidWrite,
 )
+import mozinstall
+from mozpack.files import FileFinder
 from mozpack.mozjar import (
     JarReader,
     JarWriter,
@@ -127,6 +130,83 @@ class AndroidArtifactJob(ArtifactJob):
                 writer.add(basename.encode('utf-8'), f)
 
 
+class MacArtifactJob(ArtifactJob):
+    def process_artifact(self, filename, processed_filename):
+        tempdir = tempfile.mkdtemp()
+        try:
+            self.log(logging.INFO, 'artifact',
+                {'tempdir': tempdir},
+                'Unpacking DMG into {tempdir}')
+            mozinstall.install(filename, tempdir) 
+
+            
+
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+
+            
+            bundle_name = 'Nightly.app'
+            source = mozpath.join(tempdir, bundle_name)
+
+            paths = [
+                'Contents/MacOS/crashreporter.app/Contents/MacOS/crashreporter',
+                'Contents/MacOS/firefox',
+                'Contents/MacOS/firefox-bin',
+                'Contents/MacOS/libfreebl3.dylib',
+                'Contents/MacOS/liblgpllibs.dylib',
+                
+                'Contents/MacOS/libmozglue.dylib',
+                'Contents/MacOS/libnss3.dylib',
+                'Contents/MacOS/libnssckbi.dylib',
+                'Contents/MacOS/libnssdbm3.dylib',
+                'Contents/MacOS/libplugin_child_interpose.dylib',
+                
+                
+                'Contents/MacOS/libsoftokn3.dylib',
+                'Contents/MacOS/plugin-container.app/Contents/MacOS/plugin-container',
+                'Contents/MacOS/updater.app/Contents/MacOS/updater',
+                
+                'Contents/MacOS/XUL',
+                'Contents/Resources/browser/components/components.manifest',
+                'Contents/Resources/browser/components/libbrowsercomps.dylib',
+                'Contents/Resources/dependentlibs.list',
+                
+                'Contents/Resources/gmp-clearkey/0.1/libclearkey.dylib',
+                
+                
+                'Contents/Resources/webapprt-stub',
+            ]
+
+            with JarWriter(file=processed_filename, optimize=False, compress_level=5) as writer:
+                finder = FileFinder(source)
+                for path in paths:
+                    for p, f in finder.find(path):
+                        self.log(logging.INFO, 'artifact',
+                            {'path': path},
+                            'Adding {path} to processed archive')
+                        writer.add(os.path.basename(p).encode('utf-8'), f, mode=os.stat(mozpath.join(source, p)).st_mode)
+        finally:
+            try:
+                shutil.rmtree(tempdir)
+            except (OSError, IOError):
+                self.log(logging.WARN, 'artifact',
+                    {'tempdir': tempdir},
+                    'Unable to delete {tempdir}')
+                pass
+
+
 
 JOB_DETAILS = {
     
@@ -134,7 +214,7 @@ JOB_DETAILS = {
     'android-x86': (AndroidArtifactJob, 'public/build/fennec-(.*)\.android-i386\.apk'),
     
     
-    
+    'macosx64': (MacArtifactJob, 'public/build/firefox-(.*)\.mac\.dmg'),
 }
 
 def get_job_details(job, log=None):
