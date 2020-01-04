@@ -804,25 +804,7 @@ XPCJSContext::FinalizeCallback(JSFreeOp* fop,
                 
                 if (AutoMarkingPtr* roots = Get()->mAutoRoots)
                     roots->MarkAfterJSFinalizeAll();
-
-                XPCCallContext* ccxp = XPCJSContext::Get()->GetCallContext();
-                while (ccxp) {
-                    
-                    
-                    
-                    
-                    if (ccxp->CanGetSet()) {
-                        XPCNativeSet* set = ccxp->GetSet();
-                        if (set)
-                            set->Mark();
-                    }
-                    ccxp = ccxp->GetPrevCallContext();
-                }
             }
-
-#ifdef DEBUG
-            XPCWrappedNativeScope::ASSERT_NoInterfaceSetsAreMarked();
-#endif
 
             
             
