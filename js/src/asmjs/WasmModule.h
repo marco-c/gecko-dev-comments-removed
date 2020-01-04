@@ -214,6 +214,18 @@ class Module
 
 typedef UniquePtr<Module> UniqueModule;
 
+
+
+
+extern bool
+IsExportedFunction(JSFunction* fun);
+
+extern Instance&
+ExportedFunctionToInstance(JSFunction* fun);
+
+extern uint32_t
+ExportedFunctionToExportIndex(JSFunction* fun);
+
 } 
 } 
 
