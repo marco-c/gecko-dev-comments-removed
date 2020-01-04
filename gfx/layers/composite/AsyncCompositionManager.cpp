@@ -828,6 +828,11 @@ AsyncCompositionManager::ApplyAsyncContentTransformToTree(Layer *aLayer,
   
   
   
+  asyncClip = IntersectMaybeRects(asyncClip, clipDeferredFromChildren);
+
+  
+  
+  
   
   
   
@@ -978,8 +983,7 @@ AsyncCompositionManager::ApplyAsyncContentTransformToTree(Layer *aLayer,
   }
 
   if (hasAsyncTransform || clipDeferredFromChildren) {
-    aLayer->AsLayerComposite()->SetShadowClipRect(
-        IntersectMaybeRects(asyncClip, clipDeferredFromChildren));
+    aLayer->AsLayerComposite()->SetShadowClipRect(asyncClip);
   }
 
   if (hasAsyncTransform) {
