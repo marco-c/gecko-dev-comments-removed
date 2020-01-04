@@ -659,15 +659,31 @@ Cookies.prototype = {
 
 
 
+
+
+
   _parseCookieBuffer(aTextBuffer) {
     
-    let records = [r for each (r in aTextBuffer.split("*\n")) if (r)];
+    let records = [];
+    let lines = aTextBuffer.split("\n");
+    while (lines.length > 0) {
+      let record = lines.splice(0, 9);
+      
+      if (record.length > 1) {
+        records.push(record);
+      }
+    }
     for (let record of records) {
       let [name, value, hostpath, flags,
-           expireTimeLo, expireTimeHi] = record.split("\n");
+           expireTimeLo, expireTimeHi] = record;
 
       
       if (value.length == 0)
+        continue;
+
+      
+      
+      if (hostpath.startsWith("~~local~~"))
         continue;
 
       let hostLen = hostpath.indexOf("/");
