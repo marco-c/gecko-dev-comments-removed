@@ -50,10 +50,23 @@ add_task(function *() {
   assertHasWorker(true, document, "service-workers", SERVICE_WORKER);
 
   
-  
+  let frameScript = function () {
+    
+    let { sw } = content.wrappedJSObject;
+    sw.then(function (registration) {
+      sendAsyncMessage("sw-registered");
+    });
+  };
+  let mm = swTab.linkedBrowser.messageManager;
+  mm.loadFrameScript("data:,(" + encodeURIComponent(frameScript) + ")()", true);
+
   yield new Promise(done => {
-    require("sdk/timers").setTimeout(done, 250);
+    mm.addMessageListener("sw-registered", function listener() {
+      mm.removeMessageListener("sw-registered", listener);
+      done();
+    });
   });
+  ok(true, "Service worker registration resolved");
 
   
   let names = [...document.querySelectorAll("#service-workers .target-name")];
@@ -93,7 +106,7 @@ add_task(function *() {
 
   
   
-  let frameScript = function () {
+  frameScript = function () {
     
     let { sw } = content.wrappedJSObject;
     sw.then(function (registration) {
@@ -105,7 +118,7 @@ add_task(function *() {
       });
     });
   };
-  let mm = swTab.linkedBrowser.messageManager;
+  mm = swTab.linkedBrowser.messageManager;
   mm.loadFrameScript("data:,(" + encodeURIComponent(frameScript) + ")()", true);
 
   yield new Promise(done => {
