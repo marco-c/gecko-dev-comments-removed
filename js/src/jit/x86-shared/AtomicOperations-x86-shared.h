@@ -321,6 +321,32 @@ js::jit::AtomicOperations::fetchXorSeqCst(T* addr, T val)
 # endif
 }
 
+template<typename T>
+inline T
+js::jit::AtomicOperations::loadSafeWhenRacy(T* addr)
+{
+    return *addr;               
+}
+
+template<typename T>
+inline void
+js::jit::AtomicOperations::storeSafeWhenRacy(T* addr, T val)
+{
+    *addr = val;                
+}
+
+inline void
+js::jit::AtomicOperations::memcpySafeWhenRacy(void* dest, const void* src, size_t nbytes)
+{
+    ::memcpy(dest, src, nbytes); 
+}
+
+inline void
+js::jit::AtomicOperations::memmoveSafeWhenRacy(void* dest, const void* src, size_t nbytes)
+{
+    ::memmove(dest, src, nbytes); 
+}
+
 template<size_t nbytes>
 inline void
 js::jit::RegionLock::acquire(void* addr)
@@ -521,6 +547,32 @@ MSC_FETCHBITOP(int32_t, long,  _InterlockedAnd, _InterlockedOr, _InterlockedXor)
 MSC_FETCHBITOP(uint32_t, long, _InterlockedAnd, _InterlockedOr, _InterlockedXor)
 
 # undef MSC_FETCHBITOP
+
+template<typename T>
+inline T
+js::jit::AtomicOperations::loadSafeWhenRacy(T* addr)
+{
+    return *addr;               
+}
+
+template<typename T>
+inline void
+js::jit::AtomicOperations::storeSafeWhenRacy(T* addr, T val)
+{
+    *addr = val;                
+}
+
+inline void
+js::jit::AtomicOperations::memcpySafeWhenRacy(void* dest, const void* src, size_t nbytes)
+{
+    ::memcpy(dest, src, nbytes); 
+}
+
+inline void
+js::jit::AtomicOperations::memmoveSafeWhenRacy(void* dest, const void* src, size_t nbytes)
+{
+    ::memmove(dest, src, nbytes); 
+}
 
 template<size_t nbytes>
 inline void

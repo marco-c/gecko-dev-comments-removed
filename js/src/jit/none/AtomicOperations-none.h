@@ -11,12 +11,14 @@
 
 #include "jit/AtomicOperations.h"
 
+
+
+
+
 inline bool
 js::jit::AtomicOperations::isLockfree8()
 {
-    
-    
-    return false;
+    MOZ_CRASH();
 }
 
 inline void
@@ -88,10 +90,37 @@ js::jit::AtomicOperations::exchangeSeqCst(T* addr, T val)
     MOZ_CRASH();
 }
 
+template<typename T>
+inline T
+js::jit::AtomicOperations::loadSafeWhenRacy(T* addr)
+{
+    MOZ_CRASH();
+}
+
+template<typename T>
+inline void
+js::jit::AtomicOperations::storeSafeWhenRacy(T* addr, T val)
+{
+    MOZ_CRASH();
+}
+
+inline void
+js::jit::AtomicOperations::memcpySafeWhenRacy(void* dest, const void* src, size_t nbytes)
+{
+    MOZ_CRASH();
+}
+
+inline void
+js::jit::AtomicOperations::memmoveSafeWhenRacy(void* dest, const void* src, size_t nbytes)
+{
+    MOZ_CRASH();
+}
+
 template<size_t nbytes>
 inline void
 js::jit::RegionLock::acquire(void* addr)
 {
+    (void)spinlock;             
     MOZ_CRASH();
 }
 
