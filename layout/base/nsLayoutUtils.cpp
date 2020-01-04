@@ -4190,19 +4190,15 @@ GetPercentBSize(const nsStyleCoord& aStyle,
   MOZ_ASSERT(!aStyle.IsCalcUnit() || aStyle.CalcHasPercent(),
              "GetAbsoluteCoord should have handled this");
 
-  nsIFrame *f = aFrame->GetContainingBlock();
+  
+  
+  
+  
+  
+  nsIFrame *f = aFrame->GetContainingBlock(nsIFrame::SKIP_SCROLLED_FRAME);
   if (!f) {
     NS_NOTREACHED("top of frame tree not a containing block");
     return false;
-  }
-
-  
-  
-  
-  
-  
-  if (f->StyleContext()->GetPseudo() == nsCSSAnonBoxes::scrolledContent) {
-    f = f->GetParent();
   }
 
   WritingMode wm = f->GetWritingMode();

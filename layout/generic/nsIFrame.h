@@ -1267,7 +1267,7 @@ public:
   
   void ComputePreserve3DChildrenOverflow(nsOverflowAreas& aOverflowAreas, const nsRect& aBounds);
 
-  void RecomputePerspectiveChildrenOverflow(const nsStyleContext* aStartStyle, const nsRect* aBounds);
+  void RecomputePerspectiveChildrenOverflow(const nsIFrame* aStartFrame, const nsRect* aBounds);
 
   
 
@@ -2117,7 +2117,17 @@ public:
 
 
 
-  nsIFrame* GetContainingBlock() const;
+
+
+
+
+
+  enum {
+    
+    
+    SKIP_SCROLLED_FRAME = 0x01
+  };
+  nsIFrame* GetContainingBlock(uint32_t aFlags = 0) const;
 
   
 
