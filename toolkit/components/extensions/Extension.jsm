@@ -287,6 +287,16 @@ var GlobalManager = {
       injectAPI(api, chromeObj);
     }
 
+    
+    
+    
+    
+    let principal = contentWindow.document.nodePrincipal;
+    let id = principal.originAttributes.addonId;
+    if (!this.extensionMap.has(id)) {
+      return;
+    }
+
     let docShell = contentWindow.QueryInterface(Ci.nsIInterfaceRequestor)
                                 .getInterface(Ci.nsIWebNavigation)
                                 .QueryInterface(Ci.nsIDocShellTreeItem)
@@ -295,7 +305,7 @@ var GlobalManager = {
 
     if (this.docShells.has(docShell)) {
       let {extension, context} = this.docShells.get(docShell);
-      if (context) {
+      if (context && extension.id == id) {
         inject(extension, context);
       }
       return;
@@ -303,16 +313,6 @@ var GlobalManager = {
 
     
     if (contentWindow != contentWindow.top) {
-      return;
-    }
-
-    
-    
-    
-    
-    let principal = contentWindow.document.nodePrincipal;
-    let id = principal.originAttributes.addonId;
-    if (!this.extensionMap.has(id)) {
       return;
     }
     let extension = this.extensionMap.get(id);
