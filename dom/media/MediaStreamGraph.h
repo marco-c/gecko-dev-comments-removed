@@ -101,18 +101,6 @@ protected:
 public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(MediaStreamListener)
 
-  enum Consumption {
-    CONSUMED,
-    NOT_CONSUMED
-  };
-
-  
-
-
-
-
-  virtual void NotifyConsumptionChanged(MediaStreamGraph* aGraph, Consumption aConsuming) {}
-
   
 
 
@@ -470,16 +458,6 @@ public:
   void RemoveListenerImpl(MediaStreamListener* aListener);
   void RemoveAllListenersImpl();
   virtual void SetTrackEnabledImpl(TrackID aTrackID, bool aEnabled);
-  
-
-
-
-
-
-  virtual bool IsIntrinsicallyConsumed() const
-  {
-    return !mAudioOutputs.IsEmpty() || !mVideoOutputs.IsEmpty();
-  }
 
   void AddConsumer(MediaInputPort* aPort)
   {
@@ -685,10 +663,6 @@ protected:
   bool mNotifiedHasCurrentData;
 
   
-  
-  bool mIsConsumed;
-
-  
   DOMMediaStream* mWrapper;
   
   StreamTime mMainThreadCurrentTime;
@@ -713,7 +687,6 @@ class SourceMediaStream : public MediaStream
 public:
   explicit SourceMediaStream(DOMMediaStream* aWrapper) :
     MediaStream(aWrapper),
-    mLastConsumptionState(MediaStreamListener::NOT_CONSUMED),
     mMutex("mozilla::media::SourceMediaStream"),
     mUpdateKnownTracksTime(0),
     mPullEnabled(false),
@@ -909,9 +882,6 @@ protected:
 
   void NotifyDirectConsumers(TrackData *aTrack,
                              MediaSegment *aSegment);
-
-  
-  MediaStreamListener::Consumption mLastConsumptionState;
 
   
   

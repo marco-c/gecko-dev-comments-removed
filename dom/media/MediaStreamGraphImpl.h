@@ -250,10 +250,6 @@ public:
 
 
   void UpdateBufferSufficiencyState(SourceMediaStream* aStream);
-  
-
-
-  static void MarkConsumed(MediaStream* aStream);
 
   
 
