@@ -222,11 +222,18 @@ function getDialogDoc() {
                                     .contentViewer
                                     .DOMDocument;
 
+        if (childDoc.location.href != "chrome://global/content/commonDialog.xul" &&
+            childDoc.location.href != "chrome://global/content/selectDialog.xul")
+          continue;
+
         
-        if (childDoc.location.href == "chrome://global/content/commonDialog.xul")
-          return childDoc;
-        if (childDoc.location.href == "chrome://global/content/selectDialog.xul")
-          return childDoc;
+        
+        let fm = Cc["@mozilla.org/focus-manager;1"].
+                 getService(Ci.nsIFocusManager);
+        if (fm.focusedWindow != childDoc.defaultView)
+          continue;
+
+        return childDoc;
     }
   }
 
