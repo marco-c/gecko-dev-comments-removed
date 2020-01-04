@@ -230,14 +230,14 @@ public:
   
 
 
-  bool HasARIARole() const { return mRoleMapEntry; }
+  bool HasARIARole() const;
   bool IsARIARole(nsIAtom* aARIARole) const;
   bool HasStrongARIARole() const;
 
   
 
 
-  const nsRoleMapEntry* ARIARoleMap() const { return mRoleMapEntry; }
+  const nsRoleMapEntry* ARIARoleMap() const;
 
   
 
@@ -383,8 +383,7 @@ public:
   
 
 
-  void SetRoleMapEntry(const nsRoleMapEntry* aRoleMapEntry)
-    { mRoleMapEntry = aRoleMapEntry; }
+  void SetRoleMapEntry(const nsRoleMapEntry* aRoleMapEntry);
 
   
 
@@ -1122,6 +1121,12 @@ protected:
   
 
 
+
+  uint8_t mRoleMapEntryIndex;
+
+  
+
+
   uint32_t mStateFlags : kStateFlagsBits;
   uint32_t mContextFlags : kContextFlagsBits;
   uint32_t mType : kTypeBits;
@@ -1153,11 +1158,6 @@ protected:
     ProxyAccessible* proxy;
   } mBits;
   friend class AccGroupInfo;
-
-  
-
-
-  const nsRoleMapEntry* mRoleMapEntry;
 
 private:
   Accessible() = delete;
