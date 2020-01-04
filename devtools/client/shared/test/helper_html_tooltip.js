@@ -20,10 +20,12 @@
 
 
 
-function showTooltip(tooltip, anchor, position) {
+
+function* showTooltip(tooltip, anchor, position) {
   let onShown = tooltip.once("shown");
   tooltip.show(anchor, {position});
-  return onShown;
+  yield onShown;
+  return waitForReflow(tooltip);
 }
 
 
@@ -34,10 +36,27 @@ function showTooltip(tooltip, anchor, position) {
 
 
 
-function hideTooltip(tooltip) {
+
+function* hideTooltip(tooltip) {
   let onPopupHidden = tooltip.once("hidden");
   tooltip.hide();
-  return onPopupHidden;
+  yield onPopupHidden;
+  return waitForReflow(tooltip);
+}
+
+
+
+
+
+
+
+
+function waitForReflow(tooltip) {
+  let {document} = tooltip;
+  return new Promise(resolve => {
+    document.documentElement.offsetWidth;
+    document.defaultView.requestAnimationFrame(resolve);
+  });
 }
 
 
