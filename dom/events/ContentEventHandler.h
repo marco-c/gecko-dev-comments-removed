@@ -10,6 +10,8 @@
 #include "mozilla/EventForwards.h"
 #include "mozilla/dom/Selection.h"
 #include "nsCOMPtr.h"
+#include "nsIFrame.h"
+#include "nsINode.h"
 #include "nsRange.h"
 
 class nsPresContext;
@@ -82,14 +84,59 @@ public:
   
 
   
-  static nsresult GetFlatTextOffsetOfRange(nsIContent* aRootContent,
-                                           nsINode* aNode,
-                                           int32_t aNodeOffset,
-                                           uint32_t* aOffset,
-                                           LineBreakType aLineBreakType);
-  static nsresult GetFlatTextOffsetOfRange(nsIContent* aRootContent,
-                                           nsRange* aRange,
-                                           uint32_t* aOffset,
+  
+  struct NodePosition final
+  {
+    nsCOMPtr<nsINode> mNode;
+    int32_t mOffset;
+
+    NodePosition()
+      : mOffset(-1)
+    {
+    }
+
+    NodePosition(nsINode* aNode, int32_t aOffset)
+      : mNode(aNode)
+      , mOffset(aOffset)
+    {
+    }
+
+    explicit NodePosition(const nsIFrame::ContentOffsets& aContentOffsets)
+      : mNode(aContentOffsets.content)
+      , mOffset(aContentOffsets.offset)
+    {
+    }
+
+    bool IsValid() const
+    {
+      return mNode && mOffset >= 0;
+    }
+    bool OffsetIsValid() const
+    {
+      return IsValid() && static_cast<uint32_t>(mOffset) <= mNode->Length();
+    }
+    nsresult SetToRangeStart(nsRange* aRange) const
+    {
+      nsCOMPtr<nsIDOMNode> domNode(do_QueryInterface(mNode));
+      return aRange->SetStart(domNode, mOffset);
+    }
+    nsresult SetToRangeEnd(nsRange* aRange) const
+    {
+      nsCOMPtr<nsIDOMNode> domNode(do_QueryInterface(mNode));
+      return aRange->SetEnd(domNode, mOffset);
+    }
+    nsresult SetToRangeEndAfter(nsRange* aRange) const
+    {
+      nsCOMPtr<nsIDOMNode> domNode(do_QueryInterface(mNode));
+      return aRange->SetEndAfter(domNode);
+    }
+  };
+
+  
+  static nsresult GetFlatTextLengthInRange(const NodePosition& aStartPosition,
+                                           const NodePosition& aEndPosition,
+                                           nsIContent* aRootContent,
+                                           uint32_t* aLength,
                                            LineBreakType aLineBreakType);
   
   
@@ -114,6 +161,14 @@ protected:
                                        uint32_t aXPStartOffset,
                                        uint32_t aXPEndOffset,
                                        LineBreakType aLineBreakType);
+  
+  nsresult GenerateFlatTextContent(nsRange* aRange,
+                                   nsAFlatString& aString,
+                                   LineBreakType aLineBreakType);
+  
+  nsresult GetFlatTextLengthBefore(nsRange* aRange,
+                                   uint32_t* aOffset,
+                                   LineBreakType aLineBreakType);
   
   static inline uint32_t GetBRLength(LineBreakType aLineBreakType);
   static LineBreakType GetLineBreakType(WidgetQueryContentEvent* aEvent);
