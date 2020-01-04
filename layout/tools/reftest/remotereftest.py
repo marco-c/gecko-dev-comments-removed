@@ -260,6 +260,8 @@ class RemoteReftest(RefTest):
         
         prefs["gfx.canvas.azure.accelerated"] = False
 
+        prefs["media.autoplay.enabled"] = True
+
         
         if mozinfo.info['debug'] and self._devicemanager.shellCheckOutput(['getprop', 'ro.product.name']) == 'pandaboard':
             prefs["layers.tiles.adjust"] = False
