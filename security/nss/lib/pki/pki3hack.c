@@ -239,6 +239,7 @@ STAN_GetCertIdentifierFromDER(NSSArena *arenaOpt, NSSDER *der)
     }
     secrv = CERT_KeyFromDERCert(arena, &secDER, &secKey);
     if (secrv != SECSuccess) {
+	PORT_FreeArena(arena, PR_FALSE);
 	return NULL;
     }
     rvKey = nssItem_Create(arenaOpt, NULL, secKey.len, (void *)secKey.data);
@@ -1272,7 +1273,7 @@ DeleteCertTrustMatchingSlot(PK11SlotInfo *pk11slot, nssPKIObject *tObject)
 {
     int numNotDestroyed = 0;     
     int failureCount = 0;        
-    int index;
+    unsigned int index;
 
     nssPKIObject_AddRef(tObject);
     nssPKIObject_Lock(tObject);
@@ -1327,7 +1328,7 @@ STAN_DeleteCertTrustMatchingSlot(NSSCertificate *c)
     
     nssPKIObject *tobject = &nssTrust->object;
     nssPKIObject *cobject = &c->object;
-    int i;
+    unsigned int i;
 
     
 

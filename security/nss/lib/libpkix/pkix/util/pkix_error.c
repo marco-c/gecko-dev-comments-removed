@@ -325,7 +325,7 @@ pkix_Error_Hashcode(
 
         
         
-        *pResult = (PKIX_UInt32)object;
+        *pResult = (PKIX_UInt32)((char *)object - (char *)NULL);
 
         PKIX_RETURN(ERROR);
 }

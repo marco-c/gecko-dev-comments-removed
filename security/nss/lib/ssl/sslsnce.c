@@ -507,7 +507,6 @@ ConvertFromSID(sidCacheEntry *to, sslSessionID *from)
 	to->sessionIDLength         = from->u.ssl3.sessionIDLength;
 	to->u.ssl3.certIndex        = -1;
 	to->u.ssl3.srvNameIndex     = -1;
-
 	PORT_Memcpy(to->sessionID, from->u.ssl3.sessionID,
 		    to->sessionIDLength);
 
@@ -637,7 +636,7 @@ ConvertToSID(sidCacheEntry *    from,
     to->authKeyBits	= from->authKeyBits;
     to->keaType		= from->keaType;
     to->keaKeyBits	= from->keaKeyBits;
-    
+
     return to;
 
   loser:
@@ -1228,20 +1227,32 @@ InitCache(cacheDesc *cache, int maxCacheEntries, int maxCertCacheEntries,
     
 
 
-    ptr = (ptrdiff_t)cache->cacheMem;
-    *(ptrdiff_t *)(&cache->sidCacheLocks) += ptr;
-    *(ptrdiff_t *)(&cache->keyCacheLock ) += ptr;
-    *(ptrdiff_t *)(&cache->certCacheLock) += ptr;
-    *(ptrdiff_t *)(&cache->srvNameCacheLock) += ptr;
-    *(ptrdiff_t *)(&cache->sidCacheSets ) += ptr;
-    *(ptrdiff_t *)(&cache->sidCacheData ) += ptr;
-    *(ptrdiff_t *)(&cache->certCacheData) += ptr;
-    *(ptrdiff_t *)(&cache->keyCacheData ) += ptr;
-    *(ptrdiff_t *)(&cache->ticketKeyNameSuffix) += ptr;
-    *(ptrdiff_t *)(&cache->ticketEncKey ) += ptr;
-    *(ptrdiff_t *)(&cache->ticketMacKey ) += ptr;
-    *(ptrdiff_t *)(&cache->ticketKeysValid) += ptr;
-    *(ptrdiff_t *)(&cache->srvNameCacheData) += ptr;
+    cache->sidCacheLocks = (sidCacheLock *)
+        (cache->cacheMem + (ptrdiff_t)cache->sidCacheLocks);
+    cache->keyCacheLock = (sidCacheLock *)
+        (cache->cacheMem + (ptrdiff_t)cache->keyCacheLock);
+    cache->certCacheLock = (sidCacheLock *)
+        (cache->cacheMem + (ptrdiff_t)cache->certCacheLock);
+    cache->srvNameCacheLock = (sidCacheLock *)
+        (cache->cacheMem + (ptrdiff_t)cache->srvNameCacheLock);
+    cache->sidCacheSets = (sidCacheSet *)
+        (cache->cacheMem + (ptrdiff_t)cache->sidCacheSets);
+    cache->sidCacheData = (sidCacheEntry *)
+        (cache->cacheMem + (ptrdiff_t)cache->sidCacheData);
+    cache->certCacheData = (certCacheEntry *)
+        (cache->cacheMem + (ptrdiff_t)cache->certCacheData);
+    cache->keyCacheData = (SSLWrappedSymWrappingKey *)
+        (cache->cacheMem + (ptrdiff_t)cache->keyCacheData);
+    cache->ticketKeyNameSuffix = (PRUint8 *)
+        (cache->cacheMem + (ptrdiff_t)cache->ticketKeyNameSuffix);
+    cache->ticketEncKey = (encKeyCacheEntry *)
+        (cache->cacheMem + (ptrdiff_t)cache->ticketEncKey);
+    cache->ticketMacKey = (encKeyCacheEntry *)
+        (cache->cacheMem + (ptrdiff_t)cache->ticketMacKey);
+    cache->ticketKeysValid = (PRUint32 *)
+        (cache->cacheMem + (ptrdiff_t)cache->ticketKeysValid);
+    cache->srvNameCacheData = (srvNameCacheEntry *)
+        (cache->cacheMem + (ptrdiff_t)cache->srvNameCacheData);
 
     
     init_time = ssl_Time();
@@ -1484,7 +1495,6 @@ SSL_InheritMPServerSIDCacheInstance(cacheDesc *cache, const char * envString)
     char *          fmString   = NULL;
     char *          myEnvString = NULL;
     unsigned int    decoLen;
-    ptrdiff_t       ptr;
     inheritance     inherit;
     cacheDesc       my;
 #ifdef WINNT
@@ -1580,20 +1590,32 @@ SSL_InheritMPServerSIDCacheInstance(cacheDesc *cache, const char * envString)
     
 
 
-    ptr = (ptrdiff_t)my.cacheMem;
-    *(ptrdiff_t *)(&cache->sidCacheLocks) += ptr;
-    *(ptrdiff_t *)(&cache->keyCacheLock ) += ptr;
-    *(ptrdiff_t *)(&cache->certCacheLock) += ptr;
-    *(ptrdiff_t *)(&cache->srvNameCacheLock) += ptr;
-    *(ptrdiff_t *)(&cache->sidCacheSets ) += ptr;
-    *(ptrdiff_t *)(&cache->sidCacheData ) += ptr;
-    *(ptrdiff_t *)(&cache->certCacheData) += ptr;
-    *(ptrdiff_t *)(&cache->keyCacheData ) += ptr;
-    *(ptrdiff_t *)(&cache->ticketKeyNameSuffix) += ptr;
-    *(ptrdiff_t *)(&cache->ticketEncKey ) += ptr;
-    *(ptrdiff_t *)(&cache->ticketMacKey ) += ptr;
-    *(ptrdiff_t *)(&cache->ticketKeysValid) += ptr;
-    *(ptrdiff_t *)(&cache->srvNameCacheData) += ptr;
+    cache->sidCacheLocks = (sidCacheLock *)
+        (my.cacheMem + (ptrdiff_t)cache->sidCacheLocks);
+    cache->keyCacheLock = (sidCacheLock *)
+        (my.cacheMem + (ptrdiff_t)cache->keyCacheLock);
+    cache->certCacheLock = (sidCacheLock *)
+        (my.cacheMem + (ptrdiff_t)cache->certCacheLock);
+    cache->srvNameCacheLock = (sidCacheLock *)
+        (my.cacheMem + (ptrdiff_t)cache->srvNameCacheLock);
+    cache->sidCacheSets = (sidCacheSet *)
+        (my.cacheMem + (ptrdiff_t)cache->sidCacheSets);
+    cache->sidCacheData = (sidCacheEntry *)
+        (my.cacheMem + (ptrdiff_t)cache->sidCacheData);
+    cache->certCacheData = (certCacheEntry *)
+        (my.cacheMem + (ptrdiff_t)cache->certCacheData);
+    cache->keyCacheData = (SSLWrappedSymWrappingKey *)
+        (my.cacheMem + (ptrdiff_t)cache->keyCacheData);
+    cache->ticketKeyNameSuffix = (PRUint8 *)
+        (my.cacheMem + (ptrdiff_t)cache->ticketKeyNameSuffix);
+    cache->ticketEncKey = (encKeyCacheEntry *)
+        (my.cacheMem + (ptrdiff_t)cache->ticketEncKey);
+    cache->ticketMacKey = (encKeyCacheEntry *)
+        (my.cacheMem + (ptrdiff_t)cache->ticketMacKey);
+    cache->ticketKeysValid = (PRUint32 *)
+        (my.cacheMem + (ptrdiff_t)cache->ticketKeysValid);
+    cache->srvNameCacheData = (srvNameCacheEntry *)
+        (my.cacheMem + (ptrdiff_t)cache->srvNameCacheData);
 
     cache->cacheMemMap = my.cacheMemMap;
     cache->cacheMem    = my.cacheMem;

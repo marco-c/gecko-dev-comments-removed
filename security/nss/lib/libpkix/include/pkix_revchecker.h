@@ -89,8 +89,6 @@ extern "C" {
 
 
 
-
-
 PKIX_Error *
 PKIX_RevocationChecker_Create(
     PKIX_UInt32 leafMethodListFlags,

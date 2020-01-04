@@ -260,6 +260,14 @@ extern int SECKEY_ECParamsToKeySize(const SECItem *params);
 
 extern int SECKEY_ECParamsToBasePointOrderLen(const SECItem *params);
 
+
+
+
+
+
+
+SECOidTag SECKEY_GetECCOid(const SECKEYECParams * params);
+
 SEC_END_PROTOS
 
 #endif 

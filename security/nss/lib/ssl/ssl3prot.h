@@ -219,32 +219,6 @@ typedef struct {
 
 
 
-
-
-enum {
-    tls_hash_md5 = 1,
-    tls_hash_sha1 = 2,
-    tls_hash_sha224 = 3,
-    tls_hash_sha256 = 4,
-    tls_hash_sha384 = 5,
-    tls_hash_sha512 = 6
-};
-
-
-
-typedef enum {
-    tls_sig_rsa = 1,
-    tls_sig_dsa = 2,
-    tls_sig_ecdsa = 3
-} TLSSignatureAlgorithm;
-
-typedef struct {
-    SECOidTag hashAlg;
-    TLSSignatureAlgorithm sigAlg;
-} SSL3SignatureAndHashAlgorithm;
-
-
-
 typedef struct {
     PRUint8 md5[16];
     PRUint8 sha[20];
@@ -255,7 +229,7 @@ typedef struct {
 
 typedef struct {
     unsigned int len;
-    SECOidTag hashAlg;
+    SSLHashType hashAlg;
     union {
         PRUint8 raw[64];
         SSL3HashesIndividually s;

@@ -166,22 +166,22 @@ aes_gcm_kat(const char *respfn)
     FILE *aesresp;      
     int i, j;
     unsigned int test_group = 0;
-    unsigned int num_tests;
+    unsigned int num_tests = 0;
     PRBool is_encrypt;
     unsigned char key[32];              
-    unsigned int keysize;
+    unsigned int keysize = 16;
     unsigned char iv[10*16];            
-    unsigned int ivsize;
+    unsigned int ivsize = 12;
     unsigned char plaintext[10*16];     
     unsigned int plaintextlen = 0;
     unsigned char aad[10*16];           
     unsigned int aadlen = 0;
     unsigned char ciphertext[10*16];    
-    unsigned int ciphertextlen;
+    unsigned int ciphertextlen = 0;
     unsigned char tag[16];
-    unsigned int tagsize;
+    unsigned int tagsize = 16;
     unsigned char output[10*16];         
-    unsigned int outputlen;
+    unsigned int outputlen = 0;
 
     unsigned int expected_keylen = 0;
     unsigned int expected_ivlen = 0;

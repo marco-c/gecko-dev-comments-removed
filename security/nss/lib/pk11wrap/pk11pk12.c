@@ -234,13 +234,17 @@ PK11_ImportDERPrivateKeyInfoAndReturnKey(PK11SlotInfo *slot, SECItem *derPKI,
     rv = SEC_ASN1DecodeItem(pki->arena, pki, SECKEY_PrivateKeyInfoTemplate,
 		derPKI);
     if( rv != SECSuccess ) {
-	goto finish;
+        
+
+
+
+        PORT_FreeArena(temparena, PR_TRUE);
+        return rv;
     }
 
     rv = PK11_ImportPrivateKeyInfoAndReturnKey(slot, pki, nickname,
 		publicValue, isPerm, isPrivate, keyUsage, privk, wincx);
 
-finish:
     
     SECKEY_DestroyPrivateKeyInfo(pki, PR_TRUE );
     return rv;
@@ -422,7 +426,6 @@ PK11_ImportPrivateKeyInfoAndReturnKey(PK11SlotInfo *slot,
 	PRBool isPerm, PRBool isPrivate, unsigned int keyUsage,
 	SECKEYPrivateKey **privk, void *wincx) 
 {
-    CK_KEY_TYPE keyType = CKK_RSA;
     SECStatus rv = SECFailure;
     SECKEYRawPrivateKey *lpk = NULL;
     const SEC_ASN1Template *keyTemplate, *paramTemplate;
@@ -449,7 +452,6 @@ PK11_ImportPrivateKeyInfoAndReturnKey(PK11SlotInfo *slot,
 	    paramTemplate = NULL;
 	    paramDest = NULL;
 	    lpk->keyType = rsaKey;
-	    keyType = CKK_RSA;
 	    break;
 	case SEC_OID_ANSIX9_DSA_SIGNATURE:
 	    prepare_dsa_priv_key_export_for_asn1(lpk);
@@ -457,7 +459,6 @@ PK11_ImportPrivateKeyInfoAndReturnKey(PK11SlotInfo *slot,
 	    paramTemplate = SECKEY_PQGParamsTemplate;
 	    paramDest = &(lpk->u.dsa.params);
 	    lpk->keyType = dsaKey;
-	    keyType = CKK_DSA;
 	    break;
 	case SEC_OID_X942_DIFFIE_HELMAN_KEY:
 	    if(!publicValue) {
@@ -468,7 +469,6 @@ PK11_ImportPrivateKeyInfoAndReturnKey(PK11SlotInfo *slot,
 	    paramTemplate = NULL;
 	    paramDest = NULL;
 	    lpk->keyType = dhKey;
-	    keyType = CKK_DH;
 	    break;
 
 	default:

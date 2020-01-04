@@ -71,8 +71,8 @@ ssl3_GatherData(sslSocket *ss, sslGather *gs, int flags)
 	    break;
 	}
 
-	PORT_Assert( nb <= gs->remainder );
-	if (nb > gs->remainder) {
+	PORT_Assert( (unsigned int)nb <= gs->remainder );
+	if ((unsigned int)nb > gs->remainder) {
 	    
 	    gs->state = GS_INIT;         
 	    rv = SECFailure;
