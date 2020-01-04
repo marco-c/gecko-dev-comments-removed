@@ -309,7 +309,6 @@ public class LayerView extends ScrollView implements Tabs.OnTabsChangedListener 
 
             mSurfaceView = new LayerSurfaceView(getContext(), this);
             mSurfaceView.setBackgroundColor(Color.WHITE);
-            Log.i("GeckoBug1151102", "Initialized surfaceview");
 
             
             
@@ -660,10 +659,6 @@ public class LayerView extends ScrollView implements Tabs.OnTabsChangedListener 
         }
 
         return super.getOverScrollMode();
-    }
-
-    public float getZoomFactor() {
-        return getLayerClient().getViewportMetrics().zoomFactor;
     }
 
     @Override
