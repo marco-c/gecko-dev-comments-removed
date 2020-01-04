@@ -3806,6 +3806,7 @@ HTMLInputElement::PostHandleEvent(EventChainPostVisitor& aVisitor)
                   break;  
                 }
                 
+                MOZ_FALLTHROUGH;
               }
               case NS_FORM_INPUT_BUTTON:
               case NS_FORM_INPUT_RESET:
@@ -3834,7 +3835,7 @@ HTMLInputElement::PostHandleEvent(EventChainPostVisitor& aVisitor)
               case NS_VK_UP:
               case NS_VK_LEFT:
                 isMovingBack = true;
-                
+                MOZ_FALLTHROUGH;
               case NS_VK_DOWN:
               case NS_VK_RIGHT:
               
