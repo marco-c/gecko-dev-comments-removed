@@ -351,7 +351,7 @@ TLSFilterTransaction::WriteSegments(nsAHttpSegmentWriter *aWriter,
   if (NS_SUCCEEDED(rv) && NS_FAILED(mFilterReadCode) && !(*outCountWritten)) {
     
     rv = mFilterReadCode;
-    if (mFilterReadCode == NS_BASE_STREAM_WOULD_BLOCK) {
+    if (Connection() && (mFilterReadCode == NS_BASE_STREAM_WOULD_BLOCK)) {
       Connection()->ResumeRecv();
     }
   }
