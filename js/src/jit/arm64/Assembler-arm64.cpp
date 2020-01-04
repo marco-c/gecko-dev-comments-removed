@@ -221,7 +221,10 @@ void
 Assembler::bind(Label* label, BufferOffset targetOffset)
 {
     
-    if (!label->used()) {
+    
+    
+    
+    if (!label->used() || oom()) {
         label->bind(targetOffset.getOffset());
         return;
     }
@@ -259,7 +262,9 @@ void
 Assembler::bind(RepatchLabel* label)
 {
     
-    if (!label->used()) {
+    
+    
+    if (!label->used() || oom()) {
         label->bind(nextOffset().getOffset());
         return;
     }
