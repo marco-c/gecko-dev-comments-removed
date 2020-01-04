@@ -424,7 +424,23 @@ protected:
   void InitSourceStream(nsIDOMWindow* aWindow, MediaStreamGraph* aGraph);
   void InitTrackUnionStream(nsIDOMWindow* aWindow, MediaStreamGraph* aGraph);
   void InitAudioCaptureStream(nsIDOMWindow* aWindow, MediaStreamGraph* aGraph);
-  void InitStreamCommon(MediaStream* aStream, MediaStreamGraph* aGraph);
+
+  
+  
+  
+  void InitInputStreamCommon(MediaStream* aStream, MediaStreamGraph* aGraph);
+
+  
+  
+  
+  
+  void InitOwnedStreamCommon(MediaStreamGraph* aGraph);
+
+  
+  
+  
+  
+  void InitPlaybackStreamCommon(MediaStreamGraph* aGraph);
 
   void CheckTracksAvailable();
 
