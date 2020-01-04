@@ -24,6 +24,7 @@
 #endif
 #include "mozilla/StateWatching.h"
 #include "nsGkAtoms.h"
+#include "PrincipalChangeObserver.h"
 
 
 #ifdef CurrentTime
@@ -76,7 +77,8 @@ class HTMLMediaElement : public nsGenericHTMLElement,
                          public nsIDOMHTMLMediaElement,
                          public nsIObserver,
                          public MediaDecoderOwner,
-                         public nsIAudioChannelAgentCallback
+                         public nsIAudioChannelAgentCallback,
+                         public PrincipalChangeObserver<DOMMediaStream>
 {
   friend AutoNotifyAudioChannelAgent;
 
@@ -227,6 +229,11 @@ public:
   layers::ImageContainer* GetImageContainer();
 
   
+  void PrincipalChanged(DOMMediaStream* aStream) override;
+
+  void UpdateSrcStreamVideoPrincipal(nsIPrincipal* aPrincipal);
+
+  
   virtual nsresult DispatchAsyncEvent(const nsAString& aName) final override;
 
   
@@ -263,6 +270,13 @@ public:
   
   
   already_AddRefed<nsIPrincipal> GetCurrentPrincipal();
+
+  
+  
+  
+  
+  
+  already_AddRefed<nsIPrincipal> GetCurrentVideoPrincipal();
 
   
   void NotifyDecoderPrincipalChanged() final override;
@@ -1489,6 +1503,10 @@ protected:
   RefPtr<VideoTrackList> mVideoTrackList;
 
   RefPtr<MediaStreamTrackListener> mMediaStreamTrackListener;
+
+  
+  
+  nsCOMPtr<nsIPrincipal> mSrcStreamVideoPrincipal;
 
   enum ElementInTreeState {
     

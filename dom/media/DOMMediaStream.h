@@ -449,6 +449,12 @@ public:
 
 
 
+  nsIPrincipal* GetVideoPrincipal() { return mVideoPrincipal; }
+
+  
+
+
+
 
   PeerIdentity* GetPeerIdentity() const { return mPeerIdentity; }
   void SetPeerIdentity(PeerIdentity* aPeerIdentity)
@@ -676,6 +682,9 @@ private:
   
   
   nsCOMPtr<nsIPrincipal> mPrincipal;
+  
+  
+  nsCOMPtr<nsIPrincipal> mVideoPrincipal;
   nsTArray<dom::PrincipalChangeObserver<DOMMediaStream>*> mPrincipalChangeObservers;
   
   
