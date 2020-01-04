@@ -494,6 +494,7 @@ TextureClient::Unlock()
   }
 
   if (mBorrowedDrawTarget) {
+    MOZ_ASSERT(mBorrowedDrawTarget->refCount() <= mExpectedDtRefs);
     if (mOpenMode & OpenMode::OPEN_WRITE) {
       mBorrowedDrawTarget->Flush();
       if (mReadbackSink && !mData->ReadBack(mReadbackSink)) {
@@ -504,12 +505,6 @@ TextureClient::Unlock()
         mReadbackSink->ProcessReadback(dataSurf);
       }
     }
-
-    mBorrowedDrawTarget->DetachAllSnapshots();
-    
-    
-    MOZ_ASSERT(mBorrowedDrawTarget->refCount() <= mExpectedDtRefs);
-
     mBorrowedDrawTarget = nullptr;
   }
 

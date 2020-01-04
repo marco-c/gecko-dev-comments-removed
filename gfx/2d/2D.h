@@ -1175,17 +1175,6 @@ public:
     return mPermitSubpixelAA;
   }
 
-  
-
-
-
-
-
-
-
-
-  virtual void DetachAllSnapshots() = 0;
-
 #ifdef USE_SKIA_GPU
   virtual bool InitWithGrContext(GrContext* aGrContext,
                                  const IntSize &aSize,
