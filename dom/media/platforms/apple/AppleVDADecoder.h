@@ -86,6 +86,8 @@ public:
     return "apple VDA decoder";
   }
 
+  void SetSeekThreshold(const media::TimeUnit& aTime) override;
+
 protected:
   AppleVDADecoder(const VideoInfo& aConfig,
                   TaskQueue* aTaskQueue,
@@ -139,6 +141,10 @@ private:
   
   Atomic<bool> mIsFlushing;
   ReorderQueue mReorderQueue;
+  
+  
+  
+  Maybe<media::TimeUnit> mSeekTargetThreshold;
 
   
   nsresult InitializeSession();
