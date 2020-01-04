@@ -841,6 +841,9 @@ class MacroAssembler : public MacroAssemblerSpecific
     
     inline void branchPrivatePtr(Condition cond, const Address& lhs, Register rhs, Label* label) PER_ARCH;
 
+    inline void branchTest64(Condition cond, Register64 lhs, Register64 rhs, Register temp,
+                             Label* label) PER_ARCH;
+
     
   public:
 
