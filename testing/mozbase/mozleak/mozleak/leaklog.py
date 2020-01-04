@@ -117,6 +117,22 @@ def expectedTabProcessLeakCounts():
             'nsTArray_base': 17,
         })
 
+        
+        numExtraTextureLeaks = 4
+        appendExpectedLeakCounts({
+            'CondVar': numExtraTextureLeaks,
+            'Mutex': numExtraTextureLeaks,
+            'PTextureChild': numExtraTextureLeaks,
+            'SharedMemory': numExtraTextureLeaks,
+            'TextureChild': numExtraTextureLeaks,
+            'TextureData': numExtraTextureLeaks,
+        })
+
+        
+        appendExpectedLeakCounts({
+            'WeakReference<MessageListener>': 3
+        })
+
     return leaks
 
 
