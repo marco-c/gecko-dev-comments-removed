@@ -34,7 +34,7 @@ public class testShareLink extends AboutHomeTest {
         blockForGeckoReady();
 
         
-        openAboutHomeTab(AboutHomeTabs.READING_LIST);
+        openAboutHomeTab(AboutHomeTabs.HISTORY);
 
         inputAndLoadUrl(url);
         verifyUrlBarTitle(url); 
