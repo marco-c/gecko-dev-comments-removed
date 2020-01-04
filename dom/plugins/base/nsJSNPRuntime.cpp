@@ -218,6 +218,12 @@ CreateNPObjectMember(NPP npp, JSContext *cx, JSObject *obj, NPObject* npobj,
                      JS::Handle<jsid> id,  NPVariant* getPropertyResult,
                      JS::MutableHandle<JS::Value> vp);
 
+const static js::ClassExtension sNPObjectJSWrapperClassExtension = {
+    false,                                                
+    nullptr,                                              
+    NPObjWrapper_ObjectMoved
+};
+
 const static js::ObjectOps sNPObjectJSWrapperObjectOps = {
     nullptr, 
     nullptr, 
@@ -249,11 +255,7 @@ const static js::Class sNPObjectJSWrapperClass =
     NPObjWrapper_Construct,
     nullptr,                                                
     JS_NULL_CLASS_SPEC,
-    {
-      false,                                                
-      nullptr,                                              
-      NPObjWrapper_ObjectMoved
-    },
+    &sNPObjectJSWrapperClassExtension,
     &sNPObjectJSWrapperObjectOps
   };
 

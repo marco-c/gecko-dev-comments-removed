@@ -385,7 +385,7 @@ CreateGlobalObject(JSContext* cx, const JSClass* clasp, nsIPrincipal* principal,
     
     
     
-    if (!((const js::Class*)clasp)->ext.isWrappedNative)
+    if (!((const js::Class*)clasp)->extIsWrappedNative())
     {
         VerifyTraceProtoAndIfaceCacheCalledTracer trc(JS_GetRuntime(cx));
         TraceChildren(&trc, GCCellPtr(global.get()));

@@ -758,14 +758,15 @@ protected:
                                   JS::AutoIdVector &props) const;
 };
 
-const js::Class OuterWindowProxyClass =
-    PROXY_CLASS_WITH_EXT(
-        "Proxy",
-        0, 
-        PROXY_MAKE_EXT(
-            false,   
-            nsOuterWindowProxy::ObjectMoved
-        ));
+static const js::ClassExtension OuterWindowProxyClassExtension = PROXY_MAKE_EXT(
+    false,   
+    nsOuterWindowProxy::ObjectMoved
+);
+
+const js::Class OuterWindowProxyClass = PROXY_CLASS_WITH_EXT(
+    "Proxy",
+    0, 
+    &OuterWindowProxyClassExtension);
 
 const char *
 nsOuterWindowProxy::className(JSContext *cx, JS::Handle<JSObject*> proxy) const
