@@ -2339,7 +2339,12 @@ struct JSJitInfo {
         js::jit::InlinableNative inlinableNative;
     };
 
-    uint16_t depth;
+    union {
+        uint16_t depth;
+
+        
+        uint16_t nativeOp;
+    };
 
     
     

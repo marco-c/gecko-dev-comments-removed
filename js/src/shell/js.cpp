@@ -5652,7 +5652,7 @@ dom_doFoo(JSContext* cx, HandleObject obj, void* self, const JSJitMethodCallArgs
 static const JSJitInfo dom_x_getterinfo = {
     { (JSJitGetterOp)dom_get_x },
     { 0 },    
-    0,        
+    { 0 },    
     JSJitInfo::AliasNone, 
     JSJitInfo::Getter,
     JSVAL_TYPE_UNKNOWN, 
@@ -5668,7 +5668,7 @@ static const JSJitInfo dom_x_getterinfo = {
 static const JSJitInfo dom_x_setterinfo = {
     { (JSJitGetterOp)dom_set_x },
     { 0 },    
-    0,        
+    { 0 },    
     JSJitInfo::Setter,
     JSJitInfo::AliasEverything, 
     JSVAL_TYPE_UNKNOWN, 
@@ -5684,7 +5684,7 @@ static const JSJitInfo dom_x_setterinfo = {
 static const JSJitInfo doFoo_methodinfo = {
     { (JSJitGetterOp)dom_doFoo },
     { 0 },    
-    0,        
+    { 0 },    
     JSJitInfo::Method,
     JSJitInfo::AliasEverything, 
     JSVAL_TYPE_UNKNOWN, 
