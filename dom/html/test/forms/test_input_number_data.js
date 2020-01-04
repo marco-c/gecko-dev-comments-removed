@@ -30,3 +30,9 @@ var tests = [
     inputWithoutGrouping: "123456.78", value: 123456.78
   },
 ];
+
+var invalidTests = [
+  
+  
+  
+];
