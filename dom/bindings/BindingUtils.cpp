@@ -1797,6 +1797,21 @@ NativePropertyHooks sEmptyNativePropertyHooks = {
   nullptr
 };
 
+const js::ObjectOps sInterfaceObjectClassObjectOps = {
+  nullptr, 
+  nullptr, 
+  nullptr, 
+  nullptr, 
+  nullptr, 
+  nullptr, 
+  nullptr, 
+  nullptr, 
+  nullptr, 
+  nullptr, 
+  nullptr, 
+  InterfaceObjectToString, 
+};
+
 bool
 GetPropertyOnPrototype(JSContext* cx, JS::Handle<JSObject*> proxy,
                        JS::Handle<JS::Value> receiver, JS::Handle<jsid> id,

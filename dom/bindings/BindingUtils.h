@@ -2508,6 +2508,8 @@ XrayGetNativeProto(JSContext* cx, JS::Handle<JSObject*> obj,
 
 extern NativePropertyHooks sEmptyNativePropertyHooks;
 
+extern const js::ObjectOps sInterfaceObjectClassObjectOps;
+
 
 
 

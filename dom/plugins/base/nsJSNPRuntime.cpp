@@ -218,6 +218,20 @@ CreateNPObjectMember(NPP npp, JSContext *cx, JSObject *obj, NPObject* npobj,
                      JS::Handle<jsid> id,  NPVariant* getPropertyResult,
                      JS::MutableHandle<JS::Value> vp);
 
+const static js::ObjectOps sNPObjectJSWrapperObjectOps = {
+    nullptr, 
+    nullptr, 
+    nullptr, 
+    nullptr, 
+    nullptr, 
+    nullptr, 
+    nullptr, 
+    nullptr, nullptr, 
+    nullptr, 
+    NPObjWrapper_Enumerate,
+    nullptr,
+};
+
 const static js::Class sNPObjectJSWrapperClass =
   {
     NPRUNTIME_JSCLASS_NAME,
@@ -240,19 +254,7 @@ const static js::Class sNPObjectJSWrapperClass =
       nullptr,                                              
       NPObjWrapper_ObjectMoved
     },
-    {
-        nullptr, 
-        nullptr, 
-        nullptr, 
-        nullptr, 
-        nullptr, 
-        nullptr, 
-        nullptr, 
-        nullptr, nullptr, 
-        nullptr, 
-        NPObjWrapper_Enumerate,
-        nullptr,
-    }
+    &sNPObjectJSWrapperObjectOps
   };
 
 typedef struct NPObjectMemberPrivate {
