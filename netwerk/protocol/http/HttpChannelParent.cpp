@@ -261,12 +261,6 @@ HttpChannelParent::SynthesizeResponse(nsIInterceptedChannel* aChannel)
     return;
   }
 
-  if (!mSynthesizedResponseHead) {
-    
-    mozilla::Unused << SendReportRedirectionError();
-    return;
-  }
-
   aChannel->SynthesizeStatus(mSynthesizedResponseHead->Status(),
                              mSynthesizedResponseHead->StatusText());
   nsCOMPtr<nsIHttpHeaderVisitor> visitor = new HeaderVisitor(aChannel);
