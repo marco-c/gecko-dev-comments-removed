@@ -1408,6 +1408,23 @@ function ensure_test_completed() {
 
 
 
+function promiseAddonEvent(event) {
+  return new Promise(resolve => {
+    let listener = {
+      [event]: function(...args) {
+        AddonManager.removeAddonListener(listener);
+        resolve(args);
+      }
+    }
+
+    AddonManager.addAddonListener(listener);
+  });
+}
+
+
+
+
+
 
 
 
