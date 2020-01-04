@@ -306,14 +306,6 @@ InternalRequest::MapChannelToRequestMode(nsIChannel* aChannel)
 
   
 
-  
-#ifndef RELEASE_BUILD
-  nsCOMPtr<nsIJARChannel> jarChannel = do_QueryInterface(aChannel);
-  if (jarChannel) {
-    return RequestMode::No_cors;
-  }
-#endif
-
   nsCOMPtr<nsIHttpChannelInternal> httpChannel = do_QueryInterface(aChannel);
 
   uint32_t corsMode;

@@ -25,8 +25,6 @@
 #include "mozilla/net/RemoteOpenFileChild.h"
 #include "nsITabChild.h"
 #include "private/pprio.h"
-#include "nsINetworkInterceptController.h"
-#include "InterceptedJARChannel.h"
 #include "nsInputStreamPump.h"
 
 using namespace mozilla;
@@ -203,7 +201,6 @@ nsJARChannel::nsJARChannel()
     , mIsPending(false)
     , mIsUnsafe(true)
     , mOpeningRemote(false)
-    , mSynthesizedStreamLength(0)
     , mBlockRemoteFiles(false)
 {
     if (!gJarProtocolLog)
@@ -521,8 +518,6 @@ nsJARChannel::GetStatus(nsresult *status)
 {
     if (mPump && NS_SUCCEEDED(mStatus))
         mPump->GetStatus(status);
-    else if (mSynthesizedResponsePump && NS_SUCCEEDED(mStatus))
-        mSynthesizedResponsePump->GetStatus(status);
     else
         *status = mStatus;
     return NS_OK;
@@ -534,8 +529,6 @@ nsJARChannel::Cancel(nsresult status)
     mStatus = status;
     if (mPump)
         return mPump->Cancel(status);
-    if (mSynthesizedResponsePump)
-        return mSynthesizedResponsePump->Cancel(status);
 
     NS_ASSERTION(!mIsPending, "need to implement cancel when downloading");
     return NS_OK;
@@ -546,8 +539,6 @@ nsJARChannel::Suspend()
 {
     if (mPump)
         return mPump->Suspend();
-    if (mSynthesizedResponsePump)
-        return mSynthesizedResponsePump->Suspend();
 
     NS_ASSERTION(!mIsPending, "need to implement suspend when downloading");
     return NS_OK;
@@ -558,8 +549,6 @@ nsJARChannel::Resume()
 {
     if (mPump)
         return mPump->Resume();
-    if (mSynthesizedResponsePump)
-        return mSynthesizedResponsePump->Resume();
 
     NS_ASSERTION(!mIsPending, "need to implement resume when downloading");
     return NS_OK;
@@ -863,78 +852,6 @@ nsJARChannel::Open2(nsIInputStream** aStream)
     return Open(aStream);
 }
 
-bool
-nsJARChannel::BypassServiceWorker() const
-{
-  return mLoadFlags & LOAD_BYPASS_SERVICE_WORKER;
-}
-
-bool
-nsJARChannel::ShouldIntercept()
-{
-    LOG(("nsJARChannel::ShouldIntercept [this=%x]\n", this));
-    
-    if (!mAppURI) {
-      return false;
-    }
-
-    nsCOMPtr<nsINetworkInterceptController> controller;
-    NS_QueryNotificationCallbacks(mCallbacks, mLoadGroup,
-                                  NS_GET_IID(nsINetworkInterceptController),
-                                  getter_AddRefs(controller));
-    bool shouldIntercept = false;
-    if (controller && !BypassServiceWorker() && mLoadInfo) {
-      nsresult rv = controller->ShouldPrepareForIntercept(mAppURI,
-                                                          nsContentUtils::IsNonSubresourceRequest(this),
-                                                          &shouldIntercept);
-      NS_ENSURE_SUCCESS(rv, false);
-    }
-
-    return shouldIntercept;
-}
-
-void nsJARChannel::ResetInterception()
-{
-    LOG(("nsJARChannel::ResetInterception [this=%x]\n", this));
-
-    
-    nsresult rv = ContinueAsyncOpen();
-    NS_ENSURE_SUCCESS_VOID(rv);
-}
-
-void
-nsJARChannel::OverrideWithSynthesizedResponse(nsIInputStream* aSynthesizedInput,
-                                              const nsACString& aContentType)
-{
-    
-    
-    
-    uint64_t available;
-    nsresult rv = aSynthesizedInput->Available(&available);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      mSynthesizedStreamLength = -1;
-    } else {
-      mSynthesizedStreamLength = int64_t(available);
-    }
-
-    rv = nsInputStreamPump::Create(getter_AddRefs(mSynthesizedResponsePump),
-                                   aSynthesizedInput,
-                                   int64_t(-1), int64_t(-1), 0, 0, true);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      aSynthesizedInput->Close();
-      return;
-    }
-
-    SetContentType(aContentType);
-
-    mIsUnsafe = false;
-
-    FinishAsyncOpen();
-
-    rv = mSynthesizedResponsePump->AsyncRead(this, nullptr);
-    NS_ENSURE_SUCCESS_VOID(rv);
-}
-
 NS_IMETHODIMP
 nsJARChannel::AsyncOpen(nsIStreamListener *listener, nsISupports *ctx)
 {
@@ -961,48 +878,6 @@ nsJARChannel::AsyncOpen(nsIStreamListener *listener, nsISupports *ctx)
     mListenerContext = ctx;
     mIsPending = true;
 
-
-
-#ifndef RELEASE_BUILD
-    
-    
-    if (ShouldIntercept()) {
-      nsCOMPtr<nsINetworkInterceptController> controller;
-      NS_QueryNotificationCallbacks(mCallbacks, mLoadGroup,
-                                    NS_GET_IID(nsINetworkInterceptController),
-                                    getter_AddRefs(controller));
-
-      RefPtr<InterceptedJARChannel> intercepted =
-        new InterceptedJARChannel(this, controller);
-      intercepted->NotifyController();
-
-      
-      
-      nsresult rv = mJarURI->GetJAREntry(mJarEntry);
-      if (NS_FAILED(rv)) {
-          return rv;
-      }
-
-      return NS_OK;
-    }
-#endif
-
-    return ContinueAsyncOpen();
-}
-
-NS_IMETHODIMP
-nsJARChannel::AsyncOpen2(nsIStreamListener *aListener)
-{
-  nsCOMPtr<nsIStreamListener> listener = aListener;
-  nsresult rv = nsContentSecurityManager::doContentSecurityCheck(this, listener);
-  NS_ENSURE_SUCCESS(rv, rv);
-  return AsyncOpen(listener, nullptr);
-}
-
-nsresult
-nsJARChannel::ContinueAsyncOpen()
-{
-    LOG(("nsJARChannel::ContinueAsyncOpen [this=%x]\n", this));
     nsresult rv = LookupFile(true);
     if (NS_FAILED(rv)) {
         mIsPending = false;
@@ -1057,19 +932,21 @@ nsJARChannel::ContinueAsyncOpen()
         return rv;
     }
 
-
-    FinishAsyncOpen();
-
-    return NS_OK;
-}
-
-void
-nsJARChannel::FinishAsyncOpen()
-{
     if (mLoadGroup)
         mLoadGroup->AddRequest(this, nullptr);
 
     mOpened = true;
+
+    return NS_OK;
+}
+
+NS_IMETHODIMP
+nsJARChannel::AsyncOpen2(nsIStreamListener *aListener)
+{
+  nsCOMPtr<nsIStreamListener> listener = aListener;
+  nsresult rv = nsContentSecurityManager::doContentSecurityCheck(this, listener);
+  NS_ENSURE_SUCCESS(rv, rv);
+  return AsyncOpen(listener, nullptr);
 }
 
 

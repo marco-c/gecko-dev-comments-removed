@@ -10,7 +10,6 @@
 #include "nsIJARChannel.h"
 #include "nsIJARURI.h"
 #include "nsIInputStreamPump.h"
-#include "InterceptedJARChannel.h"
 #include "nsIInterfaceRequestor.h"
 #include "nsIProgressEventSink.h"
 #include "nsIStreamListener.h"
@@ -29,12 +28,6 @@
 
 class nsJARInputThunk;
 class nsInputStreamPump;
-
-namespace mozilla {
-namespace net {
-  class InterceptedJARChannel;
-} 
-} 
 
 
 
@@ -80,23 +73,6 @@ private:
                                     mozilla::net::MemoryDownloader::Data aData)
         override;
 
-    bool BypassServiceWorker() const;
-
-    
-    
-    bool ShouldIntercept();
-
-    nsresult ContinueAsyncOpen();
-    void FinishAsyncOpen();
-
-    
-    
-    void ResetInterception();
-    
-    
-    void OverrideWithSynthesizedResponse(nsIInputStream* aSynthesizedInput,
-                                         const nsACString& aContentType);
-
     nsCString                       mSpec;
 
     bool                            mOpened;
@@ -135,12 +111,8 @@ private:
     nsCString                       mJarEntry;
     nsCString                       mInnerJarEntry;
 
-    RefPtr<nsInputStreamPump>     mSynthesizedResponsePump;
-    int64_t                         mSynthesizedStreamLength;
-
     
     bool                            mBlockRemoteFiles;
-    friend class mozilla::net::InterceptedJARChannel;
 };
 
 #endif 
