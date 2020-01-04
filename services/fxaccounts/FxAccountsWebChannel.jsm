@@ -22,6 +22,8 @@ XPCOMUtils.defineLazyModuleGetter(this, "WebChannel",
                                   "resource://gre/modules/WebChannel.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "fxAccounts",
                                   "resource://gre/modules/FxAccounts.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "FxAccountsStorageManagerCanStoreField",
+                                  "resource://gre/modules/FxAccountsStorage.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "Weave",
                                   "resource://services-sync/main.js");
 
@@ -31,6 +33,7 @@ const COMMAND_LOGIN                = "fxaccounts:login";
 const COMMAND_LOGOUT               = "fxaccounts:logout";
 const COMMAND_DELETE               = "fxaccounts:delete";
 const COMMAND_SYNC_PREFERENCES     = "fxaccounts:sync_preferences";
+const COMMAND_CHANGE_PASSWORD      = "fxaccounts:change_password";
 
 const PREF_LAST_FXA_USER           = "identity.fxaccounts.lastSignedInUserHash";
 const PREF_SYNC_SHOW_CUSTOMIZATION = "services.sync-setup.ui.showCustomizationDialog";
@@ -172,6 +175,9 @@ this.FxAccountsWebChannel.prototype = {
           case COMMAND_SYNC_PREFERENCES:
             this._helpers.openSyncPreferences(sendingContext.browser, data.entryPoint);
             break;
+          case COMMAND_CHANGE_PASSWORD:
+            this._helpers.changePassword(data);
+            break;
           default:
             log.warn("Unrecognized FxAccountsWebChannel command", command);
             break;
@@ -272,6 +278,29 @@ this.FxAccountsWebChannelHelpers.prototype = {
         
         return fxAccounts.signOut(true);
       }
+    });
+  },
+
+  changePassword(credentials) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    let newCredentials = {};
+    for (let name of Object.keys(credentials)) {
+      if (name == "email" || name == "uid" || FxAccountsStorageManagerCanStoreField(name)) {
+        newCredentials[name] = credentials[name];
+      } else {
+        log.info("changePassword ignoring unsupported field", name);
+      }
+    }
+    this._fxAccounts.updateUserAccountData(newCredentials).catch(err => {
+      log.error("Failed to update account data on password change", err);
     });
   },
 
