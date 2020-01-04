@@ -3016,7 +3016,6 @@ GetUserMediaCallbackMediaStreamListener::Invalidate()
   if (mStopped) {
     return;
   }
-  mStopped = true;
 
   
   
@@ -3025,8 +3024,10 @@ GetUserMediaCallbackMediaStreamListener::Invalidate()
   MediaManager::PostTask(FROM_HERE,
     new MediaOperationTask(MEDIA_STOP,
                            this, nullptr, nullptr,
-                           mAudioDevice, mVideoDevice,
+                           !mAudioStopped ? mAudioDevice.get() : nullptr,
+                           !mVideoStopped ? mVideoDevice.get() : nullptr,
                            mFinished, mWindowID, nullptr));
+  mStopped = mAudioStopped = mVideoStopped = true;
 }
 
 
@@ -3041,12 +3042,13 @@ GetUserMediaCallbackMediaStreamListener::StopSharing()
     
     if (!mAudioDevice) {
       Invalidate();
-    } else {
+    } else if (!mVideoStopped) {
       MediaManager::PostTask(FROM_HERE,
         new MediaOperationTask(MEDIA_STOP_TRACK,
                                this, nullptr, nullptr,
                                nullptr, mVideoDevice,
                                mFinished, mWindowID, nullptr));
+      mVideoStopped = true;
     }
   } else if (mAudioDevice &&
              mAudioDevice->GetMediaSource() == dom::MediaSourceEnum::AudioCapture) {
@@ -3166,12 +3168,16 @@ GetUserMediaCallbackMediaStreamListener::StopTrack(TrackID aTrackID, bool aIsAud
   {
     
     
+    bool stopAudio = aIsAudio && !mAudioStopped;
+    bool stopVideo = !aIsAudio && !mVideoStopped;
     MediaManager::PostTask(FROM_HERE,
       new MediaOperationTask(MEDIA_STOP_TRACK,
                              this, nullptr, nullptr,
-                             aIsAudio  ? mAudioDevice.get() : nullptr,
-                             !aIsAudio ? mVideoDevice.get() : nullptr,
+                             stopAudio ? mAudioDevice.get() : nullptr,
+                             stopVideo ? mVideoDevice.get() : nullptr,
                              mFinished, mWindowID, nullptr));
+    mAudioStopped |= stopAudio;
+    mVideoStopped |= stopVideo;
   } else {
     LOG(("gUM track %d ended, but we don't have type %s",
          aTrackID, aIsAudio ? "audio" : "video"));

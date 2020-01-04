@@ -128,7 +128,9 @@ public:
     , mWindowID(aWindowID)
     , mStopped(false)
     , mFinished(false)
-    , mRemoved(false) {}
+    , mRemoved(false)
+    , mAudioStopped(false)
+    , mVideoStopped(false) {}
 
   ~GetUserMediaCallbackMediaStreamListener()
   {
@@ -311,6 +313,14 @@ private:
   
   
   bool mRemoved;
+
+  
+  
+  bool mAudioStopped;
+
+  
+  
+  bool mVideoStopped;
 
   
 
