@@ -801,6 +801,21 @@ public:
   
   
   
+
+  bool IsMSJapaneseIMEActive() const
+  {
+    
+    
+    return mLangID == 0x411 &&
+      (mActiveTIPKeyboardDescription.EqualsLiteral("Microsoft IME") ||
+       mActiveTIPKeyboardDescription.Equals(
+         NS_LITERAL_STRING("Microsoft \xC785\xB825\xAE30")) ||
+       mActiveTIPKeyboardDescription.Equals(
+         NS_LITERAL_STRING("\x5FAE\x8F6F\x8F93\x5165\x6CD5")) ||
+       mActiveTIPKeyboardDescription.Equals(
+         NS_LITERAL_STRING("\x5FAE\x8EDF\x8F38\x5165\x6CD5")));
+  }
+
   bool IsGoogleJapaneseInputActive() const
   {
     return mActiveTIPKeyboardDescription.Equals(
@@ -897,6 +912,8 @@ private:
   
   DWORD mLangProfileCookie;
 
+  LANGID mLangID;
+
   
   bool mIsIMM_IME;
   
@@ -917,6 +934,7 @@ StaticRefPtr<TSFStaticSink> TSFStaticSink::sInstance;
 TSFStaticSink::TSFStaticSink()
   : mIPProfileCookie(TF_INVALID_COOKIE)
   , mLangProfileCookie(TF_INVALID_COOKIE)
+  , mLangID(0)
   , mIsIMM_IME(false)
   , mOnActivatedCalled(false)
 {
@@ -1035,14 +1053,13 @@ TSFStaticSink::OnActivated(REFCLSID clsid, REFGUID guidProfile,
     mOnActivatedCalled = true;
     mIsIMM_IME = IsIMM_IME(::GetKeyboardLayout(0));
 
-    LANGID langID;
-    HRESULT hr = mInputProcessorProfiles->GetCurrentLanguage(&langID);
+    HRESULT hr = mInputProcessorProfiles->GetCurrentLanguage(&mLangID);
     if (FAILED(hr)) {
       MOZ_LOG(sTextStoreLog, LogLevel::Error,
              ("TSF: TSFStaticSink::OnActivated() FAILED due to "
               "GetCurrentLanguage() failure, hr=0x%08X", hr));
-    } else if (IsTIPCategoryKeyboard(clsid, langID, guidProfile)) {
-      GetTIPDescription(clsid, langID, guidProfile,
+    } else if (IsTIPCategoryKeyboard(clsid, mLangID, guidProfile)) {
+      GetTIPDescription(clsid, mLangID, guidProfile,
                         mActiveTIPKeyboardDescription);
     } else if (clsid == CLSID_NULL || guidProfile == GUID_NULL) {
       
@@ -1076,8 +1093,9 @@ TSFStaticSink::OnActivated(DWORD dwProfileType,
       (dwProfileType == TF_PROFILETYPE_KEYBOARDLAYOUT ||
        catid == GUID_TFCAT_TIP_KEYBOARD)) {
     mOnActivatedCalled = true;
+    mLangID = langid;
     mIsIMM_IME = IsIMM_IME(hkl);
-    GetTIPDescription(rclsid, langid, guidProfile,
+    GetTIPDescription(rclsid, mLangID, guidProfile,
                       mActiveTIPKeyboardDescription);
   }
   MOZ_LOG(sTextStoreLog, LogLevel::Info,
