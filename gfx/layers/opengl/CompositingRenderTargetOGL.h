@@ -77,6 +77,8 @@ public:
 
   ~CompositingRenderTargetOGL();
 
+  virtual const char* Name() const override { return "CompositingRenderTargetOGL"; }
+
   
 
 

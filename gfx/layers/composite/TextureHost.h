@@ -88,6 +88,8 @@ public:
 
   virtual ~TextureSource();
 
+  virtual const char* Name() const = 0;
+
   
 
 
@@ -232,6 +234,8 @@ public:
   DataTextureSource()
     : mUpdateSerial(0)
   {}
+
+  virtual const char* Name() const override { return "DataTextureSource"; }
 
   virtual DataTextureSource* AsDataTextureSource() override { return this; }
 
@@ -723,6 +727,8 @@ public:
     , mHasComplexProjection(false)
   {}
   virtual ~CompositingRenderTarget() {}
+
+  virtual const char* Name() const override { return "CompositingRenderTarget"; }
 
 #ifdef MOZ_DUMP_PAINTING
   virtual already_AddRefed<gfx::DataSourceSurface> Dump(Compositor* aCompositor) { return nullptr; }
