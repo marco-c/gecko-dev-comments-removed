@@ -136,7 +136,8 @@ exports.getFrameElement = getFrameElement;
 function getFrameOffsets(boundaryWindow, node) {
   let xOffset = 0;
   let yOffset = 0;
-  let frameWin = node.ownerDocument.defaultView;
+
+  let frameWin = getWindowFor(node);
   let scale = getCurrentZoom(node);
 
   if (boundaryWindow === null) {
@@ -469,6 +470,53 @@ exports.getElementFromPoint = getElementFromPoint;
 
 
 
+
+
+
+function scrollIntoViewIfNeeded(elem, centered = true) {
+  let win = elem.ownerDocument.defaultView;
+  let clientRect = elem.getBoundingClientRect();
+
+  
+  
+  
+  
+
+  let topToBottom = clientRect.bottom;
+  let bottomToTop = clientRect.top - win.innerHeight;
+  
+  let yAllowed = true;
+
+  
+  
+  if ((topToBottom > 0 || !centered) && topToBottom <= elem.offsetHeight) {
+    win.scrollBy(0, topToBottom - elem.offsetHeight);
+    yAllowed = false;
+  } else if ((bottomToTop < 0 || !centered) &&
+             bottomToTop >= -elem.offsetHeight) {
+    win.scrollBy(0, bottomToTop + elem.offsetHeight);
+    yAllowed = false;
+  }
+
+  
+  
+  if (centered) {
+    if (yAllowed && (topToBottom <= 0 || bottomToTop >= 0)) {
+      win.scroll(win.scrollX,
+                 win.scrollY + clientRect.top
+                 - (win.innerHeight - elem.offsetHeight) / 2);
+    }
+  }
+}
+exports.scrollIntoViewIfNeeded = scrollIntoViewIfNeeded;
+
+
+
+
+
+
+
+
 function isNodeConnected(node) {
   if (!node.ownerDocument || !node.ownerDocument.defaultView) {
     return false;
@@ -614,13 +662,7 @@ exports.isShadowAnonymous = isShadowAnonymous;
 
 
 function getCurrentZoom(node) {
-  let win = null;
-
-  if (node instanceof Ci.nsIDOMNode) {
-    win = node.ownerDocument.defaultView;
-  } else if (node instanceof Ci.nsIDOMWindow) {
-    win = node;
-  }
+  let win = getWindowFor(node);
 
   if (!win) {
     throw new Error("Unable to get the zoom from the given argument.");
@@ -629,3 +671,23 @@ function getCurrentZoom(node) {
   return utilsFor(win).fullZoom;
 }
 exports.getCurrentZoom = getCurrentZoom;
+
+
+
+
+
+
+
+
+
+function getWindowFor(node) {
+  if (node instanceof Ci.nsIDOMNode) {
+    if (node.nodeType === node.DOCUMENT_NODE) {
+      return node.defaultView;
+    }
+    return node.ownerDocument.defaultView;
+  } else if (node instanceof Ci.nsIDOMWindow) {
+    return node;
+  }
+  return null;
+}
