@@ -163,6 +163,10 @@ protected:
 class MediaStreamTrack : public DOMEventTargetHelper,
                          public MediaStreamTrackSource::Sink
 {
+  
+  
+  friend class mozilla::DOMMediaStream;
+
 public:
   
 

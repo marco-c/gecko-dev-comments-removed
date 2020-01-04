@@ -47,7 +47,6 @@ class MediaStreamTrack;
 class MediaStreamTrackSource;
 class AudioStreamTrack;
 class VideoStreamTrack;
-class MediaStreamTrackSource;
 class AudioTrack;
 class VideoTrack;
 class AudioTrackList;
@@ -207,7 +206,8 @@ protected:
 
 
 
-class DOMMediaStream : public DOMEventTargetHelper
+class DOMMediaStream : public DOMEventTargetHelper,
+                       public dom::PrincipalChangeObserver<dom::MediaStreamTrack>
 {
   friend class DOMLocalMediaStream;
   typedef dom::MediaStreamTrack MediaStreamTrack;
@@ -457,7 +457,24 @@ public:
 
   void SetPrincipal(nsIPrincipal* aPrincipal);
 
+  
+  void PrincipalChanged(MediaStreamTrack* aTrack) override;
+
+  
+
+
+
+
+
+
+
   bool AddPrincipalChangeObserver(dom::PrincipalChangeObserver<DOMMediaStream>* aObserver);
+
+  
+
+
+
+
   bool RemovePrincipalChangeObserver(dom::PrincipalChangeObserver<DOMMediaStream>* aObserver);
 
   
@@ -582,6 +599,11 @@ protected:
   void CreateAndAddPlaybackStreamListener(MediaStream*);
 
   
+  
+  
+  void RecomputePrincipal();
+
+  
   StreamTime mLogicalStreamStartTime;
 
   
@@ -640,7 +662,6 @@ protected:
 
 private:
   void NotifyPrincipalChanged();
-
   
   
   nsCOMPtr<nsIPrincipal> mPrincipal;
