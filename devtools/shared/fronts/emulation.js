@@ -3,7 +3,7 @@
 
 "use strict";
 
-const { Front, FrontClass } = require("devtools/shared/protocol");
+const { Front, FrontClassWithSpec } = require("devtools/shared/protocol");
 const { emulationSpec } = require("devtools/shared/specs/emulation");
 
 
