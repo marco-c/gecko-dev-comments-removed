@@ -29,7 +29,7 @@ public class TelemetryConstants {
         private CorePing() {  }
 
         public static final String NAME = "core";
-        public static final int VERSION_VALUE = 3; 
+        public static final int VERSION_VALUE = 4; 
         public static final String OS_VALUE = "Android";
 
         public static final String ARCHITECTURE = "arch";
