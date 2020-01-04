@@ -675,6 +675,8 @@ ICMonitoredStub::ICMonitoredStub(Kind kind, JitCode* stubCode, ICStub* firstMoni
     firstMonitorStub_(firstMonitorStub)
 {
     
+    MOZ_ASSERT(firstMonitorStub_);
+    
     
     MOZ_ASSERT_IF(firstMonitorStub_->isTypeMonitor_Fallback(),
                   firstMonitorStub_->toTypeMonitor_Fallback()->firstMonitorStub() ==
