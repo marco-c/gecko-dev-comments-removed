@@ -34,10 +34,12 @@ var SCALE_SELECT_PADDING = 22;
 var PAGE_NUMBER_LOADING_INDICATOR = 'visiblePageIsLoading';
 var DISABLE_AUTO_FETCH_LOADING_BAR_TIMEOUT = 5000;
 
-PDFJS.imageResourcesPath = './images/';
+function configure(PDFJS) {
+  PDFJS.imageResourcesPath = './images/';
   PDFJS.workerSrc = '../build/pdf.worker.js';
   PDFJS.cMapUrl = '../web/cmaps/';
   PDFJS.cMapPacked = true;
+}
 
 var mozL10n = document.mozL10n || document.webL10n;
 
@@ -3447,8 +3449,6 @@ var TEXT_LAYER_RENDER_DELAY = 200;
 
 
 var PDFPageView = (function PDFPageViewClosure() {
-  var CustomStyle = PDFJS.CustomStyle;
-
   
 
 
@@ -3460,7 +3460,7 @@ var PDFPageView = (function PDFPageViewClosure() {
     var defaultViewport = options.defaultViewport;
     var renderingQueue = options.renderingQueue;
     var textLayerFactory = options.textLayerFactory;
-    var annotationsLayerFactory = options.annotationsLayerFactory;
+    var annotationLayerFactory = options.annotationLayerFactory;
 
     this.id = id;
     this.renderingId = 'page' + id;
@@ -3473,7 +3473,7 @@ var PDFPageView = (function PDFPageViewClosure() {
 
     this.renderingQueue = renderingQueue;
     this.textLayerFactory = textLayerFactory;
-    this.annotationsLayerFactory = annotationsLayerFactory;
+    this.annotationLayerFactory = annotationLayerFactory;
 
     this.renderingState = RenderingStates.INITIAL;
     this.resume = null;
@@ -3622,6 +3622,8 @@ var PDFPageView = (function PDFPageViewClosure() {
     },
 
     cssTransform: function PDFPageView_transform(canvas, redrawAnnotations) {
+      var CustomStyle = PDFJS.CustomStyle;
+
       
       var width = this.viewport.width;
       var height = this.viewport.height;
@@ -3902,10 +3904,10 @@ var PDFPageView = (function PDFPageViewClosure() {
         }
       );
 
-      if (this.annotationsLayerFactory) {
+      if (this.annotationLayerFactory) {
         if (!this.annotationLayer) {
-          this.annotationLayer = this.annotationsLayerFactory.
-            createAnnotationsLayerBuilder(div, this.pdfPage);
+          this.annotationLayer = this.annotationLayerFactory.
+            createAnnotationLayerBuilder(div, this.pdfPage);
         }
         this.annotationLayer.render(this.viewport, 'display');
       }
@@ -3918,6 +3920,7 @@ var PDFPageView = (function PDFPageViewClosure() {
     },
 
     beforePrint: function PDFPageView_beforePrint() {
+      var CustomStyle = PDFJS.CustomStyle;
       var pdfPage = this.pdfPage;
 
       var viewport = pdfPage.getViewport(1);
@@ -4305,12 +4308,12 @@ DefaultTextLayerFactory.prototype = {
 
 
 
-var AnnotationsLayerBuilder = (function AnnotationsLayerBuilderClosure() {
+var AnnotationLayerBuilder = (function AnnotationLayerBuilderClosure() {
   
 
 
 
-  function AnnotationsLayerBuilder(options) {
+  function AnnotationLayerBuilder(options) {
     this.pageDiv = options.pageDiv;
     this.pdfPage = options.pdfPage;
     this.linkService = options.linkService;
@@ -4318,14 +4321,14 @@ var AnnotationsLayerBuilder = (function AnnotationsLayerBuilderClosure() {
     this.div = null;
   }
 
-  AnnotationsLayerBuilder.prototype =
+  AnnotationLayerBuilder.prototype =
        {
 
     
 
 
 
-    render: function AnnotationsLayerBuilder_render(viewport, intent) {
+    render: function AnnotationLayerBuilder_render(viewport, intent) {
       var self = this;
       var parameters = {
         intent: (intent === undefined ? 'display' : intent),
@@ -4333,11 +4336,18 @@ var AnnotationsLayerBuilder = (function AnnotationsLayerBuilderClosure() {
 
       this.pdfPage.getAnnotations(parameters).then(function (annotations) {
         viewport = viewport.clone({ dontFlip: true });
+        parameters = {
+          viewport: viewport,
+          div: self.div,
+          annotations: annotations,
+          page: self.pdfPage,
+          linkService: self.linkService
+        };
 
         if (self.div) {
           
           
-          PDFJS.AnnotationLayer.update(viewport, self.div, annotations);
+          PDFJS.AnnotationLayer.update(parameters);
         } else {
           
           
@@ -4348,9 +4358,9 @@ var AnnotationsLayerBuilder = (function AnnotationsLayerBuilderClosure() {
           self.div = document.createElement('div');
           self.div.className = 'annotationLayer';
           self.pageDiv.appendChild(self.div);
+          parameters.div = self.div;
 
-          PDFJS.AnnotationLayer.render(viewport, self.div, annotations,
-                                       self.pdfPage, self.linkService);
+          PDFJS.AnnotationLayer.render(parameters);
           if (typeof mozL10n !== 'undefined') {
             mozL10n.translate(self.div);
           }
@@ -4358,7 +4368,7 @@ var AnnotationsLayerBuilder = (function AnnotationsLayerBuilderClosure() {
       });
     },
 
-    hide: function AnnotationsLayerBuilder_hide() {
+    hide: function AnnotationLayerBuilder_hide() {
       if (!this.div) {
         return;
       }
@@ -4366,22 +4376,22 @@ var AnnotationsLayerBuilder = (function AnnotationsLayerBuilderClosure() {
     }
   };
 
-  return AnnotationsLayerBuilder;
+  return AnnotationLayerBuilder;
 })();
 
 
 
 
 
-function DefaultAnnotationsLayerFactory() {}
-DefaultAnnotationsLayerFactory.prototype = {
+function DefaultAnnotationLayerFactory() {}
+DefaultAnnotationLayerFactory.prototype = {
   
 
 
 
 
-  createAnnotationsLayerBuilder: function (pageDiv, pdfPage) {
-    return new AnnotationsLayerBuilder({
+  createAnnotationLayerBuilder: function (pageDiv, pdfPage) {
+    return new AnnotationLayerBuilder({
       pageDiv: pageDiv,
       pdfPage: pdfPage,
       linkService: new SimpleLinkService(),
@@ -4649,7 +4659,7 @@ var PDFViewer = (function pdfViewer() {
             defaultViewport: viewport.clone(),
             renderingQueue: this.renderingQueue,
             textLayerFactory: textLayerFactory,
-            annotationsLayerFactory: this
+            annotationLayerFactory: this
           });
           bindOnAfterAndBeforeDraw(pageView);
           this._pages.push(pageView);
@@ -5108,8 +5118,8 @@ var PDFViewer = (function pdfViewer() {
 
 
 
-    createAnnotationsLayerBuilder: function (pageDiv, pdfPage) {
-      return new AnnotationsLayerBuilder({
+    createAnnotationLayerBuilder: function (pageDiv, pdfPage) {
+      return new AnnotationLayerBuilder({
         pageDiv: pageDiv,
         pdfPage: pdfPage,
         linkService: this.linkService
@@ -7090,7 +7100,8 @@ var PDFViewerApplication = {
 
 
 function webViewerLoad(evt) {
-  PDFViewerApplication.initialize().then(webViewerInitialized);
+    configure(PDFJS);
+    PDFViewerApplication.initialize().then(webViewerInitialized);
 }
 
 function webViewerInitialized() {
