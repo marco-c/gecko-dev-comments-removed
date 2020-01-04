@@ -73,7 +73,7 @@ Animation::SetTimeline(AnimationTimeline* aTimeline)
   }
 
   if (mTimeline) {
-    mTimeline->RemoveAnimation(*this);
+    mTimeline->NotifyAnimationUpdated(*this);
   }
 
   mTimeline = aTimeline;
@@ -842,39 +842,8 @@ Animation::UpdateTiming(SeekFlag aSeekFlag, SyncNotifyFlag aSyncNotifyFlag)
   UpdateFinishedState(aSeekFlag, aSyncNotifyFlag);
   UpdateEffect();
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
   if (mTimeline) {
-    
-    
-    
-    
-    
-    
-    if (IsRelevant()) {
-      mTimeline->AddAnimation(*this);
-    } else {
-      mTimeline->RemoveAnimation(*this);
-    }
+    mTimeline->NotifyAnimationUpdated(*this);
   }
 }
 

@@ -57,6 +57,8 @@ public:
                                                                      override;
   TimeStamp ToTimeStamp(const TimeDuration& aTimelineTime) const override;
 
+  void NotifyAnimationUpdated(Animation& aAnimation) override;
+
   
   void WillRefresh(TimeStamp aTime) override;
 

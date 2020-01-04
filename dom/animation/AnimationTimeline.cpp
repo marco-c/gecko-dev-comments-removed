@@ -34,10 +34,12 @@ AnimationTimeline::GetAnimations(AnimationSequence& aAnimations)
   for (auto iter = mAnimations.Iter(); !iter.Done(); iter.Next()) {
     Animation* animation = iter.Get()->GetKey();
 
-    MOZ_ASSERT(animation->IsRelevant(),
-               "Animations registered with a timeline should be relevant");
-    MOZ_ASSERT(animation->GetTimeline() == this,
-               "Animation should refer to this timeline");
+    
+    
+    
+    if (!animation->IsRelevant() || animation->GetTimeline() != this) {
+      continue;
+    }
 
     
     
@@ -59,15 +61,9 @@ AnimationTimeline::GetAnimations(AnimationSequence& aAnimations)
 }
 
 void
-AnimationTimeline::AddAnimation(Animation& aAnimation)
+AnimationTimeline::NotifyAnimationUpdated(Animation& aAnimation)
 {
   mAnimations.PutEntry(&aAnimation);
-}
-
-void
-AnimationTimeline::RemoveAnimation(Animation& aAnimation)
-{
-  mAnimations.RemoveEntry(&aAnimation);
 }
 
 } 

@@ -83,8 +83,13 @@ public:
 
   virtual TimeStamp ToTimeStamp(const TimeDuration& aTimelineTime) const = 0;
 
-  void AddAnimation(Animation& aAnimation);
-  void RemoveAnimation(Animation& aAnimation);
+  
+
+
+
+
+
+  virtual void NotifyAnimationUpdated(Animation& aAnimation);
 
 protected:
   nsCOMPtr<nsIGlobalObject> mWindow;
