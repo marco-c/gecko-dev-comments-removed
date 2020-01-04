@@ -814,6 +814,8 @@ nsUrlClassifierLookupCallback::LookupComplete(nsTArray<LookupResult>* results)
       NS_ENSURE_SUCCESS(rv, rv);
       rv = listManager->GetGethashUrl(result.mTableName, gethashUrl);
       NS_ENSURE_SUCCESS(rv, rv);
+      LOG(("The match from %s needs to be completed at %s",
+           result.mTableName.get(), gethashUrl.get()));
       
       
       
@@ -836,6 +838,8 @@ nsUrlClassifierLookupCallback::LookupComplete(nsTArray<LookupResult>* results)
         
         if (result.Complete()) {
           result.mFresh = true;
+          LOG(("Skipping completion in a table without a valid completer (%s).",
+               result.mTableName.get()));
         } else {
           NS_WARNING("Partial match in a table without a valid completer, ignoring partial match.");
         }
@@ -922,8 +926,11 @@ nsUrlClassifierLookupCallback::HandleResults()
     
     
     
-    if (!result.Confirmed() || result.mNoise) {
-      LOG(("Skipping result from table %s", result.mTableName.get()));
+    if (!result.Confirmed()) {
+      LOG(("Skipping result from table %s (not confirmed)", result.mTableName.get()));
+      continue;
+    } else if (result.mNoise) {
+      LOG(("Skipping result from table %s (noise)", result.mTableName.get()));
       continue;
     }
 
