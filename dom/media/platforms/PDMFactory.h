@@ -60,7 +60,11 @@ protected:
   }
 
 private:
-  already_AddRefed<PlatformDecoderModule> CreatePDM();
+  void CreatePDMs();
+  
+  bool StartupPDM(PlatformDecoderModule* aPDM);
+  
+  already_AddRefed<PlatformDecoderModule> GetDecoder(const nsACString& aMimeType);
 
   
   static bool sUseBlankDecoder;
@@ -72,7 +76,7 @@ private:
   static uint32_t sVideoOutputMinimumInterval_ms;
   static bool sDontDelayInputExhausted;
 
-  nsRefPtr<PlatformDecoderModule> mCurrentPDM;
+  nsTArray<nsRefPtr<PlatformDecoderModule>> mCurrentPDMs;
 };
 
 } 
