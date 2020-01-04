@@ -101,9 +101,6 @@ function RadixSort(array, len, buffer, nbytes, signed, floating, comparefn) {
         return array;
     }
 
-    
-    assert(buffer !== null, "Attached data buffer should be reified when array length is >= 128.");
-
     let aux = new List();
     for (let i = 0; i < len; i++) {
         aux[i] = 0;
@@ -114,6 +111,14 @@ function RadixSort(array, len, buffer, nbytes, signed, floating, comparefn) {
 
     
     if (floating) {
+        
+        if (buffer === null) {
+            buffer = callFunction(std_TypedArray_buffer, array);
+        }
+
+        
+        assert(buffer !== null, "Attached data buffer should be reified when array length is >= 128.");
+
         view = new Int32Array(buffer);
 
         
