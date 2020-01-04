@@ -1061,16 +1061,16 @@ Search.prototype = {
     if (searchString.length < 2)
       return true;
 
-    let tokens = searchString.split(REGEXP_SPACES);
-
     
-    if (REGEXP_SINGLEWORD_HOST.test(tokens[0]) &&
-        Services.uriFixup.isDomainWhitelisted(tokens[0], -1))
+    if (this._searchTokens.length == 1 &&
+        REGEXP_SINGLEWORD_HOST.test(this._searchTokens[0]) &&
+        Services.uriFixup.isDomainWhitelisted(this._searchTokens[0], -1)) {
       return true;
+    }
 
     
     
-    return tokens.some(looksLikeUrl);
+    return this._searchTokens.some(looksLikeUrl);
   },
 
   _matchKnownUrl: function* (conn) {
