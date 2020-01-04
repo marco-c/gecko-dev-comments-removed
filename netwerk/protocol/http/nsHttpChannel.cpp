@@ -4518,12 +4518,17 @@ nsHttpChannel::SetupReplacementChannel(nsIURI       *newURI,
         mInterceptCache != INTERCEPTED) {
         
         
-        nsLoadFlags loadFlags = nsIRequest::LOAD_NORMAL;
-        rv = newChannel->GetLoadFlags(&loadFlags);
-        NS_ENSURE_SUCCESS(rv, rv);
-        loadFlags |= nsIChannel::LOAD_BYPASS_SERVICE_WORKER;
-        rv = newChannel->SetLoadFlags(loadFlags);
-        NS_ENSURE_SUCCESS(rv, rv);
+        
+        if (mRedirectMode != nsIHttpChannelInternal::REDIRECT_MODE_MANUAL ||
+            (redirectFlags & (nsIChannelEventSink::REDIRECT_TEMPORARY |
+                              nsIChannelEventSink::REDIRECT_PERMANENT)) == 0) {
+            nsLoadFlags loadFlags = nsIRequest::LOAD_NORMAL;
+            rv = newChannel->GetLoadFlags(&loadFlags);
+            NS_ENSURE_SUCCESS(rv, rv);
+            loadFlags |= nsIChannel::LOAD_BYPASS_SERVICE_WORKER;
+            rv = newChannel->SetLoadFlags(loadFlags);
+            NS_ENSURE_SUCCESS(rv, rv);
+        }
     }
 
     return NS_OK;
