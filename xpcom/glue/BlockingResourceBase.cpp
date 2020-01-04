@@ -350,9 +350,9 @@ BlockingResourceBase::Release()
     ResourceChainRemove();
   } else {
     
-    NS_WARNING("Resource acquired at calling context\n");
-    NS_WARNING("  [stack trace unavailable]\n");
-    NS_WARNING("\nis being released in non-LIFO order; why?");
+    NS_WARNING("Resource acquired is being released in non-LIFO order; why?\n");
+    nsCString tmp;
+    Print(tmp);
 
     
     
@@ -416,9 +416,7 @@ ReentrantMonitor::Enter()
          br = ResourceChainPrev(br)) {
       if (br == this) {
         NS_WARNING(
-          "Re-entering ReentrantMonitor after acquiring other resources.\n"
-          "At calling context\n"
-          "  [stack trace unavailable]\n");
+          "Re-entering ReentrantMonitor after acquiring other resources.");
 
         
         CheckAcquire();
