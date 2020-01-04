@@ -265,17 +265,11 @@ SessionStore.prototype = {
         break;
       }
       case "DOMTitleChanged": {
+        
+        
+        
+        
         let browser = aEvent.currentTarget;
-
-        
-        if (browser.contentDocument !== aEvent.originalTarget) {
-          return;
-        }
-
-        
-        
-        
-        
         log("DOMTitleChanged for tab " + window.BrowserApp.getTabForBrowser(browser).id);
         this.onTabLoad(window, browser);
         break;
