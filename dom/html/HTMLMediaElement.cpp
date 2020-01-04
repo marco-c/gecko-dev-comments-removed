@@ -1637,20 +1637,6 @@ nsresult HTMLMediaElement::LoadResource()
   
   mCORSMode = AttrValueToCORSMode(GetParsedAttr(nsGkAtoms::crossorigin));
 
-#ifdef MOZ_EME
-  bool isBlob = false;
-  if (mMediaKeys &&
-      Preferences::GetBool("media.eme.mse-only", true) &&
-      
-      
-      (NS_FAILED(mLoadingSrc->SchemeIs(BLOBURI_SCHEME, &isBlob)) ||
-       !isBlob ||
-       IsMediaStreamURI(mLoadingSrc) ||
-       IsBlobURI(mLoadingSrc))) {
-    return NS_ERROR_DOM_NOT_SUPPORTED_ERR;
-  }
-#endif
-
   HTMLMediaElement* other = LookupMediaElementURITable(mLoadingSrc);
   if (other && other->mDecoder) {
     
@@ -4340,8 +4326,10 @@ void HTMLMediaElement::MetadataLoaded(const MediaInfo* aInfo,
     mDecoder->SetFragmentEndTime(mFragmentEnd);
   }
   if (mIsEncrypted) {
+    
     if (!mMediaSource && Preferences::GetBool("media.eme.mse-only", true)) {
-      DecodeError(NS_ERROR_DOM_MEDIA_FATAL_ERR);
+      DecodeError(MediaResult(NS_ERROR_DOM_MEDIA_FATAL_ERR,
+                              "Encrypted content not supported outside of MSE"));
       return;
     }
 
@@ -6108,16 +6096,6 @@ HTMLMediaElement::SetMediaKeys(mozilla::dom::MediaKeys* aMediaKeys,
     NS_LITERAL_CSTRING("HTMLMediaElement.setMediaKeys"));
   if (aRv.Failed()) {
     return nullptr;
-  }
-
-  
-  if (mDecoder &&
-      !mMediaSource &&
-      Preferences::GetBool("media.eme.mse-only", true)) {
-    ShutdownDecoder();
-    promise->MaybeReject(NS_ERROR_DOM_NOT_SUPPORTED_ERR,
-                         NS_LITERAL_CSTRING("EME not supported on non-MSE streams"));
-    return promise.forget();
   }
 
   
