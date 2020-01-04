@@ -183,8 +183,15 @@ class AndroidEmulatorTest(BlobUploadMixin, TestingMixin, EmulatorMixin, VCSMixin
         
         env['LD_LIBRARY_PATH'] = self.abs_dirs['abs_work_dir']
 
+        
+        
+        
+        
+        
+        
         avd_home_dir = self.abs_dirs['abs_avds_dir']
         env['ANDROID_AVD_HOME'] = os.path.join(avd_home_dir, 'avd')
+        env['ANDROID_SDK_HOME'] = os.path.abspath(os.path.join(avd_home_dir, '..'))
 
         command = [
             "emulator", "-avd", self.emulator["name"],
