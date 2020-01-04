@@ -11,6 +11,29 @@
 #include <stdio.h>
 #include <string.h>
 
+#ifdef __clang__
+#ifndef CLANG_ANALYZER_NORETURN
+#if __has_feature(attribute_analyzer_noreturn)
+#define CLANG_ANALYZER_NORETURN __attribute__((analyzer_noreturn))
+#else
+#define CLANG_ANALYZER_NORETURN
+#endif 
+#endif 
+#else 
+#define CLANG_ANALYZER_NORETURN
+#endif
+
+#if defined(__cplusplus)
+extern "C" {
+#endif
+
+
+void cubeb_crash() CLANG_ANALYZER_NORETURN;
+
+#if defined(__cplusplus)
+}
+#endif
+
 struct cubeb_ops {
   int (* init)(cubeb ** context, char const * context_name);
   char const * (* get_backend_id)(cubeb * context);
@@ -52,12 +75,11 @@ struct cubeb_ops {
                                              void * user_ptr);
 };
 
-#define XASSERT(expr) do {                                              \
-    if (!(expr)) {                                                      \
+#define XASSERT(expr) do {                                                     \
+    if (!(expr)) {                                                             \
       fprintf(stderr, "%s:%d - fatal error: %s\n", __FILE__, __LINE__, #expr); \
-      *((volatile int *) NULL) = 0;                                     \
-      abort();                                                          \
-    }                                                                   \
+      cubeb_crash();                                                           \
+    }                                                                          \
   } while (0)
 
-#endif 
+#endif
