@@ -33,8 +33,7 @@ function shouldCapture() {
   
   
   let capture = AppConstants.MOZ_UPDATE_CHANNEL == "nightly" ||
-                AppConstants.SOURCE_REVISION_URL == "" ||
-                AppConstants.SOURCE_REVISION_URL == "1"; 
+                AppConstants.SOURCE_REVISION_URL == "";
   if (!capture) {
     ok(true, "Capturing is disabled for this MOZ_UPDATE_CHANNEL or REPO");
   }
