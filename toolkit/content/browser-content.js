@@ -670,17 +670,60 @@ var FindBar = {
 };
 FindBar.init();
 
-
-addEventListener("WebChannelMessageToChrome", function (e) {
+let WebChannelMessageToChromeListener = {
   
-  let principal = e.target.nodePrincipal ? e.target.nodePrincipal : e.target.document.nodePrincipal;
+  
+  
+  URL_WHITELIST_PREF: "webchannel.allowObject.urlWhitelist",
 
-  if (e.detail) {
-    sendAsyncMessage("WebChannelMessageToChrome", e.detail, { eventTarget: e.target }, principal);
-  } else  {
-    Cu.reportError("WebChannel message failed. No message detail.");
+  
+  
+  
+  
+  _principalWhitelist: null,
+
+  init() {
+    Services.prefs.addObserver(this.URL_WHITELIST_PREF, () => {
+      this._principalWhitelist = null;
+    }, false);
+    addEventListener("WebChannelMessageToChrome", e => {
+      this._onMessageToChrome(e);
+    }, true, true);
+  },
+
+  _getWhitelistedPrincipals() {
+    if (!this._principalWhitelist) {
+      let prefValue = Services.prefs.getCharPref(this.URL_WHITELIST_PREF);
+      let urls = prefValue.split(/\s+/);
+      this._principalWhitelist = urls.map(origin =>
+        Services.scriptSecurityManager.createCodebasePrincipalFromOrigin(origin));
+    }
+    return this._principalWhitelist;
+  },
+
+  _onMessageToChrome(e) {
+    
+    let principal = e.target.nodePrincipal ? e.target.nodePrincipal : e.target.document.nodePrincipal;
+
+    if (e.detail) {
+      if (typeof e.detail != 'string') {
+        
+        
+        let objectsAllowed = this._getWhitelistedPrincipals().some(whitelisted =>
+          principal.originNoSuffix == whitelisted.originNoSuffix);
+        if (!objectsAllowed) {
+          Cu.reportError("WebChannelMessageToChrome sent with an object from a non-whitelisted principal");
+          return;
+        }
+      }
+      sendAsyncMessage("WebChannelMessageToChrome", e.detail, { eventTarget: e.target }, principal);
+    } else  {
+      Cu.reportError("WebChannel message failed. No message detail.");
+    }
   }
-}, true, true);
+};
+
+WebChannelMessageToChromeListener.init();
 
 
 
