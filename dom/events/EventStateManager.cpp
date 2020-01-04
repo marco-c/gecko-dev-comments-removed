@@ -622,7 +622,7 @@ EventStateManager::PreHandleEvent(nsPresContext* aPresContext,
     } else {
       if (sPointerEventEnabled) {
         
-        GeneratePointerEnterExit(NS_POINTER_LEAVE, mouseEvent);
+        GeneratePointerEnterExit(ePointerLeave, mouseEvent);
       }
       GenerateMouseEnterExit(mouseEvent);
       
@@ -3951,7 +3951,7 @@ EventStateManager::NotifyMouseOut(WidgetMouseEvent* aMouseEvent,
 
   EnterLeaveDispatcher leaveDispatcher(this, wrapper->mLastOverElement,
                                        movingInto, aMouseEvent,
-                                       isPointer ? NS_POINTER_LEAVE : eMouseLeave);
+                                       isPointer ? ePointerLeave : eMouseLeave);
 
   
   DispatchMouseOrPointerEvent(aMouseEvent, isPointer ? NS_POINTER_OUT : eMouseOut,
@@ -4184,7 +4184,7 @@ EventStateManager::GenerateMouseEnterExit(WidgetMouseEvent* aMouseEvent)
       }
     }
     break;
-  case NS_POINTER_LEAVE:
+  case ePointerLeave:
   case ePointerCancel:
   case eMouseExitFromWidget:
     {
