@@ -812,11 +812,9 @@ var SessionStoreInternal = {
         
         if ("image" in tabData) {
           
-          
-          
-          
-          win.gBrowser.setIcon(tab, tabData.image, null);
-          TabStateCache.update(browser, {image: null});
+          let loadingPrincipal = Utils.deserializePrincipal(tabData.iconLoadingPrincipal);
+          win.gBrowser.setIcon(tab, tabData.image, loadingPrincipal);
+          TabStateCache.update(browser, { image: null, iconLoadingPrincipal: null });
         }
 
         let event = win.document.createEvent("Events");
@@ -1775,6 +1773,7 @@ var SessionStoreInternal = {
       state: tabState,
       title: tabTitle,
       image: tabbrowser.getIcon(aTab),
+      iconLoadingPrincipal: Utils.serializePrincipal(aTab.linkedBrowser.contentPrincipal),
       pos: aTab._tPos,
       closedAt: Date.now()
     };
@@ -3321,6 +3320,7 @@ var SessionStoreInternal = {
       
       
       image: tabData.image || "",
+      iconLoadingPrincipal: tabData.iconLoadingPrincipal || null,
       userTypedValue: tabData.userTypedValue || "",
       userTypedClear: tabData.userTypedClear || 0
     });
