@@ -555,6 +555,7 @@ public:
   
   bool IsDescendantOfRoot(nsIDOMNode* inNode);
   bool IsDescendantOfRoot(nsINode* inNode);
+  bool IsDescendantOfEditorRoot(nsIDOMNode* aNode);
   bool IsDescendantOfEditorRoot(nsINode* aNode);
 
   
@@ -598,8 +599,7 @@ public:
   static bool IsTextNode(nsINode *aNode);
 
   static nsCOMPtr<nsIDOMNode> GetChildAt(nsIDOMNode *aParent, int32_t aOffset);
-  static nsIContent* GetNodeAtRangeOffsetPoint(nsIDOMNode* aParentOrNode,
-                                               int32_t aOffset);
+  static nsCOMPtr<nsIDOMNode> GetNodeAtRangeOffsetPoint(nsIDOMNode* aParentOrNode, int32_t aOffset);
 
   static nsresult GetStartNodeAndOffset(Selection* aSelection,
                                         nsIDOMNode** outStartNode,
