@@ -162,9 +162,6 @@ user_pref("layout.css.object-fit-and-position.enabled", true);
 user_pref("layout.css.ruby.enabled", true);
 
 
-user_pref("layout.css.unicode-range.enabled", true);
-
-
 user_pref("layout.css.prefixes.webkit", true);
 
 
