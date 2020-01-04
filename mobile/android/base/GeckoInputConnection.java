@@ -368,6 +368,13 @@ class GeckoInputConnection
         final InputMethodManager imm = getInputMethodManager();
         if (imm != null) {
             final View v = getView();
+
+            if (v.hasFocus() && !imm.isActive(v)) {
+                
+                v.clearFocus();
+                v.requestFocus();
+            }
+
             imm.showSoftInput(v, 0);
         }
     }
