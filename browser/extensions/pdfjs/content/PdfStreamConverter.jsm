@@ -65,22 +65,15 @@ function getFindBar(domWindow) {
   if (PdfjsContentUtils.isRemote) {
     throw new Error('FindBar is not accessible from the content process.');
   }
-  var browser = getContainingBrowser(domWindow);
   try {
+    var browser = getContainingBrowser(domWindow);
     var tabbrowser = browser.getTabBrowser();
-    var tab;
-    tab = tabbrowser.getTabForBrowser(browser);
+    var tab = tabbrowser.getTabForBrowser(browser);
     return tabbrowser.getFindBar(tab);
   } catch (e) {
-    try {
-      
-      var chromeWindow = browser.ownerDocument.defaultView;
-      return chromeWindow.gFindBar;
-    } catch (ex) {
-      
-      
-      return null;
-    }
+    
+    
+    return null;
   }
 }
 
@@ -155,16 +148,15 @@ function getLocalizedString(strings, id, property) {
   return id;
 }
 
-function makeContentReadable(obj, window) {
-  
-  return Cu.cloneInto(obj, window);
-}
-
-function createNewChannel(uri) {
+function createNewChannel(uri, node) {
   return NetUtil.newChannel({
     uri: uri,
-    loadUsingSystemPrincipal: true
+    loadUsingSystemPrincipal: true,
   });
+}
+
+function asyncOpenChannel(channel, listener, context) {
+  return channel.asyncOpen2(listener);
 }
 
 function asyncFetchChannel(channel, callback) {
@@ -264,7 +256,7 @@ ChromeActions.prototype = {
              getService(Ci.nsIExternalHelperAppService);
 
     var docIsPrivate = this.isInPrivateBrowsing();
-    var netChannel = createNewChannel(blobUri);
+    var netChannel = createNewChannel(blobUri, this.domWindow.document);
     if ('nsIPrivateBrowsingChannel' in Ci &&
         netChannel instanceof Ci.nsIPrivateBrowsingChannel) {
       netChannel.setPrivate(docIsPrivate);
@@ -327,7 +319,7 @@ ChromeActions.prototype = {
         }
       };
 
-      channel.asyncOpen2(listener);
+      asyncOpenChannel(channel, listener, null);
     });
   },
   getLocale: function() {
@@ -367,11 +359,7 @@ ChromeActions.prototype = {
     return (!!prefBrowser && prefGfx);
   },
   supportsDocumentColors: function() {
-    if (getIntPref('browser.display.document_color_use', 0) === 2 ||
-        !getBoolPref('browser.display.use_document_colors', true)) {
-      return false;
-    }
-    return true;
+    return getIntPref('browser.display.document_color_use', 0) !== 2;
   },
   supportedMouseWheelZoomModifierKeys: function() {
     return {
@@ -783,7 +771,7 @@ RequestListener.prototype.receive = function(event) {
   var response;
   if (sync) {
     response = actions[action].call(this.actions, data);
-    event.detail.response = makeContentReadable(response, doc.defaultView);
+    event.detail.response = Cu.cloneInto(response, doc.defaultView);
   } else {
     if (!event.detail.responseExpected) {
       doc.documentElement.removeChild(message);
@@ -792,8 +780,7 @@ RequestListener.prototype.receive = function(event) {
       response = function sendResponse(response) {
         try {
           var listener = doc.createEvent('CustomEvent');
-          let detail = makeContentReadable({response: response},
-                                           doc.defaultView);
+          let detail = Cu.cloneInto({ response: response }, doc.defaultView);
           listener.initCustomEvent('pdf.js.response', true, false, detail);
           return message.dispatchEvent(listener);
         } catch (e) {
@@ -837,7 +824,7 @@ FindEventManager.prototype.receiveMessage = function(msg) {
   var type = msg.data.type;
   var contentWindow = this.contentWindow;
 
-  detail = makeContentReadable(detail, contentWindow);
+  detail = Cu.cloneInto(detail, contentWindow);
   var forward = contentWindow.document.createEvent('CustomEvent');
   forward.initCustomEvent(type, true, true, detail);
   contentWindow.dispatchEvent(forward);
@@ -972,7 +959,7 @@ PdfStreamConverter.prototype = {
                         .createInstance(Ci.nsIBinaryInputStream);
 
     
-    var channel = createNewChannel(PDF_VIEWER_WEB_PAGE);
+    var channel = createNewChannel(PDF_VIEWER_WEB_PAGE, null);
 
     var listener = this.listener;
     var dataListener = this.dataListener;
@@ -1027,15 +1014,14 @@ PdfStreamConverter.prototype = {
     
     
     
-    
     var ssm = Cc['@mozilla.org/scriptsecuritymanager;1']
                 .getService(Ci.nsIScriptSecurityManager);
     var uri = NetUtil.newURI(PDF_VIEWER_WEB_PAGE, null, null);
-    var attrs = aRequest.loadInfo.originAttributes;
     var resourcePrincipal;
-    resourcePrincipal = ssm.createCodebasePrincipal(uri, attrs);
+    resourcePrincipal =
+      ssm.createCodebasePrincipal(uri, aRequest.loadInfo.originAttributes);
     aRequest.owner = resourcePrincipal;
-    channel.asyncOpen2(proxy);
+    asyncOpenChannel(channel, proxy, aContext);
   },
 
   
