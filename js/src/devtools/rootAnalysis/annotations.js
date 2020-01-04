@@ -324,10 +324,31 @@ function isUnsafeStorage(typeName)
     return typeName.startsWith('UniquePtr<');
 }
 
-function isSuppressConstructor(varName)
+function isSuppressConstructor(edgeType, varName)
 {
     
-    return GCSuppressionTypes.indexOf(varName[1]) != -1;
+    if (edgeType.Kind != 'Function')
+        return false;
+    if (!('TypeFunctionCSU' in edgeType))
+        return false;
+    if (edgeType.Type.Kind != 'Void')
+        return false;
+
+    
+    var type = edgeType.TypeFunctionCSU.Type.Name;
+    if (GCSuppressionTypes.indexOf(type) == -1)
+        return false;
+
+    
+    
+    var [ mangled, unmangled ] = splitFunction(varName[0]);
+    if (mangled.search(/C\dE/) == -1)
+        return false; 
+    var m = unmangled.match(/([~\w]+)(?:<.*>)?\(/);
+    if (!m)
+        return false;
+    var type_stem = type.replace(/\w+::/g, '').replace(/\<.*\>/g, '');
+    return m[1] == type_stem;
 }
 
 
