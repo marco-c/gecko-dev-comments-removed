@@ -4943,26 +4943,43 @@ JS_ReportAllocationOverflow(JSContext* cx);
 
 class JSErrorReport
 {
+    
+    const char16_t* linebuf_;
+
+    
+    size_t linebufLength_;
+
+    
+    size_t tokenOffset_;
+
   public:
     JSErrorReport()
-      : filename(nullptr), lineno(0), column(0), isMuted(false), linebuf(nullptr),
-        tokenptr(nullptr), uclinebuf(nullptr), uctokenptr(nullptr), flags(0), errorNumber(0),
-        ucmessage(nullptr), messageArgs(nullptr), exnType(0)
+      : linebuf_(nullptr), linebufLength_(0), tokenOffset_(0),
+        filename(nullptr), lineno(0), column(0), isMuted(false),
+        flags(0), errorNumber(0), ucmessage(nullptr),
+        messageArgs(nullptr), exnType(0)
     {}
 
     const char*     filename;      
     unsigned        lineno;         
     unsigned        column;         
     bool            isMuted;        
-    const char*     linebuf;       
-    const char*     tokenptr;      
-    const char16_t* uclinebuf;     
-    const char16_t* uctokenptr;    
     unsigned        flags;          
     unsigned        errorNumber;    
     const char16_t* ucmessage;     
     const char16_t** messageArgs;  
     int16_t         exnType;        
+
+    const char16_t* linebuf() const {
+        return linebuf_;
+    }
+    size_t linebufLength() const {
+        return linebufLength_;
+    }
+    size_t tokenOffset() const {
+        return tokenOffset_;
+    }
+    void initLinebuf(const char16_t* linebuf, size_t linebufLength, size_t tokenOffset);
 };
 
 
