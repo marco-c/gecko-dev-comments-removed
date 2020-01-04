@@ -123,6 +123,8 @@ public:
   
   
   
+  
+  
   template <AudioConfig::SampleFormat Format, typename Value>
   AudioDataBuffer<Format, Value> Process(AudioDataBuffer<Format, Value>&& aBuffer)
   {
@@ -152,7 +154,7 @@ public:
       return AudioDataBuffer<Format, Value>(Move(temp1));
     }
     frames = ProcessInternal(temp1.Data(), aBuffer.Data(), frames);
-    if (!frames || mIn.Rate() == mOut.Rate()) {
+    if (mIn.Rate() == mOut.Rate()) {
       temp1.SetLength(FramesOutToSamples(frames));
       return AudioDataBuffer<Format, Value>(Move(temp1));
     }
@@ -161,13 +163,17 @@ public:
     
     AlignedBuffer<Value>* outputBuffer = &temp1;
     AlignedBuffer<Value> temp2;
-    if (mOut.Rate() > mIn.Rate()) {
+    if (!frames || mOut.Rate() > mIn.Rate()) {
       
       
       temp2.SetLength(FramesOutToSamples(ResampleRecipientFrames(frames)));
       outputBuffer = &temp2;
     }
-    frames = ResampleAudio(outputBuffer->Data(), temp1.Data(), frames);
+    if (!frames) {
+      frames = DrainResampler(outputBuffer->Data());
+    } else {
+      frames = ResampleAudio(outputBuffer->Data(), temp1.Data(), frames);
+    }
     outputBuffer->SetLength(FramesOutToSamples(frames));
     return AudioDataBuffer<Format, Value>(Move(*outputBuffer));
   }
@@ -223,6 +229,8 @@ private:
   SpeexResamplerState* mResampler;
   size_t ResampleAudio(void* aOut, const void* aIn, size_t aFrames);
   size_t ResampleRecipientFrames(size_t aFrames) const;
+  void RecreateResampler();
+  size_t DrainResampler(void* aOut);
 };
 
 } 
