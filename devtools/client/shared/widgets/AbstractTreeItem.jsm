@@ -522,7 +522,6 @@ AbstractTreeItem.prototype = {
 
 
   _onClick: function(e) {
-    e.preventDefault();
     e.stopPropagation();
     this.focus();
   },
