@@ -518,7 +518,7 @@ CycleCollectedJSRuntime::Initialize(JSRuntime* aParentRuntime,
   }
   JS_SetGrayGCRootsTracer(mJSContext, TraceGrayJS, this);
   JS_SetGCCallback(mJSContext, GCCallback, this);
-  mPrevGCSliceCallback = JS::SetGCSliceCallback(mJSRuntime, GCSliceCallback);
+  mPrevGCSliceCallback = JS::SetGCSliceCallback(mJSContext, GCSliceCallback);
 
   if (NS_IsMainThread()) {
     
@@ -529,7 +529,7 @@ CycleCollectedJSRuntime::Initialize(JSRuntime* aParentRuntime,
     
     
     mPrevGCNurseryCollectionCallback = JS::SetGCNurseryCollectionCallback(
-      mJSRuntime, GCNurseryCollectionCallback);
+      mJSContext, GCNurseryCollectionCallback);
   }
 
   JS_SetObjectsTenuredCallback(mJSContext, JSObjectsTenuredCb, this);

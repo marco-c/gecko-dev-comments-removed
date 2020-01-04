@@ -233,7 +233,7 @@ GCForReason(JSContext* cx, JSGCInvocationKind gckind, gcreason::Reason reason);
 
 
 extern JS_PUBLIC_API(void)
-StartIncrementalGC(JSRuntime* rt, JSGCInvocationKind gckind, gcreason::Reason reason,
+StartIncrementalGC(JSContext* cx, JSGCInvocationKind gckind, gcreason::Reason reason,
                    int64_t millis = 0);
 
 
@@ -245,7 +245,7 @@ StartIncrementalGC(JSRuntime* rt, JSGCInvocationKind gckind, gcreason::Reason re
 
 
 extern JS_PUBLIC_API(void)
-IncrementalGCSlice(JSRuntime* rt, gcreason::Reason reason, int64_t millis = 0);
+IncrementalGCSlice(JSContext* cx, gcreason::Reason reason, int64_t millis = 0);
 
 
 
@@ -254,7 +254,7 @@ IncrementalGCSlice(JSRuntime* rt, gcreason::Reason reason, int64_t millis = 0);
 
 
 extern JS_PUBLIC_API(void)
-FinishIncrementalGC(JSRuntime* rt, gcreason::Reason reason);
+FinishIncrementalGC(JSContext* cx, gcreason::Reason reason);
 
 
 
@@ -263,7 +263,7 @@ FinishIncrementalGC(JSRuntime* rt, gcreason::Reason reason);
 
 
 extern JS_PUBLIC_API(void)
-AbortIncrementalGC(JSRuntime* rt);
+AbortIncrementalGC(JSContext* cx);
 
 namespace dbg {
 
@@ -356,7 +356,7 @@ typedef void
 
 
 extern JS_PUBLIC_API(GCSliceCallback)
-SetGCSliceCallback(JSRuntime* rt, GCSliceCallback callback);
+SetGCSliceCallback(JSContext* cx, GCSliceCallback callback);
 
 
 
@@ -384,7 +384,7 @@ using GCNurseryCollectionCallback = void(*)(JSRuntime* rt, GCNurseryProgress pro
 
 
 extern JS_PUBLIC_API(GCNurseryCollectionCallback)
-SetGCNurseryCollectionCallback(JSRuntime* rt, GCNurseryCollectionCallback callback);
+SetGCNurseryCollectionCallback(JSContext* cx, GCNurseryCollectionCallback callback);
 
 
 
@@ -479,7 +479,7 @@ GetGCNumber();
 
 
 extern JS_PUBLIC_API(void)
-ShrinkGCBuffers(JSRuntime* rt);
+ShrinkGCBuffers(JSContext* cx);
 
 
 
@@ -665,13 +665,13 @@ MarkStringAsLive(Zone* zone, JSString* string)
 
 
 extern JS_FRIEND_API(void)
-PokeGC(JSRuntime* rt);
+PokeGC(JSContext* cx);
 
 
 
 
 extern JS_FRIEND_API(void)
-NotifyDidPaint(JSRuntime* rt);
+NotifyDidPaint(JSContext* cx);
 
 } 
 

@@ -352,7 +352,7 @@ nsJSEnvironmentObserver::Observe(nsISupports* aSubject, const char* aTopic,
   } else if (!nsCRT::strcmp(aTopic, "user-interaction-active")) {
     nsJSContext::KillShrinkingGCTimer();
     if (sIsCompactingOnUserInactive) {
-      JS::AbortIncrementalGC(sRuntime);
+      JS::AbortIncrementalGC(sContext);
     }
     MOZ_ASSERT(!sIsCompactingOnUserInactive);
   } else if (!nsCRT::strcmp(aTopic, "quit-application") ||
@@ -1206,7 +1206,7 @@ nsJSContext::GarbageCollectNow(JS::gcreason::Reason aReason,
   if (sCCLockedOut && aIncremental == IncrementalGC) {
     
     JS::PrepareForIncrementalGC(sContext);
-    JS::IncrementalGCSlice(sRuntime, aReason, aSliceMillis);
+    JS::IncrementalGCSlice(sContext, aReason, aSliceMillis);
     return;
   }
 
@@ -1220,7 +1220,7 @@ nsJSContext::GarbageCollectNow(JS::gcreason::Reason aReason,
   }
 
   if (aIncremental == IncrementalGC) {
-    JS::StartIncrementalGC(sRuntime, gckind, aReason, aSliceMillis);
+    JS::StartIncrementalGC(sContext, gckind, aReason, aSliceMillis);
   } else {
     JS::GCForReason(sContext, gckind, aReason);
   }
@@ -1235,7 +1235,7 @@ nsJSContext::ShrinkGCBuffersNow()
 
   KillShrinkGCBuffersTimer();
 
-  JS::ShrinkGCBuffers(sRuntime);
+  JS::ShrinkGCBuffers(sContext);
 }
 
 static void
@@ -1246,7 +1246,7 @@ FinishAnyIncrementalGC()
   if (sCCLockedOut) {
     
     JS::PrepareForIncrementalGC(sContext);
-    JS::FinishIncrementalGC(sRuntime, JS::gcreason::CC_FORCED);
+    JS::FinishIncrementalGC(sContext, JS::gcreason::CC_FORCED);
   }
 }
 
@@ -2449,7 +2449,7 @@ nsJSContext::EnsureStatics()
   
   MOZ_ASSERT(NS_IsMainThread());
 
-  sPrevGCSliceCallback = JS::SetGCSliceCallback(sRuntime, DOMGCSliceCallback);
+  sPrevGCSliceCallback = JS::SetGCSliceCallback(sContext, DOMGCSliceCallback);
 
   
   static const JS::AsmJSCacheOps asmJSCacheOps = {
