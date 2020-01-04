@@ -174,12 +174,18 @@ function onNextAnimationFrame(fn) {
       requestAnimationFrame(fn));
 }
 
-function renderComponent(component, container) {
+
+
+
+
+
+function renderComponent(element, container) {
   return new Promise(resolve => {
-    ReactDOM.render(component, container, onNextAnimationFrame(() => {
-      dumpn("Rendered = " + container.innerHTML);
-      resolve();
-    }));
+    let component = ReactDOM.render(element, container,
+      onNextAnimationFrame(() => {
+        dumpn("Rendered = " + container.innerHTML);
+        resolve(component);
+      }));
   });
 }
 
