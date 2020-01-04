@@ -2,8 +2,8 @@
 
 
 
-#ifndef mozilla_test__TLSServer_h
-#define mozilla_test__TLSServer_h
+#ifndef TLSServer_h
+#define TLSServer_h
 
 
 
@@ -21,8 +21,7 @@
 
 namespace mozilla {
 
-MOZ_TYPE_SPECIFIC_SCOPED_POINTER_TEMPLATE(ScopedPRDir, PRDir, PR_CloseDir);
-MOZ_TYPE_SPECIFIC_SCOPED_POINTER_TEMPLATE(ScopedPORTString, char, PORT_Free);
+MOZ_TYPE_SPECIFIC_UNIQUE_PTR_TEMPLATE(UniquePRDir, PRDir, PR_CloseDir);
 
 } 
 
