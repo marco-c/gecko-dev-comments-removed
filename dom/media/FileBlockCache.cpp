@@ -87,6 +87,14 @@ void FileBlockCache::Close()
   }
 }
 
+template<typename Container, typename Value>
+bool
+ContainerContains(const Container& aContainer, const Value& value)
+{
+  return std::find(aContainer.begin(), aContainer.end(), value)
+         != aContainer.end();
+}
+
 nsresult FileBlockCache::WriteBlock(uint32_t aBlockIndex, const uint8_t* aData)
 {
   MonitorAutoLock mon(mDataMonitor);
@@ -99,16 +107,16 @@ nsresult FileBlockCache::WriteBlock(uint32_t aBlockIndex, const uint8_t* aData)
   bool blockAlreadyHadPendingChange = mBlockChanges[aBlockIndex] != nullptr;
   mBlockChanges[aBlockIndex] = new BlockChange(aData);
 
-  if (!blockAlreadyHadPendingChange || !mChangeIndexList.Contains(aBlockIndex)) {
+  if (!blockAlreadyHadPendingChange || !ContainerContains(mChangeIndexList, aBlockIndex)) {
     
     
     
     
     
     
-    mChangeIndexList.PushBack(aBlockIndex);
+    mChangeIndexList.push_back(aBlockIndex);
   }
-  NS_ASSERTION(mChangeIndexList.Contains(aBlockIndex), "Must have entry for new block");
+  NS_ASSERTION(ContainerContains(mChangeIndexList, aBlockIndex), "Must have entry for new block");
 
   EnsureWriteScheduled();
 
@@ -196,10 +204,10 @@ nsresult FileBlockCache::Run()
 {
   MonitorAutoLock mon(mDataMonitor);
   NS_ASSERTION(!NS_IsMainThread(), "Don't call on main thread");
-  NS_ASSERTION(!mChangeIndexList.IsEmpty(), "Only dispatch when there's work to do");
+  NS_ASSERTION(!mChangeIndexList.empty(), "Only dispatch when there's work to do");
   NS_ASSERTION(mIsWriteScheduled, "Should report write running or scheduled.");
 
-  while (!mChangeIndexList.IsEmpty()) {
+  while (!mChangeIndexList.empty()) {
     if (!mIsOpen) {
       
       mIsWriteScheduled = false;
@@ -217,7 +225,8 @@ nsresult FileBlockCache::Run()
     
     
     
-    int32_t blockIndex = mChangeIndexList.PopFront();
+    int32_t blockIndex = mChangeIndexList.front();
+    mChangeIndexList.pop_front();
     RefPtr<BlockChange> change = mBlockChanges[blockIndex];
     MOZ_ASSERT(change,
                "Change index list should only contain entries for blocks "
@@ -326,14 +335,14 @@ nsresult FileBlockCache::MoveBlock(int32_t aSourceBlockIndex, int32_t aDestBlock
   }
 
   if (mBlockChanges[aDestBlockIndex] == nullptr ||
-      !mChangeIndexList.Contains(aDestBlockIndex)) {
+      !ContainerContains(mChangeIndexList, aDestBlockIndex)) {
     
     
     
     
     
     
-    mChangeIndexList.PushBack(aDestBlockIndex);
+    mChangeIndexList.push_back(aDestBlockIndex);
   }
 
   
@@ -346,7 +355,7 @@ nsresult FileBlockCache::MoveBlock(int32_t aSourceBlockIndex, int32_t aDestBlock
 
   EnsureWriteScheduled();
 
-  NS_ASSERTION(mChangeIndexList.Contains(aDestBlockIndex),
+  NS_ASSERTION(ContainerContains(mChangeIndexList, aDestBlockIndex),
     "Should have scheduled block for change");
 
   return NS_OK;
