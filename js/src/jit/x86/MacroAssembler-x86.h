@@ -566,6 +566,79 @@ class MacroAssemblerX86 : public MacroAssemblerX86Shared
     
     
 
+    void addPtr(Register src, Register dest) {
+        add32(src, dest);
+    }
+    void addPtr(Imm32 imm, Register dest) {
+        add32(imm, dest);
+    }
+    void addPtr(ImmWord imm, Register dest) {
+        add32(Imm32(imm.value), dest);
+    }
+    void addPtr(ImmPtr imm, Register dest) {
+        addPtr(ImmWord(uintptr_t(imm.value)), dest);
+    }
+    void addPtr(Imm32 imm, const Address& dest) {
+        add32(imm, Operand(dest));
+    }
+    void addPtr(Imm32 imm, const Operand& dest) {
+        add32(imm, dest);
+    }
+    void addPtr(const Address& src, Register dest) {
+        addl(Operand(src), dest);
+    }
+    void add64(Imm32 imm, Register64 dest) {
+        addl(imm, dest.low);
+        adcl(Imm32(0), dest.high);
+    }
+    void subPtr(Imm32 imm, Register dest) {
+        subl(imm, dest);
+    }
+    void subPtr(Register src, Register dest) {
+        subl(src, dest);
+    }
+    void subPtr(const Address& addr, Register dest) {
+        subl(Operand(addr), dest);
+    }
+    void subPtr(Register src, const Address& dest) {
+        subl(src, Operand(dest));
+    }
+    void mulBy3(const Register& src, const Register& dest) {
+        lea(Operand(src, src, TimesTwo), dest);
+    }
+    
+    void mul64(Imm64 imm, const Register64& dest) {
+        
+        
+        
+        
+
+        MOZ_ASSERT(dest.low != eax && dest.low != edx);
+        MOZ_ASSERT(dest.high != eax && dest.high != edx);
+
+        
+        movl(Imm32(imm.value & 0xFFFFFFFFL), edx);
+        imull(edx, dest.high);
+
+        
+        movl(Imm32(imm.value & 0xFFFFFFFFL), edx);
+        movl(dest.low, eax);
+        mull(edx);
+
+        
+        addl(edx, dest.high);
+
+        
+        if (((imm.value >> 32) & 0xFFFFFFFFL) == 5)
+            leal(Operand(dest.low, dest.low, TimesFour), edx);
+        else
+            MOZ_CRASH("Unsupported imm");
+        addl(edx, dest.high);
+
+        
+        movl(eax, dest.low);
+    }
+
     void branch32(Condition cond, AbsoluteAddress lhs, Imm32 rhs, Label* label) {
         cmp32(Operand(lhs), rhs);
         j(cond, label);
@@ -650,7 +723,7 @@ class MacroAssemblerX86 : public MacroAssemblerX86Shared
         j(cond, label);
     }
     void decBranchPtr(Condition cond, Register lhs, Imm32 imm, Label* label) {
-        subl(imm, lhs);
+        subPtr(imm, lhs);
         j(cond, label);
     }
 
@@ -938,7 +1011,9 @@ class MacroAssemblerX86 : public MacroAssemblerX86Shared
     }
 
     void loadConstantDouble(double d, FloatRegister dest);
+    void addConstantDouble(double d, FloatRegister dest);
     void loadConstantFloat32(float f, FloatRegister dest);
+    void addConstantFloat32(float f, FloatRegister dest);
     void loadConstantInt32x4(const SimdConstant& v, FloatRegister dest);
     void loadConstantFloat32x4(const SimdConstant& v, FloatRegister dest);
 
@@ -1023,12 +1098,38 @@ class MacroAssemblerX86 : public MacroAssemblerX86Shared
     }
 
     
-    inline void convertUInt32ToDouble(Register src, FloatRegister dest);
+    void convertUInt32ToDouble(Register src, FloatRegister dest) {
+        
+        subl(Imm32(0x80000000), src);
+
+        
+        convertInt32ToDouble(src, dest);
+
+        
+        
+        addConstantDouble(2147483648.0, dest);
+    }
 
     
-    inline void convertUInt32ToFloat32(Register src, FloatRegister dest);
+    void convertUInt32ToFloat32(Register src, FloatRegister dest) {
+        convertUInt32ToDouble(src, dest);
+        convertDoubleToFloat32(dest, dest);
+    }
 
     void convertUInt64ToDouble(Register64 src, Register temp, FloatRegister dest);
+
+    void mulDoublePtr(ImmPtr imm, Register temp, FloatRegister dest) {
+        movl(imm, temp);
+        vmulsd(Operand(temp, 0), dest, dest);
+    }
+
+    void inc64(AbsoluteAddress dest) {
+        addl(Imm32(1), Operand(dest));
+        Label noOverflow;
+        j(NonZero, &noOverflow);
+        addl(Imm32(1), Operand(dest.offset(4)));
+        bind(&noOverflow);
+    }
 
     void incrementInt32Value(const Address& addr) {
         addl(Imm32(1), payloadOf(addr));

@@ -97,6 +97,14 @@ class MacroAssemblerARM : public Assembler
     void convertInt32ToFloat32(Register src, FloatRegister dest);
     void convertInt32ToFloat32(const Address& src, FloatRegister dest);
 
+    void addDouble(FloatRegister src, FloatRegister dest);
+    void subDouble(FloatRegister src, FloatRegister dest);
+    void mulDouble(FloatRegister src, FloatRegister dest);
+    void divDouble(FloatRegister src, FloatRegister dest);
+
+    void negateDouble(FloatRegister reg);
+    void inc64(AbsoluteAddress dest);
+
     
     
     
@@ -631,6 +639,9 @@ class MacroAssemblerARMCompat : public MacroAssemblerARM
         ma_bx(scratch);
     }
 
+    void neg32(Register reg) {
+        ma_neg(reg, reg, SetCC);
+    }
     void negl(Register reg) {
         ma_neg(reg, reg, SetCC);
     }
@@ -971,7 +982,10 @@ class MacroAssemblerARMCompat : public MacroAssemblerARM
     void branchPtr(Condition cond, Register lhs, Imm32 imm, Label* label) {
         branch32(cond, lhs, imm, label);
     }
-    inline void decBranchPtr(Condition cond, Register lhs, Imm32 imm, Label* label);
+    void decBranchPtr(Condition cond, Register lhs, Imm32 imm, Label* label) {
+        subPtr(imm, lhs);
+        branch32(cond, lhs, Imm32(0), label);
+    }
     void branchTest64(Condition cond, Register64 lhs, Register64 rhs, Register temp, Label* label);
     void moveValue(const Value& val, Register type, Register data);
 
@@ -1171,13 +1185,26 @@ class MacroAssemblerARMCompat : public MacroAssemblerARM
     
     
   public:
-    template <typename T> inline void branchAdd32(Condition cond, T src, Register dest, Label* label);
+    void add32(Register src, Register dest);
+    void add32(Imm32 imm, Register dest);
+    void add32(Imm32 imm, const Address& dest);
+    template <typename T>
+    void branchAdd32(Condition cond, T src, Register dest, Label* label) {
+        add32(src, dest);
+        j(cond, label);
+    }
     template <typename T>
     void branchSub32(Condition cond, T src, Register dest, Label* label) {
         ma_sub(src, dest, SetCC);
         j(cond, label);
     }
 
+    void addPtr(Register src, Register dest);
+    void addPtr(const Address& src, Register dest);
+    void add64(Imm32 imm, Register64 dest) {
+        ma_add(imm, dest.low, SetCC);
+        ma_adc(Imm32(0), dest.high, LeaveCC);
+    }
     void not32(Register reg);
 
     void move32(Imm32 imm, Register dest);
@@ -1604,7 +1631,9 @@ class MacroAssemblerARMCompat : public MacroAssemblerARM
         ma_mov(Imm32(0), reg, LeaveCC, Signed);
     }
 
-    inline void incrementInt32Value(const Address& addr);
+    void incrementInt32Value(const Address& addr) {
+        add32(Imm32(1), ToPayload(addr));
+    }
 
     void cmp32(Register lhs, Imm32 rhs);
     void cmp32(Register lhs, Register rhs);
@@ -1622,7 +1651,54 @@ class MacroAssemblerARMCompat : public MacroAssemblerARM
     void cmpPtr(const Address& lhs, ImmGCPtr rhs);
     void cmpPtr(const Address& lhs, Imm32 rhs);
 
+    void subPtr(Imm32 imm, const Register dest);
+    void subPtr(const Address& addr, const Register dest);
+    void subPtr(Register src, Register dest);
+    void subPtr(Register src, const Address& dest);
+    void addPtr(Imm32 imm, const Register dest);
+    void addPtr(Imm32 imm, const Address& dest);
+    void addPtr(ImmWord imm, const Register dest) {
+        addPtr(Imm32(imm.value), dest);
+    }
+    void addPtr(ImmPtr imm, const Register dest) {
+        addPtr(ImmWord(uintptr_t(imm.value)), dest);
+    }
+    void mulBy3(const Register& src, const Register& dest) {
+        as_add(dest, src, lsl(src, 1));
+    }
+    void mul64(Imm64 imm, const Register64& dest) {
+        
+        
+        
+        
+
+        
+        ma_mov(Imm32(imm.value & 0xFFFFFFFFL), ScratchRegister);
+        as_mul(dest.high, dest.high, ScratchRegister);
+
+        
+        as_umull(secondScratchReg_, ScratchRegister, dest.low, ScratchRegister);
+
+        
+        as_add(dest.high, dest.high, O2Reg(secondScratchReg_));
+
+        
+        if (((imm.value >> 32) & 0xFFFFFFFFL) == 5)
+            as_add(secondScratchReg_, dest.low, lsl(dest.low, 2));
+        else
+            MOZ_CRASH("Not supported imm");
+        as_add(dest.high, dest.high, O2Reg(secondScratchReg_));
+
+        
+        ma_mov(ScratchRegister, dest.low);
+    }
+
     void convertUInt64ToDouble(Register64 src, Register temp, FloatRegister dest);
+    void mulDoublePtr(ImmPtr imm, Register temp, FloatRegister dest) {
+        movePtr(imm, ScratchRegister);
+        loadDouble(Address(ScratchRegister, 0), ScratchDoubleReg);
+        mulDouble(ScratchDoubleReg, dest);
+    }
 
     void setStackArg(Register reg, uint32_t arg);
 
