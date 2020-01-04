@@ -64,7 +64,6 @@ struct Config
     EGLint transparentRedValue;     
     EGLint transparentGreenValue;   
     EGLint transparentBlueValue;    
-    EGLint optimalOrientation;      
 };
 
 class ConfigSet

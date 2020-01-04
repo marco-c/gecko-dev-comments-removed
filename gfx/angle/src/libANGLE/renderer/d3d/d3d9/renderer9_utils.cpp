@@ -558,7 +558,6 @@ void GenerateCaps(IDirect3D9 *d3d9,
     SafeRelease(eventQuery);
 
     extensions->timerQuery = false; 
-    extensions->disjointTimerQuery     = false;
     extensions->robustness = true;
     extensions->blendMinMax = true;
     extensions->framebufferBlit = true;
@@ -578,7 +577,6 @@ void GenerateCaps(IDirect3D9 *d3d9,
     extensions->unpackSubimage         = true;
     extensions->packSubimage           = true;
     extensions->vertexArrayObject      = true;
-    extensions->noError                = true;
 
     
     

@@ -709,8 +709,7 @@ gl::Error Blit11::swizzleTexture(ID3D11ShaderResourceView *source,
     deviceContext->GSSetShader(support.geometryShader, nullptr, 0);
 
     
-    auto stateManager = mRenderer->getStateManager();
-    stateManager->setShaderResource(gl::SAMPLER_PIXEL, 0, nullptr);
+    mRenderer->setShaderResource(gl::SAMPLER_PIXEL, 0, nullptr);
 
     
     mRenderer->setOneTimeRenderTarget(dest);
@@ -726,7 +725,7 @@ gl::Error Blit11::swizzleTexture(ID3D11ShaderResourceView *source,
     deviceContext->RSSetViewports(1, &viewport);
 
     
-    stateManager->setShaderResource(gl::SAMPLER_PIXEL, 0, source);
+    mRenderer->setShaderResource(gl::SAMPLER_PIXEL, 0, source);
 
     
     deviceContext->PSSetSamplers(0, 1, &mPointSampler);
@@ -735,7 +734,7 @@ gl::Error Blit11::swizzleTexture(ID3D11ShaderResourceView *source,
     deviceContext->Draw(drawCount, 0);
 
     
-    stateManager->setShaderResource(gl::SAMPLER_PIXEL, 0, nullptr);
+    mRenderer->setShaderResource(gl::SAMPLER_PIXEL, 0, nullptr);
 
     mRenderer->unapplyRenderTargets();
 
@@ -847,8 +846,7 @@ gl::Error Blit11::copyTexture(ID3D11ShaderResourceView *source,
     deviceContext->GSSetShader(support.geometryShader, nullptr, 0);
 
     
-    auto stateManager = mRenderer->getStateManager();
-    stateManager->setShaderResource(gl::SAMPLER_PIXEL, 0, nullptr);
+    mRenderer->setShaderResource(gl::SAMPLER_PIXEL, 0, nullptr);
 
     
     mRenderer->setOneTimeRenderTarget(dest);
@@ -864,7 +862,7 @@ gl::Error Blit11::copyTexture(ID3D11ShaderResourceView *source,
     deviceContext->RSSetViewports(1, &viewport);
 
     
-    stateManager->setShaderResource(gl::SAMPLER_PIXEL, 0, source);
+    mRenderer->setShaderResource(gl::SAMPLER_PIXEL, 0, source);
 
     
     ID3D11SamplerState *sampler = nullptr;
@@ -883,7 +881,7 @@ gl::Error Blit11::copyTexture(ID3D11ShaderResourceView *source,
     deviceContext->Draw(drawCount, 0);
 
     
-    stateManager->setShaderResource(gl::SAMPLER_PIXEL, 0, nullptr);
+    mRenderer->setShaderResource(gl::SAMPLER_PIXEL, 0, nullptr);
 
     mRenderer->unapplyRenderTargets();
 
@@ -975,8 +973,7 @@ gl::Error Blit11::copyDepth(ID3D11ShaderResourceView *source, const gl::Box &sou
     deviceContext->GSSetShader(nullptr, nullptr, 0);
 
     
-    auto stateManager = mRenderer->getStateManager();
-    stateManager->setShaderResource(gl::SAMPLER_PIXEL, 0, nullptr);
+    mRenderer->setShaderResource(gl::SAMPLER_PIXEL, 0, nullptr);
 
     
     deviceContext->OMSetRenderTargets(0, nullptr, dest);
@@ -992,7 +989,7 @@ gl::Error Blit11::copyDepth(ID3D11ShaderResourceView *source, const gl::Box &sou
     deviceContext->RSSetViewports(1, &viewport);
 
     
-    stateManager->setShaderResource(gl::SAMPLER_PIXEL, 0, source);
+    mRenderer->setShaderResource(gl::SAMPLER_PIXEL, 0, source);
 
     
     deviceContext->PSSetSamplers(0, 1, &mPointSampler);
@@ -1001,7 +998,7 @@ gl::Error Blit11::copyDepth(ID3D11ShaderResourceView *source, const gl::Box &sou
     deviceContext->Draw(drawCount, 0);
 
     
-    stateManager->setShaderResource(gl::SAMPLER_PIXEL, 0, nullptr);
+    mRenderer->setShaderResource(gl::SAMPLER_PIXEL, 0, nullptr);
 
     mRenderer->unapplyRenderTargets();
 

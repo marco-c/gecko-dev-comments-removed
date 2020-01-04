@@ -58,6 +58,6 @@ class HandleAllocator final : angle::NonCopyable
     std::vector<GLuint> mReleasedList;
 };
 
-}  
+}
 
 #endif   

@@ -27,12 +27,9 @@ namespace rx
 namespace
 {
 
-size_t GetReservedBufferCount(bool usesPointSpriteEmulation)
-{
-    return usesPointSpriteEmulation ? 1 : 0;
-}
-
-gl::InputLayout GetInputLayout(const SortedAttribArray &translatedAttributes, size_t attributeCount)
+gl::InputLayout GetInputLayout(
+    const TranslatedAttribute *translatedAttributes[gl::MAX_VERTEX_ATTRIBS],
+    size_t attributeCount)
 {
     gl::InputLayout inputLayout(attributeCount, gl::VERTEX_FORMAT_INVALID);
 
@@ -82,19 +79,6 @@ struct PackedAttribute
     uint8_t divisor;
 };
 
-Optional<size_t> FindFirstNonInstanced(const SortedAttribArray &sortedAttributes, size_t maxIndex)
-{
-    for (size_t index = 0; index < maxIndex; ++index)
-    {
-        if (sortedAttributes[index]->divisor == 0)
-        {
-            return Optional<size_t>(index);
-        }
-    }
-
-    return Optional<size_t>::Invalid();
-}
-
 } 
 
 void InputLayoutCache::PackedAttributeLayout::addAttributeData(
@@ -136,13 +120,13 @@ bool InputLayoutCache::PackedAttributeLayout::operator<(const PackedAttributeLay
     return memcmp(attributeData, other.attributeData, sizeof(uint32_t) * numAttributes) < 0;
 }
 
-InputLayoutCache::InputLayoutCache() : mUnsortedAttributesCount(0), mCacheSize(kDefaultCacheSize)
+InputLayoutCache::InputLayoutCache()
+    : mCacheSize(kDefaultCacheSize)
 {
     mCounter = 0;
     mDevice = NULL;
     mDeviceContext = NULL;
     mCurrentIL = NULL;
-
     for (unsigned int i = 0; i < gl::MAX_VERTEX_ATTRIBS; i++)
     {
         mCurrentBuffers[i] = NULL;
@@ -187,73 +171,180 @@ void InputLayoutCache::markDirty()
         mCurrentVertexStrides[i] = static_cast<UINT>(-1);
         mCurrentVertexOffsets[i] = static_cast<UINT>(-1);
     }
-    mUnsortedAttributesCount = 0;
 }
 
-gl::Error InputLayoutCache::applyVertexBuffers(
-    const std::vector<TranslatedAttribute> &unsortedAttributes,
-    GLenum mode,
-    gl::Program *program,
-    TranslatedIndexData *indexInfo,
-    GLsizei numIndicesPerInstance)
+gl::Error InputLayoutCache::applyVertexBuffers(const std::vector<TranslatedAttribute> &unsortedAttributes,
+                                               GLenum mode, gl::Program *program, SourceIndexData *sourceInfo)
 {
-    ASSERT(mDevice && mDeviceContext);
-
     ProgramD3D *programD3D = GetImplAs<ProgramD3D>(program);
 
+    int sortedSemanticIndices[gl::MAX_VERTEX_ATTRIBS];
+    const TranslatedAttribute *sortedAttributes[gl::MAX_VERTEX_ATTRIBS] = { nullptr };
+    programD3D->sortAttributesByLayout(unsortedAttributes, sortedSemanticIndices, sortedAttributes);
     bool programUsesInstancedPointSprites = programD3D->usesPointSize() && programD3D->usesInstancedPointSpriteEmulation();
     bool instancedPointSpritesActive = programUsesInstancedPointSprites && (mode == GL_POINTS);
+    bool indexedPointSpriteEmulationActive = instancedPointSpritesActive && (sourceInfo != nullptr);
 
-    SortedIndexArray sortedSemanticIndices;
-    mSortedAttributes.fill(nullptr);
-    mUnsortedAttributesCount = unsortedAttributes.size();
+    const auto &semanticToLocation = programD3D->getAttributesByLayout();
 
-    programD3D->sortAttributesByLayout(unsortedAttributes, sortedSemanticIndices.data(),
-                                       mSortedAttributes.data());
-
-    
-    if (mFeatureLevel <= D3D_FEATURE_LEVEL_9_3 && !unsortedAttributes.empty())
+    if (!mDevice || !mDeviceContext)
     {
-        if (mSortedAttributes[0]->divisor > 0)
+        return gl::Error(GL_OUT_OF_MEMORY, "Internal input layout cache is not initialized.");
+    }
+
+    unsigned int inputElementCount = 0;
+    D3D11_INPUT_ELEMENT_DESC inputElements[gl::MAX_VERTEX_ATTRIBS];
+    PackedAttributeLayout layout;
+
+    static const char* semanticName = "TEXCOORD";
+
+    unsigned int firstIndexedElement = gl::MAX_VERTEX_ATTRIBS;
+    unsigned int firstInstancedElement = gl::MAX_VERTEX_ATTRIBS;
+    unsigned int nextAvailableInputSlot = 0;
+
+    const std::vector<sh::Attribute> &shaderAttributes = program->getAttributes();
+
+    for (unsigned int i = 0; i < unsortedAttributes.size(); i++)
+    {
+        if (sortedAttributes[i]->active)
         {
-            Optional<size_t> firstNonInstancedIndex =
-                FindFirstNonInstanced(mSortedAttributes, unsortedAttributes.size());
-            if (firstNonInstancedIndex.valid())
+            D3D11_INPUT_CLASSIFICATION inputClass = sortedAttributes[i]->divisor > 0 ? D3D11_INPUT_PER_INSTANCE_DATA : D3D11_INPUT_PER_VERTEX_DATA;
+            
+            inputClass = instancedPointSpritesActive ? D3D11_INPUT_PER_INSTANCE_DATA : inputClass;
+
+            gl::VertexFormatType vertexFormatType = gl::GetVertexFormatType(*sortedAttributes[i]->attribute, sortedAttributes[i]->currentValueType);
+            const d3d11::VertexFormat &vertexFormatInfo = d3d11::GetVertexFormatInfo(vertexFormatType, mFeatureLevel);
+
+            inputElements[inputElementCount].SemanticName = semanticName;
+            inputElements[inputElementCount].SemanticIndex = sortedSemanticIndices[i];
+            inputElements[inputElementCount].Format = vertexFormatInfo.nativeFormat;
+            inputElements[inputElementCount].InputSlot = i;
+            inputElements[inputElementCount].AlignedByteOffset = 0;
+            inputElements[inputElementCount].InputSlotClass = inputClass;
+            inputElements[inputElementCount].InstanceDataStepRate = instancedPointSpritesActive ? 1 : sortedAttributes[i]->divisor;
+
+            if (inputClass == D3D11_INPUT_PER_VERTEX_DATA && firstIndexedElement == gl::MAX_VERTEX_ATTRIBS)
             {
-                size_t index = firstNonInstancedIndex.value();
-                std::swap(mSortedAttributes[0], mSortedAttributes[index]);
-                std::swap(sortedSemanticIndices[0], sortedSemanticIndices[index]);
+                firstIndexedElement = inputElementCount;
             }
+            else if (inputClass == D3D11_INPUT_PER_INSTANCE_DATA && firstInstancedElement == gl::MAX_VERTEX_ATTRIBS)
+            {
+                firstInstancedElement = inputElementCount;
+            }
+
+            
+            
+            GLenum glslElementType = GetGLSLAttributeType(
+                shaderAttributes, semanticToLocation[sortedSemanticIndices[i]]);
+
+            layout.addAttributeData(glslElementType,
+                                    sortedSemanticIndices[i],
+                                    vertexFormatType,
+                                    sortedAttributes[i]->divisor);
+
+            inputElementCount++;
+            nextAvailableInputSlot = i + 1;
         }
     }
 
-    gl::Error error = updateInputLayout(program, mode, mSortedAttributes, sortedSemanticIndices,
-                                        unsortedAttributes.size(), numIndicesPerInstance);
+    
+    
+    
+    if (programUsesInstancedPointSprites)
+    {
+        inputElements[inputElementCount].SemanticName = "SPRITEPOSITION";
+        inputElements[inputElementCount].SemanticIndex = 0;
+        inputElements[inputElementCount].Format = DXGI_FORMAT_R32G32B32_FLOAT;
+        inputElements[inputElementCount].InputSlot = nextAvailableInputSlot;
+        inputElements[inputElementCount].AlignedByteOffset = 0;
+        inputElements[inputElementCount].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+        inputElements[inputElementCount].InstanceDataStepRate = 0;
+
+        
+        
+        
+        if (firstIndexedElement == gl::MAX_VERTEX_ATTRIBS)
+        {
+            firstIndexedElement = inputElementCount;
+        }
+
+        inputElementCount++;
+
+        inputElements[inputElementCount].SemanticName = "SPRITETEXCOORD";
+        inputElements[inputElementCount].SemanticIndex = 0;
+        inputElements[inputElementCount].Format = DXGI_FORMAT_R32G32_FLOAT;
+        inputElements[inputElementCount].InputSlot = nextAvailableInputSlot;
+        inputElements[inputElementCount].AlignedByteOffset = sizeof(float) * 3;
+        inputElements[inputElementCount].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+        inputElements[inputElementCount].InstanceDataStepRate = 0;
+
+        inputElementCount++;
+    }
+
+    
+    
+    
+    
+    ASSERT(!(mFeatureLevel <= D3D_FEATURE_LEVEL_9_3 && firstIndexedElement == gl::MAX_VERTEX_ATTRIBS));
+    bool moveFirstIndexedIntoSlotZero = mFeatureLevel <= D3D_FEATURE_LEVEL_9_3 && firstInstancedElement == 0 && firstIndexedElement != gl::MAX_VERTEX_ATTRIBS;
+
+    if (moveFirstIndexedIntoSlotZero)
+    {
+        inputElements[firstInstancedElement].InputSlot = inputElements[firstIndexedElement].InputSlot;
+        inputElements[firstIndexedElement].InputSlot = 0;
+
+        
+        
+        if (programUsesInstancedPointSprites)
+        {
+            inputElements[firstIndexedElement + 1].InputSlot = 0;
+        }
+    }
+
+    if (programUsesInstancedPointSprites)
+    {
+        layout.flags |= PackedAttributeLayout::FLAG_USES_INSTANCED_SPRITES;
+    }
+
+    if (moveFirstIndexedIntoSlotZero)
+    {
+        layout.flags |= PackedAttributeLayout::FLAG_MOVE_FIRST_INDEXED;
+    }
+
+    if (instancedPointSpritesActive)
+    {
+        layout.flags |= PackedAttributeLayout::FLAG_INSTANCED_SPRITES_ACTIVE;
+    }
+
+    ID3D11InputLayout *inputLayout = nullptr;
+    gl::Error error = findInputLayout(layout, inputElementCount, inputElements, programD3D,
+                                      sortedAttributes, unsortedAttributes.size(), &inputLayout);
     if (error.isError())
     {
         return error;
     }
 
+    if (inputLayout != mCurrentIL)
+    {
+        mDeviceContext->IASetInputLayout(inputLayout);
+        mCurrentIL = inputLayout;
+    }
+
     bool dirtyBuffers = false;
-    size_t minDiff    = gl::MAX_VERTEX_ATTRIBS;
-    size_t maxDiff    = 0;
+    unsigned int minDiff            = gl::MAX_VERTEX_ATTRIBS;
+    unsigned int maxDiff            = 0;
+    unsigned int nextAvailableIndex = 0;
 
-    
-    size_t reservedBuffers = GetReservedBufferCount(programUsesInstancedPointSprites);
-
-    for (size_t attribIndex = 0; attribIndex < (gl::MAX_VERTEX_ATTRIBS - reservedBuffers);
-         ++attribIndex)
+    for (unsigned int i = 0; i < gl::MAX_VERTEX_ATTRIBS; i++)
     {
         ID3D11Buffer *buffer = NULL;
         UINT vertexStride = 0;
         UINT vertexOffset = 0;
 
-        const auto &attrib = *mSortedAttributes[attribIndex];
-
-        if (attribIndex < unsortedAttributes.size() && attrib.active)
+        if (i < unsortedAttributes.size() && sortedAttributes[i]->active)
         {
-            VertexBuffer11 *vertexBuffer = GetAs<VertexBuffer11>(attrib.vertexBuffer);
-            Buffer11 *bufferStorage      = attrib.storage ? GetAs<Buffer11>(attrib.storage) : nullptr;
+            VertexBuffer11 *vertexBuffer = GetAs<VertexBuffer11>(sortedAttributes[i]->vertexBuffer);
+            Buffer11 *bufferStorage = sortedAttributes[i]->storage ? GetAs<Buffer11>(sortedAttributes[i]->storage) : NULL;
 
             
             
@@ -263,51 +354,57 @@ gl::Error InputLayoutCache::applyVertexBuffers(
             {
                 buffer = vertexBuffer->getBuffer();
             }
-            else if (instancedPointSpritesActive && (indexInfo != nullptr))
+            else if (indexedPointSpriteEmulationActive)
             {
-                if (indexInfo->srcIndexData.srcBuffer != nullptr)
+                if (sourceInfo->srcBuffer != nullptr)
                 {
                     const uint8_t *bufferData = nullptr;
-                    error = indexInfo->srcIndexData.srcBuffer->getData(&bufferData);
+                    error = sourceInfo->srcBuffer->getData(&bufferData);
                     if (error.isError())
                     {
                         return error;
                     }
                     ASSERT(bufferData != nullptr);
 
-                    ptrdiff_t offset =
-                        reinterpret_cast<ptrdiff_t>(indexInfo->srcIndexData.srcIndices);
-                    indexInfo->srcIndexData.srcBuffer  = nullptr;
-                    indexInfo->srcIndexData.srcIndices = bufferData + offset;
+                    ptrdiff_t offset = reinterpret_cast<ptrdiff_t>(sourceInfo->srcIndices);
+                    sourceInfo->srcBuffer = nullptr;
+                    sourceInfo->srcIndices = bufferData + offset;
                 }
 
-                buffer = bufferStorage->getEmulatedIndexedBuffer(&indexInfo->srcIndexData, &attrib);
+                buffer = bufferStorage->getEmulatedIndexedBuffer(sourceInfo, sortedAttributes[i]);
             }
             else
             {
                 buffer = bufferStorage->getBuffer(BUFFER_USAGE_VERTEX_OR_TRANSFORM_FEEDBACK);
             }
 
-            vertexStride = attrib.stride;
-            vertexOffset = attrib.offset;
+            vertexStride = sortedAttributes[i]->stride;
+            vertexOffset = sortedAttributes[i]->offset;
         }
 
-        size_t bufferIndex = reservedBuffers + attribIndex;
-
-        if (buffer != mCurrentBuffers[bufferIndex] ||
-            vertexStride != mCurrentVertexStrides[bufferIndex] ||
-            vertexOffset != mCurrentVertexOffsets[bufferIndex])
+        if (buffer != mCurrentBuffers[i] || vertexStride != mCurrentVertexStrides[i] ||
+            vertexOffset != mCurrentVertexOffsets[i])
         {
             dirtyBuffers = true;
-            minDiff      = std::min(minDiff, bufferIndex);
-            maxDiff      = std::max(maxDiff, bufferIndex);
+            minDiff      = std::min(minDiff, i);
+            maxDiff      = std::max(maxDiff, i);
 
-            mCurrentBuffers[bufferIndex]       = buffer;
-            mCurrentVertexStrides[bufferIndex] = vertexStride;
-            mCurrentVertexOffsets[bufferIndex] = vertexOffset;
+            mCurrentBuffers[i] = buffer;
+            mCurrentVertexStrides[i] = vertexStride;
+            mCurrentVertexOffsets[i] = vertexOffset;
+        }
+
+        
+        
+        
+        if (buffer)
+        {
+            nextAvailableIndex = i + 1;
         }
     }
 
+    
+    
     
     
     
@@ -349,16 +446,16 @@ gl::Error InputLayoutCache::applyVertexBuffers(
             }
         }
 
-        mCurrentBuffers[0] = mPointSpriteVertexBuffer;
+        mCurrentBuffers[nextAvailableIndex] = mPointSpriteVertexBuffer;
         
         
-        mCurrentVertexStrides[0] = instancedPointSpritesActive ? pointSpriteVertexStride : 0;
-        mCurrentVertexOffsets[0] = 0;
+        mCurrentVertexStrides[nextAvailableIndex] =
+            instancedPointSpritesActive ? pointSpriteVertexStride : 0;
+        mCurrentVertexOffsets[nextAvailableIndex] = 0;
 
         
         
-        minDiff = 0;
-        maxDiff = std::max(maxDiff, static_cast<size_t>(0));
+        maxDiff = std::max(maxDiff, nextAvailableIndex);
 
         if (!mPointSpriteIndexBuffer)
         {
@@ -391,238 +488,55 @@ gl::Error InputLayoutCache::applyVertexBuffers(
             
             
             
+            
+            
             mDeviceContext->IASetIndexBuffer(mPointSpriteIndexBuffer, DXGI_FORMAT_R16_UINT, 0);
         }
+    }
+
+    if (moveFirstIndexedIntoSlotZero)
+    {
+        
+        
+        
+        std::swap(mCurrentBuffers[firstIndexedElement], mCurrentBuffers[firstInstancedElement]);
+        std::swap(mCurrentVertexStrides[firstIndexedElement], mCurrentVertexStrides[firstInstancedElement]);
+        std::swap(mCurrentVertexOffsets[firstIndexedElement], mCurrentVertexOffsets[firstInstancedElement]);
     }
 
     if (dirtyBuffers)
     {
         ASSERT(minDiff <= maxDiff && maxDiff < gl::MAX_VERTEX_ATTRIBS);
-        mDeviceContext->IASetVertexBuffers(
-            static_cast<UINT>(minDiff), static_cast<UINT>(maxDiff - minDiff + 1),
-            mCurrentBuffers + minDiff, mCurrentVertexStrides + minDiff,
-            mCurrentVertexOffsets + minDiff);
+        mDeviceContext->IASetVertexBuffers(minDiff, maxDiff - minDiff + 1, mCurrentBuffers + minDiff,
+                                           mCurrentVertexStrides + minDiff, mCurrentVertexOffsets + minDiff);
     }
 
     return gl::Error(GL_NO_ERROR);
 }
 
-gl::Error InputLayoutCache::updateVertexOffsetsForPointSpritesEmulation(GLsizei emulatedInstanceId)
+gl::Error InputLayoutCache::findInputLayout(
+    const PackedAttributeLayout &layout,
+    unsigned int inputElementCount,
+    const D3D11_INPUT_ELEMENT_DESC inputElements[gl::MAX_VERTEX_ATTRIBS],
+    ProgramD3D *programD3D,
+    const TranslatedAttribute *sortedAttributes[gl::MAX_VERTEX_ATTRIBS],
+    size_t attributeCount,
+    ID3D11InputLayout **inputLayout)
 {
-    size_t reservedBuffers = GetReservedBufferCount(true);
-    for (size_t attribIndex = 0; attribIndex < mUnsortedAttributesCount; ++attribIndex)
+    if (inputElementCount == 0)
     {
-        const auto &attrib = *mSortedAttributes[attribIndex];
-        size_t bufferIndex = reservedBuffers + attribIndex;
-
-        if (attrib.active && attrib.divisor > 0)
-        {
-            mCurrentVertexOffsets[bufferIndex] =
-                attrib.offset + (attrib.stride * (emulatedInstanceId / attrib.divisor));
-        }
+        *inputLayout = nullptr;
+        return gl::Error(GL_NO_ERROR);
     }
 
-    mDeviceContext->IASetVertexBuffers(0, gl::MAX_VERTEX_ATTRIBS, mCurrentBuffers,
-                                       mCurrentVertexStrides, mCurrentVertexOffsets);
-
-    return gl::Error(GL_NO_ERROR);
-}
-
-gl::Error InputLayoutCache::updateInputLayout(gl::Program *program,
-                                              GLenum mode,
-                                              const SortedAttribArray &sortedAttributes,
-                                              const SortedIndexArray &sortedSemanticIndices,
-                                              size_t attribCount,
-                                              GLsizei numIndicesPerInstance)
-{
-    const std::vector<sh::Attribute> &shaderAttributes = program->getAttributes();
-    PackedAttributeLayout layout;
-
-    ProgramD3D *programD3D = GetImplAs<ProgramD3D>(program);
-    bool programUsesInstancedPointSprites =
-        programD3D->usesPointSize() && programD3D->usesInstancedPointSpriteEmulation();
-    bool instancedPointSpritesActive = programUsesInstancedPointSprites && (mode == GL_POINTS);
-
-    if (programUsesInstancedPointSprites)
+    auto layoutMapIt = mLayoutMap.find(layout);
+    if (layoutMapIt != mLayoutMap.end())
     {
-        layout.flags |= PackedAttributeLayout::FLAG_USES_INSTANCED_SPRITES;
+        *inputLayout = layoutMapIt->second;
+        return gl::Error(GL_NO_ERROR);
     }
 
-    if (instancedPointSpritesActive)
-    {
-        layout.flags |= PackedAttributeLayout::FLAG_INSTANCED_SPRITES_ACTIVE;
-    }
-
-    if (numIndicesPerInstance > 0)
-    {
-        layout.flags |= PackedAttributeLayout::FLAG_INSTANCED_RENDERING_ACTIVE;
-    }
-
-    const auto &semanticToLocation = programD3D->getAttributesByLayout();
-
-    for (size_t attribIndex = 0; attribIndex < attribCount; ++attribIndex)
-    {
-        const auto &attrib = *sortedAttributes[attribIndex];
-        int sortedIndex    = sortedSemanticIndices[attribIndex];
-
-        if (!attrib.active)
-            continue;
-
-        gl::VertexFormatType vertexFormatType =
-            gl::GetVertexFormatType(*attrib.attribute, attrib.currentValueType);
-
-        
-        
-        GLenum glslElementType =
-            GetGLSLAttributeType(shaderAttributes, semanticToLocation[sortedIndex]);
-
-        layout.addAttributeData(glslElementType, sortedIndex, vertexFormatType, attrib.divisor);
-    }
-
-    ID3D11InputLayout *inputLayout = nullptr;
-    if (layout.numAttributes > 0 || layout.flags != 0)
-    {
-        auto layoutMapIt = mLayoutMap.find(layout);
-        if (layoutMapIt != mLayoutMap.end())
-        {
-            inputLayout = layoutMapIt->second;
-        }
-        else
-        {
-            gl::Error error =
-                createInputLayout(sortedAttributes, sortedSemanticIndices, attribCount, mode,
-                                  program, numIndicesPerInstance, &inputLayout);
-            if (error.isError())
-            {
-                return error;
-            }
-            if (mLayoutMap.size() >= mCacheSize)
-            {
-                TRACE("Overflowed the limit of %u input layouts, purging half the cache.",
-                      mCacheSize);
-
-                
-                auto it = mLayoutMap.begin();
-                while (it != mLayoutMap.end())
-                {
-                    it++;
-                    if (it != mLayoutMap.end())
-                    {
-                        
-                        SafeRelease(it->second);
-                        it = mLayoutMap.erase(it);
-                    }
-                }
-            }
-
-            mLayoutMap[layout] = inputLayout;
-        }
-    }
-
-    if (inputLayout != mCurrentIL)
-    {
-        mDeviceContext->IASetInputLayout(inputLayout);
-        mCurrentIL = inputLayout;
-    }
-
-    return gl::Error(GL_NO_ERROR);
-}
-
-gl::Error InputLayoutCache::createInputLayout(const SortedAttribArray &sortedAttributes,
-                                              const SortedIndexArray &sortedSemanticIndices,
-                                              size_t attribCount,
-                                              GLenum mode,
-                                              gl::Program *program,
-                                              GLsizei numIndicesPerInstance,
-                                              ID3D11InputLayout **inputLayoutOut)
-{
-    ProgramD3D *programD3D = GetImplAs<ProgramD3D>(program);
-
-    bool programUsesInstancedPointSprites =
-        programD3D->usesPointSize() && programD3D->usesInstancedPointSpriteEmulation();
-
-    unsigned int inputElementCount = 0;
-    std::array<D3D11_INPUT_ELEMENT_DESC, gl::MAX_VERTEX_ATTRIBS> inputElements;
-
-    for (size_t attribIndex = 0; attribIndex < attribCount; ++attribIndex)
-    {
-        const auto &attrib    = *sortedAttributes[attribIndex];
-        const int sortedIndex = sortedSemanticIndices[attribIndex];
-
-        if (!attrib.active)
-            continue;
-
-        D3D11_INPUT_CLASSIFICATION inputClass =
-            attrib.divisor > 0 ? D3D11_INPUT_PER_INSTANCE_DATA : D3D11_INPUT_PER_VERTEX_DATA;
-
-        const auto &vertexFormatType =
-            gl::GetVertexFormatType(*attrib.attribute, attrib.currentValueType);
-        const auto &vertexFormatInfo = d3d11::GetVertexFormatInfo(vertexFormatType, mFeatureLevel);
-
-        auto *inputElement = &inputElements[inputElementCount];
-
-        inputElement->SemanticName         = "TEXCOORD";
-        inputElement->SemanticIndex        = sortedIndex;
-        inputElement->Format               = vertexFormatInfo.nativeFormat;
-        inputElement->InputSlot            = static_cast<UINT>(attribIndex);
-        inputElement->AlignedByteOffset    = 0;
-        inputElement->InputSlotClass       = inputClass;
-        inputElement->InstanceDataStepRate = attrib.divisor;
-
-        inputElementCount++;
-    }
-
-    
-    
-    
-    
-    if (programUsesInstancedPointSprites)
-    {
-        
-        
-        
-        
-        
-        
-        for (size_t elementIndex = 0; elementIndex < inputElementCount; ++elementIndex)
-        {
-            if (sortedAttributes[elementIndex]->active)
-            {
-                
-                
-                if (mode == GL_POINTS)
-                {
-                    inputElements[elementIndex].InputSlotClass       = D3D11_INPUT_PER_INSTANCE_DATA;
-                    inputElements[elementIndex].InstanceDataStepRate = 1;
-                    if (numIndicesPerInstance > 0 && sortedAttributes[elementIndex]->divisor > 0)
-                    {
-                        inputElements[elementIndex].InstanceDataStepRate = numIndicesPerInstance;
-                    }
-                }
-                inputElements[elementIndex].InputSlot++;
-            }
-        }
-
-        inputElements[inputElementCount].SemanticName         = "SPRITEPOSITION";
-        inputElements[inputElementCount].SemanticIndex        = 0;
-        inputElements[inputElementCount].Format               = DXGI_FORMAT_R32G32B32_FLOAT;
-        inputElements[inputElementCount].InputSlot            = 0;
-        inputElements[inputElementCount].AlignedByteOffset    = 0;
-        inputElements[inputElementCount].InputSlotClass       = D3D11_INPUT_PER_VERTEX_DATA;
-        inputElements[inputElementCount].InstanceDataStepRate = 0;
-        inputElementCount++;
-
-        inputElements[inputElementCount].SemanticName         = "SPRITETEXCOORD";
-        inputElements[inputElementCount].SemanticIndex        = 0;
-        inputElements[inputElementCount].Format               = DXGI_FORMAT_R32G32_FLOAT;
-        inputElements[inputElementCount].InputSlot            = 0;
-        inputElements[inputElementCount].AlignedByteOffset    = sizeof(float) * 3;
-        inputElements[inputElementCount].InputSlotClass       = D3D11_INPUT_PER_VERTEX_DATA;
-        inputElements[inputElementCount].InstanceDataStepRate = 0;
-        inputElementCount++;
-    }
-
-    const gl::InputLayout &shaderInputLayout = GetInputLayout(sortedAttributes, attribCount);
+    const gl::InputLayout &shaderInputLayout = GetInputLayout(sortedAttributes, attributeCount);
 
     ShaderExecutableD3D *shader = nullptr;
     gl::Error error =
@@ -635,14 +549,34 @@ gl::Error InputLayoutCache::createInputLayout(const SortedAttribArray &sortedAtt
     ShaderExecutableD3D *shader11 = GetAs<ShaderExecutable11>(shader);
 
     HRESULT result =
-        mDevice->CreateInputLayout(inputElements.data(), inputElementCount, shader11->getFunction(),
-                                   shader11->getLength(), inputLayoutOut);
+        mDevice->CreateInputLayout(inputElements, inputElementCount, shader11->getFunction(),
+                                   shader11->getLength(), inputLayout);
     if (FAILED(result))
     {
         return gl::Error(GL_OUT_OF_MEMORY,
                          "Failed to create internal input layout, HRESULT: 0x%08x", result);
     }
 
+    if (mLayoutMap.size() >= mCacheSize)
+    {
+        TRACE("Overflowed the limit of %u input layouts, purging half the cache.", mCacheSize);
+
+        
+        auto it = mLayoutMap.begin();
+        while (it != mLayoutMap.end())
+        {
+            it++;
+            if (it != mLayoutMap.end())
+            {
+                
+                auto eraseIt = it++;
+                SafeRelease(eraseIt->second);
+                mLayoutMap.erase(eraseIt);
+            }
+        }
+    }
+
+    mLayoutMap[layout] = *inputLayout;
     return gl::Error(GL_NO_ERROR);
 }
 

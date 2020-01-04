@@ -8,7 +8,6 @@
 
 #include <sstream>
 
-#include "angle_gl.h"
 #include "common/debug.h"
 #include "compiler/translator/Diagnostics.h"
 
@@ -26,15 +25,13 @@ static TBehavior getBehavior(const std::string& str)
     return EBhUndefined;
 }
 
-TDirectiveHandler::TDirectiveHandler(TExtensionBehavior &extBehavior,
-                                     TDiagnostics &diagnostics,
-                                     int &shaderVersion,
-                                     sh::GLenum shaderType,
+TDirectiveHandler::TDirectiveHandler(TExtensionBehavior& extBehavior,
+                                     TDiagnostics& diagnostics,
+                                     int& shaderVersion,
                                      bool debugShaderPrecisionSupported)
     : mExtensionBehavior(extBehavior),
       mDiagnostics(diagnostics),
       mShaderVersion(shaderVersion),
-      mShaderType(shaderType),
       mDebugShaderPrecisionSupported(debugShaderPrecisionSupported)
 {
 }
@@ -60,16 +57,7 @@ void TDirectiveHandler::handlePragma(const pp::SourceLocation& loc,
         const char kAll[] = "all";
 
         if (name == kInvariant && value == kAll)
-        {
-            if (mShaderVersion == 300 && mShaderType == GL_FRAGMENT_SHADER)
-            {
-                
-                mDiagnostics.writeInfo(
-                    pp::Diagnostics::PP_ERROR, loc,
-                    "#pragma STDGL invariant(all) can not be used in fragment shader", name, value);
-            }
             mPragma.stdgl.invariantAll = true;
-        }
         
         
         

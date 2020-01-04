@@ -4,14 +4,8 @@
 
 
 
-#ifdef ANGLE_ENABLE_ESSL
 #include "compiler/translator/TranslatorESSL.h"
-#endif
-
-#ifdef ANGLE_ENABLE_GLSL
 #include "compiler/translator/TranslatorGLSL.h"
-#endif
-
 #ifdef ANGLE_ENABLE_HLSL
 #include "compiler/translator/TranslatorHLSL.h"
 #endif 
@@ -26,13 +20,7 @@ TCompiler* ConstructCompiler(
 {
     switch (output) {
       case SH_ESSL_OUTPUT:
-#ifdef ANGLE_ENABLE_ESSL
         return new TranslatorESSL(type, spec);
-#else
-        
-        
-        return nullptr;
-#endif 
       case SH_GLSL_130_OUTPUT:
       case SH_GLSL_140_OUTPUT:
       case SH_GLSL_150_CORE_OUTPUT:
@@ -44,26 +32,19 @@ TCompiler* ConstructCompiler(
       case SH_GLSL_440_CORE_OUTPUT:
       case SH_GLSL_450_CORE_OUTPUT:
       case SH_GLSL_COMPATIBILITY_OUTPUT:
-#ifdef ANGLE_ENABLE_GLSL
         return new TranslatorGLSL(type, spec, output);
-#else
-        
-        
-        return nullptr;
-#endif 
-      case SH_HLSL_3_0_OUTPUT:
-      case SH_HLSL_4_1_OUTPUT:
-      case SH_HLSL_4_0_FL9_3_OUTPUT:
+      case SH_HLSL9_OUTPUT:
+      case SH_HLSL11_OUTPUT:
 #ifdef ANGLE_ENABLE_HLSL
         return new TranslatorHLSL(type, spec, output);
 #else
         
         
-        return nullptr;
+        return NULL;
 #endif 
       default:
         
-        return nullptr;
+        return NULL;
     }
 }
 

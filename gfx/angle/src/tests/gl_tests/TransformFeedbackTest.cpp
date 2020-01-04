@@ -700,6 +700,6 @@ TEST_P(TransformFeedbackTest, PackingBug)
 }
 
 
-ANGLE_INSTANTIATE_TEST(TransformFeedbackTest, ES3_D3D11(), ES3_OPENGL(), ES3_OPENGLES());
+ANGLE_INSTANTIATE_TEST(TransformFeedbackTest, ES3_D3D11(), ES3_OPENGL());
 
 }  

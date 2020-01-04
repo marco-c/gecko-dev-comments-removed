@@ -462,24 +462,6 @@ TEST_P(GLSLTest, NamelessScopedStructs)
 
 TEST_P(GLSLTest, ScopedStructsOrderBug)
 {
-#if defined(__APPLE__)
-    
-    
-    if (getPlatformRenderer() == EGL_PLATFORM_ANGLE_TYPE_OPENGL_ANGLE)
-    {
-        std::cout << "Test disabled on Apple OpenGL." << std::endl;
-        return;
-    }
-#endif
-
-    
-    
-    if (isAMD() && getPlatformRenderer() == EGL_PLATFORM_ANGLE_TYPE_OPENGL_ANGLE)
-    {
-        std::cout << "Test disabled on AMD OpenGL." << std::endl;
-        return;
-    }
-
     const std::string fragmentShaderSource = SHADER_SOURCE
     (
         precision mediump float;
@@ -634,14 +616,6 @@ TEST_P(GLSLTest, TwoElseIfRewriting)
 
 TEST_P(GLSLTest, InvariantVaryingOut)
 {
-    
-    
-    if (getPlatformRenderer() == EGL_PLATFORM_ANGLE_TYPE_OPENGL_ANGLE)
-    {
-        std::cout << "Test disabled on OpenGL." << std::endl;
-        return;
-    }
-
     const std::string fragmentShaderSource = SHADER_SOURCE
     (
         precision mediump float;
@@ -713,14 +687,6 @@ TEST_P(GLSLTest, FrontFacingAndVarying)
 
 TEST_P(GLSLTest, InvariantVaryingIn)
 {
-    
-    
-    if (getPlatformRenderer() == EGL_PLATFORM_ANGLE_TYPE_OPENGL_ANGLE)
-    {
-        std::cout << "Test disabled on OpenGL." << std::endl;
-        return;
-    }
-
     const std::string fragmentShaderSource = SHADER_SOURCE
     (
         precision mediump float;
@@ -782,14 +748,6 @@ TEST_P(GLSLTest, InvariantGLPosition)
 
 TEST_P(GLSLTest, InvariantAll)
 {
-    
-    
-    if (getPlatformRenderer() == EGL_PLATFORM_ANGLE_TYPE_OPENGL_ANGLE)
-    {
-        std::cout << "Test disabled on OpenGL." << std::endl;
-        return;
-    }
-
     const std::string fragmentShaderSource = SHADER_SOURCE
     (
         precision mediump float;
@@ -809,16 +767,6 @@ TEST_P(GLSLTest, InvariantAll)
 
 TEST_P(GLSLTest, MaxVaryingVec4)
 {
-#if defined(__APPLE__)
-    
-    
-    if (isAMD() && getPlatformRenderer() == EGL_PLATFORM_ANGLE_TYPE_OPENGL_ANGLE)
-    {
-        std::cout << "Test disabled on Apple AMD OpenGL." << std::endl;
-        return;
-    }
-#endif
-
     GLint maxVaryings = 0;
     glGetIntegerv(GL_MAX_VARYING_VECTORS, &maxVaryings);
 
@@ -836,13 +784,6 @@ TEST_P(GLSLTest, MaxMinusTwoVaryingVec4PlusTwoSpecialVariables)
 
 TEST_P(GLSLTest, MaxMinusTwoVaryingVec4PlusThreeSpecialVariables)
 {
-    
-    if (isAMD() && getPlatformRenderer() == EGL_PLATFORM_ANGLE_TYPE_OPENGL_ANGLE)
-    {
-        std::cout << "Test disabled on OpenGL." << std::endl;
-        return;
-    }
-
     GLint maxVaryings = 0;
     glGetIntegerv(GL_MAX_VARYING_VECTORS, &maxVaryings);
 
@@ -850,9 +791,7 @@ TEST_P(GLSLTest, MaxMinusTwoVaryingVec4PlusThreeSpecialVariables)
     VaryingTestBase(0, 0, 0, 0, 0, 0, maxVaryings - 2, 0, true, true, true, true);
 }
 
-
-
-TEST_P(GLSLTest, DISABLED_MaxVaryingVec4PlusFragCoord)
+TEST_P(GLSLTest, MaxVaryingVec4PlusFragCoord)
 {
     GLint maxVaryings = 0;
     glGetIntegerv(GL_MAX_VARYING_VECTORS, &maxVaryings);
@@ -862,9 +801,7 @@ TEST_P(GLSLTest, DISABLED_MaxVaryingVec4PlusFragCoord)
     VaryingTestBase(0, 0, 0, 0, 0, 0, maxVaryings, 0, true, false, false, false);
 }
 
-
-
-TEST_P(GLSLTest, DISABLED_MaxVaryingVec4PlusPointCoord)
+TEST_P(GLSLTest, MaxVaryingVec4PlusPointCoord)
 {
     GLint maxVaryings = 0;
     glGetIntegerv(GL_MAX_VARYING_VECTORS, &maxVaryings);
@@ -929,23 +866,6 @@ TEST_P(GLSLTest, TwiceMaxVaryingVec2)
         return;
     }
 
-    if (getPlatformRenderer() == EGL_PLATFORM_ANGLE_TYPE_OPENGLES_ANGLE)
-    {
-        
-        std::cout << "Test disabled on OpenGL ES." << std::endl;
-        return;
-    }
-
-#if defined(__APPLE__)
-    
-    
-    if (isAMD() && getPlatformRenderer() == EGL_PLATFORM_ANGLE_TYPE_OPENGL_ANGLE)
-    {
-        std::cout << "Test disabled on Apple AMD OpenGL." << std::endl;
-        return;
-    }
-#endif
-
     GLint maxVaryings = 0;
     glGetIntegerv(GL_MAX_VARYING_VECTORS, &maxVaryings);
 
@@ -961,32 +881,13 @@ TEST_P(GLSLTest, MaxVaryingVec2Arrays)
         return;
     }
 
-    if (getPlatformRenderer() == EGL_PLATFORM_ANGLE_TYPE_OPENGLES_ANGLE)
-    {
-        
-        std::cout << "Test disabled on OpenGL ES." << std::endl;
-        return;
-    }
-
-#if defined(__APPLE__)
-    
-    
-    if (isAMD() && getPlatformRenderer() == EGL_PLATFORM_ANGLE_TYPE_OPENGL_ANGLE)
-    {
-        std::cout << "Test disabled on Apple AMD OpenGL." << std::endl;
-        return;
-    }
-#endif
-
     GLint maxVaryings = 0;
     glGetIntegerv(GL_MAX_VARYING_VECTORS, &maxVaryings);
 
     VaryingTestBase(0, 0, 0, maxVaryings, 0, 0, 0, 0, false, false, false, true);
 }
 
-
-
-TEST_P(GLSLTest, DISABLED_MaxPlusOneVaryingVec3)
+TEST_P(GLSLTest, MaxPlusOneVaryingVec3)
 {
     GLint maxVaryings = 0;
     glGetIntegerv(GL_MAX_VARYING_VECTORS, &maxVaryings);
@@ -994,9 +895,7 @@ TEST_P(GLSLTest, DISABLED_MaxPlusOneVaryingVec3)
     VaryingTestBase(0, 0, 0, 0, maxVaryings + 1, 0, 0, 0, false, false, false, false);
 }
 
-
-
-TEST_P(GLSLTest, DISABLED_MaxPlusOneVaryingVec3Array)
+TEST_P(GLSLTest, MaxPlusOneVaryingVec3Array)
 {
     GLint maxVaryings = 0;
     glGetIntegerv(GL_MAX_VARYING_VECTORS, &maxVaryings);
@@ -1004,9 +903,7 @@ TEST_P(GLSLTest, DISABLED_MaxPlusOneVaryingVec3Array)
     VaryingTestBase(0, 0, 0, 0, 0, maxVaryings / 2 + 1, 0, 0, false, false, false, false);
 }
 
-
-
-TEST_P(GLSLTest, DISABLED_MaxVaryingVec3AndOneVec2)
+TEST_P(GLSLTest, MaxVaryingVec3AndOneVec2)
 {
     GLint maxVaryings = 0;
     glGetIntegerv(GL_MAX_VARYING_VECTORS, &maxVaryings);
@@ -1014,9 +911,7 @@ TEST_P(GLSLTest, DISABLED_MaxVaryingVec3AndOneVec2)
     VaryingTestBase(0, 0, 1, 0, maxVaryings, 0, 0, 0, false, false, false, false);
 }
 
-
-
-TEST_P(GLSLTest, DISABLED_MaxPlusOneVaryingVec2)
+TEST_P(GLSLTest, MaxPlusOneVaryingVec2)
 {
     GLint maxVaryings = 0;
     glGetIntegerv(GL_MAX_VARYING_VECTORS, &maxVaryings);
@@ -1024,9 +919,7 @@ TEST_P(GLSLTest, DISABLED_MaxPlusOneVaryingVec2)
     VaryingTestBase(0, 0, 2 * maxVaryings + 1, 0, 0, 0, 0, 0, false, false, false, false);
 }
 
-
-
-TEST_P(GLSLTest, DISABLED_MaxVaryingVec3ArrayAndMaxPlusOneFloatArray)
+TEST_P(GLSLTest, MaxVaryingVec3ArrayAndMaxPlusOneFloatArray)
 {
     GLint maxVaryings = 0;
     glGetIntegerv(GL_MAX_VARYING_VECTORS, &maxVaryings);
@@ -1360,13 +1253,6 @@ TEST_P(GLSLTest, VerifyMaxVertexUniformVectors)
 
 TEST_P(GLSLTest, VerifyMaxVertexUniformVectorsWithSamplers)
 {
-    if (GetParam().eglParameters.renderer == EGL_PLATFORM_ANGLE_TYPE_OPENGL_ANGLE ||
-        GetParam().eglParameters.renderer == EGL_PLATFORM_ANGLE_TYPE_OPENGLES_ANGLE)
-    {
-        std::cout << "Test disabled on OpenGL." << std::endl;
-        return;
-    }
-
     int maxUniforms = 10000;
     glGetIntegerv(GL_MAX_VERTEX_UNIFORM_VECTORS, &maxUniforms);
     EXPECT_GL_NO_ERROR();
@@ -1406,13 +1292,6 @@ TEST_P(GLSLTest, VerifyMaxFragmentUniformVectors)
 
 TEST_P(GLSLTest, VerifyMaxFragmentUniformVectorsWithSamplers)
 {
-    if (GetParam().eglParameters.renderer == EGL_PLATFORM_ANGLE_TYPE_OPENGL_ANGLE ||
-        GetParam().eglParameters.renderer == EGL_PLATFORM_ANGLE_TYPE_OPENGLES_ANGLE)
-    {
-        std::cout << "Test disabled on OpenGL." << std::endl;
-        return;
-    }
-
     int maxUniforms = 10000;
     glGetIntegerv(GL_MAX_FRAGMENT_UNIFORM_VECTORS, &maxUniforms);
     EXPECT_GL_NO_ERROR();
@@ -1437,14 +1316,7 @@ TEST_P(GLSLTest, VerifyMaxFragmentUniformVectorsExceeded)
 }
 
 
-ANGLE_INSTANTIATE_TEST(GLSLTest,
-                       ES2_D3D9(),
-                       ES2_D3D11(),
-                       ES2_D3D11_FL9_3(),
-                       ES2_OPENGL(),
-                       ES3_OPENGL(),
-                       ES2_OPENGLES(),
-                       ES3_OPENGLES());
+ANGLE_INSTANTIATE_TEST(GLSLTest, ES2_D3D9(), ES2_D3D11(), ES2_D3D11_FL9_3());
 
 
-ANGLE_INSTANTIATE_TEST(GLSLTest_ES3, ES3_D3D11(), ES3_OPENGL(), ES3_OPENGLES());
+ANGLE_INSTANTIATE_TEST(GLSLTest_ES3, ES3_D3D11());

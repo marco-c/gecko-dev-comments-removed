@@ -12,8 +12,26 @@
 namespace rx
 {
 
-CompilerD3D::CompilerD3D(ShShaderOutput translatorOutputType)
-    : mTranslatorOutputType(translatorOutputType)
+namespace
+{
+
+ShShaderOutput GetShaderOutputType(RendererClass rendererClass)
+{
+    if (rendererClass == RENDERER_D3D11)
+    {
+        return SH_HLSL11_OUTPUT;
+    }
+    else
+    {
+        ASSERT(rendererClass == RENDERER_D3D9);
+        return SH_HLSL9_OUTPUT;
+    }
+}
+
+}  
+
+CompilerD3D::CompilerD3D(RendererClass rendererClass)
+    : mTranslatorOutputType(GetShaderOutputType(rendererClass))
 {
 }
 

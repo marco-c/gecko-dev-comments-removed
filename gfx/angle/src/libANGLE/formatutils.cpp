@@ -219,54 +219,6 @@ static bool RequireExtOrExt(GLuint, const Extensions &extensions)
     return extensions.*bool1 || extensions.*bool2;
 }
 
-
-static bool HalfFloatSupport(GLuint clientVersion, const Extensions &extensions)
-{
-    return clientVersion >= 3 || extensions.textureHalfFloat;
-}
-
-static bool HalfFloatRenderableSupport(GLuint clientVersion, const Extensions &extensions)
-{
-    return HalfFloatSupport(clientVersion, extensions) && extensions.colorBufferHalfFloat;
-}
-
-
-static bool HalfFloatSupportRG(GLuint clientVersion, const Extensions &extensions)
-{
-    return clientVersion >= 3 || (extensions.textureHalfFloat && extensions.textureRG);
-}
-
-static bool HalfFloatRenderableSupportRG(GLuint clientVersion, const Extensions &extensions)
-{
-    return HalfFloatSupportRG(clientVersion, extensions) && extensions.colorBufferHalfFloat;
-}
-
-
-static bool FloatSupport(GLuint clientVersion, const Extensions &extensions)
-{
-    return clientVersion >= 3 || extensions.textureFloat;
-}
-
-static bool FloatRenderableSupport(GLuint clientVersion, const Extensions &extensions)
-{
-    
-    return FloatSupport(clientVersion, extensions) &&
-           (extensions.colorBufferFloat || clientVersion == 2);
-}
-
-
-static bool FloatSupportRG(GLuint clientVersion, const Extensions &extensions)
-{
-    return clientVersion >= 3 || (extensions.textureFloat && extensions.textureRG);
-}
-
-static bool FloatRenderableSupportRG(GLuint clientVersion, const Extensions &extensions)
-{
-    
-    return FloatSupportRG(clientVersion, extensions) &&
-           (extensions.colorBufferFloat || clientVersion == 2);
-}
-
 InternalFormat::InternalFormat()
     : redBits(0),
       greenBits(0),
@@ -450,14 +402,14 @@ static InternalFormatInfoMap BuildInternalFormatInfoMap()
     
     
     
-    map.insert(InternalFormatInfoPair(GL_R16F,              RGBAFormat(16,  0,  0,  0, 0, GL_RED,          GL_HALF_FLOAT,                   GL_FLOAT, false, HalfFloatSupportRG, HalfFloatRenderableSupportRG, RequireExt<&Extensions::textureHalfFloatLinear>)));
-    map.insert(InternalFormatInfoPair(GL_RG16F,             RGBAFormat(16, 16,  0,  0, 0, GL_RG,           GL_HALF_FLOAT,                   GL_FLOAT, false, HalfFloatSupportRG, HalfFloatRenderableSupportRG, RequireExt<&Extensions::textureHalfFloatLinear>)));
-    map.insert(InternalFormatInfoPair(GL_RGB16F,            RGBAFormat(16, 16, 16,  0, 0, GL_RGB,          GL_HALF_FLOAT,                   GL_FLOAT, false, HalfFloatSupport,   HalfFloatRenderableSupport,   RequireExt<&Extensions::textureHalfFloatLinear>)));
-    map.insert(InternalFormatInfoPair(GL_RGBA16F,           RGBAFormat(16, 16, 16, 16, 0, GL_RGBA,         GL_HALF_FLOAT,                   GL_FLOAT, false, HalfFloatSupport,   HalfFloatRenderableSupport,   RequireExt<&Extensions::textureHalfFloatLinear>)));
-    map.insert(InternalFormatInfoPair(GL_R32F,              RGBAFormat(32,  0,  0,  0, 0, GL_RED,          GL_FLOAT,                        GL_FLOAT, false, FloatSupportRG,     FloatRenderableSupportRG,     RequireExt<&Extensions::textureFloatLinear>    )));
-    map.insert(InternalFormatInfoPair(GL_RG32F,             RGBAFormat(32, 32,  0,  0, 0, GL_RG,           GL_FLOAT,                        GL_FLOAT, false, FloatSupportRG,     FloatRenderableSupportRG,     RequireExt<&Extensions::textureFloatLinear>    )));
-    map.insert(InternalFormatInfoPair(GL_RGB32F,            RGBAFormat(32, 32, 32,  0, 0, GL_RGB,          GL_FLOAT,                        GL_FLOAT, false, FloatSupport,       FloatRenderableSupport,       RequireExt<&Extensions::textureFloatLinear>    )));
-    map.insert(InternalFormatInfoPair(GL_RGBA32F,           RGBAFormat(32, 32, 32, 32, 0, GL_RGBA,         GL_FLOAT,                        GL_FLOAT, false, FloatSupport,       FloatRenderableSupport,       RequireExt<&Extensions::textureFloatLinear>    )));
+    map.insert(InternalFormatInfoPair(GL_R16F,              RGBAFormat(16,  0,  0,  0, 0, GL_RED,          GL_HALF_FLOAT,                   GL_FLOAT, false, RequireESOrExtAndExt<3, &Extensions::textureHalfFloat, &Extensions::textureRG>, RequireESOrExtAndExt<3, &Extensions::textureHalfFloat, &Extensions::textureRG>, RequireExt<&Extensions::textureHalfFloatLinear>)));
+    map.insert(InternalFormatInfoPair(GL_RG16F,             RGBAFormat(16, 16,  0,  0, 0, GL_RG,           GL_HALF_FLOAT,                   GL_FLOAT, false, RequireESOrExtAndExt<3, &Extensions::textureHalfFloat, &Extensions::textureRG>, RequireESOrExtAndExt<3, &Extensions::textureHalfFloat, &Extensions::textureRG>, RequireExt<&Extensions::textureHalfFloatLinear>)));
+    map.insert(InternalFormatInfoPair(GL_RGB16F,            RGBAFormat(16, 16, 16,  0, 0, GL_RGB,          GL_HALF_FLOAT,                   GL_FLOAT, false, RequireESOrExt<3, &Extensions::textureHalfFloat>,                               RequireESOrExt<3, &Extensions::textureHalfFloat>,                               RequireExt<&Extensions::textureHalfFloatLinear>)));
+    map.insert(InternalFormatInfoPair(GL_RGBA16F,           RGBAFormat(16, 16, 16, 16, 0, GL_RGBA,         GL_HALF_FLOAT,                   GL_FLOAT, false, RequireESOrExt<3, &Extensions::textureHalfFloat>,                               RequireESOrExt<3, &Extensions::textureHalfFloat>,                               RequireExt<&Extensions::textureHalfFloatLinear>)));
+    map.insert(InternalFormatInfoPair(GL_R32F,              RGBAFormat(32,  0,  0,  0, 0, GL_RED,          GL_FLOAT,                        GL_FLOAT, false, RequireESOrExtAndExt<3, &Extensions::textureFloat, &Extensions::textureRG>,     RequireESOrExtAndExt<3, &Extensions::textureFloat, &Extensions::textureRG>,     RequireExt<&Extensions::textureFloatLinear>    )));
+    map.insert(InternalFormatInfoPair(GL_RG32F,             RGBAFormat(32, 32,  0,  0, 0, GL_RG,           GL_FLOAT,                        GL_FLOAT, false, RequireESOrExtAndExt<3, &Extensions::textureFloat, &Extensions::textureRG>,     RequireESOrExtAndExt<3, &Extensions::textureFloat, &Extensions::textureRG>,     RequireExt<&Extensions::textureFloatLinear>    )));
+    map.insert(InternalFormatInfoPair(GL_RGB32F,            RGBAFormat(32, 32, 32,  0, 0, GL_RGB,          GL_FLOAT,                        GL_FLOAT, false, RequireESOrExt<3, &Extensions::textureFloat>,                                   RequireESOrExt<3, &Extensions::textureFloat>,                                   RequireExt<&Extensions::textureFloatLinear>    )));
+    map.insert(InternalFormatInfoPair(GL_RGBA32F,           RGBAFormat(32, 32, 32, 32, 0, GL_RGBA,         GL_FLOAT,                        GL_FLOAT, false, RequireESOrExt<3, &Extensions::textureFloat>,                                   RequireESOrExt<3, &Extensions::textureFloat>,                                   RequireExt<&Extensions::textureFloatLinear>    )));
 
     
     
@@ -565,10 +517,6 @@ static InternalFormatInfoMap BuildInternalFormatInfoMap()
     
     
     map.insert(InternalFormatInfoPair(GL_STENCIL_INDEX8, DepthStencilFormat(0, 8, 0, GL_DEPTH_STENCIL, GL_UNSIGNED_BYTE, GL_UNSIGNED_NORMALIZED, RequireES<2>, RequireES<2>, NeverSupported)));
-
-    
-    map.insert(InternalFormatInfoPair(GL_ETC1_RGB8_LOSSY_DECODE_ANGLE, CompressedFormat(4, 4, 64, 3, GL_ETC1_RGB8_OES, GL_UNSIGNED_BYTE, false, RequireExt<&Extensions::lossyETCDecode>, NeverSupported, AlwaysSupported)));
-
     
 
     return map;

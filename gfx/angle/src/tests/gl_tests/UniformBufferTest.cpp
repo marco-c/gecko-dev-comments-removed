@@ -246,8 +246,7 @@ TEST_P(UniformBufferTest, UnboundUniformBuffer)
 TEST_P(UniformBufferTest, UniformBufferManyUpdates)
 {
     
-    if (isIntel() && (getPlatformRenderer() == EGL_PLATFORM_ANGLE_TYPE_D3D11_ANGLE ||
-                      getPlatformRenderer() == EGL_PLATFORM_ANGLE_TYPE_OPENGL_ANGLE))
+    if (isIntel() && GetParam().getRenderer() == EGL_PLATFORM_ANGLE_TYPE_D3D11_ANGLE)
     {
         std::cout << "Test skipped on Intel." << std::endl;
         return;
@@ -413,11 +412,6 @@ TEST_P(UniformBufferTest, ActiveUniformNames)
 }
 
 
-ANGLE_INSTANTIATE_TEST(UniformBufferTest,
-                       ES3_D3D11(),
-                       ES3_D3D11_FL11_1(),
-                       ES3_D3D11_FL11_1_REFERENCE(),
-                       ES3_OPENGL(),
-                       ES3_OPENGLES());
+ANGLE_INSTANTIATE_TEST(UniformBufferTest, ES3_D3D11(), ES3_D3D11_FL11_1(), ES3_D3D11_FL11_1_REFERENCE());
 
 } 

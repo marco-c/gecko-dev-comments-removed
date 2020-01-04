@@ -221,14 +221,12 @@ D3D11_QUERY ConvertQueryType(GLenum queryType)
       case GL_ANY_SAMPLES_PASSED_EXT:
       case GL_ANY_SAMPLES_PASSED_CONSERVATIVE_EXT:   return D3D11_QUERY_OCCLUSION;
       case GL_TRANSFORM_FEEDBACK_PRIMITIVES_WRITTEN: return D3D11_QUERY_SO_STATISTICS;
-      case GL_TIME_ELAPSED_EXT:
-          
-          return D3D11_QUERY_TIMESTAMP_DISJOINT;
       default: UNREACHABLE();                        return D3D11_QUERY_EVENT;
     }
 }
 
-}  
+}
+
 
 namespace d3d11_gl
 {
@@ -292,7 +290,7 @@ unsigned int GetReservedVertexUniformVectors(D3D_FEATURE_LEVEL featureLevel)
         case D3D_FEATURE_LEVEL_9_3:
         case D3D_FEATURE_LEVEL_9_2:
         case D3D_FEATURE_LEVEL_9_1:
-            return 3;  
+            return 2;  
 
         default:
             UNREACHABLE();
@@ -313,7 +311,7 @@ unsigned int GetReservedFragmentUniformVectors(D3D_FEATURE_LEVEL featureLevel)
         case D3D_FEATURE_LEVEL_9_3:
         case D3D_FEATURE_LEVEL_9_2:
         case D3D_FEATURE_LEVEL_9_1:
-            return 3;
+            return 2;
 
         default:
             UNREACHABLE();
@@ -1201,10 +1199,6 @@ void GenerateCaps(ID3D11Device *device, ID3D11DeviceContext *deviceContext, cons
     extensions->occlusionQueryBoolean = GetOcclusionQuerySupport(featureLevel);
     extensions->fence = GetEventQuerySupport(featureLevel);
     extensions->timerQuery = false; 
-    extensions->disjointTimerQuery          = true;
-    extensions->queryCounterBitsTimeElapsed = 64;
-    extensions->queryCounterBitsTimestamp =
-        0;  
     extensions->robustness = true;
     extensions->blendMinMax = true;
     extensions->framebufferBlit = GetFramebufferBlitSupport(featureLevel);
@@ -1223,8 +1217,6 @@ void GenerateCaps(ID3D11Device *device, ID3D11DeviceContext *deviceContext, cons
     extensions->unpackSubimage           = true;
     extensions->packSubimage             = true;
     extensions->vertexArrayObject        = true;
-    extensions->noError                  = true;
-    extensions->lossyETCDecode           = true;
 
     
     
@@ -1254,76 +1246,10 @@ void GenerateCaps(ID3D11Device *device, ID3D11DeviceContext *deviceContext, cons
 #endif
 }
 
-}  
+}
 
 namespace d3d11
 {
-
-ANGLED3D11DeviceType GetDeviceType(ID3D11Device *device)
-{
-    
-    
-
-    IDXGIDevice *dxgiDevice     = nullptr;
-    IDXGIAdapter *dxgiAdapter   = nullptr;
-    IDXGIAdapter2 *dxgiAdapter2 = nullptr;
-
-    ANGLED3D11DeviceType retDeviceType = ANGLE_D3D11_DEVICE_TYPE_UNKNOWN;
-
-    HRESULT hr = device->QueryInterface(__uuidof(IDXGIDevice), (void **)&dxgiDevice);
-    if (SUCCEEDED(hr))
-    {
-        hr = dxgiDevice->GetParent(__uuidof(IDXGIAdapter), (void **)&dxgiAdapter);
-        if (SUCCEEDED(hr))
-        {
-            std::wstring adapterString;
-            HRESULT adapter2hr =
-                dxgiAdapter->QueryInterface(__uuidof(dxgiAdapter2), (void **)&dxgiAdapter2);
-            if (SUCCEEDED(adapter2hr))
-            {
-                
-                
-                
-                DXGI_ADAPTER_DESC2 adapterDesc2;
-                dxgiAdapter2->GetDesc2(&adapterDesc2);
-                adapterString = std::wstring(adapterDesc2.Description);
-            }
-            else
-            {
-                DXGI_ADAPTER_DESC adapterDesc;
-                dxgiAdapter->GetDesc(&adapterDesc);
-                adapterString = std::wstring(adapterDesc.Description);
-            }
-
-            
-            const bool isSoftwareDevice =
-                (adapterString.find(std::wstring(L"Software Adapter")) != std::string::npos);
-            const bool isNullDevice = (adapterString == L"");
-            const bool isWARPDevice =
-                (adapterString.find(std::wstring(L"Basic Render")) != std::string::npos);
-
-            if (isSoftwareDevice || isNullDevice)
-            {
-                ASSERT(!isWARPDevice);
-                retDeviceType = ANGLE_D3D11_DEVICE_TYPE_SOFTWARE_REF_OR_NULL;
-            }
-            else if (isWARPDevice)
-            {
-                retDeviceType = ANGLE_D3D11_DEVICE_TYPE_WARP;
-            }
-            else
-            {
-                retDeviceType = ANGLE_D3D11_DEVICE_TYPE_HARDWARE;
-            }
-        }
-    }
-
-    SafeRelease(dxgiDevice);
-    SafeRelease(dxgiAdapter);
-    SafeRelease(dxgiAdapter2);
-
-    return retDeviceType;
-}
 
 void MakeValidSize(bool isImage, DXGI_FORMAT format, GLsizei *requestWidth, GLsizei *requestHeight, int *levelOffset)
 {
@@ -1344,14 +1270,9 @@ void MakeValidSize(bool isImage, DXGI_FORMAT format, GLsizei *requestWidth, GLsi
     *levelOffset = upsampleCount;
 }
 
-void GenerateInitialTextureData(GLint internalFormat,
-                                const Renderer11DeviceCaps &renderer11DeviceCaps,
-                                GLuint width,
-                                GLuint height,
-                                GLuint depth,
-                                GLuint mipLevels,
-                                std::vector<D3D11_SUBRESOURCE_DATA> *outSubresourceData,
-                                std::vector<std::vector<BYTE>> *outData)
+void GenerateInitialTextureData(GLint internalFormat, const Renderer11DeviceCaps &renderer11DeviceCaps, GLuint width, GLuint height, GLuint depth,
+                                GLuint mipLevels, std::vector<D3D11_SUBRESOURCE_DATA> *outSubresourceData,
+                                std::vector< std::vector<BYTE> > *outData)
 {
     const d3d11::TextureFormat &d3dFormatInfo = d3d11::GetTextureFormatInfo(internalFormat, renderer11DeviceCaps);
     ASSERT(d3dFormatInfo.dataInitializerFunction != NULL);
@@ -1406,36 +1327,8 @@ void SetPositionLayerTexCoord3DVertex(PositionLayerTexCoord3DVertex* vertex, flo
 HRESULT SetDebugName(ID3D11DeviceChild *resource, const char *name)
 {
 #if defined(_DEBUG)
-    UINT existingDataSize = 0;
-    resource->GetPrivateData(WKPDID_D3DDebugObjectName, &existingDataSize, nullptr);
-    
-    
-
-    if (existingDataSize > 0)
-    {
-        
-        
-        
-        
-        static const char *multipleNamesUsed = "Multiple names set by ANGLE";
-
-        
-        HRESULT hr = resource->SetPrivateData(WKPDID_D3DDebugObjectName, 0, nullptr);
-        if (FAILED(hr))
-        {
-            return hr;
-        }
-
-        
-        return resource->SetPrivateData(WKPDID_D3DDebugObjectName,
-                                        static_cast<unsigned int>(strlen(multipleNamesUsed)),
-                                        multipleNamesUsed);
-    }
-    else
-    {
-        return resource->SetPrivateData(WKPDID_D3DDebugObjectName,
-                                        static_cast<unsigned int>(strlen(name)), name);
-    }
+    return resource->SetPrivateData(WKPDID_D3DDebugObjectName,
+                                    static_cast<unsigned int>(strlen(name)), name);
 #else
     return S_OK;
 #endif
@@ -1501,188 +1394,6 @@ WorkaroundsD3D GenerateWorkarounds(D3D_FEATURE_LEVEL featureLevel)
     return workarounds;
 }
 
-}  
-
-TextureHelper11::TextureHelper11()
-    : mTextureType(GL_NONE),
-      mFormat(DXGI_FORMAT_UNKNOWN),
-      mSampleCount(0),
-      mTexture2D(nullptr),
-      mTexture3D(nullptr)
-{
 }
 
-TextureHelper11::TextureHelper11(TextureHelper11 &&toCopy)
-    : mTextureType(toCopy.mTextureType),
-      mExtents(toCopy.mExtents),
-      mFormat(toCopy.mFormat),
-      mSampleCount(toCopy.mSampleCount),
-      mTexture2D(toCopy.mTexture2D),
-      mTexture3D(toCopy.mTexture3D)
-{
-    toCopy.reset();
 }
-
-
-TextureHelper11 TextureHelper11::MakeAndReference(ID3D11Resource *genericResource)
-{
-    TextureHelper11 newHelper;
-    newHelper.mTexture2D   = d3d11::DynamicCastComObject<ID3D11Texture2D>(genericResource);
-    newHelper.mTexture3D   = d3d11::DynamicCastComObject<ID3D11Texture3D>(genericResource);
-    newHelper.mTextureType = newHelper.mTexture2D ? GL_TEXTURE_2D : GL_TEXTURE_3D;
-    newHelper.initDesc();
-    return newHelper;
-}
-
-
-TextureHelper11 TextureHelper11::MakeAndPossess2D(ID3D11Texture2D *texToOwn)
-{
-    TextureHelper11 newHelper;
-    newHelper.mTexture2D   = texToOwn;
-    newHelper.mTextureType = GL_TEXTURE_2D;
-    newHelper.initDesc();
-    return newHelper;
-}
-
-
-TextureHelper11 TextureHelper11::MakeAndPossess3D(ID3D11Texture3D *texToOwn)
-{
-    TextureHelper11 newHelper;
-    newHelper.mTexture3D   = texToOwn;
-    newHelper.mTextureType = GL_TEXTURE_3D;
-    newHelper.initDesc();
-    return newHelper;
-}
-
-void TextureHelper11::initDesc()
-{
-    if (mTextureType == GL_TEXTURE_2D)
-    {
-        ASSERT(!mTexture3D);
-        D3D11_TEXTURE2D_DESC desc2D;
-        mTexture2D->GetDesc(&desc2D);
-
-        mExtents.width  = static_cast<int>(desc2D.Width);
-        mExtents.height = static_cast<int>(desc2D.Height);
-        mExtents.depth  = 1;
-        mFormat         = desc2D.Format;
-        mSampleCount    = desc2D.SampleDesc.Count;
-    }
-    else
-    {
-        ASSERT(mTexture3D && mTextureType == GL_TEXTURE_3D);
-        D3D11_TEXTURE3D_DESC desc3D;
-        mTexture3D->GetDesc(&desc3D);
-
-        mExtents.width  = static_cast<int>(desc3D.Width);
-        mExtents.height = static_cast<int>(desc3D.Height);
-        mExtents.depth  = static_cast<int>(desc3D.Depth);
-        mFormat         = desc3D.Format;
-        mSampleCount    = 1;
-    }
-}
-
-TextureHelper11::~TextureHelper11()
-{
-    SafeRelease(mTexture2D);
-    SafeRelease(mTexture3D);
-}
-
-ID3D11Resource *TextureHelper11::getResource() const
-{
-    return mTexture2D ? static_cast<ID3D11Resource *>(mTexture2D)
-                      : static_cast<ID3D11Resource *>(mTexture3D);
-}
-
-TextureHelper11 &TextureHelper11::operator=(TextureHelper11 &&texture)
-{
-    SafeRelease(mTexture2D);
-    SafeRelease(mTexture3D);
-
-    mTextureType = texture.mTextureType;
-    mExtents     = texture.mExtents;
-    mFormat      = texture.mFormat;
-    mSampleCount = texture.mSampleCount;
-    mTexture2D   = texture.mTexture2D;
-    mTexture3D = texture.mTexture3D;
-    texture.reset();
-    return *this;
-}
-
-void TextureHelper11::reset()
-{
-    mTextureType = GL_NONE;
-    mExtents     = gl::Extents();
-    mFormat      = DXGI_FORMAT_UNKNOWN;
-    mSampleCount = 0;
-    mTexture2D   = nullptr;
-    mTexture3D   = nullptr;
-}
-
-gl::ErrorOrResult<TextureHelper11> CreateStagingTexture(GLenum textureType,
-                                                        DXGI_FORMAT dxgiFormat,
-                                                        const gl::Extents &size,
-                                                        ID3D11Device *device)
-{
-    if (textureType == GL_TEXTURE_2D)
-    {
-        D3D11_TEXTURE2D_DESC stagingDesc;
-        stagingDesc.Width              = size.width;
-        stagingDesc.Height             = size.height;
-        stagingDesc.MipLevels          = 1;
-        stagingDesc.ArraySize          = 1;
-        stagingDesc.Format             = dxgiFormat;
-        stagingDesc.SampleDesc.Count   = 1;
-        stagingDesc.SampleDesc.Quality = 0;
-        stagingDesc.Usage              = D3D11_USAGE_STAGING;
-        stagingDesc.BindFlags          = 0;
-        stagingDesc.CPUAccessFlags     = D3D11_CPU_ACCESS_READ;
-        stagingDesc.MiscFlags          = 0;
-
-        ID3D11Texture2D *stagingTex = nullptr;
-        HRESULT result = device->CreateTexture2D(&stagingDesc, nullptr, &stagingTex);
-        if (FAILED(result))
-        {
-            return gl::Error(GL_OUT_OF_MEMORY, "CreateStagingTextureFor failed, HRESULT: 0x%X.",
-                             result);
-        }
-
-        return TextureHelper11::MakeAndPossess2D(stagingTex);
-    }
-    ASSERT(textureType == GL_TEXTURE_3D);
-
-    D3D11_TEXTURE3D_DESC stagingDesc;
-    stagingDesc.Width          = size.width;
-    stagingDesc.Height         = size.height;
-    stagingDesc.Depth          = 1;
-    stagingDesc.MipLevels      = 1;
-    stagingDesc.Format         = dxgiFormat;
-    stagingDesc.Usage          = D3D11_USAGE_STAGING;
-    stagingDesc.BindFlags      = 0;
-    stagingDesc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
-    stagingDesc.MiscFlags      = 0;
-
-    ID3D11Texture3D *stagingTex = nullptr;
-    HRESULT result = device->CreateTexture3D(&stagingDesc, nullptr, &stagingTex);
-    if (FAILED(result))
-    {
-        return gl::Error(GL_OUT_OF_MEMORY, "CreateStagingTextureFor failed, HRESULT: 0x%X.",
-                         result);
-    }
-
-    return TextureHelper11::MakeAndPossess3D(stagingTex);
-}
-
-bool UsePresentPathFast(const Renderer11 *renderer,
-                        const gl::FramebufferAttachment *framebufferAttachment)
-{
-    if (framebufferAttachment == nullptr)
-    {
-        return false;
-    }
-
-    return (framebufferAttachment->type() == GL_FRAMEBUFFER_DEFAULT &&
-            renderer->presentPathFastEnabled());
-}
-
-}  

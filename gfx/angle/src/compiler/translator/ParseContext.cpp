@@ -1925,84 +1925,6 @@ void TParseContext::parseGlobalLayoutQualifier(const TPublicType &typeQualifier)
     }
 }
 
-TIntermAggregate *TParseContext::addFunctionPrototypeDeclaration(const TFunction &function,
-                                                                 const TSourceLoc &location)
-{
-    
-    
-    
-    TFunction *symbolTableFunction =
-        static_cast<TFunction *>(symbolTable.find(function.getMangledName(), getShaderVersion()));
-    if (symbolTableFunction->hasPrototypeDeclaration() && mShaderVersion == 100)
-    {
-        
-        
-        error(location, "duplicate function prototype declarations are not allowed", "function");
-        recover();
-    }
-    symbolTableFunction->setHasPrototypeDeclaration();
-
-    TIntermAggregate *prototype = new TIntermAggregate;
-    prototype->setType(function.getReturnType());
-    prototype->setName(function.getMangledName());
-    prototype->setFunctionId(function.getUniqueId());
-
-    for (size_t i = 0; i < function.getParamCount(); i++)
-    {
-        const TConstParameter &param = function.getParam(i);
-        if (param.name != 0)
-        {
-            TVariable variable(param.name, *param.type);
-
-            TIntermSymbol *paramSymbol = intermediate.addSymbol(
-                variable.getUniqueId(), variable.getName(), variable.getType(), location);
-            prototype = intermediate.growAggregate(prototype, paramSymbol, location);
-        }
-        else
-        {
-            TIntermSymbol *paramSymbol = intermediate.addSymbol(0, "", *param.type, location);
-            prototype                  = intermediate.growAggregate(prototype, paramSymbol, location);
-        }
-    }
-
-    prototype->setOp(EOpPrototype);
-
-    symbolTable.pop();
-
-    if (!symbolTable.atGlobalLevel())
-    {
-        
-        error(location, "local function prototype declarations are not allowed", "function");
-        recover();
-    }
-
-    return prototype;
-}
-
-TIntermAggregate *TParseContext::addFunctionDefinition(const TFunction &function,
-                                                       TIntermAggregate *functionPrototype,
-                                                       TIntermAggregate *functionBody,
-                                                       const TSourceLoc &location)
-{
-    
-    
-    if (mCurrentFunctionType->getBasicType() != EbtVoid && !mFunctionReturnsValue)
-    {
-        error(location, "function does not return a value:", "", function.getName().c_str());
-        recover();
-    }
-
-    TIntermAggregate *aggregate =
-        intermediate.growAggregate(functionPrototype, functionBody, location);
-    intermediate.setAggregateOperator(aggregate, EOpFunction, location);
-    aggregate->setName(function.getMangledName().c_str());
-    aggregate->setType(function.getReturnType());
-    aggregate->setFunctionId(function.getUniqueId());
-
-    symbolTable.pop();
-    return aggregate;
-}
-
 void TParseContext::parseFunctionPrototype(const TSourceLoc &location,
                                            TFunction *function,
                                            TIntermAggregate **aggregateOut)
@@ -2056,8 +1978,8 @@ void TParseContext::parseFunctionPrototype(const TSourceLoc &location,
     
     
     
-    mCurrentFunctionType  = &(prevDec->getReturnType());
-    mFunctionReturnsValue = false;
+    setCurrentFunctionType(&(prevDec->getReturnType()));
+    setFunctionReturnsValue(false);
 
     
     

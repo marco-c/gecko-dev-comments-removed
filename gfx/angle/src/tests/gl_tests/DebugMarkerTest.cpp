@@ -66,6 +66,6 @@ TEST_P(DebugMarkerTest, BasicValidation)
 }
 
 
-ANGLE_INSTANTIATE_TEST(DebugMarkerTest, ES2_D3D9(), ES2_D3D11(), ES2_OPENGL(), ES2_OPENGLES());
+ANGLE_INSTANTIATE_TEST(DebugMarkerTest, ES2_D3D9(), ES2_D3D11(), ES2_OPENGL());
 
 } 

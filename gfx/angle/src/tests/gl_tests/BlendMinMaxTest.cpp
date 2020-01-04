@@ -166,10 +166,9 @@ TEST_P(BlendMinMaxTest, RGBA8)
 
 TEST_P(BlendMinMaxTest, RGBA32f)
 {
-    if (getClientVersion() < 3 || !extensionEnabled("GL_EXT_color_buffer_float"))
+    if (getClientVersion() < 3 && !extensionEnabled("GL_OES_texture_float"))
     {
-        std::cout << "Test skipped because ES3 and GL_EXT_color_buffer_float are not available."
-                  << std::endl;
+        std::cout << "Test skipped because ES3 or GL_OES_texture_float is not available." << std::endl;
         return;
     }
 
@@ -180,22 +179,14 @@ TEST_P(BlendMinMaxTest, RGBA32f)
         return;
     }
 
-    
-    if (isD3D11_FL93())
-    {
-        std::cout << "Test skipped on Feature Level 9_3." << std::endl;
-        return;
-    }
-
     runTest(GL_RGBA32F);
 }
 
 TEST_P(BlendMinMaxTest, RGBA16F)
 {
-    if (getClientVersion() < 3 && !extensionEnabled("GL_EXT_color_buffer_half_float"))
+    if (getClientVersion() < 3 && !extensionEnabled("GL_OES_texture_half_float"))
     {
-        std::cout << "Test skipped because ES3 or GL_EXT_color_buffer_half_float is not available."
-                  << std::endl;
+        std::cout << "Test skipped because ES3 or GL_OES_texture_half_float is not available." << std::endl;
         return;
     }
 
@@ -206,21 +197,8 @@ TEST_P(BlendMinMaxTest, RGBA16F)
         return;
     }
 
-    
-    
-    if (GetParam().getRenderer() == EGL_PLATFORM_ANGLE_TYPE_OPENGLES_ANGLE)
-    {
-        std::cout << "Test skipped on OpenGL ES targets." << std::endl;
-        return;
-    }
-
     runTest(GL_RGBA16F);
 }
 
 
-ANGLE_INSTANTIATE_TEST(BlendMinMaxTest,
-                       ES2_D3D9(),
-                       ES2_D3D11(),
-                       ES2_D3D11_FL9_3(),
-                       ES2_OPENGL(),
-                       ES2_OPENGLES());
+ANGLE_INSTANTIATE_TEST(BlendMinMaxTest, ES2_D3D9(), ES2_D3D11(), ES2_OPENGL());

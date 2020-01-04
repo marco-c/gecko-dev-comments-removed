@@ -4,19 +4,9 @@
 
 
 
-
-
-
 #include "test_utils/ANGLETest.h"
 
-#include <array>
-
-#include "random_utils.h"
-
 using namespace angle;
-
-namespace
-{
 
 class ReadPixelsTest : public ANGLETest
 {
@@ -30,8 +20,76 @@ class ReadPixelsTest : public ANGLETest
         setConfigBlueBits(8);
         setConfigAlphaBits(8);
     }
-};
 
+    virtual void SetUp()
+    {
+        ANGLETest::SetUp();
+
+        glGenBuffers(1, &mPBO);
+        glBindBuffer(GL_PIXEL_PACK_BUFFER, mPBO);
+        glBufferData(GL_PIXEL_PACK_BUFFER, 4 * getWindowWidth() * getWindowHeight(), NULL, GL_STATIC_DRAW);
+        glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
+
+        const char *vertexShaderSrc = SHADER_SOURCE
+        (
+            attribute vec4 aTest;
+            attribute vec2 aPosition;
+            varying vec4 vTest;
+
+            void main()
+            {
+                vTest = aTest;
+                gl_Position = vec4(aPosition, 0.0, 1.0);
+                gl_PointSize = 1.0;
+            }
+        );
+
+        const char *fragmentShaderSrc = SHADER_SOURCE
+        (
+            precision mediump float;
+            varying vec4 vTest;
+
+            void main()
+            {
+                gl_FragColor = vTest;
+            }
+        );
+
+        mProgram = CompileProgram(vertexShaderSrc, fragmentShaderSrc);
+
+        glGenTextures(1, &mTexture);
+        glBindTexture(GL_TEXTURE_2D, mTexture);
+        glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA8, 4, 1);
+
+        glGenFramebuffers(1, &mFBO);
+        glBindFramebuffer(GL_FRAMEBUFFER, mFBO);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, mTexture, 0);
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+        glGenBuffers(1, &mPositionVBO);
+        glBindBuffer(GL_ARRAY_BUFFER, mPositionVBO);
+        glBufferData(GL_ARRAY_BUFFER, 128, NULL, GL_DYNAMIC_DRAW);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+        ASSERT_GL_NO_ERROR();
+    }
+
+    virtual void TearDown()
+    {
+        ANGLETest::TearDown();
+
+        glDeleteBuffers(1, &mPBO);
+        glDeleteProgram(mProgram);
+        glDeleteTextures(1, &mTexture);
+        glDeleteFramebuffers(1, &mFBO);
+    }
+
+    GLuint mPBO;
+    GLuint mProgram;
+    GLuint mTexture;
+    GLuint mFBO;
+    GLuint mPositionVBO;
+};
 
 TEST_P(ReadPixelsTest, OutOfBounds)
 {
@@ -66,49 +124,7 @@ TEST_P(ReadPixelsTest, OutOfBounds)
     }
 }
 
-class ReadPixelsPBOTest : public ReadPixelsTest
-{
-  protected:
-    ReadPixelsPBOTest() : mPBO(0), mTexture(0), mFBO(0) {}
-
-    void SetUp() override
-    {
-        ANGLETest::SetUp();
-
-        glGenBuffers(1, &mPBO);
-        glBindBuffer(GL_PIXEL_PACK_BUFFER, mPBO);
-        glBufferData(GL_PIXEL_PACK_BUFFER, 4 * getWindowWidth() * getWindowHeight(), nullptr,
-                     GL_STATIC_DRAW);
-        glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
-
-        glGenTextures(1, &mTexture);
-        glBindTexture(GL_TEXTURE_2D, mTexture);
-        glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA8, 4, 1);
-
-        glGenFramebuffers(1, &mFBO);
-        glBindFramebuffer(GL_FRAMEBUFFER, mFBO);
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, mTexture, 0);
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-        ASSERT_GL_NO_ERROR();
-    }
-
-    void TearDown() override
-    {
-        ANGLETest::TearDown();
-
-        glDeleteBuffers(1, &mPBO);
-        glDeleteTextures(1, &mTexture);
-        glDeleteFramebuffers(1, &mFBO);
-    }
-
-    GLuint mPBO;
-    GLuint mTexture;
-    GLuint mFBO;
-};
-
-
-TEST_P(ReadPixelsPBOTest, ArrayBufferTarget)
+TEST_P(ReadPixelsTest, PBOWithOtherTarget)
 {
     glClearColor(1.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
@@ -133,16 +149,8 @@ TEST_P(ReadPixelsPBOTest, ArrayBufferTarget)
     EXPECT_GL_NO_ERROR();
 }
 
-
-TEST_P(ReadPixelsPBOTest, ExistingDataPreserved)
+TEST_P(ReadPixelsTest, PBOWithExistingData)
 {
-    
-    if (isAMD() && getPlatformRenderer() == EGL_PLATFORM_ANGLE_TYPE_OPENGL_ANGLE)
-    {
-        std::cout << "Test disabled on AMD OpenGL." << std::endl;
-        return;
-    }
-
     
     glClearColor(1.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
@@ -179,8 +187,7 @@ TEST_P(ReadPixelsPBOTest, ExistingDataPreserved)
     EXPECT_GL_NO_ERROR();
 }
 
-
-TEST_P(ReadPixelsPBOTest, SubDataPreservesContents)
+TEST_P(ReadPixelsTest, PBOAndSubData)
 {
     glClearColor(1.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
@@ -208,8 +215,7 @@ TEST_P(ReadPixelsPBOTest, SubDataPreservesContents)
     EXPECT_GL_NO_ERROR();
 }
 
-
-TEST_P(ReadPixelsPBOTest, SubDataOffsetPreservesContents)
+TEST_P(ReadPixelsTest, PBOAndSubDataOffset)
 {
     glClearColor(1.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
@@ -242,53 +248,7 @@ TEST_P(ReadPixelsPBOTest, SubDataOffsetPreservesContents)
     EXPECT_GL_NO_ERROR();
 }
 
-class ReadPixelsPBODrawTest : public ReadPixelsPBOTest
-{
-  protected:
-    ReadPixelsPBODrawTest() : mProgram(0), mPositionVBO(0) {}
-
-    void SetUp() override
-    {
-        ReadPixelsPBOTest::SetUp();
-
-        const char *vertexShaderSrc =
-            "attribute vec4 aTest; attribute vec2 aPosition; varying vec4 vTest;\n"
-            "void main()\n"
-            "{\n"
-            "    vTest        = aTest;\n"
-            "    gl_Position  = vec4(aPosition, 0.0, 1.0);\n"
-            "    gl_PointSize = 1.0;\n"
-            "}";
-
-        const char *fragmentShaderSrc =
-            "precision mediump float; varying vec4 vTest;\n"
-            "void main()\n"
-            "{\n"
-            "    gl_FragColor = vTest;\n"
-            "}";
-
-        mProgram = CompileProgram(vertexShaderSrc, fragmentShaderSrc);
-        ASSERT_NE(0u, mProgram);
-
-        glGenBuffers(1, &mPositionVBO);
-        glBindBuffer(GL_ARRAY_BUFFER, mPositionVBO);
-        glBufferData(GL_ARRAY_BUFFER, 128, NULL, GL_DYNAMIC_DRAW);
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
-    }
-
-    void TearDown() override
-    {
-        glDeleteProgram(mProgram);
-        glDeleteBuffers(1, &mPositionVBO);
-        ReadPixelsPBOTest::TearDown();
-    }
-
-    GLuint mProgram;
-    GLuint mPositionVBO;
-};
-
-
-TEST_P(ReadPixelsPBODrawTest, DrawWithPBO)
+TEST_P(ReadPixelsTest, DrawWithPBO)
 {
     unsigned char data[4] = { 1, 2, 3, 4 };
 
@@ -296,6 +256,7 @@ TEST_P(ReadPixelsPBODrawTest, DrawWithPBO)
     glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, data);
     EXPECT_GL_NO_ERROR();
 
+    
     glBindFramebuffer(GL_READ_FRAMEBUFFER, mFBO);
     EXPECT_GL_NO_ERROR();
 
@@ -340,52 +301,21 @@ TEST_P(ReadPixelsPBODrawTest, DrawWithPBO)
     EXPECT_EQ(4, data[3]);
 }
 
-class ReadPixelsMultisampleTest : public ReadPixelsTest
-{
-  protected:
-    ReadPixelsMultisampleTest() : mFBO(0), mRBO(0), mPBO(0) {}
-
-    void SetUp() override
-    {
-        ANGLETest::SetUp();
-
-        glGenFramebuffers(1, &mFBO);
-        glBindFramebuffer(GL_FRAMEBUFFER, mFBO);
-
-        glGenRenderbuffers(1, &mRBO);
-        glBindRenderbuffer(GL_RENDERBUFFER, mRBO);
-
-        glGenBuffers(1, &mPBO);
-        glBindBuffer(GL_PIXEL_PACK_BUFFER, mPBO);
-        glBufferData(GL_PIXEL_PACK_BUFFER, 4 * getWindowWidth() * getWindowHeight(), nullptr,
-                     GL_STATIC_DRAW);
-        glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
-
-        ASSERT_GL_NO_ERROR();
-    }
-
-    void TearDown() override
-    {
-        ANGLETest::TearDown();
-
-        glDeleteFramebuffers(1, &mFBO);
-        glDeleteRenderbuffers(1, &mRBO);
-        glDeleteBuffers(1, &mPBO);
-    }
-
-    GLuint mFBO;
-    GLuint mRBO;
-    GLuint mPBO;
-};
-
-
-TEST_P(ReadPixelsMultisampleTest, BasicClear)
+TEST_P(ReadPixelsTest, MultisampledPBO)
 {
     if (getClientVersion() < 3 && !extensionEnabled("GL_ANGLE_framebuffer_multisample"))
     {
         std::cout << "Test skipped because ES3 or GL_ANGLE_framebuffer_multisample is not available." << std::endl;
         return;
     }
+
+    GLuint fbo;
+    glGenFramebuffers(1, &fbo);
+    glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+
+    GLuint rbo;
+    glGenRenderbuffers(1, &rbo);
+    glBindRenderbuffer(GL_RENDERBUFFER, rbo);
 
     if (extensionEnabled("GL_ANGLE_framebuffer_multisample"))
     {
@@ -396,243 +326,24 @@ TEST_P(ReadPixelsMultisampleTest, BasicClear)
         glRenderbufferStorageMultisample(GL_RENDERBUFFER, 2, GL_RGBA8, 4, 4);
     }
 
-    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, mRBO);
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, rbo);
+
     ASSERT_GL_NO_ERROR();
 
     glClearColor(1.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
 
     glBindBuffer(GL_PIXEL_PACK_BUFFER, mPBO);
+
     EXPECT_GL_NO_ERROR();
 
     glReadPixels(0, 0, 1, 1, GL_RGBA8, GL_UNSIGNED_BYTE, NULL);
+
     EXPECT_GL_ERROR(GL_INVALID_OPERATION);
-}
 
-class ReadPixelsTextureTest : public ANGLETest
-{
-  public:
-    ReadPixelsTextureTest() : mFBO(0), mTexture(0)
-    {
-        setWindowWidth(32);
-        setWindowHeight(32);
-        setConfigRedBits(8);
-        setConfigGreenBits(8);
-        setConfigBlueBits(8);
-        setConfigAlphaBits(8);
-    }
-
-    void SetUp() override
-    {
-        ANGLETest::SetUp();
-
-        glGenTextures(1, &mTexture);
-        glGenFramebuffers(1, &mFBO);
-        glBindFramebuffer(GL_FRAMEBUFFER, mFBO);
-    }
-
-    void TearDown() override
-    {
-        glDeleteFramebuffers(1, &mFBO);
-        glDeleteTextures(1, &mTexture);
-
-        ANGLETest::TearDown();
-    }
-
-    void initTexture(GLenum textureTarget,
-                     GLint levels,
-                     GLint attachmentLevel,
-                     GLint attachmentLayer)
-    {
-        glBindTexture(textureTarget, mTexture);
-        glTexStorage3D(textureTarget, levels, GL_RGBA8, 4, 4, 4);
-        glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, mTexture, attachmentLevel,
-                                  attachmentLayer);
-        initializeTextureData(textureTarget, levels);
-    }
-
-    void testRead(GLenum textureTarget, GLint levels, GLint attachmentLevel, GLint attachmentLayer)
-    {
-        initTexture(textureTarget, levels, attachmentLevel, attachmentLayer);
-        verifyColor(attachmentLevel, attachmentLayer);
-    }
-
-    void initPBO()
-    {
-        glGenBuffers(1, &mBuffer);
-        glBindBuffer(GL_PIXEL_PACK_BUFFER, mBuffer);
-        glBufferData(GL_PIXEL_PACK_BUFFER, sizeof(angle::GLColor), nullptr, GL_STREAM_COPY);
-        ASSERT_GL_NO_ERROR();
-    }
-
-    void testPBORead(GLenum textureTarget,
-                     GLint levels,
-                     GLint attachmentLevel,
-                     GLint attachmentLayer)
-    {
-        initPBO();
-        initTexture(textureTarget, levels, attachmentLevel, attachmentLayer);
-        verifyPBO(attachmentLevel, attachmentLayer);
-    }
-
-    
-    GLuint getColorValue(GLint level, GLint layer)
-    {
-        mRNG.reseed(level + layer * 32);
-        return mRNG.randomUInt();
-    }
-
-    void verifyColor(GLint level, GLint layer)
-    {
-        angle::GLColor colorValue(getColorValue(level, layer));
-        EXPECT_PIXEL_COLOR_EQ(0, 0, colorValue);
-    }
-
-    void verifyPBO(GLint level, GLint layer)
-    {
-        glReadPixels(0, 0, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
-
-        angle::GLColor expectedColor(getColorValue(level, layer));
-        void *mapPointer =
-            glMapBufferRange(GL_PIXEL_PACK_BUFFER, 0, sizeof(angle::GLColor), GL_MAP_READ_BIT);
-        ASSERT_NE(nullptr, mapPointer);
-        angle::GLColor actualColor;
-        memcpy(&actualColor, mapPointer, sizeof(angle::GLColor));
-        glUnmapBuffer(GL_PIXEL_PACK_BUFFER);
-        ASSERT_GL_NO_ERROR();
-        EXPECT_EQ(expectedColor, actualColor);
-    }
-
-    void initializeTextureData(GLenum textureTarget, GLint levels)
-    {
-        for (GLint level = 0; level < levels; ++level)
-        {
-            GLint mipSize = 4 >> level;
-            GLint layers  = (textureTarget == GL_TEXTURE_3D ? mipSize : 4);
-
-            size_t layerSize = mipSize * mipSize;
-            std::vector<GLuint> textureData(layers * layerSize);
-
-            for (GLint layer = 0; layer < layers; ++layer)
-            {
-                GLuint colorValue = getColorValue(level, layer);
-                size_t offset = (layer * layerSize);
-                std::fill(textureData.begin() + offset, textureData.begin() + offset + layerSize,
-                          colorValue);
-            }
-
-            glTexSubImage3D(textureTarget, level, 0, 0, 0, mipSize, mipSize, layers, GL_RGBA,
-                            GL_UNSIGNED_BYTE, textureData.data());
-        }
-    }
-
-    angle::RNG mRNG;
-    GLuint mFBO;
-    GLuint mTexture;
-    GLuint mBuffer;
-};
-
-
-TEST_P(ReadPixelsTextureTest, BasicAttachment3D)
-{
-    testRead(GL_TEXTURE_3D, 1, 0, 0);
+    glDeleteRenderbuffers(1, &rbo);
+    glDeleteFramebuffers(1, &fbo);
 }
 
 
-TEST_P(ReadPixelsTextureTest, MipAttachment3D)
-{
-    testRead(GL_TEXTURE_3D, 2, 1, 0);
-}
-
-
-TEST_P(ReadPixelsTextureTest, LayerAttachment3D)
-{
-    testRead(GL_TEXTURE_3D, 1, 0, 1);
-}
-
-
-TEST_P(ReadPixelsTextureTest, MipLayerAttachment3D)
-{
-    testRead(GL_TEXTURE_3D, 2, 1, 1);
-}
-
-
-TEST_P(ReadPixelsTextureTest, BasicAttachment2DArray)
-{
-    testRead(GL_TEXTURE_2D_ARRAY, 1, 0, 0);
-}
-
-
-TEST_P(ReadPixelsTextureTest, MipAttachment2DArray)
-{
-    testRead(GL_TEXTURE_2D_ARRAY, 2, 1, 0);
-}
-
-
-TEST_P(ReadPixelsTextureTest, LayerAttachment2DArray)
-{
-    testRead(GL_TEXTURE_2D_ARRAY, 1, 0, 1);
-}
-
-
-TEST_P(ReadPixelsTextureTest, MipLayerAttachment2DArray)
-{
-    testRead(GL_TEXTURE_2D_ARRAY, 2, 1, 1);
-}
-
-
-TEST_P(ReadPixelsTextureTest, BasicAttachment3DPBO)
-{
-    testPBORead(GL_TEXTURE_3D, 1, 0, 0);
-}
-
-
-TEST_P(ReadPixelsTextureTest, MipAttachment3DPBO)
-{
-    testPBORead(GL_TEXTURE_3D, 2, 1, 0);
-}
-
-
-TEST_P(ReadPixelsTextureTest, LayerAttachment3DPBO)
-{
-    testPBORead(GL_TEXTURE_3D, 1, 0, 1);
-}
-
-
-TEST_P(ReadPixelsTextureTest, MipLayerAttachment3DPBO)
-{
-    testPBORead(GL_TEXTURE_3D, 2, 1, 1);
-}
-
-
-TEST_P(ReadPixelsTextureTest, BasicAttachment2DArrayPBO)
-{
-    testPBORead(GL_TEXTURE_2D_ARRAY, 1, 0, 0);
-}
-
-
-TEST_P(ReadPixelsTextureTest, MipAttachment2DArrayPBO)
-{
-    testPBORead(GL_TEXTURE_2D_ARRAY, 2, 1, 0);
-}
-
-
-TEST_P(ReadPixelsTextureTest, LayerAttachment2DArrayPBO)
-{
-    testPBORead(GL_TEXTURE_2D_ARRAY, 1, 0, 1);
-}
-
-
-TEST_P(ReadPixelsTextureTest, MipLayerAttachment2DArrayPBO)
-{
-    testPBORead(GL_TEXTURE_2D_ARRAY, 2, 1, 1);
-}
-
-}  
-
-
-ANGLE_INSTANTIATE_TEST(ReadPixelsTest, ES2_D3D11(), ES2_OPENGL(), ES2_OPENGLES());
-ANGLE_INSTANTIATE_TEST(ReadPixelsPBOTest, ES3_D3D11(), ES3_OPENGL(), ES3_OPENGLES());
-ANGLE_INSTANTIATE_TEST(ReadPixelsPBODrawTest, ES3_D3D11(), ES3_OPENGL(), ES3_OPENGLES());
-ANGLE_INSTANTIATE_TEST(ReadPixelsMultisampleTest, ES3_D3D11(), ES3_OPENGL(), ES3_OPENGLES());
-ANGLE_INSTANTIATE_TEST(ReadPixelsTextureTest, ES3_D3D11(), ES3_OPENGL(), ES3_OPENGLES());
+ANGLE_INSTANTIATE_TEST(ReadPixelsTest, ES3_D3D11());

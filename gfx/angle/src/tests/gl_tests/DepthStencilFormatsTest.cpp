@@ -184,9 +184,5 @@ TEST_P(DepthStencilFormatsTestES3, DrawWithDepthStencil)
 }
 
 
-ANGLE_INSTANTIATE_TEST(DepthStencilFormatsTest,
-                       ES2_D3D9(),
-                       ES2_D3D11(),
-                       ES2_OPENGL(),
-                       ES2_OPENGLES());
-ANGLE_INSTANTIATE_TEST(DepthStencilFormatsTestES3, ES3_D3D11(), ES3_OPENGL(), ES3_OPENGLES());
+ANGLE_INSTANTIATE_TEST(DepthStencilFormatsTest, ES2_D3D9(), ES2_D3D11(), ES2_OPENGL());
+ANGLE_INSTANTIATE_TEST(DepthStencilFormatsTestES3, ES3_D3D11(), ES3_OPENGL());

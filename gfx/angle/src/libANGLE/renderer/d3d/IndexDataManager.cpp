@@ -150,6 +150,7 @@ gl::Error IndexDataManager::prepareIndexData(GLenum srcType,
                                              gl::Buffer *glBuffer,
                                              const GLvoid *indices,
                                              TranslatedIndexData *translated,
+                                             SourceIndexData *sourceData,
                                              bool primitiveRestartFixedIndexEnabled)
 {
     
@@ -175,10 +176,13 @@ gl::Error IndexDataManager::prepareIndexData(GLenum srcType,
     BufferD3D *buffer = glBuffer ? GetImplAs<BufferD3D>(glBuffer) : nullptr;
 
     translated->indexType = dstType;
-    translated->srcIndexData.srcBuffer    = buffer;
-    translated->srcIndexData.srcIndices   = indices;
-    translated->srcIndexData.srcIndexType = srcType;
-    translated->srcIndexData.srcCount     = count;
+    if (sourceData)
+    {
+        sourceData->srcBuffer = buffer;
+        sourceData->srcIndices = indices;
+        sourceData->srcIndexType = srcType;
+        sourceData->srcCount = count;
+    }
 
     
     if (glBuffer == nullptr)

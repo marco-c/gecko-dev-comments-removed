@@ -743,18 +743,7 @@ class FunctionsGL
     PFNGLVERTEXARRAYVERTEXBUFFERPROC vertexArrayVertexBuffer;
     PFNGLVERTEXARRAYVERTEXBUFFERSPROC vertexArrayVertexBuffers;
 
-    
-    PFNGLBLENDBARRIERPROC blendBarrier;
-    PFNGLPRIMITIVEBOUNDINGBOXPROC primitiveBoundingBox;
-
-    
-    PFNGLEGLIMAGETARGETRENDERBUFFERSTORAGEOESPROC eglImageTargetRenderbufferStorageOES;
-    PFNGLEGLIMAGETARGETTEXTURE2DOESPROC eglImageTargetTexture2DOES;
-
   private:
-    void initializeProcsDesktopGL();
-    void initializeProcsGLES();
-
     virtual void *loadProcAddress(const std::string &function) = 0;
 };
 

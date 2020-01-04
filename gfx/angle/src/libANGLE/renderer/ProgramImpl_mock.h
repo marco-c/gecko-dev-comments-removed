@@ -60,16 +60,6 @@ class MockProgramImpl : public rx::ProgramImpl
     MOCK_METHOD0(destroy, void());
 };
 
-inline ::testing::NiceMock<MockProgramImpl> *MakeProgramMock()
-{
-    ::testing::NiceMock<MockProgramImpl> *programImpl = new ::testing::NiceMock<MockProgramImpl>();
-    
-    
-    EXPECT_CALL(*programImpl, destroy()).Times(1).RetiresOnSaturation();
-
-    return programImpl;
-}
-
 }  
 
 #endif  

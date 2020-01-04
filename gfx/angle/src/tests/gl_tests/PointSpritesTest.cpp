@@ -154,7 +154,6 @@ TEST_P(PointSpritesTest, PointCoordAndPointSizeCompliance)
 
 TEST_P(PointSpritesTest, PointWithoutAttributesCompliance)
 {
-    
     const std::string fs = SHADER_SOURCE
     (
         precision mediump float;
@@ -168,11 +167,10 @@ TEST_P(PointSpritesTest, PointWithoutAttributesCompliance)
     (
         void main()
         {
-            gl_PointSize = 2.0;
+            gl_PointSize = 1.0;
             gl_Position = vec4(0.0, 0.0, 0.0, 1.0);
         }
     );
-    
 
     GLuint program = CompileProgram(vs, fs);
     ASSERT_NE(program, 0u);
@@ -440,9 +438,4 @@ TEST_P(PointSpritesTest, PointSizeDeclaredButUnused)
 
 
 
-ANGLE_INSTANTIATE_TEST(PointSpritesTest,
-                       ES2_D3D9(),
-                       ES2_D3D11(),
-                       ES2_D3D11_FL9_3(),
-                       ES2_OPENGL(),
-                       ES2_OPENGLES());
+ANGLE_INSTANTIATE_TEST(PointSpritesTest, ES2_D3D9(), ES2_D3D11(), ES2_D3D11_FL9_3());

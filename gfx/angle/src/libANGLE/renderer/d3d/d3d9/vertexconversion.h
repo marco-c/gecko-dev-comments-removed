@@ -149,10 +149,7 @@ struct NormalizedDefaultValues
 
 
 
-template <class InT,
-          class WidenRule,
-          class Converter,
-          class DefaultValueRule = SimpleDefaultValues<InT>>
+template <class InT, class WidenRule, class Converter, class DefaultValueRule = SimpleDefaultValues<InT> >
 struct VertexDataConverter
 {
     typedef typename Converter::OutputType OutputType;
