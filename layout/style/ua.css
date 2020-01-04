@@ -282,13 +282,6 @@
 
 
 
-
-:not(xul|*):root:-moz-full-screen-ancestor {
-  overflow: hidden !important;
-}
-
-
-
 parsererror|parsererror {
   display: block;
   font-family: sans-serif;

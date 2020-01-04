@@ -2312,7 +2312,7 @@ nsCSSFrameConstructor::ConstructDocElementFrame(Element*                 aDocEle
   
   DebugOnly<nsIContent*> propagatedScrollFrom;
   if (nsPresContext* presContext = mPresShell->GetPresContext()) {
-    propagatedScrollFrom = presContext->PropagateScrollToViewport();
+    propagatedScrollFrom = presContext->UpdateViewportScrollbarStylesOverride();
   }
 
   SetUpDocElementContainingBlock(aDocElement);
@@ -4425,7 +4425,7 @@ nsCSSFrameConstructor::FindDisplayData(const nsStyleDisplay* aDisplay,
   if (aElement->IsHTMLElement(nsGkAtoms::body)) {
     if (nsPresContext* presContext = mPresShell->GetPresContext()) {
       propagatedScrollToViewport =
-        presContext->PropagateScrollToViewport() == aElement;
+        presContext->UpdateViewportScrollbarStylesOverride() == aElement;
     }
   }
 

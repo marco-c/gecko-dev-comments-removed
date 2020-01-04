@@ -1575,7 +1575,7 @@ nsPresContext::ScreenSizeInchesForFontInflation(bool* aChanged)
 }
 
 static bool
-CheckOverflow(nsPresContext* aPresContext, const nsStyleDisplay* aDisplay)
+CheckOverflow(const nsStyleDisplay* aDisplay, ScrollbarStyles* aStyles)
 {
   if (aDisplay->mOverflowX == NS_STYLE_OVERFLOW_VISIBLE &&
       aDisplay->mScrollBehavior == NS_STYLE_SCROLL_BEHAVIOR_AUTO &&
@@ -1591,45 +1591,35 @@ CheckOverflow(nsPresContext* aPresContext, const nsStyleDisplay* aDisplay)
   }
 
   if (aDisplay->mOverflowX == NS_STYLE_OVERFLOW_CLIP) {
-    aPresContext->SetViewportScrollbarStylesOverride(
-                                    ScrollbarStyles(NS_STYLE_OVERFLOW_HIDDEN,
-                                                    NS_STYLE_OVERFLOW_HIDDEN,
-                                                    aDisplay));
+    *aStyles = ScrollbarStyles(NS_STYLE_OVERFLOW_HIDDEN,
+                               NS_STYLE_OVERFLOW_HIDDEN, aDisplay);
   } else {
-    aPresContext->SetViewportScrollbarStylesOverride(
-                                    ScrollbarStyles(aDisplay));
+    *aStyles = ScrollbarStyles(aDisplay);
   }
   return true;
 }
 
-
-
-
-
-
-
-
-
-nsIContent*
-nsPresContext::PropagateScrollToViewport()
+static nsIContent*
+GetPropagatedScrollbarStylesForViewport(nsPresContext* aPresContext,
+                                        ScrollbarStyles *aStyles)
 {
   
-  SetViewportScrollbarStylesOverride(ScrollbarStyles(NS_STYLE_OVERFLOW_AUTO,
-                                                     NS_STYLE_OVERFLOW_AUTO));
+  *aStyles = ScrollbarStyles(NS_STYLE_OVERFLOW_AUTO, NS_STYLE_OVERFLOW_AUTO);
 
   
   
-  if (IsPaginated()) {
+  if (aPresContext->IsPaginated()) {
     return nullptr;
   }
 
-  Element* docElement = mDocument->GetRootElement();
+  nsIDocument* document = aPresContext->Document();
+  Element* docElement = document->GetRootElement();
 
   
-  nsStyleSet *styleSet = mShell->StyleSet();
+  nsStyleSet *styleSet = aPresContext->StyleSet();
   nsRefPtr<nsStyleContext> rootStyle;
   rootStyle = styleSet->ResolveStyleFor(docElement, nullptr);
-  if (CheckOverflow(this, rootStyle->StyleDisplay())) {
+  if (CheckOverflow(rootStyle->StyleDisplay(), aStyles)) {
     
     return docElement;
   }
@@ -1640,7 +1630,7 @@ nsPresContext::PropagateScrollToViewport()
   
   
   
-  nsCOMPtr<nsIDOMHTMLDocument> htmlDoc(do_QueryInterface(mDocument));
+  nsCOMPtr<nsIDOMHTMLDocument> htmlDoc(do_QueryInterface(document));
   if (!htmlDoc || !docElement->IsHTMLElement()) {
     return nullptr;
   }
@@ -1658,12 +1648,35 @@ nsPresContext::PropagateScrollToViewport()
   nsRefPtr<nsStyleContext> bodyStyle;
   bodyStyle = styleSet->ResolveStyleFor(bodyElement->AsElement(), rootStyle);
 
-  if (CheckOverflow(this, bodyStyle->StyleDisplay())) {
+  if (CheckOverflow(bodyStyle->StyleDisplay(), aStyles)) {
     
     return bodyElement;
   }
 
   return nullptr;
+}
+
+nsIContent*
+nsPresContext::UpdateViewportScrollbarStylesOverride()
+{
+  nsIContent* propagatedFrom =
+    GetPropagatedScrollbarStylesForViewport(this, &mViewportStyleScrollbar);
+
+  nsIDocument* document = Document();
+  if (Element* fullscreenElement = document->GetFullScreenElement()) {
+    
+    
+    
+    
+    
+    if (fullscreenElement != document->GetRootElement() &&
+        fullscreenElement != propagatedFrom) {
+      mViewportStyleScrollbar = ScrollbarStyles(NS_STYLE_OVERFLOW_HIDDEN,
+                                                NS_STYLE_OVERFLOW_HIDDEN);
+    }
+  }
+
+  return propagatedFrom;
 }
 
 void

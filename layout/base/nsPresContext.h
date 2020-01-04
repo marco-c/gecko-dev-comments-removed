@@ -665,16 +665,21 @@ public:
   nscoord RoundAppUnitsToNearestDevPixels(nscoord aAppUnits) const
   { return DevPixelsToAppUnits(AppUnitsToDevPixels(aAppUnits)); }
 
-  void SetViewportScrollbarStylesOverride(const ScrollbarStyles& aScrollbarStyle)
-  {
-    mViewportStyleScrollbar = aScrollbarStyle;
-  }
+  
+
+
+
+
+
+
+
+
+
+  nsIContent* UpdateViewportScrollbarStylesOverride();
   ScrollbarStyles GetViewportScrollbarStylesOverride()
   {
     return mViewportStyleScrollbar;
   }
-
-  nsIContent* PropagateScrollToViewport();
 
   
 
