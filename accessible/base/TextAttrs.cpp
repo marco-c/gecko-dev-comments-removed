@@ -659,9 +659,7 @@ TextAttrsMgr::FontWeightTextAttr::
   
   
   
-#if defined(MOZ_WIDGET_QT)
-  useFontEntryWeight = false;
-#elif defined(MOZ_WIDGET_GTK)
+#if defined(MOZ_WIDGET_GTK)
   useFontEntryWeight = gfxPlatformGtk::UseFcFontList();
 #endif
 

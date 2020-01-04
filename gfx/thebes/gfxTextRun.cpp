@@ -1610,8 +1610,6 @@ gfxFontGroup::BuildFontList()
 #if defined(MOZ_WIDGET_GTK)
     
     enumerateFonts = gfxPlatformGtk::UseFcFontList();
-#elif defined(MOZ_WIDGET_QT)
-    enumerateFonts = false;
 #endif
     if (!enumerateFonts) {
         return;

@@ -151,8 +151,6 @@ gfxASurface::Wrap (cairo_surface_t *csurf, const IntSize& aSize)
     
     cairo_surface_type_t stype = cairo_surface_get_type(csurf);
 
-    MOZ_ASSERT(stype != CAIRO_SURFACE_TYPE_QT);
-
     if (stype == CAIRO_SURFACE_TYPE_IMAGE) {
         result = new gfxImageSurface(csurf);
     }
