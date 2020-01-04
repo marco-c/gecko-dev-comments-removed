@@ -8,6 +8,8 @@
 
 const EventEmitter = require("devtools/shared/event-emitter");
 const {TooltipToggle} = require("devtools/client/shared/widgets/tooltip/TooltipToggle");
+const {listenOnce} = require("devtools/shared/async-utils");
+const {Task} = require("devtools/shared/task");
 
 const XUL_NS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
 const XHTML_NS = "http://www.w3.org/1999/xhtml";
@@ -61,15 +63,19 @@ const EXTRA_BORDER = {
 
 
 
-const calculateVerticalPosition = function (anchorRect, docRect, height, pos, offset) {
+
+const calculateVerticalPosition =
+function (anchorRect, viewportRect, height, pos, offset) {
   let {TOP, BOTTOM} = POSITION;
 
   let {top: anchorTop, height: anchorHeight} = anchorRect;
-  let {bottom: docBottom} = docRect;
+
+  
+  anchorTop -= viewportRect.top;
 
   
   let availableTop = anchorTop;
-  let availableBottom = docBottom - (anchorTop + anchorHeight);
+  let availableBottom = viewportRect.height - (anchorTop + anchorHeight);
 
   
   let keepPosition = false;
@@ -90,6 +96,9 @@ const calculateVerticalPosition = function (anchorRect, docRect, height, pos, of
   
   let top = pos === TOP ? anchorTop - height - offset : anchorTop + anchorHeight + offset;
 
+  
+  top += viewportRect.top;
+
   return {top, height, computedPosition: pos};
 };
 
@@ -109,18 +118,21 @@ const calculateVerticalPosition = function (anchorRect, docRect, height, pos, of
 
 
 
-const calculateHorizontalPosition = function (anchorRect, docRect, width, type, offset) {
+
+const calculateHorizontalPosition =
+function (anchorRect, viewportRect, width, type, offset) {
   let {left: anchorLeft, width: anchorWidth} = anchorRect;
-  let {right: docRight} = docRect;
 
   
-  let availableWidth = docRight;
-  width = Math.min(width, availableWidth);
+  anchorLeft -= viewportRect.left;
+
+  
+  width = Math.min(width, viewportRect.width);
 
   
   
   
-  let left = Math.min(anchorLeft + offset, docRight - width);
+  let left = Math.min(anchorLeft + offset, viewportRect.width - width);
 
   
   let arrowLeft;
@@ -140,6 +152,9 @@ const calculateHorizontalPosition = function (anchorRect, docRect, width, type, 
     arrowLeft = Math.min(arrowLeft, width - ARROW_WIDTH);
     arrowLeft = Math.max(arrowLeft, 0);
   }
+
+  
+  left += viewportRect.left;
 
   return {left, width, arrowLeft};
 };
@@ -178,14 +193,24 @@ const getRelativeRect = function (node, relativeTo) {
 
 
 
-function HTMLTooltip(toolbox,
-  {type = "normal", autofocus = false, consumeOutsideClicks = true} = {}) {
+
+
+
+function HTMLTooltip(toolbox, {
+    type = "normal",
+    autofocus = false,
+    consumeOutsideClicks = true,
+    useXulWrapper = true,
+  } = {}) {
   EventEmitter.decorate(this);
 
   this.doc = toolbox.doc;
   this.type = type;
   this.autofocus = autofocus;
   this.consumeOutsideClicks = consumeOutsideClicks;
+  this.useXulWrapper = useXulWrapper;
+
+  this._position = null;
 
   
   this.topWindow = this.doc.defaultView.top;
@@ -198,7 +223,20 @@ function HTMLTooltip(toolbox,
 
   this.container = this._createContainer();
 
-  if (this._isXUL()) {
+  if (this._isXUL() && this.useXulWrapper) {
+    
+    
+    
+    
+    
+    this.xulPanelWrapper = this._createXulPanelWrapper();
+    let inner = this.doc.createElementNS(XHTML_NS, "div");
+    inner.classList.add("tooltip-xul-wrapper-inner");
+
+    this.doc.documentElement.appendChild(this.xulPanelWrapper);
+    this.xulPanelWrapper.appendChild(inner);
+    inner.appendChild(this.container);
+  } else if (this._isXUL()) {
     this.doc.documentElement.appendChild(this.container);
   } else {
     
@@ -222,6 +260,13 @@ HTMLTooltip.prototype = {
 
   get arrow() {
     return this.container.querySelector(".tooltip-arrow");
+  },
+
+  
+
+
+  get position() {
+    return this.isVisible() ? this._position : null;
   },
 
   
@@ -260,37 +305,51 @@ HTMLTooltip.prototype = {
 
 
 
-  show: function (anchor, {position, x = 0, y = 0} = {}) {
+  show: Task.async(function* (anchor, {position, x = 0, y = 0} = {}) {
     
     let anchorRect = getRelativeRect(anchor, this.doc);
+    if (this.useXulWrapper) {
+      anchorRect = this._convertToScreenRect(anchorRect);
+    }
+
     
-    let docRect = this.doc.documentElement.getBoundingClientRect();
+    let viewportRect = this._getViewportRect();
 
     let themeHeight = EXTRA_HEIGHT[this.type] + 2 * EXTRA_BORDER[this.type];
     let preferredHeight = this.preferredHeight + themeHeight;
 
     let {top, height, computedPosition} =
-      calculateVerticalPosition(anchorRect, docRect, preferredHeight, position, y);
+      calculateVerticalPosition(anchorRect, viewportRect, preferredHeight, position, y);
 
+    this._position = computedPosition;
     
     let isTop = computedPosition === POSITION.TOP;
     this.container.classList.toggle("tooltip-top", isTop);
     this.container.classList.toggle("tooltip-bottom", !isTop);
     this.container.style.height = height + "px";
-    this.container.style.top = top + "px";
 
-    let themeWidth = 2 * EXTRA_BORDER[this.type];
-    let preferredWidth = this.preferredWidth === "auto" ?
-      this._measureContainerWidth() : this.preferredWidth + themeWidth;
+    let preferredWidth;
+    if (this.preferredWidth === "auto") {
+      preferredWidth = this._measureContainerWidth();
+    } else {
+      let themeWidth = 2 * EXTRA_BORDER[this.type];
+      preferredWidth = this.preferredWidth + themeWidth;
+    }
 
     let {left, width, arrowLeft} =
-      calculateHorizontalPosition(anchorRect, docRect, preferredWidth, this.type, x);
+      calculateHorizontalPosition(anchorRect, viewportRect, preferredWidth, this.type, x);
 
     this.container.style.width = width + "px";
-    this.container.style.left = left + "px";
 
     if (this.type === TYPE.ARROW) {
       this.arrow.style.left = arrowLeft + "px";
+    }
+
+    if (this.useXulWrapper) {
+      this._showXulWrapperAt(left, top);
+    } else {
+      this.container.style.left = left + "px";
+      this.container.style.top = top + "px";
     }
 
     this.container.classList.add("tooltip-visible");
@@ -304,14 +363,53 @@ HTMLTooltip.prototype = {
       this.topWindow.addEventListener("click", this._onClick, true);
       this.emit("shown");
     }, 0);
+  }),
+
+  
+
+
+
+
+
+
+
+
+  _getViewportRect: function () {
+    if (this.useXulWrapper) {
+      
+      
+      
+      
+      let {availLeft, availTop, availHeight, availWidth} = this.doc.defaultView.screen;
+      return {
+        top: availTop,
+        right: availLeft + availWidth,
+        bottom: availTop + availHeight,
+        left: availLeft,
+        width: availWidth,
+        height: availHeight,
+      };
+    }
+
+    return this.doc.documentElement.getBoundingClientRect();
   },
 
   _measureContainerWidth: function () {
+    let xulParent = this.container.parentNode;
+    if (this.useXulWrapper && !this.isVisible()) {
+      
+      this.doc.documentElement.appendChild(this.container);
+    }
+
     this.container.classList.add("tooltip-hidden");
-    this.container.style.left = "0px";
     this.container.style.width = "auto";
     let width = this.container.getBoundingClientRect().width;
     this.container.classList.remove("tooltip-hidden");
+
+    if (this.useXulWrapper && !this.isVisible()) {
+      xulParent.appendChild(this.container);
+    }
+
     return width;
   },
 
@@ -319,7 +417,7 @@ HTMLTooltip.prototype = {
 
 
 
-  hide: function () {
+  hide: Task.async(function* () {
     this.doc.defaultView.clearTimeout(this.attachEventsTimer);
     if (!this.isVisible()) {
       return;
@@ -327,6 +425,10 @@ HTMLTooltip.prototype = {
 
     this.topWindow.removeEventListener("click", this._onClick, true);
     this.container.classList.remove("tooltip-visible");
+    if (this.useXulWrapper) {
+      yield this._hideXulWrapper();
+    }
+
     this.emit("hidden");
 
     let tooltipHasFocus = this.container.contains(this.doc.activeElement);
@@ -334,7 +436,7 @@ HTMLTooltip.prototype = {
       this._focusedElement.focus();
       this._focusedElement = null;
     }
-  },
+  }),
 
   
 
@@ -351,6 +453,9 @@ HTMLTooltip.prototype = {
   destroy: function () {
     this.hide();
     this.container.remove();
+    if (this.xulPanelWrapper) {
+      this.xulPanelWrapper.remove();
+    }
   },
 
   _createContainer: function () {
@@ -410,13 +515,6 @@ HTMLTooltip.prototype = {
   
 
 
-  _isXUL: function () {
-    return this.doc.documentElement.namespaceURI === XUL_NS;
-  },
-
-  
-
-
 
   _maybeFocusTooltip: function () {
     
@@ -426,5 +524,53 @@ HTMLTooltip.prototype = {
     if (this.autofocus && focusableElement) {
       focusableElement.focus();
     }
+  },
+
+  
+
+
+  _isXUL: function () {
+    return this.doc.documentElement.namespaceURI === XUL_NS;
+  },
+
+  _createXulPanelWrapper: function () {
+    let panel = this.doc.createElementNS(XUL_NS, "panel");
+
+    
+    
+    panel.setAttribute("animate", false);
+    panel.setAttribute("consumeoutsideclicks", false);
+    panel.setAttribute("noautofocus", true);
+    panel.setAttribute("ignorekeys", true);
+
+    panel.setAttribute("level", "float");
+    panel.setAttribute("class", "tooltip-xul-wrapper");
+
+    return panel;
+  },
+
+  _showXulWrapperAt: function (left, top) {
+    let onPanelShown = listenOnce(this.xulPanelWrapper, "popupshown");
+    this.xulPanelWrapper.openPopupAtScreen(left, top, false);
+    return onPanelShown;
+  },
+
+  _hideXulWrapper: function () {
+    let onPanelHidden = listenOnce(this.xulPanelWrapper, "popuphidden");
+    this.xulPanelWrapper.hidePopup();
+    return onPanelHidden;
+  },
+
+  
+
+
+
+
+  _convertToScreenRect: function ({left, top, width, height}) {
+    
+    
+    left += this.doc.defaultView.mozInnerScreenX;
+    top += this.doc.defaultView.mozInnerScreenY;
+    return {top, right: left + width, bottom: top + height, left, width, height};
   },
 };
