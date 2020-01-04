@@ -155,6 +155,8 @@ var gPlayTests = [
   
   { name:"r16000_u8_c1_list.wav", type:"audio/x-wav", duration:4.2 },
   
+  { name:"16bit_wave_extrametadata.wav", type:"audio/x-wav", duration:1.108 },
+  
   { name:"wavedata_s24.wav", type:"audio/x-wav", duration:1.0 },
 
   
