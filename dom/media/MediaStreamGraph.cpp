@@ -647,37 +647,6 @@ MediaStreamGraphImpl::UpdateStreamOrder()
   MOZ_ASSERT(orderedStreamCount == mFirstCycleBreaker);
 }
 
-GraphTime
-MediaStreamGraphImpl::ComputeStreamBlockTime(MediaStream* aStream,
-                                             GraphTime aTime,
-                                             GraphTime aEndBlockingDecisions)
-{
-  if (aStream->IsSuspended()) {
-    STREAM_LOG(LogLevel::Verbose, ("MediaStream %p is blocked due to being suspended", aStream));
-    return aTime;
-  }
-
-  if (aStream->mFinished) {
-    
-    
-    
-    GraphTime endTime = aStream->GetStreamBuffer().GetAllTracksEnd() +
-        aStream->mBufferStartTime;
-    if (endTime <= aTime) {
-      STREAM_LOG(LogLevel::Verbose, ("MediaStream %p is blocked due to being finished", aStream));
-      return aTime;
-    } else {
-      STREAM_LOG(LogLevel::Verbose, ("MediaStream %p is finished, but not blocked yet (end at %f, with blocking at %f)",
-          aStream, MediaTimeToSeconds(aStream->GetBufferEnd()),
-          MediaTimeToSeconds(endTime)));
-      
-      return std::min(endTime, aEndBlockingDecisions);
-    }
-  }
-
-  return WillUnderrun(aStream, aEndBlockingDecisions);
-}
-
 void
 MediaStreamGraphImpl::NotifyHasCurrentData(MediaStream* aStream)
 {
@@ -1143,18 +1112,34 @@ MediaStreamGraphImpl::UpdateGraph(GraphTime aEndBlockingDecisions)
 
   
   for (MediaStream* stream : mStreams) {
-    SourceMediaStream* is = stream->AsSourceStream();
-    if (is) {
+    if (SourceMediaStream* is = stream->AsSourceStream()) {
       UpdateConsumptionState(is);
       ExtractPendingInput(is, aEndBlockingDecisions, &ensureNextIteration);
     }
 
-    stream->mStartBlocking =
-      ComputeStreamBlockTime(stream, mStateComputedTime, aEndBlockingDecisions);
+    if (stream->mFinished) {
+      
+      
+      
+      GraphTime endTime = stream->GetStreamBuffer().GetAllTracksEnd() +
+          stream->mBufferStartTime;
+      if (endTime <= mStateComputedTime) {
+        STREAM_LOG(LogLevel::Verbose, ("MediaStream %p is blocked due to being finished", stream));
+        stream->mStartBlocking = mStateComputedTime;
+      } else {
+        STREAM_LOG(LogLevel::Verbose, ("MediaStream %p is finished, but not blocked yet (end at %f, with blocking at %f)",
+            stream, MediaTimeToSeconds(stream->GetBufferEnd()),
+            MediaTimeToSeconds(endTime)));
+        
+        stream->mStartBlocking = std::min(endTime, aEndBlockingDecisions);
+      }
+    } else {
+      stream->mStartBlocking = WillUnderrun(stream, aEndBlockingDecisions);
+    }
   }
+
   for (MediaStream* stream : mSuspendedStreams) {
-    stream->mStartBlocking =
-      ComputeStreamBlockTime(stream, mStateComputedTime, aEndBlockingDecisions);
+    stream->mStartBlocking = mStateComputedTime;
   }
 
   

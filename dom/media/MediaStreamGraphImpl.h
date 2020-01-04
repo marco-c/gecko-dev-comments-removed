@@ -301,15 +301,6 @@ public:
 
 
 
-
-
-  GraphTime ComputeStreamBlockTime(MediaStream* aStream,
-                                   GraphTime aTime,
-                                   GraphTime aEndBlockingDecisions);
-  
-
-
-
   GraphTime RoundUpToNextAudioBlock(GraphTime aTime);
   
 
