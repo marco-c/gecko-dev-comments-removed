@@ -68,8 +68,15 @@ public class PermissionBlock {
     
 
 
+    public void run() {
+        run(null);
+    }
 
-    public void run(@NonNull Runnable onPermissionsGranted) {
+    
+
+
+
+    public void run(Runnable onPermissionsGranted) {
         if (!doNotPrompt && !(context instanceof Activity)) {
             throw new IllegalStateException("You need to either specify doNotPrompt() or pass in an Activity context");
         }
