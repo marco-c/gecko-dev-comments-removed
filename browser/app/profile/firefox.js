@@ -1528,8 +1528,7 @@ pref("media.eme.apiVisible", true);
 
 
 
-
-pref("media.gmp.decoder.enabled", false);
+pref("media.gmp.decoder.enabled", true);
 
 
 
