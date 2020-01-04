@@ -70,7 +70,6 @@ public class GeckoEvent {
     @JNITarget
     private enum NativeGeckoEvent {
         NATIVE_POKE(0),
-        KEY_EVENT(1),
         MOTION_EVENT(2),
         SENSOR_EVENT(3),
         LOCATION_EVENT(5),
@@ -138,33 +137,15 @@ public class GeckoEvent {
 
     private int mMetaState;
     private int mFlags;
-    private int mKeyCode;
-    private int mScanCode;
-    private int mUnicodeChar;
-    private int mBaseUnicodeChar; 
-    private int mDOMPrintableKeyValue;
-    private int mRepeatCount;
     private int mCount;
-    private int mStart;
-    private int mEnd;
     private String mCharacters;
     private String mCharactersExtra;
     private String mData;
-    private int mRangeType;
-    private int mRangeStyles;
-    private int mRangeLineStyle;
-    private boolean mRangeBoldLine;
-    private int mRangeForeColor;
-    private int mRangeBackColor;
-    private int mRangeLineColor;
     private Location mLocation;
-    private Address mAddress;
 
     private int     mConnectionType;
     private boolean mIsWifi;
     private int     mDHCPGateway;
-
-    private int mNativeWindow;
 
     private short mScreenOrientation;
     private short mScreenAngle;
@@ -196,12 +177,6 @@ public class GeckoEvent {
         return GeckoEvent.get(NativeGeckoEvent.NOOP);
     }
 
-    public static GeckoEvent createKeyEvent(KeyEvent k, int action, int metaState) {
-        GeckoEvent event = GeckoEvent.get(NativeGeckoEvent.KEY_EVENT);
-        event.initKeyEvent(k, action, metaState);
-        return event;
-    }
-
     public static GeckoEvent createCompositorCreateEvent(int width, int height) {
         GeckoEvent event = GeckoEvent.get(NativeGeckoEvent.COMPOSITOR_CREATE);
         event.mWidth = width;
@@ -215,39 +190,6 @@ public class GeckoEvent {
 
     public static GeckoEvent createCompositorResumeEvent() {
         return GeckoEvent.get(NativeGeckoEvent.COMPOSITOR_RESUME);
-    }
-
-    private void initKeyEvent(KeyEvent k, int action, int metaState) {
-        
-        
-        
-        mAction = action;
-        mTime = k.getEventTime();
-        
-        
-        
-        
-        mMetaState = k.getMetaState() | metaState;
-        mFlags = k.getFlags();
-        mKeyCode = k.getKeyCode();
-        mScanCode = k.getScanCode();
-        mUnicodeChar = k.getUnicodeChar(mMetaState);
-        
-        
-        mBaseUnicodeChar = k.getUnicodeChar(0);
-        mRepeatCount = k.getRepeatCount();
-        mCharacters = k.getCharacters();
-        if (mUnicodeChar >= ' ') {
-            mDOMPrintableKeyValue = mUnicodeChar;
-        } else {
-            int unmodifiedMetaState =
-                mMetaState & ~(KeyEvent.META_ALT_MASK |
-                               KeyEvent.META_CTRL_MASK |
-                               KeyEvent.META_META_MASK);
-            if (unmodifiedMetaState != mMetaState) {
-                mDOMPrintableKeyValue = k.getUnicodeChar(unmodifiedMetaState);
-            }
-        }
     }
 
     
