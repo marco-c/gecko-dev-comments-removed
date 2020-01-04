@@ -341,26 +341,6 @@ nsAnimationManager::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const
   return aMallocSizeOf(this) + SizeOfExcludingThis(aMallocSizeOf);
 }
 
-void
-nsAnimationManager::CopyIsRunningOnCompositor(
-  KeyframeEffectReadOnly& aSourceEffect,
-  KeyframeEffectReadOnly& aDestEffect)
-{
-  nsCSSPropertySet sourceProperties;
-
-  for (AnimationProperty& property : aSourceEffect.Properties()) {
-    if (property.mIsRunningOnCompositor) {
-      sourceProperties.AddProperty(property.mProperty);
-    }
-  }
-
-  for (AnimationProperty& property : aDestEffect.Properties()) {
-    if (sourceProperties.HasProperty(property.mProperty)) {
-      property.mIsRunningOnCompositor = true;
-    }
-  }
-}
-
 nsIStyleRule*
 nsAnimationManager::CheckAnimationRule(nsStyleContext* aStyleContext,
                                        mozilla::dom::Element* aElement)
@@ -465,13 +445,7 @@ nsAnimationManager::CheckAnimationRule(nsStyleContext* aStyleContext,
             oldEffect->Timing() != newEffect->Timing() ||
             oldEffect->Properties() != newEffect->Properties();
           oldEffect->SetTiming(newEffect->Timing());
-
-          
-          
-          
-          
-          CopyIsRunningOnCompositor(*oldEffect, *newEffect);
-          oldEffect->Properties() = newEffect->Properties();
+          oldEffect->CopyPropertiesFrom(*newEffect);
         }
 
         

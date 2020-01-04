@@ -283,6 +283,10 @@ public:
   InfallibleTArray<AnimationProperty>& Properties() {
     return mProperties;
   }
+  
+  
+  
+  void CopyPropertiesFrom(const KeyframeEffectReadOnly& aOther);
 
   
   
