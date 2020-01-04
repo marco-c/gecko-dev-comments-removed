@@ -1032,7 +1032,6 @@ public:
         
         const bool resetting = !!mLayerClient;
         mLayerClient = layerClient;
-        layerClient->OnGeckoReady();
 
         if (resetting) {
             
@@ -1051,6 +1050,8 @@ public:
         NPZCSupport::AttachNative(
                 npzc, mozilla::MakeUnique<NPZCSupport>(&window, npzc));
 #endif
+
+        layerClient->OnGeckoReady();
     }
 
     void OnSizeChanged(int32_t aWindowWidth, int32_t aWindowHeight,

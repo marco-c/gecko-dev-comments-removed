@@ -23,6 +23,7 @@ public interface PanZoomTarget {
     
     public void forceRedraw(DisplayPortMetrics displayPort);
 
+    public boolean isGeckoReady();
     public boolean post(Runnable action);
     public void postRenderTask(RenderTask task);
     public void removeRenderTask(RenderTask task);

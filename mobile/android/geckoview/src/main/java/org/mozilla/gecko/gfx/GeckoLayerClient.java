@@ -150,11 +150,12 @@ class GeckoLayerClient implements LayerView.Listener, PanZoomTarget
         mPanZoomController.setOverscrollHandler(listener);
     }
 
-    
-     boolean isGeckoReady() {
+    @Override 
+    public boolean isGeckoReady() {
         return mGeckoIsReady;
     }
 
+    
     @WrapForJNI
     private void onGeckoReady() {
         mGeckoIsReady = true;
