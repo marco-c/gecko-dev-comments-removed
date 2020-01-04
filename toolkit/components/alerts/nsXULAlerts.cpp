@@ -138,10 +138,13 @@ nsXULAlerts::ShowAlertNotification(const nsAString& aImageUrl, const nsAString& 
 
   
   
-  if (nsAlertsUtils::IsActionablePrincipal(aPrincipal)) {
-    rv = argsArray->AppendElement(aPrincipal);
-    NS_ENSURE_SUCCESS(rv, rv);
-  }
+  nsCOMPtr<nsISupportsString> scriptableAlertSource (do_CreateInstance(NS_SUPPORTS_STRING_CONTRACTID));
+  NS_ENSURE_TRUE(scriptableAlertSource, NS_ERROR_FAILURE);
+  nsAutoString source;
+  nsAlertsUtils::GetSource(aPrincipal, source);
+  scriptableAlertSource->SetData(source);
+  rv = argsArray->AppendElement(scriptableAlertSource);
+  NS_ENSURE_SUCCESS(rv, rv);
 
   nsCOMPtr<nsIDOMWindow> newWindow;
   nsAutoCString features("chrome,dialog=yes,titlebar=no,popup=yes");
