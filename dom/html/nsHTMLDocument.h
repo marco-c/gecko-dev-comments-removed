@@ -237,7 +237,8 @@ public:
   
   
   
-  already_AddRefed<nsLocation> GetLocation() const {
+  already_AddRefed<mozilla::dom::Location> GetLocation() const
+  {
     return nsIDocument::GetLocation();
   }
 
