@@ -55,8 +55,8 @@ public class TelemetryCorePingBuilder extends TelemetryPingBuilder {
     public static final String SEQ = "seq";
     private static final String VERSION_ATTR = "v";
 
-    public TelemetryCorePingBuilder(final Context context, final String serverURLSchemeHostPort) {
-        super(serverURLSchemeHostPort);
+    public TelemetryCorePingBuilder(final Context context) {
+        super();
         initPayloadConstants(context);
     }
 
@@ -145,11 +145,6 @@ public class TelemetryCorePingBuilder extends TelemetryPingBuilder {
         }
         payload.put(SEQ, seq);
         return this;
-    }
-
-    public static String getServer(final SharedPreferences sharedPrefs) {
-        
-        return sharedPrefs.getString(TelemetryConstants.PREF_SERVER_URL, TelemetryConstants.DEFAULT_SERVER_URL);
     }
 
     @WorkerThread 

@@ -3989,7 +3989,7 @@ public class BrowserApp extends GeckoApp
 
                     
                     final SharedPreferences sharedPrefs = GeckoSharedPrefs.forProfileName(activity, profile.getName());
-                    final TelemetryCorePingBuilder pingBuilder = new TelemetryCorePingBuilder(activity, TelemetryCorePingBuilder.getServer(sharedPrefs))
+                    final TelemetryCorePingBuilder pingBuilder = new TelemetryCorePingBuilder(activity)
                             .setClientID(clientID)
                             .setDefaultSearchEngine(TelemetryCorePingBuilder.getEngineIdentifier(engine))
                             .setProfileCreationDate(TelemetryCorePingBuilder.getProfileCreationDate(activity, profile))

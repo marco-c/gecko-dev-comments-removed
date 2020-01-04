@@ -7,11 +7,14 @@ package org.mozilla.gecko.telemetry;
 import android.app.IntentService;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.util.Log;
 import ch.boye.httpclientandroidlib.HttpResponse;
 import ch.boye.httpclientandroidlib.client.ClientProtocolException;
 import org.mozilla.gecko.GeckoProfile;
+import org.mozilla.gecko.GeckoSharedPrefs;
 import org.mozilla.gecko.preferences.GeckoPreferences;
+import org.mozilla.gecko.sync.ExtendedJSONObject;
 import org.mozilla.gecko.sync.net.BaseResource;
 import org.mozilla.gecko.sync.net.BaseResourceDelegate;
 import org.mozilla.gecko.sync.net.Resource;
@@ -59,13 +62,14 @@ public class TelemetryUploadService extends IntentService {
         }
 
         final TelemetryPingStore store = intent.getParcelableExtra(EXTRA_STORE);
-        uploadPendingPingsFromStore(store);
+        uploadPendingPingsFromStore(this, store);
         store.maybePrunePings();
         Log.d(LOGTAG, "Service finished: upload and prune attempts completed");
     }
 
-    private static void uploadPendingPingsFromStore(final TelemetryPingStore store) {
+    private static void uploadPendingPingsFromStore(final Context context, final TelemetryPingStore store) {
         final ArrayList<TelemetryPingFromStore> pingsToUpload = store.getAllPings();
+        final String serverSchemeHostPort = getServerSchemeHostPort(context);
 
         final HashSet<Integer> successfulUploadIDs = new HashSet<>(pingsToUpload.size()); 
         final PingResultDelegate delegate = new PingResultDelegate(successfulUploadIDs);
@@ -77,7 +81,8 @@ public class TelemetryUploadService extends IntentService {
 
             
             delegate.setPingID(ping.getUniqueID());
-            uploadPing(ping, delegate);
+            final String url = serverSchemeHostPort + "/" + ping.getURLPath();
+            uploadPayload(url, ping.getPayload(), delegate);
         }
 
         if (!delegate.hadConnectionError()) {
@@ -87,10 +92,18 @@ public class TelemetryUploadService extends IntentService {
         store.onUploadAttemptComplete(successfulUploadIDs);
     }
 
-    private static void uploadPing(final TelemetryPing ping, final ResultDelegate delegate) {
+    private static String getServerSchemeHostPort(final Context context) {
+        
+        
+        
+        final SharedPreferences sharedPrefs = GeckoSharedPrefs.forApp(context);
+        return sharedPrefs.getString(TelemetryConstants.PREF_SERVER_URL, TelemetryConstants.DEFAULT_SERVER_URL);
+    }
+
+    private static void uploadPayload(final String url, final ExtendedJSONObject payload, final ResultDelegate delegate) {
         final BaseResource resource;
         try {
-            resource = new BaseResource(ping.getURL());
+            resource = new BaseResource(url);
         } catch (final URISyntaxException e) {
             Log.w(LOGTAG, "URISyntaxException for server URL when creating BaseResource: returning.");
             return;
@@ -103,7 +116,7 @@ public class TelemetryUploadService extends IntentService {
 
         
         
-        resource.postBlocking(ping.getPayload());
+        resource.postBlocking(payload);
     }
 
     private static boolean isReadyToUpload(final Context context, final Intent intent) {
