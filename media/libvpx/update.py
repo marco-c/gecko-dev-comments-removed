@@ -600,6 +600,8 @@ def apply_patches():
     os.system("patch -p3 < clamp-abs-QIndex.patch")
     
     os.system("patch -p3 < clang-cl.patch")
+    
+    os.system("patch -p3 < cast-char-to-uint-before-shift.patch")
 
 def update_readme(commit):
     with open('README_MOZILLA') as f:
