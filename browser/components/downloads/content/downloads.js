@@ -912,7 +912,16 @@ const DownloadsView = {
     
     if (aEvent.button == 0 &&
         !aEvent.originalTarget.hasAttribute("oncommand")) {
-      goDoCommand("downloadsCmd_open");
+      let target = aEvent.target;
+      while (target.nodeName != "richlistitem") {
+        target = target.parentNode;
+      }
+      let download = DownloadsView.itemForElement(target).download;
+      if (download.hasBlockedData) {
+        goDoCommand("downloadsCmd_showBlockedInfo");
+      } else {
+        goDoCommand("downloadsCmd_open");
+      }
     }
   },
 
@@ -1070,6 +1079,8 @@ DownloadsViewItem.prototype = {
       case "downloadsCmd_copyLocation":
       case "downloadsCmd_doDefault":
         return true;
+      case "downloadsCmd_showBlockedInfo":
+        return this.download.hasBlockedData;
     }
     return DownloadsViewUI.DownloadElementShell.prototype
                           .isCommandEnabled.call(this, aCommand);
@@ -1126,6 +1137,11 @@ DownloadsViewItem.prototype = {
     
     
     DownloadsPanel.hidePanel();
+  },
+
+  downloadsCmd_showBlockedInfo() {
+    DownloadsBlockedSubview.show(this.element,
+                                 ...this.rawBlockedTitleAndDetails);
   },
 
   downloadsCmd_openReferrer() {
@@ -1481,3 +1497,123 @@ const DownloadsFooter = {
 };
 
 XPCOMUtils.defineConstant(this, "DownloadsFooter", DownloadsFooter);
+
+
+
+
+
+
+
+
+const DownloadsBlockedSubview = {
+
+  get subview() {
+    let subview = document.getElementById("downloadsPanel-blockedSubview");
+    delete this.subview;
+    return this.subview = subview;
+  },
+
+  
+
+
+  get elements() {
+    let idSuffixes = [
+      "title",
+      "details1",
+      "details2",
+      "openButton",
+      "deleteButton",
+    ];
+    let elements = idSuffixes.reduce((memo, s) => {
+      memo[s] = document.getElementById("downloadsPanel-blockedSubview-" + s);
+      return memo;
+    }, {});
+    delete this.elements;
+    return this.elements = elements;
+  },
+
+  
+
+
+  get view() {
+    let view = document.getElementById("downloadsPanel-multiView");
+    delete this.view;
+    return this.view = view;
+  },
+
+  
+
+
+
+  element: undefined,
+
+  
+
+
+
+
+
+
+
+
+
+  show(element, title, details) {
+    if (this.view.showingSubView) {
+      return;
+    }
+
+    this.element = element;
+    element.setAttribute("showingsubview", "true");
+
+    let e = this.elements;
+    let s = DownloadsCommon.strings;
+    e.title.textContent = title;
+    e.details1.textContent = details[0];
+    e.details2.textContent = details[1];
+    e.openButton.label = s.unblockButtonOpen;
+    e.deleteButton.label = s.unblockButtonConfirmBlock;
+
+    let verdict = element.getAttribute("verdict");
+    this.subview.setAttribute("verdict", verdict);
+    this.subview.addEventListener("ViewHiding", this);
+
+    this.view.showSubView(this.subview.id);
+
+    
+    
+    document.getElementById("downloadsPanel-mainView").style.minWidth =
+      window.getComputedStyle(this.view).width;
+  },
+
+  handleEvent(event) {
+    switch (event.type) {
+      case "ViewHiding":
+        this.subview.removeEventListener(event.type, this);
+        this.element.removeAttribute("showingsubview");
+        delete this.element;
+        break;
+      default:
+        DownloadsCommon.log("Unhandled DownloadsBlockedSubview event: " +
+                            event.type);
+        break;
+    }
+  },
+
+  
+
+
+  hide() {
+    this.view.showMainView();
+  },
+
+  
+
+
+  confirmBlock() {
+    goDoCommand("cmd_delete");
+    DownloadsPanel.hidePanel();
+  },
+};
+
+XPCOMUtils.defineConstant(this, "DownloadsBlockedSubview",
+                          DownloadsBlockedSubview);
