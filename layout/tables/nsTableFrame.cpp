@@ -622,7 +622,24 @@ nsTableFrame::RemoveCol(nsTableColGroupFrame* aColGroupFrame,
   if (aRemoveFromCellMap) {
     nsTableCellMap* cellMap = GetCellMap();
     if (cellMap) {
-      AppendAnonymousColFrames(1);
+      
+      
+      if (!mColFrames.IsEmpty() &&
+          mColFrames.LastElement() && 
+          mColFrames.LastElement()->GetColType() == eColAnonymousCell) {
+        AppendAnonymousColFrames(1);
+      } else {
+        
+        
+        
+        
+        
+        
+        
+        
+        cellMap->RemoveColsAtEnd();
+        MatchCellMapToColCache(cellMap);
+      }
     }
   }
   
@@ -2534,10 +2551,30 @@ nsTableFrame::DoRemoveFrame(ChildListID     aListID,
       }
     }
 
-    int32_t numAnonymousColsToAdd = GetColCount() - mColFrames.Length();
-    if (numAnonymousColsToAdd > 0) {
+    
+    
+    if (!mColFrames.IsEmpty() &&
+        mColFrames.LastElement() && 
+        mColFrames.LastElement()->GetColType() == eColAnonymousCell) {
+      int32_t numAnonymousColsToAdd = GetColCount() - mColFrames.Length();
+      if (numAnonymousColsToAdd > 0) {
+        
+        AppendAnonymousColFrames(numAnonymousColsToAdd);
+      }
+    } else {
       
-      AppendAnonymousColFrames(numAnonymousColsToAdd);
+      
+      
+      
+      
+      
+      
+      
+      nsTableCellMap* cellMap = GetCellMap();
+      if (cellMap) { 
+        cellMap->RemoveColsAtEnd();
+        MatchCellMapToColCache(cellMap);
+      }
     }
 
   } else {
