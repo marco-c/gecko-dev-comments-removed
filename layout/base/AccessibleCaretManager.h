@@ -160,7 +160,10 @@ protected:
   
   
   
-  nsIFrame* FindFirstNodeWithFrame(bool aBackward, int32_t* aOutOffset) const;
+  
+  nsIFrame* GetFrameForFirstRangeStartOrLastRangeEnd(
+    nsDirection aDirection, int32_t* aOutOffset, nsINode** aOutNode = nullptr,
+    int32_t* aOutNodeOffset = nullptr) const;
 
   nsresult DragCaretInternal(const nsPoint& aPoint);
   nsPoint AdjustDragBoundary(const nsPoint& aPoint) const;
@@ -183,7 +186,10 @@ protected:
   
   
   
-  bool CompareRangeWithContentOffset(nsIFrame::ContentOffsets& aOffsets);
+  
+  
+  
+  bool RestrictCaretDraggingOffsets(nsIFrame::ContentOffsets& aOffsets);
 
   
   

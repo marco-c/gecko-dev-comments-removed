@@ -341,10 +341,12 @@ AccessibleCaretManager::UpdateCaretsForSelectionMode(UpdateCaretsHint aHint)
   AC_LOG("%s: selection: %p", __FUNCTION__, GetSelection());
 
   int32_t startOffset = 0;
-  nsIFrame* startFrame = FindFirstNodeWithFrame(false, &startOffset);
+  nsIFrame* startFrame =
+    GetFrameForFirstRangeStartOrLastRangeEnd(eDirNext, &startOffset);
 
   int32_t endOffset = 0;
-  nsIFrame* endFrame = FindFirstNodeWithFrame(true, &endOffset);
+  nsIFrame* endFrame =
+    GetFrameForFirstRangeStartOrLastRangeEnd(eDirPrevious, &endOffset);
 
   if (!CompareTreePosition(startFrame, endFrame)) {
     
@@ -864,41 +866,51 @@ AccessibleCaretManager::FlushLayout() const
 }
 
 nsIFrame*
-AccessibleCaretManager::FindFirstNodeWithFrame(bool aBackward,
-                                               int32_t* aOutOffset) const
+AccessibleCaretManager::GetFrameForFirstRangeStartOrLastRangeEnd(
+  nsDirection aDirection, int32_t* aOutOffset, nsINode** aOutNode,
+  int32_t* aOutNodeOffset) const
 {
   if (!mPresShell) {
     return nullptr;
   }
 
+  MOZ_ASSERT(GetCaretMode() == CaretMode::Selection);
+
+  nsRange* range = nullptr;
+  RefPtr<nsINode> startNode;
+  RefPtr<nsINode> endNode;
+  int32_t nodeOffset = 0;
+  CaretAssociationHint hint;
+
   RefPtr<Selection> selection = GetSelection();
-  if (!selection) {
-    return nullptr;
+  bool findInFirstRangeStart = aDirection == eDirNext;
+
+  if (findInFirstRangeStart) {
+    range = selection->GetRangeAt(0);
+    startNode = range->GetStartParent();
+    endNode = range->GetEndParent();
+    nodeOffset = range->StartOffset();
+    hint = CARET_ASSOCIATE_AFTER;
+  } else {
+    range = selection->GetRangeAt(selection->RangeCount() - 1);
+    startNode = range->GetEndParent();
+    endNode = range->GetStartParent();
+    nodeOffset = range->EndOffset();
+    hint = CARET_ASSOCIATE_BEFORE;
   }
 
-  RefPtr<nsFrameSelection> fs = GetFrameSelection();
-  if (!fs) {
-    return nullptr;
-  }
-
-  uint32_t rangeCount = selection->RangeCount();
-  if (rangeCount <= 0) {
-    return nullptr;
-  }
-
-  nsRange* range = selection->GetRangeAt(aBackward ? rangeCount - 1 : 0);
-  RefPtr<nsINode> startNode =
-    aBackward ? range->GetEndParent() : range->GetStartParent();
-  RefPtr<nsINode> endNode =
-    aBackward ? range->GetStartParent() : range->GetEndParent();
-  int32_t offset = aBackward ? range->EndOffset() : range->StartOffset();
   nsCOMPtr<nsIContent> startContent = do_QueryInterface(startNode);
-  CaretAssociationHint hintStart =
-    aBackward ? CARET_ASSOCIATE_BEFORE : CARET_ASSOCIATE_AFTER;
+  RefPtr<nsFrameSelection> fs = GetFrameSelection();
   nsIFrame* startFrame =
-    fs->GetFrameForNodeOffset(startContent, offset, hintStart, aOutOffset);
+    fs->GetFrameForNodeOffset(startContent, nodeOffset, hint, aOutOffset);
 
   if (startFrame) {
+    if (aOutNode) {
+      *aOutNode = startNode.get();
+    }
+    if (aOutNodeOffset) {
+      *aOutNodeOffset = nodeOffset;
+    }
     return startFrame;
   }
 
@@ -912,7 +924,8 @@ AccessibleCaretManager::FindFirstNodeWithFrame(bool aBackward,
 
   startFrame = startContent ? startContent->GetPrimaryFrame() : nullptr;
   while (!startFrame && startNode != endNode) {
-    startNode = aBackward ? walker->PreviousNode(err) : walker->NextNode(err);
+    startNode = findInFirstRangeStart ? walker->NextNode(err)
+                                      : walker->PreviousNode(err);
 
     if (!startNode) {
       break;
@@ -925,78 +938,50 @@ AccessibleCaretManager::FindFirstNodeWithFrame(bool aBackward,
 }
 
 bool
-AccessibleCaretManager::CompareRangeWithContentOffset(nsIFrame::ContentOffsets& aOffsets)
+AccessibleCaretManager::RestrictCaretDraggingOffsets(
+  nsIFrame::ContentOffsets& aOffsets)
 {
-  Selection* selection = GetSelection();
-  if (!selection) {
+  if (!mPresShell) {
     return false;
   }
 
-  uint32_t rangeCount = selection->RangeCount();
-  MOZ_ASSERT(rangeCount > 0);
+  MOZ_ASSERT(GetCaretMode() == CaretMode::Selection);
 
-  int32_t rangeIndex = (mActiveCaret == mFirstCaret.get() ? rangeCount - 1 : 0);
-  RefPtr<nsRange> range = selection->GetRangeAt(rangeIndex);
-
+  nsDirection dir = mActiveCaret == mFirstCaret.get() ? eDirPrevious : eDirNext;
+  int32_t offset = 0;
   nsINode* node = nullptr;
-  int32_t nodeOffset = 0;
-  CaretAssociationHint hint;
-  nsDirection dir;
+  int32_t contentOffset = 0;
+  nsIFrame* frame =
+    GetFrameForFirstRangeStartOrLastRangeEnd(dir, &offset, &node, &contentOffset);
 
-  if (mActiveCaret == mFirstCaret.get()) {
-    
-    node = range->GetEndParent();
-    nodeOffset = range->EndOffset();
-    hint = CARET_ASSOCIATE_BEFORE;
-    dir = eDirPrevious;
-  } else {
-    
-    node = range->GetStartParent();
-    nodeOffset = range->StartOffset();
-    hint = CARET_ASSOCIATE_AFTER;
-    dir = eDirNext;
+  if (!frame) {
+    return false;
   }
+
   nsCOMPtr<nsIContent> content = do_QueryInterface(node);
 
-  RefPtr<nsFrameSelection> fs = GetFrameSelection();
-  if (!fs) {
-    return false;
-  }
-
-  int32_t offset = 0;
-  nsIFrame* theFrame =
-    fs->GetFrameForNodeOffset(content, nodeOffset, hint, &offset);
-
-  if (!theFrame) {
-    return false;
-  }
-
   
-  nsPeekOffsetStruct pos(eSelectCluster,
-                         dir,
-                         offset,
-                         nsPoint(0, 0),
-                         true,
-                         true,  
-                         false,
-                         false,
-                         false);
-  nsresult rv = theFrame->PeekOffset(&pos);
+  
+  nsPeekOffsetStruct limit(eSelectCluster, dir, offset, nsPoint(0, 0), true, true,
+                           false, false, false);
+  nsresult rv = frame->PeekOffset(&limit);
   if (NS_FAILED(rv)) {
-    pos.mResultContent = content;
-    pos.mContentOffset = nodeOffset;
+    limit.mResultContent = content;
+    limit.mContentOffset = contentOffset;
   }
 
   
-  int32_t result = nsContentUtils::ComparePoints(aOffsets.content,
-                                                 aOffsets.StartOffset(),
-                                                 pos.mResultContent,
-                                                 pos.mContentOffset);
-  if ((mActiveCaret == mFirstCaret.get() && result == 1) ||
-      (mActiveCaret == mSecondCaret.get() && result == -1)) {
-    aOffsets.content = pos.mResultContent;
-    aOffsets.offset = pos.mContentOffset;
-    aOffsets.secondaryOffset = pos.mContentOffset;
+  int32_t cmpToLimit =
+    nsContentUtils::ComparePoints(aOffsets.content, aOffsets.StartOffset(),
+                                  limit.mResultContent, limit.mContentOffset);
+  if ((mActiveCaret == mFirstCaret.get() && cmpToLimit == 1) ||
+      (mActiveCaret == mSecondCaret.get() && cmpToLimit == -1)) {
+    
+    
+    
+    aOffsets.content = limit.mResultContent;
+    aOffsets.offset = limit.mContentOffset;
+    aOffsets.secondaryOffset = limit.mContentOffset;
   }
 
   return true;
@@ -1066,7 +1051,7 @@ AccessibleCaretManager::DragCaretInternal(const nsPoint& aPoint)
   }
 
   if (GetCaretMode() == CaretMode::Selection &&
-      !CompareRangeWithContentOffset(offsets)) {
+      !RestrictCaretDraggingOffsets(offsets)) {
     return NS_ERROR_FAILURE;
   }
 
