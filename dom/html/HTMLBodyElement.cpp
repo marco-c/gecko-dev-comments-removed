@@ -168,6 +168,12 @@ BodyRule::MapRuleInfoInto(nsRuleData* aData)
   }
 }
 
+ bool
+BodyRule::MightMapInheritedStyleData()
+{
+  return false;
+}
+
 #ifdef DEBUG
  void
 BodyRule::List(FILE* out, int32_t aIndent) const

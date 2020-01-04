@@ -184,6 +184,14 @@ nsMappedAttributes::MapRuleInfoInto(nsRuleData* aRuleData)
   }
 }
 
+ bool
+nsMappedAttributes::MightMapInheritedStyleData()
+{
+  
+  
+  return true;
+}
+
 #ifdef DEBUG
  void
 nsMappedAttributes::List(FILE* out, int32_t aIndent) const
