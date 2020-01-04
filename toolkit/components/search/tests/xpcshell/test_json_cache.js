@@ -56,7 +56,6 @@ function run_test() {
   engineTemplateFile.copyTo(engineFile.parent, "test-search-engine.xml");
 
   
-  let filesToIgnore = []
   let chan = NetUtil.ioService.newChannel2("resource://search-plugins/list.txt",
                                            null, 
                                            null, 
@@ -76,37 +75,6 @@ function run_test() {
       continue;
     visibleDefaultEngines.push(name);
   }
-  let chromeURI = chan.URI;
-  if (chromeURI instanceof Ci.nsIJARURI) {
-    
-    let fileURI = chromeURI; 
-    while (fileURI instanceof Ci.nsIJARURI)
-      fileURI = fileURI.JARFile;
-    fileURI.QueryInterface(Ci.nsIFileURL);
-    filesToIgnore.push(fileURI.file);
-  } else {
-    
-    for (let name of names) {
-      let url = "resource://search-plugins/" + name + ".xml";
-      let chan = NetUtil.ioService.newChannel2(url,
-                                               null, 
-                                               null, 
-                                               null, 
-                                               Services.scriptSecurityManager.getSystemPrincipal(),
-                                               null, 
-                                               Ci.nsILoadInfo.SEC_NORMAL,
-                                               Ci.nsIContentPolicy.TYPE_OTHER);
-      filesToIgnore.push(chan.URI.QueryInterface(Ci.nsIFileURL).file);
-    }
-  }
-
-  for (let file of filesToIgnore) {
-    cacheTemplate.directories[file.path] = {
-      lastModifiedTime: file.lastModifiedTime,
-      engines: []
-    };
-  }
-
   cacheTemplate.visibleDefaultEngines = visibleDefaultEngines;
 
   run_next_test();
