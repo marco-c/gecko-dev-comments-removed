@@ -4,6 +4,7 @@
 
 
 #include "GPUVideoTextureHost.h"
+#include "mozilla/dom/VideoDecoderManagerParent.h"
 #include "ImageContainer.h"
 
 namespace mozilla {
@@ -14,6 +15,7 @@ GPUVideoTextureHost::GPUVideoTextureHost(TextureFlags aFlags,
   : TextureHost(aFlags)
 {
   MOZ_COUNT_CTOR(GPUVideoTextureHost);
+  mImage = dom::VideoDecoderManagerParent::LookupImage(aDescriptor);
 }
 
 GPUVideoTextureHost::~GPUVideoTextureHost()
