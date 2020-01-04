@@ -90,8 +90,8 @@ static int safe_strcmp(const char16_t* a, const char16_t* b)
   return NS_strcmp(a, b);
 }
 
-static nsChangeHint CalcShadowDifference(nsCSSShadowArray* lhs,
-                                         nsCSSShadowArray* rhs);
+static bool AreShadowArraysEqual(nsCSSShadowArray* lhs,
+                                 nsCSSShadowArray* rhs);
 
 
 
@@ -519,22 +519,26 @@ nsStyleBorder::Destroy(nsPresContext* aContext) {
 
 nsChangeHint nsStyleBorder::CalcDifference(const nsStyleBorder& aOther) const
 {
-  nsChangeHint shadowDifference =
-    CalcShadowDifference(mBoxShadow, aOther.mBoxShadow);
-  MOZ_ASSERT(shadowDifference == unsigned(NS_STYLE_HINT_REFLOW) ||
-             shadowDifference == unsigned(NS_STYLE_HINT_VISUAL) ||
-             shadowDifference == unsigned(NS_STYLE_HINT_NONE),
-             "should do more with shadowDifference");
-
   
   
   if (mTwipsPerPixel != aOther.mTwipsPerPixel ||
       GetComputedBorder() != aOther.GetComputedBorder() ||
       mFloatEdge != aOther.mFloatEdge ||
       mBorderImageOutset != aOther.mBorderImageOutset ||
-      (shadowDifference & nsChangeHint_NeedReflow) ||
       mBoxDecorationBreak != aOther.mBoxDecorationBreak)
     return NS_STYLE_HINT_REFLOW;
+
+  nsChangeHint boxShadowHint = nsChangeHint(0);
+  if (!AreShadowArraysEqual(mBoxShadow, aOther.mBoxShadow)) {
+    
+    NS_UpdateHint(boxShadowHint, nsChangeHint_UpdateOverflow);
+    NS_UpdateHint(boxShadowHint, nsChangeHint_SchedulePaint);
+    
+    
+    
+    NS_UpdateHint(boxShadowHint, nsChangeHint_RepaintFrame);
+    
+  }
 
   NS_FOR_CSS_SIDES(ix) {
     
@@ -543,9 +547,17 @@ nsChangeHint nsStyleBorder::CalcDifference(const nsStyleBorder& aOther) const
     
     
     if (HasVisibleStyle(ix) != aOther.HasVisibleStyle(ix)) {
-      return NS_CombineHint(nsChangeHint_RepaintFrame,
+      return NS_CombineHint(boxShadowHint,
+                            nsChangeHint_RepaintFrame |
                             nsChangeHint_BorderStyleNoneChange);
     }
+  }
+
+  if (boxShadowHint) {
+    
+    
+    
+    return boxShadowHint;
   }
 
   
@@ -582,10 +594,6 @@ nsChangeHint nsStyleBorder::CalcDifference(const nsStyleBorder& aOther) const
                                  aOther.mBorderColors[ix]))
         return nsChangeHint_RepaintFrame;
     }
-  }
-
-  if (shadowDifference) {
-    return shadowDifference;
   }
 
   
@@ -3382,24 +3390,21 @@ nsChangeHint nsStyleTextReset::CalcDifference(const nsStyleTextReset& aOther) co
 }
 
 
-
-
-
-static nsChangeHint
-CalcShadowDifference(nsCSSShadowArray* lhs,
+static bool
+AreShadowArraysEqual(nsCSSShadowArray* lhs,
                      nsCSSShadowArray* rhs)
 {
   if (lhs == rhs)
-    return NS_STYLE_HINT_NONE;
+    return true;
 
   if (!lhs || !rhs || lhs->Length() != rhs->Length())
-    return NS_STYLE_HINT_REFLOW;
+    return false;
 
   for (uint32_t i = 0; i < lhs->Length(); ++i) {
     if (*lhs->ShadowAt(i) != *rhs->ShadowAt(i))
-      return NS_STYLE_HINT_REFLOW;
+      return false;
   }
-  return NS_STYLE_HINT_NONE;
+  return true;
 }
 
 
@@ -3495,7 +3500,12 @@ nsChangeHint nsStyleText::CalcDifference(const nsStyleText& aOther) const
       (mTabSize != aOther.mTabSize))
     return NS_STYLE_HINT_REFLOW;
 
-  return CalcShadowDifference(mTextShadow, aOther.mTextShadow);
+  if (!AreShadowArraysEqual(mTextShadow, aOther.mTextShadow)) {
+    return nsChangeHint_UpdateSubtreeOverflow |
+           nsChangeHint_SchedulePaint |
+           nsChangeHint_RepaintFrame;
+  }
+  return NS_STYLE_HINT_NONE;
 }
 
 
