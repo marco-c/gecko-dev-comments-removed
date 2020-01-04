@@ -5,11 +5,6 @@
 
 
 
-thisTestLeaksUncaughtRejectionsAndShouldBeFixed(
-  "Error: Assertion failure: Should have an event loop.");
-
-
-
 
 
 const TAB_URL = EXAMPLE_URL + "doc_inline-debugger-statement.html";
@@ -83,6 +78,8 @@ function testDebuggerStatement([aGrip, aResponse]) {
 
   
   callInTab(gTab, "runDebuggerStatement");
+
+  return deferred.promise;
 }
 
 function closeConnection() {
