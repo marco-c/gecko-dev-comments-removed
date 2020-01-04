@@ -618,6 +618,10 @@ class BlockObject : public NestedScopeObject
         return propertyCount();
     }
 
+    
+    
+    bool isExtensible() const;
+
   protected:
     
     const Value& slotValue(unsigned i) {
@@ -741,6 +745,10 @@ class StaticBlockObject : public BlockObject
         Value v = slotValue(i);
         return reinterpret_cast<frontend::Definition*>(v.toPrivate());
     }
+
+    
+    
+    bool makeNonExtensible(ExclusiveContext* cx);
 
     
 

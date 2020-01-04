@@ -908,6 +908,12 @@ BytecodeEmitter::enterNestedScope(StmtInfoBCE* stmt, ObjectBox* objbox, StmtType
             if (!emitInternedObjectOp(scopeObjectIndex, JSOP_PUSHBLOCKSCOPE))
                 return false;
         }
+
+        
+        
+        
+        if (!blockObj->makeNonExtensible(cx))
+            return false;
         break;
       }
       case StmtType::WITH:

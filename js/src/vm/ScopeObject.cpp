@@ -804,6 +804,12 @@ const Class NonSyntacticVariablesObject::class_ = {
 
 
 
+bool
+BlockObject::isExtensible() const
+{
+    return nonProxyIsExtensible();
+}
+
  ClonedBlockObject*
 ClonedBlockObject::create(JSContext* cx, Handle<StaticBlockObject*> block, HandleObject enclosing)
 {
@@ -907,6 +913,18 @@ StaticBlockObject::lookupAliasedName(PropertyName* name)
         r.popFront();
     }
     return nullptr;
+}
+
+bool
+StaticBlockObject::makeNonExtensible(ExclusiveContext* cx)
+{
+    
+    
+    
+    
+    if (!isExtensible())
+        return true;
+    return setFlags(cx, BaseShape::NOT_EXTENSIBLE, JSObject::GENERATE_SHAPE);
 }
 
  Shape*
