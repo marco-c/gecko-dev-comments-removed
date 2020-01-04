@@ -2348,11 +2348,23 @@ NativeKey::WillDispatchKeyboardEvent(WidgetKeyboardEvent& aKeyboardEvent,
     return;
   }
 
+  
+  
+  
+  
+  bool isLastIndex =
+    aKeyboardEvent.mMessage != eKeyPress ||
+    mCommittedCharsAndModifiers.IsEmpty() ||
+    mCommittedCharsAndModifiers.mLength - 1 == aIndex;
+
   nsTArray<AlternativeCharCode>& altArray =
     aKeyboardEvent.mAlternativeCharCodes;
 
-  uint16_t shiftedChar = 0, unshiftedChar = 0;
-  if (skipUniChars <= aIndex) {
+  
+  
+  
+  
+  if (aKeyboardEvent.mMessage == eKeyPress && skipUniChars <= aIndex) {
     
     
     
@@ -2381,19 +2393,44 @@ NativeKey::WillDispatchKeyboardEvent(WidgetKeyboardEvent& aKeyboardEvent,
     aKeyboardEvent.SetCharCode(uniChar);
   }
 
-  if (skipShiftedChars <= aIndex) {
-    shiftedChar = mShiftedString.mChars[aIndex - skipShiftedChars];
+  
+  
+  
+  
+  
+  
+  
+  size_t count;
+  if (aKeyboardEvent.mMessage == eKeyPress) {
+    
+    count = 1;
+    
+    
+    
+    if (isLastIndex) {
+      count = longestLength - aIndex;
+    }
+  } else {
+    count = longestLength;
   }
-  if (skipUnshiftedChars <= aIndex) {
-    unshiftedChar = mUnshiftedString.mChars[aIndex - skipUnshiftedChars];
-  }
+  for (size_t i = 0; i < count; ++i) {
+    uint16_t shiftedChar = 0, unshiftedChar = 0;
+    if (skipShiftedChars <= aIndex + i) {
+      shiftedChar = mShiftedString.mChars[aIndex + i - skipShiftedChars];
+    }
+    if (skipUnshiftedChars <= aIndex + i) {
+      unshiftedChar = mUnshiftedString.mChars[aIndex + i - skipUnshiftedChars];
+    }
 
-  if (shiftedChar || unshiftedChar) {
-    AlternativeCharCode chars(unshiftedChar, shiftedChar);
-    altArray.AppendElement(chars);
-  }
+    if (shiftedChar || unshiftedChar) {
+      AlternativeCharCode chars(unshiftedChar, shiftedChar);
+      altArray.AppendElement(chars);
+    }
 
-  if (aIndex == longestLength - 1) {
+    if (!isLastIndex) {
+      continue;
+    }
+
     if (mUnshiftedLatinChar || mShiftedLatinChar) {
       AlternativeCharCode chars(mUnshiftedLatinChar, mShiftedLatinChar);
       altArray.AppendElement(chars);
