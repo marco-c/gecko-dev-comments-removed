@@ -38,8 +38,7 @@ struct OpaqueCRLFieldsStr {
 
 typedef struct PreAllocatorStr PreAllocator;
 
-struct PreAllocatorStr
-{
+struct PreAllocatorStr {
     PRSize len;
     void* data;
     PRSize used;
@@ -56,31 +55,30 @@ struct CRLEntryCacheStr {
     CRLEntryCache *prev, *next;
 };
 
-#define CRL_CACHE_INVALID_CRLS              0x0001 /* this state will be set
-        if we have CRL objects with an invalid DER or signature. Can be
-        cleared if the invalid objects are deleted from the token */
-#define CRL_CACHE_LAST_FETCH_FAILED         0x0002 /* this state will be set
-        if the last CRL fetch encountered an error. Can be cleared if a
-        new fetch succeeds */
+#define CRL_CACHE_INVALID_CRLS 0x0001 /* this state will be set
+            if we have CRL objects with an invalid DER or signature. Can be
+            cleared if the invalid objects are deleted from the token */
+#define CRL_CACHE_LAST_FETCH_FAILED 0x0002 /* this state will be set
+            if the last CRL fetch encountered an error. Can be cleared if a
+            new fetch succeeds */
 
-#define CRL_CACHE_OUT_OF_MEMORY             0x0004 /* this state will be set
-        if we don't have enough memory to build the hash table of entries */
+#define CRL_CACHE_OUT_OF_MEMORY 0x0004 /* this state will be set
+            if we don't have enough memory to build the hash table of entries */
 
 typedef enum {
-    CRL_OriginToken = 0,    
-    CRL_OriginExplicit = 1  
+    CRL_OriginToken = 0,   
+    CRL_OriginExplicit = 1 
 } CRLOrigin;
 
 typedef enum {
-    dpcacheNoEntry = 0,             
-    dpcacheFoundEntry = 1,          
-    dpcacheCallerError = 2,         
-    dpcacheInvalidCacheError = 3,   
-                                    
-    dpcacheEmpty = 4,               
-    dpcacheLookupError = 5          
+    dpcacheNoEntry = 0,           
+    dpcacheFoundEntry = 1,        
+    dpcacheCallerError = 2,       
+    dpcacheInvalidCacheError = 3, 
+                                  
+    dpcacheEmpty = 4,             
+    dpcacheLookupError = 5        
 } dpcacheStatus;
-
 
 struct CachedCrlStr {
     CERTSignedCrl* crl;
@@ -98,10 +96,10 @@ struct CachedCrlStr {
 
     PLHashTable* entries;
     PreAllocator* prebuffer; 
-    PRBool sigChecked; 
-    PRBool sigValid; 
+    PRBool sigChecked;       
+    PRBool sigValid;         
 
-    PRBool unbuildable; 
+    PRBool unbuildable;      
 
 };
 
@@ -116,7 +114,7 @@ struct CRLDPCacheStr {
 #else
     PRLock* lock;
 #endif
-    SECItem *issuerDERCert;    
+    SECItem* issuerDERCert; 
 
 
 
@@ -124,7 +122,7 @@ struct CRLDPCacheStr {
 
 
 
-    CERTCertDBHandle *dbHandle;
+    CERTCertDBHandle* dbHandle;
 
     SECItem* subject;           
     SECItem* distributionPoint; 
@@ -133,30 +131,30 @@ struct CRLDPCacheStr {
 
 
     
-    PRUint32 ncrls;              
-    CachedCrl** crls;            
+    PRUint32 ncrls;   
+    CachedCrl** crls; 
     
 
 
 
     
-    CachedCrl* selected;    
+    CachedCrl* selected; 
 #if 0
     
     PRInt32 numdeltas;      
     CachedCrl** deltas;     
 #endif
     
-    PRUint16 invalid;       
+    PRUint16 invalid;  
 
 
 
 
-    PRBool refresh;        
-    PRBool mustchoose;     
+    PRBool refresh;    
+    PRBool mustchoose; 
 
-    PRTime lastfetch;      
-    PRTime lastcheck;      
+    PRTime lastfetch;  
+    PRTime lastcheck;  
 
 };
 
@@ -168,7 +166,7 @@ struct CRLDPCacheStr {
 
 
 struct CRLIssuerCacheStr {
-    SECItem* subject;           
+    SECItem* subject; 
     CRLDPCache* dpp;
 };
 
@@ -194,46 +192,40 @@ SECStatus ShutdownCRLCache(void);
 
 
 
-extern char * cert_GetCertificateEmailAddresses(CERTCertificate *cert);
+extern char* cert_GetCertificateEmailAddresses(CERTCertificate* cert);
 
 
 
 
 
-SECStatus
-cert_CreateSubjectKeyIDHashTable(void);
+SECStatus cert_CreateSubjectKeyIDHashTable(void);
 
-SECStatus
-cert_AddSubjectKeyIDMapping(SECItem *subjKeyID, CERTCertificate *cert);
+SECStatus cert_AddSubjectKeyIDMapping(SECItem* subjKeyID,
+                                      CERTCertificate* cert);
 
-SECStatus
-cert_UpdateSubjectKeyIDSlotCheck(SECItem *slotid, int series);
+SECStatus cert_UpdateSubjectKeyIDSlotCheck(SECItem* slotid, int series);
 
-int
-cert_SubjectKeyIDSlotCheckSeries(SECItem *slotid);
+int cert_SubjectKeyIDSlotCheckSeries(SECItem* slotid);
 
 
 
 
-SECStatus
-cert_RemoveSubjectKeyIDMapping(SECItem *subjKeyID);
+SECStatus cert_RemoveSubjectKeyIDMapping(SECItem* subjKeyID);
 
-SECStatus
-cert_DestroySubjectKeyIDHashTable(void);
+SECStatus cert_DestroySubjectKeyIDHashTable(void);
 
-SECItem*
-cert_FindDERCertBySubjectKeyID(SECItem *subjKeyID);
+SECItem* cert_FindDERCertBySubjectKeyID(SECItem* subjKeyID);
 
 
 extern int cert_AVAOidTagToMaxLen(SECOidTag tag);
 
 
-extern CERTAVA * CERT_CreateAVAFromRaw(PLArenaPool *pool, 
-                               const SECItem * OID, const SECItem * value);
+extern CERTAVA* CERT_CreateAVAFromRaw(PLArenaPool* pool, const SECItem* OID,
+                                      const SECItem* value);
 
 
-extern CERTAVA * CERT_CreateAVAFromSECItem(PLArenaPool *arena, SECOidTag kind, 
-                                           int valueType, SECItem *value);
+extern CERTAVA* CERT_CreateAVAFromSECItem(PLArenaPool* arena, SECOidTag kind,
+                                          int valueType, SECItem* value);
 
 
 
@@ -260,10 +252,11 @@ void CERT_MapStanError();
 
 
 
-SECStatus
-cert_VerifyCertWithFlags(CERTCertDBHandle *handle, CERTCertificate *cert,
-                         PRBool checkSig, SECCertUsage certUsage, PRTime t,
-                         PRUint32 flags, void *wincx, CERTVerifyLog *log);
+SECStatus cert_VerifyCertWithFlags(CERTCertDBHandle* handle,
+                                   CERTCertificate* cert, PRBool checkSig,
+                                   SECCertUsage certUsage, PRTime t,
+                                   PRUint32 flags, void* wincx,
+                                   CERTVerifyLog* log);
 
 
 
@@ -281,15 +274,10 @@ cert_VerifyCertWithFlags(CERTCertDBHandle *handle, CERTCertificate *cert,
 
 
 
-SECStatus
-cert_VerifyCertChainPkix(CERTCertificate *cert,
-                         PRBool checkSig,
-                         SECCertUsage     requiredUsage,
-                         PRTime           time,
-                         void            *wincx,
-                         CERTVerifyLog   *log,
-                         PRBool          *sigError,
-                         PRBool          *revoked);
+SECStatus cert_VerifyCertChainPkix(CERTCertificate* cert, PRBool checkSig,
+                                   SECCertUsage requiredUsage, PRTime time,
+                                   void* wincx, CERTVerifyLog* log,
+                                   PRBool* sigError, PRBool* revoked);
 
 SECStatus cert_InitLocks(void);
 
@@ -298,22 +286,16 @@ SECStatus cert_DestroyLocks(void);
 
 
 
-extern SECStatus cert_GetCertType(CERTCertificate *cert);
+extern SECStatus cert_GetCertType(CERTCertificate* cert);
 
 
 
 
 
-extern PRUint32 cert_ComputeCertType(CERTCertificate *cert);
+extern PRUint32 cert_ComputeCertType(CERTCertificate* cert);
 
-void cert_AddToVerifyLog(CERTVerifyLog *log,CERTCertificate *cert,
-                         long errorCode, unsigned int depth,
-                         void *arg);
-
-
-
-
-
+void cert_AddToVerifyLog(CERTVerifyLog* log, CERTCertificate* cert,
+                         long errorCode, unsigned int depth, void* arg);
 
 
 
@@ -323,7 +305,12 @@ void cert_AddToVerifyLog(CERTVerifyLog *log,CERTCertificate *cert,
 
 
 
- 
+
+
+
+
+
+
 SECStatus cert_CacheCRLByGeneralName(CERTCertDBHandle* dbhandle, SECItem* crl,
                                      const SECItem* canonicalizedName);
 
@@ -336,15 +323,15 @@ struct NamedCRLCacheStr {
 
 struct NamedCRLCacheEntryStr {
     SECItem* canonicalizedName;
-    SECItem* crl;                   
+    SECItem* crl; 
 
     PRBool inCRLCache;
     PRTime successfulInsertionTime; 
     PRTime lastAttemptTime;         
 
-    PRBool badDER;      
-    PRBool dupe;        
-    PRBool unsupported; 
+    PRBool badDER;                  
+    PRBool dupe;                    
+    PRBool unsupported;             
 };
 
 typedef enum {
@@ -355,12 +342,12 @@ typedef enum {
 
 
 
-SECStatus
-cert_CheckCertRevocationStatus(CERTCertificate* cert, CERTCertificate* issuer,
-                               const SECItem* dp, PRTime t, void *wincx,
-                               CERTRevocationStatus *revStatus,
-                               CERTCRLEntryReasonCode *revReason);
-
+SECStatus cert_CheckCertRevocationStatus(CERTCertificate* cert,
+                                         CERTCertificate* issuer,
+                                         const SECItem* dp, PRTime t,
+                                         void* wincx,
+                                         CERTRevocationStatus* revStatus,
+                                         CERTCRLEntryReasonCode* revReason);
 
 SECStatus cert_AcquireNamedCRLCache(NamedCRLCache** returned);
 
@@ -374,14 +361,11 @@ SECStatus cert_FindCRLByGeneralName(NamedCRLCache* ncc,
 SECStatus cert_ReleaseNamedCRLCache(NamedCRLCache* ncc);
 
 
-CERTGeneralName *
-cert_GetSubjectAltNameList(const CERTCertificate *cert, PLArenaPool *arena);
+CERTGeneralName* cert_GetSubjectAltNameList(const CERTCertificate* cert,
+                                            PLArenaPool* arena);
 
 
-PRUint32
-cert_CountDNSPatterns(CERTGeneralName *firstName);
-
-
+PRUint32 cert_CountDNSPatterns(CERTGeneralName* firstName);
 
 
 
@@ -389,11 +373,9 @@ cert_CountDNSPatterns(CERTGeneralName *firstName);
 
 
 
-SECStatus
-cert_CheckLeafTrust(CERTCertificate *cert,
-                    SECCertUsage usage, 
-                    unsigned int *failedFlags,
-                    PRBool *isTrusted);
+
+
+SECStatus cert_CheckLeafTrust(CERTCertificate* cert, SECCertUsage usage,
+                              unsigned int* failedFlags, PRBool* isTrusted);
 
 #endif 
-

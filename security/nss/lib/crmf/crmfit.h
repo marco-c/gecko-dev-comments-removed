@@ -3,13 +3,12 @@
 
 
 
-
 #ifndef _CRMFIT_H_
 #define _CRMFIT_H_
 
 struct CRMFCertReqMessagesStr {
     CRMFCertReqMsg **messages;
-    PLArenaPool     *poolp;
+    PLArenaPool *poolp;
 };
 
 struct CRMFCertExtensionStr {
@@ -18,38 +17,37 @@ struct CRMFCertExtensionStr {
     SECItem value;
 };
 
-
 struct CRMFOptionalValidityStr {
-    SECItem notBefore; 
+    SECItem notBefore;
     SECItem notAfter;
 };
 
 struct CRMFCertTemplateStr {
-    SECItem                   version;
-    SECItem                   serialNumber;
-    SECAlgorithmID           *signingAlg;
-    CERTName                 *issuer;
-    CRMFOptionalValidity     *validity;
-    CERTName                 *subject;
+    SECItem version;
+    SECItem serialNumber;
+    SECAlgorithmID *signingAlg;
+    CERTName *issuer;
+    CRMFOptionalValidity *validity;
+    CERTName *subject;
     CERTSubjectPublicKeyInfo *publicKey;
-    SECItem                   issuerUID;
-    SECItem                   subjectUID; 
-    CRMFCertExtension       **extensions;
-    int                       numExtensions;
+    SECItem issuerUID;
+    SECItem subjectUID;
+    CRMFCertExtension **extensions;
+    int numExtensions;
 };
 
 struct CRMFCertIDStr {
-    SECItem issuer; 
+    SECItem issuer;       
     SECItem serialNumber; 
 };
 
 struct CRMFEncryptedValueStr {
     SECAlgorithmID *intendedAlg;
     SECAlgorithmID *symmAlg;
-    SECItem         encSymmKey; 
+    SECItem encSymmKey; 
     SECAlgorithmID *keyAlg;
-    SECItem         valueHint;  
-    SECItem         encValue;   
+    SECItem valueHint; 
+    SECItem encValue;  
 };
 
 
@@ -59,8 +57,8 @@ struct CRMFEncryptedValueStr {
 
 struct CRMFEncryptedKeyStr {
     union {
-        SEC_PKCS7ContentInfo   *envelopedData;
-        CRMFEncryptedValue      encryptedValue; 
+        SEC_PKCS7ContentInfo *envelopedData;
+        CRMFEncryptedValue encryptedValue;
     } value;
     CRMFEncryptedKeyChoice encKeyChoice;
     SECItem derValue;
@@ -69,9 +67,9 @@ struct CRMFEncryptedKeyStr {
 
 struct CRMFPKIArchiveOptionsStr {
     union {
-        CRMFEncryptedKey  encryptedKey;
-        SECItem           keyGenParameters;
-        SECItem           archiveRemGenPrivKey; 
+        CRMFEncryptedKey encryptedKey;
+        SECItem keyGenParameters;
+        SECItem archiveRemGenPrivKey; 
     } option;
     CRMFPKIArchiveOptionsType archOption;
 };
@@ -79,13 +77,13 @@ struct CRMFPKIArchiveOptionsStr {
 struct CRMFPKIPublicationInfoStr {
     SECItem action; 
                     
-    CRMFSinglePubInfo **pubInfos; 
+    CRMFSinglePubInfo **pubInfos;
 };
 
 struct CRMFControlStr {
-    SECOidTag  tag;
-    SECItem    derTag;
-    SECItem    derValue;
+    SECOidTag tag;
+    SECItem derTag;
+    SECItem derValue;
     
 
 
@@ -93,25 +91,25 @@ struct CRMFControlStr {
 
 
     union {
-        CRMFCertID              oldCertId;
-        CRMFPKIArchiveOptions   archiveOptions;
-        CRMFPKIPublicationInfo  pubInfo;
-        CRMFProtocolEncrKey     protEncrKey; 
+        CRMFCertID oldCertId;
+        CRMFPKIArchiveOptions archiveOptions;
+        CRMFPKIPublicationInfo pubInfo;
+        CRMFProtocolEncrKey protEncrKey;
     } value;
 };
 
 struct CRMFCertRequestStr {
-    SECItem            certReqId;
-    CRMFCertTemplate   certTemplate;
-    CRMFControl      **controls;
+    SECItem certReqId;
+    CRMFCertTemplate certTemplate;
+    CRMFControl **controls;
     
 
 
     PLArenaPool *poolp;
-    PRUint32     requestID; 
+    PRUint32 requestID; 
 
 
-};                                   
+};
 
 struct CRMFAttributeStr {
     SECItem derTag;
@@ -119,41 +117,41 @@ struct CRMFAttributeStr {
 };
 
 struct CRMFCertReqMsgStr {
-    CRMFCertRequest            *certReq;
-    CRMFProofOfPossession      *pop;
-    CRMFAttribute             **regInfo;
-    SECItem                     derPOP;
+    CRMFCertRequest *certReq;
+    CRMFProofOfPossession *pop;
+    CRMFAttribute **regInfo;
+    SECItem derPOP;
     
 
     PLArenaPool *poolp;
-    PRBool       isDecoded;
+    PRBool isDecoded;
 };
 
 struct CRMFPOPOSigningKeyInputStr {
     
     union {
-        SECItem          sender; 
-        CRMFPKMACValue  *publicKeyMAC;
-    }authInfo;
+        SECItem sender; 
+        CRMFPKMACValue *publicKeyMAC;
+    } authInfo;
     CERTSubjectPublicKeyInfo publicKey;
 };
 
 struct CRMFPOPOSigningKeyStr {
-    SECItem                  derInput; 
+    SECItem derInput; 
 
 
 
 
-    SECAlgorithmID          *algorithmIdentifier;
-    SECItem                  signature; 
-};                                      
+    SECAlgorithmID *algorithmIdentifier;
+    SECItem signature; 
+};                     
 
 
 struct CRMFPOPOPrivKeyStr {
     union {
-        SECItem thisMessage; 
-        SECItem subsequentMessage;  
-        SECItem dhMAC; 
+        SECItem thisMessage;       
+        SECItem subsequentMessage; 
+        SECItem dhMAC;             
     } message;
     CRMFPOPOPrivKeyChoice messageChoice;
 };
@@ -161,21 +159,21 @@ struct CRMFPOPOPrivKeyStr {
 
 struct CRMFProofOfPossessionStr {
     union {
-        SECItem             raVerified;
-        CRMFPOPOSigningKey  signature;
-        CRMFPOPOPrivKey     keyEncipherment;
-        CRMFPOPOPrivKey     keyAgreement;
+        SECItem raVerified;
+        CRMFPOPOSigningKey signature;
+        CRMFPOPOPrivKey keyEncipherment;
+        CRMFPOPOPrivKey keyAgreement;
     } popChoice;
-    CRMFPOPChoice       popUsed; 
+    CRMFPOPChoice popUsed; 
 };
 
 struct CRMFPKMACValueStr {
     SECAlgorithmID algID;
-    SECItem        value; 
+    SECItem value; 
 };
 
 struct CRMFSinglePubInfoStr {
-    SECItem pubMethod; 
+    SECItem pubMethod;            
 
 
 

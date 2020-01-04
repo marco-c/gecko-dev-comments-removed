@@ -41,18 +41,18 @@ struct CMMFPKIStatusInfoStr {
 };
 
 struct CMMFCertOrEncCertStr {
-    union { 
-        CERTCertificate    *certificate;
+    union {
+        CERTCertificate *certificate;
         CRMFEncryptedValue *encryptedCert;
     } cert;
     CMMFCertOrEncCertChoice choice;
-    SECItem                 derValue;
+    SECItem derValue;
 };
 
 struct CMMFCertifiedKeyPairStr {
-    CMMFCertOrEncCert   certOrEncCert;
+    CMMFCertOrEncCert certOrEncCert;
     CRMFEncryptedValue *privateKey;
-    SECItem             derPublicationInfo; 
+    SECItem derPublicationInfo; 
 
 
 
@@ -62,55 +62,54 @@ struct CMMFCertifiedKeyPairStr {
 };
 
 struct CMMFCertResponseStr {
-    SECItem               certReqId;
-    CMMFPKIStatusInfo     status; 
+    SECItem certReqId;
+    CMMFPKIStatusInfo status; 
     CMMFCertifiedKeyPair *certifiedKeyPair;
 };
 
 struct CMMFCertRepContentStr {
-    CERTCertificate  **caPubs;
+    CERTCertificate **caPubs;
     CMMFCertResponse **response;
-    PLArenaPool       *poolp;
-    PRBool             isDecoded;
+    PLArenaPool *poolp;
+    PRBool isDecoded;
 };
 
 struct CMMFChallengeStr {
-    SECAlgorithmID  *owf;
-    SECItem          witness;
-    SECItem          senderDER;
-    SECItem          key;
-    SECItem          challenge;
-    SECItem          randomNumber;
+    SECAlgorithmID *owf;
+    SECItem witness;
+    SECItem senderDER;
+    SECItem key;
+    SECItem challenge;
+    SECItem randomNumber;
 };
 
 struct CMMFRandStr {
-    SECItem          integer;
-    SECItem          senderHash;
+    SECItem integer;
+    SECItem senderHash;
     CERTGeneralName *sender;
 };
 
 struct CMMFPOPODecKeyChallContentStr {
     CMMFChallenge **challenges;
-    PLArenaPool    *poolp;
-    int             numChallenges;
-    int             numAllocated;
+    PLArenaPool *poolp;
+    int numChallenges;
+    int numAllocated;
 };
 
 struct CMMFPOPODecKeyRespContentStr {
-    SECItem     **responses;
-    PLArenaPool  *poolp;
+    SECItem **responses;
+    PLArenaPool *poolp;
 };
 
 struct CMMFKeyRecRepContentStr {
-    CMMFPKIStatusInfo      status; 
-    CERTCertificate       *newSigCert;
-    CERTCertificate      **caCerts;
+    CMMFPKIStatusInfo status; 
+    CERTCertificate *newSigCert;
+    CERTCertificate **caCerts;
     CMMFCertifiedKeyPair **keyPairHist;
-    PLArenaPool           *poolp;
-    int                    numKeyPairs;
-    int                    allocKeyPairs;
-    PRBool                 isDecoded;
+    PLArenaPool *poolp;
+    int numKeyPairs;
+    int allocKeyPairs;
+    PRBool isDecoded;
 };
 
 #endif 
-

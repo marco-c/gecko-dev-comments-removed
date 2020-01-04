@@ -44,11 +44,7 @@ PR_BEGIN_EXTERN_C
 
 
 
-NSS_EXTERN NSSArena *
-NSSArena_Create
-(
-  void
-);
+NSS_EXTERN NSSArena *NSSArena_Create(void);
 
 extern const NSSError NSS_ERROR_NO_MEMORY;
 
@@ -68,11 +64,7 @@ extern const NSSError NSS_ERROR_NO_MEMORY;
 
 
 
-NSS_EXTERN PRStatus
-NSSArena_Destroy
-(
-  NSSArena *arena
-);
+NSS_EXTERN PRStatus NSSArena_Destroy(NSSArena *arena);
 
 extern const NSSError NSS_ERROR_INVALID_ARENA;
 
@@ -100,11 +92,7 @@ extern const NSSError NSS_ERROR_INVALID_ARENA;
 
 
 
-NSS_EXTERN NSSError
-NSS_GetError
-(
-  void
-);
+NSS_EXTERN NSSError NSS_GetError(void);
 
 extern const NSSError NSS_ERROR_NO_ERROR;
 
@@ -126,12 +114,7 @@ extern const NSSError NSS_ERROR_NO_ERROR;
 
 
 
-NSS_EXTERN NSSError *
-NSS_GetErrorStack
-(
-  void
-);
-
+NSS_EXTERN NSSError *NSS_GetErrorStack(void);
 
 
 
@@ -175,8 +158,9 @@ NSS_GetErrorStack
 
 
 
+#define NSS_ZNEWARRAY(arenaOpt, type, quantity)                                \
+    ((type *)NSS_ZAlloc((arenaOpt), sizeof(type) * (quantity)))
 
-#define NSS_ZNEWARRAY(arenaOpt, type, quantity) ((type *)NSS_ZAlloc((arenaOpt), sizeof(type) * (quantity)))
 
 
 
@@ -200,14 +184,9 @@ NSS_GetErrorStack
 
 
 
+NSS_EXTERN void *NSS_ZAlloc(NSSArena *arenaOpt, PRUint32 size);
 
 
-NSS_EXTERN void *
-NSS_ZAlloc
-(
-  NSSArena *arenaOpt,
-  PRUint32 size
-);
 
 
 
@@ -227,14 +206,9 @@ NSS_ZAlloc
 
 
 
+NSS_EXTERN void *NSS_ZRealloc(void *pointer, PRUint32 newSize);
 
 
-NSS_EXTERN void *
-NSS_ZRealloc
-(
-  void *pointer,
-  PRUint32 newSize
-);
 
 
 
@@ -252,14 +226,7 @@ NSS_ZRealloc
 
 
 
-
-
-
-NSS_EXTERN PRStatus
-NSS_ZFreeIf
-(
-  void *pointer
-);
+NSS_EXTERN PRStatus NSS_ZFreeIf(void *pointer);
 
 PR_END_EXTERN_C
 

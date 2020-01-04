@@ -23,49 +23,49 @@ struct NSSCertificateStr;
 struct NSSTrustDomainStr;
 
 
-typedef struct CERTAVAStr                        CERTAVA;
-typedef struct CERTAttributeStr                  CERTAttribute;
-typedef struct CERTAuthInfoAccessStr             CERTAuthInfoAccess;
-typedef struct CERTAuthKeyIDStr                  CERTAuthKeyID;
-typedef struct CERTBasicConstraintsStr           CERTBasicConstraints;
-typedef struct NSSTrustDomainStr                 CERTCertDBHandle;
-typedef struct CERTCertExtensionStr              CERTCertExtension;
-typedef struct CERTCertKeyStr                    CERTCertKey;
-typedef struct CERTCertListStr                   CERTCertList;
-typedef struct CERTCertListNodeStr               CERTCertListNode;
-typedef struct CERTCertNicknamesStr              CERTCertNicknames;
-typedef struct CERTCertTrustStr                  CERTCertTrust;
-typedef struct CERTCertificateStr                CERTCertificate;
-typedef struct CERTCertificateListStr            CERTCertificateList;
-typedef struct CERTCertificateRequestStr         CERTCertificateRequest;
-typedef struct CERTCrlStr                        CERTCrl;
-typedef struct CERTCrlDistributionPointsStr      CERTCrlDistributionPoints; 
-typedef struct CERTCrlEntryStr                   CERTCrlEntry;
-typedef struct CERTCrlHeadNodeStr                CERTCrlHeadNode;
-typedef struct CERTCrlKeyStr                     CERTCrlKey;
-typedef struct CERTCrlNodeStr                    CERTCrlNode;
-typedef struct CERTDERCertsStr                   CERTDERCerts;
-typedef struct CERTDistNamesStr                  CERTDistNames;
-typedef struct CERTGeneralNameStr                CERTGeneralName;
-typedef struct CERTGeneralNameListStr            CERTGeneralNameList;
-typedef struct CERTIssuerAndSNStr                CERTIssuerAndSN;
-typedef struct CERTNameStr                       CERTName;
-typedef struct CERTNameConstraintStr             CERTNameConstraint;
-typedef struct CERTNameConstraintsStr            CERTNameConstraints;
-typedef struct CERTOKDomainNameStr               CERTOKDomainName;
-typedef struct CERTPrivKeyUsagePeriodStr         CERTPrivKeyUsagePeriod;
-typedef struct CERTPublicKeyAndChallengeStr      CERTPublicKeyAndChallenge;
-typedef struct CERTRDNStr                        CERTRDN;
-typedef struct CERTSignedCrlStr                  CERTSignedCrl;
-typedef struct CERTSignedDataStr                 CERTSignedData;
-typedef struct CERTStatusConfigStr               CERTStatusConfig;
-typedef struct CERTSubjectListStr                CERTSubjectList;
-typedef struct CERTSubjectNodeStr                CERTSubjectNode;
-typedef struct CERTSubjectPublicKeyInfoStr       CERTSubjectPublicKeyInfo;
-typedef struct CERTValidityStr                   CERTValidity;
-typedef struct CERTVerifyLogStr                  CERTVerifyLog;
-typedef struct CERTVerifyLogNodeStr              CERTVerifyLogNode;
-typedef struct CRLDistributionPointStr           CRLDistributionPoint;
+typedef struct CERTAVAStr CERTAVA;
+typedef struct CERTAttributeStr CERTAttribute;
+typedef struct CERTAuthInfoAccessStr CERTAuthInfoAccess;
+typedef struct CERTAuthKeyIDStr CERTAuthKeyID;
+typedef struct CERTBasicConstraintsStr CERTBasicConstraints;
+typedef struct NSSTrustDomainStr CERTCertDBHandle;
+typedef struct CERTCertExtensionStr CERTCertExtension;
+typedef struct CERTCertKeyStr CERTCertKey;
+typedef struct CERTCertListStr CERTCertList;
+typedef struct CERTCertListNodeStr CERTCertListNode;
+typedef struct CERTCertNicknamesStr CERTCertNicknames;
+typedef struct CERTCertTrustStr CERTCertTrust;
+typedef struct CERTCertificateStr CERTCertificate;
+typedef struct CERTCertificateListStr CERTCertificateList;
+typedef struct CERTCertificateRequestStr CERTCertificateRequest;
+typedef struct CERTCrlStr CERTCrl;
+typedef struct CERTCrlDistributionPointsStr CERTCrlDistributionPoints;
+typedef struct CERTCrlEntryStr CERTCrlEntry;
+typedef struct CERTCrlHeadNodeStr CERTCrlHeadNode;
+typedef struct CERTCrlKeyStr CERTCrlKey;
+typedef struct CERTCrlNodeStr CERTCrlNode;
+typedef struct CERTDERCertsStr CERTDERCerts;
+typedef struct CERTDistNamesStr CERTDistNames;
+typedef struct CERTGeneralNameStr CERTGeneralName;
+typedef struct CERTGeneralNameListStr CERTGeneralNameList;
+typedef struct CERTIssuerAndSNStr CERTIssuerAndSN;
+typedef struct CERTNameStr CERTName;
+typedef struct CERTNameConstraintStr CERTNameConstraint;
+typedef struct CERTNameConstraintsStr CERTNameConstraints;
+typedef struct CERTOKDomainNameStr CERTOKDomainName;
+typedef struct CERTPrivKeyUsagePeriodStr CERTPrivKeyUsagePeriod;
+typedef struct CERTPublicKeyAndChallengeStr CERTPublicKeyAndChallenge;
+typedef struct CERTRDNStr CERTRDN;
+typedef struct CERTSignedCrlStr CERTSignedCrl;
+typedef struct CERTSignedDataStr CERTSignedData;
+typedef struct CERTStatusConfigStr CERTStatusConfig;
+typedef struct CERTSubjectListStr CERTSubjectList;
+typedef struct CERTSubjectNodeStr CERTSubjectNode;
+typedef struct CERTSubjectPublicKeyInfoStr CERTSubjectPublicKeyInfo;
+typedef struct CERTValidityStr CERTValidity;
+typedef struct CERTVerifyLogStr CERTVerifyLog;
+typedef struct CERTVerifyLogNodeStr CERTVerifyLogNode;
+typedef struct CRLDistributionPointStr CRLDistributionPoint;
 
 
 typedef unsigned long CERTCrlNumber;
@@ -150,10 +150,13 @@ typedef enum SECTrustTypeEnum {
     trustTypeNone = 3
 } SECTrustType;
 
-#define SEC_GET_TRUST_FLAGS(trust,type) \
-        (((type)==trustSSL)?((trust)->sslFlags): \
-	 (((type)==trustEmail)?((trust)->emailFlags): \
-	  (((type)==trustObjectSigning)?((trust)->objectSigningFlags):0)))
+#define SEC_GET_TRUST_FLAGS(trust, type)                                       \
+    (((type) == trustSSL)                                                      \
+         ? ((trust)->sslFlags)                                                 \
+         : (((type) == trustEmail) ? ((trust)->emailFlags)                     \
+                                   : (((type) == trustObjectSigning)           \
+                                          ? ((trust)->objectSigningFlags)      \
+                                          : 0)))
 
 
 
@@ -195,12 +198,12 @@ struct CERTCertificateStr {
     
     char *subjectName;
     char *issuerName;
-    CERTSignedData signatureWrap;	
-    SECItem derCert;			
-    SECItem derIssuer;			
-    SECItem derSubject;			
-    SECItem derPublicKey;		
-    SECItem certKey;			
+    CERTSignedData signatureWrap; 
+    SECItem derCert;              
+    SECItem derIssuer;            
+    SECItem derSubject;           
+    SECItem derPublicKey;         
+    SECItem certKey;              
     SECItem version;
     SECItem serialNumber;
     SECAlgorithmID signature;
@@ -213,21 +216,21 @@ struct CERTCertificateStr {
     CERTCertExtension **extensions;
     char *emailAddr;
     CERTCertDBHandle *dbhandle;
-    SECItem subjectKeyID;	
-    PRBool keyIDGenerated;	
-    unsigned int keyUsage;	
-    unsigned int rawKeyUsage;	
-    PRBool keyUsagePresent;	
-    PRUint32 nsCertType;	
-				
+    SECItem subjectKeyID;     
+    PRBool keyIDGenerated;    
+    unsigned int keyUsage;    
+    unsigned int rawKeyUsage; 
+    PRBool keyUsagePresent;   
+    PRUint32 nsCertType;      
+                              
 
     
 
 
 
-    PRBool keepSession;			
-    PRBool timeOK;			
-    CERTOKDomainName *domainOK;		
+    PRBool keepSession;         
+    PRBool timeOK;              
+    CERTOKDomainName *domainOK; 
 
     
 
@@ -238,7 +241,7 @@ struct CERTCertificateStr {
     PRBool istemp;
     char *nickname;
     char *dbnickname;
-    struct NSSCertificateStr *nssCertificate;	
+    struct NSSCertificateStr *nssCertificate; 
     CERTCertTrust *trust;
 
     
@@ -255,8 +258,8 @@ struct CERTCertificateStr {
     
 
 
-    CERTAuthKeyID * authKeyID;  
-    PRBool isRoot;              
+    CERTAuthKeyID *authKeyID; 
+    PRBool isRoot;            
 
     
 
@@ -264,33 +267,33 @@ struct CERTCertificateStr {
 
 
     union {
-        void* apointer; 
+        void *apointer; 
         struct {
-            unsigned int hasUnsupportedCriticalExt :1;
+            unsigned int hasUnsupportedCriticalExt : 1;
             
         } bits;
     } options;
     int series; 
 
     
-    PK11SlotInfo *slot;		
-    CK_OBJECT_HANDLE pkcs11ID;	
-    PRBool ownSlot;		
+    PK11SlotInfo *slot;        
+    CK_OBJECT_HANDLE pkcs11ID; 
+    PRBool ownSlot;            
 };
-#define SEC_CERTIFICATE_VERSION_1		0	/* default created */
-#define SEC_CERTIFICATE_VERSION_2		1	/* v2 */
-#define SEC_CERTIFICATE_VERSION_3		2	/* v3 extensions */
+#define SEC_CERTIFICATE_VERSION_1 0 /* default created */
+#define SEC_CERTIFICATE_VERSION_2 1 /* v2 */
+#define SEC_CERTIFICATE_VERSION_3 2 /* v3 extensions */
 
-#define SEC_CRL_VERSION_1		0	/* default */
-#define SEC_CRL_VERSION_2		1	/* v2 extensions */
-
-
+#define SEC_CRL_VERSION_1 0 /* default */
+#define SEC_CRL_VERSION_2 1 /* v2 extensions */
 
 
-#define SEC_CERT_CLASS_CA	1
-#define SEC_CERT_CLASS_SERVER	2
-#define SEC_CERT_CLASS_USER	3
-#define SEC_CERT_CLASS_EMAIL	4
+
+
+#define SEC_CERT_CLASS_CA 1
+#define SEC_CERT_CLASS_SERVER 2
+#define SEC_CERT_CLASS_USER 3
+#define SEC_CERT_CLASS_EMAIL 4
 
 struct CERTDERCertsStr {
     PLArenaPool *arena;
@@ -318,15 +321,14 @@ struct CERTCertificateRequestStr {
     CERTSubjectPublicKeyInfo subjectPublicKeyInfo;
     CERTAttribute **attributes;
 };
-#define SEC_CERTIFICATE_REQUEST_VERSION		0	/* what we *create* */
-
+#define SEC_CERTIFICATE_REQUEST_VERSION 0 /* what we *create* */
 
 
 
 
 struct CERTCertificateListStr {
     SECItem *certs;
-    int len;					
+    int len; 
     PLArenaPool *arena;
 };
 
@@ -344,13 +346,13 @@ struct CERTCertListStr {
 #define CERT_LIST_HEAD(l) ((CERTCertListNode *)PR_LIST_HEAD(&l->list))
 #define CERT_LIST_TAIL(l) ((CERTCertListNode *)PR_LIST_TAIL(&l->list))
 #define CERT_LIST_NEXT(n) ((CERTCertListNode *)n->links.next)
-#define CERT_LIST_END(n,l) (((void *)n) == ((void *)&l->list))
+#define CERT_LIST_END(n, l) (((void *)n) == ((void *)&l->list))
 #define CERT_LIST_EMPTY(l) CERT_LIST_END(CERT_LIST_HEAD(l), l)
 
 struct CERTCrlEntryStr {
     SECItem serialNumber;
     SECItem revocationDate;
-    CERTCertExtension **extensions;    
+    CERTCertExtension **extensions;
 };
 
 struct CERTCrlStr {
@@ -360,15 +362,15 @@ struct CERTCrlStr {
     SECItem derName;
     CERTName name;
     SECItem lastUpdate;
-    SECItem nextUpdate;				
+    SECItem nextUpdate; 
     CERTCrlEntry **entries;
-    CERTCertExtension **extensions;    
+    CERTCertExtension **extensions;
     
 };
 
 struct CERTCrlKeyStr {
     SECItem derName;
-    SECItem dummy;			
+    SECItem dummy; 
 
 
 
@@ -383,14 +385,13 @@ struct CERTSignedCrlStr {
     PRBool istemp;
     int referenceCount;
     CERTCertDBHandle *dbhandle;
-    CERTSignedData signatureWrap;	
+    CERTSignedData signatureWrap; 
     char *url;
     SECItem *derCrl;
     PK11SlotInfo *slot;
     CK_OBJECT_HANDLE pkcs11ID;
-    void* opaque; 
+    void *opaque; 
 };
-
 
 struct CERTCrlHeadNodeStr {
     PLArenaPool *arena;
@@ -399,13 +400,11 @@ struct CERTCrlHeadNodeStr {
     CERTCrlNode *last;
 };
 
-
 struct CERTCrlNodeStr {
     CERTCrlNode *next;
-    int 	type;
+    int type;
     CERTSignedCrl *crl;
 };
-
 
 
 
@@ -413,32 +412,29 @@ struct CERTCrlNodeStr {
 struct CERTDistNamesStr {
     PLArenaPool *arena;
     int nnames;
-    SECItem  *names;
+    SECItem *names;
     void *head; 
 };
 
+#define NS_CERT_TYPE_SSL_CLIENT (0x80)        /* bit 0 */
+#define NS_CERT_TYPE_SSL_SERVER (0x40)        /* bit 1 */
+#define NS_CERT_TYPE_EMAIL (0x20)             /* bit 2 */
+#define NS_CERT_TYPE_OBJECT_SIGNING (0x10)    /* bit 3 */
+#define NS_CERT_TYPE_RESERVED (0x08)          /* bit 4 */
+#define NS_CERT_TYPE_SSL_CA (0x04)            /* bit 5 */
+#define NS_CERT_TYPE_EMAIL_CA (0x02)          /* bit 6 */
+#define NS_CERT_TYPE_OBJECT_SIGNING_CA (0x01) /* bit 7 */
 
-#define NS_CERT_TYPE_SSL_CLIENT		(0x80)	/* bit 0 */
-#define NS_CERT_TYPE_SSL_SERVER		(0x40)  /* bit 1 */
-#define NS_CERT_TYPE_EMAIL		(0x20)  /* bit 2 */
-#define NS_CERT_TYPE_OBJECT_SIGNING	(0x10)  /* bit 3 */
-#define NS_CERT_TYPE_RESERVED		(0x08)  /* bit 4 */
-#define NS_CERT_TYPE_SSL_CA		(0x04)  /* bit 5 */
-#define NS_CERT_TYPE_EMAIL_CA		(0x02)  /* bit 6 */
-#define NS_CERT_TYPE_OBJECT_SIGNING_CA	(0x01)  /* bit 7 */
+#define EXT_KEY_USAGE_TIME_STAMP (0x8000)
+#define EXT_KEY_USAGE_STATUS_RESPONDER (0x4000)
 
-#define EXT_KEY_USAGE_TIME_STAMP        (0x8000)
-#define EXT_KEY_USAGE_STATUS_RESPONDER	(0x4000)
+#define NS_CERT_TYPE_APP                                                       \
+    (NS_CERT_TYPE_SSL_CLIENT | NS_CERT_TYPE_SSL_SERVER | NS_CERT_TYPE_EMAIL |  \
+     NS_CERT_TYPE_OBJECT_SIGNING)
 
-#define NS_CERT_TYPE_APP ( NS_CERT_TYPE_SSL_CLIENT | \
-			  NS_CERT_TYPE_SSL_SERVER | \
-			  NS_CERT_TYPE_EMAIL | \
-			  NS_CERT_TYPE_OBJECT_SIGNING )
-
-#define NS_CERT_TYPE_CA ( NS_CERT_TYPE_SSL_CA | \
-			 NS_CERT_TYPE_EMAIL_CA | \
-			 NS_CERT_TYPE_OBJECT_SIGNING_CA | \
-			 EXT_KEY_USAGE_STATUS_RESPONDER )
+#define NS_CERT_TYPE_CA                                                        \
+    (NS_CERT_TYPE_SSL_CA | NS_CERT_TYPE_EMAIL_CA |                             \
+     NS_CERT_TYPE_OBJECT_SIGNING_CA | EXT_KEY_USAGE_STATUS_RESPONDER)
 typedef enum SECCertUsageEnum {
     certUsageSSLClient = 0,
     certUsageSSLServer = 1,
@@ -456,19 +452,19 @@ typedef enum SECCertUsageEnum {
 
 typedef PRInt64 SECCertificateUsage;
 
-#define certificateUsageCheckAllUsages         (0x0000)
-#define certificateUsageSSLClient              (0x0001)
-#define certificateUsageSSLServer              (0x0002)
-#define certificateUsageSSLServerWithStepUp    (0x0004)
-#define certificateUsageSSLCA                  (0x0008)
-#define certificateUsageEmailSigner            (0x0010)
-#define certificateUsageEmailRecipient         (0x0020)
-#define certificateUsageObjectSigner           (0x0040)
-#define certificateUsageUserCertImport         (0x0080)
-#define certificateUsageVerifyCA               (0x0100)
-#define certificateUsageProtectedObjectSigner  (0x0200)
-#define certificateUsageStatusResponder        (0x0400)
-#define certificateUsageAnyCA                  (0x0800)
+#define certificateUsageCheckAllUsages (0x0000)
+#define certificateUsageSSLClient (0x0001)
+#define certificateUsageSSLServer (0x0002)
+#define certificateUsageSSLServerWithStepUp (0x0004)
+#define certificateUsageSSLCA (0x0008)
+#define certificateUsageEmailSigner (0x0010)
+#define certificateUsageEmailRecipient (0x0020)
+#define certificateUsageObjectSigner (0x0040)
+#define certificateUsageUserCertImport (0x0080)
+#define certificateUsageVerifyCA (0x0100)
+#define certificateUsageProtectedObjectSigner (0x0200)
+#define certificateUsageStatusResponder (0x0400)
+#define certificateUsageAnyCA (0x0800)
 
 #define certificateUsageHighest certificateUsageAnyCA
 
@@ -498,8 +494,7 @@ typedef enum SECCertTimeValidityEnum {
 
 
 
-typedef enum CERTCompareValidityStatusEnum
-{
+typedef enum CERTCompareValidityStatusEnum {
     certValidityUndetermined = 0, 
 
     certValidityChooseB = 1,      
@@ -512,10 +507,10 @@ typedef enum CERTCompareValidityStatusEnum
 
 
 
-#define SEC_CERT_NICKNAMES_ALL		1
-#define SEC_CERT_NICKNAMES_USER		2
-#define SEC_CERT_NICKNAMES_SERVER	3
-#define SEC_CERT_NICKNAMES_CA		4
+#define SEC_CERT_NICKNAMES_ALL 1
+#define SEC_CERT_NICKNAMES_USER 2
+#define SEC_CERT_NICKNAMES_SERVER 3
+#define SEC_CERT_NICKNAMES_CA 4
 
 struct CERTCertNicknamesStr {
     PLArenaPool *arena;
@@ -533,23 +528,18 @@ struct CERTIssuerAndSNStr {
 };
 
 
-
-#define KU_DIGITAL_SIGNATURE		(0x80)	/* bit 0 */
-#define KU_NON_REPUDIATION		(0x40)  /* bit 1 */
-#define KU_KEY_ENCIPHERMENT		(0x20)  /* bit 2 */
-#define KU_DATA_ENCIPHERMENT		(0x10)  /* bit 3 */
-#define KU_KEY_AGREEMENT		(0x08)  /* bit 4 */
-#define KU_KEY_CERT_SIGN		(0x04)  /* bit 5 */
-#define KU_CRL_SIGN			(0x02)  /* bit 6 */
-#define KU_ENCIPHER_ONLY		(0x01)  /* bit 7 */
-#define KU_ALL				(KU_DIGITAL_SIGNATURE | \
-					 KU_NON_REPUDIATION | \
-					 KU_KEY_ENCIPHERMENT | \
-					 KU_DATA_ENCIPHERMENT | \
-					 KU_KEY_AGREEMENT | \
-					 KU_KEY_CERT_SIGN | \
-					 KU_CRL_SIGN | \
-					 KU_ENCIPHER_ONLY)
+#define KU_DIGITAL_SIGNATURE (0x80) /* bit 0 */
+#define KU_NON_REPUDIATION (0x40)   /* bit 1 */
+#define KU_KEY_ENCIPHERMENT (0x20)  /* bit 2 */
+#define KU_DATA_ENCIPHERMENT (0x10) /* bit 3 */
+#define KU_KEY_AGREEMENT (0x08)     /* bit 4 */
+#define KU_KEY_CERT_SIGN (0x04)     /* bit 5 */
+#define KU_CRL_SIGN (0x02)          /* bit 6 */
+#define KU_ENCIPHER_ONLY (0x01)     /* bit 7 */
+#define KU_ALL                                                                 \
+    (KU_DIGITAL_SIGNATURE | KU_NON_REPUDIATION | KU_KEY_ENCIPHERMENT |         \
+     KU_DATA_ENCIPHERMENT | KU_KEY_AGREEMENT | KU_KEY_CERT_SIGN |              \
+     KU_CRL_SIGN | KU_ENCIPHER_ONLY)
 
 
 
@@ -565,7 +555,7 @@ struct CERTIssuerAndSNStr {
 
 
 
-#define KU_NS_GOVT_APPROVED		(0x8000) /*don't make part of KU_ALL!*/
+#define KU_NS_GOVT_APPROVED (0x8000) /*don't make part of KU_ALL!*/
 
 
 
@@ -578,8 +568,8 @@ struct CERTIssuerAndSNStr {
 #define CERT_UNLIMITED_PATH_CONSTRAINT -2
 
 struct CERTBasicConstraintsStr {
-    PRBool isCA;			
-    int pathLenConstraint;		
+    PRBool isCA;           
+    int pathLenConstraint; 
 
 
 
@@ -588,17 +578,17 @@ struct CERTBasicConstraintsStr {
 
 #define CERT_MAX_CERT_CHAIN 20
 
-#define CERT_MAX_SERIAL_NUMBER_BYTES  20    /* from RFC 3280 */
-#define CERT_MAX_DN_BYTES             4096  /* arbitrary */
+#define CERT_MAX_SERIAL_NUMBER_BYTES 20 /* from RFC 3280 */
+#define CERT_MAX_DN_BYTES 4096          /* arbitrary */
 
 
-#define RF_UNUSED			(0x80)	/* bit 0 */
-#define RF_KEY_COMPROMISE		(0x40)  /* bit 1 */
-#define RF_CA_COMPROMISE		(0x20)  /* bit 2 */
-#define RF_AFFILIATION_CHANGED		(0x10)  /* bit 3 */
-#define RF_SUPERSEDED			(0x08)  /* bit 4 */
-#define RF_CESSATION_OF_OPERATION	(0x04)  /* bit 5 */
-#define RF_CERTIFICATE_HOLD		(0x02)  /* bit 6 */
+#define RF_UNUSED (0x80)                 /* bit 0 */
+#define RF_KEY_COMPROMISE (0x40)         /* bit 1 */
+#define RF_CA_COMPROMISE (0x20)          /* bit 2 */
+#define RF_AFFILIATION_CHANGED (0x10)    /* bit 3 */
+#define RF_SUPERSEDED (0x08)             /* bit 4 */
+#define RF_CESSATION_OF_OPERATION (0x04) /* bit 5 */
+#define RF_CERTIFICATE_HOLD (0x02)       /* bit 6 */
 
 
 typedef enum CERTCRLEntryReasonCodeEnum {
@@ -628,22 +618,19 @@ typedef enum CERTGeneralNameTypeEnum {
     certRegisterID = 9
 } CERTGeneralNameType;
 
-
 typedef struct OtherNameStr {
-    SECItem          name;
-    SECItem          oid;
-}OtherName;
-
-
+    SECItem name;
+    SECItem oid;
+} OtherName;
 
 struct CERTGeneralNameStr {
-    CERTGeneralNameType type;		
+    CERTGeneralNameType type; 
     union {
-	CERTName directoryName;         
-	OtherName  OthName;		
-	SECItem other;                  
-    }name;
-    SECItem derDirectoryName;		
+        CERTName directoryName; 
+        OtherName OthName;      
+        SECItem other;          
+    } name;
+    SECItem derDirectoryName; 
 
     PRCList l;
 };
@@ -657,21 +644,19 @@ struct CERTGeneralNameListStr {
 };
 
 struct CERTNameConstraintStr {
-    CERTGeneralName  name;
-    SECItem          DERName;
-    SECItem          min;
-    SECItem          max;
-    PRCList          l;
+    CERTGeneralName name;
+    SECItem DERName;
+    SECItem min;
+    SECItem max;
+    PRCList l;
 };
-
 
 struct CERTNameConstraintsStr {
-    CERTNameConstraint  *permited;
-    CERTNameConstraint  *excluded;
-    SECItem             **DERPermited;
-    SECItem             **DERExcluded;
+    CERTNameConstraint *permited;
+    CERTNameConstraint *excluded;
+    SECItem **DERPermited;
+    SECItem **DERExcluded;
 };
-
 
 
 struct CERTPrivKeyUsagePeriodStr {
@@ -684,10 +669,10 @@ struct CERTPrivKeyUsagePeriodStr {
 
 
 struct CERTAuthKeyIDStr {
-    SECItem keyID;			
-    CERTGeneralName *authCertIssuer;	
-    SECItem authCertSerialNumber;	
-    SECItem **DERAuthCertIssuer;	
+    SECItem keyID;                   
+    CERTGeneralName *authCertIssuer; 
+    SECItem authCertSerialNumber;    
+    SECItem **DERAuthCertIssuer;     
 
 
 
@@ -700,19 +685,19 @@ struct CERTAuthKeyIDStr {
 
 
 typedef enum DistributionPointTypesEnum {
-    generalName = 1,			
+    generalName = 1, 
     relativeDistinguishedName = 2
 } DistributionPointTypes;
 
 struct CRLDistributionPointStr {
     DistributionPointTypes distPointType;
     union {
-	CERTGeneralName *fullName;
-	CERTRDN relativeName;
+        CERTGeneralName *fullName;
+        CERTRDN relativeName;
     } distPoint;
     SECItem reasons;
     CERTGeneralName *crlIssuer;
-    
+
     
     SECItem derDistPoint;
     SECItem derRelativeName;
@@ -731,14 +716,13 @@ struct CERTCrlDistributionPointsStr {
 
 
 struct CERTVerifyLogNodeStr {
-    CERTCertificate *cert;	
-    long error;			
-    unsigned int depth;		
-    void *arg;			
+    CERTCertificate *cert;             
+    long error;                        
+    unsigned int depth;                
+    void *arg;                         
     struct CERTVerifyLogNodeStr *next; 
     struct CERTVerifyLogNodeStr *prev; 
 };
-
 
 struct CERTVerifyLogStr {
     PLArenaPool *arena;
@@ -747,36 +731,32 @@ struct CERTVerifyLogStr {
     struct CERTVerifyLogNodeStr *tail;
 };
 
-
 struct CERTOKDomainNameStr {
     CERTOKDomainName *next;
-    char              name[1]; 
+    char name[1]; 
 };
 
+typedef SECStatus(PR_CALLBACK *CERTStatusChecker)(CERTCertDBHandle *handle,
+                                                  CERTCertificate *cert,
+                                                  PRTime time, void *pwArg);
 
-typedef SECStatus (PR_CALLBACK *CERTStatusChecker) (CERTCertDBHandle *handle,
-						    CERTCertificate *cert,
-						    PRTime time,
-						    void *pwArg);
-
-typedef SECStatus (PR_CALLBACK *CERTStatusDestroy) (CERTStatusConfig *handle);
+typedef SECStatus(PR_CALLBACK *CERTStatusDestroy)(CERTStatusConfig *handle);
 
 struct CERTStatusConfigStr {
-    CERTStatusChecker statusChecker;	
-    CERTStatusDestroy statusDestroy;	
-    void *statusContext;		
+    CERTStatusChecker statusChecker; 
+    CERTStatusDestroy statusDestroy; 
+    void *statusContext;             
 };
 
 struct CERTAuthInfoAccessStr {
     SECItem method;
     SECItem derLocation;
-    CERTGeneralName *location;		
+    CERTGeneralName *location; 
 };
 
 
 
-
-typedef char * (*CERTDBNameFunc)(void *arg, int dbVersion);
+typedef char *(*CERTDBNameFunc)(void *arg, int dbVersion);
 
 
 
@@ -875,10 +855,8 @@ typedef struct {
 
 
 
-typedef SECStatus (*CERTChainVerifyCallbackFunc)
-                                             (void *isChainValidArg,
-                                              const CERTCertList *currentChain,
-                                              PRBool *chainOK);
+typedef SECStatus (*CERTChainVerifyCallbackFunc)(
+    void *isChainValidArg, const CERTCertList *currentChain, PRBool *chainOK);
 
 
 
@@ -895,76 +873,59 @@ typedef struct {
 
 
 typedef enum {
-   cert_pi_end             = 0, 
+    cert_pi_end = 0,         
 
-   cert_pi_nbioContext     = 1, 
-
-
-
-
-
-   cert_pi_nbioAbort       = 2, 
+    cert_pi_nbioContext = 1, 
 
 
 
 
 
-
-   cert_pi_certList        = 3, 
-
-
-
-   cert_pi_policyOID       = 4, 
-
-
-
-
-   cert_pi_policyFlags     = 5, 
-
-
-
-
-   cert_pi_keyusage        = 6, 
+    cert_pi_nbioAbort = 2,   
 
 
 
 
 
 
-   cert_pi_extendedKeyusage= 7, 
+    cert_pi_certList = 3,    
+
+
+
+    cert_pi_policyOID = 4,   
+
+
+
+
+    cert_pi_policyFlags = 5, 
+
+
+
+
+    cert_pi_keyusage = 6,    
 
 
 
 
 
 
-   cert_pi_date            = 8, 
-
-
-   cert_pi_revocationFlags = 9, 
-
-
-   cert_pi_certStores      = 10,
-
-   cert_pi_trustAnchors    = 11,
+    cert_pi_extendedKeyusage = 7, 
 
 
 
 
 
 
+    cert_pi_date = 8,             
 
 
+    cert_pi_revocationFlags = 9,  
 
 
-   cert_pi_useAIACertFetch = 12, 
+    cert_pi_certStores = 10,      
 
-
-   cert_pi_chainVerifyCallback = 13,
-                                
-
-
-   cert_pi_useOnlyTrustAnchors = 14,
+    cert_pi_trustAnchors =
+        11,                       
 
 
 
@@ -974,7 +935,28 @@ typedef enum {
 
 
 
-   cert_pi_max                  
+
+
+
+    cert_pi_useAIACertFetch = 12, 
+
+
+    cert_pi_chainVerifyCallback = 13,
+    
+
+
+    cert_pi_useOnlyTrustAnchors = 14,
+        
+
+
+
+
+
+
+
+
+
+    cert_pi_max 
 
 } CERTValParamInType;
 
@@ -987,38 +969,38 @@ typedef enum {
 
 
 typedef enum {
-   cert_po_end             = 0, 
+    cert_po_end = 0,              
 
-   cert_po_nbioContext     = 1, 
-
-
+    cert_po_nbioContext = 1,      
 
 
 
 
-   cert_po_trustAnchor     = 2, 
+
+
+    cert_po_trustAnchor = 2,      
 
 
 
-   cert_po_certList        = 3, 
+    cert_po_certList = 3,         
 
 
 
-   cert_po_policyOID       = 4, 
+    cert_po_policyOID = 4,        
 
 
 
-   cert_po_errorLog        = 5, 
+    cert_po_errorLog = 5,         
 
-   cert_po_usages          = 6, 
+    cert_po_usages = 6,           
 
-   cert_po_keyUsage        = 7, 
-
-
-   cert_po_extendedKeyusage= 8, 
+    cert_po_keyUsage = 7,         
 
 
-   cert_po_max                  
+    cert_po_extendedKeyusage = 8, 
+
+
+    cert_po_max                   
 
 
 } CERTValParamOutType;
@@ -1041,18 +1023,8 @@ typedef enum {
 
 
 
-
-#define CERT_REV_M_DO_NOT_TEST_USING_THIS_METHOD     0UL
-#define CERT_REV_M_TEST_USING_THIS_METHOD            1UL
-
-
-
-
-
-
-
-#define CERT_REV_M_ALLOW_NETWORK_FETCHING            0UL
-#define CERT_REV_M_FORBID_NETWORK_FETCHING           2UL
+#define CERT_REV_M_DO_NOT_TEST_USING_THIS_METHOD 0UL
+#define CERT_REV_M_TEST_USING_THIS_METHOD 1UL
 
 
 
@@ -1060,14 +1032,8 @@ typedef enum {
 
 
 
-
-
-
-
-
- 
-#define CERT_REV_M_ALLOW_IMPLICIT_DEFAULT_SOURCE     0UL
-#define CERT_REV_M_IGNORE_IMPLICIT_DEFAULT_SOURCE    4UL
+#define CERT_REV_M_ALLOW_NETWORK_FETCHING 0UL
+#define CERT_REV_M_FORBID_NETWORK_FETCHING 2UL
 
 
 
@@ -1081,18 +1047,8 @@ typedef enum {
 
 
 
-#define CERT_REV_M_SKIP_TEST_ON_MISSING_SOURCE       0UL
-#define CERT_REV_M_REQUIRE_INFO_ON_MISSING_SOURCE    8UL
-
-
-
-
-
-
-
-
-#define CERT_REV_M_IGNORE_MISSING_FRESH_INFO         0UL
-#define CERT_REV_M_FAIL_ON_MISSING_FRESH_INFO        16UL
+#define CERT_REV_M_ALLOW_IMPLICIT_DEFAULT_SOURCE 0UL
+#define CERT_REV_M_IGNORE_IMPLICIT_DEFAULT_SOURCE 4UL
 
 
 
@@ -1104,8 +1060,33 @@ typedef enum {
 
 
 
-#define CERT_REV_M_STOP_TESTING_ON_FRESH_INFO        0UL
-#define CERT_REV_M_CONTINUE_TESTING_ON_FRESH_INFO    32UL
+
+
+#define CERT_REV_M_SKIP_TEST_ON_MISSING_SOURCE 0UL
+#define CERT_REV_M_REQUIRE_INFO_ON_MISSING_SOURCE 8UL
+
+
+
+
+
+
+
+
+#define CERT_REV_M_IGNORE_MISSING_FRESH_INFO 0UL
+#define CERT_REV_M_FAIL_ON_MISSING_FRESH_INFO 16UL
+
+
+
+
+
+
+
+
+
+
+
+#define CERT_REV_M_STOP_TESTING_ON_FRESH_INFO 0UL
+#define CERT_REV_M_CONTINUE_TESTING_ON_FRESH_INFO 32UL
 
 
 
@@ -1131,8 +1112,8 @@ typedef enum {
 
 
 
-#define CERT_REV_MI_TEST_EACH_METHOD_SEPARATELY       0UL
-#define CERT_REV_MI_TEST_ALL_LOCAL_INFORMATION_FIRST  1UL
+#define CERT_REV_MI_TEST_EACH_METHOD_SEPARATELY 0UL
+#define CERT_REV_MI_TEST_ALL_LOCAL_INFORMATION_FIRST 1UL
 
 
 
@@ -1147,9 +1128,8 @@ typedef enum {
 
 
 
-#define CERT_REV_MI_NO_OVERALL_INFO_REQUIREMENT       0UL
+#define CERT_REV_MI_NO_OVERALL_INFO_REQUIREMENT 0UL
 #define CERT_REV_MI_REQUIRE_SOME_FRESH_INFO_AVAILABLE 2UL
-
 
 typedef struct {
     
@@ -1171,7 +1151,7 @@ typedef struct {
 
 
 
- 
+
     PRUint64 *cert_rev_flags_per_method;
 
     
@@ -1207,50 +1187,49 @@ typedef struct {
 
 typedef struct CERTValParamInValueStr {
     union {
-        PRBool   b;
-        PRInt32  i;
+        PRBool b;
+        PRInt32 i;
         PRUint32 ui;
-        PRInt64  l;
+        PRInt64 l;
         PRUint64 ul;
         PRTime time;
     } scalar;
     union {
-        const void*    p;
-        const char*    s;
-        const CERTCertificate* cert;
+        const void *p;
+        const char *s;
+        const CERTCertificate *cert;
         const CERTCertList *chain;
         const CERTRevocationFlags *revocation;
         const CERTChainVerifyCallback *chainVerifyCallback;
     } pointer;
     union {
-        const PRInt32  *pi;
+        const PRInt32 *pi;
         const PRUint32 *pui;
-        const PRInt64  *pl;
+        const PRInt64 *pl;
         const PRUint64 *pul;
         const SECOidTag *oids;
     } array;
     int arraySize;
 } CERTValParamInValue;
 
-
 typedef struct CERTValParamOutValueStr {
     union {
-        PRBool   b;
-        PRInt32  i;
+        PRBool b;
+        PRInt32 i;
         PRUint32 ui;
-        PRInt64  l;
+        PRInt64 l;
         PRUint64 ul;
         SECCertificateUsage usages;
     } scalar;
     union {
-        void*    p;
-        char*    s;
+        void *p;
+        char *s;
         CERTVerifyLog *log;
-        CERTCertificate* cert;
+        CERTCertificate *cert;
         CERTCertList *chain;
     } pointer;
     union {
-        void 	  *p;
+        void *p;
         SECOidTag *oids;
     } array;
     int arraySize;
@@ -1270,34 +1249,34 @@ typedef struct {
 
 
 typedef enum CertStrictnessLevels {
-    CERT_N2A_READABLE   =  0, 
-    CERT_N2A_STRICT     = 10, 
-    CERT_N2A_INVERTIBLE = 20  
+    CERT_N2A_READABLE = 0,   
+    CERT_N2A_STRICT = 10,    
+    CERT_N2A_INVERTIBLE = 20 
 
 } CertStrictnessLevel;
 
 
 
 
-#define CERT_POLICY_FLAG_NO_MAPPING    1
-#define CERT_POLICY_FLAG_EXPLICIT      2
-#define CERT_POLICY_FLAG_NO_ANY        4
+#define CERT_POLICY_FLAG_NO_MAPPING 1
+#define CERT_POLICY_FLAG_EXPLICIT 2
+#define CERT_POLICY_FLAG_NO_ANY 4
 
 
 
 
-#define CERT_ENABLE_LDAP_FETCH          1
-#define CERT_ENABLE_HTTP_FETCH          2
+#define CERT_ENABLE_LDAP_FETCH 1
+#define CERT_ENABLE_HTTP_FETCH 2
 
 
 
 
 
-typedef char * (*CERT_StringFromCertFcn)(CERTCertificate *cert);
+typedef char *(*CERT_StringFromCertFcn)(CERTCertificate *cert);
 
 
 
-#include "secasn1t.h"	
+#include "secasn1t.h" 
 
 
 SEC_BEGIN_PROTOS

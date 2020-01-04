@@ -87,6 +87,19 @@ static PRInt32 ssl3_ClientSendSigAlgsXtn(sslSocket *ss, PRBool append,
 static SECStatus ssl3_ServerHandleSigAlgsXtn(sslSocket *ss, PRUint16 ex_type,
                                              SECItem *data);
 
+static PRInt32 ssl3_ClientSendSignedCertTimestampXtn(sslSocket *ss,
+                                                     PRBool append,
+                                                     PRUint32 maxBytes);
+static SECStatus ssl3_ClientHandleSignedCertTimestampXtn(sslSocket *ss,
+                                                         PRUint16 ex_type,
+                                                         SECItem *data);
+static PRInt32 ssl3_ServerSendSignedCertTimestampXtn(sslSocket * ss,
+                                                     PRBool append,
+                                                     PRUint32 maxBytes);
+static SECStatus ssl3_ServerHandleSignedCertTimestampXtn(sslSocket *ss,
+                                                         PRUint16 ex_type,
+                                                         SECItem *data);
+
 static PRInt32 ssl3_ClientSendDraftVersionXtn(sslSocket *ss, PRBool append,
                                               PRUint32 maxBytes);
 static SECStatus ssl3_ServerHandleDraftVersionXtn(sslSocket *ss, PRUint16 ex_type,
@@ -263,6 +276,7 @@ static const ssl3HelloExtensionHandler clientHelloHandlers[] = {
     { ssl_signature_algorithms_xtn, &ssl3_ServerHandleSigAlgsXtn },
     { ssl_tls13_draft_version_xtn, &ssl3_ServerHandleDraftVersionXtn },
     { ssl_extended_master_secret_xtn, &ssl3_HandleExtendedMasterSecretXtn },
+    { ssl_signed_cert_timestamp_xtn, &ssl3_ServerHandleSignedCertTimestampXtn },
     { -1, NULL }
 };
 
@@ -278,6 +292,7 @@ static const ssl3HelloExtensionHandler serverHelloHandlersTLS[] = {
     { ssl_use_srtp_xtn,           &ssl3_ClientHandleUseSRTPXtn },
     { ssl_cert_status_xtn,        &ssl3_ClientHandleStatusRequestXtn },
     { ssl_extended_master_secret_xtn, &ssl3_HandleExtendedMasterSecretXtn },
+    { ssl_signed_cert_timestamp_xtn, &ssl3_ClientHandleSignedCertTimestampXtn },
     { -1, NULL }
 };
 
@@ -308,6 +323,7 @@ ssl3HelloExtensionSender clientHelloSendersTLS[SSL_MAX_EXTENSIONS] = {
     { ssl_signature_algorithms_xtn, &ssl3_ClientSendSigAlgsXtn },
     { ssl_tls13_draft_version_xtn, &ssl3_ClientSendDraftVersionXtn },
     { ssl_extended_master_secret_xtn,       &ssl3_SendExtendedMasterSecretXtn},
+    { ssl_signed_cert_timestamp_xtn, &ssl3_ClientSendSignedCertTimestampXtn },
     
 };
 
@@ -966,23 +982,24 @@ ssl3_ServerSendStatusRequestXtn(
                         PRUint32    maxBytes)
 {
     PRInt32 extension_length;
+    SSLKEAType effectiveExchKeyType;
     SECStatus rv;
-    int i;
-    PRBool haveStatus = PR_FALSE;
 
-    for (i = kt_null; i < kt_kea_size; i++) {
-        
+    
 
 
 
-
-        if (ss->certStatusArray[i] && ss->certStatusArray[i]->len) {
-            haveStatus = PR_TRUE;
-            break;
-        }
+    if (ss->ssl3.hs.kea_def->kea == kea_ecdhe_rsa ||
+        ss->ssl3.hs.kea_def->kea == kea_dhe_rsa) {
+        effectiveExchKeyType = ssl_kea_rsa;
+    } else {
+        effectiveExchKeyType = ss->ssl3.hs.kea_def->exchKeyType;
     }
-    if (!haveStatus)
+
+    if (!ss->certStatusArray[effectiveExchKeyType] ||
+        !ss->certStatusArray[effectiveExchKeyType]->len) {
         return 0;
+    }
 
     extension_length = 2 + 2;
     if (maxBytes < (PRUint32)extension_length) {
@@ -997,6 +1014,7 @@ ssl3_ServerSendStatusRequestXtn(
         rv = ssl3_AppendHandshakeNumber(ss, 0, 2);
         if (rv != SECSuccess)
             return -1;
+        
     }
 
     return extension_length;
@@ -1077,7 +1095,7 @@ ssl3_SendNewSessionTicket(sslSocket *ss)
     SSL3KEAType          effectiveExchKeyType = ssl_kea_null;
     PRUint32             padding_length;
     PRUint32             message_length;
-    PRUint32             cert_length;
+    PRUint32             cert_length = 0;
     PRUint8              length_buf[4];
     PRUint32             now;
     PK11SymKey          *aes_key_pkcs11;
@@ -1113,8 +1131,9 @@ ssl3_SendNewSessionTicket(sslSocket *ss)
     PORT_Assert( ss->opt.noLocks || ssl_HaveSSL3HandshakeLock(ss));
 
     ticket.ticket_lifetime_hint = TLS_EX_SESS_TICKET_LIFETIME_HINT;
-    cert_length = (ss->opt.requestCertificate && ss->sec.ci.sid->peerCert) ?
-        3 + ss->sec.ci.sid->peerCert->derCert.len : 0;
+    if (ss->opt.requestCertificate && ss->sec.ci.sid->peerCert) {
+        cert_length = 3 + ss->sec.ci.sid->peerCert->derCert.len;
+    }
 
     
     ivItem.data = iv;
@@ -2010,8 +2029,11 @@ ssl3_CallHelloExtensionSenders(sslSocket *ss, PRBool append, PRUint32 maxBytes,
     int i;
 
     if (!sender) {
-        sender = ss->version > SSL_LIBRARY_VERSION_3_0 ?
-                 &clientHelloSendersTLS[0] : &clientHelloSendersSSL3[0];
+        if (ss->version > SSL_LIBRARY_VERSION_3_0) {
+            sender = &clientHelloSendersTLS[0];
+        } else {
+            sender = &clientHelloSendersSSL3[0];
+        }
     }
 
     for (i = 0; i < SSL_MAX_EXTENSIONS; ++i, ++sender) {
@@ -2040,7 +2062,8 @@ ssl3_SendRenegotiationInfoXtn(
                         PRBool      append,
                         PRUint32    maxBytes)
 {
-    PRInt32 len, needed;
+    PRInt32 len = 0;
+    PRInt32 needed;
 
     
 
@@ -2048,9 +2071,10 @@ ssl3_SendRenegotiationInfoXtn(
 
     if (!ss || ss->ssl3.hs.sendingSCSV)
         return 0;
-    len = !ss->firstHsDone ? 0 :
-           (ss->sec.isServer ? ss->ssl3.hs.finishedBytes * 2
-                             : ss->ssl3.hs.finishedBytes);
+    if (ss->firstHsDone) {
+        len = ss->sec.isServer ? ss->ssl3.hs.finishedBytes * 2
+                               : ss->ssl3.hs.finishedBytes;
+    }
     needed = 5 + len;
     if (maxBytes < (PRUint32)needed) {
         return 0;
@@ -2681,4 +2705,126 @@ ssl3_HandleExtendedMasterSecretXtn(sslSocket * ss, PRUint16 ex_type,
             ss, ex_type, ssl3_SendExtendedMasterSecretXtn);
     }
     return SECSuccess;
+}
+
+
+
+
+static PRInt32
+ssl3_ClientSendSignedCertTimestampXtn(sslSocket *ss, PRBool append,
+                                      PRUint32 maxBytes)
+{
+    PRInt32 extension_length = 2  +
+                               2 ;
+
+    
+    if (!ss->opt.enableSignedCertTimestamps)
+        return 0;
+
+    if (append && maxBytes >= extension_length) {
+        SECStatus rv;
+        
+        rv = ssl3_AppendHandshakeNumber(ss,
+                                        ssl_signed_cert_timestamp_xtn,
+                                        2);
+        if (rv != SECSuccess)
+            goto loser;
+        
+        rv = ssl3_AppendHandshakeNumber(ss, 0, 2);
+        if (rv != SECSuccess)
+            goto loser;
+        ss->xtnData.advertised[ss->xtnData.numAdvertised++] =
+            ssl_signed_cert_timestamp_xtn;
+    } else if (maxBytes < extension_length) {
+        PORT_Assert(0);
+        return 0;
+    }
+
+    return extension_length;
+loser:
+    return -1;
+}
+
+static SECStatus
+ssl3_ClientHandleSignedCertTimestampXtn(sslSocket *ss, PRUint16 ex_type,
+                                        SECItem *data)
+{
+    
+
+
+
+
+
+
+
+    SECItem *scts = &ss->xtnData.signedCertTimestamps;
+    PORT_Assert(!scts->data && !scts->len);
+
+    if (!data->len) {
+        
+        return SECFailure;
+    }
+    *scts = *data;
+    
+    ss->xtnData.negotiated[ss->xtnData.numNegotiated++] = ex_type;
+    return SECSuccess;
+}
+
+static PRInt32
+ssl3_ServerSendSignedCertTimestampXtn(sslSocket * ss,
+                                      PRBool append,
+                                      PRUint32 maxBytes)
+{
+    PRInt32 extension_length;
+    SSLKEAType effectiveExchKeyType;
+    const SECItem *scts;
+
+    if (ss->ssl3.hs.kea_def->kea == kea_ecdhe_rsa ||
+        ss->ssl3.hs.kea_def->kea == kea_dhe_rsa) {
+        effectiveExchKeyType = ssl_kea_rsa;
+    } else {
+        effectiveExchKeyType = ss->ssl3.hs.kea_def->exchKeyType;
+    }
+
+    scts = &ss->signedCertTimestamps[effectiveExchKeyType];
+
+    if (!scts->len) {
+        
+        return 0;
+    }
+
+    extension_length = 2  +
+                       2  +
+                       scts->len;
+
+    if (maxBytes < extension_length) {
+        PORT_Assert(0);
+        return 0;
+    }
+    if (append) {
+        SECStatus rv;
+        
+        rv = ssl3_AppendHandshakeNumber(ss,
+                                        ssl_signed_cert_timestamp_xtn,
+                                        2);
+        if (rv != SECSuccess) goto loser;
+        
+        rv = ssl3_AppendHandshakeVariable(ss, scts->data, scts->len, 2);
+        if (rv != SECSuccess) goto loser;
+    }
+
+    return extension_length;
+
+loser:
+    return -1;
+}
+
+static SECStatus
+ssl3_ServerHandleSignedCertTimestampXtn(sslSocket *ss, PRUint16 ex_type,
+                                        SECItem *data)
+{
+    ss->xtnData.negotiated[ss->xtnData.numNegotiated++] = ex_type;
+    PORT_Assert(ss->sec.isServer);
+    return ssl3_RegisterServerHelloExtensionSender(ss, ex_type,
+        ssl3_ServerSendSignedCertTimestampXtn);
 }

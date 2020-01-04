@@ -38,12 +38,6 @@
 
 typedef SSLKEAType      SSL3KEAType;
 typedef SSLMACAlgorithm SSL3MACAlgorithm;
-typedef SSLSignType     SSL3SignType;
-
-#define sign_null	ssl_sign_null
-#define sign_rsa	ssl_sign_rsa
-#define sign_dsa	ssl_sign_dsa
-#define sign_ecdsa	ssl_sign_ecdsa
 
 #define calg_null	ssl_calg_null
 #define calg_rc4	ssl_calg_rc4
@@ -338,6 +332,7 @@ typedef struct sslOptionsStr {
     unsigned int enableFallbackSCSV     : 1;  
     unsigned int enableServerDhe        : 1;  
     unsigned int enableExtendedMS       : 1;  
+    unsigned int enableSignedCertTimestamps : 1;  
 } sslOptions;
 
 typedef enum { sslHandshakingUndetermined = 0,
@@ -497,9 +492,9 @@ typedef PRUint16 DTLSEpoch;
 
 typedef void (*DTLSTimerCb)(sslSocket *);
 
-#define MAX_MAC_CONTEXT_BYTES 400  /* 400 is large enough for MD5, SHA-1, and
-                                    * SHA-256. For SHA-384 support, increase
-                                    * it to 712. */
+
+
+#define MAX_MAC_CONTEXT_BYTES 400
 #define MAX_MAC_CONTEXT_LLONGS (MAX_MAC_CONTEXT_BYTES / 8)
 
 #define MAX_CIPHER_CONTEXT_BYTES 2080
@@ -704,6 +699,11 @@ struct sslSessionIDStr {
 	    
 
 
+	    SECItem	      signedCertTimestamps;
+
+	    
+
+
 
 	    PRRWLock *lock;
 
@@ -735,7 +735,7 @@ typedef struct ssl3CipherSuiteDefStr {
 typedef struct {
     SSL3KeyExchangeAlgorithm kea;
     SSL3KEAType              exchKeyType;
-    SSL3SignType             signKeyType;
+    SSLSignType signKeyType;
     
 
 
@@ -745,6 +745,8 @@ typedef struct {
     
 
     PRBool                   ephemeral;
+    
+    SECOidTag                oid;
 } ssl3KEADef;
 
 
@@ -760,6 +762,7 @@ struct ssl3BulkCipherDefStr {
     int             block_size;
     int             tag_size;  
     int             explicit_nonce_size;               
+    SECOidTag       oid;
 };
 
 
@@ -770,6 +773,7 @@ struct ssl3MACDefStr {
     CK_MECHANISM_TYPE mmech;
     int              pad_size;
     int              mac_size;
+    SECOidTag        oid;
 };
 
 typedef enum {
@@ -815,6 +819,18 @@ struct TLSExtensionDataStr {
 
     SECItem *sniNameArr;
     PRUint32 sniNameArrSize;
+
+    
+
+
+
+
+
+
+
+
+
+    SECItem signedCertTimestamps;
 };
 
 typedef SECStatus (*sslRestartTarget)(sslSocket *);
@@ -1011,8 +1027,9 @@ struct ssl3StateStr {
     unsigned int signatureAlgorithmCount;
 };
 
-#define DTLS_MAX_MTU  1500U     /* Ethernet MTU but without subtracting the
-				 * headers, so slightly larger than expected */
+
+
+#define DTLS_MAX_MTU  1500U
 #define IS_DTLS(ss) (ss->protocolVariant == ssl_variant_datagram)
 
 typedef struct {
@@ -1314,6 +1331,11 @@ const unsigned char *  preferredCipher;
     sslServerCerts        serverCerts[kt_kea_size];
     
     SECItemArray *        certStatusArray[kt_kea_size];
+    
+
+
+
+    SECItem               signedCertTimestamps[kt_kea_size];
 
     ssl3CipherSuiteCfg cipherSuites[ssl_V3_SUITES_IMPLEMENTED];
     ssl3KeyPair *         ephemeralECDHKeyPair; 
@@ -1459,6 +1481,13 @@ extern void      ssl3_SetAlwaysBlock(sslSocket *ss);
 extern SECStatus ssl_EnableNagleDelay(sslSocket *ss, PRBool enabled);
 
 extern void      ssl_FinishHandshake(sslSocket *ss);
+
+extern SECStatus ssl_CipherPolicySet(PRInt32 which, PRInt32 policy);
+
+extern SECStatus ssl_CipherPrefSetDefault(PRInt32 which, PRBool enabled);
+
+extern SECStatus ssl3_ConstrainRangeByPolicy(void);
+
 
 
 
@@ -1648,11 +1677,13 @@ extern PRUint32  ssl3_GetSupportedECCurveMask(sslSocket *ss);
 
 
 
+
 #define SSL_RSASTRENGTH_TO_ECSTRENGTH(s) \
         ((s <= 1024) ? 160 \
 	  : ((s <= 2048) ? 224 \
 	    : ((s <= 3072) ? 256 \
 	      : ((s <= 7168) ? 384 : 521 ) ) ) )
+
 
 
 typedef enum { ec_type_explicitPrime      = 1,
@@ -1945,6 +1976,8 @@ extern void SSL_AtomicIncrementLong(long * x);
 SECStatus SSL_DisableDefaultExportCipherSuites(void);
 SECStatus SSL_DisableExportCipherSuites(PRFileDesc * fd);
 PRBool    SSL_IsExportCipherSuite(PRUint16 cipherSuite);
+
+SECStatus ssl3_ApplyNSSPolicy(void);
 
 extern SECStatus
 ssl3_TLSPRFWithMasterSecret(ssl3CipherSpec *spec,

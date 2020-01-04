@@ -747,8 +747,7 @@ RSA_PopulatePrivateKey(RSAPrivateKey *key)
     }
     
     if ((prime_count == 1) && (hasModulus)) {
-	mp_div(&n,&p,&q,&r);
-	if (mp_cmp_z(&r) != 0) {
+	if (mp_div(&n,&p,&q,&r) != MP_OKAY || mp_cmp_z(&r) != 0) {
 	   
 	   err = MP_BADARG;
 	   goto cleanup;
@@ -1096,9 +1095,7 @@ init_blinding_params(RSABlindingParams *rsabp, RSAPrivateKey *key,
     rsabp->free = bp;
 
     
-    SECITEM_CopyItem(NULL, &rsabp->modulus, &key->modulus);
-
-    return SECSuccess;
+    return SECITEM_CopyItem(NULL, &rsabp->modulus, &key->modulus);
 }
 
 static SECStatus

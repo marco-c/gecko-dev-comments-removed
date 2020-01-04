@@ -830,8 +830,10 @@ fill_CERTCertificateFields(NSSCertificate *c, CERTCertificate *cc, PRBool forced
             cc->trust = trust;
             CERT_UnlockCertTrust(cc);
         }
-	nssCryptokiObject_Destroy(instance);
     } 
+    if (instance) {
+	nssCryptokiObject_Destroy(instance);
+    }
     
     cc->dbhandle = c->object.trustDomain;
     

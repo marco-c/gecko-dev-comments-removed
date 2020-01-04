@@ -204,6 +204,8 @@ SSL_IMPORT PRFileDesc *DTLS_ImportFD(PRFileDesc *model, PRFileDesc *fd);
 #define SSL_ENABLE_EXTENDED_MASTER_SECRET 30
 
 
+#define SSL_ENABLE_SIGNED_CERT_TIMESTAMPS 31
+
 #ifdef SSL_DEPRECATED_FUNCTION 
 
 SSL_IMPORT SECStatus SSL_Enable(PRFileDesc *fd, int option, PRBool on);
@@ -566,9 +568,38 @@ SSL_IMPORT const SECItemArray * SSL_PeerStapledOCSPResponses(PRFileDesc *fd);
 
 
 
+
+
+
+
+
+
+
+
+
+SSL_IMPORT const SECItem * SSL_PeerSignedCertTimestamps(PRFileDesc *fd);
+
+
+
+
+
+
+
 SSL_IMPORT SECStatus
 SSL_SetStapledOCSPResponses(PRFileDesc *fd, const SECItemArray *responses,
 			    SSLKEAType kea);
+
+
+
+
+
+
+
+
+
+SSL_IMPORT SECStatus
+SSL_SetSignedCertTimestamps(PRFileDesc *fd, const SECItem *scts,
+                            SSLKEAType kea);
 
 
 

@@ -19,7 +19,6 @@ SEC_BEGIN_PROTOS
 
 
 
-
 extern void SECKEY_DestroySubjectPublicKeyInfo(CERTSubjectPublicKeyInfo *spki);
 
 
@@ -27,15 +26,15 @@ extern void SECKEY_DestroySubjectPublicKeyInfo(CERTSubjectPublicKeyInfo *spki);
 
 
 extern SECStatus SECKEY_CopySubjectPublicKeyInfo(PLArenaPool *arena,
-					     CERTSubjectPublicKeyInfo *dst,
-					     CERTSubjectPublicKeyInfo *src);
+                                                 CERTSubjectPublicKeyInfo *dst,
+                                                 CERTSubjectPublicKeyInfo *src);
 
 
 
 
 
 extern SECStatus
-SECKEY_UpdateCertPQG(CERTCertificate * subjectCert);
+SECKEY_UpdateCertPQG(CERTCertificate *subjectCert);
 
 
 
@@ -77,19 +76,19 @@ extern SECKEYPublicKey *SECKEY_ConvertToPublicKey(SECKEYPrivateKey *privateKey);
 
 
 SECKEYPrivateKey *SECKEY_CreateRSAPrivateKey(int keySizeInBits,
-					   SECKEYPublicKey **pubk, void *cx);
-	
+                                             SECKEYPublicKey **pubk, void *cx);
+
 
 
 
 SECKEYPrivateKey *SECKEY_CreateDHPrivateKey(SECKEYDHParams *param,
-					   SECKEYPublicKey **pubk, void *cx);
+                                            SECKEYPublicKey **pubk, void *cx);
 
 
 
 
 SECKEYPrivateKey *SECKEY_CreateECPrivateKey(SECKEYECParams *param,
-                                           SECKEYPublicKey **pubk, void *cx);
+                                            SECKEYPublicKey **pubk, void *cx);
 
 
 
@@ -103,7 +102,7 @@ SECKEY_CreateSubjectPublicKeyInfo(const SECKEYPublicKey *k);
 
 extern CERTSubjectPublicKeyInfo *
 SECKEY_ConvertAndDecodePublicKeyAndChallenge(char *pkacstr, char *challenge,
-								void *cx);
+                                             void *cx);
 
 
 
@@ -143,7 +142,6 @@ extern void SECKEY_DestroyPrivateKey(SECKEYPrivateKey *key);
 
 
 
-
 extern void SECKEY_DestroyPublicKey(SECKEYPublicKey *key);
 
 
@@ -165,7 +163,7 @@ SECKEY_DestroyPrivateKeyInfo(SECKEYPrivateKeyInfo *pvk, PRBool freeit);
 
 extern void
 SECKEY_DestroyEncryptedPrivateKeyInfo(SECKEYEncryptedPrivateKeyInfo *epki,
-				      PRBool freeit);
+                                      PRBool freeit);
 
 
 
@@ -177,11 +175,11 @@ SECKEY_DestroyEncryptedPrivateKeyInfo(SECKEYEncryptedPrivateKeyInfo *epki,
 
 extern SECStatus
 SECKEY_CopyPrivateKeyInfo(PLArenaPool *poolp,
-			  SECKEYPrivateKeyInfo *to,
-			  const SECKEYPrivateKeyInfo *from);
+                          SECKEYPrivateKeyInfo *to,
+                          const SECKEYPrivateKeyInfo *from);
 
 extern SECStatus
-SECKEY_CacheStaticFlags(SECKEYPrivateKey* key);
+SECKEY_CacheStaticFlags(SECKEYPrivateKey *key);
 
 
 
@@ -193,8 +191,8 @@ SECKEY_CacheStaticFlags(SECKEYPrivateKey* key);
 
 extern SECStatus
 SECKEY_CopyEncryptedPrivateKeyInfo(PLArenaPool *poolp,
-				   SECKEYEncryptedPrivateKeyInfo *to,
-				   const SECKEYEncryptedPrivateKeyInfo *from);
+                                   SECKEYEncryptedPrivateKeyInfo *to,
+                                   const SECKEYEncryptedPrivateKeyInfo *from);
 
 
 
@@ -205,10 +203,10 @@ KeyType SECKEY_GetPublicKeyType(const SECKEYPublicKey *pubKey);
 
 
 
-SECKEYPublicKey*
+SECKEYPublicKey *
 SECKEY_ImportDERPublicKey(const SECItem *derKey, CK_KEY_TYPE type);
 
-SECKEYPrivateKeyList*
+SECKEYPrivateKeyList *
 SECKEY_NewPrivateKeyList(void);
 
 void
@@ -218,14 +216,14 @@ void
 SECKEY_RemovePrivateKeyListNode(SECKEYPrivateKeyListNode *node);
 
 SECStatus
-SECKEY_AddPrivateKeyToListTail( SECKEYPrivateKeyList *list,
-                                SECKEYPrivateKey *key);
+SECKEY_AddPrivateKeyToListTail(SECKEYPrivateKeyList *list,
+                               SECKEYPrivateKey *key);
 
-#define PRIVKEY_LIST_HEAD(l) ((SECKEYPrivateKeyListNode*)PR_LIST_HEAD(&l->list))
+#define PRIVKEY_LIST_HEAD(l) ((SECKEYPrivateKeyListNode *)PR_LIST_HEAD(&l->list))
 #define PRIVKEY_LIST_NEXT(n) ((SECKEYPrivateKeyListNode *)n->links.next)
-#define PRIVKEY_LIST_END(n,l) (((void *)n) == ((void *)&l->list))
+#define PRIVKEY_LIST_END(n, l) (((void *)n) == ((void *)&l->list))
 
-SECKEYPublicKeyList*
+SECKEYPublicKeyList *
 SECKEY_NewPublicKeyList(void);
 
 void
@@ -235,12 +233,12 @@ void
 SECKEY_RemovePublicKeyListNode(SECKEYPublicKeyListNode *node);
 
 SECStatus
-SECKEY_AddPublicKeyToListTail( SECKEYPublicKeyList *list,
-                                SECKEYPublicKey *key);
+SECKEY_AddPublicKeyToListTail(SECKEYPublicKeyList *list,
+                              SECKEYPublicKey *key);
 
-#define PUBKEY_LIST_HEAD(l) ((SECKEYPublicKeyListNode*)PR_LIST_HEAD(&l->list))
+#define PUBKEY_LIST_HEAD(l) ((SECKEYPublicKeyListNode *)PR_LIST_HEAD(&l->list))
 #define PUBKEY_LIST_NEXT(n) ((SECKEYPublicKeyListNode *)n->links.next)
-#define PUBKEY_LIST_END(n,l) (((void *)n) == ((void *)&l->list))
+#define PUBKEY_LIST_END(n, l) (((void *)n) == ((void *)&l->list))
 
 
 
@@ -266,7 +264,7 @@ extern int SECKEY_ECParamsToBasePointOrderLen(const SECItem *params);
 
 
 
-SECOidTag SECKEY_GetECCOid(const SECKEYECParams * params);
+SECOidTag SECKEY_GetECCOid(const SECKEYECParams *params);
 
 SEC_END_PROTOS
 

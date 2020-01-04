@@ -9,14 +9,12 @@
 #ifndef _OCSP_H_
 #define _OCSP_H_
 
-
 #include "plarena.h"
 #include "seccomon.h"
 #include "secoidt.h"
 #include "keyt.h"
 #include "certt.h"
 #include "ocspt.h"
-
 
 
 SEC_BEGIN_PROTOS
@@ -134,7 +132,7 @@ CERT_DisableOCSPChecking(CERTCertDBHandle *handle);
 
 extern SECStatus
 CERT_SetOCSPDefaultResponder(CERTCertDBHandle *handle,
-			     const char *url, const char *name);
+                             const char *url, const char *name);
 
 
 
@@ -221,9 +219,9 @@ extern SECStatus CERT_ForcePostMethodForOCSP(PRBool forcePost);
 
 
 extern CERTOCSPRequest *
-CERT_CreateOCSPRequest(CERTCertList *certList, PRTime time, 
-		       PRBool addServiceLocator,
-		       CERTCertificate *signerCert);
+CERT_CreateOCSPRequest(CERTCertList *certList, PRTime time,
+                       PRBool addServiceLocator,
+                       CERTCertificate *signerCert);
 
 
 
@@ -243,7 +241,7 @@ CERT_CreateOCSPRequest(CERTCertList *certList, PRTime time,
 
 extern SECStatus
 CERT_AddOCSPAcceptableResponses(CERTOCSPRequest *request,
-				SECOidTag responseType0, ...);
+                                SECOidTag responseType0, ...);
 
 
 
@@ -264,8 +262,8 @@ CERT_AddOCSPAcceptableResponses(CERTOCSPRequest *request,
 
 
 extern SECItem *
-CERT_EncodeOCSPRequest(PLArenaPool *arena, CERTOCSPRequest *request, 
-		       void *pwArg);
+CERT_EncodeOCSPRequest(PLArenaPool *arena, CERTOCSPRequest *request,
+                       void *pwArg);
 
 
 
@@ -369,10 +367,10 @@ CERT_DestroyOCSPResponse(CERTOCSPResponse *response);
 
 extern SECItem *
 CERT_GetEncodedOCSPResponse(PLArenaPool *arena, CERTCertList *certList,
-			    const char *location, PRTime time,
-			    PRBool addServiceLocator,
-			    CERTCertificate *signerCert, void *pwArg,
-			    CERTOCSPRequest **pRequest);
+                            const char *location, PRTime time,
+                            PRBool addServiceLocator,
+                            CERTCertificate *signerCert, void *pwArg,
+                            CERTOCSPRequest **pRequest);
 
 
 
@@ -406,10 +404,10 @@ CERT_GetEncodedOCSPResponse(PLArenaPool *arena, CERTCertList *certList,
 
 
 extern SECStatus
-CERT_VerifyOCSPResponseSignature(CERTOCSPResponse *response,	
-				 CERTCertDBHandle *handle, void *pwArg,
-				 CERTCertificate **pSignerCert,
-				 CERTCertificate *issuerCert);
+CERT_VerifyOCSPResponseSignature(CERTOCSPResponse *response,
+                                 CERTCertDBHandle *handle, void *pwArg,
+                                 CERTCertificate **pSignerCert,
+                                 CERTCertificate *issuerCert);
 
 
 
@@ -446,8 +444,8 @@ CERT_GetOCSPAuthorityInfoAccessLocation(const CERTCertificate *cert);
 
 extern SECStatus
 CERT_RegisterAlternateOCSPAIAInfoCallBack(
-			CERT_StringFromCertFcn   newCallback,
-			CERT_StringFromCertFcn * oldCallback);
+    CERT_StringFromCertFcn newCallback,
+    CERT_StringFromCertFcn *oldCallback);
 
 
 
@@ -521,10 +519,10 @@ CERT_ParseURL(const char *url, char **pHostname, PRUint16 *pPort, char **pPath);
 
 
 
-    
-extern SECStatus 
+
+extern SECStatus
 CERT_CheckOCSPStatus(CERTCertDBHandle *handle, CERTCertificate *cert,
-		     PRTime time, void *pwArg);
+                     PRTime time, void *pwArg);
 
 
 
@@ -556,10 +554,10 @@ CERT_CheckOCSPStatus(CERTCertDBHandle *handle, CERTCertificate *cert,
 
 extern SECStatus
 CERT_CacheOCSPResponseFromSideChannel(CERTCertDBHandle *handle,
-				      CERTCertificate *cert,
-				      PRTime time,
-				      const SECItem *encodedResponse,
-				      void *pwArg);
+                                      CERTCertificate *cert,
+                                      PRTime time,
+                                      const SECItem *encodedResponse,
+                                      void *pwArg);
 
 
 
@@ -581,11 +579,11 @@ CERT_CacheOCSPResponseFromSideChannel(CERTCertDBHandle *handle,
 
 
 extern SECStatus
-CERT_GetOCSPStatusForCertID(CERTCertDBHandle *handle, 
-			    CERTOCSPResponse *response,
-			    CERTOCSPCertID   *certID,
-			    CERTCertificate  *signerCert,
-                            PRTime            time);
+CERT_GetOCSPStatusForCertID(CERTCertDBHandle *handle,
+                            CERTOCSPResponse *response,
+                            CERTOCSPCertID *certID,
+                            CERTCertificate *signerCert,
+                            PRTime time);
 
 
 
@@ -622,7 +620,7 @@ CERT_GetOCSPResponseStatus(CERTOCSPResponse *response);
 
 
 
-extern CERTOCSPCertID*
+extern CERTOCSPCertID *
 CERT_CreateOCSPCertID(CERTCertificate *cert, PRTime time);
 
 
@@ -638,31 +636,30 @@ CERT_CreateOCSPCertID(CERTCertificate *cert, PRTime time);
 
 
 extern SECStatus
-CERT_DestroyOCSPCertID(CERTOCSPCertID* certID);
+CERT_DestroyOCSPCertID(CERTOCSPCertID *certID);
 
-
-extern CERTOCSPSingleResponse*
+extern CERTOCSPSingleResponse *
 CERT_CreateOCSPSingleResponseGood(PLArenaPool *arena,
                                   CERTOCSPCertID *id,
                                   PRTime thisUpdate,
                                   const PRTime *nextUpdate);
 
-extern CERTOCSPSingleResponse*
+extern CERTOCSPSingleResponse *
 CERT_CreateOCSPSingleResponseUnknown(PLArenaPool *arena,
                                      CERTOCSPCertID *id,
                                      PRTime thisUpdate,
                                      const PRTime *nextUpdate);
 
-extern CERTOCSPSingleResponse*
+extern CERTOCSPSingleResponse *
 CERT_CreateOCSPSingleResponseRevoked(
     PLArenaPool *arena,
     CERTOCSPCertID *id,
     PRTime thisUpdate,
     const PRTime *nextUpdate,
     PRTime revocationTime,
-    const CERTCRLEntryReasonCode* revocationReason);
+    const CERTCRLEntryReasonCode *revocationReason);
 
-extern SECItem*
+extern SECItem *
 CERT_CreateEncodedOCSPSuccessResponse(
     PLArenaPool *arena,
     CERTCertificate *responderCert,
@@ -703,7 +700,7 @@ CERT_CreateEncodedOCSPSuccessResponse(
 
 
 
-extern SECItem*
+extern SECItem *
 CERT_CreateEncodedOCSPErrorResponse(PLArenaPool *arena, int error);
 
 
@@ -717,7 +714,7 @@ CERT_CreateEncodedOCSPErrorResponse(PLArenaPool *arena, int error);
 
 
 
-SECItem* CERT_PostOCSPRequest(PLArenaPool *arena, const char *location,
+SECItem *CERT_PostOCSPRequest(PLArenaPool *arena, const char *location,
                               const SECItem *encodedRequest);
 
 

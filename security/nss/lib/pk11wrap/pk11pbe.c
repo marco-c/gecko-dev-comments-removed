@@ -805,13 +805,26 @@ pbe_PK11AlgidToParam(SECAlgorithmID *algid,SECItem *mech)
  	    p5_param.pPrfAlgId->algorithm.data != 0) {
  	    prfAlgTag = SECOID_GetAlgorithmTag(p5_param.pPrfAlgId);
 	}
-	if (prfAlgTag == SEC_OID_HMAC_SHA1) {
-	    pbeV2_params->prf = CKP_PKCS5_PBKD2_HMAC_SHA1;
-	} else {
-	    
-	    PORT_SetError(SEC_ERROR_INVALID_ALGORITHM);
-	    goto loser;
-	}
+        switch (prfAlgTag) {
+        case SEC_OID_HMAC_SHA1:
+            pbeV2_params->prf = CKP_PKCS5_PBKD2_HMAC_SHA1;
+            break;
+        case SEC_OID_HMAC_SHA224:
+            pbeV2_params->prf = CKP_PKCS5_PBKD2_HMAC_SHA224;
+            break;
+        case SEC_OID_HMAC_SHA256:
+            pbeV2_params->prf = CKP_PKCS5_PBKD2_HMAC_SHA256;
+            break;
+        case SEC_OID_HMAC_SHA384:
+            pbeV2_params->prf = CKP_PKCS5_PBKD2_HMAC_SHA384;
+            break;
+        case SEC_OID_HMAC_SHA512:
+            pbeV2_params->prf = CKP_PKCS5_PBKD2_HMAC_SHA512;
+            break;
+        default:
+            PORT_SetError(SEC_ERROR_INVALID_ALGORITHM);
+            goto loser;
+        }
 	
 	
 	pbeV2_params->pPrfData = NULL;

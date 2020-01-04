@@ -17,89 +17,76 @@ SEC_BEGIN_PROTOS
 
 extern const SEC_ASN1Template CERT_GeneralNamesTemplate[];
 
-extern SECItem **
-cert_EncodeGeneralNames(PLArenaPool *arena, CERTGeneralName *names);
+extern SECItem **cert_EncodeGeneralNames(PLArenaPool *arena,
+                                         CERTGeneralName *names);
 
-extern CERTGeneralName *
-cert_DecodeGeneralNames(PLArenaPool *arena, SECItem **encodedGenName);
+extern CERTGeneralName *cert_DecodeGeneralNames(PLArenaPool *arena,
+                                                SECItem **encodedGenName);
 
-extern SECStatus
-cert_DestroyGeneralNames(CERTGeneralName *name);
+extern SECStatus cert_DestroyGeneralNames(CERTGeneralName *name);
 
-extern SECStatus 
-cert_EncodeNameConstraints(CERTNameConstraints *constraints, PLArenaPool *arena,
-			   SECItem *dest);
+extern SECStatus cert_EncodeNameConstraints(CERTNameConstraints *constraints,
+                                            PLArenaPool *arena, SECItem *dest);
 
-extern CERTNameConstraints *
-cert_DecodeNameConstraints(PLArenaPool *arena, const SECItem *encodedConstraints);
+extern CERTNameConstraints *cert_DecodeNameConstraints(
+    PLArenaPool *arena, const SECItem *encodedConstraints);
 
-extern CERTGeneralName *
-cert_CombineNamesLists(CERTGeneralName *list1, CERTGeneralName *list2);
+extern CERTGeneralName *cert_CombineNamesLists(CERTGeneralName *list1,
+                                               CERTGeneralName *list2);
 
-extern CERTNameConstraint *
-cert_CombineConstraintsLists(CERTNameConstraint *list1, CERTNameConstraint *list2);
+extern CERTNameConstraint *cert_CombineConstraintsLists(
+    CERTNameConstraint *list1, CERTNameConstraint *list2);
 
 
 
 
 
 
-void
-CERT_DestroyGeneralName(CERTGeneralName *name);
+void CERT_DestroyGeneralName(CERTGeneralName *name);
 
-SECStatus
-CERT_CompareGeneralName(CERTGeneralName *a, CERTGeneralName *b);
+SECStatus CERT_CompareGeneralName(CERTGeneralName *a, CERTGeneralName *b);
 
-SECStatus
-CERT_CopyGeneralName(PLArenaPool      *arena,
-		     CERTGeneralName  *dest, 
-		     CERTGeneralName  *src);
+SECStatus CERT_CopyGeneralName(PLArenaPool *arena, CERTGeneralName *dest,
+                               CERTGeneralName *src);
 
 
 
 
 
-void
-CERT_DestroyGeneralNameList(CERTGeneralNameList *list);
+void CERT_DestroyGeneralNameList(CERTGeneralNameList *list);
 
 
-CERTGeneralNameList *
-CERT_CreateGeneralNameList(CERTGeneralName *name);
+CERTGeneralNameList *CERT_CreateGeneralNameList(CERTGeneralName *name);
 
 
-SECStatus
-CERT_CompareGeneralNameLists(CERTGeneralNameList *a, CERTGeneralNameList *b);
+SECStatus CERT_CompareGeneralNameLists(CERTGeneralNameList *a,
+                                       CERTGeneralNameList *b);
 
 
-void *
-CERT_GetGeneralNameFromListByType(CERTGeneralNameList *list,
-				  CERTGeneralNameType type,
-				  PLArenaPool *arena);
+void *CERT_GetGeneralNameFromListByType(CERTGeneralNameList *list,
+                                        CERTGeneralNameType type,
+                                        PLArenaPool *arena);
 
 
-void
-CERT_AddGeneralNameToList(CERTGeneralNameList *list, 
-			  CERTGeneralNameType type,
-			  void *data, SECItem *oid);
+void CERT_AddGeneralNameToList(CERTGeneralNameList *list,
+                               CERTGeneralNameType type, void *data,
+                               SECItem *oid);
 
 
-CERTGeneralNameList *
-CERT_DupGeneralNameList(CERTGeneralNameList *list);
+CERTGeneralNameList *CERT_DupGeneralNameList(CERTGeneralNameList *list);
 
 
 
 
-extern int
-CERT_GetNamesLength(CERTGeneralName *names);
+extern int CERT_GetNamesLength(CERTGeneralName *names);
 
 
 
-SECStatus
-CERT_CompareNameSpace(CERTCertificate  *cert,
-		      CERTGeneralName  *namesList,
- 		      CERTCertificate **certsList,
- 		      PLArenaPool      *reqArena,
- 		      CERTCertificate **pBadCert);
+SECStatus CERT_CompareNameSpace(CERTCertificate *cert,
+                                CERTGeneralName *namesList,
+                                CERTCertificate **certsList,
+                                PLArenaPool *reqArena,
+                                CERTCertificate **pBadCert);
 
 SEC_END_PROTOS
 

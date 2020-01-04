@@ -56,7 +56,6 @@ typedef struct NSSCKFWCryptoOperationStr NSSCKFWCryptoOperation;
 
 
 
-
 struct NSSCKFWSessionStr;
 typedef struct NSSCKFWSessionStr NSSCKFWSession;
 
@@ -87,7 +86,7 @@ typedef struct NSSCKFWMutexStr NSSCKFWMutex;
 typedef enum {
     SingleThreaded,
     MultiThreaded
-} CryptokiLockingState ;
+} CryptokiLockingState;
 
 
 typedef enum {

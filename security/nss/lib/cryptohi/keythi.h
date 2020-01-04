@@ -21,14 +21,14 @@
 
 
 
- 
 
-typedef enum { 
-    nullKey = 0, 
-    rsaKey = 1, 
-    dsaKey = 2, 
+
+typedef enum {
+    nullKey = 0,
+    rsaKey = 1,
+    dsaKey = 2,
     fortezzaKey = 3, 
-    dhKey = 4, 
+    dhKey = 4,
     keaKey = 5, 
     ecKey = 6,
     rsaPssKey = 7,
@@ -59,9 +59,8 @@ SEC_END_PROTOS
 
 
 
-
 struct SECKEYRSAPublicKeyStr {
-    PLArenaPool * arena;
+    PLArenaPool *arena;
     SECItem modulus;
     SECItem publicExponent;
 };
@@ -101,16 +100,15 @@ typedef struct SECKEYDSAPublicKeyStr SECKEYDSAPublicKey;
 
 
 
-
 struct SECKEYDHParamsStr {
-    PLArenaPool * arena;
+    PLArenaPool *arena;
     SECItem prime; 
-    SECItem base; 
+    SECItem base;  
 };
 typedef struct SECKEYDHParamsStr SECKEYDHParams;
 
 struct SECKEYDHPublicKeyStr {
-    PLArenaPool * arena;
+    PLArenaPool *arena;
     SECItem prime;
     SECItem base;
     SECItem publicValue;
@@ -126,8 +124,8 @@ typedef SECItem SECKEYECParams;
 
 struct SECKEYECPublicKeyStr {
     SECKEYECParams DEREncodedParams;
-    int     size;             
-    SECItem publicValue;      
+    int size;            
+    SECItem publicValue; 
     
 
 
@@ -141,9 +139,9 @@ typedef struct SECKEYECPublicKeyStr SECKEYECPublicKey;
 
 
 struct SECKEYFortezzaPublicKeyStr {
-    int      KEAversion;
-    int      DSSversion;
-    unsigned char    KMID[8];
+    int KEAversion;
+    int DSSversion;
+    unsigned char KMID[8];
     SECItem clearance;
     SECItem KEApriviledge;
     SECItem DSSpriviledge;
@@ -173,7 +171,7 @@ struct SECKEYKEAParamsStr {
     SECItem hash;
 };
 typedef struct SECKEYKEAParamsStr SECKEYKEAParams;
- 
+
 struct SECKEYKEAPublicKeyStr {
     SECKEYKEAParams params;
     SECItem publicValue;
@@ -190,26 +188,26 @@ struct SECKEYPublicKeyStr {
     CK_OBJECT_HANDLE pkcs11ID;
     union {
         SECKEYRSAPublicKey rsa;
-	SECKEYDSAPublicKey dsa;
-	SECKEYDHPublicKey  dh;
+        SECKEYDSAPublicKey dsa;
+        SECKEYDHPublicKey dh;
         SECKEYKEAPublicKey kea;
         SECKEYFortezzaPublicKey fortezza;
-	SECKEYECPublicKey  ec;
+        SECKEYECPublicKey ec;
     } u;
 };
 typedef struct SECKEYPublicKeyStr SECKEYPublicKey;
 
 
-#define SECKEY_Attributes_Cached 0x1    /* bit 0 states
-                                           whether attributes are cached */
-#define SECKEY_CKA_PRIVATE (1U << 1)    /* bit 1 is the value of CKA_PRIVATE */
-#define SECKEY_CKA_ALWAYS_AUTHENTICATE (1U << 2)    
+#define SECKEY_Attributes_Cached 0x1 /* bit 0 states \
+                                        whether attributes are cached */
+#define SECKEY_CKA_PRIVATE (1U << 1) /* bit 1 is the value of CKA_PRIVATE */
+#define SECKEY_CKA_ALWAYS_AUTHENTICATE (1U << 2)
 
 #define SECKEY_ATTRIBUTES_CACHED(key) \
-     (0 != (key->staticflags & SECKEY_Attributes_Cached))
+    (0 != (key->staticflags & SECKEY_Attributes_Cached))
 
 #define SECKEY_ATTRIBUTE_VALUE(key,attribute) \
-     (0 != (key->staticflags & SECKEY_##attribute))
+    (0 != (key->staticflags & SECKEY_##attribute))
 
 #define SECKEY_HAS_ATTRIBUTE_SET(key,attribute) \
     (0 != (key->staticflags & SECKEY_Attributes_Cached)) ? \
@@ -223,15 +221,15 @@ typedef struct SECKEYPublicKeyStr SECKEYPublicKey;
 
 
 
- 
+
 struct SECKEYPrivateKeyStr {
     PLArenaPool *arena;
     KeyType keyType;
-    PK11SlotInfo *pkcs11Slot;	
-    CK_OBJECT_HANDLE pkcs11ID;  
-    PRBool pkcs11IsTemp;	
-    void *wincx;		
-    PRUint32 staticflags;       
+    PK11SlotInfo *pkcs11Slot;  
+    CK_OBJECT_HANDLE pkcs11ID; 
+    PRBool pkcs11IsTemp;       
+    void *wincx;               
+    PRUint32 staticflags;      
 };
 typedef struct SECKEYPrivateKeyStr SECKEYPrivateKey;
 
@@ -255,4 +253,3 @@ typedef struct {
     PLArenaPool *arena;
 } SECKEYPublicKeyList;
 #endif 
-

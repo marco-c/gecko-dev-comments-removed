@@ -83,11 +83,7 @@ PR_BEGIN_EXTERN_C
 
 
 
-NSS_EXTERN NSSArena *
-nssArena_Create
-(
-  void
-);
+NSS_EXTERN NSSArena *nssArena_Create(void);
 
 extern const NSSError NSS_ERROR_NO_MEMORY;
 
@@ -107,11 +103,7 @@ extern const NSSError NSS_ERROR_NO_MEMORY;
 
 
 
-NSS_EXTERN PRStatus
-nssArena_Destroy
-(
-  NSSArena *arena
-);
+NSS_EXTERN PRStatus nssArena_Destroy(NSSArena *arena);
 
 extern const NSSError NSS_ERROR_INVALID_ARENA;
 
@@ -136,11 +128,7 @@ extern const NSSError NSS_ERROR_INVALID_ARENA;
 
 
 
-NSS_EXTERN nssArenaMark *
-nssArena_Mark
-(
-  NSSArena *arena
-);
+NSS_EXTERN nssArenaMark *nssArena_Mark(NSSArena *arena);
 
 extern const NSSError NSS_ERROR_INVALID_ARENA;
 extern const NSSError NSS_ERROR_NO_MEMORY;
@@ -165,12 +153,7 @@ extern const NSSError NSS_ERROR_ARENA_MARKED_BY_ANOTHER_THREAD;
 
 
 
-NSS_EXTERN PRStatus
-nssArena_Release
-(
-  NSSArena *arena,
-  nssArenaMark *arenaMark
-);
+NSS_EXTERN PRStatus nssArena_Release(NSSArena *arena, nssArenaMark *arenaMark);
 
 extern const NSSError NSS_ERROR_INVALID_ARENA;
 extern const NSSError NSS_ERROR_INVALID_ARENA_MARK;
@@ -197,12 +180,7 @@ extern const NSSError NSS_ERROR_INVALID_ARENA_MARK;
 
 
 
-NSS_EXTERN PRStatus
-nssArena_Unmark
-(
-  NSSArena *arena,
-  nssArenaMark *arenaMark
-);
+NSS_EXTERN PRStatus nssArena_Unmark(NSSArena *arena, nssArenaMark *arenaMark);
 
 extern const NSSError NSS_ERROR_INVALID_ARENA;
 extern const NSSError NSS_ERROR_INVALID_ARENA_MARK;
@@ -236,13 +214,8 @@ extern const NSSError NSS_ERROR_ARENA_MARKED_BY_ANOTHER_THREAD;
 
 
 
-NSS_EXTERN PRStatus
-nssArena_registerDestructor
-(
-  NSSArena *arena,
-  void (*destructor)(void *argument),
-  void *arg
-);
+NSS_EXTERN PRStatus nssArena_registerDestructor(
+    NSSArena *arena, void (*destructor)(void *argument), void *arg);
 
 extern const NSSError NSS_ERROR_INVALID_ARENA;
 extern const NSSError NSS_ERROR_NO_MEMORY;
@@ -266,13 +239,8 @@ extern const NSSError NSS_ERROR_NO_MEMORY;
 
 
 
-NSS_EXTERN PRStatus
-nssArena_deregisterDestructor
-(
-  NSSArena *arena,
-  void (*destructor)(void *argument),
-  void *arg
-);
+NSS_EXTERN PRStatus nssArena_deregisterDestructor(
+    NSSArena *arena, void (*destructor)(void *argument), void *arg);
 
 extern const NSSError NSS_ERROR_INVALID_ITEM;
 extern const NSSError NSS_ERROR_INVALID_ARENA;
@@ -303,12 +271,7 @@ extern const NSSError NSS_ERROR_NOT_FOUND;
 
 
 
-NSS_EXTERN void *
-nss_ZAlloc
-(
-  NSSArena *arenaOpt,
-  PRUint32 size
-);
+NSS_EXTERN void *nss_ZAlloc(NSSArena *arenaOpt, PRUint32 size);
 
 extern const NSSError NSS_ERROR_INVALID_ARENA;
 extern const NSSError NSS_ERROR_NO_MEMORY;
@@ -332,11 +295,7 @@ extern const NSSError NSS_ERROR_ARENA_MARKED_BY_ANOTHER_THREAD;
 
 
 
-NSS_EXTERN PRStatus
-nss_ZFreeIf
-(
-  void *pointer
-);
+NSS_EXTERN PRStatus nss_ZFreeIf(void *pointer);
 
 extern const NSSError NSS_ERROR_INVALID_POINTER;
 
@@ -360,17 +319,11 @@ extern const NSSError NSS_ERROR_INVALID_POINTER;
 
 
 
-NSS_EXTERN void *
-nss_ZRealloc
-(
-  void *pointer,
-  PRUint32 newSize
-);
+NSS_EXTERN void *nss_ZRealloc(void *pointer, PRUint32 newSize);
 
 extern const NSSError NSS_ERROR_INVALID_POINTER;
 extern const NSSError NSS_ERROR_NO_MEMORY;
 extern const NSSError NSS_ERROR_ARENA_MARKED_BY_ANOTHER_THREAD;
-
 
 
 
@@ -414,10 +367,8 @@ extern const NSSError NSS_ERROR_ARENA_MARKED_BY_ANOTHER_THREAD;
 
 
 
-
-#define nss_ZNEWARRAY(arenaOpt, type, quantity) ((type *)nss_ZAlloc((arenaOpt), sizeof(type) * (quantity)))
-
-
+#define nss_ZNEWARRAY(arenaOpt, type, quantity)                                \
+    ((type *)nss_ZAlloc((arenaOpt), sizeof(type) * (quantity)))
 
 
 
@@ -434,7 +385,10 @@ extern const NSSError NSS_ERROR_ARENA_MARKED_BY_ANOTHER_THREAD;
 
 
 
-#define nss_ZREALLOCARRAY(p, type, quantity) ((type *)nss_ZRealloc((p), sizeof(type) * (quantity)))
+
+
+#define nss_ZREALLOCARRAY(p, type, quantity)                                   \
+    ((type *)nss_ZRealloc((p), sizeof(type) * (quantity)))
 
 
 
@@ -454,11 +408,7 @@ extern const NSSError NSS_ERROR_ARENA_MARKED_BY_ANOTHER_THREAD;
 
 
 #ifdef DEBUG
-NSS_EXTERN PRStatus
-nssArena_verifyPointer
-(
-  const NSSArena *arena
-);
+NSS_EXTERN PRStatus nssArena_verifyPointer(const NSSArena *arena);
 
 extern const NSSError NSS_ERROR_INVALID_ARENA;
 #endif 
@@ -480,15 +430,15 @@ extern const NSSError NSS_ERROR_INVALID_ARENA;
 #define nssArena_VERIFYPOINTER(p) nssArena_verifyPointer(p)
 #else 
 
-#define nssArena_VERIFYPOINTER(p) (((NSSArena *)NULL == (p))?PR_FAILURE:PR_SUCCESS)
+#define nssArena_VERIFYPOINTER(p)                                              \
+    (((NSSArena *)NULL == (p)) ? PR_FAILURE : PR_SUCCESS)
 #endif 
 
 
 
 
 
-extern PRStatus
-nssArena_Shutdown(void);
+extern PRStatus nssArena_Shutdown(void);
 
 
 
@@ -520,11 +470,7 @@ NSS_EXTERN_DATA PLHashAllocOps nssArenaHashAllocOps;
 
 
 
-NSS_EXTERN void
-nss_SetError
-(
-  PRUint32 error
-);
+NSS_EXTERN void nss_SetError(PRUint32 error);
 
 
 
@@ -532,11 +478,7 @@ nss_SetError
 
 
 
-NSS_EXTERN void
-nss_ClearErrorStack
-(
-  void
-);
+NSS_EXTERN void nss_ClearErrorStack(void);
 
 
 
@@ -544,11 +486,7 @@ nss_ClearErrorStack
 
 
 
-NSS_EXTERN void
-nss_DestroyErrorStack
-(
-  void
-);
+NSS_EXTERN void nss_DestroyErrorStack(void);
 
 
 
@@ -558,36 +496,16 @@ nss_DestroyErrorStack
 
 
 
-NSS_EXTERN NSSItem *
-nssItem_Create
-(
-  NSSArena *arenaOpt,
-  NSSItem *rvOpt,
-  PRUint32 length,
-  const void *data
-);
+NSS_EXTERN NSSItem *nssItem_Create(NSSArena *arenaOpt, NSSItem *rvOpt,
+                                   PRUint32 length, const void *data);
 
-NSS_EXTERN void
-nssItem_Destroy
-(
-  NSSItem *item
-);
+NSS_EXTERN void nssItem_Destroy(NSSItem *item);
 
-NSS_EXTERN NSSItem *
-nssItem_Duplicate
-(
-  NSSItem *obj,
-  NSSArena *arenaOpt,
-  NSSItem *rvOpt
-);
+NSS_EXTERN NSSItem *nssItem_Duplicate(NSSItem *obj, NSSArena *arenaOpt,
+                                      NSSItem *rvOpt);
 
-NSS_EXTERN PRBool
-nssItem_Equal
-(
-  const NSSItem *one,
-  const NSSItem *two,
-  PRStatus *statusOpt
-);
+NSS_EXTERN PRBool nssItem_Equal(const NSSItem *one, const NSSItem *two,
+                                PRStatus *statusOpt);
 
 
 
@@ -614,13 +532,8 @@ nssItem_Equal
 
 
 
-NSS_EXTERN PRBool
-nssUTF8_CaseIgnoreMatch
-(
-  const NSSUTF8 *a,
-  const NSSUTF8 *b,
-  PRStatus *statusOpt
-);
+NSS_EXTERN PRBool nssUTF8_CaseIgnoreMatch(const NSSUTF8 *a, const NSSUTF8 *b,
+                                          PRStatus *statusOpt);
 
 
 
@@ -639,12 +552,7 @@ nssUTF8_CaseIgnoreMatch
 
 
 
-NSS_EXTERN NSSUTF8 *
-nssUTF8_Duplicate
-(
-  const NSSUTF8 *s,
-  NSSArena *arenaOpt
-);
+NSS_EXTERN NSSUTF8 *nssUTF8_Duplicate(const NSSUTF8 *s, NSSArena *arenaOpt);
 
 
 
@@ -668,13 +576,8 @@ nssUTF8_Duplicate
 
 
 
-NSS_EXTERN PRBool
-nssUTF8_PrintableMatch
-(
-  const NSSUTF8 *a,
-  const NSSUTF8 *b,
-  PRStatus *statusOpt
-);
+NSS_EXTERN PRBool nssUTF8_PrintableMatch(const NSSUTF8 *a, const NSSUTF8 *b,
+                                         PRStatus *statusOpt);
 
 
 
@@ -692,12 +595,7 @@ nssUTF8_PrintableMatch
 
 
 
-NSS_EXTERN PRUint32
-nssUTF8_Size
-(
-  const NSSUTF8 *s,
-  PRStatus *statusOpt
-);
+NSS_EXTERN PRUint32 nssUTF8_Size(const NSSUTF8 *s, PRStatus *statusOpt);
 
 extern const NSSError NSS_ERROR_INVALID_POINTER;
 extern const NSSError NSS_ERROR_VALUE_TOO_LARGE;
@@ -719,12 +617,7 @@ extern const NSSError NSS_ERROR_VALUE_TOO_LARGE;
 
 
 
-NSS_EXTERN PRUint32
-nssUTF8_Length
-(
-  const NSSUTF8 *s,
-  PRStatus *statusOpt
-);
+NSS_EXTERN PRUint32 nssUTF8_Length(const NSSUTF8 *s, PRStatus *statusOpt);
 
 extern const NSSError NSS_ERROR_INVALID_POINTER;
 extern const NSSError NSS_ERROR_VALUE_TOO_LARGE;
@@ -753,27 +646,17 @@ extern const NSSError NSS_ERROR_INVALID_STRING;
 
 
 
-NSS_EXTERN NSSUTF8 *
-nssUTF8_Create
-(
-  NSSArena *arenaOpt,
-  nssStringType type,
-  const void *inputString,
-  PRUint32 size 
-);
+NSS_EXTERN NSSUTF8 *nssUTF8_Create(NSSArena *arenaOpt, nssStringType type,
+                                   const void *inputString,
+                                   PRUint32 size 
+                                   );
 
 extern const NSSError NSS_ERROR_INVALID_POINTER;
 extern const NSSError NSS_ERROR_NO_MEMORY;
 extern const NSSError NSS_ERROR_UNSUPPORTED_TYPE;
 
-NSS_EXTERN NSSItem *
-nssUTF8_GetEncoding
-(
-  NSSArena *arenaOpt,
-  NSSItem *rvOpt,
-  nssStringType type,
-  NSSUTF8 *string
-);
+NSS_EXTERN NSSItem *nssUTF8_GetEncoding(NSSArena *arenaOpt, NSSItem *rvOpt,
+                                        nssStringType type, NSSUTF8 *string);
 
 
 
@@ -789,27 +672,16 @@ nssUTF8_GetEncoding
 extern const NSSError NSS_ERROR_INVALID_POINTER;
 extern const NSSError NSS_ERROR_INVALID_ARGUMENT;
 
-NSS_EXTERN PRStatus
-nssUTF8_CopyIntoFixedBuffer
-(
-  NSSUTF8 *string,
-  char *buffer,
-  PRUint32 bufferSize,
-  char pad
-);
+NSS_EXTERN PRStatus nssUTF8_CopyIntoFixedBuffer(NSSUTF8 *string, char *buffer,
+                                                PRUint32 bufferSize, char pad);
 
 
 
 
 
 
-NSS_EXTERN PRBool
-nssUTF8_Equal
-(
-  const NSSUTF8 *a,
-  const NSSUTF8 *b,
-  PRStatus *statusOpt
-);
+NSS_EXTERN PRBool nssUTF8_Equal(const NSSUTF8 *a, const NSSUTF8 *b,
+                                PRStatus *statusOpt);
 
 
 
@@ -826,28 +698,15 @@ nssUTF8_Equal
 
 
 
-NSS_EXTERN nssList *
-nssList_Create
-(
-  NSSArena *arenaOpt,
-  PRBool threadSafe
-);
+NSS_EXTERN nssList *nssList_Create(NSSArena *arenaOpt, PRBool threadSafe);
 
 
 
 
-NSS_EXTERN PRStatus
-nssList_Destroy
-(
-  nssList *list
-);
+NSS_EXTERN PRStatus nssList_Destroy(nssList *list);
 
-NSS_EXTERN void
-nssList_Clear
-(
-  nssList *list, 
-  nssListElementDestructorFunc destructor
-);
+NSS_EXTERN void nssList_Clear(nssList *list,
+                              nssListElementDestructorFunc destructor);
 
 
 
@@ -856,34 +715,21 @@ nssList_Clear
 
 
 
-NSS_EXTERN void
-nssList_SetCompareFunction
-(
-  nssList *list, 
-  nssListCompareFunc compareFunc
-);
+NSS_EXTERN void nssList_SetCompareFunction(nssList *list,
+                                           nssListCompareFunc compareFunc);
 
 
 
 
 
 
-NSS_EXTERN void
-nssList_SetSortFunction
-(
-  nssList *list, 
-  nssListSortFunc sortFunc
-);
+NSS_EXTERN void nssList_SetSortFunction(nssList *list,
+                                        nssListSortFunc sortFunc);
 
 
 
 
-NSS_EXTERN PRStatus
-nssList_Add
-(
-  nssList *list, 
-  void *data
-);
+NSS_EXTERN PRStatus nssList_Add(nssList *list, void *data);
 
 
 
@@ -891,20 +737,14 @@ nssList_Add
 
 
 
-NSS_EXTERN PRStatus
-nssList_AddUnique
-(
-  nssList *list, 
-  void *data
-);
+NSS_EXTERN PRStatus nssList_AddUnique(nssList *list, void *data);
 
 
 
 
 
 
-NSS_EXTERN PRStatus
-nssList_Remove(nssList *list, void *data);
+NSS_EXTERN PRStatus nssList_Remove(nssList *list, void *data);
 
 
 
@@ -912,21 +752,12 @@ nssList_Remove(nssList *list, void *data);
 
 
 
-NSS_EXTERN void *
-nssList_Get
-(
-  nssList *list, 
-  void *data
-);
+NSS_EXTERN void *nssList_Get(nssList *list, void *data);
 
 
 
 
-NSS_EXTERN PRUint32
-nssList_Count
-(
-  nssList *list
-);
+NSS_EXTERN PRUint32 nssList_Count(nssList *list);
 
 
 
@@ -934,39 +765,22 @@ nssList_Count
 
 
 
-NSS_EXTERN PRStatus
-nssList_GetArray
-(
-  nssList *list, 
-  void **rvArray, 
-  PRUint32 maxElements
-);
+NSS_EXTERN PRStatus nssList_GetArray(nssList *list, void **rvArray,
+                                     PRUint32 maxElements);
 
 
 
 
 
 
-NSS_EXTERN nssListIterator *
-nssList_CreateIterator
-(
-  nssList *list
-);
+NSS_EXTERN nssListIterator *nssList_CreateIterator(nssList *list);
 
-NSS_EXTERN nssList *
-nssList_Clone
-(
-  nssList *list
-);
+NSS_EXTERN nssList *nssList_Clone(nssList *list);
 
 
 
 
-NSS_EXTERN void
-nssListIterator_Destroy
-(
-  nssListIterator *iter
-);
+NSS_EXTERN void nssListIterator_Destroy(nssListIterator *iter);
 
 
 
@@ -974,22 +788,14 @@ nssListIterator_Destroy
 
 
 
-NSS_EXTERN void *
-nssListIterator_Start
-(
-  nssListIterator *iter
-);
+NSS_EXTERN void *nssListIterator_Start(nssListIterator *iter);
 
 
 
 
 
 
-NSS_EXTERN void *
-nssListIterator_Next
-(
-  nssListIterator *iter
-);
+NSS_EXTERN void *nssListIterator_Next(nssListIterator *iter);
 
 
 
@@ -997,11 +803,7 @@ nssListIterator_Next
 
 
 
-NSS_EXTERN PRStatus
-nssListIterator_Finish
-(
-  nssListIterator *iter
-);
+NSS_EXTERN PRStatus nssListIterator_Finish(nssListIterator *iter);
 
 
 
@@ -1021,46 +823,24 @@ nssListIterator_Finish
 
 
 
-NSS_EXTERN nssHash *
-nssHash_Create
-(
-  NSSArena *arenaOpt,
-  PRUint32 numBuckets,
-  PLHashFunction keyHash,
-  PLHashComparator keyCompare,
-  PLHashComparator valueCompare
-);
+NSS_EXTERN nssHash *nssHash_Create(NSSArena *arenaOpt, PRUint32 numBuckets,
+                                   PLHashFunction keyHash,
+                                   PLHashComparator keyCompare,
+                                   PLHashComparator valueCompare);
 
-NSS_EXTERN nssHash *
-nssHash_CreatePointer
-(
-  NSSArena *arenaOpt,
-  PRUint32 numBuckets
-);
+NSS_EXTERN nssHash *nssHash_CreatePointer(NSSArena *arenaOpt,
+                                          PRUint32 numBuckets);
 
-NSS_EXTERN nssHash *
-nssHash_CreateString
-(
-  NSSArena *arenaOpt,
-  PRUint32 numBuckets
-);
+NSS_EXTERN nssHash *nssHash_CreateString(NSSArena *arenaOpt,
+                                         PRUint32 numBuckets);
 
-NSS_EXTERN nssHash *
-nssHash_CreateItem
-(
-  NSSArena *arenaOpt,
-  PRUint32 numBuckets
-);
+NSS_EXTERN nssHash *nssHash_CreateItem(NSSArena *arenaOpt, PRUint32 numBuckets);
 
 
 
 
 
-NSS_EXTERN void
-nssHash_Destroy
-(
-  nssHash *hash
-);
+NSS_EXTERN void nssHash_Destroy(nssHash *hash);
 
 
 
@@ -1069,69 +849,39 @@ nssHash_Destroy
 
 extern const NSSError NSS_ERROR_HASH_COLLISION;
 
-NSS_EXTERN PRStatus
-nssHash_Add
-(
-  nssHash *hash,
-  const void *key,
-  const void *value
-);
+NSS_EXTERN PRStatus nssHash_Add(nssHash *hash, const void *key,
+                                const void *value);
 
 
 
 
 
-NSS_EXTERN void
-nssHash_Remove
-(
-  nssHash *hash,
-  const void *it
-);
+NSS_EXTERN void nssHash_Remove(nssHash *hash, const void *it);
 
 
 
 
 
-NSS_EXTERN PRUint32
-nssHash_Count
-(
-  nssHash *hash
-);
+NSS_EXTERN PRUint32 nssHash_Count(nssHash *hash);
 
 
 
 
 
-NSS_EXTERN PRBool
-nssHash_Exists
-(
-  nssHash *hash,
-  const void *it
-);
+NSS_EXTERN PRBool nssHash_Exists(nssHash *hash, const void *it);
 
 
 
 
 
-NSS_EXTERN void *
-nssHash_Lookup
-(
-  nssHash *hash,
-  const void *it
-);
+NSS_EXTERN void *nssHash_Lookup(nssHash *hash, const void *it);
 
 
 
 
 
-NSS_EXTERN void
-nssHash_Iterate
-(
-  nssHash *hash,
-  nssHashIterator fcn,
-  void *closure
-);
-
+NSS_EXTERN void nssHash_Iterate(nssHash *hash, nssHashIterator fcn,
+                                void *closure);
 
 
 
@@ -1169,11 +919,7 @@ nssHash_Iterate
 
 
 #ifdef DEBUG
-NSS_EXTERN PRStatus
-nssPointerTracker_initialize
-(
-  nssPointerTracker *tracker
-);
+NSS_EXTERN PRStatus nssPointerTracker_initialize(nssPointerTracker *tracker);
 
 extern const NSSError NSS_ERROR_NO_MEMORY;
 #endif 
@@ -1202,11 +948,7 @@ extern const NSSError NSS_ERROR_NO_MEMORY;
 
 
 #ifdef DEBUG
-NSS_EXTERN PRStatus
-nssPointerTracker_finalize
-(
-  nssPointerTracker *tracker
-);
+NSS_EXTERN PRStatus nssPointerTracker_finalize(nssPointerTracker *tracker);
 
 extern const NSSError NSS_ERROR_TRACKER_NOT_EMPTY;
 #endif 
@@ -1234,12 +976,8 @@ extern const NSSError NSS_ERROR_TRACKER_NOT_EMPTY;
 
 
 #ifdef DEBUG
-NSS_EXTERN PRStatus
-nssPointerTracker_add
-(
-  nssPointerTracker *tracker,
-  const void *pointer
-);
+NSS_EXTERN PRStatus nssPointerTracker_add(nssPointerTracker *tracker,
+                                          const void *pointer);
 
 extern const NSSError NSS_ERROR_NO_MEMORY;
 extern const NSSError NSS_ERROR_TRACKER_NOT_INITIALIZED;
@@ -1269,12 +1007,8 @@ extern const NSSError NSS_ERROR_DUPLICATE_POINTER;
 
 
 #ifdef DEBUG
-NSS_EXTERN PRStatus
-nssPointerTracker_remove
-(
-  nssPointerTracker *tracker,
-  const void *pointer
-);
+NSS_EXTERN PRStatus nssPointerTracker_remove(nssPointerTracker *tracker,
+                                             const void *pointer);
 
 extern const NSSError NSS_ERROR_TRACKER_NOT_INITIALIZED;
 extern const NSSError NSS_ERROR_POINTER_NOT_REGISTERED;
@@ -1304,12 +1038,8 @@ extern const NSSError NSS_ERROR_POINTER_NOT_REGISTERED;
 
 
 #ifdef DEBUG
-NSS_EXTERN PRStatus
-nssPointerTracker_verify
-(
-  nssPointerTracker *tracker,
-  const void *pointer
-);
+NSS_EXTERN PRStatus nssPointerTracker_verify(nssPointerTracker *tracker,
+                                             const void *pointer);
 
 extern const NSSError NSS_ERROR_POINTER_NOT_REGISTERED;
 #endif 
@@ -1333,13 +1063,7 @@ extern const NSSError NSS_ERROR_POINTER_NOT_REGISTERED;
 
 
 
-NSS_EXTERN void *
-nsslibc_memcpy
-(
-  void *dest,
-  const void *source,
-  PRUint32 n
-);
+NSS_EXTERN void *nsslibc_memcpy(void *dest, const void *source, PRUint32 n);
 
 extern const NSSError NSS_ERROR_INVALID_POINTER;
 
@@ -1354,13 +1078,7 @@ extern const NSSError NSS_ERROR_INVALID_POINTER;
 
 
 
-NSS_EXTERN void *
-nsslibc_memset
-(
-  void *dest,
-  PRUint8 byte,
-  PRUint32 n
-);
+NSS_EXTERN void *nsslibc_memset(void *dest, PRUint8 byte, PRUint32 n);
 
 extern const NSSError NSS_ERROR_INVALID_POINTER;
 
@@ -1376,14 +1094,8 @@ extern const NSSError NSS_ERROR_INVALID_POINTER;
 
 
 
-NSS_EXTERN PRBool
-nsslibc_memequal
-(
-  const void *a,
-  const void *b,
-  PRUint32 len,
-  PRStatus *statusOpt
-);
+NSS_EXTERN PRBool nsslibc_memequal(const void *a, const void *b, PRUint32 len,
+                                   PRStatus *statusOpt);
 
 extern const NSSError NSS_ERROR_INVALID_POINTER;
 

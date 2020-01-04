@@ -3496,6 +3496,9 @@ shutdown:
 	
 	PL_strfree(pwdata.data);
     }
+    if (email) {
+	PL_strfree(email);
+    }
 
     
 

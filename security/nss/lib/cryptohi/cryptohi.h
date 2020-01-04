@@ -17,9 +17,7 @@
 #include "keyt.h"
 #include "certt.h"
 
-
 SEC_BEGIN_PROTOS
-
 
 
 
@@ -45,8 +43,8 @@ extern SECItem *DSAU_DecodeDerSig(const SECItem *item);
 
 
 
-extern SECStatus DSAU_EncodeDerSigWithLen(SECItem *dest, SECItem *src, 
-					  unsigned int len);
+extern SECStatus DSAU_EncodeDerSigWithLen(SECItem *dest, SECItem *src,
+                                          unsigned int len);
 extern SECItem *DSAU_DecodeDerSigToLen(const SECItem *item, unsigned int len);
 
 
@@ -81,7 +79,7 @@ extern SECStatus SGN_Begin(SGNContext *cx);
 
 
 extern SECStatus SGN_Update(SGNContext *cx, const unsigned char *input,
-			   unsigned int inputLen);
+                            unsigned int inputLen);
 
 
 
@@ -104,8 +102,8 @@ extern SECStatus SGN_End(SGNContext *cx, SECItem *result);
 
 
 extern SECStatus SEC_SignData(SECItem *result,
-			     const unsigned char *buf, int len,
-			     SECKEYPrivateKey *pk, SECOidTag algid);
+                              const unsigned char *buf, int len,
+                              SECKEYPrivateKey *pk, SECOidTag algid);
 
 
 
@@ -116,7 +114,7 @@ extern SECStatus SEC_SignData(SECItem *result,
 
 
 extern SECStatus SGN_Digest(SECKEYPrivateKey *privKey,
-                SECOidTag algtag, SECItem *result, SECItem *digest);
+                            SECOidTag algtag, SECItem *result, SECItem *digest);
 
 
 
@@ -130,8 +128,8 @@ extern SECStatus SGN_Digest(SECKEYPrivateKey *privKey,
 
 
 extern SECStatus SEC_DerSignData(PLArenaPool *arena, SECItem *result,
-				const unsigned char *buf, int len,
-				SECKEYPrivateKey *pk, SECOidTag algid);
+                                 const unsigned char *buf, int len,
+                                 SECKEYPrivateKey *pk, SECOidTag algid);
 
 
 
@@ -166,7 +164,7 @@ extern SECOidTag SEC_GetSignatureAlgorithmOidTag(KeyType keyType,
 
 
 extern VFYContext *VFY_CreateContext(SECKEYPublicKey *key, SECItem *sig,
-				     SECOidTag sigAlg, void *wincx);
+                                     SECOidTag sigAlg, void *wincx);
 
 
 
@@ -186,10 +184,10 @@ extern VFYContext *VFY_CreateContext(SECKEYPublicKey *key, SECItem *sig,
 
 
 extern VFYContext *VFY_CreateContextDirect(const SECKEYPublicKey *key,
-					   const SECItem *sig,
-	     				   SECOidTag pubkAlg, 
-					   SECOidTag hashAlg, 
-					   SECOidTag *hash, void *wincx);
+                                           const SECItem *sig,
+                                           SECOidTag pubkAlg,
+                                           SECOidTag hashAlg,
+                                           SECOidTag *hash, void *wincx);
 
 
 
@@ -202,11 +200,11 @@ extern VFYContext *VFY_CreateContextDirect(const SECKEYPublicKey *key,
 
 
 
-extern VFYContext *VFY_CreateContextWithAlgorithmID(const SECKEYPublicKey *key, 
-				     const SECItem *sig,
-				     const SECAlgorithmID *algid, 
-				     SECOidTag *hash,
-				     void *wincx);
+extern VFYContext *VFY_CreateContextWithAlgorithmID(const SECKEYPublicKey *key,
+                                                    const SECItem *sig,
+                                                    const SECAlgorithmID *algid,
+                                                    SECOidTag *hash,
+                                                    void *wincx);
 
 
 
@@ -226,7 +224,7 @@ extern SECStatus VFY_Begin(VFYContext *cx);
 
 
 extern SECStatus VFY_Update(VFYContext *cx, const unsigned char *input,
-			    unsigned int inputLen);
+                            unsigned int inputLen);
 
 
 
@@ -263,9 +261,8 @@ extern SECStatus VFY_EndWithSignature(VFYContext *cx, SECItem *sig);
 
 
 
-
 extern SECStatus VFY_VerifyDigest(SECItem *dig, SECKEYPublicKey *key,
-				  SECItem *sig, SECOidTag sigAlg, void *wincx);
+                                  SECItem *sig, SECOidTag sigAlg, void *wincx);
 
 
 
@@ -279,10 +276,10 @@ extern SECStatus VFY_VerifyDigest(SECItem *dig, SECKEYPublicKey *key,
 
 
 
-extern SECStatus VFY_VerifyDigestDirect(const SECItem *dig, 
-					const SECKEYPublicKey *key,
-					const SECItem *sig, SECOidTag pubkAlg, 
-					SECOidTag hashAlg, void *wincx);
+extern SECStatus VFY_VerifyDigestDirect(const SECItem *dig,
+                                        const SECKEYPublicKey *key,
+                                        const SECItem *sig, SECOidTag pubkAlg,
+                                        SECOidTag hashAlg, void *wincx);
 
 
 
@@ -297,10 +294,10 @@ extern SECStatus VFY_VerifyDigestDirect(const SECItem *dig,
 
 
 
-extern SECStatus VFY_VerifyDigestWithAlgorithmID(const SECItem *dig, 
-				const SECKEYPublicKey *key, const SECItem *sig,
-				const SECAlgorithmID *algid, SECOidTag hash,
-				void *wincx);
+extern SECStatus VFY_VerifyDigestWithAlgorithmID(const SECItem *dig,
+                                                 const SECKEYPublicKey *key, const SECItem *sig,
+                                                 const SECAlgorithmID *algid, SECOidTag hash,
+                                                 void *wincx);
 
 
 
@@ -316,8 +313,8 @@ extern SECStatus VFY_VerifyDigestWithAlgorithmID(const SECItem *dig,
 
 
 extern SECStatus VFY_VerifyData(const unsigned char *buf, int len,
-				const SECKEYPublicKey *key, const SECItem *sig,
-				SECOidTag sigAlg, void *wincx);
+                                const SECKEYPublicKey *key, const SECItem *sig,
+                                SECOidTag sigAlg, void *wincx);
 
 
 
@@ -338,10 +335,10 @@ extern SECStatus VFY_VerifyData(const unsigned char *buf, int len,
 
 
 extern SECStatus VFY_VerifyDataDirect(const unsigned char *buf, int len,
-				      const SECKEYPublicKey *key, 
-				      const SECItem *sig,
-				      SECOidTag pubkAlg, SECOidTag hashAlg, 
-				      SECOidTag *hash, void *wincx);
+                                      const SECKEYPublicKey *key,
+                                      const SECItem *sig,
+                                      SECOidTag pubkAlg, SECOidTag hashAlg,
+                                      SECOidTag *hash, void *wincx);
 
 
 
@@ -356,12 +353,11 @@ extern SECStatus VFY_VerifyDataDirect(const unsigned char *buf, int len,
 
 
 
-extern SECStatus VFY_VerifyDataWithAlgorithmID(const unsigned char *buf, 
-				int len, const SECKEYPublicKey *key,
-				const SECItem *sig,
-				const SECAlgorithmID *algid, SECOidTag *hash,
-				void *wincx);
-
+extern SECStatus VFY_VerifyDataWithAlgorithmID(const unsigned char *buf,
+                                               int len, const SECKEYPublicKey *key,
+                                               const SECItem *sig,
+                                               const SECAlgorithmID *algid, SECOidTag *hash,
+                                               void *wincx);
 
 SEC_END_PROTOS
 

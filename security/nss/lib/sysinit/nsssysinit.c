@@ -318,10 +318,10 @@ overlapstrcpy(char *target, char *src)
 
 
 static SECStatus
-parse_parameters(char *parameters, char **filename, char **stripped)
+parse_parameters(const char *parameters, char **filename, char **stripped)
 {
-    char *sourcePrev;
-    char *sourceCurr;
+    const char *sourcePrev;
+    const char *sourceCurr;
     char *targetCurr;
     char *newStripped;
     *filename = NULL;

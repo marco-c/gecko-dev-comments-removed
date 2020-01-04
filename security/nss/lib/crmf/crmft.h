@@ -7,7 +7,6 @@
 
 
 
-
 #ifndef _CRMFT_H_
 #define _CRMFT_H_
 
@@ -132,41 +131,41 @@ typedef enum {
 
 
 
-typedef void (*CRMFEncoderOutputCallback) (void *arg,
-					   const char *buf,
-					   unsigned long len);
+typedef void (*CRMFEncoderOutputCallback)(void *arg,
+                                          const char *buf,
+                                          unsigned long len);
 
 
 
 
 
-typedef SECItem* (*CRMFMACPasswordCallback) (void *arg);
+typedef SECItem *(*CRMFMACPasswordCallback)(void *arg);
 
-typedef struct CRMFOptionalValidityStr      CRMFOptionalValidity;
-typedef struct CRMFValidityCreationInfoStr  CRMFGetValidity;
-typedef struct CRMFCertTemplateStr          CRMFCertTemplate;
-typedef struct CRMFCertRequestStr           CRMFCertRequest;
-typedef struct CRMFCertReqMsgStr            CRMFCertReqMsg;
-typedef struct CRMFCertReqMessagesStr       CRMFCertReqMessages;
-typedef struct CRMFProofOfPossessionStr     CRMFProofOfPossession;
-typedef struct CRMFPOPOSigningKeyStr        CRMFPOPOSigningKey;
-typedef struct CRMFPOPOSigningKeyInputStr   CRMFPOPOSigningKeyInput;
-typedef struct CRMFPOPOPrivKeyStr           CRMFPOPOPrivKey;
-typedef struct CRMFPKIPublicationInfoStr    CRMFPKIPublicationInfo;
-typedef struct CRMFSinglePubInfoStr         CRMFSinglePubInfo;
-typedef struct CRMFPKIArchiveOptionsStr     CRMFPKIArchiveOptions;
-typedef struct CRMFEncryptedKeyStr          CRMFEncryptedKey;
-typedef struct CRMFEncryptedValueStr        CRMFEncryptedValue;
-typedef struct CRMFCertIDStr                CRMFCertID;
-typedef struct CRMFCertIDStr                CRMFOldCertID;
-typedef CERTSubjectPublicKeyInfo            CRMFProtocolEncrKey;
-typedef struct CRMFValidityCreationInfoStr  CRMFValidityCreationInfo;
-typedef struct CRMFCertExtCreationInfoStr   CRMFCertExtCreationInfo;
-typedef struct CRMFPKMACValueStr            CRMFPKMACValue;
-typedef struct CRMFAttributeStr             CRMFAttribute;
-typedef struct CRMFControlStr               CRMFControl;
-typedef CERTGeneralName                     CRMFGeneralName;
-typedef struct CRMFCertExtensionStr         CRMFCertExtension;
+typedef struct CRMFOptionalValidityStr CRMFOptionalValidity;
+typedef struct CRMFValidityCreationInfoStr CRMFGetValidity;
+typedef struct CRMFCertTemplateStr CRMFCertTemplate;
+typedef struct CRMFCertRequestStr CRMFCertRequest;
+typedef struct CRMFCertReqMsgStr CRMFCertReqMsg;
+typedef struct CRMFCertReqMessagesStr CRMFCertReqMessages;
+typedef struct CRMFProofOfPossessionStr CRMFProofOfPossession;
+typedef struct CRMFPOPOSigningKeyStr CRMFPOPOSigningKey;
+typedef struct CRMFPOPOSigningKeyInputStr CRMFPOPOSigningKeyInput;
+typedef struct CRMFPOPOPrivKeyStr CRMFPOPOPrivKey;
+typedef struct CRMFPKIPublicationInfoStr CRMFPKIPublicationInfo;
+typedef struct CRMFSinglePubInfoStr CRMFSinglePubInfo;
+typedef struct CRMFPKIArchiveOptionsStr CRMFPKIArchiveOptions;
+typedef struct CRMFEncryptedKeyStr CRMFEncryptedKey;
+typedef struct CRMFEncryptedValueStr CRMFEncryptedValue;
+typedef struct CRMFCertIDStr CRMFCertID;
+typedef struct CRMFCertIDStr CRMFOldCertID;
+typedef CERTSubjectPublicKeyInfo CRMFProtocolEncrKey;
+typedef struct CRMFValidityCreationInfoStr CRMFValidityCreationInfo;
+typedef struct CRMFCertExtCreationInfoStr CRMFCertExtCreationInfo;
+typedef struct CRMFPKMACValueStr CRMFPKMACValue;
+typedef struct CRMFAttributeStr CRMFAttribute;
+typedef struct CRMFControlStr CRMFControl;
+typedef CERTGeneralName CRMFGeneralName;
+typedef struct CRMFCertExtensionStr CRMFCertExtension;
 
 struct CRMFValidityCreationInfoStr {
     PRTime *notBefore;
@@ -183,6 +182,5 @@ struct CRMFCertExtCreationInfoStr {
 
 extern const SEC_ASN1Template CRMFCertReqMessagesTemplate[];
 extern const SEC_ASN1Template CRMFCertRequestTemplate[];
-
 
 #endif 

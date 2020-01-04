@@ -3,7 +3,6 @@
 
 
 
-
 #ifndef _CRMFI_H_
 #define _CRMFI_H_
 
@@ -16,7 +15,7 @@
 #include "secerr.h"
 #include "blapit.h"
 
-#define CRMF_DEFAULT_ARENA_SIZE   1024
+#define CRMF_DEFAULT_ARENA_SIZE 1024
 
 
 
@@ -45,9 +44,9 @@
 
 
 
-#define MAX_WRAPPED_KEY_LEN       RSA_MAX_MODULUS_BITS
+#define MAX_WRAPPED_KEY_LEN RSA_MAX_MODULUS_BITS
 
-#define CRMF_BITS_TO_BYTES(bits) (((bits)+7)/8)
+#define CRMF_BITS_TO_BYTES(bits) (((bits) + 7) / 8)
 #define CRMF_BYTES_TO_BITS(bytes) ((bytes)*8)
 
 struct crmfEncoderArg {
@@ -66,16 +65,16 @@ struct crmfEncoderOutput {
 
 
 extern void
-       crmf_encoder_out(void *arg, const char *buf, unsigned long len,
-                        int depth, SEC_ASN1EncodingPart data_kind);
+crmf_encoder_out(void *arg, const char *buf, unsigned long len,
+                 int depth, SEC_ASN1EncodingPart data_kind);
 
 
 
 
 
-extern SECStatus 
-       crmf_init_encoder_callback_arg (struct crmfEncoderArg *encoderArg,
-				       SECItem               *derDest);
+extern SECStatus
+crmf_init_encoder_callback_arg(struct crmfEncoderArg *encoderArg,
+                               SECItem *derDest);
 
 
 
@@ -83,8 +82,8 @@ extern SECStatus
 
 
 extern void
-crmf_generic_encoder_callback(void *arg, const char* buf, unsigned long len,
-			      int depth, SEC_ASN1EncodingPart data_kind);
+crmf_generic_encoder_callback(void *arg, const char *buf, unsigned long len,
+                              int depth, SEC_ASN1EncodingPart data_kind);
 
 
 
@@ -109,76 +108,76 @@ extern const unsigned char hexFalse;
 
 
 extern SECStatus crmf_encode_integer(PLArenaPool *poolp, SECItem *dest,
-				     long value);
+                                     long value);
 extern SECStatus crmf_make_bitstring_copy(PLArenaPool *arena, SECItem *dest,
-					  SECItem *src);
+                                          SECItem *src);
 
-extern SECStatus crmf_copy_pkiarchiveoptions(PLArenaPool           *poolp,
-					     CRMFPKIArchiveOptions *destOpt,
-					     CRMFPKIArchiveOptions *srcOpt);
-extern SECStatus  
-       crmf_destroy_pkiarchiveoptions(CRMFPKIArchiveOptions *inArchOptions,
-				      PRBool                 freeit);
-extern const SEC_ASN1Template*
-       crmf_get_pkiarchiveoptions_subtemplate(CRMFControl *inControl);
-
-extern SECStatus crmf_copy_encryptedkey(PLArenaPool       *poolp,
-					CRMFEncryptedKey  *srcEncrKey,
-					CRMFEncryptedKey  *destEncrKey);
+extern SECStatus crmf_copy_pkiarchiveoptions(PLArenaPool *poolp,
+                                             CRMFPKIArchiveOptions *destOpt,
+                                             CRMFPKIArchiveOptions *srcOpt);
 extern SECStatus
-crmf_copy_encryptedvalue(PLArenaPool        *poolp,
-			 CRMFEncryptedValue *srcValue,
-			 CRMFEncryptedValue *destValue);
+crmf_destroy_pkiarchiveoptions(CRMFPKIArchiveOptions *inArchOptions,
+                               PRBool freeit);
+extern const SEC_ASN1Template *
+crmf_get_pkiarchiveoptions_subtemplate(CRMFControl *inControl);
+
+extern SECStatus crmf_copy_encryptedkey(PLArenaPool *poolp,
+                                        CRMFEncryptedKey *srcEncrKey,
+                                        CRMFEncryptedKey *destEncrKey);
+extern SECStatus
+crmf_copy_encryptedvalue(PLArenaPool *poolp,
+                         CRMFEncryptedValue *srcValue,
+                         CRMFEncryptedValue *destValue);
 
 extern SECStatus
-crmf_copy_encryptedvalue_secalg(PLArenaPool     *poolp,
-				SECAlgorithmID  *srcAlgId,
-				SECAlgorithmID **destAlgId);
+crmf_copy_encryptedvalue_secalg(PLArenaPool *poolp,
+                                SECAlgorithmID *srcAlgId,
+                                SECAlgorithmID **destAlgId);
 
 extern SECStatus crmf_template_copy_secalg(PLArenaPool *poolp,
-					   SECAlgorithmID **dest,
-					   SECAlgorithmID *src);
+                                           SECAlgorithmID **dest,
+                                           SECAlgorithmID *src);
 
 extern SECStatus crmf_copy_cert_name(PLArenaPool *poolp, CERTName **dest,
-				     CERTName *src);
+                                     CERTName *src);
 
-extern SECStatus crmf_template_add_public_key(PLArenaPool               *poolp,
-					      CERTSubjectPublicKeyInfo **dest,
-					      CERTSubjectPublicKeyInfo  *pubKey);
+extern SECStatus crmf_template_add_public_key(PLArenaPool *poolp,
+                                              CERTSubjectPublicKeyInfo **dest,
+                                              CERTSubjectPublicKeyInfo *pubKey);
 
-extern CRMFCertExtension* crmf_create_cert_extension(PLArenaPool *poolp,
-						     SECOidTag    tag, 
-						     PRBool       isCritical,
-						     SECItem     *data);
-extern CRMFCertRequest*
+extern CRMFCertExtension *crmf_create_cert_extension(PLArenaPool *poolp,
+                                                     SECOidTag tag,
+                                                     PRBool isCritical,
+                                                     SECItem *data);
+extern CRMFCertRequest *
 crmf_copy_cert_request(PLArenaPool *poolp, CRMFCertRequest *srcReq);
 
-extern SECStatus crmf_destroy_encrypted_value(CRMFEncryptedValue *inEncrValue, 
-					      PRBool freeit);
+extern SECStatus crmf_destroy_encrypted_value(CRMFEncryptedValue *inEncrValue,
+                                              PRBool freeit);
 
 extern CRMFEncryptedValue *
-crmf_create_encrypted_value_wrapped_privkey(SECKEYPrivateKey   *inPrivKey,
-					    SECKEYPublicKey    *inPubKey,
-					    CRMFEncryptedValue *destValue);
+crmf_create_encrypted_value_wrapped_privkey(SECKEYPrivateKey *inPrivKey,
+                                            SECKEYPublicKey *inPubKey,
+                                            CRMFEncryptedValue *destValue);
 
-extern CK_MECHANISM_TYPE 
-       crmf_get_mechanism_from_public_key(SECKEYPublicKey *inPubKey);
+extern CK_MECHANISM_TYPE
+crmf_get_mechanism_from_public_key(SECKEYPublicKey *inPubKey);
 
 extern SECStatus
-crmf_encrypted_value_unwrap_priv_key(PLArenaPool        *poolp,
-				     CRMFEncryptedValue *encValue,
-				     SECKEYPrivateKey   *privKey,
-				     SECKEYPublicKey    *newPubKey,
-				     SECItem            *nickname,
-				     PK11SlotInfo       *slot,
-				     unsigned char       keyUsage,
-				     SECKEYPrivateKey  **unWrappedKey,
-				     void               *wincx);
+crmf_encrypted_value_unwrap_priv_key(PLArenaPool *poolp,
+                                     CRMFEncryptedValue *encValue,
+                                     SECKEYPrivateKey *privKey,
+                                     SECKEYPublicKey *newPubKey,
+                                     SECItem *nickname,
+                                     PK11SlotInfo *slot,
+                                     unsigned char keyUsage,
+                                     SECKEYPrivateKey **unWrappedKey,
+                                     void *wincx);
 
-extern SECItem*
+extern SECItem *
 crmf_get_public_value(SECKEYPublicKey *pubKey, SECItem *dest);
 
-extern CRMFCertExtension*
+extern CRMFCertExtension *
 crmf_copy_cert_extension(PLArenaPool *poolp, CRMFCertExtension *inExtension);
 
 extern SECStatus

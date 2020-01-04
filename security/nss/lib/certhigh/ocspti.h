@@ -53,8 +53,6 @@
 
 
 
-
-
 typedef struct ocspBasicOCSPResponseStr ocspBasicOCSPResponse;
 typedef struct ocspCertStatusStr ocspCertStatus;
 typedef struct ocspResponderIDStr ocspResponderID;
@@ -70,9 +68,8 @@ typedef struct ocspTBSRequestStr ocspTBSRequest;
 
 
 
-
 struct CERTOCSPRequestStr {
-    PLArenaPool *arena;			
+    PLArenaPool *arena; 
     ocspTBSRequest *tbsRequest;
     ocspSignature *optionalSignature;
 };
@@ -92,12 +89,12 @@ struct CERTOCSPRequestStr {
 
 
 struct ocspTBSRequestStr {
-    SECItem version;			
-    SECItem *derRequestorName;		
-    CERTGeneralNameList *requestorName;	
+    SECItem version;                    
+    SECItem *derRequestorName;          
+    CERTGeneralNameList *requestorName; 
     ocspSingleRequest **requestList;
     CERTCertExtension **requestExtensions;
-    void *extensionHandle;		
+    void *extensionHandle; 
 };
 
 
@@ -124,12 +121,12 @@ struct ocspTBSRequestStr {
 
 struct ocspSignatureStr {
     SECAlgorithmID signatureAlgorithm;
-    SECItem signature;			
-    SECItem **derCerts;			
-    CERTCertificate *cert;		
-    PRBool wasChecked;			
-    SECStatus status;			
-    int failureReason;			
+    SECItem signature;     
+    SECItem **derCerts;    
+    CERTCertificate *cert; 
+    PRBool wasChecked;     
+    SECStatus status;      
+    int failureReason;     
 };
 
 
@@ -144,7 +141,7 @@ struct ocspSignatureStr {
 
 
 struct ocspSingleRequestStr {
-    PLArenaPool *arena;			
+    PLArenaPool *arena; 
 
 
     CERTOCSPCertID *reqCert;
@@ -160,14 +157,14 @@ struct ocspSingleRequestStr {
 
 struct CERTOCSPCertIDStr {
     SECAlgorithmID hashAlgorithm;
-    SECItem issuerNameHash;		
-    SECItem issuerKeyHash;		
-    SECItem serialNumber;		
-    SECItem issuerSHA1NameHash;		
-    SECItem issuerMD5NameHash;              
+    SECItem issuerNameHash;     
+    SECItem issuerKeyHash;      
+    SECItem serialNumber;       
+    SECItem issuerSHA1NameHash; 
+    SECItem issuerMD5NameHash;  
     SECItem issuerMD2NameHash;
-    SECItem issuerSHA1KeyHash;		
-    SECItem issuerMD5KeyHash;              
+    SECItem issuerSHA1KeyHash; 
+    SECItem issuerMD5KeyHash;  
     SECItem issuerMD2KeyHash;
     PLArenaPool *poolp;
 };
@@ -209,10 +206,10 @@ typedef enum {
 
 
 struct CERTOCSPResponseStr {
-    PLArenaPool *arena;			
-    SECItem responseStatus;		
-    ocspResponseStatus statusValue;	
-    ocspResponseBytes *responseBytes;	
+    PLArenaPool *arena;               
+    SECItem responseStatus;           
+    ocspResponseStatus statusValue;   
+    ocspResponseBytes *responseBytes; 
 };
 
 
@@ -230,12 +227,12 @@ struct CERTOCSPResponseStr {
 
 
 struct ocspResponseBytesStr {
-    SECItem responseType;		
-    SECOidTag responseTypeTag;		
-    SECItem response;			
+    SECItem responseType;      
+    SECOidTag responseTypeTag; 
+    SECItem response;          
     union {
-	ocspBasicOCSPResponse *basic;	
-    } decodedResponse;			
+        ocspBasicOCSPResponse *basic; 
+    } decodedResponse;                
 };
 
 
@@ -250,7 +247,7 @@ struct ocspResponseBytesStr {
 
 struct ocspBasicOCSPResponseStr {
     SECItem tbsResponseDataDER;
-    ocspResponseData *tbsResponseData;	
+    ocspResponseData *tbsResponseData; 
     ocspSignature responseSignature;
 };
 
@@ -260,20 +257,20 @@ struct ocspBasicOCSPResponseStr {
 
 
 struct ocspResponseDataStr {
-    SECItem version;			
+    SECItem version; 
     SECItem derResponderID;
-    ocspResponderID *responderID;	
-    SECItem producedAt;			
+    ocspResponderID *responderID; 
+    SECItem producedAt;           
     CERTOCSPSingleResponse **responses;
     CERTCertExtension **responseExtensions;
 };
 
 struct ocspResponderIDStr {
-    CERTOCSPResponderIDType responderIDType;
+    CERTOCSPResponderIDType responderIDType; 
     union {
-	CERTName name;			
-	SECItem keyHash;		
-	SECItem other;			
+        CERTName name;   
+        SECItem keyHash; 
+        SECItem other;   
     } responderIDValue;
 };
 
@@ -284,14 +281,14 @@ struct ocspResponderIDStr {
 
 
 struct CERTOCSPSingleResponseStr {
-    PLArenaPool *arena;			
+    PLArenaPool *arena; 
 
 
     CERTOCSPCertID *certID;
     SECItem derCertStatus;
-    ocspCertStatus *certStatus;		
-    SECItem thisUpdate;			
-    SECItem *nextUpdate;		
+    ocspCertStatus *certStatus; 
+    SECItem thisUpdate;         
+    SECItem *nextUpdate;        
     CERTCertExtension **singleExtensions;
 };
 
@@ -313,10 +310,10 @@ struct CERTOCSPSingleResponseStr {
 
 
 typedef enum {
-    ocspCertStatus_good,		
-    ocspCertStatus_revoked,		
-    ocspCertStatus_unknown,		
-    ocspCertStatus_other		
+    ocspCertStatus_good,    
+    ocspCertStatus_revoked, 
+    ocspCertStatus_unknown, 
+    ocspCertStatus_other    
 } ocspCertStatusType;
 
 
@@ -327,13 +324,13 @@ typedef enum {
 
 
 struct ocspCertStatusStr {
-    ocspCertStatusType certStatusType;	
+    ocspCertStatusType certStatusType; 
     union {
-	SECItem *goodInfo;		
-	ocspRevokedInfo *revokedInfo;	
-	SECItem *unknownInfo;		
-	SECItem *otherInfo;		
-    } certStatusInfo; 
+        SECItem *goodInfo;            
+        ocspRevokedInfo *revokedInfo; 
+        SECItem *unknownInfo;         
+        SECItem *otherInfo;           
+    } certStatusInfo;
 };
 
 
@@ -341,8 +338,8 @@ struct ocspCertStatusStr {
 
 
 struct ocspRevokedInfoStr {
-    SECItem revocationTime;		
-    SECItem *revocationReason;		
+    SECItem revocationTime;    
+    SECItem *revocationReason; 
 };
 
 
@@ -353,7 +350,7 @@ struct ocspRevokedInfoStr {
 
 struct ocspServiceLocatorStr {
     CERTName *issuer;
-    SECItem locator;	
+    SECItem locator; 
 };
 
 #endif 

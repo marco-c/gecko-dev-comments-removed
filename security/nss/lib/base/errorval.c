@@ -12,6 +12,8 @@
 #include "nssbaset.h"
 #endif 
 
+
+
 const NSSError NSS_ERROR_NO_ERROR                       =  0;
 const NSSError NSS_ERROR_INTERNAL_ERROR                 =  1;
 const NSSError NSS_ERROR_NO_MEMORY                      =  2;

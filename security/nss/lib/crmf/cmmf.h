@@ -38,7 +38,7 @@ SEC_BEGIN_PROTOS
 
 
 
-extern CMMFCertRepContent* CMMF_CreateCertRepContent(void);
+extern CMMFCertRepContent *CMMF_CreateCertRepContent(void);
 
 
 
@@ -60,10 +60,10 @@ extern CMMFCertRepContent* CMMF_CreateCertRepContent(void);
 
 
 
-extern CMMFCertRepContent* 
-       CMMF_CreateCertRepContentFromDER(CERTCertDBHandle *db, 
-					const char       *buf, 
-					long              len);
+extern CMMFCertRepContent *
+CMMF_CreateCertRepContentFromDER(CERTCertDBHandle *db,
+                                 const char *buf,
+                                 long len);
 
 
 
@@ -83,7 +83,7 @@ extern CMMFCertRepContent*
 
 
 
-extern CMMFCertResponse* CMMF_CreateCertResponse(long inCertReqId);
+extern CMMFCertResponse *CMMF_CreateCertResponse(long inCertReqId);
 
 
 
@@ -127,10 +127,10 @@ extern CMMFKeyRecRepContent *CMMF_CreateKeyRecRepContent(void);
 
 
 
-extern CMMFKeyRecRepContent* 
-       CMMF_CreateKeyRecRepContentFromDER(CERTCertDBHandle *db,
-					  const char       *buf,
-					  long              len);
+extern CMMFKeyRecRepContent *
+CMMF_CreateKeyRecRepContentFromDER(CERTCertDBHandle *db,
+                                   const char *buf,
+                                   long len);
 
 
 
@@ -149,8 +149,8 @@ extern CMMFKeyRecRepContent*
 
 
 
-extern CMMFPOPODecKeyChallContent*
-       CMMF_CreatePOPODecKeyChallContent(void);
+extern CMMFPOPODecKeyChallContent *
+CMMF_CreatePOPODecKeyChallContent(void);
 
 
 
@@ -167,8 +167,8 @@ extern CMMFPOPODecKeyChallContent*
 
 
 
-extern CMMFPOPODecKeyChallContent*
-       CMMF_CreatePOPODecKeyChallContentFromDER(const char *buf, long len);
+extern CMMFPOPODecKeyChallContent *
+CMMF_CreatePOPODecKeyChallContentFromDER(const char *buf, long len);
 
 
 
@@ -185,8 +185,8 @@ extern CMMFPOPODecKeyChallContent*
 
 
 
-extern CMMFPOPODecKeyRespContent*
-       CMMF_CreatePOPODecKeyRespContentFromDER(const char *buf, long len);
+extern CMMFPOPODecKeyRespContent *
+CMMF_CreatePOPODecKeyRespContentFromDER(const char *buf, long len);
 
 
 
@@ -213,10 +213,10 @@ extern CMMFPOPODecKeyRespContent*
 
 
 
-extern SECStatus 
-      CMMF_CertRepContentSetCertResponses(CMMFCertRepContent *inCertRepContent,
-					  CMMFCertResponse  **inCertResponses,
-					  int                 inNumResponses);
+extern SECStatus
+CMMF_CertRepContentSetCertResponses(CMMFCertRepContent *inCertRepContent,
+                                    CMMFCertResponse **inCertResponses,
+                                    int inNumResponses);
 
 
 
@@ -238,9 +238,9 @@ extern SECStatus
 
 
 
-extern SECStatus 
-       CMMF_CertRepContentSetCAPubs (CMMFCertRepContent  *inCertRepContent,
-				     CERTCertList        *inCAPubs);
+extern SECStatus
+CMMF_CertRepContentSetCAPubs(CMMFCertRepContent *inCertRepContent,
+                             CERTCertList *inCAPubs);
 
 
 
@@ -260,9 +260,9 @@ extern SECStatus
 
 
 
-extern SECStatus 
-     CMMF_CertResponseSetPKIStatusInfoStatus (CMMFCertResponse *inCertResp,
-					      CMMFPKIStatus     inPKIStatus);
+extern SECStatus
+CMMF_CertResponseSetPKIStatusInfoStatus(CMMFCertResponse *inCertResp,
+                                        CMMFPKIStatus inPKIStatus);
 
 
 
@@ -282,9 +282,9 @@ extern SECStatus
 
 
 
-extern SECStatus 
-       CMMF_CertResponseSetCertificate (CMMFCertResponse *inCertResp,
-					CERTCertificate  *inCertificate);
+extern SECStatus
+CMMF_CertResponseSetCertificate(CMMFCertResponse *inCertResp,
+                                CERTCertificate *inCertificate);
 
 
 
@@ -304,9 +304,9 @@ extern SECStatus
 
 
 
-extern SECStatus 
+extern SECStatus
 CMMF_KeyRecRepContentSetPKIStatusInfoStatus(CMMFKeyRecRepContent *inKeyRecRep,
-					    CMMFPKIStatus         inPKIStatus);
+                                            CMMFPKIStatus inPKIStatus);
 
 
 
@@ -324,31 +324,9 @@ CMMF_KeyRecRepContentSetPKIStatusInfoStatus(CMMFKeyRecRepContent *inKeyRecRep,
 
 
 
-extern SECStatus 
-       CMMF_KeyRecRepContentSetNewSignCert(CMMFKeyRecRepContent *inKeyRecRep,
-					   CERTCertificate     *inNewSignCert);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-extern SECStatus 
-       CMMF_KeyRecRepContentSetCACerts(CMMFKeyRecRepContent *inKeyRecRep,
-				       CERTCertList         *inCACerts);
+extern SECStatus
+CMMF_KeyRecRepContentSetNewSignCert(CMMFKeyRecRepContent *inKeyRecRep,
+                                    CERTCertificate *inNewSignCert);
 
 
 
@@ -368,15 +346,37 @@ extern SECStatus
 
 
 
+extern SECStatus
+CMMF_KeyRecRepContentSetCACerts(CMMFKeyRecRepContent *inKeyRecRep,
+                                CERTCertList *inCACerts);
 
 
 
 
-extern SECStatus 
-    CMMF_KeyRecRepContentSetCertifiedKeyPair(CMMFKeyRecRepContent *inKeyRecRep,
-					     CERTCertificate      *inCert,
-					     SECKEYPrivateKey     *inPrivKey,
-					     SECKEYPublicKey      *inPubKey);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+extern SECStatus
+CMMF_KeyRecRepContentSetCertifiedKeyPair(CMMFKeyRecRepContent *inKeyRecRep,
+                                         CERTCertificate *inCert,
+                                         SECKEYPrivateKey *inPrivKey,
+                                         SECKEYPublicKey *inPubKey);
 
 
 
@@ -409,46 +409,13 @@ extern SECStatus
 
 
 extern SECStatus
-CMMF_POPODecKeyChallContentSetNextChallenge
-                                   (CMMFPOPODecKeyChallContent *inDecKeyChall,
-				    long                        inRandom,
-				    CERTGeneralName            *inSender,
-				    SECKEYPublicKey            *inPubKey,
-				    void                       *passwdArg);
+CMMF_POPODecKeyChallContentSetNextChallenge(CMMFPOPODecKeyChallContent *inDecKeyChall,
+                                            long inRandom,
+                                            CERTGeneralName *inSender,
+                                            SECKEYPublicKey *inPubKey,
+                                            void *passwdArg);
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-extern SECStatus 
-       CMMF_EncodeCertRepContent (CMMFCertRepContent        *inCertRepContent,
-				  CRMFEncoderOutputCallback  inCallback,
-				  void                      *inArg);
 
 
 
@@ -477,9 +444,40 @@ extern SECStatus
 
 
 extern SECStatus
-       CMMF_EncodeKeyRecRepContent(CMMFKeyRecRepContent      *inKeyRecRep,
-				   CRMFEncoderOutputCallback  inCallback,
-				   void                      *inArg);
+CMMF_EncodeCertRepContent(CMMFCertRepContent *inCertRepContent,
+                          CRMFEncoderOutputCallback inCallback,
+                          void *inArg);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+extern SECStatus
+CMMF_EncodeKeyRecRepContent(CMMFKeyRecRepContent *inKeyRecRep,
+                            CRMFEncoderOutputCallback inCallback,
+                            void *inArg);
 
 
 
@@ -509,10 +507,10 @@ extern SECStatus
 
 
 
-extern SECStatus 
+extern SECStatus
 CMMF_EncodePOPODecKeyChallContent(CMMFPOPODecKeyChallContent *inDecKeyChall,
-				  CRMFEncoderOutputCallback inCallback,
-				  void                     *inArg);
+                                  CRMFEncoderOutputCallback inCallback,
+                                  void *inArg);
 
 
 
@@ -544,11 +542,11 @@ CMMF_EncodePOPODecKeyChallContent(CMMFPOPODecKeyChallContent *inDecKeyChall,
 
 
 
-extern SECStatus 
-      CMMF_EncodePOPODecKeyRespContent(long                     *inDecodedRand,
-				       int                       inNumRand,
-				       CRMFEncoderOutputCallback inCallback,
-				       void                     *inArg); 
+extern SECStatus
+CMMF_EncodePOPODecKeyRespContent(long *inDecodedRand,
+                                 int inNumRand,
+                                 CRMFEncoderOutputCallback inCallback,
+                                 void *inArg);
 
 
 
@@ -578,8 +576,8 @@ extern SECStatus
 
 
 
-extern CERTCertList* 
-       CMMF_CertRepContentGetCAPubs (CMMFCertRepContent *inCertRepContent);
+extern CERTCertList *
+CMMF_CertRepContentGetCAPubs(CMMFCertRepContent *inCertRepContent);
 
 
 
@@ -593,9 +591,9 @@ extern CERTCertList*
 
 
 
+extern int
+CMMF_CertRepContentGetNumResponses(CMMFCertRepContent *inCertRepContent);
 
-extern int 
- CMMF_CertRepContentGetNumResponses (CMMFCertRepContent *inCertRepContent);
 
 
 
@@ -615,10 +613,9 @@ extern int
 
 
 
-
-extern CMMFCertResponse*
-CMMF_CertRepContentGetResponseAtIndex (CMMFCertRepContent *inCertRepContent,
-				       int                 inIndex);
+extern CMMFCertResponse *
+CMMF_CertRepContentGetResponseAtIndex(CMMFCertRepContent *inCertRepContent,
+                                      int inIndex);
 
 
 
@@ -650,8 +647,8 @@ extern long CMMF_CertResponseGetCertReqId(CMMFCertResponse *inCertResp);
 
 
 
-extern CMMFPKIStatus 
-       CMMF_CertResponseGetPKIStatusInfoStatus(CMMFCertResponse *inCertResp);
+extern CMMFPKIStatus
+CMMF_CertResponseGetPKIStatusInfoStatus(CMMFCertResponse *inCertResp);
 
 
 
@@ -673,9 +670,9 @@ extern CMMFPKIStatus
 
 
 
-extern CERTCertificate*
-       CMMF_CertResponseGetCertificate(CMMFCertResponse *inCertResp,
-                                       CERTCertDBHandle *inCertdb);
+extern CERTCertificate *
+CMMF_CertResponseGetCertificate(CMMFCertResponse *inCertResp,
+                                CERTCertDBHandle *inCertdb);
 
 
 
@@ -689,7 +686,7 @@ extern CERTCertificate*
 
 
 
-extern CMMFPKIStatus 
+extern CMMFPKIStatus
 CMMF_KeyRecRepContentGetPKIStatusInfoStatus(CMMFKeyRecRepContent *inKeyRecRep);
 
 
@@ -706,8 +703,8 @@ CMMF_KeyRecRepContentGetPKIStatusInfoStatus(CMMFKeyRecRepContent *inKeyRecRep);
 
 
 
-extern CERTCertificate*
-       CMMF_KeyRecRepContentGetNewSignCert(CMMFKeyRecRepContent *inKeyRecRep);
+extern CERTCertificate *
+CMMF_KeyRecRepContentGetNewSignCert(CMMFKeyRecRepContent *inKeyRecRep);
 
 
 
@@ -729,8 +726,8 @@ extern CERTCertificate*
 
 
 
-extern CERTCertList*
-       CMMF_KeyRecRepContentGetCACerts(CMMFKeyRecRepContent *inKeyRecRep);
+extern CERTCertList *
+CMMF_KeyRecRepContentGetCACerts(CMMFKeyRecRepContent *inKeyRecRep);
 
 
 
@@ -741,8 +738,8 @@ extern CERTCertList*
 
 
 
-extern int 
-       CMMF_KeyRecRepContentGetNumKeyPairs(CMMFKeyRecRepContent *inKeyRecRep);
+extern int
+CMMF_KeyRecRepContentGetNumKeyPairs(CMMFKeyRecRepContent *inKeyRecRep);
 
 
 
@@ -761,9 +758,9 @@ extern int
 
 
 
-extern CMMFCertifiedKeyPair*
-      CMMF_KeyRecRepContentGetCertKeyAtIndex(CMMFKeyRecRepContent *inKeyRecRep,
-					     int                   inIndex);
+extern CMMFCertifiedKeyPair *
+CMMF_KeyRecRepContentGetCertKeyAtIndex(CMMFKeyRecRepContent *inKeyRecRep,
+                                       int inIndex);
 
 
 
@@ -786,9 +783,9 @@ extern CMMFCertifiedKeyPair*
 
 
 
-extern CERTCertificate*
-      CMMF_CertifiedKeyPairGetCertificate(CMMFCertifiedKeyPair *inCertKeyPair,
-					  CERTCertDBHandle     *inCertdb);
+extern CERTCertificate *
+CMMF_CertifiedKeyPairGetCertificate(CMMFCertifiedKeyPair *inCertKeyPair,
+                                    CERTCertDBHandle *inCertdb);
 
 
 
@@ -799,8 +796,7 @@ extern CERTCertificate*
 
 
 
-extern int CMMF_POPODecKeyChallContentGetNumChallenges
-                                  (CMMFPOPODecKeyChallContent *inKeyChallCont);
+extern int CMMF_POPODecKeyChallContentGetNumChallenges(CMMFPOPODecKeyChallContent *inKeyChallCont);
 
 
 
@@ -820,9 +816,8 @@ extern int CMMF_POPODecKeyChallContentGetNumChallenges
 
 
 
-extern SECItem* CMMF_POPODecKeyChallContentGetPublicValue
-                                   (CMMFPOPODecKeyChallContent *inKeyChallCont,
-				    int                         inIndex);
+extern SECItem *CMMF_POPODecKeyChallContentGetPublicValue(CMMFPOPODecKeyChallContent *inKeyChallCont,
+                                                          int inIndex);
 
 
 
@@ -849,11 +844,10 @@ extern SECItem* CMMF_POPODecKeyChallContentGetPublicValue
 
 
 
+extern SECStatus CMMF_POPODecKeyChallContentGetRandomNumber(CMMFPOPODecKeyChallContent *inKeyChallCont,
+                                                            int inIndex,
+                                                            long *inDest);
 
-extern SECStatus CMMF_POPODecKeyChallContentGetRandomNumber
-                                      (CMMFPOPODecKeyChallContent *inKeyChallCont,
-				       int                          inIndex,
-				       long                        *inDest);
 
 
 
@@ -862,9 +856,8 @@ extern SECStatus CMMF_POPODecKeyChallContentGetRandomNumber
 
 
 
-
-extern int 
- CMMF_POPODecKeyRespContentGetNumResponses(CMMFPOPODecKeyRespContent *inRespCont);
+extern int
+CMMF_POPODecKeyRespContentGetNumResponses(CMMFPOPODecKeyRespContent *inRespCont);
 
 
 
@@ -889,9 +882,9 @@ extern int
 
 
 extern SECStatus
-     CMMF_POPODecKeyRespContentGetResponse (CMMFPOPODecKeyRespContent *inRespCont,
-					    int                        inIndex,
-					    long                      *inDest);
+CMMF_POPODecKeyRespContentGetResponse(CMMFPOPODecKeyRespContent *inRespCont,
+                                      int inIndex,
+                                      long *inDest);
 
 
 
@@ -922,8 +915,8 @@ extern SECStatus CMMF_DestroyCertResponse(CMMFCertResponse *inCertResp);
 
 
 
-extern SECStatus 
-       CMMF_DestroyCertRepContent (CMMFCertRepContent *inCertRepContent);
+extern SECStatus
+CMMF_DestroyCertRepContent(CMMFCertRepContent *inCertRepContent);
 
 
 
@@ -938,8 +931,8 @@ extern SECStatus
 
 
 
-extern SECStatus 
-       CMMF_DestroyKeyRecRepContent(CMMFKeyRecRepContent *inKeyRecRep);
+extern SECStatus
+CMMF_DestroyKeyRecRepContent(CMMFKeyRecRepContent *inKeyRecRep);
 
 
 
@@ -954,8 +947,8 @@ extern SECStatus
 
 
 
-extern SECStatus 
-       CMMF_DestroyCertifiedKeyPair(CMMFCertifiedKeyPair *inCertKeyPair);
+extern SECStatus
+CMMF_DestroyCertifiedKeyPair(CMMFCertifiedKeyPair *inCertKeyPair);
 
 
 
@@ -972,11 +965,10 @@ extern SECStatus
 
 
 extern SECStatus
-       CMMF_DestroyPOPODecKeyRespContent(CMMFPOPODecKeyRespContent *inDecKeyResp);
+CMMF_DestroyPOPODecKeyRespContent(CMMFPOPODecKeyRespContent *inDecKeyResp);
 
 
 
- 
 
 
 
@@ -1008,14 +1000,14 @@ extern SECStatus
 
 
 
-extern SECStatus 
-       CMMF_CertifiedKeyPairUnwrapPrivKey(CMMFCertifiedKeyPair *inKeyPair,
-					  SECKEYPrivateKey     *inPrivKey,
-					  SECItem              *inNickName,
-					  PK11SlotInfo         *inSlot,
-                                          CERTCertDBHandle     *inCertdb,
-					  SECKEYPrivateKey    **destPrivKey,
-					  void                 *wincx);
+extern SECStatus
+CMMF_CertifiedKeyPairUnwrapPrivKey(CMMFCertifiedKeyPair *inKeyPair,
+                                   SECKEYPrivateKey *inPrivKey,
+                                   SECItem *inNickName,
+                                   PK11SlotInfo *inSlot,
+                                   CERTCertDBHandle *inCertdb,
+                                   SECKEYPrivateKey **destPrivKey,
+                                   void *wincx);
 
 
 
@@ -1028,8 +1020,8 @@ extern SECStatus
 
 
 
-extern PRBool 
-       CMMF_KeyRecRepContentHasCACerts(CMMFKeyRecRepContent *inKeyRecRep);
+extern PRBool
+CMMF_KeyRecRepContentHasCACerts(CMMFKeyRecRepContent *inKeyRecRep);
 
 
 
@@ -1064,10 +1056,10 @@ extern PRBool
 
 
 
-extern SECStatus 
-  CMMF_POPODecKeyChallContDecryptChallenge(CMMFPOPODecKeyChallContent *inChalCont,
-					   int                         inIndex,
-					   SECKEYPrivateKey           *inPrivKey);
+extern SECStatus
+CMMF_POPODecKeyChallContDecryptChallenge(CMMFPOPODecKeyChallContent *inChalCont,
+                                         int inIndex,
+                                         SECKEYPrivateKey *inPrivKey);
 
 
 
@@ -1083,8 +1075,8 @@ extern SECStatus
 
 
 
-extern SECStatus 
- CMMF_DestroyPOPODecKeyChallContent (CMMFPOPODecKeyChallContent *inDecKeyCont);
+extern SECStatus
+CMMF_DestroyPOPODecKeyChallContent(CMMFPOPODecKeyChallContent *inDecKeyCont);
 
 SEC_END_PROTOS
 #endif 
