@@ -14,7 +14,6 @@
 
 "use strict";
 
-const {cssTokenizer} = require("devtools/client/sourceeditor/css-tokenizer");
 const {Cc, Ci, Cu} = require("chrome");
 Cu.importGlobalProperties(["CSS"]);
 const promise = require("promise");
@@ -42,6 +41,85 @@ const BLANK_LINE_RX = /^[ \t]*(?:\r\n|\n|\r|\f|$)/;
 
 
 const COMMENT_PARSING_HEURISTIC_BYPASS_CHAR = "!";
+
+
+
+
+
+
+
+
+
+function* cssTokenizer(string) {
+  let lexer = DOMUtils.getCSSLexer(string);
+  while (true) {
+    let token = lexer.nextToken();
+    if (!token) {
+      break;
+    }
+    
+    if (token.tokenType !== "comment") {
+      yield token;
+    }
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function cssTokenizerWithLineColumn(string) {
+  let lexer = DOMUtils.getCSSLexer(string);
+  let result = [];
+  let prevToken = undefined;
+  while (true) {
+    let token = lexer.nextToken();
+    let lineNumber = lexer.lineNumber;
+    let columnNumber = lexer.columnNumber;
+
+    if (prevToken) {
+      prevToken.loc.end = {
+        line: lineNumber,
+        column: columnNumber
+      };
+    }
+
+    if (!token) {
+      break;
+    }
+
+    if (token.tokenType === "comment") {
+      
+      prevToken = undefined;
+    } else {
+      let startLoc = {
+        line: lineNumber,
+        column: columnNumber
+      };
+      token.loc = {start: startLoc};
+
+      result.push(token);
+      prevToken = token;
+    }
+  }
+
+  return result;
+}
 
 
 
@@ -992,6 +1070,8 @@ function parseSingleValue(value) {
   };
 }
 
+exports.cssTokenizer = cssTokenizer;
+exports.cssTokenizerWithLineColumn = cssTokenizerWithLineColumn;
 exports.escapeCSSComment = escapeCSSComment;
 
 exports._unescapeCSSComment = unescapeCSSComment;

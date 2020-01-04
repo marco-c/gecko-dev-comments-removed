@@ -4,7 +4,7 @@
 
 const { Cc, Ci, Cu } = require('chrome');
 const {cssTokenizer, cssTokenizerWithLineColumn}  =
-      require("devtools/client/sourceeditor/css-tokenizer");
+      require("devtools/client/shared/css-parsing-utils");
 
 
 

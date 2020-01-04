@@ -5,10 +5,10 @@
 
 "use strict";
 
-var Cu = Components.utils;
-const {require} = Cu.import("resource://gre/modules/devtools/shared/Loader.jsm", {});
+const Cu = Components.utils;
+const {require} = Cu.import("resource://gre/modules/devtools/Loader.jsm", {});
 const {parseDeclarations, _parseCommentDeclarations} =
-  require("devtools/client/styleinspector/css-parsing-utils");
+  require("devtools/client/shared/css-parsing-utils");
 
 const TEST_DATA = [
   
