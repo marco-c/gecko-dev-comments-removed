@@ -53,7 +53,7 @@ protected:
     
     
     
-    nsTArray<RefPtr<MediaStreamTrackDirectListener>> mOwnedDirectListeners;
+    nsTArray<RefPtr<DirectMediaStreamTrackListener>> mOwnedDirectListeners;
   };
 
   
@@ -65,9 +65,9 @@ protected:
                      uint32_t aMapIndex, GraphTime aFrom, GraphTime aTo,
                      bool* aOutputTrackFinished);
 
-  void AddDirectTrackListenerImpl(already_AddRefed<MediaStreamTrackDirectListener> aListener,
+  void AddDirectTrackListenerImpl(already_AddRefed<DirectMediaStreamTrackListener> aListener,
                                   TrackID aTrackID) override;
-  void RemoveDirectTrackListenerImpl(MediaStreamTrackDirectListener* aListener,
+  void RemoveDirectTrackListenerImpl(DirectMediaStreamTrackListener* aListener,
                                      TrackID aTrackID) override;
 
   nsTArray<TrackMapEntry> mTrackMap;
@@ -81,7 +81,7 @@ protected:
 
   
   
-  nsTArray<TrackBound<MediaStreamTrackDirectListener>> mPendingDirectTrackListeners;
+  nsTArray<TrackBound<DirectMediaStreamTrackListener>> mPendingDirectTrackListeners;
 };
 
 } 

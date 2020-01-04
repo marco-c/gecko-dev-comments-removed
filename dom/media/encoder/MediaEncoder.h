@@ -51,7 +51,7 @@ namespace mozilla {
 
 
 
-class MediaEncoder : public MediaStreamDirectListener
+class MediaEncoder : public DirectMediaStreamListener
 {
 public :
   enum {
