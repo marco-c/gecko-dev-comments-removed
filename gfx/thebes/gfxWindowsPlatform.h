@@ -152,6 +152,11 @@ public:
     
 
 
+    void ForceDeviceReset(ForcedDeviceResetReason aReason);
+
+    
+
+
 
 
 
