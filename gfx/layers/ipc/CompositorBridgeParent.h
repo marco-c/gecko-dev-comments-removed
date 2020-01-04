@@ -516,6 +516,9 @@ public:
                                             dom::ContentParent* aContentParent,
                                             const dom::TabId& aTabId,
                                             dom::TabParent* aBrowserParent);
+  bool AsyncPanZoomEnabled() const {
+    return !!mApzcTreeManager;
+  }
 
 protected:
   

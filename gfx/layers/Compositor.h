@@ -533,6 +533,9 @@ public:
   
   void SetInvalid();
   bool IsValid() const;
+  CompositorBridgeParent* GetCompositorBridgeParent() const {
+    return mParent;
+  }
 
 protected:
   void DrawDiagnosticsInternal(DiagnosticFlags aFlags,
