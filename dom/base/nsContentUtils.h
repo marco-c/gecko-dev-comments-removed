@@ -2561,6 +2561,13 @@ public:
 
   static StorageAccess StorageAllowedForPrincipal(nsIPrincipal* aPrincipal);
 
+  
+
+
+  static bool SerializeNodeToMarkup(nsINode* aRoot,
+                                    bool aDescendentsOnly,
+                                    nsAString& aOut);
+
 private:
   static bool InitializeEventTable();
 
