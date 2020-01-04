@@ -185,7 +185,12 @@ FragmentOrURL::GetSourceString(nsString &aRef) const
     mURL->GetRef(cref);
     cref.Insert('#', 0);
   } else {
-    mURL->GetSpec(cref);
+    
+    
+    nsresult rv = mURL->GetSpec(cref);
+    if (NS_FAILED(rv)) {
+      cref.Truncate();
+    }
   }
 
   aRef = NS_ConvertUTF8toUTF16(cref);

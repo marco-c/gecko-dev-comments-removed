@@ -1263,9 +1263,7 @@ FontFaceSet::LogMessage(gfxUserFontEntry* aUserFontEntry,
     CSSStyleSheet* sheet = rule->GetStyleSheet();
     
     if (sheet) {
-      nsAutoCString spec;
-      rv = sheet->GetSheetURI()->GetSpec(spec);
-      NS_ENSURE_SUCCESS(rv, rv);
+      nsCString spec = sheet->GetSheetURI()->GetSpecOrDefault();
       CopyUTF8toUTF16(spec, href);
     } else {
       NS_WARNING("null parent stylesheet for @font-face rule");
