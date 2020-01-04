@@ -215,7 +215,9 @@ public class CombinedHistoryAdapter extends RecyclerView.Adapter<CombinedHistory
                 
                 return position * PRIME_SECTION_HEADERS;
             case HISTORY:
-                if (!historyCursor.moveToPosition(position)) {
+                final int historyPosition = transformAdapterPositionForDataStructure(
+                        CombinedHistoryItem.ItemType.HISTORY, position);
+                if (!historyCursor.moveToPosition(historyPosition)) {
                     return RecyclerView.NO_ID;
                 }
 
