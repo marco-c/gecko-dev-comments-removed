@@ -81,8 +81,6 @@ var CallsListView = Heritage.extend(WidgetMethods, {
       gutter.appendChild(index);
       contents.appendChild(gutter);
 
-      
-      
       if (call.callerPreview) {
         let context = document.createElement("label");
         context.className = "plain call-item-context";
