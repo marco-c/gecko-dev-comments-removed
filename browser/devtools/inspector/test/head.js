@@ -80,6 +80,11 @@ let addTab = Task.async(function* (url) {
   return tab;
 });
 
+let navigateTo = function (toolbox, url) {
+  let activeTab = toolbox.target.activeTab;
+  return activeTab.navigateTo(url);
+};
+
 
 
 
