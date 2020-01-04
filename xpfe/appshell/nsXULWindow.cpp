@@ -441,8 +441,13 @@ NS_IMETHODIMP nsXULWindow::Destroy()
   
   
   ExitModalLoop(NS_OK);
+  
+  
+  
+#ifndef MOZ_WIDGET_GTK
   if (mWindow)
     mWindow->Show(false);
+#endif
 
 #if defined(XP_WIN)
   
