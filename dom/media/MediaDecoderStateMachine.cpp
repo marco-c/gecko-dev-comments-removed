@@ -63,19 +63,28 @@ using namespace mozilla::media;
 #define NS_DispatchToMainThread(...) CompileError_UseAbstractThreadDispatchInstead
 
 
-#undef FMT
+#undef LOG
 #undef DECODER_LOG
 #undef VERBOSE_LOG
-#undef SAMPLE_LOG
-#undef DECODER_WARN
 #undef DUMP_LOG
 
-#define FMT(x, ...) "Decoder=%p " x, mDecoderID, ##__VA_ARGS__
-#define DECODER_LOG(...) MOZ_LOG(gMediaDecoderLog, LogLevel::Debug,   (FMT(__VA_ARGS__)))
-#define VERBOSE_LOG(...) MOZ_LOG(gMediaDecoderLog, LogLevel::Verbose, (FMT(__VA_ARGS__)))
-#define SAMPLE_LOG(...)  MOZ_LOG(gMediaSampleLog,  LogLevel::Debug,   (FMT(__VA_ARGS__)))
-#define DECODER_WARN(...) NS_WARNING(nsPrintfCString(FMT(__VA_ARGS__)).get())
-#define DUMP_LOG(...) NS_DebugBreak(NS_DEBUG_WARNING, nsPrintfCString(FMT(__VA_ARGS__)).get(), nullptr, nullptr, -1)
+#define LOG(m, l, x, ...) \
+  MOZ_LOG(m, l, ("Decoder=%p " x, mDecoderID, ##__VA_ARGS__))
+#define DECODER_LOG(x, ...) \
+  LOG(gMediaDecoderLog, LogLevel::Debug, x, ##__VA_ARGS__)
+#define VERBOSE_LOG(x, ...) \
+  LOG(gMediaDecoderLog, LogLevel::Verbose, x, ##__VA_ARGS__)
+#define SAMPLE_LOG(x, ...) \
+  LOG(gMediaSampleLog, LogLevel::Debug, x, ##__VA_ARGS__)
+
+
+
+#define DECODER_WARN_HELPER(a, b) NS_WARNING b
+#define DECODER_WARN(x, ...) \
+  DECODER_WARN_HELPER(0, (nsPrintfCString("Decoder=%p " x, mDecoderID, ##__VA_ARGS__).get()))
+
+#define DUMP_LOG(x, ...) \
+  NS_DebugBreak(NS_DEBUG_WARNING, nsPrintfCString("Decoder=%p " x, mDecoderID, ##__VA_ARGS__).get(), nullptr, nullptr, -1)
 
 
 
@@ -1353,6 +1362,7 @@ void MediaDecoderStateMachine::VisibilityChanged()
 
   if (mVideoDecodeSuspended) {
     mVideoDecodeSuspended = false;
+    mReader->SetVideoBlankDecode(false);
 
     if (mIsReaderSuspended) {
       return;
@@ -2631,7 +2641,7 @@ bool MediaDecoderStateMachine::IsStateMachineScheduled() const
 bool MediaDecoderStateMachine::IsVideoDecodeSuspended() const
 {
   MOZ_ASSERT(OnTaskQueue());
-  return mVideoDecodeSuspended || mIsReaderSuspended;
+  return mIsReaderSuspended;
 }
 
 void
@@ -2923,6 +2933,7 @@ MediaDecoderStateMachine::OnSuspendTimerResolved()
   DECODER_LOG("OnSuspendTimerResolved");
   mVideoDecodeSuspendTimer.CompleteRequest();
   mVideoDecodeSuspended = true;
+  mReader->SetVideoBlankDecode(true);
 }
 
 void
@@ -2935,5 +2946,12 @@ MediaDecoderStateMachine::OnSuspendTimerRejected()
 }
 
 } 
+
+
+#undef LOG
+#undef DECODER_LOG
+#undef VERBOSE_LOG
+#undef DECODER_WARN
+#undef DECODER_WARN_HELPER
 
 #undef NS_DispatchToMainThread
