@@ -650,14 +650,14 @@ nsDOMIdentity.prototype = {
 
   
   observe: function nsDOMIdentityInternal_observe(aSubject, aTopic, aData) {
-    let window = aSubject.QueryInterface(Ci.nsIDOMWindow);
-    if (window != this._window) {
+    let wId = aSubject.QueryInterface(Ci.nsISupportsPRUint64).data;
+    if (wId != this._innerWindowID) {
       return;
     }
 
     this.uninit();
 
-    Services.obs.removeObserver(this, "dom-window-destroyed");
+    Services.obs.removeObserver(this, "inner-window-destroyed");
     this._initializeState();
 
     
@@ -729,7 +729,7 @@ nsDOMIdentity.prototype = {
     }, this);
 
     
-    Services.obs.addObserver(this, "dom-window-destroyed", false);
+    Services.obs.addObserver(this, "inner-window-destroyed", false);
   },
 
   uninit: function DOMIdentity_uninit() {
