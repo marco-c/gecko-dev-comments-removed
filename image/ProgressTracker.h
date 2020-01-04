@@ -7,9 +7,11 @@
 #ifndef mozilla_image_ProgressTracker_h
 #define mozilla_image_ProgressTracker_h
 
+#include "CopyOnWrite.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/WeakPtr.h"
+#include "nsDataHashtable.h"
 #include "nsCOMPtr.h"
 #include "nsTObserverArray.h"
 #include "nsThreadUtils.h"
@@ -67,6 +69,37 @@ inline Progress LoadCompleteProgress(bool aLastPart,
 
 
 
+class ObserverTable
+  : public nsDataHashtable<nsPtrHashKey<IProgressObserver>,
+                           WeakPtr<IProgressObserver>>
+{
+public:
+  NS_INLINE_DECL_REFCOUNTING(ObserverTable);
+
+  ObserverTable() = default;
+
+  ObserverTable(const ObserverTable& aOther)
+  {
+    NS_WARNING("Forced to copy ObserverTable due to nested notifications");
+    for (auto iter = aOther.ConstIter(); !iter.Done(); iter.Next()) {
+      this->Put(iter.Key(), iter.Data());
+    }
+  }
+
+private:
+  ~ObserverTable() { }
+};
+
+
+
+
+
+
+
+
+
+
+
 class ProgressTracker : public mozilla::SupportsWeakPtr<ProgressTracker>
 {
   virtual ~ProgressTracker() { }
@@ -78,6 +111,7 @@ public:
   ProgressTracker()
     : mImageMutex("ProgressTracker::mImage")
     , mImage(nullptr)
+    , mObservers(new ObserverTable)
     , mProgress(NoProgress)
   { }
 
@@ -150,17 +184,13 @@ public:
   
   void AddObserver(IProgressObserver* aObserver);
   bool RemoveObserver(IProgressObserver* aObserver);
-  size_t ObserverCount() const {
-    MOZ_ASSERT(NS_IsMainThread(), "Use mObservers on main thread only");
-    return mObservers.Length();
-  }
+  uint32_t ObserverCount() const;
 
   
   
   void ResetImage();
 
 private:
-  typedef nsTObserverArray<mozilla::WeakPtr<IProgressObserver>> ObserverArray;
   friend class AsyncNotifyRunnable;
   friend class AsyncNotifyCurrentStateRunnable;
   friend class ImageFactory;
@@ -179,11 +209,6 @@ private:
   void FireFailureNotification();
 
   
-  
-  static void SyncNotifyInternal(ObserverArray& aObservers,
-                                 bool aHasImage, Progress aProgress,
-                                 const nsIntRect& aInvalidRect);
-
   nsCOMPtr<nsIRunnable> mRunnable;
 
   
@@ -193,8 +218,7 @@ private:
 
   
   
-  
-  ObserverArray mObservers;
+  CopyOnWrite<ObserverTable> mObservers;
 
   Progress mProgress;
 };
