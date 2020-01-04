@@ -2604,6 +2604,12 @@ bool Renderer11::testDeviceLost()
 {
     bool isLost = false;
 
+    if (!mDevice) {
+        
+        ASSERT(mDeviceLost);
+        return true;
+    }
+
     
     HRESULT result = mDevice->GetDeviceRemovedReason();
     isLost = d3d11::isDeviceLostError(result);
