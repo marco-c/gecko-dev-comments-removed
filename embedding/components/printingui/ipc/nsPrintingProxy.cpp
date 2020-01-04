@@ -228,9 +228,7 @@ nsPrintingProxy::DeallocPPrintProgressDialogChild(PPrintProgressDialogChild* aAc
 {
   
   
-  NS_NOTREACHED("Deallocator for PPrintProgressDialogChild should not be "
-                "called on nsPrintingProxy.");
-  return false;
+  return true;
 }
 
 PPrintSettingsDialogChild*
