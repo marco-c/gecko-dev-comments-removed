@@ -487,13 +487,48 @@ class RelocationIterator
 static JitCode*
 CodeFromJump(JitCode* code, uint8_t* jump)
 {
-    Instruction* branch = (Instruction*)jump;
+    const Instruction* inst = (const Instruction*)jump;
     uint8_t* target;
+
     
-    if (branch->BranchType() == vixl::UnknownBranchType)
-        target = (uint8_t*)branch->Literal64();
-    else
-        target = (uint8_t*)branch->ImmPCOffsetTarget();
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    inst = inst->skipPool();
+
+    
+    if (inst->IsStackPtrSync())
+        inst = inst->InstructionAtOffset(vixl::kInstructionSize)->skipPool();
+
+    if (inst->BranchType() != vixl::UnknownBranchType) {
+        
+        target = (uint8_t*)inst->ImmPCOffsetTarget();
+    } else if (inst->IsLDR()) {
+        
+        mozilla::DebugOnly<const Instruction*> nextInst =
+          inst->InstructionAtOffset(vixl::kInstructionSize)->skipPool();
+        MOZ_ASSERT(nextInst->IsNOP() || nextInst->IsBLR());
+        target = (uint8_t*)inst->Literal64();
+    } else if (inst->IsADR()) {
+        
+        mozilla::DebugOnly<const Instruction*> nextInst =
+          inst->InstructionAtOffset(vixl::kInstructionSize)->skipPool();
+        MOZ_ASSERT(nextInst->IsNOP());
+        ptrdiff_t offset = inst->ImmPCRawOffset() << vixl::kLiteralEntrySizeLog2;
+        
+        memcpy(&target, inst + offset, sizeof(target));
+    } else {
+        MOZ_CRASH("Unrecognized jump instruction.");
+    }
 
     
     if (target >= code->raw() && target < code->raw() + code->instructionsSize()) {
