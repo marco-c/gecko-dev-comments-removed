@@ -470,8 +470,6 @@ nsGIFDecoder2::DoDecode(SourceBufferIterator& aIterator, IResumable* aOnResume)
         return FinishedGlobalColorTable();
       case State::BLOCK_HEADER:
         return ReadBlockHeader(aData);
-      case State::BLOCK_HEADER_AFTER_YIELD:
-        return Transition::To(State::BLOCK_HEADER, BLOCK_HEADER_LEN);
       case State::EXTENSION_HEADER:
         return ReadExtensionHeader(aData);
       case State::GRAPHIC_CONTROL_EXTENSION:
@@ -484,6 +482,8 @@ nsGIFDecoder2::DoDecode(SourceBufferIterator& aIterator, IResumable* aOnResume)
         return ReadNetscapeExtensionData(aData);
       case State::IMAGE_DESCRIPTOR:
         return ReadImageDescriptor(aData);
+      case State::FINISH_IMAGE_DESCRIPTOR:
+        return FinishImageDescriptor(aData);
       case State::LOCAL_COLOR_TABLE:
         return ReadLocalColorTable(aData, aLength);
       case State::FINISHED_LOCAL_COLOR_TABLE:
@@ -754,29 +754,40 @@ nsGIFDecoder2::ReadNetscapeExtensionData(const char* aData)
 LexerTransition<nsGIFDecoder2::State>
 nsGIFDecoder2::ReadImageDescriptor(const char* aData)
 {
-  if (mGIFStruct.images_decoded == 1) {
-    if (!HasAnimation()) {
-      
-      
-      
-      
-      PostIsAnimated(FrameTimeout::FromRawMilliseconds(0));
-    }
-
-    if (IsFirstFrameDecode()) {
-      
-      
-      FinishInternal();
-      return Transition::TerminateSuccess();
-    }
-
-    if (mDownscaler) {
-      MOZ_ASSERT_UNREACHABLE("Doing downscale-during-decode for an animated "
-                             "image?");
-      mDownscaler.reset();
-    }
+  
+  
+  if (mGIFStruct.images_decoded == 0) {
+    return FinishImageDescriptor(aData);
   }
 
+  if (!HasAnimation()) {
+    
+    
+    
+    
+    PostIsAnimated(FrameTimeout::FromRawMilliseconds(0));
+  }
+
+  if (IsFirstFrameDecode()) {
+    
+    
+    FinishInternal();
+    return Transition::TerminateSuccess();
+  }
+
+  if (mDownscaler) {
+    MOZ_ASSERT_UNREACHABLE("Doing downscale-during-decode for an animated "
+                           "image?");
+    mDownscaler.reset();
+  }
+
+  
+  return Transition::ToAfterYield(State::FINISH_IMAGE_DESCRIPTOR);
+}
+
+LexerTransition<nsGIFDecoder2::State>
+nsGIFDecoder2::FinishImageDescriptor(const char* aData)
+{
   IntRect frameRect;
 
   
@@ -972,7 +983,7 @@ nsGIFDecoder2::ReadImageDataSubBlock(const char* aData)
   if (subBlockLength == 0) {
     
     EndImageFrame();
-    return Transition::ToAfterYield(State::BLOCK_HEADER_AFTER_YIELD);
+    return Transition::To(State::BLOCK_HEADER, BLOCK_HEADER_LEN);
   }
 
   if (mGIFStruct.pixels_remaining == 0) {
