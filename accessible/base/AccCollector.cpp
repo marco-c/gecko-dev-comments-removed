@@ -12,12 +12,6 @@ using namespace mozilla::a11y;
 
 
 
-AccCollector::
-  AccCollector(Accessible* aRoot, filters::FilterFuncPtr aFilterFunc) :
-  mFilterFunc(aFilterFunc), mRoot(aRoot), mRootChildIdx(0)
-{
-}
-
 AccCollector::~AccCollector()
 {
 }
