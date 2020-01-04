@@ -46,6 +46,9 @@ bool IMEHandler::sShowingOnScreenKeyboard = false;
 decltype(SetInputScopes)* IMEHandler::sSetInputScopes = nullptr;
 #endif 
 
+static POWER_PLATFORM_ROLE sPowerPlatformRole = PlatformRoleUnspecified;
+static bool sDeterminedPowerPlatformRole = false;
+
 
 void
 IMEHandler::Initialize()
@@ -661,21 +664,31 @@ IMEHandler::IsKeyboardPresentOnSlate()
   
   
   
-  typedef POWER_PLATFORM_ROLE (WINAPI* PowerDeterminePlatformRole)();
-  PowerDeterminePlatformRole power_determine_platform_role =
-    reinterpret_cast<PowerDeterminePlatformRole>(::GetProcAddress(
-      ::LoadLibraryW(L"PowrProf.dll"), "PowerDeterminePlatformRole"));
-  if (power_determine_platform_role) {
-    POWER_PLATFORM_ROLE role = power_determine_platform_role();
-    if (((role == PlatformRoleMobile) || (role == PlatformRoleSlate)) &&
-         (::GetSystemMetrics(SM_CONVERTIBLESLATEMODE) == 0)) {
-      if (role == PlatformRoleMobile) {
-        Preferences::SetString(kOskDebugReason, L"IKPOS: PlatformRoleMobile.");
-      } else if (role == PlatformRoleSlate) {
-        Preferences::SetString(kOskDebugReason, L"IKPOS: PlatformRoleSlate.");
-      }
-      return false;
+  typedef POWER_PLATFORM_ROLE (WINAPI* PowerDeterminePlatformRoleEx)(ULONG Version);
+  if (!sDeterminedPowerPlatformRole) {
+    sDeterminedPowerPlatformRole = true;
+    PowerDeterminePlatformRoleEx power_determine_platform_role =
+      reinterpret_cast<PowerDeterminePlatformRoleEx>(::GetProcAddress(
+        ::LoadLibraryW(L"PowrProf.dll"), "PowerDeterminePlatformRoleEx"));
+    if (power_determine_platform_role) {
+      sPowerPlatformRole = power_determine_platform_role(POWER_PLATFORM_ROLE_V2);
+    } else {
+      sPowerPlatformRole = PlatformRoleUnspecified;
     }
+  }
+
+  
+  
+  if (sPowerPlatformRole != PlatformRoleMobile &&
+      sPowerPlatformRole != PlatformRoleSlate) {
+    Preferences::SetString(kOskDebugReason, L"IKPOS: PlatformRole is neither Mobile nor Slate.");
+    return true;
+  }
+
+  
+  if (::GetSystemMetrics(SM_CONVERTIBLESLATEMODE) != 0) {
+    Preferences::SetString(kOskDebugReason, L"IKPOS: ConvertibleSlateMode is non-zero");
+    return true;
   }
 
   const GUID KEYBOARD_CLASS_GUID =
