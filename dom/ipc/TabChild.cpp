@@ -867,6 +867,9 @@ TabChild::NotifyTabContextUpdated()
         
         if (IsBrowserElement()) {
           docShell->SetIsBrowserInsideApp(BrowserOwnerAppId());
+          
+          
+          docShell->SetIsInIsolatedMozBrowserElement(IsBrowserElement());
         } else {
           docShell->SetIsApp(OwnAppId());
         }
@@ -1110,7 +1113,7 @@ TabChild::ProvideWindow(mozIDOMWindowProxy* aParent,
     
     
     nsCOMPtr<nsIDocShell> docshell = do_GetInterface(aParent);
-    bool iframeMoz = (docshell && docshell->GetIsInBrowserOrApp() &&
+    bool iframeMoz = (docshell && docshell->GetIsInMozBrowserOrApp() &&
                       !(aChromeFlags & (nsIWebBrowserChrome::CHROME_MODAL |
                                         nsIWebBrowserChrome::CHROME_OPENAS_DIALOG |
                                         nsIWebBrowserChrome::CHROME_OPENAS_CHROME)));

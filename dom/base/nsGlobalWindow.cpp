@@ -3802,7 +3802,7 @@ nsGlobalWindow::GetParentOuter()
   }
 
   nsCOMPtr<nsPIDOMWindowOuter> parent;
-  if (mDocShell->GetIsBrowserOrApp()) {
+  if (mDocShell->GetIsMozBrowserOrApp()) {
     parent = AsOuter();
   } else {
     parent = GetParent();
@@ -3968,7 +3968,7 @@ nsGlobalWindow::GetContentInternal(ErrorResult& aError, bool aUnprivilegedCaller
 
   
   
-  if (mDocShell && mDocShell->GetIsInBrowserOrApp()) {
+  if (mDocShell && mDocShell->GetIsInMozBrowserOrApp()) {
     return GetTopOuter();
   }
 
@@ -7176,7 +7176,7 @@ nsGlobalWindow::ResizeToOuter(int32_t aWidth, int32_t aHeight, ErrorResult& aErr
 
 
 
-  if (mDocShell && mDocShell->GetIsBrowserOrApp()) {
+  if (mDocShell && mDocShell->GetIsMozBrowserOrApp()) {
     CSSIntSize size(aWidth, aHeight);
     if (!DispatchResizeEvent(size)) {
       
@@ -7226,7 +7226,7 @@ nsGlobalWindow::ResizeByOuter(int32_t aWidthDif, int32_t aHeightDif,
 
 
 
-  if (mDocShell && mDocShell->GetIsBrowserOrApp()) {
+  if (mDocShell && mDocShell->GetIsMozBrowserOrApp()) {
     CSSIntSize size;
     if (NS_FAILED(GetInnerSize(size))) {
       return;
@@ -8175,7 +8175,7 @@ nsGlobalWindow::CloseOuter(bool aTrustedCaller)
   MOZ_RELEASE_ASSERT(IsOuterWindow());
 
   if (!mDocShell || IsInModalState() ||
-      (IsFrame() && !mDocShell->GetIsBrowserOrApp())) {
+      (IsFrame() && !mDocShell->GetIsMozBrowserOrApp())) {
     
     
     
@@ -8702,7 +8702,7 @@ nsGlobalWindow::GetFrameElementOuter()
 {
   MOZ_RELEASE_ASSERT(IsOuterWindow());
 
-  if (!mDocShell || mDocShell->GetIsBrowserOrApp()) {
+  if (!mDocShell || mDocShell->GetIsMozBrowserOrApp()) {
     return nullptr;
   }
 

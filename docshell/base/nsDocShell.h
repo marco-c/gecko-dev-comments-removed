@@ -1001,6 +1001,9 @@ protected:
   FrameType mFrameType;
 
   
+  bool mIsInIsolatedMozBrowser;
+
+  
   
   
   
