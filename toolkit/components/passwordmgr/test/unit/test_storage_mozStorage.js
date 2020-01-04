@@ -156,7 +156,7 @@ testuser5.init("http://test.gov", "http://test.gov", null,
 
 
 testnum++;
-testdesc = "Test downgrade from v999 storage"
+testdesc = "Test downgrade from v999 storage";
 
 yield* copyFile("signons-v999.sqlite");
 
@@ -177,7 +177,7 @@ deleteFile(OUTDIR, "signons-v999.sqlite");
 
 
 testnum++;
-testdesc = "Test downgrade from incompat v999 storage"
+testdesc = "Test downgrade from incompat v999 storage";
 
 
 var origFile = OS.Path.join(OUTDIR, "signons-v999-2.sqlite");
@@ -198,7 +198,7 @@ yield OS.File.remove(failFile);
 
 
 testnum++;
-testdesc = "Test upgrade from v1->v2 storage"
+testdesc = "Test upgrade from v1->v2 storage";
 
 yield* copyFile("signons-v1.sqlite");
 
@@ -257,7 +257,7 @@ deleteFile(OUTDIR, "signons-v1v2.sqlite");
 
 
 testnum++;
-testdesc = "Test upgrade from v2->v3 storage"
+testdesc = "Test upgrade from v2->v3 storage";
 
 yield* copyFile("signons-v2.sqlite");
 
@@ -317,7 +317,7 @@ deleteFile(OUTDIR, "signons-v2v3.sqlite");
 
 
 testnum++;
-testdesc = "Test upgrade from v3->v4 storage"
+testdesc = "Test upgrade from v3->v4 storage";
 
 yield* copyFile("signons-v3.sqlite");
 
@@ -344,7 +344,7 @@ for (var i = 0; i < 2; i++) {
 
 
 testnum++;
-testdesc = "Test upgrade from v3->v4->v3 storage"
+testdesc = "Test upgrade from v3->v4->v3 storage";
 
 yield* copyFile("signons-v3v4.sqlite");
 
@@ -384,7 +384,7 @@ LoginTestUtils.assertTimeIsAboutNow(t2.timePasswordChanged);
 
 
 testnum++;
-testdesc = "Test upgrade from v4 storage"
+testdesc = "Test upgrade from v4 storage";
 
 yield* copyFile("signons-v4.sqlite");
 
@@ -399,7 +399,7 @@ do_check_true(dbConnection.tableExists("moz_deleted_logins"));
 
 
 testnum++;
-testdesc = "Test upgrade from v4->v5->v4 storage"
+testdesc = "Test upgrade from v4->v5->v4 storage";
 
 yield copyFile("signons-v4v5.sqlite");
 
@@ -451,7 +451,7 @@ for (let host of disabledHosts) {
 
 
 testnum++;
-testdesc = "Create nsILoginInfo instances for testing with"
+testdesc = "Create nsILoginInfo instances for testing with";
 
 testuser1 = new nsLoginInfo;
 testuser1.init("http://dummyhost.mozilla.org", "", null,
@@ -466,7 +466,7 @@ testuser1.init("http://dummyhost.mozilla.org", "", null,
 
 
 testnum++;
-testdesc = "Corrupt database and backup"
+testdesc = "Corrupt database and backup";
 
 const filename = "signons-c.sqlite";
 const filepath = OS.Path.join(OS.Constants.Path.profileDir, filename);

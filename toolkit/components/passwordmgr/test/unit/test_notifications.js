@@ -67,7 +67,7 @@ Services.obs.addObserver(TestObserver, "passwordmgr-storage-changed", false);
 
 
 testnum = 1;
-testdesc = "Initial connection to storage module"
+testdesc = "Initial connection to storage module";
 
 
 testnum++;
