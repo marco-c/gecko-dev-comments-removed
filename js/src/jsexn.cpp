@@ -543,6 +543,13 @@ js::ErrorToException(JSContext* cx, const char* message, JSErrorReport* reportp,
         return false;
 
     
+    
+    
+    
+    if (cx->runtime()->isSelfHostingCompartment(cx->compartment()))
+        return false;
+
+    
     JSErrNum errorNumber = static_cast<JSErrNum>(reportp->errorNumber);
     if (!callback)
         callback = GetErrorMessage;
