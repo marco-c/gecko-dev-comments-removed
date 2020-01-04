@@ -27,13 +27,13 @@ JoinNodeTransaction::JoinNodeTransaction(nsEditor& aEditor,
 {
 }
 
-NS_IMPL_CYCLE_COLLECTION_INHERITED(JoinNodeTransaction, EditTxn,
+NS_IMPL_CYCLE_COLLECTION_INHERITED(JoinNodeTransaction, EditTransactionBase,
                                    mLeftNode,
                                    mRightNode,
                                    mParent)
 
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(JoinNodeTransaction)
-NS_INTERFACE_MAP_END_INHERITING(EditTxn)
+NS_INTERFACE_MAP_END_INHERITING(EditTransactionBase)
 
 nsresult
 JoinNodeTransaction::CheckValidity()

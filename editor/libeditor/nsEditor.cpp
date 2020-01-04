@@ -18,7 +18,7 @@
 #include "DeleteTextTransaction.h"      
 #include "EditAggregateTransaction.h"   
 #include "EditorUtils.h"                
-#include "EditTxn.h"                    
+#include "EditTransactionBase.h"        
 #include "InsertNodeTransaction.h"      
 #include "InsertTextTransaction.h"      
 #include "JoinNodeTransaction.h"        
@@ -2408,7 +2408,7 @@ nsEditor::InsertTextIntoTextNodeImpl(const nsAString& aStringToInsert,
                                      Text& aTextNode,
                                      int32_t aOffset, bool aSuppressIME)
 {
-  RefPtr<EditTxn> txn;
+  RefPtr<EditTransactionBase> transaction;
   bool isIMETransaction = false;
   int32_t replacedOffset = 0;
   int32_t replacedLength = 0;
@@ -2436,7 +2436,7 @@ nsEditor::InsertTextIntoTextNodeImpl(const nsAString& aStringToInsert,
                          textRange.mStartOffset, textRange.Length());
     }
 
-    txn = CreateTxnForComposition(aStringToInsert);
+    transaction = CreateTxnForComposition(aStringToInsert);
     isIMETransaction = true;
     
     
@@ -2445,7 +2445,7 @@ nsEditor::InsertTextIntoTextNodeImpl(const nsAString& aStringToInsert,
     replacedLength = mIMETextLength;
     mIMETextLength = aStringToInsert.Length();
   } else {
-    txn = CreateTxnForInsertText(aStringToInsert, aTextNode, aOffset);
+    transaction = CreateTxnForInsertText(aStringToInsert, aTextNode, aOffset);
   }
 
   
@@ -2458,7 +2458,7 @@ nsEditor::InsertTextIntoTextNodeImpl(const nsAString& aStringToInsert,
   
   
   BeginUpdateViewBatch();
-  nsresult res = DoTransaction(txn);
+  nsresult rv = DoTransaction(transaction);
   EndUpdateViewBatch();
 
   if (replacedLength) {
@@ -2472,7 +2472,7 @@ nsEditor::InsertTextIntoTextNodeImpl(const nsAString& aStringToInsert,
   for (auto& listener : mActionListeners) {
     listener->DidInsertText(
       static_cast<nsIDOMCharacterData*>(aTextNode.AsDOMNode()),
-      aOffset, aStringToInsert, res);
+      aOffset, aStringToInsert, rv);
   }
 
   
@@ -2490,11 +2490,11 @@ nsEditor::InsertTextIntoTextNodeImpl(const nsAString& aStringToInsert,
     if (!len) {
       DeleteNode(mIMETextNode);
       mIMETextNode = nullptr;
-      static_cast<CompositionTransaction*>(txn.get())->MarkFixed();
+      static_cast<CompositionTransaction*>(transaction.get())->MarkFixed();
     }
   }
 
-  return res;
+  return rv;
 }
 
 

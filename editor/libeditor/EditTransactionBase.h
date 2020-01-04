@@ -1,0 +1,44 @@
+
+
+
+
+
+#ifndef EditTransactionBase_h
+#define EditTransactionBase_h
+
+#include "nsCycleCollectionParticipant.h"
+#include "nsISupportsImpl.h"
+#include "nsITransaction.h"
+#include "nsPIEditorTransaction.h"
+#include "nscore.h"
+
+namespace mozilla {
+
+
+
+
+class EditTransactionBase : public nsITransaction
+                          , public nsPIEditorTransaction
+{
+public:
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTION_CLASS_AMBIGUOUS(EditTransactionBase, nsITransaction)
+
+  virtual void LastRelease() {}
+
+  NS_IMETHOD RedoTransaction(void) override;
+  NS_IMETHOD GetIsTransient(bool* aIsTransient) override;
+  NS_IMETHOD Merge(nsITransaction* aTransaction, bool* aDidMerge) override;
+
+protected:
+  virtual ~EditTransactionBase();
+};
+
+} 
+
+#define NS_DECL_EDITTRANSACTIONBASE \
+  NS_IMETHOD DoTransaction() override; \
+  NS_IMETHOD UndoTransaction() override; \
+  NS_IMETHOD GetTxnDescription(nsAString& aTransactionDescription) override;
+
+#endif 

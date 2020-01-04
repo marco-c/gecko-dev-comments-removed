@@ -6,7 +6,7 @@
 #ifndef SetDocumentTitleTransaction_h
 #define SetDocumentTitleTransaction_h
 
-#include "EditTxn.h"                    
+#include "EditTransactionBase.h"        
 #include "nsString.h"                   
 #include "nscore.h"                     
 
@@ -19,7 +19,7 @@ namespace mozilla {
 
 
 
-class SetDocumentTitleTransaction final : public EditTxn
+class SetDocumentTitleTransaction final : public EditTransactionBase
 {
 public:
   
@@ -35,7 +35,7 @@ private:
   nsresult SetDomTitle(const nsAString& aTitle);
 
 public:
-  NS_DECL_EDITTXN
+  NS_DECL_EDITTRANSACTIONBASE
 
   NS_IMETHOD RedoTransaction() override;
   NS_IMETHOD GetIsTransient(bool *aIsTransient) override;

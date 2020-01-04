@@ -6,7 +6,7 @@
 #ifndef ChangeAttributeTransaction_h
 #define ChangeAttributeTransaction_h
 
-#include "EditTxn.h"                      
+#include "EditTransactionBase.h"          
 #include "mozilla/Attributes.h"           
 #include "nsCOMPtr.h"                     
 #include "nsCycleCollectionParticipant.h" 
@@ -25,7 +25,7 @@ class Element;
 
 
 
-class ChangeAttributeTransaction final : public EditTxn
+class ChangeAttributeTransaction final : public EditTransactionBase
 {
 public:
   
@@ -38,9 +38,10 @@ public:
                              const nsAString* aValue);
 
   NS_DECL_ISUPPORTS_INHERITED
-  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(ChangeAttributeTransaction, EditTxn)
+  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(ChangeAttributeTransaction,
+                                           EditTransactionBase)
 
-  NS_DECL_EDITTXN
+  NS_DECL_EDITTRANSACTIONBASE
 
   NS_IMETHOD RedoTransaction() override;
 

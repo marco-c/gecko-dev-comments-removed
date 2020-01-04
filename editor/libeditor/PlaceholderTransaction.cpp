@@ -125,13 +125,14 @@ PlaceholderTransaction::Merge(nsITransaction* aTransaction,
   nsCOMPtr<nsPIEditorTransaction> pTxn = do_QueryInterface(aTransaction);
   NS_ENSURE_TRUE(pTxn, NS_OK); 
 
-  EditTxn *editTxn = (EditTxn*)aTransaction;  
   
-  nsCOMPtr<nsIAbsorbingTransaction> plcTxn = do_QueryObject(editTxn);
+  EditTransactionBase* editTransactionBase = (EditTransactionBase*)aTransaction;
+  
+  nsCOMPtr<nsIAbsorbingTransaction> absorbingTransaction =
+    do_QueryObject(editTransactionBase);
 
   
-  if (mAbsorb)
-  {
+  if (mAbsorb) {
     RefPtr<CompositionTransaction> otherTransaction =
       do_QueryObject(aTransaction);
     if (otherTransaction) {
@@ -140,7 +141,7 @@ PlaceholderTransaction::Merge(nsITransaction* aTransaction,
       if (!mCompositionTransaction) {
         
         mCompositionTransaction = otherTransaction;
-        AppendChild(editTxn);
+        AppendChild(editTransactionBase);
       } else {
         bool didMerge;
         mCompositionTransaction->Merge(otherTransaction, &didMerge);
@@ -149,41 +150,36 @@ PlaceholderTransaction::Merge(nsITransaction* aTransaction,
           
           
           mCompositionTransaction = otherTransaction;
-          AppendChild(editTxn);
+          AppendChild(editTransactionBase);
         }
       }
-    } else if (!plcTxn) {
+    } else if (!absorbingTransaction) {
       
       
-      AppendChild(editTxn);
+      AppendChild(editTransactionBase);
     }
     *aDidMerge = true;
 
 
 
 
-  }
-  else
-  { 
+  } else {
+    
     if (((mName.get() == nsGkAtoms::TypingTxnName) ||
          (mName.get() == nsGkAtoms::IMETxnName)    ||
          (mName.get() == nsGkAtoms::DeleteTxnName))
-         && !mCommitted )
-    {
-      nsCOMPtr<nsIAbsorbingTransaction> plcTxn = do_QueryObject(editTxn);
-      if (plcTxn) {
+         && !mCommitted) {
+      if (absorbingTransaction) {
         nsCOMPtr<nsIAtom> atom;
-        plcTxn->GetTxnName(getter_AddRefs(atom));
-        if (atom && (atom == mName))
-        {
+        absorbingTransaction->GetTxnName(getter_AddRefs(atom));
+        if (atom && atom == mName) {
           
           
           bool isSame;
-          plcTxn->StartSelectionEquals(&mEndSel, &isSame);
-          if (isSame)
-          {
+          absorbingTransaction->StartSelectionEquals(&mEndSel, &isSame);
+          if (isSame) {
             mAbsorb = true;  
-            plcTxn->ForwardEndBatchTo(this);
+            absorbingTransaction->ForwardEndBatchTo(this);
             
             
             
