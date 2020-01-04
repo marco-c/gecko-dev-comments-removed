@@ -680,8 +680,7 @@ OggDemuxer::ReadMetadata()
     }
 
     if (mInfo.mMetadataDuration.isNothing() &&
-        Resource(TrackInfo::kAudioTrack)->GetLength() >= 0 &&
-        Resource(TrackInfo::kAudioTrack)->GetResource()->IsTransportSeekable()) {
+        Resource(TrackInfo::kAudioTrack)->GetLength() >= 0) {
       
       
       int64_t length = Resource(TrackInfo::kAudioTrack)->GetLength();
