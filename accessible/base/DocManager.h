@@ -90,6 +90,21 @@ public:
   static const nsTArray<DocAccessibleParent*>* TopLevelRemoteDocs()
     { return sRemoteDocuments; }
 
+  
+
+
+  static void NotifyOfRemoteDocShutdown(DocAccessibleParent* adoc);
+
+  
+
+
+  static xpcAccessibleDocument* GetXPCDocument(DocAccessibleParent* aDoc);
+  static xpcAccessibleDocument* GetCachedXPCDocument(const DocAccessibleParent* aDoc)
+  {
+    return sRemoteXPCDocumentCache ? sRemoteXPCDocumentCache->GetWeak(aDoc)
+      : nullptr;
+  }
+
 #ifdef DEBUG
   bool IsProcessingRefreshDriverNotification() const;
 #endif
@@ -147,6 +162,8 @@ private:
   typedef nsRefPtrHashtable<nsPtrHashKey<const DocAccessible>, xpcAccessibleDocument>
     XPCDocumentHashtable;
   XPCDocumentHashtable mXPCDocumentCache;
+  static nsRefPtrHashtable<nsPtrHashKey<const DocAccessibleParent>, xpcAccessibleDocument>*
+    sRemoteXPCDocumentCache;
 
   
 
