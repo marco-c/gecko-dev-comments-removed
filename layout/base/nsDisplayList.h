@@ -3426,13 +3426,9 @@ private:
 
 class nsDisplayBlendContainer : public nsDisplayWrapList {
 public:
-    
     nsDisplayBlendContainer(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
                             nsDisplayList* aList,
                             const DisplayItemScrollClip* aScrollClip);
-    
-    nsDisplayBlendContainer(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
-                            nsDisplayList* aList);
 #ifdef NS_BUILD_REFCNT_LOGGING
     virtual ~nsDisplayBlendContainer();
 #endif
@@ -3457,9 +3453,6 @@ private:
     
     
     uint32_t mIndex;
-    
-    
-    bool mCanBeActive;
 };
 
 
