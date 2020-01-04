@@ -6,6 +6,7 @@
 #include "TextureHost.h"
 
 #include "CompositableHost.h"           
+#include "LayerScope.h"
 #include "LayersLogging.h"              
 #include "mozilla/gfx/2D.h"             
 #include "mozilla/ipc/Shmem.h"          
@@ -23,6 +24,7 @@
 #include "mozilla/unused.h"
 #include <limits>
 #include "../opengl/CompositorOGL.h"
+#include "gfxPrefs.h"
 #include "gfxUtils.h"
 
 #ifdef MOZ_ENABLE_D3D10_LAYER
