@@ -15,11 +15,27 @@
 #include "mozilla/Assertions.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/Likely.h"
+#include "mozilla/MacroForEach.h"
 
 
 
 
 
+
+
+
+
+
+
+
+
+
+
+#if !defined(ANDROID) || !defined(RELEASE_BUILD)
+#define MOZ_LOGGING_ENABLED 1
+#else
+#define MOZ_LOGGING_ENABLED 0
+#endif
 
 namespace mozilla {
 
@@ -179,12 +195,25 @@ void log_print(const LogModule* aModule,
 } 
 
 
-#define MOZ_LOG_TEST(_module,_level) mozilla::detail::log_test(_module, _level)
-
 
 
 
 #define MOZ_LOG_EXPAND_ARGS(...) __VA_ARGS__
+
+#if MOZ_LOGGING_ENABLED
+#define MOZ_LOG_TEST(_module,_level) mozilla::detail::log_test(_module, _level)
+#else
+
+
+
+
+
+
+
+
+
+#define MOZ_LOG_TEST(_module,_level) false
+#endif
 
 #define MOZ_LOG(_module,_level,_args)     \
   PR_BEGIN_MACRO             \
@@ -206,5 +235,9 @@ void log_print(const LogModule* aModule,
 #    define __func__ __FUNCTION__
 #  endif
 #endif
+
+
+
+#undef MOZ_LOGGING_ENABLED
 
 #endif 
