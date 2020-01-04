@@ -172,12 +172,12 @@ html[dir="rtl"] .rename-container > .input-group {
 
 
 #share-link-header {
-  -moz-padding-start: 20px;
+  padding-inline-start: 20px;
 }
 
 .fte-get-started-container + .generate-url > #share-link-header {
   
-  -moz-padding-start: 0;
+  padding-inline-start: 0;
 }
 
 .content-area label {
@@ -391,7 +391,7 @@ html[dir="rtl"] .rename-container > .input-group {
   height: 24px;
   border: none;
   margin: .1em; 
-  -moz-margin-start: .5em;
+  margin-inline-start: .5em;
   background-color: transparent;  
   top: -15px;
 }
@@ -466,7 +466,7 @@ html[dir="rtl"] .room-entry-context-actions > .dropdown-menu {
 
 .room-entry-context-item {
   display: inline-block;
-  -moz-margin-end: 1rem;
+  margin-inline-end: 1rem;
   vertical-align: middle;
 }
 

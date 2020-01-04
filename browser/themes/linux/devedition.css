@@ -54,7 +54,7 @@
 }
 
 #forward-button > .toolbarbutton-icon {
-  -moz-border-start: none;
+  border-inline-start: none;
 }
 
 
@@ -102,5 +102,5 @@
 .ac-type-icon {
   
 
-  -moz-margin-start: 11px;
+  margin-inline-start: 11px;
 }

@@ -44,7 +44,7 @@
 }
 
 #forward-button {
-  -moz-border-start: none !important;
+  border-inline-start: none !important;
   
 
 
@@ -125,5 +125,5 @@
 .ac-type-icon {
   
 
-  -moz-margin-start: 14px;
+  margin-inline-start: 14px;
 }

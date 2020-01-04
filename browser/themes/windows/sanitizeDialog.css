@@ -3,12 +3,12 @@
 
 
 #sanitizeDurationChoice {
-  -moz-margin-end: 0;
+  margin-inline-end: 0;
 }
 
 
 #sanitizeDurationLabel {
-  -moz-margin-start: 3px;
+  margin-inline-start: 3px;
 }
 
 
@@ -79,15 +79,15 @@
 
 
 #itemList {
-  -moz-margin-start: 0;
-  -moz-margin-end: 0;
+  margin-inline-start: 0;
+  margin-inline-end: 0;
 }
 
 
 
 .prefWindow-dlgbuttons {
-  -moz-margin-end: 0;
+  margin-inline-end: 0;
 }
 .dialog-button[dlgtype="cancel"] {
-  -moz-margin-end: 0;
+  margin-inline-end: 0;
 }

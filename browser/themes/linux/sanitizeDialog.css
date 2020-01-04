@@ -3,12 +3,12 @@
 
 
 #sanitizeDurationChoice {
-  -moz-margin-end: 0;
+  margin-inline-end: 0;
 }
 
 
 #sanitizeDurationLabel {
-  -moz-margin-start: 3px;
+  margin-inline-start: 3px;
 }
 
 
@@ -56,15 +56,15 @@
   padding: 0;
   margin-top: 6px;
   margin-bottom: 6px;
-  -moz-margin-start: -6px;
-  -moz-margin-end: 0;
+  margin-inline-start: -6px;
+  margin-inline-end: 0;
 }
 
 .expander-up,
 .expander-down {
   min-width: 0;
   padding: 2px 0;
-  -moz-padding-start: 2px;
+  padding-inline-start: 2px;
 }
 
 .expander-up {
@@ -86,8 +86,8 @@
 
 
 #itemList {
-  -moz-margin-start: 0;
-  -moz-margin-end: 0;
+  margin-inline-start: 0;
+  margin-inline-end: 0;
 }
 
 
@@ -100,8 +100,8 @@
 
 
 .prefWindow-dlgbuttons {
-  -moz-margin-end: 0;
+  margin-inline-end: 0;
 }
 .dialog-button[dlgtype="accept"] {
-  -moz-margin-end: 0;
+  margin-inline-end: 0;
 }

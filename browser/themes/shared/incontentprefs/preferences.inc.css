@@ -149,7 +149,7 @@ treecol {
 
 #useFirefoxSync  {
   font-size: 90%;
-  -moz-margin-end: 8px !important;
+  margin-inline-end: 8px !important;
 }
 
 #getStarted {
@@ -161,7 +161,7 @@ treecol {
 }
 
 #downloadFolder {
-  -moz-margin-start: 0;
+  margin-inline-start: 0;
 }
 
 
@@ -172,12 +172,12 @@ treecol {
 }
 
 #notificationsPolicyLearnMore {
-  -moz-margin-start: 1.5em !important;
+  margin-inline-start: 1.5em !important;
 }
 
 #defaultFontSizeLabel {
   
-  -moz-margin-start: 4px !important;
+  margin-inline-start: 4px !important;
 }
 
 
@@ -187,7 +187,7 @@ treecol {
 }
 
 #filter {
-  -moz-margin-start: 0;
+  margin-inline-start: 0;
 }
 
 #handlersView {
@@ -199,13 +199,13 @@ treecol {
 }
 
 .typeIcon {
-  -moz-margin-start: 10px !important;
-  -moz-margin-end: 9px !important;
+  margin-inline-start: 10px !important;
+  margin-inline-end: 9px !important;
 }
 
 .actionIcon {
-  -moz-margin-start: 11px !important;
-  -moz-margin-end: 8px !important;
+  margin-inline-start: 11px !important;
+  margin-inline-end: 8px !important;
 }
 
 .actionsMenu {
@@ -213,11 +213,11 @@ treecol {
 }
 
 .actionsMenu > menupopup > menuitem {
-  -moz-padding-start: 10px !important;
+  padding-inline-start: 10px !important;
 }
 
 .actionsMenu > menupopup > menuitem > .menu-iconic-left {
-  -moz-margin-end: 8px !important;
+  margin-inline-end: 8px !important;
 }
 
 
@@ -225,7 +225,7 @@ treecol {
 .doNotTrackLearnMore,
 #trackingProtectionPBMLearnMore,
 #trackingProtectionLearnMore {
-  -moz-margin-start: 1.5em !important;
+  margin-inline-start: 1.5em !important;
   margin-top: 0;
   font-weight: normal;
 }
@@ -257,11 +257,11 @@ description > html|a {
 #weavePrefsDeck > #hasFxaAccount > vbox > label,
 #weavePrefsDeck > #hasFxaAccount > hbox:not(#tosPP-normal) > label {
   
-  -moz-margin-start: 0;
+  margin-inline-start: 0;
 }
 
 #tabsElement {
-  -moz-margin-end: 4px; 
+  margin-inline-end: 4px; 
 }
 
 #telemetryLearnMore,
@@ -269,7 +269,7 @@ description > html|a {
 #crashReporterLearnMore {
   
   
-  -moz-margin-start: 20px !important;
+  margin-inline-start: 20px !important;
   
   margin-top: 8px;
   margin-bottom: 8px;
@@ -278,7 +278,7 @@ description > html|a {
 .indent {
   
 
-  -moz-margin-start: 33px !important;
+  margin-inline-start: 33px !important;
 }
 
 .text-link {
@@ -286,7 +286,7 @@ description > html|a {
 }
 
 #showUpdateHistory {
-  -moz-margin-start: 0;
+  margin-inline-start: 0;
 }
 
 

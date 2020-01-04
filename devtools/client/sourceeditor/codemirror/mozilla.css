@@ -191,7 +191,7 @@
 }
 
 .CodeMirror-Tern-completion {
-  -moz-padding-start: 22px;
+  padding-inline-start: 22px;
   position: relative;
   line-height: 18px;
 }

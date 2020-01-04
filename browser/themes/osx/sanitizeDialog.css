@@ -4,7 +4,7 @@
 
 
 #sanitizeDurationLabel {
-  -moz-margin-start: 1px;
+  margin-inline-start: 1px;
 }
 
 
@@ -70,8 +70,8 @@
 
 
 #itemList {
-  -moz-margin-start: 0;
-  -moz-margin-end: 0;
+  margin-inline-start: 0;
+  margin-inline-end: 0;
 }
 
 
@@ -84,8 +84,8 @@
 
 
 .prefWindow-dlgbuttons {
-  -moz-margin-end: 0;
+  margin-inline-end: 0;
 }
 .dialog-button[dlgtype="accept"] {
-  -moz-margin-end: 0;
+  margin-inline-end: 0;
 }
