@@ -34,92 +34,43 @@ function assert_promise_rejects(promise, code, description) {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-self.assert_object_equals = function(actual, expected, description) {
-  var object_stack = [];
-
-  function _is_equal(actual, expected, prefix) {
-    if (typeof actual !== 'object') {
-      assert_equals(actual, expected, prefix);
-      return;
-    }
-    assert_true(typeof expected === 'object', prefix);
-    assert_equals(object_stack.indexOf(actual), -1,
-                  prefix + ' must not contain cyclic references.');
-
-    object_stack.push(actual);
-
-    Object.getOwnPropertyNames(expected).forEach(function(property) {
-        assert_own_property(actual, property, prefix);
-        _is_equal(actual[property], expected[property],
-                  prefix + '.' + property);
-      });
-    Object.getOwnPropertyNames(actual).forEach(function(property) {
-        assert_own_property(expected, property, prefix);
-      });
-
-    object_stack.pop();
-  }
-
-  function _brand(object) {
-    return Object.prototype.toString.call(object).match(/^\[object (.*)\]$/)[1];
-  }
-
-  _is_equal(actual, expected,
-            (description ? description + ': ' : '') + _brand(expected));
-};
-
-
-
-function assert_object_in_array(actual, expected_array, description) {
-  assert_true(expected_array.some(function(element) {
-      try {
-        assert_object_equals(actual, element);
-        return true;
-      } catch (e) {
-        return false;
-      }
-    }), description);
+function assert_header_equals(actual, expected, description) {
+    assert_class_string(actual, "Headers", description);
+    var header, actual_headers = [], expected_headers = [];
+    for (header of actual)
+        actual_headers.push(header[0] + ": " + header[1]);
+    for (header of expected)
+        expected_headers.push(header[0] + ": " + header[1]);
+    assert_array_equals(actual_headers, expected_headers,
+                        description + " Headers differ.");
 }
 
 
 
 
-
-
-function assert_array_equivalent(actual, expected, description) {
-  assert_true(Array.isArray(actual), description);
-  assert_equals(actual.length, expected.length, description);
-  expected.forEach(function(expected_element) {
-      
-      
-      
-      
-      assert_object_in_array(expected_element, actual, description);
+function assert_response_equals(actual, expected, description) {
+    assert_class_string(actual, "Response", description);
+    ["type", "url", "status", "ok", "statusText"].forEach(function(attribute) {
+        assert_equals(actual[attribute], expected[attribute],
+                      description + " Attributes differ: " + attribute + ".");
     });
+    assert_header_equals(actual.headers, expected.headers, description);
 }
 
 
 
 
-function assert_array_objects_equals(actual, expected, description) {
-  assert_true(Array.isArray(actual), description);
-  assert_equals(actual.length, expected.length, description);
-  actual.forEach(function(value, index) {
-      assert_object_equals(value, expected[index],
-                           description + ' : object[' + index + ']');
+
+
+function assert_response_array_equivalent(actual, expected, description) {
+    assert_true(Array.isArray(actual), description);
+    assert_equals(actual.length, expected.length, description);
+    expected.forEach(function(expected_element) {
+        
+        
+        
+        
+        assert_response_in_array(expected_element, actual, description);
     });
 }
 
@@ -127,37 +78,23 @@ function assert_array_objects_equals(actual, expected, description) {
 
 
 
-
-
-
-
-
-
-function assert_will_be_idl_attribute(object, attribute_name, description) {
-  assert_true(typeof object === "object", description);
-
-  assert_true("hasOwnProperty" in object, description);
-
-  
-  
-  
-
-  assert_true(attribute_name in object, description);
+function assert_response_array_equals(actual, expected, description) {
+    assert_true(Array.isArray(actual), description);
+    assert_equals(actual.length, expected.length, description);
+    actual.forEach(function(value, index) {
+        assert_response_equals(value, expected[index],
+                               description + " : object[" + index + "]");
+    });
 }
 
 
-
-
-function stringifyDOMObject(object)
-{
-    function deepCopy(src) {
-        if (typeof src != "object")
-            return src;
-        var dst = Array.isArray(src) ? [] : {};
-        for (var property in src) {
-            dst[property] = deepCopy(src[property]);
+function assert_response_in_array(actual, expected_array, description) {
+    assert_true(expected_array.some(function(element) {
+        try {
+            assert_response_equals(actual, element);
+            return true;
+        } catch (e) {
+            return false;
         }
-        return dst;
-    }
-    return JSON.stringify(deepCopy(object));
+    }), description);
 }
