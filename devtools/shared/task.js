@@ -136,7 +136,7 @@ function isGenerator(value) {
 
 
 
-this.Task = {
+var Task = {
   
 
 
