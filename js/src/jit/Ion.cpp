@@ -474,10 +474,9 @@ JitCompartment::ensureIonStubsExist(JSContext* cx)
 }
 
 void
-jit::FinishOffThreadBuilder(JSRuntime* runtime, IonBuilder* builder)
+jit::FinishOffThreadBuilder(JSRuntime* runtime, IonBuilder* builder,
+                            const AutoLockHelperThreadState& locked)
 {
-    MOZ_ASSERT(HelperThreadState().isLocked());
-
     
     if (builder->script()->baselineScript()->hasPendingIonBuilder() &&
         builder->script()->baselineScript()->pendingIonBuilder() == builder)
@@ -515,12 +514,12 @@ static inline void
 FinishAllOffThreadCompilations(JSCompartment* comp)
 {
     AutoLockHelperThreadState lock;
-    GlobalHelperThreadState::IonBuilderVector& finished = HelperThreadState().ionFinishedList();
+    GlobalHelperThreadState::IonBuilderVector& finished = HelperThreadState().ionFinishedList(lock);
 
     for (size_t i = 0; i < finished.length(); i++) {
         IonBuilder* builder = finished[i];
         if (builder->compartment == CompileCompartment::get(comp)) {
-            FinishOffThreadBuilder(nullptr, builder);
+            FinishOffThreadBuilder(nullptr, builder, lock);
             HelperThreadState().remove(finished, &i);
         }
     }
@@ -590,7 +589,7 @@ jit::LinkIonScript(JSContext* cx, HandleScript calleeScript)
 
     {
         AutoLockHelperThreadState lock;
-        FinishOffThreadBuilder(cx->runtime(), builder);
+        FinishOffThreadBuilder(cx->runtime(), builder, lock);
     }
 }
 
@@ -2052,7 +2051,7 @@ AttachFinishedCompilations(JSContext* cx)
     {
         AutoLockHelperThreadState lock;
 
-        GlobalHelperThreadState::IonBuilderVector& finished = HelperThreadState().ionFinishedList();
+        GlobalHelperThreadState::IonBuilderVector& finished = HelperThreadState().ionFinishedList(lock);
 
         
         
@@ -3539,4 +3538,3 @@ jit::JitSupportsAtomics()
 
  const size_t TempAllocator::BallastSize            = 16 * 1024;
  const size_t TempAllocator::PreferredLifoChunkSize = 32 * 1024;
-
