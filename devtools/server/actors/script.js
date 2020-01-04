@@ -814,6 +814,17 @@ ThreadActor.prototype = {
     return function () {
       
 
+      
+      
+      
+      
+      
+      
+      if (this === startFrame &&
+          !this.script.getOffsetLocation(this.offset).isEntryPoint) {
+        return undefined;
+      }
+
       const generatedLocation = thread.sources.getFrameLocation(this);
       const newLocation = thread.unsafeSynchronize(thread.sources.getOriginalLocation(
         generatedLocation));

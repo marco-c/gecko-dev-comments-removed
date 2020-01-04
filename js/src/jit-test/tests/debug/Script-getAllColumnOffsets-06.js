@@ -14,9 +14,10 @@ Debugger(global).onDebuggerStatement = function (frame) {
 };
 
 global.log = "";
+global.eval("function ppppp() { return 1; }");
 
 
-global.eval("function f(){ 1 && print(print()) && new Error() } debugger;");
+global.eval("function f(){ 1 && ppppp(ppppp()) && new Error() } debugger;");
 global.f();
 
 
