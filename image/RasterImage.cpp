@@ -1173,7 +1173,6 @@ RasterImage::Decode(const IntSize& aSize,
 
   
   if (!task) {
-    DoError();
     return NS_ERROR_FAILURE;
   }
 
@@ -1228,7 +1227,6 @@ RasterImage::RecoverFromInvalidFrames(const IntSize& aSize, uint32_t aFlags)
   
   
   if (mAnimationState) {
-    mAnimationState->SetDoneDecoding(false);
     Decode(mSize, aFlags | FLAG_SYNC_DECODE, PlaybackType::eAnimated);
     ResetAnimation();
     return;
