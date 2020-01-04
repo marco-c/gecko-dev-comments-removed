@@ -1707,8 +1707,8 @@ nsEditor::MoveNode(nsIContent* aNode, nsINode* aParent, int32_t aOffset)
   }
 
   
-  nsAutoMoveNodeSelNotify selNotify(mRangeUpdater, oldParent, oldOffset,
-                                    aParent, aOffset);
+  AutoMoveNodeSelNotify selNotify(mRangeUpdater, oldParent, oldOffset,
+                                  aParent, aOffset);
 
   
   if (aParent == oldParent && oldOffset < aOffset) {
