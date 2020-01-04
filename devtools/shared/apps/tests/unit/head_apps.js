@@ -80,10 +80,7 @@ function setup() {
   Components.utils.import("resource://testing-common/AppInfo.jsm");
   updateAppInfo();
 
-  
-  
   Components.utils.import('resource://gre/modules/Webapps.jsm');
-  DOMApplicationRegistry.allAppsLaunchable = true;
 
   
   let {WebappsActor} = require("devtools/server/actors/webapps");

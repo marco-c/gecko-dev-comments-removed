@@ -166,7 +166,6 @@
 
     function() {
       info("enabling use of mozbrowser");
-      
       SpecialPowers.setBoolPref("dom.mozBrowserFramesEnabled", true);
       runTests();
     },

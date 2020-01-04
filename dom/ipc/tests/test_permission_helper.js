@@ -32,8 +32,6 @@ var gScript = SpecialPowers.loadChromeScript(SimpleTest.getTestFileURL('test_per
 
 SimpleTest.waitForExplicitFinish();
 
-SpecialPowers.setAllAppsLaunchable(true);
-
 
 function runTests() {
   if (!tests.length) {

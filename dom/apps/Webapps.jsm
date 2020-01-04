@@ -196,7 +196,6 @@ this.DOMApplicationRegistry = {
   
   appsFile: null,
   webapps: { },
-  allAppsLaunchable: false,
   _updateHandlers: [ ],
   _pendingUninstalls: {},
   _contentActions: new Map(),
