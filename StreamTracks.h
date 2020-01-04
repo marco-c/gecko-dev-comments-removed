@@ -3,8 +3,8 @@
 
 
 
-#ifndef MOZILLA_STREAMBUFFER_H_
-#define MOZILLA_STREAMBUFFER_H_
+#ifndef MOZILLA_STREAMTRACKS_H_
+#define MOZILLA_STREAMTRACKS_H_
 
 #include "MediaSegment.h"
 #include "nsAutoPtr.h"
@@ -55,7 +55,7 @@ inline TrackTicks RateConvertTicksRoundUp(TrackRate aOutRate,
 
 
 
-class StreamBuffer
+class StreamTracks
 {
 public:
   
@@ -139,7 +139,7 @@ public:
     }
 
   private:
-    friend class StreamBuffer;
+    friend class StreamTracks;
 
     
     StreamTime mStart;
@@ -163,7 +163,7 @@ public:
     }
   };
 
-  StreamBuffer()
+  StreamTracks()
     : mGraphRate(0)
     , mTracksKnownTime(0)
     , mForgottenTime(0)
@@ -172,11 +172,11 @@ public:
     , mGraphRateIsSet(false)
 #endif
   {
-    MOZ_COUNT_CTOR(StreamBuffer);
+    MOZ_COUNT_CTOR(StreamTracks);
   }
-  ~StreamBuffer()
+  ~StreamTracks()
   {
-    MOZ_COUNT_DTOR(StreamBuffer);
+    MOZ_COUNT_DTOR(StreamTracks);
   }
 
   size_t SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const
@@ -224,7 +224,7 @@ public:
     if (mTracksKnownTime == STREAM_TIME_MAX) {
       
       
-      NS_WARNING("Adding track to StreamBuffer that should have no more tracks");
+      NS_WARNING("Adding track to StreamTracks that should have no more tracks");
     } else {
       NS_ASSERTION(mTracksKnownTime <= aStart, "Start time too early");
     }
@@ -262,12 +262,12 @@ public:
     
 
 
-    explicit TrackIter(const StreamBuffer& aBuffer) :
+    explicit TrackIter(const StreamTracks& aBuffer) :
       mBuffer(&aBuffer.mTracks), mIndex(0), mMatchType(false) {}
     
 
 
-    TrackIter(const StreamBuffer& aBuffer, MediaSegment::Type aType) :
+    TrackIter(const StreamTracks& aBuffer, MediaSegment::Type aType) :
       mBuffer(&aBuffer.mTracks), mIndex(0), mType(aType), mMatchType(true) { FindMatch(); }
     bool IsEnded() { return mIndex >= mBuffer->Length(); }
     void Next()
