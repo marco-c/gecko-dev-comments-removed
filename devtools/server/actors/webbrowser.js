@@ -51,12 +51,15 @@ function getDocShellChromeEventHandler(docShell) {
       
       handler = docShell.QueryInterface(Ci.nsIInterfaceRequestor)
                         .getInterface(Ci.nsIDOMWindow);
-    } catch(e) {}
+    } catch (e) {
+      
+    }
   }
   return handler;
 }
-function getChildDocShells(docShell) {
-  let docShellsEnum = docShell.getDocShellEnumerator(
+
+function getChildDocShells(parentDocShell) {
+  let docShellsEnum = parentDocShell.getDocShellEnumerator(
     Ci.nsIDocShellTreeItem.typeAll,
     Ci.nsIDocShell.ENUMERATE_FORWARDS
   );
@@ -70,6 +73,7 @@ function getChildDocShells(docShell) {
   }
   return docShells;
 }
+
 exports.getChildDocShells = getChildDocShells;
 
 
@@ -77,18 +81,17 @@ exports.getChildDocShells = getChildDocShells;
 
 
 function getInnerId(window) {
-  return window.QueryInterface(Ci.nsIInterfaceRequestor).
-                getInterface(Ci.nsIDOMWindowUtils).currentInnerWindowID;
-};
+  return window.QueryInterface(Ci.nsIInterfaceRequestor)
+               .getInterface(Ci.nsIDOMWindowUtils).currentInnerWindowID;
+}
 
 
 
 
 
 
-function* allAppShellDOMWindows(aWindowType)
-{
-  let e = Services.wm.getEnumerator(aWindowType);
+function* allAppShellDOMWindows(windowType) {
+  let e = Services.wm.getEnumerator(windowType);
   while (e.hasMoreElements()) {
     yield e.getNext();
   }
@@ -99,9 +102,9 @@ exports.allAppShellDOMWindows = allAppShellDOMWindows;
 
 
 
-function appShellDOMWindowType(aWindow) {
+function appShellDOMWindowType(window) {
   
-  return aWindow.document.documentElement.getAttribute('windowtype');
+  return window.document.documentElement.getAttribute("windowtype");
 }
 
 
@@ -128,19 +131,17 @@ exports.sendShutdownEvent = sendShutdownEvent;
 
 
 
-function createRootActor(aConnection)
-{
-  return new RootActor(aConnection,
-                       {
-                         tabList: new BrowserTabList(aConnection),
-                         addonList: new BrowserAddonList(aConnection),
-                         workerList: new WorkerActorList(aConnection, {}),
-                         serviceWorkerRegistrationList:
-                           new ServiceWorkerRegistrationActorList(aConnection),
-                         processList: new ProcessActorList(),
-                         globalActorFactories: DebuggerServer.globalActorFactories,
-                         onShutdown: sendShutdownEvent
-                       });
+function createRootActor(connection) {
+  return new RootActor(connection, {
+    tabList: new BrowserTabList(connection),
+    addonList: new BrowserAddonList(connection),
+    workerList: new WorkerActorList(connection, {}),
+    serviceWorkerRegistrationList:
+      new ServiceWorkerRegistrationActorList(connection),
+    processList: new ProcessActorList(),
+    globalActorFactories: DebuggerServer.globalActorFactories,
+    onShutdown: sendShutdownEvent
+  });
 }
 
 
@@ -213,9 +214,8 @@ function createRootActor(aConnection)
 
 
 
-function BrowserTabList(aConnection)
-{
-  this._connection = aConnection;
+function BrowserTabList(connection) {
+  this._connection = connection;
 
   
 
@@ -270,16 +270,15 @@ BrowserTabList.prototype.constructor = BrowserTabList;
 
 
 
-
-BrowserTabList.prototype._getSelectedBrowser = function(aWindow) {
-  return aWindow.gBrowser ? aWindow.gBrowser.selectedBrowser : null;
+BrowserTabList.prototype._getSelectedBrowser = function (window) {
+  return window.gBrowser ? window.gBrowser.selectedBrowser : null;
 };
 
 
 
 
 
-BrowserTabList.prototype._getBrowsers = function*() {
+BrowserTabList.prototype._getBrowsers = function* () {
   
   for (let win of allAppShellDOMWindows(DebuggerServer.chromeWindowType)) {
     
@@ -292,17 +291,18 @@ BrowserTabList.prototype._getBrowsers = function*() {
   }
 };
 
-BrowserTabList.prototype._getChildren = function(aWindow) {
-  let children = aWindow.gBrowser ? aWindow.gBrowser.browsers : [];
+BrowserTabList.prototype._getChildren = function (window) {
+  let children = window.gBrowser ? window.gBrowser.browsers : [];
   return children ? children : [];
 };
 
-BrowserTabList.prototype._isRemoteBrowser = function(browser) {
+BrowserTabList.prototype._isRemoteBrowser = function (browser) {
   return browser.getAttribute("remote") == "true";
 };
 
-BrowserTabList.prototype.getList = function() {
-  let topXULWindow = Services.wm.getMostRecentWindow(DebuggerServer.chromeWindowType);
+BrowserTabList.prototype.getList = function () {
+  let topXULWindow = Services.wm.getMostRecentWindow(
+    DebuggerServer.chromeWindowType);
   let selectedBrowser = null;
   if (topXULWindow) {
     selectedBrowser = this._getSelectedBrowser(topXULWindow);
@@ -332,8 +332,9 @@ BrowserTabList.prototype.getList = function() {
     );
   }
 
-  if (this._testing && initialMapSize !== this._foundCount)
-    throw Error("_actorByBrowser map contained actors for dead tabs");
+  if (this._testing && initialMapSize !== this._foundCount) {
+    throw new Error("_actorByBrowser map contained actors for dead tabs");
+  }
 
   this._mustNotify = true;
   this._checkListening();
@@ -341,7 +342,7 @@ BrowserTabList.prototype.getList = function() {
   return promise.all(actorPromises);
 };
 
-BrowserTabList.prototype._getActorForBrowser = function(browser) {
+BrowserTabList.prototype._getActorForBrowser = function (browser) {
   
   let actor = this._actorByBrowser.get(browser);
   if (actor) {
@@ -352,16 +353,16 @@ BrowserTabList.prototype._getActorForBrowser = function(browser) {
     this._actorByBrowser.set(browser, actor);
     this._checkListening();
     return actor.connect();
-  } else {
-    actor = new BrowserTabActor(this._connection, browser);
-    this._actorByBrowser.set(browser, actor);
-    this._checkListening();
-    return promise.resolve(actor);
   }
+
+  actor = new BrowserTabActor(this._connection, browser);
+  this._actorByBrowser.set(browser, actor);
+  this._checkListening();
+  return promise.resolve(actor);
 };
 
-BrowserTabList.prototype.getTab = function({ outerWindowID, tabId }) {
-  if (typeof(outerWindowID) == "number") {
+BrowserTabList.prototype.getTab = function ({ outerWindowID, tabId }) {
+  if (typeof outerWindowID == "number") {
     for (let browser of this._getBrowsers()) {
       if (browser.outerWindowID == outerWindowID) {
         return this._getActorForBrowser(browser);
@@ -371,7 +372,7 @@ BrowserTabList.prototype.getTab = function({ outerWindowID, tabId }) {
       error: "noTab",
       message: "Unable to find tab with outerWindowID '" + outerWindowID + "'"
     });
-  } else if (typeof(tabId) == "number") {
+  } else if (typeof tabId == "number") {
     
     for (let browser of this._getBrowsers()) {
       if (browser.frameLoader.tabParent &&
@@ -385,7 +386,8 @@ BrowserTabList.prototype.getTab = function({ outerWindowID, tabId }) {
     });
   }
 
-  let topXULWindow = Services.wm.getMostRecentWindow(DebuggerServer.chromeWindowType);
+  let topXULWindow = Services.wm.getMostRecentWindow(
+    DebuggerServer.chromeWindowType);
   if (topXULWindow) {
     let selectedBrowser = this._getSelectedBrowser(topXULWindow);
     return this._getActorForBrowser(selectedBrowser);
@@ -396,12 +398,16 @@ BrowserTabList.prototype.getTab = function({ outerWindowID, tabId }) {
   });
 };
 
-Object.defineProperty(BrowserTabList.prototype, 'onListChanged', {
-  enumerable: true, configurable:true,
-  get: function() { return this._onListChanged; },
-  set: function(v) {
-    if (v !== null && typeof v !== 'function') {
-      throw Error("onListChanged property may only be set to 'null' or a function");
+Object.defineProperty(BrowserTabList.prototype, "onListChanged", {
+  enumerable: true,
+  configurable: true,
+  get() {
+    return this._onListChanged;
+  },
+  set(v) {
+    if (v !== null && typeof v !== "function") {
+      throw new Error(
+        "onListChanged property may only be set to 'null' or a function");
     }
     this._onListChanged = v;
     this._checkListening();
@@ -412,9 +418,10 @@ Object.defineProperty(BrowserTabList.prototype, 'onListChanged', {
 
 
 
-BrowserTabList.prototype._notifyListChanged = function() {
-  if (!this._onListChanged)
+BrowserTabList.prototype._notifyListChanged = function () {
+  if (!this._onListChanged) {
     return;
+  }
   if (this._mustNotify) {
     this._onListChanged();
     this._mustNotify = false;
@@ -425,18 +432,18 @@ BrowserTabList.prototype._notifyListChanged = function() {
 
 
 
-BrowserTabList.prototype._handleActorClose = function(aActor, aBrowser) {
+BrowserTabList.prototype._handleActorClose = function (actor, browser) {
   if (this._testing) {
-    if (this._actorByBrowser.get(aBrowser) !== aActor) {
-      throw Error("BrowserTabActor not stored in map under given browser");
+    if (this._actorByBrowser.get(browser) !== actor) {
+      throw new Error("BrowserTabActor not stored in map under given browser");
     }
-    if (aActor.browser !== aBrowser) {
-      throw Error("actor's browser and map key don't match");
+    if (actor.browser !== browser) {
+      throw new Error("actor's browser and map key don't match");
     }
   }
 
-  this._actorByBrowser.delete(aBrowser);
-  aActor.exit();
+  this._actorByBrowser.delete(browser);
+  actor.exit();
 
   this._notifyListChanged();
   this._checkListening();
@@ -448,7 +455,7 @@ BrowserTabList.prototype._handleActorClose = function(aActor, aBrowser) {
 
 
 
-BrowserTabList.prototype._checkListening = function() {
+BrowserTabList.prototype._checkListening = function () {
   
 
 
@@ -486,36 +493,39 @@ BrowserTabList.prototype._checkListening = function() {
 
 
 
-BrowserTabList.prototype._listenForEventsIf = function(aShouldListen, aGuard, aEventNames) {
-  if (!aShouldListen !== !this[aGuard]) {
-    let op = aShouldListen ? "addEventListener" : "removeEventListener";
-    for (let win of allAppShellDOMWindows(DebuggerServer.chromeWindowType)) {
-      for (let name of aEventNames) {
-        win[op](name, this, false);
+BrowserTabList.prototype._listenForEventsIf =
+  function (shouldListen, guard, eventNames) {
+    if (!shouldListen !== !this[guard]) {
+      let op = shouldListen ? "addEventListener" : "removeEventListener";
+      for (let win of allAppShellDOMWindows(DebuggerServer.chromeWindowType)) {
+        for (let name of eventNames) {
+          win[op](name, this, false);
+        }
       }
+      this[guard] = shouldListen;
     }
-    this[aGuard] = aShouldListen;
-  }
-};
+  };
 
 
 
 
-BrowserTabList.prototype.handleEvent = DevToolsUtils.makeInfallible(function(aEvent) {
-  switch (aEvent.type) {
-  case "TabOpen":
-  case "TabSelect":
-    
-    this._notifyListChanged();
-    this._checkListening();
-    break;
-  case "TabClose":
-    let browser = aEvent.target.linkedBrowser;
-    let actor = this._actorByBrowser.get(browser);
-    if (actor) {
-      this._handleActorClose(actor, browser);
-    }
-    break;
+BrowserTabList.prototype.handleEvent =
+DevToolsUtils.makeInfallible(function (event) {
+  switch (event.type) {
+    case "TabOpen":
+    case "TabSelect":
+      
+      
+      this._notifyListChanged();
+      this._checkListening();
+      break;
+    case "TabClose":
+      let browser = event.target.linkedBrowser;
+      let actor = this._actorByBrowser.get(browser);
+      if (actor) {
+        this._handleActorClose(actor, browser);
+      }
+      break;
   }
 }, "BrowserTabList.prototype.handleEvent");
 
@@ -523,11 +533,11 @@ BrowserTabList.prototype.handleEvent = DevToolsUtils.makeInfallible(function(aEv
 
 
 
-BrowserTabList.prototype._listenToMediatorIf = function(aShouldListen) {
-  if (!aShouldListen !== !this._listeningToMediator) {
-    let op = aShouldListen ? "addListener" : "removeListener";
+BrowserTabList.prototype._listenToMediatorIf = function (shouldListen) {
+  if (!shouldListen !== !this._listeningToMediator) {
+    let op = shouldListen ? "addListener" : "removeListener";
     Services.wm[op](this);
-    this._listeningToMediator = aShouldListen;
+    this._listeningToMediator = shouldListen;
   }
 };
 
@@ -542,21 +552,23 @@ BrowserTabList.prototype._listenToMediatorIf = function(aShouldListen) {
 
 BrowserTabList.prototype.onWindowTitleChange = () => { };
 
-BrowserTabList.prototype.onOpenWindow = DevToolsUtils.makeInfallible(function(aWindow) {
+BrowserTabList.prototype.onOpenWindow =
+DevToolsUtils.makeInfallible(function (window) {
   let handleLoad = DevToolsUtils.makeInfallible(() => {
     
-    aWindow.removeEventListener("load", handleLoad, false);
+    window.removeEventListener("load", handleLoad, false);
 
-    if (appShellDOMWindowType(aWindow) !== DebuggerServer.chromeWindowType)
+    if (appShellDOMWindowType(window) !== DebuggerServer.chromeWindowType) {
       return;
+    }
 
     
     if (this._listeningForTabOpen) {
-      aWindow.addEventListener("TabOpen", this, false);
-      aWindow.addEventListener("TabSelect", this, false);
+      window.addEventListener("TabOpen", this, false);
+      window.addEventListener("TabSelect", this, false);
     }
     if (this._listeningForTabClose) {
-      aWindow.addEventListener("TabClose", this, false);
+      window.addEventListener("TabClose", this, false);
     }
 
     
@@ -571,18 +583,20 @@ BrowserTabList.prototype.onOpenWindow = DevToolsUtils.makeInfallible(function(aW
 
 
 
-  aWindow = aWindow.QueryInterface(Ci.nsIInterfaceRequestor)
-                   .getInterface(Ci.nsIDOMWindow);
+  window = window.QueryInterface(Ci.nsIInterfaceRequestor)
+                 .getInterface(Ci.nsIDOMWindow);
 
-  aWindow.addEventListener("load", handleLoad, false);
+  window.addEventListener("load", handleLoad, false);
 }, "BrowserTabList.prototype.onOpenWindow");
 
-BrowserTabList.prototype.onCloseWindow = DevToolsUtils.makeInfallible(function(aWindow) {
-  aWindow = aWindow.QueryInterface(Ci.nsIInterfaceRequestor)
+BrowserTabList.prototype.onCloseWindow =
+DevToolsUtils.makeInfallible(function (window) {
+  window = window.QueryInterface(Ci.nsIInterfaceRequestor)
                    .getInterface(Ci.nsIDOMWindow);
 
-  if (appShellDOMWindowType(aWindow) !== DebuggerServer.chromeWindowType)
+  if (appShellDOMWindowType(window) !== DebuggerServer.chromeWindowType) {
     return;
+  }
 
   
 
@@ -704,9 +718,13 @@ exports.BrowserTabList = BrowserTabList;
 
 
 
-function TabActor(aConnection)
-{
-  this.conn = aConnection;
+
+
+
+
+
+function TabActor(connection) {
+  this.conn = connection;
   this._tabActorPool = null;
   
   this._extraActors = {};
@@ -716,7 +734,8 @@ function TabActor(aConnection)
   
   this._styleSheetActors = new Map();
 
-  this._shouldAddNewGlobalAsDebuggee = this._shouldAddNewGlobalAsDebuggee.bind(this);
+  this._shouldAddNewGlobalAsDebuggee =
+    this._shouldAddNewGlobalAsDebuggee.bind(this);
 
   this.makeDebugger = makeDebugger.bind(null, {
     findDebuggees: () => {
@@ -727,7 +746,8 @@ function TabActor(aConnection)
 
   
   
-  this.listenForNewDocShells = Services.appinfo.processType == Services.appinfo.PROCESS_TYPE_CONTENT;
+  this.listenForNewDocShells =
+    Services.appinfo.processType == Services.appinfo.PROCESS_TYPE_CONTENT;
 
   this.traits = {
     reconfigure: true,
@@ -750,14 +770,23 @@ function TabActor(aConnection)
 TabActor.prototype = {
   traits: null,
 
-  get exited() { return this._exited; },
-  get attached() { return !!this._attached; },
+  get exited() {
+    return this._exited;
+  },
+
+  get attached() {
+    return !!this._attached;
+  },
 
   _tabPool: null,
-  get tabActorPool() { return this._tabPool; },
+  get tabActorPool() {
+    return this._tabPool;
+  },
 
   _contextPool: null,
-  get contextActorPool() { return this._contextPool; },
+  get contextActorPool() {
+    return this._contextPool;
+  },
 
   _pendingNavigation: null,
 
@@ -784,7 +813,8 @@ TabActor.prototype = {
 
 
   get docShell() {
-    throw "The docShell getter should be implemented by a subclass of TabActor";
+    throw new Error(
+      "The docShell getter should be implemented by a subclass of TabActor");
   },
 
   
@@ -920,11 +950,11 @@ TabActor.prototype = {
 
 
 
-  update: function() {
+  update() {
     return promise.resolve(this);
   },
 
-  form: function BTA_form() {
+  form() {
     assert(!this.exited,
                "form() shouldn't be called on exited browser actor.");
     assert(this.actorID,
@@ -965,14 +995,14 @@ TabActor.prototype = {
   
 
 
-  disconnect: function BTA_disconnect() {
+  disconnect() {
     this.exit();
   },
 
   
 
 
-  exit: function BTA_exit() {
+  exit() {
     if (this.exited) {
       return;
     }
@@ -1002,7 +1032,7 @@ TabActor.prototype = {
 
 
 
-  _shouldAddNewGlobalAsDebuggee: function (wrappedGlobal) {
+  _shouldAddNewGlobalAsDebuggee(wrappedGlobal) {
     if (wrappedGlobal.hostAnnotations &&
         wrappedGlobal.hostAnnotations.type == "document" &&
         wrappedGlobal.hostAnnotations.element === this.window) {
@@ -1020,8 +1050,9 @@ TabActor.prototype = {
     try {
       id = getInnerId(this.window);
       metadata = Cu.getSandboxMetadata(global);
+    } catch (e) {
+      
     }
-    catch (e) {}
     if (metadata
         && metadata["inner-window-id"]
         && metadata["inner-window-id"] == id) {
@@ -1038,7 +1069,7 @@ TabActor.prototype = {
   
 
 
-  _attach: function BTA_attach() {
+  _attach() {
     if (this._attached) {
       return;
     }
@@ -1066,7 +1097,7 @@ TabActor.prototype = {
     this._attached = true;
   },
 
-  _watchDocshells: function BTA_watchDocshells() {
+  _watchDocshells() {
     
     if (this.listenForNewDocShells) {
       Services.obs.addObserver(this, "webnavigation-create", false);
@@ -1080,12 +1111,15 @@ TabActor.prototype = {
     this._updateChildDocShells();
   },
 
-  onSwitchToFrame: function BTA_onSwitchToFrame(aRequest) {
-    let windowId = aRequest.windowId;
+  onSwitchToFrame(request) {
+    let windowId = request.windowId;
     let win;
+
     try {
       win = Services.wm.getOuterWindowWithId(windowId);
-    } catch(e) {}
+    } catch (e) {
+      
+    }
     if (!win) {
       return { error: "noWindow",
                message: "The related docshell is destroyed or not found" };
@@ -1099,12 +1133,12 @@ TabActor.prototype = {
     return {};
   },
 
-  onListFrames: function BTA_onListFrames(aRequest) {
+  onListFrames(request) {
     let windows = this._docShellsToWindows(this.docShells);
     return { frames: windows };
   },
 
-  onListWorkers: function BTA_onListWorkers(aRequest) {
+  onListWorkers(request) {
     if (!this.attached) {
       return { error: "wrongState" };
     }
@@ -1135,26 +1169,27 @@ TabActor.prototype = {
     });
   },
 
-  _onWorkerActorListChanged: function () {
+  _onWorkerActorListChanged() {
     this._workerActorList.onListChanged = null;
     this.conn.sendActorEvent(this.actorID, "workerListChanged");
   },
 
-  observe: function (aSubject, aTopic, aData) {
+  observe(subject, topic, data) {
     
     
     if (!this.attached) {
       return;
     }
-    if (aTopic == "webnavigation-create") {
-      aSubject.QueryInterface(Ci.nsIDocShell);
-      this._onDocShellCreated(aSubject);
-    } else if (aTopic == "webnavigation-destroy") {
-      this._onDocShellDestroy(aSubject);
+    if (topic == "webnavigation-create") {
+      subject.QueryInterface(Ci.nsIDocShell);
+      this._onDocShellCreated(subject);
+    } else if (topic == "webnavigation-destroy") {
+      this._onDocShellDestroy(subject);
     }
   },
 
-  _onDocShellCreated: function (docShell) {
+  _onDocShellCreated(docShell) {
+    
     
     
     
@@ -1178,13 +1213,13 @@ TabActor.prototype = {
     });
   },
 
-  _onDocShellDestroy: function (docShell) {
+  _onDocShellDestroy(docShell) {
     let webProgress = docShell.QueryInterface(Ci.nsIInterfaceRequestor)
                               .getInterface(Ci.nsIWebProgress);
     this._notifyDocShellDestroy(webProgress);
   },
 
-  _isRootDocShell: function (docShell) {
+  _isRootDocShell(docShell) {
     
     
     
@@ -1195,7 +1230,7 @@ TabActor.prototype = {
   },
 
   
-  _docShellsToWindows: function (docshells) {
+  _docShellsToWindows(docshells) {
     return docshells.map(docShell => {
       let webProgress = docShell.QueryInterface(Ci.nsIInterfaceRequestor)
                                 .getInterface(Ci.nsIWebProgress);
@@ -1221,7 +1256,7 @@ TabActor.prototype = {
     });
   },
 
-  _notifyDocShellsUpdate: function (docshells) {
+  _notifyDocShellsUpdate(docshells) {
     let windows = this._docShellsToWindows(docshells);
     this.conn.send({ from: this.actorID,
                      type: "frameUpdate",
@@ -1229,11 +1264,11 @@ TabActor.prototype = {
                    });
   },
 
-  _updateChildDocShells: function () {
+  _updateChildDocShells() {
     this._notifyDocShellsUpdate(this.docShells);
   },
 
-  _notifyDocShellDestroy: function (webProgress) {
+  _notifyDocShellDestroy(webProgress) {
     webProgress = webProgress.QueryInterface(Ci.nsIWebProgress);
     let id = webProgress.DOMWindow
                         .QueryInterface(Ci.nsIInterfaceRequestor)
@@ -1283,7 +1318,7 @@ TabActor.prototype = {
     }
   },
 
-  _notifyDocShellDestroyAll: function () {
+  _notifyDocShellDestroyAll() {
     this.conn.send({ from: this.actorID,
                      type: "frameUpdate",
                      destroyAll: true
@@ -1294,7 +1329,7 @@ TabActor.prototype = {
 
 
 
-  _pushContext: function BTA_pushContext() {
+  _pushContext() {
     assert(!this._contextPool, "Can't push multiple contexts");
 
     this._contextPool = new ActorPool(this.conn);
@@ -1308,7 +1343,7 @@ TabActor.prototype = {
 
 
 
-  _popContext: function BTA_popContext() {
+  _popContext() {
     assert(!!this._contextPool, "No context to pop.");
 
     this.conn.removeActorPool(this._contextPool);
@@ -1323,7 +1358,7 @@ TabActor.prototype = {
 
 
 
-  _detach: function BTA_detach() {
+  _detach() {
     if (!this.attached) {
       return false;
     }
@@ -1385,7 +1420,7 @@ TabActor.prototype = {
 
   
 
-  onAttach: function BTA_onAttach(aRequest) {
+  onAttach(request) {
     if (this.exited) {
       return { type: "exited" };
     }
@@ -1401,7 +1436,7 @@ TabActor.prototype = {
     };
   },
 
-  onDetach: function BTA_onDetach(aRequest) {
+  onDetach(request) {
     if (!this._detach()) {
       return { error: "wrongState" };
     }
@@ -1412,7 +1447,7 @@ TabActor.prototype = {
   
 
 
-  onFocus: function() {
+  onFocus() {
     if (this.window) {
       this.window.focus();
     }
@@ -1422,8 +1457,8 @@ TabActor.prototype = {
   
 
 
-  onReload: function(aRequest) {
-    let force = aRequest && aRequest.options && aRequest.options.force;
+  onReload(request) {
+    let force = request && request.options && request.options.force;
     
     
     Services.tm.currentThread.dispatch(DevToolsUtils.makeInfallible(() => {
@@ -1432,8 +1467,9 @@ TabActor.prototype = {
       if (Services.startup.shuttingDown) {
         return;
       }
-      this.webNavigation.reload(force ? Ci.nsIWebNavigation.LOAD_FLAGS_BYPASS_CACHE
-                                      : Ci.nsIWebNavigation.LOAD_FLAGS_NONE);
+      this.webNavigation.reload(force ?
+        Ci.nsIWebNavigation.LOAD_FLAGS_BYPASS_CACHE :
+        Ci.nsIWebNavigation.LOAD_FLAGS_NONE);
     }, "TabActor.prototype.onReload's delayed body"), 0);
     return {};
   },
@@ -1441,11 +1477,11 @@ TabActor.prototype = {
   
 
 
-  onNavigateTo: function(aRequest) {
+  onNavigateTo(request) {
     
     
     Services.tm.currentThread.dispatch(DevToolsUtils.makeInfallible(() => {
-      this.window.location = aRequest.url;
+      this.window.location = request.url;
     }, "TabActor.prototype.onNavigateTo's delayed body"), 0);
     return {};
   },
@@ -1453,8 +1489,8 @@ TabActor.prototype = {
   
 
 
-  onReconfigure: function (aRequest) {
-    let options = aRequest.options || {};
+  onReconfigure(request) {
+    let options = request.options || {};
 
     if (!this.docShell) {
       
@@ -1468,7 +1504,7 @@ TabActor.prototype = {
   
 
 
-  _toggleDevToolsSettings: function(options) {
+  _toggleDevToolsSettings(options) {
     
     
     let reload = false;
@@ -1510,7 +1546,7 @@ TabActor.prototype = {
 
 
 
-  _restoreDocumentSettings: function () {
+  _restoreDocumentSettings() {
     this._restoreJavascript();
     this._setCacheDisabled(false);
     this._setServiceWorkersTestingEnabled(false);
@@ -1520,8 +1556,8 @@ TabActor.prototype = {
   
 
 
-  _setCacheDisabled: function(disabled) {
-    let enable =  Ci.nsIRequest.LOAD_NORMAL;
+  _setCacheDisabled(disabled) {
+    let enable = Ci.nsIRequest.LOAD_NORMAL;
     let disable = Ci.nsIRequest.LOAD_BYPASS_CACHE |
                   Ci.nsIRequest.INHIBIT_CACHING;
 
@@ -1532,7 +1568,7 @@ TabActor.prototype = {
 
 
   _wasJavascriptEnabled: null,
-  _setJavascriptEnabled: function(allow) {
+  _setJavascriptEnabled(allow) {
     if (this._wasJavascriptEnabled === null) {
       this._wasJavascriptEnabled = this.docShell.allowJavascript;
     }
@@ -1542,7 +1578,7 @@ TabActor.prototype = {
   
 
 
-  _restoreJavascript: function () {
+  _restoreJavascript() {
     if (this._wasJavascriptEnabled !== null) {
       this._setJavascriptEnabled(this._wasJavascriptEnabled);
       this._wasJavascriptEnabled = null;
@@ -1552,7 +1588,7 @@ TabActor.prototype = {
   
 
 
-  _getJavascriptEnabled: function() {
+  _getJavascriptEnabled() {
     if (!this.docShell) {
       
       return null;
@@ -1564,7 +1600,7 @@ TabActor.prototype = {
   
 
 
-  _setServiceWorkersTestingEnabled: function(enabled) {
+  _setServiceWorkersTestingEnabled(enabled) {
     let windowUtils = this.window.QueryInterface(Ci.nsIInterfaceRequestor)
                                  .getInterface(Ci.nsIDOMWindowUtils);
     windowUtils.serviceWorkersTestingEnabled = enabled;
@@ -1573,7 +1609,7 @@ TabActor.prototype = {
   
 
 
-  _getCacheDisabled: function() {
+  _getCacheDisabled() {
     if (!this.docShell) {
       
       return null;
@@ -1587,7 +1623,7 @@ TabActor.prototype = {
   
 
 
-  _getServiceWorkersTestingEnabled: function() {
+  _getServiceWorkersTestingEnabled() {
     if (!this.docShell) {
       
       return null;
@@ -1603,7 +1639,7 @@ TabActor.prototype = {
   
 
 
-  _getCustomUserAgent: function() {
+  _getCustomUserAgent() {
     if (!this.docShell) {
       
       return null;
@@ -1614,7 +1650,7 @@ TabActor.prototype = {
   
 
 
-  _setCustomUserAgent: function(userAgent) {
+  _setCustomUserAgent(userAgent) {
     if (this._previousCustomUserAgent === null) {
       this._previousCustomUserAgent = this.docShell.customUserAgent;
     }
@@ -1624,7 +1660,7 @@ TabActor.prototype = {
   
 
 
-  _restoreUserAgent: function() {
+  _restoreUserAgent() {
     if (this._previousCustomUserAgent !== null) {
       this.docShell.customUserAgent = this._previousCustomUserAgent;
     }
@@ -1633,7 +1669,7 @@ TabActor.prototype = {
   
 
 
-  preNest: function BTA_preNest() {
+  preNest() {
     if (!this.window) {
       
       return;
@@ -1648,7 +1684,7 @@ TabActor.prototype = {
   
 
 
-  postNest: function BTA_postNest(aNestData) {
+  postNest(nestData) {
     if (!this.window) {
       
       return;
@@ -1664,7 +1700,7 @@ TabActor.prototype = {
     }
   },
 
-  _changeTopLevelDocument: function (window) {
+  _changeTopLevelDocument(window) {
     
     
     this._willNavigate(this.window, window.location.href, null, true);
@@ -1684,7 +1720,7 @@ TabActor.prototype = {
     });
   },
 
-  _setWindow: function (window) {
+  _setWindow(window) {
     let docShell = window.QueryInterface(Ci.nsIInterfaceRequestor)
                          .getInterface(Ci.nsIWebNavigation)
                          .QueryInterface(Ci.nsIDocShell);
@@ -1711,7 +1747,7 @@ TabActor.prototype = {
 
 
 
-  _windowReady: function (window, isFrameSwitching = false) {
+  _windowReady(window, isFrameSwitching = false) {
     let isTopLevel = window == this.window;
 
     
@@ -1726,6 +1762,7 @@ TabActor.prototype = {
       id: getWindowID(window)
     });
 
+    
     
     let threadActor = this.threadActor;
     if (isTopLevel && threadActor.state != "detached") {
@@ -1745,7 +1782,7 @@ TabActor.prototype = {
     }
   },
 
-  _windowDestroyed: function (window, id = null, isFrozen = false) {
+  _windowDestroyed(window, id = null, isFrozen = false) {
     events.emit(this, "window-destroyed", {
       window: window,
       isTopLevel: window == this.window,
@@ -1758,7 +1795,7 @@ TabActor.prototype = {
 
 
 
-  _willNavigate: function (window, newURI, request, isFrameSwitching = false) {
+  _willNavigate(window, newURI, request, isFrameSwitching = false) {
     let isTopLevel = window == this.window;
     let reset = false;
 
@@ -1772,7 +1809,7 @@ TabActor.prototype = {
       
       
       if (this.window != this._originalWindow) {
-        reset=true;
+        reset = true;
         window = this.window;
         isTopLevel = true;
       }
@@ -1798,10 +1835,12 @@ TabActor.prototype = {
 
     
     
+    
     let threadActor = this.threadActor;
     if (request && threadActor.state == "paused") {
       request.suspend();
-      this.conn.send(threadActor.unsafeSynchronize(Promise.resolve(threadActor.onResume())));
+      this.conn.send(
+        threadActor.unsafeSynchronize(Promise.resolve(threadActor.onResume())));
       threadActor.dbg.enabled = false;
       this._pendingNavigation = request;
     }
@@ -1825,7 +1864,7 @@ TabActor.prototype = {
 
 
 
-  _navigate: function (window, isFrameSwitching = false) {
+  _navigate(window, isFrameSwitching = false) {
     let isTopLevel = window == this.window;
 
     
@@ -1869,15 +1908,16 @@ TabActor.prototype = {
 
 
 
-  hasNativeConsoleAPI: function BTA_hasNativeConsoleAPI(aWindow) {
+  hasNativeConsoleAPI(window) {
     let isNative = false;
     try {
       
       
-      let console = aWindow.wrappedJSObject.console;
-      isNative = console instanceof aWindow.Console;
+      let console = window.wrappedJSObject.console;
+      isNative = console instanceof window.Console;
+    } catch (ex) {
+      
     }
-    catch (ex) { }
     return isNative;
   },
 
@@ -1891,7 +1931,7 @@ TabActor.prototype = {
 
 
 
-  createStyleSheetActor: function BTA_createStyleSheetActor(styleSheet) {
+  createStyleSheetActor(styleSheet) {
     if (this._styleSheetActors.has(styleSheet)) {
       return this._styleSheetActors.get(styleSheet);
     }
@@ -1903,13 +1943,13 @@ TabActor.prototype = {
     return actor;
   },
 
-  removeActorByName: function BTA_removeActor(aName) {
-    if (aName in this._extraActors) {
-      const actor = this._extraActors[aName];
+  removeActorByName(name) {
+    if (name in this._extraActors) {
+      const actor = this._extraActors[name];
       if (this._tabActorPool.has(actor)) {
         this._tabActorPool.removeActor(actor);
       }
-      delete this._extraActors[aName];
+      delete this._extraActors[name];
     }
   },
 
@@ -1923,31 +1963,45 @@ TabActor.prototype = {
 
 
 
-  onResolveLocation: function (request) {
+  onResolveLocation(request) {
     let { url, line } = request;
     let column = request.column || 0;
-    let actor;
+    let actor = this.sources.getSourceActorByURL(url);
 
-    if (actor = this.sources.getSourceActorByURL(url)) {
+    if (actor) {
       
       let generatedActor = actor.generatedSource ?
-                           this.sources.createNonSourceMappedActor(actor.generatedSource) :
-                           actor;
-      let generatedLocation = new GeneratedLocation(generatedActor, line, column);
+        this.sources.createNonSourceMappedActor(actor.generatedSource) :
+        actor;
+      let generatedLocation = new GeneratedLocation(
+        generatedActor, line, column);
 
       return this.sources.getOriginalLocation(generatedLocation).then(loc => {
         
         if (loc.originalLine == null) {
-          return { from: this.actorID, type: "resolveLocation", error: "MAP_NOT_FOUND" };
+          return {
+            from: this.actorID,
+            type: "resolveLocation",
+            error: "MAP_NOT_FOUND"
+          };
         }
 
         loc = loc.toJSON();
-        return { from: this.actorID, url: loc.source.url, column: loc.column, line: loc.line };
+        return {
+          from: this.actorID,
+          url: loc.source.url,
+          column: loc.column,
+          line: loc.line
+        };
       });
     }
 
     
-    return promise.resolve({ from: this.actorID, type: "resolveLocation", error: "SOURCE_NOT_FOUND" });
+    return promise.resolve({
+      from: this.actorID,
+      type: "resolveLocation",
+      error: "SOURCE_NOT_FOUND"
+    });
   },
 };
 
@@ -1979,12 +2033,11 @@ exports.TabActor = TabActor;
 
 
 
-function BrowserTabActor(aConnection, aBrowser)
-{
-  TabActor.call(this, aConnection, aBrowser);
-  this._browser = aBrowser;
-  if (typeof(aBrowser.getTabBrowser) == "function") {
-    this._tabbrowser = aBrowser.getTabBrowser();
+function BrowserTabActor(connection, browser) {
+  TabActor.call(this, connection, browser);
+  this._browser = browser;
+  if (typeof browser.getTabBrowser == "function") {
+    this._tabbrowser = browser.getTabBrowser();
   }
 
   Object.defineProperty(this, "docShell", {
@@ -1998,7 +2051,7 @@ BrowserTabActor.prototype = Object.create(TabActor.prototype);
 BrowserTabActor.prototype.constructor = BrowserTabActor;
 
 Object.defineProperty(BrowserTabActor.prototype, "title", {
-  get: function() {
+  get() {
     
     if (this._browser.__SS_restore) {
       let sessionStore = this._browser.__SS_data;
@@ -2023,7 +2076,7 @@ Object.defineProperty(BrowserTabActor.prototype, "title", {
 });
 
 Object.defineProperty(BrowserTabActor.prototype, "url", {
-  get: function() {
+  get() {
     
     if (this._browser.__SS_restore) {
       let sessionStore = this._browser.__SS_data;
@@ -2041,20 +2094,20 @@ Object.defineProperty(BrowserTabActor.prototype, "url", {
 });
 
 Object.defineProperty(BrowserTabActor.prototype, "browser", {
-  get: function() {
+  get() {
     return this._browser;
   },
   enumerable: true,
   configurable: false
 });
 
-BrowserTabActor.prototype.disconnect = function() {
+BrowserTabActor.prototype.disconnect = function () {
   TabActor.prototype.disconnect.call(this);
   this._browser = null;
   this._tabbrowser = null;
 };
 
-BrowserTabActor.prototype.exit = function() {
+BrowserTabActor.prototype.exit = function () {
   TabActor.prototype.exit.call(this);
   this._browser = null;
   this._tabbrowser = null;
@@ -2070,19 +2123,19 @@ exports.BrowserTabActor = BrowserTabActor;
 
 
 
-function RemoteBrowserTabActor(aConnection, aBrowser)
-{
-  this._conn = aConnection;
-  this._browser = aBrowser;
+function RemoteBrowserTabActor(connection, browser) {
+  this._conn = connection;
+  this._browser = browser;
   this._form = null;
 }
 
 RemoteBrowserTabActor.prototype = {
-  connect: function() {
+  connect() {
     let onDestroy = () => {
       this._form = null;
     };
-    let connect = DebuggerServer.connectToChild(this._conn, this._browser, onDestroy);
+    let connect = DebuggerServer.connectToChild(
+      this._conn, this._browser, onDestroy);
     return connect.then(form => {
       this._form = form;
       return this;
@@ -2094,7 +2147,8 @@ RemoteBrowserTabActor.prototype = {
            .messageManager;
   },
 
-  update: function() {
+  update() {
+    
     
     
     if (this._form) {
@@ -2111,31 +2165,30 @@ RemoteBrowserTabActor.prototype = {
       this._mm.addMessageListener("debug:form", onFormUpdate);
       this._mm.sendAsyncMessage("debug:form");
       return deferred.promise;
-    } else {
-      return this.connect();
     }
+
+    return this.connect();
   },
 
-  form: function() {
+  form() {
     return this._form;
   },
 
-  exit: function() {
+  exit() {
     this._browser = null;
   },
 };
 
 exports.RemoteBrowserTabActor = RemoteBrowserTabActor;
 
-function BrowserAddonList(aConnection)
-{
-  this._connection = aConnection;
+function BrowserAddonList(connection) {
+  this._connection = connection;
   this._actorByAddonId = new Map();
   this._onListChanged = null;
 }
 
-BrowserAddonList.prototype.getList = function() {
-  var deferred = promise.defer();
+BrowserAddonList.prototype.getList = function () {
+  let deferred = promise.defer();
   AddonManager.getAllAddons((addons) => {
     for (let addon of addons) {
       let actor = this._actorByAddonId.get(addon.id);
@@ -2147,14 +2200,18 @@ BrowserAddonList.prototype.getList = function() {
     deferred.resolve([...this._actorByAddonId].map(([_, actor]) => actor));
   });
   return deferred.promise;
-}
+};
 
 Object.defineProperty(BrowserAddonList.prototype, "onListChanged", {
-  enumerable: true, configurable: true,
-  get: function() { return this._onListChanged; },
-  set: function(v) {
+  enumerable: true,
+  configurable: true,
+  get() {
+    return this._onListChanged;
+  },
+  set(v) {
     if (v !== null && typeof v != "function") {
-      throw Error("onListChanged property may only be set to 'null' or a function");
+      throw new Error(
+        "onListChanged property may only be set to 'null' or a function");
     }
     this._onListChanged = v;
     if (this._onListChanged) {
@@ -2165,12 +2222,12 @@ Object.defineProperty(BrowserAddonList.prototype, "onListChanged", {
   }
 });
 
-BrowserAddonList.prototype.onInstalled = function (aAddon) {
+BrowserAddonList.prototype.onInstalled = function (addon) {
   this._onListChanged();
 };
 
-BrowserAddonList.prototype.onUninstalled = function (aAddon) {
-  this._actorByAddonId.delete(aAddon.id);
+BrowserAddonList.prototype.onUninstalled = function (addon) {
+  this._actorByAddonId.delete(addon.id);
   this._onListChanged();
 };
 
@@ -2185,8 +2242,8 @@ exports.BrowserAddonList = BrowserAddonList;
 
 
 
-function DebuggerProgressListener(aTabActor) {
-  this._tabActor = aTabActor;
+function DebuggerProgressListener(tabActor) {
+  this._tabActor = tabActor;
   this._onWindowCreated = this.onWindowCreated.bind(this);
   this._onWindowHidden = this.onWindowHidden.bind(this);
 
@@ -2208,13 +2265,13 @@ DebuggerProgressListener.prototype = {
     Ci.nsISupports,
   ]),
 
-  destroy: function() {
+  destroy() {
     Services.obs.removeObserver(this, "inner-window-destroyed", false);
     this._knownWindowIDs.clear();
     this._knownWindowIDs = null;
   },
 
-  watch: function(docShell) {
+  watch(docShell) {
     
     
     
@@ -2224,9 +2281,10 @@ DebuggerProgressListener.prototype = {
 
     let webProgress = docShell.QueryInterface(Ci.nsIInterfaceRequestor)
                               .getInterface(Ci.nsIWebProgress);
-    webProgress.addProgressListener(this, Ci.nsIWebProgress.NOTIFY_STATUS |
-                                          Ci.nsIWebProgress.NOTIFY_STATE_WINDOW |
-                                          Ci.nsIWebProgress.NOTIFY_STATE_DOCUMENT);
+    webProgress.addProgressListener(this,
+                                    Ci.nsIWebProgress.NOTIFY_STATUS |
+                                    Ci.nsIWebProgress.NOTIFY_STATE_WINDOW |
+                                    Ci.nsIWebProgress.NOTIFY_STATE_DOCUMENT);
 
     let handler = getDocShellChromeEventHandler(docShell);
     handler.addEventListener("DOMWindowCreated", this._onWindowCreated, true);
@@ -2240,7 +2298,7 @@ DebuggerProgressListener.prototype = {
     }
   },
 
-  unwatch: function(docShell) {
+  unwatch(docShell) {
     let docShellWindow = docShell.QueryInterface(Ci.nsIInterfaceRequestor)
                                  .getInterface(Ci.nsIDOMWindow);
     if (!this._watchedDocShells.has(docShellWindow)) {
@@ -2252,10 +2310,13 @@ DebuggerProgressListener.prototype = {
     
     try {
       webProgress.removeProgressListener(this);
-    } catch(e) {}
+    } catch (e) {
+      
+    }
 
     let handler = getDocShellChromeEventHandler(docShell);
-    handler.removeEventListener("DOMWindowCreated", this._onWindowCreated, true);
+    handler.removeEventListener("DOMWindowCreated",
+      this._onWindowCreated, true);
     handler.removeEventListener("pageshow", this._onWindowCreated, true);
     handler.removeEventListener("pagehide", this._onWindowHidden, true);
 
@@ -2264,14 +2325,14 @@ DebuggerProgressListener.prototype = {
     }
   },
 
-  _getWindowsInDocShell: function(docShell) {
+  _getWindowsInDocShell(docShell) {
     return getChildDocShells(docShell).map(d => {
       return d.QueryInterface(Ci.nsIInterfaceRequestor)
               .getInterface(Ci.nsIDOMWindow);
     });
   },
 
-  onWindowCreated: DevToolsUtils.makeInfallible(function(evt) {
+  onWindowCreated: DevToolsUtils.makeInfallible(function (evt) {
     if (!this._tabActor.attached) {
       return;
     }
@@ -2291,7 +2352,7 @@ DebuggerProgressListener.prototype = {
     }
   }, "DebuggerProgressListener.prototype.onWindowCreated"),
 
-  onWindowHidden: DevToolsUtils.makeInfallible(function(evt) {
+  onWindowHidden: DevToolsUtils.makeInfallible(function (evt) {
     if (!this._tabActor.attached) {
       return;
     }
@@ -2308,7 +2369,7 @@ DebuggerProgressListener.prototype = {
     this._tabActor._windowDestroyed(window, null, true);
   }, "DebuggerProgressListener.prototype.onWindowHidden"),
 
-  observe: DevToolsUtils.makeInfallible(function(subject, topic) {
+  observe: DevToolsUtils.makeInfallible(function (subject, topic) {
     if (!this._tabActor.attached) {
       return;
     }
@@ -2325,29 +2386,29 @@ DebuggerProgressListener.prototype = {
   }, "DebuggerProgressListener.prototype.observe"),
 
   onStateChange:
-  DevToolsUtils.makeInfallible(function(aProgress, aRequest, aFlag, aStatus) {
+  DevToolsUtils.makeInfallible(function (progress, request, flag, status) {
     if (!this._tabActor.attached) {
       return;
     }
 
-    let isStart = aFlag & Ci.nsIWebProgressListener.STATE_START;
-    let isStop = aFlag & Ci.nsIWebProgressListener.STATE_STOP;
-    let isDocument = aFlag & Ci.nsIWebProgressListener.STATE_IS_DOCUMENT;
-    let isWindow = aFlag & Ci.nsIWebProgressListener.STATE_IS_WINDOW;
+    let isStart = flag & Ci.nsIWebProgressListener.STATE_START;
+    let isStop = flag & Ci.nsIWebProgressListener.STATE_STOP;
+    let isDocument = flag & Ci.nsIWebProgressListener.STATE_IS_DOCUMENT;
+    let isWindow = flag & Ci.nsIWebProgressListener.STATE_IS_WINDOW;
 
     
     if (isDocument && isStop) {
       
-      aProgress.QueryInterface(Ci.nsIDocShell);
-      this._tabActor._notifyDocShellsUpdate([aProgress]);
+      progress.QueryInterface(Ci.nsIDocShell);
+      this._tabActor._notifyDocShellsUpdate([progress]);
     }
 
-    let window = aProgress.DOMWindow;
+    let window = progress.DOMWindow;
     if (isDocument && isStart) {
       
       
-      let newURI = aRequest instanceof Ci.nsIChannel ? aRequest.URI.spec : null;
-      this._tabActor._willNavigate(window, newURI, aRequest);
+      let newURI = request instanceof Ci.nsIChannel ? request.URI.spec : null;
+      this._tabActor._willNavigate(window, newURI, request);
     }
     if (isWindow && isStop) {
       
@@ -2357,10 +2418,10 @@ DebuggerProgressListener.prototype = {
   }, "DebuggerProgressListener.prototype.onStateChange")
 };
 
-exports.register = function(handle) {
+exports.register = function (handle) {
   handle.setRootActor(createRootActor);
 };
 
-exports.unregister = function(handle) {
+exports.unregister = function (handle) {
   handle.setRootActor(null);
 };
