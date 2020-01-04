@@ -3627,7 +3627,7 @@ nsContentUtils::IsChildOfSameType(nsIDocument* aDoc)
   return sameTypeParent != nullptr;
 }
 
-bool 
+bool
 nsContentUtils::IsScriptType(const nsACString& aContentType)
 {
   
@@ -4445,9 +4445,10 @@ nsContentUtils::CreateContextualFragment(nsINode* aContextNode,
       uint32_t index;
 
       for (index = 0; index < count; index++) {
-        const nsAttrName* name = content->GetAttrNameAt(index);
+        const nsAttrInfo info = content->GetAttrInfoAt(index);
+        const nsAttrName* name = info.mName;
         if (name->NamespaceEquals(kNameSpaceID_XMLNS)) {
-          content->GetAttr(kNameSpaceID_XMLNS, name->LocalName(), uriStr);
+          info.mValue->ToString(uriStr);
 
           
           tagName.AppendLiteral(" xmlns"); 
