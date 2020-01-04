@@ -19,7 +19,7 @@ function basicTest(aIcc) {
     
     
     is(iccInfo.mcc, 310);
-    is(iccInfo.mnc, 260);
+    is(iccInfo.mnc, 410);
     
     
     is(iccInfo.msisdn, "15555215554");

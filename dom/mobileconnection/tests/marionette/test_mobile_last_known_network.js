@@ -7,7 +7,7 @@ MARIONETTE_HEAD_JS = "head.js";
 
 startTestCommon(function() {
   
-  is(mobileConnection.lastKnownNetwork, "310-260");
+  is(mobileConnection.lastKnownNetwork, "310-410");
   
-  is(mobileConnection.lastKnownHomeNetwork, "310-260-Android");
+  is(mobileConnection.lastKnownHomeNetwork, "310-410-Android");
 }, ["mobilenetwork"]);

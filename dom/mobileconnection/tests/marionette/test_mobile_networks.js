@@ -9,7 +9,7 @@ function isHomeNetwork(network) {
   is(network.longName, "Android");
   is(network.shortName, "Android");
   is(network.mcc, "310");
-  is(network.mnc, "260");
+  is(network.mnc, "410");
 }
 
 function isRoamingNetwork(network) {
