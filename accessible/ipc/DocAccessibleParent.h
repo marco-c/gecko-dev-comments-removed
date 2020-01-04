@@ -17,6 +17,8 @@
 namespace mozilla {
 namespace a11y {
 
+class xpcAccessibleGeneric;
+
 
 
 
@@ -159,6 +161,7 @@ private:
                       const nsTArray<AccessibleData>& aNewTree, uint32_t aIdx,
                       uint32_t aIdxInParent);
   MOZ_WARN_UNUSED_RESULT bool CheckDocTree() const;
+  xpcAccessibleGeneric* GetXPCAccessible(ProxyAccessible* aProxy);
 
   nsTArray<DocAccessibleParent*> mChildDocs;
   DocAccessibleParent* mParentDoc;
