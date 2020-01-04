@@ -307,8 +307,8 @@ var Stepper = (function StepperClosure() {
       this.table = table;
       if (!opMap) {
         opMap = Object.create(null);
-        for (var key in PDFJS.OPS) {
-          opMap[PDFJS.OPS[key]] = key;
+        for (var key in pdfjsLib.OPS) {
+          opMap[pdfjsLib.OPS[key]] = key;
         }
       }
     },
@@ -460,7 +460,7 @@ var Stats = (function Stats() {
     manager: null,
     init: function init() {
       this.panel.setAttribute('style', 'padding: 5px;');
-      PDFJS.enableStats = true;
+      pdfjsLib.PDFJS.enableStats = true;
     },
     enabled: false,
     active: false,

@@ -1023,14 +1023,18 @@ PdfStreamConverter.prototype = {
     
     channel.originalURI = aRequest.URI;
     channel.loadGroup = aRequest.loadGroup;
+    channel.loadInfo.originAttributes = aRequest.loadInfo.originAttributes;
 
+    
+    
     
     
     var ssm = Cc['@mozilla.org/scriptsecuritymanager;1']
                 .getService(Ci.nsIScriptSecurityManager);
     var uri = NetUtil.newURI(PDF_VIEWER_WEB_PAGE, null, null);
+    var attrs = aRequest.loadInfo.originAttributes;
     var resourcePrincipal;
-    resourcePrincipal = ssm.createCodebasePrincipal(uri, {});
+    resourcePrincipal = ssm.createCodebasePrincipal(uri, attrs);
     aRequest.owner = resourcePrincipal;
     channel.asyncOpen(proxy, aContext);
   },
