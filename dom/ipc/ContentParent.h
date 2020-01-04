@@ -1092,6 +1092,9 @@ private:
 
   virtual bool RecvGetAndroidSystemInfo(AndroidSystemInfo* aInfo) override;
 
+  virtual bool RecvNotifyBenchmarkResult(const nsString& aCodecName,
+                                         const uint32_t& aDecodeFPS) override;
+
   
   
   
