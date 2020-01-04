@@ -59,17 +59,17 @@ add_task(function *() {
   
   dispatch(setDominatorTreeBreakdownAndRefresh(
     heapWorker,
-    dominatorTreeBreakdowns.internalType.breakdown));
+    dominatorTreeBreakdowns.allocationStack.breakdown));
 
   
   yield waitUntilState(store, state =>
     state.snapshots[0].dominatorTree.state === dominatorTreeState.LOADED);
 
   equal(getState().snapshots[0].dominatorTree.breakdown,
-        dominatorTreeBreakdowns.internalType.breakdown,
-        "The new dominator tree's breakdown is internalType");
+        dominatorTreeBreakdowns.allocationStack.breakdown,
+        "The new dominator tree's breakdown is allocationStack");
   equal(getState().dominatorTreeBreakdown,
-        dominatorTreeBreakdowns.internalType.breakdown,
+        dominatorTreeBreakdowns.allocationStack.breakdown,
         "as is our requested dominator tree breakdown");
 
   heapWorker.destroy();

@@ -24,8 +24,8 @@ add_task(function *() {
 
   
   equal(getState().breakdown.by, "coarseType", "default coarseType breakdown selected at start.");
-  dispatch(setBreakdown(breakdowns.objectClass.breakdown));
-  equal(getState().breakdown.by, "objectClass", "breakdown changed with no snapshots");
+  dispatch(setBreakdown(breakdowns.allocationStack.breakdown));
+  equal(getState().breakdown.by, "allocationStack", "breakdown changed with no snapshots");
 
   
   try {
@@ -34,12 +34,12 @@ add_task(function *() {
   } catch (e) {
     ok(true, "Throws when passing in an invalid breakdown object");
   }
-  equal(getState().breakdown.by, "objectClass",
+  equal(getState().breakdown.by, "allocationStack",
     "current breakdown unchanged when passing invalid breakdown");
 
   
   dispatch(takeSnapshotAndCensus(front, heapWorker));
   yield waitUntilSnapshotState(store, [states.SAVED_CENSUS]);
-  ok(isBreakdownType(getState().snapshots[0].census.report, "objectClass"),
+  ok(isBreakdownType(getState().snapshots[0].census.report, "allocationStack"),
     "New snapshots use the current, non-default breakdown");
 });

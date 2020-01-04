@@ -50,7 +50,7 @@ function catchAndIgnore(fn) {
 
 
 let breakdownModel = exports.breakdown = PropTypes.shape({
-  by: PropTypes.oneOf(["coarseType", "allocationStack", "objectClass", "internalType"]).isRequired,
+  by: PropTypes.string.isRequired,
 });
 
 let censusModel = exports.censusModel = PropTypes.shape({
