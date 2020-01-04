@@ -114,6 +114,24 @@ public:
   virtual int64_t StartTime(int64_t granulepos) { return -1; }
 
   
+  virtual int64_t PacketDuration(ogg_packet* aPacket) { return -1; }
+
+  
+  virtual int64_t PacketStartTime(ogg_packet* aPacket) {
+    if (aPacket->granulepos < 0) {
+      return -1;
+    }
+    int64_t endTime = Time(aPacket->granulepos);
+    int64_t duration = PacketDuration(aPacket);
+    if (duration > endTime) {
+      
+      return 0;
+    } else {
+      return endTime - duration;
+    }
+  }
+
+  
   virtual bool Init();
 
   
@@ -141,6 +159,13 @@ public:
 
   
   
+  virtual bool IsKeyframe(ogg_packet* aPacket) { return true; }
+
+  
+  bool IsPacketReady();
+
+  
+  
   
   
   
@@ -148,7 +173,18 @@ public:
 
   
   
+  
+  ogg_packet* PacketPeek();
+
+  
+  
   static void ReleasePacket(ogg_packet* aPacket);
+
+  
+  
+  
+  
+  virtual RefPtr<MediaRawData> PacketOutAsMediaRawData();
 
   
   
@@ -218,6 +254,7 @@ public:
   CodecType GetType() { return TYPE_VORBIS; }
   bool DecodeHeader(ogg_packet* aPacket);
   int64_t Time(int64_t granulepos);
+  int64_t PacketDuration(ogg_packet* aPacket);
   bool Init();
   nsresult Reset();
   bool IsHeader(ogg_packet* aPacket);
@@ -292,8 +329,10 @@ public:
   bool DecodeHeader(ogg_packet* aPacket);
   int64_t Time(int64_t granulepos);
   int64_t StartTime(int64_t granulepos);
+  int64_t PacketDuration(ogg_packet* aPacket);
   bool Init();
   bool IsHeader(ogg_packet* aPacket);
+  bool IsKeyframe(ogg_packet* aPacket);
   nsresult PageIn(ogg_page* aPage); 
 
   
@@ -305,7 +344,7 @@ public:
 
   th_info mInfo;
   th_comment mComment;
-  th_setup_info *mSetup;
+  th_setup_info* mSetup;
   th_dec_ctx* mCtx;
 
   float mPixelAspectRatio;
@@ -329,6 +368,7 @@ public:
   CodecType GetType() { return TYPE_OPUS; }
   bool DecodeHeader(ogg_packet* aPacket);
   int64_t Time(int64_t aGranulepos);
+  int64_t PacketDuration(ogg_packet* aPacket);
   bool Init();
   nsresult Reset();
   nsresult Reset(bool aStart);
@@ -349,7 +389,7 @@ public:
 #endif
 
   nsAutoPtr<OpusParser> mParser;
-  OpusMSDecoder *mDecoder;
+  OpusMSDecoder* mDecoder;
 
   int mSkip;        
   
