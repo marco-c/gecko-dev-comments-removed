@@ -819,8 +819,8 @@ class nsIWidget : public nsISupports
 
 
 
-    NS_IMETHOD PlaceBehind(nsTopLevelWidgetZPlacement aPlacement,
-                           nsIWidget *aWidget, bool aActivate) = 0;
+    virtual void PlaceBehind(nsTopLevelWidgetZPlacement aPlacement,
+                             nsIWidget *aWidget, bool aActivate) = 0;
 
     
 

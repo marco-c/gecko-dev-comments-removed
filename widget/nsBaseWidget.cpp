@@ -722,17 +722,6 @@ void nsBaseWidget::SetZIndex(int32_t aZIndex)
 
 
 
-NS_IMETHODIMP nsBaseWidget::PlaceBehind(nsTopLevelWidgetZPlacement aPlacement,
-                                        nsIWidget *aWidget, bool aActivate)
-{
-  return NS_OK;
-}
-
-
-
-
-
-
 
 void
 nsBaseWidget::SetSizeMode(nsSizeMode aMode)
