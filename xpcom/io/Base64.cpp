@@ -391,7 +391,7 @@ Base64Decode(const nsAString& aBinaryData, nsAString& aString)
 
 nsresult
 Base64URLDecode(const nsACString& aString,
-                const dom::Base64URLDecodeOptions& aOptions,
+                Base64URLDecodePaddingPolicy aPaddingPolicy,
                 FallibleTArray<uint8_t>& aOutput)
 {
   
@@ -412,8 +412,8 @@ Base64URLDecode(const nsACString& aString,
 
   
   bool maybePadded = false;
-  switch (aOptions.mPadding) {
-    case dom::Base64URLDecodePadding::Require:
+  switch (aPaddingPolicy) {
+    case Base64URLDecodePaddingPolicy::Require:
       if (sourceLength % 4) {
         
         return NS_ERROR_INVALID_ARG;
@@ -421,7 +421,7 @@ Base64URLDecode(const nsACString& aString,
       maybePadded = true;
       break;
 
-    case dom::Base64URLDecodePadding::Ignore:
+    case Base64URLDecodePaddingPolicy::Ignore:
       
       maybePadded = !(sourceLength % 4);
       break;
@@ -429,8 +429,8 @@ Base64URLDecode(const nsACString& aString,
     
     
     default:
-      MOZ_FALLTHROUGH_ASSERT("Invalid decode padding option");
-    case dom::Base64URLDecodePadding::Reject:
+      MOZ_FALLTHROUGH_ASSERT("Invalid decode padding policy");
+    case Base64URLDecodePaddingPolicy::Reject:
       break;
   }
   if (maybePadded && source[sourceLength - 1] == '=') {
@@ -487,7 +487,7 @@ Base64URLDecode(const nsACString& aString,
 
 nsresult
 Base64URLEncode(uint32_t aLength, const uint8_t* aData,
-                const dom::Base64URLEncodeOptions& aOptions,
+                Base64URLEncodePaddingPolicy aPaddingPolicy,
                 nsACString& aString)
 {
   
@@ -533,7 +533,7 @@ Base64URLEncode(uint32_t aLength, const uint8_t* aData,
   }
 
   uint32_t length = rawBuffer - aString.BeginWriting();
-  if (aOptions.mPad) {
+  if (aPaddingPolicy == Base64URLEncodePaddingPolicy::Include) {
     if (length % 4 == 2) {
       *rawBuffer++ = '=';
       *rawBuffer++ = '=';
@@ -542,6 +542,9 @@ Base64URLEncode(uint32_t aLength, const uint8_t* aData,
       *rawBuffer++ = '=';
       length += 1;
     }
+  } else {
+    MOZ_ASSERT(aPaddingPolicy == Base64URLEncodePaddingPolicy::Omit,
+               "Invalid encode padding policy");
   }
 
   
