@@ -8,9 +8,12 @@
 #include "FFmpegLibWrapper.h"
 #include "FFmpegLog.h"
 #include "nsIFile.h"
-#include "nsXPCOMPrivate.h" 
 #include "prmem.h"
 #include "prlink.h"
+
+
+
+#include "soundtouch/SoundTouch.h"
 
 namespace mozilla
 {
@@ -51,8 +54,14 @@ FFVPXRuntimeLinker::Init()
 
   
   
+  char* lgpllibsname = PR_GetLibraryName(nullptr, "lgpllibs");
+  if (!lgpllibsname) {
+    return false;
+  }
   char* path =
-    PR_GetLibraryFilePathname(XUL_DLL, (PRFuncPtr)&FFVPXRuntimeLinker::Init);
+    PR_GetLibraryFilePathname(lgpllibsname,
+                              (PRFuncPtr)&soundtouch::SoundTouch::getVersionId);
+  PR_FreeLibraryName(lgpllibsname);
   if (!path) {
     return false;
   }
