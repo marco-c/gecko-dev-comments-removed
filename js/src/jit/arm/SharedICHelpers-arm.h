@@ -108,7 +108,23 @@ EmitBaselineTailCallVM(JitCode* target, MacroAssembler& masm, uint32_t argSize)
 inline void
 EmitIonTailCallVM(JitCode* target, MacroAssembler& masm, uint32_t stackSize)
 {
-    MOZ_CRASH("Not implemented yet.");
+    
+    
+    MOZ_ASSERT(R2 == ValueOperand(r1, r0));
+
+    masm.loadPtr(Address(sp, stackSize), r0);
+    masm.rshiftPtr(Imm32(FRAMESIZE_SHIFT), r0);
+    masm.add32(Imm32(stackSize + JitStubFrameLayout::Size() - sizeof(intptr_t)), r0);
+
+    
+    
+    
+    
+    MOZ_ASSERT(ICTailCallReg == lr);
+    masm.makeFrameDescriptor(r0, JitFrame_IonJS);
+    masm.push(r0);
+    masm.push(lr);
+    masm.branch(target);
 }
 
 inline void
@@ -187,8 +203,8 @@ EmitBaselineLeaveStubFrame(MacroAssembler& masm, bool calledIntoIon = false)
     
     if (calledIntoIon) {
         masm.pop(scratch);
-        masm.ma_lsr(Imm32(FRAMESIZE_SHIFT), scratch, scratch);
-        masm.ma_add(scratch, BaselineStackReg);
+        masm.rshiftPtr(Imm32(FRAMESIZE_SHIFT), scratch);
+        masm.add32(scratch, BaselineStackReg);
     } else {
         masm.mov(BaselineFrameReg, BaselineStackReg);
     }

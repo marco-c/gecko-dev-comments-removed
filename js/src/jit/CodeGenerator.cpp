@@ -1688,6 +1688,13 @@ CodeGenerator::emitSharedStub(ICStub::Kind kind, LInstruction* lir)
     JSScript* script = lir->mirRaw()->block()->info().script();
     jsbytecode* pc = lir->mirRaw()->toInstruction()->resumePoint()->pc();
 
+#ifdef JS_USE_LINK_REGISTER
+    
+    
+    
+    masm.Push(Imm32(0));
+#endif
+
     
     uint32_t descriptor = MakeFrameDescriptor(masm.framePushed(), JitFrame_IonJS);
     masm.Push(Imm32(descriptor));
@@ -1703,7 +1710,11 @@ CodeGenerator::emitSharedStub(ICStub::Kind kind, LInstruction* lir)
 
     
     uint32_t callOffset = masm.currentOffset();
+#ifdef JS_USE_LINK_REGISTER
+    masm.freeStack(sizeof(intptr_t) * 2);
+#else
     masm.freeStack(sizeof(intptr_t));
+#endif
     markSafepointAt(callOffset, lir);
 }
 
