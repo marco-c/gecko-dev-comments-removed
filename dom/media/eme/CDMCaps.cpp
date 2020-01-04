@@ -43,19 +43,23 @@ CDMCaps::AutoLock::~AutoLock()
   mData.Unlock();
 }
 
+
+
+static bool
+IsUsableStatus(GMPMediaKeyStatus aStatus)
+{
+  return aStatus == kGMPUsable ||
+         aStatus == kGMPOutputRestricted ||
+         aStatus == kGMPOutputDownscaled;
+}
+
 bool
 CDMCaps::AutoLock::IsKeyUsable(const CencKeyId& aKeyId)
 {
   mData.mMonitor.AssertCurrentThreadOwns();
-  const auto& keys = mData.mKeyStatuses;
-  for (size_t i = 0; i < keys.Length(); i++) {
-    if (keys[i].mId != aKeyId) {
-      continue;
-    }
-    if (keys[i].mStatus == kGMPUsable ||
-        keys[i].mStatus == kGMPOutputRestricted ||
-        keys[i].mStatus == kGMPOutputDownscaled) {
-      return true;
+  for (const KeyStatus& keyStatus : mData.mKeyStatuses) {
+    if (keyStatus.mId == aKeyId) {
+      return IsUsableStatus(keyStatus.mStatus);
     }
   }
   return false;
@@ -68,20 +72,25 @@ CDMCaps::AutoLock::SetKeyStatus(const CencKeyId& aKeyId,
 {
   mData.mMonitor.AssertCurrentThreadOwns();
   KeyStatus key(aKeyId, aSessionId, aStatus);
-  auto index = mData.mKeyStatuses.IndexOf(key);
 
   if (aStatus == kGMPUnknown) {
     
     return mData.mKeyStatuses.RemoveElement(key);
   }
 
+  auto index = mData.mKeyStatuses.IndexOf(key);
   if (index != mData.mKeyStatuses.NoIndex) {
     if (mData.mKeyStatuses[index].mStatus == aStatus) {
+      
       return false;
     }
     auto oldStatus = mData.mKeyStatuses[index].mStatus;
     mData.mKeyStatuses[index].mStatus = aStatus;
-    if (oldStatus == kGMPUsable || oldStatus == kGMPOutputDownscaled) {
+    
+    
+    
+    
+    if (IsUsableStatus(oldStatus)) {
       return true;
     }
   } else {
@@ -90,9 +99,7 @@ CDMCaps::AutoLock::SetKeyStatus(const CencKeyId& aKeyId,
 
   
   
-  
-  
-  if (aStatus != kGMPUsable && aStatus != kGMPOutputDownscaled) {
+  if (!IsUsableStatus(aStatus)) {
     return true;
   }
 
@@ -124,10 +131,9 @@ void
 CDMCaps::AutoLock::GetKeyStatusesForSession(const nsAString& aSessionId,
                                             nsTArray<KeyStatus>& aOutKeyStatuses)
 {
-  for (size_t i = 0; i < mData.mKeyStatuses.Length(); i++) {
-    const auto& key = mData.mKeyStatuses[i];
-    if (key.mSessionId.Equals(aSessionId)) {
-      aOutKeyStatuses.AppendElement(key);
+  for (const KeyStatus& keyStatus : mData.mKeyStatuses) {
+    if (keyStatus.mSessionId.Equals(aSessionId)) {
+      aOutKeyStatuses.AppendElement(keyStatus);
     }
   }
 }
@@ -136,7 +142,7 @@ void
 CDMCaps::AutoLock::GetSessionIdsForKeyId(const CencKeyId& aKeyId,
                                          nsTArray<nsCString>& aOutSessionIds)
 {
-  for (const auto& keyStatus : mData.mKeyStatuses) {
+  for (const KeyStatus& keyStatus : mData.mKeyStatuses) {
     if (keyStatus.mId == aKeyId) {
       aOutSessionIds.AppendElement(NS_ConvertUTF16toUTF8(keyStatus.mSessionId));
     }
@@ -149,8 +155,8 @@ CDMCaps::AutoLock::RemoveKeysForSession(const nsString& aSessionId)
   bool changed = false;
   nsTArray<KeyStatus> statuses;
   GetKeyStatusesForSession(aSessionId, statuses);
-  for (const KeyStatus& status : statuses) {
-    changed |= SetKeyStatus(status.mId, aSessionId, kGMPUnknown);
+  for (const KeyStatus& keyStatus : statuses) {
+    changed |= SetKeyStatus(keyStatus.mId, aSessionId, kGMPUnknown);
   }
   return changed;
 }
