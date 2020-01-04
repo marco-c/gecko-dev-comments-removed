@@ -194,6 +194,7 @@ public:
 
   
   void TransactionHasDataToWrite(nsAHttpTransaction *) override;
+  void TransactionHasDataToRecv(nsAHttpTransaction *) override;
 
   
   void TransactionHasDataToWrite(Http2Stream *);
@@ -208,6 +209,7 @@ public:
 
   bool TryToActivate(Http2Stream *stream);
   void ConnectPushedStream(Http2Stream *stream);
+  void ConnectSlowConsumer(Http2Stream *stream);
 
   nsresult ConfirmTLSProfile();
   static bool ALPNCallback(nsISupports *securityInfo);
@@ -223,6 +225,7 @@ public:
   nsISocketTransport *SocketTransport() { return mSocketTransport; }
   int64_t ServerSessionWindow() { return mServerSessionWindow; }
   void DecrementServerSessionWindow (uint32_t bytes) { mServerSessionWindow -= bytes; }
+  uint32_t InitialRwin() { return mInitialRwin; }
 
   void SendPing() override;
   bool MaybeReTunnel(nsAHttpTransaction *) override;
@@ -240,7 +243,8 @@ private:
     DISCARDING_DATA_FRAME_PADDING,
     DISCARDING_DATA_FRAME,
     PROCESSING_COMPLETE_HEADERS,
-    PROCESSING_CONTROL_RST_STREAM
+    PROCESSING_CONTROL_RST_STREAM,
+    NOT_USING_NETWORK
   };
 
   static const uint8_t kMagicHello[24];
@@ -267,6 +271,11 @@ private:
   void        RealignOutputQueue();
 
   void        ProcessPending();
+  nsresult    ProcessConnectedPush(Http2Stream *, nsAHttpSegmentWriter *,
+                                   uint32_t, uint32_t *);
+  nsresult    ProcessSlowConsumer(Http2Stream *, nsAHttpSegmentWriter *,
+                                  uint32_t, uint32_t *);
+
   nsresult    SetInputFrameDataStream(uint32_t);
   void        CreatePriorityNode(uint32_t, uint32_t, uint8_t, const char *);
   bool        VerifyStream(Http2Stream *, uint32_t);
@@ -335,7 +344,8 @@ private:
 
   nsDeque                                             mReadyForWrite;
   nsDeque                                             mQueuedStreams;
-  nsDeque                                             mReadyForRead;
+  nsDeque                                             mPushesReadyForRead;
+  nsDeque                                             mSlowConsumersReadyForRead;
   nsTArray<Http2PushedStream *>                       mPushedStreams;
 
   
@@ -450,6 +460,9 @@ private:
   
   
   int64_t              mServerSessionWindow;
+
+  
+  uint32_t             mInitialRwin;
 
   
   

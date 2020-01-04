@@ -52,7 +52,7 @@ public:
 
   virtual nsresult ReadSegments(nsAHttpSegmentReader *,  uint32_t, uint32_t *);
   virtual nsresult WriteSegments(nsAHttpSegmentWriter *, uint32_t, uint32_t *);
-  virtual bool DeferCleanup(nsresult status) { return false; }
+  virtual bool DeferCleanup(nsresult status);
 
   
   
@@ -124,7 +124,7 @@ public:
     mLocalUnacked -= delta;
   }
 
-  uint64_t LocalUnAcked() { return mLocalUnacked; }
+  uint64_t LocalUnAcked();
   int64_t  ClientReceiveWindow()  { return mClientReceiveWindow; }
 
   bool     BlockedOnRwin() { return mBlockedOnRwin; }
@@ -210,6 +210,8 @@ private:
   nsresult TransmitFrame(const char *, uint32_t *, bool forceCommitment);
   void     GenerateDataFrameHeader(uint32_t, bool);
 
+  nsresult BufferInput(uint32_t , uint32_t *);
+
   
   
   
@@ -257,6 +259,10 @@ private:
 
   
   uint32_t                     mSetTCPSocketBuffer   : 1;
+
+  
+  
+  uint32_t                     mBypassInputBuffer   : 1;
 
   
   
@@ -311,6 +317,11 @@ private:
 
   
   Http2PushedStream *mPushSource;
+
+  
+  
+  nsCOMPtr<nsIInputStream> mInputBufferIn;
+  nsCOMPtr<nsIOutputStream> mInputBufferOut;
 
 
 public:

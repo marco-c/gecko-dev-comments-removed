@@ -27,6 +27,7 @@
 #include "nsHttpHandler.h"
 #include "nsHttpRequestHead.h"
 #include "nsIClassOfService.h"
+#include "nsIPipe.h"
 #include "nsISocketTransport.h"
 #include "nsStandardURL.h"
 #include "prnetdb.h"
@@ -63,6 +64,7 @@ Http2Stream::Http2Stream(nsAHttpTransaction *httpTransaction,
   , mSentFin(0)
   , mSentWaitingFor(0)
   , mSetTCPSocketBuffer(0)
+  , mBypassInputBuffer(0)
   , mTxInlineFrameSize(Http2Session::kDefaultBufferSize)
   , mTxInlineFrameUsed(0)
   , mTxStreamFrameSize(0)
@@ -236,6 +238,69 @@ Http2Stream::ReadSegments(nsAHttpSegmentReader *reader,
   return rv;
 }
 
+static bool
+IsDataAvailable(nsIInputStream *stream)
+{
+  if (!stream) {
+    return false;
+  }
+  uint64_t avail;
+  if (NS_FAILED(stream->Available(&avail))) {
+    return false;
+  }
+  return (avail > 0);
+}
+
+uint64_t
+Http2Stream::LocalUnAcked()
+{
+  
+  
+  uint64_t undelivered = 0;
+  if (mInputBufferIn) {
+    mInputBufferIn->Available(&undelivered);
+  }
+
+  if (undelivered > mLocalUnacked) {
+    return 0;
+  }
+  return mLocalUnacked - undelivered;
+}
+
+nsresult
+Http2Stream::BufferInput(uint32_t count, uint32_t *countWritten)
+{
+  static const uint32_t segmentSize = 32768;
+  char buf[segmentSize];
+
+  count = std::min(segmentSize, count);
+  if (!mInputBufferOut) {
+    NS_NewPipe(getter_AddRefs(mInputBufferIn), getter_AddRefs(mInputBufferOut),
+               segmentSize, UINT32_MAX);
+    if (!mInputBufferOut) {
+      return NS_ERROR_OUT_OF_MEMORY;
+    }
+  }
+  mBypassInputBuffer = 1;
+  nsresult rv = mSegmentWriter->OnWriteSegment(buf, count, countWritten);
+  mBypassInputBuffer = 0;
+  if (NS_SUCCEEDED(rv)) {
+    uint32_t buffered;
+    rv = mInputBufferOut->Write(buf, *countWritten, &buffered);
+    if (NS_SUCCEEDED(rv) && (buffered != *countWritten)) {
+      rv = NS_ERROR_OUT_OF_MEMORY;
+    }
+  }
+  return rv;
+}
+
+bool
+Http2Stream::DeferCleanup(nsresult status)
+{
+  
+  return (NS_SUCCEEDED(status) && IsDataAvailable(mInputBufferIn));
+}
+
 
 
 
@@ -253,8 +318,16 @@ Http2Stream::WriteSegments(nsAHttpSegmentWriter *writer,
 
   mSegmentWriter = writer;
   nsresult rv = mTransaction->WriteSegments(this, count, countWritten);
-  mSegmentWriter = nullptr;
 
+  if (rv == NS_BASE_STREAM_WOULD_BLOCK) {
+    
+    
+    
+
+    
+    rv = BufferInput(count, countWritten);
+  }
+  mSegmentWriter = nullptr;
   return rv;
 }
 
@@ -623,8 +696,21 @@ Http2Stream::AdjustInitialWindow()
     return;
   }
 
-  MOZ_ASSERT(mClientReceiveWindow <= ASpdySession::kInitialRwin);
-  uint32_t bump = ASpdySession::kInitialRwin - mClientReceiveWindow;
+  
+  
+  
+  uint32_t bump = 0;
+  nsHttpTransaction *trans = mTransaction->QueryHttpTransaction();
+  if (trans && trans->InitialRwin()) {
+    bump = (trans->InitialRwin() > mClientReceiveWindow) ?
+      (trans->InitialRwin() - mClientReceiveWindow) : 0;
+  } else {
+    MOZ_ASSERT(mSession->InitialRwin() >= mClientReceiveWindow);
+    bump = mSession->InitialRwin() - mClientReceiveWindow;
+  }
+
+  LOG3(("AdjustInitialwindow increased flow control window %p 0x%X %u\n",
+        this, stream->mStreamID, bump));
   if (!bump) { 
     return;
   }
@@ -641,8 +727,6 @@ Http2Stream::AdjustInitialWindow()
   mClientReceiveWindow += bump;
   bump = PR_htonl(bump);
   memcpy(packet + Http2Session::kFrameHeaderBytes, &bump, 4);
-  LOG3(("AdjustInitialwindow increased flow control window %p 0x%X\n",
-        this, stream->mStreamID));
 }
 
 void
@@ -1318,16 +1402,34 @@ Http2Stream::OnWriteSegment(char *buf,
   MOZ_ASSERT(PR_GetCurrentThread() == gSocketThread);
   MOZ_ASSERT(mSegmentWriter);
 
-  if (!mPushSource)
-    return mSegmentWriter->OnWriteSegment(buf, count, countWritten);
+  if (mPushSource) {
+    nsresult rv;
+    rv = mPushSource->GetBufferedData(buf, count, countWritten);
+    if (NS_FAILED(rv))
+      return rv;
 
-  nsresult rv;
-  rv = mPushSource->GetBufferedData(buf, count, countWritten);
-  if (NS_FAILED(rv))
+    mSession->ConnectPushedStream(this);
+    return NS_OK;
+  }
+
+  
+  
+  
+  
+  if (!mBypassInputBuffer && IsDataAvailable(mInputBufferIn)) {
+    nsresult rv = mInputBufferIn->Read(buf, count, countWritten);
+    LOG3(("Http2Stream::OnWriteSegment read from flow control buffer %p %x %d\n",
+          this, mStreamID, *countWritten));
+    if (!IsDataAvailable(mInputBufferIn)) {
+      
+      mInputBufferIn = nullptr;
+      mInputBufferOut = nullptr;
+    }
     return rv;
+  }
 
-  mSession->ConnectPushedStream(this);
-  return NS_OK;
+  
+  return mSegmentWriter->OnWriteSegment(buf, count, countWritten);
 }
 
 

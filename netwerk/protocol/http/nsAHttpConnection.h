@@ -70,7 +70,15 @@ public:
         
         return;
     }
+
     
+    
+    virtual void TransactionHasDataToRecv(nsAHttpTransaction *)
+    {
+        
+        return;
+    }
+
     
     
     
