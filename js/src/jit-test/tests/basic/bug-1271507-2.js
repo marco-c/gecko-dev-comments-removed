@@ -1,0 +1,4 @@
+
+
+
+load(libdir + "../tests/basic/bug-1271507.js");
