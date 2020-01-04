@@ -2817,6 +2817,13 @@ public:
 
   static nsBlockFrame* GetFloatContainingBlock(nsIFrame* aFrame);
 
+  
+
+
+
+
+  static bool IsTransformed(nsIFrame* aForFrame, nsIFrame* aTopFrame = nullptr);
+
 private:
   static uint32_t sFontSizeInflationEmPerLine;
   static uint32_t sFontSizeInflationMinTwips;
