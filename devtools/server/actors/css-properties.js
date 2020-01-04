@@ -4,7 +4,7 @@
 
 "use strict";
 
-const { Cc, Ci, Cu } = require("chrome");
+const { Cc, Ci } = require("chrome");
 
 loader.lazyGetter(this, "DOMUtils", () => {
   return Cc["@mozilla.org/inspector/dom-utils;1"].getService(Ci.inIDOMUtils);
@@ -13,32 +13,40 @@ loader.lazyGetter(this, "DOMUtils", () => {
 const protocol = require("devtools/shared/protocol");
 const { ActorClassWithSpec, Actor } = protocol;
 const { cssPropertiesSpec } = require("devtools/shared/specs/css-properties");
-const clientCssDatabase = require("devtools/shared/css-properties-db")
+const { CSS_PROPERTIES, CSS_TYPES } = require("devtools/shared/css-properties-db");
 
-var CssPropertiesActor = exports.CssPropertiesActor = ActorClassWithSpec(cssPropertiesSpec, {
+exports.CssPropertiesActor = ActorClassWithSpec(cssPropertiesSpec, {
   typeName: "cssProperties",
 
-  initialize: function(conn, parent) {
+  initialize(conn, parent) {
     Actor.prototype.initialize.call(this, conn);
     this.parent = parent;
   },
 
-  destroy: function() {
+  destroy() {
     Actor.prototype.destroy.call(this);
   },
 
-  getCSSDatabase: function() {
+  getCSSDatabase() {
     const db = {};
     const properties = DOMUtils.getCSSPropertyNames(DOMUtils.INCLUDE_ALIASES);
 
     properties.forEach(name => {
       
+      let supports = [];
+      for (let type in CSS_TYPES) {
+        if (safeCssPropertySupportsType(name, DOMUtils["TYPE_" + type])) {
+          supports.push(CSS_TYPES[type]);
+        }
+      }
+
       
       
       
-      const clientDefinition = clientCssDatabase[name] || {};
+      const clientDefinition = CSS_PROPERTIES[name] || {};
       const serverDefinition = {
-        isInherited: DOMUtils.isInheritedProperty(name)
+        isInherited: DOMUtils.isInheritedProperty(name),
+        supports
       };
       db[name] = Object.assign(clientDefinition, serverDefinition);
     });
@@ -65,4 +73,21 @@ function isCssPropertyKnown(name) {
   }
 }
 
-exports.isCssPropertyKnown = isCssPropertyKnown
+exports.isCssPropertyKnown = isCssPropertyKnown;
+
+
+
+
+
+
+
+
+
+
+function safeCssPropertySupportsType(name, type) {
+  try {
+    return DOMUtils.cssPropertySupportsType(name, type);
+  } catch (e) {
+    return false;
+  }
+}

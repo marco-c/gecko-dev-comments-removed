@@ -6,6 +6,7 @@
 const { FrontClassWithSpec, Front } = require("devtools/shared/protocol");
 const { cssPropertiesSpec } = require("devtools/shared/specs/css-properties");
 const { Task } = require("devtools/shared/task");
+const { CSS_PROPERTIES } = require("devtools/shared/css-properties-db");
 
 
 
@@ -56,12 +57,14 @@ exports.CssPropertiesFront = CssPropertiesFront;
 
 
 
+
+
 function CssProperties(properties) {
   this.properties = properties;
-  
-  
+
   this.isKnown = this.isKnown.bind(this);
   this.isInherited = this.isInherited.bind(this);
+  this.supportsType = this.supportsType.bind(this);
 }
 
 CssProperties.prototype = {
@@ -72,13 +75,30 @@ CssProperties.prototype = {
 
 
 
-
   isKnown(property) {
     return !!this.properties[property] || isCssVariable(property);
   },
 
+  
+
+
+
+
+
   isInherited(property) {
     return this.properties[property] && this.properties[property].isInherited;
+  },
+
+  
+
+
+
+
+
+
+
+  supportsType(property, type) {
+    return this.properties[property] && this.properties[property].supports.includes(type);
   }
 };
 
@@ -107,11 +127,24 @@ exports.initCssProperties = Task.async(function* (toolbox) {
   if (toolbox.target.hasActor("cssProperties")) {
     front = CssPropertiesFront(client, toolbox.target.form);
     db = yield front.getCSSDatabase();
+
+    
+    
+    
+    
+    if (!db.color.supports) {
+      for (let name in db) {
+        if (typeof CSS_PROPERTIES[name] === "object") {
+          db[name].supports = CSS_PROPERTIES[name].supports;
+        }
+      }
+    }
   } else {
     
     
-    db = require("devtools/shared/css-properties-db");
+    db = CSS_PROPERTIES;
   }
+
   const cssProperties = new CssProperties(db);
   cachedCssProperties.set(client, {cssProperties, front});
   return {cssProperties, front};

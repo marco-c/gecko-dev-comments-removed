@@ -9,37 +9,14 @@ const {angleUtils} = require("devtools/client/shared/css-angle");
 const {colorUtils} = require("devtools/client/shared/css-color");
 const {getCSSLexer} = require("devtools/shared/css-lexer");
 const EventEmitter = require("devtools/shared/event-emitter");
+const {
+  ANGLE_TAKING_FUNCTIONS,
+  BEZIER_KEYWORDS,
+  COLOR_TAKING_FUNCTIONS,
+  CSS_TYPES
+} = require("devtools/shared/css-properties-db");
 
 const HTML_NS = "http://www.w3.org/1999/xhtml";
-
-const BEZIER_KEYWORDS = ["linear", "ease-in-out", "ease-in", "ease-out",
-                         "ease"];
-
-
-const COLOR_TAKING_FUNCTIONS = ["linear-gradient",
-                                "-moz-linear-gradient",
-                                "repeating-linear-gradient",
-                                "-moz-repeating-linear-gradient",
-                                "radial-gradient",
-                                "-moz-radial-gradient",
-                                "repeating-radial-gradient",
-                                "-moz-repeating-radial-gradient",
-                                "drop-shadow"];
-
-
-const ANGLE_TAKING_FUNCTIONS = ["linear-gradient",
-                                "-moz-linear-gradient",
-                                "repeating-linear-gradient",
-                                "-moz-repeating-linear-gradient",
-                                "rotate",
-                                "rotateX",
-                                "rotateY",
-                                "rotateZ",
-                                "rotate3d",
-                                "skew",
-                                "skewX",
-                                "skewY",
-                                "hue-rotate"];
 
 loader.lazyGetter(this, "DOMUtils", function () {
   return Cc["@mozilla.org/inspector/dom-utils;1"].getService(Ci.inIDOMUtils);
@@ -61,9 +38,16 @@ loader.lazyGetter(this, "DOMUtils", function () {
 
 
 
-function OutputParser(document) {
+
+
+
+
+
+
+function OutputParser(document, supportsType) {
   this.parsed = [];
   this.doc = document;
+  this.supportsType = supportsType;
   this.colorSwatches = new WeakMap();
   this.angleSwatches = new WeakMap();
   this._onColorSwatchMouseDown = this._onColorSwatchMouseDown.bind(this);
@@ -89,12 +73,10 @@ OutputParser.prototype = {
   parseCssProperty: function (name, value, options = {}) {
     options = this._mergeOptions(options);
 
-    options.expectCubicBezier =
-      safeCssPropertySupportsType(name, DOMUtils.TYPE_TIMING_FUNCTION);
+    options.expectCubicBezier = this.supportsType(name, CSS_TYPES.TIMING_FUNCTION);
     options.expectFilter = name === "filter";
-    options.supportsColor =
-      safeCssPropertySupportsType(name, DOMUtils.TYPE_COLOR) ||
-      safeCssPropertySupportsType(name, DOMUtils.TYPE_GRADIENT);
+    options.supportsColor = this.supportsType(name, CSS_TYPES.COLOR) ||
+                            this.supportsType(name, CSS_TYPES.GRADIENT);
 
     
     
@@ -681,20 +663,3 @@ OutputParser.prototype = {
     return defaults;
   }
 };
-
-
-
-
-
-
-
-
-
-
-function safeCssPropertySupportsType(name, type) {
-  try {
-    return DOMUtils.cssPropertySupportsType(name, type);
-  } catch (e) {
-    return false;
-  }
-}
