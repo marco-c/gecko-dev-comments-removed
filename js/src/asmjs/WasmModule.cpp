@@ -906,6 +906,12 @@ Module::trace(JSTracer* trc)
 }
 
  void
+Module::readBarrier()
+{
+    InternalBarrierMethods<JSObject*>::readBarrier(owner());
+}
+
+ void
 Module::addSizeOfMisc(MallocSizeOf mallocSizeOf, size_t* code, size_t* data)
 {
     *code += codeBytes();

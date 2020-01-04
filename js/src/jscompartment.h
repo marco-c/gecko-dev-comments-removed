@@ -471,7 +471,9 @@ struct JSCompartment
     mozilla::LinkedList<js::UnboxedLayout> unboxedLayouts;
 
     
-    mozilla::LinkedList<js::wasm::Module> wasmModules;
+    
+    
+    mozilla::LinkedList<js::wasm::Module> wasmModuleWeakList;
 
   private:
     

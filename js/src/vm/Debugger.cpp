@@ -4071,8 +4071,8 @@ class MOZ_STACK_CLASS Debugger::ScriptQuery
         
         
         for (WeakGlobalObjectSet::Range r = debugger->allDebuggees(); !r.empty(); r.popFront()) {
-            for (wasm::Module* module : r.front()->compartment()->wasmModules)
-                consider(module->owner());
+            for (wasm::Module* module : r.front()->compartment()->wasmModuleWeakList)
+                consider(module);
         }
 
         return true;
@@ -4304,14 +4304,19 @@ class MOZ_STACK_CLASS Debugger::ScriptQuery
 
 
 
-    void consider(WasmModuleObject* wasmModule) {
+    void consider(wasm::Module* wasmModule) {
         if (oom)
             return;
 
-        if (hasSource && source != AsVariant(wasmModule))
+        WasmModuleObject* moduleObject = wasmModule->owner();
+        if (hasSource && source != AsVariant(moduleObject))
             return;
 
-        if (!wasmModuleVector.append(wasmModule))
+        
+        
+        wasmModule->readBarrier();
+
+        if (!wasmModuleVector.append(moduleObject))
             oom = true;
     }
 };
