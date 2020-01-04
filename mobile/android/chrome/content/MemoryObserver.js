@@ -55,6 +55,11 @@ var MemoryObserver = {
     }
 
     
+    let evt = document.createEvent("UIEvents");
+    evt.initUIEvent("TabPreZombify", true, false, window, null);
+    browser.dispatchEvent(evt);
+
+    
     
     let currentURL = browser.__SS_restore ? data.entries[0].url : browser.currentURI.spec;
     let sibling = browser.nextSibling;
@@ -69,6 +74,11 @@ var MemoryObserver = {
     browser.__SS_extdata = extra;
     browser.__SS_restore = true;
     browser.setAttribute("pending", "true");
+
+    
+    evt = document.createEvent("UIEvents");
+    evt.initUIEvent("TabPostZombify", true, false, window, null);
+    browser.dispatchEvent(evt);
   },
 
   gc: function() {
