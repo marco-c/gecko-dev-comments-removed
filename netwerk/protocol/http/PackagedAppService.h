@@ -10,6 +10,9 @@
 #include "nsIPackagedAppService.h"
 #include "nsILoadContextInfo.h"
 #include "nsICacheStorage.h"
+#include "PackagedAppVerifier.h"
+#include "nsIMultiPartChannel.h"
+#include "PackagedAppVerifier.h"
 
 namespace mozilla {
 namespace net {
@@ -61,6 +64,12 @@ private:
     static nsresult Create(nsIURI*, nsICacheStorage*, CacheEntryWriter**);
 
     nsCOMPtr<nsICacheEntry> mEntry;
+
+    
+    NS_METHOD ConsumeData(const char *aBuf,
+                          uint32_t aCount,
+                          uint32_t *aWriteCount);
+
   private:
     CacheEntryWriter() { }
     ~CacheEntryWriter() { }
@@ -73,11 +82,6 @@ private:
     static nsresult CopyHeadersFromChannel(nsIChannel *aChannel,
                                            nsHttpResponseHead *aHead);
 
-    
-    
-    static NS_METHOD ConsumeData(nsIInputStream *in, void *closure,
-                                 const char *fromRawSegment, uint32_t toOffset,
-                                 uint32_t count, uint32_t *writeCount);
     
     
     nsCOMPtr<nsIOutputStream> mOutputStream;
@@ -93,27 +97,82 @@ private:
   
   class PackagedAppDownloader final
     : public nsIStreamListener
+    , public nsIPackagedAppVerifierListener
   {
+  public:
+    typedef PackagedAppVerifier::ResourceCacheInfo ResourceCacheInfo;
+
+  private:
+    enum EErrorType {
+      ERROR_MANIFEST_VERIFIED_FAILED,
+      ERROR_RESOURCE_VERIFIED_FAILED,
+    };
+
   public:
     NS_DECL_ISUPPORTS
     NS_DECL_NSISTREAMLISTENER
     NS_DECL_NSIREQUESTOBSERVER
+    NS_DECL_NSIPACKAGEDAPPVERIFIERLISTENER
 
     
     
     
     
-    nsresult Init(nsILoadContextInfo* aInfo, const nsCString &aKey);
+    nsresult Init(nsILoadContextInfo* aInfo, const nsCString &aKey,
+                                             const nsACString& aPackageOrigin);
     
     
     nsresult AddCallback(nsIURI *aURI, nsICacheEntryOpenCallback *aCallback);
 
     
+    nsresult RemoveCallbacks(nsICacheEntryOpenCallback* aCallback);
+
+    
     
     
     void SetIsFromCache(bool aFromCache) { mIsFromCache = aFromCache; }
+
+    
+    
+    void NotifyOnStartSignedPackageRequest(const nsACString& PackageOrigin);
+
   private:
     ~PackagedAppDownloader() { }
+
+    
+    
+    
+    static NS_METHOD ConsumeData(nsIInputStream *aStream,
+                                 void *aClosure,
+                                 const char *aFromRawSegment,
+                                 uint32_t aToOffset,
+                                 uint32_t aCount,
+                                 uint32_t *aWriteCount);
+
+    
+    
+    
+    virtual void OnManifestVerified(const ResourceCacheInfo* aInfo, bool aSuccess);
+    virtual void OnResourceVerified(const ResourceCacheInfo* aInfo, bool aSuccess);
+
+    
+    void OnError(EErrorType aError);
+
+    
+    void FinalizeDownload(nsresult aStatusCode);
+
+    
+    nsCString GetSignatureFromChannel(nsIMultiPartChannel* aChannel);
+
+    
+    nsresult BeginHashComputation(nsIURI* aURI, nsIRequest* aRequest);
+
+    
+    void EnsureVerifier(nsIRequest *aRequest);
+
+    
+    
+    void InstallSignedPackagedApp();
 
     
     
@@ -144,6 +203,14 @@ private:
 
     
     bool mIsFromCache;
+
+    
+    nsRefPtr<PackagedAppVerifier> mVerifier;
+
+    
+    
+    
+    nsCString mPackageOrigin;
   };
 
   

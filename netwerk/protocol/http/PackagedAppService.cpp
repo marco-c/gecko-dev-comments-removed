@@ -169,6 +169,75 @@ HeaderCopier::ShouldCopy(const nsACString &aHeader) const
   return true;
 }
 
+
+
+static already_AddRefed<nsICacheEntry>
+GetPackageCacheEntry(nsIRequest *aRequest)
+{
+  nsCOMPtr<nsIChannel> baseChannel;
+
+  nsCOMPtr<nsIMultiPartChannel> multiChannel(do_QueryInterface(aRequest));
+  if (multiChannel) {
+    
+    multiChannel->GetBaseChannel(getter_AddRefs(baseChannel));
+  } else {
+    
+    baseChannel = do_QueryInterface(aRequest);
+  }
+
+  if (!baseChannel) {
+    return nullptr;
+  }
+
+  nsCOMPtr<nsICachingChannel> cachingChannel = do_QueryInterface(baseChannel);
+  if (!cachingChannel) {
+    return nullptr;
+  }
+
+  nsCOMPtr<nsISupports> cacheToken;
+  cachingChannel->GetCacheToken(getter_AddRefs(cacheToken));
+  if (!cacheToken) {
+    return nullptr;
+  }
+
+  nsCOMPtr<nsICacheEntry> entry(do_QueryInterface(cacheToken));
+
+  return entry.forget();
+}
+
+
+
+static already_AddRefed<nsIInputStream>
+CreateSharedStringStream(const char* aData, uint32_t aCount)
+{
+  nsresult rv;
+  nsCOMPtr<nsIStringInputStream> stream =
+    do_CreateInstance("@mozilla.org/io/string-input-stream;1", &rv);
+  NS_ENSURE_SUCCESS(rv, nullptr);
+
+  rv = stream->ShareData((char*)aData, aCount);
+  NS_ENSURE_SUCCESS(rv, nullptr);
+
+  return stream.forget();
+}
+
+
+static bool
+GetOriginalResponseHeader(nsIRequest* aRequest, nsACString& aHeader)
+{
+  
+  
+
+  nsCOMPtr<nsIResponseHeadProvider> headerProvider(do_QueryInterface(aRequest));
+  nsHttpResponseHead *responseHead = headerProvider->GetResponseHead();
+  NS_ENSURE_TRUE(responseHead, false);
+
+  responseHead->Flatten(aHeader, true);
+  aHeader.Append("\r\n");
+
+  return true;
+}
+
 } 
 
  nsresult
@@ -189,17 +258,12 @@ PackagedAppService::CacheEntryWriter::CopyHeadersFromChannel(nsIChannel *aChanne
 }
 
 NS_METHOD
-PackagedAppService::CacheEntryWriter::ConsumeData(nsIInputStream *aStream,
-                                                  void *aClosure,
-                                                  const char *aFromRawSegment,
-                                                  uint32_t aToOffset,
+PackagedAppService::CacheEntryWriter::ConsumeData(const char *aBuf,
                                                   uint32_t aCount,
                                                   uint32_t *aWriteCount)
 {
-  MOZ_ASSERT(aClosure, "The closure must not be null");
-  CacheEntryWriter *self = static_cast<CacheEntryWriter*>(aClosure);
-  MOZ_ASSERT(self->mOutputStream, "The stream should not be null");
-  return self->mOutputStream->Write(aFromRawSegment, aCount, aWriteCount);
+  MOZ_ASSERT(mOutputStream, "The stream should not be null");
+  return mOutputStream->Write(aBuf, aCount, aWriteCount);
 }
 
 NS_IMETHODIMP
@@ -275,12 +339,8 @@ PackagedAppService::CacheEntryWriter::OnDataAvailable(nsIRequest *aRequest,
                                                       uint64_t aOffset,
                                                       uint32_t aCount)
 {
-  if (!aInputStream) {
-    return NS_ERROR_INVALID_ARG;
-  }
-  
-  uint32_t n;
-  return aInputStream->ReadSegments(ConsumeData, this, aCount, &n);
+  MOZ_ASSERT_UNREACHABLE("This function should never ever be called");
+  return NS_ERROR_NOT_IMPLEMENTED;
 }
 
 
@@ -299,6 +359,26 @@ PackagedAppService::PackagedAppChannelListener::OnStartRequest(nsIRequest *aRequ
 
   mDownloader->SetIsFromCache(isFromCache);
   LOG(("[%p] Downloader isFromCache: %d\n", mDownloader.get(), isFromCache));
+
+  
+  
+  if (isFromCache) {
+    bool isPackageSigned = false;
+    nsCString signedPackageOrigin;
+    nsCOMPtr<nsICacheEntry> packageCacheEntry = GetPackageCacheEntry(aRequest);
+    if (packageCacheEntry) {
+      const char* key = PackagedAppVerifier::kSignedPakOriginMetadataKey;
+      nsXPIDLCString value;
+      nsresult rv = packageCacheEntry->GetMetaDataElement(key,
+                                                          getter_Copies(value));
+      isPackageSigned = (NS_SUCCEEDED(rv) && !value.IsEmpty());
+      signedPackageOrigin = value;
+    }
+    if (isPackageSigned) {
+      LOG(("The cached package is signed. Notify the requesters."));
+      mDownloader->NotifyOnStartSignedPackageRequest(signedPackageOrigin);
+    }
+  }
 
   
   
@@ -326,11 +406,14 @@ PackagedAppService::PackagedAppChannelListener::OnDataAvailable(nsIRequest *aReq
 
 
 
-NS_IMPL_ISUPPORTS(PackagedAppService::PackagedAppDownloader, nsIStreamListener)
+NS_IMPL_ISUPPORTS(PackagedAppService::PackagedAppDownloader,
+                  nsIStreamListener,
+                  nsIPackagedAppVerifierListener)
 
 nsresult
 PackagedAppService::PackagedAppDownloader::Init(nsILoadContextInfo* aInfo,
-                                                const nsCString& aKey)
+                                                const nsCString& aKey,
+                                                const nsACString& aPackageOrigin)
 {
   nsresult rv;
   nsCOMPtr<nsICacheStorageService> cacheStorageService =
@@ -346,7 +429,28 @@ PackagedAppService::PackagedAppDownloader::Init(nsILoadContextInfo* aInfo,
   }
 
   mPackageKey = aKey;
+  mPackageOrigin = aPackageOrigin;
+
   return NS_OK;
+}
+
+void
+PackagedAppService::PackagedAppDownloader::EnsureVerifier(nsIRequest *aRequest)
+{
+  if (mVerifier) {
+    return;
+  }
+
+  LOG(("Creating PackagedAppVerifier."));
+
+  nsCOMPtr<nsIMultiPartChannel> multiChannel(do_QueryInterface(aRequest));
+  nsCString signature = GetSignatureFromChannel(multiChannel);
+  nsCOMPtr<nsICacheEntry> packageCacheEntry = GetPackageCacheEntry(aRequest);
+
+  mVerifier = new PackagedAppVerifier(this,
+                                      mPackageOrigin,
+                                      signature,
+                                      packageCacheEntry);
 }
 
 NS_IMETHODIMP
@@ -374,7 +478,18 @@ PackagedAppService::PackagedAppDownloader::OnStartRequest(nsIRequest *aRequest,
   MOZ_ASSERT(mWriter);
   rv = mWriter->OnStartRequest(aRequest, aContext);
   NS_WARN_IF(NS_FAILED(rv));
-  return NS_OK;
+
+  EnsureVerifier(aRequest);
+  mVerifier->OnStartRequest(nullptr, uri);
+
+  
+  
+  nsCString header;
+  if (!GetOriginalResponseHeader(aRequest, header)) {
+    return NS_ERROR_FAILURE;
+  }
+  nsCOMPtr<nsIInputStream> stream = CreateSharedStringStream(header.get(), header.Length());
+  return mVerifier->OnDataAvailable(nullptr, nullptr, stream, 0, header.Length());
 }
 
 nsresult
@@ -442,6 +557,56 @@ PackagedAppService::PackagedAppDownloader::GetSubresourceURI(nsIRequest * aReque
   return NS_OK;
 }
 
+void
+PackagedAppService::PackagedAppDownloader::OnError(EErrorType aError)
+{
+  
+  LOG(("PackagedAppDownloader::OnError > %d", aError));
+
+  FinalizeDownload(NS_ERROR_SIGNED_APP_MANIFEST_INVALID);
+}
+
+void
+PackagedAppService::PackagedAppDownloader::FinalizeDownload(nsresult aStatusCode)
+{
+  
+  
+  
+  
+  
+  if (NS_SUCCEEDED(aStatusCode) && !mIsFromCache) {
+    aStatusCode = NS_ERROR_FILE_NOT_FOUND;
+  }
+
+  nsRefPtr<PackagedAppDownloader> kungFuDeathGrip(this);
+  
+  if (gPackagedAppService) {
+    gPackagedAppService->NotifyPackageDownloaded(mPackageKey);
+  }
+  ClearCallbacks(aStatusCode);
+
+  mVerifier = nullptr;
+}
+
+nsCString
+PackagedAppService::PackagedAppDownloader::GetSignatureFromChannel(nsIMultiPartChannel* aMulitChannel)
+{
+  if (mIsFromCache) {
+    
+    return EmptyCString();
+  }
+
+  if (!aMulitChannel) {
+    LOG(("The package is either not loaded from cache or malformed."));
+    return EmptyCString();
+  }
+
+  nsCString packageHeader;
+  aMulitChannel->GetPreamble(packageHeader);
+
+  return packageHeader;
+}
+
 NS_IMETHODIMP
 PackagedAppService::PackagedAppDownloader::OnStopRequest(nsIRequest *aRequest,
                                                          nsISupports *aContext,
@@ -455,51 +620,78 @@ PackagedAppService::PackagedAppDownloader::OnStopRequest(nsIRequest *aRequest,
 
   
   
-  
-  if (multiChannel && mWriter) {
-    mWriter->OnStopRequest(aRequest, aContext, aStatusCode);
-
-    nsCOMPtr<nsIURI> uri;
-    rv = GetSubresourceURI(aRequest, getter_AddRefs(uri));
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return NS_OK;
-    }
-
-    nsCOMPtr<nsICacheEntry> entry;
-    mWriter->mEntry.swap(entry);
-
-    
-    mWriter = nullptr;
-    CallCallbacks(uri, entry, aStatusCode);
-  }
-
-  
-  
   bool lastPart = true;
   if (multiChannel) {
-    rv = multiChannel->GetIsLastPart(&lastPart);
-    if (NS_SUCCEEDED(rv) && !lastPart) {
+    multiChannel->GetIsLastPart(&lastPart);
+  }
+
+  
+  
+  
+  if (!multiChannel || !mWriter) {
+    LOG(("Either the package was loaded from cache or malformed"));
+    if (lastPart) {
       
-      return NS_OK;
+      
+      
+      FinalizeDownload(aStatusCode);
     }
+    return NS_OK;
   }
+
+  LOG(("We are going to finish the resource and process it in the verifier."));
 
   
   
-  
-  
-  
-  if (NS_SUCCEEDED(aStatusCode) && lastPart && !mIsFromCache) {
-    aStatusCode = NS_ERROR_FILE_NOT_FOUND;
+  mWriter->OnStopRequest(aRequest, aContext, aStatusCode);
+
+  nsCOMPtr<nsIURI> uri;
+  rv = GetSubresourceURI(aRequest, getter_AddRefs(uri));
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return NS_OK;
   }
 
-  nsRefPtr<PackagedAppDownloader> kungFuDeathGrip(this);
+  nsCOMPtr<nsICacheEntry> entry;
+  mWriter->mEntry.swap(entry);
+
   
-  if (gPackagedAppService) {
-    gPackagedAppService->NotifyPackageDownloaded(mPackageKey);
-  }
-  ClearCallbacks(aStatusCode);
+  mWriter = nullptr;
+
+  
+  
+  nsRefPtr<ResourceCacheInfo> info =
+    new ResourceCacheInfo(uri, entry, aStatusCode, lastPart);
+
+  mVerifier->OnStopRequest(nullptr, info, aStatusCode);
+
   return NS_OK;
+}
+
+NS_METHOD
+PackagedAppService::PackagedAppDownloader::ConsumeData(nsIInputStream *aStream,
+                                                       void *aClosure,
+                                                       const char *aFromRawSegment,
+                                                       uint32_t aToOffset,
+                                                       uint32_t aCount,
+                                                       uint32_t *aWriteCount)
+{
+  MOZ_ASSERT(aClosure, "The closure must not be null");
+
+  if (!aStream) {
+    return NS_ERROR_INVALID_ARG;
+  }
+
+  PackagedAppDownloader *self = static_cast<PackagedAppDownloader*>(aClosure);
+
+  if (!self->mWriter) {
+    *aWriteCount = aCount;
+    return NS_OK;
+  }
+
+  self->mWriter->ConsumeData(aFromRawSegment, aCount, aWriteCount);
+
+  nsCOMPtr<nsIInputStream> stream = CreateSharedStringStream(aFromRawSegment, aCount);
+  return self->mVerifier->OnDataAvailable(nullptr, nullptr, stream, 0, aCount);
 }
 
 NS_IMETHODIMP
@@ -509,12 +701,8 @@ PackagedAppService::PackagedAppDownloader::OnDataAvailable(nsIRequest *aRequest,
                                                            uint64_t aOffset,
                                                            uint32_t aCount)
 {
-  if (!mWriter) {
-    uint32_t n;
-    return aInputStream->ReadSegments(NS_DiscardSegment, nullptr, aCount, &n);
-  }
-  return mWriter->OnDataAvailable(aRequest, aContext, aInputStream, aOffset,
-                                  aCount);
+  uint32_t n;
+  return aInputStream->ReadSegments(ConsumeData, this, aCount, &n);
 }
 
 nsresult
@@ -536,6 +724,12 @@ PackagedAppService::PackagedAppDownloader::AddCallback(nsIURI *aURI,
       
       
       LOG(("[%p]    > already downloaded\n", this));
+
+      
+      
+
+      
+      
       mCacheStorage->AsyncOpenURI(aURI, EmptyCString(),
                                   nsICacheStorage::OPEN_READONLY, aCallback);
     } else {
@@ -572,6 +766,7 @@ PackagedAppService::PackagedAppDownloader::CallCallbacks(nsIURI *aURI,
 
   nsCOMArray<nsICacheEntryOpenCallback>* array = mCallbacks.Get(spec);
   if (array) {
+    uint32_t callbacksNum = array->Length();
     
     for (uint32_t i = 0; i < array->Length(); ++i) {
       nsCOMPtr<nsICacheEntryOpenCallback> callback(array->ObjectAt(i));
@@ -583,7 +778,7 @@ PackagedAppService::PackagedAppDownloader::CallCallbacks(nsIURI *aURI,
     
     
     array->Clear();
-    LOG(("[%p]    > called callbacks\n", this));
+    LOG(("[%p]    > called callbacks (%d)\n", this, callbacksNum));
   } else {
     
     
@@ -605,6 +800,8 @@ PackagedAppService::PackagedAppDownloader::ClearCallbacks(nsresult aResult)
   LOG(("[%p] PackagedAppService::PackagedAppDownloader::ClearCallbacks > packageKey:%s status:%X\n",
        this, mPackageKey.get(), aResult));
 
+  
+  
   for (auto iter = mCallbacks.Iter(); !iter.Done(); iter.Next()) {
     const nsACString& key = iter.Key();
     const nsCOMArray<nsICacheEntryOpenCallback>* callbackArray = iter.UserData();
@@ -638,6 +835,84 @@ PackagedAppService::PackagedAppDownloader::ClearCallbacks(nsresult aResult)
   }
 
   return NS_OK;
+}
+
+void
+PackagedAppService::PackagedAppDownloader::NotifyOnStartSignedPackageRequest(const nsACString& aPackageOrigin)
+{
+  
+  
+  LOG(("Notifying the signed package is ready to load."));
+}
+
+void PackagedAppService::PackagedAppDownloader::InstallSignedPackagedApp()
+{
+  
+  
+  LOG(("Install this packaged app."));
+}
+
+
+
+
+NS_IMETHODIMP
+PackagedAppService::PackagedAppDownloader::OnVerified(bool aIsManifest,
+                                                      nsIURI* aUri,
+                                                      nsICacheEntry* aCacheEntry,
+                                                      nsresult aStatusCode,
+                                                      bool aIsLastPart,
+                                                      bool aVerificationSuccess)
+{
+  RefPtr<ResourceCacheInfo> info =
+    new ResourceCacheInfo(aUri, aCacheEntry, aStatusCode, aIsLastPart);
+
+  aIsManifest ? OnManifestVerified(info, aVerificationSuccess)
+              : OnResourceVerified(info, aVerificationSuccess);
+
+  return NS_OK;
+}
+
+void
+PackagedAppService::PackagedAppDownloader::OnManifestVerified(const ResourceCacheInfo* aInfo,
+                                                              bool aSuccess)
+{
+  if (!aSuccess) {
+    
+    return OnError(ERROR_MANIFEST_VERIFIED_FAILED);
+  }
+
+  
+  CallCallbacks(aInfo->mURI, aInfo->mCacheEntry, aInfo->mStatusCode);
+
+  bool isPackagedSigned;
+  mVerifier->GetIsPackageSigned(&isPackagedSigned);
+  if (!isPackagedSigned) {
+    
+    LOG(("No signature in the package. Just run normally."));
+    return;
+  }
+
+  nsCString packageOrigin;
+  mVerifier->GetPackageOrigin(packageOrigin);
+  NotifyOnStartSignedPackageRequest(packageOrigin);
+  InstallSignedPackagedApp();
+}
+
+void
+PackagedAppService::PackagedAppDownloader::OnResourceVerified(const ResourceCacheInfo* aInfo,
+                                                              bool aSuccess)
+{
+  if (!aSuccess) {
+    return OnError(ERROR_RESOURCE_VERIFIED_FAILED);
+  }
+
+  
+  CallCallbacks(aInfo->mURI, aInfo->mCacheEntry, aInfo->mStatusCode);
+
+  if (aInfo->mIsLastPart) {
+    LOG(("This is the last part. FinalizeDownload (%d)", aInfo->mStatusCode));
+    FinalizeDownload(aInfo->mStatusCode);
+  }
 }
 
 
@@ -786,7 +1061,9 @@ PackagedAppService::GetResource(nsIChannel *aChannel,
   }
 
   downloader = new PackagedAppDownloader();
-  rv = downloader->Init(loadContextInfo, key);
+  nsCString packageOrigin;
+  principal->GetOriginNoSuffix(packageOrigin);
+  rv = downloader->Init(loadContextInfo, key, packageOrigin);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }

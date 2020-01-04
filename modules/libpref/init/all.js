@@ -1438,6 +1438,11 @@ pref("network.http.enable-packaged-apps", false);
 
 
 
+pref("network.http.packaged-apps-developer-mode", false);
+
+
+
+
 
 pref("network.ftp.data.qos", 0);
 pref("network.ftp.control.qos", 0);

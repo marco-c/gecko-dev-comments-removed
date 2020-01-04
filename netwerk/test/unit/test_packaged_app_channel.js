@@ -37,7 +37,8 @@ function Listener(callback) {
 Listener.prototype = {
     gotStartRequest: false,
     available: -1,
-    gotStopRequest: false,
+    gotStopRequestOK: false,
+    gotFileNotFound: false,
     QueryInterface: function(iid) {
         if (iid.equals(Ci.nsISupports) ||
             iid.equals(Ci.nsIRequestObserver))
@@ -60,8 +61,8 @@ Listener.prototype = {
         this.gotStartRequest = true;
     },
     onStopRequest: function(request, ctx, status) {
-        this.gotStopRequest = true;
-        do_check_eq(status, 0);
+        this.gotStopRequestOK = (Cr.NS_OK === status);
+        this.gotFileNotFound = (Cr.NS_ERROR_FILE_NOT_FOUND === status);
         if (this._callback) {
             this._callback.call(null, this);
         }
@@ -71,6 +72,7 @@ Listener.prototype = {
 
 
 var testData = {
+  packageHeader: "manifest-signature: dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk\r\n",
   content: [
    { headers: ["Content-Location: /index.html", "Content-Type: text/html"], data: "<html>\r\n  <head>\r\n    <script src=\"/scripts/app.js\"></script>\r\n    ...\r\n  </head>\r\n  ...\r\n</html>\r\n", type: "text/html" },
    { headers: ["Content-Location: /scripts/app.js", "Content-Type: text/javascript"], data: "module Math from '/scripts/helpers/math.js';\r\n...\r\n", type: "text/javascript" },
@@ -106,8 +108,16 @@ function regularContentHandler(metadata, response)
   response.bodyOutputStream.write(body, body.length);
 }
 
+function contentHandlerWithSignature(metadata, response)
+{
+  response.setHeader("Content-Type", 'application/package');
+  var body = testData.packageHeader + testData.getData();
+  response.bodyOutputStream.write(body, body.length);
+}
+
 var httpserver = null;
 var originalPref = false;
+var originalDevMode = false;
 
 function run_test()
 {
@@ -115,19 +125,48 @@ function run_test()
   httpserver = new HttpServer();
   httpserver.registerPathHandler("/package", contentHandler);
   httpserver.registerPathHandler("/regular", regularContentHandler);
+  httpserver.registerPathHandler("/package_with_signature", contentHandlerWithSignature);
   httpserver.start(-1);
 
   
   originalPref = Services.prefs.getBoolPref("network.http.enable-packaged-apps");
+  originalDevMode = Services.prefs.getBoolPref("network.http.packaged-apps-developer-mode");
   Services.prefs.setBoolPref("network.http.enable-packaged-apps", true);
+  Services.prefs.setBoolPref("network.http.packaged-apps-developer-mode", false);
   do_register_cleanup(reset_pref);
 
   add_test(test_channel);
   add_test(test_channel_no_notificationCallbacks);
   add_test(test_channel_uris);
 
+  add_test(test_channel_with_signature);
+  add_test(test_channel_with_signature_dev_mode);
+
   
   run_next_test();
+}
+
+function test_channel_with_signature() {
+  var channel = make_channel(uri+"/package_with_signature!//index.html");
+  channel.notificationCallbacks = new LoadContextCallback(1024, false, false, false);
+  channel.asyncOpen(new Listener(function(l) {
+    
+    
+    
+    do_check_true(l.gotFileNotFound);
+    run_next_test();
+  }), null);
+}
+
+function test_channel_with_signature_dev_mode() {
+  Services.prefs.setBoolPref("network.http.packaged-apps-developer-mode", true);
+  var channel = make_channel(uri+"/package_with_signature!//index.html");
+  channel.notificationCallbacks = new LoadContextCallback(1024, false, false, false);
+  channel.asyncOpen(new Listener(function(l) {
+    do_check_true(l.gotStopRequestOK);
+    Services.prefs.setBoolPref("network.http.packaged-apps-developer-mode", false);
+    run_next_test();
+  }), null);
 }
 
 function test_channel(aNullNotificationCallbacks) {
@@ -141,7 +180,7 @@ function test_channel(aNullNotificationCallbacks) {
     
     
     do_check_true(l.gotStartRequest);
-    do_check_true(l.gotStopRequest);
+    do_check_true(l.gotStopRequestOK);
     run_next_test();
   }), null);
 }
@@ -166,4 +205,5 @@ function check_regular_response(request, buffer) {
 function reset_pref() {
   
   Services.prefs.setBoolPref("network.http.enable-packaged-apps", originalPref);
+  Services.prefs.setBoolPref("network.http.packaged-apps-developer-mode", originalDevMode);
 }
