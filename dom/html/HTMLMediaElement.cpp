@@ -873,6 +873,11 @@ void HTMLMediaElement::AbortExistingLoads()
   
   mCurrentLoadID++;
 
+  if (mChannelLoader) {
+    mChannelLoader->Cancel();
+    mChannelLoader = nullptr;
+  }
+
   bool fireTimeUpdate = false;
 
   
