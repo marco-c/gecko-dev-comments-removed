@@ -24,7 +24,7 @@ using mozilla::TimeStamp;
 static const long NanoSecPerSec = 1000000000;
 
 
-#if defined(HAVE_CLOCK_MONOTONIC) && !defined(__ANDROID__)
+#if defined(HAVE_CLOCK_MONOTONIC) && !defined(__ANDROID__) && !defined(__APPLE__)
 # define USE_CLOCK_API
 #endif
 
