@@ -438,8 +438,7 @@ struct JSCompartment
     js::PropertyTree             propertyTree;
 
     
-    js::BaseShapeSet             baseShapes;
-    void sweepBaseShapeTable();
+    JS::WeakCache<js::BaseShapeSet> baseShapes;
 
     
     js::InitialShapeSet          initialShapes;
