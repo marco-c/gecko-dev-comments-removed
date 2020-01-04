@@ -93,10 +93,8 @@ public:
   
   MOZ_DECLARE_WEAKREFERENCE_TYPENAME(DisplayDeviceProvider)
 
-  nsresult RequestSession(HDMIDisplayDevice* aDevice,
-                          const nsAString& aUrl,
-                          const nsAString& aPresentationId,
-                          nsIPresentationControlChannel** aControlChannel);
+  nsresult Connect(HDMIDisplayDevice* aDevice,
+                   nsIPresentationControlChannel** aControlChannel);
 private:
   virtual ~DisplayDeviceProvider();
 
