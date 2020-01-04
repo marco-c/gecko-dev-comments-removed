@@ -90,6 +90,12 @@ private:
     
 
 
+    virtual status_t onTransact(uint32_t code, const Parcel& data,
+        Parcel* reply, uint32_t flags);
+
+    
+
+
     virtual sp<ISurfaceComposerClient> createConnection();
     virtual sp<IGraphicBufferAlloc> createGraphicBufferAlloc();
     virtual sp<IBinder> createDisplay(const String8& displayName, bool secure);
