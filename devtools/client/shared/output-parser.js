@@ -42,8 +42,6 @@ loader.lazyGetter(this, "DOMUtils", function () {
 
 
 
-
-
 function OutputParser(document, supportsType) {
   this.parsed = [];
   this.doc = document;

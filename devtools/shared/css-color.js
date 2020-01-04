@@ -55,7 +55,6 @@ const SPECIALVALUES = new Set([
 
 
 
-
 function CssColor(colorValue) {
   this.newColor(colorValue);
 }
