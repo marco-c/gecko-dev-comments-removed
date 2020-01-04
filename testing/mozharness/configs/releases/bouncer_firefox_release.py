@@ -106,10 +106,8 @@ config = {
         },
         "sha1-installer": {
             "product-name": "Firefox-%(version)s-sha1",
-            
-            "check_uptake": False,
-            
-            
+            "check_uptake": True,
+            "alias": "firefox-sha1",
             "ssl-only": True,
             "add-locales": True,
             "paths": {
