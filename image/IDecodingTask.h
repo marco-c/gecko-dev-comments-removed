@@ -49,9 +49,6 @@ public:
   
   void Resume() override;
 
-  
-  virtual NotNull<Decoder*> GetDecoder() const = 0;
-
 protected:
   virtual ~IDecodingTask() { }
 };
@@ -74,8 +71,6 @@ public:
   
   
   TaskPriority Priority() const override { return TaskPriority::eLow; }
-
-  NotNull<Decoder*> GetDecoder() const override { return mDecoder; }
 
 private:
   virtual ~DecodingTask();
@@ -102,8 +97,6 @@ public:
   
   
   TaskPriority Priority() const override { return TaskPriority::eLow; }
-
-  NotNull<Decoder*> GetDecoder() const override { return mDecoder; }
 
 private:
   virtual ~AnimationDecodingTask() { }
@@ -133,8 +126,6 @@ public:
   
   TaskPriority Priority() const override { return TaskPriority::eHigh; }
 
-  NotNull<Decoder*> GetDecoder() const override { return mDecoder; }
-
 private:
   virtual ~MetadataDecodingTask() { }
 
@@ -162,8 +153,6 @@ public:
   
   
   void Resume() override { }
-
-  NotNull<Decoder*> GetDecoder() const override { return mDecoder; }
 
 private:
   virtual ~AnonymousDecodingTask() { }
