@@ -10028,8 +10028,13 @@ nsGlobalWindow::GetFocusMethod()
 void
 nsGlobalWindow::InitializeShowFocusRings()
 {
+  MOZ_ASSERT(IsInnerWindow());
+
+  
+  
+  
   nsPIDOMWindowOuter* root = GetPrivateRoot();
-  if (root) {
+  if (root && GetOuterWindow() != root) {
     bool showAccelerators = false, showFocusRings = false;
     root->GetKeyboardIndicators(&showAccelerators, &showFocusRings);
     mShowFocusRings = showFocusRings;
