@@ -88,7 +88,7 @@ public:
 
   void GetStack(nsAString& aStack, ErrorResult& aRv) const;
 
-  void Stringify(JSContext* aCx, nsString& retval);
+  void Stringify(nsString& retval);
 
   
   Exception();
@@ -131,7 +131,7 @@ public:
   NS_DECL_NSIDOMDOMEXCEPTION
 
   
-  NS_IMETHOD ToString(JSContext* aCx, nsACString& aReturn) override;
+  NS_IMETHOD ToString(nsACString& aReturn) override;
 
   
   virtual JSObject* WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto)
