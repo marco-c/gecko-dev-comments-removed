@@ -191,6 +191,7 @@ private:
   VertexShaderConstants mVSConstants;
   PixelShaderConstants mPSConstants;
   bool mDisableSequenceForNextFrame;
+  bool mAllowPartialPresents;
 
   gfx::IntRect mInvalidRect;
   
