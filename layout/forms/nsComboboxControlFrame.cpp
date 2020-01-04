@@ -1482,7 +1482,11 @@ nsComboboxControlFrame::Rollup(uint32_t aCount, bool aFlush,
     
     
     nsViewManager* viewManager = mDropdownFrame->GetView()->GetViewManager();
-    viewManager->UpdateWidgetGeometry();
+    viewManager->UpdateWidgetGeometry(); 
+  }
+
+  if (!weakFrame.IsAlive()) {
+    return consume;
   }
 
   if (aLastRolledUp) {
