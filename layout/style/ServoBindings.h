@@ -7,12 +7,14 @@
 #ifndef mozilla_ServoBindings_h
 #define mozilla_ServoBindings_h
 
-#include "stdint.h"
-#include "nsColor.h"
-#include "nsStyleStruct.h"
-#include "nsStyleCoord.h"
+#include "mozilla/ServoElementSnapshot.h"
 #include "mozilla/css/SheetParsingMode.h"
+#include "nsChangeHint.h"
+#include "nsColor.h"
 #include "nsProxyRelease.h"
+#include "nsStyleCoord.h"
+#include "nsStyleStruct.h"
+#include "stdint.h"
 
 
 
@@ -36,6 +38,7 @@ namespace mozilla {
 using mozilla::FontFamilyList;
 using mozilla::FontFamilyType;
 using mozilla::dom::Element;
+using mozilla::ServoElementSnapshot;
 typedef mozilla::dom::Element RawGeckoElement;
 class nsIDocument;
 typedef nsIDocument RawGeckoDocument;
@@ -104,29 +107,29 @@ nsIAtom* Gecko_Namespace(RawGeckoElement* element);
 nsIAtom* Gecko_GetElementId(RawGeckoElement* element);
 
 
-bool Gecko_HasAttr(RawGeckoElement* element, nsIAtom* ns, nsIAtom* name);
-bool Gecko_AttrEquals(RawGeckoElement* element, nsIAtom* ns, nsIAtom* name, nsIAtom* str, bool ignoreCase);
-bool Gecko_AttrDashEquals(RawGeckoElement* element, nsIAtom* ns, nsIAtom* name, nsIAtom* str);
-bool Gecko_AttrIncludes(RawGeckoElement* element, nsIAtom* ns, nsIAtom* name, nsIAtom* str);
-bool Gecko_AttrHasSubstring(RawGeckoElement* element, nsIAtom* ns, nsIAtom* name, nsIAtom* str);
-bool Gecko_AttrHasPrefix(RawGeckoElement* element, nsIAtom* ns, nsIAtom* name, nsIAtom* str);
-bool Gecko_AttrHasSuffix(RawGeckoElement* element, nsIAtom* ns, nsIAtom* name, nsIAtom* str);
+#define SERVO_DECLARE_ELEMENT_ATTR_MATCHING_FUNCTIONS(prefix_, implementor_)   \
+  nsIAtom* prefix_##AtomAttrValue(implementor_* element, nsIAtom* attribute);  \
+  bool prefix_##HasAttr(implementor_* element, nsIAtom* ns, nsIAtom* name);    \
+  bool prefix_##AttrEquals(implementor_* element, nsIAtom* ns, nsIAtom* name,  \
+                           nsIAtom* str, bool ignoreCase);                     \
+  bool prefix_##AttrDashEquals(implementor_* element, nsIAtom* ns,             \
+                               nsIAtom* name, nsIAtom* str);                   \
+  bool prefix_##AttrIncludes(implementor_* element, nsIAtom* ns,               \
+                             nsIAtom* name, nsIAtom* str);                     \
+  bool prefix_##AttrHasSubstring(implementor_* element, nsIAtom* ns,           \
+                                 nsIAtom* name, nsIAtom* str);                 \
+  bool prefix_##AttrHasPrefix(implementor_* element, nsIAtom* ns,              \
+                              nsIAtom* name, nsIAtom* str);                    \
+  bool prefix_##AttrHasSuffix(implementor_* element, nsIAtom* ns,              \
+                              nsIAtom* name, nsIAtom* str);                    \
+  uint32_t prefix_##ClassOrClassList(implementor_* element, nsIAtom** class_,  \
+                                     nsIAtom*** classList);
 
+SERVO_DECLARE_ELEMENT_ATTR_MATCHING_FUNCTIONS(Gecko_, RawGeckoElement)
+SERVO_DECLARE_ELEMENT_ATTR_MATCHING_FUNCTIONS(Gecko_Snapshot,
+                                              ServoElementSnapshot)
 
-
-
-
-
-
-
-
-
-
-
-
-
-uint32_t Gecko_ClassOrClassList(RawGeckoElement* element,
-                                nsIAtom** class_, nsIAtom*** classList);
+#undef SERVO_DECLARE_ELEMENT_ATTR_MATCHING_FUNCTIONS
 
 
 ServoDeclarationBlock* Gecko_GetServoDeclarationBlock(RawGeckoElement* element);
@@ -260,12 +263,19 @@ void Servo_RestyleDocument(RawGeckoDocument* doc, RawServoStyleSet* set);
 void Servo_RestyleSubtree(RawGeckoNode* node, RawServoStyleSet* set);
 
 
-#define STYLE_STRUCT(name, checkdata_cb) \
-struct nsStyle##name; \
-void Gecko_Construct_nsStyle##name(nsStyle##name* ptr); \
-void Gecko_CopyConstruct_nsStyle##name(nsStyle##name* ptr, const nsStyle##name* other); \
-void Gecko_Destroy_nsStyle##name(nsStyle##name* ptr); \
-const nsStyle##name* Servo_GetStyle##name(ServoComputedValues* computedValues);
+nsRestyleHint Servo_ComputeRestyleHint(RawGeckoElement* element,
+                                       ServoElementSnapshot* snapshot,
+                                       RawServoStyleSet* set);
+
+
+#define STYLE_STRUCT(name, checkdata_cb)                                       \
+  struct nsStyle##name;                                                        \
+  void Gecko_Construct_nsStyle##name(nsStyle##name* ptr);                      \
+  void Gecko_CopyConstruct_nsStyle##name(nsStyle##name* ptr,                   \
+                                         const nsStyle##name* other);          \
+  void Gecko_Destroy_nsStyle##name(nsStyle##name* ptr);                        \
+  const nsStyle##name* Servo_GetStyle##name(                                   \
+    ServoComputedValues* computedValues);
 #include "nsStyleStructList.h"
 #undef STYLE_STRUCT
 

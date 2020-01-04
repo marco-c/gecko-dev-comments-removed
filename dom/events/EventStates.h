@@ -12,6 +12,8 @@
 
 namespace mozilla {
 
+#define NS_EVENT_STATE_HIGHEST_SERVO_BIT 6
+
 
 
 
@@ -23,6 +25,7 @@ class EventStates
 {
 public:
   typedef uint64_t InternalType;
+  typedef uint8_t ServoType;
 
   constexpr EventStates()
     : mStates(0)
@@ -155,6 +158,14 @@ public:
     return mStates;
   }
 
+  
+
+
+  ServoType ServoValue() const
+  {
+    return mStates & ((1 << (NS_EVENT_STATE_HIGHEST_SERVO_BIT + 1)) - 1);
+  }
+
 private:
   InternalType mStates;
 };
@@ -200,7 +211,8 @@ private:
 
 #define NS_EVENT_STATE_INDETERMINATE NS_DEFINE_EVENT_STATE_MACRO(6)
 
-#define NS_EVENT_STATE_HIGHEST_SERVO_BIT 6
+
+
 
 
 
