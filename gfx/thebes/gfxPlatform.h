@@ -606,6 +606,12 @@ public:
     virtual void FlushContentDrawing() {}
 
     
+    
+    virtual bool UpdateForDeviceReset() {
+      return false;
+    }
+
+    
 
 
 
