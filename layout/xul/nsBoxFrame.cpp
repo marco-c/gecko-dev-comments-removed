@@ -148,11 +148,13 @@ nsBoxFrame::SetInitialChildList(ChildListID     aListID,
                                 nsFrameList&    aChildList)
 {
   nsContainerFrame::SetInitialChildList(aListID, aChildList);
-  
-  nsBoxLayoutState state(PresContext());
-  CheckBoxOrder();
-  if (mLayoutManager)
-    mLayoutManager->ChildrenSet(this, state, mFrames.FirstChild());
+  if (aListID == kPrincipalList) {
+    
+    nsBoxLayoutState state(PresContext());
+    CheckBoxOrder();
+    if (mLayoutManager)
+      mLayoutManager->ChildrenSet(this, state, mFrames.FirstChild());
+  }
 }
 
  void

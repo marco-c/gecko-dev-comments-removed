@@ -394,8 +394,9 @@ nsMenuPopupFrame::SetInitialChildList(ChildListID  aListID,
                                       nsFrameList& aChildList)
 {
   
-  if (aChildList.NotEmpty())
+  if (aListID == kPrincipalList && aChildList.NotEmpty()) {
     mGeneratedChildren = true;
+  }
   nsBoxFrame::SetInitialChildList(aListID, aChildList);
 }
 

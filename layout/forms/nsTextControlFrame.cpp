@@ -1224,13 +1224,14 @@ nsTextControlFrame::SetInitialChildList(ChildListID     aListID,
                                         nsFrameList&    aChildList)
 {
   nsContainerFrame::SetInitialChildList(aListID, aChildList);
+  if (aListID != kPrincipalList) {
+    return;
+  }
 
-  nsIFrame* first = GetFirstPrincipalChild();
-
   
   
   
-  if (first) {
+  if (nsIFrame* first = GetFirstPrincipalChild()) {
     first->AddStateBits(NS_FRAME_REFLOW_ROOT);
 
     nsCOMPtr<nsITextControlElement> txtCtrl = do_QueryInterface(GetContent());

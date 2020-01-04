@@ -932,11 +932,13 @@ void
 nsListControlFrame::SetInitialChildList(ChildListID    aListID,
                                         nsFrameList&   aChildList)
 {
-  
-  mIsAllContentHere = mContent->IsDoneAddingChildren();
-  if (!mIsAllContentHere) {
-    mIsAllFramesHere    = false;
-    mHasBeenInitialized = false;
+  if (aListID == kPrincipalList) {
+    
+    mIsAllContentHere = mContent->IsDoneAddingChildren();
+    if (!mIsAllContentHere) {
+      mIsAllFramesHere    = false;
+      mHasBeenInitialized = false;
+    }
   }
   nsHTMLScrollFrame::SetInitialChildList(aListID, aChildList);
 
