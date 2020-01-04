@@ -210,6 +210,8 @@ class MediaStreamTrack : public DOMEventTargetHelper,
   friend class mozilla::PeerConnectionMedia;
   friend class mozilla::RemoteSourceStreamInfo;
 
+  class PrincipalHandleListener;
+
 public:
   
 
@@ -250,7 +252,14 @@ public:
   
 
 
-  nsIPrincipal* GetPrincipal() const { return GetSource().GetPrincipal(); }
+  nsIPrincipal* GetPrincipal() const { return mPrincipal; }
+
+  
+
+
+
+
+  void NotifyPrincipalHandleChanged(const PrincipalHandle& aPrincipalHandle);
 
   
 
@@ -331,6 +340,8 @@ public:
 protected:
   virtual ~MediaStreamTrack();
 
+  void Destroy();
+
   
   MediaStream* GetInputStream();
 
@@ -340,6 +351,11 @@ protected:
   
   
   DOMMediaStream* GetInputDOMStream();
+
+  
+
+
+  void SetPrincipal(nsIPrincipal* aPrincipal);
 
   
 
@@ -356,6 +372,9 @@ protected:
   TrackID mInputTrackID;
   RefPtr<MediaStreamTrackSource> mSource;
   RefPtr<MediaStreamTrack> mOriginalTrack;
+  nsCOMPtr<nsIPrincipal> mPrincipal;
+  nsCOMPtr<nsIPrincipal> mPendingPrincipal;
+  RefPtr<PrincipalHandleListener> mPrincipalHandleListener;
   nsString mID;
   nsString mLabel;
   bool mEnded;

@@ -44,11 +44,67 @@ MediaStreamTrackSource::ApplyConstraints(nsPIDOMWindowInner* aWindow,
   return promise.forget();
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class MediaStreamTrack::PrincipalHandleListener : public MediaStreamTrackListener
+{
+public:
+  explicit PrincipalHandleListener(MediaStreamTrack* aTrack)
+    : mTrack(aTrack) {}
+
+  void Forget()
+  {
+    MOZ_ASSERT(NS_IsMainThread());
+    mTrack = nullptr;
+  }
+
+  void DoNotifyPrincipalHandleChanged(const PrincipalHandle& aNewPrincipalHandle)
+  {
+    MOZ_ASSERT(NS_IsMainThread());
+
+    if (!mTrack) {
+      return;
+    }
+
+    mTrack->NotifyPrincipalHandleChanged(aNewPrincipalHandle);
+  }
+
+  void NotifyPrincipalHandleChanged(MediaStreamGraph* aGraph,
+                                    const PrincipalHandle& aNewPrincipalHandle) override
+  {
+    nsCOMPtr<nsIRunnable> runnable =
+      NS_NewRunnableMethodWithArgs<StoreCopyPassByConstLRef<PrincipalHandle>>(
+        this, &PrincipalHandleListener::DoNotifyPrincipalHandleChanged, aNewPrincipalHandle);
+    aGraph->DispatchToMainThreadAfterStreamStateUpdate(runnable.forget());
+  }
+
+protected:
+  
+  MediaStreamTrack* mTrack;
+};
+
 MediaStreamTrack::MediaStreamTrack(DOMMediaStream* aStream, TrackID aTrackID,
                                    TrackID aInputTrackID, const nsString& aLabel,
                                    MediaStreamTrackSource* aSource)
   : mOwningStream(aStream), mTrackID(aTrackID),
-    mInputTrackID(aInputTrackID), mSource(aSource), mLabel(aLabel),
+    mInputTrackID(aInputTrackID), mSource(aSource),
+    mPrincipal(aSource->GetPrincipal()), mLabel(aLabel),
     mEnded(false), mEnabled(true), mRemote(aSource->IsRemote()), mStopped(false)
 {
 
@@ -57,6 +113,9 @@ MediaStreamTrack::MediaStreamTrack(DOMMediaStream* aStream, TrackID aTrackID,
   }
 
   GetSource().RegisterSink(this);
+
+  mPrincipalHandleListener = new PrincipalHandleListener(this);
+  AddListener(mPrincipalHandleListener);
 
   nsresult rv;
   nsCOMPtr<nsIUUIDGenerator> uuidgen =
@@ -75,18 +134,34 @@ MediaStreamTrack::MediaStreamTrack(DOMMediaStream* aStream, TrackID aTrackID,
 
 MediaStreamTrack::~MediaStreamTrack()
 {
+  Destroy();
+}
+
+void
+MediaStreamTrack::Destroy()
+{
+  if (mSource) {
+    mSource->UnregisterSink(this);
+  }
+  if (mPrincipalHandleListener) {
+    if (GetOwnedStream()) {
+      RemoveListener(mPrincipalHandleListener);
+    }
+    mPrincipalHandleListener->Forget();
+    mPrincipalHandleListener = nullptr;
+  }
 }
 
 NS_IMPL_CYCLE_COLLECTION_CLASS(MediaStreamTrack)
 
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN_INHERITED(MediaStreamTrack,
                                                 DOMEventTargetHelper)
+  tmp->Destroy();
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mOwningStream)
-  if (tmp->mSource) {
-    tmp->mSource->UnregisterSink(tmp);
-  }
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mSource)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mOriginalTrack)
+  NS_IMPL_CYCLE_COLLECTION_UNLINK(mPrincipal)
+  NS_IMPL_CYCLE_COLLECTION_UNLINK(mPendingPrincipal)
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INHERITED(MediaStreamTrack,
@@ -94,6 +169,8 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INHERITED(MediaStreamTrack,
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mOwningStream)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mSource)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mOriginalTrack)
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mPrincipal)
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mPendingPrincipal)
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
 NS_IMPL_ADDREF_INHERITED(MediaStreamTrack, DOMEventTargetHelper)
@@ -177,17 +254,52 @@ MediaStreamTrack::GraphImpl()
 }
 
 void
-MediaStreamTrack::PrincipalChanged()
+MediaStreamTrack::SetPrincipal(nsIPrincipal* aPrincipal)
 {
-  LOG(LogLevel::Info, ("MediaStreamTrack %p Principal changed. Now: "
-                       "null=%d, codebase=%d, expanded=%d, system=%d", this,
-                       GetPrincipal()->GetIsNullPrincipal(),
-                       GetPrincipal()->GetIsCodebasePrincipal(),
-                       GetPrincipal()->GetIsExpandedPrincipal(),
-                       GetPrincipal()->GetIsSystemPrincipal()));
+  if (aPrincipal == mPrincipal) {
+    return;
+  }
+  mPrincipal = aPrincipal;
+
+  LOG(LogLevel::Info, ("MediaStreamTrack %p principal changed to %p. Now: "
+                       "null=%d, codebase=%d, expanded=%d, system=%d",
+                       this, mPrincipal.get(),
+                       mPrincipal->GetIsNullPrincipal(),
+                       mPrincipal->GetIsCodebasePrincipal(),
+                       mPrincipal->GetIsExpandedPrincipal(),
+                       mPrincipal->GetIsSystemPrincipal()));
   for (PrincipalChangeObserver<MediaStreamTrack>* observer
       : mPrincipalChangeObservers) {
     observer->PrincipalChanged(this);
+  }
+}
+
+void
+MediaStreamTrack::PrincipalChanged()
+{
+  mPendingPrincipal = GetSource().GetPrincipal();
+  nsCOMPtr<nsIPrincipal> newPrincipal = mPrincipal;
+  LOG(LogLevel::Info, ("MediaStreamTrack %p Principal changed on main thread "
+                       "to %p (pending). Combining with existing principal %p.",
+                       this, mPendingPrincipal.get(), mPrincipal.get()));
+  if (nsContentUtils::CombineResourcePrincipals(&newPrincipal,
+                                                mPendingPrincipal)) {
+    SetPrincipal(newPrincipal);
+  }
+}
+
+void
+MediaStreamTrack::NotifyPrincipalHandleChanged(const PrincipalHandle& aNewPrincipalHandle)
+{
+  PrincipalHandle handle(aNewPrincipalHandle);
+  LOG(LogLevel::Info, ("MediaStreamTrack %p principalHandle changed on "
+                       "MediaStreamGraph thread to %p. Current principal: %p, "
+                       "pending: %p",
+                       this, GetPrincipalFromHandle(handle),
+                       mPrincipal.get(), mPendingPrincipal.get()));
+  if (PrincipalHandleMatches(handle, mPendingPrincipal)) {
+    SetPrincipal(mPendingPrincipal);
+    mPendingPrincipal = nullptr;
   }
 }
 
