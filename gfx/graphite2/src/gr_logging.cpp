@@ -24,7 +24,7 @@
 
 
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "graphite2/Log.h"
 #include "inc/debug.h"

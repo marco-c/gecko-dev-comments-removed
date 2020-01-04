@@ -32,7 +32,7 @@
 
 #include "inc/Main.h"
 #include <cassert>
-#include <stdio.h>
+#include <cstdio>
 #include "inc/List.h"
 
 namespace graphite2 {

@@ -32,7 +32,7 @@
 
 #ifndef GRAPHITE2_NFILEFACE
 
-#include <stdio.h>
+#include <cstdio>
 #include <cassert>
 
 #include "graphite2/Font.h"

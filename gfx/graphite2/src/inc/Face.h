@@ -26,7 +26,7 @@
 
 #pragma once
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "graphite2/Font.h"
 

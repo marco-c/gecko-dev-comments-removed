@@ -120,10 +120,24 @@ inline T max(const T a, const T b)
     void operator delete[] (void * p)throw() { free(p); } \
     void operator delete[] (void *, void *) throw() {}
 
-#ifdef __GNUC__
+#if defined(__GNUC__)  || defined(__clang__)
 #define GR_MAYBE_UNUSED __attribute__((unused))
 #else
 #define GR_MAYBE_UNUSED
+#endif
+
+#if defined(__clang__) && __cplusplus >= 201103L
+   
+    #define GR_FALLTHROUGH [[clang::fallthrough]]
+#elif defined(_MSC_VER)
+   
+
+
+
+    #include <sal.h>
+    #define GR_FALLTHROUGH __fallthrough
+#else
+    #define GR_FALLTHROUGH
 #endif
 
 #ifdef _MSC_VER

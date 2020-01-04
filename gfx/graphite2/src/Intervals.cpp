@@ -155,6 +155,7 @@ void Zones::remove(float x, float xm)
         {
         case 0:     
             if (separated(i->x, x))  { i = _exclusions.insert(i,i->split_at(x)); ++i; }
+            GR_FALLTHROUGH;
             
         case 1:     
             i->left_trim(xm);
@@ -162,6 +163,7 @@ void Zones::remove(float x, float xm)
         case 2:     
             i->xm = x;
             if (separated(i->x, i->xm)) break;
+            GR_FALLTHROUGH;
             
         case 3:     
             i = _exclusions.erase(i);

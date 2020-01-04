@@ -330,8 +330,8 @@ Error Face::Table::decompress()
     {
         uncompressed_size  = hdr & 0x07ffffff;
         uncompressed_table = gralloc<byte>(uncompressed_size);
-        
         if (!e.test(!uncompressed_table, E_OUTOFMEM))
+            
             
             e.test(lz4::decompress(p, _sz - 2*sizeof(uint32), uncompressed_table, uncompressed_size) != signed(uncompressed_size), E_SHRINKERFAILED);
         break;
@@ -343,6 +343,7 @@ Error Face::Table::decompress()
 
     
     if (!e)
+        
         
         e.test(be::peek<uint32>(uncompressed_table) != version, E_SHRINKERFAILED);
 
@@ -358,7 +359,7 @@ Error Face::Table::decompress()
     }
 
     _p = uncompressed_table;
-    _sz = uncompressed_size + sizeof(uint32);
+    _sz = uncompressed_size;
     _compressed = true;
 
     return e;

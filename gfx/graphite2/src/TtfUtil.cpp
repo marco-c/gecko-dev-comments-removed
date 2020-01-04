@@ -852,11 +852,11 @@ const void * FindCmapSubtable(const void * pCmap, int nPlatformId,  int nEncodin
             const uint8 * pRtn = reinterpret_cast<const uint8 *>(pCmap) + offset;
             if (length)
             {
-                if (offset + 2 > length) return NULL;
+                if (offset > length - 2) return NULL;
                 uint16 format = be::read<uint16>(pRtn);
                 if (format == 4)
                 {
-                    if (offset + 4 > length) return NULL;
+                    if (offset > length - 4) return NULL;
                     uint16 subTableLength = be::peek<uint16>(pRtn);
                     if (i + 1 == csuPlatforms)
                     {
@@ -868,7 +868,7 @@ const void * FindCmapSubtable(const void * pCmap, int nPlatformId,  int nEncodin
                 }
                 if (format == 12)
                 {
-                    if (offset + 6 > length) return NULL;
+                    if (offset > length - 6) return NULL;
                     uint32 subTableLength = be::peek<uint32>(pRtn);
                     if (i + 1 == csuPlatforms)
                     {
@@ -1210,7 +1210,7 @@ size_t LocaLookup(gid16 nGlyphId,
     
     if (be::swap(pTable->index_to_loc_format) == Sfnt::FontHeader::ShortIndexLocFormat)
     { 
-        if (nGlyphId < (lLocaSize >> 1) - 1) 
+        if (lLocaSize > 1 && nGlyphId + 1u < lLocaSize >> 1) 
         {
             const uint16 * pShortTable = reinterpret_cast<const uint16 *>(pLoca);
             res = be::peek<uint16>(pShortTable + nGlyphId) << 1;
@@ -1220,7 +1220,7 @@ size_t LocaLookup(gid16 nGlyphId,
     }
     else if (be::swap(pTable->index_to_loc_format) == Sfnt::FontHeader::LongIndexLocFormat)
     { 
-        if (nGlyphId < (lLocaSize >> 2) - 1)
+        if (lLocaSize > 3 && nGlyphId + 1u < lLocaSize >> 2)
         {
             const uint32 * pLongTable = reinterpret_cast<const uint32 *>(pLoca);
             res = be::peek<uint32>(pLongTable + nGlyphId);

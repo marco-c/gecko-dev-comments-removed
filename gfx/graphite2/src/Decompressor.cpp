@@ -85,7 +85,7 @@ int lz4::decompress(void const *in, size_t in_size, void *out, size_t out_size)
         {
             
             
-            if (dst + align(literal_len) > dst_end - MINMATCH+5)
+            if (dst + align(literal_len) > dst_end - (MINMATCH+5))
                 return -1;
             dst = overrun_copy(dst, literal, literal_len);
         }

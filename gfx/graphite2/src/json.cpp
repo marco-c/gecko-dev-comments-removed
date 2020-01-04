@@ -29,7 +29,7 @@
 
 #if !defined GRAPHITE2_NTRACING
 
-#include <stdio.h>
+#include <cstdio>
 #include <limits>
 #include "inc/json.h"
 

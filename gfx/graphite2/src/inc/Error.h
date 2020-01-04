@@ -115,6 +115,7 @@ enum errors {
     E_BADEMPTYPASS = 54,    
     E_BADSILFVERSION = 55,  
     E_BADCOLLISIONPASS = 56,    
+    E_BADNUMCOLUMNS = 57,   
 
     E_CODEFAILURE = 60,     
     E_CODEALLOC = 61,       
