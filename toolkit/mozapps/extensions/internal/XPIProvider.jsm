@@ -693,6 +693,8 @@ function isUsableAddon(aAddon) {
        mustSign(aAddon.type)) {
     if (aAddon.signedState <= AddonManager.SIGNEDSTATE_MISSING)
       return false;
+    if (aAddon.foreignInstall && aAddon.signedState < AddonManager.SIGNEDSTATE_SIGNED)
+      return false;
   }
 
   if (aAddon.blocklistState == Blocklist.STATE_BLOCKED)
@@ -2300,7 +2302,7 @@ this.XPIProvider = {
   
   bootstrappedAddons: {},
   
-  bootstrapScopes: {},
+  activeAddons: new Map(),
   
   extensionsActive: false,
   
@@ -2693,7 +2695,7 @@ this.XPIProvider = {
             
             
             
-            if (!(id in XPIProvider.bootstrapScopes))
+            if (!XPIProvider.activeAddons.has(id))
               continue;
 
             let file = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
@@ -2755,7 +2757,7 @@ this.XPIProvider = {
     this.cancelAll();
 
     this.bootstrappedAddons = {};
-    this.bootstrapScopes = {};
+    this.activeAddons.clear();
     this.enabledAddons = null;
     this.allAppGlobal = true;
 
@@ -4157,8 +4159,9 @@ this.XPIProvider = {
     if (aWhat != "opened")
       return;
 
-    for (let id of Object.keys(this.bootstrapScopes)) {
-      aConnection.setAddonOptions(id, { global: this.bootstrapScopes[id] });
+    for (let [id, val] of this.activeAddons) {
+      aConnection.setAddonOptions(
+        id, { global: val.bootstrapScope });
     }
   },
 
@@ -4446,9 +4449,13 @@ this.XPIProvider = {
     this.persistBootstrappedAddons();
     this.addAddonsToCrashReporter();
 
+    this.activeAddons.set(aId, {
+      bootstrapScope: null,
+    });
+    let activeAddon = this.activeAddons.get(aId);
+
     
     if (aType == "locale") {
-      this.bootstrapScopes[aId] = null;
       return;
     }
 
@@ -4463,7 +4470,7 @@ this.XPIProvider = {
     }
 
     if (!aFile.exists()) {
-      this.bootstrapScopes[aId] =
+      activeAddon.bootstrapScope =
         new Cu.Sandbox(principal, { sandboxName: aFile.path,
                                     wantGlobalProperties: ["indexedDB"],
                                     addonId: aId,
@@ -4478,7 +4485,7 @@ this.XPIProvider = {
     else if (aType == "webextension")
       uri = "resource://gre/modules/addons/WebExtensionBootstrap.js"
 
-    this.bootstrapScopes[aId] =
+    activeAddon.bootstrapScope =
       new Cu.Sandbox(principal, { sandboxName: uri,
                                   wantGlobalProperties: ["indexedDB"],
                                   addonId: aId,
@@ -4490,25 +4497,27 @@ this.XPIProvider = {
     try {
       
       for (let name in BOOTSTRAP_REASONS)
-        this.bootstrapScopes[aId][name] = BOOTSTRAP_REASONS[name];
+        activeAddon.bootstrapScope[name] = BOOTSTRAP_REASONS[name];
 
       
       const features = [ "Worker", "ChromeWorker" ];
 
       for (let feature of features)
-        this.bootstrapScopes[aId][feature] = gGlobalScope[feature];
+        activeAddon.bootstrapScope[feature] = gGlobalScope[feature];
 
       
-      this.bootstrapScopes[aId]["console"] = new ConsoleAPI({ consoleID: "addon/" + aId });
+      activeAddon.bootstrapScope["console"] = new ConsoleAPI(
+        { consoleID: "addon/" + aId });
 
       
       
       
-      this.bootstrapScopes[aId].__SCRIPT_URI_SPEC__ = uri;
+      activeAddon.bootstrapScope.__SCRIPT_URI_SPEC__ = uri;
       Components.utils.evalInSandbox(
         "Components.classes['@mozilla.org/moz/jssubscript-loader;1'] \
                    .createInstance(Components.interfaces.mozIJSSubScriptLoader) \
-                   .loadSubScript(__SCRIPT_URI_SPEC__);", this.bootstrapScopes[aId], "ECMAv5");
+                   .loadSubScript(__SCRIPT_URI_SPEC__);",
+                   activeAddon.bootstrapScope, "ECMAv5");
     }
     catch (e) {
       logger.warn("Error loading bootstrap.js for " + aId, e);
@@ -4518,7 +4527,8 @@ this.XPIProvider = {
     
     
     if (this._toolboxProcessLoaded) {
-      BrowserToolboxProcess.setAddonOptions(aId, { global: this.bootstrapScopes[aId] });
+      BrowserToolboxProcess.setAddonOptions(aId,
+        { global: activeAddon.bootstrapScope });
     }
   },
 
@@ -4534,7 +4544,7 @@ this.XPIProvider = {
     
     Cu.setAddonInterposition(aId, null);
 
-    delete this.bootstrapScopes[aId];
+    this.activeAddons.delete(aId);
     delete this.bootstrappedAddons[aId];
     this.persistBootstrappedAddons();
     this.addAddonsToCrashReporter();
@@ -4580,10 +4590,12 @@ this.XPIProvider = {
 
     try {
       
-      if (!(aAddon.id in this.bootstrapScopes)) {
+      let activeAddon = this.activeAddons.get(aAddon.id);
+      if (!activeAddon) {
         this.loadBootstrapScope(aAddon.id, aFile, aAddon.version, aAddon.type,
                                 aAddon.multiprocessCompatible || false,
                                 runInSafeMode);
+        activeAddon = this.activeAddons.get(aAddon.id);
       }
 
       
@@ -4593,8 +4605,7 @@ this.XPIProvider = {
       let method = undefined;
       try {
         method = Components.utils.evalInSandbox(`${aMethod};`,
-                                                this.bootstrapScopes[aAddon.id],
-                                                "ECMAv5");
+          activeAddon.bootstrapScope, "ECMAv5");
       }
       catch (e) {
         
@@ -7970,12 +7981,6 @@ Object.assign(SystemAddonInstallLocation.prototype, {
 
 
   cleanDirectories: Task.async(function*() {
-
-    
-    if (!(yield OS.File.exists(this._baseDir.path))) {
-      return;
-    }
-
     let iterator;
     try {
       iterator = new OS.File.DirectoryIterator(this._baseDir.path);
