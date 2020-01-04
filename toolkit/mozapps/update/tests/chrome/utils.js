@@ -77,55 +77,11 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 'use strict';
 
 const { classes: Cc, interfaces: Ci, manager: Cm, results: Cr,
         utils: Cu } = Components;
 
-Cu.import("resource://gre/modules/AddonManager.jsm", this);
 Cu.import("resource://gre/modules/Services.jsm", this);
 
 const IS_MACOSX = ("nsILocalFileMac" in Ci);
@@ -139,11 +95,9 @@ const PAGEID_PLUGIN_UPDATES   = "pluginupdatesfound";
 const PAGEID_NO_UPDATES_FOUND = "noupdatesfound";        
 const PAGEID_MANUAL_UPDATE    = "manualUpdate";          
 const PAGEID_UNSUPPORTED      = "unsupported";           
-const PAGEID_INCOMPAT_CHECK   = "incompatibleCheck";     
 const PAGEID_FOUND_BASIC      = "updatesfoundbasic";     
 const PAGEID_FOUND_BILLBOARD  = "updatesfoundbillboard"; 
 const PAGEID_LICENSE          = "license";               
-const PAGEID_INCOMPAT_LIST    = "incompatibleList";      
 const PAGEID_DOWNLOADING      = "downloading";           
 const PAGEID_ERRORS           = "errors";                
 const PAGEID_ERROR_EXTRA      = "errorextra";            
@@ -165,22 +119,8 @@ const URL_HTTPS_UPDATE_XML = "https://example.com" + URL_PATH_UPDATE_XML;
 
 const URI_UPDATE_PROMPT_DIALOG  = "chrome://mozapps/content/update/updates.xul";
 
-const ADDON_ID_SUFFIX = "@appupdatetest.mozilla.org";
-const ADDON_PREP_DIR = "appupdateprep";
-
 const PREF_APP_UPDATE_INTERVAL = "app.update.interval";
 const PREF_APP_UPDATE_LASTUPDATETIME = "app.update.lastUpdateTime.background-update-timer";
-
-
-
-const PREF_DISABLEDADDONS = "app.update.test.disabledAddons";
-const PREF_EM_HOTFIX_ID = "extensions.hotfix.id";
-const TEST_ADDONS = [ "appdisabled_1", "appdisabled_2",
-                      "compatible_1", "compatible_2",
-                      "noupdate_1", "noupdate_2",
-                      "updatecompatibility_1", "updatecompatibility_2",
-                      "updateversion_1", "updateversion_2",
-                      "userdisabled_1", "userdisabled_2", "hotfix" ];
 
 const LOG_FUNCTION = info;
 
@@ -207,15 +147,11 @@ var gAppUpdateServiceEnabled;
 var gAppUpdateStagingEnabled;     
 var gAppUpdateURLDefault;         
 var gAppUpdateURL;                
-var gExtUpdateURL;                
 
 var gTestCounter = -1;
 var gWin;
 var gDocElem;
 var gPrefToCheck;
-var gDisableNoUpdateAddon = false;
-var gDisableUpdateCompatibilityAddon = false;
-var gDisableUpdateVersionAddon = false;
 var gUseTestUpdater = false;
 
 
@@ -278,13 +214,6 @@ this.__defineGetter__("gAcceptDeclineLicense", function() {
 
 
 
-this.__defineGetter__("gIncompatibleListbox", function() {
-  return gWin.document.getElementById("incompatibleListbox");
-});
-
-
-
-
 
 
 
@@ -334,7 +263,8 @@ function runTestDefaultWaitForWindowClosed() {
     gEnv.set("MOZ_TEST_SKIP_UPDATE_STAGE", "1");
     removeUpdateDirsAndFiles();
     reloadUpdateManagerData();
-    setupAddons(setupTestUpdater);
+    setupTimer(gTestTimeout);
+    SimpleTest.executeSoon(setupTestUpdater);
   }
 }
 
@@ -623,7 +553,6 @@ function getExpectedButtonStates() {
 
   switch (gTest.pageid) {
     case PAGEID_CHECKING:
-    case PAGEID_INCOMPAT_CHECK:
       return { cancel: { disabled: false, hidden: false } };
     case PAGEID_FOUND_BASIC:
     case PAGEID_FOUND_BILLBOARD:
@@ -640,9 +569,6 @@ function getExpectedButtonStates() {
         return { extra1: { disabled: false, hidden: false },
                  next  : { disabled: true, hidden: false } };
       }
-      return { extra1: { disabled: false, hidden: false },
-               next  : { disabled: false, hidden: false } };
-    case PAGEID_INCOMPAT_LIST:
       return { extra1: { disabled: false, hidden: false },
                next  : { disabled: false, hidden: false } };
     case PAGEID_DOWNLOADING:
@@ -768,19 +694,6 @@ function checkRadioGroupSelectedIndex() {
   is(gAcceptDeclineLicense.selectedIndex, gTest.expectedRadioGroupSelectedIndex,
      "Checking license radiogroup selectedIndex equals " +
      gTest.expectedRadioGroupSelectedIndex);
-}
-
-
-
-
-
-function checkIncompatbleList() {
-  for (let i = 0; i < gIncompatibleListbox.itemCount; i++) {
-    let label = gIncompatibleListbox.getItemAtIndex(i).label;
-    
-    ok(label.indexOf("noupdate") != -1, "Checking that only incompatible " +
-       "add-ons that don't have an update are listed in the incompatible list");
-  }
 }
 
 
@@ -1052,19 +965,9 @@ function setupPrefs() {
   }
   Services.prefs.setBoolPref(PREF_APP_UPDATE_STAGING_ENABLED, false);
 
-  if (Services.prefs.prefHasUserValue(PREF_EXTENSIONS_UPDATE_URL)) {
-    gExtUpdateURL = Services.prefs.getCharPref(PREF_EXTENSIONS_UPDATE_URL);
-  }
-  let extUpdateUrl = URL_HTTP_UPDATE_XML + "?addonID=%ITEM_ID%" +
-                     "&platformVersion=" + Services.appinfo.platformVersion +
-                     "&newerPlatformVersion=" + getNewerPlatformVersion();
-  Services.prefs.setCharPref(PREF_EXTENSIONS_UPDATE_URL, extUpdateUrl);
-
   Services.prefs.setIntPref(PREF_APP_UPDATE_IDLETIME, 0);
   Services.prefs.setIntPref(PREF_APP_UPDATE_PROMPTWAITTIME, 0);
   Services.prefs.setBoolPref(PREF_APP_UPDATE_SILENT, false);
-  Services.prefs.setBoolPref(PREF_EXTENSIONS_STRICT_COMPAT, true);
-  Services.prefs.setCharPref(PREF_EM_HOTFIX_ID, "hotfix" + ADDON_ID_SUFFIX);
 }
 
 
@@ -1131,12 +1034,6 @@ function resetPrefs() {
     Services.prefs.setBoolPref(PREF_APP_UPDATE_STAGING_ENABLED, gAppUpdateStagingEnabled);
   } else if (Services.prefs.prefHasUserValue(PREF_APP_UPDATE_STAGING_ENABLED)) {
     Services.prefs.clearUserPref(PREF_APP_UPDATE_STAGING_ENABLED);
-  }
-
-  if (gExtUpdateURL !== undefined) {
-    Services.prefs.setCharPref(PREF_EXTENSIONS_UPDATE_URL, gExtUpdateURL);
-  } else if (Services.prefs.prefHasUserValue(PREF_EXTENSIONS_UPDATE_URL)) {
-    Services.prefs.clearUserPref(PREF_EXTENSIONS_UPDATE_URL);
   }
 
   if (Services.prefs.prefHasUserValue(PREF_APP_UPDATE_IDLETIME)) {
@@ -1209,14 +1106,6 @@ function resetPrefs() {
   if (Services.prefs.prefHasUserValue(PREF_APP_UPDATE_SILENT)) {
     Services.prefs.clearUserPref(PREF_APP_UPDATE_SILENT);
   }
-
-  if (Services.prefs.prefHasUserValue(PREF_EXTENSIONS_STRICT_COMPAT)) {
-		Services.prefs.clearUserPref(PREF_EXTENSIONS_STRICT_COMPAT);
-  }
-
-  if (Services.prefs.prefHasUserValue(PREF_EM_HOTFIX_ID)) {
-    Services.prefs.clearUserPref(PREF_EM_HOTFIX_ID);
-  }
 }
 
 function setupTimer(aTestTimeout) {
@@ -1229,256 +1118,6 @@ function setupTimer(aTestTimeout) {
                   createInstance(Ci.nsITimer);
   gTimeoutTimer.initWithCallback(finishTestTimeout, gTestTimeout,
                                  Ci.nsITimer.TYPE_ONE_SHOT);
-}
-
-
-
-
-
-
-
-
-
-
-
-function setupAddons(aCallback) {
-  debugDump("entering");
-
-  
-  
-  
-  function setNoUpdateAddonsDisabledState() {
-    AddonManager.getAllAddons(function(aAddons) {
-      aAddons.forEach(function(aAddon) {
-        if (aAddon.name.startsWith("appdisabled")) {
-          if (!aAddon.userDisabled) {
-            aAddon.userDisabled = true;
-          }
-        }
-
-        if (aAddon.name.startsWith("noupdate")) {
-          if (aAddon.userDisabled != gDisableNoUpdateAddon) {
-            aAddon.userDisabled = gDisableNoUpdateAddon;
-          }
-        }
-
-        if (aAddon.name.startsWith("updatecompatibility")) {
-          if (aAddon.userDisabled != gDisableUpdateCompatibilityAddon) {
-            aAddon.userDisabled = gDisableUpdateCompatibilityAddon;
-          }
-        }
-
-        if (aAddon.name.startsWith("updateversion")) {
-          if (aAddon.userDisabled != gDisableUpdateVersionAddon) {
-            aAddon.userDisabled = gDisableUpdateVersionAddon;
-          }
-        }
-      });
-      
-      
-      setupTimer(gTestTimeout);
-      SimpleTest.executeSoon(aCallback);
-    });
-  }
-
-  
-  
-  
-  
-  
-  if (Services.prefs.prefHasUserValue(PREF_DISABLEDADDONS)) {
-    setNoUpdateAddonsDisabledState();
-    return;
-  }
-
-  
-  
-  AddonManager.getAllAddons(function(aAddons) {
-    let disabledAddons = [];
-    let harnessAddons = ["special-powers@mozilla.org", "mochikit@mozilla.org"];
-    aAddons.forEach(function(aAddon) {
-      
-      
-      
-      
-      
-      
-      if (aAddon.type != "plugin" && !aAddon.appDisabled &&
-          !aAddon.userDisabled &&
-          aAddon.scope != AddonManager.SCOPE_APPLICATION &&
-          harnessAddons.indexOf(aAddon.id) == -1) {
-        disabledAddons.push(aAddon);
-        aAddon.userDisabled = true;
-      }
-    });
-    
-    
-    Services.prefs.setCharPref(PREF_DISABLEDADDONS, disabledAddons.join(" "));
-
-    
-    let promises = getTestAddonXPIFiles().map(function(aFile) {
-      return AddonManager.installTemporaryAddon(aFile).then(addon => {
-        if (getAddonTestType(addon.name) == "userdisabled") {
-          addon.userDisabled = true;
-        }
-      });
-    });
-    return Promise.all(promises).then(setNoUpdateAddonsDisabledState);
-  });
-}
-
-
-
-
-
-
-
-
-function resetAddons(aCallback) {
-  debugDump("entering");
-  
-  
-  
-  if (!Services.prefs.prefHasUserValue(PREF_DISABLEDADDONS)) {
-    debugDump("preference " + PREF_DISABLEDADDONS + " doesn't exist... " +
-              "returning early");
-    aCallback();
-    return;
-  }
-
-  
-  let count = TEST_ADDONS.length;
-  function uninstallCompleted(aAddon) {
-    if (--count == 0) {
-      AddonManager.removeAddonListener(listener);
-
-      
-      
-      let disabledAddons = Services.prefs.getCharPref(PREF_DISABLEDADDONS).split(" ");
-      Services.prefs.clearUserPref(PREF_DISABLEDADDONS);
-      AddonManager.getAllAddons(function(aAddons) {
-        aAddons.forEach(function(aAddon) {
-          if (disabledAddons.indexOf(aAddon.id)) {
-            aAddon.userDisabled = false;
-          }
-        });
-        SimpleTest.executeSoon(aCallback);
-      });
-    }
-  }
-
-  let listener = {
-    onUninstalled: uninstallCompleted
-  };
-
-  AddonManager.addAddonListener(listener);
-  TEST_ADDONS.forEach(function(aName) {
-    AddonManager.getAddonByID(aName + ADDON_ID_SUFFIX, function(aAddon) {
-      aAddon.uninstall();
-    });
-  });
-}
-
-
-
-
-
-
-
-
-
-
-function getAddonTestType(aName) {
-  return aName.split("_")[0];
-}
-
-
-
-
-
-
-
-function getTestAddonXPIFiles() {
-  let addonPrepDir = Services.dirsvc.get(NS_APP_USER_PROFILE_50_DIR,
-                                         Ci.nsILocalFile);
-  addonPrepDir.append(ADDON_PREP_DIR);
-
-  let bootstrap = addonPrepDir.clone();
-  bootstrap.append("bootstrap.js");
-  
-  if (!bootstrap.exists()) {
-    let bootstrapContents = "function install(data, reason){ }\n" +
-                            "function startup(data, reason){ }\n" +
-                            "function shutdown(data, reason){ }\n" +
-                            "function uninstall(data, reason){ }\n";
-    writeFile(bootstrap, bootstrapContents);
-  }
-
-  let installRDF = addonPrepDir.clone();
-  installRDF.append("install.rdf");
-
-  let xpiFiles = [];
-  TEST_ADDONS.forEach(function(aName) {
-    let xpiFile = addonPrepDir.clone();
-    xpiFile.append(aName + ".xpi");
-
-    if (installRDF.exists()) {
-      installRDF.remove(false);
-    }
-    writeFile(installRDF, getInstallRDFString(aName));
-    gZipW.open(xpiFile, PR_RDWR | PR_CREATE_FILE | PR_TRUNCATE);
-    gZipW.addEntryFile(installRDF.leafName,
-                       Ci.nsIZipWriter.COMPRESSION_DEFAULT, installRDF,
-                       false);
-    gZipW.addEntryFile(bootstrap.leafName,
-                       Ci.nsIZipWriter.COMPRESSION_DEFAULT, bootstrap,
-                       false);
-    gZipW.close();
-    xpiFiles.push(xpiFile);
-  });
-
-  return xpiFiles;
-}
-
-
-
-
-
-
-
-
-
-
-
-function getInstallRDFString(aName) {
-  let maxVersion = Services.appinfo.platformVersion;
-  switch (getAddonTestType(aName)) {
-    case "compatible":
-      maxVersion = getNewerPlatformVersion();
-      break;
-    case "appdisabled":
-      maxVersion = "0.1";
-      break;
-  }
-
-  return "<?xml version=\"1.0\"?>\n" +
-         "<RDF xmlns=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\"\n" +
-         "  xmlns:em=\"http://www.mozilla.org/2004/em-rdf#\">\n" +
-         "  <Description about=\"urn:mozilla:install-manifest\">\n" +
-         "    <em:id>" + aName + ADDON_ID_SUFFIX + "</em:id>\n" +
-         "    <em:version>1.0</em:version>\n" +
-         "    <em:bootstrap>true</em:bootstrap>\n" +
-         "    <em:name>" + aName + "</em:name>\n" +
-         "    <em:description>Test Description</em:description>\n" +
-         "    <em:targetApplication>\n" +
-         "      <Description>\n" +
-         "        <em:id>toolkit@mozilla.org</em:id>\n" +
-         "        <em:minVersion>undefined</em:minVersion>\n" +
-         "        <em:maxVersion>" + maxVersion + "</em:maxVersion>\n" +
-         "      </Description>\n" +
-         "    </em:targetApplication>\n" +
-         "  </Description>\n" +
-         "</RDF>";
 }
 
 
