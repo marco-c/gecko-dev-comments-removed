@@ -917,25 +917,38 @@ loop.OTSdkDriver = (function() {
     },
 
     _onOTException: function(event) {
-      if (event.code === OT.ExceptionCodes.UNABLE_TO_PUBLISH &&
-          event.message === "GetUserMedia") {
-        
-        
-        if (this.publisher) {
-          this.publisher.off("accessAllowed accessDenied accessDialogOpened streamCreated");
-          this.publisher.destroy();
-          delete this.publisher;
-          delete this._mockPublisherEl;
-        }
-        this.dispatcher.dispatch(new sharedActions.ConnectionFailure({
-          reason: FAILURE_DETAILS.UNABLE_TO_PUBLISH_MEDIA
-        }));
-      } else if (event.code === OT.ExceptionCodes.UNABLE_TO_PUBLISH) {
-        
-        
-        this._notifyMetricsEvent("sdk.exception." + event.code + "." + event.message);
-      } else {
-        this._notifyMetricsEvent("sdk.exception." + event.code);
+      switch (event.code) {
+        case OT.ExceptionCodes.UNABLE_TO_PUBLISH:
+          if (event.message === "GetUserMedia") {
+            
+            
+            if (this.publisher) {
+              this.publisher.off("accessAllowed accessDenied accessDialogOpened streamCreated");
+              this.publisher.destroy();
+              delete this.publisher;
+              delete this._mockPublisherEl;
+            }
+            this.dispatcher.dispatch(new sharedActions.ConnectionFailure({
+              reason: FAILURE_DETAILS.UNABLE_TO_PUBLISH_MEDIA
+            }));
+            
+          } else {
+            
+            
+            this._notifyMetricsEvent("sdk.exception." + event.code + "." + event.message);
+          }
+          break;
+        case OT.ExceptionCodes.TERMS_OF_SERVICE_FAILURE:
+          this.dispatcher.dispatch(new sharedActions.ConnectionFailure({
+            reason: FAILURE_DETAILS.TOS_FAILURE
+          }));
+          
+          
+          this._notifyMetricsEvent("sdk.exception." + event.code);
+          break;
+        default:
+          this._notifyMetricsEvent("sdk.exception." + event.code);
+          break;
       }
     },
 
