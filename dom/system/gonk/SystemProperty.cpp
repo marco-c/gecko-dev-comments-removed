@@ -5,8 +5,11 @@
 
 
 #include "SystemProperty.h"
-#include <dlfcn.h>
 
+#include <dlfcn.h>
+#include <string.h>
+
+#include "nsDebug.h"
 #include "prinit.h"
 
 namespace mozilla {
