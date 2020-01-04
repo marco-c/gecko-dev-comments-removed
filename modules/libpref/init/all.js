@@ -2046,6 +2046,13 @@ pref("security.cert_pinning.process_headers_from_non_builtin_roots", false);
 
 pref("security.view-source.reachable-from-inner-protocol", false);
 
+#ifdef RELEASE_BUILD
+pref("security.onecrl.via.amo", true);
+#else
+pref("security.onecrl.via.amo", false);
+#endif
+
+
 
 
 

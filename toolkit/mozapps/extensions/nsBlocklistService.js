@@ -48,6 +48,7 @@ const PREF_BLOCKLIST_PINGCOUNTTOTAL   = "extensions.blocklist.pingCountTotal";
 const PREF_BLOCKLIST_PINGCOUNTVERSION = "extensions.blocklist.pingCountVersion";
 const PREF_BLOCKLIST_SUPPRESSUI       = "extensions.blocklist.suppressUI";
 const PREF_ONECRL_VIA_AMO             = "security.onecrl.via.amo";
+const PREF_KINTO_UPDATE_ENABLED       = "services.kinto.update_enabled";
 const PREF_PLUGINS_NOTIFYUSER         = "plugins.update.notifyUser";
 const PREF_GENERAL_USERAGENT_LOCALE   = "general.useragent.locale";
 const PREF_APP_DISTRIBUTION           = "distribution.id";
@@ -626,6 +627,17 @@ Blocklist.prototype = {
     
     if (!this._isBlocklistLoaded())
       this._loadBlocklist();
+
+    
+    if (gPref.getBoolPref(PREF_KINTO_UPDATE_ENABLED)) {
+      let KintoUpdater =
+        Components.utils.import("resource://services-common/kinto-updater.js",
+                                {});
+      KintoUpdater.checkVersions().catch(() => {
+        
+        
+      });
+    }
   },
 
   onXMLLoad: Task.async(function*(aEvent) {
