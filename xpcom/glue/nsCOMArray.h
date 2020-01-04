@@ -163,15 +163,17 @@ public:
   void SetCapacity(uint32_t aCapacity) { mArray.SetCapacity(aCapacity); }
   uint32_t Capacity() { return mArray.Capacity(); }
 
-  typedef size_t (*nsBaseArraySizeOfElementIncludingThisFunc)(
-    nsISupports* aElement, mozilla::MallocSizeOf aMallocSizeOf, void* aData);
-
   
   
   
-  size_t SizeOfExcludingThis(
-    nsBaseArraySizeOfElementIncludingThisFunc aSizeOfElementIncludingThis,
-    mozilla::MallocSizeOf aMallocSizeOf, void* aData = nullptr) const;
+  
+  
+  
+  
+  size_t ShallowSizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const
+  {
+    return mArray.ShallowSizeOfExcludingThis(aMallocSizeOf);
+  }
 
 private:
 
@@ -400,21 +402,6 @@ public:
   void SwapElements(nsCOMArray<T>& aOther)
   {
     nsCOMArray_base::SwapElements(aOther);
-  }
-
-  
-  
-  
-  typedef size_t (*nsCOMArraySizeOfElementIncludingThisFunc)(
-    T* aElement, mozilla::MallocSizeOf aMallocSizeOf, void* aData);
-
-  size_t SizeOfExcludingThis(
-      nsCOMArraySizeOfElementIncludingThisFunc aSizeOfElementIncludingThis,
-      mozilla::MallocSizeOf aMallocSizeOf, void* aData = nullptr) const
-  {
-    return nsCOMArray_base::SizeOfExcludingThis(
-      nsBaseArraySizeOfElementIncludingThisFunc(aSizeOfElementIncludingThis),
-      aMallocSizeOf, aData);
   }
 
   

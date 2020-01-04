@@ -90,14 +90,6 @@ Rule::GetCSSRule()
   return this;
 }
 
-size_t
-Rule::SizeOfCOMArrayElementIncludingThis(css::Rule* aElement,
-                                         MallocSizeOf aMallocSizeOf,
-                                         void* aData)
-{
-  return aElement->SizeOfIncludingThis(aMallocSizeOf);
-}
-
 
 
 
@@ -573,12 +565,15 @@ GroupRule::DeleteRule(uint32_t aIndex)
  size_t
 GroupRule::SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const
 {
-  return mRules.SizeOfExcludingThis(Rule::SizeOfCOMArrayElementIncludingThis,
-                                    aMallocSizeOf);
+  size_t n = mRules.ShallowSizeOfExcludingThis(aMallocSizeOf);
+  for (size_t i = 0; i < mRules.Length(); i++) {
+    n += mRules[i]->SizeOfIncludingThis(aMallocSizeOf);
+  }
 
   
   
   
+  return n;
 }
 
 
