@@ -747,8 +747,6 @@
               let topLevel = aWebProgress.isTopLevel;
 
               if (topLevel) {
-                let isSameDocument =
-                  !!(aFlags & Ci.nsIWebProgressListener.LOCATION_CHANGE_SAME_DOCUMENT);
                 // If userTypedClear > 0, the document loaded correctly and we should be
                 // clearing the user typed value. We also need to clear the typed value
                 // if the document failed to load, to make sure the urlbar reflects the
@@ -760,12 +758,14 @@
                 if (this.mBrowser.userTypedClear > 0 ||
                     ((aFlags & Ci.nsIWebProgressListener.LOCATION_CHANGE_ERROR_PAGE) &&
                      aLocation.spec != "about:blank") ||
-                     isSameDocument) {
+                     aFlags & Ci.nsIWebProgressListener.LOCATION_CHANGE_SAME_DOCUMENT) {
                   this.mBrowser.userTypedValue = null;
                 }
 
                 // If the browser was playing audio, we should remove the playing state.
-                if (this.mTab.hasAttribute("soundplaying") && !isSameDocument) {
+                if (this.mTab.hasAttribute("soundplaying") &&
+                    (!this.mBrowser.lastURI ||
+                     this.mBrowser.lastURI.spec != aLocation.spec)) {
                   this.mTab.removeAttribute("soundplaying");
                   this.mTabBrowser._tabAttrModified(this.mTab, ["soundplaying"]);
                 }
@@ -788,9 +788,9 @@
                 }
 
                 // Don't clear the favicon if this onLocationChange was
-                // triggered by a pushState or a replaceState (bug 550565) or
-                // a hash change (bug 408415).
-                if (aWebProgress.isLoadingDocument && !isSameDocument) {
+                // triggered by a pushState or a replaceState.  See bug 550565.
+                if (aWebProgress.isLoadingDocument &&
+                    !(aWebProgress.loadType & Ci.nsIDocShell.LOAD_CMD_PUSHSTATE)) {
                   this.mBrowser.mIconURL = null;
                 }
 
@@ -1106,6 +1106,8 @@
             }
 
             if (!this._previewMode) {
+              this._recordTabAccess(this.mCurrentTab);
+
               this.mCurrentTab.lastAccessed = Infinity;
               this.mCurrentTab.removeAttribute("unread");
               oldTab.lastAccessed = Date.now();
@@ -1295,6 +1297,45 @@
         }
 
         fm.setFocus(newBrowser, focusFlags);
+        ]]></body>
+      </method>
+
+      <!--
+        This function assumes we have an LRU cache of tabs (either
+        images of tab content or their layers). The goal is to find
+        out how far into the cache we need to look in order to find
+        aTab. We record this number in telemetry and also move aTab to
+        the front of the cache.
+
+        A newly created tab has position Infinity in the cache.
+        If a tab is closed, it has no effect on the position of other
+        tabs in the cache since we assume that closing a tab doesn't
+        cause us to load in any other tabs.
+
+        We ignore the effect of dragging tabs between windows.
+      -->
+      <method name="_recordTabAccess">
+	<parameter name="aTab"/>
+        <body><![CDATA[
+          if (!Services.telemetry.canRecordExtended) {
+            return;
+          }
+
+          let tabs = Array.from(this.visibleTabs);
+
+          let pos = aTab.cachePosition;
+          for (let i = 0; i < tabs.length; i++) {
+            // If aTab is moving to the front, everything that was
+            // previously in front of it is bumped up one position.
+            if (tabs[i].cachePosition < pos) {
+              tabs[i].cachePosition++;
+            }
+          }
+          aTab.cachePosition = 0;
+
+          if (isFinite(pos)) {
+            Services.telemetry.getHistogramById("TAB_SWITCH_CACHE_POSITION").add(pos);
+          }
         ]]></body>
       </method>
 
@@ -1758,7 +1799,6 @@
             var aForceNotRemote;
             var aNoReferrer;
             var aUserContextId;
-            var aEventDetail;
             if (arguments.length == 2 &&
                 typeof arguments[1] == "object" &&
                 !(arguments[1] instanceof Ci.nsIURI)) {
@@ -1776,7 +1816,6 @@
               aForceNotRemote       = params.forceNotRemote;
               aNoReferrer           = params.noReferrer;
               aUserContextId        = params.userContextId;
-              aEventDetail          = params.eventDetail;
             }
 
             // if we're adding tabs, we're past interrupt mode, ditch the owner
@@ -1895,8 +1934,8 @@
             // Dispatch a new tab notification.  We do this once we're
             // entirely done, so that things are in a consistent state
             // even if the event listener opens or closes tabs.
-            var detail = aEventDetail || {};
-            var evt = new CustomEvent("TabOpen", { bubbles: true, detail });
+            var evt = document.createEvent("Events");
+            evt.initEvent("TabOpen", true, false);
             t.dispatchEvent(evt);
 
             // If we didn't swap docShells with a preloaded browser
@@ -2130,7 +2169,7 @@
 
             var isLastTab = (this.tabs.length - this._removingTabs.length == 1);
 
-            if (!this._beginRemoveTab(aTab, null, null, true, skipPermitUnload))
+            if (!this._beginRemoveTab(aTab, false, null, true, skipPermitUnload))
               return;
 
             if (!aTab.pinned && !aTab.hidden && aTab._fullyOpen && byMouse)
@@ -2175,7 +2214,7 @@
 
       <method name="_beginRemoveTab">
         <parameter name="aTab"/>
-        <parameter name="aAdoptedByTab"/>
+        <parameter name="aTabWillBeMoved"/>
         <parameter name="aCloseWindowWithLastTab"/>
         <parameter name="aCloseWindowFastpath"/>
         <parameter name="aSkipPermitUnload"/>
@@ -2209,7 +2248,7 @@
               newTab = true;
             }
 
-            if (!aTab._pendingPermitUnload && !aAdoptedByTab && !aSkipPermitUnload) {
+            if (!aTab._pendingPermitUnload && !aTabWillBeMoved && !aSkipPermitUnload) {
               // We need to block while calling permitUnload() because it
               // processes the event queue and may lead to another removeTab()
               // call before permitUnload() returns.
@@ -2243,10 +2282,11 @@
             // Dispatch a notification.
             // We dispatch it before any teardown so that event listeners can
             // inspect the tab that's about to close.
-            var evt = new CustomEvent("TabClose", { bubbles: true, detail: { adoptedBy: aAdoptedByTab } });
+            var evt = document.createEvent("UIEvent");
+            evt.initUIEvent("TabClose", true, false, window, aTabWillBeMoved ? 1 : 0);
             aTab.dispatchEvent(evt);
 
-            if (!aAdoptedByTab && !gMultiProcessBrowser) {
+            if (!aTabWillBeMoved && !gMultiProcessBrowser) {
               // Prevent this tab from showing further dialogs, since we're closing it
               var windowUtils = browser.contentWindow.QueryInterface(Ci.nsIInterfaceRequestor).
                                 getInterface(Ci.nsIDOMWindowUtils);
@@ -2262,7 +2302,7 @@
             filter.removeProgressListener(listener);
             listener.destroy();
 
-            if (browser.registeredOpenURI && !aAdoptedByTab) {
+            if (browser.registeredOpenURI && !aTabWillBeMoved) {
               this._placesAutocomplete.unregisterOpenPage(browser.registeredOpenURI);
               this._unifiedComplete.unregisterOpenPage(browser.registeredOpenURI);
               delete browser.registeredOpenURI;
@@ -2496,7 +2536,7 @@
             // First, start teardown of the other browser.  Make sure to not
             // fire the beforeunload event in the process.  Close the other
             // window if this was its last tab.
-            if (!remoteBrowser._beginRemoveTab(aOtherTab, aOurTab, true))
+            if (!remoteBrowser._beginRemoveTab(aOtherTab, true, true))
               return;
 
             let modifiedAttrs = [];
@@ -2947,7 +2987,7 @@
           // Swap the dropped tab with a new one we create and then close
           // it in the other window (making it seem to have moved between
           // windows).
-          let newTab = this.addTab("about:blank", { eventDetail: { adoptedTab: aTab } });
+          let newTab = this.addTab("about:blank");
           let newBrowser = this.getBrowserForTab(newTab);
           let newURL = aTab.linkedBrowser.currentURI.spec;
 
@@ -4267,6 +4307,7 @@
           this.mCurrentTab._tPos = 0;
           this.mCurrentTab._fullyOpen = true;
           this.mCurrentTab.lastAccessed = Infinity;
+          this.mCurrentTab.cachePosition = 0;
           this.mCurrentTab.linkedBrowser = this.mCurrentBrowser;
           this._tabForBrowser.set(this.mCurrentBrowser, this.mCurrentTab);
 
@@ -6162,6 +6203,8 @@
           this._lastAccessed = val;
         </setter>
       </property>
+
+      <field name="cachePosition">Infinity</field>
 
       <field name="mOverCloseButton">false</field>
       <property name="_overPlayingIcon" readonly="true">
