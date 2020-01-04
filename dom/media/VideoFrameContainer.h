@@ -42,11 +42,11 @@ public:
                       already_AddRefed<ImageContainer> aContainer);
 
   
-  B2G_ACL_EXPORT void SetCurrentFrame(const gfxIntSize& aIntrinsicSize, Image* aImage,
+  B2G_ACL_EXPORT void SetCurrentFrame(const gfx::IntSize& aIntrinsicSize, Image* aImage,
                        const TimeStamp& aTargetTime);
-  void SetCurrentFrames(const gfxIntSize& aIntrinsicSize,
+  void SetCurrentFrames(const gfx::IntSize& aIntrinsicSize,
                         const nsTArray<ImageContainer::NonOwningImage>& aImages);
-  void ClearCurrentFrame(const gfxIntSize& aIntrinsicSize)
+  void ClearCurrentFrame(const gfx::IntSize& aIntrinsicSize)
   {
     SetCurrentFrames(aIntrinsicSize, nsTArray<ImageContainer::NonOwningImage>());
   }
@@ -79,7 +79,7 @@ public:
   void ForgetElement() { mElement = nullptr; }
 
 protected:
-  void SetCurrentFramesLocked(const gfxIntSize& aIntrinsicSize,
+  void SetCurrentFramesLocked(const gfx::IntSize& aIntrinsicSize,
                               const nsTArray<ImageContainer::NonOwningImage>& aImages);
 
   
@@ -94,7 +94,7 @@ protected:
   
   
   
-  gfxIntSize mIntrinsicSize;
+  gfx::IntSize mIntrinsicSize;
   
   
   ImageContainer::FrameID mFrameID;

@@ -2066,7 +2066,7 @@ public:
     DirectDrawInfo mDrawInfo;
 
     
-    gfxIntSize mSize;
+    mozilla::gfx::IntSize mSize;
     
 
     nsCOMPtr<nsIPrincipal> mPrincipal;

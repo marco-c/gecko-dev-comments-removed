@@ -33,7 +33,7 @@ public:
                               dom::HTMLCanvasElement* aCanvas,
                               imgIRequest* aRequest,
                               SourceSurface* aSource,
-                              const gfxIntSize& aSize);
+                              const gfx::IntSize& aSize);
 
   
 

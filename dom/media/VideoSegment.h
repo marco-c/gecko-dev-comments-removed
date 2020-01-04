@@ -30,7 +30,7 @@ public:
   typedef mozilla::layers::Image Image;
 #endif
 
-  VideoFrame(already_AddRefed<Image>& aImage, const gfxIntSize& aIntrinsicSize);
+  VideoFrame(already_AddRefed<Image>& aImage, const gfx::IntSize& aIntrinsicSize);
   VideoFrame();
   ~VideoFrame();
 
@@ -48,13 +48,13 @@ public:
   Image* GetImage() const { return mImage; }
   void SetForceBlack(bool aForceBlack) { mForceBlack = aForceBlack; }
   bool GetForceBlack() const { return mForceBlack; }
-  const gfxIntSize& GetIntrinsicSize() const { return mIntrinsicSize; }
+  const gfx::IntSize& GetIntrinsicSize() const { return mIntrinsicSize; }
   void SetNull();
   void TakeFrom(VideoFrame* aFrame);
 
 #if !defined(MOZILLA_XPCOMRT_API)
   
-  static already_AddRefed<Image> CreateBlackImage(const gfxIntSize& aSize);
+  static already_AddRefed<Image> CreateBlackImage(const gfx::IntSize& aSize);
 #endif 
 
 protected:
@@ -62,7 +62,7 @@ protected:
   
   nsRefPtr<Image> mImage;
   
-  gfxIntSize mIntrinsicSize;
+  gfx::IntSize mIntrinsicSize;
   bool mForceBlack;
 };
 

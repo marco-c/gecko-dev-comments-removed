@@ -351,8 +351,8 @@ public:
 
 
 
-  static gfxIntSize ConvertToSurfaceSize(const gfxSize& aSize,
-                                         bool *aResultOverflows);
+  static mozilla::gfx::IntSize ConvertToSurfaceSize(const gfxSize& aSize,
+                                                    bool *aResultOverflows);
 
   
 

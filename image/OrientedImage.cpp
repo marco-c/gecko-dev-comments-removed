@@ -81,7 +81,7 @@ OrientedImage::GetFrame(uint32_t aWhichFrame,
   }
 
   
-  gfxIntSize size;
+  IntSize size;
   rv = InnerImage()->GetWidth(&size.width);
   NS_ENSURE_SUCCESS(rv, nullptr);
   rv = InnerImage()->GetHeight(&size.height);
