@@ -31,6 +31,7 @@
 #include "mozilla/BasicEvents.h"        
 #include "mozilla/ClearOnShutdown.h"    
 #include "mozilla/EventForwards.h"      
+#include "mozilla/MouseEvents.h"        
 #include "mozilla/Preferences.h"        
 #include "mozilla/ReentrantMonitor.h"   
 #include "mozilla/StaticPtr.h"          
@@ -1639,17 +1640,10 @@ AsyncPanZoomController::GetScrollWheelDelta(const ScrollWheelInput& aEvent) cons
   if (isRootContent &&
       gfxPrefs::MouseWheelHasRootScrollDeltaOverride() &&
       !aEvent.IsCustomizedByUserPrefs() &&
-      aEvent.mDeltaType == ScrollWheelInput::SCROLLDELTA_LINE)
-  {
-    
-    double hfactor = double(gfxPrefs::MouseWheelRootHScrollDeltaFactor()) / 100;
-    double vfactor = double(gfxPrefs::MouseWheelRootVScrollDeltaFactor()) / 100;
-    if (vfactor > 1.0) {
-      delta.x *= hfactor;
-    }
-    if (hfactor > 1.0) {
-      delta.y *= vfactor;
-    }
+      aEvent.mDeltaType == ScrollWheelInput::SCROLLDELTA_LINE &&
+      aEvent.mAllowToOverrideSystemScrollSpeed) {
+    delta.x = WidgetWheelEvent::ComputeOverriddenDelta(delta.x, false);
+    delta.y = WidgetWheelEvent::ComputeOverriddenDelta(delta.y, true);
   }
 
   
