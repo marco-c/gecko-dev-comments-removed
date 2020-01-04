@@ -173,7 +173,10 @@ public:
 
 
 
-  void ApplyOcclusionCulling(Layer* aLayer, nsIntRegion& aOpaqueRegion);
+
+
+
+  void PostProcessLayers(Layer* aLayer, nsIntRegion& aOpaqueRegion);
 
   
 
