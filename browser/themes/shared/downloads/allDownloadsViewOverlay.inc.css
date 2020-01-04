@@ -2,6 +2,11 @@
 
 
 
+%filter substitution
+
+%define item richlistitem.download
+%define itemFocused @item@[selected]
+
 
 
 #downloadsRichListBox {
