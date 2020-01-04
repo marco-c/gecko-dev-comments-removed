@@ -964,15 +964,6 @@ VectorImage::RecoverFromLossOfSurfaces()
   SurfaceCache::RemoveImage(ImageKey(this));
 }
 
-
-
-NS_IMETHODIMP
-VectorImage::RequestDecode()
-{
-  
-  return NS_OK;
-}
-
 NS_IMETHODIMP
 VectorImage::StartDecoding()
 {

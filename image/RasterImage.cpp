@@ -1166,15 +1166,6 @@ RasterImage::CanDiscard() {
          !mAnim;                 
 }
 
-
-
-NS_IMETHODIMP
-RasterImage::RequestDecode()
-{
-  return RequestDecodeForSize(mSize, DECODE_FLAGS_DEFAULT);
-}
-
-
 NS_IMETHODIMP
 RasterImage::StartDecoding()
 {
@@ -1799,7 +1790,7 @@ RasterImage::FinalizeDecoder(Decoder* aDecoder)
   
   if (done && wasMetadata && mWantFullDecode) {
     mWantFullDecode = false;
-    RequestDecode();
+    RequestDecodeForSize(mSize, DECODE_FLAGS_DEFAULT);
   }
 }
 
