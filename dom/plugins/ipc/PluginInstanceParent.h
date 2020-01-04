@@ -316,18 +316,6 @@ public:
         aOutput = mSrcAttribute;
     }
 
-    
-
-
-
-
-
-    bool
-    IsWhitelistedForShumway() const
-    {
-        return mIsWhitelistedForShumway;
-    }
-
     virtual bool
     AnswerPluginFocusChange(const bool& gotFocus) override;
 
@@ -398,7 +386,6 @@ private:
     NPP mNPP;
     const NPNetscapeFuncs* mNPNIface;
     nsCString mSrcAttribute;
-    bool mIsWhitelistedForShumway;
     NPWindowType mWindowType;
     int16_t mDrawingModel;
 
