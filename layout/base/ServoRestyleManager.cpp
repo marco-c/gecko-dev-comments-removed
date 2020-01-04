@@ -140,15 +140,26 @@ ServoRestyleManager::RecreateStyleContexts(nsIContent* aContent,
 void
 ServoRestyleManager::ProcessPendingRestyles()
 {
+  if (!HasPendingRestyles()) {
+    return;
+  }
   ServoStyleSet* styleSet = StyleSet();
 
   nsIDocument* doc = PresContext()->Document();
-  Element* root = doc->GetRootElement();
 
+  Element* root = doc->GetRootElement();
   if (root) {
     styleSet->RestyleSubtree(root,  false);
     RecreateStyleContexts(root, nullptr, styleSet);
   }
+
+  
+  
+  
+  
+  
+  MOZ_ASSERT(!doc->IsDirtyForServo());
+  doc->UnsetFlags(NODE_HAS_DIRTY_DESCENDANTS_FOR_SERVO);
 
   IncrementRestyleGeneration();
 }
@@ -217,13 +228,6 @@ nsresult
 ServoRestyleManager::ReparentStyleContext(nsIFrame* aFrame)
 {
   MOZ_CRASH("stylo: ServoRestyleManager::ReparentStyleContext not implemented");
-}
-
-bool
-ServoRestyleManager::HasPendingRestyles()
-{
-  NS_ERROR("stylo: ServoRestyleManager::HasPendingRestyles not implemented");
-  return false;
 }
 
 } 
