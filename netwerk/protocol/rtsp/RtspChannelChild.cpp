@@ -5,6 +5,7 @@
 
 
 #include "nsContentSecurityManager.h"
+#include "nsContentUtils.h"
 #include "RtspChannelChild.h"
 #include "mozilla/ipc/URIUtils.h"
 #include "nsServiceManagerUtils.h"
