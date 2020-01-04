@@ -23,7 +23,7 @@ function test() {
 
   
   url = engine.getSubmission("foo").uri.spec;
-  is(url, base + "&form=MOZSBR", "Check search URL for 'foo'");
+  is(url, base, "Check search URL for 'foo'");
 
   waitForExplicitFinish();
 

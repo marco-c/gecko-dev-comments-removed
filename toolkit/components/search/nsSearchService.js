@@ -1139,10 +1139,11 @@ EngineURL.prototype = {
   getSubmission: function SRCH_EURL_getSubmission(aSearchTerms, aEngine, aPurpose) {
     var url = ParamSubstitution(this.template, aSearchTerms, aEngine);
     
-    var purpose = aPurpose || "searchbar";
+    
+    var purpose = aPurpose || "";
 
     
-    if (!this.params.some(p => p.purpose !== undefined && p.purpose == purpose))
+    if (purpose == "system" && !this.params.some(p => p.purpose == "system"))
       purpose = "searchbar";
 
     
