@@ -303,24 +303,9 @@ loop.shared.views = (function(_, mozL10n) {
     
 
 
-    handleSubmitFeedback: function(event) {
-      event.preventDefault();
-      var helloFeedbackUrl = this.props.mozLoop.getLoopPref("feedback.formURL");
-      this.props.mozLoop.openURL(helloFeedbackUrl);
-    },
-
-    
-
-
     getItemInfo: function(menuItem) {
       var cx = React.addons.classSet;
       switch (menuItem.id) {
-        case "feedback":
-          return {
-            cssClasses: "dropdown-menu-item",
-            handler: this.handleSubmitFeedback,
-            label: mozL10n.get("feedback_request_button")
-          };
         case "help":
           return {
             cssClasses: "dropdown-menu-item",
