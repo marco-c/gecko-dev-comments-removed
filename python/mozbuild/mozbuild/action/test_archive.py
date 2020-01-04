@@ -11,6 +11,7 @@
 from __future__ import absolute_import, print_function, unicode_literals
 
 import argparse
+import itertools
 import os
 import sys
 
@@ -24,6 +25,21 @@ STAGE = mozpath.join(buildconfig.topobjdir, 'dist', 'test-stage')
 
 
 ARCHIVE_FILES = {
+    'common': [
+        {
+            'source': STAGE,
+            'base': '',
+            'pattern': '**',
+            'ignore': [
+                'cppunittest/**',
+                'mochitest/**',
+                'reftest/**',
+                'talos/**',
+                'web-platform/**',
+                'xpcshell/**',
+            ],
+        },
+    ],
     'mochitest': [
         {
             'source': buildconfig.topobjdir,
@@ -77,6 +93,21 @@ ARCHIVE_FILES = {
         },
     ],
 }
+
+
+
+
+
+for k, v in ARCHIVE_FILES.items():
+    
+    if k in ('common', 'mozharness'):
+        continue
+
+    ignores = set(itertools.chain(*(e.get('ignore', [])
+                                  for e in ARCHIVE_FILES['common'])))
+
+    if not any(p.startswith('%s/' % k) for p in ignores):
+        raise Exception('"common" ignore list probably should contain %s' % k)
 
 
 def find_files(archive):
