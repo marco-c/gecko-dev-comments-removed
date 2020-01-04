@@ -1794,7 +1794,7 @@ EventStateManager::GenerateDragGesture(nsPresContext* aPresContext,
                                               targetContent, selection);
         if (dragStarted) {
           sActiveESM = nullptr;
-          aEvent->mFlags.mPropagationStopped = true;
+          aEvent->StopPropagation();
         }
       }
 
@@ -4233,7 +4233,7 @@ EventStateManager::GenerateMouseEnterExit(WidgetMouseEvent* aMouseEvent)
         } else if (aMouseEvent->refPoint == sSynthCenteringPoint) {
           
           
-          aMouseEvent->mFlags.mPropagationStopped = true;
+          aMouseEvent->StopPropagation();
           
           
           sSynthCenteringPoint = kInvalidRefPoint;

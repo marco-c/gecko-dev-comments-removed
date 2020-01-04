@@ -243,7 +243,7 @@ TextComposition::DispatchCompositionEvent(
   
   if (mTabParent) {
     Unused << mTabParent->SendCompositionEvent(*aCompositionEvent);
-    aCompositionEvent->mFlags.mPropagationStopped = true;
+    aCompositionEvent->StopPropagation();
     if (aCompositionEvent->CausesDOMTextEvent()) {
       mLastData = aCompositionEvent->mData;
       mLastRanges = aCompositionEvent->mRanges;
@@ -411,7 +411,7 @@ TextComposition::HandleSelectionEvent(nsPresContext* aPresContext,
   
   if (aTabParent) {
     Unused << aTabParent->SendSelectionEvent(*aSelectionEvent);
-    aSelectionEvent->mFlags.mPropagationStopped = true;
+    aSelectionEvent->StopPropagation();
     return;
   }
 
