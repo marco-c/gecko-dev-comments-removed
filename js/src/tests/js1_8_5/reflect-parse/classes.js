@@ -438,6 +438,30 @@ function testClasses() {
     assertClassError("class NAME { constructor() { super; } }", SyntaxError);
 
     
+
+    
+    assertError("super()", SyntaxError);
+    assertError("(function() { super(); })", SyntaxError);
+
+    
+    assertClassError("class NAME { constructor() { super(); } }", SyntaxError);
+
+    function superConstructor(args) {
+        return classMethod(ident("constructor"),
+                           methodFun("constructor", "method", false,
+                                     [], [exprStmt(superCallExpr(args))]),
+                           "method", false);
+    }
+
+    
+    assertClass("class NAME extends null { constructor() { super() } }",
+                [superConstructor([])], lit(null));
+    assertClass("class NAME extends null { constructor() { super(1) } }",
+                [superConstructor([lit(1)])], lit(null));
+    assertClass("class NAME extends null { constructor() { super(...[]) } }",
+                [superConstructor([spread(arrExpr([]))])], lit(null));
+
+    
     
     assertClassError("class NAME {", SyntaxError);
     assertClassError("class NAME {;", SyntaxError);

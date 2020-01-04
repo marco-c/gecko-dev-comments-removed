@@ -376,6 +376,7 @@ class NameResolver
           case PNK_EXPORT_BATCH_SPEC:
           case PNK_FRESHENBLOCK:
           case PNK_OBJECT_PROPERTY_NAME:
+          case PNK_POSHOLDER:
             MOZ_ASSERT(cur->isArity(PN_NULLARY));
             break;
 
@@ -673,6 +674,7 @@ class NameResolver
           case PNK_COMMA:
           case PNK_NEW:
           case PNK_CALL:
+          case PNK_SUPERCALL:
           case PNK_GENEXP:
           case PNK_ARRAY:
           case PNK_STATEMENTLIST:
@@ -796,7 +798,6 @@ class NameResolver
           case PNK_EXPORT_SPEC: 
           case PNK_CALLSITEOBJ: 
           case PNK_CLASSNAMES:  
-          case PNK_POSHOLDER:   
             MOZ_CRASH("should have been handled by a parent node");
 
           case PNK_LIMIT: 

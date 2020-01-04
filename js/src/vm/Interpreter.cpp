@@ -877,7 +877,7 @@ StackCheckIsConstructorCalleeNewTarget(JSContext* cx, HandleValue callee, Handle
 
     
     
-    MOZ_ASSERT(&callee.toObject() == &newTarget.toObject());
+    MOZ_ASSERT(IsConstructor(newTarget));
 
     return true;
 }
@@ -1757,6 +1757,34 @@ SetObjectElementOperation(JSContext* cx, HandleObject obj, HandleValue receiver,
 
 
 
+static JSFunction&
+GetSuperEnvFunction(JSContext *cx, InterpreterRegs& regs)
+{
+    ScopeIter si(cx, regs.fp()->scopeChain(), regs.fp()->script()->innermostStaticScope(regs.pc));
+    for (; !si.done(); ++si) {
+        if (si.hasSyntacticScopeObject() && si.type() == ScopeIter::Call) {
+            JSFunction& callee = si.scope().as<CallObject>().callee();
+
+            
+            
+            
+            if (callee.isArrow())
+                continue;
+
+            return callee;
+        }
+    }
+    MOZ_CRASH("unexpected scope chain for GetSuperEnvFunction");
+}
+
+
+
+
+
+
+
+
+
 
 
 
@@ -2059,10 +2087,6 @@ CASE(JSOP_NOP)
 CASE(JSOP_UNUSED2)
 CASE(JSOP_UNUSED14)
 CASE(JSOP_BACKPATCH)
-CASE(JSOP_UNUSED163)
-CASE(JSOP_UNUSED164)
-CASE(JSOP_UNUSED165)
-CASE(JSOP_UNUSED166)
 CASE(JSOP_UNUSED167)
 CASE(JSOP_UNUSED168)
 CASE(JSOP_UNUSED169)
@@ -3006,6 +3030,7 @@ END_CASE(JSOP_EVAL)
 
 CASE(JSOP_SPREADNEW)
 CASE(JSOP_SPREADCALL)
+CASE(JSOP_SPREADSUPERCALL)
     if (REGS.fp()->hasPushedSPSFrame())
         cx->runtime()->spsProfiler.updatePC(script, REGS.pc);
     
@@ -3015,7 +3040,7 @@ CASE(JSOP_STRICTSPREADEVAL)
 {
     static_assert(JSOP_SPREADEVAL_LENGTH == JSOP_STRICTSPREADEVAL_LENGTH,
                   "spreadeval and strictspreadeval must be the same size");
-    bool construct = JSOp(*REGS.pc) == JSOP_SPREADNEW;
+    bool construct = JSOp(*REGS.pc) == JSOP_SPREADNEW || JSOp(*REGS.pc) == JSOP_SPREADSUPERCALL;;
 
     MOZ_ASSERT(REGS.stackDepth() >= 3u + construct);
 
@@ -3047,12 +3072,13 @@ CASE(JSOP_FUNAPPLY)
 
 CASE(JSOP_NEW)
 CASE(JSOP_CALL)
+CASE(JSOP_SUPERCALL)
 CASE(JSOP_FUNCALL)
 {
     if (REGS.fp()->hasPushedSPSFrame())
         cx->runtime()->spsProfiler.updatePC(script, REGS.pc);
 
-    bool construct = (*REGS.pc == JSOP_NEW);
+    bool construct = (*REGS.pc == JSOP_NEW || *REGS.pc == JSOP_SUPERCALL);
     unsigned argStackSlots = GET_ARGC(REGS.pc) + construct;
 
     MOZ_ASSERT(REGS.stackDepth() >= 2u + GET_ARGC(REGS.pc));
@@ -4075,37 +4101,22 @@ END_CASE(JSOP_INITHOMEOBJECT)
 
 CASE(JSOP_SUPERBASE)
 {
-    ScopeIter si(cx, REGS.fp()->scopeChain(), REGS.fp()->script()->innermostStaticScope(REGS.pc));
-    for (; !si.done(); ++si) {
-        if (si.hasSyntacticScopeObject() && si.type() == ScopeIter::Call) {
-            JSFunction& callee = si.scope().as<CallObject>().callee();
+    JSFunction& superEnvFunc = GetSuperEnvFunction(cx, REGS);
+    MOZ_ASSERT(superEnvFunc.allowSuperProperty());
+    MOZ_ASSERT(superEnvFunc.nonLazyScript()->needsHomeObject());
+    const Value& homeObjVal = superEnvFunc.getExtendedSlot(FunctionExtended::METHOD_HOMEOBJECT_SLOT);
 
-            
-            
-            
-            if (callee.isArrow())
-                continue;
+    ReservedRooted<JSObject*> homeObj(&rootObject0, &homeObjVal.toObject());
+    ReservedRooted<JSObject*> superBase(&rootObject1);
+    if (!GetPrototype(cx, homeObj, &superBase))
+        goto error;
 
-            MOZ_ASSERT(callee.allowSuperProperty());
-            MOZ_ASSERT(callee.nonLazyScript()->needsHomeObject());
-            const Value& homeObjVal = callee.getExtendedSlot(FunctionExtended::METHOD_HOMEOBJECT_SLOT);
-
-            ReservedRooted<JSObject*> homeObj(&rootObject0, &homeObjVal.toObject());
-            ReservedRooted<JSObject*> superBase(&rootObject1);
-            if (!GetPrototype(cx, homeObj, &superBase))
-                goto error;
-
-            if (!superBase) {
-                JS_ReportErrorNumber(cx, GetErrorMessage, nullptr, JSMSG_CANT_CONVERT_TO,
-                                     "null", "object");
-                goto error;
-            }
-            PUSH_OBJECT(*superBase);
-            break;
-        }
+    if (!superBase) {
+        JS_ReportErrorNumber(cx, GetErrorMessage, nullptr, JSMSG_CANT_CONVERT_TO,
+                                "null", "object");
+        goto error;
     }
-    if (si.done())
-        MOZ_CRASH("Unexpected scope chain in superbase");
+    PUSH_OBJECT(*superBase);
 }
 END_CASE(JSOP_SUPERBASE)
 
@@ -4113,6 +4124,48 @@ CASE(JSOP_NEWTARGET)
     PUSH_COPY(REGS.fp()->newTarget());
     MOZ_ASSERT(REGS.sp[-1].isObject() || REGS.sp[-1].isUndefined());
 END_CASE(JSOP_NEWTARGET)
+
+CASE(JSOP_SUPERFUN)
+{
+    ReservedRooted<JSObject*> superEnvFunc(&rootObject0, &GetSuperEnvFunction(cx, REGS));
+    MOZ_ASSERT(superEnvFunc->as<JSFunction>().isClassConstructor());
+    MOZ_ASSERT(superEnvFunc->as<JSFunction>().nonLazyScript()->isDerivedClassConstructor());
+
+    ReservedRooted<JSObject*> superFun(&rootObject1);
+
+    if (!GetPrototype(cx, superEnvFunc, &superFun))
+        goto error;
+
+    ReservedRooted<Value> superFunVal(&rootValue0, UndefinedValue());
+    if (!superFun)
+        superFunVal = NullValue();
+    else if (!superFun->isConstructor())
+        superFunVal = ObjectValue(*superFun);
+
+    if (superFunVal.isObjectOrNull()) {
+        ReportIsNotFunction(cx, superFunVal, JSDVG_IGNORE_STACK, CONSTRUCT);
+        goto error;
+    }
+
+    PUSH_OBJECT(*superFun);
+}
+END_CASE(JSOP_SUPERFUN)
+
+CASE(JSOP_SETTHIS)
+{
+    MOZ_ASSERT(REGS.fp()->isNonEvalFunctionFrame());
+    MOZ_ASSERT(REGS.fp()->script()->isDerivedClassConstructor());
+    MOZ_ASSERT(REGS.fp()->callee().isClassConstructor());
+
+    if (!REGS.fp()->thisValue().isMagic(JS_UNINITIALIZED_LEXICAL)) {
+        JS_ReportErrorNumber(cx, GetErrorMessage, nullptr, JSMSG_REINIT_THIS);
+        goto error;
+    }
+
+    ReservedRooted<JSObject*> thisv(&rootObject0, &REGS.sp[-1].toObject());
+    REGS.fp()->setDerivedConstructorThis(thisv);
+}
+END_CASE(JSOP_SETTHIS)
 
 DEFAULT()
 {
@@ -4714,7 +4767,7 @@ js::SpreadCallOperation(JSContext* cx, HandleScript script, jsbytecode* pc, Hand
     RootedArrayObject aobj(cx, &arr.toObject().as<ArrayObject>());
     uint32_t length = aobj->length();
     JSOp op = JSOp(*pc);
-    bool constructing = op == JSOP_SPREADNEW;
+    bool constructing = op == JSOP_SPREADNEW || op == JSOP_SPREADSUPERCALL;
 
     if (length > ARGS_LENGTH_MAX) {
         JS_ReportErrorNumber(cx, GetErrorMessage, nullptr,
@@ -4732,7 +4785,7 @@ js::SpreadCallOperation(JSContext* cx, HandleScript script, jsbytecode* pc, Hand
         MOZ_ASSERT(!aobj->getDenseElement(i).isMagic());
 #endif
 
-    if (op == JSOP_SPREADNEW) {
+    if (constructing) {
         if (!StackCheckIsConstructorCalleeNewTarget(cx, callee, newTarget))
             return false;
 
