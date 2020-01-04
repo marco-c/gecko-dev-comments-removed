@@ -182,6 +182,7 @@
 #include "nsIContentSecurityPolicy.h"
 #include "mozilla/dom/nsCSPContext.h"
 #include "mozilla/dom/nsCSPService.h"
+#include "mozilla/dom/nsCSPUtils.h"
 #include "nsHTMLStyleSheet.h"
 #include "nsHTMLCSSStyleSheet.h"
 #include "SVGAttrAnimationRuleProcessor.h"
@@ -2646,29 +2647,6 @@ nsDocument::SendToConsole(nsCOMArray<nsISecurityConsoleMessage>& aMessages)
   }
 }
 
-static nsresult
-AppendCSPFromHeader(nsIContentSecurityPolicy* csp,
-                    const nsAString& aHeaderValue,
-                    bool aReportOnly)
-{
-  
-  
-  
-  nsresult rv = NS_OK;
-  nsCharSeparatedTokenizer tokenizer(aHeaderValue, ',');
-  while (tokenizer.hasMoreTokens()) {
-      const nsSubstring& policy = tokenizer.nextToken();
-      rv = csp->AppendPolicy(policy, aReportOnly, false);
-      NS_ENSURE_SUCCESS(rv, rv);
-      {
-        MOZ_LOG(gCspPRLog, LogLevel::Debug,
-                ("CSP refined with policy: \"%s\"",
-                NS_ConvertUTF16toUTF8(policy).get()));
-      }
-  }
-  return NS_OK;
-}
-
 bool
 nsDocument::IsLoopDocument(nsIChannel *aChannel)
 {
@@ -2931,13 +2909,13 @@ nsDocument::InitCSP(nsIChannel* aChannel)
 
   
   if (!cspHeaderValue.IsEmpty()) {
-    rv = AppendCSPFromHeader(csp, cspHeaderValue, false);
+    rv = CSP_AppendCSPFromHeader(csp, cspHeaderValue, false);
     NS_ENSURE_SUCCESS(rv, rv);
   }
 
   
   if (!cspROHeaderValue.IsEmpty()) {
-    rv = AppendCSPFromHeader(csp, cspROHeaderValue, true);
+    rv = CSP_AppendCSPFromHeader(csp, cspROHeaderValue, true);
     NS_ENSURE_SUCCESS(rv, rv);
   }
 
