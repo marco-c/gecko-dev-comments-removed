@@ -91,11 +91,6 @@ const MAX_TRIM_LENGTH = 100;
 
 
 
-Components.utils.import('resource://gre/modules/Services.jsm');
-
-
-
-
 var gAccRetrieval = Components.classes["@mozilla.org/accessibleRetrieval;1"].
   getService(nsIAccessibleRetrieval);
 
@@ -745,31 +740,6 @@ function getTextFromClipboard()
 
 
 
-
-
-
-
-function getAccessibleDOMNodeID(accessible) {
-  if (accessible instanceof nsIAccessibleDocument) {
-    
-    try {
-      return accessible.DOMNode.body.id;
-    } catch (e) {  }
-  }
-  try {
-    return accessible.DOMNode.id;
-  } catch (e) {  }
-  try {
-    
-    
-    
-    return accessible.id;
-  } catch (e) {  }
-}
-
-
-
-
 function prettyName(aIdentifier)
 {
   if (aIdentifier instanceof Array) {
@@ -785,17 +755,10 @@ function prettyName(aIdentifier)
 
   if (aIdentifier instanceof nsIAccessible) {
     var acc = getAccessible(aIdentifier);
-    var domID = getAccessibleDOMNodeID(acc);
     var msg = "[";
     try {
-      if (Services.appinfo.browserTabsRemoteAutostart) {
-        if (domID) {
-          msg += `DOM node id: ${domID}, `;
-        }
-      } else {
-        msg += `${getNodePrettyName(acc.DOMNode)}, `;
-      }
-      msg += "role: " + roleToString(acc.role);
+      msg += getNodePrettyName(acc.DOMNode);
+      msg += ", role: " + roleToString(acc.role);
       if (acc.name)
         msg += ", name: '" + shortenString(acc.name) + "'";
     } catch (e) {
