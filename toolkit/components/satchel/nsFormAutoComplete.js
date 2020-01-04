@@ -220,17 +220,20 @@ FormAutoComplete.prototype = {
             let datalistResults, datalistLabels;
             if (allResults) {
                 
-                datalistLabels = allResults.slice(wrappedResult.entries.length);
-                let filtered = [];
+                
+                
+                
+                let oldLabels = allResults.slice(wrappedResult.entries.length);
+                let oldValues = wrappedResult._values.slice(wrappedResult.entries.length);
+
+                datalistLabels = [];
                 datalistResults = [];
-                for (let i = 0; i < datalistLabels.length; ++i) {
-                    if (datalistLabels[i].toLowerCase().includes(searchString)) {
-                        filtered.push(datalistLabels[i]);
-                        datalistResults.push(wrappedResult._values[i]);
+                for (let i = 0; i < oldLabels.length; ++i) {
+                    if (oldLabels[i].toLowerCase().includes(searchString)) {
+                        datalistLabels.push(oldLabels[i]);
+                        datalistResults.push(oldValues[i]);
                     }
                 }
-
-                datalistLabels = filtered;
             }
 
             let searchTokens = searchString.split(/\s+/);
@@ -260,6 +263,9 @@ FormAutoComplete.prototype = {
                 let comments = new Array(filteredEntries.length + datalistResults.length).fill("");
                 comments[filteredEntries.length] = "separator";
 
+                
+                
+                
                 datalistLabels = new Array(filteredEntries.length).fill("").concat(datalistLabels);
                 wrappedResult._values = filteredEntries.concat(datalistResults);
                 wrappedResult._labels = datalistLabels;
@@ -301,19 +307,18 @@ FormAutoComplete.prototype = {
     mergeResults(historyResult, datalistResult) {
         let values = datalistResult.wrappedJSObject._values;
         let labels = datalistResult.wrappedJSObject._labels;
-        let comments = [];
+        let comments = new Array(values.length).fill("");
 
         
         
         let entries = historyResult.wrappedJSObject.entries;
-        let historyResults = entries.map(function(entry) { return entry.text });
+        let historyResults = entries.map(entry => entry.text);
         let historyComments = new Array(entries.length).fill("");
 
         
         
         if (values.length) {
             comments[0] = "separator";
-            comments.fill(1, "");
         }
 
         
