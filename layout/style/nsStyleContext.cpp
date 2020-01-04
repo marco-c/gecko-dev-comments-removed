@@ -442,13 +442,28 @@ const void* nsStyleContext::StyleData(nsStyleStructID aSID)
   if (cachedData)
     return cachedData; 
   
-  const void* newData = mSource.IsGeckoRuleNode()
-                          ? mSource.AsGeckoRuleNode()->GetStyleData(aSID, this, true)
-                          : StyleStructFromServoComputedValues(aSID);
-  if (!nsCachedStyleData::IsReset(aSID)) {
+  const void* newData;
+  if (mSource.IsGeckoRuleNode()) {
+    newData = mSource.AsGeckoRuleNode()->GetStyleData(aSID, this, true);
+    if (!nsCachedStyleData::IsReset(aSID)) {
+      
+      
+      mCachedInheritedData.mStyleStructs[aSID] = const_cast<void*>(newData);
+    }
+  } else {
+    
+    newData = StyleStructFromServoComputedValues(aSID);
+    AddStyleBit(nsCachedStyleData::GetBitForSID(aSID));
+
     
     
-    mCachedInheritedData.mStyleStructs[aSID] = const_cast<void*>(newData);
+    
+    
+    
+    
+    
+    
+    SetStyle(aSID, const_cast<void*>(newData));
   }
   return newData;
 }
