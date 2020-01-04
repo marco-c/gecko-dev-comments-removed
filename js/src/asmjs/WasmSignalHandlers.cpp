@@ -734,7 +734,10 @@ EmulateHeapAccess(EMULATOR_CONTEXT* context, uint8_t* pc, uint8_t* faultingAddre
                   const MemoryAccess* memoryAccess, const Instance& instance)
 {
     
-    return instance.codeSegment().outOfBoundsCode();
+    
+    
+    
+    return instance.codeSegment().unalignedAccessCode();
 }
 
 #endif 
@@ -1097,16 +1100,28 @@ MachExceptionHandler::install(JSRuntime* rt)
 
 #else  
 
+enum class Signal {
+    SegFault,
+    BusError
+};
 
 
+
+template<Signal signal>
 static bool
 HandleFault(int signum, siginfo_t* info, void* ctx)
 {
     
     
     
-    MOZ_RELEASE_ASSERT(signum == SIGSEGV);
-    if (info->si_code != SEGV_ACCERR)
+    if (signal == Signal::SegFault)
+        MOZ_RELEASE_ASSERT(signum == SIGSEGV);
+    else
+        MOZ_RELEASE_ASSERT(signum == SIGBUS);
+
+    if (signal == Signal::SegFault && info->si_code != SEGV_ACCERR)
+        return false;
+    if (signal == Signal::BusError && info->si_code != BUS_ADRALN)
         return false;
 
     CONTEXT* context = (CONTEXT*)ctx;
@@ -1135,7 +1150,7 @@ HandleFault(int signum, siginfo_t* info, void* ctx)
         return false;
 
     const MemoryAccess* memoryAccess = instance.lookupMemoryAccess(pc);
-    if (!memoryAccess)
+    if (signal == Signal::SegFault && !memoryAccess)
         return false;
 
     *ppc = EmulateHeapAccess(context, pc, faultingAddress, memoryAccess, instance);
@@ -1144,34 +1159,39 @@ HandleFault(int signum, siginfo_t* info, void* ctx)
 }
 
 static struct sigaction sPrevSEGVHandler;
+static struct sigaction sPrevSIGBUSHandler;
 
+template<Signal signal>
 static void
 AsmJSFaultHandler(int signum, siginfo_t* info, void* context)
 {
-    if (HandleFault(signum, info, context))
+    if (HandleFault<signal>(signum, info, context))
         return;
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    if (sPrevSEGVHandler.sa_flags & SA_SIGINFO)
-        sPrevSEGVHandler.sa_sigaction(signum, info, context);
-    else if (sPrevSEGVHandler.sa_handler == SIG_DFL || sPrevSEGVHandler.sa_handler == SIG_IGN)
-        sigaction(signum, &sPrevSEGVHandler, nullptr);
-    else
-        sPrevSEGVHandler.sa_handler(signum);
-}
-#endif
+    struct sigaction* previousSignal = signal == Signal::SegFault
+                                       ? &sPrevSEGVHandler
+                                       : &sPrevSIGBUSHandler;
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (previousSignal->sa_flags & SA_SIGINFO)
+        previousSignal->sa_sigaction(signum, info, context);
+    else if (previousSignal->sa_handler == SIG_DFL || previousSignal->sa_handler == SIG_IGN)
+        sigaction(signum, previousSignal, nullptr);
+    else
+        previousSignal->sa_handler(signum);
+}
+# endif 
 #endif 
 
 static void
@@ -1303,12 +1323,22 @@ wasm::EnsureSignalHandlersInstalled(JSRuntime* rt)
     
     
     
+
+#  if defined(ASMJS_MAY_USE_SIGNAL_HANDLERS_FOR_OOB)
     struct sigaction faultHandler;
     faultHandler.sa_flags = SA_SIGINFO | SA_NODEFER;
-    faultHandler.sa_sigaction = &AsmJSFaultHandler;
+    faultHandler.sa_sigaction = &AsmJSFaultHandler<Signal::SegFault>;
     sigemptyset(&faultHandler.sa_mask);
     if (sigaction(SIGSEGV, &faultHandler, &sPrevSEGVHandler))
         MOZ_CRASH("unable to install segv handler");
+#  elif defined(ASMJS_MAY_USE_SIGNAL_HANDLERS_FOR_UNALIGNED)
+    struct sigaction busHandler;
+    busHandler.sa_flags = SA_SIGINFO | SA_NODEFER;
+    busHandler.sa_sigaction = &AsmJSFaultHandler<Signal::BusError>;
+    sigemptyset(&busHandler.sa_mask);
+    if (sigaction(SIGBUS, &busHandler, &sPrevSIGBUSHandler))
+        MOZ_CRASH("unable to install sigbus handler");
+#  endif
 # endif
 #endif 
 
