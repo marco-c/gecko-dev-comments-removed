@@ -761,14 +761,18 @@ OmxDataDecoder::Event(OMX_EVENTTYPE aEvent, OMX_U32 aData1, OMX_U32 aData2)
     case OMX_EventPortSettingsChanged:
     {
       
-      
-      
-      
-      
-      
-      
-      MOZ_ASSERT(mPortSettingsChanged == -1);
-      mPortSettingsChanged = aData1;
+      if (aData2 == 0 ||
+          aData2 == OMX_IndexParamPortDefinition) {
+        
+        
+        
+        
+        
+        
+        
+        MOZ_ASSERT(mPortSettingsChanged == -1);
+        mPortSettingsChanged = aData1;
+      }
       LOG("Got OMX_EventPortSettingsChanged event");
       break;
     }
