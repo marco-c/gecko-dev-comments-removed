@@ -2809,7 +2809,7 @@ private:
 
     
     
-    JSContext* Pop();
+    void Pop();
     void Push(JSContext* cx);
 
     AutoTArray<JSContext*, 16> mStack;
