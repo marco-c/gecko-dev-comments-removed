@@ -396,9 +396,10 @@ struct nsStyleBackground {
 
   nsChangeHint CalcDifference(const nsStyleBackground& aOther) const;
   static nsChangeHint MaxDifference() {
-    return NS_CombineHint(nsChangeHint_UpdateEffects,
-                          NS_CombineHint(nsChangeHint_RepaintFrame,
-                                         nsChangeHint_NeutralChange));
+    return nsChangeHint_UpdateEffects |
+           nsChangeHint_RepaintFrame |
+           nsChangeHint_SchedulePaint |
+           nsChangeHint_NeutralChange;
   }
   static nsChangeHint DifferenceAlwaysHandledForDescendants() {
     
@@ -551,6 +552,9 @@ struct nsStyleBackground {
     
     
     bool RenderingMightDependOnPositioningAreaSizeChange() const;
+
+    
+    nsChangeHint CalcDifference(const Layer& aOther) const;
 
     
     
