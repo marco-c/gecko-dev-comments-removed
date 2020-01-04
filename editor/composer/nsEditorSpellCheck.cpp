@@ -596,19 +596,13 @@ nsEditorSpellCheck::SetCurrentDictionary(const nsAString& aDictionary)
     
     mDictionaryFetcherGroup++;
 
-    nsDefaultStringComparator comparator;
-    nsAutoString langCode;
-    int32_t dashIdx = aDictionary.FindChar('-');
-    if (dashIdx != -1) {
-      langCode.Assign(Substring(aDictionary, 0, dashIdx));
-    } else {
-      langCode.Assign(aDictionary);
-    }
     uint32_t flags = 0;
     mEditor->GetFlags(&flags);
     if (!(flags & nsIPlaintextEditor::eEditorMailMask)) {
-      if (mPreferredLang.IsEmpty() ||
-          !nsStyleUtil::DashMatchCompare(mPreferredLang, langCode, comparator)) {
+      if (mPreferredLang.IsEmpty() || !mPreferredLang.Equals(aDictionary)) {
+        
+        
+        
         
         
         StoreCurrentDictionary(mEditor, aDictionary);
