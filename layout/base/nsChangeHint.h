@@ -209,6 +209,12 @@ enum nsChangeHint {
   
   
   
+  
+
+  
+
+
+  nsChangeHint_AllHints = (1 << 27) - 1,
 };
 
 
