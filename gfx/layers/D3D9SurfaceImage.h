@@ -47,7 +47,7 @@ protected:
 
 class D3D9SurfaceImage : public Image {
 public:
-  explicit D3D9SurfaceImage(bool aIsFirstFrame);
+  explicit D3D9SurfaceImage();
   virtual ~D3D9SurfaceImage();
 
   HRESULT AllocateAndCopy(D3D9RecycleAllocator* aAllocator,
@@ -63,19 +63,15 @@ public:
 
   virtual TextureClient* GetTextureClient(CompositableClient* aClient) override;
 
-  virtual bool IsValid() override;
+  virtual bool IsValid() override { return mValid; }
+
+  void Invalidate() { mValid = false; }
 
 private:
 
-  
-  
-  void EnsureSynchronized();
-
   gfx::IntSize mSize;
-  RefPtr<IDirect3DQuery9> mQuery;
   RefPtr<TextureClient> mTextureClient;
   bool mValid;
-  bool mIsFirstFrame;
 };
 
 } 
