@@ -346,13 +346,14 @@ DecodedStream::OnEnded(TrackType aType)
   AssertOwnerThread();
   MOZ_ASSERT(mStartTime.isSome());
 
-  if (aType == TrackInfo::kAudioTrack) {
+  if (aType == TrackInfo::kAudioTrack && mInfo.HasAudio()) {
     
     
     
     return mFinishPromise;
+  } else if (aType == TrackInfo::kVideoTrack && mInfo.HasVideo()) {
+    return mFinishPromise;
   }
-  
   return nullptr;
 }
 
