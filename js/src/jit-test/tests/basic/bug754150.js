@@ -1,4 +1,13 @@
 
+
+
+
+if (typeof inJit == "function" && typeof inJit() == "string") {
+  assertEq(inJit(), "Baseline is disabled.");
+  
+  toPrinted(null);
+}
+
 function printStatus (msg) {}
 function toPrinted(value) {
   value = value.replace(/\\n/g, 'NL')
