@@ -558,6 +558,9 @@ ParseContext<ParseHandler>::generateBindings(ExclusiveContext* cx, TokenStream& 
     if (UINT32_MAX - args_.length() <= vars_.length() + bodyLevelLexicals_.length())
         return ts.reportError(JSMSG_TOO_MANY_LOCALS);
 
+    if (blockScopeDepth >= Bindings::BLOCK_SCOPED_LIMIT)
+        return ts.reportError(JSMSG_TOO_MANY_LOCALS);
+
     
     
     
