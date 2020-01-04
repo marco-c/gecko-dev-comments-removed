@@ -25,7 +25,7 @@ function* spawnTest() {
     
     
     let newData = merge({}, data, { startTime: void 0 });
-    request.call(target.client, newData, res);
+    return request.call(target.client, newData, res);
   };
 
   
