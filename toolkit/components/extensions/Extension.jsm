@@ -573,6 +573,9 @@ GlobalManager = {
     Management.generateAPIs(context, apis);
     SchemaAPIManager.generateAPIs(context, context.extension.apis, apis);
 
+    
+    context._unwrappedAPIs = apis;
+
     let schemaWrapper = {
       isChromeCompat,
 

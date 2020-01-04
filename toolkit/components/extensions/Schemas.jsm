@@ -1889,6 +1889,28 @@ this.Schemas = {
 
 
 
+
+
+
+
+
+
+  checkPermissions(namespace, wrapperFuncs) {
+    let ns = this.namespaces.get(namespace);
+    if (ns && ns.permissions) {
+      return ns.permissions.some(perm => wrapperFuncs.hasPermission(perm));
+    }
+    return true;
+  },
+
+  
+
+
+
+
+
+
+
   inject(dest, wrapperFuncs) {
     let context = new InjectionContext(wrapperFuncs);
 
