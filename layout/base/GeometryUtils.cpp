@@ -140,7 +140,7 @@ GetBoxRectForFrame(nsIFrame** aFrame, CSSBoxType aType)
 {
   nsRect r;
   nsIFrame* f = nsSVGUtils::GetOuterSVGFrameAndCoveredRegion(*aFrame, &r);
-  if (f) {
+  if (f && f != *aFrame) {
     
     *aFrame = f;
     return r;
