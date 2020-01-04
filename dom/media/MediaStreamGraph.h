@@ -1253,6 +1253,10 @@ public:
 
   AudioNodeExternalInputStream*
   CreateAudioNodeExternalInputStream(AudioNodeEngine* aEngine);
+  
+
+
+  void AddStream(MediaStream* aStream);
 
   
 
