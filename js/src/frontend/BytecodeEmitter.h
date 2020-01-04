@@ -121,7 +121,12 @@ enum VarEmitOption {
     
     
     
-    PushInitialValues
+    PushInitialValues,
+
+    
+    
+    
+    AnnexB,
 };
 
 struct BytecodeEmitter
