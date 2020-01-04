@@ -894,13 +894,6 @@ public:
 
 
 
-  static bool IsRectVisibleInScrollFrames(nsIFrame* aFrame,
-                                          const nsRect& aRect);
-
-  
-
-
-
   static nsRect ClampRectToScrollFrames(nsIFrame* aFrame,
                                         const nsRect& aRect);
 
