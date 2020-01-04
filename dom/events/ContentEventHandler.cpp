@@ -1553,7 +1553,11 @@ ContentEventHandler::GetLastFrameInRangeForTextRect(nsRange* aRange)
   
   nsINode* nextNodeOfRangeEnd = nullptr;
   if (endNode->IsNodeOfType(nsINode::eTEXT)) {
-    if (!endOffset) {
+    
+    
+    
+    
+    if (!endOffset && aRange->GetStartParent() != endNode) {
       nextNodeOfRangeEnd = endNode;
     }
   } else if (endOffset < endNode->GetChildCount()) {
