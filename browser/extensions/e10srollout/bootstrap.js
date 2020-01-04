@@ -16,7 +16,7 @@ const TEST_THRESHOLD = {
 };
 
 const ADDON_ROLLOUT_POLICY = {
-  
+  "beta"    : "2a", 
 };
 
 const PREF_COHORT_SAMPLE       = "e10s.rollout.cohortSample";
