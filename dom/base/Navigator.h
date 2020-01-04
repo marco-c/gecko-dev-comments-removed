@@ -152,6 +152,10 @@ public:
 
   
   
+  void GetUserAgent(nsString& aUserAgent, ErrorResult& )
+  {
+    GetUserAgent(aUserAgent);
+  }
   bool OnLine();
   void RegisterProtocolHandler(const nsAString& aScheme, const nsAString& aURL,
                                const nsAString& aTitle, ErrorResult& aRv);
