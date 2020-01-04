@@ -50,6 +50,9 @@ public:
 protected:
   virtual ~nsFontFaceLoader();
 
+  
+  uint8_t GetFontDisplay();
+
 private:
   RefPtr<gfxUserFontEntry>  mUserFontEntry;
   nsCOMPtr<nsIURI>        mFontURI;

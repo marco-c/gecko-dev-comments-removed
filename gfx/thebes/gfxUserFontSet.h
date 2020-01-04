@@ -214,7 +214,8 @@ public:
                               uint8_t aStyle,
                               const nsTArray<gfxFontFeature>& aFeatureSettings,
                               uint32_t aLanguageOverride,
-                              gfxSparseBitSet* aUnicodeRanges) = 0;
+                              gfxSparseBitSet* aUnicodeRanges,
+                              uint8_t aFontDisplay) = 0;
 
     
     
@@ -226,7 +227,8 @@ public:
                                uint8_t aStyle,
                                const nsTArray<gfxFontFeature>& aFeatureSettings,
                                uint32_t aLanguageOverride,
-                               gfxSparseBitSet* aUnicodeRanges);
+                               gfxSparseBitSet* aUnicodeRanges,
+                               uint8_t aFontDisplay);
 
     
     void AddUserFontEntry(const nsAString& aFamilyName,
@@ -508,7 +510,8 @@ protected:
                                    uint8_t aStyle,
                                    const nsTArray<gfxFontFeature>& aFeatureSettings,
                                    uint32_t aLanguageOverride,
-                                   gfxSparseBitSet* aUnicodeRanges);
+                                   gfxSparseBitSet* aUnicodeRanges,
+                                   uint8_t aFontDisplay);
 
     
     
@@ -551,7 +554,8 @@ public:
                      uint8_t aStyle,
                      const nsTArray<gfxFontFeature>& aFeatureSettings,
                      uint32_t aLanguageOverride,
-                     gfxSparseBitSet* aUnicodeRanges);
+                     gfxSparseBitSet* aUnicodeRanges,
+                     uint8_t aFontDisplay);
 
     virtual ~gfxUserFontEntry();
 
@@ -562,7 +566,8 @@ public:
                  uint8_t aStyle,
                  const nsTArray<gfxFontFeature>& aFeatureSettings,
                  uint32_t aLanguageOverride,
-                 gfxSparseBitSet* aUnicodeRanges);
+                 gfxSparseBitSet* aUnicodeRanges,
+                 uint8_t aFontDisplay);
 
     virtual gfxFont* CreateFontInstance(const gfxFontStyle* aFontStyle,
                                         bool aNeedsBold);
@@ -590,6 +595,8 @@ public:
     gfxCharacterMap* GetUnicodeRangeMap() const {
         return mCharacterMap.get();
     }
+
+    uint8_t GetFontDisplay() const { return mFontDisplay; }
 
     
     
@@ -661,11 +668,13 @@ protected:
                              
         LOADING_SLOWLY,      
                              
+        LOADING_TIMED_OUT,   
         LOADING_FAILED       
     };
     FontDataLoadingState     mFontDataLoadingState;
 
     bool                     mUnsupportedFormat;
+    uint8_t                  mFontDisplay; 
 
     RefPtr<gfxFontEntry>   mPlatformFontEntry;
     nsTArray<gfxFontFaceSrc> mSrcList;

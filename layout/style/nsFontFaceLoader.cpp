@@ -31,6 +31,18 @@ using namespace mozilla::dom;
 #define LOG_ENABLED() MOZ_LOG_TEST(gfxUserFontSet::GetUserFontsLog(), \
                                   LogLevel::Debug)
 
+static uint32_t
+GetFallbackDelay()
+{
+  return Preferences::GetInt("gfx.downloadable_fonts.fallback_delay", 3000);
+}
+
+static uint32_t
+GetShortFallbackDelay()
+{
+  return Preferences::GetInt("gfx.downloadable_fonts.fallback_delay_short", 100);
+}
+
 nsFontFaceLoader::nsFontFaceLoader(gfxUserFontEntry* aUserFontEntry,
                                    nsIURI* aFontURI,
                                    FontFaceSet* aFontFaceSet,
@@ -60,8 +72,15 @@ nsFontFaceLoader::~nsFontFaceLoader()
 void
 nsFontFaceLoader::StartedLoading(nsIStreamLoader* aStreamLoader)
 {
-  int32_t loadTimeout =
-    Preferences::GetInt("gfx.downloadable_fonts.fallback_delay", 3000);
+  int32_t loadTimeout;
+  uint8_t fontDisplay = GetFontDisplay();
+  if (fontDisplay == NS_FONT_DISPLAY_AUTO ||
+      fontDisplay == NS_FONT_DISPLAY_BLOCK) {
+    loadTimeout = GetFallbackDelay();
+  } else {
+    loadTimeout = GetShortFallbackDelay();
+  }
+
   if (loadTimeout > 0) {
     mLoadTimer = do_CreateInstance("@mozilla.org/timer;1");
     if (mLoadTimer) {
@@ -87,39 +106,72 @@ nsFontFaceLoader::LoadTimerCallback(nsITimer* aTimer, void* aClosure)
   }
 
   gfxUserFontEntry* ufe = loader->mUserFontEntry.get();
-  bool updateUserFontSet = true;
+  uint8_t fontDisplay = loader->GetFontDisplay();
 
   
   
-  if (ufe->mFontDataLoadingState == gfxUserFontEntry::LOADING_STARTED) {
-    int64_t contentLength;
-    uint32_t numBytesRead;
-    if (NS_SUCCEEDED(loader->mChannel->GetContentLength(&contentLength)) &&
-        contentLength > 0 &&
-        contentLength < UINT32_MAX &&
-        NS_SUCCEEDED(loader->mStreamLoader->GetNumBytesRead(&numBytesRead)) &&
-        numBytesRead > 3 * (uint32_t(contentLength) >> 2))
-    {
+  
+  
+  
+
+  bool updateUserFontSet = true;
+  switch (fontDisplay) {
+    case NS_FONT_DISPLAY_AUTO:
+    case NS_FONT_DISPLAY_BLOCK:
       
       
-      
-      ufe->mFontDataLoadingState = gfxUserFontEntry::LOADING_ALMOST_DONE;
-      uint32_t delay;
-      loader->mLoadTimer->GetDelay(&delay);
-      loader->mLoadTimer->InitWithFuncCallback(LoadTimerCallback,
-                                               static_cast<void*>(loader),
-                                               delay >> 1,
-                                               nsITimer::TYPE_ONE_SHOT);
-      updateUserFontSet = false;
-      LOG(("userfonts (%p) 75%% done, resetting timer\n", loader));
+      if (ufe->mFontDataLoadingState == gfxUserFontEntry::LOADING_STARTED) {
+        int64_t contentLength;
+        uint32_t numBytesRead;
+        if (NS_SUCCEEDED(loader->mChannel->GetContentLength(&contentLength)) &&
+            contentLength > 0 &&
+            contentLength < UINT32_MAX &&
+            NS_SUCCEEDED(loader->mStreamLoader->GetNumBytesRead(&numBytesRead)) &&
+            numBytesRead > 3 * (uint32_t(contentLength) >> 2))
+        {
+          
+          
+          
+          ufe->mFontDataLoadingState = gfxUserFontEntry::LOADING_ALMOST_DONE;
+          uint32_t delay;
+          loader->mLoadTimer->GetDelay(&delay);
+          loader->mLoadTimer->InitWithFuncCallback(LoadTimerCallback,
+                                                   static_cast<void*>(loader),
+                                                   delay >> 1,
+                                                   nsITimer::TYPE_ONE_SHOT);
+          updateUserFontSet = false;
+          LOG(("userfonts (%p) 75%% done, resetting timer\n", loader));
+        }
+      }
+      if (updateUserFontSet) {
+        ufe->mFontDataLoadingState = gfxUserFontEntry::LOADING_SLOWLY;
+      }
+      break;
+    case NS_FONT_DISPLAY_SWAP:
+      ufe->mFontDataLoadingState = gfxUserFontEntry::LOADING_SLOWLY;
+      break;
+    case NS_FONT_DISPLAY_FALLBACK: {
+      if (ufe->mFontDataLoadingState == gfxUserFontEntry::LOADING_STARTED) {
+        ufe->mFontDataLoadingState = gfxUserFontEntry::LOADING_SLOWLY;
+      } else {
+        ufe->mFontDataLoadingState = gfxUserFontEntry::LOADING_TIMED_OUT;
+        updateUserFontSet = false;
+      }
+      break;
     }
+    case NS_FONT_DISPLAY_OPTIONAL:
+      ufe->mFontDataLoadingState = gfxUserFontEntry::LOADING_TIMED_OUT;
+      break;
+
+    default:
+      NS_NOTREACHED("strange font-display value");
+      break;
   }
 
   
   
   
   if (updateUserFontSet) {
-    ufe->mFontDataLoadingState = gfxUserFontEntry::LOADING_SLOWLY;
     nsTArray<gfxUserFontSet*> fontSets;
     ufe->GetUserFontSets(fontSets);
     for (gfxUserFontSet* fontSet : fontSets) {
@@ -127,8 +179,8 @@ nsFontFaceLoader::LoadTimerCallback(nsITimer* aTimer, void* aClosure)
       if (ctx) {
         fontSet->IncrementGeneration();
         ctx->UserFontSetUpdated(ufe);
-        LOG(("userfonts (%p) timeout reflow for pres context %p\n",
-             loader, ctx));
+        LOG(("userfonts (%p) timeout reflow for pres context %p display %d\n",
+             loader, ctx, fontDisplay));
       }
     }
   }
@@ -154,6 +206,16 @@ nsFontFaceLoader::OnStreamComplete(nsIStreamLoader* aLoader,
   TimeDuration downloadTime = doneTime - mStartTime;
   uint32_t downloadTimeMS = uint32_t(downloadTime.ToMilliseconds());
   Telemetry::Accumulate(Telemetry::WEBFONT_DOWNLOAD_TIME, downloadTimeMS);
+
+  if (GetFontDisplay() == NS_FONT_DISPLAY_FALLBACK) {
+    uint32_t loadTimeout = GetFallbackDelay();
+    if (downloadTimeMS > loadTimeout &&
+        (mUserFontEntry->mFontDataLoadingState ==
+         gfxUserFontEntry::LOADING_SLOWLY)) {
+      mUserFontEntry->mFontDataLoadingState =
+        gfxUserFontEntry::LOADING_TIMED_OUT;
+    }
+  }
 
   if (LOG_ENABLED()) {
     nsAutoCString fontURI;
@@ -270,4 +332,14 @@ nsFontFaceLoader::CheckLoadAllowed(nsIPrincipal* aSourcePrincipal,
   }
 
   return NS_OK;
+}
+
+uint8_t
+nsFontFaceLoader::GetFontDisplay()
+{
+  uint8_t fontDisplay = NS_FONT_DISPLAY_AUTO;
+  if (Preferences::GetBool("layout.css.font-display.enabled")) {
+    fontDisplay = mUserFontEntry->GetFontDisplay();
+  }
+  return fontDisplay;
 }
