@@ -87,11 +87,33 @@ InputBlockState::IsTargetConfirmed() const
   return mTargetConfirmed;
 }
 
+bool
+InputBlockState::IsAncestorOf(AsyncPanZoomController* aA, AsyncPanZoomController* aB)
+{
+  if (aA == aB) {
+    return true;
+  }
+
+  bool seenA = false;
+  for (size_t i = 0; i < mOverscrollHandoffChain->Length(); ++i) {
+    AsyncPanZoomController* apzc = mOverscrollHandoffChain->GetApzcAtIndex(i);
+    if (apzc == aB) {
+      return seenA;
+    }
+    if (apzc == aA) {
+      seenA = true;
+    }
+  }
+  return false;
+}
+
+
 void
 InputBlockState::SetScrolledApzc(AsyncPanZoomController* aApzc)
 {
   
-  MOZ_ASSERT(!mScrolledApzc || mScrolledApzc == aApzc);
+  
+  MOZ_ASSERT(!mScrolledApzc || IsAncestorOf(aApzc, mScrolledApzc));
 
   mScrolledApzc = aApzc;
 }

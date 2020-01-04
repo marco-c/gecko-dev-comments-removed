@@ -57,6 +57,11 @@ protected:
   virtual void UpdateTargetApzc(const RefPtr<AsyncPanZoomController>& aTargetApzc);
 
 private:
+  
+  
+  bool IsAncestorOf(AsyncPanZoomController* aA, AsyncPanZoomController* aB);
+
+private:
   RefPtr<AsyncPanZoomController> mTargetApzc;
   bool mTargetConfirmed;
   const uint64_t mBlockId;
