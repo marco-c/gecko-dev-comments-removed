@@ -782,7 +782,7 @@ BookmarksStore.prototype = {
       return special;
 
     return Async.promiseSpinningly(
-      PlacesSyncUtils.bookmarks.ensureGuidForId(id));
+      PlacesUtils.promiseItemGuid(id));
   },
 
   

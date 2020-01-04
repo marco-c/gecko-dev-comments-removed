@@ -52,31 +52,12 @@ const BookmarkSyncUtils = PlacesSyncUtils.bookmarks = Object.freeze({
   
 
 
-
   fetchChildGuids: Task.async(function* (parentGuid) {
     PlacesUtils.SYNC_BOOKMARK_VALIDATORS.guid(parentGuid);
 
     let db = yield PlacesUtils.promiseDBConnection();
     let children = yield fetchAllChildren(db, parentGuid);
-    let childGuids = [];
-    let guidsToSet = new Map();
-    for (let child of children) {
-      let guid = child.guid;
-      if (!PlacesUtils.isValidGuid(guid)) {
-        
-        
-        
-        guid = yield generateGuid(db);
-        BookmarkSyncLog.warn(`fetchChildGuids: Assigning ${
-          guid} to item without GUID ${child.id}`);
-        guidsToSet.set(child.id, guid);
-      }
-      childGuids.push(guid);
-    }
-    if (guidsToSet.size > 0) {
-      yield setGuids(guidsToSet);
-    }
-    return childGuids;
+    return children.map(child => child.guid);
   }),
 
   
@@ -159,54 +140,22 @@ const BookmarkSyncUtils = PlacesSyncUtils.bookmarks = Object.freeze({
 
 
 
-
-
-
-
-
-
-  ensureGuidForId: Task.async(function* (itemId) {
-    let guid;
-    try {
-      
-      
-      guid = yield PlacesUtils.promiseItemGuid(itemId);
-    } catch (ex) {
-      BookmarkSyncLog.warn(`ensureGuidForId: Error fetching GUID for ${
-        itemId}`, ex);
-      if (!isInvalidCachedGuidError(ex)) {
-        throw ex;
-      }
-      
-      guid = yield PlacesUtils.withConnectionWrapper(
-        "BookmarkSyncUtils: ensureGuidForId", Task.async(function* (db) {
-          let guid = yield generateGuid(db);
-          BookmarkSyncLog.warn(`ensureGuidForId: Assigning ${
-            guid} to item without GUID ${itemId}`);
-          return setGuid(db, itemId, guid);
-        })
-      );
-
-    }
-    return guid;
-  }),
-
-  
-
-
-
-
-
-
   changeGuid: Task.async(function* (oldGuid, newGuid) {
     PlacesUtils.SYNC_BOOKMARK_VALIDATORS.guid(oldGuid);
+    PlacesUtils.SYNC_BOOKMARK_VALIDATORS.guid(newGuid);
 
     let itemId = yield PlacesUtils.promiseItemId(oldGuid);
     if (PlacesUtils.isRootItem(itemId)) {
       throw new Error(`Cannot change GUID of Places root ${oldGuid}`);
     }
     return PlacesUtils.withConnectionWrapper("BookmarkSyncUtils: changeGuid",
-      db => setGuid(db, itemId, newGuid));
+      Task.async(function* (db) {
+        yield db.executeCached(`UPDATE moz_bookmarks SET guid = :newGuid
+          WHERE id = :itemId`, { newGuid, itemId });
+        PlacesUtils.invalidateCachedGuidFor(itemId);
+        return newGuid;
+      })
+    );
   }),
 
   
@@ -348,11 +297,6 @@ function notify(observers, notification, args) {
       observer[notification](...args);
     } catch (ex) {}
   }
-}
-
-function isInvalidCachedGuidError(error) {
-  return error && error.message ==
-    "Trying to update the GUIDs cache with an invalid GUID";
 }
 
 
@@ -784,23 +728,6 @@ var updateBookmarkMetadata = Task.async(function* (itemId, oldItem, newItem, upd
 
   return newItem;
 });
-
-function generateGuid(db) {
-  return db.executeCached("SELECT GENERATE_GUID() AS guid").then(rows =>
-    rows[0].getResultByName("guid"));
-}
-
-function setGuids(guids) {
-  return PlacesUtils.withConnectionWrapper("BookmarkSyncUtils: setGuids",
-    db => db.executeTransaction(function* () {
-      let promises = [];
-      for (let [itemId, newGuid] of guids) {
-        promises.push(setGuid(db, itemId, newGuid));
-      }
-      return Promise.all(promises);
-    })
-  );
-}
 
 var setGuid = Task.async(function* (db, itemId, newGuid) {
   yield db.executeCached(`UPDATE moz_bookmarks SET guid = :newGuid
