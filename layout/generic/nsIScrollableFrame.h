@@ -48,6 +48,7 @@ public:
   typedef mozilla::CSSIntPoint CSSIntPoint;
   typedef mozilla::ContainerLayerParameters ContainerLayerParameters;
   typedef mozilla::layers::FrameMetrics FrameMetrics;
+  typedef mozilla::layers::ScrollSnapInfo ScrollSnapInfo;
 
   NS_DECL_QUERYFRAME_TARGET(nsIScrollableFrame)
 
@@ -470,6 +471,11 @@ public:
 
 
   virtual void TriggerDisplayPortExpiration() = 0;
+
+  
+
+
+  virtual ScrollSnapInfo GetScrollSnapInfo() const = 0;
 };
 
 #endif

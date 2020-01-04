@@ -8668,6 +8668,8 @@ nsLayoutUtils::ComputeScrollMetadata(nsIFrame* aForFrame,
     }
 
     metrics.SetUsesContainerScrolling(scrollableFrame->UsesContainerScrolling());
+
+    metadata.SetSnapInfo(scrollableFrame->GetScrollSnapInfo());
   }
 
   

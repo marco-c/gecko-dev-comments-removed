@@ -791,12 +791,14 @@ public:
 
   ScrollMetadata()
     : mMetrics()
+    , mSnapInfo()
     , mMaskLayerIndex()
     , mClipRect()
   {}
 
   bool operator==(const ScrollMetadata& aOther) const
   {
+    
     return mMetrics == aOther.mMetrics &&
            mMaskLayerIndex == aOther.mMaskLayerIndex &&
            mClipRect == aOther.mClipRect;
@@ -817,6 +819,11 @@ public:
 
   FrameMetrics& GetMetrics() { return mMetrics; }
   const FrameMetrics& GetMetrics() const { return mMetrics; }
+
+  void SetSnapInfo(ScrollSnapInfo&& aSnapInfo) {
+    mSnapInfo = Move(aSnapInfo);
+  }
+  const ScrollSnapInfo& GetSnapInfo() const { return mSnapInfo; }
 
   void SetMaskLayerIndex(const Maybe<size_t>& aIndex) {
     mMaskLayerIndex = aIndex;
@@ -841,6 +848,9 @@ public:
   }
 private:
   FrameMetrics mMetrics;
+
+  
+  ScrollSnapInfo mSnapInfo;
 
   
   
