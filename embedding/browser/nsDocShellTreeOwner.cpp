@@ -1064,198 +1064,6 @@ nsDocShellTreeOwner::GetOwnerRequestor()
   return req.forget();
 }
 
-class DefaultTooltipTextProvider final : public nsITooltipTextProvider
-{
-public:
-  DefaultTooltipTextProvider();
-
-  NS_DECL_ISUPPORTS
-  NS_DECL_NSITOOLTIPTEXTPROVIDER
-
-protected:
-  ~DefaultTooltipTextProvider() {}
-
-  nsCOMPtr<nsIAtom> mTag_dialogHeader;
-};
-
-NS_IMPL_ISUPPORTS(DefaultTooltipTextProvider, nsITooltipTextProvider)
-
-DefaultTooltipTextProvider::DefaultTooltipTextProvider()
-{
-  
-  
-  mTag_dialogHeader = NS_Atomize("dialogheader");
-}
-
-
-
-
-static bool
-UseSVGTitle(nsIDOMElement* aCurrElement)
-{
-  nsCOMPtr<dom::Element> element(do_QueryInterface(aCurrElement));
-  if (!element || !element->IsSVGElement() || !element->GetParentNode()) {
-    return false;
-  }
-
-  return element->GetParentNode()->NodeType() != nsIDOMNode::DOCUMENT_NODE;
-}
-
-NS_IMETHODIMP
-DefaultTooltipTextProvider::GetNodeText(nsIDOMNode* aNode, char16_t** aText,
-                                        bool* aResult)
-{
-  NS_ENSURE_ARG_POINTER(aNode);
-  NS_ENSURE_ARG_POINTER(aText);
-
-  nsString outText;
-
-  nsCOMPtr<nsINode> node = do_QueryInterface(aNode);
-
-  bool lookingForSVGTitle = true;
-  bool found = false;
-  nsCOMPtr<nsIDOMNode> current(aNode);
-
-  
-  
-  nsCOMPtr<nsIConstraintValidation> cvElement = do_QueryInterface(current);
-  if (cvElement) {
-    nsCOMPtr<nsIContent> content = do_QueryInterface(cvElement);
-    nsCOMPtr<nsIAtom> titleAtom = NS_Atomize("title");
-
-    nsCOMPtr<nsIFormControl> formControl = do_QueryInterface(content);
-    bool formHasNoValidate = false;
-    mozilla::dom::Element* form = formControl->GetFormElement();
-    if (form) {
-      nsCOMPtr<nsIAtom> noValidateAtom = NS_Atomize("novalidate");
-      formHasNoValidate = form->HasAttr(kNameSpaceID_None, noValidateAtom);
-    }
-
-    if (!content->HasAttr(kNameSpaceID_None, titleAtom) && !formHasNoValidate) {
-      cvElement->GetValidationMessage(outText);
-      found = !outText.IsEmpty();
-    }
-  }
-
-  while (!found && current) {
-    nsCOMPtr<nsIDOMElement> currElement(do_QueryInterface(current));
-    if (currElement) {
-      nsCOMPtr<nsIContent> content(do_QueryInterface(currElement));
-      if (content) {
-        if (!content->IsAnyOfXULElements(nsGkAtoms::dialog,
-                                         mTag_dialogHeader,
-                                         nsGkAtoms::window)) {
-          
-          if (!content->IsSVGElement()) {
-            
-            
-            if (content->IsHTMLElement(nsGkAtoms::input) &&
-                content->AttrValueIs(kNameSpaceID_None, nsGkAtoms::type,
-                                     NS_LITERAL_STRING("file"), eIgnoreCase) &&
-                !content->HasAttr(kNameSpaceID_None, nsGkAtoms::title)) {
-              found = true;
-              nsCOMPtr<nsIDOMFileList> fileList;
-              nsCOMPtr<nsIDOMHTMLInputElement> currInputElement(do_QueryInterface(currElement));
-              nsresult rv = currInputElement->GetFiles(getter_AddRefs(fileList));
-              NS_ENSURE_SUCCESS(rv, rv);
-              if (!fileList) {
-                return NS_ERROR_FAILURE;
-              }
-
-              nsCOMPtr<nsIStringBundleService> bundleService =
-                mozilla::services::GetStringBundleService();
-              if (!bundleService) {
-                return NS_ERROR_FAILURE;
-              }
-
-              nsCOMPtr<nsIStringBundle> bundle;
-              rv = bundleService->CreateBundle("chrome://global/locale/layout/HtmlForm.properties",
-                                                        getter_AddRefs(bundle));
-              NS_ENSURE_SUCCESS(rv, rv);
-              uint32_t listLength = 0;
-              rv = fileList->GetLength(&listLength);
-              NS_ENSURE_SUCCESS(rv, rv);
-              if (listLength == 0) {
-                if (content->HasAttr(kNameSpaceID_None, nsGkAtoms::multiple)) {
-                  rv = bundle->GetStringFromName(MOZ_UTF16("NoFilesSelected"),
-                                                 getter_Copies(outText));
-                } else {
-                  rv = bundle->GetStringFromName(MOZ_UTF16("NoFileSelected"),
-                                                 getter_Copies(outText));
-                }
-                NS_ENSURE_SUCCESS(rv, rv);
-              } else {
-                FileList* fl = static_cast<FileList*>(fileList.get());
-                fl->Item(0)->GetName(outText);
-
-                
-                
-                
-                const uint32_t TRUNCATED_FILE_COUNT = 20;
-                uint32_t count = std::min(listLength, TRUNCATED_FILE_COUNT);
-                for (uint32_t i = 1; i < count; ++i) {
-                  nsString fileName;
-                  fl->Item(i)->GetName(fileName);
-                  outText.Append(NS_LITERAL_STRING("\n"));
-                  outText.Append(fileName);
-                }
-              }
-            } else if (NS_SUCCEEDED(currElement->GetAttribute(NS_LITERAL_STRING("title"), outText)) &&
-                       outText.Length()) {
-              found = true;
-            }
-          }
-          if (!found) {
-            
-            NS_NAMED_LITERAL_STRING(xlinkNS, "http://www.w3.org/1999/xlink");
-            nsCOMPtr<mozilla::dom::Link> linkContent(
-              do_QueryInterface(currElement));
-            if (linkContent) {
-              nsCOMPtr<nsIURI> uri(linkContent->GetURIExternal());
-              if (uri) {
-                currElement->GetAttributeNS(
-                  xlinkNS, NS_LITERAL_STRING("title"), outText);
-                if (outText.Length()) {
-                  found = true;
-                }
-              }
-            } else {
-              if (lookingForSVGTitle) {
-                lookingForSVGTitle = UseSVGTitle(currElement);
-              }
-              if (lookingForSVGTitle) {
-                nsINodeList* childNodes = content->ChildNodes();
-                uint32_t childNodeCount = childNodes->Length();
-                for (uint32_t i = 0; i < childNodeCount; i++) {
-                  nsIContent* child = childNodes->Item(i);
-                  if (child->IsSVGElement(nsGkAtoms::title)) {
-                    static_cast<dom::SVGTitleElement*>(child)->GetTextContent(outText);
-                    if (outText.Length()) {
-                      found = true;
-                    }
-                    break;
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-
-    
-    if (!found) {
-      nsCOMPtr<nsIDOMNode> temp(current);
-      temp->GetParentNode(getter_AddRefs(current));
-    }
-  }
-
-  *aResult = found;
-  *aText = (found) ? ToNewUnicode(outText) : nullptr;
-
-  return NS_OK;
-}
-
 NS_IMPL_ISUPPORTS(ChromeTooltipListener, nsIDOMEventListener)
 
 ChromeTooltipListener::ChromeTooltipListener(nsWebBrowser* aInBrowser,
@@ -1270,7 +1078,7 @@ ChromeTooltipListener::ChromeTooltipListener(nsWebBrowser* aInBrowser,
 {
   mTooltipTextProvider = do_GetService(NS_TOOLTIPTEXTPROVIDER_CONTRACTID);
   if (!mTooltipTextProvider) {
-    mTooltipTextProvider = new DefaultTooltipTextProvider();
+    mTooltipTextProvider = do_GetService(NS_DEFAULTTOOLTIPTEXTPROVIDER_CONTRACTID);
   }
 }
 
@@ -1460,7 +1268,8 @@ ChromeTooltipListener::MouseMove(nsIDOMEvent* aMouseEvent)
 
 NS_IMETHODIMP
 ChromeTooltipListener::ShowTooltip(int32_t aInXCoords, int32_t aInYCoords,
-                                   const nsAString& aInTipText)
+                                   const nsAString& aInTipText,
+                                   const nsAString& aTipDir)
 {
   nsresult rv = NS_OK;
 
@@ -1469,7 +1278,8 @@ ChromeTooltipListener::ShowTooltip(int32_t aInXCoords, int32_t aInYCoords,
     do_QueryInterface(mWebBrowserChrome));
   if (tooltipListener) {
     rv = tooltipListener->OnShowTooltip(aInXCoords, aInYCoords,
-                                        PromiseFlatString(aInTipText).get());
+                                        PromiseFlatString(aInTipText).get(),
+                                        PromiseFlatString(aTipDir).get());
     if (NS_SUCCEEDED(rv)) {
       mShowingTooltip = true;
     }
@@ -1558,14 +1368,17 @@ ChromeTooltipListener::sTooltipCallback(nsITimer* aTimer,
     
 
     nsXPIDLString tooltipText;
+    nsXPIDLString directionText;
     if (self->mTooltipTextProvider) {
       bool textFound = false;
 
       self->mTooltipTextProvider->GetNodeText(
-        self->mPossibleTooltipNode, getter_Copies(tooltipText), &textFound);
+        self->mPossibleTooltipNode, getter_Copies(tooltipText),
+        getter_Copies(directionText), &textFound);
 
       if (textFound) {
         nsString tipText(tooltipText);
+        nsString dirText(directionText);
         LayoutDeviceIntPoint screenDot = widget->WidgetToScreenOffset();
         double scaleFactor = 1.0;
         if (shell->GetPresContext()) {
@@ -1576,7 +1389,7 @@ ChromeTooltipListener::sTooltipCallback(nsITimer* aTimer,
         
         self->ShowTooltip(self->mMouseScreenX - screenDot.x / scaleFactor,
                           self->mMouseScreenY - screenDot.y / scaleFactor,
-                          tipText);
+                          tipText, dirText);
       }
     }
 
