@@ -12,6 +12,10 @@ class BrokerServices;
 class TargetServices;
 }
 
+
+
+extern "C" bool IsSandboxedProcess();
+
 namespace mozilla {
 
 
