@@ -13,8 +13,8 @@ describe("Validator", function() {
   }
 
   
-  function X(){}
-  function Y(){}
+  function X() {}
+  function Y() {}
 
   describe("#validate", function() {
     function RTCSessionDescription() {}
