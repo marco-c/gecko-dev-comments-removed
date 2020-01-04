@@ -2,11 +2,6 @@
 
 
 
-
-
-
-#define CERT_AddTempCertToPerm __CERT_AddTempCertToPerm
-
 #include "nsNSSCertificateDB.h"
 
 #include "CertVerifier.h"

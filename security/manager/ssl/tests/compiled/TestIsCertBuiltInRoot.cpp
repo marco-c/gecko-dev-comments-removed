@@ -4,8 +4,6 @@
 
 
 
-#define CERT_AddTempCertToPerm __CERT_AddTempCertToPerm
-
 #include "ScopedNSSTypes.h"
 #include "TestHarness.h"
 #include "cert.h"
