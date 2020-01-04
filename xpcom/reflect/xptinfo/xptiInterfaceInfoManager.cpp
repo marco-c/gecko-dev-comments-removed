@@ -52,7 +52,7 @@ XPTInterfaceInfoManager::CollectReports(nsIHandleReportCallback* aHandleReport,
     
     
     
-    amount += XPT_SizeOfArena(gXPTIStructArena, XPTIMallocSizeOf);
+    amount += XPT_SizeOfArenaIncludingThis(gXPTIStructArena, XPTIMallocSizeOf);
 
     return MOZ_COLLECT_REPORT(
         "explicit/xpti-working-set", KIND_HEAP, UNITS_BYTES, amount,
