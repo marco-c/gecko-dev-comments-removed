@@ -8,8 +8,9 @@
 
 
 
+#include "mozilla/RestyleManager.h"
+
 #include <algorithm> 
-#include "RestyleManager.h"
 #include "mozilla/EventStates.h"
 #include "nsLayoutUtils.h"
 #include "AnimationCommon.h" 

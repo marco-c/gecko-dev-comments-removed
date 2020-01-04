@@ -13,6 +13,7 @@
 #include "mozilla/EffectSet.h"
 #include "mozilla/InitializerList.h"
 #include "mozilla/LayerAnimationInfo.h"
+#include "mozilla/RestyleManager.h"
 #include "nsComputedDOMStyle.h" 
 #include "nsCSSPropertySet.h"
 #include "nsCSSProps.h"
@@ -22,7 +23,6 @@
 #include "nsRuleNode.h" 
 #include "nsRuleProcessorData.h" 
 #include "nsTArray.h"
-#include "RestyleManager.h"
 
 using mozilla::dom::Animation;
 using mozilla::dom::Element;

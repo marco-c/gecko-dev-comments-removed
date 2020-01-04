@@ -6,7 +6,7 @@
 
 #include "EffectSet.h"
 #include "mozilla/dom/Element.h" 
-#include "RestyleManager.h"
+#include "mozilla/RestyleManager.h"
 #include "nsCSSPseudoElements.h" 
 #include "nsCycleCollectionNoteChild.h" 
 #include "nsPresContext.h"
