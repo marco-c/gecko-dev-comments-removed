@@ -2533,6 +2533,20 @@ nsWindow::OnLeaveNotifyEvent(GdkEventCrossing *aEvent)
     DispatchInputEvent(&event);
 }
 
+template <typename Event> static LayoutDeviceIntPoint
+GetRefPoint(nsWindow* aWindow, Event* aEvent)
+{
+    if (aEvent->window == aWindow->GetGdkWindow()) {
+        
+        return aWindow->GdkEventCoordsToDevicePixels(aEvent->x, aEvent->y);
+    }
+    
+    
+    
+    return aWindow->GdkEventCoordsToDevicePixels(
+        aEvent->x_root, aEvent->y_root) - aWindow->WidgetToScreenOffset();
+}
+
 void
 nsWindow::OnMotionNotifyEvent(GdkEventMotion *aEvent)
 {
@@ -2593,16 +2607,8 @@ nsWindow::OnMotionNotifyEvent(GdkEventMotion *aEvent)
         event.time = aEvent->time;
         event.timeStamp = GetEventTimeStamp(aEvent->time);
 #endif 
-    }
-    else {
-        
-        if (aEvent->window == mGdkWindow) {
-            event.refPoint = GdkEventCoordsToDevicePixels(aEvent->x, aEvent->y);
-        } else {
-            LayoutDeviceIntPoint point = GdkEventCoordsToDevicePixels(
-                    aEvent->x_root, aEvent->y_root);
-            event.refPoint = point - WidgetToScreenOffset();
-        }
+    } else {
+        event.refPoint = GetRefPoint(this, aEvent);
 
         modifierState = aEvent->state;
 
@@ -2671,14 +2677,7 @@ void
 nsWindow::InitButtonEvent(WidgetMouseEvent& aEvent,
                           GdkEventButton* aGdkEvent)
 {
-    
-    if (aGdkEvent->window == mGdkWindow) {
-        aEvent.refPoint = GdkEventCoordsToDevicePixels(aGdkEvent->x, aGdkEvent->y);
-    } else {
-        LayoutDeviceIntPoint point = GdkEventCoordsToDevicePixels(
-                aGdkEvent->x_root, aGdkEvent->y_root);
-        aEvent.refPoint = point - WidgetToScreenOffset();
-    }
+    aEvent.refPoint = GetRefPoint(this, aGdkEvent);
 
     guint modifierState = aGdkEvent->state;
     
@@ -3193,17 +3192,7 @@ nsWindow::OnScrollEvent(GdkEventScroll *aEvent)
         break;
     }
 
-    if (aEvent->window == mGdkWindow) {
-        
-        wheelEvent.refPoint = GdkEventCoordsToDevicePixels(aEvent->x, aEvent->y);
-    } else {
-        
-        
-        
-        LayoutDeviceIntPoint point = GdkEventCoordsToDevicePixels(
-                aEvent->x_root, aEvent->y_root);
-        wheelEvent.refPoint = point - WidgetToScreenOffset();
-    }
+    wheelEvent.refPoint = GetRefPoint(this, aEvent);
 
     KeymapWrapper::InitInputEvent(wheelEvent, aEvent->state);
 
@@ -3411,13 +3400,7 @@ nsWindow::OnTouchEvent(GdkEventTouch* aEvent)
         return FALSE;
     }
 
-    LayoutDeviceIntPoint touchPoint;
-    if (aEvent->window == mGdkWindow) {
-        touchPoint = LayoutDeviceIntPoint(aEvent->x, aEvent->y);
-    } else {
-        touchPoint = LayoutDeviceIntPoint(aEvent->x_root, aEvent->y_root) -
-                     WidgetToScreenOffset();
-    }
+    LayoutDeviceIntPoint touchPoint = GetRefPoint(this, aEvent);
 
     int32_t id;
     RefPtr<dom::Touch> touch;
