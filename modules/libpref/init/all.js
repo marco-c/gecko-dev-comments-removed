@@ -2543,9 +2543,9 @@ pref("dom.ipc.plugins.unloadTimeoutSecs", 30);
 
 
 #ifdef E10S_TESTING_ONLY
-pref("dom.ipc.plugins.asyncInit", false);
+pref("dom.ipc.plugins.asyncInit.enabled", false);
 #else
-pref("dom.ipc.plugins.asyncInit", true);
+pref("dom.ipc.plugins.asyncInit.enabled", true);
 #endif
 
 pref("dom.ipc.processCount", 1);
