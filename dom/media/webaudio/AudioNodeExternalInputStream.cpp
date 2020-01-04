@@ -109,8 +109,12 @@ static void ConvertSegmentToAudioBlock(AudioSegment* aSegment,
         CopyChunkToBlock<float>(*ci, aBlock, duration);
         break;
       }
-      case AUDIO_FORMAT_SILENCE:
+      case AUDIO_FORMAT_SILENCE: {
+        
+        
+        CopyChunkToBlock<float>(*ci, aBlock, duration);
         break;
+      }
     }
     duration += ci->GetDuration();
   }
