@@ -71,6 +71,33 @@ struct SetDOMProxyInformation
 SetDOMProxyInformation gSetDOMProxyInformation;
 
 
+void
+DOMProxyHandler::ClearExternalRefsForWrapperRelease(JSObject* obj)
+{
+  MOZ_ASSERT(IsDOMProxy(obj), "expected a DOM proxy object");
+  JS::Value v = js::GetProxyExtra(obj, JSPROXYSLOT_EXPANDO);
+  if (v.isUndefined()) {
+    
+    return;
+  }
+
+  
+
+  if (v.isObject()) {
+    
+    
+    xpc::ObjectScope(obj)->RemoveDOMExpandoObject(obj);
+    return;
+  }
+
+  
+  
+  js::ExpandoAndGeneration* expandoAndGeneration =
+    static_cast<js::ExpandoAndGeneration*>(v.toPrivate());
+  expandoAndGeneration->expando = UndefinedValue();
+}
+
+
 JSObject*
 DOMProxyHandler::GetAndClearExpandoObject(JSObject* obj)
 {
@@ -90,6 +117,19 @@ DOMProxyHandler::GetAndClearExpandoObject(JSObject* obj)
     if (v.isUndefined()) {
       return nullptr;
     }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    JS::ExposeValueToActiveJS(v);
     expandoAndGeneration->expando = UndefinedValue();
   }
 

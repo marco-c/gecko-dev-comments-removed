@@ -132,10 +132,35 @@ public:
   virtual bool setCustom(JSContext* cx, JS::Handle<JSObject*> proxy, JS::Handle<jsid> id,
                          JS::Handle<JS::Value> v, bool *done) const;
 
+  
+
+
   static JSObject* GetExpandoObject(JSObject* obj);
 
   
+
+
+
+
+
+
+
+  static void ClearExternalRefsForWrapperRelease(JSObject* obj);
+
+  
+
+
+
+
+
+
+
   static JSObject* GetAndClearExpandoObject(JSObject* obj);
+
+  
+
+
+
   static JSObject* EnsureExpandoObject(JSContext* cx,
                                        JS::Handle<JSObject*> obj);
 
