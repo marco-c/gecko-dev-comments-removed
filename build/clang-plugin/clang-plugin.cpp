@@ -28,7 +28,7 @@ typedef std::unique_ptr<ASTConsumer> ASTConsumerPtr;
 typedef ASTConsumer *ASTConsumerPtr;
 #endif
 
-#if CLANG_VERSION_FULL < 308
+#ifndef HAVE_NEW_ASTMATCHER_NAMES
 
 
 
