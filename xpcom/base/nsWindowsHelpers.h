@@ -10,6 +10,7 @@
 #include <windows.h>
 #include "nsAutoRef.h"
 #include "nscore.h"
+#include "mozilla/Assertions.h"
 
 
 
@@ -223,30 +224,57 @@ typedef nsAutoRef<DEVMODEW*> nsAutoDevMode;
 
 namespace {
 
+
+
+
+
+
+
+bool inline
+ConstructSystem32Path(LPCWSTR aModule, WCHAR* aSystemPath, UINT aSize)
+{
+  MOZ_ASSERT(aSystemPath);
+
+  size_t fileLen = wcslen(aModule);
+  if (fileLen >= aSize) {
+    
+    return false;
+  }
+
+  size_t systemDirLen = GetSystemDirectoryW(aSystemPath, aSize);
+
+  if (systemDirLen) {
+    if (systemDirLen < aSize - fileLen) {
+      
+      if (aSystemPath[systemDirLen - 1] != L'\\') {
+        if (systemDirLen + 1 < aSize - fileLen) {
+            aSystemPath[systemDirLen] = L'\\';
+            ++systemDirLen;
+            
+        } else {
+          
+          systemDirLen = 0;
+        }
+      }
+    } else {
+      
+      systemDirLen = 0;
+    }
+  }
+
+  MOZ_ASSERT(systemDirLen + fileLen < aSize);
+
+  wcsncpy(aSystemPath + systemDirLen, aModule, fileLen);
+  aSystemPath[systemDirLen + fileLen] = L'\0';
+  return true;
+}
+
 HMODULE inline
 LoadLibrarySystem32(LPCWSTR aModule)
 {
-  WCHAR systemPath[MAX_PATH + 1] = { L'\0' };
-
-  
-  
-  GetSystemDirectoryW(systemPath, MAX_PATH + 1);
-  size_t systemDirLen = wcslen(systemPath);
-
-  
-  if (systemDirLen && systemPath[systemDirLen - 1] != L'\\') {
-    systemPath[systemDirLen] = L'\\';
-    ++systemDirLen;
-    
-  }
-
-  size_t fileLen = wcslen(aModule);
-  wcsncpy(systemPath + systemDirLen, aModule,
-          MAX_PATH - systemDirLen);
-  if (systemDirLen + fileLen <= MAX_PATH) {
-    systemPath[systemDirLen + fileLen] = L'\0';
-  } else {
-    systemPath[MAX_PATH] = L'\0';
+  WCHAR systemPath[MAX_PATH + 1];
+  if (!ConstructSystem32Path(aModule, systemPath, MAX_PATH + 1)) {
+    return NULL;
   }
   return LoadLibraryW(systemPath);
 }
