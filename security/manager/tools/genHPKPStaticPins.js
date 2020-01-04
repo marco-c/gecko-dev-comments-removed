@@ -170,6 +170,42 @@ function getSKDFromPem(pem) {
 
 
 
+function sha1Base64(input) {
+  let decodedValue;
+  try {
+    decodedValue = atob(input);
+  }
+  catch (e) {
+    throw `ERROR: could not decode as base64: '${input}': ${e}`;
+  }
+
+  
+  
+  
+  
+  
+  let data = [];
+  for (let i = 0; i < decodedValue.length; i++) {
+    data[i] = decodedValue.charCodeAt(i);
+  }
+
+  let hasher = Cc["@mozilla.org/security/hash;1"]
+                 .createInstance(Ci.nsICryptoHash);
+  hasher.init(hasher.SHA1);
+  hasher.update(data, data.length);
+
+  
+  return hasher.finish(true);
+}
+
+
+
+
+
+
+
+
+
 
 
 
@@ -184,19 +220,23 @@ function downloadAndParseChromeCerts(filename, certSKDToName) {
   
   const BEGIN_CERT = "-----BEGIN CERTIFICATE-----";
   const END_CERT = "-----END CERTIFICATE-----";
+  const BEGIN_PUB_KEY = "-----BEGIN PUBLIC KEY-----";
+  const END_PUB_KEY = "-----END PUBLIC KEY-----";
 
   
   const PRE_NAME = 0;
   const POST_NAME = 1;
   const IN_CERT = 2;
+  const IN_PUB_KEY = 3;
   let state = PRE_NAME;
 
   let lines = download(filename).split("\n");
   let name = "";
   let pemCert = "";
+  let pemPubKey = "";
   let hash = "";
   let chromeNameToHash = {};
-  let chromeNameToMozName = {}
+  let chromeNameToMozName = {};
   let chromeName;
   for (let i = 0; i < lines.length; ++i) {
     let line = lines[i];
@@ -210,12 +250,14 @@ function downloadAndParseChromeCerts(filename, certSKDToName) {
         state = POST_NAME;
         break;
       case POST_NAME:
+        
+        
         if (line.startsWith(SHA1_PREFIX) ||
             line.startsWith(SHA256_PREFIX)) {
           if (line.startsWith(SHA1_PREFIX)) {
             hash = line.substring(SHA1_PREFIX.length);
           } else if (line.startsWith(SHA256_PREFIX)) {
-            hash = line.substring(SHA256_PREFIX);
+            hash = line.substring(SHA256_PREFIX.length);
           }
           
           
@@ -225,6 +267,8 @@ function downloadAndParseChromeCerts(filename, certSKDToName) {
           state = PRE_NAME;
         } else if (line.startsWith(BEGIN_CERT)) {
           state = IN_CERT;
+        } else if (line.startsWith(BEGIN_PUB_KEY)) {
+          state = IN_PUB_KEY;
         } else {
           throw "ERROR: couldn't parse Chrome certificate file " + line;
         }
@@ -249,6 +293,21 @@ function downloadAndParseChromeCerts(filename, certSKDToName) {
           chromeNameToMozName[chromeName] = mozName;
         } else {
           pemCert += line;
+        }
+        break;
+      case IN_PUB_KEY:
+        if (line.startsWith(END_PUB_KEY)) {
+          state = PRE_NAME;
+          
+          
+          
+          hash = sha1Base64(pemPubKey);
+          pemPubKey = "";
+          chromeNameToHash[chromeName] = SHA1_PREFIX + hash;
+          certNameToSKD[chromeName] = hash;
+          certSKDToName[hash] = chromeName;
+        } else {
+          pemPubKey += line;
         }
         break;
       default:
