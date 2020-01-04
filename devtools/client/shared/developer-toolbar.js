@@ -505,6 +505,10 @@ DeveloperToolbar.prototype.show = function(focus) {
             
             let waitForBinding = () => {
               
+              if (!this._input) {
+                return;
+              }
+              
               if (typeof this._input.mInputField != "undefined") {
                 this._input.focus();
                 this._notify(NOTIFICATIONS.SHOW);
