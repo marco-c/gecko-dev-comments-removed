@@ -90,7 +90,8 @@ typedef uint32_t sctp_assoc_t;
 
 
 
-#if defined(__APPLE__) || defined(__FreeBSD__) || defined(__OpenBSD__)
+#if defined(__APPLE__) || defined(__Bitrig__) || defined(__DragonFly__) || \
+    defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__NetBSD__)
 struct sockaddr_conn {
 	uint8_t sconn_len;
 	uint8_t sconn_family;
