@@ -32,10 +32,10 @@ BaselineFrame::trace(JSTracer* trc, JitFrameIterator& frameIterator)
 {
     replaceCalleeToken(MarkCalleeToken(trc, calleeToken()));
 
-    TraceRoot(trc, &thisValue(), "baseline-this");
-
     
     if (isNonEvalFunctionFrame()) {
+        TraceRoot(trc, &thisArgument(), "baseline-this");
+
         unsigned numArgs = js::Max(numActualArgs(), numFormalArgs());
         TraceRootRange(trc, numArgs + isConstructing(), argv(), "baseline-args");
     }

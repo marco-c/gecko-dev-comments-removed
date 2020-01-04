@@ -216,7 +216,7 @@ class AbstractFramePtr
     inline JSFunction* maybeFun() const;
     inline JSFunction* callee() const;
     inline Value calleev() const;
-    inline Value& thisValue() const;
+    inline Value& thisArgument() const;
 
     inline Value newTarget() const;
 
@@ -716,28 +716,8 @@ class InterpreterFrame
 
 
 
-
-
-
-
-
-
-
-    Value& functionThis() const {
-        MOZ_ASSERT(isFunctionFrame());
-        if (isEvalFrame())
-            return ((Value*)this)[-1];
-        return argv()[-1];
-    }
-
-    JSObject& constructorThis() const {
-        MOZ_ASSERT(hasArgs());
-        return argv()[-1].toObject();
-    }
-
-    Value& thisValue() const {
-        if (flags_ & (EVAL | GLOBAL | MODULE))
-            return ((Value*)this)[-1];
+    Value& thisArgument() const {
+        MOZ_ASSERT(isNonEvalFunctionFrame());
         return argv()[-1];
     }
 
@@ -2006,7 +1986,7 @@ class FrameIter
     
     
     
-    Value       originalFunctionThis(JSContext* cx) const;
+    Value       thisArgument(JSContext* cx) const;
 
     Value       newTarget() const;
 
