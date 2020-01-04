@@ -1633,6 +1633,25 @@ function getSignedStatus(aRv, aCert, aAddonID) {
   }
 }
 
+function shouldVerifySignedState(aAddon) {
+  
+  if (aAddon._installLocation.name == KEY_APP_SYSTEM_ADDONS)
+    return true;
+
+  
+  if (aAddon._installLocation.name == KEY_APP_SYSTEM_DEFAULTS)
+    return false;
+
+  
+  let hotfixID = Preferences.get(PREF_EM_HOTFIX_ID, undefined);
+  if (hotfixID && aAddon.id == hotfixID)
+    return true;
+
+  
+  
+  return ADDON_SIGNING && SIGNED_TYPES.has(aAddon.type);
+}
+
 
 
 
@@ -1644,7 +1663,7 @@ function getSignedStatus(aRv, aCert, aAddonID) {
 
 
 function verifyZipSignedState(aFile, aAddon) {
-  if (!ADDON_SIGNING || !SIGNED_TYPES.has(aAddon.type))
+  if (!shouldVerifySignedState(aAddon))
     return Promise.resolve(AddonManager.SIGNEDSTATE_NOT_REQUIRED);
 
   let certDB = Cc["@mozilla.org/security/x509certdb;1"]
@@ -1674,7 +1693,7 @@ function verifyZipSignedState(aFile, aAddon) {
 
 
 function verifyDirSignedState(aDir, aAddon) {
-  if (!ADDON_SIGNING || !SIGNED_TYPES.has(aAddon.type))
+  if (!shouldVerifySignedState(aAddon))
     return Promise.resolve(AddonManager.SIGNEDSTATE_NOT_REQUIRED);
 
   let certDB = Cc["@mozilla.org/security/x509certdb;1"]
