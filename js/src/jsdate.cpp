@@ -1126,33 +1126,27 @@ ParseDate(const CharT* s, size_t length, ClippedTime* result)
 
 
 
+
+
+
     if (seenMonthName) {
-        if ((mday >= 70 && year >= 70) || (mday < 70 && year < 70))
+        if (mday >= 100 && mon >= 100)
             return false;
 
-        if (mday > year) {
+        if (year > 0 && (mday == 0 || mday > year)) {
             int temp = year;
             year = mday;
             mday = temp;
         }
-        if (year >= 70 && year < 100) {
-            year += 1900;
-        }
-    } else if (mon < 70) { 
-        if (year < 100) {
-            year += 1900;
-        }
-    } else if (mon < 100) { 
-        if (mday < 70) {
-            int temp = year;
-            year = mon + 1900;
-            mon = mday;
-            mday = temp;
-        } else {
+
+        if (mday <= 0 || mday > 31)
             return false;
-        }
-    } else { 
-        if (mday < 70) {
+
+    } else if (0 < mon && mon <= 12 && 0 < mday && mday <= 31) {
+        
+    } else {
+        
+        if (mon > 31 && mday <= 12 && year <= 31) {
             int temp = year;
             year = mon;
             mon = mday;
@@ -1161,6 +1155,11 @@ ParseDate(const CharT* s, size_t length, ClippedTime* result)
             return false;
         }
     }
+
+    if (year < 50)
+        year += 2000;
+    else if (year >= 50 && year < 100)
+        year += 1900;
 
     mon -= 1; 
     if (sec < 0)
