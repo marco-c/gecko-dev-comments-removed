@@ -37,7 +37,7 @@ class BufferableRef
 typedef HashSet<void*, PointerHasher<void*, 3>, SystemAllocPolicy> EdgeSet;
 
 
-static const size_t LifoAllocBlockSize = 1 << 16; 
+static const size_t LifoAllocBlockSize = 1 << 13; 
 
 
 
@@ -48,7 +48,7 @@ class StoreBuffer
     friend class mozilla::ReentrancyGuard;
 
     
-    static const size_t LowAvailableThreshold = (size_t)(LifoAllocBlockSize * 1.0 / 16.0);
+    static const size_t LowAvailableThreshold = size_t(LifoAllocBlockSize / 2.0);
 
     
 
@@ -156,7 +156,8 @@ class StoreBuffer
         }
 
         bool isAboutToOverflow() const {
-            return !storage_->isEmpty() && storage_->availableInCurrentChunk() < LowAvailableThreshold;
+            return !storage_->isEmpty() &&
+                   storage_->availableInCurrentChunk() < LowAvailableThreshold;
         }
 
         
