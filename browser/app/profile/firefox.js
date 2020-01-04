@@ -1500,6 +1500,7 @@ pref("ui.key.menuAccessKeyFocuses", true);
 
 
 pref("media.eme.enabled", true);
+pref("media.eme.apiVisible", true);
 
 
 
