@@ -51,7 +51,7 @@ class TestSafeBrowsingNotificationBar(FirefoxTestCase):
 
     def tearDown(self):
         try:
-            self.utils.remove_perms('https://www.itisatrap.org', 'safe-browsing')
+            self.utils.permissions.remove('https://www.itisatrap.org', 'safe-browsing')
             self.browser.tabbar.close_all_tabs([self.browser.tabbar.tabs[0]])
         finally:
             FirefoxTestCase.tearDown(self)
@@ -97,7 +97,7 @@ class TestSafeBrowsingNotificationBar(FirefoxTestCase):
         self.assertEquals(self.marionette.get_url(), self.browser.get_final_url(unsafe_page))
 
         
-        self.utils.remove_perms('https://www.itisatrap.org', 'safe-browsing')
+        self.utils.permissions.remove('https://www.itisatrap.org', 'safe-browsing')
 
     
     def check_not_badware_button(self, button_property, report_page):
