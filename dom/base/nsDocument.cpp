@@ -164,6 +164,7 @@
 #include "mozilla/dom/HTMLIFrameElement.h"
 #include "mozilla/dom/HTMLImageElement.h"
 #include "mozilla/dom/MediaSource.h"
+#include "mozilla/dom/FlyWebService.h"
 
 #include "mozAutoDocUpdate.h"
 #include "nsGlobalWindow.h"
@@ -8985,6 +8986,13 @@ nsDocument::CanSavePresentation(nsIRequest *aNewRequest)
   
   
   if (ContainsMSEContent()) {
+    return false;
+  }
+
+  
+  
+  FlyWebService* flyWebService = FlyWebService::GetExisting();
+  if (flyWebService && flyWebService->HasConnectionOrServer(win->WindowID())) {
     return false;
   }
 

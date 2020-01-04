@@ -135,6 +135,15 @@ public:
 
     
     
+    
+    nsresult InitPreResolved(const char **socketTypes, uint32_t typeCount,
+                             const nsACString &host, uint16_t port,
+                             const nsACString &hostRoute, uint16_t portRoute,
+                             nsIProxyInfo *proxyInfo,
+                             const mozilla::net::NetAddr* addr);
+
+    
+    
     nsresult InitWithConnectedSocket(PRFileDesc *socketFD,
                                      const NetAddr *addr);
 
@@ -326,6 +335,7 @@ private:
     NetAddr                 mSelfAddr; 
     Atomic<bool, Relaxed>   mNetAddrIsSet;
     Atomic<bool, Relaxed>   mSelfAddrIsSet;
+    Atomic<bool, Relaxed>   mNetAddrPreResolved;
 
     nsAutoPtr<NetAddr>      mBindAddr;
 

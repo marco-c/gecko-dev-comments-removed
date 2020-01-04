@@ -37,6 +37,7 @@
 #include "mozilla/dom/WakeLock.h"
 #include "mozilla/dom/power/PowerManagerService.h"
 #include "mozilla/dom/CellBroadcast.h"
+#include "mozilla/dom/FlyWebService.h"
 #include "mozilla/dom/IccManager.h"
 #include "mozilla/dom/InputPortManager.h"
 #include "mozilla/dom/MobileMessageManager.h"
@@ -134,6 +135,7 @@
 namespace mozilla {
 namespace dom {
 
+static bool sDoNotTrackEnabled = false;
 static bool sVibratorEnabled   = false;
 static uint32_t sMaxVibrateMS  = 0;
 static uint32_t sMaxVibrateListLen = 0;
@@ -189,6 +191,9 @@ GetPermission(nsIPrincipal* aPrincipal, const char* aType)
 void
 Navigator::Init()
 {
+  Preferences::AddBoolVarCache(&sDoNotTrackEnabled,
+                               "privacy.donottrackheader.enabled",
+                               false);
   Preferences::AddBoolVarCache(&sVibratorEnabled,
                                "dom.vibrator.enabled", true);
   Preferences::AddUintVarCache(&sMaxVibrateMS,
@@ -756,13 +761,7 @@ Navigator::GetBuildID(nsAString& aBuildID)
 NS_IMETHODIMP
 Navigator::GetDoNotTrack(nsAString &aResult)
 {
-  bool doNotTrack = nsContentUtils::DoNotTrackEnabled();
-  if (!doNotTrack) {
-    nsCOMPtr<nsILoadContext> loadContext = do_GetInterface(mWindow);
-    doNotTrack = loadContext && loadContext->UseTrackingProtection();
-  }
-
-  if (doNotTrack) {
+  if (sDoNotTrackEnabled) {
     aResult.AssignLiteral("1");
   } else {
     aResult.AssignLiteral("unspecified");
@@ -1618,6 +1617,20 @@ Navigator::GetDeprecatedBattery(ErrorResult& aRv)
   }
 
   return mBatteryManager;
+}
+
+already_AddRefed<Promise>
+Navigator::PublishServer(const nsAString& aName,
+                         const FlyWebPublishOptions& aOptions,
+                         ErrorResult& aRv)
+{
+  RefPtr<FlyWebService> service = FlyWebService::GetOrCreate();
+  if (!service) {
+    aRv.Throw(NS_ERROR_FAILURE);
+    return nullptr;
+  }
+
+  return service->PublishServer(aName, aOptions, mWindow, aRv);
 }
 
 already_AddRefed<Promise>
