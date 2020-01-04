@@ -292,15 +292,9 @@ private:
       return;
     }
 
-    int32_t rowToOutput = aStart;
-    mNext.template WriteRows<PixelType>([&](PixelType* aRow, uint32_t aLength) {
-      const uint8_t* rowToOutputPointer = GetRowPointer(rowToOutput);
-      memcpy(aRow, rowToOutputPointer, aLength * sizeof(PixelType));
-
-      rowToOutput++;
-      return rowToOutput >= aUntil ? Some(WriteState::NEED_MORE_DATA)
-                                   : Nothing();
-    });
+    for (int32_t rowToOutput = aStart; rowToOutput < aUntil; ++rowToOutput) {
+      mNext.WriteBuffer(reinterpret_cast<PixelType*>(GetRowPointer(rowToOutput)));
+    }
   }
 
   uint8_t* GetRowPointer(uint32_t aRow) const
@@ -424,14 +418,9 @@ protected:
     
     
     if (mFrameRect.y > 0) {
-      int32_t rowsToWrite = mFrameRect.y;
-      mNext.template WriteRows<uint32_t>([&](uint32_t* aRow, uint32_t aLength)
-                                           -> Maybe<WriteState> {
-        memset(aRow, 0, aLength * sizeof(uint32_t));
-        rowsToWrite--;
-        return rowsToWrite > 0 ? Nothing()
-                               : Some(WriteState::NEED_MORE_DATA);
-      });
+      for (int32_t rowToOutput = 0; rowToOutput < mFrameRect.y ; ++rowToOutput) {
+        mNext.WriteEmptyRow();
+      }
     }
 
     
@@ -447,10 +436,7 @@ protected:
     
     
     
-    mNext.template WriteRows<uint32_t>([](uint32_t* aRow, uint32_t aLength) {
-      memset(aRow, 0, aLength * sizeof(uint32_t));
-      return Nothing();
-    });
+    while (mNext.WriteEmptyRow() == WriteState::NEED_MORE_DATA) { }
 
     mRow = mFrameRect.YMost();
     return nullptr;  
@@ -474,37 +460,25 @@ protected:
 
     
     if (mBuffer) {
-      mNext.template WriteRows<uint32_t>([&](uint32_t* aRow, uint32_t aLength) {
-        
-        MOZ_ASSERT(mFrameRect.x >= 0);
-        MOZ_ASSERT(uint32_t(mFrameRect.x) < aLength);
-        memset(aRow, 0, mFrameRect.x * sizeof(uint32_t));
+      
+      
+      
+      uint32_t* source = reinterpret_cast<uint32_t*>(mBuffer.get()) -
+                         std::min(mUnclampedFrameRect.x, 0);
 
-        
-        MOZ_ASSERT(mFrameRect.width >= 0);
-        aRow += mFrameRect.x;
-        aLength -= std::min(aLength, uint32_t(mFrameRect.x));
-        uint32_t toWrite = std::min(aLength, uint32_t(mFrameRect.width));
-        uint8_t* source = mBuffer.get() -
-                          std::min(mUnclampedFrameRect.x, 0) * sizeof(uint32_t);
-        MOZ_ASSERT(source >= mBuffer.get());
-        MOZ_ASSERT(source + toWrite * sizeof(uint32_t)
-                     <= mBuffer.get() + mUnclampedFrameRect.width * sizeof(uint32_t));
-        memcpy(aRow, source, toWrite * sizeof(uint32_t));
+      
+      
+      
+      
+      WriteState state = mNext.WriteBuffer(source, mFrameRect.x, mFrameRect.width);
 
-        
-        aRow += toWrite;
-        aLength -= std::min(aLength, toWrite);
-        memset(aRow, 0, aLength * sizeof(uint32_t));
-
-        return Some(WriteState::NEED_MORE_DATA);
-      });
-
-      rowPtr = mBuffer.get();
+      rowPtr = state == WriteState::NEED_MORE_DATA ? mBuffer.get()
+                                                   : nullptr;
     } else {
       rowPtr = mNext.AdvanceRow();
     }
 
+    
     
     if (mRow < mFrameRect.YMost() || rowPtr == nullptr) {
       return AdjustRowPointer(rowPtr);
@@ -512,10 +486,7 @@ protected:
 
     
     
-    mNext.template WriteRows<uint32_t>([](uint32_t* aRow, uint32_t aLength) {
-      memset(aRow, 0, aLength * sizeof(uint32_t));
-      return Nothing();
-    });
+    while (mNext.WriteEmptyRow() == WriteState::NEED_MORE_DATA) { }
 
     mRow = mFrameRect.YMost();
     return nullptr;  
@@ -525,7 +496,7 @@ private:
   uint8_t* AdjustRowPointer(uint8_t* aNextRowPointer) const
   {
     if (mBuffer) {
-      MOZ_ASSERT(aNextRowPointer == mBuffer.get());
+      MOZ_ASSERT(aNextRowPointer == mBuffer.get() || aNextRowPointer == nullptr);
       return aNextRowPointer;  
     }
 
