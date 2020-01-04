@@ -378,8 +378,25 @@ DataTransfer::GetFiles(nsIDOMFileList** aFileList)
 already_AddRefed<DOMStringList>
 DataTransfer::Types() const
 {
-  ErrorResult rv;
-  return MozTypesAt(0, rv);
+  RefPtr<DOMStringList> types = new DOMStringList();
+  if (mItems.Length()) {
+    bool addFile = false;
+    const nsTArray<TransferItem>& item = mItems[0];
+    for (uint32_t i = 0; i < item.Length(); i++) {
+      const nsString& format = item[i].mFormat;
+      types->Add(format);
+      if (!addFile) {
+        addFile = format.EqualsASCII(kFileMime) ||
+                  format.EqualsASCII("application/x-moz-file-promise");
+      }
+    }
+
+    if (addFile) {
+      types->Add(NS_LITERAL_STRING("Files"));
+    }
+  }
+
+  return types.forget();
 }
 
 NS_IMETHODIMP
@@ -553,7 +570,7 @@ DataTransfer::GetMozSourceNode(nsIDOMNode** aSourceNode)
 }
 
 already_AddRefed<DOMStringList>
-DataTransfer::MozTypesAt(uint32_t aIndex, ErrorResult& aRv) const
+DataTransfer::MozTypesAt(uint32_t aIndex, ErrorResult& aRv)
 {
   
   if (aIndex > 0 &&
@@ -565,27 +582,10 @@ DataTransfer::MozTypesAt(uint32_t aIndex, ErrorResult& aRv) const
 
   RefPtr<DOMStringList> types = new DOMStringList();
   if (aIndex < mItems.Length()) {
-    bool addFile = false;
     
-    const nsTArray<TransferItem>& item = mItems[aIndex];
+    nsTArray<TransferItem>& item = mItems[aIndex];
     for (uint32_t i = 0; i < item.Length(); i++) {
-      const nsString& format = item[i].mFormat;
-      types->Add(format);
-      if (!addFile) {
-        addFile = format.EqualsASCII(kFileMime);
-      }
-    }
-
-    if (addFile) {
-      
-      
-      
-      if (!nsContentUtils::LegacyIsCallerChromeOrNativeCode()) {
-        types->Clear();
-        types->Add(NS_LITERAL_STRING(kFileMime));
-      }
-
-      types->Add(NS_LITERAL_STRING("Files"));
+      types->Add(item[i].mFormat);
     }
   }
 
@@ -632,22 +632,11 @@ DataTransfer::GetDataAtInternal(const nsAString& aFormat, uint32_t aIndex,
     return NS_ERROR_DOM_INDEX_SIZE_ERR;
   }
 
+
   nsAutoString format;
   GetRealFormat(aFormat, format);
 
   nsTArray<TransferItem>& item = mItems[aIndex];
-
-  
-  
-  if (!format.EqualsLiteral(kFileMime) &&
-      !nsContentUtils::IsSystemPrincipal(aSubjectPrincipal)) {
-    uint32_t count = item.Length();
-    for (uint32_t i = 0; i < count; i++) {
-      if (item[i].mFormat.EqualsLiteral(kFileMime)) {
-        return NS_OK;
-      }
-    }
-  }
 
   
   
@@ -757,8 +746,8 @@ DataTransfer::SetDataAtInternal(const nsAString& aFormat, nsIVariant* aData,
   
   
   if (!nsContentUtils::IsSystemPrincipal(aSubjectPrincipal)) {
-    if (aFormat.EqualsLiteral(kFilePromiseMime) ||
-        aFormat.EqualsLiteral(kFileMime)) {
+    if (aFormat.EqualsLiteral("application/x-moz-file-promise") ||
+        aFormat.EqualsLiteral("application/x-moz-file")) {
       return NS_ERROR_DOM_SECURITY_ERR;
     }
 
