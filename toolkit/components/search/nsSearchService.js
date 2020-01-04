@@ -2074,54 +2074,57 @@ Engine.prototype = {
       case "https":
       case "ftp":
         
-        LOG("_setIcon: Downloading icon: \"" + uri.spec +
-            "\" for engine: \"" + this.name + "\"");
-        var chan = NetUtil.ioService.newChannelFromURI2(uri,
-                                                        null,      
-                                                        Services.scriptSecurityManager.getSystemPrincipal(),
-                                                        null,      
-                                                        Ci.nsILoadInfo.SEC_NORMAL,
-                                                        Ci.nsIContentPolicy.TYPE_IMAGE);
+        if (!this._readOnly ||
+            getBoolPref(BROWSER_SEARCH_PREF + "cache.enabled", true)) {
+          LOG("_setIcon: Downloading icon: \"" + uri.spec +
+              "\" for engine: \"" + this.name + "\"");
+          var chan = NetUtil.ioService.newChannelFromURI2(uri,
+                                                          null,      
+                                                          Services.scriptSecurityManager.getSystemPrincipal(),
+                                                          null,      
+                                                          Ci.nsILoadInfo.SEC_NORMAL,
+                                                          Ci.nsIContentPolicy.TYPE_IMAGE);
 
-        let iconLoadCallback = function (aByteArray, aEngine) {
-          
-          
-          if (aEngine._hasPreferredIcon && !aIsPreferred)
-            return;
+          let iconLoadCallback = function (aByteArray, aEngine) {
+            
+            
+            if (aEngine._hasPreferredIcon && !aIsPreferred)
+              return;
 
-          if (!aByteArray || aByteArray.length > MAX_ICON_SIZE) {
-            LOG("iconLoadCallback: load failed, or the icon was too large!");
-            return;
+            if (!aByteArray || aByteArray.length > MAX_ICON_SIZE) {
+              LOG("iconLoadCallback: load failed, or the icon was too large!");
+              return;
+            }
+
+            var str = btoa(String.fromCharCode.apply(null, aByteArray));
+            let dataURL = ICON_DATAURL_PREFIX + str;
+            aEngine._iconURI = makeURI(dataURL);
+
+            if (aWidth && aHeight) {
+              aEngine._addIconToMap(aWidth, aHeight, dataURL)
+            }
+
+            
+            
+            
+            
+            
+            if (aEngine._file && !aEngine._readOnly)
+              aEngine._serializeToFile();
+
+            notifyAction(aEngine, SEARCH_ENGINE_CHANGED);
+            aEngine._hasPreferredIcon = aIsPreferred;
           }
 
-          var str = btoa(String.fromCharCode.apply(null, aByteArray));
-          let dataURL = ICON_DATAURL_PREFIX + str;
-          aEngine._iconURI = makeURI(dataURL);
+          
+          
+          
+          var engineToSet = this._engineToUpdate || this;
 
-          if (aWidth && aHeight) {
-            aEngine._addIconToMap(aWidth, aHeight, dataURL)
-          }
-
-          
-          
-          
-          
-          
-          if (aEngine._file && !aEngine._readOnly)
-            aEngine._serializeToFile();
-
-          notifyAction(aEngine, SEARCH_ENGINE_CHANGED);
-          aEngine._hasPreferredIcon = aIsPreferred;
+          var listener = new loadListener(chan, engineToSet, iconLoadCallback);
+          chan.notificationCallbacks = listener;
+          chan.asyncOpen(listener, null);
         }
-
-        
-        
-        
-        var engineToSet = this._engineToUpdate || this;
-
-        var listener = new loadListener(chan, engineToSet, iconLoadCallback);
-        chan.notificationCallbacks = listener;
-        chan.asyncOpen(listener, null);
         break;
     }
   },
@@ -3611,6 +3614,9 @@ SearchService.prototype = {
   },
 
   _buildCache: function SRCH_SVC__buildCache() {
+    if (!getBoolPref(BROWSER_SEARCH_PREF + "cache.enabled", true))
+      return;
+
     TelemetryStopwatch.start("SEARCH_SERVICE_BUILD_CACHE_MS");
     let cache = {};
     let locale = getLocale();
@@ -3691,10 +3697,13 @@ SearchService.prototype = {
     LOG("_syncLoadEngines: start");
     
     let cache = {};
-    let cacheFile = getDir(NS_APP_USER_PROFILE_50_DIR);
-    cacheFile.append("search.json");
-    if (cacheFile.exists())
-      cache = this._readCacheFile(cacheFile);
+    let cacheEnabled = getBoolPref(BROWSER_SEARCH_PREF + "cache.enabled", true);
+    if (cacheEnabled) {
+      let cacheFile = getDir(NS_APP_USER_PROFILE_50_DIR);
+      cacheFile.append("search.json");
+      if (cacheFile.exists())
+        cache = this._readCacheFile(cacheFile);
+    }
 
     let [chromeFiles, chromeURIs] = this._findJAREngines();
 
@@ -3747,7 +3756,7 @@ SearchService.prototype = {
                        this._visibleDefaultEngines.some(notInCacheVisibleEngines) ||
                        toLoad.some(modifiedDir);
 
-    if (rebuildCache) {
+    if (!cacheEnabled || rebuildCache) {
       LOG("_loadEngines: Absent or outdated cache. Loading engines from disk.");
       distDirs.forEach(this._loadEnginesFromDir, this);
 
@@ -3755,7 +3764,8 @@ SearchService.prototype = {
 
       otherDirs.forEach(this._loadEnginesFromDir, this);
 
-      this._buildCache();
+      if (cacheEnabled)
+        this._buildCache();
       return;
     }
 
@@ -3777,8 +3787,11 @@ SearchService.prototype = {
       LOG("_asyncLoadEngines: start");
       
       let cache = {};
-      let cacheFilePath = OS.Path.join(OS.Constants.Path.profileDir, "search.json");
-      cache = yield checkForSyncCompletion(this._asyncReadCacheFile(cacheFilePath));
+      let cacheEnabled = getBoolPref(BROWSER_SEARCH_PREF + "cache.enabled", true);
+      if (cacheEnabled) {
+        let cacheFilePath = OS.Path.join(OS.Constants.Path.profileDir, "search.json");
+        cache = yield checkForSyncCompletion(this._asyncReadCacheFile(cacheFilePath));
+      }
 
       Services.obs.notifyObservers(null, SEARCH_SERVICE_TOPIC, "find-jar-engines");
       let [chromeFiles, chromeURIs] =
@@ -3869,7 +3882,7 @@ SearchService.prototype = {
                          this._visibleDefaultEngines.some(notInCacheVisibleEngines) ||
                          (yield checkForSyncCompletion(hasModifiedDir(toLoad)));
 
-      if (rebuildCache) {
+      if (!cacheEnabled || rebuildCache) {
         LOG("_asyncLoadEngines: Absent or outdated cache. Loading engines from disk.");
         let engines = [];
         for (let loadDir of distDirs) {
@@ -3889,7 +3902,8 @@ SearchService.prototype = {
         for (let engine of engines) {
           this._addEngineToStore(engine);
         }
-        this._buildCache();
+        if (cacheEnabled)
+          this._buildCache();
         return;
       }
 
@@ -5529,6 +5543,12 @@ var engineUpdateService = {
     let engine = aEngine.wrappedJSObject;
     ULOG("update called for " + aEngine._name);
     if (!getBoolPref(BROWSER_SEARCH_PREF + "update", true) || !engine._hasUpdates)
+      return;
+
+    
+    
+    if (engine._readOnly &&
+        !getBoolPref(BROWSER_SEARCH_PREF + "cache.enabled", true))
       return;
 
     let testEngine = null;
