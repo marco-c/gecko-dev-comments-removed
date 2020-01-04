@@ -909,9 +909,25 @@ var Impl = {
       
       return;
     }
-    
-    this._log.trace("_onUploadPrefChange - Sending deletion ping.");
-    this.submitExternalPing(PING_TYPE_DELETION, {}, { addClientId: true });
+
+    let p = Task.spawn(function*() {
+      try {
+        
+        yield TelemetrySend.clearCurrentPings();
+
+        
+        yield TelemetryStorage.runRemovePendingPingsTask();
+      } catch (e) {
+        this._log.error("_onUploadPrefChange - error clearing pending pings", e);
+      } finally {
+        
+        this._log.trace("_onUploadPrefChange - Sending deletion ping.");
+        this.submitExternalPing(PING_TYPE_DELETION, {}, { addClientId: true });
+      }
+    }.bind(this));
+
+    this._shutdownBarrier.client.addBlocker(
+      "TelemetryController: removing pending pings after data upload was disabled", p);
   },
 
   _attachObservers: function() {

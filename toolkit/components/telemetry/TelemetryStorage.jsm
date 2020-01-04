@@ -116,22 +116,9 @@ var Policy = {
 
 
 function waitForAll(it) {
-  let list = Array.from(it);
-  let pending = list.length;
-  if (pending == 0) {
-    return Promise.resolve();
-  }
-  return new Promise(function(resolve, reject) {
-    let rfunc = () => {
-      --pending;
-      if (pending == 0) {
-        resolve();
-      }
-    };
-    for (let p of list) {
-      p.then(rfunc, rfunc);
-    }
-  });
+  let dummy = () => {};
+  let promises = [for (p of it) p.catch(dummy)];
+  return Promise.all(promises);
 }
 
 this.TelemetryStorage = {
@@ -202,6 +189,15 @@ this.TelemetryStorage = {
 
   runEnforcePendingPingsQuotaTask: function() {
     return TelemetryStorageImpl.runEnforcePendingPingsQuotaTask();
+  },
+
+  
+
+
+
+
+  runRemovePendingPingsTask: function() {
+    return TelemetryStorageImpl.runRemovePendingPingsTask();
   },
 
   
@@ -537,6 +533,12 @@ var TelemetryStorageImpl = {
   _scannedArchiveDirectory: false,
 
   
+  _removePendingPingsTask: null,
+
+  
+  _activePendingPingSaves: new Set(),
+
+  
   
   _pendingPings: new Map(),
 
@@ -561,12 +563,34 @@ var TelemetryStorageImpl = {
 
   shutdown: Task.async(function*() {
     this._shutdown = true;
-    yield this._abortedSessionSerializer.flushTasks();
-    yield this._deletionPingSerializer.flushTasks();
+
     
     
-    yield this._cleanArchiveTask;
-    yield this._enforcePendingPingsQuotaTask;
+    yield this._abortedSessionSerializer.flushTasks().catch(ex => {
+      this._log.error("shutdown - failed to flush aborted-session writes", ex);
+    });
+
+    yield this._deletionPingSerializer.flushTasks().catch(ex => {
+      this._log.error("shutdown - failed to flush deletion ping writes", ex);
+    });
+
+    if (this._cleanArchiveTask) {
+      yield this._cleanArchiveTask.catch(ex => {
+        this._log.error("shutdown - the archive cleaning task failed", ex);
+      });
+    }
+
+    if (this._enforcePendingPingsQuotaTask) {
+      yield this._enforcePendingPingsQuotaTask.catch(ex => {
+        this._log.error("shutdown - the pending pings quota task failed", ex);
+      });
+    }
+
+    if (this._removePendingPingsTask) {
+      yield this._removePendingPingsTask.catch(ex => {
+        this._log.error("shutdown - the pending pings removal task failed", ex);
+      });
+    }
   }),
 
   
@@ -1171,13 +1195,15 @@ var TelemetryStorageImpl = {
   },
 
   savePendingPing: function(ping) {
-    return this.savePing(ping, true).then((path) => {
+    let p = this.savePing(ping, true).then((path) => {
       this._pendingPings.set(ping.id, {
         path: path,
         lastModificationDate: Policy.now().getTime(),
       });
       this._log.trace("savePendingPing - saved ping with id " + ping.id);
     });
+    this._trackPendingPingSaveTask(p);
+    return p;
   },
 
   loadPendingPing: Task.async(function*(id) {
@@ -1238,6 +1264,80 @@ var TelemetryStorageImpl = {
     return OS.File.remove(info.path).catch((ex) =>
       this._log.error("removePendingPing - failed to remove ping", ex));
   },
+
+  
+
+
+
+
+
+  _trackPendingPingSaveTask: function (promise) {
+    let clear = () => this._activePendingPingSaves.delete(promise);
+    promise.then(clear, clear);
+    this._activePendingPingSaves.add(promise);
+  },
+
+  
+
+
+
+
+  promisePendingPingSaves: function () {
+    
+    
+    return waitForAll(this._activePendingPingSaves);
+  },
+
+  
+
+
+
+
+  runRemovePendingPingsTask: Task.async(function*() {
+    
+    if (this._removePendingPingsTask) {
+      return this._removePendingPingsTask;
+    }
+
+    
+    try {
+      this._removePendingPingsTask = this.removePendingPings();
+      yield this._removePendingPingsTask;
+    } finally {
+      this._removePendingPingsTask = null;
+    }
+  }),
+
+  removePendingPings: Task.async(function*() {
+    this._log.trace("removePendingPings - removing all pending pings");
+
+    
+    yield this.promisePendingPingSaves();
+
+    
+    
+    const directory = TelemetryStorage.pingDirectoryPath;
+    let iter = new OS.File.DirectoryIterator(directory);
+
+    try {
+      if (!(yield iter.exists())) {
+        this._log.trace("removePendingPings - the pending pings directory doesn't exist");
+        return;
+      }
+
+      let files = (yield iter.nextBatch()).filter(e => !e.isDir);
+      for (let file of files) {
+        try {
+          yield OS.File.remove(file.path);
+        } catch (ex) {
+          this._log.error("removePendingPings - failed to remove file " + file.path, ex);
+          continue;
+        }
+      }
+    } finally {
+      yield iter.close();
+    }
+  }),
 
   loadPendingPingList: function() {
     
@@ -1490,8 +1590,10 @@ var TelemetryStorageImpl = {
     this._log.trace("saveDeletionPing - ping path: " + gDeletionPingFilePath);
     yield OS.File.makeDir(gDataReportingDir, { ignoreExisting: true });
 
-    return this._deletionPingSerializer.enqueueTask(() =>
+    let p = this._deletionPingSerializer.enqueueTask(() =>
       this.savePingToFile(ping, gDeletionPingFilePath, true));
+    this._trackPendingPingSaveTask(p);
+    return p;
   }),
 
   

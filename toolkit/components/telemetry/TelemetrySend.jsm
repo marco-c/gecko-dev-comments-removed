@@ -237,6 +237,13 @@ this.TelemetrySend = {
   
 
 
+  clearCurrentPings: function() {
+    return TelemetrySendImpl.clearCurrentPings();
+  },
+
+  
+
+
   testWaitOnOutgoingPings: function() {
     return TelemetrySendImpl.promisePendingPingActivity();
   },
@@ -326,16 +333,19 @@ var SendScheduler = {
     return Promise.resolve(this._sendTask);
   },
 
+  start: function() {
+    this._log.trace("start");
+    this._sendsFailed = false;
+    this._backoffDelay = SEND_TICK_DELAY;
+    this._shutdown = false;
+  },
+
   
 
 
   reset: function() {
     this._log.trace("reset");
-    return this.shutdown().then(() => {
-      this._sendsFailed = false;
-      this._backoffDelay = SEND_TICK_DELAY;
-      this._shutdown = false;
-    });
+    return this.shutdown().then(() => this.start());
   },
 
   
@@ -521,6 +531,8 @@ var SendScheduler = {
 
 var TelemetrySendImpl = {
   _sendingEnabled: false,
+  
+  _shutdown: false,
   _logger: null,
   
   _pendingPingRequests: new Map(),
@@ -616,6 +628,8 @@ var TelemetrySendImpl = {
    }),
 
   shutdown: Task.async(function*() {
+    this._shutdown = true;
+
     for (let topic of this.OBSERVER_TOPICS) {
       try {
         Services.obs.removeObserver(this, topic);
@@ -643,8 +657,8 @@ var TelemetrySendImpl = {
   reset: function() {
     this._log.trace("reset");
 
+    this._shutdown = false;
     this._currentPings = new Map();
-
     this._overduePingCount = 0;
 
     const histograms = [
@@ -705,6 +719,38 @@ var TelemetrySendImpl = {
     this._log.trace("setServer", server);
     this._server = server;
   },
+
+  
+
+
+  clearCurrentPings: Task.async(function*() {
+    if (this._shutdown) {
+      this._log.trace("clearCurrentPings - in shutdown, bailing out");
+      return;
+    }
+
+    
+    
+    yield SendScheduler.shutdown();
+
+    
+    this._cancelOutgoingRequests();
+
+    
+    this._currentPings.clear();
+
+    
+    
+    
+    if (this._shutdown) {
+      this._log.trace("clearCurrentPings - in shutdown, not spinning SendScheduler up again");
+      return;
+    }
+
+    
+    SendScheduler.start();
+    SendScheduler.triggerSendingPings(true);
+  }),
 
   _cancelOutgoingRequests: function() {
     
