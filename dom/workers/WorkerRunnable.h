@@ -18,6 +18,10 @@
 struct JSContext;
 class nsIEventTarget;
 
+namespace mozilla {
+class ErrorResult;
+} 
+
 BEGIN_WORKERS_NAMESPACE
 
 class WorkerPrivate;
@@ -405,8 +409,33 @@ protected:
 public:
   bool Dispatch(JSContext* aCx);
 
+  
+  
+  
+  void Dispatch(ErrorResult& aRv);
+
 private:
   NS_IMETHOD Run() override;
+};
+
+
+
+
+
+
+
+
+class WorkerCheckAPIExposureOnMainThreadRunnable : public WorkerMainThreadRunnable
+{
+public:
+  explicit WorkerCheckAPIExposureOnMainThreadRunnable(WorkerPrivate* aWorkerPrivate):
+    WorkerMainThreadRunnable(aWorkerPrivate)
+  {}
+  ~WorkerCheckAPIExposureOnMainThreadRunnable() {}
+
+  
+  
+  bool Dispatch();
 };
 
 END_WORKERS_NAMESPACE
