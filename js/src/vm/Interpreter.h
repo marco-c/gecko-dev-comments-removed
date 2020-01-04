@@ -73,17 +73,6 @@ Invoke(JSContext* cx, const AnyInvokeArgs& args)
 }
 
 
-
-
-
-
-inline bool
-InternalInvoke(JSContext* cx, const CallArgs& args)
-{
-    return InternalCallOrConstruct(cx, args, NO_CONSTRUCT);
-}
-
-
 extern bool
 Invoke(JSContext* cx, const Value& thisv, const Value& fval, unsigned argc, const Value* argv,
        MutableHandleValue rval);

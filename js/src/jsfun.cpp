@@ -1148,22 +1148,35 @@ js::fun_call(JSContext* cx, unsigned argc, Value* vp)
 {
     CallArgs args = CallArgsFromVp(argc, vp);
 
-    HandleValue fval = args.thisv();
-    if (!IsCallable(fval)) {
+    HandleValue func = args.thisv();
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (!IsCallable(func)) {
         ReportIncompatibleMethod(cx, args, &JSFunction::class_);
         return false;
     }
 
-    args.setCallee(fval);
-    args.setThis(args.get(0));
+    size_t argCount = args.length();
+    if (argCount > 0)
+        argCount--; 
 
-    if (args.length() > 0) {
-        for (size_t i = 0; i < args.length() - 1; i++)
-            args[i].set(args[i + 1]);
-        args = CallArgsFromVp(args.length() - 1, vp);
-    }
+    InvokeArgs iargs(cx);
+    if (!iargs.init(argCount))
+        return false;
 
-    return InternalInvoke(cx, args);
+    for (size_t i = 0; i < argCount; i++)
+        iargs[i].set(args[i + 1]);
+
+    return Call(cx, func, args.get(0), iargs, args.rval());
 }
 
 
@@ -1172,6 +1185,10 @@ js::fun_apply(JSContext* cx, unsigned argc, Value* vp)
 {
     CallArgs args = CallArgsFromVp(argc, vp);
 
+    
+    
+    
+    
     
     HandleValue fval = args.thisv();
     if (!IsCallable(fval)) {
@@ -1195,9 +1212,6 @@ js::fun_apply(JSContext* cx, unsigned argc, Value* vp)
         MOZ_ASSERT(iter.numActualArgs() <= ARGS_LENGTH_MAX);
         if (!args2.init(iter.numActualArgs()))
             return false;
-
-        args2.setCallee(fval);
-        args2.setThis(args[0]);
 
         
         iter.unaliasedForEachActual(cx, CopyTo(args2.array()));
@@ -1226,20 +1240,12 @@ js::fun_apply(JSContext* cx, unsigned argc, Value* vp)
             return false;
 
         
-        args2.setCallee(fval);
-        args2.setThis(args[0]);
-
-        
         if (!GetElements(cx, aobj, length, args2.array()))
             return false;
     }
 
     
-    if (!Invoke(cx, args2))
-        return false;
-
-    args.rval().set(args2.rval());
-    return true;
+    return Call(cx, fval, args[0], args2, args.rval());
 }
 
 bool
