@@ -91,13 +91,11 @@ function getChannelForURL(url, notificationCallbacks) {
     tmpChannel.loadInfo.originAttributes = { appId: principal.appId,
                                              inIsolatedMozBrowser: principal.isInIsolatedMozBrowserElement
                                            };
-    tmpChannel.notificationCallbacks =
-      new LoadContextCallback(principal.appId,
-                              principal.isInIsolatedMozBrowserElement,
-                              false,
-                              false);
-
+    
+    
+    tmpChannel.notificationCallbacks = null;
   }
+
   return tmpChannel;
 }
 

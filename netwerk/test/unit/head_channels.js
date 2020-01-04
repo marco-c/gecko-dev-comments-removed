@@ -206,36 +206,13 @@ ChannelEventSink.prototype = {
 
 
 
-
-
-function LoadContextCallback(appId, inIsolatedMozBrowser, isPrivate, isContent) {
+function OriginAttributes(appId, inIsolatedMozBrowser, privateId) {
   this.appId = appId;
-  this.isInIsolatedMozBrowserElement = inIsolatedMozBrowser;
-  this.originAttributes = {
-    appId: appId,
-    inIsolatedMozBrowser: inIsolatedMozBrowser
-  };
-  this.usePrivateBrowsing = isPrivate;
-  this.isContent = isContent;
+  this.inIsolatedMozBrowser = inIsolatedMozBrowser;
+  this.privateBrowsingId = privateId;
 }
-
-LoadContextCallback.prototype = {
-  associatedWindow: null,
-  topWindow : null,
-  isAppOfType: function(appType) {
-    throw Cr.NS_ERROR_NOT_IMPLEMENTED;
-  },
-  QueryInterface: function(iid) {
-    if (iid.equals(Ci.nsILoadContext) ||
-        iid.equals(Ci.nsIInterfaceRequestor) ||
-        iid.equals(Ci.nsISupports)) {
-        return this;
-    }
-    throw Cr.NS_ERROR_NO_INTERFACE;
-  },
-  getInterface: function(iid) {
-    if (iid.equals(Ci.nsILoadContext))
-      return this;
-    throw Cr.NS_ERROR_NO_INTERFACE;
-  },
-}
+OriginAttributes.prototype = {
+  appId: 0,
+  inIsolatedMozBrowser: false,
+  privateBrowsingId: 0
+};

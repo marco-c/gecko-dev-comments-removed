@@ -5,7 +5,6 @@
 
 
 
-
  
 
 XPCOMUtils.defineLazyGetter(this, "URL", function() {
@@ -36,13 +35,13 @@ function inChildProcess() {
 
 var tests = [
   { cookieName: 'LCC_App0_BrowF_PrivF', 
-    loadContext: new LoadContextCallback(0, false, false, 1) }, 
+    originAttributes: new OriginAttributes(0, false, 0) },
   { cookieName: 'LCC_App0_BrowT_PrivF', 
-    loadContext: new LoadContextCallback(0, true,  false, 1) }, 
+    originAttributes: new OriginAttributes(0, true, 0) },
   { cookieName: 'LCC_App1_BrowF_PrivF', 
-    loadContext: new LoadContextCallback(1, false, false, 1) }, 
+    originAttributes: new OriginAttributes(1, false, 0) },
   { cookieName: 'LCC_App1_BrowT_PrivF', 
-    loadContext: new LoadContextCallback(1, true,  false, 1) }, 
+    originAttributes: new OriginAttributes(1, true, 0) },
 ];
 
 
@@ -51,10 +50,7 @@ var i = 0;
 function setupChannel(path)
 {
   var chan = NetUtil.newChannel({uri: URL + path, loadUsingSystemPrincipal: true});
-  chan.loadInfo.originAttributes = { appId: tests[i].loadContext.appId,
-                                     inIsolatedMozBrowser: tests[i].loadContext.isInIsolatedMozBrowserElement
-                                   };
-  chan.notificationCallbacks = tests[i].loadContext;
+  chan.loadInfo.originAttributes = tests[i].originAttributes;
   chan.QueryInterface(Ci.nsIHttpChannel);
   return chan;
 }

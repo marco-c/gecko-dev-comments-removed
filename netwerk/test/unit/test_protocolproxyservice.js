@@ -597,8 +597,9 @@ function run_pac4_test() {
     uri: "http://www.mozilla.org/",
     loadUsingSystemPrincipal: true
   });
-  channel.notificationCallbacks =
-    AppsUtils.createLoadContext(appId, isInIsolatedMozBrowser);
+  channel.loadInfo.originAttributes = { appId: appId,
+                                        inIsolatedMozBrowser: isInIsolatedMozBrowser
+                                      };
 
   
   prefs.setIntPref("network.proxy.type", 2);
