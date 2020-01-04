@@ -11,6 +11,9 @@ var Cr = Components.results;
 Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
+XPCOMUtils.defineLazyModuleGetter(this, "ReaderMode",
+  "resource://gre/modules/ReaderMode.jsm");
+
 var global = this;
 
 
@@ -405,6 +408,7 @@ var Printing = {
     "Printing:Preview:Enter",
     "Printing:Preview:Exit",
     "Printing:Preview:Navigate",
+    "Printing:Preview:ParseDocument",
     "Printing:Preview:UpdatePageCount",
     "Printing:Print",
   ],
@@ -437,7 +441,7 @@ var Printing = {
     let data = message.data;
     switch(message.name) {
       case "Printing:Preview:Enter": {
-        this.enterPrintPreview(Services.wm.getOuterWindowWithId(data.windowID));
+        this.enterPrintPreview(Services.wm.getOuterWindowWithId(data.windowID), data.simplifiedMode);
         break;
       }
 
@@ -448,6 +452,11 @@ var Printing = {
 
       case "Printing:Preview:Navigate": {
         this.navigate(data.navType, data.pageNum);
+        break;
+      }
+
+      case "Printing:Preview:ParseDocument": {
+        this.parseDocument(data.URL, Services.wm.getOuterWindowWithId(data.windowID));
         break;
       }
 
@@ -487,7 +496,98 @@ var Printing = {
     return null;
   },
 
-  enterPrintPreview(contentWindow) {
+  parseDocument(URL, contentWindow) {
+    
+    
+    let articlePromise = ReaderMode.parseDocument(contentWindow.document).catch(Cu.reportError);
+    articlePromise.then(function (article) {
+      content.document.head.innerHTML = "";
+
+      
+      content.document.title = article.title;
+
+      
+      
+      
+      let headBaseElement = content.document.createElement("base");
+      headBaseElement.setAttribute("href", URL);
+      content.document.head.appendChild(headBaseElement);
+
+      
+      let headStyleElement = content.document.createElement("link");
+      headStyleElement.setAttribute("rel", "stylesheet");
+      headStyleElement.setAttribute("href", "chrome://global/skin/aboutReader.css");
+      headStyleElement.setAttribute("type", "text/css");
+      content.document.head.appendChild(headStyleElement);
+
+      content.document.body.innerHTML = "";
+
+      
+      let containerElement = content.document.createElement("div");
+      containerElement.setAttribute("id", "container");
+      content.document.body.appendChild(containerElement);
+
+      
+      let headerElement = content.document.createElement("div");
+      headerElement.setAttribute("id", "reader-header");
+      headerElement.setAttribute("class", "header");
+      containerElement.appendChild(headerElement);
+
+      
+      let controlHeaderStyle = content.document.createElement("style");
+      controlHeaderStyle.setAttribute("scoped", "");
+      controlHeaderStyle.textContent = "@import url(\"chrome://global/content/simplifyMode.css\");";
+      headerElement.appendChild(controlHeaderStyle);
+
+      
+      let titleElement = content.document.createElement("h1");
+      titleElement.setAttribute("id", "reader-title");
+      titleElement.textContent = article.title;
+      headerElement.appendChild(titleElement);
+
+      let bylineElement = content.document.createElement("div");
+      bylineElement.setAttribute("id", "reader-credits");
+      bylineElement.setAttribute("class", "credits");
+      bylineElement.textContent = article.byline;
+      headerElement.appendChild(bylineElement);
+
+      
+      headerElement.style.display = "block";
+
+      
+      let contentElement = content.document.createElement("div");
+      contentElement.setAttribute("class", "content");
+      containerElement.appendChild(contentElement);
+
+      
+      let controlContentStyle = content.document.createElement("style");
+      controlContentStyle.setAttribute("scoped", "");
+      controlContentStyle.textContent = "@import url(\"chrome://global/skin/aboutReaderContent.css\");";
+      contentElement.appendChild(controlContentStyle);
+
+      
+      let readerContent = content.document.createElement("div");
+      readerContent.setAttribute("id", "moz-reader-content");
+      contentElement.appendChild(readerContent);
+
+      let articleUri = Services.io.newURI(article.url, null, null);
+      let parserUtils = Cc["@mozilla.org/parserutils;1"].getService(Ci.nsIParserUtils);
+      let contentFragment = parserUtils.parseFragment(article.content,
+        Ci.nsIParserUtils.SanitizerDropForms | Ci.nsIParserUtils.SanitizerAllowStyle,
+        false, articleUri, readerContent);
+
+      readerContent.appendChild(contentFragment);
+
+      
+      readerContent.style.display = "block";
+
+      
+      
+      sendAsyncMessage("Printing:Preview:ReaderModeReady");
+    });
+  },
+
+  enterPrintPreview(contentWindow, simplifiedMode) {
     
     
     
@@ -511,6 +611,13 @@ var Printing = {
 
     try {
       let printSettings = this.getPrintSettings();
+
+      
+      
+      
+      if (printSettings && simplifiedMode)
+        printSettings.docURL = contentWindow.document.baseURI;
+
       docShell.printPreview.printPreview(printSettings, contentWindow, this);
     } catch(error) {
       

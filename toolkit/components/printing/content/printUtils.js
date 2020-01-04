@@ -299,6 +299,7 @@ var PrintUtils = {
   _sourceBrowser: null,
   _originalTitle: "",
   _originalURL: "",
+  _shouldSimplify: false,
 
   get usingRemoteTabs() {
     
@@ -479,6 +480,11 @@ var PrintUtils = {
     }
   },
 
+  setSimplifiedMode: function (shouldSimplify)
+  {
+    this._shouldSimplify = shouldSimplify;
+  },
+
   enterPrintPreview: function ()
   {
     
@@ -488,9 +494,46 @@ var PrintUtils = {
     
     let ppBrowser = this._listener.getPrintPreviewBrowser();
     let mm = ppBrowser.messageManager;
-    mm.sendAsyncMessage("Printing:Preview:Enter", {
-      windowID: this._sourceBrowser.outerWindowID,
-    });
+
+    let sendEnterPreviewMessage = function (browser, simplified) {
+      mm.sendAsyncMessage("Printing:Preview:Enter", {
+        windowID: browser.outerWindowID,
+        simplifiedMode: simplified,
+      });
+    };
+
+    
+    
+    
+    
+    
+    if (this._shouldSimplify) {
+      let simplifiedBrowser = this._listener.getSimplifiedSourceBrowser();
+      if (simplifiedBrowser) {
+        sendEnterPreviewMessage(simplifiedBrowser, true);
+      } else {
+        simplifiedBrowser = this._listener.createSimplifiedBrowser();
+
+        
+        
+        
+        let spMM = simplifiedBrowser.messageManager;
+        spMM.addMessageListener("Printing:Preview:ReaderModeReady", function onReaderReady() {
+          spMM.removeMessageListener("Printing:Preview:ReaderModeReady", onReaderReady);
+          sendEnterPreviewMessage(simplifiedBrowser, true);
+        });
+
+        
+        
+        
+        spMM.sendAsyncMessage("Printing:Preview:ParseDocument", {
+          URL: this._listener.getSourceBrowser().currentURI.spec,
+          windowID: this._listener.getSourceBrowser().outerWindowID,
+        });
+      }
+    } else {
+      sendEnterPreviewMessage(this._listener.getSourceBrowser(), false);
+    }
 
     if (this._webProgressPP.value) {
       mm.addMessageListener("Printing:Preview:StateChange", this);
@@ -538,6 +581,12 @@ var PrintUtils = {
       printPreviewTB.initialize(ppBrowser);
 
       
+      if (this._sourceBrowser.isArticle)
+        printPreviewTB.enableSimplifyPage();
+      else
+        printPreviewTB.disableSimplifyPage();
+
+      
       if (document.documentElement.hasAttribute("onclose"))
         this._closeHandlerPP = document.documentElement.getAttribute("onclose");
       else
@@ -580,6 +629,8 @@ var PrintUtils = {
     else
       this._sourceBrowser.focus();
     gFocusedElement = null;
+
+    this.setSimplifiedMode(false);
 
     this._listener.onExit();
   },
