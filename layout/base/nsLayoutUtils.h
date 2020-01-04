@@ -2256,6 +2256,14 @@ public:
   
 
 
+
+
+  static bool HasRelevantAnimationOfProperty(const nsIFrame* aFrame,
+                                             nsCSSProperty aProperty);
+
+  
+
+
   static bool AreAsyncAnimationsEnabled();
 
   
