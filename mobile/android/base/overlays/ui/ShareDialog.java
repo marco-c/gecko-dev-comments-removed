@@ -348,10 +348,15 @@ public class ShareDialog extends Locales.LocaleAwareActivity implements SendTabT
 
     @Override
     public void finish() {
-        super.finish();
+        finish(true);
+    }
 
-        
-        overridePendingTransition(0, 0);
+    private void finish(final boolean shouldOverrideAnimations) {
+        super.finish();
+        if (shouldOverrideAnimations) {
+            
+            overridePendingTransition(0, 0);
+        }
     }
 
     
@@ -413,7 +418,8 @@ public class ShareDialog extends Locales.LocaleAwareActivity implements SendTabT
         } catch (URISyntaxException e) {
             
         } finally {
-            slideOut();
+            
+            finish(false);
         }
     }
 
