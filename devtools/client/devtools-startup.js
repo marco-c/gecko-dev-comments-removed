@@ -70,7 +70,7 @@ DevToolsStartup.prototype = {
     let { loader } = Cu.import("resource://devtools/shared/Loader.jsm", {});
     
     
-    loader.main("devtools/client/main");
+    loader.require("devtools/client/framework/devtools-browser");
   },
 
   handleConsoleFlag: function(cmdLine) {
@@ -154,8 +154,8 @@ DevToolsStartup.prototype = {
       
       let serverLoader = new DevToolsLoader();
       serverLoader.invisibleToDebugger = true;
-      serverLoader.main("devtools/server/main");
-      let debuggerServer = serverLoader.DebuggerServer;
+      let { DebuggerServer: debuggerServer } =
+        serverLoader.require("devtools/server/main");
       debuggerServer.init();
       debuggerServer.addBrowserActors();
       debuggerServer.allowChromeProcess = true;

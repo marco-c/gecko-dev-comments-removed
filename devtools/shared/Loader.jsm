@@ -2,7 +2,6 @@
 
 
 
-
 "use strict";
 
 
@@ -13,10 +12,6 @@ var { Constructor: CC, classes: Cc, interfaces: Ci, utils: Cu } = Components;
 
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
-
-XPCOMUtils.defineLazyModuleGetter(this, "NetUtil", "resource://gre/modules/NetUtil.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "FileUtils", "resource://gre/modules/FileUtils.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "OS", "resource://gre/modules/osfile.jsm");
 
 var { Loader } = Cu.import("resource://gre/modules/commonjs/toolkit/loader.js", {});
 var promise = Cu.import("resource://gre/modules/Promise.jsm", {}).Promise;
@@ -139,15 +134,14 @@ var gNextLoaderID = 0;
 
 
 
-
-
 this.DevToolsLoader = function DevToolsLoader() {
   this.require = this.require.bind(this);
   this.lazyGetter = XPCOMUtils.defineLazyGetter.bind(XPCOMUtils);
   this.lazyImporter = XPCOMUtils.defineLazyModuleGetter.bind(XPCOMUtils);
   this.lazyServiceGetter = XPCOMUtils.defineLazyServiceGetter.bind(XPCOMUtils);
   this.lazyRequireGetter = this.lazyRequireGetter.bind(this);
-  this.main = this.main.bind(this);
+
+  Services.obs.addObserver(this, "devtools-unload", false);
 };
 
 DevToolsLoader.prototype = {
@@ -221,46 +215,6 @@ DevToolsLoader.prototype = {
   
 
 
-
-
-
-
-
-  loadURI: function(id, uri) {
-    let module = Loader.Module(id, uri);
-    return Loader.load(this.provider.loader, module).exports;
-  },
-
-  
-
-
-
-
-
-
-
-
-  main: function(id) {
-    
-    
-    if (this._mainid) {
-      return;
-    }
-    this._mainid = id;
-    this._main = Loader.main(this.provider.loader, id);
-
-    
-    Object.getOwnPropertyNames(this._main).forEach(key => {
-      XPCOMUtils.defineLazyGetter(this, key, () => this._main[key]);
-    });
-
-    var events = this.require("sdk/system/events");
-    events.emit("devtools-loaded", {});
-  },
-
-  
-
-
   setProvider: function(provider) {
     if (provider === this._provider) {
       return;
@@ -286,8 +240,7 @@ DevToolsLoader.prototype = {
         lazyImporter: this.lazyImporter,
         lazyServiceGetter: this.lazyServiceGetter,
         lazyRequireGetter: this.lazyRequireGetter,
-        id: this.id,
-        main: this.main
+        id: this.id
       },
       
       
@@ -325,16 +278,19 @@ DevToolsLoader.prototype = {
   
 
 
-  reload: function() {
-    var events = this.require("sdk/system/events");
-    events.emit("startupcache-invalidate", {});
 
-    this._provider.unload("reload");
-    delete this._provider;
-    let mainid = this._mainid;
-    delete this._mainid;
-    this._loadProvider();
-    this.main(mainid);
+
+
+  observe: function(subject, topic, data) {
+    if (topic != "devtools-unload") {
+      return;
+    }
+    Services.obs.removeObserver(this, "devtools-unload");
+
+    if (this._provider) {
+      this._provider.unload(data);
+      delete this._provider;
+    }
   },
 
   
@@ -353,3 +309,11 @@ DevToolsLoader.prototype = {
 this.devtools = this.loader = new DevToolsLoader();
 
 this.require = this.devtools.require.bind(this.devtools);
+
+
+Object.defineProperty(this.devtools, "Toolbox", {
+  get: () => this.require("devtools/client/framework/toolbox").Toolbox
+});
+Object.defineProperty(this.devtools, "TargetFactory", {
+  get: () => this.require("devtools/client/framework/target").TargetFactory
+});

@@ -98,8 +98,14 @@ function reload(event) {
     }
   }, false);
 
-  const {devtools} = Components.utils.import("resource://devtools/shared/Loader.jsm", {});
-  devtools.reload();
+  
+  
+  Services.obs.notifyObservers(null, "devtools-unload", "reload");
+
+  
+  Cu.unload("resource://devtools/shared/Loader.jsm");
+  const {devtools} = Cu.import("resource://devtools/shared/Loader.jsm", {});
+  devtools.require("devtools/client/framework/devtools-browser");
 
   
   let windowsEnum = Services.wm.getEnumerator(null);
