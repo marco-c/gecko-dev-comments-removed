@@ -66,18 +66,6 @@ BufferDecoder::GetImageContainer()
   return nullptr;
 }
 
-void
-BufferDecoder::MetadataLoaded(nsAutoPtr<MediaInfo> aInfo, nsAutoPtr<MetadataTags> aTags, MediaDecoderEventVisibility aEventVisibility)
-{
-  
-}
-
-void
-BufferDecoder::FirstFrameLoaded(nsAutoPtr<MediaInfo> aInfo, MediaDecoderEventVisibility aEventVisibility)
-{
-  
-}
-
 MediaDecoderOwner*
 BufferDecoder::GetOwner()
 {

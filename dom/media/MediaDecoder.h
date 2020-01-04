@@ -612,17 +612,6 @@ private:
 
   
   
-  virtual void MetadataLoaded(nsAutoPtr<MediaInfo> aInfo,
-                              nsAutoPtr<MetadataTags> aTags,
-                              MediaDecoderEventVisibility aEventVisibility) override;
-
-  
-  
-  virtual void FirstFrameLoaded(nsAutoPtr<MediaInfo> aInfo,
-                                MediaDecoderEventVisibility aEventVisibility) override;
-
-  
-  
   
   void ConstructMediaTracks();
 
@@ -750,6 +739,12 @@ private:
 
 protected:
   virtual ~MediaDecoder();
+
+  
+  
+  virtual void FirstFrameLoaded(nsAutoPtr<MediaInfo> aInfo,
+                                MediaDecoderEventVisibility aEventVisibility);
+
   void SetStateMachineParameters();
 
   static void DormantTimerExpired(nsITimer *aTimer, void *aClosure);
@@ -815,6 +810,12 @@ protected:
   RefPtr<MediaResource> mResource;
 
 private:
+  
+  
+  void MetadataLoaded(nsAutoPtr<MediaInfo> aInfo,
+                      nsAutoPtr<MetadataTags> aTags,
+                      MediaDecoderEventVisibility aEventVisibility);
+
   MediaEventSource<void>*
   DataArrivedEvent() override { return &mDataArrivedEvent; }
 
@@ -935,6 +936,9 @@ protected:
 
   
   MediaEventListener mTimedMetadataListener;
+
+  MediaEventListener mMetadataLoadedListener;
+  MediaEventListener mFirstFrameLoadedListener;
 
 protected:
   

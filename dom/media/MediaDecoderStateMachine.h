@@ -224,6 +224,15 @@ public:
     return mMetadataManager.TimedMetadataEvent();
   }
 
+  MediaEventSourceExc<nsAutoPtr<MediaInfo>,
+                      nsAutoPtr<MetadataTags>,
+                      MediaDecoderEventVisibility>&
+  MetadataLoadedEvent() { return mMetadataLoadedEvent; }
+
+  MediaEventSourceExc<nsAutoPtr<MediaInfo>,
+                      MediaDecoderEventVisibility>&
+  FirstFrameLoadedEvent() { return mFirstFrameLoadedEvent; }
+
   
   bool IsRealTime() const { return mRealTime; }
 
@@ -1185,6 +1194,12 @@ private:
 
   MediaEventListener mAudioQueueListener;
   MediaEventListener mVideoQueueListener;
+
+  MediaEventProducerExc<nsAutoPtr<MediaInfo>,
+                        nsAutoPtr<MetadataTags>,
+                        MediaDecoderEventVisibility> mMetadataLoadedEvent;
+  MediaEventProducerExc<nsAutoPtr<MediaInfo>,
+                        MediaDecoderEventVisibility> mFirstFrameLoadedEvent;
 
   
   
