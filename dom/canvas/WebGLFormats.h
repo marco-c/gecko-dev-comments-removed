@@ -199,6 +199,10 @@ struct FormatInfo
     const UnsizedFormat unsizedFormat;
     const ComponentType componentType;
     const uint8_t estimatedBytesPerPixel; 
+    const uint8_t r;
+    const uint8_t g;
+    const uint8_t b;
+    const uint8_t a;
     const bool isColorFormat;             
     const bool isSRGB;                    
     const bool hasAlpha;                  
@@ -206,6 +210,8 @@ struct FormatInfo
     const bool hasStencil;
 
     const CompressedFormatInfo* const compression;
+
+    map<GLenum, const FormatInfo*> copyFormats;
 };
 
 struct PackingInfo
