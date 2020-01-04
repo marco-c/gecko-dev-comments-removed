@@ -3626,7 +3626,7 @@ nsWindow::GetLayerManager(PLayerTransactionChild* aShadowManager,
     
     
     if (!mCompositorWidgetProxy) {
-      mCompositorWidgetProxy = new WinCompositorWidgetProxy(this);
+      mCompositorWidgetProxy = NewCompositorWidgetProxy();
     }
 
     mLayerManager = CreateBasicLayerManager();
@@ -3692,7 +3692,11 @@ nsWindow::OnDefaultButtonLoaded(const LayoutDeviceIntRect& aButtonRect)
 mozilla::widget::CompositorWidgetProxy*
 nsWindow::NewCompositorWidgetProxy()
 {
-  return new WinCompositorWidgetProxy(this);
+  return new WinCompositorWidgetProxy(
+    mWnd,
+    reinterpret_cast<uintptr_t>(this),
+    mTransparencyMode,
+    this);
 }
 
 mozilla::widget::WinCompositorWidgetProxy*
