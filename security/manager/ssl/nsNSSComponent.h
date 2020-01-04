@@ -160,11 +160,7 @@ private:
   nsresult ConfigureInternalPKCS11Token();
   nsresult RegisterObservers();
 
-  
-  
-  void DoProfileChangeNetTeardown();
-  void DoProfileBeforeChange(nsISupports* aSubject);
-  void DoProfileChangeNetRestore();
+  void DoProfileBeforeChange();
 
   mozilla::Mutex mutex;
 
@@ -176,7 +172,6 @@ private:
 #ifndef MOZ_NO_SMART_CARDS
   SmartCardThreadList* mThreadList;
 #endif
-  bool mIsNetworkDown;
 
   void deleteBackgroundThreads();
   void createBackgroundThreads();
