@@ -77,6 +77,8 @@ public:
   uint32_t
   RecursionDepth() const;
 
+  void ShutdownComplete(struct nsThreadShutdownContext* aContext);
+
 protected:
   class nsChainedEventQueue;
 
@@ -112,6 +114,8 @@ protected:
 
   nsresult DispatchInternal(already_AddRefed<nsIRunnable>&& aEvent, uint32_t aFlags,
                             nsNestedEventTarget* aTarget);
+
+  struct nsThreadShutdownContext* ShutdownInternal(bool aSync);
 
   
   class nsChainedEventQueue
@@ -193,7 +197,10 @@ protected:
   uint32_t  mNestedEventLoopDepth;
   uint32_t  mStackSize;
 
+  
   struct nsThreadShutdownContext* mShutdownContext;
+  
+  nsTArray<nsAutoPtr<struct nsThreadShutdownContext>> mRequestedShutdownContexts;
 
   bool mShutdownRequired;
   

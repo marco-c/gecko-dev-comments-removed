@@ -21,6 +21,7 @@
 #include "nsIClassInfoImpl.h"
 #include "nsAutoPtr.h"
 #include "nsCOMPtr.h"
+#include "nsQueryObject.h"
 #include "pratom.h"
 #include "mozilla/CycleCollectedJSRuntime.h"
 #include "mozilla/Logging.h"
@@ -238,27 +239,42 @@ private:
 
 struct nsThreadShutdownContext
 {
+  
+  nsRefPtr<nsThread> terminatingThread;
   nsThread* joiningThread;
-  bool      shutdownAck;
+  bool      awaitingShutdownAck;
 };
 
 
 
-class nsThreadShutdownAckEvent : public nsRunnable
+
+
+class nsThreadShutdownAckEvent : public nsRunnable,
+                                 public nsICancelableRunnable
 {
 public:
   explicit nsThreadShutdownAckEvent(nsThreadShutdownContext* aCtx)
     : mShutdownContext(aCtx)
   {
   }
-  NS_IMETHOD Run()
+  NS_DECL_ISUPPORTS_INHERITED
+  NS_IMETHOD Run() override
   {
-    mShutdownContext->shutdownAck = true;
+    mShutdownContext->terminatingThread->ShutdownComplete(mShutdownContext);
     return NS_OK;
   }
+  NS_IMETHOD Cancel() override
+  {
+    return Run();
+  }
 private:
+  virtual ~nsThreadShutdownAckEvent() { }
+
   nsThreadShutdownContext* mShutdownContext;
 };
+
+NS_IMPL_ISUPPORTS_INHERITED(nsThreadShutdownAckEvent, nsRunnable,
+                            nsICancelableRunnable)
 
 
 class nsThreadShutdownEvent : public nsRunnable
@@ -370,7 +386,14 @@ nsThread::ThreadFunc(void* aArg)
     
     
     
+    
     while (true) {
+      
+      while (self->mRequestedShutdownContexts.Length()) {
+        
+        NS_ProcessNextEvent(self, true);
+      }
+
       {
         MutexAutoLock lock(self->mLock);
         if (!self->mEvents->HasPendingEvent()) {
@@ -394,7 +417,8 @@ nsThread::ThreadFunc(void* aArg)
   nsThreadManager::get()->UnregisterCurrentThread(self);
 
   
-  event = new nsThreadShutdownAckEvent(self->mShutdownContext);
+  MOZ_ASSERT(self->mShutdownContext->terminatingThread == self);
+  event = do_QueryObject(new nsThreadShutdownAckEvent(self->mShutdownContext));
   self->mShutdownContext->joiningThread->Dispatch(event, NS_DISPATCH_NORMAL);
 
   
@@ -631,9 +655,9 @@ nsThread::GetPRThread(PRThread** aResult)
 }
 
 NS_IMETHODIMP
-nsThread::Shutdown()
+nsThread::AsyncShutdown()
 {
-  LOG(("THRD(%p) shutdown\n", this));
+  LOG(("THRD(%p) async shutdown\n", this));
 
   
   
@@ -642,37 +666,61 @@ nsThread::Shutdown()
     return NS_OK;
   }
 
+  return !!ShutdownInternal( false) ? NS_OK : NS_ERROR_UNEXPECTED;
+}
+
+nsThreadShutdownContext*
+nsThread::ShutdownInternal(bool aSync)
+{
+  MOZ_ASSERT(mThread);
+
   if (NS_WARN_IF(mThread == PR_GetCurrentThread())) {
-    return NS_ERROR_UNEXPECTED;
+    return nullptr;
   }
 
   
   {
     MutexAutoLock lock(mLock);
     if (!mShutdownRequired) {
-      return NS_ERROR_UNEXPECTED;
+      return nullptr;
     }
     mShutdownRequired = false;
   }
 
-  nsThreadShutdownContext context;
-  context.joiningThread = nsThreadManager::get()->GetCurrentThread();
-  context.shutdownAck = false;
+  nsThread* currentThread = nsThreadManager::get()->GetCurrentThread();
+  MOZ_ASSERT(currentThread);
+
+  nsAutoPtr<nsThreadShutdownContext>& context =
+    *currentThread->mRequestedShutdownContexts.AppendElement();
+  context = new nsThreadShutdownContext();
+
+  context->terminatingThread = this;
+  context->joiningThread = currentThread;
+  context->awaitingShutdownAck = aSync;
 
   
   
-  nsCOMPtr<nsIRunnable> event = new nsThreadShutdownEvent(this, &context);
+  nsCOMPtr<nsIRunnable> event = new nsThreadShutdownEvent(this, context);
   
   PutEvent(event.forget(), nullptr);
 
   
   
   
+  return context;
+}
 
-  
-  
-  while (!context.shutdownAck) {
-    NS_ProcessNextEvent(context.joiningThread, true);
+void
+nsThread::ShutdownComplete(nsThreadShutdownContext* aContext)
+{
+  MOZ_ASSERT(mThread);
+  MOZ_ASSERT(aContext->terminatingThread == this);
+
+  if (aContext->awaitingShutdownAck) {
+    
+    
+    aContext->awaitingShutdownAck = false;
+    return;
   }
 
   
@@ -691,6 +739,34 @@ nsThread::Shutdown()
     MOZ_ASSERT(!mObserver, "Should have been cleared at shutdown!");
   }
 #endif
+
+  
+  MOZ_ALWAYS_TRUE(
+    aContext->joiningThread->mRequestedShutdownContexts.RemoveElement(aContext));
+}
+
+NS_IMETHODIMP
+nsThread::Shutdown()
+{
+  LOG(("THRD(%p) sync shutdown\n", this));
+
+  
+  
+  
+  if (!mThread) {
+    return NS_OK;
+  }
+
+  nsThreadShutdownContext* context = ShutdownInternal( true);
+  NS_ENSURE_TRUE(context, NS_ERROR_UNEXPECTED);
+
+  
+  
+  while (context->awaitingShutdownAck) {
+    NS_ProcessNextEvent(context->joiningThread, true);
+  }
+
+  ShutdownComplete(context);
 
   return NS_OK;
 }

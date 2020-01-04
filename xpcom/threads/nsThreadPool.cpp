@@ -128,13 +128,7 @@ nsThreadPool::PutEvent(already_AddRefed<nsIRunnable>&& aEvent)
   if (killThread) {
     
     
-    
-    
-    
-
-    nsCOMPtr<nsIRunnable> r = NS_NewRunnableMethod(thread,
-                                                   &nsIThread::Shutdown);
-    NS_DispatchToCurrentThread(r);
+    MOZ_ALWAYS_TRUE(NS_SUCCEEDED(thread->AsyncShutdown()));
   } else {
     thread->Dispatch(this, NS_DISPATCH_NORMAL);
   }
