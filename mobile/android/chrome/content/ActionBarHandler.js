@@ -623,7 +623,7 @@ var ActionBarHandler = {
     }
 
     
-    return selection.toString().trim();
+    return selection.toString();
   },
 
   
