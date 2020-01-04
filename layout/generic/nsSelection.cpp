@@ -3725,8 +3725,14 @@ Selection::AddItem(nsRange* aItem, int32_t* aOutIndex, bool aNoStartSelect)
         
         
         bool defaultAction = true;
-        nsContentUtils::DispatchTrustedEvent(GetParentObject(),
-                                             aItem->GetStartParent(),
+
+        
+        nsCOMPtr<nsINode> target = aItem->GetStartParent();
+        while (target && target->IsInNativeAnonymousSubtree()) {
+          target = target->GetParent();
+        }
+
+        nsContentUtils::DispatchTrustedEvent(GetParentObject(), target,
                                              NS_LITERAL_STRING("selectstart"),
                                              true, true, &defaultAction);
 
@@ -6377,7 +6383,6 @@ NS_INTERFACE_MAP_END
 NS_IMPL_CYCLE_COLLECTING_ADDREF(SelectionChangeListener)
 NS_IMPL_CYCLE_COLLECTING_RELEASE(SelectionChangeListener)
 
-
 NS_IMETHODIMP
 SelectionChangeListener::NotifySelectionChanged(nsIDOMDocument* aDoc,
                                                 nsISelection* aSel, int16_t aReason)
@@ -6387,7 +6392,8 @@ SelectionChangeListener::NotifySelectionChanged(nsIDOMDocument* aDoc,
   nsRefPtr<Selection> sel = static_cast<Selection*>(aSel);
 
   
-  if (mOldRanges.Length() == sel->RangeCount()) {
+  
+  if (mOldRanges.Length() == sel->RangeCount() && !sel->IsBlockingSelectionChangeEvents()) {
     bool changed = false;
 
     for (size_t i = 0; i < mOldRanges.Length(); i++) {
@@ -6409,10 +6415,38 @@ SelectionChangeListener::NotifySelectionChanged(nsIDOMDocument* aDoc,
   }
 
   
-  nsCOMPtr<nsIDocument> doc = do_QueryInterface(aDoc);
-  if (doc) {
+  
+  
+  if (sel->IsBlockingSelectionChangeEvents()) {
+    return NS_OK;
+  }
+
+  nsCOMPtr<nsINode> target;
+
+  
+  
+  
+  
+  
+  if (nsFrameSelection* fs = sel->GetFrameSelection()) {
+    if (nsCOMPtr<nsIContent> root = fs->GetLimiter()) {
+      while (root && root->IsInNativeAnonymousSubtree()) {
+        root = root->GetParent();
+      }
+
+      target = root.forget();
+    }
+  }
+
+  
+  if (!target) {
+    nsCOMPtr<nsIDocument> doc = do_QueryInterface(aDoc);
+    target = doc.forget();
+  }
+
+  if (target) {
     nsRefPtr<AsyncEventDispatcher> asyncDispatcher =
-      new AsyncEventDispatcher(doc, NS_LITERAL_STRING("selectionchange"), false);
+      new AsyncEventDispatcher(target, NS_LITERAL_STRING("selectionchange"), false);
     asyncDispatcher->PostDOMEvent();
   }
 
