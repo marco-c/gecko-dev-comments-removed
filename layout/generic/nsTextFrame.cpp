@@ -9529,8 +9529,19 @@ static void TransformChars(nsTextFrame* aFrame, const nsStyleText* aStyle,
                            const nsTextFragment* aFrag, int32_t aFragOffset,
                            int32_t aFragLen, nsAString& aOut)
 {
-  aOut.SetLength(aOut.Length() + aFragLen);
-  char16_t* out = aOut.EndWriting() - aFragLen;
+  nsAutoString fragString;
+  char16_t* out;
+  if (aStyle->mTextTransform == NS_STYLE_TEXT_TRANSFORM_NONE) {
+    
+    aOut.SetLength(aOut.Length() + aFragLen);
+    out = aOut.EndWriting() - aFragLen;
+  } else {
+    
+    fragString.SetLength(aFragLen);
+    out = fragString.BeginWriting();
+  }
+
+  
   for (int32_t i = 0; i < aFragLen; ++i) {
     char16_t ch = aFrag->CharAt(aFragOffset + i);
     if ((ch == '\n' && !aStyle->NewlineIsSignificant(aFrame)) ||
@@ -9540,20 +9551,27 @@ static void TransformChars(nsTextFrame* aFrame, const nsStyleText* aStyle,
     out[i] = ch;
   }
 
-  switch (aStyle->mTextTransform) {
-  case NS_STYLE_TEXT_TRANSFORM_LOWERCASE:
-    ToLowerCase(out, out, aFragLen);
-    break;
-  case NS_STYLE_TEXT_TRANSFORM_UPPERCASE:
-    ToUpperCase(out, out, aFragLen);
-    break;
-  case NS_STYLE_TEXT_TRANSFORM_CAPITALIZE:
-    for (int32_t i = 0; i < aFragLen; ++i) {
-      if (aTextRun->CanBreakLineBefore(aSkippedOffset + i)) {
-        out[i] = ToTitleCase(out[i]);
-      }
+  if (aStyle->mTextTransform != NS_STYLE_TEXT_TRANSFORM_NONE) {
+    MOZ_ASSERT(aTextRun->GetFlags() & nsTextFrameUtils::TEXT_IS_TRANSFORMED);
+    if (aTextRun->GetFlags() & nsTextFrameUtils::TEXT_IS_TRANSFORMED) {
+      
+      auto transformedTextRun =
+        static_cast<const nsTransformedTextRun*>(aTextRun);
+      nsAutoString convertedString;
+      AutoTArray<bool,50> charsToMergeArray;
+      AutoTArray<bool,50> deletedCharsArray;
+      nsCaseTransformTextRunFactory::TransformString(fragString,
+                                                     convertedString,
+                                                     false, nullptr,
+                                                     charsToMergeArray,
+                                                     deletedCharsArray,
+                                                     transformedTextRun,
+                                                     aSkippedOffset);
+      aOut.Append(convertedString);
+    } else {
+      
+      aOut.Append(fragString);
     }
-    break;
   }
 }
 
