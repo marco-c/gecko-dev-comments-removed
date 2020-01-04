@@ -36,6 +36,125 @@ const int32_t kMaxWipeSchemaVersion = 15;
 namespace {
 
 const int32_t kLatestSchemaVersion = 15;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const char* const kTableCaches =
+  "CREATE TABLE caches ("
+    "id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT "
+  ")";
+
+
+
+const char* const kTableSecurityInfo =
+  "CREATE TABLE security_info ("
+    "id INTEGER NOT NULL PRIMARY KEY, "
+    "hash BLOB NOT NULL, "  
+    "data BLOB NOT NULL, "  
+    "refcount INTEGER NOT NULL"
+  ")";
+
+
+const char* const kIndexSecurityInfoHash =
+  "CREATE INDEX security_info_hash_index ON security_info (hash)";
+
+const char* const kTableEntries =
+  "CREATE TABLE entries ("
+    "id INTEGER NOT NULL PRIMARY KEY, "
+    "request_method TEXT NOT NULL, "
+    "request_url_no_query TEXT NOT NULL, "
+    "request_url_no_query_hash BLOB NOT NULL, " 
+    "request_url_query TEXT NOT NULL, "
+    "request_url_query_hash BLOB NOT NULL, "    
+    "request_referrer TEXT NOT NULL, "
+    "request_headers_guard INTEGER NOT NULL, "
+    "request_mode INTEGER NOT NULL, "
+    "request_credentials INTEGER NOT NULL, "
+    "request_contentpolicytype INTEGER NOT NULL, "
+    "request_cache INTEGER NOT NULL, "
+    "request_body_id TEXT NULL, "
+    "response_type INTEGER NOT NULL, "
+    "response_url TEXT NOT NULL, "
+    "response_status INTEGER NOT NULL, "
+    "response_status_text TEXT NOT NULL, "
+    "response_headers_guard INTEGER NOT NULL, "
+    "response_body_id TEXT NULL, "
+    "response_security_info_id INTEGER NULL REFERENCES security_info(id), "
+    "response_principal_info TEXT NOT NULL, "
+    "response_redirected INTEGER NOT NULL, "
+    
+    
+    "response_redirected_url TEXT NOT NULL, "
+    "cache_id INTEGER NOT NULL REFERENCES caches(id) ON DELETE CASCADE"
+  ")";
+
+
+
+
+
+
+
+
+
+const char* const kIndexEntriesRequest =
+  "CREATE INDEX entries_request_match_index "
+            "ON entries (cache_id, request_url_no_query_hash, "
+                        "request_url_query_hash)";
+
+const char* const kTableRequestHeaders =
+  "CREATE TABLE request_headers ("
+    "name TEXT NOT NULL, "
+    "value TEXT NOT NULL, "
+    "entry_id INTEGER NOT NULL REFERENCES entries(id) ON DELETE CASCADE"
+  ")";
+
+const char* const kTableResponseHeaders =
+  "CREATE TABLE response_headers ("
+    "name TEXT NOT NULL, "
+    "value TEXT NOT NULL, "
+    "entry_id INTEGER NOT NULL REFERENCES entries(id) ON DELETE CASCADE"
+  ")";
+
+
+
+const char* const kIndexResponseHeadersName =
+  "CREATE INDEX response_headers_name_index "
+            "ON response_headers (name)";
+
+
+
+
+const char* const kTableStorage =
+  "CREATE TABLE storage ("
+    "namespace INTEGER NOT NULL, "
+    "key BLOB NULL, "
+    "cache_id INTEGER NOT NULL REFERENCES caches(id), "
+    "PRIMARY KEY(namespace, key) "
+  ")";
+
+
+
+
+
 const int32_t kMaxEntriesPerStatement = 255;
 
 const uint32_t kPageSize = 4 * 1024;
@@ -224,130 +343,31 @@ CreateSchema(mozIStorageConnection* aConn)
   }
 
   if (!schemaVersion) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    rv = aConn->ExecuteSimpleSQL(NS_LITERAL_CSTRING(
-      "CREATE TABLE caches ("
-        "id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT "
-      ");"
-    ));
+    rv = aConn->ExecuteSimpleSQL(nsDependentCString(kTableCaches));
     if (NS_WARN_IF(NS_FAILED(rv))) { return rv; }
 
-    
-    
-    rv = aConn->ExecuteSimpleSQL(NS_LITERAL_CSTRING(
-      "CREATE TABLE security_info ("
-        "id INTEGER NOT NULL PRIMARY KEY, "
-        "hash BLOB NOT NULL, "  
-        "data BLOB NOT NULL, "  
-        "refcount INTEGER NOT NULL"
-      ");"
-    ));
+    rv = aConn->ExecuteSimpleSQL(nsDependentCString(kTableSecurityInfo));
     if (NS_WARN_IF(NS_FAILED(rv))) { return rv; }
 
-    
-    rv = aConn->ExecuteSimpleSQL(NS_LITERAL_CSTRING(
-      "CREATE INDEX security_info_hash_index ON security_info (hash);"
-    ));
+    rv = aConn->ExecuteSimpleSQL(nsDependentCString(kIndexSecurityInfoHash));
     if (NS_WARN_IF(NS_FAILED(rv))) { return rv; }
 
-    rv = aConn->ExecuteSimpleSQL(NS_LITERAL_CSTRING(
-      "CREATE TABLE entries ("
-        "id INTEGER NOT NULL PRIMARY KEY, "
-        "request_method TEXT NOT NULL, "
-        "request_url_no_query TEXT NOT NULL, "
-        "request_url_no_query_hash BLOB NOT NULL, " 
-        "request_url_query TEXT NOT NULL, "
-        "request_url_query_hash BLOB NOT NULL, "    
-        "request_referrer TEXT NOT NULL, "
-        "request_headers_guard INTEGER NOT NULL, "
-        "request_mode INTEGER NOT NULL, "
-        "request_credentials INTEGER NOT NULL, "
-        "request_contentpolicytype INTEGER NOT NULL, "
-        "request_cache INTEGER NOT NULL, "
-        "request_body_id TEXT NULL, "
-        "response_type INTEGER NOT NULL, "
-        "response_url TEXT NOT NULL, "
-        "response_status INTEGER NOT NULL, "
-        "response_status_text TEXT NOT NULL, "
-        "response_headers_guard INTEGER NOT NULL, "
-        "response_body_id TEXT NULL, "
-        "response_security_info_id INTEGER NULL REFERENCES security_info(id), "
-        "response_principal_info TEXT NOT NULL, "
-        "response_redirected INTEGER NOT NULL, "
-        
-        
-        "response_redirected_url TEXT NOT NULL, "
-        "cache_id INTEGER NOT NULL REFERENCES caches(id) ON DELETE CASCADE"
-      ");"
-    ));
+    rv = aConn->ExecuteSimpleSQL(nsDependentCString(kTableEntries));
     if (NS_WARN_IF(NS_FAILED(rv))) { return rv; }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    rv = aConn->ExecuteSimpleSQL(NS_LITERAL_CSTRING(
-      "CREATE INDEX entries_request_match_index "
-                "ON entries (cache_id, request_url_no_query_hash, "
-                            "request_url_query_hash);"
-    ));
+    rv = aConn->ExecuteSimpleSQL(nsDependentCString(kIndexEntriesRequest));
     if (NS_WARN_IF(NS_FAILED(rv))) { return rv; }
 
-    rv = aConn->ExecuteSimpleSQL(NS_LITERAL_CSTRING(
-      "CREATE TABLE request_headers ("
-        "name TEXT NOT NULL, "
-        "value TEXT NOT NULL, "
-        "entry_id INTEGER NOT NULL REFERENCES entries(id) ON DELETE CASCADE"
-      ");"
-    ));
+    rv = aConn->ExecuteSimpleSQL(nsDependentCString(kTableRequestHeaders));
     if (NS_WARN_IF(NS_FAILED(rv))) { return rv; }
 
-    rv = aConn->ExecuteSimpleSQL(NS_LITERAL_CSTRING(
-      "CREATE TABLE response_headers ("
-        "name TEXT NOT NULL, "
-        "value TEXT NOT NULL, "
-        "entry_id INTEGER NOT NULL REFERENCES entries(id) ON DELETE CASCADE"
-      ");"
-    ));
+    rv = aConn->ExecuteSimpleSQL(nsDependentCString(kTableResponseHeaders));
     if (NS_WARN_IF(NS_FAILED(rv))) { return rv; }
 
-    
-    
-    rv = aConn->ExecuteSimpleSQL(NS_LITERAL_CSTRING(
-      "CREATE INDEX response_headers_name_index "
-                "ON response_headers (name);"
-    ));
+    rv = aConn->ExecuteSimpleSQL(nsDependentCString(kIndexResponseHeadersName));
     if (NS_WARN_IF(NS_FAILED(rv))) { return rv; }
 
-    
-    
-    
-    rv = aConn->ExecuteSimpleSQL(NS_LITERAL_CSTRING(
-      "CREATE TABLE storage ("
-        "namespace INTEGER NOT NULL, "
-        "key BLOB NULL, "
-        "cache_id INTEGER NOT NULL REFERENCES caches(id), "
-        "PRIMARY KEY(namespace, key) "
-      ");"
-    ));
+    rv = aConn->ExecuteSimpleSQL(nsDependentCString(kTableStorage));
     if (NS_WARN_IF(NS_FAILED(rv))) { return rv; }
 
     rv = aConn->SetSchemaVersion(kLatestSchemaVersion);
