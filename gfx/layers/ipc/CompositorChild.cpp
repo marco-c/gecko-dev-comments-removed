@@ -211,7 +211,7 @@ static void CalculatePluginClip(const gfx::IntRect& aBounds,
                                 const nsIntPoint& aContentOffset,
                                 const nsIntRegion& aParentLayerVisibleRegion,
                                 nsTArray<gfx::IntRect>& aResult,
-                                gfx::IntRect& aVisibleBounds,
+                                LayoutDeviceIntRect& aVisibleBounds,
                                 bool& aPluginIsVisible)
 {
   aPluginIsVisible = true;
@@ -237,7 +237,8 @@ static void CalculatePluginClip(const gfx::IntRect& aBounds,
   nsIntRegionRectIterator iter(contentVisibleRegion);
   for (const gfx::IntRect* rgnRect = iter.Next(); rgnRect; rgnRect = iter.Next()) {
     aResult.AppendElement(*rgnRect);
-    aVisibleBounds.UnionRect(aVisibleBounds, *rgnRect);
+    aVisibleBounds.UnionRect(aVisibleBounds,
+                             LayoutDeviceIntRect::FromUnknownRect(*rgnRect));
   }
 }
 #endif
@@ -274,7 +275,7 @@ CompositorChild::RecvUpdatePluginConfigurations(const nsIntPoint& aContentOffset
     bool isVisible = aPlugins[pluginsIdx].visible();
     if (widget && !widget->Destroyed()) {
       gfx::IntRect bounds;
-      gfx::IntRect visibleBounds;
+      LayoutDeviceIntRect visibleBounds;
       
       if (isVisible) {
         
@@ -309,7 +310,8 @@ CompositorChild::RecvUpdatePluginConfigurations(const nsIntPoint& aContentOffset
         
         
         
-        mozilla::widget::WinUtils::InvalidatePluginAsWorkaround(widget, visibleBounds);
+        mozilla::widget::WinUtils::InvalidatePluginAsWorkaround(
+          widget, visibleBounds);
 #else
         rv = widget->Invalidate(visibleBounds);
         NS_ASSERTION(NS_SUCCEEDED(rv), "widget call failure");

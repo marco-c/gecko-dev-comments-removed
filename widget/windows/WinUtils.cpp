@@ -1021,7 +1021,8 @@ WINAPI EnumFirstChild(HWND hwnd, LPARAM lParam)
 
 
 void
-WinUtils::InvalidatePluginAsWorkaround(nsIWidget *aWidget, const nsIntRect &aRect)
+WinUtils::InvalidatePluginAsWorkaround(nsIWidget* aWidget,
+                                       const LayoutDeviceIntRect& aRect)
 {
   aWidget->Invalidate(aRect);
 

@@ -358,7 +358,8 @@ public:
 
 
 
-  static void InvalidatePluginAsWorkaround(nsIWidget *aWidget, const nsIntRect &aRect);
+  static void InvalidatePluginAsWorkaround(nsIWidget* aWidget,
+                                           const LayoutDeviceIntRect& aRect);
 
   
 

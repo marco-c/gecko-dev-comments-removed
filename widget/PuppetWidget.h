@@ -109,7 +109,7 @@ public:
 
   virtual nsresult ConfigureChildren(const nsTArray<Configuration>& aConfigurations) override;
 
-  NS_IMETHOD Invalidate(const nsIntRect& aRect) override;
+  NS_IMETHOD Invalidate(const LayoutDeviceIntRect& aRect) override;
 
   
   virtual void Scroll(const nsIntPoint& aDelta,
@@ -313,7 +313,7 @@ private:
   
   
   RefPtr<PuppetWidget> mChild;
-  nsIntRegion mDirtyRegion;
+  LayoutDeviceIntRegion mDirtyRegion;
   nsRevocableEventPtr<PaintTask> mPaintTask;
   RefPtr<MemoryPressureObserver> mMemoryPressureObserver;
   

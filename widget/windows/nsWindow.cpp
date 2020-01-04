@@ -2849,10 +2849,9 @@ NS_METHOD nsWindow::Invalidate(bool aEraseBackground,
 }
 
 
-NS_METHOD nsWindow::Invalidate(const nsIntRect & aRect)
+NS_METHOD nsWindow::Invalidate(const LayoutDeviceIntRect& aRect)
 {
-  if (mWnd)
-  {
+  if (mWnd) {
 #ifdef WIDGET_DEBUG_OUTPUT
     debug_DumpInvalidate(stdout,
                          this,
@@ -6542,11 +6541,11 @@ nsWindow::ConfigureChildren(const nsTArray<Configuration>& aConfigurations)
         
         
         
-        nsIntRegion r;
-        r.Sub(bounds.ToUnknownRect(), configuration.mBounds.ToUnknownRect());
+        LayoutDeviceIntRegion r;
+        r.Sub(bounds, configuration.mBounds);
         r.MoveBy(-bounds.x,
                  -bounds.y);
-        nsIntRect toInvalidate = r.GetBounds();
+        LayoutDeviceIntRect toInvalidate = r.GetBounds();
 
         WinUtils::InvalidatePluginAsWorkaround(w, toInvalidate);
       }
