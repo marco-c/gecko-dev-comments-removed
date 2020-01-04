@@ -259,10 +259,6 @@ select {
 
 
 
-settings {
-  -moz-binding: url("chrome://mozapps/content/extensions/setting.xml#settings");
-}
-
 setting {
   display: none;
 }
