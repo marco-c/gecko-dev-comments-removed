@@ -547,7 +547,7 @@ VariablesView.prototype = {
 
 
   _doSearch: function(aToken) {
-    if (this.controller.supportsSearch()) {
+    if (this.controller && this.controller.supportsSearch()) {
       
       let scope = this._store[0]._store.get("");
       if (!aToken) {
