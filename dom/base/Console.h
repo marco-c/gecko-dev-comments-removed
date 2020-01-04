@@ -288,6 +288,9 @@ private:
   void
   UnregisterConsoleCallData(ConsoleCallData* aData);
 
+  void
+  AssertIsOnOwningThread() const;
+
   
   nsCOMPtr<nsPIDOMWindowInner> mWindow;
   nsCOMPtr<nsIConsoleAPIStorage> mStorage;
@@ -300,6 +303,10 @@ private:
   
   
   nsTArray<ConsoleCallData*> mConsoleCallDataArray;
+
+#ifdef DEBUG
+  PRThread* mOwningThread;
+#endif
 
   uint64_t mOuterID;
   uint64_t mInnerID;
