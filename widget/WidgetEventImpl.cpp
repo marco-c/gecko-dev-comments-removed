@@ -278,7 +278,7 @@ WidgetEvent::IsAllowedToDispatchDOMEvent() const
       
       const WidgetWheelEvent* wheelEvent = AsWheelEvent();
       return wheelEvent->mDeltaX != 0.0 || wheelEvent->mDeltaY != 0.0 ||
-             wheelEvent->deltaZ != 0.0;
+             wheelEvent->mDeltaZ != 0.0;
     }
 
     

@@ -450,7 +450,7 @@ private:
   WidgetWheelEvent()
     : mDeltaX(0.0)
     , mDeltaY(0.0)
-    , deltaZ(0.0)
+    , mDeltaZ(0.0)
     , deltaMode(nsIDOMWheelEvent::DOM_DELTA_PIXEL)
     , customizedByUserPrefs(false)
     , isMomentum(false)
@@ -473,7 +473,7 @@ public:
     : WidgetMouseEventBase(aIsTrusted, aMessage, aWidget, eWheelEventClass)
     , mDeltaX(0.0)
     , mDeltaY(0.0)
-    , deltaZ(0.0)
+    , mDeltaZ(0.0)
     , deltaMode(nsIDOMWheelEvent::DOM_DELTA_PIXEL)
     , customizedByUserPrefs(false)
     , mayHaveMomentum(false)
@@ -517,7 +517,7 @@ public:
   
   double mDeltaX;
   double mDeltaY;
-  double deltaZ;
+  double mDeltaZ;
 
   
   uint32_t deltaMode;
@@ -612,7 +612,7 @@ public:
 
     mDeltaX = aEvent.mDeltaX;
     mDeltaY = aEvent.mDeltaY;
-    deltaZ = aEvent.deltaZ;
+    mDeltaZ = aEvent.mDeltaZ;
     deltaMode = aEvent.deltaMode;
     customizedByUserPrefs = aEvent.customizedByUserPrefs;
     mayHaveMomentum = aEvent.mayHaveMomentum;

@@ -5642,7 +5642,7 @@ EventStateManager::WheelPrefs::ApplyUserPrefsToDelta(WidgetWheelEvent* aEvent)
 
   aEvent->mDeltaX *= mMultiplierX[index];
   aEvent->mDeltaY *= mMultiplierY[index];
-  aEvent->deltaZ *= mMultiplierZ[index];
+  aEvent->mDeltaZ *= mMultiplierZ[index];
 
   
   
@@ -5689,7 +5689,7 @@ EventStateManager::WheelPrefs::ComputeActionFor(WidgetWheelEvent* aEvent)
 
   bool deltaXPreferred =
     (Abs(aEvent->mDeltaX) > Abs(aEvent->mDeltaY) &&
-     Abs(aEvent->mDeltaX) > Abs(aEvent->deltaZ));
+     Abs(aEvent->mDeltaX) > Abs(aEvent->mDeltaZ));
   Action* actions = deltaXPreferred ? mOverriddenActionsX : mActions;
   if (actions[index] == ACTION_NONE || actions[index] == ACTION_SCROLL) {
     return actions[index];
