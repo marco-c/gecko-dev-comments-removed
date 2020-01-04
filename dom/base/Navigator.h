@@ -71,6 +71,7 @@ class MobileMessageManager;
 class MozIdleObserver;
 #ifdef MOZ_GAMEPAD
 class Gamepad;
+class GamepadServiceTest;
 #endif 
 class NavigatorUserMediaSuccessCallback;
 class NavigatorUserMediaErrorCallback;
@@ -265,6 +266,7 @@ public:
 #endif 
 #ifdef MOZ_GAMEPAD
   void GetGamepads(nsTArray<RefPtr<Gamepad> >& aGamepads, ErrorResult& aRv);
+  GamepadServiceTest* RequestGamepadServiceTest();
 #endif 
   already_AddRefed<Promise> GetVRDevices(ErrorResult& aRv);
   void NotifyVRDevicesUpdated();
@@ -398,7 +400,9 @@ private:
   nsCOMPtr<nsPIDOMWindowInner> mWindow;
   RefPtr<DeviceStorageAreaListener> mDeviceStorageAreaListener;
   RefPtr<Presentation> mPresentation;
-
+#ifdef MOZ_GAMEPAD
+  RefPtr<GamepadServiceTest> mGamepadServiceTest;
+#endif
   nsTArray<RefPtr<Promise> > mVRGetDevicesPromises;
   nsTArray<uint32_t> mRequestedVibrationPattern;
 };
