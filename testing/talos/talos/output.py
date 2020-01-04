@@ -450,6 +450,7 @@ class PerfherderOutput(Output):
                 replicates = {}
 
                 
+                
                 for result in test.results:
                     
                     
@@ -484,7 +485,8 @@ class PerfherderOutput(Output):
                         }
                         subtests.append(subtest)
                         if test.test_config.get('lower_is_better') is not None:
-                            subtest['lowerIsBetter'] = test.test_config['lower_is_better']
+                            subtest['lowerIsBetter'] = \
+                                test.test_config['lower_is_better']
                         if test.test_config.get('unit'):
                             subtest['unit'] = test.test_config['unit']
 
@@ -493,7 +495,8 @@ class PerfherderOutput(Output):
                     suite['value'] = self.construct_results(
                         vals, testname=test.name())
                 if test.test_config.get('lower_is_better') is not None:
-                    suite['lowerIsBetter'] = test.test_config['lower_is_better']
+                    suite['lowerIsBetter'] = \
+                        test.test_config['lower_is_better']
 
             
             counter_subtests = []
@@ -524,7 +527,8 @@ class PerfherderOutput(Output):
                             varray = [float(v) for v in vals]
                             subtest['value'] = filter.mean(varray)
             if counter_subtests:
-                suites.append({'name': test.name(), 'subtests': counter_subtests})
+                suites.append({'name': test.name(),
+                               'subtests': counter_subtests})
         return test_results
 
 

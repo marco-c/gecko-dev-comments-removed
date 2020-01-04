@@ -167,7 +167,7 @@ class Results(object):
                     data = f.apply(data)
 
             summary = {
-                'filtered': data, 
+                'filtered': data,  
                 'value': data
             }
 
