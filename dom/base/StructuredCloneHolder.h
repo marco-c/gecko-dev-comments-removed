@@ -22,6 +22,10 @@ namespace layers {
 class Image;
 }
 
+namespace gfx {
+class DataSourceSurface;
+}
+
 namespace dom {
 
 class StructuredCloneHolderBase
@@ -181,7 +185,7 @@ public:
   bool HasClonedDOMObjects() const
   {
     return !mBlobImplArray.IsEmpty() ||
-           !mClonedImages.IsEmpty();
+           !mClonedSurfaces.IsEmpty();
   }
 
   nsTArray<RefPtr<BlobImpl>>& BlobImpls()
@@ -212,9 +216,9 @@ public:
     return mPortIdentifiers;
   }
 
-  nsTArray<RefPtr<layers::Image>>& GetImages()
+  nsTArray<RefPtr<gfx::DataSourceSurface>>& GetSurfaces()
   {
-    return mClonedImages;
+    return mClonedSurfaces;
   }
 
   
@@ -294,7 +298,7 @@ protected:
   
   
   
-  nsTArray<RefPtr<layers::Image>> mClonedImages;
+  nsTArray<RefPtr<gfx::DataSourceSurface>> mClonedSurfaces;
 
   
   nsISupports* MOZ_NON_OWNING_REF mParent;
