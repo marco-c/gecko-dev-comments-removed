@@ -6,8 +6,6 @@
 
 
 
-var { Services } = Cu.import("resource://gre/modules/Services.jsm", {});
-
 
 var netMonitorHead = "chrome://mochitests/content/browser/devtools/client/netmonitor/test/head.js";
 Services.scriptloader.loadSubScript(netMonitorHead, this);
