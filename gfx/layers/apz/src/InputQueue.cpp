@@ -277,15 +277,17 @@ InputQueue::ReceiveScrollWheelInput(const RefPtr<AsyncPanZoomController>& aTarge
     *aOutInputBlockId = block->GetBlockId();
   }
 
-  block->Update(aEvent);
+  
+  ScrollWheelInput event(aEvent);
+  block->Update(event);
 
   
   
   
   
   
-  if (!MaybeHandleCurrentBlock(block, aEvent)) {
-    block->AddEvent(aEvent.AsScrollWheelInput());
+  if (!MaybeHandleCurrentBlock(block, event)) {
+    block->AddEvent(event);
   }
 
   return nsEventStatus_eConsumeDoDefault;
