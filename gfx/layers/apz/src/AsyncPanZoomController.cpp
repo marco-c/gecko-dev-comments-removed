@@ -747,6 +747,14 @@ public:
       CSSPoint::ToAppUnits(ParentLayerPoint(1, 1) / aFrameMetrics.GetZoom());
     if (mXAxisModel.IsFinished(oneParentLayerPixel.x) &&
         mYAxisModel.IsFinished(oneParentLayerPixel.y)) {
+      
+      
+      
+      
+      aFrameMetrics.SetScrollOffset(
+          aFrameMetrics.CalculateScrollRange().ClampPoint(
+              CSSPoint::FromAppUnits(nsPoint(mXAxisModel.GetDestination(),
+                                             mYAxisModel.GetDestination()))));
       return false;
     }
 
