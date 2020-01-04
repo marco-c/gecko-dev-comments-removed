@@ -1103,7 +1103,12 @@ struct Bool64x2 {
     }
 };
 
-PropertyName* SimdTypeToName(JSContext* cx, SimdType type);
+
+PropertyName* SimdTypeToName(const JSAtomState& atoms, SimdType type);
+
+
+
+bool IsSimdTypeName(const JSAtomState& atoms, const PropertyName* name, SimdType* type);
 
 const char* SimdTypeToString(SimdType type);
 
