@@ -38,9 +38,11 @@ Compositor::Compositor(widget::CompositorWidget* aWidget,
 #if defined(MOZ_WIDGET_ANDROID)
   
   
-  , mBeginFrameClearColor(1.0, 1.0, 1.0, 1.0)
+  , mClearColor(1.0, 1.0, 1.0, 1.0)
+  , mDefaultClearColor(1.0, 1.0, 1.0, 1.0)
 #else
-  , mBeginFrameClearColor(0.0, 0.0, 0.0, 0.0)
+  , mClearColor(0.0, 0.0, 0.0, 0.0)
+  , mDefaultClearColor(0.0, 0.0, 0.0, 0.0)
 #endif
 {
 }

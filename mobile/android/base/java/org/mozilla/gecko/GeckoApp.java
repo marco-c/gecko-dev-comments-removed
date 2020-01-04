@@ -1154,8 +1154,6 @@ public abstract class GeckoApp
         
         GeckoAppShell.setNotificationClient(makeNotificationClient());
 
-        Tabs.getInstance().attachToContext(this);
-
         
         
         
@@ -1266,6 +1264,8 @@ public abstract class GeckoApp
         mGeckoLayout = (RelativeLayout) findViewById(R.id.gecko_layout);
         mMainLayout = (RelativeLayout) findViewById(R.id.main_layout);
         mLayerView = (GeckoView) findViewById(R.id.layer_view);
+
+        Tabs.getInstance().attachToContext(this, mLayerView);
 
         
         mMainLayout.getViewTreeObserver().addOnGlobalLayoutListener(this);
@@ -2878,5 +2878,9 @@ public abstract class GeckoApp
     public String getDefaultChromeURI() {
         
         return null;
+    }
+
+    public GeckoView getGeckoView() {
+        return mLayerView;
     }
 }
