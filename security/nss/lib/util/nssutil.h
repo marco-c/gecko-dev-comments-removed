@@ -19,10 +19,10 @@
 
 
 
-#define NSSUTIL_VERSION  "3.20"
+#define NSSUTIL_VERSION  "3.20.1"
 #define NSSUTIL_VMAJOR   3
 #define NSSUTIL_VMINOR   20
-#define NSSUTIL_VPATCH   0
+#define NSSUTIL_VPATCH   1
 #define NSSUTIL_VBUILD   0
 #define NSSUTIL_BETA     PR_FALSE
 
