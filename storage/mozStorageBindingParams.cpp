@@ -155,49 +155,6 @@ BindingParams::getOwner() const
   return mOwningArray;
 }
 
-PLDHashOperator
-AsyncBindingParams::iterateOverNamedParameters(const nsACString &aName,
-                                               nsIVariant *aValue,
-                                               void *voidClosureThunk)
-{
-  NamedParameterIterationClosureThunk *closureThunk =
-    static_cast<NamedParameterIterationClosureThunk *>(voidClosureThunk);
-
-  
-  
-  nsAutoCString name(":");
-  name.Append(aName);
-  int oneIdx = ::sqlite3_bind_parameter_index(closureThunk->statement,
-                                              name.get());
-
-  if (oneIdx == 0) {
-    nsAutoCString errMsg(aName);
-    errMsg.AppendLiteral(" is not a valid named parameter.");
-    closureThunk->err = new Error(SQLITE_RANGE, errMsg.get());
-    return PL_DHASH_STOP;
-  }
-
-  
-  
-  
-  
-  int rc = variantToSQLiteT(BindingColumnData(closureThunk->statement,
-                                              oneIdx - 1),
-                            aValue);
-  if (rc != SQLITE_OK) {
-    
-    
-    
-    const char *msg = "Could not covert nsIVariant to SQLite type.";
-    if (rc != SQLITE_MISMATCH)
-      msg = ::sqlite3_errmsg(::sqlite3_db_handle(closureThunk->statement));
-
-    closureThunk->err = new Error(rc, msg);
-    return PL_DHASH_STOP;
-  }
-  return PL_DHASH_NEXT;
-}
-
 
 
 
@@ -241,13 +198,44 @@ AsyncBindingParams::bind(sqlite3_stmt * aStatement)
   if (!mNamedParameters.Count())
     return BindingParams::bind(aStatement);
 
-  
-  
-  NamedParameterIterationClosureThunk closureThunk = {this, aStatement, nullptr};
-  (void)mNamedParameters.EnumerateRead(iterateOverNamedParameters,
-                                       (void *)&closureThunk);
+  nsCOMPtr<mozIStorageError> err;
 
-  return closureThunk.err.forget();
+  for (auto iter = mNamedParameters.Iter(); !iter.Done(); iter.Next()) {
+    const nsACString &key = iter.Key();
+
+    
+    
+    nsAutoCString name(":");
+    name.Append(key);
+    int oneIdx = ::sqlite3_bind_parameter_index(aStatement, name.get());
+
+    if (oneIdx == 0) {
+      nsAutoCString errMsg(key);
+      errMsg.AppendLiteral(" is not a valid named parameter.");
+      err = new Error(SQLITE_RANGE, errMsg.get());
+      break;
+    }
+
+    
+    
+    
+    
+    int rc = variantToSQLiteT(BindingColumnData(aStatement, oneIdx - 1),
+                              iter.UserData());
+    if (rc != SQLITE_OK) {
+      
+      
+      
+      const char *msg = "Could not covert nsIVariant to SQLite type.";
+      if (rc != SQLITE_MISMATCH) {
+        msg = ::sqlite3_errmsg(::sqlite3_db_handle(aStatement));
+      }
+      err = new Error(rc, msg);
+      break;
+    }
+  }
+
+  return err.forget();
 }
 
 
