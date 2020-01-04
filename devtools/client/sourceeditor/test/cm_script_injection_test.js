@@ -1,3 +1,8 @@
-window.addEventListener("editorReady", function(event) {
-  editor.setText("Script successfully injected !");
+
+
+
+"use strict";
+
+window.addEventListener("editorReady", function() {
+  editor.setText("Script successfully injected!");
 });
