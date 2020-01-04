@@ -352,9 +352,13 @@ Preferences.prototype = {
           
           
           
+          let firefoxVal = 0;
+          if (webkitVal != 0) {
+            firefoxVal = webkitVal == 1 ? 2 : 1;
+          }
           this._set("WebKitCookieStorageAcceptPolicy",
             "network.cookie.cookieBehavior",
-            webkitVal => webkitVal == 0 ? 0 : webkitVal == 1 ? 2 : 1);
+            firefoxVal);
         }
 
         this._migrateFontSettings();
@@ -566,8 +570,12 @@ WebFoundationCookieBehavior.prototype = {
           
           
           let acceptCookies = aDict.get("NSHTTPAcceptCookies");
-          let cookieValue = acceptCookies == "never" ? 2 :
-                            acceptCookies == "current page" ? 1 : 0;
+          let cookieValue = 0;
+          if (acceptCookies == "never") {
+            cookieValue = 2;
+          } else if (acceptCookies == "current page") {
+            cookieValue = 1;
+          }
           Services.prefs.setIntPref("network.cookie.cookieBehavior",
                                     cookieValue);
         }
