@@ -2064,7 +2064,7 @@ protected:
     
     nsRefPtr<gfxCharacterMap> mUnicodeRangeMap;
 
-    mozilla::RefPtr<mozilla::gfx::ScaledFont> mAzureScaledFont;
+    nsRefPtr<mozilla::gfx::ScaledFont> mAzureScaledFont;
 
     
     nsAutoPtr<const Metrics> mVerticalMetrics;
@@ -2119,7 +2119,7 @@ protected:
 
 
 struct TextRunDrawParams {
-    mozilla::RefPtr<mozilla::gfx::DrawTarget> dt;
+    nsRefPtr<mozilla::gfx::DrawTarget> dt;
     gfxContext              *context;
     gfxFont::Spacing        *spacing;
     gfxTextRunDrawCallbacks *callbacks;
@@ -2134,8 +2134,8 @@ struct TextRunDrawParams {
 };
 
 struct FontDrawParams {
-    mozilla::RefPtr<mozilla::gfx::ScaledFont>            scaledFont;
-    mozilla::RefPtr<mozilla::gfx::GlyphRenderingOptions> renderingOptions;
+    nsRefPtr<mozilla::gfx::ScaledFont>            scaledFont;
+    nsRefPtr<mozilla::gfx::GlyphRenderingOptions> renderingOptions;
     gfxTextContextPaint      *contextPaint;
     mozilla::gfx::Matrix     *passedInvMatrix;
     mozilla::gfx::Matrix      matInv;

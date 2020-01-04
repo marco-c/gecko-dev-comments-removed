@@ -29,7 +29,7 @@
 #include "gfxRect.h"                    
 #include "gfxUtils.h"                   
 #include "mozilla/Assertions.h"         
-#include "mozilla/RefPtr.h"             
+#include "mozilla/nsRefPtr.h"             
 #include "mozilla/gfx/2D.h"             
 #include "mozilla/gfx/Matrix.h"         
 #include "mozilla/gfx/Point.h"          
@@ -533,7 +533,7 @@ LayerManagerComposite::RenderDebugOverlay(const Rect& aBounds)
   }
 }
 
-RefPtr<CompositingRenderTarget>
+nsRefPtr<CompositingRenderTarget>
 LayerManagerComposite::PushGroupForLayerEffects()
 {
   
@@ -542,7 +542,7 @@ LayerManagerComposite::PushGroupForLayerEffects()
              gfxPrefs::LayersEffectGrayscale() ||
              gfxPrefs::LayersEffectContrast() != 0.0);
 
-  RefPtr<CompositingRenderTarget> previousTarget = mCompositor->GetCurrentRenderTarget();
+  nsRefPtr<CompositingRenderTarget> previousTarget = mCompositor->GetCurrentRenderTarget();
   
   
   IntRect rect(previousTarget->GetOrigin(), previousTarget->GetSize());
@@ -557,7 +557,7 @@ LayerManagerComposite::PushGroupForLayerEffects()
   return previousTarget;
 }
 void
-LayerManagerComposite::PopGroupForLayerEffects(RefPtr<CompositingRenderTarget> aPreviousTarget,
+LayerManagerComposite::PopGroupForLayerEffects(nsRefPtr<CompositingRenderTarget> aPreviousTarget,
                                                IntRect aClipRect,
                                                bool aGrayscaleEffect,
                                                bool aInvertEffect,
@@ -735,7 +735,7 @@ LayerManagerComposite::Render()
                                                                actualBounds.width,
                                                                actualBounds.height));
 
-  RefPtr<CompositingRenderTarget> previousTarget;
+  nsRefPtr<CompositingRenderTarget> previousTarget;
   if (haveLayerEffects) {
     previousTarget = PushGroupForLayerEffects();
   } else {

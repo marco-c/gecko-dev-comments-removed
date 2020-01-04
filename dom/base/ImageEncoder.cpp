@@ -9,7 +9,7 @@
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/DataSurfaceHelpers.h"
 #include "mozilla/layers/AsyncCanvasRenderer.h"
-#include "mozilla/RefPtr.h"
+#include "mozilla/nsRefPtr.h"
 #include "mozilla/SyncRunnable.h"
 #include "mozilla/unused.h"
 #include "gfxUtils.h"
@@ -53,8 +53,8 @@ public:
   }
 
 private:
-  RefPtr<layers::Image> mImage;
-  RefPtr<gfx::DataSourceSurface> mDataSourceSurface;
+  nsRefPtr<layers::Image> mImage;
+  nsRefPtr<gfx::DataSourceSurface> mDataSourceSurface;
 };
 
 
@@ -402,8 +402,8 @@ ImageEncoder::ExtractDataInternal(const nsAString& aType,
                                   imgIEncoder::INPUT_FORMAT_HOSTARGB,
                                   aOptions);
     } else {
-      RefPtr<gfx::DataSourceSurface> dataSurface;
-      RefPtr<layers::Image> image(aImage);
+      nsRefPtr<gfx::DataSourceSurface> dataSurface;
+      nsRefPtr<layers::Image> image(aImage);
       dataSurface = GetBRGADataSourceSurfaceSync(image.forget());
 
       DataSourceSurface::MappedSurface map;
@@ -428,7 +428,7 @@ ImageEncoder::ExtractDataInternal(const nsAString& aType,
     
     
     
-    RefPtr<DataSourceSurface> emptyCanvas =
+    nsRefPtr<DataSourceSurface> emptyCanvas =
       Factory::CreateDataSourceSurfaceWithStride(IntSize(aSize.width, aSize.height),
                                                  SurfaceFormat::B8G8R8A8,
                                                  4 * aSize.width, true);

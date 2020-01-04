@@ -9,7 +9,7 @@
 #include <dlfcn.h>
 #include <signal.h>
 #include "mozilla/RefCounted.h"
-#include "mozilla/RefPtr.h"
+#include "mozilla/nsRefPtr.h"
 #include "mozilla/UniquePtr.h"
 #include "Zip.h"
 #include "Elfxx.h"
@@ -235,7 +235,7 @@ private:
   char *path;
 
   
-  mutable mozilla::RefPtr<Mappable> mappable;
+  mutable nsRefPtr<Mappable> mappable;
 };
 
 
@@ -469,14 +469,14 @@ private:
 
   
 
-  mozilla::RefPtr<LibHandle> self_elf;
+  nsRefPtr<LibHandle> self_elf;
 
 #if defined(ANDROID)
   
 
 
 
-  mozilla::RefPtr<LibHandle> libc;
+  nsRefPtr<LibHandle> libc;
 #endif
 
   

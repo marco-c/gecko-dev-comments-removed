@@ -10,7 +10,7 @@
 #include "gfx2DGlue.h"
 #include "gfxPlatform.h"                
 #include "gfxUtils.h"                   
-#include "mozilla/RefPtr.h"             
+#include "mozilla/nsRefPtr.h"             
 #include "mozilla/ipc/CrossProcessMutex.h"  
 #include "mozilla/layers/CompositorTypes.h"
 #include "mozilla/layers/ImageBridgeChild.h"  
@@ -552,7 +552,7 @@ already_AddRefed<gfx::SourceSurface>
 PlanarYCbCrImage::GetAsSourceSurface()
 {
   if (mSourceSurface) {
-    RefPtr<gfx::SourceSurface> surface(mSourceSurface);
+    nsRefPtr<gfx::SourceSurface> surface(mSourceSurface);
     return surface.forget();
   }
 
@@ -565,7 +565,7 @@ PlanarYCbCrImage::GetAsSourceSurface()
     return nullptr;
   }
 
-  RefPtr<gfx::DataSourceSurface> surface = gfx::Factory::CreateDataSourceSurface(size, format);
+  nsRefPtr<gfx::DataSourceSurface> surface = gfx::Factory::CreateDataSourceSurface(size, format);
   if (NS_WARN_IF(!surface)) {
     return nullptr;
   }
@@ -598,12 +598,12 @@ CairoImage::GetTextureClient(CompositableClient *aClient)
   }
 
   CompositableForwarder* forwarder = aClient->GetForwarder();
-  RefPtr<TextureClient> textureClient = mTextureClients.Get(forwarder->GetSerial());
+  nsRefPtr<TextureClient> textureClient = mTextureClients.Get(forwarder->GetSerial());
   if (textureClient) {
     return textureClient;
   }
 
-  RefPtr<SourceSurface> surface = GetAsSourceSurface();
+  nsRefPtr<SourceSurface> surface = GetAsSourceSurface();
   MOZ_ASSERT(surface);
   if (!surface) {
     return nullptr;
@@ -617,7 +617,7 @@ CairoImage::GetTextureClient(CompositableClient *aClient)
 
 
 #ifdef MOZ_WIDGET_GONK
-  RefPtr<TextureClientRecycleAllocator> recycler =
+  nsRefPtr<TextureClientRecycleAllocator> recycler =
     aClient->GetTextureClientRecycler();
   if (recycler) {
     textureClient =

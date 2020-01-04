@@ -10,7 +10,7 @@
 #include "LayersTypes.h"
 #include "mozilla/gfx/Point.h"          
 #include "mozilla/Mutex.h"
-#include "mozilla/RefPtr.h"             
+#include "mozilla/nsRefPtr.h"             
 #include "nsCOMPtr.h"                   
 
 class nsICanvasRenderingContextInternal;
@@ -129,7 +129,7 @@ public:
   
   
   
-  RefPtr<gl::GLContext> mGLContext;
+  nsRefPtr<gl::GLContext> mGLContext;
 private:
 
   virtual ~AsyncCanvasRenderer();
@@ -154,7 +154,7 @@ private:
   
   
   
-  RefPtr<gfx::DataSourceSurface> mSurfaceForBasic;
+  nsRefPtr<gfx::DataSourceSurface> mSurfaceForBasic;
 
   
   Mutex mMutex;

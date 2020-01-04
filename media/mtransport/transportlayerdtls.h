@@ -14,7 +14,7 @@
 
 #include "sigslot.h"
 
-#include "mozilla/RefPtr.h"
+#include "mozilla/nsRefPtr.h"
 #include "mozilla/Scoped.h"
 #include "nsCOMPtr.h"
 #include "nsIEventTarget.h"
@@ -68,7 +68,7 @@ class TransportLayerDtls final : public TransportLayer {
   void SetRole(Role role) { role_ = role;}
   Role role() { return role_; }
 
-  void SetIdentity(const RefPtr<DtlsIdentity>& identity) {
+  void SetIdentity(const nsRefPtr<DtlsIdentity>& identity) {
     identity_ = identity;
   }
   nsresult SetAlpn(const std::set<std::string>& allowedAlpn,
@@ -158,10 +158,10 @@ class TransportLayerDtls final : public TransportLayer {
 
   static void TimerCallback(nsITimer *timer, void *arg);
 
-  SECStatus CheckDigest(const RefPtr<VerificationDigest>& digest,
+  SECStatus CheckDigest(const nsRefPtr<VerificationDigest>& digest,
                         CERTCertificate *cert);
 
-  RefPtr<DtlsIdentity> identity_;
+  nsRefPtr<DtlsIdentity> identity_;
   
   std::set<std::string> alpn_allowed_;
   
@@ -173,7 +173,7 @@ class TransportLayerDtls final : public TransportLayer {
 
   Role role_;
   Verification verification_mode_;
-  std::vector<RefPtr<VerificationDigest> > digests_;
+  std::vector<nsRefPtr<VerificationDigest> > digests_;
 
   
   

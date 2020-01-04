@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- *
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "nsNSSIOLayer.h"
 
@@ -52,38 +52,38 @@
 using namespace mozilla;
 using namespace mozilla::psm;
 
-//#define DEBUG_SSL_VERBOSE //Enable this define to get minimal
-                            //reports when doing SSL read/write
 
-//#define DUMP_BUFFER  //Enable this define along with
-                       //DEBUG_SSL_VERBOSE to dump SSL
-                       //read/write buffer to a log.
-                       //Uses PR_LOG except on Mac where
-                       //we always write out to our own
-                       //file.
+                            
+
+
+                       
+                       
+                       
+                       
+                       
 
 namespace {
 
 void
 getSiteKey(const nsACString& hostName, uint16_t port,
-           /*out*/ nsCSubstring& key)
+            nsCSubstring& key)
 {
   key = hostName;
   key.AppendASCII(":");
   key.AppendInt(port);
 }
 
-// SSM_UserCertChoice: enum for cert choice info
+
 typedef enum {ASK, AUTO} SSM_UserCertChoice;
 
-// Historically, we have required that the server negotiate ALPN or NPN in
-// order to false start, as a compatibility hack to work around
-// implementations that just stop responding during false start. However, now
-// false start is resricted to modern crypto (TLS 1.2 and AEAD cipher suites)
-// so it is less likely that requring NPN or ALPN is still necessary.
+
+
+
+
+
 static const bool FALSE_START_REQUIRE_NPN_DEFAULT = false;
 
-} // unnamed namespace
+} 
 
 extern PRLogModuleInfo* gPIPNSSLog;
 
@@ -242,7 +242,7 @@ nsNSSSocketInfo::NoteTimeUntilReady()
 
   mNotedTimeUntilReady = true;
 
-  // This will include TCP and proxy tunnel wait time
+  
   Telemetry::AccumulateTimeDelta(Telemetry::SSL_TIME_UNTIL_READY,
                                  mSocketCreationTimestamp, TimeStamp::Now());
   MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
@@ -265,21 +265,21 @@ nsNSSSocketInfo::SetHandshakeCompleted()
                                 : mFalseStartCallbackCalled ? ChoseNotToFalseStart
                                 : NotAllowedToFalseStart;
 
-    // This will include TCP and proxy tunnel wait time
+    
     Telemetry::AccumulateTimeDelta(Telemetry::SSL_TIME_UNTIL_HANDSHAKE_FINISHED,
                                    mSocketCreationTimestamp, TimeStamp::Now());
 
-    // If the handshake is completed for the first time from just 1 callback
-    // that means that TLS session resumption must have been used.
+    
+    
     Telemetry::Accumulate(Telemetry::SSL_RESUMED_SESSION,
                           handshakeType == Resumption);
     Telemetry::Accumulate(Telemetry::SSL_HANDSHAKE_TYPE, handshakeType);
   }
 
 
-    // Remove the plain text layer as it is not needed anymore.
-    // The plain text layer is not always present - so its not a fatal error
-    // if it cannot be removed
+    
+    
+    
     PRFileDesc* poppedPlaintext =
       PR_GetIdentitiesLayer(mFd, nsSSLIOLayerHelpers::nsSSLPlaintextLayerIdentity);
     if (poppedPlaintext) {
@@ -292,7 +292,7 @@ nsNSSSocketInfo::SetHandshakeCompleted()
     MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
            ("[%p] nsNSSSocketInfo::SetHandshakeCompleted\n", (void*) mFd));
 
-    mIsFullHandshake = false; // reset for next handshake on this connection
+    mIsFullHandshake = false; 
 }
 
 void
@@ -319,33 +319,33 @@ nsNSSSocketInfo::GetNegotiatedNPN(nsACString& aNegotiatedNPN)
 NS_IMETHODIMP
 nsNSSSocketInfo::IsAcceptableForHost(const nsACString& hostname, bool* _retval)
 {
-  // If this is the same hostname then the certicate status does not
-  // need to be considered. They are joinable.
+  
+  
   if (hostname.Equals(GetHostName())) {
     *_retval = true;
     return NS_OK;
   }
 
-  // Before checking the server certificate we need to make sure the
-  // handshake has completed.
+  
+  
   if (!mHandshakeCompleted || !SSLStatus() || !SSLStatus()->HasServerCert()) {
     return NS_OK;
   }
 
-  // If the cert has error bits (e.g. it is untrusted) then do not join.
-  // The value of mHaveCertErrorBits is only reliable because we know that
-  // the handshake completed.
+  
+  
+  
   if (SSLStatus()->mHaveCertErrorBits)
     return NS_OK;
 
-  // If the connection is using client certificates then do not join
-  // because the user decides on whether to send client certs to hosts on a
-  // per-domain basis.
+  
+  
+  
   if (mSentClientCert)
     return NS_OK;
 
-  // Ensure that the server certificate covers the hostname that would
-  // like to join this connection
+  
+  
 
   ScopedCERTCertificate nssCert;
 
@@ -361,23 +361,23 @@ nsNSSSocketInfo::IsAcceptableForHost(const nsACString& hostname, bool* _retval)
     return NS_OK;
   }
 
-  // Attempt to verify the joinee's certificate using the joining hostname.
-  // This ensures that any hostname-specific verification logic (e.g. key
-  // pinning) is satisfied by the joinee's certificate chain.
-  // This verification only uses local information; since we're on the network
-  // thread, we would be blocking on ourselves if we attempted any network i/o.
-  // TODO(bug 1056935): The certificate chain built by this verification may be
-  // different than the certificate chain originally built during the joined
-  // connection's TLS handshake. Consequently, we may report a wrong and/or
-  // misleading certificate chain for HTTP transactions coalesced onto this
-  // connection. This may become problematic in the future. For example,
-  // if/when we begin relying on intermediate certificates being stored in the
-  // securityInfo of a cached HTTPS response, that cached certificate chain may
-  // actually be the wrong chain. We should consider having JoinConnection
-  // return the certificate chain built here, so that the calling Necko code
-  // can associate the correct certificate chain with the HTTP transactions it
-  // is trying to join onto this connection.
-  RefPtr<SharedCertVerifier> certVerifier(GetDefaultCertVerifier());
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  nsRefPtr<SharedCertVerifier> certVerifier(GetDefaultCertVerifier());
   if (!certVerifier) {
     return NS_OK;
   }
@@ -392,7 +392,7 @@ nsNSSSocketInfo::IsAcceptableForHost(const nsACString& hostname, bool* _retval)
     return NS_OK;
   }
 
-  // All tests pass
+  
   *_retval = true;
   return NS_OK;
 }
@@ -405,24 +405,24 @@ nsNSSSocketInfo::JoinConnection(const nsACString& npnProtocol,
 {
   *_retval = false;
 
-  // Different ports may not be joined together
+  
   if (port != GetPort())
     return NS_OK;
 
-  // Make sure NPN has been completed and matches requested npnProtocol
+  
   if (!mNPNCompleted || !mNegotiatedNPN.Equals(npnProtocol))
     return NS_OK;
 
   if (mBypassAuthentication) {
-    // An unauthenticated connection does not know whether or not it
-    // is acceptable for a particular hostname
+    
+    
     return NS_OK;
   }
 
   IsAcceptableForHost(hostname, _retval);
 
   if (*_retval) {
-    // All tests pass - this is joinable
+    
     mJoined = true;
   }
   return NS_OK;
@@ -461,7 +461,7 @@ nsNSSSocketInfo::SetNPNList(nsTArray<nsCString>& protocolArray)
   if (!mFd)
     return NS_ERROR_FAILURE;
 
-  // the npn list is a concatenated list of 8 bit byte strings.
+  
   nsCString npnList;
 
   for (uint32_t index = 0; index < protocolArray.Length(); ++index) {
@@ -516,18 +516,18 @@ nsNSSSocketInfo::SetFileDescPtr(PRFileDesc* aFilePtr)
 void
 nsNSSSocketInfo::SetCertVerificationWaiting()
 {
-  // mCertVerificationState may be before_cert_verification for the first
-  // handshake on the connection, or after_cert_verification for subsequent
-  // renegotiation handshakes.
+  
+  
+  
   NS_ASSERTION(mCertVerificationState != waiting_for_cert_verification,
                "Invalid state transition to waiting_for_cert_verification");
   mCertVerificationState = waiting_for_cert_verification;
 }
 
-// Be careful that SetCertVerificationResult does NOT get called while we are
-// processing a SSL callback function, because SSL_AuthCertificateComplete will
-// attempt to acquire locks that are already held by libssl when it calls
-// callbacks.
+
+
+
+
 void
 nsNSSSocketInfo::SetCertVerificationResult(PRErrorCode errorCode,
                                            SSLErrorMessageType errorMessageType)
@@ -537,7 +537,7 @@ nsNSSSocketInfo::SetCertVerificationResult(PRErrorCode errorCode,
 
   if (mFd) {
     SECStatus rv = SSL_AuthCertificateComplete(mFd, errorCode);
-    // Only replace errorCode if there was originally no error
+    
     if (rv != SECSuccess && errorCode == 0) {
       errorCode = PR_GetError();
       errorMessageType = PlainErrorMessage;
@@ -584,17 +584,17 @@ nsHandleSSLError(nsNSSSocketInfo* socketInfo,
     return;
   }
 
-  // SetCanceled is only called by the main thread or the socket transport
-  // thread. Whenever this function is called on the main thread, the SSL
-  // thread is blocked on it. So, no mutex is necessary for
-  // SetCanceled()/GetError*().
+  
+  
+  
+  
   if (socketInfo->GetErrorCode()) {
-    // If the socket has been flagged as canceled,
-    // the code who did was responsible for setting the error code.
+    
+    
     return;
   }
 
-  // We must cancel first, which sets the error code.
+  
   socketInfo->SetCanceled(err, PlainErrorMessage);
   nsXPIDLString errorString;
   socketInfo->GetErrorLogMessage(err, errtype, errorString);
@@ -614,7 +614,7 @@ int32_t checkHandshake(int32_t bytesTransfered, bool wasReading,
 
 nsNSSSocketInfo*
 getSocketInfoIfRunning(PRFileDesc* fd, Operation op,
-                       const nsNSSShutDownPreventionLock& /*proofOfLock*/)
+                       const nsNSSShutDownPreventionLock& )
 {
   if (!fd || !fd->lower || !fd->secret ||
       fd->identity != nsSSLIOLayerHelpers::nsSSLIOLayerIdentity) {
@@ -634,20 +634,20 @@ getSocketInfoIfRunning(PRFileDesc* fd, Operation op,
     PRErrorCode err = socketInfo->GetErrorCode();
     PR_SetError(err, 0);
     if (op == reading || op == writing) {
-      // We must do TLS intolerance checks for reads and writes, for timeouts
-      // in particular.
+      
+      
       (void) checkHandshake(-1, op == reading, fd, socketInfo);
     }
 
-    // If we get here, it is probably because cert verification failed and this
-    // is the first I/O attempt since that failure.
+    
+    
     return nullptr;
   }
 
   return socketInfo;
 }
 
-} // namespace
+} 
 
 static PRStatus
 nsSSLIOLayerConnect(PRFileDesc* fd, const PRNetAddr* addr,
@@ -685,7 +685,7 @@ nsSSLIOLayerHelpers::rememberTolerantAtVersion(const nsACString& hostName,
     entry.tolerant = std::max(entry.tolerant, tolerant);
     if (entry.intolerant != 0 && entry.intolerant <= entry.tolerant) {
       entry.intolerant = entry.tolerant + 1;
-      entry.intoleranceReason = 0; // lose the reason
+      entry.intoleranceReason = 0; 
     }
     if (entry.strongCipherStatus == StrongCipherStatusUnknown) {
       entry.strongCipherStatus = StrongCiphersWorked;
@@ -740,7 +740,7 @@ nsSSLIOLayerHelpers::fallbackLimitReached(const nsACString& hostName,
   return intolerant <= mVersionFallbackLimit;
 }
 
-// returns true if we should retry the handshake
+
 bool
 nsSSLIOLayerHelpers::rememberIntolerantAtVersion(const nsACString& hostName,
                                                  int16_t port,
@@ -749,16 +749,16 @@ nsSSLIOLayerHelpers::rememberIntolerantAtVersion(const nsACString& hostName,
                                                  PRErrorCode intoleranceReason)
 {
   if (intolerant <= minVersion || fallbackLimitReached(hostName, intolerant)) {
-    // We can't fall back any further. Assume that intolerance isn't the issue.
+    
     uint32_t tolerant = forgetIntolerance(hostName, port);
-    // If we know the server is tolerant at the version, we don't have to
-    // gather the telemetry.
+    
+    
     if (intolerant <= tolerant) {
       return false;
     }
 
     uint32_t fallbackLimitBucket = 0;
-    // added if the version has reached the min version.
+    
     if (intolerant <= minVersion) {
       switch (minVersion) {
         case SSL_LIBRARY_VERSION_TLS_1_0:
@@ -772,7 +772,7 @@ nsSSLIOLayerHelpers::rememberIntolerantAtVersion(const nsACString& hostName,
           break;
       }
     }
-    // added if the version has reached the fallback limit.
+    
     if (intolerant <= mVersionFallbackLimit) {
       switch (mVersionFallbackLimit) {
         case SSL_LIBRARY_VERSION_TLS_1_0:
@@ -803,11 +803,11 @@ nsSSLIOLayerHelpers::rememberIntolerantAtVersion(const nsACString& hostName,
   if (mTLSIntoleranceInfo.Get(key, &entry)) {
     entry.AssertInvariant();
     if (intolerant <= entry.tolerant) {
-      // We already know the server is tolerant at an equal or higher version.
+      
       return false;
     }
     if ((entry.intolerant != 0 && intolerant >= entry.intolerant)) {
-      // We already know that the server is intolerant at a lower version.
+      
       return true;
     }
   } else {
@@ -823,7 +823,7 @@ nsSSLIOLayerHelpers::rememberIntolerantAtVersion(const nsACString& hostName,
   return true;
 }
 
-// returns true if we should retry the handshake
+
 bool
 nsSSLIOLayerHelpers::rememberStrongCiphersFailed(const nsACString& hostName,
                                                  int16_t port,
@@ -838,7 +838,7 @@ nsSSLIOLayerHelpers::rememberStrongCiphersFailed(const nsACString& hostName,
   if (mTLSIntoleranceInfo.Get(key, &entry)) {
     entry.AssertInvariant();
     if (entry.strongCipherStatus != StrongCipherStatusUnknown) {
-      // We already know if the server supports a strong cipher.
+      
       return false;
     }
   } else {
@@ -857,8 +857,8 @@ nsSSLIOLayerHelpers::rememberStrongCiphersFailed(const nsACString& hostName,
 void
 nsSSLIOLayerHelpers::adjustForTLSIntolerance(const nsACString& hostName,
                                              int16_t port,
-                                             /*in/out*/ SSLVersionRange& range,
-                                             /*out*/ StrongCipherStatus& strongCipherStatus)
+                                              SSLVersionRange& range,
+                                              StrongCipherStatus& strongCipherStatus)
 {
   IntoleranceEntry entry;
 
@@ -875,8 +875,8 @@ nsSSLIOLayerHelpers::adjustForTLSIntolerance(const nsACString& hostName,
   entry.AssertInvariant();
 
   if (entry.intolerant != 0) {
-    // We've tried connecting at a higher range but failed, so try at the
-    // version we haven't tried yet, unless we have reached the minimum.
+    
+    
     if (range.min < entry.intolerant) {
       range.max = entry.intolerant - 1;
     }
@@ -928,15 +928,15 @@ nsSSLIOLayerClose(PRFileDesc* fd)
 
 PRStatus
 nsNSSSocketInfo::CloseSocketAndDestroy(
-    const nsNSSShutDownPreventionLock& /*proofOfLock*/)
+    const nsNSSShutDownPreventionLock& )
 {
   PRFileDesc* popped = PR_PopIOLayer(mFd, PR_TOP_IO_LAYER);
   NS_ASSERTION(popped &&
                popped->identity == nsSSLIOLayerHelpers::nsSSLIOLayerIdentity,
                "SSL Layer not on top of stack");
 
-  // The plain text layer is not always present - so its not a fatal error
-  // if it cannot be removed
+  
+  
   PRFileDesc* poppedPlaintext =
     PR_GetIdentitiesLayer(mFd, nsSSLIOLayerHelpers::nsSSLPlaintextLayerIdentity);
   if (poppedPlaintext) {
@@ -946,10 +946,10 @@ nsNSSSocketInfo::CloseSocketAndDestroy(
 
   PRStatus status = mFd->methods->close(mFd);
 
-  // the nsNSSSocketInfo instance can out-live the connection, so we need some
-  // indication that the connection has been closed. mFd == nullptr is that
-  // indication. This is needed, for example, when the connection is closed
-  // before we have finished validating the server's certificate.
+  
+  
+  
+  
   mFd = nullptr;
 
   if (status != PR_SUCCESS) return status;
@@ -962,8 +962,8 @@ nsNSSSocketInfo::CloseSocketAndDestroy(
 }
 
 #if defined(DEBUG_SSL_VERBOSE) && defined(DUMP_BUFFER)
-// Dumps a (potentially binary) buffer using SSM_DEBUG.  (We could have used
-// the version in ssltrace.c, but that's specifically tailored to SSLTRACE.)
+
+
 #define DUMPBUF_LINESIZE 24
 static void
 nsDumpBuffer(unsigned char* buf, int len)
@@ -997,12 +997,12 @@ nsDumpBuffer(unsigned char* buf, int len)
       l = 0;
     }
 
-    // Convert a character to hex.
+    
     *h++ = hex[(ch >> 4) & 0xf];
     *h++ = hex[ch & 0xf];
     h++;
 
-    // Put the character (if it's printable) into the character buffer.
+    
     if ((ch >= 0x20) && (ch <= 0x7e)) {
       *c++ = ch;
     } else {
@@ -1035,7 +1035,7 @@ class SSLErrorRunnable : public SyncRunnableBase
     nsHandleSSLError(mInfoObject, mErrType, mErrorCode);
   }
 
-  RefPtr<nsNSSSocketInfo> mInfoObject;
+  nsRefPtr<nsNSSSocketInfo> mInfoObject;
   ::mozilla::psm::SSLErrorMessageType mErrType;
   const PRErrorCode mErrorCode;
 };
@@ -1044,9 +1044,9 @@ namespace {
 
 uint32_t tlsIntoleranceTelemetryBucket(PRErrorCode err)
 {
-  // returns a numeric code for where we track various errors in telemetry
-  // only errors that cause version fallback are tracked,
-  // so this is also used to determine which errors can cause version fallback
+  
+  
+  
   switch (err) {
     case SSL_ERROR_BAD_MAC_ALERT: return 1;
     case SSL_ERROR_BAD_MAC_READ: return 2;
@@ -1067,9 +1067,9 @@ uint32_t tlsIntoleranceTelemetryBucket(PRErrorCode err)
 bool
 retryDueToTLSIntolerance(PRErrorCode err, nsNSSSocketInfo* socketInfo)
 {
-  // This function is supposed to decide which error codes should
-  // be used to conclude server is TLS intolerant.
-  // Note this only happens during the initial SSL handshake.
+  
+  
+  
 
   SSLVersionRange range = socketInfo->GetTLSVersionRange();
   nsSSLIOLayerHelpers& helpers = socketInfo->SharedState().IOLayerHelpers();
@@ -1081,13 +1081,13 @@ retryDueToTLSIntolerance(PRErrorCode err, nsNSSSocketInfo* socketInfo)
   }
 
   if (err == SSL_ERROR_INAPPROPRIATE_FALLBACK_ALERT) {
-    // This is a clear signal that we've fallen back too many versions.  Treat
-    // this as a hard failure, but forget any intolerance so that later attempts
-    // don't use this version (i.e., range.max) and trigger the error again.
+    
+    
+    
 
-    // First, track the original cause of the version fallback.  This uses the
-    // same buckets as the telemetry below, except that bucket 0 will include
-    // all cases where there wasn't an original reason.
+    
+    
+    
     PRErrorCode originalReason =
       helpers.getIntoleranceReason(socketInfo->GetHostName(),
                                    socketInfo->GetPort());
@@ -1100,7 +1100,7 @@ retryDueToTLSIntolerance(PRErrorCode err, nsNSSSocketInfo* socketInfo)
     return false;
   }
 
-  // Disallow PR_CONNECT_RESET_ERROR if fallback limit reached.
+  
   bool fallbackLimitReached =
     helpers.fallbackLimitReached(socketInfo->GetHostName(), range.max);
   if (err == PR_CONNECT_RESET_ERROR && fallbackLimitReached) {
@@ -1119,18 +1119,18 @@ retryDueToTLSIntolerance(PRErrorCode err, nsNSSSocketInfo* socketInfo)
       }
       Telemetry::Accumulate(Telemetry::SSL_WEAK_CIPHERS_FALLBACK, 0);
     } else if (err == SSL_ERROR_NO_CYPHER_OVERLAP) {
-      // Indicate that the override UI should be shown.
+      
       socketInfo->SetSecurityState(
         nsIWebProgressListener::STATE_IS_INSECURE |
         nsIWebProgressListener::STATE_USES_WEAK_CRYPTO);
     }
   }
 
-  // When not using a proxy we'll see a connection reset error.
-  // When using a proxy, we'll see an end of file error.
+  
+  
 
-  // Don't allow STARTTLS connections to fall back on connection resets or
-  // EOF.
+  
+  
   if ((err == PR_CONNECT_RESET_ERROR || err == PR_END_OF_FILE_ERROR)
       && socketInfo->GetForSTARTTLS()) {
     return false;
@@ -1161,8 +1161,8 @@ retryDueToTLSIntolerance(PRErrorCode err, nsNSSSocketInfo* socketInfo)
       return false;
   }
 
-  // The difference between _PRE and _POST represents how often we avoided
-  // TLS intolerance fallback due to remembered tolerance.
+  
+  
   Telemetry::Accumulate(pre, reason);
 
   if (!helpers.rememberIntolerantAtVersion(socketInfo->GetHostName(),
@@ -1183,24 +1183,24 @@ checkHandshake(int32_t bytesTransfered, bool wasReading,
   const PRErrorCode originalError = PR_GetError();
   PRErrorCode err = originalError;
 
-  // This is where we work around all of those SSL servers that don't
-  // conform to the SSL spec and shutdown a connection when we request
-  // SSL v3.1 (aka TLS).  The spec says the client says what version
-  // of the protocol we're willing to perform, in our case SSL v3.1
-  // In its response, the server says which version it wants to perform.
-  // Many servers out there only know how to do v3.0.  Next, we're supposed
-  // to send back the version of the protocol we requested (ie v3.1).  At
-  // this point many servers's implementations are broken and they shut
-  // down the connection when they don't see the version they sent back.
-  // This is supposed to prevent a man in the middle from forcing one
-  // side to dumb down to a lower level of the protocol.  Unfortunately,
-  // there are enough broken servers out there that such a gross work-around
-  // is necessary.  :(
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
 
-  // Do NOT assume TLS intolerance on a closed connection after bad cert ui was shown.
-  // Simply retry.
-  // This depends on the fact that Cert UI will not be shown again,
-  // should the user override the bad cert.
+  
+  
+  
+  
 
   bool handleHandshakeResultNow = socketInfo->IsHandshakePending();
 
@@ -1216,24 +1216,24 @@ checkHandshake(int32_t bytesTransfered, bool wasReading,
       wantRetry = retryDueToTLSIntolerance(err, socketInfo);
     }
 
-    // This is the common place where we trigger non-cert-errors on a SSL
-    // socket. This might be reached at any time of the connection.
-    //
-    // The socketInfo->GetErrorCode() check is here to ensure we don't try to
-    // do the synchronous dispatch to the main thread unnecessarily after we've
-    // already handled a certificate error. (SSLErrorRunnable calls
-    // nsHandleSSLError, which has logic to avoid replacing the error message,
-    // so without the !socketInfo->GetErrorCode(), it would just be an
-    // expensive no-op.)
+    
+    
+    
+    
+    
+    
+    
+    
+    
     if (!wantRetry && mozilla::psm::IsNSSErrorCode(err) &&
         !socketInfo->GetErrorCode()) {
-      RefPtr<SyncRunnableBase> runnable(new SSLErrorRunnable(socketInfo,
+      nsRefPtr<SyncRunnableBase> runnable(new SSLErrorRunnable(socketInfo,
                                                              PlainErrorMessage,
                                                              err));
       (void) runnable->DispatchToMainThreadAndWait();
     }
   } else if (wasReading && 0 == bytesTransfered) {
-    // zero bytes on reading, socket closed
+    
     if (handleHandshakeResultNow) {
       wantRetry = retryDueToTLSIntolerance(PR_END_OF_FILE_ERROR, socketInfo);
     }
@@ -1243,25 +1243,25 @@ checkHandshake(int32_t bytesTransfered, bool wasReading,
     MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
            ("[%p] checkHandshake: will retry with lower max TLS version\n",
             ssl_layer_fd));
-    // We want to cause the network layer to retry the connection.
+    
     err = PR_CONNECT_RESET_ERROR;
     if (wasReading)
       bytesTransfered = -1;
   }
 
-  // TLS intolerant servers only cause the first transfer to fail, so let's
-  // set the HandshakePending attribute to false so that we don't try the logic
-  // above again in a subsequent transfer.
+  
+  
+  
   if (handleHandshakeResultNow) {
     socketInfo->SetHandshakeNotPending();
   }
 
   if (bytesTransfered < 0) {
-    // Remember that we encountered an error so that getSocketInfoIfRunning
-    // will correctly cause us to fail if another part of Gecko
-    // (erroneously) calls an I/O function (PR_Send/PR_Recv/etc.) again on
-    // this socket. Note that we use the original error because if we use
-    // PR_CONNECT_RESET_ERROR, we'll repeated try to reconnect.
+    
+    
+    
+    
+    
     if (originalError != PR_WOULD_BLOCK_ERROR && !socketInfo->GetErrorCode()) {
       socketInfo->SetCanceled(originalError, PlainErrorMessage);
     }
@@ -1271,7 +1271,7 @@ checkHandshake(int32_t bytesTransfered, bool wasReading,
   return bytesTransfered;
 }
 
-} // namespace
+} 
 
 static int16_t
 nsSSLIOLayerPoll(PRFileDesc* fd, int16_t in_flags, int16_t* out_flags)
@@ -1289,8 +1289,8 @@ nsSSLIOLayerPoll(PRFileDesc* fd, int16_t in_flags, int16_t* out_flags)
     getSocketInfoIfRunning(fd, not_reading_or_writing, locker);
 
   if (!socketInfo) {
-    // If we get here, it is probably because certificate validation failed
-    // and this is the first I/O operation after the failure.
+    
+    
     MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
             ("[%p] polling SSL socket right after certificate verification failed "
                   "or NSS shutdown or SDR logout %d\n",
@@ -1298,10 +1298,10 @@ nsSSLIOLayerPoll(PRFileDesc* fd, int16_t in_flags, int16_t* out_flags)
 
     NS_ASSERTION(in_flags & PR_POLL_EXCEPT,
                  "caller did not poll for EXCEPT (canceled)");
-    // Since this poll method cannot return errors, we want the caller to call
-    // PR_Send/PR_Recv right away to get the error, so we tell that we are
-    // ready for whatever I/O they are asking for. (See getSocketInfoIfRunning).
-    *out_flags = in_flags | PR_POLL_EXCEPT; // see also bug 480619
+    
+    
+    
+    *out_flags = in_flags | PR_POLL_EXCEPT; 
     return in_flags;
   }
 
@@ -1311,10 +1311,10 @@ nsSSLIOLayerPoll(PRFileDesc* fd, int16_t in_flags, int16_t* out_flags)
             :  "[%p] poll SSL socket using lower %d\n",
          fd, (int) in_flags));
 
-  // We want the handshake to continue during certificate validation, so we
-  // don't need to do anything special here. libssl automatically blocks when
-  // it reaches any point that would be unsafe to send/receive something before
-  // cert validation is complete.
+  
+  
+  
+  
   int16_t result = fd->lower->methods->poll(fd->lower, in_flags, out_flags);
   MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("[%p] poll SSL socket returned %d\n",
                                     (void*) fd, (int) result));
@@ -1494,7 +1494,7 @@ PSMConnectcontinue(PRFileDesc* fd, int16_t out_flags)
 static int
 PSMAvailable(void)
 {
-  // This is called through PR_Available(), but is not implemented in PSM
+  
   PR_SetError(PR_NOT_IMPLEMENTED_ERROR, 0);
   return -1;
 }
@@ -1502,7 +1502,7 @@ PSMAvailable(void)
 static int64_t
 PSMAvailable64(void)
 {
-  // This is called through PR_Available(), but is not implemented in PSM
+  
   PR_SetError(PR_NOT_IMPLEMENTED_ERROR, 0);
   return -1;
 }
@@ -1521,7 +1521,7 @@ private:
   nsSSLIOLayerHelpers* mOwner;
 };
 
-} // unnamed namespace
+} 
 
 NS_IMPL_ISUPPORTS(PrefObserver, nsIObserver)
 
@@ -1543,8 +1543,8 @@ PrefObserver::Observe(nsISupports* aSubject, const char* aTopic,
     } else if (prefName.EqualsLiteral("security.tls.version.fallback-limit")) {
       mOwner->loadVersionFallbackLimit();
     } else if (prefName.EqualsLiteral("security.tls.insecure_fallback_hosts")) {
-      // Changes to the whitelist on the public side will update the pref.
-      // Don't propagate the changes to the private side.
+      
+      
       if (mOwner->isPublic()) {
         mOwner->initInsecureFallbackSites();
       }
@@ -1563,8 +1563,8 @@ static int32_t
 PlaintextRecv(PRFileDesc* fd, void* buf, int32_t amount, int flags,
               PRIntervalTime timeout)
 {
-  // The shutdownlocker is not needed here because it will already be
-  // held higher in the stack
+  
+  
   nsNSSSocketInfo* socketInfo = nullptr;
 
   int32_t bytesRead = fd->lower->methods->recv(fd->lower, buf, amount, flags,
@@ -1579,8 +1579,8 @@ PlaintextRecv(PRFileDesc* fd, void* buf, int32_t amount, int flags,
 
 nsSSLIOLayerHelpers::~nsSSLIOLayerHelpers()
 {
-  // mPrefObserver will only be set if this->Init was called. The GTest tests
-  // do not call Init.
+  
+  
   if (mPrefObserver) {
     Preferences::RemoveObserver(mPrefObserver,
         "security.ssl.treat_unsafe_negotiation_as_broken");
@@ -1671,9 +1671,9 @@ nsSSLIOLayerHelpers::Init()
 void
 nsSSLIOLayerHelpers::loadVersionFallbackLimit()
 {
-  // see nsNSSComponent::setEnabledTLSVersions for pref handling rules
+  
   uint32_t limit = Preferences::GetUint("security.tls.version.fallback-limit",
-                                        3); // 3 = TLS 1.2
+                                        3); 
   SSLVersionRange defaults = { SSL_LIBRARY_VERSION_TLS_1_2,
                                SSL_LIBRARY_VERSION_TLS_1_2 };
   SSLVersionRange filledInRange;
@@ -1799,7 +1799,7 @@ nsSSLIOLayerHelpers::removeInsecureFallbackSite(const nsACString& hostname,
   if (!isPublic()) {
     return;
   }
-  RefPtr<nsRunnable> runnable = new FallbackPrefRemover(hostname);
+  nsRefPtr<nsRunnable> runnable = new FallbackPrefRemover(hostname);
   if (NS_IsMainThread()) {
     runnable->Run();
   } else {
@@ -1823,8 +1823,8 @@ private:
 
 static const char* const kFallbackWildcardList[] =
 {
-  ".eur.xerox.com", // bug 1187215
-  ".kuronekoyamato.co.jp", // bug 1128366
+  ".eur.xerox.com", 
+  ".kuronekoyamato.co.jp", 
   ".wildcard.test",
 };
 
@@ -1893,14 +1893,14 @@ nsSSLIOLayerNewSocket(int32_t family,
   return NS_OK;
 }
 
-// Creates CA names strings from (CERTDistNames* caNames)
-//
-// - arena: arena to allocate strings on
-// - caNameStrings: filled with CA names strings on return
-// - caNames: CERTDistNames to extract strings from
-// - return: SECSuccess if successful; error code otherwise
-//
-// Note: copied in its entirety from Nova code
+
+
+
+
+
+
+
+
 static SECStatus
 nsConvertCANamesToStrings(PLArenaPool* arena, char** caNameStrings,
                           CERTDistNames* caNames)
@@ -1924,9 +1924,9 @@ nsConvertCANamesToStrings(PLArenaPool* arena, char** caNameStrings,
         }
 
         if (headerlen + contentlen != dername->len) {
-            // This must be from an enterprise 2.x server, which sent
-            // incorrectly formatted der without the outer wrapper of type and
-            // length. Fix it up by adding the top level header.
+            
+            
+            
             if (dername->len <= 127) {
                 newitem.data = (unsigned char*) PR_Malloc(dername->len + 2);
                 if (!newitem.data) {
@@ -1945,7 +1945,7 @@ nsConvertCANamesToStrings(PLArenaPool* arena, char** caNameStrings,
                 newitem.data[2] = (unsigned char) dername->len;
                 (void) memcpy(&newitem.data[3], dername->data, dername->len);
             } else {
-                // greater than 256, better be less than 64k
+                
                 newitem.data = (unsigned char*) PR_Malloc(dername->len + 4);
                 if (!newitem.data) {
                     goto loser;
@@ -1961,7 +1961,7 @@ nsConvertCANamesToStrings(PLArenaPool* arena, char** caNameStrings,
 
         namestring = CERT_DerNameToAscii(dername);
         if (!namestring) {
-            // XXX - keep going until we fail to convert the name
+            
             caNameStrings[n] = const_cast<char*>("");
         } else {
             caNameStrings[n] = PORT_ArenaStrdup(arena, namestring);
@@ -1984,13 +1984,13 @@ loser:
     return SECFailure;
 }
 
-// Sets certChoice by reading the preference
-//
-// If done properly, this function will read the identifier strings for ASK and
-// AUTO modes read the selected strings from the preference, compare the
-// strings, and determine in which mode it is in. We currently use ASK mode for
-// UI apps and AUTO mode for UI-less apps without really asking for
-// preferences.
+
+
+
+
+
+
+
 nsresult
 nsGetUserCertChoice(SSM_UserCertChoice* certChoice)
 {
@@ -2011,8 +2011,8 @@ nsGetUserCertChoice(SSM_UserCertChoice* certChoice)
   } else if (PL_strcmp(mode, "Ask Every Time") == 0) {
     *certChoice = ASK;
   } else {
-    // Most likely we see a nickname from a migrated cert.
-    // We do not currently support that, ask the user which cert to use.
+    
+    
     *certChoice = ASK;
   }
 
@@ -2026,7 +2026,7 @@ loser:
 static bool
 hasExplicitKeyUsageNonRepudiation(CERTCertificate* cert)
 {
-  // There is no extension, v1 or v2 certificate
+  
   if (!cert->extensions)
     return false;
 
@@ -2062,28 +2062,28 @@ public:
   {
   }
 
-  SECStatus mRV;                        // out
-  PRErrorCode mErrorCodeToReport;       // out
-  CERTCertificate** const mPRetCert;    // in/out
-  SECKEYPrivateKey** const mPRetKey;    // in/out
+  SECStatus mRV;                        
+  PRErrorCode mErrorCodeToReport;       
+  CERTCertificate** const mPRetCert;    
+  SECKEYPrivateKey** const mPRetKey;    
 protected:
   virtual void RunOnTargetThread();
 private:
-  CERTDistNames* const mCANames;        // in
-  nsNSSSocketInfo* const mSocketInfo;   // in
-  CERTCertificate* const mServerCert;   // in
+  CERTDistNames* const mCANames;        
+  nsNSSSocketInfo* const mSocketInfo;   
+  CERTCertificate* const mServerCert;   
 };
 
-// This callback function is used to pull client certificate
-// information upon server request
-//
-// - arg: SSL data connection
-// - socket: SSL socket we're dealing with
-// - caNames: list of CA names
-// - pRetCert: returns a pointer to a pointer to a valid certificate if
-//             successful; otherwise nullptr
-// - pRetKey: returns a pointer to a pointer to the corresponding key if
-//            successful; otherwise nullptr
+
+
+
+
+
+
+
+
+
+
 SECStatus
 nsNSS_SSLGetClientAuthData(void* arg, PRFileDesc* socket,
                            CERTDistNames* caNames, CERTCertificate** pRetCert,
@@ -2096,7 +2096,7 @@ nsNSS_SSLGetClientAuthData(void* arg, PRFileDesc* socket,
     return SECFailure;
   }
 
-  RefPtr<nsNSSSocketInfo> info(
+  nsRefPtr<nsNSSSocketInfo> info(
     reinterpret_cast<nsNSSSocketInfo*>(socket->higher->secret));
 
   CERTCertificate* serverCert = SSL_PeerCertificate(socket);
@@ -2108,9 +2108,9 @@ nsNSS_SSLGetClientAuthData(void* arg, PRFileDesc* socket,
   }
 
   if (info->GetJoined()) {
-    // We refuse to send a client certificate when there are multiple hostnames
-    // joined on this connection, because we only show the user one hostname
-    // (mHostName) in the client certificate UI.
+    
+    
+    
 
     MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
            ("[%p] Not returning client cert due to previous join\n", socket));
@@ -2119,8 +2119,8 @@ nsNSS_SSLGetClientAuthData(void* arg, PRFileDesc* socket,
     return SECSuccess;
   }
 
-  // XXX: This should be done asynchronously; see bug 696976
-  RefPtr<ClientAuthDataRunnable> runnable(
+  
+  nsRefPtr<ClientAuthDataRunnable> runnable(
     new ClientAuthDataRunnable(caNames, pRetCert, pRetKey, info, serverCert));
   nsresult rv = runnable->DispatchToMainThreadAndWait();
   if (NS_FAILED(rv)) {
@@ -2131,7 +2131,7 @@ nsNSS_SSLGetClientAuthData(void* arg, PRFileDesc* socket,
   if (runnable->mRV != SECSuccess) {
     PR_SetError(runnable->mErrorCodeToReport, 0);
   } else if (*runnable->mPRetCert || *runnable->mPRetKey) {
-    // Make joinConnection prohibit joining after we've sent a client cert
+    
     info->SetSentClientCert();
   }
 
@@ -2148,7 +2148,7 @@ ClientAuthDataRunnable::RunOnTargetThread()
   ScopedCERTCertList certList;
   CERTCertListNode* node;
   ScopedCERTCertNicknames nicknames;
-  int keyError = 0; // used for private key retrieval error
+  int keyError = 0; 
   SSM_UserCertChoice certChoice;
   int32_t NumberOfCerts = 0;
   void* wincx = mSocketInfo;
@@ -2157,15 +2157,15 @@ ClientAuthDataRunnable::RunOnTargetThread()
   nsCOMPtr<nsIX509Cert> socketClientCert;
   mSocketInfo->GetClientCert(getter_AddRefs(socketClientCert));
 
-  // If a client cert preference was set on the socket info, use that and skip
-  // the client cert UI and/or search of the user's past cert decisions.
+  
+  
   if (socketClientCert) {
     cert = socketClientCert->GetCert();
     if (!cert) {
       goto loser;
     }
 
-    // Get the private key
+    
     privKey = PK11_FindKeyByAnyCert(cert.get(), wincx);
     if (!privKey) {
       goto loser;
@@ -2177,7 +2177,7 @@ ClientAuthDataRunnable::RunOnTargetThread()
     return;
   }
 
-  // create caNameStrings
+  
   arena = PORT_NewArena(DER_DEFAULT_CHUNKSIZE);
   if (!arena) {
     goto loser;
@@ -2194,16 +2194,16 @@ ClientAuthDataRunnable::RunOnTargetThread()
     goto loser;
   }
 
-  // get the preference
+  
   if (NS_FAILED(nsGetUserCertChoice(&certChoice))) {
     goto loser;
   }
 
-  // find valid user cert and key pair
+  
   if (certChoice == AUTO) {
-    // automatically find the right cert
+    
 
-    // find all user certs that are valid and for SSL
+    
     certList = CERT_FindUserCertsByUsage(CERT_GetDefaultCertDB(),
                                          certUsageSSLClient, false,
                                          true, wincx);
@@ -2211,14 +2211,14 @@ ClientAuthDataRunnable::RunOnTargetThread()
       goto noCert;
     }
 
-    // filter the list to those issued by CAs supported by the server
+    
     mRV = CERT_FilterCertListByCANames(certList.get(), mCANames->nnames,
                                        caNameStrings, certUsageSSLClient);
     if (mRV != SECSuccess) {
       goto noCert;
     }
 
-    // make sure the list is not empty
+    
     node = CERT_LIST_HEAD(certList);
     if (CERT_LIST_END(node, certList)) {
       goto noCert;
@@ -2226,27 +2226,27 @@ ClientAuthDataRunnable::RunOnTargetThread()
 
     ScopedCERTCertificate low_prio_nonrep_cert;
 
-    // loop through the list until we find a cert with a key
+    
     while (!CERT_LIST_END(node, certList)) {
-      // if the certificate has restriction and we do not satisfy it we do not
-      // use it
+      
+      
       privKey = PK11_FindKeyByAnyCert(node->cert, wincx);
       if (privKey) {
         if (hasExplicitKeyUsageNonRepudiation(node->cert)) {
           privKey = nullptr;
-          // Not a prefered cert
-          if (!low_prio_nonrep_cert) { // did not yet find a low prio cert
+          
+          if (!low_prio_nonrep_cert) { 
             low_prio_nonrep_cert = CERT_DupCertificate(node->cert);
           }
         } else {
-          // this is a good cert to present
+          
           cert = CERT_DupCertificate(node->cert);
           break;
         }
       }
       keyError = PR_GetError();
       if (keyError == SEC_ERROR_BAD_PASSWORD) {
-        // problem with password: bail
+        
         goto loser;
       }
 
@@ -2261,13 +2261,13 @@ ClientAuthDataRunnable::RunOnTargetThread()
     if (!cert) {
       goto noCert;
     }
-  } else { // Not Auto => ask
-    // Get the SSL Certificate
+  } else { 
+    
 
     nsXPIDLCString hostname;
     mSocketInfo->GetHostName(getter_Copies(hostname));
 
-    RefPtr<nsClientAuthRememberService> cars =
+    nsRefPtr<nsClientAuthRememberService> cars =
       mSocketInfo->SharedState().GetClientAuthRememberService();
 
     bool hasRemembered = false;
@@ -2310,14 +2310,14 @@ ClientAuthDataRunnable::RunOnTargetThread()
     }
 
     if (!hasRemembered) {
-      // user selects a cert to present
+      
       nsIClientAuthDialogs* dialogs = nullptr;
       int32_t selectedIndex = -1;
       char16_t** certNicknameList = nullptr;
       char16_t** certDetailsList = nullptr;
 
-      // find all user certs that are for SSL
-      // note that we are allowing expired certs in this list
+      
+      
       certList = CERT_FindUserCertsByUsage(CERT_GetDefaultCertDB(),
         certUsageSSLClient, false,
         false, wincx);
@@ -2326,7 +2326,7 @@ ClientAuthDataRunnable::RunOnTargetThread()
       }
 
       if (mCANames->nnames != 0) {
-        // filter the list to those issued by CAs supported by the server
+        
         mRV = CERT_FilterCertListByCANames(certList.get(),
                                            mCANames->nnames,
                                            caNameStrings,
@@ -2337,11 +2337,11 @@ ClientAuthDataRunnable::RunOnTargetThread()
       }
 
       if (CERT_LIST_END(CERT_LIST_HEAD(certList), certList)) {
-        // list is empty - no matching certs
+        
         goto noCert;
       }
 
-      // filter it further for hostname restriction
+      
       node = CERT_LIST_HEAD(certList.get());
       while (!CERT_LIST_END(node, certList.get())) {
         ++NumberOfCerts;
@@ -2359,7 +2359,7 @@ ClientAuthDataRunnable::RunOnTargetThread()
 
       NS_ASSERTION(nicknames->numnicknames == NumberOfCerts, "nicknames->numnicknames != NumberOfCerts");
 
-      // Get CN and O of the subject and O of the issuer
+      
       UniquePtr<char, void(&)(void*)>
         ccn(CERT_GetCommonName(&mServerCert->subject), PORT_Free);
       NS_ConvertUTF8toUTF16 cn(ccn.get());
@@ -2404,7 +2404,7 @@ ClientAuthDataRunnable::RunOnTargetThread()
         !CERT_LIST_END(node, certList) && CertsToUse < nicknames->numnicknames;
         node = CERT_LIST_NEXT(node)
         ) {
-        RefPtr<nsNSSCertificate> tempCert(nsNSSCertificate::Create(node->cert));
+        nsRefPtr<nsNSSCertificate> tempCert(nsNSSCertificate::Create(node->cert));
 
         if (!tempCert)
           continue;
@@ -2427,7 +2427,7 @@ ClientAuthDataRunnable::RunOnTargetThread()
         ++CertsToUse;
       }
 
-      // Throw up the client auth dialog and get back the index of the selected cert
+      
       nsresult rv = getNSSDialogs((void**)&dialogs,
         NS_GET_IID(nsIClientAuthDialogs),
         NS_CLIENTAUTHDIALOGS_CONTRACTID);
@@ -2457,7 +2457,7 @@ ClientAuthDataRunnable::RunOnTargetThread()
 
       if (NS_FAILED(rv)) goto loser;
 
-      // even if the user has canceled, we want to remember that, to avoid repeating prompts
+      
       bool wantRemember = false;
       mSocketInfo->GetRememberClientAuthCertificate(&wantRemember);
 
@@ -2485,12 +2485,12 @@ ClientAuthDataRunnable::RunOnTargetThread()
       goto loser;
     }
 
-    // go get the private key
+    
     privKey = PK11_FindKeyByAnyCert(cert.get(), wincx);
     if (!privKey) {
       keyError = PR_GetError();
       if (keyError == SEC_ERROR_BAD_PASSWORD) {
-        // problem with password: bail
+        
         goto loser;
       } else {
         goto noCert;
@@ -2534,7 +2534,7 @@ nsSSLIOLayerImportFD(PRFileDesc* fd,
   SSL_HandshakeCallback(sslSock, HandshakeCallback, infoObject);
   SSL_SetCanFalseStartCallback(sslSock, CanFalseStartCallback, infoObject);
 
-  // Disable this hook if we connect anonymously. See bug 466080.
+  
   uint32_t flags = 0;
   infoObject->GetProviderFlags(&flags);
   if (flags & nsISocketProvider::ANONYMOUS_CONNECT) {
@@ -2560,8 +2560,8 @@ nsSSLIOLayerImportFD(PRFileDesc* fd,
     goto loser;
   }
 
-  // This is an optimization to make sure the identity info dataset is parsed
-  // and loaded on a separate thread and can be overlapped with network latency.
+  
+  
   EnsureServerVerificationInitialized();
 
   return sslSock;
@@ -2609,8 +2609,8 @@ nsSSLIOLayerSetOptions(PRFileDesc* fd, bool forSTARTTLS,
     nsNSSComponent::UseWeakCiphersOnSocket(fd);
   }
 
-  // when adjustForTLSIntolerance tweaks the maximum version downward,
-  // we tell the server using this SCSV so they can detect a downgrade attack
+  
+  
   if (range.max < maxEnabledVersion) {
     MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
            ("[%p] nsSSLIOLayerSetOptions: enabling TLS_FALLBACK_SCSV\n", fd));
@@ -2628,11 +2628,11 @@ nsSSLIOLayerSetOptions(PRFileDesc* fd, bool forSTARTTLS,
     return NS_ERROR_FAILURE;
   }
 
-  // Set the Peer ID so that SSL proxy connections work properly and to
-  // separate anonymous and/or private browsing connections.
+  
+  
   uint32_t flags = infoObject->GetProviderFlags();
   nsAutoCString peerId;
-  if (flags & nsISocketProvider::ANONYMOUS_CONNECT) { // See bug 466080
+  if (flags & nsISocketProvider::ANONYMOUS_CONNECT) { 
     peerId.AppendLiteral("anon:");
   }
   if (flags & nsISocketProvider::NO_PERMANENT_STORAGE) {
@@ -2678,8 +2678,8 @@ nsSSLIOLayerAddToSocket(int32_t family,
   infoObject->SetHostName(host);
   infoObject->SetPort(port);
 
-  // A plaintext observer shim is inserted so we can observe some protocol
-  // details without modifying nss
+  
+  
   plaintextLayer = PR_CreateIOLayerStub(nsSSLIOLayerHelpers::nsSSLPlaintextLayerIdentity,
                                         &nsSSLIOLayerHelpers::nsSSLPlaintextLayerMethods);
   if (plaintextLayer) {
@@ -2705,7 +2705,7 @@ nsSSLIOLayerAddToSocket(int32_t family,
   if (NS_FAILED(rv))
     goto loser;
 
-  // Now, layer ourselves on top of the SSL socket...
+  
   layer = PR_CreateIOLayerStub(nsSSLIOLayerHelpers::nsSSLIOLayerIdentity,
                                &nsSSLIOLayerHelpers::nsSSLIOLayerMethods);
   if (!layer)
@@ -2721,7 +2721,7 @@ nsSSLIOLayerAddToSocket(int32_t family,
   MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("[%p] Socket set up\n", (void*) sslSock));
   infoObject->QueryInterface(NS_GET_IID(nsISupports), (void**) (info));
 
-  // We are going use a clear connection first //
+  
   if (forSTARTTLS || proxyHost) {
     infoObject->SetHandshakeNotPending();
   }

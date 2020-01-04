@@ -457,7 +457,7 @@ private:
 #endif
     CGColorSpaceRef               mShColorSpace;
     CGContextRef                  mShContext;
-    mozilla::RefPtr<nsCARenderer> mCARenderer;
+    nsRefPtr<nsCARenderer> mCARenderer;
     void                         *mCGLayer;
 
     

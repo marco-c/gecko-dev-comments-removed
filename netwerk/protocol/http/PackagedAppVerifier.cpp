@@ -57,7 +57,7 @@ PackagedAppVerifier::~PackagedAppVerifier()
   while (auto i = mPendingResourceCacheInfoList.popFirst()) {
     
     
-    RefPtr<ResourceCacheInfo> deleter(i);
+    nsRefPtr<ResourceCacheInfo> deleter(i);
   }
 }
 
@@ -371,7 +371,7 @@ PackagedAppVerifier::OnManifestVerified(bool aSuccess)
     }
   }
 
-  RefPtr<ResourceCacheInfo> info(mPendingResourceCacheInfoList.popFirst());
+  nsRefPtr<ResourceCacheInfo> info(mPendingResourceCacheInfoList.popFirst());
   MOZ_ASSERT(info);
 
   mListener->OnVerified(true, 
@@ -399,7 +399,7 @@ PackagedAppVerifier::OnResourceVerified(bool aSuccess)
     return;
   }
 
-  RefPtr<ResourceCacheInfo> info(mPendingResourceCacheInfoList.popFirst());
+  nsRefPtr<ResourceCacheInfo> info(mPendingResourceCacheInfoList.popFirst());
   MOZ_ASSERT(info);
 
   mListener->OnVerified(false, 

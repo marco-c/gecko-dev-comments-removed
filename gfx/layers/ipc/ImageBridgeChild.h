@@ -9,7 +9,7 @@
 #include <stddef.h>                     
 #include <stdint.h>                     
 #include "mozilla/Attributes.h"         
-#include "mozilla/RefPtr.h"             
+#include "mozilla/nsRefPtr.h"             
 #include "mozilla/ipc/SharedMemory.h"   
 #include "mozilla/layers/AsyncTransactionTracker.h" 
 #include "mozilla/layers/CanvasClient.h"

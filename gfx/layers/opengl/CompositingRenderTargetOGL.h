@@ -10,7 +10,7 @@
 #include "GLDefs.h"                     
 #include "mozilla/Assertions.h"         
 #include "mozilla/Attributes.h"         
-#include "mozilla/RefPtr.h"             
+#include "mozilla/nsRefPtr.h"             
 #include "mozilla/gfx/Point.h"          
 #include "mozilla/gfx/Types.h"          
 #include "mozilla/layers/Compositor.h"  
@@ -85,7 +85,7 @@ public:
   RenderTargetForWindow(CompositorOGL* aCompositor,
                         const gfx::IntSize& aSize)
   {
-    RefPtr<CompositingRenderTargetOGL> result
+    nsRefPtr<CompositingRenderTargetOGL> result
       = new CompositingRenderTargetOGL(aCompositor, gfx::IntPoint(), 0, 0);
     result->mInitParams = InitParams(aSize, 0, INIT_MODE_NONE);
     result->mInitParams.mStatus = InitParams::INITIALIZED;
@@ -168,7 +168,7 @@ private:
 
 
 
-  RefPtr<CompositorOGL> mCompositor;
+  nsRefPtr<CompositorOGL> mCompositor;
   GLContext* mGL;
   GLuint mTextureHandle;
   GLuint mFBO;

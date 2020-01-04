@@ -8,7 +8,7 @@
 #define MFTDecoder_h_
 
 #include "WMF.h"
-#include "mozilla/RefPtr.h"
+#include "mozilla/nsRefPtr.h"
 #include "mozilla/ReentrantMonitor.h"
 #include "nsIThread.h"
 
@@ -47,7 +47,7 @@ public:
 
   
   
-  HRESULT GetOutputMediaType(RefPtr<IMFMediaType>& aMediaType);
+  HRESULT GetOutputMediaType(nsRefPtr<IMFMediaType>& aMediaType);
 
   
   
@@ -62,7 +62,7 @@ public:
   HRESULT CreateInputSample(const uint8_t* aData,
                             uint32_t aDataSize,
                             int64_t aTimestampUsecs,
-                            RefPtr<IMFSample>* aOutSample);
+                            nsRefPtr<IMFSample>* aOutSample);
 
   
   
@@ -76,7 +76,7 @@ public:
   
   
   
-  HRESULT Output(RefPtr<IMFSample>* aOutput);
+  HRESULT Output(nsRefPtr<IMFSample>* aOutput);
 
   
   
@@ -90,14 +90,14 @@ public:
 private:
 
 
-  HRESULT CreateOutputSample(RefPtr<IMFSample>* aOutSample);
+  HRESULT CreateOutputSample(nsRefPtr<IMFSample>* aOutSample);
 
   MFT_INPUT_STREAM_INFO mInputStreamInfo;
   MFT_OUTPUT_STREAM_INFO mOutputStreamInfo;
 
-  RefPtr<IMFTransform> mDecoder;
+  nsRefPtr<IMFTransform> mDecoder;
 
-  RefPtr<IMFMediaType> mOutputType;
+  nsRefPtr<IMFMediaType> mOutputType;
 
   
   bool mMFTProvidesOutputSamples;

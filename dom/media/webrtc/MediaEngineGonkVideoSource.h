@@ -130,7 +130,7 @@ protected:
   bool mBackCamera;
   bool mOrientationChanged; 
 
-  RefPtr<layers::TextureClientRecycleAllocator> mTextureClientAllocator;
+  nsRefPtr<layers::TextureClientRecycleAllocator> mTextureClientAllocator;
 };
 
 } 

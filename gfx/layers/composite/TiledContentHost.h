@@ -14,7 +14,7 @@
 #include "CompositableHost.h"
 #include "mozilla/Assertions.h"         
 #include "mozilla/Attributes.h"         
-#include "mozilla/RefPtr.h"             
+#include "mozilla/nsRefPtr.h"             
 #include "mozilla/gfx/Point.h"          
 #include "mozilla/gfx/Rect.h"           
 #include "mozilla/gfx/Types.h"          
@@ -113,7 +113,7 @@ public:
     CompositableHost::DumpTextureHost(aStream, mTextureHost);
   }
 
-  RefPtr<gfxSharedReadLock> mSharedLock;
+  nsRefPtr<gfxSharedReadLock> mSharedLock;
   CompositableTextureHostRef mTextureHost;
   CompositableTextureHostRef mTextureHostOnWhite;
   mutable CompositableTextureSourceRef mTextureSource;
@@ -155,7 +155,7 @@ public:
 protected:
 
   CSSToParentLayerScale2D mFrameResolution;
-  nsTArray<RefPtr<gfxSharedReadLock>> mDelayedUnlocks;
+  nsTArray<nsRefPtr<gfxSharedReadLock>> mDelayedUnlocks;
 };
 
 

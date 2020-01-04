@@ -441,16 +441,16 @@ class MOZ_RAII AutoStopwatch final
     
     
     
-    mozilla::RefPtr<js::PerformanceGroup> sharedGroup_;
+    nsRefPtr<js::PerformanceGroup> sharedGroup_;
 
     
     
-    mozilla::RefPtr<js::PerformanceGroup> topGroup_;
+    nsRefPtr<js::PerformanceGroup> topGroup_;
 
     
     
     
-    mozilla::RefPtr<js::PerformanceGroup> ownGroup_;
+    nsRefPtr<js::PerformanceGroup> ownGroup_;
 
  public:
     

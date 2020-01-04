@@ -10,7 +10,7 @@
 #include "Layers.h"                     
 #include "RotatedBuffer.h"              
 #include "mozilla/Attributes.h"         
-#include "mozilla/RefPtr.h"             
+#include "mozilla/nsRefPtr.h"             
 #include "mozilla/layers/ContentClient.h"  
 #include "mozilla/mozalloc.h"           
 #include "nsDebug.h"                    
@@ -112,7 +112,7 @@ protected:
     mContentClient = nullptr;
   }
 
-  RefPtr<ContentClient> mContentClient;
+  nsRefPtr<ContentClient> mContentClient;
 };
 
 } 

@@ -9,7 +9,7 @@
 #include "Units.h"                      
 #include "mozilla/layers/LayerManagerComposite.h"  
 #include "mozilla/Attributes.h"         
-#include "mozilla/RefPtr.h"             
+#include "mozilla/nsRefPtr.h"             
 #include "mozilla/TimeStamp.h"          
 #include "mozilla/dom/ScreenOrientation.h"  
 #include "mozilla/gfx/BasePoint.h"      

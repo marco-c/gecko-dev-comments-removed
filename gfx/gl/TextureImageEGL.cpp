@@ -146,8 +146,8 @@ TextureImageEGL::EndUpdate()
     
     
 
-    RefPtr<gfx::SourceSurface> updateSurface = nullptr;
-    RefPtr<gfx::DataSourceSurface> uploadImage = nullptr;
+    nsRefPtr<gfx::SourceSurface> updateSurface = nullptr;
+    nsRefPtr<gfx::DataSourceSurface> uploadImage = nullptr;
     gfx::IntSize updateSize(mUpdateRect.width, mUpdateRect.height);
 
     NS_ASSERTION(mUpdateDrawTarget->GetSize() == updateSize,

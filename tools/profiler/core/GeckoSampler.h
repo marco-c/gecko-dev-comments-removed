@@ -137,7 +137,7 @@ protected:
 
   
   ThreadProfile* mPrimaryThreadProfile;
-  mozilla::RefPtr<ProfileBuffer> mBuffer;
+  nsRefPtr<ProfileBuffer> mBuffer;
   bool mSaveRequested;
   bool mAddLeafAddresses;
   bool mUseStackWalk;
