@@ -4012,7 +4012,9 @@ nsGlobalWindow::GetMozSelfSupport(ErrorResult& aError)
     return mMozSelfSupport;
   }
 
-  AutoSafeJSContext cx;
+  
+  
+  AutoJSContext cx;
   GlobalObject global(cx, FastGetGlobalJSObject());
   mMozSelfSupport = MozSelfSupport::Constructor(global, cx, aError);
   return mMozSelfSupport;
@@ -5700,8 +5702,13 @@ nsGlobalWindow::DispatchResizeEvent(const CSSIntSize& aSize)
     return false;
   }
 
-  AutoSafeJSContext cx;
+  
+  
+  AutoJSAPI jsapi;
+  jsapi.Init();
+  JSContext* cx = jsapi.cx();
   JSAutoCompartment ac(cx, GetWrapperPreserveColor());
+
   DOMWindowResizeEventDetail detail;
   detail.mWidth = aSize.width;
   detail.mHeight = aSize.height;
@@ -8672,8 +8679,7 @@ nsGlobalWindow::NotifyDOMWindowThawed(nsGlobalWindow* aWindow) {
 JSObject*
 nsGlobalWindow::GetCachedXBLPrototypeHandler(nsXBLPrototypeHandler* aKey)
 {
-  AutoSafeJSContext cx;
-  JS::Rooted<JSObject*> handler(cx);
+  JS::Rooted<JSObject*> handler(nsContentUtils::RootingCx());
   if (mCachedXBLPrototypeHandlers) {
     mCachedXBLPrototypeHandlers->Get(aKey, handler.address());
   }

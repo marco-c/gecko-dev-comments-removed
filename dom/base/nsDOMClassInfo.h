@@ -110,7 +110,7 @@ protected:
   static nsIXPConnect *sXPConnect;
 
   
-  static nsresult DefineStaticJSVals(JSContext *cx);
+  static nsresult DefineStaticJSVals();
 
   static bool sIsInitialized;
 

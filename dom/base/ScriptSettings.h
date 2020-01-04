@@ -221,8 +221,16 @@ public:
   
   
   
+  
+  
+  
+  
   void Init();
 
+  
+  
+  
+  
   
   
   
@@ -233,6 +241,10 @@ public:
   
   bool Init(JSObject* aObject);
 
+  
+  
+  
+  
   
   
   

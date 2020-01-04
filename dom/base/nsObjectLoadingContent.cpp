@@ -3720,11 +3720,15 @@ nsObjectLoadingContent::TeardownProtoChain()
   nsCOMPtr<nsIContent> thisContent =
     do_QueryInterface(static_cast<nsIImageLoadingContent*>(this));
 
+  NS_ENSURE_TRUE_VOID(thisContent->GetWrapper());
+
   
   
-  AutoSafeJSContext cx;
+  AutoJSAPI jsapi;
+  jsapi.Init();
+  JSContext* cx = jsapi.cx();
   JS::Rooted<JSObject*> obj(cx, thisContent->GetWrapper());
-  NS_ENSURE_TRUE(obj, );
+  MOZ_ASSERT(obj);
 
   JS::Rooted<JSObject*> proto(cx);
   JSAutoCompartment ac(cx, obj);
