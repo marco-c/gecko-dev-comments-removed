@@ -7,13 +7,13 @@
 const {Cc, Ci} = require("chrome");
 const events = require("sdk/event/core");
 const protocol = require("devtools/server/protocol");
-const {Arg, method, RetVal, types} = protocol;
 const {LongStringActor} = require("devtools/server/actors/string");
 const {DebuggerServer} = require("devtools/server/main");
 const Services = require("Services");
 const promise = require("promise");
 const {isWindowIncluded} = require("devtools/shared/layout/utils");
 const {setTimeout, clearTimeout} = require("sdk/timers");
+const specs = require("devtools/shared/specs/storage");
 
 loader.lazyImporter(this, "OS", "resource://gre/modules/osfile.jsm");
 loader.lazyImporter(this, "Sqlite", "resource://gre/modules/Sqlite.jsm");
@@ -52,18 +52,6 @@ var storageTypePool = new Map();
 
 
 
-function getRegisteredTypes() {
-  let registeredTypes = {};
-  for (let store of storageTypePool.keys()) {
-    registeredTypes[store] = store;
-  }
-  return registeredTypes;
-}
-
-
-
-
-
 
 
 function sleep(time) {
@@ -75,70 +63,6 @@ function sleep(time) {
 
   return deferred.promise;
 }
-
-
-types.addDictType("cookieobject", {
-  name: "string",
-  value: "longstring",
-  path: "nullable:string",
-  host: "string",
-  isDomain: "boolean",
-  isSecure: "boolean",
-  isHttpOnly: "boolean",
-  creationTime: "number",
-  lastAccessed: "number",
-  expires: "number"
-});
-
-
-types.addDictType("cookiestoreobject", {
-  total: "number",
-  offset: "number",
-  data: "array:nullable:cookieobject"
-});
-
-
-types.addDictType("storageobject", {
-  name: "string",
-  value: "longstring"
-});
-
-
-types.addDictType("storagestoreobject", {
-  total: "number",
-  offset: "number",
-  data: "array:nullable:storageobject"
-});
-
-
-
-
-types.addDictType("idbobject", {
-  name: "nullable:string",
-  db: "nullable:string",
-  objectStore: "nullable:string",
-  origin: "nullable:string",
-  version: "nullable:number",
-  objectStores: "nullable:number",
-  keyPath: "nullable:string",
-  autoIncrement: "nullable:boolean",
-  indexes: "nullable:string",
-  value: "nullable:longstring"
-});
-
-
-types.addDictType("idbstoreobject", {
-  total: "number",
-  offset: "number",
-  data: "array:nullable:idbobject"
-});
-
-
-types.addDictType("storeUpdateObject", {
-  changed: "nullable:json",
-  deleted: "nullable:json",
-  added: "nullable:json"
-});
 
 
 var StorageActors = {};
@@ -164,9 +88,7 @@ var StorageActors = {};
 
 
 
-
-
-StorageActors.defaults = function(typeName, observationTopic, storeObjectType) {
+StorageActors.defaults = function(typeName, observationTopic) {
   return {
     typeName: typeName,
 
@@ -333,7 +255,7 @@ StorageActors.defaults = function(typeName, observationTopic, storeObjectType) {
 
 
 
-    getStoreObjects: method(Task.async(function* (host, names, options = {}) {
+    getStoreObjects: Task.async(function* (host, names, options = {}) {
       let offset = options.offset || 0;
       let size = options.size || MAX_STORE_OBJECT_COUNT;
       if (size > MAX_STORE_OBJECT_COUNT) {
@@ -409,13 +331,6 @@ StorageActors.defaults = function(typeName, observationTopic, storeObjectType) {
       }
 
       return toReturn;
-    }), {
-      request: {
-        host: Arg(0),
-        names: Arg(1, "nullable:array:string"),
-        options: Arg(2, "nullable:json")
-      },
-      response: RetVal(storeObjectType)
     })
   };
 };
@@ -437,31 +352,17 @@ StorageActors.defaults = function(typeName, observationTopic, storeObjectType) {
 
 
 
-
-
 StorageActors.createActor = function(options = {}, overrides = {}) {
   let actorObject = StorageActors.defaults(
     options.typeName,
-    options.observationTopic || null,
-    options.storeObjectType
+    options.observationTopic || null
   );
   for (let key in overrides) {
     actorObject[key] = overrides[key];
   }
 
-  let actor = protocol.ActorClass(actorObject);
-  protocol.FrontClass(actor, {
-    form: function(form, detail) {
-      if (detail === "actorid") {
-        this.actorID = form;
-        return null;
-      }
-
-      this.actorID = form.actor;
-      this.hosts = form.hosts;
-      return null;
-    }
-  });
+  let actorSpec = specs.childSpecs[options.typeName];
+  let actor = protocol.ActorClassWithSpec(actorSpec, actorObject);
   storageTypePool.set(actorObject.typeName, actor);
 };
 
@@ -469,8 +370,7 @@ StorageActors.createActor = function(options = {}, overrides = {}) {
 
 
 StorageActors.createActor({
-  typeName: "cookies",
-  storeObjectType: "cookiestoreobject"
+  typeName: "cookies"
 }, {
   initialize: function(storageActor) {
     protocol.Actor.prototype.initialize.call(this, null);
@@ -652,7 +552,7 @@ StorageActors.createActor({
 
 
 
-  getEditableFields: method(Task.async(function* () {
+  getEditableFields: Task.async(function* () {
     return [
       "name",
       "path",
@@ -662,11 +562,6 @@ StorageActors.createActor({
       "isSecure",
       "isHttpOnly"
     ];
-  }), {
-    request: {},
-    response: {
-      value: RetVal("json")
-    }
   }),
 
   
@@ -675,33 +570,16 @@ StorageActors.createActor({
 
 
 
-  editItem: method(Task.async(function* (data) {
+  editItem: Task.async(function* (data) {
     this.editCookie(data);
-  }), {
-    request: {
-      data: Arg(0, "json"),
-    },
-    response: {}
   }),
 
-  removeItem: method(Task.async(function* (host, name) {
+  removeItem: Task.async(function* (host, name) {
     this.removeCookie(host, name);
-  }), {
-    request: {
-      host: Arg(0, "string"),
-      name: Arg(1, "string"),
-    },
-    response: {}
   }),
 
-  removeAll: method(Task.async(function* (host, domain) {
+  removeAll: Task.async(function* (host, domain) {
     this.removeAllCookies(host, domain);
-  }), {
-    request: {
-      host: Arg(0, "string"),
-      domain: Arg(1, "nullable:string")
-    },
-    response: {}
   }),
 
   maybeSetupChildProcess: function() {
@@ -1129,16 +1007,11 @@ function getObjectForLocalOrSessionStorage(type) {
 
 
 
-    getEditableFields: method(Task.async(function* () {
+    getEditableFields: Task.async(function* () {
       return [
         "name",
         "value"
       ];
-    }), {
-      request: {},
-      response: {
-        value: RetVal("json")
-      }
     }),
 
     
@@ -1147,7 +1020,7 @@ function getObjectForLocalOrSessionStorage(type) {
 
 
 
-    editItem: method(Task.async(function* ({host, field, oldValue, items}) {
+    editItem: Task.async(function* ({host, field, oldValue, items}) {
       let storage = this.hostVsStores.get(host);
 
       if (field === "name") {
@@ -1155,11 +1028,16 @@ function getObjectForLocalOrSessionStorage(type) {
       }
 
       storage.setItem(items.name, items.value);
-    }), {
-      request: {
-        data: Arg(0, "json"),
-      },
-      response: {}
+    }),
+
+    removeItem: Task.async(function* (host, name) {
+      let storage = this.hostVsStores.get(host);
+      storage.removeItem(name);
+    }),
+
+    removeAll: Task.async(function* (host) {
+      let storage = this.hostVsStores.get(host);
+      storage.clear();
     }),
 
     observe: function(subject, topic, data) {
@@ -1207,27 +1085,6 @@ function getObjectForLocalOrSessionStorage(type) {
         value: new LongStringActor(this.conn, item.value || "")
       };
     },
-
-    removeItem: method(Task.async(function* (host, name) {
-      let storage = this.hostVsStores.get(host);
-      storage.removeItem(name);
-    }), {
-      request: {
-        host: Arg(0),
-        name: Arg(1),
-      },
-      response: {}
-    }),
-
-    removeAll: method(Task.async(function* (host) {
-      let storage = this.hostVsStores.get(host);
-      storage.clear();
-    }), {
-      request: {
-        host: Arg(0)
-      },
-      response: {}
-    }),
   };
 }
 
@@ -1236,8 +1093,7 @@ function getObjectForLocalOrSessionStorage(type) {
 
 StorageActors.createActor({
   typeName: "localStorage",
-  observationTopic: "dom-storage2-changed",
-  storeObjectType: "storagestoreobject"
+  observationTopic: "dom-storage2-changed"
 }, getObjectForLocalOrSessionStorage("localStorage"));
 
 
@@ -1245,25 +1101,11 @@ StorageActors.createActor({
 
 StorageActors.createActor({
   typeName: "sessionStorage",
-  observationTopic: "dom-storage2-changed",
-  storeObjectType: "storagestoreobject"
+  observationTopic: "dom-storage2-changed"
 }, getObjectForLocalOrSessionStorage("sessionStorage"));
 
-types.addDictType("cacheobject", {
-  "url": "string",
-  "status": "string"
-});
-
-
-types.addDictType("cachestoreobject", {
-  total: "number",
-  offset: "number",
-  data: "array:nullable:cacheobject"
-});
-
 StorageActors.createActor({
-  typeName: "Cache",
-  storeObjectType: "cachestoreobject"
+  typeName: "Cache"
 }, {
   getCachesForHost: Task.async(function* (host) {
     let uri = Services.io.newURI(host, null, null);
@@ -1492,8 +1334,7 @@ DatabaseMetadata.prototype = {
 };
 
 StorageActors.createActor({
-  typeName: "indexedDB",
-  storeObjectType: "idbstoreobject"
+  typeName: "indexedDB"
 }, {
   initialize: function(storageActor) {
     protocol.Actor.prototype.initialize.call(this, null);
@@ -1522,7 +1363,7 @@ StorageActors.createActor({
   
 
 
-  removeDatabase: method(Task.async(function* (host, name) {
+  removeDatabase: Task.async(function* (host, name) {
     let win = this.storageActor.getWindowFromHost(host);
     if (win) {
       let principal = win.document.nodePrincipal;
@@ -1536,12 +1377,6 @@ StorageActors.createActor({
         });
       }
     }
-  }), {
-    request: {
-      host: Arg(0, "string"),
-      name: Arg(1, "string"),
-    },
-    response: {}
   }),
 
   getHostName: function(location) {
@@ -2148,7 +1983,7 @@ exports.setupParentProcessForIndexedDB = function({mm, prefix}) {
 
 
 
-var StorageActor = exports.StorageActor = protocol.ActorClass({
+let StorageActor = protocol.ActorClassWithSpec(specs.storageSpec, {
   typeName: "storage",
 
   get window() {
@@ -2161,29 +1996,6 @@ var StorageActor = exports.StorageActor = protocol.ActorClass({
 
   get windows() {
     return this.childWindowPool;
-  },
-
-  
-
-
-
-
-
-
-
-  events: {
-    "stores-update": {
-      type: "storesUpdate",
-      data: Arg(0, "storeUpdateObject")
-    },
-    "stores-cleared": {
-      type: "storesCleared",
-      data: Arg(0, "json")
-    },
-    "stores-reloaded": {
-      type: "storesReloaded",
-      data: Arg(0, "json")
-    }
   },
 
   initialize: function(conn, tabActor) {
@@ -2359,7 +2171,7 @@ var StorageActor = exports.StorageActor = protocol.ActorClass({
 
 
 
-  listStores: method(Task.async(function* () {
+  listStores: Task.async(function* () {
     let toReturn = {};
 
     for (let [name, value] of this.childActorPool) {
@@ -2370,8 +2182,6 @@ var StorageActor = exports.StorageActor = protocol.ActorClass({
     }
 
     return toReturn;
-  }), {
-    response: RetVal(types.addDictType("storelist", getRegisteredTypes()))
   }),
 
   
@@ -2498,13 +2308,4 @@ var StorageActor = exports.StorageActor = protocol.ActorClass({
   }
 });
 
-
-
-
-exports.StorageFront = protocol.FrontClass(StorageActor, {
-  initialize: function(client, tabForm) {
-    protocol.Front.prototype.initialize.call(this, client);
-    this.actorID = tabForm.storageActor;
-    this.manage(this);
-  }
-});
+exports.StorageActor = StorageActor;
