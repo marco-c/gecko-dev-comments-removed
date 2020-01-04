@@ -250,7 +250,7 @@ public:
     nsresult rv;
     nsCOMPtr<nsIURI> uri;
     nsAutoCString url;
-    mInternalResponse->GetUnfilteredURL(url);
+    mInternalResponse->GetUnfilteredUrl(url);
     if (url.IsEmpty()) {
       
       url = mScriptSpec;
@@ -587,8 +587,6 @@ RespondWithHandler::ResolvedCallback(JSContext* aCx, JS::Handle<JS::Value> aValu
   
   
   
-  
-  
 
   if (response->Type() == ResponseType::Error) {
     autoCancel.SetCancelMessage(
@@ -617,12 +615,6 @@ RespondWithHandler::ResolvedCallback(JSContext* aCx, JS::Handle<JS::Value> aValu
     return;
   }
 
-  if (mRequestRedirectMode != RequestRedirect::Follow && response->Redirected()) {
-    autoCancel.SetCancelMessage(
-      NS_LITERAL_CSTRING("BadRedirectModeInterceptionWithURL"), mRequestURL);
-    return;
-  }
-
   if (NS_WARN_IF(response->BodyUsed())) {
     autoCancel.SetCancelMessage(
       NS_LITERAL_CSTRING("InterceptedUsedResponseWithURL"), mRequestURL);
@@ -639,7 +631,7 @@ RespondWithHandler::ResolvedCallback(JSContext* aCx, JS::Handle<JS::Value> aValu
   
   nsCString responseURL;
   if (response->Type() == ResponseType::Opaque) {
-    ir->GetUnfilteredURL(responseURL);
+    ir->GetUnfilteredUrl(responseURL);
     if (NS_WARN_IF(responseURL.IsEmpty())) {
       return;
     }

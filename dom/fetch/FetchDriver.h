@@ -96,8 +96,9 @@ private:
   nsresult ContinueFetch();
   nsresult HttpFetch();
   
+  
   already_AddRefed<InternalResponse>
-  BeginAndGetFilteredResponse(InternalResponse* aResponse,
+  BeginAndGetFilteredResponse(InternalResponse* aResponse, nsIURI* aFinalURI,
                               bool aFoundOpaqueRedirect);
   
   

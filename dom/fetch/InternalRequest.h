@@ -88,7 +88,7 @@ class InternalRequest final
 public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(InternalRequest)
 
-  explicit InternalRequest(const nsACString& aURL)
+  InternalRequest()
     : mMethod("GET")
     , mHeaders(new InternalHeaders(HeadersGuardEnum::None))
     , mContentPolicyType(nsIContentPolicy::TYPE_FETCH)
@@ -112,8 +112,6 @@ public:
     , mUnsafeRequest(false)
     , mUseURLCredentials(false)
   {
-    MOZ_ASSERT(!aURL.IsEmpty());
-    AddURL(aURL);
   }
 
   InternalRequest(const nsACString& aURL,
@@ -127,6 +125,7 @@ public:
                   ReferrerPolicy aReferrerPolicy,
                   nsContentPolicyType aContentPolicyType)
     : mMethod(aMethod)
+    , mURL(aURL)
     , mHeaders(aHeaders)
     , mContentPolicyType(aContentPolicyType)
     , mReferrer(aReferrer)
@@ -146,8 +145,12 @@ public:
     , mUnsafeRequest(false)
     , mUseURLCredentials(false)
   {
-    MOZ_ASSERT(!aURL.IsEmpty());
-    AddURL(aURL);
+    
+    
+    
+    
+    
+    MOZ_ASSERT(mURL.Find(NS_LITERAL_CSTRING("#")) == kNotFound);
   }
 
   already_AddRefed<InternalRequest> Clone();
@@ -172,34 +175,16 @@ public:
            mMethod.LowerCaseEqualsASCII("head");
   }
 
-  
-  
   void
-  GetURL(nsACString& aURL) const
+  GetURL(nsCString& aURL) const
   {
-    MOZ_RELEASE_ASSERT(!mURLList.IsEmpty(), "Internal Request's urlList should not be empty.");
-
-    aURL.Assign(mURLList.LastElement());
-  }
-
-  
-  
-  
-  
-  
-  
-  void
-  AddURL(const nsACString& aURL)
-  {
-    MOZ_ASSERT(!aURL.IsEmpty());
-    mURLList.AppendElement(aURL);
-    MOZ_ASSERT(mURLList.LastElement().Find(NS_LITERAL_CSTRING("#")) == kNotFound);
+    aURL.Assign(mURL);
   }
 
   void
-  GetURLList(nsTArray<nsCString>& aURLList)
+  SetURL(const nsACString& aURL)
   {
-    aURLList.Assign(mURLList);
+    mURL.Assign(aURL);
   }
 
   void
@@ -475,7 +460,7 @@ private:
 
   nsCString mMethod;
   
-  nsTArray<nsCString> mURLList;
+  nsCString mURL;
   RefPtr<InternalHeaders> mHeaders;
   nsCOMPtr<nsIInputStream> mBodyStream;
 

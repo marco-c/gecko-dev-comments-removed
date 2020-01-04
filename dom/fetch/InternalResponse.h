@@ -76,55 +76,27 @@ public:
   }
 
   
+  void
+  GetUrl(nsCString& aURL) const
+  {
+    aURL.Assign(mURL);
+  }
+
+  void
+  GetUnfilteredUrl(nsCString& aURL) const
+  {
+    if (mWrappedResponse) {
+      return mWrappedResponse->GetUrl(aURL);
+    }
+
+    return GetUrl(aURL);
+  }
+
   
   void
-  GetURL(nsCString& aURL) const
+  SetUrl(const nsACString& aURL)
   {
-    
-    if (mURLList.IsEmpty()) {
-      aURL.Truncate();
-      return;
-    }
-
-    aURL.Assign(mURLList.LastElement());
-  }
-
-  void
-  GetURLList(nsTArray<nsCString>& aURLList) const
-  {
-    aURLList.Assign(mURLList);
-  }
-
-  void
-  GetUnfilteredURL(nsCString& aURL) const
-  {
-    if (mWrappedResponse) {
-      return mWrappedResponse->GetURL(aURL);
-    }
-
-    return GetURL(aURL);
-  }
-
-  void
-  GetUnfilteredURLList(nsTArray<nsCString>& aURLList) const
-  {
-    if (mWrappedResponse) {
-      return mWrappedResponse->GetURLList(aURLList);
-    }
-
-    return GetURLList(aURLList);
-  }
-
-  void
-  SetURLList(const nsTArray<nsCString>& aURLList)
-  {
-    mURLList.Assign(aURLList);
-
-#ifdef DEBUG
-    for(uint32_t i = 0; i < mURLList.Length(); ++i) {
-      MOZ_ASSERT(mURLList[i].Find(NS_LITERAL_CSTRING("#")) == kNotFound);
-    }
-#endif
+    mURL.Assign(aURL);
   }
 
   uint16_t
@@ -239,15 +211,12 @@ public:
     return mPrincipalInfo;
   }
 
-  bool
-  IsRedirected() const
-  {
-    return mURLList.Length() > 1;
-  }
-
   
   void
   SetPrincipalInfo(UniquePtr<mozilla::ipc::PrincipalInfo> aPrincipalInfo);
+
+  nsresult
+  StripFragmentAndSetUrl(const nsACString& aUrl);
 
   LoadTainting
   GetTainting() const;
@@ -268,10 +237,7 @@ private:
 
   ResponseType mType;
   nsCString mTerminationReason;
-  
-  
-  
-  nsTArray<nsCString> mURLList;
+  nsCString mURL;
   const uint16_t mStatus;
   const nsCString mStatusText;
   RefPtr<InternalHeaders> mHeaders;

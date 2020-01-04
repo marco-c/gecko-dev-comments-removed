@@ -95,7 +95,7 @@ FetchDriver::ContinueFetch()
   if (NS_FAILED(rv)) {
     FailWithNetworkError();
   }
-
+ 
   return rv;
 }
 
@@ -373,15 +373,18 @@ FetchDriver::HttpFetch()
 
 already_AddRefed<InternalResponse>
 FetchDriver::BeginAndGetFilteredResponse(InternalResponse* aResponse,
+                                         nsIURI* aFinalURI,
                                          bool aFoundOpaqueRedirect)
 {
   MOZ_ASSERT(aResponse);
-
-  AutoTArray<nsCString, 4> reqURLList;
-  mRequest->GetURLList(reqURLList);
-
-  MOZ_ASSERT(!reqURLList.IsEmpty());
-  aResponse->SetURLList(reqURLList);
+  nsAutoCString reqURL;
+  if (aFinalURI) {
+    aFinalURI->GetSpec(reqURL);
+  } else {
+    mRequest->GetURL(reqURL);
+  }
+  DebugOnly<nsresult> rv = aResponse->StripFragmentAndSetUrl(reqURL);
+  MOZ_ASSERT(NS_SUCCEEDED(rv));
 
   RefPtr<InternalResponse> filteredResponse;
   if (aFoundOpaqueRedirect) {
@@ -485,6 +488,20 @@ FetchDriver::OnStartRequest(nsIRequest* aRequest,
 
   
   
+
+  
+  
+  
+  
+  nsCOMPtr<nsIURI> newURI;
+  rv = NS_GetFinalChannelURI(channel, getter_AddRefs(newURI));
+  if (NS_FAILED(rv)) {
+    FailWithNetworkError();
+    return rv;
+  }
+  nsAutoCString newUrl;
+  newURI->GetSpec(newUrl);
+  mRequest->SetURL(newUrl);
 
   bool foundOpaqueRedirect = false;
 
@@ -590,7 +607,8 @@ FetchDriver::OnStartRequest(nsIRequest* aRequest,
 
   
   
-  mResponse = BeginAndGetFilteredResponse(response, foundOpaqueRedirect);
+  mResponse = BeginAndGetFilteredResponse(response, channelURI,
+                                          foundOpaqueRedirect);
 
   nsCOMPtr<nsIEventTarget> sts = do_GetService(NS_STREAMTRANSPORTSERVICE_CONTRACTID, &rv);
   if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -668,24 +686,6 @@ FetchDriver::AsyncOnChannelRedirect(nsIChannel* aOldChannel,
   if (httpChannel) {
     SetRequestHeaders(httpChannel);
   }
-
-  
-  nsCOMPtr<nsIURI> uri;
-  MOZ_ALWAYS_SUCCEEDS(aNewChannel->GetURI(getter_AddRefs(uri)));
-
-  nsCOMPtr<nsIURI> uriClone;
-  nsresult rv = uri->CloneIgnoringRef(getter_AddRefs(uriClone));
-  if(NS_WARN_IF(NS_FAILED(rv))){
-    return rv;
-  }
-
-  nsCString spec;
-  rv = uriClone->GetSpec(spec);
-  if(NS_WARN_IF(NS_FAILED(rv))){
-    return rv;
-  }
-
-  mRequest->AddURL(spec);
 
   aCallback->OnRedirectVerifyCallback(NS_OK);
   return NS_OK;
