@@ -2403,11 +2403,13 @@ BackgroundRequestChild::HandleResponse(
 
       StructuredCloneReadInfo* cloneReadInfo = cloneReadInfos.AppendElement();
 
-      *cloneReadInfo = Move(serializedCloneInfo);
+      
+      nsTArray<StructuredCloneFile> files;
+      ConvertActorsToBlobs(database, serializedCloneInfo, files);
 
-      ConvertActorsToBlobs(database,
-                           serializedCloneInfo,
-                           cloneReadInfo->mFiles);
+      
+      *cloneReadInfo = Move(serializedCloneInfo);
+      cloneReadInfo->mFiles = Move(files);
     }
   }
 
