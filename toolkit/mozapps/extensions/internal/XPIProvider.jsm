@@ -2812,7 +2812,6 @@ this.XPIProvider = {
       logger.debug("Notifying XPI shutdown observers");
       Services.obs.notifyObservers(null, "xpi-provider-shutdown", null);
     }
-    return undefined;
   },
 
   
@@ -2907,18 +2906,16 @@ this.XPIProvider = {
   updateSystemAddons: Task.async(function*() {
     let systemAddonLocation = XPIProvider.installLocationsByName[KEY_APP_SYSTEM_ADDONS];
     if (!systemAddonLocation)
-      return;
+      return undefined;
 
     
     if (Services.appinfo.inSafeMode)
-      return;
+      return undefined;
 
     
     let url = Preferences.get(PREF_SYSTEM_ADDON_UPDATE_URL, null);
-    if (!url) {
-      yield systemAddonLocation.cleanDirectories();
-      return;
-    }
+    if (!url)
+      return systemAddonLocation.cleanDirectories();
 
     url = UpdateUtils.formatUpdateURL(url);
 
@@ -2928,8 +2925,7 @@ this.XPIProvider = {
     
     if (!addonList) {
       logger.info("No system add-ons list was returned.");
-      yield systemAddonLocation.cleanDirectories();
-      return;
+      return systemAddonLocation.cleanDirectories();
     }
 
     addonList = new Map(
@@ -2961,8 +2957,7 @@ this.XPIProvider = {
     let updatedAddons = addonMap(yield getAddonsInLocation(KEY_APP_SYSTEM_ADDONS));
     if (setMatches(addonList, updatedAddons)) {
       logger.info("Retaining existing updated system add-ons.");
-      yield systemAddonLocation.cleanDirectories();
-      return;
+      return systemAddonLocation.cleanDirectories();
     }
 
     
@@ -2971,8 +2966,7 @@ this.XPIProvider = {
     if (setMatches(addonList, defaultAddons)) {
       logger.info("Resetting system add-ons.");
       systemAddonLocation.resetAddonSet();
-      yield systemAddonLocation.cleanDirectories();
-      return;
+      return systemAddonLocation.cleanDirectories();
     }
 
     
@@ -5642,7 +5636,6 @@ AddonInstall.prototype = {
                                     repoAddon.compatibilityOverrides :
                                     null;
     this.addon.appDisabled = !isUsableAddon(this.addon);
-    return undefined;
   }),
 
   observe: function(aSubject, aTopic, aData) {
@@ -7338,7 +7331,8 @@ function defineAddonWrapperProperty(name, getter) {
  "strictCompatibility", "compatibilityOverrides", "updateURL",
  "getDataDirectory", "multiprocessCompatible", "signedState"].forEach(function(aProp) {
    defineAddonWrapperProperty(aProp, function() {
-     return addonFor(this)[aProp];
+     let addon = addonFor(this);
+     return (aProp in addon) ? addon[aProp] : undefined;
    });
 });
 
@@ -7395,9 +7389,8 @@ PROP_LOCALE_SINGLE.forEach(function(aProp) {
       }
     }
 
-    let rest;
     if (result == null)
-      [result, ...rest] = chooseValue(addon, addon.selectedLocale, aProp);
+      [result, ] = chooseValue(addon, addon.selectedLocale, aProp);
 
     if (aProp == "creator")
       return result ? new AddonManagerPrivate.AddonAuthor(result) : null;
