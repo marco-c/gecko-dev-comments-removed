@@ -440,8 +440,6 @@ class MacroAssemblerMIPSCompat : public MacroAssemblerMIPS
 
     void branchTestBooleanTruthy(bool b, const ValueOperand& operand, Label* label);
 
-    inline void decBranchPtr(Condition cond, Register lhs, Imm32 imm, Label* label);
-
     
     Operand ToPayload(Operand base);
     Address ToPayload(Address base) {
