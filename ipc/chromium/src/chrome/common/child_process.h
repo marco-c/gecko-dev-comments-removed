@@ -33,17 +33,6 @@ class ChildProcess {
   
   
   
-  
-  
-  
-  
-  
-  base::WaitableEvent* GetShutDownEvent();
-
-  
-  
-  
-  
   void AddRefProcess();
   void ReleaseProcess();
 

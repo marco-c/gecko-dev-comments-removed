@@ -54,16 +54,6 @@ class WaitableEvent {
   
   WaitableEvent(bool manual_reset, bool initially_signaled);
 
-#if defined(OS_WIN)
-  
-  
-  
-  explicit WaitableEvent(HANDLE event_handle);
-
-  
-  HANDLE Release();
-#endif
-
   ~WaitableEvent();
 
   
