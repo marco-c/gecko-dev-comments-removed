@@ -175,6 +175,12 @@ public:
   };
 
   
+  
+  static LRESULT WINAPI
+  NonClientDpiScalingDefWindowProcW(HWND hWnd, UINT msg,
+                                    WPARAM wParam, LPARAM lParam);
+
+  
 
 
 
