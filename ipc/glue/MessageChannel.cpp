@@ -324,6 +324,7 @@ MessageChannel::MessageChannel(MessageListener *aListener)
     mDispatchingAsyncMessagePriority(0),
     mCurrentTransaction(0),
     mTimedOutMessageSeqno(0),
+    mTimedOutMessagePriority(0),
     mRecvdErrors(0),
     mRemoteStackDepthGuess(false),
     mSawInterruptOutMsg(false),
@@ -1039,6 +1040,7 @@ MessageChannel::Send(Message* aMsg, Message* aReply)
             }
 
             mTimedOutMessageSeqno = seqno;
+            mTimedOutMessagePriority = prio;
             return false;
         }
     }
@@ -1408,7 +1410,22 @@ MessageChannel::DispatchSyncMessage(const Message& aMsg, Message*& aReply)
     MessageChannel*& blockingVar = ShouldBlockScripts() ? gParentProcessBlocker : dummy;
 
     Result rv;
-    {
+    if (mTimedOutMessageSeqno && mTimedOutMessagePriority >= prio) {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        rv = MsgNotAllowed;
+    } else {
         AutoSetValue<MessageChannel*> blocked(blockingVar, this);
         AutoSetValue<bool> sync(mDispatchingSyncMessage, true);
         AutoSetValue<int> prioSet(mDispatchingSyncMessagePriority, prio);

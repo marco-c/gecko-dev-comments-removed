@@ -630,6 +630,7 @@ class MessageChannel : HasResultCodes
     
     
     int32_t mTimedOutMessageSeqno;
+    int mTimedOutMessagePriority;
 
     
     
