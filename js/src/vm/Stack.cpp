@@ -755,6 +755,11 @@ FrameIter::copyData() const
     MOZ_ASSERT(data_.state_ != ASMJS);
     if (data && data_.jitFrames_.isIonScripted())
         data->ionInlineFrameNo_ = ionInlineFrames_.frameNo();
+    
+    
+    
+    
+    data->cx_ = activation()->cx();
     return data;
 }
 
