@@ -843,7 +843,8 @@ var NodeFront = protocol.FrontClass(NodeActor, {
         }
       }
       
-      if (!found)  {
+      
+      if (!found && change.newValue !== null)  {
         this.attributes.push({
           name: change.attributeName,
           namespace: change.attributeNamespace,
