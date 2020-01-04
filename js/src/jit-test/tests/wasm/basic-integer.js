@@ -40,7 +40,7 @@ function testComparison(type, opcode, lhs, rhs, expect) {
     
     assertEq(wasmEvalText(`(module
                             (func (param i64) (param i64) (result i32)
-                              (if_else (i64.${opcode} (get_local 0) (get_local 1))
+                              (if (i64.${opcode} (get_local 0) (get_local 1))
                                 (i32.const 1)
                                 (i32.const 0)))
                             (func (result i32) (call 0 (i64.const ${lhs}) (i64.const ${rhs})))
