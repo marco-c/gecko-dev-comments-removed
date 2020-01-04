@@ -1,0 +1,21 @@
+
+
+
+
+
+
+"use strict";
+
+
+
+
+add_task(function* () {
+  yield openTabAndSetupStorage(MAIN_DOMAIN + "storage-cookies.html");
+
+  yield checkState([
+    [["cookies", "test1.example.org"],
+      ["test1", "test2", "test3", "test4", "test5"]],
+  ]);
+
+  yield finishTests();
+});
