@@ -62,7 +62,6 @@ pref("browser.cache.memory_limit", 2048);
 
 
 pref("image.cache.size", 1048576); 
-pref("image.high_quality_downscaling.enabled", false);
 pref("canvas.image.cache.limit", 20971520); 
 
 

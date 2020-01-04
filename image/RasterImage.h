@@ -254,12 +254,12 @@ public:
 private:
   nsresult Init(const char* aMimeType, uint32_t aFlags);
 
-  DrawResult DrawWithPreDownscaleIfNeeded(DrawableFrameRef&& aFrameRef,
-                                          gfxContext* aContext,
-                                          const nsIntSize& aSize,
-                                          const ImageRegion& aRegion,
-                                          GraphicsFilter aFilter,
-                                          uint32_t aFlags);
+  DrawResult DrawInternal(DrawableFrameRef&& aFrameRef,
+                          gfxContext* aContext,
+                          const nsIntSize& aSize,
+                          const ImageRegion& aRegion,
+                          GraphicsFilter aFilter,
+                          uint32_t aFlags);
 
   already_AddRefed<gfx::SourceSurface> CopyFrame(uint32_t aWhichFrame,
                                              uint32_t aFlags);
@@ -421,20 +421,8 @@ private:
   
 
   
-  void RequestScale(imgFrame* aFrame, uint32_t aFlags, const nsIntSize& aSize);
-
-  
-  bool CanScale(GraphicsFilter aFilter, const nsIntSize& aSize,
-                uint32_t aFlags);
-
-  
   
   bool CanDownscaleDuringDecode(const nsIntSize& aSize, uint32_t aFlags);
-
-  
-  void NotifyNewScaledFrame();
-
-  friend class ScaleRunner;
 
 
   

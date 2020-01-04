@@ -24,7 +24,7 @@
     
     branch.setIntPref("urlclassifier.updateinterval", 172800);
     
-    branch.setBoolPref("image.high_quality_downscaling.enabled", false);
+    branch.setBoolPref("image.downscale-during-decode.enabled", false);
     
     
     

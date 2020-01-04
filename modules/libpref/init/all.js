@@ -4070,16 +4070,6 @@ pref("image.downscale-during-decode.enabled", true);
 
 pref("image.http.accept", "image/png,image/*;q=0.8,*/*;q=0.5");
 
-pref("image.high_quality_downscaling.enabled", true);
-
-
-
-pref("image.high_quality_downscaling.min_factor", 1000);
-
-
-
-pref("image.high_quality_upscaling.max_size", 20971520);
-
 
 
 
