@@ -1593,6 +1593,10 @@ XPCJSRuntime::~XPCJSRuntime()
 {
     
     
+    MOZ_ASSERT(MaybeRuntime());
+
+    
+    
     
     
     js::SetActivityCallback(Runtime(), nullptr, nullptr);
