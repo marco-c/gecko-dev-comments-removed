@@ -4856,6 +4856,10 @@ pref("layout.accessiblecaret.bar.width", "2.0");
 pref("layout.accessiblecaret.timeout_ms", 3000);
 
 
+
+pref("layout.accessiblecaret.use_long_tap_injector", true);
+
+
 pref("dom.wakelock.enabled", false);
 
 

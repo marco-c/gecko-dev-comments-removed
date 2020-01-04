@@ -130,9 +130,6 @@ protected:
   
   bool mInitialized = false;
 
-  
-  bool mUseAsyncPanZoom = false;
-
   State* mState = NoActionState();
 
   
@@ -154,6 +151,9 @@ protected:
 
   
   int32_t mActiveTouchId = kInvalidTouchId;
+
+  
+  static bool sUseLongTapInjector;
 
   static const int32_t kScrollEndTimerDelay = 300;
   static const int32_t kMoveStartToleranceInPixel = 5;

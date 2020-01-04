@@ -87,11 +87,6 @@ public:
   {
     return static_cast<MockAccessibleCaretManager*>(mManager.get());
   }
-
-  void SetUseAsyncPanZoom(bool aUseAsyncPanZoom)
-  {
-    mUseAsyncPanZoom = aUseAsyncPanZoom;
-  }
 };
 
 
@@ -558,8 +553,6 @@ AccessibleCaretEventHubTester::TestEventDrivenAsyncPanZoomScroll(
     EXPECT_CALL(*mHub->GetMockAccessibleCaretManager(), OnScrollEnd());
   }
 
-  mHub->SetUseAsyncPanZoom(true);
-
   
   HandleEventAndCheckState(aPressEventCreator(0, 0),
                            MockAccessibleCaretEventHub::PressNoCaretState(),
@@ -641,8 +634,6 @@ TEST_F(AccessibleCaretEventHubTester, TestNoEventAsyncPanZoomScroll)
     EXPECT_CALL(*mHub->GetMockAccessibleCaretManager(), OnScrollEnd());
   }
 
-  mHub->SetUseAsyncPanZoom(true);
-
   check.Call("1");
 
   mHub->AsyncPanZoomStarted();
@@ -680,8 +671,6 @@ TEST_F(AccessibleCaretEventHubTester, TestAsyncPanZoomScrollStartedThenBlur)
     EXPECT_CALL(*mHub->GetMockAccessibleCaretManager(), OnBlur());
   }
 
-  mHub->SetUseAsyncPanZoom(true);
-
   mHub->AsyncPanZoomStarted();
   EXPECT_EQ(mHub->GetState(), MockAccessibleCaretEventHub::ScrollState());
 
@@ -701,8 +690,6 @@ TEST_F(AccessibleCaretEventHubTester, TestAsyncPanZoomScrollEndedThenBlur)
     EXPECT_CALL(*mHub->GetMockAccessibleCaretManager(), OnScrollEnd()).Times(0);
     EXPECT_CALL(*mHub->GetMockAccessibleCaretManager(), OnBlur());
   }
-
-  mHub->SetUseAsyncPanZoom(true);
 
   mHub->AsyncPanZoomStarted();
   EXPECT_EQ(mHub->GetState(), MockAccessibleCaretEventHub::ScrollState());

@@ -1070,6 +1070,11 @@ pref("dom.apps.customization.enabled", true);
 pref("layout.accessiblecaret.enabled", true);
 
 
+#ifdef MOZ_WIDGET_GONK
+pref("layout.accessiblecaret.use_long_tap_injector", false);
+#endif
+
+
 pref("services.sync.fxaccounts.enabled", true);
 pref("identity.fxaccounts.enabled", true);
 
