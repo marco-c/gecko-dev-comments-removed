@@ -27,7 +27,7 @@
 
 
 #ifdef DEBUG
-#define assert(b, info) if (!(b)) AssertionFailed(info)
+#define assert(b, info) if (!(b)) AssertionFailed(__FILE__ + ":" + __LINE__ + ": " + info)
 #else
 #define assert(b, info) // Elided assertion.
 #endif
