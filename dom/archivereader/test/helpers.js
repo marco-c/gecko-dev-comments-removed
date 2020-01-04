@@ -3,13 +3,14 @@
 
 
 
-var testGenerator = testSteps();
+var testGenerator;
 
 function runTest()
 {
   SimpleTest.waitForExplicitFinish();
 
   SpecialPowers.pushPrefEnv({'set': [ ["dom.archivereader.enabled", true] ]}, function() {
+    testGenerator = testSteps();
     return testGenerator.next();
   });
 }
