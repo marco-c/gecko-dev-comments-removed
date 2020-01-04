@@ -1,0 +1,3 @@
+
+
+document.myMetaCSPScript = "external-JS-loaded";
