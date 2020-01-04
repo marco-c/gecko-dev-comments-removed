@@ -428,8 +428,6 @@ private:
   MozPromiseHolder<AudioDataPromise> mBaseAudioPromise;
   MozPromiseHolder<VideoDataPromise> mBaseVideoPromise;
 
-  bool mTaskQueueIsBorrowed;
-
   
   
   bool mAudioDiscontinuity;

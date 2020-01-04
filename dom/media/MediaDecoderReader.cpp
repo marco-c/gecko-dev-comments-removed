@@ -76,7 +76,6 @@ MediaDecoderReader::MediaDecoderReader(AbstractMediaDecoder* aDecoder)
   , mIgnoreAudioOutputFormat(false)
   , mHitAudioDecodeError(false)
   , mShutdown(false)
-  , mTaskQueueIsBorrowed(!!aBorrowedTaskQueue)
   , mAudioDiscontinuity(false)
   , mVideoDiscontinuity(false)
 {
@@ -372,7 +371,7 @@ MediaDecoderReader::RequestAudioData()
     
     
     
-    if (AudioQueue().GetSize() == 0 && mTaskQueue) {
+    if (AudioQueue().GetSize() == 0) {
       RefPtr<nsIRunnable> task(new ReRequestAudioTask(this));
       mTaskQueue->Dispatch(task.forget());
       return p;
@@ -423,22 +422,10 @@ MediaDecoderReader::Shutdown()
 
   nsRefPtr<ShutdownPromise> p;
 
-  
-  
-  
-  if (mTaskQueue && !mTaskQueueIsBorrowed) {
-    
-    p = mTaskQueue->BeginShutdown();
-  } else {
-    
-    
-    p = ShutdownPromise::CreateAndResolve(true, __func__);
-  }
-
   mTimer = nullptr;
   mDecoder = nullptr;
 
-  return p;
+  return mTaskQueue->BeginShutdown();
 }
 
 } 
