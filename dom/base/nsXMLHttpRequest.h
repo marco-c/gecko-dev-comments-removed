@@ -626,7 +626,7 @@ protected:
 
 
 
-  void CheckChannelForCrossSiteRequest(nsIChannel* aChannel);
+  nsresult CheckChannelForCrossSiteRequest(nsIChannel* aChannel);
 
   void StartProgressEventTimer();
 

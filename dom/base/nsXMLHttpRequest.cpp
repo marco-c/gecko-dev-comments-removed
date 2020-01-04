@@ -51,7 +51,10 @@
 #include "nsICachingChannel.h"
 #include "nsContentUtils.h"
 #include "nsCycleCollectionParticipant.h"
+#include "nsIContentPolicy.h"
+#include "nsContentPolicyUtils.h"
 #include "nsError.h"
+#include "nsCORSListenerProxy.h"
 #include "nsIHTMLDocument.h"
 #include "nsIStorageStream.h"
 #include "nsIPromptFactory.h"
@@ -123,7 +126,7 @@ using namespace mozilla::dom;
 #define XML_HTTP_REQUEST_SYNCLOOPING    (1 << 10) // Internal
 #define XML_HTTP_REQUEST_BACKGROUND     (1 << 13) // Internal
 #define XML_HTTP_REQUEST_USE_XSITE_AC   (1 << 14) // Internal
-#define XML_HTTP_REQUEST_NEED_AC_PREFLIGHT_IF_XSITE (1 << 15) // Internal
+#define XML_HTTP_REQUEST_NEED_AC_PREFLIGHT (1 << 15) // Internal
 #define XML_HTTP_REQUEST_AC_WITH_CREDENTIALS (1 << 16) // Internal
 #define XML_HTTP_REQUEST_TIMED_OUT (1 << 17) // Internal
 #define XML_HTTP_REQUEST_DELETED (1 << 18) // Internal
@@ -1530,15 +1533,47 @@ nsXMLHttpRequest::IsSystemXHR()
   return mIsSystem || nsContentUtils::IsSystemPrincipal(mPrincipal);
 }
 
-void
+nsresult
 nsXMLHttpRequest::CheckChannelForCrossSiteRequest(nsIChannel* aChannel)
 {
   
   
-  if (!IsSystemXHR() &&
-      !nsContentUtils::CheckMayLoad(mPrincipal, aChannel, true)) {
-    mState |= XML_HTTP_REQUEST_USE_XSITE_AC;
+  
+  if (IsSystemXHR()) {
+    if (!nsContentUtils::IsSystemPrincipal(mPrincipal)) {
+      nsIScriptSecurityManager *secMan = nsContentUtils::GetSecurityManager();
+      nsCOMPtr<nsIURI> uri;
+      aChannel->GetOriginalURI(getter_AddRefs(uri));
+      return secMan->CheckLoadURIWithPrincipal(
+        mPrincipal, uri, nsIScriptSecurityManager::STANDARD);
+    }
+    return NS_OK;
   }
+
+  
+  
+  if (nsContentUtils::CheckMayLoad(mPrincipal, aChannel, true)) {
+    return NS_OK;
+  }
+
+  
+  mState |= XML_HTTP_REQUEST_USE_XSITE_AC;
+
+  
+  nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(aChannel);
+  NS_ENSURE_TRUE(httpChannel, NS_ERROR_DOM_BAD_URI);
+
+  nsAutoCString method;
+  httpChannel->GetRequestMethod(method);
+  if (!mCORSUnsafeHeaders.IsEmpty() ||
+      (mUpload && mUpload->HasListeners()) ||
+      (!method.LowerCaseEqualsLiteral("get") &&
+       !method.LowerCaseEqualsLiteral("post") &&
+       !method.LowerCaseEqualsLiteral("head"))) {
+    mState |= XML_HTTP_REQUEST_NEED_AC_PREFLIGHT;
+  }
+
+  return NS_OK;
 }
 
 NS_IMETHODIMP
@@ -1645,6 +1680,21 @@ nsXMLHttpRequest::Open(const nsACString& inMethod, const nsACString& url,
 
   rv = CheckInnerWindowCorrectness();
   NS_ENSURE_SUCCESS(rv, rv);
+  int16_t shouldLoad = nsIContentPolicy::ACCEPT;
+  rv = NS_CheckContentLoadPolicy(nsIContentPolicy::TYPE_INTERNAL_XMLHTTPREQUEST,
+                                 uri,
+                                 mPrincipal,
+                                 doc,
+                                 EmptyCString(), 
+                                 nullptr,         
+                                 &shouldLoad,
+                                 nsContentUtils::GetContentPolicy(),
+                                 nsContentUtils::GetSecurityManager());
+  if (NS_FAILED(rv)) return rv;
+  if (NS_CP_REJECTED(shouldLoad)) {
+    
+    return NS_ERROR_CONTENT_BLOCKED;
+  }
 
   
   
@@ -1667,27 +1717,20 @@ nsXMLHttpRequest::Open(const nsACString& inMethod, const nsACString& url,
   
   nsCOMPtr<nsILoadGroup> loadGroup = GetLoadGroup();
 
-  nsSecurityFlags secFlags;
+  nsSecurityFlags secFlags = nsILoadInfo::SEC_NORMAL;
   nsLoadFlags loadFlags = nsIRequest::LOAD_BACKGROUND;
-  if (nsContentUtils::IsSystemPrincipal(mPrincipal)) {
-    
-    
-    secFlags = nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_DATA_IS_NULL |
-               nsILoadInfo::SEC_SANDBOXED;
-  }
-  else if (IsSystemXHR()) {
+  if (IsSystemXHR()) {
     
     
     
-    secFlags = nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_DATA_INHERITS |
-               nsILoadInfo::SEC_FORCE_INHERIT_PRINCIPAL;
+    
+    
+    secFlags |= nsILoadInfo::SEC_SANDBOXED;
+
+    
     loadFlags |= nsIChannel::LOAD_BYPASS_SERVICE_WORKER;
-  }
-  else {
-    
-    
-    secFlags = nsILoadInfo::SEC_REQUIRE_CORS_DATA_INHERITS |
-               nsILoadInfo::SEC_FORCE_INHERIT_PRINCIPAL;
+  } else {
+    secFlags |= nsILoadInfo::SEC_FORCE_INHERIT_PRINCIPAL;
   }
 
   
@@ -1712,10 +1755,10 @@ nsXMLHttpRequest::Open(const nsACString& inMethod, const nsACString& url,
                        loadFlags);
   }
 
-  NS_ENSURE_SUCCESS(rv, rv);
+  if (NS_FAILED(rv)) return rv;
 
   mState &= ~(XML_HTTP_REQUEST_USE_XSITE_AC |
-              XML_HTTP_REQUEST_NEED_AC_PREFLIGHT_IF_XSITE);
+              XML_HTTP_REQUEST_NEED_AC_PREFLIGHT);
 
   nsCOMPtr<nsIHttpChannel> httpChannel(do_QueryInterface(mChannel));
   if (httpChannel) {
@@ -1731,7 +1774,7 @@ nsXMLHttpRequest::Open(const nsACString& inMethod, const nsACString& url,
 
   ChangeState(XML_HTTP_REQUEST_OPENED);
 
-  return NS_OK;
+  return rv;
 }
 
 void
@@ -2775,20 +2818,14 @@ nsXMLHttpRequest::Send(nsIVariant* aVariant, const Nullable<RequestBody>& aBody)
 
   ResetResponse();
 
-  CheckChannelForCrossSiteRequest(mChannel);
+  rv = CheckChannelForCrossSiteRequest(mChannel);
+  NS_ENSURE_SUCCESS(rv, rv);
 
   bool withCredentials = !!(mState & XML_HTTP_REQUEST_AC_WITH_CREDENTIALS);
 
   
-  if (!IsSystemXHR() && withCredentials) {
-    
-    
-    
-    
-    
-    nsCOMPtr<nsILoadInfo> loadInfo = mChannel->GetLoadInfo();
-    static_cast<LoadInfo*>(loadInfo.get())->SetWithCredentialsSecFlag();
-  }
+  mChannel->GetNotificationCallbacks(getter_AddRefs(mNotificationCallbacks));
+  mChannel->SetNotificationCallbacks(this);
 
   
   
@@ -2809,12 +2846,33 @@ nsXMLHttpRequest::Send(nsIVariant* aVariant, const Nullable<RequestBody>& aBody)
     internalHttpChannel->SetResponseTimeoutEnabled(false);
   }
 
+  nsCOMPtr<nsIStreamListener> listener = this;
+  if (!IsSystemXHR()) {
+    
+    
+    nsRefPtr<nsCORSListenerProxy> corsListener =
+      new nsCORSListenerProxy(listener, mPrincipal, withCredentials);
+    rv = corsListener->Init(mChannel, DataURIHandling::Allow);
+    NS_ENSURE_SUCCESS(rv, rv);
+    listener = corsListener;
+  }
+  else {
+    
+    
+    
+
+    listener = new nsStreamListenerWrapper(listener);
+  }
+
   if (mIsAnon) {
     AddLoadFlags(mChannel, nsIRequest::LOAD_ANONYMOUS);
   }
   else {
     AddLoadFlags(mChannel, nsIChannel::LOAD_EXPLICIT_CREDENTIALS);
   }
+
+  NS_ASSERTION(listener != this,
+               "Using an object as a listener that can't be exposed to JS");
 
   
   
@@ -2849,18 +2907,9 @@ nsXMLHttpRequest::Send(nsIVariant* aVariant, const Nullable<RequestBody>& aBody)
   StartTimeoutTimer();
 
   
-  if (!mCORSUnsafeHeaders.IsEmpty() ||
-      (mUpload && mUpload->HasListeners()) ||
-      (!method.LowerCaseEqualsLiteral("get") &&
-       !method.LowerCaseEqualsLiteral("post") &&
-       !method.LowerCaseEqualsLiteral("head"))) {
-    mState |= XML_HTTP_REQUEST_NEED_AC_PREFLIGHT_IF_XSITE;
-  }
-
-  
-  if ((mState & XML_HTTP_REQUEST_USE_XSITE_AC) &&
-      (mState & XML_HTTP_REQUEST_NEED_AC_PREFLIGHT_IF_XSITE)) {
-    NS_ENSURE_TRUE(internalHttpChannel, NS_ERROR_DOM_BAD_URI);
+  if (mState & XML_HTTP_REQUEST_NEED_AC_PREFLIGHT) {
+    
+    
 
     rv = internalHttpChannel->SetCorsPreflightParameters(mCORSUnsafeHeaders,
                                                          withCredentials, mPrincipal);
@@ -2884,29 +2933,15 @@ nsXMLHttpRequest::Send(nsIVariant* aVariant, const Nullable<RequestBody>& aBody)
   }
 
   
-  
-  
-  
-  mChannel->GetNotificationCallbacks(getter_AddRefs(mNotificationCallbacks));
-  mChannel->SetNotificationCallbacks(this);
-
-  
-  
-  
-  
-  nsCOMPtr<nsIStreamListener> listener = new nsStreamListenerWrapper(this);
-  rv = mChannel->AsyncOpen2(listener);
-  listener = nullptr;
+  rv = mChannel->AsyncOpen(listener, nullptr);
 
   if (NS_WARN_IF(NS_FAILED(rv))) {
     
-    
-    mChannel->SetNotificationCallbacks(mNotificationCallbacks);
     mChannel = nullptr;
-
     return rv;
   }
 
+  
   mWaitingForOnStopRequest = true;
 
   
@@ -3349,12 +3384,17 @@ nsXMLHttpRequest::AsyncOnChannelRedirect(nsIChannel *aOldChannel,
   nsresult rv;
 
   if (!NS_IsInternalSameURIRedirect(aOldChannel, aNewChannel, aFlags)) {
-    CheckChannelForCrossSiteRequest(aNewChannel);
+    rv = CheckChannelForCrossSiteRequest(aNewChannel);
+    if (NS_FAILED(rv)) {
+      NS_WARNING("nsXMLHttpRequest::OnChannelRedirect: "
+                 "CheckChannelForCrossSiteRequest returned failure");
+      return rv;
+    }
 
     
-    if ((mState & XML_HTTP_REQUEST_USE_XSITE_AC) &&
-        (mState & XML_HTTP_REQUEST_NEED_AC_PREFLIGHT_IF_XSITE)) {
-       aOldChannel->Cancel(NS_ERROR_DOM_BAD_URI);
+    
+    
+    if ((mState & XML_HTTP_REQUEST_NEED_AC_PREFLIGHT)) {
        return NS_ERROR_DOM_BAD_URI;
     }
   }
@@ -3515,7 +3555,7 @@ bool
 nsXMLHttpRequest::AllowUploadProgress()
 {
   return !(mState & XML_HTTP_REQUEST_USE_XSITE_AC) ||
-    (mState & XML_HTTP_REQUEST_NEED_AC_PREFLIGHT_IF_XSITE);
+    (mState & XML_HTTP_REQUEST_NEED_AC_PREFLIGHT);
 }
 
 

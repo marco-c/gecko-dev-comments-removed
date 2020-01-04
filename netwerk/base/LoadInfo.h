@@ -15,7 +15,6 @@
 #include "nsTArray.h"
 
 class nsINode;
-class nsXMLHttpRequest;
 
 namespace mozilla {
 
@@ -78,17 +77,11 @@ private:
 
   ~LoadInfo();
 
-  
-  
-  
-  void SetWithCredentialsSecFlag();
-  friend class ::nsXMLHttpRequest;
-
   nsCOMPtr<nsIPrincipal>           mLoadingPrincipal;
   nsCOMPtr<nsIPrincipal>           mTriggeringPrincipal;
   nsWeakPtr                        mLoadingContext;
   nsSecurityFlags                  mSecurityFlags;
-  nsContentPolicyType              mInternalContentPolicyType;
+  nsContentPolicyType              mContentPolicyType;
   bool                             mUpgradeInsecureRequests;
   uint64_t                         mInnerWindowID;
   uint64_t                         mOuterWindowID;
