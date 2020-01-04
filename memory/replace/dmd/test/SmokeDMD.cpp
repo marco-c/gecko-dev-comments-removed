@@ -133,7 +133,7 @@ TestFull(const char* aTestName, int aNum, const char* aMode, int aSeven)
   
   
   
-  char* a2 = (char*) malloc(8);
+  char* a2 = (char*) malloc(16);
   Report(a2);
 
   
@@ -144,7 +144,7 @@ TestFull(const char* aTestName, int aNum, const char* aMode, int aSeven)
   
   
   
-  char* b2 = (char*) malloc(8);
+  char* b2 = (char*) malloc(16);
   ReportOnAlloc(b2);
   free(b2);
 
@@ -293,7 +293,7 @@ TestPartial(const char* aTestName, const char* aMode, int aSeven)
   
   
   for (int i = 0; i < kTenThousand; i++) {
-    s = (char*) malloc(8);
+    s = (char*) malloc(16);
     UseItOrLoseIt(s, aSeven);
   }
 
