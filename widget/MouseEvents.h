@@ -174,11 +174,12 @@ public:
 
 
 
-class WidgetMouseEvent : public WidgetMouseEventBase, public WidgetPointerHelper
+class WidgetMouseEvent : public WidgetMouseEventBase
+                       , public WidgetPointerHelper
 {
 private:
-  friend class mozilla::dom::PBrowserParent;
-  friend class mozilla::dom::PBrowserChild;
+  friend class dom::PBrowserParent;
+  friend class dom::PBrowserChild;
 
 public:
   typedef bool ReasonType;
@@ -212,8 +213,11 @@ protected:
   {
   }
 
-  WidgetMouseEvent(bool aIsTrusted, EventMessage aMessage, nsIWidget* aWidget,
-                   EventClassID aEventClassID, Reason aReason)
+  WidgetMouseEvent(bool aIsTrusted,
+                   EventMessage aMessage,
+                   nsIWidget* aWidget,
+                   EventClassID aEventClassID,
+                   Reason aReason)
     : WidgetMouseEventBase(aIsTrusted, aMessage, aWidget, aEventClassID)
     , mReason(aReason)
     , mContextMenuTrigger(eNormal)
@@ -267,15 +271,27 @@ public:
     return result;
   }
 
+  
+  
+  
+  
   Reason mReason;
 
+  
+  
+  
   ContextMenuTrigger mContextMenuTrigger;
 
+  
+  
+  
   ExitFrom mExitFrom;
 
   
   bool mIgnoreRootScrollFrame;
 
+  
+  
   
   uint32_t mClickCount;
 
