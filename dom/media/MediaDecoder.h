@@ -411,11 +411,15 @@ private:
   
   void SeekingStarted(MediaDecoderEventVisibility aEventVisibility = MediaDecoderEventVisibility::Observable);
 
-  void UpdateLogicalPosition(MediaDecoderEventVisibility aEventVisibility);
+  void UpdateLogicalPositionInternal(MediaDecoderEventVisibility aEventVisibility);
   void UpdateLogicalPosition()
   {
     MOZ_ASSERT(NS_IsMainThread());
-    UpdateLogicalPosition(MediaDecoderEventVisibility::Observable);
+    
+    if (mPlayState == PLAY_STATE_PAUSED || IsSeeking()) {
+      return;
+    }
+    UpdateLogicalPositionInternal(MediaDecoderEventVisibility::Observable);
   }
 
   
