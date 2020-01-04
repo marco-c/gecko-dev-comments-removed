@@ -1552,25 +1552,17 @@ var PlacesControllerDragHelper = {
 
 
 
-
-
-  canMoveNode(aNode, aDOMNode) {
+  canMoveNode:
+  function PCDH_canMoveNode(aNode) {
     
     if (aNode.itemId == -1)
       return false;
 
+    
+    
     let parentNode = aNode.parent;
-    if (!parentNode) {
-      
-      
-      return aDOMNode &&
-             aDOMNode.hasAttribute("simulated-places-node") &&
-             PlacesUtils.nodeIsBookmark(aNode);
-    }
-
-    
-    
-    return !(PlacesUtils.nodeIsFolder(parentNode) &&
+    return parentNode != null &&
+           !(PlacesUtils.nodeIsFolder(parentNode) &&
              PlacesUIUtils.isContentsReadOnly(parentNode)) &&
            !PlacesUtils.nodeIsTagQuery(parentNode);
   },
