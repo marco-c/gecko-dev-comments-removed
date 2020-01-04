@@ -14,6 +14,8 @@ this.EXPORTED_SYMBOLS = ["Extension", "ExtensionData"];
 
 
 
+
+
 const Ci = Components.interfaces;
 const Cc = Components.classes;
 const Cu = Components.utils;
@@ -21,8 +23,9 @@ const Cr = Components.results;
 
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
-Cu.import("resource://devtools/shared/event-emitter.js");
 
+XPCOMUtils.defineLazyModuleGetter(this, "EventEmitter",
+                                  "resource://devtools/shared/event-emitter.js");
 XPCOMUtils.defineLazyModuleGetter(this, "Locale",
                                   "resource://gre/modules/Locale.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "Log",
@@ -67,12 +70,13 @@ var {
   injectAPI,
   extend,
   flushJarCache,
-  instanceOf,
 } = ExtensionUtils;
 
 const LOGGER_ID_BASE = "addons.webextension.";
 
 var scriptScope = this;
+
+var ExtensionPage, GlobalManager;
 
 
 var Management = {
@@ -165,7 +169,7 @@ var Management = {
 
   off(hook, callback) {
     this.emitter.off(hook, callback);
-  }
+  },
 };
 
 
@@ -183,9 +187,8 @@ var globalBroker = new MessageBroker([Services.mm, Services.ppmm]);
 
 
 
-function ExtensionPage(extension, params)
-{
-  let {type, contentWindow, uri, docShell} = params;
+ExtensionPage = function(extension, params) {
+  let {type, contentWindow, uri} = params;
   this.extension = extension;
   this.type = type;
   this.contentWindow = contentWindow || null;
@@ -206,7 +209,7 @@ function ExtensionPage(extension, params)
   this.messenger = new Messenger(this, globalBroker, sender, filter, delegate);
 
   this.extension.views.add(this);
-}
+};
 
 ExtensionPage.prototype = {
   get cloneScope() {
@@ -264,7 +267,7 @@ ExtensionPage.prototype = {
 };
 
 
-var GlobalManager = {
+GlobalManager = {
   
   count: 0,
 
@@ -365,8 +368,7 @@ var GlobalManager = {
 
 
 
-this.ExtensionData = function(rootURI)
-{
+this.ExtensionData = function(rootURI) {
   this.rootURI = rootURI;
 
   this.manifest = null;
@@ -375,7 +377,7 @@ this.ExtensionData = function(rootURI)
   this._promiseLocales = null;
 
   this.errors = [];
-}
+};
 
 ExtensionData.prototype = {
   get logger() {
@@ -406,11 +408,12 @@ ExtensionData.prototype = {
         yield iter.forEach(entry => {
           results.push(entry);
         });
-      } catch (e) {}
+      } catch (e) {
+        
+        
+      }
       iter.close();
 
-      
-      
       return results;
     }
 
@@ -488,7 +491,9 @@ ExtensionData.prototype = {
 
       try {
         this.id = this.manifest.applications.gecko.id;
-      } catch (e) {}
+      } catch (e) {
+        
+      }
 
       if (typeof this.id != "string") {
         this.manifestError("Missing required `applications.gecko.id` property");
@@ -626,8 +631,7 @@ ExtensionData.prototype = {
 
 
 
-function getExtensionUUID(id)
-{
+function getExtensionUUID(id) {
   const PREF_NAME = "extensions.webextensions.uuids";
 
   let pref = Preferences.get(PREF_NAME, "{}");
@@ -653,8 +657,7 @@ function getExtensionUUID(id)
 
 
 
-this.Extension = function(addonData)
-{
+this.Extension = function(addonData) {
   ExtensionData.call(this, addonData.resourceURI);
 
   this.uuid = getExtensionUUID(addonData.id);
@@ -683,7 +686,7 @@ this.Extension = function(addonData)
   this.webAccessibleResources = new Set();
 
   this.emitter = new EventEmitter();
-}
+};
 
 
 
@@ -710,8 +713,7 @@ this.Extension = function(addonData)
 
 
 
-this.Extension.generateXPI = function(id, data)
-{
+this.Extension.generateXPI = function(id, data) {
   let manifest = data.manifest;
   if (!manifest) {
     manifest = {};
@@ -799,8 +801,7 @@ this.Extension.generateXPI = function(id, data)
 
 
 
-this.Extension.generate = function(id, data)
-{
+this.Extension.generate = function(id, data) {
   let file = this.generateXPI(id, data);
 
   flushJarCache(file);
@@ -812,7 +813,7 @@ this.Extension.generate = function(id, data)
   return new Extension({
     id,
     resourceURI: jarURI,
-    cleanupFile: file
+    cleanupFile: file,
   });
 };
 
@@ -856,7 +857,7 @@ Extension.prototype = extend(Object.create(ExtensionData.prototype), {
       manifest: this.manifest,
       resourceURL: this.addonData.resourceURI.spec,
       baseURL: this.baseURI.spec,
-      content_scripts: this.manifest.content_scripts || [],
+      content_scripts: this.manifest.content_scripts || [],  
       webAccessibleResources: this.webAccessibleResources,
       whiteListedHosts: this.whiteListedHosts.serialize(),
       localeData: this.localeData.serialize(),

@@ -1,3 +1,5 @@
+
+
 "use strict";
 
 XPCOMUtils.defineLazyServiceGetter(this, "aboutNewTabService",
@@ -10,6 +12,8 @@ XPCOMUtils.defineLazyModuleGetter(this, "MatchPattern",
 XPCOMUtils.defineLazyModuleGetter(this, "Services",
                                   "resource://gre/modules/Services.jsm");
 
+
+
 Cu.import("resource://gre/modules/ExtensionUtils.jsm");
 
 var {
@@ -20,8 +24,7 @@ var {
 
 
 
-function getSender(context, target, sender)
-{
+function getSender(context, target, sender) {
   
   
   if (target instanceof Ci.nsIDOMXULElement) {
@@ -33,19 +36,18 @@ function getSender(context, target, sender)
     let tab = tabbrowser.getTabForBrowser(target);
 
     sender.tab = TabManager.convert(context.extension, tab);
-  } else {
+  } else if ("tabId" in sender) {
     
     
     
-    if ("tabId" in sender) {
-      sender.tab = TabManager.convert(context.extension, TabManager.getTab(sender.tabId));
-      delete sender.tabId;
-    }
+    sender.tab = TabManager.convert(context.extension, TabManager.getTab(sender.tabId));
+    delete sender.tabId;
   }
 }
 
 
 var pageDataMap = new WeakMap();
+
 
 
 
@@ -96,14 +98,14 @@ extensions.on("fill-browser-data", (type, browser, data, result) => {
   data.tabId = tabId;
 });
 
-global.currentWindow = function(context)
-{
+
+global.currentWindow = function(context) {
   let pageData = pageDataMap.get(context);
   if (pageData) {
     return pageData.parentWindow;
   }
   return WindowManager.topWindow;
-}
+};
 
 
 
@@ -211,7 +213,7 @@ extensions.registerAPI((extension, context) => {
             let tabId = TabManager.getId(tab);
             let [needed, changeInfo] = sanitize(extension, {
               status: webProgress.isLoadingDocument ? "loading" : "complete",
-              url: locationURI.spec
+              url: locationURI.spec,
             });
             if (needed) {
               fire(tabId, changeInfo, TabManager.convert(extension, tab));
@@ -389,7 +391,7 @@ extensions.registerAPI((extension, context) => {
       getAllInWindow: function(...args) {
         let window, callback;
         if (args.length == 1) {
-          callbacks = args[0];
+          callback = args[0];
         } else {
           window = WindowManager.getWindow(args[0]);
           callback = args[1];
@@ -435,10 +437,8 @@ extensions.registerAPI((extension, context) => {
               if (currentWindow(context) != window) {
                 return false;
               }
-            } else {
-              if (queryInfo.windowId != tab.windowId) {
-                return false;
-              }
+            } else if (queryInfo.windowId != tab.windowId) {
+              return false;
             }
           }
 
@@ -495,7 +495,7 @@ extensions.registerAPI((extension, context) => {
         }
 
         if (details.code) {
-          options[kind + 'Code'] = details.code;
+          options[kind + "Code"] = details.code;
         }
         if (details.file) {
           let url = context.uri.resolve(details.file);
@@ -522,17 +522,17 @@ extensions.registerAPI((extension, context) => {
 
       executeScript: function(...args) {
         if (args.length == 1) {
-          self.tabs._execute(undefined, args[0], 'js', undefined);
+          self.tabs._execute(undefined, args[0], "js", undefined);
         } else {
-          self.tabs._execute(args[0], args[1], 'js', args[2]);
+          self.tabs._execute(args[0], args[1], "js", args[2]);
         }
       },
 
-      insertCss: function(tabId, details, callback) {
+      insertCss: function(...args) {
         if (args.length == 1) {
-          self.tabs._execute(undefined, args[0], 'css', undefined);
+          self.tabs._execute(undefined, args[0], "css", undefined);
         } else {
-          self.tabs._execute(args[0], args[1], 'css', args[2]);
+          self.tabs._execute(args[0], args[1], "css", args[2]);
         }
       },
 

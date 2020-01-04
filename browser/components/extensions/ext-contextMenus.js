@@ -1,3 +1,7 @@
+
+
+"use strict";
+
 Cu.import("resource://gre/modules/ExtensionUtils.jsm");
 Cu.import("resource://gre/modules/MatchPattern.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
@@ -5,8 +9,7 @@ Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
 var {
   EventManager,
-  contextMenuItems,
-  runSafe
+  runSafe,
 } = ExtensionUtils;
 
 
@@ -20,11 +23,6 @@ var onClickedCallbacksMap = new WeakMap();
 
 
 var nextID = 0;
-
-function contextMenuObserver(subject, topic, data) {
-  subject = subject.wrappedJSObject;
-  menuBuilder.build(subject);
-}
 
 
 
@@ -82,7 +80,7 @@ var menuBuilder = {
             topLevelItems.add(element);
           }
 
-          element.addEventListener("command", event => {
+          element.addEventListener("command", event => { 
             item.tabManager.addActiveTabPermission();
             if (item.onclick) {
               let clickData = item.getClickData(contextData, event);
@@ -124,6 +122,11 @@ var menuBuilder = {
   },
 
   _itemsToCleanUp: new Set(),
+};
+
+function contextMenuObserver(subject, topic, data) {
+  subject = subject.wrappedJSObject;
+  menuBuilder.build(subject);
 }
 
 function getContexts(contextData) {
@@ -132,38 +135,37 @@ function getContexts(contextData) {
   contexts.add("page");
 
   if (contextData.inFrame) {
-    contexts.add("frame")
+    contexts.add("frame");
   }
 
   if (contextData.isTextSelected) {
-    contexts.add("selection")
+    contexts.add("selection");
   }
 
   if (contextData.onLink) {
-    contexts.add("link")
+    contexts.add("link");
   }
 
   if (contextData.onEditableArea) {
-    contexts.add("editable")
+    contexts.add("editable");
   }
 
   if (contextData.onImage) {
-    contexts.add("image")
+    contexts.add("image");
   }
 
   if (contextData.onVideo) {
-    contexts.add("video")
+    contexts.add("video");
   }
 
   if (contextData.onAudio) {
-    contexts.add("audio")
+    contexts.add("audio");
   }
 
   return contexts;
 }
 
-function MenuItem(extension, extContext, createProperties)
-{
+function MenuItem(extension, extContext, createProperties) {
   this.extension = extension;
   this.extContext = extContext;
 
@@ -175,7 +177,7 @@ function MenuItem(extension, extContext, createProperties)
 MenuItem.prototype = {
   
   
-  init(createProperties, update=false) {
+  init(createProperties, update = false) {
     let item = this;
     
     function parseProp(propName, defaultValue = null) {
@@ -214,8 +216,8 @@ MenuItem.prototype = {
       let found = false;
       let menuMap = contextMenuMap.get(this.extension);
       if (menuMap.has(this.parentId)) {
-          found = true;
-          menuMap.get(this.parentId).isMenu = true;
+        found = true;
+        menuMap.get(this.parentId).isMenu = true;
       }
       if (!found) {
         throw new Error("MenuItem with this parentId not found");
@@ -265,7 +267,7 @@ MenuItem.prototype = {
 
     let toRemove = new Set();
     toRemove.add(this.id);
-    for (let [id, item] of menuMap) {
+    for (let [, item] of menuMap) {
       if (hasAncestorWithId(item, this.id)) {
         toRemove.add(item.id);
       }
@@ -288,7 +290,7 @@ MenuItem.prototype = {
     }
 
     let clickData = {
-      menuItemId: this.id
+      menuItemId: this.id,
     };
 
     function setIfDefined(argName, value) {
@@ -318,7 +320,7 @@ MenuItem.prototype = {
     for (let c of this.contexts) {
       if (contexts.has(c)) {
         enabled = true;
-        break
+        break;
       }
     }
     if (!enabled) {
@@ -342,6 +344,7 @@ MenuItem.prototype = {
 };
 
 var extCount = 0;
+
 extensions.on("startup", (type, extension) => {
   contextMenuMap.set(extension, new Map());
   if (++extCount == 1) {
@@ -358,6 +361,7 @@ extensions.on("shutdown", (type, extension) => {
                                 "on-build-contextmenu");
   }
 });
+
 
 extensions.registerPrivilegedAPI("contextMenus", (extension, context) => {
   return {
@@ -392,7 +396,7 @@ extensions.registerPrivilegedAPI("contextMenus", (extension, context) => {
       },
 
       removeAll: function(callback) {
-        for (let [id, menuItem] of contextMenuMap.get(extension)) {
+        for (let [, menuItem] of contextMenuMap.get(extension)) {
           menuItem.remove();
         }
         if (callback) {

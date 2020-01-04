@@ -1,3 +1,5 @@
+"use strict";
+
 var { classes: Cc, interfaces: Ci, utils: Cu } = Components;
 
 Cu.import("resource://gre/modules/ExtensionUtils.jsm");
@@ -6,15 +8,14 @@ var {
   runSafe,
 } = ExtensionUtils;
 
-// WeakMap[Extension -> Set[Alarm]]
+
 var alarmsMap = new WeakMap();
 
-// WeakMap[Extension -> Set[callback]]
+
 var alarmCallbacksMap = new WeakMap();
 
-// Manages an alarm created by the extension (alarms API).
-function Alarm(extension, name, alarmInfo)
-{
+
+function Alarm(extension, name, alarmInfo) {
   this.extension = extension;
   this.name = name;
   this.when = alarmInfo.when;
@@ -75,6 +76,7 @@ Alarm.prototype = {
   },
 };
 
+
 extensions.on("startup", (type, extension) => {
   alarmsMap.set(extension, new Set());
   alarmCallbacksMap.set(extension, new Set());
@@ -87,6 +89,7 @@ extensions.on("shutdown", (type, extension) => {
   alarmsMap.delete(extension);
   alarmCallbacksMap.delete(extension);
 });
+
 
 extensions.registerAPI((extension, context) => {
   return {
@@ -121,7 +124,7 @@ extensions.registerAPI((extension, context) => {
 
       getAll: function(callback) {
         let alarms = alarmsMap.get(extension);
-        result = alarms.map(alarm => alarm.data);
+        let result = alarms.map(alarm => alarm.data);
         runSafe(context, callback, result);
       },
 

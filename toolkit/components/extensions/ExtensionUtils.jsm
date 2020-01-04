@@ -18,8 +18,7 @@ XPCOMUtils.defineLazyModuleGetter(this, "Locale",
                                   "resource://gre/modules/Locale.jsm");
 
 
-function runSafeSyncWithoutClone(f, ...args)
-{
+function runSafeSyncWithoutClone(f, ...args) {
   try {
     return f(...args);
   } catch (e) {
@@ -29,8 +28,7 @@ function runSafeSyncWithoutClone(f, ...args)
 }
 
 
-function runSafeWithoutClone(f, ...args)
-{
+function runSafeWithoutClone(f, ...args) {
   if (typeof(f) != "function") {
     dump(`Extension error: expected function\n${Error().stack}`);
     return;
@@ -43,8 +41,7 @@ function runSafeWithoutClone(f, ...args)
 
 
 
-function runSafeSync(context, f, ...args)
-{
+function runSafeSync(context, f, ...args) {
   try {
     args = Cu.cloneInto(args, context.cloneScope);
   } catch (e) {
@@ -56,8 +53,7 @@ function runSafeSync(context, f, ...args)
 
 
 
-function runSafe(context, f, ...args)
-{
+function runSafe(context, f, ...args) {
   try {
     args = Cu.cloneInto(args, context.cloneScope);
   } catch (e) {
@@ -90,8 +86,7 @@ function extend(obj, ...args) {
 
 
 
-function DefaultWeakMap(defaultValue)
-{
+function DefaultWeakMap(defaultValue) {
   this.defaultValue = defaultValue;
   this.weakmap = new WeakMap();
 }
@@ -123,7 +118,7 @@ function LocaleData(data) {
   
   
   this.messages = data.messages || new Map();
-};
+}
 
 LocaleData.prototype = {
   
@@ -151,7 +146,7 @@ LocaleData.prototype = {
     for (let locale of locales) {
       let messages = this.messages.get(locale);
       if (messages.has(message)) {
-        let str = messages.get(message)
+        let str = messages.get(message);
 
         if (!Array.isArray(substitutions)) {
           substitutions = [substitutions];
@@ -162,7 +157,7 @@ LocaleData.prototype = {
             
             
             
-            index = parseInt(index) - 1;
+            index = parseInt(index, 10) - 1;
             return index in substitutions ? substitutions[index] : "";
           } else {
             
@@ -301,8 +296,7 @@ LocaleData.prototype = {
 
 
 
-function EventManager(context, name, register)
-{
+function EventManager(context, name, register) {
   this.context = context;
   this.name = name;
   this.register = register;
@@ -375,8 +369,7 @@ EventManager.prototype = {
 
 
 
-function SingletonEventManager(context, name, register)
-{
+function SingletonEventManager(context, name, register) {
   this.context = context;
   this.name = name;
   this.register = register;
@@ -397,7 +390,7 @@ SingletonEventManager.prototype = {
 
     let unregister = this.unregister.get(callback);
     this.unregister.delete(callback);
-    this.unregister();
+    unregister();
   },
 
   hasListener(callback) {
@@ -420,8 +413,7 @@ SingletonEventManager.prototype = {
 };
 
 
-function ignoreEvent(context, name)
-{
+function ignoreEvent(context, name) {
   return {
     addListener: function(callback) {
       let id = context.extension.id;
@@ -435,7 +427,7 @@ function ignoreEvent(context, name)
                                    frame.lineNumber, frame.columnNumber,
                                    Ci.nsIScriptError.warningFlag,
                                    "content javascript", winID);
-      let consoleService = Cc['@mozilla.org/consoleservice;1']
+      let consoleService = Cc["@mozilla.org/consoleservice;1"]
         .getService(Ci.nsIConsoleService);
       consoleService.logMessage(scriptError);
     },
@@ -445,11 +437,10 @@ function ignoreEvent(context, name)
 }
 
 
-function injectAPI(source, dest)
-{
+function injectAPI(source, dest) {
   for (let prop in source) {
     
-    if (prop[0] == '_') {
+    if (prop[0] == "_") {
       continue;
     }
 
@@ -484,8 +475,7 @@ var MESSAGES = [
 
 
 
-function MessageBroker(messageManagers)
-{
+function MessageBroker(messageManagers) {
   this.messageManagers = messageManagers;
   for (let mm of this.messageManagers) {
     for (let message of MESSAGES) {
@@ -516,7 +506,6 @@ MessageBroker.prototype = {
   },
 
   removeListener(type, listener) {
-    let index = -1;
     for (let i = 0; i < this.listeners[type].length; i++) {
       if (this.listeners[type][i].listener == listener) {
         this.listeners[type].splice(i, 1);
@@ -550,13 +539,13 @@ MessageBroker.prototype = {
 
   receiveMessage({name, data, target}) {
     switch (name) {
-    case "Extension:Message":
-      this.runListeners("message", target, data);
-      break;
+      case "Extension:Message":
+        this.runListeners("message", target, data);
+        break;
 
-    case "Extension:Connect":
-      this.runListeners("connect", target, data);
-      break;
+      case "Extension:Connect":
+        this.runListeners("connect", target, data);
+        break;
     }
   },
 
@@ -568,8 +557,7 @@ MessageBroker.prototype = {
 };
 
 
-function Port(context, messageManager, name, id, sender)
-{
+function Port(context, messageManager, name, id, sender) {
   this.context = context;
   this.messageManager = messageManager;
   this.name = name;
@@ -597,7 +585,7 @@ Port.prototype = {
       },
       postMessage: json => {
         if (this.disconnected) {
-          throw "Attempt to postMessage on disconnected port";
+          throw new this.context.contentWindow.Error("Attempt to postMessage on disconnected port");
         }
         this.messageManager.sendAsyncMessage(this.listenerName, json);
       },
@@ -657,7 +645,7 @@ Port.prototype = {
 
   disconnect() {
     if (this.disconnected) {
-      throw "Attempt to disconnect() a disconnected port";
+      throw new this.context.contentWindow.Error("Attempt to disconnect() a disconnected port");
     }
     this.handleDisconnection();
     this.messageManager.sendAsyncMessage(this.disconnectName);
@@ -668,8 +656,7 @@ Port.prototype = {
   },
 };
 
-function getMessageManager(target)
-{
+function getMessageManager(target) {
   if (target instanceof Ci.nsIDOMXULElement) {
     return target.messageManager;
   } else {
@@ -687,8 +674,7 @@ function getMessageManager(target)
 
 
 
-function Messenger(context, broker, sender, filter, delegate)
-{
+function Messenger(context, broker, sender, filter, delegate) {
   this.context = context;
   this.broker = broker;
   this.sender = sender;
@@ -716,7 +702,7 @@ Messenger.prototype = {
     onClose = {
       close() {
         messageManager.removeMessageListener(replyName, listener);
-      }
+      },
     };
     if (responseCallback) {
       messageManager.addMessageListener(replyName, listener);
@@ -790,8 +776,7 @@ Messenger.prototype = {
   },
 };
 
-function flushJarCache(jarFile)
-{
+function flushJarCache(jarFile) {
   Services.obs.notifyObservers(jarFile, "flush-cache-entry", null);
 }
 

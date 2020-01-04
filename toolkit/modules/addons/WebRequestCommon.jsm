@@ -2,7 +2,11 @@
 
 
 
+"use strict";
+
 const EXPORTED_SYMBOLS = ["WebRequestCommon"];
+
+
 
 const Ci = Components.interfaces;
 const Cc = Components.classes;
@@ -49,5 +53,5 @@ var WebRequestCommon = {
     }
 
     return urlFilter.matches(uri);
-  }
+  },
 };

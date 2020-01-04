@@ -5,7 +5,6 @@
 Cu.import("resource://gre/modules/ExtensionUtils.jsm");
 var {
   EventManager,
-  DefaultWeakMap,
   runSafe,
 } = ExtensionUtils;
 
@@ -15,8 +14,7 @@ var pageActionMap = new WeakMap();
 
 
 
-function PageAction(options, extension)
-{
+function PageAction(options, extension) {
   this.extension = extension;
   this.id = makeWidgetId(extension.id) + "-page-action";
 
@@ -39,7 +37,7 @@ function PageAction(options, extension)
   this.tabContext = new TabContext(tab => Object.create(this.defaults),
                                    extension);
 
-  this.tabContext.on("location-change", this.handleLocationChange.bind(this));
+  this.tabContext.on("location-change", this.handleLocationChange.bind(this)); 
 
   
   this.buttons = new WeakMap();
@@ -110,7 +108,7 @@ PageAction.prototype = {
     button.id = this.id;
     button.setAttribute("class", "urlbar-icon");
 
-    button.addEventListener("click", event => {
+    button.addEventListener("click", event => { 
       if (event.button == 0) {
         this.handleClick(window);
       }
@@ -173,6 +171,7 @@ PageAction.for = extension => {
 };
 
 
+
 extensions.on("manifest_page_action", (type, directive, extension, manifest) => {
   let pageAction = new PageAction(manifest.page_action, extension);
   pageActionMap.set(extension, pageAction);
@@ -184,6 +183,7 @@ extensions.on("shutdown", (type, extension) => {
     pageActionMap.delete(extension);
   }
 });
+
 
 
 extensions.registerAPI((extension, context) => {
@@ -244,6 +244,6 @@ extensions.registerAPI((extension, context) => {
         let popup = PageAction.for(extension).getProperty(tab, "popup");
         runSafe(context, callback, popup);
       },
-    }
+    },
   };
 });

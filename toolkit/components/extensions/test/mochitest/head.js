@@ -1,3 +1,7 @@
+"use strict";
+
+
+
 function waitForLoad(win) {
   return new Promise(resolve => {
     win.addEventListener("load", function listener() {

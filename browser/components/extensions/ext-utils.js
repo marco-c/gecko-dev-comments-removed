@@ -31,7 +31,7 @@ global.IconDetails = {
   
   
   
-  normalize(details, extension, context=null, localize=false) {
+  normalize(details, extension, context = null, localize = false) {
     let result = {};
 
     try {
@@ -112,14 +112,14 @@ global.IconDetails = {
     canvas.getContext("2d").putImageData(imageData, 0, 0);
 
     return canvas.toDataURL("image/png");
-  }
+  },
 };
 
 global.makeWidgetId = id => {
   id = id.toLowerCase();
   
   return id.replace(/[^a-z0-9_-]/g, "_");
-}
+};
 
 
 
@@ -161,14 +161,16 @@ global.openPanel = (node, popupURL, extension) => {
 
   let titleChangedListener = () => {
     panel.setAttribute("aria-label", browser.contentTitle);
-  }
+  };
 
   let context;
-  panel.addEventListener("popuphidden", () => {
+  let popuphidden = () => {
+    panel.removeEventListener("popuphidden", popuphidden);
     browser.removeEventListener("DOMTitleChanged", titleChangedListener, true);
     context.unload();
     panel.remove();
-  });
+  };
+  panel.addEventListener("popuphidden", popuphidden);
 
   let loadListener = () => {
     panel.removeEventListener("load", loadListener);
@@ -216,7 +218,7 @@ global.openPanel = (node, popupURL, extension) => {
   panel.addEventListener("load", loadListener);
 
   return panel;
-}
+};
 
 
 
@@ -230,7 +232,7 @@ global.TabContext = function TabContext(getDefaults, extension) {
   AllWindowEvents.addListener("TabSelect", this);
 
   EventEmitter.decorate(this);
-}
+};
 
 TabContext.prototype = {
   get(tab) {
@@ -311,7 +313,6 @@ ExtensionTabManager.prototype = {
 
   convert(tab) {
     let window = tab.ownerDocument.defaultView;
-    let windowActive = window == WindowManager.topWindow;
 
     let result = {
       id: TabManager.getId(tab),
@@ -411,16 +412,18 @@ let tabManagers = new WeakMap();
 
 
 
-TabManager.for = function (extension) {
+TabManager.for = function(extension) {
   if (!tabManagers.has(extension)) {
     tabManagers.set(extension, new ExtensionTabManager(extension));
   }
   return tabManagers.get(extension);
 };
 
+
 extensions.on("shutdown", (type, extension) => {
   tabManagers.delete(extension);
 });
+
 
 
 global.WindowManager = {
@@ -489,7 +492,7 @@ global.WindowListManager = {
 
   
   
-  *browserWindows(includeIncomplete = false) {
+  * browserWindows(includeIncomplete = false) {
     
     
     
@@ -654,15 +657,14 @@ AllWindowEvents.openListener = AllWindowEvents.openListener.bind(AllWindowEvents
 
 
 
-global.WindowEventManager = function(context, name, event, listener)
-{
+global.WindowEventManager = function(context, name, event, listener) {
   EventManager.call(this, context, name, fire => {
     let listener2 = (...args) => listener(fire, ...args);
     AllWindowEvents.addListener(event, listener2);
     return () => {
       AllWindowEvents.removeListener(event, listener2);
-    }
+    };
   });
-}
+};
 
 WindowEventManager.prototype = Object.create(EventManager.prototype);

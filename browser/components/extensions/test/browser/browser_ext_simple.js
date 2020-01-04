@@ -1,11 +1,15 @@
+
+
+"use strict";
+
 add_task(function* test_simple() {
   let extensionData = {
     manifest: {
       "name": "Simple extension test",
       "version": "1.0",
       "manifest_version": 2,
-      "description": ""
-    }
+      "description": "",
+    },
   };
 
   let extension = ExtensionTestUtils.loadExtension(extensionData);
@@ -36,8 +40,8 @@ add_task(function* test_background() {
       "name": "Simple extension test",
       "version": "1.0",
       "manifest_version": 2,
-      "description": ""
-    }
+      "description": "",
+    },
   };
 
   let extension = ExtensionTestUtils.loadExtension(extensionData);
