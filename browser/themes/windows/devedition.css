@@ -48,6 +48,10 @@
 }
 
 
+#back-button[open="true"] > .toolbarbutton-icon {
+  box-shadow: none !important;
+}
+
 
 
 @media (min-resolution: 1.1dppx) {
