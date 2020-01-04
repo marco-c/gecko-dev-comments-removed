@@ -666,6 +666,7 @@ ReadEvalPrintLoop(JSContext* cx, FILE* in, FILE* out, bool compileOnly)
 
         int startline = lineno;
         typedef Vector<char, 32> CharBuffer;
+        RootedObject globalLexical(cx, &cx->global()->lexicalScope());
         CharBuffer buffer(cx);
         do {
             ScheduleWatchdog(cx->runtime(), -1);
@@ -700,6 +701,17 @@ ReadEvalPrintLoop(JSContext* cx, FILE* in, FILE* out, bool compileOnly)
         {
             
             JS_ReportPendingException(cx);
+        }
+        
+        
+        
+        
+        if (JS::ForceLexicalInitialization(cx, globalLexical)) {
+            fputs("Warning: According to the standard, after the above exception,\n"
+                  "Warning: the global bindings should be permanently uninitialized.\n"
+                  "Warning: We have non-standard-ly initialized them to `undefined`"
+                  "for you.\nWarning: This nicety only happens in the JS shell.\n",
+                  stderr);
         }
     } while (!hitEOF && !sr->quitting);
 

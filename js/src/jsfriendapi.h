@@ -243,6 +243,13 @@ namespace JS {
 extern JS_FRIEND_API(char*)
 FormatStackDump(JSContext* cx, char* buf, bool showArgs, bool showLocals, bool showThisProps);
 
+
+
+
+
+extern JS_FRIEND_API(bool)
+ForceLexicalInitialization(JSContext *cx, HandleObject obj);
+
 } 
 
 
