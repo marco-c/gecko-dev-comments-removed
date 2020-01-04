@@ -2204,7 +2204,7 @@ nsImageFrame::LoadIcon(const nsAString& aSpec,
 
   
   nsLoadFlags loadFlags = nsIRequest::LOAD_NORMAL;
-  nsContentPolicyType contentPolicyType = nsIContentPolicy::TYPE_INTERNAL_IMAGE;
+  nsContentPolicyType contentPolicyType = nsIContentPolicy::TYPE_IMAGE;
 
   return il->LoadImage(realURI,     
                        nullptr,      

@@ -50,7 +50,7 @@ ResourceLoader.load = function(uri, doc) {
     
     let ioChannel = ioService.newChannelFromURI2(uri, doc, doc.nodePrincipal,
                                                  systemPrincipal, 0,
-                                                 Ci.nsIContentPolicy.TYPE_INTERNAL_SCRIPT);
+                                                 Ci.nsIContentPolicy.TYPE_SCRIPT);
 
     ioChannel.loadGroup = doc.documentLoadGroup.QueryInterface(Ci.nsILoadGroup);
     ioChannel.notificationCallbacks = new RedirectHttpsOnly();

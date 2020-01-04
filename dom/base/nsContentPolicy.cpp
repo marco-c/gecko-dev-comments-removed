@@ -13,7 +13,6 @@
 #include "nsISupports.h"
 #include "nsXPCOM.h"
 #include "nsContentPolicyUtils.h"
-#include "mozilla/dom/nsCSPService.h"
 #include "nsContentPolicy.h"
 #include "nsIURI.h"
 #include "nsIDocShell.h"
@@ -124,14 +123,8 @@ nsContentPolicy::CheckPolicy(CPMethod          policyMethod,
     nsContentPolicyType externalTypeOrScript =
         nsContentUtils::InternalContentPolicyTypeToExternalOrScript(contentType);
 
-    nsContentPolicyType externalTypeOrPreload =
-       nsContentUtils::InternalContentPolicyTypeToExternalOrPreload(contentType);
-
     nsCOMPtr<nsIContentPolicy> mixedContentBlocker =
         do_GetService(NS_MIXEDCONTENTBLOCKER_CONTRACTID);
-
-    nsCOMPtr<nsIContentPolicy> cspService =
-      do_GetService(CSPSERVICE_CONTRACTID);
 
     
 
@@ -150,15 +143,6 @@ nsContentPolicy::CheckPolicy(CPMethod          policyMethod,
         nsContentPolicyType type = externalType;
         if (isMixedContentBlocker) {
             type = externalTypeOrScript;
-        }
-        
-        
-        
-        
-        
-        bool isCSP = cspService == entries[i];
-        if (isCSP) {
-          type = externalTypeOrPreload;
         }
         rv = (entries[i]->*policyMethod)(type, contentLocation,
                                          requestingLocation, requestingContext,
