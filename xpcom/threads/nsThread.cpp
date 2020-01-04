@@ -205,11 +205,6 @@ public:
   
   void Wait()
   {
-    if (mInitialized) {
-      
-      return;
-    }
-
     ReentrantMonitorAutoEnter mon(mMon);
     while (!mInitialized) {
       mon.Wait();
