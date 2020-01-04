@@ -62,17 +62,11 @@ public:
                   nsStyleContext* aStyleContext,
                   StyleAnimationValue& aComputedValue);
 
-  virtual bool IsAnimationManager() {
-    return false;
-  }
-
 protected:
   virtual ~CommonAnimationManager();
 
   void AddElementCollection(AnimationCollection* aCollection);
   void RemoveAllElementCollections();
-
-  bool NeedsRefresh() const;
 
   virtual nsIAtom* GetAnimationsAtom() = 0;
   virtual nsIAtom* GetAnimationsBeforeAtom() = 0;
@@ -130,23 +124,7 @@ struct AnimationCollection : public LinkedListElement<AnimationCollection>
   static void PropertyDtor(void *aObject, nsIAtom *aPropertyName,
                            void *aPropertyValue, void *aData);
 
-  void Tick();
-
 public:
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  bool CanPerformOnCompositorThread(const nsIFrame* aFrame) const;
-
-  bool HasCurrentAnimationOfProperty(nsCSSProperty aProperty) const;
-
   bool IsForElement() const { 
     return mElementProperty == nsGkAtoms::animationsProperty ||
            mElementProperty == nsGkAtoms::transitionsProperty;
@@ -160,18 +138,6 @@ public:
   bool IsForAfterPseudo() const {
     return mElementProperty == nsGkAtoms::animationsOfAfterProperty ||
            mElementProperty == nsGkAtoms::transitionsOfAfterProperty;
-  }
-
-  bool IsForTransitions() const {
-    return mElementProperty == nsGkAtoms::transitionsProperty ||
-           mElementProperty == nsGkAtoms::transitionsOfBeforeProperty ||
-           mElementProperty == nsGkAtoms::transitionsOfAfterProperty;
-  }
-
-  bool IsForAnimations() const {
-    return mElementProperty == nsGkAtoms::animationsProperty ||
-           mElementProperty == nsGkAtoms::animationsOfBeforeProperty ||
-           mElementProperty == nsGkAtoms::animationsOfAfterProperty;
   }
 
   CSSPseudoElementType PseudoElementType() const
@@ -188,8 +154,6 @@ public:
   }
 
   static nsString PseudoTypeAsString(CSSPseudoElementType aPseudoType);
-
-  dom::Element* GetElementToRestyle() const;
 
   dom::Element *mElement;
 
