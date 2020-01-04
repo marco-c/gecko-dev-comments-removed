@@ -174,6 +174,34 @@ public class RecentTabsAdapter extends RecyclerView.Adapter<CombinedHistoryItem>
         });
     }
 
+    public void clearLastSessionData() {
+        final ClosedTab[] emptyLastSessionTabs = new ClosedTab[0];
+
+        
+        ThreadUtils.postToUiThread(new Runnable() {
+            @Override
+            public void run() {
+                
+                
+                int prevClosedTabsCount = lastSessionTabs.length;
+                boolean prevSectionHeaderVisibility = isSectionHeaderVisible();
+                int prevSectionHeaderIndex = getSectionHeaderIndex();
+
+                lastSessionTabs = emptyLastSessionTabs;
+                recentTabsUpdateHandler.onRecentTabsCountUpdated(getClosedTabsCount());
+                panelStateUpdateHandler.onPanelStateUpdated();
+
+                
+                updateHeaderVisibility(prevSectionHeaderVisibility, prevSectionHeaderIndex);
+
+                
+                if (prevClosedTabsCount > 0) {
+                    notifyItemRangeRemoved(getFirstLastSessionTabIndex(), prevClosedTabsCount);
+                }
+            }
+        });
+    }
+
     private void updateHeaderVisibility(boolean prevSectionHeaderVisibility, int prevSectionHeaderIndex) {
         if (prevSectionHeaderVisibility && !isSectionHeaderVisible()) {
             notifyItemRemoved(prevSectionHeaderIndex);
