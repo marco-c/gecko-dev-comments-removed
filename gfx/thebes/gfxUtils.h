@@ -296,6 +296,12 @@ public:
     static bool sDumpPaintingIntermediate;
     static bool sDumpPaintingToFile;
     static bool sDumpPaintItems;
+    
+    
+    
+    
+    
+    static bool sDumpCompositorTextures;
     static FILE* sDumpPaintFile;
 };
 
