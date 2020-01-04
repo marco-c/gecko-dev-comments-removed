@@ -2758,6 +2758,7 @@ IMMHandler::SetCandidateWindow(nsWindow* aWindow, CANDIDATEFORM* aForm)
 {
   
   
+  
   if (aWindow->PluginHasFocus()) {
     
     
