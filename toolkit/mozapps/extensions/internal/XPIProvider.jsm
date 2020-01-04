@@ -688,7 +688,12 @@ function isUsableAddon(aAddon) {
     return false;
   }
   
-  if ((aAddon._installLocation.name != KEY_APP_SYSTEM_DEFAULTS &&
+  
+  
+  
+  if (((aAddon._installLocation.scope != AddonManager.SCOPE_SYSTEM ||
+        Services.appinfo.OS == "Darwin") &&
+       aAddon._installLocation.name != KEY_APP_SYSTEM_DEFAULTS &&
        aAddon._installLocation.name != KEY_APP_TEMPORARY) &&
        mustSign(aAddon.type)) {
     if (aAddon.signedState <= AddonManager.SIGNEDSTATE_MISSING)
