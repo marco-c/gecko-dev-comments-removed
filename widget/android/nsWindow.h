@@ -167,7 +167,6 @@ public:
     static void InvalidateAndScheduleComposite();
     static void SchedulePauseComposition();
     static void ScheduleResumeComposition();
-    static void ScheduleResumeComposition(int width, int height);
     static float ComputeRenderIntegrity();
     static mozilla::layers::APZCTreeManager* GetAPZCTreeManager();
     

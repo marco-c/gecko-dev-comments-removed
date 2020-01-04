@@ -288,12 +288,6 @@ public class GeckoAppShell
 
     public static native void invalidateAndScheduleComposite();
 
-    
-    
-    
-    
-    public static native void scheduleResumeComposition(int width, int height);
-
     public static native float computeRenderIntegrity();
 
     public static native SurfaceBits getSurfaceBits(Surface surface);

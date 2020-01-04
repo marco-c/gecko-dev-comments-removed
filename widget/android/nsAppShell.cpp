@@ -824,30 +824,6 @@ nsAppShell::LegacyGeckoEvent::PostTo(mozilla::LinkedList<Event>& queue)
     {
         EVLOG("nsAppShell::PostEvent %p %d", ae, ae->Type());
         switch (ae->Type()) {
-        case AndroidGeckoEvent::COMPOSITOR_CREATE:
-        case AndroidGeckoEvent::COMPOSITOR_PAUSE:
-        case AndroidGeckoEvent::COMPOSITOR_RESUME:
-            
-            {
-                Event* event = queue.getFirst();
-                while (event && event->HasSameTypeAs(this)) {
-                    const auto& e = static_cast<LegacyGeckoEvent*>(event)->ae;
-                    if (e->Type() != AndroidGeckoEvent::COMPOSITOR_CREATE
-                            && e->Type() != AndroidGeckoEvent::COMPOSITOR_PAUSE
-                            && e->Type() != AndroidGeckoEvent::COMPOSITOR_RESUME) {
-                        break;
-                    }
-                    event = event->getNext();
-                }
-                if (event) {
-                    event->setPrevious(this);
-                } else {
-                    queue.insertBack(this);
-                }
-                EVLOG("nsAppShell: Inserting compositor event %d to maintain priority order", ae->Type());
-            }
-            break;
-
         case AndroidGeckoEvent::VIEWPORT:
             
             

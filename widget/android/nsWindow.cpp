@@ -1431,34 +1431,6 @@ nsWindow::OnGlobalAndroidEvent(AndroidGeckoEvent *ae)
             win->OnNativeGestureEvent(ae);
             break;
         }
-
-        case AndroidGeckoEvent::COMPOSITOR_PAUSE:
-            
-            
-            
-            
-            if (sCompositorChild) {
-                sCompositorChild->SendPause();
-            }
-            sCompositorPaused = true;
-            break;
-
-        case AndroidGeckoEvent::COMPOSITOR_CREATE:
-            win->CreateLayerManager(ae->Width(), ae->Height());
-            
-
-        case AndroidGeckoEvent::COMPOSITOR_RESUME:
-            
-            
-            
-            
-            
-            
-            
-            if (!sCompositorPaused) {
-                win->RedrawAll();
-            }
-            break;
     }
 }
 
@@ -2980,14 +2952,6 @@ nsWindow::ScheduleResumeComposition()
 {
     if (gGeckoViewWindow && gGeckoViewWindow->mGLControllerSupport) {
         return gGeckoViewWindow->mGLControllerSupport->SyncResumeCompositor();
-    }
-}
-
-void
-nsWindow::ScheduleResumeComposition(int width, int height)
-{
-    if (sCompositorParent && sCompositorParent->ScheduleResumeOnCompositorThread(width, height)) {
-        sCompositorPaused = false;
     }
 }
 
