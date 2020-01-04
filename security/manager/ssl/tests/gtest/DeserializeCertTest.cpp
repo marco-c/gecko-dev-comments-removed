@@ -23,7 +23,7 @@
 
 
 
-TEST(DeserializeCert, gecko33)
+TEST(psm_DeserializeCert, gecko33)
 {
   
   
@@ -59,7 +59,7 @@ TEST(DeserializeCert, gecko33)
   ASSERT_TRUE(cert);
 }
 
-TEST(DeserializeCert, gecko46)
+TEST(psm_DeserializeCert, gecko46)
 {
   
   
