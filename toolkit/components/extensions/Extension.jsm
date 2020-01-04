@@ -39,6 +39,8 @@ XPCOMUtils.defineLazyModuleGetter(this, "PrivateBrowsingUtils",
                                   "resource://gre/modules/PrivateBrowsingUtils.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "Preferences",
                                   "resource://gre/modules/Preferences.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "Schemas",
+                                  "resource://gre/modules/Schemas.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "Task",
                                   "resource://gre/modules/Task.jsm");
 
@@ -59,6 +61,8 @@ ExtensionManagement.registerScript("chrome://extensions/content/ext-webRequest.j
 ExtensionManagement.registerScript("chrome://extensions/content/ext-storage.js");
 ExtensionManagement.registerScript("chrome://extensions/content/ext-test.js");
 
+ExtensionManagement.registerSchema("chrome://extensions/content/schemas/cookies.json");
+
 Cu.import("resource://gre/modules/ExtensionUtils.jsm");
 var {
   LocaleData,
@@ -76,17 +80,22 @@ var scriptScope = this;
 
 
 var Management = {
-  initialized: false,
+  initialized: null,
   scopes: [],
   apis: [],
+  schemaApis: [],
   emitter: new EventEmitter(),
 
   
   lazyInit() {
     if (this.initialized) {
-      return;
+      return this.initialized;
     }
-    this.initialized = true;
+
+    let promises = [];
+    for (let schema of ExtensionManagement.getSchemas()) {
+      promises.push(Schemas.load(schema));
+    }
 
     for (let script of ExtensionManagement.getScripts()) {
       let scope = {extensions: this,
@@ -98,6 +107,9 @@ var Management = {
       
       this.scopes.push(scope);
     }
+
+    this.initialized = Promise.all(promises);
+    return this.initialized;
   },
 
   
@@ -119,9 +131,13 @@ var Management = {
     this.apis.push({api, permission});
   },
 
+  registerSchemaAPI(namespace, permission, api) {
+    this.schemaApis.push({namespace, permission, api});
+  },
+
   
   
-  generateAPIs(extension, context) {
+  generateAPIs(extension, context, apis) {
     let obj = {};
 
     
@@ -138,7 +154,7 @@ var Management = {
       }
     }
 
-    for (let api of this.apis) {
+    for (let api of apis) {
       if (api.permission) {
         if (!extension.hasPermission(api.permission)) {
           continue;
@@ -159,7 +175,6 @@ var Management = {
 
   
   emit(hook, ...args) {
-    this.lazyInit();
     this.emitter.emit(hook, ...args);
   },
 
@@ -211,29 +226,6 @@ function ExtensionPage(extension, params)
 ExtensionPage.prototype = {
   get cloneScope() {
     return this.contentWindow;
-  },
-
-  get principal() {
-    return this.contentWindow.document.nodePrincipal;
-  },
-
-  checkLoadURL(url, options = {}) {
-    let ssm = Services.scriptSecurityManager;
-
-    let flags = ssm.STANDARD;
-    if (!options.allowScript) {
-      flags |= ssm.DISALLOW_SCRIPT;
-    }
-    if (!options.allowInheritsPrincipal) {
-      flags |= ssm.DISALLOW_INHERIT_PRINCIPAL;
-    }
-
-    try {
-      ssm.checkLoadURIStrWithPrincipal(this.principal, url, flags);
-    } catch (e) {
-      return false;
-    }
-    return true;
   },
 
   callOnClose(obj) {
@@ -304,12 +296,30 @@ var GlobalManager = {
   },
 
   observe(contentWindow, topic, data) {
-    function inject(extension, context) {
+    let inject = (extension, context) => {
       let chromeObj = Cu.createObjectIn(contentWindow, {defineAs: "browser"});
       contentWindow.wrappedJSObject.chrome = contentWindow.wrappedJSObject.browser;
-      let api = Management.generateAPIs(extension, context);
+      let api = Management.generateAPIs(extension, context, Management.apis);
       injectAPI(api, chromeObj);
-    }
+
+      let schemaApi = Management.generateAPIs(extension, context, Management.schemaApis);
+      let schemaWrapper = {
+        callFunction(ns, name, args) {
+          return schemaApi[ns][name].apply(null, args);
+        },
+
+        addListener(ns, name, listener, args) {
+          return schemaApi[ns][name].addListener.call(null, listener, ...args);
+        },
+        removeListener(ns, name, listener) {
+          return schemaApi[ns][name].removeListener.call(null, listener);
+        },
+        hasListener(ns, name, listener) {
+          return schemaApi[ns][name].hasListener.call(null, listener);
+        },
+      };
+      Schemas.inject(chromeObj, schemaWrapper);
+    };
 
     
     
@@ -883,10 +893,10 @@ Extension.prototype = extend(Object.create(ExtensionData.prototype), {
 
     let whitelist = [];
     for (let perm of permissions) {
-      if (/^\w+(\.\w+)*$/.test(perm)) {
-        this.permissions.add(perm);
-      } else {
+      if (perm.match(/:\/\//)) {
         whitelist.push(perm);
+      } else {
+        this.permissions.add(perm);
       }
     }
     this.whiteListedHosts = new MatchPattern(whitelist);
@@ -944,7 +954,11 @@ Extension.prototype = extend(Object.create(ExtensionData.prototype), {
       return Promise.reject(e);
     }
 
-    return this.readManifest().then(() => {
+    let lazyInit = Management.lazyInit();
+
+    return lazyInit.then(() => {
+      return this.readManifest();
+    }).then(() => {
       return this.initLocale();
     }).then(() => {
       if (this.hasShutdown) {
