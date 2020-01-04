@@ -1194,6 +1194,11 @@ class nsIWidget : public nsISupports
     
 
 
+    already_AddRefed<nsIScreen> GetWidgetScreen();
+
+    
+
+
 
 
 
@@ -1718,18 +1723,6 @@ public:
 
 
     virtual nsresult ForceUpdateNativeMenuAt(const nsAString& indexString) = 0;
-
-    
-
-
-
-
-
-    NS_IMETHOD
-    GetSelectionAsPlaintext(nsAString& aResult)
-    {
-      return NS_ERROR_NOT_IMPLEMENTED;
-    }
 
     
 
