@@ -208,11 +208,7 @@ add_task(function* test_pingHasClientId() {
   let ping = yield PingServer.promiseNextPing();
   checkPingFormat(ping, TEST_PING_TYPE, true, false);
 
-  if (HAS_DATAREPORTINGSERVICE &&
-      Services.prefs.getBoolPref(PREF_FHR_UPLOAD_ENABLED)) {
-    Assert.equal(ping.clientId, gClientID,
-                 "The correct clientId must be reported.");
-  }
+  Assert.equal(ping.clientId, gClientID, "The correct clientId must be reported.");
 });
 
 add_task(function* test_pingHasEnvironment() {
@@ -234,11 +230,7 @@ add_task(function* test_pingHasEnvironmentAndClientId() {
   
   Assert.equal(ping.application.buildId, ping.environment.build.buildId);
   
-  if (HAS_DATAREPORTINGSERVICE &&
-      Services.prefs.getBoolPref(PREF_FHR_UPLOAD_ENABLED)) {
-    Assert.equal(ping.clientId, gClientID,
-                 "The correct clientId must be reported.");
-  }
+  Assert.equal(ping.clientId, gClientID, "The correct clientId must be reported.");
 });
 
 add_task(function* test_archivePings() {
