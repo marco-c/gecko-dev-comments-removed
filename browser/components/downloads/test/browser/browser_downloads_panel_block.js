@@ -39,7 +39,8 @@ add_task(function* mainTest() {
     
     
     let dialogPromise = promiseAlertDialogOpen("cancel");
-    DownloadsBlockedSubview.elements.openButton.click();
+    EventUtils.synthesizeMouse(DownloadsBlockedSubview.elements.openButton,
+                               10, 10, {}, window);
     yield dialogPromise;
 
     window.focus();
@@ -53,7 +54,8 @@ add_task(function* mainTest() {
 
     
     
-    DownloadsBlockedSubview.elements.deleteButton.click();
+    EventUtils.synthesizeMouse(DownloadsBlockedSubview.elements.deleteButton,
+                               10, 10, {}, window);
     yield promisePanelHidden();
     yield openPanel();
 
@@ -150,16 +152,16 @@ function makeDownload(verdict) {
 }
 
 function promiseSubviewShown(shown) {
+  
+  
   return new Promise(resolve => {
-    if (shown == DownloadsBlockedSubview.view.showingSubView) {
-      resolve();
-      return;
-    }
-    let event = shown ? "ViewShowing" : "ViewHiding";
-    let subview = DownloadsBlockedSubview.subview;
-    subview.addEventListener(event, function showing() {
-      subview.removeEventListener(event, showing);
-      resolve();
-    });
+    let interval = setInterval(() => {
+      if (shown == DownloadsBlockedSubview.view.showingSubView &&
+          !DownloadsBlockedSubview.view._transitioning) {
+        clearInterval(interval);
+        setTimeout(resolve, 1000);
+        return;
+      }
+    }, 0);
   });
 }

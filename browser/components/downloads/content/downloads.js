@@ -1197,6 +1197,16 @@ const DownloadsViewController = {
       return false;
     }
     
+    
+    if (DownloadsBlockedSubview.view.showingSubView) {
+      let blockedSubviewCmds = [
+        "downloadsCmd_chooseOpen",
+        "cmd_delete",
+      ];
+      return blockedSubviewCmds.indexOf(aCommand) >= 0;
+    }
+    
+    
     let element = document.commandDispatcher.focusedElement;
     while (element && element != DownloadsView.richListBox) {
       element = element.parentNode;
@@ -1606,6 +1616,9 @@ const DownloadsBlockedSubview = {
 
   hide() {
     this.view.showMainView();
+    
+    
+    DownloadsPanel.showPanel();
   },
 
   
