@@ -10286,6 +10286,37 @@ CSSParserImpl::ParseWebkitGradientColorStops(nsCSSValueGradient* aGradient)
 
 
 
+static bool
+IsWebkitGradientCoordLarger(const nsCSSValue& aStartCoord,
+                            const nsCSSValue& aEndCoord)
+{
+  if (aStartCoord.GetUnit() == eCSSUnit_Percent &&
+      aEndCoord.GetUnit() == eCSSUnit_Percent) {
+    return aStartCoord.GetPercentValue() > aEndCoord.GetPercentValue();
+  }
+
+  if (aStartCoord.GetUnit() == eCSSUnit_Pixel &&
+      aEndCoord.GetUnit() == eCSSUnit_Pixel) {
+    return aStartCoord.GetFloatValue() > aEndCoord.GetFloatValue();
+  }
+
+  
+  
+  return false;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 void
 CSSParserImpl::FinalizeLinearWebkitGradient(nsCSSValueGradient* aGradient,
@@ -10294,10 +10325,51 @@ CSSParserImpl::FinalizeLinearWebkitGradient(nsCSSValueGradient* aGradient,
 {
   MOZ_ASSERT(!aGradient->mIsRadial, "passed-in gradient must be linear");
 
-  aGradient->mIsLegacySyntax = true; 
-  aGradient->mBgPos = aStartPoint;
+  
+  
+  
+  if (aStartPoint.mYValue == aEndPoint.mYValue) {
+    aGradient->mBgPos.mYValue.SetIntValue(NS_STYLE_BG_POSITION_CENTER,
+                                          eCSSUnit_Enumerated);
+    if (IsWebkitGradientCoordLarger(aStartPoint.mXValue, aEndPoint.mXValue)) {
+      aGradient->mBgPos.mXValue.SetIntValue(NS_STYLE_BG_POSITION_LEFT,
+                                            eCSSUnit_Enumerated);
+    } else {
+      aGradient->mBgPos.mXValue.SetIntValue(NS_STYLE_BG_POSITION_RIGHT,
+                                            eCSSUnit_Enumerated);
+    }
+    return;
+  }
 
   
+  
+  
+  if (aStartPoint.mXValue == aEndPoint.mXValue) {
+    aGradient->mBgPos.mXValue.SetIntValue(NS_STYLE_BG_POSITION_CENTER,
+                                          eCSSUnit_Enumerated);
+    if (IsWebkitGradientCoordLarger(aStartPoint.mYValue, aEndPoint.mYValue)) {
+      aGradient->mBgPos.mYValue.SetIntValue(NS_STYLE_BG_POSITION_TOP,
+                                            eCSSUnit_Enumerated);
+    } else {
+      aGradient->mBgPos.mYValue.SetIntValue(NS_STYLE_BG_POSITION_BOTTOM,
+                                            eCSSUnit_Enumerated);
+    }
+    return;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  aGradient->mIsLegacySyntax = true;
+  aGradient->mBgPos = aStartPoint;
 }
 
 
