@@ -288,6 +288,13 @@ MobileConnectionParent::NotifyNetworkSelectionModeChanged()
   return SendNotifyNetworkSelectionModeChanged(mode) ? NS_OK : NS_ERROR_FAILURE;
 }
 
+NS_IMETHODIMP
+MobileConnectionParent::NotifyDeviceIdentitiesChanged()
+{
+  
+  return NS_OK;
+}
+
 
 
 

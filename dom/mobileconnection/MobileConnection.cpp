@@ -1127,6 +1127,13 @@ MobileConnection::NotifyNetworkSelectionModeChanged()
   return NS_OK;
 }
 
+NS_IMETHODIMP
+MobileConnection::NotifyDeviceIdentitiesChanged()
+{
+  
+  return NS_OK;
+}
+
 
 
 NS_IMETHODIMP

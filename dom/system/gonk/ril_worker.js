@@ -166,10 +166,7 @@ RilObject.prototype = {
     
 
 
-    this.IMEI = null;
-    this.IMEISV = null;
-    this.ESN = null;
-    this.MEID = null;
+    this.deviceIdentities = null;
 
     
 
@@ -1166,25 +1163,8 @@ RilObject.prototype = {
     this.context.Buf.simpleRequest(REQUEST_SIGNAL_STRENGTH);
   },
 
-  getIMEI: function(options) {
-    
-    if (this.IMEI) {
-      if (options && options.rilMessageType) {
-        options.imei = this.IMEI;
-        this.sendChromeMessage(options);
-      }
-      return;
-    }
-
-    this.context.Buf.simpleRequest(REQUEST_GET_IMEI, options);
-  },
-
-  getIMEISV: function() {
-    this.context.Buf.simpleRequest(REQUEST_GET_IMEISV);
-  },
-
   getDeviceIdentity: function() {
-    this.context.Buf.simpleRequest(REQUEST_DEVICE_IDENTITY);
+    this.deviceIdentities || this.context.Buf.simpleRequest(REQUEST_DEVICE_IDENTITY);
   },
 
   getBasebandVersion: function() {
@@ -3137,12 +3117,6 @@ RilObject.prototype = {
     if (this._waitingRadioTech || isCdma != this._isCdma) {
       this._isCdma = isCdma;
       this._waitingRadioTech = false;
-      if (this._isCdma) {
-        this.getDeviceIdentity();
-      } else {
-        this.getIMEI();
-        this.getIMEISV();
-      }
       this.getICCStatus();
     }
   },
@@ -4369,28 +4343,8 @@ RilObject.prototype[REQUEST_SET_CALL_WAITING] = function REQUEST_SET_CALL_WAITIN
   this.sendChromeMessage(options);
 };
 RilObject.prototype[REQUEST_SMS_ACKNOWLEDGE] = null;
-RilObject.prototype[REQUEST_GET_IMEI] = function REQUEST_GET_IMEI(length, options) {
-  this.IMEI = this.context.Buf.readString();
-
-  
-  
-  if (options.rilMessageType) {
-    if (options.errorMsg) {
-      this.sendChromeMessage(options);
-      return;
-    }
-
-    options.imei = this.IMEI;
-    this.sendChromeMessage(options);
-  }
-};
-RilObject.prototype[REQUEST_GET_IMEISV] = function REQUEST_GET_IMEISV(length, options) {
-  if (options.errorMsg) {
-    return;
-  }
-
-  this.IMEISV = this.context.Buf.readString();
-};
+RilObject.prototype[REQUEST_GET_IMEI] = null;
+RilObject.prototype[REQUEST_GET_IMEISV] = null;
 RilObject.prototype[REQUEST_ANSWER] = function REQUEST_ANSWER(length, options) {
   this.sendDefaultResponse(options);
 };
@@ -4806,16 +4760,22 @@ RilObject.prototype[REQUEST_CDMA_WRITE_SMS_TO_RUIM] = null;
 RilObject.prototype[REQUEST_CDMA_DELETE_SMS_ON_RUIM] = null;
 RilObject.prototype[REQUEST_DEVICE_IDENTITY] = function REQUEST_DEVICE_IDENTITY(length, options) {
   if (options.errorMsg) {
+    this.context.debug("Failed to get device identities:" + options.errorMsg);
     return;
   }
 
   let result = this.context.Buf.readStringList();
+  this.deviceIdentities = {
+    imei: result[0] || null,
+    imeisv: result[1] || null,
+    esn: result[2] || null,
+    meid: result[3] || null,
+  };
 
-  
-  
-  
-  this.ESN = result[2];
-  this.MEID = result[3];
+  this.sendChromeMessage({
+    rilMessageType: "deviceidentitieschange",
+    deviceIdentities: this.deviceIdentities
+  });
 };
 RilObject.prototype[REQUEST_EXIT_EMERGENCY_CALLBACK_MODE] = function REQUEST_EXIT_EMERGENCY_CALLBACK_MODE(length, options) {
   if (options.internal) {
@@ -5061,6 +5021,11 @@ RilObject.prototype[UNSOLICITED_RESPONSE_RADIO_STATE_CHANGED] = function UNSOLIC
     return;
   }
 
+  if (radioState !== RADIO_STATE_UNAVAILABLE) {
+    
+    this.getDeviceIdentity();
+  }
+
   if (radioState == RADIO_STATE_ON) {
     
     
@@ -5073,14 +5038,6 @@ RilObject.prototype[UNSOLICITED_RESPONSE_RADIO_STATE_CHANGED] = function UNSOLIC
        this.radioState == GECKO_RADIOSTATE_DISABLED) &&
        newState == GECKO_RADIOSTATE_ENABLED) {
     
-    if (!this._waitingRadioTech) {
-      if (this._isCdma) {
-        this.getDeviceIdentity();
-      } else {
-        this.getIMEI();
-        this.getIMEISV();
-      }
-    }
     this.getBasebandVersion();
     this.updateCellBroadcastConfig();
     if ((RILQUIRKS_DATA_REGISTRATION_ON_DEMAND ||
