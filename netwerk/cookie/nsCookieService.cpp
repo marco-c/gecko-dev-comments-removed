@@ -2026,8 +2026,8 @@ nsCookieService::SetCookieStringInternal(nsIURI                 *aHostURI,
   nsCookieKey key(baseDomain, aOriginAttrs);
 
   
-  CookieStatus cookieStatus = CheckPrefs(aHostURI, aIsForeign, requireHostMatch,
-                                         aCookieHeader.get());
+  CookieStatus cookieStatus = CheckSafe(aHostURI, aIsForeign, requireHostMatch,
+                                        aCookieHeader.get(), true);
   
   
   switch (cookieStatus) {
@@ -3005,8 +3005,8 @@ nsCookieService::GetCookieStringInternal(nsIURI *aHostURI,
   }
 
   
-  CookieStatus cookieStatus = CheckPrefs(aHostURI, aIsForeign, requireHostMatch,
-                                         nullptr);
+  CookieStatus cookieStatus = CheckSafe(aHostURI, aIsForeign, requireHostMatch,
+                                        nullptr, false);
   
   switch (cookieStatus) {
   case STATUS_REJECTED:
@@ -3787,10 +3787,11 @@ static inline bool IsSubdomainOf(const nsCString &a, const nsCString &b)
 }
 
 CookieStatus
-nsCookieService::CheckPrefs(nsIURI          *aHostURI,
-                            bool             aIsForeign,
-                            bool             aRequireHostMatch,
-                            const char      *aCookieHeader)
+nsCookieService::CheckSafe(nsIURI          *aHostURI,
+                           bool             aIsForeign,
+                           bool             aRequireHostMatch,
+                           const char      *aCookieHeader,
+                           bool             aCheckPrefs)
 {
   nsresult rv;
 
@@ -3803,7 +3804,8 @@ nsCookieService::CheckPrefs(nsIURI          *aHostURI,
 
   
   
-  if (mPermissionService) {
+  
+  if (mPermissionService && aCheckPrefs) {
     nsCookieAccess access;
     
     
