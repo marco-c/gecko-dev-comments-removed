@@ -59,10 +59,19 @@ define(function(require, exports, module) {
       return json.indexOf(this.props.searchFilter) >= 0;
     },
 
-    render: function() {
-      let content;
-      let data = this.props.data;
+    renderValue: props => {
+      let member = props.member;
 
+      
+      if (typeof member.value == "object" && member.open) {
+        return null;
+      }
+
+      
+      return Rep(props);
+    },
+
+    renderTree: function() {
       
       
       let columns = [{
@@ -70,18 +79,23 @@ define(function(require, exports, module) {
         width: "100%"
       }];
 
+      
+      return TreeView({
+        object: this.props.data,
+        mode: "tiny",
+        onFilter: this.onFilter.bind(this),
+        columns: columns,
+        renderValue: this.renderValue
+      });
+    },
+
+    render: function() {
+      let content;
+      let data = this.props.data;
+
       try {
         if (typeof data == "object") {
-          
-          content = TreeView({
-            object: this.props.data,
-            mode: "tiny",
-            onFilter: this.onFilter.bind(this),
-            columns: columns,
-            renderValue: props => {
-              return Rep(props);
-            }
-          });
+          content = this.renderTree();
         } else {
           content = div({className: "jsonParseError"},
             data + ""
