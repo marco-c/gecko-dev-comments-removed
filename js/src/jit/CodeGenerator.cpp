@@ -3470,20 +3470,8 @@ CodeGenerator::emitPostWriteBarrier(Register objreg)
 void
 CodeGenerator::visitOutOfLineCallPostWriteBarrier(OutOfLineCallPostWriteBarrier* ool)
 {
-    const LAllocation* obj = ool->object();
-
-    
-    
-    if (obj->isConstant()) {
-        JSObject* object = &obj->toConstant()->toObject();
-        if (object->is<GlobalObject>()) {
-            JSCompartment* comp = object->compartment();
-            AbsoluteAddress addr(&comp->globalWriteBarriered);
-            masm.branch32(Assembler::NotEqual, addr, Imm32(0), ool->rejoin());
-        }
-    }
-
     saveLiveVolatile(ool->lir());
+    const LAllocation* obj = ool->object();
     emitPostWriteBarrier(obj);
     restoreLiveVolatile(ool->lir());
 
