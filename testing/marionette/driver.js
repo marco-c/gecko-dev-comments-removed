@@ -1786,7 +1786,16 @@ GeckoDriver.prototype.getElementAttribute = function*(cmd, resp) {
     case Context.CHROME:
       let win = this.getCurrentWindow();
       let el = this.curBrowser.seenEls.get(id, {frame: win});
-      resp.body.value = atom.getElementAttribute(el, name, this.getCurrentWindow());
+
+      if (element.isBooleanAttribute(el, name)) {
+        if (el.hasAttribute(name)) {
+          resp.body.value = "true";
+        } else {
+          resp.body.value = null;
+        }
+      } else {
+        resp.body.value = el.getAttribute(name);
+      }
       break;
 
     case Context.CONTENT:
@@ -2490,8 +2499,8 @@ GeckoDriver.prototype.setWindowSize = function(cmd, resp) {
     throw new UnsupportedOperationError();
   }
 
-  let width = parseInt(cmd.parameters.width);
-  let height = parseInt(cmd.parameters.height);
+  let width = cmd.parameters.width;
+  let height = cmd.parameters.height;
 
   let win = this.getCurrentWindow();
   if (width >= win.screen.availWidth || height >= win.screen.availHeight) {
