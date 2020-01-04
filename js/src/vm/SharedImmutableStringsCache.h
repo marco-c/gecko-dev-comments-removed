@@ -189,7 +189,7 @@ class SharedImmutableStringsCache
     }
 
     
-    SharedImmutableStringsCache(const SharedImmutableStringsCache&) = delete;
+    SharedImmutableStringsCache& operator=(const SharedImmutableStringsCache&) = delete;
 
     ~SharedImmutableStringsCache() {
         if (!inner_)
@@ -366,6 +366,9 @@ class SharedImmutableString
 
     SharedImmutableString clone() const;
 
+    
+    SharedImmutableString& operator=(const SharedImmutableString&) = delete;
+
     ~SharedImmutableString();
 
     
@@ -415,6 +418,9 @@ class SharedImmutableTwoByteString
 
 
     SharedImmutableTwoByteString clone() const;
+
+    
+    SharedImmutableTwoByteString& operator=(const SharedImmutableTwoByteString&) = delete;
 
     
 
