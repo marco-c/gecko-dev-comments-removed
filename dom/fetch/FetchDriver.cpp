@@ -944,6 +944,24 @@ FetchDriver::AsyncOnChannelRedirect(nsIChannel* aOldChannel,
   
   
   
+  
+  
+  
+  
+  
+  
+  if (!NS_IsInternalSameURIRedirect(aOldChannel, aNewChannel, aFlags)) {
+    nsresult rv = DoesNotRequirePreflight(aNewChannel);
+    if (NS_FAILED(rv)) {
+      NS_WARNING("FetchDriver::OnChannelRedirect: "
+                 "DoesNotRequirePreflight returned failure");
+      return rv;
+    }
+  }
+
+  
+  
+  
   if (mRequest->GetRedirectMode() == RequestRedirect::Manual) {
     
     
