@@ -3973,7 +3973,7 @@ class MOZ_STACK_CLASS Debugger::ScriptQuery
 
 
     bool findScripts() {
-        if (!prepareQuery())
+        if (!prepareQuery() || !delazifyScripts())
             return false;
 
         JSCompartment* singletonComp = nullptr;
@@ -4099,13 +4099,6 @@ class MOZ_STACK_CLASS Debugger::ScriptQuery
     bool oom;
 
     bool addCompartment(JSCompartment* comp) {
-        {
-            
-            
-            AutoCompartment ac(cx, comp);
-            if (!comp->ensureDelazifyScriptsForDebugger(cx))
-                return false;
-        }
         return compartments.put(comp);
     }
 
@@ -4147,6 +4140,18 @@ class MOZ_STACK_CLASS Debugger::ScriptQuery
                 return false;
         }
 
+        return true;
+    }
+
+    bool delazifyScripts() {
+        
+        
+        for (auto r = compartments.all(); !r.empty(); r.popFront()) {
+            JSCompartment* comp = r.front();
+            AutoCompartment ac(cx, comp);
+            if (!comp->ensureDelazifyScriptsForDebugger(cx))
+                return false;
+        }
         return true;
     }
 
