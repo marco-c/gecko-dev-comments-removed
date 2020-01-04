@@ -1,7 +1,11 @@
 load(libdir + 'wasm.js');
 load(libdir + 'asserts.js');
 
-const emptyModule = wasmTextToBinary('(module)');
+
+
+const textToBinary = str => wasmTextToBinary(str, 'new-format');
+
+const emptyModule = textToBinary('(module)');
 
 
 const wasmDesc = Object.getOwnPropertyDescriptor(this, 'WebAssembly');
@@ -99,22 +103,3 @@ assertEq(exportsDesc.enumerable, true);
 assertEq(exportsDesc.configurable, true);
 
 
-
-
-
-
-const e1 = i1.exports;
-assertEq(e1, exportsDesc.value);
-assertEq(Object.keys(e1).length, 0);
-
-var code = wasmTextToBinary('(module (func) (export "foo" 0))');
-var e = new Instance(new Module(code)).exports;
-assertEq(Object.keys(e).join(), "foo");
-assertEq(e.foo(), undefined);
-
-var code = wasmTextToBinary('(module (func) (export "foo" 0) (export "bar" 0))');
-var e = new Instance(new Module(code)).exports;
-assertEq(Object.keys(e).join(), "foo,bar");
-assertEq(e.foo(), undefined);
-assertEq(e.bar(), undefined);
-assertEq(e.foo, e.bar);
