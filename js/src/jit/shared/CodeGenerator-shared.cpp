@@ -208,6 +208,11 @@ CodeGeneratorShared::addNativeToBytecodeEntry(const BytecodeSite* site)
     if (!isProfilerInstrumentationEnabled())
         return true;
 
+    
+    
+    if (masm.oom())
+        return false;
+
     MOZ_ASSERT(site);
     MOZ_ASSERT(site->tree());
     MOZ_ASSERT(site->pc());
