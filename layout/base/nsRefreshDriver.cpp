@@ -148,11 +148,11 @@ public:
       NS_ASSERTION(mRootRefreshDrivers.Contains(aDriver), "RemoveRefreshDriver for a refresh driver that's not in the root refresh list!");
       mRootRefreshDrivers.RemoveElement(aDriver);
     } else {
-      nsPresContext* displayRoot = aDriver->PresContext()->GetDisplayRootPresContext();
+      nsPresContext* rootContext = aDriver->PresContext()->GetRootPresContext();
       
       
       
-      if (!displayRoot) {
+      if (!rootContext) {
         if (mRootRefreshDrivers.Contains(aDriver)) {
           mRootRefreshDrivers.RemoveElement(aDriver);
         } else {
@@ -202,13 +202,12 @@ protected:
 
   bool IsRootRefreshDriver(nsRefreshDriver* aDriver)
   {
-    nsPresContext* displayRoot = aDriver->PresContext()->GetDisplayRootPresContext();
-    if (!displayRoot) {
+    nsPresContext* rootContext = aDriver->PresContext()->GetRootPresContext();
+    if (!rootContext) {
       return false;
     }
 
-    nsRefreshDriver* rootRefreshDriver = displayRoot->GetRootPresContext()->RefreshDriver();
-    return aDriver == rootRefreshDriver;
+    return aDriver == rootContext->RefreshDriver();
   }
 
   
@@ -2030,9 +2029,9 @@ nsRefreshDriver::IsWaitingForPaint(mozilla::TimeStamp aTime)
 
   
   
-  nsPresContext *displayRoot = PresContext()->GetDisplayRootPresContext();
-  if (displayRoot) {
-    nsRefreshDriver *rootRefresh = displayRoot->GetRootPresContext()->RefreshDriver();
+  nsPresContext *rootContext = PresContext()->GetRootPresContext();
+  if (rootContext) {
+    nsRefreshDriver *rootRefresh = rootContext->RefreshDriver();
     if (rootRefresh && rootRefresh != this) {
       if (rootRefresh->IsWaitingForPaint(aTime)) {
         if (mRootRefresh != rootRefresh) {

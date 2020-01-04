@@ -1086,9 +1086,9 @@ nsView::DidCompositeWindow(const TimeStamp& aCompositeStart,
     nsAutoScriptBlocker scriptBlocker;
 
     nsPresContext* context = presShell->GetPresContext();
-    nsRootPresContext* rootContext = context->GetDisplayRootPresContext();
+    nsRootPresContext* rootContext = context->GetRootPresContext();
     MOZ_ASSERT(rootContext, "rootContext must be valid.");
-    rootContext->GetRootPresContext()->NotifyDidPaintForSubtree(nsIPresShell::PAINT_COMPOSITE);
+    rootContext->NotifyDidPaintForSubtree(nsIPresShell::PAINT_COMPOSITE);
 
     
     
