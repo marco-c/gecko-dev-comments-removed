@@ -66,13 +66,12 @@ public:
 
 
 
-
   static already_AddRefed<IDecodingTask>
   CreateDecoder(DecoderType aType,
                 NotNull<RasterImage*> aImage,
                 NotNull<SourceBuffer*> aSourceBuffer,
                 const gfx::IntSize& aIntrinsicSize,
-                const Maybe<gfx::IntSize>& aTargetSize,
+                const gfx::IntSize& aOutputSize,
                 DecoderFlags aDecoderFlags,
                 SurfaceFlags aSurfaceFlags,
                 int aSampleSize);
@@ -160,7 +159,7 @@ public:
   static already_AddRefed<Decoder>
   CreateAnonymousDecoder(DecoderType aType,
                          NotNull<SourceBuffer*> aSourceBuffer,
-                         const Maybe<gfx::IntSize>& aTargetSize,
+                         const Maybe<gfx::IntSize>& aOutputSize,
                          SurfaceFlags aSurfaceFlags);
 
   
