@@ -70,6 +70,10 @@ public:
   
   
   class ResourceCallback : public MediaResourceCallback {
+    
+    
+    static const uint32_t sDelay = 500;
+
   public:
     
     void Connect(MediaDecoder* aDecoder);
@@ -92,8 +96,12 @@ public:
     void NotifySuspendedStatusChanged() override;
     void NotifyBytesConsumed(int64_t aBytes, int64_t aOffset) override;
 
+    static void TimerCallback(nsITimer* aTimer, void* aClosure);
+
     
     MediaDecoder* mDecoder = nullptr;
+    nsCOMPtr<nsITimer> mTimer;
+    bool mTimerArmed = false;
   };
 
   typedef MozPromise<SeekResolveValue, bool ,  true> SeekPromise;

@@ -14,7 +14,6 @@
 #include "MediaDecoderStateMachine.h"
 #include "ImageContainer.h"
 #include "MediaResource.h"
-#include "VideoFrameContainer.h"
 #include "nsError.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/StaticPtr.h"
@@ -146,6 +145,7 @@ MediaDecoder::ResourceCallback::Connect(MediaDecoder* aDecoder)
 {
   MOZ_ASSERT(NS_IsMainThread());
   mDecoder = aDecoder;
+  mTimer = do_CreateInstance("@mozilla.org/timer;1");
 }
 
 void
@@ -153,6 +153,8 @@ MediaDecoder::ResourceCallback::Disconnect()
 {
   MOZ_ASSERT(NS_IsMainThread());
   mDecoder = nullptr;
+  mTimer->Cancel();
+  mTimer = nullptr;
 }
 
 MediaDecoderOwner*
@@ -217,13 +219,30 @@ MediaDecoder::ResourceCallback::NotifyDecodeError()
   AbstractThread::MainThread()->Dispatch(r.forget());
 }
 
+ void
+MediaDecoder::ResourceCallback::TimerCallback(nsITimer* aTimer, void* aClosure)
+{
+  MOZ_ASSERT(NS_IsMainThread());
+  ResourceCallback* thiz = static_cast<ResourceCallback*>(aClosure);
+  MOZ_ASSERT(thiz->mDecoder);
+  thiz->mDecoder->NotifyDataArrived();
+  thiz->mTimerArmed = false;
+}
+
 void
 MediaDecoder::ResourceCallback::NotifyDataArrived()
 {
   MOZ_ASSERT(NS_IsMainThread());
-  if (mDecoder) {
-    mDecoder->NotifyDataArrived();
+  if (!mDecoder || mTimerArmed) {
+    return;
   }
+  
+  
+  
+  
+  mTimerArmed = true;
+  mTimer->InitWithFuncCallback(
+    TimerCallback, this, sDelay, nsITimer::TYPE_ONE_SHOT);
 }
 
 void
