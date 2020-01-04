@@ -415,6 +415,7 @@ pref("font.size.inflation.minTwips", 0);
 pref("browser.ui.zoom.force-user-scalable", false);
 
 pref("ui.zoomedview.enabled", true);
+pref("ui.zoomedview.keepLimitSize", 16); 
 pref("ui.zoomedview.limitReadableSize", 8); 
 pref("ui.zoomedview.defaultZoomFactor", 2);
 pref("ui.zoomedview.simplified", true); 
