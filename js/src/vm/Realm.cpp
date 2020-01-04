@@ -7,6 +7,7 @@
 #include "js/Realm.h"
 
 #include "jscntxt.h"
+#include "jscompartment.h" 
 
 #include "vm/GlobalObject.h"
 
