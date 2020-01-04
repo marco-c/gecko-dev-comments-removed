@@ -4650,7 +4650,7 @@ enum {
   kE10sDisabledForBidi = 6,
   kE10sDisabledForAddons = 7,
   kE10sForceDisabled = 8,
-  kE10sDisabledForXPAcceleration = 9,
+  
   kE10sDisabledForOperatingSystem = 10,
 };
 
@@ -4740,18 +4740,6 @@ MultiprocessBlockPolicy() {
   if (Preferences::GetDefaultCString("app.update.channel").EqualsLiteral("release") &&
       !IsVistaOrLater()) {
     gMultiprocessBlockPolicy = kE10sDisabledForOperatingSystem;
-    return gMultiprocessBlockPolicy;
-  }
-
-  
-
-
-
-  bool layersAccelerationRequested = !Preferences::GetBool("layers.acceleration.disabled") ||
-                                      Preferences::GetBool("layers.acceleration.force-enabled");
-
-  if (layersAccelerationRequested && !IsVistaOrLater()) {
-    gMultiprocessBlockPolicy = kE10sDisabledForXPAcceleration;
     return gMultiprocessBlockPolicy;
   }
 #endif 
