@@ -314,7 +314,7 @@ module.exports = {
 
 
   getIsHeadFile: function(scope) {
-    var pathAndFilename = this.cleanUpPath(scope.getFilename());
+    var pathAndFilename = scope.getFilename();
 
     return /.*[\\/]head(_.+)?\.js$/.test(pathAndFilename);
   },
@@ -330,7 +330,7 @@ module.exports = {
 
 
   getIsXpcshellTest: function(scope) {
-    var pathAndFilename = this.cleanUpPath(scope.getFilename());
+    var pathAndFilename = scope.getFilename();
 
     return /.*[\\/]test_.+\.js$/.test(pathAndFilename);
   },
@@ -346,7 +346,7 @@ module.exports = {
 
 
   getIsBrowserMochitest: function(scope) {
-    var pathAndFilename = this.cleanUpPath(scope.getFilename());
+    var pathAndFilename = scope.getFilename();
 
     return /.*[\\/]browser_.+\.js$/.test(pathAndFilename);
   },
@@ -362,6 +362,8 @@ module.exports = {
 
 
   getIsTest: function(scope) {
+    var pathAndFilename = scope.getFilename();
+
     if (this.getIsXpcshellTest(scope)) {
       return true;
     }
@@ -403,7 +405,7 @@ module.exports = {
 
 
   getAbsoluteFilePath: function(context) {
-    var fileName = this.cleanUpPath(context.getFilename());
+    var fileName = context.getFilename();
     var cwd = process.cwd();
 
     if (path.isAbsolute(fileName)) {
@@ -418,14 +420,5 @@ module.exports = {
       var dirName = path.dirname(fileName);
       return cwd.slice(0, cwd.length - dirName.length) + fileName;
     }
-  },
-
-  
-
-
-
-
-  cleanUpPath: function(path) {
-    return path.replace(/^"/, "").replace(/"$/, "");
   }
 };

@@ -7,6 +7,8 @@
 
 
 
+const SEARCH = "00F";
+
 const TEST_URI = [
   "<style type='text/css'>",
   "  h1 {}",

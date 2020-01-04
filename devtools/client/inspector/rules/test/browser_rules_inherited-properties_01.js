@@ -7,6 +7,8 @@
 
 
 
+var {ELEMENT_STYLE} = require("devtools/server/actors/styles");
+
 const TEST_URI = `
   <style type="text/css">
     #test2 {

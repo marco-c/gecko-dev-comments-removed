@@ -1,8 +1,6 @@
 
 
 
-
-
 "use strict";
 
 
@@ -14,6 +12,7 @@ registerCleanupFunction(() => {
   Services.prefs.clearUserPref("devtools.defaultColorUnit");
 });
 
+var {CssLogic} = require("devtools/shared/inspector/css-logic");
 var {getInplaceEditorForSpan: inplaceEditor} =
   require("devtools/client/shared/inplace-editor");
 
@@ -39,7 +38,7 @@ addTab = function(url) {
     browser.messageManager.loadFrameScript(FRAME_SCRIPT_URL, false);
     return tab;
   });
-};
+}
 
 
 
@@ -49,14 +48,28 @@ addTab = function(url) {
 
 
 function openRuleView() {
-  return openInspectorSidebarTab("ruleview").then(data => {
+  return openInspectorSidebarTab("ruleview").then(({toolbox, inspector}) => {
     return {
-      toolbox: data.toolbox,
-      inspector: data.inspector,
-      testActor: data.testActor,
-      view: data.inspector.ruleview.view
+      toolbox,
+      inspector,
+      view: inspector.ruleview.view
     };
   });
+}
+
+
+
+
+
+
+
+
+
+function getNode(nodeOrSelector) {
+  info("Getting the node for '" + nodeOrSelector + "'");
+  return typeof nodeOrSelector === "string" ?
+    content.document.querySelector(nodeOrSelector) :
+    nodeOrSelector;
 }
 
 
@@ -119,6 +132,20 @@ function waitForNEvents(target, eventName, numTimes, useCapture = false) {
 
 
 
+function wait(ms) {
+  let def = promise.defer();
+  content.setTimeout(def.resolve, ms);
+  return def.promise;
+}
+
+
+
+
+
+
+
+
+
 
 function waitForContentMessage(name) {
   info("Expecting message " + name + " from content");
@@ -150,8 +177,7 @@ function waitForContentMessage(name) {
 
 
 
-function executeInContent(name, data = {}, objects = {},
-                          expectResponse = true) {
+function executeInContent(name, data={}, objects={}, expectResponse=true) {
   info("Sending message " + name + " to content");
   let mm = gBrowser.selectedBrowser.messageManager;
 
@@ -189,21 +215,6 @@ function* getComputedStyleProperty(selector, pseudo, propName) {
 
 
 
-function getStyle(testActor, selector, propName) {
-  return testActor.eval(`
-    content.document.querySelector("${selector}")
-                    .style.getPropertyValue("${propName}");
-  `);
-}
-
-
-
-
-
-
-
-
-
 
 
 
@@ -225,8 +236,8 @@ function* waitForComputedStyleProperty(selector, pseudo, name, expected) {
 
 
 
-var focusEditableField = Task.async(function*(ruleView, editable, xOffset = 1,
-    yOffset = 1, options = {}) {
+var focusEditableField = Task.async(function*(ruleView, editable, xOffset=1,
+    yOffset=1, options={}) {
   let onFocus = once(editable.parentNode, "focus", true);
   info("Clicking on editable field to turn to edit mode");
   EventUtils.synthesizeMouse(editable, xOffset, yOffset, options,
@@ -313,22 +324,39 @@ var waitForTab = Task.async(function*() {
 
 
 
-var waitForSuccess = Task.async(function*(validatorFn, desc = "untitled") {
-  let i = 0;
-  while (true) {
-    info("Checking: " + desc);
-    if (yield validatorFn()) {
-      ok(true, "Success: " + desc);
-      break;
+function waitForSuccess(validatorFn, name="untitled") {
+  let def = promise.defer();
+
+  function wait(validator) {
+    if (validator()) {
+      ok(true, "Validator function " + name + " returned true");
+      def.resolve();
+    } else {
+      setTimeout(() => wait(validator), 200);
     }
-    i++;
-    if (i > 10) {
-      ok(false, "Failure: " + desc);
-      break;
-    }
-    yield new Promise(r => setTimeout(r, 200));
   }
-});
+  wait(validatorFn);
+
+  return def.promise;
+}
+
+
+
+
+
+
+
+
+
+function addStyle(doc, style) {
+  info("Adding a new style tag to the document with style content: " +
+    style.substring(0, 50));
+  let node = doc.createElement("style");
+  node.setAttribute("type", "text/css");
+  node.textContent = style;
+  doc.getElementsByTagName("head")[0].appendChild(node);
+  return node;
+}
 
 
 
@@ -482,8 +510,6 @@ function getRuleViewSelectorHighlighterIcon(view, selectorText) {
 
 
 
-
-
 var simulateColorPickerChange = Task.async(function*(ruleView, colorPicker,
     newRgba, expectedChange) {
   let onRuleViewChanged = ruleView.once("ruleview-changed");
@@ -499,96 +525,11 @@ var simulateColorPickerChange = Task.async(function*(ruleView, colorPicker,
 
   if (expectedChange) {
     info("Waiting for the style to be applied on the page");
-    let {selector, name, value} = expectedChange;
-    yield waitForComputedStyleProperty(selector, null, name, value);
+    yield waitForSuccess(() => {
+      let {element, name, value} = expectedChange;
+      return content.getComputedStyle(element)[name] === value;
+    }, "Color picker change applied on the page");
   }
-});
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-var openColorPickerAndSelectColor = Task.async(function*(view, ruleIndex,
-    propIndex, newRgba, expectedChange) {
-  let ruleEditor = getRuleViewRuleEditor(view, ruleIndex);
-  let propEditor = ruleEditor.rule.textProps[propIndex].editor;
-  let swatch = propEditor.valueSpan.querySelector(".ruleview-colorswatch");
-  let cPicker = view.tooltips.colorPicker;
-
-  info("Opening the colorpicker by clicking the color swatch");
-  let onShown = cPicker.tooltip.once("shown");
-  swatch.click();
-  yield onShown;
-
-  yield simulateColorPickerChange(view, cPicker, newRgba, expectedChange);
-
-  return {propEditor, swatch, cPicker};
-});
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-var openCubicBezierAndChangeCoords = Task.async(function*(view, ruleIndex,
-    propIndex, coords, expectedChange) {
-  let ruleEditor = getRuleViewRuleEditor(view, ruleIndex);
-  let propEditor = ruleEditor.rule.textProps[propIndex].editor;
-  let swatch = propEditor.valueSpan.querySelector(".ruleview-bezierswatch");
-  let bezierTooltip = view.tooltips.cubicBezier;
-
-  info("Opening the cubicBezier by clicking the swatch");
-  let onShown = bezierTooltip.tooltip.once("shown");
-  swatch.click();
-  yield onShown;
-
-  let widget = yield bezierTooltip.widget;
-
-  info("Simulating a change of curve in the widget");
-  let onRuleViewChanged = view.once("ruleview-changed");
-  widget.coordinates = coords;
-  yield onRuleViewChanged;
-
-  if (expectedChange) {
-    info("Waiting for the style to be applied on the page");
-    let {selector, name, value} = expectedChange;
-    yield waitForComputedStyleProperty(selector, null, name, value);
-  }
-
-  return {propEditor, swatch, bezierTooltip};
 });
 
 
@@ -635,149 +576,6 @@ function getRuleViewRuleEditor(view, childrenIndex, nodeIndex) {
     view.element.children[childrenIndex].childNodes[nodeIndex]._ruleEditor :
     view.element.children[childrenIndex]._ruleEditor;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-var addProperty = Task.async(function*(view, ruleIndex, name, value,
-                                       commitValueWith = "VK_RETURN",
-                                       blurNewProperty = true) {
-  info("Adding new property " + name + ":" + value + " to rule " + ruleIndex);
-
-  let ruleEditor = getRuleViewRuleEditor(view, ruleIndex);
-  let editor = yield focusNewRuleViewProperty(ruleEditor);
-  let numOfProps = ruleEditor.rule.textProps.length;
-
-  info("Adding name " + name);
-  editor.input.value = name;
-  let onNameAdded = view.once("ruleview-changed");
-  EventUtils.synthesizeKey("VK_RETURN", {}, view.styleWindow);
-  yield onNameAdded;
-
-  
-  editor = inplaceEditor(view.styleDocument.activeElement);
-  let textProps = ruleEditor.rule.textProps;
-  let textProp = textProps[textProps.length - 1];
-
-  is(ruleEditor.rule.textProps.length, numOfProps + 1,
-     "A new test property was added");
-  is(editor, inplaceEditor(textProp.editor.valueSpan),
-     "The inplace editor appeared for the value");
-
-  info("Adding value " + value);
-  
-  
-  let onPreview = view.once("ruleview-changed");
-  editor.input.value = value;
-  yield onPreview;
-
-  let onValueAdded = view.once("ruleview-changed");
-  EventUtils.synthesizeKey(commitValueWith, {}, view.styleWindow);
-  yield onValueAdded;
-
-  if (blurNewProperty) {
-    view.styleDocument.activeElement.blur();
-  }
-
-  return textProp;
-});
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-var setProperty = Task.async(function*(view, textProp, value,
-                                       blurNewProperty = true) {
-  yield focusEditableField(view, textProp.editor.valueSpan);
-
-  let onPreview = view.once("ruleview-changed");
-  if (value === null) {
-    EventUtils.synthesizeKey("VK_DELETE", {}, view.styleWindow);
-  } else {
-    EventUtils.sendString(value, view.styleWindow);
-  }
-  yield onPreview;
-
-  let onValueDone = view.once("ruleview-changed");
-  EventUtils.synthesizeKey("VK_RETURN", {}, view.styleWindow);
-  yield onValueDone;
-
-  if (blurNewProperty) {
-    view.styleDocument.activeElement.blur();
-  }
-});
-
-
-
-
-
-
-
-
-
-
-
-
-
-var removeProperty = Task.async(function*(view, textProp,
-                                          blurNewProperty = true) {
-  yield focusEditableField(view, textProp.editor.nameSpan);
-
-  let onModifications = view.once("ruleview-changed");
-  info("Deleting the property name now");
-  EventUtils.synthesizeKey("VK_DELETE", {}, view.styleWindow);
-  EventUtils.synthesizeKey("VK_RETURN", {}, view.styleWindow);
-  yield onModifications;
-
-  if (blurNewProperty) {
-    view.styleDocument.activeElement.blur();
-  }
-});
-
-
-
-
-
-
-
-
-
-var togglePropStatus = Task.async(function*(view, textProp) {
-  let onRuleViewRefreshed = view.once("ruleview-changed");
-  textProp.editor.enable.click();
-  yield onRuleViewRefreshed;
-});
 
 
 
@@ -854,11 +652,12 @@ var setSearchFilter = Task.async(function*(view, searchValue) {
 
 
 
-function* reloadPage(inspector, testActor) {
+function reloadPage(inspector) {
   let onNewRoot = inspector.once("new-root");
-  yield testActor.eval("content.location.reload();");
-  yield onNewRoot;
-  yield inspector.markup._waitForChildren();
+  content.location.reload();
+  return onNewRoot.then(() => {
+    inspector.markup._waitForChildren();
+  });
 }
 
 

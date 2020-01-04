@@ -16,6 +16,8 @@
 
 "use strict";
 
+const {setBaseCssDocsUrl} = require("devtools/client/shared/widgets/MdnDocsWidget");
+
 
 
 
