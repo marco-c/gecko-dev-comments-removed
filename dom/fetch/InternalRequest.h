@@ -406,6 +406,9 @@ public:
   static RequestMode
   MapChannelToRequestMode(nsIChannel* aChannel);
 
+  static RequestCredentials
+  MapChannelToRequestCredentials(nsIChannel* aChannel);
+
 private:
   
   explicit InternalRequest(const InternalRequest& aOther);
