@@ -431,7 +431,7 @@ function createUserContextMenu(event, addCommandAttribute = true, excludeUserCon
   
   if (excludeUserContextId) {
     let menuitem = document.createElement("menuitem");
-    menuitem.setAttribute("usercontextid", "0");
+    menuitem.setAttribute("data-usercontextid", "0");
     menuitem.setAttribute("label", bundle.getString("userContextNone.label"));
     menuitem.setAttribute("accesskey", bundle.getString("userContextNone.accesskey"));
 
@@ -451,7 +451,7 @@ function createUserContextMenu(event, addCommandAttribute = true, excludeUserCon
     }
 
     let menuitem = document.createElement("menuitem");
-    menuitem.setAttribute("usercontextid", identity.userContextId);
+    menuitem.setAttribute("data-usercontextid", identity.userContextId);
     menuitem.setAttribute("label", ContextualIdentityService.getUserContextLabel(identity.userContextId));
 
     if (identity.accessKey) {
@@ -825,16 +825,13 @@ function openNewWindowWith(aURL, aDocument, aPostData, aAllowThirdPartyFixup,
              });
 }
 
-function getHelpLinkURL(aHelpTopic) {
+
+function openHelpLink(aHelpTopic, aCalledFromModal, aWhere) {
   var url = Components.classes["@mozilla.org/toolkit/URLFormatterService;1"]
                       .getService(Components.interfaces.nsIURLFormatter)
                       .formatURLPref("app.support.baseURL");
-  return url + aHelpTopic;
-}
+  url += aHelpTopic;
 
-
-function openHelpLink(aHelpTopic, aCalledFromModal, aWhere) {
-  var url = getHelpLinkURL(aHelpTopic);
   var where = aWhere;
   if (!aWhere)
     where = aCalledFromModal ? "window" : "tab";

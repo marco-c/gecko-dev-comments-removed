@@ -3714,14 +3714,11 @@ const BrowserSearch = {
     return document.getElementById("searchbar");
   },
 
-  get searchEnginesURL() {
-    return formatURL("browser.search.searchEnginesURL", true);
-  },
-
   loadAddEngines: function BrowserSearch_loadAddEngines() {
     var newWindowPref = gPrefService.getIntPref("browser.link.open_newwindow");
     var where = newWindowPref == 3 ? "tab" : "window";
-    openUILinkIn(this.searchEnginesURL, where);
+    var searchEnginesURL = formatURL("browser.search.searchEnginesURL", true);
+    openUILinkIn(searchEnginesURL, where);
   },
 
   get _isExtendedTelemetryEnabled() {
@@ -4083,7 +4080,7 @@ function updateEditUIVisibility()
 function openNewUserContextTab(event)
 {
   openUILinkIn(BROWSER_NEW_TAB_URL, "tab", {
-    userContextId: parseInt(event.target.getAttribute('usercontextid')),
+    userContextId: parseInt(event.target.getAttribute('data-usercontextid')),
   });
 }
 
@@ -4836,12 +4833,6 @@ var TabsProgressListener = {
     
     if (!Object.getOwnPropertyDescriptor(window, "PopupNotifications").get)
       PopupNotifications.locationChange(aBrowser);
-
-    let tab = gBrowser.getTabForBrowser(aBrowser);
-    if (tab && tab._sharingState) {
-      gBrowser.setBrowserSharing(aBrowser, {});
-      webrtcUI.forgetStreamsFromBrowser(aBrowser);
-    }
 
     gBrowser.getNotificationBox(aBrowser).removeTransientNotifications();
 
