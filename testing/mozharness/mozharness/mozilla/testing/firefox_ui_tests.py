@@ -394,7 +394,9 @@ class FirefoxUITests(TestingMixin, VCSToolsScript):
                     
                     fname = os.path.realpath(os.path.join(parent_dir, entry))
                     mode = bundle.getinfo(entry).external_attr >> 16 & 0x1FF
-                    os.chmod(fname, mode)
+                    
+                    if mode:
+                        os.chmod(fname, mode)
         except zipfile.BadZipfile as e:
             self.log('%s (%s)' % (e.message, zip),
                      level=FATAL, exit_code=2)
