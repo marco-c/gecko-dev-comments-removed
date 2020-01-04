@@ -69,7 +69,10 @@ public:
 class AutoTaskDispatcher : public TaskDispatcher
 {
 public:
-  explicit AutoTaskDispatcher(bool aIsTailDispatcher = false) : mIsTailDispatcher(aIsTailDispatcher) {}
+  explicit AutoTaskDispatcher(bool aIsTailDispatcher = false)
+    : mIsTailDispatcher(aIsTailDispatcher)
+  {}
+
   ~AutoTaskDispatcher()
   {
     
@@ -81,25 +84,33 @@ public:
     
     
     
-    MOZ_ASSERT(mDirectTasks.empty());
+    MOZ_ASSERT(!HaveDirectTasks());
 
     for (size_t i = 0; i < mTaskGroups.Length(); ++i) {
       DispatchTaskGroup(Move(mTaskGroups[i]));
     }
   }
 
+  bool HaveDirectTasks() const
+  {
+    return mDirectTasks.isSome() && !mDirectTasks->empty();
+  }
+
   void DrainDirectTasks() override
   {
-    while (!mDirectTasks.empty()) {
-      nsCOMPtr<nsIRunnable> r = mDirectTasks.front();
-      mDirectTasks.pop();
+    while (HaveDirectTasks()) {
+      nsCOMPtr<nsIRunnable> r = mDirectTasks->front();
+      mDirectTasks->pop();
       r->Run();
     }
   }
 
   void AddDirectTask(already_AddRefed<nsIRunnable> aRunnable) override
   {
-    mDirectTasks.push(Move(aRunnable));
+    if (mDirectTasks.isNothing()) {
+      mDirectTasks.emplace();
+    }
+    mDirectTasks->push(Move(aRunnable));
   }
 
   void AddStateChangeTask(AbstractThread* aThread,
@@ -124,7 +135,8 @@ public:
 
   bool HasTasksFor(AbstractThread* aThread) override
   {
-    return !!GetTaskGroup(aThread) || (aThread == AbstractThread::GetCurrent() && !mDirectTasks.empty());
+    return !!GetTaskGroup(aThread) ||
+           (aThread == AbstractThread::GetCurrent() && HaveDirectTasks());
   }
 
   void DispatchTasksFor(AbstractThread* aThread) override
@@ -233,7 +245,10 @@ private:
   }
 
   
-  std::queue<nsCOMPtr<nsIRunnable>> mDirectTasks;
+  
+  
+  
+  mozilla::Maybe<std::queue<nsCOMPtr<nsIRunnable>>> mDirectTasks;
 
   
   nsTArray<UniquePtr<PerThreadTaskGroup>> mTaskGroups;
