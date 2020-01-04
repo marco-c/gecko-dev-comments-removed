@@ -541,7 +541,7 @@ def process_test_results(results, num_tests, pb, options):
     pb.finish(True)
     return print_test_summary(num_tests, failures, complete, doing, options)
 
-def run_tests(tests, prefix, options):
+def run_tests(tests, num_tests, prefix, options):
     
     
     
@@ -555,7 +555,6 @@ def run_tests(tests, prefix, options):
     
     JitTest.js_cmd_prefix = prefix
 
-    num_tests = len(tests) * options.repeat
     pb = create_progressbar(num_tests, options)
     gen = run_all_tests(tests, prefix, pb, shim_options)
     ok = process_test_results(gen, num_tests, pb, options)
@@ -591,7 +590,7 @@ def push_progs(options, device, progs):
                                      os.path.basename(local_file))
         device.pushFile(local_file, remote_file)
 
-def run_tests_remote(tests, prefix, options):
+def run_tests_remote(tests, num_tests, prefix, options):
     
     from mozdevice import devicemanagerADB, devicemanagerSUT
 
@@ -639,7 +638,6 @@ def run_tests_remote(tests, prefix, options):
     prefix[0] = os.path.join(options.remote_test_root, 'js')
 
     
-    num_tests = len(tests) * options.repeat
     pb = create_progressbar(num_tests, options)
     gen = get_remote_results(tests, dm, prefix, options)
     ok = process_test_results(gen, num_tests, pb, options)
