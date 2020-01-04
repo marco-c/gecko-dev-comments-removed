@@ -8131,6 +8131,7 @@ void
 nsGlobalWindow::ForceClose()
 {
   MOZ_ASSERT(IsOuterWindow());
+  MOZ_ASSERT(XRE_GetProcessType() == GeckoProcessType_Default);
 
   if (IsFrame() || !mDocShell) {
     
@@ -8158,6 +8159,12 @@ nsGlobalWindow::FinalClose()
 
   
   mIsClosed = true;
+
+  
+  
+  if (XRE_GetProcessType() == GeckoProcessType_Content) {
+    return;
+  }
 
   
   
