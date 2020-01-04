@@ -87,7 +87,7 @@ private:
   
 
 
-  void Process();
+  void Process(const RefPtr<DocAccessible>& aDeathGrip);
 
   
 

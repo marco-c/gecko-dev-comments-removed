@@ -401,7 +401,9 @@ NotificationController::WillRefresh(mozilla::TimeStamp aTime)
   
   mObservingState = eRefreshProcessing;
 
-  mEventTree.Process();
+  RefPtr<DocAccessible> deathGrip(mDocument);
+  mEventTree.Process(deathGrip);
+  deathGrip = nullptr;
 
   ProcessEventQueue();
 
