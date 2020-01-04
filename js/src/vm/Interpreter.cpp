@@ -341,7 +341,7 @@ InvokeState::pushInterpreterFrame(JSContext* cx)
 InterpreterFrame*
 ExecuteState::pushInterpreterFrame(JSContext* cx)
 {
-    return cx->runtime()->interpreterStack().pushExecuteFrame(cx, script_, thisv_, newTargetValue_,
+    return cx->runtime()->interpreterStack().pushExecuteFrame(cx, script_, newTargetValue_,
                                                               scopeChain_, type_, evalInFrame_);
 }
 
@@ -645,12 +645,8 @@ js::ExecuteKernel(JSContext* cx, HandleScript script, JSObject& scopeChainArg,
         return true;
     }
 
-    
-    
-    RootedValue thisv(cx);
-
     probes::StartExecution(script);
-    ExecuteState state(cx, script, thisv, newTargetValue, scopeChainArg, type, evalInFrame, result);
+    ExecuteState state(cx, script, newTargetValue, scopeChainArg, type, evalInFrame, result);
     bool ok = RunScript(cx, state);
     probes::StopExecution(script);
 

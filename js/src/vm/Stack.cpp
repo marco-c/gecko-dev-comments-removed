@@ -34,11 +34,9 @@ using mozilla::PodCopy;
 
 void
 InterpreterFrame::initExecuteFrame(JSContext* cx, HandleScript script, AbstractFramePtr evalInFramePrev,
-                                   const Value& thisv, const Value& newTargetValue, HandleObject scopeChain,
+                                   const Value& newTargetValue, HandleObject scopeChain,
                                    ExecuteType type)
 {
-    MOZ_ASSERT_IF(type & MODULE, thisv.isUndefined());
-
     
 
 
@@ -77,8 +75,7 @@ InterpreterFrame::initExecuteFrame(JSContext* cx, HandleScript script, AbstractF
         }
     }
 
-    Value* dstvp = (Value*)this - 3;
-    dstvp[2] = thisv;
+    Value* dstvp = (Value*)this - 2;
 
     if (isFunctionFrame()) {
         dstvp[1] = ObjectValue(*callee);
@@ -455,7 +452,7 @@ InterpreterFrame::markValues(JSTracer* trc, Value* sp, jsbytecode* pc)
         TraceRootRange(trc, argc + 2 + isConstructing(), argv_ - 2, "fp argv");
     } else {
         
-        TraceRootRange(trc, 3, ((Value*)this) - 3, "stack callee, this, newTarget");
+        TraceRootRange(trc, 2, ((Value*)this) - 2, "stack callee and newTarget");
     }
 }
 
@@ -512,20 +509,20 @@ InterpreterStack::pushInvokeFrame(JSContext* cx, const CallArgs& args, InitialFr
 }
 
 InterpreterFrame*
-InterpreterStack::pushExecuteFrame(JSContext* cx, HandleScript script, const Value& thisv,
-                                   const Value& newTargetValue, HandleObject scopeChain,
-                                   ExecuteType type, AbstractFramePtr evalInFrame)
+InterpreterStack::pushExecuteFrame(JSContext* cx, HandleScript script, const Value& newTargetValue,
+                                   HandleObject scopeChain, ExecuteType type,
+                                   AbstractFramePtr evalInFrame)
 {
     LifoAlloc::Mark mark = allocator_.mark();
 
-    unsigned nvars = 3  + script->nslots();
+    unsigned nvars = 2  + script->nslots();
     uint8_t* buffer = allocateFrame(cx, sizeof(InterpreterFrame) + nvars * sizeof(Value));
     if (!buffer)
         return nullptr;
 
-    InterpreterFrame* fp = reinterpret_cast<InterpreterFrame*>(buffer + 3 * sizeof(Value));
+    InterpreterFrame* fp = reinterpret_cast<InterpreterFrame*>(buffer + 2 * sizeof(Value));
     fp->mark_ = mark;
-    fp->initExecuteFrame(cx, script, evalInFrame, thisv, newTargetValue, scopeChain, type);
+    fp->initExecuteFrame(cx, script, evalInFrame, newTargetValue, scopeChain, type);
     fp->initLocals();
 
     return fp;
