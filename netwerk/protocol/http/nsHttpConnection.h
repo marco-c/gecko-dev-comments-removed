@@ -369,6 +369,7 @@ private:
                                                              
                                                              
     int64_t                        mContentBytesWritten0RTT;
+    bool                           mEarlyDataNegotiated; 
 };
 
 } 
