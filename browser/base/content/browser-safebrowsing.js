@@ -2,7 +2,9 @@
 
 
 
-#ifdef MOZ_SAFE_BROWSING
+
+
+
 var gSafeBrowsing = {
 
   setReportPhishingMenu: function() {
@@ -39,4 +41,3 @@ var gSafeBrowsing = {
     return SafeBrowsing.getReportURL(name, gBrowser.currentURI);
   }
 }
-#endif
