@@ -204,6 +204,22 @@ public:
 
     virtual void DisableSpdy() { }
     virtual void ReuseConnectionOnRestartOK(bool) { }
+
+    
+    virtual bool Do0RTT() {
+        return false;
+    }
+    
+    
+    
+    
+    
+    
+    
+    
+    virtual nsresult Finish0RTT(bool aRestart) {
+        return NS_ERROR_NOT_IMPLEMENTED;
+    }
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(nsAHttpTransaction, NS_AHTTPTRANSACTION_IID)
