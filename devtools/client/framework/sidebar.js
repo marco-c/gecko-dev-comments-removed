@@ -264,12 +264,7 @@ ToolSidebar.prototype = {
     this._tabs.set(id, tab);
 
     if (selected) {
-      
-      
-      
-      this._panelDoc.defaultView.setTimeout(() => {
-        this.select(id);
-      }, 10);
+      this._selectTabSoon(id);
     }
 
     this.emit("new-tab-registered", id);
@@ -366,6 +361,18 @@ ToolSidebar.prototype = {
   
 
 
+
+
+
+  _selectTabSoon: function(id) {
+    this._panelDoc.defaultView.setTimeout(() => {
+      this.select(id);
+    }, 0);
+  },
+
+  
+
+
   getCurrentTabID: function() {
     let currentID = null;
     for (let [id, tab] of this._tabs) {
@@ -457,11 +464,26 @@ ToolSidebar.prototype = {
   
 
 
-  show: function() {
+
+
+
+  show: function(id) {
     if (this._width) {
       this._tabbox.width = this._width;
     }
     this._tabbox.removeAttribute("hidden");
+
+    
+    
+    if (id) {
+      this._currentTool = id;
+
+      if (this._telemetry) {
+        this._telemetry.toolOpened(this._currentTool);
+      }
+
+      this._selectTabSoon(id);
+    }
 
     this.emit("show");
   },
