@@ -6,9 +6,6 @@
 
 
 
-
-Services.scriptloader.loadSubScript("chrome://mochitests/content/browser/devtools/client/inspector/shared/test/head.js", this);
-
 const TESTCASE_URI = TEST_BASE_HTTP + "sync.html";
 
 const expectedText = `
