@@ -21,16 +21,6 @@ let whitelist = [
   {sourceName: /aboutaccounts\/(main|normalize)\.css$/i,
     isFromDevTools: false},
   
-  {sourceName: /loop\/.*sdk-content\/.*\.css$/i,
-    isFromDevTools: false},
-  
-  {sourceName: /loop\/.*\.css$/i,
-   errorMessage: /Unknown pseudo-class.*placeholder/i,
-   isFromDevTools: false},
-  {sourceName: /loop\/.*shared\/css\/common.css$/i,
-   errorMessage: /Unknown property .user-select./i,
-   isFromDevTools: false},
-  
   {sourceName: /highlighters\.css$/i,
    errorMessage: /Unknown pseudo-class.*moz-native-anonymous/i,
    isFromDevTools: true},
