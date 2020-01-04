@@ -26,8 +26,6 @@ public:
 
 
 
-
-
   static nsresult ChainHasValidPins(const CERTCertList* certList,
                                     const char* hostname,
                                     mozilla::pkix::Time time,
