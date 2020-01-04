@@ -58,7 +58,7 @@ def config_status(config):
         fh.write("__all__ = ['topobjdir', 'topsrcdir', 'defines', "
                  "'non_global_defines', 'substs']")
 
-        if config.get('MOZ_BUILD_APP') != 'js' or config.get('JS_STANDALONE'):
+        if not config.get('BUILDING_JS') or config.get('JS_STANDALONE'):
             fh.write('''
 if __name__ == '__main__':
     args = dict([(name, globals()[name]) for name in __all__])
@@ -69,7 +69,7 @@ if __name__ == '__main__':
     
     
     os.chmod('config.status', 0755)
-    if config.get('MOZ_BUILD_APP') != 'js' or config.get('JS_STANDALONE'):
+    if not config.get('BUILDING_JS') or config.get('JS_STANDALONE'):
         if not config.get('JS_STANDALONE'):
             os.environ['WRITE_MOZINFO'] = '1'
         
