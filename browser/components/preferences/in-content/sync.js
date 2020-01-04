@@ -607,10 +607,7 @@ var gSyncPane = {
     }
     params.set("entrypoint", entryPoint);
 
-    this.openContentInBrowser("about:accounts?" + params, {
-      replaceQueryString: true
-    });
-
+    this.replaceTabWithUrl("about:accounts?" + params);
   },
 
   
@@ -651,6 +648,17 @@ var gSyncPane = {
       return;
     }
     win.switchToTabHavingURI(url, true, options);
+  },
+
+  
+  replaceTabWithUrl(url) {
+    
+    let browser = window.QueryInterface(Ci.nsIInterfaceRequestor)
+                        .getInterface(Ci.nsIWebNavigation)
+                        .QueryInterface(Ci.nsIDocShell)
+                        .chromeEventHandler;
+    
+    browser.loadURI(url);
   },
 
   openPrivacyPolicy: function(aEvent) {

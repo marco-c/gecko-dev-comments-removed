@@ -220,7 +220,7 @@ var wrapper = {
       
       this.injectData("message", { status: "login" });
       
-      window.location = "about:accounts";
+      openPrefs();
       return;
     }
     delete accountData.verifiedCanLinkAccount;
@@ -333,7 +333,9 @@ function retry() {
 }
 
 function openPrefs() {
-  window.openPreferences("paneSync");
+  
+  
+  window.location = "about:preferences#sync";
 }
 
 function init() {
@@ -511,8 +513,9 @@ function initObservers() {
       window.location = "about:accounts?action=signin";
       return;
     }
+
     
-    window.location = "about:accounts";
+    openPrefs();
   }
 
   for (let topic of OBSERVER_TOPICS) {
