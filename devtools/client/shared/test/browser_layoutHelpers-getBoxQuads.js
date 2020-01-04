@@ -4,13 +4,13 @@
 
 
 
-"use strict";
-
+var {utils: Cu} = Components;
 var {getAdjustedQuads} = require("devtools/shared/layout/utils");
 
 const TEST_URI = TEST_URI_ROOT + "browser_layoutHelpers-getBoxQuads.html";
 
 add_task(function* () {
+
   let tab = yield addTab(TEST_URI);
   let doc = tab.linkedBrowser.contentDocument;
 

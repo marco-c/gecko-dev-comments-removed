@@ -6,11 +6,10 @@
 
 
 
-
-
-Services.scriptloader.loadSubScript(
-  "chrome://mochitests/content/browser/devtools/client/framework/test/shared-head.js",
-  this);
+var { require } = Cu.import("resource://devtools/shared/Loader.jsm", {});
+var { TargetFactory } = require("devtools/client/framework/target");
+var promise = require("promise");
+var DevToolsUtils = require("devtools/shared/DevToolsUtils");
 
 const {TableWidget} = require("devtools/client/shared/widgets/TableWidget");
 const SPLIT_CONSOLE_PREF = "devtools.toolbox.splitconsoleEnabled";
@@ -24,6 +23,8 @@ const MAIN_DOMAIN = "http://test1.example.org/" + PATH;
 const ALT_DOMAIN = "http://sectest1.example.org/" + PATH;
 const ALT_DOMAIN_SECURED = "https://sectest1.example.org:443/" + PATH;
 
+waitForExplicitFinish();
+
 var gToolbox, gPanelWindow, gWindow, gUI;
 
 
@@ -31,7 +32,9 @@ var gToolbox, gPanelWindow, gWindow, gUI;
 
 Services.prefs.setBoolPref(STORAGE_PREF, true);
 Services.prefs.setBoolPref(CACHES_ON_HTTP_PREF, true);
+DevToolsUtils.testing = true;
 registerCleanupFunction(() => {
+  DevToolsUtils.testing = false;
   gToolbox = gPanelWindow = gWindow = gUI = null;
   Services.prefs.clearUserPref(STORAGE_PREF);
   Services.prefs.clearUserPref(SPLIT_CONSOLE_PREF);
@@ -39,6 +42,46 @@ registerCleanupFunction(() => {
   Services.prefs.clearUserPref(DEBUGGERLOG_PREF);
   Services.prefs.clearUserPref(CACHES_ON_HTTP_PREF);
 });
+
+registerCleanupFunction(function* cleanup() {
+  let target = TargetFactory.forTab(gBrowser.selectedTab);
+  yield gDevTools.closeToolbox(target);
+
+  while (gBrowser.tabs.length > 1) {
+    gBrowser.removeCurrentTab();
+  }
+});
+
+
+
+
+
+
+
+
+function addTab(url) {
+  info("Adding a new tab with URL: '" + url + "'");
+  let def = promise.defer();
+
+  
+  
+  
+  window.focus();
+
+  let tab = window.gBrowser.selectedTab = window.gBrowser.addTab(url);
+  let linkedBrowser = tab.linkedBrowser;
+
+  linkedBrowser.addEventListener("load", function onload(event) {
+    if (event.originalTarget.location.href != url) {
+      return;
+    }
+    linkedBrowser.removeEventListener("load", onload, true);
+    info("URL '" + url + "' loading complete");
+    def.resolve(tab.linkedBrowser.contentWindow);
+  }, true);
+
+  return def.promise;
+}
 
 
 
@@ -51,8 +94,7 @@ registerCleanupFunction(() => {
 
 
 function* openTabAndSetupStorage(url) {
-  let tab = yield addTab(url);
-  let content = tab.linkedBrowser.contentWindow;
+  let content = yield addTab(url);
 
   gWindow = content.wrappedJSObject;
 
@@ -762,6 +804,54 @@ function PressKeyXTimes(key, x, modifiers = {}) {
   for (let i = 0; i < x; i++) {
     EventUtils.synthesizeKey(key, modifiers);
   }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function waitForContextMenu(popup, button, onShown, onHidden) {
+  let deferred = promise.defer();
+
+  function onPopupShown() {
+    info("onPopupShown");
+    popup.removeEventListener("popupshown", onPopupShown);
+
+    onShown && onShown();
+
+    
+    popup.addEventListener("popuphidden", onPopupHidden);
+    executeSoon(() => popup.hidePopup());
+  }
+  function onPopupHidden() {
+    info("onPopupHidden");
+    popup.removeEventListener("popuphidden", onPopupHidden);
+
+    onHidden && onHidden();
+
+    deferred.resolve(popup);
+  }
+
+  popup.addEventListener("popupshown", onPopupShown);
+
+  info("wait for the context menu to open");
+  button.scrollIntoView();
+  let eventDetails = {type: "contextmenu", button: 2};
+  EventUtils.synthesizeMouse(button, 2, 2, eventDetails,
+                             button.ownerDocument.defaultView);
+  return deferred.promise;
 }
 
 
