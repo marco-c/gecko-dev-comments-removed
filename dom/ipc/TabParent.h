@@ -442,6 +442,10 @@ public:
                                int32_t& aDragAreaX, int32_t& aDragAreaY);
     layout::RenderFrameParent* GetRenderFrame();
 
+    
+    
+    void OnStartSignedPackageRequest(nsIChannel* aChannel);
+
 protected:
     bool ReceiveMessage(const nsString& aMessage,
                         bool aSync,
@@ -481,6 +485,10 @@ protected:
                                   BrowserConfiguration& aConfiguration);
 
     void SetHasContentOpener(bool aHasContentOpener);
+
+    
+    
+    bool ShouldSwitchProcess(nsIChannel* aChannel);
 
     ContentCacheInParent mContentCache;
 

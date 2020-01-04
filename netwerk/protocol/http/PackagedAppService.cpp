@@ -726,7 +726,8 @@ PackagedAppService::PackagedAppDownloader::OnDataAvailable(nsIRequest *aRequest,
 
 nsresult
 PackagedAppService::PackagedAppDownloader::AddCallback(nsIURI *aURI,
-                                                       nsICacheEntryOpenCallback *aCallback)
+                                                       nsICacheEntryOpenCallback *aCallback,
+                                                       nsIChannel* aRequester)
 {
   MOZ_RELEASE_ASSERT(NS_IsMainThread(), "mCallbacks hashtable is not thread safe");
   nsAutoCString spec;
@@ -734,6 +735,8 @@ PackagedAppService::PackagedAppDownloader::AddCallback(nsIURI *aURI,
 
   LogURI("PackagedAppDownloader::AddCallback", this, aURI);
   LOG(("[%p]    > callback: %p\n", this, aCallback));
+
+  nsCOMPtr<nsIPackagedAppChannelListener> listener = do_QueryInterface(aRequester);
 
   
   nsCOMArray<nsICacheEntryOpenCallback>* array = mCallbacks.Get(spec);
@@ -746,9 +749,12 @@ PackagedAppService::PackagedAppDownloader::AddCallback(nsIURI *aURI,
 
       
       
-
-      
-      
+      if (mVerifier && mVerifier->GetIsPackageSigned()) {
+        
+        
+        listener->OnStartSignedPackageRequest(mVerifier->GetPackageOrigin());
+        listener = nullptr; 
+      }
       mCacheStorage->AsyncOpenURI(aURI, EmptyCString(),
                                   nsICacheStorage::OPEN_READONLY, aCallback);
     } else {
@@ -765,6 +771,12 @@ PackagedAppService::PackagedAppDownloader::AddCallback(nsIURI *aURI,
     newArray->AppendObject(aCallback);
     mCallbacks.Put(spec, newArray);
   }
+
+  
+  if (listener) {
+    mRequesters.AppendObject(listener);
+  }
+
   return NS_OK;
 }
 
@@ -859,9 +871,19 @@ PackagedAppService::PackagedAppDownloader::ClearCallbacks(nsresult aResult)
 void
 PackagedAppService::PackagedAppDownloader::NotifyOnStartSignedPackageRequest(const nsACString& aPackageOrigin)
 {
+  MOZ_RELEASE_ASSERT(NS_IsMainThread(), "mRequesters is not thread safe");
+
+  LOG(("Ready to notify OnStartSignedPackageRequest to all requesters."));
   
   
-  LOG(("Notifying the signed package is ready to load."));
+  for (uint32_t i = 0; i < mRequesters.Length(); i++) {
+    nsCOMPtr<nsIPackagedAppChannelListener> requester = mRequesters.ObjectAt(i);
+    LOG(("Notifying %p OnStartSignedPackageRequest. New origin: %s", requester.get(),
+          nsCString(aPackageOrigin).get()));
+    requester->OnStartSignedPackageRequest(aPackageOrigin);
+  }
+
+  mRequesters.Clear();
 }
 
 void PackagedAppService::PackagedAppDownloader::InstallSignedPackagedApp(const ResourceCacheInfo* aInfo)
@@ -963,6 +985,15 @@ PackagedAppService::PackagedAppDownloader::OnResourceVerified(const ResourceCach
 {
   if (!aSuccess) {
     return OnError(ERROR_RESOURCE_VERIFIED_FAILED);
+  }
+
+  
+  
+  
+  if (mVerifier->GetIsPackageSigned()) {
+    
+    
+    NotifyOnStartSignedPackageRequest(mVerifier->GetPackageOrigin());
   }
 
   
@@ -1096,8 +1127,7 @@ PackagedAppService::GetResource(nsIChannel *aChannel,
     
     
     
-
-    downloader->AddCallback(uri, aCallback);
+    downloader->AddCallback(uri, aCallback, aChannel);
     return NS_OK;
   }
 
@@ -1127,7 +1157,7 @@ PackagedAppService::GetResource(nsIChannel *aChannel,
     return rv;
   }
 
-  downloader->AddCallback(uri, aCallback);
+  downloader->AddCallback(uri, aCallback, aChannel);
 
   nsCOMPtr<nsIStreamConverterService> streamconv =
     do_GetService("@mozilla.org/streamConverters;1", &rv);

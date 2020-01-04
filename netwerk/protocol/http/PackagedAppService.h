@@ -13,6 +13,7 @@
 #include "PackagedAppVerifier.h"
 #include "nsIMultiPartChannel.h"
 #include "PackagedAppVerifier.h"
+#include "nsIPackagedAppChannelListener.h"
 
 namespace mozilla {
 namespace net {
@@ -124,7 +125,10 @@ private:
                                              const nsACString& aPackageOrigin);
     
     
-    nsresult AddCallback(nsIURI *aURI, nsICacheEntryOpenCallback *aCallback);
+    
+    nsresult AddCallback(nsIURI *aURI,
+                         nsICacheEntryOpenCallback *aCallback,
+                         nsIChannel* aRequester);
 
     
     nsresult RemoveCallbacks(nsICacheEntryOpenCallback* aCallback);
@@ -208,6 +212,9 @@ private:
 
     
     nsRefPtr<PackagedAppVerifier> mVerifier;
+
+    
+    nsCOMArray<nsIPackagedAppChannelListener> mRequesters;
 
     
     
