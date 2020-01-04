@@ -2535,6 +2535,9 @@ pref("layout.spammy_warnings.enabled", false);
 pref("layout.float-fragments-inside-column.enabled", true);
 
 
+
+
+
 #ifdef RELEASE_BUILD
 pref("dom.animations-api.core.enabled", false);
 #else
