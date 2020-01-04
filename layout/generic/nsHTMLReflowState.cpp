@@ -620,7 +620,7 @@ nsHTMLReflowState::InitResizeFlags(nsPresContext* aPresContext, nsIAtom* aFrameT
     
     
     SetBResize(true);
-  } else if (mCBReflowState && frame->IsBlockWrapper()) {
+  } else if (mCBReflowState && !nsLayoutUtils::IsNonWrapperBlock(frame)) {
     
     
     

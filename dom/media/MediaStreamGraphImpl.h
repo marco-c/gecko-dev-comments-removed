@@ -717,7 +717,7 @@ public:
   RefPtr<AudioOutputObserver> mFarendObserverRef;
 #endif
 
-  dom::AudioChannel AudioChannel() const { return mAudioChannel; }
+  uint32_t AudioChannel() const { return mAudioChannel; }
 
 private:
   virtual ~MediaStreamGraphImpl();
@@ -762,7 +762,9 @@ private:
   bool mCanRunMessagesSynchronously;
 #endif
 
-  dom::AudioChannel mAudioChannel;
+  
+  
+  uint32_t mAudioChannel;
 };
 
 } 
