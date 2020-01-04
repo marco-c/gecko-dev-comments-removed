@@ -8,7 +8,13 @@ package org.mozilla.gecko.customtabs;
 import android.os.Bundle;
 
 import org.mozilla.gecko.GeckoApp;
+import org.mozilla.gecko.GeckoAppShell;
 import org.mozilla.gecko.R;
+import org.mozilla.gecko.Tab;
+import org.mozilla.gecko.Tabs;
+import org.mozilla.gecko.util.GeckoRequest;
+import org.mozilla.gecko.util.NativeJSObject;
+import org.mozilla.gecko.util.ThreadUtils;
 
 public class CustomTabsActivity extends GeckoApp {
     @Override
@@ -23,6 +29,38 @@ public class CustomTabsActivity extends GeckoApp {
 
     @Override
     public void onBackPressed() {
-        finish();
+        final Tabs tabs = Tabs.getInstance();
+        final Tab tab = tabs.getSelectedTab();
+
+        
+        GeckoAppShell.sendRequestToGecko(new GeckoRequest("Browser:OnBackPressed", null) {
+            @Override
+            public void onResponse(NativeJSObject nativeJSObject) {
+                if (!nativeJSObject.getBoolean("handled")) {
+                    
+                    onDefault();
+                }
+            }
+
+            @Override
+            public void onError(NativeJSObject error) {
+                
+                onDefault();
+            }
+
+            
+            private void onDefault() {
+                ThreadUtils.postToUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        if (tab.doBack()) {
+                            return;
+                        }
+
+                        finish();
+                    }
+                });
+            }
+        });
     }
 }
