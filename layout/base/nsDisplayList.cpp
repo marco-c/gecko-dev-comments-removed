@@ -1856,7 +1856,7 @@ struct FramesWithDepth
   {}
 
   bool operator<(const FramesWithDepth& aOther) const {
-    if (mDepth != aOther.mDepth) {
+    if (!FuzzyEqual(mDepth,aOther.mDepth, 0.1)) {
       
       return mDepth > aOther.mDepth;
     }
