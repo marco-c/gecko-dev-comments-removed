@@ -513,6 +513,11 @@ Toolbox.prototype = {
     let toggleKey = this.doc.getElementById("toolbox-toggle-host-key");
     toggleKey.addEventListener("command", this.switchToPreviousHost.bind(this), true);
 
+    if (Services.prefs.prefHasUserValue("devtools.loader.srcdir")) {
+      let reloadKey = this.doc.getElementById("tools-reload-key");
+      reloadKey.addEventListener("command", this.reload.bind(this), true);
+    }
+
     
     
     this.doc.addEventListener("keypress", this._splitConsoleOnKeypress, false);
@@ -1611,6 +1616,11 @@ Toolbox.prototype = {
     let newHost = new Hosts[hostType](this.target.tab, options);
     newHost.on("window-closed", this.destroy);
     return newHost;
+  },
+
+  reload: function () {
+    const {devtools} = Cu.import("resource://gre/modules/devtools/Loader.jsm", {});
+    devtools.reload(true);
   },
 
   
