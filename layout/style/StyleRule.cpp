@@ -1395,33 +1395,6 @@ StyleRule::StyleRule(const StyleRule& aCopy)
   
 }
 
-
-StyleRule::StyleRule(StyleRule& aCopy,
-                     Declaration* aDeclaration)
-  : Rule(aCopy),
-    mSelector(aCopy.mSelector),
-    mDeclaration(aDeclaration),
-    mDOMRule(aCopy.mDOMRule.forget())
-{
-  
-  
-
-  
-  aCopy.mSelector = nullptr;
-
-  
-  
-  
-  if (mDeclaration == aCopy.mDeclaration) {
-    
-    mDeclaration->AssertMutable();
-    aCopy.mDeclaration = nullptr;
-    mDeclaration->SetOwningRule(nullptr);
-  }
-
-  mDeclaration->SetOwningRule(this);
-}
-
 StyleRule::~StyleRule()
 {
   delete mSelector;
