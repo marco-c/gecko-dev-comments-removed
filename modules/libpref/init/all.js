@@ -5089,7 +5089,7 @@ pref("urlclassifier.max-complete-age", 2700);
 pref("urlclassifier.alternate_error_page", "blocked");
 
 
-pref("browser.safebrowsing.enabled", true);
+pref("browser.safebrowsing.phishing.enabled", true);
 
 
 pref("browser.safebrowsing.malware.enabled", true);
