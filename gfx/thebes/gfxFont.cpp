@@ -2290,9 +2290,7 @@ gfxFont::Measure(gfxTextRun *aTextRun,
     
     
     
-    if (mStyle.style != NS_FONT_STYLE_NORMAL &&
-        mFontEntry->IsUpright() &&
-        mStyle.allowSyntheticStyle) {
+    if (mStyle.style != NS_FONT_STYLE_NORMAL && !mFontEntry->IsItalic()) {
         gfxFloat extendLeftEdge =
             ceil(OBLIQUE_SKEW_FACTOR * metrics.mBoundingBox.YMost());
         gfxFloat extendRightEdge =

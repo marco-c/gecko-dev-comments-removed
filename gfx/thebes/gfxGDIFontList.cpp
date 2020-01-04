@@ -118,8 +118,7 @@ FontTypeToOutPrecision(uint8_t fontType)
 
 GDIFontEntry::GDIFontEntry(const nsAString& aFaceName,
                            gfxWindowsFontType aFontType,
-                           uint8_t aStyle, uint16_t aWeight,
-                           int16_t aStretch,
+                           bool aItalic, uint16_t aWeight, int16_t aStretch,
                            gfxUserFontData *aUserFontData,
                            bool aFamilyHasItalicFace)
     : gfxFontEntry(aFaceName),
@@ -130,7 +129,7 @@ GDIFontEntry::GDIFontEntry(const nsAString& aFaceName,
       mCharset(), mUnicodeRanges()
 {
     mUserFontData = aUserFontData;
-    mStyle = aStyle;
+    mItalic = aItalic;
     mWeight = aWeight;
     mStretch = aStretch;
     if (IsType1())
@@ -307,10 +306,9 @@ GDIFontEntry::TestCharacterMap(uint32_t aCh)
             return false;
 
         
-        gfxFontStyle fakeStyle;
-        if (!IsUpright()) {
+        gfxFontStyle fakeStyle;  
+        if (mItalic)
             fakeStyle.style = NS_FONT_STYLE_ITALIC;
-        }
         fakeStyle.weight = mWeight * 100;
 
         RefPtr<gfxFont> tempFont = FindOrMakeFont(&fakeStyle, false);
@@ -389,7 +387,7 @@ GDIFontEntry::InitLogFont(const nsAString& aName,
     
     
     
-    mLogFont.lfItalic         = !IsUpright();
+    mLogFont.lfItalic         = mItalic;
     mLogFont.lfWeight         = mWeight;
 
     int len = std::min<int>(aName.Length(), LF_FACESIZE - 1);
@@ -399,15 +397,14 @@ GDIFontEntry::InitLogFont(const nsAString& aName,
 
 GDIFontEntry* 
 GDIFontEntry::CreateFontEntry(const nsAString& aName,
-                              gfxWindowsFontType aFontType,
-                              uint8_t aStyle,
+                              gfxWindowsFontType aFontType, bool aItalic,
                               uint16_t aWeight, int16_t aStretch,
                               gfxUserFontData* aUserFontData,
                               bool aFamilyHasItalicFace)
 {
     
 
-    GDIFontEntry *fe = new GDIFontEntry(aName, aFontType, aStyle,
+    GDIFontEntry *fe = new GDIFontEntry(aName, aFontType, aItalic,
                                         aWeight, aStretch, aUserFontData,
                                         aFamilyHasItalicFace);
 
@@ -459,7 +456,7 @@ GDIFontFamily::FamilyAddStylesProc(const ENUMLOGFONTEXW *lpelfe,
         fe = static_cast<GDIFontEntry*>(ff->mAvailableFonts[i].get());
         
         if (fe->mWeight == logFont.lfWeight &&
-            fe->IsItalic() == (logFont.lfItalic == 0xFF)) {
+            fe->mItalic == (logFont.lfItalic == 0xFF)) {
             
             fe->mCharset.set(metrics.tmCharSet);
             return 1; 
@@ -469,10 +466,8 @@ GDIFontFamily::FamilyAddStylesProc(const ENUMLOGFONTEXW *lpelfe,
     
     
     
-    uint8_t italicStyle = (logFont.lfItalic == 0xFF ?
-                           NS_FONT_STYLE_ITALIC : NS_FONT_STYLE_NORMAL);
     fe = GDIFontEntry::CreateFontEntry(nsDependentString(lpelfe->elfFullName),
-                                       feType, italicStyle,
+                                       feType, (logFont.lfItalic == 0xFF),
                                        (uint16_t) (logFont.lfWeight), 0,
                                        nullptr, false);
     if (!fe)
@@ -717,7 +712,7 @@ gfxFontEntry*
 gfxGDIFontList::LookupLocalFont(const nsAString& aFontName,
                                 uint16_t aWeight,
                                 int16_t aStretch,
-                                uint8_t aStyle)
+                                bool aItalic)
 {
     gfxFontEntry *lookup;
 
@@ -734,9 +729,10 @@ gfxGDIFontList::LookupLocalFont(const nsAString& aFontName,
     
     GDIFontEntry *fe = GDIFontEntry::CreateFontEntry(lookup->Name(), 
         gfxWindowsFontType(isCFF ? GFX_FONT_TYPE_PS_OPENTYPE : GFX_FONT_TYPE_TRUETYPE) , 
-        lookup->mStyle, lookup->mWeight, aStretch, nullptr,
+        lookup->mItalic ? NS_FONT_STYLE_ITALIC : NS_FONT_STYLE_NORMAL,
+        lookup->mWeight, aStretch, nullptr,
         static_cast<GDIFontEntry*>(lookup)->mFamilyHasItalicFace);
-
+        
     if (!fe)
         return nullptr;
 
@@ -744,7 +740,7 @@ gfxGDIFontList::LookupLocalFont(const nsAString& aFontName,
 
     
     fe->mWeight = (aWeight == 0 ? 400 : aWeight);
-    fe->mStyle = aStyle;
+    fe->mItalic = aItalic;
 
     return fe;
 }
@@ -753,7 +749,7 @@ gfxFontEntry*
 gfxGDIFontList::MakePlatformFont(const nsAString& aFontName,
                                  uint16_t aWeight,
                                  int16_t aStretch,
-                                 uint8_t aStyle,
+                                 bool aItalic,
                                  const uint8_t* aFontData,
                                  uint32_t aLength)
 {
@@ -812,9 +808,10 @@ gfxGDIFontList::MakePlatformFont(const nsAString& aFontName,
     WinUserFontData *winUserFontData = new WinUserFontData(fontRef);
     uint16_t w = (aWeight == 0 ? 400 : aWeight);
 
-    GDIFontEntry *fe = GDIFontEntry::CreateFontEntry(uniqueName,
-        gfxWindowsFontType(isCFF ? GFX_FONT_TYPE_PS_OPENTYPE : GFX_FONT_TYPE_TRUETYPE) ,
-        aStyle, w, aStretch, winUserFontData, false);
+    GDIFontEntry *fe = GDIFontEntry::CreateFontEntry(uniqueName, 
+        gfxWindowsFontType(isCFF ? GFX_FONT_TYPE_PS_OPENTYPE : GFX_FONT_TYPE_TRUETYPE) , 
+        uint32_t(aItalic ? NS_FONT_STYLE_ITALIC : NS_FONT_STYLE_NORMAL),
+        w, aStretch, winUserFontData, false);
 
     if (!fe)
         return fe;
