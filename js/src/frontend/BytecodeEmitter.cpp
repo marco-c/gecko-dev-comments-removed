@@ -644,7 +644,7 @@ NonLocalExitScope::prepareForNonLocalJump(StmtInfoBCE* toStmt)
 
 
 
-            npops += 3;
+            npops += 2;
             break;
 
           default:;
@@ -5035,9 +5035,7 @@ BytecodeEmitter::emitTry(ParseNode* pn)
         if (!updateSourceCoordNotes(pn->pn_kid3->pn_pos.begin))
             return false;
         if (!emit1(JSOP_FINALLY) ||
-            !emit1(JSOP_GETRVAL) ||
             !emitTree(pn->pn_kid3) ||
-            !emit1(JSOP_SETRVAL) ||
             !emit1(JSOP_RETSUB))
         {
             return false;
@@ -6070,6 +6068,16 @@ BytecodeEmitter::emitContinue(PropertyName* label)
 }
 
 bool
+BytecodeEmitter::inTryBlockWithFinally()
+{
+    for (StmtInfoBCE* stmt = innermostStmt(); stmt; stmt = stmt->enclosing) {
+        if (stmt->type == StmtType::FINALLY)
+            return true;
+    }
+    return false;
+}
+
+bool
 BytecodeEmitter::emitReturn(ParseNode* pn)
 {
     if (!updateSourceCoordNotes(pn->pn_pos.begin))
@@ -6081,7 +6089,7 @@ BytecodeEmitter::emitReturn(ParseNode* pn)
     }
 
     
-    if (ParseNode* pn2 = pn->pn_kid) {
+    if (ParseNode* pn2 = pn->pn_left) {
         if (!emitTree(pn2))
             return false;
     } else {
@@ -6109,8 +6117,25 @@ BytecodeEmitter::emitReturn(ParseNode* pn)
     ptrdiff_t top = offset();
 
     bool isGenerator = sc->isFunctionBox() && sc->asFunctionBox()->isGenerator();
-    if (!emit1(isGenerator ? JSOP_SETRVAL : JSOP_RETURN))
-        return false;
+    bool useGenRVal = false;
+    if (isGenerator) {
+        if (sc->asFunctionBox()->isStarGenerator() && inTryBlockWithFinally()) {
+            
+            
+            useGenRVal = true;
+            MOZ_ASSERT(pn->pn_right);
+            if (!emitTree(pn->pn_right))
+                return false;
+            if (!emit1(JSOP_POP))
+                return false;
+        } else {
+            if (!emit1(JSOP_SETRVAL))
+                return false;
+        }
+    } else {
+        if (!emit1(JSOP_RETURN))
+            return false;
+    }
 
     NonLocalExitScope nle(this);
 
@@ -6122,6 +6147,14 @@ BytecodeEmitter::emitReturn(ParseNode* pn)
         
         
         sc.setHops(0);
+        if (useGenRVal) {
+            MOZ_ALWAYS_TRUE(lookupAliasedNameSlot(cx->names().dotGenRVal, &sc));
+            if (!emitAliasedVarOp(JSOP_GETALIASEDVAR, sc, DontCheckLexical))
+                return false;
+            if (!emit1(JSOP_SETRVAL))
+                return false;
+        }
+
         MOZ_ALWAYS_TRUE(lookupAliasedNameSlot(cx->names().dotGenerator, &sc));
         if (!emitAliasedVarOp(JSOP_GETALIASEDVAR, sc, DontCheckLexical))
             return false;

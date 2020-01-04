@@ -304,6 +304,8 @@ struct BytecodeEmitter
     
     bool checkSideEffects(ParseNode* pn, bool* answer);
 
+    bool inTryBlockWithFinally();
+
 #ifdef DEBUG
     bool checkStrictOrSloppy(JSOp op);
 #endif

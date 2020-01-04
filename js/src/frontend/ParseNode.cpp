@@ -339,10 +339,17 @@ PushNodeChildren(ParseNode* pn, NodeStack* stack)
 
       
       
+      
       case PNK_RETURN: {
-        MOZ_ASSERT(pn->isArity(PN_UNARY));
-        if (pn->pn_kid)
-            stack->push(pn->pn_kid);
+        MOZ_ASSERT(pn->isArity(PN_BINARY));
+        if (pn->pn_left)
+            stack->push(pn->pn_left);
+        if (pn->pn_right) {
+            MOZ_ASSERT(pn->pn_right->isKind(PNK_NAME));
+            MOZ_ASSERT(pn->pn_right->pn_atom->equals(".genrval"));
+            MOZ_ASSERT(pn->pn_right->isAssigned());
+            stack->push(pn->pn_right);
+        }
         return PushResult::Recyclable;
       }
 
