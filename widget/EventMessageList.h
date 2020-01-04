@@ -296,7 +296,7 @@ NS_EVENT_MESSAGE(ePluginInputEvent,     ePluginEventFirst)
 
 NS_EVENT_MESSAGE(eSelectionEventFirst,  3700)
 
-NS_EVENT_MESSAGE(NS_SELECTION_SET,      eSelectionEventFirst)
+NS_EVENT_MESSAGE(eSetSelection,         eSelectionEventFirst)
 
 
 NS_EVENT_MESSAGE(NS_CONTENT_COMMAND_EVENT_START,        3800)
