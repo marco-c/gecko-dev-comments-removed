@@ -8,17 +8,40 @@
 
 #include "CompositorWidget.h"
 #include "mozilla/gfx/CriticalSection.h"
+#include "mozilla/gfx/Point.h"
 
 class nsWindow;
 
 namespace mozilla {
 namespace widget {
+
+class CompositorWidgetDelegate
+{
+public:
+  
+  virtual void EnterPresentLock() = 0;
+  virtual void LeavePresentLock() = 0;
+  virtual void OnDestroyWindow() = 0;
+
+  
+  virtual void UpdateTransparency(nsTransparencyMode aMode) = 0;
+  virtual void ClearTransparentWindow() = 0;
+
+  
+  virtual void ResizeTransparentWindow(const gfx::IntSize& aSize) = 0;
+
+  
+  
+  virtual HDC GetTransparentDC() const = 0;
+};
  
 
 
 
 
-class WinCompositorWidget: public CompositorWidget
+class WinCompositorWidget
+ : public CompositorWidget,
+   public CompositorWidgetDelegate
 {
 public:
   WinCompositorWidget(const CompositorWidgetInitData& aInitData,
@@ -39,24 +62,24 @@ public:
   WinCompositorWidget* AsWindows() override {
     return this;
   }
+  CompositorWidgetDelegate* AsDelegate() override {
+    return this;
+  }
 
   
-  void EnterPresentLock();
-  void LeavePresentLock();
-  void OnDestroyWindow();
+  void EnterPresentLock() override;
+  void LeavePresentLock() override;
+  void OnDestroyWindow() override;
+  void UpdateTransparency(nsTransparencyMode aMode) override;
+  void ClearTransparentWindow() override;
+  void ResizeTransparentWindow(const gfx::IntSize& aSize) override;
 
-  
-  void UpdateTransparency(nsTransparencyMode aMode);
-  void ClearTransparentWindow();
   bool RedrawTransparentWindow();
-
-  
-  void ResizeTransparentWindow(int32_t aNewWidth, int32_t aNewHeight);
 
   
   RefPtr<gfxASurface> EnsureTransparentSurface();
 
-  HDC GetTransparentDC() const {
+  HDC GetTransparentDC() const override {
     return mMemoryDC;
   }
   HWND GetHwnd() const {
@@ -67,7 +90,7 @@ private:
   HDC GetWindowSurface();
   void FreeWindowSurface(HDC dc);
 
-  void CreateTransparentSurface(int32_t aWidth, int32_t aHeight);
+  void CreateTransparentSurface(const gfx::IntSize& aSize);
 
 private:
   nsWindow* mWindow;

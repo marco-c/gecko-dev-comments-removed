@@ -34,6 +34,13 @@ class CompositorWidgetInitData;
 
 
 
+
+
+class CompositorWidgetDelegate;
+
+
+
+
 class CompositorWidget
 {
 public:
@@ -208,6 +215,13 @@ public:
   virtual already_AddRefed<CompositorVsyncDispatcher> GetCompositorVsyncDispatcher() = 0;
 
   virtual WinCompositorWidget* AsWindows() {
+    return nullptr;
+  }
+
+  
+
+
+  virtual CompositorWidgetDelegate* AsDelegate() {
     return nullptr;
   }
 
