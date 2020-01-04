@@ -423,7 +423,6 @@ public:
     mIsSolidColorInVisibleRegion(false),
     mFontSmoothingBackgroundColor(NS_RGBA(0,0,0,0)),
     mSingleItemFixedToViewport(false),
-    mIsCaret(false),
     mNeedComponentAlpha(false),
     mForceTransparentSurface(false),
     mHideAllLayersBelow(false),
@@ -589,10 +588,6 @@ public:
   
 
 
-  bool mIsCaret;
-  
-
-
 
   bool mNeedComponentAlpha;
   
@@ -683,7 +678,6 @@ struct NewLayerEntry {
     , mOpaqueForAnimatedGeometryRootParent(false)
     , mPropagateComponentAlphaFlattening(true)
     , mUntransformedVisibleRegion(false)
-    , mIsCaret(false)
     , mIsPerspectiveItem(false)
   {}
   
@@ -720,7 +714,6 @@ struct NewLayerEntry {
   
   
   bool mUntransformedVisibleRegion;
-  bool mIsCaret;
   bool mIsPerspectiveItem;
 };
 
@@ -3087,7 +3080,6 @@ void ContainerState::FinishPaintedLayerData(PaintedLayerData& aData, FindOpaqueB
       newLayerEntry->mLayer = layer;
       newLayerEntry->mAnimatedGeometryRoot = data->mAnimatedGeometryRoot;
       newLayerEntry->mScrollClip = data->mScrollClip;
-      newLayerEntry->mIsCaret = data->mIsCaret;
 
       
       
@@ -3536,13 +3528,11 @@ ContainerState::NewPaintedLayerData(nsDisplayItem* aItem,
   data.mReferenceFrame = aItem->ReferenceFrame();
   data.mSingleItemFixedToViewport = aShouldFixToViewport;
   data.mBackfaceHidden = aItem->Frame()->In3DContextAndBackfaceIsHidden();
-  data.mIsCaret = aItem->GetType() == nsDisplayItem::TYPE_CARET;
 
   data.mNewChildLayersIndex = mNewChildLayers.Length();
   NewLayerEntry* newLayerEntry = mNewChildLayers.AppendElement();
   newLayerEntry->mAnimatedGeometryRoot = aAnimatedGeometryRoot;
   newLayerEntry->mScrollClip = aScrollClip;
-  newLayerEntry->mIsCaret = data.mIsCaret;
   
   
 
@@ -4175,7 +4165,6 @@ ContainerState::ProcessDisplayItems(nsDisplayList* aList)
           layerState == LAYER_ACTIVE_FORCE) {
         newLayerEntry->mPropagateComponentAlphaFlattening = false;
       }
-      newLayerEntry->mIsCaret = itemType == nsDisplayItem::TYPE_CARET;
       
       
       
