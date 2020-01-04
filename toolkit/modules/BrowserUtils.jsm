@@ -270,7 +270,21 @@ this.BrowserUtils = {
         return false;
     }
 
-    if (win && !this.mimeTypeIsTextBased(win.document.contentType))
+    return true;
+  },
+
+  
+
+
+
+
+
+
+  canFastFind: function(win) {
+    if (!win)
+      return false;
+
+    if (!this.mimeTypeIsTextBased(win.document.contentType))
       return false;
 
     
@@ -280,7 +294,7 @@ this.BrowserUtils = {
 
     
     if ((loc.protocol == "about:" || loc.protocol == "chrome:") &&
-        (win && win.document.documentElement &&
+        (win.document.documentElement &&
          win.document.documentElement.getAttribute("disablefastfind") == "true"))
       return false;
 
