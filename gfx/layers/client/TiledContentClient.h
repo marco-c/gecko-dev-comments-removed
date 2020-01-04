@@ -443,9 +443,6 @@ private:
   
   nsIntRegion mNewValidRegion;
 
-  
-  RefPtr<gfx::DrawTarget>       mSinglePaintDrawTarget;
-  nsIntPoint                    mSinglePaintBufferOffset;
   SharedFrameMetricsHelper*  mSharedFrameMetricsHelper;
   
   std::vector<gfx::Tile> mMoz2DTiles;
