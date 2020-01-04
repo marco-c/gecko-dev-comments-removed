@@ -1618,7 +1618,10 @@ MediaDecoderStateMachine::InitiateSeek(SeekJob aSeekJob)
                                       Move(aSeekJob), mInfo, Duration(),
                                       GetMediaTime(), AudioQueue(), VideoQueue());
   } else {
-    MOZ_ASSERT(false, "Cannot handle this seek task.");
+    
+    
+    
+    MOZ_DIAGNOSTIC_ASSERT(false, "Cannot handle this seek task.");
   }
 
   
