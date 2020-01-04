@@ -185,7 +185,6 @@ let SourceActor = ActorClassWithSpec(sourceSpec, {
   get threadActor() { return this._threadActor; },
   get sources() { return this._threadActor.sources; },
   get dbg() { return this.threadActor.dbg; },
-  get scripts() { return this.threadActor.scripts; },
   get source() { return this._source; },
   get generatedSource() { return this._generatedSource; },
   get breakpointActorMap() { return this.threadActor.breakpointActorMap; },
@@ -444,7 +443,7 @@ let SourceActor = ActorClassWithSpec(sourceSpec, {
 
   getExecutableOffsets: function (source, onlyLine) {
     let offsets = new Set();
-    for (let s of this.threadActor.scripts.getScriptsBySource(source)) {
+    for (let s of this.dbg.findScripts({ source })) {
       for (let offset of s.getAllColumnOffsets()) {
         offsets.add(onlyLine ? offset.lineNumber : offset);
       }
@@ -718,10 +717,17 @@ let SourceActor = ActorClassWithSpec(sourceSpec, {
         actor,
         GeneratedLocation.fromOriginalLocation(originalLocation)
       )) {
-        const scripts = this.scripts.getScriptsBySourceActorAndLine(
-          this,
-          originalLine
-        );
+        const query = { line: originalLine };
+        
+        
+        
+        
+        if (this.source) {
+          query.source = this.source;
+        } else {
+          query.url = this.url;
+        }
+        const scripts = this.dbg.findScripts(query);
 
         
         
@@ -837,10 +843,14 @@ let SourceActor = ActorClassWithSpec(sourceSpec, {
     } = generatedLocation;
 
     
-    let scripts = this.scripts.getScriptsBySourceActorAndLine(
-      generatedSourceActor,
-      generatedLine
-    );
+    
+    const query = { line: generatedLine };
+    if (generatedSourceActor.source) {
+      query.source = generatedSourceActor.source;
+    } else {
+      query.url = generatedSourceActor.url;
+    }
+    let scripts = this.dbg.findScripts(query);
 
     scripts = scripts.filter((script) => !actor.hasScript(script));
 
