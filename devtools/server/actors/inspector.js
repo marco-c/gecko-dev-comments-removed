@@ -1987,18 +1987,12 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
     }
 
     let rawNode = node.rawNode;
-    
-    
-    if (node.isDocumentElement()) {
-      throw new Error("Can't insert adjacent element to the root.");
-    }
-
     let isInsertAsSibling = position === "beforeBegin" ||
       position === "afterEnd";
-    if ((rawNode.tagName === "BODY" || rawNode.tagName === "HEAD") &&
-      isInsertAsSibling) {
-      throw new Error("Can't insert element before or after the body " +
-        "or the head.");
+
+    
+    if (isInsertAsSibling && node.isDocumentElement()) {
+      throw new Error("Can't insert adjacent element to the root.");
     }
 
     let rawParentNode = rawNode.parentNode;
