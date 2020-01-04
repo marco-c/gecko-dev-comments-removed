@@ -156,7 +156,7 @@ nsTableOuterFrame::RemoveFrame(ChildListID     aListID,
   
   NS_PRECONDITION(kCaptionList == aListID, "can't remove inner frame");
 
-  if (HasSideCaption(GetWritingMode())) {
+  if (HasSideCaption()) {
     
     
     InnerTableFrame()->AddStateBits(NS_FRAME_IS_DIRTY);
@@ -307,7 +307,7 @@ nsTableOuterFrame::GetMinISize(nsRenderingContext *aRenderingContext)
       nsLayoutUtils::IntrinsicForContainer(aRenderingContext,
                                            mCaptionFrames.FirstChild(),
                                            nsLayoutUtils::MIN_ISIZE);
-    if (HasSideCaption(GetWritingMode())) {
+    if (HasSideCaption()) {
       iSize += capISize;
     } else {
       if (capISize > iSize) {
@@ -326,12 +326,11 @@ nsTableOuterFrame::GetPrefISize(nsRenderingContext *aRenderingContext)
 
   maxISize = nsLayoutUtils::IntrinsicForContainer(aRenderingContext,
                InnerTableFrame(), nsLayoutUtils::PREF_ISIZE);
-  WritingMode wm = GetWritingMode();
   if (mCaptionFrames.NotEmpty()) {
-    uint8_t captionSide = GetLogicalCaptionSide(wm);
+    uint8_t captionSide = GetCaptionSide();
     switch (captionSide) {
-    case NS_STYLE_CAPTION_SIDE_ISTART:
-    case NS_STYLE_CAPTION_SIDE_IEND:
+    case NS_STYLE_CAPTION_SIDE_LEFT:
+    case NS_STYLE_CAPTION_SIDE_RIGHT:
       {
         nscoord capMin =
           nsLayoutUtils::IntrinsicForContainer(aRenderingContext,
@@ -343,14 +342,14 @@ nsTableOuterFrame::GetPrefISize(nsRenderingContext *aRenderingContext)
     default:
       {
         nsLayoutUtils::IntrinsicISizeType iwt;
-        if (captionSide == NS_STYLE_CAPTION_SIDE_BSTART ||
-            captionSide == NS_STYLE_CAPTION_SIDE_BEND) {
+        if (captionSide == NS_STYLE_CAPTION_SIDE_TOP ||
+            captionSide == NS_STYLE_CAPTION_SIDE_BOTTOM) {
           
           
           iwt = nsLayoutUtils::MIN_ISIZE;
         } else {
-          NS_ASSERTION(captionSide == NS_STYLE_CAPTION_SIDE_BSTART_OUTSIDE ||
-                       captionSide == NS_STYLE_CAPTION_SIDE_BEND_OUTSIDE,
+          NS_ASSERTION(captionSide == NS_STYLE_CAPTION_SIDE_TOP_OUTSIDE ||
+                       captionSide == NS_STYLE_CAPTION_SIDE_BOTTOM_OUTSIDE,
                        "unexpected caption side");
           iwt = nsLayoutUtils::PREF_ISIZE;
         }
@@ -420,13 +419,13 @@ nsTableOuterFrame::ComputeAutoSize(nsRenderingContext *aRenderingContext,
   
 
   
-  uint8_t captionSide = GetLogicalCaptionSide(aWM);
+  uint8_t captionSide = GetCaptionSide();
   nscoord inlineSize;
   if (captionSide == NO_SIDE) {
     inlineSize = ChildShrinkWrapISize(aRenderingContext, InnerTableFrame(), aWM,
                                       aCBSize, kidAvailableISize);
-  } else if (captionSide == NS_STYLE_CAPTION_SIDE_ISTART ||
-             captionSide == NS_STYLE_CAPTION_SIDE_IEND) {
+  } else if (captionSide == NS_STYLE_CAPTION_SIDE_LEFT ||
+             captionSide == NS_STYLE_CAPTION_SIDE_RIGHT) {
     nscoord capISize = ChildShrinkWrapISize(aRenderingContext,
                                             mCaptionFrames.FirstChild(), aWM,
                                             aCBSize, kidAvailableISize);
@@ -434,8 +433,8 @@ nsTableOuterFrame::ComputeAutoSize(nsRenderingContext *aRenderingContext,
                                                  InnerTableFrame(), aWM,
                                                  aCBSize,
                                                  kidAvailableISize - capISize);
-  } else if (captionSide == NS_STYLE_CAPTION_SIDE_BSTART ||
-             captionSide == NS_STYLE_CAPTION_SIDE_BEND) {
+  } else if (captionSide == NS_STYLE_CAPTION_SIDE_TOP ||
+             captionSide == NS_STYLE_CAPTION_SIDE_BOTTOM) {
     nscoord margin;
     inlineSize = ChildShrinkWrapISize(aRenderingContext, InnerTableFrame(), aWM,
                                       aCBSize, kidAvailableISize, &margin);
@@ -446,8 +445,8 @@ nsTableOuterFrame::ComputeAutoSize(nsRenderingContext *aRenderingContext,
       inlineSize = capISize;
     }
   } else {
-    NS_ASSERTION(captionSide == NS_STYLE_CAPTION_SIDE_BSTART_OUTSIDE ||
-                 captionSide == NS_STYLE_CAPTION_SIDE_BEND_OUTSIDE,
+    NS_ASSERTION(captionSide == NS_STYLE_CAPTION_SIDE_TOP_OUTSIDE ||
+                 captionSide == NS_STYLE_CAPTION_SIDE_BOTTOM_OUTSIDE,
                  "unexpected caption-side");
     inlineSize = ChildShrinkWrapISize(aRenderingContext, InnerTableFrame(), aWM,
                                       aCBSize, kidAvailableISize);
@@ -463,11 +462,10 @@ nsTableOuterFrame::ComputeAutoSize(nsRenderingContext *aRenderingContext,
 }
 
 uint8_t
-nsTableOuterFrame::GetLogicalCaptionSide(WritingMode aWM)
+nsTableOuterFrame::GetCaptionSide()
 {
   if (mCaptionFrames.NotEmpty()) {
-    return mCaptionFrames.FirstChild()->StyleTableBorder()->
-      LogicalCaptionSide(aWM);
+    return mCaptionFrames.FirstChild()->StyleTableBorder()->mCaptionSide;
   }
   else {
     return NO_SIDE; 
@@ -498,17 +496,17 @@ nsTableOuterFrame::SetDesiredSize(uint8_t              aCaptionSide,
 
   
   switch (aCaptionSide) {
-    case NS_STYLE_CAPTION_SIDE_ISTART:
+    case NS_STYLE_CAPTION_SIDE_LEFT:
       aISize =
-        std::max(aInnerMargin.IStart(aWM),
+        std::max(aInnerMargin.LineLeft(aWM),
                  aCaptionMargin.IStartEnd(aWM) + aCaptionSize.ISize(aWM)) +
-        aInnerSize.ISize(aWM) + aInnerMargin.IEnd(aWM);
+        aInnerSize.ISize(aWM) + aInnerMargin.LineRight(aWM);
       break;
-    case NS_STYLE_CAPTION_SIDE_IEND:
+    case NS_STYLE_CAPTION_SIDE_RIGHT:
       aISize =
-        std::max(aInnerMargin.IEnd(aWM),
+        std::max(aInnerMargin.LineRight(aWM),
                  aCaptionMargin.IStartEnd(aWM) + aCaptionSize.ISize(aWM)) +
-        aInnerSize.ISize(aWM) + aInnerMargin.IStart(aWM);
+        aInnerSize.ISize(aWM) + aInnerMargin.LineLeft(aWM);
       break;
     default:
       aISize =
@@ -519,22 +517,22 @@ nsTableOuterFrame::SetDesiredSize(uint8_t              aCaptionSide,
 
   
   switch (aCaptionSide) {
-    case NS_STYLE_CAPTION_SIDE_BSTART:
-    case NS_STYLE_CAPTION_SIDE_BSTART_OUTSIDE:
+    case NS_STYLE_CAPTION_SIDE_TOP:
+    case NS_STYLE_CAPTION_SIDE_TOP_OUTSIDE:
       aBSize = aInnerSize.BSize(aWM) + aInnerMargin.BEnd(aWM);
       aBSize +=
         std::max(aInnerMargin.BStart(aWM),
                  aCaptionSize.BSize(aWM) + aCaptionMargin.BStartEnd(aWM));
       break;
-    case NS_STYLE_CAPTION_SIDE_BEND:
-    case NS_STYLE_CAPTION_SIDE_BEND_OUTSIDE:
+    case NS_STYLE_CAPTION_SIDE_BOTTOM:
+    case NS_STYLE_CAPTION_SIDE_BOTTOM_OUTSIDE:
       aBSize = aInnerSize.BSize(aWM) + aInnerMargin.BStart(aWM);
       aBSize +=
         std::max(aInnerMargin.BEnd(aWM),
                  aCaptionSize.BSize(aWM) + aCaptionMargin.BStartEnd(aWM));
       break;
-    case NS_STYLE_CAPTION_SIDE_ISTART:
-    case NS_STYLE_CAPTION_SIDE_IEND:
+    case NS_STYLE_CAPTION_SIDE_LEFT:
+    case NS_STYLE_CAPTION_SIDE_RIGHT:
       aBSize = aInnerMargin.BStart(aWM);
       aBSize +=
         std::max(aInnerSize.BSize(aWM) + aInnerMargin.BEnd(aWM),
@@ -579,28 +577,28 @@ nsTableOuterFrame::GetCaptionOrigin(uint32_t             aCaptionSide,
 
   
   switch (aCaptionSide) {
-    case NS_STYLE_CAPTION_SIDE_BEND:
-    case NS_STYLE_CAPTION_SIDE_BEND_OUTSIDE:
+    case NS_STYLE_CAPTION_SIDE_BOTTOM:
+    case NS_STYLE_CAPTION_SIDE_BOTTOM_OUTSIDE:
       aOrigin.I(aWM) = aCaptionMargin.IStart(aWM);
-      if (aCaptionSide == NS_STYLE_CAPTION_SIDE_BEND) {
+      if (aCaptionSide == NS_STYLE_CAPTION_SIDE_BOTTOM) {
         
         
         aOrigin.I(aWM) += aInnerMargin.IStart(aWM);
       }
       break;
-    case NS_STYLE_CAPTION_SIDE_ISTART:
+    case NS_STYLE_CAPTION_SIDE_LEFT:
+    case NS_STYLE_CAPTION_SIDE_RIGHT:
       aOrigin.I(aWM) = aCaptionMargin.IStart(aWM);
-      break;
-    case NS_STYLE_CAPTION_SIDE_IEND:
-      aOrigin.I(aWM) = aInnerMargin.IStart(aWM) + aInnerSize.ISize(aWM) +
-                       aCaptionMargin.IStart(aWM);
+      if (aWM.IsBidiLTR() == (aCaptionSide == NS_STYLE_CAPTION_SIDE_RIGHT)) {
+        aOrigin.I(aWM) += aInnerMargin.IStart(aWM) + aInnerSize.ISize(aWM);
+      }
       break;
     default: 
-      NS_ASSERTION(aCaptionSide == NS_STYLE_CAPTION_SIDE_BSTART ||
-                   aCaptionSide == NS_STYLE_CAPTION_SIDE_BSTART_OUTSIDE,
+      NS_ASSERTION(aCaptionSide == NS_STYLE_CAPTION_SIDE_TOP ||
+                   aCaptionSide == NS_STYLE_CAPTION_SIDE_TOP_OUTSIDE,
                    "unexpected caption side");
       aOrigin.I(aWM) = aCaptionMargin.IStart(aWM);
-      if (aCaptionSide == NS_STYLE_CAPTION_SIDE_BSTART) {
+      if (aCaptionSide == NS_STYLE_CAPTION_SIDE_TOP) {
         
         
         aOrigin.I(aWM) += aInnerMargin.IStart(aWM);
@@ -609,8 +607,8 @@ nsTableOuterFrame::GetCaptionOrigin(uint32_t             aCaptionSide,
   }
   
   switch (aCaptionSide) {
-    case NS_STYLE_CAPTION_SIDE_IEND:
-    case NS_STYLE_CAPTION_SIDE_ISTART:
+    case NS_STYLE_CAPTION_SIDE_RIGHT:
+    case NS_STYLE_CAPTION_SIDE_LEFT:
       aOrigin.B(aWM) = aInnerMargin.BStart(aWM);
       switch (GetCaptionVerticalAlign()) {
         case NS_STYLE_VERTICAL_ALIGN_MIDDLE:
@@ -627,13 +625,13 @@ nsTableOuterFrame::GetCaptionOrigin(uint32_t             aCaptionSide,
           break;
       }
       break;
-    case NS_STYLE_CAPTION_SIDE_BEND_OUTSIDE:
-    case NS_STYLE_CAPTION_SIDE_BEND:
+    case NS_STYLE_CAPTION_SIDE_BOTTOM_OUTSIDE:
+    case NS_STYLE_CAPTION_SIDE_BOTTOM:
       aOrigin.B(aWM) = aInnerMargin.BStart(aWM) + aInnerSize.BSize(aWM) +
                        aCaptionMargin.BStart(aWM);
       break;
-    case NS_STYLE_CAPTION_SIDE_BSTART_OUTSIDE:
-    case NS_STYLE_CAPTION_SIDE_BSTART:
+    case NS_STYLE_CAPTION_SIDE_TOP_OUTSIDE:
+    case NS_STYLE_CAPTION_SIDE_TOP:
       aOrigin.B(aWM) = aInnerMargin.BStart(aWM) + aCaptionMargin.BStart(aWM);
       break;
     default:
@@ -675,21 +673,23 @@ nsTableOuterFrame::GetInnerOrigin(uint32_t             aCaptionSide,
 
   
   switch (aCaptionSide) {
-    case NS_STYLE_CAPTION_SIDE_ISTART:
-      if (aInnerMargin.IStart(aWM) < minCapISize) {
-        
-        aInnerMargin.IEnd(aWM) += aInnerMargin.IStart(aWM) - minCapISize;
-        aInnerMargin.IEnd(aWM)  = std::max(0, aInnerMargin.IEnd(aWM));
-        aInnerMargin.IStart(aWM) = minCapISize;
+    case NS_STYLE_CAPTION_SIDE_LEFT:
+    case NS_STYLE_CAPTION_SIDE_RIGHT:
+      if (aWM.IsBidiLTR() == (aCaptionSide == NS_STYLE_CAPTION_SIDE_LEFT)) {
+        if (aInnerMargin.IStart(aWM) < minCapISize) {
+          
+          aInnerMargin.IEnd(aWM) += aInnerMargin.IStart(aWM) - minCapISize;
+          aInnerMargin.IEnd(aWM)  = std::max(0, aInnerMargin.IEnd(aWM));
+          aInnerMargin.IStart(aWM) = minCapISize;
+        }
       }
       aOrigin.I(aWM) = aInnerMargin.IStart(aWM);
       break;
     default:
-      NS_ASSERTION(aCaptionSide == NS_STYLE_CAPTION_SIDE_BSTART ||
-                   aCaptionSide == NS_STYLE_CAPTION_SIDE_BSTART_OUTSIDE ||
-                   aCaptionSide == NS_STYLE_CAPTION_SIDE_BEND ||
-                   aCaptionSide == NS_STYLE_CAPTION_SIDE_BEND_OUTSIDE ||
-                   aCaptionSide == NS_STYLE_CAPTION_SIDE_IEND ||
+      NS_ASSERTION(aCaptionSide == NS_STYLE_CAPTION_SIDE_TOP ||
+                   aCaptionSide == NS_STYLE_CAPTION_SIDE_TOP_OUTSIDE ||
+                   aCaptionSide == NS_STYLE_CAPTION_SIDE_BOTTOM ||
+                   aCaptionSide == NS_STYLE_CAPTION_SIDE_BOTTOM_OUTSIDE ||
                    aCaptionSide == NO_SIDE,
                    "unexpected caption side");
       aOrigin.I(aWM) = aInnerMargin.IStart(aWM);
@@ -698,12 +698,12 @@ nsTableOuterFrame::GetInnerOrigin(uint32_t             aCaptionSide,
   
   
   switch (aCaptionSide) {
-    case NS_STYLE_CAPTION_SIDE_BEND:
-    case NS_STYLE_CAPTION_SIDE_BEND_OUTSIDE:
+    case NS_STYLE_CAPTION_SIDE_BOTTOM:
+    case NS_STYLE_CAPTION_SIDE_BOTTOM_OUTSIDE:
       aOrigin.B(aWM) = aInnerMargin.BStart(aWM);
       break;
-    case NS_STYLE_CAPTION_SIDE_ISTART:
-    case NS_STYLE_CAPTION_SIDE_IEND:
+    case NS_STYLE_CAPTION_SIDE_LEFT:
+    case NS_STYLE_CAPTION_SIDE_RIGHT:
       aOrigin.B(aWM) = aInnerMargin.BStart(aWM);
       switch (GetCaptionVerticalAlign()) {
         case NS_STYLE_VERTICAL_ALIGN_MIDDLE:
@@ -721,8 +721,8 @@ nsTableOuterFrame::GetInnerOrigin(uint32_t             aCaptionSide,
       }
       break;
     case NO_SIDE:
-    case NS_STYLE_CAPTION_SIDE_BSTART_OUTSIDE:
-    case NS_STYLE_CAPTION_SIDE_BSTART:
+    case NS_STYLE_CAPTION_SIDE_TOP_OUTSIDE:
+    case NS_STYLE_CAPTION_SIDE_TOP:
       aOrigin.B(aWM) = aInnerMargin.BStart(aWM) + aCaptionSize.BSize(aWM) +
                        aCaptionMargin.BStartEnd(aWM);
       break;
@@ -771,9 +771,9 @@ nsTableOuterFrame::OuterBeginReflowChild(nsPresContext*            aPresContext,
   
   if (aChildRS->mFlags.mIsTopOfPage &&
       mCaptionFrames.FirstChild() == aChildFrame) {
-    uint8_t captionSide = GetLogicalCaptionSide(wm);
-    if (captionSide == NS_STYLE_CAPTION_SIDE_BEND ||
-        captionSide == NS_STYLE_CAPTION_SIDE_BEND_OUTSIDE) {
+    uint8_t captionSide = GetCaptionSide();
+    if (captionSide == NS_STYLE_CAPTION_SIDE_BOTTOM ||
+        captionSide == NS_STYLE_CAPTION_SIDE_BOTTOM_OUTSIDE) {
       aChildRS->mFlags.mIsTopOfPage = false;
     }
   }
@@ -860,15 +860,15 @@ nsTableOuterFrame::Reflow(nsPresContext*           aPresContext,
   
   
   WritingMode wm = aOuterRS.GetWritingMode();
-  uint8_t captionSide = GetLogicalCaptionSide(wm);
+  uint8_t captionSide = GetCaptionSide();
   WritingMode captionWM = wm; 
 
   if (captionSide == NO_SIDE) {
     
     OuterBeginReflowChild(aPresContext, InnerTableFrame(), aOuterRS,
                           innerRS, aOuterRS.ComputedSize(wm).ISize(wm));
-  } else if (captionSide == NS_STYLE_CAPTION_SIDE_ISTART ||
-             captionSide == NS_STYLE_CAPTION_SIDE_IEND) {
+  } else if (captionSide == NS_STYLE_CAPTION_SIDE_LEFT ||
+             captionSide == NS_STYLE_CAPTION_SIDE_RIGHT) {
     
     
     OuterBeginReflowChild(aPresContext, mCaptionFrames.FirstChild(), aOuterRS,
@@ -878,8 +878,8 @@ nsTableOuterFrame::Reflow(nsPresContext*           aPresContext,
       captionRS->ComputedSizeWithMarginBorderPadding(wm).ISize(wm);
     OuterBeginReflowChild(aPresContext, InnerTableFrame(), aOuterRS,
                           innerRS, innerAvailISize);
-  } else if (captionSide == NS_STYLE_CAPTION_SIDE_BSTART ||
-             captionSide == NS_STYLE_CAPTION_SIDE_BEND) {
+  } else if (captionSide == NS_STYLE_CAPTION_SIDE_TOP ||
+             captionSide == NS_STYLE_CAPTION_SIDE_BOTTOM) {
     
     
     
@@ -901,8 +901,8 @@ nsTableOuterFrame::Reflow(nsPresContext*           aPresContext,
                           captionRS, innerBorderISize);
     captionWM = captionRS->GetWritingMode();
   } else {
-    NS_ASSERTION(captionSide == NS_STYLE_CAPTION_SIDE_BSTART_OUTSIDE ||
-                 captionSide == NS_STYLE_CAPTION_SIDE_BEND_OUTSIDE,
+    NS_ASSERTION(captionSide == NS_STYLE_CAPTION_SIDE_TOP_OUTSIDE ||
+                 captionSide == NS_STYLE_CAPTION_SIDE_BOTTOM_OUTSIDE,
                  "unexpected caption-side");
     
     captionWM = mCaptionFrames.FirstChild()->GetWritingMode();
@@ -932,10 +932,10 @@ nsTableOuterFrame::Reflow(nsPresContext*           aPresContext,
     if (NS_UNCONSTRAINEDSIZE != aOuterRS.AvailableBSize()) {
       nscoord captionBSize = 0;
       switch (captionSide) {
-        case NS_STYLE_CAPTION_SIDE_BSTART:
-        case NS_STYLE_CAPTION_SIDE_BEND:
-        case NS_STYLE_CAPTION_SIDE_BSTART_OUTSIDE:
-        case NS_STYLE_CAPTION_SIDE_BEND_OUTSIDE:
+        case NS_STYLE_CAPTION_SIDE_TOP:
+        case NS_STYLE_CAPTION_SIDE_BOTTOM:
+        case NS_STYLE_CAPTION_SIDE_TOP_OUTSIDE:
+        case NS_STYLE_CAPTION_SIDE_BOTTOM_OUTSIDE:
           captionBSize = captionSize.BSize(wm) + captionMargin.BStartEnd(wm);
           break;
       }

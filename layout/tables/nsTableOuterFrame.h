@@ -190,12 +190,13 @@ protected:
 
   
   
-  uint8_t GetLogicalCaptionSide(mozilla::WritingMode aWM);
+  
+  uint8_t GetCaptionSide();
 
-  bool HasSideCaption(mozilla::WritingMode aWM) {
-    uint8_t captionSide = GetLogicalCaptionSide(aWM);
-    return captionSide == NS_STYLE_CAPTION_SIDE_ISTART ||
-           captionSide == NS_STYLE_CAPTION_SIDE_IEND;
+  bool HasSideCaption() {
+    uint8_t captionSide = GetCaptionSide();
+    return captionSide == NS_STYLE_CAPTION_SIDE_LEFT ||
+           captionSide == NS_STYLE_CAPTION_SIDE_RIGHT;
   }
   
   uint8_t GetCaptionVerticalAlign();
