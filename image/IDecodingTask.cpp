@@ -75,17 +75,16 @@ IDecodingTask::NotifyDecodeComplete(NotNull<RasterImage*> aImage,
   
   if (NS_IsMainThread() &&
       !(aDecoder->GetDecoderFlags() & DecoderFlags::ASYNC_NOTIFY)) {
-    aImage->FinalizeDecoder(aDecoder, finalStatus, metadata, telemetry, progress,
-                            invalidRect, frameCount, surfaceFlags);
+    aImage->NotifyDecodeComplete(finalStatus, metadata, telemetry, progress,
+                                 invalidRect, frameCount, surfaceFlags);
     return;
   }
 
   
   NotNull<RefPtr<RasterImage>> image = aImage;
-  NotNull<RefPtr<Decoder>> decoder = aDecoder;
   NS_DispatchToMainThread(NS_NewRunnableFunction([=]() -> void {
-    image->FinalizeDecoder(decoder.get(), finalStatus, metadata, telemetry,
-                           progress, invalidRect, frameCount, surfaceFlags);
+    image->NotifyDecodeComplete(finalStatus, metadata, telemetry, progress,
+                                invalidRect, frameCount, surfaceFlags);
   }));
 }
 
