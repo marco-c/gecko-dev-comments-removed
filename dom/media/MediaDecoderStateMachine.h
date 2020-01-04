@@ -544,9 +544,7 @@ protected:
 
   
   
-  
-  
-  bool MaybeFinishDecodeFirstFrame();
+  void MaybeFinishDecodeFirstFrame();
 
   void FinishDecodeFirstFrame();
 
