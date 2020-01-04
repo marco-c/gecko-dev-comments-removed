@@ -110,7 +110,7 @@ public:
                      nsIAtom* aCommand, nsIWidget* aWidget)
     : WidgetGUIEvent(aIsTrusted, eUnidentifiedEvent, aWidget,
                      eCommandEventClass)
-    , mCommand(aCommand)
+    , command(aCommand)
   {
     mSpecifiedEventType = aEventType;
   }
@@ -121,13 +121,13 @@ public:
                "Duplicate() must be overridden by sub class");
     
     WidgetCommandEvent* result =
-      new WidgetCommandEvent(false, mSpecifiedEventType, mCommand, nullptr);
+      new WidgetCommandEvent(false, mSpecifiedEventType, command, nullptr);
     result->AssignCommandEventData(*this, true);
     result->mFlags = mFlags;
     return result;
   }
 
-  nsCOMPtr<nsIAtom> mCommand;
+  nsCOMPtr<nsIAtom> command;
 
   
   void AssignCommandEventData(const WidgetCommandEvent& aEvent,
