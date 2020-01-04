@@ -1143,6 +1143,10 @@ class nsIWidget : public nsISupports {
 
 
 
+
+
+
+
     NS_IMETHOD MakeFullScreen(bool aFullScreen, nsIScreen* aTargetScreen = nullptr) = 0;
 
     
