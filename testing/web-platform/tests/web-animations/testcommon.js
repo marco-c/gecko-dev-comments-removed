@@ -8,8 +8,22 @@
 
 
 
-"use strict";
+'use strict';
+
 var MS_PER_SEC = 1000;
+
+
+
+
+var TIME_PRECISION = 0.000001;
+
+
+
+if (!window.assert_times_equal) {
+  window.assert_times_equal = function(actual, expected, description) {
+    assert_approx_equals(actual, expected, TIME_PRECISION, description);
+  }
+}
 
 
 
