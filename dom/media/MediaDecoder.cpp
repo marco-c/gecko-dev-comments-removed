@@ -458,13 +458,12 @@ void MediaDecoder::Shutdown()
 
   mShuttingDown = true;
 
-  mTimedMetadataListener.Disconnect();
-
   
   
   
   if (mDecoderStateMachine) {
     mDecoderStateMachine->DispatchShutdown();
+    mTimedMetadataListener.Disconnect();
   }
 
   
