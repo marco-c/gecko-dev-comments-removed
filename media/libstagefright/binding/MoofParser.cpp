@@ -649,7 +649,9 @@ Mvhd::Mvhd(Box& aBox)
   }
   
   reader->DiscardRemaining();
-  mValid = true;
+  if (mTimescale) {
+    mValid = true;
+  }
 }
 
 Mdhd::Mdhd(Box& aBox)
