@@ -425,6 +425,7 @@ bool
 WidgetKeyboardEvent::ShouldCauseKeypressEvents() const
 {
   
+  
   switch (mKeyNameIndex) {
     case KEY_NAME_INDEX_Alt:
     case KEY_NAME_INDEX_AltGraph:
@@ -441,6 +442,7 @@ WidgetKeyboardEvent::ShouldCauseKeypressEvents() const
     
     case KEY_NAME_INDEX_Symbol:
     case KEY_NAME_INDEX_SymbolLock:
+    case KEY_NAME_INDEX_Dead:
       return false;
     default:
       return true;
