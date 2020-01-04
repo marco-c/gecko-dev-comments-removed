@@ -20,9 +20,6 @@ namespace gfx {
 
 
 
-
-
-
 class PrintTargetThebes final : public PrintTarget {
 public:
 

@@ -105,8 +105,6 @@ public:
 
 
 
-
-
   virtual already_AddRefed<DrawTarget>
   MakeDrawTarget(const IntSize& aSize,
                  DrawEventRecorder* aRecorder = nullptr);
@@ -118,10 +116,6 @@ protected:
 
   
   virtual ~PrintTarget();
-
-  already_AddRefed<DrawTarget>
-  CreateRecordingDrawTarget(DrawEventRecorder* aRecorder,
-                            DrawTarget* aDrawTarget);
 
   cairo_surface_t* mCairoSurface;
   IntSize mSize;
