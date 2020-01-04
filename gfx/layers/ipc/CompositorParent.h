@@ -25,6 +25,7 @@
 #include "mozilla/Monitor.h"            
 #include "mozilla/RefPtr.h"             
 #include "mozilla/TimeStamp.h"          
+#include "mozilla/dom/ipc/IdType.h"
 #include "mozilla/gfx/Point.h"          
 #include "mozilla/ipc/ProtocolUtils.h"
 #include "mozilla/layers/GeckoContentController.h"
@@ -54,6 +55,7 @@ class Compositor;
 class CompositorParent;
 class LayerManagerComposite;
 class LayerTransactionParent;
+class PAPZParent;
 
 struct ScopedLayerTreeRegistration
 {
@@ -283,7 +285,7 @@ public:
 
   static void SetShadowProperties(Layer* aLayer);
 
-  void NotifyChildCreated(const uint64_t& aChild);
+  void NotifyChildCreated(uint64_t aChild);
 
   void AsyncRender();
 
@@ -446,6 +448,20 @@ public:
   nsIWidget* GetWidget() { return mWidget; }
 
   void ForceComposeToTarget(gfx::DrawTarget* aTarget, const gfx::IntRect* aRect = nullptr);
+
+  
+
+
+
+
+
+
+
+
+  static bool UpdateRemoteContentController(uint64_t aLayersId,
+                                            dom::ContentParent* aContentParent,
+                                            const dom::TabId& aTabId,
+                                            dom::TabParent* aBrowserParent);
 
 protected:
   

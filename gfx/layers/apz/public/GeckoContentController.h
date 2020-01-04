@@ -12,6 +12,7 @@
 #include "mozilla/Assertions.h"         
 #include "mozilla/EventForwards.h"      
 #include "nsISupportsImpl.h"
+#include "ThreadSafeRefcountingWithMainThreadDestruction.h"
 
 class Task;
 
@@ -21,7 +22,12 @@ namespace layers {
 class GeckoContentController
 {
 public:
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(GeckoContentController)
+  
+
+
+
+
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING_WITH_MAIN_THREAD_DESTRUCTION(GeckoContentController)
 
   
 
@@ -92,6 +98,7 @@ public:
 
 
 
+
   virtual bool GetTouchSensitiveRegion(CSSRect* aOutRegion)
   {
     return false;
@@ -148,6 +155,10 @@ public:
   virtual void UpdateOverscrollOffset(const float aX,const  float aY) {}
 
   GeckoContentController() {}
+  virtual void ChildAdopted() {}
+  
+
+
   virtual void Destroy() {}
 
 protected:

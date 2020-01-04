@@ -25,6 +25,7 @@
 #include "mozilla/AutoRestore.h"        
 #include "mozilla/ClearOnShutdown.h"    
 #include "mozilla/DebugOnly.h"          
+#include "mozilla/dom/ContentParent.h"
 #include "mozilla/gfx/2D.h"          
 #include "mozilla/gfx/Point.h"          
 #include "mozilla/gfx/Rect.h"          
@@ -43,7 +44,9 @@
 #include "mozilla/layers/LayerManagerComposite.h"
 #include "mozilla/layers/LayersTypes.h"
 #include "mozilla/layers/PLayerTransactionParent.h"
+#include "mozilla/layers/RemoteContentController.h"
 #include "mozilla/layers/ShadowLayersManager.h" 
+#include "mozilla/layout/RenderFrameParent.h"
 #include "mozilla/media/MediaSystemResourceService.h" 
 #include "mozilla/mozalloc.h"           
 #include "mozilla/Telemetry.h"
@@ -76,6 +79,10 @@
 #ifdef MOZ_WIDGET_GONK
 #include "GeckoTouchDispatcher.h"
 #include "nsScreenManagerGonk.h"
+#endif
+
+#ifdef MOZ_ANDROID_APZ
+#include "AndroidBridge.h"
 #endif
 
 #include "LayerScope.h"
@@ -1654,23 +1661,57 @@ CompositorParent::RecvNotifyChildCreated(const uint64_t& child)
 }
 
 void
-CompositorParent::NotifyChildCreated(const uint64_t& aChild)
+CompositorParent::NotifyChildCreated(uint64_t aChild)
 {
   sIndirectLayerTreesLock->AssertCurrentThreadOwns();
   sIndirectLayerTrees[aChild].mParent = this;
   sIndirectLayerTrees[aChild].mLayerManager = mLayerManager;
 }
 
+ bool
+CompositorParent::UpdateRemoteContentController(uint64_t aLayersId,
+                                                dom::ContentParent* aContent,
+                                                const dom::TabId& aTabId,
+                                                dom::TabParent* aTopLevel)
+{
+  MOZ_ASSERT(NS_IsMainThread());
+
+  MonitorAutoLock lock(*sIndirectLayerTreesLock);
+  LayerTreeState& state = sIndirectLayerTrees[aLayersId];
+  
+  
+  
+  
+  RefPtr<RemoteContentController> controller =
+    new RemoteContentController(aLayersId, aTopLevel);
+  if (!aContent->SendPAPZConstructor(controller, aTabId)) {
+    return false;
+  }
+  state.mController = controller;
+  return true;
+}
+
 bool
 CompositorParent::RecvAdoptChild(const uint64_t& child)
 {
-  MonitorAutoLock lock(*sIndirectLayerTreesLock);
-  NotifyChildCreated(child);
-  if (sIndirectLayerTrees[child].mLayerTree) {
-    sIndirectLayerTrees[child].mLayerTree->mLayerManager = mLayerManager;
+  RefPtr<GeckoContentController> controller;
+  {
+    MonitorAutoLock lock(*sIndirectLayerTreesLock);
+    NotifyChildCreated(child);
+    if (sIndirectLayerTrees[child].mLayerTree) {
+      sIndirectLayerTrees[child].mLayerTree->mLayerManager = mLayerManager;
+    }
+    if (sIndirectLayerTrees[child].mRoot) {
+      sIndirectLayerTrees[child].mRoot->AsLayerComposite()->SetLayerManager(mLayerManager);
+    }
+    controller = sIndirectLayerTrees[child].mController;
   }
-  if (sIndirectLayerTrees[child].mRoot) {
-    sIndirectLayerTrees[child].mRoot->AsLayerComposite()->SetLayerManager(mLayerManager);
+
+  
+  
+  
+  if (mApzcTreeManager && controller) {
+    controller->ChildAdopted();
   }
   return true;
 }
