@@ -1461,17 +1461,12 @@ RuntimeService::RegisterWorker(WorkerPrivate* aWorkerPrivate)
 
     if (queued) {
       domainInfo->mQueuedWorkers.AppendElement(aWorkerPrivate);
+
+      
+      
+      WorkerPrivate::ReportErrorToConsole("HittingMaxWorkersPerDomain2");
+
       if (isServiceWorker || isSharedWorker) {
-        AssertIsOnMainThread();
-        
-        
-        
-        
-        nsContentUtils::ReportToConsole(nsIScriptError::warningFlag,
-                                        NS_LITERAL_CSTRING("DOM"),
-                                        aWorkerPrivate->GetDocument(),
-                                        nsContentUtils::eDOM_PROPERTIES,
-                                        "HittingMaxWorkersPerDomain");
         Telemetry::Accumulate(isSharedWorker ? Telemetry::SHARED_WORKER_SPAWN_GETS_QUEUED
                                              : Telemetry::SERVICE_WORKER_SPAWN_GETS_QUEUED, 1);
       }
