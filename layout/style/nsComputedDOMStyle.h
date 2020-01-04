@@ -589,6 +589,8 @@ private:
     nsROCSSPrimitiveValue* aValue);
   void SetValueToPosition(const nsStyleImageLayers::Position& aPosition,
                           nsDOMCSSValueList* aValueList);
+  void SetValueToFragmentOrURL(const FragmentOrURL* aFragmentOrURL,
+                               nsROCSSPrimitiveValue* aValue);
 
   
 
