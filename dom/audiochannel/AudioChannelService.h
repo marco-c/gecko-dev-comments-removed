@@ -142,6 +142,8 @@ private:
   AudioChannelService();
   ~AudioChannelService();
 
+  static void CreateServiceIfNeeded();
+
   
 
 

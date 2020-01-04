@@ -161,15 +161,20 @@ static const nsAttrValue::EnumTable kMozAudioChannelAttributeTable[] = {
   { nullptr }
 };
 
- already_AddRefed<AudioChannelService>
-AudioChannelService::GetOrCreate()
+ void
+AudioChannelService::CreateServiceIfNeeded()
 {
   MOZ_ASSERT(NS_IsMainThread());
 
   if (!gAudioChannelService) {
     gAudioChannelService = new AudioChannelService();
   }
+}
 
+ already_AddRefed<AudioChannelService>
+AudioChannelService::GetOrCreate()
+{
+  CreateServiceIfNeeded();
   nsRefPtr<AudioChannelService> service = gAudioChannelService.get();
   return service.forget();
 }
@@ -919,5 +924,6 @@ AudioChannelService::ChildStatusReceived(uint64_t aChildID,
  bool
 AudioChannelService::IsAudioChannelMutedByDefault()
 {
+  CreateServiceIfNeeded();
   return sAudioChannelMutedByDefault;
 }
