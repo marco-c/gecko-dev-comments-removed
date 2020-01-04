@@ -25,9 +25,8 @@ function RegExpFlagsGetter() {
         result += "m";
 
     
-    
-    
-    
+    if (R.unicode)
+         result += "u";
 
     
     if (R.sticky)

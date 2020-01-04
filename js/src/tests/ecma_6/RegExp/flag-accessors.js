@@ -8,17 +8,14 @@ var props = [
   "ignoreCase",
   "multiline",
   "sticky",
-  
+  "unicode",
 ];
 
 testThrows(RegExp.prototype);
 test(/foo/iymg, [true, true, true, true, false]);
 test(RegExp(""), [false, false, false, false, false]);
 test(RegExp("", "mygi"), [true, true, true, true, false]);
-
-
-assertThrowsInstanceOf(() => RegExp("", "mygui").flags, SyntaxError);
-
+test(RegExp("", "mygiu"), [true, true, true, true, true]);
 
 testThrowsGeneric();
 testThrowsGeneric(1);
