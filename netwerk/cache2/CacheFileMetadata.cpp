@@ -832,6 +832,7 @@ CacheFileMetadata::InitEmptyMetadata()
     mBuf = nullptr;
     mBufSize = 0;
   }
+  mAllocExactSize = false;
   mOffset = 0;
   mMetaHdr.mVersion = kCacheEntryVersion;
   mMetaHdr.mFetchCount = 0;
@@ -890,6 +891,9 @@ CacheFileMetadata::ParseMetadata(uint32_t aMetaOffset, uint32_t aBufOffset,
   if (mMetaHdr.mVersion == 1) {
     
     keyOffset -= sizeof(uint32_t);
+  } else if (mMetaHdr.mVersion == 2) {
+    
+    
   } else if (mMetaHdr.mVersion != kCacheEntryVersion) {
     LOG(("CacheFileMetadata::ParseMetadata() - Not a version we understand to. "
          "[version=0x%x, this=%p]", mMetaHdr.mVersion, this));

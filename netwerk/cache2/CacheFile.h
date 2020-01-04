@@ -80,7 +80,11 @@ public:
   NS_IMETHOD OnMetadataWritten(nsresult aResult) override;
 
   NS_IMETHOD OpenInputStream(nsICacheEntry *aCacheEntryHandle, nsIInputStream **_retval);
+  NS_IMETHOD OpenAlternativeInputStream(nsICacheEntry *aCacheEntryHandle,
+                                        const char *aAltDataType, nsIInputStream **_retval);
   NS_IMETHOD OpenOutputStream(CacheOutputCloseListener *aCloseListener, nsIOutputStream **_retval);
+  NS_IMETHOD OpenAlternativeOutputStream(CacheOutputCloseListener *aCloseListener,
+                                         const char *aAltDataType, nsIOutputStream **_retval);
   NS_IMETHOD SetMemoryOnly();
   NS_IMETHOD Doom(CacheFileListener *aCallback);
 
@@ -147,7 +151,13 @@ private:
   nsresult DeactivateChunk(CacheFileChunk *aChunk);
   void     RemoveChunkInternal(CacheFileChunk *aChunk, bool aCacheChunk);
 
-  int64_t  BytesFromChunk(uint32_t aIndex);
+  bool     OutputStreamExists(bool aAlternativeData);
+  
+  
+  
+  
+  int64_t  BytesFromChunk(uint32_t aIndex, bool aAlternativeData);
+  nsresult Truncate(int64_t aOffset);
 
   nsresult RemoveInput(CacheFileInputStream *aInput, nsresult aStatus);
   nsresult RemoveOutput(CacheFileOutputStream *aOutput, nsresult aStatus);
@@ -190,7 +200,12 @@ private:
   bool           mPreloadWithoutInputStreams;
   uint32_t       mPreloadChunkCount;
   nsresult       mStatus;
-  int64_t        mDataSize;
+  int64_t        mDataSize; 
+                            
+  int64_t        mAltDataOffset; 
+                                 
+                                 
+                                 
   nsCString      mKey;
 
   RefPtr<CacheFileHandle>      mHandle;
@@ -202,6 +217,14 @@ private:
   nsRefPtrHashtable<nsUint32HashKey, CacheFileChunk> mChunks;
   nsClassHashtable<nsUint32HashKey, ChunkListeners> mChunkListeners;
   nsRefPtrHashtable<nsUint32HashKey, CacheFileChunk> mCachedChunks;
+  
+  
+  
+  
+  
+  
+  
+  nsTArray<RefPtr<CacheFileChunk> > mDiscardedChunks;
 
   nsTArray<CacheFileInputStream*> mInputs;
   CacheFileOutputStream          *mOutput;
