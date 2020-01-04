@@ -178,8 +178,6 @@
 
 
 
-
-
 class JSAtom;
 struct JSCompartment;
 class JSFlatString;
@@ -202,6 +200,7 @@ class BaseShape;
 class DebugScopeObject;
 class GlobalObject;
 class LazyScript;
+class ModuleObject;
 class ModuleEnvironmentObject;
 class ModuleNamespaceObject;
 class NativeObject;
@@ -417,22 +416,19 @@ class PreBarriered : public WriteBarrieredBase<T>
 
 
 
-
-
-
 template <class T>
-class HeapPtr : public WriteBarrieredBase<T>
+class GCPtr : public WriteBarrieredBase<T>
 {
   public:
-    HeapPtr() : WriteBarrieredBase<T>(JS::GCPolicy<T>::initial()) {}
-    explicit HeapPtr(T v) : WriteBarrieredBase<T>(v) {
+    GCPtr() : WriteBarrieredBase<T>(JS::GCPolicy<T>::initial()) {}
+    explicit GCPtr(T v) : WriteBarrieredBase<T>(v) {
         this->post(JS::GCPolicy<T>::initial(), v);
     }
-    explicit HeapPtr(const HeapPtr<T>& v) : WriteBarrieredBase<T>(v) {
+    explicit GCPtr(const GCPtr<T>& v) : WriteBarrieredBase<T>(v) {
         this->post(JS::GCPolicy<T>::initial(), v);
     }
 #ifdef DEBUG
-    ~HeapPtr() {
+    ~GCPtr() {
         
         
         MOZ_ASSERT(CurrentThreadIsGCSweeping() || CurrentThreadIsHandlingInitFailure());
@@ -444,7 +440,7 @@ class HeapPtr : public WriteBarrieredBase<T>
         this->post(JS::GCPolicy<T>::initial(), v);
     }
 
-    DECLARE_POINTER_ASSIGN_OPS(HeapPtr, T);
+    DECLARE_POINTER_ASSIGN_OPS(GCPtr, T);
 
     T unbarrieredGet() const {
         return this->value;
@@ -465,8 +461,8 @@ class HeapPtr : public WriteBarrieredBase<T>
 
 
 
-    HeapPtr(HeapPtr<T>&&) = delete;
-    HeapPtr<T>& operator=(HeapPtr<T>&&) = delete;
+    GCPtr(GCPtr<T>&&) = delete;
+    GCPtr<T>& operator=(GCPtr<T>&&) = delete;
 };
 
 
@@ -726,7 +722,7 @@ class HeapSlotArray
     {}
 
     operator const Value*() const {
-        JS_STATIC_ASSERT(sizeof(HeapPtr<Value>) == sizeof(Value));
+        JS_STATIC_ASSERT(sizeof(GCPtr<Value>) == sizeof(Value));
         JS_STATIC_ASSERT(sizeof(HeapSlot) == sizeof(Value));
         return reinterpret_cast<const Value*>(array);
     }
@@ -834,9 +830,9 @@ struct MovableCellHasher<ReadBarriered<T>>
 
 
 template <class T>
-struct HeapPtrHasher
+struct GCPtrHasher
 {
-    typedef HeapPtr<T> Key;
+    typedef GCPtr<T> Key;
     typedef T Lookup;
 
     static HashNumber hash(Lookup obj) { return DefaultHasher<T>::hash(obj); }
@@ -846,7 +842,7 @@ struct HeapPtrHasher
 
 
 template <class T>
-struct DefaultHasher<HeapPtr<T>> : HeapPtrHasher<T> { };
+struct DefaultHasher<GCPtr<T>> : GCPtrHasher<T> {};
 
 template <class T>
 struct PreBarrieredHasher
@@ -911,34 +907,35 @@ typedef RelocatablePtr<JSString*> RelocatablePtrString;
 typedef RelocatablePtr<JSAtom*> RelocatablePtrAtom;
 typedef RelocatablePtr<ArrayBufferObjectMaybeShared*> RelocatablePtrArrayBufferObjectMaybeShared;
 
-typedef HeapPtr<NativeObject*> HeapPtrNativeObject;
-typedef HeapPtr<ArrayObject*> HeapPtrArrayObject;
-typedef HeapPtr<ArrayBufferObjectMaybeShared*> HeapPtrArrayBufferObjectMaybeShared;
-typedef HeapPtr<ArrayBufferObject*> HeapPtrArrayBufferObject;
-typedef HeapPtr<BaseShape*> HeapPtrBaseShape;
-typedef HeapPtr<JSAtom*> HeapPtrAtom;
-typedef HeapPtr<JSFlatString*> HeapPtrFlatString;
-typedef HeapPtr<JSFunction*> HeapPtrFunction;
-typedef HeapPtr<JSLinearString*> HeapPtrLinearString;
-typedef HeapPtr<JSObject*> HeapPtrObject;
-typedef HeapPtr<JSScript*> HeapPtrScript;
-typedef HeapPtr<JSString*> HeapPtrString;
-typedef HeapPtr<ModuleEnvironmentObject*> HeapPtrModuleEnvironmentObject;
-typedef HeapPtr<ModuleNamespaceObject*> HeapPtrModuleNamespaceObject;
-typedef HeapPtr<PlainObject*> HeapPtrPlainObject;
-typedef HeapPtr<PropertyName*> HeapPtrPropertyName;
-typedef HeapPtr<Shape*> HeapPtrShape;
-typedef HeapPtr<UnownedBaseShape*> HeapPtrUnownedBaseShape;
-typedef HeapPtr<jit::JitCode*> HeapPtrJitCode;
-typedef HeapPtr<ObjectGroup*> HeapPtrObjectGroup;
+typedef GCPtr<NativeObject*> GCPtrNativeObject;
+typedef GCPtr<ArrayObject*> GCPtrArrayObject;
+typedef GCPtr<ArrayBufferObjectMaybeShared*> GCPtrArrayBufferObjectMaybeShared;
+typedef GCPtr<ArrayBufferObject*> GCPtrArrayBufferObject;
+typedef GCPtr<BaseShape*> GCPtrBaseShape;
+typedef GCPtr<JSAtom*> GCPtrAtom;
+typedef GCPtr<JSFlatString*> GCPtrFlatString;
+typedef GCPtr<JSFunction*> GCPtrFunction;
+typedef GCPtr<JSLinearString*> GCPtrLinearString;
+typedef GCPtr<JSObject*> GCPtrObject;
+typedef GCPtr<JSScript*> GCPtrScript;
+typedef GCPtr<JSString*> GCPtrString;
+typedef GCPtr<ModuleObject*> GCPtrModuleObject;
+typedef GCPtr<ModuleEnvironmentObject*> GCPtrModuleEnvironmentObject;
+typedef GCPtr<ModuleNamespaceObject*> GCPtrModuleNamespaceObject;
+typedef GCPtr<PlainObject*> GCPtrPlainObject;
+typedef GCPtr<PropertyName*> GCPtrPropertyName;
+typedef GCPtr<Shape*> GCPtrShape;
+typedef GCPtr<UnownedBaseShape*> GCPtrUnownedBaseShape;
+typedef GCPtr<jit::JitCode*> GCPtrJitCode;
+typedef GCPtr<ObjectGroup*> GCPtrObjectGroup;
 
 typedef PreBarriered<Value> PreBarrieredValue;
 typedef RelocatablePtr<Value> RelocatableValue;
-typedef HeapPtr<Value> HeapValue;
+typedef GCPtr<Value> GCPtrValue;
 
 typedef PreBarriered<jsid> PreBarrieredId;
 typedef RelocatablePtr<jsid> RelocatableId;
-typedef HeapPtr<jsid> HeapId;
+typedef GCPtr<jsid> GCPtrId;
 
 typedef ImmutableTenuredPtr<PropertyName*> ImmutablePropertyNamePtr;
 typedef ImmutableTenuredPtr<JS::Symbol*> ImmutableSymbolPtr;

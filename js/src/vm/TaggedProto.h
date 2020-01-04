@@ -101,7 +101,7 @@ class RootedBase<TaggedProto> : public TaggedProtoOperations<Rooted<TaggedProto>
 {};
 
 template <>
-class BarrieredBaseMixins<TaggedProto> : public TaggedProtoOperations<HeapPtr<TaggedProto>>
+class BarrieredBaseMixins<TaggedProto> : public TaggedProtoOperations<GCPtr<TaggedProto>>
 {};
 
 

@@ -91,5 +91,5 @@ js::SetValueInProxy(Value* slot, const Value& value)
 {
     
     
-    *reinterpret_cast<HeapValue*>(slot) = value;
+    *reinterpret_cast<GCPtrValue*>(slot) = value;
 }

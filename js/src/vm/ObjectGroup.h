@@ -84,7 +84,7 @@ class ObjectGroup : public gc::TenuredCell
     const Class* clasp_;
 
     
-    HeapPtr<TaggedProto> proto_;
+    GCPtr<TaggedProto> proto_;
 
     
     JSCompartment* compartment_;
@@ -103,11 +103,11 @@ class ObjectGroup : public gc::TenuredCell
         return proto_.isDynamic();
     }
 
-    const HeapPtr<TaggedProto>& proto() const {
+    const GCPtr<TaggedProto>& proto() const {
         return proto_;
     }
 
-    HeapPtr<TaggedProto>& proto() {
+    GCPtr<TaggedProto>& proto() {
         return proto_;
     }
 
@@ -280,7 +280,7 @@ class ObjectGroup : public gc::TenuredCell
         
         
         
-        HeapId id;
+        GCPtrId id;
 
         
         HeapTypeSet types;

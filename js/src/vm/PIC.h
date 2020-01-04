@@ -178,20 +178,20 @@ struct ForOfPIC
     {
       private:
         
-        HeapPtrNativeObject arrayProto_;
-        HeapPtrNativeObject arrayIteratorProto_;
+        GCPtrNativeObject arrayProto_;
+        GCPtrNativeObject arrayIteratorProto_;
 
         
         
-        HeapPtrShape arrayProtoShape_;
+        GCPtrShape arrayProtoShape_;
         uint32_t arrayProtoIteratorSlot_;
-        HeapValue canonicalIteratorFunc_;
+        GCPtrValue canonicalIteratorFunc_;
 
         
         
-        HeapPtrShape arrayIteratorProtoShape_;
+        GCPtrShape arrayIteratorProtoShape_;
         uint32_t arrayIteratorProtoNextSlot_;
-        HeapValue canonicalNextFunc_;
+        GCPtrValue canonicalNextFunc_;
 
         
         bool initialized_;

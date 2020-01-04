@@ -310,10 +310,10 @@ class ReferenceTypeDescr : public SimpleTypeDescr
     static MOZ_MUST_USE bool call(JSContext* cx, unsigned argc, Value* vp);
 };
 
-#define JS_FOR_EACH_REFERENCE_TYPE_REPR(macro_)                    \
-    macro_(ReferenceTypeDescr::TYPE_ANY,    HeapValue, Any)        \
-    macro_(ReferenceTypeDescr::TYPE_OBJECT, HeapPtrObject, Object) \
-    macro_(ReferenceTypeDescr::TYPE_STRING, HeapPtrString, string)
+#define JS_FOR_EACH_REFERENCE_TYPE_REPR(macro_) \
+    macro_(ReferenceTypeDescr::TYPE_ANY, GCPtrValue, Any) \
+    macro_(ReferenceTypeDescr::TYPE_OBJECT, GCPtrObject, Object) \
+    macro_(ReferenceTypeDescr::TYPE_STRING, GCPtrString, string)
 
 
 
@@ -498,7 +498,7 @@ class TypedObject : public JSObject
   protected:
     static const ObjectOps objectOps_;
 
-    HeapPtrShape shape_;
+    GCPtrShape shape_;
 
     static MOZ_MUST_USE bool obj_lookupProperty(JSContext* cx, HandleObject obj,
                                                 HandleId id, MutableHandleObject objp,
@@ -865,7 +865,7 @@ class StoreScalar##T {                                                        \
 
 
 #define JS_STORE_REFERENCE_CLASS_DEFN(_constant, T, _name)                    \
-class StoreReference##T {                                                     \
+class StoreReference##_name {                                                 \
   private:                                                                    \
     static MOZ_MUST_USE bool store(JSContext* cx, T* heap, const Value& v,    \
                                    TypedObject* obj, jsid id);                \
@@ -899,7 +899,7 @@ class LoadScalar##T {                                                         \
 
 
 #define JS_LOAD_REFERENCE_CLASS_DEFN(_constant, T, _name)                     \
-class LoadReference##T {                                                      \
+class LoadReference##_name {                                                  \
   private:                                                                    \
     static void load(T* heap, MutableHandleValue v);                          \
                                                                               \

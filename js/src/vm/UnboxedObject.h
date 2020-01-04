@@ -61,11 +61,11 @@ class UnboxedLayout : public mozilla::LinkedListElement<UnboxedLayout>
     
     
     
-    HeapPtrObjectGroup nativeGroup_;
-    HeapPtrShape nativeShape_;
+    GCPtrObjectGroup nativeGroup_;
+    GCPtrShape nativeShape_;
 
     
-    HeapPtrScript allocationScript_;
+    GCPtrScript allocationScript_;
     jsbytecode* allocationPc_;
 
     
@@ -73,7 +73,7 @@ class UnboxedLayout : public mozilla::LinkedListElement<UnboxedLayout>
     
     
     
-    HeapPtrObjectGroup replacementGroup_;
+    GCPtrObjectGroup replacementGroup_;
 
     
 
@@ -93,7 +93,7 @@ class UnboxedLayout : public mozilla::LinkedListElement<UnboxedLayout>
     
     
     
-    HeapPtrJitCode constructorCode_;
+    GCPtrJitCode constructorCode_;
 
     
 

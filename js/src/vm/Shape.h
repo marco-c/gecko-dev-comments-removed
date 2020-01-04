@@ -379,7 +379,7 @@ class BaseShape : public gc::TenuredCell
 
 
     
-    HeapPtrUnownedBaseShape unowned_;
+    GCPtrUnownedBaseShape unowned_;
 
     
     ShapeTable*      table_;
@@ -542,8 +542,8 @@ class Shape : public gc::TenuredCell
     friend class js::gc::RelocationOverlay;
 
   protected:
-    HeapPtrBaseShape    base_;
-    PreBarrieredId      propid_;
+    GCPtrBaseShape base_;
+    PreBarrieredId propid_;
 
     enum SlotInfo : uint32_t
     {
@@ -576,12 +576,12 @@ class Shape : public gc::TenuredCell
     uint8_t             attrs;          
     uint8_t             flags;          
 
-    HeapPtrShape        parent;        
+    GCPtrShape   parent;          
     
     union {
-        KidsPointer kids;       
+        KidsPointer kids;         
 
-        HeapPtrShape* listp;    
+        GCPtrShape* listp;        
 
 
 
@@ -593,9 +593,10 @@ class Shape : public gc::TenuredCell
     static inline Shape* searchNoHashify(Shape* start, jsid id);
 
     void removeFromDictionary(NativeObject* obj);
-    void insertIntoDictionary(HeapPtrShape* dictp);
+    void insertIntoDictionary(GCPtrShape* dictp);
 
-    inline void initDictionaryShape(const StackShape& child, uint32_t nfixed, HeapPtrShape* dictp);
+    inline void initDictionaryShape(const StackShape& child, uint32_t nfixed,
+                                    GCPtrShape* dictp);
 
     
     static Shape* replaceLastProperty(ExclusiveContext* cx, StackBaseShape& base,
@@ -652,7 +653,7 @@ class Shape : public gc::TenuredCell
         return *(AccessorShape*)this;
     }
 
-    const HeapPtrShape& previous() const { return parent; }
+    const GCPtrShape& previous() const { return parent; }
     JSCompartment* compartment() const { return base()->compartment(); }
     JSCompartment* maybeCompartment() const { return compartment(); }
 
@@ -1350,7 +1351,7 @@ Shape::setterObject() const
 }
 
 inline void
-Shape::initDictionaryShape(const StackShape& child, uint32_t nfixed, HeapPtrShape* dictp)
+Shape::initDictionaryShape(const StackShape& child, uint32_t nfixed, GCPtrShape* dictp)
 {
     if (child.isAccessorShape())
         new (this) AccessorShape(child, nfixed);

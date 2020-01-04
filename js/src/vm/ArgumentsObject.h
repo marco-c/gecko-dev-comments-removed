@@ -42,7 +42,7 @@ struct ArgumentsData
 
 
 
-    HeapValue   callee;
+    GCPtrValue callee;
 
     
     JSScript*   script;
@@ -61,16 +61,16 @@ struct ArgumentsData
 
 
 
-    HeapValue   args[1];
+    GCPtrValue args[1];
 
     
     static ptrdiff_t offsetOfArgs() { return offsetof(ArgumentsData, args); }
 
     
-    HeapValue* begin() { return args; }
-    const HeapValue* begin() const { return args; }
-    HeapValue* end() { return args + numArgs; }
-    const HeapValue* end() const { return args + numArgs; }
+    GCPtrValue* begin() { return args; }
+    const GCPtrValue* begin() const { return args; }
+    GCPtrValue* end() { return args + numArgs; }
+    const GCPtrValue* end() const { return args + numArgs; }
 };
 
 
@@ -272,7 +272,7 @@ class ArgumentsObject : public NativeObject
 
     void setArg(unsigned i, const Value& v) {
         MOZ_ASSERT(i < data()->numArgs);
-        HeapValue& lhs = data()->args[i];
+        GCPtrValue& lhs = data()->args[i];
         MOZ_ASSERT(!lhs.isMagic());
         lhs = v;
     }

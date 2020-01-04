@@ -311,13 +311,13 @@ UnboxedPlainObject::trace(JSTracer* trc, JSObject* obj)
 
     uint8_t* data = obj->as<UnboxedPlainObject>().data();
     while (*list != -1) {
-        HeapPtrString* heap = reinterpret_cast<HeapPtrString*>(data + *list);
+        GCPtrString* heap = reinterpret_cast<GCPtrString*>(data + *list);
         TraceEdge(trc, heap, "unboxed_string");
         list++;
     }
     list++;
     while (*list != -1) {
-        HeapPtrObject* heap = reinterpret_cast<HeapPtrObject*>(data + *list);
+        GCPtrObject* heap = reinterpret_cast<GCPtrObject*>(data + *list);
         TraceNullableEdge(trc, heap, "unboxed_object");
         list++;
     }
@@ -649,13 +649,13 @@ UnboxedPlainObject::create(ExclusiveContext* cx, HandleObjectGroup group, NewObj
     if (list) {
         uint8_t* data = res->data();
         while (*list != -1) {
-            HeapPtrString* heap = reinterpret_cast<HeapPtrString*>(data + *list);
+            GCPtrString* heap = reinterpret_cast<GCPtrString*>(data + *list);
             heap->init(cx->names().empty);
             list++;
         }
         list++;
         while (*list != -1) {
-            HeapPtrObject* heap = reinterpret_cast<HeapPtrObject*>(data + *list);
+            GCPtrObject* heap = reinterpret_cast<GCPtrObject*>(data + *list);
             heap->init(nullptr);
             list++;
         }
@@ -1150,14 +1150,14 @@ UnboxedArrayObject::trace(JSTracer* trc, JSObject* obj)
     switch (type) {
       case JSVAL_TYPE_OBJECT:
         for (size_t i = 0; i < initlen; i++) {
-            HeapPtrObject* heap = reinterpret_cast<HeapPtrObject*>(elements + i);
+            GCPtrObject* heap = reinterpret_cast<GCPtrObject*>(elements + i);
             TraceNullableEdge(trc, heap, "unboxed_object");
         }
         break;
 
       case JSVAL_TYPE_STRING:
         for (size_t i = 0; i < initlen; i++) {
-            HeapPtrString* heap = reinterpret_cast<HeapPtrString*>(elements + i);
+            GCPtrString* heap = reinterpret_cast<GCPtrString*>(elements + i);
             TraceEdge(trc, heap, "unboxed_string");
         }
         break;
