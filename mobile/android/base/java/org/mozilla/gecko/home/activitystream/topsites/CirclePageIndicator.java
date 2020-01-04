@@ -52,6 +52,15 @@ public class CirclePageIndicator
         extends View
         implements ViewPager.OnPageChangeListener {
 
+    
+
+
+
+
+
+
+    private static final int SEPARATION_FACTOR = 7;
+
     private static final int INVALID_POINTER = -1;
 
     private float mRadius;
@@ -237,7 +246,7 @@ public class CirclePageIndicator
             shortPaddingBefore = getPaddingLeft();
         }
 
-        final float threeRadius = mRadius * 3;
+        final float threeRadius = mRadius * SEPARATION_FACTOR;
         final float shortOffset = shortPaddingBefore + mRadius;
         float longOffset = longPaddingBefore + mRadius;
         if (mCentered) {
