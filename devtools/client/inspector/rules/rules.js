@@ -1059,6 +1059,7 @@ CssRuleView.prototype = {
   createExpandableContainer: function(label, isPseudo = false) {
     let header = this.styleDocument.createElementNS(HTML_NS, "div");
     header.className = this._getRuleViewHeaderClassName(true);
+    header.classList.add("show-expandable-container");
     header.textContent = label;
 
     let twisty = this.styleDocument.createElementNS(HTML_NS, "span");
@@ -1070,21 +1071,20 @@ CssRuleView.prototype = {
 
     let container = this.styleDocument.createElementNS(HTML_NS, "div");
     container.classList.add("ruleview-expandable-container");
-    container.hidden = false;
     this.element.appendChild(container);
 
     header.addEventListener("dblclick", () => {
-      this._toggleContainerVisibility(twisty, container, isPseudo,
+      this._toggleContainerVisibility(twisty, header, isPseudo,
         !this.showPseudoElements);
     }, false);
 
     twisty.addEventListener("click", () => {
-      this._toggleContainerVisibility(twisty, container, isPseudo,
+      this._toggleContainerVisibility(twisty, header, isPseudo,
         !this.showPseudoElements);
     }, false);
 
     if (isPseudo) {
-      this._toggleContainerVisibility(twisty, container, isPseudo,
+      this._toggleContainerVisibility(twisty, header, isPseudo,
         this.showPseudoElements);
     }
 
@@ -1103,8 +1103,7 @@ CssRuleView.prototype = {
 
 
 
-  _toggleContainerVisibility: function(twisty, container, isPseudo,
-      showPseudo) {
+  _toggleContainerVisibility: function(twisty, header, isPseudo, showPseudo) {
     let isOpen = twisty.getAttribute("open");
 
     if (isPseudo) {
@@ -1113,10 +1112,12 @@ CssRuleView.prototype = {
       Services.prefs.setBoolPref("devtools.inspector.show_pseudo_elements",
         this.showPseudoElements);
 
-      container.hidden = !this.showPseudoElements;
+      header.classList.toggle("show-expandable-container",
+        this.showPseudoElements);
+
       isOpen = !this.showPseudoElements;
     } else {
-      container.hidden = !container.hidden;
+      header.classList.toggle("show-expandable-container");
     }
 
     if (isOpen) {
