@@ -573,15 +573,6 @@ nsICODecoder::FinishMask()
     }
   }
 
-  
-  if (mHasMaskAlpha) {
-    PostHasTransparency();
-
-    RefPtr<nsBMPDecoder> bmpDecoder =
-      static_cast<nsBMPDecoder*>(mContainedDecoder.get());
-    bmpDecoder->SetHasTransparency();
-  }
-
   return Transition::To(ICOState::FINISHED_RESOURCE, 0);
 }
 

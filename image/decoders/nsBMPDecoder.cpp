@@ -262,12 +262,19 @@ nsBMPDecoder::FinishInternal()
     nsIntRect r(0, 0, mH.mWidth, AbsoluteHeight());
     PostInvalidation(r);
 
-    if (mDoesHaveTransparency) {
-      MOZ_ASSERT(mMayHaveTransparency);
-      PostFrameStop(Opacity::SOME_TRANSPARENCY);
-    } else {
-      PostFrameStop(Opacity::FULLY_OPAQUE);
-    }
+    MOZ_ASSERT_IF(mDoesHaveTransparency, mMayHaveTransparency);
+
+    
+    
+    
+    
+    
+    
+    const Opacity opacity = mDoesHaveTransparency || mIsWithinICO
+                          ? Opacity::SOME_TRANSPARENCY
+                          : Opacity::FULLY_OPAQUE;
+
+    PostFrameStop(opacity);
     PostDecodeDone();
   }
 

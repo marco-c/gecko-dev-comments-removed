@@ -142,13 +142,6 @@ public:
   
   bool HasTransparency() const { return mDoesHaveTransparency; }
 
-  
-  void SetHasTransparency()
-  {
-    mMayHaveTransparency = true;
-    mDoesHaveTransparency = true;
-  }
-
   Maybe<TerminalState> DoDecode(SourceBufferIterator& aIterator) override;
   nsresult BeforeFinishInternal() override;
   nsresult FinishInternal() override;
