@@ -8,6 +8,46 @@ function createProfDFile() {
            .get('ProfD', Ci.nsIFile);
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function createTreeFile(depth, parent) {
+  if (!parent) {
+    parent = Cc["@mozilla.org/file/directory_service;1"]
+                .getService(Ci.nsIDirectoryService)
+                .QueryInterface(Ci.nsIProperties)
+                .get('TmpD', Ci.nsIFile);
+    parent.append('dir-tree-test');
+    parent.createUnique(Components.interfaces.nsIFile.DIRECTORY_TYPE, 0o700);
+  }
+
+  var nextFile = parent.clone();
+  if (depth == 0) {
+    nextFile.append('file.txt');
+    nextFile.create(Components.interfaces.nsIFile.NORMAL_FILE_TYPE, 0o600);
+  } else {
+    nextFile.append('subdir' + depth);
+    nextFile.createUnique(Components.interfaces.nsIFile.DIRECTORY_TYPE, 0o700);
+    
+    for (i = 0; i < depth; i++) {
+      createTreeFile(i, nextFile);
+    }
+  }
+
+  return parent;
+}
+
 function createRootFile() {
   var testFile = createProfDFile();
 
@@ -52,6 +92,8 @@ addMessageListener("dir.open", function (e) {
 
   switch (e.path) {
     case 'ProfD':
+      
+      
       testFile = createProfDFile();
       break;
 
@@ -61,6 +103,10 @@ addMessageListener("dir.open", function (e) {
 
     case 'test':
       testFile = createTestFile();
+      break;
+
+    case 'tree':
+      testFile = createTreeFile(3);
       break;
   }
 
