@@ -22,6 +22,9 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.ProtocolException;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Locale;
 import java.util.MissingResourceException;
 import java.util.UUID;
@@ -288,6 +291,37 @@ public class SwitchBoard {
 		
 	}
 	
+	
+
+
+	public static List<String> getActiveExperiments(Context c) {
+		ArrayList<String> returnList = new ArrayList<String>();
+
+		
+		String config = Preferences.getDynamicConfigJson(c);
+
+		
+		if (config == null) {
+			return returnList;
+		}
+
+		try {
+			JSONObject experiments = new JSONObject(config);
+			Iterator<?> iter = experiments.keys();
+			while (iter.hasNext()) {
+				String key = (String)iter.next();
+				JSONObject experiment = experiments.getJSONObject(key);
+				if (experiment.getBoolean(IS_EXPERIMENT_ACTIVE)) {
+					returnList.add(key);
+				}
+			}
+		} catch (JSONException e) {
+			
+		}
+
+		return returnList;
+	}
+
 	
 
 
