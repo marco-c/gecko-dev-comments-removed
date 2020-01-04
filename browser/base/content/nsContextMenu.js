@@ -1344,15 +1344,12 @@ nsContextMenu.prototype = {
     
     
     
-    var ioService = Cc["@mozilla.org/network/io-service;1"].
-                    getService(Ci.nsIIOService);
-    var principal = Services.scriptSecurityManager.getSystemPrincipal();
-    var channel = ioService.newChannelFromURI2(makeURI(linkURL),
-                                               null, 
-                                               principal, 
-                                               null, 
-                                               Ci.nsILoadInfo.SEC_NORMAL,
-                                               Ci.nsIContentPolicy.TYPE_OTHER);
+    var channel = NetUtil.newChannel({
+                    uri: makeURI(linkURL),
+                    loadUsingSystemPrincipal: true,
+                    securityFlags: Ci.nsILoadInfo.SEC_ALLOW_CROSS_ORIGIN_DATA_IS_NULL
+                  });
+
     if (linkDownload)
       channel.contentDispositionFilename = linkDownload;
     if (channel instanceof Ci.nsIPrivateBrowsingChannel) {
@@ -1385,7 +1382,7 @@ nsContextMenu.prototype = {
                            timer.TYPE_ONE_SHOT);
 
     
-    channel.asyncOpen(new saveAsListener(), null);
+    channel.asyncOpen2(new saveAsListener());
   },
 
   
