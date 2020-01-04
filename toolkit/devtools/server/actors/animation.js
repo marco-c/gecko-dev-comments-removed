@@ -635,11 +635,13 @@ let AnimationsActor = exports.AnimationsActor = ActorClass({
           continue;
         }
         let index = this.actors.findIndex(a => a.player === player);
-        eventData.push({
-          type: "removed",
-          player: this.actors[index]
-        });
-        this.actors.splice(index, 1);
+        if (index !== -1) {
+          eventData.push({
+            type: "removed",
+            player: this.actors[index]
+          });
+          this.actors.splice(index, 1);
+        }
       }
 
       for (let player of addedAnimations) {
@@ -785,6 +787,26 @@ let AnimationsActor = exports.AnimationsActor = ActorClass({
     return this.pauseAll();
   }, {
     request: {},
+    response: {}
+  }),
+
+  
+
+
+
+
+
+  setCurrentTimes: method(function(players, time, shouldPause) {
+    return promise.all(players.map(player => {
+      let pause = shouldPause ? player.pause() : promise.resolve();
+      return pause.then(() => player.setCurrentTime(time));
+    }));
+  }, {
+    request: {
+      players: Arg(0, "array:animationplayer"),
+      time: Arg(1, "number"),
+      shouldPause: Arg(2, "boolean")
+    },
     response: {}
   })
 });

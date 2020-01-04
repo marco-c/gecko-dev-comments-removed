@@ -63,10 +63,10 @@ let shutdown = Task.async(function*() {
 
 
 function setPanel(panel) {
-  return startup(panel).catch(Cu.reportError);
+  return startup(panel).catch(e => console.error(e));
 }
 function destroy() {
-  return shutdown().catch(Cu.reportError);
+  return shutdown().catch(e => console.error(e));
 }
 
 
@@ -115,6 +115,8 @@ let AnimationsController = {
                                                           "setPlaybackRate");
     this.hasTargetNode = yield target.actorHasMethod("domwalker",
                                                      "getNodeFromActor");
+    this.hasSetCurrentTimes = yield target.actorHasMethod("animations",
+                                                          "setCurrentTimes");
     this.isNewUI = Services.prefs.getBoolPref("devtools.inspector.animationInspectorV3");
 
     if (this.destroyed) {
@@ -214,8 +216,31 @@ let AnimationsController = {
       return promise.resolve();
     }
 
-    return this.animationsFront.toggleAll().catch(Cu.reportError);
+    return this.animationsFront.toggleAll().catch(e => console.error(e));
   },
+
+  
+
+
+
+
+
+
+
+
+  setCurrentTimeAll: Task.async(function*(time, shouldPause) {
+    if (this.hasSetCurrentTimes) {
+      yield this.animationsFront.setCurrentTimes(this.animationPlayers, time,
+                                                 shouldPause);
+    } else {
+      for (let animation of this.animationPlayers) {
+        if (shouldPause) {
+          yield animation.pause();
+        }
+        yield animation.setCurrentTime(time);
+      }
+    }
+  }),
 
   
   
