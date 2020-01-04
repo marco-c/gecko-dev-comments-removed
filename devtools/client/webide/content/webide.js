@@ -47,9 +47,9 @@ const MS_PER_DAY = 86400000;
  });
 
 
-getJSON("devtools.webide.addonsURL", true);
-getJSON("devtools.webide.templatesURL", true);
-getJSON("devtools.devices.url", true);
+getJSON("devtools.webide.addonsURL");
+getJSON("devtools.webide.templatesURL");
+getJSON("devtools.devices.url");
 
 
 console.log = console.log.bind(console);

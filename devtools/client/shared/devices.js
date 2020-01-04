@@ -47,11 +47,11 @@ function AddDevice(device, type = "phones") {
 exports.AddDevice = AddDevice;
 
 
-function GetDevices(bypassCache = false) {
+function GetDevices() {
   let deferred = promise.defer();
 
   
-  getJSON(DEVICES_URL, bypassCache).then(devices => {
+  getJSON(DEVICES_URL).then(devices => {
     for (let type in localDevices) {
       if (!devices[type]) {
         devices.TYPES.push(type);

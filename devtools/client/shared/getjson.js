@@ -8,36 +8,61 @@ const {CC} = require("chrome");
 const promise = require("promise");
 const Services = require("Services");
 
+loader.lazyRequireGetter(this, "asyncStorage", "devtools/shared/async-storage");
+
 const XMLHttpRequest = CC("@mozilla.org/xmlextras/xmlhttprequest;1");
 
 
-exports.getJSON = function (prefName, bypassCache) {
-  if (!bypassCache) {
-    try {
-      let str = Services.prefs.getCharPref(prefName + "_cache");
-      let json = JSON.parse(str);
-      return promise.resolve(json);
-    } catch (e) {
-      
-    }
-  }
 
+
+
+
+
+
+
+
+
+
+exports.getJSON = function (prefName) {
   let deferred = promise.defer();
   let xhr = new XMLHttpRequest();
 
+  
+  
+  
+  if (Services.prefs.prefHasUserValue(prefName + "_cache")) {
+    let json = Services.prefs.getCharPref(prefName + "_cache");
+    asyncStorage.setItem(prefName + "_cache", json).catch(function (e) {
+      
+      console.error(e);
+    });
+    Services.prefs.clearUserPref(prefName + "_cache");
+  }
+
+  function readFromStorage(networkError) {
+    asyncStorage.getItem(prefName + "_cache").then(function (json) {
+      deferred.resolve(json);
+    }).catch(function (e) {
+      deferred.reject("JSON not available, CDN error: " + networkError +
+                      ", storage error: " + e);
+    });
+  }
+
   xhr.onload = () => {
-    let json;
     try {
-      json = JSON.parse(xhr.responseText);
+      let json = JSON.parse(xhr.responseText);
+      asyncStorage.setItem(prefName + "_cache", json).catch(function (e) {
+        
+        console.error(e);
+      });
+      deferred.resolve(json);
     } catch (e) {
-      return deferred.reject("Invalid JSON");
+      readFromStorage(e);
     }
-    Services.prefs.setCharPref(prefName + "_cache", xhr.responseText);
-    return deferred.resolve(json);
   };
 
   xhr.onerror = (e) => {
-    deferred.reject("Network error");
+    readFromStorage(e);
   };
 
   xhr.open("get", Services.prefs.getCharPref(prefName));
