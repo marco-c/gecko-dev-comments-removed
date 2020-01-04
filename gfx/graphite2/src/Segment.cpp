@@ -36,7 +36,6 @@
 #include "inc/Slot.h"
 #include "inc/Main.h"
 #include "inc/CmapCache.h"
-
 #include "inc/Collider.h"
 #include "graphite2/Segment.h"
 
@@ -156,12 +155,6 @@ void Segment::appendSlot(int id, int cid, int gid, int iFeats, size_t coffset)
     aSlot->originate(id);
     aSlot->before(id);
     aSlot->after(id);
-
-
-
-
-
-
     if (m_last) m_last->next(aSlot);
     aSlot->prev(m_last);
     m_last = aSlot;
@@ -409,6 +402,14 @@ Position Segment::positionSlots(const Font *font, Slot * iStart, Slot * iEnd, bo
     float clusterMin = 0.;
     Rect bbox;
 
+    if (currdir() != isRtl)
+    {
+        Slot *temp;
+        reverseSlots();
+        temp = iStart;
+        iStart = iEnd;
+        iEnd = temp;
+    }
     if (!iStart)    iStart = m_first;
     if (!iEnd)      iEnd   = m_last;
 
@@ -501,58 +502,6 @@ bool Segment::read_text(const Face *face, const Features* pFeats, gr_encform enc
     }
     return true;
 }
-
-#if 0
-Slot *process_bidi(Slot *start, int level, int prelevel, int &nextLevel, int dirover, int isol, int &cisol, int &isolerr, int &embederr, int init, Segment *seg, uint8 aMirror, BracketPairStack &stack);
-void resolveImplicit(Slot *s, Segment *seg, uint8 aMirror);
-void resolveWhitespace(int baseLevel, Slot *s);
-Slot *resolveOrder(Slot * & s, const bool reordered, const int level = 0);
-
-void Segment::bidiPass(int paradir, uint8 aMirror)
-{
-    if (slotCount() == 0)
-        return;
-
-    Slot *s;
-    int baseLevel = paradir ? 1 : 0;
-    unsigned int bmask = 0;
-    unsigned int ssize = 0;
-    for (s = first(); s; s = s->next())
-    {
-        if (getSlotBidiClass(s) < 0)
-            s->setBidiClass(0);
-        bmask |= (1 << s->getBidiClass());
-        s->setBidiLevel(baseLevel);
-        if (s->getBidiClass() == 21)
-            ++ssize;
-    }
-
-    BracketPairStack bstack(ssize);
-    if (bmask & (paradir ? 0x2E7892 : 0x2E789C))
-    {
-        
-        int nextLevel = paradir;
-        int e, i, c;
-        process_bidi(first(), baseLevel, paradir, nextLevel, 0, 0, c = 0, i = 0, e = 0, 1, this, aMirror, bstack);
-        resolveImplicit(first(), this, aMirror);
-        resolveWhitespace(baseLevel, last());
-        s = resolveOrder(s = first(), baseLevel != 0);
-        if (s)
-        {
-            first(s); last(s->prev());
-            s->prev()->next(0); s->prev(0);
-        }
-    }
-    else if (!(dir() & 4) && baseLevel && aMirror)
-    {
-        for (s = first(); s; s = s->next())
-        {
-            unsigned short g = glyphAttr(s->gid(), aMirror);
-            if (g) s->setGlyph(this, g);
-        }
-    }
-}
-#endif
 
 void Segment::doMirror(uint16 aMirror)
 {

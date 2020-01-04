@@ -26,13 +26,10 @@
 
 #pragma once
 
-#include <utility>
 #include "inc/List.h"
-
 #include "inc/Position.h"
 #include "inc/Intervals.h"
 #include "inc/debug.h"
-
 
 namespace graphite2 {
 

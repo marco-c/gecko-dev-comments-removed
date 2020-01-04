@@ -35,11 +35,9 @@
 #include "inc/FeatureVal.h"
 #include "inc/GlyphCache.h"
 #include "inc/GlyphFace.h"
-
 #include "inc/Slot.h"
 #include "inc/Position.h"
 #include "inc/List.h"
-
 #include "inc/Collider.h"
 
 #define MAX_SEG_GROWTH_FACTOR  256
@@ -243,62 +241,6 @@ bool Segment::isWhitespace(const int cid) const
          + (cid == 0x205F)
          + (cid == 0x3000)) != 0;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 } 
 

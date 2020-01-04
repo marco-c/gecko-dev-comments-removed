@@ -33,6 +33,22 @@ namespace lz4
 {
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 int decompress(void const *in, size_t in_size, void *out, size_t out_size);
 
 } 
