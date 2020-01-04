@@ -212,38 +212,100 @@ const MozLangGroupData MozLangGroups[] = {
     { nsGkAtoms::Unicode,        0    }
 };
 
-static void
-GetSampleLangForGroup(nsIAtom* aLanguage, nsACString& aLangStr)
+bool
+gfxFcPlatformFontList::TryLangForGroup(const nsACString& aOSLang,
+                                       nsIAtom* aLangGroup,
+                                       nsACString& aFcLang)
+{
+    
+    
+    
+    
+    
+    
+    const char *pos, *end;
+    aOSLang.BeginReading(pos);
+    aOSLang.EndReading(end);
+    aFcLang.Truncate();
+    while (pos < end) {
+        switch (*pos) {
+            case '.':
+            case '@':
+                end = pos;
+                break;
+            case '_':
+                aFcLang.Append('-');
+                break;
+            default:
+                aFcLang.Append(*pos);
+        }
+        ++pos;
+    }
+
+    nsILanguageAtomService* langService = GetLangService();
+    nsIAtom *atom = langService->LookupLanguage(aFcLang);
+    return atom == aLangGroup;
+}
+
+void
+gfxFcPlatformFontList::GetSampleLangForGroup(nsIAtom* aLanguage,
+                                             nsACString& aLangStr)
 {
     aLangStr.Truncate();
-    if (aLanguage) {
-        
-        const MozLangGroupData *mozLangGroup = nullptr;
+    if (!aLanguage) {
+        return;
+    }
 
+    
+    const MozLangGroupData *mozLangGroup = nullptr;
+
+    
+    for (unsigned int i = 0; i < ArrayLength(MozLangGroups); ++i) {
+        if (aLanguage == MozLangGroups[i].mozLangGroup) {
+            mozLangGroup = &MozLangGroups[i];
+            break;
+        }
+    }
+
+    
+    
+    if (!mozLangGroup) {
         
-        for (unsigned int i = 0; i < ArrayLength(MozLangGroups); ++i) {
-            if (aLanguage == MozLangGroups[i].mozLangGroup) {
-                mozLangGroup = &MozLangGroups[i];
-                break;
+        
+        aLanguage->ToUTF8String(aLangStr);
+        return;
+    }
+
+    
+    
+    const char *languages = getenv("LANGUAGE");
+    if (languages) {
+        const char separator = ':';
+
+        for (const char *pos = languages; true; ++pos) {
+            if (*pos == '\0' || *pos == separator) {
+                if (languages < pos &&
+                    TryLangForGroup(Substring(languages, pos),
+                                    aLanguage, aLangStr))
+                    return;
+
+                if (*pos == '\0')
+                    break;
+
+                languages = pos + 1;
             }
         }
+    }
+    const char *ctype = setlocale(LC_CTYPE, nullptr);
+    if (ctype &&
+        TryLangForGroup(nsDependentCString(ctype), aLanguage, aLangStr)) {
+        return;
+    }
 
-        
-        
-        
-        
-        
-
-        
-        if (mozLangGroup) {
-            if (mozLangGroup->defaultLang) {
-                aLangStr.Assign(mozLangGroup->defaultLang);
-            }
-        } else {
-            
-            
-            aLanguage->ToUTF8String(aLangStr);
-        }
+    if (mozLangGroup->defaultLang) {
+        aLangStr.Assign(mozLangGroup->defaultLang);
+    } else {
+        aLangStr.Truncate();
     }
 }
 
@@ -346,7 +408,8 @@ gfxFontconfigFontEntry::SupportsLangGroup(nsIAtom *aLangGroup) const
     }
 
     nsAutoCString fcLang;
-    GetSampleLangForGroup(aLangGroup, fcLang);
+    gfxFcPlatformFontList* pfl = gfxFcPlatformFontList::PlatformFontList();
+    pfl->GetSampleLangForGroup(aLangGroup, fcLang);
     if (fcLang.IsEmpty()) {
         return true;
     }
@@ -1105,7 +1168,8 @@ GetSystemFontList(nsTArray<nsString>& aListOfFonts, nsIAtom *aLangGroup)
 
     
     nsAutoCString fcLang;
-    GetSampleLangForGroup(aLangGroup, fcLang);
+    gfxFcPlatformFontList* pfl = gfxFcPlatformFontList::PlatformFontList();
+    pfl->GetSampleLangForGroup(aLangGroup, fcLang);
     if (!fcLang.IsEmpty()) {
         FcPatternAddString(pat, FC_LANG, ToFcChar8Ptr(fcLang.get()));
     }
