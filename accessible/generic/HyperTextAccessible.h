@@ -518,7 +518,8 @@ protected:
   
 
 
-  void GetSelectionDOMRanges(int16_t aType, nsTArray<nsRange*>* aRanges);
+  void GetSelectionDOMRanges(SelectionType aSelectionType,
+                             nsTArray<nsRange*>* aRanges);
 
   nsresult SetSelectionRange(int32_t aStartPos, int32_t aEndPos);
 

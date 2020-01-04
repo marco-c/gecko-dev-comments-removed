@@ -572,7 +572,8 @@ nsCopySupport::GetSelectionForCopy(nsIDocument* aDocument, nsISelection** aSelec
   }
 
   
-  NS_IF_ADDREF(*aSelection = presShell->GetCurrentSelection(nsISelectionController::SELECTION_NORMAL));
+  NS_IF_ADDREF(*aSelection =
+                 presShell->GetCurrentSelection(SelectionType::SELECTION_NORMAL));
   return nullptr;
 }
 

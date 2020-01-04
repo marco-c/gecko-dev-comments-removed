@@ -60,13 +60,13 @@ SelectionManager::ClearControlSelectionListener()
 
   
   Selection* normalSel =
-    frameSel->GetSelection(nsISelectionController::SELECTION_NORMAL);
+    frameSel->GetSelection(SelectionType::SELECTION_NORMAL);
   normalSel->RemoveSelectionListener(this);
 
   
   
   Selection* spellSel =
-    frameSel->GetSelection(nsISelectionController::SELECTION_SPELLCHECK);
+    frameSel->GetSelection(SelectionType::SELECTION_SPELLCHECK);
   spellSel->RemoveSelectionListener(this);
 }
 
@@ -89,12 +89,12 @@ SelectionManager::SetControlSelectionListener(dom::Element* aFocusedElm)
 
   
   Selection* normalSel =
-    frameSel->GetSelection(nsISelectionController::SELECTION_NORMAL);
+    frameSel->GetSelection(SelectionType::SELECTION_NORMAL);
   normalSel->AddSelectionListener(this);
 
   
   Selection* spellSel =
-    frameSel->GetSelection(nsISelectionController::SELECTION_SPELLCHECK);
+    frameSel->GetSelection(SelectionType::SELECTION_SPELLCHECK);
   spellSel->AddSelectionListener(this);
 }
 
@@ -105,12 +105,12 @@ SelectionManager::AddDocSelectionListener(nsIPresShell* aPresShell)
 
   
   Selection* normalSel =
-    frameSel->GetSelection(nsISelectionController::SELECTION_NORMAL);
+    frameSel->GetSelection(SelectionType::SELECTION_NORMAL);
   normalSel->AddSelectionListener(this);
 
   
   Selection* spellSel =
-    frameSel->GetSelection(nsISelectionController::SELECTION_SPELLCHECK);
+    frameSel->GetSelection(SelectionType::SELECTION_SPELLCHECK);
   spellSel->AddSelectionListener(this);
 }
 
@@ -121,13 +121,13 @@ SelectionManager::RemoveDocSelectionListener(nsIPresShell* aPresShell)
 
   
   Selection* normalSel =
-    frameSel->GetSelection(nsISelectionController::SELECTION_NORMAL);
+    frameSel->GetSelection(SelectionType::SELECTION_NORMAL);
   normalSel->RemoveSelectionListener(this);
 
   
   
   Selection* spellSel =
-    frameSel->GetSelection(nsISelectionController::SELECTION_SPELLCHECK);
+    frameSel->GetSelection(SelectionType::SELECTION_SPELLCHECK);
   spellSel->RemoveSelectionListener(this);
 }
 
@@ -225,12 +225,12 @@ SelectionManager::ProcessSelectionChanged(SelData* aSelData)
     return;
   }
 
-  if (selection->GetType() == nsISelectionController::SELECTION_NORMAL) {
+  if (selection->GetType() == SelectionType::SELECTION_NORMAL) {
     RefPtr<AccEvent> event =
       new AccTextSelChangeEvent(text, selection, aSelData->mReason);
     text->Document()->FireDelayedEvent(event);
 
-  } else if (selection->GetType() == nsISelectionController::SELECTION_SPELLCHECK) {
+  } else if (selection->GetType() == SelectionType::SELECTION_SPELLCHECK) {
     
     
     text->Document()->FireDelayedEvent(nsIAccessibleEvent::EVENT_TEXT_ATTRIBUTE_CHANGED,
