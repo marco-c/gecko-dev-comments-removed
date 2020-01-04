@@ -1372,6 +1372,12 @@ void KeyframeEffect::NotifySpecifiedTimingUpdated()
   }
 }
 
+void
+KeyframeEffect::SetTarget(const Nullable<ElementOrCSSPseudoElement>& aTarget)
+{
+  
+}
+
 KeyframeEffect::~KeyframeEffect()
 {
   
