@@ -56,6 +56,7 @@ class CompositorParent;
 class LayerManagerComposite;
 class LayerTransactionParent;
 class PAPZParent;
+class CrossProcessCompositorParent;
 
 struct ScopedLayerTreeRegistration
 {
@@ -399,7 +400,7 @@ public:
     
     
     
-    PCompositorParent* mCrossProcessParent;
+    CrossProcessCompositorParent* mCrossProcessParent;
     TargetConfig mTargetConfig;
     APZTestData mApzTestData;
     LayerTransactionParent* mLayerTree;
@@ -407,6 +408,8 @@ public:
     bool mUpdatedPluginDataAvailable;
     RefPtr<CompositorUpdateObserver> mLayerTreeReadyObserver;
     RefPtr<CompositorUpdateObserver> mLayerTreeClearedObserver;
+
+    PCompositorParent* CrossProcessPCompositor() const;
   };
 
   
