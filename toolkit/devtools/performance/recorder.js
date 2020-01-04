@@ -25,14 +25,13 @@ loader.lazyRequireGetter(this, "Profiler",
   "devtools/toolkit/shared/profiler", true);
 loader.lazyRequireGetter(this, "PerformanceRecordingActor",
   "devtools/server/actors/performance-recording", true);
+
 loader.lazyRequireGetter(this, "PerformanceRecordingFront",
   "devtools/server/actors/performance-recording", true);
 loader.lazyRequireGetter(this, "mapRecordingOptions",
   "devtools/toolkit/performance/utils", true);
 loader.lazyRequireGetter(this, "DevToolsUtils",
   "devtools/toolkit/DevToolsUtils");
-loader.lazyRequireGetter(this, "getSystemInfo",
-  "devtools/toolkit/shared/system", true);
 
 const PROFILER_EVENTS = [
   "console-api-profiler",
@@ -73,10 +72,7 @@ const PerformanceRecorder = exports.PerformanceRecorder = Class({
 
 
 
-
-
-
-  connect: function (options) {
+  connect: function () {
     if (this._connected) {
       return;
     }
@@ -87,8 +83,6 @@ const PerformanceRecorder = exports.PerformanceRecorder = Class({
     
     this._connectComponents();
     this._registerListeners();
-
-    this._systemClient = options.systemClient;
 
     this._connected = true;
   },
@@ -346,9 +340,6 @@ const PerformanceRecorder = exports.PerformanceRecorder = Class({
     data.position = profilerStartData.position;
     data.generation = profilerStartData.generation;
     data.totalSize = profilerStartData.totalSize;
-
-    data.systemClient = this._systemClient;
-    data.systemHost = yield getSystemInfo();
 
     let model = new PerformanceRecordingActor(this.conn, options, data);
     this._recordings.push(model);
