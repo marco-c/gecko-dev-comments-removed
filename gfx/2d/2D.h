@@ -638,6 +638,26 @@ struct GlyphBuffer
   uint32_t mNumGlyphs;  
 };
 
+struct GlyphMetrics
+{
+  
+  
+  Float mXBearing;
+  
+  
+  Float mXAdvance;
+  
+  
+  Float mYBearing;
+  
+  
+  Float mYAdvance;
+  
+  Float mWidth;
+  
+  Float mHeight;
+};
+
 
 
 
@@ -666,6 +686,10 @@ public:
 
 
   virtual void CopyGlyphsToBuilder(const GlyphBuffer &aBuffer, PathBuilder *aBuilder, BackendType aBackendType, const Matrix *aTransformHint = nullptr) = 0;
+
+  
+
+  virtual void GetGlyphDesignMetrics(const uint16_t* aGlyphIndices, uint32_t aNumGlyphs, GlyphMetrics* aGlyphMetrics) = 0;
 
   virtual bool GetFontFileData(FontFileDataOutput, void *) { return false; }
 
@@ -1111,6 +1135,22 @@ public:
   virtual already_AddRefed<FilterNode> CreateFilter(FilterType aType) = 0;
 
   Matrix GetTransform() const { return mTransform; }
+
+  
+
+
+
+
+
+
+
+
+
+  virtual void GetGlyphRasterizationMetrics(ScaledFont *aScaledFont, const uint16_t* aGlyphIndices,
+                                            uint32_t aNumGlyphs, GlyphMetrics* aGlyphMetrics)
+  {
+    aScaledFont->GetGlyphDesignMetrics(aGlyphIndices, aNumGlyphs, aGlyphMetrics);
+  }
 
   
 
