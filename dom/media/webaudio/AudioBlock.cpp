@@ -17,8 +17,15 @@ namespace mozilla {
 
 
 
+
+
+
+
 class AudioBlockBuffer final : public ThreadSharedObject {
 public:
+
+  virtual AudioBlockBuffer* AsAudioBlockBuffer() override { return this; };
+
   float* ChannelData(uint32_t aChannel)
   {
     return reinterpret_cast<float*>(this + 1) + aChannel * WEBAUDIO_BLOCK_SIZE;
@@ -40,6 +47,36 @@ public:
     return p.forget();
   }
 
+  
+  void DownstreamRefAdded() { ++mDownstreamRefCount; }
+  void DownstreamRefRemoved() {
+    MOZ_ASSERT(mDownstreamRefCount > 0);
+    --mDownstreamRefCount;
+  }
+  
+  
+  
+  bool HasLastingShares()
+  {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    nsrefcnt count = mRefCnt;
+    
+    
+    MOZ_ASSERT(mDownstreamRefCount < count);
+    return count != mDownstreamRefCount + 1;
+  }
+
   virtual size_t SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const override
   {
     return aMallocSizeOf(this) + SizeOfExcludingThis(aMallocSizeOf);
@@ -47,18 +84,58 @@ public:
 
 private:
   AudioBlockBuffer() {}
+  ~AudioBlockBuffer() override { MOZ_ASSERT(mDownstreamRefCount == 0); }
+
+  nsAutoRefCnt mDownstreamRefCount;
 };
+
+AudioBlock::~AudioBlock()
+{
+  ClearDownstreamMark();
+}
+
+void
+AudioBlock::SetBuffer(ThreadSharedObject* aNewBuffer)
+{
+  if (aNewBuffer == mBuffer) {
+    return;
+  }
+
+  ClearDownstreamMark();
+
+  mBuffer = aNewBuffer;
+
+  if (!aNewBuffer) {
+    return;
+  }
+
+  AudioBlockBuffer* buffer = aNewBuffer->AsAudioBlockBuffer();
+  if (buffer) {
+    buffer->DownstreamRefAdded();
+    mBufferIsDownstreamRef = true;
+  }
+}
+
+void
+AudioBlock::ClearDownstreamMark() {
+  if (mBufferIsDownstreamRef) {
+    mBuffer->AsAudioBlockBuffer()->DownstreamRefRemoved();
+    mBufferIsDownstreamRef = false;
+  }
+}
 
 void
 AllocateAudioBlock(uint32_t aChannelCount, AudioChunk* aChunk)
 {
-  if (aChunk->mBuffer && !aChunk->mBuffer->IsShared() &&
-      aChunk->ChannelCount() == aChannelCount) {
-    MOZ_ASSERT(aChunk->mBufferFormat == AUDIO_FORMAT_FLOAT32);
-    MOZ_ASSERT(aChunk->mDuration == WEBAUDIO_BLOCK_SIZE);
-    
-    aChunk->mVolume = 1.0f;
-    return;
+  if (aChunk->mBuffer && aChunk->ChannelCount() == aChannelCount) {
+    AudioBlockBuffer* buffer = aChunk->mBuffer->AsAudioBlockBuffer();
+    if (buffer && !buffer->HasLastingShares()) {
+      MOZ_ASSERT(aChunk->mBufferFormat == AUDIO_FORMAT_FLOAT32);
+      MOZ_ASSERT(aChunk->mDuration == WEBAUDIO_BLOCK_SIZE);
+      
+      aChunk->mVolume = 1.0f;
+      return;
+    }
   }
 
   
