@@ -78,8 +78,6 @@ RasterImage::RasterImage(ImageURL* aURI ) :
   mLockCount(0),
   mDecodeCount(0),
   mRequestedSampleSize(0),
-  mImageProducerID(ImageContainer::AllocateProducerID()),
-  mLastFrameID(0),
   mLastImageContainerDrawResult(DrawResult::NOT_READY),
 #ifdef DEBUG
   mFramesNotified(0),
@@ -693,11 +691,7 @@ RasterImage::GetImageContainer(LayerManager* aManager, uint32_t aFlags)
   
   
   
-  nsAutoTArray<ImageContainer::NonOwningImage, 1> imageList;
-  imageList.AppendElement(ImageContainer::NonOwningImage(image, TimeStamp(),
-                                                         mLastFrameID++,
-                                                         mImageProducerID));
-  container->SetCurrentImagesInTransaction(imageList);
+  container->SetCurrentImageInTransaction(image);
 
   mLastImageContainerDrawResult = drawResult;
   mImageContainer = container;
@@ -724,9 +718,7 @@ RasterImage::UpdateImageContainer()
 
   mLastImageContainerDrawResult = drawResult;
   AutoTArray<ImageContainer::NonOwningImage, 1> imageList;
-  imageList.AppendElement(ImageContainer::NonOwningImage(image, TimeStamp(),
-                                                         mLastFrameID++,
-                                                         mImageProducerID));
+  imageList.AppendElement(ImageContainer::NonOwningImage(image));
   container->SetCurrentImages(imageList);
 }
 
