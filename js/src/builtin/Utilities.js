@@ -184,8 +184,7 @@ function SpeciesConstructor(obj, defaultConstructor) {
         ThrowTypeError(JSMSG_NOT_NONNULL_OBJECT, "object's 'constructor' property");
 
     
-    
-    var s =  undefined;
+    var s = ctor[std_species];
 
     
     if (s === undefined || s === null)
@@ -198,6 +197,18 @@ function SpeciesConstructor(obj, defaultConstructor) {
     
     ThrowTypeError(JSMSG_NOT_CONSTRUCTOR, "@@species property of object's constructor");
 }
+
+function GetTypeError(msg) {
+    try {
+        FUN_APPLY(ThrowTypeError, undefined, arguments);
+    } catch (e) {
+        return e;
+    }
+    assert(false, "the catch block should've returned from this function.");
+}
+
+
+function NullFunction() {}
 
 
 function outer() {

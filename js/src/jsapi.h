@@ -610,6 +610,9 @@ typedef void
 typedef bool
 (* JSInterruptCallback)(JSContext* cx);
 
+typedef bool
+(* JSEnqueuePromiseJobCallback)(JSContext* cx, JS::HandleObject job, void* data);
+
 typedef void
 (* JSErrorReporter)(JSContext* cx, const char* message, JSErrorReport* report);
 
@@ -4287,6 +4290,133 @@ JS_GetInterruptCallback(JSRuntime* rt);
 
 extern JS_PUBLIC_API(void)
 JS_RequestInterruptCallback(JSRuntime* rt);
+
+namespace JS {
+
+
+
+
+
+
+
+
+
+extern JS_PUBLIC_API(void)
+SetEnqueuePromiseJobCallback(JSRuntime* rt, JSEnqueuePromiseJobCallback callback,
+                             void* data = nullptr);
+
+
+
+
+
+
+
+extern JS_PUBLIC_API(JSObject*)
+NewPromiseObject(JSContext* cx, JS::HandleObject executor, JS::HandleObject proto = nullptr);
+
+
+
+
+
+extern JS_PUBLIC_API(bool)
+IsPromiseObject(JS::HandleObject obj);
+
+
+
+
+extern JS_PUBLIC_API(JSObject*)
+GetPromiseConstructor(JSContext* cx);
+
+
+
+
+extern JS_PUBLIC_API(JSObject*)
+GetPromisePrototype(JSContext* cx);
+
+
+enum class PromiseState {
+    Pending,
+    Fulfilled,
+    Rejected
+};
+
+extern JS_PUBLIC_API(PromiseState)
+GetPromiseState(JS::HandleObject promise);
+
+
+
+
+
+extern JS_PUBLIC_API(JSObject*)
+CallOriginalPromiseResolve(JSContext* cx, JS::HandleValue resolutionValue);
+
+
+
+
+
+extern JS_PUBLIC_API(JSObject*)
+CallOriginalPromiseReject(JSContext* cx, JS::HandleValue rejectionValue);
+
+
+
+
+
+
+
+extern JS_PUBLIC_API(bool)
+ResolvePromise(JSContext* cx, JS::HandleObject promise, JS::HandleValue resolutionValue);
+
+
+
+
+
+
+
+extern JS_PUBLIC_API(bool)
+RejectPromise(JSContext* cx, JS::HandleObject promise, JS::HandleValue rejectionValue);
+
+
+
+
+
+
+
+
+
+extern JS_PUBLIC_API(JSObject*)
+CallOriginalPromiseThen(JSContext* cx, JS::HandleObject promise,
+                        JS::HandleObject onResolve, JS::HandleObject onReject);
+
+
+
+
+
+
+
+
+
+
+
+
+extern JS_PUBLIC_API(bool)
+AddPromiseReactions(JSContext* cx, JS::HandleObject promise,
+                    JS::HandleObject onResolve, JS::HandleObject onReject);
+
+
+
+
+
+
+
+
+
+
+
+
+extern JS_PUBLIC_API(JSObject*)
+GetWaitForAllPromise(JSContext* cx, const JS::AutoObjectVector& promises);
+
+} 
 
 extern JS_PUBLIC_API(bool)
 JS_IsRunning(JSContext* cx);
