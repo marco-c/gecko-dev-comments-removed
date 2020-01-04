@@ -35,11 +35,10 @@ marionette_harness_tests_config_options = [
 ] + copy.deepcopy(virtualenv_config_options)
 
 marionette_harness_tests_config = {
-
-
-
-
-
+    "find_links": [
+        "http://pypi.pub.build.mozilla.org/pub",
+    ],
+    "pip_index": False,
     
     "rel_src_dir": os.path.join("build", "src"),
 }
