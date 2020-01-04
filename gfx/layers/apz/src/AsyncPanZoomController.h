@@ -246,6 +246,17 @@ public:
 
 
 
+  uint32_t GetCheckerboardMagnitude() const;
+
+  
+
+
+  void ReportCheckerboard(const TimeStamp& aSampleTime);
+
+  
+
+
+
 
 
   bool IsCurrentlyCheckerboarding() const;
@@ -713,6 +724,9 @@ private:
   
   
   TimeStamp mLastSampleTime;
+
+  
+  TimeStamp mLastCheckerboardReport;
 
   
   
