@@ -96,6 +96,22 @@ JS_InitWithFailureDiagnostic(void)
 
 
 
+inline bool
+JS_IsInitialized(void)
+{
+  return JS::detail::libraryInitState != JS::detail::InitState::Uninitialized;
+}
+
+
+
+
+
+
+
+
+
+
+
 
 
 
