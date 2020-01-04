@@ -64,7 +64,7 @@ class CodeSegment
     void operator=(CodeSegment&&) = delete;
 
   public:
-    static UniqueCodeSegment create(JSContext* cx,
+    static UniqueCodeSegment create(ExclusiveContext* cx,
                                     const Bytes& code,
                                     const LinkData& linkData,
                                     const Metadata& metadata,
@@ -387,21 +387,6 @@ UsesHeap(HeapUsage heapUsage)
 
 
 
-struct NameInBytecode
-{
-    uint32_t offset;
-    uint32_t length;
-
-    NameInBytecode() = default;
-    NameInBytecode(uint32_t offset, uint32_t length) : offset(offset), length(length) {}
-};
-
-typedef Vector<NameInBytecode, 0, SystemAllocPolicy> NameInBytecodeVector;
-typedef Vector<char16_t, 64> TwoByteName;
-
-
-
-
 
 
 
@@ -429,11 +414,14 @@ struct Metadata : ShareableBase<Metadata>, MetadataCacheablePod
     CodeRangeVector       codeRanges;
     CallSiteVector        callSites;
     CallThunkVector       callThunks;
-    NameInBytecodeVector  funcNames;
+    CacheableCharsVector  funcNames;
     CacheableChars        filename;
 
     bool usesHeap() const { return UsesHeap(heapUsage); }
     bool hasSharedHeap() const { return heapUsage == HeapUsage::Shared; }
+
+    const char* getFuncName(ExclusiveContext* cx, uint32_t funcIndex, UniqueChars* owner) const;
+    JSAtom* getFuncAtom(JSContext* cx, uint32_t funcIndex) const;
 
     
     
@@ -456,8 +444,6 @@ struct Metadata : ShareableBase<Metadata>, MetadataCacheablePod
     virtual ScriptSource* maybeScriptSource() const {
         return nullptr;
     }
-    virtual bool getFuncName(JSContext* cx, const Bytes* maybeBytecode, uint32_t funcIndex,
-                             TwoByteName* name) const;
 
     WASM_DECLARE_SERIALIZABLE_VIRTUAL(Metadata);
 };

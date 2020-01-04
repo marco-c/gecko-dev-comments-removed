@@ -184,7 +184,7 @@ class MOZ_STACK_CLASS ModuleGenerator
     MOZ_MUST_USE bool finishFuncDefs();
 
     
-    void setFuncNames(NameInBytecodeVector&& funcNames);
+    void setFuncNames(CacheableCharsVector&& funcNames);
 
     
     void initSig(uint32_t sigIndex, Sig&& sig);

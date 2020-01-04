@@ -132,12 +132,6 @@ class Instance
 
     
     
-
-    bool getFuncName(JSContext* cx, uint32_t funcIndex, TwoByteName* name) const;
-    JSAtom* getFuncAtom(JSContext* cx, uint32_t funcIndex) const;
-
-    
-    
     
     
     
