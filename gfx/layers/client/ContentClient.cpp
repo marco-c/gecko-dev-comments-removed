@@ -415,7 +415,9 @@ ContentClientDoubleBuffered::Dump(std::stringstream& aStream,
                                 bool aDumpHtml)
 {
   
-  aStream << "\n" << aPrefix << "Surface: ";
+  if (!aDumpHtml) {
+    aStream << "\n" << aPrefix << "Surface: ";
+  }
   CompositableClient::DumpTextureClient(aStream, mFrontClient);
 }
 
