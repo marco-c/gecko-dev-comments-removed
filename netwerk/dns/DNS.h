@@ -111,6 +111,7 @@ union NetAddr {
 #endif
   
   bool operator == (const NetAddr& other) const;
+  bool operator < (const NetAddr &other) const;
 };
 
 
