@@ -28,7 +28,8 @@ namespace media {
 class DecodedAudioDataSink : public AudioSink,
                              private AudioStream::DataSource {
 public:
-  DecodedAudioDataSink(MediaQueue<MediaData>& aAudioQueue,
+  DecodedAudioDataSink(AbstractThread* aThread,
+                       MediaQueue<MediaData>& aAudioQueue,
                        int64_t aStartTime,
                        const AudioInfo& aInfo,
                        dom::AudioChannel aChannel);
@@ -102,12 +103,32 @@ private:
   
   UniquePtr<AudioBufferCursor> mCursor;
   
-  bool mErrored = false;
+  Atomic<bool> mErrored;
 
   
   Atomic<bool> mPlaybackComplete;
 
+  const RefPtr<AbstractThread> mProcessingThread;
+  Atomic<bool> mShutdown;
+
+  
+  void OnAudioPopped(const RefPtr<MediaData>& aSample);
+  void OnAudioPushed(const RefPtr<MediaData>& aSample);
+  void NotifyAudioNeeded();
+  already_AddRefed<AudioData> CreateAudioFromBuffer(AlignedAudioBuffer&& aBuffer,
+                                                    AudioData* aReference);
   UniquePtr<AudioConverter> mConverter;
+  MediaQueue<AudioData> mProcessedQueue;
+  MediaEventListener mAudioQueueListener;
+  MediaEventListener mProcessedQueueListener;
+  
+  
+  
+  int64_t mFramesParsed;
+  int64_t mLastEndTime;
+  
+  uint32_t mOutputRate;
+  uint32_t mOutputChannels;
 };
 
 } 
