@@ -2113,8 +2113,14 @@ nsWindowWatcher::SizeOpenedDocShellItem(nsIDocShellTreeItem* aDocShellItem,
       int32_t winWidth = width + (sizeChromeWidth ? 0 : chromeWidth),
               winHeight = height + (sizeChromeHeight ? 0 : chromeHeight);
 
-      screen->GetAvailRectDisplayPix(&screenLeft, &screenTop, &screenWidth,
-                                     &screenHeight);
+      
+      screen->GetAvailRect(&screenLeft, &screenTop, &screenWidth,
+                           &screenHeight);
+      
+      screenLeft = NSToIntRound(screenLeft / scale);
+      screenTop = NSToIntRound(screenTop / scale);
+      screenWidth = NSToIntRound(screenWidth / scale);
+      screenHeight = NSToIntRound(screenHeight / scale);
 
       if (aSizeSpec.SizeSpecified()) {
         
