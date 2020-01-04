@@ -232,7 +232,8 @@ static bool
 DoMatch(Implementor* aElement, nsIAtom* aNS, nsIAtom* aName, MatchFn aMatch)
 {
   if (aNS) {
-    int32_t ns = nsContentUtils::NameSpaceManager()->GetNameSpaceID(aNS);
+    int32_t ns = nsContentUtils::NameSpaceManager()->GetNameSpaceID(aNS,
+                                                                    aElement->IsInChromeDocument());
     NS_ENSURE_TRUE(ns != kNameSpaceID_Unknown, false);
     const nsAttrValue* value = aElement->GetParsedAttr(aName, ns);
     return value && aMatch(value);
@@ -726,7 +727,6 @@ Servo_DropNodeData(ServoNodeData* data)
 RawServoStyleSheet*
 Servo_StylesheetFromUTF8Bytes(const uint8_t* bytes, uint32_t length,
                               mozilla::css::SheetParsingMode mode,
-                              const uint8_t* base_bytes, uint32_t base_length,
                               ThreadSafeURIHolder* base,
                               ThreadSafeURIHolder* referrer,
                               ThreadSafePrincipalHolder* principal)

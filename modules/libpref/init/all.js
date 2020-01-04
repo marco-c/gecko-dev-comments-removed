@@ -281,6 +281,9 @@ pref("print.shrink-to-fit.scale-limit-percent", 20);
 pref("print.use_simplify_page", false);
 
 
+pref("mathml.disabled",    false);
+
+
 pref("mathml.scale_stretchy_operators.enabled", true);
 
 
@@ -1500,6 +1503,7 @@ pref("network.http.bypass-cachelock-threshold", 250);
 
 
 pref("network.http.spdy.enabled", true);
+pref("network.http.spdy.enabled.v3-1", false);
 pref("network.http.spdy.enabled.http2", true);
 pref("network.http.spdy.enabled.deps", true);
 pref("network.http.spdy.enforce-tls-profile", true);

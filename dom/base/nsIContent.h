@@ -243,6 +243,12 @@ public:
 
   inline bool IsInHTMLDocument() const;
 
+
+  
+
+
+  virtual bool IsInChromeDocument();
+
   
 
 
