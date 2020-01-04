@@ -189,7 +189,7 @@ var MessageListener = {
       sendAsyncMessage("SessionStore:restoreTabContentComplete", {epoch, isRemotenessUpdate});
     });
 
-    sendAsyncMessage("SessionStore:restoreTabContentStarted", {epoch, didStartLoad});
+    sendAsyncMessage("SessionStore:restoreTabContentStarted", {epoch, isRemotenessUpdate});
 
     if (!didStartLoad) {
       

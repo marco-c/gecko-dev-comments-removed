@@ -820,7 +820,7 @@ var SessionStoreInternal = {
           
           
           this.markTabAsRestoring(tab);
-        } else {
+        } else if (!data.isRemotenessUpdate) {
           
           
           
