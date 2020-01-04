@@ -95,6 +95,18 @@ function handlePCRequest(aSubject, aTopic, aData) {
   let { windowID, innerWindowID, callID, isSecure } = aSubject;
   let contentWindow = Services.wm.getOuterWindowWithId(windowID);
 
+  let mm = getMessageManagerForWindow(contentWindow);
+  if (!mm) {
+    
+    
+    
+    
+
+    
+    Services.obs.notifyObservers(null, "PeerConnection:response:allow", callID);
+    return;
+  }
+
   if (!contentWindow.pendingPeerConnectionRequests) {
     setupPendingListsInitially(contentWindow);
   }
@@ -107,8 +119,6 @@ function handlePCRequest(aSubject, aTopic, aData) {
     documentURI: contentWindow.document.documentURI,
     secure: isSecure,
   };
-
-  let mm = getMessageManagerForWindow(contentWindow);
   mm.sendAsyncMessage("rtcpeer:Request", request);
 }
 
