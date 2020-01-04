@@ -216,14 +216,18 @@ class BasePopup {
   
   resizeBrowser() {
     if (this.resizeTimeout == null) {
-      this._resizeBrowser();
-      this.resizeTimeout = this.window.setTimeout(this._resizeBrowser.bind(this), RESIZE_TIMEOUT);
+      this.resizeTimeout = this.window.setTimeout(() => {
+        try {
+          this._resizeBrowser();
+        } finally {
+          this.resizeTimeout = null;
+        }
+      }, RESIZE_TIMEOUT);
+      this._resizeBrowser(false);
     }
   }
 
-  _resizeBrowser() {
-    this.resizeTimeout = null;
-
+  _resizeBrowser(clearTimeout = true) {
     if (!this.browser) {
       return;
     }
