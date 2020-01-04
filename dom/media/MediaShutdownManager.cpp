@@ -20,7 +20,6 @@ NS_IMPL_ISUPPORTS(MediaShutdownManager, nsIObserver)
 MediaShutdownManager::MediaShutdownManager()
   : mIsObservingShutdown(false)
   , mIsDoingXPCOMShutDown(false)
-  , mCompletedShutdown(false)
 {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_COUNT_CTOR(MediaShutdownManager);
@@ -49,7 +48,6 @@ MediaShutdownManager::Instance()
 void
 MediaShutdownManager::EnsureCorrectShutdownObserverState()
 {
-  MOZ_DIAGNOSTIC_ASSERT(!mIsDoingXPCOMShutDown);
   bool needShutdownObserver = mDecoders.Count() > 0;
   if (needShutdownObserver != mIsObservingShutdown) {
     mIsObservingShutdown = needShutdownObserver;
@@ -68,6 +66,7 @@ void
 MediaShutdownManager::Register(MediaDecoder* aDecoder)
 {
   MOZ_ASSERT(NS_IsMainThread());
+  MOZ_DIAGNOSTIC_ASSERT(!mIsDoingXPCOMShutDown);
   
   
   MOZ_ASSERT(!mDecoders.Contains(aDecoder));
@@ -82,10 +81,8 @@ MediaShutdownManager::Unregister(MediaDecoder* aDecoder)
 {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(mDecoders.Contains(aDecoder));
-  if (!mIsDoingXPCOMShutDown) {
-    mDecoders.RemoveEntry(aDecoder);
-    EnsureCorrectShutdownObserverState();
-  }
+  mDecoders.RemoveEntry(aDecoder);
+  EnsureCorrectShutdownObserverState();
 }
 
 NS_IMETHODIMP
@@ -109,59 +106,28 @@ MediaShutdownManager::Shutdown()
   DECODER_LOG(LogLevel::Debug, ("MediaShutdownManager::Shutdown() start..."));
 
   
-  
-  
   mIsDoingXPCOMShutDown = true;
 
+  DebugOnly<uint32_t> oldCount = mDecoders.Count();
+  MOZ_ASSERT(oldCount > 0);
+
   
-  
-  nsTArray<RefPtr<ShutdownPromise>> promises;
   for (auto iter = mDecoders.Iter(); !iter.Done(); iter.Next()) {
-    promises.AppendElement(iter.Get()->GetKey()->Shutdown()->Then(
-      
-      
-      
-      
-      
-      AbstractThread::MainThread(), __func__,
-      []() -> RefPtr<ShutdownPromise> {
-        return ShutdownPromise::CreateAndResolve(true, __func__);
-      },
-      []() -> RefPtr<ShutdownPromise> {
-        return ShutdownPromise::CreateAndResolve(true, __func__);
-      })->CompletionPromise());
-    iter.Remove();
-  }
-
-  if (!promises.IsEmpty()) {
-    ShutdownPromise::All(AbstractThread::MainThread(), promises)
-      ->Then(AbstractThread::MainThread(), __func__, this,
-             &MediaShutdownManager::FinishShutdown,
-             &MediaShutdownManager::FinishShutdown);
+    iter.Get()->GetKey()->Shutdown();
     
-    while (!mCompletedShutdown) {
-      NS_ProcessNextEvent(NS_GetCurrentThread(), true);
-    }
+    
+    MOZ_ASSERT(mDecoders.Count() == oldCount);
   }
 
   
   
-  nsContentUtils::UnregisterShutdownObserver(this);
+  while (sInstance) {
+    NS_ProcessNextEvent(NS_GetCurrentThread(), true);
+  }
 
   
-  
-  
-  
-  sInstance = nullptr;
 
   DECODER_LOG(LogLevel::Debug, ("MediaShutdownManager::Shutdown() end."));
-}
-
-void
-MediaShutdownManager::FinishShutdown()
-{
-  MOZ_ASSERT(NS_IsMainThread());
-  mCompletedShutdown = true;
 }
 
 } 

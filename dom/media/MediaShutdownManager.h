@@ -81,7 +81,6 @@ private:
   virtual ~MediaShutdownManager();
 
   void Shutdown();
-  void FinishShutdown();
 
   
   
@@ -98,10 +97,6 @@ private:
   bool mIsObservingShutdown;
 
   bool mIsDoingXPCOMShutDown;
-
-  
-  
-  bool mCompletedShutdown;
 };
 
 } 
