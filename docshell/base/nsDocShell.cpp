@@ -7579,6 +7579,17 @@ nsDocShell::EndPageLoad(nsIWebProgress* aProgress,
         aStatus == NS_ERROR_INVALID_CONTENT_ENCODING) {
       DisplayLoadError(aStatus, url, nullptr, aChannel);
       return NS_OK;
+    } else if (aStatus == NS_ERROR_INVALID_SIGNATURE) {
+      
+      
+      
+      
+      
+      return LoadURI(MOZ_UTF16("about:blank"),  
+                     nsIChannel::LOAD_NORMAL,   
+                     nullptr,                   
+                     nullptr,                   
+                     nullptr);                  
     }
 
     
@@ -9549,6 +9560,27 @@ nsDocShell::CreatePrincipalFromReferrer(nsIURI* aReferrer,
   return *aResult ? NS_OK : NS_ERROR_FAILURE;
 }
 
+bool
+nsDocShell::IsAboutNewtab(nsIURI* aURI)
+{
+  if (!aURI) {
+    return false;
+  }
+  bool isAbout;
+  if (NS_WARN_IF(NS_FAILED(aURI->SchemeIs("about", &isAbout)))) {
+    return false;
+  }
+  if (!isAbout) {
+    return false;
+  }
+
+  nsAutoCString module;
+  if (NS_WARN_IF(NS_FAILED(NS_GetAboutModuleName(aURI, module)))) {
+    return false;
+  }
+  return module.Equals("newtab");
+}
+
 NS_IMETHODIMP
 nsDocShell::InternalLoad(nsIURI* aURI,
                          nsIURI* aOriginalURI,
@@ -10218,8 +10250,16 @@ nsDocShell::InternalLoad(nsIURI* aURI,
   
   nsCOMPtr<nsIWebBrowserChrome3> browserChrome3 = do_GetInterface(mTreeOwner);
   if (browserChrome3) {
+    
+    
+    
+    nsIURI* uriForShouldLoadCheck = aURI;
+    if (IsAboutNewtab(aOriginalURI)) {
+      uriForShouldLoadCheck = aOriginalURI;
+    }
     bool shouldLoad;
-    rv = browserChrome3->ShouldLoadURI(this, aURI, aReferrer, &shouldLoad);
+    rv = browserChrome3->ShouldLoadURI(this, uriForShouldLoadCheck, aReferrer,
+                                       &shouldLoad);
     if (NS_SUCCEEDED(rv) && !shouldLoad) {
       return NS_OK;
     }
@@ -10868,6 +10908,15 @@ nsDocShell::DoURILoad(nsIURI* aURI,
     if (aReferrerURI && aSendReferrer) {
       
       httpChannel->SetReferrerWithPolicy(aReferrerURI, aReferrerPolicy);
+    }
+    
+    if (aOriginalURI && httpChannel) {
+      if (IsAboutNewtab(aOriginalURI)) {
+        nsCOMPtr<nsILoadInfo> loadInfo = httpChannel->GetLoadInfo();
+        if (loadInfo) {
+          loadInfo->SetVerifySignedContent(true);
+        }
+      }
     }
   }
 

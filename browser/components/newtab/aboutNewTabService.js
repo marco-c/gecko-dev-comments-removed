@@ -33,6 +33,9 @@ const ABOUT_URL = "about:newtab";
 const PREF_REMOTE_ENABLED = "browser.newtabpage.remote";
 
 
+const PREF_REMOTE_CS_TEST = "browser.newtabpage.remote.content-signing-test";
+
+
 const PREF_MATCH_OS_LOCALE = "intl.locale.matchOS";
 
 
@@ -126,8 +129,13 @@ AboutNewTabService.prototype = {
       return false;
     }
 
+    let csTest = Services.prefs.getBoolPref(PREF_REMOTE_CS_TEST);
     if (stateEnabled) {
-      this._remoteURL = this.generateRemoteURL();
+      if (!csTest) {
+        this._remoteURL = this.generateRemoteURL();
+      } else {
+        this._remoteURL = this._newTabURL;
+      }
       NewTabPrefsProvider.prefs.on(
         PREF_SELECTED_LOCALE,
         this._updateRemoteMaybe);
@@ -144,7 +152,9 @@ AboutNewTabService.prototype = {
       NewTabPrefsProvider.prefs.off(PREF_REMOTE_MODE, this._updateRemoteMaybe);
       this._remoteEnabled = false;
     }
-    this._newTabURL = ABOUT_URL;
+    if (!csTest) {
+      this._newTabURL = ABOUT_URL;
+    }
     return true;
   },
 
@@ -172,8 +182,11 @@ AboutNewTabService.prototype = {
 
 
 
+
+
   get defaultURL() {
-    if (this._remoteEnabled) {
+    let csTest = Services.prefs.getBoolPref(PREF_REMOTE_CS_TEST);
+    if (this._remoteEnabled || csTest)  {
       return this._remoteURL;
     }
     return LOCAL_NEWTAB_URL;
@@ -219,6 +232,7 @@ AboutNewTabService.prototype = {
   },
 
   set newTabURL(aNewTabURL) {
+    let csTest = Services.prefs.getBoolPref(PREF_REMOTE_CS_TEST);
     aNewTabURL = aNewTabURL.trim();
     if (aNewTabURL === ABOUT_URL) {
       
@@ -233,14 +247,19 @@ AboutNewTabService.prototype = {
     let isResetRemote = prefRemoteEnabled && aNewTabURL === remoteURL;
 
     if (isResetLocal || isResetRemote) {
-      if (this._overriden) {
+      if (this._overriden && !csTest) {
         
         this.resetNewTabURL();
       }
       return;
     }
     
-    this.toggleRemote(false);
+    if (!csTest) {
+      this.toggleRemote(false);
+    } else {
+      
+      this._remoteURL = aNewTabURL;
+    }
     this._newTabURL = aNewTabURL;
     this._overridden = true;
     Services.obs.notifyObservers(null, "newtab-url-changed", this._newTabURL);

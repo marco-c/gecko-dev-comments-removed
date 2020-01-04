@@ -155,6 +155,7 @@ AboutRedirector::NewChannel(nsIURI* aURI,
   for (int i = 0; i < kRedirTotal; i++) {
     if (!strcmp(path.get(), kRedirMap[i].id)) {
       nsAutoCString url;
+      nsLoadFlags loadFlags = static_cast<nsLoadFlags>(nsIChannel::LOAD_NORMAL);
 
       if (path.EqualsLiteral("newtab")) {
         
@@ -163,6 +164,17 @@ AboutRedirector::NewChannel(nsIURI* aURI,
         NS_ENSURE_SUCCESS(rv, rv);
         rv = aboutNewTabService->GetDefaultURL(url);
         NS_ENSURE_SUCCESS(rv, rv);
+
+        
+        
+        bool remoteEnabled = false;
+        rv = aboutNewTabService->GetRemoteEnabled(&remoteEnabled);
+        NS_ENSURE_SUCCESS(rv, rv);
+        if (remoteEnabled) {
+          NS_ENSURE_ARG_POINTER(aLoadInfo);
+          aLoadInfo->SetVerifySignedContent(true);
+          loadFlags = static_cast<nsLoadFlags>(nsIChannel::LOAD_REPLACE);
+        }
       }
       
       if (url.IsEmpty()) {
@@ -183,9 +195,9 @@ AboutRedirector::NewChannel(nsIURI* aURI,
                                &isUIResource);
       NS_ENSURE_SUCCESS(rv, rv);
 
-      nsLoadFlags loadFlags =
-        isUIResource ? static_cast<nsLoadFlags>(nsIChannel::LOAD_NORMAL)
-                     : static_cast<nsLoadFlags>(nsIChannel::LOAD_REPLACE);
+      loadFlags = isUIResource
+                    ? static_cast<nsLoadFlags>(nsIChannel::LOAD_NORMAL)
+                    : static_cast<nsLoadFlags>(nsIChannel::LOAD_REPLACE);
 
       rv = NS_NewChannelInternal(getter_AddRefs(tempChannel),
                                  tempURI,
