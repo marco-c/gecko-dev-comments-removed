@@ -27,6 +27,19 @@
 
 
 
+const TEST_URLS = ["about:mozilla", "about:buildconfig"];
+
+
+
+const NOTIFICATIONS_EXPECTED = 6;
+
+
+const POPUP_FEATURES = "toolbar=no,resizable=no,status=no";
+
+
+const CHROME_FEATURES = "chrome,all,dialog=no";
+
+const IS_MAC = navigator.platform.match(/Mac/);
 
 
 
@@ -35,84 +48,62 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function browserWindowsCount(expected, msg) {
-  if (typeof expected == "number")
-    expected = [expected, expected];
-  let count = 0;
+function getBrowserWindowsCount() {
+  let open = 0;
   let e = Services.wm.getEnumerator("navigator:browser");
   while (e.hasMoreElements()) {
     if (!e.getNext().closed)
-      ++count;
+      ++open;
   }
-  is(count, expected[0], msg + " (nsIWindowMediator)");
-  let state = ss.getBrowserState();
-  is(JSON.parse(state).windows.length, expected[1], msg + " (getBrowserState)");
+
+  let winstates = JSON.parse(ss.getBrowserState()).windows.length;
+
+  return { open, winstates };
 }
 
-function test() {
-  browserWindowsCount(1, "Only one browser window should be open initially");
+add_task(function* setup() {
+  
+  let { open, winstates } = getBrowserWindowsCount();
+  is(open, 1, "Should only be one open window");
+  is(winstates, 1, "Should only be one window state in SessionStore");
 
-  waitForExplicitFinish();
   
   
   requestLongerTimeout(2);
 
   
-  
-  
-  const TEST_URLS = ["about:mozilla", "about:buildconfig"];
+  let oldWinType = document.documentElement.getAttribute("windowtype");
+  document.documentElement.setAttribute("windowtype", "navigator:testrunner");
 
-  
-  
-  const NOTIFICATIONS_EXPECTED = 6;
+  registerCleanupFunction(() => {
+    document.documentElement.setAttribute("windowtype", "navigator:browser");
+  });
+});
 
-  
-  const POPUP_FEATURES = "toolbar=no,resizable=no,status=no";
 
-  
-  const CHROME_FEATURES = "chrome,all,dialog=no";
 
-  
-  let oldWinType = "";
-  
-  
-  let oldWarnTabsOnClose = gPrefService.getBoolPref("browser.tabs.warnOnClose");
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+let setupTest = Task.async(function*(options, testFunction) {
+  yield pushPrefs(["browser.startup.page", 3],
+                  ["browser.tabs.warnOnClose", false]);
 
   
   let observing = {
@@ -129,355 +120,355 @@ function test() {
     observing[aTopic]++;
 
     
-    if (++hitCount == 1) {
-      
+    if (options.denyFirst && ++hitCount == 1) {
       aCancel.QueryInterface(Ci.nsISupportsPRBool).data = true;
     }
   }
 
-  
-
-
-
-  function setPrefs() {
-    gPrefService.setIntPref("browser.startup.page", 3);
-    gPrefService.setBoolPref("browser.tabs.warnOnClose", false);
+  for (let o in observing) {
+    Services.obs.addObserver(observer, o, false);
   }
 
-  
+  let private = options.private || false;
+  let newWin = yield promiseNewWindowLoaded({ private });
 
+  injectTestTabs(newWin);
 
-  function setupTestsuite(testFn) {
-    
-    for (let o in observing)
-      Services.obs.addObserver(observer, o, false);
+  yield testFunction(newWin, observing);
 
-    
-    oldWinType = document.documentElement.getAttribute("windowtype");
-    document.documentElement.setAttribute("windowtype", "navigator:testrunner");
+  let count = getBrowserWindowsCount();
+  is(count.open, 0, "Got right number of open windows");
+  is(count.winstates, 1, "Got right number of stored window states");
+
+  for (let o in observing) {
+    Services.obs.removeObserver(observer, o);
   }
 
-  
+  yield popPrefs();
+});
 
 
-  function cleanupTestsuite(callback) {
-    
-    for (let o in observing)
-      Services.obs.removeObserver(observer, o);
-
-    
-    let pref = "browser.startup.page";
-    if (gPrefService.prefHasUserValue(pref))
-      gPrefService.clearUserPref(pref);
-    gPrefService.setBoolPref("browser.tabs.warnOnClose", oldWarnTabsOnClose);
-
-    
-    document.documentElement.setAttribute("windowtype", oldWinType);
-  }
-
-  
 
 
-  function setupTestAndRun(aIsPrivateWindow, testFn) {
-    
-    setPrefs();
 
-    
-    let options = {};
-    if (aIsPrivateWindow) {
-      options = {private: true};
+
+
+function injectTestTabs(win) {
+  TEST_URLS.forEach(function (url) {
+    win.gBrowser.addTab(url);
+  });
+}
+
+
+
+
+
+
+
+
+
+
+
+
+function closeWindowForRestoration(win) {
+  return new Promise((resolve) => {
+    let closePromise = BrowserTestUtils.windowClosed(win);
+    win.BrowserTryToCloseWindow();
+    if (!win.closed) {
+      resolve(false);
+      return;
     }
 
-    whenNewWindowLoaded(options, function (newWin) {
-      TEST_URLS.forEach(function (url) {
-        newWin.gBrowser.addTab(url);
-      });
-
-      executeSoon(() => testFn(newWin));
+    closePromise.then(() => {
+      resolve(true);
     });
-  }
-
-  
-
-
-
-  function testOpenCloseNormal(nextFn) {
-    setupTestAndRun(false, function(newWin) {
-      
-      
-      
-      newWin.BrowserTryToCloseWindow();
-
-      
-      ok(!newWin.closed, "First close request was denied");
-      if (!newWin.closed) {
-        newWin.BrowserTryToCloseWindow();
-        ok(newWin.closed, "Second close request was granted");
-      }
-
-      
-      
-      whenNewWindowLoaded({}, function (newWin) {
-        is(newWin.gBrowser.browsers.length, TEST_URLS.length + 2,
-           "Restored window in-session with otherpopup windows around");
-
-        
-        newWin.close();
-
-        
-        executeSoon(nextFn);
-      });
-    });
-  }
-
-  
-
-
-
-  function testOpenClosePrivateBrowsing(nextFn) {
-    setupTestAndRun(false, function(newWin) {
-      
-      newWin.BrowserTryToCloseWindow();
-
-      
-      
-      
-      whenNewWindowLoaded({private: true}, function (newWin) {
-        is(newWin.gBrowser.browsers.length, 1,
-           "Did not restore in private browing mode");
-
-        
-        newWin.BrowserTryToCloseWindow();
-
-        
-        whenNewWindowLoaded({}, function (newWin) {
-          is(newWin.gBrowser.browsers.length, TEST_URLS.length + 2,
-             "Restored after leaving private browsing again");
-
-          newWin.close();
-
-          
-          executeSoon(nextFn);
-        });
-      });
-    });
-  }
-
-  
-
-
-
-
-  function testOpenCloseWindowAndPopup(nextFn) {
-    setupTestAndRun(false, function(newWin) {
-      
-      let popup = openDialog(location, "popup", POPUP_FEATURES, TEST_URLS[0]);
-      let popup2 = openDialog(location, "popup2", POPUP_FEATURES, TEST_URLS[1]);
-      popup2.addEventListener("load", function() {
-        popup2.removeEventListener("load", arguments.callee, false);
-        popup2.gBrowser.addEventListener("load", function() {
-          popup2.gBrowser.removeEventListener("load", arguments.callee, true);
-          popup2.gBrowser.addTab(TEST_URLS[0]);
-          
-          newWin.BrowserTryToCloseWindow();
-
-          
-          
-          
-          popup2.close();
-
-          
-          whenNewWindowLoaded({}, function (newWin) {
-            is(newWin.gBrowser.browsers.length, TEST_URLS.length + 2,
-               "Restored window and associated tabs in session");
-
-            
-            newWin.close();
-            popup.close();
-
-            
-            executeSoon(nextFn);
-          });
-        }, true);
-      }, false);
-    });
-  }
-
-  
-
-
-
-
-  function testOpenCloseOnlyPopup(nextFn) {
-    
-    setPrefs();
-
-    
-    
-    let popup = openDialog(location, "popup", POPUP_FEATURES, TEST_URLS[1]);
-    popup.addEventListener("load", function() {
-      this.removeEventListener("load", arguments.callee, true);
-      is(popup.gBrowser.browsers.length, 1,
-         "Did not restore the popup window (1)");
-      popup.BrowserTryToCloseWindow();
-
-      
-      popup = openDialog(location, "popup", POPUP_FEATURES, TEST_URLS[1]);
-      popup.addEventListener("load", function() {
-        popup.removeEventListener("load", arguments.callee, false);
-        popup.gBrowser.addEventListener("load", function() {
-          popup.gBrowser.removeEventListener("load", arguments.callee, true);
-          popup.gBrowser.addTab(TEST_URLS[0]);
-
-          is(popup.gBrowser.browsers.length, 2,
-             "Did not restore to the popup window (2)");
-
-          
-          
-          
-          popup.close();
-
-          whenNewWindowLoaded({}, function (newWin) {
-            isnot(newWin.gBrowser.browsers.length, 2,
-                  "Did not restore the popup window");
-            is(TEST_URLS.indexOf(newWin.gBrowser.browsers[0].currentURI.spec), -1,
-               "Did not restore the popup window (2)");
-
-            
-            newWin.close();
-
-            
-            executeSoon(nextFn);
-          });
-        }, true);
-      }, false);
-    }, true);
-  }
-
-    
-
-
-
-
-  function testOpenCloseRestoreFromPopup(nextFn) {
-    setupTestAndRun(false, function(newWin) {
-      setupTestAndRun(false, function(newWin2) {
-        newWin.BrowserTryToCloseWindow();
-        newWin2.BrowserTryToCloseWindow();
-
-        browserWindowsCount([0, 1], "browser windows while running testOpenCloseRestoreFromPopup");
-
-        newWin = undoCloseWindow(0);
-        newWin.addEventListener("load", function whenloaded() {
-          newWin.removeEventListener("load", whenloaded, false);
-
-          newWin.gBrowser.tabContainer.addEventListener("SSTabRestored", function whenSSTabRestored() {
-            newWin.gBrowser.tabContainer.removeEventListener("SSTabRestored", whenSSTabRestored, false);
-
-            whenNewWindowLoaded({}, function (newWin2) {
-              is(newWin2.gBrowser.browsers.length, 1,
-                 "Did not restore, as undoCloseWindow() was last called");
-              is(TEST_URLS.indexOf(newWin2.gBrowser.browsers[0].currentURI.spec), -1,
-                 "Did not restore, as undoCloseWindow() was last called (2)");
-
-              browserWindowsCount([2, 3], "browser windows while running testOpenCloseRestoreFromPopup");
-
-              
-              newWin.close();
-              newWin2.close();
-
-              browserWindowsCount([0, 1], "browser windows while running testOpenCloseRestoreFromPopup");
-
-              
-              executeSoon(nextFn);
-            });
-          }, false);
-        }, false);
-      });
-    });
-  }
-
-  
-
-
-
-  function testNotificationCount(nextFn) {
-    is(observing["browser-lastwindow-close-requested"], NOTIFICATIONS_EXPECTED,
-       "browser-lastwindow-close-requested notifications observed");
-
-    
-    
-    
-    is(observing["browser-lastwindow-close-requested"],
-       observing["browser-lastwindow-close-granted"] + 1,
-       "Notification count for -request and -grant matches");
-
-    executeSoon(nextFn);
-  }
-
-  
-
-
-
-
-  function testMacNotifications(nextFn, iteration) {
-    iteration = iteration || 1;
-    setupTestAndRun(false, function(newWin) {
-      
-      
-      
-      newWin.BrowserTryToCloseWindow();
-      if (iteration == 1) {
-        ok(!newWin.closed, "First close attempt denied");
-        if (!newWin.closed) {
-          newWin.BrowserTryToCloseWindow();
-          ok(newWin.closed, "Second close attempt granted");
-        }
-      }
-
-      if (iteration < NOTIFICATIONS_EXPECTED - 1) {
-        executeSoon(() => testMacNotifications(nextFn, ++iteration));
-      }
-      else {
-        executeSoon(nextFn);
-      }
-    });
-  }
-
-  
-
-  setupTestsuite();
-  if (navigator.platform.match(/Mac/)) {
-    
-    testMacNotifications(function () {
-      testNotificationCount(function () {
-        cleanupTestsuite();
-        browserWindowsCount(1, "Only one browser window should be open eventually");
-        finish();
-      });
-    });
-  }
-  else {
-    
-    testOpenCloseNormal(function () {
-      browserWindowsCount([0, 1], "browser windows after testOpenCloseNormal");
-      testOpenClosePrivateBrowsing(function () {
-        browserWindowsCount([0, 1], "browser windows after testOpenClosePrivateBrowsing");
-        testOpenCloseWindowAndPopup(function () {
-          browserWindowsCount([0, 1], "browser windows after testOpenCloseWindowAndPopup");
-          testOpenCloseOnlyPopup(function () {
-            browserWindowsCount([0, 1], "browser windows after testOpenCloseOnlyPopup");
-            testOpenCloseRestoreFromPopup(function () {
-              browserWindowsCount([0, 1], "browser windows after testOpenCloseRestoreFromPopup");
-              testNotificationCount(function () {
-                cleanupTestsuite();
-                browserWindowsCount(1, "browser windows after testNotificationCount");
-                finish();
-              });
-            });
-          });
-        });
-      });
-    });
-  }
+  });
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+add_task(function* test_open_close_normal() {
+  if (IS_MAC) {
+    return;
+  }
+
+  yield setupTest({ denyFirst: true }, function*(newWin, obs) {
+    let closed = yield closeWindowForRestoration(newWin);
+    ok(!closed, "First close request should have been denied");
+
+    closed = yield closeWindowForRestoration(newWin);
+    ok(closed, "Second close request should be accepted");
+
+    newWin = yield promiseNewWindowLoaded();
+    is(newWin.gBrowser.browsers.length, TEST_URLS.length + 2,
+       "Restored window in-session with otherpopup windows around");
+
+    
+    
+    yield BrowserTestUtils.closeWindow(newWin);
+
+    
+    
+    is(obs["browser-lastwindow-close-requested"], 2,
+       "Got expected browser-lastwindow-close-requested notifications");
+    is(obs["browser-lastwindow-close-granted"], 1,
+       "Got expected browser-lastwindow-close-granted notifications");
+  });
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+add_task(function* test_open_close_private_browsing() {
+  if (IS_MAC) {
+    return;
+  }
+
+  yield setupTest({}, function*(newWin, obs) {
+    let closed = yield closeWindowForRestoration(newWin);
+    ok(closed, "Should be able to close the window");
+
+    newWin = yield promiseNewWindowLoaded({private: true});
+    is(newWin.gBrowser.browsers.length, 1,
+       "Did not restore in private browing mode");
+
+    closed = yield closeWindowForRestoration(newWin);
+    ok(closed, "Should be able to close the window");
+
+    newWin = yield promiseNewWindowLoaded();
+    is(newWin.gBrowser.browsers.length, TEST_URLS.length + 2,
+       "Restored tabs in a new non-private window");
+
+    
+    
+    yield BrowserTestUtils.closeWindow(newWin);
+
+    
+    
+    is(obs["browser-lastwindow-close-requested"], 2,
+       "Got expected browser-lastwindow-close-requested notifications");
+    is(obs["browser-lastwindow-close-granted"], 2,
+       "Got expected browser-lastwindow-close-granted notifications");
+  });
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+add_task(function* test_open_close_window_and_popup() {
+  if (IS_MAC) {
+    return;
+  }
+
+  yield setupTest({}, function*(newWin, obs) {
+    let popupPromise = BrowserTestUtils.waitForNewWindow();
+    openDialog(location, "popup", POPUP_FEATURES, TEST_URLS[0]);
+    let popup = yield popupPromise;
+
+    let popup2Promise = BrowserTestUtils.waitForNewWindow();
+    openDialog(location, "popup2", POPUP_FEATURES, TEST_URLS[1]);
+    let popup2 = yield popup2Promise;
+
+    popup2.gBrowser.addTab(TEST_URLS[0]);
+
+    let closed = yield closeWindowForRestoration(newWin);
+    ok(closed, "Should be able to close the window");
+
+    yield BrowserTestUtils.closeWindow(popup2);
+
+    newWin = yield promiseNewWindowLoaded();
+
+    is(newWin.gBrowser.browsers.length, TEST_URLS.length + 2,
+       "Restored window and associated tabs in session");
+
+    yield BrowserTestUtils.closeWindow(popup);
+    yield BrowserTestUtils.closeWindow(newWin);
+
+    
+    
+    is(obs["browser-lastwindow-close-requested"], 1,
+       "Got expected browser-lastwindow-close-requested notifications");
+    is(obs["browser-lastwindow-close-granted"], 1,
+       "Got expected browser-lastwindow-close-granted notifications");
+  });
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+add_task(function* test_open_close_only_popup() {
+  if (IS_MAC) {
+    return;
+  }
+
+  yield setupTest({}, function*(newWin, obs) {
+    
+    yield BrowserTestUtils.closeWindow(newWin);
+
+    
+    
+    let popupPromise = BrowserTestUtils.waitForNewWindow();
+    openDialog(location, "popup", POPUP_FEATURES, TEST_URLS[1]);
+    let popup = yield popupPromise;
+
+    is(popup.gBrowser.browsers.length, 1,
+       "Did not restore the popup window (1)");
+
+    let closed = yield closeWindowForRestoration(popup);
+    ok(closed, "Should be able to close the window");
+
+    popupPromise = BrowserTestUtils.waitForNewWindow();
+    openDialog(location, "popup", POPUP_FEATURES, TEST_URLS[1]);
+    popup = yield popupPromise;
+
+    popup.gBrowser.addTab(TEST_URLS[0]);
+    is(popup.gBrowser.browsers.length, 2,
+       "Did not restore to the popup window (2)");
+
+    yield BrowserTestUtils.closeWindow(popup);
+
+    newWin = yield promiseNewWindowLoaded();
+    isnot(newWin.gBrowser.browsers.length, 2,
+          "Did not restore the popup window");
+    is(TEST_URLS.indexOf(newWin.gBrowser.browsers[0].currentURI.spec), -1,
+        "Did not restore the popup window (2)");
+    yield BrowserTestUtils.closeWindow(newWin);
+
+    
+    
+    is(obs["browser-lastwindow-close-requested"], 0,
+       "Got expected browser-lastwindow-close-requested notifications");
+    is(obs["browser-lastwindow-close-granted"], 0,
+       "Got expected browser-lastwindow-close-granted notifications");
+  });
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+add_task(function* test_open_close_restore_from_popup() {
+  if (IS_MAC) {
+    return;
+  }
+
+  yield setupTest({}, function*(newWin, obs) {
+    let newWin2 = yield promiseNewWindowLoaded();
+    yield injectTestTabs(newWin2);
+
+    let closed = yield closeWindowForRestoration(newWin);
+    ok(closed, "Should be able to close the window");
+    closed = yield closeWindowForRestoration(newWin2);
+    ok(closed, "Should be able to close the window");
+
+    let counts = getBrowserWindowsCount();
+    is(counts.open, 0, "Got right number of open windows");
+    is(counts.winstates, 1, "Got right number of window states");
+
+    newWin = undoCloseWindow(0);
+    yield BrowserTestUtils.waitForEvent(newWin, "load");
+
+    
+    yield BrowserTestUtils.waitForEvent(newWin.gBrowser.tabContainer,
+                                        "SSTabRestored");
+
+    newWin2 = yield promiseNewWindowLoaded();
+
+    is(newWin2.gBrowser.browsers.length, 1,
+       "Did not restore, as undoCloseWindow() was last called");
+    is(TEST_URLS.indexOf(newWin2.gBrowser.browsers[0].currentURI.spec), -1,
+       "Did not restore, as undoCloseWindow() was last called (2)");
+
+    counts = getBrowserWindowsCount();
+    is(counts.open, 2, "Got right number of open windows");
+    is(counts.winstates, 3, "Got right number of window states");
+
+    yield BrowserTestUtils.closeWindow(newWin);
+    yield BrowserTestUtils.closeWindow(newWin2);
+
+    counts = getBrowserWindowsCount();
+    is(counts.open, 0, "Got right number of open windows");
+    is(counts.winstates, 1, "Got right number of window states");
+  });
+});
+
+
+
+
+
+add_task(function* test_mac_notifications() {
+  if (!IS_MAC) {
+    return;
+  }
+
+  yield setupTest({ denyFirst: true }, function*(newWin, obs) {
+    let closed = yield closeWindowForRestoration(newWin);
+    ok(!closed, "First close attempt should be denied");
+    closed = yield closeWindowForRestoration(newWin);
+    ok(closed, "Second close attempt should be granted");
+
+    
+    
+    is(obs["browser-lastwindow-close-requested"], 2,
+       "Got expected browser-lastwindow-close-requested notifications");
+    is(obs["browser-lastwindow-close-granted"], 1,
+       "Got expected browser-lastwindow-close-granted notifications");
+  });
+});
+
