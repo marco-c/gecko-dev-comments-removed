@@ -595,7 +595,8 @@ protected:
   
 
 
-  void DispatchRepaintRequest(const FrameMetrics& aFrameMetrics);
+  void DispatchRepaintRequest(const FrameMetrics& aFrameMetrics,
+                              const ParentLayerPoint& aVelocity);
 
   
 
