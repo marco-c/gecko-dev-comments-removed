@@ -1795,13 +1795,18 @@ DebuggerServer.ObjectActorPreviewers.Object = [
   function PseudoArray({obj, hooks}, grip, rawObj) {
     let length = 0;
 
-    
     let keys = obj.getOwnPropertyNames();
     if (keys.length == 0) {
       return false;
     }
+
+    
+    
+    
+    
     for (let key of keys) {
-      if (isNaN(key) || key != length++) {
+      let numKey = key >>> 0; 
+      if (numKey + '' != key || numKey != length++) {
         return false;
       }
     }
