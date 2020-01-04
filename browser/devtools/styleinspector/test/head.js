@@ -920,6 +920,25 @@ let createNewRuleViewProperty = Task.async(function*(ruleEditor, inputValue) {
 
 
 
+let setSearchFilter = Task.async(function*(view, searchValue) {
+  info("Setting filter text to \"" + searchValue + "\"");
+  let win = view.styleWindow;
+  let searchField = view.searchField;
+  searchField.focus();
+  synthesizeKeys(searchValue, win);
+  yield view.inspector.once("ruleview-filtered");
+});
+
+
+
+
+
+
+
+
+
+
+
 
 
 
