@@ -19,6 +19,7 @@ XPCOMUtils.defineLazyGetter(this, "kDebug", () => {
 });
 
 const kModalHighlightRepaintFreqMs = 10;
+const kHighlightAllPref = "findbar.highlightAll";
 const kModalHighlightPref = "findbar.modalHighlight";
 const kFontPropsCSS = ["color", "font-family", "font-kerning", "font-size",
   "font-size-adjust", "font-stretch", "font-variant", "font-weight", "letter-spacing",
@@ -100,7 +101,6 @@ const kModalStyle = `
 .findbar-modalHighlight-outlineMask[brighttext] > .findbar-modalHighlight-rect {
   background: #000;
 }`;
-const kXULNS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
 
 function mockAnonymousContentNode(domNode) {
   return {
@@ -137,8 +137,11 @@ function mockAnonymousContentNode(domNode) {
 
 
 function FinderHighlighter(finder) {
-  this.finder = finder;
+  this._currentFoundRange = null;
   this._modal = Services.prefs.getBoolPref(kModalHighlightPref);
+  this._highlightAll = Services.prefs.getBoolPref(kHighlightAllPref);
+  this.finder = finder;
+  this.visible = false;
 }
 
 FinderHighlighter.prototype = {
@@ -262,47 +265,44 @@ FinderHighlighter.prototype = {
 
 
 
-
-
-
   show(window = null) {
-    if (!this._modal)
-      return null;
+    if (!this._modal || this.visible)
+      return;
 
+    this.visible = true;
     window = window || this.finder._getWindow();
-    let anonNode = this._maybeCreateModalHighlightNodes(window);
+    this._maybeCreateModalHighlightNodes(window);
     this._addModalHighlightListeners(window);
-
-    return anonNode;
   },
 
   
 
 
 
-  hide(window = null) {
+
+
+
+
+
+  hide(window = null, skipRange = null) {
     window = window || this.finder._getWindow();
 
     let doc = window.document;
-    let controller = this.finder._getSelectionController(window);
-    let sel = controller.getSelection(Ci.nsISelectionController.SELECTION_FIND);
-    sel.removeAllRanges();
+    this._clearSelection(this.finder._getSelectionController(window), skipRange);
 
     
     
     if (this._editors) {
       for (let x = this._editors.length - 1; x >= 0; --x) {
         if (this._editors[x].document == doc) {
-          sel = this._editors[x].selectionController
-                                .getSelection(Ci.nsISelectionController.SELECTION_FIND);
-          sel.removeAllRanges();
+          this._clearSelection(this._editors[x].selectionController, skipRange);
           
           this._unhookListenersAtIndex(x);
         }
       }
     }
 
-    if (!this._modal)
+    if (!this._modal || !this.visible)
       return;
 
     if (this._modalHighlightOutline)
@@ -311,6 +311,8 @@ FinderHighlighter.prototype = {
     this._removeHighlightAllMask(window);
     this._removeModalHighlightListeners(window);
     delete this._brightText;
+
+    this.visible = false;
   },
 
   
@@ -335,52 +337,69 @@ FinderHighlighter.prototype = {
 
 
   update(data) {
-    if (!this._modal)
+    let window = this.finder._getWindow();
+    let foundRange = this.finder._fastFind.getFoundRange();
+    if (!this._modal) {
+      if (this._highlightAll) {
+        this.hide(window, foundRange);
+        let params = this.iterator.params;
+        if (params.word)
+          this.highlight(true, params.word, params.linksOnly);
+      }
       return;
+    }
 
     
-    let foundRange = this.finder._fastFind.getFoundRange();
     if (data.result == Ci.nsITypeAheadFind.FIND_NOTFOUND || !foundRange) {
       this.hide();
       return;
     }
 
-    let window = this.finder._getWindow();
-    let textContent = this._getRangeContentArray(foundRange);
-    if (!textContent.length) {
-      this.hide(window);
-      return;
+    let outlineNode;
+    if (foundRange !== this._currentFoundRange || data.findAgain) {
+      this._currentFoundRange = foundRange;
+
+      let textContent = this._getRangeContentArray(foundRange);
+      if (!textContent.length) {
+        this.hide(window);
+        return;
+      }
+
+      let rect = foundRange.getBoundingClientRect();
+      let fontStyle = this._getRangeFontStyle(foundRange);
+      if (typeof this._brightText == "undefined") {
+        this._brightText = this._isColorBright(fontStyle.color);
+      }
+
+      
+      delete fontStyle.color;
+
+      if (!this.visible)
+        this.show(window);
+      else
+        this._maybeCreateModalHighlightNodes(window);
+
+      outlineNode = this._modalHighlightOutline;
+      outlineNode.setTextContentForElement(kModalOutlineId + "-text", textContent.join(" "));
+      outlineNode.setAttributeForElement(kModalOutlineId + "-text", "style",
+        this._getHTMLFontStyle(fontStyle));
+
+      if (typeof outlineNode.getAttributeForElement(kModalOutlineId, "hidden") == "string")
+        outlineNode.removeAttributeForElement(kModalOutlineId, "hidden");
+      let { scrollX, scrollY } = this._getScrollPosition(window);
+      outlineNode.setAttributeForElement(kModalOutlineId, "style",
+        `top: ${scrollY + rect.top}px; left: ${scrollX + rect.left}px`);
     }
 
-    let rect = foundRange.getBoundingClientRect();
-    let fontStyle = this._getRangeFontStyle(foundRange);
-    if (typeof this._brightText == "undefined") {
-      this._brightText = this._isColorBright(fontStyle.color);
-    }
-
-    
-    delete fontStyle.color;
-
-    let anonNode = this.show(window);
-
-    anonNode.setTextContentForElement(kModalOutlineId + "-text", textContent.join(" "));
-    anonNode.setAttributeForElement(kModalOutlineId + "-text", "style",
-      this._getHTMLFontStyle(fontStyle));
-
-    if (typeof anonNode.getAttributeForElement(kModalOutlineId, "hidden") == "string")
-      anonNode.removeAttributeForElement(kModalOutlineId, "hidden");
-    let { scrollX, scrollY } = this._getScrollPosition(window);
-    anonNode.setAttributeForElement(kModalOutlineId, "style",
-      `top: ${scrollY + rect.top}px; left: ${scrollX + rect.left}px`);
-
-    if (typeof anonNode.getAttributeForElement(kModalOutlineId, "grow") == "string")
+    outlineNode = this._modalHighlightOutline;
+    if (typeof outlineNode.getAttributeForElement(kModalOutlineId, "grow") == "string")
       return;
 
     window.requestAnimationFrame(() => {
-      anonNode.setAttributeForElement(kModalOutlineId, "grow", true);
+      outlineNode.setAttributeForElement(kModalOutlineId, "grow", true);
       this._listenForOutlineEvent(kModalOutlineId, "transitionend", () => {
         try {
-          anonNode.removeAttributeForElement(kModalOutlineId, "grow");
+          outlineNode.removeAttributeForElement(kModalOutlineId, "grow");
         } catch (ex) {}
       });
     });
@@ -441,9 +460,30 @@ FinderHighlighter.prototype = {
 
 
   onHighlightAllChange(highlightAll) {
+    this._highlightAll = highlightAll;
     if (this._modal && !highlightAll) {
       this.clear();
       this._scheduleRepaintOfMask(this.finder._getWindow());
+    }
+  },
+
+  
+
+
+
+
+
+
+  _clearSelection(controller, skipRange = null) {
+    let sel = controller.getSelection(Ci.nsISelectionController.SELECTION_FIND);
+    if (!skipRange) {
+      sel.removeAllRanges();
+    } else {
+      for (let i = sel.rangeCount - 1; i >= 0; --i) {
+        let range = sel.getRangeAt(i);
+        if (range !== skipRange)
+          sel.removeRange(range);
+      }
     }
   },
 
@@ -607,12 +647,14 @@ FinderHighlighter.prototype = {
 
 
 
-
   _maybeCreateModalHighlightNodes(window) {
     if (this._modalHighlightOutline) {
-      if (!this._modalHighlightAllMask)
-        this._repaintHighlightAllMask(window);
-      return this._modalHighlightOutline;
+      if (!this._modalHighlightAllMask) {
+        
+        this._repaintHighlightAllMask(window, false);
+        this._scheduleRepaintOfMask(window);
+      }
+      return;
     }
 
     let document = window.document;
@@ -623,7 +665,7 @@ FinderHighlighter.prototype = {
         this._maybeCreateModalHighlightNodes(window);
       };
       document.addEventListener("visibilitychange", onVisibilityChange);
-      return null;
+      return;
     }
 
     this._maybeInstallStyleSheet(window);
@@ -641,13 +683,12 @@ FinderHighlighter.prototype = {
     outlineBox.appendChild(outlineBoxText);
 
     container.appendChild(outlineBox);
-
-    this._repaintHighlightAllMask(window);
-
     this._modalHighlightOutline = kDebug ?
       mockAnonymousContentNode(document.body.appendChild(container.firstChild)) :
       document.insertAnonymousContent(container);
-    return this._modalHighlightOutline;
+
+    
+    this._repaintHighlightAllMask(window, false);
   },
 
   
@@ -657,7 +698,8 @@ FinderHighlighter.prototype = {
 
 
 
-  _repaintHighlightAllMask(window) {
+
+  _repaintHighlightAllMask(window, paintContent = true) {
     let document = window.document;
 
     const kMaskId = kModalIdPrefix + "-findbar-modalHighlight-outlineMask";
@@ -671,18 +713,20 @@ FinderHighlighter.prototype = {
     if (this._brightText)
       maskNode.setAttribute("brighttext", "true");
 
-    
-    let maskContent = [];
-    const kRectClassName = kModalIdPrefix + "-findbar-modalHighlight-rect";
-    if (this._modalHighlightRectsMap) {
-      for (let rects of this._modalHighlightRectsMap.values()) {
-        for (let rect of rects) {
-          maskContent.push(`<div class="${kRectClassName}" style="top: ${rect.y}px;
-            left: ${rect.x}px; height: ${rect.height}px; width: ${rect.width}px;"></div>`);
+    if (paintContent) {
+      
+      let maskContent = [];
+      const kRectClassName = kModalIdPrefix + "-findbar-modalHighlight-rect";
+      if (this._modalHighlightRectsMap) {
+        for (let rects of this._modalHighlightRectsMap.values()) {
+          for (let rect of rects) {
+            maskContent.push(`<div class="${kRectClassName}" style="top: ${rect.y}px;
+              left: ${rect.x}px; height: ${rect.height}px; width: ${rect.width}px;"></div>`);
+          }
         }
       }
+      maskNode.innerHTML = maskContent.join("");
     }
-    maskNode.innerHTML = maskContent.join("");
 
     
     

@@ -29,6 +29,10 @@ this.FinderIterator = {
   
   get kIterationSizeMax() { return kIterationSizeMax },
 
+  get params() {
+    return Object.assign({}, this._currentParams || this._previousParams);
+  },
+
   
 
 
