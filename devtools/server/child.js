@@ -11,17 +11,18 @@ try {
 
   
   (function () {
-    let Cu = Components.utils;
-    let { require } = Cu.import("resource://devtools/shared/Loader.jsm", {});
+    const Cu = Components.utils;
+    const { require } = Cu.import("resource://devtools/shared/Loader.jsm", {});
+
     const DevToolsUtils = require("devtools/shared/DevToolsUtils");
     const { dumpn } = DevToolsUtils;
     const { DebuggerServer, ActorPool } = require("devtools/server/main");
 
-    
-    
     if (!DebuggerServer.initialized) {
       DebuggerServer.init();
-      DebuggerServer.isInChildProcess = true;
+      
+      
+      DebuggerServer.addBrowserActors();
     }
 
     
@@ -97,6 +98,16 @@ try {
       }
     });
     addMessageListener("debug:disconnect", onDisconnect);
+
+    
+    
+    
+    addEventListener("unload", () => {
+      for (let conn of connections.values()) {
+        conn.close();
+      }
+      connections.clear();
+    });
 
     let onInspect = DevToolsUtils.makeInfallible(function (msg) {
       

@@ -9,8 +9,6 @@ function test() {
   requestCompleteLog();
 
   Task.spawn(function* () {
-    const { DebuggerServer } = require("devtools/server/main");
-
     
     
     DebuggerServer.destroy();

@@ -2,8 +2,6 @@
 
 
 
-
-
 "use strict";
 
 const events = require("sdk/event/core");
@@ -125,8 +123,13 @@ var MessagePortActor = exports.MessagePortActor = protocol.ActorClassWithSpec(me
       return;
     }
 
-    this.port.onmessage = null;
-    this.port.close();
+    try {
+      this.port.onmessage = null;
+      this.port.close();
+    } catch (e) {
+      
+      console.error(e);
+    }
   },
 
   finalize: function () {

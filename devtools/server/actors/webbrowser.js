@@ -315,10 +315,6 @@ BrowserTabList.prototype._getChildren = function (window) {
   });
 };
 
-BrowserTabList.prototype._isRemoteBrowser = function (browser) {
-  return browser.getAttribute("remote") == "true";
-};
-
 BrowserTabList.prototype.getList = function () {
   let topXULWindow = Services.wm.getMostRecentWindow(
     DebuggerServer.chromeWindowType);
@@ -367,17 +363,12 @@ BrowserTabList.prototype._getActorForBrowser = function (browser) {
   if (actor) {
     this._foundCount++;
     return actor.update();
-  } else if (this._isRemoteBrowser(browser)) {
-    actor = new RemoteBrowserTabActor(this._connection, browser);
-    this._actorByBrowser.set(browser, actor);
-    this._checkListening();
-    return actor.connect();
   }
 
   actor = new BrowserTabActor(this._connection, browser);
   this._actorByBrowser.set(browser, actor);
   this._checkListening();
-  return promise.resolve(actor);
+  return actor.connect();
 };
 
 BrowserTabList.prototype.getTab = function ({ outerWindowID, tabId }) {
@@ -619,7 +610,6 @@ DevToolsUtils.makeInfallible(function (event) {
     }
     case "TabRemotenessChange": {
       
-      
       let actor = this._actorByBrowser.get(browser);
       if (actor) {
         this._actorByBrowser.delete(browser);
@@ -744,7 +734,6 @@ DevToolsUtils.makeInfallible(function (window) {
 }, "BrowserTabList.prototype.onCloseWindow");
 
 exports.BrowserTabList = BrowserTabList;
-
 
 
 
@@ -2151,114 +2140,29 @@ exports.TabActor = TabActor;
 
 
 
-
 function BrowserTabActor(connection, browser) {
-  TabActor.call(this, connection, browser);
-  this._browser = browser;
-  if (typeof browser.getTabBrowser == "function") {
-    this._tabbrowser = browser.getTabBrowser();
-  }
-
-  Object.defineProperty(this, "docShell", {
-    value: this._browser.docShell,
-    configurable: true
-  });
-}
-
-BrowserTabActor.prototype = Object.create(TabActor.prototype);
-
-BrowserTabActor.prototype.constructor = BrowserTabActor;
-
-Object.defineProperty(BrowserTabActor.prototype, "title", {
-  get() {
-    
-    if (this._browser.__SS_restore) {
-      let sessionStore = this._browser.__SS_data;
-      
-      let entry = sessionStore.entries[sessionStore.index - 1];
-      return entry.title;
-    }
-    let title = this.contentDocument.title || this._browser.contentTitle;
-    
-    
-    
-    if (!title && this._tabbrowser) {
-      let tab = this._tabbrowser._getTabForContentWindow(this.window);
-      if (tab) {
-        title = tab.label;
-      }
-    }
-    return title;
-  },
-  enumerable: true,
-  configurable: false
-});
-
-Object.defineProperty(BrowserTabActor.prototype, "url", {
-  get() {
-    
-    if (this._browser.__SS_restore) {
-      let sessionStore = this._browser.__SS_data;
-      
-      let entry = sessionStore.entries[sessionStore.index - 1];
-      return entry.url;
-    }
-    if (this.webNavigation.currentURI) {
-      return this.webNavigation.currentURI.spec;
-    }
-    return null;
-  },
-  enumerable: true,
-  configurable: true
-});
-
-Object.defineProperty(BrowserTabActor.prototype, "browser", {
-  get() {
-    return this._browser;
-  },
-  enumerable: true,
-  configurable: false
-});
-
-BrowserTabActor.prototype.disconnect = function () {
-  TabActor.prototype.disconnect.call(this);
-  this._browser = null;
-  this._tabbrowser = null;
-};
-
-BrowserTabActor.prototype.exit = function () {
-  TabActor.prototype.exit.call(this);
-  this._browser = null;
-  this._tabbrowser = null;
-};
-
-exports.BrowserTabActor = BrowserTabActor;
-
-
-
-
-
-
-
-
-
-function RemoteBrowserTabActor(connection, browser) {
   this._conn = connection;
   this._browser = browser;
   this._form = null;
 }
 
-RemoteBrowserTabActor.prototype = {
+BrowserTabActor.prototype = {
   connect() {
     let onDestroy = () => {
       this._form = null;
     };
-    let connect = DebuggerServer.connectToChild(
-      this._conn, this._browser, onDestroy);
+    let connect = DebuggerServer.connectToChild(this._conn, this._browser, onDestroy);
     return connect.then(form => {
       this._form = form;
       return this;
     });
+  },
+
+  get _tabbrowser() {
+    if (typeof this._browser.getTabBrowser == "function") {
+      return this._browser.getTabBrowser();
+    }
+    return null;
   },
 
   get _mm() {
@@ -2291,8 +2195,57 @@ RemoteBrowserTabActor.prototype = {
     return this.connect();
   },
 
+  
+
+
+
+  get title() {
+    
+    if (this._browser.__SS_restore) {
+      let sessionStore = this._browser.__SS_data;
+      
+      let entry = sessionStore.entries[sessionStore.index - 1];
+      return entry.title;
+    }
+    
+    
+    
+    if (this._tabbrowser) {
+      let tab = this._tabbrowser.getTabForBrowser(this._browser);
+      if (tab) {
+        return tab.label;
+      }
+    }
+    return "";
+  },
+
+  
+
+
+
+  get url() {
+    
+    if (this._browser.__SS_restore) {
+      let sessionStore = this._browser.__SS_data;
+      
+      let entry = sessionStore.entries[sessionStore.index - 1];
+      return entry.url;
+    }
+    return null;
+  },
+
   form() {
-    return this._form;
+    let form = Object.assign({}, this._form);
+    
+    
+    
+    if (!form.title) {
+      form.title = this.title;
+    }
+    if (!form.url) {
+      form.url = this.url;
+    }
+    return form;
   },
 
   exit() {
@@ -2300,7 +2253,7 @@ RemoteBrowserTabActor.prototype = {
   },
 };
 
-exports.RemoteBrowserTabActor = RemoteBrowserTabActor;
+exports.BrowserTabActor = BrowserTabActor;
 
 function BrowserAddonList(connection) {
   this._connection = connection;

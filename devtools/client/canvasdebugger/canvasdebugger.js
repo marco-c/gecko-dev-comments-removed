@@ -128,6 +128,12 @@ var EventsHandler = {
 
 
   initialize: function () {
+    
+    
+    
+    
+    gFront.setup({ reload: false });
+
     this._onTabNavigated = this._onTabNavigated.bind(this);
     gTarget.on("will-navigate", this._onTabNavigated);
     gTarget.on("navigate", this._onTabNavigated);
@@ -148,8 +154,6 @@ var EventsHandler = {
     if (event != "will-navigate") {
       return;
     }
-    
-    gFront.setup({ reload: false });
 
     
     SnapshotsListView.empty();

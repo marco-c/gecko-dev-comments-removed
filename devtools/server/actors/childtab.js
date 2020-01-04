@@ -4,6 +4,7 @@
 
 "use strict";
 
+var { Cr } = require("chrome");
 var { TabActor } = require("devtools/server/actors/webbrowser");
 
 
@@ -54,10 +55,22 @@ Object.defineProperty(ContentActor.prototype, "title", {
 
 ContentActor.prototype.exit = function () {
   if (this._sendForm) {
-    this._chromeGlobal.removeMessageListener("debug:form", this._sendForm);
+    try {
+      this._chromeGlobal.removeMessageListener("debug:form", this._sendForm);
+    } catch (e) {
+      if (e.result != Cr.NS_ERROR_NULL_POINTER) {
+        throw e;
+      }
+      
+      
+      
+    }
     this._sendForm = null;
   }
-  return TabActor.prototype.exit.call(this);
+
+  TabActor.prototype.exit.call(this);
+
+  this._chromeGlobal = null;
 };
 
 

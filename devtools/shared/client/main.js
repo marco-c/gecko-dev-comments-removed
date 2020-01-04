@@ -942,6 +942,16 @@ DebuggerClient.prototype = {
       return;
     }
 
+    
+    
+    
+    if (this.mainRoot &&
+        aPacket.from == this.mainRoot.actor &&
+        aPacket.type == "forwardingCancelled") {
+      this.purgeRequests(aPacket.prefix);
+      return;
+    }
+
     if (this._clients.has(aPacket.from) && aPacket.type) {
       let client = this._clients.get(aPacket.from);
       let type = aPacket.type;
@@ -1072,35 +1082,11 @@ DebuggerClient.prototype = {
 
 
 
-  onClosed: function (aStatus) {
+  onClosed: function () {
     this._closed = true;
     this.emit("closed");
 
-    
-    let reject = function (type, request, actor) {
-      
-      
-      let msg;
-      if (request.request) {
-        msg = "'" + request.request.type + "' " + type + " request packet" +
-              " to '" + actor + "' " +
-              "can't be sent as the connection just closed.";
-      } else {
-        msg = "server side packet from '" + actor + "' can't be received " +
-              "as the connection just closed.";
-      }
-      let packet = { error: "connectionClosed", message: msg };
-      request.emit("json-reply", packet);
-    };
-
-    let pendingRequests = new Map(this._pendingRequests);
-    this._pendingRequests.clear();
-    pendingRequests.forEach((list, actor) => {
-      list.forEach(request => reject("pending", request, actor));
-    });
-    let activeRequests = new Map(this._activeRequests);
-    this._activeRequests.clear();
-    activeRequests.forEach(reject.bind(null, "active"));
+    this.purgeRequests();
 
     
     
@@ -1122,6 +1108,51 @@ DebuggerClient.prototype = {
     for (let pool of this._pools) {
       pool.cleanup();
     }
+  },
+
+  
+
+
+
+
+
+
+
+  purgeRequests(prefix = "") {
+    let reject = function (type, request) {
+      
+      
+      let msg;
+      if (request.request) {
+        msg = "'" + request.request.type + "' " + type + " request packet" +
+              " to '" + request.actor + "' " +
+              "can't be sent as the connection just closed.";
+      } else {
+        msg = "server side packet can't be received as the connection just closed.";
+      }
+      let packet = { error: "connectionClosed", message: msg };
+      request.emit("json-reply", packet);
+    };
+
+    let pendingRequestsToReject = [];
+    this._pendingRequests.forEach((requests, actor) => {
+      if (!actor.startsWith(prefix)) {
+        return;
+      }
+      this._pendingRequests.delete(actor);
+      pendingRequestsToReject = pendingRequestsToReject.concat(requests);
+    });
+    pendingRequestsToReject.forEach(request => reject("pending", request));
+
+    let activeRequestsToReject = [];
+    this._activeRequests.forEach((request, actor) => {
+      if (!actor.startsWith(prefix)) {
+        return;
+      }
+      this._activeRequests.delete(actor);
+      activeRequestsToReject = activeRequestsToReject.concat(request);
+    });
+    activeRequestsToReject.forEach(request => reject("active", request));
   },
 
   registerClient: function (client) {

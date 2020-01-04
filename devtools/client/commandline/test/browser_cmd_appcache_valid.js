@@ -12,12 +12,12 @@ function test() {
 
 function* spawnTest() {
   let options = yield helpers.openTab(TEST_URI);
-  yield helpers.openToolbar(options);
 
   info("adding cache listener.");
-
   
   yield helpers.listenOnce(gBrowser.contentWindow.applicationCache, "cached");
+
+  yield helpers.openToolbar(options);
 
   
   

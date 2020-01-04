@@ -608,7 +608,9 @@ WebConsoleActor.prototype =
             this.stackTraceCollector = new StackTraceCollector({ window, appId });
             this.stackTraceCollector.init();
 
-            if (appId || messageManager) {
+            let processBoundary = Services.appinfo.processType !=
+                                  Ci.nsIXULRuntime.PROCESS_TYPE_DEFAULT;
+            if ((appId || messageManager) && processBoundary) {
               
               
               this.networkMonitor =

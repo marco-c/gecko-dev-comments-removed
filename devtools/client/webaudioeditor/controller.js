@@ -69,6 +69,12 @@ var WebAudioEditorController = {
     } else {
       AUDIO_NODE_DEFINITION = require("devtools/server/actors/utils/audionodes.json");
     }
+
+    
+    
+    
+    
+    gFront.setup({ reload: false });
   }),
 
   
@@ -133,11 +139,6 @@ var WebAudioEditorController = {
   _onTabNavigated: Task.async(function* (event, {isFrameSwitching}) {
     switch (event) {
       case "will-navigate": {
-        
-        if (!isFrameSwitching) {
-          yield gFront.setup({ reload: false });
-        }
-
         
         this.reset();
 

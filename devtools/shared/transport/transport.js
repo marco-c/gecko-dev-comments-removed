@@ -733,7 +733,16 @@
     },
 
     close: function () {
-      this._sender.removeMessageListener(this._messageName, this);
+      try {
+        this._sender.removeMessageListener(this._messageName, this);
+      } catch (e) {
+        if (e.result != Cr.NS_ERROR_NULL_POINTER) {
+          throw e;
+        }
+        
+        
+        
+      }
       this.emit("onClosed");
       this.hooks.onClosed();
     },
@@ -745,7 +754,16 @@
 
     send: function (packet) {
       this.emit("send", packet);
-      this._sender.sendAsyncMessage(this._messageName, packet);
+      try {
+        this._sender.sendAsyncMessage(this._messageName, packet);
+      } catch (e) {
+        if (e.result != Cr.NS_ERROR_NULL_POINTER) {
+          throw e;
+        }
+        
+        
+        
+      }
     },
 
     startBulkSend: function () {

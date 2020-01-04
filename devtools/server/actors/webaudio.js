@@ -704,6 +704,14 @@ var WebAudioActor = exports.WebAudioActor = protocol.ActorClassWithSpec(webAudio
 
 
   _onGlobalCreated: function () {
+    
+    
+    this._firstNodeCreated = false;
+
+    
+    
+    this._nativeToActorID.clear();
+
     this._callWatcher.resumeRecording();
   },
 

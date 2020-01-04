@@ -14,19 +14,19 @@ function test() {
 
     info("highlighting the body node");
     yield runCommand("highlight body", options);
-    is(getHighlighterNumber(), 1, "The highlighter element exists for body");
+    is(yield getHighlighterNumber(), 1, "The highlighter element exists for body");
 
     info("highlighting the div node");
     yield runCommand("highlight div", options);
-    is(getHighlighterNumber(), 1, "The highlighter element exists for div");
+    is(yield getHighlighterNumber(), 1, "The highlighter element exists for div");
 
     info("highlighting the body node again, asking to keep the div");
     yield runCommand("highlight body --keep", options);
-    is(getHighlighterNumber(), 2, "2 highlighter elements have been created");
+    is(yield getHighlighterNumber(), 2, "2 highlighter elements have been created");
 
     info("unhighlighting all nodes");
     yield runCommand("unhighlight", options);
-    is(getHighlighterNumber(), 0, "All highlighters have been removed");
+    is(yield getHighlighterNumber(), 0, "All highlighters have been removed");
 
     yield helpers.closeToolbar(options);
     yield helpers.closeTab(options);
@@ -34,9 +34,10 @@ function test() {
 }
 
 function getHighlighterNumber() {
-  
-  
-  return require("devtools/shared/gcli/commands/highlight").highlighters.length;
+  return ContentTask.spawn(gBrowser.selectedBrowser, {}, function* () {
+    const { require } = Cu.import("resource://devtools/shared/Loader.jsm", {});
+    return require("devtools/shared/gcli/commands/highlight").highlighters.length;
+  });
 }
 
 function* runCommand(cmd, options) {

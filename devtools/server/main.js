@@ -898,11 +898,9 @@ var DebuggerServer = {
   
 
 
-
-
-
-
-  isInChildProcess: false,
+  get isInChildProcess() {
+    return Services.appinfo.processType != Ci.nsIXULRuntime.PROCESS_TYPE_DEFAULT;
+  },
 
   
 
@@ -918,7 +916,7 @@ var DebuggerServer = {
 
 
   setupInChild({ module, setupChild, args, waitForEval }) {
-    if (this.isInChildProcess || this._childMessageManagers.size == 0) {
+    if (this._childMessageManagers.size == 0) {
       return Promise.resolve();
     }
     let deferred = Promise.defer();
@@ -1300,7 +1298,22 @@ var DebuggerServer = {
         }
       }
     }
-  }
+  },
+
+  
+
+
+
+
+  _searchAllConnectionsForActor(actorID) {
+    for (let connID of Object.getOwnPropertyNames(this._connections)) {
+      let actor = this._connections[connID].getActor(actorID);
+      if (actor) {
+        return actor;
+      }
+    }
+    return null;
+  },
 };
 
 
@@ -1392,7 +1405,9 @@ DebuggerServerConnection.prototype = {
   parentMessageManager: null,
 
   close() {
-    this._transport.close();
+    if (this._transport) {
+      this._transport.close();
+    }
   },
 
   send(packet) {
@@ -1596,6 +1611,13 @@ DebuggerServerConnection.prototype = {
 
   cancelForwarding(prefix) {
     this._forwardingPrefixes.delete(prefix);
+
+    
+    
+    
+    if (this.rootActor) {
+      this.send(this.rootActor.forwardingCancelled(prefix));
+    }
   },
 
   sendActorEvent(actorID, eventName, event = {}) {
