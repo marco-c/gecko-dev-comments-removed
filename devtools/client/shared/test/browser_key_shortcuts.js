@@ -10,6 +10,7 @@ add_task(function* () {
   yield testSimple(shortcuts);
   yield testNonLetterCharacter(shortcuts);
   yield testMixup(shortcuts);
+  yield testLooseDigits(shortcuts);
   yield testExactModifiers(shortcuts);
   yield testLooseShiftModifier(shortcuts);
   yield testStrictLetterShiftModifier(shortcuts);
@@ -93,6 +94,40 @@ function testMixup(shortcuts) {
   EventUtils.synthesizeKey("a", { altKey: true }, window);
   yield onSecondKey;
   ok(hitSecond, "Got the second shortcut notified once it is actually fired");
+}
+
+
+
+function testLooseDigits(shortcuts) {
+  info("Test Loose digits");
+  let onKey = once(shortcuts, "0", (key, event) => {
+    is(event.key, "à");
+    ok(!event.altKey);
+    ok(!event.ctrlKey);
+    ok(!event.metaKey);
+    ok(!event.shiftKey);
+  });
+  
+  
+  EventUtils.synthesizeKey(
+    "à",
+    { keyCode: 48 },
+    window);
+  yield onKey;
+
+  onKey = once(shortcuts, "0", (key, event) => {
+    is(event.key, "0");
+    ok(!event.altKey);
+    ok(!event.ctrlKey);
+    ok(!event.metaKey);
+    ok(event.shiftKey);
+  });
+  
+  EventUtils.synthesizeKey(
+    "0",
+    { keyCode: 48, shiftKey: true },
+    window);
+  yield onKey;
 }
 
 
