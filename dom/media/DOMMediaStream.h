@@ -222,9 +222,9 @@ public:
   typedef dom::MediaTrackConstraints MediaTrackConstraints;
 
   class TrackListener {
-    NS_INLINE_DECL_REFCOUNTING(TrackListener)
-
   public:
+    virtual ~TrackListener() {}
+
     
 
 
@@ -238,9 +238,6 @@ public:
 
     virtual void
     NotifyTrackRemoved(const RefPtr<MediaStreamTrack>& aTrack) {};
-
-  protected:
-    virtual ~TrackListener() {}
   };
 
   
@@ -566,7 +563,14 @@ public:
     }
   }
 
+  
+  
+  
   void RegisterTrackListener(TrackListener* aListener);
+
+  
+  
+  
   void UnregisterTrackListener(TrackListener* aListener);
 
 protected:
@@ -675,7 +679,7 @@ protected:
   bool mNotifiedOfMediaStreamGraphShutdown;
 
   
-  nsTArray<RefPtr<TrackListener>> mTrackListeners;
+  nsTArray<TrackListener*> mTrackListeners;
 
 private:
   void NotifyPrincipalChanged();

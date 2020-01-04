@@ -1502,7 +1502,7 @@ protected:
 
   RefPtr<VideoTrackList> mVideoTrackList;
 
-  RefPtr<MediaStreamTrackListener> mMediaStreamTrackListener;
+  nsAutoPtr<MediaStreamTrackListener> mMediaStreamTrackListener;
 
   
   
