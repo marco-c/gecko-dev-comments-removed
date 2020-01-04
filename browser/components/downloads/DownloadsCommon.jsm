@@ -128,7 +128,8 @@ var PrefObserver = {
 
 PrefObserver.register({
   
-  animateNotifications: true
+  animateNotifications: true,
+  showPanelDropmarker: true,
 });
 
 
@@ -216,6 +217,13 @@ this.DownloadsCommon = {
 
   get animateNotifications() {
     return PrefObserver.animateNotifications;
+  },
+
+  
+
+
+  get showPanelDropmarker() {
+    return PrefObserver.showPanelDropmarker;
   },
 
   

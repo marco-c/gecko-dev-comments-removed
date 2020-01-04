@@ -226,6 +226,14 @@ const DownloadsPanel = {
     }
 
     this.initialize(() => {
+      let downloadsFooterButtons =
+        document.getElementById("downloadsFooterButtons");
+      if (DownloadsCommon.showPanelDropmarker) {
+        downloadsFooterButtons.classList.remove("downloadsHideDropmarker");
+      } else {
+        downloadsFooterButtons.classList.add("downloadsHideDropmarker");
+      }
+
       
       
       
