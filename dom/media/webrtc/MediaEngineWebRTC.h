@@ -434,6 +434,7 @@ public:
     , mSampleFrequency(MediaEngine::DEFAULT_SAMPLE_RATE)
     , mPlayoutDelay(0)
     , mNullTransport(nullptr)
+    , mSkipProcessing(false)
   {
     MOZ_ASSERT(aVoiceEnginePtr);
     MOZ_ASSERT(aAudioInput);
@@ -515,6 +516,22 @@ private:
   bool InitEngine();
   void DeInitEngine();
 
+  
+  
+  bool PassThrough() {
+    return mSkipProcessing;
+  }
+  template<typename T>
+  void InsertInGraph(const T* aBuffer,
+                     size_t aFrames,
+                     uint32_t aChannels);
+
+  void PacketizeAndProcess(MediaStreamGraph* aGraph,
+                           const AudioDataValue* aBuffer,
+                           size_t aFrames,
+                           TrackRate aRate,
+                           uint32_t aChannels);
+
   webrtc::VoiceEngine* mVoiceEngine;
   RefPtr<mozilla::AudioInput> mAudioInput;
   RefPtr<WebRTCAudioDataListener> mListener;
@@ -555,6 +572,10 @@ private:
   NullTransport *mNullTransport;
 
   nsTArray<int16_t> mInputBuffer;
+  
+  
+  
+  bool mSkipProcessing;
 };
 
 class MediaEngineWebRTC : public MediaEngine

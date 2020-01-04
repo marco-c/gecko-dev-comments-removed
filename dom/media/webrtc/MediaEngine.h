@@ -58,6 +58,10 @@ public:
 #else
   static const int DEFAULT_SAMPLE_RATE = 16000;
 #endif
+  
+  
+  
+  static const int USE_GRAPH_RATE = -1;
 
   
 

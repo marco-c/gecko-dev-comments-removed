@@ -298,6 +298,12 @@ MediaEngineWebRTCMicrophoneSource::Restart(const dom::MediaTrackConstraints& aCo
       LOG(("%s Error setting NoiseSuppression Status: %d ",__FUNCTION__, error));
     }
   }
+
+  mSkipProcessing = !(aec_on || agc_on || noise_on);
+  if (mSkipProcessing) {
+    mSampleFrequency = MediaEngine::USE_GRAPH_RATE;
+  }
+
   return NS_OK;
 }
 
@@ -344,6 +350,9 @@ MediaEngineWebRTCMicrophoneSource::Start(SourceMediaStream *aStream,
   }
 
   AudioSegment* segment = new AudioSegment();
+  if (mSampleFrequency == MediaEngine::USE_GRAPH_RATE) {
+    mSampleFrequency = aStream->GraphRate();
+  }
   aStream->AddAudioTrack(aID, mSampleFrequency, 0, segment, SourceMediaStream::ADDTRACK_QUEUED);
 
   
@@ -457,6 +466,82 @@ MediaEngineWebRTCMicrophoneSource::NotifyOutputData(MediaStreamGraph* aGraph,
 {
 }
 
+void
+MediaEngineWebRTCMicrophoneSource::PacketizeAndProcess(MediaStreamGraph* aGraph,
+                                                       const AudioDataValue* aBuffer,
+                                                       size_t aFrames,
+                                                       TrackRate aRate,
+                                                       uint32_t aChannels)
+{
+  
+  if (!mPacketizer ||
+      mPacketizer->PacketSize() != aRate/100u ||
+      mPacketizer->Channels() != aChannels) {
+    
+    mPacketizer =
+      new AudioPacketizer<AudioDataValue, int16_t>(aRate/100, aChannels);
+  }
+
+  mPacketizer->Input(aBuffer, static_cast<uint32_t>(aFrames));
+
+  while (mPacketizer->PacketsAvailable()) {
+    uint32_t samplesPerPacket = mPacketizer->PacketSize() *
+      mPacketizer->Channels();
+    if (mInputBuffer.Length() < samplesPerPacket) {
+      mInputBuffer.SetLength(samplesPerPacket);
+    }
+    int16_t* packet = mInputBuffer.Elements();
+    mPacketizer->Output(packet);
+
+    mVoERender->ExternalRecordingInsertData(packet, samplesPerPacket, aRate, 0);
+  }
+}
+
+template<typename T>
+void
+MediaEngineWebRTCMicrophoneSource::InsertInGraph(const T* aBuffer,
+                                                 size_t aFrames,
+                                                 uint32_t aChannels)
+{
+  if (mState != kStarted) {
+    return;
+  }
+
+  size_t len = mSources.Length();
+  for (size_t i = 0; i < len; i++) {
+    if (!mSources[i]) {
+      continue;
+    }
+    RefPtr<SharedBuffer> buffer =
+      SharedBuffer::Create(aFrames * aChannels * sizeof(T));
+    PodCopy(static_cast<T*>(buffer->Data()),
+            aBuffer, aFrames * aChannels);
+
+    TimeStamp insertTime;
+    
+    
+    LogTime(AsyncLatencyLogger::AudioTrackInsertion,
+            LATENCY_STREAM_ID(mSources[i].get(), mTrackID),
+            (i+1 < len) ? 0 : 1, insertTime);
+
+    nsAutoPtr<AudioSegment> segment(new AudioSegment());
+    AutoTArray<const T*, 1> channels;
+    
+    MOZ_ASSERT(aChannels == 1,
+        "GraphDriver only supports us stereo audio for now");
+    channels.AppendElement(static_cast<T*>(buffer->Data()));
+    segment->AppendFrames(buffer.forget(), channels, aFrames,
+                         mPrincipalHandles[i]);
+    segment->GetStartTime(insertTime);
+
+    RUN_ON_THREAD(mThread,
+                  WrapRunnable(mSources[i], &SourceMediaStream::AppendToTrack,
+                               mTrackID, segment,
+                               static_cast<AudioSegment*>(nullptr)),
+                  NS_DISPATCH_NORMAL);
+  }
+}
+
 
 
 void
@@ -467,25 +552,11 @@ MediaEngineWebRTCMicrophoneSource::NotifyInputData(MediaStreamGraph* aGraph,
                                                    uint32_t aChannels)
 {
   
-  if (!mPacketizer ||
-      mPacketizer->PacketSize() != aRate/100u ||
-      mPacketizer->Channels() != aChannels) {
-    
-    mPacketizer = new AudioPacketizer<AudioDataValue, int16_t>(aRate/100, aChannels);
-  }
-
-  mPacketizer->Input(aBuffer, static_cast<uint32_t>(aFrames));
-
-  while (mPacketizer->PacketsAvailable()) {
-    uint32_t samplesPerPacket = mPacketizer->PacketSize() *
-                                mPacketizer->Channels();
-    if (mInputBuffer.Length() < samplesPerPacket) {
-      mInputBuffer.SetLength(samplesPerPacket);
-    }
-    int16_t* packet = mInputBuffer.Elements();
-    mPacketizer->Output(packet);
-
-    mVoERender->ExternalRecordingInsertData(packet, samplesPerPacket, aRate, 0);
+  
+  if (PassThrough()) {
+    InsertInGraph<AudioDataValue>(aBuffer, aFrames, aChannels);
+  } else {
+    PacketizeAndProcess(aGraph, aBuffer, aFrames, aRate, aChannels);
   }
 }
 
@@ -678,6 +749,7 @@ MediaEngineWebRTCMicrophoneSource::Process(int channel,
                                            sample *audio10ms, int length,
                                            int samplingFreq, bool isStereo)
 {
+  MOZ_ASSERT(!PassThrough(), "This should be bypassed when in PassThrough mode.");
   
   
   
@@ -710,33 +782,8 @@ MediaEngineWebRTCMicrophoneSource::Process(int channel,
 
   uint32_t len = mSources.Length();
   for (uint32_t i = 0; i < len; i++) {
-    RefPtr<SharedBuffer> buffer = SharedBuffer::Create(length * sizeof(sample));
-
-    sample* dest = static_cast<sample*>(buffer->Data());
-    memcpy(dest, audio10ms, length * sizeof(sample));
-
-    nsAutoPtr<AudioSegment> segment(new AudioSegment());
-    AutoTArray<const sample*,1> channels;
-    channels.AppendElement(dest);
-    segment->AppendFrames(buffer.forget(), channels, length,
-                          mPrincipalHandles[i]);
-    TimeStamp insertTime;
-    segment->GetStartTime(insertTime);
-
-    if (mSources[i]) {
-      
-      
-      LogTime(AsyncLatencyLogger::AudioTrackInsertion, LATENCY_STREAM_ID(mSources[i].get(), mTrackID),
-              (i+1 < len) ? 0 : 1, insertTime);
-
-      
-      
-      
-      
-      RUN_ON_THREAD(mThread, WrapRunnable(mSources[i], &SourceMediaStream::AppendToTrack,
-                                          mTrackID, segment, (AudioSegment *) nullptr),
-                    NS_DISPATCH_NORMAL);
-    }
+    MOZ_ASSERT(!isStereo);
+    InsertInGraph<int16_t>(audio10ms, length, 1);
   }
 
   return;
