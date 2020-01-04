@@ -464,7 +464,8 @@ GenerateMaskSurface(const nsSVGIntegrationUtils::PaintFramesParams& aParams,
   
   
   RefPtr<DrawTarget> maskDT =
-    (ctx.GetDrawTarget()->GetBackendType() == BackendType::COREGRAPHICS)
+    (ctx.GetDrawTarget()->GetBackendType() == BackendType::COREGRAPHICS ||
+     ctx.GetDrawTarget()->GetBackendType() == BackendType::DIRECT2D1_1)
     ? Factory::CreateDrawTarget(BackendType::SKIA, maskSurfaceRect.Size(),
                                 SurfaceFormat::A8)
     : ctx.GetDrawTarget()->CreateSimilarDrawTarget(maskSurfaceRect.Size(),
