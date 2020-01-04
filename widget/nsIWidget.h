@@ -897,12 +897,12 @@ class nsIWidget : public nsISupports {
     
 
 
-    virtual mozilla::gfx::IntSize GetClientSize() {
+    virtual mozilla::LayoutDeviceIntSize GetClientSize() {
       
       
       mozilla::LayoutDeviceIntRect rect;
       GetClientBounds(rect);
-      return mozilla::gfx::IntSize(rect.width, rect.height);
+      return rect.Size();
     }
 
     

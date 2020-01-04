@@ -506,7 +506,7 @@ BasicCompositor::BeginFrame(const nsIntRegion& aInvalidRegion,
                             gfx::Rect *aClipRectOut ,
                             gfx::Rect *aRenderBoundsOut )
 {
-  mWidgetSize = mWidget->GetClientSize();
+  mWidgetSize = mWidget->GetClientSize().ToUnknownSize();
   IntRect intRect = gfx::IntRect(IntPoint(), mWidgetSize);
   Rect rect = Rect(0, 0, intRect.width, intRect.height);
 
