@@ -412,9 +412,6 @@ protected:
   bool HasFutureAudio();
 
   
-  bool JustExitedQuickBuffering();
-
-  
   
   void UpdateNextFrameStatus();
 
@@ -714,10 +711,6 @@ private:
 
   
   
-  int64_t mQuickBufferingLowDataThresholdUsecs;
-
-  
-  
   
   
   
@@ -817,13 +810,6 @@ private:
   
   
   bool mNotifyMetadataBeforeFirstFrame;
-
-  
-  
-  
-  
-  
-  bool mQuickBuffering;
 
   
   

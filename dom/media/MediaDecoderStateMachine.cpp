@@ -142,36 +142,6 @@ static_assert(LOW_DATA_THRESHOLD_USECS > AMPLE_AUDIO_USECS,
 
 static const uint32_t EXHAUSTED_DATA_MARGIN_USECS = 100000;
 
-
-
-
-
-
-
-
-
-
-static const uint32_t QUICK_BUFFER_THRESHOLD_USECS = 2000000;
-
-namespace detail {
-
-
-
-static const uint32_t QUICK_BUFFERING_LOW_DATA_USECS = 1000000;
-
-
-
-
-
-static_assert(QUICK_BUFFERING_LOW_DATA_USECS <= AMPLE_AUDIO_USECS,
-              "QUICK_BUFFERING_LOW_DATA_USECS is too large");
-
-} 
-
-static TimeDuration UsecsToDuration(int64_t aUsecs) {
-  return TimeDuration::FromMicroseconds(aUsecs);
-}
-
 static int64_t DurationToUsecs(TimeDuration aDuration) {
   return static_cast<int64_t>(aDuration.ToSeconds() * USECS_PER_S);
 }
@@ -611,14 +581,12 @@ MediaDecoderStateMachine::MediaDecoderStateMachine(MediaDecoder* aDecoder,
   mPlaybackRate(1.0),
   mLowAudioThresholdUsecs(detail::LOW_AUDIO_USECS),
   mAmpleAudioThresholdUsecs(detail::AMPLE_AUDIO_USECS),
-  mQuickBufferingLowDataThresholdUsecs(detail::QUICK_BUFFERING_LOW_DATA_USECS),
   mIsAudioPrerolling(false),
   mIsVideoPrerolling(false),
   mAudioCaptured(false),
   INIT_WATCHABLE(mAudioCompleted, false),
   INIT_WATCHABLE(mVideoCompleted, false),
   mNotifyMetadataBeforeFirstFrame(false),
-  mQuickBuffering(false),
   mMinimizePreroll(false),
   mDecodeThreadWaiting(false),
   mSentLoadedMetadataEvent(false),
@@ -1386,7 +1354,7 @@ MediaDecoderStateMachine::MaybeStartBuffering()
   bool shouldBuffer;
   if (mReader->UseBufferingHeuristics()) {
     shouldBuffer = HasLowDecodedData(EXHAUSTED_DATA_MARGIN_USECS) &&
-                   (JustExitedQuickBuffering() || HasLowBufferedData());
+                   HasLowBufferedData();
   } else {
     MOZ_ASSERT(mReader->IsWaitForDataSupported());
     shouldBuffer = (OutOfDecodedAudio() && mReader->IsWaitingAudioData()) ||
@@ -2470,11 +2438,6 @@ MediaDecoderStateMachine::SeekCompleted()
   
   DECODER_LOG("Seek completed, mCurrentPosition=%lld", mCurrentPosition.Ref());
 
-  
-  
-  
-  mQuickBuffering = false;
-
   if (video) {
     mMediaSink->Redraw(mInfo.mVideo);
     mOnPlaybackEvent.Notify(MediaEventType::Invalidate);
@@ -2550,12 +2513,10 @@ MediaDecoderStateMachine::StepBuffering()
     bool isLiveStream = mResource->IsLiveStream();
     if ((isLiveStream || !CanPlayThrough()) &&
         elapsed < TimeDuration::FromSeconds(mBufferingWait * mPlaybackRate) &&
-        (mQuickBuffering ? HasLowDecodedData(mQuickBufferingLowDataThresholdUsecs)
-                         : HasLowBufferedData(mBufferingWait * USECS_PER_S)) &&
+        HasLowBufferedData(mBufferingWait * USECS_PER_S) &&
         mResource->IsExpectingMoreData()) {
-      DECODER_LOG("Buffering: wait %ds, timeout in %.3lfs %s",
-                  mBufferingWait, mBufferingWait - elapsed.ToSeconds(),
-                  (mQuickBuffering ? "(quick exit)" : ""));
+      DECODER_LOG("Buffering: wait %ds, timeout in %.3lfs",
+                  mBufferingWait, mBufferingWait - elapsed.ToSeconds());
       ScheduleStateMachineIn(USECS_PER_S);
       return;
     }
@@ -2755,14 +2716,6 @@ void MediaDecoderStateMachine::UpdateNextFrameStatus()
   mNextFrameStatus = status;
 }
 
-bool MediaDecoderStateMachine::JustExitedQuickBuffering()
-{
-  MOZ_ASSERT(OnTaskQueue());
-  return !mDecodeStartTime.IsNull() &&
-    mQuickBuffering &&
-    (TimeStamp::Now() - mDecodeStartTime) < TimeDuration::FromMicroseconds(QUICK_BUFFER_THRESHOLD_USECS);
-}
-
 bool
 MediaDecoderStateMachine::CanPlayThrough()
 {
@@ -2796,12 +2749,6 @@ MediaDecoderStateMachine::StartBuffering()
   }
 
   TimeDuration decodeDuration = TimeStamp::Now() - mDecodeStartTime;
-  
-  
-  
-  mQuickBuffering =
-    !JustExitedQuickBuffering() &&
-    decodeDuration < UsecsToDuration(QUICK_BUFFER_THRESHOLD_USECS);
   mBufferingStart = TimeStamp::Now();
 
   DECODER_LOG("Changed state from DECODING to BUFFERING, decoded for %.3lfs",
