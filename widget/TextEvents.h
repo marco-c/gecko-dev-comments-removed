@@ -106,7 +106,7 @@ protected:
     , mCharCode(0)
     , mPseudoCharCode(0)
     , mLocation(nsIDOMKeyEvent::DOM_KEY_LOCATION_STANDARD)
-    , isChar(false)
+    , mIsChar(false)
     , mIsRepeat(false)
     , mIsComposing(false)
     , mIsReserved(false)
@@ -135,7 +135,7 @@ public:
     , mCharCode(0)
     , mPseudoCharCode(0)
     , mLocation(nsIDOMKeyEvent::DOM_KEY_LOCATION_STANDARD)
-    , isChar(false)
+    , mIsChar(false)
     , mIsRepeat(false)
     , mIsComposing(false)
     , mIsReserved(false)
@@ -211,7 +211,7 @@ public:
   
   nsTArray<AlternativeCharCode> mAlternativeCharCodes;
   
-  bool isChar;
+  bool mIsChar;
   
   
   bool mIsRepeat;
@@ -377,7 +377,7 @@ public:
     mPseudoCharCode = aEvent.mPseudoCharCode;
     mLocation = aEvent.mLocation;
     mAlternativeCharCodes = aEvent.mAlternativeCharCodes;
-    isChar = aEvent.isChar;
+    mIsChar = aEvent.mIsChar;
     mIsRepeat = aEvent.mIsRepeat;
     mIsComposing = aEvent.mIsComposing;
     mIsReserved = aEvent.mIsReserved;
