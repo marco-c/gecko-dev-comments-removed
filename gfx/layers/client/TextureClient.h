@@ -535,6 +535,7 @@ public:
 
   
   virtual TextureData* GetInternalData() { return nullptr; }
+  virtual const TextureData* GetInternalData() const { return nullptr; }
 
 private:
   static void TextureClientRecycleCallback(TextureClient* aClient, void* aClosure);
@@ -704,6 +705,7 @@ public:
 
   
   virtual TextureData* GetInternalData() override { return mData; }
+  virtual const TextureData* GetInternalData() const override { return mData; }
 
   virtual void FinalizeOnIPDLThread() override;
 
