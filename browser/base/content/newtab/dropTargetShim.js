@@ -221,7 +221,7 @@ var gDropTargetShim = {
 
   _dispatchEvent: function (aEvent, aType, aTarget) {
     let node = aTarget.node;
-    let event = document.createEvent("DragEvents");
+    let event = document.createEvent("DragEvent");
 
     
     event.initDragEvent(aType, false, true, window, 0, 0, 0, 0, 0, false, false,
