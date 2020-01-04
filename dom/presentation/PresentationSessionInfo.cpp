@@ -859,7 +859,9 @@ PresentationControllingInfo::NotifyDisconnected(nsresult aReason)
   if (NS_WARN_IF(NS_FAILED(aReason) || !mIsResponderReady)) {
     
     
-    SetStateWithReason(nsIPresentationSessionListener::STATE_TERMINATED, aReason);
+    if (nsIPresentationSessionListener::STATE_TERMINATED != mState) {
+      SetStateWithReason(nsIPresentationSessionListener::STATE_CLOSED, aReason);
+    }
 
     
     return ReplyError(NS_ERROR_DOM_OPERATION_ERR);
