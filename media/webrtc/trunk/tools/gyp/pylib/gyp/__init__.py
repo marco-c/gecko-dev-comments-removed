@@ -71,6 +71,9 @@ def Load(build_files, format, default_variables={},
   default_variables['GENERATOR_FLAVOR'] = params.get('flavor', '')
 
   
+  default_variables['PYTHON'] = sys.executable
+
+  
   
   if format.endswith('.py'):
     generator_name = os.path.splitext(format)[0]
