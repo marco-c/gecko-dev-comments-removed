@@ -115,6 +115,17 @@ gfxConfig::UserDisable(Feature aFeature, const char* aMessage)
   state.UserDisable(aMessage);
 }
 
+ void
+gfxConfig::Reenable(Feature aFeature, Fallback aFallback)
+{
+  FeatureState& state = sConfig.GetState(aFeature);
+  MOZ_ASSERT(IsFeatureStatusFailure(state.GetValue()));
+
+  const char* message = state.GetRuntimeMessage();
+  EnableFallback(aFallback, message);
+  state.SetRuntime(FeatureStatus::Available, nullptr);
+}
+
  bool
 gfxConfig::UseFallback(Fallback aFallback)
 {
