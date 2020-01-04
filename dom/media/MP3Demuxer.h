@@ -370,10 +370,12 @@ public:
   
   media::TimeUnit Duration(int64_t aNumFrames) const;
 
+  
+  media::TimeUnit SeekPosition() const;
+
 #ifdef ENABLE_TESTS
   const FrameParser::Frame& LastFrame() const;
   RefPtr<MediaRawData> DemuxSample();
-  media::TimeUnit SeekPosition() const;
 #endif
 
   const ID3Parser::ID3Header& ID3Header() const;
