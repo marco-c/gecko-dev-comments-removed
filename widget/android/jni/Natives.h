@@ -639,7 +639,7 @@ struct NativeStub : detail::NativeStubImpl
 
 
 template<class Traits, typename Ret, typename... Args>
-constexpr JNINativeMethod MakeNativeMethod(Ret (*stub)(JNIEnv*, Args...))
+constexpr JNINativeMethod MakeNativeMethod(MOZ_JNICALL Ret (*stub)(JNIEnv*, Args...))
 {
     return {
         Traits::name,
