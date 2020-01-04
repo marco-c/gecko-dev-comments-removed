@@ -2751,8 +2751,7 @@ nsXPCComponents_Utils::GetGlobalForObject(HandleValue object,
         return NS_ERROR_FAILURE;
 
     
-    if (js::ObjectOp outerize = js::GetObjectClass(obj)->ext.outerObject)
-      obj = outerize(cx, obj);
+    obj = js::ToWindowProxyIfWindow(obj);
 
     retval.setObject(*obj);
     return NS_OK;

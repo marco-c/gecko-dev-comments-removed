@@ -570,7 +570,7 @@ IsCacheableGetPropCallNative(JSObject* obj, JSObject* holder, Shape* shape)
     
     
     
-    return !obj->getClass()->ext.outerObject;
+    return !IsWindow(obj);
 }
 
 static bool
@@ -590,7 +590,7 @@ IsCacheableGetPropCallScripted(JSObject* obj, JSObject* holder, Shape* shape)
         return false;
 
     
-    return !obj->getClass()->ext.outerObject;
+    return !IsWindow(obj);
 }
 
 static bool
