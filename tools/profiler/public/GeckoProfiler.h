@@ -102,7 +102,7 @@ enum TracingMetadata {
 
 
 #define PROFILER_MARKER(info) do {} while (0)
-#define PROFILER_MARKER_PAYLOAD(info, payload) do { nsAutoPtr<ProfilerMarkerPayload> payloadDeletor(payload); } while (0)
+#define PROFILER_MARKER_PAYLOAD(info, payload) do { mozilla::UniquePtr<ProfilerMarkerPayload> payloadDeletor(payload); } while (0)
 
 
 #define PROFILER_MAIN_THREAD_LABEL(name_space, info, category) do {} while (0)
