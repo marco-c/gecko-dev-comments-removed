@@ -267,6 +267,10 @@ private:
   
   
   nsTArray<MSG> mFollowingCharMsgs;
+  
+  
+  
+  HWND mFocusedWndBeforeDispatch;
 
   uint32_t mDOMKeyCode;
   KeyNameIndex mKeyNameIndex;
@@ -526,6 +530,15 @@ private:
 
 
   void ComputeInputtingStringWithKeyboardLayout();
+
+  
+
+
+
+  bool IsFocusedWindowChanged() const
+  {
+    return mFocusedWndBeforeDispatch != ::GetFocus();
+  }
 };
 
 class KeyboardLayout
