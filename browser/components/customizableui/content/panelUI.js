@@ -17,7 +17,9 @@ XPCOMUtils.defineLazyModuleGetter(this, "ShortcutUtils",
 
 const PanelUI = {
   
-  get kEvents() ["popupshowing", "popupshown", "popuphiding", "popuphidden"],
+  get kEvents() {
+    return ["popupshowing", "popupshown", "popuphiding", "popuphidden"];
+  },
   
 
 
