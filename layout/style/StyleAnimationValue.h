@@ -68,7 +68,8 @@ public:
 
 
 
-  static double ComputeColorDistance(nscolor aStartColor, nscolor aEndColor);
+  static double ComputeColorDistance(const css::RGBAColorData& aStartColor,
+                                     const css::RGBAColorData& aEndColor);
 
   
 
