@@ -136,6 +136,8 @@ public:
   
   void DissociateActor();
 
+  static void EnableSameExecutableForContentProc() { sRunSelfAsContentProc = true; }
+
 protected:
   GeckoProcessType mProcessType;
   ChildPrivileges mPrivileges;
@@ -200,7 +202,7 @@ private:
   bool RunPerformAsyncLaunch(StringVector aExtraOpts=StringVector(),
                              base::ProcessArchitecture aArch=base::GetCurrentProcessArchitecture());
 
-  static void GetPathToBinary(FilePath& exePath);
+  static void GetPathToBinary(FilePath& exePath, GeckoProcessType processType);
 
   
   
@@ -227,6 +229,8 @@ private:
   nsCString mRestoreOrigMozLogName;
 
   static uint32_t sNextUniqueID;
+
+  static bool sRunSelfAsContentProc;
 };
 
 #ifdef MOZ_NUWA_PROCESS

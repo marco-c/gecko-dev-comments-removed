@@ -507,6 +507,9 @@ XRE_API(void,
                                 const nsXREAppData* aAppData));
 #endif 
 
+XRE_API(void,
+        XRE_EnableSameExecutableForContentProc, ())
+
 XRE_API(int,
         XRE_XPCShellMain, (int argc, char** argv, char** envp,
                            const XREShellData* aShellData))

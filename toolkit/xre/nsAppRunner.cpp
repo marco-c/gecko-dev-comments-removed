@@ -11,6 +11,7 @@
 
 #include "mozilla/dom/ContentParent.h"
 #include "mozilla/dom/ContentChild.h"
+#include "mozilla/ipc/GeckoChildProcessHost.h"
 
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/Attributes.h"
@@ -4961,4 +4962,9 @@ OverrideDefaultLocaleIfNeeded() {
     
     setlocale(LC_ALL, "C.UTF-8") || setlocale(LC_ALL, "C");
   }
+}
+
+void
+XRE_EnableSameExecutableForContentProc() {
+  mozilla::ipc::GeckoChildProcessHost::EnableSameExecutableForContentProc();
 }

@@ -8,11 +8,6 @@
 #include "nsXULAppAPI.h"
 #include "nsAutoPtr.h"
 
-
-#if !defined(OS_WIN)
-#include <unistd.h>
-#endif
-
 #ifdef XP_WIN
 #include <windows.h>
 
@@ -20,6 +15,9 @@
 #define XRE_DONT_PROTECT_DLL_LOAD
 #include "nsWindowsWMain.cpp"
 #include "nsSetDllDirectory.h"
+#else
+
+#include <unistd.h>
 #endif
 
 #include "GMPLoader.h"
@@ -217,10 +215,10 @@ content_process_main(int argc, char* argv[])
     
     if (XRE_GetProcessType() != GeckoProcessType_Plugin) {
         mozilla::SanitizeEnvironmentVariables();
-        SetDllDirectory(L"");
+        SetDllDirectoryW(L"");
     }
 #endif
-#if !defined(MOZ_WIDGET_ANDROID) && !defined(MOZ_WIDGET_GONK)
+#if !defined(MOZ_WIDGET_ANDROID) && !defined(MOZ_WIDGET_GONK) && defined(MOZ_PLUGIN_CONTAINER)
     
     
     nsAutoPtr<mozilla::gmp::SandboxStarter> starter(MakeSandboxStarter());
