@@ -120,10 +120,6 @@ private:
 
   
   
-  bool mCheckForbiddenURIs;
-
-  
-  
   bool mCheckBlockedURIs;
 
   

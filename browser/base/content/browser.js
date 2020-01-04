@@ -2955,12 +2955,6 @@ var BrowserOnClick = {
           this.ignoreWarningButton(reason);
         }
         break;
-
-      case "whyForbiddenButton":
-        
-        
-        gBrowser.loadURI("https://support.mozilla.org/kb/controlledaccess");
-        break;
     }
   },
 
@@ -3027,8 +3021,6 @@ var BrowserOnClick = {
       title = gNavigatorBundle.getString("safebrowsing.reportedUnwantedSite");
       
       
-    } else {
-      return; 
     }
 
     let notificationBox = gBrowser.getNotificationBox();
