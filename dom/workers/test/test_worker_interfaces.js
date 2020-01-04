@@ -180,6 +180,8 @@ var interfaceNamesInGlobalScope =
 
     { name: "ServiceWorkerRegistration", b2g: false },
 
+    "StorageManager",
+
     "SubtleCrypto",
 
     "TextDecoder",

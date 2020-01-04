@@ -196,6 +196,8 @@ var interfaceNamesInGlobalScope =
 
     "ServiceWorkerRegistration",
 
+    "StorageManager",
+
     "SubtleCrypto",
 
     "TextDecoder",
