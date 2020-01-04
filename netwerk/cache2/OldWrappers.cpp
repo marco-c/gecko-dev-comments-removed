@@ -268,7 +268,7 @@ NS_IMETHODIMP _OldVisitCallbackWrapper::VisitEntry(const char * deviceID,
 
   
   rv = mCB->OnCacheEntryInfo(
-    uri, enhanceId, (int64_t)dataSize, fetchCount, lastModified, expirationTime);
+    uri, enhanceId, (int64_t)dataSize, fetchCount, lastModified, expirationTime, false);
 
   *_retval = NS_SUCCEEDED(rv);
   return NS_OK;

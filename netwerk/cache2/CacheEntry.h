@@ -71,6 +71,7 @@ public:
   bool IsReferenced() const;
   bool IsFileDoomed();
   bool IsDoomed() const { return mIsDoomed; }
+  bool IsPinned() const { return mPinned; }
 
   
   
