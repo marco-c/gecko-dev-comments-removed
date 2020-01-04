@@ -238,7 +238,6 @@ function nsAsyncShutdownService() {
     
     "webWorkersShutdown",
     "xpcomWillShutdown",
-    "xpcomThreadsShutdown",
     ]) {
     let k = _k;
     Object.defineProperty(this, k, {
