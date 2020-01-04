@@ -2,6 +2,8 @@
 
 "use strict";
 
+requestLongerTimeout(2);
+
 function* testHasPermission(params) {
   let contentSetup = params.contentSetup || (() => Promise.resolve());
 
