@@ -3418,8 +3418,9 @@ TextPropertyEditor.prototype = {
                                  !this.isValid() ||
                                  !this.prop.overridden;
 
-    if (this.prop.overridden || !this.prop.enabled ||
-        !this.prop.isKnownProperty()) {
+    if (!this.editing &&
+        (this.prop.overridden || !this.prop.enabled ||
+         !this.prop.isKnownProperty())) {
       this.element.classList.add("ruleview-overridden");
     } else {
       this.element.classList.remove("ruleview-overridden");
@@ -3804,7 +3805,7 @@ TextPropertyEditor.prototype = {
 
 
   _onSwatchRevert: function() {
-    this._previewValue(this.prop.value);
+    this._previewValue(this.prop.value, true);
     this.update();
   },
 
@@ -3861,10 +3862,12 @@ TextPropertyEditor.prototype = {
 
 
 
-  _previewValue: function(value) {
+
+
+  _previewValue: function(value, reverting = false) {
     
     
-    if (!this.editing || this.ruleEditor.isEditing) {
+    if (!reverting && (!this.editing || this.ruleEditor.isEditing)) {
       return;
     }
 
