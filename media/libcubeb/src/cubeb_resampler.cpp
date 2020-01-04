@@ -4,6 +4,7 @@
 
 
 
+#include <algorithm>
 #include <cmath>
 #include <cassert>
 #include <cstring>
@@ -14,45 +15,8 @@
 #endif
 #include "cubeb_resampler.h"
 #include "cubeb-speex-resampler.h"
-
-namespace {
-
-template<typename T>
-class auto_array
-{
-public:
-  auto_array(uint32_t size)
-    : data(new T[size])
-  {}
-
-  ~auto_array()
-  {
-    delete [] data;
-  }
-
-  T * get() const
-  {
-    return data;
-  }
-
-private:
-  T * data;
-};
-
-long
-frame_count_at_rate(long frame_count, float rate)
-{
-  return static_cast<long>(ceilf(rate * frame_count) + 1);
-}
-
-size_t
-frames_to_bytes(cubeb_stream_params params, size_t frames)
-{
-  assert(params.format == CUBEB_SAMPLE_S16NE || params.format == CUBEB_SAMPLE_FLOAT32NE);
-  size_t sample_size = params.format == CUBEB_SAMPLE_S16NE ? sizeof(short) : sizeof(float);
-  size_t frame_size = params.channels * sample_size;
-  return frame_size * frames;
-}
+#include "cubeb_resampler_internal.h"
+#include "cubeb_utils.h"
 
 int
 to_speex_quality(cubeb_resampler_quality q)
@@ -69,188 +33,249 @@ to_speex_quality(cubeb_resampler_quality q)
     return 0XFFFFFFFF;
   }
 }
-} 
 
-struct cubeb_resampler {
-  virtual long fill(void * input_buffer, void * output_buffer, long frames_needed) = 0;
-  virtual ~cubeb_resampler() {}
-};
+long noop_resampler::fill(void * input_buffer, long * input_frames_count,
+                          void * output_buffer, long output_frames)
+{
+  assert((input_buffer && output_buffer &&
+         *input_frames_count >= output_frames) ||
+         (!input_buffer && (!input_frames_count || *input_frames_count == 0)) ||
+         (!output_buffer && output_frames == 0));
 
-class noop_resampler : public cubeb_resampler {
-public:
-  noop_resampler(cubeb_stream * s,
-                 cubeb_data_callback cb,
-                 void * ptr)
-    : stream(s)
-    , data_callback(cb)
-    , user_ptr(ptr)
-  {
+  if (output_buffer == nullptr) {
+    output_frames = *input_frames_count;
   }
 
-  virtual long fill(void * input_buffer, void * output_buffer, long frames_needed)
-  {
-    long got = data_callback(stream, user_ptr, input_buffer, output_buffer, frames_needed);
-    assert(got <= frames_needed);
-    return got;
+  if (input_buffer && *input_frames_count != output_frames) {
+    assert(*input_frames_count > output_frames);
+    *input_frames_count = output_frames;
   }
 
-private:
-  cubeb_stream * const stream;
-  const cubeb_data_callback data_callback;
-  void * const user_ptr;
-};
+  return data_callback(stream, user_ptr,
+                       input_buffer, output_buffer, output_frames);
+}
 
-class cubeb_resampler_speex : public cubeb_resampler {
-public:
-  cubeb_resampler_speex(SpeexResamplerState * r, cubeb_stream * s,
-                        cubeb_stream_params params, uint32_t out_rate,
-                        cubeb_data_callback cb, long max_count,
-                        void * ptr);
-
-  virtual ~cubeb_resampler_speex();
-
-  virtual long fill(void * input_buffer, void * output_buffer, long frames_needed);
-
-private:
-  SpeexResamplerState * const speex_resampler;
-  cubeb_stream * const stream;
-  const cubeb_stream_params stream_params;
-  const cubeb_data_callback data_callback;
-  void * const user_ptr;
-
-  
-  const long buffer_frame_count;
-  
-  const float resampling_ratio;
-  
-  const uint32_t leftover_frame_size;
-  
-  uint32_t leftover_frame_count;
-
-  
-  
-  
-  auto_array<uint8_t> leftover_frames_buffer;
-  
-  auto_array<uint8_t> resampling_src_buffer;
-};
-
-cubeb_resampler_speex::cubeb_resampler_speex(SpeexResamplerState * r,
-                                             cubeb_stream * s,
-                                             cubeb_stream_params params,
-                                             uint32_t out_rate,
-                                             cubeb_data_callback cb,
-                                             long max_count,
-                                             void * ptr)
-  : speex_resampler(r)
+template<typename T, typename InputProcessor, typename OutputProcessor>
+cubeb_resampler_speex<T, InputProcessor, OutputProcessor>
+  ::cubeb_resampler_speex(InputProcessor * input_processor,
+                          OutputProcessor * output_processor,
+                          cubeb_stream * s,
+                          cubeb_data_callback cb,
+                          void * ptr)
+  : input_processor(input_processor)
+  , output_processor(output_processor)
   , stream(s)
-  , stream_params(params)
   , data_callback(cb)
   , user_ptr(ptr)
-  , buffer_frame_count(max_count)
-  , resampling_ratio(static_cast<float>(params.rate) / out_rate)
-  , leftover_frame_size(static_cast<uint32_t>(ceilf(1 / resampling_ratio * 2) + 1))
-  , leftover_frame_count(0)
-  , leftover_frames_buffer(auto_array<uint8_t>(frames_to_bytes(params, leftover_frame_size)))
-  , resampling_src_buffer(auto_array<uint8_t>(frames_to_bytes(params,
-        frame_count_at_rate(buffer_frame_count, resampling_ratio))))
 {
-  assert(r);
+  if (input_processor && output_processor) {
+    
+    
+    uint32_t in_latency = input_processor->latency();
+    uint32_t out_latency = output_processor->latency();
+    if (in_latency > out_latency) {
+      uint32_t latency_diff = in_latency - out_latency;
+      output_processor->add_latency(latency_diff);
+    } else if (in_latency < out_latency) {
+      uint32_t latency_diff = out_latency - in_latency;
+      input_processor->add_latency(latency_diff);
+    }
+    fill_internal = &cubeb_resampler_speex::fill_internal_duplex;
+  }  else if (input_processor) {
+    fill_internal = &cubeb_resampler_speex::fill_internal_input;
+  }  else if (output_processor) {
+    fill_internal = &cubeb_resampler_speex::fill_internal_output;
+  }
 }
 
-cubeb_resampler_speex::~cubeb_resampler_speex()
-{
-  speex_resampler_destroy(speex_resampler);
-}
+template<typename T, typename InputProcessor, typename OutputProcessor>
+cubeb_resampler_speex<T, InputProcessor, OutputProcessor>
+  ::~cubeb_resampler_speex()
+{ }
 
+template<typename T, typename InputProcessor, typename OutputProcessor>
 long
-cubeb_resampler_speex::fill(void * input_buffer, void * output_buffer, long frames_needed)
+cubeb_resampler_speex<T, InputProcessor, OutputProcessor>
+::fill(void * input_buffer, long * input_frames_count,
+       void * output_buffer, long output_frames_needed)
 {
   
-  
-  
-  assert(frames_needed <= buffer_frame_count);
-  long before_resampling = frame_count_at_rate(frames_needed, resampling_ratio);
-  long frames_requested = before_resampling - leftover_frame_count;
-
-  
-  size_t leftover_bytes = frames_to_bytes(stream_params, leftover_frame_count);
-  memcpy(resampling_src_buffer.get(), leftover_frames_buffer.get(), leftover_bytes);
-  uint8_t * buffer_start = resampling_src_buffer.get() + leftover_bytes;
-
-  long got = data_callback(stream, user_ptr, NULL, buffer_start, frames_requested);
-  assert(got <= frames_requested);
-
-  if (got < 0) {
-    return CUBEB_ERROR;
-  }
-
-  uint32_t in_frames = leftover_frame_count + got;
-  uint32_t out_frames = frames_needed;
-  uint32_t old_in_frames = in_frames;
-
-  if (stream_params.format == CUBEB_SAMPLE_FLOAT32NE) {
-    float * in_buffer = reinterpret_cast<float *>(resampling_src_buffer.get());
-    float * out_buffer = reinterpret_cast<float *>(output_buffer);
-    speex_resampler_process_interleaved_float(speex_resampler, in_buffer, &in_frames,
-                                              out_buffer, &out_frames);
-  } else {
-    short * in_buffer = reinterpret_cast<short *>(resampling_src_buffer.get());
-    short * out_buffer = reinterpret_cast<short *>(output_buffer);
-    speex_resampler_process_interleaved_int(speex_resampler, in_buffer, &in_frames,
-                                            out_buffer, &out_frames);
-  }
-
-  
-  leftover_frame_count = old_in_frames - in_frames;
-  assert(leftover_frame_count <= leftover_frame_size);
-
-  size_t unresampled_bytes = frames_to_bytes(stream_params, leftover_frame_count);
-  uint8_t * leftover_frames_start = resampling_src_buffer.get();
-  leftover_frames_start += frames_to_bytes(stream_params, in_frames);
-  memcpy(leftover_frames_buffer.get(), leftover_frames_start, unresampled_bytes);
-
-  return out_frames;
+  T * in_buffer = reinterpret_cast<T*>(input_buffer);
+  T * out_buffer = reinterpret_cast<T*>(output_buffer);
+  return (this->*fill_internal)(in_buffer, input_frames_count,
+                                out_buffer, output_frames_needed);
 }
+
+template<typename T, typename InputProcessor, typename OutputProcessor>
+long
+cubeb_resampler_speex<T, InputProcessor, OutputProcessor>
+::fill_internal_output(T * input_buffer, long * input_frames_count,
+                       T * output_buffer, long output_frames_needed)
+{
+  assert(!input_buffer && (!input_frames_count || *input_frames_count == 0) &&
+         output_buffer && output_frames_needed);
+
+  long got = 0;
+  T * out_unprocessed = nullptr;
+  long output_frames_before_processing = 0;
+
+
+  
+  output_frames_before_processing =
+    output_processor->input_needed_for_output(output_frames_needed);
+
+  out_unprocessed =
+    output_processor->input_buffer(output_frames_before_processing);
+
+  got = data_callback(stream, user_ptr,
+                      nullptr, out_unprocessed,
+                      output_frames_before_processing);
+
+  output_processor->written(got);
+
+  
+
+  return output_processor->output(output_buffer, output_frames_needed);
+}
+
+template<typename T, typename InputProcessor, typename OutputProcessor>
+long
+cubeb_resampler_speex<T, InputProcessor, OutputProcessor>
+::fill_internal_input(T * input_buffer, long * input_frames_count,
+                      T * output_buffer, long output_frames_needed)
+{
+  assert(input_buffer && input_frames_count && *input_frames_count &&
+         !output_buffer);
+
+  
+  T * resampled_input = nullptr;
+  uint32_t resampled_frame_count = input_processor->output_for_input(*input_frames_count);
+
+  
+
+  input_processor->input(input_buffer, *input_frames_count);
+  resampled_input = input_processor->output(resampled_frame_count);
+
+  return data_callback(stream, user_ptr,
+                       resampled_input, nullptr, resampled_frame_count);
+}
+
+
+template<typename T, typename InputProcessor, typename OutputProcessor>
+long
+cubeb_resampler_speex<T, InputProcessor, OutputProcessor>
+::fill_internal_duplex(T * in_buffer, long * input_frames_count,
+                       T * out_buffer, long output_frames_needed)
+{
+  
+  T * resampled_input = nullptr;
+  
+  T * out_unprocessed = nullptr;
+  size_t output_frames_before_processing = 0;
+  
+  long got = 0;
+
+  
+
+
+
+
+
+
+
+
+
+
+  output_frames_before_processing =
+    output_processor->input_needed_for_output(output_frames_needed);
+   
+  out_unprocessed =
+    output_processor->input_buffer(output_frames_before_processing);
+
+  if (in_buffer) {
+    
+
+    input_processor->input(in_buffer, *input_frames_count);
+    resampled_input =
+      input_processor->output(output_frames_before_processing);
+  } else {
+    resampled_input = nullptr;
+  }
+
+  got = data_callback(stream, user_ptr,
+                      resampled_input, out_unprocessed,
+                      output_frames_before_processing);
+
+  output_processor->written(got);
+
+  
+
+  return output_processor->output(out_buffer, output_frames_needed);
+}
+
+
 
 cubeb_resampler *
 cubeb_resampler_create(cubeb_stream * stream,
-                       cubeb_stream_params params,
-                       unsigned int out_rate,
+                       cubeb_stream_params * input_params,
+                       cubeb_stream_params * output_params,
+                       unsigned int target_rate,
                        cubeb_data_callback callback,
-                       long buffer_frame_count,
                        void * user_ptr,
                        cubeb_resampler_quality quality)
 {
-  if (params.rate != out_rate) {
-    SpeexResamplerState * resampler = NULL;
-    resampler = speex_resampler_init(params.channels,
-                                     params.rate,
-                                     out_rate,
-                                     to_speex_quality(quality),
-                                     NULL);
-    if (!resampler) {
-      return NULL;
-    }
+  cubeb_sample_format format;
 
-    return new cubeb_resampler_speex(resampler, stream, params, out_rate,
-                                     callback, buffer_frame_count, user_ptr);
+  assert(input_params || output_params);
+
+  if (input_params) {
+    format = input_params->format;
+  } else {
+    format = output_params->format;
   }
 
-  return new noop_resampler(stream, callback, user_ptr);
+  switch(format) {
+    case CUBEB_SAMPLE_S16NE:
+      return cubeb_resampler_create_internal<short>(stream,
+                                                    input_params,
+                                                    output_params,
+                                                    target_rate,
+                                                    callback,
+                                                    user_ptr,
+                                                    quality);
+    case CUBEB_SAMPLE_FLOAT32NE:
+      return cubeb_resampler_create_internal<float>(stream,
+                                                    input_params,
+                                                    output_params,
+                                                    target_rate,
+                                                    callback,
+                                                    user_ptr,
+                                                    quality);
+    default:
+      assert(false);
+      return nullptr;
+  }
 }
 
 long
 cubeb_resampler_fill(cubeb_resampler * resampler,
                      void * input_buffer,
+                     long * input_frames_count,
                      void * output_buffer,
-                     long frames_needed)
+                     long output_frames_needed)
 {
-  return resampler->fill(input_buffer, output_buffer, frames_needed);
+  return resampler->fill(input_buffer, input_frames_count,
+                         output_buffer, output_frames_needed);
 }
 
 void
 cubeb_resampler_destroy(cubeb_resampler * resampler)
 {
   delete resampler;
+}
+
+long
+cubeb_resampler_latency(cubeb_resampler * resampler)
+{
+  return resampler->latency();
 }

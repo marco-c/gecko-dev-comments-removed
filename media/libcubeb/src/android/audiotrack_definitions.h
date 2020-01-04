@@ -14,7 +14,7 @@
 
 
 
-#include <cubeb/cubeb-stdint.h>
+#include <stdint.h>
 
 
 
