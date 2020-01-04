@@ -1,2 +1,0 @@
-
-Components.utils.import("resource://gre/modules/ContactService.jsm");
