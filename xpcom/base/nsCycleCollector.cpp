@@ -3435,14 +3435,14 @@ nsCycleCollector::RegisterJSRuntime(CycleCollectedJSRuntime* aJSRuntime)
   MOZ_RELEASE_ASSERT(!mJSRuntime, "Multiple registrations of JS runtime in cycle collector");
   mJSRuntime = aJSRuntime;
 
-  
-  
-  
-  static bool registered = false;
-  if (!registered) {
-    RegisterWeakMemoryReporter(this);
-    registered = true;
+  if (!NS_IsMainThread()) {
+    return;
   }
+
+  
+  
+  
+  RegisterWeakMemoryReporter(this);
 }
 
 void
