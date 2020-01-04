@@ -681,6 +681,11 @@ protected:
     
 
 
+    virtual void WillShutdown();
+
+    
+
+
     virtual already_AddRefed<mozilla::gfx::VsyncSource> CreateHardwareVsyncSource();
 
     

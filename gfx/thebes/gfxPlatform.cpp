@@ -875,6 +875,8 @@ gfxPlatform::Shutdown()
 
     gfxConfig::Shutdown();
 
+    gPlatform->WillShutdown();
+
     delete gPlatform;
     gPlatform = nullptr;
 }
@@ -928,11 +930,18 @@ gfxPlatform::ShutdownLayersIPC()
     }
 }
 
-gfxPlatform::~gfxPlatform()
+void
+gfxPlatform::WillShutdown()
 {
+    
+    
+    
     mScreenReferenceSurface = nullptr;
     mScreenReferenceDrawTarget = nullptr;
+}
 
+gfxPlatform::~gfxPlatform()
+{
     
     
     
