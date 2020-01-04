@@ -210,17 +210,34 @@ class BaseContext {
 
 
 
+  normalizeError(error) {
+    if (error instanceof this.cloneScope.Error) {
+      return error;
+    }
+    if (!instanceOf(error, "Object")) {
+      Cu.reportError(error);
+      error = {message: "An unexpected error occurred"};
+    }
+    return new this.cloneScope.Error(error.message);
+  }
+
+  
+
+
+
+
+
+
+
+
 
   withLastError(error, callback) {
-    if (!(error instanceof this.cloneScope.Error)) {
-      error = new this.cloneScope.Error(error.message);
-    }
-    this.lastError = error;
+    this.lastError = this.normalizeError(error);
     try {
       return callback();
     } finally {
       if (!this.checkedLastError) {
-        Cu.reportError(`Unchecked lastError value: ${error}`);
+        Cu.reportError(`Unchecked lastError value: ${this.lastError}`);
       }
       this.lastError = null;
     }
@@ -278,10 +295,7 @@ class BaseContext {
         promise.then(
           value => { runSafe(resolve, value); },
           value => {
-            if (!(value instanceof this.cloneScope.Error)) {
-              value = new this.cloneScope.Error(value.message);
-            }
-            runSafeSyncWithoutClone(reject, value);
+            runSafeSyncWithoutClone(reject, this.normalizeError(value));
           });
       });
     }
