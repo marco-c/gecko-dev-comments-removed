@@ -173,6 +173,51 @@ public:
                    mozilla::WritingMode aContainingBlockWritingMode,
                    nscoord aContainingBlockISize);
 
+  struct ReflowStateFlags {
+    ReflowStateFlags() { memset(this, 0, sizeof(*this)); }
+    uint16_t mSpecialBSizeReflow:1;  
+                                     
+    uint16_t mNextInFlowUntouched:1; 
+                                     
+    uint16_t mIsTopOfPage:1;         
+                                     
+                                     
+                                     
+    uint16_t mAssumingHScrollbar:1;  
+                                     
+    uint16_t mAssumingVScrollbar:1;  
+                                     
+
+    uint16_t mIsIResize:1;           
+                                     
+
+    uint16_t mIsBResize:1;           
+                                     
+                                     
+                                     
+                                     
+    uint16_t mTableIsSplittable:1;   
+                                     
+    uint16_t mHeightDependsOnAncestorCell:1;   
+                                               
+    uint16_t mIsColumnBalancing:1;   
+    uint16_t mIsFlexContainerMeasuringHeight:1; 
+                                                
+                                                
+    uint16_t mDummyParentReflowState:1; 
+                                        
+                                        
+    uint16_t mMustReflowPlaceholders:1; 
+                                        
+                                        
+                                        
+                                        
+                                        
+    uint16_t mShrinkWrap:1; 
+    uint16_t mUseAutoBSize:1; 
+    uint16_t mStaticPosIsCBOrigin:1; 
+  };
+
 #ifdef DEBUG
   
   
@@ -234,8 +279,9 @@ protected:
   void InitOffsets(mozilla::WritingMode aWM,
                    const mozilla::LogicalSize& aPercentBasis,
                    nsIAtom* aFrameType,
-                   const nsMargin *aBorder = nullptr,
-                   const nsMargin *aPadding = nullptr);
+                   ReflowStateFlags aFlags,
+                   const nsMargin* aBorder = nullptr,
+                   const nsMargin* aPadding = nullptr);
 
   
 
@@ -543,50 +589,7 @@ public:
   
   
   int16_t mReflowDepth;
-
-  struct ReflowStateFlags {
-    uint16_t mSpecialBSizeReflow:1;  
-                                     
-    uint16_t mNextInFlowUntouched:1; 
-                                     
-    uint16_t mIsTopOfPage:1;         
-                                     
-                                     
-                                     
-    uint16_t mAssumingHScrollbar:1;  
-                                     
-    uint16_t mAssumingVScrollbar:1;  
-                                     
-
-    uint16_t mIsIResize:1;           
-                                     
-
-    uint16_t mIsBResize:1;           
-                                     
-                                     
-                                     
-                                     
-    uint16_t mTableIsSplittable:1;   
-                                     
-    uint16_t mHeightDependsOnAncestorCell:1;   
-                                               
-    uint16_t mIsColumnBalancing:1;   
-    uint16_t mIsFlexContainerMeasuringHeight:1; 
-                                                
-                                                
-    uint16_t mDummyParentReflowState:1; 
-                                        
-                                        
-    uint16_t mMustReflowPlaceholders:1; 
-                                        
-                                        
-                                        
-                                        
-                                        
-    uint16_t mShrinkWrap:1; 
-    uint16_t mUseAutoBSize:1; 
-    uint16_t mStaticPosIsCBOrigin:1; 
-  } mFlags;
+  ReflowStateFlags mFlags;
 
   
   
