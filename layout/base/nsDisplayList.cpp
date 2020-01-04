@@ -4014,6 +4014,15 @@ RequiredLayerStateForChildren(nsDisplayListBuilder* aBuilder,
     }
 
     LayerState state = i->GetLayerState(aBuilder, aManager, aParameters);
+    if (state == LAYER_ACTIVE && i->GetType() == nsDisplayItem::TYPE_BLEND_MODE) {
+      
+      
+      
+      
+      
+      state = RequiredLayerStateForChildren(aBuilder, aManager, aParameters,
+        *i->GetSameCoordinateSystemChildren(), i->GetAnimatedGeometryRoot());
+    }
     if ((state == LAYER_ACTIVE || state == LAYER_ACTIVE_FORCE) &&
         state > result) {
       result = state;
@@ -4455,7 +4464,7 @@ nsDisplayBlendContainer::GetLayerState(nsDisplayListBuilder* aBuilder,
                                        LayerManager* aManager,
                                        const ContainerLayerParameters& aParameters)
 {
-  return mozilla::LAYER_ACTIVE;
+  return RequiredLayerStateForChildren(aBuilder, aManager, aParameters, mList, GetAnimatedGeometryRoot());
 }
 
 bool nsDisplayBlendContainer::TryMerge(nsDisplayItem* aItem) {
