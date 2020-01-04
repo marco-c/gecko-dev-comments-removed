@@ -1201,9 +1201,8 @@ class ChildAPIManager {
 function normalizeTime(date) {
   
   
-  const result = new Date((typeof date == "string" && /^\d+$/.test(date))
+  return new Date((typeof date == "string" && /^\d+$/.test(date))
                         ? parseInt(date, 10) : date);
-  return result.valueOf();
 }
 
 this.ExtensionUtils = {
