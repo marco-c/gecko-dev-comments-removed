@@ -51,7 +51,7 @@ FetchDriver::FetchDriver(InternalRequest* aRequest, nsIPrincipal* aPrincipal,
   , mLoadGroup(aLoadGroup)
   , mRequest(aRequest)
   , mFetchRecursionCount(0)
-  , mCORSFlagEverSet(false)
+  , mHasBeenCrossSite(false)
   , mResponseAvailableCalled(false)
 {
 }
@@ -97,41 +97,25 @@ FetchDriver::Fetch()
   MOZ_CRASH("Synchronous fetch not supported");
 }
 
-FetchDriver::MainFetchOp
-FetchDriver::SetTaintingAndGetNextOp()
+nsresult
+FetchDriver::SetTainting()
 {
   workers::AssertIsOnMainThread();
+
+  
+  if (mHasBeenCrossSite) {
+    return NS_OK;
+  }
 
   nsAutoCString url;
   mRequest->GetURL(url);
   nsCOMPtr<nsIURI> requestURI;
   nsresult rv = NS_NewURI(getter_AddRefs(requestURI), url,
                           nullptr, nullptr);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return MainFetchOp(NETWORK_ERROR);
-  }
-
-  
-  int16_t shouldLoad;
-  rv = NS_CheckContentLoadPolicy(mRequest->ContentPolicyType(),
-                                 requestURI,
-                                 mPrincipal,
-                                 mDocument,
-                                 EmptyCString(), 
-                                 nullptr, 
-                                 &shouldLoad,
-                                 nsContentUtils::GetContentPolicy(),
-                                 nsContentUtils::GetSecurityManager());
-  if (NS_WARN_IF(NS_FAILED(rv) || NS_CP_REJECTED(shouldLoad))) {
-    
-    return MainFetchOp(NETWORK_ERROR);
-  }
+  NS_ENSURE_SUCCESS(rv, rv);
 
   
   
-
-  MOZ_ASSERT_IF(mRequest->Mode() == RequestMode::Same_origin ||
-                mRequest->Mode() == RequestMode::No_cors, !mCORSFlagEverSet);
 
   
   
@@ -139,46 +123,33 @@ FetchDriver::SetTaintingAndGetNextOp()
 
   
   
-  if (!mCORSFlagEverSet &&
-      (NS_IsAboutBlank(requestURI) ||
+  if (NS_IsAboutBlank(requestURI) ||
        NS_SUCCEEDED(mPrincipal->CheckMayLoad(requestURI, false ,
-                                             true )))) {
-    return MainFetchOp(HTTP_FETCH, false , false );
+                                             true ))) {
+    
+    
+    return NS_OK;
   }
+
+  mHasBeenCrossSite = true;
 
   
   if (mRequest->Mode() == RequestMode::Same_origin) {
-    return MainFetchOp(NETWORK_ERROR);
+    return NS_ERROR_DOM_BAD_URI;
   }
 
   
   if (mRequest->Mode() == RequestMode::No_cors) {
     mRequest->SetResponseTainting(InternalRequest::RESPONSETAINT_OPAQUE);
-    return MainFetchOp(HTTP_FETCH, false , false );
-  }
-
-  
-  
-  
-  if (mRequest->Mode() == RequestMode::Cors_with_forced_preflight ||
-      (mRequest->UnsafeRequest() && (!mRequest->HasSimpleMethod() ||
-                                     !mRequest->Headers()->HasOnlySimpleHeaders()))) {
-    mRequest->SetResponseTainting(InternalRequest::RESPONSETAINT_CORS);
-    mRequest->SetRedirectMode(RequestRedirect::Error);
-
     
     
-    
-    
-    
-    
-
-    return MainFetchOp(HTTP_FETCH, true , true );
+    return NS_OK;
   }
 
   
   mRequest->SetResponseTainting(InternalRequest::RESPONSETAINT_CORS);
-  return MainFetchOp(HTTP_FETCH, true , false );
+
+  return NS_OK;
 }
 
 nsresult
@@ -186,40 +157,26 @@ FetchDriver::ContinueFetch()
 {
   workers::AssertIsOnMainThread();
 
-  MainFetchOp nextOp = SetTaintingAndGetNextOp();
-
-  if (nextOp.mType == NETWORK_ERROR) {
-    return FailWithNetworkError();
+  nsresult rv = HttpFetch();
+  if (NS_FAILED(rv)) {
+    FailWithNetworkError();
   }
-
-  if (nextOp.mType == HTTP_FETCH) {
-    return HttpFetch(nextOp.mCORSFlag, nextOp.mCORSPreflightFlag);
-  }
-
-  MOZ_ASSERT_UNREACHABLE("Unexpected main fetch operation!");
-  return FailWithNetworkError();
- }
+ 
+  return rv;
+}
 
 
 
 
 nsresult
-FetchDriver::HttpFetch(bool aCORSFlag, bool aCORSPreflightFlag, bool aAuthenticationFlag)
+FetchDriver::HttpFetch()
 {
   
   mResponse = nullptr;
   nsresult rv;
 
-  
-  
-  
-  mCORSFlagEverSet = mCORSFlagEverSet || aCORSFlag;
-
   nsCOMPtr<nsIIOService> ios = do_GetIOService(&rv);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    FailWithNetworkError();
-    return rv;
-  }
+  NS_ENSURE_SUCCESS(rv, rv);
 
   nsAutoCString url;
   mRequest->GetURL(url);
@@ -229,10 +186,10 @@ FetchDriver::HttpFetch(bool aCORSFlag, bool aCORSPreflightFlag, bool aAuthentica
                           nullptr,
                           nullptr,
                           ios);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    FailWithNetworkError();
-    return rv;
-  }
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  rv = SetTainting();
+  NS_ENSURE_SUCCESS(rv, rv);
 
   
   
@@ -255,19 +212,18 @@ FetchDriver::HttpFetch(bool aCORSFlag, bool aCORSPreflightFlag, bool aAuthentica
   
   
   
-  bool useCredentials = false;
-  if (mRequest->GetCredentialsMode() == RequestCredentials::Include ||
-      (mRequest->GetCredentialsMode() == RequestCredentials::Same_origin && !aCORSFlag &&
-       mRequest->GetResponseTainting() != InternalRequest::RESPONSETAINT_OPAQUE)) {
-    useCredentials = true;
-  }
 
   
   
   
   
   
-  const nsLoadFlags credentialsFlag = useCredentials ? 0 : nsIRequest::LOAD_ANONYMOUS;
+  const nsLoadFlags credentialsFlag =
+    (mRequest->GetCredentialsMode() == RequestCredentials::Omit ||
+    (mHasBeenCrossSite &&
+     mRequest->GetCredentialsMode() == RequestCredentials::Same_origin &&
+     mRequest->Mode() == RequestMode::No_cors)) ?
+    nsIRequest::LOAD_ANONYMOUS : 0;
 
   
   
@@ -275,25 +231,56 @@ FetchDriver::HttpFetch(bool aCORSFlag, bool aCORSPreflightFlag, bool aAuthentica
   const nsLoadFlags bypassFlag = mRequest->SkipServiceWorker() ?
                                  nsIChannel::LOAD_BYPASS_SERVICE_WORKER : 0;
 
+  nsSecurityFlags secFlags;
+  if (mRequest->Mode() == RequestMode::Cors &&
+      mRequest->GetCredentialsMode() == RequestCredentials::Include) {
+    secFlags = nsILoadInfo::SEC_REQUIRE_CORS_DATA_INHERITS |
+               nsILoadInfo::SEC_REQUIRE_CORS_WITH_CREDENTIALS;
+  } else if (mRequest->Mode() == RequestMode::Cors) {
+    secFlags = nsILoadInfo::SEC_REQUIRE_CORS_DATA_INHERITS;
+  } else if (mRequest->Mode() == RequestMode::Same_origin) {
+    secFlags = nsILoadInfo::SEC_REQUIRE_SAME_ORIGIN_DATA_INHERITS;
+  } else if (mRequest->Mode() == RequestMode::No_cors) {
+    secFlags = nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_DATA_INHERITS;
+  } else {
+    MOZ_ASSERT_UNREACHABLE("Unexpected request mode!");
+    return NS_ERROR_UNEXPECTED;
+  }
+
   
   
   MOZ_ASSERT(mLoadGroup);
   nsCOMPtr<nsIChannel> chan;
-  rv = NS_NewChannel(getter_AddRefs(chan),
-                     uri,
-                     mPrincipal,
-                     nsILoadInfo::SEC_NORMAL |
-                       nsILoadInfo::SEC_ABOUT_BLANK_INHERITS,
-                     mRequest->ContentPolicyType(),
-                     mLoadGroup,
-                     nullptr, 
-                     nsIRequest::LOAD_NORMAL | credentialsFlag | bypassFlag,
-                     ios);
-  mLoadGroup = nullptr;
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    FailWithNetworkError();
-    return rv;
+
+  
+  
+  
+  if (mDocument && mDocument->NodePrincipal() == mPrincipal) {
+    rv = NS_NewChannel(getter_AddRefs(chan),
+                       uri,
+                       mDocument,
+                       secFlags |
+                         nsILoadInfo::SEC_ABOUT_BLANK_INHERITS,
+                       mRequest->ContentPolicyType(),
+                       mLoadGroup,
+                       nullptr, 
+                       nsIRequest::LOAD_NORMAL | credentialsFlag | bypassFlag,
+                       ios);
+  } else {
+    rv = NS_NewChannel(getter_AddRefs(chan),
+                       uri,
+                       mPrincipal,
+                       secFlags |
+                         nsILoadInfo::SEC_ABOUT_BLANK_INHERITS,
+                       mRequest->ContentPolicyType(),
+                       mLoadGroup,
+                       nullptr, 
+                       nsIRequest::LOAD_NORMAL | credentialsFlag | bypassFlag,
+                       ios);
   }
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  mLoadGroup = nullptr;
 
   
   
@@ -322,10 +309,7 @@ FetchDriver::HttpFetch(bool aCORSFlag, bool aCORSPreflightFlag, bool aAuthentica
     nsAutoCString method;
     mRequest->GetMethod(method);
     rv = httpChan->SetRequestMethod(method);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      FailWithNetworkError();
-      return rv;
-    }
+    NS_ENSURE_SUCCESS(rv, rv);
 
     
     nsAutoTArray<InternalHeaders::Entry, 5> headers;
@@ -345,14 +329,10 @@ FetchDriver::HttpFetch(bool aCORSFlag, bool aCORSPreflightFlag, bool aAuthentica
       rv = nsContentUtils::SetFetchReferrerURIWithPolicy(mPrincipal,
                                                          mDocument,
                                                          httpChan);
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        return FailWithNetworkError();
-      }
+      NS_ENSURE_SUCCESS(rv, rv);
     } else if (referrer.IsEmpty()) {
       rv = httpChan->SetReferrerWithPolicy(nullptr, net::RP_No_Referrer);
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        return FailWithNetworkError();
-      }
+      NS_ENSURE_SUCCESS(rv, rv);
     } else {
       
       
@@ -364,26 +344,21 @@ FetchDriver::HttpFetch(bool aCORSFlag, bool aCORSPreflightFlag, bool aAuthentica
       
       nsCOMPtr<nsIURI> referrerURI;
       rv = NS_NewURI(getter_AddRefs(referrerURI), referrer, nullptr, nullptr);
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        return FailWithNetworkError();
-      }
+      NS_ENSURE_SUCCESS(rv, rv);
 
       rv =
         httpChan->SetReferrerWithPolicy(referrerURI,
                                         mDocument ? mDocument->GetReferrerPolicy() :
                                                     net::RP_Default);
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        return FailWithNetworkError();
-      }
+      NS_ENSURE_SUCCESS(rv, rv);
     }
 
     
     if (mRequest->ForceOriginHeader()) {
       nsAutoString origin;
       rv = nsContentUtils::GetUTFOrigin(mPrincipal, origin);
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        return FailWithNetworkError();
-      }
+      NS_ENSURE_SUCCESS(rv, rv);
+
       httpChan->SetRequestHeader(NS_LITERAL_CSTRING("origin"),
                                  NS_ConvertUTF16toUTF8(origin),
                                  false );
@@ -414,7 +389,7 @@ FetchDriver::HttpFetch(bool aCORSFlag, bool aCORSPreflightFlag, bool aAuthentica
     
     
     if (result.Failed()) {
-      return FailWithNetworkError();
+      return result.StealNSResult();
     }
 
     nsCOMPtr<nsIInputStream> bodyStream;
@@ -423,67 +398,50 @@ FetchDriver::HttpFetch(bool aCORSFlag, bool aCORSPreflightFlag, bool aAuthentica
       nsAutoCString method;
       mRequest->GetMethod(method);
       rv = uploadChan->ExplicitSetUploadStream(bodyStream, contentType, -1, method, false );
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        return FailWithNetworkError();
-      }
+      NS_ENSURE_SUCCESS(rv, rv);
     }
   }
 
-  nsCOMPtr<nsIStreamListener> listener = this;
-
-  MOZ_ASSERT_IF(aCORSFlag, mRequest->Mode() == RequestMode::Cors);
-
   
   
   
-  if (mRequest->Mode() == RequestMode::Cors) {
-    
-    
-    
-    bool corsCredentials =
-      mRequest->GetCredentialsMode() == RequestCredentials::Include;
-
-    
-    
-    
-    
-    
-    RefPtr<nsCORSListenerProxy> corsListener =
-      new nsCORSListenerProxy(this, mPrincipal, corsCredentials);
-    rv = corsListener->Init(chan, DataURIHandling::Allow);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return FailWithNetworkError();
+  
+  
+  if (IsUnsafeRequest()) {
+    if (mRequest->Mode() == RequestMode::No_cors) {
+      return NS_ERROR_DOM_BAD_URI;
     }
-    listener = corsListener.forget();
-  }
 
-  
-  
-  
-  
-  
-  if (aCORSPreflightFlag) {
-    MOZ_ASSERT(mRequest->Mode() != RequestMode::No_cors,
-               "FetchDriver::ContinueFetch() should ensure that the request is not no-cors");
-    MOZ_ASSERT(httpChan, "CORS preflight can only be used with HTTP channels");
+    mRequest->SetRedirectMode(RequestRedirect::Error);
+
     nsAutoTArray<nsCString, 5> unsafeHeaders;
     mRequest->Headers()->GetUnsafeHeaders(unsafeHeaders);
 
     nsCOMPtr<nsIHttpChannelInternal> internalChan = do_QueryInterface(httpChan);
-    rv = internalChan->SetCorsPreflightParameters(unsafeHeaders, useCredentials, mPrincipal);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return FailWithNetworkError();
-    }
+    NS_ENSURE_TRUE(internalChan, NS_ERROR_DOM_BAD_URI);
+
+    rv = internalChan->SetCorsPreflightParameters(
+      unsafeHeaders,
+      mRequest->GetCredentialsMode() == RequestCredentials::Include,
+      mPrincipal);
+    NS_ENSURE_SUCCESS(rv, rv);
   }
 
-  rv = chan->AsyncOpen(listener, nullptr);
-
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return FailWithNetworkError();
-  }
+  rv = chan->AsyncOpen2(this);
+  NS_ENSURE_SUCCESS(rv, rv);
 
   
   return NS_OK;
+}
+
+bool
+FetchDriver::IsUnsafeRequest()
+{
+  return mHasBeenCrossSite &&
+         (mRequest->Mode() == RequestMode::Cors_with_forced_preflight ||
+          (mRequest->UnsafeRequest() &&
+           (!mRequest->HasSimpleMethod() ||
+            !mRequest->Headers()->HasOnlySimpleHeaders())));
 }
 
 nsresult
@@ -779,6 +737,12 @@ FetchDriver::AsyncOnChannelRedirect(nsIChannel* aOldChannel,
 {
   NS_PRECONDITION(aNewChannel, "Redirect without a channel?");
 
+  if (NS_IsInternalSameURIRedirect(aOldChannel, aNewChannel, aFlags) ||
+      NS_IsHSTSUpgradeRedirect(aOldChannel, aNewChannel, aFlags)) {
+    aCallback->OnRedirectVerifyCallback(NS_OK);
+    return NS_OK;
+  }
+
   
   if (NS_WARN_IF(mRequest->GetRedirectMode() == RequestRedirect::Error)) {
     aOldChannel->Cancel(NS_BINDING_FAILED);
@@ -795,26 +759,6 @@ FetchDriver::AsyncOnChannelRedirect(nsIChannel* aOldChannel,
 
   
   
-  
-  mRequest->UnsetSameOriginDataURL();
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  if (!NS_IsInternalSameURIRedirect(aOldChannel, aNewChannel, aFlags)) {
-    nsresult rv = DoesNotRequirePreflight(aNewChannel);
-    if (NS_FAILED(rv)) {
-      NS_WARNING("FetchDriver::OnChannelRedirect: "
-                 "DoesNotRequirePreflight returned failure");
-      return rv;
-    }
-  }
 
   
   
@@ -869,62 +813,68 @@ FetchDriver::AsyncOnChannelRedirect(nsIChannel* aOldChannel,
   mRequest->SetURL(newUrl);
 
   
-  MainFetchOp nextOp = SetTaintingAndGetNextOp();
-
-  if (nextOp.mType == NETWORK_ERROR) {
-    
-    aOldChannel->Cancel(NS_ERROR_DOM_BAD_URI);
-    return NS_ERROR_DOM_BAD_URI;
-  }
-
-  
-  
-  
-  MOZ_ASSERT(nextOp.mType == HTTP_FETCH);
-  MOZ_ASSERT_IF(mCORSFlagEverSet, nextOp.mCORSFlag);
-
-  
-  nsLoadFlags flags;
-  rv = aNewChannel->GetLoadFlags(&flags);
+  rv = SetTainting();
   if (NS_FAILED(rv)) {
     aOldChannel->Cancel(rv);
     return rv;
   }
 
-  if (mRequest->GetCredentialsMode() == RequestCredentials::Same_origin &&
-      mRequest->GetResponseTainting() == InternalRequest::RESPONSETAINT_OPAQUE) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  if (IsUnsafeRequest()) {
     
     
     
-    flags |= nsIRequest::LOAD_ANONYMOUS;
-    rv = aNewChannel->SetLoadFlags(flags);
+
+    
+    aOldChannel->Cancel(NS_BINDING_FAILED);
+    return NS_BINDING_FAILED;
+  }
+
+  
+  
+  
+
+  
+  if (mHasBeenCrossSite &&
+      mRequest->GetCredentialsMode() == RequestCredentials::Same_origin &&
+      mRequest->Mode() == RequestMode::No_cors) {
+    
+    
+    
+    nsLoadFlags flags;
+    rv = aNewChannel->GetLoadFlags(&flags);
+    if (NS_SUCCEEDED(rv)) {
+      flags |= nsIRequest::LOAD_ANONYMOUS;
+      rv = aNewChannel->SetLoadFlags(flags);
+    }
     if (NS_FAILED(rv)) {
       aOldChannel->Cancel(rv);
       return rv;
     }
-
-  } else if (mRequest->GetCredentialsMode() == RequestCredentials::Omit) {
-    
-    
-    MOZ_ASSERT(flags & nsIRequest::LOAD_ANONYMOUS);
-
-  } else if (mRequest->GetCredentialsMode() == RequestCredentials::Same_origin &&
-             nextOp.mCORSFlag) {
-    
-    
-    
-    
-    
-    
-    MOZ_ASSERT_IF(mCORSFlagEverSet, flags & nsIRequest::LOAD_ANONYMOUS);
-
-  } else {
-    
-    MOZ_ASSERT(!(flags & nsIRequest::LOAD_ANONYMOUS));
   }
-
-  
-  mCORSFlagEverSet = mCORSFlagEverSet || nextOp.mCORSFlag;
+#ifdef DEBUG
+  {
+    
+    
+    
+    nsLoadFlags flags;
+    aNewChannel->GetLoadFlags(&flags);
+    bool shouldBeAnon =
+      mRequest->GetCredentialsMode() == RequestCredentials::Omit ||
+      (mHasBeenCrossSite &&
+       mRequest->GetCredentialsMode() == RequestCredentials::Same_origin);
+    MOZ_ASSERT(!!(flags & nsIRequest::LOAD_ANONYMOUS) == shouldBeAnon);
+  }
+#endif
 
   aCallback->OnRedirectVerifyCallback(NS_OK);
 
@@ -934,33 +884,6 @@ FetchDriver::AsyncOnChannelRedirect(nsIChannel* aOldChannel,
 NS_IMETHODIMP
 FetchDriver::CheckListenerChain()
 {
-  return NS_OK;
-}
-
-
-nsresult
-FetchDriver::DoesNotRequirePreflight(nsIChannel* aChannel)
-{
-  
-  
-  if (nsContentUtils::CheckMayLoad(mPrincipal, aChannel, true)) {
-    return NS_OK;
-  }
-
-  
-  nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(aChannel);
-  NS_ENSURE_TRUE(httpChannel, NS_ERROR_DOM_BAD_URI);
-
-  nsAutoCString method;
-  httpChannel->GetRequestMethod(method);
-  if (mRequest->Mode() == RequestMode::Cors_with_forced_preflight ||
-      !mRequest->Headers()->HasOnlySimpleHeaders() ||
-      (!method.LowerCaseEqualsLiteral("get") &&
-       !method.LowerCaseEqualsLiteral("post") &&
-       !method.LowerCaseEqualsLiteral("head"))) {
-    return NS_ERROR_DOM_BAD_URI;
-  }
-
   return NS_OK;
 }
 
