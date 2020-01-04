@@ -84,8 +84,17 @@ public:
     PRIntervalTime LastOfflineStateChange() { return mLastOfflineStateChange; }
     PRIntervalTime LastConnectivityChange() { return mLastConnectivityChange; }
     PRIntervalTime LastNetworkLinkChange() { return mLastNetworkLinkChange; }
-    bool IsNetTearingDown() { return mShutdown || mOfflineForProfileChange; }
+    bool IsNetTearingDown() { return mShutdown || mOfflineForProfileChange ||
+                                     mHttpHandlerAlreadyShutingDown; }
     PRIntervalTime NetTearingDownStarted() { return mNetTearingDownStarted; }
+
+    
+    
+    
+    
+    
+    void SetHttpHandlerAlreadyShutingDown();
+
     bool IsLinkUp();
 
     
@@ -152,6 +161,7 @@ private:
     bool                                 mSetOfflineValue;
 
     mozilla::Atomic<bool, mozilla::Relaxed> mShutdown;
+    mozilla::Atomic<bool, mozilla::Relaxed> mHttpHandlerAlreadyShutingDown;
 
     nsCOMPtr<nsPISocketTransportService> mSocketTransportService;
     nsCOMPtr<nsPIDNSService>             mDNSService;
