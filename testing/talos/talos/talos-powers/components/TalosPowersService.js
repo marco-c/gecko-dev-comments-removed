@@ -40,6 +40,7 @@ TalosPowersService.prototype = {
     Services.mm.addMessageListener("Talos:ForceQuit", this);
     Services.mm.addMessageListener("TalosContentProfiler:Command", this);
     Services.mm.addMessageListener("TalosPowersContent:ForceCCAndGC", this);
+    Services.mm.addMessageListener("TalosPowersContent:GetStartupInfo", this);
     Services.obs.addObserver(this, "xpcom-shutdown", false);
   },
 
@@ -62,6 +63,9 @@ TalosPowersService.prototype = {
         Cu.forceCC();
         Cu.forceShrinkingGC();
         break;
+      }
+      case "TalosPowersContent:GetStartupInfo": {
+        this.receiveGetStartupInfo(message);
       }
     }
   },
@@ -228,6 +232,28 @@ TalosPowersService.prototype = {
       Services.startup.quit(Services.startup.eForceQuit);
     } catch(e) {
       dump('Force Quit failed: ' + e);
+    }
+  },
+
+  receiveGetStartupInfo(message) {
+    let mm = message.target.messageManager;
+    let startupInfo = Services.startup.getStartupInfo();
+
+    if (!startupInfo["firstPaint"]) {
+      
+      
+      
+      
+      let obs = function(subject, topic) {
+        Services.obs.removeObserver(this, topic);
+        startupInfo = Services.startup.getStartupInfo();
+        mm.sendAsyncMessage("TalosPowersContent:GetStartupInfo:Result",
+                            startupInfo);
+      };
+      Services.obs.addObserver(obs, "widget-first-paint", false);
+    } else {
+      mm.sendAsyncMessage("TalosPowersContent:GetStartupInfo:Result",
+                          startupInfo);
     }
   },
 };
