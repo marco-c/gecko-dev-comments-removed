@@ -18,10 +18,13 @@ import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.v7.app.ActionBar;
+import android.support.v7.widget.Toolbar;
 import android.util.TypedValue;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.view.View;
+import android.view.Window;
 import android.widget.Toast;
 import org.mozilla.gecko.AppConstants;
 import org.mozilla.gecko.Locales.LocaleAwareAppCompatActivity;
@@ -207,4 +210,23 @@ public class FxAccountStatusActivity extends LocaleAwareAppCompatActivity {
     }
     return super.onCreateOptionsMenu(menu);
   };
+
+  @Override
+  public void openOptionsMenu() {
+    
+    
+    
+    
+    
+    
+
+    final Window window = getWindow();
+    final View decor = window.getDecorView();
+    final View view = decor.findViewById(R.id.action_bar);
+
+    if (view instanceof Toolbar) {
+      final Toolbar toolbar = (Toolbar) view;
+      toolbar.showOverflowMenu();
+    }
+  }
 }
