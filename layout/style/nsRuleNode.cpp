@@ -1652,7 +1652,7 @@ nsRuleNode::ConvertChildrenToHash(int32_t aNumKids)
   for (nsRuleNode* curr = ChildrenList(); curr; curr = curr->mNextSibling) {
     
     auto entry =
-      static_cast<ChildrenHashEntry*>(hash->Add(curr->mRule, fallible));
+      static_cast<ChildrenHashEntry*>(hash->Add(curr->mRule));
     NS_ASSERTION(!entry->mRuleNode, "duplicate entries in list");
     entry->mRuleNode = curr;
   }
