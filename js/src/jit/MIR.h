@@ -1853,6 +1853,7 @@ class MSimdGeneralShuffle :
 
         setResultType(type);
         specialization_ = type;
+        setGuard(); 
         setMovable();
     }
 
