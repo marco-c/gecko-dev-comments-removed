@@ -121,6 +121,7 @@ LCovSource::writeTopLevelScript(JSScript* script)
         
         if (!script->hasObjects())
             continue;
+
         size_t idx = script->objects()->length;
         while (idx--) {
             JSObject* obj = script->getObject(idx);
@@ -134,6 +135,19 @@ LCovSource::writeTopLevelScript(JSScript* script)
             if (!fun.isInterpreted())
                 continue;
             MOZ_ASSERT(!fun.isInterpretedLazy());
+
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            JSScript* child = fun.nonLazyScript();
+            if (child->sourceObject() != source_)
+                continue;
 
             
             
