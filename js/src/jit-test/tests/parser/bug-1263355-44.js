@@ -1,0 +1,9 @@
+if (!('oomTest' in this))
+  quit();
+
+
+"use strict";
+enableSPSProfiling();
+oomTest(function() {
+    eval("(function() {})()");
+});
