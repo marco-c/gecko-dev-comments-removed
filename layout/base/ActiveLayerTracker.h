@@ -53,12 +53,6 @@ public:
 
 
 
-  static void NotifyAnimatedFromScrollHandler(nsIFrame* aFrame, nsCSSProperty aProperty,
-                                              nsIFrame* aScrollFrame);
-  
-
-
-
 
 
   static void NotifyInlineStyleRuleModified(nsIFrame* aFrame, nsCSSProperty aProperty);
@@ -113,13 +107,6 @@ public:
 
 
   static bool IsContentActive(nsIFrame* aFrame);
-
-  
-
-
-
-
-  static void SetCurrentScrollHandlerFrame(nsIFrame* aFrame);
 };
 
 } 

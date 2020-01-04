@@ -130,14 +130,6 @@ public:
   
 
 
-  void clear()
-  {
-    mBitField = 0;
-  }
-
-  
-
-
   void operator&=(const EnumSet<T> aEnumSet)
   {
     mBitField &= aEnumSet.mBitField;
