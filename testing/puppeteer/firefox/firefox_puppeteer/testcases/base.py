@@ -66,20 +66,25 @@ class BaseFirefoxTestCase(unittest.TestCase, Puppeteer):
             self.browser.tabbar.close_all_tabs([self.browser.tabbar.tabs[0]])
             self.browser.tabbar.tabs[0].switch_to()
 
-    def restart(self, flags=None):
+    def restart(self, **kwargs):
         """Restart Firefox and re-initialize data.
 
         :param flags: Specific restart flags for Firefox
         """
+
         
         
-        self.marionette.execute_script("""
-          Components.utils.import("resource://gre/modules/Services.jsm");
-          let cancelQuit = Components.classes["@mozilla.org/supports-PRBool;1"]
-                                     .createInstance(Components.interfaces.nsISupportsPRBool);
-          Services.obs.notifyObservers(cancelQuit, "quit-application-requested", null);
-        """)
-        self.marionette.restart(in_app=True)
+        with self.marionette.using_context('chrome'):
+            self.marionette.execute_script("""
+                Components.utils.import("resource://gre/modules/Services.jsm");
+                let cancelQuit = Components.classes["@mozilla.org/supports-PRBool;1"]
+                                         .createInstance(Components.interfaces.nsISupportsPRBool);
+                Services.obs.notifyObservers(cancelQuit, "quit-application-requested", null);
+                """)
+        if kwargs.get('clean'):
+            self.marionette.restart(clean=True)
+        else:
+            self.marionette.restart(in_app=True)
 
         
         self.marionette.set_context('chrome')
