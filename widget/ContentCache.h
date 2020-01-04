@@ -41,6 +41,9 @@ protected:
   
   nsString mText;
 
+  
+  uint32_t mCompositionStart;
+
   struct Selection final
   {
     
@@ -360,8 +363,6 @@ private:
   
   
   nsAString* mCommitStringByRequest;
-  
-  uint32_t mCompositionStart;
   
   
   
