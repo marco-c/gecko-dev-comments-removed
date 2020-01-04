@@ -95,6 +95,7 @@
 #include "nsThreadUtils.h"
 #include "nsILoadContext.h"
 #include "nsIPresShell.h"
+#include "nsIScriptSecurityManager.h"
 #include "nsIScrollableFrame.h"
 #include "nsView.h"
 #include "nsViewManager.h"
@@ -191,7 +192,6 @@
 #include "nsRefreshDriver.h"
 
 #include "mozilla/AddonPathService.h"
-#include "mozilla/BasePrincipal.h"
 #include "mozilla/Services.h"
 #include "mozilla/Telemetry.h"
 #include "nsLocation.h"
@@ -256,8 +256,6 @@ static const char kStorageEnabled[] = "dom.storage.enabled";
 using namespace mozilla;
 using namespace mozilla::dom;
 using namespace mozilla::dom::ipc;
-using mozilla::BasePrincipal;
-using mozilla::OriginAttributes;
 using mozilla::TimeStamp;
 using mozilla::TimeDuration;
 using mozilla::dom::cache::CacheStorage;
@@ -8588,14 +8586,21 @@ nsGlobalWindow::PostMessageMozOuter(JSContext* aCx, JS::Handle<JS::Value> aMessa
       return;
     }
 
+    nsCOMPtr<nsIScriptSecurityManager> ssm =
+      nsContentUtils::GetSecurityManager();
+    MOZ_ASSERT(ssm);
+
     nsCOMPtr<nsIPrincipal> principal = nsContentUtils::SubjectPrincipal();
     MOZ_ASSERT(principal);
 
-    OriginAttributes attrs = BasePrincipal::Cast(principal)->OriginAttributesRef();
+    uint32_t appId = principal->GetAppId();
+    bool isInBrowser = principal->GetIsInBrowserElement();
+
     
     
-    providedPrincipal = BasePrincipal::CreateCodebasePrincipal(originURI, attrs);
-    if (NS_WARN_IF(!providedPrincipal)) {
+    nsresult rv = ssm->GetAppCodebasePrincipal(originURI, appId, isInBrowser,
+                                             getter_AddRefs(providedPrincipal));
+    if (NS_WARN_IF(NS_FAILED(rv))) {
       return;
     }
   }
@@ -8614,7 +8619,7 @@ nsGlobalWindow::PostMessageMozOuter(JSContext* aCx, JS::Handle<JS::Value> aMessa
   JS::Rooted<JS::Value> message(aCx, aMessage);
   JS::Rooted<JS::Value> transfer(aCx, aTransfer);
 
-  event->Write(aCx, message, transfer, aError);
+  event->Write(aCx, message, transfer, false, aError);
   if (NS_WARN_IF(aError.Failed())) {
     return;
   }
