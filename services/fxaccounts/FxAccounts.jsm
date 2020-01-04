@@ -46,6 +46,7 @@ var publicProperties = [
   "getSignedInUser",
   "getOAuthToken",
   "getSignedInUserProfile",
+  "invalidateCertificate",
   "loadAndPoll",
   "localtimeOffsetMsec",
   "now",
@@ -596,6 +597,14 @@ FxAccountsInternal.prototype = {
     }).catch(err =>
       this._handleTokenError(err)
     ).then(result => currentState.resolve(result));
+  },
+
+  
+
+
+
+  invalidateCertificate() {
+    return this.currentAccountState.updateUserAccountData({ cert: null });
   },
 
   getDeviceId() {
