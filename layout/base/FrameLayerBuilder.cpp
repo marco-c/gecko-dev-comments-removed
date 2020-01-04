@@ -4292,7 +4292,11 @@ FrameLayerBuilder::ComputeGeometryChangeForItem(DisplayItemData* aData)
     
     
     
-    if (!combined.IsEmpty()) {
+    
+    
+    
+    
+    if (!combined.IsEmpty() || aData->mLayerState == LAYER_INACTIVE) {
       geometry = item->AllocateGeometry(mDisplayListBuilder);
     } else if (aData->mClip == clip && invalid.IsEmpty() && changedFrames.Length() == 0) {
       notifyRenderingChanged = false;
