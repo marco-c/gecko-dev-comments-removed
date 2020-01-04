@@ -39,9 +39,9 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.nio.charset.Charset;
 import java.util.Enumeration;
-import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -79,7 +79,9 @@ public final class GeckoProfile {
 
     private boolean mOldSessionDataProcessed = false;
 
-    private static final HashMap<String, GeckoProfile> sProfileCache = new HashMap<String, GeckoProfile>();
+    private static final ConcurrentHashMap<String, GeckoProfile> sProfileCache =
+            new ConcurrentHashMap<String, GeckoProfile>(
+                     4,  0.75f,  2);
     private static String sDefaultProfileName;
 
     private final String mName;
@@ -162,7 +164,7 @@ public final class GeckoProfile {
     }
 
     public static GeckoProfile get(Context context, String profileName) {
-        synchronized (sProfileCache) {
+        if (profileName != null) {
             GeckoProfile profile = sProfileCache.get(profileName);
             if (profile != null)
                 return profile;
@@ -243,50 +245,55 @@ public final class GeckoProfile {
         }
 
         
-        synchronized (sProfileCache) {
-            
-            final boolean init = profileDir != null && profileDir.mkdirs();
+        final boolean init = profileDir != null && profileDir.mkdirs();
 
-            GeckoProfile profile = sProfileCache.get(profileName);
-            if (profile == null) {
-                try {
-                    profile = new GeckoProfile(context, profileName, profileDir, dbFactory);
-                } catch (NoMozillaDirectoryException e) {
-                    
-                    throw new RuntimeException(e);
-                }
-                sProfileCache.put(profileName, profile);
+        
+        GeckoProfile profile = sProfileCache.get(profileName);
+        GeckoProfile newProfile = null;
 
-            } else if (profileDir != null) {
+        if (profile == null) {
+            try {
+                newProfile = new GeckoProfile(context, profileName, profileDir, dbFactory);
+            } catch (NoMozillaDirectoryException e) {
                 
-                boolean consistent = false;
-                try {
-                    consistent = profile.getDir().getCanonicalPath().equals(
-                            profileDir.getCanonicalPath());
-                } catch (final IOException e) {
-                }
-
-                if (!consistent) {
-                    if (!sAcceptDirectoryChanges || !profileDir.isDirectory()) {
-                        throw new IllegalStateException(
-                                "Refusing to reuse profile with a different directory.");
-                    }
-
-                    if (AppConstants.RELEASE_BUILD) {
-                        Log.e(LOGTAG, "Release build trying to switch out profile dir. " +
-                                      "This is an error, but let's do what we can.");
-                    }
-                    profile.setDir(profileDir);
-                }
+                throw new RuntimeException(e);
             }
 
-            if (init) {
-                
-                profile.enqueueInitialization(profileDir);
-            }
-
-            return profile;
+            profile = sProfileCache.putIfAbsent(profileName, newProfile);
         }
+
+        if (profile == null) {
+            profile = newProfile;
+
+        } else if (profileDir != null) {
+            
+            boolean consistent = false;
+            try {
+                consistent = profile.mProfileDir != null &&
+                        profile.mProfileDir.getCanonicalPath().equals(profileDir.getCanonicalPath());
+            } catch (final IOException e) {
+            }
+
+            if (!consistent) {
+                if (!sAcceptDirectoryChanges || !profileDir.isDirectory()) {
+                    throw new IllegalStateException(
+                            "Refusing to reuse profile with a different directory.");
+                }
+
+                if (AppConstants.RELEASE_BUILD) {
+                    Log.e(LOGTAG, "Release build trying to switch out profile dir. " +
+                                  "This is an error, but let's do what we can.");
+                }
+                profile.setDir(profileDir);
+            }
+        }
+
+        if (init) {
+            
+            profile.enqueueInitialization(profileDir);
+        }
+
+        return profile;
     }
 
     
