@@ -178,8 +178,6 @@ gfxFT2FontBase::GetGlyphWidth(DrawTarget& aDrawTarget, uint16_t aGID)
 bool
 gfxFT2FontBase::SetupCairoFont(gfxContext *aContext)
 {
-    cairo_t *cr = aContext->GetCairo();
-
     
     
     
@@ -212,6 +210,6 @@ gfxFT2FontBase::SetupCairoFont(gfxContext *aContext)
     
     
     
-    cairo_set_scaled_font(cr, cairoFont);
+    cairo_set_scaled_font(aContext->GetCairo(), cairoFont);
     return true;
 }

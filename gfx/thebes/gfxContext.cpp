@@ -3,6 +3,7 @@
 
 
 
+
 #include <math.h>
 
 #include "mozilla/Alignment.h"
@@ -68,7 +69,6 @@ PatternFromState::operator mozilla::gfx::Pattern&()
 gfxContext::gfxContext(DrawTarget *aTarget, const Point& aDeviceOffset)
   : mPathIsRect(false)
   , mTransformChanged(false)
-  , mRefCairo(nullptr)
   , mDT(aTarget)
   , mOriginalDT(aTarget)
 {
@@ -98,9 +98,6 @@ gfxContext::ContextForDrawTarget(DrawTarget* aTarget)
 
 gfxContext::~gfxContext()
 {
-  if (mRefCairo) {
-    cairo_destroy(mRefCairo);
-  }
   for (int i = mStateStack.Length() - 1; i >= 0; i--) {
     for (unsigned int c = 0; c < mStateStack[i].pushedClips.Length(); c++) {
       mDT->PopClip();
@@ -132,25 +129,38 @@ gfxContext::CurrentSurface(gfxFloat *dx, gfxFloat *dy)
   return nullptr;
 }
 
+static void
+DestroyRefCairo(void* aData)
+{
+  cairo_t* refCairo = static_cast<cairo_t*>(aData);
+  MOZ_ASSERT(refCairo);
+  cairo_destroy(refCairo);
+}
+
 cairo_t *
 gfxContext::GetCairo()
 {
+  
+  
+  
+  static UserDataKey sRefCairo;
+
+  cairo_t* refCairo = nullptr;
   if (mDT->GetBackendType() == BackendType::CAIRO) {
-    cairo_t *ctx =
-      (cairo_t*)mDT->GetNativeSurface(NativeSurfaceType::CAIRO_CONTEXT);
-    if (ctx) {
-      return ctx;
+    refCairo = static_cast<cairo_t*>
+      (mDT->GetNativeSurface(NativeSurfaceType::CAIRO_CONTEXT));
+    if (refCairo) {
+      return refCairo;
     }
   }
 
-  if (mRefCairo) {
-    
-    return mRefCairo;
+  refCairo = static_cast<cairo_t*>(mDT->GetUserData(&sRefCairo));
+  if (!refCairo) {
+    refCairo = cairo_create(gfxPlatform::GetPlatform()->ScreenReferenceSurface()->CairoSurface());
+    mDT->AddUserData(&sRefCairo, refCairo, DestroyRefCairo);
   }
 
-  mRefCairo = cairo_create(gfxPlatform::GetPlatform()->ScreenReferenceSurface()->CairoSurface()); 
-
-  return mRefCairo;
+  return refCairo;
 }
 
 void

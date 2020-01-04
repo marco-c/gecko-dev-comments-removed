@@ -55,6 +55,7 @@ static void DrawDebugOverlay(mozilla::gfx::DrawTarget* dt, int x, int y, int wid
   ss << x << ", " << y;
 
   
+  
   cairo_t* cr = c.GetCairo();
   cairo_set_font_size(cr, 25);
   cairo_text_extents_t extents;
