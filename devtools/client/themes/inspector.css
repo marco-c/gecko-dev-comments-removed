@@ -40,6 +40,12 @@
 
 
 
+#inspector-element-add-button {
+  list-style-image: url("chrome://devtools/skin/images/add.svg");
+}
+
+
+
 #devtools-tooltip-events-container {
   margin: -4px; 
   max-width: 590px;

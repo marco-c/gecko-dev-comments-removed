@@ -450,6 +450,25 @@ InspectorPanel.prototype = {
   
 
 
+
+  canAddHTMLChild: function() {
+    let selection = this.selection;
+
+    
+    
+    let invalidTagNames = ["html", "iframe"];
+
+    return selection.isHTMLNode() &&
+           selection.isElementNode() &&
+           !selection.isPseudoElementNode() &&
+           !selection.isAnonymousNode() &&
+           invalidTagNames.indexOf(
+            selection.nodeFront.nodeName.toLowerCase()) === -1;
+  },
+
+  
+
+
   onNewSelection: function(event, value, reason) {
     if (reason === "selection-destroy") {
       return;
@@ -458,6 +477,15 @@ InspectorPanel.prototype = {
     
     
     let selection = this.selection.nodeFront;
+
+    
+    
+    let btn = this.panelDoc.querySelector("#inspector-element-add-button");
+    if (this.canAddHTMLChild()) {
+      btn.removeAttribute("disabled");
+    } else {
+      btn.setAttribute("disabled", "true");
+    }
 
     
     
@@ -703,6 +731,14 @@ InspectorPanel.prototype = {
       deleteNode.removeAttribute("disabled");
     } else {
       deleteNode.setAttribute("disabled", "true");
+    }
+
+    
+    let addNode = this.panelDoc.getElementById("node-menu-add");
+    if (this.canAddHTMLChild()) {
+      addNode.removeAttribute("disabled");
+    } else {
+      addNode.setAttribute("disabled", "true");
     }
 
     
@@ -1011,6 +1047,27 @@ InspectorPanel.prototype = {
       button.setAttribute("tooltiptext", strings.GetStringFromName("inspector.collapsePane"));
     }
   },
+
+  
+
+
+
+  addNode: Task.async(function*() {
+    let root = this.selection.nodeFront;
+    if (!this.canAddHTMLChild(root)) {
+      return;
+    }
+
+    let html = "<div></div>";
+
+    
+    let onMutations = this.once("markupmutation");
+    let {nodes} = yield this.walker.insertAdjacentHTML(root, "beforeEnd", html);
+    yield onMutations;
+
+    
+    this.selection.setNodeFront(nodes[0]);
+  }),
 
   
 
