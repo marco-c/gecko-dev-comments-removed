@@ -38,7 +38,7 @@ public abstract class SharedBrowserDatabaseProvider extends AbstractPerProfileDa
         return databases;
     }
 
-    
+    @Override
     public void shutdown() {
         synchronized (SharedBrowserDatabaseProvider.class) {
             databases.shutdown();
