@@ -11869,6 +11869,11 @@ IonBuilder::getPropTryInnerize(bool* emitted, MDefinition* obj, PropertyName* na
 {
     
 
+    
+    
+    
+    
+
     MOZ_ASSERT(*emitted == false);
 
     MDefinition* inner = tryInnerizeWindow(obj);
@@ -11876,15 +11881,6 @@ IonBuilder::getPropTryInnerize(bool* emitted, MDefinition* obj, PropertyName* na
         return true;
 
     if (!forceInlineCaches()) {
-        
-        
-        
-
-        
-        
-        
-        
-
         trackOptimizationAttempt(TrackedStrategy::GetProp_Constant);
         if (!getPropTryConstant(emitted, inner, NameToId(name), types) || *emitted)
             return *emitted;
