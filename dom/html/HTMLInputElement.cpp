@@ -5596,7 +5596,6 @@ HTMLInputElement::SubmitNamesValues(nsFormSubmission* aFormSubmission)
       
       
       aFormSubmission->AddNameFilePair(name, nullptr);
-
     }
 
     return NS_OK;
