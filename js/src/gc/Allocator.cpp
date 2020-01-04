@@ -294,7 +294,7 @@ GCRuntime::startBackgroundAllocTaskIfIdle()
     
     
     allocTask.joinWithLockHeld(helperLock);
-    allocTask.startWithLockHeld();
+    allocTask.startWithLockHeld(helperLock);
 }
 
  TenuredCell*

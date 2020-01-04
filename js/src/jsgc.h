@@ -865,7 +865,8 @@ class GCHelperState
     
     PRThread* thread;
 
-    void startBackgroundThread(State newState, const js::AutoLockGC&);
+    void startBackgroundThread(State newState, const AutoLockGC& lock,
+                               const AutoLockHelperThreadState& helperLock);
     void waitForBackgroundThread(js::AutoLockGC& lock);
 
     State state(const AutoLockGC&);
@@ -894,7 +895,8 @@ class GCHelperState
 
     void work();
 
-    void maybeStartBackgroundSweep(const AutoLockGC& lock);
+    void maybeStartBackgroundSweep(const AutoLockGC& lock,
+                                   const AutoLockHelperThreadState& helperLock);
     void startBackgroundShrink(const AutoLockGC& lock);
 
     
@@ -955,7 +957,7 @@ class GCParallelTask
 
     
     
-    bool startWithLockHeld();
+    bool startWithLockHeld(AutoLockHelperThreadState& locked);
     void joinWithLockHeld(AutoLockHelperThreadState& locked);
 
     
