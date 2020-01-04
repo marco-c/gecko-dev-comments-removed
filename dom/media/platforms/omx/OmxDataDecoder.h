@@ -207,12 +207,6 @@ void InitOmxParameter(T* aParam)
   aParam->nVersion.s.nVersionMajor = 1;
 }
 
-
-void GetOmxPortIndex(nsTArray<uint32_t>& aPortIndex) {
-  aPortIndex.AppendElement(0);
-  aPortIndex.AppendElement(1);
-}
-
 }
 
 #endif 

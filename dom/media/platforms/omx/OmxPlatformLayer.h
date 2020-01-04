@@ -66,6 +66,17 @@ public:
   virtual ~OmxPlatformLayer() {}
 
   
+  
+  OMX_U32 InputPortIndex() { return mStartPortNumber; }
+
+  OMX_U32 OutputPortIndex() { return mStartPortNumber + 1; }
+
+  void GetPortIndices(nsTArray<uint32_t>& aPortIndex) {
+    aPortIndex.AppendElement(InputPortIndex());
+    aPortIndex.AppendElement(OutputPortIndex());
+  }
+
+  
   static bool SupportsMimeType(const nsACString& aMimeType);
 
   
@@ -75,10 +86,11 @@ public:
                                   layers::ImageContainer* aImageContainer);
 
 protected:
-  OmxPlatformLayer() : mInfo(nullptr) {}
+  OmxPlatformLayer() : mInfo(nullptr), mStartPortNumber(0) {}
 
   
   const TrackInfo* mInfo;
+  OMX_U32 mStartPortNumber;
 };
 
 }
