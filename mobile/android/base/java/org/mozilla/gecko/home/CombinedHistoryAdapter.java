@@ -122,7 +122,7 @@ public class CombinedHistoryAdapter extends RecyclerView.Adapter<CombinedHistory
                     remoteClients.add(null);
                 } else {
                     
-                    notifyItemChanged(getRemoteClientsHiddenItemsIndex());
+                    notifyItemChanged(remoteClients.size() - 1);
                 }
                 break;
             case HISTORY:
@@ -141,34 +141,18 @@ public class CombinedHistoryAdapter extends RecyclerView.Adapter<CombinedHistory
             hiddenClients.remove(client);
         }
 
-        final int insertIndex = getRemoteClientsHiddenItemsIndex();
+        final int insertIndex = remoteClients.size() - 1;
 
         remoteClients.addAll(insertIndex, selectedClients);
         notifyItemRangeInserted(insertIndex, selectedClients.size());
 
         if (hiddenClients.isEmpty()) {
             
-            remoteClients.remove(getRemoteClientsHiddenItemsIndex());
+            remoteClients.remove(remoteClients.size() - 1);
         } else {
             
-            notifyItemChanged(getRemoteClientsHiddenItemsIndex());
+            notifyItemChanged(remoteClients.size() - 1);
         }
-    }
-
-    
-
-
-
-
-
-
-
-
-    private int getRemoteClientsHiddenItemsIndex() {
-        if (hiddenClients.isEmpty()) {
-            return -1;
-        }
-        return remoteClients.size() - 1;
     }
 
     public List<RemoteClient> getHiddenClients() {
