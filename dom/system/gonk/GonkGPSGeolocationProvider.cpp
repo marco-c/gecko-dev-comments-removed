@@ -55,15 +55,6 @@
 #endif
 
 #define FLUSH_AIDE_DATA 0
-#define SUPL_NI_NOTIFY  "supl-ni-notify"
-#define SUPL_NI_VERIFY  "supl-ni-verify"
-#define SUPL_NI_VERIFY_TIMEOUT  "supl-ni-verify-timeout"
-
-
-
-
-
-#define GPS_NI_NEED_TIMEOUT 0xFFFF
 
 using namespace mozilla;
 using namespace mozilla::dom;
@@ -84,10 +75,6 @@ static const char* kSettingDebugEnabled = "geolocation.debugging.enabled";
 static const char* kSettingDebugGpsIgnored = "geolocation.debugging.gps-locations-ignored";
 
 
-static const char* kSettingSuplVerificationChoice = "supl.verification.choice";
-
-
-
 
 
 NS_IMPL_ISUPPORTS(GonkGPSGeolocationProvider,
@@ -97,16 +84,12 @@ NS_IMPL_ISUPPORTS(GonkGPSGeolocationProvider,
 
  GonkGPSGeolocationProvider* GonkGPSGeolocationProvider::sSingleton = nullptr;
 GpsCallbacks GonkGPSGeolocationProvider::mCallbacks;
-GpsNiCallbacks GonkGPSGeolocationProvider::mGPSNiCallbacks;
-
-
-
-static nsTArray<int> repliedSuplNiReqIds;
 
 #ifdef MOZ_B2G_RIL
 AGpsCallbacks GonkGPSGeolocationProvider::mAGPSCallbacks;
 AGpsRilCallbacks GonkGPSGeolocationProvider::mAGPSRILCallbacks;
 #endif 
+
 
 void
 GonkGPSGeolocationProvider::LocationCallback(GpsLocation* location)
@@ -342,106 +325,6 @@ GonkGPSGeolocationProvider::CreateThreadCallback(const char* name, void (*start)
 void
 GonkGPSGeolocationProvider::RequestUtcTimeCallback()
 {
-}
-
-void
-GonkGPSGeolocationProvider::SetNiResponse(int id, int response)
-{
-  MOZ_ASSERT(mGpsNiInterface);
-  mGpsNiInterface->respond(id, response);
-}
-
-bool
-GonkGPSGeolocationProvider::SendChromeEvent(int id, GpsNiNotifyFlags flags)
-{
-  MOZ_ASSERT(NS_IsMainThread());
-  nsCOMPtr<nsIObserverService> obs = services::GetObserverService();
-  if (!obs) {
-    if (flags == GPS_NI_NEED_VERIFY) {
-      RefPtr<GonkGPSGeolocationProvider> provider = GonkGPSGeolocationProvider::GetSingleton();
-      provider->SetNiResponse(id, GPS_NI_RESPONSE_NORESP);
-    }
-    return false;
-  }
-
-  nsCString str = nsPrintfCString("%d", id);
-  if (flags == GPS_NI_NEED_NOTIFY) {
-    obs->NotifyObservers(nullptr, SUPL_NI_NOTIFY, NS_ConvertUTF8toUTF16(str).get());
-  } else if (flags == GPS_NI_NEED_VERIFY) {
-    obs->NotifyObservers(nullptr, SUPL_NI_VERIFY, NS_ConvertUTF8toUTF16(str).get());
-  } else if (flags == GPS_NI_NEED_TIMEOUT) {
-    obs->NotifyObservers(nullptr, SUPL_NI_VERIFY_TIMEOUT, NS_ConvertUTF8toUTF16(str).get());
-  }
-  return true;
-}
-
-void
-GonkGPSGeolocationProvider::GPSNiNotifyCallback(GpsNiNotification *notification)
-{
-
-  class GPSNiNotifyEvent : public nsRunnable {
-  public:
-    GPSNiNotifyEvent(GpsNiNotification *aNotification)
-      : mNotification(aNotification)
-    {}
-    NS_IMETHOD Run() {
-      int id = mNotification->notification_id;
-      GpsNiNotifyFlags flags = mNotification->notify_flags;
-
-      if (gDebug_isLoggingEnabled) {
-        nsContentUtils::LogMessageToConsole(
-          "GPSNiNotifyCallback id:%d, flag:%x, timeout:%d, default response:%d\n",
-           id, flags, mNotification->timeout, mNotification->default_response);
-      }
-
-      RefPtr<GonkGPSGeolocationProvider> provider =
-        GonkGPSGeolocationProvider::GetSingleton();
-
-      if(!provider->SendChromeEvent(id, flags)) {
-        nsContentUtils::LogMessageToConsole(
-          "SendChromeEvent Failed(id:%d, flags:%x)", id, flags);
-        return NS_OK;
-      }
-
-      class TimeoutResponseEvent : public Task {
-        public:
-          TimeoutResponseEvent(int id, int defaultResp)
-            : mId(id), mDefaultResp(defaultResp)
-          {}
-          void Run() {
-            for (uint32_t idx = 0; idx < repliedSuplNiReqIds.Length() ; idx++) {
-              if(repliedSuplNiReqIds[idx] == mId) {
-                repliedSuplNiReqIds.RemoveElementAt(idx);
-                return;
-              }
-            }
-            RefPtr<GonkGPSGeolocationProvider> provider =
-              GonkGPSGeolocationProvider::GetSingleton();
-            if (!provider->SendChromeEvent(mId, GPS_NI_NEED_TIMEOUT)) {
-              nsContentUtils::LogMessageToConsole(
-                "SendChromeEvent Failed(id:%d, flags:%x", mId, GPS_NI_NEED_TIMEOUT);
-            }
-            provider->SetNiResponse(mId, mDefaultResp);
-            return;
-          }
-        private:
-          int mId;
-          int mDefaultResp;
-      };
-
-    if (flags == GPS_NI_NEED_VERIFY) {
-      MessageLoop::current()->PostDelayedTask(FROM_HERE,
-        new TimeoutResponseEvent(id, mNotification->default_response),
-        mNotification->timeout*1000);
-    }
-    return NS_OK;
-    }
-  private:
-    GpsNiNotification *mNotification;
-  };
-
-  NS_DispatchToMainThread(new GPSNiNotifyEvent(notification));
-  return;
 }
 
 #ifdef MOZ_B2G_RIL
@@ -899,9 +782,6 @@ GonkGPSGeolocationProvider::Init()
     mCallbacks.request_utc_time_cb = RequestUtcTimeCallback;
 #endif
 
-    mGPSNiCallbacks.notify_cb = GPSNiNotifyCallback;
-    mGPSNiCallbacks.create_thread_cb = CreateThreadCallback;
-
 #ifdef MOZ_B2G_RIL
     mAGPSCallbacks.status_cb = AGPSStatusCallback;
     mAGPSCallbacks.create_thread_cb = CreateThreadCallback;
@@ -914,12 +794,6 @@ GonkGPSGeolocationProvider::Init()
 
   if (mGpsInterface->init(&mCallbacks) != 0) {
     return;
-  }
-
-  mGpsNiInterface =
-    static_cast<const GpsNiInterface*>(mGpsInterface->get_extension(GPS_NI_INTERFACE));
-  if (mGpsNiInterface) {
-    mGpsNiInterface->init(&mGPSNiCallbacks);
   }
 
 #ifdef MOZ_B2G_RIL
@@ -1323,22 +1197,6 @@ GonkGPSGeolocationProvider::Observe(nsISupports* aSubject,
       nsContentUtils::LogMessageToConsole("geo: received mozsettings-changed: logging\n");
       gDebug_isLoggingEnabled =
         setting.mValue.isBoolean() ? setting.mValue.toBoolean() : false;
-      return NS_OK;
-    } else if (setting.mKey.EqualsASCII(kSettingSuplVerificationChoice)) {
-      nsContentUtils::LogMessageToConsole("geo: received the choice of supl ni verification\n");
-      int id = setting.mValue.toNumber();
-      RefPtr<GonkGPSGeolocationProvider> provider =
-        GonkGPSGeolocationProvider::GetSingleton();
-      
-      
-      
-      if (id >= 0) {
-        provider->SetNiResponse(id, GPS_NI_RESPONSE_ACCEPT);
-        repliedSuplNiReqIds.AppendElement(id);
-      } else {
-        provider->SetNiResponse(id*-1, GPS_NI_RESPONSE_DENY);
-        repliedSuplNiReqIds.AppendElement(id*-1);
-      }
       return NS_OK;
     }
 #ifdef MOZ_B2G_RIL
