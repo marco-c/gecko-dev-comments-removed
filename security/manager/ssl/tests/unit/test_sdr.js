@@ -29,11 +29,7 @@ function run_test() {
   
   
   
-  let tokenDB = Cc["@mozilla.org/security/pk11tokendb;1"]
-                  .getService(Ci.nsIPK11TokenDB);
-  let token = tokenDB.getInternalKeyToken();
-  token.initPassword("");
-  token.login( false);
+  loginToDBWithDefaultPassword();
 
   let sdr = Cc["@mozilla.org/security/sdr;1"]
               .getService(Ci.nsISecretDecoderRing);
