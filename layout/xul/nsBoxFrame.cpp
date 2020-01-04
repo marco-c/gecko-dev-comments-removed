@@ -489,9 +489,10 @@ nsBoxFrame::GetInitialDirection(bool& aIsNormal)
 
   
   const nsStyleXUL* boxInfo = StyleXUL();
-  if (boxInfo->mBoxDirection == NS_STYLE_BOX_DIRECTION_REVERSE)
+  if (boxInfo->mBoxDirection == StyleBoxDirection::Reverse) {
     aIsNormal = !aIsNormal; 
-  
+  }
+
   
   
   if (IsXULHorizontal()) {

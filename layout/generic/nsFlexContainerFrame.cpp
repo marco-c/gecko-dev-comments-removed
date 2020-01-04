@@ -3277,7 +3277,7 @@ FlexboxAxisTracker::InitAxesFromLegacyProps(
 
   
   
-  if (styleXUL->mBoxDirection == NS_STYLE_BOX_DIRECTION_REVERSE) {
+  if (styleXUL->mBoxDirection == StyleBoxDirection::Reverse) {
     mMainAxis = GetReverseAxis(mMainAxis);
     mIsMainAxisReversed = true;
   } else {
