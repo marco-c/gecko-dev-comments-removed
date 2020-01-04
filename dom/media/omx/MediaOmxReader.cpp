@@ -176,7 +176,7 @@ void MediaOmxReader::ReleaseMediaResources()
   mMediaResourceRequest.DisconnectIfExists();
   mMetadataPromise.RejectIfExists(ReadMetadataFailureReason::METADATA_ERROR, __func__);
 
-  ResetDecode();
+  ResetDecode(AUDIO_VIDEO);
   
   
   VideoFrameContainer* container = mDecoder->GetVideoFrameContainer();
