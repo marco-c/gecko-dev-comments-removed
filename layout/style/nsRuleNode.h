@@ -420,7 +420,8 @@ private:
                              
                              
                              
-  nsIStyleRule* const mRule; 
+
+  const nsCOMPtr<nsIStyleRule> mRule; 
 
   nsRuleNode* mNextSibling; 
                             
