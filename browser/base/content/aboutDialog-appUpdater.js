@@ -6,7 +6,6 @@
 
 Components.utils.import("resource://gre/modules/XPCOMUtils.jsm");
 Components.utils.import("resource://gre/modules/DownloadUtils.jsm");
-Components.utils.import("resource://gre/modules/AddonManager.jsm");
 
 XPCOMUtils.defineLazyModuleGetter(this, "UpdateUtils",
                                   "resource://gre/modules/UpdateUtils.jsm");
@@ -193,21 +192,6 @@ appUpdater.prototype =
   
 
 
-  doUpdate: function() {
-    
-    
-    if (!this.update.appVersion ||
-        Services.vc.compare(gAppUpdater.update.appVersion,
-                            Services.appinfo.version) == 0) {
-      this.startDownload();
-    } else {
-      this.checkAddonCompatibility();
-    }
-  },
-
-  
-
-
 
   buttonRestartAfterDownload: function() {
     if (!this.isPending && !this.isApplied)
@@ -290,7 +274,7 @@ appUpdater.prototype =
       }
 
       if (gAppUpdater.updateAuto) 
-        gAppUpdater.doUpdate();
+        gAppUpdater.startDownload();
       else 
         gAppUpdater.selectPanel("downloadAndInstall");
     },
@@ -315,118 +299,6 @@ appUpdater.prototype =
         throw Components.results.NS_ERROR_NO_INTERFACE;
       return this;
     }
-  },
-
-  
-
-
-  checkAddonCompatibility: function() {
-    try {
-      var hotfixID = Services.prefs.getCharPref(PREF_EM_HOTFIX_ID);
-    }
-    catch (e) { }
-
-    var self = this;
-    AddonManager.getAllAddons(function(aAddons) {
-      self.addons = [];
-      self.addonsCheckedCount = 0;
-      aAddons.forEach(function(aAddon) {
-        
-        
-        if (!("isCompatibleWith" in aAddon) || !("findUpdates" in aAddon)) {
-          let errMsg = "Add-on doesn't implement either the isCompatibleWith " +
-                       "or the findUpdates method!";
-          if (aAddon.id)
-            errMsg += " Add-on ID: " + aAddon.id;
-          Components.utils.reportError(errMsg);
-          return;
-        }
-
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        try {
-          if (aAddon.type != "plugin" && aAddon.id != hotfixID &&
-              !aAddon.appDisabled && !aAddon.userDisabled &&
-              aAddon.scope != AddonManager.SCOPE_APPLICATION &&
-              aAddon.isCompatible &&
-              !aAddon.isCompatibleWith(self.update.appVersion,
-                                       self.update.platformVersion))
-            self.addons.push(aAddon);
-        }
-        catch (e) {
-          Components.utils.reportError(e);
-        }
-      });
-      self.addonsTotalCount = self.addons.length;
-      if (self.addonsTotalCount == 0) {
-        self.startDownload();
-        return;
-      }
-
-      self.checkAddonsForUpdates();
-    });
-  },
-
-  
-
-
-
-  checkAddonsForUpdates: function() {
-    this.addons.forEach(function(aAddon) {
-      aAddon.findUpdates(this, AddonManager.UPDATE_WHEN_NEW_APP_DETECTED,
-                         this.update.appVersion,
-                         this.update.platformVersion);
-    }, this);
-  },
-
-  
-
-
-  onCompatibilityUpdateAvailable: function(aAddon) {
-    for (var i = 0; i < this.addons.length; ++i) {
-      if (this.addons[i].id == aAddon.id) {
-        this.addons.splice(i, 1);
-        break;
-      }
-    }
-  },
-
-  
-
-
-  onUpdateAvailable: function(aAddon, aInstall) {
-    if (!Services.blocklist.isAddonBlocklisted(aAddon,
-                                               this.update.appVersion,
-                                               this.update.platformVersion)) {
-      
-      this.onCompatibilityUpdateAvailable(aAddon);
-    }
-  },
-
-  
-
-
-  onUpdateFinished: function(aAddon) {
-    ++this.addonsCheckedCount;
-
-    if (this.addonsCheckedCount < this.addonsTotalCount)
-      return;
-
-    if (this.addons.length == 0) {
-      
-      this.startDownload();
-      return;
-    }
-
-    this.selectPanel("applyBillboard");
   },
 
   
