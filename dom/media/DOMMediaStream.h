@@ -303,7 +303,7 @@ public:
 
 
 
-    already_AddRefed<media::Pledge<bool, nsresult>> BlockTrackId(TrackID aTrackId);
+    already_AddRefed<media::Pledge<bool, nsresult>> BlockSourceTrackId(TrackID aTrackId);
 
   private:
     RefPtr<MediaInputPort> mInputPort;
