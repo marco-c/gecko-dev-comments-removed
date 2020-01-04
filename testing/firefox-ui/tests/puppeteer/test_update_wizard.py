@@ -2,7 +2,7 @@
 
 
 
-from firefox_puppeteer.testcases import FirefoxTestCase
+from firefox_ui_harness.testcases import FirefoxTestCase
 from firefox_puppeteer.ui.update_wizard import UpdateWizardDialog
 
 

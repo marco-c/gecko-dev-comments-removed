@@ -3,7 +3,7 @@
 
 
 from marionette_driver import By
-from firefox_puppeteer.testcases import FirefoxTestCase
+from firefox_ui_harness.testcases import FirefoxTestCase
 
 
 class TestPageInfoWindow(FirefoxTestCase):
