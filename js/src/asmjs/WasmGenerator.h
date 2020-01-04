@@ -40,7 +40,6 @@ struct TableGenDesc
 {
     uint32_t globalDataOffset;
     uint32_t numElems;
-    Uint32Vector elemFuncIndices;
 
     TableGenDesc()
       : globalDataOffset(0), numElems(0)
@@ -111,6 +110,7 @@ class MOZ_STACK_CLASS ModuleGenerator
     MutableMetadata                 metadata_;
     ExportMap                       exportMap_;
     DataSegmentVector               dataSegments_;
+    ElemSegmentVector               elemSegments_;
 
     
     UniqueModuleGeneratorData       shared_;
@@ -160,7 +160,6 @@ class MOZ_STACK_CLASS ModuleGenerator
     
     bool usesMemory() const { return UsesMemory(shared_->memoryUsage); }
     uint32_t minMemoryLength() const { return shared_->minMemoryLength; }
-    MOZ_MUST_USE bool addDataSegment(DataSegment s) { return dataSegments_.append(s); }
 
     
     uint32_t numSigs() const { return numSigs_; }
@@ -191,6 +190,10 @@ class MOZ_STACK_CLASS ModuleGenerator
     MOZ_MUST_USE bool finishFuncDefs();
 
     
+    MOZ_MUST_USE bool addDataSegment(DataSegment s) { return dataSegments_.append(s); }
+    MOZ_MUST_USE bool addElemSegment(Uint32Vector&& elemFuncIndices);
+
+    
     void setFuncNames(NameInBytecodeVector&& funcNames);
 
     
@@ -198,7 +201,7 @@ class MOZ_STACK_CLASS ModuleGenerator
     void initFuncSig(uint32_t funcIndex, uint32_t sigIndex);
     MOZ_MUST_USE bool initImport(uint32_t importIndex, uint32_t sigIndex);
     MOZ_MUST_USE bool initSigTableLength(uint32_t sigIndex, uint32_t numElems);
-    void initSigTableElems(uint32_t sigIndex, Uint32Vector&& elemFuncIndices);
+    MOZ_MUST_USE bool initSigTableElems(uint32_t sigIndex, Uint32Vector&& elemFuncIndices);
     void initMemoryUsage(MemoryUsage memoryUsage);
     void bumpMinMemoryLength(uint32_t newMinMemoryLength);
 

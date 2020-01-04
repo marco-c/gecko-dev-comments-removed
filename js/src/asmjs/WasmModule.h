@@ -70,20 +70,8 @@ struct LinkData : LinkDataCacheablePod
         WASM_DECLARE_SERIALIZABLE(SymbolicLinkArray)
     };
 
-    struct FuncTable {
-        uint32_t globalDataOffset;
-        Uint32Vector elemOffsets;
-        FuncTable(uint32_t globalDataOffset, Uint32Vector&& elemOffsets)
-          : globalDataOffset(globalDataOffset), elemOffsets(Move(elemOffsets))
-        {}
-        FuncTable() = default;
-        WASM_DECLARE_SERIALIZABLE(FuncTable)
-    };
-    typedef Vector<FuncTable, 0, SystemAllocPolicy> FuncTableVector;
-
     InternalLinkVector  internalLinks;
     SymbolicLinkArray   symbolicLinks;
-    FuncTableVector     funcTables;
 
     WASM_DECLARE_SERIALIZABLE(LinkData)
 };
@@ -149,6 +137,24 @@ typedef Vector<DataSegment, 0, SystemAllocPolicy> DataSegmentVector;
 
 
 
+struct ElemSegment
+{
+    uint32_t globalDataOffset;
+    Uint32Vector elems;
+
+    ElemSegment() = default;
+    ElemSegment(uint32_t globalDataOffset, Uint32Vector&& elems)
+      : globalDataOffset(globalDataOffset), elems(Move(elems))
+    {}
+
+    WASM_DECLARE_SERIALIZABLE(ElemSegment)
+};
+
+typedef Vector<ElemSegment, 0, SystemAllocPolicy> ElemSegmentVector;
+
+
+
+
 
 
 
@@ -165,10 +171,12 @@ class Module
     const ImportVector      imports_;
     const ExportMap         exportMap_;
     const DataSegmentVector dataSegments_;
+    const ElemSegmentVector elemSegments_;
     const SharedMetadata    metadata_;
     const SharedBytes       bytecode_;
 
     bool instantiateMemory(JSContext* cx, MutableHandleWasmMemoryObject memory) const;
+    bool instantiateTable(JSContext* cx, const CodeSegment& cs) const;
 
   public:
     Module(Bytes&& code,
@@ -176,6 +184,7 @@ class Module
            ImportVector&& imports,
            ExportMap&& exportMap,
            DataSegmentVector&& dataSegments,
+           ElemSegmentVector&& elemSegments,
            const Metadata& metadata,
            const ShareableBytes& bytecode)
       : code_(Move(code)),
@@ -183,6 +192,7 @@ class Module
         imports_(Move(imports)),
         exportMap_(Move(exportMap)),
         dataSegments_(Move(dataSegments)),
+        elemSegments_(Move(elemSegments)),
         metadata_(&metadata),
         bytecode_(&bytecode)
     {}

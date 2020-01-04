@@ -98,12 +98,6 @@ StaticallyLink(CodeSegment& cs, const LinkData& linkData, ExclusiveContext* cx)
 
     *(double*)(cs.globalData() + NaN64GlobalDataOffset) = GenericNaN();
     *(float*)(cs.globalData() + NaN32GlobalDataOffset) = GenericNaN();
-
-    for (const LinkData::FuncTable& table : linkData.funcTables) {
-        auto array = reinterpret_cast<void**>(cs.globalData() + table.globalDataOffset);
-        for (size_t i = 0; i < table.elemOffsets.length(); i++)
-            array[i] = cs.code() + table.elemOffsets[i];
-    }
 }
 
 static void
