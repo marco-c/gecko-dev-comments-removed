@@ -303,7 +303,7 @@ this.AUSTLMY = {
           try {
             let id = "UPDATE_INVALID_LASTUPDATETIME_" + aSuffix;
             
-            Services.telemetry.getHistogramById().add();
+            Services.telemetry.getHistogramById(id).add();
           } catch(e) {
             Cu.reportError(e);
           }
