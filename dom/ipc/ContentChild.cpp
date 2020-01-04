@@ -437,6 +437,9 @@ ConsoleListener::Observe(nsIConsoleMessage* aMessage)
         
         
         
+        if (sourceName.Length() > 1000) {
+            sourceName.Truncate(1000);
+        }
         if (sourceLine.Length() > 1000) {
             sourceLine.Truncate(1000);
         }
