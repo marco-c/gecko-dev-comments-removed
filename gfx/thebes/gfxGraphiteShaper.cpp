@@ -263,6 +263,11 @@ gfxGraphiteShaper::SetGlyphsFromSegment(DrawTarget      *aDrawTarget,
         ++clusters[cIndex].nGlyphs;
 
         
+        if (NS_IS_HIGH_SURROGATE(aText[after]) && after < aLength - 1 &&
+            NS_IS_LOW_SURROGATE(aText[after + 1])) {
+            after++;
+        }
+        
         if (clusters[cIndex].baseChar + clusters[cIndex].nChars < after + 1) {
             clusters[cIndex].nChars = after + 1 - clusters[cIndex].baseChar;
         }
