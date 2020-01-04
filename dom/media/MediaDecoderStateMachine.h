@@ -176,10 +176,6 @@ public:
 
   
   
-  void DispatchWaitingForResourcesStatusChanged();
-
-  
-  
   
   
   
@@ -255,8 +251,6 @@ private:
   void SetDormant(bool aDormant);
 
   void SetAudioCaptured(bool aCaptured);
-
-  void NotifyWaitingForResourcesStatusChanged();
 
   nsRefPtr<MediaDecoder::SeekPromise> Seek(SeekTarget aTarget);
 

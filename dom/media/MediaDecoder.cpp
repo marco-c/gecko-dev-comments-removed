@@ -1344,15 +1344,6 @@ MediaDecoder::GetStateMachine() const {
   return mDecoderStateMachine;
 }
 
-void
-MediaDecoder::NotifyWaitingForResourcesStatusChanged()
-{
-  MOZ_ASSERT(NS_IsMainThread());
-  if (mDecoderStateMachine) {
-    mDecoderStateMachine->DispatchWaitingForResourcesStatusChanged();
-  }
-}
-
 
 void
 MediaDecoder::BreakCycles() {
