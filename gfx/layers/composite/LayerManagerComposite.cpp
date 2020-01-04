@@ -204,23 +204,72 @@ LayerManagerComposite::BeginTransactionWithDrawTarget(DrawTarget* aTarget, const
   mTargetBounds = aRect;
 }
 
+template<typename RectType>
+Maybe<RectType>
+IntersectMaybeRects(const Maybe<RectType>& aRect1, const Maybe<RectType>& aRect2)
+{
+  if (aRect1) {
+    if (aRect2) {
+      return Some(aRect1->Intersect(*aRect2));
+    }
+    return aRect1;
+  }
+  return aRect2;
+}
+
 void
 LayerManagerComposite::PostProcessLayers(Layer* aLayer,
                                          nsIntRegion& aOpaqueRegion,
-                                         LayerIntRegion& aVisibleRegion)
+                                         LayerIntRegion& aVisibleRegion,
+                                         const Maybe<ParentLayerIntRect>& aClipFromAncestors)
 {
   nsIntRegion localOpaque;
+  Matrix4x4 transform = aLayer->GetLocalTransform();
   Matrix transform2d;
   Maybe<nsIntPoint> integerTranslation;
   
   
   
-  if (aLayer->GetLocalTransform().Is2D(&transform2d)) {
+  if (transform.Is2D(&transform2d)) {
     if (transform2d.IsIntegerTranslation()) {
       integerTranslation = Some(TruncatedToInt(transform2d.GetTranslation()));
       localOpaque = aOpaqueRegion;
       localOpaque.MoveBy(-*integerTranslation);
     }
+  }
+ 
+  
+  
+  LayerComposite* composite = aLayer->AsLayerComposite();
+  Maybe<ParentLayerIntRect> layerClip = composite->GetShadowClipRect();
+  Maybe<ParentLayerIntRect> outsideClip =
+    IntersectMaybeRects(layerClip, aClipFromAncestors);
+
+  
+  
+  
+  
+  Maybe<LayerIntRect> insideClip;
+  if (outsideClip && !transform.HasPerspectiveComponent()) {
+    Matrix4x4 inverse = transform;
+    if (inverse.Invert()) {
+      Maybe<LayerRect> insideClipFloat =
+        UntransformTo<LayerPixel>(inverse, ParentLayerRect(*outsideClip),
+                                  LayerRect::MaxIntRect());
+      if (insideClipFloat) {
+        insideClipFloat->RoundOut();
+        LayerIntRect insideClipInt;
+        if (insideClipFloat->ToIntRect(&insideClipInt)) {
+          insideClip = Some(insideClipInt);
+        }
+      }
+    }
+  }
+
+  Maybe<ParentLayerIntRect> ancestorClipForChildren;
+  if (insideClip) {
+    ancestorClipForChildren =
+      Some(ViewAs<ParentLayerPixel>(*insideClip, PixelCastJustification::MovingDownToChildren));
   }
 
   
@@ -233,11 +282,10 @@ LayerManagerComposite::PostProcessLayers(Layer* aLayer,
   
   LayerIntRegion descendantsVisibleRegion;
   for (Layer* child = aLayer->GetLastChild(); child; child = child->GetPrevSibling()) {
-    PostProcessLayers(child, localOpaque, descendantsVisibleRegion);
+    PostProcessLayers(child, localOpaque, descendantsVisibleRegion, ancestorClipForChildren);
   }
 
   
-  LayerComposite* composite = aLayer->AsLayerComposite();
   LayerIntRegion visible = composite->GetShadowVisibleRegion();
 
   
@@ -251,13 +299,17 @@ LayerManagerComposite::PostProcessLayers(Layer* aLayer,
     visible.SubOut(LayerIntRegion::FromUnknownRegion(obscured));
   }
 
+  
+  if (insideClip) {
+    visible.AndWith(*insideClip);
+  }
   composite->SetShadowVisibleRegion(visible);
 
   
   
   
-  ParentLayerIntRegion visibleParentSpace = TransformTo<ParentLayerPixel>(
-      aLayer->GetLocalTransform(), visible);
+  ParentLayerIntRegion visibleParentSpace =
+    TransformTo<ParentLayerPixel>(transform, visible);
   if (const Maybe<ParentLayerIntRect>& clipRect = composite->GetShadowClipRect()) {
     visibleParentSpace.AndWith(*clipRect);
   }
@@ -273,9 +325,8 @@ LayerManagerComposite::PostProcessLayers(Layer* aLayer,
       localOpaque.OrWith(composite->GetFullyRenderedRegion());
     }
     localOpaque.MoveBy(*integerTranslation);
-    const Maybe<ParentLayerIntRect>& clip = aLayer->GetEffectiveClipRect();
-    if (clip) {
-      localOpaque.AndWith(clip->ToUnknownRect());
+    if (layerClip) {
+      localOpaque.AndWith(layerClip->ToUnknownRect());
     }
     aOpaqueRegion.OrWith(localOpaque);
   }
@@ -390,7 +441,7 @@ LayerManagerComposite::UpdateAndRender()
 
   nsIntRegion opaque;
   LayerIntRegion visible;
-  PostProcessLayers(mRoot, opaque, visible);
+  PostProcessLayers(mRoot, opaque, visible, Nothing());
 
   Render(invalid);
 #if defined(MOZ_WIDGET_ANDROID) || defined(MOZ_WIDGET_GONK)
@@ -1050,7 +1101,7 @@ LayerManagerComposite::RenderToPresentationSurface()
   mRoot->ComputeEffectiveTransforms(matrix);
   nsIntRegion opaque;
   LayerIntRegion visible;
-  PostProcessLayers(mRoot, opaque, visible);
+  PostProcessLayers(mRoot, opaque, visible, Nothing());
 
   nsIntRegion invalid;
   Rect bounds(0.0f, 0.0f, scale * pageWidth, (float)actualHeight);

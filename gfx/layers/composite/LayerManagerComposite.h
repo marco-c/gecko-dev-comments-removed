@@ -182,7 +182,8 @@ public:
 
   void PostProcessLayers(Layer* aLayer,
                          nsIntRegion& aOpaqueRegion,
-                         LayerIntRegion& aVisibleRegion);
+                         LayerIntRegion& aVisibleRegion,
+                         const Maybe<ParentLayerIntRect>& aClipFromAncestors);
 
   
 
