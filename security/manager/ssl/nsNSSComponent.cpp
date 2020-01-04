@@ -1592,6 +1592,17 @@ nsNSSComponent::InitializeNSS()
   }
 
   
+  
+  
+  
+  
+  
+  
+  if (SSL_ConfigServerSessionIDCache(1000, 0, 0, nullptr) != SECSuccess) {
+    return NS_ERROR_FAILURE;
+  }
+
+  
   nsCOMPtr<nsICertBlocklist> certList = do_GetService(NS_CERTBLOCKLIST_CONTRACTID);
   if (!certList) {
     return NS_ERROR_FAILURE;
@@ -1650,6 +1661,9 @@ nsNSSComponent::ShutdownNSS()
     ShutdownSmartCardThreads();
 #endif
     SSL_ClearSessionCache();
+    
+    
+    Unused << SSL_ShutdownServerSessionIDCache();
     UnloadLoadableRoots();
 #ifndef MOZ_NO_EV_CERTS
     CleanupIdentityInfo();
