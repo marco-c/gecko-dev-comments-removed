@@ -25,124 +25,6 @@ const PREFIX = "Services.prefs:";
 
 
 
-function Preference(branch, name, fullName) {
-  this.branch = branch;
-  this.name = name;
-  this.fullName = fullName;
-  this.defaultValue = null;
-  this.hasUserValue = false;
-  this.userValue = null;
-  this.type = null;
-}
-
-Preference.prototype = {
-  
-
-
-
-
-
-
-  get: function () {
-    if (this.hasUserValue) {
-      return this.userValue;
-    }
-    return this.defaultValue;
-  },
-
-  
-
-
-
-
-
-
-  set: function (value) {
-    if (!this.hasUserValue || value !== this.userValue) {
-      this.userValue = value;
-      this.hasUserValue = true;
-      this.saveAndNotify();
-    }
-  },
-
-  
-
-
-
-
-
-  setDefault: function (value) {
-    if (this.defaultValue !== value) {
-      this.defaultValue = value;
-      if (!this.hasUserValue) {
-        this.saveAndNotify();
-      }
-    }
-  },
-
-  
-
-
-
-  clearUserValue: function () {
-    if (this.hasUserValue) {
-      this.userValue = null;
-      this.hasUserValue = false;
-      this.saveAndNotify();
-    }
-  },
-
-  
-
-
-
-  saveAndNotify: function () {
-    let store = {
-      type: this.type,
-      defaultValue: this.defaultValue,
-      hasUserValue: this.hasUserValue,
-      userValue: this.userValue,
-    };
-
-    localStorage.setItem(PREFIX + this.fullName, JSON.stringify(store));
-    this.branch._notify(this.name);
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  storageUpdated: function (type, userValue, hasUserValue, defaultValue) {
-    this.type = type;
-    this.defaultValue = defaultValue;
-    this.hasUserValue = hasUserValue;
-    this.userValue = userValue;
-    
-    
-    this.branch._notify(this.name);
-  },
-};
-
-
-
-
-
-
-
 
 
 
@@ -153,6 +35,12 @@ function PrefBranch(parent, name, fullName) {
   this._fullName = fullName;
   this._observers = {};
   this._children = {};
+
+  
+  this._defaultValue = null;
+  this._hasUserValue = false;
+  this._userValue = null;
+  this._type = PREF_INVALID;
 
   if (!parent) {
     this._initializeRoot();
@@ -172,16 +60,16 @@ PrefBranch.prototype = {
 
   
   getPrefType: function (prefName) {
-    return this._findPref(prefName).type;
+    return this._findPref(prefName)._type;
   },
 
   
   getBoolPref: function (prefName) {
     let thePref = this._findPref(prefName);
-    if (thePref.type !== PREF_BOOL) {
+    if (thePref._type !== PREF_BOOL) {
       throw new Error(`${prefName} does not have bool type`);
     }
-    return thePref.get();
+    return thePref._get();
   },
 
   
@@ -190,19 +78,19 @@ PrefBranch.prototype = {
       throw new Error("non-bool passed to setBoolPref");
     }
     let thePref = this._findOrCreatePref(prefName, value, true, value);
-    if (thePref.type !== PREF_BOOL) {
+    if (thePref._type !== PREF_BOOL) {
       throw new Error(`${prefName} does not have bool type`);
     }
-    thePref.set(value);
+    thePref._set(value);
   },
 
   
   getCharPref: function (prefName) {
     let thePref = this._findPref(prefName);
-    if (thePref.type !== PREF_STRING) {
+    if (thePref._type !== PREF_STRING) {
       throw new Error(`${prefName} does not have string type`);
     }
-    return thePref.get();
+    return thePref._get();
   },
 
   
@@ -211,19 +99,19 @@ PrefBranch.prototype = {
       throw new Error("non-string passed to setCharPref");
     }
     let thePref = this._findOrCreatePref(prefName, value, true, value);
-    if (thePref.type !== PREF_STRING) {
+    if (thePref._type !== PREF_STRING) {
       throw new Error(`${prefName} does not have string type`);
     }
-    thePref.set(value);
+    thePref._set(value);
   },
 
   
   getIntPref: function (prefName) {
     let thePref = this._findPref(prefName);
-    if (thePref.type !== PREF_INT) {
+    if (thePref._type !== PREF_INT) {
       throw new Error(`${prefName} does not have int type`);
     }
-    return thePref.get();
+    return thePref._get();
   },
 
   
@@ -232,22 +120,22 @@ PrefBranch.prototype = {
       throw new Error("non-number passed to setIntPref");
     }
     let thePref = this._findOrCreatePref(prefName, value, true, value);
-    if (thePref.type !== PREF_INT) {
+    if (thePref._type !== PREF_INT) {
       throw new Error(`${prefName} does not have int type`);
     }
-    thePref.set(value);
+    thePref._set(value);
   },
 
   
   clearUserPref: function (prefName) {
     let thePref = this._findPref(prefName);
-    thePref.clearUserValue();
+    thePref._clearUserValue();
   },
 
   
   prefHasUserValue: function (prefName) {
     let thePref = this._findPref(prefName);
-    return thePref.hasUserValue;
+    return thePref._hasUserValue;
   },
 
   
@@ -292,6 +180,106 @@ PrefBranch.prototype = {
     
     
     return this._findPref(prefRoot);
+  },
+
+  
+
+
+
+
+
+
+  _get: function () {
+    if (this._hasUserValue) {
+      return this._userValue;
+    }
+    return this._defaultValue;
+  },
+
+  
+
+
+
+
+
+
+  _set: function (value) {
+    if (!this._hasUserValue || value !== this._userValue) {
+      this._userValue = value;
+      this._hasUserValue = true;
+      this._saveAndNotify();
+    }
+  },
+
+  
+
+
+
+
+
+  _setDefault: function (value) {
+    if (this._defaultValue !== value) {
+      this._defaultValue = value;
+      if (!this._hasUserValue) {
+        this._saveAndNotify();
+      }
+    }
+  },
+
+  
+
+
+
+  _clearUserValue: function () {
+    if (this._hasUserValue) {
+      this._userValue = null;
+      this._hasUserValue = false;
+      this._saveAndNotify();
+    }
+  },
+
+  
+
+
+
+  _saveAndNotify: function () {
+    let store = {
+      type: this._type,
+      defaultValue: this._defaultValue,
+      hasUserValue: this._hasUserValue,
+      userValue: this._userValue,
+    };
+
+    localStorage.setItem(PREFIX + this.fullName, JSON.stringify(store));
+    this._parent._notify(this._name);
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  _storageUpdated: function (type, userValue, hasUserValue, defaultValue) {
+    this._type = type;
+    this._defaultValue = defaultValue;
+    this._hasUserValue = hasUserValue;
+    this._userValue = userValue;
+    
+    
+    this._parent._notify(this._name);
   },
 
   
@@ -378,36 +366,34 @@ PrefBranch.prototype = {
 
 
   _findOrCreatePref: function (keyName, userValue, hasUserValue, defaultValue) {
-    let branchName = keyName.split(".");
-    let prefName = branchName.pop();
+    let branch = this._createBranch(keyName.split("."));
 
-    let branch = this._createBranch(branchName);
-    if (!(prefName in branch._children)) {
-      if (hasUserValue && typeof (userValue) !== typeof (defaultValue)) {
-        throw new Error("inconsistent values when creating " + keyName);
-      }
-
-      let type;
-      switch (typeof (defaultValue)) {
-        case "boolean":
-          type = PREF_BOOL;
-          break;
-        case "number":
-          type = PREF_INT;
-          break;
-        case "string":
-          type = PREF_STRING;
-          break;
-        default:
-          throw new Error("unhandled argument type: " + typeof (defaultValue));
-      }
-
-      let thePref = new Preference(branch, prefName, keyName);
-      thePref.storageUpdated(type, userValue, hasUserValue, defaultValue);
-      branch._children[prefName] = thePref;
+    if (hasUserValue && typeof (userValue) !== typeof (defaultValue)) {
+      throw new Error("inconsistent values when creating " + keyName);
     }
 
-    return branch._children[prefName];
+    let type;
+    switch (typeof (defaultValue)) {
+      case "boolean":
+        type = PREF_BOOL;
+        break;
+      case "number":
+        type = PREF_INT;
+        break;
+      case "string":
+        type = PREF_STRING;
+        break;
+      default:
+        throw new Error("unhandled argument type: " + typeof (defaultValue));
+    }
+
+    if (branch._type === PREF_INVALID) {
+      branch._storageUpdated(type, userValue, hasUserValue, defaultValue);
+    } else if (branch._type !== type) {
+      throw new Error("attempt to change type of pref " + keyName);
+    }
+
+    return branch;
   },
 
   
@@ -432,7 +418,7 @@ PrefBranch.prototype = {
       this._findOrCreatePref(event.key, userValue, hasUserValue, defaultValue);
     } else {
       let thePref = this._findPref(event.key);
-      thePref.storageUpdated(type, userValue, hasUserValue, defaultValue);
+      thePref._storageUpdated(type, userValue, hasUserValue, defaultValue);
     }
   },
 
@@ -592,7 +578,7 @@ const Services = {
 
 function pref(name, value) {
   let thePref = Services.prefs._findOrCreatePref(name, value, true, value);
-  thePref.setDefault(value);
+  thePref._setDefault(value);
 }
 
 module.exports = Services;
