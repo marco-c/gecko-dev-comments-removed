@@ -95,7 +95,7 @@ static const unsigned FramePushedForEntrySP = FramePushedAfterSave + sizeof(void
 
 
 Offsets
-wasm::GenerateEntry(MacroAssembler& masm, unsigned target, const Sig& sig, bool usesHeap)
+wasm::GenerateEntry(MacroAssembler& masm, const Export& exp, bool usesHeap)
 {
     masm.haltingAlign(CodeAlignment);
 
@@ -160,11 +160,11 @@ wasm::GenerateEntry(MacroAssembler& masm, unsigned target, const Sig& sig, bool 
     masm.andToStackPtr(Imm32(~(AsmJSStackAlignment - 1)));
 
     
-    masm.reserveStack(AlignBytes(StackArgBytes(sig.args()), AsmJSStackAlignment));
+    masm.reserveStack(AlignBytes(StackArgBytes(exp.sig().args()), AsmJSStackAlignment));
 
     
     
-    for (ABIArgValTypeIter iter(sig.args()); !iter.done(); iter++) {
+    for (ABIArgValTypeIter iter(exp.sig().args()); !iter.done(); iter++) {
         unsigned argOffset = iter.index() * Module::SizeOfEntryArg;
         Address src(argv, argOffset);
         MIRType type = iter.mirType();
@@ -252,7 +252,7 @@ wasm::GenerateEntry(MacroAssembler& masm, unsigned target, const Sig& sig, bool 
 
     
     masm.assertStackAlignment(AsmJSStackAlignment);
-    masm.call(CallSiteDesc(CallSiteDesc::Relative), target);
+    masm.call(CallSiteDesc(CallSiteDesc::Relative), exp.funcIndex());
 
     
     masm.loadWasmActivation(scratch);
@@ -263,7 +263,7 @@ wasm::GenerateEntry(MacroAssembler& masm, unsigned target, const Sig& sig, bool 
     masm.Pop(argv);
 
     
-    switch (sig.ret()) {
+    switch (exp.sig().ret()) {
       case ExprType::Void:
         break;
       case ExprType::I32:

@@ -100,16 +100,12 @@ typedef RefPtr<const StaticLinkData> SharedStaticLinkData;
 
 
 
-
-
-
 static const uint32_t MemoryExport = UINT32_MAX;
 
 struct ExportMap : RefCounted<ExportMap>
 {
     CacheableCharsVector fieldNames;
     Uint32Vector fieldsToExports;
-    Uint32Vector exportFuncIndices;
 
     WASM_DECLARE_SERIALIZABLE(ExportMap)
 };
