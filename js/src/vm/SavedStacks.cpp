@@ -757,11 +757,17 @@ GetSavedFrameFunctionDisplayName(JSContext* cx, HandleObject savedFrame, Mutable
 
 JS_PUBLIC_API(SavedFrameResult)
 GetSavedFrameAsyncCause(JSContext* cx, HandleObject savedFrame, MutableHandleString asyncCausep,
-                        SavedFrameSelfHosted selfHosted )
+                        SavedFrameSelfHosted unused_ )
 {
     AutoMaybeEnterFrameCompartment ac(cx, savedFrame);
     bool skippedAsync;
-    js::RootedSavedFrame frame(cx, UnwrapSavedFrame(cx, savedFrame, selfHosted, skippedAsync));
+    
+    
+    
+    
+    
+    js::RootedSavedFrame frame(cx, UnwrapSavedFrame(cx, savedFrame, SavedFrameSelfHosted::Include,
+                                                    skippedAsync));
     if (!frame) {
         asyncCausep.set(nullptr);
         return SavedFrameResult::AccessDenied;
