@@ -1,0 +1,12 @@
+
+
+
+
+
+"use strict";
+
+function prefs(state = {}, action) {
+  return state;
+}
+
+exports.prefs = prefs;

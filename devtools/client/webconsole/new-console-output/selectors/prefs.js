@@ -1,0 +1,12 @@
+
+
+
+
+
+"use strict";
+
+function getLogLimit(state) {
+  return state.prefs.logLimit;
+}
+
+exports.getLogLimit = getLogLimit;
