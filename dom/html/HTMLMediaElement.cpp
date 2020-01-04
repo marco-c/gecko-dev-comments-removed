@@ -4760,6 +4760,11 @@ HTMLMediaElement::IsPlayingThroughTheAudioChannel() const
     return true;
   }
 
+  
+  if (mSrcAttrStream) {
+    return true;
+  }
+
   return false;
 }
 
