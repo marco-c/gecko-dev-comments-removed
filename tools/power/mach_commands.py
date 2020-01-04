@@ -109,6 +109,9 @@ class MachCommands(MachCommandBase):
         
         
         
+        
+        
+        
 
         print()  
 
@@ -129,7 +132,11 @@ class MachCommands(MachCommandBase):
             
             
             
-            if re.search(r'(^Name|firefox|plugin-container|Safari\b|WebKit|Chrome|Terminal)', line):
+            
+            
+            
+            
+            if re.search(r'(^Name|firefox|plugin-container|Safari\b|WebKit|Chrome|Terminal|WindowServer|kernel)', line):
                 print(line)
 
         return 0
