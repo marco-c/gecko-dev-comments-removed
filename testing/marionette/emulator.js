@@ -4,32 +4,17 @@
 
 "use strict";
 
-const {classes: Cc, interfaces: Ci, utils: Cu} = Components;
+var {classes: Cc, interfaces: Ci} = Components;
+const uuidGen = Cc["@mozilla.org/uuid-generator;1"].getService(Ci.nsIUUIDGenerator);
+this.EXPORTED_SYMBOLS = ["emulator", "Emulator", "EmulatorCallback"];
 
-Cu.import("resource://gre/modules/Log.jsm");
-Cu.import("resource://gre/modules/XPCOMUtils.jsm");
-
-const logger = Log.repository.getLogger("Marionette");
-
-this.EXPORTED_SYMBOLS = ["Emulator"];
+this.emulator = {};
 
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-this.Emulator = function(sendToEmulatorFn) {
-  this.sendToEmulator = sendToEmulatorFn;
+this.emulator.isCallback = function(cmdId) {
+  return cmdId < 0;
 };
 
 
@@ -42,10 +27,11 @@ this.Emulator = function(sendToEmulatorFn) {
 
 
 
-Emulator.prototype.command = function(cmd, resCb, errCb) {
-  assertDefined(cmd, "runEmulatorCmd");
-  this.sendToEmulator(
-      "runEmulatorCmd", {emulator_cmd: cmd}, resCb, errCb);
+
+
+this.Emulator = function(sendFn) {
+  this.send = sendFn;
+  this.cbs = [];
 };
 
 
@@ -58,54 +44,79 @@ Emulator.prototype.command = function(cmd, resCb, errCb) {
 
 
 
-Emulator.prototype.shell = function(args, resCb, errCb) {
-  assertDefined(args, "runEmulatorShell");
-  this.sendToEmulator(
-      "runEmulatorShell", {emulator_shell: args}, resCb, errCb);
-};
-
-Emulator.prototype.processMessage = function(msg) {
-  let resCb = this.resultCallback(msg.json.id);
-  let errCb = this.errorCallback(msg.json.id);
-
-  switch (msg.name) {
-    case "Marionette:runEmulatorCmd":
-      this.command(msg.json.command, resCb, errCb);
-      break;
-
-    case "Marionette:runEmulatorShell":
-      this.shell(msg.json.arguments, resCb, errCb);
-      break;
+Emulator.prototype.popCallback = function(id) {
+  let f, fi;
+  for (let i = 0; i < this.cbs.length; ++i) {
+    if (this.cbs[i].id == id) {
+      f = this.cbs[i];
+      fi = i;
+    }
   }
-};
 
-Emulator.prototype.resultCallback = function(msgId) {
-  return res => this.sendResult({result: res, id: msgId});
-};
+  if (!f) {
+    return null;
+  }
 
-Emulator.prototype.errorCallback = function(msgId) {
-  return err => this.sendResult({error: err, id: msgId});
-};
-
-Emulator.prototype.sendResult = function(msg) {
-  
-  this.sendToListener("emulatorCmdResult", msg);
+  this.cbs.splice(fi, 1);
+  return f;
 };
 
 
-Emulator.prototype.receiveMessage = function(msg) {
+
+
+
+
+
+
+Emulator.prototype.pushCallback = function(cb) {
+  cb.send_ = this.sendFn;
+  this.cbs.push(cb);
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+this.EmulatorCallback = function() {
+  this.id = uuidGen.generateUUID().toString();
+  this.onresult = null;
+  this.onerror = null;
+  this.send_ = null;
+};
+
+EmulatorCallback.prototype.command = function(cmd, cb) {
+  this.onresult = cb;
+  this.send_({emulator_cmd: cmd, id: this.id});
+};
+
+EmulatorCallback.prototype.shell = function(args, cb) {
+  this.onresult = cb;
+  this.send_({emulator_shell: args, id: this.id});
+};
+
+EmulatorCallback.prototype.result = function(msg) {
+  if (this.send_ === null) {
+    throw new TypeError(
+      "EmulatorCallback must be registered with Emulator to fire");
+  }
+
   try {
-    this.processMessage(msg);
+    if (!this.onresult) {
+      return;
+    }
+    this.onresult(msg.result);
   } catch (e) {
-    this.sendResult({error: `${e.name}: ${e.message}`, id: msg.json.id});
+    if (this.onerror) {
+      this.onerror(e);
+    }
   }
 };
-
-Emulator.prototype.QueryInterface = XPCOMUtils.generateQI(
-    [Ci.nsIMessageListener, Ci.nsISupportsWeakReference]);
-
-function assertDefined(arg, action) {
-  if (typeof arg == "undefined") {
-    throw new TypeError("Not enough arguments to " + action);
-  }
-}

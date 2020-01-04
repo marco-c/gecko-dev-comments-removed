@@ -24,6 +24,7 @@ XPCOMUtils.defineLazyServiceGetter(
 
 Cu.import("chrome://marionette/content/actions.js");
 Cu.import("chrome://marionette/content/elements.js");
+Cu.import("chrome://marionette/content/emulator.js");
 Cu.import("chrome://marionette/content/error.js");
 Cu.import("chrome://marionette/content/modal.js");
 Cu.import("chrome://marionette/content/proxy.js");
@@ -97,14 +98,9 @@ this.Context.fromString = function(s) {
 
 
 
-
-
-this.GeckoDriver = function(appName, device, stopSignal, emulator) {
+this.GeckoDriver = function(appName, device, emulator) {
   this.appName = appName;
-  this.stopSignal_ = stopSignal;
   this.emulator = emulator;
-  
-  this.emulator.sendToListener = this.sendAsync.bind(this);
 
   this.sessionId = null;
   
@@ -168,7 +164,6 @@ this.GeckoDriver = function(appName, device, stopSignal, emulator) {
   this.mm = globalMessageManager;
   this.listener = proxy.toListener(() => this.mm, this.sendAsync.bind(this));
 
-  
   this.dialog = null;
   let handleDialog = (subject, topic) => {
     let winr;
@@ -1088,6 +1083,11 @@ GeckoDriver.prototype.executeWithCallback = function(cmd, resp, directInject) {
 
   let res = yield new Promise(function(resolve, reject) {
     let chromeAsyncReturnFunc = function(val) {
+      if (that.emulator.cbs.length > 0) {
+        that.emulator.cbs = [];
+        throw new WebDriverError("Emulator callback still pending when finish() called");
+      }
+
       if (cmd.id == that.sandboxes[sandboxName].command_id) {
         if (that.timer !== null) {
           that.timer.cancel();
@@ -1133,11 +1133,20 @@ GeckoDriver.prototype.executeWithCallback = function(cmd, resp, directInject) {
     }
 
     this.sandboxes[sandboxName].command_id = cmd.id;
-    this.sandboxes[sandboxName].runEmulatorCmd =
-        (cmd, cb) => this.emulator.command(cmd, cb, chromeAsyncError);
-    this.sandboxes[sandboxName].runEmulatorShell =
-        (args, cb) => this.emulator.shell(args, cb, chromeAsyncError);
-
+    this.sandboxes[sandboxName].runEmulatorCmd = (cmd, cb) => {
+      let ecb = new EmulatorCallback();
+      ecb.onresult = cb;
+      ecb.onerror = chromeAsyncError;
+      this.emulator.pushCallback(ecb);
+      this.emulator.send({emulator_cmd: cmd, id: ecb.id});
+    };
+    this.sandboxes[sandboxName].runEmulatorShell = (args, cb) => {
+      let ecb = new EmulatorCallback();
+      ecb.onresult = cb;
+      ecb.onerror = chromeAsyncError;
+      this.emulator.pushCallback(ecb);
+      this.emulator.send({emulator_shell: args, id: ecb.id});
+    };
     this.applyArgumentsToSandbox(win, this.sandboxes[sandboxName], args);
 
     
@@ -2795,27 +2804,6 @@ GeckoDriver.prototype.sendKeysToDialog = function(cmd, resp) {
 
 
 
-GeckoDriver.prototype.quitApplication = function(cmd, resp) {
-  if (this.appName != "Firefox") {
-    throw new WebDriverError("In app initiated quit only supported in Firefox");
-  }
-
-  let flags = Ci.nsIAppStartup.eAttemptQuit;
-  for (let k of cmd.parameters.flags) {
-    flags |= Ci.nsIAppStartup[k];
-  }
-
-  this.stopSignal_();
-  resp.send();
-
-  this.sessionTearDown();
-  Services.startup.quit(flags);
-};
-
-
-
-
-
 GeckoDriver.prototype.generateFrameId = function(id) {
   let uid = id + (this.appName == "B2G" ? "-b2g" : "");
   return uid;
@@ -2845,6 +2833,11 @@ GeckoDriver.prototype.receiveMessage = function(message) {
       if (message.json.log) {
         this.marionetteLog.addLogs(message.json.log);
       }
+      break;
+
+    case "Marionette:runEmulatorCmd":
+    case "Marionette:runEmulatorShell":
+      this.emulator.send(message.json);
       break;
 
     case "Marionette:switchToModalOrigin":
@@ -3029,8 +3022,7 @@ GeckoDriver.prototype.commands = {
   "dismissDialog": GeckoDriver.prototype.dismissDialog,
   "acceptDialog": GeckoDriver.prototype.acceptDialog,
   "getTextFromDialog": GeckoDriver.prototype.getTextFromDialog,
-  "sendKeysToDialog": GeckoDriver.prototype.sendKeysToDialog,
-  "quitApplication": GeckoDriver.prototype.quitApplication,
+  "sendKeysToDialog": GeckoDriver.prototype.sendKeysToDialog
 };
 
 

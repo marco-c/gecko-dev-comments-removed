@@ -114,24 +114,6 @@ error.stringify = function(err) {
 
 
 
-
-
-
-
-error.toJson = function(err) {
-  let json = {
-    error: err.status,
-    message: err.message || null,
-    stacktrace: err.stack || null,
-  };
-  return json;
-};
-
-
-
-
-
-
 this.WebDriverError = function(msg) {
   Error.call(this, msg);
   this.name = "WebDriverError";
@@ -234,7 +216,7 @@ this.NoAlertOpenError = function(msg) {
   WebDriverError.call(this, msg);
   this.name = "NoAlertOpenError";
   this.status = "no such alert";
-};
+}
 NoAlertOpenError.prototype = Object.create(WebDriverError.prototype);
 
 this.NoSuchElementError = function(msg) {
