@@ -98,7 +98,13 @@ void IIRFilter::process(const float* sourceP, float* destP, size_t framesToProce
 
         m_bufferIndex = (m_bufferIndex + 1) & (kBufferLength - 1);
 
-        destP[n] = yn;
+        
+        
+        if (fabs(yn) >= FLT_MIN) {
+            destP[n] = yn;
+        } else {
+            destP[n] = 0.0;
+        }
     }
 }
 
