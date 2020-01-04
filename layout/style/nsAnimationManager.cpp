@@ -336,11 +336,14 @@ UpdateOldAnimationPropertiesWithNew(
   
   
   if (aOld.GetEffect()) {
-    KeyframeEffectReadOnly* oldEffect = aOld.GetEffect();
-    animationChanged =
-      oldEffect->SpecifiedTiming() != aNewTiming;
+    AnimationEffectReadOnly* oldEffect = aOld.GetEffect();
+    animationChanged = oldEffect->SpecifiedTiming() != aNewTiming;
     oldEffect->SetSpecifiedTiming(aNewTiming);
-    oldEffect->SetKeyframes(Move(aNewKeyframes), aStyleContext);
+
+    KeyframeEffectReadOnly* oldKeyframeEffect = oldEffect->AsKeyframeEffect();
+    if (oldKeyframeEffect) {
+      oldKeyframeEffect->SetKeyframes(Move(aNewKeyframes), aStyleContext);
+    }
   }
 
   

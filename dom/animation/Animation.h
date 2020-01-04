@@ -97,12 +97,8 @@ public:
               ErrorResult& aRv);
   void GetId(nsAString& aResult) const { aResult = mId; }
   void SetId(const nsAString& aId);
-  KeyframeEffectReadOnly* GetEffect() const { return mEffect; }
-  void SetEffect(AnimationEffectReadOnly* aEffect)
-  {
-    
-  }
-  virtual void SetEffect(KeyframeEffectReadOnly* aEffect);
+  AnimationEffectReadOnly* GetEffect() const { return mEffect; }
+  virtual void SetEffect(AnimationEffectReadOnly* aEffect);
   AnimationTimeline* GetTimeline() const { return mTimeline; }
   void SetTimeline(AnimationTimeline* aTimeline);
   Nullable<TimeDuration> GetStartTime() const { return mStartTime; }
@@ -378,10 +374,9 @@ protected:
   StickyTimeDuration EffectEnd() const;
 
   nsIDocument* GetRenderedDocument() const;
-  nsPresContext* GetPresContext() const;
 
   RefPtr<AnimationTimeline> mTimeline;
-  RefPtr<KeyframeEffectReadOnly> mEffect;
+  RefPtr<AnimationEffectReadOnly> mEffect;
   
   Nullable<TimeDuration> mStartTime; 
   Nullable<TimeDuration> mHoldTime;  
