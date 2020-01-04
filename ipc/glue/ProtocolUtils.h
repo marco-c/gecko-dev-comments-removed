@@ -310,8 +310,18 @@ LogMessageForProtocol(const char* aTopLevelProtocol, base::ProcessId aOtherPid,
 MOZ_NEVER_INLINE void
 ProtocolErrorBreakpoint(const char* aMsg);
 
+
+
+
 MOZ_NEVER_INLINE void
 FatalError(const char* aProtocolName, const char* aMsg, bool aIsParent);
+
+
+
+
+
+MOZ_NEVER_INLINE void
+LogicError(const char* aMsg);
 
 struct PrivateIPDLInterface {};
 
