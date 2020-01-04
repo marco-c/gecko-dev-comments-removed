@@ -78,15 +78,16 @@ function Merge(array, start, mid, end, lBuffer, rBuffer, comparefn) {
     for (j = 0; j < sizeRight; j++)
         rBuffer[j] = array[mid + 1 + j];
 
+
     i = 0;
     j = 0;
     k = start;
     while (i < sizeLeft && j < sizeRight) {
         if (comparefn(lBuffer[i], rBuffer[j]) <= 0) {
-            array[k] = lBuffer[i];
+            _DefineDataProperty(array, k, lBuffer[i]);
             i++;
         } else {
-            array[k] = rBuffer[j];
+            _DefineDataProperty(array, k, rBuffer[j]);
             j++;
         }
         k++;
@@ -94,46 +95,68 @@ function Merge(array, start, mid, end, lBuffer, rBuffer, comparefn) {
 
     
     while (i < sizeLeft) {
-        array[k] = lBuffer[i];
+        _DefineDataProperty(array, k, lBuffer[i]);
         i++;
         k++;
     }
 
     while (j < sizeRight) {
-        array[k] = rBuffer[j];
+        _DefineDataProperty(array, k, rBuffer[j]);
         j++;
         k++;
     }
 }
 
 
+
+function MoveHoles(sparse, sparseLen, dense, denseLen) {
+    for (var i in dense)
+        _DefineDataProperty(sparse, i, dense[i]);
+    for (var j = denseLen; j < sparseLen; j++)
+        delete sparse[j];
+}
+
+
 function MergeSort(array, len, comparefn) {
     
     
+    var denseArray = [];
+    var denseLen = 0;
+    for (var i = 0; i < len; i++) {
+        if (i in array)
+            _DefineDataProperty(denseArray, denseLen++, array[i]);
+    }
+    if (denseLen < 1)
+        return array;
+
+    
+    
     if (len < 24) {
-       InsertionSort(array, 0, len - 1, comparefn);
-       return array;
+        InsertionSort(denseArray, 0, denseLen - 1, comparefn);
+        MoveHoles(array, len, denseArray, denseLen);
+        return array;
     }
 
     
     var lBuffer = new List();
     var rBuffer = new List();
-    var mid, end, endOne, endTwo;
 
-    for (var windowSize = 1; windowSize < len; windowSize = 2*windowSize) {
-        for (var start = 0; start < len - 1; start += 2*windowSize) {
-            assert(windowSize < len, "The window size is larger than the array length!");
+    var mid, end, endOne, endTwo;
+    for (var windowSize = 1; windowSize < denseLen; windowSize = 2 * windowSize) {
+        for (var start = 0; start < denseLen - 1; start += 2*windowSize) {
+            assert(windowSize < denseLen, "The window size is larger than the array denseLength!");
             
             mid = start + windowSize - 1;
             
             end = start + 2 * windowSize - 1;
-            end = end < len - 1 ? end : len - 1;
+            end = end < denseLen - 1 ? end : denseLen - 1;
             
             if (mid > end)
                 continue;
-            Merge(array, start, mid, end, lBuffer, rBuffer, comparefn);
+            Merge(denseArray, start, mid, end, lBuffer, rBuffer, comparefn);
         }
     }
+    MoveHoles(array, len, denseArray, denseLen);
     return array;
 }
 
