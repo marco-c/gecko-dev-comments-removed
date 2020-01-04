@@ -7,6 +7,7 @@
 
 
 
+
 #include "nsHTMLCSSStyleSheet.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/css/StyleRule.h"
@@ -22,24 +23,6 @@
 using namespace mozilla;
 using namespace mozilla::dom;
 
-namespace {
-
-PLDHashOperator
-ClearAttrCache(const nsAString& aKey, MiscContainer*& aValue, void*)
-{
-  
-  
-  MOZ_ASSERT(aValue->mType == nsAttrValue::eCSSDeclaration);
-
-  css::Declaration* declaration = aValue->mValue.mCSSDeclaration;
-  declaration->SetHTMLCSSStyleSheet(nullptr);
-  aValue->mValue.mCached = 0;
-
-  return PL_DHASH_REMOVE;
-}
-
-} 
-
 nsHTMLCSSStyleSheet::nsHTMLCSSStyleSheet()
 {
 }
@@ -48,7 +31,19 @@ nsHTMLCSSStyleSheet::~nsHTMLCSSStyleSheet()
 {
   
   
-  mCachedStyleAttrs.Enumerate(ClearAttrCache, nullptr);
+  for (auto iter = mCachedStyleAttrs.Iter(); !iter.Done(); iter.Next()) {
+    MiscContainer*& value = iter.Data();
+
+    
+    
+    MOZ_ASSERT(value->mType == nsAttrValue::eCSSDeclaration);
+
+    css::Declaration* declaration = value->mValue.mCSSDeclaration;
+    declaration->SetHTMLCSSStyleSheet(nullptr);
+    value->mValue.mCached = 0;
+
+    iter.Remove();
+  }
 }
 
 NS_IMPL_ISUPPORTS(nsHTMLCSSStyleSheet, nsIStyleRuleProcessor)
