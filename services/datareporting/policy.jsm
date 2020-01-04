@@ -378,6 +378,16 @@ this.DataReportingPolicy.prototype = Object.freeze({
     this._prefs.set("dataSubmissionEnabled", !!value);
   },
 
+  
+
+
+
+
+  get dataSubmissionEnabledV2() {
+    
+    return this._prefs.get("dataSubmissionEnabled.v2", true);
+  },
+
   get currentPolicyVersion() {
     return this._prefs.get("currentPolicyVersion", DATAREPORTING_POLICY_VERSION);
   },
@@ -648,7 +658,7 @@ this.DataReportingPolicy.prototype = Object.freeze({
     
     
     
-    if (!this.dataSubmissionEnabled) {
+    if (!this.dataSubmissionEnabled || !this.dataSubmissionEnabledV2) {
       this._log.debug("Data submission is disabled. Doing nothing.");
       return;
     }
