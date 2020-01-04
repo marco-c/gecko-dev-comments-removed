@@ -1,0 +1,12 @@
+function run_test()
+{
+  
+  do_crash(function() {
+             Components.classes["@mozilla.org/xpcom/debug;1"].getService(Components.interfaces.nsIDebug2).rustPanic("OH NO");
+           },
+           function(mdump, extra) {
+             
+           },
+          
+          true);
+}
