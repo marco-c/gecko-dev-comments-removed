@@ -815,7 +815,9 @@ element.inViewport = function(el, x = undefined, y = undefined) {
 
 
 
-element.isVisible = function(el, win, x = undefined, y = undefined) {
+element.isVisible = function(el, x = undefined, y = undefined) {
+  let win = el.ownerDocument.defaultView;
+
   
   let ns = atom.getElementAttribute(el, "namespaceURI", win);
   if (ns.indexOf("there.is.only.xul") < 0 &&
