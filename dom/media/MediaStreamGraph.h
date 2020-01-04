@@ -15,8 +15,9 @@
 #include "AudioStream.h"
 #include "nsTArray.h"
 #include "nsIRunnable.h"
-#include "VideoFrameContainer.h"
 #include "VideoSegment.h"
+#include "StreamTracks.h"
+#include "MediaStreamVideoSink.h"
 #include "MainThreadUtils.h"
 #include "StreamTracks.h"
 #include "nsAutoPtr.h"
@@ -293,8 +294,8 @@ public:
   
   
   
-  virtual void AddVideoOutput(VideoFrameContainer* aContainer);
-  virtual void RemoveVideoOutput(VideoFrameContainer* aContainer);
+  virtual void AddVideoOutput(MediaStreamVideoSink* aSink);
+  virtual void RemoveVideoOutput(MediaStreamVideoSink* aSink);
   
   
   
@@ -423,8 +424,8 @@ public:
     return !mAudioOutputs.IsEmpty();
   }
   void RemoveAudioOutputImpl(void* aKey);
-  void AddVideoOutputImpl(already_AddRefed<VideoFrameContainer> aContainer);
-  void RemoveVideoOutputImpl(VideoFrameContainer* aContainer);
+  void AddVideoOutputImpl(already_AddRefed<MediaStreamVideoSink> aSink);
+  void RemoveVideoOutputImpl(MediaStreamVideoSink* aSink);
   void AddListenerImpl(already_AddRefed<MediaStreamListener> aListener);
   void RemoveListenerImpl(MediaStreamListener* aListener);
   void RemoveAllListenersImpl();
@@ -583,7 +584,7 @@ protected:
     float mVolume;
   };
   nsTArray<AudioOutput> mAudioOutputs;
-  nsTArray<RefPtr<VideoFrameContainer>> mVideoOutputs;
+  nsTArray<RefPtr<MediaStreamVideoSink>> mVideoOutputs;
   
   
   VideoFrame mLastPlayedVideoFrame;
