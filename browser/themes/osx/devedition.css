@@ -10,7 +10,8 @@
 
 
 #navigator-toolbox::after {
-  background: linear-gradient(to top, var(--chrome-navigator-toolbox-separator-color), var(--chrome-navigator-toolbox-separator-color) 1px, transparent 1px);
+  border-top-style: none;
+  margin-top: -1px;
 }
 
 
