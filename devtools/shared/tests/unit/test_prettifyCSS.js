@@ -5,7 +5,7 @@
 
 "use strict";
 
-const {CssLogic} = require("devtools/shared/inspector/css-logic");
+const {prettifyCSS} = require("devtools/shared/inspector/css-logic");
 
 const TESTS = [
   { name: "simple test",
@@ -54,15 +54,15 @@ const TESTS = [
 function run_test() {
   
   
-  CssLogic.prettifyCSS("");
+  prettifyCSS("");
 
   for (let test of TESTS) {
     do_print(test.name);
 
-    let input = test.input.split("\n").join(CssLogic.LINE_SEPARATOR);
-    let output = CssLogic.prettifyCSS(input);
-    let expected = test.expected.join(CssLogic.LINE_SEPARATOR) +
-        CssLogic.LINE_SEPARATOR;
+    let input = test.input.split("\n").join(prettifyCSS.LINE_SEPARATOR);
+    let output = prettifyCSS(input);
+    let expected = test.expected.join(prettifyCSS.LINE_SEPARATOR) +
+        prettifyCSS.LINE_SEPARATOR;
     equal(output, expected, test.name);
   }
 }

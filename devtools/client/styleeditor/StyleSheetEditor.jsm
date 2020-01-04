@@ -15,7 +15,7 @@ const {require} = Cu.import("resource://devtools/shared/Loader.jsm", {});
 const Editor = require("devtools/client/sourceeditor/editor");
 const promise = require("promise");
 const defer = require("devtools/shared/defer");
-const {CssLogic} = require("devtools/shared/inspector/css-logic");
+const {shortSource, prettifyCSS} = require("devtools/shared/inspector/css-logic");
 const {console} = require("resource://gre/modules/Console.jsm");
 const Services = require("Services");
 const EventEmitter = require("devtools/shared/event-emitter");
@@ -196,7 +196,7 @@ StyleSheetEditor.prototype = {
 
     if (!this._friendlyName) {
       let sheetURI = this.styleSheet.href;
-      this._friendlyName = CssLogic.shortSource({ href: sheetURI });
+      this._friendlyName = shortSource({ href: sheetURI });
       try {
         this._friendlyName = decodeURI(this._friendlyName);
       } catch (ex) {
@@ -267,14 +267,13 @@ StyleSheetEditor.prototype = {
 
 
 
-
   _getSourceTextAndPrettify: function () {
     return this.styleSheet.getText().then((longStr) => {
       return longStr.string();
     }).then((source) => {
       let ruleCount = this.styleSheet.ruleCount;
       if (!this.styleSheet.isOriginalSource) {
-        source = CssLogic.prettifyCSS(source, ruleCount);
+        source = prettifyCSS(source, ruleCount);
       }
       this._state.text = source;
       return source;
