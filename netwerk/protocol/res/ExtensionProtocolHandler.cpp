@@ -104,7 +104,8 @@ ExtensionProtocolHandler::SubstituteChannel(nsIURI* aURI,
   const char* kToType = "text/css";
 
   nsCOMPtr<nsIInputStream> inputStream;
-  if (aLoadInfo && aLoadInfo->GetSecurityMode()) {
+  if (aLoadInfo &&
+      aLoadInfo->GetSecurityMode() == nsILoadInfo::SEC_REQUIRE_CORS_DATA_INHERITS) {
     
 
     nsCOMPtr<nsIOutputStream> outputStream;
@@ -129,10 +130,13 @@ ExtensionProtocolHandler::SubstituteChannel(nsIURI* aURI,
     rv = (*result)->AsyncOpen2(converter);
   } else {
     
-    
 
     nsCOMPtr<nsIInputStream> sourceStream;
-    rv = (*result)->Open(getter_AddRefs(sourceStream));
+    if (aLoadInfo && aLoadInfo->GetEnforceSecurity()) {
+      rv = (*result)->Open2(getter_AddRefs(sourceStream));
+    } else {
+      rv = (*result)->Open(getter_AddRefs(sourceStream));
+    }
     NS_ENSURE_SUCCESS(rv, rv);
 
     rv = convService->Convert(sourceStream, kFromType, kToType,
