@@ -266,6 +266,10 @@ var Addons = {
         return a.name.localeCompare(b.name);
       });
       for (let i=0; i<aAddons.length; i++) {
+        
+        if (aAddons[i].isSystem)
+          continue;
+
         let item = self._createItemForAddon(aAddons[i]);
         list.appendChild(item);
       }
