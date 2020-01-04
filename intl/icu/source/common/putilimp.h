@@ -212,7 +212,7 @@ typedef size_t uintptr_t;
 
 #ifdef U_HAVE_STD_ATOMICS
     
-#elif !defined(__cplusplus) || __cplusplus<201103L
+#elif U_CPLUSPLUS_VERSION < 11
     
 #   define U_HAVE_STD_ATOMICS 0
 #elif __clang__ && __clang_major__==3 && __clang_minor__<=1
@@ -234,20 +234,16 @@ typedef size_t uintptr_t;
 
 
 
-
-
-
-
-
-#ifdef U_ALIGN_CODE
+#ifdef U_HAVE_CLANG_ATOMICS
     
-#elif defined(_MSC_VER) && defined(_M_IX86) && !defined(_MANAGED)
-#   define U_ALIGN_CODE(boundarySize) __asm  align boundarySize
+#elif __has_builtin(__c11_atomic_load) && \
+    __has_builtin(__c11_atomic_store) && \
+    __has_builtin(__c11_atomic_fetch_add) && \
+    __has_builtin(__c11_atomic_fetch_sub)
+#    define U_HAVE_CLANG_ATOMICS 1
 #else
-#   define U_ALIGN_CODE(boundarySize) 
+#    define U_HAVE_CLANG_ATOMICS 0
 #endif
-
-
 
 
 

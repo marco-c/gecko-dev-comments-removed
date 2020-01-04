@@ -440,7 +440,6 @@ public:
     void setTimeSeparatorString(const UnicodeString& newTimeSeparator);
 #endif  
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -490,8 +489,6 @@ public:
 
     void setZodiacNames(const UnicodeString* zodiacNames, int32_t count,
                             DtContextType context, DtWidthType width);
-
-#endif  
 
 #ifndef U_HIDE_INTERNAL_API
     

@@ -69,6 +69,9 @@ public:
     const char *data() const { return buffer.getAlias(); }
     char *data() { return buffer.getAlias(); }
 
+    
+    int32_t lastIndexOf(char c) const;
+
     CharString &clear() { len=0; buffer[0]=0; return *this; }
     CharString &truncate(int32_t newLength);
 
@@ -113,6 +116,12 @@ public:
 
 
     CharString &appendPathPart(const StringPiece &s, UErrorCode &errorCode);
+
+    
+
+
+
+    CharString &ensureEndsWithFileSeparator(UErrorCode &errorCode);
 
 private:
     MaybeStackArray<char, 40> buffer;

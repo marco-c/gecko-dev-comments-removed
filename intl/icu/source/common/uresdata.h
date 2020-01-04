@@ -13,8 +13,6 @@
 
 
 
-
-
 #ifndef __RESDATA_H__
 #define __RESDATA_H__
 
@@ -51,6 +49,8 @@ typedef enum {
 
 
     URES_ARRAY16=9
+
+    
 } UResInternalType;
 
 
@@ -61,6 +61,7 @@ typedef enum {
 typedef uint32_t Resource;
 
 #define RES_BOGUS 0xffffffff
+#define RES_MAX_OFFSET 0x0fffffff
 
 #define RES_GET_TYPE(res) ((int32_t)((res)>>28UL))
 #define RES_GET_OFFSET(res) ((res)&0x0fffffff)
@@ -84,22 +85,48 @@ typedef uint32_t Resource;
 
 
 enum {
-    URES_INDEX_LENGTH,          
+    
 
 
 
 
 
-    URES_INDEX_KEYS_TOP,        
-                                
-    URES_INDEX_RESOURCES_TOP,   
-    URES_INDEX_BUNDLE_TOP,      
-                                
+
+
+
+
+
+
+    URES_INDEX_LENGTH,
+    
+
+
+
+    URES_INDEX_KEYS_TOP,
+    
+    URES_INDEX_RESOURCES_TOP,
+    
+
+
+
+    URES_INDEX_BUNDLE_TOP,
+    
     URES_INDEX_MAX_TABLE_LENGTH,
-    URES_INDEX_ATTRIBUTES,      
-    URES_INDEX_16BIT_TOP,       
+    
 
-    URES_INDEX_POOL_CHECKSUM,   
+
+
+
+
+
+    URES_INDEX_ATTRIBUTES,
+    
+
+
+
+    URES_INDEX_16BIT_TOP,
+    
+    URES_INDEX_POOL_CHECKSUM,
     URES_INDEX_TOP
 };
 
@@ -310,6 +337,48 @@ enum {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 typedef struct {
     UDataMemory *data;
     const int32_t *pRoot;
@@ -317,6 +386,9 @@ typedef struct {
     const char *poolBundleKeys;
     Resource rootRes;
     int32_t localKeyLimit;
+    const uint16_t *poolBundleStrings;
+    int32_t poolStringIndexLimit;
+    int32_t poolStringIndex16Limit;
     UBool noFallback; 
     UBool isPoolBundle;
     UBool usesPoolBundle;

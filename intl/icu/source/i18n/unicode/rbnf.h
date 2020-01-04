@@ -38,6 +38,7 @@
 
 U_NAMESPACE_BEGIN
 
+class NFRule;
 class NFRuleSet;
 class LocalizationInfo;
 class PluralFormat;
@@ -55,6 +56,36 @@ enum URBNFRuleSetTag {
     URBNF_NUMBERING_SYSTEM,
     URBNF_COUNT
 };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -980,11 +1011,17 @@ private:
     
     friend class NFSubstitution;
     friend class NFRule;
+    friend class NFRuleSet;
     friend class FractionalPartSubstitution;
 
     inline NFRuleSet * getDefaultRuleSet() const;
     const RuleBasedCollator * getCollator() const;
-    DecimalFormatSymbols * getDecimalFormatSymbols() const;
+    DecimalFormatSymbols * initializeDecimalFormatSymbols(UErrorCode &status);
+    const DecimalFormatSymbols * getDecimalFormatSymbols() const;
+    NFRule * initializeDefaultInfinityRule(UErrorCode &status);
+    const NFRule * getDefaultInfinityRule() const;
+    NFRule * initializeDefaultNaNRule(UErrorCode &status);
+    const NFRule * getDefaultNaNRule() const;
     PluralFormat *createPluralFormat(UPluralType pluralType, const UnicodeString &pattern, UErrorCode& status) const;
     UnicodeString& adjustForCapitalizationContext(int32_t startPos, UnicodeString& currentResult) const;
 
@@ -996,6 +1033,8 @@ private:
     Locale locale;
     RuleBasedCollator* collator;
     DecimalFormatSymbols* decimalFormatSymbols;
+    NFRule *defaultInfinityRule;
+    NFRule *defaultNaNRule;
     UBool lenient;
     UnicodeString* lenientParseRules;
     LocalizationInfo* localizations;

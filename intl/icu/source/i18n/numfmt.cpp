@@ -120,6 +120,9 @@ static const UChar * const gLastResortNumberPatterns[UNUM_FORMAT_STYLE_COUNT] = 
     gLastResortPluralCurrencyPat,  
     gLastResortAccountingCurrencyPat, 
     gLastResortCurrencyPat,  
+    NULL,  
+    NULL,  
+    gLastResortCurrencyPat,  
 };
 
 
@@ -145,7 +148,10 @@ static const char *gFormatKeys[UNUM_FORMAT_STYLE_COUNT] = {
     "currencyFormat",  
     "currencyFormat",  
     "accountingFormat",  
-    "currencyFormat"  
+    "currencyFormat",  
+    NULL,  
+    NULL,  
+    "currencyFormat",  
 };
 
 
@@ -1020,8 +1026,18 @@ NumberFormat::getAvailableLocales(void)
 #endif 
 
 
+enum { kKeyValueLenMax = 32 };
+
 NumberFormat*
 NumberFormat::internalCreateInstance(const Locale& loc, UNumberFormatStyle kind, UErrorCode& status) {
+    if (kind == UNUM_CURRENCY) {
+        char cfKeyValue[kKeyValueLenMax] = {0};
+        UErrorCode kvStatus = U_ZERO_ERROR;
+        int32_t kLen = loc.getKeywordValue("cf", cfKeyValue, kKeyValueLenMax, kvStatus);
+        if (U_SUCCESS(kvStatus) && kLen > 0 && uprv_strcmp(cfKeyValue,"account")==0) {
+            kind = UNUM_CURRENCY_ACCOUNTING;
+        }
+    }
 #if !UCONFIG_NO_SERVICE
     if (haveService()) {
         return (NumberFormat*)gService->get(loc, kind, status);
@@ -1322,6 +1338,7 @@ NumberFormat::makeInstance(const Locale& desiredLocale,
             case UNUM_CURRENCY_PLURAL:
             case UNUM_CURRENCY_ACCOUNTING:
             case UNUM_CASH_CURRENCY:
+            case UNUM_CURRENCY_STANDARD:
                 f = new Win32NumberFormat(desiredLocale, curr, status);
 
                 if (U_SUCCESS(status)) {
@@ -1406,7 +1423,7 @@ NumberFormat::makeInstance(const Locale& desiredLocale,
         return NULL;
     }
     if(style==UNUM_CURRENCY || style == UNUM_CURRENCY_ISO || style == UNUM_CURRENCY_ACCOUNTING 
-        || style == UNUM_CASH_CURRENCY){
+        || style == UNUM_CASH_CURRENCY || style == UNUM_CURRENCY_STANDARD){
         const UChar* currPattern = symbolsToAdopt->getCurrencyPattern();
         if(currPattern!=NULL){
             pattern.setTo(currPattern, u_strlen(currPattern));

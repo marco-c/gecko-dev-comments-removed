@@ -132,7 +132,7 @@
 
 
 
-#if defined(__cplusplus) && __cplusplus>=201103L
+#if U_CPLUSPLUS_VERSION >= 11
 
 #ifndef U_OVERRIDE
 #define U_OVERRIDE override

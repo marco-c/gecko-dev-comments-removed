@@ -96,12 +96,12 @@ struct UConverterSharedData {
     uint32_t referenceCounter;      
 
     const void *dataMemory;         
-    void *table;                    
 
     const UConverterStaticData *staticData; 
 
     UBool                sharedDataCached;   
-  
+    
+    UBool isReferenceCounted;
 
     const UConverterImpl *impl;     
 
@@ -119,11 +119,16 @@ struct UConverterSharedData {
 
 
 
-
-
-
     UConverterMBCSTable mbcs;
 };
+
+
+#define UCNV_IMMUTABLE_SHARED_DATA_INITIALIZER(pStaticData, pImpl) \
+    { \
+        sizeof(UConverterSharedData), ~((uint32_t)0), \
+        NULL, pStaticData, FALSE, FALSE, pImpl, \
+        0, UCNV_MBCS_TABLE_INITIALIZER \
+    }
 
 
 

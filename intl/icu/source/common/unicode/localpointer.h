@@ -151,11 +151,11 @@ protected:
     T *ptr;
 private:
     
-    bool operator==(const LocalPointerBase &other);
-    bool operator!=(const LocalPointerBase &other);
+    bool operator==(const LocalPointerBase<T> &other);
+    bool operator!=(const LocalPointerBase<T> &other);
     
-    LocalPointerBase(const LocalPointerBase &other);
-    void operator=(const LocalPointerBase &other);
+    LocalPointerBase(const LocalPointerBase<T> &other);
+    void operator=(const LocalPointerBase<T> &other);
     
     static void * U_EXPORT2 operator new(size_t size);
     static void * U_EXPORT2 operator new[](size_t size);
@@ -210,6 +210,16 @@ public:
             errorCode=U_MEMORY_ALLOCATION_ERROR;
         }
     }
+#if U_HAVE_RVALUE_REFERENCES
+    
+
+
+
+
+    LocalPointer(LocalPointer<T> &&src) U_NOEXCEPT : LocalPointerBase<T>(src.ptr) {
+        src.ptr=NULL;
+    }
+#endif
 #endif  
     
 
@@ -218,6 +228,54 @@ public:
     ~LocalPointer() {
         delete LocalPointerBase<T>::ptr;
     }
+#ifndef U_HIDE_DRAFT_API
+#if U_HAVE_RVALUE_REFERENCES
+    
+
+
+
+
+
+
+    LocalPointer<T> &operator=(LocalPointer<T> &&src) U_NOEXCEPT {
+        return moveFrom(src);
+    }
+#endif
+    
+
+
+
+
+
+
+
+
+    LocalPointer<T> &moveFrom(LocalPointer<T> &src) U_NOEXCEPT {
+        delete LocalPointerBase<T>::ptr;
+        LocalPointerBase<T>::ptr=src.ptr;
+        src.ptr=NULL;
+        return *this;
+    }
+    
+
+
+
+
+    void swap(LocalPointer<T> &other) U_NOEXCEPT {
+        T *temp=LocalPointerBase<T>::ptr;
+        LocalPointerBase<T>::ptr=other.ptr;
+        other.ptr=temp;
+    }
+    
+
+
+
+
+
+    friend inline void swap(LocalPointer<T> &p1, LocalPointer<T> &p2) U_NOEXCEPT {
+        p1.swap(p2);
+    }
+#endif  
     
 
 
@@ -285,6 +343,36 @@ public:
 
 
     explicit LocalArray(T *p=NULL) : LocalPointerBase<T>(p) {}
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+
+
+
+
+
+
+
+
+    LocalArray(T *p, UErrorCode &errorCode) : LocalPointerBase<T>(p) {
+        if(p==NULL && U_SUCCESS(errorCode)) {
+            errorCode=U_MEMORY_ALLOCATION_ERROR;
+        }
+    }
+#if U_HAVE_RVALUE_REFERENCES
+    
+
+
+
+
+    LocalArray(LocalArray<T> &&src) U_NOEXCEPT : LocalPointerBase<T>(src.ptr) {
+        src.ptr=NULL;
+    }
+#endif
+#endif  
     
 
 
@@ -292,6 +380,54 @@ public:
     ~LocalArray() {
         delete[] LocalPointerBase<T>::ptr;
     }
+#ifndef U_HIDE_DRAFT_API
+#if U_HAVE_RVALUE_REFERENCES
+    
+
+
+
+
+
+
+    LocalArray<T> &operator=(LocalArray<T> &&src) U_NOEXCEPT {
+        return moveFrom(src);
+    }
+#endif
+    
+
+
+
+
+
+
+
+
+    LocalArray<T> &moveFrom(LocalArray<T> &src) U_NOEXCEPT {
+        delete[] LocalPointerBase<T>::ptr;
+        LocalPointerBase<T>::ptr=src.ptr;
+        src.ptr=NULL;
+        return *this;
+    }
+    
+
+
+
+
+    void swap(LocalArray<T> &other) U_NOEXCEPT {
+        T *temp=LocalPointerBase<T>::ptr;
+        LocalPointerBase<T>::ptr=other.ptr;
+        other.ptr=temp;
+    }
+    
+
+
+
+
+
+    friend inline void swap(LocalArray<T> &p1, LocalArray<T> &p2) U_NOEXCEPT {
+        p1.swap(p2);
+    }
+#endif  
     
 
 
@@ -302,6 +438,34 @@ public:
         delete[] LocalPointerBase<T>::ptr;
         LocalPointerBase<T>::ptr=p;
     }
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    void adoptInsteadAndCheckErrorCode(T *p, UErrorCode &errorCode) {
+        if(U_SUCCESS(errorCode)) {
+            delete[] LocalPointerBase<T>::ptr;
+            LocalPointerBase<T>::ptr=p;
+            if(p==NULL) {
+                errorCode=U_MEMORY_ALLOCATION_ERROR;
+            }
+        } else {
+            delete[] p;
+        }
+    }
+#endif  
     
 
 
@@ -335,16 +499,64 @@ public:
 
 
 
+#if U_HAVE_RVALUE_REFERENCES
 #define U_DEFINE_LOCAL_OPEN_POINTER(LocalPointerClassName, Type, closeFunction) \
     class LocalPointerClassName : public LocalPointerBase<Type> { \
     public: \
         explicit LocalPointerClassName(Type *p=NULL) : LocalPointerBase<Type>(p) {} \
+        LocalPointerClassName(LocalPointerClassName &&src) U_NOEXCEPT \
+                : LocalPointerBase<Type>(src.ptr) { \
+            src.ptr=NULL; \
+        } \
         ~LocalPointerClassName() { closeFunction(ptr); } \
+        LocalPointerClassName &operator=(LocalPointerClassName &&src) U_NOEXCEPT { \
+            return moveFrom(src); \
+        } \
+        LocalPointerClassName &moveFrom(LocalPointerClassName &src) U_NOEXCEPT { \
+            closeFunction(ptr); \
+            LocalPointerBase<Type>::ptr=src.ptr; \
+            src.ptr=NULL; \
+            return *this; \
+        } \
+        void swap(LocalPointerClassName &other) U_NOEXCEPT { \
+            Type *temp=LocalPointerBase<Type>::ptr; \
+            LocalPointerBase<Type>::ptr=other.ptr; \
+            other.ptr=temp; \
+        } \
+        friend inline void swap(LocalPointerClassName &p1, LocalPointerClassName &p2) U_NOEXCEPT { \
+            p1.swap(p2); \
+        } \
         void adoptInstead(Type *p) { \
             closeFunction(ptr); \
             ptr=p; \
         } \
     }
+#else
+#define U_DEFINE_LOCAL_OPEN_POINTER(LocalPointerClassName, Type, closeFunction) \
+    class LocalPointerClassName : public LocalPointerBase<Type> { \
+    public: \
+        explicit LocalPointerClassName(Type *p=NULL) : LocalPointerBase<Type>(p) {} \
+        ~LocalPointerClassName() { closeFunction(ptr); } \
+        LocalPointerClassName &moveFrom(LocalPointerClassName &src) U_NOEXCEPT { \
+            closeFunction(ptr); \
+            LocalPointerBase<Type>::ptr=src.ptr; \
+            src.ptr=NULL; \
+            return *this; \
+        } \
+        void swap(LocalPointerClassName &other) U_NOEXCEPT { \
+            Type *temp=LocalPointerBase<Type>::ptr; \
+            LocalPointerBase<Type>::ptr=other.ptr; \
+            other.ptr=temp; \
+        } \
+        friend inline void swap(LocalPointerClassName &p1, LocalPointerClassName &p2) U_NOEXCEPT { \
+            p1.swap(p2); \
+        } \
+        void adoptInstead(Type *p) { \
+            closeFunction(ptr); \
+            ptr=p; \
+        } \
+    }
+#endif
 
 U_NAMESPACE_END
 

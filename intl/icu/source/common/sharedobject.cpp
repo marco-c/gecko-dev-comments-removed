@@ -6,37 +6,62 @@
 
 
 #include "sharedobject.h"
+#include "uassert.h"
 
 U_NAMESPACE_BEGIN
+
 SharedObject::~SharedObject() {}
 
+UnifiedCacheBase::~UnifiedCacheBase() {}
+
 void
-SharedObject::addRef() const {
+SharedObject::addRef(UBool fromWithinCache) const {
     umtx_atomic_inc(&totalRefCount);
+
+    
+    
+    if (umtx_atomic_inc(&hardRefCount) == 1 && cachePtr != NULL) {
+        
+        
+        
+        
+        
+        U_ASSERT(fromWithinCache);
+        cachePtr->incrementItemsInUse();
+    }
 }
 
 void
-SharedObject::removeRef() const {
-    if(umtx_atomic_dec(&totalRefCount) == 0) {
+SharedObject::removeRef(UBool fromWithinCache) const {
+    UBool decrementItemsInUse = (umtx_atomic_dec(&hardRefCount) == 0);
+    UBool allReferencesGone = (umtx_atomic_dec(&totalRefCount) == 0);
+
+    
+    
+    if (decrementItemsInUse && cachePtr != NULL) {
+        if (fromWithinCache) {
+            cachePtr->decrementItemsInUse();
+        } else {
+            cachePtr->decrementItemsInUseWithLockingAndEviction();
+        }
+    }
+    if (allReferencesGone) {
         delete this;
     }
 }
 
 void
 SharedObject::addSoftRef() const {
-    addRef();
-    umtx_atomic_inc(&softRefCount);
+    umtx_atomic_inc(&totalRefCount);
+    ++softRefCount;
 }
 
 void
 SharedObject::removeSoftRef() const {
-    umtx_atomic_dec(&softRefCount);
-    removeRef();
-}
-
-UBool
-SharedObject::allSoftReferences() const {
-    return umtx_loadAcquire(totalRefCount) == umtx_loadAcquire(softRefCount);
+    --softRefCount;
+    if (umtx_atomic_dec(&totalRefCount) == 0) {
+        delete this;
+    }
 }
 
 int32_t
@@ -45,8 +70,8 @@ SharedObject::getRefCount() const {
 }
 
 int32_t
-SharedObject::getSoftRefCount() const {
-    return umtx_loadAcquire(softRefCount);
+SharedObject::getHardRefCount() const {
+    return umtx_loadAcquire(hardRefCount);
 }
 
 void

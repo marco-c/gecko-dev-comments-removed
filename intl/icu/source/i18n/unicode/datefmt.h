@@ -571,8 +571,22 @@ public:
                                               EStyle timeStyle = kDefault,
                                               const Locale& aLocale = Locale::getDefault());
 
-#ifndef U_HIDE_DRAFT_API
+#ifndef U_HIDE_INTERNAL_API
+    
 
+
+
+
+
+
+
+    static UnicodeString getBestPattern(
+            const Locale &locale,
+            const UnicodeString &skeleton,
+            UErrorCode &status);
+#endif  
+
+#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -626,41 +640,6 @@ public:
             Calendar *calendarToAdopt,
             const UnicodeString& skeleton,
             const Locale &locale,
-            UErrorCode &status);
-
-#endif 
-
-#ifndef U_HIDE_INTERNAL_API 
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    static DateFormat* U_EXPORT2 internalCreateInstanceForSkeleton(
-            const UnicodeString& skeleton,
-            const Locale &locale,
-            DateTimePatternGenerator &dpng,
             UErrorCode &status);
 
 #endif 
@@ -887,6 +866,7 @@ protected:
 
 
 private:
+
     
 
 

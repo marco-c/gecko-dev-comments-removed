@@ -243,7 +243,6 @@ u_fopen(const char    *filename,
     const char    *locale,
     const char    *codepage);
 
-#ifndef U_HIDE_DRAFT_API
 
 
 
@@ -261,12 +260,11 @@ u_fopen(const char    *filename,
 
 
 
-U_DRAFT UFILE* U_EXPORT2
+U_STABLE UFILE* U_EXPORT2
 u_fopen_u(const UChar    *filename,
     const char    *perm,
     const char    *locale,
     const char    *codepage);
-#endif  
 
 
 

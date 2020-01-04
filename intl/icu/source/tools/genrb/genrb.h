@@ -24,8 +24,6 @@
 #include "errmsg.h"
 #include "parse.h"
 #include "rbutil.h"
-#include "reslist.h"
-
 
 #include "toolutil.h"
 #include "uoptions.h"
@@ -34,7 +32,7 @@
 #include "unicode/uloc.h"
 
 
-#define GENRB_VERSION "3.3"
+#define GENRB_VERSION "56"
 
 U_CDECL_BEGIN
 

@@ -493,7 +493,6 @@ public:
 
     uint32_t        getLCID(void) const;
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -508,7 +507,6 @@ public:
 
 
     UBool isRightToLeft() const;
-#endif  
 
     
 

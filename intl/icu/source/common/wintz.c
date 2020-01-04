@@ -44,7 +44,7 @@ typedef struct
 
 
 static const char CURRENT_ZONE_REGKEY[] = "SYSTEM\\CurrentControlSet\\Control\\TimeZoneInformation\\";
-static const char STANDARD_NAME_REGKEY[] = "StandardName";
+
 static const char STANDARD_TIME_REGKEY[] = " Standard Time";
 static const char TZI_REGKEY[] = "TZI";
 static const char STD_REGKEY[] = "Std";

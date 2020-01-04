@@ -22,7 +22,6 @@
 
 
 enum UCurrencyUsage {
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -36,7 +35,6 @@ enum UCurrencyUsage {
 
 
     UCURR_USAGE_CASH=1,
-#endif  
     
 
 
@@ -204,7 +202,6 @@ U_STABLE int32_t U_EXPORT2
 ucurr_getDefaultFractionDigits(const UChar* currency,
                                UErrorCode* ec);
 
-#ifndef U_HIDE_DRAFT_API
 
 
 
@@ -215,11 +212,10 @@ ucurr_getDefaultFractionDigits(const UChar* currency,
 
 
 
-U_DRAFT int32_t U_EXPORT2
+U_STABLE int32_t U_EXPORT2
 ucurr_getDefaultFractionDigitsForUsage(const UChar* currency, 
                                        const UCurrencyUsage usage,
                                        UErrorCode* ec);
-#endif  
 
 
 
@@ -235,7 +231,6 @@ U_STABLE double U_EXPORT2
 ucurr_getRoundingIncrement(const UChar* currency,
                            UErrorCode* ec);
 
-#ifndef U_HIDE_DRAFT_API
 
 
 
@@ -246,11 +241,10 @@ ucurr_getRoundingIncrement(const UChar* currency,
 
 
 
-U_DRAFT double U_EXPORT2
+U_STABLE double U_EXPORT2
 ucurr_getRoundingIncrementForUsage(const UChar* currency,
                                    const UCurrencyUsage usage,
                                    UErrorCode* ec);
-#endif  
 
 
 

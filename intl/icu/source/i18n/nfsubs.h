@@ -32,12 +32,11 @@ U_NAMESPACE_BEGIN
 class NFSubstitution : public UObject {
     int32_t pos;
     const NFRuleSet* ruleSet;
-    const DecimalFormat* numberFormat;
+    DecimalFormat* numberFormat;
     
 protected:
     NFSubstitution(int32_t pos,
         const NFRuleSet* ruleSet,
-        const RuleBasedNumberFormat* rbnf,
         const UnicodeString& description,
         UErrorCode& status);
     
@@ -98,10 +97,24 @@ public:
 
     virtual void toString(UnicodeString& result) const;
     
+    void setDecimalFormatSymbols(const DecimalFormatSymbols &newSymbols, UErrorCode& status);
+
+    
     
     
     
     
+
+
+
+
+
+
+
+
+
+    virtual void doSubstitution(int64_t number, UnicodeString& toInsertInto, int32_t pos, int32_t recursionCount, UErrorCode& status) const;
+
     
 
 
@@ -112,19 +125,7 @@ public:
 
 
 
-    virtual void doSubstitution(int64_t number, UnicodeString& toInsertInto, int32_t pos, UErrorCode& status) const;
-
-    
-
-
-
-
-
-
-
-
-
-    virtual void doSubstitution(double number, UnicodeString& toInsertInto, int32_t pos, UErrorCode& status) const;
+    virtual void doSubstitution(double number, UnicodeString& toInsertInto, int32_t pos, int32_t recursionCount, UErrorCode& status) const;
     
 protected:
     
@@ -231,14 +232,6 @@ public:
 
 
     virtual UChar tokenChar() const = 0;
-    
-    
-
-
-
-
-
-    virtual UBool isNullSubstitution() const;
     
     
 

@@ -22,6 +22,7 @@
 #include "unicode/uiter.h"
 #include "unicode/unorm2.h"
 
+#ifndef U_HIDE_DEPRECATED_API
 
 
 
@@ -126,6 +127,9 @@
 
 
 
+
+
+#ifndef U_HIDE_DEPRECATED_API
 
 
 
@@ -149,6 +153,7 @@ typedef enum {
   
   UNORM_MODE_COUNT
 } UNormalizationMode;
+#endif  
 
 
 
@@ -460,102 +465,6 @@ unorm_concatenate(const UChar *left, int32_t leftLength,
                   UNormalizationMode mode, int32_t options,
                   UErrorCode *pErrorCode);
 
-
-
-
-
-
-#define UNORM_INPUT_IS_FCD          0x20000
-
-
-
-
-
-
-#define U_COMPARE_IGNORE_CASE       0x10000
-
-#ifndef U_COMPARE_CODE_POINT_ORDER
-
-
-
-
-
-
-#define U_COMPARE_CODE_POINT_ORDER  0x8000
-#endif
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-U_STABLE int32_t U_EXPORT2
-unorm_compare(const UChar *s1, int32_t length1,
-              const UChar *s2, int32_t length2,
-              uint32_t options,
-              UErrorCode *pErrorCode);
-
+#endif  
 #endif 
-
 #endif

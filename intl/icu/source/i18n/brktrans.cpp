@@ -12,13 +12,15 @@
 
 #if  !UCONFIG_NO_TRANSLITERATION && !UCONFIG_NO_BREAK_ITERATION
 
-#include "unicode/unifilt.h"
-#include "unicode/uchar.h"
-#include "unicode/uniset.h"
 #include "unicode/brkiter.h"
-#include "brktrans.h"
+#include "unicode/localpointer.h"
 #include "unicode/uchar.h"
+#include "unicode/unifilt.h"
+#include "unicode/uniset.h"
+
+#include "brktrans.h"
 #include "cmemory.h"
+#include "mutex.h"
 #include "uprops.h"
 #include "uinvchar.h"
 #include "util.h"
@@ -36,11 +38,8 @@ static const UChar SPACE       = 32;
 
 
 BreakTransliterator::BreakTransliterator(UnicodeFilter* adoptedFilter) :
-    Transliterator(UNICODE_STRING("Any-BreakInternal", 17), adoptedFilter),
-    fInsertion(SPACE) {
-        bi = NULL;
-        UErrorCode status = U_ZERO_ERROR;
-        boundaries = new UVector32(status);
+        Transliterator(UNICODE_STRING("Any-BreakInternal", 17), adoptedFilter),
+        cachedBI(NULL), cachedBoundaries(NULL), fInsertion(SPACE) {
     }
 
 
@@ -48,25 +47,14 @@ BreakTransliterator::BreakTransliterator(UnicodeFilter* adoptedFilter) :
 
 
 BreakTransliterator::~BreakTransliterator() {
-    delete bi;
-    bi = NULL;
-    delete boundaries;
-    boundaries = NULL;
 }
 
 
 
 
 BreakTransliterator::BreakTransliterator(const BreakTransliterator& o) :
-    Transliterator(o) {
-        bi = NULL;
-        if (o.bi != NULL) {
-            bi = o.bi->clone();
-        }
-        fInsertion = o.fInsertion;
-        UErrorCode status = U_ZERO_ERROR;
-        boundaries = new UVector32(status);
-    }
+        Transliterator(o), cachedBI(NULL), cachedBoundaries(NULL), fInsertion(o.fInsertion) {
+}
 
 
 
@@ -83,9 +71,27 @@ void BreakTransliterator::handleTransliterate(Replaceable& text, UTransPosition&
                                                     UBool isIncremental ) const {
 
         UErrorCode status = U_ZERO_ERROR;
+        LocalPointer<BreakIterator> bi;
+        LocalPointer<UVector32> boundaries;
+
+        {
+            Mutex m;
+            BreakTransliterator *nonConstThis = const_cast<BreakTransliterator *>(this);
+            boundaries.moveFrom(nonConstThis->cachedBoundaries);
+            bi.moveFrom(nonConstThis->cachedBI);
+        }
+        if (bi.isNull()) {
+            bi.adoptInstead(BreakIterator::createWordInstance(Locale::getEnglish(), status));
+        }
+        if (boundaries.isNull()) {
+            boundaries.adoptInstead(new UVector32(status));
+        }
+
+        if (bi.isNull() || boundaries.isNull() || U_FAILURE(status)) {
+            return;
+        }
+
         boundaries->removeAllElements();
-        BreakTransliterator *nonConstThis = (BreakTransliterator *)this;
-        nonConstThis->getBreakIterator(); 
         UnicodeString sText = replaceableAsString(text);
         bi->setText(sText);
         bi->preceding(offsets.start);
@@ -133,6 +139,18 @@ void BreakTransliterator::handleTransliterate(Replaceable& text, UTransPosition&
         offsets.start = isIncremental ? lastBoundary + delta : offsets.limit;
 
         
+        {
+            Mutex m;
+            BreakTransliterator *nonConstThis = const_cast<BreakTransliterator *>(this);
+            if (nonConstThis->cachedBI.isNull()) {
+                nonConstThis->cachedBI.moveFrom(bi);
+            }
+            if (nonConstThis->cachedBoundaries.isNull()) {
+                nonConstThis->cachedBoundaries.moveFrom(boundaries);
+            }
+        }
+
+        
         
 }
 
@@ -148,21 +166,6 @@ const UnicodeString &BreakTransliterator::getInsertion() const {
 
 void BreakTransliterator::setInsertion(const UnicodeString &insertion) {
     this->fInsertion = insertion;
-}
-
-
-
-
-
-
-BreakIterator *BreakTransliterator::getBreakIterator() {
-    UErrorCode status = U_ZERO_ERROR;
-    if (bi == NULL) {
-        
-        
-        bi = BreakIterator::createWordInstance(Locale::getEnglish(), status);
-    }
-    return bi;
 }
 
 

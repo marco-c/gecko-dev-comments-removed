@@ -25,6 +25,7 @@
 #include "collationrootelements.h"
 #include "collationsettings.h"
 #include "collationtailoring.h"
+#include "collunsafe.h"
 #include "normalizer2impl.h"
 #include "uassert.h"
 #include "ucmndata.h"
@@ -262,6 +263,15 @@ CollationDataReader::read(const CollationTailoring *base, const uint8_t *inBytes
             return;
         }
         if(baseData == NULL) {
+#if defined(COLLUNSAFE_COLL_VERSION) && defined (COLLUNSAFE_SERIALIZE)
+          tailoring.unsafeBackwardSet = new UnicodeSet(unsafe_serializedData, unsafe_serializedCount, UnicodeSet::kSerialized, errorCode);
+          if(tailoring.unsafeBackwardSet == NULL) {
+            errorCode = U_MEMORY_ALLOCATION_ERROR;
+            return;
+          } else if (U_FAILURE(errorCode)) {
+            return;
+          }
+#else
             
             
             
@@ -279,6 +289,7 @@ CollationDataReader::read(const CollationTailoring *base, const uint8_t *inBytes
                 return;
             }
             data->nfcImpl.addLcccChars(*tailoring.unsafeBackwardSet);
+#endif 
         } else {
             
             tailoring.unsafeBackwardSet = static_cast<UnicodeSet *>(

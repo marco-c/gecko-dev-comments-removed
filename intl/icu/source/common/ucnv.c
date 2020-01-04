@@ -295,12 +295,7 @@ ucnv_safeClone(const UConverter* cnv, void *stackBuffer, int32_t *pBufferSize, U
     }
 
     
-    
-
-
-
-
-    if (cnv->sharedData->referenceCounter != ~0) {
+    if (cnv->sharedData->isReferenceCounted) {
         ucnv_incrementRefCount(cnv->sharedData);
     }
 
@@ -385,12 +380,7 @@ ucnv_close (UConverter * converter)
         uprv_free(converter->subChars);
     }
 
-    
-
-
-
-
-    if (converter->sharedData->referenceCounter != ~0) {
+    if (converter->sharedData->isReferenceCounted) {
         ucnv_unloadSharedDataIfReady(converter->sharedData);
     }
 

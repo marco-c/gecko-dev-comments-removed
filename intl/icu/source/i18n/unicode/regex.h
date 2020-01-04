@@ -889,6 +889,11 @@ public:
 
 
 
+
+
+
+
+
     virtual UnicodeString group(int32_t groupNum, UErrorCode &status) const;
 
    
@@ -916,6 +921,11 @@ public:
     virtual UText *group(UText *dest, int64_t &group_len, UErrorCode &status) const; 
 
    
+
+
+
+
+
 
 
 

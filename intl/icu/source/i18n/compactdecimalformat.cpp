@@ -242,10 +242,22 @@ CompactDecimalFormat::format(
     double number,
     UnicodeString& appendTo,
     FieldPosition& pos) const {
+  UErrorCode status = U_ZERO_ERROR;
+  return format(number, appendTo, pos, status);
+}
+
+UnicodeString&
+CompactDecimalFormat::format(
+    double number,
+    UnicodeString& appendTo,
+    FieldPosition& pos,
+    UErrorCode &status) const {
+  if (U_FAILURE(status)) {
+    return appendTo;
+  }
   DigitList orig, rounded;
   orig.set(number);
   UBool isNegative;
-  UErrorCode status = U_ZERO_ERROR;
   _round(orig, rounded, isNegative, status);
   if (U_FAILURE(status)) {
     return appendTo;
@@ -279,10 +291,46 @@ CompactDecimalFormat::format(
 
 UnicodeString&
 CompactDecimalFormat::format(
+    int32_t number,
+    UnicodeString& appendTo,
+    FieldPosition& pos) const {
+  return format((double) number, appendTo, pos);
+}
+
+UnicodeString&
+CompactDecimalFormat::format(
+    int32_t number,
+    UnicodeString& appendTo,
+    FieldPosition& pos,
+    UErrorCode &status) const {
+  return format((double) number, appendTo, pos, status);
+}
+
+UnicodeString&
+CompactDecimalFormat::format(
+    int32_t ,
+    UnicodeString& appendTo,
+    FieldPositionIterator* ,
+    UErrorCode& status) const {
+  status = U_UNSUPPORTED_ERROR;
+  return appendTo;
+}
+
+UnicodeString&
+CompactDecimalFormat::format(
     int64_t number,
     UnicodeString& appendTo,
     FieldPosition& pos) const {
   return format((double) number, appendTo, pos);
+}
+
+UnicodeString&
+CompactDecimalFormat::format(
+    int64_t number,
+    UnicodeString& appendTo,
+    FieldPosition& pos,
+    UErrorCode &status) const {
+  return format((double) number, appendTo, pos, status);
 }
 
 UnicodeString&

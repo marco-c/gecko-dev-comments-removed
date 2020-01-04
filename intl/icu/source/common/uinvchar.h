@@ -21,6 +21,9 @@
 #define __UINVCHAR_H__
 
 #include "unicode/utypes.h"
+#ifdef __cplusplus
+#include "unicode/unistr.h"
+#endif
 
 
 
@@ -47,6 +50,22 @@ uprv_isInvariantString(const char *s, int32_t length);
 
 U_INTERNAL UBool U_EXPORT2
 uprv_isInvariantUString(const UChar *s, int32_t length);
+
+#ifdef __cplusplus
+
+
+
+
+
+
+
+
+U_INTERNAL inline UBool U_EXPORT2
+uprv_isInvariantUnicodeString(const icu::UnicodeString &s) {
+    return uprv_isInvariantUString(s.getBuffer(), s.length());
+}
+
+#endif  
 
 
 

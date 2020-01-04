@@ -28,12 +28,11 @@ U_NAMESPACE_BEGIN
 UOBJECT_DEFINE_RTTI_IMPLEMENTATION(SpoofImpl)
 
 SpoofImpl::SpoofImpl(SpoofData *data, UErrorCode &status) :
-        fMagic(0), fChecks(USPOOF_ALL_CHECKS), fSpoofData(NULL), fAllowedCharsSet(NULL) , 
+        fMagic(0), fChecks(USPOOF_ALL_CHECKS), fSpoofData(data), fAllowedCharsSet(NULL) , 
         fAllowedLocales(NULL), fCachedIdentifierInfo(NULL) {
     if (U_FAILURE(status)) {
         return;
     }
-    fSpoofData = data;
     fRestrictionLevel = USPOOF_HIGHLY_RESTRICTIVE;
 
     UnicodeSet *allowedCharsSet = new UnicodeSet(0, 0x10ffff);
@@ -502,9 +501,10 @@ spoofDataIsAcceptable(void *context,
 
 
 
-SpoofData *SpoofData::getDefault(UErrorCode &status) {
-    
 
+
+
+SpoofData *SpoofData::getDefault(UErrorCode &status) {
     UDataMemory *udm = udata_openChoice(NULL, "cfu", "confusables",
                                         spoofDataIsAcceptable, 
                                         NULL,       
@@ -567,7 +567,6 @@ SpoofData::SpoofData(UErrorCode &status) {
         return;
     }
     fDataOwned = true;
-    fRefCount = 1;
 
     
     

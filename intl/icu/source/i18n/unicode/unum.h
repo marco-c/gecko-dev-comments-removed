@@ -151,6 +151,10 @@ typedef enum UNumberFormatStyle {
 
 
 
+
+
+
+
     UNUM_CURRENCY=2,
     
 
@@ -207,21 +211,43 @@ typedef enum UNumberFormatStyle {
 
 
 
+
     UNUM_CURRENCY_ACCOUNTING=12,
-#ifndef U_HIDE_DRAFT_API
     
 
 
 
 
     UNUM_CASH_CURRENCY=13,
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+
+    UNUM_DECIMAL_COMPACT_SHORT=14,
+    
+
+
+
+
+
+    UNUM_DECIMAL_COMPACT_LONG=15,
+    
+
+
+
+
+
+    UNUM_CURRENCY_STANDARD=16,
 #endif 
 
     
 
 
 
-    UNUM_FORMAT_STYLE_COUNT=14,
+    UNUM_FORMAT_STYLE_COUNT=17,
 
     
 
@@ -629,12 +655,16 @@ unum_formatUFormattable(const UNumberFormat* fmt,
 
 
 
+
+
 U_STABLE int32_t U_EXPORT2 
 unum_parse(    const   UNumberFormat*  fmt,
         const   UChar*          text,
         int32_t         textLength,
         int32_t         *parsePos ,
         UErrorCode      *status);
+
+
 
 
 
@@ -677,12 +707,16 @@ unum_parseInt64(const UNumberFormat*  fmt,
 
 
 
+
+
 U_STABLE double U_EXPORT2 
 unum_parseDouble(    const   UNumberFormat*  fmt,
             const   UChar*          text,
             int32_t         textLength,
             int32_t         *parsePos ,
             UErrorCode      *status);
+
+
 
 
 
@@ -745,6 +779,8 @@ unum_parseDoubleCurrency(const UNumberFormat* fmt,
                          int32_t* parsePos, 
                          UChar* currency,
                          UErrorCode* status);
+
+
 
 
 
@@ -835,6 +871,9 @@ typedef enum UNumberFormatAttributeValue {
   UNUM_YES = 1,
   
   UNUM_MAYBE = 2
+#else
+  
+  UNUM_FORMAT_ATTRIBUTE_VALUE_HIDDEN
 #endif 
 } UNumberFormatAttributeValue;
 #endif
@@ -891,7 +930,7 @@ typedef enum UNumberFormatAttribute {
 
 
 
-  UNUM_PARSE_ALL_INPUT = UNUM_LENIENT_PARSE + 1,
+  UNUM_PARSE_ALL_INPUT = 20,
 #endif
   
 
@@ -902,23 +941,25 @@ typedef enum UNumberFormatAttribute {
 
 
 
-  UNUM_SCALE = UNUM_LENIENT_PARSE + 2,
-
+  UNUM_SCALE = 21,
 #ifndef U_HIDE_INTERNAL_API
   
 
-  UNUM_NUMERIC_ATTRIBUTE_COUNT = UNUM_LENIENT_PARSE + 3,
+
+
+
+
+  UNUM_MINIMUM_GROUPING_DIGITS = 22,
+  
 #endif  
 
-#ifndef U_HIDE_DRAFT_API
   
 
 
 
 
 
-  UNUM_CURRENCY_USAGE = UNUM_LENIENT_PARSE + 4,
-#endif  
+  UNUM_CURRENCY_USAGE = 23,
 
   
   
@@ -940,7 +981,6 @@ typedef enum UNumberFormatAttribute {
 
   UNUM_PARSE_NO_EXPONENT,
 
-#ifndef U_HIDE_DRAFT_API
   
 
 
@@ -949,13 +989,12 @@ typedef enum UNumberFormatAttribute {
 
 
 
-  UNUM_PARSE_DECIMAL_MARK_REQUIRED = UNUM_PARSE_NO_EXPONENT+1,
-#endif  
+  UNUM_PARSE_DECIMAL_MARK_REQUIRED = 0x1002,
 
   
   
 
-  UNUM_LIMIT_BOOLEAN_ATTRIBUTE = UNUM_PARSE_NO_EXPONENT+2
+  UNUM_LIMIT_BOOLEAN_ATTRIBUTE = 0x1003
 } UNumberFormatAttribute;
 
 
@@ -1228,12 +1267,10 @@ typedef enum UNumberFormatSymbol {
 
   UNUM_NINE_DIGIT_SYMBOL = 26,
 
-#ifndef U_HIDE_DRAFT_API
   
 
 
   UNUM_EXPONENT_MULTIPLICATION_SYMBOL = 27,
-#endif  
 
   
   UNUM_FORMAT_SYMBOL_COUNT = 28

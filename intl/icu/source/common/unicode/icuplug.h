@@ -108,6 +108,10 @@
 #include "unicode/utypes.h"
 
 
+#if UCONFIG_ENABLE_PLUGINS
+
+
+
 
 
 #ifndef U_HIDE_INTERNAL_API
@@ -368,4 +372,7 @@ U_INTERNAL void U_EXPORT2
 uplug_removePlug(UPlugData *plug, UErrorCode *status);
 #endif  
 
-#endif
+#endif 
+
+#endif 
+

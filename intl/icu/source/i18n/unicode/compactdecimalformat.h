@@ -133,6 +133,23 @@ public:
 
 
 
+    virtual UnicodeString& format(double number,
+                                  UnicodeString& appendTo,
+                                  FieldPosition& pos,
+                                  UErrorCode &status) const;
+
+    
+
+
+
+
+
+
+
+
+
+
+
 
 
     virtual UnicodeString& format(double number,
@@ -151,9 +168,75 @@ public:
 
 
 
+    virtual UnicodeString& format(int32_t number,
+                                  UnicodeString& appendTo,
+                                  FieldPosition& pos) const;
+
+    
+
+
+
+
+
+
+
+
+
+
+    virtual UnicodeString& format(int32_t number,
+                                  UnicodeString& appendTo,
+                                  FieldPosition& pos,
+                                  UErrorCode &status) const;
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+    virtual UnicodeString& format(int32_t number,
+                                  UnicodeString& appendTo,
+                                  FieldPositionIterator* posIter,
+                                  UErrorCode& status) const;
+
+    
+
+
+
+
+
+
+
+
+
+
     virtual UnicodeString& format(int64_t number,
                                   UnicodeString& appendTo,
                                   FieldPosition& pos) const;
+
+    
+
+
+
+
+
+
+
+
+
+
+    virtual UnicodeString& format(int64_t number,
+                                  UnicodeString& appendTo,
+                                  FieldPosition& pos,
+                                  UErrorCode &status) const;
 
     
 

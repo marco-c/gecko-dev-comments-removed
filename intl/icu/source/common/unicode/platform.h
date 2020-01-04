@@ -160,6 +160,9 @@
 #       define U_PLATFORM U_PF_DARWIN
 #   endif
 #elif defined(BSD) || defined(__FreeBSD__) || defined(__FreeBSD_kernel__) || defined(__NetBSD__) || defined(__OpenBSD__) || defined(__MirBSD__)
+#   if defined(__FreeBSD__)
+#       include <sys/endian.h>
+#   endif
 #   define U_PLATFORM U_PF_BSD
 #elif defined(sun) || defined(__sun)
     
@@ -429,6 +432,15 @@
 #ifndef __has_attribute
 #    define __has_attribute(x) 0
 #endif
+#ifndef __has_builtin
+#    define __has_builtin(x) 0
+#endif
+#ifndef __has_feature
+#    define __has_feature(x) 0
+#endif
+#ifndef __has_extension
+#    define __has_extension(x) 0
+#endif
 
 
 
@@ -452,6 +464,61 @@
 #else
 #   define U_ALLOC_SIZE_ATTR(X)
 #   define U_ALLOC_SIZE_ATTR2(X,Y)
+#endif
+
+
+
+
+
+
+
+#ifdef U_CPLUSPLUS_VERSION
+#   if U_CPLUSPLUS_VERSION != 0 && !defined(__cplusplus)
+#       undef U_CPLUSPLUS_VERSION
+#       define U_CPLUSPLUS_VERSION 0
+#   endif
+    
+#elif !defined(__cplusplus)
+#   define U_CPLUSPLUS_VERSION 0
+#elif __cplusplus >= 201402L
+#   define U_CPLUSPLUS_VERSION 14
+#elif __cplusplus >= 201103L
+#   define U_CPLUSPLUS_VERSION 11
+#else
+    
+#   define U_CPLUSPLUS_VERSION 1
+#endif
+
+
+
+
+
+
+
+#ifdef U_HAVE_RVALUE_REFERENCES
+    
+#elif U_CPLUSPLUS_VERSION >= 11 || __has_feature(cxx_rvalue_references) \
+        || defined(__GXX_EXPERIMENTAL_CXX0X__) \
+        || (defined(_MSC_VER) && _MSC_VER >= 1600)  
+#   define U_HAVE_RVALUE_REFERENCES 1
+#else
+#   define U_HAVE_RVALUE_REFERENCES 0
+#endif
+
+
+
+
+
+
+
+
+#ifdef U_NOEXCEPT
+    
+#elif U_CPLUSPLUS_VERSION >= 11 || __has_feature(cxx_noexcept) || __has_extension(cxx_noexcept) \
+        || (defined(_MSC_VER) && _MSC_VER >= 1900)  
+#   define U_NOEXCEPT noexcept
+#else
+#   define U_NOEXCEPT
 #endif
 
 
@@ -670,7 +737,7 @@
 
 
 
-#   if (defined(__cplusplus) && __cplusplus >= 201103L) || (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L)
+#   if U_CPLUSPLUS_VERSION >= 11 || (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L)
 #       define U_HAVE_CHAR16_T 1
 #   else
 #       define U_HAVE_CHAR16_T 0

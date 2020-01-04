@@ -127,8 +127,11 @@ U_NAMESPACE_BEGIN
 
 
 
+
+
 class U_COMMON_API Normalizer : public UObject {
 public:
+#ifndef U_HIDE_DEPRECATED_API
   
 
 
@@ -183,6 +186,7 @@ public:
 
 
   Normalizer(const Normalizer& copy);
+#endif  
 
   
 
@@ -195,6 +199,7 @@ public:
   
   
 
+#ifndef U_HIDE_DEPRECATED_API
   
 
 
@@ -372,6 +377,7 @@ public:
               UnicodeString &result,
               UNormalizationMode mode, int32_t options,
               UErrorCode &errorCode);
+#endif  
 
   
 
@@ -442,6 +448,7 @@ public:
           uint32_t options,
           UErrorCode &errorCode);
 
+#ifndef U_HIDE_DEPRECATED_API
   
   
   
@@ -712,6 +719,7 @@ public:
 
 
   static UClassID U_EXPORT2 getStaticClassID();
+#endif  
 
   
 
@@ -742,7 +750,9 @@ private:
 
   FilteredNormalizer2*fFilteredNorm2;  
   const Normalizer2  *fNorm2;  
+#ifndef U_HIDE_DEPRECATED_API
   UNormalizationMode  fUMode;
+#endif  
   int32_t             fOptions;
 
   
@@ -761,6 +771,7 @@ private:
 
 
 
+#ifndef U_HIDE_DEPRECATED_API
 inline UBool
 Normalizer::operator!= (const Normalizer& other) const
 { return ! operator==(other); }
@@ -778,6 +789,7 @@ Normalizer::isNormalized(const UnicodeString& source,
                          UErrorCode &status) {
     return isNormalized(source, mode, 0, status);
 }
+#endif  
 
 inline int32_t
 Normalizer::compare(const UnicodeString &s1, const UnicodeString &s2,

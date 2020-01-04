@@ -606,11 +606,8 @@ static const UConverterStaticData _LMBCSStaticData##n={\
     0, UCNV_IBM, UCNV_LMBCS_##n, 1, 3,\
     { 0x3f, 0, 0, 0 },1,FALSE,FALSE,0,0,{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0} \
 };\
-const UConverterSharedData _LMBCSData##n={\
-    sizeof(UConverterSharedData), ~((uint32_t) 0),\
-    NULL, NULL, &_LMBCSStaticData##n, FALSE, &_LMBCSImpl##n, \
-    0 \
-};
+const UConverterSharedData _LMBCSData##n= \
+        UCNV_IMMUTABLE_SHARED_DATA_INITIALIZER(&_LMBCSStaticData##n, &_LMBCSImpl##n);
 
  
 

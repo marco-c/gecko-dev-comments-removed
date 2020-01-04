@@ -29,6 +29,7 @@
 #include "charstr.h"
 #include "cmemory.h"
 #include "cstring.h"
+#include "mutex.h"
 #include "putilimp.h"
 #include "uassert.h"
 #include "ucln_cmn.h"
@@ -100,14 +101,15 @@ static UDataMemory *udata_findCachedData(const char *path);
 
 
 
-static UDataMemory *gCommonICUDataArray[10] = { NULL };
+static UDataMemory *gCommonICUDataArray[10] = { NULL };   
 
-static UBool gHaveTriedToLoadCommonData = FALSE;  
+static u_atomic_int32_t gHaveTriedToLoadCommonData = ATOMIC_INT32_T_INITIALIZER(0);  
 
 static UHashtable  *gCommonDataCache = NULL;  
 static icu::UInitOnce gCommonDataCacheInitOnce = U_INITONCE_INITIALIZER;
 
-static UDataFileAccess  gDataFileAccess = UDATA_DEFAULT_ACCESS;
+static UDataFileAccess  gDataFileAccess = UDATA_DEFAULT_ACCESS;  
+                                                                 
 
 static UBool U_CALLCONV
 udata_cleanup(void)
@@ -124,7 +126,7 @@ udata_cleanup(void)
         udata_close(gCommonICUDataArray[i]);
         gCommonICUDataArray[i] = NULL;
     }
-    gHaveTriedToLoadCommonData = FALSE;
+    gHaveTriedToLoadCommonData = 0;
 
     return TRUE;                   
 }
@@ -139,14 +141,16 @@ findCommonICUDataByName(const char *inBasename)
     if (pData == NULL)
         return FALSE;
 
-    for (i = 0; i < UPRV_LENGTHOF(gCommonICUDataArray); ++i) {
-        if ((gCommonICUDataArray[i] != NULL) && (gCommonICUDataArray[i]->pHeader == pData->pHeader)) {
-            
-            found = TRUE;
-            break;
+    {
+        Mutex lock;
+        for (i = 0; i < UPRV_LENGTHOF(gCommonICUDataArray); ++i) {
+            if ((gCommonICUDataArray[i] != NULL) && (gCommonICUDataArray[i]->pHeader == pData->pHeader)) {
+                
+                found = TRUE;
+                break;
+            }
         }
     }
-
     return found;
 }
 
@@ -663,7 +667,11 @@ openCommonData(const char *path,
         if(commonDataIndex >= UPRV_LENGTHOF(gCommonICUDataArray)) {
             return NULL;
         }
-        if(gCommonICUDataArray[commonDataIndex] == NULL) {
+        {
+            Mutex lock;
+            if(gCommonICUDataArray[commonDataIndex] != NULL) {
+                return gCommonICUDataArray[commonDataIndex];
+            }
             int32_t i;
             for(i = 0; i < commonDataIndex; ++i) {
                 if(gCommonICUDataArray[i]->pHeader == &U_ICUDATA_ENTRY_POINT) {
@@ -671,23 +679,26 @@ openCommonData(const char *path,
                     return NULL;
                 }
             }
-
-            
-            
-
-
-
-            
-
-
-
-
-
-
-
-            setCommonICUDataPointer(&U_ICUDATA_ENTRY_POINT, FALSE, pErrorCode);
         }
-        return gCommonICUDataArray[commonDataIndex];
+
+        
+        
+
+
+
+        
+
+
+
+
+
+
+
+        setCommonICUDataPointer(&U_ICUDATA_ENTRY_POINT, FALSE, pErrorCode);
+        {
+            Mutex lock;
+            return gCommonICUDataArray[commonDataIndex];
+        }
     }
 
 
@@ -795,7 +806,7 @@ static UBool extendICUData(UErrorCode *pErr)
     static UMutex extendICUDataMutex = U_MUTEX_INITIALIZER;
     umtx_lock(&extendICUDataMutex);
 #endif
-    if(!gHaveTriedToLoadCommonData) {
+    if(!umtx_loadAcquire(gHaveTriedToLoadCommonData)) {
         
         pData = openCommonData(
                    U_ICUDATA_NAME,            
@@ -820,7 +831,7 @@ static UBool extendICUData(UErrorCode *pErr)
                        pErr);             
         }
 
-        gHaveTriedToLoadCommonData = TRUE;
+        umtx_storeRelease(gHaveTriedToLoadCommonData, 1);
     }
 
     didUpdate = findCommonICUDataByName(U_ICUDATA_NAME);  
@@ -1398,5 +1409,6 @@ udata_getInfo(UDataMemory *pData, UDataInfo *pInfo) {
 
 U_CAPI void U_EXPORT2 udata_setFileAccess(UDataFileAccess access, UErrorCode * )
 {
+    
     gDataFileAccess = access;
 }

@@ -89,6 +89,8 @@ public:
                                   UnicodeString& appendTo,
                                   FieldPosition& pos) const;
 
+    using NumberFormat::format;
+
 
 
 

@@ -1674,11 +1674,18 @@ utrans_stripRules(const UChar *source, int32_t sourceLen, UChar *target, UErrorC
                     target--;
                 }
                 do {
+                    if (source == sourceLimit) {
+                        c = U_SENTINEL;
+                        break;
+                    }
                     c = *(source++);
                 }
                 while (c != CR && c != LF);
+                if (c < 0) {
+                    break;
+                }
             }
-            else if (c == ESCAPE) {
+            else if (c == ESCAPE && source < sourceLimit) {
                 UChar32   c2 = *source;
                 if (c2 == CR || c2 == LF) {
                     

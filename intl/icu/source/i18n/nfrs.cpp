@@ -26,6 +26,22 @@
 #include "cmemory.h"
 #endif
 
+enum {
+    
+    NEGATIVE_RULE_INDEX = 0,
+    
+    IMPROPER_FRACTION_RULE_INDEX = 1,
+    
+    PROPER_FRACTION_RULE_INDEX = 2,
+    
+    MASTER_RULE_INDEX = 3,
+    
+    INFINITY_RULE_INDEX = 4,
+    
+    NAN_RULE_INDEX = 5,
+    NON_NUMERICAL_RULE_LENGTH = 6
+};
+
 U_NAMESPACE_BEGIN
 
 #if 0
@@ -104,10 +120,6 @@ static const UChar gColon = 0x003a;
 static const UChar gSemicolon = 0x003b;
 static const UChar gLineFeed = 0x000a;
 
-static const UChar gFourSpaces[] =
-{
-    0x20, 0x20, 0x20, 0x20, 0
-}; 
 static const UChar gPercentPercent[] =
 {
     0x25, 0x25, 0
@@ -118,17 +130,17 @@ static const UChar gNoparse[] =
     0x40, 0x6E, 0x6F, 0x70, 0x61, 0x72, 0x73, 0x65, 0
 }; 
 
-NFRuleSet::NFRuleSet(UnicodeString* descriptions, int32_t index, UErrorCode& status)
+NFRuleSet::NFRuleSet(RuleBasedNumberFormat *_owner, UnicodeString* descriptions, int32_t index, UErrorCode& status)
   : name()
   , rules(0)
-  , negativeNumberRule(NULL)
+  , owner(_owner)
+  , fractionRules()
   , fIsFractionRuleSet(FALSE)
   , fIsPublic(FALSE)
   , fIsParseable(TRUE)
-  , fRecursionCount(0)
 {
-    for (int i = 0; i < 3; ++i) {
-        fractionRules[i] = NULL;
+    for (int32_t i = 0; i < NON_NUMERICAL_RULE_LENGTH; ++i) {
+        nonNumericalRules[i] = NULL;
     }
 
     if (U_FAILURE(status)) {
@@ -179,7 +191,7 @@ NFRuleSet::NFRuleSet(UnicodeString* descriptions, int32_t index, UErrorCode& sta
 }
 
 void
-NFRuleSet::parseRules(UnicodeString& description, const RuleBasedNumberFormat* owner, UErrorCode& status)
+NFRuleSet::parseRules(UnicodeString& description, UErrorCode& status)
 {
     
     
@@ -217,85 +229,103 @@ NFRuleSet::parseRules(UnicodeString& description, const RuleBasedNumberFormat* o
     
     
     
-    uint32_t i = 0;
-    while (i < rules.size()) {
+    int32_t rulesSize = rules.size();
+    for (int32_t i = 0; i < rulesSize; i++) {
         NFRule* rule = rules[i];
+        int64_t baseValue = rule->getBaseValue();
 
-        switch (rule->getType()) {
+        if (baseValue == 0) {
             
             
             
             
             
-        case NFRule::kNoBase:
             rule->setBaseValue(defaultBaseValue, status);
-            if (!isFractionRuleSet()) {
-                ++defaultBaseValue;
-            }
-            ++i;
-            break;
-
-            
-            
-        case NFRule::kNegativeNumberRule:
-            if (negativeNumberRule) {
-                delete negativeNumberRule;
-            }
-            negativeNumberRule = rules.remove(i);
-            break;
-
-            
-            
-        case NFRule::kImproperFractionRule:
-            if (fractionRules[0]) {
-                delete fractionRules[0];
-            }
-            fractionRules[0] = rules.remove(i);
-            break;
-
-            
-            
-        case NFRule::kProperFractionRule:
-            if (fractionRules[1]) {
-                delete fractionRules[1];
-            }
-            fractionRules[1] = rules.remove(i);
-            break;
-
-            
-            
-        case NFRule::kMasterRule:
-            if (fractionRules[2]) {
-                delete fractionRules[2];
-            }
-            fractionRules[2] = rules.remove(i);
-            break;
-
+        }
+        else {
             
             
             
-        default:
-            if (rule->getBaseValue() < defaultBaseValue) {
+            if (baseValue < defaultBaseValue) {
                 
                 status = U_PARSE_ERROR;
                 return;
             }
-            defaultBaseValue = rule->getBaseValue();
-            if (!isFractionRuleSet()) {
-                ++defaultBaseValue;
-            }
-            ++i;
-            break;
+            defaultBaseValue = baseValue;
         }
+        if (!fIsFractionRuleSet) {
+            ++defaultBaseValue;
+        }
+    }
+}
+
+
+
+
+
+void NFRuleSet::setNonNumericalRule(NFRule *rule) {
+    int64_t baseValue = rule->getBaseValue();
+    if (baseValue == NFRule::kNegativeNumberRule) {
+        delete nonNumericalRules[NEGATIVE_RULE_INDEX];
+        nonNumericalRules[NEGATIVE_RULE_INDEX] = rule;
+    }
+    else if (baseValue == NFRule::kImproperFractionRule) {
+        setBestFractionRule(IMPROPER_FRACTION_RULE_INDEX, rule, TRUE);
+    }
+    else if (baseValue == NFRule::kProperFractionRule) {
+        setBestFractionRule(PROPER_FRACTION_RULE_INDEX, rule, TRUE);
+    }
+    else if (baseValue == NFRule::kMasterRule) {
+        setBestFractionRule(MASTER_RULE_INDEX, rule, TRUE);
+    }
+    else if (baseValue == NFRule::kInfinityRule) {
+        delete nonNumericalRules[INFINITY_RULE_INDEX];
+        nonNumericalRules[INFINITY_RULE_INDEX] = rule;
+    }
+    else if (baseValue == NFRule::kNaNRule) {
+        delete nonNumericalRules[NAN_RULE_INDEX];
+        nonNumericalRules[NAN_RULE_INDEX] = rule;
+    }
+}
+
+
+
+
+
+
+
+
+void NFRuleSet::setBestFractionRule(int32_t originalIndex, NFRule *newRule, UBool rememberRule) {
+    if (rememberRule) {
+        fractionRules.add(newRule);
+    }
+    NFRule *bestResult = nonNumericalRules[originalIndex];
+    if (bestResult == NULL) {
+        nonNumericalRules[originalIndex] = newRule;
+    }
+    else {
+        
+        const DecimalFormatSymbols *decimalFormatSymbols = owner->getDecimalFormatSymbols();
+        if (decimalFormatSymbols->getSymbol(DecimalFormatSymbols::kDecimalSeparatorSymbol).charAt(0)
+            == newRule->getDecimalPoint())
+        {
+            nonNumericalRules[originalIndex] = newRule;
+        }
+        
     }
 }
 
 NFRuleSet::~NFRuleSet()
 {
-    delete negativeNumberRule;
-    delete fractionRules[0];
-    delete fractionRules[1];
-    delete fractionRules[2];
+    for (int i = 0; i < NON_NUMERICAL_RULE_LENGTH; i++) {
+        if (i != IMPROPER_FRACTION_RULE_INDEX
+            && i != PROPER_FRACTION_RULE_INDEX
+            && i != MASTER_RULE_INDEX)
+        {
+            delete nonNumericalRules[i];
+        }
+        
+    }
 }
 
 static UBool
@@ -316,12 +346,16 @@ NFRuleSet::operator==(const NFRuleSet& rhs) const
 {
     if (rules.size() == rhs.rules.size() &&
         fIsFractionRuleSet == rhs.fIsFractionRuleSet &&
-        name == rhs.name &&
-        util_equalRules(negativeNumberRule, rhs.negativeNumberRule) &&
-        util_equalRules(fractionRules[0], rhs.fractionRules[0]) &&
-        util_equalRules(fractionRules[1], rhs.fractionRules[1]) &&
-        util_equalRules(fractionRules[2], rhs.fractionRules[2])) {
+        name == rhs.name) {
 
+        
+        for (int i = 0; i < NON_NUMERICAL_RULE_LENGTH; i++) {
+            if (!util_equalRules(nonNumericalRules[i], rhs.nonNumericalRules[i])) {
+                return FALSE;
+            }
+        }
+
+        
         for (uint32_t i = 0; i < rules.size(); ++i) {
             if (*rules[i] != *rhs.rules[i]) {
                 return FALSE;
@@ -332,41 +366,62 @@ NFRuleSet::operator==(const NFRuleSet& rhs) const
     return FALSE;
 }
 
-#define RECURSION_LIMIT 50
-
 void
-NFRuleSet::format(int64_t number, UnicodeString& toAppendTo, int32_t pos, UErrorCode& status) const
-{
-    NFRule *rule = findNormalRule(number);
-    if (rule) { 
-        NFRuleSet* ncThis = (NFRuleSet*)this;
-        if (ncThis->fRecursionCount++ >= RECURSION_LIMIT) {
-            
-            ncThis->fRecursionCount = 0;
-        } else {
-            rule->doFormat(number, toAppendTo, pos, status);
-            ncThis->fRecursionCount--;
+NFRuleSet::setDecimalFormatSymbols(const DecimalFormatSymbols &newSymbols, UErrorCode& status) {
+    for (uint32_t i = 0; i < rules.size(); ++i) {
+        rules[i]->setDecimalFormatSymbols(newSymbols, status);
+    }
+    
+    for (int32_t nonNumericalIdx = IMPROPER_FRACTION_RULE_INDEX; nonNumericalIdx <= MASTER_RULE_INDEX; nonNumericalIdx++) {
+        if (nonNumericalRules[nonNumericalIdx]) {
+            for (uint32_t fIdx = 0; fIdx < fractionRules.size(); fIdx++) {
+                NFRule *fractionRule = fractionRules[fIdx];
+                if (nonNumericalRules[nonNumericalIdx]->getBaseValue() == fractionRule->getBaseValue()) {
+                    setBestFractionRule(nonNumericalIdx, fractionRule, FALSE);
+                }
+            }
+        }
+    }
+
+    for (uint32_t nnrIdx = 0; nnrIdx < NON_NUMERICAL_RULE_LENGTH; nnrIdx++) {
+        NFRule *rule = nonNumericalRules[nnrIdx];
+        if (rule) {
+            rule->setDecimalFormatSymbols(newSymbols, status);
         }
     }
 }
 
+#define RECURSION_LIMIT 64
+
 void
-NFRuleSet::format(double number, UnicodeString& toAppendTo, int32_t pos, UErrorCode& status) const
+NFRuleSet::format(int64_t number, UnicodeString& toAppendTo, int32_t pos, int32_t recursionCount, UErrorCode& status) const
 {
-    NFRule *rule = findDoubleRule(number);
+    if (recursionCount >= RECURSION_LIMIT) {
+        
+        status = U_INVALID_STATE_ERROR;
+        return;
+    }
+    const NFRule *rule = findNormalRule(number);
     if (rule) { 
-        NFRuleSet* ncThis = (NFRuleSet*)this;
-        if (ncThis->fRecursionCount++ >= RECURSION_LIMIT) {
-            
-            ncThis->fRecursionCount = 0;
-        } else {
-            rule->doFormat(number, toAppendTo, pos, status);
-            ncThis->fRecursionCount--;
-        }
+        rule->doFormat(number, toAppendTo, pos, ++recursionCount, status);
     }
 }
 
-NFRule*
+void
+NFRuleSet::format(double number, UnicodeString& toAppendTo, int32_t pos, int32_t recursionCount, UErrorCode& status) const
+{
+    if (recursionCount >= RECURSION_LIMIT) {
+        
+        status = U_INVALID_STATE_ERROR;
+        return;
+    }
+    const NFRule *rule = findDoubleRule(number);
+    if (rule) { 
+        rule->doFormat(number, toAppendTo, pos, ++recursionCount, status);
+    }
+}
+
+const NFRule*
 NFRuleSet::findDoubleRule(double number) const
 {
     
@@ -374,33 +429,49 @@ NFRuleSet::findDoubleRule(double number) const
         return findFractionRuleSetRule(number);
     }
 
+    if (uprv_isNaN(number)) {
+        const NFRule *rule = nonNumericalRules[NAN_RULE_INDEX];
+        if (!rule) {
+            rule = owner->getDefaultNaNRule();
+        }
+        return rule;
+    }
+
     
     
     
     if (number < 0) {
-        if (negativeNumberRule) {
-            return  negativeNumberRule;
+        if (nonNumericalRules[NEGATIVE_RULE_INDEX]) {
+            return  nonNumericalRules[NEGATIVE_RULE_INDEX];
         } else {
             number = -number;
         }
+    }
+
+    if (uprv_isInfinite(number)) {
+        const NFRule *rule = nonNumericalRules[INFINITY_RULE_INDEX];
+        if (!rule) {
+            rule = owner->getDefaultInfinityRule();
+        }
+        return rule;
     }
 
     
     if (number != uprv_floor(number)) {
         
         
-        if (number < 1 && fractionRules[1]) {
-            return fractionRules[1];
+        if (number < 1 && nonNumericalRules[PROPER_FRACTION_RULE_INDEX]) {
+            return nonNumericalRules[PROPER_FRACTION_RULE_INDEX];
         }
         
-        else if (fractionRules[0]) {
-            return fractionRules[0];
+        else if (nonNumericalRules[IMPROPER_FRACTION_RULE_INDEX]) {
+            return nonNumericalRules[IMPROPER_FRACTION_RULE_INDEX];
         }
     }
 
     
-    if (fractionRules[2]) {
-        return fractionRules[2];
+    if (nonNumericalRules[MASTER_RULE_INDEX]) {
+        return nonNumericalRules[MASTER_RULE_INDEX];
     }
 
     
@@ -409,7 +480,7 @@ NFRuleSet::findDoubleRule(double number) const
     return findNormalRule(r);
 }
 
-NFRule *
+const NFRule *
 NFRuleSet::findNormalRule(int64_t number) const
 {
     
@@ -422,8 +493,8 @@ NFRuleSet::findNormalRule(int64_t number) const
     
     
     if (number < 0) {
-        if (negativeNumberRule) {
-            return negativeNumberRule;
+        if (nonNumericalRules[NEGATIVE_RULE_INDEX]) {
+            return nonNumericalRules[NEGATIVE_RULE_INDEX];
         } else {
             number = -number;
         }
@@ -480,7 +551,7 @@ NFRuleSet::findNormalRule(int64_t number) const
         return result;
     }
     
-    return fractionRules[2];
+    return nonNumericalRules[MASTER_RULE_INDEX];
 }
 
 
@@ -498,7 +569,7 @@ NFRuleSet::findNormalRule(int64_t number) const
 
 
 
-NFRule*
+const NFRule*
 NFRuleSet::findFractionRuleSetRule(double number) const
 {
     
@@ -631,40 +702,16 @@ NFRuleSet::parse(const UnicodeString& text, ParsePosition& pos, double upperBoun
     fprintf(stderr, "'\n");
     fprintf(stderr, "  parse negative: %d\n", this, negativeNumberRule != 0);
 #endif
-
     
-    if (negativeNumberRule) {
-        Formattable tempResult;
-#ifdef RBNF_DEBUG
-        fprintf(stderr, "  <nfrs before negative> %x ub: %g\n", negativeNumberRule, upperBound);
-#endif
-        UBool success = negativeNumberRule->doParse(text, workingPos, 0, upperBound, tempResult);
-#ifdef RBNF_DEBUG
-        fprintf(stderr, "  <nfrs after negative> success: %d wpi: %d\n", success, workingPos.getIndex());
-#endif
-        if (success && workingPos.getIndex() > highWaterMark.getIndex()) {
-            result = tempResult;
-            highWaterMark = workingPos;
-        }
-        workingPos = pos;
-    }
-#ifdef RBNF_DEBUG
-    fprintf(stderr, "<nfrs> continue fractional with text '");
-    dumpUS(stderr, text);
-    fprintf(stderr, "' hwm: %d\n", highWaterMark.getIndex());
-#endif
-    
-    {
-        for (int i = 0; i < 3; i++) {
-            if (fractionRules[i]) {
-                Formattable tempResult;
-                UBool success = fractionRules[i]->doParse(text, workingPos, 0, upperBound, tempResult);
-                if (success && (workingPos.getIndex() > highWaterMark.getIndex())) {
-                    result = tempResult;
-                    highWaterMark = workingPos;
-                }
-                workingPos = pos;
+    for (int i = 0; i < NON_NUMERICAL_RULE_LENGTH; i++) {
+        if (nonNumericalRules[i]) {
+            Formattable tempResult;
+            UBool success = nonNumericalRules[i]->doParse(text, workingPos, 0, upperBound, tempResult);
+            if (success && (workingPos.getIndex() > highWaterMark.getIndex())) {
+                result = tempResult;
+                highWaterMark = workingPos;
             }
+            workingPos = pos;
         }
     }
 #ifdef RBNF_DEBUG
@@ -720,30 +767,37 @@ NFRuleSet::parse(const UnicodeString& text, ParsePosition& pos, double upperBoun
 void
 NFRuleSet::appendRules(UnicodeString& result) const
 {
+    uint32_t i;
+
     
     result.append(name);
     result.append(gColon);
     result.append(gLineFeed);
 
     
-    for (uint32_t i = 0; i < rules.size(); i++) {
-        result.append(gFourSpaces, 4);
+    for (i = 0; i < rules.size(); i++) {
         rules[i]->_appendRuleText(result);
         result.append(gLineFeed);
     }
 
     
-    if (negativeNumberRule) {
-        result.append(gFourSpaces, 4);
-        negativeNumberRule->_appendRuleText(result);
-        result.append(gLineFeed);
-    }
-
-    {
-        for (uint32_t i = 0; i < 3; ++i) {
-            if (fractionRules[i]) {
-                result.append(gFourSpaces, 4);
-                fractionRules[i]->_appendRuleText(result);
+    for (i = 0; i < NON_NUMERICAL_RULE_LENGTH; ++i) {
+        NFRule *rule = nonNumericalRules[i];
+        if (nonNumericalRules[i]) {
+            if (rule->getBaseValue() == NFRule::kImproperFractionRule
+                || rule->getBaseValue() == NFRule::kProperFractionRule
+                || rule->getBaseValue() == NFRule::kMasterRule)
+            {
+                for (uint32_t fIdx = 0; fIdx < fractionRules.size(); fIdx++) {
+                    NFRule *fractionRule = fractionRules[fIdx];
+                    if (fractionRule->getBaseValue() == rule->getBaseValue()) {
+                        fractionRule->_appendRuleText(result);
+                        result.append(gLineFeed);
+                    }
+                }
+            }
+            else {
+                rule->_appendRuleText(result);
                 result.append(gLineFeed);
             }
         }

@@ -1,9 +1,9 @@
-/*
- ************************************************************************************
- * Copyright (C) 2006-2014, International Business Machines Corporation
- * and others. All Rights Reserved.
- ************************************************************************************
- */
+
+
+
+
+
+
 
 #include "unicode/utypes.h"
 
@@ -23,6 +23,7 @@
 #include "unicode/bytestrie.h"
 #include "charstr.h"
 #include "dictionarydata.h"
+#include "mutex.h"
 #include "uvector.h"
 #include "umutex.h"
 #include "uresimp.h"
@@ -30,9 +31,9 @@
 
 U_NAMESPACE_BEGIN
 
-/*
- ******************************************************************
- */
+
+
+
 
 LanguageBreakEngine::LanguageBreakEngine() {
 }
@@ -40,9 +41,9 @@ LanguageBreakEngine::LanguageBreakEngine() {
 LanguageBreakEngine::~LanguageBreakEngine() {
 }
 
-/*
- ******************************************************************
- */
+
+
+
 
 LanguageBreakFactory::LanguageBreakFactory() {
 }
@@ -50,11 +51,11 @@ LanguageBreakFactory::LanguageBreakFactory() {
 LanguageBreakFactory::~LanguageBreakFactory() {
 }
 
-/*
- ******************************************************************
- */
 
-UnhandledEngine::UnhandledEngine(UErrorCode &/*status*/) {
+
+
+
+UnhandledEngine::UnhandledEngine(UErrorCode &) {
     for (int32_t i = 0; i < (int32_t)(sizeof(fHandled)/sizeof(fHandled[0])); ++i) {
         fHandled[i] = 0;
     }
@@ -80,7 +81,7 @@ UnhandledEngine::findBreaks( UText *text,
                                  int32_t endPos,
                                  UBool reverse,
                                  int32_t breakType,
-                                 UStack &/*foundBreaks*/ ) const {
+                                 UStack & ) const {
     if (breakType >= 0 && breakType < (int32_t)(sizeof(fHandled)/sizeof(fHandled[0]))) {
         UChar32 c = utext_current32(text); 
         if (reverse) {
@@ -90,7 +91,7 @@ UnhandledEngine::findBreaks( UText *text,
         }
         else {
             while((int32_t)utext_getNativeIndex(text) < endPos && fHandled[breakType]->contains(c)) {
-                utext_next32(text);            // TODO:  recast loop to work with post-increment operations.
+                utext_next32(text);            
                 c = utext_current32(text);
             }
         }
@@ -109,18 +110,18 @@ UnhandledEngine::handleCharacter(UChar32 c, int32_t breakType) {
         }
         if (!fHandled[breakType]->contains(c)) {
             UErrorCode status = U_ZERO_ERROR;
-            // Apply the entire script of the character.
+            
             int32_t script = u_getIntPropertyValue(c, UCHAR_SCRIPT);
             fHandled[breakType]->applyIntPropertyValue(UCHAR_SCRIPT, script, status);
         }
     }
 }
 
-/*
- ******************************************************************
- */
 
-ICULanguageBreakFactory::ICULanguageBreakFactory(UErrorCode &/*status*/) {
+
+
+
+ICULanguageBreakFactory::ICULanguageBreakFactory(UErrorCode &) {
     fEngines = 0;
 }
 
@@ -138,82 +139,38 @@ static void U_CALLCONV _deleteEngine(void *obj) {
 U_CDECL_END
 U_NAMESPACE_BEGIN
 
+static UMutex gBreakEngineMutex = U_MUTEX_INITIALIZER;
+
 const LanguageBreakEngine *
 ICULanguageBreakFactory::getEngineFor(UChar32 c, int32_t breakType) {
-    UBool       needsInit;
-    int32_t     i;
     const LanguageBreakEngine *lbe = NULL;
     UErrorCode  status = U_ZERO_ERROR;
 
-    // TODO: The global mutex should not be used.
-    // The global mutex should only be used for short periods.
-    // A ICULanguageBreakFactory specific mutex should be used.
-    umtx_lock(NULL);
-    needsInit = (UBool)(fEngines == NULL);
-    if (!needsInit) {
-        i = fEngines->size();
+    Mutex m(&gBreakEngineMutex);
+
+    if (fEngines == NULL) {
+        UStack  *engines = new UStack(_deleteEngine, NULL, status);
+        if (U_FAILURE(status) || engines == NULL) {
+            
+            delete engines;
+            return NULL;
+        }
+        fEngines = engines;
+    } else {
+        int32_t i = fEngines->size();
         while (--i >= 0) {
             lbe = (const LanguageBreakEngine *)(fEngines->elementAt(i));
             if (lbe != NULL && lbe->handles(c, breakType)) {
-                break;
+                return lbe;
             }
-            lbe = NULL;
         }
     }
-    umtx_unlock(NULL);
     
+    
+    lbe = loadEngineFor(c, breakType);
     if (lbe != NULL) {
-        return lbe;
+        fEngines->push((void *)lbe, status);
     }
-    
-    if (needsInit) {
-        UStack  *engines = new UStack(_deleteEngine, NULL, status);
-        if (U_SUCCESS(status) && engines == NULL) {
-            status = U_MEMORY_ALLOCATION_ERROR;
-        }
-        else if (U_FAILURE(status)) {
-            delete engines;
-            engines = NULL;
-        }
-        else {
-            umtx_lock(NULL);
-            if (fEngines == NULL) {
-                fEngines = engines;
-                engines = NULL;
-            }
-            umtx_unlock(NULL);
-            delete engines;
-        }
-    }
-    
-    if (fEngines == NULL) {
-        return NULL;
-    }
-
-    // We didn't find an engine the first time through, or there was no
-    // stack. Create an engine.
-    const LanguageBreakEngine *newlbe = loadEngineFor(c, breakType);
-    
-    // Now get the lock, and see if someone else has created it in the
-    // meantime
-    umtx_lock(NULL);
-    i = fEngines->size();
-    while (--i >= 0) {
-        lbe = (const LanguageBreakEngine *)(fEngines->elementAt(i));
-        if (lbe != NULL && lbe->handles(c, breakType)) {
-            break;
-        }
-        lbe = NULL;
-    }
-    if (lbe == NULL && newlbe != NULL) {
-        fEngines->push((void *)newlbe, status);
-        lbe = newlbe;
-        newlbe = NULL;
-    }
-    umtx_unlock(NULL);
-    
-    delete newlbe;
-
     return lbe;
 }
 
@@ -240,22 +197,22 @@ ICULanguageBreakFactory::loadEngineFor(UChar32 c, int32_t breakType) {
                 break;
 
 #if !UCONFIG_NO_NORMALIZATION
-                // CJK not available w/o normalization
+                
             case USCRIPT_HANGUL:
                 engine = new CjkBreakEngine(m, kKorean, status);
                 break;
 
-            // use same BreakEngine and dictionary for both Chinese and Japanese
+            
             case USCRIPT_HIRAGANA:
             case USCRIPT_KATAKANA:
             case USCRIPT_HAN:
                 engine = new CjkBreakEngine(m, kChineseJapanese, status);
                 break;
 #if 0
-            // TODO: Have to get some characters with script=common handled
-            // by CjkBreakEngine (e.g. U+309B). Simply subjecting
-            // them to CjkBreakEngine does not work. The engine has to
-            // special-case them.
+            
+            
+            
+            
             case USCRIPT_COMMON:
             {
                 UBlockCode block = ublock_getCode(code);
@@ -283,9 +240,9 @@ ICULanguageBreakFactory::loadEngineFor(UChar32 c, int32_t breakType) {
 }
 
 DictionaryMatcher *
-ICULanguageBreakFactory::loadDictionaryMatcherFor(UScriptCode script, int32_t /* brkType */) { 
+ICULanguageBreakFactory::loadDictionaryMatcherFor(UScriptCode script, int32_t ) { 
     UErrorCode status = U_ZERO_ERROR;
-    // open root from brkitr tree.
+    
     UResourceBundle *b = ures_open(U_ICUDATA_BRKITR, "", &status);
     b = ures_getByKeyWithFallback(b, "dictionaries", b, &status);
     int32_t dictnlength = 0;
@@ -297,7 +254,7 @@ ICULanguageBreakFactory::loadDictionaryMatcherFor(UScriptCode script, int32_t /*
     }
     CharString dictnbuf;
     CharString ext;
-    const UChar *extStart = u_memrchr(dictfname, 0x002e, dictnlength);  // last dot
+    const UChar *extStart = u_memrchr(dictfname, 0x002e, dictnlength);  
     if (extStart != NULL) {
         int32_t len = (int32_t)(extStart - dictfname);
         ext.appendInvariantChars(UnicodeString(FALSE, extStart + 1, dictnlength - len - 1), status);
@@ -308,7 +265,7 @@ ICULanguageBreakFactory::loadDictionaryMatcherFor(UScriptCode script, int32_t /*
 
     UDataMemory *file = udata_open(U_ICUDATA_BRKITR, ext.data(), dictnbuf.data(), &status);
     if (U_SUCCESS(status)) {
-        // build trie
+        
         const uint8_t *data = (const uint8_t *)udata_getMemory(file);
         const int32_t *indexes = (const int32_t *)data;
         const int32_t offset = indexes[DictionaryData::IX_STRING_TRIE_OFFSET];
@@ -324,14 +281,14 @@ ICULanguageBreakFactory::loadDictionaryMatcherFor(UScriptCode script, int32_t /*
             m = new UCharsDictionaryMatcher(characters, file);
         }
         if (m == NULL) {
-            // no matcher exists to take ownership - either we are an invalid 
-            // type or memory allocation failed
+            
+            
             udata_close(file);
         }
         return m;
     } else if (dictfname != NULL) {
-        // we don't have a dictionary matcher.
-        // returning NULL here will cause us to fail to find a dictionary break engine, as expected
+        
+        
         status = U_ZERO_ERROR;
         return NULL;
     }
@@ -340,4 +297,4 @@ ICULanguageBreakFactory::loadDictionaryMatcherFor(UScriptCode script, int32_t /*
 
 U_NAMESPACE_END
 
-#endif /* #if !UCONFIG_NO_BREAK_ITERATION */
+#endif 

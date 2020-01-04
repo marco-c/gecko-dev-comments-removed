@@ -167,7 +167,6 @@ public:
 
     static TimeZoneNames* U_EXPORT2 createInstance(const Locale& locale, UErrorCode& status);
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -179,7 +178,6 @@ public:
 
 
      static TimeZoneNames* U_EXPORT2 createTZDBInstance(const Locale& locale, UErrorCode& status);
-#endif 
 
     
 

@@ -353,6 +353,7 @@ private:
         kIPI_AM_PM,
         kIPI_HOUR,
         kIPI_MINUTE,
+        kIPI_SECOND,
         kIPI_MAX_INDEX
     };
 public:

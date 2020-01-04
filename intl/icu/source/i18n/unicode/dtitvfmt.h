@@ -215,6 +215,8 @@ U_NAMESPACE_BEGIN
 
 
 
+
+
 class U_I18N_API DateIntervalFormat : public Format {
 public:
 
@@ -391,6 +393,9 @@ public:
 
 
 
+
+
+
     virtual UnicodeString& format(const Formattable& obj,
                                   UnicodeString& appendTo,
                                   FieldPosition& fieldPosition,
@@ -410,6 +415,9 @@ public:
 
 
 
+
+
+
     UnicodeString& format(const DateInterval* dtInterval,
                           UnicodeString& appendTo,
                           FieldPosition& fieldPosition,
@@ -417,6 +425,9 @@ public:
 
 
     
+
+
+
 
 
 
@@ -645,27 +656,32 @@ private:
 
 
 
-
-
-
-
-
-
-
-
-    static SimpleDateFormat* U_EXPORT2 createSDFPatternInstance(
-                                        const UnicodeString& skeleton,
-                                        const Locale& locale,
-                                        DateTimePatternGenerator* dtpng,
-                                        UErrorCode& status);
-
-
     
 
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+    static void
+    adjustPosition(UnicodeString& combiningPattern, 
+                   UnicodeString& pat0, FieldPosition& pos0, 
+                   UnicodeString& pat1, FieldPosition& pos1, 
+                   FieldPosition& posResult);
+
+
     
+
+
 
 
 
@@ -684,6 +700,7 @@ private:
 
     UnicodeString& fallbackFormat(Calendar& fromCalendar,
                                   Calendar& toCalendar,
+                                  UBool fromToOnSameDay,
                                   UnicodeString& appendTo,
                                   FieldPosition& pos,
                                   UErrorCode& status) const;
@@ -878,9 +895,7 @@ private:
 
 
 
-
-    void concatSingleDate2TimeInterval(const UChar* format,
-                                       int32_t formatLen,
+    void concatSingleDate2TimeInterval(UnicodeString& format,
                                        const UnicodeString& datePattern,
                                        UCalendarDateFields field,
                                        UErrorCode& status);
@@ -960,16 +975,20 @@ private:
     Calendar* fFromCalendar;
     Calendar* fToCalendar;
 
-    
-
-
-    DateTimePatternGenerator* fDtpng;
+    Locale fLocale;
 
     
 
 
     UnicodeString fSkeleton;
     PatternInfo fIntervalPatterns[DateIntervalInfo::kIPI_MAX_INDEX];
+
+    
+
+
+    UnicodeString* fDatePattern;
+    UnicodeString* fTimePattern;
+    UnicodeString* fDateTimeFormat;
 };
 
 inline UBool

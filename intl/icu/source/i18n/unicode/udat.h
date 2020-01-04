@@ -767,6 +767,7 @@ typedef enum UDateFormatField {
 
 
 
+
     UDAT_TIME_SEPARATOR_FIELD = 35,
 #endif  
 
@@ -781,6 +782,16 @@ typedef enum UDateFormatField {
     UDAT_FIELD_COUNT = 36
 
 } UDateFormatField;
+
+
+#ifndef U_HIDE_INTERNAL_API
+
+
+
+
+
+#define UDAT_HAS_PATTERN_CHAR_FOR_TIME_SEPARATOR 0
+#endif 
 
 
 
@@ -866,7 +877,8 @@ typedef enum UDateFormatBooleanAttribute {
 
 
 
-    UDAT_PARSE_PARTIAL_MATCH = 2,
+
+    UDAT_PARSE_PARTIAL_LITERAL_MATCH = 2,
     
 
 
@@ -1195,7 +1207,6 @@ udat_setCalendar(            UDateFormat*    fmt,
 U_STABLE const UNumberFormat* U_EXPORT2 
 udat_getNumberFormat(const UDateFormat* fmt);
 
-#ifndef U_HIDE_DRAFT_API
 
 
 
@@ -1205,7 +1216,7 @@ udat_getNumberFormat(const UDateFormat* fmt);
 
 
 
-U_DRAFT const UNumberFormat* U_EXPORT2 
+U_STABLE const UNumberFormat* U_EXPORT2 
 udat_getNumberFormatForField(const UDateFormat* fmt, UChar field);
 
 
@@ -1223,13 +1234,11 @@ udat_getNumberFormatForField(const UDateFormat* fmt, UChar field);
 
 
 
-U_DRAFT void U_EXPORT2 
+U_STABLE void U_EXPORT2 
 udat_adoptNumberFormatForFields(  UDateFormat* fmt,
                             const UChar* fields,
                                   UNumberFormat*  numberFormatToSet,
                                   UErrorCode* status);
-#endif  
-
 
 
 
@@ -1246,7 +1255,6 @@ U_STABLE void U_EXPORT2
 udat_setNumberFormat(            UDateFormat*    fmt,
                         const   UNumberFormat*  numberFormatToSet);
 
-#ifndef U_HIDE_DRAFT_API
 
 
 
@@ -1255,12 +1263,9 @@ udat_setNumberFormat(            UDateFormat*    fmt,
 
 
 
-
-U_DRAFT void U_EXPORT2 
+U_STABLE void U_EXPORT2 
 udat_adoptNumberFormat(            UDateFormat*    fmt,
                                    UNumberFormat*  numberFormatToAdopt);
-#endif  
-
 
 
 
@@ -1408,9 +1413,7 @@ typedef enum UDateFormatSymbolType {
 
 
 
-    UDAT_STANDALONE_SHORTER_WEEKDAYS
-#ifndef U_HIDE_DRAFT_API
-    ,
+    UDAT_STANDALONE_SHORTER_WEEKDAYS,
     
 
 
@@ -1445,7 +1448,6 @@ typedef enum UDateFormatSymbolType {
 
 
     UDAT_ZODIAC_NAMES_NARROW
-#endif  
 } UDateFormatSymbolType;
 
 struct UDateFormatSymbols;

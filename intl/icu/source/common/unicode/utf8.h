@@ -815,7 +815,7 @@ utf8_back1SafeBody(const uint8_t *s, int32_t start, int32_t i);
 
 
 #define U8_SET_CP_LIMIT(s, start, i, length) { \
-    if((start)<(i) && ((i)<(length) || ((length)<0 && (s)[i]!=0))) { \
+    if((start)<(i) && ((i)<(length) || (length)<0)) { \
         U8_BACK_1(s, start, i); \
         U8_FWD_1(s, i, length); \
     } \

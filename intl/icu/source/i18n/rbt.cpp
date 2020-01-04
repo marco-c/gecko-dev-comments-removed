@@ -18,6 +18,7 @@
 #include "rbt_data.h"
 #include "rbt_rule.h"
 #include "rbt.h"
+#include "mutex.h"
 #include "umutex.h"
 
 U_NAMESPACE_BEGIN
@@ -249,12 +250,18 @@ RuleBasedTransliterator::handleTransliterate(Replaceable& text, UTransPosition& 
         
         
         
+        
+        
+        
+        
         UBool needToLock;
-        umtx_lock(NULL);
-        needToLock = (&text != gLockedText);
-        umtx_unlock(NULL);
+        {
+            Mutex m;
+            needToLock = (&text != gLockedText);
+        }
         if (needToLock) {
-            umtx_lock(&transliteratorDataMutex);
+            umtx_lock(&transliteratorDataMutex);  
+            Mutex m;
             gLockedText = &text;
             lockedMutexAtThisLevel = TRUE;
         }
@@ -269,7 +276,10 @@ RuleBasedTransliterator::handleTransliterate(Replaceable& text, UTransPosition& 
 	    }
     }
     if (lockedMutexAtThisLevel) {
-        gLockedText = NULL;
+        {
+            Mutex m;
+            gLockedText = NULL;
+        }
         umtx_unlock(&transliteratorDataMutex);
     }
 }

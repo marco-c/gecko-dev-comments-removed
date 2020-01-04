@@ -288,7 +288,7 @@ public:
 
 
     static TimeZone* U_EXPORT2 detectHostTimeZone();
-#endif
+#endif  
 
     
 

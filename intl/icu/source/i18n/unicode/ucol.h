@@ -1269,6 +1269,7 @@ ucol_setVariableTop(UCollator *coll,
 
 U_STABLE uint32_t U_EXPORT2 ucol_getVariableTop(const UCollator *coll, UErrorCode *status);
 
+#ifndef U_HIDE_DEPRECATED_API
 
 
 
@@ -1284,6 +1285,7 @@ U_STABLE uint32_t U_EXPORT2 ucol_getVariableTop(const UCollator *coll, UErrorCod
 
 U_DEPRECATED void U_EXPORT2 
 ucol_restoreVariableTop(UCollator *coll, const uint32_t varTop, UErrorCode *status);
+#endif  
 
 
 

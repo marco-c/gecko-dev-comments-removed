@@ -21,28 +21,76 @@ U_NAMESPACE_BEGIN
 
 
 
+class UnifiedCacheBase : public UObject {
+public:
+    UnifiedCacheBase() { }
+
+    
+
+
+
+    virtual void incrementItemsInUse() const = 0;
+
+    
+
+
+
+    virtual void decrementItemsInUseWithLockingAndEviction() const = 0;
+
+    
+
+
+
+    virtual void decrementItemsInUse() const = 0;
+    virtual ~UnifiedCacheBase();
+private:
+    UnifiedCacheBase(const UnifiedCacheBase &);
+    UnifiedCacheBase &operator=(const UnifiedCacheBase &);
+};
+
+
+
+
+
+
+
 
 
 
 class U_COMMON_API SharedObject : public UObject {
 public:
     
-    SharedObject() : totalRefCount(0), softRefCount(0) {}
+    SharedObject() :
+            totalRefCount(0),
+            softRefCount(0),
+            hardRefCount(0),
+            cachePtr(NULL) {}
 
     
-    SharedObject(const SharedObject &other)
-        : UObject(other),
-          totalRefCount(0),
-          softRefCount(0) {}
+    SharedObject(const SharedObject &other) :
+            UObject(other),
+            totalRefCount(0),
+            softRefCount(0),
+            hardRefCount(0),
+            cachePtr(NULL) {}
 
     virtual ~SharedObject();
 
     
 
 
-    void addRef() const;
+    void addRef() const { addRef(FALSE); }
 
     
+
+
+
+
+    void addRefWhileHoldingCacheLock() const { addRef(TRUE); }
+
+    
+
+
 
 
     void addSoftRef() const;
@@ -50,9 +98,18 @@ public:
     
 
 
-    void removeRef() const;
+    void removeRef() const { removeRef(FALSE); }
 
     
+
+
+
+
+    void removeRefWhileHoldingCacheLock() const { removeRef(TRUE); }
+
+    
+
+
 
 
     void removeSoftRef() const;
@@ -67,19 +124,47 @@ public:
 
 
 
-    int32_t getSoftRefCount() const;
+
+    int32_t getSoftRefCount() const { return softRefCount; }
 
     
 
 
 
-    UBool allSoftReferences() const;
+    int32_t getHardRefCount() const;
+
+    
+
+
+
+    inline UBool noHardReferences() const { return getHardRefCount() == 0; }
+
+    
+
+
+
+    inline UBool hasHardReferences() const { return getHardRefCount() != 0; }
+
+    
+
+
+
+
+    UBool noSoftReferences() const { return (softRefCount == 0); }
 
     
 
 
     void deleteIfZeroRefCount() const;
 
+    
+
+
+ 
+    void registerWithCache(const UnifiedCacheBase *ptr) const {
+        cachePtr = ptr;
+    }
+        
     
 
 
@@ -133,7 +218,15 @@ public:
 
 private:
     mutable u_atomic_int32_t totalRefCount;
-    mutable u_atomic_int32_t softRefCount;
+
+    
+    mutable int32_t softRefCount;
+
+    mutable u_atomic_int32_t hardRefCount;
+    mutable const UnifiedCacheBase *cachePtr;
+    void addRef(UBool withCacheLock) const;
+    void removeRef(UBool withCacheLock) const;
+
 };
 
 U_NAMESPACE_END

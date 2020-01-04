@@ -622,17 +622,8 @@ static const UConverterStaticData _HZStaticData={
         { 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 }, 
 
 };
-            
-            
-const UConverterSharedData _HZData={
-    sizeof(UConverterSharedData),
-        ~((uint32_t) 0),
-        NULL, 
-        NULL, 
-        &_HZStaticData, 
-        FALSE, 
-        &_HZImpl, 
-        0
-};
+
+const UConverterSharedData _HZData=
+        UCNV_IMMUTABLE_SHARED_DATA_INITIALIZER(&_HZStaticData, &_HZImpl);
 
 #endif 

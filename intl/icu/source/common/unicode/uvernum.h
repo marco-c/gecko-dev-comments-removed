@@ -57,7 +57,7 @@
 
 
 
-#define U_ICU_VERSION_MAJOR_NUM 55
+#define U_ICU_VERSION_MAJOR_NUM 56
 
 
 
@@ -83,7 +83,7 @@
 
 
 
-#define U_ICU_VERSION_SUFFIX _55
+#define U_ICU_VERSION_SUFFIX _56
 
 
 
@@ -118,19 +118,19 @@
 
 
 
-#define U_ICU_VERSION "55.1"
+#define U_ICU_VERSION "56.1"
 
 
 
 
 
-#define U_ICU_VERSION_SHORT "55"
+#define U_ICU_VERSION_SHORT "56"
 
 #ifndef U_HIDE_INTERNAL_API
 
 
 
-#define U_ICU_DATA_VERSION "55.1"
+#define U_ICU_DATA_VERSION "56.1"
 #endif  
 
 

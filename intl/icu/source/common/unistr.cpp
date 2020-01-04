@@ -208,13 +208,13 @@ UnicodeString::UnicodeString(UChar32 ch) {
 
 UnicodeString::UnicodeString(const UChar *text) {
   fUnion.fFields.fLengthAndFlags = kShortString;
-  doReplace(0, 0, text, 0, -1);
+  doAppend(text, 0, -1);
 }
 
 UnicodeString::UnicodeString(const UChar *text,
                              int32_t textLength) {
   fUnion.fFields.fLengthAndFlags = kShortString;
-  doReplace(0, 0, text, 0, textLength);
+  doAppend(text, 0, textLength);
 }
 
 UnicodeString::UnicodeString(UBool isTerminated,
@@ -306,6 +306,13 @@ UnicodeString::UnicodeString(const UnicodeString& that) {
   copyFrom(that);
 }
 
+#if U_HAVE_RVALUE_REFERENCES
+UnicodeString::UnicodeString(UnicodeString &&src) U_NOEXCEPT {
+  fUnion.fFields.fLengthAndFlags = kShortString;
+  moveFrom(src);
+}
+#endif
+
 UnicodeString::UnicodeString(const UnicodeString& that,
                              int32_t srcStart) {
   fUnion.fFields.fLengthAndFlags = kShortString;
@@ -367,8 +374,40 @@ UnicodeString::allocate(int32_t capacity) {
 
 
 
+
+#ifdef UNISTR_COUNT_FINAL_STRING_LENGTHS
+static u_atomic_int32_t finalLengthCounts[0x400];  
+static u_atomic_int32_t beyondCount(0);
+
+U_CAPI void unistr_printLengths() {
+  int32_t i;
+  for(i = 0; i <= 59; ++i) {
+    printf("%2d,  %9d\n", i, (int32_t)finalLengthCounts[i]);
+  }
+  int32_t beyond = beyondCount;
+  for(; i < UPRV_LENGTHOF(finalLengthCounts); ++i) {
+    beyond += finalLengthCounts[i];
+  }
+  printf(">59, %9d\n", beyond);
+}
+#endif
+
 UnicodeString::~UnicodeString()
 {
+#ifdef UNISTR_COUNT_FINAL_STRING_LENGTHS
+  
+  
+  
+  
+  if((fUnion.fFields.fLengthAndFlags&(kOpenGetBuffer|kReadonlyAlias|kWritableAlias)) == 0) {
+    if(hasShortLength()) {
+      umtx_atomic_inc(finalLengthCounts + getShortLength());
+    } else {
+      umtx_atomic_inc(&beyondCount);
+    }
+  }
+#endif
+
   releaseArray();
 }
 
@@ -504,12 +543,60 @@ UnicodeString::copyFrom(const UnicodeString &src, UBool fastCopy) {
   return *this;
 }
 
+UnicodeString &UnicodeString::moveFrom(UnicodeString &src) U_NOEXCEPT {
+  
+  
+  releaseArray();
+  copyFieldsFrom(src, TRUE);
+  return *this;
+}
+
+
+void UnicodeString::copyFieldsFrom(UnicodeString &src, UBool setSrcToBogus) U_NOEXCEPT {
+  int16_t lengthAndFlags = fUnion.fFields.fLengthAndFlags = src.fUnion.fFields.fLengthAndFlags;
+  if(lengthAndFlags & kUsingStackBuffer) {
+    
+    
+    
+    if(this != &src) {
+      uprv_memcpy(fUnion.fStackFields.fBuffer, src.fUnion.fStackFields.fBuffer,
+                  getShortLength() * U_SIZEOF_UCHAR);
+    }
+  } else {
+    
+    fUnion.fFields.fArray = src.fUnion.fFields.fArray;
+    fUnion.fFields.fCapacity = src.fUnion.fFields.fCapacity;
+    if(!hasShortLength()) {
+      fUnion.fFields.fLength = src.fUnion.fFields.fLength;
+    }
+    if(setSrcToBogus) {
+      
+      src.fUnion.fFields.fLengthAndFlags = kIsBogus;
+      src.fUnion.fFields.fArray = NULL;
+      src.fUnion.fFields.fCapacity = 0;
+    }
+  }
+}
+
+void UnicodeString::swap(UnicodeString &other) U_NOEXCEPT {
+  UnicodeString temp;  
+  
+  temp.copyFieldsFrom(*this, FALSE);
+  this->copyFieldsFrom(other, FALSE);
+  other.copyFieldsFrom(temp, FALSE);
+  
+  temp.fUnion.fFields.fLengthAndFlags = kShortString;
+}
+
 
 
 
 
 UnicodeString UnicodeString::unescape() const {
     UnicodeString result(length(), (UChar32)0, (int32_t)0); 
+    if (result.isBogus()) {
+        return result;
+    }
     const UChar *array = getBuffer();
     int32_t len = length();
     int32_t prev = 0;
@@ -1274,7 +1361,7 @@ UnicodeString::append(UChar32 srcChar) {
   U16_APPEND(buffer, _length, U16_MAX_LENGTH, srcChar, isError);
   
   
-  return isError ? *this : doReplace(length(), 0, buffer, 0, _length);
+  return isError ? *this : doAppend(buffer, 0, _length);
 }
 
 UnicodeString&
@@ -1284,17 +1371,12 @@ UnicodeString::doReplace( int32_t start,
               int32_t srcStart,
               int32_t srcLength)
 {
-  if(!src.isBogus()) {
-    
-    src.pinIndices(srcStart, srcLength);
+  
+  src.pinIndices(srcStart, srcLength);
 
-    
-    
-    return doReplace(start, length, src.getArrayStart(), srcStart, srcLength);
-  } else {
-    
-    return doReplace(start, length, 0, 0, 0);
-  }
+  
+  
+  return doReplace(start, length, src.getArrayStart(), srcStart, srcLength);
 }
 
 UnicodeString&
@@ -1330,6 +1412,10 @@ UnicodeString::doReplace(int32_t start,
     }
   }
 
+  if(start == oldLength) {
+    return doAppend(srcChars, srcStart, srcLength);
+  }
+
   if(srcChars == 0) {
     srcStart = srcLength = 0;
   } else if(srcLength < 0) {
@@ -1338,39 +1424,10 @@ UnicodeString::doReplace(int32_t start,
   }
 
   
-  int32_t newLength;
+  pinIndices(start, length);
 
   
-  if(start >= oldLength) {
-    if(srcLength == 0) {
-      return *this;
-    }
-    newLength = oldLength + srcLength;
-    if(newLength <= getCapacity() && isBufferWritable()) {
-      UChar *oldArray = getArrayStart();
-      
-      
-      
-      
-      
-      
-      
-      if(srcChars + srcStart != oldArray + start || start > oldLength) {
-        us_arrayCopy(srcChars, srcStart, oldArray, oldLength, srcLength);
-      }
-      setLength(newLength);
-      return *this;
-    } else {
-      
-      start = oldLength;
-      length = 0;
-    }
-  } else {
-    
-    pinIndices(start, length);
-
-    newLength = oldLength - length + srcLength;
-  }
+  int32_t newLength = oldLength - length + srcLength;
 
   
   
@@ -1420,6 +1477,54 @@ UnicodeString::doReplace(int32_t start,
     uprv_free(bufferToDelete);
   }
 
+  return *this;
+}
+
+
+
+
+UnicodeString&
+UnicodeString::doAppend(const UnicodeString& src, int32_t srcStart, int32_t srcLength) {
+  if(srcLength == 0) {
+    return *this;
+  }
+
+  
+  src.pinIndices(srcStart, srcLength);
+  return doAppend(src.getArrayStart(), srcStart, srcLength);
+}
+
+UnicodeString&
+UnicodeString::doAppend(const UChar *srcChars, int32_t srcStart, int32_t srcLength) {
+  if(!isWritable() || srcLength == 0 || srcChars == NULL) {
+    return *this;
+  }
+
+  if(srcLength < 0) {
+    
+    if((srcLength = u_strlen(srcChars + srcStart)) == 0) {
+      return *this;
+    }
+  }
+
+  int32_t oldLength = length();
+  int32_t newLength = oldLength + srcLength;
+  
+  if((newLength <= getCapacity() && isBufferWritable()) ||
+      cloneArrayIfNeeded(newLength, newLength + (newLength >> 2) + kGrowSize)) {
+    UChar *newArray = getArrayStart();
+    
+    
+    
+    
+    
+    
+    
+    if(srcChars + srcStart != newArray + oldLength) {
+      us_arrayCopy(srcChars, srcStart, newArray, oldLength, srcLength);
+    }
+    setLength(newLength);
+  }
   return *this;
 }
 
@@ -1722,7 +1827,7 @@ UnicodeStringAppendable::~UnicodeStringAppendable() {}
 
 UBool
 UnicodeStringAppendable::appendCodeUnit(UChar c) {
-  return str.doReplace(str.length(), 0, &c, 0, 1).isWritable();
+  return str.doAppend(&c, 0, 1).isWritable();
 }
 
 UBool
@@ -1731,12 +1836,12 @@ UnicodeStringAppendable::appendCodePoint(UChar32 c) {
   int32_t cLength = 0;
   UBool isError = FALSE;
   U16_APPEND(buffer, cLength, U16_MAX_LENGTH, c, isError);
-  return !isError && str.doReplace(str.length(), 0, buffer, 0, cLength).isWritable();
+  return !isError && str.doAppend(buffer, 0, cLength).isWritable();
 }
 
 UBool
 UnicodeStringAppendable::appendString(const UChar *s, int32_t length) {
-  return str.doReplace(str.length(), 0, s, 0, length).isWritable();
+  return str.doAppend(s, 0, length).isWritable();
 }
 
 UBool

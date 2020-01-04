@@ -1131,7 +1131,6 @@ public:
 
     virtual void setContext(UDisplayContext value, UErrorCode& status);
     
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -1164,7 +1163,6 @@ public:
 
 
     const NumberFormat * getNumberFormatForField(UChar field) const;
-#endif  
 
 #ifndef U_HIDE_INTERNAL_API
     

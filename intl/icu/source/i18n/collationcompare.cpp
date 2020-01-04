@@ -40,7 +40,6 @@ CollationCompare::compareUpToQuaternary(CollationIterator &left, CollationIterat
     UBool anyVariable = FALSE;
 
     
-    U_ALIGN_CODE(16);
     for(;;) {
         
         uint32_t leftPrimary;

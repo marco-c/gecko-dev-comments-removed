@@ -158,11 +158,62 @@ public:
 
 
     explicit LocalMemory(T *p=NULL) : LocalPointerBase<T>(p) {}
+#if U_HAVE_RVALUE_REFERENCES
+    
+
+
+
+    LocalMemory(LocalMemory<T> &&src) U_NOEXCEPT : LocalPointerBase<T>(src.ptr) {
+        src.ptr=NULL;
+    }
+#endif
     
 
 
     ~LocalMemory() {
         uprv_free(LocalPointerBase<T>::ptr);
+    }
+#if U_HAVE_RVALUE_REFERENCES
+    
+
+
+
+
+
+    LocalMemory<T> &operator=(LocalMemory<T> &&src) U_NOEXCEPT {
+        return moveFrom(src);
+    }
+#endif
+    
+
+
+
+
+
+
+
+    LocalMemory<T> &moveFrom(LocalMemory<T> &src) U_NOEXCEPT {
+        delete[] LocalPointerBase<T>::ptr;
+        LocalPointerBase<T>::ptr=src.ptr;
+        src.ptr=NULL;
+        return *this;
+    }
+    
+
+
+
+    void swap(LocalMemory<T> &other) U_NOEXCEPT {
+        T *temp=LocalPointerBase<T>::ptr;
+        LocalPointerBase<T>::ptr=other.ptr;
+        other.ptr=temp;
+    }
+    
+
+
+
+
+    friend inline void swap(LocalMemory<T> &p1, LocalMemory<T> &p2) U_NOEXCEPT {
+        p1.swap(p2);
     }
     
 

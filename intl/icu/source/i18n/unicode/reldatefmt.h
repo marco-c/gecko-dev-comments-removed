@@ -24,14 +24,11 @@
 
 #if !UCONFIG_NO_FORMATTING && !UCONFIG_NO_BREAK_ITERATION
 
-#ifndef U_HIDE_DRAFT_API
-
 
 
 
 
 typedef enum UDateRelativeDateTimeFormatterStyle {
-
   
 
 
@@ -55,9 +52,7 @@ typedef enum UDateRelativeDateTimeFormatterStyle {
 
 
   UDAT_STYLE_COUNT
-} UDateRelativeDateTimeFormatterStyle; 
-
-#endif 
+} UDateRelativeDateTimeFormatterStyle;
 
 
 
@@ -358,7 +353,6 @@ public:
     RelativeDateTimeFormatter(
         const Locale& locale, NumberFormat *nfToAdopt, UErrorCode& status);
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -380,7 +374,6 @@ public:
             UDateRelativeDateTimeFormatterStyle style,
             UDisplayContext capitalizationContext,
             UErrorCode& status);
-#endif  
 
     
 
@@ -466,7 +459,6 @@ public:
 
     const NumberFormat& getNumberFormat() const;
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -480,7 +472,6 @@ public:
 
 
     UDateRelativeDateTimeFormatterStyle getFormatStyle() const;
-#endif  
 
 private:
     const RelativeDateTimeCacheData* fCache;

@@ -22,15 +22,43 @@
 #define RESLIST_MAX_INT_VECTOR 2048
 
 #include "unicode/utypes.h"
+#include "unicode/unistr.h"
 #include "unicode/ures.h"
 #include "unicode/ustring.h"
-#include "uresdata.h"
 #include "cmemory.h"
 #include "cstring.h"
+#include "uhash.h"
 #include "unewdata.h"
+#include "uresdata.h"
 #include "ustr.h"
 
 U_CDECL_BEGIN
+
+class PseudoListResource;
+
+struct ResFile {
+    ResFile()
+            : fBytes(NULL), fIndexes(NULL),
+              fKeys(NULL), fKeysLength(0), fKeysCount(0),
+              fStrings(NULL), fStringIndexLimit(0),
+              fChecksum(0) {}
+    ~ResFile() { close(); }
+
+    void close();
+
+    uint8_t *fBytes;
+    const int32_t *fIndexes;
+    const char *fKeys;
+    int32_t fKeysLength;
+    int32_t fKeysCount;
+
+    PseudoListResource *fStrings;
+    int32_t fStringIndexLimit;
+
+    int32_t fChecksum;
+};
+
+struct SResource;
 
 typedef struct KeyMapEntry {
     int32_t oldpos, newpos;
@@ -38,11 +66,36 @@ typedef struct KeyMapEntry {
 
 
 struct SRBRoot {
-  struct SResource *fRoot;
+    SRBRoot(const UString *comment, UBool isPoolBundle, UErrorCode &errorCode);
+    ~SRBRoot();
+
+    void write(const char *outputDir, const char *outputPkg,
+               char *writtenFilename, int writtenFilenameLen, UErrorCode &errorCode);
+
+    void setLocale(UChar *locale, UErrorCode &errorCode);
+    int32_t addTag(const char *tag, UErrorCode &errorCode);
+
+    const char *getKeyString(int32_t key) const;
+    const char *getKeyBytes(int32_t *pLength) const;
+
+    int32_t addKeyBytes(const char *keyBytes, int32_t length, UErrorCode &errorCode);
+
+    void compactKeys(UErrorCode &errorCode);
+
+    int32_t makeRes16(uint32_t resWord) const;
+    int32_t mapKey(int32_t oldpos) const;
+
+private:
+    void compactStringsV2(UHashtable *stringSet, UErrorCode &errorCode);
+
+public:
+    
+
+  SResource *fRoot;  
   char *fLocale;
   int32_t fIndexLength;
   int32_t fMaxTableLength;
-  UBool noFallback; 
+  UBool fNoFallback; 
   int8_t fStringsForm; 
   UBool fIsPoolBundle;
 
@@ -53,18 +106,16 @@ struct SRBRoot {
   int32_t fKeysCount;
   int32_t fLocalKeyLimit; 
 
-  uint16_t *f16BitUnits;
-  int32_t f16BitUnitsCapacity;
-  int32_t f16BitUnitsLength;
+  icu::UnicodeString f16BitUnits;
+  int32_t f16BitStringsLength;
 
-  const char *fPoolBundleKeys;
-  int32_t fPoolBundleKeysLength;
-  int32_t fPoolBundleKeysCount;
-  int32_t fPoolChecksum;
+  const ResFile *fUsePoolBundle;
+  int32_t fPoolStringIndexLimit;
+  int32_t fPoolStringIndex16Limit;
+  int32_t fLocalStringIndexLimit;
+  SRBRoot *fWritePoolBundle;
 };
 
-struct SRBRoot *bundle_open(const struct UString* comment, UBool isPoolBundle, UErrorCode *status);
-void bundle_write(struct SRBRoot *bundle, const char *outputDir, const char *outputPkg, char *writtenFilename, int writtenFilenameLen, UErrorCode *status);
 
 
 void bundle_write_java(struct SRBRoot *bundle, const char *outputDir, const char* outputEnc, char *writtenFilename, 
@@ -72,25 +123,8 @@ void bundle_write_java(struct SRBRoot *bundle, const char *outputDir, const char
 
 
 
-
-
-
-
 void bundle_write_xml(struct SRBRoot *bundle, const char *outputDir,const char* outputEnc, const char* rbname,
                   char *writtenFilename, int writtenFilenameLen, const char* language, const char* package, UErrorCode *status);
-
-void bundle_close(struct SRBRoot *bundle, UErrorCode *status);
-void bundle_setlocale(struct SRBRoot *bundle, UChar *locale, UErrorCode *status);
-int32_t bundle_addtag(struct SRBRoot *bundle, const char *tag, UErrorCode *status);
-
-const char *
-bundle_getKeyBytes(struct SRBRoot *bundle, int32_t *pLength);
-
-int32_t
-bundle_addKeyBytes(struct SRBRoot *bundle, const char *keyBytes, int32_t length, UErrorCode *status);
-
-void
-bundle_compactKeys(struct SRBRoot *bundle, UErrorCode *status);
 
 
 
@@ -101,81 +135,273 @@ bundle_compactKeys(struct SRBRoot *bundle, UErrorCode *status);
 
 struct SResource* res_none(void);
 
-struct SResTable {
-    uint32_t fCount;
-    int8_t fType;  
-    struct SResource *fFirst;
-    struct SRBRoot *fRoot;
-};
+class ArrayResource;
+class TableResource;
+class IntVectorResource;
 
-struct SResource* table_open(struct SRBRoot *bundle, const char *tag, const struct UString* comment, UErrorCode *status);
-void table_add(struct SResource *table, struct SResource *res, int linenumber, UErrorCode *status);
+TableResource *table_open(struct SRBRoot *bundle, const char *tag, const struct UString* comment, UErrorCode *status);
 
-struct SResArray {
-    uint32_t fCount;
-    struct SResource *fFirst;
-    struct SResource *fLast;
-};
-
-struct SResource* array_open(struct SRBRoot *bundle, const char *tag, const struct UString* comment, UErrorCode *status);
-void array_add(struct SResource *array, struct SResource *res, UErrorCode *status);
-
-struct SResString {
-    struct SResource *fSame;  
-    UChar *fChars;
-    int32_t fLength;
-    int32_t fSuffixOffset;  
-    int8_t fNumCharsForLength;
-};
+ArrayResource *array_open(struct SRBRoot *bundle, const char *tag, const struct UString* comment, UErrorCode *status);
 
 struct SResource *string_open(struct SRBRoot *bundle, const char *tag, const UChar *value, int32_t len, const struct UString* comment, UErrorCode *status);
 
 struct SResource *alias_open(struct SRBRoot *bundle, const char *tag, UChar *value, int32_t len, const struct UString* comment, UErrorCode *status);
 
-struct SResIntVector {
-    uint32_t fCount;
-    uint32_t *fArray;
-};
-
-struct SResource* intvector_open(struct SRBRoot *bundle, const char *tag,  const struct UString* comment, UErrorCode *status);
-void intvector_add(struct SResource *intvector, int32_t value, UErrorCode *status);
-
-struct SResInt {
-    uint32_t fValue;
-};
+IntVectorResource *intvector_open(struct SRBRoot *bundle, const char *tag,  const struct UString* comment, UErrorCode *status);
 
 struct SResource *int_open(struct SRBRoot *bundle, const char *tag, int32_t value, const struct UString* comment, UErrorCode *status);
-
-struct SResBinary {
-    uint32_t fLength;
-    uint8_t *fData;
-    char* fFileName; 
-};
 
 struct SResource *bin_open(struct SRBRoot *bundle, const char *tag, uint32_t length, uint8_t *data, const char* fileName, const struct UString* comment, UErrorCode *status);
 
 
 
 struct SResource {
+    SResource();
+    SResource(SRBRoot *bundle, const char *tag, int8_t type, const UString* comment,
+              UErrorCode &errorCode);
+    virtual ~SResource();
+
+    UBool isTable() const { return fType == URES_TABLE; }
+    UBool isString() const { return fType == URES_STRING; }
+
+    const char *getKeyString(const SRBRoot *bundle) const;
+
+    
+
+
+
+
+
+
+
+
+    void preflightStrings(SRBRoot *bundle, UHashtable *stringSet, UErrorCode &errorCode);
+    virtual void handlePreflightStrings(SRBRoot *bundle, UHashtable *stringSet, UErrorCode &errorCode);
+
+    
+
+
+
+    void write16(SRBRoot *bundle);
+    virtual void handleWrite16(SRBRoot *bundle);
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    void preWrite(uint32_t *byteOffset);
+    virtual void handlePreWrite(uint32_t *byteOffset);
+
+    
+
+
+
+    void write(UNewDataMemory *mem, uint32_t *byteOffset);
+    virtual void handleWrite(UNewDataMemory *mem, uint32_t *byteOffset);
+
     int8_t   fType;     
     UBool    fWritten;  
     uint32_t fRes;      
+    int32_t  fRes16;    
     int32_t  fKey;      
+    int32_t  fKey16;    
     int      line;      
-    struct SResource *fNext; 
+    SResource *fNext;   
     struct UString fComment;
-    union {
-        struct SResTable fTable;
-        struct SResArray fArray;
-        struct SResString fString;
-        struct SResIntVector fIntVector;
-        struct SResInt fIntValue;
-        struct SResBinary fBinaryValue;
-    } u;
 };
 
-const char *
-res_getKeyString(const struct SRBRoot *bundle, const struct SResource *res, char temp[8]);
+class ContainerResource : public SResource {
+public:
+    ContainerResource(SRBRoot *bundle, const char *tag, int8_t type,
+                      const UString* comment, UErrorCode &errorCode)
+            : SResource(bundle, tag, type, comment, errorCode),
+              fCount(0), fFirst(NULL) {}
+    virtual ~ContainerResource();
+
+    virtual void handlePreflightStrings(SRBRoot *bundle, UHashtable *stringSet, UErrorCode &errorCode);
+protected:
+    void writeAllRes16(SRBRoot *bundle);
+    void preWriteAllRes(uint32_t *byteOffset);
+    void writeAllRes(UNewDataMemory *mem, uint32_t *byteOffset);
+    void writeAllRes32(UNewDataMemory *mem, uint32_t *byteOffset);
+
+public:
+    
+    uint32_t fCount;
+    SResource *fFirst;
+};
+
+class TableResource : public ContainerResource {
+public:
+    TableResource(SRBRoot *bundle, const char *tag,
+                  const UString* comment, UErrorCode &errorCode)
+            : ContainerResource(bundle, tag, URES_TABLE, comment, errorCode),
+              fTableType(URES_TABLE), fRoot(bundle) {}
+    virtual ~TableResource();
+
+    void add(SResource *res, int linenumber, UErrorCode &errorCode);
+
+    virtual void handleWrite16(SRBRoot *bundle);
+    virtual void handlePreWrite(uint32_t *byteOffset);
+    virtual void handleWrite(UNewDataMemory *mem, uint32_t *byteOffset);
+
+    int8_t fTableType;  
+    SRBRoot *fRoot;
+};
+
+class ArrayResource : public ContainerResource {
+public:
+    ArrayResource(SRBRoot *bundle, const char *tag,
+                  const UString* comment, UErrorCode &errorCode)
+            : ContainerResource(bundle, tag, URES_ARRAY, comment, errorCode),
+              fLast(NULL) {}
+    virtual ~ArrayResource();
+
+    void add(SResource *res);
+
+    virtual void handleWrite16(SRBRoot *bundle);
+    virtual void handlePreWrite(uint32_t *byteOffset);
+    virtual void handleWrite(UNewDataMemory *mem, uint32_t *byteOffset);
+
+    SResource *fLast;
+};
+
+
+
+
+
+class PseudoListResource : public ContainerResource {
+public:
+    PseudoListResource(SRBRoot *bundle, UErrorCode &errorCode)
+            : ContainerResource(bundle, NULL, URES_TABLE, NULL, errorCode) {}
+    virtual ~PseudoListResource();
+
+    void add(SResource *res);
+
+    virtual void handleWrite16(SRBRoot *bundle);
+};
+
+class StringBaseResource : public SResource {
+public:
+    StringBaseResource(SRBRoot *bundle, const char *tag, int8_t type,
+                       const UChar *value, int32_t len,
+                       const UString* comment, UErrorCode &errorCode);
+    StringBaseResource(SRBRoot *bundle, int8_t type,
+                       const icu::UnicodeString &value, UErrorCode &errorCode);
+    StringBaseResource(int8_t type, const UChar *value, int32_t len, UErrorCode &errorCode);
+    virtual ~StringBaseResource();
+
+    const UChar *getBuffer() const { return fString.getBuffer(); }
+    int32_t length() const { return fString.length(); }
+
+    virtual void handlePreWrite(uint32_t *byteOffset);
+    virtual void handleWrite(UNewDataMemory *mem, uint32_t *byteOffset);
+
+    
+    icu::UnicodeString fString;
+};
+
+class StringResource : public StringBaseResource {
+public:
+    StringResource(SRBRoot *bundle, const char *tag, const UChar *value, int32_t len,
+                   const UString* comment, UErrorCode &errorCode)
+            : StringBaseResource(bundle, tag, URES_STRING, value, len, comment, errorCode),
+              fSame(NULL), fSuffixOffset(0),
+              fNumCopies(0), fNumUnitsSaved(0), fNumCharsForLength(0) {}
+    StringResource(SRBRoot *bundle, const icu::UnicodeString &value, UErrorCode &errorCode)
+            : StringBaseResource(bundle, URES_STRING, value, errorCode),
+              fSame(NULL), fSuffixOffset(0),
+              fNumCopies(0), fNumUnitsSaved(0), fNumCharsForLength(0) {}
+    StringResource(int32_t poolStringIndex, int8_t numCharsForLength,
+                   const UChar *value, int32_t length,
+                   UErrorCode &errorCode)
+            : StringBaseResource(URES_STRING, value, length, errorCode),
+              fSame(NULL), fSuffixOffset(0),
+              fNumCopies(0), fNumUnitsSaved(0), fNumCharsForLength(numCharsForLength) {
+        
+        fRes = URES_MAKE_RESOURCE(URES_STRING_V2, poolStringIndex);
+        fWritten = TRUE;
+    }
+    virtual ~StringResource();
+
+    int32_t get16BitStringsLength() const {
+        return fNumCharsForLength + length() + 1;  
+    }
+
+    virtual void handlePreflightStrings(SRBRoot *bundle, UHashtable *stringSet, UErrorCode &errorCode);
+    virtual void handleWrite16(SRBRoot *bundle);
+
+    void writeUTF16v2(int32_t base, icu::UnicodeString &dest);
+
+    StringResource *fSame;  
+    int32_t fSuffixOffset;  
+    int32_t fNumCopies;     
+    int32_t fNumUnitsSaved;  
+    int8_t fNumCharsForLength;
+};
+
+class AliasResource : public StringBaseResource {
+public:
+    AliasResource(SRBRoot *bundle, const char *tag, const UChar *value, int32_t len,
+                  const UString* comment, UErrorCode &errorCode)
+            : StringBaseResource(bundle, tag, URES_ALIAS, value, len, comment, errorCode) {}
+    virtual ~AliasResource();
+};
+
+class IntResource : public SResource {
+public:
+    IntResource(SRBRoot *bundle, const char *tag, int32_t value,
+                const UString* comment, UErrorCode &errorCode);
+    virtual ~IntResource();
+
+    
+    int32_t fValue;
+};
+
+class IntVectorResource : public SResource {
+public:
+    IntVectorResource(SRBRoot *bundle, const char *tag,
+                      const UString* comment, UErrorCode &errorCode);
+    virtual ~IntVectorResource();
+
+    void add(int32_t value, UErrorCode &errorCode);
+
+    virtual void handlePreWrite(uint32_t *byteOffset);
+    virtual void handleWrite(UNewDataMemory *mem, uint32_t *byteOffset);
+
+    
+    uint32_t fCount;
+    uint32_t *fArray;
+};
+
+class BinaryResource : public SResource {
+public:
+    BinaryResource(SRBRoot *bundle, const char *tag,
+                   uint32_t length, uint8_t *data, const char* fileName,
+                   const UString* comment, UErrorCode &errorCode);
+    virtual ~BinaryResource();
+
+    virtual void handlePreWrite(uint32_t *byteOffset);
+    virtual void handleWrite(UNewDataMemory *mem, uint32_t *byteOffset);
+
+    
+    uint32_t fLength;
+    uint8_t *fData;
+    
+    char* fFileName;  
+};
+
 
 void res_close(struct SResource *res);
 
@@ -184,10 +410,12 @@ UBool getIncludeCopyright(void);
 
 void setFormatVersion(int32_t formatVersion);
 
+int32_t getFormatVersion();
+
 void setUsePoolBundle(UBool use);
 
 
-uint32_t computeCRC(char *ptr, uint32_t len, uint32_t lastcrc);
+uint32_t computeCRC(const char *ptr, uint32_t len, uint32_t lastcrc);
 
 U_CDECL_END
 #endif 

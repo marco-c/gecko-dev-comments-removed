@@ -51,6 +51,7 @@ typedef enum EDigitListValues {
 U_NAMESPACE_BEGIN
 
 class CharString;
+class DigitInterval; 
 
 
 
@@ -314,6 +315,7 @@ public:
 
 
 
+
     void round(int32_t maximumDigits);
 
     void roundFixedPoint(int32_t maximumFractionDigits);
@@ -356,6 +358,78 @@ public:
 
     uint8_t     getDigitValue(int32_t i);
 
+    
+
+
+
+
+    int32_t getUpperExponent() const;
+
+    
+
+
+
+    int32_t getLowerExponent() const { return fDecNumber->exponent; }
+
+    
+
+
+
+    DigitInterval& getSmallestInterval(DigitInterval &result) const;
+
+    
+
+
+
+
+
+
+    uint8_t getDigitByExponent(int32_t exponent) const;
+
+    
+
+
+
+    void appendDigitsTo(CharString &str, UErrorCode &status) const;
+
+    
+
+
+
+
+
+    void roundAtExponent(int32_t digitExponent, int32_t maxSigDigits=INT32_MAX);
+
+    
+
+
+
+    void quantize(const DigitList &amount, UErrorCode &status);
+
+    
+
+
+ 
+    int32_t getScientificExponent(
+            int32_t minIntDigitCount, int32_t exponentMultiplier) const;
+
+    
+
+
+
+
+
+
+
+
+
+    int32_t toScientific(
+            int32_t minIntDigitCount, int32_t exponentMultiplier);
+
+    
+
+
+    void shiftDecimalRight(int32_t numPlaces);
 
 private:
     
@@ -420,6 +494,7 @@ private:
     static inline void * U_EXPORT2 operator new(size_t size) U_NO_THROW { return ::operator new(size); };
     static inline void U_EXPORT2 operator delete(void *ptr )  U_NO_THROW { ::operator delete(ptr); };
 #endif
+    static char U_EXPORT2 getStrtodDecimalSeparator();
 
     
 

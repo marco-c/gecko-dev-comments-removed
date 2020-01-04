@@ -78,15 +78,19 @@ inline uint32_t getMask(UCollationStrength strength)
 
 
 
-
 static
-inline int hash(uint32_t ce)
+inline int hashFromCE32(uint32_t ce)
 {
-    
-    
-    
-    
-    return UCOL_PRIMARYORDER(ce) % MAX_TABLE_SIZE_;
+    int hc = (int)(
+            ((((((ce >> 24) * 37) +
+            (ce >> 16)) * 37) +
+            (ce >> 8)) * 37) +
+            ce);
+    hc %= MAX_TABLE_SIZE_;
+    if (hc < 0) {
+        hc += MAX_TABLE_SIZE_;
+    }
+    return hc;
 }
 
 U_CDECL_BEGIN
@@ -492,22 +496,22 @@ inline void setShiftTable(int16_t   shift[], int16_t backshift[],
     for (count = 0; count < cesize; count ++) {
         
         int temp = defaultforward - count - 1;
-        shift[hash(cetable[count])] = temp > 1 ? temp : 1;
+        shift[hashFromCE32(cetable[count])] = temp > 1 ? temp : 1;
     }
-    shift[hash(cetable[cesize])] = 1;
+    shift[hashFromCE32(cetable[cesize])] = 1;
     
-    shift[hash(0)] = 1;
+    shift[hashFromCE32(0)] = 1;
 
     for (count = 0; count < MAX_TABLE_SIZE_; count ++) {
         backshift[count] = defaultbackward;
     }
     for (count = cesize; count > 0; count --) {
         
-        backshift[hash(cetable[count])] = count > expansionsize ?
+        backshift[hashFromCE32(cetable[count])] = count > expansionsize ?
                                           (int16_t)(count - expansionsize) : 1;
     }
-    backshift[hash(cetable[0])] = 1;
-    backshift[hash(0)] = 1;
+    backshift[hashFromCE32(cetable[0])] = 1;
+    backshift[hashFromCE32(0)] = 1;
 }
 
 
@@ -730,7 +734,7 @@ inline int32_t shiftForward(UStringSearch *strsrch,
 {
     UPattern *pattern = &(strsrch->pattern);
     if (ce != UCOL_NULLORDER) {
-        int32_t shift = pattern->shift[hash(ce)];
+        int32_t shift = pattern->shift[hashFromCE32(ce)];
         
         
         int32_t adjust = pattern->cesLength - patternceindex;
@@ -1971,7 +1975,7 @@ inline int32_t reverseShift(UStringSearch *strsrch,
     }
     else {
         if (ce != UCOL_NULLORDER) {
-            int32_t shift = strsrch->pattern.backShift[hash(ce)];
+            int32_t shift = strsrch->pattern.backShift[hashFromCE32(ce)];
 
             
             
@@ -3805,6 +3809,28 @@ static UCompareCEsResult compareCE64s(int64_t targCE, int64_t patCE, int16_t com
 
 #endif
 
+namespace {
+
+UChar32 codePointAt(const USearch &search, int32_t index) {
+    if (index < search.textLength) {
+        UChar32 c;
+        U16_NEXT(search.text, index, search.textLength, c);
+        return c;
+    }
+    return U_SENTINEL;
+}
+
+UChar32 codePointBefore(const USearch &search, int32_t index) {
+    if (0 < index) {
+        UChar32 c;
+        U16_PREV(search.text, 0, index, c);
+        return c;
+    }
+    return U_SENTINEL;
+}
+
+}  
+
 U_CAPI UBool U_EXPORT2 usearch_search(UStringSearch  *strsrch,
                                        int32_t        startIdx,
                                        int32_t        *matchStart,
@@ -4000,6 +4026,34 @@ U_CAPI UBool U_EXPORT2 usearch_search(UStringSearch  *strsrch,
 
         
         
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        UBool allowMidclusterMatch = FALSE;
+        if (strsrch->search->text != NULL && strsrch->search->textLength > maxLimit) {
+            allowMidclusterMatch =
+                    strsrch->search->breakIter == NULL &&
+                    nextCEI != NULL && (((nextCEI->ce) >> 32) & 0xFFFF0000UL) != 0 &&
+                    maxLimit >= lastCEI->highIndex && nextCEI->highIndex > maxLimit &&
+                    (strsrch->nfd->hasBoundaryBefore(codePointAt(*strsrch->search, maxLimit)) ||
+                        strsrch->nfd->hasBoundaryAfter(codePointBefore(*strsrch->search, maxLimit)));
+        }
+        
+        
+        
+        
+        
+        
+        
+
+        
+        
         mLimit = maxLimit;
         if (minLimit < maxLimit) {
             
@@ -4012,7 +4066,10 @@ U_CAPI UBool U_EXPORT2 usearch_search(UStringSearch  *strsrch,
                 mLimit = minLimit;
             } else {
                 int32_t nba = nextBoundaryAfter(strsrch, minLimit);
-                if (nba >= lastCEI->highIndex) {
+                
+                
+                
+                if (nba >= lastCEI->highIndex && (!allowMidclusterMatch || nba < maxLimit)) {
                     mLimit = nba;
                 }
             }
@@ -4024,14 +4081,16 @@ U_CAPI UBool U_EXPORT2 usearch_search(UStringSearch  *strsrch,
         }
     #endif
 
-        
-        
-        if (mLimit > maxLimit) {
-            found = FALSE;
-        }
+        if (!allowMidclusterMatch) {
+            
+            
+            if (mLimit > maxLimit) {
+                found = FALSE;
+            }
 
-        if (!isBreakBoundary(strsrch, mLimit)) {
-            found = FALSE;
+            if (!isBreakBoundary(strsrch, mLimit)) {
+                found = FALSE;
+            }
         }
 
         if (! checkIdentical(strsrch, mStart, mLimit)) {
@@ -4250,23 +4309,55 @@ U_CAPI UBool U_EXPORT2 usearch_searchBackwards(UStringSearch  *strsrch,
 
             
             
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            UBool allowMidclusterMatch = FALSE;
+            if (strsrch->search->text != NULL && strsrch->search->textLength > maxLimit) {
+                allowMidclusterMatch =
+                        strsrch->search->breakIter == NULL &&
+                        nextCEI != NULL && (((nextCEI->ce) >> 32) & 0xFFFF0000UL) != 0 &&
+                        maxLimit >= lastCEI->highIndex && nextCEI->highIndex > maxLimit &&
+                        (strsrch->nfd->hasBoundaryBefore(codePointAt(*strsrch->search, maxLimit)) ||
+                            strsrch->nfd->hasBoundaryAfter(codePointBefore(*strsrch->search, maxLimit)));
+            }
+            
+            
+            
+            
+            
+            
+            
+
+            
+            
             if (minLimit < maxLimit) {
                 int32_t nba = nextBoundaryAfter(strsrch, minLimit);
-
-                if (nba >= lastCEI->highIndex) {
+                
+                
+                
+                if (nba >= lastCEI->highIndex && (!allowMidclusterMatch || nba < maxLimit)) {
                     mLimit = nba;
                 }
             }
 
-            
-            
-            if (mLimit > maxLimit) {
-                found = FALSE;
-            }
+            if (!allowMidclusterMatch) {
+                
+                
+                if (mLimit > maxLimit) {
+                    found = FALSE;
+                }
 
-            
-            if (!isBreakBoundary(strsrch, mLimit)) {
-                found = FALSE;
+                
+                if (!isBreakBoundary(strsrch, mLimit)) {
+                    found = FALSE;
+                }
             }
 
         } else {

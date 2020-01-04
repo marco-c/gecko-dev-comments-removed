@@ -744,7 +744,7 @@ ucnv_io_getConverterName(const char *alias, UBool *containsOption, UErrorCode *p
 
 
 
-            if (aliasTmp[0] == 'x' || aliasTmp[1] == '-') {
+            if (aliasTmp[0] == 'x' && aliasTmp[1] == '-') {
                 aliasTmp = aliasTmp+2;
             } else {
                 break;

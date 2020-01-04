@@ -63,7 +63,19 @@ finit_owner(FILE         *f,
     uprv_memset(result, 0, sizeof(UFILE));
     result->fFileno = fileno(f);
 
-#if U_PLATFORM_USES_ONLY_WIN32_API
+#if U_PLATFORM_USES_ONLY_WIN32_API && _MSC_VER < 1900
+    
+
+
+
+
+
+
+
+
+
+
+
     if (0 <= result->fFileno && result->fFileno <= 2) {
         
 #if _MSC_VER >= 1400

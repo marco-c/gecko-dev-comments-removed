@@ -292,6 +292,7 @@ ucnv_data_unFlattenClone(UConverterLoadArgs *pArgs, UDataMemory *pData, UErrorCo
 
     if( (uint16_t)type >= UCNV_NUMBER_OF_SUPPORTED_CONVERTER_TYPES ||
         converterData[type] == NULL ||
+        !converterData[type]->isReferenceCounted ||
         converterData[type]->referenceCounter != 1 ||
         source->structSize != sizeof(UConverterStaticData))
     {
@@ -308,26 +309,6 @@ ucnv_data_unFlattenClone(UConverterLoadArgs *pArgs, UDataMemory *pData, UErrorCo
     
     uprv_memcpy(data, converterData[type], sizeof(UConverterSharedData));
 
-#if 0 
-    
-
-
-
-
-
-
-
-
-
-    data->table = (UConverterTable *)uprv_malloc(sizeof(UConverterTable));
-    if(data->table == NULL) {
-        uprv_free(data);
-        *status = U_MEMORY_ALLOCATION_ERROR;
-        return NULL;
-    }
-    uprv_memset(data->table, 0, sizeof(UConverterTable));
-#endif
-
     data->staticData = source;
 
     data->sharedDataCached = FALSE;
@@ -338,7 +319,6 @@ ucnv_data_unFlattenClone(UConverterLoadArgs *pArgs, UDataMemory *pData, UErrorCo
     if(data->impl->load != NULL) {
         data->impl->load(data, pArgs, raw + source->structSize, status);
         if(U_FAILURE(*status)) {
-            uprv_free(data->table);
             uprv_free(data);
             return NULL;
         }
@@ -542,25 +522,6 @@ ucnv_deleteSharedConverterData(UConverterSharedData * deadSharedData)
         udata_close(data);
     }
 
-    if(deadSharedData->table != NULL)
-    {
-        uprv_free(deadSharedData->table);
-    }
-
-#if 0
-    
-    
-    if(deadSharedData->staticDataOwned == TRUE) 
-    {
-        uprv_free((void*)deadSharedData->staticData);
-    }
-#endif
-
-#if 0
-    
-    uprv_memset(deadSharedData->0, sizeof(*deadSharedData));
-#endif
-
     uprv_free(deadSharedData);
 
     UTRACE_EXIT_VALUE((int32_t)TRUE);
@@ -630,12 +591,7 @@ ucnv_unload(UConverterSharedData *sharedData) {
 U_CFUNC void
 ucnv_unloadSharedDataIfReady(UConverterSharedData *sharedData)
 {
-    
-
-
-
-
-    if(sharedData != NULL && sharedData->referenceCounter != (uint32_t)~0) {
+    if(sharedData != NULL && sharedData->isReferenceCounted) {
         umtx_lock(&cnvCacheMutex);
         ucnv_unload(sharedData);
         umtx_unlock(&cnvCacheMutex);
@@ -645,12 +601,7 @@ ucnv_unloadSharedDataIfReady(UConverterSharedData *sharedData)
 U_CFUNC void
 ucnv_incrementRefCount(UConverterSharedData *sharedData)
 {
-    
-
-
-
-
-    if(sharedData != NULL && sharedData->referenceCounter != (uint32_t)~0) {
+    if(sharedData != NULL && sharedData->isReferenceCounted) {
         umtx_lock(&cnvCacheMutex);
         sharedData->referenceCounter++;
         umtx_unlock(&cnvCacheMutex);
@@ -940,12 +891,7 @@ ucnv_createAlgorithmicConverter(UConverter *myUConverter,
     }
 
     sharedData = converterData[type];
-    
-
-
-
-
-    if(sharedData == NULL || sharedData->referenceCounter != (uint32_t)~0) {
+    if(sharedData == NULL || sharedData->isReferenceCounted) {
         
         *err = U_ILLEGAL_ARGUMENT_ERROR;
         UTRACE_EXIT_STATUS(U_ILLEGAL_ARGUMENT_ERROR);

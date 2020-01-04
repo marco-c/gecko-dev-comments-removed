@@ -21,6 +21,8 @@
 
 #include "unicode/icuplug.h"
 
+#if UCONFIG_ENABLE_PLUGINS
+
 
 
 
@@ -83,5 +85,7 @@ U_INTERNAL const char* U_EXPORT2
 uplug_getPluginFile(void);
 
 
+
+#endif
 
 #endif

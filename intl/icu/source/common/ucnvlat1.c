@@ -458,11 +458,8 @@ static const UConverterStaticData _Latin1StaticData={
     { 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 } 
 };
 
-const UConverterSharedData _Latin1Data={
-    sizeof(UConverterSharedData), ~((uint32_t) 0),
-    NULL, NULL, &_Latin1StaticData, FALSE, &_Latin1Impl, 
-    0
-};
+const UConverterSharedData _Latin1Data=
+        UCNV_IMMUTABLE_SHARED_DATA_INITIALIZER(&_Latin1StaticData, &_Latin1Impl);
 
 
 
@@ -735,10 +732,7 @@ static const UConverterStaticData _ASCIIStaticData={
     { 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 } 
 };
 
-const UConverterSharedData _ASCIIData={
-    sizeof(UConverterSharedData), ~((uint32_t) 0),
-    NULL, NULL, &_ASCIIStaticData, FALSE, &_ASCIIImpl, 
-    0
-};
+const UConverterSharedData _ASCIIData=
+        UCNV_IMMUTABLE_SHARED_DATA_INITIALIZER(&_ASCIIStaticData, &_ASCIIImpl);
 
 #endif

@@ -269,8 +269,9 @@ udatpg_getBestPatternWithOptions(UDateTimePatternGenerator *dtpg,
 
 
 
+
 U_STABLE int32_t U_EXPORT2
-udatpg_getSkeleton(UDateTimePatternGenerator *dtpg,
+udatpg_getSkeleton(UDateTimePatternGenerator *unusedDtpg,
                    const UChar *pattern, int32_t length,
                    UChar *skeleton, int32_t capacity,
                    UErrorCode *pErrorCode);
@@ -298,8 +299,9 @@ udatpg_getSkeleton(UDateTimePatternGenerator *dtpg,
 
 
 
+
 U_STABLE int32_t U_EXPORT2
-udatpg_getBaseSkeleton(UDateTimePatternGenerator *dtpg,
+udatpg_getBaseSkeleton(UDateTimePatternGenerator *unusedDtpg,
                        const UChar *pattern, int32_t length,
                        UChar *baseSkeleton, int32_t capacity,
                        UErrorCode *pErrorCode);

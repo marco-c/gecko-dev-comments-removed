@@ -41,6 +41,7 @@
 #include "unicode/curramt.h"
 #include "unicode/enumset.h"
 
+#ifndef U_HIDE_INTERNAL_API
 
 
 
@@ -48,6 +49,7 @@
 #if UCONFIG_FORMAT_FASTPATHS_49
 #define UNUM_DECIMALFORMAT_INTERNAL_SIZE 16
 #endif
+#endif  
 
 U_NAMESPACE_BEGIN
 
@@ -59,6 +61,9 @@ class UnicodeSet;
 class FieldPositionHandler;
 class DecimalFormatStaticSets;
 class FixedDecimal;
+class DecimalFormatImpl;
+class PluralRules;
+class VisibleDigitsWithExponent;
 
 
 #if defined (_MSC_VER)
@@ -1122,6 +1127,40 @@ public:
 
 
 
+    virtual UnicodeString& format(
+            const VisibleDigitsWithExponent &number,
+            UnicodeString& appendTo,
+            FieldPosition& pos,
+            UErrorCode& status) const;
+
+    
+
+
+
+
+
+
+
+
+
+
+    virtual UnicodeString& format(
+            const VisibleDigitsWithExponent &number,
+            UnicodeString& appendTo,
+            FieldPositionIterator* posIter,
+            UErrorCode& status) const;
+
+    
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -1610,6 +1649,43 @@ public:
 
     virtual void setSecondaryGroupingSize(int32_t newValue);
 
+#ifndef U_HIDE_INTERNAL_API
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    int32_t getMinimumGroupingDigits() const;
+
+    
+
+
+
+
+
+
+
+    virtual void setMinimumGroupingDigits(int32_t newValue);
+
+#endif  
+
     
 
 
@@ -1630,7 +1706,6 @@ public:
 
     virtual void setDecimalSeparatorAlwaysShown(UBool newValue);
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -1638,7 +1713,6 @@ public:
 
 
     UBool isDecimalPatternMatchRequired(void) const;
-#endif  
 
     
 
@@ -1893,7 +1967,6 @@ public:
 
     virtual void setCurrency(const UChar* theCurrency);
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -1908,7 +1981,6 @@ public:
 
 
     UCurrencyUsage getCurrencyUsage() const;
-#endif  
 
 
 #ifndef U_HIDE_DEPRECATED_API
@@ -1944,6 +2016,41 @@ public:
 
 
      FixedDecimal getFixedDecimal(DigitList &number, UErrorCode &status) const;
+
+    
+
+
+
+
+
+     VisibleDigitsWithExponent &initVisibleDigitsWithExponent(
+             double number,
+             VisibleDigitsWithExponent &digits,
+             UErrorCode &status) const;
+
+    
+
+
+
+
+
+     VisibleDigitsWithExponent &initVisibleDigitsWithExponent(
+             const Formattable &number,
+             VisibleDigitsWithExponent &digits,
+             UErrorCode &status) const;
+
+    
+
+
+
+
+
+
+     VisibleDigitsWithExponent &initVisibleDigitsWithExponent(
+             DigitList &number,
+             VisibleDigitsWithExponent &digits,
+             UErrorCode &status) const;
+
 #endif  
 
 public:
@@ -1978,8 +2085,6 @@ private:
 
     DecimalFormat(); 
 
-    int32_t precision() const;
-
     
 
 
@@ -1994,72 +2099,6 @@ private:
                    const UnicodeString*     pattern = 0,
                    DecimalFormatSymbols*    symbolsToAdopt = 0
                    );
-
-    
-
-
-
-
-
-
-
-    UnicodeString& toPattern(UnicodeString& result, UBool localized) const;
-
-    
-
-
-
-
-
-
-
-
-
-    void applyPattern(const UnicodeString& pattern,
-                            UBool localized,
-                            UParseError& parseError,
-                            UErrorCode& status);
-
-    
-
-
-    void applyPatternInternally(const UnicodeString& pluralCount,
-                                const UnicodeString& pattern,
-                                UBool localized,
-                                UParseError& parseError,
-                                UErrorCode& status);
-
-    
-
-
-    void applyPatternWithoutExpandAffix(const UnicodeString& pattern,
-                                        UBool localized,
-                                        UParseError& parseError,
-                                        UErrorCode& status);
-
-
-    
-
-
-    void expandAffixAdjustWidth(const UnicodeString* pluralCount);
-
-
-    
-
-
-
-
-
-
-
-
-
-    UnicodeString& subformat(UnicodeString& appendTo,
-                             FieldPositionHandler& handler,
-                             DigitList&     digits,
-                             UBool          isInteger,
-                             UErrorCode &status) const;
-
 
     void parse(const UnicodeString& text,
                Formattable& result,
@@ -2145,68 +2184,11 @@ private:
                              UChar32 schar);
 
     
-
-
-
-
-    inline const UnicodeString &getConstSymbol(DecimalFormatSymbols::ENumberFormatSymbol symbol) const;
-
-    int32_t appendAffix(UnicodeString& buf,
-                        double number,
-                        FieldPositionHandler& handler,
-                        UBool isNegative,
-                        UBool isPrefix) const;
-
-    
-
-
-
-
-    void appendAffixPattern(UnicodeString& appendTo, const UnicodeString& affix,
-                            UBool localized) const;
-
-    void appendAffixPattern(UnicodeString& appendTo,
-                            const UnicodeString* affixPattern,
-                            const UnicodeString& expAffix, UBool localized) const;
-
-    void expandAffix(const UnicodeString& pattern,
-                     UnicodeString& affix,
-                     double number,
-                     FieldPositionHandler& handler,
-                     UBool doFormat,
-                     const UnicodeString* pluralCount) const;
-
-    void expandAffixes(const UnicodeString* pluralCount);
-
-    void addPadding(UnicodeString& appendTo,
-                    FieldPositionHandler& handler,
-                    int32_t prefixLen, int32_t suffixLen) const;
-
-    UBool isGroupingPosition(int32_t pos) const;
-
-    void setCurrencyForSymbols();
-
-    
-    
-    
-    
-    virtual void setCurrencyInternally(const UChar* theCurrency, UErrorCode& ec);
-
-    
     
     
     
     void setupCurrencyAffixPatterns(UErrorCode& status);
 
-    
-    
-    
-    
-    void setupCurrencyAffixes(const UnicodeString& pattern,
-                              UBool setupForCurrentPattern,
-                              UBool setupForPluralPattern,
-                              UErrorCode& status);
-	
     
     double getCurrencyRounding(const UChar* currency,
                                UErrorCode* ec) const;
@@ -2217,157 +2199,28 @@ private:
 
     
     Hashtable* initHashForAffixPattern(UErrorCode& status);
-    Hashtable* initHashForAffix(UErrorCode& status);
 
     void deleteHashForAffixPattern();
-    void deleteHashForAffix(Hashtable*& table);
 
     void copyHashForAffixPattern(const Hashtable* source,
                                  Hashtable* target, UErrorCode& status);
-    void copyHashForAffix(const Hashtable* source,
-                          Hashtable* target, UErrorCode& status);
 
-    UnicodeString& _format(int64_t number,
-                           UnicodeString& appendTo,
-                           FieldPositionHandler& handler,
-                           UErrorCode &status) const;
-    UnicodeString& _format(double number,
-                           UnicodeString& appendTo,
-                           FieldPositionHandler& handler,
-                           UErrorCode &status) const;
-    UnicodeString& _format(const DigitList &number,
-                           UnicodeString& appendTo,
-                           FieldPositionHandler& handler,
-                           UErrorCode &status) const;
+    DecimalFormatImpl *fImpl;
 
     
 
 
 
-    UnicodeString           fPositivePrefix;
-    UnicodeString           fPositiveSuffix;
-    UnicodeString           fNegativePrefix;
-    UnicodeString           fNegativeSuffix;
-    UnicodeString*          fPosPrefixPattern;
-    UnicodeString*          fPosSuffixPattern;
-    UnicodeString*          fNegPrefixPattern;
-    UnicodeString*          fNegSuffixPattern;
-
-    
-
-
-
-
-    ChoiceFormat*           fCurrencyChoice;
-
-    DigitList *             fMultiplier;   
-    int32_t                 fScale;
-    int32_t                 fGroupingSize;
-    int32_t                 fGroupingSize2;
-    UBool                   fDecimalSeparatorAlwaysShown;
-    DecimalFormatSymbols*   fSymbols;
-
-    UBool                   fUseSignificantDigits;
-    int32_t                 fMinSignificantDigits;
-    int32_t                 fMaxSignificantDigits;
-
-    UBool                   fUseExponentialNotation;
-    int8_t                  fMinExponentDigits;
-    UBool                   fExponentSignAlwaysShown;
 
     EnumSet<UNumberFormatAttribute,
             UNUM_MAX_NONBOOLEAN_ATTRIBUTE+1,
             UNUM_LIMIT_BOOLEAN_ATTRIBUTE>
                             fBoolFlags;
 
-    DigitList*              fRoundingIncrement;  
-    ERoundingMode           fRoundingMode;
 
-    UChar32                 fPad;
-    int32_t                 fFormatWidth;
-    EPadPosition            fPadPosition;
-
-    
-
-
-    
-    UnicodeString fFormatPattern;
     
     
     int fStyle;
-    
-
-
-
-
-
-
-
-
-
-    int fCurrencySignCount;
-
-
-    
-
-
-
-
-
-    
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    
-
-
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
     
@@ -2386,16 +2239,6 @@ private:
     Hashtable* fAffixPatternsForCurrency;
 
     
-    
-    
-    
-    
-    
-    
-    Hashtable* fAffixesForCurrency;  
-    Hashtable* fPluralAffixesForCurrency;  
-
-    
     CurrencyPluralInfo* fCurrencyPluralInfo;
 
 #if UCONFIG_HAVE_PARSEALLINPUT
@@ -2405,9 +2248,6 @@ private:
     
     const DecimalFormatStaticSets *fStaticSets;
 	
-    
-    UCurrencyUsage fCurrencyUsage;
-
 protected:
 
 #ifndef U_HIDE_INTERNAL_API
@@ -2449,26 +2289,7 @@ protected:
 
     static const int32_t  kMaxScientificIntegerDigits;
 
-#if UCONFIG_FORMAT_FASTPATHS_49
- private:
-    
-
-
-
-    uint8_t fReserved[UNUM_DECIMALFORMAT_INTERNAL_SIZE];
-
-
-    
-
-
-    void handleChanged();
-#endif
 };
-
-inline const UnicodeString &
-DecimalFormat::getConstSymbol(DecimalFormatSymbols::ENumberFormatSymbol symbol) const {
-    return fSymbols->getConstSymbol(symbol);
-}
 
 U_NAMESPACE_END
 

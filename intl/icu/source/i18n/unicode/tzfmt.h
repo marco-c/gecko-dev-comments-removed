@@ -233,9 +233,7 @@ typedef enum UTimeZoneFormatParseOption {
 
 
 
-    UTZFMT_PARSE_OPTION_ALL_STYLES  = 0x01
-#ifndef U_HIDE_DRAFT_API
-    ,
+    UTZFMT_PARSE_OPTION_ALL_STYLES  = 0x01,
      
 
 
@@ -244,7 +242,6 @@ typedef enum UTimeZoneFormatParseOption {
 
 
     UTZFMT_PARSE_OPTION_TZ_DATABASE_ABBREVIATIONS = 0x02
-#endif  
 } UTimeZoneFormatParseOption;
 
 U_CDECL_END

@@ -369,6 +369,28 @@ public:
 
     UnicodeSet(UChar32 start, UChar32 end);
 
+#ifndef U_HIDE_INTERNAL_API
+    
+
+
+    enum ESerialization {
+      kSerialized  
+    };
+
+    
+
+
+
+
+
+
+
+
+
+    UnicodeSet(const uint16_t buffer[], int32_t bufferLen,
+               ESerialization serialization, UErrorCode &status);
+#endif  
+
     
 
 

@@ -18,6 +18,10 @@
 
 
 #include "unicode/icuplug.h"
+
+#if UCONFIG_ENABLE_PLUGINS
+
+
 #include <stdio.h> 
 #include <stdlib.h> 
 #include "udbgutil.h"
@@ -202,3 +206,4 @@ UPlugTokenReturn U_EXPORT2 debugMemoryPlugin (
     return UPLUG_TOKEN;
 }
 
+#endif

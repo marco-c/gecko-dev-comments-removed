@@ -139,6 +139,15 @@
 
 
 
+#ifndef UCONFIG_ENABLE_PLUGINS
+#define UCONFIG_ENABLE_PLUGINS 0
+#endif
+
+
+
+
+
+
 #ifndef U_ENABLE_DYLOAD
 #define U_ENABLE_DYLOAD 1
 #endif
@@ -151,7 +160,6 @@
 #ifndef U_CHECK_DYLOAD
 #define U_CHECK_DYLOAD 1
 #endif
-
 
 
 
@@ -437,9 +445,6 @@
 
 #ifndef UCONFIG_NO_FILTERED_BREAK_ITERATION
 #   define UCONFIG_NO_FILTERED_BREAK_ITERATION 0
-
-
-
 #endif
 
 #endif

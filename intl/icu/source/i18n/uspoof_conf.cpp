@@ -300,8 +300,31 @@ void ConfusabledataBuilder::build(const char * confusables, int32_t confusablesL
                             uregex_start(fParseLine, 5, &status) >= 0 ? fMLTable :
                             uregex_start(fParseLine, 6, &status) >= 0 ? fMATable :
                             NULL;
-        U_ASSERT(table != NULL);
-        uhash_iput(table, keyChar, smapString, &status);
+        if (U_SUCCESS(status) && table == NULL) {
+            status = U_PARSE_ERROR;
+        }
+        if (U_FAILURE(status)) {
+            return;
+        }
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        if (table != fMATable) {
+            status = U_PARSE_ERROR;
+            return;
+        };
+        
+        uhash_iput(fSLTable, keyChar, smapString, &status);
+        uhash_iput(fSATable, keyChar, smapString, &status);
+        uhash_iput(fMLTable, keyChar, smapString, &status);
+        uhash_iput(fMATable, keyChar, smapString, &status);
         fKeySet->add(keyChar);
         if (U_FAILURE(status)) {
             return;

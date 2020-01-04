@@ -16,6 +16,8 @@
 
 #include "unicode/translit.h"
 
+#include "unicode/localpointer.h"
+
 
 U_NAMESPACE_BEGIN
 
@@ -30,10 +32,6 @@ class UVector32;
 class BreakTransliterator : public Transliterator {
 public:
 
-    BreakTransliterator(const UnicodeString &ID, 
-                        UnicodeFilter *adoptedFilter,
-                        BreakIterator *bi, 
-                        const UnicodeString &insertion);
     
 
 
@@ -63,14 +61,6 @@ public:
     
 
 
-
-
-    virtual BreakIterator *getBreakIterator();
-
-
-    
-
-
     virtual UClassID getDynamicClassID() const;
 
     
@@ -93,10 +83,9 @@ public:
                                      UBool isIncremental) const;
 
  private:
-     BreakIterator     *bi;
-     UnicodeString      fInsertion;
-     UVector32         *boundaries;
-     UnicodeString      sText;  
+     LocalPointer<BreakIterator> cachedBI;
+     LocalPointer<UVector32>     cachedBoundaries;
+     UnicodeString               fInsertion;
 
      static UnicodeString replaceableAsString(Replaceable &r);
 

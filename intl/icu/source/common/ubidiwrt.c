@@ -17,11 +17,6 @@
 
 
 
-
-#ifndef U_COMMON_IMPLEMENTATION
-#   define U_COMMON_IMPLEMENTATION
-#endif
-
 #include "unicode/utypes.h"
 #include "unicode/ustring.h"
 #include "unicode/uchar.h"

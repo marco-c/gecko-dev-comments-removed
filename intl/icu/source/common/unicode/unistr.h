@@ -34,7 +34,6 @@
 #include "unicode/ucasemap.h"
 
 struct UConverter;          
-class  StringThreadTest;
 
 #ifndef U_COMPARE_CODE_POINT_ORDER
 
@@ -172,6 +171,55 @@ class UnicodeStringAppendable;
 #   define UNISTR_FROM_STRING_EXPLICIT
 # endif
 #endif
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#ifndef UNISTR_OBJECT_SIZE
+# define UNISTR_OBJECT_SIZE 64
+#endif
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -1814,6 +1862,17 @@ public:
 
 
 
+
+
+
+
+
+
+
+
+
+
+
   UnicodeString &operator=(const UnicodeString &srcText);
 
   
@@ -1838,7 +1897,55 @@ public:
 
 
 
+
+
+
   UnicodeString &fastCopyFrom(const UnicodeString &src);
+
+#ifndef U_HIDE_DRAFT_API
+#if U_HAVE_RVALUE_REFERENCES
+  
+
+
+
+
+
+
+
+  UnicodeString &operator=(UnicodeString &&src) U_NOEXCEPT {
+    return moveFrom(src);
+  }
+#endif
+  
+
+
+
+
+
+
+
+
+
+  UnicodeString &moveFrom(UnicodeString &src) U_NOEXCEPT;
+
+  
+
+
+
+
+  void swap(UnicodeString &other) U_NOEXCEPT;
+
+  
+
+
+
+
+
+  friend U_COMMON_API inline void U_EXPORT2
+  swap(UnicodeString &s1, UnicodeString &s2) U_NOEXCEPT {
+    s1.swap(s2);
+  }
+#endif  
 
   
 
@@ -3092,7 +3199,30 @@ public:
 
 
 
+
+
+
+
+
+
+
+
+
+
+
   UnicodeString(const UnicodeString& that);
+
+#ifndef U_HIDE_DRAFT_API
+#if U_HAVE_RVALUE_REFERENCES
+  
+
+
+
+
+
+  UnicodeString(UnicodeString &&src) U_NOEXCEPT;
+#endif
+#endif  
 
   
 
@@ -3359,6 +3489,9 @@ private:
                int32_t srcStart,
                int32_t srcLength);
 
+  UnicodeString& doAppend(const UnicodeString& src, int32_t srcStart, int32_t srcLength);
+  UnicodeString& doAppend(const UChar *srcChars, int32_t srcStart, int32_t srcLength);
+
   UnicodeString& doReverse(int32_t start,
                int32_t length);
 
@@ -3402,6 +3535,9 @@ private:
 
   
   UnicodeString &copyFrom(const UnicodeString &src, UBool fastCopy=FALSE);
+
+  
+  void copyFieldsFrom(UnicodeString &src, UBool setSrcToBogus) U_NOEXCEPT;
 
   
   inline void pinIndex(int32_t& start) const;
@@ -3475,8 +3611,11 @@ private:
   
   enum {
     
-    
-    US_STACKBUF_SIZE= sizeof(void *)==4 ? 13 : 15, 
+
+
+
+
+    US_STACKBUF_SIZE=(int32_t)(UNISTR_OBJECT_SIZE-sizeof(void *)-2)/U_SIZEOF_UCHAR,
     kInvalidUChar=0xffff, 
     kGrowSize=128, 
     kInvalidHashCode=0, 
@@ -3503,13 +3642,13 @@ private:
     kWritableAlias=0
   };
 
-  friend class StringThreadTest;
   friend class UnicodeStringAppendable;
 
   union StackBufferOrFields;        
   friend union StackBufferOrFields; 
 
   
+
 
 
 
@@ -3558,9 +3697,11 @@ private:
     } fStackFields;
     struct {
       int16_t fLengthAndFlags;          
-      UChar   *fArray;    
-      int32_t fCapacity;  
       int32_t fLength;    
+      int32_t fCapacity;  
+      
+      
+      UChar   *fArray;    
     } fFields;
   } fUnion;
 };
@@ -4385,30 +4526,30 @@ inline UnicodeString&
 UnicodeString::append(const UnicodeString& srcText,
               int32_t srcStart,
               int32_t srcLength)
-{ return doReplace(length(), 0, srcText, srcStart, srcLength); }
+{ return doAppend(srcText, srcStart, srcLength); }
 
 inline UnicodeString&
 UnicodeString::append(const UnicodeString& srcText)
-{ return doReplace(length(), 0, srcText, 0, srcText.length()); }
+{ return doAppend(srcText, 0, srcText.length()); }
 
 inline UnicodeString&
 UnicodeString::append(const UChar *srcChars,
               int32_t srcStart,
               int32_t srcLength)
-{ return doReplace(length(), 0, srcChars, srcStart, srcLength); }
+{ return doAppend(srcChars, srcStart, srcLength); }
 
 inline UnicodeString&
 UnicodeString::append(const UChar *srcChars,
               int32_t srcLength)
-{ return doReplace(length(), 0, srcChars, 0, srcLength); }
+{ return doAppend(srcChars, 0, srcLength); }
 
 inline UnicodeString&
 UnicodeString::append(UChar srcChar)
-{ return doReplace(length(), 0, &srcChar, 0, 1); }
+{ return doAppend(&srcChar, 0, 1); }
 
 inline UnicodeString&
 UnicodeString::operator+= (UChar ch)
-{ return doReplace(length(), 0, &ch, 0, 1); }
+{ return doAppend(&ch, 0, 1); }
 
 inline UnicodeString&
 UnicodeString::operator+= (UChar32 ch) {
@@ -4417,7 +4558,7 @@ UnicodeString::operator+= (UChar32 ch) {
 
 inline UnicodeString&
 UnicodeString::operator+= (const UnicodeString& srcText)
-{ return doReplace(length(), 0, srcText, 0, srcText.length()); }
+{ return doAppend(srcText, 0, srcText.length()); }
 
 inline UnicodeString&
 UnicodeString::insert(int32_t start,

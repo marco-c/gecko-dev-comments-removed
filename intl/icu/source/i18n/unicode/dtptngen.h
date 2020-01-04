@@ -116,6 +116,7 @@ public:
 
     UBool operator!=(const DateTimePatternGenerator& other) const;
 
+#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -126,7 +127,41 @@ public:
 
 
 
-    UnicodeString getSkeleton(const UnicodeString& pattern, UErrorCode& status);
+    static UnicodeString staticGetSkeleton(const UnicodeString& pattern, UErrorCode& status);
+#endif  
+
+    
+
+
+
+
+
+
+
+
+
+
+
+    UnicodeString getSkeleton(const UnicodeString& pattern, UErrorCode& status) {
+        return staticGetSkeleton(pattern, status);
+    }
+
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+
+
+
+
+
+
+
+
+    static UnicodeString staticGetBaseSkeleton(const UnicodeString& pattern, UErrorCode& status);
+#endif  
 
     
 
@@ -141,7 +176,11 @@ public:
 
 
 
-    UnicodeString getBaseSkeleton(const UnicodeString& pattern, UErrorCode& status);
+
+
+    UnicodeString getBaseSkeleton(const UnicodeString& pattern, UErrorCode& status) {
+        return staticGetBaseSkeleton(pattern, status);
+    }
 
     
 

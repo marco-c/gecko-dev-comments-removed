@@ -296,24 +296,49 @@ CollationWeights::getWeightRanges(uint32_t lowerLimit, uint32_t upperLimit) {
         middle.count=(int32_t)((middle.end-middle.start)>>(8*(4-middleLength)))+1;
     } else {
         
-
-        
         for(int32_t length=4; length>middleLength; --length) {
             if(lower[length].count>0 && upper[length].count>0) {
-                uint32_t start=upper[length].start;
-                uint32_t end=lower[length].end;
+                
+                
+                
+                
+                
+                const uint32_t lowerEnd=lower[length].end;
+                const uint32_t upperStart=upper[length].start;
+                UBool merged=FALSE;
 
-                if(end>=start || incWeight(end, length)==start) {
+                if(lowerEnd>upperStart) {
                     
-                    start=lower[length].start;
-                    end=lower[length].end=upper[length].end;
                     
-
-
-
+                    
+                    
+                    
+                    
+                    
+                    U_ASSERT(truncateWeight(lowerEnd, length-1)==
+                            truncateWeight(upperStart, length-1));
+                    
+                    lower[length].end=upper[length].end;
                     lower[length].count=
-                        (int32_t)(getWeightTrail(end, length)-getWeightTrail(start, length)+1+
-                                  countBytes(length)*(getWeightByte(end, length-1)-getWeightByte(start, length-1)));
+                            (int32_t)getWeightTrail(lower[length].end, length)-
+                            (int32_t)getWeightTrail(lower[length].start, length)+1;
+                    
+                    
+                    merged=TRUE;
+                } else if(lowerEnd==upperStart) {
+                    
+                    U_ASSERT(minBytes[length]<maxBytes[length]);
+                } else  {
+                    if(incWeight(lowerEnd, length)==upperStart) {
+                        
+                        lower[length].end=upper[length].end;
+                        lower[length].count+=upper[length].count;  
+                        merged=TRUE;
+                    }
+                }
+                if(merged) {
+                    
+                    
                     upper[length].count=0;
                     while(--length>middleLength) {
                         lower[length].count=upper[length].count=0;

@@ -32,13 +32,13 @@ class UnifiedCache;
 
 class U_COMMON_API CacheKeyBase : public UObject {
  public:
-   CacheKeyBase() : creationStatus(U_ZERO_ERROR) {}
+   CacheKeyBase() : fCreationStatus(U_ZERO_ERROR), fIsMaster(FALSE) {}
 
    
 
 
    CacheKeyBase(const CacheKeyBase &other) 
-           : UObject(other), creationStatus(other.creationStatus) { }
+           : UObject(other), fCreationStatus(other.fCreationStatus), fIsMaster(FALSE) { }
    virtual ~CacheKeyBase();
 
    
@@ -85,7 +85,8 @@ class U_COMMON_API CacheKeyBase : public UObject {
        return !(*this == other);
    }
  private:
-   mutable UErrorCode creationStatus;
+   mutable UErrorCode fCreationStatus;
+   mutable UBool fIsMaster;
    friend class UnifiedCache;
 };
 
@@ -175,9 +176,13 @@ class LocaleCacheKey : public CacheKey<T> {
 
 
 
-class U_COMMON_API UnifiedCache : public UObject {
+
+
+class U_COMMON_API UnifiedCache : public UnifiedCacheBase {
  public:
    
+
+
 
 
    UnifiedCache(UErrorCode &status);
@@ -185,7 +190,7 @@ class U_COMMON_API UnifiedCache : public UObject {
    
 
 
-   static const UnifiedCache *getInstance(UErrorCode &status);
+   static UnifiedCache *getInstance(UErrorCode &status);
 
    
 
@@ -285,9 +290,66 @@ class U_COMMON_API UnifiedCache : public UObject {
 
    void flush() const;
 
+   
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+   void setEvictionPolicy(
+           int32_t count, int32_t percentageOfInUseItems, UErrorCode &status);
+
+
+   
+
+
+
+
+   int64_t autoEvictedCount() const;
+
+   
+
+
+
+   int32_t unusedCount() const;
+
+   virtual void incrementItemsInUse() const;
+   virtual void decrementItemsInUseWithLockingAndEviction() const;
+   virtual void decrementItemsInUse() const;
    virtual ~UnifiedCache();
  private:
    UHashtable *fHashtable;
+   mutable int32_t fEvictPos;
+   mutable int32_t fItemsInUseCount;
+   int32_t fMaxUnused;
+   int32_t fMaxPercentageOfInUse;
+   mutable int64_t fAutoEvictedCount;
    UnifiedCache(const UnifiedCache &other);
    UnifiedCache &operator=(const UnifiedCache &other);
    UBool _flush(UBool all) const;
@@ -309,18 +371,28 @@ class U_COMMON_API UnifiedCache : public UObject {
            const CacheKeyBase &key,
            const SharedObject *&value,
            UErrorCode &status) const;
+   const UHashElement *_nextElement() const;
+   int32_t _computeCountOfItemsToEvict() const;
+   void _runEvictionSlice() const;
+   void _registerMaster( 
+        const CacheKeyBase *theKey, const SharedObject *value) const;
+   void _put(
+           const UHashElement *element,
+           const SharedObject *value,
+           const UErrorCode status) const;
 #ifdef UNIFIED_CACHE_DEBUG
    void _dumpContents() const;
 #endif
-   static void _put(
-           const UHashElement *element,
-           const SharedObject *value,
-           const UErrorCode status);
+   static void copyPtr(const SharedObject *src, const SharedObject *&dest);
+   static void clearPtr(const SharedObject *&ptr);
    static void _fetch(
            const UHashElement *element,
            const SharedObject *&value,
            UErrorCode &status);
    static UBool _inProgress(const UHashElement *element);
+   static UBool _inProgress(
+           const SharedObject *theValue, UErrorCode creationStatus);
+   static UBool _isEvictable(const UHashElement *element);
 };
 
 U_NAMESPACE_END

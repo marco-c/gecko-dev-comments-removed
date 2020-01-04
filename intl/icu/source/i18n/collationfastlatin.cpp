@@ -17,7 +17,6 @@
 #include "collationdata.h"
 #include "collationfastlatin.h"
 #include "collationsettings.h"
-#include "putilimp.h"  
 #include "uassert.h"
 
 U_NAMESPACE_BEGIN
@@ -119,7 +118,6 @@ CollationFastLatin::compareUTF16(const uint16_t *table, const uint16_t *primarie
     options &= 0xffff;  
 
     
-    U_ALIGN_CODE(16);
     int32_t leftIndex = 0, rightIndex = 0;
     
 
@@ -456,7 +454,6 @@ CollationFastLatin::compareUTF8(const uint16_t *table, const uint16_t *primaries
     options &= 0xffff;  
 
     
-    U_ALIGN_CODE(16);
     int32_t leftIndex = 0, rightIndex = 0;
     
 

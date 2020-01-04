@@ -24,7 +24,9 @@ U_NAMESPACE_BEGIN
 
 class NumsysNameEnumeration : public StringEnumeration {
 public:
-    NumsysNameEnumeration(UVector *fNumsysNames, UErrorCode& status);
+    
+    NumsysNameEnumeration(UVector *numsysNames, UErrorCode& status);
+
     virtual ~NumsysNameEnumeration();
     static UClassID U_EXPORT2 getStaticClassID(void);
     virtual UClassID getDynamicClassID(void) const;

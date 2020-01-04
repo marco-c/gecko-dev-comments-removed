@@ -56,6 +56,7 @@ static UOption options[]={
     UOPTION_ICUDATADIR,         
     UOPTION_DESTDIR,            
     UOPTION_COPYRIGHT,          
+    UOPTION_QUIET,              
 };
 
 void usageAndDie(int retCode) {
@@ -66,6 +67,7 @@ void usageAndDie(int retCode) {
             "\t-V or --version     show a version message\n"
             "\t-c or --copyright   include a copyright notice\n"
             "\t-v or --verbose     turn on verbose output\n"
+            "\t-q or --quiet       do not display warnings and progress\n"
             "\t-i or --icudatadir  directory for locating any needed intermediate data files,\n"
             "\t                    followed by path, defaults to %s\n"
             "\t-d or --destdir     destination directory, followed by the path\n",
@@ -338,7 +340,9 @@ int  main(int argc, char **argv) {
     u_cleanup();
 
 
-    printf("genbrk: tool completed successfully.\n");
+    if(!options[8].doesOccur) {
+        printf("genbrk: tool completed successfully.\n");
+    }
     return 0;
 
 #endif 
