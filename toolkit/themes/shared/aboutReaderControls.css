@@ -136,6 +136,10 @@
   box-shadow: 0 1px 12px #666;
 }
 
+.keep-open .dropdown-popup {
+  z-index: initial;
+}
+
 .dropdown-popup > hr {
   display: none;
 }
@@ -153,6 +157,8 @@
   background-image: url("chrome://global/skin/reader/RM-Type-Controls-Arrow.svg");
   display: block;
 }
+
+
 
 #font-type-buttons,
 #font-size-buttons,

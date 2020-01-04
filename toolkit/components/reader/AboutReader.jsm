@@ -168,7 +168,7 @@ AboutReader.prototype = {
       
       case "Reader:CloseDropdown": {
         
-        this._closeDropdown();
+        this._closeDropdowns();
         break;
       }
 
@@ -209,19 +209,27 @@ AboutReader.prototype = {
     switch (aEvent.type) {
       case "click":
         let target = aEvent.target;
-        while (target && target.id != "reader-popup")
-          target = target.parentNode;
-        if (!target)
-          this._closeDropdown();
+        if (target.classList.contains('dropdown-toggle')) {
+          this._toggleDropdownClicked(aEvent);
+        } else if (!target.closest('.dropdown-popup')) {
+          this._closeDropdowns();
+        }
         break;
       case "scroll":
-        this._closeDropdown();
+        this._closeDropdowns();
         let isScrollingUp = this._scrollOffset > aEvent.pageY;
         this._setSystemUIVisibility(isScrollingUp);
         this._scrollOffset = aEvent.pageY;
         break;
       case "resize":
         this._updateImageMargins();
+        if (this._isToolbarVertical) {
+          this._win.setTimeout(() => {
+            for (let dropdown of this._doc.querySelectorAll('.dropdown.open')) {
+              this._updatePopupPosition(dropdown);
+            }
+          }, 0);
+        }
         break;
 
       case "devicelight":
@@ -234,7 +242,7 @@ AboutReader.prototype = {
 
       case "unload":
         
-        this._closeDropdown();
+        this._closeDropdowns();
 
         this._mm.removeMessageListener("Reader:CloseDropdown", this);
         this._mm.removeMessageListener("Reader:AddButton", this);
@@ -718,58 +726,48 @@ AboutReader.prototype = {
   },
 
   _setupStyleDropdown: function() {
-    let doc = this._doc;
-    let win = this._win;
+    let dropdownToggle = this._doc.querySelector("#style-dropdown .dropdown-toggle");
+    dropdownToggle.setAttribute("title", gStrings.GetStringFromName("aboutReader.toolbar.typeControls"));
+  },
 
-    let dropdown = doc.getElementById("style-dropdown");
+  _updatePopupPosition: function(dropdown) {
     let dropdownToggle = dropdown.querySelector(".dropdown-toggle");
     let dropdownPopup = dropdown.querySelector(".dropdown-popup");
 
-    
-    
-    function updatePopupPosition() {
-      let toggleHeight = dropdownToggle.offsetHeight;
-      let toggleTop = dropdownToggle.offsetTop;
-      let popupTop = toggleTop - toggleHeight / 2;
-      dropdownPopup.style.top = popupTop + "px";
-    }
+    let toggleHeight = dropdownToggle.offsetHeight;
+    let toggleTop = dropdownToggle.offsetTop;
+    let popupTop = toggleTop - toggleHeight / 2;
 
-    if (this._isToolbarVertical) {
-      win.addEventListener("resize", event => {
-        if (!event.isTrusted)
-          return;
+    dropdownPopup.style.top = popupTop + "px";
+  },
 
-        
-        win.setTimeout(updatePopupPosition, 0);
-      }, true);
-    }
+  _toggleDropdownClicked: function(event) {
+    let dropdown = event.target.closest('.dropdown');
 
-    dropdownToggle.setAttribute("title", gStrings.GetStringFromName("aboutReader.toolbar.typeControls"));
-    dropdownToggle.addEventListener("click", event => {
-      if (!event.isTrusted)
-        return;
+    if (!dropdown)
+      return;
 
-      event.stopPropagation();
+    event.stopPropagation();
 
-      if (dropdown.classList.contains("open")) {
-        this._closeDropdown();
-      } else {
-        this._openDropdown();
-        if (this._isToolbarVertical) {
-          updatePopupPosition();
-        }
+    if (dropdown.classList.contains("open")) {
+      this._closeDropdowns();
+    } else {
+      this._openDropdown(dropdown);
+      if (this._isToolbarVertical) {
+        this._updatePopupPosition(dropdown);
       }
-    }, true);
+    }
   },
 
   
 
 
-  _openDropdown: function() {
-    let dropdown = this._doc.getElementById("style-dropdown");
+  _openDropdown: function(dropdown) {
     if (dropdown.classList.contains("open")) {
       return;
     }
+
+    this._closeDropdowns();
 
     
     dropdown.classList.add("open");
@@ -779,14 +777,15 @@ AboutReader.prototype = {
   
 
 
-  _closeDropdown: function() {
-    let dropdown = this._doc.getElementById("style-dropdown");
-    if (!dropdown.classList.contains("open")) {
-      return;
+  _closeDropdowns: function() {
+    let openDropdowns = this._doc.querySelectorAll(".dropdown.open:not(.keep-open)");
+    for (let dropdown of openDropdowns) {
+      dropdown.classList.remove("open");
     }
 
     
-    dropdown.classList.remove("open");
-    this._mm.sendAsyncMessage("Reader:DropdownClosed", this.viewId);
-  },
+    if (openDropdowns.length) {
+      this._mm.sendAsyncMessage("Reader:DropdownClosed", this.viewId);
+    }
+  }
 };
