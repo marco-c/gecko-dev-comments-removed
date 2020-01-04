@@ -1078,6 +1078,23 @@ class IDLInterface(IDLObjectWithScope, IDLExposureMixins):
 
             specialMembersSeen[memberType] = member
 
+        if self.getExtendedAttribute("LegacyUnenumerableNamedProperties"):
+            
+            if "named getters" not in specialMembersSeen:
+                raise WebIDLError(
+                    "Interface with [LegacyUnenumerableNamedProperties] does "
+                    "not have a named getter",
+                    [self.location])
+            ancestor = self.parent
+            while ancestor:
+                if ancestor.getExtendedAttribute("LegacyUnenumerableNamedProperties"):
+                    raise WebIDLError(
+                        "Interface with [LegacyUnenumerableNamedProperties] "
+                        "inherits from another interface with "
+                        "[LegacyUnenumerableNamedProperties]",
+                        [self.location, ancestor.location])
+                ancestor = ancestor.parent
+
         if self._isOnGlobalProtoChain:
             
             for memberType in ["setter", "creator", "deleter"]:
@@ -1465,6 +1482,7 @@ class IDLInterface(IDLObjectWithScope, IDLExposureMixins):
                   identifier == "UnsafeInPrerendering" or
                   identifier == "LegacyEventInit" or
                   identifier == "ProbablyShortLivingObject" or
+                  identifier == "LegacyUnenumerableNamedProperties" or
                   identifier == "NonOrdinaryGetPrototypeOf"):
                 
                 if not attr.noArguments():
