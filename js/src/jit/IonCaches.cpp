@@ -1259,6 +1259,13 @@ IsCacheableArrayLength(JSContext* cx, HandleObject obj, HandlePropertyName name,
         return false;
     }
 
+    
+    
+    
+    
+    if (obj->as<ArrayObject>().length() > INT32_MAX)
+        return false;
+
     return true;
 }
 
