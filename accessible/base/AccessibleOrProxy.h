@@ -85,6 +85,18 @@ public:
     return AsAccessible()->FirstChild();
   }
 
+  
+
+
+  AccessibleOrProxy LastChild()
+  {
+    if (IsProxy()) {
+      return AsProxy()->LastChild();
+    }
+
+    return AsAccessible()->LastChild();
+  }
+
   role Role() const
   {
     if (IsProxy()) {
