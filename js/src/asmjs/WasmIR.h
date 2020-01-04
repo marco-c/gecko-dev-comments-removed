@@ -64,6 +64,7 @@ enum class Stmt : uint8_t
     F64Expr,
     I32X4Expr,
     F32X4Expr,
+    B32X4Expr,
 
     Id,
     Noop,
@@ -173,6 +174,9 @@ enum class I32 : uint8_t
 
     
     I32X4ExtractLane,
+    B32X4ExtractLane,
+    B32X4AllTrue,
+    B32X4AnyTrue,
 
     
     Id,
@@ -312,8 +316,6 @@ enum class I32X4 : uint8_t
     Unary,
 
     Binary,
-    BinaryCompI32X4,
-    BinaryCompF32X4,
     BinaryBitwise,
     BinaryShift,
 
@@ -371,6 +373,43 @@ enum class F32X4 : uint8_t
 
     Load,
     Store,
+
+    
+    Id,
+    Bad
+};
+
+enum class B32X4 : uint8_t
+{
+    
+    GetLocal,
+    SetLocal,
+
+    GetGlobal,
+    SetGlobal,
+
+    CallInternal,
+    CallIndirect,
+    CallImport,
+
+    Conditional,
+    Comma,
+
+    Literal,
+
+    
+    Ctor,
+
+    Unary,
+
+    Binary,
+    BinaryCompI32X4,
+    BinaryCompF32X4,
+    BinaryBitwise,
+
+    ReplaceLane,
+
+    Splat,
 
     
     Id,
