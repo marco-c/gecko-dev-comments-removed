@@ -21,13 +21,13 @@ static const size_t ICStackValueOffset = sizeof(void*);
 inline void
 EmitRestoreTailCallReg(MacroAssembler& masm)
 {
-    masm.pop(ICTailCallReg);
+    masm.Pop(ICTailCallReg);
 }
 
 inline void
 EmitRepushTailCallReg(MacroAssembler& masm)
 {
-    masm.push(ICTailCallReg);
+    masm.Push(ICTailCallReg);
 }
 
 inline void
@@ -134,7 +134,13 @@ EmitBaselineCallVM(JitCode* target, MacroAssembler& masm)
 inline void
 EmitIonCallVM(JitCode* target, size_t stackSlots, MacroAssembler& masm)
 {
-    uint32_t descriptor = MakeFrameDescriptor(masm.framePushed(), JitFrame_IonStub);
+    
+    
+    
+    
+    uint32_t framePushed = masm.framePushed() - sizeof(void*);
+
+    uint32_t descriptor = MakeFrameDescriptor(framePushed, JitFrame_IonStub);
     masm.Push(Imm32(descriptor));
     masm.call(target);
 
@@ -169,12 +175,12 @@ EmitBaselineEnterStubFrame(MacroAssembler& masm, Register scratch)
 
     
     masm.makeFrameDescriptor(scratch, JitFrame_BaselineJS);
-    masm.push(scratch);
-    masm.push(ICTailCallReg);
+    masm.Push(scratch);
+    masm.Push(ICTailCallReg);
 
     
-    masm.push(ICStubReg);
-    masm.push(BaselineFrameReg);
+    masm.Push(ICStubReg);
+    masm.Push(BaselineFrameReg);
     masm.mov(BaselineStackReg, BaselineFrameReg);
 }
 
@@ -183,9 +189,9 @@ EmitIonEnterStubFrame(MacroAssembler& masm, Register scratch)
 {
     MOZ_ASSERT(scratch != ICTailCallReg);
 
-    masm.pop(ICTailCallReg);
-    masm.push(ICTailCallReg);
-    masm.push(ICStubReg);
+    masm.Pop(ICTailCallReg);
+    masm.Push(ICTailCallReg);
+    masm.Push(ICStubReg);
 }
 
 inline void
@@ -197,18 +203,18 @@ EmitBaselineLeaveStubFrame(MacroAssembler& masm, bool calledIntoIon = false)
     
     if (calledIntoIon) {
         Register scratch = ICTailCallReg;
-        masm.pop(scratch);
+        masm.Pop(scratch);
         masm.shrl(Imm32(FRAMESIZE_SHIFT), scratch);
         masm.addl(scratch, BaselineStackReg);
     } else {
         masm.mov(BaselineFrameReg, BaselineStackReg);
     }
 
-    masm.pop(BaselineFrameReg);
-    masm.pop(ICStubReg);
+    masm.Pop(BaselineFrameReg);
+    masm.Pop(ICStubReg);
 
     
-    masm.pop(ICTailCallReg);
+    masm.Pop(ICTailCallReg);
 
     
     
@@ -218,8 +224,8 @@ EmitBaselineLeaveStubFrame(MacroAssembler& masm, bool calledIntoIon = false)
 inline void
 EmitIonLeaveStubFrame(MacroAssembler& masm)
 {
-    masm.pop(ICStubReg);
-    masm.pop(ICTailCallReg);
+    masm.Pop(ICStubReg);
+    masm.Pop(ICTailCallReg);
 }
 
 inline void
@@ -230,14 +236,14 @@ EmitStowICValues(MacroAssembler& masm, int values)
       case 1:
         
         masm.pop(ICTailCallReg);
-        masm.pushValue(R0);
+        masm.Push(R0);
         masm.push(ICTailCallReg);
         break;
       case 2:
         
         masm.pop(ICTailCallReg);
-        masm.pushValue(R0);
-        masm.pushValue(R1);
+        masm.Push(R0);
+        masm.Push(R1);
         masm.push(ICTailCallReg);
         break;
     }
@@ -269,6 +275,7 @@ EmitUnstowICValues(MacroAssembler& masm, int values, bool discard = false)
         masm.push(ICTailCallReg);
         break;
     }
+    masm.adjustFrame(-values * sizeof(Value));
 }
 
 inline void
@@ -303,9 +310,9 @@ EmitCallTypeUpdateIC(MacroAssembler& masm, JitCode* code, uint32_t objectOffset)
 
     masm.loadValue(Address(BaselineStackReg, STUB_FRAME_SIZE + objectOffset), R1);
 
-    masm.pushValue(R0);
-    masm.pushValue(R1);
-    masm.push(ICStubReg);
+    masm.Push(R0);
+    masm.Push(R1);
+    masm.Push(ICStubReg);
 
     
     masm.loadPtr(Address(BaselineFrameReg, 0), R0.scratchReg());

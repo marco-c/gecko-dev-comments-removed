@@ -780,6 +780,11 @@ JitCode*
 JitRuntime::generateDebugTrapHandler(JSContext* cx)
 {
     MacroAssembler masm(cx);
+#ifndef JS_USE_LINK_REGISTER
+    
+    
+    masm.setFramePushed(sizeof(intptr_t));
+#endif
 
     Register scratch1 = r0;
     Register scratch2 = r1;

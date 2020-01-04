@@ -229,13 +229,12 @@ EmitStowICValues(MacroAssembler& masm, int values)
     switch(values) {
       case 1:
         
-        masm.pushValue(R0);
+        masm.Push(R0);
         break;
       case 2:
         
-        masm.pushValue(R0);
-        masm.pushValue(R1);
-        break;
+        masm.Push(R0);
+        masm.Push(R1);
     }
 }
 
@@ -261,6 +260,7 @@ EmitUnstowICValues(MacroAssembler& masm, int values, bool discard = false)
         }
         break;
     }
+    masm.adjustFrame(-values * sizeof(Value));
 }
 
 inline void
@@ -302,9 +302,9 @@ EmitCallTypeUpdateIC(MacroAssembler& masm, JitCode* code, uint32_t objectOffset)
 
     masm.loadValue(Address(BaselineStackReg, STUB_FRAME_SIZE + objectOffset), R1);
 
-    masm.pushValue(R0);
-    masm.pushValue(R1);
-    masm.push(ICStubReg);
+    masm.Push(R0);
+    masm.Push(R1);
+    masm.Push(ICStubReg);
 
     
     masm.loadPtr(Address(BaselineFrameReg, 0), R0.scratchReg());

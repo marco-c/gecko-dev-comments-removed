@@ -980,6 +980,7 @@ class ICStubCompiler
 
 #ifdef DEBUG
     bool entersStubFrame_;
+    uint32_t framePushedAtEnterStubFrame_;
 #endif
 
     
@@ -996,11 +997,12 @@ class ICStubCompiler
     ICStubCompiler(JSContext* cx, ICStub::Kind kind, Engine engine)
       : suppressGC(cx), cx(cx), kind(kind), engine_(engine), inStubFrame_(false)
 #ifdef DEBUG
-      , entersStubFrame_(false)
+      , entersStubFrame_(false), framePushedAtEnterStubFrame_(0)
 #endif
     {}
 
     
+    void PushFramePtr(MacroAssembler& masm, Register scratch);
     void pushFramePtr(MacroAssembler& masm, Register scratch);
 
     

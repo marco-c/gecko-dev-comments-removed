@@ -163,7 +163,7 @@ EmitBaselineEnterStubFrame(MacroAssembler& masm, Register scratch)
     
     
     masm.makeFrameDescriptor(scratch, JitFrame_BaselineJS);
-    masm.push(scratch, ICTailCallReg, ICStubReg, BaselineFrameReg);
+    masm.Push(scratch, ICTailCallReg, ICStubReg, BaselineFrameReg);
 
     
     masm.Mov(BaselineFrameReg64, masm.GetStackPointer64());
@@ -215,11 +215,12 @@ EmitStowICValues(MacroAssembler& masm, int values)
     switch (values) {
       case 1:
         
-        masm.pushValue(R0);
+        masm.Push(R0);
         break;
       case 2:
         
-        masm.push(R0.valueReg(), R1.valueReg());
+        masm.Push(R0.valueReg());
+        masm.Push(R1.valueReg());
         break;
       default:
         MOZ_MAKE_COMPILER_ASSUME_IS_UNREACHABLE("Expected 1 or 2 values");
@@ -248,6 +249,7 @@ EmitUnstowICValues(MacroAssembler& masm, int values, bool discard = false)
       default:
         MOZ_MAKE_COMPILER_ASSUME_IS_UNREACHABLE("Expected 1 or 2 values");
     }
+    masm.adjustFrame(-values * sizeof(Value));
 }
 
 inline void
@@ -286,7 +288,9 @@ EmitCallTypeUpdateIC(MacroAssembler& masm, JitCode* code, uint32_t objectOffset)
     EmitBaselineEnterStubFrame(masm, R1.scratchReg());
 
     masm.loadValue(Address(masm.getStackPointer(), STUB_FRAME_SIZE + objectOffset), R1);
-    masm.push(R0.valueReg(), R1.valueReg(), ICStubReg);
+    masm.Push(R0.valueReg());
+    masm.Push(R1.valueReg());
+    masm.Push(ICStubReg);
 
     
     masm.loadPtr(Address(BaselineFrameReg, 0), R0.scratchReg());
