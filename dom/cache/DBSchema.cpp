@@ -36,7 +36,8 @@ const int32_t kFirstShippedSchemaVersion = 15;
 
 namespace {
 
-const int32_t kLatestSchemaVersion = 15;
+
+const int32_t kLatestSchemaVersion = 16;
 
 
 
@@ -105,7 +106,11 @@ const char* const kTableEntries =
     
     
     "response_redirected_url TEXT NOT NULL, "
-    "cache_id INTEGER NOT NULL REFERENCES caches(id) ON DELETE CASCADE"
+    "cache_id INTEGER NOT NULL REFERENCES caches(id) ON DELETE CASCADE, "
+
+    
+    
+    "request_redirect INTEGER NOT NULL"
   ")";
 
 
@@ -207,12 +212,18 @@ static_assert(int(RequestCache::Default) == 0 &&
               int(RequestCache::Only_if_cached) == 5 &&
               int(RequestCache::EndGuard_) == 6,
               "RequestCache values are as expected");
+static_assert(int(RequestRedirect::Follow) == 0 &&
+              int(RequestRedirect::Error) == 1 &&
+              int(RequestRedirect::Manual) == 2 &&
+              int(RequestRedirect::EndGuard_) == 3,
+              "RequestRedirect values are as expected");
 static_assert(int(ResponseType::Basic) == 0 &&
               int(ResponseType::Cors) == 1 &&
               int(ResponseType::Default) == 2 &&
               int(ResponseType::Error) == 3 &&
               int(ResponseType::Opaque) == 4 &&
-              int(ResponseType::EndGuard_) == 5,
+              int(ResponseType::Opaqueredirect) == 5 &&
+              int(ResponseType::EndGuard_) == 6,
               "ResponseType values are as expected");
 
 
@@ -359,6 +370,7 @@ CreateOrMigrateSchema(mozIStorageConnection* aConn)
     rv = Migrate(aConn);
     if (NS_WARN_IF(NS_FAILED(rv))) { return rv; }
 
+    
     
     
     needVacuum = true;
@@ -1580,6 +1592,7 @@ InsertEntry(mozIStorageConnection* aConn, CacheId aCacheId,
       "request_credentials, "
       "request_contentpolicytype, "
       "request_cache, "
+      "request_redirect, "
       "request_body_id, "
       "response_type, "
       "response_url, "
@@ -1604,6 +1617,7 @@ InsertEntry(mozIStorageConnection* aConn, CacheId aCacheId,
       ":request_credentials, "
       ":request_contentpolicytype, "
       ":request_cache, "
+      ":request_redirect, "
       ":request_body_id, "
       ":response_type, "
       ":response_url, "
@@ -1671,6 +1685,9 @@ InsertEntry(mozIStorageConnection* aConn, CacheId aCacheId,
   rv = state->BindInt32ByName(NS_LITERAL_CSTRING("request_cache"),
     static_cast<int32_t>(aRequest.requestCache()));
   if (NS_WARN_IF(NS_FAILED(rv))) { return rv; }
+
+  rv = state->BindInt32ByName(NS_LITERAL_CSTRING("request_redirect"),
+    static_cast<int32_t>(aRequest.requestRedirect()));
 
   rv = BindId(state, NS_LITERAL_CSTRING("request_body_id"), aRequestBodyId);
   if (NS_WARN_IF(NS_FAILED(rv))) { return rv; }
@@ -1951,6 +1968,7 @@ ReadRequest(mozIStorageConnection* aConn, EntryId aEntryId,
       "request_credentials, "
       "request_contentpolicytype, "
       "request_cache, "
+      "request_redirect, "
       "request_body_id "
     "FROM entries "
     "WHERE id=:id;"
@@ -2005,13 +2023,19 @@ ReadRequest(mozIStorageConnection* aConn, EntryId aEntryId,
   aSavedRequestOut->mValue.requestCache() =
     static_cast<RequestCache>(requestCache);
 
+  int32_t requestRedirect;
+  rv = state->GetInt32(9, &requestRedirect);
+  if (NS_WARN_IF(NS_FAILED(rv))) { return rv; }
+  aSavedRequestOut->mValue.requestRedirect() =
+    static_cast<RequestRedirect>(requestRedirect);
+
   bool nullBody = false;
-  rv = state->GetIsNull(9, &nullBody);
+  rv = state->GetIsNull(10, &nullBody);
   if (NS_WARN_IF(NS_FAILED(rv))) { return rv; }
   aSavedRequestOut->mHasBodyId = !nullBody;
 
   if (aSavedRequestOut->mHasBodyId) {
-    rv = ExtractId(state, 9, &aSavedRequestOut->mBodyId);
+    rv = ExtractId(state, 10, &aSavedRequestOut->mBodyId);
     if (NS_WARN_IF(NS_FAILED(rv))) { return rv; }
   }
 
@@ -2360,9 +2384,11 @@ struct Migration
 
 
 
+nsresult MigrateFrom15To16(mozIStorageConnection* aConn);
 
 
 Migration sMigrationList[] = {
+  Migration(15, MigrateFrom15To16),
 };
 
 uint32_t sMigrationListLength = sizeof(sMigrationList) / sizeof(Migration);
@@ -2398,6 +2424,54 @@ Migrate(mozIStorageConnection* aConn)
   }
 
   MOZ_ASSERT(currentVersion == kLatestSchemaVersion);
+
+  return rv;
+}
+
+nsresult MigrateFrom15To16(mozIStorageConnection* aConn)
+{
+  MOZ_ASSERT(!NS_IsMainThread());
+  MOZ_ASSERT(aConn);
+
+  
+  
+  
+  
+  
+  nsresult rv = aConn->ExecuteSimpleSQL(NS_LITERAL_CSTRING(
+    "ALTER TABLE entries "
+    "ADD COLUMN request_redirect INTEGER NOT NULL DEFAULT 0"
+  ));
+  if (NS_WARN_IF(NS_FAILED(rv))) { return rv; }
+
+  
+  
+  
+  rv = aConn->ExecuteSimpleSQL(NS_LITERAL_CSTRING(
+    "PRAGMA writable_schema = ON"
+  ));
+  if (NS_WARN_IF(NS_FAILED(rv))) { return rv; }
+
+  nsCOMPtr<mozIStorageStatement> state;
+  rv = aConn->CreateStatement(NS_LITERAL_CSTRING(
+    "UPDATE sqlite_master SET sql=:sql WHERE name='entries'"
+  ), getter_AddRefs(state));
+  if (NS_WARN_IF(NS_FAILED(rv))) { return rv; }
+
+  rv = state->BindUTF8StringByName(NS_LITERAL_CSTRING("sql"),
+                                   nsDependentCString(kTableEntries));
+  if (NS_WARN_IF(NS_FAILED(rv))) { return rv; }
+
+  rv = state->Execute();
+  if (NS_WARN_IF(NS_FAILED(rv))) { return rv; }
+
+  rv = aConn->SetSchemaVersion(16);
+  if (NS_WARN_IF(NS_FAILED(rv))) { return rv; }
+
+  rv = aConn->ExecuteSimpleSQL(NS_LITERAL_CSTRING(
+    "PRAGMA writable_schema = OFF"
+  ));
+  if (NS_WARN_IF(NS_FAILED(rv))) { return rv; }
 
   return rv;
 }
