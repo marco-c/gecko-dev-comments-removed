@@ -4,7 +4,7 @@
 
 
 
-#include "jit/mips-shared/Architecture-mips.h"
+#include "jit/mips-shared/Architecture-mips-shared.h"
 
 #include <fcntl.h>
 #include <unistd.h>

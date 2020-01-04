@@ -4,8 +4,8 @@
 
 
 
-#ifndef jit_mips_shared_Architecture_mips_h
-#define jit_mips_shared_Architecture_mips_h
+#ifndef jit_mips_shared_Architecture_mips_shared_h
+#define jit_mips_shared_Architecture_mips_shared_h
 
 #include "mozilla/MathAlgorithms.h"
 
