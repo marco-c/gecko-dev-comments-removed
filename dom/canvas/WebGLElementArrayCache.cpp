@@ -488,6 +488,9 @@ WebGLElementArrayCache::BufferSubData(size_t pos, const void* ptr,
     if (!updateByteLength)
         return true;
 
+    
+    
+    
     if (ptr)
         memcpy(mBytes.Elements() + pos, ptr, updateByteLength);
     else

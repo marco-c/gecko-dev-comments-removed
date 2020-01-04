@@ -1369,33 +1369,10 @@ WebGLContext::GetPackSize(uint32_t width, uint32_t height, uint8_t bytesPerPixel
     return bytesNeeded;
 }
 
-
-
-void
-ComputeLengthAndData(const dom::ArrayBufferViewOrSharedArrayBufferView& view,
-                     void** const out_data, size_t* const out_length,
-                     js::Scalar::Type* const out_type)
-{
-    if (view.IsArrayBufferView()) {
-        const auto& view2 = view.GetAsArrayBufferView();
-        view2.ComputeLengthAndData();
-
-        *out_length = view2.Length();
-        *out_data = view2.Data();
-        *out_type = JS_GetArrayBufferViewType(view2.Obj());
-    } else {
-        const auto& view2 = view.GetAsSharedArrayBufferView();
-        view2.ComputeLengthAndData();
-        *out_length = view2.Length();
-        *out_data = view2.Data();
-        *out_type = JS_GetSharedArrayBufferViewType(view2.Obj());
-    }
-}
-
 void
 WebGLContext::ReadPixels(GLint x, GLint y, GLsizei width, GLsizei height, GLenum format,
                          GLenum type,
-                         const dom::Nullable<dom::ArrayBufferViewOrSharedArrayBufferView>& pixels,
+                         const dom::Nullable<dom::ArrayBufferView>& pixels,
                          ErrorResult& out_error)
 {
     if (IsContextLost())
@@ -1469,12 +1446,13 @@ WebGLContext::ReadPixels(GLint x, GLint y, GLsizei width, GLsizei height, GLenum
     }
 
     const auto& view = pixels.Value();
+
     
     
-    void* data;
-    size_t bytesAvailable;
-    js::Scalar::Type dataType;
-    ComputeLengthAndData(view, &data, &bytesAvailable, &dataType);
+    view.ComputeLengthAndData();
+    void* data = view.DataAllowShared();
+    size_t bytesAvailable = view.LengthAllowShared();
+    js::Scalar::Type dataType = JS_GetArrayBufferViewType(view.Obj());
 
     
     if (dataType != requiredDataType)
@@ -1545,6 +1523,7 @@ WebGLContext::ReadPixels(GLint x, GLint y, GLsizei width, GLsizei height, GLenum
     Intersect(srcHeight, y, height, &readY, &writeY, &rwHeight);
 
     if (rwWidth == uint32_t(width) && rwHeight == uint32_t(height)) {
+        
         DoReadPixelsAndConvert(x, y, width, height, format, type, data, auxReadFormat,
                                auxReadType);
         return;
