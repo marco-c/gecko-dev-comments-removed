@@ -37,7 +37,7 @@ static const clockid_t WhichClock = CLOCK_MONOTONIC;
 
 
 static void
-timespecadd(struct timespec* lhs, struct timespec* rhs, struct timespec* result)
+moz_timespecadd(struct timespec* lhs, struct timespec* rhs, struct timespec* result)
 {
   
   MOZ_RELEASE_ASSERT(lhs->tv_nsec < NanoSecPerSec);
@@ -149,7 +149,7 @@ js::ConditionVariable::wait_for(UniqueLock<Mutex>& lock,
   MOZ_RELEASE_ASSERT(!r);
 
   struct timespec abs_ts;
-  timespecadd(&now_ts, &rel_ts, &abs_ts);
+  moz_timespecadd(&now_ts, &rel_ts, &abs_ts);
 
   r = pthread_cond_timedwait(ptCond, ptMutex, &abs_ts);
 #else
