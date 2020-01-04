@@ -32,93 +32,19 @@
 
 
 
-#downloadsSummary,
-richlistitem[type="download"] {
-  height: 7em;
-  -moz-padding-end: 0;
-  color: inherit;
-}
-
-richlistitem[type="download"] {
-  margin: 0;
-  border-top: 1px solid hsla(0,0%,100%,.07);
-  border-bottom: 1px solid hsla(0,0%,0%,.2);
-  background: transparent;
-  padding: 8px;
-}
-
-richlistitem[type="download"]:first-child {
-  border-top: 1px solid transparent;
-}
-
-richlistitem[type="download"]:last-child {
-  border-bottom: 1px solid transparent;
-}
-
-.downloadTypeIcon {
-  -moz-margin-end: 8px;
-  
-  height: 32px;
-  width: 32px;
-}
-
-.blockedIcon {
-  list-style-image: url("chrome://global/skin/icons/Error.png");
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#downloadsSummaryDetails,
-.downloadContainer {
-  font-size: 95%;
-}
-
-#downloadsSummaryDescription,
-.downloadTarget {
-  margin-bottom: 6px;
-  cursor: inherit;
-}
-
-.downloadTarget {
-  font-size: calc(100%/0.95);
-}
-
-#downloadsSummaryDetails,
-.downloadDetails {
-  opacity: 0.7;
-  cursor: inherit;
-}
-
-.downloadButton {
-  -moz-appearance: none;
-  min-width: 0;
-  min-height: 0;
-  margin: 3px;
-  border: none;
-  background: transparent;
-  padding: 5px;
-  list-style-image: url("chrome://browser/skin/downloads/buttons.png");
+:root {
+  --downloads-item-height: 7em;
+  --downloads-item-border-top-color: hsla(0,0%,100%,.07);
+  --downloads-item-border-bottom-color: hsla(0,0%,0%,.2);
+  --downloads-item-font-size-factor: 0.95;
+  --downloads-item-target-margin-bottom: 6px;
+  --downloads-item-details-margin-top: 0;
+  --downloads-item-details-opacity: 0.7;
 }
 
 .downloadButton:focus > .button-box {
   outline: 2px -moz-mac-focusring solid;
   outline-offset: -2px;
-}
-
-.downloadButton > .button-box {
-  padding: 0;
 }
 
 
