@@ -1560,4 +1560,8 @@ function isSlowPlatform() {
   return SpecialPowers.Services.appinfo.name == "B2G" || getAndroidVersion() == 10;
 }
 
-SimpleTest.requestFlakyTimeout("untriaged");
+
+
+if ("SimpleTest" in window) {
+  SimpleTest.requestFlakyTimeout("untriaged");
+}
