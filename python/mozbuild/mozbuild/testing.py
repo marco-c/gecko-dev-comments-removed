@@ -269,6 +269,8 @@ class TestResolver(MozbuildObject):
 
 
 
+
+
 TEST_MANIFESTS = dict(
     A11Y=('a11y', 'testing/mochitest', 'a11y', True),
     BROWSER_CHROME=('browser-chrome', 'testing/mochitest', 'browser', True),
