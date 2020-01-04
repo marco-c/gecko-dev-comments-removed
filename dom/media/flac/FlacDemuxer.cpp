@@ -242,6 +242,36 @@ public:
   
   
   
+  int64_t FindNext(const uint8_t* aData, const uint32_t aLength)
+  {
+    uint32_t modOffset = aLength % 4;
+    uint32_t i, j;
+
+    for (i = 0; i < modOffset; i++) {
+      if ((BigEndian::readUint16(aData + i) & 0xfffe) == 0xfff8) {
+        if (mHeader.Parse(aData + i)) {
+          return i;
+        }
+      }
+    }
+
+    for (; i < aLength; i += 4) {
+      uint32_t x = BigEndian::readUint32(aData + i);
+      if (((x & ~(x + 0x01010101)) & 0x80808080)) {
+        for (j = 0; j < 4; j++) {
+          if ((BigEndian::readUint16(aData + i + j) & 0xfffe) == 0xfff8) {
+            if (mHeader.Parse(aData + i + j)) {
+              return i + j;
+            }
+          }
+        }
+      }
+    }
+    return -1;
+  }
+
+  
+  
   bool FindNext(MediaResourceIndex& aResource)
   {
     static const int BUFFER_SIZE = 4096;
@@ -261,6 +291,7 @@ public:
       if (NS_FAILED(rv)) {
         return false;
       }
+
       if (read < FLAC_MAX_FRAME_HEADER_SIZE) {
         
         
@@ -270,32 +301,12 @@ public:
       }
 
       const size_t bufSize = read + innerOffset - FLAC_MAX_FRAME_HEADER_SIZE;
+      int64_t foundOffset =
+        FindNext(reinterpret_cast<uint8_t*>(buffer.Elements()), bufSize);
 
-      const uint8_t* buf = reinterpret_cast<uint8_t*>(buffer.Elements());
-      uint32_t modOffset = bufSize % 4;
-      uint32_t i, j;
-
-      for (i = 0; i < modOffset; i++) {
-        if ((BigEndian::readUint16(buf + i) & 0xfffe) == 0xfff8) {
-          if (mHeader.Parse(buf + i)) {
-            SetOffset(aResource, offset + i);
-            return true;
-          }
-        }
-      }
-
-      for (; i < bufSize; i += 4) {
-        uint32_t x = BigEndian::readUint32(buf + i);
-        if (((x & ~(x + 0x01010101)) & 0x80808080)) {
-          for (j = 0; j < 4; j++) {
-            if ((BigEndian::readUint16(buf + i + j) & 0xfffe) == 0xfff8) {
-              if (mHeader.Parse(buf + i + j)) {
-                SetOffset(aResource, offset + i + j);
-                return true;
-              }
-            }
-          }
-        }
+      if (foundOffset >= 0) {
+        SetOffset(aResource, foundOffset + offset);
+        return true;
       }
 
       
@@ -1037,6 +1048,17 @@ FlacTrackDemuxer::TimeAtEnd()
   mTotalFrameLen = streamLen - mParser->FirstFrame().Offset();
 
   return mParsedFramesDuration;
+}
+
+ bool
+FlacDemuxer::FlacSniffer(const uint8_t* aData, const uint32_t aLength)
+{
+  if (aLength < FLAC_MAX_FRAME_HEADER_SIZE) {
+    return false;
+  }
+
+  flac::Frame frame;
+  return frame.FindNext(aData, aLength - FLAC_MAX_FRAME_HEADER_SIZE) >= 0;
 }
 
 } 
