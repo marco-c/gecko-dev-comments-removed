@@ -12275,17 +12275,25 @@ nsDocShell::AddToSessionHistory(nsIURI* aURI, nsIChannel* aChannel,
     }
 
     
-    if (LOAD_TYPE_HAS_FLAGS(mLoadType, LOAD_FLAGS_REPLACE_HISTORY)) {
+    bool addToSHistory = !LOAD_TYPE_HAS_FLAGS(mLoadType, LOAD_FLAGS_REPLACE_HISTORY);
+    if (!addToSHistory) {
       
       int32_t index = 0;
       mSessionHistory->GetIndex(&index);
       nsCOMPtr<nsISHistoryInternal> shPrivate =
         do_QueryInterface(mSessionHistory);
       
-      if (shPrivate) {
-        rv = shPrivate->ReplaceEntry(index, entry);
+      if (index >= 0) {
+        if (shPrivate) {
+          rv = shPrivate->ReplaceEntry(index, entry);
+        }
+      } else {
+        
+        addToSHistory = true;
       }
-    } else {
+    }
+
+    if (addToSHistory) {
       
       nsCOMPtr<nsISHistoryInternal> shPrivate =
         do_QueryInterface(mSessionHistory);
