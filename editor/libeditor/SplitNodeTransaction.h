@@ -3,8 +3,8 @@
 
 
 
-#ifndef SplitNodeTxn_h__
-#define SplitNodeTxn_h__
+#ifndef SplitNodeTransaction_h
+#define SplitNodeTransaction_h
 
 #include "EditTxn.h"                    
 #include "nsCOMPtr.h"                   
@@ -17,13 +17,12 @@ class nsIContent;
 class nsINode;
 
 namespace mozilla {
-namespace dom {
 
 
 
 
 
-class SplitNodeTxn : public EditTxn
+class SplitNodeTransaction final : public EditTxn
 {
 public:
   
@@ -32,10 +31,11 @@ public:
 
 
 
-  SplitNodeTxn(nsEditor& aEditor, nsIContent& aNode, int32_t aOffset);
+
+  SplitNodeTransaction(nsEditor& aEditor, nsIContent& aNode, int32_t aOffset);
 
   NS_DECL_ISUPPORTS_INHERITED
-  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(SplitNodeTxn, EditTxn)
+  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(SplitNodeTransaction, EditTxn)
 
   NS_DECL_EDITTXN
 
@@ -44,7 +44,7 @@ public:
   nsIContent* GetNewNode();
 
 protected:
-  virtual ~SplitNodeTxn();
+  virtual ~SplitNodeTransaction();
 
   nsEditor& mEditor;
 
@@ -52,9 +52,8 @@ protected:
   nsCOMPtr<nsIContent> mExistingRightNode;
 
   
-
-
-
+  
+  
   int32_t mOffset;
 
   
@@ -65,6 +64,5 @@ protected:
 };
 
 } 
-} 
 
-#endif
+#endif 
