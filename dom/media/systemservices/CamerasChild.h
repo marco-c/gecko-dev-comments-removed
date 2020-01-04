@@ -7,6 +7,7 @@
 #ifndef mozilla_CamerasChild_h
 #define mozilla_CamerasChild_h
 
+#include "mozilla/Move.h"
 #include "mozilla/Pair.h"
 #include "mozilla/dom/ContentChild.h"
 #include "mozilla/camera/PCamerasChild.h"
@@ -47,31 +48,94 @@ struct CapturerElement {
 };
 
 
+class CamerasChild;
 
 
-int NumberOfCapabilities(CaptureEngine aCapEngine,
-                         const char* deviceUniqueIdUTF8);
-int GetCaptureCapability(CaptureEngine aCapEngine,
-                         const char* unique_idUTF8,
-                         const unsigned int capability_number,
-                         webrtc::CaptureCapability& capability);
-int NumberOfCaptureDevices(CaptureEngine aCapEngine);
-int GetCaptureDevice(CaptureEngine aCapEngine,
-                     unsigned int list_number, char* device_nameUTF8,
-                     const unsigned int device_nameUTF8Length,
-                     char* unique_idUTF8,
-                     const unsigned int unique_idUTF8Length);
-int AllocateCaptureDevice(CaptureEngine aCapEngine,
-                          const char* unique_idUTF8,
-                          const unsigned int unique_idUTF8Length,
-                          int& capture_id);
-int ReleaseCaptureDevice(CaptureEngine aCapEngine,
-                         const int capture_id);
-int StartCapture(CaptureEngine aCapEngine,
-                 const int capture_id, webrtc::CaptureCapability& capability,
-                 webrtc::ExternalRenderer* func);
-int StopCapture(CaptureEngine aCapEngine, const int capture_id);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class CamerasSingleton {
+public:
+  CamerasSingleton();
+  ~CamerasSingleton();
+
+  static OffTheBooksMutex& Mutex() {
+    return GetInstance().mCamerasMutex;
+  }
+
+  static CamerasChild*& Child() {
+    Mutex().AssertCurrentThreadOwns();
+    return GetInstance().mCameras;
+  }
+
+  static nsCOMPtr<nsIThread>& Thread() {
+    Mutex().AssertCurrentThreadOwns();
+    return GetInstance().mCamerasChildThread;
+  }
+
+private:
+  static CamerasSingleton& GetInstance() {
+    static CamerasSingleton instance;
+    return instance;
+  }
+
+  
+  
+  
+  mozilla::OffTheBooksMutex mCamerasMutex;
+
+  
+  
+  
+  
+  
+  
+  CamerasChild* mCameras;
+  nsCOMPtr<nsIThread> mCamerasChildThread;
+};
+
+
+
+
+
+
+CamerasChild* GetCamerasChild();
+
+
+
+
 void Shutdown(void);
+
+
+
+template <class MEM_FUN, class... ARGS>
+int GetChildAndCall(MEM_FUN&& f, ARGS&&... args)
+{
+  OffTheBooksMutexAutoLock lock(CamerasSingleton::Mutex());
+  CamerasChild* child = GetCamerasChild();
+  if (child) {
+    return (child->*f)(mozilla::Forward<ARGS>(args)...);
+  } else {
+    return -1;
+  }
+}
 
 class CamerasChild final : public PCamerasChild
 {
