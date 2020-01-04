@@ -15,18 +15,29 @@
 
 
 
-
-if (typeof PDFJS === 'undefined') {
-  (typeof window !== 'undefined' ? window :
-   typeof global !== 'undefined' ? global : this).PDFJS = {};
-}
-
-PDFJS.version = '1.3.142';
-PDFJS.build = 'e8db825';
-
-(function pdfjsWrapper() {
+(function (root, factory) {
+  'use strict';
+  if (typeof define === 'function' && define.amd) {
+define('pdfjs-dist/build/pdf', ['exports'], factory);
+  } else if (typeof exports !== 'undefined') {
+    factory(exports);
+  } else {
+factory((root.pdfjsDistBuildPdf = {}));
+  }
+}(this, function (exports) {
   
   'use strict';
+
+var pdfjsVersion = '1.3.161';
+var pdfjsBuild = '4a215f0';
+
+  var pdfjsFilePath =
+    typeof document !== 'undefined' && document.currentScript ?
+      document.currentScript.src : null;
+
+  var pdfjsLibs = {};
+
+  (function pdfjsWrapper() {
 
 
 
@@ -47,6 +58,13 @@ PDFJS.build = 'e8db825';
   
   if (!globalScope.PDFJS) {
     globalScope.PDFJS = {};
+  }
+
+  if (typeof pdfjsVersion !== 'undefined') {
+    globalScope.PDFJS.version = pdfjsVersion;
+  }
+  if (typeof pdfjsVersion !== 'undefined') {
+    globalScope.PDFJS.build = pdfjsBuild;
   }
 
   globalScope.PDFJS.pdfBug = false;
@@ -598,6 +616,16 @@ var XRefParseException = (function XRefParseExceptionClosure() {
   return XRefParseException;
 })();
 
+var NullCharactersRegExp = /\x00/g;
+
+function removeNullCharacters(str) {
+  if (typeof str !== 'string') {
+    warn('The argument for removeNullCharacters must be a string.');
+    return str;
+  }
+  return str.replace(NullCharactersRegExp, '');
+}
+PDFJS.removeNullCharacters = removeNullCharacters;
 
 function bytesToString(bytes) {
   assert(bytes !== null && typeof bytes === 'object' &&
@@ -1462,6 +1490,7 @@ exports.log2 = log2;
 exports.readInt8 = readInt8;
 exports.readUint16 = readUint16;
 exports.readUint32 = readUint32;
+exports.removeNullCharacters = removeNullCharacters;
 exports.shadow = shadow;
 exports.string32 = string32;
 exports.stringToBytes = stringToBytes;
@@ -1484,6 +1513,7 @@ var AnnotationType = sharedUtil.AnnotationType;
 var Util = sharedUtil.Util;
 var isExternalLinkTargetSet = sharedUtil.isExternalLinkTargetSet;
 var LinkTargetStringMap = sharedUtil.LinkTargetStringMap;
+var removeNullCharacters = sharedUtil.removeNullCharacters;
 var warn = sharedUtil.warn;
 var CustomStyle = displayDOMUtils.CustomStyle;
 
@@ -1523,8 +1553,17 @@ AnnotationElementFactory.prototype =
       case AnnotationType.POPUP:
         return new PopupAnnotationElement(parameters);
 
+      case AnnotationType.HIGHLIGHT:
+        return new HighlightAnnotationElement(parameters);
+
       case AnnotationType.UNDERLINE:
         return new UnderlineAnnotationElement(parameters);
+
+      case AnnotationType.SQUIGGLY:
+        return new SquigglyAnnotationElement(parameters);
+
+      case AnnotationType.STRIKEOUT:
+        return new StrikeOutAnnotationElement(parameters);
 
       default:
         throw new Error('Unimplemented annotation type "' + subtype + '"');
@@ -1674,7 +1713,8 @@ var LinkAnnotationElement = (function LinkAnnotationElementClosure() {
       this.container.className = 'linkAnnotation';
 
       var link = document.createElement('a');
-      link.href = link.title = this.data.url || '';
+      link.href = link.title = (this.data.url ?
+                                removeNullCharacters(this.data.url) : '');
 
       if (this.data.url && isExternalLinkTargetSet()) {
         link.target = LinkTargetStringMap[PDFJS.externalLinkTarget];
@@ -2058,6 +2098,33 @@ var PopupElement = (function PopupElementClosure() {
 
 
 
+var HighlightAnnotationElement = (
+    function HighlightAnnotationElementClosure() {
+  function HighlightAnnotationElement(parameters) {
+    AnnotationElement.call(this, parameters);
+  }
+
+  Util.inherit(HighlightAnnotationElement, AnnotationElement, {
+    
+
+
+
+
+
+
+    render: function HighlightAnnotationElement_render() {
+      this.container.className = 'highlightAnnotation';
+      return this.container;
+    }
+  });
+
+  return HighlightAnnotationElement;
+})();
+
+
+
+
+
 var UnderlineAnnotationElement = (
     function UnderlineAnnotationElementClosure() {
   function UnderlineAnnotationElement(parameters) {
@@ -2079,6 +2146,59 @@ var UnderlineAnnotationElement = (
   });
 
   return UnderlineAnnotationElement;
+})();
+
+
+
+
+
+var SquigglyAnnotationElement = (function SquigglyAnnotationElementClosure() {
+  function SquigglyAnnotationElement(parameters) {
+    AnnotationElement.call(this, parameters);
+  }
+
+  Util.inherit(SquigglyAnnotationElement, AnnotationElement, {
+    
+
+
+
+
+
+
+    render: function SquigglyAnnotationElement_render() {
+      this.container.className = 'squigglyAnnotation';
+      return this.container;
+    }
+  });
+
+  return SquigglyAnnotationElement;
+})();
+
+
+
+
+
+var StrikeOutAnnotationElement = (
+    function StrikeOutAnnotationElementClosure() {
+  function StrikeOutAnnotationElement(parameters) {
+    AnnotationElement.call(this, parameters);
+  }
+
+  Util.inherit(StrikeOutAnnotationElement, AnnotationElement, {
+    
+
+
+
+
+
+
+    render: function StrikeOutAnnotationElement_render() {
+      this.container.className = 'strikeoutAnnotation';
+      return this.container;
+    }
+  });
+
+  return StrikeOutAnnotationElement;
 })();
 
 
@@ -5699,10 +5819,10 @@ exports.createScratchCanvas = createScratchCanvas;
   {
     factory((root.pdfjsDisplayAPI = {}), root.pdfjsSharedUtil,
       root.pdfjsDisplayFontLoader, root.pdfjsDisplayCanvas,
-      root.pdfjsSharedGlobal);
+      root.pdfjsDisplayMetadata, root.pdfjsSharedGlobal);
   }
 }(this, function (exports, sharedUtil, displayFontLoader, displayCanvas,
-                  sharedGlobal, amdRequire) {
+                  displayMetadata, sharedGlobal, amdRequire) {
 
 var InvalidPDFException = sharedUtil.InvalidPDFException;
 var MessageHandler = sharedUtil.MessageHandler;
@@ -5726,6 +5846,7 @@ var FontFaceObject = displayFontLoader.FontFaceObject;
 var FontLoader = displayFontLoader.FontLoader;
 var CanvasGraphics = displayCanvas.CanvasGraphics;
 var createScratchCanvas = displayCanvas.createScratchCanvas;
+var Metadata = displayMetadata.Metadata;
 var PDFJS = sharedGlobal.PDFJS;
 var globalScope = sharedGlobal.globalScope;
 
@@ -6844,6 +6965,13 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
 var PDFWorker = (function PDFWorkerClosure() {
   var nextFakeWorkerId = 0;
 
+  function getWorkerSrc() {
+    if (PDFJS.workerSrc) {
+      return PDFJS.workerSrc;
+    }
+    error('No PDFJS.workerSrc specified');
+  }
+
   
   function setupFakeWorkerGlobal() {
     if (!PDFJS.fakeWorkerFilesLoadedCapability) {
@@ -6852,7 +6980,7 @@ var PDFWorker = (function PDFWorkerClosure() {
       
       
       var loader = fakeWorkerFilesLoader || function (callback) {
-        Util.loadScript(PDFJS.workerSrc, callback);
+        Util.loadScript(getWorkerSrc(), callback);
       };
       loader(function () {
         PDFJS.fakeWorkerFilesLoadedCapability.resolve();
@@ -6892,10 +7020,7 @@ var PDFWorker = (function PDFWorkerClosure() {
       
       
       if (!globalScope.PDFJS.disableWorker && typeof Worker !== 'undefined') {
-        var workerSrc = PDFJS.workerSrc;
-        if (!workerSrc) {
-          error('No PDFJS.workerSrc specified');
-        }
+        var workerSrc = getWorkerSrc();
 
         try {
           
@@ -7447,7 +7572,7 @@ var WorkerTransport = (function WorkerTransportClosure() {
         then(function transportMetadata(results) {
         return {
           info: results[0],
-          metadata: (results[1] ? new PDFJS.Metadata(results[1]) : null)
+          metadata: (results[1] ? new Metadata(results[1]) : null)
         };
       });
     },
@@ -7780,7 +7905,22 @@ exports.PDFPageProxy = PDFPageProxy;
 }));
 
 
-}).call((typeof window === 'undefined') ? this : window);
+  }).call(pdfjsLibs);
 
+  exports.PDFJS = pdfjsLibs.pdfjsSharedGlobal.PDFJS;
+
+  exports.getDocument = pdfjsLibs.pdfjsDisplayAPI.getDocument;
+  exports.PDFDataRangeTransport =
+    pdfjsLibs.pdfjsDisplayAPI.PDFDataRangeTransport;
+  exports.renderTextLayer = pdfjsLibs.pdfjsDisplayTextLayer.renderTextLayer;
+  exports.AnnotationLayer =
+    pdfjsLibs.pdfjsDisplayAnnotationLayer.AnnotationLayer;
+  exports.CustomStyle = pdfjsLibs.pdfjsDisplayDOMUtils.CustomStyle;
+  exports.PasswordResponses = pdfjsLibs.pdfjsSharedUtil.PasswordResponses;
+  exports.InvalidPDFException = pdfjsLibs.pdfjsSharedUtil.InvalidPDFException;
+  exports.MissingPDFException = pdfjsLibs.pdfjsSharedUtil.MissingPDFException;
+  exports.UnexpectedResponseException =
+    pdfjsLibs.pdfjsSharedUtil.UnexpectedResponseException;
+}));
 
 
