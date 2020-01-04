@@ -210,11 +210,13 @@ public class FindInPageBar extends LinearLayout implements TextWatcher, View.OnC
                 } else if (total > 0) {
                     final int current = nativeJSObject.optInt("current", 0);
                     updateResult(Integer.toString(current) + "/" + Integer.toString(total));
+                } else if (TextUtils.isEmpty(searchString)) {
+                    updateResult("");
                 } else {
                     
                     
                     
-                    updateResult("");
+                    updateResult("0/0");
                 }
             }
 
