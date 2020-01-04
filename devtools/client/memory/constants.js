@@ -30,6 +30,9 @@ actions.SELECT_SNAPSHOT = "select-snapshot";
 actions.TOGGLE_INVERTED = "toggle-inverted";
 
 
+actions.SNAPSHOT_ERROR = "snapshot-error";
+
+
 exports.ALLOCATION_RECORDING_OPTIONS = {
   probability: 1,
   maxLogLength: 1
@@ -78,6 +81,10 @@ const snapshotState = exports.snapshotState = {};
 
 
 
+
+
+
+snapshotState.ERROR = "snapshot-state-error";
 snapshotState.SAVING = "snapshot-state-saving";
 snapshotState.SAVED = "snapshot-state-saved";
 snapshotState.READING = "snapshot-state-reading";

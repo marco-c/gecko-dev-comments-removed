@@ -34,6 +34,8 @@ let snapshotModel = exports.snapshot = PropTypes.shape({
   
   inverted: PropTypes.bool,
   
+  error: PropTypes.object,
+  
   
   state: function (props, propName) {
     let stateNames = Object.keys(states);
