@@ -433,9 +433,38 @@ zone_force_unlock(malloc_zone_t *zone)
 static malloc_zone_t zone;
 static struct malloc_introspection_t zone_introspect;
 
+static malloc_zone_t *get_default_zone()
+{
+  malloc_zone_t **zones = NULL;
+  unsigned int num_zones = 0;
+
+  
+
+
+
+
+
+
+
+
+
+  if (KERN_SUCCESS != malloc_get_all_zones(0, NULL, (vm_address_t**) &zones,
+                                           &num_zones)) {
+    
+    num_zones = 0;
+  }
+  if (num_zones) {
+    return zones[0];
+  }
+  return malloc_default_zone();
+}
+
+
 __attribute__((constructor)) void
 register_zone(void)
 {
+  malloc_zone_t *default_zone = get_default_zone();
+
   zone.size = (void *)zone_size;
   zone.malloc = (void *)zone_malloc;
   zone.calloc = (void *)zone_calloc;
@@ -488,7 +517,6 @@ register_zone(void)
   malloc_zone_register(&zone);
 
   do {
-    malloc_zone_t *default_zone = malloc_default_zone();
     
 
 
@@ -512,6 +540,7 @@ register_zone(void)
 
     malloc_zone_unregister(purgeable_zone);
     malloc_zone_register(purgeable_zone);
-  } while (malloc_default_zone() != &zone);
+    default_zone = get_default_zone();
+  } while (default_zone != &zone);
 }
 #endif
