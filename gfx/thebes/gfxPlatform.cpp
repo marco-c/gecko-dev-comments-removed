@@ -906,11 +906,6 @@ gfxPlatform::GetSourceSurfaceForSurface(DrawTarget *aTarget, gfxASurface *aSurfa
     
     
     
-    NativeSurface surf;
-    surf.mFormat = format;
-    surf.mType = NativeSurfaceType::CAIRO_CONTEXT;
-    surf.mSurface = aSurface->CairoSurface();
-    surf.mSize = aSurface->GetSize();
     
     
     
@@ -923,7 +918,9 @@ gfxPlatform::GetSourceSurfaceForSurface(DrawTarget *aTarget, gfxASurface *aSurfa
     
     
     
-    return aTarget->CreateSourceSurfaceFromNativeSurface(surf);
+    
+    return Factory::CreateSourceSurfaceForCairoSurface(aSurface->CairoSurface(),
+                                                       aSurface->GetSize(), format);
   }
 
   RefPtr<SourceSurface> srcBuffer;
@@ -964,18 +961,8 @@ gfxPlatform::GetSourceSurfaceForSurface(DrawTarget *aTarget, gfxASurface *aSurfa
     
     
     
-    NativeSurface surf;
-    surf.mFormat = format;
-    surf.mType = NativeSurfaceType::CAIRO_CONTEXT;
-    surf.mSurface = aSurface->CairoSurface();
-    surf.mSize = aSurface->GetSize();
-    RefPtr<DrawTarget> drawTarget =
-      Factory::CreateDrawTarget(BackendType::CAIRO, IntSize(1, 1), format);
-    if (!drawTarget) {
-      gfxWarning() << "gfxPlatform::GetSourceSurfaceForSurface failed in CreateDrawTarget";
-      return nullptr;
-    }
-    srcBuffer = drawTarget->CreateSourceSurfaceFromNativeSurface(surf);
+    srcBuffer = Factory::CreateSourceSurfaceForCairoSurface(aSurface->CairoSurface(),
+                                                            aSurface->GetSize(), format);
     if (srcBuffer) {
       srcBuffer = aTarget->OptimizeSourceSurface(srcBuffer);
     }
