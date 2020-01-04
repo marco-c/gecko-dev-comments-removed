@@ -152,8 +152,21 @@ nsGridContainerFrame::TrackSize::Initialize(nscoord aPercentageBasis,
 {
   MOZ_ASSERT(mBase == 0 && mLimit == 0 && mState == 0,
              "track size data is expected to be initialized to zero");
+  auto minSizeUnit = aMinCoord.GetUnit();
+  auto maxSizeUnit = aMaxCoord.GetUnit();
+  if (aPercentageBasis == NS_UNCONSTRAINEDSIZE) {
+    
+    
+    
+    if (aMinCoord.HasPercent()) {
+      minSizeUnit = eStyleUnit_Auto;
+    }
+    if (aMaxCoord.HasPercent()) {
+      maxSizeUnit = eStyleUnit_Auto;
+    }
+  }
   
-  switch (aMinCoord.GetUnit()) {
+  switch (minSizeUnit) {
     case eStyleUnit_Auto:
       mState = eAutoMinSizing;
       break;
@@ -167,7 +180,7 @@ nsGridContainerFrame::TrackSize::Initialize(nscoord aPercentageBasis,
     default:
       mBase = nsRuleNode::ComputeCoordPercentCalc(aMinCoord, aPercentageBasis);
   }
-  switch (aMaxCoord.GetUnit()) {
+  switch (maxSizeUnit) {
     case eStyleUnit_Auto:
       mState |= eAutoMaxSizing;
       mLimit = NS_UNCONSTRAINEDSIZE;
@@ -3208,12 +3221,8 @@ nsGridContainerFrame::Tracks::Initialize(
                              aFunctions.NumExplicitTracks());
   mSizes.SetLength(aNumTracks);
   PodZero(mSizes.Elements(), mSizes.Length());
-  nscoord percentageBasis = aContentBoxSize;
-  if (percentageBasis == NS_UNCONSTRAINEDSIZE) {
-    percentageBasis = 0;
-  }
   for (uint32_t i = 0, len = mSizes.Length(); i < len; ++i) {
-    mSizes[i].Initialize(percentageBasis,
+    mSizes[i].Initialize(aContentBoxSize,
                          aFunctions.MinSizingFor(i),
                          aFunctions.MaxSizingFor(i));
   }
