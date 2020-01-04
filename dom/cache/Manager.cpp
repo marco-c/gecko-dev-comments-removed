@@ -242,55 +242,61 @@ public:
   }
 
   static void
-  StartAbortOnMainThread(const nsACString& aOrigin)
+  Abort(const nsACString& aOrigin)
   {
-    MOZ_ASSERT(NS_IsMainThread());
+    mozilla::ipc::AssertIsOnBackgroundThread();
 
-    
-    StaticMutexAutoLock lock(sMutex);
-
-    if (!sBackgroundThread) {
+    if (!sFactory) {
       return;
     }
 
-    
-    
-    nsCOMPtr<nsIRunnable> runnable = new AbortRunnable(aOrigin);
-    nsresult rv = sBackgroundThread->Dispatch(runnable,
-                                              nsIThread::DISPATCH_NORMAL);
-    MOZ_ALWAYS_TRUE(NS_SUCCEEDED(rv));
+    MOZ_ASSERT(!sFactory->mManagerList.IsEmpty());
+
+    {
+      ManagerList::ForwardIterator iter(sFactory->mManagerList);
+      while (iter.HasMore()) {
+        RefPtr<Manager> manager = iter.GetNext();
+        if (aOrigin.IsVoid() ||
+            manager->mManagerId->QuotaOrigin() == aOrigin) {
+          manager->Abort();
+        }
+      }
+    }
   }
 
   static void
-  StartShutdownAllOnMainThread()
+  ShutdownAll()
   {
-    MOZ_ASSERT(NS_IsMainThread());
+    mozilla::ipc::AssertIsOnBackgroundThread();
 
-    
-    StaticMutexAutoLock lock(sMutex);
-
-    sFactoryShutdown = true;
-
-    if (!sBackgroundThread) {
+    if (!sFactory) {
       return;
     }
 
-    
-    
-    nsCOMPtr<nsIRunnable> runnable = new ShutdownAllRunnable();
-    nsresult rv = sBackgroundThread->Dispatch(runnable,
-                                              nsIThread::DISPATCH_NORMAL);
-    MOZ_ALWAYS_TRUE(NS_SUCCEEDED(rv));
+    MOZ_ASSERT(!sFactory->mManagerList.IsEmpty());
+
+    {
+      
+      
+      
+      AutoRestore<bool> restore(sFactory->mInSyncShutdown);
+      sFactory->mInSyncShutdown = true;
+
+      ManagerList::ForwardIterator iter(sFactory->mManagerList);
+      while (iter.HasMore()) {
+        RefPtr<Manager> manager = iter.GetNext();
+        manager->Shutdown();
+      }
+    }
+
+    MaybeDestroyInstance();
   }
 
   static bool
-  IsShutdownAllCompleteOnMainThread()
+  IsShutdownAllComplete()
   {
-    MOZ_ASSERT(NS_IsMainThread());
-    StaticMutexAutoLock lock(sMutex);
-    
-    
-    return sFactoryShutdown && !sBackgroundThread;
+    mozilla::ipc::AssertIsOnBackgroundThread();
+    return !sFactory;
   }
 
 private:
@@ -322,12 +328,6 @@ private:
         if (sFactoryShutdown) {
           return NS_ERROR_ILLEGAL_DURING_SHUTDOWN;
         }
-
-        
-        
-        
-        MOZ_ASSERT(!sBackgroundThread);
-        sBackgroundThread = NS_GetCurrentThread();
       }
 
       
@@ -359,116 +359,8 @@ private:
       return;
     }
 
-    
-    
-    {
-      StaticMutexAutoLock lock(sMutex);
-      MOZ_ASSERT(sBackgroundThread);
-      sBackgroundThread = nullptr;
-    }
-
     sFactory = nullptr;
   }
-
-  static void
-  AbortOnBackgroundThread(const nsACString& aOrigin)
-  {
-    mozilla::ipc::AssertIsOnBackgroundThread();
-
-    
-    
-    
-    if (!sFactory) {
-#ifdef DEBUG
-      StaticMutexAutoLock lock(sMutex);
-      MOZ_ASSERT(!sBackgroundThread);
-#endif
-      return;
-    }
-
-    MOZ_ASSERT(!sFactory->mManagerList.IsEmpty());
-
-    {
-      ManagerList::ForwardIterator iter(sFactory->mManagerList);
-      while (iter.HasMore()) {
-        RefPtr<Manager> manager = iter.GetNext();
-        if (aOrigin.IsVoid() ||
-            manager->mManagerId->QuotaOrigin() == aOrigin) {
-          manager->Abort();
-        }
-      }
-    }
-  }
-
-  static void
-  ShutdownAllOnBackgroundThread()
-  {
-    mozilla::ipc::AssertIsOnBackgroundThread();
-
-    
-    
-    
-    
-    if (!sFactory) {
-#ifdef DEBUG
-      StaticMutexAutoLock lock(sMutex);
-      MOZ_ASSERT(!sBackgroundThread);
-#endif
-      return;
-    }
-
-    MOZ_ASSERT(!sFactory->mManagerList.IsEmpty());
-
-    {
-      
-      
-      
-      AutoRestore<bool> restore(sFactory->mInSyncShutdown);
-      sFactory->mInSyncShutdown = true;
-
-      ManagerList::ForwardIterator iter(sFactory->mManagerList);
-      while (iter.HasMore()) {
-        RefPtr<Manager> manager = iter.GetNext();
-        manager->Shutdown();
-      }
-    }
-
-    MaybeDestroyInstance();
-  }
-
-  class AbortRunnable final : public nsRunnable
-  {
-  public:
-    explicit AbortRunnable(const nsACString& aOrigin)
-      : mOrigin(aOrigin)
-    { }
-
-    NS_IMETHOD
-    Run() override
-    {
-      mozilla::ipc::AssertIsOnBackgroundThread();
-      AbortOnBackgroundThread(mOrigin);
-      return NS_OK;
-    }
-  private:
-    ~AbortRunnable() { }
-
-    const nsCString mOrigin;
-  };
-
-  class ShutdownAllRunnable final : public nsRunnable
-  {
-  public:
-    NS_IMETHOD
-    Run() override
-    {
-      mozilla::ipc::AssertIsOnBackgroundThread();
-      ShutdownAllOnBackgroundThread();
-      return NS_OK;
-    }
-  private:
-    ~ShutdownAllRunnable() { }
-  };
 
   
   
@@ -481,11 +373,6 @@ private:
   
   
   static bool sFactoryShutdown;
-
-  
-  
-  
-  static StaticRefPtr<nsIThread> sBackgroundThread;
 
   
   
@@ -507,9 +394,6 @@ StaticMutex Manager::Factory::sMutex;
 
 
 bool Manager::Factory::sFactoryShutdown = false;
-
-
-StaticRefPtr<nsIThread> Manager::Factory::sBackgroundThread;
 
 
 
@@ -1531,13 +1415,13 @@ Manager::Get(ManagerId* aManagerId)
 
 
 void
-Manager::ShutdownAllOnMainThread()
+Manager::ShutdownAll()
 {
-  MOZ_ASSERT(NS_IsMainThread());
+  mozilla::ipc::AssertIsOnBackgroundThread();
 
-  Factory::StartShutdownAllOnMainThread();
+  Factory::ShutdownAll();
 
-  while (!Factory::IsShutdownAllCompleteOnMainThread()) {
+  while (!Factory::IsShutdownAllComplete()) {
     if (!NS_ProcessNextEvent()) {
       NS_WARNING("Something bad happened!");
       break;
@@ -1547,11 +1431,11 @@ Manager::ShutdownAllOnMainThread()
 
 
 void
-Manager::AbortOnMainThread(const nsACString& aOrigin)
+Manager::Abort(const nsACString& aOrigin)
 {
-  MOZ_ASSERT(NS_IsMainThread());
+  mozilla::ipc::AssertIsOnBackgroundThread();
 
-  Factory::StartAbortOnMainThread(aOrigin);
+  Factory::Abort(aOrigin);
 }
 
 void

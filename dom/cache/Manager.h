@@ -132,10 +132,10 @@ public:
   static already_AddRefed<Manager> Get(ManagerId* aManagerId);
 
   
-  static void ShutdownAllOnMainThread();
+  static void ShutdownAll();
 
   
-  static void AbortOnMainThread(const nsACString& aOrigin);
+  static void Abort(const nsACString& aOrigin);
 
   
   void RemoveListener(Listener* aListener);
