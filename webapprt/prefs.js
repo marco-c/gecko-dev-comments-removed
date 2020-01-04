@@ -82,9 +82,6 @@ pref("plugin.allowed_types", " ");
 
 pref("extensions.blocklist.suppressUI", true);
 
-pref("devtools.debugger.remote-enabled", true);
-pref("devtools.debugger.force-local", true);
-
 
 
 #ifdef XP_MACOSX
