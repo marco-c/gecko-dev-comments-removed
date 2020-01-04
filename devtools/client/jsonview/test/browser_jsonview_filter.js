@@ -12,7 +12,7 @@ add_task(function* () {
 
   yield addJsonViewTab(TEST_JSON_URL);
 
-  let count = yield getElementCount(".jsonPanelBox .domTable .memberRow");
+  let count = yield getElementCount(".jsonPanelBox .treeTable .treeRow");
   is(count, 3, "There must be three rows");
 
   
@@ -23,6 +23,6 @@ add_task(function* () {
   yield waitForFilter();
 
   let hiddenCount = yield getElementCount(
-    ".jsonPanelBox .domTable .memberRow.hidden");
+    ".jsonPanelBox .treeTable .treeRow.hidden");
   is(hiddenCount, 2, "There must be two hidden rows");
 });
