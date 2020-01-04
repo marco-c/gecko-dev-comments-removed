@@ -150,6 +150,11 @@ class GCSchedulingTunables
     
 
 
+    bool refreshFrameSlicesEnabled_;
+
+    
+
+
     uint32_t minEmptyChunkCount_;
     uint32_t maxEmptyChunkCount_;
 
@@ -167,6 +172,7 @@ class GCSchedulingTunables
         highFrequencyHeapGrowthMin_(1.5),
         lowFrequencyHeapGrowth_(1.5),
         dynamicMarkSliceEnabled_(false),
+        refreshFrameSlicesEnabled_(true),
         minEmptyChunkCount_(1),
         maxEmptyChunkCount_(30)
     {}
@@ -183,6 +189,7 @@ class GCSchedulingTunables
     double highFrequencyHeapGrowthMin() const { return highFrequencyHeapGrowthMin_; }
     double lowFrequencyHeapGrowth() const { return lowFrequencyHeapGrowth_; }
     bool isDynamicMarkSliceEnabled() const { return dynamicMarkSliceEnabled_; }
+    bool areRefreshFrameSlicesEnabled() const { return refreshFrameSlicesEnabled_; }
     unsigned minEmptyChunkCount(const AutoLockGC&) const { return minEmptyChunkCount_; }
     unsigned maxEmptyChunkCount() const { return maxEmptyChunkCount_; }
 

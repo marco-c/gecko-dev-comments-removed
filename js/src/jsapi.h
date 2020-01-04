@@ -1849,6 +1849,9 @@ typedef enum JSGCParamKey {
 
     
     JSGC_COMPACTING_ENABLED = 23,
+
+    
+    JSGC_REFRESH_FRAME_SLICES_ENABLED = 24,
 } JSGCParamKey;
 
 extern JS_PUBLIC_API(void)
