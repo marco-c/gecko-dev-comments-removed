@@ -71,13 +71,6 @@ ChromeUtils::OriginAttributesMatchPattern(dom::GlobalObject& aGlobal,
 }
 
  void
-ChromeUtils::CreateDefaultOriginAttributes(dom::GlobalObject& aGlobal,
-                                      dom::OriginAttributesDictionary& aAttrs)
-{
-  aAttrs = GenericOriginAttributes();
-}
-
- void
 ChromeUtils::CreateOriginAttributesFromOrigin(dom::GlobalObject& aGlobal,
                                        const nsAString& aOrigin,
                                        dom::OriginAttributesDictionary& aAttrs,
@@ -93,7 +86,7 @@ ChromeUtils::CreateOriginAttributesFromOrigin(dom::GlobalObject& aGlobal,
 }
 
  void
-ChromeUtils::CreateOriginAttributesFromDict(dom::GlobalObject& aGlobal,
+ChromeUtils::FillNonDefaultOriginAttributes(dom::GlobalObject& aGlobal,
                                  const dom::OriginAttributesDictionary& aAttrs,
                                  dom::OriginAttributesDictionary& aNewAttrs)
 {

@@ -170,12 +170,12 @@ Script.prototype = {
     }
 
     if (this.options.include_globs != null) {
-      if (!this.include_globs_.matches(uri.spec)) {
+      if (!this.include_globs_.matches(uri)) {
         return false;
       }
     }
 
-    if (this.exclude_globs_.matches(uri.spec)) {
+    if (this.exclude_globs_.matches(uri)) {
       return false;
     }
 
@@ -296,13 +296,18 @@ class ExtensionContext extends BaseContext {
     let contentPrincipal = contentWindow.document.nodePrincipal;
     let ssm = Services.scriptSecurityManager;
 
-    let extensionPrincipal = ssm.createCodebasePrincipal(this.extension.baseURI, {addonId: extensionId});
+    
+    
+    let attrs = contentPrincipal.originAttributes;
+    attrs.addonId = extensionId;
+    let extensionPrincipal = ssm.createCodebasePrincipal(this.extension.baseURI, attrs);
     Object.defineProperty(this, "principal",
                           {value: extensionPrincipal, enumerable: true, configurable: true});
 
     if (ssm.isSystemPrincipal(contentPrincipal)) {
       
-      prin = Cc["@mozilla.org/nullprincipal;1"].createInstance(Ci.nsIPrincipal);
+      
+      prin = ssm.createNullPrincipal(attrs);
     } else {
       prin = [contentPrincipal, extensionPrincipal];
     }
@@ -654,7 +659,7 @@ function BrowserExtensionContent(data) {
   this.uuid = data.uuid;
   this.data = data;
   this.scripts = data.content_scripts.map(scriptData => new Script(scriptData));
-  this.webAccessibleResources = new MatchGlobs(data.webAccessibleResources);
+  this.webAccessibleResources = data.webAccessibleResources;
   this.whiteListedHosts = new MatchPattern(data.whiteListedHosts);
 
   this.localeData = new LocaleData(data.localeData);
