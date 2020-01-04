@@ -1037,6 +1037,25 @@ JSStructuredCloneWriter::traverseSet(HandleObject obj)
     return out.writePair(SCTAG_SET_OBJECT, 0);
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 bool
 JSStructuredCloneWriter::startWrite(HandleValue v)
 {
@@ -1894,16 +1913,22 @@ JSStructuredCloneReader::readTransferMap()
     return true;
 }
 
+
 bool
 JSStructuredCloneReader::read(MutableHandleValue vp)
 {
     if (!readTransferMap())
         return false;
 
+    
+    
+    
     if (!startRead(vp))
         return false;
 
+    
     while (objs.length() != 0) {
+        
         RootedObject obj(context(), &objs.back().toObject());
 
         uint32_t tag, data;
@@ -1911,11 +1936,27 @@ JSStructuredCloneReader::read(MutableHandleValue vp)
             return false;
 
         if (tag == SCTAG_END_OF_KEYS) {
+            
+            
             MOZ_ALWAYS_TRUE(in.readPair(&tag, &data));
             objs.popBack();
             continue;
         }
 
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
         RootedValue key(context());
         if (!startRead(&key))
             return false;
@@ -1927,20 +1968,27 @@ JSStructuredCloneReader::read(MutableHandleValue vp)
             continue;
         }
 
+        
+        
         if (obj->is<SetObject>()) {
             if (!SetObject::add(context(), obj, key))
                 return false;
             continue;
         }
 
+        
+        
         RootedValue val(context());
         if (!startRead(&val))
             return false;
 
         if (obj->is<MapObject>()) {
+            
+            
             if (!MapObject::set(context(), obj, key, val))
                 return false;
         } else {
+            
             RootedId id(context());
             if (!ValueToId<CanGC>(context(), key, &id))
                 return false;
