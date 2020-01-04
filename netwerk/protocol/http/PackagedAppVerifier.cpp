@@ -385,6 +385,12 @@ PackagedAppVerifier::OnManifestVerified(bool aSuccess)
   }
 
   
+  
+  if (!aSuccess && mPackageCacheEntry) {
+    mPackageCacheEntry->AsyncDoom(nullptr);
+  }
+
+  
   if (mIsPackageSigned && mPackageCacheEntry) {
     LOG(("This package is signed. Add this info to the cache channel."));
     if (mPackageCacheEntry) {
