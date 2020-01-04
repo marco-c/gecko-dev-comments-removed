@@ -203,7 +203,8 @@ var MozLoopServiceInternal = {
   pushURLs: new Map(),
 
   mocks: {
-    pushHandler: undefined
+    pushHandler: undefined,
+    isChatWindowOpen: undefined
   },
 
   
@@ -877,6 +878,22 @@ var MozLoopServiceInternal = {
 
 
 
+  isChatWindowOpen: function(chatWindowId) {
+    if (this.mocks.isChatWindowOpen !== undefined) {
+      return this.mocks.isChatWindowOpen;
+    }
+
+    let chatUrl = this.getChatURL(chatWindowId);
+
+    return [...Chat.chatboxes].some(chatbox => chatbox.src == chatUrl);
+  },
+
+  
+
+
+
+
+
 
 
   openChatWindow: function(conversationWindowData) {
@@ -1375,6 +1392,16 @@ this.MozLoopService = {
 
   openChatWindow: function(conversationWindowData) {
     return MozLoopServiceInternal.openChatWindow(conversationWindowData);
+  },
+
+  
+
+
+
+
+
+  isChatWindowOpen: function(chatWindowId) {
+    return MozLoopServiceInternal.isChatWindowOpen(chatWindowId);
   },
 
   
