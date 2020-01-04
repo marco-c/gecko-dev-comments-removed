@@ -785,11 +785,13 @@ IsCacheableSetPropAddSlot(JSContext* cx, JSObject* obj, Shape* oldShape,
     size_t chainDepth = 0;
     
     
-    for (JSObject* proto = obj->getProto(); proto; proto = proto->getProto()) {
+    for (JSObject* proto = obj->staticPrototype(); proto; proto = proto->staticPrototype()) {
         chainDepth++;
         
         if (!proto->isNative())
             return false;
+
+        MOZ_ASSERT(proto->hasStaticPrototype());
 
         
         Shape* protoShape = proto->as<NativeObject>().lookup(cx, id);
@@ -2352,13 +2354,13 @@ SetElemAddHasSameShapes(ICSetElem_DenseOrUnboxedArrayAdd* stub, JSObject* obj)
     if (obj->maybeShape() != nstub->shape(0))
         return false;
 
-    JSObject* proto = obj->getProto();
+    JSObject* proto = obj->staticPrototype();
     for (size_t i = 0; i < stub->protoChainDepth(); i++) {
         if (!proto->isNative())
             return false;
         if (proto->as<NativeObject>().lastProperty() != nstub->shape(i + 1))
             return false;
-        proto = obj->getProto();
+        proto = obj->staticPrototype();
         if (!proto) {
             if (i != stub->protoChainDepth() - 1)
                 return false;
@@ -2479,12 +2481,12 @@ CanOptimizeDenseOrUnboxedArraySetElem(JSObject* obj, uint32_t index,
     
     if (obj->isIndexed())
         return false;
-    JSObject* curObj = obj->getProto();
+    JSObject* curObj = obj->staticPrototype();
     while (curObj) {
         ++*protoDepthOut;
         if (!curObj->isNative() || curObj->isIndexed())
             return false;
-        curObj = curObj->getProto();
+        curObj = curObj->staticPrototype();
     }
 
     if (*protoDepthOut > ICSetElem_DenseOrUnboxedArrayAdd::MAX_PROTO_CHAIN_DEPTH)
@@ -3698,7 +3700,7 @@ TryAttachGlobalNameValueStub(JSContext* cx, HandleScript script, jsbytecode* pc,
         if (current == globalLexical) {
             current = &globalLexical->global();
         } else {
-            JSObject* proto = current->getProto();
+            JSObject* proto = current->staticPrototype();
             if (!proto || !proto->is<NativeObject>())
                 return true;
             current = &proto->as<NativeObject>();
@@ -3773,7 +3775,7 @@ TryAttachGlobalNameAccessorStub(JSContext* cx, HandleScript script, jsbytecode* 
         shape = current->lookup(cx, id);
         if (shape)
             break;
-        JSObject* proto = current->getProto();
+        JSObject* proto = current->staticPrototype();
         if (!proto || !proto->is<NativeObject>())
             return true;
         current = &proto->as<NativeObject>();

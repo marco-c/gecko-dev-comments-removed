@@ -137,12 +137,10 @@ GeneratePrototypeGuards(CacheIRWriter& writer, JSObject* obj, JSObject* holder, 
 
     if (obj->hasUncacheableProto()) {
         
-        writer.guardProto(objId, obj->getProto());
+        writer.guardProto(objId, obj->staticPrototype());
     }
 
-    JSObject* pobj = IsCacheableDOMProxy(obj)
-                     ? obj->getTaggedProto().toObjectOrNull()
-                     : obj->getProto();
+    JSObject* pobj = obj->staticPrototype();
     if (!pobj)
         return;
 
@@ -151,12 +149,12 @@ GeneratePrototypeGuards(CacheIRWriter& writer, JSObject* obj, JSObject* holder, 
             ObjOperandId protoId = writer.loadObject(pobj);
             if (pobj->isSingleton()) {
                 
-                writer.guardProto(protoId, pobj->getProto());
+                writer.guardProto(protoId, pobj->staticPrototype());
             } else {
                 writer.guardGroup(protoId, pobj->group());
             }
         }
-        pobj = pobj->getProto();
+        pobj = pobj->staticPrototype();
     }
 }
 
@@ -199,12 +197,12 @@ EmitReadSlotResult(CacheIRWriter& writer, JSObject* obj, JSObject* holder,
             
             
             
-            JSObject* proto = obj->getTaggedProto().toObjectOrNull();
+            JSObject* proto = obj->taggedProto().toObjectOrNull();
             ObjOperandId lastObjId = objId;
             while (proto) {
                 ObjOperandId protoId = writer.loadProto(lastObjId);
                 writer.guardShape(protoId, proto->as<NativeObject>().lastProperty());
-                proto = proto->getProto();
+                proto = proto->staticPrototype();
                 lastObjId = protoId;
             }
         }

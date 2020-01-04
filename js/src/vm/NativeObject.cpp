@@ -1086,7 +1086,7 @@ PurgeProtoChain(ExclusiveContext* cx, JSObject* objArg, HandleId id)
         if (shape)
             return obj->as<NativeObject>().shadowingShapeChange(cx, *shape);
 
-        obj = obj->getProto();
+        obj = obj->staticPrototype();
     }
 
     return true;
@@ -1105,7 +1105,7 @@ PurgeScopeChainHelper(ExclusiveContext* cx, HandleObject objArg, HandleId id)
     if (JSID_IS_INT(id))
         return true;
 
-    if (!PurgeProtoChain(cx, obj->getProto(), id))
+    if (!PurgeProtoChain(cx, obj->staticPrototype(), id))
         return false;
 
     
@@ -1646,7 +1646,7 @@ js::NativeHasProperty(JSContext* cx, HandleNativeObject obj, HandleId id, bool* 
         
         
         
-        RootedObject proto(cx, done ? nullptr : pobj->getProto());
+        RootedObject proto(cx, done ? nullptr : pobj->staticPrototype());
 
         
         if (!proto) {
@@ -2018,7 +2018,7 @@ NativeGetPropertyInline(JSContext* cx,
         
         
         
-        RootedObject proto(cx, done ? nullptr : pobj->getProto());
+        RootedObject proto(cx, done ? nullptr : pobj->staticPrototype());
 
         
         
@@ -2228,9 +2228,10 @@ js::SetPropertyOnProto(JSContext* cx, HandleObject obj, HandleId id, HandleValue
 {
     MOZ_ASSERT(!obj->is<ProxyObject>());
 
-    RootedObject proto(cx, obj->getProto());
+    RootedObject proto(cx, obj->staticPrototype());
     if (proto)
         return SetProperty(cx, proto, id, v, receiver, result);
+
     return SetPropertyByDefining(cx, id, v, receiver, result);
 }
 
@@ -2404,7 +2405,7 @@ js::NativeSetProperty(JSContext* cx, HandleNativeObject obj, HandleId id, Handle
         
         
         
-        RootedObject proto(cx, done ? nullptr : pobj->getProto());
+        RootedObject proto(cx, done ? nullptr : pobj->staticPrototype());
         if (!proto) {
             
             return SetNonexistentProperty(cx, id, v, receiver, qualified, result);

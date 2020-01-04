@@ -828,26 +828,33 @@ ObjectMayHaveExtraIndexedOwnProperties(JSObject* obj)
                              obj->getClass(), INT_TO_JSID(0), obj);
 }
 
+
+
+
+
+
 bool
 js::ObjectMayHaveExtraIndexedProperties(JSObject* obj)
 {
-    
-
-
-
-
+    MOZ_ASSERT_IF(obj->hasDynamicPrototype(), !obj->isNative());
 
     if (ObjectMayHaveExtraIndexedOwnProperties(obj))
         return true;
 
-    while ((obj = obj->getProto()) != nullptr) {
+    do {
+        MOZ_ASSERT(obj->hasStaticPrototype(),
+                   "dynamic-prototype objects must be non-native, ergo must "
+                   "have failed ObjectMayHaveExtraIndexedOwnProperties");
+
+        obj = obj->staticPrototype();
+        if (!obj)
+            return false; 
+
         if (ObjectMayHaveExtraIndexedOwnProperties(obj))
             return true;
         if (GetAnyBoxedOrUnboxedInitializedLength(obj) != 0)
             return true;
-    }
-
-    return false;
+    } while (true);
 }
 
 static bool
@@ -2696,7 +2703,7 @@ GetIndexedPropertiesInRange(JSContext* cx, HandleObject obj, uint32_t begin, uin
     do {
         if (!pobj->isNative() || pobj->getClass()->getResolve() || pobj->getOpsLookupProperty())
             return true;
-    } while ((pobj = pobj->getProto()));
+    } while ((pobj = pobj->staticPrototype()));
 
     
     pobj = obj;
@@ -2741,7 +2748,7 @@ GetIndexedPropertiesInRange(JSContext* cx, HandleObject obj, uint32_t begin, uin
                     return false;
             }
         }
-    } while ((pobj = pobj->getProto()));
+    } while ((pobj = pobj->staticPrototype()));
 
     
     Vector<uint32_t> tmp(cx);
@@ -3605,7 +3612,7 @@ NewArrayTryReuseGroup(JSContext* cx, JSObject* obj, size_t length,
     if (!obj->is<ArrayObject>() && !obj->is<UnboxedArrayObject>())
         return NewArray<maxLength>(cx, length, nullptr, newKind);
 
-    if (obj->getProto() != cx->global()->maybeGetArrayPrototype())
+    if (obj->staticPrototype() != cx->global()->maybeGetArrayPrototype())
         return NewArray<maxLength>(cx, length, nullptr, newKind);
 
     RootedObjectGroup group(cx, obj->getGroup(cx));

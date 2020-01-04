@@ -134,7 +134,7 @@ EmptyShape::ensureInitialCustomShape(ExclusiveContext* cx, Handle<ObjectSubclass
 
     
     
-    RootedObject proto(cx, obj->getProto());
+    RootedObject proto(cx, obj->staticPrototype());
     EmptyShape::insertInitialShape(cx, shape, proto);
     return true;
 }

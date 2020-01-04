@@ -39,7 +39,6 @@ public:
 
   
   
-  
 
   virtual bool
   preventExtensions(JSContext* aCx, JS::Handle<JSObject*> aProxy,
