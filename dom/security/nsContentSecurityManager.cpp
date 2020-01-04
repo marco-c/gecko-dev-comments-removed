@@ -477,6 +477,13 @@ nsContentSecurityManager::CheckChannel(nsIChannel* aChannel)
   }
 
   
+  
+  
+  if (nsContentUtils::IsSystemPrincipal(loadInfo->TriggeringPrincipal())) {
+    return NS_OK;
+  }
+
+  
   if ((securityMode == nsILoadInfo::SEC_REQUIRE_SAME_ORIGIN_DATA_INHERITS) ||
       (securityMode == nsILoadInfo::SEC_REQUIRE_SAME_ORIGIN_DATA_IS_BLOCKED)) {
     rv = DoSOPChecks(uri, loadInfo, aChannel);
