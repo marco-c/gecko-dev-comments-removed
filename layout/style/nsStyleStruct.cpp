@@ -567,8 +567,8 @@ nsChangeHint nsStyleOutline::CalcDifference(const nsStyleOutline& aOther) const
   if (mActualOutlineWidth != aOther.mActualOutlineWidth ||
       (mActualOutlineWidth > 0 &&
        mOutlineOffset != aOther.mOutlineOffset)) {
-    return NS_CombineHint(nsChangeHint_UpdateOverflow,
-                          nsChangeHint_SchedulePaint);
+    return nsChangeHint_UpdateOverflow |
+           nsChangeHint_SchedulePaint;
   }
 
   if (mOutlineStyle != aOther.mOutlineStyle ||
@@ -1522,8 +1522,8 @@ nsStylePosition::CalcDifference(const nsStylePosition& aOther,
   
   if (mObjectFit != aOther.mObjectFit ||
       mObjectPosition != aOther.mObjectPosition) {
-    NS_UpdateHint(hint, NS_CombineHint(nsChangeHint_RepaintFrame,
-                                       nsChangeHint_NeedReflow));
+    NS_UpdateHint(hint, nsChangeHint_RepaintFrame |
+                        nsChangeHint_NeedReflow);
   }
 
   if (mOrder != aOther.mOrder) {
@@ -1533,13 +1533,15 @@ nsStylePosition::CalcDifference(const nsStylePosition& aOther,
     
     
     
-    return NS_CombineHint(hint, NS_CombineHint(nsChangeHint_RepaintFrame,
-                                               nsChangeHint_AllReflowHints));
+    return hint |
+           nsChangeHint_RepaintFrame |
+           nsChangeHint_AllReflowHints;
   }
 
   if (mBoxSizing != aOther.mBoxSizing) {
     
-    return NS_CombineHint(hint, nsChangeHint_AllReflowHints);
+    return hint |
+           nsChangeHint_AllReflowHints;
   }
 
   
@@ -1548,7 +1550,8 @@ nsStylePosition::CalcDifference(const nsStylePosition& aOther,
       mFlexBasis != aOther.mFlexBasis ||
       mFlexGrow != aOther.mFlexGrow ||
       mFlexShrink != aOther.mFlexShrink) {
-    return NS_CombineHint(hint, nsChangeHint_AllReflowHints);
+    return hint |
+           nsChangeHint_AllReflowHints;
   }
 
   
@@ -1560,7 +1563,8 @@ nsStylePosition::CalcDifference(const nsStylePosition& aOther,
   if (mAlignItems != aOther.mAlignItems ||
       mFlexDirection != aOther.mFlexDirection ||
       mFlexWrap != aOther.mFlexWrap) {
-    return NS_CombineHint(hint, nsChangeHint_AllReflowHints);
+    return hint |
+           nsChangeHint_AllReflowHints;
   }
 
   
@@ -1574,7 +1578,8 @@ nsStylePosition::CalcDifference(const nsStylePosition& aOther,
       mGridAutoRowsMin != aOther.mGridAutoRowsMin ||
       mGridAutoRowsMax != aOther.mGridAutoRowsMax ||
       mGridAutoFlow != aOther.mGridAutoFlow) {
-    return NS_CombineHint(hint, nsChangeHint_AllReflowHints);
+    return hint |
+           nsChangeHint_AllReflowHints;
   }
 
   
@@ -1586,7 +1591,8 @@ nsStylePosition::CalcDifference(const nsStylePosition& aOther,
       mGridRowEnd != aOther.mGridRowEnd ||
       mGridColumnGap != aOther.mGridColumnGap ||
       mGridRowGap != aOther.mGridRowGap) {
-    return NS_CombineHint(hint, nsChangeHint_AllReflowHints);
+    return hint |
+           nsChangeHint_AllReflowHints;
   }
 
   
@@ -1639,8 +1645,8 @@ nsStylePosition::CalcDifference(const nsStylePosition& aOther,
       
       
       NS_UpdateHint(hint, NS_SubtractHint(nsChangeHint_AllReflowHints,
-                                          NS_CombineHint(nsChangeHint_ClearDescendantIntrinsics,
-                                                         nsChangeHint_NeedDirtyReflow)));
+                                          nsChangeHint_ClearDescendantIntrinsics |
+                                          nsChangeHint_NeedDirtyReflow));
     }
   } else {
     if (widthChanged || heightChanged) {
@@ -2971,8 +2977,8 @@ nsChangeHint nsStyleDisplay::CalcDifference(const nsStyleDisplay& aOther) const
     
     NS_UpdateHint(hint,
        NS_SubtractHint(nsChangeHint_AllReflowHints,
-                       NS_CombineHint(nsChangeHint_ClearDescendantIntrinsics,
-                                      nsChangeHint_NeedDirtyReflow)));
+                       nsChangeHint_ClearDescendantIntrinsics |
+                       nsChangeHint_NeedDirtyReflow));
   }
 
   if (mVerticalAlign != aOther.mVerticalAlign) {
@@ -2990,8 +2996,8 @@ nsChangeHint nsStyleDisplay::CalcDifference(const nsStyleDisplay& aOther) const
       || mAppearance != aOther.mAppearance
       || mOrient != aOther.mOrient
       || mOverflowClipBox != aOther.mOverflowClipBox)
-    NS_UpdateHint(hint, NS_CombineHint(nsChangeHint_AllReflowHints,
-                                       nsChangeHint_RepaintFrame));
+    NS_UpdateHint(hint, nsChangeHint_AllReflowHints |
+                        nsChangeHint_RepaintFrame);
 
   if (mIsolation != aOther.mIsolation) {
     NS_UpdateHint(hint, nsChangeHint_RepaintFrame);
@@ -3004,9 +3010,9 @@ nsChangeHint nsStyleDisplay::CalcDifference(const nsStyleDisplay& aOther) const
     
     
     
-    NS_UpdateHint(hint, NS_CombineHint(nsChangeHint_UpdateContainingBlock,
-                          NS_CombineHint(nsChangeHint_UpdateOverflow,
-                                         nsChangeHint_RepaintFrame)));
+    NS_UpdateHint(hint, nsChangeHint_UpdateContainingBlock |
+                        nsChangeHint_UpdateOverflow |
+                        nsChangeHint_RepaintFrame);
   } else {
     
 
@@ -3034,11 +3040,11 @@ nsChangeHint nsStyleDisplay::CalcDifference(const nsStyleDisplay& aOther) const
     }
 
     const nsChangeHint kUpdateOverflowAndRepaintHint =
-      NS_CombineHint(nsChangeHint_UpdateOverflow, nsChangeHint_RepaintFrame);
+      nsChangeHint_UpdateOverflow | nsChangeHint_RepaintFrame;
     for (uint8_t index = 0; index < 3; ++index)
       if (mTransformOrigin[index] != aOther.mTransformOrigin[index]) {
-        NS_UpdateHint(transformHint, NS_CombineHint(nsChangeHint_UpdateTransformLayer,
-                                                    nsChangeHint_UpdatePostTransformOverflow));
+        NS_UpdateHint(transformHint, nsChangeHint_UpdateTransformLayer |
+                                     nsChangeHint_UpdatePostTransformOverflow);
         break;
       }
     

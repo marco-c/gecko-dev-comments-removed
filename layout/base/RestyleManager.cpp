@@ -839,12 +839,10 @@ RestyleManager::ProcessRestyledFrames(nsStyleChangeList& aChangeList)
       if (!frame->FrameMaintainsOverflow()) {
         
         
-        hint = NS_SubtractHint(hint,
-                 NS_CombineHint(
-                   NS_CombineHint(nsChangeHint_UpdateOverflow,
-                                  nsChangeHint_ChildrenOnlyTransform),
-                   NS_CombineHint(nsChangeHint_UpdatePostTransformOverflow,
-                                  nsChangeHint_UpdateParentOverflow)));
+        hint = NS_SubtractHint(hint, nsChangeHint_UpdateOverflow |
+                                     nsChangeHint_ChildrenOnlyTransform |
+                                     nsChangeHint_UpdatePostTransformOverflow |
+                                     nsChangeHint_UpdateParentOverflow);
       }
 
       if (!(frame->GetStateBits() & NS_FRAME_MAY_BE_TRANSFORMED)) {
@@ -926,9 +924,8 @@ RestyleManager::ProcessRestyledFrames(nsStyleChangeList& aChangeList)
           }
           
           
-          hint = NS_SubtractHint(hint,
-                   NS_CombineHint(nsChangeHint_UpdateOverflow,
-                                  nsChangeHint_UpdatePostTransformOverflow));
+          hint = NS_SubtractHint(hint, nsChangeHint_UpdateOverflow |
+                                       nsChangeHint_UpdatePostTransformOverflow);
         }
         if (hint & nsChangeHint_ChildrenOnlyTransform) {
           
