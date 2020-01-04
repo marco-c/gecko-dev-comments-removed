@@ -44,12 +44,16 @@ def do_process_check(func, always=False):
             exc, val, tb = sys.exc_info()
 
             
-            if type(e) in (socket.error, socket.timeout):
-                m.force_shutdown()
-
+            
+            
             if not isinstance(e, MarionetteException) or type(e) is MarionetteException:
                 if not always:
                     check_for_crash()
+
+            
+            if type(e) in (socket.error, socket.timeout):
+                m.force_shutdown()
+
             raise exc, val, tb
         finally:
             if always:
