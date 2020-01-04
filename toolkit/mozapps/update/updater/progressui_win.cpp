@@ -134,7 +134,7 @@ InitDialog(HWND hDlg)
 
   
   HDC hDCInfo = GetDC(hWndInfo);
-  HFONT hInfoFont, hOldFont;
+  HFONT hInfoFont, hOldFont = NULL;
   hInfoFont = (HFONT)SendMessage(hWndInfo, WM_GETFONT, 0, 0);
 
   if (hInfoFont)
