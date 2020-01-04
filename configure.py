@@ -72,9 +72,8 @@ if __name__ == '__main__':
     if not config.get('BUILDING_JS') or config.get('JS_STANDALONE'):
         if not config.get('JS_STANDALONE'):
             os.environ['WRITE_MOZINFO'] = '1'
-        
-        
-        return subprocess.call([config['PYTHON'], 'config.status'])
+        from mozbuild.config_status import config_status
+        return config_status(args=[], **sanitized_config)
     return 0
 
 
