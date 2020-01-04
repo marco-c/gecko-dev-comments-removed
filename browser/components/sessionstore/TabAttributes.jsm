@@ -24,13 +24,15 @@ this.TabAttributes = Object.freeze({
 });
 
 var TabAttributesInternal = {
-  _attrs: new Set(["muted"]),
+  _attrs: new Set(),
 
   
   
   
   
-  _skipAttrs: new Set(["image", "pending"]),
+  
+  
+  _skipAttrs: new Set(["image", "muted", "pending"]),
 
   persist: function (name) {
     if (this._attrs.has(name) || this._skipAttrs.has(name)) {
