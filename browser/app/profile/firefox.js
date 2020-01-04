@@ -1645,6 +1645,8 @@ pref("dom.serviceWorkers.interception.enabled", true);
 
 
 pref("dom.push.enabled", true);
+
+pref("dom.serviceWorkers.openWindow.enabled", true);
 #endif
 
 
