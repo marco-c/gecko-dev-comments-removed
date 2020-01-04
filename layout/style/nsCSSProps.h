@@ -233,6 +233,11 @@ static_assert((CSS_PROPERTY_PARSE_PROPERTY_MASK &
 
 
 
+#define CSS_PROPERTY_INTERNAL                     (1<<28)
+
+
+
+
 enum nsStyleAnimType {
   
   

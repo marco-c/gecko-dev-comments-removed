@@ -129,6 +129,8 @@
 
 
 
+
+
 #ifdef CSS_PROP
 
 #define USED_CSS_PROP
@@ -417,7 +419,8 @@ CSS_PROP_FONT(
     -x-system-font,
     _x_system_font,
     CSS_PROP_DOMPROP_PREFIXED(SystemFont),
-    CSS_PROPERTY_PARSE_INACCESSIBLE |
+    CSS_PROPERTY_INTERNAL |
+        CSS_PROPERTY_PARSE_INACCESSIBLE |
         CSS_PROPERTY_APPLIES_TO_FIRST_LETTER_AND_FIRST_LINE |
         CSS_PROPERTY_APPLIES_TO_PLACEHOLDER,
     "",
@@ -1515,7 +1518,8 @@ CSS_PROP_TEXT(
     -moz-control-character-visibility,
     _moz_control_character_visibility,
     CSS_PROP_DOMPROP_PREFIXED(ControlCharacterVisibility),
-    CSS_PROPERTY_PARSE_VALUE,
+    CSS_PROPERTY_INTERNAL |
+        CSS_PROPERTY_PARSE_VALUE,
     "",
     VARIANT_HK,
     kControlCharacterVisibilityKTable,
@@ -3753,7 +3757,8 @@ CSS_PROP_FONT(
     
     
     
-    CSS_PROPERTY_PARSE_VALUE,
+    CSS_PROPERTY_INTERNAL |
+        CSS_PROPERTY_PARSE_VALUE,
     "",
     
     
@@ -3767,7 +3772,8 @@ CSS_PROP_FONT(
     script_size_multiplier,
     ScriptSizeMultiplier,
     
-    CSS_PROPERTY_PARSE_INACCESSIBLE,
+    CSS_PROPERTY_INTERNAL |
+        CSS_PROPERTY_PARSE_INACCESSIBLE,
     "",
     0,
     nullptr,
@@ -3778,7 +3784,8 @@ CSS_PROP_FONT(
     script_min_size,
     ScriptMinSize,
     
-    CSS_PROPERTY_PARSE_INACCESSIBLE,
+    CSS_PROPERTY_INTERNAL |
+        CSS_PROPERTY_PARSE_INACCESSIBLE,
     "",
     0,
     nullptr,
@@ -3788,7 +3795,8 @@ CSS_PROP_FONT(
     -moz-math-variant,
     math_variant,
     MathVariant,
-    CSS_PROPERTY_PARSE_INACCESSIBLE,
+    CSS_PROPERTY_INTERNAL |
+        CSS_PROPERTY_PARSE_INACCESSIBLE,
     "",
     VARIANT_HK,
     kMathVariantKTable,
@@ -3800,7 +3808,8 @@ CSS_PROP_FONT(
     MathDisplay,
     
     
-    CSS_PROPERTY_PARSE_VALUE,
+    CSS_PROPERTY_INTERNAL |
+        CSS_PROPERTY_PARSE_VALUE,
     "",
     VARIANT_HK,
     kMathDisplayKTable,
@@ -4184,7 +4193,8 @@ CSS_PROP_FONT(
     -x-lang,
     _x_lang,
     Lang,
-    CSS_PROPERTY_PARSE_INACCESSIBLE,
+    CSS_PROPERTY_INTERNAL |
+        CSS_PROPERTY_PARSE_INACCESSIBLE,
     "",
     0,
     nullptr,
@@ -4194,7 +4204,8 @@ CSS_PROP_TABLE(
     -x-span,
     _x_span,
     Span,
-    CSS_PROPERTY_PARSE_INACCESSIBLE,
+    CSS_PROPERTY_INTERNAL |
+        CSS_PROPERTY_PARSE_INACCESSIBLE,
     "",
     0,
     nullptr,
@@ -4204,7 +4215,8 @@ CSS_PROP_FONT(
     -x-text-zoom,
     _x_text_zoom,
     TextZoom,
-    CSS_PROPERTY_PARSE_INACCESSIBLE,
+    CSS_PROPERTY_INTERNAL |
+        CSS_PROPERTY_PARSE_INACCESSIBLE,
     "",
     0,
     nullptr,
