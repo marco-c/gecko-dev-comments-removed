@@ -25,7 +25,7 @@ const kWhitelist = [
   {sourceName: /loop\/.*shared\/css\/common.css/i,
    errorMessage: /Unknown property 'user-select'/i},
   
-  {sourceName: /highlighter\.css/i,
+  {sourceName: /highlighters\.css/i,
    errorMessage: /Unknown pseudo-class.*moz-native-anonymous/i},
 ];
 

@@ -4,8 +4,6 @@
 Cu.import("resource://gre/modules/jsdebugger.jsm");
 addDebuggerToGlobal(this);
 
-const COLOR_URI = "resource://devtools/css-color.js";
-
 
 
 
