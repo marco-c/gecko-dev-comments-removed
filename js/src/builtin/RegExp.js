@@ -480,7 +480,16 @@ function RegExpLocalReplaceOpt(rx, S, lengthS, replaceValue)
 {
     var sticky = !!rx.sticky;
 
-    var lastIndex = sticky ? rx.lastIndex : 0;
+    var lastIndex;
+    if (sticky) {
+        lastIndex = ToLength(rx.lastIndex);
+        if (lastIndex > lengthS) {
+            rx.lastIndex = 0;
+            return S;
+        }
+    } else {
+        lastIndex = 0;
+    }
 
     
     var result = RegExpMatcher(rx, S, lastIndex, sticky);
@@ -810,7 +819,7 @@ function RegExpBuiltinExec(R, S, forTest) {
     if (!global && !sticky) {
         lastIndex = 0;
     } else {
-        if (lastIndex < 0 || lastIndex > S.length) {
+        if (lastIndex > S.length) {
             
             R.lastIndex = 0;
             return forTest ? false : null;
