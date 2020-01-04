@@ -6787,7 +6787,7 @@ CSSParserImpl::LookupKeywordPrefixAware(nsAString& aKeywordStr,
 
   if (aKeywordTable == nsCSSProps::kDisplayKTable) {
     if (keyword == eCSSKeyword_UNKNOWN &&
-        ShouldUseUnprefixingService() &&
+        (sWebkitPrefixedAliasesEnabled || ShouldUseUnprefixingService()) &&
         aKeywordStr.EqualsLiteral("-webkit-box")) {
       
       
@@ -6807,9 +6807,10 @@ CSSParserImpl::LookupKeywordPrefixAware(nsAString& aKeywordStr,
     
     if (mWebkitBoxUnprefixState == eHaveUnprefixed &&
         keyword == eCSSKeyword__moz_box) {
-      MOZ_ASSERT(ShouldUseUnprefixingService(),
+      MOZ_ASSERT(sWebkitPrefixedAliasesEnabled || ShouldUseUnprefixingService(),
                  "mDidUnprefixWebkitBoxInEarlierDecl should only be set if "
-                 "we're using the unprefixing service on this site");
+                 "we're supporting webkit-prefixed aliases, or if we're using "
+                 "the css unprefixing service on this site");
       return eCSSKeyword_flex;
     }
   }
