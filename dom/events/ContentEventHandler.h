@@ -93,7 +93,6 @@ public:
                                            LineBreakType aLineBreakType);
   
   
-  
   static uint32_t GetNativeTextLength(nsIContent* aContent,
                                       uint32_t aStartOffset,
                                       uint32_t aEndOffset);
@@ -102,14 +101,21 @@ public:
                                       uint32_t aMaxLength = UINT32_MAX);
   
   
+  static uint32_t GetNativeTextLengthBefore(nsIContent* aContent);
+
+protected:
+  
+  static uint32_t GetTextLength(nsIContent* aContent,
+                                LineBreakType aLineBreakType,
+                                uint32_t aMaxLength = UINT32_MAX);
+  
+  
   static uint32_t GetTextLengthInRange(nsIContent* aContent,
                                        uint32_t aXPStartOffset,
                                        uint32_t aXPEndOffset,
                                        LineBreakType aLineBreakType);
-protected:
-  static uint32_t GetTextLength(nsIContent* aContent,
-                                LineBreakType aLineBreakType,
-                                uint32_t aMaxLength = UINT32_MAX);
+  
+  static inline uint32_t GetBRLength(LineBreakType aLineBreakType);
   static LineBreakType GetLineBreakType(WidgetQueryContentEvent* aEvent);
   static LineBreakType GetLineBreakType(WidgetSelectionEvent* aEvent);
   static LineBreakType GetLineBreakType(bool aUseNativeLineBreak);
