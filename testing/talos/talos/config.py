@@ -298,14 +298,6 @@ def get_active_tests(config):
     activeTests = config.pop('activeTests').strip().split(':')
 
     
-    if config['e10s'] and not config['develop']:
-        for testname in ('sessionrestore',
-                         'sessionrestore_no_auto_restore'):
-            if testname in activeTests:
-                print "%s is unsupported on e10s, removing from list of " \
-                    "tests to run" % testname
-                activeTests.remove(testname)
-    
     availableTests = test.test_dict()
     if not set(activeTests).issubset(availableTests):
         missing = [i for i in activeTests
