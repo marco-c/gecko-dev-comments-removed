@@ -45,6 +45,8 @@ PrincipalOriginAttributes::InheritFromDocShellToDoc(const DocShellOriginAttribut
   
   
   mSignedPkg = aAttrs.mSignedPkg;
+
+  mPrivateBrowsingId = aAttrs.mPrivateBrowsingId;
 }
 
 void
@@ -56,6 +58,8 @@ PrincipalOriginAttributes::InheritFromNecko(const NeckoOriginAttributes& aAttrs)
   
   mUserContextId = aAttrs.mUserContextId;
   mSignedPkg = aAttrs.mSignedPkg;
+
+  mPrivateBrowsingId = aAttrs.mPrivateBrowsingId;
 }
 
 void
@@ -71,6 +75,8 @@ DocShellOriginAttributes::InheritFromDocToChildDocShell(const PrincipalOriginAtt
   
   
   mSignedPkg = aAttrs.mSignedPkg;
+
+  mPrivateBrowsingId = aAttrs.mPrivateBrowsingId;
 }
 
 void
@@ -85,6 +91,8 @@ NeckoOriginAttributes::InheritFromDocToNecko(const PrincipalOriginAttributes& aA
   
   
   
+
+  mPrivateBrowsingId = aAttrs.mPrivateBrowsingId;
 }
 
 void
@@ -99,6 +107,8 @@ NeckoOriginAttributes::InheritFromDocShellToNecko(const DocShellOriginAttributes
   
   
   
+
+  mPrivateBrowsingId = aAttrs.mPrivateBrowsingId;
 }
 
 void
@@ -145,6 +155,12 @@ OriginAttributes::CreateSuffix(nsACString& aStr) const
     params->Set(NS_LITERAL_STRING("signedPkg"), mSignedPkg);
   }
 
+  if (mPrivateBrowsingId) {
+    value.Truncate();
+    value.AppendInt(mPrivateBrowsingId);
+    params->Set(NS_LITERAL_STRING("privateBrowsingId"), value);
+  }
+
   aStr.Truncate();
 
   params->Serialize(value);
@@ -171,6 +187,10 @@ public:
     : mOriginAttributes(aOriginAttributes)
   {
     MOZ_ASSERT(aOriginAttributes);
+    
+    
+    
+    mOriginAttributes->mPrivateBrowsingId = 0;
   }
 
   bool URLParamsIterator(const nsString& aName,
@@ -217,6 +237,16 @@ public:
       return true;
     }
 
+    if (aName.EqualsLiteral("privateBrowsingId")) {
+      nsresult rv;
+      int64_t val = aValue.ToInteger64(&rv);
+      NS_ENSURE_SUCCESS(rv, false);
+      NS_ENSURE_TRUE(val >= 0 && val <= UINT32_MAX, false);
+      mOriginAttributes->mPrivateBrowsingId = static_cast<uint32_t>(val);
+
+      return true;
+    }
+
     
     return false;
   }
@@ -260,6 +290,12 @@ OriginAttributes::PopulateFromOrigin(const nsACString& aOrigin,
 
   aOriginNoSuffix = Substring(origin, 0, pos);
   return PopulateFromSuffix(Substring(origin, pos));
+}
+
+void
+OriginAttributes::SyncAttributesWithPrivateBrowsing(bool aInPrivateBrowsing)
+{
+  mPrivateBrowsingId = aInPrivateBrowsing ? 1 : 0;
 }
 
 BasePrincipal::BasePrincipal()

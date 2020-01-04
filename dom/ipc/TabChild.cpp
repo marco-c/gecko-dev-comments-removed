@@ -812,6 +812,8 @@ TabChild::Init()
   baseWindow->InitWindow(0, mPuppetWidget, 0, 0, 0, 0);
   baseWindow->Create();
 
+  
+  SetPrivateBrowsingAttributes(mChromeFlags & nsIWebBrowserChrome::CHROME_PRIVATE_WINDOW);
   NotifyTabContextUpdated();
 
   

@@ -156,6 +156,11 @@ protected:
   
 
 
+  void SetPrivateBrowsingAttributes(bool aIsPrivateBrowsing);
+
+  
+
+
 
 
 
