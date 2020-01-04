@@ -57,6 +57,7 @@ typedef nsCSSProps::KTableValue KTableValue;
 
 
 static bool sOpentypeSVGEnabled;
+static bool sWebkitPrefixedAliasesEnabled;
 static bool sUnprefixingServiceEnabled;
 #ifdef NIGHTLY_BUILD
 static bool sUnprefixingServiceGloballyWhitelisted;
@@ -6690,6 +6691,11 @@ bool
 CSSParserImpl::ShouldUseUnprefixingService() const
 {
   if (!sUnprefixingServiceEnabled) {
+    
+    return false;
+  }
+  if (sWebkitPrefixedAliasesEnabled) {
+    
     
     return false;
   }
@@ -15727,6 +15733,8 @@ nsCSSParser::Startup()
 {
   Preferences::AddBoolVarCache(&sOpentypeSVGEnabled,
                                "gfx.font_rendering.opentype_svg.enabled");
+  Preferences::AddBoolVarCache(&sWebkitPrefixedAliasesEnabled,
+                               "layout.css.prefixes.webkit");
   Preferences::AddBoolVarCache(&sUnprefixingServiceEnabled,
                                "layout.css.unprefixing-service.enabled");
 #ifdef NIGHTLY_BUILD
