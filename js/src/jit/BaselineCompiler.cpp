@@ -484,7 +484,7 @@ BaselineCompiler::emitOutOfLinePostBarrierSlot()
     
     
     masm.push(lr);
-#elif defined(JS_CODEGEN_MIPS32)
+#elif defined(JS_CODEGEN_MIPS32) || defined(JS_CODEGEN_MIPS64)
     masm.push(ra);
 #endif
     masm.pushValue(R0);
