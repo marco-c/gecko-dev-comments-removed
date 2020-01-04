@@ -212,6 +212,7 @@ RenderFrameParent::OwnerContentChanged(nsIContent* aContent)
   
   if (lm && lm->AsClientLayerManager()) {
     lm->AsClientLayerManager()->GetRemoteRenderer()->SendAdoptChild(mLayersId);
+    FrameLayerBuilder::InvalidateAllLayers(lm);
   }
 }
 
