@@ -13,6 +13,7 @@ namespace mozilla {
 namespace dom {
 
 class VideoTrackList;
+class VideoStreamTrack;
 
 class VideoTrack : public MediaTrack
 {
@@ -20,7 +21,11 @@ public:
   VideoTrack(const nsAString& aId,
              const nsAString& aKind,
              const nsAString& aLabel,
-             const nsAString& aLanguage);
+             const nsAString& aLanguage,
+             VideoStreamTrack* aStreamTarck = nullptr);
+
+  NS_DECL_ISUPPORTS_INHERITED
+  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(VideoTrack, MediaTrack)
 
   JSObject* WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) override;
 
@@ -37,6 +42,11 @@ public:
   void SetEnabledInternal(bool aEnabled, int aFlags) override;
 
   
+  
+  
+  VideoStreamTrack* GetVideoStreamTrack() { return mVideoStreamTrack; }
+
+  
   bool Selected() const
   {
     return mSelected;
@@ -48,7 +58,10 @@ public:
   void SetSelected(bool aSelected);
 
 private:
+  virtual ~VideoTrack();
+
   bool mSelected;
+  RefPtr<VideoStreamTrack> mVideoStreamTrack;
 };
 
 } 

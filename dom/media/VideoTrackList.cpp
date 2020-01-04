@@ -31,18 +31,18 @@ VideoTrackList::RemoveTrack(const RefPtr<MediaTrack>& aTrack)
   
   
   bool found;
-  VideoTrack* videoTrack = IndexedGetter(mSelectedIndex, found);
+  VideoTrack* selectedVideoTrack = IndexedGetter(mSelectedIndex, found);
   MediaTrackList::RemoveTrack(aTrack);
   if (mSelectedIndex == -1) {
     
     return;
   }
   MOZ_ASSERT(found, "When mSelectedIndex is set it should point to a track");
-  MOZ_ASSERT(videoTrack, "The mSelectedIndex should be set to video track only");
+  MOZ_ASSERT(selectedVideoTrack, "The mSelectedIndex should be set to video track only");
 
   
   
-  if (aTrack == videoTrack) {
+  if (aTrack == selectedVideoTrack) {
     mSelectedIndex = -1;
     return;
   }
@@ -51,7 +51,7 @@ VideoTrackList::RemoveTrack(const RefPtr<MediaTrack>& aTrack)
   
   
   for (size_t ix = 0; ix < mTracks.Length(); ix++) {
-    if (mTracks[ix] == videoTrack) {
+    if (mTracks[ix] == selectedVideoTrack) {
       mSelectedIndex = ix;
       return;
     }

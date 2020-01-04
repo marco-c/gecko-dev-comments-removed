@@ -1239,6 +1239,8 @@ protected:
   
   
   RefPtr<StreamSizeListener> mMediaStreamSizeListener;
+  
+  RefPtr<VideoStreamTrack> mSelectedVideoStreamTrack;
 
   
   
