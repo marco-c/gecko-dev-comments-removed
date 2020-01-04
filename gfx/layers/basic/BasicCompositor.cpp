@@ -352,7 +352,6 @@ BasicCompositor::DrawQuad(const gfx::Rect& aRect,
   
   RefPtr<DrawTarget> dest = buffer;
 
-  buffer->PushClipRect(aClipRect);
   AutoRestoreTransform autoRestoreTransform(dest);
 
   Matrix newTransform;
@@ -375,6 +374,10 @@ BasicCompositor::DrawQuad(const gfx::Rect& aRect,
     transformBounds = aTransform.TransformAndClipBounds(aRect, Rect(offset.x, offset.y, buffer->GetSize().width, buffer->GetSize().height));
     transformBounds.RoundOut();
 
+    if (transformBounds.IsEmpty()) {
+      return;
+    }
+
     
     newTransform = Matrix::Translation(transformBounds.x, transformBounds.y);
 
@@ -382,6 +385,8 @@ BasicCompositor::DrawQuad(const gfx::Rect& aRect,
     
     new3DTransform = Matrix4x4::Translation(aRect.x, aRect.y, 0) * aTransform;
   }
+
+  buffer->PushClipRect(aClipRect);
 
   newTransform.PostTranslate(-offset.x, -offset.y);
   buffer->SetTransform(newTransform);
