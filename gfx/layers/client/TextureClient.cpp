@@ -363,6 +363,15 @@ TextureClient::Lock(OpenMode aMode)
   mIsLocked = mData->Lock(aMode, mReleaseFenceHandle.IsValid() ? &mReleaseFenceHandle : nullptr);
   mOpenMode = aMode;
 
+  if (mIsLocked && CanExposeDrawTarget() && (aMode & OpenMode::OPEN_WRITE) && NS_IsMainThread()) {
+    if (!BorrowDrawTarget()) {
+      
+      
+      Unlock();
+      return false;
+    }
+  }
+
   return mIsLocked;
 }
 
