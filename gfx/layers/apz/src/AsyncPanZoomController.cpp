@@ -2805,7 +2805,7 @@ void AsyncPanZoomController::RequestContentRepaint() {
 
 void AsyncPanZoomController::RequestContentRepaint(FrameMetrics& aFrameMetrics) {
   aFrameMetrics.SetDisplayPortMargins(CalculatePendingDisplayPort(aFrameMetrics, GetVelocityVector()));
-  aFrameMetrics.SetUseDisplayPortMargins();
+  aFrameMetrics.SetUseDisplayPortMargins(true);
 
   
   
@@ -3399,7 +3399,7 @@ void AsyncPanZoomController::ZoomToRect(CSSRect aRect) {
     endZoomToMetrics.SetScrollOffset(aRect.TopLeft());
     endZoomToMetrics.SetDisplayPortMargins(
       CalculatePendingDisplayPort(endZoomToMetrics, ParentLayerPoint(0,0)));
-    endZoomToMetrics.SetUseDisplayPortMargins();
+    endZoomToMetrics.SetUseDisplayPortMargins(true);
 
     StartAnimation(new ZoomAnimation(
         mFrameMetrics.GetScrollOffset(),
