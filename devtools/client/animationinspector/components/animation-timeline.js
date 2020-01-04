@@ -169,6 +169,11 @@ AnimationsTimeline.prototype = {
   },
 
   onWindowResize: function() {
+    
+    if (this.rootWrapperEl.offsetWidth === 0) {
+      return;
+    }
+
     if (this.windowResizeTimer) {
       this.win.clearTimeout(this.windowResizeTimer);
     }

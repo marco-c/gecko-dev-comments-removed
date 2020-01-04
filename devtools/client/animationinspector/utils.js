@@ -79,6 +79,11 @@ function drawGraphElementBackground(document, id, graphWidth, intervalWidth) {
   let ctx = canvas.getContext("2d");
 
   
+  if (graphWidth === 0 || intervalWidth === 0) {
+    return;
+  }
+
+  
   
   canvas.width = graphWidth;
   canvas.height = 1;
