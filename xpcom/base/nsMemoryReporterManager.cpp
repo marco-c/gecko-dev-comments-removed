@@ -1520,6 +1520,30 @@ NS_IMPL_ISUPPORTS(nsMemoryReporterManager, nsIMemoryReporterManager)
 NS_IMETHODIMP
 nsMemoryReporterManager::Init()
 {
+  if (!NS_IsMainThread()) {
+    MOZ_CRASH();
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  static bool isInited = false;
+  if (isInited) {
+    NS_WARNING("nsMemoryReporterManager::Init() has already been called!");
+    return NS_OK;
+  }
+  isInited = true;
+
 #if defined(HAVE_JEMALLOC_STATS) && defined(MOZ_GLUE_IN_PROGRAM)
   if (!jemalloc_stats) {
     return NS_ERROR_FAILURE;
