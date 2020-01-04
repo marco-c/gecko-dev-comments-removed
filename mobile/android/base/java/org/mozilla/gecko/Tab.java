@@ -592,6 +592,10 @@ public class Tab {
                 Tabs.getInstance().notifyListeners(Tab.this, Tabs.TabEvents.BOOKMARK_REMOVED);
             }
         });
+
+        
+        
+        ReadingListHelper.removeCachedReaderItem(pageUrl, mAppContext);
     }
 
     public void addToReadingList() {

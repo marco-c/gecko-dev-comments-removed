@@ -299,6 +299,23 @@ public final class ReadingListHelper implements NativeEventListener {
         }
     }
 
+    public static void removeCachedReaderItem(final String url, Context context) {
+        if (AboutPages.isAboutReader(url)) {
+            throw new IllegalArgumentException("Page url must be original (not about:reader) url");
+        }
+
+        SavedReaderViewHelper rch = SavedReaderViewHelper.getSavedReaderViewHelper(context);
+
+        if (rch.isURLCached(url)) {
+            GeckoAppShell.notifyObservers("Reader:RemoveFromCache", url);
+        }
+
+        
+        
+        
+        rch.remove(url);
+    }
+
     @RobocopTarget
     
 
