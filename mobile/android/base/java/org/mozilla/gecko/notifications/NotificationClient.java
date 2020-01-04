@@ -3,7 +3,7 @@
 
 
 
-package org.mozilla.gecko;
+package org.mozilla.gecko.notifications;
 
 import android.app.Notification;
 import android.app.PendingIntent;

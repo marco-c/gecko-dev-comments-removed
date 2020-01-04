@@ -3,8 +3,9 @@
 
 
 
-package org.mozilla.gecko;
+package org.mozilla.gecko.notifications;
 
+import org.mozilla.gecko.GeckoThread;
 import org.mozilla.gecko.mozglue.SafeIntent;
 
 import android.content.BroadcastReceiver;
