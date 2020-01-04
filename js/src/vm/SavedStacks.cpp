@@ -52,7 +52,7 @@ namespace js {
 
 
 
-const unsigned ASYNC_STACK_MAX_FRAME_COUNT = 60;
+const uint32_t ASYNC_STACK_MAX_FRAME_COUNT = 60;
 
  Maybe<LiveSavedFrameCache::FramePtr>
 LiveSavedFrameCache::getFramePtr(FrameIter& iter)
@@ -1091,7 +1091,7 @@ SavedStacks::saveCurrentStack(JSContext* cx, MutableHandleSavedFrame frame,
 
 bool
 SavedStacks::copyAsyncStack(JSContext* cx, HandleObject asyncStack, HandleString asyncCause,
-                            MutableHandleSavedFrame adoptedStack, unsigned maxFrameCount)
+                            MutableHandleSavedFrame adoptedStack, uint32_t maxFrameCount)
 {
     MOZ_ASSERT(initialized());
     MOZ_RELEASE_ASSERT(cx->compartment());
@@ -1307,7 +1307,7 @@ SavedStacks::insertFrames(JSContext* cx, FrameIter& iter, MutableHandleSavedFram
     
     RootedSavedFrame parentFrame(cx, cachedFrame);
     if (asyncStack && !capture.is<JS::FirstSubsumedFrame>()) {
-        unsigned maxAsyncFrames = capture.is<JS::MaxFrames>()
+        uint32_t maxAsyncFrames = capture.is<JS::MaxFrames>()
             ? capture.as<JS::MaxFrames>().maxFrames
             : ASYNC_STACK_MAX_FRAME_COUNT;
         if (!adoptAsyncStack(cx, asyncStack, asyncCause, &parentFrame, maxAsyncFrames))
@@ -1338,7 +1338,7 @@ bool
 SavedStacks::adoptAsyncStack(JSContext* cx, HandleSavedFrame asyncStack,
                              HandleString asyncCause,
                              MutableHandleSavedFrame adoptedStack,
-                             unsigned maxFrameCount)
+                             uint32_t maxFrameCount)
 {
     RootedAtom asyncCauseAtom(cx, AtomizeString(cx, asyncCause));
     if (!asyncCauseAtom)
@@ -1348,13 +1348,13 @@ SavedStacks::adoptAsyncStack(JSContext* cx, HandleSavedFrame asyncStack,
     
     
     
-    unsigned maxFrames = maxFrameCount > 0 ? maxFrameCount : ASYNC_STACK_MAX_FRAME_COUNT;
+    uint32_t maxFrames = maxFrameCount > 0 ? maxFrameCount : ASYNC_STACK_MAX_FRAME_COUNT;
 
     
     SavedFrame::AutoLookupVector stackChain(cx);
     SavedFrame* currentSavedFrame = asyncStack;
     SavedFrame* firstSavedFrameParent = nullptr;
-    for (unsigned i = 0; i < maxFrames && currentSavedFrame; i++) {
+    for (uint32_t i = 0; i < maxFrames && currentSavedFrame; i++) {
         if (!stackChain->emplaceBack(*currentSavedFrame)) {
             ReportOutOfMemory(cx);
             return false;
