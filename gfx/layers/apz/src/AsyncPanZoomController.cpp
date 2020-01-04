@@ -3562,6 +3562,14 @@ void AsyncPanZoomController::ZoomToRect(CSSRect aRect, const uint32_t aFlags) {
     CSSSize sizeAfterZoom = endZoomToMetrics.CalculateCompositedSizeInCssPixels();
 
     
+    if (!zoomOut && (sizeAfterZoom.height > aRect.height)) {
+      aRect.y -= (sizeAfterZoom.height - aRect.height) * 0.5f;
+      if (aRect.y < 0.0f) {
+        aRect.y = 0.0f;
+      }
+    }
+
+    
     
     if (aRect.y + sizeAfterZoom.height > cssPageRect.height) {
       aRect.y = cssPageRect.height - sizeAfterZoom.height;
@@ -3570,14 +3578,6 @@ void AsyncPanZoomController::ZoomToRect(CSSRect aRect, const uint32_t aFlags) {
     if (aRect.x + sizeAfterZoom.width > cssPageRect.width) {
       aRect.x = cssPageRect.width - sizeAfterZoom.width;
       aRect.x = aRect.x > 0 ? aRect.x : 0;
-    }
-
-    
-    if (!zoomOut && (sizeAfterZoom.height > aRect.height)) {
-      aRect.y -= (sizeAfterZoom.height - aRect.height) * 0.5f;
-      if (aRect.y < 0.0f) {
-        aRect.y = 0.0f;
-      }
     }
 
     endZoomToMetrics.SetScrollOffset(aRect.TopLeft());
