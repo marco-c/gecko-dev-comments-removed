@@ -344,10 +344,6 @@ pref("image.mem.surfacecache.size_factor", 8);
 pref("image.mem.surfacecache.discard_factor", 2);  
 pref("image.mem.surfacecache.min_expiration_ms", 86400000); 
 
-
-
-
-pref("dom.w3c_touch_events.enabled", 1);
 pref("dom.w3c_touch_events.safetyX", 0); 
 pref("dom.w3c_touch_events.safetyY", 120); 
 
