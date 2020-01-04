@@ -6393,25 +6393,25 @@ nsHTMLEditRules::ReturnInHeader(Selection* aSelection,
                                 nsIDOMNode *aNode,
                                 int32_t aOffset)
 {
-  NS_ENSURE_TRUE(aSelection && aHeader && aNode, NS_ERROR_NULL_POINTER);
+  nsCOMPtr<Element> header = do_QueryInterface(aHeader);
+  nsCOMPtr<nsINode> node = do_QueryInterface(aNode);
+  NS_ENSURE_TRUE(aSelection && header && node, NS_ERROR_NULL_POINTER);
 
   
   int32_t offset;
   nsCOMPtr<nsIDOMNode> headerParent = nsEditor::GetNodeLocation(aHeader, &offset);
 
   
-  nsCOMPtr<nsINode> selNode(do_QueryInterface(aNode));
   NS_ENSURE_STATE(mHTMLEditor);
   nsresult res = nsWSRunObject::PrepareToSplitAcrossBlocks(mHTMLEditor,
-                                                           address_of(selNode),
+                                                           address_of(node),
                                                            &aOffset);
   NS_ENSURE_SUCCESS(res, res);
 
   
-  int32_t newOffset;
+  NS_ENSURE_STATE(node->IsContent());
   NS_ENSURE_STATE(mHTMLEditor);
-  res = mHTMLEditor->SplitNodeDeep(aHeader, GetAsDOMNode(selNode), aOffset, &newOffset);
-  NS_ENSURE_SUCCESS(res, res);
+  mHTMLEditor->SplitNodeDeep(*header, *node->AsContent(), aOffset);
 
   
   nsCOMPtr<nsIDOMNode> prevItem;
@@ -6598,13 +6598,14 @@ nsHTMLEditRules::SplitParagraph(nsIDOMNode *aPara,
                                 nsCOMPtr<nsIDOMNode> *aSelNode,
                                 int32_t *aOffset)
 {
-  NS_ENSURE_TRUE(aPara && aBRNode && aSelNode && *aSelNode && aOffset && aSelection, NS_ERROR_NULL_POINTER);
+  nsCOMPtr<Element> para = do_QueryInterface(aPara);
+  NS_ENSURE_TRUE(para && aBRNode && aSelNode && *aSelNode && aOffset &&
+                 aSelection, NS_ERROR_NULL_POINTER);
   nsresult res = NS_OK;
 
   
-  int32_t newOffset;
   
-  nsCOMPtr<nsIDOMNode> leftPara, rightPara;
+  nsCOMPtr<nsIContent> leftPara, rightPara;
   NS_ENSURE_STATE(mHTMLEditor);
   nsCOMPtr<nsINode> selNode(do_QueryInterface(*aSelNode));
   res = nsWSRunObject::PrepareToSplitAcrossBlocks(mHTMLEditor, address_of(selNode), aOffset);
@@ -6612,9 +6613,11 @@ nsHTMLEditRules::SplitParagraph(nsIDOMNode *aPara,
   NS_ENSURE_SUCCESS(res, res);
   
   NS_ENSURE_STATE(mHTMLEditor);
-  res = mHTMLEditor->SplitNodeDeep(aPara, *aSelNode, *aOffset, &newOffset, false,
-                                   address_of(leftPara), address_of(rightPara));
-  NS_ENSURE_SUCCESS(res, res);
+  NS_ENSURE_STATE(selNode->IsContent());
+  mHTMLEditor->SplitNodeDeep(*para, *selNode->AsContent(), *aOffset,
+                             nsHTMLEditor::EmptyContainers::yes,
+                             getter_AddRefs(leftPara),
+                             getter_AddRefs(rightPara));
   
   NS_ENSURE_STATE(mHTMLEditor);
   if (mHTMLEditor->IsVisBreak(aBRNode))
@@ -6631,9 +6634,9 @@ nsHTMLEditRules::SplitParagraph(nsIDOMNode *aPara,
   NS_ENSURE_SUCCESS(res, res);
 
   
-  res = InsertMozBRIfNeeded(leftPara);
+  res = InsertMozBRIfNeeded(GetAsDOMNode(leftPara));
   NS_ENSURE_SUCCESS(res, res);
-  res = InsertMozBRIfNeeded(rightPara);
+  res = InsertMozBRIfNeeded(GetAsDOMNode(rightPara));
   NS_ENSURE_SUCCESS(res, res);
 
   
@@ -6751,10 +6754,9 @@ nsHTMLEditRules::ReturnInListItem(Selection* aSelection,
   res = nsWSRunObject::PrepareToSplitAcrossBlocks(mHTMLEditor, address_of(selNode), &aOffset);
   NS_ENSURE_SUCCESS(res, res);
   
-  int32_t newOffset;
   NS_ENSURE_STATE(mHTMLEditor);
-  res = mHTMLEditor->SplitNodeDeep(aListItem, GetAsDOMNode(selNode), aOffset, &newOffset, false);
-  NS_ENSURE_SUCCESS(res, res);
+  NS_ENSURE_STATE(selNode->IsContent());
+  mHTMLEditor->SplitNodeDeep(*listItem, *selNode->AsContent(), aOffset);
   
   
   
@@ -7156,14 +7158,15 @@ nsHTMLEditRules::SplitAsNeeded(nsIAtom& aTag,
     
     return NS_ERROR_FAILURE;
   }
-  if (splitNode) {
+  if (splitNode && splitNode->IsContent() && inOutParent->IsContent()) {
     
     NS_ENSURE_STATE(mHTMLEditor);
-    nsresult res = mHTMLEditor->SplitNodeDeep(splitNode->AsDOMNode(),
-                                              inOutParent->AsDOMNode(),
-                                              inOutOffset, &inOutOffset);
-    NS_ENSURE_SUCCESS(res, res);
+    int32_t offset = mHTMLEditor->SplitNodeDeep(*splitNode->AsContent(),
+                                                *inOutParent->AsContent(),
+                                                inOutOffset);
+    NS_ENSURE_STATE(offset != -1);
     inOutParent = tagParent;
+    inOutOffset = offset;
   }
   return NS_OK;
 }

@@ -1583,10 +1583,10 @@ nsHTMLEditor::InsertNodeAtPoint(nsIDOMNode *aNode,
   NS_ENSURE_TRUE(ioOffset, NS_ERROR_NULL_POINTER);
 
   nsresult res = NS_OK;
-  nsCOMPtr<nsINode> parent = do_QueryInterface(*ioParent);
+  nsCOMPtr<nsIContent> parent = do_QueryInterface(*ioParent);
   NS_ENSURE_TRUE(parent, NS_ERROR_NULL_POINTER);
-  nsCOMPtr<nsINode> topChild = parent;
-  int32_t offsetOfInsert = *ioOffset;
+  nsCOMPtr<nsIContent> topChild = parent;
+  nsCOMPtr<nsIContent> origParent = parent;
 
   
   while (!CanContain(*parent, *node)) {
@@ -1602,24 +1602,24 @@ nsHTMLEditor::InsertNodeAtPoint(nsIDOMNode *aNode,
       
       
       
-      parent = topChild = do_QueryInterface(*ioParent);
-      NS_ENSURE_STATE(parent);
+      parent = topChild = origParent;
       break;
     }
     topChild = parent;
-    parent = parent->GetParentNode();
+    parent = parent->GetParent();
   }
   if (parent != topChild)
   {
     
-    res = SplitNodeDeep(GetAsDOMNode(topChild), *ioParent, *ioOffset,
-                        &offsetOfInsert, aNoEmptyNodes);
-    NS_ENSURE_SUCCESS(res, res);
+    int32_t offset = SplitNodeDeep(*topChild, *origParent, *ioOffset,
+                                   aNoEmptyNodes ? EmptyContainers::no
+                                                 : EmptyContainers::yes);
+    NS_ENSURE_STATE(offset != -1);
     *ioParent = GetAsDOMNode(parent);
-    *ioOffset = offsetOfInsert;
+    *ioOffset = offset;
   }
   
-  res = InsertNode(*node, *parent, offsetOfInsert);
+  res = InsertNode(*node, *parent, *ioOffset);
   return res;
 }
 
@@ -1927,30 +1927,31 @@ nsHTMLEditor::MakeOrChangeList(const nsAString& aListType, bool entireList, cons
     
     bool isCollapsed = selection->Collapsed();
 
-    nsCOMPtr<nsINode> node;
-    int32_t offset;
-    res = GetStartNodeAndOffset(selection, getter_AddRefs(node), &offset);
-    if (!node) res = NS_ERROR_FAILURE;
-    NS_ENSURE_SUCCESS(res, res);
+    NS_ENSURE_TRUE(selection->GetRangeAt(0) &&
+                   selection->GetRangeAt(0)->GetStartParent() &&
+                   selection->GetRangeAt(0)->GetStartParent()->IsContent(),
+                   NS_ERROR_FAILURE);
+    OwningNonNull<nsIContent> node =
+      *selection->GetRangeAt(0)->GetStartParent()->AsContent();
+    int32_t offset = selection->GetRangeAt(0)->StartOffset();
 
     if (isCollapsed)
     {
       
-      nsCOMPtr<nsINode> parent = node;
-      nsCOMPtr<nsINode> topChild = node;
+      nsCOMPtr<nsIContent> parent = node;
+      nsCOMPtr<nsIContent> topChild = node;
 
       nsCOMPtr<nsIAtom> listAtom = do_GetAtom(aListType);
       while (!CanContainTag(*parent, *listAtom)) {
         topChild = parent;
-        parent = parent->GetParentNode();
+        parent = parent->GetParent();
       }
 
       if (parent != node)
       {
         
-        res = SplitNodeDeep(GetAsDOMNode(topChild), GetAsDOMNode(node), offset,
-                            &offset);
-        NS_ENSURE_SUCCESS(res, res);
+        offset = SplitNodeDeep(*topChild, *node, offset);
+        NS_ENSURE_STATE(offset != -1);
       }
 
       
@@ -2058,31 +2059,32 @@ nsHTMLEditor::InsertBasicBlock(const nsAString& aBlockType)
     
     bool isCollapsed = selection->Collapsed();
 
-    nsCOMPtr<nsINode> node;
-    int32_t offset;
-    res = GetStartNodeAndOffset(selection, getter_AddRefs(node), &offset);
-    if (!node) res = NS_ERROR_FAILURE;
-    NS_ENSURE_SUCCESS(res, res);
+    NS_ENSURE_TRUE(selection->GetRangeAt(0) &&
+                   selection->GetRangeAt(0)->GetStartParent() &&
+                   selection->GetRangeAt(0)->GetStartParent()->IsContent(),
+                   NS_ERROR_FAILURE);
+    OwningNonNull<nsIContent> node =
+      *selection->GetRangeAt(0)->GetStartParent()->AsContent();
+    int32_t offset = selection->GetRangeAt(0)->StartOffset();
 
     if (isCollapsed)
     {
       
-      nsCOMPtr<nsINode> parent = node;
-      nsCOMPtr<nsINode> topChild = node;
+      nsCOMPtr<nsIContent> parent = node;
+      nsCOMPtr<nsIContent> topChild = node;
 
       nsCOMPtr<nsIAtom> blockAtom = do_GetAtom(aBlockType);
       while (!CanContainTag(*parent, *blockAtom)) {
-        NS_ENSURE_TRUE(parent->GetParentNode(), NS_ERROR_FAILURE);
+        NS_ENSURE_TRUE(parent->GetParent(), NS_ERROR_FAILURE);
         topChild = parent;
-        parent = parent->GetParentNode();
+        parent = parent->GetParent();
       }
 
       if (parent != node)
       {
         
-        res = SplitNodeDeep(GetAsDOMNode(topChild), GetAsDOMNode(node), offset,
-                            &offset);
-        NS_ENSURE_SUCCESS(res, res);
+        offset = SplitNodeDeep(*topChild, *node, offset);
+        NS_ENSURE_STATE(offset != -1);
       }
 
       
@@ -2128,33 +2130,34 @@ nsHTMLEditor::Indent(const nsAString& aIndent)
   if (!handled)
   {
     
-    nsCOMPtr<nsINode> node;
-    int32_t offset;
     bool isCollapsed = selection->Collapsed();
 
-    res = GetStartNodeAndOffset(selection, getter_AddRefs(node), &offset);
-    if (!node) res = NS_ERROR_FAILURE;
-    NS_ENSURE_SUCCESS(res, res);
+    NS_ENSURE_TRUE(selection->GetRangeAt(0) &&
+                   selection->GetRangeAt(0)->GetStartParent() &&
+                   selection->GetRangeAt(0)->GetStartParent()->IsContent(),
+                   NS_ERROR_FAILURE);
+    OwningNonNull<nsIContent> node =
+      *selection->GetRangeAt(0)->GetStartParent()->AsContent();
+    int32_t offset = selection->GetRangeAt(0)->StartOffset();
 
     if (aIndent.EqualsLiteral("indent"))
     {
       if (isCollapsed)
       {
         
-        nsCOMPtr<nsINode> parent = node;
-        nsCOMPtr<nsINode> topChild = node;
+        nsCOMPtr<nsIContent> parent = node;
+        nsCOMPtr<nsIContent> topChild = node;
         while (!CanContainTag(*parent, *nsGkAtoms::blockquote)) {
-          NS_ENSURE_TRUE(parent->GetParentNode(), NS_ERROR_FAILURE);
+          NS_ENSURE_TRUE(parent->GetParent(), NS_ERROR_FAILURE);
           topChild = parent;
-          parent = parent->GetParentNode();
+          parent = parent->GetParent();
         }
 
         if (parent != node)
         {
           
-          res = SplitNodeDeep(GetAsDOMNode(topChild), GetAsDOMNode(node),
-                              offset, &offset);
-          NS_ENSURE_SUCCESS(res, res);
+          offset = SplitNodeDeep(*topChild, *node, offset);
+          NS_ENSURE_STATE(offset != -1);
         }
 
         
@@ -2166,9 +2169,9 @@ nsHTMLEditor::Indent(const nsAString& aIndent)
         res = InsertText(NS_LITERAL_STRING(" "));
         NS_ENSURE_SUCCESS(res, res);
         
-        res = GetStartNodeAndOffset(selection, getter_AddRefs(node), &offset);
-        NS_ENSURE_SUCCESS(res, res);
-        res = selection->Collapse(node,0);
+        NS_ENSURE_STATE(selection->GetRangeAt(0));
+        res = selection->Collapse(selection->GetRangeAt(0)->GetStartParent(),
+                                  0);
         NS_ENSURE_SUCCESS(res, res);
       }
     }
