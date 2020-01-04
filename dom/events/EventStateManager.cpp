@@ -4400,9 +4400,6 @@ EventStateManager::SetPointerLock(nsIWidget* aWidget,
     
     
     sLastRefPoint = mPreLockPoint;
-    
-    
-    sSynthCenteringPoint = kInvalidRefPoint;
     if (aWidget) {
       aWidget->SynthesizeNativeMouseMove(
         mPreLockPoint + aWidget->WidgetToScreenOffset(), nullptr);

@@ -1,46 +1,62 @@
-
-var testName = location.pathname.split('/').pop();
-
-
-window.ok = function(a, msg) {
-  opener.ok(a, testName + ": " + msg);
-};
-
-window.is = function(a, b, msg) {
-  opener.is(a, b, testName + ": " + msg);
-};
-
-window.isnot = function(a, b, msg) {
-  opener.isnot(a, b, testName + ": " + msg);
-};
-
-window.todo = function(a, msg) {
-  opener.todo(a, testName + ": " + msg);
-};
-
-window.todo_is = function(a, b, msg) {
-  opener.todo_is(a, b, testName + ": " + msg);
-};
-
-window.todo_isnot = function(a, b, msg) {
-  opener.todo_isnot(a, b, testName + ": " + msg);
-};
-
-window.info = function(msg) {
-  opener.info(testName + ": " + msg);
-};
+const isWinXP = navigator.userAgent.indexOf("Windows NT 5.1") != -1;
+const isOSXLion = navigator.userAgent.indexOf("Mac OS X 10.7") != -1;
 
 
-var SimpleTest = SimpleTest || {};
 
-SimpleTest.waitForExplicitFinish = function() {
-  dump("[POINTERLOCK] Starting " + testName+ "\n");
-};
+if (window.opener) {
+  
+  var testName = location.pathname.split('/').pop();
 
-SimpleTest.finish = function () {
-  dump("[POINTERLOCK] Finishing " + testName+ "\n");
-  opener.nextTest();
-};
+  
+  window.ok = function(a, msg) {
+    opener.ok(a, testName + ": " + msg);
+  };
+
+  window.is = function(a, b, msg) {
+    opener.is(a, b, testName + ": " + msg);
+  };
+
+  window.isnot = function(a, b, msg) {
+    opener.isnot(a, b, testName + ": " + msg);
+  };
+
+  window.todo = function(a, msg) {
+    opener.todo(a, testName + ": " + msg);
+  };
+
+  window.todo_is = function(a, b, msg) {
+    opener.todo_is(a, b, testName + ": " + msg);
+  };
+
+  window.todo_isnot = function(a, b, msg) {
+    opener.todo_isnot(a, b, testName + ": " + msg);
+  };
+
+  window.info = function(msg) {
+    opener.info(testName + ": " + msg);
+  };
+
+  
+  var SimpleTest = SimpleTest || {};
+
+  SimpleTest.waitForExplicitFinish = function() {
+    dump("[POINTERLOCK] Starting " + testName+ "\n");
+  };
+
+  SimpleTest.finish = function () {
+    dump("[POINTERLOCK] Finishing " + testName+ "\n");
+    opener.nextTest();
+  };
+} else {
+  
+  
+
+  
+  SpecialPowers.setBoolPref("full-screen-api.enabled", true);
+
+  
+  SpecialPowers.setBoolPref("full-screen-api.allow-trusted-requests-only", false);
+}
 
 addLoadEvent(function() {
   if (typeof start !== 'undefined') {
@@ -48,73 +64,3 @@ addLoadEvent(function() {
   }
 });
 
-
-
-
-function inFullscreenMode(win) {
-  return win.innerWidth == win.screen.width &&
-         win.innerHeight == win.screen.height;
-}
-
-
-
-
-function inNormalMode(win) {
-  return win.innerWidth == win.normalSize.w &&
-         win.innerHeight == win.normalSize.h;
-}
-
-
-
-
-
-
-
-
-
-
-function addFullscreenChangeContinuation(type, callback, inDoc) {
-  var doc = inDoc || document;
-  var topWin = doc.defaultView.top;
-  
-  if (!topWin.normalSize) {
-    topWin.normalSize = {
-      w: window.innerWidth,
-      h: window.innerHeight
-    };
-  }
-  function checkCondition() {
-    if (type == "enter") {
-      return inFullscreenMode(topWin);
-    } else if (type == "exit") {
-      
-      
-      
-      
-      
-      return topWin.document.fullscreenElement || inNormalMode(topWin);
-    } else {
-      throw "'type' must be either 'enter', or 'exit'.";
-    }
-  }
-  function invokeCallback(event) {
-    
-    
-    requestAnimationFrame(() => setTimeout(() => callback(event), 0), 0);
-  }
-  function onFullscreenChange(event) {
-    doc.removeEventListener("fullscreenchange", onFullscreenChange, false);
-    if (checkCondition()) {
-      invokeCallback(event);
-      return;
-    }
-    function onResize() {
-      if (checkCondition()) {
-        topWin.removeEventListener("resize", onResize, false);
-        invokeCallback(event);
-      }
-    }
-    topWin.addEventListener("resize", onResize, false);
-  }
-  doc.addEventListener("fullscreenchange", onFullscreenChange, false);
-}
