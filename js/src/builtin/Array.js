@@ -8,7 +8,7 @@ function ArrayIndexOf(searchElement) {
     var O = ToObject(this);
 
     
-    var len = TO_UINT32(O.length);
+    var len = ToLength(O.length);
 
     
     if (len === 0)
@@ -64,7 +64,7 @@ function ArrayLastIndexOf(searchElement) {
     var O = ToObject(this);
 
     
-    var len = TO_UINT32(O.length);
+    var len = ToLength(O.length);
 
     
     if (len === 0)
@@ -107,7 +107,7 @@ function ArrayStaticLastIndexOf(list, searchElement) {
         fromIndex = arguments[2];
     } else {
         var O = ToObject(list);
-        var len = TO_UINT32(O.length);
+        var len = ToLength(O.length);
         fromIndex = len - 1;
     }
     return callFunction(ArrayLastIndexOf, list, searchElement, fromIndex);
@@ -119,7 +119,7 @@ function ArrayEvery(callbackfn) {
     var O = ToObject(this);
 
     
-    var len = TO_UINT32(O.length);
+    var len = ToLength(O.length);
 
     
     if (arguments.length === 0)
@@ -160,7 +160,7 @@ function ArraySome(callbackfn) {
     var O = ToObject(this);
 
     
-    var len = TO_UINT32(O.length);
+    var len = ToLength(O.length);
 
     
     if (arguments.length === 0)
@@ -201,7 +201,7 @@ function ArraySort(comparefn) {
     var O = ToObject(this);
 
     
-    var len = TO_UINT32(O.length);
+    var len = ToLength(O.length);
 
     
     var wrappedCompareFn = comparefn;
@@ -231,7 +231,7 @@ function ArrayForEach(callbackfn) {
     var O = ToObject(this);
 
     
-    var len = TO_UINT32(O.length);
+    var len = ToLength(O.length);
 
     
     if (arguments.length === 0)
@@ -271,8 +271,7 @@ function ArrayMap(callbackfn) {
     var O = ToObject(this);
 
     
-    
-    var len = TO_UINT32(O.length);
+    var len = ToLength(O.length);
 
     
     if (arguments.length === 0)
@@ -316,7 +315,7 @@ function ArrayFilter(callbackfn) {
     var O = ToObject(this);
 
     
-    var len = ToInteger(O.length);
+    var len = ToLength(O.length);
 
     
     if (arguments.length === 0)
@@ -364,7 +363,7 @@ function ArrayReduce(callbackfn) {
     var O = ToObject(this);
 
     
-    var len = TO_UINT32(O.length);
+    var len = ToLength(O.length);
 
     
     if (arguments.length === 0)
@@ -431,7 +430,7 @@ function ArrayReduceRight(callbackfn) {
     var O = ToObject(this);
 
     
-    var len = TO_UINT32(O.length);
+    var len = ToLength(O.length);
 
     
     if (arguments.length === 0)
@@ -498,7 +497,7 @@ function ArrayFind(predicate) {
     var O = ToObject(this);
 
     
-    var len = ToInteger(O.length);
+    var len = ToLength(O.length);
 
     
     if (arguments.length === 0)
@@ -511,11 +510,6 @@ function ArrayFind(predicate) {
 
     
     
-    
-
-
-
-
     for (var k = 0; k < len; k++) {
         
         var kValue = O[k];
@@ -534,7 +528,7 @@ function ArrayFindIndex(predicate) {
     var O = ToObject(this);
 
     
-    var len = ToInteger(O.length);
+    var len = ToLength(O.length);
 
     
     if (arguments.length === 0)
@@ -547,11 +541,6 @@ function ArrayFindIndex(predicate) {
 
     
     
-    
-
-
-
-
     for (var k = 0; k < len; k++) {
         
         if (callContentFunction(predicate, T, O[k], k, O))
@@ -568,7 +557,7 @@ function ArrayCopyWithin(target, start, end = undefined) {
     var O = ToObject(this);
 
     
-    var len = ToInteger(O.length);
+    var len = ToLength(O.length);
 
     
     var relativeTarget = ToInteger(target);
@@ -631,8 +620,7 @@ function ArrayFill(value, start = 0, end = undefined) {
     var O = ToObject(this);
 
     
-    
-    var len = ToInteger(O.length);
+    var len = ToLength(O.length);
 
     
     var relativeStart = ToInteger(start);
@@ -745,7 +733,7 @@ function ArrayIteratorNext() {
     
     var len = IsPossiblyWrappedTypedArray(a)
               ? PossiblyWrappedTypedArrayLength(a)
-              : TO_UINT32(a.length);
+              : ToLength(a.length);
 
     
     if (index >= len) {
