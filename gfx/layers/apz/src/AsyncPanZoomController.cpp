@@ -10,6 +10,7 @@
 #include <algorithm>                    
 #include "AsyncPanZoomController.h"     
 #include "Axis.h"                       
+#include "CheckerboardEvent.h"          
 #include "Compositor.h"                 
 #include "FrameMetrics.h"               
 #include "GestureEventListener.h"       
@@ -25,6 +26,7 @@
 #include "base/tracked.h"               
 #include "gfxPrefs.h"                   
 #include "gfxTypes.h"                   
+#include "LayersLogging.h"              
 #include "mozilla/Assertions.h"         
 #include "mozilla/BasicEvents.h"        
 #include "mozilla/ClearOnShutdown.h"    
@@ -67,13 +69,10 @@
 #include "SharedMemoryBasic.h"          
 #include "WheelScrollAnimation.h"
 
-
-
 #define ENABLE_APZC_LOGGING 0
 
 
 #if ENABLE_APZC_LOGGING
-#  include "LayersLogging.h"
 #  define APZC_LOG(...) printf_stderr("APZC: " __VA_ARGS__)
 #  define APZC_LOG_FM(fm, prefix, ...) \
     { std::stringstream ss; \
@@ -94,6 +93,9 @@ typedef GeckoContentController::APZStateChange APZStateChange;
 typedef mozilla::gfx::Point Point;
 typedef mozilla::gfx::Matrix4x4 Matrix4x4;
 using mozilla::gfx::PointTyped;
+
+
+
 
 
 
@@ -386,18 +388,6 @@ static bool IsCloseToHorizontal(float aAngle, float aThreshold)
 static bool IsCloseToVertical(float aAngle, float aThreshold)
 {
   return (fabs(aAngle - (M_PI / 2)) < aThreshold);
-}
-
-static inline void LogRendertraceRect(const ScrollableLayerGuid& aGuid, const char* aDesc, const char* aColor, const CSSRect& aRect)
-{
-#ifdef APZC_ENABLE_RENDERTRACE
-  static const TimeStamp sRenderStart = TimeStamp::Now();
-  TimeDuration delta = TimeStamp::Now() - sRenderStart;
-  printf_stderr("(%llu,%lu,%llu)%s RENDERTRACE %f rect %s %f %f %f %f\n",
-    aGuid.mLayersId, aGuid.mPresShellId, aGuid.mScrollId,
-    aDesc, delta.ToMilliseconds(), aColor,
-    aRect.x, aRect.y, aRect.width, aRect.height);
-#endif
 }
 
 
@@ -2866,7 +2856,10 @@ AsyncPanZoomController::DispatchRepaintRequest(const FrameMetrics& aFrameMetrics
   }
 
   APZC_LOG_FM(aFrameMetrics, "%p requesting content repaint", this);
-  LogRendertraceRect(GetGuid(), "requested displayport", "yellow", GetDisplayPortRect(aFrameMetrics));
+  if (mCheckerboardEvent) {
+    mCheckerboardEvent->UpdateRendertraceProperty(
+        CheckerboardEvent::RequestedDisplayPort, GetDisplayPortRect(aFrameMetrics));
+  }
 
   if (NS_IsMainThread()) {
     controller->RequestContentRepaint(aFrameMetrics);
@@ -2974,9 +2967,12 @@ bool AsyncPanZoomController::AdvanceAnimations(const TimeStamp& aSampleTime)
 
     requestAnimationFrame = UpdateAnimation(aSampleTime, &deferredTasks);
 
-    LogRendertraceRect(GetGuid(), "viewport", "red",
-      CSSRect(mFrameMetrics.GetScrollOffset(),
-              mFrameMetrics.CalculateCompositedSizeInCssPixels()));
+    if (mCheckerboardEvent) {
+      mCheckerboardEvent->UpdateRendertraceProperty(
+          CheckerboardEvent::UserVisible,
+          CSSRect(mFrameMetrics.GetScrollOffset(),
+                  mFrameMetrics.CalculateCompositedSizeInCssPixels()));
+    }
   }
 
   
@@ -3098,6 +3094,19 @@ AsyncPanZoomController::ReportCheckerboard(const TimeStamp& aSampleTime)
   mozilla::Telemetry::Accumulate(
       mozilla::Telemetry::CHECKERBOARDED_CSSPIXELS_MS, magnitude * time);
   mLastCheckerboardReport = aSampleTime;
+
+  if (!mCheckerboardEvent && gfxPrefs::APZRecordCheckerboarding()) {
+    mCheckerboardEvent = MakeUnique<CheckerboardEvent>();
+  }
+  if (mCheckerboardEvent) {
+    if (mCheckerboardEvent->RecordFrameInfo(magnitude)) {
+      
+      
+      std::stringstream log(mCheckerboardEvent->GetLog());
+      print_stderr(log);
+      mCheckerboardEvent = nullptr;
+    }
+  }
 }
 
 bool AsyncPanZoomController::IsCurrentlyCheckerboarding() const {
@@ -3130,12 +3139,17 @@ void AsyncPanZoomController::NotifyLayersUpdated(const FrameMetrics& aLayerMetri
   mFrameMetrics.SetScrollParentId(aLayerMetrics.GetScrollParentId());
   APZC_LOG_FM(aLayerMetrics, "%p got a NotifyLayersUpdated with aIsFirstPaint=%d", this, aIsFirstPaint);
 
-  LogRendertraceRect(GetGuid(), "page", "brown", aLayerMetrics.GetScrollableRect());
-  LogRendertraceRect(GetGuid(), "painted displayport", "lightgreen",
-    aLayerMetrics.GetDisplayPort() + aLayerMetrics.GetScrollOffset());
-  if (!aLayerMetrics.GetCriticalDisplayPort().IsEmpty()) {
-    LogRendertraceRect(GetGuid(), "painted critical displayport", "darkgreen",
-      aLayerMetrics.GetCriticalDisplayPort() + aLayerMetrics.GetScrollOffset());
+  if (mCheckerboardEvent) {
+    mCheckerboardEvent->UpdateRendertraceProperty(
+        CheckerboardEvent::Page, aLayerMetrics.GetScrollableRect());
+    mCheckerboardEvent->UpdateRendertraceProperty(
+        CheckerboardEvent::PaintedDisplayPort,
+        aLayerMetrics.GetDisplayPort() + aLayerMetrics.GetScrollOffset());
+    if (!aLayerMetrics.GetCriticalDisplayPort().IsEmpty()) {
+      mCheckerboardEvent->UpdateRendertraceProperty(
+          CheckerboardEvent::PaintedCriticalDisplayPort,
+          aLayerMetrics.GetCriticalDisplayPort() + aLayerMetrics.GetScrollOffset());
+    }
   }
 
   bool needContentRepaint = false;
