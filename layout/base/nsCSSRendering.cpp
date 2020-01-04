@@ -5522,6 +5522,12 @@ nsImageRenderer::DrawBorderImageComponent(nsPresContext*       aPresContext,
     uint32_t drawFlags = ConvertImageRendererToDrawFlags(mFlags) |
                            imgIContainer::FLAG_FORCE_PRESERVEASPECTRATIO_NONE;
     
+    
+    
+    if (!ComputeIntrinsicSize().HasRatio()) {
+      drawFlags = drawFlags | imgIContainer::FLAG_FORCE_UNIFORM_SCALING;
+    }
+    
     nsIntRect srcRect(aSrc.x, aSrc.y, aSrc.width, aSrc.height);
     if (mType == eStyleImageType_Image) {
       if ((subImage = mImage->GetSubImage(aIndex)) == nullptr) {
