@@ -890,7 +890,7 @@ XULDocument::ExecuteOnBroadcastHandlerFor(Element* aBroadcaster,
 
         
         
-        WidgetEvent event(true, NS_XUL_BROADCAST);
+        WidgetEvent event(true, eXULBroadcast);
 
         nsCOMPtr<nsIPresShell> shell = GetShell();
         if (shell) {
