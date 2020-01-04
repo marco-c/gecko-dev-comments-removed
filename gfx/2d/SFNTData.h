@@ -30,6 +30,15 @@ public:
   static UniquePtr<SFNTData> Create(const uint8_t *aFontData,
                                     uint32_t aDataLength);
 
+  
+
+
+
+
+
+
+  static uint64_t GetUniqueKey(const uint8_t *aFontData, uint32_t aDataLength);
+
   ~SFNTData();
 
   
@@ -44,6 +53,17 @@ public:
 
 
   bool GetU16FullName(uint32_t aIndex, mozilla::u16string& aU16FullName);
+
+  
+
+
+
+
+
+
+
+
+  bool GetU16FullNames(Vector<mozilla::u16string>& aU16FullNames);
 
   
 

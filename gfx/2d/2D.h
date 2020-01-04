@@ -671,6 +671,29 @@ protected:
 
 
 
+class NativeFontResource : public RefCounted<NativeFontResource>
+{
+public:
+  MOZ_DECLARE_REFCOUNTED_VIRTUAL_TYPENAME(NativeFontResource)
+
+  
+
+
+
+
+
+
+
+  virtual already_AddRefed<ScaledFont>
+    CreateScaledFont(uint32_t aIndex, uint32_t aGlyphSize) = 0;
+
+  virtual ~NativeFontResource() {};
+};
+
+
+
+
+
 
 
 class GlyphRenderingOptions : public RefCounted<GlyphRenderingOptions>
@@ -1199,9 +1222,8 @@ public:
 
 
 
-
-  static already_AddRefed<ScaledFont>
-    CreateScaledFontForTrueTypeData(uint8_t *aData, uint32_t aSize, uint32_t aFaceIndex, Float aGlyphSize, FontType aType);
+  static already_AddRefed<NativeFontResource>
+    CreateNativeFontResource(uint8_t *aData, uint32_t aSize, FontType aType);
 
   
 
