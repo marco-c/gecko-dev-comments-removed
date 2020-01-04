@@ -40,6 +40,7 @@ class SharedMemoryBasic;
 
 namespace layers {
 
+class AsyncDragMetrics;
 struct ScrollableLayerGuid;
 class CompositorParent;
 class GestureEventListener;
@@ -265,6 +266,9 @@ public:
 
 
   void SendAsyncScrollEvent();
+
+  nsEventStatus HandleDragEvent(const MouseInput& aEvent,
+                                const AsyncDragMetrics& aDragMetrics);
 
   
 
