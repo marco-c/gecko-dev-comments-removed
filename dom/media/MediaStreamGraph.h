@@ -1240,19 +1240,7 @@ public:
 
 
   ProcessedMediaStream* CreateAudioCaptureStream(DOMMediaStream* aWrapper);
-  
-  
-  
-  enum AudioNodeStreamKind { SOURCE_STREAM, INTERNAL_STREAM, EXTERNAL_STREAM };
-  
 
-
-
-  AudioNodeStream* CreateAudioNodeStream(AudioNodeEngine* aEngine,
-                                         AudioNodeStreamKind aKind);
-
-  AudioNodeExternalInputStream*
-  CreateAudioNodeExternalInputStream(AudioNodeEngine* aEngine);
   
 
 

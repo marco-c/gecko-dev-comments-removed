@@ -100,8 +100,8 @@ AudioParam::Stream()
 
   AudioNodeEngine* engine = new AudioNodeEngine(nullptr);
   nsRefPtr<AudioNodeStream> stream =
-    mNode->Context()->Graph()->CreateAudioNodeStream(engine,
-                                                     MediaStreamGraph::INTERNAL_STREAM);
+    AudioNodeStream::Create(mNode->Context()->Graph(), engine,
+                            AudioNodeStream::INTERNAL_STREAM);
 
   
   
