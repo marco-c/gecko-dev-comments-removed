@@ -22,14 +22,6 @@ public:
   explicit APZCTreeManagerParent(uint64_t aLayersId, RefPtr<APZCTreeManager> aAPZCTreeManager);
   virtual ~APZCTreeManagerParent() { }
 
-  uint64_t LayersId() const { return mLayersId; }
-
-  
-
-
-
-  void ChildAdopted(RefPtr<APZCTreeManager> aAPZCTreeManager);
-
   bool
   RecvReceiveMultiTouchInputEvent(
           const MultiTouchInput& aEvent,
