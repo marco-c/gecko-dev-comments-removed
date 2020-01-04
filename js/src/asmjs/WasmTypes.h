@@ -1262,18 +1262,62 @@ struct ExternalTableElem
 
 
 
+extern bool
+IsValidARMImmediate(uint32_t i);
+
+extern uint32_t
+RoundUpToNextValidARMImmediate(uint32_t i);
+
+
+
 
 static const unsigned PageSize = 64 * 1024;
 
 #ifdef JS_CODEGEN_X64
-#define WASM_HUGE_MEMORY
-static const uint64_t Uint32Range = uint64_t(UINT32_MAX) + 1;
-static const uint64_t MappedSize = 2 * Uint32Range + PageSize;
-#endif
 
-bool IsValidARMLengthImmediate(uint32_t length);
-uint32_t RoundUpToNextValidARMLengthImmediate(uint32_t length);
-size_t LegalizeMapLength(size_t requestedSize);
+
+
+
+# define WASM_HUGE_MEMORY
+
+
+
+
+
+
+
+static const uint64_t Uint32Range = uint64_t(UINT32_MAX) + 1;
+static const uint64_t HugeMappedSize = 2 * Uint32Range + PageSize;
+
+#else 
+
+
+
+
+
+
+
+
+static const size_t GuardSize = PageSize;
+
+
+
+
+extern bool
+IsValidBoundsCheckImmediate(uint32_t i);
+
+
+
+
+
+
+
+extern size_t
+ComputeMappedSize(uint32_t maxSize);
+
+#endif 
+
+
 
 static const unsigned NaN64GlobalDataOffset       = 0;
 static const unsigned NaN32GlobalDataOffset       = NaN64GlobalDataOffset + sizeof(double);

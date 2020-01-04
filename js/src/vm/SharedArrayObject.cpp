@@ -83,7 +83,7 @@ SharedArrayMappedSize()
 {
     MOZ_RELEASE_ASSERT(jit::JitOptions.wasmTestMode);
     MOZ_RELEASE_ASSERT(sizeof(SharedArrayRawBuffer) < gc::SystemPageSize());
-    return wasm::MappedSize + gc::SystemPageSize();
+    return wasm::HugeMappedSize + gc::SystemPageSize();
 }
 
 

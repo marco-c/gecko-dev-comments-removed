@@ -69,6 +69,22 @@ using JS::GenericNaN;
 
 
 
+static const size_t MinHeapLength = PageSize;
+
+static uint32_t
+RoundUpToNextValidAsmJSHeapLength(uint32_t length)
+{
+    if (length <= MinHeapLength)
+        return MinHeapLength;
+
+    return wasm::RoundUpToNextValidARMImmediate(length);
+}
+
+
+
+
+
+
 enum AsmJSMathBuiltinFunction
 {
     AsmJSMathBuiltin_sin, AsmJSMathBuiltin_cos, AsmJSMathBuiltin_tan,
@@ -8827,24 +8843,11 @@ js::AsmJSFunctionToString(JSContext* cx, HandleFunction fun)
     return out.finishString();
 }
 
-
-
-static const size_t MinHeapLength = PageSize;
-
 bool
 js::IsValidAsmJSHeapLength(uint32_t length)
 {
     if (length < MinHeapLength)
         return false;
 
-    return wasm::IsValidARMLengthImmediate(length);
-}
-
-uint32_t
-js::RoundUpToNextValidAsmJSHeapLength(uint32_t length)
-{
-    if (length <= MinHeapLength)
-        return MinHeapLength;
-
-    return wasm::RoundUpToNextValidARMLengthImmediate(length);
+    return wasm::IsValidARMImmediate(length);
 }

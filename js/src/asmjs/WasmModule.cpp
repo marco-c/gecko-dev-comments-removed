@@ -576,10 +576,10 @@ Module::instantiateMemory(JSContext* cx, MutableHandleWasmMemoryObject memory) c
             return false;
         }
 
-        
-        
-        
-        if (!metadata_->isAsmJS()) {
+        if (metadata_->isAsmJS()) {
+            MOZ_ASSERT(IsValidAsmJSHeapLength(actualLength));
+            MOZ_ASSERT(actualLength == buffer->wasmMaxSize().value());
+        } else {
             Maybe<uint32_t> actualMax = buffer->as<ArrayBufferObject>().wasmMaxSize();
             if (declaredMax.isSome() != actualMax.isSome() || declaredMax < actualMax) {
                 JS_ReportErrorNumber(cx, GetErrorMessage, nullptr, JSMSG_WASM_BAD_IMP_SIZE, "Memory");
