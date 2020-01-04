@@ -744,7 +744,7 @@ WebrtcVideoConduit::ConfigureSendMediaCodec(const VideoCodecConfig* codecConfig)
 
   
   bool use_fec = codecConfig->RtcpFbFECIsSet();
-  if (mExternalSendCodec && codecConfig->mType == mExternalSendCodec->mType
+  if ((mExternalSendCodec && codecConfig->mType == mExternalSendCodec->mType)
       || codecConfig->mType == webrtc::kVideoCodecH264) {
     if(codecConfig->RtcpFbNackIsSet("")) {
       use_fec = false;
