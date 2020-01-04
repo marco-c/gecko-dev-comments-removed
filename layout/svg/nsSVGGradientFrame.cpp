@@ -68,7 +68,8 @@ nsSVGGradientFrame::AttributeChanged(int32_t         aNameSpaceID,
        aAttribute == nsGkAtoms::gradientTransform ||
        aAttribute == nsGkAtoms::spreadMethod)) {
     nsSVGEffects::InvalidateDirectRenderingObservers(this);
-  } else if (aNameSpaceID == kNameSpaceID_XLink &&
+  } else if ((aNameSpaceID == kNameSpaceID_XLink ||
+              aNameSpaceID == kNameSpaceID_None) &&
              aAttribute == nsGkAtoms::href) {
     
     Properties().Delete(nsSVGEffects::HrefAsPaintingProperty());
@@ -319,9 +320,18 @@ nsSVGGradientFrame::GetReferencedGradient()
 
   if (!property) {
     
-    dom::SVGGradientElement*grad = static_cast<dom::SVGGradientElement*>(mContent);
+    dom::SVGGradientElement* grad =
+      static_cast<dom::SVGGradientElement*>(mContent);
     nsAutoString href;
-    grad->mStringAttributes[dom::SVGGradientElement::HREF].GetAnimValue(href, grad);
+    if (grad->mStringAttributes[dom::SVGGradientElement::HREF]
+          .IsExplicitlySet()) {
+      grad->mStringAttributes[dom::SVGGradientElement::HREF]
+        .GetAnimValue(href, grad);
+    } else {
+      grad->mStringAttributes[dom::SVGGradientElement::XLINK_HREF]
+        .GetAnimValue(href, grad);
+    }
+
     if (href.IsEmpty()) {
       mNoHRefURI = true;
       return nullptr; 
