@@ -429,8 +429,8 @@ NSSCertDBTrustDomain::CheckRevocation(EndEntityOrCA endEntityOrCA,
     
     
     MOZ_LOG(gCertVerifierLog, LogLevel::Debug,
-           ("NSSCertDBTrustDomain: cached OCSP response: error %ld valid "
-           "until %lld", cachedResponseResult, cachedResponseValidThrough));
+           ("NSSCertDBTrustDomain: cached OCSP response: error %d",
+           cachedResponseResult));
     
     
     
