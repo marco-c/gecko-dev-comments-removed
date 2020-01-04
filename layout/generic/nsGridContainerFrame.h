@@ -231,15 +231,15 @@ private:
                                     nscoord              aAvailableSize);
 
   
-  void ReflowInFlowChild(nsIFrame*              aChild,
-                         const GridItemInfo*    aGridItemInfo,
-                         nsSize                 aContainerSize,
-                         mozilla::Maybe<nscoord>aStretchBSize,
-                         const Fragmentainer*   aFragmentainer,
-                         const GridReflowState& aState,
-                         const LogicalRect&     aContentArea,
-                         nsHTMLReflowMetrics&   aDesiredSize,
-                         nsReflowStatus&        aStatus);
+  void ReflowInFlowChild(nsIFrame*               aChild,
+                         const GridItemInfo*     aGridItemInfo,
+                         nsSize                  aContainerSize,
+                         mozilla::Maybe<nscoord> aStretchBSize,
+                         const Fragmentainer*    aFragmentainer,
+                         const GridReflowState&  aState,
+                         const LogicalRect&      aContentArea,
+                         nsHTMLReflowMetrics&    aDesiredSize,
+                         nsReflowStatus&         aStatus);
 
   
 
