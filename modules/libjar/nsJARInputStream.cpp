@@ -58,8 +58,10 @@ nsJARInputStream::InitFile(nsJAR *aJar, nsZipItem *item)
     
     mFd = aJar->mZip->GetFD();
     mZs.next_in = (Bytef *)aJar->mZip->GetData(item);
-    if (!mZs.next_in)
+    if (!mZs.next_in) {
+        nsZipArchive::sFileCorruptedReason = "nsJARInputStream: !mZs.next_in";
         return NS_ERROR_FILE_CORRUPTED;
+    }
     mZs.avail_in = item->Size();
     mOutSize = item->RealSize();
     mZs.total_out = 0;
@@ -266,8 +268,10 @@ nsJARInputStream::ContinueInflate(char* aBuffer, uint32_t aCount,
 
     
     int zerr = inflate(&mZs, Z_SYNC_FLUSH);
-    if ((zerr != Z_OK) && (zerr != Z_STREAM_END))
+    if ((zerr != Z_OK) && (zerr != Z_STREAM_END)) {
+        nsZipArchive::sFileCorruptedReason = "nsJARInputStream: error while inflating";
         return NS_ERROR_FILE_CORRUPTED;
+    }
 
     *aBytesRead = (mZs.total_out - oldTotalOut);
 
@@ -280,8 +284,10 @@ nsJARInputStream::ContinueInflate(char* aBuffer, uint32_t aCount,
         inflateEnd(&mZs);
 
         
-        if (mOutCrc != mInCrc)
+        if (mOutCrc != mInCrc) {
+            nsZipArchive::sFileCorruptedReason = "nsJARInputStream: crc mismatch";
             return NS_ERROR_FILE_CORRUPTED;
+        }
     }
 
     return NS_OK;
