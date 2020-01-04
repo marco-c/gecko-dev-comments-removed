@@ -22,7 +22,7 @@ using media::TimeIntervals;
 
 MediaSourceDemuxer::MediaSourceDemuxer()
   : mTaskQueue(new TaskQueue(GetMediaThreadPool(MediaThreadType::PLAYBACK),
-                              false))
+                              true))
   , mMonitor("MediaSourceDemuxer")
 {
   MOZ_ASSERT(NS_IsMainThread());

@@ -213,6 +213,10 @@ public:
     return mActive;
   }
 
+#if defined(DEBUG)
+  void Dump(const char* aPath);
+#endif
+
 private:
   ~SourceBuffer();
 
@@ -234,7 +238,7 @@ private:
 
   
   void AppendData(const uint8_t* aData, uint32_t aLength, ErrorResult& aRv);
-  void BufferAppend();
+  void BufferAppend(uint32_t aAppendID);
 
   
   
@@ -261,6 +265,11 @@ private:
   bool mUpdating;
 
   mozilla::Atomic<bool> mActive;
+
+  
+  
+  
+  uint32_t mUpdateID;
 
   MozPromiseRequestHolder<SourceBufferContentManager::AppendPromise> mPendingAppend;
   const nsCString mType;

@@ -98,6 +98,10 @@ public:
                                            bool& aError);
   media::TimeUnit GetNextRandomAccessPoint(TrackInfo::TrackType aTrack);
 
+#if defined(DEBUG)
+  void Dump(const char* aPath) override;
+#endif
+
   void AddSizeOfResources(MediaSourceDecoder::ResourceSizes* aSizes);
 
 private:
@@ -120,6 +124,8 @@ private:
   RefPtr<CodedFrameProcessingPromise> CodedFrameProcessing();
   void CompleteCodedFrameProcessing();
   
+  
+  void FinishCodedFrameProcessing();
   void CompleteResetParserState();
   RefPtr<RangeRemovalPromise>
     CodedFrameRemovalWithPromise(media::TimeInterval aInterval);
@@ -304,6 +310,10 @@ private:
   MozPromiseHolder<CodedFrameProcessingPromise> mProcessingPromise;
 
   MozPromiseHolder<AppendPromise> mAppendPromise;
+  
+  
+  
+  bool mAppendRunning;
 
   
   nsTArray<TrackData*> GetTracksList();
@@ -340,6 +350,11 @@ private:
   nsMainThreadPtrHandle<MediaSourceDecoder> mParentDecoder;
 
   
+  Mirror<Maybe<double>> mMediaSourceDuration;
+
+  
+  Atomic<bool> mAbort;
+  
   Atomic<bool> mEnded;
 
   
@@ -348,13 +363,7 @@ private:
   Atomic<bool> mEvictionOccurred;
 
   
-  
   mutable Monitor mMonitor;
-  
-  Atomic<bool> mAppendRunning;
-  
-  
-  bool mSegmentParserLoopRunning;
   
   media::TimeIntervals mVideoBufferedRanges;
   media::TimeIntervals mAudioBufferedRanges;
