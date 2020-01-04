@@ -132,27 +132,7 @@ private:
 
 
 
-class MediaByteRange : public media::Interval<int64_t> {
-public:
-  typedef Interval<int64_t> BaseType;
-
-  
-  
-  
-  
-
-  MOZ_IMPLICIT MediaByteRange(const BaseType& aOther)
-    : BaseType(aOther)
-  {}
-  MOZ_IMPLICIT MediaByteRange(BaseType&& aOther)
-    : BaseType(Move(aOther))
-  {}
-  MediaByteRange(int64_t aStart, int64_t aEnd)
-    : media::Interval<int64_t>(aStart, aEnd)
-  {}
-  MediaByteRange() = default;
-};
-
+typedef media::Interval<int64_t> MediaByteRange;
 typedef media::IntervalSet<int64_t> MediaByteRangeSet;
 
 class RtspMediaResource;
