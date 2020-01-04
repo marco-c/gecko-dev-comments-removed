@@ -5698,20 +5698,45 @@ DebuggerScript_getOffsetLocation(JSContext* cx, unsigned argc, Value* vp)
     while (!r.empty() && r.frontOffset() < offset)
         r.popFront();
 
+    offset = r.frontOffset();
+    bool isEntryPoint = r.frontIsEntryPoint();
+
+    
+    
+    
+    while (!r.frontIsEntryPoint() && !flowData[r.frontOffset()].hasSingleEdge()) {
+        r.popFront();
+        MOZ_ASSERT(!r.empty());
+    }
+
+    
+    
+    
+    size_t lineno;
+    size_t column;
+    if (r.frontIsEntryPoint()) {
+        lineno = r.frontLineNumber();
+        column = r.frontColumnNumber();
+    } else {
+        MOZ_ASSERT(flowData[r.frontOffset()].hasSingleEdge());
+        lineno = flowData[r.frontOffset()].lineno();
+        column = flowData[r.frontOffset()].column();
+    }
+
     RootedId id(cx, NameToId(cx->names().lineNumber));
-    RootedValue value(cx, NumberValue(r.frontLineNumber()));
+    RootedValue value(cx, NumberValue(lineno));
     if (!DefineProperty(cx, result, id, value))
         return false;
 
-    value = NumberValue(r.frontColumnNumber());
+    value = NumberValue(column);
     if (!DefineProperty(cx, result, cx->names().columnNumber, value))
         return false;
 
     
-    bool isEntryPoint = (r.frontIsEntryPoint() &&
-                         !flowData[offset].hasNoEdges() &&
-                         (flowData[offset].lineno() != r.frontLineNumber() ||
-                          flowData[offset].column() != r.frontColumnNumber()));
+    isEntryPoint = (isEntryPoint &&
+                    !flowData[offset].hasNoEdges() &&
+                    (flowData[offset].lineno() != r.frontLineNumber() ||
+                     flowData[offset].column() != r.frontColumnNumber()));
     value.setBoolean(isEntryPoint);
     if (!DefineProperty(cx, result, cx->names().isEntryPoint, value))
         return false;
