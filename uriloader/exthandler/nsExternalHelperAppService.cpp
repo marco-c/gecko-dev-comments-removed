@@ -2733,6 +2733,7 @@ nsExternalHelperAppService::GetTypeFromExtension(const nsACString& aFileExt,
   
   
   
+  
 
   
   if (aFileExt.IsEmpty()) {
@@ -2743,15 +2744,6 @@ nsExternalHelperAppService::GetTypeFromExtension(const nsACString& aFileExt,
   for (auto& entry : defaultMimeEntries) {
     if (aFileExt.LowerCaseEqualsASCII(entry.mFileExtension)) {
       aContentType = entry.mMimeType;
-      return NS_OK;
-    }
-  }
-
-  
-  nsCOMPtr<nsIHandlerService> handlerSvc = do_GetService(NS_HANDLERSERVICE_CONTRACTID);
-  if (handlerSvc) {
-    nsresult rv = handlerSvc->GetTypeFromExtension(aFileExt, aContentType);
-    if (NS_SUCCEEDED(rv) && !aContentType.IsEmpty()) {
       return NS_OK;
     }
   }
