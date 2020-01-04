@@ -1353,6 +1353,8 @@ BuildSegmentsFromValueEntries(nsTArray<KeyframeValueEntry>& aEntries,
       lastProperty = aEntries[i].mProperty;
     }
 
+    MOZ_ASSERT(animationProperty, "animationProperty should be valid pointer.");
+
     
     AnimationPropertySegment* segment =
       animationProperty->mSegments.AppendElement();
