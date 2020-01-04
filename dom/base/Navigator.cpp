@@ -774,13 +774,25 @@ NS_IMPL_ISUPPORTS(VibrateWindowListener, nsIDOMEventListener)
 
 StaticRefPtr<VibrateWindowListener> gVibrateWindowListener;
 
+static bool
+MayVibrate(nsIDocument* doc) {
+#if MOZ_WIDGET_GONK
+  if (XRE_IsParentProcess()) {
+    return true; 
+  }
+#endif 
+
+  
+  return (doc && !doc->Hidden());
+}
+
 NS_IMETHODIMP
 VibrateWindowListener::HandleEvent(nsIDOMEvent* aEvent)
 {
   nsCOMPtr<nsIDocument> doc =
     do_QueryInterface(aEvent->InternalDOMEvent()->GetTarget());
 
-  if (!doc || doc->Hidden()) {
+  if (!MayVibrate(doc)) {
     
     
     
@@ -853,12 +865,8 @@ Navigator::Vibrate(const nsTArray<uint32_t>& aPattern)
   }
 
   nsCOMPtr<nsIDocument> doc = mWindow->GetExtantDoc();
-  if (!doc) {
-    return false;
-  }
 
-  if (doc->Hidden()) {
-    
+  if (!MayVibrate(doc)) {
     return false;
   }
 

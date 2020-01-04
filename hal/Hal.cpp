@@ -124,6 +124,7 @@ Vibrate(const nsTArray<uint32_t>& pattern, const WindowIdentifier &id)
 {
   AssertMainThread();
 
+#if !defined(MOZ_WIDGET_GONK)
   
   
   
@@ -134,6 +135,7 @@ Vibrate(const nsTArray<uint32_t>& pattern, const WindowIdentifier &id)
     HAL_LOG("Vibrate: Window is inactive, dropping vibrate.");
     return;
   }
+#endif 
 
   if (!InSandbox()) {
     if (!gLastIDToVibrate) {
