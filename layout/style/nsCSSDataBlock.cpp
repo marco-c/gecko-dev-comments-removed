@@ -295,18 +295,43 @@ EnsurePhysicalProperty(nsCSSProperty aProperty, nsRuleData* aRuleData)
   }
 
   const nsCSSProperty* props = nsCSSProps::LogicalGroup(aProperty);
+  
+  size_t len = isSingleProperty ? 1 : (isAxisProperty ? 2 : 4);
 #ifdef DEBUG
-  {
-    
-    size_t len = isSingleProperty ? 1 : (isAxisProperty ? 2 : 4);
-    for (size_t i = 0; i < len; i++) {
-      MOZ_ASSERT(props[i] != eCSSProperty_UNKNOWN,
-                 "unexpected logical group length");
-    }
-    MOZ_ASSERT(props[len] == eCSSProperty_UNKNOWN,
+  for (size_t i = 0; i < len; i++) {
+    MOZ_ASSERT(props[i] != eCSSProperty_UNKNOWN,
                "unexpected logical group length");
   }
+  MOZ_ASSERT(props[len] == eCSSProperty_UNKNOWN,
+             "unexpected logical group length");
 #endif
+
+  for (size_t i = 0; i < len; i++) {
+    if (aRuleData->ValueFor(props[i])->GetUnit() == eCSSUnit_Null) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      uint8_t wm = WritingMode(aRuleData->mStyleContext).GetBits();
+      aRuleData->mConditions.SetWritingModeDependency(wm);
+      break;
+    }
+  }
+
   return props[index];
 }
 
@@ -329,13 +354,6 @@ nsCSSCompressedDataBlock::MapRuleInfoInto(nsRuleData *aRuleData) const
         aRuleData->mSIDs) {
       nsCSSProperty physicalProp = EnsurePhysicalProperty(iProp,
                                                           aRuleData);
-      if (physicalProp != iProp) {
-        
-        
-        
-        uint8_t wm = WritingMode(aRuleData->mStyleContext).GetBits();
-        aRuleData->mConditions.SetWritingModeDependency(wm);
-      }
       nsCSSValue* target = aRuleData->ValueFor(physicalProp);
       if (target->GetUnit() == eCSSUnit_Null) {
         const nsCSSValue *val = ValueAtIndex(i);
@@ -792,10 +810,6 @@ nsCSSExpandedDataBlock::MapRuleInfoInto(nsCSSProperty aPropID,
   MOZ_ASSERT(src->GetUnit() != eCSSUnit_Null);
 
   nsCSSProperty physicalProp = EnsurePhysicalProperty(aPropID, aRuleData);
-  if (physicalProp != aPropID) {
-    uint8_t wm = WritingMode(aRuleData->mStyleContext).GetBits();
-    aRuleData->mConditions.SetWritingModeDependency(wm);
-  }
 
   nsCSSValue* dest = aRuleData->ValueFor(physicalProp);
   MOZ_ASSERT(dest->GetUnit() == eCSSUnit_TokenStream &&
