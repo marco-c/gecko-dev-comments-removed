@@ -26,6 +26,7 @@
 #include "GeckoProfiler.h"
 #include "jsfriendapi.h"
 #include "mozilla/ArrayUtils.h"
+#include "mozilla/Atomics.h"
 #include "mozilla/CycleCollectedJSRuntime.h"
 #include "mozilla/Telemetry.h"
 #include "mozilla/TimeStamp.h"
@@ -68,6 +69,7 @@
 #include "WorkerRunnable.h"
 #include "WorkerScope.h"
 #include "WorkerThread.h"
+#include "prsystem.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;
@@ -2450,6 +2452,28 @@ void
 RuntimeService::SendOfflineStatusChangeEventToAllWorkers(bool aIsOffline)
 {
   BROADCAST_ALL_WORKERS(OfflineStatusChangeEvent, aIsOffline);
+}
+
+uint32_t
+RuntimeService::ClampedHardwareConcurrency() const
+{
+  
+  
+  static Atomic<uint32_t> clampedHardwareConcurrency;
+
+  
+  
+  if (!clampedHardwareConcurrency) {
+    int32_t numberOfProcessors = PR_GetNumberOfProcessors();
+    if (numberOfProcessors <= 0) {
+      numberOfProcessors = 1; 
+    }
+    uint32_t clampedValue = std::min(uint32_t(numberOfProcessors),
+                                     gMaxWorkersPerDomain);
+    clampedHardwareConcurrency.compareExchange(0, clampedValue);
+  }
+
+  return clampedHardwareConcurrency;
 }
 
 
