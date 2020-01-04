@@ -2382,67 +2382,42 @@ nsWebBrowserPersist::EndDownload(nsresult aResult)
     mEventSink = nullptr;
 }
 
-struct MOZ_STACK_CLASS FixRedirectData
-{
-    nsCOMPtr<nsIChannel> mNewChannel;
-    nsCOMPtr<nsIURI> mOriginalURI;
-    nsCOMPtr<nsISupports> mMatchingKey;
-};
-
 nsresult
 nsWebBrowserPersist::FixRedirectedChannelEntry(nsIChannel *aNewChannel)
 {
     NS_ENSURE_ARG_POINTER(aNewChannel);
+
+    
+    
     nsCOMPtr<nsIURI> originalURI;
+    aNewChannel->GetOriginalURI(getter_AddRefs(originalURI));
+    for (auto iter = mOutputMap.Iter(); !iter.Done(); iter.Next()) {
+        nsISupports* key = iter.Key();
+        nsCOMPtr<nsIChannel> thisChannel = do_QueryInterface(key);
+        nsCOMPtr<nsIURI> thisURI;
 
-    
-    
-
-    FixRedirectData data;
-    data.mNewChannel = aNewChannel;
-    data.mNewChannel->GetOriginalURI(getter_AddRefs(data.mOriginalURI));
-    mOutputMap.EnumerateRead(EnumFixRedirect, &data);
-
-    
-    
-
-    if (data.mMatchingKey)
-    {
-        nsAutoPtr<OutputData> outputData;
-        mOutputMap.RemoveAndForget(data.mMatchingKey, outputData);
-        NS_ENSURE_TRUE(outputData, NS_ERROR_FAILURE);
+        thisChannel->GetOriginalURI(getter_AddRefs(thisURI));
 
         
-        if (!(mPersistFlags & PERSIST_FLAGS_IGNORE_REDIRECTED_DATA))
-        {
-            nsCOMPtr<nsISupports> keyPtr = do_QueryInterface(aNewChannel);
-            mOutputMap.Put(keyPtr, outputData.forget());
+        bool matchingURI = false;
+        thisURI->Equals(originalURI, &matchingURI);
+        if (matchingURI) {
+            
+            
+            nsAutoPtr<OutputData> outputData;
+            mOutputMap.RemoveAndForget(key, outputData);
+            NS_ENSURE_TRUE(outputData, NS_ERROR_FAILURE);
+
+            
+            if (!(mPersistFlags & PERSIST_FLAGS_IGNORE_REDIRECTED_DATA)) {
+                nsCOMPtr<nsISupports> keyPtr = do_QueryInterface(aNewChannel);
+                mOutputMap.Put(keyPtr, outputData.forget());
+            }
+
+            break;
         }
     }
-
     return NS_OK;
-}
-
-PLDHashOperator
-nsWebBrowserPersist::EnumFixRedirect(nsISupports *aKey, OutputData *aData, void* aClosure)
-{
-    FixRedirectData *data = static_cast<FixRedirectData*>(aClosure);
-
-    nsCOMPtr<nsIChannel> thisChannel = do_QueryInterface(aKey);
-    nsCOMPtr<nsIURI> thisURI;
-
-    thisChannel->GetOriginalURI(getter_AddRefs(thisURI));
-
-    
-    bool matchingURI = false;
-    thisURI->Equals(data->mOriginalURI, &matchingURI);
-    if (matchingURI)
-    {
-        data->mMatchingKey = aKey;
-        return PL_DHASH_STOP;
-    }
-
-    return PL_DHASH_NEXT;
 }
 
 void
