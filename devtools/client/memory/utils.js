@@ -18,6 +18,27 @@ const { snapshotState: states, breakdowns } = require("./constants");
 
 
 
+
+exports.getSnapshotTitle = function (snapshot) {
+  if (!snapshot.creationTime) {
+    return L10N.getStr("snapshot-title.loading");
+  }
+
+  let date = new Date(snapshot.creationTime / 1000);
+  return date.toLocaleTimeString(void 0, {
+    year: "2-digit",
+    month: "2-digit",
+    day: "2-digit",
+    hour12: false
+  });
+};
+
+
+
+
+
+
+
 exports.getBreakdownDisplayData = function () {
   return exports.getBreakdownNames().map(name => {
     
@@ -216,3 +237,33 @@ exports.breakdownEquals = function (obj1, obj2) {
 
   return false;
 };
+
+
+
+
+
+
+
+
+exports.getSnapshotTotals = function (snapshot) {
+  let bytes, count;
+
+  let census = snapshot.census;
+
+  if (snapshot.inverted) {
+    while (census) {
+      bytes = census.totalBytes;
+      count = census.totalCount;
+      census = census.children && census.children[0];
+    }
+  } else {
+    bytes = census.totalBytes;
+    count = census.totalCount;
+  }
+
+  return {
+    bytes: bytes || 0,
+    count: count || 0,
+  };
+};
+

@@ -78,3 +78,11 @@ workerHelper.createTask(self, "takeCensusDiff", request => {
     return delta;
   }
 });
+
+
+
+
+workerHelper.createTask(self, "getCreationTime", (snapshotFilePath) => {
+  let snapshot = snapshots[snapshotFilePath];
+  return snapshot ? snapshot.creationTime : null;
+});

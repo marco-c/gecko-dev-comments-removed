@@ -37,10 +37,13 @@ let snapshotModel = exports.snapshot = PropTypes.shape({
   
   error: PropTypes.object,
   
+  creationTime: PropTypes.number,
+  
   
   state: function (snapshot, propName) {
     let current = snapshot.state;
     let shouldHavePath = [states.SAVED, states.READ, states.SAVING_CENSUS, states.SAVED_CENSUS];
+    let shouldHaveCreationTime = [states.READ, states.SAVING_CENSUS, states.SAVED_CENSUS];
     let shouldHaveCensus = [states.SAVED_CENSUS];
 
     if (!stateKeys.includes(current)) {
@@ -51,6 +54,9 @@ let snapshotModel = exports.snapshot = PropTypes.shape({
     }
     if (shouldHaveCensus.includes(current) && (!snapshot.census || !snapshot.breakdown)) {
       throw new Error(`Snapshots in state ${current} must have a census and breakdown.`);
+    }
+    if (shouldHaveCreationTime.includes(current) && !snapshot.creationTime) {
+      throw new Error(`Snapshots in state ${current} must have a creation time.`);
     }
   },
 });

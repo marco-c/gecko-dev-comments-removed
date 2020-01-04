@@ -128,4 +128,18 @@ HeapAnalysesClient.prototype.takeCensusDiff = function (firstSnapshotFilePath,
     censusOptions,
     requestOptions
   });
-}
+};
+
+
+
+
+
+
+
+
+
+
+
+HeapAnalysesClient.prototype.getCreationTime = function (snapshotFilePath) {
+  return this._worker.performTask("getCreationTime", snapshotFilePath);
+};
