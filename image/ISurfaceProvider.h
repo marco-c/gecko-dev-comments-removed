@@ -23,6 +23,8 @@
 namespace mozilla {
 namespace image {
 
+class CachedSurface;
+
 
 
 
@@ -40,13 +42,6 @@ public:
 
   
   virtual bool IsFinished() const = 0;
-
-  
-  virtual bool IsLocked() const = 0;
-
-  
-  
-  virtual void SetLocked(bool aLocked) = 0;
 
   
   
@@ -67,7 +62,19 @@ protected:
 
   virtual ~ISurfaceProvider() { }
 
+  
+  
+  
+  virtual bool IsLocked() const = 0;
+
+  
+  
+  
+  virtual void SetLocked(bool aLocked) = 0;
+
 private:
+  friend class CachedSurface;
+
   AvailabilityState mAvailability;
 };
 
@@ -86,6 +93,14 @@ public:
 
   DrawableFrameRef DrawableRef() override { return mSurface->DrawableRef(); }
   bool IsFinished() const override { return mSurface->IsFinished(); }
+
+  size_t LogicalSizeInBytes() const override
+  {
+    gfx::IntSize size = mSurface->GetSize();
+    return size.width * size.height * mSurface->GetBytesPerPixel();
+  }
+
+protected:
   bool IsLocked() const override { return bool(mLockRef); }
 
   void SetLocked(bool aLocked) override
@@ -98,12 +113,6 @@ public:
     
     mLockRef = aLocked ? mSurface->DrawableRef()
                        : DrawableFrameRef();
-  }
-
-  size_t LogicalSizeInBytes() const override
-  {
-    gfx::IntSize size = mSurface->GetSize();
-    return size.width * size.height * mSurface->GetBytesPerPixel();
   }
 
 private:
