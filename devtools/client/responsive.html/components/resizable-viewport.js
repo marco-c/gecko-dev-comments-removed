@@ -107,7 +107,7 @@ module.exports = createClass({
     
     this.props.onResizeViewport(width, height);
     
-    this.props.onChangeViewportDevice("");
+    this.props.onChangeViewportDevice({ name: "" });
 
     this.setState({
       lastClientX,

@@ -114,7 +114,7 @@ module.exports = createClass({
     }
 
     
-    this.props.onChangeViewportDevice("");
+    this.props.onChangeViewportDevice({ name: "" });
     this.props.onResizeViewport(parseInt(this.state.width, 10),
                                 parseInt(this.state.height, 10));
   },
