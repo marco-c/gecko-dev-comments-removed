@@ -6049,10 +6049,18 @@ HTMLMediaElement::OnVisibilityChange(Visibility aNewVisibility)
         break;
     }
     case Visibility::APPROXIMATELY_NONVISIBLE: {
+      if (mPlayTime.IsStarted()) {
+        
+        HiddenVideoStart();
+      }
+
       mDecoder->NotifyOwnerActivityChanged(false);
       break;
     }
     case Visibility::APPROXIMATELY_VISIBLE: {
+      
+      HiddenVideoStop();
+
       mDecoder->NotifyOwnerActivityChanged(true);
       break;
     }
