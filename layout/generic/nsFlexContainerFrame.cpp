@@ -374,6 +374,8 @@ private:
   
   
   
+  void InitAxesFromLegacyProps(const nsFlexContainerFrame* aFlexContainer,
+                               const WritingMode& aWM);
   void InitAxesFromModernProps(const nsFlexContainerFrame* aFlexContainer,
                                const WritingMode& aWM);
 
@@ -3161,7 +3163,12 @@ FlexboxAxisTracker::FlexboxAxisTracker(
   : mWM(aWM),
     mAreAxesInternallyReversed(false)
 {
-  InitAxesFromModernProps(aFlexContainer, aWM);
+  if (IsLegacyBox(aFlexContainer->StyleDisplay(),
+                  aFlexContainer->StyleContext())) {
+    InitAxesFromLegacyProps(aFlexContainer, aWM);
+  } else {
+    InitAxesFromModernProps(aFlexContainer, aWM);
+  }
 
   
   
@@ -3180,6 +3187,53 @@ FlexboxAxisTracker::FlexboxAxisTracker(
       mIsCrossAxisReversed = !mIsCrossAxisReversed;
     }
   }
+}
+
+void
+FlexboxAxisTracker::InitAxesFromLegacyProps(
+  const nsFlexContainerFrame* aFlexContainer,
+  const WritingMode& aWM)
+{
+  const nsStyleXUL* styleXUL = aFlexContainer->StyleXUL();
+
+  const bool boxOrientIsVertical = (styleXUL->mBoxOrient ==
+                                    NS_STYLE_BOX_ORIENT_VERTICAL);
+  const bool wmIsVertical = aWM.IsVertical();
+
+  
+  
+  
+  
+  mIsRowOriented = (boxOrientIsVertical == wmIsVertical);
+
+  
+  if (boxOrientIsVertical) {
+    mMainAxis = eAxis_TB;
+    mCrossAxis = eAxis_LR;
+  } else {
+    mMainAxis = eAxis_LR;
+    mCrossAxis = eAxis_TB;
+  }
+  
+  
+  
+  if (aWM.IsBidiLTR()) {
+    mMainAxis = GetReverseAxis(mMainAxis);
+  }
+  
+
+  
+  
+  if (styleXUL->mBoxDirection == NS_STYLE_BOX_DIRECTION_REVERSE) {
+    mMainAxis = GetReverseAxis(mMainAxis);
+    mIsMainAxisReversed = true;
+  } else {
+    mIsMainAxisReversed = false;
+  }
+
+  
+  
+  mIsCrossAxisReversed = false;
 }
 
 void
