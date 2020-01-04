@@ -22,8 +22,6 @@ class MOZ_STACK_CLASS nsRenderingContext final
     typedef mozilla::gfx::DrawTarget DrawTarget;
 
 public:
-    nsRenderingContext() {}
-
     explicit nsRenderingContext(gfxContext* aThebesContext)
       : mThebes(aThebesContext)
     {}
@@ -31,13 +29,6 @@ public:
     explicit nsRenderingContext(already_AddRefed<gfxContext>&& aThebesContext)
       : mThebes(aThebesContext)
     {}
-
-    explicit nsRenderingContext(DrawTarget* aDrawTarget) {
-      Init(aDrawTarget);
-    }
-
-    void Init(gfxContext* aThebesContext);
-    void Init(DrawTarget* aDrawTarget);
 
     
     gfxContext *ThebesContext() { return mThebes; }
