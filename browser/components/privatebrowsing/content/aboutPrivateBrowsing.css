@@ -1,6 +1,8 @@
+%if 0
 
 
 
+%endif
 
 @import url("chrome://global/skin/in-content/common.css");
 
@@ -17,6 +19,9 @@ body.private .showNormal,
 body.normal .showPrivate,
 body[tpEnabled] .showTpDisabled,
 body:not([tpEnabled]) .showTpEnabled {
+  display: none !important;
+}
+body[globalTpEnabled] .showGlobalTpDisabled {
   display: none !important;
 }
 
