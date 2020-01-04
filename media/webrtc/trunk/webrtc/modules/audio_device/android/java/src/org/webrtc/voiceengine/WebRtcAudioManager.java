@@ -26,6 +26,10 @@ import android.util.Log;
 
 
 
+
+import org.mozilla.gecko.annotation.WebRTCJNITarget;
+
+@WebRTCJNITarget
 class WebRtcAudioManager {
   private static final boolean DEBUG = false;
 

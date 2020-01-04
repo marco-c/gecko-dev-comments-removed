@@ -49,7 +49,7 @@ class ExternalRenderer {
                            void* handle) = 0;
 
   
-  virtual int DeliverI420Frame(const I420VideoFrame& webrtc_frame) = 0;
+  virtual int DeliverI420Frame(const webrtc::I420VideoFrame& webrtc_frame) = 0;
 
   
   

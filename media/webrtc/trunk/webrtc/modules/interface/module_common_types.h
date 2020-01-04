@@ -66,8 +66,36 @@ struct RTPVideoHeaderH264 {
   bool single_nalu;
 };
 
+
+struct RTPVideoHeaderVP9 {
+  void InitRTPVideoHeaderVP9() {
+    nonReference = false;
+    pictureId = kNoPictureId;
+    tl0PicIdx = kNoTl0PicIdx;
+    temporalIdx = kNoTemporalIdx;
+    layerSync = false;
+    keyIdx = kNoKeyIdx;
+    partitionId = 0;
+    beginningOfPartition = false;
+  }
+
+  bool nonReference;          
+  int16_t pictureId;          
+                              
+  int16_t tl0PicIdx;          
+                              
+  uint8_t temporalIdx;        
+  bool layerSync;             
+                              
+  int keyIdx;                 
+  int partitionId;            
+  bool beginningOfPartition;  
+                              
+};
+
 union RTPVideoTypeHeader {
   RTPVideoHeaderVP8 VP8;
+  RTPVideoHeaderVP9 VP9;
   RTPVideoHeaderH264 H264;
 };
 
@@ -75,6 +103,7 @@ enum RtpVideoCodecTypes {
   kRtpVideoNone,
   kRtpVideoGeneric,
   kRtpVideoVp8,
+  kRtpVideoVp9,
   kRtpVideoH264
 };
 
@@ -668,6 +697,11 @@ inline bool IsNewerSequenceNumber(uint16_t sequence_number,
 inline bool IsNewerTimestamp(uint32_t timestamp, uint32_t prev_timestamp) {
   return timestamp != prev_timestamp &&
          static_cast<uint32_t>(timestamp - prev_timestamp) < 0x80000000;
+}
+
+inline bool IsNewerOrSameTimestamp(uint32_t timestamp, uint32_t prev_timestamp) {
+  return timestamp == prev_timestamp ||
+      static_cast<uint32_t>(timestamp - prev_timestamp) < 0x80000000;
 }
 
 inline uint16_t LatestSequenceNumber(uint16_t sequence_number1,

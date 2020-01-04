@@ -150,13 +150,13 @@ public:
 
 
 
-  virtual int SendPacket(int channel, const void *data, int len) override;
+  virtual int SendPacket(int channel, const void *data, size_t len) override;
 
   
 
 
 
-  virtual int SendRTCPPacket(int channel, const void *data, int len) override;
+  virtual int SendRTCPPacket(int channel, const void *data, size_t len) override;
 
 
   virtual uint64_t CodecPluginID() override { return 0; }

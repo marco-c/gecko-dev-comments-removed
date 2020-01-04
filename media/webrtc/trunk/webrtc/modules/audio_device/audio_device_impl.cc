@@ -16,21 +16,31 @@
 #include <assert.h>
 #include <string.h>
 
-#if defined(_WIN32)
+#if defined(WEBRTC_DUMMY_AUDIO_BUILD)
+
+#elif defined(_WIN32)
     #include "audio_device_utility_win.h"
     #include "audio_device_wave_win.h"
  #if defined(WEBRTC_WINDOWS_CORE_AUDIO_BUILD)
     #include "audio_device_core_win.h"
  #endif
-#elif defined(WEBRTC_ANDROID)
+#elif defined(WEBRTC_ANDROID_OPENSLES)
+
     #include <stdlib.h>
+    #include <dlfcn.h>
     #include "audio_device_utility_android.h"
     #include "webrtc/modules/audio_device/android/audio_device_template.h"
+#if !defined(WEBRTC_GONK)
+
     #include "webrtc/modules/audio_device/android/audio_record_jni.h"
     #include "webrtc/modules/audio_device/android/audio_track_jni.h"
+#endif
     #include "webrtc/modules/audio_device/android/opensles_input.h"
     #include "webrtc/modules/audio_device/android/opensles_output.h"
-#elif defined(WEBRTC_LINUX)
+#elif defined(WEBRTC_AUDIO_SNDIO)
+    #include "audio_device_utility_sndio.h"
+    #include "audio_device_sndio.h"
+#elif defined(WEBRTC_LINUX) || defined(WEBRTC_BSD)
     #include "audio_device_utility_linux.h"
  #if defined(LINUX_ALSA)
     #include "audio_device_alsa_linux.h"
@@ -164,7 +174,10 @@ int32_t AudioDeviceModuleImpl::CheckPlatform()
 #elif defined(WEBRTC_ANDROID)
     platform = kPlatformAndroid;
     WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, "current platform is ANDROID");
-#elif defined(WEBRTC_LINUX)
+#elif defined(WEBRTC_AUDIO_SNDIO)
+    platform = kPlatformSndio;
+    WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, "current platform is POSIX using SNDIO");
+#elif defined(WEBRTC_LINUX) || defined(WEBRTC_BSD)
     platform = kPlatformLinux;
     WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, "current platform is LINUX");
 #elif defined(WEBRTC_IOS)
@@ -271,33 +284,57 @@ int32_t AudioDeviceModuleImpl::CreatePlatformSpecificObjects()
 
     
     
-#if defined(WEBRTC_ANDROID)
-#ifdef WEBRTC_ANDROID_OPENSLES
-    
-    
+#if defined(WEBRTC_ANDROID) || defined (WEBRTC_GONK)
     if (audioLayer == kPlatformDefaultAudio) {
-      audioLayer =  kAndroidOpenSLESAudio;
-    }
-#endif
-    if (audioLayer == kPlatformDefaultAudio ||
-        audioLayer == kAndroidJavaAudio) {
-        ptrAudioDevice =
-            new AudioDeviceTemplate<AudioRecordJni, AudioTrackJni>(Id());
-    } else if (audioLayer == kAndroidOpenSLESAudio) {
+    
+#if defined (WEBRTC_ANDROID_OPENSLES)
       
-      ptrAudioDevice =
-        new AudioDeviceTemplate<OpenSlesInput, OpenSlesOutput>(Id());
+      
+      void* opensles_lib = dlopen("libOpenSLES.so", RTLD_LAZY);
+      if (opensles_lib) {
+        
+        dlclose(opensles_lib);
+        if (audioLayer == kPlatformDefaultAudio)
+          {
+            
+            ptrAudioDevice = new AudioDeviceTemplate<OpenSlesInput, OpenSlesOutput>(Id());
+            WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
+                         "Android OpenSLES Audio APIs will be utilized");
+          }
+      }
+#endif 
+#if !defined(WEBRTC_GONK)
+      
+      if (ptrAudioDevice == NULL) {
+        
+        if (audioLayer == kPlatformDefaultAudio)
+          {
+            
+            ptrAudioDevice = new AudioDeviceTemplate<AudioRecordJni, AudioTrackJni>(Id());
+            WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, "Android JNI Audio APIs will be utilized");
+          }
+      }
+#endif 
     }
 
     if (ptrAudioDevice != NULL) {
         
         ptrAudioDeviceUtility = new AudioDeviceUtilityAndroid(Id());
     }
-    
+
+#elif defined(WEBRTC_AUDIO_SNDIO)
+    ptrAudioDevice = new AudioDeviceSndio(Id());
+    if (ptrAudioDevice != NULL)
+    {
+        WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, "attempting to use the Sndio audio API...");
+        _platformAudioLayer = kSndioAudio;
+        
+        ptrAudioDeviceUtility = new AudioDeviceUtilitySndio(Id());
+    }
 
     
     
-#elif defined(WEBRTC_LINUX)
+#elif defined(WEBRTC_LINUX) || defined(WEBRTC_BSD)
     if ((audioLayer == kLinuxPulseAudio) || (audioLayer == kPlatformDefaultAudio))
     {
 #if defined(LINUX_PULSE)
@@ -572,6 +609,10 @@ int32_t AudioDeviceModuleImpl::ActiveAudioLayer(AudioLayer* audioLayer) const
     else if (*audioLayer == AudioDeviceModule::kLinuxAlsaAudio)
     {
         WEBRTC_TRACE(kTraceStateInfo, kTraceAudioDevice, _id, "output: kLinuxAlsaAudio");
+    }
+    else if (*audioLayer == AudioDeviceModule::kSndioAudio)
+    {
+        WEBRTC_TRACE(kTraceStateInfo, kTraceAudioDevice, _id, "output: kSndioAudio");
     }
     else
     {
@@ -2022,6 +2063,10 @@ AudioDeviceModule::AudioLayer AudioDeviceModuleImpl::PlatformAudioLayer() const
     case kLinuxAlsaAudio:
         WEBRTC_TRACE(kTraceStateInfo, kTraceAudioDevice, _id,
                      "output: kLinuxAlsaAudio");
+        break;
+    case kSndioAudio:
+        WEBRTC_TRACE(kTraceStateInfo, kTraceAudioDevice, _id,
+                     "output: kSndioAudio");
         break;
     case kDummyAudio:
         WEBRTC_TRACE(kTraceStateInfo, kTraceAudioDevice, _id,

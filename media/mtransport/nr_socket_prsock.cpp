@@ -175,7 +175,8 @@ private:
   ~SingletonThreadHolder()
   {
     r_log(LOG_GENERIC,LOG_DEBUG,"Deleting SingletonThreadHolder");
-    if (NS_WARN_IF(mThread)) {
+    MOZ_ASSERT(!mThread, "SingletonThreads should be Released and shut down before exit!");
+    if (mThread) {
       mThread->Shutdown();
       mThread = nullptr;
     }
@@ -230,6 +231,7 @@ public:
             mThread.get());
       mThread->Shutdown();
       mThread = nullptr;
+      
       
     }
     r_log(LOG_GENERIC,LOG_DEBUG,"ReleaseUse: %lu", (unsigned long) count);

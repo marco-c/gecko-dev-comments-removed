@@ -156,6 +156,7 @@ bool isInIgnoredNamespaceForImplicitCtor(const Decl *decl) {
          name == "__gnu_cxx" ||         
          name == "boost" ||             
          name == "webrtc" ||            
+         name == "rtc" ||               
          name.substr(0, 4) == "icu_" || 
          name == "google" ||            
          name == "google_breakpad" ||   

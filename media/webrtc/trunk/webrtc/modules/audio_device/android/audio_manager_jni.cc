@@ -13,6 +13,7 @@
 #include <android/log.h>
 #include <assert.h>
 
+#include "AndroidJNIWrapper.h"
 #include "webrtc/modules/utility/interface/helpers_android.h"
 #include "webrtc/system_wrappers/interface/trace.h"
 
@@ -53,23 +54,18 @@ void AudioManagerJni::SetAndroidAudioDeviceObjects(void* jvm, void* context) {
   
   g_jvm_ = reinterpret_cast<JavaVM*>(jvm);
   g_jni_env_ = GetEnv(g_jvm_);
-  g_context_ = g_jni_env_->NewGlobalRef(reinterpret_cast<jobject>(context));
 
-  
-  
-  
-  
-  
-  
-  jclass javaAmClassLocal = g_jni_env_->FindClass(
-      "org/webrtc/voiceengine/AudioManagerAndroid");
-  assert(javaAmClassLocal);
+  if (!g_context_) {
+    g_context_ = g_jni_env_->NewGlobalRef(reinterpret_cast<jobject>(context));
+  }
 
-  
-  
-  g_audio_manager_class_ = reinterpret_cast<jclass>(
-      g_jni_env_->NewGlobalRef(javaAmClassLocal));
-  assert(g_audio_manager_class_);
+  if (!g_audio_manager_class_) {
+    
+    
+    g_audio_manager_class_ = jsjni_GetGlobalClassRef(
+                                 "org/webrtc/voiceengine/AudioManagerAndroid");
+    DCHECK(g_audio_manager_class_);
+  }
 }
 
 void AudioManagerJni::ClearAndroidAudioDeviceObjects() {

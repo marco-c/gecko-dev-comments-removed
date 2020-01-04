@@ -49,14 +49,14 @@ if (navigator.mozGetUserMedia) {
   var RTCPeerConnection = function(pcConfig, pcConstraints) {
     
     maybeFixConfiguration(pcConfig);
-    return new mozRTCPeerConnection(pcConfig, pcConstraints);
+    return new (RTCPeerConnectioni || mozRTCPeerConnection)(pcConfig, pcConstraints);
   }
 
   
-  RTCSessionDescription = mozRTCSessionDescription;
+  RTCSessionDescription = RTCSessionDescription || mozRTCSessionDescription;
 
   
-  RTCIceCandidate = mozRTCIceCandidate;
+  RTCIceCandidate = RTCIceCandidate || mozRTCIceCandidate;
 
   
   

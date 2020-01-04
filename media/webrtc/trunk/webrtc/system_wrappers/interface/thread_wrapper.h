@@ -67,6 +67,9 @@ class ThreadWrapper {
   static rtc::scoped_ptr<ThreadWrapper> CreateThread(ThreadRunFunction func,
       void* obj, const char* thread_name);
 
+  static rtc::scoped_ptr<ThreadWrapper> CreateUIThread(ThreadRunFunction func,
+      void* obj,  const char* thread_name);
+
   
   
   
@@ -84,6 +87,10 @@ class ThreadWrapper {
   
   
   virtual bool Stop() = 0;
+
+  
+  
+  virtual bool RequestCallbackTimer(unsigned int milliseconds);
 
   
   

@@ -51,12 +51,18 @@ enum BufferState
 bool
 OMXCodecReservation::ReserveOMXCodec()
 {
-  if (mClient) {
+  if (!mClient) {
+    mClient = new mozilla::MediaSystemResourceClient(mType);
+  } else {
+    if (mOwned) {
+      
+      return true;
+    }
     
-    return false;
   }
-  mClient = new mozilla::MediaSystemResourceClient(mType);
-  return mClient->AcquireSyncNoWait(); 
+  mOwned = mClient->AcquireSyncNoWait(); 
+  
+  return mOwned;
 }
 
 void
@@ -65,7 +71,12 @@ OMXCodecReservation::ReleaseOMXCodec()
   if (!mClient) {
     return;
   }
-  mClient->ReleaseResource();
+  
+  if (mOwned) {
+    mClient->ReleaseResource();
+    mClient = nullptr;
+    mOwned = false;
+  }
 }
 
 OMXAudioEncoder*

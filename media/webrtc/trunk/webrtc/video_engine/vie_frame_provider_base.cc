@@ -31,7 +31,8 @@ ViEFrameProviderBase::ViEFrameProviderBase(int Id, int engine_id)
 
 ViEFrameProviderBase::~ViEFrameProviderBase() {
   DCHECK(thread_checker_.CalledOnValidThread());
-  DCHECK(frame_callbacks_.empty());
+  
+  
 
   
   

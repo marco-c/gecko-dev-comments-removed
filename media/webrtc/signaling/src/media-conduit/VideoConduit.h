@@ -8,12 +8,14 @@
 #include "nsAutoPtr.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/Atomics.h"
+#include "mozilla/SharedThreadPool.h"
 
 #include "MediaConduitInterface.h"
 #include "MediaEngineWrapper.h"
 #include "CodecStatistics.h"
 #include "LoadManagerFactory.h"
 #include "LoadManager.h"
+#include "runnable_utils.h"
 
 
 #undef FF
@@ -46,6 +48,7 @@
 namespace mozilla {
 
 class WebrtcAudioConduit;
+class nsThread;
 
 
 class WebrtcVideoEncoder:public VideoEncoder
@@ -61,9 +64,9 @@ class WebrtcVideoDecoder:public VideoDecoder
 
 
 
-class WebrtcVideoConduit:public VideoSessionConduit
-                         ,public webrtc::Transport
-                         ,public webrtc::ExternalRenderer
+class WebrtcVideoConduit : public VideoSessionConduit
+                         , public webrtc::Transport
+                         , public webrtc::ExternalRenderer
 {
 public:
   
@@ -135,9 +138,6 @@ public:
 
   virtual MediaConduitErrorCode SetReceiverTransport(RefPtr<TransportInterface> aTransport) override;
 
-  void SelectBandwidth(webrtc::VideoCodec& vie_codec,
-                       unsigned short width,
-                       unsigned short height);
   
 
 
@@ -145,7 +145,18 @@ public:
 
 
   bool SelectSendResolution(unsigned short width,
-                            unsigned short height);
+                            unsigned short height,
+                            webrtc::I420VideoFrame *frame);
+
+  
+
+
+
+
+
+  nsresult ReconfigureSendCodec(unsigned short width,
+                                unsigned short height,
+                                webrtc::I420VideoFrame *frame);
 
   
 
@@ -172,6 +183,7 @@ public:
                                                 unsigned short height,
                                                 VideoType video_type,
                                                 uint64_t capture_time) override;
+  virtual MediaConduitErrorCode SendVideoFrame(webrtc::I420VideoFrame& frame) override;
 
   
 
@@ -192,13 +204,13 @@ public:
 
 
 
-  virtual int SendPacket(int channel, const void *data, int len) override;
+  virtual int SendPacket(int channel, const void *data, size_t len) override;
 
   
 
 
 
-  virtual int SendRTCPPacket(int channel, const void *data, int len) override;
+  virtual int SendRTCPPacket(int channel, const void *data, size_t len) override;
 
 
   
@@ -207,8 +219,13 @@ public:
 
   virtual int FrameSizeChange(unsigned int, unsigned int, unsigned int) override;
 
-  virtual int DeliverFrame(unsigned char*, int, uint32_t , int64_t,
+  virtual int DeliverFrame(unsigned char*, size_t, uint32_t , int64_t,
                            int64_t, void *handle) override;
+
+  virtual int DeliverFrame(unsigned char*, size_t, uint32_t, uint32_t, uint32_t , int64_t,
+                           int64_t, void *handle);
+
+  virtual int DeliverI420Frame(const webrtc::I420VideoFrame& webrtc_frame) override;
 
   
 
@@ -251,7 +268,9 @@ public:
   WebrtcVideoConduit();
   virtual ~WebrtcVideoConduit();
 
-  MediaConduitErrorCode Init();
+  MediaConduitErrorCode InitMain();
+  virtual MediaConduitErrorCode Init();
+  virtual void Destroy();
 
   int GetChannel() { return mChannel; }
   webrtc::VideoEngine* GetVideoEngine() { return mVideoEngine; }
@@ -285,9 +304,24 @@ public:
   uint64_t MozVideoLatencyAvg();
 
 private:
+  DISALLOW_COPY_AND_ASSIGN(WebrtcVideoConduit);
 
-  WebrtcVideoConduit(const WebrtcVideoConduit& other) = delete;
-  void operator=(const WebrtcVideoConduit& other) = delete;
+  static inline bool OnThread(nsIEventTarget *thread)
+  {
+    bool on;
+    nsresult rv;
+    rv = thread->IsOnCurrentThread(&on);
+
+    
+    if (rv != NS_ERROR_NOT_INITIALIZED) {
+      MOZ_ASSERT(NS_SUCCEEDED(rv));
+    }
+
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return false;
+    }
+    return on;
+  }
 
   
   typedef std::vector<VideoCodecConfig* > RecvCodecList;
@@ -340,7 +374,10 @@ private:
 
   Mutex mCodecMutex; 
   nsAutoPtr<VideoCodecConfig> mCurSendCodecConfig;
+  bool mInReconfig;
 
+  unsigned short mLastWidth;
+  unsigned short mLastHeight;
   unsigned short mSendingWidth;
   unsigned short mSendingHeight;
   unsigned short mReceivingWidth;
@@ -372,7 +409,6 @@ private:
   nsAutoPtr<LoadManager> mLoadManager;
   webrtc::VideoCodecMode mCodecMode;
 };
-
 } 
 
 #endif

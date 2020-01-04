@@ -100,6 +100,21 @@ class ViEBitrateObserver : public BitrateObserver {
   ViEEncoder* owner_;
 };
 
+class ViECPULoadStateObserver : public CPULoadStateObserver {
+ public:
+  explicit ViECPULoadStateObserver(ViEEncoder* owner)
+      : owner_(owner) {
+  }
+  virtual ~ViECPULoadStateObserver() {};
+
+  
+  virtual void onLoadStateChanged(CPULoadState state) {
+    owner_->onLoadStateChanged(state);
+  }
+ private:
+  ViEEncoder* owner_;
+};
+
 ViEEncoder::ViEEncoder(int32_t channel_id,
                        uint32_t number_of_cores,
                        const Config& config,
@@ -121,6 +136,7 @@ ViEEncoder::ViEEncoder(int32_t channel_id,
       bitrate_allocator_(bitrate_allocator),
       bitrate_controller_(bitrate_controller),
       time_of_last_incoming_frame_ms_(0),
+      load_manager_(NULL),
       send_padding_(false),
       min_transmit_bitrate_kbps_(0),
       last_observed_bitrate_bps_(0),
@@ -143,6 +159,7 @@ ViEEncoder::ViEEncoder(int32_t channel_id,
       start_ms_(Clock::GetRealTimeClock()->TimeInMilliseconds()),
       send_statistics_proxy_(NULL) {
   bitrate_observer_.reset(new ViEBitrateObserver(this));
+  loadstate_observer_.reset(new ViECPULoadStateObserver(this));
 }
 
 bool ViEEncoder::Init() {
@@ -152,7 +169,7 @@ bool ViEEncoder::Init() {
   vpm_.EnableTemporalDecimation(true);
 
   
-  vpm_.EnableContentAnalysis(false);
+  vpm_.EnableContentAnalysis(load_manager_ != NULL);
 
   if (qm_callback_) {
     delete qm_callback_;
@@ -209,10 +226,21 @@ void ViEEncoder::StopThreadsAndRemoveSharedMembers() {
   module_process_thread_.DeRegisterModule(&vpm_);
 }
 
+void ViEEncoder::SetLoadManager(CPULoadStateCallbackInvoker* load_manager) {
+  load_manager_ = load_manager;
+  if (load_manager_) {
+      load_manager_->AddObserver(loadstate_observer_.get());
+  }
+  vpm_.EnableContentAnalysis(load_manager != NULL);
+}
+
 ViEEncoder::~ViEEncoder() {
   UpdateHistograms();
   if (bitrate_allocator_)
     bitrate_allocator_->RemoveBitrateObserver(bitrate_observer_.get());
+  if (load_manager_) {
+    load_manager_->RemoveObserver(loadstate_observer_.get());
+  }
   VideoCodingModule::Destroy(&vcm_);
   VideoProcessingModule::Destroy(&vpm_);
   delete qm_callback_;
@@ -599,7 +627,21 @@ void ViEEncoder::DeliverFrame(int id,
     return;
   }
 #endif
-  vcm_.AddVideoFrame(*decimated_frame);
+  
+
+#ifdef MOZ_WEBRTC_OMX
+  
+  if (qm_callback_ && vcm_.SendCodec() == webrtc::kVideoCodecH264) {
+    if (vcm_.RegisterVideoQMCallback(NULL) != 0) {
+      LOG_F(LS_ERROR) << "VCM::RegisterQMCallback(NULL) failure";
+      return;
+    }
+    delete qm_callback_;
+    qm_callback_ = NULL;
+  }
+#endif
+
+  vcm_.AddVideoFrame(*decimated_frame, vpm_.ContentMetrics());
 }
 
 void ViEEncoder::DelayChanged(int id, int frame_delay) {
@@ -880,6 +922,11 @@ void ViEEncoder::OnNetworkChanged(uint32_t bitrate_bps,
                  << " for channel " << channel_id_;
     codec_observer_->SuspendChange(channel_id_, video_is_suspended);
   }
+}
+
+void ViEEncoder::onLoadStateChanged(CPULoadState load_state) {
+  LOG(LS_INFO) << "load state changed to " << load_state;
+  vcm_.SetCPULoadState(load_state);
 }
 
 int32_t ViEEncoder::RegisterEffectFilter(ViEEffectFilter* effect_filter) {
