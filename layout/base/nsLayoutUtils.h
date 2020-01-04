@@ -558,8 +558,7 @@ public:
 
 
   static nsIFrame* GetAnimatedGeometryRootForFrame(nsDisplayListBuilder* aBuilder,
-                                                   nsIFrame* aFrame,
-                                                   const nsIFrame* aStopAtAncestor);
+                                                   nsIFrame* aFrame);
 
   
 
