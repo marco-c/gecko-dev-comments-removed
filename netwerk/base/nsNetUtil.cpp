@@ -1646,9 +1646,10 @@ NS_SecurityHashURI(nsIURI *aURI)
     if (scheme.EqualsLiteral("file"))
         return schemeHash; 
 
-    if (scheme.EqualsLiteral("imap") ||
-        scheme.EqualsLiteral("mailbox") ||
-        scheme.EqualsLiteral("news"))
+    bool hasFlag;
+    if (NS_FAILED(NS_URIChainHasFlags(baseURI,
+        nsIProtocolHandler::ORIGIN_IS_FULL_SPEC, &hasFlag)) ||
+        hasFlag)
     {
         nsAutoCString spec;
         uint32_t specHash;
@@ -1745,10 +1746,10 @@ NS_SecurityCompareURIs(nsIURI *aSourceURI,
         return NS_SUCCEEDED(rv) && filesAreEqual;
     }
 
-    
-    if (targetScheme.EqualsLiteral("imap") ||
-        targetScheme.EqualsLiteral("mailbox") ||
-        targetScheme.EqualsLiteral("news"))
+    bool hasFlag;
+    if (NS_FAILED(NS_URIChainHasFlags(targetBaseURI,
+        nsIProtocolHandler::ORIGIN_IS_FULL_SPEC, &hasFlag)) ||
+        hasFlag)
     {
         
         
