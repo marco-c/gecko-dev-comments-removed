@@ -16,9 +16,6 @@ Cu.import("resource://gre/modules/Services.jsm");
 
 
 
-
-
-
 var Manager = {
   listeners: new Map(),
 
@@ -104,18 +101,26 @@ var Manager = {
   },
 
   onDocumentChange(browser, data) {
-    let url = data.location;
+    let extra = {
+      url: data.location,
+      
+      frameTransitionData: data.frameTransitionData,
+    };
 
-    this.fire("onCommitted", browser, data, {url});
+    this.fire("onCommitted", browser, data, extra);
   },
 
   onHistoryChange(browser, data) {
-    let url = data.location;
+    let extra = {
+      url: data.location,
+      
+      frameTransitionData: data.frameTransitionData,
+    };
 
     if (data.isReferenceFragmentUpdated) {
-      this.fire("onReferenceFragmentUpdated", browser, data, {url});
+      this.fire("onReferenceFragmentUpdated", browser, data, extra);
     } else if (data.isHistoryStateUpdated) {
-      this.fire("onHistoryStateUpdated", browser, data, {url});
+      this.fire("onHistoryStateUpdated", browser, data, extra);
     }
   },
 

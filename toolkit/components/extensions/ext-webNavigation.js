@@ -18,6 +18,60 @@ var {
   runSafe,
 } = ExtensionUtils;
 
+const defaultTransitionTypes = {
+  topFrame: "link",
+  subFrame: "auto_subframe",
+};
+
+const frameTransitions = {
+  anyFrame: {
+    qualifiers: ["server_redirect", "client_redirect", "forward_back"],
+  },
+  topFrame: {
+    types: ["reload", "form_submit"],
+  },
+};
+
+function isTopLevelFrame({frameId, parentFrameId}) {
+  return frameId == 0 && parentFrameId == -1;
+}
+
+function fillTransitionProperties(eventName, src, dst) {
+  if (eventName == "onCommitted" || eventName == "onHistoryStateUpdated") {
+    let frameTransitionData = src.frameTransitionData || {};
+
+    let transitionType, transitionQualifiers = [];
+
+    
+    for (let qualifier of frameTransitions.anyFrame.qualifiers) {
+      if (frameTransitionData[qualifier]) {
+        transitionQualifiers.push(qualifier);
+      }
+    }
+
+    if (isTopLevelFrame(dst)) {
+      for (let type of frameTransitions.topFrame.types) {
+        if (frameTransitionData[type]) {
+          transitionType = type;
+        }
+      }
+
+      
+      if (!transitionType) {
+        transitionType = defaultTransitionTypes.topFrame;
+      }
+    } else {
+      
+      
+      transitionType = defaultTransitionTypes.subFrame;
+    }
+
+    
+    dst.transitionType = transitionType;
+    dst.transitionQualifiers = transitionQualifiers;
+  }
+}
+
 
 function WebNavigationEventManager(context, eventName) {
   let name = `webNavigation.${eventName}`;
@@ -45,6 +99,8 @@ function WebNavigationEventManager(context, eventName) {
       if (result.cancel) {
         return;
       }
+
+      fillTransitionProperties(eventName, data, data2);
 
       runSafe(context, callback, data2);
     };
