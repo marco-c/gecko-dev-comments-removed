@@ -72,7 +72,6 @@ class nsIRequest;
 class nsIRunnable;
 class nsIStreamListener;
 class nsIStructuredCloneContainer;
-class nsIStyleRule;
 class nsIStyleSheet;
 class nsIURI;
 class nsIVariant;
@@ -101,6 +100,7 @@ template<typename> class OwningNonNull;
 namespace css {
 class Loader;
 class ImageLoader;
+class Rule;
 } 
 
 namespace gfx {
@@ -1273,12 +1273,12 @@ public:
   
   
   virtual void StyleRuleChanged(nsIStyleSheet* aStyleSheet,
-                                nsIStyleRule* aOldStyleRule,
-                                nsIStyleRule* aNewStyleRule) = 0;
+                                mozilla::css::Rule* aOldStyleRule,
+                                mozilla::css::Rule* aNewStyleRule) = 0;
   virtual void StyleRuleAdded(nsIStyleSheet* aStyleSheet,
-                              nsIStyleRule* aStyleRule) = 0;
+                              mozilla::css::Rule* aStyleRule) = 0;
   virtual void StyleRuleRemoved(nsIStyleSheet* aStyleSheet,
-                                nsIStyleRule* aStyleRule) = 0;
+                                mozilla::css::Rule* aStyleRule) = 0;
 
   
 
