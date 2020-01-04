@@ -7,6 +7,11 @@
 #ifndef vm_Stopwatch_h
 #define vm_Stopwatch_h
 
+#include "mozilla/RefPtr.h"
+#include "mozilla/Vector.h"
+
+#include "jsapi.h"
+
 
 
 
