@@ -115,17 +115,23 @@ this.PageThumbs = {
   
 
 
-  get scheme() "moz-page-thumb",
+  get scheme() {
+    return "moz-page-thumb";
+  },
 
   
 
 
-  get staticHost() "thumbnail",
+  get staticHost() {
+    return "thumbnail";
+  },
 
   
 
 
-  get contentType() "image/png",
+  get contentType() {
+    return "image/png";
+  },
 
   init: function PageThumbs_init() {
     if (!this._initialized) {

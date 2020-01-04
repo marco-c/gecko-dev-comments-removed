@@ -1247,8 +1247,12 @@ var DirectoryIterator = function DirectoryIterator(path, options) {
   this._isClosed = false;
 };
 DirectoryIterator.prototype = {
-  iterator: function () this,
-  __iterator__: function () this,
+  iterator: function () {
+    return this;
+  },
+  __iterator__: function () {
+    return this;
+  },
 
   
   
