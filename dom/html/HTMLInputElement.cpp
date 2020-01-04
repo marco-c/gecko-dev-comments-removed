@@ -808,7 +808,7 @@ UploadLastDir::StoreLastUsedDirectory(nsIDocument* aDoc, nsIFile* aDir)
   aDir->GetPath(unicodePath);
   if (unicodePath.IsEmpty()) 
     return NS_OK;
-  nsRefPtr<nsVariant> prefValue = new nsVariant();
+  nsRefPtr<nsVariantCC> prefValue = new nsVariantCC();
   prefValue->SetAsAString(unicodePath);
 
   
