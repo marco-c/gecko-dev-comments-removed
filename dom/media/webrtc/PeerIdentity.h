@@ -27,9 +27,11 @@ namespace mozilla {
 
 
 
-class PeerIdentity final
+class PeerIdentity final : public RefCounted<PeerIdentity>
 {
 public:
+  MOZ_DECLARE_REFCOUNTED_TYPENAME(PeerIdentity)
+
   explicit PeerIdentity(const nsAString& aPeerIdentity)
     : mPeerIdentity(aPeerIdentity) {}
   ~PeerIdentity() {}

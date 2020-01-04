@@ -770,7 +770,7 @@ private:
 #if !defined(MOZILLA_EXTERNAL_LINKAGE)
   
   
-  nsAutoPtr<PeerIdentity> mPeerIdentity;
+  RefPtr<PeerIdentity> mPeerIdentity;
   
   RefPtr<mozilla::dom::RTCCertificate> mCertificate;
 #else
