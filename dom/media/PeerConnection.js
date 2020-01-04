@@ -277,44 +277,34 @@ RTCStatsReport.prototype = {
   contractID: PC_STATS_CONTRACT,
   QueryInterface: XPCOMUtils.generateQI([Ci.nsISupports]),
 
-  
-  
-  
-  
-  
-
-  makeStatsPublic: function() {
-    let props = {};
-    this.forEach(function(stat) {
-        props[stat.id] = { enumerable: true, configurable: false,
-                           writable: false, value: stat };
-      });
-    Object.defineProperties(this.__DOM_IMPL__.wrappedJSObject, props);
+  setInternal: function(aKey, aObj) {
+    return this.__DOM_IMPL__.__set(aKey, aObj);
   },
 
-  forEach: function(cb, thisArg) {
-    for (var key in this._report) {
-      cb.call(thisArg || this._report, this.get(key), key, this._report);
+  
+  
+  
+  
+  
+
+  makeStatsPublic: function(warnNullable) {
+    let legacyProps = {};
+    for (let key in this._report) {
+      let value = Cu.cloneInto(this._report[key], this._win);
+      this.setInternal(key, value);
+
+      legacyProps[key] = {
+        enumerable: true, configurable: false,
+        get: Cu.exportFunction(function() {
+          if (warnNullable.warn) {
+            warnNullable.warn();
+            warnNullable.warn = null;
+          }
+          return value;
+        }, this.__DOM_IMPL__.wrappedJSObject)
+      };
     }
-  },
-
-  get: function(key) {
-    function publifyReadonly(win, obj) {
-      let props = {};
-      for (let k in obj) {
-        props[k] = {enumerable:true, configurable:false, writable:false, value:obj[k]};
-      }
-      let pubobj = Cu.createObjectIn(win);
-      Object.defineProperties(pubobj, props);
-      return pubobj;
-    }
-
-    
-    return publifyReadonly(this._win, this._report[key]);
-  },
-
-  has: function(key) {
-    return this._report[key] !== undefined;
+    Object.defineProperties(this.__DOM_IMPL__.wrappedJSObject, legacyProps);
   },
 
   get mozPcid() { return this._pcid; }
@@ -433,6 +423,11 @@ RTCPeerConnection.prototype = {
     var location = "" + this._win.location;
     this._isLoop = location.startsWith("about:loop") ||
                    location.startsWith("https://hello.firefox.com/");
+
+    
+    this._warnDeprecatedStatsAccessNullable = { warn: () =>
+      this.logWarning("non-maplike pc.getStats access is deprecated! " +
+                      "See http://w3c.github.io/webrtc-pc/#example for usage.") };
 
     
     _globalPCList.addPC(this);
@@ -1509,7 +1504,7 @@ PeerConnectionObserver.prototype = {
     let pc = this._dompc;
     let chromeobj = new RTCStatsReport(pc._win, dict);
     let webidlobj = pc._win.RTCStatsReport._create(pc._win, chromeobj);
-    chromeobj.makeStatsPublic();
+    chromeobj.makeStatsPublic(pc._warnDeprecatedStatsAccessNullable);
     pc._onGetStatsSuccess(webidlobj);
   },
 
