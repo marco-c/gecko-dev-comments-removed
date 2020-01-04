@@ -6,6 +6,7 @@
 
 #include "jit/arm/MacroAssembler-arm.h"
 
+#include "mozilla/Attributes.h"
 #include "mozilla/Casting.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/MathAlgorithms.h"
@@ -4906,14 +4907,14 @@ MacroAssembler::callWithABIPost(uint32_t stackAdjust, MoveOp::Type result)
         if (!UseHardFpABI()) {
             
             ma_vxfer(r0, r1, ReturnDoubleReg);
-            break;
         }
+        break;
       case MoveOp::FLOAT32:
         if (!UseHardFpABI()) {
             
             ma_vxfer(r0, ReturnFloat32Reg.singleOverlay());
-            break;
         }
+        break;
       case MoveOp::GENERAL:
         break;
 
