@@ -45,16 +45,6 @@ var MemoryObserver = {
 
     
     
-    
-    if (tab.playingAudio) {
-      Messaging.sendRequest({
-        type: "Tab:AudioPlayingChange",
-        tabID: tab.id,
-        isAudioPlaying: false
-      });
-    }
-
-    
     let evt = document.createEvent("UIEvents");
     evt.initUIEvent("TabPreZombify", true, false, window, null);
     browser.dispatchEvent(evt);
