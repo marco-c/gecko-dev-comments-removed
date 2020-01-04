@@ -11154,14 +11154,14 @@ nsGlobalWindow::ShowSlowScriptDialog()
     buttonFlags += nsIPrompt::BUTTON_TITLE_IS_STRING * nsIPrompt::BUTTON_POS_2;
 
   
-  JSInterruptCallback old = JS_SetInterruptCallback(cx, nullptr);
+  bool old = JS_DisableInterruptCallback(cx);
 
   
   rv = prompt->ConfirmEx(title, msg, buttonFlags, waitButton, stopButton,
                          debugButton, neverShowDlg, &neverShowDlgChk,
                          &buttonPressed);
 
-  JS_SetInterruptCallback(cx, old);
+  JS_ResetInterruptCallback(cx, old);
 
   if (NS_SUCCEEDED(rv) && (buttonPressed == 0)) {
     return neverShowDlgChk ? AlwaysContinueSlowScript : ContinueSlowScript;

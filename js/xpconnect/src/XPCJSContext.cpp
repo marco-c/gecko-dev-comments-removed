@@ -3476,7 +3476,7 @@ XPCJSContext::Initialize()
 #endif
     JS_SetAccumulateTelemetryCallback(cx, AccumulateTelemetryCallback);
     js::SetActivityCallback(cx, ActivityCallback, this);
-    JS_SetInterruptCallback(cx, InterruptCallback);
+    JS_AddInterruptCallback(cx, InterruptCallback);
     js::SetWindowProxyClass(cx, &OuterWindowProxyClass);
 
     
