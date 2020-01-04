@@ -686,6 +686,10 @@ struct GLContextSymbols
     
     typedef const GLubyte* (GLAPIENTRY * PFNGLGETSTRINGIPROC)(GLenum name, GLuint index);
     PFNGLGETSTRINGIPROC fGetStringi;
+
+    
+    typedef void (GLAPIENTRY * PFNRESOLVEMULTISAMPLEFRAMEBUFFERAPPLE) (void);
+    PFNRESOLVEMULTISAMPLEFRAMEBUFFERAPPLE fResolveMultisampleFramebufferAPPLE;
 };
 
 } 
