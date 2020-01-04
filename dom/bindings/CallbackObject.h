@@ -119,6 +119,17 @@ public:
     return JS::Handle<JSObject*>::fromMarkedLocation(mCallback.address());
   }
 
+  
+
+
+
+
+  JS::Handle<JSObject*> CallbackKnownNotGray() const
+  {
+    MOZ_ASSERT(!JS::ObjectIsMarkedGray(mCallback.get()));
+    return CallbackPreserveColor();
+  }
+
   nsIGlobalObject* IncumbentGlobalOrNull() const
   {
     return mIncumbentGlobal;

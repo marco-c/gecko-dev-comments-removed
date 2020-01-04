@@ -15052,7 +15052,7 @@ class CallbackMember(CGNativeMember):
     
     def __init__(self, sig, name, descriptorProvider, needThisHandling,
                  rethrowContentException=False, typedArraysAreStructs=False,
-                 wrapScope='CallbackPreserveColor()'):
+                 wrapScope='CallbackKnownNotGray()'):
         """
         needThisHandling is True if we need to be able to accept a specified
         thisObj, False otherwise.
@@ -15503,7 +15503,7 @@ class CallbackSetter(CallbackAccessor):
             MOZ_ASSERT(argv.length() == 1);
             ${atomCacheName}* atomsCache = GetAtomCache<${atomCacheName}>(cx);
             if ((!*reinterpret_cast<jsid**>(atomsCache) && !InitIds(cx, atomsCache)) ||
-                !JS_SetPropertyById(cx, CallbackPreserveColor(), atomsCache->${attrAtomName}, argv[0])) {
+                !JS_SetPropertyById(cx, CallbackKnownNotGray(), atomsCache->${attrAtomName}, argv[0])) {
               aRv.Throw(NS_ERROR_UNEXPECTED);
               return${errorReturn};
             }
