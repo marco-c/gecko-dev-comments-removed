@@ -94,7 +94,7 @@ function reindent(text) {
   let indents = lines.filter(s => s.trim().length > 0)
                      .map(s => s.length - s.trimLeft().length);
   
-  let minIndent = Math.min(...indents);
+  let minIndent = Math.min.apply(null, indents);
 
   
   
