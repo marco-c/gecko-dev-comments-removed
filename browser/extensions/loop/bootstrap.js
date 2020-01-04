@@ -859,7 +859,7 @@ function startup() {
 
 
 
-function shutdown() {
+function shutdown(data, reason) {
   
   Cu.import("resource:///modules/Chat.jsm");
   let isLoopURL = ({ src }) => /^about:loopconversation#/.test(src);
@@ -882,6 +882,12 @@ function shutdown() {
 
   
   wm.removeListener(WindowListener);
+
+  
+  
+  if (reason == APP_SHUTDOWN) {
+    return;
+  }
 
   CustomizableUI.destroyWidget("loop-button");
 
