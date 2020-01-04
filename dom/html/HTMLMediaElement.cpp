@@ -465,6 +465,152 @@ void HTMLMediaElement::ReportLoadError(const char* aMsg,
                                   aParamCount);
 }
 
+class HTMLMediaElement::ChannelLoader final {
+public:
+  NS_INLINE_DECL_REFCOUNTING(ChannelLoader);
+
+  nsresult Load(HTMLMediaElement* aElement)
+  {
+
+    
+    nsSecurityFlags securityFlags = aElement->ShouldCheckAllowOrigin()
+      ? nsILoadInfo::SEC_REQUIRE_CORS_DATA_INHERITS :
+        nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_DATA_INHERITS;
+
+    if (aElement->GetCORSMode() == CORS_USE_CREDENTIALS) {
+      securityFlags |= nsILoadInfo::SEC_COOKIES_INCLUDE;
+    }
+
+    MOZ_ASSERT(aElement->IsAnyOfHTMLElements(nsGkAtoms::audio, nsGkAtoms::video));
+    nsContentPolicyType contentPolicyType = aElement->IsHTMLElement(nsGkAtoms::audio)
+      ? nsIContentPolicy::TYPE_INTERNAL_AUDIO :
+        nsIContentPolicy::TYPE_INTERNAL_VIDEO;
+
+    nsCOMPtr<nsIDocShell> docShell = aElement->OwnerDoc()->GetDocShell();
+    if (docShell) {
+      nsDocShell* docShellPtr = nsDocShell::Cast(docShell);
+      bool privateBrowsing;
+      docShellPtr->GetUsePrivateBrowsing(&privateBrowsing);
+      if (privateBrowsing) {
+        securityFlags |= nsILoadInfo::SEC_FORCE_PRIVATE_BROWSING;
+      }
+    }
+
+    nsCOMPtr<nsILoadGroup> loadGroup = aElement->GetDocumentLoadGroup();
+    nsCOMPtr<nsIChannel> channel;
+    nsresult rv = NS_NewChannel(getter_AddRefs(channel),
+                                aElement->mLoadingSrc,
+                                static_cast<Element*>(aElement),
+                                securityFlags,
+                                contentPolicyType,
+                                loadGroup,
+                                nullptr,   
+                                nsICachingChannel::LOAD_BYPASS_LOCAL_CACHE_IF_BUSY |
+                                nsIChannel::LOAD_MEDIA_SNIFFER_OVERRIDES_CONTENT_TYPE |
+                                nsIChannel::LOAD_CLASSIFY_URI |
+                                nsIChannel::LOAD_CALL_CONTENT_SNIFFERS);
+
+    if (NS_FAILED(rv)) {
+      return rv;
+    }
+
+    
+    nsCOMPtr<nsILoadInfo> loadInfo = channel->GetLoadInfo();
+    if (loadInfo) {
+      NeckoOriginAttributes originAttrs;
+      NS_GetOriginAttributes(channel, originAttrs);
+      loadInfo->SetOriginAttributes(originAttrs);
+    }
+
+    
+    
+    
+    
+    
+    
+    RefPtr<MediaLoadListener> loadListener = new MediaLoadListener(aElement);
+
+    channel->SetNotificationCallbacks(loadListener);
+
+    nsCOMPtr<nsIHttpChannel> hc = do_QueryInterface(channel);
+    if (hc) {
+      
+      
+      
+      hc->SetRequestHeader(NS_LITERAL_CSTRING("Range"),
+                           NS_LITERAL_CSTRING("bytes=0-"),
+                           false);
+      aElement->SetRequestHeaders(hc);
+    }
+
+    rv = channel->AsyncOpen2(loadListener);
+    if (NS_FAILED(rv)) {
+      return rv;
+    }
+
+    
+    
+    
+    mChannel = channel;
+
+    
+    
+    nsContentUtils::RegisterShutdownObserver(loadListener);
+    return NS_OK;
+  }
+
+  void Cancel()
+  {
+    mChannel->Cancel(NS_BINDING_ABORTED);
+    mChannel = nullptr;
+  }
+
+  void Done() {
+    
+    
+    mChannel = nullptr;
+  }
+
+  nsresult Redirect(nsIChannel* aChannel,
+                    nsIChannel* aNewChannel,
+                    uint32_t aFlags)
+  {
+    NS_ASSERTION(aChannel == mChannel, "Channels should match!");
+    mChannel = aNewChannel;
+
+    
+    
+    nsCOMPtr<nsIHttpChannel> http = do_QueryInterface(aChannel);
+    NS_ENSURE_STATE(http);
+
+    NS_NAMED_LITERAL_CSTRING(rangeHdr, "Range");
+
+    nsAutoCString rangeVal;
+    if (NS_SUCCEEDED(http->GetRequestHeader(rangeHdr, rangeVal))) {
+      NS_ENSURE_STATE(!rangeVal.IsEmpty());
+
+      http = do_QueryInterface(aNewChannel);
+      NS_ENSURE_STATE(http);
+
+      nsresult rv = http->SetRequestHeader(rangeHdr, rangeVal, false);
+      NS_ENSURE_SUCCESS(rv, rv);
+    }
+
+    return NS_OK;
+  }
+
+private:
+  ~ChannelLoader()
+  {
+    MOZ_ASSERT(!mChannel);
+  }
+  
+  
+  
+  
+  nsCOMPtr<nsIChannel> mChannel;
+};
+
 NS_IMPL_ADDREF_INHERITED(HTMLMediaElement, nsGenericHTMLElement)
 NS_IMPL_RELEASE_INHERITED(HTMLMediaElement, nsGenericHTMLElement)
 
@@ -678,28 +824,8 @@ HTMLMediaElement::OnChannelRedirect(nsIChannel* aChannel,
                                     nsIChannel* aNewChannel,
                                     uint32_t aFlags)
 {
-  NS_ASSERTION(aChannel == mChannel, "Channels should match!");
-  mChannel = aNewChannel;
-
-  
-  
-  nsCOMPtr<nsIHttpChannel> http = do_QueryInterface(aChannel);
-  NS_ENSURE_STATE(http);
-
-  NS_NAMED_LITERAL_CSTRING(rangeHdr, "Range");
-
-  nsAutoCString rangeVal;
-  if (NS_SUCCEEDED(http->GetRequestHeader(rangeHdr, rangeVal))) {
-    NS_ENSURE_STATE(!rangeVal.IsEmpty());
-
-    http = do_QueryInterface(aNewChannel);
-    NS_ENSURE_STATE(http);
-
-    nsresult rv = http->SetRequestHeader(rangeHdr, rangeVal, false);
-    NS_ENSURE_SUCCESS(rv, rv);
-  }
-
-  return NS_OK;
+  MOZ_ASSERT(mChannelLoader);
+  return mChannelLoader->Redirect(aChannel, aNewChannel, aFlags);
 }
 
 void HTMLMediaElement::ShutdownDecoder()
@@ -1256,9 +1382,9 @@ nsresult HTMLMediaElement::LoadResource()
   NS_ASSERTION(mDelayingLoadEvent,
                "Should delay load event (if in document) during load");
 
-  if (mChannel) {
-    mChannel->Cancel(NS_BINDING_ABORTED);
-    mChannel = nullptr;
+  if (mChannelLoader) {
+    mChannelLoader->Cancel();
+    mChannelLoader = nullptr;
   }
 
   
@@ -1314,87 +1440,12 @@ nsresult HTMLMediaElement::LoadResource()
     return FinishDecoderSetup(decoder, resource, nullptr);
   }
 
-  
-  nsSecurityFlags securityFlags =
-    ShouldCheckAllowOrigin() ? nsILoadInfo::SEC_REQUIRE_CORS_DATA_INHERITS :
-                               nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_DATA_INHERITS;
-
-  if (GetCORSMode() == CORS_USE_CREDENTIALS) {
-    securityFlags |= nsILoadInfo::SEC_COOKIES_INCLUDE;
+  RefPtr<ChannelLoader> loader = new ChannelLoader;
+  nsresult rv = loader->Load(this);
+  if (NS_SUCCEEDED(rv)) {
+    mChannelLoader = loader.forget();
   }
-
-  MOZ_ASSERT(IsAnyOfHTMLElements(nsGkAtoms::audio, nsGkAtoms::video));
-  nsContentPolicyType contentPolicyType = IsHTMLElement(nsGkAtoms::audio) ?
-    nsIContentPolicy::TYPE_INTERNAL_AUDIO : nsIContentPolicy::TYPE_INTERNAL_VIDEO;
-
-  nsDocShell* docShellPtr;
-  if (docShell) {
-    docShellPtr = nsDocShell::Cast(docShell);
-    bool privateBrowsing;
-    docShellPtr->GetUsePrivateBrowsing(&privateBrowsing);
-    if (privateBrowsing) {
-      securityFlags |= nsILoadInfo::SEC_FORCE_PRIVATE_BROWSING;
-    }
-  }
-
-  nsCOMPtr<nsILoadGroup> loadGroup = GetDocumentLoadGroup();
-  nsCOMPtr<nsIChannel> channel;
-  nsresult rv = NS_NewChannel(getter_AddRefs(channel),
-                              mLoadingSrc,
-                              static_cast<Element*>(this),
-                              securityFlags,
-                              contentPolicyType,
-                              loadGroup,
-                              nullptr,   
-                              nsICachingChannel::LOAD_BYPASS_LOCAL_CACHE_IF_BUSY |
-                              nsIChannel::LOAD_MEDIA_SNIFFER_OVERRIDES_CONTENT_TYPE |
-                              nsIChannel::LOAD_CLASSIFY_URI |
-                              nsIChannel::LOAD_CALL_CONTENT_SNIFFERS);
-
-  NS_ENSURE_SUCCESS(rv,rv);
-
-  
-  nsCOMPtr<nsILoadInfo> loadInfo = channel->GetLoadInfo();
-  if (loadInfo) {
-    NeckoOriginAttributes originAttrs;
-    NS_GetOriginAttributes(channel, originAttrs);
-    loadInfo->SetOriginAttributes(originAttrs);
-  }
-
-  
-  
-  
-  
-  
-  
-  RefPtr<MediaLoadListener> loadListener = new MediaLoadListener(this);
-
-  channel->SetNotificationCallbacks(loadListener);
-
-  nsCOMPtr<nsIHttpChannel> hc = do_QueryInterface(channel);
-  if (hc) {
-    
-    
-    
-    hc->SetRequestHeader(NS_LITERAL_CSTRING("Range"),
-                         NS_LITERAL_CSTRING("bytes=0-"),
-                         false);
-
-    SetRequestHeaders(hc);
-  }
-
-  rv = channel->AsyncOpen2(loadListener);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  
-  
-  
-  mChannel = channel;
-
-  
-  
-  nsContentUtils::RegisterShutdownObserver(loadListener);
-  return NS_OK;
+  return rv;
 }
 
 nsresult HTMLMediaElement::LoadWithChannel(nsIChannel* aChannel,
@@ -2406,8 +2457,8 @@ HTMLMediaElement::~HTMLMediaElement()
   NS_ASSERTION(MediaElementTableCount(this, mLoadingSrc) == 0,
     "Destroyed media element should no longer be in element table");
 
-  if (mChannel) {
-    mChannel->Cancel(NS_BINDING_ABORTED);
+  if (mChannelLoader) {
+    mChannelLoader->Cancel();
   }
 
   WakeLockRelease();
@@ -3062,8 +3113,10 @@ nsresult HTMLMediaElement::InitializeDecoderForChannel(nsIChannel* aChannel,
   if (!resource)
     return NS_ERROR_OUT_OF_MEMORY;
 
-  
-  mChannel = nullptr;
+  if (mChannelLoader) {
+    mChannelLoader->Done();
+    mChannelLoader = nullptr;
+  }
 
   
   
@@ -3131,9 +3184,10 @@ nsresult HTMLMediaElement::FinishDecoderSetup(MediaDecoder* aDecoder,
   }
 #endif
 
-  
-  
-  mChannel = nullptr;
+  if (mChannelLoader) {
+    mChannelLoader->Done();
+    mChannelLoader = nullptr;
+  }
 
   AddMediaElementToURITable();
 

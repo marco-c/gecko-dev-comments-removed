@@ -732,6 +732,7 @@ public:
 protected:
   virtual ~HTMLMediaElement();
 
+  class ChannelLoader;
   class MediaLoadListener;
   class MediaStreamTracksAvailableCallback;
   class MediaStreamTrackListener;
@@ -1255,11 +1256,7 @@ protected:
   
   RefPtr<MediaSource> mMediaSource;
 
-  
-  
-  
-  
-  nsCOMPtr<nsIChannel> mChannel;
+  RefPtr<ChannelLoader> mChannelLoader;
 
   
   RefPtr<MediaError> mError;
