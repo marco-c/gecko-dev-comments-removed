@@ -16,33 +16,16 @@ function test() {
 
 
 function loadBadCertPage() {
-  gBrowser.addProgressListener(certErrorProgressListener);
-  gBrowser.selectedBrowser.loadURI("https://expired.example.com");
+  Services.obs.addObserver(certExceptionDialogObserver,
+                           "cert-exception-ui-ready", false);
+  let startedLoad = BrowserTestUtils.loadURI(gBrowser.selectedBrowser,
+                                             "https://expired.example.com");
+  startedLoad.then(() => promiseErrorPageLoaded(gBrowser.selectedBrowser)).then(function() {
+    ContentTask.spawn(gBrowser.selectedBrowser, null, function*() {
+      content.document.getElementById("exceptionDialogButton").click();
+    });
+  });
 }
-
-
-
-var certErrorProgressListener = {
-  buttonClicked: false,
-
-  onStateChange: function(aWebProgress, aRequest, aStateFlags, aStatus) {
-    if (aStateFlags & Ci.nsIWebProgressListener.STATE_STOP) {
-      let self = this;
-      
-      executeSoon(function() {
-        let button = content.document.getElementById("exceptionDialogButton");
-        
-        
-        if (button && !self.buttonClicked) {
-          gBrowser.removeProgressListener(self);
-          Services.obs.addObserver(certExceptionDialogObserver,
-                                   "cert-exception-ui-ready", false);
-          button.click();
-        }
-      });
-    }
-  }
-};
 
 
 
@@ -54,9 +37,7 @@ var certExceptionDialogObserver = {
       let certExceptionDialog = getDialog(EXCEPTION_DIALOG_URI);
       ok(certExceptionDialog, "found exception dialog");
       executeSoon(function() {
-        gBrowser.selectedBrowser.addEventListener("load",
-                                                  successfulLoadListener,
-                                                  true);
+        BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser).then(realPageLoaded);
         certExceptionDialog.documentElement.getButton("extra1").click();
       });
     }
@@ -64,16 +45,12 @@ var certExceptionDialogObserver = {
 };
 
 
-var successfulLoadListener = {
-  handleEvent: function() {
-    gBrowser.selectedBrowser.removeEventListener("load", this, true);
-    checkControlPanelIcons();
-    let certOverrideService = Cc["@mozilla.org/security/certoverride;1"]
-                                .getService(Ci.nsICertOverrideService);
-    certOverrideService.clearValidityOverride("expired.example.com", -1);
-    gBrowser.removeTab(gBrowser.selectedTab);
-    finish();
-  }
+function realPageLoaded() {
+  checkControlPanelIcons();
+  let certOverrideService = Cc["@mozilla.org/security/certoverride;1"]
+                              .getService(Ci.nsICertOverrideService);
+  certOverrideService.clearValidityOverride("expired.example.com", -1);
+  BrowserTestUtils.removeTab(gBrowser.selectedTab).then(finish);
 };
 
 
@@ -82,7 +59,7 @@ function checkControlPanelIcons() {
   gIdentityHandler._identityBox.click();
   document.getElementById("identity-popup-security-expander").click();
 
-  is_element_visible(document.getElementById("connection-icon"));
+  is_element_visible(document.getElementById("connection-icon"), "Should see connection icon");
   let connectionIconImage = gBrowser.ownerGlobal
         .getComputedStyle(document.getElementById("connection-icon"), "")
         .getPropertyValue("list-style-image");
