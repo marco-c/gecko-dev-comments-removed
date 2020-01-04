@@ -94,9 +94,6 @@ XPCOMUtils.defineLazyServiceGetter(this, "Profiler",
 XPCOMUtils.defineLazyModuleGetter(this, "SimpleServiceDiscovery",
                                   "resource://gre/modules/SimpleServiceDiscovery.jsm");
 
-XPCOMUtils.defineLazyModuleGetter(this, "ExtensionManagement",
-                                  "resource://gre/modules/ExtensionManagement.jsm");
-
 XPCOMUtils.defineLazyModuleGetter(this, "CharsetMenu",
                                   "resource://gre/modules/CharsetMenu.jsm");
 
@@ -388,12 +385,6 @@ var BrowserApp = {
     Services.obs.addObserver(this, "sessionstore-state-purge-complete", false);
     Services.obs.addObserver(this, "Fonts:Reload", false);
     Services.obs.addObserver(this, "Vibration:Request", false);
-
-    
-    ExtensionManagement.registerScript("chrome://browser/content/ext-pageAction.js");
-
-    
-    ExtensionManagement.registerSchema("chrome://browser/content/schemas/page_action.json");
 
     Messaging.addListener(this.getHistory.bind(this), "Session:GetHistory");
 
