@@ -828,12 +828,6 @@ nsPresContext::Init(nsDeviceContext* aDeviceContext)
     }
   }
 
-  
-  
-  
-  
-  mRestyleManager = new mozilla::RestyleManager(this);
-
   mLangService = do_GetService(NS_LANGUAGEATOMSERVICE_CONTRACTID);
 
   
@@ -903,10 +897,19 @@ nsPresContext::Init(nsDeviceContext* aDeviceContext)
 
 
 void
-nsPresContext::AttachShell(nsIPresShell* aShell)
+nsPresContext::AttachShell(nsIPresShell* aShell, StyleBackendType aBackendType)
 {
   MOZ_ASSERT(!mShell);
   mShell = aShell;
+
+  if (aBackendType == StyleBackendType::Servo) {
+    mRestyleManager = new ServoRestyleManager(this);
+  } else {
+    
+    
+    
+    mRestyleManager = new mozilla::RestyleManager(this);
+  }
 
   
   
