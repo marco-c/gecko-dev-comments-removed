@@ -484,9 +484,7 @@ this.BrowserTestUtils = {
 
 
 
-
-
-  waitForEvent(subject, eventName, capture, checkFn, wantsUntrusted) {
+  waitForEvent(subject, eventName, capture, checkFn) {
     return new Promise((resolve, reject) => {
       subject.addEventListener(eventName, function listener(event) {
         try {
@@ -503,7 +501,7 @@ this.BrowserTestUtils = {
           }
           reject(ex);
         }
-      }, capture, wantsUntrusted);
+      }, capture);
     });
   },
 
@@ -983,10 +981,11 @@ this.BrowserTestUtils = {
 
 
 
+
   waitForCondition(condition, msg, interval=100, maxTries=50) {
     return new Promise((resolve, reject) => {
       let tries = 0;
-      let intervalID = setInterval(() => {
+      let intervalID = setInterval(Task.async(function* () {
         if (tries >= maxTries) {
           clearInterval(intervalID);
           msg += ` - timed out after ${maxTries} tries.`;
@@ -996,7 +995,7 @@ this.BrowserTestUtils = {
 
         let conditionPassed = false;
         try {
-          conditionPassed = condition();
+          conditionPassed = yield condition();
         } catch(e) {
           msg += ` - threw exception: ${e}`;
           clearInterval(intervalID);
@@ -1009,7 +1008,7 @@ this.BrowserTestUtils = {
           resolve();
         }
         tries++;
-      }, interval);
+      }), interval);
     });
   },
 
