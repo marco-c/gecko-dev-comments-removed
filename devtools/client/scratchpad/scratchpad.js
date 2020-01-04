@@ -438,7 +438,7 @@ var Scratchpad = {
 
   get browserWindow()
   {
-    return Services.wm.getMostRecentWindow("navigator:browser");
+    return Services.wm.getMostRecentWindow(gDevTools.chromeWindowType);
   },
 
   

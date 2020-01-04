@@ -27,6 +27,7 @@
 const Services = require("Services");
 const defer = require("devtools/shared/defer");
 const {getCSSLexer} = require("devtools/shared/css-lexer");
+const {gDevTools} = require("devtools/client/framework/devtools");
 
 
 
@@ -41,8 +42,6 @@ const PAGE_LINK_PARAMS =
 
 var PAGE_LINK_URL = "https://developer.mozilla.org/docs/Web/CSS/";
 exports.PAGE_LINK_URL = PAGE_LINK_URL;
-
-const BROWSER_WINDOW = "navigator:browser";
 
 const PROPERTY_NAME_COLOR = "theme-fg-color5";
 const PROPERTY_VALUE_COLOR = "theme-fg-color1";
@@ -256,12 +255,12 @@ function MdnDocsWidget(tooltipDocument) {
     l10n.strings.GetStringFromName("docsTooltip.visitMDN");
 
   
-  let browserWindow = Services.wm.getMostRecentWindow(BROWSER_WINDOW);
+  let mainWindow = Services.wm.getMostRecentWindow(gDevTools.chromeWindowType);
   this.elements.linkToMdn.addEventListener("click", function (e) {
     e.stopPropagation();
     e.preventDefault();
     let link = e.target.href;
-    browserWindow.gBrowser.addTab(link);
+    mainWindow.gBrowser.addTab(link);
   });
 }
 

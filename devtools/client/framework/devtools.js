@@ -50,6 +50,10 @@ this.DevTools = function DevTools() {
 };
 
 DevTools.prototype = {
+  
+  
+  chromeWindowType: "navigator:browser",
+
   registerDefaults() {
     
     

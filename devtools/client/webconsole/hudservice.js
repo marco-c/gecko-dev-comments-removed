@@ -2,8 +2,6 @@
 
 
 
-
-
 "use strict";
 
 const {Cc, Ci, Cu} = require("chrome");
@@ -70,7 +68,7 @@ HUD_SERVICE.prototype =
 
 
   currentContext: function HS_currentContext() {
-    return Services.wm.getMostRecentWindow("navigator:browser");
+    return Services.wm.getMostRecentWindow(gDevTools.chromeWindowType);
   },
 
   
@@ -295,7 +293,7 @@ function WebConsole(aTarget, aIframeWindow, aChromeWindow)
   this.browserWindow = this.chromeWindow.top;
 
   let element = this.browserWindow.document.documentElement;
-  if (element.getAttribute("windowtype") != "navigator:browser") {
+  if (element.getAttribute("windowtype") != gDevTools.chromeWindowType) {
     this.browserWindow = HUDService.currentContext();
   }
 
@@ -438,7 +436,7 @@ WebConsole.prototype = {
   viewSource: function WC_viewSource(aSourceURL, aSourceLine) {
     
     
-    let browserWin = Services.wm.getMostRecentWindow("navigator:browser");
+    let browserWin = Services.wm.getMostRecentWindow(gDevTools.chromeWindowType);
     if (browserWin && browserWin.BrowserViewSourceOfDocument) {
       return browserWin.BrowserViewSourceOfDocument({
         URL: aSourceURL,
