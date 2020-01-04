@@ -11,6 +11,9 @@ var CacheFlushObserver = {
   observe: function(aSubject, aTopic, aData) {
     if (aTopic != "flush-cache-entry")
       return;
+    
+    if (aData == "cert-override")
+      return;
 
     do_check_true(gExpectedFile != null);
     do_check_true(aSubject instanceof AM_Ci.nsIFile);

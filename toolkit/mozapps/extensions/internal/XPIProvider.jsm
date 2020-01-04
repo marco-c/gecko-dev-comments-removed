@@ -1641,11 +1641,18 @@ function verifyZipSignedState(aFile, aAddon) {
     root = Ci.nsIX509CertDB.AddonsStageRoot;
 
   return new Promise(resolve => {
-    gCertDB.openSignedAppFileAsync(root, aFile, (aRv, aZipReader, aCert) => {
-      if (aZipReader)
-        aZipReader.close();
-      resolve(getSignedStatus(aRv, aCert, aAddon.id));
-    });
+    let callback = {
+      openSignedAppFileFinished: function(aRv, aZipReader, aCert) {
+        if (aZipReader)
+          aZipReader.close();
+        resolve(getSignedStatus(aRv, aCert, aAddon.id));
+      }
+    };
+    
+    
+    callback.wrappedJSObject = callback;
+
+    gCertDB.openSignedAppFileAsync(root, aFile, callback);
   });
 }
 
@@ -1668,9 +1675,16 @@ function verifyDirSignedState(aDir, aAddon) {
     root = Ci.nsIX509CertDB.AddonsStageRoot;
 
   return new Promise(resolve => {
-    gCertDB.verifySignedDirectoryAsync(root, aDir, (aRv, aCert) => {
-      resolve(getSignedStatus(aRv, aCert, aAddon.id));
-    });
+    let callback = {
+      verifySignedDirectoryFinished: function(aRv, aCert) {
+        resolve(getSignedStatus(aRv, aCert, aAddon.id));
+      }
+    };
+    
+    
+    callback.wrappedJSObject = callback;
+
+    gCertDB.verifySignedDirectoryAsync(root, aDir, callback);
   });
 }
 
