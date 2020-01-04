@@ -216,14 +216,6 @@ public:
 
   virtual bool IsFrozen() const = 0;
 
-  
-  virtual nsresult SetTimeoutOrInterval(nsIScriptTimeoutHandler *aHandler,
-                                        int32_t interval,
-                                        bool aIsInterval, int32_t *aReturn) = 0;
-
-  
-  virtual nsresult ClearTimeoutOrInterval(int32_t aTimerID) = 0;
-
   nsPIDOMWindowOuter* GetOuterWindow()
   {
     return mIsInnerWindow ? mOuterWindow.get() : AsOuter();
