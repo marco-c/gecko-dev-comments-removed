@@ -39,6 +39,8 @@ enum {
 
 
 
+
+
   JSPROXYSLOT_EXPANDO = 0
 };
 
@@ -138,6 +140,13 @@ public:
                                        JS::Handle<JSObject*> obj);
 
   static const char family;
+};
+
+
+
+class ShadowingDOMProxyHandler : public DOMProxyHandler
+{
+  virtual void trace(JSTracer* trc, JSObject* proxy) const override;
 };
 
 inline bool IsDOMProxy(JSObject *obj)

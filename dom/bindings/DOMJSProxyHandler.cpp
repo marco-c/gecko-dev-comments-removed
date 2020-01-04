@@ -297,5 +297,27 @@ DOMProxyHandler::GetExpandoObject(JSObject *obj)
   return v.isUndefined() ? nullptr : &v.toObject();
 }
 
+
+void
+ShadowingDOMProxyHandler::trace(JSTracer* trc, JSObject* proxy) const
+{
+  DOMProxyHandler::trace(trc, proxy);
+
+  MOZ_ASSERT(IsDOMProxy(proxy), "expected a DOM proxy object");
+  JS::Value v = js::GetProxyExtra(proxy, JSPROXYSLOT_EXPANDO);
+  MOZ_ASSERT(!v.isObject(), "Should not have expando object directly!");
+
+  if (v.isUndefined()) {
+    
+    
+    return;
+  }
+
+  js::ExpandoAndGeneration* expandoAndGeneration =
+    static_cast<js::ExpandoAndGeneration*>(v.toPrivate());
+  JS::TraceEdge(trc, &expandoAndGeneration->expando,
+                "Shadowing DOM proxy expando");
+}
+
 } 
 } 
