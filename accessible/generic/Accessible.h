@@ -472,12 +472,6 @@ public:
   
 
 
-  inline bool AreChildrenCached() const
-    { return !IsChildrenFlag(eChildrenUninitialized); }
-
-  
-
-
   bool IsBoundToParent() const { return !!mParent; }
 
   
@@ -993,29 +987,6 @@ protected:
   
 
 
-  enum ChildrenFlags {
-    eChildrenUninitialized = 0, 
-    eMixedChildren = 1 << 0, 
-    eEmbeddedChildren = 1 << 1, 
-
-    eLastChildrenFlag = eEmbeddedChildren
-  };
-
-  
-
-
-  bool IsChildrenFlag(ChildrenFlags aFlag) const
-    { return static_cast<ChildrenFlags>(mChildrenFlags) == aFlag; }
-
-  
-
-
-  void SetChildrenFlag(ChildrenFlags aFlag) { mChildrenFlags = aFlag; }
-
-  
-
-
-
   enum StateFlags {
     eIsDefunct = 1 << 0, 
     eIsNotInDocument = 1 << 1, 
@@ -1029,6 +1000,7 @@ protected:
     eRelocated = 1 << 9, 
     eNoXBLKids = 1 << 10, 
     eNoKidsFromDOM = 1 << 11, 
+    eHasTextKids = 1 << 12, 
 
     eLastStateFlag = eNoKidsFromDOM
   };
@@ -1129,8 +1101,7 @@ protected:
   nsTArray<RefPtr<Accessible> > mChildren;
   int32_t mIndexInParent;
 
-  static const uint8_t kChildrenFlagsBits = 2;
-  static const uint8_t kStateFlagsBits = 12;
+  static const uint8_t kStateFlagsBits = 13;
   static const uint8_t kContextFlagsBits = 3;
   static const uint8_t kTypeBits = 6;
   static const uint8_t kGenericTypesBits = 15;
@@ -1138,7 +1109,6 @@ protected:
   
 
 
-  uint32_t mChildrenFlags : kChildrenFlagsBits;
   uint32_t mStateFlags : kStateFlagsBits;
   uint32_t mContextFlags : kContextFlagsBits;
   uint32_t mType : kTypeBits;
