@@ -112,6 +112,7 @@ loop.store.ActiveRoomStore = (function(mozL10n) {
       "remoteSrcMediaElement",
       "remoteVideoDimensions",
       "remoteVideoEnabled",
+      "streamPaused",
       "screenSharingState",
       "screenShareMediaElement",
       "videoMuted"
@@ -151,6 +152,8 @@ loop.store.ActiveRoomStore = (function(mozL10n) {
         roomInfoFailure: null,
         
         roomName: null,
+        
+        streamPaused: false,
         
         socialShareProviders: null,
         
@@ -268,7 +271,8 @@ loop.store.ActiveRoomStore = (function(mozL10n) {
         "toggleBrowserSharing",
         "updateSocialShareInfo",
         "connectionStatus",
-        "mediaConnected"
+        "mediaConnected",
+        "videoScreenStreamChanged"
       ];
       
       if (this._isDesktop) {
@@ -1205,6 +1209,18 @@ loop.store.ActiveRoomStore = (function(mozL10n) {
       nextState[storeProp] = this.getStoreState()[storeProp];
       nextState[storeProp][actionData.videoType] = actionData.dimensions;
       this.setStoreState(nextState);
+    },
+
+    
+
+
+
+
+
+    videoScreenStreamChanged: function(actionData) {
+      this.setStoreState({
+        streamPaused: !actionData.hasVideo
+      });
     },
 
     

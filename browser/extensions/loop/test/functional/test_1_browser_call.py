@@ -126,9 +126,10 @@ class Test1BrowserCall(MarionetteTestCase):
         self.marionette.navigate(url)
 
         
-        join_button = self.wait_for_element_displayed(By.CLASS_NAME,
-                                                      "btn-join")
-        join_button.click()
+        
+        tour_close_button = self.wait_for_element_displayed(By.CLASS_NAME,
+                                                            "button-close")
+        tour_close_button.click()
 
     
     def check_video(self, selector):

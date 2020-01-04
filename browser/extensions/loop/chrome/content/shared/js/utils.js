@@ -398,6 +398,7 @@ if (inChrome) {
 
 
 
+
   function formatURL(url, suppressConsoleError) {
     
     
@@ -412,7 +413,8 @@ if (inChrome) {
       
       return {
         hostname: urlObject.hostname,
-        location: decodeURI(urlObject.href)
+        location: decodeURI(urlObject.href),
+        protocol: urlObject.protocol
       };
     } catch (ex) {
       if (suppressConsoleError ? !suppressConsoleError : true) {

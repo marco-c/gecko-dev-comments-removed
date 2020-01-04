@@ -601,18 +601,25 @@ var WindowListener = {
 
         let cursor = document.getElementById("loop-remote-cursor");
         if (!cursor) {
-          cursor = document.createElement("image");
+          
+          
+          let cursorContainer = document.createElement("div");
+          cursorContainer.setAttribute("id", "loop-remote-cursor-container");
+
+          cursor = document.createElement("img");
           cursor.setAttribute("id", "loop-remote-cursor");
+
+          cursorContainer.appendChild(cursor);
+          
+          
+          browser.parentNode.appendChild(cursorContainer);
         }
 
         
-        cursor.setAttribute("left",
-                            cursorData.ratioX * browser.boxObject.width);
-        cursor.setAttribute("top",
-                            cursorData.ratioY * browser.boxObject.height);
-
-        
-        browser.parentNode.appendChild(cursor);
+        cursor.style.left =
+          Math.abs(cursorData.ratioX * browser.boxObject.width) + "px";
+        cursor.style.top =
+          Math.abs(cursorData.ratioY * browser.boxObject.height) + "px";
       },
 
       

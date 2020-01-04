@@ -319,4 +319,13 @@
     
     -moz-margin-start: calc(50% - 310px);
   }
+
+  #loop-remote-cursor-container {
+    position: absolute;
+    pointer-events: none;
+    
+
+
+    overflow: hidden;
+  }
 }
