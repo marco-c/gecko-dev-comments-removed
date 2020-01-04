@@ -356,6 +356,12 @@ class ProxyContext extends ExtensionContext {
 }
 
 function findPathInObject(obj, path) {
+  
+  
+  path = path.reduce((acc, el) => {
+    return acc.concat(el.split("."));
+  }, []);
+
   for (let elt of path) {
     obj = obj[elt] || undefined;
   }

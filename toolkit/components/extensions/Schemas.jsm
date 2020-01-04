@@ -1651,8 +1651,33 @@ this.Schemas = {
         }
       }
 
+      
       if (!Object.keys(obj).length) {
         delete dest[namespace];
+        
+        continue;
+      }
+
+      
+      
+      if (namespace.includes(".")) {
+        let apiObj = dest[namespace];
+        delete dest[namespace];
+
+        let nsLevels = namespace.split(".");
+        let currentObj = dest;
+        for (let nsLevel of nsLevels.slice(0, -1)) {
+          if (!currentObj[nsLevel]) {
+            
+            currentObj = Cu.createObjectIn(currentObj, {defineAs: nsLevel});
+          } else {
+            
+            currentObj = currentObj[nsLevel];
+          }
+        }
+
+        
+        currentObj[nsLevels.pop()] = apiObj;
       }
     }
   },
