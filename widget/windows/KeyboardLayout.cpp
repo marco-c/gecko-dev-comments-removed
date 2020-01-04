@@ -345,6 +345,26 @@ ModifierKeyState::IsWin() const
 }
 
 bool
+ModifierKeyState::MaybeMatchShortcutKey() const
+{
+  
+  
+  if (IsWin()) {
+    return true;
+  }
+  
+  
+  
+  if (IsControl() ^ IsAlt()) {
+    return true;
+  }
+  
+  
+  
+  return false;
+}
+
+bool
 ModifierKeyState::IsCapsLocked() const
 {
   return (mModifiers & MODIFIER_CAPSLOCK) != 0;
