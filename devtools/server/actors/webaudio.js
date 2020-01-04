@@ -802,7 +802,7 @@ function InvalidCommandError() {
 
 
 function getConstructorName(obj) {
-  return obj.toString().match(/\[object ([^\[\]]*)\]\]?$/)[1];
+  return Object.prototype.toString.call(obj).match(/\[object ([^\[\]]*)\]\]?$/)[1];
 }
 
 

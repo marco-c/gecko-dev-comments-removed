@@ -29,7 +29,7 @@ function IsDetachedBuffer(buffer) {
     
     
     if (IsSharedArrayBuffer(buffer))
-	return false;
+        return false;
 
     var flags = UnsafeGetInt32FromReservedSlot(buffer, JS_ARRAYBUFFER_FLAGS_SLOT);
     return (flags & JS_ARRAYBUFFER_DETACHED_FLAG) !== 0;
@@ -171,11 +171,10 @@ function TypedArrayEvery(callbackfn, thisArg = undefined) {
 
     
     var len;
-    if (isTypedArray) {
+    if (isTypedArray)
         len = TypedArrayLength(O);
-    } else {
+    else
         len = callFunction(CallTypedArrayMethodIfWrapped, O, O, "TypedArrayLength");
-    }
 
     
     if (arguments.length === 0)
@@ -260,11 +259,10 @@ function TypedArrayFilter(callbackfn, thisArg = undefined) {
 
     
     var len;
-    if (isTypedArray) {
+    if (isTypedArray)
         len = TypedArrayLength(O);
-    } else {
+    else
         len = callFunction(CallTypedArrayMethodIfWrapped, O, O, "TypedArrayLength");
-    }
 
     
     if (arguments.length === 0)
@@ -329,11 +327,10 @@ function TypedArrayFind(predicate, thisArg = undefined) {
 
     
     var len;
-    if (isTypedArray) {
+    if (isTypedArray)
         len = TypedArrayLength(O);
-    } else {
+    else
         len = callFunction(CallTypedArrayMethodIfWrapped, O, O, "TypedArrayLength");
-    }
 
     
     if (arguments.length === 0)
@@ -372,11 +369,10 @@ function TypedArrayFindIndex(predicate, thisArg = undefined) {
 
     
     var len;
-    if (isTypedArray) {
+    if (isTypedArray)
         len = TypedArrayLength(O);
-    } else {
+    else
         len = callFunction(CallTypedArrayMethodIfWrapped, O, O, "TypedArrayLength");
-    }
 
     
     if (arguments.length === 0)
@@ -413,11 +409,10 @@ function TypedArrayForEach(callbackfn, thisArg = undefined) {
 
     
     var len;
-    if (isTypedArray) {
+    if (isTypedArray)
         len = TypedArrayLength(O);
-    } else {
+    else
         len = callFunction(CallTypedArrayMethodIfWrapped, O, O, "TypedArrayLength");
-    }
 
     
     if (arguments.length === 0)
@@ -607,11 +602,10 @@ function TypedArrayMap(callbackfn, thisArg = undefined) {
 
     
     var len;
-    if (isTypedArray) {
+    if (isTypedArray)
         len = TypedArrayLength(O);
-    } else {
+    else
         len = callFunction(CallTypedArrayMethodIfWrapped, O, O, "TypedArrayLength");
-    }
 
     
     if (arguments.length === 0)
@@ -657,11 +651,10 @@ function TypedArrayReduce(callbackfn) {
 
     
     var len;
-    if (isTypedArray) {
+    if (isTypedArray)
         len = TypedArrayLength(O);
-    } else {
+    else
         len = callFunction(CallTypedArrayMethodIfWrapped, O, O, "TypedArrayLength");
-    }
 
     
     if (arguments.length === 0)
@@ -704,11 +697,10 @@ function TypedArrayReduceRight(callbackfn) {
 
     
     var len;
-    if (isTypedArray) {
+    if (isTypedArray)
         len = TypedArrayLength(O);
-    } else {
+    else
         len = callFunction(CallTypedArrayMethodIfWrapped, O, O, "TypedArrayLength");
-    }
 
     
     if (arguments.length === 0)
@@ -870,7 +862,7 @@ function SetFromTypedArray(target, typedArray, targetOffset, targetLength) {
 }
 
 
-function TypedArraySet(overloaded, offset) {
+function TypedArraySet(overloaded, offset = 0) {
     
     var target = this;
     if (!IsObject(target) || !IsTypedArray(target)) {
@@ -971,11 +963,10 @@ function TypedArraySome(callbackfn, thisArg = undefined) {
 
     
     var len;
-    if (isTypedArray) {
+    if (isTypedArray)
         len = TypedArrayLength(O);
-    } else {
+    else
         len = callFunction(CallTypedArrayMethodIfWrapped, O, O, "TypedArrayLength");
-    }
 
     
     if (arguments.length === 0)
@@ -1104,6 +1095,78 @@ function TypedArraySort(comparefn) {
     }
 
     return QuickSort(obj, len, comparefn);
+}
+
+
+
+
+
+function TypedArrayToLocaleString(locales = undefined, options = undefined) {
+    
+    var array = this;
+
+    
+    
+    var isTypedArray = IsTypedArrayEnsuringArrayBuffer(array);
+
+    
+    
+
+    
+    var len;
+    if (isTypedArray)
+        len = TypedArrayLength(array);
+    else
+        len = callFunction(CallTypedArrayMethodIfWrapped, array, array, "TypedArrayLength");
+
+    
+    if (len === 0)
+        return "";
+
+    
+    var firstElement = array[0];
+
+    
+    
+    
+#if EXPOSE_INTL_API
+    var R = ToString(callContentFunction(firstElement.toLocaleString, firstElement, locales, options));
+#else
+    var R = ToString(callContentFunction(firstElement.toLocaleString, firstElement));
+#endif
+
+    
+    
+    var separator = ",";
+
+    
+    for (var k = 1; k < len; k++) {
+        
+        var S = R + separator;
+
+        
+        var nextElement = array[k];
+
+        
+        
+        
+        
+        
+        
+
+        
+#if EXPOSE_INTL_API
+        R = ToString(callContentFunction(nextElement.toLocaleString, nextElement, locales, options));
+#else
+        R = ToString(callContentFunction(nextElement.toLocaleString, nextElement));
+#endif
+
+        
+        R = S + R;
+    }
+
+    
+    return R;
 }
 
 
