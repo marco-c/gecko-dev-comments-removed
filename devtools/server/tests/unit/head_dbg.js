@@ -8,6 +8,18 @@ var Cu = Components.utils;
 var Cr = Components.results;
 var CC = Components.Constructor;
 
+
+
+const _appInfo = {};
+Cu.import("resource://testing-common/AppInfo.jsm", _appInfo);
+_appInfo.updateAppInfo({
+  ID: "devtools@tests.mozilla.org",
+  name: "devtools-tests",
+  version: "1",
+  platformVersion: "42",
+  crashReporter: true,
+});
+
 const { require, loader } = Cu.import("resource://devtools/shared/Loader.jsm", {});
 const { worker } = Cu.import("resource://devtools/shared/worker/loader.js", {});
 const promise = require("promise");
