@@ -46,6 +46,12 @@ browser.Context = class {
     this.setBrowser(win);
 
     
+    
+    
+    
+    
+    
+    
     this.tab = null;
     this.pendingCommands = [];
 
@@ -214,7 +220,9 @@ browser.Context = class {
   hasRemotenessChange() {
     
     
-    if (this.driver.appName != "Firefox" || this.tab === null) {
+    if (this.driver.appName != "Firefox" ||
+        this.tab === null ||
+        this.browserForTab === null) {
       return false;
     }
 
@@ -222,9 +230,7 @@ browser.Context = class {
       return true;
     }
 
-    
-    let currentTab = this.browser.selectedTab;
-    let currentIsRemote = this.browser.getBrowserForTab(currentTab).isRemoteBrowser;
+    let currentIsRemote = this.browserForTab.isRemoteBrowser;
     this._hasRemotenessChange = this._browserWasRemote !== currentIsRemote;
     this._browserWasRemote = currentIsRemote;
     return this._hasRemotenessChange;
