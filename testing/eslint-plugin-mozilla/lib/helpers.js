@@ -129,6 +129,13 @@ module.exports = {
     variable.eslintExplicitGlobal = false;
     variable.writeable = true;
     variables.push(variable);
+
+    
+    
+    
+    if (scope.set) {
+      scope.set.set(name, variable);
+    }
   },
 
   
