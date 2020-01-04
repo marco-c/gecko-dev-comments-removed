@@ -525,7 +525,7 @@ js::GetErrorTypeName(JSRuntime* rt, int16_t exnType)
     return ClassName(key, rt);
 }
 
-bool
+void
 js::ErrorToException(JSContext* cx, const char* message, JSErrorReport* reportp,
                      JSErrorCallback callback, void* userRef)
 {
@@ -537,7 +537,7 @@ js::ErrorToException(JSContext* cx, const char* message, JSErrorReport* reportp,
     
     if (cx->runtime()->isSelfHostingCompartment(cx->compartment())) {
         PrintError(cx, stderr, message, reportp, true);
-        return false;
+        return;
     }
 
     
@@ -556,42 +556,40 @@ js::ErrorToException(JSContext* cx, const char* message, JSErrorReport* reportp,
 
     
     if (cx->generatingError)
-        return false;
+        return;
     AutoScopedAssign<bool> asa(&cx->generatingError, true);
 
     
     RootedString messageStr(cx, reportp->ucmessage ? JS_NewUCStringCopyZ(cx, reportp->ucmessage)
                                                    : JS_NewStringCopyZ(cx, message));
     if (!messageStr)
-        return cx->isExceptionPending();
+        return;
 
     RootedString fileName(cx, JS_NewStringCopyZ(cx, reportp->filename));
     if (!fileName)
-        return cx->isExceptionPending();
+        return;
 
     uint32_t lineNumber = reportp->lineno;
     uint32_t columnNumber = reportp->column;
 
     RootedObject stack(cx);
     if (!CaptureStack(cx, &stack))
-        return cx->isExceptionPending();
+        return;
 
     js::ScopedJSFreePtr<JSErrorReport> report(CopyErrorReport(cx, reportp));
     if (!report)
-        return cx->isExceptionPending();
+        return;
 
     RootedObject errObject(cx, ErrorObject::create(cx, exnType, stack, fileName,
                                                    lineNumber, columnNumber, &report, messageStr));
     if (!errObject)
-        return cx->isExceptionPending();
+        return;
 
     
-    RootedValue errValue(cx, ObjectValue(*errObject));
-    JS_SetPendingException(cx, errValue);
+    cx->setPendingException(ObjectValue(*errObject));
 
     
     reportp->flags |= JSREPORT_EXCEPTION;
-    return true;
 }
 
 static bool
