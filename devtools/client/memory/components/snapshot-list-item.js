@@ -3,7 +3,7 @@
 
 
 const { DOM: dom, createClass, PropTypes } = require("devtools/client/shared/vendor/react");
-const { getSnapshotStatusText } = require("../utils");
+const { L10N, getSnapshotStatusText } = require("../utils");
 const { snapshot: snapshotModel } = require("../models");
 
 const SnapshotListItem = module.exports = createClass({
