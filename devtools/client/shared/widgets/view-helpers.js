@@ -5,29 +5,18 @@
 
 "use strict";
 
-const Ci = Components.interfaces;
-const Cu = Components.utils;
+const DevToolsUtils = require("devtools/shared/DevToolsUtils");
+const { Ci } = require("chrome");
 
 const PANE_APPEARANCE_DELAY = 50;
 const PAGE_SIZE_ITEM_COUNT_RATIO = 5;
 const WIDGET_FOCUSABLE_NODES = new Set(["vbox", "hbox"]);
 
-Cu.import("resource://gre/modules/XPCOMUtils.jsm");
-Cu.import("resource://gre/modules/Timer.jsm");
-const { require } = Cu.import("resource://devtools/shared/Loader.jsm", {});
-const DevToolsUtils = require("devtools/shared/DevToolsUtils");
-
-this.EXPORTED_SYMBOLS = [
-  "Heritage", "ViewHelpers", "WidgetMethods",
-  "setNamedTimeout", "clearNamedTimeout",
-  "setConditionalTimeout", "clearConditionalTimeout",
-];
 
 
 
 
-
-this.Heritage = {
+exports.Heritage = {
   
 
 
@@ -57,12 +46,13 @@ this.Heritage = {
 
 
 
-this.setNamedTimeout = function setNamedTimeout(aId, aWait, aCallback) {
+const setNamedTimeout = function setNamedTimeout(aId, aWait, aCallback) {
   clearNamedTimeout(aId);
 
   namedTimeoutsStore.set(aId, setTimeout(() =>
     namedTimeoutsStore.delete(aId) && aCallback(), aWait));
-};
+}
+exports.setNamedTimeout = setNamedTimeout;
 
 
 
@@ -71,13 +61,14 @@ this.setNamedTimeout = function setNamedTimeout(aId, aWait, aCallback) {
 
 
 
-this.clearNamedTimeout = function clearNamedTimeout(aId) {
+const clearNamedTimeout = function clearNamedTimeout(aId) {
   if (!namedTimeoutsStore) {
     return;
   }
   clearTimeout(namedTimeoutsStore.get(aId));
   namedTimeoutsStore.delete(aId);
 };
+exports.clearNamedTimeout = clearNamedTimeout;
 
 
 
@@ -93,7 +84,7 @@ this.clearNamedTimeout = function clearNamedTimeout(aId) {
 
 
 
-this.setConditionalTimeout = function setConditionalTimeout(aId, aWait, aPredicate, aCallback) {
+const setConditionalTimeout = function setConditionalTimeout(aId, aWait, aPredicate, aCallback) {
   setNamedTimeout(aId, aWait, function maybeCallback() {
     if (aPredicate()) {
       aCallback();
@@ -102,6 +93,7 @@ this.setConditionalTimeout = function setConditionalTimeout(aId, aWait, aPredica
     setConditionalTimeout(aId, aWait, aPredicate, aCallback);
   });
 };
+exports.setConditionalTimeout = setConditionalTimeout;
 
 
 
@@ -110,16 +102,17 @@ this.setConditionalTimeout = function setConditionalTimeout(aId, aWait, aPredica
 
 
 
-this.clearConditionalTimeout = function clearConditionalTimeout(aId) {
+const clearConditionalTimeout = function clearConditionalTimeout(aId) {
   clearNamedTimeout(aId);
 };
+exports.clearConditionalTimeout = clearConditionalTimeout;
 
-XPCOMUtils.defineLazyGetter(this, "namedTimeoutsStore", () => new Map());
+loader.lazyGetter(this, "namedTimeoutsStore", () => new Map());
 
 
 
 
-this.ViewHelpers = {
+const ViewHelpers = exports.ViewHelpers = {
   
 
 
@@ -495,7 +488,7 @@ DevToolsUtils.defineLazyPrototypeGetter(Item.prototype, "_itemsByElement", () =>
 
 
 
-this.WidgetMethods = {
+const WidgetMethods = exports.WidgetMethods = {
   
 
 

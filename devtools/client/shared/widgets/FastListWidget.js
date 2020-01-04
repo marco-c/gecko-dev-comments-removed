@@ -7,7 +7,7 @@
 
 const EventEmitter = require("devtools/shared/event-emitter");
 const { Cu, Ci } = require("chrome");
-const { ViewHelpers } = Cu.import("resource://devtools/client/shared/widgets/ViewHelpers.jsm", {});
+const { ViewHelpers } = require("devtools/client/shared/widgets/view-helpers");
 
 
 

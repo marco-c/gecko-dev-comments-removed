@@ -6,7 +6,6 @@
 
 
 
-
 "use strict";
 
 var { classes: Cc, interfaces: Ci, utils: Cu } = Components;
@@ -24,8 +23,8 @@ const {Tooltip} = require("devtools/client/shared/widgets/Tooltip");
 const DevToolsUtils = require("devtools/shared/DevToolsUtils");
 const {LocalizationHelper} = require("devtools/client/shared/l10n");
 const {PrefsHelper} = require("devtools/client/shared/prefs");
-
-Cu.import("resource://devtools/client/shared/widgets/ViewHelpers.jsm");
+const {ViewHelpers, Heritage, WidgetMethods, setNamedTimeout} =
+  require("devtools/client/shared/widgets/view-helpers");
 
 
 

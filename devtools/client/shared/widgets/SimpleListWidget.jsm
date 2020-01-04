@@ -8,7 +8,8 @@
 const Ci = Components.interfaces;
 const Cu = Components.utils;
 
-Cu.import("resource://devtools/client/shared/widgets/ViewHelpers.jsm");
+const { require } = Cu.import("resource://devtools/shared/Loader.jsm", {});
+const { ViewHelpers } = require("devtools/client/shared/widgets/view-helpers");
 
 this.EXPORTED_SYMBOLS = ["SimpleListWidget"];
 

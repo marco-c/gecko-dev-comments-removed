@@ -10,7 +10,8 @@ const Cu = Components.utils;
 
 const ENSURE_SELECTION_VISIBLE_DELAY = 50; 
 
-Cu.import("resource://devtools/client/shared/widgets/ViewHelpers.jsm");
+const { require } = Cu.import("resource://devtools/shared/Loader.jsm", {});
+const { ViewHelpers, setNamedTimeout } = require("devtools/client/shared/widgets/view-helpers");
 Cu.import("resource://devtools/shared/event-emitter.js");
 
 this.EXPORTED_SYMBOLS = ["BreadcrumbsWidget"];
