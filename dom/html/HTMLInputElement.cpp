@@ -1747,23 +1747,7 @@ HTMLInputElement::GetValueInternal(nsAString& aValue) const
 
     case VALUE_MODE_FILENAME:
       if (nsContentUtils::LegacyIsCallerChromeOrNativeCode()) {
-#ifndef MOZ_CHILD_PERMISSIONS
         aValue.Assign(mFirstFilePath);
-#else
-        
-        
-        if (!mFilesOrDirectories.IsEmpty()) {
-          ErrorResult rv;
-          GetDOMFileOrDirectoryPath(mFilesOrDirectories[0], aValue, rv);
-          if (NS_WARN_IF(rv.Failed())) {
-            return rv.StealNSResult();
-          }
-          return NS_OK;
-        }
-        else {
-          aValue.Truncate();
-        }
-#endif
       } else {
         
         if (mFilesOrDirectories.IsEmpty()) {
@@ -2938,7 +2922,6 @@ HTMLInputElement::AfterSetFilesOrDirectories(bool aSetValueChanged)
     formControlFrame->SetFormProperty(nsGkAtoms::value, readableValue);
   }
 
-#ifndef MOZ_CHILD_PERMISSIONS
   
   
   
@@ -2953,7 +2936,6 @@ HTMLInputElement::AfterSetFilesOrDirectories(bool aSetValueChanged)
       rv.SuppressException();
     }
   }
-#endif
 
   UpdateFileList();
 
