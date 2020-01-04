@@ -6,6 +6,7 @@
 
 #include "mozilla/CheckedInt.h"
 #include "mozilla/gfx/Point.h"
+#include "mozilla/SyncRunnable.h"
 
 #include "AudioSegment.h"
 #include "DecodedStream.h"
@@ -269,23 +270,35 @@ DecodedStream::Start(int64_t aStartTime, const MediaInfo& aInfo)
 
   class R : public nsRunnable {
     typedef MozPromiseHolder<GenericPromise> Promise;
-    typedef decltype(&DecodedStream::CreateData) Method;
   public:
-    R(DecodedStream* aThis, Method aMethod, PlaybackInfoInit&& aInit, Promise&& aPromise)
-      : mThis(aThis), mMethod(aMethod), mInit(Move(aInit))
+    R(PlaybackInfoInit&& aInit, Promise&& aPromise, OutputStreamManager* aManager)
+      : mInit(Move(aInit)), mOutputStreamManager(aManager)
     {
       mPromise = Move(aPromise);
     }
     NS_IMETHOD Run() override
     {
-      (mThis->*mMethod)(Move(mInit), Move(mPromise));
+      MOZ_ASSERT(NS_IsMainThread());
+      
+      
+      if (!mOutputStreamManager->Graph()) {
+        
+        mPromise.Resolve(true, __func__);
+        return NS_OK;
+      }
+      mData = MakeUnique<DecodedStreamData>(
+        mOutputStreamManager, Move(mInit), Move(mPromise));
       return NS_OK;
     }
+    UniquePtr<DecodedStreamData> ReleaseData()
+    {
+      return Move(mData);
+    }
   private:
-    RefPtr<DecodedStream> mThis;
-    Method mMethod;
     PlaybackInfoInit mInit;
     Promise mPromise;
+    RefPtr<OutputStreamManager> mOutputStreamManager;
+    UniquePtr<DecodedStreamData> mData;
   };
 
   MozPromiseHolder<GenericPromise> promise;
@@ -293,8 +306,15 @@ DecodedStream::Start(int64_t aStartTime, const MediaInfo& aInfo)
   PlaybackInfoInit init {
     aStartTime, aInfo
   };
-  nsCOMPtr<nsIRunnable> r = new R(this, &DecodedStream::CreateData, Move(init), Move(promise));
-  AbstractThread::MainThread()->Dispatch(r.forget());
+  nsCOMPtr<nsIRunnable> r = new R(Move(init), Move(promise), mOutputStreamManager);
+  nsCOMPtr<nsIThread> mainThread = do_GetMainThread();
+  SyncRunnable::DispatchToThread(mainThread, r);
+  mData = static_cast<R*>(r.get())->ReleaseData();
+
+  if (mData) {
+    mData->SetPlaying(mPlaying);
+    SendData();
+  }
 }
 
 void
@@ -340,77 +360,6 @@ DecodedStream::DestroyData(UniquePtr<DecodedStreamData> aData)
     delete data;
   });
   AbstractThread::MainThread()->Dispatch(r.forget());
-}
-
-void
-DecodedStream::CreateData(PlaybackInfoInit&& aInit, MozPromiseHolder<GenericPromise>&& aPromise)
-{
-  MOZ_ASSERT(NS_IsMainThread());
-
-  
-  
-  if (!mOutputStreamManager->Graph()) {
-    
-    aPromise.Resolve(true, __func__);
-    return;
-  }
-
-  auto data = new DecodedStreamData(mOutputStreamManager, Move(aInit), Move(aPromise));
-
-  class R : public nsRunnable {
-    typedef void(DecodedStream::*Method)(UniquePtr<DecodedStreamData>);
-  public:
-    R(DecodedStream* aThis, Method aMethod, DecodedStreamData* aData)
-      : mThis(aThis), mMethod(aMethod), mData(aData) {}
-    NS_IMETHOD Run() override
-    {
-      (mThis->*mMethod)(Move(mData));
-      return NS_OK;
-    }
-  private:
-    virtual ~R()
-    {
-      
-      
-      
-      if (mData) {
-        DecodedStreamData* data = mData.release();
-        nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction([=] () {
-          delete data;
-        });
-        
-        
-        
-        NS_DispatchToMainThread(r.forget());
-      }
-    }
-    RefPtr<DecodedStream> mThis;
-    Method mMethod;
-    UniquePtr<DecodedStreamData> mData;
-  };
-
-  
-  
-  nsCOMPtr<nsIRunnable> r = new R(this, &DecodedStream::OnDataCreated, data);
-  mOwnerThread->Dispatch(r.forget(), AbstractThread::DontAssertDispatchSuccess);
-}
-
-void
-DecodedStream::OnDataCreated(UniquePtr<DecodedStreamData> aData)
-{
-  AssertOwnerThread();
-  MOZ_ASSERT(!mData, "Already created.");
-
-  
-  if (mStartTime.isSome()) {
-    aData->SetPlaying(mPlaying);
-    mData = Move(aData);
-    SendData();
-    return;
-  }
-
-  
-  DestroyData(Move(aData));
 }
 
 void
