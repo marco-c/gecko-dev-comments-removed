@@ -1733,18 +1733,17 @@ Element::UnbindFromTree(bool aDeep, bool aNullParent)
   if (HasPointerLock()) {
     nsIDocument::UnlockPointer();
   }
+  if (mState.HasState(NS_EVENT_STATE_FULL_SCREEN)) {
+    
+    
+    nsContentUtils::ReportToConsole(nsIScriptError::warningFlag,
+                                    NS_LITERAL_CSTRING("DOM"), OwnerDoc(),
+                                    nsContentUtils::eDOM_PROPERTIES,
+                                    "RemovedFullscreenElement");
+    
+    nsIDocument::ExitFullscreenInDocTree(OwnerDoc());
+  }
   if (aNullParent) {
-    if (IsFullScreenAncestor()) {
-      
-      
-      nsContentUtils::ReportToConsole(nsIScriptError::warningFlag,
-                                      NS_LITERAL_CSTRING("DOM"), OwnerDoc(),
-                                      nsContentUtils::eDOM_PROPERTIES,
-                                      "RemovedFullscreenElement");
-      
-      nsIDocument::ExitFullscreenInDocTree(OwnerDoc());
-    }
-
     if (GetParent() && GetParent()->IsInUncomposedDoc()) {
       
       
