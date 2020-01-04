@@ -4,17 +4,18 @@
 
 
 
-#ifndef _NSNSSIOLAYER_H
-#define _NSNSSIOLAYER_H
+#ifndef nsNSSIOLayer_h
+#define nsNSSIOLayer_h
 
 #include "TransportSecurityInfo.h"
-#include "nsISSLSocketControl.h"
+#include "mozilla/TimeStamp.h"
+#include "nsCOMPtr.h"
+#include "nsDataHashtable.h"
 #include "nsIClientAuthDialogs.h"
 #include "nsIProxyInfo.h"
+#include "nsISSLSocketControl.h"
 #include "nsNSSCertificate.h"
-#include "nsDataHashtable.h"
 #include "nsTHashtable.h"
-#include "mozilla/TimeStamp.h"
 #include "sslt.h"
 
 namespace mozilla {

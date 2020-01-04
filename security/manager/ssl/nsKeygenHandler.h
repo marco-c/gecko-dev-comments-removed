@@ -4,12 +4,17 @@
 
 
 
-#ifndef _NSKEYGENHANDLER_H_
-#define _NSKEYGENHANDLER_H_
+#ifndef nsKeygenHandler_h
+#define nsKeygenHandler_h
 
+#include "keythi.h"
+#include "nsCOMPtr.h"
+#include "nsError.h"
 #include "nsIFormProcessor.h"
-#include "nsTArray.h"
+#include "nsIInterfaceRequestor.h"
 #include "nsNSSShutDown.h"
+#include "nsTArray.h"
+#include "secmodt.h"
 
 nsresult GetSlotWithMechanism(uint32_t mechanism,
                               nsIInterfaceRequestor* ctx,
