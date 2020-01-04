@@ -55,7 +55,7 @@ public:
   
   EventHandlerNonNull* GetEventHandler(const nsAString& aType)
   {
-    nsCOMPtr<nsIAtom> type = do_GetAtom(aType);
+    nsCOMPtr<nsIAtom> type = NS_Atomize(aType);
     return GetEventHandler(type, EmptyString());
   }
 

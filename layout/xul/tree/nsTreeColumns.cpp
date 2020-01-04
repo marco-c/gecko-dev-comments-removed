@@ -276,7 +276,7 @@ nsTreeColumn::Invalidate()
 
   
   if (!mId.IsEmpty()) {
-    mAtom = do_GetAtom(mId);
+    mAtom = NS_Atomize(mId);
   }
 
   

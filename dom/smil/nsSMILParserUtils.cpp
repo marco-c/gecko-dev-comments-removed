@@ -351,7 +351,7 @@ ConvertUnescapedTokenToAtom(const nsAString& aToken)
   
   if (aToken.IsEmpty() || NS_FAILED(nsContentUtils::CheckQName(aToken, false)))
     return nullptr;
-  return do_GetAtom(aToken);
+  return NS_Atomize(aToken);
 }
     
 already_AddRefed<nsIAtom>

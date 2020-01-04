@@ -1266,7 +1266,7 @@ gfxPangoFontGroup::gfxPangoFontGroup(const FontFamilyList& aFontFamilyList,
     
     
     if (mPangoLanguage) {
-        mStyle.language = do_GetAtom(pango_language_to_string(mPangoLanguage));
+        mStyle.language = NS_Atomize(pango_language_to_string(mPangoLanguage));
     }
 
     
@@ -1491,7 +1491,7 @@ gfxPangoFontGroup::MakeFontSet(PangoLanguage *aLang, gfxFloat aSizeAdjustFactor,
     RefPtr<nsIAtom> langGroup;
     if (aLang != mPangoLanguage) {
         
-        langGroup = do_GetAtom(lang);
+        langGroup = NS_Atomize(lang);
     }
 
     AutoTArray<nsString, 20> fcFamilyList;

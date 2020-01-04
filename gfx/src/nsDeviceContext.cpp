@@ -100,7 +100,7 @@ nsFontCache::Init(nsDeviceContext* aContext)
         mLocaleLanguage = langService->GetLocaleLanguage();
     }
     if (!mLocaleLanguage) {
-        mLocaleLanguage = do_GetAtom("x-western");
+        mLocaleLanguage = NS_Atomize("x-western");
     }
 }
 

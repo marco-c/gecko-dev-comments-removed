@@ -259,7 +259,7 @@ txIdPattern::txIdPattern(const nsSubstring& aString)
     nsWhitespaceTokenizer tokenizer(aString);
     while (tokenizer.hasMoreTokens()) {
         
-        nsCOMPtr<nsIAtom> atom = do_GetAtom(tokenizer.nextToken());
+        nsCOMPtr<nsIAtom> atom = NS_Atomize(tokenizer.nextToken());
         mIds.AppendObject(atom);
     }
 }
