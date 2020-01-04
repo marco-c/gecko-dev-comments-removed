@@ -42,6 +42,12 @@ BluetoothSetupResultHandler::Configuration()
 
 
 
+BluetoothSetupInterface::~BluetoothSetupInterface()
+{ }
+
+
+
+
 
 
 

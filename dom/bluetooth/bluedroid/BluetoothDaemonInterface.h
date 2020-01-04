@@ -27,6 +27,7 @@ class BluetoothDaemonAvrcpInterface;
 class BluetoothDaemonGattInterface;
 class BluetoothDaemonHandsfreeInterface;
 class BluetoothDaemonProtocol;
+class BluetoothDaemonSetupInterface;
 class BluetoothDaemonSocketInterface;
 
 class BluetoothDaemonInterface final
@@ -127,6 +128,7 @@ public:
 
   
 
+  BluetoothSetupInterface* GetBluetoothSetupInterface() override;
   BluetoothSocketInterface* GetBluetoothSocketInterface() override;
   BluetoothHandsfreeInterface* GetBluetoothHandsfreeInterface() override;
   BluetoothA2dpInterface* GetBluetoothA2dpInterface() override;
@@ -162,6 +164,7 @@ private:
 
   nsTArray<nsRefPtr<BluetoothResultHandler> > mResultHandlerQ;
 
+  nsAutoPtr<BluetoothDaemonSetupInterface> mSetupInterface;
   nsAutoPtr<BluetoothDaemonSocketInterface> mSocketInterface;
   nsAutoPtr<BluetoothDaemonHandsfreeInterface> mHandsfreeInterface;
   nsAutoPtr<BluetoothDaemonA2dpInterface> mA2dpInterface;
