@@ -116,8 +116,8 @@ nsContentPolicy::CheckPolicy(CPMethod          policyMethod,
     nsContentPolicyType externalType =
         nsContentUtils::InternalContentPolicyTypeToExternal(contentType);
 
-    nsContentPolicyType externalTypeOrMCBInternal =
-        nsContentUtils::InternalContentPolicyTypeToExternalOrMCBInternal(contentType);
+    nsContentPolicyType externalTypeOrScript =
+        nsContentUtils::InternalContentPolicyTypeToExternalOrScript(contentType);
 
     nsContentPolicyType externalTypeOrCSPInternal =
        nsContentUtils::InternalContentPolicyTypeToExternalOrCSPInternal(contentType);
@@ -141,12 +141,10 @@ nsContentPolicy::CheckPolicy(CPMethod          policyMethod,
         
         
         
-        
-        
         bool isMixedContentBlocker = mixedContentBlocker == entries[i];
         nsContentPolicyType type = externalType;
         if (isMixedContentBlocker) {
-            type = externalTypeOrMCBInternal;
+            type = externalTypeOrScript;
         }
         
         

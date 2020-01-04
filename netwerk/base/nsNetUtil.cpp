@@ -2258,6 +2258,11 @@ NS_ShouldSecureUpgrade(nsIURI* aURI,
     
     
     if (aLoadInfo) {
+      bool isPreload = nsContentUtils::IsPreloadType(aLoadInfo->InternalContentPolicyType());
+      bool upgradeRequests =
+        ((isPreload && aLoadInfo->GetUpgradeInsecurePreloads()) ||
+         (aLoadInfo->GetUpgradeInsecureRequests()));
+
       
       
       
@@ -2265,7 +2270,7 @@ NS_ShouldSecureUpgrade(nsIURI* aURI,
         (aLoadInfo->GetExternalContentPolicyType() == nsIContentPolicy::TYPE_DOCUMENT) &&
         (!aChannelResultPrincipal->Equals(aLoadInfo->LoadingPrincipal()));
 
-      if (aLoadInfo->GetUpgradeInsecureRequests() && !crossOriginNavigation) {
+      if (upgradeRequests && !crossOriginNavigation) {
         
         nsAutoCString spec, scheme;
         aURI->GetSpec(spec);

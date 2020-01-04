@@ -2550,12 +2550,12 @@ nsDocument::StartDocumentLoad(const char* aCommand, nsIChannel* aChannel,
     treeItem->GetSameTypeParent(getter_AddRefs(sameTypeParent));
     if (sameTypeParent) {
       mUpgradeInsecureRequests =
-        sameTypeParent->GetDocument()->GetUpgradeInsecureRequests(false);
+        sameTypeParent->GetDocument()->GetUpgradeInsecureRequests();
       
       
       mUpgradeInsecurePreloads =
         mUpgradeInsecureRequests ||
-        sameTypeParent->GetDocument()->GetUpgradeInsecureRequests(true);
+        sameTypeParent->GetDocument()->GetUpgradeInsecurePreloads();
     }
   }
 

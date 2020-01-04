@@ -1561,7 +1561,7 @@ WebSocketImpl::Init(JSContext* aCx,
   
   
   
-  if (!mSecure && originDoc && originDoc->GetUpgradeInsecureRequests(false)) {
+  if (!mSecure && originDoc && originDoc->GetUpgradeInsecureRequests()) {
     
     NS_ConvertUTF8toUTF16 reportSpec(mURI);
 

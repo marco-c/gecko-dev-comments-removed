@@ -1746,7 +1746,7 @@ HTMLFormElement::GetActionURL(nsIURI** aActionURL,
   bool isHttpScheme = false;
   rv = actionURL->SchemeIs("http", &isHttpScheme);
   NS_ENSURE_SUCCESS(rv, rv);
-  if (isHttpScheme && document->GetUpgradeInsecureRequests(false)) {
+  if (isHttpScheme && document->GetUpgradeInsecureRequests()) {
     
     nsAutoCString spec;
     rv = actionURL->GetSpec(spec);
