@@ -97,6 +97,10 @@ const { findMostRelevantCssPropertyIndex } = require("./suggestion-picker");
 
 
 
+
+
+
+
 function editableField(options) {
   return editableItem(options, function(element, event) {
     if (!options.element.inplaceEditor) {
@@ -199,6 +203,11 @@ function InplaceEditor(options, event) {
   this.destroy = options.destroy;
   this.initial = options.initial ? options.initial : this.elt.textContent;
   this.multiline = options.multiline || false;
+  this.maxWidth = options.maxWidth;
+  if (typeof this.maxWidth == "function") {
+    this.maxWidth = this.maxWidth();
+  }
+
   this.trimOutput = options.trimOutput === undefined
                     ? true
                     : !!options.trimOutput;
@@ -218,9 +227,16 @@ function InplaceEditor(options, event) {
   this._onKeyup = this._onKeyup.bind(this);
 
   this._createInput();
-  this._autosize();
-  this.inputCharWidth = this._getInputCharWidth();
 
+  
+  this.originalDisplay = this.elt.style.display;
+  this.elt.style.display = "none";
+  this.elt.parentNode.insertBefore(this.input, this.elt);
+
+  
+  this._autosize();
+
+  this.inputCharDimensions = this._getInputCharDimensions();
   
   
   if (typeof options.advanceChars === "function") {
@@ -233,11 +249,6 @@ function InplaceEditor(options, event) {
     }
     this._advanceChars = charCode => charCode in advanceCharcodes;
   }
-
-  
-  this.originalDisplay = this.elt.style.display;
-  this.elt.style.display = "none";
-  this.elt.parentNode.insertBefore(this.input, this.elt);
 
   this.input.focus();
 
@@ -286,6 +297,13 @@ InplaceEditor.prototype = {
     this.input =
       this.doc.createElementNS(HTML_NS, this.multiline ? "textarea" : "input");
     this.input.inplaceEditor = this;
+
+    if (this.multiline) {
+      
+      this.input.style.resize = "none";
+      this.input.style.overflow = "hidden";
+    }
+
     this.input.classList.add("styleinspector-propertyeditor");
     this.input.value = this.initial;
     if (!this.preserveTextStyles) {
@@ -352,6 +370,18 @@ InplaceEditor.prototype = {
     style.position = "absolute";
     style.top = "0";
     style.left = "0";
+
+    if (this.multiline) {
+      style.whiteSpace = "pre-wrap";
+      style.wordWrap = "break-word";
+      if (this.maxWidth) {
+        style.maxWidth = this.maxWidth + "px";
+        
+        
+        style.position = "fixed";
+      }
+    }
+
     copyTextStyles(this.input, this._measurement);
     this._updateSize();
   },
@@ -374,36 +404,49 @@ InplaceEditor.prototype = {
     
     
     
-    this._measurement.textContent = this.input.value.replace(/ /g, "\u00a0");
+    let content = this.input.value;
+    let unbreakableSpace = "\u00a0";
 
-    let width = this._measurement.offsetWidth;
+    
+    if (content === "") {
+      content = unbreakableSpace;
+    }
+
+    
+    
+    if (content.lastIndexOf("\n") === content.length - 1) {
+      content = content + unbreakableSpace;
+    }
+
+    if (!this.multiline) {
+      content = content.replace(/ /g, unbreakableSpace);
+    }
+
+    this._measurement.textContent = content;
+
+    
+    let width = this._measurement.getBoundingClientRect().width + 2;
     if (this.multiline) {
-      
-      
-      
-      width += 15;
-      this.input.style.height = this._measurement.offsetHeight + "px";
+      if (this.maxWidth) {
+        width = Math.min(this.maxWidth, width);
+      }
+      let height = this._measurement.getBoundingClientRect().height;
+      this.input.style.height = height + "px";
     }
-
-    if (width === 0) {
-      
-      this.input.style.width = "1ch";
-    } else {
-      
-      width = width + 2;
-      this.input.style.width = width + "px";
-    }
+    this.input.style.width = width + "px";
   },
 
   
 
 
 
-  _getInputCharWidth: function() {
+  _getInputCharDimensions: function() {
     
     
     this._measurement.textContent = "x";
-    return this._measurement.offsetWidth;
+    let width = this._measurement.clientWidth;
+    let height = this._measurement.clientHeight;
+    return { width, height };
   },
 
    
@@ -1307,10 +1350,54 @@ InplaceEditor.prototype = {
 function copyTextStyles(from, to) {
   let win = from.ownerDocument.defaultView;
   let style = win.getComputedStyle(from);
-  to.style.fontFamily = style.getPropertyCSSValue("font-family").cssText;
-  to.style.fontSize = style.getPropertyCSSValue("font-size").cssText;
-  to.style.fontWeight = style.getPropertyCSSValue("font-weight").cssText;
-  to.style.fontStyle = style.getPropertyCSSValue("font-style").cssText;
+  let getCssText = name => style.getPropertyCSSValue(name).cssText;
+
+  to.style.fontFamily = getCssText("font-family");
+  to.style.fontSize = getCssText("font-size");
+  to.style.fontWeight = getCssText("font-weight");
+  to.style.fontStyle = getCssText("font-style");
+  to.style.lineHeight = getCssText("line-height");
+
+  
+  
+  let boxSizing = getCssText("box-sizing");
+  if (boxSizing === "border-box") {
+    to.style.boxSizing = boxSizing;
+    copyBoxModelStyles(from, to);
+  }
+}
+
+
+
+
+
+
+
+
+
+
+function copyBoxModelStyles(from, to) {
+  let win = from.ownerDocument.defaultView;
+  let style = win.getComputedStyle(from);
+  let getCssText = name => style.getPropertyCSSValue(name).cssText;
+
+  
+  to.style.paddingTop = getCssText("padding-top");
+  to.style.paddingRight = getCssText("padding-right");
+  to.style.paddingBottom = getCssText("padding-bottom");
+  to.style.paddingLeft = getCssText("padding-left");
+
+  
+  to.style.borderTopStyle = getCssText("border-top-style");
+  to.style.borderRightStyle = getCssText("border-right-style");
+  to.style.borderBottomStyle = getCssText("border-bottom-style");
+  to.style.borderLeftStyle = getCssText("border-left-style");
+
+  
+  to.style.borderTopWidth = getCssText("border-top-width");
+  to.style.borderRightWidth = getCssText("border-right-width");
+  to.style.borderBottomWidth = getCssText("border-bottom-width");
+  to.style.borderLeftWidth = getCssText("border-left-width");
 }
 
 
