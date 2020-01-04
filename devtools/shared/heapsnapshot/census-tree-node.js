@@ -397,13 +397,33 @@ CensusTreeNodeVisitor.prototype.root = function () {
 
 
 function CensusTreeNode(name) {
+  
+  
   this.name = name;
+
+  
   this.bytes = 0;
+
+  
+  
   this.totalBytes = 0;
+
+  
+  
   this.count = 0;
+
+  
+  
   this.totalCount = 0;
+
+  
   this.children = undefined;
+
+  
   this.id = ++censusTreeNodeIdCounter;
+
+  
+  
   this.parent = undefined;
 }
 
