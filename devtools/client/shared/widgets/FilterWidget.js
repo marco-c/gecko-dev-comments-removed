@@ -10,7 +10,7 @@
 
 
 const EventEmitter = require("devtools/shared/event-emitter");
-const { Cu } = require("chrome");
+const { Cu, Cc, Ci } = require("chrome");
 const { ViewHelpers } =
       Cu.import("resource://devtools/client/shared/widgets/ViewHelpers.jsm",
                 {});
@@ -20,6 +20,10 @@ const {cssTokenizer} = require("devtools/client/shared/css-parsing-utils");
 
 loader.lazyGetter(this, "asyncStorage",
                   () => require("devtools/shared/async-storage"));
+
+loader.lazyGetter(this, "DOMUtils", () => {
+  return Cc["@mozilla.org/inspector/dom-utils;1"].getService(Ci.inIDOMUtils);
+});
 
 const DEFAULT_FILTER_TYPE = "length";
 const UNIT_MAPPING = {
@@ -391,19 +395,7 @@ CSSFilterEditorWidget.prototype = {
     }
 
     const key = select.value;
-    const def = this._definition(key);
-    
-    
-    const unitLabel = typeof UNIT_MAPPING[def.type] === "undefined" ?
-                             UNIT_MAPPING[DEFAULT_FILTER_TYPE] :
-                             UNIT_MAPPING[def.type];
-
-    
-    if (!unitLabel) {
-      this.add(key);
-    } else {
-      this.add(key, def.range[0] + unitLabel);
-    }
+    this.add(key, null);
 
     this.render();
   },
@@ -697,6 +689,7 @@ CSSFilterEditorWidget.prototype = {
 
 
   _definition: function(name) {
+    name = name.toLowerCase();
     return filterList.find(a => a.name === name);
   },
 
@@ -720,6 +713,14 @@ CSSFilterEditorWidget.prototype = {
     }
 
     for (let {name, value} of tokenizeFilterValue(cssValue)) {
+      
+      
+      if (name !== "url") {
+        if (!DOMUtils.cssPropertyIsValid("filter", name + "(" + value + ")")) {
+          value = null;
+        }
+      }
+
       this.add(name, value);
     }
 
@@ -737,10 +738,26 @@ CSSFilterEditorWidget.prototype = {
 
 
 
-  add: function(name, value = "") {
+
+  add: function(name, value) {
     const def = this._definition(name);
     if (!def) {
       return false;
+    }
+
+    if (value === null) {
+      
+      
+      const unitLabel = typeof UNIT_MAPPING[def.type] === "undefined" ?
+                               UNIT_MAPPING[DEFAULT_FILTER_TYPE] :
+                               UNIT_MAPPING[def.type];
+
+      
+      if (!unitLabel) {
+        value = "";
+      } else {
+        value = def.range[0] + unitLabel;
+      }
     }
 
     let unit = def.type === "string"
@@ -764,7 +781,7 @@ CSSFilterEditorWidget.prototype = {
       }
     }
 
-    const index = this.filters.push({value, unit, name: def.name}) - 1;
+    const index = this.filters.push({value, unit, name}) - 1;
     this.emit("updated", this.getCssValue());
 
     return index;
