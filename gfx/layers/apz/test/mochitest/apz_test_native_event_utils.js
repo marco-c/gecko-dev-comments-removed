@@ -241,3 +241,23 @@ function synthesizeNativeClick(aElement, aX, aY, aObserver = null) {
   });
   return true;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function moveMouseAndScrollWheelOver(element, dx, dy, testDriver) {
+  return synthesizeNativeMouseMoveAndWaitForMoveEvent(element, dx, dy, function() {
+    synthesizeNativeWheelAndWaitForScrollEvent(element, dx, dy, 0, -10, testDriver);
+  });
+}
+
