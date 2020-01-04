@@ -432,7 +432,6 @@ public:
   
   SamplerStackFramePrintfRAII(const char *aInfo,
     js::ProfileEntry::Category aCategory, uint32_t line, const char *aFormat, ...)
-    : mHandle(nullptr)
   {
     if (profiler_is_active() && !profiler_in_privacy_mode()) {
       va_list args;

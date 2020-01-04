@@ -24,8 +24,6 @@ public:
   NS_DECL_MOZISTORAGEROW
   NS_DECL_MOZISTORAGEVALUEARRAY
 
-  Row() : mNumCols(0) {}
-
   
 
 
