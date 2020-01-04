@@ -2,24 +2,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 this.EXPORTED_SYMBOLS = [
   "ClientEngine",
   "ClientsRec"
@@ -74,7 +56,7 @@ this.ClientEngine = function ClientEngine(service) {
   SyncEngine.call(this, "Clients", service);
 
   
-  this.resetLastSync();
+  this._resetClient();
 }
 ClientEngine.prototype = {
   __proto__: SyncEngine.prototype,
@@ -208,54 +190,6 @@ ClientEngine.prototype = {
     return false;
   },
 
-  _readCommands() {
-    let cb = Async.makeSpinningCallback();
-    Utils.jsonLoad("commands", this, commands => cb(null, commands));
-    return cb.wait() || {};
-  },
-
-  
-
-
-  _saveCommands(commands) {
-    let cb = Async.makeSpinningCallback();
-    Utils.jsonSave("commands", this, commands, error => {
-      if (error) {
-        this._log.error("Failed to save JSON outgoing commands", error);
-      }
-      cb();
-    });
-    cb.wait();
-  },
-
-  _prepareCommandsForUpload() {
-    let cb = Async.makeSpinningCallback();
-    Utils.jsonMove("commands", "commands-syncing", this).catch(() => {}) 
-      .then(() => {
-        Utils.jsonLoad("commands-syncing", this, commands => cb(null, commands));
-      });
-    return cb.wait() || {};
-  },
-
-  _deleteUploadedCommands() {
-    delete this._currentlySyncingCommands;
-    Async.promiseSpinningly(
-      Utils.jsonRemove("commands-syncing", this).catch(err => {
-        this._log.error("Failed to delete syncing-commands file", error);
-      })
-    );
-  },
-
-  _addClientCommand(clientId, command) {
-    const allCommands = this._readCommands();
-    const clientCommands = allCommands[clientId] || [];
-    if (hasDupeCommand(clientCommands, command)) {
-      return;
-    }
-    allCommands[clientId] = clientCommands.concat(command);
-    this._saveCommands(allCommands);
-  },
-
   _syncStartup: function _syncStartup() {
     
     if (Date.now() / 1000 - this.lastRecordUpload > CLIENTS_TTL_REFRESH) {
@@ -307,50 +241,11 @@ ClientEngine.prototype = {
   },
 
   _uploadOutgoing() {
-    this._currentlySyncingCommands = this._prepareCommandsForUpload();
-    const clientWithPendingCommands = Object.keys(this._currentlySyncingCommands);
-    for (let clientId of clientWithPendingCommands) {
-      if (this._store._remoteClients[clientId] || this.localID == clientId) {
-        this._modified[clientId] = 0;
-      }
-    }
+    this._clearedCommands = null;
     SyncEngine.prototype._uploadOutgoing.call(this);
   },
 
   _onRecordsWritten(succeeded, failed) {
-    
-    
-    for (let id of succeeded) {
-      const commandChanges = this._currentlySyncingCommands[id];
-      if (id == this.localID) {
-        if (this.localCommands) {
-          this.localCommands = this.localCommands.filter(command => !hasDupeCommand(commandChanges, command));
-        }
-      } else {
-        const clientRecord = this._store._remoteClients[id];
-        if (!commandChanges || !clientRecord) {
-          
-          this._log.warn("No command/No record changes for a client we uploaded");
-          continue;
-        }
-        
-        clientRecord.commands = this._store.createRecord(id);
-        
-        
-      }
-    }
-
-    
-    for (let id of failed) {
-      const commandChanges = this._currentlySyncingCommands[id];
-      if (!commandChanges) {
-        continue;
-      }
-      this._addClientCommand(id, commandChanges);
-    }
-
-    this._deleteUploadedCommands();
-
     
     const idsToNotify = succeeded.reduce((acc, id) => {
       if (id == this.localID) {
@@ -427,11 +322,6 @@ ClientEngine.prototype = {
     SyncEngine.prototype._resetClient.call(this);
     delete this.localCommands;
     this._store.wipe();
-    const logRemoveError = err => this._log.warn("Could not delete json file", err);
-    Async.promiseSpinningly(
-      Utils.jsonRemove("commands", this).catch(logRemoveError)
-        .then(Utils.jsonRemove("commands-syncing", this).catch(logRemoveError))
-    );
   },
 
   removeClientData: function removeClientData() {
@@ -472,6 +362,20 @@ ClientEngine.prototype = {
   
 
 
+  clearCommands: function clearCommands() {
+    if (!this._clearedCommands) {
+      this._clearedCommands = [];
+    }
+    
+    
+    this._clearedCommands = this._clearedCommands.concat(this.localCommands);
+    delete this.localCommands;
+    this._tracker.addChangedID(this.localID);
+  },
+
+  
+
+
 
 
 
@@ -492,8 +396,19 @@ ClientEngine.prototype = {
       args: args,
     };
 
+    if (!client.commands) {
+      client.commands = [action];
+    }
+    
+    else if (!hasDupeCommand(client.commands, action)) {
+      client.commands.push(action);
+    }
+    
+    else {
+      return;
+    }
+
     this._log.trace("Client " + clientId + " got a new action: " + [command, args]);
-    this._addClientCommand(clientId, action);
     this._tracker.addChangedID(clientId);
   },
 
@@ -504,17 +419,18 @@ ClientEngine.prototype = {
 
   processIncomingCommands: function processIncomingCommands() {
     return this._notify("clients:process-commands", "", function() {
-      if (!this.localCommands) {
+      let commands = this.localCommands;
+
+      
+      this.clearCommands();
+
+      
+      if (!commands) {
         return true;
       }
-
-      const clearedCommands = this._readCommands()[this.localID];
-      const commands = this.localCommands.filter(command => !hasDupeCommand(clearedCommands, command));
-
       let URIsToDisplay = [];
-      
-      for (let rawCommand of commands) {
-        let {command, args} = rawCommand;
+      for (let key in commands) {
+        let {command, args} = commands[key];
         this._log.debug("Processing command: " + command + "(" + args + ")");
 
         let engines = [args[0]];
@@ -542,11 +458,7 @@ ClientEngine.prototype = {
             this._log.debug("Received an unknown command: " + command);
             break;
         }
-        
-        this._addClientCommand(this.localID, rawCommand)
       }
-      this._tracker.addChangedID(this.localID);
-
       if (URIsToDisplay.length) {
         this._handleDisplayURIs(URIsToDisplay);
       }
@@ -659,27 +571,65 @@ function ClientStore(name, engine) {
 ClientStore.prototype = {
   __proto__: Store.prototype,
 
-  _remoteClients: {},
-
   create(record) {
-    this.update(record);
+    this.update(record)
   },
 
   update: function update(record) {
     if (record.id == this.engine.localID) {
-      
-      this.engine.localCommands = record.commands;
+      this._updateLocalRecord(record);
     } else {
-      this._remoteClients[record.id] = record.cleartext;
+      this._updateRemoteRecord(record);
     }
+  },
+
+  _updateLocalRecord(record) {
+    
+    
+    let incomingCommands = record.commands;
+    if (incomingCommands) {
+      
+      incomingCommands = incomingCommands.filter(action =>
+        !hasDupeCommand(this.engine._clearedCommands, action));
+      if (!incomingCommands.length) {
+        
+        
+        incomingCommands = undefined;
+      }
+    }
+    
+    this.engine.localCommands = incomingCommands;
+  },
+
+  _updateRemoteRecord(record) {
+    let currentRecord = this._remoteClients[record.id];
+    if (!currentRecord || !currentRecord.commands ||
+        !(record.id in this.engine._modified)) {
+
+      
+      
+      this._remoteClients[record.id] = record.cleartext;
+      return;
+    }
+
+    
+    
+    for (let action of currentRecord.commands) {
+      if (hasDupeCommand(record.cleartext.commands, action)) {
+        
+        continue;
+      }
+      if (record.cleartext.commands) {
+        record.cleartext.commands.push(action);
+      } else {
+        record.cleartext.commands = [action];
+      }
+    }
+    this._remoteClients[record.id] = record.cleartext;
   },
 
   createRecord: function createRecord(id, collection) {
     let record = new ClientsRec(collection, id);
-
-    const commandsChanges = this.engine._currentlySyncingCommands ?
-                            this.engine._currentlySyncingCommands[id] :
-                            [];
 
     
     if (id == this.engine.localID) {
@@ -692,14 +642,9 @@ ClientStore.prototype = {
       }
       record.name = this.engine.localName;
       record.type = this.engine.localType;
+      record.commands = this.engine.localCommands;
       record.version = Services.appinfo.version;
       record.protocols = SUPPORTED_PROTOCOL_VERSIONS;
-
-      
-      if (commandsChanges && commandsChanges.length &&
-          this.engine.localCommands && this.engine.localCommands.length) {
-        record.commands = this.engine.localCommands.filter(command => !hasDupeCommand(commandsChanges, command));
-      }
 
       
       record.os = Services.appinfo.OS;             
@@ -711,14 +656,6 @@ ClientStore.prototype = {
       
     } else {
       record.cleartext = this._remoteClients[id];
-
-      
-      if (commandsChanges && commandsChanges.length) {
-        const recordCommands = record.cleartext.commands || [];
-        const newCommands = commandsChanges.filter(command => !hasDupeCommand(recordCommands, command));
-        record.cleartext.commands = recordCommands.concat(newCommands);
-      }
-
       if (record.cleartext.stale) {
         
         
