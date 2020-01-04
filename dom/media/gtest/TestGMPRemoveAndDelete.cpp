@@ -228,14 +228,25 @@ void
 GMPRemoveTest::Setup()
 {
   GeneratePlugin();
-  EXPECT_OK(GetServiceParent()->RemovePluginDirectory(mOriginalPath));
+  GetService()->GetThread(getter_AddRefs(mGMPThread));
 
-  GetServiceParent()->AddPluginDirectory(mTmpPath);
+  
+  
+  
+  
+  RefPtr<AbstractThread> thread(GetServiceParent()->GetAbstractGMPThread());
+  GMPTestMonitor* mon = &mTestMonitor;
+  GetServiceParent()->EnsureInitialized()->Then(thread, __func__,
+    [mon]() { mon->SetFinished(); },
+    [mon]() { mon->SetFinished(); }
+  );
+  mTestMonitor.AwaitFinished();
 
   nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
   obs->AddObserver(this, GMP_DELETED_TOPIC, false );
+  EXPECT_OK(GetServiceParent()->RemovePluginDirectory(mOriginalPath));
 
-  GetService()->GetThread(getter_AddRefs(mGMPThread));
+  GetServiceParent()->AddPluginDirectory(mTmpPath);
 }
 
 bool
