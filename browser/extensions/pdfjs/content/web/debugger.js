@@ -165,7 +165,7 @@ var StepperManager = (function StepperManagerClosure() {
   var stepperDiv = null;
   var stepperControls = null;
   var stepperChooser = null;
-  var breakPoints = {};
+  var breakPoints = Object.create(null);
   return {
     
     id: 'Stepper',
