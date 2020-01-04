@@ -773,12 +773,15 @@ MathMLTextRunFactory::RebuildTextRun(nsTransformedTextRun* aTextRun,
   }
   if (!child)
     return;
+
+  typedef gfxTextRun::Range Range;
+
   
   
   NS_ASSERTION(convertedString.Length() == canBreakBeforeArray.Length(),
                "Dropped characters or break-before values somewhere!");
-  child->SetPotentialLineBreaks(0, canBreakBeforeArray.Length(),
-                                canBreakBeforeArray.Elements());
+  Range range(0, uint32_t(canBreakBeforeArray.Length()));
+  child->SetPotentialLineBreaks(range, canBreakBeforeArray.Elements());
   if (transformedChild) {
     transformedChild->FinishSettingProperties(aRefDrawTarget, aMFR);
   }
@@ -796,6 +799,6 @@ MathMLTextRunFactory::RebuildTextRun(nsTransformedTextRun* aTextRun,
     
     
     aTextRun->ResetGlyphRuns();
-    aTextRun->CopyGlyphDataFrom(child, 0, child->GetLength(), 0);
+    aTextRun->CopyGlyphDataFrom(child, Range(child), 0);
   }
 }
