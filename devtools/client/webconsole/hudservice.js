@@ -669,9 +669,6 @@ BrowserConsole.prototype = extend(WebConsole.prototype, {
     };
     window.addEventListener("unload", onClose);
 
-    
-    window.document.getElementById("cmd_close").removeAttribute("disabled");
-
     this._telemetry.toolOpened("browserconsole");
 
     

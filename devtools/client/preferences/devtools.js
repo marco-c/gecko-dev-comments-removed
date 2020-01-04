@@ -277,9 +277,6 @@ pref("devtools.browserconsole.filter.serverinfo", false);
 pref("devtools.browserconsole.filter.serverlog", false);
 
 
-pref("devtools.webconsole.fontSize", 0);
-
-
 pref("devtools.webconsole.inputHistoryCount", 50);
 
 

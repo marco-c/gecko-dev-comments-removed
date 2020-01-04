@@ -7,11 +7,8 @@
 "use strict";
 
 const MAX_ORDINAL = 99;
-const ZOOM_PREF = "devtools.toolbox.zoomValue";
 const SPLITCONSOLE_ENABLED_PREF = "devtools.toolbox.splitconsoleEnabled";
 const SPLITCONSOLE_HEIGHT_PREF = "devtools.toolbox.splitconsoleHeight";
-const MIN_ZOOM = 0.5;
-const MAX_ZOOM = 2;
 const OS_HISTOGRAM = "DEVTOOLS_OS_ENUMERATED_PER_USER";
 const OS_IS_64_BITS = "DEVTOOLS_OS_IS_64_BITS_PER_USER";
 const SCREENSIZE_HISTOGRAM = "DEVTOOLS_SCREEN_RESOLUTION_ENUMERATED_PER_USER";
@@ -73,6 +70,8 @@ loader.lazyRequireGetter(this, "getPreferenceFront",
   "devtools/server/actors/preference", true);
 loader.lazyRequireGetter(this, "KeyShortcuts",
   "devtools/client/shared/key-shortcuts", true);
+loader.lazyRequireGetter(this, "ZoomKeys",
+  "devtools/client/shared/zoom-keys");
 
 loader.lazyGetter(this, "osString", () => {
   return Cc["@mozilla.org/xre/app-info;1"].getService(Ci.nsIXULRuntime).OS;
@@ -306,13 +305,6 @@ Toolbox.prototype = {
   
 
 
-  get zoomValue() {
-    return parseFloat(Services.prefs.getCharPref(ZOOM_PREF));
-  },
-
-  
-
-
 
 
 
@@ -440,8 +432,7 @@ Toolbox.prototype = {
       this._addHostListeners(shortcuts);
       this._registerOverlays();
       if (!this._hostOptions || this._hostOptions.zoom === true) {
-        this._addZoomKeys(shortcuts);
-        this._loadInitialZoom();
+        ZoomKeys.register(this.win);
       }
       this._setToolbarKeyboardNavigation();
 
@@ -657,88 +648,6 @@ Toolbox.prototype = {
         splitter.setAttribute("hidden", "true");
       }
     }
-  },
-
-  
-
-
-  _addZoomKeys: function (shortcuts) {
-    shortcuts.on(toolboxStrings("toolbox.zoomIn.key"),
-                 this.zoomIn.bind(this));
-    let zoomIn2 = toolboxStrings("toolbox.zoomIn2.key");
-    if (zoomIn2) {
-      shortcuts.on(zoomIn2, this.zoomIn.bind(this));
-    }
-    let zoomIn3 = toolboxStrings("toolbox.zoomIn2.key");
-    if (zoomIn3) {
-      shortcuts.on(zoomIn3, this.zoomIn.bind(this));
-    }
-
-    shortcuts.on(toolboxStrings("toolbox.zoomOut.key"),
-                 this.zoomOut.bind(this));
-    let zoomOut2 = toolboxStrings("toolbox.zoomOut2.key");
-    if (zoomOut2) {
-      shortcuts.on(zoomOut2, this.zoomOut.bind(this));
-    }
-
-    shortcuts.on(toolboxStrings("toolbox.zoomReset.key"),
-                 this.zoomReset.bind(this));
-    let zoomReset2 = toolboxStrings("toolbox.zoomReset2.key");
-    if (zoomReset2) {
-      shortcuts.on(zoomReset2, this.zoomReset.bind(this));
-    }
-  },
-
-  
-
-
-  _loadInitialZoom: function () {
-    this.setZoom(this.zoomValue);
-  },
-
-  
-
-
-  zoomIn: function (name, event) {
-    this.setZoom(this.zoomValue + 0.1);
-    event.preventDefault();
-  },
-
-  
-
-
-  zoomOut: function (name, event) {
-    this.setZoom(this.zoomValue - 0.1);
-    event.preventDefault();
-  },
-
-  
-
-
-  zoomReset: function (name, event) {
-    this.setZoom(1);
-    event.preventDefault();
-  },
-
-  
-
-
-
-
-
-  setZoom: function (zoomValue) {
-    
-    zoomValue = Math.max(zoomValue, MIN_ZOOM);
-    zoomValue = Math.min(zoomValue, MAX_ZOOM);
-
-    let docShell = this.win.QueryInterface(Ci.nsIInterfaceRequestor)
-      .getInterface(Ci.nsIWebNavigation)
-      .QueryInterface(Ci.nsIDocShell);
-    let contViewer = docShell.contentViewer;
-
-    contViewer.fullZoom = zoomValue;
-
-    Services.prefs.setCharPref(ZOOM_PREF, zoomValue);
   },
 
   
