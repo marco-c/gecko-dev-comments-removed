@@ -1780,8 +1780,7 @@ Element::UnbindFromTree(bool aDeep, bool aNullParent)
   
   
   
-  
-  if (HasFlag(NODE_HAS_PROPERTIES)) {
+  if (MayHaveAnimations()) {
     DeleteProperty(nsGkAtoms::transitionsOfBeforeProperty);
     DeleteProperty(nsGkAtoms::transitionsOfAfterProperty);
     DeleteProperty(nsGkAtoms::transitionsProperty);
