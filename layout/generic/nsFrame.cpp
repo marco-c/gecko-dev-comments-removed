@@ -2807,7 +2807,7 @@ nsIFrame::BuildDisplayListForChild(nsDisplayListBuilder*   aBuilder,
     
     
     
-    clipState.Clear();
+    clipState.SetClipForContainingBlockDescendants(nullptr);
     clipState.SetScrollClipForContainingBlockDescendants(nullptr);
   }
 
