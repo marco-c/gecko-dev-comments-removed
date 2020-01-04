@@ -1251,14 +1251,14 @@ public:
 
 
 
-  bool Preserves3DChildren() const;
+  bool Extend3DContext() const;
 
   
 
 
 
 
-  bool Preserves3D() const;
+  bool Combines3DTransformWithAncestors() const;
 
   bool HasPerspective() const;
 
