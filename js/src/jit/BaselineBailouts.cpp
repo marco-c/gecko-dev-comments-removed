@@ -989,7 +989,7 @@ InitFromBailout(JSContext* cx, HandleScript caller, jsbytecode* callerPC,
 
 #ifdef JS_JITSPEW
     JitSpew(JitSpew_BaselineBailouts, "      Resuming %s pc offset %d (op %s) (line %d) of %s:%" PRIuSIZE,
-                resumeAfter ? "after" : "at", (int) pcOff, js_CodeName[op],
+                resumeAfter ? "after" : "at", (int) pcOff, CodeName[op],
                 PCToLineNumber(script, pc), script->filename(), script->lineno());
     JitSpew(JitSpew_BaselineBailouts, "      Bailout kind: %s",
             BailoutKindString(bailoutKind));
@@ -1007,7 +1007,7 @@ InitFromBailout(JSContext* cx, HandleScript caller, jsbytecode* callerPC,
         
         
         bool enterMonitorChain = false;
-        if (resumeAfter && (js_CodeSpec[op].format & JOF_TYPESET)) {
+        if (resumeAfter && (CodeSpec[op].format & JOF_TYPESET)) {
             
             
             
@@ -1154,7 +1154,7 @@ InitFromBailout(JSContext* cx, HandleScript caller, jsbytecode* callerPC,
             JS_snprintf(buf, len, "%s %s %s on line %u of %s:%" PRIuSIZE,
                                   BailoutKindString(bailoutKind),
                                   resumeAfter ? "after" : "at",
-                                  js_CodeName[op],
+                                  CodeName[op],
                                   PCToLineNumber(script, pc),
                                   filename,
                                   script->lineno());
