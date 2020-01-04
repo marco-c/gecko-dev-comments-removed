@@ -14460,7 +14460,16 @@ ICCContactHelperObject.prototype = {
       this.updateContactField(pbr, contact, field, (fieldEntry) => {
         contactField = Object.assign(contactField, fieldEntry);
         updateField.call(this);
-      }, onerror);
+      }, (errorMsg) => {
+        
+        
+        
+        if (errorMsg === CONTACT_ERR_NO_FREE_RECORD_FOUND) {
+          updateField.call(this);
+          return;
+        }
+        onerror(errorMsg);
+      });
     }).call(this);
   },
 
