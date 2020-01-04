@@ -69,11 +69,15 @@ const ElectronKeysMapping = {
 
 
 
-function KeyShortcuts({ window }) {
+
+
+
+function KeyShortcuts({ window, target }) {
   this.window = window;
+  this.target = target || window;
   this.keys = new Map();
   this.eventEmitter = new EventEmitter();
-  this.window.addEventListener("keydown", this);
+  this.target.addEventListener("keydown", this);
 }
 
 
@@ -169,7 +173,7 @@ KeyShortcuts.stringify = function (shortcut) {
 
 KeyShortcuts.prototype = {
   destroy() {
-    this.window.removeEventListener("keydown", this);
+    this.target.removeEventListener("keydown", this);
     this.keys.clear();
   },
 
