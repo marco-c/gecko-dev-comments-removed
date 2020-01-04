@@ -15,6 +15,10 @@ from mozbuild.base import (
     MachCommandConditions as conditions,
 )
 
+from mozbuild.shellutil import (
+    split as shell_split,
+)
+
 from mach.decorators import (
     CommandArgument,
     CommandProvider,
@@ -63,6 +67,8 @@ class MachCommands(MachCommandBase):
         
         java_home = os.path.dirname(os.path.dirname(self.substs['JAVA']))
 
+        gradle_flags = shell_split(self.substs.get('GRADLE_FLAGS', ''))
+
         
         
         
@@ -72,7 +78,7 @@ class MachCommands(MachCommandBase):
         
         
         
-        return self.run_process([self.substs['GRADLE']] + args,
+        return self.run_process([self.substs['GRADLE']] + gradle_flags + args,
             append_env={
                 'GRADLE_OPTS': '-Dfile.encoding=utf-8',
                 'JAVA_HOME': java_home,
