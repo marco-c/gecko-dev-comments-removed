@@ -4,10 +4,10 @@
 
 
 
-#ifndef vm_Runtime_inl_h
-#define vm_Runtime_inl_h
+#ifndef vm_Caches_inl_h
+#define vm_Caches_inl_h
 
-#include "vm/Runtime.h"
+#include "vm/Caches.h"
 
 #include "jscompartment.h"
 

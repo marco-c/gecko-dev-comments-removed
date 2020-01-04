@@ -4,8 +4,6 @@
 
 
 
-#include "vm/Runtime-inl.h"
-
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/DebugOnly.h"
@@ -226,7 +224,6 @@ JSRuntime::JSRuntime(JSRuntime* parentRuntime)
     decimalSeparator(0),
     numGrouping(0),
 #endif
-    mathCache_(nullptr),
     activeCompilations_(0),
     keepAtoms_(0),
     trustedPrincipals_(nullptr),
@@ -335,9 +332,6 @@ JSRuntime::init(uint32_t maxbytes, uint32_t maxNurseryBytes)
         return false;
 
     if (!scriptDataTable_.init())
-        return false;
-
-    if (!evalCache.init())
         return false;
 
     
@@ -460,7 +454,6 @@ JSRuntime::destroyRuntime()
     atomsCompartment_ = nullptr;
 
     js_free(defaultLocale);
-    js_delete(mathCache_);
     js_delete(jitRuntime_);
 
     js_delete(ionPcScriptCache);
@@ -497,21 +490,6 @@ JSRuntime::setTelemetryCallback(JSRuntime* rt, JSAccumulateTelemetryDataCallback
 }
 
 void
-NewObjectCache::clearNurseryObjects(JSRuntime* rt)
-{
-    for (unsigned i = 0; i < mozilla::ArrayLength(entries); ++i) {
-        Entry& e = entries[i];
-        NativeObject* obj = reinterpret_cast<NativeObject*>(&e.templateObject);
-        if (IsInsideNursery(e.key) ||
-            rt->gc.nursery.isInside(obj->slots_) ||
-            rt->gc.nursery.isInside(obj->elements_))
-        {
-            PodZero(&e);
-        }
-    }
-}
-
-void
 JSRuntime::addSizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf, JS::RuntimeSizes* rtSizes)
 {
     
@@ -520,7 +498,8 @@ JSRuntime::addSizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf, JS::Runtim
     
     
     
-    rtSizes->object += mallocSizeOf(unsafeContextFromAnyThread());
+    JSContext* cx = unsafeContextFromAnyThread();
+    rtSizes->object += mallocSizeOf(cx);
 
     rtSizes->atomsTable += atoms(lock).sizeOfIncludingThis(mallocSizeOf);
 
@@ -530,20 +509,23 @@ JSRuntime::addSizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf, JS::Runtim
         rtSizes->atomsTable += permanentAtoms->sizeOfIncludingThis(mallocSizeOf);
     }
 
-    rtSizes->contexts += unsafeContextFromAnyThread()->sizeOfExcludingThis(mallocSizeOf);
+    rtSizes->contexts += cx->sizeOfExcludingThis(mallocSizeOf);
 
     rtSizes->temporary += tempLifoAlloc.sizeOfExcludingThis(mallocSizeOf);
 
     rtSizes->interpreterStack += interpreterStack_.sizeOfExcludingThis(mallocSizeOf);
 
-    rtSizes->mathCache += mathCache_ ? mathCache_->sizeOfIncludingThis(mallocSizeOf) : 0;
+    if (MathCache* cache = cx->caches.maybeGetMathCache())
+        rtSizes->mathCache += cache->sizeOfIncludingThis(mallocSizeOf);
 
     if (sharedImmutableStrings_) {
         rtSizes->sharedImmutableStringsCache +=
             sharedImmutableStrings_->sizeOfExcludingThis(mallocSizeOf);
     }
 
-    rtSizes->uncompressedSourceCache += uncompressedSourceCache.sizeOfExcludingThis(mallocSizeOf);
+    rtSizes->uncompressedSourceCache +=
+        cx->caches.uncompressedSourceCache.sizeOfExcludingThis(mallocSizeOf);
+
 
     rtSizes->scriptData += scriptDataTable(lock).sizeOfExcludingThis(mallocSizeOf);
     for (ScriptDataTable::Range r = scriptDataTable(lock).all(); !r.empty(); r.popFront())
@@ -676,22 +658,6 @@ JSRuntime::handleInterrupt(JSContext* cx)
         return InvokeInterruptCallback(cx);
     }
     return true;
-}
-
-MathCache*
-JSRuntime::createMathCache(JSContext* cx)
-{
-    MOZ_ASSERT(!mathCache_);
-    MOZ_ASSERT(cx->runtime() == this);
-
-    MathCache* newMathCache = js_new<MathCache>();
-    if (!newMathCache) {
-        ReportOutOfMemory(cx);
-        return nullptr;
-    }
-
-    mathCache_ = newMathCache;
-    return mathCache_;
 }
 
 bool

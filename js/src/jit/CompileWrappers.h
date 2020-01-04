@@ -88,8 +88,6 @@ class CompileRuntime
     
     const DOMCallbacks* DOMcallbacks();
 
-    const MathCache* maybeGetMathCache();
-
     const Nursery& gcNursery();
     void setMinorGCShouldCancelIonCompilations();
 };
