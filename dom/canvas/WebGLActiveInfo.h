@@ -88,6 +88,10 @@ private:
     ~WebGLActiveInfo() { }
 };
 
+
+
+uint8_t ElemSizeFromType(GLenum elemType);
+
 } 
 
 #endif 
