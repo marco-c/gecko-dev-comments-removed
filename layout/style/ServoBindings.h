@@ -226,6 +226,10 @@ void Servo_SetDeclarationBlockImmutable(ServoDeclarationBlock* declarations);
 void Servo_ClearDeclarationBlockCachePointer(ServoDeclarationBlock* declarations);
 
 
+bool Servo_CSSSupports(const uint8_t* name, uint32_t name_length,
+                       const uint8_t* value, uint32_t value_length);
+
+
 ServoComputedValues* Servo_GetComputedValues(RawGeckoNode* node);
 ServoComputedValues* Servo_GetComputedValuesForAnonymousBox(ServoComputedValues* parentStyleOrNull,
                                                             nsIAtom* pseudoTag,
