@@ -1884,8 +1884,7 @@ static bool SelectorMatches(Element* aElement,
           
           
           nsAutoString language;
-          aElement->GetLang(language);
-          if (!language.IsEmpty()) {
+          if (aElement->GetLang(language)) {
             if (!nsStyleUtil::DashMatchCompare(language,
                                                nsDependentString(pseudoClass->u.mString),
                                                nsASCIICaseInsensitiveStringComparator())) {

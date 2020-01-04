@@ -915,7 +915,7 @@ public:
 
 
 
-  void GetLang(nsAString& aResult) const {
+  bool GetLang(nsAString& aResult) const {
     for (const nsIContent* content = this; content; content = content->GetParent()) {
       if (content->GetAttrCount() > 0) {
         
@@ -930,10 +930,11 @@ public:
         NS_ASSERTION(hasAttr || aResult.IsEmpty(),
                      "GetAttr that returns false should not make string non-empty");
         if (hasAttr) {
-          return;
+          return true;
         }
       }
     }
+    return false;
   }
 
   
