@@ -2309,7 +2309,8 @@ Engine.prototype = {
     
     
     
-    if (!gEnvironment.get("XPCSHELL_TEST_PROFILE_DIR"))
+    if (!Services.prefs.prefHasUserValue(LOCALE_PREF) &&
+        !gEnvironment.get("XPCSHELL_TEST_PROFILE_DIR"))
       return false;
 
     
@@ -2322,8 +2323,7 @@ Engine.prototype = {
     let uri = makeURI(APP_SEARCH_PREFIX + this._shortName + ".xml");
     if (this.getAnonymizedLoadPath(null, uri) == this._loadPath) {
       
-      LOG("_isDefault, pretending " + this._loadPath +
-          " is a default engine for testing purposes");
+      LOG("_isDefault, pretending " + this._loadPath + " is a default engine");
       return true;
     }
 
@@ -2440,6 +2440,7 @@ Engine.prototype = {
         Services.prefs.getDefaultBranch(BROWSER_SEARCH_PREF).getBoolPref("reset.enabled") &&
         this.name == Services.search.currentEngine.name &&
         !this._isDefault &&
+        this.name != Services.search.originalDefaultEngine.name &&
         (!this.getAttr("loadPathHash") ||
          this.getAttr("loadPathHash") != getVerificationHash(this._loadPath)) &&
         !this._isWhiteListed) {
