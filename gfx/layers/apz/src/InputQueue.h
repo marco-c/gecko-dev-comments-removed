@@ -11,7 +11,6 @@
 #include "InputData.h"
 #include "mozilla/EventForwards.h"
 #include "mozilla/RefPtr.h"
-#include "mozilla/UniquePtr.h"
 #include "nsTArray.h"
 #include "TouchCounter.h"
 
@@ -184,7 +183,7 @@ private:
 private:
   
   
-  nsTArray<UniquePtr<CancelableBlockState>> mInputBlockQueue;
+  nsTArray<RefPtr<CancelableBlockState>> mInputBlockQueue;
 
   
   RefPtr<AsyncPanZoomController> mLastActiveApzc;

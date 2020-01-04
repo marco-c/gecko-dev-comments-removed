@@ -8,6 +8,7 @@
 #define mozilla_layers_InputBlockState_h
 
 #include "InputData.h"                      
+#include "mozilla/RefCounted.h"             
 #include "mozilla/RefPtr.h"                 
 #include "mozilla/gfx/Matrix.h"             
 #include "mozilla/layers/APZUtils.h"        
@@ -34,9 +35,11 @@ class PanGestureBlockState;
 
 
 
-class InputBlockState
+class InputBlockState : public RefCounted<InputBlockState>
 {
 public:
+  MOZ_DECLARE_REFCOUNTED_TYPENAME(InputBlockState)
+
   static const uint64_t NO_BLOCK_ID = 0;
 
   enum class TargetConfirmationState {
