@@ -2108,8 +2108,6 @@ IonCompile(JSContext* cx, JSScript* script,
     AutoTraceLog logScript(logger, event);
     AutoTraceLog logCompile(logger, TraceLogger_IonCompilation);
 
-    MOZ_ASSERT(optimizationLevel != OptimizationLevel::DontCompile);
-
     
     
     script->ensureNonLazyCanonicalFunction(cx);
