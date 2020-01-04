@@ -302,6 +302,17 @@ struct MOZ_STACK_CLASS ParseContext : public GenericParseContext
     
     
     bool atBodyLevel() {
+        
+        
+        
+        if (sc->staticScope() && sc->staticScope()->is<StaticEvalObject>()) {
+            bool bl = !innermostStmt()->enclosing;
+            MOZ_ASSERT_IF(bl, innermostStmt()->type == StmtType::BLOCK);
+            MOZ_ASSERT_IF(bl, innermostStmt()->staticScope
+                                             ->template as<StaticBlockObject>()
+                                             .maybeEnclosingEval() == sc->staticScope());
+            return bl;
+        }
         return !innermostStmt();
     }
 
@@ -560,6 +571,12 @@ class Parser : private JS::AutoGCRooter, public StrictModeGetter
 
     bool maybeParseDirective(Node list, Node pn, bool* cont);
 
+    
+    
+    
+    Node evalBody();
+
+    
     Node standaloneModule(Handle<ModuleObject*> module);
 
     

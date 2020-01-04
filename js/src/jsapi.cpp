@@ -3375,11 +3375,9 @@ IsFunctionCloneable(HandleFunction fun, HandleObject dynamicScope)
 
         
         
-        if (scope->is<StaticEvalObject>() &&
-            !scope->as<StaticEvalObject>().isDirect() &&
-            !scope->as<StaticEvalObject>().isStrict())
-        {
-            return true;
+        if (scope->is<StaticBlockObject>()) {
+            if (StaticEvalObject* staticEval = scope->as<StaticBlockObject>().maybeEnclosingEval())
+                return !staticEval->isDirect();
         }
 
         
