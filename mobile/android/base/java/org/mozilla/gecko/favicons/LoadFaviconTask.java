@@ -4,17 +4,11 @@
 
 package org.mozilla.gecko.favicons;
 
-
 import android.content.ContentResolver;
 import android.content.Context;
 import android.graphics.Bitmap;
-import ch.boye.httpclientandroidlib.impl.client.DefaultHttpClient;
 import android.text.TextUtils;
 import android.util.Log;
-import ch.boye.httpclientandroidlib.Header;
-import ch.boye.httpclientandroidlib.HttpEntity;
-import ch.boye.httpclientandroidlib.HttpResponse;
-import ch.boye.httpclientandroidlib.client.methods.HttpGet;
 import org.mozilla.gecko.GeckoAppShell;
 import org.mozilla.gecko.GeckoProfile;
 import org.mozilla.gecko.db.BrowserDB;
@@ -25,6 +19,8 @@ import org.mozilla.gecko.util.IOUtils;
 import org.mozilla.gecko.util.ThreadUtils;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
@@ -78,14 +74,18 @@ public class LoadFaviconTask {
     volatile boolean mCancelled;
 
     
-    protected int targetWidth;
+    protected int targetWidthAndHeight;
     private LinkedList<LoadFaviconTask> chainees;
     private boolean isChaining;
 
-    static DefaultHttpClient httpClient = new DefaultHttpClient();
+    private static class Response {
+        public final int contentLength;
+        public final InputStream stream;
 
-    public LoadFaviconTask(Context context, String pageURL, String faviconURL, int flags, OnFaviconLoadedListener listener) {
-        this(context, pageURL, faviconURL, flags, listener, -1, false);
+        private Response(InputStream stream, int contentLength) {
+            this.stream = stream;
+            this.contentLength = contentLength;
+        }
     }
 
     public LoadFaviconTask(Context context, String pageURL, String faviconURL, int flags, OnFaviconLoadedListener listener,
@@ -98,7 +98,7 @@ public class LoadFaviconTask {
         this.faviconURL = faviconURL;
         this.listener = listener;
         this.flags = flags;
-        this.targetWidth = targetWidth;
+        this.targetWidthAndHeight = targetWidth;
         this.onlyFromLocal = onlyFromLocal;
     }
 
@@ -127,73 +127,53 @@ public class LoadFaviconTask {
 
 
 
-    private HttpResponse tryDownload(URI faviconURI) throws URISyntaxException, IOException {
+    private Response tryDownload(URI faviconURI) throws URISyntaxException, IOException {
         HashSet<String> visitedLinkSet = new HashSet<>();
         visitedLinkSet.add(faviconURI.toString());
         return tryDownloadRecurse(faviconURI, visitedLinkSet);
     }
-    private HttpResponse tryDownloadRecurse(URI faviconURI, HashSet<String> visited) throws URISyntaxException, IOException {
+    private Response tryDownloadRecurse(URI faviconURI, HashSet<String> visited) throws URISyntaxException, IOException {
         if (visited.size() == MAX_REDIRECTS_TO_FOLLOW) {
             return null;
         }
 
-        HttpGet request = new HttpGet(faviconURI);
-        request.setHeader("User-Agent", GeckoAppShell.getGeckoInterface().getDefaultUAString());
-        HttpResponse response = httpClient.execute(request);
-        if (response == null) {
+        HttpURLConnection connection = (HttpURLConnection) faviconURI.toURL().openConnection();
+        connection.setRequestProperty("User-Agent", GeckoAppShell.getGeckoInterface().getDefaultUAString());
+
+        connection.connect();
+
+        
+        int status = connection.getResponseCode();
+
+        
+        if (status >= 300 && status < 400) {
+            final String newURI = connection.getHeaderField("Location");
+
+            
+            try {
+                if (newURI == null || newURI.equals(faviconURI.toString())) {
+                    return null;
+                }
+
+                if (visited.contains(newURI)) {
+                    
+                    return null;
+                }
+
+                visited.add(newURI);
+            } finally {
+                connection.disconnect();
+            }
+
+            return tryDownloadRecurse(new URI(newURI), visited);
+        }
+
+        if (status >= 400) {
+            connection.disconnect();
             return null;
         }
 
-        if (response.getStatusLine() != null) {
-
-            
-            int status = response.getStatusLine().getStatusCode();
-
-            
-            if (status >= 300 && status < 400) {
-                Header header = response.getFirstHeader("Location");
-
-                
-                final String newURI;
-                try {
-                    if (header == null) {
-                        return null;
-                    }
-
-                    newURI = header.getValue();
-                    if (newURI == null || newURI.equals(faviconURI.toString())) {
-                        return null;
-                    }
-
-                    if (visited.contains(newURI)) {
-                        
-                        return null;
-                    }
-
-                    visited.add(newURI);
-                } finally {
-                    
-                    try {
-                        response.getEntity().consumeContent();
-                    } catch (Exception e) {
-                        
-                    }
-                }
-
-                return tryDownloadRecurse(new URI(newURI), visited);
-            }
-
-            if (status >= 400) {
-                
-                try {
-                    response.getEntity().consumeContent();
-                } catch (Exception e) {
-                    
-                }
-                return null;
-            }
-        }
-        return response;
+        return new Response(connection.getInputStream(), connection.getHeaderFieldInt("Content-Length", -1));
     }
 
     
@@ -256,22 +236,17 @@ public class LoadFaviconTask {
 
     private LoadFaviconResult downloadAndDecodeImage(URI targetFaviconURL) throws IOException, URISyntaxException {
         
-        HttpResponse response = tryDownload(targetFaviconURL);
+        Response response = tryDownload(targetFaviconURL);
         if (response == null) {
-            return null;
-        }
-
-        HttpEntity entity = response.getEntity();
-        if (entity == null) {
             return null;
         }
 
         
         try {
-            return decodeImageFromResponse(entity);
+            return decodeImageFromResponse(response);
         } finally {
             
-            entity.consumeContent();
+            IOUtils.safeStreamClose(response.stream);
         }
     }
 
@@ -285,21 +260,20 @@ public class LoadFaviconTask {
 
 
 
-    private LoadFaviconResult decodeImageFromResponse(HttpEntity entity) throws IOException {
+    private LoadFaviconResult decodeImageFromResponse(Response response) throws IOException {
         
-        final long entityReportedLength = entity.getContentLength();
         int bufferSize;
-        if (entityReportedLength > 0) {
+        if (response.contentLength > 0) {
             
             
-            bufferSize = (int) entityReportedLength + 1;
+            bufferSize = response.contentLength + 1;
         } else {
             
             bufferSize = DEFAULT_FAVICON_BUFFER_SIZE;
         }
 
         
-        ConsumedInputStream result = IOUtils.readFully(entity.getContent(), bufferSize);
+        ConsumedInputStream result = IOUtils.readFully(response.stream, bufferSize);
         if (result == null) {
             return null;
         }
@@ -474,7 +448,7 @@ public class LoadFaviconTask {
                     sizes.add(b.getWidth());
                 }
 
-                int bestSize = Favicons.selectBestSizeFromList(sizes, targetWidth);
+                int bestSize = Favicons.selectBestSizeFromList(sizes, targetWidthAndHeight);
                 return iconMap.get(bestSize);
             }
         }
@@ -528,8 +502,7 @@ public class LoadFaviconTask {
 
     private Bitmap pushToCacheAndGetResult(LoadFaviconResult loadedBitmaps) {
         Favicons.putFaviconsInMemCache(faviconURL, loadedBitmaps.getBitmaps());
-        Bitmap result = Favicons.getSizedFaviconFromCache(faviconURL, targetWidth);
-        return result;
+        return Favicons.getSizedFaviconFromCache(faviconURL, targetWidthAndHeight);
     }
 
     private static boolean imageIsValid(final Bitmap image) {
@@ -576,9 +549,9 @@ public class LoadFaviconTask {
 
         
         if ((flags & FLAG_BYPASS_CACHE_WHEN_DOWNLOADING_ICONS) != 0) {
-            scaled = Bitmap.createScaledBitmap(image, targetWidth, targetWidth, true);
-        } else if (targetWidth != -1 && image != null &&  image.getWidth() != targetWidth) {
-            scaled = Favicons.getSizedFaviconFromCache(faviconURL, targetWidth);
+            scaled = Bitmap.createScaledBitmap(image, targetWidthAndHeight, targetWidthAndHeight, true);
+        } else if (targetWidthAndHeight != -1 && image != null &&  image.getWidth() != targetWidthAndHeight) {
+            scaled = Favicons.getSizedFaviconFromCache(faviconURL, targetWidthAndHeight);
         } else {
             scaled = image;
         }
@@ -628,24 +601,5 @@ public class LoadFaviconTask {
 
     int getId() {
         return id;
-    }
-
-    static void closeHTTPClient() {
-        
-        
-        
-        if (ThreadUtils.isOnBackgroundThread()) {
-            if (httpClient != null) {
-                httpClient.close();
-            }
-            return;
-        }
-
-        ThreadUtils.postToBackgroundThread(new Runnable() {
-            @Override
-            public void run() {
-                LoadFaviconTask.closeHTTPClient();
-            }
-        });
     }
 }
