@@ -1099,6 +1099,15 @@ DefaultServerNicknameForCert(const CERTCertificate* cert,
   return NS_ERROR_FAILURE;
 }
 
+
+
+
+
+
+
+
+
+
 void
 SaveIntermediateCerts(const UniqueCERTCertList& certList)
 {
@@ -1128,6 +1137,16 @@ SaveIntermediateCerts(const UniqueCERTCertList& certList)
 
     if (node->cert->isperm) {
       
+      continue;
+    }
+
+    
+    
+    
+    
+    
+    
+    if (node == CERT_LIST_TAIL(certList)) {
       continue;
     }
 
