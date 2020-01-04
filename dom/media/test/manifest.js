@@ -1415,7 +1415,8 @@ var PARALLEL_TESTS = 2;
 var gTestPrefs = [
   ['media.recorder.max_memory', 1024],
   ["media.preload.default", 2], 
-  ["media.preload.auto", 3] 
+  ["media.preload.auto", 3], 
+  ["media.test.dumpDebugInfo", true],
 ];
 
 
@@ -1587,4 +1588,14 @@ function isSlowPlatform() {
 
 if ("SimpleTest" in window) {
   SimpleTest.requestFlakyTimeout("untriaged");
+
+  
+  SimpleTest.registerTimeoutFunction(function() {
+    for (var v of document.getElementsByTagName("video")) {
+      v.mozDumpDebugInfo();
+    }
+    for (var a of document.getElementsByTagName("audio")) {
+      a.mozDumpDebugInfo();
+    }
+  });
 }
