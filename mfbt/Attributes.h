@@ -46,21 +46,8 @@
 
 
 
-
-
-
-
 #  define MOZ_HAVE_NEVER_INLINE          __declspec(noinline)
 #  define MOZ_HAVE_NORETURN              __declspec(noreturn)
-#  if _MSC_VER >= 1900
-#    define MOZ_HAVE_EXPLICIT_CONVERSION
-#  endif
-#  ifdef __clang__
-     
-#    if __has_extension(cxx_explicit_conversions)
-#      define MOZ_HAVE_EXPLICIT_CONVERSION
-#    endif
-#  endif
 #elif defined(__clang__)
    
 
@@ -70,9 +57,6 @@
 #  ifndef __has_extension
 #    define __has_extension __has_feature /* compatibility, for older versions of clang */
 #  endif
-#  if __has_extension(cxx_explicit_conversions)
-#    define MOZ_HAVE_EXPLICIT_CONVERSION
-#  endif
 #  if __has_attribute(noinline)
 #    define MOZ_HAVE_NEVER_INLINE        __attribute__((noinline))
 #  endif
@@ -80,9 +64,6 @@
 #    define MOZ_HAVE_NORETURN            __attribute__((noreturn))
 #  endif
 #elif defined(__GNUC__)
-#  if defined(__GXX_EXPERIMENTAL_CXX0X__) || __cplusplus >= 201103L
-#    define MOZ_HAVE_EXPLICIT_CONVERSION
-#  endif
 #  define MOZ_HAVE_NEVER_INLINE          __attribute__((noinline))
 #  define MOZ_HAVE_NORETURN              __attribute__((noreturn))
 #endif
@@ -95,31 +76,6 @@
 #  if __has_extension(attribute_analyzer_noreturn)
 #    define MOZ_HAVE_ANALYZER_NORETURN __attribute__((analyzer_noreturn))
 #  endif
-#endif
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#ifdef MOZ_HAVE_EXPLICIT_CONVERSION
-#  define MOZ_EXPLICIT_CONVERSION explicit
-#else
-#  define MOZ_EXPLICIT_CONVERSION
 #endif
 
 
