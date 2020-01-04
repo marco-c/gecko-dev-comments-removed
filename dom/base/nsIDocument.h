@@ -1049,6 +1049,17 @@ public:
   
 
 
+
+
+
+
+  template<typename T>
+  size_t FindDocStyleSheetInsertionPoint(const nsTArray<RefPtr<T>>& aDocSheets,
+                                         T* aSheet);
+
+  
+
+
   mozilla::css::Loader* CSSLoader() const {
     return mCSSLoader;
   }
