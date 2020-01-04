@@ -87,10 +87,6 @@ class Channel::ChannelImpl : public MessageLoopForIO::Watcher {
   
   size_t message_send_bytes_written_;
 
-  
-  
-  bool uses_fifo_;
-
   int server_listen_pipe_;
   int pipe_;
   int client_pipe_;  

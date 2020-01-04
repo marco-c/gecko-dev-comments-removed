@@ -11,24 +11,6 @@
 namespace base {
 
 
-std::string SysWideToUTF8(const std::wstring& wide) {
-  return SysWideToMultiByte(wide, CP_UTF8);
-}
-
-
-std::wstring SysUTF8ToWide(const StringPiece& utf8) {
-  return SysMultiByteToWide(utf8, CP_UTF8);
-}
-
-std::string SysWideToNativeMB(const std::wstring& wide) {
-  return SysWideToMultiByte(wide, CP_ACP);
-}
-
-std::wstring SysNativeMBToWide(const StringPiece& native_mb) {
-  return SysMultiByteToWide(native_mb, CP_ACP);
-}
-
-
 std::wstring SysMultiByteToWide(const StringPiece& mb, uint32_t code_page) {
   if (mb.empty())
     return std::wstring();
@@ -65,6 +47,24 @@ std::string SysWideToMultiByte(const std::wstring& wide, uint32_t code_page) {
                       &mb[0], charcount, NULL, NULL);
 
   return mb;
+}
+
+
+std::string SysWideToUTF8(const std::wstring& wide) {
+  return SysWideToMultiByte(wide, CP_UTF8);
+}
+
+
+std::wstring SysUTF8ToWide(const StringPiece& utf8) {
+  return SysMultiByteToWide(utf8, CP_UTF8);
+}
+
+std::string SysWideToNativeMB(const std::wstring& wide) {
+  return SysWideToMultiByte(wide, CP_ACP);
+}
+
+std::wstring SysNativeMBToWide(const StringPiece& native_mb) {
+  return SysMultiByteToWide(native_mb, CP_ACP);
 }
 
 }  

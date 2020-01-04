@@ -7,7 +7,6 @@
 #include "base/message_loop.h"
 #include "base/object_watcher.h"
 #include "base/sys_info.h"
-#include "chrome/common/env_vars.h"
 #include "chrome/common/result_codes.h"
 
 
@@ -48,15 +47,6 @@ class TimerExpiredTask : public Task, public base::ObjectWatcher::Delegate {
 
  private:
   void KillProcess() {
-    if (base::SysInfo::HasEnvVar(env_vars::kHeadless)) {
-     
-     
-     if (WaitForSingleObject(process_, kWaitInterval) == WAIT_OBJECT_0) {
-       OnObjectSignaled(process_);
-       return;
-     }
-    }
-
     
     
     

@@ -15,19 +15,6 @@
 namespace win_util {
 
 
-bool IsShiftPressed();
-
-
-bool IsCtrlPressed();
-
-
-bool IsAltPressed();
-
-
-
-std::wstring FormatMessage(unsigned messageid);
-
-
 std::wstring FormatLastWin32Error();
 
 }  
