@@ -22,6 +22,8 @@ XPCOMUtils.defineLazyModuleGetter(this, "ChromeManifestParser",
                                   "resource://gre/modules/ChromeManifestParser.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "LightweightThemeManager",
                                   "resource://gre/modules/LightweightThemeManager.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "ExtensionData",
+                                  "resource://gre/modules/Extension.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "Locale",
                                   "resource://gre/modules/Locale.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "FileUtils",
@@ -834,9 +836,14 @@ function getRDFProperty(aDs, aResource, aProperty) {
 
 
 
-function loadManifestFromWebManifest(aStream) {
-  let decoder = Cc["@mozilla.org/dom/json;1"].createInstance(Ci.nsIJSON);
-  let manifest = decoder.decodeFromStream(aStream, aStream.available());
+var loadManifestFromWebManifest = Task.async(function* loadManifestFromWebManifest(aUri) {
+  
+  
+  let uri = NetUtil.newURI("./", null, aUri);
+
+  let extension = new ExtensionData(uri);
+
+  let manifest = yield extension.readManifest();
 
   function findProp(obj, current, properties) {
     if (properties.length == 0)
@@ -903,16 +910,33 @@ function loadManifestFromWebManifest(aStream) {
 
   addon.applyBackgroundUpdates = AddonManager.AUTOUPDATE_DEFAULT;
 
-  addon.defaultLocale = {
-    name: getProp("name"),
-    description: getOptionalProp("description"),
-    creator: null,
-    homepageURL: null,
+  function getLocale(aLocale) {
+    let result = {
+      name: extension.localize(getProp("name"), aLocale),
+      description: extension.localize(getOptionalProp("description"), aLocale),
+      creator: null,
+      homepageURL: null,
 
-    developers: null,
-    translators: null,
-    contributors: null,
+      developers: null,
+      translators: null,
+      contributors: null,
+      locales: [aLocale],
+    };
+    return result;
   }
+
+  
+  
+  let locales = yield extension.initAllLocales();
+
+  
+  if (extension.errors.length)
+    throw new Error("Extension is invalid");
+
+  addon.defaultLocale = getLocale(extension.defaultLocale);
+  addon.locales = Array.from(locales.keys(), getLocale);
+
+  delete addon.defaultLocale.locales;
 
   addon.targetApplications = [{
     id: TOOLKIT_ID,
@@ -920,13 +944,12 @@ function loadManifestFromWebManifest(aStream) {
     maxVersion: "*",
   }];
 
-  addon.locales = [];
   addon.targetPlatforms = [];
   addon.userDisabled = false;
   addon.softDisabled = addon.blocklistState == Blocklist.STATE_SOFTBLOCKED;
 
   return addon;
-}
+});
 
 
 
@@ -1251,8 +1274,19 @@ var loadManifestFromDir = Task.async(function* loadManifestFromDir(aDir, aInstal
     return size;
   }
 
-  function loadFromRDF(aFile, aStream) {
-    let addon = loadManifestFromRDF(Services.io.newFileURI(aFile), aStream);
+  function loadFromRDF(aUri) {
+    let fis = Cc["@mozilla.org/network/file-input-stream;1"].
+              createInstance(Ci.nsIFileInputStream);
+    fis.init(aUri.file, -1, -1, false);
+    let bis = Cc["@mozilla.org/network/buffered-input-stream;1"].
+              createInstance(Ci.nsIBufferedInputStream);
+    bis.init(fis, 4096);
+    try {
+      var addon = loadManifestFromRDF(aUri, bis);
+    } finally {
+      bis.close();
+      fis.close();
+    }
 
     let iconFile = aDir.clone();
     iconFile.append("icon.png");
@@ -1283,32 +1317,21 @@ var loadManifestFromDir = Task.async(function* loadManifestFromDir(aDir, aInstal
                     "install manifest");
   }
 
-  let fis = Cc["@mozilla.org/network/file-input-stream;1"].
-            createInstance(Ci.nsIFileInputStream);
-  fis.init(file, -1, -1, false);
-  let bis = Cc["@mozilla.org/network/buffered-input-stream;1"].
-            createInstance(Ci.nsIBufferedInputStream);
-  bis.init(fis, 4096);
+  let uri = Services.io.newFileURI(file).QueryInterface(Ci.nsIFileURL);
 
-  try {
-    let addon = file.leafName == FILE_WEB_MANIFEST ?
-                loadManifestFromWebManifest(bis) :
-                loadFromRDF(file, bis);
+  let addon = file.leafName == FILE_WEB_MANIFEST ?
+              yield loadManifestFromWebManifest(uri) :
+              loadFromRDF(uri);
 
-    addon._sourceBundle = aDir.clone();
-    addon._installLocation = aInstallLocation;
-    addon.size = getFileSize(aDir);
-    addon.signedState = yield verifyDirSignedState(aDir, addon);
-    addon.appDisabled = !isUsableAddon(addon);
+  addon._sourceBundle = aDir.clone();
+  addon._installLocation = aInstallLocation;
+  addon.size = getFileSize(aDir);
+  addon.signedState = yield verifyDirSignedState(aDir, addon);
+  addon.appDisabled = !isUsableAddon(addon);
 
-    defineSyncGUID(addon);
+  defineSyncGUID(addon);
 
-    return addon;
-  }
-  finally {
-    bis.close();
-    fis.close();
-  }
+  return addon;
 });
 
 
@@ -1320,9 +1343,17 @@ var loadManifestFromDir = Task.async(function* loadManifestFromDir(aDir, aInstal
 
 
 var loadManifestFromZipReader = Task.async(function* loadManifestFromZipReader(aZipReader, aInstallLocation) {
-  function loadFromRDF(aStream) {
-    let uri = buildJarURI(aZipReader.file, FILE_RDF_MANIFEST);
-    let addon = loadManifestFromRDF(uri, aStream);
+  function loadFromRDF(aUri) {
+    let zis = aZipReader.getInputStream(entry);
+    let bis = Cc["@mozilla.org/network/buffered-input-stream;1"].
+              createInstance(Ci.nsIBufferedInputStream);
+    bis.init(zis, 4096);
+    try {
+      var addon = loadManifestFromRDF(aUri, bis);
+    } finally {
+      bis.close();
+      zis.close();
+    }
 
     if (aZipReader.hasEntry("icon.png")) {
       addon.icons[32] = "icon.png";
@@ -1335,7 +1366,7 @@ var loadManifestFromZipReader = Task.async(function* loadManifestFromZipReader(a
 
     
     if (addon.unpack) {
-      uri = buildJarURI(aZipReader.file, "chrome.manifest");
+      let uri = buildJarURI(aZipReader.file, "chrome.manifest");
       let chromeManifest = ChromeManifestParser.parseSync(uri);
       addon.hasBinaryComponents = ChromeManifestParser.hasType(chromeManifest,
                                                                "binary-component");
@@ -1352,35 +1383,26 @@ var loadManifestFromZipReader = Task.async(function* loadManifestFromZipReader(a
                     "install manifest");
   }
 
-  let zis = aZipReader.getInputStream(entry);
-  let bis = Cc["@mozilla.org/network/buffered-input-stream;1"].
-            createInstance(Ci.nsIBufferedInputStream);
-  bis.init(zis, 4096);
+  let uri = buildJarURI(aZipReader.file, entry);
 
-  try {
-    let addon = entry == FILE_WEB_MANIFEST ?
-                loadManifestFromWebManifest(bis) :
-                loadFromRDF(bis);
+  let addon = entry == FILE_WEB_MANIFEST ?
+              yield loadManifestFromWebManifest(uri) :
+              loadFromRDF(uri);
 
-    addon._sourceBundle = aZipReader.file;
-    addon._installLocation = aInstallLocation;
+  addon._sourceBundle = aZipReader.file;
+  addon._installLocation = aInstallLocation;
 
-    addon.size = 0;
-    let entries = aZipReader.findEntries(null);
-    while (entries.hasMore())
-      addon.size += aZipReader.getEntry(entries.getNext()).realSize;
+  addon.size = 0;
+  let entries = aZipReader.findEntries(null);
+  while (entries.hasMore())
+    addon.size += aZipReader.getEntry(entries.getNext()).realSize;
 
-    addon.signedState = yield verifyZipSignedState(aZipReader.file, addon);
-    addon.appDisabled = !isUsableAddon(addon);
+  addon.signedState = yield verifyZipSignedState(aZipReader.file, addon);
+  addon.appDisabled = !isUsableAddon(addon);
 
-    defineSyncGUID(addon);
+  defineSyncGUID(addon);
 
-    return addon;
-  }
-  finally {
-    bis.close();
-    zis.close();
-  }
+  return addon;
 });
 
 
