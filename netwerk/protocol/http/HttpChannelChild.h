@@ -37,6 +37,7 @@ namespace net {
 
 class InterceptedChannelContent;
 class InterceptStreamListener;
+class OverrideRunnable;
 
 class HttpChannelChild final : public PHttpChannelChild
                              , public HttpBaseChannel
@@ -175,12 +176,16 @@ private:
   
   void OverrideWithSynthesizedResponse(nsAutoPtr<nsHttpResponseHead>& aResponseHead,
                                        nsIInputStream* aSynthesizedInput,
-                                       nsIStreamListener* aStreamListener);
+                                       InterceptStreamListener* aStreamListener);
+
+  void ForceIntercepted(nsIInputStream* aSynthesizedInput);
 
   RequestHeaderTuples mClientSetRequestHeaders;
   nsCOMPtr<nsIChildChannel> mRedirectChannelChild;
   RefPtr<InterceptStreamListener> mInterceptListener;
   RefPtr<nsInputStreamPump> mSynthesizedResponsePump;
+  nsAutoPtr<nsHttpResponseHead> mSynthesizedResponseHead;
+  nsCOMPtr<nsIInputStream> mSynthesizedInput;
   int64_t mSynthesizedStreamLength;
 
   bool mIsFromCache;
@@ -214,6 +219,13 @@ private:
   
   
   bool mSynthesizedResponse;
+
+  
+  
+  bool mShouldInterceptSubsequentRedirect;
+  
+  
+  bool mRedirectingForSubsequentSynthesizedResponse;
 
   
   
@@ -260,6 +272,16 @@ private:
   void Redirect3Complete();
   void DeleteSelf();
 
+  
+  
+  nsresult SetupRedirect(nsIURI* uri,
+                         const nsHttpResponseHead* responseHead,
+                         nsIChannel** outChannel);
+
+  
+  void BeginNonIPCRedirect(nsIURI* responseURI,
+                           const nsHttpResponseHead* responseHead);
+
   friend class AssociateApplicationCacheEvent;
   friend class StartRequestEvent;
   friend class StopRequestEvent;
@@ -275,6 +297,7 @@ private:
   friend class HttpAsyncAborter<HttpChannelChild>;
   friend class InterceptStreamListener;
   friend class InterceptedChannelContent;
+  friend class OverrideRunnable;
 };
 
 

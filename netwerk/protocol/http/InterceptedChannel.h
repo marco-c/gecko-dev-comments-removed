@@ -21,6 +21,7 @@ namespace net {
 class nsHttpChannel;
 class HttpChannelChild;
 class nsHttpResponseHead;
+class InterceptStreamListener;
 
 
 
@@ -93,11 +94,11 @@ class InterceptedChannelContent : public InterceptedChannelBase
 
   
   
-  nsCOMPtr<nsIStreamListener> mStreamListener;
+  RefPtr<InterceptStreamListener> mStreamListener;
 public:
   InterceptedChannelContent(HttpChannelChild* aChannel,
                             nsINetworkInterceptController* aController,
-                            nsIStreamListener* aListener);
+                            InterceptStreamListener* aListener);
 
   NS_IMETHOD ResetInterception() override;
   NS_IMETHOD FinishSynthesizedResponse(const nsACString& aFinalURLSpec) override;
