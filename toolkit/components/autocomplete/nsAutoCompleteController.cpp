@@ -1390,26 +1390,28 @@ nsAutoCompleteController::EnterMatch(bool aIsPopupSelection,
     int32_t selectedIndex;
     popup->GetSelectedIndex(&selectedIndex);
     if (selectedIndex >= 0) {
-
       nsAutoString inputValue;
       input->GetTextValue(inputValue);
-      nsAutoString finalValue;
-      if (!completeSelection || aIsPopupSelection ||
-          (mDefaultIndexCompleted &&
-           inputValue.Equals(mPlaceholderCompletionString,
-                             nsCaseInsensitiveStringComparator()))) {
+      bool defaultCompleted = mDefaultIndexCompleted &&
+                              inputValue.Equals(mPlaceholderCompletionString,
+                                                nsCaseInsensitiveStringComparator());
+      if (aIsPopupSelection || (!completeSelection && !defaultCompleted)) {
         
         
         
+        GetResultValueAt(selectedIndex, true, value);
+      } else if (defaultCompleted) {
         
-        GetResultValueAt(selectedIndex, true, finalValue);
-        value = finalValue;
+        
+        
+        GetFinalDefaultCompleteValue(value);
       } else if (mCompletedSelectionIndex != -1) {
         
         
         
         
         
+        nsAutoString finalValue;
         GetResultValueAt(mCompletedSelectionIndex, true, finalValue);
         nsAutoString completedValue;
         GetResultValueAt(mCompletedSelectionIndex, false, completedValue);
