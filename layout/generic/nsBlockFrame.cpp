@@ -1235,7 +1235,7 @@ nsBlockFrame::Reflow(nsPresContext*           aPresContext,
         mLines.front() != mLines.back() &&
         mLines.begin().next()->IsBlock()))) {
     
-    ReflowOutput metrics(aReflowInput);
+    ReflowOutput reflowOutput(aReflowInput);
     
     nsLayoutUtils::LinePosition position;
     WritingMode wm = aReflowInput.GetWritingMode();
@@ -1245,8 +1245,8 @@ nsBlockFrame::Reflow(nsPresContext*           aPresContext,
       position.mBStart :
       reflowInput->ComputedLogicalBorderPadding().BStart(wm);
     nsIFrame* bullet = GetOutsideBullet();
-    ReflowBullet(bullet, state, metrics, lineBStart);
-    NS_ASSERTION(!BulletIsEmpty() || metrics.BSize(wm) == 0,
+    ReflowBullet(bullet, state, reflowOutput, lineBStart);
+    NS_ASSERTION(!BulletIsEmpty() || reflowOutput.BSize(wm) == 0,
                  "empty bullet took up space");
 
     if (havePosition && !BulletIsEmpty()) {
@@ -1256,9 +1256,9 @@ nsBlockFrame::Reflow(nsPresContext*           aPresContext,
       
     
       
-      LogicalRect bbox = bullet->GetLogicalRect(wm, metrics.PhysicalSize());
-      bbox.BStart(wm) = position.mBaseline - metrics.BlockStartAscent();
-      bullet->SetRect(wm, bbox, metrics.PhysicalSize());
+      LogicalRect bbox = bullet->GetLogicalRect(wm, reflowOutput.PhysicalSize());
+      bbox.BStart(wm) = position.mBaseline - reflowOutput.BlockStartAscent();
+      bullet->SetRect(wm, bbox, reflowOutput.PhysicalSize());
     }
     
     
