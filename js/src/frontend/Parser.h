@@ -800,6 +800,15 @@ class Parser : private JS::AutoGCRooter, public StrictModeGetter
                                 ParseNodeKind headKind);
     bool checkForHeadConstInitializers(Node pn1);
 
+    
+    bool shouldParseLetDeclaration(bool* parseDeclOut);
+
+    
+    
+    
+    
+    bool peekShouldParseLetDeclaration(bool* parseDeclOut, TokenStream::Modifier modifier);
+
   public:
     enum FunctionCallBehavior {
         PermitAssignmentToFunctionCalls,

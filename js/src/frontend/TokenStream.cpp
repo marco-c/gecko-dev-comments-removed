@@ -1000,18 +1000,17 @@ TokenStream::checkForKeyword(const KeywordInfo* kw, TokenKind* ttp)
     if (kw->tokentype != TOK_STRICT_RESERVED) {
         if (kw->version <= versionNumber()) {
             
+            
+            if (kw->tokentype == TOK_LET && !strictMode())
+                return true;
+
+            
             if (ttp) {
                 *ttp = kw->tokentype;
                 return true;
             }
             return reportError(JSMSG_RESERVED_ID, kw->chars);
         }
-
-        
-        
-        
-        if (kw->tokentype != TOK_LET)
-            return true;
     }
 
     

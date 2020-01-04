@@ -5196,6 +5196,10 @@ Parser<FullParseHandler>::forStatement(YieldHandling yieldHandling)
     bool isForDecl = false;
 
     
+    
+    bool letIsIdentifier = false;
+
+    
     RootedStaticBlockObject blockObj(context);
 
     
@@ -5222,19 +5226,38 @@ Parser<FullParseHandler>::forStatement(YieldHandling yieldHandling)
                 isForDecl = true;
                 tokenStream.consumeKnownToken(tt, TokenStream::Operand);
                 pn1 = variables(yieldHandling, PNK_VAR, InForInit);
-            } else if (tt == TOK_LET || tt == TOK_CONST) {
+            } else if (tt == TOK_LET || tt == TOK_CONST ||
+                       (tt == TOK_NAME && tokenStream.nextName() == context->names().let)) {
                 handler.disableSyntaxParser();
-                bool constDecl = tt == TOK_CONST;
-                tokenStream.consumeKnownToken(tt, TokenStream::Operand);
-                isForDecl = true;
-                blockObj = StaticBlockObject::create(context);
-                if (!blockObj)
-                    return null();
+
                 
                 
-                blockObj->initEnclosingScopeFromParser(pc->innermostStaticScope());
-                pn1 = variables(yieldHandling, constDecl ? PNK_CONST : PNK_LET, InForInit,
-                                nullptr, blockObj, DontHoistVars);
+                
+                bool parseDecl;
+                if (tt == TOK_NAME) {
+                    if (!peekShouldParseLetDeclaration(&parseDecl, TokenStream::Operand))
+                        return null();
+                    letIsIdentifier = !parseDecl;
+                } else {
+                    parseDecl = true;
+                    tokenStream.consumeKnownToken(tt, TokenStream::Operand);
+                }
+
+                if (parseDecl) {
+                    bool constDecl = tt == TOK_CONST;
+                    isForDecl = true;
+                    blockObj = StaticBlockObject::create(context);
+                    if (!blockObj)
+                        return null();
+
+                    
+                    
+                    blockObj->initEnclosingScopeFromParser(pc->innermostStaticScope());
+                    pn1 = variables(yieldHandling, constDecl ? PNK_CONST : PNK_LET, InForInit,
+                                    nullptr, blockObj, DontHoistVars);
+                } else {
+                    pn1 = expr(InProhibited, yieldHandling, TripledotProhibited);
+                }
             } else {
                 
                 
@@ -5309,9 +5332,17 @@ Parser<FullParseHandler>::forStatement(YieldHandling yieldHandling)
         bool isForIn, isForOf;
         if (!matchInOrOf(&isForIn, &isForOf))
             return null();
+
+        
+        
+        
+        
+        
+        
+        
         if (isForIn)
             headKind = PNK_FORIN;
-        else if (isForOf)
+        else if (isForOf && !letIsIdentifier)
             headKind = PNK_FOROF;
     }
 
@@ -5567,12 +5598,12 @@ Parser<SyntaxParseHandler>::forStatement(YieldHandling yieldHandling)
                 isForDecl = true;
                 tokenStream.consumeKnownToken(tt, TokenStream::Operand);
                 lhsNode = variables(yieldHandling, PNK_VAR, InForInit, &simpleForDecl);
-            }
-            else if (tt == TOK_CONST || tt == TOK_LET) {
+            } else if (tt == TOK_CONST || tt == TOK_LET ||
+                       (tt == TOK_NAME && tokenStream.nextName() == context->names().let))
+            {
                 JS_ALWAYS_FALSE(abortIfSyntaxParser());
                 return null();
-            }
-            else {
+            } else {
                 lhsNode = expr(InProhibited, yieldHandling, TripledotProhibited);
             }
             if (!lhsNode)
@@ -6628,6 +6659,71 @@ Parser<SyntaxParseHandler>::classDefinition(YieldHandling yieldHandling,
 }
 
 template <typename ParseHandler>
+bool
+Parser<ParseHandler>::shouldParseLetDeclaration(bool* parseDeclOut)
+{
+    
+    MOZ_ASSERT(!pc->sc->strict());
+
+    TokenKind tt;
+    *parseDeclOut = false;
+
+    if (!tokenStream.peekToken(&tt))
+        return false;
+
+    switch (tt) {
+      case TOK_NAME:
+        
+        *parseDeclOut = tokenStream.nextName() != context->names().let;
+        break;
+
+      case TOK_LC:
+      case TOK_LB:
+        
+        
+        
+        *parseDeclOut = true;
+        break;
+
+      case TOK_LP:
+        
+        
+        *parseDeclOut = versionNumber() == JSVERSION_1_7 || versionNumber() == JSVERSION_1_8;
+        break;
+
+      default:
+        break;
+    }
+
+    return true;
+}
+
+template <typename ParseHandler>
+bool
+Parser<ParseHandler>::peekShouldParseLetDeclaration(bool* parseDeclOut,
+                                                    TokenStream::Modifier modifier)
+{
+    *parseDeclOut = false;
+
+#ifdef DEBUG
+    TokenKind tt;
+    if (!tokenStream.peekToken(&tt, modifier))
+        return false;
+    MOZ_ASSERT(tt == TOK_NAME && tokenStream.nextName() == context->names().let);
+#endif
+
+    tokenStream.consumeKnownToken(TOK_NAME, modifier);
+    if (!shouldParseLetDeclaration(parseDeclOut))
+        return false;
+
+    
+    if (!*parseDeclOut)
+        tokenStream.ungetToken();
+
+    return true;
+}
+
+template <typename ParseHandler>
 typename ParseHandler::Node
 Parser<ParseHandler>::statement(YieldHandling yieldHandling, bool canHaveDirectives)
 {
@@ -6696,6 +6792,16 @@ Parser<ParseHandler>::statement(YieldHandling yieldHandling, bool canHaveDirecti
       }
 
       case TOK_NAME: {
+        
+        
+        if (tokenStream.currentName() == context->names().let) {
+            bool parseDecl;
+            if (!shouldParseLetDeclaration(&parseDecl))
+                return null();
+            if (parseDecl)
+                return lexicalDeclaration(yieldHandling,  false);
+        }
+
         TokenKind next;
         if (!tokenStream.peekToken(&next))
             return null();
