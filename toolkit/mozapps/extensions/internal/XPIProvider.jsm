@@ -2582,16 +2582,20 @@ this.XPIProvider = {
       if (!REQUIRE_SIGNING)
         Services.prefs.addObserver(PREF_XPI_SIGNATURES_REQUIRED, this, false);
       Services.obs.addObserver(this, NOTIFICATION_FLUSH_PERMISSIONS, false);
-      if (Cu.isModuleLoaded("resource://devtools/client/framework/ToolboxProcess.jsm")) {
-        
-        
-        this._toolboxProcessLoaded = true;
-        BrowserToolboxProcess.on("connectionchange",
-                                 this.onDebugConnectionChange.bind(this));
-      }
-      else {
-        
-        Services.obs.addObserver(this, NOTIFICATION_TOOLBOXPROCESS_LOADED, false);
+
+      
+      
+      if (ResProtocolHandler.hasSubstitution("devtools")) {
+        if (Cu.isModuleLoaded("resource://devtools/client/framework/ToolboxProcess.jsm")) {
+          
+          
+          this._toolboxProcessLoaded = true;
+          BrowserToolboxProcess.on("connectionchange",
+                                   this.onDebugConnectionChange.bind(this));
+        } else {
+          
+          Services.obs.addObserver(this, NOTIFICATION_TOOLBOXPROCESS_LOADED, false);
+        }
       }
 
       let flushCaches = this.checkForChanges(aAppChanged, aOldAppVersion,
