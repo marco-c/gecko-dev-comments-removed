@@ -212,6 +212,9 @@ private:
   
   PrefixArray mMissCache;
 
+  
+  CacheResultArray mLastResults;
+
   nsresult mUpdateStatus;
   nsTArray<nsCString> mUpdateTables;
 
