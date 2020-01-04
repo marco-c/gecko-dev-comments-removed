@@ -42,20 +42,18 @@ InterpreterFrame::initExecuteFrame(JSContext* cx, HandleScript script,
     
     RootedValue newTarget(cx, newTargetValue);
     if (script->isDirectEvalInFunction()) {
-        if (evalInFramePrev) {
-            if (newTarget.isNull() &&
-                evalInFramePrev.script()->bodyScope()->hasOnChain(ScopeKind::Function))
-            {
-                newTarget = evalInFramePrev.newTarget();
-            }
-        } else {
-            FrameIter iter(cx);
-            MOZ_ASSERT(!iter.isWasm());
-            if (newTarget.isNull() &&
-                iter.script()->bodyScope()->hasOnChain(ScopeKind::Function))
-            {
-                newTarget = iter.newTarget();
-            }
+        FrameIter iter(cx);
+        MOZ_ASSERT(!iter.isWasm());
+        if (newTarget.isNull() &&
+            iter.script()->bodyScope()->hasOnChain(ScopeKind::Function))
+        {
+            newTarget = iter.newTarget();
+        }
+    } else if (evalInFramePrev) {
+        if (newTarget.isNull() &&
+            evalInFramePrev.script()->bodyScope()->hasOnChain(ScopeKind::Function))
+        {
+            newTarget = evalInFramePrev.newTarget();
         }
     }
 
