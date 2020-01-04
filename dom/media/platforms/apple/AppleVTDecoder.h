@@ -96,7 +96,7 @@ private:
   CFDictionaryRef CreateDecoderSpecification();
   CFDictionaryRef CreateDecoderExtensions();
   
-  nsresult DoDecode(MediaRawData* aSample);
+  MediaResult DoDecode(MediaRawData* aSample);
 
   const RefPtr<TaskQueue> mTaskQueue;
   const uint32_t mMaxRefFrames;
