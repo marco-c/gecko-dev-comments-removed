@@ -175,7 +175,7 @@ RegExpObject::trace(JSTracer* trc, JSObject* obj)
     
     
     
-    if (trc->runtime()->isHeapBusy() &&
+    if (trc->runtime()->isHeapCollecting() &&
         trc->isMarkingTracer() &&
         !obj->asTenured().zone()->isPreservingCode())
     {
