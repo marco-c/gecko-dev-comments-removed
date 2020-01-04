@@ -33,6 +33,19 @@ except ImportError:
 def get_default_valgrind_suppression_files():
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     if build_obj is None or build_obj.topsrcdir is None:
         return []
 
