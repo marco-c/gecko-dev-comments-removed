@@ -17,7 +17,6 @@
 #ifdef XP_WIN
 #include "windows.h"
 #ifdef MOZ_SANDBOX
-#include "mozilla/Scoped.h"
 #include <intrin.h>
 #include <assert.h>
 #endif
@@ -35,31 +34,6 @@
 #include "rlz/lib/machine_id.h"
 #include "rlz/lib/string_utils.h"
 #include "sha256.h"
-#endif
-
-#if defined(XP_WIN) && defined(MOZ_SANDBOX)
-namespace {
-
-
-struct ScopedActCtxHandleTraits
-{
-  typedef HANDLE type;
-
-  static type empty()
-  {
-    return INVALID_HANDLE_VALUE;
-  }
-
-  static void release(type aActCtxHandle)
-  {
-    if (aActCtxHandle != INVALID_HANDLE_VALUE) {
-      ReleaseActCtx(aActCtxHandle);
-    }
-  }
-};
-typedef mozilla::Scoped<ScopedActCtxHandleTraits> ScopedActCtxHandle;
-
-} 
 #endif
 
 namespace mozilla {
@@ -146,11 +120,6 @@ static void SecureMemset(void* start, uint8_t value, size_t size)
 }
 #endif
 
-
-
-#if defined(_MSC_VER)
-#pragma optimize("g", off)
-#endif
 bool
 GMPLoaderImpl::Load(const char* aUTF8LibPath,
                     uint32_t aUTF8LibPathLen,
@@ -214,6 +183,15 @@ GMPLoaderImpl::Load(const char* aUTF8LibPath,
     nodeId = std::string(aOriginSalt, aOriginSalt + aOriginSaltLen);
   }
 
+  
+  
+  
+  if (mSandboxStarter && !mSandboxStarter->Start(aUTF8LibPath)) {
+    return false;
+  }
+
+  
+  PRLibSpec libSpec;
 #ifdef XP_WIN
   int pathLen = MultiByteToWideChar(CP_UTF8, 0, aUTF8LibPath, -1, nullptr, 0);
   if (pathLen == 0) {
@@ -225,29 +203,6 @@ GMPLoaderImpl::Load(const char* aUTF8LibPath,
     return false;
   }
 
-#ifdef MOZ_SANDBOX
-  
-  
-  
-  
-  ACTCTX actCtx = { sizeof(actCtx) };
-  actCtx.dwFlags = ACTCTX_FLAG_RESOURCE_NAME_VALID;
-  actCtx.lpSource = widePath;
-  actCtx.lpResourceName = ISOLATIONAWARE_MANIFEST_RESOURCE_ID;
-  ScopedActCtxHandle actCtxHandle(CreateActCtx(&actCtx));
-#endif
-#endif
-
-  
-  
-  
-  if (mSandboxStarter && !mSandboxStarter->Start(aUTF8LibPath)) {
-    return false;
-  }
-
-  
-  PRLibSpec libSpec;
-#ifdef XP_WIN
   libSpec.value.pathname_u = widePath;
   libSpec.type = PR_LibSpec_PathnameU;
 #else
@@ -280,9 +235,6 @@ GMPLoaderImpl::Load(const char* aUTF8LibPath,
 
   return true;
 }
-#if defined(_MSC_VER)
-#pragma optimize("", on)
-#endif
 
 GMPErr
 GMPLoaderImpl::GetAPI(const char* aAPIName,
