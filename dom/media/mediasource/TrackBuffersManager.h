@@ -341,9 +341,12 @@ private:
   void InsertFrames(TrackBuffer& aSamples,
                     const media::TimeIntervals& aIntervals,
                     TrackData& aTrackData);
-  void RemoveFrames(const media::TimeIntervals& aIntervals,
-                    TrackData& aTrackData,
-                    uint32_t aStartIndex);
+  
+  
+  
+  size_t RemoveFrames(const media::TimeIntervals& aIntervals,
+                      TrackData& aTrackData,
+                      uint32_t aStartIndex);
   
   uint32_t FindSampleIndex(const TrackBuffer& aTrackBuffer,
                            const media::TimeInterval& aInterval);

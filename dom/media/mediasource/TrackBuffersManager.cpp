@@ -1630,7 +1630,11 @@ TrackBuffersManager::InsertFrames(TrackBuffer& aSamples,
       
       trackBuffer.mNextInsertionIndex.reset();
     }
-    RemoveFrames(aIntervals, trackBuffer, trackBuffer.mNextInsertionIndex.refOr(0));
+    size_t index =
+      RemoveFrames(aIntervals, trackBuffer, trackBuffer.mNextInsertionIndex.refOr(0));
+    if (index) {
+      trackBuffer.mNextInsertionIndex = Some(index);
+    }
   }
 
   
@@ -1667,7 +1671,7 @@ TrackBuffersManager::InsertFrames(TrackBuffer& aSamples,
   }
 }
 
-void
+size_t
 TrackBuffersManager::RemoveFrames(const TimeIntervals& aIntervals,
                                   TrackData& aTrackData,
                                   uint32_t aStartIndex)
@@ -1699,7 +1703,7 @@ TrackBuffersManager::RemoveFrames(const TimeIntervals& aIntervals,
   }
 
   if (firstRemovedIndex.isNothing()) {
-    return;
+    return 0;
   }
 
   
@@ -1763,6 +1767,8 @@ TrackBuffersManager::RemoveFrames(const TimeIntervals& aIntervals,
 
   data.RemoveElementsAt(firstRemovedIndex.ref(),
                         lastRemovedIndex - firstRemovedIndex.ref() + 1);
+
+  return firstRemovedIndex.ref();
 }
 
 void
