@@ -1499,6 +1499,11 @@ void
 TabChild::MaybeRequestPreinitCamera()
 {
     
+    
+    if (IsBrowserElement()) {
+      return;
+    }
+
     nsCOMPtr<nsIAppsService> appsService = do_GetService("@mozilla.org/AppsService;1");
     if (NS_WARN_IF(!appsService)) {
       return;
