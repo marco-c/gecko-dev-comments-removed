@@ -332,8 +332,6 @@ AudioDestinationNode::AudioDestinationNode(AudioContext* aContext,
   , mAudioChannel(AudioChannel::Normal)
   , mIsOffline(aIsOffline)
   , mAudioChannelAgentPlaying(false)
-  , mExtraCurrentTimeSinceLastStartedBlocking(0)
-  , mExtraCurrentTimeUpdatedSinceLastStableState(false)
   , mCaptured(false)
 {
   MediaStreamGraph* graph = aIsOffline ?
@@ -646,73 +644,6 @@ AudioDestinationNode::CreateAudioChannelAgent()
   }
 
   return NS_OK;
-}
-
-void
-AudioDestinationNode::NotifyStableState()
-{
-  mExtraCurrentTimeUpdatedSinceLastStableState = false;
-}
-
-void
-AudioDestinationNode::ScheduleStableStateNotification()
-{
-  
-  
-  nsContentUtils::RunInStableState(NewRunnableMethod(this,
-                                                     &AudioDestinationNode::NotifyStableState));
-}
-
-StreamTime
-AudioDestinationNode::ExtraCurrentTime()
-{
-  if (!mStartedBlockingDueToBeingOnlyNode.IsNull() &&
-      !mExtraCurrentTimeUpdatedSinceLastStableState) {
-    mExtraCurrentTimeUpdatedSinceLastStableState = true;
-    
-    double seconds =
-      (TimeStamp::Now() - mStartedBlockingDueToBeingOnlyNode).ToSeconds();
-    mExtraCurrentTimeSinceLastStartedBlocking = WEBAUDIO_BLOCK_SIZE *
-      StreamTime(seconds * Context()->SampleRate() / WEBAUDIO_BLOCK_SIZE + 0.5);
-    ScheduleStableStateNotification();
-  }
-  return mExtraCurrentTimeSinceLastStartedBlocking;
-}
-
-void
-AudioDestinationNode::SetIsOnlyNodeForContext(bool aIsOnlyNode)
-{
-  if (!mStartedBlockingDueToBeingOnlyNode.IsNull() == aIsOnlyNode) {
-    
-    return;
-  }
-
-  if (!mStream) {
-    
-    return;
-  }
-
-  if (mIsOffline) {
-    
-    
-    
-    
-    return;
-  }
-
-  if (aIsOnlyNode) {
-    mStream->Suspend();
-    mStartedBlockingDueToBeingOnlyNode = TimeStamp::Now();
-    
-    mExtraCurrentTimeUpdatedSinceLastStableState = true;
-    ScheduleStableStateNotification();
-  } else {
-    
-    ExtraCurrentTime();
-    mStream->AdvanceAndResume(mExtraCurrentTimeSinceLastStartedBlocking);
-    mExtraCurrentTimeSinceLastStartedBlocking = 0;
-    mStartedBlockingDueToBeingOnlyNode = TimeStamp();
-  }
 }
 
 void

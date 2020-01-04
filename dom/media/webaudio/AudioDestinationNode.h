@@ -65,13 +65,6 @@ public:
   void NotifyMainThreadStreamFinished() override;
   void FireOfflineCompletionEvent();
 
-  
-  
-  StreamTime ExtraCurrentTime();
-
-  
-  void SetIsOnlyNodeForContext(bool aIsOnlyNode);
-
   nsresult CreateAudioChannelAgent();
   void DestroyAudioChannelAgent();
 
@@ -101,9 +94,6 @@ private:
 
   void SetCanPlay(float aVolume, bool aMuted);
 
-  void NotifyStableState();
-  void ScheduleStableStateNotification();
-
   SelfReference<AudioDestinationNode> mOfflineRenderingRef;
   uint32_t mFramesToProduce;
 
@@ -117,9 +107,6 @@ private:
   bool mIsOffline;
   bool mAudioChannelAgentPlaying;
 
-  TimeStamp mStartedBlockingDueToBeingOnlyNode;
-  StreamTime mExtraCurrentTimeSinceLastStartedBlocking;
-  bool mExtraCurrentTimeUpdatedSinceLastStableState;
   bool mCaptured;
 };
 
