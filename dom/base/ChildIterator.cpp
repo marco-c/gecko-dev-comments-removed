@@ -375,6 +375,31 @@ AllChildrenIterator::Seek(nsIContent* aChildToFind)
   return child == aChildToFind;
 }
 
+void
+AllChildrenIterator::AppendNativeAnonymousChildren()
+{
+  AppendNativeAnonymousChildrenFromFrame(mOriginalContent->GetPrimaryFrame());
+
+  
+  
+  if (mOriginalContent == mOriginalContent->OwnerDoc()->GetRootElement()) {
+    nsIPresShell* presShell = mOriginalContent->OwnerDoc()->GetShell();
+    nsIFrame* scrollFrame = presShell ? presShell->GetRootScrollFrame() : nullptr;
+    if (scrollFrame) {
+      AppendNativeAnonymousChildrenFromFrame(scrollFrame);
+    }
+  }
+}
+
+void
+AllChildrenIterator::AppendNativeAnonymousChildrenFromFrame(nsIFrame* aFrame)
+{
+  nsIAnonymousContentCreator* ac = do_QueryFrame(aFrame);
+  if (ac) {
+    ac->AppendAnonymousContentTo(mAnonKids, mFlags);
+  }
+}
+
 nsIContent*
 AllChildrenIterator::GetNextChild()
 {
@@ -406,11 +431,7 @@ AllChildrenIterator::GetNextChild()
   if (mPhase == eAtAnonKids) {
     if (mAnonKids.IsEmpty()) {
       MOZ_ASSERT(mAnonKidsIdx == UINT32_MAX);
-      nsIAnonymousContentCreator* ac =
-        do_QueryFrame(mOriginalContent->GetPrimaryFrame());
-      if (ac) {
-        ac->AppendAnonymousContentTo(mAnonKids, mFlags);
-      }
+      AppendNativeAnonymousChildren();
       mAnonKidsIdx = 0;
     }
     else {
@@ -462,12 +483,8 @@ AllChildrenIterator::GetPreviousChild()
 
   if (mPhase == eAtAnonKids) {
     if (mAnonKids.IsEmpty()) {
-      nsIAnonymousContentCreator* ac =
-        do_QueryFrame(mOriginalContent->GetPrimaryFrame());
-      if (ac) {
-        ac->AppendAnonymousContentTo(mAnonKids, mFlags);
-        mAnonKidsIdx = mAnonKids.Length();
-      }
+      AppendNativeAnonymousChildren();
+      mAnonKidsIdx = mAnonKids.Length();
     }
 
     

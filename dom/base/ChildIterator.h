@@ -225,6 +225,10 @@ public:
   IteratorPhase Phase() const { return mPhase; }
 
 private:
+  
+  void AppendNativeAnonymousChildren();
+  void AppendNativeAnonymousChildrenFromFrame(nsIFrame* aFrame);
+
   nsIContent* mOriginalContent;
 
   
