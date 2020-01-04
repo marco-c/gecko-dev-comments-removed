@@ -5,6 +5,7 @@
 #include "CacheLog.h"
 #include "CacheFileUtils.h"
 #include "LoadContextInfo.h"
+#include "mozilla/Tokenizer.h"
 #include "nsCOMPtr.h"
 #include "nsAutoPtr.h"
 #include "nsString.h"
@@ -20,174 +21,152 @@ namespace {
 
 
 
-class KeyParser
+class KeyParser : protected Tokenizer
 {
 public:
-  KeyParser(nsACString::const_iterator aCaret, nsACString::const_iterator aEnd)
-    : caret(aCaret)
-    , end(aEnd)
+  explicit KeyParser(nsACString const& aInput)
+    : Tokenizer(aInput)
     
-    , appId(nsILoadContextInfo::NO_APP_ID)
+    , originAttribs(0, false)
     , isPrivate(false)
-    , isInBrowser(false)
     , isAnonymous(false)
     
-    , cacheKey(aEnd)
     , lastTag(0)
   {
   }
 
 private:
   
-  nsACString::const_iterator caret;
-  
-  nsACString::const_iterator const end;
-
-  
-  uint32_t appId;
+  OriginAttributes originAttribs;
   bool isPrivate;
-  bool isInBrowser;
   bool isAnonymous;
   nsCString idEnhance;
-  
-  nsACString::const_iterator cacheKey;
+  nsDependentCSubstring cacheKey;
 
   
   char lastTag;
 
+  
+  static bool TagChar(const char aChar)
+  {
+    return aChar >= ' ' && aChar <= '~';
+  }
+
   bool ParseTags()
   {
     
-    if (caret == end)
+    if (CheckEOF()) {
       return true;
+    }
 
-    
-    char const tag = *caret++;
-    
-    if (!(lastTag < tag || tag == ':'))
+    char tag;
+    if (!ReadChar(&TagChar, &tag)) {
       return false;
+    }
 
+    
+    if (!(lastTag < tag || tag == ':')) {
+      return false;
+    }
     lastTag = tag;
 
     switch (tag) {
     case ':':
       
       
-      cacheKey = caret;
-      caret = end;
+      cacheKey.Rebind(mCursor, mEnd - mCursor);
       return true;
+    case 'O': {
+      nsAutoCString originSuffix;
+      if (!ParseValue(&originSuffix) || !originAttribs.PopulateFromSuffix(originSuffix)) {
+        return false;
+      }
+      break;
+    }
     case 'p':
       isPrivate = true;
       break;
     case 'b':
-      isInBrowser = true;
+      
+      originAttribs.mInBrowser = true;
       break;
     case 'a':
       isAnonymous = true;
       break;
     case 'i': {
-      nsAutoCString appIdString;
-      if (!ParseValue(&appIdString))
-        return false;
-
-      nsresult rv;
-      int64_t appId64 = appIdString.ToInteger64(&rv);
-      if (NS_FAILED(rv))
+      
+      if (!ReadInteger(&originAttribs.mAppId)) {
         return false; 
-      if (appId64 < 0 || appId64 > PR_UINT32_MAX)
-        return false; 
-      appId = static_cast<uint32_t>(appId64);
-
+      }
       break;
     }
     case '~':
-      if (!ParseValue(&idEnhance))
+      if (!ParseValue(&idEnhance)) {
         return false;
+      }
       break;
     default:
-      if (!ParseValue()) 
+      if (!ParseValue()) { 
         return false;
+      }
       break;
     }
 
     
-    return ParseNextTagOrEnd();
-  }
-
-  bool ParseNextTagOrEnd()
-  {
-    
-    if (caret == end || *caret++ != ',')
+    if (!CheckChar(',')) {
       return false;
+    }
 
     
     return ParseTags();
   }
 
-  bool ParseValue(nsACString * result = nullptr)
+  bool ParseValue(nsACString *result = nullptr)
   {
     
-    if (caret == end)
+    if (CheckEOF()) {
       return false;
+    }
 
-    
-    nsACString::const_iterator val = caret;
-    nsACString::const_iterator comma = end;
-    bool escape = false;
-    while (caret != end) {
-      nsACString::const_iterator at = caret;
-      ++caret; 
-
-      if (*at == ',') {
-        if (comma != end) {
-          
-          comma = end;
-          escape = true;
-        } else {
-          comma = at;
+    Token t;
+    while (Next(t)) {
+      if (!Token::Char(',').Equals(t)) {
+        if (result) {
+          result->Append(t.Fragment());
         }
         continue;
       }
 
-      if (comma != end) {
+      if (CheckChar(',')) {
         
-        break;
+        if (result) {
+          result->Append(',');
+        }
+        continue;
       }
+
+      
+      Rollback();
+      return true;
     }
 
-    
-    
-    
-
-    caret = comma;
-    if (result) {
-      if (escape) {
-        
-        nsAutoCString _result(Substring(val, caret));
-        _result.ReplaceSubstring(NS_LITERAL_CSTRING(",,"), NS_LITERAL_CSTRING(","));
-        result->Assign(_result);
-      } else {
-        result->Assign(Substring(val, caret));
-      }
-    }
-
-    return caret != end;
+    return false;
   }
 
 public:
   already_AddRefed<LoadContextInfo> Parse()
   {
     nsRefPtr<LoadContextInfo> info;
-    if (ParseTags())
-      info = GetLoadContextInfo(isPrivate, appId, isInBrowser, isAnonymous);
+    if (ParseTags()) {
+      info = GetLoadContextInfo(isPrivate, isAnonymous, originAttribs);
+    }
 
     return info.forget();
   }
 
   void URISpec(nsACString &result)
   {
-    
-    result.Assign(Substring(cacheKey, end));
+    result.Assign(cacheKey);
   }
 
   void IdEnhance(nsACString &result)
@@ -203,11 +182,7 @@ ParseKey(const nsCSubstring &aKey,
          nsCSubstring *aIdEnhance,
          nsCSubstring *aURISpec)
 {
-  nsACString::const_iterator caret, end;
-  aKey.BeginReading(caret);
-  aKey.EndReading(end);
-
-  KeyParser parser(caret, end);
+  KeyParser parser(aKey);
   nsRefPtr<LoadContextInfo> info = parser.Parse();
 
   if (info) {
@@ -231,18 +206,15 @@ AppendKeyPrefix(nsILoadContextInfo* aInfo, nsACString &_retval)
 
 
 
+  OriginAttributes const *oa = aInfo->OriginAttributesPtr();
+  nsAutoCString suffix;
+  oa->CreateSuffix(suffix);
+  if (!suffix.IsEmpty()) {
+    AppendTagWithValue(_retval, 'O', suffix);
+  }
+
   if (aInfo->IsAnonymous()) {
     _retval.AppendLiteral("a,");
-  }
-
-  if (aInfo->IsInBrowserElement()) {
-    _retval.AppendLiteral("b,");
-  }
-
-  if (aInfo->AppId() != nsILoadContextInfo::NO_APP_ID) {
-    _retval.Append('i');
-    _retval.AppendInt(aInfo->AppId());
-    _retval.Append(',');
   }
 
   if (aInfo->IsPrivate()) {

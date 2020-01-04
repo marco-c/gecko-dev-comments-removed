@@ -124,9 +124,10 @@ NS_IMETHODIMP AppCacheStorage::AsyncEvictStorage(nsICacheEntryDoomCallback* aCal
   NS_ENSURE_SUCCESS(rv, rv);
 
   if (!mAppCache) {
-    if (LoadInfo()->AppId() == nsILoadContextInfo::NO_APP_ID &&
-        !LoadInfo()->IsInBrowserElement()) {
-
+    
+    
+    const OriginAttributes* oa = LoadInfo()->OriginAttributesPtr();
+    if (oa->mAppId == nsILoadContextInfo::NO_APP_ID && !oa->mInBrowser) {
       
       nsCOMPtr<nsICacheService> serv =
           do_GetService(NS_CACHESERVICE_CONTRACTID, &rv);
@@ -137,8 +138,7 @@ NS_IMETHODIMP AppCacheStorage::AsyncEvictStorage(nsICacheEntryDoomCallback* aCal
     }
     else {
       
-      rv = appCacheService->DiscardByAppId(LoadInfo()->AppId(),
-                                           LoadInfo()->IsInBrowserElement());
+      rv = appCacheService->DiscardByAppId(oa->mAppId, oa->mInBrowser);
       NS_ENSURE_SUCCESS(rv, rv);
     }
   }

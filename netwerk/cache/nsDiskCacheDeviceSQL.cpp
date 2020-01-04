@@ -46,6 +46,7 @@
 
 using namespace mozilla;
 using namespace mozilla::storage;
+using mozilla::OriginAttributes;
 
 static const char OFFLINE_CACHE_DEVICE_ID[] = { "offline" };
 
@@ -1299,33 +1300,12 @@ GetGroupForCache(const nsCSubstring &clientID, nsCString &group)
   return NS_OK;
 }
 
-nsresult
-AppendJARIdentifier(nsACString &_result, int32_t appId, bool isInBrowserElement)
+void
+AppendJARIdentifier(nsACString &_result, OriginAttributes const *aOriginAttributes)
 {
-    _result.Append('#');
-    _result.AppendInt(appId);
-    _result.Append('+');
-    _result.Append(isInBrowserElement ? 't' : 'f');
-
-    return NS_OK;
-}
-
-nsresult
-GetJARIdentifier(nsIURI *aURI,
-                 uint32_t appId, bool isInBrowserElement,
-                 nsACString &_result)
-{
-    _result.Truncate();
-
-    
-    
-    
-    
-    if (!isInBrowserElement && appId == NECKO_NO_APP_ID)
-        return NS_OK;
-
-    
-    return AppendJARIdentifier(_result, appId, isInBrowserElement);
+  nsAutoCString suffix;
+  aOriginAttributes->CreateSuffix(suffix);
+  _result.Append(suffix);
 }
 
 } 
@@ -1333,7 +1313,7 @@ GetJARIdentifier(nsIURI *aURI,
 
 nsresult
 nsOfflineCacheDevice::BuildApplicationCacheGroupID(nsIURI *aManifestURL,
-                                                   uint32_t appId, bool isInBrowserElement,
+                                                   OriginAttributes const *aOriginAttributes,
                                                    nsACString &_result)
 {
   nsCOMPtr<nsIURI> newURI;
@@ -1346,13 +1326,9 @@ nsOfflineCacheDevice::BuildApplicationCacheGroupID(nsIURI *aManifestURL,
 
   _result.Assign(manifestSpec);
 
-  nsAutoCString jarid;
-  rv = GetJARIdentifier(aManifestURL, appId, isInBrowserElement, jarid);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  
-  if (!jarid.IsEmpty())
-    _result.Append(jarid);
+  if (aOriginAttributes) {
+    AppendJARIdentifier(_result, aOriginAttributes);
+  }
 
   return NS_OK;
 }
@@ -2430,9 +2406,17 @@ nsOfflineCacheDevice::DiscardByAppId(int32_t appID, bool browserEntriesOnly)
   nsresult rv;
 
   nsAutoCString jaridsuffix;
+
   jaridsuffix.Append('%');
-  rv = AppendJARIdentifier(jaridsuffix, appID, browserEntriesOnly);
-  NS_ENSURE_SUCCESS(rv, rv);
+
+  
+  
+  
+
+  OriginAttributes oa;
+  oa.mAppId = appID;
+  oa.mInBrowser = browserEntriesOnly;
+  AppendJARIdentifier(jaridsuffix, &oa);
 
   {
     AutoResetStatement statement(mStatement_EnumerateApps);
@@ -2489,8 +2473,9 @@ nsOfflineCacheDevice::CanUseCache(nsIURI *keyURI,
 
   nsCOMPtr<nsIURI> groupURI;
   rv = NS_NewURI(getter_AddRefs(groupURI), groupID);
-  if (NS_FAILED(rv))
+  if (NS_FAILED(rv)) {
     return false;
+  }
 
   
   
@@ -2499,28 +2484,24 @@ nsOfflineCacheDevice::CanUseCache(nsIURI *keyURI,
   
   
   if (!NS_SecurityCompareURIs(keyURI, groupURI,
-                              GetStrictFileOriginPolicy()))
+                              GetStrictFileOriginPolicy())) {
     return false;
-
-  
-  uint32_t appId = NECKO_NO_APP_ID;
-  bool isInBrowserElement = false;
-
-  if (loadContextInfo) {
-      appId = loadContextInfo->AppId();
-      isInBrowserElement = loadContextInfo->IsInBrowserElement();
   }
 
   
   
   
   nsAutoCString demandedGroupID;
-  rv = BuildApplicationCacheGroupID(groupURI, appId, isInBrowserElement,
-                                    demandedGroupID);
+
+  const OriginAttributes *oa = loadContextInfo
+    ? loadContextInfo->OriginAttributesPtr()
+    : nullptr;
+  rv = BuildApplicationCacheGroupID(groupURI, oa, demandedGroupID);
   NS_ENSURE_SUCCESS(rv, false);
 
-  if (groupID != demandedGroupID)
+  if (groupID != demandedGroupID) {
     return false;
+  }
 
   return true;
 }
