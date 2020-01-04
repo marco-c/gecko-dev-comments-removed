@@ -508,25 +508,53 @@ function simulateDrop(aSourceIndex, aDestIndex) {
 
 
 
-function simulateExternalDrop(aDestIndex) {
-  let dest = getCell(aDestIndex).node;
+function* simulateExternalDrop(aDestIndex) {
+  let pagesUpdatedPromise = whenPagesUpdated();
 
-  
-  createExternalDropIframe().then(iframe => {
-    let link = iframe.contentDocument.getElementById("link");
+  yield ContentTask.spawn(gWindow.gBrowser.selectedBrowser, aDestIndex, function*(dropIndex) {
+    return new Promise(resolve => {
+      const url = "data:text/html;charset=utf-8," +
+                  "<a id='link' href='http://example99.com/'>link</a>";
 
-    
-    startAndCompleteDragOperation(link, dest, () => {
-      
-      
-      whenPagesUpdated().then(() => {
-        
+      let doc = content.document;
+      let iframe = doc.createElement("iframe");
+
+      function iframeLoaded() {
+        let link = iframe.contentDocument.getElementById("link");
+
+        let dataTransfer = new iframe.contentWindow.DataTransfer("dragstart", false);
+        dataTransfer.mozSetDataAt("text/x-moz-url", "http://example99.com/", 0);
+
+        let event = content.document.createEvent("DragEvents");
+        event.initDragEvent("drop", true, true, content, 0, 0, 0, 0, 0,
+                            false, false, false, false, 0, null, dataTransfer);
+
+        let target = content.gGrid.cells[dropIndex].node;
+        target.dispatchEvent(event);
+
         iframe.remove();
-        
-        TestRunner.next();
+
+        resolve();
+      }
+
+      iframe.addEventListener("load", function onLoad() {
+        iframe.removeEventListener("load", onLoad);
+        content.setTimeout(iframeLoaded, 0);
       });
+
+      iframe.setAttribute("src", url);
+      iframe.style.width = "50px";
+      iframe.style.height = "50px";
+      iframe.style.position = "absolute";
+      iframe.style.zIndex = 50;
+
+      
+      let margin = doc.getElementById("newtab-search-container");
+      margin.appendChild(iframe);
     });
   });
+
+  yield pagesUpdatedPromise;
 }
 
 
@@ -608,36 +636,6 @@ function startAndCompleteDragOperation(aSource, aDest, aCallback) {
   } else {
     throw "Unsupported platform";
   }
-}
-
-
-
-
-
-
-function createExternalDropIframe() {
-  const url = "data:text/html;charset=utf-8," +
-              "<a id='link' href='http://example99.com/'>link</a>";
-
-  let deferred = Promise.defer();
-  let doc = getContentDocument();
-  let iframe = doc.createElement("iframe");
-  iframe.setAttribute("src", url);
-  iframe.style.width = "50px";
-  iframe.style.height = "50px";
-  iframe.style.position = "absolute";
-  iframe.style.zIndex = 50;
-
-  
-  let margin = doc.getElementById("newtab-search-container");
-  margin.appendChild(iframe);
-
-  iframe.addEventListener("load", function onLoad() {
-    iframe.removeEventListener("load", onLoad);
-    executeSoon(() => deferred.resolve(iframe));
-  });
-
-  return deferred.promise;
 }
 
 
