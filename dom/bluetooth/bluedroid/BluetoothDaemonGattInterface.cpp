@@ -1568,56 +1568,13 @@ BluetoothDaemonGattModule::ClientScanResultNtf(
     ClientScanResultInitOp(aPDU));
 }
 
-
-class BluetoothDaemonGattModule::ClientConnectDisconnectInitOp final
-  : private PDUInitOp
-{
-public:
-  ClientConnectDisconnectInitOp(DaemonSocketPDU& aPDU)
-    : PDUInitOp(aPDU)
-  { }
-
-  nsresult
-  operator () (int& aArg1,
-               BluetoothGattStatus& aArg2,
-               int& aArg3,
-               BluetoothAddress& aArg4) const
-  {
-    DaemonSocketPDU& pdu = GetPDU();
-
-    
-    nsresult rv = UnpackPDU(pdu, aArg1);
-    if (NS_FAILED(rv)) {
-      return rv;
-    }
-    
-    rv = UnpackPDU(pdu, aArg2);
-    if (NS_FAILED(rv)) {
-      return rv;
-    }
-    
-    rv = UnpackPDU(pdu, aArg3);
-    if (NS_FAILED(rv)) {
-      return rv;
-    }
-    
-    rv = UnpackPDU(pdu, aArg4);
-    if (NS_FAILED(rv)) {
-      return rv;
-    }
-
-    WarnAboutTrailingData();
-    return NS_OK;
-  }
-};
-
 void
 BluetoothDaemonGattModule::ClientConnectNtf(
   const DaemonSocketPDUHeader& aHeader, DaemonSocketPDU& aPDU)
 {
   ClientConnectNotification::Dispatch(
     &BluetoothGattNotificationHandler::ConnectNotification,
-    ClientConnectDisconnectInitOp(aPDU));
+    UnpackPDUInitOp(aPDU));
 }
 
 void
@@ -1626,7 +1583,7 @@ BluetoothDaemonGattModule::ClientDisconnectNtf(
 {
   ClientDisconnectNotification::Dispatch(
     &BluetoothGattNotificationHandler::DisconnectNotification,
-    ClientConnectDisconnectInitOp(aPDU));
+    UnpackPDUInitOp(aPDU));
 }
 
 void
@@ -1737,56 +1694,13 @@ BluetoothDaemonGattModule::ClientExecuteWriteNtf(
     UnpackPDUInitOp(aPDU));
 }
 
-
-class BluetoothDaemonGattModule::ClientReadRemoteRssiInitOp final
-  : private PDUInitOp
-{
-public:
-  ClientReadRemoteRssiInitOp(DaemonSocketPDU& aPDU)
-    : PDUInitOp(aPDU)
-  { }
-
-  nsresult
-  operator () (int& aArg1,
-               BluetoothAddress& aArg2,
-               int& aArg3,
-               BluetoothGattStatus& aArg4) const
-  {
-    DaemonSocketPDU& pdu = GetPDU();
-
-    
-    nsresult rv = UnpackPDU(pdu, aArg1);
-    if (NS_FAILED(rv)) {
-      return rv;
-    }
-    
-    rv = UnpackPDU(pdu, aArg2);
-    if (NS_FAILED(rv)) {
-      return rv;
-    }
-    
-    rv = UnpackPDU(pdu, aArg3);
-    if (NS_FAILED(rv)) {
-      return rv;
-    }
-    
-    rv = UnpackPDU(pdu, aArg4);
-    if (NS_FAILED(rv)) {
-      return rv;
-    }
-
-    WarnAboutTrailingData();
-    return NS_OK;
-  }
-};
-
 void
 BluetoothDaemonGattModule::ClientReadRemoteRssiNtf(
   const DaemonSocketPDUHeader& aHeader, DaemonSocketPDU& aPDU)
 {
   ClientReadRemoteRssiNotification::Dispatch(
     &BluetoothGattNotificationHandler::ReadRemoteRssiNotification,
-    ClientReadRemoteRssiInitOp(aPDU));
+    UnpackPDUInitOp(aPDU));
 }
 
 void
@@ -1922,68 +1836,13 @@ BluetoothDaemonGattModule::ServerServiceDeletedNtf(
     UnpackPDUInitOp(aPDU));
 }
 
-
-class BluetoothDaemonGattModule::ServerRequestReadInitOp final
-  : private PDUInitOp
-{
-public:
-  ServerRequestReadInitOp(DaemonSocketPDU& aPDU)
-    : PDUInitOp(aPDU)
-  { }
-
-  nsresult
-  operator () (int& aArg1,
-               int& aArg2,
-               BluetoothAddress& aArg3,
-               BluetoothAttributeHandle& aArg4,
-               int& aArg5,
-               bool& aArg6) const
-  {
-    DaemonSocketPDU& pdu = GetPDU();
-
-    
-    nsresult rv = UnpackPDU(pdu, aArg1);
-    if (NS_FAILED(rv)) {
-      return rv;
-    }
-    
-    rv = UnpackPDU(pdu, aArg2);
-    if (NS_FAILED(rv)) {
-      return rv;
-    }
-    
-    rv = UnpackPDU(pdu, aArg3);
-    if (NS_FAILED(rv)) {
-      return rv;
-    }
-    
-    rv = UnpackPDU(pdu, aArg4);
-    if (NS_FAILED(rv)) {
-      return rv;
-    }
-    
-    rv = UnpackPDU(pdu, aArg5);
-    if (NS_FAILED(rv)) {
-      return rv;
-    }
-    
-    rv = UnpackPDU(pdu, aArg6);
-    if (NS_FAILED(rv)) {
-      return rv;
-    }
-
-    WarnAboutTrailingData();
-    return NS_OK;
-  }
-};
-
 void
 BluetoothDaemonGattModule::ServerRequestReadNtf(
   const DaemonSocketPDUHeader& aHeader, DaemonSocketPDU& aPDU)
 {
   ServerRequestReadNotification::Dispatch(
     &BluetoothGattNotificationHandler::RequestReadNotification,
-    ServerRequestReadInitOp(aPDU));
+    UnpackPDUInitOp(aPDU));
 }
 
 
@@ -2069,56 +1928,13 @@ BluetoothDaemonGattModule::ServerRequestWriteNtf(
     ServerRequestWriteInitOp(aPDU));
 }
 
-
-class BluetoothDaemonGattModule::ServerRequestExecuteWriteInitOp final
-  : private PDUInitOp
-{
-public:
-  ServerRequestExecuteWriteInitOp(DaemonSocketPDU& aPDU)
-    : PDUInitOp(aPDU)
-  { }
-
-  nsresult
-  operator () (int& aArg1,
-               int& aArg2,
-               BluetoothAddress& aArg3,
-               bool& aArg4) const
-  {
-    DaemonSocketPDU& pdu = GetPDU();
-
-    
-    nsresult rv = UnpackPDU(pdu, aArg1);
-    if (NS_FAILED(rv)) {
-      return rv;
-    }
-    
-    rv = UnpackPDU(pdu, aArg2);
-    if (NS_FAILED(rv)) {
-      return rv;
-    }
-    
-    rv = UnpackPDU(pdu, aArg3);
-    if (NS_FAILED(rv)) {
-      return rv;
-    }
-    
-    rv = UnpackPDU(pdu, aArg4);
-    if (NS_FAILED(rv)) {
-      return rv;
-    }
-
-    WarnAboutTrailingData();
-    return NS_OK;
-  }
-};
-
 void
 BluetoothDaemonGattModule::ServerRequestExecuteWriteNtf(
   const DaemonSocketPDUHeader& aHeader, DaemonSocketPDU& aPDU)
 {
   ServerRequestExecuteWriteNotification::Dispatch(
     &BluetoothGattNotificationHandler::RequestExecuteWriteNotification,
-    ServerRequestExecuteWriteInitOp(aPDU));
+    UnpackPDUInitOp(aPDU));
 }
 
 void
