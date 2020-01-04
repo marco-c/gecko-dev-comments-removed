@@ -6280,6 +6280,11 @@ GCRuntime::checkIfGCAllowedInCurrentState(JS::gcreason::Reason reason)
     if (rt->mainThread.suppressGC)
         return false;
 
+    
+    
+    if (rt->isBeingDestroyed() && !IsShutdownGC(reason))
+        return false;
+
 #ifdef JS_GC_ZEAL
     if (deterministicOnly && !IsDeterministicGCReason(reason))
         return false;
