@@ -54,12 +54,6 @@ nsStyleStructID_Inherited_Count =
 nsStyleStructID_Reset_Count =
   nsStyleStructID_Length - nsStyleStructID_Reset_Start,
 
-
-
-
-
-eStyleStruct_BackendOnly = nsStyleStructID_Length
-
 };
 
 
