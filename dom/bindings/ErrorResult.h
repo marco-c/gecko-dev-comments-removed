@@ -19,9 +19,6 @@
 
 
 
-
-
-
 #ifndef mozilla_ErrorResult_h
 #define mozilla_ErrorResult_h
 
@@ -91,25 +88,9 @@ struct StringArrayAppender
 
 } 
 
-class ErrorResult;
-
-namespace binding_danger {
-
-
-
-
-
-
-
-
-
-
-
-
-template<typename CleanupPolicy>
-class TErrorResult {
+class ErrorResult {
 public:
-  TErrorResult()
+  ErrorResult()
     : mResult(NS_OK)
 #ifdef DEBUG
     , mMightHaveUnreportedJSException(false)
@@ -118,35 +99,29 @@ public:
   {
   }
 
-  ~TErrorResult() {
-    NS_ASSERT_OWNINGTHREAD(TErrorResult);
-
-    if (CleanupPolicy::assertHandled) {
-      
-      
-      AssertReportedOrSuppressed();
-    }
-
-    if (CleanupPolicy::suppress) {
-      SuppressException();
-    }
-
+#ifdef DEBUG
+  ~ErrorResult() {
     
-    AssertReportedOrSuppressed();
+    
+    MOZ_ASSERT(!Failed());
+    MOZ_ASSERT(!mMightHaveUnreportedJSException);
+    MOZ_ASSERT(mUnionState == HasNothing);
+    NS_ASSERT_OWNINGTHREAD(ErrorResult);
   }
+#endif 
 
-  TErrorResult(TErrorResult&& aRHS)
+  ErrorResult(ErrorResult&& aRHS)
     
     
     
-    : TErrorResult()
+    : ErrorResult()
   {
     *this = Move(aRHS);
   }
-  TErrorResult& operator=(TErrorResult&& aRHS);
+  ErrorResult& operator=(ErrorResult&& aRHS);
 
-  explicit TErrorResult(nsresult aRv)
-    : TErrorResult()
+  explicit ErrorResult(nsresult aRv)
+    : ErrorResult()
   {
     AssignErrorCode(aRv);
   }
@@ -159,7 +134,7 @@ public:
   
   
   
-  void CloneTo(TErrorResult& aRv) const;
+  void CloneTo(ErrorResult& aRv) const;
 
   
   
@@ -333,7 +308,6 @@ private:
   };
 #endif 
 
-  friend struct IPC::ParamTraits<TErrorResult>;
   friend struct IPC::ParamTraits<ErrorResult>;
   void SerializeMessage(IPC::Message* aMsg) const;
   bool DeserializeMessage(const IPC::Message* aMsg, PickleIterator* aIter);
@@ -365,7 +339,7 @@ private:
   }
 
   void AssertInOwningThread() const {
-    NS_ASSERT_OWNINGTHREAD(TErrorResult);
+    NS_ASSERT_OWNINGTHREAD(ErrorResult);
   }
 
   void AssignErrorCode(nsresult aRv) {
@@ -403,12 +377,6 @@ private:
   void SetPendingDOMException(JSContext* cx);
   void SetPendingGenericErrorException(JSContext* cx);
 
-  MOZ_ALWAYS_INLINE void AssertReportedOrSuppressed()
-  {
-    MOZ_ASSERT(!Failed());
-    MOZ_ASSERT(!mMightHaveUnreportedJSException);
-    MOZ_ASSERT(mUnionState == HasNothing);
-  }
 
   
   
@@ -447,50 +415,6 @@ private:
   NS_DECL_OWNINGTHREAD;
 #endif
 
-  
-  
-  TErrorResult(const TErrorResult&) = delete;
-  void operator=(const TErrorResult&) = delete;
-};
-
-struct JustAssertCleanupPolicy {
-  static const bool assertHandled = true;
-  static const bool suppress = false;
-};
-
-} 
-
-
-
-class ErrorResult : public binding_danger::TErrorResult<binding_danger::JustAssertCleanupPolicy>
-{
-  typedef binding_danger::TErrorResult<binding_danger::JustAssertCleanupPolicy> BaseErrorResult;
-
-public:
-  ErrorResult()
-    : BaseErrorResult()
-  {}
-
-  ErrorResult(ErrorResult&& aRHS)
-    : BaseErrorResult(Move(aRHS))
-  {}
-
-  explicit ErrorResult(nsresult aRv)
-    : BaseErrorResult(aRv)
-  {}
-
-  void operator=(nsresult rv)
-  {
-    BaseErrorResult::operator=(rv);
-  }
-
-  ErrorResult& operator=(ErrorResult&& aRHS)
-  {
-    BaseErrorResult::operator=(Move(aRHS));
-    return *this;
-  }
-
-private:
   
   
   ErrorResult(const ErrorResult&) = delete;
