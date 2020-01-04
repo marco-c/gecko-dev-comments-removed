@@ -165,10 +165,11 @@ public:
 protected:
   
   
-  explicit MozPromise(const char* aCreationSite)
+  MozPromise(const char* aCreationSite, bool aIsCompletionPromise)
     : mCreationSite(aCreationSite)
     , mMutex("MozPromise Mutex")
     , mHaveRequest(false)
+    , mIsCompletionPromise(aIsCompletionPromise)
   {
     PROMISE_LOG("%s creating MozPromise (%p)", mCreationSite, this);
   }
@@ -278,6 +279,8 @@ public:
 
     virtual MozPromise* CompletionPromise() = 0;
 
+    virtual void AssertIsDead() = 0;
+
   protected:
     Request() : mComplete(false), mDisconnected(false) {}
     virtual ~Request() {}
@@ -309,7 +312,9 @@ protected:
 
       ~ResolveOrRejectRunnable()
       {
-        MOZ_DIAGNOSTIC_ASSERT(!mThenValue || mThenValue->IsDisconnected());
+        if (mThenValue) {
+          mThenValue->AssertIsDead();
+        }
       }
 
       NS_IMETHODIMP Run()
@@ -334,9 +339,26 @@ protected:
       MOZ_DIAGNOSTIC_ASSERT(mResponseTarget->IsCurrentThreadIn());
       MOZ_DIAGNOSTIC_ASSERT(!Request::mComplete);
       if (!mCompletionPromise) {
-        mCompletionPromise = new MozPromise::Private("<completion promise>");
+        mCompletionPromise = new MozPromise::Private(
+          "<completion promise>", true );
       }
       return mCompletionPromise;
+    }
+
+    void AssertIsDead() override
+    {
+      
+      
+      
+      
+      
+      
+      
+      if (mCompletionPromise) {
+        mCompletionPromise->AssertIsDead();
+      } else {
+        MOZ_DIAGNOSTIC_ASSERT(Request::mDisconnected);
+      }
     }
 
     void Dispatch(MozPromise *aPromise)
@@ -613,6 +635,21 @@ public:
     }
   }
 
+  
+  
+  
+  
+  void AssertIsDead()
+  {
+    MutexAutoLock lock(mMutex);
+    for (auto&& then : mThenValues) {
+      then->AssertIsDead();
+    }
+    for (auto&& chained : mChainedPromises) {
+      chained->AssertIsDead();
+    }
+  }
+
 protected:
   bool IsPending() const { return mValue.IsNothing(); }
   const ResolveOrRejectValue& Value() const
@@ -650,9 +687,14 @@ protected:
   virtual ~MozPromise()
   {
     PROMISE_LOG("MozPromise::~MozPromise [this=%p]", this);
-    MOZ_ASSERT(!IsPending());
-    MOZ_ASSERT(mThenValues.IsEmpty());
-    MOZ_ASSERT(mChainedPromises.IsEmpty());
+    AssertIsDead();
+    
+    
+    if (!mIsCompletionPromise) {
+      MOZ_ASSERT(!IsPending());
+      MOZ_ASSERT(mThenValues.IsEmpty());
+      MOZ_ASSERT(mChainedPromises.IsEmpty());
+    }
   };
 
   const char* mCreationSite; 
@@ -661,6 +703,7 @@ protected:
   nsTArray<RefPtr<ThenValueBase>> mThenValues;
   nsTArray<RefPtr<Private>> mChainedPromises;
   bool mHaveRequest;
+  const bool mIsCompletionPromise;
 };
 
 template<typename ResolveValueT, typename RejectValueT, bool IsExclusive>
@@ -668,7 +711,8 @@ class MozPromise<ResolveValueT, RejectValueT, IsExclusive>::Private
   : public MozPromise<ResolveValueT, RejectValueT, IsExclusive>
 {
 public:
-  explicit Private(const char* aCreationSite) : MozPromise(aCreationSite) {}
+  explicit Private(const char* aCreationSite, bool aIsCompletionPromise = false)
+    : MozPromise(aCreationSite, aIsCompletionPromise) {}
 
   template<typename ResolveValueT_>
   void Resolve(ResolveValueT_&& aResolveValue, const char* aResolveSite)
