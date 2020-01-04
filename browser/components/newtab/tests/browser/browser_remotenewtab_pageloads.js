@@ -1,18 +1,17 @@
 
 "use strict";
 
-let Cu = Components.utils;
 Cu.import("resource://gre/modules/Task.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
-Cu.import("resource://gre/modules/Services.jsm");
 
-XPCOMUtils.defineLazyModuleGetter(this, "RemotePageManager",
-                                  "resource://gre/modules/RemotePageManager.jsm");
 XPCOMUtils.defineLazyServiceGetter(this, "aboutNewTabService",
                                    "@mozilla.org/browser/aboutnewtab-service;1",
                                    "nsIAboutNewTabService");
 
 const TEST_URL = "https://example.com/browser/browser/components/newtab/tests/browser/dummy_page.html";
+
+
+
 
 add_task(function* open_newtab() {
   let notificationPromise = nextChangeNotificationPromise(TEST_URL, "newtab page now points to test url");
@@ -21,37 +20,30 @@ add_task(function* open_newtab() {
   yield notificationPromise;
   Assert.ok(aboutNewTabService.overridden, "url has been overridden");
 
-  let tabOptions = {
-    gBrowser,
-    url: "about:newtab",
-  };
+  
 
-  yield BrowserTestUtils.withNewTab(tabOptions, function* (browser) {
-    Assert.equal(TEST_URL, browser.contentWindow.location, `New tab should open to ${TEST_URL}`);
+
+
+
+
+
+
+  BrowserOpenTab();  
+
+  let browser = gBrowser.selectedBrowser;
+  yield BrowserTestUtils.browserLoaded(browser);
+
+  yield ContentTask.spawn(browser, {url: TEST_URL}, function*(args) {
+    is(content.document.location.href, args.url, "document.location should match the external resource");
+    is(content.document.documentURI, args.url, "document.documentURI should match the external resource");
+    is(content.document.nodePrincipal.URI.spec, args.url, "nodePrincipal should match the external resource");
   });
-});
-
-add_task(function* emptyURL() {
-  let notificationPromise = nextChangeNotificationPromise("", "newtab service now points to empty url");
-  aboutNewTabService.newTabURL = "";
-  yield notificationPromise;
-
-  let tabOptions = {
-    gBrowser,
-    url: "about:newtab",
-  };
-
-  yield BrowserTestUtils.withNewTab(tabOptions, function* (browser) {
-    Assert.equal("about:blank", browser.contentWindow.location, `New tab should open to ${"about:blank"}`);
-  });
+  yield BrowserTestUtils.removeTab(gBrowser.selectedTab);
 });
 
 function nextChangeNotificationPromise(aNewURL, testMessage) {
-  return new Promise(resolve => {
-    Services.obs.addObserver(function observer(aSubject, aTopic, aData) {  
-      Services.obs.removeObserver(observer, aTopic);
+  return TestUtils.topicObserved("newtab-url-changed", function observer(aSubject, aData) {  
       Assert.equal(aData, aNewURL, testMessage);
-      resolve();
-    }, "newtab-url-changed", false);
-  });
+      return true;
+  }.bind(this));
 }

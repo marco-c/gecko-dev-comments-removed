@@ -15,7 +15,7 @@ XPCOMUtils.defineLazyServiceGetter(this, "aboutNewTabService",
                                    "@mozilla.org/browser/aboutnewtab-service;1",
                                    "nsIAboutNewTabService");
 
-add_task(function* () {
+add_task(function*() {
   let defaultURL = aboutNewTabService.newTabURL;
   Services.prefs.setBoolPref("browser.newtabpage.remote", false);
 
@@ -36,8 +36,7 @@ add_task(function* () {
   
   NewTabPrefsProvider.prefs.init();
   Services.prefs.setBoolPref("browser.newtabpage.remote", true);
-  let remoteURL = aboutNewTabService.generateRemoteURL();
-  Assert.equal(NewTabURL.get(), remoteURL, `Newtab URL should be ${remoteURL}`);
+  Assert.equal(NewTabURL.get(), "about:newtab", `Newtab URL should be about:newtab`);
   Assert.ok(!NewTabURL.overridden, "Newtab URL should not be overridden");
   NewTabPrefsProvider.prefs.uninit();
 });
