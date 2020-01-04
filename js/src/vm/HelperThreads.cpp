@@ -1271,6 +1271,8 @@ GlobalHelperThreadState::mergeParseTaskCompartment(JSRuntime* rt, ParseTask* par
     LeaveParseTaskZone(rt, parseTask);
 
     {
+        gc::ZoneCellIter iter(parseTask->cx->zone(), gc::AllocKind::OBJECT_GROUP);
+
         
         
         
@@ -1286,7 +1288,8 @@ GlobalHelperThreadState::mergeParseTaskCompartment(JSRuntime* rt, ParseTask* par
         
         
         
-        for (auto group = parseTask->cx->zone()->cellIter<ObjectGroup>(); !group.done(); group.next()) {
+        for (; !iter.done(); iter.next()) {
+            ObjectGroup* group = iter.get<ObjectGroup>();
             TaggedProto proto(group->proto());
             if (!proto.isObject())
                 continue;

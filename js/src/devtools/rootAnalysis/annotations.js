@@ -3,10 +3,6 @@
 "use strict";
 
 
-
-var GCSuppressionTypes = [];
-
-
 var ignoreIndirectCalls = {
     "mallocSizeOf" : true,
     "aMallocSizeOf" : true,
@@ -85,7 +81,6 @@ var ignoreCallees = {
     "std::strstreambuf._M_alloc_fun" : true,
     "std::strstreambuf._M_free_fun" : true,
     "struct js::gc::Callback<void (*)(JSRuntime*, void*)>.op" : true,
-    "mozilla::ThreadSharedFloatArrayBufferList::Storage.mFree" : true,
 };
 
 function fieldCallCannotGC(csu, fullfield)
@@ -152,16 +147,9 @@ function ignoreEdgeAddressTaken(edge)
 }
 
 
-function isSuppressedVirtualMethod(csu, method)
-{
-    return csu == "nsISupports" && (method == "AddRef" || method == "Release");
-}
-
-
 var ignoreFunctions = {
     "ptio.c:pt_MapError" : true,
     "je_malloc_printf" : true,
-    "vprintf_stderr" : true,
     "PR_ExplodeTime" : true,
     "PR_ErrorInstallTable" : true,
     "PR_SetThreadPrivate" : true,
@@ -192,7 +180,6 @@ var ignoreFunctions = {
     
     "void js::AutoCompartment::~AutoCompartment(int32)" : true,
     "void JSAutoCompartment::~JSAutoCompartment(int32)" : true,
-    "void js::AutoClearTypeInferenceStateOnOOM::~AutoClearTypeInferenceStateOnOOM()" : true,
 
     
     
@@ -225,13 +212,6 @@ var ignoreFunctions = {
     "uint64 js::TenuringTracer::moveObjectToTenured(JSObject*, JSObject*, int32)" : true,
     "uint32 js::TenuringTracer::moveObjectToTenured(JSObject*, JSObject*, int32)" : true,
     "void js::Nursery::freeMallocedBuffers()" : true,
-
-    
-    
-    
-    
-    "EntryType* nsTHashtable<EntryType>::PutEntry(nsTHashtable<EntryType>::KeyType) [with EntryType = nsBaseHashtableET<nsCharPtrHashKey, nsAutoPtr<mozilla::LogModule> >; nsTHashtable<EntryType>::KeyType = const char*]" : true,
-    "EntryType* nsTHashtable<EntryType>::GetEntry(nsTHashtable<EntryType>::KeyType) const [with EntryType = nsBaseHashtableET<nsCharPtrHashKey, nsAutoPtr<mozilla::LogModule> >; nsTHashtable<EntryType>::KeyType = const char*]" : true,
 };
 
 function isProtobuf(name)
@@ -333,31 +313,16 @@ function isUnsafeStorage(typeName)
     return typeName.startsWith('UniquePtr<');
 }
 
-function isSuppressConstructor(edgeType, varName)
+function isSuppressConstructor(varName)
 {
     
-    if (edgeType.Kind != 'Function')
-        return false;
-    if (!('TypeFunctionCSU' in edgeType))
-        return false;
-    if (edgeType.Type.Kind != 'Void')
-        return false;
-
-    
-    var type = edgeType.TypeFunctionCSU.Type.Name;
-    if (GCSuppressionTypes.indexOf(type) == -1)
-        return false;
-
-    
-    
-    var [ mangled, unmangled ] = splitFunction(varName[0]);
-    if (mangled.search(/C\dE/) == -1)
-        return false; 
-    var m = unmangled.match(/([~\w]+)(?:<.*>)?\(/);
-    if (!m)
-        return false;
-    var type_stem = type.replace(/\w+::/g, '').replace(/\<.*\>/g, '');
-    return m[1] == type_stem;
+    return [
+        "AutoSuppressGC",
+        "AutoAssertGCCallback",
+        "AutoEnterAnalysis",
+        "AutoSuppressGCAnalysis",
+        "AutoIgnoreRootingHazards"
+    ].indexOf(varName[1]) != -1;
 }
 
 

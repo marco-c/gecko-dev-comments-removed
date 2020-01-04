@@ -12,19 +12,25 @@ if (scriptArgs[0] == '--function') {
     scriptArgs = scriptArgs.slice(2);
 }
 
-var typeInfo_filename = scriptArgs[0] || "typeInfo.txt";
+var subclasses = {};
+var superclasses = {};
+var classFunctions = {};
 
-var subclasses = new Map(); 
-var superclasses = new Map(); 
-var classFunctions = new Map(); 
+var fieldCallSeen = {};
 
-var virtualResolutionsSeen = new Set();
-
-function addEntry(map, name, entry)
+function addClassEntry(index, name, other)
 {
-    if (!map.has(name))
-        map.set(name, new Set());
-    map.get(name).add(entry);
+    if (!(name in index)) {
+        index[name] = [other];
+        return;
+    }
+
+    for (var entry of index[name]) {
+        if (entry == other)
+            return;
+    }
+
+    index[name].push(other);
 }
 
 
@@ -37,107 +43,82 @@ function processCSU(csuName, csu)
             var superclass = field.Field[1].Type.Name;
             var subclass = field.Field[1].FieldCSU.Type.Name;
             assert(subclass == csuName);
-            addEntry(subclasses, superclass, subclass);
-            addEntry(superclasses, subclass, superclass);
+            addClassEntry(subclasses, superclass, subclass);
+            addClassEntry(superclasses, subclass, superclass);
         }
         if ("Variable" in field) {
             
             var name = field.Variable.Name[0];
             var key = csuName + ":" + field.Field[0].Name[0];
-            addEntry(classFunctions, key, name);
+            if (!(key in classFunctions))
+                classFunctions[key] = [];
+            classFunctions[key].push(name);
         }
     }
 }
 
-
-
-function nearestAncestorMethods(csu, method)
+function findVirtualFunctions(initialCSU, field, suppressed)
 {
-    var key = csu + ":" + method;
+    var worklist = [initialCSU];
+    var functions = [];
 
-    if (classFunctions.has(key))
-        return new Set(classFunctions.get(key));
+    
+    
+    
+    
+    while (worklist.length) {
+        var csu = worklist.pop();
+        if (csu == "nsISupports" && (field == "AddRef" || field == "Release")) {
+            suppressed[0] = true;
+            return [];
+        }
+        if (isOverridableField(initialCSU, csu, field)) {
+            
+            
+            
+            functions.push(null);
+        }
 
-    var functions = new Set();
-    if (superclasses.has(csu)) {
-        for (var parent of superclasses.get(csu))
-            functions.update(nearestAncestorMethods(parent, method));
+        if (csu in superclasses) {
+            for (var superclass of superclasses[csu])
+                worklist.push(superclass);
+        }
+    }
+
+    worklist = [csu];
+    while (worklist.length) {
+        var csu = worklist.pop();
+        var key = csu + ":" + field;
+
+        if (key in classFunctions) {
+            for (var name of classFunctions[key])
+                functions.push(name);
+        }
+
+        if (csu in subclasses) {
+            for (var subclass of subclasses[csu])
+                worklist.push(subclass);
+        }
     }
 
     return functions;
 }
 
-
-
-
-
-function findVirtualFunctions(initialCSU, field)
-{
-    var worklist = [initialCSU];
-    var functions = new Set();
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-    while (worklist.length) {
-        var csu = worklist.pop();
-        if (isSuppressedVirtualMethod(csu, field))
-            return [ new Set(), true ];
-        if (isOverridableField(initialCSU, csu, field)) {
-            
-            
-            
-            functions.add(null);
-        }
-
-        if (superclasses.has(csu))
-            worklist.push(...superclasses.get(csu));
-    }
-
-    
-    
-
-    
-    
-    functions.update(nearestAncestorMethods(initialCSU, field));
-
-    
-    var worklist = [initialCSU];
-    while (worklist.length) {
-        var csu = worklist.pop();
-        var key = csu + ":" + field;
-
-        if (classFunctions.has(key))
-            functions.update(classFunctions.get(key));
-
-        if (subclasses.has(csu))
-            worklist.push(...subclasses.get(csu));
-    }
-
-    return [ functions, false ];
-}
-
-var memoized = new Map();
+var memoized = {};
 var memoizedCount = 0;
 
 function memo(name)
 {
-    if (!memoized.has(name)) {
-        let id = memoized.size + 1;
-        memoized.set(name, "" + id);
-        print(`#${id} ${name}`);
+    if (!(name in memoized)) {
+        memoizedCount++;
+        memoized[name] = "" + memoizedCount;
+        print("#" + memoizedCount + " " + name);
     }
-    return memoized.get(name);
+    return memoized[name];
 }
 
-
+var seenCallees = null;
+var seenSuppressedCallees = null;
 
 
 
@@ -158,42 +139,42 @@ function getCallees(edge)
             var field = callee.Exp[0].Field;
             var fieldName = field.Name[0];
             var csuName = field.FieldCSU.Type.Name;
-            var functions;
+            var functions = null;
             if ("FieldInstanceFunction" in field) {
-                let suppressed;
-                [ functions, suppressed ] = findVirtualFunctions(csuName, fieldName, suppressed);
-                if (suppressed) {
+                var suppressed = [ false ];
+                functions = findVirtualFunctions(csuName, fieldName, suppressed);
+                if (suppressed[0]) {
                     
                     
                     callees.push({'kind': "field", 'csu': csuName, 'field': fieldName,
                                   'suppressed': true});
                 }
-            } else {
-                functions = new Set([null]); 
             }
-
-            
-            
-            
-            
-            
-            
-            var targets = [];
-            var fullyResolved = true;
-            for (var name of functions) {
-                if (name === null) {
-                    
-                    
-                    
-                    callees.push({'kind': "field", 'csu': csuName, 'field': fieldName});
-                    fullyResolved = false;
-                } else {
-                    callees.push({'kind': "direct", 'name': name});
-                    targets.push({'kind': "direct", 'name': name});
+            if (functions) {
+                
+                
+                
+                
+                
+                
+                var targets = [];
+                var fullyResolved = true;
+                for (var name of functions) {
+                    if (name === null) {
+                        
+                        callees.push({'kind': "field", 'csu': csuName, 'field': fieldName});
+                        fullyResolved = false;
+                    } else {
+                        callees.push({'kind': "direct", 'name': name});
+                        targets.push({'kind': "direct", 'name': name});
+                    }
                 }
+                if (fullyResolved)
+                    callees.push({'kind': "resolved-field", 'csu': csuName, 'field': fieldName, 'callees': targets});
+            } else {
+                
+                callees.push({'kind': "field", 'csu': csuName, 'field': fieldName});
             }
-            if (fullyResolved)
-                callees.push({'kind': "resolved-field", 'csu': csuName, 'field': fieldName, 'callees': targets});
         } else if (callee.Exp[0].Kind == "Var") {
             
             callees.push({'kind': "indirect", 'variable': callee.Exp[0].Variable.Name[0]});
@@ -238,6 +219,7 @@ function getTags(functionName, body) {
     var tags = new Set();
     var annotations = getAnnotations(body);
     if (functionName in annotations) {
+        print("crawling through");
         for (var [ annName, annValue ] of annotations[functionName]) {
             if (annName == 'Tag')
                 tags.add(annValue);
@@ -254,28 +236,22 @@ function processBody(functionName, body)
     for (var tag of getTags(functionName, body).values())
         print("T " + memo(functionName) + " " + tag);
 
-    
-    
-    
-    
-    
-    var seen = [ new Set(), new Set() ];
-
     lastline = null;
     for (var edge of body.PEdge) {
         if (edge.Kind != "Call")
             continue;
-
-        
-        var edgeSuppressed = (edge.Index[0] in body.suppressed);
-
+        var edgeSuppressed = false;
+        var seen = seenCallees;
+        if (edge.Index[0] in body.suppressed) {
+            edgeSuppressed = true;
+            seen = seenSuppressedCallees;
+        }
         for (var callee of getCallees(edge)) {
-            var suppressed = Boolean(edgeSuppressed || callee.suppressed);
-            var prologue = suppressed ? "SUPPRESS_GC " : "";
+            var prologue = (edgeSuppressed || callee.suppressed) ? "SUPPRESS_GC " : "";
             prologue += memo(functionName) + " ";
             if (callee.kind == 'direct') {
-                if (!seen[+suppressed].has(callee.name)) {
-                    seen[+suppressed].add(callee.name);
+                if (!(callee.name in seen)) {
+                    seen[callee.name] = true;
                     printOnce("D " + prologue + memo(callee.name));
                 }
             } else if (callee.kind == 'field') {
@@ -291,8 +267,8 @@ function processBody(functionName, body)
                 
                 var { csu, field, callees } = callee;
                 var fullFieldName = csu + "." + field;
-                if (!virtualResolutionsSeen.has(fullFieldName)) {
-                    virtualResolutionsSeen.add(fullFieldName);
+                if (!(fullFieldName in fieldCallSeen)) {
+                    fieldCallSeen[fullFieldName] = true;
                     for (var target of callees)
                         printOnce("R " + memo(fullFieldName) + " " + memo(target.name));
                 }
@@ -308,7 +284,7 @@ function processBody(functionName, body)
     }
 }
 
-GCSuppressionTypes = loadTypeInfo(typeInfo_filename)["Suppress GC"] || [];
+var callgraph = {};
 
 var xdb = xdbLibrary();
 xdb.open("src_comp.xdb");
@@ -346,11 +322,13 @@ function process(functionName, functionBodies)
 {
     for (var body of functionBodies)
         body.suppressed = [];
-
     for (var body of functionBodies) {
         for (var [pbody, id] of allRAIIGuardedCallPoints(functionBodies, body, isSuppressConstructor))
             pbody.suppressed[id] = true;
     }
+
+    seenCallees = {};
+    seenSuppressedCallees = {};
 
     for (var body of functionBodies)
         processBody(functionName, body);
@@ -402,26 +380,20 @@ function process(functionName, functionBodies)
     
     
     
-    
-    if (functionName.indexOf("C4E") != -1 || functionName.indexOf("D4Ev") != -1) {
+    if (functionName.indexOf("C4E") != -1) {
         var [ mangled, unmangled ] = splitFunction(functionName);
         
-        
-        
-        
-        for (let [synthetic, variant] of [['C4E', 'C1E'],
-                                          ['C4E', 'C2E'],
-                                          ['C4E', 'C3E'],
-                                          ['D4Ev', 'D1Ev'],
-                                          ['D4Ev', 'D2Ev'],
-                                          ['D4Ev', 'D3Ev']])
-        {
-            if (mangled.indexOf(synthetic) == -1)
-                continue;
-
-            let variant_mangled = mangled.replace(synthetic, variant);
-            let variant_full = variant_mangled + "$" + unmangled;
-            print("D " + memo(variant_full) + " " + memo(functionName));
+        if (mangled.indexOf("C4E") != -1) {
+            
+            
+            
+            
+            var C1 = mangled.replace("C4E", "C1E");
+            var C2 = mangled.replace("C4E", "C2E");
+            var C3 = mangled.replace("C4E", "C3E");
+            print("D " + memo(C1) + " " + memo(mangled));
+            print("D " + memo(C2) + " " + memo(mangled));
+            print("D " + memo(C3) + " " + memo(mangled));
         }
     }
 }

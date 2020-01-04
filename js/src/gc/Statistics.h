@@ -86,8 +86,6 @@ enum Phase : uint8_t {
 
     PHASE_LIMIT,
     PHASE_NONE = PHASE_LIMIT,
-    PHASE_EXPLICIT_SUSPENSION = PHASE_LIMIT,
-    PHASE_IMPLICIT_SUSPENSION,
     PHASE_MULTI_PARENTS
 };
 
@@ -170,22 +168,6 @@ struct Statistics
     void beginPhase(Phase phase);
     void endPhase(Phase phase);
     void endParallelPhase(Phase phase, const GCParallelTask* task);
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    void suspendPhases(Phase suspension = PHASE_EXPLICIT_SUSPENSION);
-
-    
-    void resumePhases();
 
     void beginSlice(const ZoneGCStats& zoneStats, JSGCInvocationKind gckind,
                     SliceBudget budget, JS::gcreason::Reason reason);
@@ -341,9 +323,8 @@ struct Statistics
 
 
 
-
-    Phase suspendedPhases[MAX_NESTING * 3];
-    size_t suspended;
+    Phase suspendedPhases[MAX_NESTING];
+    size_t suspendedPhaseNestingDepth;
 
     
     Vector<int64_t, 0, SystemAllocPolicy> sccTimes;
