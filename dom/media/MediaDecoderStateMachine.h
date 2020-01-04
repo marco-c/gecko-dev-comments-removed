@@ -233,6 +233,15 @@ public:
                       MediaDecoderEventVisibility>&
   FirstFrameLoadedEvent() { return mFirstFrameLoadedEvent; }
 
+  MediaEventSource<void>& OnPlaybackStart() { return mOnPlaybackStart; }
+  MediaEventSource<void>& OnPlaybackStop() { return mOnPlaybackStop; }
+  MediaEventSource<void>& OnPlaybackEnded() { return mOnPlaybackEnded; }
+  MediaEventSource<void>& OnDecodeError() { return mOnDecodeError; }
+  MediaEventSource<void>& OnInvalidate() { return mOnInvalidate; }
+
+  MediaEventSource<MediaDecoderEventVisibility>&
+  OnSeekingStart() { return mOnSeekingStart; }
+
   
   bool IsRealTime() const { return mRealTime; }
 
@@ -1200,6 +1209,13 @@ private:
                         MediaDecoderEventVisibility> mMetadataLoadedEvent;
   MediaEventProducerExc<nsAutoPtr<MediaInfo>,
                         MediaDecoderEventVisibility> mFirstFrameLoadedEvent;
+
+  MediaEventProducer<void> mOnPlaybackStart;
+  MediaEventProducer<void> mOnPlaybackStop;
+  MediaEventProducer<void> mOnPlaybackEnded;
+  MediaEventProducer<void> mOnDecodeError;
+  MediaEventProducer<void> mOnInvalidate;
+  MediaEventProducer<MediaDecoderEventVisibility> mOnSeekingStart;
 
   
   

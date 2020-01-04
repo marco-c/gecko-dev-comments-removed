@@ -571,26 +571,6 @@ private:
   virtual void UpdatePlaybackRate();
 
   
-  
-  void DispatchPlaybackStarted() {
-    RefPtr<MediaDecoder> self = this;
-    nsCOMPtr<nsIRunnable> r =
-      NS_NewRunnableFunction([self] () { self->mPlaybackStatistics->Start(); });
-    AbstractThread::MainThread()->Dispatch(r.forget());
-  }
-
-  
-  
-  void DispatchPlaybackStopped() {
-    RefPtr<MediaDecoder> self = this;
-    nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction([self] () {
-      self->mPlaybackStatistics->Stop();
-      self->ComputePlaybackRate();
-    });
-    AbstractThread::MainThread()->Dispatch(r.forget());
-  }
-
-  
   void ComputePlaybackRate();
 
   
@@ -820,6 +800,18 @@ private:
   MediaEventSource<void>*
   DataArrivedEvent() override { return &mDataArrivedEvent; }
 
+  
+  
+  void OnPlaybackStarted() { mPlaybackStatistics->Start(); }
+
+  
+  
+  void OnPlaybackStopped()
+  {
+    mPlaybackStatistics->Stop();
+    ComputePlaybackRate();
+  }
+
   MediaEventProducer<void> mDataArrivedEvent;
 
   
@@ -940,6 +932,13 @@ protected:
 
   MediaEventListener mMetadataLoadedListener;
   MediaEventListener mFirstFrameLoadedListener;
+
+  MediaEventListener mOnPlaybackStart;
+  MediaEventListener mOnPlaybackStop;
+  MediaEventListener mOnPlaybackEnded;
+  MediaEventListener mOnDecodeError;
+  MediaEventListener mOnInvalidate;
+  MediaEventListener mOnSeekingStart;
 
 protected:
   
