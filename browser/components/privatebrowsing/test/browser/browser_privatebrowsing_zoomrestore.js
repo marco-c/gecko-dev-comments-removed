@@ -5,76 +5,60 @@
 
 
 
-function test() {
+add_task(function* test() {
   
-  waitForExplicitFinish();
   let windowsToClose = [];
   let windowsToReset = [];
 
-  function doTestWhenReady(aIsZoomedWindow, aWindow, aCallback) {
-    
-    
-    
-    
-
-    let n = 0;
-
-    let browser = aWindow.gBrowser.selectedBrowser;
-    browser.addEventListener("load", function onLoad() {
-      browser.removeEventListener("load", onLoad, true);
-      if (++n == 2)
-        doTest(aIsZoomedWindow, aWindow, aCallback);
-    }, true);
-
-    Services.obs.addObserver(function onLocationChange(subj, topic, data) {
-      Services.obs.removeObserver(onLocationChange, topic);
-      if (++n == 2)
-        doTest(aIsZoomedWindow, aWindow, aCallback);
-    }, "browser-fullZoom:location-change", false);
-
-    browser.loadURI("about:blank");
+  function promiseLocationChange() {
+    return new Promise(resolve => {
+      Services.obs.addObserver(function onLocationChange(subj, topic, data) {
+        Services.obs.removeObserver(onLocationChange, topic);
+        resolve();
+      }, "browser-fullZoom:location-change", false);
+    });
   }
 
-  function doTest(aIsZoomedWindow, aWindow, aCallback) {
+  function promiseTestReady(aIsZoomedWindow, aWindow) {
+    
+    
+    
+    
+
+
+    let browser = aWindow.gBrowser.selectedBrowser;
+    return BrowserTestUtils.loadURI(browser, "about:blank").then(() => {
+      return Promise.all([ BrowserTestUtils.browserLoaded(browser),
+                           promiseLocationChange() ]);
+    }).then(() => doTest(aIsZoomedWindow, aWindow));
+  }
+
+  function doTest(aIsZoomedWindow, aWindow) {
     if (aIsZoomedWindow) {
       is(aWindow.ZoomManager.zoom, 1,
          "Zoom level for freshly loaded about:blank should be 1");
       
       aWindow.FullZoom.enlarge();
       isnot(aWindow.ZoomManager.zoom, 1, "Zoom level for about:blank should be changed");
-      aCallback();
       return;
     }
+
     
     is(aWindow.ZoomManager.zoom, 1, "Zoom level for about:privatebrowsing should be reset");
-    aCallback();
-  }
-
-  function finishTest() {
-    
-    windowsToReset.forEach(function(win) {
-      win.FullZoom.reset();
-    });
-    windowsToClose.forEach(function(win) {
-      win.close();
-    });
-    finish();
   }
 
   function testOnWindow(options, callback) {
-    let win = whenNewWindowLoaded(options,
-      function(win) {
-        windowsToClose.push(win);
-        windowsToReset.push(win);
-        executeSoon(function() { callback(win); });
-      });
-  };
-
-  testOnWindow({}, function(win) {
-    doTestWhenReady(true, win, function() {
-      testOnWindow({private: true}, function(win) {
-        doTestWhenReady(false, win, finishTest);
-      });
+    return BrowserTestUtils.openNewBrowserWindow(options).then((win) => {
+      windowsToClose.push(win);
+      windowsToReset.push(win);
+      return win;
     });
-  });
-}
+  }
+
+  yield testOnWindow({}).then(win => promiseTestReady(true, win));
+  yield testOnWindow({private: true}).then(win => promiseTestReady(false, win));
+
+  
+  windowsToReset.forEach((win) => win.FullZoom.reset());
+  yield Promise.all(windowsToClose.map(win => BrowserTestUtils.closeWindow(win)));
+});
