@@ -1312,33 +1312,6 @@ class MOZ_RAII AutoSuppressGC
     }
 };
 
-#ifdef DEBUG
-
-class MOZ_RAII AutoEnterOOMUnsafeRegion
-{
-    bool oomEnabled_;
-    int64_t oomAfter_;
-
-  public:
-    AutoEnterOOMUnsafeRegion()
-      : oomEnabled_(OOM_maxAllocations != UINT32_MAX), oomAfter_(0)
-    {
-        if (oomEnabled_) {
-            oomAfter_ = OOM_maxAllocations - OOM_counter;
-            OOM_maxAllocations = UINT32_MAX;
-        }
-    }
-
-    ~AutoEnterOOMUnsafeRegion() {
-        MOZ_ASSERT(OOM_maxAllocations == UINT32_MAX);
-        if (oomEnabled_)
-            OOM_maxAllocations = OOM_counter + oomAfter_;
-    }
-};
-#else
-class MOZ_RAII AutoEnterOOMUnsafeRegion {};
-#endif 
-
 
 class ZoneList
 {
