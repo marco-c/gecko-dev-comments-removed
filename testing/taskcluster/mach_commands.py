@@ -153,30 +153,23 @@ def query_vcs_info(repository, revision):
         sys.stderr.write('cannot query vcs info because vcs info not provided\n')
         return None
 
-    VCSInfo = namedtuple('VCSInfo', ['pushid', 'pushdate'])
+    VCSInfo = namedtuple('VCSInfo', ['pushid', 'pushdate', 'changesets'])
 
     try:
         import requests
-        url = '%s/json-pushes?changeset=%s' % (repository, revision)
-        sys.stderr.write("Querying URL for pushdate: %s\n" % url)
+        url = '%s/json-automationrelevance/%s' % (repository.rstrip('/'),
+                                                  revision)
+        sys.stderr.write("Querying version control for metadata: %s\n" % url)
         contents = requests.get(url).json()
 
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        pushid = contents.iterkeys().next()
-        pushdate = contents[pushid]['date']
-        return VCSInfo(pushid, pushdate)
+        changesets = []
+        for c in contents['changesets']:
+            changesets.append({k: c[k] for k in ('desc', 'files', 'node')})
+
+        pushid = contents['changesets'][-1]['pushid']
+        pushdate = contents['changesets'][-1]['pushdate'][0]
+
+        return VCSInfo(pushid, pushdate, changesets)
 
     except Exception:
         sys.stderr.write(
