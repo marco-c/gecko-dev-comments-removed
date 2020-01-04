@@ -56,7 +56,6 @@ final class GeckoEditable extends JNIObject
     private InputFilter[] mFilters;
 
     private final SpannableStringBuilder mText;
-    private final SpannableStringBuilder mChangedText;
     private final Editable mProxy;
     private final ActionQueue mActionQueue;
 
@@ -381,7 +380,6 @@ final class GeckoEditable extends JNIObject
         mActionQueue = new ActionQueue();
 
         mText = new SpannableStringBuilder();
-        mChangedText = new SpannableStringBuilder();
 
         final Class<?>[] PROXY_INTERFACES = { Editable.class };
         mProxy = (Editable)Proxy.newProxyInstance(
@@ -1027,17 +1025,30 @@ final class GeckoEditable extends JNIObject
                 newEnd >= action.mStart + action.mSequence.length()) {
 
             
-            final int actionNewEnd = action.mStart + action.mSequence.length();
-
             
-            if (start == action.mStart && oldEnd == action.mEnd && newEnd == actionNewEnd) {
+            final int indexInText = TextUtils.indexOf(text, action.mSequence);
+            if (indexInText < 0) {
+                
+                geckoReplaceText(start, oldEnd, text);
+
+            } else if (indexInText == 0 && text.length() == action.mSequence.length()) {
                 
                 geckoReplaceText(start, oldEnd, action.mSequence);
+
             } else {
-                mChangedText.clearSpans();
-                mChangedText.replace(0, mChangedText.length(), mText, start, oldEnd);
-                mChangedText.replace(action.mStart - start, action.mEnd - start, action.mSequence);
-                geckoReplaceText(start, oldEnd, mChangedText);
+                
+                
+                geckoReplaceText(start, action.mStart, text.subSequence(0, indexInText));
+
+                
+                final int actionStart = indexInText + start;
+                geckoReplaceText(actionStart, actionStart + action.mEnd - action.mStart,
+                                 action.mSequence);
+
+                
+                final int actionEnd = actionStart + action.mSequence.length();
+                geckoReplaceText(actionEnd, actionEnd + oldEnd - action.mEnd,
+                                 text.subSequence(actionEnd - start, text.length()));
             }
 
             
