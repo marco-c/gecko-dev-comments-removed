@@ -233,7 +233,7 @@ public:
     aWorkerPrivate->AssertIsOnWorkerThread();
 
     
-    Write(aCx, aObj, true, mRv);
+    Write(aCx, aObj, mRv);
     NS_WARN_IF(mRv.Failed());
   }
 
@@ -294,7 +294,7 @@ public:
     aWorkerPrivate->AssertIsOnWorkerThread();
 
     
-    Write(aCx, aObj, true, mRv);
+    Write(aCx, aObj, mRv);
     NS_WARN_IF(mRv.Failed());
   }
 
