@@ -214,7 +214,9 @@ private:
   
   ConsumeType mConsumeType;
   RefPtr<Promise> mConsumePromise;
-  DebugOnly<bool> mReadDone;
+#ifdef DEBUG
+  bool mReadDone;
+#endif
 
   nsMainThreadPtrHandle<nsIInputStreamPump> mConsumeBodyPump;
 };

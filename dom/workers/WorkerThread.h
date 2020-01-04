@@ -54,8 +54,10 @@ class WorkerThread final
   
   uint32_t mOtherThreadsDispatchingViaEventTarget;
 
+#ifdef DEBUG
   
-  DebugOnly<bool> mAcceptingNonWorkerRunnables;
+  bool mAcceptingNonWorkerRunnables;
+#endif
 
 public:
   static already_AddRefed<WorkerThread>

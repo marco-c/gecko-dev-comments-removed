@@ -67,7 +67,9 @@ protected:
   android::MediaBuffer* mMediaBuffer;
   
   
-  DebugOnly<nsIThread*> mThread;
+#ifdef DEBUG
+  nsIThread* mThread;
+#endif
 };
 
 } 

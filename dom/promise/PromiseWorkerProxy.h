@@ -227,8 +227,10 @@ private:
   
   Mutex mCleanUpLock;
 
+#ifdef DEBUG
   
-  DebugOnly<bool> mFeatureAdded;
+  bool mFeatureAdded;
+#endif
 };
 } 
 } 
