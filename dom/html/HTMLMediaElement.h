@@ -1193,9 +1193,6 @@ protected:
   bool IsAllowedToPlay();
 
   bool IsAudible() const;
-  bool HaveFailedWithSourceNotSupportedError() const;
-
-  void OpenUnsupportedMediaWithExtenalAppIfNeeded();
 
   class nsAsyncEventRunner;
   using nsGenericHTMLElement::DispatchEvent;
@@ -1247,6 +1244,8 @@ protected:
   
   
   RefPtr<StreamSizeListener> mMediaStreamSizeListener;
+  
+  RefPtr<VideoStreamTrack> mSelectedVideoStreamTrack;
 
   const RefPtr<ShutdownObserver> mShutdownObserver;
 
@@ -1631,8 +1630,6 @@ private:
 
   
   bool mAudible;
-
-  nsAutoCString mMimeType;
 };
 
 } 
