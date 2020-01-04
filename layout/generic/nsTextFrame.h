@@ -184,6 +184,9 @@ public:
   
   virtual nsresult GetPointFromOffset(int32_t  inOffset,
                                       nsPoint* outPoint) override;
+  virtual nsresult GetCharacterRectsInRange(int32_t  aInOffset,
+                                            int32_t  aLength,
+                                            nsTArray<nsRect>& aRects) override;
   
   virtual nsresult GetChildFrameContainingOffset(int32_t inContentOffset,
                                                  bool    inHint,
@@ -792,6 +795,18 @@ protected:
   virtual bool HasAnyNoncollapsedCharacters() override;
 
   void ClearMetrics(nsHTMLReflowMetrics& aMetrics);
+
+  
+
+
+
+
+  void UpdateIteratorFromOffset(const PropertyProvider& aProperties,
+                                int32_t& aInOffset,
+                                gfxSkipCharsIterator& aIter);
+
+  nsPoint GetPointFromIterator(const gfxSkipCharsIterator& aIter,
+                               PropertyProvider& aProperties);
 };
 
 #endif
