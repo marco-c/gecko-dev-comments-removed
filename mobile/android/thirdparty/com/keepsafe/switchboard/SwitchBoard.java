@@ -70,12 +70,6 @@ public class SwitchBoard {
     private static final String KEY_SERVER_URL = "mainServerUrl";
     private static final String KEY_CONFIG_RESULTS = "results";
 
-    private static String uuidExtra = null;
-
-    public static void setUUIDFromExtra(String uuid) {
-        uuidExtra = uuid;
-    }
-
     
 
 
@@ -83,15 +77,14 @@ public class SwitchBoard {
 
 
 
-
-    static void loadConfig(Context c, String uuid, @NonNull String defaultServerUrl) {
+    static void loadConfig(Context c, @NonNull String defaultServerUrl) {
 
         
         
         
         String serverUrl = defaultServerUrl;
 
-        final URL requestUrl = buildConfigRequestUrl(c, uuid, serverUrl);
+        final URL requestUrl = buildConfigRequestUrl(c, serverUrl);
         if (DEBUG) Log.d(TAG, "Request URL: " + requestUrl);
         if (requestUrl == null) {
             return;
@@ -121,11 +114,9 @@ public class SwitchBoard {
         }
     }
 
-    @Nullable private static URL buildConfigRequestUrl(Context c, String uuid, String serverUrl) {
-        if (uuid == null) {
-            DeviceUuidFactory df = new DeviceUuidFactory(c);
-            uuid = df.getDeviceUuid().toString();
-        }
+    @Nullable private static URL buildConfigRequestUrl(Context c, String serverUrl) {
+        final DeviceUuidFactory df = new DeviceUuidFactory(c);
+        final String uuid = df.getDeviceUuid().toString();
 
         final String device = Build.DEVICE;
         final String manufacturer = Build.MANUFACTURER;
@@ -290,12 +281,8 @@ public class SwitchBoard {
 
 
     private static int getUserBucket(Context c) {
-        
-        String uuid = uuidExtra;
-        if (uuid == null) {
-            DeviceUuidFactory df = new DeviceUuidFactory(c);
-            uuid = df.getDeviceUuid().toString();
-        }
+        final DeviceUuidFactory df = new DeviceUuidFactory(c);
+        final String uuid = df.getDeviceUuid().toString();
 
         CRC32 crc = new CRC32();
         crc.update(uuid.getBytes());
