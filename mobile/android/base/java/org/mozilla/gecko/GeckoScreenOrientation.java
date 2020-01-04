@@ -109,7 +109,7 @@ public class GeckoScreenOrientation {
 
 
     public boolean update() {
-        Activity activity = GeckoAppShell.getGeckoInterface().getActivity();
+        Activity activity = getActivity();
         if (activity == null) {
             return false;
         }
@@ -211,6 +211,13 @@ public class GeckoScreenOrientation {
         return update();
     }
 
+    private Activity getActivity() {
+        if (GeckoAppShell.getGeckoInterface() == null) {
+            return null;
+        }
+        return GeckoAppShell.getGeckoInterface().getActivity();
+    }
+
     
 
 
@@ -224,9 +231,10 @@ public class GeckoScreenOrientation {
 
     private boolean setRequestedOrientation(ScreenOrientation aScreenOrientation) {
         int activityOrientation = screenOrientationToActivityInfoOrientation(aScreenOrientation);
-        Activity activity = GeckoAppShell.getGeckoInterface().getActivity();
+        Activity activity = getActivity();
         if (activity == null) {
             Log.w(LOGTAG, "setRequestOrientation: failed to get activity");
+            return false;
         }
         if (activity.getRequestedOrientation() == activityOrientation) {
             return false;
@@ -289,7 +297,7 @@ public class GeckoScreenOrientation {
 
 
     private int getRotation() {
-        Activity activity = GeckoAppShell.getGeckoInterface().getActivity();
+        Activity activity = getActivity();
         if (activity == null) {
             Log.w(LOGTAG, "getRotation: failed to get activity");
             return DEFAULT_ROTATION;
