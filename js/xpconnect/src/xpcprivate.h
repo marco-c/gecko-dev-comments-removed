@@ -409,7 +409,7 @@ private:
     mozilla::Maybe<StringType> mStrings[2];
 };
 
-class XPCJSRuntime : public mozilla::CycleCollectedJSRuntime
+class XPCJSRuntime final : public mozilla::CycleCollectedJSRuntime
 {
 public:
     static XPCJSRuntime* newXPCJSRuntime();
@@ -667,7 +667,7 @@ private:
 
 
 
-class MOZ_STACK_CLASS XPCCallContext : public nsAXPCNativeCallContext
+class MOZ_STACK_CLASS XPCCallContext final : public nsAXPCNativeCallContext
 {
 public:
     NS_IMETHOD GetCallee(nsISupports** aResult);
@@ -848,7 +848,7 @@ typedef nsTArray<InterpositionWhitelistPair> InterpositionWhitelistArray;
 
 class nsIAddonInterposition;
 class nsXPCComponentsBase;
-class XPCWrappedNativeScope : public PRCList
+class XPCWrappedNativeScope final : public PRCList
 {
 public:
 
@@ -1114,7 +1114,7 @@ private:
 
 
 
-class XPCNativeMember
+class XPCNativeMember final
 {
 public:
     static bool GetCallInfo(JSObject* funobj,
@@ -1211,7 +1211,7 @@ private:
 
 
 
-class XPCNativeInterface
+class XPCNativeInterface final
 {
   public:
     static XPCNativeInterface* GetNewOrUsed(const nsIID* iid);
@@ -1288,7 +1288,7 @@ private:
 
 
 
-class XPCNativeSetKey
+class XPCNativeSetKey final
 {
 public:
     explicit XPCNativeSetKey(XPCNativeSet*       BaseSet  = nullptr,
@@ -1338,7 +1338,7 @@ private:
 
 
 
-class XPCNativeSet
+class XPCNativeSet final
 {
   public:
     static XPCNativeSet* GetNewOrUsed(const nsIID* iid);
@@ -1457,7 +1457,7 @@ class XPCNativeSet
 
 #define XPC_WN_SJSFLAGS_MARK_FLAG JS_BIT(31) // only high bit of 32 is set
 
-class XPCNativeScriptableFlags
+class XPCNativeScriptableFlags final
 {
 private:
     uint32_t mFlags;
@@ -1521,7 +1521,7 @@ public:
 
 
 
-class XPCNativeScriptableShared
+class XPCNativeScriptableShared final
 {
 public:
     const XPCNativeScriptableFlags& GetFlags() const { return mFlags; }
@@ -1559,7 +1559,7 @@ private:
 
 
 
-class XPCNativeScriptableInfo
+class XPCNativeScriptableInfo final
 {
 public:
     static XPCNativeScriptableInfo*
@@ -1616,7 +1616,7 @@ private:
 
 
 
-class MOZ_STACK_CLASS XPCNativeScriptableCreateInfo
+class MOZ_STACK_CLASS XPCNativeScriptableCreateInfo final
 {
 public:
 
@@ -1653,7 +1653,7 @@ private:
 
 
 
-class XPCWrappedNativeProto
+class XPCWrappedNativeProto final
 {
 public:
     static XPCWrappedNativeProto*
@@ -1780,7 +1780,7 @@ private:
 
 
 
-class XPCWrappedNativeTearOff
+class XPCWrappedNativeTearOff final
 {
 public:
     bool IsAvailable() const {return mInterface == nullptr;}
@@ -2355,8 +2355,8 @@ private:
 
 
 
-class XPCJSObjectHolder : public nsIXPConnectJSObjectHolder,
-                          public XPCRootSetElem
+class XPCJSObjectHolder final : public nsIXPConnectJSObjectHolder,
+                                public XPCRootSetElem
 {
 public:
     
