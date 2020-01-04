@@ -470,7 +470,7 @@ extensions.on("shutdown", (type, extension) => {
 });
 
 
-extensions.registerSchemaAPI("contextMenus", (extension, context) => {
+extensions.registerSchemaAPI("contextMenus", "contextMenus", (extension, context) => {
   return {
     contextMenus: {
       create: function(createProperties, callback) {
