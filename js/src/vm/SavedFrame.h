@@ -49,7 +49,7 @@ class SavedFrame : public NativeObject {
     JSAtom*       getAsyncCause();
     SavedFrame*   getParent() const;
     JSPrincipals* getPrincipals();
-    bool          isSelfHosted();
+    bool          isSelfHosted(JSContext* cx);
 
     
     
@@ -296,7 +296,9 @@ class ConcreteStackFrame<SavedFrame> : public BaseStackFrame {
             ptr = next;
     }
 
-    bool isSelfHosted() const override { return get().isSelfHosted(); }
+    bool isSelfHosted(JSContext* cx) const override {
+        return get().isSelfHosted(cx);
+    }
 
     bool isSystem() const override;
 
