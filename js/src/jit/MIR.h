@@ -7739,17 +7739,27 @@ class MAsmJSInterruptCheck
 };
 
 
-class MAsmThrowUnreachable
+
+
+class MWasmTrap
   : public MAryControlInstruction<0, 0>,
     public NoTypePolicy::Data
 {
+    wasm::Trap trap_;
+
+    explicit MWasmTrap(wasm::Trap trap)
+      : trap_(trap)
+    {}
+
   public:
-    INSTRUCTION_HEADER(AsmThrowUnreachable)
+    INSTRUCTION_HEADER(WasmTrap)
     TRIVIAL_NEW_WRAPPERS
 
     AliasSet getAliasSet() const override {
         return AliasSet::None();
     }
+
+    wasm::Trap trap() const { return trap_; }
 };
 
 
