@@ -59,8 +59,6 @@ public:
   NS_IMETHOD GetFeatureLog(JSContext*, JS::MutableHandle<JS::Value>) override;
   NS_IMETHOD GetActiveCrashGuards(JSContext*, JS::MutableHandle<JS::Value>) override;
 
-  NS_IMETHOD Reset(const nsAString& aVendorID, const nsAString& aDeviceID) override;
-
   
   
   
