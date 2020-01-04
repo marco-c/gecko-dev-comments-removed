@@ -29,8 +29,7 @@ namespace media {
 
 static const int64_t AUDIO_FUZZ_FRAMES = 1;
 
-DecodedAudioDataSink::DecodedAudioDataSink(AbstractThread* aThread,
-                                           MediaQueue<MediaData>& aAudioQueue,
+DecodedAudioDataSink::DecodedAudioDataSink(MediaQueue<MediaData>& aAudioQueue,
                                            int64_t aStartTime,
                                            const AudioInfo& aInfo,
                                            dom::AudioChannel aChannel)
@@ -41,30 +40,16 @@ DecodedAudioDataSink::DecodedAudioDataSink(AbstractThread* aThread,
   , mInfo(aInfo)
   , mChannel(aChannel)
   , mPlaying(true)
-  , mErrored(false)
   , mPlaybackComplete(false)
-  , mProcessingThread(aThread)
-  , mShutdown(false)
-  , mFramesParsed(0)
-  , mLastEndTime(0)
 {
   bool resampling = gfxPrefs::AudioSinkResampling();
   uint32_t resamplingRate = gfxPrefs::AudioSinkResampleRate();
-  mOutputRate = resampling ? resamplingRate : mInfo.mRate;
-  mOutputChannels = mInfo.mChannels > 2 && gfxPrefs::AudioSinkForceStereo()
-                      ? 2 : mInfo.mChannels;
   mConverter =
     MakeUnique<AudioConverter>(
       AudioConfig(mInfo.mChannels, mInfo.mRate),
-      AudioConfig(mOutputChannels, mOutputRate));
-  mAudioQueueListener = aAudioQueue.PushEvent().Connect(
-    mProcessingThread, this, &DecodedAudioDataSink::OnAudioPushed);
-  mProcessedQueueListener = mProcessedQueue.PopEvent().Connect(
-    mProcessingThread, this, &DecodedAudioDataSink::OnAudioPopped);
-
-  
-  
-  NotifyAudioNeeded();
+      AudioConfig(mInfo.mChannels > 2 && gfxPrefs::AudioSinkForceStereo()
+                    ? 2 : mInfo.mChannels,
+                  resampling ? resamplingRate : mInfo.mRate));
 }
 
 DecodedAudioDataSink::~DecodedAudioDataSink()
@@ -110,15 +95,11 @@ DecodedAudioDataSink::HasUnplayedFrames()
 void
 DecodedAudioDataSink::Shutdown()
 {
-  mAudioQueueListener.Disconnect();
-  mProcessedQueueListener.Disconnect();
   if (mAudioStream) {
     mAudioStream->Shutdown();
     mAudioStream = nullptr;
   }
-  mProcessedQueue.Reset();
   mEndPromise.ResolveIfExists(true, __func__);
-  mShutdown = true;
 }
 
 void
@@ -165,7 +146,9 @@ nsresult
 DecodedAudioDataSink::InitializeAudioStream(const PlaybackParams& aParams)
 {
   mAudioStream = new AudioStream(*this);
-  nsresult rv = mAudioStream->Init(mOutputChannels, mOutputRate, mChannel);
+  nsresult rv = mAudioStream->Init(mConverter->OutputConfig().Channels(),
+                                   mConverter->OutputConfig().Rate(),
+                                   mChannel);
   if (NS_FAILED(rv)) {
     mAudioStream->Shutdown();
     mAudioStream = nullptr;
@@ -185,14 +168,13 @@ DecodedAudioDataSink::InitializeAudioStream(const PlaybackParams& aParams)
 int64_t
 DecodedAudioDataSink::GetEndTime() const
 {
-  CheckedInt64 playedUsecs = FramesToUsecs(mWritten, mOutputRate) + mStartTime;
+  CheckedInt64 playedUsecs =
+    FramesToUsecs(mWritten, mConverter->OutputConfig().Rate()) + mStartTime;
   if (!playedUsecs.isValid()) {
     NS_WARNING("Int overflow calculating audio end time");
     return -1;
   }
-  
-  
-  return std::min<int64_t>(mLastEndTime, playedUsecs.value());
+  return playedUsecs.value();
 }
 
 UniquePtr<AudioStream::Chunk>
@@ -235,13 +217,78 @@ DecodedAudioDataSink::PopFrames(uint32_t aFrames)
     UniquePtr<AudioDataValue[]> mData;
   };
 
-  if (!mCurrentData) {
+  while (!mCurrentData) {
     
-    if (!mProcessedQueue.GetSize()) {
+    if (AudioQueue().GetSize() == 0) {
       return MakeUnique<Chunk>();
     }
 
-    mCurrentData = dont_AddRef(mProcessedQueue.PopFront().take());
+    AudioData* a = AudioQueue().PeekFront()->As<AudioData>();
+
+    
+    if (a->mFrames == 0) {
+      RefPtr<MediaData> releaseMe = AudioQueue().PopFront();
+      continue;
+    }
+
+    
+    if (a->mRate != mInfo.mRate || a->mChannels != mInfo.mChannels) {
+      NS_WARNING(nsPrintfCString(
+        "mismatched sample format, data=%p rate=%u channels=%u frames=%u",
+        a->mAudioData.get(), a->mRate, a->mChannels, a->mFrames).get());
+      RefPtr<MediaData> releaseMe = AudioQueue().PopFront();
+      continue;
+    }
+
+    
+    
+    
+    
+    CheckedInt64 sampleTime = UsecsToFrames(AudioQueue().PeekFront()->mTime,
+                                            mConverter->OutputConfig().Rate());
+    
+    CheckedInt64 playedFrames = UsecsToFrames(mStartTime,
+                                              mConverter->OutputConfig().Rate()) +
+                                static_cast<int64_t>(mWritten);
+    CheckedInt64 missingFrames = sampleTime - playedFrames;
+
+    if (!missingFrames.isValid() || !sampleTime.isValid()) {
+      NS_WARNING("Int overflow in DecodedAudioDataSink");
+      mErrored = true;
+      return MakeUnique<Chunk>();
+    }
+
+    const uint32_t rate = mConverter->OutputConfig().Rate();
+    const uint32_t channels = mConverter->OutputConfig().Channels();
+
+    if (missingFrames.value() > AUDIO_FUZZ_FRAMES) {
+      
+      
+      
+      
+      missingFrames = std::min<int64_t>(UINT32_MAX, missingFrames.value());
+      auto framesToPop = std::min<uint32_t>(missingFrames.value(), aFrames);
+      mWritten += framesToPop;
+      return MakeUnique<SilentChunk>(framesToPop, channels, rate);
+    }
+
+    RefPtr<AudioData> data =
+      dont_AddRef(AudioQueue().PopFront().take()->As<AudioData>());
+    if (mConverter->InputConfig() != mConverter->OutputConfig()) {
+      AlignedAudioBuffer convertedData =
+        mConverter->Process(AudioSampleBuffer(Move(data->mAudioData))).Forget();
+      mCurrentData =
+        new AudioData(data->mOffset,
+                      data->mTime,
+                      data->mDuration,
+                      convertedData.Length() / channels,
+                      Move(convertedData),
+                      channels,
+                      rate);
+    } else {
+      mCurrentData = Move(data);
+    }
+
     mCursor = MakeUnique<AudioBufferCursor>(mCurrentData->mAudioData.get(),
                                             mCurrentData->mChannels,
                                             mCurrentData->mFrames);
@@ -261,7 +308,7 @@ DecodedAudioDataSink::PopFrames(uint32_t aFrames)
 
   
   
-  if (!mCursor->Available()) {
+  if (mCursor->Available() == 0) {
     mCurrentData = nullptr;
   }
 
@@ -281,121 +328,6 @@ DecodedAudioDataSink::Drained()
   SINK_LOG("Drained");
   mPlaybackComplete = true;
   mEndPromise.ResolveIfExists(true, __func__);
-}
-
-void
-DecodedAudioDataSink::OnAudioPopped(const RefPtr<MediaData>& aSample)
-{
-  SINK_LOG_V("AudioStream has used an audio packet.");
-  NotifyAudioNeeded();
-}
-
-void
-DecodedAudioDataSink::OnAudioPushed(const RefPtr<MediaData>& aSample)
-{
-  SINK_LOG_V("One new audio packet available.");
-  NotifyAudioNeeded();
-}
-
-void
-DecodedAudioDataSink::NotifyAudioNeeded()
-{
-  if (mShutdown) {
-    return;
-  }
-  if (!mProcessingThread->IsCurrentThreadIn()) {
-    nsCOMPtr<nsIRunnable> r = NS_NewRunnableMethod(
-      this, &DecodedAudioDataSink::NotifyAudioNeeded);
-    mProcessingThread->Dispatch(r.forget());
-    return;
-  }
-
-  
-  
-  while (AudioQueue().GetSize() && mProcessedQueue.GetSize() < 2) {
-    RefPtr<AudioData> data =
-      dont_AddRef(AudioQueue().PopFront().take()->As<AudioData>());
-    
-    if (!data->mFrames) {
-      continue;
-    }
-
-    
-    if (data->mRate != mConverter->InputConfig().Rate() ||
-        data->mChannels != mConverter->InputConfig().Channels()) {
-      NS_WARNING(nsPrintfCString(
-        "mismatched sample format, data=%p rate=%u channels=%u frames=%u",
-        data->mAudioData.get(), data->mRate, data->mChannels, data->mFrames).get());
-      continue;
-    }
-
-    
-    
-    
-    
-    CheckedInt64 sampleTime = UsecsToFrames(data->mTime - mStartTime,
-                                            data->mRate);
-    
-    CheckedInt64 missingFrames = sampleTime - mFramesParsed;
-
-    if (!missingFrames.isValid()) {
-      NS_WARNING("Int overflow in DecodedAudioDataSink");
-      mErrored = true;
-      return;
-    }
-
-    if (missingFrames.value() > AUDIO_FUZZ_FRAMES) {
-      
-      
-      
-      
-      missingFrames = std::min<int64_t>(INT32_MAX, missingFrames.value());
-      mFramesParsed += missingFrames.value();
-      AlignedAudioBuffer silenceData(missingFrames.value() * mOutputChannels);
-      RefPtr<AudioData> silence = CreateAudioFromBuffer(Move(silenceData), data);
-      if (silence) {
-        mProcessedQueue.Push(silence);
-      }
-    }
-
-    mLastEndTime = data->GetEndTime();
-    mFramesParsed += data->mFrames;
-
-    if (mConverter->InputConfig() != mConverter->OutputConfig()) {
-      AlignedAudioBuffer convertedData =
-        mConverter->Process(AudioSampleBuffer(Move(data->mAudioData))).Forget();
-      data = CreateAudioFromBuffer(Move(convertedData), data);
-      if (!data) {
-        continue;
-      }
-    }
-    mProcessedQueue.Push(data);
-  }
-}
-
-already_AddRefed<AudioData>
-DecodedAudioDataSink::CreateAudioFromBuffer(AlignedAudioBuffer&& aBuffer,
-                                            AudioData* aReference)
-{
-  uint32_t frames = aBuffer.Length() / mOutputChannels;
-  if (!frames) {
-    return nullptr;
-  }
-  CheckedInt64 duration = FramesToUsecs(frames, mOutputRate);
-  if (!duration.isValid()) {
-    NS_WARNING("Int overflow in DecodedAudioDataSink");
-    mErrored = true;
-    return nullptr;
-  }
-  RefPtr<AudioData> data =
-    new AudioData(aReference->mOffset,
-                  aReference->mTime,
-                  duration.value(),
-                  frames,
-                  Move(aBuffer),
-                  mOutputChannels,
-                  mOutputRate);
-  return data.forget();
 }
 
 } 
