@@ -2312,7 +2312,8 @@ this.XPIProvider = {
       }
 
       try {
-        var location = new DirectoryInstallLocation(aName, dir, aScope, aLocked);
+        var location = aLocked ? new DirectoryInstallLocation(aName, dir, aScope)
+                               : new MutableDirectoryInstallLocation(aName, dir, aScope);
       }
       catch (e) {
         logger.warn("Failed to add directory install location " + aName, e);
@@ -6759,23 +6760,13 @@ function AddonWrapper(aAddon) {
 
 
 
-
-
-
-
-
-
-
-
-
-function DirectoryInstallLocation(aName, aDirectory, aScope, aLocked) {
+function DirectoryInstallLocation(aName, aDirectory, aScope) {
   this._name = aName;
-  this.locked = aLocked;
+  this.locked = true;
   this._directory = aDirectory;
   this._scope = aScope
   this._IDToFileMap = {};
   this._linkedAddons = [];
-  this._stagingDirLock = 0;
 
   if (!aDirectory.exists())
     return;
@@ -6910,6 +6901,51 @@ DirectoryInstallLocation.prototype = {
     return locations;
   },
 
+  
+
+
+
+
+
+
+
+  getLocationForID: function DirInstallLocation_getLocationForID(aId) {
+    if (aId in this._IDToFileMap)
+      return this._IDToFileMap[aId].clone();
+    throw new Error("Unknown add-on ID " + aId);
+  },
+
+  
+
+
+
+
+
+
+  isLinkedAddon: function DirInstallLocation__isLinkedAddon(aId) {
+    return this._linkedAddons.indexOf(aId) != -1;
+  }
+};
+
+
+
+
+
+
+
+
+
+
+
+
+function MutableDirectoryInstallLocation(aName, aDirectory, aScope) {
+  DirectoryInstallLocation.call(this, aName, aDirectory, aScope);
+  this.locked = false;
+  this._stagingDirLock = 0;
+}
+
+MutableDirectoryInstallLocation.prototype = Object.create(DirectoryInstallLocation.prototype);
+Object.assign(MutableDirectoryInstallLocation.prototype, {
   
 
 
@@ -7174,32 +7210,7 @@ DirectoryInstallLocation.prototype = {
 
     delete this._IDToFileMap[aId];
   },
-
-  
-
-
-
-
-
-
-
-  getLocationForID: function DirInstallLocation_getLocationForID(aId) {
-    if (aId in this._IDToFileMap)
-      return this._IDToFileMap[aId].clone();
-    throw new Error("Unknown add-on ID " + aId);
-  },
-
-  
-
-
-
-
-
-
-  isLinkedAddon: function DirInstallLocation__isLinkedAddon(aId) {
-    return this._linkedAddons.indexOf(aId) != -1;
-  }
-};
+});
 
 #ifdef XP_WIN
 
