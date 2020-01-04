@@ -18,6 +18,7 @@
 #include "gc/Policy.h"
 #include "jit/BaselineDebugModeOSR.h"
 #include "jit/BaselineJIT.h"
+#include "jit/InlinableNatives.h"
 #include "jit/JitSpewer.h"
 #include "jit/Linker.h"
 #include "jit/Lowering.h"
@@ -5549,10 +5550,67 @@ TryAttachFunCallStub(JSContext* cx, ICCall_Fallback* stub, HandleScript script, 
     return true;
 }
 
+
+
 static bool
-GetTemplateObjectForNative(JSContext* cx, Native native, const CallArgs& args,
+GetTemplateObjectForSimd(JSContext* cx, JSFunction* target, MutableHandleObject res)
+{
+    const JSJitInfo* jitInfo = target->jitInfo();
+    if (!jitInfo || jitInfo->type() != JSJitInfo::InlinableNative)
+        return false;
+
+    
+    SimdType ctrlType;
+    switch (jitInfo->inlinableNative) {
+      case InlinableNative::SimdInt32x4:   ctrlType = SimdType::Int32x4;   break;
+      case InlinableNative::SimdFloat32x4: ctrlType = SimdType::Float32x4; break;
+      case InlinableNative::SimdBool32x4:  ctrlType = SimdType::Bool32x4;  break;
+      
+      default: return false;
+    }
+
+    
+    
+    SimdOperation simdOp = SimdOperation(jitInfo->nativeOp);
+    SimdType retType;
+
+    switch(simdOp) {
+      case SimdOperation::Fn_allTrue:
+      case SimdOperation::Fn_anyTrue:
+      case SimdOperation::Fn_extractLane:
+        
+        return false;
+
+      case SimdOperation::Fn_lessThan:
+      case SimdOperation::Fn_lessThanOrEqual:
+      case SimdOperation::Fn_equal:
+      case SimdOperation::Fn_notEqual:
+      case SimdOperation::Fn_greaterThan:
+      case SimdOperation::Fn_greaterThanOrEqual:
+        
+        
+        retType = GetBooleanSimdType(ctrlType);
+        break;
+
+      default:
+        
+        retType = ctrlType;
+        break;
+    }
+
+    
+    RootedGlobalObject global(cx, cx->global());
+    Rooted<SimdTypeDescr*> descr(cx, GlobalObject::getOrCreateSimdTypeDescr(cx, global, retType));
+    res.set(cx->compartment()->jitCompartment()->getSimdTemplateObjectFor(cx, descr));
+    return true;
+}
+
+static bool
+GetTemplateObjectForNative(JSContext* cx, JSFunction* target, const CallArgs& args,
                            MutableHandleObject res, bool* skipAttach)
 {
+    Native native = target->native();
+
     
     
 
@@ -5626,51 +5684,8 @@ GetTemplateObjectForNative(JSContext* cx, Native native, const CallArgs& args,
         return !!res;
     }
 
-    if (JitSupportsSimd()) {
-        RootedGlobalObject global(cx, cx->global());
-#define ADD_INT32X4_SIMD_OP_NAME_(OP) || native == js::simd_int32x4_##OP
-#define ADD_BOOL32X4_SIMD_OP_NAME_(OP) || native == js::simd_bool32x4_##OP
-#define ADD_FLOAT32X4_SIMD_OP_NAME_(OP) || native == js::simd_float32x4_##OP
-        
-        if (false
-            ION_COMMONX4_SIMD_OP(ADD_INT32X4_SIMD_OP_NAME_)
-            FOREACH_BITWISE_SIMD_UNOP(ADD_INT32X4_SIMD_OP_NAME_)
-            FOREACH_BITWISE_SIMD_BINOP(ADD_INT32X4_SIMD_OP_NAME_)
-            FOREACH_SHIFT_SIMD_OP(ADD_INT32X4_SIMD_OP_NAME_)
-            ADD_INT32X4_SIMD_OP_NAME_(fromFloat32x4)
-            ADD_INT32X4_SIMD_OP_NAME_(fromFloat32x4Bits))
-        {
-            Rooted<SimdTypeDescr*> descr(cx, GlobalObject::getOrCreateSimdTypeDescr(cx, global, SimdType::Int32x4));
-            res.set(cx->compartment()->jitCompartment()->getSimdTemplateObjectFor(cx, descr));
-            return !!res;
-        }
-        
-        if (false
-            FOREACH_BITWISE_SIMD_UNOP(ADD_BOOL32X4_SIMD_OP_NAME_)
-            FOREACH_BITWISE_SIMD_BINOP(ADD_BOOL32X4_SIMD_OP_NAME_)
-            FOREACH_COMP_SIMD_OP(ADD_INT32X4_SIMD_OP_NAME_)
-            FOREACH_COMP_SIMD_OP(ADD_FLOAT32X4_SIMD_OP_NAME_))
-        {
-            Rooted<SimdTypeDescr*> descr(cx, GlobalObject::getOrCreateSimdTypeDescr(cx, global, SimdType::Bool32x4));
-            res.set(cx->compartment()->jitCompartment()->getSimdTemplateObjectFor(cx, descr));
-            return !!res;
-        }
-        
-        if (false
-            FOREACH_FLOAT_SIMD_UNOP(ADD_FLOAT32X4_SIMD_OP_NAME_)
-            FOREACH_FLOAT_SIMD_BINOP(ADD_FLOAT32X4_SIMD_OP_NAME_)
-            ADD_FLOAT32X4_SIMD_OP_NAME_(fromInt32x4)
-            ADD_FLOAT32X4_SIMD_OP_NAME_(fromInt32x4Bits)
-            ION_COMMONX4_SIMD_OP(ADD_FLOAT32X4_SIMD_OP_NAME_))
-        {
-            Rooted<SimdTypeDescr*> descr(cx, GlobalObject::getOrCreateSimdTypeDescr(cx, global, SimdType::Float32x4));
-            res.set(cx->compartment()->jitCompartment()->getSimdTemplateObjectFor(cx, descr));
-            return !!res;
-        }
-#undef ADD_BOOL32X4_SIMD_OP_NAME_
-#undef ADD_INT32X4_SIMD_OP_NAME_
-#undef ADD_FLOAT32X4_SIMD_OP_NAME_
-    }
+    if (JitSupportsSimd() && GetTemplateObjectForSimd(cx, target, res))
+       return !!res;
 
     return true;
 }
@@ -5934,7 +5949,7 @@ TryAttachCallStub(JSContext* cx, ICCall_Fallback* stub, HandleScript script, jsb
         if (MOZ_LIKELY(!isSpread && !isSuper)) {
             bool skipAttach = false;
             CallArgs args = CallArgsFromVp(argc, vp);
-            if (!GetTemplateObjectForNative(cx, fun->native(), args, &templateObject, &skipAttach))
+            if (!GetTemplateObjectForNative(cx, fun, args, &templateObject, &skipAttach))
                 return false;
             if (skipAttach) {
                 *handled = true;
