@@ -58,8 +58,6 @@ const PREF_UNIFIED = PREF_BRANCH + "unified";
 
 const MESSAGE_TELEMETRY_PAYLOAD = "Telemetry:Payload";
 const MESSAGE_TELEMETRY_GET_CHILD_PAYLOAD = "Telemetry:GetChildPayload";
-const MESSAGE_TELEMETRY_THREAD_HANGS = "Telemetry:ChildThreadHangs";
-const MESSAGE_TELEMETRY_GET_CHILD_THREAD_HANGS = "Telemetry:GetChildThreadHangs";
 const MESSAGE_TELEMETRY_USS = "Telemetry:USS";
 const MESSAGE_TELEMETRY_GET_CHILD_USS = "Telemetry:GetChildUSS";
 
@@ -547,17 +545,6 @@ this.TelemetrySession = Object.freeze({
 
 
 
-
-
-
-
-  getChildThreadHangs: function() {
-    return Impl.getChildThreadHangs();
-  },
-  
-
-
-
   testSavePendingPing: function() {
     return Impl.testSavePendingPing();
   },
@@ -659,15 +646,6 @@ var Impl = {
   
   
   _childTelemetry: [],
-  
-  
-  
-  
-  _childThreadHangs: [],
-  
-  _childThreadHangsResolveFunctions: [],
-  
-  _childThreadHangsTimeout: null,
   
   
   _sessionId: null,
@@ -1394,7 +1372,6 @@ var Impl = {
     this._hasXulWindowVisibleObserver = true;
 
     ppml.addMessageListener(MESSAGE_TELEMETRY_PAYLOAD, this);
-    ppml.addMessageListener(MESSAGE_TELEMETRY_THREAD_HANGS, this);
     ppml.addMessageListener(MESSAGE_TELEMETRY_USS, this);
 
     
@@ -1461,7 +1438,6 @@ var Impl = {
 
     Services.obs.addObserver(this, "content-child-shutdown", false);
     cpml.addMessageListener(MESSAGE_TELEMETRY_GET_CHILD_PAYLOAD, this);
-    cpml.addMessageListener(MESSAGE_TELEMETRY_GET_CHILD_THREAD_HANGS, this);
     cpml.addMessageListener(MESSAGE_TELEMETRY_GET_CHILD_USS, this);
 
     this.gatherStartupHistograms();
@@ -1494,7 +1470,6 @@ var Impl = {
     switch (message.name) {
     case MESSAGE_TELEMETRY_PAYLOAD:
     {
-      
       let source = message.data.childUUID;
       delete message.data.childUUID;
 
@@ -1520,42 +1495,11 @@ var Impl = {
     }
     case MESSAGE_TELEMETRY_GET_CHILD_PAYLOAD:
     {
-      
       this.sendContentProcessPing("saved-session");
-      break;
-    }
-    case MESSAGE_TELEMETRY_THREAD_HANGS:
-    {
-      
-      this._childThreadHangs.push(message.data);
-
-      
-      
-      
-      
-      
-      if (this._childThreadHangs.length === Math.min(this._childCount, ppmm.childCount)) {
-        clearTimeout(this._childThreadHangsTimeout);
-
-        
-        
-        for (let resolve of this._childThreadHangsResolveFunctions) {
-          resolve(this._childThreadHangs);
-        }
-        this._childThreadHangsResolveFunctions = [];
-      }
-
-      break;
-    }
-    case MESSAGE_TELEMETRY_GET_CHILD_THREAD_HANGS:
-    {
-      
-      this.sendContentProcessThreadHangs();
       break;
     }
     case MESSAGE_TELEMETRY_USS:
     {
-      
       if (this._totalMemoryTimeout && this._childrenToHearFrom.delete(message.data.id)) {
         this._totalMemory += message.data.bytes;
         if (this._childrenToHearFrom.size == 0) {
@@ -1573,7 +1517,6 @@ var Impl = {
     }
     case MESSAGE_TELEMETRY_GET_CHILD_USS:
     {
-      
       this.sendContentProcessUSS(message.data.id);
       break
     }
@@ -1608,15 +1551,6 @@ var Impl = {
     let payload = this.getSessionPayload(reason, isSubsession);
     payload.childUUID = this._processUUID;
     cpmm.sendAsyncMessage(MESSAGE_TELEMETRY_PAYLOAD, payload);
-  },
-
-  sendContentProcessThreadHangs: function sendContentProcessThreadHangs() {
-    this._log.trace("sendContentProcessThreadHangs");
-    let payload = {
-      childUUID: this._processUUID,
-      hangs: Telemetry.threadHangStats,
-    };
-    cpmm.sendAsyncMessage(MESSAGE_TELEMETRY_THREAD_HANGS, payload);
   },
 
    
@@ -1706,50 +1640,6 @@ var Impl = {
   requestChildPayloads: function() {
     this._log.trace("requestChildPayloads");
     ppmm.broadcastAsyncMessage(MESSAGE_TELEMETRY_GET_CHILD_PAYLOAD, {});
-  },
-
-  getChildThreadHangs: function getChildThreadHangs() {
-    return new Promise((resolve) => {
-      
-      if (ppmm.childCount === 0) {
-        resolve([]);
-        return;
-      }
-
-      
-      
-      this._childThreadHangsResolveFunctions.push((threadHangStats) => {
-        let hangs = threadHangStats.map(child => child.hangs);
-        return resolve(hangs);
-      });
-
-      
-      
-      if (this._childThreadHangsResolveFunctions.length === 1) {
-        
-        
-        this._childCount = ppmm.childCount;
-
-        this._childThreadHangs = []; 
-        for (let i = 0; i < this._childCount; i++) {
-          
-          
-          ppmm.getChildAt(i).sendAsyncMessage(MESSAGE_TELEMETRY_GET_CHILD_THREAD_HANGS);
-        }
-
-        
-        this._childThreadHangsTimeout = setTimeout(() => {
-          
-          
-          
-          
-          for (let resolve of this._childThreadHangsResolveFunctions) {
-            resolve(this._childThreadHangs);
-          }
-          this._childThreadHangsResolveFunctions = [];
-        }, 200);
-      }
-    });
   },
 
   gatherStartup: function gatherStartup() {
