@@ -899,7 +899,7 @@ int STSPreloadCompare(const void *key, const void *entry)
 {
   const char *keyStr = (const char *)key;
   const nsSTSPreload *preloadEntry = (const nsSTSPreload *)entry;
-  return strcmp(keyStr, preloadEntry->mHost);
+  return strcmp(keyStr, &kSTSHostTable[preloadEntry->mHostIndex]);
 }
 
 

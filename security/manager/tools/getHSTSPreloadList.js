@@ -42,16 +42,6 @@ const HEADER = "/* This Source Code Form is subject to the terms of the Mozilla 
 "/*****************************************************************************/\n" +
 "\n" +
 "#include <stdint.h>\n";
-const PREFIX = "\n" +
-"class nsSTSPreload\n" +
-"{\n" +
-"  public:\n" +
-"    const char *mHost;\n" +
-"    const bool mIncludeSubdomains;\n" +
-"};\n" +
-"\n" +
-"static const nsSTSPreload kSTSPreloadList[] = {\n";
-const POSTFIX =  "};\n";
 
 function download() {
   var req = Cc["@mozilla.org/xmlextras/xmlhttprequest;1"]
@@ -241,12 +231,9 @@ function errorToString(status) {
           : status.error);
 }
 
-function writeEntry(status, outputStream) {
-  let incSubdomainsBool = (status.forceInclude && status.error != ERROR_NONE
-                           ? status.originalIncludeSubdomains
-                           : status.includeSubdomains);
-  let includeSubdomains = (incSubdomainsBool ? "true" : "false");
-  writeTo("  { \"" + status.name + "\", " + includeSubdomains + " },\n",
+function writeEntry(status, indices, outputStream) {
+  let includeSubdomains = (status.finalIncludeSubdomains ? "true" : "false");
+  writeTo("  { " + indices[status.name] + ", " + includeSubdomains + " },\n",
           outputStream);
 }
 
@@ -258,7 +245,6 @@ function output(sortedStatuses, currentList) {
     var eos = FileUtils.openSafeFileOutputStream(errorFile);
     writeTo(HEADER, fos);
     writeTo(getExpirationTimeString(), fos);
-    writeTo(PREFIX, fos);
 
     for (let status in sortedStatuses) {
       
@@ -291,8 +277,56 @@ function output(sortedStatuses, currentList) {
       return true;
     });
 
-    for (var status of includedStatuses) {
-      writeEntry(status, fos);
+    
+    
+    
+    
+    
+    for (let status of includedStatuses) {
+      let incSubdomainsBool = (status.forceInclude && status.error != ERROR_NONE
+                               ? status.originalIncludeSubdomains
+                               : status.includeSubdomains);
+      status.finalIncludeSubdomains = incSubdomainsBool;
+    }
+
+    writeTo("\nstatic const char kSTSHostTable[] = {\n", fos);
+    var indices = {};
+    var currentIndex = 0;
+    for (let status of includedStatuses) {
+      indices[status.name] = currentIndex;
+      
+      currentIndex += status.name.length + 1;
+      
+      
+      
+      writeTo("  /* \"" + status.name + "\", " +
+              (status.finalIncludeSubdomains ? "true" : "false") + " */ ",
+              fos);
+      
+      
+      
+      
+      
+      for (let c of status.name) {
+	writeTo("'" + c + "', ", fos);
+      }
+      writeTo("'\\0',\n", fos);
+    }
+    writeTo("};\n", fos);
+
+    const PREFIX = "\n" +
+      "struct nsSTSPreload\n" +
+      "{\n" +
+      "  const uint32_t mHostIndex : 31;\n" +
+      "  const uint32_t mIncludeSubdomains : 1;\n" +
+      "};\n" +
+      "\n" +
+      "static const nsSTSPreload kSTSPreloadList[] = {\n";
+    const POSTFIX = "};\n";
+
+    writeTo(PREFIX, fos);
+    for (let status of includedStatuses) {
+      writeEntry(status, indices, fos);
     }
     writeTo(POSTFIX, fos);
     FileUtils.closeSafeFileOutputStream(fos);
@@ -358,9 +392,17 @@ function readCurrentList(filename) {
               .createInstance(Ci.nsILineInputStream);
   fis.init(file, -1, -1, Ci.nsIFileInputStream.CLOSE_ON_EOF);
   var line = {};
-  var entryRegex = /  { "([^"]*)", (true|false) },/;
+  
+  
+  
+  
+  var v1EntryRegex = /  { "([^"]*)", (true|false) },/;
+  var v2EntryRegex = /  \/\* "([^"]*)", (true|false) \*\//;
   while (fis.readLine(line)) {
-    var match = entryRegex.exec(line.value);
+    var match = v1EntryRegex.exec(line.value);
+    if (!match) {
+      match = v2EntryRegex.exec(line.value);
+    }
     if (match) {
       currentHosts[match[1]] = (match[2] == "true");
     }
