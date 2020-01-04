@@ -41,7 +41,7 @@ SourceSurfaceCG::GetDataSurface()
 {
   
   CGImageRetain(mImage);
-  RefPtr<DataSourceSurface> dataSurf = new DataSourceSurfaceCG(mImage);
+  nsRefPtr<DataSourceSurface> dataSurf = new DataSourceSurfaceCG(mImage);
 
   
   
@@ -388,7 +388,7 @@ SourceSurfaceCGIOSurfaceContext::SourceSurfaceCGIOSurfaceContext(DrawTargetCG *a
 {
   CGContextRef cg = (CGContextRef)aDrawTarget->GetNativeSurface(NativeSurfaceType::CGCONTEXT_ACCELERATED);
 
-  RefPtr<MacIOSurface> surf = MacIOSurface::IOSurfaceContextGetSurface(cg);
+  nsRefPtr<MacIOSurface> surf = MacIOSurface::IOSurfaceContextGetSurface(cg);
 
   mFormat = aDrawTarget->GetFormat();
   mSize.width = surf->GetWidth();

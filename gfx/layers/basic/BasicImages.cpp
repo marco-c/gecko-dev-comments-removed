@@ -136,7 +136,7 @@ BasicPlanarYCbCrImage::GetAsSourceSurface()
   NS_ASSERTION(NS_IsMainThread(), "Must be main thread");
 
   if (mSourceSurface) {
-    RefPtr<gfx::SourceSurface> surface(mSourceSurface);
+    nsRefPtr<gfx::SourceSurface> surface(mSourceSurface);
     return surface.forget();
   }
 
@@ -146,12 +146,12 @@ BasicPlanarYCbCrImage::GetAsSourceSurface()
 
   gfxImageFormat format = GetOffscreenFormat();
 
-  RefPtr<gfx::SourceSurface> surface;
+  nsRefPtr<gfx::SourceSurface> surface;
   {
     
     
     
-    RefPtr<gfx::DrawTarget> drawTarget
+    nsRefPtr<gfx::DrawTarget> drawTarget
       = gfxPlatform::GetPlatform()->CreateDrawTargetForData(mDecodedBuffer,
                                                             mSize,
                                                             mStride,

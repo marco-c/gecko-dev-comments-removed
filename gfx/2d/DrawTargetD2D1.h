@@ -191,22 +191,22 @@ private:
 
   IntSize mSize;
 
-  RefPtr<ID3D11Device> mDevice;
-  RefPtr<ID3D11Texture2D> mTexture;
-  RefPtr<ID2D1Geometry> mCurrentClippedGeometry;
+  nsRefPtr<ID3D11Device> mDevice;
+  nsRefPtr<ID3D11Texture2D> mTexture;
+  nsRefPtr<ID2D1Geometry> mCurrentClippedGeometry;
   
   
   
   IntRect mCurrentClipBounds;
-  mutable RefPtr<ID2D1DeviceContext> mDC;
-  RefPtr<ID2D1Bitmap1> mBitmap;
-  RefPtr<ID2D1Bitmap1> mTempBitmap;
-  RefPtr<ID2D1Effect> mBlendEffect;
+  mutable nsRefPtr<ID2D1DeviceContext> mDC;
+  nsRefPtr<ID2D1Bitmap1> mBitmap;
+  nsRefPtr<ID2D1Bitmap1> mTempBitmap;
+  nsRefPtr<ID2D1Effect> mBlendEffect;
 
-  RefPtr<ID2D1SolidColorBrush> mSolidColorBrush;
+  nsRefPtr<ID2D1SolidColorBrush> mSolidColorBrush;
 
   
-  RefPtr<IDWriteRenderingParams> mTextRenderingParams;
+  nsRefPtr<IDWriteRenderingParams> mTextRenderingParams;
 
   
   struct PushedClip
@@ -218,13 +218,13 @@ private:
       D2D1_MATRIX_3X2_F mTransform;
       bool mIsPixelAligned;
     };
-    RefPtr<PathD2D> mPath;
+    nsRefPtr<PathD2D> mPath;
   };
   std::vector<PushedClip> mPushedClips;
 
   
   
-  RefPtr<SourceSurfaceD2D1> mSnapshot;
+  nsRefPtr<SourceSurfaceD2D1> mSnapshot;
   
   TargetSet mDependentTargets;
   

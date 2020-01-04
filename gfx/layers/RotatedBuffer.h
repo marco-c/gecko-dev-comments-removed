@@ -9,7 +9,7 @@
 #include "gfxTypes.h"
 #include <stdint.h>                     
 #include "mozilla/Assertions.h"         
-#include "mozilla/RefPtr.h"             
+#include "mozilla/nsRefPtr.h"             
 #include "mozilla/gfx/2D.h"             
 #include "mozilla/mozalloc.h"           
 #include "nsAutoPtr.h"                  
@@ -146,8 +146,8 @@ public:
   virtual bool HaveBufferOnWhite() const { return !!mSourceOnWhite; }
 
 private:
-  RefPtr<gfx::SourceSurface> mSource;
-  RefPtr<gfx::SourceSurface> mSourceOnWhite;
+  nsRefPtr<gfx::SourceSurface> mSource;
+  nsRefPtr<gfx::SourceSurface> mSourceOnWhite;
 };
 
 
@@ -160,7 +160,7 @@ protected:
   
   
   
-  RefPtr<gfx::DrawTarget> mLoanedDrawTarget;
+  nsRefPtr<gfx::DrawTarget> mLoanedDrawTarget;
   gfx::Matrix mLoanedTransform;
 };
 
@@ -309,7 +309,7 @@ public:
 
   virtual void
   CreateBuffer(ContentType aType, const gfx::IntRect& aRect, uint32_t aFlags,
-               RefPtr<gfx::DrawTarget>* aBlackDT, RefPtr<gfx::DrawTarget>* aWhiteDT) = 0;
+               nsRefPtr<gfx::DrawTarget>* aBlackDT, nsRefPtr<gfx::DrawTarget>* aWhiteDT) = 0;
 
   
 
@@ -411,8 +411,8 @@ protected:
 
   virtual void FinalizeFrame(const nsIntRegion& aRegionToDraw) {}
 
-  RefPtr<gfx::DrawTarget> mDTBuffer;
-  RefPtr<gfx::DrawTarget> mDTBufferOnWhite;
+  nsRefPtr<gfx::DrawTarget> mDTBuffer;
+  nsRefPtr<gfx::DrawTarget> mDTBufferOnWhite;
 
   
 

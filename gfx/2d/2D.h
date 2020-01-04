@@ -22,7 +22,7 @@
 
 
 
-#include "mozilla/RefPtr.h"
+#include "mozilla/nsRefPtr.h"
 
 #include "mozilla/DebugOnly.h"
 
@@ -231,7 +231,7 @@ public:
   Point mEnd;                   
 
 
-  RefPtr<GradientStops> mStops; 
+  nsRefPtr<GradientStops> mStops; 
 
 
   Matrix mMatrix;               
@@ -271,7 +271,7 @@ public:
   Point mCenter2; 
   Float mRadius1; 
   Float mRadius2; 
-  RefPtr<GradientStops> mStops; 
+  nsRefPtr<GradientStops> mStops; 
 
 
   Matrix mMatrix; 
@@ -300,7 +300,7 @@ public:
     return PatternType::SURFACE;
   }
 
-  RefPtr<SourceSurface> mSurface; 
+  nsRefPtr<SourceSurface> mSurface; 
   ExtendMode mExtendMode;         
 
   Filter mFilter;                 
@@ -436,7 +436,7 @@ public:
     bool IsMapped() { return mIsMapped; }
 
   private:
-    RefPtr<DataSourceSurface> mSurface;
+    nsRefPtr<DataSourceSurface> mSurface;
     MappedSurface mMap;
     bool mIsMapped;
   };
@@ -585,7 +585,7 @@ protected:
   Path();
   void EnsureFlattenedPath();
 
-  RefPtr<FlattenedPath> mFlattenedPath;
+  nsRefPtr<FlattenedPath> mFlattenedPath;
 };
 
 
@@ -810,7 +810,7 @@ public:
   virtual void CopyRect(const IntRect &aSourceRect,
                         const IntPoint &aDestination)
   {
-    RefPtr<SourceSurface> source = Snapshot();
+    nsRefPtr<SourceSurface> source = Snapshot();
     CopySurface(source, aSourceRect, aDestination);
   }
 
@@ -1118,7 +1118,7 @@ public:
 
 struct Tile
 {
-  RefPtr<DrawTarget> mDrawTarget;
+  nsRefPtr<DrawTarget> mDrawTarget;
   IntPoint mTileOrigin;
 };
 

@@ -10,7 +10,7 @@
 #include "ImageContainer.h"             
 #include "gfxTypes.h"
 #include "mozilla/Attributes.h"         
-#include "mozilla/RefPtr.h"             
+#include "mozilla/nsRefPtr.h"             
 #include "mozilla/gfx/Point.h"          
 #include "mozilla/gfx/Types.h"          
 #include "nsCOMPtr.h"                   
@@ -52,8 +52,8 @@ public:
   bool Allocate(gfx::IntSize aSize, gfx::SurfaceFormat aFormat);
 private:
   gfx::IntSize mSize;
-  RefPtr<ImageClient> mCompositable;
-  RefPtr<BufferTextureClient> mTextureClient;
+  nsRefPtr<ImageClient> mCompositable;
+  nsRefPtr<BufferTextureClient> mTextureClient;
 };
 
 } 

@@ -95,7 +95,7 @@ CompositorChild::Destroy()
   
   
   for (int i = ManagedPLayerTransactionChild().Length() - 1; i >= 0; --i) {
-    RefPtr<LayerTransactionChild> layers =
+    nsRefPtr<LayerTransactionChild> layers =
       static_cast<LayerTransactionChild*>(ManagedPLayerTransactionChild()[i]);
     layers->Destroy();
   }

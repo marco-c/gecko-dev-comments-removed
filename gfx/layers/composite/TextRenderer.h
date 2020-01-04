@@ -39,8 +39,8 @@ private:
   
   void EnsureInitialized();
 
-  RefPtr<Compositor> mCompositor;
-  RefPtr<gfx::DataSourceSurface> mGlyphBitmaps;
+  nsRefPtr<Compositor> mCompositor;
+  nsRefPtr<gfx::DataSourceSurface> mGlyphBitmaps;
   gfx::DataSourceSurface::MappedSurface mMap;
 };
 

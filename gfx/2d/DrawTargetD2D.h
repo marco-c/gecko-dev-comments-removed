@@ -30,10 +30,10 @@ const int32_t kLayerCacheSize = 5;
 
 struct PrivateD3D10DataD2D
 {
-  RefPtr<ID3D10Effect> mEffect;
-  RefPtr<ID3D10InputLayout> mInputLayout;
-  RefPtr<ID3D10Buffer> mVB;
-  RefPtr<ID3D10BlendState> mBlendStates[size_t(CompositionOp::OP_COUNT)];
+  nsRefPtr<ID3D10Effect> mEffect;
+  nsRefPtr<ID3D10InputLayout> mInputLayout;
+  nsRefPtr<ID3D10Buffer> mVB;
+  nsRefPtr<ID3D10BlendState> mBlendStates[size_t(CompositionOp::OP_COUNT)];
 };
 
 class DrawTargetD2D : public DrawTarget
@@ -227,30 +227,30 @@ private:
 
   IntSize mSize;
 
-  RefPtr<ID3D10Device1> mDevice;
-  RefPtr<ID3D10Texture2D> mTexture;
-  RefPtr<ID3D10Texture2D> mCurrentClipMaskTexture;
-  RefPtr<ID2D1Geometry> mCurrentClippedGeometry;
+  nsRefPtr<ID3D10Device1> mDevice;
+  nsRefPtr<ID3D10Texture2D> mTexture;
+  nsRefPtr<ID3D10Texture2D> mCurrentClipMaskTexture;
+  nsRefPtr<ID2D1Geometry> mCurrentClippedGeometry;
   
   
   
   IntRect mCurrentClipBounds;
-  mutable RefPtr<ID2D1RenderTarget> mRT;
+  mutable nsRefPtr<ID2D1RenderTarget> mRT;
 
   
-  RefPtr<IDWriteRenderingParams> mTextRenderingParams;
+  nsRefPtr<IDWriteRenderingParams> mTextRenderingParams;
 
   
-  RefPtr<ID3D10Texture2D> mTempTexture;
-  RefPtr<ID3D10RenderTargetView> mRTView;
-  RefPtr<ID3D10ShaderResourceView> mSRView;
-  RefPtr<ID2D1RenderTarget> mTempRT;
-  RefPtr<ID3D10RenderTargetView> mTempRTView;
+  nsRefPtr<ID3D10Texture2D> mTempTexture;
+  nsRefPtr<ID3D10RenderTargetView> mRTView;
+  nsRefPtr<ID3D10ShaderResourceView> mSRView;
+  nsRefPtr<ID2D1RenderTarget> mTempRT;
+  nsRefPtr<ID3D10RenderTargetView> mTempRTView;
 
   
   struct PushedClip
   {
-    RefPtr<ID2D1Layer> mLayer;
+    nsRefPtr<ID2D1Layer> mLayer;
     D2D1_RECT_F mBounds;
     union {
       
@@ -258,7 +258,7 @@ private:
       D2D1_MATRIX_3X2_F mTransform;
       bool mIsPixelAligned;
     };
-    RefPtr<PathD2D> mPath;
+    nsRefPtr<PathD2D> mPath;
   };
   std::vector<PushedClip> mPushedClips;
 
@@ -266,12 +266,12 @@ private:
   
   
   
-  RefPtr<ID2D1Layer> mCachedLayers[kLayerCacheSize];
+  nsRefPtr<ID2D1Layer> mCachedLayers[kLayerCacheSize];
   uint32_t mCurrentCachedLayer;
   
   
   
-  RefPtr<SourceSurfaceD2DTarget> mSnapshot;
+  nsRefPtr<SourceSurfaceD2DTarget> mSnapshot;
   
   TargetSet mDependentTargets;
   

@@ -7,7 +7,7 @@
 #define MOZILLA_LAYERS_EFFECTS_H
 
 #include "mozilla/Assertions.h"         
-#include "mozilla/RefPtr.h"             
+#include "mozilla/nsRefPtr.h"             
 #include "mozilla/gfx/Matrix.h"         
 #include "mozilla/gfx/Point.h"          
 #include "mozilla/gfx/Rect.h"           
@@ -120,7 +120,7 @@ struct EffectVRDistortion : public Effect
   virtual void PrintInfo(std::stringstream& aStream, const char* aPrefix);
 
   nsRefPtr<gfx::VRHMDInfo> mHMD;
-  RefPtr<CompositingRenderTarget> mRenderTarget;
+  nsRefPtr<CompositingRenderTarget> mRenderTarget;
   TextureSource* mTexture;
 
   
@@ -152,7 +152,7 @@ struct EffectRenderTarget : public TexturedEffect
   virtual const char* Name() { return "EffectRenderTarget"; }
   virtual void PrintInfo(std::stringstream& aStream, const char* aPrefix);
 
-  RefPtr<CompositingRenderTarget> mRenderTarget;
+  nsRefPtr<CompositingRenderTarget> mRenderTarget;
 
 protected:
   EffectRenderTarget(EffectTypes aType, CompositingRenderTarget *aRenderTarget)
@@ -239,8 +239,8 @@ struct EffectChain
   EffectChain() : mLayerRef(nullptr) {}
   explicit EffectChain(void* aLayerRef) : mLayerRef(aLayerRef) {}
 
-  RefPtr<Effect> mPrimaryEffect;
-  EnumeratedArray<EffectTypes, EffectTypes::MAX_SECONDARY, RefPtr<Effect>>
+  nsRefPtr<Effect> mPrimaryEffect;
+  EnumeratedArray<EffectTypes, EffectTypes::MAX_SECONDARY, nsRefPtr<Effect>>
     mSecondaryEffects;
   void* mLayerRef; 
 };
@@ -262,7 +262,7 @@ CreateTexturedEffect(gfx::SurfaceFormat aFormat,
                      const LayerRenderState &state = LayerRenderState())
 {
   MOZ_ASSERT(aSource);
-  RefPtr<TexturedEffect> result;
+  nsRefPtr<TexturedEffect> result;
   switch (aFormat) {
   case gfx::SurfaceFormat::B8G8R8A8:
   case gfx::SurfaceFormat::B8G8R8X8:

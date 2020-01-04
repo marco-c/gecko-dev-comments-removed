@@ -2059,7 +2059,7 @@ public:
     SurfaceFromElementResult();
 
     
-    mozilla::RefPtr<SourceSurface> mSourceSurface;
+    nsRefPtr<SourceSurface> mSourceSurface;
     
     DirectDrawInfo mDrawInfo;
 

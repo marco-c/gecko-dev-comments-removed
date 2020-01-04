@@ -8,7 +8,7 @@
 #define MOZILLA_SVGMOTIONSMILANIMATIONFUNCTION_H_
 
 #include "mozilla/gfx/2D.h"
-#include "mozilla/RefPtr.h"
+#include "mozilla/nsRefPtr.h"
 #include "nsAutoPtr.h"
 #include "nsSMILAnimationFunction.h"
 #include "nsTArray.h"
@@ -95,7 +95,7 @@ protected:
   float                      mRotateAngle; 
 
   PathSourceType             mPathSourceType; 
-  RefPtr<Path>               mPath;           
+  nsRefPtr<Path>               mPath;           
   FallibleTArray<double>     mPathVertices; 
 
   bool                       mIsPathStale;

@@ -7,7 +7,7 @@
 #include "ImageContainer.h"             
 #include "ImageLayers.h"                
 #include "mozilla/Attributes.h"         
-#include "mozilla/RefPtr.h"             
+#include "mozilla/nsRefPtr.h"             
 #include "mozilla/layers/CompositorTypes.h"
 #include "mozilla/layers/ImageClient.h"  
 #include "mozilla/layers/LayersMessages.h"  
@@ -120,7 +120,7 @@ protected:
     return mImageClientTypeContainer;
   }
 
-  RefPtr<ImageClient> mImageClient;
+  nsRefPtr<ImageClient> mImageClient;
   CompositableType mImageClientTypeContainer;
 };
 

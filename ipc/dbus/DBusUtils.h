@@ -19,7 +19,7 @@
 #ifndef mozilla_ipc_dbus_dbusutils_h__
 #define mozilla_ipc_dbus_dbusutils_h__
 
-#include "mozilla/RefPtr.h"
+#include "mozilla/nsRefPtr.h"
 
 
 

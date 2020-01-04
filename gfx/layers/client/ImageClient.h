@@ -9,7 +9,7 @@
 #include <stdint.h>                     
 #include <sys/types.h>                  
 #include "mozilla/Attributes.h"         
-#include "mozilla/RefPtr.h"             
+#include "mozilla/nsRefPtr.h"             
 #include "mozilla/gfx/Types.h"          
 #include "mozilla/layers/AsyncTransactionTracker.h" 
 #include "mozilla/layers/CompositableClient.h"  
@@ -105,7 +105,7 @@ public:
 
 protected:
   struct Buffer {
-    RefPtr<TextureClient> mTextureClient;
+    nsRefPtr<TextureClient> mTextureClient;
     int32_t mImageSerial;
   };
   nsTArray<Buffer> mBuffers;

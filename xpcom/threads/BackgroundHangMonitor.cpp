@@ -132,7 +132,7 @@ private:
 
   
 
-  const RefPtr<BackgroundHangManager> mManager;
+  const nsRefPtr<BackgroundHangManager> mManager;
   
   const PRThread* mThreadID;
 
@@ -464,7 +464,7 @@ BackgroundHangThread::FindThread()
     return sTlsKey.get();
   }
   
-  RefPtr<BackgroundHangManager> manager(BackgroundHangManager::sInstance);
+  nsRefPtr<BackgroundHangManager> manager(BackgroundHangManager::sInstance);
   MOZ_ASSERT(manager, "Creating BackgroundHangMonitor after shutdown");
 
   PRThread* threadID = PR_GetCurrentThread();

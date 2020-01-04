@@ -26,7 +26,7 @@ struct ReadbackTask {
   
   nsRefPtr<ID3D10Texture2D> mReadbackTexture;
   
-  RefPtr<TextureReadbackSink> mSink;
+  nsRefPtr<TextureReadbackSink> mSink;
 };
 
 
@@ -54,7 +54,7 @@ public:
     }
 
     {
-      RefPtr<DataSourceSurface> surf =
+      nsRefPtr<DataSourceSurface> surf =
         Factory::CreateWrappingDataSourceSurface((uint8_t*)mappedTex.pData, mappedTex.RowPitch,
                                                  IntSize(desc.Width, desc.Height),
                                                  SurfaceFormat::B8G8R8X8);

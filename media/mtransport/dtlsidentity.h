@@ -9,7 +9,7 @@
 #include <string>
 
 #include "m_cpp_utils.h"
-#include "mozilla/RefPtr.h"
+#include "mozilla/nsRefPtr.h"
 #include "nsISupportsImpl.h"
 #include "sslt.h"
 #include "ScopedNSSTypes.h"
@@ -29,7 +29,7 @@ class DtlsIdentity final {
 
   
   
-  static RefPtr<DtlsIdentity> Generate();
+  static nsRefPtr<DtlsIdentity> Generate();
 
   
   

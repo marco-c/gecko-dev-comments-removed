@@ -13,7 +13,7 @@
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/Range.h"
 #include "mozilla/RangedPtr.h"
-#include "mozilla/RefPtr.h"
+#include "mozilla/nsRefPtr.h"
 
 #include <stdarg.h>
 #include <stddef.h>
@@ -5651,8 +5651,8 @@ struct PerformanceGroupHolder {
     
     
     
-    mozilla::RefPtr<js::PerformanceGroup> sharedGroup_;
-    mozilla::RefPtr<js::PerformanceGroup> ownGroup_;
+    nsRefPtr<js::PerformanceGroup> sharedGroup_;
+    nsRefPtr<js::PerformanceGroup> ownGroup_;
 };
 
 

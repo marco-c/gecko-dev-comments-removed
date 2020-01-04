@@ -13,7 +13,7 @@
 #include "MainThreadIOLogger.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/Mutex.h"
-#include "mozilla/RefPtr.h"
+#include "mozilla/nsRefPtr.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/ThreadLocal.h"
 #include "nscore.h" 
@@ -149,7 +149,7 @@ public:
   inline bool IsMainThread() const { return mIsMainThread; }
 
   inline void SetObserverLists(uint32_t aNewGeneration,
-                               RefPtr<ObserverLists>& aNewLists)
+                               nsRefPtr<ObserverLists>& aNewLists)
   {
     mCurrentGeneration = aNewGeneration;
     mObserverLists = aNewLists;
@@ -167,7 +167,7 @@ private:
   bool                  mIsMainThread;
   bool                  mIsHandlingObservation;
   uint32_t              mCurrentGeneration;
-  RefPtr<ObserverLists> mObserverLists;
+  nsRefPtr<ObserverLists> mObserverLists;
 };
 
 class MasterList
@@ -329,7 +329,7 @@ public:
   }
 
 private:
-  RefPtr<ObserverLists>             mObserverLists;
+  nsRefPtr<ObserverLists>             mObserverLists;
   
   
   

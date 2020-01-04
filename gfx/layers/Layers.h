@@ -21,7 +21,7 @@
 #include "mozilla/DebugOnly.h"          
 #include "mozilla/EventForwards.h"      
 #include "mozilla/Maybe.h"              
-#include "mozilla/RefPtr.h"             
+#include "mozilla/nsRefPtr.h"             
 #include "mozilla/StyleAnimationValue.h" 
 #include "mozilla/TimeStamp.h"          
 #include "mozilla/UniquePtr.h"          

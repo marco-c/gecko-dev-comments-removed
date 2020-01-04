@@ -10,7 +10,7 @@
 #include "ImageLayers.h"                
 #include "mozilla/Attributes.h"         
 #include "mozilla/gfx/Rect.h"
-#include "mozilla/RefPtr.h"             
+#include "mozilla/nsRefPtr.h"             
 #include "mozilla/layers/LayerManagerComposite.h"  
 #include "mozilla/layers/LayersTypes.h"  
 #include "nsISupportsImpl.h"            
@@ -73,7 +73,7 @@ private:
   gfx::Filter GetEffectFilter();
 
 private:
-  RefPtr<CompositableHost> mImageHost;
+  nsRefPtr<CompositableHost> mImageHost;
 };
 
 } 

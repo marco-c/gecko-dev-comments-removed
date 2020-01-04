@@ -257,13 +257,13 @@ JsepTrack::Negotiate(const SdpMediaSection& answer,
 
 
 void
-JsepTrack::SetUniquePayloadTypes(const std::vector<RefPtr<JsepTrack>>& tracks)
+JsepTrack::SetUniquePayloadTypes(const std::vector<nsRefPtr<JsepTrack>>& tracks)
 {
   
   
   std::map<uint16_t, JsepTrackNegotiatedDetails*> payloadTypeToDetailsMap;
 
-  for (const RefPtr<JsepTrack>& track : tracks) {
+  for (const nsRefPtr<JsepTrack>& track : tracks) {
     if (track->GetMediaType() == SdpMediaSection::kApplication) {
       continue;
     }

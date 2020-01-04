@@ -23,7 +23,7 @@
 #include "mozilla/Assertions.h"         
 #include "mozilla/Attributes.h"         
 #include "mozilla/Monitor.h"            
-#include "mozilla/RefPtr.h"             
+#include "mozilla/nsRefPtr.h"             
 #include "mozilla/TimeStamp.h"          
 #include "mozilla/gfx/Point.h"          
 #include "mozilla/ipc/ProtocolUtils.h"
@@ -444,7 +444,7 @@ protected:
 
   nsRefPtr<LayerManagerComposite> mLayerManager;
   nsRefPtr<Compositor> mCompositor;
-  RefPtr<AsyncCompositionManager> mCompositionManager;
+  nsRefPtr<AsyncCompositionManager> mCompositionManager;
   nsIWidget* mWidget;
   TimeStamp mTestTime;
   bool mIsTesting;

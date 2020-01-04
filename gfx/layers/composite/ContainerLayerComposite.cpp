@@ -11,7 +11,7 @@
 #include "gfxPrefs.h"                   
 #include "gfxUtils.h"                   
 #include "mozilla/Assertions.h"         
-#include "mozilla/RefPtr.h"             
+#include "mozilla/nsRefPtr.h"             
 #include "mozilla/UniquePtr.h"          
 #include "mozilla/gfx/BaseRect.h"       
 #include "mozilla/gfx/Matrix.h"         
@@ -140,11 +140,11 @@ ContainerRenderVR(ContainerT* aContainer,
                   const gfx::IntRect& aClipRect,
                   gfx::VRHMDInfo* aHMD)
 {
-  RefPtr<CompositingRenderTarget> surface;
+  nsRefPtr<CompositingRenderTarget> surface;
 
   Compositor* compositor = aManager->GetCompositor();
 
-  RefPtr<CompositingRenderTarget> previousTarget = compositor->GetCurrentRenderTarget();
+  nsRefPtr<CompositingRenderTarget> previousTarget = compositor->GetCurrentRenderTarget();
 
   float opacity = aContainer->GetEffectiveOpacity();
 
@@ -321,7 +321,7 @@ ContainerRenderVR(ContainerT* aContainer,
 
 struct PreparedData
 {
-  RefPtr<CompositingRenderTarget> mTmpTarget;
+  nsRefPtr<CompositingRenderTarget> mTmpTarget;
   nsAutoTArray<PreparedLayer, 12> mLayers;
   bool mNeedsSurfaceCopy;
 };
@@ -396,9 +396,9 @@ ContainerPrepare(ContainerT* aContainer,
   aContainer->DefaultComputeSupportsComponentAlphaChildren(&surfaceCopyNeeded);
   if (aContainer->UseIntermediateSurface()) {
     if (!surfaceCopyNeeded) {
-      RefPtr<CompositingRenderTarget> surface = nullptr;
+      nsRefPtr<CompositingRenderTarget> surface = nullptr;
 
-      RefPtr<CompositingRenderTarget>& lastSurf = aContainer->mLastIntermediateSurface;
+      nsRefPtr<CompositingRenderTarget>& lastSurf = aContainer->mLastIntermediateSurface;
       if (lastSurf && !aContainer->mChildrenChanged && lastSurf->GetRect().IsEqualEdges(surfaceRect)) {
         surface = lastSurf;
       }
@@ -605,7 +605,7 @@ RenderLayers(ContainerT* aContainer,
   }
 }
 
-template<class ContainerT> RefPtr<CompositingRenderTarget>
+template<class ContainerT> nsRefPtr<CompositingRenderTarget>
 CreateOrRecycleTarget(ContainerT* aContainer,
                       LayerManagerComposite* aManager)
 {
@@ -618,7 +618,7 @@ CreateOrRecycleTarget(ContainerT* aContainer,
     mode = INIT_MODE_NONE;
   }
 
-  RefPtr<CompositingRenderTarget>& lastSurf = aContainer->mLastIntermediateSurface;
+  nsRefPtr<CompositingRenderTarget>& lastSurf = aContainer->mLastIntermediateSurface;
   if (lastSurf && lastSurf->GetRect().IsEqualEdges(surfaceRect)) {
     if (mode == INIT_MODE_CLEAR) {
       lastSurf->ClearOnBind();
@@ -632,13 +632,13 @@ CreateOrRecycleTarget(ContainerT* aContainer,
   }
 }
 
-template<class ContainerT> RefPtr<CompositingRenderTarget>
+template<class ContainerT> nsRefPtr<CompositingRenderTarget>
 CreateTemporaryTargetAndCopyFromBackground(ContainerT* aContainer,
                                            LayerManagerComposite* aManager)
 {
   Compositor* compositor = aManager->GetCompositor();
   gfx::IntRect visibleRect = aContainer->GetEffectiveVisibleRegion().GetBounds();
-  RefPtr<CompositingRenderTarget> previousTarget = compositor->GetCurrentRenderTarget();
+  nsRefPtr<CompositingRenderTarget> previousTarget = compositor->GetCurrentRenderTarget();
   gfx::IntRect surfaceRect = gfx::IntRect(visibleRect.x, visibleRect.y,
                                           visibleRect.width, visibleRect.height);
 
@@ -658,10 +658,10 @@ template<class ContainerT> void
 RenderIntermediate(ContainerT* aContainer,
                    LayerManagerComposite* aManager,
                    const gfx::IntRect& aClipRect,
-                   RefPtr<CompositingRenderTarget> surface)
+                   nsRefPtr<CompositingRenderTarget> surface)
 {
   Compositor* compositor = aManager->GetCompositor();
-  RefPtr<CompositingRenderTarget> previousTarget = compositor->GetCurrentRenderTarget();
+  nsRefPtr<CompositingRenderTarget> previousTarget = compositor->GetCurrentRenderTarget();
 
   if (!surface) {
     return;
@@ -689,7 +689,7 @@ ContainerRender(ContainerT* aContainer,
   }
 
   if (aContainer->UseIntermediateSurface()) {
-    RefPtr<CompositingRenderTarget> surface;
+    nsRefPtr<CompositingRenderTarget> surface;
 
     if (aContainer->mPrepared->mNeedsSurfaceCopy) {
       
@@ -709,7 +709,7 @@ ContainerRender(ContainerT* aContainer,
     nsRefPtr<Compositor> compositor = aManager->GetCompositor();
 #ifdef MOZ_DUMP_PAINTING
     if (gfxUtils::sDumpCompositorTextures) {
-      RefPtr<gfx::DataSourceSurface> surf = surface->Dump(compositor);
+      nsRefPtr<gfx::DataSourceSurface> surf = surface->Dump(compositor);
       if (surf) {
         WriteSnapshotToDumpFile(aContainer, surf);
       }

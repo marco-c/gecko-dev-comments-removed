@@ -13,7 +13,7 @@
 #include "GLContextTypes.h"
 #include "GraphicsFilter.h"
 #include "mozilla/gfx/Rect.h"
-#include "mozilla/RefPtr.h"
+#include "mozilla/nsRefPtr.h"
 
 class gfxASurface;
 
@@ -279,7 +279,7 @@ protected:
     GLuint mTexture;
     TextureState mTextureState;
     nsRefPtr<GLContext> mGLContext;
-    RefPtr<gfx::DrawTarget> mUpdateDrawTarget;
+    nsRefPtr<gfx::DrawTarget> mUpdateDrawTarget;
     nsIntRegion mUpdateRegion;
 
     
@@ -331,7 +331,7 @@ protected:
     unsigned int mRows, mColumns;
     GLContext* mGL;
     
-    RefPtr<gfx::DrawTarget> mUpdateDrawTarget;
+    nsRefPtr<gfx::DrawTarget> mUpdateDrawTarget;
     
     nsIntRegion mUpdateRegion;
     TextureState mTextureState;

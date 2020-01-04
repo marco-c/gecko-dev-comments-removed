@@ -49,7 +49,7 @@
 
 #include "sigslot.h"
 
-#include "mozilla/RefPtr.h"
+#include "mozilla/nsRefPtr.h"
 #include "mozilla/Scoped.h"
 #include "nsCOMPtr.h"
 #include "nsIEventTarget.h"
@@ -124,7 +124,7 @@ struct NrIceCandidatePair {
 
 class NrIceMediaStream {
  public:
-  static RefPtr<NrIceMediaStream> Create(NrIceCtx *ctx,
+  static nsRefPtr<NrIceMediaStream> Create(NrIceCtx *ctx,
                                          const std::string& name,
                                          int components);
   enum State { ICE_CONNECTING, ICE_OPEN, ICE_CLOSED};

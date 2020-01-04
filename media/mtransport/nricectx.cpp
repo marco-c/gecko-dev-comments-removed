@@ -284,7 +284,7 @@ int NrIceCtx::stream_ready(void *obj, nr_ice_media_stream *stream) {
   
   NrIceCtx *ctx = static_cast<NrIceCtx *>(obj);
 
-  RefPtr<NrIceMediaStream> s = ctx->FindStream(stream);
+  nsRefPtr<NrIceMediaStream> s = ctx->FindStream(stream);
 
   
   MOZ_ASSERT(s);
@@ -299,7 +299,7 @@ int NrIceCtx::stream_failed(void *obj, nr_ice_media_stream *stream) {
 
   
   NrIceCtx *ctx = static_cast<NrIceCtx *>(obj);
-  RefPtr<NrIceMediaStream> s = ctx->FindStream(stream);
+  nsRefPtr<NrIceMediaStream> s = ctx->FindStream(stream);
 
   
   MOZ_ASSERT(s);
@@ -339,7 +339,7 @@ int NrIceCtx::msg_recvd(void *obj, nr_ice_peer_ctx *pctx,
                         UCHAR *msg, int len) {
   
   NrIceCtx *ctx = static_cast<NrIceCtx *>(obj);
-  RefPtr<NrIceMediaStream> s = ctx->FindStream(stream);
+  nsRefPtr<NrIceMediaStream> s = ctx->FindStream(stream);
 
   
   MOZ_ASSERT(s);
@@ -355,7 +355,7 @@ void NrIceCtx::trickle_cb(void *arg, nr_ice_ctx *ice_ctx,
                           nr_ice_candidate *candidate) {
   
   NrIceCtx *ctx = static_cast<NrIceCtx *>(arg);
-  RefPtr<NrIceMediaStream> s = ctx->FindStream(stream);
+  nsRefPtr<NrIceMediaStream> s = ctx->FindStream(stream);
 
   if (!s) {
     
@@ -376,14 +376,14 @@ void NrIceCtx::trickle_cb(void *arg, nr_ice_ctx *ice_ctx,
   s->SignalCandidate(s, candidate_str);
 }
 
-RefPtr<NrIceCtx> NrIceCtx::Create(const std::string& name,
+nsRefPtr<NrIceCtx> NrIceCtx::Create(const std::string& name,
                                   bool offerer,
                                   bool allow_loopback,
                                   bool tcp_enabled,
                                   bool allow_link_local,
                                   bool hide_non_default,
                                   Policy policy) {
-   RefPtr<NrIceCtx> ctx = new NrIceCtx(name, offerer, policy);
+   nsRefPtr<NrIceCtx> ctx = new NrIceCtx(name, offerer, policy);
 
   
   if (!initialized) {
@@ -550,7 +550,7 @@ NrIceCtx::~NrIceCtx() {
   delete ice_handler_;
 }
 
-RefPtr<NrIceMediaStream>
+nsRefPtr<NrIceMediaStream>
 NrIceCtx::CreateStream(const std::string& name, int components) {
   return NrIceMediaStream::Create(this, name, components);
 }
@@ -561,7 +561,7 @@ NrIceCtx::SetStream(size_t index, NrIceMediaStream* stream) {
     streams_.resize(index + 1);
   }
 
-  RefPtr<NrIceMediaStream> oldStream(streams_[index]);
+  nsRefPtr<NrIceMediaStream> oldStream(streams_[index]);
   streams_[index] = stream;
 
   if (oldStream) {
@@ -724,7 +724,7 @@ nsresult NrIceCtx::StartGathering() {
   return NS_OK;
 }
 
-RefPtr<NrIceMediaStream> NrIceCtx::FindStream(
+nsRefPtr<NrIceMediaStream> NrIceCtx::FindStream(
     nr_ice_media_stream *stream) {
   for (size_t i=0; i<streams_.size(); ++i) {
     if (streams_[i] && (streams_[i]->stream() == stream)) {

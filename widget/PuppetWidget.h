@@ -16,7 +16,7 @@
 #define mozilla_widget_PuppetWidget_h__
 
 #include "mozilla/gfx/2D.h"
-#include "mozilla/RefPtr.h"
+#include "mozilla/nsRefPtr.h"
 #include "nsBaseScreen.h"
 #include "nsBaseWidget.h"
 #include "nsIScreenManager.h"
@@ -316,7 +316,7 @@ private:
   nsRefPtr<MemoryPressureObserver> mMemoryPressureObserver;
   
   
-  mozilla::RefPtr<DrawTarget> mDrawTarget;
+  nsRefPtr<DrawTarget> mDrawTarget;
   
   nsIMEUpdatePreference mIMEPreferenceOfParent;
   ContentCacheInChild mContentCache;

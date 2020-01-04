@@ -159,7 +159,7 @@ protected:
 
 
   nsRefPtr<layers::Image> mData;
-  RefPtr<gfx::SourceSurface> mSurface;
+  nsRefPtr<gfx::SourceSurface> mSurface;
 
   
 
