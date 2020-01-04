@@ -12063,7 +12063,7 @@ nsCSSFrameConstructor::WipeContainingBlock(nsFrameConstructorState& aState,
     }
 
     
-    break;
+    
   } while (0);
 
   
