@@ -100,11 +100,9 @@ public:
     return false;
   }
 
-  enum FlushFlags {
-    Can_Throttle,
-    Cannot_Throttle
-  };
-  void FlushAnimations(FlushFlags aFlags);
+  
+  
+  void FlushAnimations();
 
   nsIStyleRule* GetAnimationRule(dom::Element* aElement,
                                  nsCSSPseudoElements::Type aPseudoType);
