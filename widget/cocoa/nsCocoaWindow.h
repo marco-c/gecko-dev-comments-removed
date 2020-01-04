@@ -412,9 +412,6 @@ protected:
     return widget.forget();
   }
 
-  virtual nsresult NotifyIMEInternal(
-                     const IMENotification& aIMENotification) override;
-
   nsIWidget*           mParent;         
   nsIWidget*           mAncestorLink;   
   BaseWindow*          mWindow;         
