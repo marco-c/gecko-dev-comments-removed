@@ -4223,73 +4223,58 @@ nsHTMLEditRules::RemovePartOfBlock(Element& aBlock,
                                    nsIContent& aStartChild,
                                    nsIContent& aEndChild)
 {
-  nsresult res = SplitBlock(aBlock.AsDOMNode(), aStartChild.AsDOMNode(),
-                            aEndChild.AsDOMNode());
+  SplitBlock(aBlock, aStartChild, aEndChild);
+  
+
+  NS_ENSURE_STATE(mHTMLEditor);
+  nsresult res = mHTMLEditor->RemoveBlockContainer(aBlock.AsDOMNode());
   NS_ENSURE_SUCCESS(res, res);
-  
-
-  NS_ENSURE_STATE(mHTMLEditor);
-  return mHTMLEditor->RemoveBlockContainer(aBlock.AsDOMNode());
-}
-
-nsresult
-nsHTMLEditRules::SplitBlock(nsIDOMNode *aBlock,
-                            nsIDOMNode *aStartChild,
-                            nsIDOMNode *aEndChild,
-                            nsCOMPtr<nsIDOMNode> *aLeftNode,
-                            nsCOMPtr<nsIDOMNode> *aRightNode,
-                            nsCOMPtr<nsIDOMNode> *aMiddleNode)
-{
-  NS_ENSURE_TRUE(aBlock && aStartChild && aEndChild, NS_ERROR_NULL_POINTER);
-
-  nsCOMPtr<nsIContent> leftNode, rightNode;
-  int32_t startOffset, endOffset;
-
-  
-  nsCOMPtr<nsIDOMNode> startParent = nsEditor::GetNodeLocation(aStartChild, &startOffset);
-
-  
-  nsCOMPtr<nsIContent> block = do_QueryInterface(aBlock);
-  NS_ENSURE_STATE(block || !aBlock);
-  nsCOMPtr<nsIContent> startParentContent = do_QueryInterface(startParent);
-  NS_ENSURE_STATE(startParentContent || !startParent);
-  NS_ENSURE_STATE(mHTMLEditor);
-  mHTMLEditor->SplitNodeDeep(*block, *startParentContent, startOffset,
-                             nsHTMLEditor::EmptyContainers::no,
-                             getter_AddRefs(leftNode),
-                             getter_AddRefs(rightNode));
-  if (rightNode) {
-    aBlock = GetAsDOMNode(rightNode);
-  }
-
-  
-  if (aLeftNode)
-    *aLeftNode = GetAsDOMNode(leftNode);
-
-  
-  nsCOMPtr<nsIDOMNode> endParent = nsEditor::GetNodeLocation(aEndChild, &endOffset);
-  endOffset++;  
-
-  
-  nsCOMPtr<nsIContent> endParentContent = do_QueryInterface(endParent);
-  NS_ENSURE_STATE(endParentContent || !endParent);
-  NS_ENSURE_STATE(mHTMLEditor);
-  mHTMLEditor->SplitNodeDeep(*block, *endParentContent, endOffset,
-                             nsHTMLEditor::EmptyContainers::no,
-                             getter_AddRefs(leftNode),
-                             getter_AddRefs(rightNode));
-  if (leftNode) {
-    aBlock = GetAsDOMNode(leftNode);
-  }
-
-  
-  if (aRightNode)
-    *aRightNode = GetAsDOMNode(rightNode);
-
-  if (aMiddleNode)
-    *aMiddleNode = aBlock;
 
   return NS_OK;
+}
+
+void
+nsHTMLEditRules::SplitBlock(Element& aBlock,
+                            nsIContent& aStartChild,
+                            nsIContent& aEndChild,
+                            nsIContent** aOutLeftNode,
+                            nsIContent** aOutRightNode,
+                            nsIContent** aOutMiddleNode)
+{
+  
+  MOZ_ASSERT(nsEditorUtils::IsDescendantOf(&aStartChild, &aBlock) &&
+             nsEditorUtils::IsDescendantOf(&aEndChild, &aBlock));
+  NS_ENSURE_TRUE_VOID(mHTMLEditor);
+  nsCOMPtr<nsIEditor> kungFuDeathGrip(mHTMLEditor);
+
+  
+  OwningNonNull<nsIContent> startParent = *aStartChild.GetParent();
+  int32_t startOffset = startParent->IndexOf(&aStartChild);
+
+  
+  nsCOMPtr<nsIContent> newMiddleNode1;
+  mHTMLEditor->SplitNodeDeep(aBlock, startParent, startOffset,
+                             nsHTMLEditor::EmptyContainers::no,
+                             aOutLeftNode, getter_AddRefs(newMiddleNode1));
+
+  
+  OwningNonNull<nsIContent> endParent = *aEndChild.GetParent();
+  
+  int32_t endOffset = 1 + endParent->IndexOf(&aEndChild);
+
+  
+  nsCOMPtr<nsIContent> newMiddleNode2;
+  mHTMLEditor->SplitNodeDeep(aBlock, endParent, endOffset,
+                             nsHTMLEditor::EmptyContainers::no,
+                             getter_AddRefs(newMiddleNode2), aOutRightNode);
+
+  if (aOutMiddleNode) {
+    if (newMiddleNode2) {
+      newMiddleNode2.forget(aOutMiddleNode);
+    } else {
+      newMiddleNode1.forget(aOutMiddleNode);
+    }
+  }
 }
 
 nsresult
@@ -4302,27 +4287,18 @@ nsHTMLEditRules::OutdentPartOfBlock(Element& aBlock,
 {
   MOZ_ASSERT(aOutLeftNode && aOutRightNode);
 
-  nsCOMPtr<nsIDOMNode> leftNodeDOM, rightNodeDOM, middleNodeDOM;
-  nsresult res = SplitBlock(aBlock.AsDOMNode(), aStartChild.AsDOMNode(),
-                            aEndChild.AsDOMNode(), address_of(leftNodeDOM),
-                            address_of(rightNodeDOM),
-                            address_of(middleNodeDOM));
-  NS_ENSURE_SUCCESS(res, res);
-
-  nsCOMPtr<nsIContent> leftNode = do_QueryInterface(leftNodeDOM);
-  NS_ENSURE_STATE(leftNode || !leftNodeDOM);
-  leftNode.forget(aOutLeftNode);
-
-  nsCOMPtr<nsIContent> rightNode = do_QueryInterface(rightNodeDOM);
-  NS_ENSURE_STATE(rightNode || !rightNodeDOM);
-  rightNode.forget(aOutRightNode);
+  nsCOMPtr<nsIContent> middleNode;
+  SplitBlock(aBlock, aStartChild, aEndChild, aOutLeftNode, aOutRightNode,
+             getter_AddRefs(middleNode));
 
   if (aIsBlockIndentedWithCSS) {
-    res = RelativeChangeIndentationOfElementNode(middleNodeDOM, -1);
+    nsresult res =
+      RelativeChangeIndentationOfElementNode(GetAsDOMNode(middleNode), -1);
     NS_ENSURE_SUCCESS(res, res);
   } else {
     NS_ENSURE_STATE(mHTMLEditor);
-    res = mHTMLEditor->RemoveBlockContainer(middleNodeDOM);
+    nsresult res =
+      mHTMLEditor->RemoveBlockContainer(GetAsDOMNode(middleNode));
     NS_ENSURE_SUCCESS(res, res);
   }
 
