@@ -40,6 +40,13 @@ pref("security.remember_cert_checkbox_default_setting", true);
 pref("security.ask_for_password",        0);
 pref("security.password_lifetime",       30);
 
+
+
+
+
+
+pref("security.family_safety.mode", 2);
+
 pref("security.OCSP.enabled", 1);
 pref("security.OCSP.require", false);
 pref("security.OCSP.GET.enabled", false);
