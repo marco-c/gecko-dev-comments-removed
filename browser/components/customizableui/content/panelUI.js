@@ -183,6 +183,11 @@ const PanelUI = {
   },
 
   handleEvent: function(aEvent) {
+    
+    if (aEvent.type.startsWith("popup") &&
+        aEvent.target != this.panel) {
+      return;
+    }
     switch (aEvent.type) {
       case "popupshowing":
         this._adjustLabelsForAutoHyphens();
