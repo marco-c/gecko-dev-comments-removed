@@ -149,7 +149,7 @@ NS_IMPL_ISUPPORTS(DataChannelShutdown, nsIObserver);
 
 
 BufferedMsg::BufferedMsg(struct sctp_sendv_spa &spa, const char *data,
-                         uint32_t length) : mLength(length)
+                         size_t length) : mLength(length)
 {
   mSpa = new sctp_sendv_spa;
   *mSpa = spa;
@@ -1123,11 +1123,16 @@ DataChannelConnection::SendDeferredMessages()
       if (channel->mState == CLOSED || channel->mState == CLOSING) {
         channel->mBufferedData.Clear();
       }
+
+      uint32_t buffered_amount = channel->GetBufferedAmount();
+      uint32_t threshold = channel->GetBufferedAmountLowThreshold();
+      bool was_over_threshold = buffered_amount >= threshold;
+
       while (!channel->mBufferedData.IsEmpty() &&
              !failed_send) {
         struct sctp_sendv_spa *spa = channel->mBufferedData[0]->mSpa;
         const char *data           = channel->mBufferedData[0]->mData;
-        uint32_t len               = channel->mBufferedData[0]->mLength;
+        size_t len                 = channel->mBufferedData[0]->mLength;
 
         
         
@@ -1147,7 +1152,19 @@ DataChannelConnection::SendDeferredMessages()
         } else {
           LOG(("Resent buffer of %d bytes (%d)", len, result));
           sent = true;
+          
+          
+          buffered_amount -= channel->mBufferedData[0]->mLength;
           channel->mBufferedData.RemoveElementAt(0);
+          
+          if (was_over_threshold && buffered_amount < threshold) {
+            LOG(("%s: sending BUFFER_LOW_THRESHOLD for %s/%s: %u", __FUNCTION__,
+                 channel->mLabel.get(), channel->mProtocol.get(), channel->mStream));
+            NS_DispatchToMainThread(do_AddRef(new DataChannelOnMessageAvailable(
+                                                DataChannelOnMessageAvailable::BUFFER_LOW_THRESHOLD,
+                                                this, channel)));
+            was_over_threshold = false;
+          }
         }
       }
       if (channel->mBufferedData.IsEmpty())
@@ -1288,7 +1305,7 @@ DataChannelConnection::DeliverQueuedData(uint16_t stream)
     
     if (mQueuedData[i]->mStream == stream) {
       LOG(("Delivering queued data for stream %u, length %u",
-           stream, mQueuedData[i]->mLength));
+           stream, (unsigned int) mQueuedData[i]->mLength));
       
       HandleDataMessage(mQueuedData[i]->mPpid,
                         mQueuedData[i]->mData, mQueuedData[i]->mLength,
@@ -2199,7 +2216,7 @@ request_error_cleanup:
 
 int32_t
 DataChannelConnection::SendMsgInternal(DataChannel *channel, const char *data,
-                                       uint32_t length, uint32_t ppid)
+                                       size_t length, uint32_t ppid)
 {
   uint16_t flags;
   struct sctp_sendv_spa spa;
@@ -2267,7 +2284,7 @@ DataChannelConnection::SendMsgInternal(DataChannel *channel, const char *data,
 
 int32_t
 DataChannelConnection::SendBinary(DataChannel *channel, const char *data,
-                                  uint32_t len,
+                                  size_t len,
                                   uint32_t ppid_partial, uint32_t ppid_final)
 {
   
@@ -2292,7 +2309,7 @@ DataChannelConnection::SendBinary(DataChannel *channel, const char *data,
     LOG(("Sending binary message length %u in chunks", len));
     
     while (len > 0) {
-      uint32_t sendlen = PR_MIN(len, DATA_CHANNEL_MAX_BINARY_FRAGMENT);
+      size_t sendlen = PR_MIN(len, DATA_CHANNEL_MAX_BINARY_FRAGMENT);
       uint32_t ppid;
       len -= sendlen;
       ppid = len > 0 ? ppid_partial : ppid_final;
@@ -2622,11 +2639,34 @@ DataChannel::AppReady()
 uint32_t
 DataChannel::GetBufferedAmount()
 {
-  uint32_t buffered = 0;
-  for (uint32_t i = 0; i < mBufferedData.Length(); ++i) {
-    buffered += mBufferedData[i]->mLength;
+  size_t buffered = 0;
+  for (auto& buffer : mBufferedData) {
+    buffered += buffer->mLength;
+  }
+  
+  
+  
+  
+  
+  
+
+  if (buffered > UINT32_MAX) { 
+    buffered = UINT32_MAX;
   }
   return buffered;
+}
+
+uint32_t
+DataChannel::GetBufferedAmountLowThreshold()
+{
+  return mBufferedThreshold;
+}
+
+
+void
+DataChannel::SetBufferedAmountLowThreshold(uint32_t aThreshold)
+{
+  mBufferedThreshold = aThreshold;
 }
 
 
