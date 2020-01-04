@@ -375,12 +375,16 @@ public:
   
 
 
-  MediaStreamTrack* FindOwnedDOMTrack(MediaStream* aOwningStream, TrackID aTrackID) const;
+
+  MediaStreamTrack* FindOwnedDOMTrack(MediaStream* aOwningStream,
+                                      TrackID aInputTrackID) const;
 
   
 
 
-  MediaStreamTrack* FindPlaybackDOMTrack(MediaStream* aOwningStream, TrackID aTrackID) const;
+
+  MediaStreamTrack* FindPlaybackDOMTrack(MediaStream* aOwningStream,
+                                         TrackID aInputTrackID) const;
 
   
 
