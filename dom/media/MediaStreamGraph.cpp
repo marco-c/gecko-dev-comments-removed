@@ -2384,8 +2384,7 @@ MediaStream::AddMainThreadListener(MainThreadMediaStreamListener* aListener)
   mMainThreadListeners.AppendElement(aListener);
 
   
-  
-  if (!mFinishedNotificationSent || mNotificationMainThreadRunnable) {
+  if (!mFinishedNotificationSent) {
     return;
   }
 
@@ -2399,7 +2398,6 @@ MediaStream::AddMainThreadListener(MainThreadMediaStreamListener* aListener)
     NS_IMETHOD Run() override
     {
       MOZ_ASSERT(NS_IsMainThread());
-      mStream->mNotificationMainThreadRunnable = nullptr;
       mStream->NotifyMainThreadListeners();
       return NS_OK;
     }
@@ -2411,11 +2409,7 @@ MediaStream::AddMainThreadListener(MainThreadMediaStreamListener* aListener)
   };
 
   nsRefPtr<nsRunnable> runnable = new NotifyRunnable(this);
-  if (NS_WARN_IF(NS_FAILED(NS_DispatchToMainThread(runnable.forget())))) {
-    return;
-  }
-
-  mNotificationMainThreadRunnable = runnable;
+  NS_WARN_IF(NS_FAILED(NS_DispatchToMainThread(runnable.forget())));
 }
 
 void
