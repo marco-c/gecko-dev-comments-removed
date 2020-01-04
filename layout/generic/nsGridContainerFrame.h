@@ -86,11 +86,6 @@ public:
   };
 
   
-  
-  
-  enum Dimension { eColDimension, eRowDimension };
-
-  
   static const nscoord VERY_LIKELY_A_GRID_CONTAINER = -123456789;
 
   NS_DECLARE_FRAME_PROPERTY(GridItemContainingBlockRect, DeleteValue<nsRect>)
@@ -295,6 +290,8 @@ protected:
 
     GridArea mArea;
     bool mIsFlexing[2]; 
+    static_assert(mozilla::eLogicalAxisBlock == 0, "unexpected index value");
+    static_assert(mozilla::eLogicalAxisInline == 1, "unexpected index value");
 #ifdef DEBUG
     nsIFrame* mFrame;
 #endif
