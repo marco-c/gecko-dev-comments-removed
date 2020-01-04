@@ -204,6 +204,7 @@ class TelemetryRecord {
       took: this.took,
       failureReason: this.failureReason,
       status: this.status,
+      deviceID: this.deviceID,
     };
     let engines = [];
     for (let engine of this.engines) {
@@ -228,8 +229,16 @@ class TelemetryRecord {
 
     try {
       this.uid = Weave.Service.identity.hashedUID();
+      let deviceID = Weave.Service.identity.deviceID();
+      if (deviceID) {
+        
+        
+        
+        this.deviceID = Utils.sha256(deviceID + this.uid);
+      }
     } catch (e) {
       this.uid = "0".repeat(32);
+      this.deviceID = undefined;
     }
 
     
