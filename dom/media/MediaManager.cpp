@@ -762,21 +762,6 @@ public:
     return promise.forget();
   }
 
-#if 0
-  virtual void NotifyMediaStreamTrackEnded(dom::MediaStreamTrack* aTrack)
-  {
-    TrackID trackID = aTrack->GetTrackID();
-    
-    LOG(("track %d ending, type = %s",
-         trackID, aTrack->AsAudioStreamTrack() ? "audio" : "video"));
-    MOZ_ASSERT(aTrack->AsVideoStreamTrack() || aTrack->AsAudioStreamTrack());
-    mListener->StopTrack(trackID, !!aTrack->AsAudioStreamTrack());
-
-    
-    DOMLocalMediaStream::NotifyMediaStreamTrackEnded(aTrack);
-  }
-#endif
-
   
   bool AddDirectListener(MediaStreamDirectListener *aListener) override
   {
