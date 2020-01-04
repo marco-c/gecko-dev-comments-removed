@@ -82,6 +82,7 @@ public:
 
     nscoord mBase;
     nscoord mLimit;
+    nscoord mPosition;  
     StateBits mState;
   };
 
