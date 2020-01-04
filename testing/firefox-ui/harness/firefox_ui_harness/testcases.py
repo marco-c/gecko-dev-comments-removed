@@ -158,20 +158,13 @@ class UpdateTestCase(FirefoxTestCase):
         return about_window.deck.selected_panel != about_window.deck.no_updates_found
 
     def check_update_applied(self):
-        self.updates[self.current_update_index]['build_post'] = self.software_update.build_info
+        """Check that the update has been applied correctly"""
+        update = self.updates[self.current_update_index]
+        update['build_post'] = self.software_update.build_info
 
         about_window = self.browser.open_about_window()
         try:
             update_available = self.check_for_updates(about_window)
-
-            
-            if update_available:
-                self.download_update(about_window, wait_for_finish=False)
-                self.assertNotEqual(self.software_update.active_update.type,
-                                    self.updates[self.current_update_index].type)
-
-            
-            update = self.updates[self.current_update_index]
 
             
             
@@ -201,6 +194,17 @@ class UpdateTestCase(FirefoxTestCase):
             
             self.assertEqual(update['build_post']['disabled_addons'],
                              update['build_pre']['disabled_addons'])
+
+            
+            if update_available:
+                self.download_update(about_window, wait_for_finish=False)
+                self.assertNotEqual(self.software_update.active_update.type,
+                                    update['patch']['type'],
+                                    'No further update of the same type gets offered: '
+                                    '{0} != {1}'.format(
+                                        self.software_update.active_update.type,
+                                        update['patch']['type']
+                                    ))
 
             update['success'] = True
 
