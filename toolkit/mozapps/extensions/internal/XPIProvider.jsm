@@ -112,6 +112,7 @@ const PREF_SHOWN_SELECTION_UI         = "extensions.shownSelectionUI";
 const PREF_INTERPOSITION_ENABLED      = "extensions.interposition.enabled";
 const PREF_SYSTEM_ADDON_SET           = "extensions.systemAddonSet";
 const PREF_SYSTEM_ADDON_UPDATE_URL    = "extensions.systemAddon.update.url";
+const PREF_E10S_BLOCK_ENABLE          = "extensions.e10sBlocksEnabling";
 
 const PREF_EM_MIN_COMPAT_APP_VERSION      = "extensions.minCompatibleAppVersion";
 const PREF_EM_MIN_COMPAT_PLATFORM_VERSION = "extensions.minCompatiblePlatformVersion";
@@ -2744,11 +2745,19 @@ this.XPIProvider = {
         observe: function(aSubject, aTopic, aData) {
           XPIProvider._closing = true;
           for (let id in XPIProvider.bootstrappedAddons) {
+            
+            
+            
+            if (!(id in XPIProvider.bootstrapScopes))
+              continue;
+
             let file = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
             file.persistentDescriptor = XPIProvider.bootstrappedAddons[id].descriptor;
             let addon = createAddonDetails(id, XPIProvider.bootstrappedAddons[id]);
             XPIProvider.callBootstrapMethod(addon, file, "shutdown",
                                             BOOTSTRAP_REASONS.APP_SHUTDOWN);
+            if (XPIProvider.bootstrappedAddons[id].disable)
+              delete XPIProvider.bootstrappedAddons[aId];
           }
           Services.obs.removeObserver(this, "quit-application-granted");
         }
@@ -4236,6 +4245,41 @@ this.XPIProvider = {
 
 
 
+
+
+  e10sBlocksEnabling: function(aAddon) {
+    
+    if (!Preferences.get(PREF_E10S_BLOCK_ENABLE, false))
+      return false;
+
+    
+    if (!Services.appinfo.browserTabsRemoteAutostart)
+      return false;
+
+    
+    if (aAddon.type != "extension")
+      return false;
+
+    
+    let hotfixID = Preferences.get(PREF_EM_HOTFIX_ID, undefined);
+    if (hotfixID && hotfixID == aAddon.id)
+      return false;
+
+    
+    if (aAddon._installLocation.name == KEY_APP_SYSTEM_DEFAULTS ||
+        aAddon._installLocation.name == KEY_APP_SYSTEM_ADDONS)
+      return false;
+
+    return true;
+  },
+
+  
+
+
+
+
+
+
   enableRequiresRestart: function(aAddon) {
     
     
@@ -4262,6 +4306,9 @@ this.XPIProvider = {
       
       return aAddon.internalName != this.currentSkin;
     }
+
+    if (this.e10sBlocksEnabling(aAddon))
+      return true;
 
     return !aAddon.bootstrap;
   },
@@ -4352,6 +4399,9 @@ this.XPIProvider = {
     
     if (aAddon.disabled)
       return false;
+
+    if (this.e10sBlocksEnabling(aAddon))
+      return true;
 
     
     
@@ -4722,6 +4772,23 @@ this.XPIProvider = {
                                      BOOTSTRAP_REASONS.ADDON_ENABLE);
           }
           AddonManagerPrivate.callAddonListeners("onEnabled", wrapper);
+        }
+      }
+      else if (aAddon.bootstrap) {
+        
+        
+        if (isDisabled) {
+          this.bootstrappedAddons[aAddon.id].disable = true;
+        }
+        else {
+          this.bootstrappedAddons[aAddon.id] = {
+            version: aAddon.version,
+            type: aAddon.type,
+            descriptor: aAddon._sourceBundle.persistentDescriptor,
+            multiprocessCompatible: aAddon.multiprocessCompatible,
+            runInSafeMode: canRunInSafeMode(aAddon),
+          };
+          this.persistBootstrappedAddons();
         }
       }
     }
