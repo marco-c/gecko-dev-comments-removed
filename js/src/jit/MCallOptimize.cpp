@@ -436,6 +436,10 @@ IonBuilder::inlineArray(CallInfo& callInfo)
     uint32_t initLength = 0;
 
     JSObject* templateObject = inspector->getTemplateObjectForNative(pc, ArrayConstructor);
+    
+    if (!templateObject)
+        templateObject = inspector->getTemplateObjectForNative(pc, array_construct);
+
     if (!templateObject) {
         trackOptimizationOutcome(TrackedOutcome::CantInlineNativeNoTemplateObj);
         return InliningStatus_NotInlined;
