@@ -574,7 +574,7 @@ public:
     case __NR_mprotect:
     case __NR_brk:
     case __NR_madvise:
-#if defined(ANDROID) && !defined(MOZ_MEMORY)
+#if !defined(MOZ_MEMORY)
       
     case __NR_mremap:
 #endif
