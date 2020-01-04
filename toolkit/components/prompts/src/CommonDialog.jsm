@@ -128,8 +128,11 @@ CommonDialog.prototype = {
             this.setLabelForNode(this.ui.button0, this.args.button0Label);
 
         
-        
-        let croppedMessage = this.args.text.substr(0, 10000);
+        let croppedMessage = "";
+        if (this.args.text) {
+            
+            croppedMessage = this.args.text.substr(0, 10000);
+        }
         let infoBody = this.ui.infoBody;
         infoBody.appendChild(infoBody.ownerDocument.createTextNode(croppedMessage));
 
