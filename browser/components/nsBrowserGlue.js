@@ -13,6 +13,8 @@ Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/AppConstants.jsm");
 
+Cu.import("resource://gre/modules/AsyncPrefs.jsm");
+
 XPCOMUtils.defineLazyModuleGetter(this, "AboutHome",
                                   "resource:///modules/AboutHome.jsm");
 
@@ -744,9 +746,6 @@ BrowserGlue.prototype = {
 
     
     this._migrateUI();
-
-    
-    Cu.import("resource://gre/modules/Webapps.jsm", {});
 
     PageThumbs.init();
     webrtcUI.init();
