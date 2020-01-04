@@ -244,21 +244,6 @@ appUpdater.prototype =
 
 
 
-  buttonApplyBillboard: function() {
-    const URI_UPDATE_PROMPT_DIALOG = "chrome://mozapps/content/update/updates.xul";
-    var ary = null;
-    ary = Components.classes["@mozilla.org/supports-array;1"].
-          createInstance(Components.interfaces.nsISupportsArray);
-    ary.AppendElement(this.update);
-    var openFeatures = "chrome,centerscreen,dialog=no,resizable=no,titlebar,toolbar=no";
-    Services.ww.openWindow(null, URI_UPDATE_PROMPT_DIALOG, "", openFeatures, ary);
-    window.close(); 
-  },
-
-  
-
-
-
 
   updateCheckListener: {
     
@@ -284,11 +269,6 @@ appUpdater.prototype =
 
       if (!gAppUpdater.aus.canApplyUpdates) {
         gAppUpdater.selectPanel("manualUpdate");
-        return;
-      }
-
-      if (gAppUpdater.update.billboardURL) {
-        gAppUpdater.selectPanel("applyBillboard");
         return;
       }
 
