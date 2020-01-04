@@ -119,7 +119,7 @@ class DateTimeInfo
         }
     };
 
-    friend const char* ::JS_InitWithFailureDiagnostic();
+    friend const char* JS::detail::InitWithFailureDiagnostic(bool);
 
     
     

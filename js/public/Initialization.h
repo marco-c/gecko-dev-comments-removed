@@ -25,6 +25,9 @@ enum class InitState { Uninitialized = 0, Running, ShutDown };
 extern JS_PUBLIC_DATA(InitState)
 libraryInitState;
 
+extern JS_PUBLIC_API(const char*)
+InitWithFailureDiagnostic(bool isDebugBuild);
+
 } 
 } 
 
@@ -58,16 +61,30 @@ JS_SetICUMemoryFunctions(JS_ICUAllocFn allocFn,
 
 
 
-extern JS_PUBLIC_API(bool)
-JS_Init(void);
+inline bool
+JS_Init(void)
+{
+#ifdef DEBUG
+    return !JS::detail::InitWithFailureDiagnostic(true);
+#else
+    return !JS::detail::InitWithFailureDiagnostic(false);
+#endif
+}
 
 
 
 
 
 
-extern JS_PUBLIC_API(const char*)
-JS_InitWithFailureDiagnostic(void);
+inline const char*
+JS_InitWithFailureDiagnostic(void)
+{
+#ifdef DEBUG
+    return JS::detail::InitWithFailureDiagnostic(true);
+#else
+    return JS::detail::InitWithFailureDiagnostic(false);
+#endif
+}
 
 
 
