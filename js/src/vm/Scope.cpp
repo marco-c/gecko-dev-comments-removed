@@ -1205,7 +1205,7 @@ BindingIter::init(LexicalScope::Data& data, uint32_t firstFrameSlot, uint8_t fla
     if (flags & IsNamedLambda) {
         
         
-        init(0, 0, 0, 0, 0,
+        init(0, 0, 0, 0, 0, 0,
              CanHaveEnvironmentSlots | flags,
              firstFrameSlot, JSSLOT_FREE(&LexicalEnvironmentObject::class_),
              data.names, data.length);
@@ -1216,7 +1216,8 @@ BindingIter::init(LexicalScope::Data& data, uint32_t firstFrameSlot, uint8_t fla
         
         
         
-        init(0, 0, 0, 0, data.constStart,
+        
+        init(0, 0, 0, 0, 0, data.constStart,
              CanHaveFrameSlots | CanHaveEnvironmentSlots | flags,
              firstFrameSlot, JSSLOT_FREE(&LexicalEnvironmentObject::class_),
              data.names, data.length);
@@ -1236,7 +1237,8 @@ BindingIter::init(FunctionScope::Data& data, uint8_t flags)
     
     
     
-    init(0, data.nonPositionalFormalStart, data.varStart, data.length, data.length,
+    
+    init(0, data.nonPositionalFormalStart, data.varStart, data.varStart, data.length, data.length,
          flags,
          0, JSSLOT_FREE(&CallObject::class_),
          data.names, data.length);
@@ -1251,7 +1253,8 @@ BindingIter::init(VarScope::Data& data, uint32_t firstFrameSlot)
     
     
     
-    init(0, 0, 0, data.length, data.length,
+    
+    init(0, 0, 0, 0, data.length, data.length,
          CanHaveFrameSlots | CanHaveEnvironmentSlots,
          firstFrameSlot, JSSLOT_FREE(&VarEnvironmentObject::class_),
          data.names, data.length);
@@ -1266,7 +1269,8 @@ BindingIter::init(GlobalScope::Data& data)
     
     
     
-    init(0, 0, 0, data.letStart, data.constStart,
+    
+    init(0, 0, 0, data.varStart, data.letStart, data.constStart,
          CannotHaveSlots,
          UINT32_MAX, UINT32_MAX,
          data.names, data.length);
@@ -1294,7 +1298,8 @@ BindingIter::init(EvalScope::Data& data, bool strict)
     
     
     
-    init(0, 0, 0, data.length, data.length,
+    
+    init(0, 0, 0, data.varStart, data.length, data.length,
          flags, firstFrameSlot, firstEnvironmentSlot,
          data.names, data.length);
 }
@@ -1308,7 +1313,8 @@ BindingIter::init(ModuleScope::Data& data)
     
     
     
-    init(data.varStart, data.varStart, data.varStart, data.letStart, data.constStart,
+    
+    init(data.varStart, data.varStart, data.varStart, data.varStart, data.letStart, data.constStart,
          CanHaveFrameSlots | CanHaveEnvironmentSlots,
          0, JSSLOT_FREE(&ModuleEnvironmentObject::class_),
          data.names, data.length);

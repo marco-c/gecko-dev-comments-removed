@@ -3182,6 +3182,59 @@ js::CheckVarNameConflict(JSContext* cx, Handle<LexicalEnvironmentObject*> lexica
     return true;
 }
 
+static void
+ReportCannotDeclareGlobalBinding(JSContext* cx, HandlePropertyName name, const char* reason)
+{
+    JSAutoByteString printable;
+    if (AtomToPrintableString(cx, name, &printable)) {
+        JS_ReportErrorNumber(cx, GetErrorMessage, nullptr,
+                             JSMSG_CANT_DECLARE_GLOBAL_BINDING,
+                             printable.ptr(), reason);
+    }
+}
+
+bool
+js::CheckCanDeclareGlobalBinding(JSContext* cx, Handle<GlobalObject*> global,
+                                 HandlePropertyName name, bool isFunction)
+{
+    RootedId id(cx, NameToId(name));
+    Rooted<PropertyDescriptor> desc(cx);
+    if (!GetOwnPropertyDescriptor(cx, global, id, &desc))
+        return false;
+
+    
+    
+
+    
+    if (!desc.object()) {
+        
+        
+        if (global->nonProxyIsExtensible())
+            return true;
+
+        ReportCannotDeclareGlobalBinding(cx, name, "global is non-extensible");
+        return false;
+    }
+
+    
+    if (isFunction) {
+        
+        if (desc.configurable())
+            return true;
+
+        
+        if (desc.isDataDescriptor() && desc.writable() && desc.enumerable())
+            return true;
+
+        ReportCannotDeclareGlobalBinding(cx, name,
+                                         "property must be configurable or "
+                                         "both writable and enumerable");
+        return false;
+    }
+
+    return true;
+}
+
 bool
 js::CheckGlobalDeclarationConflicts(JSContext* cx, HandleScript script,
                                     Handle<LexicalEnvironmentObject*> lexicalEnv,
@@ -3196,14 +3249,32 @@ js::CheckGlobalDeclarationConflicts(JSContext* cx, HandleScript script,
     RootedPropertyName name(cx);
     Rooted<BindingIter> bi(cx, BindingIter(script));
 
+    
+
+    
+    
+    
+    
     for (; bi; bi++) {
         if (bi.kind() != BindingKind::Var)
             break;
         name = bi.name()->asPropertyName();
         if (!CheckVarNameConflict(cx, lexicalEnv, name))
             return false;
+
+        
+        
+        
+        if (varObj->is<GlobalObject>()) {
+            Handle<GlobalObject*> global = varObj.as<GlobalObject>();
+            if (!CheckCanDeclareGlobalBinding(cx, global, name, bi.isTopLevelFunction()))
+                return false;
+        }
     }
 
+    
+    
+    
     for (; bi; bi++) {
         name = bi.name()->asPropertyName();
         if (!CheckLexicalNameConflict(cx, lexicalEnv, varObj, name))
@@ -3257,6 +3328,8 @@ js::CheckEvalDeclarationConflicts(JSContext* cx, HandleScript script,
     RootedObject obj(cx, scopeChain);
 
     
+
+    
     
     
     
@@ -3264,6 +3337,19 @@ js::CheckEvalDeclarationConflicts(JSContext* cx, HandleScript script,
         if (!CheckVarNameConflictsInEnv(cx, script, obj))
             return false;
         obj = obj->enclosingEnvironment();
+    }
+
+    
+    
+    
+    if (varObj->is<GlobalObject>()) {
+        Handle<GlobalObject*> global = varObj.as<GlobalObject>();
+        RootedPropertyName name(cx);
+        for (Rooted<BindingIter> bi(cx, BindingIter(script)); bi; bi++) {
+            name = bi.name()->asPropertyName();
+            if (!CheckCanDeclareGlobalBinding(cx, global, name, bi.isTopLevelFunction()))
+                return false;
+        }
     }
 
     return true;

@@ -631,6 +631,8 @@ class GlobalScope : public Scope
         
         
         
+        
+        uint32_t varStart;
         uint32_t letStart;
         uint32_t constStart;
         uint32_t length;
@@ -723,6 +725,11 @@ class EvalScope : public Scope
         
         
         
+        
+        
+        
+        
+        uint32_t varStart;
         uint32_t length;
 
         
@@ -914,8 +921,12 @@ class BindingIter
     
     
     
+    
+    
+    
     uint32_t positionalFormalStart_;
     uint32_t nonPositionalFormalStart_;
+    uint32_t topLevelFunctionStart_;
     uint32_t varStart_;
     uint32_t letStart_;
     uint32_t constStart_;
@@ -947,12 +958,14 @@ class BindingIter
     BindingName* names_;
 
     void init(uint32_t positionalFormalStart, uint32_t nonPositionalFormalStart,
-              uint32_t varStart, uint32_t letStart, uint32_t constStart,
+              uint32_t topLevelFunctionStart, uint32_t varStart,
+              uint32_t letStart, uint32_t constStart,
               uint8_t flags, uint32_t firstFrameSlot, uint32_t firstEnvironmentSlot,
               BindingName* names, uint32_t length)
     {
         positionalFormalStart_ = positionalFormalStart;
         nonPositionalFormalStart_ = nonPositionalFormalStart;
+        topLevelFunctionStart_ = topLevelFunctionStart;
         varStart_ = varStart;
         letStart_ = letStart;
         constStart_ = constStart;
@@ -1113,7 +1126,7 @@ class BindingIter
         MOZ_ASSERT(!done());
         if (index_ < positionalFormalStart_)
             return BindingKind::Import;
-        if (index_ < varStart_) {
+        if (index_ < topLevelFunctionStart_) {
             
             
             if (hasFormalParameterExprs())
@@ -1127,6 +1140,11 @@ class BindingIter
         if (isNamedLambda())
             return BindingKind::NamedLambdaCallee;
         return BindingKind::Const;
+    }
+
+    bool isTopLevelFunction() const {
+        MOZ_ASSERT(!done());
+        return index_ >= topLevelFunctionStart_ && index_ < varStart_;
     }
 
     bool hasArgumentSlot() const {
@@ -1267,6 +1285,7 @@ class BindingIterOperations
     bool closedOver() const { return iter().closedOver(); }
     BindingLocation location() const { return iter().location(); }
     BindingKind kind() const { return iter().kind(); }
+    bool isTopLevelFunction() const { return iter().isTopLevelFunction(); }
     bool hasArgumentSlot() const { return iter().hasArgumentSlot(); }
     uint16_t argumentSlot() const { return iter().argumentSlot(); }
     uint32_t nextFrameSlot() const { return iter().nextFrameSlot(); }

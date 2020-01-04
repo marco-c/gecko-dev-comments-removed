@@ -380,22 +380,12 @@ class MOZ_STACK_CLASS GlobalSharedContext : public SharedContext
     ScopeKind scopeKind_;
 
   public:
-    
-    
-    
-    
-    
-    
-    
-    uint32_t functionBindingEnd;
-
     Rooted<GlobalScope::Data*> bindings;
 
     GlobalSharedContext(ExclusiveContext* cx, ScopeKind scopeKind, Directives directives,
                         bool extraWarnings)
       : SharedContext(cx, Kind::Global, directives, extraWarnings),
         scopeKind_(scopeKind),
-        functionBindingEnd(0),
         bindings(cx)
     {
         MOZ_ASSERT(scopeKind == ScopeKind::Global || scopeKind == ScopeKind::NonSyntactic);
@@ -423,15 +413,6 @@ class MOZ_STACK_CLASS EvalSharedContext : public SharedContext
     RootedScope enclosingScope_;
 
   public:
-    
-    
-    
-    
-    
-    
-    
-    uint32_t functionBindingEnd;
-
     Rooted<EvalScope::Data*> bindings;
 
     EvalSharedContext(ExclusiveContext* cx, JSObject* enclosingEnv, Scope* enclosingScope,
