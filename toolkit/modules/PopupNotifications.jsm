@@ -690,14 +690,10 @@ PopupNotifications.prototype = {
 
     if (!notifications)
       notifications = this._currentNotifications;
-    let notificationsToShow = [];
-    
-    notificationsToShow = notifications.filter(function (n) {
-      return !n.dismissed && !n.options.neverShow;
-    });
 
-    if (!anchors.size && notificationsToShow.length)
-      anchors = this._getAnchorsForNotifications(notificationsToShow);
+    let haveNotifications = notifications.length > 0;
+    if (!anchors.size && haveNotifications)
+      anchors = this._getAnchorsForNotifications(notifications);
 
     let useIconBox = !!this.iconBox;
     if (useIconBox && anchors.size) {
@@ -709,24 +705,31 @@ PopupNotifications.prototype = {
       }
     }
 
+    
+    let notificationsToShow = notifications.filter(function (n) {
+      return !n.dismissed && !n.options.neverShow;
+    });
+
     if (useIconBox) {
       
       this._hideIcons();
     }
 
-    let haveNotifications = notifications.length > 0;
     if (haveNotifications) {
-      if (useIconBox) {
-        this._showIcons(notifications);
-        this.iconBox.hidden = false;
-      } else if (anchors.size) {
-        this._updateAnchorIcons(notifications, anchors);
-      }
-
       
       notificationsToShow = notificationsToShow.filter(function (n) {
         return anchors.has(n.anchorElement);
       });
+
+      if (useIconBox) {
+        this._showIcons(notifications);
+        this.iconBox.hidden = false;
+        
+        
+        anchors = this._getAnchorsForNotifications(notificationsToShow);
+      } else if (anchors.size) {
+        this._updateAnchorIcons(notifications, anchors);
+      }
     }
 
     if (notificationsToShow.length > 0) {
