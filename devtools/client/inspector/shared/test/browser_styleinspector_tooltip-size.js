@@ -64,9 +64,9 @@ function* testPickerDimension(ruleView) {
   let swatch = valueSpan.querySelector(".ruleview-colorswatch");
   let cPicker = ruleView.tooltips.colorPicker;
 
-  let onShown = cPicker.tooltip.once("shown");
+  let onReady = cPicker.once("ready");
   swatch.click();
-  yield onShown;
+  yield onReady;
 
   
   
