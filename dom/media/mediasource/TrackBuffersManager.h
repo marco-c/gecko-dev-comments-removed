@@ -378,6 +378,7 @@ private:
 
   
   SourceBufferTaskQueue mQueue;
+  void QueueTask(SourceBufferTask* aTask);
   void ProcessTasks();
   void CancelAllTasks();
   
