@@ -516,9 +516,9 @@ public:
       
       
       mDeferredTasks.AppendElement(
-            NewRunnableMethod(mOverscrollHandoffChain.get(),
-                              &OverscrollHandoffChain::SnapBackOverscrolledApzc,
-                              &mApzc));
+            NS_NewRunnableMethodWithArg<AsyncPanZoomController*>(mOverscrollHandoffChain.get(),
+                                                                 &OverscrollHandoffChain::SnapBackOverscrolledApzc,
+                                                                 &mApzc));
       return false;
     }
 
@@ -568,11 +568,13 @@ public:
       
       APZC_LOG("%p fling went into overscroll, handing off with velocity %s\n", &mApzc, Stringify(velocity).c_str());
       mDeferredTasks.AppendElement(
-            NewRunnableMethod(&mApzc,
-                              &AsyncPanZoomController::HandleFlingOverscroll,
-                              velocity,
-                              mOverscrollHandoffChain,
-                              mScrolledApzc));
+          NS_NewRunnableMethodWithArgs<ParentLayerPoint,
+                                       RefPtr<const OverscrollHandoffChain>,
+                                       RefPtr<const AsyncPanZoomController>>(&mApzc,
+                                                                             &AsyncPanZoomController::HandleFlingOverscroll,
+                                                                             velocity,
+                                                                             mOverscrollHandoffChain,
+                                                                             mScrolledApzc));
 
       
       
@@ -700,9 +702,7 @@ public:
       
       
       
-      mDeferredTasks.AppendElement(
-            NewRunnableMethod(&mApzc,
-            &AsyncPanZoomController::ScrollSnap));
+      mDeferredTasks.AppendElement(NS_NewRunnableMethod(&mApzc, &AsyncPanZoomController::ScrollSnap));
       return false;
     }
     return true;
@@ -819,9 +819,9 @@ public:
       
       
       mDeferredTasks.AppendElement(
-            NewRunnableMethod(&mApzc,
-                              &AsyncPanZoomController::HandleSmoothScrollOverscroll,
-                              velocity));
+          NS_NewRunnableMethodWithArgs<ParentLayerPoint>(&mApzc,
+                                                         &AsyncPanZoomController::HandleSmoothScrollOverscroll,
+                                                         velocity));
       return false;
     }
 
@@ -2180,11 +2180,14 @@ nsEventStatus AsyncPanZoomController::GenerateSingleTap(const ScreenIntPoint& aP
       
       
       
-      controller->PostDelayedTask(
-        NewRunnableMethod(controller.get(), &GeckoContentController::HandleSingleTap,
-                          geckoScreenPoint, aModifiers,
-                          GetGuid()),
-        0);
+      RefPtr<Runnable> runnable =
+        NS_NewRunnableMethodWithArgs<CSSPoint,
+                                     mozilla::Modifiers,
+                                     ScrollableLayerGuid>(controller, &GeckoContentController::HandleSingleTap,
+                                                          geckoScreenPoint, aModifiers,
+                                                          GetGuid());
+
+      controller->PostDelayedTask(runnable.forget(), 0);
       return nsEventStatus_eConsumeNoDefault;
     }
   }
