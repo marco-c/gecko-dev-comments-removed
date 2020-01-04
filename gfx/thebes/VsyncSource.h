@@ -50,6 +50,7 @@ public:
       void AddCompositorVsyncDispatcher(CompositorVsyncDispatcher* aCompositorVsyncDispatcher);
       void RemoveCompositorVsyncDispatcher(CompositorVsyncDispatcher* aCompositorVsyncDispatcher);
       void NotifyRefreshTimerVsyncStatus(bool aEnable);
+      virtual TimeDuration GetVsyncRate();
 
       
       virtual void EnableVsync() = 0;

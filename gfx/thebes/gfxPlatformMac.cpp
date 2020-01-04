@@ -542,6 +542,18 @@ public:
         CVDisplayLinkRelease(mDisplayLink);
         mDisplayLink = nullptr;
       }
+
+      CVTime vsyncRate = CVDisplayLinkGetNominalOutputVideoRefreshPeriod(mDisplayLink);
+      if (vsyncRate.flags & kCVTimeIsIndefinite) {
+        NS_WARNING("Could not get vsync rate, setting to 60.");
+        mVsyncRate = TimeDuration::FromMilliseconds(1000.0 / 60.0);
+      } else {
+        int64_t timeValue = vsyncRate.timeValue;
+        int64_t timeScale = vsyncRate.timeScale;
+        const int milliseconds = 1000;
+        float rateInMs = ((double) timeValue / (double) timeScale) * milliseconds;
+        mVsyncRate = TimeDuration::FromMilliseconds(rateInMs);
+      }
     }
 
     virtual void DisableVsync() override
@@ -564,6 +576,11 @@ public:
       return mDisplayLink != nullptr;
     }
 
+    virtual TimeDuration GetVsyncRate() override
+    {
+      return mVsyncRate;
+    }
+
     
     
     
@@ -575,6 +592,7 @@ public:
     
     CVDisplayLinkRef   mDisplayLink;
     RefPtr<nsITimer> mTimer;
+    TimeDuration mVsyncRate;
   }; 
 
 private:

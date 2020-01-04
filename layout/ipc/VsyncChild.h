@@ -38,12 +38,14 @@ public:
 
   
   void SetVsyncObserver(VsyncObserver* aVsyncObserver);
+  TimeDuration GetVsyncRate();
 
 private:
   VsyncChild();
   virtual ~VsyncChild();
 
   virtual bool RecvNotify(const TimeStamp& aVsyncTimestamp) override;
+  virtual bool RecvVsyncRate(const float& aVsyncRate) override;
   virtual void ActorDestroy(ActorDestroyReason aActorDestroyReason) override;
 
   bool mObservingVsync;
@@ -51,6 +53,7 @@ private:
 
   
   RefPtr<VsyncObserver> mObserver;
+  TimeDuration mVsyncRate;
 };
 
 } 
