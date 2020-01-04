@@ -113,7 +113,7 @@ public:
   
   bool GetNextPacket(TrackInfo::TrackType aType, MediaRawDataQueue *aSamples);
 
-  nsresult Reset();
+  nsresult Reset(TrackInfo::TrackType aType);
 
   
   void PushAudioPacket(NesteggPacketHolder* aItem);
@@ -122,33 +122,54 @@ public:
   void PushVideoPacket(NesteggPacketHolder* aItem);
 
   
-  MediaResourceIndex* GetResource()
-  {
-    return &mResource;
-  }
-
-  int64_t GetEndDataOffset() const
-  {
-    return (!mIsMediaSource || mLastWebMBlockOffset < 0)
-      ? mResource.GetLength() : mLastWebMBlockOffset;
-  }
-  int64_t IsMediaSource() const
+  bool IsMediaSource() const
   {
     return mIsMediaSource;
   }
+
+  int64_t LastWebMBlockOffset() const
+  {
+    return mLastWebMBlockOffset;
+  }
+
+  struct NestEggContext {
+    NestEggContext(WebMDemuxer* aParent, MediaResource* aResource)
+    : mParent(aParent)
+    , mResource(aResource)
+    , mContext(nullptr) {}
+
+    ~NestEggContext();
+
+    int Init();
+
+    
+
+    bool IsMediaSource() const { return mParent->IsMediaSource(); }
+    MediaResourceIndex* GetResource() { return &mResource; }
+
+    int64_t GetEndDataOffset() const
+    {
+      return (!mParent->IsMediaSource() || mParent->LastWebMBlockOffset() < 0)
+             ? mResource.GetLength() : mParent->LastWebMBlockOffset();
+    }
+
+    WebMDemuxer* mParent;
+    MediaResourceIndex mResource;
+    nestegg* mContext;
+  };
 
 private:
   friend class WebMTrackDemuxer;
 
   ~WebMDemuxer();
-  void Cleanup();
   void InitBufferedState();
   nsresult ReadMetadata();
   void NotifyDataArrived() override;
   void NotifyDataRemoved() override;
   void EnsureUpToDateIndex();
   media::TimeIntervals GetBuffered();
-  nsresult SeekInternal(const media::TimeUnit& aTarget);
+  nsresult SeekInternal(TrackInfo::TrackType aType,
+                        const media::TimeUnit& aTarget);
 
   
   
@@ -157,9 +178,23 @@ private:
 
   
   
-  RefPtr<NesteggPacketHolder> DemuxPacket();
+  RefPtr<NesteggPacketHolder> DemuxPacket(TrackInfo::TrackType aType);
 
-  MediaResourceIndex mResource;
+  
+  
+  NestEggContext mVideoContext;
+  NestEggContext mAudioContext;
+  MediaResourceIndex& Resource(TrackInfo::TrackType aType)
+  {
+    return aType == TrackInfo::kVideoTrack
+           ? mVideoContext.mResource : mAudioContext.mResource;
+  }
+  nestegg* Context(TrackInfo::TrackType aType) const
+  {
+    return aType == TrackInfo::kVideoTrack
+           ? mVideoContext.mContext : mAudioContext.mContext;
+  }
+
   MediaInfo mInfo;
   nsTArray<RefPtr<WebMTrackDemuxer>> mDemuxers;
 
@@ -168,10 +203,6 @@ private:
   RefPtr<WebMBufferedState> mBufferedState;
   RefPtr<MediaByteBuffer> mInitData;
 
-  
-  
-  
-  nestegg* mContext;
 
   
   WebMPacketQueue mVideoPackets;
