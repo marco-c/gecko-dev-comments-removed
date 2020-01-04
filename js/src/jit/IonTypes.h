@@ -644,8 +644,10 @@ ScalarTypeToLength(Scalar::Type type)
     MOZ_CRASH("unexpected SIMD kind");
 }
 
+
+
 static inline MIRType
-SimdTypeToScalarType(MIRType type)
+SimdTypeToLaneType(MIRType type)
 {
     MOZ_ASSERT(IsSimdType(type));
     static_assert(MIRType_Last <= ELEMENT_TYPE_MASK,
