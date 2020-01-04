@@ -32,6 +32,8 @@ var gContentPane = {
 
     setEventListener("font.language.group", "change",
       gContentPane._rebuildFonts);
+    setEventListener("notificationsPolicyButton", "command",
+      gContentPane.showNotificationExceptions);
     setEventListener("popupPolicyButton", "command",
       gContentPane.showPopupExceptions);
     setEventListener("advancedFonts", "command",
@@ -81,6 +83,28 @@ var gContentPane = {
 
 
 
+
+
+  
+
+  
+
+
+
+  showNotificationExceptions()
+  {
+    let bundlePreferences = document.getElementById("bundlePreferences");
+    let params = { blockVisible: true,
+                   sessionVisible: false,
+                   allowVisible: true,
+                   prefilledHost: "",
+                   permissionType: "desktop-notification" };
+    params.windowTitle = bundlePreferences.getString("notificationspermissionstitle");
+    params.introText = bundlePreferences.getString("notificationspermissionstext");
+
+    gSubDialog.open("chrome://browser/content/preferences/permissions.xul",
+                    "resizable=yes", params);
+  },
 
 
   
