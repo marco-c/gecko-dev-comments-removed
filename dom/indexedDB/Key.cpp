@@ -103,6 +103,10 @@ namespace indexedDB {
 
 
 
+
+
+
+
 #ifdef ENABLE_INTL_API
 nsresult
 Key::ToLocaleBasedKey(Key& aTarget, const nsCString& aLocale) const
@@ -112,7 +116,7 @@ Key::ToLocaleBasedKey(Key& aTarget, const nsCString& aLocale) const
     return NS_OK;
   }
 
-  if (IsFloat() || IsDate()) {
+  if (IsFloat() || IsDate() || IsBinary()) {
     aTarget.mBuffer = mBuffer;
     return NS_OK;
   }
@@ -292,6 +296,16 @@ Key::EncodeJSValInternal(JSContext* aCx, JS::Handle<JS::Value> aVal,
       EncodeNumber(t, eDate + aTypeOffset);
       return NS_OK;
     }
+
+    if (JS_IsArrayBufferObject(obj)) {
+      EncodeBinary(obj,  false, aTypeOffset);
+      return NS_OK;
+    }
+
+    if (JS_IsArrayBufferViewObject(obj)) {
+      EncodeBinary(obj,  true, aTypeOffset);
+      return NS_OK;
+    }
   }
 
   return NS_ERROR_DOM_INDEXEDDB_DATA_ERR;
@@ -369,6 +383,15 @@ Key::DecodeJSValInternal(const unsigned char*& aPos, const unsigned char* aEnd,
   else if (*aPos - aTypeOffset == eFloat) {
     aVal.setDouble(DecodeNumber(aPos, aEnd));
   }
+  else if (*aPos - aTypeOffset == eBinary) {
+    JSObject* binary = DecodeBinary(aPos, aEnd, aCx);
+    if (!binary) {
+      IDB_REPORT_INTERNAL_ERR();
+      return NS_ERROR_DOM_INDEXEDDB_UNKNOWN_ERR;
+    }
+
+    aVal.setObject(*binary);
+  }
   else {
     NS_NOTREACHED("Unknown key type!");
   }
@@ -403,6 +426,13 @@ template <typename T>
 void
 Key::EncodeString(const T* aStart, const T* aEnd, uint8_t aTypeOffset)
 {
+  EncodeAsString(aStart, aEnd, eString + aTypeOffset);
+}
+
+template <typename T>
+void
+Key::EncodeAsString(const T* aStart, const T* aEnd, uint8_t aType)
+{
   
 
   
@@ -426,7 +456,7 @@ Key::EncodeString(const T* aStart, const T* aEnd, uint8_t aTypeOffset)
   buffer += oldLen;
 
   
-  *(buffer++) = eString + aTypeOffset;
+  *(buffer++) = aType;
 
   
   for (const T* iter = start; iter < end; ++iter) {
@@ -616,6 +646,82 @@ Key::DecodeNumber(const unsigned char*& aPos, const unsigned char* aEnd)
           (0 - number);
 
   return pun.d;
+}
+
+void
+Key::EncodeBinary(JSObject* aObject, bool aIsViewObject, uint8_t aTypeOffset)
+{
+  uint8_t* bufferData;
+  uint32_t bufferLength;
+  bool unused;
+
+  if (aIsViewObject) {
+    js::GetArrayBufferViewLengthAndData(aObject, &bufferLength, &unused, &bufferData);
+  } else {
+    js::GetArrayBufferLengthAndData(aObject, &bufferLength, &unused, &bufferData);
+  }
+
+  EncodeAsString(bufferData, bufferData + bufferLength, eBinary + aTypeOffset);
+}
+
+
+JSObject*
+Key::DecodeBinary(const unsigned char*& aPos,
+                  const unsigned char* aEnd,
+                  JSContext* aCx)
+{
+  MOZ_ASSERT(*aPos % eMaxType == eBinary, "Don't call me!");
+
+  const unsigned char* buffer = ++aPos;
+
+  
+  size_t size = 0;
+  const unsigned char* iter;
+  for (iter = buffer; iter < aEnd && *iter != eTerminator; ++iter) {
+    if (*iter & 0x80) {
+      iter++;
+    }
+    ++size;
+  }
+
+  if (!size) {
+    return JS_NewArrayBuffer(aCx, 0);
+  }
+
+  uint8_t* out = static_cast<uint8_t*>(JS_malloc(aCx, size));
+  if (NS_WARN_IF(!out)) {
+    return nullptr;
+  }
+
+  uint8_t* pos = out;
+
+  
+  
+  if (iter < aEnd) {
+    aEnd = iter;
+  }
+
+  for (iter = buffer; iter < aEnd;) {
+    if (!(*iter & 0x80)) {
+      *pos = *(iter++) - ONE_BYTE_ADJUST;
+    }
+    else {
+      uint16_t c = (uint16_t(*(iter++)) << 8);
+      if (iter < aEnd) {
+        c |= *(iter++);
+      }
+      *pos = static_cast<uint8_t>(c - TWO_BYTE_ADJUST - 0x8000);
+    }
+
+    ++pos;
+  }
+
+  aPos = iter + 1;
+
+  MOZ_ASSERT(static_cast<size_t>(pos - out) == size,
+             "Should have written the whole buffer");
+
+  return JS_NewArrayBufferWithContents(aCx, size, out);
 }
 
 nsresult
