@@ -1542,10 +1542,6 @@ public:
     void
     SetScriptableShared(already_AddRefed<XPCNativeScriptableShared>&& shared) { mShared = shared; }
 
-    void Mark() {}
-    void TraceJS(JSTracer* trc) {}
-    void AutoTrace(JSTracer* trc) {}
-
 protected:
     explicit XPCNativeScriptableInfo(nsIXPCScriptable* scriptable)
         : mCallback(scriptable)
@@ -1656,8 +1652,6 @@ public:
     void TraceInside(JSTracer* trc) {
         if (trc->isMarkingTracer()) {
             mSet->Mark();
-            if (mScriptableInfo)
-                mScriptableInfo->Mark();
         }
 
         GetScope()->TraceSelf(trc);
@@ -1677,10 +1671,7 @@ public:
     
     inline void AutoTrace(JSTracer* trc) {}
 
-    
-    void Mark() const
-        {mSet->Mark();
-         if (mScriptableInfo) mScriptableInfo->Mark();}
+    void Mark() const {mSet->Mark();}
 
 #ifdef DEBUG
     void ASSERT_SetNotMarked() const {mSet->ASSERT_NotMarked();}
@@ -1940,16 +1931,12 @@ public:
     void Mark() const
     {
         mSet->Mark();
-        if (mScriptableInfo) mScriptableInfo->Mark();
         if (HasProto()) GetProto()->Mark();
     }
 
-    
     inline void TraceInside(JSTracer* trc) {
         if (trc->isMarkingTracer()) {
             mSet->Mark();
-            if (mScriptableInfo)
-                mScriptableInfo->Mark();
         }
         if (HasProto())
             GetProto()->TraceSelf(trc);
@@ -2896,7 +2883,6 @@ typedef TypedAutoMarkingPtr<XPCNativeSet> AutoMarkingNativeSetPtr;
 typedef TypedAutoMarkingPtr<XPCWrappedNative> AutoMarkingWrappedNativePtr;
 typedef TypedAutoMarkingPtr<XPCWrappedNativeTearOff> AutoMarkingWrappedNativeTearOffPtr;
 typedef TypedAutoMarkingPtr<XPCWrappedNativeProto> AutoMarkingWrappedNativeProtoPtr;
-typedef TypedAutoMarkingPtr<XPCNativeScriptableInfo> AutoMarkingNativeScriptableInfoPtr;
 
 template<class T>
 class ArrayAutoMarkingPtr : public AutoMarkingPtr
