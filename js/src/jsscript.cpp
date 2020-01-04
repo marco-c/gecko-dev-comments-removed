@@ -1961,11 +1961,25 @@ ScriptSource::chars(JSContext* cx, UncompressedSourceCache::AutoHoldEntry& holde
             }
 
             decompressed[ss.length()] = 0;
-
             ReturnType ret = decompressed.get();
-            if (!cx->runtime()->uncompressedSourceCache.put(&ss, Move(decompressed), holder)) {
-                JS_ReportOutOfMemory(cx);
-                return nullptr;
+
+            
+            
+            
+            
+            const size_t HUGE_SCRIPT = 5 * 1024 * 1024;
+            if (lengthWithNull > HUGE_SCRIPT) {
+                if (ss.inCompressedSourceSet) {
+                    TlsPerThreadData.get()->runtimeFromMainThread()->compressedSourceSet.remove(&ss);
+                    ss.inCompressedSourceSet = false;
+                }
+                js_free(ss.compressedData());
+                ss.data = SourceType(Uncompressed(decompressed.release(), true));
+            } else {
+                if (!cx->runtime()->uncompressedSourceCache.put(&ss, Move(decompressed), holder)) {
+                    JS_ReportOutOfMemory(cx);
+                    return nullptr;
+                }
             }
 
             return ret;
@@ -2099,16 +2113,12 @@ ScriptSource::setSourceCopy(ExclusiveContext* cx, SourceBufferHolder& srcBuf,
     
     
     
-    
-    
-    
     bool canCompressOffThread =
         HelperThreadState().cpuCount > 1 &&
         HelperThreadState().threadCount >= 2 &&
         CanUseExtraThreads();
     const size_t TINY_SCRIPT = 256;
-    const size_t HUGE_SCRIPT = 5 * 1024 * 1024;
-    if (TINY_SCRIPT <= srcBuf.length() && srcBuf.length() < HUGE_SCRIPT && canCompressOffThread) {
+    if (TINY_SCRIPT <= srcBuf.length() && canCompressOffThread) {
         task->ss = this;
         if (!StartOffThreadCompression(cx, task))
             return false;
