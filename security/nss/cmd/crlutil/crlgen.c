@@ -1,13 +1,13 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
-
-
-
-
-
+/*
+** crlgen.c
+**
+** utility for managing certificates revocation lists generation
+**
+*/
 
 
 #include <stdio.h>
@@ -24,9 +24,9 @@
 #include "crlgen.h"
 
 
-
-
-
+/* Destroys extHandle and data. data was create on heap.
+ * extHandle creaded by CERT_StartCRLEntryExtensions. entry
+ * was allocated on arena.*/
 static void
 destroyEntryData(CRLGENEntryData *data)
 {
@@ -39,7 +39,7 @@ destroyEntryData(CRLGENEntryData *data)
 }
 
 
-
+/* Prints error messages along with line number */
 void 
 crlgen_PrintError(int line, char *msg, ...)
 {
@@ -52,8 +52,8 @@ crlgen_PrintError(int line, char *msg, ...)
 
     va_end(args);
 }
-
-
+/* Finds CRLGENEntryData in hashtable according PRUint64 value
+ * - certId : cert serial number*/
 static CRLGENEntryData*
 crlgen_FindEntry(CRLGENGeneratorData *crlGenData, SECItem *certId) 
 {
@@ -65,8 +65,8 @@ crlgen_FindEntry(CRLGENGeneratorData *crlGenData, SECItem *certId)
 }
 
 
-
-
+/* Removes CRLGENEntryData from hashtable according to certId
+ * - certId : cert serial number*/
 static SECStatus
 crlgen_RmEntry(CRLGENGeneratorData *crlGenData, SECItem *certId) 
 {
@@ -84,8 +84,8 @@ crlgen_RmEntry(CRLGENGeneratorData *crlGenData, SECItem *certId)
 }
 
 
-
-
+/* Stores CRLGENEntryData in hashtable according to certId
+ * - certId : cert serial number*/
 static CRLGENEntryData*
 crlgen_PlaceAnEntry(CRLGENGeneratorData *crlGenData,
                     CERTCrlEntry *entry, SECItem *certId)
@@ -114,14 +114,14 @@ crlgen_PlaceAnEntry(CRLGENGeneratorData *crlGenData,
     return newData;
 }
 
-
+/* Use this structure to keep pointer when commiting entries extensions */
 struct commitData {
     int pos;
     CERTCrlEntry **entries;
 };
 
-
-
+/* HT PL_HashTableEnumerateEntries callback. Sorts hashtable entries of the
+ * table he. Returns value through arg parameter*/
 static PRIntn PR_CALLBACK 
 crlgen_CommitEntryData(PLHashEntry *he, PRIntn i, void *arg)
 {
@@ -146,7 +146,7 @@ crlgen_CommitEntryData(PLHashEntry *he, PRIntn i, void *arg)
 
 
 
-
+/* Copy char * datainto allocated in arena SECItem */
 static SECStatus 
 crlgen_SetString(PLArenaPool *arena, const char *dataIn, SECItem *value)
 {
@@ -164,7 +164,7 @@ crlgen_SetString(PLArenaPool *arena, const char *dataIn, SECItem *value)
     return SECITEM_CopyItem(arena, value, &item);
 }
 
-
+/* Creates CERTGeneralName from parsed data for the Authority Key Extension */
 static CERTGeneralName *
 crlgen_GetGeneralName (PLArenaPool *arena, CRLGENGeneratorData *crlGenData,
                        const char *data)
@@ -274,7 +274,7 @@ crlgen_GetGeneralName (PLArenaPool *arena, CRLGENGeneratorData *crlGenData,
               }
 
               PORT_Memcpy (current->name.other.data + 2, buffer, strlen (buffer));
-
+/* This may not be accurate for all cases.For now, use this tag type */
               current->name.other.data[0] = (char)(((current->type - 1) & 0x1f)| 0x80);
               current->name.other.data[1] = (char)strlen (buffer);
               current->name.other.len = strlen (buffer) + 2;
@@ -312,7 +312,7 @@ crlgen_GetGeneralName (PLArenaPool *arena, CRLGENGeneratorData *crlGenData,
     return (namesList);
 }
 
-
+/* Creates CERTGeneralName from parsed data for the Authority Key Extension */
 static CERTGeneralName *
 crlgen_DistinguishedName (PLArenaPool *arena, CRLGENGeneratorData *crlGenData,
                           const char *data)
@@ -358,7 +358,7 @@ crlgen_DistinguishedName (PLArenaPool *arena, CRLGENGeneratorData *crlGenData,
 }
 
 
-
+/* Adding Authority Key ID extension to extension handle. */
 static SECStatus 
 crlgen_AddAuthKeyID (CRLGENGeneratorData *crlGenData,
                      const char **dataArr)
@@ -423,7 +423,7 @@ crlgen_AddAuthKeyID (CRLGENGeneratorData *crlGenData,
     return rv;
 } 
 
-
+/* Creates and add Subject Alternative Names extension */
 static SECStatus 
 crlgen_AddIssuerAltNames(CRLGENGeneratorData *crlGenData,
                           const char **dataArr)
@@ -483,9 +483,9 @@ crlgen_AddIssuerAltNames(CRLGENGeneratorData *crlGenData,
     return rv;
 }
 
-
-
-
+/* Creates and adds CRLNumber extension to extension handle.
+ * Since, this is CRL extension, extension handle is the one 
+ * related to CRL extensions */
 static SECStatus
 crlgen_AddCrlNumber(CRLGENGeneratorData *crlGenData, const char **dataArr)
 {
@@ -537,15 +537,15 @@ crlgen_AddCrlNumber(CRLGENGeneratorData *crlGenData, const char **dataArr)
 }
 
 
-
-
+/* Creates Cert Revocation Reason code extension. Encodes it and
+ * returns as SECItem structure */
 static SECItem*
 crlgen_CreateReasonCode(PLArenaPool *arena, const char **dataArr,
                         int *extCode)
 {
     SECItem *encodedItem;
     void *dummy;
-    void *mark;
+    void *mark = NULL;
     int code = 0;
 
     PORT_Assert(arena && dataArr);
@@ -566,8 +566,8 @@ crlgen_CreateReasonCode(PLArenaPool *arena, const char **dataArr,
     }
 
     code = atoi(dataArr[2]);
-    
-
+    /* aACompromise(10) is the last possible of the values 
+     * for the Reason Core Extension */
     if ((code == 0 && *dataArr[2] != '0') || code > 10) {
         
         PORT_SetError(SEC_ERROR_INVALID_ARGS);
@@ -583,19 +583,21 @@ crlgen_CreateReasonCode(PLArenaPool *arena, const char **dataArr,
     return encodedItem;
 
   loser:
-    PORT_ArenaRelease (arena, mark);
+    if (mark) {
+        PORT_ArenaRelease (arena, mark);
+    }
     return NULL;
 }
 
-
-
+/* Creates Cert Invalidity Date extension. Encodes it and
+ * returns as SECItem structure */
 static SECItem*
 crlgen_CreateInvalidityDate(PLArenaPool *arena, const char **dataArr,
                        int *extCode)
 {
     SECItem *encodedItem;
     int length = 0;
-    void *mark;
+    void *mark = NULL;
 
     PORT_Assert(arena && dataArr);
     if (!arena || !dataArr) {
@@ -624,13 +626,15 @@ crlgen_CreateInvalidityDate(PLArenaPool *arena, const char **dataArr,
     return encodedItem;
     
   loser:
-    PORT_ArenaRelease(arena, mark);
+    if (mark) {
+        PORT_ArenaRelease(arena, mark);
+    }
     return NULL;
 }
 
-
-
-
+/* Creates(by calling extCreator function) and adds extension to a set
+ * of already added certs. Uses values of rangeFrom and rangeTo from
+ * CRLGENCrlGenCtl structure for identifying the inclusive set of certs */
 static SECStatus
 crlgen_AddEntryExtension(CRLGENGeneratorData *crlGenData,
                          const char **dataArr, char *extName,
@@ -713,7 +717,7 @@ crlgen_AddEntryExtension(CRLGENGeneratorData *crlGenData,
 }
 
 
-
+/* Commits all added entries and their's extensions into CRL. */
 SECStatus
 CRLGEN_CommitExtensionsAndEntries(CRLGENGeneratorData *crlGenData)
 {
@@ -749,7 +753,7 @@ CRLGEN_CommitExtensionsAndEntries(CRLGENGeneratorData *crlGenData)
             dt.pos = 0;
             PL_HashTableEnumerateEntries(crlGenData->entryDataHashTable,
                                          &crlgen_CommitEntryData, &dt);
-            
+            /* Last should be NULL */
             crl->entries[size] = NULL;
         }
     }
@@ -759,7 +763,7 @@ CRLGEN_CommitExtensionsAndEntries(CRLGENGeneratorData *crlGenData)
     return rv;
 }
 
-
+/* Initializes extHandle with data from extensions array */
 static SECStatus
 crlgen_InitExtensionHandle(void *extHandle,
                            CERTCertExtension **extensions)
@@ -777,7 +781,7 @@ crlgen_InitExtensionHandle(void *extHandle,
     extension = *extensions;
     while (extension) {
         SECOidTag oidTag = SECOID_FindOIDTag (&extension->id);
-
+/* shell we skip unknown extensions? */
         CERT_AddExtension (extHandle, oidTag, &extension->value, 
                            (extension->critical.len != 0) ? PR_TRUE : PR_FALSE,
                            PR_FALSE);
@@ -786,8 +790,8 @@ crlgen_InitExtensionHandle(void *extHandle,
     return SECSuccess;
 }
 
-
-
+/* Used for initialization of extension handles for crl and certs
+ * extensions from existing CRL data then modifying existing CRL.*/
 SECStatus
 CRLGEN_ExtHandleInit(CRLGENGeneratorData *crlGenData)
 {
@@ -832,11 +836,11 @@ CRLGEN_ExtHandleInit(CRLGENGeneratorData *crlGenData)
     return SECSuccess;
 }
 
+/*****************************************************************************
+ * Parser trigger functions start here
+ */
 
-
-
-
-
+/* Sets new internal range value for add/rm certs.*/
 static SECStatus
 crlgen_SetNewRangeField(CRLGENGeneratorData *crlGenData, char *value)
 {
@@ -882,8 +886,8 @@ crlgen_SetNewRangeField(CRLGENGeneratorData *crlGenData, char *value)
     return SECSuccess;
 }
 
-
-
+/* Changes issuer subject field in CRL. By default this data is taken from
+ * issuer cert subject field.Not yet implemented */
 static SECStatus
 crlgen_SetIssuerField(CRLGENGeneratorData *crlGenData, char *value)
 {
@@ -892,7 +896,7 @@ crlgen_SetIssuerField(CRLGENGeneratorData *crlGenData, char *value)
     return SECFailure;
 }
 
-
+/* Encode and sets CRL thisUpdate and nextUpdate time fields*/
 static SECStatus
 crlgen_SetTimeField(CRLGENGeneratorData *crlGenData, char *value,
                     PRBool setThisUpdate)
@@ -940,7 +944,7 @@ crlgen_SetTimeField(CRLGENGeneratorData *crlGenData, char *value,
 }
 
 
-
+/* Adds new extension into CRL or added cert handles */
 static SECStatus
 crlgen_AddExtension(CRLGENGeneratorData *crlGenData, const char **extData)
 {
@@ -978,9 +982,9 @@ crlgen_AddExtension(CRLGENGeneratorData *crlGenData, const char **extData)
 
 
 
-
-
-
+/* Created CRLGENEntryData for cert with serial number certId and
+ * adds it to entryDataHashTable. certId can be a single cert serial
+ * number or an inclusive rage of certs */
 static SECStatus
 crlgen_AddCert(CRLGENGeneratorData *crlGenData,
         char *certId, char *revocationDate)
@@ -1073,21 +1077,18 @@ crlgen_AddCert(CRLGENGeneratorData *crlGenData,
 }
 
 
-
-
+/* Removes certs from entryDataHashTable which have certId serial number.
+ * certId can have value of a range of certs */
 static SECStatus
 crlgen_RmCert(CRLGENGeneratorData *crlGenData, char *certId)
 {
     PRUint64 i = 0;
-    PLArenaPool *arena;
 
     PORT_Assert(crlGenData && certId);
     if (!crlGenData || !certId) {
         PORT_SetError(SEC_ERROR_INVALID_ARGS);
         return SECFailure;
     }
-
-    arena = crlGenData->signCrl->arena;
 
     if (crlgen_SetNewRangeField(crlGenData, certId) == SECFailure &&
         certId) {
@@ -1112,14 +1113,14 @@ crlgen_RmCert(CRLGENGeneratorData *crlGenData, char *certId)
     return SECSuccess;
 }
 
+/*************************************************************************
+ * Lex Parser Helper functions are used to store parsed information
+ * in context related structures. Context(or state) is identified base on 
+ * a type of a instruction parser currently is going through. New context
+ * is identified by first token in a line. It can be addcert context,
+ * addext context, etc. */
 
-
-
-
-
-
-
- 
+/* Updates CRL field depending on current context */ 
 static SECStatus
 crlgen_updateCrlFn_field(CRLGENGeneratorData *crlGenData, void *str)
 {
@@ -1154,7 +1155,7 @@ crlgen_updateCrlFn_field(CRLGENGeneratorData *crlGenData, void *str)
     return SECSuccess;
 }
 
- 
+/* Sets parsed data for CRL field update into temporary structure */ 
 static SECStatus
 crlgen_setNextDataFn_field(CRLGENGeneratorData *crlGenData, void *str,
                     void *data, unsigned short dtype)
@@ -1199,7 +1200,7 @@ crlgen_setNextDataFn_field(CRLGENGeneratorData *crlGenData, void *str,
     return SECSuccess;
 }
 
- 
+/* Triggers cert entries update depending on current context */ 
 static SECStatus
 crlgen_updateCrlFn_cert(CRLGENGeneratorData *crlGenData, void *str)
 {
@@ -1227,7 +1228,7 @@ crlgen_updateCrlFn_cert(CRLGENGeneratorData *crlGenData, void *str)
 }
 
 
- 
+/* Sets parsed data for CRL entries update into temporary structure */ 
 static SECStatus
 crlgen_setNextDataFn_cert(CRLGENGeneratorData *crlGenData, void *str,
                    void *data, unsigned short dtype)
@@ -1265,7 +1266,7 @@ crlgen_setNextDataFn_cert(CRLGENGeneratorData *crlGenData, void *str,
     return SECSuccess;
 }
 
- 
+/* Triggers cert entries/crl extension update */ 
 static SECStatus
 crlgen_updateCrlFn_extension(CRLGENGeneratorData *crlGenData, void *str)
 {
@@ -1274,11 +1275,11 @@ crlgen_updateCrlFn_extension(CRLGENGeneratorData *crlGenData, void *str)
     return crlgen_AddExtension(crlGenData, (const char**)extStr->extData);
 }
 
-
+/* Defines maximum number of fields extension may have */
 #define MAX_EXT_DATA_LENGTH 10
 
-
- 
+/* Sets parsed extension data for CRL entries/CRL extensions update
+ * into temporary structure */ 
 static SECStatus
 crlgen_setNextDataFn_extension(CRLGENGeneratorData *crlGenData, void *str,
                         void *data, unsigned short dtype)
@@ -1315,14 +1316,14 @@ crlgen_setNextDataFn_extension(CRLGENGeneratorData *crlGenData, void *str,
 }
 
 
+/****************************************************************************************
+ * Top level functions are triggered directly by parser.
+ */
 
-
-
-
-
-
-
-
+/*
+ * crl generation script parser recreates a temporary data staructure
+ * for each line it is going through. This function cleans temp structure.
+ */
 void
 crlgen_destroyTempData(CRLGENGeneratorData *crlGenData)
 {
@@ -1393,7 +1394,7 @@ crlgen_updateCrl(CRLGENGeneratorData *crlGenData)
           PORT_Assert(0);
           return SECFailure;
     }
-    
+    /* Clrean structures after crl update */
     crlgen_destroyTempData(crlGenData);
 
     crlGenData->parsedLineNum += 1;
@@ -1506,7 +1507,7 @@ crlgen_createNewLangStruct(CRLGENGeneratorData *crlGenData,
 }
 
 
-
+/* Parser initialization function */
 CRLGENGeneratorData*
 CRLGEN_InitCrlGeneration(CERTSignedCrl *signCrl, PRFileDesc *src)
 {

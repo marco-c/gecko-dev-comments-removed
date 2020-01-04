@@ -82,7 +82,8 @@
 static char *
 nssutil_DupnCat(char *baseString, const char *str, int str_len)
 {
-    int len = (baseString ? PORT_Strlen(baseString) : 0) + 1;
+    int baseStringLen = baseString ? PORT_Strlen(baseString) : 0;
+    int len = baseStringLen + 1;
     char *newString;
 
     len += str_len;
@@ -91,8 +92,9 @@ nssutil_DupnCat(char *baseString, const char *str, int str_len)
 	PORT_Free(baseString);
 	return NULL;
     }
-    if (baseString == NULL) *newString = 0;
-    return PORT_Strncat(newString,str, str_len);
+    PORT_Memcpy(&newString[baseStringLen], str, str_len);
+    newString[len - 1] = 0;
+    return newString;
 }
 
 
@@ -480,7 +482,7 @@ nssutil_DeleteSecmodDBEntry(const char *appName,
     char *block = NULL;
     char *name = NULL;
     char *lib = NULL;
-    int name_len, lib_len;
+    int name_len = 0, lib_len = 0;
     PRBool skip = PR_FALSE;
     PRBool found = PR_FALSE;
 

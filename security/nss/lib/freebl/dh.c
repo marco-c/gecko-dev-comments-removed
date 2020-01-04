@@ -205,7 +205,7 @@ DH_Derive(SECItem *publicValue,
 {
     mp_int p, Xa, Yb, ZZ, psub1;
     mp_err err = MP_OKAY;
-    int len = 0;
+    unsigned int len = 0;
     unsigned int nb;
     unsigned char *secret = NULL;
     if (!publicValue || !prime || !privateValue || !derivedSecret) {
@@ -252,6 +252,24 @@ DH_Derive(SECItem *publicValue,
         err = MP_BADARG;
         goto cleanup;
     }
+
+    
+
+
+
+
+
+
+
+
+
+
+    if (mp_cmp_d(&ZZ, 1) == 0 ||
+        mp_cmp(&ZZ, &psub1) == 0) {
+        err = MP_BADARG;
+        goto cleanup;
+    }
+
     
     secret = PORT_Alloc(len);
     
