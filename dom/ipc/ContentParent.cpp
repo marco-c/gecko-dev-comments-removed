@@ -153,7 +153,7 @@
 #include "SandboxHal.h"
 #include "ScreenManagerParent.h"
 #include "SourceSurfaceRawData.h"
-#include "StructuredCloneIPCHelper.h"
+#include "StructuredCloneUtils.h"
 #include "TabParent.h"
 #include "URIUtils.h"
 #include "nsIWebBrowserChrome.h"
@@ -682,6 +682,22 @@ static const char* sObserverTopics[] = {
 #endif
 };
 
+#ifdef MOZ_NUWA_PROCESS
+
+
+
+static const char* sNuwaSafeObserverTopics[] = {
+    "xpcom-shutdown",
+    "profile-before-change",
+#ifdef MOZ_WIDGET_GONK
+    "phone-state-changed",
+#endif
+#ifdef ACCESSIBILITY
+    "a11y-init-or-shutdown",
+#endif
+    "nsPref:Changed"
+};
+#endif
  already_AddRefed<ContentParent>
 ContentParent::RunNuwaProcess()
 {
@@ -2923,6 +2939,41 @@ ContentParent::ForkNewProcess(bool aBlocking)
 #endif
 }
 
+#ifdef MOZ_NUWA_PROCESS
+
+
+static void
+KeepNuwaSafeObserverTopics(ContentParent* aNuwaContentParent)
+{
+  MOZ_ASSERT(aNuwaContentParent && aNuwaContentParent->IsNuwaProcess());
+
+  nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
+  if (!obs) {
+      return;
+  }
+
+  size_t topicLength = ArrayLength(sObserverTopics);
+  for (size_t i = 0; i < topicLength; ++i) {
+      bool nuwaSafe = false;
+      size_t safeTopicLength = ArrayLength(sNuwaSafeObserverTopics);
+
+      for (size_t j = 0; j < safeTopicLength; j++) {
+          if (!nsCRT::strcmp(sObserverTopics[i],
+                            sNuwaSafeObserverTopics[j])) {
+              
+              nuwaSafe = true;
+              break;
+          }
+      }
+
+      if (!nuwaSafe) {
+          obs->RemoveObserver(aNuwaContentParent, sObserverTopics[i]);
+      }
+  }
+
+}
+#endif
+
 void
 ContentParent::OnNuwaReady()
 {
@@ -2932,6 +2983,8 @@ ContentParent::OnNuwaReady()
     MOZ_ASSERT(IsNuwaProcess());
 
     sNuwaReady = true;
+    KeepNuwaSafeObserverTopics(this);
+
     PreallocatedProcessManager::OnNuwaReady();
     return;
 #else
@@ -3026,6 +3079,16 @@ ContentParent::Observe(nsISupports* aSubject,
         return NS_OK;
 
     
+    
+    
+    
+    
+    
+    
+    
+    
+
+    
     if (!strcmp(aTopic, "memory-pressure") &&
         !StringEndsWith(nsDependentString(aData),
                         NS_LITERAL_STRING("-no-forward"))) {
@@ -3039,7 +3102,7 @@ ContentParent::Observe(nsISupports* aSubject,
         PrefSetting pref(strData, null_t(), null_t());
         Preferences::GetPreference(&pref);
 #ifdef MOZ_NUWA_PROCESS
-        if (IsNuwaProcess() && PreallocatedProcessManager::IsNuwaReady()) {
+        if (IsReadyNuwaProcess()) {
             
             
             if (!sNuwaPrefUpdates) {
@@ -3056,28 +3119,16 @@ ContentParent::Observe(nsISupports* aSubject,
 #endif
     }
     else if (!strcmp(aTopic, NS_IPC_IOSERVICE_SET_OFFLINE_TOPIC)) {
-      NS_ConvertUTF16toUTF8 dataStr(aData);
-      const char *offline = dataStr.get();
-#ifdef MOZ_NUWA_PROCESS
-      if (!(IsNuwaReady() && IsNuwaProcess())) {
-#endif
-          if (!SendSetOffline(!strcmp(offline, "true") ? true : false)) {
-              return NS_ERROR_NOT_AVAILABLE;
-          }
-#ifdef MOZ_NUWA_PROCESS
-      }
-#endif
+        NS_ConvertUTF16toUTF8 dataStr(aData);
+        const char *offline = dataStr.get();
+        if (!SendSetOffline(!strcmp(offline, "true") ? true : false)) {
+            return NS_ERROR_NOT_AVAILABLE;
+        }
     }
     else if (!strcmp(aTopic, NS_IPC_IOSERVICE_SET_CONNECTIVITY_TOPIC)) {
-#ifdef MOZ_NUWA_PROCESS
-        if (!(IsNuwaReady() && IsNuwaProcess())) {
-#endif
-            if (!SendSetConnectivity(NS_LITERAL_STRING("true").Equals(aData))) {
-                return NS_ERROR_NOT_AVAILABLE;
-            }
-#ifdef MOZ_NUWA_PROCESS
+        if (!SendSetConnectivity(NS_LITERAL_STRING("true").Equals(aData))) {
+            return NS_ERROR_NOT_AVAILABLE;
         }
-#endif
     }
     
     else if (!strcmp(aTopic, "alertfinished") ||
@@ -3103,13 +3154,7 @@ ContentParent::Observe(nsISupports* aSubject,
         nsCString creason;
         CopyUTF16toUTF8(aData, creason);
         DeviceStorageFile* file = static_cast<DeviceStorageFile*>(aSubject);
-
-#ifdef MOZ_NUWA_PROCESS
-        if (!(IsNuwaReady() && IsNuwaProcess()))
-#endif
-        {
-            unused << SendFilePathUpdate(file->mStorageType, file->mStorageName, file->mPath, creason);
-        }
+        unused << SendFilePathUpdate(file->mStorageType, file->mStorageName, file->mPath, creason);
     }
 #ifdef MOZ_WIDGET_GONK
     else if(!strcmp(aTopic, NS_VOLUME_STATE_CHANGED)) {
@@ -3142,27 +3187,17 @@ ContentParent::Observe(nsISupports* aSubject,
         vol->GetIsRemovable(&isRemovable);
         vol->GetIsHotSwappable(&isHotSwappable);
 
-#ifdef MOZ_NUWA_PROCESS
-        if (!(IsNuwaReady() && IsNuwaProcess()))
-#endif
-        {
-            unused << SendFileSystemUpdate(volName, mountPoint, state,
-                                           mountGeneration, isMediaPresent,
-                                           isSharing, isFormatting, isFake,
-                                           isUnmounting, isRemovable, isHotSwappable);
-        }
+        unused << SendFileSystemUpdate(volName, mountPoint, state,
+                                       mountGeneration, isMediaPresent,
+                                       isSharing, isFormatting, isFake,
+                                       isUnmounting, isRemovable, isHotSwappable);
     } else if (!strcmp(aTopic, "phone-state-changed")) {
         nsString state(aData);
         unused << SendNotifyPhoneStateChange(state);
     }
     else if(!strcmp(aTopic, NS_VOLUME_REMOVED)) {
-#ifdef MOZ_NUWA_PROCESS
-        if (!(IsNuwaReady() && IsNuwaProcess()))
-#endif
-        {
-            nsString volName(aData);
-            unused << SendVolumeRemoved(volName);
-        }
+        nsString volName(aData);
+        unused << SendVolumeRemoved(volName);
     }
 #endif
 #ifdef ACCESSIBILITY
@@ -4455,12 +4490,12 @@ ContentParent::DoLoadMessageManagerScript(const nsAString& aURL,
 bool
 ContentParent::DoSendAsyncMessage(JSContext* aCx,
                                   const nsAString& aMessage,
-                                  StructuredCloneIPCHelper& aHelper,
+                                  const mozilla::dom::StructuredCloneData& aData,
                                   JS::Handle<JSObject *> aCpows,
                                   nsIPrincipal* aPrincipal)
 {
     ClonedMessageData data;
-    if (!BuildClonedMessageDataForParent(this, aHelper, data)) {
+    if (!BuildClonedMessageDataForParent(this, aData, data)) {
         return false;
     }
     InfallibleTArray<CpowEntry> cpows;
@@ -4468,12 +4503,10 @@ ContentParent::DoSendAsyncMessage(JSContext* aCx,
     if (aCpows && (!mgr || !mgr->Wrap(aCx, aCpows, &cpows))) {
         return false;
     }
-#ifdef MOZ_NUWA_PROCESS
-    if (IsNuwaProcess() && IsNuwaReady()) {
+    if (IsReadyNuwaProcess()) {
         
         return true;
     }
-#endif
     return SendAsyncMessage(nsString(aMessage), data, cpows, Principal(aPrincipal));
 }
 

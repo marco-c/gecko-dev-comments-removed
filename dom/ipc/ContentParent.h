@@ -202,7 +202,7 @@ public:
                                             bool aRunInGlobalScope) override;
     virtual bool DoSendAsyncMessage(JSContext* aCx,
                                     const nsAString& aMessage,
-                                    mozilla::dom::StructuredCloneIPCHelper& aHelper,
+                                    const mozilla::dom::StructuredCloneData& aData,
                                     JS::Handle<JSObject *> aCpows,
                                     nsIPrincipal* aPrincipal) override;
     virtual bool CheckPermission(const nsAString& aPermission) override;
@@ -259,6 +259,15 @@ public:
 #ifdef MOZ_NUWA_PROCESS
     bool IsNuwaProcess();
 #endif
+
+    
+    bool IsReadyNuwaProcess() {
+#ifdef MOZ_NUWA_PROCESS
+        return IsNuwaProcess() && IsNuwaReady();
+#else
+        return false;
+#endif
+    }
 
     GeckoChildProcessHost* Process() {
         return mSubprocess;

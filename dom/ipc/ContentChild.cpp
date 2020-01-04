@@ -178,7 +178,7 @@
 #endif
 
 #include "ProcessUtils.h"
-#include "StructuredCloneIPCHelper.h"
+#include "StructuredCloneUtils.h"
 #include "URIUtils.h"
 #include "nsContentUtils.h"
 #include "nsIPrincipal.h"
@@ -2082,11 +2082,10 @@ ContentChild::RecvAsyncMessage(const nsString& aMsg,
 {
     nsRefPtr<nsFrameMessageManager> cpm = nsFrameMessageManager::GetChildProcessManager();
     if (cpm) {
-        StructuredCloneIPCHelper helper;
-        ipc::UnpackClonedMessageDataForChild(aData, helper);
+        StructuredCloneData cloneData = ipc::UnpackClonedMessageDataForChild(aData);
         CrossProcessCpowHolder cpows(this, aCpows);
         cpm->ReceiveMessage(static_cast<nsIContentFrameMessageManager*>(cpm.get()), nullptr,
-                            aMsg, false, &helper, &cpows, aPrincipal, nullptr);
+                            aMsg, false, &cloneData, &cpows, aPrincipal, nullptr);
     }
     return true;
 }
@@ -2175,10 +2174,7 @@ bool
 ContentChild::RecvFlushMemory(const nsString& reason)
 {
 #ifdef MOZ_NUWA_PROCESS
-    if (IsNuwaProcess()) {
-        
-        return true;
-    }
+    MOZ_ASSERT(!IsNuwaProcess() || !IsNuwaReady());
 #endif
     nsCOMPtr<nsIObserverService> os =
         mozilla::services::GetObserverService();
@@ -2417,11 +2413,7 @@ bool
 ContentChild::RecvMinimizeMemoryUsage()
 {
 #ifdef MOZ_NUWA_PROCESS
-    if (IsNuwaProcess()) {
-        
-        
-        return true;
-    }
+    MOZ_ASSERT(!IsNuwaProcess() || !IsNuwaReady());
 #endif
     nsCOMPtr<nsIMemoryReporterManager> mgr =
         do_GetService("@mozilla.org/memory-reporter-manager;1");
@@ -2868,3 +2860,4 @@ ContentChild::RecvTestGraphicsDeviceReset(const uint32_t& aResetReason)
 
 } 
 } 
+
