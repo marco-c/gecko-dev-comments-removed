@@ -139,9 +139,7 @@ const TESTS = [
   }
 ];
 
-function test() {
-  var tab;
-
+add_task(function* test() {
   let mimeService = Cc["@mozilla.org/mime;1"].getService(Ci.nsIMIMEService);
   let handlerInfo = mimeService.getFromTypeAndExtension('application/pdf', 'pdf');
 
@@ -151,51 +149,85 @@ function test() {
 
   info('Pref action: ' + handlerInfo.preferredAction);
 
-  waitForExplicitFinish();
-  registerCleanupFunction(function() {
-    gBrowser.removeTab(tab);
-  });
-
-  tab = gBrowser.addTab(TESTROOT + "file_pdfjs_test.pdf");
-  gBrowser.selectedTab = tab;
-
-  var newTabBrowser = gBrowser.getBrowserForTab(tab);
-  newTabBrowser.addEventListener("load", function eventHandler() {
-    newTabBrowser.removeEventListener("load", eventHandler, true);
-
-    var document = newTabBrowser.contentDocument,
-        window = newTabBrowser.contentWindow;
-
-    
-    window.addEventListener("documentload", function() {
-      runTests(document, window, function () {
-        var pageNumber = document.querySelector('input#pageNumber');
-        is(pageNumber.value, pageNumber.max, "Document is left on the last page");
-        finish();
+  yield BrowserTestUtils.withNewTab({ gBrowser, url: TESTROOT + "file_pdfjs_test.pdf" },
+    function* (newTabBrowser) {
+      
+      yield ContentTask.spawn(newTabBrowser, null, function* () {
+        yield new Promise((resolve) => {
+          content.addEventListener("documentload", function() {
+            resolve();
+          }, false, true);
+        });
       });
-    }, false, true);
-  }, true);
-}
 
-function runTests(document, window, finish) {
-  
-  ok(document.querySelector('div#viewer'), "document content has viewer UI");
-  ok('PDFJS' in window.wrappedJSObject, "window content has PDFJS object");
+      let [ viewer, pdfjs ] = yield ContentTask.spawn(newTabBrowser, null, function* () {
+        
+        return [ content.document.querySelector('div#viewer') !== null,
+                 'PDFJS' in content.wrappedJSObject ];
+      });
 
-  
-  waitForOutlineItems(document).then(function () {
-    
-    
-    setZoomToPageFit(document).then(function () {
-      runNextTest(document, window, finish);
-    }, function () {
-      ok(false, "Current scale has been set to 'page-fit'");
-      finish();
+      ok(viewer, "document content has viewer UI");
+      ok(pdfjs, "window content has PDFJS object");
+
+      yield ContentTask.spawn(newTabBrowser, null, contentSetUp);
+
+      yield Task.spawn(runTests(newTabBrowser));
+
+      let [ pageNumberValue, pageNumberMax ] = yield ContentTask.spawn(newTabBrowser, null,
+          function*() {
+            let pageNumber = content.document.querySelector('input#pageNumber');
+            return [ pageNumber.value, pageNumber.max ];
+          });
+      is(pageNumberValue, pageNumberMax, "Document is left on the last page");
     });
-  }, function () {
-    ok(false, "Outline items have been found");
-    finish();
-  });
+});
+
+function* contentSetUp() {
+  
+
+
+
+
+
+
+  function waitForOutlineItems(document) {
+    return new Promise((resolve, reject) => {
+      document.addEventListener("outlineloaded", function outlineLoaded(evt) {
+        document.removeEventListener("outlineloaded", outlineLoaded);
+        var outlineCount = evt.detail.outlineCount;
+
+        if (document.querySelectorAll(".outlineItem").length === outlineCount) {
+          resolve();
+        } else {
+          reject();
+        }
+      });
+    });
+  }
+
+  
+
+
+
+
+
+
+  function setZoomToPageFit(document) {
+    return new Promise((resolve) => {
+      document.addEventListener("pagerendered", function onZoom(e) {
+        document.removeEventListener("pagerendered", onZoom);
+        document.querySelector("#viewer").click();
+        resolve();
+      });
+
+      var select = document.querySelector("select#scaleSelect");
+      select.selectedIndex = 2;
+      select.dispatchEvent(new Event("change"));
+    });
+  }
+
+  yield waitForOutlineItems(content.document);
+  yield setZoomToPageFit(content.document);
 }
 
 
@@ -207,99 +239,53 @@ function runTests(document, window, finish) {
 
 
 
-function runNextTest(document, window, endCallback) {
-  var test = TESTS.shift(),
-      deferred = Promise.defer(),
-      pageNumber = document.querySelector('input#pageNumber');
+function* runTests(browser) {
+  for (let test of TESTS) {
+    let pgNumber = yield ContentTask.spawn(browser, test, function* (test) {
+      let window = content;
+      let document = window.document;
 
-  
-  var timeout = window.setTimeout(() => deferred.reject(), 5000);
-  window.addEventListener('pagechange', function pageChange() {
-    if (pageNumber.value == test.expectedPage) {
-      window.removeEventListener('pagechange', pageChange);
-      window.clearTimeout(timeout);
-      deferred.resolve(pageNumber.value);
-    }
-  });
+      let deferred = {};
+      deferred.promise = new Promise((resolve, reject) => {
+        deferred.resolve = resolve;
+        deferred.reject = reject;
+      });
 
-  
-  var el = document.querySelector(test.action.selector);
-  ok(el, "Element '" + test.action.selector + "' has been found");
+      let pageNumber = document.querySelector('input#pageNumber');
 
-  
-  if (test.action.value)
-    el.value = test.action.value;
+      
+      let timeout = window.setTimeout(() => deferred.reject(), 5000);
+      window.addEventListener('pagechange', function pageChange() {
+        if (pageNumber.value == test.expectedPage) {
+          window.removeEventListener('pagechange', pageChange);
+          window.clearTimeout(timeout);
+          deferred.resolve(pageNumber.value);
+        }
+      });
 
-  
-  if (test.action.event == "keydown") {
-    var ev = document.createEvent("KeyboardEvent");
-        ev.initKeyEvent("keydown", true, true, null, false, false, false, false,
-                        test.action.keyCode, 0);
-    el.dispatchEvent(ev);
-  }
-  else {
-    var ev = new Event(test.action.event);
-  }
-  el.dispatchEvent(ev);
+      
+      var el = document.querySelector(test.action.selector);
 
+      
+      if (test.action.value)
+        el.value = test.action.value;
 
-  
-  
-  deferred.promise.then(function (pgNumber) {
+      
+      if (test.action.event == "keydown") {
+        var ev = document.createEvent("KeyboardEvent");
+            ev.initKeyEvent("keydown", true, true, null, false, false, false, false,
+                            test.action.keyCode, 0);
+        el.dispatchEvent(ev);
+      }
+      else {
+        var ev = new Event(test.action.event);
+      }
+      el.dispatchEvent(ev);
+
+      return yield deferred.promise;
+    });
+
+    info("Element '" + test.action.selector + "' has been found");
     is(pgNumber, test.expectedPage, test.message);
-
-    if (TESTS.length)
-      runNextTest(document, window, endCallback);
-    else
-      endCallback();
-  }, function () {
-    ok(false, "Test '" + test.message + "' failed with timeout.");
-    endCallback();
-  });
+  }
 }
-
-
-
-
-
-
-
-
-function waitForOutlineItems(document) {
-  var deferred = Promise.defer();
-  document.addEventListener("outlineloaded", function outlineLoaded(evt) {
-    document.removeEventListener("outlineloaded", outlineLoaded);
-    var outlineCount = evt.detail.outlineCount;
-
-    if (document.querySelectorAll(".outlineItem").length === outlineCount) {
-      deferred.resolve();
-    } else {
-      deferred.reject();
-    }
-  });
-
-  return deferred.promise;
-}
-
-
-
-
-
-
-
-
-function setZoomToPageFit(document) {
-  var deferred = Promise.defer();
-  document.addEventListener("pagerendered", function onZoom(e) {
-    document.removeEventListener("pagerendered", onZoom);
-    document.querySelector("#viewer").click();
-    deferred.resolve();
-  });
-
-  var select = document.querySelector("select#scaleSelect");
-  select.selectedIndex = 2;
-  select.dispatchEvent(new Event("change"));
-
-  return deferred.promise;
-}
-
