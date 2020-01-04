@@ -53,7 +53,7 @@ add_task(function* test_asyncClose_does_not_complete_before_statements() {
 
 
 
-add_task(function test_double_asyncClose_throws() {
+add_task(function* test_double_asyncClose_throws() {
   let db = yield openAsyncDatabase(getTestDB());
 
   
@@ -115,7 +115,7 @@ add_task(function* test_asyncClose_failed_open() {
 
 
 
-add_task(function test_asyncClose_does_not_throw_without_callback() {
+add_task(function* test_asyncClose_does_not_throw_without_callback() {
   let db = yield openAsyncDatabase(getTestDB());
   
   db.asyncClose();
