@@ -2,7 +2,7 @@
 
 
 
-package org.mozilla.gecko.util;
+package org.mozilla.gecko;
 
 import android.content.Context;
 
@@ -11,7 +11,6 @@ import android.text.TextUtils;
 
 import com.keepsafe.switchboard.Preferences;
 import com.keepsafe.switchboard.SwitchBoard;
-import org.mozilla.gecko.GeckoSharedPrefs;
 
 import java.util.LinkedList;
 import java.util.List;
