@@ -46,7 +46,7 @@ add_task(function* testSchemaAPIInjection() {
   yield Schemas.load(url);
 
   
-  Management.registerSchemaAPI("noBackgroundAPI.testnamespace", (extension, context) => {
+  Management.registerSchemaAPI("noBackgroundAPI.testnamespace", context => {
     if (context.type !== "background") {
       return {
         noBackgroundAPI: {
@@ -63,7 +63,7 @@ add_task(function* testSchemaAPIInjection() {
   });
 
   
-  Management.registerSchemaAPI("backgroundAPI.testnamespace", (extension, context) => {
+  Management.registerSchemaAPI("backgroundAPI.testnamespace", context => {
     if (context.type === "background") {
       return {
         backgroundAPI: {
