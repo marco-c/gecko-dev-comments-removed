@@ -12,7 +12,7 @@
 #include <limits>
 
 nsIncrementalStreamLoader::nsIncrementalStreamLoader()
-  : mData()
+  : mData(), mBytesConsumed(0)
 {
 }
 
@@ -49,7 +49,7 @@ NS_IMPL_ISUPPORTS(nsIncrementalStreamLoader, nsIIncrementalStreamLoader,
 NS_IMETHODIMP
 nsIncrementalStreamLoader::GetNumBytesRead(uint32_t* aNumBytes)
 {
-  *aNumBytes = mData.length();
+  *aNumBytes = mBytesConsumed + mData.length();
   return NS_OK;
 }
 
@@ -121,11 +121,66 @@ nsIncrementalStreamLoader::WriteSegmentFun(nsIInputStream *inStr,
 {
   nsIncrementalStreamLoader *self = (nsIncrementalStreamLoader *) closure;
 
-  if (!self->mData.append(fromSegment, count)) {
-    self->mData.clearAndFree();
-    return NS_ERROR_OUT_OF_MEMORY;
+  const uint8_t *data = reinterpret_cast<const uint8_t *>(fromSegment);
+  uint32_t consumedCount = 0;
+  nsresult rv;
+  if (self->mData.empty()) {
+    
+    rv = self->mObserver->OnIncrementalData(self, self->mContext,
+                                            count, data, &consumedCount);
+
+    if (rv != NS_OK) {
+      return rv;
+    }
+
+    if (consumedCount > count) {
+      return NS_ERROR_INVALID_ARG;
+    }
+
+    if (consumedCount < count) {
+      if (!self->mData.append(fromSegment + consumedCount,
+                              count - consumedCount)) {
+        self->mData.clearAndFree();
+        return NS_ERROR_OUT_OF_MEMORY;
+      }
+    }
+  } else {
+    
+    
+    if (!self->mData.append(fromSegment, count)) {
+      self->mData.clearAndFree();
+      return NS_ERROR_OUT_OF_MEMORY;
+    }
+    size_t length = self->mData.length();
+    uint32_t reportCount = length > UINT32_MAX ? UINT32_MAX : (uint32_t)length;
+    uint8_t* elems = self->mData.extractRawBuffer();
+
+    rv = self->mObserver->OnIncrementalData(self, self->mContext,
+                                            reportCount, elems, &consumedCount);
+
+    
+    if (rv != NS_OK) {
+      free(elems);
+      return rv;
+    }
+
+    if (consumedCount > reportCount) {
+      free(elems);
+      return NS_ERROR_INVALID_ARG;
+    }
+
+    if (consumedCount == length) {
+      free(elems); 
+    } else {
+      
+      self->mData.replaceRawBuffer(elems, length);
+      if (consumedCount > 0) {
+        self->mData.erase(self->mData.begin() + consumedCount);
+      }
+    }
   }
 
+  self->mBytesConsumed += consumedCount;
   *writeCount = count;
 
   return NS_OK;
@@ -136,8 +191,14 @@ nsIncrementalStreamLoader::OnDataAvailable(nsIRequest* request, nsISupports *ctx
                                 nsIInputStream *inStr,
                                 uint64_t sourceOffset, uint32_t count)
 {
+  if (mObserver) {
+    
+    mRequest = request;
+  }
   uint32_t countRead;
-  return inStr->ReadSegments(WriteSegmentFun, this, count, &countRead);
+  nsresult rv = inStr->ReadSegments(WriteSegmentFun, this, count, &countRead);
+  mRequest = 0;
+  return rv;
 }
 
 void

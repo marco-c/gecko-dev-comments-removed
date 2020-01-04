@@ -195,7 +195,7 @@ public:
 
 
 
-class nsScriptLoader final : public nsIIncrementalStreamLoaderObserver
+class nsScriptLoader final : public nsISupports
 {
   class MOZ_STACK_CLASS AutoCurrentScriptUpdater
   {
@@ -223,7 +223,6 @@ public:
   explicit nsScriptLoader(nsIDocument* aDocument);
 
   NS_DECL_ISUPPORTS
-  NS_DECL_NSIINCREMENTALSTREAMLOADEROBSERVER
 
   
 
@@ -341,6 +340,17 @@ public:
                                  const nsAString& aHintCharset,
                                  nsIDocument* aDocument,
                                  char16_t*& aBufOut, size_t& aLengthOut);
+
+  
+
+
+
+
+  nsresult OnStreamComplete(nsIIncrementalStreamLoader* aLoader,
+                            nsISupports* aContext,
+                            nsresult aStatus,
+                            uint32_t aStringLen,
+                            const uint8_t* aString);
 
   
 
@@ -536,6 +546,22 @@ private:
   bool mDeferEnabled;
   bool mDocumentParsingDone;
   bool mBlockingDOMContentLoaded;
+};
+
+class nsScriptLoadHandler final : public nsIIncrementalStreamLoaderObserver
+{
+public:
+  explicit nsScriptLoadHandler(nsScriptLoader* aScriptLoader,
+                               nsScriptLoadRequest *aRequest);
+
+  NS_DECL_ISUPPORTS
+  NS_DECL_NSIINCREMENTALSTREAMLOADEROBSERVER
+
+private:
+  virtual ~nsScriptLoadHandler();
+
+  RefPtr<nsScriptLoader> mScriptLoader;
+  RefPtr<nsScriptLoadRequest> mRequest;
 };
 
 class nsAutoScriptLoaderDisabler

@@ -46,6 +46,9 @@ protected:
   
   
   mozilla::Vector<uint8_t, 0> mData;
+
+  
+  size_t  mBytesConsumed;
 };
 
 #endif 
