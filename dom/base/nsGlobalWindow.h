@@ -1709,6 +1709,10 @@ private:
   
   bool ComputeIsSecureContext(nsIDocument* aDocument);
 
+public:
+
+  void GetConstellation(nsACString& aConstellation);
+
 protected:
   
   
@@ -1925,6 +1929,9 @@ protected:
   nsTArray<RefPtr<mozilla::dom::VRDisplay>> mVRDisplays;
 
   nsAutoPtr<mozilla::dom::VREventObserver> mVREventObserver;
+
+  uint64_t mStaticConstellation; 
+  nsCString mConstellation; 
 
   friend class nsDOMScriptableHelper;
   friend class nsDOMWindowUtils;
