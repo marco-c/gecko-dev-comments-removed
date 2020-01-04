@@ -492,7 +492,7 @@ nsresult nsZipArchive::ExtractFile(nsZipItem *item, const char *outname,
 
   
   
-  PR_ASSERT(!item->IsDirectory());
+  MOZ_ASSERT(!item->IsDirectory());
 
   Bytef outbuf[ZIP_BUFLEN];
 
@@ -878,7 +878,7 @@ nsZipHandle* nsZipArchive::GetFD()
 
 uint32_t nsZipArchive::GetDataOffset(nsZipItem* aItem)
 {
-  PR_ASSERT (aItem);
+  MOZ_ASSERT(aItem);
 MOZ_WIN_MEM_TRY_BEGIN
   
   
@@ -909,7 +909,7 @@ MOZ_WIN_MEM_TRY_CATCH(return 0)
 
 const uint8_t* nsZipArchive::GetData(nsZipItem* aItem)
 {
-  PR_ASSERT (aItem);
+  MOZ_ASSERT(aItem);
 MOZ_WIN_MEM_TRY_BEGIN
   uint32_t offset = GetDataOffset(aItem);
 
@@ -1005,7 +1005,7 @@ nsZipFind::~nsZipFind()
 
 static uint32_t HashName(const char* aName, uint16_t len)
 {
-  PR_ASSERT(aName != 0);
+  MOZ_ASSERT(aName != 0);
 
   const uint8_t* p = (const uint8_t*)aName;
   const uint8_t* endp = p + len;

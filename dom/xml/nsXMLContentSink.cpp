@@ -928,7 +928,7 @@ nsXMLContentSink::HandleStartElement(const char16_t *aName,
   
   
   
-  PR_ASSERT(eXMLContentSinkState_InEpilog != mState);
+  MOZ_ASSERT(eXMLContentSinkState_InEpilog != mState);
 
   FlushText();
   DidAddContent();
@@ -1021,7 +1021,7 @@ nsXMLContentSink::HandleEndElement(const char16_t *aName,
   
   
   
-  PR_ASSERT(eXMLContentSinkState_InDocumentElement == mState);
+  MOZ_ASSERT(eXMLContentSinkState_InDocumentElement == mState);
 
   FlushText();
 
