@@ -4,6 +4,8 @@
 
 from __future__ import absolute_import, print_function, unicode_literals
 
+import sys
+
 from mach.decorators import (
     CommandArgument,
     CommandProvider,
@@ -50,7 +52,14 @@ class VersionControlCommands(object):
         import which
         import mozboot.bootstrap as bootstrap
 
-        hg = which.which('hg')
+        
+        
+        
+        
+        if sys.platform in ('win32', 'msys'):
+            hg = which.which('hg.exe')
+        else:
+            hg = which.which(hg)
 
         if update_only:
             bootstrap.update_vct(hg, self._context.state_dir)
