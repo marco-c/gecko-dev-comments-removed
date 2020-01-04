@@ -6882,12 +6882,12 @@ nsGlobalWindow::MakeScriptDialogTitle(nsAString &aOutTitle)
 }
 
 bool
-nsGlobalWindow::CanMoveResizeWindows()
+nsGlobalWindow::CanMoveResizeWindows(bool aCallerIsChrome)
 {
   MOZ_ASSERT(IsOuterWindow());
 
   
-  if (!nsContentUtils::IsCallerChrome()) {
+  if (!aCallerIsChrome) {
     
     
     if (!mHadOriginalOpener) {
@@ -7603,7 +7603,7 @@ nsGlobalWindow::Print()
 }
 
 void
-nsGlobalWindow::MoveToOuter(int32_t aXPos, int32_t aYPos, ErrorResult& aError)
+nsGlobalWindow::MoveToOuter(int32_t aXPos, int32_t aYPos, ErrorResult& aError, bool aCallerIsChrome)
 {
   MOZ_RELEASE_ASSERT(IsOuterWindow());
   
@@ -7611,7 +7611,7 @@ nsGlobalWindow::MoveToOuter(int32_t aXPos, int32_t aYPos, ErrorResult& aError)
 
 
 
-  if (!CanMoveResizeWindows() || IsFrame()) {
+  if (!CanMoveResizeWindows(aCallerIsChrome) || IsFrame()) {
     return;
   }
 
@@ -7633,22 +7633,22 @@ nsGlobalWindow::MoveToOuter(int32_t aXPos, int32_t aYPos, ErrorResult& aError)
 void
 nsGlobalWindow::MoveTo(int32_t aXPos, int32_t aYPos, ErrorResult& aError)
 {
-  FORWARD_TO_OUTER_OR_THROW(MoveToOuter, (aXPos, aYPos, aError), aError, );
+  FORWARD_TO_OUTER_OR_THROW(MoveToOuter, (aXPos, aYPos, aError, nsContentUtils::IsCallerChrome()), aError, );
 }
 
 NS_IMETHODIMP
 nsGlobalWindow::MoveTo(int32_t aXPos, int32_t aYPos)
 {
-  FORWARD_TO_INNER(MoveTo, (aXPos, aYPos), NS_ERROR_UNEXPECTED);
+  FORWARD_TO_OUTER(MoveTo, (aXPos, aYPos), NS_ERROR_UNEXPECTED);
 
   ErrorResult rv;
-  MoveTo(aXPos, aYPos, rv);
+  MoveToOuter(aXPos, aYPos, rv,  true);
 
   return rv.StealNSResult();
 }
 
 void
-nsGlobalWindow::MoveByOuter(int32_t aXDif, int32_t aYDif, ErrorResult& aError)
+nsGlobalWindow::MoveByOuter(int32_t aXDif, int32_t aYDif, ErrorResult& aError, bool aCallerIsChrome)
 {
   MOZ_RELEASE_ASSERT(IsOuterWindow());
 
@@ -7657,7 +7657,7 @@ nsGlobalWindow::MoveByOuter(int32_t aXDif, int32_t aYDif, ErrorResult& aError)
 
 
 
-  if (!CanMoveResizeWindows() || IsFrame()) {
+  if (!CanMoveResizeWindows(aCallerIsChrome) || IsFrame()) {
     return;
   }
 
@@ -7693,22 +7693,22 @@ nsGlobalWindow::MoveByOuter(int32_t aXDif, int32_t aYDif, ErrorResult& aError)
 void
 nsGlobalWindow::MoveBy(int32_t aXDif, int32_t aYDif, ErrorResult& aError)
 {
-  FORWARD_TO_OUTER_OR_THROW(MoveByOuter, (aXDif, aYDif, aError), aError, );
+  FORWARD_TO_OUTER_OR_THROW(MoveByOuter, (aXDif, aYDif, aError, nsContentUtils::IsCallerChrome()), aError, );
 }
 
 NS_IMETHODIMP
 nsGlobalWindow::MoveBy(int32_t aXDif, int32_t aYDif)
 {
-  FORWARD_TO_INNER(MoveBy, (aXDif, aYDif), NS_ERROR_UNEXPECTED);
+  FORWARD_TO_OUTER(MoveBy, (aXDif, aYDif), NS_ERROR_UNEXPECTED);
 
   ErrorResult rv;
-  MoveBy(aXDif, aYDif, rv);
+  MoveByOuter(aXDif, aYDif, rv,  true);
 
   return rv.StealNSResult();
 }
 
 void
-nsGlobalWindow::ResizeToOuter(int32_t aWidth, int32_t aHeight, ErrorResult& aError)
+nsGlobalWindow::ResizeToOuter(int32_t aWidth, int32_t aHeight, ErrorResult& aError, bool aCallerIsChrome)
 {
   MOZ_RELEASE_ASSERT(IsOuterWindow());
 
@@ -7730,7 +7730,7 @@ nsGlobalWindow::ResizeToOuter(int32_t aWidth, int32_t aHeight, ErrorResult& aErr
 
 
 
-  if (!CanMoveResizeWindows() || IsFrame()) {
+  if (!CanMoveResizeWindows(aCallerIsChrome) || IsFrame()) {
     return;
   }
 
@@ -7751,23 +7751,23 @@ nsGlobalWindow::ResizeToOuter(int32_t aWidth, int32_t aHeight, ErrorResult& aErr
 void
 nsGlobalWindow::ResizeTo(int32_t aWidth, int32_t aHeight, ErrorResult& aError)
 {
-  FORWARD_TO_OUTER_OR_THROW(ResizeToOuter, (aWidth, aHeight, aError), aError, );
+  FORWARD_TO_OUTER_OR_THROW(ResizeToOuter, (aWidth, aHeight, aError, nsContentUtils::IsCallerChrome()), aError, );
 }
 
 NS_IMETHODIMP
 nsGlobalWindow::ResizeTo(int32_t aWidth, int32_t aHeight)
 {
-  FORWARD_TO_INNER(ResizeTo, (aWidth, aHeight), NS_ERROR_UNEXPECTED);
+  FORWARD_TO_OUTER(ResizeTo, (aWidth, aHeight), NS_ERROR_UNEXPECTED);
 
   ErrorResult rv;
-  ResizeTo(aWidth, aHeight, rv);
+  ResizeToOuter(aWidth, aHeight, rv, nsContentUtils::IsCallerChrome());
 
   return rv.StealNSResult();
 }
 
 void
 nsGlobalWindow::ResizeByOuter(int32_t aWidthDif, int32_t aHeightDif,
-                              ErrorResult& aError)
+                              ErrorResult& aError, bool aCallerIsChrome)
 {
   MOZ_RELEASE_ASSERT(IsOuterWindow());
 
@@ -7796,7 +7796,7 @@ nsGlobalWindow::ResizeByOuter(int32_t aWidthDif, int32_t aHeightDif,
 
 
 
-  if (!CanMoveResizeWindows() || IsFrame()) {
+  if (!CanMoveResizeWindows(aCallerIsChrome) || IsFrame()) {
     return;
   }
 
@@ -7832,22 +7832,22 @@ void
 nsGlobalWindow::ResizeBy(int32_t aWidthDif, int32_t aHeightDif,
                          ErrorResult& aError)
 {
-  FORWARD_TO_OUTER_OR_THROW(ResizeByOuter, (aWidthDif, aHeightDif, aError), aError, );
+  FORWARD_TO_OUTER_OR_THROW(ResizeByOuter, (aWidthDif, aHeightDif, aError, nsContentUtils::IsCallerChrome()), aError, );
 }
 
 NS_IMETHODIMP
 nsGlobalWindow::ResizeBy(int32_t aWidthDif, int32_t aHeightDif)
 {
-  FORWARD_TO_INNER(ResizeBy, (aWidthDif, aHeightDif), NS_ERROR_UNEXPECTED);
+  FORWARD_TO_OUTER(ResizeBy, (aWidthDif, aHeightDif), NS_ERROR_UNEXPECTED);
 
   ErrorResult rv;
-  ResizeBy(aWidthDif, aHeightDif, rv);
+  ResizeByOuter(aWidthDif, aHeightDif, rv,  true);
 
   return rv.StealNSResult();
 }
 
 void
-nsGlobalWindow::SizeToContentOuter(ErrorResult& aError)
+nsGlobalWindow::SizeToContentOuter(ErrorResult& aError, bool aCallerIsChrome)
 {
   MOZ_RELEASE_ASSERT(IsOuterWindow());
 
@@ -7860,7 +7860,7 @@ nsGlobalWindow::SizeToContentOuter(ErrorResult& aError)
 
 
 
-  if (!CanMoveResizeWindows() || IsFrame()) {
+  if (!CanMoveResizeWindows(aCallerIsChrome) || IsFrame()) {
     return;
   }
 
@@ -7899,16 +7899,16 @@ nsGlobalWindow::SizeToContentOuter(ErrorResult& aError)
 void
 nsGlobalWindow::SizeToContent(ErrorResult& aError)
 {
-  FORWARD_TO_OUTER_OR_THROW(SizeToContentOuter, (aError), aError, );
+  FORWARD_TO_OUTER_OR_THROW(SizeToContentOuter, (aError, nsContentUtils::IsCallerChrome()), aError, );
 }
 
 NS_IMETHODIMP
 nsGlobalWindow::SizeToContent()
 {
-  FORWARD_TO_INNER(SizeToContent, (), NS_ERROR_UNEXPECTED);
+  FORWARD_TO_OUTER(SizeToContent, (), NS_ERROR_UNEXPECTED);
 
   ErrorResult rv;
-  SizeToContent(rv);
+  SizeToContentOuter(rv,  true);
 
   return rv.StealNSResult();
 }
@@ -14734,7 +14734,7 @@ nsGlobalWindow::SetReplaceableWindowCoord(JSContext* aCx,
 
 
   nsGlobalWindow* outer = GetOuterWindowInternal();
-  if (!outer || !outer->CanMoveResizeWindows() || outer->IsFrame()) {
+  if (!outer || !outer->CanMoveResizeWindows(nsContentUtils::IsCallerChrome()) || outer->IsFrame()) {
     RedefineProperty(aCx, aPropName, aValue, aError);
     return;
   }
