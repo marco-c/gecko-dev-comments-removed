@@ -124,6 +124,12 @@ GlobalObject::resolveConstructor(JSContext* cx, Handle<GlobalObject*> global, JS
     
     
     
+    AutoSuppressObjectMetadataCallback suppressMetadata(cx);
+
+    
+    
+    
+    
     ClassInitializerOp init = protoTable[key].init;
     if (init == InitViaClassSpec)
         init = nullptr;
