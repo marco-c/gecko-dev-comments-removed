@@ -160,8 +160,7 @@ public:
 
     bool isWhitespace(const int cid) const;
     bool hasCollisionInfo() const { return (m_flags & SEG_HASCOLLISIONS); }
-    SlotCollision *collisionInfo(const Slot *s) const { return hasCollisionInfo() ? reinterpret_cast<SlotCollision *>(s->userAttrs() + m_silf->numUser()) : 0; }
-
+    SlotCollision *collisionInfo(const Slot *s) const { return m_collisions ? m_collisions + s->index() : 0; }
     CLASS_NEW_DELETE
 
 public:       
@@ -179,6 +178,7 @@ private:
     Slot          * m_freeSlots;        
     SlotJustify   * m_freeJustifies;    
     CharInfo      * m_charinfo;         
+    SlotCollision * m_collisions;
     const Face    * m_face;             
     const Silf    * m_silf;
     Slot          * m_first;            
