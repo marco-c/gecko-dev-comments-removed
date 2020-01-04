@@ -307,8 +307,6 @@ private:
     nsID                    mIID;
     XPTInterfaceDescriptor* mDescriptor;
 
-    uint16_t mMethodBaseIndex;
-    uint16_t mConstantBaseIndex;
     xptiTypelibGuts* mTypelib;
 
     xptiInterfaceEntry*     mParent;      
@@ -316,7 +314,12 @@ private:
     xptiInterfaceInfo* MOZ_UNSAFE_REF("The safety of this pointer is ensured "
                                       "by the semantics of xptiWorkingSet.")
                             mInfo;        
+
+    uint16_t mMethodBaseIndex;
+    uint16_t mConstantBaseIndex;
+
     xptiInfoFlags           mFlags;
+
     char                    mName[1];     
 };
 
