@@ -1353,13 +1353,20 @@ CodeGeneratorShared::callVM(const VMFunction& fun, LInstruction* ins, const Regi
     
     
     
-    
-    uint32_t callOffset;
-    if (dynStack)
-        callOffset = masm.callWithExitFrame(wrapper, *dynStack);
-    else
-        callOffset = masm.callWithExitFrame(wrapper);
+    if (dynStack) {
+        masm.addPtr(Imm32(masm.framePushed()), *dynStack);
+        masm.makeFrameDescriptor(*dynStack, JitFrame_IonJS);
+        masm.Push(*dynStack); 
+    } else {
+        uint32_t descriptor = MakeFrameDescriptor(framePushed(), JitFrame_IonJS);
+        masm.Push(Imm32(descriptor));
+    }
 
+    
+    
+    
+    
+    uint32_t callOffset = masm.callJit(wrapper);
     markSafepointAt(callOffset, ins);
 
     

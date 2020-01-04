@@ -571,6 +571,7 @@ class MacroAssembler : public MacroAssemblerSpecific
     
     uint32_t callJitNoProfiler(Register callee) PER_SHARED_ARCH;
     inline uint32_t callJit(Register callee);
+    inline uint32_t callJit(JitCode* code);
 
     
     
@@ -1097,37 +1098,6 @@ class MacroAssembler : public MacroAssemblerSpecific
 
     
     void generateBailoutTail(Register scratch, Register bailoutInfo);
-
-    
-    
-    
-    
-    
-    
-
-    
-    uint32_t callWithExitFrame(Label* target) {
-        AutoProfilerCallInstrumentation profiler(*this);
-        MacroAssemblerSpecific::callWithExitFrame(target);
-        uint32_t ret = currentOffset();
-        return ret;
-    }
-
-    
-    uint32_t callWithExitFrame(JitCode* target) {
-        AutoProfilerCallInstrumentation profiler(*this);
-        MacroAssemblerSpecific::callWithExitFrame(target);
-        uint32_t ret = currentOffset();
-        return ret;
-    }
-
-    
-    uint32_t callWithExitFrame(JitCode* target, Register dynStack) {
-        AutoProfilerCallInstrumentation profiler(*this);
-        MacroAssemblerSpecific::callWithExitFrame(target, dynStack);
-        uint32_t ret = currentOffset();
-        return ret;
-    }
 
     void branchTestObjectTruthy(bool truthy, Register objReg, Register scratch,
                                 Label* slowCheck, Label* checked)

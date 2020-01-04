@@ -1476,8 +1476,6 @@ class MacroAssemblerX86Shared : public Assembler
     
     
     void buildFakeExitFrame(Register scratch, uint32_t* offset);
-    void callWithExitFrame(Label* target);
-    void callWithExitFrame(JitCode* target);
 
     void callAndPushReturnAddress(Label* label);
 

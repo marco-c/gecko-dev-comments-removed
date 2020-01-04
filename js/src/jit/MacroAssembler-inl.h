@@ -162,6 +162,14 @@ MacroAssembler::callJit(Register callee)
     return ret;
 }
 
+uint32_t
+MacroAssembler::callJit(JitCode* callee)
+{
+    AutoProfilerCallInstrumentation profiler(*this);
+    call(callee);
+    return currentOffset();
+}
+
 void
 MacroAssembler::makeFrameDescriptor(Register frameSizeReg, FrameType type)
 {
@@ -171,7 +179,6 @@ MacroAssembler::makeFrameDescriptor(Register frameSizeReg, FrameType type)
     
     orPtr(Imm32(type), frameSizeReg);
 }
-
 
 
 
