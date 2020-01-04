@@ -2114,9 +2114,17 @@ void
 nsHttpConnection::CheckForTraffic(bool check)
 {
     if (check) {
+        LOG((" CheckForTraffic conn %p\n", this));
         if (mSpdySession) {
-            
-            mSpdySession->SendPing();
+            if (PR_IntervalToMilliseconds(IdleTime()) >= 500) {
+                
+                
+                
+                LOG((" SendPing\n"));
+                mSpdySession->SendPing();
+            } else {
+                LOG((" SendPing skipped due to network activity\n"));
+            }
         } else {
             
             mTrafficCount = mTotalBytesWritten + mTotalBytesRead;
