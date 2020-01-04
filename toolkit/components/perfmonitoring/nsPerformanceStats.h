@@ -17,6 +17,7 @@
 #include "nsIPerformanceStats.h"
 
 class nsPerformanceGroup;
+class nsPerformanceGroupDetails;
 
 typedef mozilla::Vector<RefPtr<js::PerformanceGroup>> JSGroupVector;
 typedef mozilla::Vector<RefPtr<nsPerformanceGroup>> GroupVector;
@@ -26,8 +27,99 @@ typedef mozilla::Vector<RefPtr<nsPerformanceGroup>> GroupVector;
 
 
 
-class nsPerformanceStatsService : public nsIPerformanceStatsService,
-                                  public nsIObserver
+
+
+
+class nsPerformanceObservationTarget final: public nsIPerformanceObservable {
+public:
+  NS_DECL_ISUPPORTS
+  NS_DECL_NSIPERFORMANCEOBSERVABLE
+
+  
+
+
+
+  bool HasObservers() const;
+
+  
+
+
+  void NotifyJankObservers(nsIPerformanceGroupDetails* source, nsIPerformanceAlert* gravity);
+
+  
+
+
+  void SetTarget(nsPerformanceGroupDetails* details);
+
+private:
+  ~nsPerformanceObservationTarget() {}
+
+  
+  
+  
+  
+  mozilla::Vector<nsCOMPtr<nsIPerformanceObserver>> mObservers;
+
+  
+  RefPtr<nsPerformanceGroupDetails> mDetails;
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+class nsGroupHolder {
+public:
+  nsGroupHolder()
+    : mGroup(nullptr)
+    , mPendingObservationTarget(nullptr)
+  { }
+
+  
+
+
+  nsPerformanceObservationTarget* ObservationTarget();
+
+  
+
+
+
+
+  class nsPerformanceGroup* GetGroup();
+
+  
+
+
+
+
+
+
+
+  void SetGroup(class nsPerformanceGroup*);
+private:
+  
+  class nsPerformanceGroup* mGroup;
+
+  
+  
+  RefPtr<nsPerformanceObservationTarget> mPendingObservationTarget;
+};
+
+
+
+
+
+
+class nsPerformanceStatsService final : public nsIPerformanceStatsService,
+                                        public nsIObserver
 {
 public:
   NS_DECL_ISUPPORTS
@@ -40,7 +132,7 @@ public:
 private:
   nsresult InitInternal();
   void Dispose();
-  virtual ~nsPerformanceStatsService();
+  ~nsPerformanceStatsService();
 
 protected:
   friend nsPerformanceGroup;
@@ -120,12 +212,11 @@ protected:
 
 
 
-  struct AddonIdToGroup: public nsStringHashKey {
+  struct AddonIdToGroup: public nsStringHashKey,
+                         public nsGroupHolder {
     explicit AddonIdToGroup(const nsAString* key)
       : nsStringHashKey(key)
-      , mGroup(nullptr)
     { }
-    nsPerformanceGroup* mGroup;
   };
   nsTHashtable<AddonIdToGroup> mAddonIdToGroup;
 
@@ -134,12 +225,11 @@ protected:
 
 
 
-  struct WindowIdToGroup: public nsUint64HashKey {
+  struct WindowIdToGroup: public nsUint64HashKey,
+                          public nsGroupHolder {
     explicit WindowIdToGroup(const uint64_t* key)
       : nsUint64HashKey(key)
-      , mGroup(nullptr)
     {}
-    nsPerformanceGroup* mGroup;
   };
   nsTHashtable<WindowIdToGroup> mWindowIdToGroup;
 
@@ -282,6 +372,78 @@ protected:
 
 
   bool mIsMonitoringPerCompartment;
+
+
+public:
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  void NotifyJankObservers();
+
+private:
+  
+
+
+
+
+
+
+  GroupVector mPendingAlerts;
+
+  
+
+
+
+
+  RefPtr<class PendingAlertsCollector> mPendingAlertsCollector;
+
+
+  
+
+
+  struct UniversalTargets {
+    UniversalTargets();
+    
+
+
+    RefPtr<nsPerformanceObservationTarget> mAddons;
+
+    
+
+
+    RefPtr<nsPerformanceObservationTarget> mWindows;
+  };
+  UniversalTargets mUniversalTargets;
+
+  
+
+
+
+  uint64_t mJankAlertThreshold;
+
+  
+
+
+
+
+
+
+  uint32_t mJankAlertBufferingDelay;
 };
 
 
@@ -331,7 +493,7 @@ struct PerformanceData {
 
 
 
-class nsPerformanceGroupDetails: public nsIPerformanceGroupDetails {
+class nsPerformanceGroupDetails final: public nsIPerformanceGroupDetails {
 public:
   NS_DECL_ISUPPORTS
   NS_DECL_NSIPERFORMANCEGROUPDETAILS
@@ -358,8 +520,9 @@ public:
   bool IsAddon() const;
   bool IsWindow() const;
   bool IsSystem() const;
+  bool IsContentProcess() const;
 private:
-  virtual ~nsPerformanceGroupDetails() {}
+  ~nsPerformanceGroupDetails() {}
 
   const nsString mName;
   const nsString mGroupId;
@@ -466,6 +629,24 @@ public:
 
 
   void Dispose();
+
+  
+
+
+
+
+
+  void SetObservationTarget(nsPerformanceObservationTarget*);
+
+
+  
+
+
+
+
+  bool HasPendingAlert() const;
+  void SetHasPendingAlert(bool value);
+
 protected:
   nsPerformanceGroup(nsPerformanceStatsService* service,
                      const nsAString& name,
@@ -487,7 +668,7 @@ protected:
   virtual void Delete() override {
     delete this;
   }
-  virtual ~nsPerformanceGroup();
+  ~nsPerformanceGroup();
 
 private:
   
@@ -505,6 +686,66 @@ private:
 
 
   const GroupScope mScope;
+
+
+
+public:
+  
+
+
+  nsPerformanceObservationTarget* ObservationTarget() const;
+
+  
+
+
+
+
+  void RecordJank(uint64_t jank);
+  uint64_t HighestRecentJank();
+
+  
+
+
+
+
+  void RecordCPOW(uint64_t cpow);
+  uint64_t HighestRecentCPOW();
+
+  
+
+
+  void ResetHighest();
+private:
+  
+
+
+
+
+
+  RefPtr<class nsPerformanceObservationTarget> mObservationTarget;
+
+  
+
+
+
+  uint64_t mHighestJank;
+
+  
+
+
+
+  uint64_t mHighestCPOW;
+
+  
+
+
+
+
+
+
+
+
+  bool mHasPendingAlert;
 };
 
 #endif
