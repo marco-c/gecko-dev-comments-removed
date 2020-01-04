@@ -167,28 +167,19 @@ body {
   background-repeat: repeat-y;
   
 
-  background-size: calc(100% - var(--timeline-sidebar-width)) 100%;
   background-position: var(--timeline-sidebar-width) 0;
   display: flex;
   flex-direction: column;
 }
 
-.animation-timeline .scrubber-wrapper {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: var(--timeline-sidebar-width);
-  right: 0;
-  z-index: 1;
-  pointer-events: none;
-}
-
 .animation-timeline .scrubber {
   position: absolute;
   height: 100%;
-  width: 0;
+  width: var(--timeline-sidebar-width);
   border-right: 1px solid red;
   box-sizing: border-box;
+  z-index: 1;
+  pointer-events: none;
 }
 
 .animation-timeline .scrubber::before {
@@ -351,7 +342,6 @@ body {
   
   background-image: url("images/animation-fast-track.svg");
   background-repeat: no-repeat;
-  background-position: calc(100% - 5px) center;
 }
 
 .animation-timeline .animation .delay {
