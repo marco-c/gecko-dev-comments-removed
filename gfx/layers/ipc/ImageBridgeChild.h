@@ -143,22 +143,6 @@ public:
 
 
 
-  static bool IsCreated();
-  
-
-
-
-
-  static bool IsShutDown()
-  {
-    return sIsShutDown;
-  }
-
-  
-
-
-
-
   static ImageBridgeChild* GetSingleton();
 
 
@@ -401,6 +385,10 @@ protected:
   void MarkShutDown();
   void FallbackDestroyActors();
 
+  void ActorDestroy(ActorDestroyReason aWhy) override;
+
+  bool CanSend() const;
+
 private:
   class ShutdownObserver final : public nsIObserver
   {
@@ -422,8 +410,8 @@ private:
 
 private:
   CompositableTransaction* mTxn;
-  Atomic<bool> mShuttingDown;
-  static Atomic<bool> sIsShutDown;
+
+  bool mCanSend;
 
   
 
