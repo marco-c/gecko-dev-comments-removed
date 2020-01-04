@@ -27,6 +27,14 @@ public:
 
   static bool
   IsDescendantPath(nsIFile* aPath, nsIFile* aDescendantPath);
+
+  
+
+
+
+  static bool
+  IsValidRelativeDOMPath(const nsAString& aPath,
+                         nsTArray<nsString>& aParts);
 };
 
 } 

@@ -9,6 +9,16 @@
 namespace mozilla {
 namespace dom {
 
+namespace {
+
+bool
+TokenizerIgnoreNothing(char16_t )
+{
+  return false;
+}
+
+} 
+
  bool
 FileSystemUtils::IsDescendantPath(nsIFile* aFile,
                                   nsIFile* aDescendantFile)
@@ -29,6 +39,45 @@ FileSystemUtils::IsDescendantPath(nsIFile* aFile,
   if (descendantPath.Length() <= path.Length() ||
       !StringBeginsWith(descendantPath, path)) {
     return false;
+  }
+
+  return true;
+}
+
+ bool
+FileSystemUtils::IsValidRelativeDOMPath(const nsAString& aPath,
+                                        nsTArray<nsString>& aParts)
+{
+  
+  if (aPath.IsEmpty()) {
+    return false;
+  }
+
+  
+  if (aPath.First() == FILESYSTEM_DOM_PATH_SEPARATOR_CHAR ||
+      aPath.Last() == FILESYSTEM_DOM_PATH_SEPARATOR_CHAR) {
+    return false;
+  }
+
+  NS_NAMED_LITERAL_STRING(kCurrentDir, ".");
+  NS_NAMED_LITERAL_STRING(kParentDir, "..");
+
+  
+  nsCharSeparatedTokenizerTemplate<TokenizerIgnoreNothing>
+    tokenizer(aPath, FILESYSTEM_DOM_PATH_SEPARATOR_CHAR);
+
+  while (tokenizer.hasMoreTokens()) {
+    nsDependentSubstring pathComponent = tokenizer.nextToken();
+    
+    
+    
+    if (pathComponent.IsEmpty() ||
+        pathComponent.Equals(kCurrentDir) ||
+        pathComponent.Equals(kParentDir)) {
+      return false;
+    }
+
+    aParts.AppendElement(pathComponent);
   }
 
   return true;
