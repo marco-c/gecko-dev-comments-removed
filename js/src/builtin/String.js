@@ -140,7 +140,7 @@ function String_replace(searchValue, replaceValue) {
         searchValue !== undefined && searchValue !== null)
     {
         
-        var replacer = searchValue[std_replace];
+        var replacer = GetMethod(searchValue, std_replace);
 
         
         if (replacer !== undefined)
@@ -223,7 +223,7 @@ function String_search(regexp) {
     var isPatternString = (typeof regexp === "string");
     if (!(isPatternString && StringProtoHasNoSearch()) && regexp !== undefined && regexp !== null) {
         
-        var searcher = regexp[std_search];
+        var searcher = GetMethod(regexp, std_search);
 
         
         if (searcher !== undefined)
@@ -285,7 +285,7 @@ function String_split(separator, limit) {
         separator !== undefined && separator !== null)
     {
         
-        var splitter = separator[std_split];
+        var splitter = GetMethod(separator, std_split);
 
         
         if (splitter !== undefined)
