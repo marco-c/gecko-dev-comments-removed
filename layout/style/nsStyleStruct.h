@@ -3489,7 +3489,6 @@ struct nsStyleSVGReset
   static nsChangeHint MaxDifference() {
     return nsChangeHint_UpdateEffects |
            nsChangeHint_UpdateOverflow |
-           nsChangeHint_UpdateContainingBlock |
            nsChangeHint_NeutralChange |
            NS_STYLE_HINT_REFLOW;
   }
@@ -3499,10 +3498,6 @@ struct nsStyleSVGReset
     return nsChangeHint_NeedReflow |
            nsChangeHint_ReflowChangesSizeOrPosition |
            nsChangeHint_ClearAncestorIntrinsics;
-  }
-
-  bool HasFilters() const {
-    return !mFilters.IsEmpty();
   }
 
   bool HasClipPath() const {
@@ -3515,7 +3510,6 @@ struct nsStyleSVGReset
 
   nsStyleImageLayers    mMask;
   nsStyleClipPath mClipPath;          
-  nsTArray<nsStyleFilter> mFilters;   
   nscolor          mStopColor;        
   nscolor          mFloodColor;       
   nscolor          mLightingColor;    
@@ -3583,6 +3577,8 @@ struct nsStyleEffects
            nsChangeHint_RepaintFrame |
            nsChangeHint_UpdateOpacityLayer |
            nsChangeHint_UpdateUsesOpacity |
+           nsChangeHint_UpdateContainingBlock |
+           nsChangeHint_UpdateEffects |
            nsChangeHint_NeutralChange;
   }
   static nsChangeHint DifferenceAlwaysHandledForDescendants() {
@@ -3593,6 +3589,11 @@ struct nsStyleEffects
            nsChangeHint_ClearAncestorIntrinsics;
   }
 
+  bool HasFilters() const {
+    return !mFilters.IsEmpty();
+  }
+
+  nsTArray<nsStyleFilter>  mFilters;   
   RefPtr<nsCSSShadowArray> mBoxShadow; 
   nsRect  mClip;                       
   float   mOpacity;                    

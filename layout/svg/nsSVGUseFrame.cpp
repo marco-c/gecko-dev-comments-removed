@@ -196,7 +196,7 @@ nsSVGUseFrame::ReflowSVG()
 
   
   
-  if (StyleSVGReset()->HasFilters()) {
+  if (StyleEffects()->HasFilters()) {
     InvalidateFrame();
   }
 

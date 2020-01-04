@@ -5682,7 +5682,7 @@ ComputeEffectsRect(nsIFrame* aFrame, const nsRect& aOverflowRect,
     
     
     
-    if (aFrame->StyleSVGReset()->HasFilters()) {
+    if (aFrame->StyleEffects()->HasFilters()) {
       aFrame->Properties().
         Set(nsIFrame::PreEffectsBBoxProperty(), new nsRect(r));
       r = nsSVGUtils::GetPostFilterVisualOverflowRect(aFrame, aOverflowRect);

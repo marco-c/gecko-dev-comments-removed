@@ -1342,7 +1342,6 @@ nsStyleSVGReset::nsStyleSVGReset(const nsStyleSVGReset& aSource)
   mFloodColor = aSource.mFloodColor;
   mLightingColor = aSource.mLightingColor;
   mClipPath = aSource.mClipPath;
-  mFilters = aSource.mFilters;
   mStopOpacity = aSource.mStopOpacity;
   mFloodOpacity = aSource.mFloodOpacity;
   mDominantBaseline = aSource.mDominantBaseline;
@@ -1362,17 +1361,9 @@ nsChangeHint nsStyleSVGReset::CalcDifference(const nsStyleSVGReset& aOther) cons
 {
   nsChangeHint hint = nsChangeHint(0);
 
-  if (HasFilters() != aOther.HasFilters()) {
-    
-    NS_UpdateHint(hint, nsChangeHint_UpdateContainingBlock);
-  }
-
-  if (mClipPath != aOther.mClipPath ||
-      mFilters != aOther.mFilters) {
+  if (mClipPath != aOther.mClipPath) {
     NS_UpdateHint(hint, nsChangeHint_UpdateEffects);
     NS_UpdateHint(hint, nsChangeHint_RepaintFrame);
-    
-    
     
     
     NS_UpdateHint(hint, nsChangeHint_UpdateOverflow);
@@ -3976,7 +3967,8 @@ nsStyleEffects::nsStyleEffects(StyleStructContext aContext)
 }
 
 nsStyleEffects::nsStyleEffects(const nsStyleEffects& aSource)
-  : mBoxShadow(aSource.mBoxShadow)
+  : mFilters(aSource.mFilters)
+  , mBoxShadow(aSource.mBoxShadow)
   , mClip(aSource.mClip)
   , mOpacity(aSource.mOpacity)
   , mClipFlags(aSource.mClipFlags)
@@ -4030,6 +4022,17 @@ nsStyleEffects::CalcDifference(const nsStyleEffects& aOther) const
         hint |= nsChangeHint_UpdateUsesOpacity;
       }
     }
+  }
+
+  if (HasFilters() != aOther.HasFilters()) {
+    
+    hint |= nsChangeHint_UpdateContainingBlock;
+  }
+
+  if (mFilters != aOther.mFilters) {
+    hint |= nsChangeHint_UpdateEffects |
+            nsChangeHint_RepaintFrame |
+            nsChangeHint_UpdateOverflow;
   }
 
   if (mMixBlendMode != aOther.mMixBlendMode) {

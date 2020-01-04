@@ -155,9 +155,9 @@ nsSVGIntegrationUtils::UsingEffectsForFrame(const nsIFrame* aFrame)
   
   
   const nsStyleSVGReset *style = aFrame->StyleSVGReset();
-  bool hasValidLayers = style->mMask.HasLayerWithImage();
-
-  return (style->HasFilters() || style->HasClipPath() || hasValidLayers);
+  return aFrame->StyleEffects()->HasFilters() ||
+         style->HasClipPath() ||
+         style->mMask.HasLayerWithImage();
 }
 
 
