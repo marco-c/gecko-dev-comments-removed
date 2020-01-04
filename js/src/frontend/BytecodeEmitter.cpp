@@ -4985,6 +4985,15 @@ BytecodeEmitter::emitTry(ParseNode* pn)
             MOZ_ASSERT(this->stackDepth == depth);
 
             
+            
+            
+            
+            if (!emit1(JSOP_UNDEFINED))
+                return false;
+            if (!emit1(JSOP_SETRVAL))
+                return false;
+
+            
             MOZ_ASSERT(pn3->isKind(PNK_LEXICALSCOPE));
             if (!emitTree(pn3))
                 return false;
@@ -5034,14 +5043,26 @@ BytecodeEmitter::emitTry(ParseNode* pn)
         stmtInfo.type = StmtType::SUBROUTINE;
         if (!updateSourceCoordNotes(pn->pn_kid3->pn_pos.begin))
             return false;
-        if (!emit1(JSOP_FINALLY) ||
-            !emit1(JSOP_GETRVAL) ||
-            !emitTree(pn->pn_kid3) ||
-            !emit1(JSOP_SETRVAL) ||
-            !emit1(JSOP_RETSUB))
-        {
+        if (!emit1(JSOP_FINALLY))
             return false;
-        }
+        if (!emit1(JSOP_GETRVAL))
+            return false;
+
+        
+        
+        
+        
+        if (!emit1(JSOP_UNDEFINED))
+            return false;
+        if (!emit1(JSOP_SETRVAL))
+            return false;
+
+        if (!emitTree(pn->pn_kid3))
+            return false;
+        if (!emit1(JSOP_SETRVAL))
+            return false;
+        if (!emit1(JSOP_RETSUB))
+            return false;
         hasTryFinally = true;
         MOZ_ASSERT(this->stackDepth == depth);
     }
