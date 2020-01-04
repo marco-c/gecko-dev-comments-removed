@@ -5,6 +5,7 @@
 
 #include "gfxConfig.h"
 #include "mozilla/UniquePtr.h"
+#include "mozilla/gfx/GraphicsMessages.h"
 #include "plstr.h"
 
 namespace mozilla {
@@ -250,11 +251,26 @@ gfxConfig::ForEachFallbackImpl(const FallbackIterCallback& aCallback)
   }
 }
 
- const nsACString&
+ const nsCString&
 gfxConfig::GetFailureId(Feature aFeature)
 {
   const FeatureState& state = sConfig->GetState(aFeature);
   return state.GetFailureId();
+}
+
+ void
+gfxConfig::ImportChange(Feature aFeature, const FeatureChange& aChange)
+{
+  if (aChange.type() == FeatureChange::Tnull_t) {
+    return;
+  }
+
+  const FeatureFailure& failure = aChange.get_FeatureFailure();
+  gfxConfig::SetFailed(
+    aFeature,
+    failure.status(),
+    failure.message().get(),
+    failure.failureId());
 }
 
  void

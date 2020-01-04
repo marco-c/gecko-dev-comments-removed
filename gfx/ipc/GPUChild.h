@@ -26,16 +26,20 @@ public:
 
   void Init();
 
+  void EnsureGPUReady();
+
   
   void OnVarChanged(const GfxVarUpdate& aVar) override;
 
   
+  bool RecvInitComplete(const GPUDeviceData& aData) override;
   void ActorDestroy(ActorDestroyReason aWhy) override;
 
   static void Destroy(UniquePtr<GPUChild>&& aChild);
 
 private:
   GPUProcessHost* mHost;
+  bool mGPUReady;
 };
 
 } 

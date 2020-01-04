@@ -84,6 +84,11 @@ GPUParent::RecvInit(nsTArray<GfxPrefSetting>&& prefs,
   }
 #endif
 
+  
+  GPUDeviceData data;
+  RecvGetDeviceStatus(&data);
+  Unused << SendInitComplete(data);
+
   return true;
 }
 
@@ -120,6 +125,43 @@ bool
 GPUParent::RecvUpdateVar(const GfxVarUpdate& aUpdate)
 {
   gfxVars::ApplyUpdate(aUpdate);
+  return true;
+}
+
+static void
+CopyFeatureChange(Feature aFeature, FeatureChange* aOut)
+{
+  FeatureState& feature = gfxConfig::GetFeature(aFeature);
+  if (feature.DisabledByDefault() || feature.IsEnabled()) {
+    
+    
+    
+    
+    *aOut = null_t();
+    return;
+  }
+
+  MOZ_ASSERT(!feature.IsEnabled());
+
+  nsCString message;
+  message.AssignASCII(feature.GetFailureMessage());
+
+  *aOut = FeatureFailure(feature.GetValue(), message, feature.GetFailureId());
+}
+
+bool
+GPUParent::RecvGetDeviceStatus(GPUDeviceData* aOut)
+{
+  CopyFeatureChange(Feature::D3D11_COMPOSITING, &aOut->d3d11Compositing());
+  CopyFeatureChange(Feature::D3D9_COMPOSITING, &aOut->d3d9Compositing());
+  CopyFeatureChange(Feature::OPENGL_COMPOSITING, &aOut->oglCompositing());
+
+#if defined(XP_WIN)
+  if (DeviceManagerD3D11* dm = DeviceManagerD3D11::Get()) {
+    dm->ExportDeviceInfo(&aOut->d3d11Device());
+  }
+#endif
+
   return true;
 }
 

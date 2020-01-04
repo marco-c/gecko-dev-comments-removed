@@ -142,8 +142,10 @@ DeviceManagerD3D11::ImportDeviceInfo(const D3D11DeviceStatus& aDeviceStatus)
 void
 DeviceManagerD3D11::ExportDeviceInfo(D3D11DeviceStatus* aOut)
 {
-  MOZ_ASSERT(ProcessOwnsCompositor());
-  MOZ_ASSERT(!!mCompositorDevice == !!mDeviceStatus);
+  
+  
+  
+  MOZ_ASSERT(XRE_IsParentProcess() || XRE_GetProcessType() == GeckoProcessType_GPU);
 
   if (mDeviceStatus) {
     *aOut = mDeviceStatus.value();

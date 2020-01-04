@@ -15,6 +15,9 @@ namespace mozilla {
 namespace gfx {
 
 
+class FeatureChange;
+
+
 
 
 
@@ -44,6 +47,9 @@ public:
   
   
   static bool IsForcedOnByUser(Feature aFeature);
+
+  
+  
   static bool IsDisabledByDefault(Feature aFeature);
 
   
@@ -173,7 +179,9 @@ public:
   static void ForEachFallback(const FallbackIterCallback& aCallback);
 
   
-  static const nsACString& GetFailureId(Feature aFeature);
+  static const nsCString& GetFailureId(Feature aFeature);
+
+  static void ImportChange(Feature aFeature, const FeatureChange& aChange);
 
   static void Init();
   static void Shutdown();

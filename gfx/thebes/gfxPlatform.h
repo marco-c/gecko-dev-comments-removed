@@ -52,6 +52,7 @@ class ScaledFont;
 class DrawEventRecorder;
 class VsyncSource;
 class ContentDeviceData;
+class GPUDeviceData;
 
 inline uint32_t
 BackendTypeBit(BackendType b)
@@ -673,6 +674,12 @@ public:
 
 
     virtual void BuildContentDeviceData(mozilla::gfx::ContentDeviceData* aOut);
+
+    
+
+
+
+    virtual void ImportGPUDeviceData(const mozilla::gfx::GPUDeviceData& aData);
 
 protected:
     gfxPlatform();
