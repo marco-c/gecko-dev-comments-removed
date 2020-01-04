@@ -122,6 +122,9 @@ public:
 
     nsresult OnPush(const nsACString &uri, Http2PushedStream *pushedStream);
 
+    static bool IsRedirectStatus(uint32_t status);
+
+
     
     
     

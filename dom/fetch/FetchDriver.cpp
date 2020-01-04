@@ -29,6 +29,7 @@
 #include "nsPrintfCString.h"
 #include "nsStreamUtils.h"
 #include "nsStringStream.h"
+#include "nsHttpChannel.h"
 
 #include "mozilla/dom/File.h"
 #include "mozilla/dom/workers/Workers.h"
@@ -51,7 +52,6 @@ FetchDriver::FetchDriver(InternalRequest* aRequest, nsIPrincipal* aPrincipal,
   , mLoadGroup(aLoadGroup)
   , mRequest(aRequest)
   , mHasBeenCrossSite(false)
-  , mFoundOpaqueRedirect(false)
   , mResponseAvailableCalled(false)
   , mFetchCalled(false)
 {
@@ -234,6 +234,10 @@ FetchDriver::HttpFetch()
   } else {
     MOZ_ASSERT_UNREACHABLE("Unexpected request mode!");
     return NS_ERROR_UNEXPECTED;
+  }
+
+  if (mRequest->GetRedirectMode() != RequestRedirect::Follow) {
+    secFlags |= nsILoadInfo::SEC_DONT_FOLLOW_REDIRECTS;
   }
 
   
@@ -441,7 +445,9 @@ FetchDriver::IsUnsafeRequest()
 }
 
 already_AddRefed<InternalResponse>
-FetchDriver::BeginAndGetFilteredResponse(InternalResponse* aResponse, nsIURI* aFinalURI)
+FetchDriver::BeginAndGetFilteredResponse(InternalResponse* aResponse,
+                                         nsIURI* aFinalURI,
+                                         bool aFoundOpaqueRedirect)
 {
   MOZ_ASSERT(aResponse);
   nsAutoCString reqURL;
@@ -454,7 +460,7 @@ FetchDriver::BeginAndGetFilteredResponse(InternalResponse* aResponse, nsIURI* aF
   MOZ_ASSERT(NS_SUCCEEDED(rv));
 
   RefPtr<InternalResponse> filteredResponse;
-  if (mFoundOpaqueRedirect) {
+  if (aFoundOpaqueRedirect) {
     filteredResponse = aResponse->OpaqueRedirectResponse();
   } else {
     switch (mRequest->GetResponseTainting()) {
@@ -551,9 +557,21 @@ FetchDriver::OnStartRequest(nsIRequest* aRequest,
   nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(aRequest);
   nsCOMPtr<nsIJARChannel> jarChannel = do_QueryInterface(aRequest);
 
+  bool foundOpaqueRedirect = false;
+
   if (httpChannel) {
     uint32_t responseStatus;
     httpChannel->GetResponseStatus(&responseStatus);
+
+    if (mozilla::net::nsHttpChannel::IsRedirectStatus(responseStatus)) {
+      if (mRequest->GetRedirectMode() == RequestRedirect::Error) {
+        FailWithNetworkError();
+        return NS_BINDING_FAILED;
+      }
+      if (mRequest->GetRedirectMode() == RequestRedirect::Manual) {
+        foundOpaqueRedirect = true;
+      }
+    }
 
     nsAutoCString statusText;
     httpChannel->GetResponseStatusText(statusText);
@@ -660,7 +678,8 @@ FetchDriver::OnStartRequest(nsIRequest* aRequest,
 
   
   
-  mResponse = BeginAndGetFilteredResponse(response, channelURI);
+  mResponse = BeginAndGetFilteredResponse(response, channelURI,
+                                          foundOpaqueRedirect);
 
   nsCOMPtr<nsIEventTarget> sts = do_GetService(NS_STREAMTRANSPORTSERVICE_CONTRACTID, &rv);
   if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -744,6 +763,12 @@ FetchDriver::AsyncOnChannelRedirect(nsIChannel* aOldChannel,
   }
 
   
+  
+  MOZ_ASSERT(mRequest->GetRedirectMode() == RequestRedirect::Follow ||
+             (mRequest->GetRedirectMode() == RequestRedirect::Error &&
+              IsUnsafeRequest()));
+
+  
   if (NS_WARN_IF(mRequest->GetRedirectMode() == RequestRedirect::Error)) {
     aOldChannel->Cancel(NS_BINDING_FAILED);
     return NS_BINDING_FAILED;
@@ -763,33 +788,10 @@ FetchDriver::AsyncOnChannelRedirect(nsIChannel* aOldChannel,
   
   
   
-  if (mRequest->GetRedirectMode() == RequestRedirect::Manual) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    MOZ_ASSERT(!mFoundOpaqueRedirect);
-    mFoundOpaqueRedirect = true;
-    Unused << OnStartRequest(aOldChannel, nullptr);
-    Unused << OnStopRequest(aOldChannel, nullptr, NS_OK);
-
-    aOldChannel->Cancel(NS_BINDING_FAILED);
-
-    return NS_BINDING_FAILED;
-  }
 
   
   
-  MOZ_ASSERT(mRequest->GetRedirectMode() == RequestRedirect::Follow);
+  
 
   
   

@@ -83,7 +83,6 @@ private:
   RefPtr<FetchDriverObserver> mObserver;
   nsCOMPtr<nsIDocument> mDocument;
   bool mHasBeenCrossSite;
-  bool mFoundOpaqueRedirect;
 
   DebugOnly<bool> mResponseAvailableCalled;
   DebugOnly<bool> mFetchCalled;
@@ -100,7 +99,8 @@ private:
   
   
   already_AddRefed<InternalResponse>
-  BeginAndGetFilteredResponse(InternalResponse* aResponse, nsIURI* aFinalURI);
+  BeginAndGetFilteredResponse(InternalResponse* aResponse, nsIURI* aFinalURI,
+                              bool aFoundOpaqueRedirect);
   
   
   nsresult FailWithNetworkError();
