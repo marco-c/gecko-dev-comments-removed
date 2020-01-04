@@ -394,10 +394,10 @@ private:
   ~MP3TrackDemuxer() {}
 
   
-  media::TimeUnit FastSeek(media::TimeUnit aTime);
+  media::TimeUnit FastSeek(const media::TimeUnit& aTime);
 
   
-  media::TimeUnit ScanUntil(media::TimeUnit aTime);
+  media::TimeUnit ScanUntil(const media::TimeUnit& aTime);
 
   
   MediaByteRange FindNextFrame();
@@ -410,6 +410,12 @@ private:
 
   
   void UpdateState(const MediaByteRange& aRange);
+
+  
+  int64_t FrameIndexFromOffset(int64_t aOffset) const;
+
+  
+  int64_t FrameIndexFromTime(const media::TimeUnit& aTime) const;
 
   
   
