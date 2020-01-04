@@ -36,6 +36,7 @@ NS_IMETHODIMP nsCertPicker::PickByUsage(nsIInterfaceRequestor *ctx,
                                         int32_t certUsage, 
                                         bool allowInvalid, 
                                         bool allowDuplicateNicknames, 
+                                        const nsAString &emailAddress,
                                         bool *canceled, 
                                         nsIX509Cert **_retval)
 {
@@ -66,6 +67,32 @@ NS_IMETHODIMP nsCertPicker::PickByUsage(nsIInterfaceRequestor *ctx,
     return NS_ERROR_NOT_AVAILABLE;
   }
 
+  
+  
+
+  if (!emailAddress.IsEmpty()) {
+    node = CERT_LIST_HEAD(certList);
+    while (!CERT_LIST_END(node, certList)) {
+      
+      if (CERT_GetFirstEmailAddress(node->cert)) {
+        RefPtr<nsNSSCertificate> tempCert(nsNSSCertificate::Create(node->cert));
+        bool match = false;
+        rv = tempCert->ContainsEmailAddress(emailAddress, &match);
+        if (NS_FAILED(rv)) {
+          return rv;
+        }
+        if (!match) {
+          
+          CERTCertListNode* freenode = node;
+          node = CERT_LIST_NEXT(node);
+          CERT_RemoveCertListNode(freenode);
+          continue;
+        }
+      }
+      node = CERT_LIST_NEXT(node);
+    }
+  }
+
   ScopedCERTCertNicknames nicknames(getNSSCertNicknamesFromCertList(certList.get()));
   if (!nicknames) {
     return NS_ERROR_NOT_AVAILABLE;
@@ -88,20 +115,16 @@ NS_IMETHODIMP nsCertPicker::PickByUsage(nsIInterfaceRequestor *ctx,
        node = CERT_LIST_NEXT(node)
       )
   {
-    nsNSSCertificate *tempCert = nsNSSCertificate::Create(node->cert);
+    RefPtr<nsNSSCertificate> tempCert(nsNSSCertificate::Create(node->cert));
 
     if (tempCert) {
-
-      
-      
-
-      NS_ADDREF(tempCert);
 
       nsAutoString i_nickname(NS_ConvertUTF8toUTF16(nicknames->nicknames[CertsToUse]));
       nsAutoString nickWithSerial;
       nsAutoString details;
 
       if (!selectionFound) {
+        
         if (i_nickname == nsDependentString(selectedNickname)) {
           selectedIndex = CertsToUse;
           selectionFound = true;
@@ -111,13 +134,18 @@ NS_IMETHODIMP nsCertPicker::PickByUsage(nsIInterfaceRequestor *ctx,
       if (NS_SUCCEEDED(tempCert->FormatUIStrings(i_nickname, nickWithSerial, details))) {
         certNicknameList[CertsToUse] = ToNewUnicode(nickWithSerial);
         certDetailsList[CertsToUse] = ToNewUnicode(details);
+        if (!selectionFound) {
+          
+          if (nickWithSerial == nsDependentString(selectedNickname)) {
+            selectedIndex = CertsToUse;
+            selectionFound = true;
+          }
+        }
       }
       else {
         certNicknameList[CertsToUse] = nullptr;
         certDetailsList[CertsToUse] = nullptr;
       }
-
-      NS_RELEASE(tempCert);
 
       ++CertsToUse;
     }
