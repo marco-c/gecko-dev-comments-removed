@@ -8,7 +8,7 @@
 
 #include "js/StructuredClone.h"
 #include "mozilla/Move.h"
-#include "nsAutoPtr.h"
+#include "mozilla/UniquePtr.h"
 #include "nsISupports.h"
 #include "nsTArray.h"
 
@@ -102,20 +102,14 @@ public:
     return !!mBuffer;
   }
 
-  uint64_t* BufferData() const
+  JSStructuredCloneData& BufferData() const
   {
     MOZ_ASSERT(mBuffer, "Write() has never been called.");
     return mBuffer->data();
   }
 
-  size_t BufferSize() const
-  {
-    MOZ_ASSERT(mBuffer, "Write() has never been called.");
-    return mBuffer->nbytes();
-  }
-
 protected:
-  nsAutoPtr<JSAutoStructuredCloneBuffer> mBuffer;
+  UniquePtr<JSAutoStructuredCloneBuffer> mBuffer;
 
   StructuredCloneScope mStructuredCloneScope;
 
@@ -171,12 +165,6 @@ public:
             JSContext* aCx,
             JS::MutableHandle<JS::Value> aValue,
             ErrorResult &aRv);
-
-  
-  
-  
-  void MoveBufferDataToArray(FallibleTArray<uint8_t>& aArray,
-                             ErrorResult& aRv);
 
   
   bool HasClonedDOMObjects() const
@@ -266,28 +254,24 @@ public:
                                              JSStructuredCloneWriter* aWriter,
                                              JS::Handle<JSObject*> aObj);
 
+  static const JSStructuredCloneCallbacks sCallbacks;
+
 protected:
   
   
   
   void ReadFromBuffer(nsISupports* aParent,
                       JSContext* aCx,
-                      uint64_t* aBuffer,
-                      size_t aBufferLength,
+                      JSStructuredCloneData& aBuffer,
                       JS::MutableHandle<JS::Value> aValue,
                       ErrorResult &aRv);
 
   void ReadFromBuffer(nsISupports* aParent,
                       JSContext* aCx,
-                      uint64_t* aBuffer,
-                      size_t aBufferLength,
+                      JSStructuredCloneData& aBuffer,
                       uint32_t aAlgorithmVersion,
                       JS::MutableHandle<JS::Value> aValue,
                       ErrorResult &aRv);
-
-  
-  void FreeBuffer(uint64_t* aBuffer,
-                  size_t aBufferLength);
 
   bool mSupportsCloning;
   bool mSupportsTransferring;

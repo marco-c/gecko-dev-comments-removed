@@ -64,21 +64,31 @@ struct null_t {
   bool operator==(const null_t&) const { return true; }
 };
 
-struct MOZ_STACK_CLASS SerializedStructuredCloneBuffer
+struct SerializedStructuredCloneBuffer final
 {
-  SerializedStructuredCloneBuffer()
-  : data(nullptr), dataLength(0)
-  { }
+  SerializedStructuredCloneBuffer&
+  operator=(const SerializedStructuredCloneBuffer& aOther)
+  {
+    data.Clear();
+    auto iter = aOther.data.Iter();
+    while (!iter.Done()) {
+      data.WriteBytes(iter.Data(), iter.RemainingInSegment());
+      iter.Advance(aOther.data, iter.RemainingInSegment());
+    }
+    return *this;
+  }
 
   bool
   operator==(const SerializedStructuredCloneBuffer& aOther) const
   {
-    return this->data == aOther.data &&
-           this->dataLength == aOther.dataLength;
+    
+    
+    
+    
+    return false;
   }
 
-  uint64_t* data;
-  size_t dataLength;
+  JSStructuredCloneData data;
 };
 
 } 
@@ -704,44 +714,72 @@ struct ParamTraits<mozilla::net::WebSocketFrameData>
 };
 
 template <>
+struct ParamTraits<JSStructuredCloneData>
+{
+  typedef JSStructuredCloneData paramType;
+
+  static void Write(Message* aMsg, const paramType& aParam)
+  {
+    MOZ_ASSERT(!(aParam.Size() % sizeof(uint64_t)));
+    WriteParam(aMsg, aParam.Size());
+    auto iter = aParam.Iter();
+    while (!iter.Done()) {
+      aMsg->WriteBytes(iter.Data(), iter.RemainingInSegment(), sizeof(uint64_t));
+      iter.Advance(aParam, iter.RemainingInSegment());
+    }
+  }
+
+  static bool Read(const Message* aMsg, PickleIterator* aIter, paramType* aResult)
+  {
+    size_t length = 0;
+    if (!ReadParam(aMsg, aIter, &length)) {
+      return false;
+    }
+    MOZ_ASSERT(!(length % sizeof(uint64_t)));
+
+    mozilla::BufferList<InfallibleAllocPolicy> buffers(0, 0, 4096);
+
+    
+    
+    
+    
+    
+    
+    if (length && !aMsg->ExtractBuffers(aIter, length, &buffers, sizeof(uint64_t))) {
+      return false;
+    }
+
+    bool success;
+    mozilla::BufferList<js::SystemAllocPolicy> out =
+      buffers.MoveFallible<js::SystemAllocPolicy>(&success);
+    if (!success) {
+      return false;
+    }
+
+    *aResult = JSStructuredCloneData(Move(out));
+
+    return true;
+  }
+};
+
+template <>
 struct ParamTraits<mozilla::SerializedStructuredCloneBuffer>
 {
   typedef mozilla::SerializedStructuredCloneBuffer paramType;
 
   static void Write(Message* aMsg, const paramType& aParam)
   {
-    WriteParam(aMsg, aParam.dataLength);
-    if (aParam.dataLength) {
-      
-      aMsg->WriteBytes(aParam.data, aParam.dataLength, sizeof(uint64_t));
-    }
+    WriteParam(aMsg, aParam.data);
   }
 
   static bool Read(const Message* aMsg, PickleIterator* aIter, paramType* aResult)
   {
-    if (!ReadParam(aMsg, aIter, &aResult->dataLength)) {
-      return false;
-    }
-
-    if (!aResult->dataLength) {
-      aResult->data = nullptr;
-      return true;
-    }
-
-    const char** buffer =
-      const_cast<const char**>(reinterpret_cast<char**>(&aResult->data));
-    
-    if (!const_cast<Message*>(aMsg)->FlattenBytes(aIter, buffer, aResult->dataLength,
-                                                  sizeof(uint64_t))) {
-      return false;
-    }
-
-    return true;
+    return ReadParam(aMsg, aIter, &aResult->data);
   }
 
   static void Log(const paramType& aParam, std::wstring* aLog)
   {
-    LogParam(aParam.dataLength, aLog);
+    LogParam(aParam.data.Size(), aLog);
   }
 };
 
