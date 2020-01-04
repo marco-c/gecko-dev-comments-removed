@@ -4,7 +4,7 @@
 
 "use strict";
 
-const { Cu } = require("chrome");
+const {Cu, Ci} = require("chrome");
 
 const promise = require("promise");
 loader.lazyGetter(this, "EventEmitter", () => require("devtools/shared/event-emitter"));
@@ -26,24 +26,116 @@ const MAX_SUGGESTIONS = 15;
 
 
 
+function InspectorSearch(inspector, input) {
+  this.inspector = inspector;
+  this.searchBox = input;
+  this._lastSearched = null;
+
+  this._onKeyDown = this._onKeyDown.bind(this);
+  this._onCommand = this._onCommand.bind(this);
+  this.searchBox.addEventListener("keydown", this._onKeyDown, true);
+  this.searchBox.addEventListener("command", this._onCommand, true);
+
+  
+  
+  this._lastQuery = promise.resolve(null);
+
+  this.autocompleter = new SelectorAutocompleter(inspector, input);
+  EventEmitter.decorate(this);
+}
+
+exports.InspectorSearch = InspectorSearch;
+
+InspectorSearch.prototype = {
+  get walker() {
+    return this.inspector.walker;
+  },
+
+  destroy: function() {
+    this.searchBox.removeEventListener("keydown", this._onKeyDown, true);
+    this.searchBox.removeEventListener("command", this._onCommand, true);
+    this.searchBox = null;
+    this.autocompleter.destroy();
+  },
+
+  _onSearch: function(reverse = false) {
+    this.doFullTextSearch(this.searchBox.value, reverse)
+        .catch(e => console.error(e));
+  },
+
+  doFullTextSearch: Task.async(function*(query, reverse) {
+    let lastSearched = this._lastSearched;
+    this._lastSearched = query;
+
+    if (query.length === 0) {
+      this.searchBox.classList.remove("devtools-no-search-result");
+      if (!lastSearched || lastSearched.length > 0) {
+        this.emit("search-cleared");
+      }
+      return;
+    }
+
+    let res = yield this.walker.search(query, { reverse });
+
+    
+    if (query != this.searchBox.value) {
+      return;
+    }
+
+    if (res) {
+      this.inspector.selection.setNodeFront(res.node, "inspectorsearch");
+      this.searchBox.classList.remove("devtools-no-search-result");
+
+      res.query = query;
+      this.emit("search-result", res);
+    } else {
+      this.searchBox.classList.add("devtools-no-search-result");
+      this.emit("search-result");
+    }
+  }),
+
+  _onCommand: function() {
+    if (this.searchBox.value.length === 0) {
+      this._onSearch();
+    }
+  },
+
+  _onKeyDown: function(event) {
+    if (this.searchBox.value.length === 0) {
+      this.searchBox.removeAttribute("filled");
+    } else {
+      this.searchBox.setAttribute("filled", true);
+    }
+    if (event.keyCode === event.DOM_VK_RETURN) {
+      this._onSearch();
+    } if (event.keyCode === Ci.nsIDOMKeyEvent.DOM_VK_G && event.metaKey) {
+      this._onSearch(event.shiftKey);
+      event.preventDefault();
+    }
+  }
+};
 
 
-function SelectorSearch(aInspector, aInputNode) {
-  this.inspector = aInspector;
-  this.searchBox = aInputNode;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function SelectorAutocompleter(inspector, inputNode) {
+  this.inspector = inspector;
+  this.searchBox = inputNode;
   this.panelDoc = this.searchBox.ownerDocument;
 
-  
-  this._lastSearched = null;
-  this._lastValidSearch = "";
-  this._lastToLastValidSearch = null;
-  this._searchResults = null;
-  this._searchSuggestions = {};
-  this._searchIndex = 0;
-
-  
-  this._showPopup = this._showPopup.bind(this);
-  this._onHTMLSearch = this._onHTMLSearch.bind(this);
+  this.showSuggestions = this.showSuggestions.bind(this);
   this._onSearchKeypress = this._onSearchKeypress.bind(this);
   this._onListBoxKeypress = this._onListBoxKeypress.bind(this);
   this._onMarkupMutation = this._onMarkupMutation.bind(this);
@@ -61,8 +153,7 @@ function SelectorSearch(aInspector, aInputNode) {
   };
   this.searchPopup = new AutocompletePopup(this.panelDoc, options);
 
-  
-  this.searchBox.addEventListener("command", this._onHTMLSearch, true);
+  this.searchBox.addEventListener("input", this.showSuggestions, true);
   this.searchBox.addEventListener("keypress", this._onSearchKeypress, true);
   this.inspector.on("markupmutation", this._onMarkupMutation);
 
@@ -72,9 +163,9 @@ function SelectorSearch(aInspector, aInputNode) {
   EventEmitter.decorate(this);
 }
 
-exports.SelectorSearch = SelectorSearch;
+exports.SelectorAutocompleter = SelectorAutocompleter;
 
-SelectorSearch.prototype = {
+SelectorAutocompleter.prototype = {
   get walker() {
     return this.inspector.walker;
   },
@@ -169,142 +260,33 @@ SelectorSearch.prototype = {
 
 
   destroy: function() {
-    
-    this.searchBox.removeEventListener("command", this._onHTMLSearch, true);
+    this.searchBox.removeEventListener("input", this.showSuggestions, true);
     this.searchBox.removeEventListener("keypress", this._onSearchKeypress, true);
     this.inspector.off("markupmutation", this._onMarkupMutation);
     this.searchPopup.destroy();
     this.searchPopup = null;
     this.searchBox = null;
     this.panelDoc = null;
-    this._searchResults = null;
-    this._searchSuggestions = null;
-  },
-
-  _selectResult: function(index) {
-    return this._searchResults.item(index).then(node => {
-      this.inspector.selection.setNodeFront(node, "selectorsearch");
-    });
-  },
-
-  _queryNodes: Task.async(function*(query) {
-    if (typeof this.hasMultiFrameSearch === "undefined") {
-      let target = this.inspector.toolbox.target;
-      this.hasMultiFrameSearch = yield target.actorHasMethod("domwalker",
-        "multiFrameQuerySelectorAll");
-    }
-
-    if (this.hasMultiFrameSearch) {
-      return yield this.walker.multiFrameQuerySelectorAll(query);
-    } else {
-      return yield this.walker.querySelectorAll(this.walker.rootNode, query);
-    }
-  }),
-
-  
-
-
-
-  _onHTMLSearch: function() {
-    let query = this.searchBox.value;
-    if (query == this._lastSearched) {
-      this.emit("processing-done");
-      return;
-    }
-    this._lastSearched = query;
-    this._searchResults = [];
-    this._searchIndex = 0;
-
-    if (query.length == 0) {
-      this._lastValidSearch = "";
-      this.searchBox.removeAttribute("filled");
-      this.searchBox.classList.remove("devtools-no-search-result");
-      if (this.searchPopup.isOpen) {
-        this.searchPopup.hidePopup();
-      }
-      this.emit("processing-done");
-      return;
-    }
-
-    this.searchBox.setAttribute("filled", true);
-    let queryList = null;
-
-    this._lastQuery = this._queryNodes(query).then(list => {
-      return list;
-    }, (err) => {
-      
-      return null;
-    }).then(queryList => {
-      
-      if (query != this.searchBox.value) {
-        if (queryList) {
-          queryList.release();
-        }
-        return promise.reject(null);
-      }
-
-      this._searchResults = queryList || [];
-      if (this._searchResults && this._searchResults.length > 0) {
-        this._lastValidSearch = query;
-        
-        
-        if (query.match(/[\s>+]$/)) {
-          
-          
-          this._lastValidSearch += "*";
-        }
-        else if (query.match(/[\s>+][\.#a-zA-Z][\.#>\s+]*$/)) {
-          
-          
-          
-          let lastPart = query.match(/[\s>+][\.#a-zA-Z][^>\s+]*$/)[0];
-          this._lastValidSearch = query.slice(0, -1 * lastPart.length + 1) + "*";
-        }
-
-        if (!query.slice(-1).match(/[\.#\s>+]/)) {
-          
-          
-          
-          if (this.searchPopup.isOpen) {
-            this.searchPopup.hidePopup();
-          }
-          this.searchBox.classList.remove("devtools-no-search-result");
-
-          return this._selectResult(0);
-        }
-        return this._selectResult(0).then(() => {
-          this.searchBox.classList.remove("devtools-no-search-result");
-        }).then(() => this.showSuggestions());
-      }
-      if (query.match(/[\s>+]$/)) {
-        this._lastValidSearch = query + "*";
-      }
-      else if (query.match(/[\s>+][\.#a-zA-Z][\.#>\s+]*$/)) {
-        let lastPart = query.match(/[\s+>][\.#a-zA-Z][^>\s+]*$/)[0];
-        this._lastValidSearch = query.slice(0, -1 * lastPart.length + 1) + "*";
-      }
-      this.searchBox.classList.add("devtools-no-search-result");
-      return this.showSuggestions();
-    }).then(() => this.emit("processing-done"), Cu.reportError);
   },
 
   
 
 
-  _onSearchKeypress: function(aEvent) {
+  _onSearchKeypress: function(event) {
     let query = this.searchBox.value;
-    switch(aEvent.keyCode) {
-      case aEvent.DOM_VK_RETURN:
-        if (query == this._lastSearched && this._searchResults) {
-          this._searchIndex = (this._searchIndex + 1) % this._searchResults.length;
-        }
-        else {
-          this._onHTMLSearch();
-          return;
+    switch(event.keyCode) {
+      case event.DOM_VK_RETURN:
+      case event.DOM_VK_TAB:
+        if (this.searchPopup.isOpen &&
+            this.searchPopup.getItemAtIndex(this.searchPopup.itemCount - 1)
+                .preLabel == query) {
+          this.searchPopup.selectedIndex = this.searchPopup.itemCount - 1;
+          this.searchBox.value = this.searchPopup.selectedItem.label;
+          this.hidePopup();
         }
         break;
 
-      case aEvent.DOM_VK_UP:
+      case event.DOM_VK_UP:
         if (this.searchPopup.isOpen && this.searchPopup.itemCount > 0) {
           this.searchPopup.focus();
           if (this.searchPopup.selectedIndex == this.searchPopup.itemCount - 1) {
@@ -316,76 +298,45 @@ SelectorSearch.prototype = {
           }
           this.searchBox.value = this.searchPopup.selectedItem.label;
         }
-        else if (--this._searchIndex < 0) {
-          this._searchIndex = this._searchResults.length - 1;
-        }
         break;
 
-      case aEvent.DOM_VK_DOWN:
+      case event.DOM_VK_DOWN:
         if (this.searchPopup.isOpen && this.searchPopup.itemCount > 0) {
           this.searchPopup.focus();
           this.searchPopup.selectedIndex = 0;
           this.searchBox.value = this.searchPopup.selectedItem.label;
         }
-        this._searchIndex = (this._searchIndex + 1) % this._searchResults.length;
         break;
-
-      case aEvent.DOM_VK_TAB:
-        if (this.searchPopup.isOpen &&
-            this.searchPopup.getItemAtIndex(this.searchPopup.itemCount - 1)
-                .preLabel == query) {
-          this.searchPopup.selectedIndex = this.searchPopup.itemCount - 1;
-          this.searchBox.value = this.searchPopup.selectedItem.label;
-          this._onHTMLSearch();
-        }
-        break;
-
-      case aEvent.DOM_VK_BACK_SPACE:
-      case aEvent.DOM_VK_DELETE:
-        
-        this._lastToLastValidSearch = null;
-        
-        
-        
-        this._lastValidSearch = (query.match(/(.*)[\.#][^\.# ]{0,}$/) ||
-                                 query.match(/(.*[\s>+])[a-zA-Z][^\.# ]{0,}$/) ||
-                                 ["",""])[1];
-        return;
 
       default:
         return;
     }
 
-    aEvent.preventDefault();
-    aEvent.stopPropagation();
-    if (this._searchResults && this._searchResults.length > 0) {
-      this._lastQuery = this._selectResult(this._searchIndex).then(() => this.emit("processing-done"));
-    }
-    else {
-      this.emit("processing-done");
-    }
+    event.preventDefault();
+    event.stopPropagation();
+    this.emit("processing-done");
   },
 
   
 
 
-  _onListBoxKeypress: function(aEvent) {
-    switch(aEvent.keyCode || aEvent.button) {
-      case aEvent.DOM_VK_RETURN:
-      case aEvent.DOM_VK_TAB:
+  _onListBoxKeypress: function(event) {
+    switch(event.keyCode || event.button) {
+      case event.DOM_VK_RETURN:
+      case event.DOM_VK_TAB:
       case 0: 
-        aEvent.stopPropagation();
-        aEvent.preventDefault();
+        event.stopPropagation();
+        event.preventDefault();
         this.searchBox.value = this.searchPopup.selectedItem.label;
         this.searchBox.focus();
-        this._onHTMLSearch();
+        this.hidePopup();
         break;
 
-      case aEvent.DOM_VK_UP:
+      case event.DOM_VK_UP:
         if (this.searchPopup.selectedIndex == 0) {
           this.searchPopup.selectedIndex = -1;
-          aEvent.stopPropagation();
-          aEvent.preventDefault();
+          event.stopPropagation();
+          event.preventDefault();
           this.searchBox.focus();
         }
         else {
@@ -394,11 +345,11 @@ SelectorSearch.prototype = {
         }
         break;
 
-      case aEvent.DOM_VK_DOWN:
+      case event.DOM_VK_DOWN:
         if (this.searchPopup.selectedIndex == this.searchPopup.itemCount - 1) {
           this.searchPopup.selectedIndex = -1;
-          aEvent.stopPropagation();
-          aEvent.preventDefault();
+          event.stopPropagation();
+          event.preventDefault();
           this.searchBox.focus();
         }
         else {
@@ -407,20 +358,15 @@ SelectorSearch.prototype = {
         }
         break;
 
-      case aEvent.DOM_VK_BACK_SPACE:
-        aEvent.stopPropagation();
-        aEvent.preventDefault();
+      case event.DOM_VK_BACK_SPACE:
+        event.stopPropagation();
+        event.preventDefault();
         this.searchBox.focus();
         if (this.searchBox.selectionStart > 0) {
           this.searchBox.value =
             this.searchBox.value.substring(0, this.searchBox.selectionStart - 1);
         }
-        this._lastToLastValidSearch = null;
-        let query = this.searchBox.value;
-        this._lastValidSearch = (query.match(/(.*)[\.#][^\.# ]{0,}$/) ||
-                                 query.match(/(.*[\s>+])[a-zA-Z][^\.# ]{0,}$/) ||
-                                 ["",""])[1];
-        this._onHTMLSearch();
+        this.hidePopup();
         break;
     }
     this.emit("processing-done");
@@ -438,12 +384,12 @@ SelectorSearch.prototype = {
   
 
 
-  _showPopup: function(aList, aFirstPart, aState) {
+  _showPopup: function(list, firstPart, aState) {
     let total = 0;
     let query = this.searchBox.value;
     let items = [];
 
-    for (let [value, count, state] of aList) {
+    for (let [value, , state] of list) {
       
       if (query.match(/[\s>+]$/)) {
         value = query + value;
@@ -461,8 +407,7 @@ SelectorSearch.prototype = {
 
       let item = {
         preLabel: query,
-        label: value,
-        count: count
+        label: value
       };
 
       
@@ -489,6 +434,16 @@ SelectorSearch.prototype = {
       this.searchPopup.openPopup(this.searchBox);
     }
     else {
+      this.hidePopup();
+    }
+  },
+
+
+  
+
+
+  hidePopup: function() {
+    if (this.searchPopup.isOpen) {
       this.searchPopup.hidePopup();
     }
   },
@@ -502,18 +457,18 @@ SelectorSearch.prototype = {
     let state = this.state;
     let firstPart = "";
 
-    if (state == this.States.TAG) {
+    if (state === this.States.TAG) {
       
       
       firstPart = (query.match(/[\s>+]?([a-zA-Z]*)$/) || ["", query])[1];
       query = query.slice(0, query.length - firstPart.length);
     }
-    else if (state == this.States.CLASS) {
+    else if (state === this.States.CLASS) {
       
       firstPart = query.match(/\.([^\.]*)$/)[1];
       query = query.slice(0, query.length - firstPart.length - 1);
     }
-    else if (state == this.States.ID) {
+    else if (state === this.States.ID) {
       
       firstPart = query.match(/#([^#]*)$/)[1];
       query = query.slice(0, query.length - firstPart.length - 1);
@@ -524,23 +479,31 @@ SelectorSearch.prototype = {
       query += "*";
     }
 
-    this._currentSuggesting = query;
-    return this.walker.getSuggestionsForQuery(query, firstPart, state).then(result => {
-      if (this._currentSuggesting != result.query) {
+    this._lastQuery = this.walker.getSuggestionsForQuery(query, firstPart, state).then(result => {
+      this.emit("processing-done");
+      if (result.query !== query) {
         
         
         return;
       }
-      this._lastToLastValidSearch = this._lastValidSearch;
 
-      if (state == this.States.CLASS) {
+      if (state === this.States.CLASS) {
         firstPart = "." + firstPart;
-      }
-      else if (state == this.States.ID) {
+      } else if (state === this.States.ID) {
         firstPart = "#" + firstPart;
       }
 
+      
+      
+      if (result.suggestions.length === 1 &&
+          result.suggestions[0][0] === firstPart) {
+        result.suggestions = [];
+      }
+
+
       this._showPopup(result.suggestions, firstPart, state);
     });
+
+    return this._lastQuery;
   }
 };

@@ -163,6 +163,12 @@ Selection.prototype = {
     this.reason = reason;
 
     
+    let parentNode = value && value.parentNode();
+    if (value && parentNode && parentNode.singleTextChild === value) {
+      value = parentNode;
+    }
+
+    
     
     
     let rawValue = null;

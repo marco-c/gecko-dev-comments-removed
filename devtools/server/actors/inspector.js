@@ -61,6 +61,7 @@ const object = require("sdk/util/object");
 const events = require("sdk/event/core");
 const {Unknown} = require("sdk/platform/xpcom");
 const {Class} = require("sdk/core/heritage");
+const {WalkerSearch} = require("devtools/server/actors/utils/walker-search");
 const {PageStyleActor, getFontPreviewData} = require("devtools/server/actors/styles");
 const {
   HighlighterActor,
@@ -1122,6 +1123,13 @@ types.addDictType("disconnectedNodeArray", {
 
 types.addDictType("dommutation", {});
 
+types.addDictType("searchresult", {
+  list: "domnodelist",
+  
+  
+  metadata: "array:json"
+});
+
 
 
 
@@ -1299,6 +1307,8 @@ var WalkerActor = protocol.ActorClass({
     this._activePseudoClassLocks = new Set();
     this.showAllAnonymousContent = options.showAllAnonymousContent;
 
+    this.walkerSearch = new WalkerSearch(this);
+
     
     
     
@@ -1334,7 +1344,13 @@ var WalkerActor = protocol.ActorClass({
         
         
         
-        autoReleased: true
+        autoReleased: true,
+        
+        
+        
+        
+        multiFrameQuerySelectorAll: true,
+        textSearch: true,
       }
     }
   },
@@ -1376,6 +1392,7 @@ var WalkerActor = protocol.ActorClass({
       this.onFrameLoad = null;
       this.onFrameUnload = null;
 
+      this.walkerSearch.destroy();
       this.reflowObserver.off("reflows", this._onReflows);
       this.reflowObserver = null;
       this._onReflows = null;
@@ -2045,6 +2062,33 @@ var WalkerActor = protocol.ActorClass({
     },
     response: {
       list: RetVal("domnodelist")
+    }
+  }),
+
+  
+
+
+
+
+
+
+
+
+
+  search: method(function(query) {
+    let results = this.walkerSearch.search(query);
+    let nodeList = new NodeListActor(this, results.map(r => r.node));
+
+    return {
+      list: nodeList,
+      metadata: []
+    }
+  }, {
+    request: {
+      query: Arg(0),
+    },
+    response: {
+      list: RetVal("searchresult"),
     }
   }),
 
@@ -2838,6 +2882,11 @@ var WalkerActor = protocol.ActorClass({
 
 
   onMutations: function(mutations) {
+    
+    
+    
+    events.emit(this, "any-mutation");
+
     for (let change of mutations) {
       let targetActor = this._refMap.get(change.target);
       if (!targetActor) {
@@ -3313,6 +3362,75 @@ var WalkerFront = exports.WalkerFront = protocol.FrontClass(WalkerActor, {
     });
   }, {
     impl: "_getNodeFromActor"
+  }),
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  search: protocol.custom(Task.async(function*(query, options = { }) {
+    let nodeList;
+    let searchType;
+    let searchData = this.searchData = this.searchData || { };
+    let selectorOnly = !!options.selectorOnly;
+
+    
+    
+    
+    if (selectorOnly || !this.traits.textSearch) {
+      searchType = "selector";
+      if (this.traits.multiFrameQuerySelectorAll) {
+        nodeList = yield this.multiFrameQuerySelectorAll(query);
+      } else {
+        nodeList = yield this.querySelectorAll(this.rootNode, query);
+      }
+    } else {
+      searchType = "search";
+      let result = yield this._search(query, options);
+      nodeList = result.list;
+    }
+
+    
+    if (searchData.query !== query ||
+        searchData.selectorOnly !== selectorOnly) {
+      searchData.selectorOnly = selectorOnly;
+      searchData.query = query;
+      searchData.index = -1;
+    }
+
+    if (!nodeList.length) {
+      return null;
+    }
+
+    
+    searchData.index = options.reverse ? searchData.index - 1 :
+                                         searchData.index + 1;
+    if (searchData.index >= nodeList.length) {
+      searchData.index = 0;
+    }
+    if (searchData.index < 0) {
+      searchData.index = nodeList.length - 1;
+    }
+
+    
+    let node = yield nodeList.item(searchData.index);
+    return {
+      type: searchType,
+      node: node,
+      resultsLength: nodeList.length,
+      resultsIndex: searchData.index,
+    };
+  }), {
+    impl: "_search"
   }),
 
   _releaseFront: function(node, force) {
@@ -3875,10 +3993,25 @@ DocumentWalker.prototype = {
     return this.walker.parentNode();
   },
 
+  nextNode: function() {
+    let node = this.walker.currentNode;
+    if (!node) {
+      return null;
+    }
+
+    let nextNode = this.walker.nextNode();
+    while (nextNode && this.filter(nextNode) === Ci.nsIDOMNodeFilter.FILTER_SKIP) {
+      nextNode = this.walker.nextNode();
+    }
+
+    return nextNode;
+  },
+
   firstChild: function() {
     let node = this.walker.currentNode;
-    if (!node)
+    if (!node) {
       return null;
+    }
 
     let firstChild = this.walker.firstChild();
     while (firstChild && this.filter(firstChild) === Ci.nsIDOMNodeFilter.FILTER_SKIP) {
@@ -3890,8 +4023,9 @@ DocumentWalker.prototype = {
 
   lastChild: function() {
     let node = this.walker.currentNode;
-    if (!node)
+    if (!node) {
       return null;
+    }
 
     let lastChild = this.walker.lastChild();
     while (lastChild && this.filter(lastChild) === Ci.nsIDOMNodeFilter.FILTER_SKIP) {

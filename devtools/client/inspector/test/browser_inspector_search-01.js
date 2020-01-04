@@ -11,44 +11,49 @@ const TEST_URL = TEST_URL_ROOT + "doc_inspector_search.html";
 
 
 
-const LISTEN_KEYPRESS = [3,4,8,18,19,20,21,22];
-
-
-
-
 
 
 
 const KEY_STATES = [
-  ["d", "b1", false],
-  ["i", "b1", false],
-  ["v", "d1", true],
-  ["VK_DOWN", "d2", true], 
-  ["VK_RETURN", "d1", true], 
-  [".", "d1", false],
-  ["c", "d1", false],
-  ["1", "d2", true],
-  ["VK_DOWN", "d2", true], 
-  ["VK_BACK_SPACE", "d2", false],
-  ["VK_BACK_SPACE", "d2", false],
-  ["VK_BACK_SPACE", "d1", true],
-  ["VK_BACK_SPACE", "d1", false],
-  ["VK_BACK_SPACE", "d1", false],
-  ["VK_BACK_SPACE", "d1", true],
-  [".", "d1", false],
-  ["c", "d1", false],
-  ["1", "d2", true],
-  ["VK_DOWN", "s2", true], 
-  ["VK_DOWN", "p1", true], 
-  ["VK_UP", "s2", true], 
-  ["VK_UP", "d2", true], 
-  ["VK_UP", "p1", true],
-  ["VK_BACK_SPACE", "p1", false],
-  ["2", "p3", true],
-  ["VK_BACK_SPACE", "p3", false],
-  ["VK_BACK_SPACE", "p3", false],
-  ["VK_BACK_SPACE", "p3", true],
-  ["r", "p3", false],
+  ["#", "b1", true],                 
+  ["d", "b1", true],                 
+  ["1", "b1", true],                 
+  ["VK_RETURN", "d1", true],         
+  ["VK_BACK_SPACE", "d1", true],     
+  ["2", "d1", true],                 
+  ["VK_RETURN", "d2", true],         
+  ["2", "d2", true],                 
+  ["VK_RETURN", "d2", false],        
+  ["VK_BACK_SPACE", "d2", false],    
+  ["VK_RETURN", "d2", true],         
+  ["VK_BACK_SPACE", "d2", true],     
+  ["1", "d2", true],                 
+  ["VK_RETURN", "d1", true],         
+  ["VK_BACK_SPACE", "d1", true],     
+  ["VK_BACK_SPACE", "d1", true],     
+  ["VK_BACK_SPACE", "d1", true],     
+  ["d", "d1", true],                 
+  ["i", "d1", true],                 
+  ["v", "d1", true],                 
+  [".", "d1", true],                 
+  ["c", "d1", true],                 
+  ["VK_UP", "d1", true],             
+  ["VK_TAB", "d1", true],            
+  ["VK_RETURN", "d2", true],         
+  ["VK_BACK_SPACE", "d2", true],     
+  ["VK_BACK_SPACE", "d2", true],     
+  ["VK_BACK_SPACE", "d2", true],     
+  ["VK_BACK_SPACE", "d2", true],     
+  ["VK_BACK_SPACE", "d2", true],     
+  ["VK_BACK_SPACE", "d2", true],     
+  [".", "d2", true],                 
+  ["c", "d2", true],                 
+  ["1", "d2", true],                 
+  ["VK_RETURN", "d2", true],         
+  ["VK_RETURN", "s2", true],         
+  ["VK_RETURN", "p1", true],         
+  ["P", "p1", true],                 
+  ["VK_RETURN", "p1", false],        
 ];
 
 add_task(function* () {
@@ -60,14 +65,18 @@ add_task(function* () {
 
   let index = 0;
   for (let [ key, id, isValid ] of KEY_STATES) {
-    let event = (LISTEN_KEYPRESS.indexOf(index) !== -1) ? "keypress" : "command";
-    let eventHandled = once(searchBox, event, true);
-
-    info(index + ": Pressing key " + key + " to get id " + id);
+    info(index + ": Pressing key " + key + " to get id " + id + ".");
+    let done = inspector.searchSuggestions.once("processing-done");
     EventUtils.synthesizeKey(key, {}, inspector.panelWin);
-    yield eventHandled;
+    yield done;
+    info("Got processing-done event");
 
-    info("Got " + event + " event. Waiting for search query to complete");
+    if (key === "VK_RETURN") {
+      info ("Waiting for " + (isValid ? "NO " : "") + "results");
+      yield inspector.search.once("search-result");
+    }
+
+    info("Waiting for search query to complete");
     yield inspector.searchSuggestions._lastQuery;
 
     info(inspector.selection.nodeFront.id + " is selected with text " +
