@@ -168,8 +168,6 @@ private:
   
   nsCOMPtr<nsIScriptGlobalObject> mGlobalObjectRef;
 
-  static void JSOptionChangedCallback(const char *pref, void *data);
-
   static bool DOMOperationCallback(JSContext *cx);
 };
 
