@@ -1482,12 +1482,6 @@ void MediaDecoderStateMachine::ReaderSuspendedChanged()
     return;
   }
 
-  if (mIsVisible && mVideoDecodeSuspended) {
-    
-    mVideoDecodeSuspendTimer.Reset();
-    mVideoDecodeSuspended = false;
-  }
-
   InitiateDecodeRecoverySeek(MediaDecoderReader::AUDIO_VIDEO);
 }
 
