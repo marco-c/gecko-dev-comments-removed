@@ -141,7 +141,7 @@ nsSVGForeignObjectFrame::Reflow(nsPresContext*           aPresContext,
 
   
 
-  NS_ASSERTION(!aReflowState.parentReflowState,
+  NS_ASSERTION(!aReflowState.mParentReflowState,
                "should only get reflow from being reflow root");
   NS_ASSERTION(aReflowState.ComputedWidth() == GetSize().width &&
                aReflowState.ComputedHeight() == GetSize().height,

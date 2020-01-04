@@ -67,7 +67,7 @@ nsHTMLReflowState::nsHTMLReflowState(nsPresContext*       aPresContext,
   MOZ_ASSERT(aPresContext, "no pres context");
   MOZ_ASSERT(aFrame, "no frame");
   MOZ_ASSERT(aPresContext == aFrame->PresContext(), "wrong pres context");
-  parentReflowState = nullptr;
+  mParentReflowState = nullptr;
   AvailableISize() = aAvailableSpace.ISize(mWritingMode);
   AvailableBSize() = aAvailableSpace.BSize(mWritingMode);
   mFloatManager = nullptr;
@@ -191,13 +191,13 @@ nsHTMLReflowState::nsHTMLReflowState(
                   !NS_SUBTREE_DIRTY(aFrame),
                   "frame should be clean when getting special bsize reflow");
 
-  parentReflowState = &aParentReflowState;
+  mParentReflowState = &aParentReflowState;
 
   
   
   
   if (!mFlags.mSpecialBSizeReflow)
-    frame->AddStateBits(parentReflowState->frame->GetStateBits() &
+    frame->AddStateBits(mParentReflowState->frame->GetStateBits() &
                         NS_FRAME_IS_DIRTY);
 
   AvailableISize() = aAvailableSpace.ISize(mWritingMode);
@@ -238,7 +238,7 @@ nsHTMLReflowState::nsHTMLReflowState(
                            ? aParentReflowState.mPercentBSizeObserver : nullptr;
 
   if ((aFlags & DUMMY_PARENT_REFLOW_STATE) ||
-      (parentReflowState->mFlags.mDummyParentReflowState &&
+      (mParentReflowState->mFlags.mDummyParentReflowState &&
        frame->GetType() == nsGkAtoms::tableFrame)) {
     mFlags.mDummyParentReflowState = true;
   }
@@ -368,8 +368,8 @@ nsHTMLReflowState::Init(nsPresContext*     aPresContext,
   if (AvailableISize() == NS_UNCONSTRAINEDSIZE) {
     
     
-    for (const nsHTMLReflowState *parent = parentReflowState;
-         parent != nullptr; parent = parent->parentReflowState) {
+    for (const nsHTMLReflowState *parent = mParentReflowState;
+         parent != nullptr; parent = parent->mParentReflowState) {
       if (parent->GetWritingMode().IsOrthogonalTo(mWritingMode) &&
           parent->mOrthogonalLimit != NS_UNCONSTRAINEDSIZE) {
         AvailableISize() = parent->mOrthogonalLimit;
@@ -460,8 +460,8 @@ nsHTMLReflowState::Init(nsPresContext*     aPresContext,
     }
   }
 
-  if (parentReflowState &&
-      parentReflowState->GetWritingMode().IsOrthogonalTo(mWritingMode)) {
+  if (mParentReflowState &&
+      mParentReflowState->GetWritingMode().IsOrthogonalTo(mWritingMode)) {
     
     
     
@@ -486,21 +486,21 @@ nsHTMLReflowState::Init(nsPresContext*     aPresContext,
 
 void nsHTMLReflowState::InitCBReflowState()
 {
-  if (!parentReflowState) {
+  if (!mParentReflowState) {
     mCBReflowState = nullptr;
     return;
   }
 
-  if (parentReflowState->frame == frame->GetContainingBlock()) {
+  if (mParentReflowState->frame == frame->GetContainingBlock()) {
     
     
     if (frame->GetType() == nsGkAtoms::tableFrame) {
-      mCBReflowState = parentReflowState->mCBReflowState;
+      mCBReflowState = mParentReflowState->mCBReflowState;
     } else {
-      mCBReflowState = parentReflowState;
+      mCBReflowState = mParentReflowState;
     }
   } else {
-    mCBReflowState = parentReflowState->mCBReflowState;
+    mCBReflowState = mParentReflowState->mCBReflowState;
   }
 }
 
@@ -732,7 +732,7 @@ nsHTMLReflowState::InitResizeFlags(nsPresContext* aPresContext, nsIAtom* aFrameT
     const nsHTMLReflowState *rs = this;
     bool hitCBReflowState = false;
     do {
-      rs = rs->parentReflowState;
+      rs = rs->mParentReflowState;
       if (!rs) {
         break;
       }
@@ -1053,8 +1053,8 @@ nsHTMLReflowState::GetHypotheticalBoxContainer(nsIFrame*    aFrame,
 
   const nsHTMLReflowState* state;
   if (aFrame->GetStateBits() & NS_FRAME_IN_REFLOW) {
-    for (state = parentReflowState; state && state->frame != aFrame;
-         state = state->parentReflowState) {
+    for (state = mParentReflowState; state && state->frame != aFrame;
+         state = state->mParentReflowState) {
       
     }
   } else {
@@ -1908,7 +1908,7 @@ CalcQuirkContainingBlockHeight(const nsHTMLReflowState* aCBReflowState)
   nscoord result = NS_AUTOHEIGHT; 
                              
   const nsHTMLReflowState* rs = aCBReflowState;
-  for (; rs; rs = rs->parentReflowState) {
+  for (; rs; rs = rs->mParentReflowState) {
     nsIAtom* frameType = rs->frame->GetType();
     
     
@@ -1982,9 +1982,9 @@ CalcQuirkContainingBlockHeight(const nsHTMLReflowState* aCBReflowState)
     }
     
     else if (nsGkAtoms::blockFrame == frameType &&
-             rs->parentReflowState &&
+             rs->mParentReflowState &&
              nsGkAtoms::canvasFrame ==
-               rs->parentReflowState->frame->GetType()) {
+               rs->mParentReflowState->frame->GetType()) {
       
       result -= GetBlockMarginBorderPadding(secondAncestorRS);
     }
@@ -2123,7 +2123,7 @@ nsHTMLReflowState::InitConstraints(nsPresContext*     aPresContext,
 
   
   
-  if (nullptr == parentReflowState || mFlags.mDummyParentReflowState) {
+  if (nullptr == mParentReflowState || mFlags.mDummyParentReflowState) {
     
     InitOffsets(wm, OffsetPercentBasis(frame, wm, aContainingBlockSize),
                 aFrameType, aBorder, aPadding);
@@ -2167,7 +2167,7 @@ nsHTMLReflowState::InitConstraints(nsPresContext*     aPresContext,
       
       
       
-      if (cbrs->parentReflowState) {
+      if (cbrs->mParentReflowState) {
         fType = cbrs->frame->GetType();
         if (IS_TABLE_CELL(fType)) {
           
@@ -2614,13 +2614,13 @@ nsHTMLReflowState::CalculateBlockSideMargins(nsIAtom* aFrameType)
     
     
     
-    const nsHTMLReflowState* prs = parentReflowState;
+    const nsHTMLReflowState* prs = mParentReflowState;
     if (aFrameType == nsGkAtoms::tableFrame) {
       NS_ASSERTION(prs->frame->GetType() == nsGkAtoms::tableOuterFrame,
                    "table not inside outer table");
       
       
-      prs = prs->parentReflowState;
+      prs = prs->mParentReflowState;
     }
     if (prs &&
         (prs->mStyleText->mTextAlign == NS_STYLE_TEXT_ALIGN_MOZ_LEFT ||

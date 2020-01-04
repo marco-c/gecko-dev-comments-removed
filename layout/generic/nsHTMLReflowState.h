@@ -269,7 +269,7 @@ protected:
 struct nsHTMLReflowState : public nsCSSOffsetState {
   
   
-  const nsHTMLReflowState* parentReflowState;
+  const nsHTMLReflowState* mParentReflowState;
 
   
   nsFloatManager* mFloatManager;
