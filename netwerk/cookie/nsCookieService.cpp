@@ -576,16 +576,12 @@ public:
     MOZ_ASSERT(!nsCRT::strcmp(aTopic, TOPIC_CLEAR_ORIGIN_DATA));
 
     MOZ_ASSERT(XRE_IsParentProcess());
-    NeckoOriginAttributes attrs;
-    MOZ_ALWAYS_TRUE(attrs.Init(nsDependentString(aData)));
 
     nsCOMPtr<nsICookieManager2> cookieManager
       = do_GetService(NS_COOKIEMANAGER_CONTRACTID);
     MOZ_ASSERT(cookieManager);
 
-    
-    
-    return cookieManager->RemoveCookiesForApp(attrs.mAppId, attrs.mInIsolatedMozBrowser);
+    return cookieManager->RemoveCookiesWithOriginAttributes(nsDependentString(aData));
   }
 };
 
@@ -4335,22 +4331,36 @@ nsCookieService::GetCookiesFromHost(const nsACString     &aHost,
 }
 
 NS_IMETHODIMP
-nsCookieService::GetCookiesForApp(uint32_t aAppId, bool aOnlyIsolatedMozBrowser,
-                                  nsISimpleEnumerator** aEnumerator)
+nsCookieService::GetCookiesWithOriginAttributes(const nsAString& aPattern,
+                                                nsISimpleEnumerator **aEnumerator)
+{
+  mozilla::OriginAttributesPattern pattern;
+  if (!pattern.Init(aPattern)) {
+    return NS_ERROR_INVALID_ARG;
+  }
+
+  return GetCookiesWithOriginAttributes(pattern, aEnumerator);
+}
+
+nsresult
+nsCookieService::GetCookiesWithOriginAttributes(
+    const mozilla::OriginAttributesPattern& aPattern,
+    nsISimpleEnumerator **aEnumerator)
 {
   if (!mDBState) {
     NS_WARNING("No DBState! Profile already closed?");
     return NS_ERROR_NOT_AVAILABLE;
   }
 
-  NS_ENSURE_TRUE(aAppId != NECKO_UNKNOWN_APP_ID, NS_ERROR_INVALID_ARG);
+  if (aPattern.mAppId.WasPassed() && aPattern.mAppId.Value() == NECKO_UNKNOWN_APP_ID) {
+    return NS_ERROR_INVALID_ARG;
+  }
 
   nsCOMArray<nsICookie> cookies;
   for (auto iter = mDBState->hostTable.Iter(); !iter.Done(); iter.Next()) {
     nsCookieEntry* entry = iter.Get();
 
-    if (entry->mOriginAttributes.mAppId != aAppId ||
-        (aOnlyIsolatedMozBrowser && !entry->mOriginAttributes.mInIsolatedMozBrowser)) {
+    if (!aPattern.Matches(entry->mOriginAttributes)) {
       continue;
     }
 
@@ -4365,49 +4375,53 @@ nsCookieService::GetCookiesForApp(uint32_t aAppId, bool aOnlyIsolatedMozBrowser,
 }
 
 NS_IMETHODIMP
-nsCookieService::RemoveCookiesForApp(uint32_t aAppId,
-                                     bool aOnlyIsolatedMozBrowser)
+nsCookieService::RemoveCookiesWithOriginAttributes(const nsAString& aPattern)
 {
-  nsCOMPtr<nsISimpleEnumerator> enumerator;
-  nsresult rv = GetCookiesForApp(aAppId, aOnlyIsolatedMozBrowser,
-                                 getter_AddRefs(enumerator));
+  MOZ_ASSERT(XRE_IsParentProcess());
 
-  NS_ENSURE_SUCCESS(rv, rv);
+  mozilla::OriginAttributesPattern pattern;
+  if (!pattern.Init(aPattern)) {
+    return NS_ERROR_INVALID_ARG;
+  }
 
-  bool hasMore;
-  while (NS_SUCCEEDED(enumerator->HasMoreElements(&hasMore)) && hasMore) {
-    nsCOMPtr<nsISupports> supports;
-    nsCOMPtr<nsICookie> cookie;
-    rv = enumerator->GetNext(getter_AddRefs(supports));
-    NS_ENSURE_SUCCESS(rv, rv);
+  return RemoveCookiesWithOriginAttributes(pattern);
+}
 
-    cookie = do_QueryInterface(supports);
+nsresult
+nsCookieService::RemoveCookiesWithOriginAttributes(
+    const mozilla::OriginAttributesPattern& aPattern)
+{
+  if (!mDBState) {
+    NS_WARNING("No DBState! Profile already close?");
+    return NS_ERROR_NOT_AVAILABLE;
+  }
 
-    nsAutoCString host;
-    cookie->GetHost(host);
+  
+  for (auto iter = mDBState->hostTable.Iter(); !iter.Done(); iter.Next()) {
+    nsCookieEntry* entry = iter.Get();
 
-    nsAutoCString name;
-    cookie->GetName(name);
-
-    nsAutoCString path;
-    cookie->GetPath(path);
+    if (!aPattern.Matches(entry->mOriginAttributes)) {
+      continue;
+    }
 
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    NeckoOriginAttributes attrs(aAppId, true);
-    Remove(host, attrs, name, path, false);
-    if (!aOnlyIsolatedMozBrowser) {
-      attrs.mInIsolatedMozBrowser = false;
-      Remove(host, attrs, name, path, false);
+    const nsCookieEntry::ArrayType& cookies = entry->GetCookies();
+
+    while (!cookies.IsEmpty()) {
+      nsCookie *cookie = cookies.LastElement();
+
+      nsAutoCString host;
+      cookie->GetHost(host);
+
+      nsAutoCString name;
+      cookie->GetName(name);
+
+      nsAutoCString path;
+      cookie->GetPath(path);
+
+      
+      nsresult rv = Remove(host, entry->mOriginAttributes, name, path, false);
+      NS_ENSURE_SUCCESS(rv, rv);
     }
   }
 
