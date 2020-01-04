@@ -3187,7 +3187,6 @@ const Class DateObject::class_ = {
     nullptr, 
     nullptr, 
     nullptr, 
-    nullptr, 
     {
         GenericCreateConstructor<DateConstructor, 7, gc::AllocKind::FUNCTION>,
         CreateDatePrototype,
@@ -3202,7 +3201,6 @@ const Class DateObject::class_ = {
 const Class DateObject::protoClass_ = {
     js_Object_str,
     JSCLASS_HAS_CACHED_PROTO(JSProto_Date),
-    nullptr, 
     nullptr, 
     nullptr, 
     nullptr, 

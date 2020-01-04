@@ -1421,7 +1421,6 @@ static const JSClass XPCOutParamClass = {
     nullptr,   
     nullptr,   
     nullptr,   
-    nullptr,   
     FinalizeStub,
     nullptr,   
     nullptr,   
