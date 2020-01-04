@@ -15,7 +15,15 @@ var gLanguagesDialog = {
     if (!this._availableLanguagesList.length)
       this._loadAvailableLanguages();
   },
+
   
+  
+  forceReflow: function ()
+  {
+    this._activeLanguages.style.fontKerning = "none";
+    setTimeout("gLanguagesDialog._activeLanguages.style.removeProperty('font-kerning')", 0);
+  },
+
   get _activeLanguages()
   {
     return document.getElementById("activeLanguages");
