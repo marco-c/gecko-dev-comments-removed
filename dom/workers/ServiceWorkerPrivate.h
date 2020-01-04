@@ -186,6 +186,9 @@ private:
 
   ~ServiceWorkerPrivate();
 
+  already_AddRefed<KeepAliveToken>
+  CreateEventKeepAliveToken();
+
   
   
   
