@@ -62,7 +62,7 @@ struct nsMediaFeature {
       const void* mInitializer_;
       
       
-      const nsCSSProps::KTableValue* mKeywordTable;
+      const nsCSSProps::KTableEntry* mKeywordTable;
       
       
       nsIAtom * const * mMetric;
