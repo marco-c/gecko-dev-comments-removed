@@ -1048,7 +1048,9 @@ Port.prototype = {
 
   disconnect() {
     if (this.disconnected) {
-      throw new this.context.contentWindow.Error("Attempt to disconnect() a disconnected port");
+      
+      
+      return;
     }
     this.handleDisconnection();
     this.messageManager.sendAsyncMessage(this.disconnectName);
