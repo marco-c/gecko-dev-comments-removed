@@ -368,7 +368,7 @@ MediaDecoderStateMachine::InitializationTask()
 media::MediaSink*
 MediaDecoderStateMachine::CreateAudioSink()
 {
-  RefPtr<MediaDecoderStateMachine> self = this;
+  nsRefPtr<MediaDecoderStateMachine> self = this;
   auto audioSinkCreator = [self] () {
     MOZ_ASSERT(self->OnTaskQueue());
     return new DecodedAudioDataSink(
@@ -400,14 +400,17 @@ bool MediaDecoderStateMachine::HaveNextFrameData()
          (!HasVideo() || VideoQueue().GetSize() > 1);
 }
 
-int64_t MediaDecoderStateMachine::GetDecodedAudioDuration()
+int64_t
+MediaDecoderStateMachine::GetDecodedAudioDuration()
 {
   MOZ_ASSERT(OnTaskQueue());
-  int64_t audioDecoded = AudioQueue().Duration();
   if (mMediaSink->IsStarted()) {
-    audioDecoded += AudioEndTime() - GetMediaTime();
+    
+    
+    return mDecodedAudioEndTime != -1 ? mDecodedAudioEndTime - GetClock() : 0;
   }
-  return audioDecoded;
+  
+  return AudioQueue().Duration();
 }
 
 void MediaDecoderStateMachine::DiscardStreamData()
@@ -425,7 +428,7 @@ void MediaDecoderStateMachine::DiscardStreamData()
     
     
     if (a && a->mTime < clockTime) {
-      RefPtr<MediaData> releaseMe = AudioQueue().PopFront();
+      nsRefPtr<MediaData> releaseMe = AudioQueue().PopFront();
       continue;
     }
     break;
@@ -576,7 +579,7 @@ void
 MediaDecoderStateMachine::OnAudioDecoded(MediaData* aAudioSample)
 {
   MOZ_ASSERT(OnTaskQueue());
-  RefPtr<MediaData> audio(aAudioSample);
+  nsRefPtr<MediaData> audio(aAudioSample);
   MOZ_ASSERT(audio);
   mAudioDataRequest.Complete();
   aAudioSample->AdjustForStartTime(StartTime());
@@ -692,7 +695,7 @@ MediaDecoderStateMachine::PushFront(MediaData* aSample, MediaData::Type aSampleT
 }
 
 void
-MediaDecoderStateMachine::OnAudioPopped(const RefPtr<MediaData>& aSample)
+MediaDecoderStateMachine::OnAudioPopped(const nsRefPtr<MediaData>& aSample)
 {
   MOZ_ASSERT(OnTaskQueue());
   mPlaybackOffset = std::max(mPlaybackOffset.Ref(), aSample->mOffset);
@@ -702,7 +705,7 @@ MediaDecoderStateMachine::OnAudioPopped(const RefPtr<MediaData>& aSample)
 }
 
 void
-MediaDecoderStateMachine::OnVideoPopped(const RefPtr<MediaData>& aSample)
+MediaDecoderStateMachine::OnVideoPopped(const nsRefPtr<MediaData>& aSample)
 {
   MOZ_ASSERT(OnTaskQueue());
   mPlaybackOffset = std::max(mPlaybackOffset.Ref(), aSample->mOffset);
@@ -741,7 +744,7 @@ MediaDecoderStateMachine::OnNotDecoded(MediaData::Type aType,
   if (aReason == MediaDecoderReader::WAITING_FOR_DATA) {
     MOZ_ASSERT(mReader->IsWaitForDataSupported(),
                "Readers that send WAITING_FOR_DATA need to implement WaitForData");
-    RefPtr<MediaDecoderStateMachine> self = this;
+    nsRefPtr<MediaDecoderStateMachine> self = this;
     WaitRequestRef(aType).Begin(InvokeAsync(DecodeTaskQueue(), mReader.get(), __func__,
                                             &MediaDecoderReader::WaitForData, aType)
       ->Then(OwnerThread(), __func__,
@@ -835,7 +838,7 @@ void
 MediaDecoderStateMachine::OnVideoDecoded(MediaData* aVideoSample)
 {
   MOZ_ASSERT(OnTaskQueue());
-  RefPtr<MediaData> video(aVideoSample);
+  nsRefPtr<MediaData> video(aVideoSample);
   MOZ_ASSERT(video);
   mVideoDataRequest.Complete();
   aVideoSample->AdjustForStartTime(StartTime());
@@ -1241,7 +1244,7 @@ MediaDecoderStateMachine::SetDormant(bool aDormant)
                                          MediaDecoderEventVisibility::Suppressed);
         
         
-        RefPtr<MediaDecoder::SeekPromise> unused = mQueuedSeek.mPromise.Ensure(__func__);
+        nsRefPtr<MediaDecoder::SeekPromise> unused = mQueuedSeek.mPromise.Ensure(__func__);
       }
     } else {
       mQueuedSeek.mTarget = SeekTarget(mCurrentPosition,
@@ -1249,7 +1252,7 @@ MediaDecoderStateMachine::SetDormant(bool aDormant)
                                        MediaDecoderEventVisibility::Suppressed);
       
       
-      RefPtr<MediaDecoder::SeekPromise> unused = mQueuedSeek.mPromise.Ensure(__func__);
+      nsRefPtr<MediaDecoder::SeekPromise> unused = mQueuedSeek.mPromise.Ensure(__func__);
     }
     mPendingSeek.RejectIfExists(__func__);
     mCurrentSeek.RejectIfExists(__func__);
@@ -1434,7 +1437,7 @@ void MediaDecoderStateMachine::BufferedRangeUpdated()
   }
 }
 
-RefPtr<MediaDecoder::SeekPromise>
+nsRefPtr<MediaDecoder::SeekPromise>
 MediaDecoderStateMachine::Seek(SeekTarget aTarget)
 {
   MOZ_ASSERT(OnTaskQueue());
@@ -1471,7 +1474,7 @@ MediaDecoderStateMachine::Seek(SeekTarget aTarget)
   return mPendingSeek.mPromise.Ensure(__func__);
 }
 
-RefPtr<MediaDecoder::SeekPromise>
+nsRefPtr<MediaDecoder::SeekPromise>
 MediaDecoderStateMachine::InvokeSeek(SeekTarget aTarget)
 {
   return InvokeAsync(OwnerThread(), this, __func__,
@@ -1585,7 +1588,7 @@ MediaDecoderStateMachine::InitiateSeek()
   Reset();
 
   
-  RefPtr<MediaDecoderStateMachine> self = this;
+  nsRefPtr<MediaDecoderStateMachine> self = this;
   mSeekRequest.Begin(InvokeAsync(DecodeTaskQueue(), mReader.get(), __func__,
                                  &MediaDecoderReader::Seek, mCurrentSeek.mTarget.mTime,
                                  Duration().ToMicroseconds())
@@ -1887,7 +1890,7 @@ MediaDecoderStateMachine::OnMetadataRead(MetadataHolder* aMetadata)
   mDecoder->DispatchSetMediaSeekable(mReader->IsMediaSeekable());
   mInfo = aMetadata->mInfo;
   mMetadataTags = aMetadata->mTags.forget();
-  RefPtr<MediaDecoderStateMachine> self = this;
+  nsRefPtr<MediaDecoderStateMachine> self = this;
 
   
   
@@ -2067,7 +2070,7 @@ MediaDecoderStateMachine::SeekCompleted()
   int64_t newCurrentTime = seekTime;
 
   
-  RefPtr<MediaData> video = VideoQueue().PeekFront();
+  nsRefPtr<MediaData> video = VideoQueue().PeekFront();
   if (seekTime == Duration().ToMicroseconds()) {
     newCurrentTime = seekTime;
   } else if (HasAudio()) {
@@ -2157,8 +2160,8 @@ public:
 
 private:
   virtual ~DecoderDisposer() {}
-  RefPtr<MediaDecoder> mDecoder;
-  RefPtr<MediaDecoderStateMachine> mStateMachine;
+  nsRefPtr<MediaDecoder> mDecoder;
+  nsRefPtr<MediaDecoderStateMachine> mStateMachine;
 };
 
 void
@@ -2486,7 +2489,7 @@ void MediaDecoderStateMachine::RenderVideoFrames(int32_t aMaxFrames,
   MOZ_ASSERT(OnTaskQueue());
 
   VideoFrameContainer* container = mDecoder->GetVideoFrameContainer();
-  nsAutoTArray<RefPtr<MediaData>,16> frames;
+  nsAutoTArray<nsRefPtr<MediaData>,16> frames;
   VideoQueue().GetFirstElements(aMaxFrames, &frames);
   if (frames.IsEmpty() || !container) {
     return;
@@ -2571,7 +2574,7 @@ void MediaDecoderStateMachine::UpdateRenderedVideoFrames()
   NS_ASSERTION(clockTime >= 0, "Should have positive clock time.");
   int64_t remainingTime = AUDIO_DURATION_USECS;
   if (VideoQueue().GetSize() > 0) {
-    RefPtr<MediaData> currentFrame = VideoQueue().PopFront();
+    nsRefPtr<MediaData> currentFrame = VideoQueue().PopFront();
     int32_t framesRemoved = 0;
     while (VideoQueue().GetSize() > 0) {
       MediaData* nextFrame = VideoQueue().PeekFront();
@@ -2623,7 +2626,7 @@ nsresult
 MediaDecoderStateMachine::DropVideoUpToSeekTarget(MediaData* aSample)
 {
   MOZ_ASSERT(OnTaskQueue());
-  RefPtr<VideoData> video(aSample->As<VideoData>());
+  nsRefPtr<VideoData> video(aSample->As<VideoData>());
   MOZ_ASSERT(video);
   DECODER_LOG("DropVideoUpToSeekTarget() frame [%lld, %lld]",
               video->mTime, video->GetEndTime());
@@ -2641,7 +2644,7 @@ MediaDecoderStateMachine::DropVideoUpToSeekTarget(MediaData* aSample)
       
       
       
-      RefPtr<VideoData> temp = VideoData::ShallowCopyUpdateTimestamp(video, target);
+      nsRefPtr<VideoData> temp = VideoData::ShallowCopyUpdateTimestamp(video, target);
       video = temp;
     }
     mFirstVideoFrameAfterSeek = nullptr;
@@ -2659,7 +2662,7 @@ nsresult
 MediaDecoderStateMachine::DropAudioUpToSeekTarget(MediaData* aSample)
 {
   MOZ_ASSERT(OnTaskQueue());
-  RefPtr<AudioData> audio(aSample->As<AudioData>());
+  nsRefPtr<AudioData> audio(aSample->As<AudioData>());
   MOZ_ASSERT(audio &&
              mCurrentSeek.Exists() &&
              mCurrentSeek.mTarget.mType == SeekTarget::Accurate);
@@ -2718,7 +2721,7 @@ MediaDecoderStateMachine::DropAudioUpToSeekTarget(MediaData* aSample)
   if (!duration.isValid()) {
     return NS_ERROR_FAILURE;
   }
-  RefPtr<AudioData> data(new AudioData(audio->mOffset,
+  nsRefPtr<AudioData> data(new AudioData(audio->mOffset,
                                          mCurrentSeek.mTarget.mTime,
                                          duration.value(),
                                          frames,
@@ -2948,7 +2951,7 @@ void MediaDecoderStateMachine::OnMediaSinkError()
 
 #ifdef MOZ_EME
 void
-MediaDecoderStateMachine::OnCDMProxyReady(RefPtr<CDMProxy> aProxy)
+MediaDecoderStateMachine::OnCDMProxyReady(nsRefPtr<CDMProxy> aProxy)
 {
   MOZ_ASSERT(OnTaskQueue());
   mCDMProxyPromise.Complete();
