@@ -186,6 +186,18 @@ public:
 
 
 
+  static bool ComputeValues(nsCSSProperty aProperty,
+                            nsCSSProps::EnabledState aEnabledState,
+                            mozilla::dom::Element* aTargetElement,
+                            nsStyleContext* aStyleContext,
+                            const nsCSSValue& aSpecifiedValue,
+                            bool aUseSVGMode,
+                            nsTArray<PropertyStyleAnimationValuePair>& aResult);
+
+  
+
+
+
 
 
 
@@ -402,14 +414,6 @@ public:
     { return !(*this == aOther); }
 
 private:
-  static bool ComputeValues(nsCSSProperty aProperty,
-                            nsCSSProps::EnabledState aEnabledState,
-                            mozilla::dom::Element* aTargetElement,
-                            nsStyleContext* aStyleContext,
-                            mozilla::css::StyleRule* aStyleRule,
-                            nsTArray<PropertyStyleAnimationValuePair>& aValues,
-                            bool* aIsContextSensitive);
-
   void FreeValue();
 
   static const char16_t* GetBufferValue(nsStringBuffer* aBuffer) {
