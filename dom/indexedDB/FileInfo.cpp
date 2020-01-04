@@ -134,6 +134,7 @@ FileInfo::UpdateReferences(ThreadSafeAutoRefCnt& aRefCount,
 {
   
   
+  
   if (IndexedDatabaseManager::IsClosed()) {
     MOZ_ASSERT(&aRefCount == &mRefCnt);
     MOZ_ASSERT(aDelta == 1 || aDelta == -1);

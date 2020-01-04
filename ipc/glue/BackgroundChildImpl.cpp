@@ -70,6 +70,7 @@ using mozilla::dom::PNuwaChild;
 
 BackgroundChildImpl::
 ThreadLocal::ThreadLocal()
+  : mCurrentFileHandle(nullptr)
 {
   
   MOZ_COUNT_CTOR(mozilla::ipc::BackgroundChildImpl::ThreadLocal);

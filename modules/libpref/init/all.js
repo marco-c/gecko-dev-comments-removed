@@ -125,6 +125,9 @@ pref("dom.indexedDB.logging.details", true);
 pref("dom.indexedDB.logging.profiler-marks", false);
 
 
+pref("dom.fileHandle.enabled", true);
+
+
 #ifdef NIGHTLY_BUILD
 pref("dom.permissions.enabled", true);
 #else
