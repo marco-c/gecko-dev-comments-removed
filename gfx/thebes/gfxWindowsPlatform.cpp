@@ -2410,6 +2410,12 @@ gfxWindowsPlatform::CheckD2DSupport()
   if (!IsVistaOrLater()) {
     return FeatureStatus::Unavailable;
   }
+
+  
+  
+  if (mIsWARP && !gfxPrefs::LayersD3D11ForceWARP()) {
+    return FeatureStatus::Blocked;
+  }
   return FeatureStatus::Available;
 }
 
@@ -2462,11 +2468,6 @@ gfxWindowsPlatform::CheckD2D1Support()
   }
   if (!gfxPrefs::Direct2DUse1_1()) {
     return FeatureStatus::Disabled;
-  }
-  
-  
-  if (mIsWARP && !gfxPrefs::LayersD3D11ForceWARP()) {
-    return FeatureStatus::Blocked;
   }
   return FeatureStatus::Available;
 }
