@@ -61,6 +61,15 @@ public:
 
   
   
+  
+  
+  static bool InitOrUpdate(Feature aFeature,
+                           bool aEnable,
+                           FeatureStatus aDisableStatus,
+                           const char* aDisableMessage);
+
+  
+  
   static void UserEnable(Feature aFeature, const char* aMessage);
   static void UserForceEnable(Feature aFeature, const char* aMessage);
   static void UserDisable(Feature aFeature, const char* aMessage);
