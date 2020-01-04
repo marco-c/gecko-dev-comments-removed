@@ -97,9 +97,9 @@ typedef enum {
     ssl_auth_dsa = 2,
     ssl_auth_kea = 3, 
     ssl_auth_ecdsa = 4,
-    ssl_auth_ecdh_rsa = 5, 
+    ssl_auth_ecdh_rsa = 5,   
     ssl_auth_ecdh_ecdsa = 6, 
-    ssl_auth_rsa_sign = 7, 
+    ssl_auth_rsa_sign = 7,   
     ssl_auth_rsa_pss = 8,
     ssl_auth_psk = 9,
     ssl_auth_size 
@@ -130,7 +130,8 @@ typedef enum {
     ssl_hmac_md5 = 3, 
     ssl_hmac_sha = 4, 
     ssl_hmac_sha256 = 5,
-    ssl_mac_aead = 6
+    ssl_mac_aead = 6,
+    ssl_hmac_sha384 = 7
 } SSLMACAlgorithm;
 
 typedef enum {
@@ -145,13 +146,13 @@ typedef struct SSLExtraServerCertDataStr {
 
     SSLAuthType authType;
     
-    const CERTCertificateList *certChain;
+    const CERTCertificateList* certChain;
     
 
-    const SECItemArray *stapledOCSPResponses;
+    const SECItemArray* stapledOCSPResponses;
     
 
-    const SECItem *signedCertTimestamps;
+    const SECItem* signedCertTimestamps;
 } SSLExtraServerCertData;
 
 typedef struct SSLChannelInfoStr {
@@ -271,10 +272,8 @@ typedef enum {
 typedef enum {
     ssl_server_name_xtn = 0,
     ssl_cert_status_xtn = 5,
-#ifndef NSS_DISABLE_ECC
     ssl_elliptic_curves_xtn = 10,
     ssl_ec_point_formats_xtn = 11,
-#endif
     ssl_signature_algorithms_xtn = 13,
     ssl_use_srtp_xtn = 14,
     ssl_app_layer_protocol_xtn = 16,
@@ -283,7 +282,7 @@ typedef enum {
     ssl_padding_xtn = 21,
     ssl_extended_master_secret_xtn = 23,
     ssl_session_ticket_xtn = 35,
-    ssl_tls13_key_share_xtn = 40, 
+    ssl_tls13_key_share_xtn = 40,      
     ssl_tls13_pre_shared_key_xtn = 41, 
     ssl_next_proto_nego_xtn = 13172,
     ssl_renegotiation_info_xtn = 0xff01,

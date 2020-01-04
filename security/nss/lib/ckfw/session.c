@@ -60,6 +60,7 @@
 
 
 
+
 struct NSSCKFWSessionStr {
     NSSArena *arena;
     NSSCKMDSession *mdSession;
@@ -2374,4 +2375,16 @@ NSSCKFWSession_GetCurrentCryptoOperation(
     }
 #endif 
     return nssCKFWSession_GetCurrentCryptoOperation(fwSession, state);
+}
+
+
+
+
+
+
+NSS_IMPLEMENT NSSCKFWSlot *
+NSSCKFWSession_GetFWSlot(
+    NSSCKFWSession *fwSession)
+{
+    return nssCKFWSession_GetFWSlot(fwSession);
 }

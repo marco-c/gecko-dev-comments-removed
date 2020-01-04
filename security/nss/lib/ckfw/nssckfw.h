@@ -39,6 +39,9 @@
 
 
 
+
+
+
 NSS_EXTERN NSSCKMDInstance *
 NSSCKFWInstance_GetMDInstance(
     NSSCKFWInstance *fwInstance);
@@ -95,6 +98,25 @@ NSSCKFWInstance_GetInitArgs(
 
 
 
+NSS_EXTERN void
+NSSCKFWInstance_DestroySessionHandle(
+    NSSCKFWInstance *fwInstance,
+    CK_SESSION_HANDLE hSession);
+
+
+
+
+
+NSS_EXTERN CK_SESSION_HANDLE
+NSSCKFWInstance_FindSessionHandle(
+    NSSCKFWInstance *fwInstance,
+    NSSCKFWSession *fwSession);
+
+
+
+
+
+
 
 
 
@@ -125,6 +147,15 @@ NSSCKFWSlot_GetFWInstance(
 
 NSS_EXTERN NSSCKMDInstance *
 NSSCKFWSlot_GetMDInstance(
+    NSSCKFWSlot *fwSlot);
+
+
+
+
+
+
+NSS_EXTERN CK_SLOT_ID
+NSSCKFWSlot_GetSlotID(
     NSSCKFWSlot *fwSlot);
 
 
@@ -226,6 +257,7 @@ NSSCKFWMechanism_GetParameter(
 
 
 
+
 NSS_EXTERN NSSCKMDSession *
 NSSCKFWSession_GetMDSession(
     NSSCKFWSession *fwSession);
@@ -277,6 +309,15 @@ NSS_EXTERN NSSCKFWCryptoOperation *
 NSSCKFWSession_GetCurrentCryptoOperation(
     NSSCKFWSession *fwSession,
     NSSCKFWCryptoOperationState state);
+
+
+
+
+
+
+NSS_EXTERN NSSCKFWSlot *
+NSSCKFWSession_GetFWSlot(
+    NSSCKFWSession *fwSession);
 
 
 

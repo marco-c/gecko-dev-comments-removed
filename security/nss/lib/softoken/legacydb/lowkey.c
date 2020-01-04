@@ -106,19 +106,6 @@ const SEC_ASN1Template lg_nsslowkey_DHPrivateKeyTemplate[] = {
 
 
 
-
-const SEC_ASN1Template lg_nsslowkey_ECParamsTemplate[] = {
-    { SEC_ASN1_CHOICE, offsetof(ECParams,type), NULL, sizeof(ECParams) },
-    { SEC_ASN1_OBJECT_ID, offsetof(ECParams,curveOID), NULL, ec_params_named },
-    { 0 }
-};
-
-
-
-
-
-
-
 const SEC_ASN1Template lg_nsslowkey_ECPrivateKeyTemplate[] = {
     { SEC_ASN1_SEQUENCE, 0, NULL, sizeof(NSSLOWKEYPrivateKey) },
     { SEC_ASN1_INTEGER, offsetof(NSSLOWKEYPrivateKey,u.ec.version) },
@@ -127,19 +114,10 @@ const SEC_ASN1Template lg_nsslowkey_ECPrivateKeyTemplate[] = {
     
 
 
-
-
-#if 1
     { SEC_ASN1_OPTIONAL | SEC_ASN1_CONSTRUCTED |
       SEC_ASN1_EXPLICIT | SEC_ASN1_CONTEXT_SPECIFIC | SEC_ASN1_XTRN | 0, 
       offsetof(NSSLOWKEYPrivateKey,u.ec.ecParams.curveOID), 
       SEC_ASN1_SUB(SEC_ObjectIDTemplate) }, 
-#else
-    { SEC_ASN1_OPTIONAL | SEC_ASN1_CONSTRUCTED |
-      SEC_ASN1_EXPLICIT | SEC_ASN1_CONTEXT_SPECIFIC | 0, 
-      offsetof(NSSLOWKEYPrivateKey,u.ec.ecParams), 
-      lg_nsslowkey_ECParamsTemplate }, 
-#endif
     { SEC_ASN1_OPTIONAL | SEC_ASN1_CONSTRUCTED |
       SEC_ASN1_EXPLICIT | SEC_ASN1_CONTEXT_SPECIFIC |
       SEC_ASN1_XTRN | 1, 

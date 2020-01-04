@@ -77,7 +77,11 @@ void freebl_cpuid(unsigned long op, unsigned long *eax,
 
 
 
-	__asm__("mov %%ebx,%%edi\n\t"
+
+
+
+	__asm__("xor %%ecx, %%ecx\n\t"
+		  "mov %%ebx,%%edi\n\t"
 		  "cpuid\n\t"
 		  "xchgl %%ebx,%%edi\n\t"
 		: "=a" (*eax),
@@ -122,6 +126,7 @@ void freebl_cpuid(unsigned long op,    unsigned long *Reax,
         unsigned long  Leax, Lebx, Lecx, Ledx;
         __asm {
         pushad
+        xor     ecx,ecx
         mov     eax,op
         wcpuid
         mov     Leax,eax

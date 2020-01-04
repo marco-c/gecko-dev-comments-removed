@@ -59,6 +59,8 @@
 
 
 
+
+
 struct NSSCKFWInstanceStr {
     NSSCKFWMutex *mutex;
     NSSArena *arena;
@@ -1265,4 +1267,28 @@ NSSCKFWInstance_GetInitArgs(
 #endif 
 
     return nssCKFWInstance_GetInitArgs(fwInstance);
+}
+
+
+
+
+
+NSS_IMPLEMENT void
+NSSCKFWInstance_DestroySessionHandle(
+    NSSCKFWInstance *fwInstance,
+    CK_SESSION_HANDLE hSession)
+{
+    nssCKFWInstance_DestroySessionHandle(fwInstance, hSession);
+}
+
+
+
+
+
+NSS_IMPLEMENT CK_SESSION_HANDLE
+NSSCKFWInstance_FindSessionHandle(
+    NSSCKFWInstance *fwInstance,
+    NSSCKFWSession *fwSession)
+{
+    return nssCKFWInstance_FindSessionHandle(fwInstance, fwSession);
 }

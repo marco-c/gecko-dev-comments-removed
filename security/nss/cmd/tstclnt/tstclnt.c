@@ -218,15 +218,13 @@ PrintParameterUsage(void)
     fprintf(stderr,
             "%-20s Restricts the set of enabled SSL/TLS protocols versions.\n"
             "%-20s All versions are enabled by default.\n"
-            "%-20s Possible values for min/max: ssl3 tls1.0 tls1.1 tls1.2\n"
+            "%-20s Possible values for min/max: ssl3 tls1.0 tls1.1 tls1.2 tls1.3\n"
             "%-20s Example: \"-V ssl3:\" enables SSL 3 and newer.\n",
             "-V [min]:[max]", "", "", "");
     fprintf(stderr, "%-20s Send TLS_FALLBACK_SCSV\n", "-K");
     fprintf(stderr, "%-20s Prints only payload data. Skips HTTP header.\n", "-S");
     fprintf(stderr, "%-20s Client speaks first. \n", "-f");
-    fprintf(stderr, "%-20s Use synchronous certificate validation "
-                    "(currently required for TLS 1.3)\n",
-            "-O");
+    fprintf(stderr, "%-20s Use synchronous certificate validation\n", "-O");
     fprintf(stderr, "%-20s Override bad server cert. Make it OK.\n", "-o");
     fprintf(stderr, "%-20s Disable SSL socket locking.\n", "-s");
     fprintf(stderr, "%-20s Verbose progress reporting.\n", "-v");
@@ -239,7 +237,6 @@ PrintParameterUsage(void)
     fprintf(stderr, "%-20s Enable false start.\n", "-g");
     fprintf(stderr, "%-20s Enable the cert_status extension (OCSP stapling).\n", "-T");
     fprintf(stderr, "%-20s Enable the signed_certificate_timestamp extension.\n", "-U");
-    fprintf(stderr, "%-20s Enable the extended master secret extension (session hash).\n", "-G");
     fprintf(stderr, "%-20s Require fresh revocation info from side channel.\n"
                     "%-20s -F once means: require for server cert only\n"
                     "%-20s -F twice means: require for intermediates, too\n"

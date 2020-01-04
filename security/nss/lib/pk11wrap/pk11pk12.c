@@ -233,8 +233,10 @@ PK11_ImportDERPrivateKeyInfoAndReturnKey(PK11SlotInfo *slot, SECItem *derPKI,
 
     rv = SEC_ASN1DecodeItem(pki->arena, pki, SECKEY_PrivateKeyInfoTemplate,
 		derPKI);
-    if( rv != SECSuccess ) {
+    if (rv != SECSuccess || pki->privateKey.data == NULL) {
         
+
+
 
 
 

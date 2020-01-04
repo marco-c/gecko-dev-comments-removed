@@ -97,7 +97,10 @@ tls13_HkdfExpandLabel(PK11SymKey *prk, SSLHashType baseHash,
 {
     CK_NSS_HKDFParams params;
     SECItem paramsi = { siBuffer, NULL, 0 };
-    PRUint8 info[100];
+    
+
+
+    PRUint8 info[110];
     PRUint8 *ptr = info;
     unsigned int infoLen;
     PK11SymKey *derived;

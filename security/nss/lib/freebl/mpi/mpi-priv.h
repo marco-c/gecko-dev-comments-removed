@@ -95,61 +95,19 @@ extern const float s_logv_2[];
 
 
 
+void     s_mp_setz(mp_digit *dp, mp_size count); 
+void     s_mp_copy(const mp_digit *sp, mp_digit *dp, mp_size count); 
+void    *s_mp_alloc(size_t nb, size_t ni);       
+void     s_mp_free(void *ptr);                   
 
-
-
-
-
-
-
-
-
-
-
-
-#if MP_MACRO == 0
- void     s_mp_setz(mp_digit *dp, mp_size count); 
- void     s_mp_copy(const mp_digit *sp, mp_digit *dp, mp_size count); 
- void    *s_mp_alloc(size_t nb, size_t ni);       
- void     s_mp_free(void *ptr);                   
 extern unsigned long mp_allocs;
 extern unsigned long mp_frees;
 extern unsigned long mp_copies;
-#else
-
- 
-
-
- #if MP_MEMSET == 0
-  #define  s_mp_setz(dp, count) \
-       {int ix;for(ix=0;ix<(count);ix++)(dp)[ix]=0;}
- #else
-  #define  s_mp_setz(dp, count) memset(dp, 0, (count) * sizeof(mp_digit))
- #endif 
-
- #if MP_MEMCPY == 0
-  #define  s_mp_copy(sp, dp, count) \
-       {int ix;for(ix=0;ix<(count);ix++)(dp)[ix]=(sp)[ix];}
- #else
-  #define  s_mp_copy(sp, dp, count) memcpy(dp, sp, (count) * sizeof(mp_digit))
- #endif 
-
- #define  s_mp_alloc(nb, ni)  calloc(nb, ni)
- #define  s_mp_free(ptr) {if(ptr) free(ptr);}
-#endif 
 
 mp_err   s_mp_grow(mp_int *mp, mp_size min);   
 mp_err   s_mp_pad(mp_int *mp, mp_size min);    
 
-#if MP_MACRO == 0
- void     s_mp_clamp(mp_int *mp);               
-#else
- #define  s_mp_clamp(mp)\
-  { mp_size used = MP_USED(mp); \
-    while (used > 1 && DIGIT(mp, used - 1) == 0) --used; \
-    MP_USED(mp) = used; \
-  } 
-#endif 
+void     s_mp_clamp(mp_int *mp);               
 
 void     s_mp_exch(mp_int *a, mp_int *b);      
 

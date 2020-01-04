@@ -411,7 +411,7 @@ sdb_measureAccess(const char *directory)
 
         PR_snprintf(tempStartOfFilename, maxFileNameLen,
 		    ".%lu%s", (PRUint32)(time+i), doesntExistName);
-	PR_Access(temp,PR_ACCESS_EXISTS);
+	PR_Access(temp, PR_ACCESS_EXISTS);
 	next = PR_IntervalNow();
 	delta = next - time;
 	if (delta >= duration)
@@ -1730,11 +1730,16 @@ sdb_init(char *dbname, char *table, sdbDataType type, int *inUpdate,
 	error = sdb_mapSQLError(type, sqlerr); 
 	goto loser;
     }
+
     
 
-    if (create) {
-	
-	chmod (dbname, 0600);
+
+
+
+
+    if (create && chmod(dbname, 0600) != 0) {
+        error = sdb_mapSQLError(type, SQLITE_CANTOPEN);
+        goto loser;
     }
 
     if (flags != SDB_RDONLY) {

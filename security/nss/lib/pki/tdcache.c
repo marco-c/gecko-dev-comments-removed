@@ -295,25 +295,27 @@ remove_email_entry (
 	if (ce) {
 	    nssList *subjects = ce->entry.list;
 	    
-	    nssList_Remove(subjects, subjectList);
+            if (subjects) {
+		nssList_Remove(subjects, subjectList);
 #ifdef DEBUG_CACHE
-	    log_item_dump("removed subject list", &cert->subject);
-	    PR_LOG(s_log, PR_LOG_DEBUG, ("for email %s", cert->email));
+		log_item_dump("removed subject list", &cert->subject);
+		PR_LOG(s_log, PR_LOG_DEBUG, ("for email %s", cert->email));
 #endif
-	    if (nssList_Count(subjects) == 0) {
-		
+		if (nssList_Count(subjects) == 0) {
+		    
 
 
-		(void)nssList_Destroy(subjects);
-		nssHash_Remove(cache->email, cert->email);
-		
+		    (void)nssList_Destroy(subjects);
+		    nssHash_Remove(cache->email, cert->email);
+		    
 
 
-		nssArena_Destroy(ce->arena);
+		     nssArena_Destroy(ce->arena);
 #ifdef DEBUG_CACHE
-		PR_LOG(s_log, PR_LOG_DEBUG, ("removed email %s", cert->email));
+		    PR_LOG(s_log, PR_LOG_DEBUG, ("removed email %s", cert->email));
 #endif
-	    }
+		}
+            }
 	    nssrv = PR_SUCCESS;
 	}
     }

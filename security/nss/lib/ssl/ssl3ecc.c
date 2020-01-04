@@ -31,8 +31,6 @@
 
 #include <stdio.h>
 
-#ifndef NSS_DISABLE_ECC
-
 #ifndef PK11_SETATTRS
 #define PK11_SETATTRS(x, id, v, l) \
     (x)->type = (id);              \
@@ -596,10 +594,9 @@ ssl3_GetCurveNameForServerSocket(sslSocket *ss)
     }
 
     if (cert->certType.authType == ssl_auth_rsa_sign) {
-        certKeySize
-                = SECKEY_PublicKeyStrengthInBits(cert->serverKeyPair->pubKey);
+        certKeySize = SECKEY_PublicKeyStrengthInBits(cert->serverKeyPair->pubKey);
         certKeySize =
-                SSL_RSASTRENGTH_TO_ECSTRENGTH(certKeySize);
+            SSL_RSASTRENGTH_TO_ECSTRENGTH(certKeySize);
     } else if (cert->certType.authType == ssl_auth_ecdsa ||
                cert->certType.authType == ssl_auth_ecdh_rsa ||
                cert->certType.authType == ssl_auth_ecdh_ecdsa) {
@@ -763,9 +760,6 @@ ssl3_HandleECDHServerKeyExchange(sslSocket *ss, SSL3Opaque *b, PRUint32 length)
 
     isTLS = (PRBool)(ss->ssl3.prSpec->version > SSL_LIBRARY_VERSION_3_0);
     isTLS12 = (PRBool)(ss->ssl3.prSpec->version >= SSL_LIBRARY_VERSION_TLS_1_2);
-
-    
-
 
     ec_params.len = sizeof paramBuf;
     ec_params.data = paramBuf;
@@ -1050,7 +1044,9 @@ static const ssl3CipherSuite ecdhe_ecdsa_suites[] = {
     TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA,
     TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256,
     TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
+    TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,
     TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA,
+    TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384,
     TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256,
     TLS_ECDHE_ECDSA_WITH_NULL_SHA,
     TLS_ECDHE_ECDSA_WITH_RC4_128_SHA,
@@ -1062,7 +1058,9 @@ static const ssl3CipherSuite ecdhe_rsa_suites[] = {
     TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA,
     TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256,
     TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
+    TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
     TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA,
+    TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384,
     TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256,
     TLS_ECDHE_RSA_WITH_NULL_SHA,
     TLS_ECDHE_RSA_WITH_RC4_128_SHA,
@@ -1079,11 +1077,15 @@ static const ssl3CipherSuite ecSuites[] = {
     TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256,
     TLS_ECDHE_ECDSA_WITH_NULL_SHA,
     TLS_ECDHE_ECDSA_WITH_RC4_128_SHA,
+    TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384,
+    TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,
     TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA,
     TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA,
     TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256,
     TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
+    TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
     TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA,
+    TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384,
     TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256,
     TLS_ECDHE_RSA_WITH_NULL_SHA,
     TLS_ECDHE_RSA_WITH_RC4_128_SHA,
@@ -1113,8 +1115,9 @@ ssl3_DisableECCSuites(sslSocket *ss, const ssl3CipherSuite *suite)
 }
 
 static PRBool
-ssl_HasCertOfAuthType(sslSocket *ss, SSLAuthType authType) {
-    const sslServerCert* sc;
+ssl_HasCertOfAuthType(sslSocket *ss, SSLAuthType authType)
+{
+    const sslServerCert *sc;
 
     sc = ssl_FindServerCertByAuthType(ss, authType);
     return sc && sc->serverCert;
@@ -1173,8 +1176,6 @@ ssl3_IsECCEnabled(sslSocket *ss)
     return PR_FALSE;
 }
 
-#define BE(n) 0, n
-
 
 
 
@@ -1193,13 +1194,6 @@ static const PRUint8 tlsECList[] = {
     25
 };
 
-
-static const PRUint8 ecPtFmt[6] = {
-    BE(11), 
-    BE(2),  
-    1,      
-    0       
-};
 
 
 
@@ -1330,7 +1324,19 @@ ssl3_SendSupportedPointFormatsXtn(
     PRBool append,
     PRUint32 maxBytes)
 {
-    if (!ss || !ssl3_IsECCEnabled(ss))
+    static const PRUint8 ecPtFmt[6] = {
+        0, 11, 
+        0, 2,  
+        1,     
+        0      
+    };
+
+    
+
+
+    if (!ss || !ssl3_IsECCEnabled(ss) ||
+        (ss->sec.isServer && ss->version >= SSL_LIBRARY_VERSION_TLS_1_3) ||
+        (!ss->sec.isServer && ss->vrange.min >= SSL_LIBRARY_VERSION_TLS_1_3))
         return 0;
     if (append && maxBytes >= (sizeof ecPtFmt)) {
         SECStatus rv = ssl3_AppendHandshake(ss, ecPtFmt, (sizeof ecPtFmt));
@@ -1342,7 +1348,7 @@ ssl3_SendSupportedPointFormatsXtn(
                 ssl_ec_point_formats_xtn;
         }
     }
-    return (sizeof ecPtFmt);
+    return sizeof(ecPtFmt);
 }
 
 
@@ -1423,17 +1429,17 @@ ssl3_HandleSupportedCurvesXtn(sslSocket *ss, PRUint16 ex_type, SECItem *data)
     for (cursor = PR_NEXT_LINK(&ss->serverCerts);
          cursor != &ss->serverCerts;
          cursor = PR_NEXT_LINK(cursor)) {
-        sslServerCert *cert = (sslServerCert*)cursor;
-        if (cert->certType.authType == ssl_auth_ecdh_rsa
-            && (mutualCurves & (1U << cert->certType.u.namedCurve))) {
+        sslServerCert *cert = (sslServerCert *)cursor;
+        if (cert->certType.authType == ssl_auth_ecdh_rsa &&
+            (mutualCurves & (1U << cert->certType.u.namedCurve))) {
             foundECDH_RSA = PR_TRUE;
         }
-        if (cert->certType.authType == ssl_auth_ecdh_ecdsa
-            && (mutualCurves & (1U << cert->certType.u.namedCurve))) {
+        if (cert->certType.authType == ssl_auth_ecdh_ecdsa &&
+            (mutualCurves & (1U << cert->certType.u.namedCurve))) {
             foundECDH_ECDSA = PR_TRUE;
         }
-        if (cert->certType.authType == ssl_auth_ecdsa
-            && (mutualCurves & (1U << cert->certType.u.namedCurve))) {
+        if (cert->certType.authType == ssl_auth_ecdsa &&
+            (mutualCurves & (1U << cert->certType.u.namedCurve))) {
             foundECDSA = PR_TRUE;
         }
     }
@@ -1451,5 +1457,3 @@ ssl3_HandleSupportedCurvesXtn(sslSocket *ss, PRUint16 ex_type, SECItem *data)
     }
     return SECSuccess;
 }
-
-#endif 

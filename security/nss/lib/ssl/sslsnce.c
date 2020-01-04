@@ -105,17 +105,17 @@ struct sidCacheEntryStr {
     
 
     union {
-struct {
-     ssl3CipherSuite cipherSuite;
-     PRUint16 compression; 
+        struct {
+             ssl3CipherSuite cipherSuite;
+             PRUint16 compression; 
 
-     ssl3SidKeys keys; 
+             ssl3SidKeys keys; 
 
-     PRUint32 masterWrapMech;
-     PRInt32 certIndex;
-     PRInt32 srvNameIndex;
-     PRUint8 srvNameHash[SHA256_LENGTH]; 
-     PRUint16 certTypeArgs;
+             PRUint32 masterWrapMech;
+             PRInt32 certIndex;
+             PRInt32 srvNameIndex;
+             PRUint8 srvNameHash[SHA256_LENGTH]; 
+             PRUint16 certTypeArgs;
 } ssl3;
 
 
@@ -451,18 +451,15 @@ ConvertFromSID(sidCacheEntry *to, sslSessionID *from)
     PORT_Memcpy(to->sessionID, from->u.ssl3.sessionID,
                 to->sessionIDLength);
     to->u.ssl3.certTypeArgs = 0U;
-    switch(from->authType) {
-#ifndef NSS_DISABLE_ECC
+    switch (from->authType) {
         case ssl_auth_ecdsa:
         case ssl_auth_ecdh_rsa:
         case ssl_auth_ecdh_ecdsa:
             to->u.ssl3.certTypeArgs = (PRUint16)from->certType.u.namedCurve;
             break;
-#endif
         default:
             break;
     }
-
 
     SSL_TRC(8, ("%d: SSL3: ConvertSID: time=%d addr=0x%08x%08x%08x%08x "
                 "cipherSuite=%d",
@@ -539,14 +536,12 @@ ConvertToSID(sidCacheEntry *from,
     }
     to->certType.authType = from->authType;
     switch (from->authType) {
-#ifndef NSS_DISABLE_ECC
         case ssl_auth_ecdsa:
         case ssl_auth_ecdh_rsa:
         case ssl_auth_ecdh_ecdsa:
             to->certType.u.namedCurve =
                 (ECName)from->u.ssl3.certTypeArgs;
             break;
-#endif
         default:
             break;
     }
@@ -1040,7 +1035,7 @@ InitCache(cacheDesc *cache, int maxCacheEntries, int maxCertCacheEntries,
     }
 
     if (shared) {
-    
+
 #if defined(XP_UNIX) || defined(XP_BEOS)
         
 
@@ -1667,8 +1662,8 @@ ssl_GetWrappingKey(PRInt32 symWrapMechIndex,
 {
     PRBool rv;
 
-    PORT_Assert( (unsigned)authType < ssl_auth_size);
-    PORT_Assert( (unsigned)symWrapMechIndex < SSL_NUM_WRAP_MECHS);
+    PORT_Assert((unsigned)authType < ssl_auth_size);
+    PORT_Assert((unsigned)symWrapMechIndex < SSL_NUM_WRAP_MECHS);
     if ((unsigned)authType < ssl_auth_size &&
         (unsigned)symWrapMechIndex < SSL_NUM_WRAP_MECHS) {
         rv = getSvrWrappingKey(symWrapMechIndex, authType, wswk,

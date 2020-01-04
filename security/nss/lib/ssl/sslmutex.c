@@ -448,7 +448,7 @@ sslMutex_Unlock(sslMutex *pMutex)
     }
 #ifdef WINNT
     return single_process_sslMutex_Unlock(pMutex);
-    
+
 #else
     return SECSuccess;
 #endif

@@ -45,6 +45,7 @@
 
 
 
+
 struct NSSCKFWSlotStr {
     NSSCKFWMutex *mutex;
     NSSCKMDSlot *mdSlot;
@@ -678,4 +679,16 @@ NSSCKFWSlot_GetMDInstance(
 #endif 
 
     return nssCKFWSlot_GetMDInstance(fwSlot);
+}
+
+
+
+
+
+
+NSS_IMPLEMENT CK_SLOT_ID
+NSSCKFWSlot_GetSlotID(
+    NSSCKFWSlot *fwSlot)
+{
+    return nssCKFWSlot_GetSlotID(fwSlot);
 }

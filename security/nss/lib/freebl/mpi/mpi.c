@@ -19,6 +19,10 @@
 #undef MP_ASSEMBLY_SQUARE
 #endif
 
+#if defined(_MSC_VER) && _MSC_VER < 1900
+#define inline __inline
+#endif
+
 #if MP_LOGTAB
 
 
@@ -199,9 +203,7 @@ mp_err mp_copy(const mp_int *from, mp_int *to)
       s_mp_copy(DIGITS(from), tmp, USED(from));
 
       if(DIGITS(to) != NULL) {
-#if MP_CRYPTO
 	s_mp_setz(DIGITS(to), ALLOC(to));
-#endif
 	s_mp_free(DIGITS(to));
       }
 
@@ -261,9 +263,7 @@ void   mp_clear(mp_int *mp)
     return;
 
   if(DIGITS(mp) != NULL) {
-#if MP_CRYPTO
     s_mp_setz(DIGITS(mp), ALLOC(mp));
-#endif
     s_mp_free(DIGITS(mp));
     DIGITS(mp) = NULL;
   }
@@ -2740,9 +2740,7 @@ mp_err   s_mp_grow(mp_int *mp, mp_size min)
 
     s_mp_copy(DIGITS(mp), tmp, USED(mp));
 
-#if MP_CRYPTO
     s_mp_setz(DIGITS(mp), ALLOC(mp));
-#endif
     s_mp_free(DIGITS(mp));
     DIGITS(mp) = tmp;
     ALLOC(mp) = min;
@@ -2782,9 +2780,8 @@ mp_err   s_mp_pad(mp_int *mp, mp_size min)
 
 
 
-#if MP_MACRO == 0
 
-void s_mp_setz(mp_digit *dp, mp_size count)
+inline void s_mp_setz(mp_digit *dp, mp_size count)
 {
 #if MP_MEMSET == 0
   int  ix;
@@ -2796,15 +2793,13 @@ void s_mp_setz(mp_digit *dp, mp_size count)
 #endif
 
 } 
-#endif
 
 
 
 
 
-#if MP_MACRO == 0
 
-void s_mp_copy(const mp_digit *sp, mp_digit *dp, mp_size count)
+inline void s_mp_copy(const mp_digit *sp, mp_digit *dp, mp_size count)
 {
 #if MP_MEMCPY == 0
   int  ix;
@@ -2817,51 +2812,44 @@ void s_mp_copy(const mp_digit *sp, mp_digit *dp, mp_size count)
   ++mp_copies;
 
 } 
-#endif
 
 
 
 
 
-#if MP_MACRO == 0
 
-void    *s_mp_alloc(size_t nb, size_t ni)
+inline void *s_mp_alloc(size_t nb, size_t ni)
 {
   ++mp_allocs;
   return calloc(nb, ni);
 
 } 
-#endif
 
 
 
 
 
-#if MP_MACRO == 0
 
-void     s_mp_free(void *ptr)
+inline void s_mp_free(void *ptr)
 {
   if(ptr) {
     ++mp_frees;
     free(ptr);
   }
 } 
-#endif
 
 
 
 
 
-#if MP_MACRO == 0
 
-void     s_mp_clamp(mp_int *mp)
+inline void s_mp_clamp(mp_int *mp)
 {
   mp_size used = MP_USED(mp);
   while (used > 1 && DIGIT(mp, used - 1) == 0)
     --used;
   MP_USED(mp) = used;
 } 
-#endif
 
 
 
@@ -3001,11 +2989,6 @@ void     s_mp_rshd(mp_int *mp, mp_size p)
   
   while (p-- > 0)
     *dst++ = 0;
-
-#if 0
-  
-  s_mp_clamp(mp);
-#endif
 
 } 
 
