@@ -71,6 +71,8 @@ nsPerformanceTiming::nsPerformanceTiming(nsPerformance* aPerformance,
   
   
   
+  
+  
   if (aHttpChannel) {
     mTimingAllowed = CheckAllowedOrigin(aHttpChannel, aChannel);
     bool redirectsPassCheck = false;
@@ -144,6 +146,14 @@ nsPerformanceTiming::CheckAllowedOrigin(nsIHttpChannel* aResourceChannel,
   if (!loadInfo) {
     return false;
   }
+
+  
+  
+  
+  if (loadInfo->GetExternalContentPolicyType() == nsIContentPolicy::TYPE_DOCUMENT) {
+    return false;
+  }
+
   nsCOMPtr<nsIPrincipal> principal = loadInfo->LoadingPrincipal();
 
   

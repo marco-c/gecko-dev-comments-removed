@@ -2923,7 +2923,9 @@ HttpBaseChannel::SetupReplacementChannel(nsIURI       *newURI,
     
     nsCOMPtr<nsILoadInfo> loadInfo;
     GetLoadInfo(getter_AddRefs(loadInfo));
-    if (loadInfo) {
+    
+    
+    if (loadInfo && loadInfo->GetExternalContentPolicyType() != nsIContentPolicy::TYPE_DOCUMENT) {
       nsCOMPtr<nsIPrincipal> principal = loadInfo->LoadingPrincipal();
       newTimedChannel->SetAllRedirectsPassTimingAllowCheck(
         mAllRedirectsPassTimingAllowCheck &&
