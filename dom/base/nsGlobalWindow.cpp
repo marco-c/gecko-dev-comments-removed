@@ -1224,6 +1224,8 @@ nsGlobalWindow::nsGlobalWindow(nsGlobalWindow *aOuterWindow)
 
       Preferences::AddStrongObserver(mObserver, "intl.accept_languages");
     }
+
+    InitializeShowFocusRings();
   } else {
     
     
@@ -9699,6 +9701,17 @@ nsGlobalWindow::GetFocusMethod()
   return mFocusMethod;
 }
 
+void
+nsGlobalWindow::InitializeShowFocusRings()
+{
+  nsPIDOMWindowOuter* root = GetPrivateRoot();
+  if (root) {
+    bool showAccelerators = false, showFocusRings = false;
+    root->GetKeyboardIndicators(&showAccelerators, &showFocusRings);
+    mShowFocusRings = showFocusRings;
+  }
+}
+
 bool
 nsGlobalWindow::ShouldShowFocusRing()
 {
@@ -9801,14 +9814,6 @@ nsGlobalWindow::SetReadyForFocus()
 
   bool oldNeedsFocus = mNeedsFocus;
   mNeedsFocus = false;
-
-  
-  
-  if (nsPIDOMWindowOuter* root = GetPrivateRoot()) {
-    bool showAccelerators, showFocusRings;
-    root->GetKeyboardIndicators(&showAccelerators, &showFocusRings);
-    mShowFocusRings = showFocusRings;
-  }
 
   nsIFocusManager* fm = nsFocusManager::GetFocusManager();
   if (fm) {

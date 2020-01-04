@@ -1593,6 +1593,8 @@ protected:
 
   inline int32_t DOMMinTimeoutValue() const;
 
+  void InitializeShowFocusRings();
+
   
   void ClearDocumentDependentSlots(JSContext* aCx);
 
