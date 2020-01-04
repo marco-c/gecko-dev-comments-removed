@@ -380,6 +380,8 @@ nsUrlClassifierStreamUpdater::StreamFinished(nsresult status,
 
   
   
+  
+  
   nsresult rv;
   mTimer = do_CreateInstance("@mozilla.org/timer;1", &rv);
   if (NS_SUCCEEDED(rv)) {
