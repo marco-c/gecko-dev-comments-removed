@@ -17,6 +17,17 @@ namespace jit {
 
 
 
+void
+MacroAssembler::andPtr(Register src, Register dest)
+{
+    andq(src, dest);
+}
+
+void
+MacroAssembler::andPtr(Imm32 imm, Register dest)
+{
+    andq(imm, dest);
+}
 
 
 
