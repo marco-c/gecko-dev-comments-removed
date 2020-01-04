@@ -856,7 +856,8 @@ class EdgeRange {
     
     
     
-    const Edge& front() { return *front_; }
+    const Edge& front() const { return *front_; }
+    Edge& front() { return *front_; }
 
     
     
