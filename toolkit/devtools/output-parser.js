@@ -315,9 +315,6 @@ OutputParser.prototype = {
 
 
 
-
-
-
   _appendColor: function(color, options={}) {
     let colorObj = new colorUtils.CssColor(color);
 
@@ -347,9 +344,9 @@ OutputParser.prototype = {
 
       container.appendChild(value);
       this.parsed.push(container);
-      return true;
+    } else {
+      this._appendTextNode(color);
     }
-    return false;
   },
 
   
