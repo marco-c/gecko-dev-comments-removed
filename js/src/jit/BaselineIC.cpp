@@ -2823,16 +2823,20 @@ ICSetElem_DenseOrUnboxedArray::Compiler::generateStubCode(MacroAssembler& masm)
 
         
         
+        
         Label noSpecialHandling;
         Address elementsFlags(scratchReg, ObjectElements::offsetOfFlags());
         masm.branchTest32(Assembler::Zero, elementsFlags,
                           Imm32(ObjectElements::CONVERT_DOUBLE_ELEMENTS |
-                                ObjectElements::COPY_ON_WRITE),
+                                ObjectElements::COPY_ON_WRITE |
+                                ObjectElements::FROZEN),
                           &noSpecialHandling);
 
         
+        
         masm.branchTest32(Assembler::NonZero, elementsFlags,
-                          Imm32(ObjectElements::COPY_ON_WRITE),
+                          Imm32(ObjectElements::COPY_ON_WRITE |
+                                ObjectElements::FROZEN),
                           &failure);
 
         
@@ -3032,7 +3036,8 @@ ICSetElemDenseOrUnboxedArrayAddCompiler::generateStubCode(MacroAssembler& masm)
         
         Address elementsFlags(scratchReg, ObjectElements::offsetOfFlags());
         masm.branchTest32(Assembler::NonZero, elementsFlags,
-                          Imm32(ObjectElements::COPY_ON_WRITE),
+                          Imm32(ObjectElements::COPY_ON_WRITE |
+                                ObjectElements::FROZEN),
                           &failure);
 
         
