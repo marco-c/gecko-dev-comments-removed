@@ -1558,139 +1558,6 @@ gfxFontGroup::~gfxFontGroup()
 }
 
 void
-gfxFontGroup::FindGenericFonts(FontFamilyType aGenericType,
-                               nsIAtom *aLanguage)
-{
-    nsAutoTArray<nsString, 5> resolvedGenerics;
-    ResolveGenericFontNames(aGenericType, aLanguage, resolvedGenerics);
-    uint32_t g = 0, numGenerics = resolvedGenerics.Length();
-    if (mTextPerf) {
-        mTextPerf->current.genericLookups++;
-    }
-    for (g = 0; g < numGenerics; g++) {
-        FindPlatformFont(resolvedGenerics[g], false);
-    }
-}
-
- void
-gfxFontGroup::ResolveGenericFontNames(FontFamilyType aGenericType,
-                                      nsIAtom *aLanguage,
-                                      nsTArray<nsString>& aGenericFamilies)
-{
-    static const char kGeneric_serif[] = "serif";
-    static const char kGeneric_sans_serif[] = "sans-serif";
-    static const char kGeneric_monospace[] = "monospace";
-    static const char kGeneric_cursive[] = "cursive";
-    static const char kGeneric_fantasy[] = "fantasy";
-
-    
-    if (aGenericType == eFamily_moz_fixed) {
-        aGenericType = eFamily_monospace;
-    }
-
-    
-    NS_ASSERTION(aGenericType >= eFamily_serif &&
-                 aGenericType <= eFamily_fantasy,
-                 "standard generic font family type required");
-
-    
-    nsIAtom *langGroupAtom = nullptr;
-    nsAutoCString langGroupString;
-    if (aLanguage) {
-        if (!gLangService) {
-            CallGetService(NS_LANGUAGEATOMSERVICE_CONTRACTID, &gLangService);
-        }
-        if (gLangService) {
-            nsresult rv;
-            langGroupAtom = gLangService->GetLanguageGroup(aLanguage, &rv);
-        }
-    }
-    if (!langGroupAtom) {
-        langGroupAtom = nsGkAtoms::Unicode;
-    }
-    langGroupAtom->ToUTF8String(langGroupString);
-
-    
-    const char *generic = nullptr;
-    switch (aGenericType) {
-        case eFamily_serif:
-            generic = kGeneric_serif;
-            break;
-        case eFamily_sans_serif:
-            generic = kGeneric_sans_serif;
-            break;
-        case eFamily_monospace:
-            generic = kGeneric_monospace;
-            break;
-        case eFamily_cursive:
-            generic = kGeneric_cursive;
-            break;
-        case eFamily_fantasy:
-            generic = kGeneric_fantasy;
-            break;
-        default:
-            break;
-    }
-
-    if (!generic) {
-        return;
-    }
-
-    aGenericFamilies.Clear();
-
-    
-    nsAutoCString prefFontName("font.name.");
-    prefFontName.Append(generic);
-    prefFontName.Append('.');
-    prefFontName.Append(langGroupString);
-    gfxFontUtils::AppendPrefsFontList(prefFontName.get(),
-                                      aGenericFamilies);
-
-    
-    if (!aGenericFamilies.IsEmpty()) {
-        nsAutoCString prefFontListName("font.name-list.");
-        prefFontListName.Append(generic);
-        prefFontListName.Append('.');
-        prefFontListName.Append(langGroupString);
-        gfxFontUtils::AppendPrefsFontList(prefFontListName.get(),
-                                          aGenericFamilies);
-    }
-
-#if 0  
-    printf("%s ===> ", prefFontName.get());
-    for (uint32_t k = 0; k < aGenericFamilies.Length(); k++) {
-        if (k > 0) printf(", ");
-        printf("%s", NS_ConvertUTF16toUTF8(aGenericFamilies[k]).get());
-    }
-    printf("\n");
-#endif
-}
-
-void gfxFontGroup::EnumerateFontList(nsIAtom *aLanguage)
-{
-    
-    const nsTArray<FontFamilyName>& fontlist = mFamilyList.GetFontlist();
-
-    
-    uint32_t i, numFonts = fontlist.Length();
-    for (i = 0; i < numFonts; i++) {
-        const FontFamilyName& name = fontlist[i];
-        if (name.IsNamed()) {
-            FindPlatformFont(name.mName, true);
-        } else {
-            FindGenericFonts(name.mType, aLanguage);
-        }
-    }
-
-    
-    if (mFamilyList.GetDefaultFontType() != eFamily_none &&
-        !mFamilyList.HasDefaultGeneric()) {
-        FindGenericFonts(mFamilyList.GetDefaultFontType(),
-                         aLanguage);
-    }
-}
-
-void
 gfxFontGroup::BuildFontList()
 {
     bool enumerateFonts = true;
@@ -1701,15 +1568,52 @@ gfxFontGroup::BuildFontList()
 #elif defined(MOZ_WIDGET_QT)
     enumerateFonts = false;
 #endif
-    if (enumerateFonts) {
-        EnumerateFontList(mStyle.language);
+    if (!enumerateFonts) {
+        return;
+    }
+
+    
+    nsAutoTArray<gfxFontFamily*,4> fonts;
+    const nsTArray<FontFamilyName>& fontlist = mFamilyList.GetFontlist();
+    gfxPlatformFontList *pfl = gfxPlatformFontList::PlatformFontList();
+
+    
+    uint32_t i, numFonts = fontlist.Length();
+    for (i = 0; i < numFonts; i++) {
+        gfxFontFamily* family;
+        const FontFamilyName& name = fontlist[i];
+        if (name.IsNamed()) {
+            family = FindPlatformFont(name.mName, true);
+            if (family) {
+                fonts.AppendElement(family);
+            }
+        } else {
+            pfl->AddGenericFonts(name.mType, &mStyle, fonts);
+            if (mTextPerf) {
+                mTextPerf->current.genericLookups++;
+            }
+        }
+    }
+
+    
+    if (mFamilyList.GetDefaultFontType() != eFamily_none &&
+        !mFamilyList.HasDefaultGeneric()) {
+        pfl->AddGenericFonts(mFamilyList.GetDefaultFontType(), &mStyle, fonts);
+        if (mTextPerf) {
+            mTextPerf->current.genericLookups++;
+        }
+    }
+
+    
+    numFonts = fonts.Length();
+    for (i = 0; i < numFonts; i++) {
+        AddFamilyToFontList(fonts[i]);
     }
 }
 
-void
+gfxFontFamily*
 gfxFontGroup::FindPlatformFont(const nsAString& aName, bool aUseFontSet)
 {
-    bool needsBold;
     gfxFontFamily *family = nullptr;
 
     if (aUseFontSet) {
@@ -1730,21 +1634,26 @@ gfxFontGroup::FindPlatformFont(const nsAString& aName, bool aUseFontSet)
         family = fontList->FindFamily(aName, mStyle.language, mStyle.systemFont);
     }
 
+    return family;
+}
+
+void
+gfxFontGroup::AddFamilyToFontList(gfxFontFamily* aFamily)
+{
+    NS_ASSERTION(aFamily, "trying to add a null font family to fontlist");
+    nsAutoTArray<gfxFontEntry*,4> fontEntryList;
+    bool needsBold;
+    aFamily->FindAllFontsForStyle(mStyle, fontEntryList, needsBold);
     
-    if (family) {
-        nsAutoTArray<gfxFontEntry*,4> fontEntryList;
-        family->FindAllFontsForStyle(mStyle, fontEntryList, needsBold);
-        
-        uint32_t n = fontEntryList.Length();
-        for (uint32_t i = 0; i < n; i++) {
-            gfxFontEntry* fe = fontEntryList[i];
-            if (!HasFont(fe)) {
-                FamilyFace ff(family, fe, needsBold);
-                if (fe->mIsUserFontContainer) {
-                    ff.CheckState(mSkipDrawing);
-                }
-                mFonts.AppendElement(ff);
+    uint32_t n = fontEntryList.Length();
+    for (uint32_t i = 0; i < n; i++) {
+        gfxFontEntry* fe = fontEntryList[i];
+        if (!HasFont(fe)) {
+            FamilyFace ff(aFamily, fe, needsBold);
+            if (fe->mIsUserFontContainer) {
+                ff.CheckState(mSkipDrawing);
             }
+            mFonts.AppendElement(ff);
         }
     }
 }

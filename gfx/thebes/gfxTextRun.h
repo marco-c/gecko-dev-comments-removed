@@ -872,12 +872,6 @@ public:
     gfxTextRun* GetEllipsisTextRun(int32_t aAppUnitsPerDevPixel, uint32_t aFlags,
                                    LazyReferenceContextGetter& aRefContextGetter);
 
-    
-    static void
-    ResolveGenericFontNames(mozilla::FontFamilyType aGenericType,
-                            nsIAtom *aLanguage,
-                            nsTArray<nsString>& aGenericFamilies);
-
 protected:
     
     already_AddRefed<gfxFont> WhichPrefFontSupportsChar(uint32_t aCh);
@@ -1118,14 +1112,10 @@ protected:
     
 
     
-    void EnumerateFontList(nsIAtom *aLanguage);
+    gfxFontFamily* FindPlatformFont(const nsAString& aName, bool aUseFontSet);
 
     
-    void FindGenericFonts(mozilla::FontFamilyType aGenericType,
-                          nsIAtom *aLanguage);
-
-    
-    void FindPlatformFont(const nsAString& aName, bool aUseFontSet);
+    void AddFamilyToFontList(gfxFontFamily* aFamily);
 
     static nsILanguageAtomService* gLangService;
 };
