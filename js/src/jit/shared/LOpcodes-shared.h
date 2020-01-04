@@ -367,6 +367,7 @@
     _(NewTarget)                    \
     _(ArrowNewTarget)               \
     _(CheckReturn)                  \
-    _(CheckObjCoercible)
+    _(CheckObjCoercible)            \
+    _(DebugCheckSelfHosted)
 
 #endif 

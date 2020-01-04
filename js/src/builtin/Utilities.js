@@ -142,7 +142,7 @@ function GetIterator(obj, method) {
         method = GetMethod(obj, std_iterator);
 
     
-    var iterator = callFunction(method, obj);
+    var iterator = callContentFunction(method, obj);
 
     
     if (!IsObject(iterator))

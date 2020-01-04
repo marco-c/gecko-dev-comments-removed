@@ -136,7 +136,7 @@ function ArrayEvery(callbackfn) {
         
         if (k in O) {
             
-            if (!callFunction(callbackfn, T, O[k], k, O))
+            if (!callContentFunction(callbackfn, T, O[k], k, O))
                 return false;
         }
     }
@@ -177,7 +177,7 @@ function ArraySome(callbackfn) {
         
         if (k in O) {
             
-            if (callFunction(callbackfn, T, O[k], k, O))
+            if (callContentFunction(callbackfn, T, O[k], k, O))
                 return true;
         }
     }
@@ -218,7 +218,7 @@ function ArrayForEach(callbackfn) {
         
         if (k in O) {
             
-            callFunction(callbackfn, T, O[k], k, O);
+            callContentFunction(callbackfn, T, O[k], k, O);
         }
     }
 
@@ -261,7 +261,7 @@ function ArrayMap(callbackfn) {
         
         if (k in O) {
             
-            var mappedValue = callFunction(callbackfn, T, O[k], k, O);
+            var mappedValue = callContentFunction(callbackfn, T, O[k], k, O);
             _DefineDataProperty(A, k, mappedValue);
         }
     }
@@ -307,7 +307,7 @@ function ArrayFilter(callbackfn) {
             
             var kValue = O[k];
             
-            var selected = callFunction(callbackfn, T, kValue, k, O);
+            var selected = callContentFunction(callbackfn, T, kValue, k, O);
             
             if (selected)
                 _DefineDataProperty(A, to++, kValue);
@@ -489,7 +489,7 @@ function ArrayFind(predicate) {
         
         var kValue = O[k];
         
-        if (callFunction(predicate, T, kValue, k, O))
+        if (callContentFunction(predicate, T, kValue, k, O))
             return kValue;
     }
 
@@ -523,7 +523,7 @@ function ArrayFindIndex(predicate) {
 
     for (var k = 0; k < len; k++) {
         
-        if (callFunction(predicate, T, O[k], k, O))
+        if (callContentFunction(predicate, T, O[k], k, O))
             return k;
     }
 
@@ -771,7 +771,7 @@ function ArrayFrom(items, mapfn=undefined, thisArg=undefined) {
         
         while (true) {
             
-            var next = callFunction(iterator.next, iterator);
+            var next = callContentFunction(iterator.next, iterator);
             if (!IsObject(next))
                 ThrowTypeError(JSMSG_NEXT_RETURNED_PRIMITIVE);
 
@@ -785,7 +785,7 @@ function ArrayFrom(items, mapfn=undefined, thisArg=undefined) {
             var nextValue = next.value;
 
             
-            var mappedValue = mapping ? callFunction(mapfn, thisArg, nextValue, k) : nextValue;
+            var mappedValue = mapping ? callContentFunction(mapfn, thisArg, nextValue, k) : nextValue;
 
             
             _DefineDataProperty(A, k++, mappedValue);
@@ -810,7 +810,7 @@ function ArrayFrom(items, mapfn=undefined, thisArg=undefined) {
         var kValue = items[k];
 
         
-        var mappedValue = mapping ? callFunction(mapfn, thisArg, kValue, k) : kValue;
+        var mappedValue = mapping ? callContentFunction(mapfn, thisArg, kValue, k) : kValue;
 
         
         _DefineDataProperty(A, k, mappedValue);
@@ -834,5 +834,5 @@ function ArrayToString() {
     
     if (!IsCallable(func))
         return callFunction(std_Object_toString, array);
-    return callFunction(func, array);
+    return callContentFunction(func, array);
 }
