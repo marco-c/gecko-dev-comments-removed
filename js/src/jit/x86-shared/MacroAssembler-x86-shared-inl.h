@@ -168,6 +168,18 @@ MacroAssembler::negateFloat(FloatRegister reg)
     vxorps(scratch, reg, reg); 
 }
 
+void
+MacroAssembler::negateDouble(FloatRegister reg)
+{
+    
+    ScratchDoubleScope scratch(*this);
+    vpcmpeqw(scratch, scratch, scratch);
+    vpsllq(Imm32(63), scratch, scratch);
+
+    
+    vxorpd(scratch, reg, reg); 
+}
+
 
 
 
