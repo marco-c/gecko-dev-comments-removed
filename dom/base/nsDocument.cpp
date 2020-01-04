@@ -9212,7 +9212,7 @@ static void
 DispatchFullScreenChange(nsIDocument* aTarget)
 {
   DispatchCustomEventWithFlush(
-    aTarget, NS_LITERAL_STRING("mozfullscreenchange"),
+    aTarget, NS_LITERAL_STRING("fullscreenchange"),
      true,  false);
 }
 
@@ -11359,7 +11359,7 @@ nsIDocument::DispatchFullscreenError(const char* aMessage)
 {
   RefPtr<AsyncEventDispatcher> asyncDispatcher =
     new AsyncEventDispatcher(this,
-                             NS_LITERAL_STRING("mozfullscreenerror"),
+                             NS_LITERAL_STRING("fullscreenerror"),
                              true,
                              false);
   asyncDispatcher->PostDOMEvent();
