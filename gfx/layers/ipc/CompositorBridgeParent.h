@@ -596,9 +596,6 @@ protected:
   nsTArray<PluginWindowData> mCachedPluginData;
   
   
-  bool mPluginUpdateResponsePending;
-  
-  
   bool mDeferPluginWindows;
   
   

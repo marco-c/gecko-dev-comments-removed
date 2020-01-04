@@ -693,7 +693,6 @@ CompositorBridgeParent::CompositorBridgeParent(nsIWidget* aWidget,
   , mCompositorScheduler(nullptr)
 #if defined(XP_WIN) || defined(MOZ_WIDGET_GTK)
   , mLastPluginUpdateLayerTreeId(0)
-  , mPluginUpdateResponsePending(false)
   , mDeferPluginWindows(false)
   , mPluginWindowsHidden(false)
 #endif
@@ -1234,53 +1233,32 @@ CompositorBridgeParent::CompositeToTarget(DrawTarget* aTarget, const gfx::IntRec
     return;
   }
 
-#if defined(XP_WIN) || defined(MOZ_WIDGET_GTK)
   
-  if (mPluginUpdateResponsePending) {
-    return;
-  }
-#endif
+
+
+
+
+
+
+
+
+
+
+
 
   bool hasRemoteContent = false;
-  bool pluginsUpdatedFlag = true;
+  bool updatePluginsFlag = true;
   AutoResolveRefLayers resolve(mCompositionManager, this,
                                &hasRemoteContent,
-                               &pluginsUpdatedFlag);
+                               &updatePluginsFlag);
 
 #if defined(XP_WIN) || defined(MOZ_WIDGET_GTK)
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  if (pluginsUpdatedFlag) {
-    mPluginUpdateResponsePending = true;
-    return;
-  }
-
   
   
   if (!hasRemoteContent && BrowserTabsRemoteAutostart() &&
       mCachedPluginData.Length()) {
     Unused << SendHideAllPlugins((uintptr_t)GetWidget());
     mCachedPluginData.Clear();
-    
-    mPluginUpdateResponsePending = true;
-    return;
   }
 #endif
 
@@ -1364,7 +1342,6 @@ bool
 CompositorBridgeParent::RecvRemotePluginsReady()
 {
 #if defined(XP_WIN) || defined(MOZ_WIDGET_GTK)
-  mPluginUpdateResponsePending = false;
   ScheduleComposition();
   return true;
 #else
@@ -2576,7 +2553,6 @@ CompositorBridgeParent::HideAllPluginWindows()
     return;
   }
   mDeferPluginWindows = true;
-  mPluginUpdateResponsePending = true;
   mPluginWindowsHidden = true;
   Unused << SendHideAllPlugins((uintptr_t)GetWidget());
   ScheduleComposition();
