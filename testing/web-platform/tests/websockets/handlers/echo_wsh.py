@@ -1,5 +1,6 @@
 
 from mod_pywebsocket import msgutil
+from mod_pywebsocket import common
 
 _GOODBYE_MESSAGE = u'Goodbye'
 
@@ -23,3 +24,13 @@ def web_socket_transfer_data(request):
         else:
             request.ws_stream.send_message(line, binary=True)
 
+def web_socket_passive_closing_handshake(request):
+    
+    code, reason = request.ws_close_code, request.ws_close_reason
+
+    
+    
+    if code == common.STATUS_NO_STATUS_RECEIVED:
+        code = None
+
+    return code, reason
