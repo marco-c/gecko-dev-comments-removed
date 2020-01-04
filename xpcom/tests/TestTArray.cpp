@@ -687,32 +687,6 @@ static bool is_heap(const Array& ary, size_t len) {
   return true;
 } 
 
-static bool test_heap() {
-  const int data[] = {4,6,8,2,4,1,5,7,3};
-  nsTArray<int> ary;
-  ary.AppendElements(data, ArrayLength(data));
-  
-  ary.MakeHeap();
-  if (!is_heap(ary, ArrayLength(data)))
-    return false;
-  
-  int root = ary[0];
-  ary.PopHeap();
-  if (!is_heap(ary, ArrayLength(data) - 1))
-    return false;
-  
-  ary.PushHeap(root);
-  if (!is_heap(ary, ArrayLength(data)))
-    return false;
-  
-  const int expected_data[] = {8,7,5,6,4,1,4,2,3};
-  size_t index;
-  for (index = 0; index < ArrayLength(data); index++)
-    if (ary[index] != expected_data[index])
-      return false;
-  return true;
-}
-
 
 
 
@@ -1178,7 +1152,6 @@ static const struct Test {
   DECL_TEST(test_autoarray),
 #endif
   DECL_TEST(test_indexof),
-  DECL_TEST(test_heap),
   DECL_TEST(test_swap),
   DECL_TEST(test_fallible),
   DECL_TEST(test_conversion_operator),
