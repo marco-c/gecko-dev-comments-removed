@@ -194,6 +194,10 @@ var gPropertyData = [
 
 
 
+
+
+const kRefCodepoint = 0xe00c;
+
 function createFeatureTestTable(propData, whichProp, isRef, debug)
 {
   var table = document.createElement("table");
@@ -268,7 +272,8 @@ function createFeatureTestTable(propData, whichProp, isRef, debug)
       }
 
       var span = document.createElement("span");
-      span.innerHTML = (isRef ? "P" : "&#x" + cp.toString(16) + ";");
+      var cpOut = (isRef ? kRefCodepoint : cp);
+      span.innerHTML = "&#x" + cpOut.toString(16) + ";";
       span.title = f + "=" + feature;
       cell.appendChild(span);
     }
