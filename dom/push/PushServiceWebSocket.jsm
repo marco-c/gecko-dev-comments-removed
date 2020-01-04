@@ -1127,9 +1127,6 @@ this.PushServiceWebSocket = {
       return;
     }
 
-    
-    this._retryFailCount = 0;
-
     let data = {
       messageType: "hello",
       use_webpush: true,
@@ -1197,11 +1194,9 @@ this.PushServiceWebSocket = {
     }
 
     
-    if (this._currentState != STATE_WAITING_FOR_HELLO) {
-      debug('Reseting _retryFailCount and _pingIntervalRetryTimes');
-      this._retryFailCount = 0;
-      this._pingIntervalRetryTimes = {};
-    }
+    
+    this._retryFailCount = 0;
+    this._pingIntervalRetryTimes = {};
 
     let doNotHandle = false;
     if ((message === '{}') ||
