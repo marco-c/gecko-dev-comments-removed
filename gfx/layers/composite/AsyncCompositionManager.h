@@ -85,7 +85,8 @@ public:
   
   enum class TransformsToSkip : uint8_t { NoneOfThem = 0, APZ = 1 };
   bool TransformShadowTree(TimeStamp aCurrentFrame,
-    TransformsToSkip aSkip = TransformsToSkip::NoneOfThem);
+                           TimeDuration aVsyncRate,
+                           TransformsToSkip aSkip = TransformsToSkip::NoneOfThem);
 
   
   
