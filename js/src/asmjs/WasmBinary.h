@@ -24,6 +24,14 @@
 namespace js {
 namespace wasm {
 
+
+
+
+enum class Telemetry {
+    ASMJS = 0,
+    WASM = 1
+};
+
 static const uint32_t MagicNumber        = 0x6d736100; 
 static const uint32_t EncodingVersion    = 0x0b;
 
