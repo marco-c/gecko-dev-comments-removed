@@ -5,8 +5,6 @@
 
 package org.mozilla.gecko.home;
 
-import java.lang.ref.WeakReference;
-
 import org.mozilla.gecko.AboutPages;
 import org.mozilla.gecko.R;
 import org.mozilla.gecko.db.BrowserContract;
@@ -24,10 +22,8 @@ import org.mozilla.gecko.widget.FaviconView;
 
 import android.content.Context;
 import android.database.Cursor;
-import android.graphics.Bitmap;
 import android.text.TextUtils;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.widget.ImageView;
@@ -50,36 +46,6 @@ public class TwoLinePageRow extends LinearLayout
 
     private boolean mShowIcons;
     private int mLoadFaviconJobId = Favicons.NOT_LOADING;
-
-    
-    
-    private static class UpdateViewFaviconLoadedListener implements OnFaviconLoadedListener {
-        private final WeakReference<FaviconView> view;
-        public UpdateViewFaviconLoadedListener(FaviconView view) {
-            this.view = new WeakReference<FaviconView>(view);
-        }
-
-        
-
-
-
-
-        @Override
-        public void onFaviconLoaded(String url, String faviconURL, Bitmap favicon) {
-            FaviconView v = view.get();
-            if (v == null) {
-                
-                return;
-            }
-
-            if (favicon == null) {
-                v.showDefaultFavicon(url);
-                return;
-            }
-
-            v.updateImage(favicon, faviconURL);
-        }
-    }
 
     
     private final OnFaviconLoadedListener mFaviconListener;
