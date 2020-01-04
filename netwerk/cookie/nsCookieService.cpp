@@ -1223,7 +1223,7 @@ nsCookieService::TryInitDB(bool aRecreateDB)
         NS_ENSURE_SUCCESS(rv, RESULT_RETRY);
 
         
-        rv = CreateTable();
+        rv = CreateTableForSchemaVersion6();
         NS_ENSURE_SUCCESS(rv, RESULT_RETRY);
 
         
@@ -1312,6 +1312,9 @@ nsCookieService::TryInitDB(bool aRecreateDB)
 
         rv = mDefaultDBState->dbConn->RemoveFunction(setInBrowserName);
         NS_ENSURE_SUCCESS(rv, RESULT_RETRY);
+
+        COOKIE_LOGSTRING(LogLevel::Debug,
+          ("Upgraded database to schema version 7"));
       }
 
       
@@ -1461,6 +1464,44 @@ nsCookieService::CreateTable()
   
   nsresult rv = mDefaultDBState->dbConn->SetSchemaVersion(
     COOKIES_SCHEMA_VERSION);
+  if (NS_FAILED(rv)) return rv;
+
+  
+  
+  
+  
+  rv = mDefaultDBState->dbConn->ExecuteSimpleSQL(NS_LITERAL_CSTRING(
+    "CREATE TABLE moz_cookies ("
+      "id INTEGER PRIMARY KEY, "
+      "baseDomain TEXT, "
+      "originAttributes TEXT NOT NULL DEFAULT '', "
+      "name TEXT, "
+      "value TEXT, "
+      "host TEXT, "
+      "path TEXT, "
+      "expiry INTEGER, "
+      "lastAccessed INTEGER, "
+      "creationTime INTEGER, "
+      "isSecure INTEGER, "
+      "isHttpOnly INTEGER, "
+      "appId INTEGER DEFAULT 0, "
+      "inBrowserElement INTEGER DEFAULT 0, "
+      "CONSTRAINT moz_uniqueid UNIQUE (name, host, path, originAttributes)"
+    ")"));
+  if (NS_FAILED(rv)) return rv;
+
+  
+  return mDefaultDBState->dbConn->ExecuteSimpleSQL(NS_LITERAL_CSTRING(
+    "CREATE INDEX moz_basedomain ON moz_cookies (baseDomain, "
+                                                "originAttributes)"));
+}
+
+
+nsresult
+nsCookieService::CreateTableForSchemaVersion6()
+{
+  
+  nsresult rv = mDefaultDBState->dbConn->SetSchemaVersion(6);
   if (NS_FAILED(rv)) return rv;
 
   
