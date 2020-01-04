@@ -1593,15 +1593,16 @@ ContentEventHandler::OnQueryTextRectArray(WidgetQueryContentEvent* aEvent)
     }
 
     bool startsBetweenLineBreaker = false;
+    nsAutoString chars;
     AutoTArray<nsRect, 16> charRects;
 
-    bool isLineBreaker = ShouldBreakLineBefore(firstContent, mRootContent);
-    if (isLineBreaker) {
+    if (ShouldBreakLineBefore(firstContent, mRootContent)) {
       
       
       
       FrameRelativeRect brRect = GetLineBreakerRectBefore(firstFrame);
       charRects.AppendElement(brRect.RectRelativeTo(firstFrame));
+      chars.AssignLiteral("\n");
       if (kBRLength > 1 && offset == aEvent->mInput.mOffset && offset) {
         
         
@@ -1624,6 +1625,30 @@ ContentEventHandler::OnQueryTextRectArray(WidgetQueryContentEvent* aEvent)
         
         return rv;
       }
+      
+      
+      AppendSubString(chars, firstContent, firstFrame.mStartOffsetInNode,
+                      charRects.Length());
+      if (NS_WARN_IF(chars.Length() != charRects.Length())) {
+        return NS_ERROR_UNEXPECTED;
+      }
+      if (kBRLength > 1 && chars[0] == '\n' &&
+          offset == aEvent->mInput.mOffset && offset) {
+        
+        
+        
+        
+        RefPtr<nsRange> rangeToPrevOffset = new nsRange(mRootContent);
+        rv = SetRangeFromFlatTextOffset(rangeToPrevOffset,
+                                        aEvent->mInput.mOffset - 1, 1,
+                                        lineBreakType, true, nullptr);
+        if (NS_WARN_IF(NS_FAILED(rv))) {
+          return rv;
+        }
+        startsBetweenLineBreaker =
+          range->GetStartParent() == rangeToPrevOffset->GetStartParent() &&
+          range->StartOffset() == rangeToPrevOffset->StartOffset();
+      }
     }
 
     for (size_t i = 0; i < charRects.Length() && offset < kEndOffset; i++) {
@@ -1642,7 +1667,7 @@ ContentEventHandler::OnQueryTextRectArray(WidgetQueryContentEvent* aEvent)
 
       
       
-      if (!isLineBreaker || kBRLength == 1) {
+      if (chars[i] != '\n' || kBRLength == 1) {
         continue;
       }
 
