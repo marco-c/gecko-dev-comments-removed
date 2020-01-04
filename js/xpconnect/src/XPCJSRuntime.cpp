@@ -975,8 +975,7 @@ class Watchdog
       , mHibernating(false)
       , mInitialized(false)
       , mShuttingDown(false)
-      , mSlowScriptSecondHalf(false)
-      , mSlowScriptHalfLastElapsedTime(0)
+      , mSlowScriptSecondHalfCount(0)
       , mMinScriptRunTimeSeconds(1)
     {}
     ~Watchdog() { MOZ_ASSERT(!Initialized()); }
@@ -1086,27 +1085,9 @@ class Watchdog
         return mMinScriptRunTimeSeconds;
     }
 
-    bool IsSlowScriptSecondHalf()
-    {
-        return mSlowScriptSecondHalf;
-    }
-    void FlipSlowScriptSecondHalf()
-    {
-        mSlowScriptSecondHalf = !mSlowScriptSecondHalf;
-    }
-    PRTime GetSlowScriptHalfLastElapsedTime()
-    {
-        return mSlowScriptHalfLastElapsedTime;
-    }
-    void SetSlowScriptHalfLastElapsedTime(PRTime t)
-    {
-        mSlowScriptHalfLastElapsedTime = t;
-    }
-    void ResetSlowScript()
-    {
-        mSlowScriptSecondHalf = false;
-        mSlowScriptHalfLastElapsedTime = 0;
-    }
+    uint32_t GetSlowScriptSecondHalfCount() { return mSlowScriptSecondHalfCount; }
+    void IncrementSlowScriptSecondHalfCount() { mSlowScriptSecondHalfCount++; }
+    void ResetSlowScriptSecondHalfCount() { mSlowScriptSecondHalfCount = 0; }
 
   private:
     WatchdogManager* mManager;
@@ -1119,8 +1100,7 @@ class Watchdog
     bool mShuttingDown;
 
     
-    bool mSlowScriptSecondHalf;
-    PRTime mSlowScriptHalfLastElapsedTime;
+    uint32_t mSlowScriptSecondHalfCount;
 
     mozilla::Atomic<int32_t> mMinScriptRunTimeSeconds;
 };
@@ -1186,7 +1166,7 @@ class WatchdogManager : public nsIObserver
         
         mTimestamps[TimestampRuntimeStateChange] = PR_Now();
         if (mWatchdog)
-            mWatchdog->ResetSlowScript();
+            mWatchdog->ResetSlowScriptSecondHalfCount();
         mRuntimeState = active ? RUNTIME_ACTIVE : RUNTIME_INACTIVE;
 
         
@@ -1337,13 +1317,13 @@ WatchdogMain(void* arg)
         
         
         
+        
         PRTime usecs = self->MinScriptRunTimeSeconds() * PR_USEC_PER_SEC;
         if (manager->IsRuntimeActive()) {
-            PRTime elapsedTime = manager->TimeSinceLastRuntimeStateChange();
-            PRTime lastElapsedTime = self->GetSlowScriptHalfLastElapsedTime();
-            if (elapsedTime >= lastElapsedTime + usecs / 2) {
-                self->SetSlowScriptHalfLastElapsedTime(elapsedTime);
-                if (self->IsSlowScriptSecondHalf()) {
+            uint32_t count = self->GetSlowScriptSecondHalfCount() + 1;
+            if (manager->TimeSinceLastRuntimeStateChange() >= usecs * count / 2) {
+                self->IncrementSlowScriptSecondHalfCount();
+                if (count % 2 == 0) {
                     bool debuggerAttached = false;
                     nsCOMPtr<nsIDebug2> dbg = do_GetService("@mozilla.org/xpcom/debug;1");
                     if (dbg)
@@ -1351,7 +1331,6 @@ WatchdogMain(void* arg)
                     if (!debuggerAttached)
                         JS_RequestInterruptCallback(manager->Runtime()->Context());
                 }
-                self->FlipSlowScriptSecondHalf();
             }
         }
     }
