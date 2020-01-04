@@ -6376,6 +6376,13 @@ nsDisplayPerspective::BuildLayer(nsDisplayListBuilder *aBuilder,
   
 
 
+  if (!mList.GetChildren()->GetTop()) {
+    return nullptr;
+  }
+
+  
+
+
 
   nsDisplayTransform* transform =
     static_cast<nsDisplayTransform*>(mList.GetChildren()->GetTop());
