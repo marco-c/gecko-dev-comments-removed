@@ -31,7 +31,7 @@ function Notification(extension, id, options) {
     svc.showAlertNotification(imageURL,
                               options.title,
                               options.message,
-                              false, 
+                              true, 
                               this.id,
                               this,
                               this.id);
