@@ -55,6 +55,7 @@ public:
   virtual JSObject* WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) override;
 
   nsresult Bind(HTMLMediaElement* aElement);
+  void Unbind();
 
   
   void GetKeySystem(nsString& retval) const;
