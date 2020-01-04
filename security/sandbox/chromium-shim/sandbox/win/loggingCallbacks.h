@@ -7,52 +7,19 @@
 #ifndef security_sandbox_loggingCallbacks_h__
 #define security_sandbox_loggingCallbacks_h__
 
-#include "mozilla/sandboxing/loggingTypes.h"
-#include "mozilla/sandboxing/sandboxLogging.h"
-
-#ifdef TARGET_SANDBOX_EXPORTS
 #include <sstream>
 #include <iostream>
 
 #include "mozilla/Preferences.h"
+#include "mozilla/sandboxing/loggingTypes.h"
 #include "nsContentUtils.h"
 
 #ifdef MOZ_STACKWALKING
 #include "mozilla/StackWalk.h"
 #endif
 
-#define TARGET_SANDBOX_EXPORT __declspec(dllexport)
-#else
-#define TARGET_SANDBOX_EXPORT __declspec(dllimport)
-#endif
-
 namespace mozilla {
 namespace sandboxing {
-
-
-
-
-
-
-
-void TARGET_SANDBOX_EXPORT
-SetProvideLogFunctionCb(ProvideLogFunctionCb aProvideLogFunctionCb);
-
-
-static void
-PrepareForLogging()
-{
-  SetProvideLogFunctionCb(ProvideLogFunction);
-}
-
-#ifdef TARGET_SANDBOX_EXPORTS
-static ProvideLogFunctionCb sProvideLogFunctionCb = nullptr;
-
-void
-SetProvideLogFunctionCb(ProvideLogFunctionCb aProvideLogFunctionCb)
-{
-  sProvideLogFunctionCb = aProvideLogFunctionCb;
-}
 
 #ifdef MOZ_STACKWALKING
 static uint32_t sStackTraceDepth = 0;
@@ -110,15 +77,15 @@ Log(const char* aMessageType,
 
 
 static void
-InitLoggingIfRequired()
+InitLoggingIfRequired(ProvideLogFunctionCb aProvideLogFunctionCb)
 {
-  if (!sProvideLogFunctionCb) {
+  if (!aProvideLogFunctionCb) {
     return;
   }
 
   if (Preferences::GetBool("security.sandbox.windows.log") ||
       PR_GetEnv("MOZ_WIN_SANDBOX_LOGGING")) {
-    sProvideLogFunctionCb(Log);
+    aProvideLogFunctionCb(Log);
 
 #if defined(MOZ_CONTENT_SANDBOX) && defined(MOZ_STACKWALKING)
     
@@ -130,7 +97,7 @@ InitLoggingIfRequired()
 #endif
   }
 }
-#endif
+
 } 
 } 
 

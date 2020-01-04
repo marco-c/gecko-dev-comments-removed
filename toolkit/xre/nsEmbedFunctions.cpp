@@ -79,7 +79,7 @@
  #include "base/histogram.h"
 
 #if defined(MOZ_SANDBOX) && defined(XP_WIN)
-#define TARGET_SANDBOX_EXPORTS
+#include "mozilla/sandboxTarget.h"
 #include "mozilla/sandboxing/loggingCallbacks.h"
 #endif
 
@@ -297,11 +297,12 @@ SetTaskbarGroupId(const nsString& aId)
 nsresult
 XRE_InitChildProcess(int aArgc,
                      char* aArgv[],
-                     GMPLoader* aGMPLoader)
+                     const XREChildData* aChildData)
 {
   NS_ENSURE_ARG_MIN(aArgc, 2);
   NS_ENSURE_ARG_POINTER(aArgv);
   NS_ENSURE_ARG_POINTER(aArgv[0]);
+  MOZ_ASSERT(aChildData);
 
 #ifdef HAS_DLL_BLOCKLIST
   DllBlocklist_Initialize();
@@ -314,13 +315,13 @@ XRE_InitChildProcess(int aArgc,
 #if !defined(MOZ_WIDGET_ANDROID) && !defined(MOZ_WIDGET_GONK)
   
   
-  GMPProcessChild::SetGMPLoader(aGMPLoader);
+  GMPProcessChild::SetGMPLoader(aChildData->gmpLoader.get());
 #else
   
   
   
-  nsAutoPtr<GMPLoader> loader(CreateGMPLoader(nullptr));
-  GMPProcessChild::SetGMPLoader(loader);
+  UniquePtr<GMPLoader> loader = CreateGMPLoader(nullptr);
+  GMPProcessChild::SetGMPLoader(loader.get());
 #endif
 
 #if defined(XP_WIN)
@@ -345,6 +346,12 @@ XRE_InitChildProcess(int aArgc,
     if (_fileno(stdin) == -1 || _get_osfhandle(fileno(stdin)) == -1)
         freopen("CONIN$", "r", stdin);
   }
+
+#if defined(MOZ_SANDBOX)
+  if (aChildData->sandboxTargetServices) {
+    SandboxTarget::Instance()->SetTargetServices(aChildData->sandboxTargetServices);
+  }
+#endif
 #endif
 
   
@@ -628,7 +635,7 @@ XRE_InitChildProcess(int aArgc,
 #if defined(MOZ_SANDBOX) && defined(XP_WIN)
       
       
-      mozilla::sandboxing::InitLoggingIfRequired();
+      mozilla::sandboxing::InitLoggingIfRequired(aChildData->ProvideLogFunction);
 #endif
 
       OverrideDefaultLocaleIfNeeded();

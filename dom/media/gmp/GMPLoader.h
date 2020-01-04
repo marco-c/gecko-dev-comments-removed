@@ -10,6 +10,7 @@
 #include <stdint.h>
 #include "prlink.h"
 #include "gmp-entrypoints.h"
+#include "mozilla/UniquePtr.h"
 
 #if defined(XP_MACOSX) && defined(MOZ_GMP_SANDBOX)
 #include "mozilla/Sandbox.h"
@@ -98,7 +99,7 @@ public:
 
 
 
-GMPLoader* CreateGMPLoader(SandboxStarter* aStarter);
+UniquePtr<GMPLoader> CreateGMPLoader(SandboxStarter* aStarter);
 
 } 
 } 

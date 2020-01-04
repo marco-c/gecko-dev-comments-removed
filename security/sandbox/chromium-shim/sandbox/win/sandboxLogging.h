@@ -13,12 +13,6 @@
 
 #include "loggingTypes.h"
 
-#ifdef SANDBOX_EXPORTS
-#define SANDBOX_EXPORT __declspec(dllexport)
-#else
-#define SANDBOX_EXPORT __declspec(dllimport)
-#endif
-
 namespace sandbox {
 class TargetPolicy;
 }
@@ -28,7 +22,7 @@ namespace sandboxing {
 
 
 
-void SANDBOX_EXPORT ProvideLogFunction(LogFunction aLogFunction);
+void ProvideLogFunction(LogFunction aLogFunction);
 
 
 void ApplyLoggingPolicy(sandbox::TargetPolicy& aPolicy);
