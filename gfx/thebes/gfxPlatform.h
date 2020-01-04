@@ -400,6 +400,12 @@ public:
     
 
 
+
+    virtual bool RespectsFontStyleSmoothing() const { return false; }
+
+    
+
+
     bool UseCmapsDuringSystemFallback();
 
     

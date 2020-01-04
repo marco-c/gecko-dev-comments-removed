@@ -64,6 +64,11 @@ public:
       return true;
     }
 
+    bool RespectsFontStyleSmoothing() const override {
+      
+      return true;
+    }
+
     bool RequiresAcceleratedGLContextForCompositorOGL() const override {
       
       
