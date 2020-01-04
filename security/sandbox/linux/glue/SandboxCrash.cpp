@@ -45,17 +45,13 @@ SandboxLogJSStack(void)
     return;
   }
   nsCOMPtr<nsIStackFrame> frame = dom::GetCurrentJSStack();
-  
-  
-  
-  JSContext* cx = frame ? nsContentUtils::GetCurrentJSContext() : nullptr;
   for (int i = 0; frame != nullptr; ++i) {
     nsAutoString fileName, funName;
     int32_t lineNumber;
 
     
     fileName.SetIsVoid(true);
-    Unused << frame->GetFilename(cx, fileName);
+    Unused << frame->GetFilename(fileName);
     lineNumber = 0;
     Unused << frame->GetLineNumber(&lineNumber);
     funName.SetIsVoid(true);
