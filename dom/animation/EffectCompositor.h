@@ -12,7 +12,7 @@
 #include "mozilla/OwningNonNull.h"
 #include "mozilla/PseudoElementHashEntry.h"
 #include "mozilla/RefPtr.h"
-#include "nsCSSProperty.h"
+#include "nsCSSPropertyID.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsDataHashtable.h"
 #include "nsIStyleRuleProcessor.h"
@@ -162,14 +162,14 @@ public:
   }
 
   static bool HasAnimationsForCompositor(const nsIFrame* aFrame,
-                                         nsCSSProperty aProperty);
+                                         nsCSSPropertyID aProperty);
 
   static nsTArray<RefPtr<dom::Animation>>
   GetAnimationsForCompositor(const nsIFrame* aFrame,
-                             nsCSSProperty aProperty);
+                             nsCSSPropertyID aProperty);
 
   static void ClearIsRunningOnCompositor(const nsIFrame* aFrame,
-                                         nsCSSProperty aProperty);
+                                         nsCSSPropertyID aProperty);
 
   
   
@@ -212,7 +212,7 @@ public:
   
   static void SetPerformanceWarning(
     const nsIFrame* aFrame,
-    nsCSSProperty aProperty,
+    nsCSSPropertyID aProperty,
     const AnimationPerformanceWarning& aWarning);
 
 private:

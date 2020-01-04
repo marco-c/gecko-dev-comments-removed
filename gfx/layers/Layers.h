@@ -36,7 +36,7 @@
 #include "mozilla/mozalloc.h"           
 #include "nsAutoPtr.h"                  
 #include "nsCOMPtr.h"                   
-#include "nsCSSProperty.h"              
+#include "nsCSSPropertyID.h"              
 #include "nsDebug.h"                    
 #include "nsISupportsImpl.h"            
 #include "nsRect.h"                     

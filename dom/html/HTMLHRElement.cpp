@@ -206,7 +206,7 @@ HTMLHRElement::MapAttributesIntoRule(const nsMappedAttributes* aAttributes,
       
       
       
-      for (const nsCSSProperty* props =
+      for (const nsCSSPropertyID* props =
             nsCSSProps::SubpropertyEntryFor(eCSSProperty_border_radius);
            *props != eCSSProperty_UNKNOWN; ++props) {
         nsCSSValue* dimen = aData->ValueFor(*props);

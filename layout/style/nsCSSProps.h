@@ -14,7 +14,7 @@
 #include <limits>
 #include <type_traits>
 #include "nsString.h"
-#include "nsCSSProperty.h"
+#include "nsCSSPropertyID.h"
 #include "nsStyleStructFwd.h"
 #include "nsCSSKeywords.h"
 #include "mozilla/CSSEnabledState.h"
@@ -380,16 +380,16 @@ public:
   
   
   
-  static nsCSSProperty LookupProperty(const nsAString& aProperty,
+  static nsCSSPropertyID LookupProperty(const nsAString& aProperty,
                                       EnabledState aEnabled);
-  static nsCSSProperty LookupProperty(const nsACString& aProperty,
+  static nsCSSPropertyID LookupProperty(const nsACString& aProperty,
                                       EnabledState aEnabled);
   
   
-  static nsCSSProperty LookupPropertyByIDLName(
+  static nsCSSPropertyID LookupPropertyByIDLName(
       const nsAString& aPropertyIDLName,
       EnabledState aEnabled);
-  static nsCSSProperty LookupPropertyByIDLName(
+  static nsCSSPropertyID LookupPropertyByIDLName(
       const nsACString& aPropertyIDLName,
       EnabledState aEnabled);
 
@@ -398,14 +398,14 @@ public:
   static bool IsCustomPropertyName(const nsAString& aProperty);
   static bool IsCustomPropertyName(const nsACString& aProperty);
 
-  static inline bool IsShorthand(nsCSSProperty aProperty) {
+  static inline bool IsShorthand(nsCSSPropertyID aProperty) {
     MOZ_ASSERT(0 <= aProperty && aProperty < eCSSProperty_COUNT,
                "out of range");
     return (aProperty >= eCSSProperty_COUNT_no_shorthands);
   }
 
   
-  static bool IsInherited(nsCSSProperty aProperty);
+  static bool IsInherited(nsCSSPropertyID aProperty);
 
   
   static nsCSSFontDesc LookupFontDesc(const nsAString& aProperty);
@@ -420,14 +420,14 @@ public:
   static bool IsPredefinedCounterStyle(const nsACString& aStyle);
 
   
-  static const nsAFlatCString& GetStringValue(nsCSSProperty aProperty);
+  static const nsAFlatCString& GetStringValue(nsCSSPropertyID aProperty);
   static const nsAFlatCString& GetStringValue(nsCSSFontDesc aFontDesc);
   static const nsAFlatCString& GetStringValue(nsCSSCounterDesc aCounterDesc);
 
   
   
   
-  static const nsAFlatCString& LookupPropertyValue(nsCSSProperty aProperty, int32_t aValue);
+  static const nsAFlatCString& LookupPropertyValue(nsCSSPropertyID aProperty, int32_t aValue);
 
   
   
@@ -479,7 +479,7 @@ private:
   static const uint32_t        kFlagsTable[eCSSProperty_COUNT];
 
 public:
-  static inline bool PropHasFlags(nsCSSProperty aProperty, uint32_t aFlags)
+  static inline bool PropHasFlags(nsCSSPropertyID aProperty, uint32_t aFlags)
   {
     MOZ_ASSERT(0 <= aProperty && aProperty < eCSSProperty_COUNT,
                "out of range");
@@ -490,7 +490,7 @@ public:
     return (nsCSSProps::kFlagsTable[aProperty] & aFlags) == aFlags;
   }
 
-  static inline uint32_t PropertyParseType(nsCSSProperty aProperty)
+  static inline uint32_t PropertyParseType(nsCSSPropertyID aProperty)
   {
     MOZ_ASSERT(0 <= aProperty && aProperty < eCSSProperty_COUNT,
                "out of range");
@@ -498,7 +498,7 @@ public:
            CSS_PROPERTY_PARSE_PROPERTY_MASK;
   }
 
-  static inline uint32_t ValueRestrictions(nsCSSProperty aProperty)
+  static inline uint32_t ValueRestrictions(nsCSSPropertyID aProperty)
   {
     MOZ_ASSERT(0 <= aProperty && aProperty < eCSSProperty_COUNT,
                "out of range");
@@ -511,7 +511,7 @@ private:
   static const uint32_t kParserVariantTable[eCSSProperty_COUNT_no_shorthands];
 
 public:
-  static inline uint32_t ParserVariant(nsCSSProperty aProperty) {
+  static inline uint32_t ParserVariant(nsCSSPropertyID aProperty) {
     MOZ_ASSERT(0 <= aProperty && aProperty < eCSSProperty_COUNT_no_shorthands,
                "out of range");
     return nsCSSProps::kParserVariantTable[aProperty];
@@ -520,12 +520,12 @@ public:
 private:
   
   
-  static const nsCSSProperty *const
+  static const nsCSSPropertyID *const
     kSubpropertyTable[eCSSProperty_COUNT - eCSSProperty_COUNT_no_shorthands];
 
 public:
   static inline
-  const nsCSSProperty * SubpropertyEntryFor(nsCSSProperty aProperty) {
+  const nsCSSPropertyID * SubpropertyEntryFor(nsCSSPropertyID aProperty) {
     MOZ_ASSERT(eCSSProperty_COUNT_no_shorthands <= aProperty &&
                aProperty < eCSSProperty_COUNT,
                "out of range");
@@ -536,7 +536,7 @@ public:
   
   
   
-  static const nsCSSProperty * ShorthandsContaining(nsCSSProperty aProperty) {
+  static const nsCSSPropertyID * ShorthandsContaining(nsCSSPropertyID aProperty) {
     MOZ_ASSERT(gShorthandsContainingPool, "uninitialized");
     MOZ_ASSERT(0 <= aProperty && aProperty < eCSSProperty_COUNT_no_shorthands,
                "out of range");
@@ -548,8 +548,8 @@ private:
   
   
   
-  static nsCSSProperty *gShorthandsContainingTable[eCSSProperty_COUNT_no_shorthands];
-  static nsCSSProperty* gShorthandsContainingPool;
+  static nsCSSPropertyID *gShorthandsContainingTable[eCSSProperty_COUNT_no_shorthands];
+  static nsCSSPropertyID* gShorthandsContainingPool;
   static bool BuildShorthandsContainingTable();
 
 private:
@@ -569,7 +569,7 @@ public:
 
 
 
-  static size_t PropertyIndexInStruct(nsCSSProperty aProperty) {
+  static size_t PropertyIndexInStruct(nsCSSPropertyID aProperty) {
     MOZ_ASSERT(0 <= aProperty && aProperty < eCSSProperty_COUNT_no_shorthands,
                "out of range");
     return gPropertyIndexInStruct[aProperty];
@@ -578,7 +578,7 @@ public:
 private:
   
   
-  static const nsCSSProperty* const
+  static const nsCSSPropertyID* const
     kLogicalGroupTable[eCSSPropertyLogicalGroup_COUNT];
 
 public:
@@ -600,7 +600,7 @@ public:
 
 
 
-  static const nsCSSProperty* LogicalGroup(nsCSSProperty aProperty);
+  static const nsCSSPropertyID* LogicalGroup(nsCSSPropertyID aProperty);
 
 private:
   static bool gPropertyEnabled[eCSSProperty_COUNT_with_aliases];
@@ -620,7 +620,7 @@ public:
 
 
 
-  static const char* PropertyIDLName(nsCSSProperty aProperty)
+  static const char* PropertyIDLName(nsCSSPropertyID aProperty)
   {
     MOZ_ASSERT(0 <= aProperty && aProperty < eCSSProperty_COUNT,
                "out of range");
@@ -635,14 +635,14 @@ public:
 
 
 
-  static int32_t PropertyIDLNameSortPosition(nsCSSProperty aProperty)
+  static int32_t PropertyIDLNameSortPosition(nsCSSPropertyID aProperty)
   {
     MOZ_ASSERT(0 <= aProperty && aProperty < eCSSProperty_COUNT,
                "out of range");
     return kIDLNameSortPositionTable[aProperty];
   }
 
-  static bool IsEnabled(nsCSSProperty aProperty) {
+  static bool IsEnabled(nsCSSPropertyID aProperty) {
     MOZ_ASSERT(0 <= aProperty && aProperty < eCSSProperty_COUNT_with_aliases,
                "out of range");
     return gPropertyEnabled[aProperty];
@@ -655,13 +655,13 @@ public:
 
 public:
 
-  static mozilla::UseCounter UseCounterFor(nsCSSProperty aProperty) {
+  static mozilla::UseCounter UseCounterFor(nsCSSPropertyID aProperty) {
     MOZ_ASSERT(0 <= aProperty && aProperty < eCSSProperty_COUNT_no_shorthands,
                "out of range");
     return gPropertyUseCounter[aProperty];
   }
 
-  static bool IsEnabled(nsCSSProperty aProperty, EnabledState aEnabled)
+  static bool IsEnabled(nsCSSPropertyID aProperty, EnabledState aEnabled)
   {
     if (IsEnabled(aProperty)) {
       return true;
@@ -689,8 +689,8 @@ public:
 
 
 #define CSSPROPS_FOR_SHORTHAND_SUBPROPERTIES(it_, prop_, enabledstate_)   \
-  for (const nsCSSProperty *it_ = nsCSSProps::SubpropertyEntryFor(prop_), \
-                            es_ = (nsCSSProperty)((enabledstate_) |       \
+  for (const nsCSSPropertyID *it_ = nsCSSProps::SubpropertyEntryFor(prop_), \
+                            es_ = (nsCSSPropertyID)((enabledstate_) |       \
                                                   CSSEnabledState(0));    \
        *it_ != eCSSProperty_UNKNOWN; ++it_)                               \
     if (nsCSSProps::IsEnabled(*it_, (mozilla::CSSEnabledState) es_))

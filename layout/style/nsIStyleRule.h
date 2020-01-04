@@ -13,7 +13,7 @@
 
 #include <stdio.h>
 
-#include "nsCSSProperty.h"
+#include "nsCSSPropertyID.h"
 #include "nsISupports.h"
 
 class nsCSSValue;
@@ -83,7 +83,7 @@ public:
 
 
 
-  virtual bool GetDiscretelyAnimatedCSSValue(nsCSSProperty aProperty,
+  virtual bool GetDiscretelyAnimatedCSSValue(nsCSSPropertyID aProperty,
                                              nsCSSValue* aValue) = 0;
 
 #ifdef DEBUG

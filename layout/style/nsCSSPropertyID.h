@@ -5,8 +5,8 @@
 
 
  
-#ifndef nsCSSProperty_h___
-#define nsCSSProperty_h___
+#ifndef nsCSSPropertyID_h___
+#define nsCSSPropertyID_h___
 
 #include <nsHashKeys.h>
 
@@ -17,7 +17,7 @@
 
 
 
-enum nsCSSProperty {
+enum nsCSSPropertyID {
   eCSSProperty_UNKNOWN = -1,
 
   #define CSS_PROP(name_, id_, method_, flags_, pref_, parsevariant_, \
@@ -70,7 +70,7 @@ namespace mozilla {
 
 template<>
 inline PLDHashNumber
-Hash<nsCSSProperty>(const nsCSSProperty& aValue)
+Hash<nsCSSPropertyID>(const nsCSSPropertyID& aValue)
 {
   return uint32_t(aValue);
 }

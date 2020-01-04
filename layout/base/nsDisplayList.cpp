@@ -458,7 +458,7 @@ AddAnimationForProperty(nsIFrame* aFrame, const AnimationProperty& aProperty,
 }
 
 static void
-AddAnimationsForProperty(nsIFrame* aFrame, nsCSSProperty aProperty,
+AddAnimationsForProperty(nsIFrame* aFrame, nsCSSPropertyID aProperty,
                          nsTArray<RefPtr<dom::Animation>>& aAnimations,
                          Layer* aLayer, AnimationData& aData,
                          bool aPending)
@@ -599,7 +599,7 @@ nsDisplayListBuilder::AddAnimationsAndTransitionsToLayer(Layer* aLayer,
                                                          nsDisplayListBuilder* aBuilder,
                                                          nsDisplayItem* aItem,
                                                          nsIFrame* aFrame,
-                                                         nsCSSProperty aProperty)
+                                                         nsCSSPropertyID aProperty)
 {
   MOZ_ASSERT(nsCSSProps::PropHasFlags(aProperty,
                                       CSS_PROPERTY_CAN_ANIMATE_ON_COMPOSITOR),
@@ -4436,7 +4436,7 @@ IsItemTooSmallForActiveLayer(nsIFrame* aFrame)
 
 static void
 SetAnimationPerformanceWarningForTooSmallItem(nsIFrame* aFrame,
-                                              nsCSSProperty aProperty)
+                                              nsCSSPropertyID aProperty)
 {
   
   

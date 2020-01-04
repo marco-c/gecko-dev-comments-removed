@@ -64,7 +64,7 @@ public:
 
 
 
-  const nsCSSValue* ValueFor(nsCSSProperty aProperty) const;
+  const nsCSSValue* ValueFor(nsCSSPropertyID aProperty) const;
 
   
 
@@ -74,7 +74,7 @@ public:
 
 
 
-  bool TryReplaceValue(nsCSSProperty aProperty,
+  bool TryReplaceValue(nsCSSPropertyID aProperty,
                          nsCSSExpandedDataBlock& aFromBlock,
                          bool* aChanged);
 
@@ -144,9 +144,9 @@ private:
     return Values() + i;
   }
 
-  nsCSSProperty PropertyAtIndex(uint32_t i) const {
+  nsCSSPropertyID PropertyAtIndex(uint32_t i) const {
     MOZ_ASSERT(i < mNumProps, "property index out of range");
-    nsCSSProperty prop = (nsCSSProperty)CompressedProperties()[i];
+    nsCSSPropertyID prop = (nsCSSPropertyID)CompressedProperties()[i];
     MOZ_ASSERT(!nsCSSProps::IsShorthand(prop), "out of range");
     return prop;
   }
@@ -159,7 +159,7 @@ private:
     memcpy(ValueAtIndex(i), aValue, sizeof(nsCSSValue));
   }
 
-  void SetPropertyAtIndex(uint32_t i, nsCSSProperty aProperty) {
+  void SetPropertyAtIndex(uint32_t i, nsCSSPropertyID aProperty) {
     MOZ_ASSERT(i < mNumProps, "set property index out of range");
     CompressedProperties()[i] = (CompressedCSSProperty)aProperty;
   }
@@ -181,7 +181,7 @@ static_assert(NS_ALIGNMENT_OF(nsCSSCompressedDataBlock::CompressedCSSProperty) =
 
 static_assert(eCSSProperty_COUNT_no_shorthands <=
               nsCSSCompressedDataBlock::MaxCompressedCSSProperty,
-              "nsCSSProperty doesn't fit in StoredSizeOfCSSProperty");
+              "nsCSSPropertyID doesn't fit in StoredSizeOfCSSProperty");
 
 class nsCSSExpandedDataBlock
 {
@@ -229,7 +229,7 @@ public:
 
 
 
-  void AddLonghandProperty(nsCSSProperty aProperty, const nsCSSValue& aValue);
+  void AddLonghandProperty(nsCSSPropertyID aProperty, const nsCSSValue& aValue);
 
   
 
@@ -240,12 +240,12 @@ public:
 
 
 
-  void ClearProperty(nsCSSProperty aPropID);
+  void ClearProperty(nsCSSPropertyID aPropID);
 
   
 
 
-  void ClearLonghandProperty(nsCSSProperty aPropID);
+  void ClearLonghandProperty(nsCSSPropertyID aPropID);
 
   
 
@@ -263,7 +263,7 @@ public:
 
 
   bool TransferFromBlock(nsCSSExpandedDataBlock& aFromBlock,
-                         nsCSSProperty aPropID,
+                         nsCSSPropertyID aPropID,
                          mozilla::CSSEnabledState aEnabledState,
                          bool aIsImportant,
                          bool aOverrideImportant,
@@ -277,7 +277,7 @@ public:
 
 
 
-  void MapRuleInfoInto(nsCSSProperty aPropID, nsRuleData* aRuleData) const;
+  void MapRuleInfoInto(nsCSSPropertyID aPropID, nsRuleData* aRuleData) const;
 
   void AssertInitialState() {
 #ifdef DEBUG
@@ -299,7 +299,7 @@ private:
 
 
   bool DoTransferFromBlock(nsCSSExpandedDataBlock& aFromBlock,
-                             nsCSSProperty aPropID,
+                             nsCSSPropertyID aPropID,
                              bool aIsImportant,
                              bool aOverrideImportant,
                              bool aMustCallValueAppended,
@@ -326,40 +326,40 @@ private:
 
 
 
-  nsCSSValue* PropertyAt(nsCSSProperty aProperty) {
+  nsCSSValue* PropertyAt(nsCSSPropertyID aProperty) {
     MOZ_ASSERT(0 <= aProperty &&
                aProperty < eCSSProperty_COUNT_no_shorthands,
                "property out of range");
     return &mValues[aProperty];
   }
-  const nsCSSValue* PropertyAt(nsCSSProperty aProperty) const {
+  const nsCSSValue* PropertyAt(nsCSSPropertyID aProperty) const {
     MOZ_ASSERT(0 <= aProperty &&
                aProperty < eCSSProperty_COUNT_no_shorthands,
                "property out of range");
     return &mValues[aProperty];
   }
 
-  void SetPropertyBit(nsCSSProperty aProperty) {
+  void SetPropertyBit(nsCSSPropertyID aProperty) {
     mPropertiesSet.AddProperty(aProperty);
   }
 
-  void ClearPropertyBit(nsCSSProperty aProperty) {
+  void ClearPropertyBit(nsCSSPropertyID aProperty) {
     mPropertiesSet.RemoveProperty(aProperty);
   }
 
-  bool HasPropertyBit(nsCSSProperty aProperty) {
+  bool HasPropertyBit(nsCSSPropertyID aProperty) {
     return mPropertiesSet.HasProperty(aProperty);
   }
 
-  void SetImportantBit(nsCSSProperty aProperty) {
+  void SetImportantBit(nsCSSPropertyID aProperty) {
     mPropertiesImportant.AddProperty(aProperty);
   }
 
-  void ClearImportantBit(nsCSSProperty aProperty) {
+  void ClearImportantBit(nsCSSPropertyID aProperty) {
     mPropertiesImportant.RemoveProperty(aProperty);
   }
 
-  bool HasImportantBit(nsCSSProperty aProperty) {
+  bool HasImportantBit(nsCSSPropertyID aProperty) {
     return mPropertiesImportant.HasProperty(aProperty);
   }
 

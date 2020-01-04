@@ -8,7 +8,7 @@
 #define mozilla_dom_KeyframeEffect_h
 
 #include "nsChangeHint.h"
-#include "nsCSSProperty.h"
+#include "nsCSSPropertyID.h"
 #include "nsCSSValue.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsTArray.h"
@@ -59,7 +59,7 @@ struct AnimationPropertyDetails;
 
 struct PropertyValuePair
 {
-  nsCSSProperty mProperty;
+  nsCSSPropertyID mProperty;
   
   
   
@@ -134,7 +134,7 @@ struct AnimationPropertySegment
 
 struct AnimationProperty
 {
-  nsCSSProperty mProperty = eCSSProperty_UNKNOWN;
+  nsCSSPropertyID mProperty = eCSSProperty_UNKNOWN;
 
   
   
@@ -290,8 +290,8 @@ public:
   void SetKeyframes(nsTArray<Keyframe>&& aKeyframes,
                     nsStyleContext* aStyleContext);
   const AnimationProperty*
-  GetAnimationOfProperty(nsCSSProperty aProperty) const;
-  bool HasAnimationOfProperty(nsCSSProperty aProperty) const {
+  GetAnimationOfProperty(nsCSSPropertyID aProperty) const;
+  bool HasAnimationOfProperty(nsCSSPropertyID aProperty) const {
     return GetAnimationOfProperty(aProperty) != nullptr;
   }
   const InfallibleTArray<AnimationProperty>& Properties() const {
@@ -313,7 +313,7 @@ public:
                     nsCSSPropertySet& aSetProperties);
   
   bool IsRunningOnCompositor() const;
-  void SetIsRunningOnCompositor(nsCSSProperty aProperty, bool aIsRunning);
+  void SetIsRunningOnCompositor(nsCSSPropertyID aProperty, bool aIsRunning);
   void ResetIsRunningOnCompositor();
 
   
@@ -338,7 +338,7 @@ public:
   
   
   void SetPerformanceWarning(
-    nsCSSProperty aProperty,
+    nsCSSPropertyID aProperty,
     const AnimationPerformanceWarning& aWarning);
 
   
@@ -434,7 +434,7 @@ private:
   static bool CanAnimateTransformOnCompositor(
     const nsIFrame* aFrame,
     AnimationPerformanceWarning::Type& aPerformanceWarning);
-  static bool IsGeometricProperty(const nsCSSProperty aProperty);
+  static bool IsGeometricProperty(const nsCSSPropertyID aProperty);
 
   static const TimeDuration OverflowRegionRefreshInterval();
 };

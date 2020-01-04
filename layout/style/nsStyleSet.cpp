@@ -63,7 +63,7 @@ nsEmptyStyleRule::MightMapInheritedStyleData()
 }
 
  bool
-nsEmptyStyleRule::GetDiscretelyAnimatedCSSValue(nsCSSProperty aProperty,
+nsEmptyStyleRule::GetDiscretelyAnimatedCSSValue(nsCSSPropertyID aProperty,
                                                 nsCSSValue* aValue)
 {
   MOZ_ASSERT(false, "GetDiscretelyAnimatedCSSValue is not implemented yet");
@@ -130,7 +130,7 @@ nsInitialStyleRule::MightMapInheritedStyleData()
 }
 
  bool
-nsInitialStyleRule::GetDiscretelyAnimatedCSSValue(nsCSSProperty aProperty,
+nsInitialStyleRule::GetDiscretelyAnimatedCSSValue(nsCSSPropertyID aProperty,
                                                   nsCSSValue* aValue)
 {
   MOZ_ASSERT(false, "GetDiscretelyAnimatedCSSValue is not implemented yet");
@@ -170,7 +170,7 @@ nsDisableTextZoomStyleRule::MightMapInheritedStyleData()
 
  bool
 nsDisableTextZoomStyleRule::
-GetDiscretelyAnimatedCSSValue(nsCSSProperty aProperty, nsCSSValue* aValue)
+GetDiscretelyAnimatedCSSValue(nsCSSPropertyID aProperty, nsCSSValue* aValue)
 {
   MOZ_ASSERT(false, "GetDiscretelyAnimatedCSSValue is not implemented yet");
   return false;
