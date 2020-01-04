@@ -230,10 +230,6 @@ private:
                             mozilla::css::Corner aCorner);
 
   
-  void DrawFallbackSolidCorner(mozilla::css::Side aSide,
-                               mozilla::css::Corner aCorner);
-
-  
   bool AllBordersSameWidth();
 
   
