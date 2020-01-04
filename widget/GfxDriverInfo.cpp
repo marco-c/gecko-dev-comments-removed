@@ -275,9 +275,6 @@ const GfxDeviceFamily* GfxDriverInfo::GetDeviceFamily(DeviceFamily id)
       APPEND_DEVICE(0xa011);
       APPEND_DEVICE(0xa012);
       break;
-    case AMDRadeonHD5800:
-      APPEND_DEVICE(0x6899);
-      break;
     
     case DeviceFamilyMax:
       NS_WARNING("Invalid DeviceFamily id");
