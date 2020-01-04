@@ -14,7 +14,7 @@ namespace mozilla {
 namespace gfx {
 
 static const int32_t kTileSize = 256;
-static const size_t kMaxTiles = 100;
+static const size_t kMaxTiles = 1000;
 
 
 
