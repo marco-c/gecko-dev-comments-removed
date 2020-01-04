@@ -183,10 +183,6 @@ public:
   void Clear();
 
 private:
-  static PLDHashOperator
-    RemoveExpiredEntries(const nsACString& aKey, nsAutoPtr<CacheEntry>& aValue,
-                         void* aUserData);
-
   static bool GetCacheKey(nsIURI* aURI, nsIPrincipal* aPrincipal,
                             bool aWithCredentials, nsACString& _retval);
 
@@ -304,7 +300,17 @@ nsPreflightCache::GetEntry(nsIURI* aURI,
   if (mTable.Count() == PREFLIGHT_CACHE_SIZE) {
     
     TimeStamp now = TimeStamp::NowLoRes();
-    mTable.Enumerate(RemoveExpiredEntries, &now);
+    for (auto iter = mTable.Iter(); !iter.Done(); iter.Next()) {
+      nsAutoPtr<CacheEntry>& entry = iter.Data();
+      entry->PurgeExpired(now);
+
+      if (entry->mHeaders.IsEmpty() &&
+          entry->mMethods.IsEmpty()) {
+        
+        entry->removeFrom(sPreflightCache->mList);
+        iter.Remove();
+      }
+    }
 
     
     
@@ -349,25 +355,6 @@ nsPreflightCache::Clear()
 {
   mList.clear();
   mTable.Clear();
-}
-
- PLDHashOperator
-nsPreflightCache::RemoveExpiredEntries(const nsACString& aKey,
-                                           nsAutoPtr<CacheEntry>& aValue,
-                                           void* aUserData)
-{
-  TimeStamp* now = static_cast<TimeStamp*>(aUserData);
-  
-  aValue->PurgeExpired(*now);
-  
-  if (aValue->mHeaders.IsEmpty() &&
-      aValue->mMethods.IsEmpty()) {
-    
-    aValue->removeFrom(sPreflightCache->mList);
-    return PL_DHASH_REMOVE;
-  }
-  
-  return PL_DHASH_NEXT;
 }
 
  bool
