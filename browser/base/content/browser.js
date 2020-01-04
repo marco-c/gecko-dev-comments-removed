@@ -7021,6 +7021,7 @@ var gIdentityHandler = {
 
 
   updateIdentity(state, uri) {
+    let shouldHidePopup = this._uri && (this._uri.spec != uri.spec);
     this._state = state;
     this._uri = uri;
 
@@ -7045,9 +7046,13 @@ var gIdentityHandler = {
     }
 
     
-
     if (this._identityBox) {
       this.refreshIdentityBlock();
+    }
+    
+    
+    if (shouldHidePopup) {
+      this._identityPopup.hidePopup();
     }
 
     
