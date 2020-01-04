@@ -2466,7 +2466,9 @@ public:
   {
     nsInProcessTabChildGlobal* tabChild =
       static_cast<nsInProcessTabChildGlobal*>(mFrameLoader->mChildMessageManager.get());
-    if (tabChild && tabChild->GetInnerManager()) {
+    
+    
+    if (tabChild && tabChild->GetInnerManager() && mFrameLoader->GetExistingDocShell()) {
       nsCOMPtr<nsIXPConnectJSObjectHolder> kungFuDeathGrip(tabChild->GetGlobal());
       ReceiveMessage(static_cast<EventTarget*>(tabChild), mFrameLoader,
                      tabChild->GetInnerManager());
