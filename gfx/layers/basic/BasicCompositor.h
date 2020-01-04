@@ -92,7 +92,8 @@ public:
   virtual void EndFrame() override;
   virtual void EndFrameForExternalComposition(const gfx::Matrix& aTransform) override
   {
-    NS_RUNTIMEABORT("We shouldn't ever hit this");
+    
+    NS_WARNING("BasicCOmpositor::EndFrameForExternalComposition - not implemented!");
   }
 
   virtual bool SupportsPartialTextureUpdate() override { return true; }
