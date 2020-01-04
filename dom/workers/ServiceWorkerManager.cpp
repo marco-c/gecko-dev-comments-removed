@@ -21,7 +21,6 @@
 #include "nsIMutableArray.h"
 #include "nsIScriptError.h"
 #include "nsISimpleEnumerator.h"
-#include "nsITimer.h"
 #include "nsIUploadChannel2.h"
 #include "nsPIDOMWindow.h"
 #include "nsScriptLoader.h"
@@ -136,9 +135,6 @@ struct ServiceWorkerManager::RegistrationDataPerPrincipal final
 
   
   nsClassHashtable<nsCStringHashKey, ServiceWorkerJobQueue> mJobQueues;
-
-  
-  nsInterfaceHashtable<nsCStringHashKey, nsITimer> mUpdateTimers;
 };
 
 struct ServiceWorkerManager::PendingOperation final
@@ -322,13 +318,7 @@ PopulateRegistrationData(nsIPrincipal* aPrincipal,
   }
 
   aData.scope() = aRegistration->mScope;
-
-  RefPtr<ServiceWorkerInfo> newest = aRegistration->Newest();
-  if (NS_WARN_IF(!newest)) {
-    return NS_ERROR_FAILURE;
-  }
-
-  aData.scriptSpec() = newest->ScriptSpec();
+  aData.scriptSpec() = aRegistration->mScriptSpec;
 
   if (aRegistration->mActiveWorker) {
     aData.currentWorkerURL() = aRegistration->mActiveWorker->ScriptSpec();
@@ -432,10 +422,9 @@ ServiceWorkerRegistrationInfo::Clear()
 ServiceWorkerRegistrationInfo::ServiceWorkerRegistrationInfo(const nsACString& aScope,
                                                              nsIPrincipal* aPrincipal)
   : mControlledDocumentsCounter(0)
-  , mUpdateState(NoUpdate)
-  , mLastUpdateCheckTime(0)
   , mScope(aScope)
   , mPrincipal(aPrincipal)
+  , mLastUpdateCheckTime(0)
   , mUpdating(false)
   , mPendingUninstall(false)
 {}
@@ -469,10 +458,7 @@ NS_IMETHODIMP
 ServiceWorkerRegistrationInfo::GetScriptSpec(nsAString& aScriptSpec)
 {
   AssertIsOnMainThread();
-  RefPtr<ServiceWorkerInfo> newest = Newest();
-  if (newest) {
-    CopyUTF8toUTF16(newest->ScriptSpec(), aScriptSpec);
-  }
+  CopyUTF8toUTF16(mScriptSpec, aScriptSpec);
   return NS_OK;
 }
 
@@ -966,42 +952,12 @@ protected:
   ~ServiceWorkerJobBase()
   { }
 
-  void
-  Succeed()
-  {
-    AssertIsOnMainThread();
-    
-    if (mCallback) {
-      mCallback->UpdateSucceeded(mRegistration);
-      mCallback = nullptr;
-    }
-  }
-};
-
-
-class ServiceWorkerScriptJobBase : public ServiceWorkerJobBase
-{
-protected:
-  const nsCString mScriptSpec;
-
-  ServiceWorkerScriptJobBase(ServiceWorkerJobQueue* aQueue,
-                             ServiceWorkerJob::Type aJobType,
-                             ServiceWorkerUpdateFinishCallback* aCallback,
-                             ServiceWorkerRegistrationInfo* aRegistration,
-                             ServiceWorkerInfo* aServiceWorkerInfo,
-                             const nsACString& aScriptSpec)
-    : ServiceWorkerJobBase(aQueue, aJobType, aCallback, aRegistration,
-                           aServiceWorkerInfo)
-    , mScriptSpec(aScriptSpec)
-  {
-  }
-
   
   
   
   
   void
-  FailWithErrorResult(ErrorResult& aRv)
+  Fail(ErrorResult& aRv)
   {
     AssertIsOnMainThread();
     MOZ_ASSERT(mRegistration);
@@ -1021,7 +977,7 @@ protected:
       
       aRv.SuppressException();
 
-      NS_ConvertUTF8toUTF16 scriptSpec(mScriptSpec);
+      NS_ConvertUTF8toUTF16 scriptSpec(mRegistration->mScriptSpec);
       NS_ConvertUTF8toUTF16 scope(mRegistration->mScope);
 
       
@@ -1055,11 +1011,22 @@ protected:
   Fail(nsresult aRv)
   {
     ErrorResult rv(aRv);
-    FailWithErrorResult(rv);
+    Fail(rv);
+  }
+
+  void
+  Succeed()
+  {
+    AssertIsOnMainThread();
+    
+    if (mCallback) {
+      mCallback->UpdateSucceeded(mRegistration);
+      mCallback = nullptr;
+    }
   }
 };
 
-class ServiceWorkerInstallJob final : public ServiceWorkerScriptJobBase
+class ServiceWorkerInstallJob final : public ServiceWorkerJobBase
 {
   friend class ContinueInstallTask;
 
@@ -1067,11 +1034,9 @@ public:
   ServiceWorkerInstallJob(ServiceWorkerJobQueue* aQueue,
                           ServiceWorkerUpdateFinishCallback* aCallback,
                           ServiceWorkerRegistrationInfo* aRegistration,
-                          ServiceWorkerInfo* aServiceWorkerInfo,
-                          const nsACString& aScriptSpec)
-    : ServiceWorkerScriptJobBase(aQueue, Type::InstallJob, aCallback,
-                                 aRegistration, aServiceWorkerInfo,
-                                 aScriptSpec)
+                          ServiceWorkerInfo* aServiceWorkerInfo)
+    : ServiceWorkerJobBase(aQueue, Type::InstallJob, aCallback,
+                           aRegistration, aServiceWorkerInfo)
   {
     MOZ_ASSERT(aRegistration);
   }
@@ -1196,12 +1161,13 @@ public:
   }
 };
 
-class ServiceWorkerRegisterJob final : public ServiceWorkerScriptJobBase,
+class ServiceWorkerRegisterJob final : public ServiceWorkerJobBase,
                                        public serviceWorkerScriptCache::CompareCallback
 {
   friend class ContinueUpdateRunnable;
 
   nsCString mScope;
+  nsCString mScriptSpec;
   nsCOMPtr<nsIPrincipal> mPrincipal;
   nsCOMPtr<nsILoadGroup> mLoadGroup;
 
@@ -1218,9 +1184,9 @@ public:
                            ServiceWorkerUpdateFinishCallback* aCallback,
                            nsIPrincipal* aPrincipal,
                            nsILoadGroup* aLoadGroup)
-    : ServiceWorkerScriptJobBase(aQueue, Type::RegisterJob, aCallback, nullptr,
-                                 nullptr, aScriptSpec)
+    : ServiceWorkerJobBase(aQueue, Type::RegisterJob, aCallback)
     , mScope(aScope)
+    , mScriptSpec(aScriptSpec)
     , mPrincipal(aPrincipal)
     , mLoadGroup(aLoadGroup)
   {
@@ -1232,10 +1198,9 @@ public:
   
   ServiceWorkerRegisterJob(ServiceWorkerJobQueue* aQueue,
                            ServiceWorkerRegistrationInfo* aRegistration,
-                           ServiceWorkerUpdateFinishCallback* aCallback,
-                           const nsACString& aScriptSpec)
-    : ServiceWorkerScriptJobBase(aQueue, Type::UpdateJob, aCallback,
-                                 aRegistration, nullptr, aScriptSpec)
+                           ServiceWorkerUpdateFinishCallback* aCallback)
+    : ServiceWorkerJobBase(aQueue, Type::UpdateJob, aCallback,
+                           aRegistration, nullptr)
   {
     AssertIsOnMainThread();
   }
@@ -1260,7 +1225,8 @@ public:
       if (mRegistration) {
         mRegistration->mPendingUninstall = false;
         RefPtr<ServiceWorkerInfo> newest = mRegistration->Newest();
-        if (newest && mScriptSpec.Equals(newest->ScriptSpec())) {
+        if (newest && mScriptSpec.Equals(newest->ScriptSpec()) &&
+            mScriptSpec.Equals(mRegistration->mScriptSpec)) {
           swm->StoreRegistration(mPrincipal, mRegistration);
           Succeed();
 
@@ -1278,25 +1244,11 @@ public:
         mRegistration = swm->CreateNewRegistration(mScope, mPrincipal);
       }
 
+      mRegistration->mScriptSpec = mScriptSpec;
+      mRegistration->NotifyListenersOnChange();
       swm->StoreRegistration(mPrincipal, mRegistration);
     } else {
       MOZ_ASSERT(mJobType == UpdateJob);
-
-      
-      
-      RefPtr<ServiceWorkerInfo> newest = mRegistration->Newest();
-      if (newest && !mScriptSpec.Equals(newest->ScriptSpec())) {
-
-        
-        nsCOMPtr<nsIRunnable> runnable =
-          NS_NewRunnableMethodWithArg<nsresult>(
-            this,
-            &ServiceWorkerRegisterJob::Fail,
-            NS_ERROR_DOM_ABORT_ERR);
-          MOZ_ALWAYS_TRUE(NS_SUCCEEDED(NS_DispatchToCurrentThread(runnable)));
-
-        return;
-      }
     }
 
     Update();
@@ -1330,7 +1282,7 @@ public:
     RefPtr<ServiceWorkerManager> swm = ServiceWorkerManager::GetInstance();
 
     nsCOMPtr<nsIURI> scriptURI;
-    nsresult rv = NS_NewURI(getter_AddRefs(scriptURI), mScriptSpec);
+    nsresult rv = NS_NewURI(getter_AddRefs(scriptURI), mRegistration->mScriptSpec);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       Fail(NS_ERROR_DOM_SECURITY_ERR);
       return;
@@ -1380,7 +1332,8 @@ public:
 
     MOZ_ASSERT(!mUpdateAndInstallInfo);
     mUpdateAndInstallInfo =
-      new ServiceWorkerInfo(mRegistration, mScriptSpec, aNewCacheName);
+      new ServiceWorkerInfo(mRegistration, mRegistration->mScriptSpec,
+                            aNewCacheName);
 
     RefPtr<ServiceWorkerJob> upcasted = this;
     nsMainThreadPtrHandle<nsISupports> handle(
@@ -1414,15 +1367,15 @@ private:
     if (NS_WARN_IF(!aScriptEvaluationResult)) {
       ErrorResult error;
 
-      NS_ConvertUTF8toUTF16 scriptSpec(mScriptSpec);
+      NS_ConvertUTF8toUTF16 scriptSpec(mRegistration->mScriptSpec);
       NS_ConvertUTF8toUTF16 scope(mRegistration->mScope);
       error.ThrowTypeError<MSG_SW_SCRIPT_THREW>(scriptSpec, scope);
-      return FailWithErrorResult(error);
+      return Fail(error);
     }
 
     RefPtr<ServiceWorkerInstallJob> job =
-      new ServiceWorkerInstallJob(mQueue, mCallback, mRegistration,
-                                  mUpdateAndInstallInfo, mScriptSpec);
+      new ServiceWorkerInstallJob(mQueue, mCallback,
+                                  mRegistration, mUpdateAndInstallInfo);
     mQueue->Append(job);
     Done(NS_OK);
   }
@@ -1465,14 +1418,14 @@ private:
     
     
     
-    if (workerInfo && workerInfo->ScriptSpec().Equals(mScriptSpec)) {
+    if (workerInfo && workerInfo->ScriptSpec().Equals(mRegistration->mScriptSpec)) {
       cacheName = workerInfo->CacheName();
     }
 
     nsresult rv =
       serviceWorkerScriptCache::Compare(mRegistration, mRegistration->mPrincipal, cacheName,
-                                        NS_ConvertUTF8toUTF16(mScriptSpec), this,
-                                        mLoadGroup);
+                                        NS_ConvertUTF8toUTF16(mRegistration->mScriptSpec),
+                                        this, mLoadGroup);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return Fail(rv);
     }
@@ -2746,54 +2699,6 @@ ServiceWorkerRegistrationInfo::NotifyListenersOnChange()
 }
 
 void
-ServiceWorkerRegistrationInfo::MaybeScheduleTimeCheckAndUpdate()
-{
-  AssertIsOnMainThread();
-
-  RefPtr<ServiceWorkerManager> swm = ServiceWorkerManager::GetInstance();
-  if (!swm) {
-    
-    return;
-  }
-
-  if (mUpdateState == NoUpdate) {
-    mUpdateState = NeedTimeCheckAndUpdate;
-  }
-
-  swm->ScheduleUpdateTimer(mPrincipal, mScope);
-}
-
-void
-ServiceWorkerRegistrationInfo::MaybeScheduleUpdate()
-{
-  AssertIsOnMainThread();
-
-  RefPtr<ServiceWorkerManager> swm = ServiceWorkerManager::GetInstance();
-  if (!swm) {
-    
-    return;
-  }
-
-  mUpdateState = NeedUpdate;
-
-  swm->ScheduleUpdateTimer(mPrincipal, mScope);
-}
-
-bool
-ServiceWorkerRegistrationInfo::CheckAndClearIfUpdateNeeded()
-{
-  AssertIsOnMainThread();
-
-  bool result = mUpdateState == NeedUpdate ||
-               (mUpdateState == NeedTimeCheckAndUpdate &&
-                IsLastUpdateCheckTimeOverOneDay());
-
-  mUpdateState = NoUpdate;
-
-  return result;
-}
-
-void
 ServiceWorkerManager::LoadRegistration(
                              const ServiceWorkerRegistrationData& aRegistration)
 {
@@ -2809,14 +2714,13 @@ ServiceWorkerManager::LoadRegistration(
     GetRegistration(principal, aRegistration.scope());
   if (!registration) {
     registration = CreateNewRegistration(aRegistration.scope(), principal);
-  } else {
-    RefPtr<ServiceWorkerInfo> newest = registration->Newest();
-    if (newest && newest->ScriptSpec() == aRegistration.scriptSpec() &&
-        !!registration->mActiveWorker == aRegistration.currentWorkerURL().IsEmpty()) {
-      
-      return;
-    }
+  } else if (registration->mScriptSpec == aRegistration.scriptSpec() &&
+             !!registration->mActiveWorker == aRegistration.currentWorkerURL().IsEmpty()) {
+    
+    return;
   }
+
+  registration->mScriptSpec = aRegistration.scriptSpec();
 
   const nsCString& currentWorkerURL = aRegistration.currentWorkerURL();
   if (!currentWorkerURL.IsEmpty()) {
@@ -3120,12 +3024,6 @@ ServiceWorkerManager::RemoveScopeAndRegistration(ServiceWorkerRegistrationInfo* 
     return;
   }
 
-  nsCOMPtr<nsITimer> timer = data->mUpdateTimers.Get(aRegistration->mScope);
-  if (timer) {
-    timer->Cancel();
-    data->mUpdateTimers.Remove(aRegistration->mScope);
-  }
-
   RefPtr<ServiceWorkerRegistrationInfo> info;
   data->mInfos.Get(aRegistration->mScope, getter_AddRefs(info));
 
@@ -3183,27 +3081,6 @@ ServiceWorkerManager::MaybeStopControlling(nsIDocument* aDoc)
   }
 
   mAllDocuments.RemoveEntry(aDoc);
-}
-
-void
-ServiceWorkerManager::MaybeCheckNavigationUpdate(nsIDocument* aDoc)
-{
-  AssertIsOnMainThread();
-  MOZ_ASSERT(aDoc);
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  RefPtr<ServiceWorkerRegistrationInfo> registration;
-  mControlledDocuments.Get(aDoc, getter_AddRefs(registration));
-  if (registration) {
-    registration->MaybeScheduleUpdate();
-  }
 }
 
 void
@@ -3730,6 +3607,9 @@ ServiceWorkerManager::SoftUpdate(const OriginAttributes& aOriginAttributes,
   }
 
   
+  registration->mScriptSpec = newest->ScriptSpec();
+
+  
   
   
   
@@ -3738,8 +3618,7 @@ ServiceWorkerManager::SoftUpdate(const OriginAttributes& aOriginAttributes,
     MOZ_ASSERT(queue);
 
     RefPtr<ServiceWorkerRegisterJob> job =
-      new ServiceWorkerRegisterJob(queue, registration, nullptr,
-                                   newest->ScriptSpec());
+      new ServiceWorkerRegisterJob(queue, registration, nullptr);
     queue->Append(job);
   }
 }
@@ -3783,6 +3662,9 @@ ServiceWorkerManager::Update(nsIPrincipal* aPrincipal,
     return;
   }
 
+  
+  registration->mScriptSpec = newest->ScriptSpec();
+
   ServiceWorkerJobQueue* queue =
     GetOrCreateJobQueue(scopeKey, aScope);
   MOZ_ASSERT(queue);
@@ -3790,8 +3672,7 @@ ServiceWorkerManager::Update(nsIPrincipal* aPrincipal,
   
   
   RefPtr<ServiceWorkerRegisterJob> job =
-    new ServiceWorkerRegisterJob(queue, registration, aCallback,
-                                 newest->ScriptSpec());
+    new ServiceWorkerRegisterJob(queue, registration, aCallback);
   queue->Append(job);
 }
 
@@ -4242,13 +4123,6 @@ ServiceWorkerManager::ForceUnregister(RegistrationDataPerPrincipal* aRegistratio
     queue->CancelJobs();
   }
 
-  nsCOMPtr<nsITimer> timer =
-    aRegistrationData->mUpdateTimers.Get(aRegistration->mScope);
-  if (timer) {
-    timer->Cancel();
-    aRegistrationData->mUpdateTimers.Remove(aRegistration->mScope);
-  }
-
   
   Unregister(aRegistration->mPrincipal, nullptr, NS_ConvertUTF8toUTF16(aRegistration->mScope));
 }
@@ -4578,14 +4452,6 @@ ServiceWorkerManager::Observe(nsISupports* aSubject,
   if (strcmp(aTopic, NS_XPCOM_SHUTDOWN_OBSERVER_ID) == 0) {
     mShuttingDown = true;
 
-    for (auto it1 = mRegistrationInfos.Iter(); !it1.Done(); it1.Next()) {
-      for (auto it2 = it1.UserData()->mUpdateTimers.Iter(); !it2.Done(); it2.Next()) {
-        nsCOMPtr<nsITimer> timer = it2.UserData();
-        timer->Cancel();
-      }
-      it1.UserData()->mUpdateTimers.Clear();
-    }
-
     nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
     if (obs) {
       obs->RemoveObserver(this, NS_XPCOM_SHUTDOWN_OBSERVER_ID);
@@ -4788,143 +4654,6 @@ ServiceWorkerManager::RemoveNavigationInterception(const nsACString& aScope,
       mNavigationInterceptions.RemoveAndForget(aScope, doomed);
     }
   }
-}
-
-class UpdateTimerCallback final : public nsITimerCallback
-{
-  nsCOMPtr<nsIPrincipal> mPrincipal;
-  const nsCString mScope;
-
-  ~UpdateTimerCallback()
-  {
-  }
-
-public:
-  UpdateTimerCallback(nsIPrincipal* aPrincipal, const nsACString& aScope)
-    : mPrincipal(aPrincipal)
-    , mScope(aScope)
-  {
-    AssertIsOnMainThread();
-    MOZ_ASSERT(mPrincipal);
-    MOZ_ASSERT(!mScope.IsEmpty());
-  }
-
-  NS_IMETHOD
-  Notify(nsITimer* aTimer) override
-  {
-    AssertIsOnMainThread();
-
-    RefPtr<ServiceWorkerManager> swm = ServiceWorkerManager::GetInstance();
-    if (!swm) {
-      
-      return NS_OK;
-    }
-
-    swm->UpdateTimerFired(mPrincipal, mScope);
-    return NS_OK;
-  }
-
-  NS_DECL_ISUPPORTS
-};
-
-NS_IMPL_ISUPPORTS(UpdateTimerCallback, nsITimerCallback)
-
-void
-ServiceWorkerManager::ScheduleUpdateTimer(nsIPrincipal* aPrincipal,
-                                          const nsACString& aScope)
-{
-  AssertIsOnMainThread();
-  MOZ_ASSERT(aPrincipal);
-  MOZ_ASSERT(!aScope.IsEmpty());
-
-  if (mShuttingDown) {
-    return;
-  }
-
-  nsAutoCString scopeKey;
-  nsresult rv = PrincipalToScopeKey(aPrincipal, scopeKey);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return;
-  }
-
-  RegistrationDataPerPrincipal* data;
-  if (!mRegistrationInfos.Get(scopeKey, &data)) {
-    return;
-  }
-
-  nsCOMPtr<nsITimer> timer = data->mUpdateTimers.Get(aScope);
-  if (timer) {
-    
-    
-    
-    
-    return;
-  }
-
-  timer = do_CreateInstance("@mozilla.org/timer;1", &rv);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return;
-  }
-
-  nsCOMPtr<nsITimerCallback> callback = new UpdateTimerCallback(aPrincipal,
-                                                                aScope);
-
-  const uint32_t UPDATE_DELAY_MS = 1000;
-
-  rv = timer->InitWithCallback(callback, UPDATE_DELAY_MS,
-                               nsITimer::TYPE_ONE_SHOT);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return;
-  }
-
-  data->mUpdateTimers.Put(aScope, timer);
-}
-
-void
-ServiceWorkerManager::UpdateTimerFired(nsIPrincipal* aPrincipal,
-                                       const nsACString& aScope)
-{
-  AssertIsOnMainThread();
-  MOZ_ASSERT(aPrincipal);
-  MOZ_ASSERT(!aScope.IsEmpty());
-
-  if (mShuttingDown) {
-    return;
-  }
-
-  
-  nsAutoCString scopeKey;
-  nsresult rv = PrincipalToScopeKey(aPrincipal, scopeKey);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return;
-  }
-
-  RegistrationDataPerPrincipal* data;
-  if (!mRegistrationInfos.Get(scopeKey, &data)) {
-    return;
-  }
-
-  nsCOMPtr<nsITimer> timer = data->mUpdateTimers.Get(aScope);
-  if (timer) {
-    timer->Cancel();
-    data->mUpdateTimers.Remove(aScope);
-  }
-
-  RefPtr<ServiceWorkerRegistrationInfo> registration;
-  data->mInfos.Get(aScope, getter_AddRefs(registration));
-  if (!registration) {
-    return;
-  }
-
-  if (!registration->CheckAndClearIfUpdateNeeded()) {
-    return;
-  }
-
-  PrincipalOriginAttributes attrs =
-    mozilla::BasePrincipal::Cast(aPrincipal)->OriginAttributesRef();
-
-  
-  PropagateSoftUpdate(attrs, NS_ConvertUTF8toUTF16(aScope));
 }
 
 NS_IMPL_ISUPPORTS(ServiceWorkerInfo, nsIServiceWorkerInfo)
