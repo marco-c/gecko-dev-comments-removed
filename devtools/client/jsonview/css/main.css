@@ -17,17 +17,19 @@
 
 
 
-
 .panelContent {
   overflow-y: auto;
-  font-size: 11px;
-  font-family: var(--monospace-font-family);
-  padding-right: 5px;
+  width: 100%;
 }
 
 
 .panelContent .treeTable {
   width: 100%;
+  font-family: var(--monospace-font-family);
+}
+
+:root[platform="linux"] .treeTable {
+  font-size: 80%; 
 }
 
 

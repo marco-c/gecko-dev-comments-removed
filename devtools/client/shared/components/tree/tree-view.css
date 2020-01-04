@@ -138,13 +138,15 @@
 
 
 
-.theme-light .treeTable .treeRow.hasChildren > .treeLabelCell > .treeIcon {
+.theme-light .treeTable .treeRow.hasChildren > .treeLabelCell > .treeIcon,
+.theme-firebug .treeTable .treeRow.hasChildren > .treeLabelCell > .treeIcon {
   background-image: url(chrome://devtools/skin/images/controls.png);
   background-size: 56px 28px;
   background-position: 0 -14px;
 }
 
-.theme-light .treeTable .treeRow.hasChildren.opened > .treeLabelCell > .treeIcon {
+.theme-light .treeTable .treeRow.hasChildren.opened > .treeLabelCell > .treeIcon,
+.theme-firebug .treeTable .treeRow.hasChildren.opened > .treeLabelCell > .treeIcon {
   background-image: url(chrome://devtools/skin/images/controls.png);
   background-size: 56px 28px;
   background-position: -14px -14px;
@@ -165,9 +167,8 @@
 
 
 @media (min-resolution: 1.1dppx) {
-  .theme-dark .treeTable .treeRow.hasChildren > .treeLabelCell > .treeIcon,
-  .theme-light .treeTable .treeRow.hasChildren > .treeLabelCell > .treeIcon {
-    background-image: url("chrome://devtools/skin/images/controls@2x.png");
+  .treeTable .treeRow.hasChildren > .treeLabelCell > .treeIcon {
+    background-image: url("chrome://devtools/skin/images/controls@2x.png") !important;
   }
 }
 
@@ -185,7 +186,8 @@
   color: var(--theme-highlight-pink);
 }
 
-.theme-light .treeTable .treeRow.hasChildren > .treeLabelCell > .treeLabel:hover {
+.theme-light .treeTable .treeRow.hasChildren > .treeLabelCell > .treeLabel:hover,
+.theme-dark .treeTable .treeRow.hasChildren > .treeLabelCell > .treeLabel:hover {
   color: var(--theme-highlight-pink);
 }
 
