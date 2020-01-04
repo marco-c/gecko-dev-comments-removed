@@ -472,6 +472,9 @@ protected:
   void PlayStateChanged();
 
   
+  void VisibilityChanged();
+
+  
   
   void StopPlayback();
 
@@ -996,6 +999,9 @@ private:
 
   
   Mirror<bool> mMediaSeekableOnlyInBufferedRanges;
+
+  
+  Mirror<bool> mIsVisible;
 
   
   

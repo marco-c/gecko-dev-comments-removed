@@ -395,6 +395,8 @@ private:
   
   virtual void UpdateBuffered();
 
+  virtual void VisibilityChanged();
+
   virtual void NotifyDataArrivedInternal() {}
 
   
