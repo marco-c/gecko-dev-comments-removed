@@ -931,5 +931,4 @@ pref("consoleservice.logcat", true);
 
 pref("dom.vr.cardboard.enabled", true);
 
-
-pref("browser.tabs.showAudioPlayingIcon", false);
+pref("browser.tabs.showAudioPlayingIcon", true);
