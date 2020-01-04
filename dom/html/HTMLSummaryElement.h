@@ -11,6 +11,7 @@
 
 namespace mozilla {
 namespace dom {
+class HTMLDetailsElement;
 
 
 
@@ -29,6 +30,8 @@ public:
   NS_IMPL_FROMCONTENT_HTML_WITH_TAG(HTMLSummaryElement, summary)
 
   nsresult Clone(NodeInfo* aNodeInfo, nsINode** aResult) const override;
+
+  nsresult PostHandleEvent(EventChainPostVisitor& aVisitor) override;
 
   
   
