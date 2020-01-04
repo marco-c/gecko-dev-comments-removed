@@ -121,6 +121,16 @@ nsStyleContext::nsStyleContext(nsStyleContext* aParent,
   mRuleNode->AddRef();
   mRuleNode->SetUsedDirectly(); 
 
+  if (!mParent) {
+    
+    
+    nsStyleSet* styleSet =
+      mRuleNode->PresContext()->PresShell()->StyleSet()->GetAsGecko();
+    if (styleSet) {
+      styleSet->AddStyleContextRoot(this);
+    }
+  }
+
   ApplyStyleFixups(aSkipParentDisplayBasedStyleFixup);
 
   #define eStyleStruct_LastItem (nsStyleStructID_Length - 1)

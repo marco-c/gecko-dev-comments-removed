@@ -262,6 +262,11 @@ class nsStyleSet final
   void Shutdown();
 
   
+  
+  
+  void AddStyleContextRoot(nsStyleContext* aStyleContext);
+
+  
   void NotifyStyleContextDestroyed(nsStyleContext* aStyleContext);
 
   
