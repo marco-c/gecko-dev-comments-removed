@@ -4876,25 +4876,6 @@ pref("selectioncaret.enabled", false);
 pref("selectioncaret.inflatesize.threshold", 40);
 
 
-pref("selectioncaret.detects.longtap", true);
-
-
-pref("selectioncaret.visibility.affectscaret", false);
-
-
-
-pref("selectioncaret.observes.compositions", false);
-
-
-
-
-pref("touchcaret.extendedvisibility", false);
-
-
-
-pref("caret.manages-android-actionbar", false);
-
-
 pref("layout.accessiblecaret.enabled", false);
 
 
@@ -4910,6 +4891,10 @@ pref("layout.accessiblecaret.timeout_ms", 3000);
 
 
 pref("layout.accessiblecaret.use_long_tap_injector", true);
+
+
+
+pref("layout.accessiblecaret.extendedvisibility", false);
 
 
 pref("dom.wakelock.enabled", false);
