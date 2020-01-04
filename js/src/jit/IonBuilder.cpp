@@ -3054,7 +3054,7 @@ IonBuilder::processSwitchEnd(DeferredEdge* breaks, jsbytecode* exitpc)
         successor = newBlock(current, exitpc);
 
     if (!successor)
-        return ControlStatus_Ended;
+        return ControlStatus_Error;
 
     
     
