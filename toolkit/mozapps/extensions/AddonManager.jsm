@@ -2310,6 +2310,7 @@ var AddonManagerInternal = {
 
 
 
+
   installTemporaryAddon: function(aFile) {
     if (!gStarted)
       throw Components.Exception("AddonManager is not initialized",

@@ -3835,8 +3835,8 @@ this.XPIProvider = {
 
 
 
-  installTemporaryAddon: Task.async(function*(aDirectory) {
-    let addon = yield loadManifestFromFile(aDirectory, TemporaryInstallLocation);
+  installTemporaryAddon: Task.async(function*(aFile) {
+    let addon = yield loadManifestFromFile(aFile, TemporaryInstallLocation);
 
     if (!addon.bootstrap) {
       throw new Error("Only restartless (bootstrap) add-ons"
@@ -3887,7 +3887,7 @@ this.XPIProvider = {
     XPIProvider.callBootstrapMethod(addon, file, "install",
                                     BOOTSTRAP_REASONS.ADDON_INSTALL);
     addon.state = AddonManager.STATE_INSTALLED;
-    logger.debug("Install of temporary addon in " + aDirectory.path + " completed.");
+    logger.debug("Install of temporary addon in " + aFile.path + " completed.");
     addon.visible = true;
     addon.enabled = true;
     addon.active = true;
@@ -7975,7 +7975,6 @@ Object.assign(SystemAddonInstallLocation.prototype, {
     this._nextDir = newDir;
   }),
 });
-
 
 
 
