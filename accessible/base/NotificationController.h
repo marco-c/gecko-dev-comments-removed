@@ -136,6 +136,16 @@ public:
   
 
 
+  void ScheduleRelocation(Accessible* aOwner)
+  {
+    if (!mRelocations.Contains(aOwner) && mRelocations.AppendElement(aOwner)) {
+      ScheduleProcessing();
+    }
+  }
+
+  
+
+
 
   void ScheduleProcessing();
 
@@ -303,6 +313,11 @@ private:
 
 
   nsTArray<RefPtr<Notification> > mNotifications;
+
+  
+
+
+  nsTArray<RefPtr<Accessible> > mRelocations;
 };
 
 } 

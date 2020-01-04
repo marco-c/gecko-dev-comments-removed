@@ -286,13 +286,9 @@ public:
 
   Accessible* ARIAOwnedAt(Accessible* aParent, uint32_t aIndex) const
   {
-    nsTArray<nsIContent*>* childrenEl = mARIAOwnsHash.Get(aParent);
-    if (childrenEl) {
-      nsIContent* childEl = childrenEl->SafeElementAt(aIndex);
-      Accessible* child = GetAccessible(childEl);
-      if (child && child->IsRepositioned()) {
-        return child;
-      }
+    nsTArray<RefPtr<Accessible> >* children = mARIAOwnsHash.Get(aParent);
+    if (children) {
+      return children->SafeElementAt(aIndex);
     }
     return nullptr;
   }
@@ -440,12 +436,6 @@ protected:
 
 
 
-  bool IsInARIAOwnsLoop(nsIContent* aOwnerEl, nsIContent* aDependentEl);
-
-  
-
-
-
 
 
 
@@ -516,7 +506,34 @@ protected:
   
 
 
+  void RelocateARIAOwnedIfNeeded(nsIContent* aEl);
+
+  
+
+
   void ValidateARIAOwned();
+
+  
+
+
+  void DoARIAOwnsRelocation(Accessible* aOwner);
+
+  
+
+
+  bool SeizeChild(Accessible* aNewParent, Accessible* aChild,
+                  int32_t aIdxInParent);
+
+  
+
+
+  void MoveChild(Accessible* aChild, int32_t aIdxInParent);
+
+  
+
+
+  void PutChildrenBack(nsTArray<RefPtr<Accessible> >* aChildren,
+                       uint32_t aStartIdx);
 
   
 
@@ -649,14 +666,12 @@ protected:
     AttrRelProvider& operator =(const AttrRelProvider&);
   };
 
-  typedef nsTArray<nsAutoPtr<AttrRelProvider> > AttrRelProviderArray;
-  typedef nsClassHashtable<nsStringHashKey, AttrRelProviderArray>
-    DependentIDsHashtable;
-
   
 
 
-  DependentIDsHashtable mDependentIDsHash;
+  typedef nsTArray<nsAutoPtr<AttrRelProvider> > AttrRelProviderArray;
+  nsClassHashtable<nsStringHashKey, AttrRelProviderArray>
+    mDependentIDsHash;
 
   friend class RelatedAccIterator;
 
@@ -671,21 +686,8 @@ protected:
   
 
 
-  nsClassHashtable<nsPtrHashKey<Accessible>, nsTArray<nsIContent*> >
+  nsClassHashtable<nsPtrHashKey<Accessible>, nsTArray<RefPtr<Accessible> > >
     mARIAOwnsHash;
-
-  struct ARIAOwnsPair {
-    ARIAOwnsPair(Accessible* aOwner, nsIContent* aChild) :
-      mOwner(aOwner), mChild(aChild) { }
-    ARIAOwnsPair(const ARIAOwnsPair& aPair) :
-      mOwner(aPair.mOwner), mChild(aPair.mChild) { }
-    ARIAOwnsPair& operator =(const ARIAOwnsPair& aPair)
-      { mOwner = aPair.mOwner; mChild = aPair.mChild; return *this; }
-
-    RefPtr<Accessible> mOwner;
-    nsCOMPtr<nsIContent> mChild;
-  };
-  nsTArray<ARIAOwnsPair> mARIAOwnsInvalidationList;
 
   
 

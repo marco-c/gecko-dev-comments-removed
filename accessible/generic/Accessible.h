@@ -910,13 +910,13 @@ public:
 
 
 
-  bool IsRepositioned() const { return mStateFlags & eRepositioned; }
-  void SetRepositioned(bool aRepositioned)
+  bool IsRelocated() const { return mStateFlags & eRelocated; }
+  void SetRelocated(bool aRelocated)
   {
-    if (aRepositioned)
-      mStateFlags |= eRepositioned;
+    if (aRelocated)
+      mStateFlags |= eRelocated;
     else
-      mStateFlags &= ~eRepositioned;
+      mStateFlags &= ~eRelocated;
   }
 
   
@@ -1009,9 +1009,9 @@ protected:
     eSubtreeMutating = 1 << 6, 
     eIgnoreDOMUIEvent = 1 << 7, 
     eSurvivingInUpdate = 1 << 8, 
-    eRepositioned = 1 << 9, 
+    eRelocated = 1 << 9, 
 
-    eLastStateFlag = eRepositioned
+    eLastStateFlag = eRelocated
   };
 
   

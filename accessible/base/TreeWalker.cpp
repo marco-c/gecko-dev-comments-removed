@@ -116,7 +116,7 @@ TreeWalker::Next(ChildrenIterator* aIter, Accessible** aAccesible,
     
     
     if (accessible) {
-      if (accessible->IsRepositioned()) {
+      if (accessible->IsRelocated()) {
         *aSkipSubtree = true;
       } else {
         *aAccesible = accessible;
