@@ -230,7 +230,7 @@ FrameTreeInternal.prototype = {
 
     if (stateFlags & Ci.nsIWebProgressListener.STATE_START) {
       
-      this._frames.clear();
+      this._frames = new WeakMap();
 
       
       this.notifyObservers("onFrameTreeReset");
