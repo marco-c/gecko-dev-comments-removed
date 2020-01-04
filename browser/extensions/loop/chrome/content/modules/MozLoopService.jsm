@@ -1112,12 +1112,16 @@ var MozLoopServiceInternal = {
       if (!chatboxInstance) {
         resolve(null);
       
+      
       } else if (chatboxInstance.setAttribute) {
         
         
         chatboxInstance.setAttribute("customSize", "loopDefault");
         chatboxInstance.parentNode.setAttribute("customSize", "loopDefault");
         Chat.loadButtonSet(chatboxInstance, "minimize,swap," + kChatboxHangupButton.id);
+      
+      
+      } else {
         resolve(windowId);
       }
     });
