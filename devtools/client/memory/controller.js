@@ -3,26 +3,26 @@
 
 "use strict";
 
-const { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
-const { loader, require } = Cu.import("resource://gre/modules/devtools/shared/Loader.jsm", {});
-
 const { Task } = require("resource://gre/modules/Task.jsm");
-const { Heritage, ViewHelpers, WidgetMethods } = require("resource:///modules/devtools/client/shared/widgets/ViewHelpers.jsm");
+const Store = require("./store");
 
 
 
 
 var gToolbox, gTarget, gFront;
 
+const REDUX_METHODS_TO_PIPE = ["dispatch", "subscribe", "getState"];
 
+const MemoryController = exports.MemoryController = function ({ toolbox, target, front }) {
+  this.store = Store();
+  this.toolbox = toolbox;
+  this.target = target;
+  this.front = front;
+};
 
+REDUX_METHODS_TO_PIPE.map(m =>
+  MemoryController.prototype[m] = function (...args) { return this.store[m](...args); });
 
-const MemoryController = {
-  initialize: Task.async(function *() {
-    yield gFront.attach();
-  }),
-
-  destroy: Task.async(function *() {
-    yield gFront.detach();
-  })
+MemoryController.prototype.destroy = function () {
+  this.store = this.toolbox = this.target = this.front = null;
 };
