@@ -1025,9 +1025,6 @@ class TracerConcrete : public Base {
   protected:
     explicit TracerConcrete(Referent* ptr) : Base(ptr) { }
     Referent& get() const { return *static_cast<Referent*>(ptr); }
-
-  public:
-    static void construct(void* storage, Referent* ptr) { new (storage) TracerConcrete(ptr); }
 };
 
 
@@ -1038,11 +1035,6 @@ class TracerConcreteWithCompartment : public TracerConcrete<Referent> {
 
   protected:
     explicit TracerConcreteWithCompartment(Referent* ptr) : TracerBase(ptr) { }
-
-  public:
-    static void construct(void* storage, Referent* ptr) {
-        new (storage) TracerConcreteWithCompartment(ptr);
-    }
 };
 
 
