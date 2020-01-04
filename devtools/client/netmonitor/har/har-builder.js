@@ -7,6 +7,7 @@ const { defer, all } = require("promise");
 const { LocalizationHelper } = require("devtools/client/shared/l10n");
 const Services = require("Services");
 const appInfo = Services.appinfo;
+const { CurlUtils } = require("devtools/client/shared/curl");
 
 loader.lazyRequireGetter(this, "NetworkHelper", "devtools/shared/webconsole/network-helper");
 
@@ -206,21 +207,9 @@ HarBuilder.prototype = {
     }
 
     this.fetchData(file.requestPostData.postData.text).then(value => {
-      let contentType = value.match(/Content-Type: ([^;\s]+)/);
-      let contentLength = value.match(/Content-Length: (.+)/);
-
-      if (contentType && contentType.length > 1) {
-        input.push({
-          name: "Content-Type",
-          value: contentType[1]
-        });
-      }
-
-      if (contentLength && contentLength.length > 1) {
-        input.push({
-          name: "Content-Length",
-          value: contentLength[1]
-        });
+      let multipartHeaders = CurlUtils.getHeadersFromMultipartText(value);
+      for (let header of multipartHeaders) {
+        input.push(header);
       }
     });
 
@@ -274,11 +263,12 @@ HarBuilder.prototype = {
     }
 
     
-    this.fetchData(file.requestPostData.postData.text).then(value => {
-      postData.text = value;
+    this.fetchData(file.requestPostData.postData.text).then(postDataText => {
+      postData.text = postDataText;
 
       
-      if (isURLEncodedFile(file, value)) {
+      let { headers } = file.requestHeaders;
+      if (CurlUtils.isUrlEncodedRequest({ headers, postDataText })) {
         postData.mimeType = "application/x-www-form-urlencoded";
 
         
@@ -431,27 +421,6 @@ HarBuilder.prototype = {
 };
 
 
-
-
-
-
-function isURLEncodedFile(file, text) {
-  let contentType = "content-type: application/x-www-form-urlencoded";
-  if (text && text.toLowerCase().indexOf(contentType) != -1) {
-    return true;
-  }
-
-  
-  
-  
-  
-  let value = findValue(file.requestHeaders.headers, "content-type");
-  if (value && value.indexOf("application/x-www-form-urlencoded") == 0) {
-    return true;
-  }
-
-  return false;
-}
 
 
 
