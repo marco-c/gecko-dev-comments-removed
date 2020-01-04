@@ -2125,7 +2125,7 @@ pref("security.mixed_content.block_display_content", false);
 pref("security.sri.enable", true);
 
 
-pref("security.block_script_with_mime_image", true);
+pref("security.block_script_with_wrong_mime", true);
 
 
 pref("security.ssl.enable_ocsp_must_staple", true);

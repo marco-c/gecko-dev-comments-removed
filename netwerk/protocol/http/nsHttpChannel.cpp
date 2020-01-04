@@ -1070,74 +1070,71 @@ EnsureMIMEOfScript(nsIURI* aURI, nsHttpResponseHead* aResponseHead, nsILoadInfo*
         return NS_OK;
     }
 
+    bool block = false;
     if (StringBeginsWith(contentType, NS_LITERAL_CSTRING("image/"))) {
         
         Telemetry::Accumulate(Telemetry::SCRIPT_BLOCK_WRONG_MIME, 2);
+        block = true;
+    } else if (StringBeginsWith(contentType, NS_LITERAL_CSTRING("audio/"))) {
+        
+        Telemetry::Accumulate(Telemetry::SCRIPT_BLOCK_WRONG_MIME, 3);
+        block = true;
+    } else if (StringBeginsWith(contentType, NS_LITERAL_CSTRING("video/"))) {
+        
+        Telemetry::Accumulate(Telemetry::SCRIPT_BLOCK_WRONG_MIME, 4);
+        block = true;
+    } else if (StringBeginsWith(contentType, NS_LITERAL_CSTRING("text/csv"))) {
+        
+        Telemetry::Accumulate(Telemetry::SCRIPT_BLOCK_WRONG_MIME, 6);
+        block = true;
+    }
 
+    if (block) {
         
         
-        static bool sCachedBlockScriptWithMimeImage = false;
+        static bool sCachedBlockScriptWithWrongMime = false;
         static bool sIsInited = false;
         if (!sIsInited) {
             sIsInited = true;
-            Preferences::AddBoolVarCache(&sCachedBlockScriptWithMimeImage,
-                                         "security.block_script_with_mime_image");
+            Preferences::AddBoolVarCache(&sCachedBlockScriptWithWrongMime,
+            "security.block_script_with_wrong_mime");
         }
 
         
-        if (!sCachedBlockScriptWithMimeImage) {
+        if (!sCachedBlockScriptWithWrongMime) {
             return NS_OK;
         }
-        
-        
+
         ReportTypeBlocking(aURI, aLoadInfo, "BlockScriptWithWrongMimeType");
         return NS_ERROR_CORRUPTED_CONTENT;
     }
 
-    if (StringBeginsWith(contentType, NS_LITERAL_CSTRING("audio/"))) {
-        
-        Telemetry::Accumulate(Telemetry::SCRIPT_BLOCK_WRONG_MIME, 3); 
-        return NS_OK;
-    }
-
-    if (StringBeginsWith(contentType, NS_LITERAL_CSTRING("video/"))) {
-        
-        Telemetry::Accumulate(Telemetry::SCRIPT_BLOCK_WRONG_MIME, 4); 
-        return NS_OK;
-    }
-
     if (StringBeginsWith(contentType, NS_LITERAL_CSTRING("text/plain"))) {
         
-        Telemetry::Accumulate(Telemetry::SCRIPT_BLOCK_WRONG_MIME, 5); 
-        return NS_OK;
-    }
-
-    if (StringBeginsWith(contentType, NS_LITERAL_CSTRING("text/csv"))) {
-        
-        Telemetry::Accumulate(Telemetry::SCRIPT_BLOCK_WRONG_MIME, 6); 
+        Telemetry::Accumulate(Telemetry::SCRIPT_BLOCK_WRONG_MIME, 5);
         return NS_OK;
     }
 
     if (StringBeginsWith(contentType, NS_LITERAL_CSTRING("text/xml"))) {
         
-        Telemetry::Accumulate(Telemetry::SCRIPT_BLOCK_WRONG_MIME, 7); 
+        Telemetry::Accumulate(Telemetry::SCRIPT_BLOCK_WRONG_MIME, 7);
         return NS_OK;
     }
 
     if (StringBeginsWith(contentType, NS_LITERAL_CSTRING("application/octet-stream"))) {
         
-        Telemetry::Accumulate(Telemetry::SCRIPT_BLOCK_WRONG_MIME, 8); 
+        Telemetry::Accumulate(Telemetry::SCRIPT_BLOCK_WRONG_MIME, 8);
         return NS_OK;
     }
 
     if (StringBeginsWith(contentType, NS_LITERAL_CSTRING("application/xml"))) {
         
-        Telemetry::Accumulate(Telemetry::SCRIPT_BLOCK_WRONG_MIME, 9); 
+        Telemetry::Accumulate(Telemetry::SCRIPT_BLOCK_WRONG_MIME, 9);
         return NS_OK;
     }
 
     
-    Telemetry::Accumulate(Telemetry::SCRIPT_BLOCK_WRONG_MIME, 0); 
+    Telemetry::Accumulate(Telemetry::SCRIPT_BLOCK_WRONG_MIME, 0);
     return NS_OK;
 }
 
