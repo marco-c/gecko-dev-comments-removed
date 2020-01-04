@@ -84,16 +84,11 @@ SyncedTabsDeckView.prototype = {
   },
 
   update(state) {
-    
-    
-    
     for (let panel of state.panels) {
       if (panel.selected) {
-        Array.prototype.map.call(this._doc.getElementsByClassName(panel.id),
-                                 item => item.classList.add("selected"));
+        this.container.getElementsByClassName(panel.id).item(0).classList.add("selected");
       } else {
-        Array.prototype.map.call(this._doc.getElementsByClassName(panel.id),
-                                 item => item.classList.remove("selected"));
+        this.container.getElementsByClassName(panel.id).item(0).classList.remove("selected");
       }
     }
   },
