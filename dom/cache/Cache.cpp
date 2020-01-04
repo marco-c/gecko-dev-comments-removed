@@ -15,7 +15,7 @@
 #include "mozilla/dom/CacheBinding.h"
 #include "mozilla/dom/cache/AutoUtils.h"
 #include "mozilla/dom/cache/CacheChild.h"
-#include "mozilla/dom/cache/Feature.h"
+#include "mozilla/dom/cache/CacheWorkerHolder.h"
 #include "mozilla/dom/cache/ReadStream.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/Preferences.h"
@@ -89,14 +89,14 @@ IsValidPutRequestMethod(const RequestOrUSVString& aRequest, ErrorResult& aRv)
 class Cache::FetchHandler final : public PromiseNativeHandler
 {
 public:
-  FetchHandler(Feature* aFeature, Cache* aCache,
+  FetchHandler(CacheWorkerHolder* aWorkerHolder, Cache* aCache,
                nsTArray<RefPtr<Request>>&& aRequestList, Promise* aPromise)
-    : mFeature(aFeature)
+    : mWorkerHolder(aWorkerHolder)
     , mCache(aCache)
     , mRequestList(Move(aRequestList))
     , mPromise(aPromise)
   {
-    MOZ_ASSERT_IF(!NS_IsMainThread(), mFeature);
+    MOZ_ASSERT_IF(!NS_IsMainThread(), mWorkerHolder);
     MOZ_ASSERT(mCache);
     MOZ_ASSERT(mPromise);
   }
@@ -107,8 +107,8 @@ public:
     NS_ASSERT_OWNINGTHREAD(FetchHandler);
 
     
-    RefPtr<Feature> feature;
-    feature.swap(mFeature);
+    RefPtr<CacheWorkerHolder> workerHolder;
+    workerHolder.swap(mWorkerHolder);
 
     
     
@@ -217,7 +217,7 @@ private:
     mPromise->MaybeReject(rv);
   }
 
-  RefPtr<Feature> mFeature;
+  RefPtr<CacheWorkerHolder> mWorkerHolder;
   RefPtr<Cache> mCache;
   nsTArray<RefPtr<Request>> mRequestList;
   RefPtr<Promise> mPromise;
@@ -614,8 +614,9 @@ Cache::AddAll(const GlobalObject& aGlobal,
     return nullptr;
   }
 
-  RefPtr<FetchHandler> handler = new FetchHandler(mActor->GetFeature(), this,
-                                                    Move(aRequestList), promise);
+  RefPtr<FetchHandler> handler =
+    new FetchHandler(mActor->GetWorkerHolder(), this,
+                     Move(aRequestList), promise);
 
   RefPtr<Promise> fetchPromise = Promise::All(aGlobal, fetchList, aRv);
   if (NS_WARN_IF(aRv.Failed())) {
