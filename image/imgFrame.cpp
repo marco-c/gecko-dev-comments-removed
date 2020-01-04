@@ -324,8 +324,11 @@ imgFrame::InitWithDrawable(gfxDrawable* aDrawable,
       return NS_ERROR_OUT_OF_MEMORY;
     }
 
-    target = gfxPlatform::GetPlatform()->
-      CreateDrawTargetForData(ptr, mFrameRect.Size(), stride, mFormat);
+    target = gfxPlatform::CreateDrawTargetForData(
+                            ptr,
+                            mFrameRect.Size(),
+                            stride,
+                            mFormat);
   } else {
     
     

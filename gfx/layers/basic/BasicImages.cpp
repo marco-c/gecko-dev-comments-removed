@@ -146,10 +146,10 @@ BasicPlanarYCbCrImage::GetAsSourceSurface()
     
     
     RefPtr<gfx::DrawTarget> drawTarget
-      = gfxPlatform::GetPlatform()->CreateDrawTargetForData(mDecodedBuffer.get(),
-                                                            mSize,
-                                                            mStride,
-                                                            gfx::ImageFormatToSurfaceFormat(format));
+      = gfxPlatform::CreateDrawTargetForData(mDecodedBuffer.get(),
+                                             mSize,
+                                             mStride,
+                                             gfx::ImageFormatToSurfaceFormat(format));
     if (!drawTarget) {
       return nullptr;
     }
