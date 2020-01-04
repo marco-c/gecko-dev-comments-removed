@@ -615,7 +615,7 @@ Http2Stream::GenerateOpen()
   messageSize += Http2Session::kFrameHeaderBytes + 5; 
   messageSize += (numFrames - 1) * Http2Session::kFrameHeaderBytes; 
 
-  EnsureBuffer(mTxInlineFrame, dataLength + messageSize,
+  EnsureBuffer(mTxInlineFrame, messageSize,
                mTxInlineFrameUsed, mTxInlineFrameSize);
 
   mTxInlineFrameUsed += messageSize;
