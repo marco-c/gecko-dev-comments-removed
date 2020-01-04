@@ -58,6 +58,12 @@ protected:
     SetScrollableFrameMetrics(layers[3], FrameMetrics::START_SCROLL_ID + 2, CSSRect(0, 0, 80, 80));
   }
 
+  void DisableApzOn(Layer* aLayer) {
+    ScrollMetadata m = aLayer->GetScrollMetadata(0);
+    m.GetMetrics().SetForceDisableApz(true);
+    aLayer->SetScrollMetadata(m);
+  }
+
   void CreateComplexMultiLayerTree() {
     const char* layerTreeSyntax = "c(tc(t)tc(c(t)tt))";
     
@@ -451,6 +457,48 @@ TEST_F(APZHitTestingTester, TestRepaintFlushOnWheelEvents) {
 
     mcc->AdvanceByMillis(5);
   }
+}
+
+TEST_F(APZHitTestingTester, TestForceDisableApz) {
+  CreateSimpleScrollingLayer();
+  DisableApzOn(root);
+  ScopedLayerTreeRegistration registration(manager, 0, root, mcc);
+  manager->UpdateHitTestingTree(nullptr, root, false, 0, 0);
+  TestAsyncPanZoomController* apzcroot = ApzcOf(root);
+
+  ScreenPoint origin(100, 50);
+  ScrollWheelInput swi(MillisecondsSinceStartup(mcc->Time()), mcc->Time(), 0,
+    ScrollWheelInput::SCROLLMODE_INSTANT, ScrollWheelInput::SCROLLDELTA_PIXEL,
+    origin, 0, 10, false);
+  EXPECT_EQ(nsEventStatus_eConsumeDoDefault, manager->ReceiveInputEvent(swi, nullptr, nullptr));
+  EXPECT_EQ(origin, swi.mOrigin);
+
+  AsyncTransform viewTransform;
+  ParentLayerPoint point;
+  apzcroot->SampleContentTransformForFrame(&viewTransform, point);
+  
+  
+  EXPECT_EQ(0, point.x);
+  EXPECT_EQ(10, point.y);
+  EXPECT_EQ(0, viewTransform.mTranslation.x);
+  EXPECT_EQ(-10, viewTransform.mTranslation.y);
+  viewTransform = apzcroot->GetCurrentAsyncTransform(AsyncPanZoomController::RESPECT_FORCE_DISABLE);
+  point = apzcroot->GetCurrentAsyncScrollOffset(AsyncPanZoomController::RESPECT_FORCE_DISABLE);
+  EXPECT_EQ(0, point.x);
+  EXPECT_EQ(0, point.y);
+  EXPECT_EQ(0, viewTransform.mTranslation.x);
+  EXPECT_EQ(0, viewTransform.mTranslation.y);
+
+  mcc->AdvanceByMillis(10);
+
+  
+  
+  
+  swi = ScrollWheelInput(MillisecondsSinceStartup(mcc->Time()), mcc->Time(), 0,
+    ScrollWheelInput::SCROLLMODE_INSTANT, ScrollWheelInput::SCROLLDELTA_PIXEL,
+    origin, 0, 0, false);
+  EXPECT_EQ(nsEventStatus_eConsumeDoDefault, manager->ReceiveInputEvent(swi, nullptr, nullptr));
+  EXPECT_EQ(origin, swi.mOrigin);
 }
 
 TEST_F(APZHitTestingTester, Bug1148350) {
