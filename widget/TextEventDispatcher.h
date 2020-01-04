@@ -179,6 +179,24 @@ public:
 
 
 
+
+
+
+
+
+  nsresult SetPendingComposition(const nsAString& aString,
+                                 const TextRangeArray* aRanges)
+  {
+    return mPendingComposition.Set(aString, aRanges);
+  }
+
+  
+
+
+
+
+
+
   nsresult FlushPendingComposition(nsEventStatus& aStatus)
   {
     return mPendingComposition.Flush(this, aStatus);
@@ -257,6 +275,7 @@ private:
     nsresult SetString(const nsAString& aString);
     nsresult AppendClause(uint32_t aLength, uint32_t aAttribute);
     nsresult SetCaret(uint32_t aOffset, uint32_t aLength);
+    nsresult Set(const nsAString& aString, const TextRangeArray* aRanges);
     nsresult Flush(TextEventDispatcher* aDispatcher, nsEventStatus& aStatus);
     void Clear();
 
