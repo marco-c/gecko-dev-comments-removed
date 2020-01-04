@@ -169,8 +169,7 @@ ClientTiledPaintedLayer::BeginPaint()
   
   
   
-  mPaintData.mHasTransformAnimation = hasTransformAnimation;
-  if (!mPaintData.mHasTransformAnimation &&
+  if (!hasTransformAnimation &&
       mContentClient->GetLowPrecisionTiledBuffer()) {
     ParentLayerRect criticalDisplayPort =
       (displayportMetrics.GetCriticalDisplayPort() * displayportMetrics.GetZoom())
@@ -257,14 +256,17 @@ ClientTiledPaintedLayer::UseProgressiveDraw() {
     return false;
   }
 
-  if (GetIsFixedPosition() || GetParent()->GetIsFixedPosition()) {
+  if (mPaintData.mCriticalDisplayPort.IsEmpty()) {
+    
+    
     
     
     
     return false;
   }
 
-  if (mPaintData.mHasTransformAnimation) {
+  if (GetIsFixedPosition() || GetParent()->GetIsFixedPosition()) {
+    
     
     
     return false;
@@ -273,9 +275,7 @@ ClientTiledPaintedLayer::UseProgressiveDraw() {
   if (ClientManager()->AsyncPanZoomEnabled()) {
     LayerMetricsWrapper scrollAncestor;
     GetAncestorLayers(&scrollAncestor, nullptr, nullptr);
-    if (!scrollAncestor) {
-      return false;
-    }
+    MOZ_ASSERT(scrollAncestor); 
     const FrameMetrics& parentMetrics = scrollAncestor.Metrics();
     if (!IsScrollingOnCompositor(parentMetrics)) {
       return false;
