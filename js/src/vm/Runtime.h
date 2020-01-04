@@ -927,8 +927,7 @@ struct JSRuntime : public JS::shadow::Runtime,
 
     js::NativeObject* selfHostingGlobal_;
 
-    static js::GlobalObject*
-    createSelfHostingGlobal(JSContext* cx);
+    static js::GlobalObject* createSelfHostingGlobal(JSContext* cx);
 
     
     js::InterpreterStack interpreterStack_;
@@ -954,7 +953,16 @@ struct JSRuntime : public JS::shadow::Runtime,
     
 
     bool initSelfHosting(JSContext* cx);
+    bool evaluateSelfHosted(const char16_t* chars, size_t length, const char* filename);
     void finishSelfHosting();
+    
+
+
+
+
+
+
+    bool completeInitialization(JSContext* cx);
     void markSelfHostingGlobal(JSTracer* trc);
     bool isSelfHostingGlobal(JSObject* global) {
         return global == selfHostingGlobal_;
@@ -1107,6 +1115,9 @@ struct JSRuntime : public JS::shadow::Runtime,
 
     
     bool                haveCreatedContext;
+
+    
+    bool                hasContentGlobals;
 
     
 
