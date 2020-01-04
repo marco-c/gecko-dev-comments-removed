@@ -465,13 +465,12 @@ ObjectGroup::defaultNewGroup(ExclusiveContext* cx, const Class* clasp,
                              TaggedProto proto, JSObject* associated)
 {
     MOZ_ASSERT_IF(associated, proto.isObject());
-    MOZ_ASSERT_IF(associated, associated->is<JSFunction>() || associated->is<TypeDescr>());
     MOZ_ASSERT_IF(proto.isObject(), cx->isInsideCurrentCompartment(proto.toObject()));
 
     
     
     
-    MOZ_ASSERT(!clasp == (associated && associated->is<JSFunction>()));
+    MOZ_ASSERT_IF(!clasp, !!associated);
 
     AutoEnterAnalysis enter(cx);
 
@@ -487,22 +486,27 @@ ObjectGroup::defaultNewGroup(ExclusiveContext* cx, const Class* clasp,
         }
     }
 
-    if (associated && associated->is<JSFunction>()) {
+    if (associated && !associated->is<TypeDescr>()) {
         MOZ_ASSERT(!clasp);
+        if (associated->is<JSFunction>()) {
 
-        
-        JSFunction* fun = &associated->as<JSFunction>();
-        if (fun->hasScript())
-            associated = fun->nonLazyScript()->functionNonDelazifying();
-        else if (fun->isInterpretedLazy() && !fun->isSelfHostedBuiltin())
-            associated = fun->lazyScript()->functionNonDelazifying();
-        else
-            associated = nullptr;
+            
+            JSFunction* fun = &associated->as<JSFunction>();
+            if (fun->hasScript())
+                associated = fun->nonLazyScript()->functionNonDelazifying();
+            else if (fun->isInterpretedLazy() && !fun->isSelfHostedBuiltin())
+                associated = fun->lazyScript()->functionNonDelazifying();
+            else
+                associated = nullptr;
 
-        
-        
-        if (associated && associated->wasNewScriptCleared())
+            
+            
+            if (associated && associated->wasNewScriptCleared())
+                associated = nullptr;
+
+        } else {
             associated = nullptr;
+        }
 
         if (!associated)
             clasp = &PlainObject::class_;
