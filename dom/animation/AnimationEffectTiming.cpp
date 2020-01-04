@@ -55,7 +55,12 @@ AnimationEffectTiming::SetEndDelay(double aEndDelay)
 void
 AnimationEffectTiming::SetFill(const FillMode& aFill)
 {
-  
+  if (mTiming.mFill == aFill) {
+    return;
+  }
+  mTiming.mFill = aFill;
+
+  PostSpecifiedTimingUpdated(mEffect);
 }
 
 void
