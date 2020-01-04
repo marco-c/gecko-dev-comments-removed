@@ -71,9 +71,14 @@ function* setDisableCacheCheckboxChecked(tabX, state) {
   let panel = tabX.toolbox.getCurrentPanel();
   let cbx = panel.panelDoc.getElementById("devtools-disable-cache");
 
+  cbx.scrollIntoView();
+
+  
+  yield waitForTick();
+
   if (cbx.checked !== state) {
     info("Setting disable cache checkbox to " + state + " for " + tabX.title);
-    cbx.click();
+    EventUtils.synthesizeMouseAtCenter(cbx, {}, panel.panelWin);
 
     
     
