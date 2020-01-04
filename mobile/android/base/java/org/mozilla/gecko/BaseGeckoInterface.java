@@ -156,9 +156,4 @@ public class BaseGeckoInterface implements GeckoAppShell.GeckoInterface {
     public void setUriTitle(final String uri, final String title) {
         
     }
-
-    @Override
-    public void setAccessibilityEnabled(boolean enabled) {
-        
-    }
 }
