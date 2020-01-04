@@ -201,14 +201,7 @@ static float
 WrapTexCoord(float v)
 {
     
-    
-    
-    
-    if (v < 0.0f) {
-        return 1.0f + fmodf(v, 1.0f);
-    }
-
-    return fmodf(v, 1.0f);
+    return v - floorf(v);
 }
 
 static void
