@@ -6,9 +6,6 @@ Components.utils.import("resource://gre/modules/osfile.jsm");
 const kSelectedEnginePref = "browser.search.selectedEngine";
 
 
-var waitForNotification = waitForSearchNotification;
-
-
 add_task(function* test_defaultEngine() {
   yield asyncInit();
 
@@ -40,13 +37,11 @@ add_task(function* test_persistAcrossRestarts() {
   
   Services.search.currentEngine = Services.search.getEngineByName(kTestEngineName);
   do_check_eq(Services.search.currentEngine.name, kTestEngineName);
-  yield waitForNotification("write-metadata-to-disk-complete");
+  yield promiseAfterCache();
 
   
-  let path = OS.Path.join(OS.Constants.Path.profileDir, "search-metadata.json");
-  let bytes = yield OS.File.read(path);
-  let json = JSON.parse(new TextDecoder().decode(bytes));
-  do_check_eq(json["[global]"].hash.length, 44);
+  let metadata = yield promiseGlobalMetadata();
+  do_check_eq(metadata.hash.length, 44);
 
   
   yield asyncReInit();
@@ -65,18 +60,12 @@ add_task(function* test_ignoreInvalidHash() {
   
   Services.search.currentEngine = Services.search.getEngineByName(kTestEngineName);
   do_check_eq(Services.search.currentEngine.name, kTestEngineName);
-  yield waitForNotification("write-metadata-to-disk-complete");
+  yield promiseAfterCache();
 
   
-  let path = OS.Path.join(OS.Constants.Path.profileDir, "search-metadata.json");
-  let bytes = yield OS.File.read(path);
-  let json = JSON.parse(new TextDecoder().decode(bytes));
-
-  
-  json["[global]"].hash = "invalid";
-
-  let data = new TextEncoder().encode(JSON.stringify(json));
-  yield OS.File.writeAtomic(path, data);
+  let metadata = yield promiseGlobalMetadata();
+  metadata.hash = "invalid";
+  yield promiseSaveGlobalMetadata(metadata);
 
   
   yield asyncReInit();
@@ -88,23 +77,20 @@ add_task(function* test_settingToDefault() {
   
   Services.search.currentEngine = Services.search.getEngineByName(kTestEngineName);
   do_check_eq(Services.search.currentEngine.name, kTestEngineName);
-  yield waitForNotification("write-metadata-to-disk-complete");
+  yield promiseAfterCache();
 
   
-  let path = OS.Path.join(OS.Constants.Path.profileDir, "search-metadata.json");
-  let bytes = yield OS.File.read(path);
-  let json = JSON.parse(new TextDecoder().decode(bytes));
-  do_check_eq(json["[global]"].current, kTestEngineName);
+  let metadata = yield promiseGlobalMetadata();
+  do_check_eq(metadata.current, kTestEngineName);
 
   
   Services.search.currentEngine =
     Services.search.getEngineByName(getDefaultEngineName());
-  yield waitForNotification("write-metadata-to-disk-complete");
+  yield promiseAfterCache();
 
   
-  bytes = yield OS.File.read(path);
-  json = JSON.parse(new TextDecoder().decode(bytes));
-  do_check_eq(json["[global]"].current, "");
+  metadata = yield promiseGlobalMetadata();
+  do_check_eq(metadata.current, "");
 });
 
 

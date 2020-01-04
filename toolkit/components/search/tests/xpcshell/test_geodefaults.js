@@ -73,16 +73,16 @@ add_task(function* no_request_if_prefed_off() {
 
   
   
-  let commitPromise = promiseAfterCommit();
+  let commitPromise = promiseAfterCache();
   Services.search.currentEngine = Services.search.getEngineByName(kTestEngineName);
   Services.search.resetToOriginalDefaultEngine();
   yield commitPromise;
 
   
   let metadata = yield promiseGlobalMetadata();
-  do_check_eq(typeof metadata.searchdefaultexpir, "undefined");
-  do_check_eq(typeof metadata.searchdefault, "undefined");
-  do_check_eq(typeof metadata.searchdefaulthash, "undefined");
+  do_check_eq(typeof metadata.searchDefaultExpir, "undefined");
+  do_check_eq(typeof metadata.searchDefault, "undefined");
+  do_check_eq(typeof metadata.searchDefaultHash, "undefined");
 
   Services.prefs.setBoolPref("browser.search.geoSpecificDefaults", true);
 });
@@ -90,7 +90,7 @@ add_task(function* no_request_if_prefed_off() {
 add_task(function* should_get_geo_defaults_only_once() {
   
   
-  let commitPromise = promiseAfterCommit();
+  let commitPromise = promiseAfterCache();
   
   do_check_true(Services.prefs.prefHasUserValue("browser.search.countryCode"));
   do_check_eq(Services.prefs.getCharPref("browser.search.countryCode"), "FR");
@@ -101,12 +101,12 @@ add_task(function* should_get_geo_defaults_only_once() {
 
   
   let metadata = yield promiseGlobalMetadata();
-  do_check_eq(typeof metadata.searchdefaultexpir, "number");
-  do_check_true(metadata.searchdefaultexpir > Date.now());
-  do_check_eq(typeof metadata.searchdefault, "string");
-  do_check_eq(metadata.searchdefault, "Test search engine");
-  do_check_eq(typeof metadata.searchdefaulthash, "string");
-  do_check_eq(metadata.searchdefaulthash.length, 44);
+  do_check_eq(typeof metadata.searchDefaultExpir, "number");
+  do_check_true(metadata.searchDefaultExpir > Date.now());
+  do_check_eq(typeof metadata.searchDefault, "string");
+  do_check_eq(metadata.searchDefault, "Test search engine");
+  do_check_eq(typeof metadata.searchDefaultHash, "string");
+  do_check_eq(metadata.searchDefaultHash.length, 44);
 
   
   yield asyncReInit();
@@ -116,7 +116,7 @@ add_task(function* should_get_geo_defaults_only_once() {
 
 add_task(function* should_request_when_countryCode_not_set() {
   Services.prefs.clearUserPref("browser.search.countryCode");
-  let commitPromise = promiseAfterCommit();
+  let commitPromise = promiseAfterCache();
   yield asyncReInit();
   checkRequest();
   yield commitPromise;
@@ -125,7 +125,7 @@ add_task(function* should_request_when_countryCode_not_set() {
 add_task(function* should_recheck_if_interval_expired() {
   yield forceExpiration();
 
-  let commitPromise = promiseAfterCommit();
+  let commitPromise = promiseAfterCache();
   let date = Date.now();
   yield asyncReInit();
   checkRequest();
@@ -133,9 +133,9 @@ add_task(function* should_recheck_if_interval_expired() {
 
   
   let metadata = yield promiseGlobalMetadata();
-  do_check_eq(typeof metadata.searchdefaultexpir, "number");
-  do_check_true(metadata.searchdefaultexpir >= date + kYearInSeconds * 1000);
-  do_check_true(metadata.searchdefaultexpir < date + (kYearInSeconds + 3600) * 1000);
+  do_check_eq(typeof metadata.searchDefaultExpir, "number");
+  do_check_true(metadata.searchDefaultExpir >= date + kYearInSeconds * 1000);
+  do_check_true(metadata.searchDefaultExpir < date + (kYearInSeconds + 3600) * 1000);
 });
 
 add_task(function* should_recheck_when_broken_hash() {
@@ -147,17 +147,13 @@ add_task(function* should_recheck_when_broken_hash() {
   let metadata = yield promiseGlobalMetadata();
 
   
-  let hash = metadata.searchdefaulthash;
-  metadata.searchdefaulthash = "broken";
+  let hash = metadata.searchDefaultHash;
+  metadata.searchDefaultHash = "broken";
   yield promiseSaveGlobalMetadata(metadata);
 
-  let commitPromise = promiseAfterCommit();
+  let commitPromise = promiseAfterCache();
   let reInitPromise = asyncReInit();
 
-  
-  
-  
-  
   
   
   do_check_false(Services.search.isInitialized)
@@ -170,8 +166,8 @@ add_task(function* should_recheck_when_broken_hash() {
 
   
   metadata = yield promiseGlobalMetadata();
-  do_check_eq(typeof metadata.searchdefaulthash, "string");
-  do_check_eq(metadata.searchdefaulthash, hash);
+  do_check_eq(typeof metadata.searchDefaultHash, "string");
+  do_check_eq(metadata.searchDefaultHash, hash);
 
   
   do_check_eq(Services.search.currentEngine.name, getDefaultEngineName(false));
@@ -193,7 +189,7 @@ add_task(function* should_remember_cohort_id() {
 
   
   yield forceExpiration();
-  let commitPromise = promiseAfterCommit();
+  let commitPromise = promiseAfterCache();
   yield asyncReInit();
   checkRequest();
   yield commitPromise;
@@ -208,7 +204,7 @@ add_task(function* should_remember_cohort_id() {
   
   
   yield forceExpiration();
-  commitPromise = promiseAfterCommit();
+  commitPromise = promiseAfterCache();
   yield asyncReInit();
   checkRequest(cohort);
   yield commitPromise;
@@ -239,16 +235,16 @@ add_task(function* should_honor_retry_after_header() {
   
   yield forceExpiration();
   let date = Date.now();
-  let commitPromise = promiseAfterCommit();
+  let commitPromise = promiseAfterCache();
   yield asyncReInit();
   checkRequest();
   yield commitPromise;
 
   
   let metadata = yield promiseGlobalMetadata();
-  do_check_eq(typeof metadata.searchdefaultexpir, "number");
-  do_check_true(metadata.searchdefaultexpir >= date + kDayInSeconds * 1000);
-  do_check_true(metadata.searchdefaultexpir < date + (kDayInSeconds + 3600) * 1000);
+  do_check_eq(typeof metadata.searchDefaultExpir, "number");
+  do_check_true(metadata.searchDefaultExpir >= date + kDayInSeconds * 1000);
+  do_check_true(metadata.searchDefaultExpir < date + (kDayInSeconds + 3600) * 1000);
 
   
   yield asyncReInit();

@@ -205,20 +205,40 @@ function getSearchMetadata()
   return readJSONFile(metadata);
 }
 
+function promiseCacheData() {
+  return new Promise(resolve => Task.spawn(function* () {
+    let path = OS.Path.join(OS.Constants.Path.profileDir, "search.json");
+    let bytes = yield OS.File.read(path);
+    resolve(JSON.parse(new TextDecoder().decode(bytes)));
+  }));
+}
+
+function promiseEngineMetadata() {
+  return new Promise(resolve => Task.spawn(function* () {
+    let cache = yield promiseCacheData();
+    let data = {};
+    for (let path in cache.directories) {
+      for (let engine of cache.directories[path].engines) {
+        data[engine._shortName] = engine._metaData;
+      }
+    }
+    resolve(data);
+  }));
+}
+
 function promiseGlobalMetadata() {
   return new Promise(resolve => Task.spawn(function* () {
-    let path = OS.Path.join(OS.Constants.Path.profileDir, "search-metadata.json");
-    let bytes = yield OS.File.read(path);
-    resolve(JSON.parse(new TextDecoder().decode(bytes))["[global]"]);
+    let cache = yield promiseCacheData();
+    resolve(cache.metaData);
   }));
 }
 
 function promiseSaveGlobalMetadata(globalData) {
   return new Promise(resolve => Task.spawn(function* () {
-    let path = OS.Path.join(OS.Constants.Path.profileDir, "search-metadata.json");
+    let path = OS.Path.join(OS.Constants.Path.profileDir, "search.json");
     let bytes = yield OS.File.read(path);
     let data = JSON.parse(new TextDecoder().decode(bytes));
-    data["[global]"] = globalData;
+    data.metaData = globalData;
     yield OS.File.writeAtomic(path,
                               new TextEncoder().encode(JSON.stringify(data)));
     resolve();
@@ -229,9 +249,12 @@ var forceExpiration = Task.async(function* () {
   let metadata = yield promiseGlobalMetadata();
 
   
-  metadata.searchdefaultexpir = Date.now() - 1000;
+  metadata.searchDefaultExpir = Date.now() - 1000;
   yield promiseSaveGlobalMetadata(metadata);
 });
+
+
+
 
 function removeCacheFile()
 {
@@ -240,19 +263,6 @@ function removeCacheFile()
   if (file.exists()) {
     file.remove(false);
   }
-}
-
-
-
-
-function removeCache()
-{
-  let file = gProfD.clone();
-  file.append("search.json");
-  if (file.exists()) {
-    file.remove(false);
-  }
-
 }
 
 
@@ -289,14 +299,6 @@ function getDefaultEngineName(isUS) {
     pref += ".US";
   }
   return Services.prefs.getComplexValue(pref, nsIPLS).data;
-}
-
-
-
-
-
-function promiseAfterCommit() {
-  return waitForSearchNotification("write-metadata-to-disk-complete");
 }
 
 
