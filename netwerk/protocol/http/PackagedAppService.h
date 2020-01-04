@@ -148,12 +148,12 @@ private:
     
     
     
-    static NS_METHOD ConsumeData(nsIInputStream *aStream,
-                                 void *aClosure,
-                                 const char *aFromRawSegment,
-                                 uint32_t aToOffset,
-                                 uint32_t aCount,
-                                 uint32_t *aWriteCount);
+    static nsresult ConsumeData(nsIInputStream *aStream,
+                                void *aClosure,
+                                const char *aFromRawSegment,
+                                uint32_t aToOffset,
+                                uint32_t aCount,
+                                uint32_t *aWriteCount);
 
     
     

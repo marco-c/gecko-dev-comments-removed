@@ -1192,8 +1192,7 @@ nsHtml5StreamParser::OnDataAvailable(nsIRequest* aRequest,
   }
 }
 
-
-NS_METHOD
+ nsresult
 nsHtml5StreamParser::CopySegmentsToParser(nsIInputStream *aInStream,
                                           void *aClosure,
                                           const char *aFromSegment,

@@ -35,8 +35,8 @@ public:
 protected:
   ~nsStreamLoader();
 
-  static NS_METHOD WriteSegmentFun(nsIInputStream *, void *, const char *,
-                                   uint32_t, uint32_t, uint32_t *);
+  static nsresult WriteSegmentFun(nsIInputStream *, void *, const char *,
+                                  uint32_t, uint32_t, uint32_t *);
 
   
   

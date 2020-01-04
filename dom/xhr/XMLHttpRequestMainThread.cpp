@@ -1562,7 +1562,7 @@ XMLHttpRequestMainThread::PopulateNetworkInterfaceId()
 
 
 
-NS_METHOD
+nsresult
 XMLHttpRequestMainThread::StreamReaderFunc(nsIInputStream* in,
                                            void* closure,
                                            const char* fromRawSegment,

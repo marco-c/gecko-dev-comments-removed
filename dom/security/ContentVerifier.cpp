@@ -58,7 +58,7 @@ ContentVerifier::Init(const nsACString& aContentSignatureHeader,
 
 
 
-NS_METHOD
+nsresult
 AppendNextSegment(nsIInputStream* aInputStream, void* aClosure,
                   const char* aRawSegment, uint32_t aToOffset, uint32_t aCount,
                   uint32_t* outWrittenCount)

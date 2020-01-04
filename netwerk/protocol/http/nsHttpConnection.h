@@ -147,8 +147,8 @@ public:
     nsresult ForceSend();
     nsresult ForceRecv();
 
-    static NS_METHOD ReadFromStream(nsIInputStream *, void *, const char *,
-                                    uint32_t, uint32_t, uint32_t *);
+    static nsresult ReadFromStream(nsIInputStream *, void *, const char *,
+                                   uint32_t, uint32_t, uint32_t *);
 
     
     

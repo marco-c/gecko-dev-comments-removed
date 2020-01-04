@@ -551,8 +551,7 @@ nsAboutCacheEntry::Channel::OnDataAvailable(nsIRequest *request, nsISupports *ct
         &nsAboutCacheEntry::Channel::PrintCacheData, this, aCount, &n);
 }
 
-
-NS_METHOD
+ nsresult
 nsAboutCacheEntry::Channel::PrintCacheData(nsIInputStream *aInStream,
                                            void *aClosure,
                                            const char *aFromSegment,

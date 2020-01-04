@@ -375,7 +375,7 @@ EventSource::OnStartRequest(nsIRequest *aRequest,
 
 
 
-NS_METHOD
+nsresult
 EventSource::StreamReaderFunc(nsIInputStream *aInputStream,
                               void *aClosure,
                               const char *aFromRawSegment,

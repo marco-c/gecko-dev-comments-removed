@@ -438,7 +438,7 @@ struct MOZ_STACK_CLASS ReadSegmentsClosure
 };
 
 
-static NS_METHOD
+static nsresult
 ReadSegmentForwardingThunk(nsIInputStream* aStream,
                            void* aClosure,
                            const char* aFromSegment,
@@ -617,7 +617,7 @@ nsBinaryInputStream::ReadDouble(double* aDouble)
   return Read64(reinterpret_cast<uint64_t*>(aDouble));
 }
 
-static NS_METHOD
+static nsresult
 WriteSegmentToCString(nsIInputStream* aStream,
                       void* aClosure,
                       const char* aFromSegment,
@@ -684,7 +684,7 @@ struct WriteStringClosure
 
 
 
-static NS_METHOD
+static nsresult
 WriteSegmentToString(nsIInputStream* aStream,
                      void* aClosure,
                      const char* aFromSegment,
