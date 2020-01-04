@@ -2,28 +2,27 @@
 
 
 
+"use strict";
 
 
 
 
-(function (factory) { 
-  if (this.module && module.id.indexOf("transport") >= 0) { 
+
+(function (factory) {
+  if (this.module && module.id.indexOf("transport") >= 0) {
+    
     factory.call(this, require, exports);
-  } else { 
-    if (this.require) {
-      factory.call(this, require, this);
-    } else {
-      const Cu = Components.utils;
-      const { require } = Cu.import("resource://devtools/shared/Loader.jsm", {});
-      factory.call(this, require, this);
-    }
+  } else if (this.require) {
+    
+    factory.call(this, require, this);
+  } else {
+    
+    const Cu = Components.utils;
+    const { require } = Cu.import("resource://devtools/shared/Loader.jsm", {});
+    factory.call(this, require, this);
   }
 }).call(this, function (require, exports) {
-
-  "use strict";
-
-  const { Cc, Ci, Cr, Cu, CC } = require("chrome");
-  const Services = require("Services");
+  const { Cc, Ci, Cr, CC } = require("chrome");
   const DevToolsUtils = require("devtools/shared/DevToolsUtils");
   const { dumpn, dumpv } = DevToolsUtils;
   const StreamUtils = require("devtools/shared/transport/stream-utils");
@@ -43,7 +42,7 @@
 
   const PACKET_HEADER_MAX = 200;
 
-
+  
 
 
 
@@ -107,12 +106,12 @@
     this._scriptableInput = new ScriptableInputStream(input);
     this._output = output;
 
-  
-  
+    
+    
     this._incomingHeader = "";
-  
+    
     this._incoming = null;
-  
+    
     this._outgoing = [];
 
     this.hooks = null;
@@ -125,7 +124,7 @@
   }
 
   DebuggerTransport.prototype = {
-  
+    
 
 
 
@@ -142,7 +141,7 @@
       this._flushOutgoing();
     },
 
-  
+    
 
 
 
@@ -193,7 +192,7 @@
       return packet.streamReadyForWriting;
     },
 
-  
+    
 
 
 
@@ -219,12 +218,14 @@
       }
     },
 
-  
+    
 
 
-    get _currentOutgoing() { return this._outgoing[0]; },
+    get _currentOutgoing() {
+      return this._outgoing[0];
+    },
 
-  
+    
 
 
 
@@ -233,18 +234,18 @@
         return;
       }
 
-    
+      
       if (this._currentOutgoing.done) {
         this._finishCurrentOutgoing();
       }
 
       if (this._outgoing.length > 0) {
-        var threadManager = Cc["@mozilla.org/thread-manager;1"].getService();
+        let threadManager = Cc["@mozilla.org/thread-manager;1"].getService();
         this._output.asyncWait(this, 0, 0, threadManager.currentThread);
       }
     },
 
-  
+    
 
 
 
@@ -253,7 +254,7 @@
       this._outgoingEnabled = false;
     },
 
-  
+    
 
 
     resumeOutgoing: function () {
@@ -261,8 +262,8 @@
       this._flushOutgoing();
     },
 
-  
-  
+    
+    
 
 
 
@@ -278,15 +279,14 @@
         if (e.result != Cr.NS_BASE_STREAM_WOULD_BLOCK) {
           this.close(e.result);
           return;
-        } else {
-          throw e;
         }
+        throw e;
       }
 
       this._flushOutgoing();
     }, "DebuggerTransport.prototype.onOutputStreamReady"),
 
-  
+    
 
 
     _finishCurrentOutgoing: function () {
@@ -296,7 +296,7 @@
       }
     },
 
-  
+    
 
 
     _destroyAllOutgoing: function () {
@@ -306,7 +306,7 @@
       this._outgoing = [];
     },
 
-  
+    
 
 
 
@@ -316,7 +316,7 @@
       this._waitForIncoming();
     },
 
-  
+    
 
 
 
@@ -327,7 +327,7 @@
       }
     },
 
-  
+    
 
 
 
@@ -336,7 +336,7 @@
       this._incomingEnabled = false;
     },
 
-  
+    
 
 
     resumeIncoming: function () {
@@ -345,26 +345,27 @@
       this._waitForIncoming();
     },
 
-  
-  
+    
+    
 
 
-    onInputStreamReady:
-  DevToolsUtils.makeInfallible(function (stream) {
-    try {
-      while (stream.available() && this._incomingEnabled &&
-            this._processIncoming(stream, stream.available())) {}
-      this._waitForIncoming();
-    } catch (e) {
-      if (e.result != Cr.NS_BASE_STREAM_WOULD_BLOCK) {
-        this.close(e.result);
-      } else {
-        throw e;
+    onInputStreamReady: DevToolsUtils.makeInfallible(function (stream) {
+      try {
+        while (stream.available() && this._incomingEnabled &&
+               this._processIncoming(stream, stream.available())) {
+           
+        }
+        this._waitForIncoming();
+      } catch (e) {
+        if (e.result != Cr.NS_BASE_STREAM_WOULD_BLOCK) {
+          this.close(e.result);
+        } else {
+          throw e;
+        }
       }
-    }
-  }, "DebuggerTransport.prototype.onInputStreamReady"),
+    }, "DebuggerTransport.prototype.onInputStreamReady"),
 
-  
+    
 
 
 
@@ -387,11 +388,12 @@
           dumpv("Creating a new packet from incoming");
 
           if (!this._readHeader(stream)) {
-            return false; 
+            
+            return false;
           }
 
-        
-        
+          
+          
           this._incoming = Packet.fromHeader(this._incomingHeader, this);
           if (!this._incoming) {
             throw new Error("No packet types for header: " +
@@ -400,7 +402,7 @@
         }
 
         if (!this._incoming.done) {
-        
+          
           dumpv("Existing packet incomplete, keep reading");
           this._incoming.read(stream, this._scriptableInput);
         }
@@ -408,23 +410,23 @@
         let msg = "Error reading incoming packet: (" + e + " - " + e.stack + ")";
         dumpn(msg);
 
-      
+        
         this.close();
         return false;
       }
 
       if (!this._incoming.done) {
-      
+        
         dumpv("Packet not done, wait for more");
         return true;
       }
 
-    
+      
       this._flushIncoming();
       return true;
     },
 
-  
+    
 
 
 
@@ -450,11 +452,11 @@
         throw new Error("Failed to parse packet header!");
       }
 
-    
+      
       return false;
     },
 
-  
+    
 
 
     _flushIncoming: function () {
@@ -467,7 +469,7 @@
       this._destroyIncoming();
     },
 
-  
+    
 
 
 
@@ -481,7 +483,7 @@
       }, "DebuggerTransport instance's this.hooks.onPacket"));
     },
 
-  
+    
 
 
 
@@ -497,7 +499,7 @@
       }, "DebuggerTransport instance's this.hooks.onBulkPacket"));
     },
 
-  
+    
 
 
 
@@ -513,7 +515,7 @@
 
   exports.DebuggerTransport = DebuggerTransport;
 
-
+  
 
 
 
@@ -530,17 +532,14 @@
     this.other = other;
     this.hooks = null;
 
-  
-
-
-
-
+    
+    
     this._serial = this.other ? this.other._serial : { count: 0 };
     this.close = this.close.bind(this);
   }
 
   LocalDebuggerTransport.prototype = {
-  
+    
 
 
 
@@ -549,7 +548,7 @@
 
       let serial = this._serial.count++;
       if (dumpn.wantLogging) {
-      
+        
         if (packet.from) {
           dumpn("Packet " + serial + " sent from " + uneval(packet.from));
         } else if (packet.to) {
@@ -560,7 +559,7 @@
       let other = this.other;
       if (other) {
         DevToolsUtils.executeSoon(DevToolsUtils.makeInfallible(() => {
-        
+          
           if (dumpn.wantLogging) {
             dumpn("Received packet " + serial + ": " + JSON.stringify(packet, null, 2));
           }
@@ -572,7 +571,7 @@
       }
     },
 
-  
+    
 
 
 
@@ -588,7 +587,8 @@
 
       dumpn("Sent bulk packet " + serial + " for actor " + actor);
       if (!this.other) {
-        return;
+        let error = new Error("startBulkSend: other side of transport missing");
+        return promise.reject(error);
       }
 
       let pipe = new Pipe(true, true, 0, 0, null);
@@ -599,7 +599,7 @@
           return;
         }
 
-      
+        
         let deferred = promise.defer();
         let packet = {
           actor: actor,
@@ -618,15 +618,15 @@
         this.other.emit("onBulkPacket", packet);
         this.other.hooks.onBulkPacket(packet);
 
-      
+        
         deferred.promise.then(() => pipe.inputStream.close(), this.close);
       }, "LocalDebuggerTransport instance's this.other.hooks.onBulkPacket"));
 
-    
+      
       let sendDeferred = promise.defer();
 
-    
-    
+      
+      
       DevToolsUtils.executeSoon(() => {
         let copyDeferred = promise.defer();
 
@@ -641,22 +641,22 @@
           done: copyDeferred
         });
 
-      
+        
         copyDeferred.promise.then(() => pipe.outputStream.close(), this.close);
       });
 
       return sendDeferred.promise;
     },
 
-  
+    
 
 
     close: function () {
       this.emit("close");
 
       if (this.other) {
-      
-      
+        
+        
         let other = this.other;
         this.other = null;
         other.close();
@@ -671,24 +671,24 @@
       }
     },
 
-  
+    
 
 
     ready: function () {},
 
-  
+    
 
 
     _deepFreeze: function (object) {
       Object.freeze(object);
       for (let prop in object) {
-      
-      
-      
-      
+        
+        
+        
+        
         if (object.hasOwnProperty(prop) && typeof object === "object" &&
-          !Object.isFrozen(object)) {
-          this._deepFreeze(o[prop]);
+            !Object.isFrozen(object)) {
+          this._deepFreeze(object[prop]);
         }
       }
     }
@@ -696,7 +696,7 @@
 
   exports.LocalDebuggerTransport = LocalDebuggerTransport;
 
-
+  
 
 
 
@@ -717,7 +717,7 @@
     this._messageName = "debug:" + prefix + ":packet";
   }
 
-
+  
 
 
 
@@ -754,19 +754,20 @@
 
   exports.ChildDebuggerTransport = ChildDebuggerTransport;
 
-
-
-
-
-
-
-
-
-
+  
+  
+  
+  
+  
+  
+  
+  
+  
 
   if (!this.isWorker) {
-    (function () { 
     
+    (function () {
+      
 
 
 
@@ -817,8 +818,9 @@
       exports.WorkerDebuggerTransport = WorkerDebuggerTransport;
     }).call(this);
   } else {
-    (function () { 
     
+    (function () {
+      
 
 
 
@@ -869,5 +871,4 @@
       exports.WorkerDebuggerTransport = WorkerDebuggerTransport;
     }).call(this);
   }
-
 });
