@@ -48,9 +48,27 @@ class MercurialUpdater(object):
     def update_mercurial_repo(self, hg, url, dest, branch, msg):
         
         
+        disable_exts = [
+            'bzexport',
+            'bzpost',
+            'firefoxtree',
+            'hgwatchman',
+            'mqext',
+            'qimportbz',
+            'push-to-try',
+            'reviewboard',
+        ]
+        global_args = []
+        for ext in disable_exts:
+            global_args.extend(['--config', 'extensions.%s=!' % ext])
+
+        
+        
         
         return self._update_repo(hg, url, dest, branch, msg,
-            update_mercurial_repo, hostfingerprints=HOST_FINGERPRINTS)
+                                 update_mercurial_repo,
+                                 hostfingerprints=HOST_FINGERPRINTS,
+                                 global_args=global_args)
 
     def _update_repo(self, binary, url, dest, branch, msg, fn, *args, **kwargs):
         print('=' * 80)
