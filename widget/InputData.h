@@ -533,6 +533,7 @@ public:
   
   
   
+  
   double mDeltaX;
   double mDeltaY;
 

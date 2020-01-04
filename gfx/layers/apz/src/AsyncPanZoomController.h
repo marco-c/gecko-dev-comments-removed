@@ -370,7 +370,7 @@ public:
 
   
   
-  bool CanScroll(const ScrollWheelInput& aEvent) const;
+  bool CanScroll(const InputData& aEvent) const;
 
   
   
