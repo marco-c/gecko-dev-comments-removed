@@ -25,29 +25,39 @@ Please choose the version of Firefox you want to build:
 
 Note: (For Firefox for Android)
 
-Firefox for Android is built on top of the Gecko technology platform. Gecko is Mozilla's web rendering engine, similar to Edge, Blink, and WebKit. Gecko is implemented in C++ and JavaScript. If you want to work on web rendering, this is what you want.
+The Firefox for Android front-end is built using Java, the Android
+Platform SDK, JavaScript, HTML, and CSS. If you want to work on the
+look-and-feel of Firefox for Android, you want "Firefox for Android
+Artifact Mode".
 
-The Firefox for Android Front-End is built using Java, the Android Platform SDK, JavaScript, HTML, and CSS. If you want to work on the look-and-feel of Firefox for Android, this is what you want.
+Firefox for Android is built on top of the Gecko technology
+platform. Gecko is Mozilla's web rendering engine, similar to Edge,
+Blink, and WebKit. Gecko is implemented in C++ and JavaScript. If you
+want to work on web rendering, you want "Firefox for Android".
 
-If you don't know what you want, start with just the Firefox for Android Artifact Mode. Your builds will be much shorter than if you build Gecko as well. But don't worry! You can always switch configurations later.
+If you don't know what you want, start with just "Firefox for Android
+Artifact Mode". Your builds will be much shorter than if you build
+Gecko as well. But don't worry! You can always switch configurations
+later.
 
-You can learn more about Artifact builds from https://developer.mozilla.org/en-US/docs/Artifact_builds
+You can learn more about Artifact mode builds at
+https://developer.mozilla.org/en-US/docs/Artifact_builds.
 
 Your choice:
 '''
 
 APPLICATIONS_LIST=[
     ('Firefox for Desktop', 'browser'),
+    ('Firefox for Android Artifact Mode', 'mobile_android_artifact_mode'),
     ('Firefox for Android', 'mobile_android'),
-    ('Firefox for Android Artifact Mode', 'mobile_android_artifact_mode')
 ]
 
 
 
 APPLICATIONS = dict(
-    desktop=APPLICATIONS_LIST[0],
-    android=APPLICATIONS_LIST[1],
-    android_artifact_mode=APPLICATIONS_LIST[2],
+    browser=APPLICATIONS_LIST[0],
+    mobile_android_artifact_mode=APPLICATIONS_LIST[1],
+    mobile_android=APPLICATIONS_LIST[2],
 )
 
 FINISHED = '''
