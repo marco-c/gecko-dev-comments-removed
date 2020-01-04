@@ -725,7 +725,7 @@ area {
   display: none ! important;
 }
 
-iframe:-moz-full-screen {
+iframe:fullscreen {
   
   border: none !important;
   padding: 0 !important;

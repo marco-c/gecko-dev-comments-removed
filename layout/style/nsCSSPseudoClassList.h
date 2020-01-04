@@ -160,6 +160,7 @@ CSS_STATE_PSEUDO_CLASS(mozDevtoolsHighlighted, ":-moz-devtools-highlighted", 0, 
 
 
 
+CSS_STATE_PSEUDO_CLASS(fullscreen, ":fullscreen", 0, "", NS_EVENT_STATE_FULL_SCREEN)
 CSS_STATE_PSEUDO_CLASS(mozFullScreen, ":-moz-full-screen", 0, "", NS_EVENT_STATE_FULL_SCREEN)
 
 
