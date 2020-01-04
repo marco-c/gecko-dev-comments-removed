@@ -34,7 +34,7 @@
 #include "nsDataHashtable.h"
 #include "nsNullPrincipal.h"
 
-#define MAGIC_REQUEST_CONTEXT 0x01020304
+#define BYTERANGE_REQUEST_CONTEXT 0x01020304
 
 
 
@@ -55,7 +55,7 @@ private:
 
   nsCOMPtr<nsIStreamListener> mStreamConverter;
   nsWeakPtr mWeakPtrPluginStreamListenerPeer;
-  bool mRemoveMagicNumber;
+  bool mRemoveByteRangeRequest;
 };
 
 NS_IMPL_ISUPPORTS(nsPluginByteRangeStreamListener,
@@ -66,7 +66,7 @@ NS_IMPL_ISUPPORTS(nsPluginByteRangeStreamListener,
 nsPluginByteRangeStreamListener::nsPluginByteRangeStreamListener(nsIWeakReference* aWeakPtr)
 {
   mWeakPtrPluginStreamListenerPeer = aWeakPtr;
-  mRemoveMagicNumber = false;
+  mRemoveByteRangeRequest = false;
 }
 
 nsPluginByteRangeStreamListener::~nsPluginByteRangeStreamListener()
@@ -149,7 +149,7 @@ nsPluginByteRangeStreamListener::OnStartRequest(nsIRequest *request, nsISupports
   
   
   mStreamConverter = finalStreamListener;
-  mRemoveMagicNumber = true;
+  mRemoveByteRangeRequest = true;
 
   rv = pslp->ServeStreamAsFile(request, ctxt);
   return rv;
@@ -173,13 +173,13 @@ nsPluginByteRangeStreamListener::OnStopRequest(nsIRequest *request, nsISupports 
     NS_ERROR("OnStopRequest received for untracked byte-range request!");
   }
 
-  if (mRemoveMagicNumber) {
+  if (mRemoveByteRangeRequest) {
     
     nsCOMPtr<nsISupportsPRUint32> container = do_QueryInterface(ctxt);
     if (container) {
-      uint32_t magicNumber = 0;
-      container->GetData(&magicNumber);
-      if (magicNumber == MAGIC_REQUEST_CONTEXT) {
+      uint32_t byteRangeRequest = 0;
+      container->GetData(&byteRangeRequest);
+      if (byteRangeRequest == BYTERANGE_REQUEST_CONTEXT) {
         
         
         container->SetData(0);
@@ -745,7 +745,7 @@ nsPluginStreamListenerPeer::RequestRead(NPByteRange* rangeList)
   nsCOMPtr<nsISupportsPRUint32> container = do_CreateInstance(NS_SUPPORTS_PRUINT32_CONTRACTID, &rv);
   if (NS_FAILED(rv))
     return rv;
-  rv = container->SetData(MAGIC_REQUEST_CONTEXT);
+  rv = container->SetData(BYTERANGE_REQUEST_CONTEXT);
   if (NS_FAILED(rv))
     return rv;
 
@@ -842,12 +842,12 @@ NS_IMETHODIMP nsPluginStreamListenerPeer::OnDataAvailable(nsIRequest *request,
     return NS_ERROR_FAILURE;
 
   if (mAbort) {
-    uint32_t magicNumber = 0;  
+    uint32_t byteRangeRequest = 0;  
     nsCOMPtr<nsISupportsPRUint32> container = do_QueryInterface(aContext);
     if (container)
-      container->GetData(&magicNumber);
+      container->GetData(&byteRangeRequest);
 
-    if (magicNumber != MAGIC_REQUEST_CONTEXT) {
+    if (byteRangeRequest != BYTERANGE_REQUEST_CONTEXT) {
       
       mAbort = false;
       return NS_BINDING_ABORTED;
@@ -980,9 +980,9 @@ NS_IMETHODIMP nsPluginStreamListenerPeer::OnStopRequest(nsIRequest *request,
   
   nsCOMPtr<nsISupportsPRUint32> container = do_QueryInterface(aContext);
   if (container) {
-    uint32_t magicNumber = 0;  
-    container->GetData(&magicNumber);
-    if (magicNumber == MAGIC_REQUEST_CONTEXT) {
+    uint32_t byteRangeRequest = 0;  
+    container->GetData(&byteRangeRequest);
+    if (byteRangeRequest == BYTERANGE_REQUEST_CONTEXT) {
       
       return NS_OK;
     }
