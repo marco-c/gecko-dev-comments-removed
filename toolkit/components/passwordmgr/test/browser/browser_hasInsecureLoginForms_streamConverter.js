@@ -44,7 +44,7 @@ function* registerConverter() {
       
       
       
-      channel.asyncOpen(this.listener, aContext);
+      channel.asyncOpen2(this.listener);
     },
 
     
