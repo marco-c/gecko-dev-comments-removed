@@ -698,13 +698,27 @@ NS_IMETHODIMP_(already_AddRefed<SourceSurface>)
 RasterImage::GetFrame(uint32_t aWhichFrame,
                       uint32_t aFlags)
 {
-  return GetFrameInternal(aWhichFrame, aFlags).second().forget();
+  return GetFrameInternal(mSize, aWhichFrame, aFlags).second().forget();
+}
+
+NS_IMETHODIMP_(already_AddRefed<SourceSurface>)
+RasterImage::GetFrameAtSize(const IntSize& aSize,
+                            uint32_t aWhichFrame,
+                            uint32_t aFlags)
+{
+  return GetFrameInternal(aSize, aWhichFrame, aFlags).second().forget();
 }
 
 Pair<DrawResult, RefPtr<SourceSurface>>
-RasterImage::GetFrameInternal(uint32_t aWhichFrame, uint32_t aFlags)
+RasterImage::GetFrameInternal(const IntSize& aSize,
+                              uint32_t aWhichFrame,
+                              uint32_t aFlags)
 {
   MOZ_ASSERT(aWhichFrame <= FRAME_MAX_VALUE);
+
+  if (aSize.IsEmpty()) {
+    return MakePair(DrawResult::BAD_ARGS, RefPtr<SourceSurface>());
+  }
 
   if (aWhichFrame > FRAME_MAX_VALUE) {
     return MakePair(DrawResult::BAD_ARGS, RefPtr<SourceSurface>());
@@ -718,7 +732,7 @@ RasterImage::GetFrameInternal(uint32_t aWhichFrame, uint32_t aFlags)
   
   
   DrawableFrameRef frameRef =
-    LookupFrame(GetRequestedFrameIndex(aWhichFrame), mSize, aFlags);
+    LookupFrame(GetRequestedFrameIndex(aWhichFrame), aSize, aFlags);
   if (!frameRef) {
     
     return MakePair(DrawResult::TEMPORARY_ERROR, RefPtr<SourceSurface>());
@@ -727,13 +741,13 @@ RasterImage::GetFrameInternal(uint32_t aWhichFrame, uint32_t aFlags)
   
   
   RefPtr<SourceSurface> frameSurf;
-  IntRect frameRect = frameRef->GetRect();
-  if (frameRect.x == 0 && frameRect.y == 0 &&
-      frameRect.width == mSize.width &&
-      frameRect.height == mSize.height) {
+  if (!frameRef->NeedsPadding() &&
+      frameRef->GetSize() == aSize) {
     frameSurf = frameRef->GetSurface();
   }
 
+  
+  
   
   
   if (!frameSurf) {
@@ -756,7 +770,7 @@ RasterImage::GetCurrentImage(ImageContainer* aContainer, uint32_t aFlags)
   DrawResult drawResult;
   RefPtr<SourceSurface> surface;
   Tie(drawResult, surface) =
-    GetFrameInternal(FRAME_CURRENT, aFlags | FLAG_ASYNC_NOTIFY);
+    GetFrameInternal(mSize, FRAME_CURRENT, aFlags | FLAG_ASYNC_NOTIFY);
   if (!surface) {
     
     
