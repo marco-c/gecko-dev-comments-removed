@@ -625,7 +625,12 @@ ResolvedStyleCache::Get(nsPresContext *aPresContext,
   
   nsStyleContext *result = mCache.GetWeak(aKeyframe);
   if (!result) {
-    aKeyframe->Declaration()->SetImmutable();
+    Declaration* declaration = aKeyframe->Declaration();
+    declaration->SetImmutable();
+    
+    MOZ_ASSERT(!declaration->HasImportantData(),
+               "Keyframe rule has !important data");
+
     nsCOMArray<nsIStyleRule> rules;
     rules.AppendObject(aKeyframe);
     RefPtr<nsStyleContext> resultStrong = aPresContext->StyleSet()->

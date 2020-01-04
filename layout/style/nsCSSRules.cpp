@@ -2078,11 +2078,6 @@ nsCSSKeyframeRule::MapRuleInfoInto(nsRuleData* aRuleData)
   
   
   
-
-  
-  NS_ASSERTION(!mDeclaration->HasImportantData(),
-               "Keyframe rules has !important data");
-
   mDeclaration->MapRuleInfoInto(aRuleData);
 }
 
