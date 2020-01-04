@@ -29,10 +29,13 @@ DEFINE_KEYNAME_WITH_SAME_NAME(Unidentified)
 
 
 DEFINE_KEYNAME_INTERNAL(PrintableKey, "MozPrintableKey")
-DEFINE_KEYNAME_INTERNAL(HomeScreen, "MozHomeScreen")
-DEFINE_KEYNAME_INTERNAL(CameraFocusAdjust, "MozCameraFocusAdjust")
 DEFINE_KEYNAME_INTERNAL(SoftLeft, "MozSoftLeft")
 DEFINE_KEYNAME_INTERNAL(SoftRight, "MozSoftRight")
+
+#ifdef MOZ_B2G
+DEFINE_KEYNAME_INTERNAL(HomeScreen, "MozHomeScreen")
+DEFINE_KEYNAME_INTERNAL(CameraFocusAdjust, "MozCameraFocusAdjust")
+#endif 
 
 
 
