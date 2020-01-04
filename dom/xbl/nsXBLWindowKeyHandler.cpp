@@ -705,38 +705,44 @@ nsXBLWindowKeyHandler::GetElementForHandler(nsXBLPrototypeHandler* aHandler,
   *aElementForHandler = nullptr;
 
   nsCOMPtr<nsIContent> keyContent = aHandler->GetHandlerElement();
-
-  
-  nsCOMPtr<Element> chromeHandlerElement = GetElement();
-  if (chromeHandlerElement && keyContent) {
-    
-    nsAutoString command;
-    keyContent->GetAttr(kNameSpaceID_None, nsGkAtoms::command, command);
-    if (!command.IsEmpty()) {
-      
-      
-      NS_ASSERTION(keyContent->IsInDoc(),
-                   "the key element must be in document");
-      nsIDocument* doc = keyContent->GetCurrentDoc();
-      if (NS_WARN_IF(!doc)) {
-        return false;
-      }
-      nsCOMPtr<Element> commandElement =
-        do_QueryInterface(doc->GetElementById(command));
-      if (!commandElement) {
-        NS_ERROR("A XUL <key> is observing a command that doesn't exist. "
-                 "Unable to execute key binding!");
-        return false;
-      }
-      commandElement.swap(*aElementForHandler);
-    }
+  if (!keyContent) {
+    return true; 
   }
 
-  if (!*aElementForHandler) {
+  nsCOMPtr<Element> chromeHandlerElement = GetElement();
+  if (!chromeHandlerElement) {
+    NS_WARN_IF(!keyContent->IsInDoc());
     nsCOMPtr<Element> keyElement = do_QueryInterface(keyContent);
     keyElement.swap(*aElementForHandler);
+    return true;
   }
 
+  
+  nsAutoString command;
+  keyContent->GetAttr(kNameSpaceID_None, nsGkAtoms::command, command);
+  if (command.IsEmpty()) {
+    
+    NS_WARN_IF(!keyContent->IsInDoc());
+    nsCOMPtr<Element> keyElement = do_QueryInterface(keyContent);
+    keyElement.swap(*aElementForHandler);
+    return true;
+  }
+
+  
+  nsIDocument* doc = keyContent->GetCurrentDoc();
+  if (NS_WARN_IF(!doc)) {
+    return false;
+  }
+
+  nsCOMPtr<Element> commandElement =
+    do_QueryInterface(doc->GetElementById(command));
+  if (!commandElement) {
+    NS_ERROR("A XUL <key> is observing a command that doesn't exist. "
+             "Unable to execute key binding!");
+    return false;
+  }
+
+  commandElement.swap(*aElementForHandler);
   return true;
 }
 
