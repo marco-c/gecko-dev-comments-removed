@@ -460,14 +460,14 @@ class LDefinition
 
     
     enum Type {
-        GENERAL,    
-        INT32,      
-        OBJECT,     
-        SLOTS,      
-        FLOAT32,    
-        DOUBLE,     
-        INT32X4,    
-        FLOAT32X4,  
+        GENERAL,      
+        INT32,        
+        OBJECT,       
+        SLOTS,        
+        FLOAT32,      
+        DOUBLE,       
+        SIMD128INT,   
+        SIMD128FLOAT, 
         SINCOS,
 #ifdef JS_NUNBOX32
         
@@ -522,7 +522,7 @@ class LDefinition
         return (Type)((bits_ >> TYPE_SHIFT) & TYPE_MASK);
     }
     bool isSimdType() const {
-        return type() == INT32X4 || type() == FLOAT32X4;
+        return type() == SIMD128INT || type() == SIMD128FLOAT;
     }
     bool isCompatibleReg(const AnyRegister& r) const {
         if (isFloatReg() && r.isFloat()) {
@@ -617,11 +617,15 @@ class LDefinition
           case MIRType::Int64:
 #endif
             return LDefinition::GENERAL;
-          case MIRType::Bool32x4:
+          case MIRType::Int8x16:
+          case MIRType::Int16x8:
           case MIRType::Int32x4:
-            return LDefinition::INT32X4;
+          case MIRType::Bool8x16:
+          case MIRType::Bool16x8:
+          case MIRType::Bool32x4:
+            return LDefinition::SIMD128INT;
           case MIRType::Float32x4:
-            return LDefinition::FLOAT32X4;
+            return LDefinition::SIMD128FLOAT;
           default:
             MOZ_CRASH("unexpected type");
         }

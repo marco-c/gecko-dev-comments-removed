@@ -347,8 +347,8 @@ static const char * const TypeChars[] =
     "s",            
     "f",            
     "d",            
-    "i32x4",        
-    "f32x4",        
+    "simd128int",   
+    "simd128float", 
     "sincos",       
 #ifdef JS_NUNBOX32
     "t",            
