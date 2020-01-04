@@ -161,4 +161,22 @@ public class BaseGeckoInterface implements GeckoAppShell.GeckoInterface {
     public void setAccessibilityEnabled(boolean enabled) {
         
     }
+
+    @Override
+    public boolean openUriExternal(String targetURI, String mimeType, String packageName, String className, String action, String title) {
+        
+        return false;
+    }
+
+    @Override
+    public String[] getHandlersForMimeType(String mimeType, String action) {
+        
+        return new String[] {};
+    }
+
+    @Override
+    public String[] getHandlersForURL(String url, String action) {
+        
+        return new String[] {};
+    }
 }
