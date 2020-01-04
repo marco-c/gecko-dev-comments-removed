@@ -203,7 +203,7 @@ function run_test() {
 
   
   
-  emptyAttrs = ChromeUtils.fillNonDefaultOriginAttributes({});
+  emptyAttrs = ChromeUtils.createDefaultOriginAttributes();
   checkValues(emptyAttrs);
 
   var uri = "http://example.org";
@@ -226,7 +226,7 @@ function run_test() {
 
   
   tests.forEach(function(t) {
-    let attrs = ChromeUtils.fillNonDefaultOriginAttributes(t[1]);
+    let attrs = ChromeUtils.createOriginAttributesFromDict(t[1]);
     checkValues(attrs, t[1]);
     do_check_eq(ChromeUtils.originAttributesToSuffix(attrs), t[0]);
   });

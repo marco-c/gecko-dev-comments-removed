@@ -296,18 +296,13 @@ class ExtensionContext extends BaseContext {
     let contentPrincipal = contentWindow.document.nodePrincipal;
     let ssm = Services.scriptSecurityManager;
 
-    
-    
-    let attrs = ChromeUtils.fillNonDefaultOriginAttributes(contentPrincipal.originAttributes);
-    attrs.addonId = extensionId;
-    let extensionPrincipal = ssm.createCodebasePrincipal(this.extension.baseURI, attrs);
+    let extensionPrincipal = ssm.createCodebasePrincipal(this.extension.baseURI, {addonId: extensionId});
     Object.defineProperty(this, "principal",
                           {value: extensionPrincipal, enumerable: true, configurable: true});
 
     if (ssm.isSystemPrincipal(contentPrincipal)) {
       
-      
-      prin = ssm.createNullPrincipal(attrs);
+      prin = Cc["@mozilla.org/nullprincipal;1"].createInstance(Ci.nsIPrincipal);
     } else {
       prin = [contentPrincipal, extensionPrincipal];
     }
