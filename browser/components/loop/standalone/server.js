@@ -22,6 +22,10 @@ var loopServerUrl = process.env.LOOP_SERVER_URL || "http://localhost:5000";
 
 
 
+var standaloneContentDir = process.env.LOOP_CONTENT_DIR || "content";
+
+
+
 if (loopServerUrl[loopServerUrl.length - 1] === "/") {
   loopServerUrl = loopServerUrl.slice(0, -1);
 }
@@ -70,10 +74,11 @@ app.use("/standalone/content", express.static(path.join(__dirname, "content")));
 
 
 
-app.use("/content", express.static(path.join(__dirname, "content")));
+app.use("/content", express.static(path.join(__dirname, standaloneContentDir)));
 app.use("/content", express.static(path.join(__dirname, "..", "content")));
 
-app.use("/content/c", express.static(path.join(__dirname, "content")));
+app.use("/content/c", express.static(path.join(__dirname,
+  standaloneContentDir)));
 app.use("/content/c", express.static(path.join(__dirname, "..", "content")));
 
 
@@ -85,7 +90,7 @@ app.use("/test", express.static(path.join(__dirname, "..", "test")));
 function serveIndex(req, res) {
   "use strict";
 
-  return res.sendfile(path.join(__dirname, "content", "index.html"));
+  return res.sendFile(path.join(__dirname, standaloneContentDir, "index.html"));
 }
 
 app.get(/^\/content\/[\w\-]+$/, serveIndex);
