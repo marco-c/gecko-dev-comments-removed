@@ -256,6 +256,7 @@ nsNSSComponent::nsNSSComponent()
 #endif
 {
   MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("nsNSSComponent::ctor\n"));
+  MOZ_ASSERT(NS_IsMainThread());
 
   NS_ASSERTION( (0 == mInstanceCount), "nsNSSComponent is a singleton, but instantiated multiple times!");
   ++mInstanceCount;
@@ -264,6 +265,7 @@ nsNSSComponent::nsNSSComponent()
 nsNSSComponent::~nsNSSComponent()
 {
   MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("nsNSSComponent::dtor\n"));
+  MOZ_ASSERT(NS_IsMainThread());
 
   
 
@@ -1835,6 +1837,7 @@ nsNSSComponent::ShutdownNSS()
   
 
   MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("nsNSSComponent::ShutdownNSS\n"));
+  MOZ_ASSERT(NS_IsMainThread());
 
   MutexAutoLock lock(mutex);
 
@@ -1857,18 +1860,20 @@ nsNSSComponent::ShutdownNSS()
     
     
     Unused << SSL_ShutdownServerSessionIDCache();
-    UnloadLoadableRoots();
 #ifndef MOZ_NO_EV_CERTS
     CleanupIdentityInfo();
 #endif
-    MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("evaporating psm resources\n"));
-    nsNSSShutDownList::evaporateAllNSSResources();
+    MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("evaporating psm resources"));
+    if (NS_FAILED(nsNSSShutDownList::evaporateAllNSSResources())) {
+      MOZ_LOG(gPIPNSSLog, LogLevel::Error, ("failed to evaporate resources"));
+      return;
+    }
+    UnloadLoadableRoots();
     EnsureNSSInitialized(nssShutdown);
     if (SECSuccess != ::NSS_Shutdown()) {
-      MOZ_LOG(gPIPNSSLog, LogLevel::Error, ("NSS SHUTDOWN FAILURE\n"));
-    }
-    else {
-      MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("NSS shutdown =====>> OK <<=====\n"));
+      MOZ_LOG(gPIPNSSLog, LogLevel::Error, ("NSS SHUTDOWN FAILURE"));
+    } else {
+      MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("NSS shutdown =====>> OK <<====="));
     }
   }
 }
@@ -1876,8 +1881,10 @@ nsNSSComponent::ShutdownNSS()
 nsresult
 nsNSSComponent::Init()
 {
-  
-  
+  MOZ_ASSERT(NS_IsMainThread());
+  if (!NS_IsMainThread()) {
+    return NS_ERROR_NOT_SAME_THREAD;
+  }
 
   nsresult rv = NS_OK;
 

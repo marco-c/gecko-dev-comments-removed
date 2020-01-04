@@ -127,18 +127,39 @@ nsresult nsNSSShutDownList::doPK11Logout()
 
 nsresult nsNSSShutDownList::evaporateAllNSSResources()
 {
+  MOZ_ASSERT(NS_IsMainThread());
+  if (!NS_IsMainThread()) {
+    return NS_ERROR_NOT_SAME_THREAD;
+  }
+
   StaticMutexAutoLock lock(sListLock);
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   if (!singleton) {
     return NS_OK;
   }
 
-  PRStatus rv = singleton->mActivityState.restrictActivityToCurrentThread();
-  if (rv != PR_SUCCESS) {
-    MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("failed to restrict activity to current thread\n"));
-    return NS_ERROR_FAILURE;
+  {
+    StaticMutexAutoUnlock unlock(sListLock);
+    PRStatus rv = singleton->mActivityState.restrictActivityToCurrentThread();
+    if (rv != PR_SUCCESS) {
+      MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
+              ("failed to restrict activity to current thread"));
+      return NS_ERROR_FAILURE;
+    }
   }
 
-  MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("now evaporating NSS resources\n"));
+  MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("now evaporating NSS resources"));
 
   
   
@@ -191,6 +212,7 @@ bool nsNSSShutDownList::construct(const StaticMutexAutoLock& )
 
 void nsNSSShutDownList::shutdown()
 {
+  MOZ_ASSERT(NS_IsMainThread());
   StaticMutexAutoLock lock(sListLock);
   sInShutdown = true;
 
