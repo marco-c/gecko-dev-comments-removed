@@ -101,7 +101,7 @@ public class HomeBanner extends LinearLayout
                 HomeBanner.this.dismiss();
 
                 
-                GeckoAppShell.sendEventToGecko(GeckoEvent.createBroadcastEvent("HomeBanner:Dismiss", (String) getTag()));
+                GeckoAppShell.notifyObservers("HomeBanner:Dismiss", (String) getTag());
             }
         });
 
@@ -111,7 +111,7 @@ public class HomeBanner extends LinearLayout
                 HomeBanner.this.dismiss();
 
                 
-                GeckoAppShell.sendEventToGecko(GeckoEvent.createBroadcastEvent("HomeBanner:Click", (String) getTag()));
+                GeckoAppShell.notifyObservers("HomeBanner:Click", (String) getTag());
             }
         });
 
@@ -123,6 +123,17 @@ public class HomeBanner extends LinearLayout
         super.onDetachedFromWindow();
 
         EventDispatcher.getInstance().unregisterGeckoThreadListener(this, "HomeBanner:Data");
+    }
+
+    @Override
+    public void setVisibility(int visibility) {
+        
+        
+        if (Versions.preHC && visibility == View.GONE) {
+            clearAnimation();
+        }
+
+        super.setVisibility(visibility);
     }
 
     public void setScrollingPages(boolean scrollingPages) {
@@ -149,7 +160,7 @@ public class HomeBanner extends LinearLayout
 
 
     public void update() {
-        GeckoAppShell.sendEventToGecko(GeckoEvent.createBroadcastEvent("HomeBanner:Get", null));
+        GeckoAppShell.notifyObservers("HomeBanner:Get", null);
     }
 
     @Override
@@ -184,7 +195,7 @@ public class HomeBanner extends LinearLayout
                     }
                 });
 
-                GeckoAppShell.sendEventToGecko(GeckoEvent.createBroadcastEvent("HomeBanner:Shown", id));
+                GeckoAppShell.notifyObservers("HomeBanner:Shown", id);
 
                 
                 setEnabled(true);

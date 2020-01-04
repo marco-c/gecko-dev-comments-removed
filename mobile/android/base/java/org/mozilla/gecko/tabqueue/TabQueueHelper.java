@@ -265,7 +265,7 @@ public class TabQueueHelper {
             try {
                 data.put("urls", jsonArray);
                 data.put("shouldNotifyTabsOpenedToJava", shouldPerformJavaScriptCallback);
-                GeckoAppShell.sendEventToGecko(GeckoEvent.createBroadcastEvent("Tabs:OpenMultiple", data.toString()));
+                GeckoAppShell.notifyObservers("Tabs:OpenMultiple", data.toString());
             } catch (JSONException e) {
                 
                 Log.e(LOGTAG, "Error sending tab queue data", e);

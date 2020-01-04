@@ -374,7 +374,7 @@ public class GeckoAppShell
             }
         }, responseMessage);
 
-        sendEventToGecko(GeckoEvent.createBroadcastEvent(request.getName(), request.getData()));
+        notifyObservers(request.getName(), request.getData());
     }
 
     
@@ -387,6 +387,7 @@ public class GeckoAppShell
     @WrapForJNI(stubName = "NotifyObservers")
     private static native void nativeNotifyObservers(String topic, String data);
 
+    @RobocopTarget
     public static void notifyObservers(final String topic, final String data) {
         notifyObservers(topic, data, GeckoThread.State.RUNNING);
     }
@@ -2508,8 +2509,7 @@ public class GeckoAppShell
         if (imeIsEnabled && !sImeWasEnabledOnLastResize) {
             
             
-            sendEventToGecko(GeckoEvent.createBroadcastEvent(
-                    "ScrollTo:FocusedInput", ""));
+            notifyObservers("ScrollTo:FocusedInput", "");
         }
         sImeWasEnabledOnLastResize = imeIsEnabled;
     }
