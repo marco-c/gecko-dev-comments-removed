@@ -4,6 +4,7 @@
 
 
 
+#include <cmath>
 #include <limits>
 #include "BatteryManager.h"
 #include "Constants.h"
@@ -12,6 +13,7 @@
 #include "mozilla/dom/BatteryManagerBinding.h"
 #include "mozilla/Preferences.h"
 #include "nsIDOMClassInfo.h"
+#include "nsIDocument.h"
 
 
 
@@ -129,6 +131,23 @@ void
 BatteryManager::UpdateFromBatteryInfo(const hal::BatteryInformation& aBatteryInfo)
 {
   mLevel = aBatteryInfo.level();
+
+  
+  nsIDocument* doc = GetOwner()->GetDoc();
+  uint16_t status = nsIPrincipal::APP_STATUS_NOT_INSTALLED;
+  if (doc) {
+    doc->NodePrincipal()->GetAppStatus(&status);
+  }
+
+  if (!nsContentUtils::IsChromeDoc(doc) &&
+      status != nsIPrincipal::APP_STATUS_CERTIFIED)
+  {
+    mLevel = 0.292f;
+    printf_stderr("SNORP: battery level before rounding: %lf\n", mLevel);
+    mLevel = lround(mLevel * 10.0) / 10.0;
+    printf_stderr("SNORP: battery level after rounding: %lf\n", mLevel);
+  }
+
   mCharging = aBatteryInfo.charging();
   mRemainingTime = aBatteryInfo.remainingTime();
 

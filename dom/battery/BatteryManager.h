@@ -66,6 +66,10 @@ private:
 
   void UpdateFromBatteryInfo(const hal::BatteryInformation& aBatteryInfo);
 
+  
+
+
+
   double mLevel;
   bool   mCharging;
   
