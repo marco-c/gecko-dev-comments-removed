@@ -194,6 +194,18 @@ extensions.registerSchemaAPI("bookmarks", "bookmarks", (extension, context) => {
 
         
         try {
+          return Bookmarks.remove(info, {preventRemovalOfNonEmptyFolders: true}).then(result => {});
+        } catch (e) {
+          return Promise.reject({message: `Invalid bookmark: ${JSON.stringify(info)}`});
+        }
+      },
+
+      removeTree: function(id) {
+        let info = {
+          guid: id,
+        };
+
+        try {
           return Bookmarks.remove(info).then(result => {});
         } catch (e) {
           return Promise.reject({message: `Invalid bookmark: ${JSON.stringify(info)}`});
