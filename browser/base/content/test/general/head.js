@@ -8,8 +8,8 @@ XPCOMUtils.defineLazyModuleGetter(this, "PlacesUtils",
   "resource://gre/modules/PlacesUtils.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "PlacesTestUtils",
   "resource://testing-common/PlacesTestUtils.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "TabCrashReporter",
-  "resource:///modules/ContentCrashReporters.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "TabCrashHandler",
+  "resource:///modules/ContentCrashHandlers.jsm");
 
 
 
