@@ -6031,6 +6031,23 @@ CSSParserImpl::ParsePseudoSelector(int32_t&       aDataMask,
     return eSelectorParsingStatus_Error;
   }
 
+  if (aSelector.IsPseudoElement()) {
+    CSSPseudoElementType type = aSelector.PseudoType();
+    if (!nsCSSPseudoElements::PseudoElementSupportsUserActionState(type)) {
+      
+      REPORT_UNEXPECTED_TOKEN(PEPseudoSelNoUserActionPC);
+      UngetToken();
+      return eSelectorParsingStatus_Error;
+    }
+    if (!isPseudoClass || !pseudoClassIsUserAction) {
+      
+      
+      REPORT_UNEXPECTED_TOKEN(PEPseudoClassNotUserAction);
+      UngetToken();
+      return eSelectorParsingStatus_Error;
+    }
+  }
+
   if (!parsingPseudoElement &&
       CSSPseudoClassType::negation == pseudoClassType) {
     if (aIsNegated) { 
@@ -6046,22 +6063,6 @@ CSSParserImpl::ParsePseudoSelector(int32_t&       aDataMask,
     }
   }
   else if (!parsingPseudoElement && isPseudoClass) {
-    if (aSelector.IsPseudoElement()) {
-      CSSPseudoElementType type = aSelector.PseudoType();
-      if (!nsCSSPseudoElements::PseudoElementSupportsUserActionState(type)) {
-        
-        REPORT_UNEXPECTED_TOKEN(PEPseudoSelNoUserActionPC);
-        UngetToken();
-        return eSelectorParsingStatus_Error;
-      }
-      if (!pseudoClassIsUserAction) {
-        
-        
-        REPORT_UNEXPECTED_TOKEN(PEPseudoClassNotUserAction);
-        UngetToken();
-        return eSelectorParsingStatus_Error;
-      }
-    }
     aDataMask |= SEL_MASK_PCLASS;
     if (eCSSToken_Function == mToken.mType) {
       nsSelectorParsingStatus parsingStatus;
@@ -6503,13 +6504,7 @@ CSSParserImpl::ParseSelector(nsCSSSelectorList* aList,
     ParseTypeOrUniversalSelector(dataMask, *selector, false);
 
   while (parsingStatus == eSelectorParsingStatus_Continue) {
-    if (eCSSToken_ID == mToken.mType) { 
-      parsingStatus = ParseIDSelector(dataMask, *selector);
-    }
-    else if (mToken.IsSymbol('.')) {    
-      parsingStatus = ParseClassSelector(dataMask, *selector);
-    }
-    else if (mToken.IsSymbol(':')) {    
+    if (mToken.IsSymbol(':')) {    
       parsingStatus = ParsePseudoSelector(dataMask, *selector, false,
                                           getter_AddRefs(pseudoElement),
                                           getter_Transfers(pseudoElementArgs),
@@ -6527,6 +6522,17 @@ CSSParserImpl::ParseSelector(nsCSSSelectorList* aList,
         selector->mClassList = pseudoElementArgs.forget();
         selector->SetPseudoType(pseudoElementType);
       }
+    } else if (selector->IsPseudoElement()) {
+      
+      
+      
+      parsingStatus = eSelectorParsingStatus_Done;
+      UngetToken();
+      break;
+    } else if (eCSSToken_ID == mToken.mType) { 
+      parsingStatus = ParseIDSelector(dataMask, *selector);
+    } else if (mToken.IsSymbol('.')) {    
+      parsingStatus = ParseClassSelector(dataMask, *selector);
     }
     else if (mToken.IsSymbol('[')) {    
       parsingStatus = ParseAttributeSelector(dataMask, *selector);
