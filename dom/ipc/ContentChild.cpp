@@ -1169,7 +1169,7 @@ StartMacOSContentSandbox()
 #endif
 
 bool
-ContentChild::RecvSetProcessSandbox()
+ContentChild::RecvSetProcessSandbox(const MaybeFileDesc& aBroker)
 {
     
     
@@ -1185,7 +1185,15 @@ ContentChild::RecvSetProcessSandbox()
         return true;
     }
 #endif
-    SetContentProcessSandbox(-1);
+    int brokerFd = -1;
+    if (aBroker.type() == MaybeFileDesc::TFileDescriptor) {
+        brokerFd = aBroker.get_FileDescriptor().PlatformHandle();
+        
+        
+        
+        MOZ_RELEASE_ASSERT(brokerFd >= 0);
+    }
+    SetContentProcessSandbox(brokerFd);
 #elif defined(XP_WIN)
     mozilla::SandboxTarget::Instance()->StartSandbox();
 #elif defined(XP_MACOSX)
