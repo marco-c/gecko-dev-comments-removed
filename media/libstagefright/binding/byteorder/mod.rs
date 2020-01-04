@@ -36,7 +36,6 @@
 
 
 
-#![crate_name = "byteorder"]
 #![doc(html_root_url = "http://burntsushi.net/rustdoc/byteorder")]
 
 #![deny(missing_docs)]
@@ -48,6 +47,7 @@ pub use byteorder::new::{ReadBytesExt, WriteBytesExt, Error, Result};
 
 pub mod new;
 
+#[inline]
 fn extend_sign(val: u64, nbytes: usize) -> i64 {
     let shift  = (8 - nbytes) * 8;
     (val << shift) as i64 >> shift
@@ -123,6 +123,7 @@ pub trait ByteOrder {
     
     
     
+    #[inline]
     fn read_i16(buf: &[u8]) -> i16 {
         Self::read_u16(buf) as i16
     }
@@ -130,6 +131,7 @@ pub trait ByteOrder {
     
     
     
+    #[inline]
     fn read_i32(buf: &[u8]) -> i32 {
         Self::read_u32(buf) as i32
     }
@@ -137,6 +139,7 @@ pub trait ByteOrder {
     
     
     
+    #[inline]
     fn read_i64(buf: &[u8]) -> i64 {
         Self::read_u64(buf) as i64
     }
@@ -145,6 +148,7 @@ pub trait ByteOrder {
     
     
     
+    #[inline]
     fn read_int(buf: &[u8], nbytes: usize) -> i64 {
         extend_sign(Self::read_uint(buf, nbytes), nbytes)
     }
@@ -152,6 +156,7 @@ pub trait ByteOrder {
     
     
     
+    #[inline]
     fn read_f32(buf: &[u8]) -> f32 {
         unsafe { transmute(Self::read_u32(buf)) }
     }
@@ -159,6 +164,7 @@ pub trait ByteOrder {
     
     
     
+    #[inline]
     fn read_f64(buf: &[u8]) -> f64 {
         unsafe { transmute(Self::read_u64(buf)) }
     }
@@ -166,6 +172,7 @@ pub trait ByteOrder {
     
     
     
+    #[inline]
     fn write_i16(buf: &mut [u8], n: i16) {
         Self::write_u16(buf, n as u16)
     }
@@ -173,6 +180,7 @@ pub trait ByteOrder {
     
     
     
+    #[inline]
     fn write_i32(buf: &mut [u8], n: i32) {
         Self::write_u32(buf, n as u32)
     }
@@ -180,6 +188,7 @@ pub trait ByteOrder {
     
     
     
+    #[inline]
     fn write_i64(buf: &mut [u8], n: i64) {
         Self::write_u64(buf, n as u64)
     }
@@ -187,6 +196,7 @@ pub trait ByteOrder {
     
     
     
+    #[inline]
     fn write_f32(buf: &mut [u8], n: f32) {
         Self::write_u32(buf, unsafe { transmute(n) })
     }
@@ -194,6 +204,7 @@ pub trait ByteOrder {
     
     
     
+    #[inline]
     fn write_f64(buf: &mut [u8], n: f64) {
         Self::write_u64(buf, unsafe { transmute(n) })
     }
@@ -271,60 +282,74 @@ macro_rules! write_num_bytes {
 }
 
 impl ByteOrder for BigEndian {
+    #[inline]
     fn read_u16(buf: &[u8]) -> u16 {
         read_num_bytes!(u16, 2, buf, to_be)
     }
 
+    #[inline]
     fn read_u32(buf: &[u8]) -> u32 {
         read_num_bytes!(u32, 4, buf, to_be)
     }
 
+    #[inline]
     fn read_u64(buf: &[u8]) -> u64 {
         read_num_bytes!(u64, 8, buf, to_be)
     }
 
+    #[inline]
     fn read_uint(buf: &[u8], nbytes: usize) -> u64 {
         read_num_bytes!(u64, 8, be nbytes, buf, to_be)
     }
 
+    #[inline]
     fn write_u16(buf: &mut [u8], n: u16) {
         write_num_bytes!(u16, 2, n, buf, to_be);
     }
 
+    #[inline]
     fn write_u32(buf: &mut [u8], n: u32) {
         write_num_bytes!(u32, 4, n, buf, to_be);
     }
 
+    #[inline]
     fn write_u64(buf: &mut [u8], n: u64) {
         write_num_bytes!(u64, 8, n, buf, to_be);
     }
 }
 
 impl ByteOrder for LittleEndian {
+    #[inline]
     fn read_u16(buf: &[u8]) -> u16 {
         read_num_bytes!(u16, 2, buf, to_le)
     }
 
+    #[inline]
     fn read_u32(buf: &[u8]) -> u32 {
         read_num_bytes!(u32, 4, buf, to_le)
     }
 
+    #[inline]
     fn read_u64(buf: &[u8]) -> u64 {
         read_num_bytes!(u64, 8, buf, to_le)
     }
 
+    #[inline]
     fn read_uint(buf: &[u8], nbytes: usize) -> u64 {
         read_num_bytes!(u64, 8, le nbytes, buf, to_le)
     }
 
+    #[inline]
     fn write_u16(buf: &mut [u8], n: u16) {
         write_num_bytes!(u16, 2, n, buf, to_le);
     }
 
+    #[inline]
     fn write_u32(buf: &mut [u8], n: u32) {
         write_num_bytes!(u32, 4, n, buf, to_le);
     }
 
+    #[inline]
     fn write_u64(buf: &mut [u8], n: u64) {
         write_num_bytes!(u64, 8, n, buf, to_le);
     }
