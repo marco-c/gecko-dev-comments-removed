@@ -263,37 +263,50 @@ FetchDriver::BasicFetch()
     nsAutoCString method;
     mRequest->GetMethod(method);
     if (method.LowerCaseEqualsASCII("get")) {
-      
-      
-      
-      
-      nsAutoCString contentType, contentCharset, dataBuffer, hashRef;
-      bool isBase64;
-      rv = nsDataHandler::ParseURI(url,
-                                   contentType,
-                                   contentCharset,
-                                   isBase64,
-                                   dataBuffer,
-                                   hashRef);
-      if (NS_SUCCEEDED(rv)) {
-        ErrorResult result;
-        nsRefPtr<InternalResponse> response = new InternalResponse(200, NS_LITERAL_CSTRING("OK"));
-        if (!contentCharset.IsEmpty()) {
-          contentType.Append(";charset=");
-          contentType.Append(contentCharset);
-        }
+      nsresult rv;
+      nsCOMPtr<nsIProtocolHandler> dataHandler =
+        do_GetService(NS_NETWORK_PROTOCOL_CONTRACTID_PREFIX "data", &rv);
 
-        response->Headers()->Append(NS_LITERAL_CSTRING("Content-Type"), contentType, result);
-        if (!result.Failed()) {
-          nsCOMPtr<nsIInputStream> stream;
-          rv = NS_NewCStringInputStream(getter_AddRefs(stream), dataBuffer);
-          if (NS_SUCCEEDED(rv)) {
-            response->SetBody(stream);
-            BeginResponse(response);
-            return SucceedWithResponse();
-          }
-        }
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return FailWithNetworkError();
       }
+
+      nsCOMPtr<nsIChannel> channel;
+      rv = dataHandler->NewChannel(uri, getter_AddRefs(channel));
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return FailWithNetworkError();
+      }
+
+      nsCOMPtr<nsIInputStream> stream;
+      rv = channel->Open(getter_AddRefs(stream));
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return FailWithNetworkError();
+      }
+
+      
+      
+      nsAutoCString contentType;
+      if (NS_SUCCEEDED(channel->GetContentType(contentType))) {
+        nsAutoCString charset;
+        if (NS_SUCCEEDED(channel->GetContentCharset(charset)) && !charset.IsEmpty()) {
+          contentType.AppendLiteral(";charset=");
+          contentType.Append(charset);
+        }
+      } else {
+        NS_WARNING("Could not get content type from data channel");
+      }
+
+      nsRefPtr<InternalResponse> response = new InternalResponse(200, NS_LITERAL_CSTRING("OK"));
+      ErrorResult result;
+      response->Headers()->Append(NS_LITERAL_CSTRING("Content-Type"), contentType, result);
+      if (NS_WARN_IF(result.Failed())) {
+        FailWithNetworkError();
+        return result.StealNSResult();
+      }
+
+      response->SetBody(stream);
+      BeginResponse(response);
+      return SucceedWithResponse();
     }
 
     return FailWithNetworkError();
