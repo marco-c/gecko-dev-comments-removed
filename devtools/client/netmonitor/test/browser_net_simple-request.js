@@ -1,5 +1,11 @@
 
 
+"use strict";
+
+
+
+
+
 
 
 
@@ -48,6 +54,19 @@ function test() {
           "The requests menu should not be empty after a reload.");
         is(NetMonitorView.detailsPaneHidden, true,
           "The details pane should still be hidden after a reload.");
+
+        RequestsMenu.clear();
+
+        is(document.querySelector("#details-pane-toggle")
+          .hasAttribute("disabled"), true,
+          "The pane toggle button should be disabled when after clear.");
+        is(document.querySelector("#requests-menu-empty-notice")
+          .hasAttribute("hidden"), false,
+          "An empty notice should be displayed again after clear.");
+        is(RequestsMenu.itemCount, 0,
+          "The requests menu should be empty after clear.");
+        is(NetMonitorView.detailsPaneHidden, true,
+          "The details pane should be hidden after clear.");
 
         teardown(aMonitor).then(finish);
       });
