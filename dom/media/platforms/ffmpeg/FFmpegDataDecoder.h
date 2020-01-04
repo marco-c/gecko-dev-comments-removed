@@ -23,7 +23,9 @@ template <>
 class FFmpegDataDecoder<LIBAV_VER> : public MediaDataDecoder
 {
 public:
-  FFmpegDataDecoder(FlushableTaskQueue* aTaskQueue, AVCodecID aCodecID);
+  FFmpegDataDecoder(FlushableTaskQueue* aTaskQueue,
+                    MediaDataDecoderCallback* aCallback,
+                    AVCodecID aCodecID);
   virtual ~FFmpegDataDecoder();
 
   static bool Link();
@@ -31,18 +33,32 @@ public:
   virtual nsRefPtr<InitPromise> Init() override = 0;
   virtual nsresult Input(MediaRawData* aSample) override = 0;
   virtual nsresult Flush() override;
-  virtual nsresult Drain() override = 0;
+  virtual nsresult Drain() override;
   virtual nsresult Shutdown() override;
 
 protected:
+  
+  virtual void ProcessFlush();
+  virtual void ProcessDrain() = 0;
+  virtual void ProcessShutdown();
   AVFrame*        PrepareFrame();
   nsresult        InitDecoder();
 
-  FlushableTaskQueue* mTaskQueue;
+  nsRefPtr<FlushableTaskQueue> mTaskQueue;
+  MediaDataDecoderCallback* mCallback;
+
   AVCodecContext* mCodecContext;
   AVFrame*        mFrame;
   nsRefPtr<MediaByteBuffer> mExtraData;
   AVCodecID mCodecID;
+
+  
+  
+  Monitor mMonitor;
+  
+  
+  
+  Atomic<bool> mIsFlushing;
 
 private:
   static bool sFFmpegInitDone;
