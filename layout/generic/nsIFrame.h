@@ -423,6 +423,7 @@ public:
   typedef mozilla::layout::FrameChildListIDs ChildListIDs;
   typedef mozilla::layout::FrameChildListIterator ChildListIterator;
   typedef mozilla::layout::FrameChildListArrayIterator ChildListArrayIterator;
+  typedef mozilla::gfx::DrawTarget DrawTarget;
   typedef mozilla::gfx::Matrix Matrix;
   typedef mozilla::gfx::Matrix4x4 Matrix4x4;
   typedef mozilla::Sides Sides;
@@ -894,8 +895,7 @@ public:
   NS_DECLARE_FRAME_PROPERTY(LineBaselineOffset, nullptr)
 
   NS_DECLARE_FRAME_PROPERTY(CachedBackgroundImage, ReleaseValue<gfxASurface>)
-  NS_DECLARE_FRAME_PROPERTY(CachedBackgroundImageDT,
-                            ReleaseValue<mozilla::gfx::DrawTarget>)
+  NS_DECLARE_FRAME_PROPERTY(CachedBackgroundImageDT, ReleaseValue<DrawTarget>)
 
   NS_DECLARE_FRAME_PROPERTY(InvalidationRect, DeleteValue<nsRect>)
 
@@ -1802,7 +1802,7 @@ public:
 
 
 
-  virtual nsRect ComputeTightBounds(gfxContext* aContext) const;
+  virtual nsRect ComputeTightBounds(DrawTarget* aDrawTarget) const;
 
   
 

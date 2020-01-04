@@ -21,7 +21,6 @@ class nsDisplayListSet;
 
 class nsMathMLFrame : public nsIMathMLFrame {
 public:
-
   
 
   virtual bool
@@ -50,7 +49,7 @@ public:
   virtual eMathMLFrameType GetMathMLFrameType() override;
 
   NS_IMETHOD
-  Stretch(nsRenderingContext& aRenderingContext,
+  Stretch(mozilla::gfx::DrawTarget* aDrawTarget,
           nsStretchDirection   aStretchDirection,
           nsBoundingMetrics&   aContainerSize,
           nsHTMLReflowMetrics& aDesiredStretchSize) override
@@ -336,14 +335,14 @@ public:
   
   
   static void
-  GetRuleThickness(nsRenderingContext& aRenderingContext, 
-                   nsFontMetrics*      aFontMetrics,
-                   nscoord&             aRuleThickness);
+  GetRuleThickness(mozilla::gfx::DrawTarget* aDrawTarget,
+                   nsFontMetrics* aFontMetrics,
+                   nscoord& aRuleThickness);
 
   static void
-  GetAxisHeight(nsRenderingContext& aRenderingContext, 
-                nsFontMetrics*      aFontMetrics,
-                nscoord&             aAxisHeight);
+  GetAxisHeight(mozilla::gfx::DrawTarget* aDrawTarget,
+                nsFontMetrics* aFontMetrics,
+                nscoord& aAxisHeight);
 
   static void
   GetRadicalParameters(nsFontMetrics* aFontMetrics,

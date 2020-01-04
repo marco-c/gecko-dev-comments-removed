@@ -82,7 +82,6 @@ struct gfxTextRunDrawCallbacks {
 
 class gfxTextRun : public gfxShapedText {
 public:
-
     
     
     void operator delete(void* p) {
@@ -92,6 +91,7 @@ public:
     virtual ~gfxTextRun();
 
     typedef gfxFont::RunMetrics Metrics;
+    typedef mozilla::gfx::DrawTarget DrawTarget;
 
     
 
@@ -194,7 +194,7 @@ public:
 
         
         
-        virtual already_AddRefed<gfxContext> GetContext() = 0;
+        virtual already_AddRefed<DrawTarget> GetDrawTarget() = 0;
 
         
         
@@ -267,8 +267,8 @@ public:
 
     Metrics MeasureText(uint32_t aStart, uint32_t aLength,
                         gfxFont::BoundingBoxType aBoundingBoxType,
-                        gfxContext *aRefContextForTightBoundingBox,
-                        PropertyProvider *aProvider);
+                        DrawTarget* aDrawTargetForTightBoundingBox,
+                        PropertyProvider* aProvider);
 
     
 
@@ -310,8 +310,7 @@ public:
 
     virtual bool SetLineBreaks(uint32_t aStart, uint32_t aLength,
                                  bool aLineBreakBefore, bool aLineBreakAfter,
-                                 gfxFloat *aAdvanceWidthDelta,
-                                 gfxContext *aRefContext);
+                                 gfxFloat* aAdvanceWidthDelta);
 
     enum SuppressBreak {
       eNoSuppressBreak,
@@ -383,7 +382,7 @@ public:
                                  gfxFloat *aTrimWhitespace,
                                  Metrics *aMetrics,
                                  gfxFont::BoundingBoxType aBoundingBoxType,
-                                 gfxContext *aRefContextForTightBoundingBox,
+                                 DrawTarget* aDrawTargetForTightBoundingBox,
                                  bool *aUsedHyphenation,
                                  uint32_t *aLastBreak,
                                  bool aCanWordWrap,
@@ -490,8 +489,8 @@ public:
     
     void ClearGlyphsAndCharacters();
 
-    void SetSpaceGlyph(gfxFont *aFont, gfxContext *aContext, uint32_t aCharIndex,
-                       uint16_t aOrientation);
+    void SetSpaceGlyph(gfxFont* aFont, DrawTarget* aDrawTarget,
+                       uint32_t aCharIndex, uint16_t aOrientation);
 
     
     
@@ -531,7 +530,7 @@ public:
 
 
 
-    void FetchGlyphExtents(gfxContext *aRefContext);
+    void FetchGlyphExtents(DrawTarget* aRefDrawTarget);
 
     uint32_t CountMissingGlyphs();
     const GlyphRun *GetGlyphRuns(uint32_t *aNumGlyphRuns) {
@@ -696,7 +695,7 @@ private:
     void AccumulatePartialLigatureMetrics(gfxFont *aFont,
                                           uint32_t aStart, uint32_t aEnd,
                                           gfxFont::BoundingBoxType aBoundingBoxType,
-                                          gfxContext *aRefContext,
+                                          DrawTarget* aRefDrawTarget,
                                           PropertyProvider *aProvider,
                                           uint16_t aOrientation,
                                           Metrics *aMetrics);
@@ -704,7 +703,7 @@ private:
     
     void AccumulateMetricsForRun(gfxFont *aFont, uint32_t aStart, uint32_t aEnd,
                                  gfxFont::BoundingBoxType aBoundingBoxType,
-                                 gfxContext *aRefContext,
+                                 DrawTarget* aRefDrawTarget,
                                  PropertyProvider *aProvider,
                                  uint32_t aSpacingStart, uint32_t aSpacingEnd,
                                  uint16_t aOrientation,
@@ -793,14 +792,14 @@ public:
 
 
     template<typename T>
-    gfxTextRun *MakeTextRun(const T *aString, uint32_t aLength,
-                            gfxContext *aRefContext,
+    gfxTextRun* MakeTextRun(const T* aString, uint32_t aLength,
+                            DrawTarget* aRefDrawTarget,
                             int32_t aAppUnitsPerDevUnit,
                             uint32_t aFlags,
                             gfxMissingFontRecorder *aMFR)
     {
         gfxTextRunFactory::Parameters params = {
-            aRefContext, nullptr, nullptr, nullptr, 0, aAppUnitsPerDevUnit
+            aRefDrawTarget, nullptr, nullptr, nullptr, 0, aAppUnitsPerDevUnit
         };
         return MakeTextRun(aString, aLength, &params, aFlags, aMFR);
     }
@@ -820,7 +819,7 @@ public:
 
 
 
-    gfxTextRun *MakeHyphenTextRun(gfxContext *aCtx,
+    gfxTextRun* MakeHyphenTextRun(DrawTarget* aDrawTarget,
                                   uint32_t aAppUnitsPerDevUnit);
 
     
@@ -871,9 +870,9 @@ public:
         return mSkipDrawing;
     }
 
-    class LazyReferenceContextGetter {
+    class LazyReferenceDrawTargetGetter {
     public:
-      virtual already_AddRefed<gfxContext> GetRefContext() = 0;
+      virtual already_AddRefed<DrawTarget> GetRefDrawTarget() = 0;
     };
     
     
@@ -881,7 +880,7 @@ public:
     
     
     gfxTextRun* GetEllipsisTextRun(int32_t aAppUnitsPerDevPixel, uint32_t aFlags,
-                                   LazyReferenceContextGetter& aRefContextGetter);
+                                   LazyReferenceDrawTargetGetter& aRefDrawTargetGetter);
 
 protected:
     
@@ -1102,7 +1101,7 @@ protected:
     
     
     template<typename T>
-    void InitTextRun(gfxContext *aContext,
+    void InitTextRun(DrawTarget* aDrawTarget,
                      gfxTextRun *aTextRun,
                      const T *aString,
                      uint32_t aLength,
@@ -1111,7 +1110,7 @@ protected:
     
     
     template<typename T>
-    void InitScriptRun(gfxContext *aContext,
+    void InitScriptRun(DrawTarget* aDrawTarget,
                        gfxTextRun *aTextRun,
                        const T *aString,
                        uint32_t aScriptRunStart,

@@ -888,7 +888,7 @@ nsMathMLmtableOuterFrame::Reflow(nsPresContext*          aPresContext,
                                             nsLayoutUtils::
                                             FontSizeInflationFor(this));
       nscoord axisHeight;
-      GetAxisHeight(*aReflowState.rendContext, fm, axisHeight);
+      GetAxisHeight(aReflowState.rendContext->GetDrawTarget(), fm, axisHeight);
       if (rowFrame) {
         
         

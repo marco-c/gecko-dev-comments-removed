@@ -81,7 +81,7 @@ public:
 
 
   NS_IMETHOD 
-  Stretch(nsRenderingContext& aRenderingContext,
+  Stretch(mozilla::gfx::DrawTarget* aDrawTarget,
           nsStretchDirection   aStretchDirection,
           nsBoundingMetrics&   aContainerSize,
           nsHTMLReflowMetrics& aDesiredStretchSize) = 0;

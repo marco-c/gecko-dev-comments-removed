@@ -62,8 +62,8 @@ public:
     
     
     
-    bool GetTightGlyphExtentsAppUnits(gfxFont *aFont,
-            gfxContext *aContext, uint32_t aGlyphID, gfxRect *aExtents);
+    bool GetTightGlyphExtentsAppUnits(gfxFont* aFont,
+            DrawTarget* aDrawTarget, uint32_t aGlyphID, gfxRect* aExtents);
 
     void SetContainedGlyphWidthAppUnits(uint32_t aGlyphID, uint16_t aWidth) {
         mContainedGlyphWidths.Set(aGlyphID, aWidth);

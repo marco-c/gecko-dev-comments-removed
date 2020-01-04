@@ -85,6 +85,8 @@ struct nsGlyphCode {
 class nsMathMLChar
 {
 public:
+  typedef mozilla::gfx::DrawTarget DrawTarget;
+
   
   nsMathMLChar() {
     MOZ_COUNT_CTOR(nsMathMLChar);
@@ -114,7 +116,7 @@ public:
   
   nsresult
   Stretch(nsPresContext*           aPresContext,
-          nsRenderingContext&     aRenderingContext,
+          DrawTarget*              aDrawTarget,
           float                    aFontSizeInflation,
           nsStretchDirection       aStretchDirection,
           const nsBoundingMetrics& aContainerSize,
@@ -164,7 +166,7 @@ public:
   
   nscoord
   GetMaxWidth(nsPresContext* aPresContext,
-              nsRenderingContext& aRenderingContext,
+              DrawTarget* aDrawTarget,
               float aFontSizeInflation,
               uint32_t aStretchHint = NS_STRETCH_NORMAL);
 
@@ -238,7 +240,7 @@ private:
 
   nsresult
   StretchInternal(nsPresContext*           aPresContext,
-                  gfxContext*              aThebesContext,
+                  DrawTarget*              aDrawTarget,
                   float                    aFontSizeInflation,
                   nsStretchDirection&      aStretchDirection,
                   const nsBoundingMetrics& aContainerSize,

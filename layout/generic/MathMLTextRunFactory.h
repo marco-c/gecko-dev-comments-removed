@@ -22,7 +22,7 @@ public:
       mSSTYScriptLevel(aSSTYScriptLevel) {}
 
   virtual void RebuildTextRun(nsTransformedTextRun* aTextRun,
-                              gfxContext* aRefContext,
+                              mozilla::gfx::DrawTarget* aRefDrawTarget,
                               gfxMissingFontRecorder* aMFR) override;
   enum {
     

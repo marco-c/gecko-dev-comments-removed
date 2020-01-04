@@ -46,6 +46,8 @@ struct nsBoundingMetrics;
 class nsFontMetrics final
 {
 public:
+    typedef mozilla::gfx::DrawTarget DrawTarget;
+
     nsFontMetrics();
 
     NS_INLINE_DECL_REFCOUNTING(nsFontMetrics)
@@ -187,9 +189,9 @@ public:
     
     
     nscoord GetWidth(const char* aString, uint32_t aLength,
-                     nsRenderingContext *aContext);
+                     DrawTarget* aDrawTarget);
     nscoord GetWidth(const char16_t* aString, uint32_t aLength,
-                     nsRenderingContext *aContext);
+                     DrawTarget* aDrawTarget);
 
     
     void DrawString(const char *aString, uint32_t aLength,
@@ -198,17 +200,17 @@ public:
     void DrawString(const char16_t* aString, uint32_t aLength,
                     nscoord aX, nscoord aY,
                     nsRenderingContext *aContext,
-                    nsRenderingContext *aTextRunConstructionContext);
+                    DrawTarget* aTextRunConstructionDrawTarget);
 
     nsBoundingMetrics GetBoundingMetrics(const char16_t *aString,
                                          uint32_t aLength,
-                                         nsRenderingContext *aContext);
+                                         DrawTarget* aDrawTarget);
 
     
     
     nsBoundingMetrics GetInkBoundsForVisualOverflow(const char16_t *aString,
                                                     uint32_t aLength,
-                                                    nsRenderingContext *aContext);
+                                                    DrawTarget* aDrawTarget);
 
     void SetTextRunRTL(bool aIsRTL) { mTextRunRTL = aIsRTL; }
     bool GetTextRunRTL() const { return mTextRunRTL; }

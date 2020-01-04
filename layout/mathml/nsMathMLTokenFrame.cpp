@@ -153,7 +153,7 @@ nsMathMLTokenFrame::Reflow(nsPresContext*          aPresContext,
   }
 
   
-  FinalizeReflow(*aReflowState.rendContext, aDesiredSize);
+  FinalizeReflow(aReflowState.rendContext->GetDrawTarget(), aDesiredSize);
 
   aStatus = NS_FRAME_COMPLETE;
   NS_FRAME_SET_TRUNCATION(aStatus, aReflowState, aDesiredSize);
@@ -163,7 +163,7 @@ nsMathMLTokenFrame::Reflow(nsPresContext*          aPresContext,
 
 
  nsresult
-nsMathMLTokenFrame::Place(nsRenderingContext& aRenderingContext,
+nsMathMLTokenFrame::Place(DrawTarget*          aDrawTarget,
                           bool                 aPlaceOrigin,
                           nsHTMLReflowMetrics& aDesiredSize)
 {

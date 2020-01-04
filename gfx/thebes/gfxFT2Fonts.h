@@ -65,7 +65,7 @@ public:
 #endif
 
 protected:
-    virtual bool ShapeText(gfxContext      *aContext,
+    virtual bool ShapeText(DrawTarget      *aDrawTarget,
                            const char16_t *aText,
                            uint32_t         aOffset,
                            uint32_t         aLength,

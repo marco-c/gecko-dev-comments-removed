@@ -243,7 +243,7 @@ public:
               const mozilla::LogicalSize& aBorder,
               const mozilla::LogicalSize& aPadding,
               ComputeSizeFlags aFlags) override;
-  virtual nsRect ComputeTightBounds(gfxContext* aContext) const override;
+  virtual nsRect ComputeTightBounds(DrawTarget* aDrawTarget) const override;
   virtual nsresult GetPrefWidthTightBounds(nsRenderingContext* aContext,
                                            nscoord* aX,
                                            nscoord* aXMost) override;
@@ -262,7 +262,7 @@ public:
     
     nscoord      mDeltaWidth;
   };
-  TrimOutput TrimTrailingWhiteSpace(nsRenderingContext* aRC);
+  TrimOutput TrimTrailingWhiteSpace(DrawTarget* aDrawTarget);
   virtual RenderedText GetRenderedText(uint32_t aStartOffset = 0,
                                        uint32_t aEndOffset = UINT32_MAX,
                                        TextOffsetType aOffsetType =
@@ -485,9 +485,8 @@ public:
 
 
 
-
   gfxSkipCharsIterator EnsureTextRun(TextRunType aWhichTextRun,
-                                     gfxContext* aReferenceContext = nullptr,
+                                     DrawTarget* aRefDrawTarget = nullptr,
                                      nsIFrame* aLineContainer = nullptr,
                                      const nsLineList::iterator* aLine = nullptr,
                                      uint32_t* aFlowEndInTextRun = nullptr);
@@ -546,7 +545,7 @@ public:
 
   
   void ReflowText(nsLineLayout& aLineLayout, nscoord aAvailableWidth,
-                  nsRenderingContext* aRenderingContext,
+                  DrawTarget* aDrawTarget,
                   nsHTMLReflowMetrics& aMetrics, nsReflowStatus& aStatus);
 
   bool IsFloatingFirstLetterChild() const;

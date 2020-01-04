@@ -273,7 +273,7 @@ public:
 
   
   
-  nsRect ComputeSimpleTightBounds(gfxContext* aContext) const;
+  nsRect ComputeSimpleTightBounds(mozilla::gfx::DrawTarget* aDrawTarget) const;
   
   
 

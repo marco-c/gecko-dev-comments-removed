@@ -454,6 +454,8 @@ class gfxTextRunFactory {
     NS_INLINE_DECL_REFCOUNTING(gfxTextRunFactory)
 
 public:
+    typedef mozilla::gfx::DrawTarget DrawTarget;
+
     
     
     
@@ -573,7 +575,7 @@ public:
 
     struct Parameters {
         
-        gfxContext   *mContext;
+        DrawTarget   *mDrawTarget;
         
         void         *mUserData;
         
@@ -626,7 +628,7 @@ public:
     
     
     
-    virtual bool ShapeText(gfxContext     *aContext,
+    virtual bool ShapeText(DrawTarget     *aDrawTarget,
                            const char16_t *aText,
                            uint32_t        aOffset,
                            uint32_t        aLength,
@@ -1486,7 +1488,7 @@ public:
         return 0;
     }
     
-    gfxFloat GetGlyphHAdvance(gfxContext *aCtx, uint16_t aGID);
+    gfxFloat GetGlyphHAdvance(DrawTarget* aDrawTarget, uint16_t aGID);
 
     
     virtual already_AddRefed<mozilla::gfx::GlyphRenderingOptions>
@@ -1643,7 +1645,7 @@ public:
     virtual RunMetrics Measure(gfxTextRun *aTextRun,
                                uint32_t aStart, uint32_t aEnd,
                                BoundingBoxType aBoundingBoxType,
-                               gfxContext *aContextForTightBoundingBox,
+                               DrawTarget* aDrawTargetForTightBoundingBox,
                                Spacing *aSpacing, uint16_t aOrientation);
     
 
@@ -1709,7 +1711,7 @@ public:
     }
 
     template<typename T>
-    bool InitFakeSmallCapsRun(gfxContext *aContext,
+    bool InitFakeSmallCapsRun(DrawTarget *aDrawTarget,
                               gfxTextRun *aTextRun,
                               const T    *aText,
                               uint32_t    aOffset,
@@ -1724,7 +1726,7 @@ public:
     
     
     template<typename T>
-    bool SplitAndInitTextRun(gfxContext *aContext,
+    bool SplitAndInitTextRun(DrawTarget *aDrawTarget,
                              gfxTextRun *aTextRun,
                              const T *aString,
                              uint32_t aRunStart,
@@ -1735,7 +1737,7 @@ public:
     
     
     template<typename T>
-    gfxShapedWord* GetShapedWord(gfxContext *aContext,
+    gfxShapedWord* GetShapedWord(DrawTarget *aDrawTarget,
                                  const T *aText,
                                  uint32_t aLength,
                                  uint32_t aHash,
@@ -1905,7 +1907,8 @@ protected:
         return -1;
     }
 
-    bool IsSpaceGlyphInvisible(gfxContext *aRefContext, gfxTextRun *aTextRun);
+    bool IsSpaceGlyphInvisible(DrawTarget* aRefDrawTarget,
+                               gfxTextRun* aTextRun);
 
     void AddGlyphChangeObserver(GlyphChangeObserver *aObserver);
     void RemoveGlyphChangeObserver(GlyphChangeObserver *aObserver);
@@ -1917,7 +1920,7 @@ protected:
     bool SpaceMayParticipateInShaping(int32_t aRunScript);
 
     
-    bool ShapeText(gfxContext    *aContext,
+    bool ShapeText(DrawTarget    *aContext,
                    const uint8_t *aText,
                    uint32_t       aOffset, 
                    uint32_t       aLength,
@@ -1927,7 +1930,7 @@ protected:
 
     
     
-    virtual bool ShapeText(gfxContext      *aContext,
+    virtual bool ShapeText(DrawTarget      *aContext,
                            const char16_t *aText,
                            uint32_t         aOffset,
                            uint32_t         aLength,
@@ -1953,7 +1956,7 @@ protected:
     
     
     template<typename T>
-    bool ShapeTextWithoutWordCache(gfxContext *aContext,
+    bool ShapeTextWithoutWordCache(DrawTarget *aDrawTarget,
                                    const T    *aText,
                                    uint32_t    aOffset,
                                    uint32_t    aLength,
@@ -1967,7 +1970,7 @@ protected:
     
     
     template<typename T>
-    bool ShapeFragmentWithoutWordCache(gfxContext *aContext,
+    bool ShapeFragmentWithoutWordCache(DrawTarget *aDrawTarget,
                                        const T    *aText,
                                        uint32_t    aOffset,
                                        uint32_t    aLength,

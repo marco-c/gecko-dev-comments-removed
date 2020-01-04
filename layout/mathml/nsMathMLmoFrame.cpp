@@ -604,7 +604,7 @@ GetStretchHint(nsOperatorFlags aFlags, nsPresentationData aPresentationData,
 
 
 NS_IMETHODIMP
-nsMathMLmoFrame::Stretch(nsRenderingContext& aRenderingContext,
+nsMathMLmoFrame::Stretch(DrawTarget*          aDrawTarget,
                          nsStretchDirection   aStretchDirection,
                          nsBoundingMetrics&   aContainerSize,
                          nsHTMLReflowMetrics& aDesiredStretchSize)
@@ -623,7 +623,7 @@ nsMathMLmoFrame::Stretch(nsRenderingContext& aRenderingContext,
   nsLayoutUtils::GetFontMetricsForFrame(this, getter_AddRefs(fm),
                                         fontSizeInflation);
   nscoord axisHeight, height;
-  GetAxisHeight(aRenderingContext, fm, axisHeight);
+  GetAxisHeight(aDrawTarget, fm, axisHeight);
 
   
   
@@ -748,7 +748,7 @@ nsMathMLmoFrame::Stretch(nsRenderingContext& aRenderingContext,
     }
 
     
-    nsresult res = mMathMLChar.Stretch(PresContext(), aRenderingContext,
+    nsresult res = mMathMLChar.Stretch(PresContext(), aDrawTarget,
                                        fontSizeInflation,
                                        aStretchDirection, container, charSize,
                                        stretchHint,
@@ -763,7 +763,7 @@ nsMathMLmoFrame::Stretch(nsRenderingContext& aRenderingContext,
 
   
   
-  nsresult rv = Place(aRenderingContext, true, aDesiredStretchSize);
+  nsresult rv = Place(aDrawTarget, true, aDesiredStretchSize);
   if (NS_MATHML_HAS_ERROR(mPresentationData.flags) || NS_FAILED(rv)) {
     
     DidReflowChildren(mFrames.FirstChild());
@@ -959,12 +959,11 @@ nsMathMLmoFrame::Reflow(nsPresContext*          aPresContext,
 }
 
 nsresult
-nsMathMLmoFrame::Place(nsRenderingContext&  aRenderingContext,
+nsMathMLmoFrame::Place(DrawTarget*          aDrawTarget,
                        bool                 aPlaceOrigin,
                        nsHTMLReflowMetrics& aDesiredSize)
 {
-  nsresult rv = nsMathMLTokenFrame::Place(aRenderingContext, aPlaceOrigin,
-                                          aDesiredSize);
+  nsresult rv = nsMathMLTokenFrame::Place(aDrawTarget, aPlaceOrigin, aDesiredSize);
 
   if (NS_FAILED(rv)) {
     return rv;
@@ -985,11 +984,11 @@ nsMathMLmoFrame::Place(nsRenderingContext&  aRenderingContext,
       StyleFont()->mMathDisplay == NS_MATHML_DISPLAYSTYLE_BLOCK &&
       NS_MATHML_OPERATOR_IS_LARGEOP(mFlags) && UseMathMLChar()) {
     nsBoundingMetrics newMetrics;
-    rv = mMathMLChar.Stretch(PresContext(), aRenderingContext,
-                                      nsLayoutUtils::FontSizeInflationFor(this),
-                                      NS_STRETCH_DIRECTION_VERTICAL,
-                                      aDesiredSize.mBoundingMetrics, newMetrics,
-                                      NS_STRETCH_LARGEOP, StyleVisibility()->mDirection);
+    rv = mMathMLChar.Stretch(PresContext(), aDrawTarget,
+                             nsLayoutUtils::FontSizeInflationFor(this),
+                             NS_STRETCH_DIRECTION_VERTICAL,
+                             aDesiredSize.mBoundingMetrics, newMetrics,
+                             NS_STRETCH_LARGEOP, StyleVisibility()->mDirection);
 
     if (NS_FAILED(rv)) {
       
@@ -1046,7 +1045,7 @@ nsMathMLmoFrame::GetIntrinsicISizeMetrics(nsRenderingContext* aRenderingContext,
     uint32_t stretchHint = GetStretchHint(mFlags, mPresentationData, true,
                                           StyleFont());
     aDesiredSize.Width() = mMathMLChar.
-      GetMaxWidth(PresContext(), *aRenderingContext,
+      GetMaxWidth(PresContext(), aRenderingContext->GetDrawTarget(),
                   nsLayoutUtils::FontSizeInflationFor(this),
                   stretchHint);
   }

@@ -44,7 +44,7 @@ public:
   
 
   NS_IMETHOD
-  Stretch(nsRenderingContext& aRenderingContext,
+  Stretch(DrawTarget*          aDrawTarget,
           nsStretchDirection   aStretchDirection,
           nsBoundingMetrics&   aContainerSize,
           nsHTMLReflowMetrics& aDesiredStretchSize) override;
@@ -196,7 +196,7 @@ protected:
 
 
   virtual nsresult
-  Place(nsRenderingContext& aRenderingContext,
+  Place(DrawTarget*          aDrawTarget,
         bool                 aPlaceOrigin,
         nsHTMLReflowMetrics& aDesiredSize);
 
@@ -209,7 +209,7 @@ protected:
   
   
   virtual nsresult
-  MeasureForWidth(nsRenderingContext& aRenderingContext,
+  MeasureForWidth(DrawTarget* aDrawTarget,
                   nsHTMLReflowMetrics& aDesiredSize);
 
 
@@ -221,7 +221,7 @@ protected:
   
   
   void
-  GetPreferredStretchSize(nsRenderingContext& aRenderingContext,
+  GetPreferredStretchSize(DrawTarget*          aDrawTarget,
                           uint32_t             aOptions,
                           nsStretchDirection   aStretchDirection,
                           nsBoundingMetrics&   aPreferredStretchSize);
@@ -235,8 +235,7 @@ public:
   
   
   nsresult
-  ReflowError(nsRenderingContext& aRenderingContext,
-              nsHTMLReflowMetrics& aDesiredSize);
+  ReflowError(DrawTarget* aDrawTarget, nsHTMLReflowMetrics& aDesiredSize);
   
 
 
@@ -295,8 +294,7 @@ protected:
   
   
   virtual nsresult
-  FinalizeReflow(nsRenderingContext& aRenderingContext,
-                 nsHTMLReflowMetrics& aDesiredSize);
+  FinalizeReflow(DrawTarget* aDrawTarget, nsHTMLReflowMetrics& aDesiredSize);
 
   
   static void
