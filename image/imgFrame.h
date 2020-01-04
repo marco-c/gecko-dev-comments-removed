@@ -253,6 +253,7 @@ private:
 
   nsresult LockImageData();
   nsresult UnlockImageData();
+  bool     CanOptimizeOpaqueImage();
   nsresult Optimize();
 
   void AssertImageDataLocked() const;
