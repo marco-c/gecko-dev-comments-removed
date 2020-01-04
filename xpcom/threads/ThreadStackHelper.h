@@ -66,7 +66,6 @@ private:
 #ifdef MOZ_THREADSTACKHELPER_PSEUDO
   const PseudoStack* const mPseudoStack;
 #ifdef MOZ_THREADSTACKHELPER_NATIVE
-  class CodeModulesProvider;
   class ThreadContext;
   
   ThreadContext* mContextToFill;
