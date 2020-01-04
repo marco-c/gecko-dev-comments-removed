@@ -398,6 +398,9 @@ public:
   virtual void ResetConnectionState() final override;
 
   
+  virtual void NotifyAudibleStateChanged(bool aAudible) final override;
+
+  
   void SetPreload(const nsAString& aValue, ErrorResult& aRv)
   {
     SetHTMLAttr(nsGkAtoms::preload, aValue, aRv);
@@ -1521,6 +1524,9 @@ private:
   
   
   double mDefaultPlaybackStartPosition;
+
+  
+  bool mIsAudioTrackAudible;
 };
 
 } 

@@ -1197,7 +1197,6 @@ private:
   bool mAudioOffloading;
 
   
-  bool mIsAudioDataAudible;
   uint32_t mSilentDataDuration;
 
 #ifdef MOZ_EME
@@ -1268,6 +1267,9 @@ private:
   
   Canonical<int64_t> mPlaybackOffset;
 
+  
+  Canonical<bool> mIsAudioDataAudible;
+
 public:
   AbstractCanonical<media::TimeIntervals>* CanonicalBuffered() {
     return mReader->CanonicalBuffered();
@@ -1286,6 +1288,9 @@ public:
   }
   AbstractCanonical<int64_t>* CanonicalPlaybackOffset() {
     return &mPlaybackOffset;
+  }
+  AbstractCanonical<bool>* CanonicalIsAudioDataAudible() {
+    return &mIsAudioDataAudible;
   }
 };
 
