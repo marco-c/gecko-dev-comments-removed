@@ -30,12 +30,8 @@ public:
   virtual void SetIntCacheImpl(const nsTArray<LookAndFeelInt>& aLookAndFeelIntCache);
 
   virtual void RefreshImpl();
+
 protected:
-
-  
-  static const int kThemeScrollBarArrowsBoth = 2;
-  static const int kThemeScrollBarArrowsUpperLeft = 3;
-
   static bool SystemWantsOverlayScrollbars();
   static bool AllowOverlayScrollbarsOverlap();
 
