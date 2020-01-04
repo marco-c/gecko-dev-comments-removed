@@ -976,6 +976,29 @@ struct MOZ_STACK_CLASS nsGridContainerFrame::GridReflowState
                       aFrame->GetWritingMode())
   {}
 
+  
+
+
+  void CalculateTrackSizes(const Grid&        aGrid,
+                           const LogicalSize& aContentBox,
+                           IntrinsicISizeType aConstraint);
+
+  
+
+
+  LogicalRect ContainingBlockFor(const GridArea& aArea) const;
+
+  
+
+
+
+
+
+
+  LogicalRect ContainingBlockForAbsPos(const GridArea&     aArea,
+                                       const LogicalPoint& aGridOrigin,
+                                       const LogicalRect&  aGridCB) const;
+
   GridItemCSSOrderIterator mIter;
   const nsStylePosition* const mGridStyle;
   Tracks mCols;
@@ -985,10 +1008,20 @@ struct MOZ_STACK_CLASS nsGridContainerFrame::GridReflowState
   
 
 
+  nsTArray<GridItemInfo> mGridItems;
+  
 
 
-  const nsHTMLReflowState* mReflowState;
+  nsTArray<GridItemInfo> mAbsPosItems;
+
+  
+
+
+
+
+  const nsHTMLReflowState* const mReflowState;
   nsRenderingContext& mRenderingContext;
+  nsGridContainerFrame* const mFrame;
   const WritingMode mWM;
 
 private:
@@ -1009,63 +1042,415 @@ private:
                     mGridStyle->mGridAutoRowsMax)
     , mReflowState(aReflowState)
     , mRenderingContext(aRenderingContext)
+    , mFrame(aFrame)
     , mWM(aWM)
-  {}
+  {
+    MOZ_ASSERT(!aReflowState || aReflowState->frame == mFrame);
+  }
 };
 
-static
-bool IsMinContent(const nsStyleCoord& aCoord)
+
+
+
+
+struct MOZ_STACK_CLASS nsGridContainerFrame::Grid
 {
-  return aCoord.GetUnit() == eStyleUnit_Enumerated &&
-         aCoord.GetIntValue() == NS_STYLE_GRID_TRACK_BREADTH_MIN_CONTENT;
-}
+  
 
 
 
 
 
 
-static const css::GridNamedArea*
-FindNamedArea(const nsSubstring& aName, const nsStylePosition* aStyle)
-{
-  if (!aStyle->mGridTemplateAreas) {
+
+
+
+
+  void PlaceGridItems(GridReflowState& aState,
+                      const LogicalSize& aComputedMinSize,
+                      const LogicalSize& aComputedSize,
+                      const LogicalSize& aComputedMaxSize);
+
+  
+
+
+
+
+
+  LineRange ResolveAbsPosLineRange(const nsStyleGridLine& aStart,
+                                   const nsStyleGridLine& aEnd,
+                                   const LineNameMap& aNameMap,
+                                   uint32_t GridNamedArea::* aAreaStart,
+                                   uint32_t GridNamedArea::* aAreaEnd,
+                                   uint32_t aExplicitGridEnd,
+                                   int32_t aGridStart,
+                                   int32_t aGridEnd,
+                                   const nsStylePosition* aStyle);
+
+  
+
+
+
+
+
+
+  GridArea PlaceAbsPos(nsIFrame* aChild,
+                       const LineNameMap& aColLineNameMap,
+                       const LineNameMap& aRowLineNameMap,
+                       const nsStylePosition* aStyle);
+
+  
+
+
+
+
+  uint32_t FindAutoCol(uint32_t aStartCol, uint32_t aLockedRow,
+                       const GridArea* aArea) const;
+
+  
+
+
+
+
+
+
+  void PlaceAutoCol(uint32_t aStartCol, GridArea* aArea) const;
+
+  
+
+
+
+
+  uint32_t FindAutoRow(uint32_t aLockedCol, uint32_t aStartRow,
+                       const GridArea* aArea) const;
+
+  
+
+
+
+
+
+
+  void PlaceAutoRow(uint32_t aStartRow, GridArea* aArea) const;
+
+  
+
+
+
+
+
+
+  void PlaceAutoAutoInRowOrder(uint32_t aStartCol,
+                               uint32_t aStartRow,
+                               GridArea* aArea) const;
+
+  
+
+
+
+
+
+
+  void PlaceAutoAutoInColOrder(uint32_t aStartCol,
+                               uint32_t aStartRow,
+                               GridArea* aArea) const;
+
+  
+
+
+
+  static int32_t
+  AutoIfOutside(int32_t aLine, int32_t aMin, int32_t aMax)
+  {
+    MOZ_ASSERT(aMin <= aMax);
+    if (aLine < aMin || aLine > aMax) {
+      return kAutoLine;
+    }
+    return aLine;
+  }
+
+  
+
+
+
+  void InflateGridFor(const GridArea& aArea)
+  {
+    mGridColEnd = std::max(mGridColEnd, aArea.mCols.HypotheticalEnd());
+    mGridRowEnd = std::max(mGridRowEnd, aArea.mRows.HypotheticalEnd());
+    MOZ_ASSERT(mGridColEnd <= kTranslatedMaxLine &&
+               mGridRowEnd <= kTranslatedMaxLine);
+  }
+
+  enum LineRangeSide {
+    eLineRangeSideStart, eLineRangeSideEnd
+  };
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  int32_t ResolveLine(const nsStyleGridLine& aLine,
+                      int32_t aNth,
+                      uint32_t aFromIndex,
+                      const LineNameMap& aNameMap,
+                      uint32_t GridNamedArea::* aAreaStart,
+                      uint32_t GridNamedArea::* aAreaEnd,
+                      uint32_t aExplicitGridEnd,
+                      LineRangeSide aSide,
+                      const nsStylePosition* aStyle);
+
+  
+
+
+
+
+  typedef std::pair<int32_t, int32_t> LinePair;
+  LinePair ResolveLineRangeHelper(const nsStyleGridLine& aStart,
+                                  const nsStyleGridLine& aEnd,
+                                  const LineNameMap& aNameMap,
+                                  uint32_t GridNamedArea::* aAreaStart,
+                                  uint32_t GridNamedArea::* aAreaEnd,
+                                  uint32_t aExplicitGridEnd,
+                                  const nsStylePosition* aStyle);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  LineRange ResolveLineRange(const nsStyleGridLine& aStart,
+                             const nsStyleGridLine& aEnd,
+                             const LineNameMap& aNameMap,
+                             uint32_t GridNamedArea::* aAreaStart,
+                             uint32_t GridNamedArea::* aAreaEnd,
+                             uint32_t aExplicitGridEnd,
+                             const nsStylePosition* aStyle);
+
+  
+
+
+
+
+
+
+  GridArea PlaceDefinite(nsIFrame*              aChild,
+                         const LineNameMap&     aColLineNameMap,
+                         const LineNameMap&     aRowLineNameMap,
+                         const nsStylePosition* aStyle);
+
+  bool HasImplicitNamedArea(const nsString& aName) const
+  {
+    return mAreas && mAreas->Contains(aName);
+  }
+
+  
+
+
+
+
+  static const css::GridNamedArea*
+  FindNamedArea(const nsSubstring& aName, const nsStylePosition* aStyle)
+  {
+    if (!aStyle->mGridTemplateAreas) {
+      return nullptr;
+    }
+    const nsTArray<css::GridNamedArea>& areas =
+      aStyle->mGridTemplateAreas->mNamedAreas;
+    size_t len = areas.Length();
+    for (size_t i = 0; i < len; ++i) {
+      const css::GridNamedArea& area = areas[i];
+      if (area.mName == aName) {
+        return &area;
+      }
+    }
     return nullptr;
   }
-  const nsTArray<css::GridNamedArea>& areas =
-    aStyle->mGridTemplateAreas->mNamedAreas;
-  size_t len = areas.Length();
-  for (size_t i = 0; i < len; ++i) {
-    const css::GridNamedArea& area = areas[i];
-    if (area.mName == aName) {
-      return &area;
+
+  
+  
+  static bool
+  IsNameWithSuffix(const nsString& aString, const nsString& aSuffix,
+                   uint32_t* aIndex)
+  {
+    if (StringEndsWith(aString, aSuffix)) {
+      *aIndex = aString.Length() - aSuffix.Length();
+      return *aIndex != 0;
     }
+    return false;
   }
-  return nullptr;
-}
 
-
-
-static bool
-IsNameWithSuffix(const nsString& aString, const nsString& aSuffix,
-                 uint32_t* aIndex)
-{
-  if (StringEndsWith(aString, aSuffix)) {
-    *aIndex = aString.Length() - aSuffix.Length();
-    return *aIndex != 0;
+  static bool
+  IsNameWithEndSuffix(const nsString& aString, uint32_t* aIndex)
+  {
+    return IsNameWithSuffix(aString, NS_LITERAL_STRING("-end"), aIndex);
   }
-  return false;
-}
 
-static bool
-IsNameWithEndSuffix(const nsString& aString, uint32_t* aIndex)
-{
-  return IsNameWithSuffix(aString, NS_LITERAL_STRING("-end"), aIndex);
-}
+  static bool
+  IsNameWithStartSuffix(const nsString& aString, uint32_t* aIndex)
+  {
+    return IsNameWithSuffix(aString, NS_LITERAL_STRING("-start"), aIndex);
+  }
 
-static bool
-IsNameWithStartSuffix(const nsString& aString, uint32_t* aIndex)
+  
+
+
+
+
+
+
+
+  struct CellMap {
+    struct Cell {
+      Cell() : mIsOccupied(false) {}
+      bool mIsOccupied : 1;
+    };
+
+    void Fill(const GridArea& aGridArea)
+    {
+      MOZ_ASSERT(aGridArea.IsDefinite());
+      MOZ_ASSERT(aGridArea.mRows.mStart < aGridArea.mRows.mEnd);
+      MOZ_ASSERT(aGridArea.mCols.mStart < aGridArea.mCols.mEnd);
+      const auto numRows = aGridArea.mRows.mEnd;
+      const auto numCols = aGridArea.mCols.mEnd;
+      mCells.EnsureLengthAtLeast(numRows);
+      for (auto i = aGridArea.mRows.mStart; i < numRows; ++i) {
+        nsTArray<Cell>& cellsInRow = mCells[i];
+        cellsInRow.EnsureLengthAtLeast(numCols);
+        for (auto j = aGridArea.mCols.mStart; j < numCols; ++j) {
+          cellsInRow[j].mIsOccupied = true;
+        }
+      }
+    }
+
+    void ClearOccupied()
+    {
+      const size_t numRows = mCells.Length();
+      for (size_t i = 0; i < numRows; ++i) {
+        nsTArray<Cell>& cellsInRow = mCells[i];
+        const size_t numCols = cellsInRow.Length();
+        for (size_t j = 0; j < numCols; ++j) {
+          cellsInRow[j].mIsOccupied = false;
+        }
+      }
+    }
+
+    uint32_t IsEmptyCol(uint32_t aCol) const
+    {
+      for (auto& row : mCells) {
+        if (aCol < row.Length() && row[aCol].mIsOccupied) {
+          return false;
+        }
+      }
+      return true;
+    }
+    uint32_t IsEmptyRow(uint32_t aRow) const
+    {
+      if (aRow >= mCells.Length()) {
+        return true;
+      }
+      for (const Cell& cell : mCells[aRow]) {
+        if (cell.mIsOccupied) {
+          return false;
+        }
+      }
+      return true;
+    }
+#ifdef DEBUG
+    void Dump() const
+    {
+      const size_t numRows = mCells.Length();
+      for (size_t i = 0; i < numRows; ++i) {
+        const nsTArray<Cell>& cellsInRow = mCells[i];
+        const size_t numCols = cellsInRow.Length();
+        printf("%lu:\t", (unsigned long)i + 1);
+        for (size_t j = 0; j < numCols; ++j) {
+          printf(cellsInRow[j].mIsOccupied ? "X " : ". ");
+        }
+        printf("\n");
+      }
+    }
+#endif
+
+    nsTArray<nsTArray<Cell>> mCells;
+  };
+
+  
+
+
+  CellMap mCellMap;
+  
+
+
+  ImplicitNamedAreas* mAreas;
+  
+
+
+
+  uint32_t mExplicitGridColEnd;
+  
+
+
+
+  uint32_t mExplicitGridRowEnd;
+  
+  
+  uint32_t mGridColEnd;
+  uint32_t mGridRowEnd;
+
+  
+
+
+
+
+
+
+  uint32_t mExplicitGridOffsetCol;
+  uint32_t mExplicitGridOffsetRow;
+
+};
+
+void
+nsGridContainerFrame::GridReflowState::CalculateTrackSizes(
+  const Grid&        aGrid,
+  const LogicalSize& aContentBox,
+  IntrinsicISizeType aConstraint)
 {
-  return IsNameWithSuffix(aString, NS_LITERAL_STRING("-start"), aIndex);
+  mCols.Initialize(mColFunctions, mGridStyle->mGridColumnGap,
+                   aGrid.mGridColEnd, aContentBox.ISize(mWM));
+  mRows.Initialize(mRowFunctions, mGridStyle->mGridRowGap,
+                   aGrid.mGridRowEnd, aContentBox.BSize(mWM));
+
+  mIter.Reset(); 
+  mCols.CalculateSizes(*this, mGridItems, mColFunctions,
+                       aContentBox.ISize(mWM), &GridArea::mCols,
+                       aConstraint);
+
+  mIter.Reset(); 
+  mRows.CalculateSizes(*this, mGridItems, mRowFunctions,
+                       aContentBox.BSize(mWM), &GridArea::mRows,
+                       aConstraint);
 }
 
 
@@ -1437,8 +1822,8 @@ nsGridContainerFrame::AddImplicitNamedAreas(
   for (uint32_t i = 0; i < len; ++i) {
     for (const nsString& name : aLineNameLists[i]) {
       uint32_t index;
-      if (::IsNameWithStartSuffix(name, &index) ||
-          ::IsNameWithEndSuffix(name, &index)) {
+      if (Grid::IsNameWithStartSuffix(name, &index) ||
+          Grid::IsNameWithEndSuffix(name, &index)) {
         nsDependentSubstring area(name, 0, index);
         if (!areas) {
           areas = new ImplicitNamedAreas;
@@ -1467,16 +1852,15 @@ nsGridContainerFrame::InitImplicitNamedAreas(const nsStylePosition* aStyle)
 }
 
 int32_t
-nsGridContainerFrame::ResolveLine(
-  const nsStyleGridLine& aLine,
-  int32_t aNth,
-  uint32_t aFromIndex,
-  const LineNameMap& aNameMap,
-  uint32_t GridNamedArea::* aAreaStart,
-  uint32_t GridNamedArea::* aAreaEnd,
-  uint32_t aExplicitGridEnd,
-  LineRangeSide aSide,
-  const nsStylePosition* aStyle)
+nsGridContainerFrame::Grid::ResolveLine(const nsStyleGridLine& aLine,
+                                        int32_t aNth,
+                                        uint32_t aFromIndex,
+                                        const LineNameMap& aNameMap,
+                                        uint32_t GridNamedArea::* aAreaStart,
+                                        uint32_t GridNamedArea::* aAreaEnd,
+                                        uint32_t aExplicitGridEnd,
+                                        LineRangeSide aSide,
+                                        const nsStylePosition* aStyle)
 {
   MOZ_ASSERT(!aLine.IsAuto());
   int32_t line = 0;
@@ -1490,7 +1874,7 @@ nsGridContainerFrame::ResolveLine(
     }
     bool isNameOnly = !aLine.mHasSpan && aLine.mInteger == 0;
     if (isNameOnly) {
-      const GridNamedArea* area = ::FindNamedArea(aLine.mLineName, aStyle);
+      const GridNamedArea* area = FindNamedArea(aLine.mLineName, aStyle);
       if (area || HasImplicitNamedArea(aLine.mLineName)) {
         
         
@@ -1514,15 +1898,15 @@ nsGridContainerFrame::ResolveLine(
       uint32_t implicitLine = 0;
       uint32_t index;
       auto GridNamedArea::* areaEdge = aAreaStart;
-      bool found = ::IsNameWithStartSuffix(aLine.mLineName, &index);
+      bool found = IsNameWithStartSuffix(aLine.mLineName, &index);
       if (!found) {
-        found = ::IsNameWithEndSuffix(aLine.mLineName, &index);
+        found = IsNameWithEndSuffix(aLine.mLineName, &index);
         areaEdge = aAreaEnd;
       }
       if (found) {
         const GridNamedArea* area =
-          ::FindNamedArea(nsDependentSubstring(aLine.mLineName, 0, index),
-                          aStyle);
+          FindNamedArea(nsDependentSubstring(aLine.mLineName, 0, index),
+                        aStyle);
         if (area) {
           implicitLine = area->*areaEdge;
         }
@@ -1551,8 +1935,8 @@ nsGridContainerFrame::ResolveLine(
   return clamped(line, nsStyleGridLine::kMinLine, nsStyleGridLine::kMaxLine);
 }
 
-nsGridContainerFrame::LinePair
-nsGridContainerFrame::ResolveLineRangeHelper(
+nsGridContainerFrame::Grid::LinePair
+nsGridContainerFrame::Grid::ResolveLineRangeHelper(
   const nsStyleGridLine& aStart,
   const nsStyleGridLine& aEnd,
   const LineNameMap& aNameMap,
@@ -1651,7 +2035,7 @@ nsGridContainerFrame::ResolveLineRangeHelper(
 }
 
 nsGridContainerFrame::LineRange
-nsGridContainerFrame::ResolveLineRange(
+nsGridContainerFrame::Grid::ResolveLineRange(
   const nsStyleGridLine& aStart,
   const nsStyleGridLine& aEnd,
   const LineNameMap& aNameMap,
@@ -1684,10 +2068,10 @@ nsGridContainerFrame::ResolveLineRange(
 }
 
 nsGridContainerFrame::GridArea
-nsGridContainerFrame::PlaceDefinite(nsIFrame* aChild,
-                                    const LineNameMap& aColLineNameMap,
-                                    const LineNameMap& aRowLineNameMap,
-                                    const nsStylePosition* aStyle)
+nsGridContainerFrame::Grid::PlaceDefinite(nsIFrame* aChild,
+                                          const LineNameMap& aColLineNameMap,
+                                          const LineNameMap& aRowLineNameMap,
+                                          const nsStylePosition* aStyle)
 {
   const nsStylePosition* itemStyle = aChild->StylePosition();
   return GridArea(
@@ -1702,7 +2086,7 @@ nsGridContainerFrame::PlaceDefinite(nsIFrame* aChild,
 }
 
 nsGridContainerFrame::LineRange
-nsGridContainerFrame::ResolveAbsPosLineRange(
+nsGridContainerFrame::Grid::ResolveAbsPosLineRange(
   const nsStyleGridLine& aStart,
   const nsStyleGridLine& aEnd,
   const LineNameMap& aNameMap,
@@ -1755,9 +2139,35 @@ nsGridContainerFrame::ResolveAbsPosLineRange(
                    AutoIfOutside(r.mUntranslatedEnd, aGridStart, aGridEnd));
 }
 
+nsGridContainerFrame::GridArea
+nsGridContainerFrame::Grid::PlaceAbsPos(nsIFrame* aChild,
+                                        const LineNameMap& aColLineNameMap,
+                                        const LineNameMap& aRowLineNameMap,
+                                        const nsStylePosition* aStyle)
+{
+  const nsStylePosition* itemStyle = aChild->StylePosition();
+  int32_t gridColStart = 1 - mExplicitGridOffsetCol;
+  int32_t gridRowStart = 1 - mExplicitGridOffsetRow;
+  return GridArea(
+    ResolveAbsPosLineRange(itemStyle->mGridColumnStart,
+                           itemStyle->mGridColumnEnd,
+                           aColLineNameMap,
+                           &GridNamedArea::mColumnStart,
+                           &GridNamedArea::mColumnEnd,
+                           mExplicitGridColEnd, gridColStart, mGridColEnd,
+                           aStyle),
+    ResolveAbsPosLineRange(itemStyle->mGridRowStart,
+                           itemStyle->mGridRowEnd,
+                           aRowLineNameMap,
+                           &GridNamedArea::mRowStart,
+                           &GridNamedArea::mRowEnd,
+                           mExplicitGridRowEnd, gridRowStart, mGridRowEnd,
+                           aStyle));
+}
+
 uint32_t
-nsGridContainerFrame::FindAutoCol(uint32_t aStartCol, uint32_t aLockedRow,
-                                  const GridArea* aArea) const
+nsGridContainerFrame::Grid::FindAutoCol(uint32_t aStartCol, uint32_t aLockedRow,
+                                        const GridArea* aArea) const
 {
   const uint32_t extent = aArea->mCols.Extent();
   const uint32_t iStart = aLockedRow;
@@ -1791,34 +2201,9 @@ nsGridContainerFrame::FindAutoCol(uint32_t aStartCol, uint32_t aLockedRow,
   return candidate;
 }
 
-nsGridContainerFrame::GridArea
-nsGridContainerFrame::PlaceAbsPos(nsIFrame* aChild,
-                                  const LineNameMap& aColLineNameMap,
-                                  const LineNameMap& aRowLineNameMap,
-                                  const nsStylePosition* aStyle)
-{
-  const nsStylePosition* itemStyle = aChild->StylePosition();
-  int32_t gridColStart = 1 - mExplicitGridOffsetCol;
-  int32_t gridRowStart = 1 - mExplicitGridOffsetRow;
-  return GridArea(
-    ResolveAbsPosLineRange(itemStyle->mGridColumnStart,
-                           itemStyle->mGridColumnEnd,
-                           aColLineNameMap,
-                           &GridNamedArea::mColumnStart,
-                           &GridNamedArea::mColumnEnd,
-                           mExplicitGridColEnd, gridColStart, mGridColEnd,
-                           aStyle),
-    ResolveAbsPosLineRange(itemStyle->mGridRowStart,
-                           itemStyle->mGridRowEnd,
-                           aRowLineNameMap,
-                           &GridNamedArea::mRowStart,
-                           &GridNamedArea::mRowEnd,
-                           mExplicitGridRowEnd, gridRowStart, mGridRowEnd,
-                           aStyle));
-}
-
 void
-nsGridContainerFrame::PlaceAutoCol(uint32_t aStartCol, GridArea* aArea) const
+nsGridContainerFrame::Grid::PlaceAutoCol(uint32_t aStartCol,
+                                         GridArea* aArea) const
 {
   MOZ_ASSERT(aArea->mRows.IsDefinite() && aArea->mCols.IsAuto());
   uint32_t col = FindAutoCol(aStartCol, aArea->mRows.mStart, aArea);
@@ -1827,8 +2212,8 @@ nsGridContainerFrame::PlaceAutoCol(uint32_t aStartCol, GridArea* aArea) const
 }
 
 uint32_t
-nsGridContainerFrame::FindAutoRow(uint32_t aLockedCol, uint32_t aStartRow,
-                                  const GridArea* aArea) const
+nsGridContainerFrame::Grid::FindAutoRow(uint32_t aLockedCol, uint32_t aStartRow,
+                                        const GridArea* aArea) const
 {
   const uint32_t extent = aArea->mRows.Extent();
   const uint32_t jStart = aLockedCol;
@@ -1856,7 +2241,8 @@ nsGridContainerFrame::FindAutoRow(uint32_t aLockedCol, uint32_t aStartRow,
 }
 
 void
-nsGridContainerFrame::PlaceAutoRow(uint32_t aStartRow, GridArea* aArea) const
+nsGridContainerFrame::Grid::PlaceAutoRow(uint32_t aStartRow,
+                                         GridArea* aArea) const
 {
   MOZ_ASSERT(aArea->mCols.IsDefinite() && aArea->mRows.IsAuto());
   uint32_t row = FindAutoRow(aArea->mCols.mStart, aStartRow, aArea);
@@ -1865,9 +2251,9 @@ nsGridContainerFrame::PlaceAutoRow(uint32_t aStartRow, GridArea* aArea) const
 }
 
 void
-nsGridContainerFrame::PlaceAutoAutoInRowOrder(uint32_t aStartCol,
-                                              uint32_t aStartRow,
-                                              GridArea* aArea) const
+nsGridContainerFrame::Grid::PlaceAutoAutoInRowOrder(uint32_t aStartCol,
+                                                    uint32_t aStartRow,
+                                                    GridArea* aArea) const
 {
   MOZ_ASSERT(aArea->mCols.IsAuto() && aArea->mRows.IsAuto());
   const uint32_t colExtent = aArea->mCols.Extent();
@@ -1890,9 +2276,9 @@ nsGridContainerFrame::PlaceAutoAutoInRowOrder(uint32_t aStartCol,
 }
 
 void
-nsGridContainerFrame::PlaceAutoAutoInColOrder(uint32_t aStartCol,
-                                              uint32_t aStartRow,
-                                              GridArea* aArea) const
+nsGridContainerFrame::Grid::PlaceAutoAutoInColOrder(uint32_t aStartCol,
+                                                    uint32_t aStartRow,
+                                                    GridArea* aArea) const
 {
   MOZ_ASSERT(aArea->mCols.IsAuto() && aArea->mRows.IsAuto());
   const uint32_t rowExtent = aArea->mRows.Extent();
@@ -1915,11 +2301,12 @@ nsGridContainerFrame::PlaceAutoAutoInColOrder(uint32_t aStartCol,
 }
 
 void
-nsGridContainerFrame::PlaceGridItems(GridReflowState& aState,
-                                     const LogicalSize& aComputedMinSize,
-                                     const LogicalSize& aComputedSize,
-                                     const LogicalSize& aComputedMaxSize)
+nsGridContainerFrame::Grid::PlaceGridItems(GridReflowState& aState,
+                                           const LogicalSize& aComputedMinSize,
+                                           const LogicalSize& aComputedSize,
+                                           const LogicalSize& aComputedMaxSize)
 {
+  mAreas = aState.mFrame->GetImplicitNamedAreas();
   const nsStylePosition* const gridStyle = aState.mGridStyle;
   mCellMap.ClearOccupied();
 
@@ -1953,16 +2340,16 @@ nsGridContainerFrame::PlaceGridItems(GridReflowState& aState,
   
   int32_t minCol = 1;
   int32_t minRow = 1;
-  mGridItems.ClearAndRetainStorage();
+  aState.mGridItems.ClearAndRetainStorage();
   for (; !aState.mIter.AtEnd(); aState.mIter.Next()) {
     nsIFrame* child = *aState.mIter;
     GridItemInfo* info =
-      mGridItems.AppendElement(GridItemInfo(PlaceDefinite(child,
-                                                          colLineNameMap,
-                                                          rowLineNameMap,
-                                                          gridStyle)));
+      aState.mGridItems.AppendElement(GridItemInfo(PlaceDefinite(child,
+                                                                 colLineNameMap,
+                                                                 rowLineNameMap,
+                                                                 gridStyle)));
 #ifdef DEBUG
-    MOZ_ASSERT(aState.mIter.GridItemIndex() == mGridItems.Length() - 1,
+    MOZ_ASSERT(aState.mIter.GridItemIndex() == aState.mGridItems.Length() - 1,
                "GridItemIndex() is broken");
     info->mFrame = child;
 #endif
@@ -1986,7 +2373,7 @@ nsGridContainerFrame::PlaceGridItems(GridReflowState& aState,
   mGridRowEnd += offsetToRowZero;
   aState.mIter.Reset();
   for (; !aState.mIter.AtEnd(); aState.mIter.Next()) {
-    GridArea& area = mGridItems[aState.mIter.GridItemIndex()].mArea;
+    GridArea& area = aState.mGridItems[aState.mIter.GridItemIndex()].mArea;
     if (area.mCols.IsDefinite()) {
       area.mCols.mStart = area.mCols.mUntranslatedStart + offsetToColZero;
       area.mCols.mEnd = area.mCols.mUntranslatedEnd + offsetToColZero;
@@ -2013,11 +2400,11 @@ nsGridContainerFrame::PlaceGridItems(GridReflowState& aState,
     if (isSparse) {
       cursors.emplace();
     }
-    auto placeAutoMinorFunc = isRowOrder ? &nsGridContainerFrame::PlaceAutoCol
-                                         : &nsGridContainerFrame::PlaceAutoRow;
+    auto placeAutoMinorFunc = isRowOrder ? &Grid::PlaceAutoCol
+                                         : &Grid::PlaceAutoRow;
     aState.mIter.Reset();
     for (; !aState.mIter.AtEnd(); aState.mIter.Next()) {
-      GridArea& area = mGridItems[aState.mIter.GridItemIndex()].mArea;
+      GridArea& area = aState.mGridItems[aState.mIter.GridItemIndex()].mArea;
       LineRange& major = isRowOrder ? area.mRows : area.mCols;
       LineRange& minor = isRowOrder ? area.mCols : area.mRows;
       if (major.IsDefinite() && minor.IsAuto()) {
@@ -2047,13 +2434,13 @@ nsGridContainerFrame::PlaceGridItems(GridReflowState& aState,
   
   uint32_t cursorMajor = 0; 
   uint32_t cursorMinor = 0;
-  auto placeAutoMajorFunc = isRowOrder ? &nsGridContainerFrame::PlaceAutoRow
-                                       : &nsGridContainerFrame::PlaceAutoCol;
+  auto placeAutoMajorFunc = isRowOrder ? &Grid::PlaceAutoRow
+                                       : &Grid::PlaceAutoCol;
   aState.mIter.Reset();
   for (; !aState.mIter.AtEnd(); aState.mIter.Next()) {
-    GridArea& area = mGridItems[aState.mIter.GridItemIndex()].mArea;
-    MOZ_ASSERT(*aState.mIter == mGridItems[aState.mIter.GridItemIndex()].mFrame,
-               "iterator out of sync with mGridItems");
+    GridArea& area = aState.mGridItems[aState.mIter.GridItemIndex()].mArea;
+    MOZ_ASSERT(*aState.mIter == aState.mGridItems[aState.mIter.GridItemIndex()].mFrame,
+               "iterator out of sync with aState.mGridItems");
     LineRange& major = isRowOrder ? area.mRows : area.mCols;
     LineRange& minor = isRowOrder ? area.mCols : area.mRows;
     if (major.IsAuto()) {
@@ -2095,12 +2482,13 @@ nsGridContainerFrame::PlaceGridItems(GridReflowState& aState,
     }
   }
 
-  if (IsAbsoluteContainer()) {
+  if (aState.mFrame->IsAbsoluteContainer()) {
     
     
     
     
-    nsFrameList children(GetChildList(GetAbsoluteListID()));
+    nsFrameList children(aState.mFrame->GetChildList(
+                           aState.mFrame->GetAbsoluteListID()));
     const int32_t offsetToColZero = int32_t(mExplicitGridOffsetCol) - 1;
     const int32_t offsetToRowZero = int32_t(mExplicitGridOffsetRow) - 1;
     
@@ -2108,15 +2496,15 @@ nsGridContainerFrame::PlaceGridItems(GridReflowState& aState,
     AutoRestore<uint32_t> save2(mGridRowEnd);
     mGridColEnd -= offsetToColZero;
     mGridRowEnd -= offsetToRowZero;
-    mAbsPosItems.ClearAndRetainStorage();
+    aState.mAbsPosItems.ClearAndRetainStorage();
     size_t i = 0;
     for (nsFrameList::Enumerator e(children); !e.AtEnd(); e.Next(), ++i) {
       nsIFrame* child = e.get();
       GridItemInfo* info =
-        mAbsPosItems.AppendElement(GridItemInfo(PlaceAbsPos(child,
-                                                            colLineNameMap,
-                                                            rowLineNameMap,
-                                                            gridStyle)));
+        aState.mAbsPosItems.AppendElement(GridItemInfo(PlaceAbsPos(child,
+                                                                   colLineNameMap,
+                                                                   rowLineNameMap,
+                                                                   gridStyle)));
 #ifdef DEBUG
       info->mFrame = child;
 #endif
@@ -2145,8 +2533,8 @@ nsGridContainerFrame::PlaceGridItems(GridReflowState& aState,
       !gridStyle->mGridTemplateColumns.mIsAutoFill &&
       aState.mColFunctions.NumRepeatTracks() > 0) {
     for (uint32_t col = aState.mColFunctions.mRepeatAutoStart,
-                  endRepeat = aState.mColFunctions.mRepeatAutoEnd,
-                  numColLines = mGridColEnd + 1;
+           endRepeat = aState.mColFunctions.mRepeatAutoEnd,
+           numColLines = mGridColEnd + 1;
          col < numColLines; ++col) {
       if (numEmptyCols) {
         (*colAdjust)[col] = numEmptyCols;
@@ -2167,8 +2555,8 @@ nsGridContainerFrame::PlaceGridItems(GridReflowState& aState,
       !gridStyle->mGridTemplateRows.mIsAutoFill &&
       aState.mRowFunctions.NumRepeatTracks() > 0) {
     for (uint32_t row = aState.mRowFunctions.mRepeatAutoStart,
-                  endRepeat = aState.mRowFunctions.mRepeatAutoEnd,
-                  numRowLines = mGridRowEnd + 1;
+           endRepeat = aState.mRowFunctions.mRepeatAutoEnd,
+           numRowLines = mGridRowEnd + 1;
          row < numRowLines; ++row) {
       if (numEmptyRows) {
         (*rowAdjust)[row] = numEmptyRows;
@@ -2186,7 +2574,7 @@ nsGridContainerFrame::PlaceGridItems(GridReflowState& aState,
   
   if (numEmptyCols || numEmptyRows) {
     
-    for (auto& item : mGridItems) {
+    for (auto& item : aState.mGridItems) {
       GridArea& area = item.mArea;
       if (numEmptyCols) {
         area.mCols.AdjustForRemovedTracks(*colAdjust);
@@ -2195,7 +2583,7 @@ nsGridContainerFrame::PlaceGridItems(GridReflowState& aState,
         area.mRows.AdjustForRemovedTracks(*rowAdjust);
       }
     }
-    for (auto& item : mAbsPosItems) {
+    for (auto& item : aState.mAbsPosItems) {
       GridArea& area = item.mArea;
       if (numEmptyCols) {
         area.mCols.AdjustAbsPosForRemovedTracks(*colAdjust);
@@ -2215,6 +2603,13 @@ nsGridContainerFrame::PlaceGridItems(GridReflowState& aState,
     auto finalRowRepeatCount = aState.mRowFunctions.NumRepeatTracks() - numEmptyRows;
     aState.mRowFunctions.SetNumRepeatTracks(finalRowRepeatCount);
   }
+}
+
+static
+bool IsMinContent(const nsStyleCoord& aCoord)
+{
+  return aCoord.GetUnit() == eStyleUnit_Enumerated &&
+         aCoord.GetIntValue() == NS_STYLE_GRID_TRACK_BREADTH_MIN_CONTENT;
 }
 
 void
@@ -2422,28 +2817,6 @@ nsGridContainerFrame::Tracks::CalculateSizes(
     DistributeFreeSpace(freeSpace);
     StretchFlexibleTracks(aState, aGridItems, aFunctions, freeSpace);
   }
-}
-
-void
-nsGridContainerFrame::CalculateTrackSizes(GridReflowState&   aState,
-                                          const LogicalSize& aContentBox,
-                                          IntrinsicISizeType aConstraint)
-{
-  const WritingMode& wm = aState.mWM;
-  const nsStylePosition* stylePos = aState.mGridStyle;
-  aState.mCols.Initialize(aState.mColFunctions, stylePos->mGridColumnGap,
-                          mGridColEnd, aContentBox.ISize(wm));
-  aState.mRows.Initialize(aState.mRowFunctions, stylePos->mGridRowGap,
-                          mGridRowEnd, aContentBox.BSize(wm));
-
-  aState.mCols.CalculateSizes(aState, mGridItems, aState.mColFunctions,
-                              aContentBox.ISize(wm), &GridArea::mCols,
-                              aConstraint);
-
-  aState.mIter.Reset(); 
-  aState.mRows.CalculateSizes(aState, mGridItems, aState.mRowFunctions,
-                              aContentBox.BSize(wm), &GridArea::mRows,
-                              aConstraint);
 }
 
 bool
@@ -3118,33 +3491,31 @@ nsGridContainerFrame::LineRange::ToPositionAndLengthForAbsPos(
 }
 
 LogicalRect
-nsGridContainerFrame::ContainingBlockFor(const GridReflowState& aState,
-                                         const GridArea&        aArea) const
+nsGridContainerFrame::GridReflowState::ContainingBlockFor(const GridArea& aArea) const
 {
   nscoord i, b, iSize, bSize;
   MOZ_ASSERT(aArea.mCols.Extent() > 0, "grid items cover at least one track");
   MOZ_ASSERT(aArea.mRows.Extent() > 0, "grid items cover at least one track");
-  aArea.mCols.ToPositionAndLength(aState.mCols.mSizes, &i, &iSize);
-  aArea.mRows.ToPositionAndLength(aState.mRows.mSizes, &b, &bSize);
-  return LogicalRect(aState.mWM, i, b, iSize, bSize);
+  aArea.mCols.ToPositionAndLength(mCols.mSizes, &i, &iSize);
+  aArea.mRows.ToPositionAndLength(mRows.mSizes, &b, &bSize);
+  return LogicalRect(mWM, i, b, iSize, bSize);
 }
 
 LogicalRect
-nsGridContainerFrame::ContainingBlockForAbsPos(const GridReflowState& aState,
-                                               const GridArea&        aArea,
-                                               const LogicalPoint& aGridOrigin,
-                                               const LogicalRect& aGridCB) const
+nsGridContainerFrame::GridReflowState::ContainingBlockForAbsPos(
+  const GridArea&     aArea,
+  const LogicalPoint& aGridOrigin,
+  const LogicalRect&  aGridCB) const
 {
-  const WritingMode& wm = aState.mWM;
-  nscoord i = aGridCB.IStart(wm);
-  nscoord b = aGridCB.BStart(wm);
-  nscoord iSize = aGridCB.ISize(wm);
-  nscoord bSize = aGridCB.BSize(wm);
-  aArea.mCols.ToPositionAndLengthForAbsPos(aState.mCols, aGridOrigin.I(wm),
+  nscoord i = aGridCB.IStart(mWM);
+  nscoord b = aGridCB.BStart(mWM);
+  nscoord iSize = aGridCB.ISize(mWM);
+  nscoord bSize = aGridCB.BSize(mWM);
+  aArea.mCols.ToPositionAndLengthForAbsPos(mCols, aGridOrigin.I(mWM),
                                            &i, &iSize);
-  aArea.mRows.ToPositionAndLengthForAbsPos(aState.mRows, aGridOrigin.B(wm),
+  aArea.mRows.ToPositionAndLengthForAbsPos(mRows, aGridOrigin.B(mWM),
                                            &b, &bSize);
-  return LogicalRect(wm, i, b, iSize, bSize);
+  return LogicalRect(mWM, i, b, iSize, bSize);
 }
 
 void
@@ -3169,11 +3540,11 @@ nsGridContainerFrame::ReflowChildren(GridReflowState&     aState,
     const bool isGridItem = child->GetType() != nsGkAtoms::placeholderFrame;
     LogicalRect cb(wm);
     if (MOZ_LIKELY(isGridItem)) {
-      MOZ_ASSERT(mGridItems[aState.mIter.GridItemIndex()].mFrame == child,
+      MOZ_ASSERT(aState.mGridItems[aState.mIter.GridItemIndex()].mFrame == child,
                  "iterator out of sync with mGridItems");
-      GridArea& area = mGridItems[aState.mIter.GridItemIndex()].mArea;
+      GridArea& area = aState.mGridItems[aState.mIter.GridItemIndex()].mArea;
       MOZ_ASSERT(area.IsDefinite());
-      cb = ContainingBlockFor(aState, area);
+      cb = aState.ContainingBlockFor(area);
       cb += gridOrigin;
     } else {
       cb = aContentArea;
@@ -3253,11 +3624,11 @@ nsGridContainerFrame::ReflowChildren(GridReflowState&     aState,
       size_t i = 0;
       for (nsFrameList::Enumerator e(children); !e.AtEnd(); e.Next(), ++i) {
         nsIFrame* child = e.get();
-        MOZ_ASSERT(i < mAbsPosItems.Length());
-        MOZ_ASSERT(mAbsPosItems[i].mFrame == child);
-        GridArea& area = mAbsPosItems[i].mArea;
+        MOZ_ASSERT(i < aState.mAbsPosItems.Length());
+        MOZ_ASSERT(aState.mAbsPosItems[i].mFrame == child);
+        GridArea& area = aState.mAbsPosItems[i].mArea;
         LogicalRect itemCB =
-          ContainingBlockForAbsPos(aState, area, padStart, gridCB);
+          aState.ContainingBlockForAbsPos(area, padStart, gridCB);
         
         nsRect* cb = static_cast<nsRect*>(child->Properties().Get(
                        GridItemContainingBlockRect()));
@@ -3326,13 +3697,13 @@ nsGridContainerFrame::Reflow(nsPresContext*           aPresContext,
        cbState->ComputedSize(wm).BSize(wm) == NS_UNCONSTRAINEDSIZE)) {
     computedMinSize.BSize(wm) = NS_UNCONSTRAINEDSIZE;
   }
-
-  PlaceGridItems(gridReflowState, computedMinSize, computedSize,
-                 aReflowState.ComputedMaxSize());
+  Grid grid;
+  grid.PlaceGridItems(gridReflowState, computedMinSize, computedSize,
+                      aReflowState.ComputedMaxSize());
 
   gridReflowState.mIter.Reset();
-  CalculateTrackSizes(gridReflowState, computedSize,
-                      nsLayoutUtils::PREF_ISIZE);
+  gridReflowState.CalculateTrackSizes(grid, computedSize,
+                                      nsLayoutUtils::PREF_ISIZE);
 
   
   
@@ -3358,7 +3729,8 @@ nsGridContainerFrame::Reflow(nsPresContext*           aPresContext,
   
   nscoord bSize = 0;
   if (computedBSize == NS_AUTOHEIGHT) {
-    for (uint32_t i = 0; i < mGridRowEnd; ++i) {
+    const uint32_t numRows = gridReflowState.mRows.mSizes.Length();
+    for (uint32_t i = 0; i < numRows; ++i) {
       bSize += gridReflowState.mRows.mSizes[i].mBase;
     }
     bSize += gridReflowState.mRows.SumOfGridGaps();
@@ -3398,14 +3770,15 @@ nsGridContainerFrame::IntrinsicISize(nsRenderingContext* aRenderingContext,
   GridReflowState state(this, *aRenderingContext);
   InitImplicitNamedAreas(state.mGridStyle); 
   LogicalSize indefinite(state.mWM, NS_UNCONSTRAINEDSIZE, NS_UNCONSTRAINEDSIZE);
-  PlaceGridItems(state, indefinite, indefinite, indefinite);  
-  if (mGridColEnd == 0) {
+  Grid grid;
+  grid.PlaceGridItems(state, indefinite, indefinite, indefinite);  
+  if (grid.mGridColEnd == 0) {
     return 0;
   }
   state.mCols.Initialize(state.mColFunctions, state.mGridStyle->mGridColumnGap,
-                         mGridColEnd, NS_UNCONSTRAINEDSIZE);
+                         grid.mGridColEnd, NS_UNCONSTRAINEDSIZE);
   state.mIter.Reset();
-  state.mCols.CalculateSizes(state, mGridItems, state.mColFunctions,
+  state.mCols.CalculateSizes(state, state.mGridItems, state.mColFunctions,
                              NS_UNCONSTRAINEDSIZE, &GridArea::mCols,
                              aConstraint);
   nscoord length = 0;
@@ -3490,53 +3863,7 @@ nsGridContainerFrame::GetFrameName(nsAString& aResult) const
 }
 #endif
 
-void
-nsGridContainerFrame::CellMap::Fill(const GridArea& aGridArea)
-{
-  MOZ_ASSERT(aGridArea.IsDefinite());
-  MOZ_ASSERT(aGridArea.mRows.mStart < aGridArea.mRows.mEnd);
-  MOZ_ASSERT(aGridArea.mCols.mStart < aGridArea.mCols.mEnd);
-  const auto numRows = aGridArea.mRows.mEnd;
-  const auto numCols = aGridArea.mCols.mEnd;
-  mCells.EnsureLengthAtLeast(numRows);
-  for (auto i = aGridArea.mRows.mStart; i < numRows; ++i) {
-    nsTArray<Cell>& cellsInRow = mCells[i];
-    cellsInRow.EnsureLengthAtLeast(numCols);
-    for (auto j = aGridArea.mCols.mStart; j < numCols; ++j) {
-      cellsInRow[j].mIsOccupied = true;
-    }
-  }
-}
-
-void
-nsGridContainerFrame::CellMap::ClearOccupied()
-{
-  const size_t numRows = mCells.Length();
-  for (size_t i = 0; i < numRows; ++i) {
-    nsTArray<Cell>& cellsInRow = mCells[i];
-    const size_t numCols = cellsInRow.Length();
-    for (size_t j = 0; j < numCols; ++j) {
-      cellsInRow[j].mIsOccupied = false;
-    }
-  }
-}
-
 #ifdef DEBUG
-void
-nsGridContainerFrame::CellMap::Dump() const
-{
-  const size_t numRows = mCells.Length();
-  for (size_t i = 0; i < numRows; ++i) {
-    const nsTArray<Cell>& cellsInRow = mCells[i];
-    const size_t numCols = cellsInRow.Length();
-    printf("%lu:\t", (unsigned long)i + 1);
-    for (size_t j = 0; j < numCols; ++j) {
-      printf(cellsInRow[j].mIsOccupied ? "X " : ". ");
-    }
-    printf("\n");
-  }
-}
-
 static bool
 FrameWantsToBeInAnonymousGridItem(nsIFrame* aFrame)
 {
