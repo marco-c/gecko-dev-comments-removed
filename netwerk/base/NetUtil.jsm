@@ -144,7 +144,23 @@ this.NetUtil = {
         }
 
         try {
-            channel.asyncOpen(listener, null);
+            
+            
+            if (channel.loadInfo &&
+                channel.loadInfo.securityMode != 0) {
+                channel.asyncOpen2(listener);
+            }
+            else {
+                
+                
+                
+                
+                Services.console.logStringMessage(
+                    "Warning: NetUtil.asyncFetch() requires the channel to have " +
+                    "one of the security flags set in the loadinfo (see nsILoadInfo). " +
+                    "Please create channel using NetUtil.newChannel()");
+                channel.asyncOpen(listener, null);
+            }
         }
         catch (e) {
             let exception = new Components.Exception(
