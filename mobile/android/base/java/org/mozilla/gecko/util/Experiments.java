@@ -32,6 +32,9 @@ public class Experiments {
     public static final String WHATSNEW_NOTIFICATION = "whatsnew-notification";
 
     
+    public static final String CONTENT_NOTIFICATIONS = "content-notifications";
+
+    
     
     public static final String ONBOARDING2_A = "onboarding2-a"; 
     public static final String ONBOARDING2_B = "onboarding2-b"; 
