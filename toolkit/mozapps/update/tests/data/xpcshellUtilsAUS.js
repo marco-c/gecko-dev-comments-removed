@@ -122,6 +122,8 @@ const HELPER_SLEEP_TIMEOUT = 180;
 
 const APP_TIMER_TIMEOUT = 120000;
 
+const FILE_IN_USE_TIMEOUT_MS = 1000;
+
 const PIPE_TO_NULL = IS_WIN ? ">nul" : "> /dev/null 2>&1";
 
 const LOG_FUNCTION = do_print;
@@ -1904,7 +1906,16 @@ function stageUpdate() {
 
 function checkUpdateStagedState(aUpdateState) {
   if (IS_WIN) {
-    waitForApplicationStop(FILE_UPDATER_BIN);
+    if (IS_SERVICE_TEST) {
+      waitForServiceStop(false);
+    } else {
+      let updater = getApplyDirFile(FILE_UPDATER_BIN, true);
+      if (isFileInUse(updater)) {
+        do_timeout(FILE_IN_USE_TIMEOUT_MS,
+                   checkUpdateStagedState.bind(null, aUpdateState));
+        return;
+      }
+    }
   }
 
   Assert.equal(aUpdateState, STATE_AFTER_STAGE,
@@ -2340,24 +2351,6 @@ function waitForApplicationStop(aApplication) {
 
 
 
-function isProcessRunning(aApplication) {
-  if (!IS_WIN) {
-    do_throw("Windows only function called by a different platform!");
-  }
-
-  debugDump("checking if " + aApplication + " is running");
-  
-  
-  let args = ["is-process-running", aApplication];
-  let exitValue = runTestHelperSync(args);
-  return exitValue;
-}
-
-
-
-
-
-
 
 
 
@@ -2390,15 +2383,8 @@ function runUpdateUsingService(aExpectedStatus, aSwitchApp, aCheckSvcLog) {
   }
 
   function checkServiceUpdateFinished() {
-    if (isProcessRunning(FILE_MAINTENANCE_SERVICE_BIN)) {
-      do_execute_soon(checkServiceUpdateFinished);
-      return;
-    }
-
-    if (isProcessRunning(FILE_UPDATER_BIN)) {
-      do_execute_soon(checkServiceUpdateFinished);
-      return;
-    }
+    waitForApplicationStop(FILE_MAINTENANCE_SERVICE_BIN);
+    waitForApplicationStop(FILE_UPDATER_BIN);
 
     
     let status;
@@ -3491,41 +3477,63 @@ function checkCallbackServiceLog() {
 
 
 
+
+
+
+
+
+
+
+
+
+function isFileInUse(aFile) {
+  if (!IS_WIN) {
+    do_throw("Windows only function called by a different platform!");
+  }
+
+  if (!aFile.exists()) {
+    debugDump("file does not exist, path: " + aFile.path);
+    return false;
+  }
+
+  let fileBak = aFile.parent;
+  fileBak.append(aFile.leafName + ".bak");
+  try {
+    if (fileBak.exists()) {
+      fileBak.remove(false);
+    }
+    aFile.copyTo(aFile.parent, fileBak.leafName);
+    aFile.remove(false);
+    fileBak.moveTo(aFile.parent, aFile.leafName);
+    debugDump("file is not in use, path: " + aFile.path);
+    return false;
+  } catch (e) {
+    debugDump("file in use, path: " + aFile.path + ", exception: " + e);
+    try {
+      if (fileBak.exists()) {
+        fileBak.remove(false);
+      }
+    } catch (e) {
+      logTestInfo("unable to remove backup file, path: " +
+                  fileBak.path + ", exception: " + e);
+    }
+  }
+  return true;
+}
+
+
+
+
+
 function waitForFilesInUse() {
   if (IS_WIN) {
-    let appBin = getApplyDirFile(FILE_APP_BIN, true);
-    let maintSvcInstaller = getApplyDirFile(FILE_MAINTENANCE_SERVICE_INSTALLER_BIN, true);
-    let helper = getApplyDirFile("uninstall/helper.exe", true);
-    let updater = getApplyDirFile(FILE_UPDATER_BIN, true);
-    let files = [appBin, updater, maintSvcInstaller, helper];
-
-    for (let i = 0; i < files.length; ++i) {
-      let file = files[i];
-      let fileBak = file.parent.clone();
-      if (file.exists()) {
-        fileBak.append(file.leafName + ".bak");
-        try {
-          if (fileBak.exists()) {
-            fileBak.remove(false);
-          }
-          file.copyTo(fileBak.parent, fileBak.leafName);
-          file.remove(false);
-          fileBak.moveTo(file.parent, file.leafName);
-          debugDump("file is not in use, path: " + file.path);
-        } catch (e) {
-          debugDump("will try again to remove file in use, path: " +
-                    file.path + ", exception: " + e);
-          try {
-            if (fileBak.exists()) {
-              fileBak.remove(false);
-            }
-          } catch (e) {
-            logTestInfo("unable to remove backup file, path: " +
-                        fileBak.path + ", exception: " + e);
-          }
-          do_execute_soon(waitForFilesInUse);
-          return;
-        }
+    let fileNames = [FILE_APP_BIN, FILE_UPDATER_BIN,
+                     FILE_MAINTENANCE_SERVICE_INSTALLER_BIN];
+    for (let i = 0; i < fileNames.length; ++i) {
+      let file = getApplyDirFile(fileNames[i], true);
+      if (isFileInUse(file)) {
+        do_timeout(FILE_IN_USE_TIMEOUT_MS, waitForFilesInUse);
+        return;
       }
     }
   }
@@ -3969,7 +3977,7 @@ function runUpdateUsingApp(aExpectedStatus) {
                    "process-finished");
 
       if (IS_SERVICE_TEST) {
-        waitForServiceStop();
+        waitForServiceStop(false);
       }
 
       do_execute_soon(afterAppExits);
@@ -4063,13 +4071,15 @@ const gUpdateStagedObserver = {
   observe: function(aSubject, aTopic, aData) {
     debugDump("observe called with topic: " + aTopic + ", data: " + aData);
     if (aTopic == "update-staged") {
+      Services.obs.removeObserver(gUpdateStagedObserver, "update-staged");
       
       
       
       
       resetEnvironment();
-      Services.obs.removeObserver(gUpdateStagedObserver, "update-staged");
-      checkUpdateStagedState(aData);
+      
+      
+      do_execute_soon(checkUpdateStagedState.bind(null, aData));
     }
   },
   QueryInterface: XPCOMUtils.generateQI([Ci.nsIObserver])
