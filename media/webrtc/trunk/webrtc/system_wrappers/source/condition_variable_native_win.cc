@@ -52,7 +52,12 @@ bool ConditionVariableNativeWin::Init() {
     if (library) {
       
       
-      WEBRTC_TRACE(kTraceStateInfo, kTraceUtility, -1, "Loaded Kernel.dll");
+
+      
+      
+      
+      
+      
 
       PInitializeConditionVariable_ =
           (PInitializeConditionVariable) GetProcAddress(
@@ -66,9 +71,9 @@ bool ConditionVariableNativeWin::Init() {
 
       if (PInitializeConditionVariable_ && PSleepConditionVariableCS_
           && PWakeConditionVariable_ && PWakeAllConditionVariable_) {
-        WEBRTC_TRACE(
-            kTraceStateInfo, kTraceUtility, -1,
-            "Loaded native condition variables");
+        
+        
+        
         win_support_condition_variables_primitive = true;
       }
     }
