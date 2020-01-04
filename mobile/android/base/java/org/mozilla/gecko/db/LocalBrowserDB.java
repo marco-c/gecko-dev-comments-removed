@@ -52,8 +52,6 @@ import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.drawable.BitmapDrawable;
 import android.net.Uri;
-import android.support.v4.os.CancellationSignal;
-import android.support.v4.os.OperationCanceledException;
 import android.text.TextUtils;
 import android.util.Log;
 import org.mozilla.gecko.util.IOUtils;
@@ -1676,8 +1674,7 @@ public class LocalBrowserDB implements BrowserDB {
     }
 
     @Override
-    public Cursor getTopSites(final ContentResolver cr, final int minLimit, final int maxLimit,
-            final CancellationSignal cancellationSignal) {
+    public Cursor getTopSites(ContentResolver cr, int minLimit, int maxLimit) {
         
         
         Cursor pinnedSites = getPinnedSites(cr, minLimit);
@@ -1698,15 +1695,6 @@ public class LocalBrowserDB implements BrowserDB {
             }
         }
 
-        final TopSitesCursorWrapper finalCursor = new TopSitesCursorWrapper(pinnedSites, topSites, suggestedSites, minLimit);
-        try {
-            cancellationSignal.throwIfCanceled();
-        } catch (final OperationCanceledException e) {
-            
-            
-            finalCursor.close();
-            throw e;
-        }
-        return finalCursor;
+        return new TopSitesCursorWrapper(pinnedSites, topSites, suggestedSites, minLimit);
     }
 }
