@@ -95,6 +95,37 @@ var loop = loop || {};
     gListenersMap = {};
   };
 
+  loop.storedRequests = {};
+
+  
+
+
+
+
+
+  loop.storeRequest = function(request, result) {
+    loop.storedRequests[request.join("|")] = result;
+  };
+
+  
+
+
+
+
+
+
+
+
+  loop.getStoredRequest = function(request) {
+    var key = request.join("|");
+    if (!(key in loop.storedRequests)) {
+      console.error("This request has not been stored!", request);
+      return null;
+    }
+
+    return loop.storedRequests[key];
+  };
+
   
 
 
