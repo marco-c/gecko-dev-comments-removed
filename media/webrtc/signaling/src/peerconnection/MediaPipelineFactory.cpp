@@ -347,13 +347,6 @@ MediaPipelineFactory::GetTransportParameters(
       for (auto i = uniquePts.begin(); i != uniquePts.end(); ++i) {
         (*aFilterOut)->AddUniquePT(*i);
       }
-    } else {
-      
-      
-      for (auto i = aTrack.GetSsrcs().begin();
-           i != aTrack.GetSsrcs().end(); ++i) {
-        (*aFilterOut)->AddLocalSSRC(*i);
-      }
     }
   }
 

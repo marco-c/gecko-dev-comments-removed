@@ -56,7 +56,6 @@ class MediaPipelineFilter {
   
   bool FilterSenderReport(const unsigned char* data, size_t len) const;
 
-  void AddLocalSSRC(uint32_t ssrc);
   void AddRemoteSSRC(uint32_t ssrc);
 
   
@@ -78,7 +77,6 @@ class MediaPipelineFilter {
   
   
   std::set<uint32_t> remote_ssrc_set_;
-  std::set<uint32_t> local_ssrc_set_;
   std::set<uint8_t> payload_type_set_;
 };
 
