@@ -499,11 +499,6 @@ protected:
   
 
 
-  void UpdateTreeOnInsertion(Accessible* aContainer);
-
-  
-
-
   void UpdateTreeOnRemoval(Accessible* aContainer, nsIContent* aChildNode);
 
   
