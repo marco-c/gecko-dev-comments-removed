@@ -1,9 +1,6 @@
 
 
 
-XPCOMUtils.defineLazyModuleGetter(this, "Promise",
-  "resource://gre/modules/Promise.jsm");
-
 
 
 
@@ -43,15 +40,15 @@ function getLocalizedPref(aPrefName, aDefault) {
 }
 
 function promiseEvent(aTarget, aEventName, aPreventDefault) {
-  let deferred = Promise.defer();
-  aTarget.addEventListener(aEventName, function onEvent(aEvent) {
-    aTarget.removeEventListener(aEventName, onEvent, true);
+  function cancelEvent(event) {
     if (aPreventDefault) {
-      aEvent.preventDefault();
+      event.preventDefault();
     }
-    deferred.resolve();
-  }, true);
-  return deferred.promise;
+
+    return true;
+  }
+
+  return BrowserTestUtils.waitForEvent(aTarget, aEventName, false, cancelEvent);
 }
 
 function promiseNewEngine(basename, options = {}) {
