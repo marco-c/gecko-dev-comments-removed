@@ -791,6 +791,8 @@ imgFrame::UnlockImageData()
     Optimize();
 
     
+    
+    
     mVBufPtr = nullptr;
   }
 
