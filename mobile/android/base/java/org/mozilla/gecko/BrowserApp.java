@@ -20,6 +20,7 @@ import org.mozilla.gecko.GeckoProfileDirectories.NoMozillaDirectoryException;
 import org.mozilla.gecko.Tabs.TabEvents;
 import org.mozilla.gecko.animation.PropertyAnimator;
 import org.mozilla.gecko.animation.ViewHelper;
+import org.mozilla.gecko.cleanup.FileCleanupController;
 import org.mozilla.gecko.db.BrowserContract;
 import org.mozilla.gecko.db.BrowserDB;
 import org.mozilla.gecko.db.SuggestedSites;
@@ -1062,6 +1063,11 @@ public class BrowserApp extends GeckoApp
                     
                     GuestSession.hideNotification(BrowserApp.this);
                 }
+
+                
+                
+                final SharedPreferences sharedPrefs = GeckoSharedPrefs.forProfileName(BrowserApp.this, profile.getName());
+                FileCleanupController.startIfReady(BrowserApp.this, sharedPrefs, profile.getDir().getAbsolutePath());
             }
         });
 
