@@ -262,12 +262,13 @@ public:
   }
 
   already_AddRefed<IDBRequest>
-  OpenCursor(IDBCursorDirection aDirection,
+  OpenCursor(JSContext* aCx,
+             IDBCursorDirection aDirection,
              ErrorResult& aRv)
   {
     AssertIsOnOwningThread();
 
-    return OpenCursorInternal( false, nullptr,
+    return OpenCursorInternal( false, aCx,
                               JS::UndefinedHandleValue, aDirection, aRv);
   }
 
@@ -347,8 +348,6 @@ private:
                       const IDBIndexParameters& aOptionalParameters,
                       ErrorResult& aRv);
 
-  
-  
   already_AddRefed<IDBRequest>
   OpenCursorInternal(bool aKeysOnly,
                      JSContext* aCx,
