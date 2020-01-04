@@ -15,6 +15,10 @@ namespace mp4_demuxer {
 
 
 
+const uint64_t Box::kMAX_BOX_READ = 32 * 1024 * 1024;
+
+
+
 static uint32_t
 BoxOffset(AtomType aType)
 {
@@ -150,7 +154,7 @@ Box::Read(nsTArray<uint8_t>* aDest, const MediaByteRange& aRange)
   if (!mContext->mSource->Length(&length)) {
     
     
-    length = std::min(aRange.mEnd - mChildOffset, uint64_t(32 * 1024 * 1024));
+    length = std::min(aRange.mEnd - mChildOffset, kMAX_BOX_READ);
   } else {
     length = aRange.mEnd - mChildOffset;
   }
