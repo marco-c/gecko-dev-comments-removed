@@ -737,7 +737,7 @@ nsWindow::Create(nsIWidget* aParent,
 }
 
 
-NS_METHOD nsWindow::Destroy()
+NS_IMETHODIMP nsWindow::Destroy()
 {
   
   if (mOnDestroyCalled)
@@ -1296,7 +1296,7 @@ nsWindow::GetFallbackScrollSnapshot(const RECT& aRequiredClip)
 
 
 
-NS_METHOD nsWindow::Show(bool bState)
+NS_IMETHODIMP nsWindow::Show(bool bState)
 {
   if (mWindowType == eWindowType_popup) {
     
@@ -1558,7 +1558,7 @@ nsWindow::GetSizeConstraints()
 }
 
 
-NS_METHOD nsWindow::Move(double aX, double aY)
+NS_IMETHODIMP nsWindow::Move(double aX, double aY)
 {
   if (mWindowType == eWindowType_toplevel ||
       mWindowType == eWindowType_dialog) {
@@ -1636,7 +1636,7 @@ NS_METHOD nsWindow::Move(double aX, double aY)
 }
 
 
-NS_METHOD nsWindow::Resize(double aWidth, double aHeight, bool aRepaint)
+NS_IMETHODIMP nsWindow::Resize(double aWidth, double aHeight, bool aRepaint)
 {
   
   
@@ -1686,7 +1686,8 @@ NS_METHOD nsWindow::Resize(double aWidth, double aHeight, bool aRepaint)
 }
 
 
-NS_METHOD nsWindow::Resize(double aX, double aY, double aWidth, double aHeight, bool aRepaint)
+NS_IMETHODIMP nsWindow::Resize(double aX, double aY, double aWidth,
+                               double aHeight, bool aRepaint)
 {
   
   
@@ -1818,8 +1819,8 @@ nsWindow::BeginResizeDrag(WidgetGUIEvent* aEvent,
 
 
 
-NS_METHOD nsWindow::PlaceBehind(nsTopLevelWidgetZPlacement aPlacement,
-                                nsIWidget *aWidget, bool aActivate)
+NS_IMETHODIMP nsWindow::PlaceBehind(nsTopLevelWidgetZPlacement aPlacement,
+                                    nsIWidget *aWidget, bool aActivate)
 {
   HWND behind = HWND_TOP;
   if (aPlacement == eZPlacementBottom)
@@ -1913,8 +1914,8 @@ nsWindow::SetSizeMode(nsSizeMode aMode) {
 
 
 
-NS_METHOD nsWindow::ConstrainPosition(bool aAllowSlop,
-                                      int32_t *aX, int32_t *aY)
+NS_IMETHODIMP nsWindow::ConstrainPosition(bool aAllowSlop,
+                                          int32_t *aX, int32_t *aY)
 {
   if (!mIsTopWidgetWindow) 
     return NS_OK;
@@ -1993,7 +1994,7 @@ NS_METHOD nsWindow::ConstrainPosition(bool aAllowSlop,
 
 
 
-NS_METHOD nsWindow::Enable(bool bState)
+NS_IMETHODIMP nsWindow::Enable(bool bState)
 {
   if (mWnd) {
     ::EnableWindow(mWnd, bState);
@@ -2018,7 +2019,7 @@ bool nsWindow::IsEnabled() const
 
 
 
-NS_METHOD nsWindow::SetFocus(bool aRaise)
+NS_IMETHODIMP nsWindow::SetFocus(bool aRaise)
 {
   if (mWnd) {
 #ifdef WINSTATE_DEBUG_OUTPUT
@@ -2056,7 +2057,7 @@ NS_METHOD nsWindow::SetFocus(bool aRaise)
 
 
 
-NS_METHOD nsWindow::GetBounds(LayoutDeviceIntRect& aRect)
+NS_IMETHODIMP nsWindow::GetBounds(LayoutDeviceIntRect& aRect)
 {
   if (mWnd) {
     RECT r;
@@ -2124,7 +2125,7 @@ NS_METHOD nsWindow::GetBounds(LayoutDeviceIntRect& aRect)
 }
 
 
-NS_METHOD nsWindow::GetClientBounds(LayoutDeviceIntRect& aRect)
+NS_IMETHODIMP nsWindow::GetClientBounds(LayoutDeviceIntRect& aRect)
 {
   if (mWnd) {
     RECT r;
@@ -2143,7 +2144,7 @@ NS_METHOD nsWindow::GetClientBounds(LayoutDeviceIntRect& aRect)
 }
 
 
-NS_METHOD nsWindow::GetScreenBounds(LayoutDeviceIntRect& aRect)
+NS_IMETHODIMP nsWindow::GetScreenBounds(LayoutDeviceIntRect& aRect)
 {
   if (mWnd) {
     RECT r;
@@ -2159,7 +2160,7 @@ NS_METHOD nsWindow::GetScreenBounds(LayoutDeviceIntRect& aRect)
   return NS_OK;
 }
 
-NS_METHOD nsWindow::GetRestoredBounds(LayoutDeviceIntRect &aRect)
+NS_IMETHODIMP nsWindow::GetRestoredBounds(LayoutDeviceIntRect &aRect)
 {
   if (SizeMode() == nsSizeMode_Normal) {
     return GetScreenBounds(aRect);
@@ -2625,7 +2626,7 @@ void nsWindow::SetBackgroundColor(const nscolor &aColor)
 
 
 
-NS_METHOD nsWindow::SetCursor(nsCursor aCursor)
+NS_IMETHODIMP nsWindow::SetCursor(nsCursor aCursor)
 {
   
 
@@ -3009,9 +3010,9 @@ NS_IMETHODIMP nsWindow::HideWindowChrome(bool aShouldHide)
 
 
 
-NS_METHOD nsWindow::Invalidate(bool aEraseBackground, 
-                               bool aUpdateNCArea,
-                               bool aIncludeChildren)
+NS_IMETHODIMP nsWindow::Invalidate(bool aEraseBackground,
+                                   bool aUpdateNCArea,
+                                   bool aIncludeChildren)
 {
   if (!mWnd) {
     return NS_OK;
@@ -3041,7 +3042,7 @@ NS_METHOD nsWindow::Invalidate(bool aEraseBackground,
 }
 
 
-NS_METHOD nsWindow::Invalidate(const LayoutDeviceIntRect& aRect)
+NS_IMETHODIMP nsWindow::Invalidate(const LayoutDeviceIntRect& aRect)
 {
   if (mWnd) {
 #ifdef WIDGET_DEBUG_OUTPUT
@@ -3407,7 +3408,7 @@ void nsWindow::FreeNativeData(void * data, uint32_t aDataType)
 
 
 
-NS_METHOD nsWindow::SetTitle(const nsAString& aTitle)
+NS_IMETHODIMP nsWindow::SetTitle(const nsAString& aTitle)
 {
   const nsString& strTitle = PromiseFlatString(aTitle);
   AutoRestore<bool> sendingText(mSendingSetText);
@@ -3424,7 +3425,7 @@ NS_METHOD nsWindow::SetTitle(const nsAString& aTitle)
 
 
 
-NS_METHOD nsWindow::SetIcon(const nsAString& aIconSpec) 
+NS_IMETHODIMP nsWindow::SetIcon(const nsAString& aIconSpec) 
 {
   
 
@@ -3527,7 +3528,7 @@ nsWindow::ClientToWindowSize(const LayoutDeviceIntSize& aClientSize)
 
 
 
-NS_METHOD nsWindow::EnableDragDrop(bool aEnable)
+NS_IMETHODIMP nsWindow::EnableDragDrop(bool aEnable)
 {
   NS_ASSERTION(mWnd, "nsWindow::EnableDragDrop() called after Destroy()");
 
@@ -3565,7 +3566,7 @@ NS_METHOD nsWindow::EnableDragDrop(bool aEnable)
 
 
 
-NS_METHOD nsWindow::CaptureMouse(bool aCapture)
+NS_IMETHODIMP nsWindow::CaptureMouse(bool aCapture)
 {
   TRACKMOUSEEVENT mTrack;
   mTrack.cbSize = sizeof(TRACKMOUSEEVENT);
