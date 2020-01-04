@@ -133,8 +133,8 @@ typedef void* nsNativeWidget;
 #endif
 
 #define NS_IWIDGET_IID \
-{ 0x6dc8ce1f, 0xbb55, 0x47c1, \
-  { 0xa1, 0x6f, 0x4e, 0x12, 0x37, 0xa1, 0xc2, 0xf4 } }
+{ 0x06396bf6, 0x2dd8, 0x45e5, \
+  { 0xac, 0x45, 0x75, 0x26, 0x53, 0xb1, 0xc9, 0x80 } }
 
 
 
@@ -1895,32 +1895,6 @@ public:
 
 
     NS_IMETHOD OnDefaultButtonLoaded(const LayoutDeviceIntRect& aButtonRect) = 0;
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    NS_IMETHOD OverrideSystemMouseScrollSpeed(double aOriginalDeltaX,
-                                              double aOriginalDeltaY,
-                                              double& aOverriddenDeltaX,
-                                              double& aOverriddenDeltaY) = 0;
 
     
 

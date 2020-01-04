@@ -619,6 +619,24 @@ public:
     mViewPortIsOverscrolled = aEvent.mViewPortIsOverscrolled;
     mCanTriggerSwipe = aEvent.mCanTriggerSwipe;
   }
+
+  
+  
+  
+  
+  
+  
+  double OverriddenDeltaX() const;
+  double OverriddenDeltaY() const;
+
+private:
+  static bool sInitialized;
+  static bool sIsSystemScrollSpeedOverrideEnabled;
+  static int32_t sOverrideFactorX;
+  static int32_t sOverrideFactorY;
+  static void Initialize();
+
+  static double ComputeOverriddenDelta(double aDelta, bool aIsForVertical);
 };
 
 

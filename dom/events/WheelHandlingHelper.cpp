@@ -419,18 +419,8 @@ WheelTransaction::OverrideSystemScrollSpeed(WidgetWheelEvent* aEvent)
     return DeltaValues(aEvent);
   }
 
-  
-  
-  
-  
-  nsCOMPtr<nsIWidget> widget(sTargetFrame->GetNearestWidget());
-  NS_ENSURE_TRUE(widget, DeltaValues(aEvent));
-  DeltaValues overriddenDeltaValues(0.0, 0.0);
-  nsresult rv =
-    widget->OverrideSystemMouseScrollSpeed(aEvent->deltaX, aEvent->deltaY,
-                                           overriddenDeltaValues.deltaX,
-                                           overriddenDeltaValues.deltaY);
-  return NS_FAILED(rv) ? DeltaValues(aEvent) : overriddenDeltaValues;
+  return DeltaValues(aEvent->OverriddenDeltaX(),
+                     aEvent->OverriddenDeltaY());
 }
 
 
