@@ -563,6 +563,7 @@ nsComboboxControlFrame::GetAvailableDropdownSpace(WritingMode aWM,
                                                   nscoord* aAfter,
                                                   LogicalPoint* aTranslation)
 {
+  MOZ_ASSERT(!XRE_IsContentProcess());
   
   
   
@@ -630,6 +631,10 @@ nsComboboxControlFrame::GetAvailableDropdownSpace(WritingMode aWM,
 nsComboboxControlFrame::DropDownPositionState
 nsComboboxControlFrame::AbsolutelyPositionDropDown()
 {
+  if (XRE_IsContentProcess()) {
+    return eDropDownPositionSuppressed;
+  }
+
   WritingMode wm = GetWritingMode();
   LogicalPoint translation(wm);
   nscoord before, after;
@@ -687,6 +692,10 @@ nsComboboxControlFrame::AbsolutelyPositionDropDown()
 void
 nsComboboxControlFrame::NotifyGeometryChange()
 {
+  if (XRE_IsContentProcess()) {
+    return;
+  }
+
   
   
   
@@ -917,6 +926,7 @@ nsComboboxControlFrame::GetFrameName(nsAString& aResult) const
 void
 nsComboboxControlFrame::ShowDropDown(bool aDoDropDown)
 {
+  MOZ_ASSERT(!XRE_IsContentProcess());
   mDelayedShowDropDown = false;
   EventStates eventStates = mContent->AsElement()->State();
   if (aDoDropDown && eventStates.HasState(NS_EVENT_STATE_DISABLED)) {

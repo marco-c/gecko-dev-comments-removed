@@ -560,7 +560,7 @@ nsListControlFrame::ReflowAsDropdown(nsPresContext*           aPresContext,
   
 
   mDropdownCanGrow = false;
-  if (visibleBSize <= 0 || blockSizeOfARow <= 0) {
+  if (visibleBSize <= 0 || blockSizeOfARow <= 0 || XRE_IsContentProcess()) {
     
     
     state.SetComputedBSize(blockSizeOfARow);
