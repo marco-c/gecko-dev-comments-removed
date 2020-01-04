@@ -3654,9 +3654,9 @@ DefineStaticJSVals(JSContext* cx);
 } 
 
 bool
-xpc_LocalizeRuntime(JSRuntime* rt);
+xpc_LocalizeContext(JSContext* cx);
 void
-xpc_DelocalizeRuntime(JSRuntime* rt);
+xpc_DelocalizeContext(JSContext* cx);
 
 
 

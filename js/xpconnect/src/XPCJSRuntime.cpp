@@ -1657,7 +1657,7 @@ XPCJSRuntime::~XPCJSRuntime()
 
     JS::SetGCSliceCallback(Context(), mPrevGCSliceCallback);
 
-    xpc_DelocalizeRuntime(Runtime());
+    xpc_DelocalizeContext(Context());
 
     if (mWatchdogManager->GetWatchdog())
         mWatchdogManager->StopWatchdog();
@@ -3596,8 +3596,8 @@ XPCJSRuntime::Initialize()
     
     
     
-    if (!xpc_LocalizeRuntime(runtime))
-        NS_RUNTIMEABORT("xpc_LocalizeRuntime failed.");
+    if (!xpc_LocalizeContext(cx))
+        NS_RUNTIMEABORT("xpc_LocalizeContext failed.");
 
     
     RegisterStrongMemoryReporter(new JSMainRuntimeCompartmentsReporter());
