@@ -94,13 +94,13 @@ nsFilePicker.prototype = {
   get files()  { return this.mFilesEnumerator; },
 
   
-  get domFileOrDirectory()  {
-    let enumerator = this.domFileOrDirectoryEnumerator;
+  get domfile()  {
+    let enumerator = this.domfiles;
     return enumerator ? enumerator.mFiles[0] : null;
   },
 
   
-  get domFileOrDirectoryEnumerator()  {
+  get domfiles()  {
     if (!this.mFilesEnumerator) {
       return null;
     }
