@@ -580,8 +580,6 @@ const DownloadsPanel = {
   },
 };
 
-XPCOMUtils.defineConstant(this, "DownloadsPanel", DownloadsPanel);
-
 
 
 
@@ -659,8 +657,6 @@ const DownloadsOverlayLoader = {
     }
   },
 };
-
-XPCOMUtils.defineConstant(this, "DownloadsOverlayLoader", DownloadsOverlayLoader);
 
 
 
@@ -1008,8 +1004,6 @@ const DownloadsView = {
   },
 }
 
-XPCOMUtils.defineConstant(this, "DownloadsView", DownloadsView);
-
 
 
 
@@ -1147,8 +1141,6 @@ const DownloadsViewController = {
     }
   }
 };
-
-XPCOMUtils.defineConstant(this, "DownloadsViewController", DownloadsViewController);
 
 
 
@@ -1496,9 +1488,7 @@ const DownloadsSummary = {
     delete this._detailsNode;
     return this._detailsNode = node;
   }
-};
-
-XPCOMUtils.defineConstant(this, "DownloadsSummary", DownloadsSummary);
+}
 
 
 
@@ -1552,5 +1542,3 @@ const DownloadsFooter = {
     return this._footerNode = node;
   }
 };
-
-XPCOMUtils.defineConstant(this, "DownloadsFooter", DownloadsFooter);

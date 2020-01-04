@@ -3,6 +3,13 @@
 
 
 
+var tempScope = {};
+Cu.import("resource://gre/modules/NetUtil.jsm", tempScope);
+Cu.import("resource://gre/modules/FileUtils.jsm", tempScope);
+var NetUtil = tempScope.NetUtil;
+var FileUtils = tempScope.FileUtils;
+
+
 var gScratchpad; 
 var gFile; 
 var DEVTOOLS_CHROME_ENABLED = "devtools.chrome.enabled";

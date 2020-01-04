@@ -7,9 +7,9 @@
 
 
 
-var BrowserElementIsPreloaded = true;
+const BrowserElementIsPreloaded = true;
 
-var DoPreloadPostfork = function(aCallback) {
+const DoPreloadPostfork = function(aCallback) {
   Services.obs.addObserver({
     _callback: aCallback,
 

@@ -367,17 +367,6 @@ this.XPCOMUtils = {
       QueryInterface: XPCOMUtils.generateQI([Ci.nsIFactory])
     };
   },
-
-  
-
-
-  defineConstant: function XPCOMUtils__defineConstant(aObj, aName, aValue) {
-    Object.defineProperty(aObj, aName, {
-      value: aValue,
-      enumerable: true,
-      writable: false
-    });
-  },
 };
 
 

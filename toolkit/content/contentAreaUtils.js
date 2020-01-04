@@ -260,10 +260,8 @@ DownloadListener.prototype = {
 }
 
 const kSaveAsType_Complete = 0; 
-XPCOMUtils.defineConstant(this, "kSaveAsType_Complete", 0);
 
 const kSaveAsType_Text     = 2; 
-XPCOMUtils.defineConstant(this, "kSaveAsType_Text", kSaveAsType_Text);
 
 
 
@@ -789,13 +787,10 @@ function DownloadURL(aURL, aFileName, aInitiatingDocument) {
 
 
 const SAVEMODE_FILEONLY      = 0x00;
-XPCOMUtils.defineConstant(this, "SAVEMODE_FILEONLY", SAVEMODE_FILEONLY);
 
 const SAVEMODE_COMPLETE_DOM  = 0x01;
-XPCOMUtils.defineConstant(this, "SAVEMODE_COMPLETE_DOM", SAVEMODE_COMPLETE_DOM);
 
 const SAVEMODE_COMPLETE_TEXT = 0x02;
-XPCOMUtils.defineConstant(this, "SAVEMODE_COMPLETE_TEXT", SAVEMODE_COMPLETE_TEXT);
 
 
 

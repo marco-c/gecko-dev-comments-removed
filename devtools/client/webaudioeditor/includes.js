@@ -74,7 +74,6 @@ const EVENTS = {
   
   UI_INSPECTOR_RESIZE: "WebAudioEditor:UIInspectorResize"
 };
-XPCOMUtils.defineConstant(this, "EVENTS", EVENTS);
 
 
 

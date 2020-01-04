@@ -19,7 +19,7 @@ const GRAPH_REQUIREMENTS = {
   memory: {
     features: ["withMemory"]
   },
-};
+}
 
 
 

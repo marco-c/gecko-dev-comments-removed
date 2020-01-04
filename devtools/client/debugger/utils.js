@@ -3,7 +3,7 @@
 
 "use strict";
 
-var XULUtils = {
+const XULUtils = {
   
 
 
@@ -35,7 +35,7 @@ const CHARACTER_LIMIT = 250;
 
 
 
-var SourceUtils = {
+const SourceUtils = {
   _labelsCache: new Map(), 
   _groupsCache: new Map(),
   _minifiedCache: new WeakMap(),

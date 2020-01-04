@@ -6,6 +6,8 @@
 
 
 
+var Cr = Components.results;
+
 
 
 var testServices = [
