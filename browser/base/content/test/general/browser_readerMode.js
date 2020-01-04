@@ -61,6 +61,15 @@ add_task(function* test_reader_button() {
   is(gURLBar.textValue, url.substring("http://".length), "gURLBar is displaying original article URL");
 
   
+  yield new Promise((resolve, reject) => {
+    waitForClipboard(url, function () {
+      gURLBar.focus();
+      gURLBar.select();
+      goDoCommand("cmd_copy");
+    }, resolve, reject);
+  });
+
+  
   readerButton.click();
   yield promiseTabLoadEvent(tab);
   is(gBrowser.selectedBrowser.currentURI.spec, url,
