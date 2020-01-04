@@ -66,24 +66,6 @@ public class FaviconGenerator {
     
 
 
-    public static void generate(final Context context, final String pageURL, final OnFaviconLoadedListener listener) {
-        ThreadUtils.postToBackgroundThread(new Runnable() {
-            @Override
-            public void run() {
-                final Bitmap bitmap = generate(context, pageURL).bitmap;
-                ThreadUtils.postToUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        listener.onFaviconLoaded(pageURL, null, bitmap);
-                    }
-                });
-            }
-        });
-    }
-
-    
-
-
     public static IconWithColor generate(Context context, String pageURL) {
         final Resources resources = context.getResources();
         final int widthAndHeight = resources.getDimensionPixelSize(R.dimen.favicon_bg);

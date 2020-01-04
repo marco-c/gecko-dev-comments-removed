@@ -66,9 +66,12 @@ import android.util.Log;
 import org.mozilla.gecko.util.IOUtils;
 
 import static org.mozilla.gecko.util.IOUtils.ConsumedInputStream;
-import static org.mozilla.gecko.favicons.LoadFaviconTask.DEFAULT_FAVICON_BUFFER_SIZE;
 
 public class LocalBrowserDB implements BrowserDB {
+    
+    
+    public static final int DEFAULT_FAVICON_BUFFER_SIZE_BYTES = 25000;
+
     private static final String LOGTAG = "GeckoLocalBrowserDB";
 
     
@@ -514,7 +517,7 @@ public class LocalBrowserDB implements BrowserDB {
         final String bitmapPath = GeckoJarReader.getJarURL(context, context.getString(faviconId));
         final InputStream iStream = GeckoJarReader.getStream(context, bitmapPath);
 
-        return IOUtils.readFully(iStream, DEFAULT_FAVICON_BUFFER_SIZE);
+        return IOUtils.readFully(iStream, DEFAULT_FAVICON_BUFFER_SIZE_BYTES);
     }
 
     private static ConsumedInputStream getDefaultFaviconFromDrawable(Context context, String name) {
@@ -524,7 +527,7 @@ public class LocalBrowserDB implements BrowserDB {
         }
 
         InputStream iStream = context.getResources().openRawResource(faviconId);
-        return IOUtils.readFully(iStream, DEFAULT_FAVICON_BUFFER_SIZE);
+        return IOUtils.readFully(iStream, DEFAULT_FAVICON_BUFFER_SIZE_BYTES);
     }
 
     
@@ -1188,7 +1191,7 @@ public class LocalBrowserDB implements BrowserDB {
 
 
     @Override
-    public LoadFaviconResult getFaviconForUrl(ContentResolver cr, String faviconURL) {
+    public LoadFaviconResult getFaviconForUrl(Context context, ContentResolver cr, String faviconURL) {
         final Cursor c = cr.query(mFaviconsUriWithProfile,
                                   new String[] { Favicons.DATA },
                                   Favicons.URL + " = ? AND " + Favicons.DATA + " IS NOT NULL",
@@ -1229,7 +1232,7 @@ public class LocalBrowserDB implements BrowserDB {
             return null;
         }
 
-        return FaviconDecoder.decodeFavicon(b);
+        return FaviconDecoder.decodeFavicon(context, b);
     }
 
     
@@ -1284,80 +1287,6 @@ public class LocalBrowserDB implements BrowserDB {
         }
 
         return mSuggestedSites.hideSite(url);
-    }
-
-    @Override
-    public void updateFaviconForUrl(ContentResolver cr, String pageUri,
-            byte[] encodedFavicon, String faviconUri) {
-        ContentValues values = new ContentValues();
-        values.put(Favicons.URL, faviconUri);
-        values.put(Favicons.PAGE_URL, pageUri);
-        values.put(Favicons.DATA, encodedFavicon);
-
-        
-        Uri faviconsUri = withDeleted(mFaviconsUriWithProfile).buildUpon().
-                appendQueryParameter(BrowserContract.PARAM_INSERT_IF_NEEDED, "true").build();
-
-        final int updated = cr.update(faviconsUri,
-                                      values,
-                                      Favicons.URL + " = ?",
-                                      new String[] { faviconUri });
-
-        if (updated == 0) {
-            return;
-        }
-
-        
-        
-        final int id = getIDForFaviconURL(cr, faviconUri);
-        if (id == FAVICON_ID_NOT_FOUND) {
-            return;
-        }
-
-        updateHistoryAndBookmarksFaviconID(cr, pageUri, id);
-    }
-
-    
-
-
-    private Integer getIDForFaviconURL(ContentResolver cr, String faviconURL) {
-        final Cursor c = cr.query(mFaviconsUriWithProfile,
-                                  new String[] { Favicons._ID },
-                                  Favicons.URL + " = ? AND " + Favicons.DATA + " IS NOT NULL",
-                                  new String[] { faviconURL },
-                                  null);
-
-        try {
-            final int col = c.getColumnIndexOrThrow(Favicons._ID);
-            if (c.moveToFirst() && !c.isNull(col)) {
-                return c.getInt(col);
-            }
-
-            
-            return FAVICON_ID_NOT_FOUND;
-        } finally {
-            c.close();
-        }
-    }
-
-    
-
-
-
-    private void updateHistoryAndBookmarksFaviconID(ContentResolver cr, String pageURL, int id) {
-        final ContentValues bookmarkValues = new ContentValues();
-        bookmarkValues.put(Bookmarks.FAVICON_ID, id);
-        cr.update(mBookmarksUriWithProfile,
-                  bookmarkValues,
-                  Bookmarks.URL + " = ?",
-                  new String[] { pageURL });
-
-        final ContentValues historyValues = new ContentValues();
-        historyValues.put(History.FAVICON_ID, id);
-        cr.update(mHistoryUriWithProfile,
-                  historyValues,
-                  History.URL + " = ?",
-                  new String[] { pageURL });
     }
 
     @Override
@@ -1674,30 +1603,6 @@ public class LocalBrowserDB implements BrowserDB {
         }
         builder.withValues(values);
 
-        
-        operations.add(builder.build());
-    }
-
-    @Override
-    public void updateFaviconInBatch(ContentResolver cr,
-                                     Collection<ContentProviderOperation> operations,
-                                     String url, String faviconUrl,
-                                     String faviconGuid, byte[] data) {
-        ContentValues values = new ContentValues();
-        values.put(Favicons.DATA, data);
-        values.put(Favicons.PAGE_URL, url);
-        if (faviconUrl != null) {
-            values.put(Favicons.URL, faviconUrl);
-        }
-
-        
-        Uri faviconsUri = withDeleted(mFaviconsUriWithProfile).buildUpon().
-            appendQueryParameter(BrowserContract.PARAM_INSERT_IF_NEEDED, "true").build();
-        
-        ContentProviderOperation.Builder builder =
-            ContentProviderOperation.newUpdate(faviconsUri);
-        builder.withValues(values);
-        builder.withSelection(Favicons.PAGE_URL + " = ?", new String[] { url });
         
         operations.add(builder.build());
     }

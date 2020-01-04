@@ -8,14 +8,11 @@ import android.graphics.Bitmap;
 import android.util.Log;
 import android.util.SparseArray;
 
-import org.mozilla.gecko.favicons.Favicons;
-
 import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 
 
 
@@ -95,7 +92,7 @@ public class LoadFaviconResult {
             }
         }
 
-        int bestSize = Favicons.selectBestSizeFromList(sizes, targetWidthAndHeight);
+        int bestSize = selectBestSizeFromList(sizes, targetWidthAndHeight);
 
         if (bestSize == -1) {
             
@@ -104,5 +101,31 @@ public class LoadFaviconResult {
         }
 
         return iconMap.get(bestSize);
+    }
+
+    
+
+
+
+
+
+
+    public static int selectBestSizeFromList(final List<Integer> sizes, final int preferredSize) {
+        if (sizes.isEmpty()) {
+            
+            return -1;
+        }
+
+        Collections.sort(sizes);
+
+        for (int size : sizes) {
+            if (size >= preferredSize) {
+                return size;
+            }
+        }
+
+        
+        
+        return sizes.get(sizes.size() - 1);
     }
 }
