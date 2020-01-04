@@ -80,7 +80,6 @@ class TraceLoggerThread;
 
 
 
-
 class TraceLoggerEvent {
   private:
     TraceLoggerEventPayload* payload_;
@@ -181,6 +180,7 @@ class TraceLoggerThread
 
     
     
+    
     uint32_t iteration_;
 
   public:
@@ -241,6 +241,7 @@ class TraceLoggerThread
             return false;
         }
 
+        
         
         
         if (lastIteration == iteration_ - 1 && lastSize == events.maxSize())
