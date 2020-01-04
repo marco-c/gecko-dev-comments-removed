@@ -2445,10 +2445,11 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
     aBuilder->ExitSVGEffectsContents();
     resultList.AppendToTop(&hoistedScrollInfoItemsStorage);
   }
+
   
 
 
-  else if (useOpacity && !resultList.IsEmpty()) {
+  if (useOpacity && !resultList.IsEmpty()) {
     
     
     
