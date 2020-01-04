@@ -693,6 +693,17 @@ HandleExceptionBaseline(JSContext* cx, const JitFrameIterator& frame, ResumeFrom
 {
     MOZ_ASSERT(frame.isBaselineJS());
 
+    bool frameOk = false;
+    RootedScript script(cx, frame.baselineFrame()->script());
+
+    if (script->hasScriptCounts()) {
+        PCCounts* counts = script->getThrowCounts(pc);
+        
+        
+        if (counts)
+            counts->numExec()++;
+    }
+
     
     
     if (cx->isPropagatingForcedReturn()) {
@@ -701,10 +712,7 @@ HandleExceptionBaseline(JSContext* cx, const JitFrameIterator& frame, ResumeFrom
         return;
     }
 
-    bool frameOk = false;
-    RootedScript script(cx, frame.baselineFrame()->script());
-
-again:
+  again:
     if (cx->isExceptionPending()) {
         if (!cx->isClosingGenerator()) {
             switch (Debugger::onExceptionUnwind(cx, frame.baselineFrame())) {
@@ -733,8 +741,12 @@ again:
             ScopeIter si(cx, frame.baselineFrame(), pc);
             if (!ProcessTryNotesBaseline(cx, frame, si, rfe, &pc))
                 goto again;
-            if (rfe->kind != ResumeFromException::RESUME_ENTRY_FRAME)
+            if (rfe->kind != ResumeFromException::RESUME_ENTRY_FRAME) {
+                
+                
+                MOZ_ASSERT_IF(script->hasScriptCounts(), script->maybeGetPCCounts(pc));
                 return;
+            }
         }
 
         frameOk = HandleClosingGeneratorReturn(cx, frame.baselineFrame(), frameOk);
