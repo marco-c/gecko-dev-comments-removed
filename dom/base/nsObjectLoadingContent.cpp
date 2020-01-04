@@ -103,6 +103,7 @@
 static NS_DEFINE_CID(kAppShellCID, NS_APPSHELL_CID);
 
 static const char *kPrefJavaMIME = "plugin.java.mime";
+static const char *kPrefYoutubeRewrite = "plugins.rewrite_youtube_embeds";
 
 using namespace mozilla;
 using namespace mozilla::dom;
@@ -714,7 +715,8 @@ nsObjectLoadingContent::nsObjectLoadingContent()
   , mActivated(false)
   , mIsStopping(false)
   , mIsLoading(false)
-  , mScriptRequested(false) {}
+  , mScriptRequested(false)
+  , mRewrittenYoutubeEmbed(false) {}
 
 nsObjectLoadingContent::~nsObjectLoadingContent()
 {
@@ -1482,7 +1484,7 @@ nsObjectLoadingContent::CheckJavaCodebase()
 }
 
 bool
-nsObjectLoadingContent::IsYoutubeEmbed()
+nsObjectLoadingContent::ShouldRewriteYoutubeEmbed(nsIURI* aURI)
 {
   nsCOMPtr<nsIContent> thisContent =
     do_QueryInterface(static_cast<nsIImageLoadingContent*>(this));
@@ -1500,25 +1502,41 @@ nsObjectLoadingContent::IsYoutubeEmbed()
     NS_WARNING("Could not get TLD service!");
     return false;
   }
+
   nsAutoCString currentBaseDomain;
-  bool ok = NS_SUCCEEDED(tldService->GetBaseDomain(mURI, 0, currentBaseDomain));
+  bool ok = NS_SUCCEEDED(tldService->GetBaseDomain(aURI, 0, currentBaseDomain));
   if (!ok) {
+    
     
     return false;
   }
+
   
-  nsAutoCString domain("youtube.com");
-  if (!StringEndsWith(domain, currentBaseDomain)) {
+  if (!currentBaseDomain.EqualsLiteral("youtube.com")) {
     return false;
   }
+
+  
+  
+  nsAutoCString path;
+  aURI->GetPath(path);
+  if (!StringBeginsWith(path, NS_LITERAL_CSTRING("/v/"))) {
+    return false;
+  }
+
   
   nsAutoCString uri;
-  mURI->GetSpec(uri);
-  
+  aURI->GetSpec(uri);
   if (uri.Find("enablejsapi=1", true, 0, -1) != kNotFound) {
     return false;
   }
-  return true;
+
+  
+  
+  Telemetry::Accumulate(Telemetry::YOUTUBE_REWRITABLE_EMBED_SEEN, 1);
+
+  
+  return Preferences::GetBool(kPrefYoutubeRewrite);
 }
 
 bool
@@ -1769,6 +1787,7 @@ nsObjectLoadingContent::UpdateObjectParameters(bool aJavaURI)
     NS_NOTREACHED("Unrecognized plugin-loading tag");
   }
 
+  mRewrittenYoutubeEmbed = false;
   
   
   if (!uriStr.IsEmpty()) {
@@ -1776,6 +1795,19 @@ nsObjectLoadingContent::UpdateObjectParameters(bool aJavaURI)
                                                    uriStr,
                                                    thisContent->OwnerDoc(),
                                                    newBaseURI);
+    if (ShouldRewriteYoutubeEmbed(newURI)) {
+      
+      
+      uriStr.ReplaceSubstring(NS_LITERAL_STRING("/v/"),
+                              NS_LITERAL_STRING("/embed/"));
+      rv = nsContentUtils::NewURIWithDocumentCharset(getter_AddRefs(newURI),
+                                                     uriStr,
+                                                     thisContent->OwnerDoc(),
+                                                     newBaseURI);
+      mRewrittenYoutubeEmbed = true;
+      newMime = NS_LITERAL_CSTRING("text/html");
+    }
+
     if (NS_SUCCEEDED(rv)) {
       NS_TryToSetImmutable(newURI);
     } else {
@@ -1939,9 +1971,9 @@ nsObjectLoadingContent::UpdateObjectParameters(bool aJavaURI)
     newType = eType_Null;
     newMime.Truncate();
   } else if (newChannel) {
-      
-      newType = GetTypeOfContent(newMime);
-      LOG(("OBJLC [%p]: Using channel type", this));
+    
+    newType = GetTypeOfContent(newMime);
+    LOG(("OBJLC [%p]: Using channel type", this));
   } else if (((caps & eAllowPluginSkipChannel) || !newURI) &&
              GetTypeOfContent(newMime) == eType_Plugin) {
     newType = eType_Plugin;
@@ -2168,11 +2200,6 @@ nsObjectLoadingContent::LoadObject(bool aNotify,
     
     NS_NOTREACHED("Loading with a channel, but state doesn't make sense");
     return NS_OK;
-  }
-
-  
-  if (IsYoutubeEmbed()) {
-    Telemetry::Accumulate(Telemetry::YOUTUBE_REWRITABLE_EMBED_SEEN, 1);
   }
 
   

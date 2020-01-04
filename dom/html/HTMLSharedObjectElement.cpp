@@ -345,6 +345,11 @@ HTMLSharedObjectElement::GetCapabilities() const
   if (mNodeInfo->Equals(nsGkAtoms::embed)) {
     capabilities |= eSupportSVG | eSupportImages;
   }
+  
+  
+  if (mRewrittenYoutubeEmbed) {
+    capabilities |= eSupportDocuments;
+  }
 
   return capabilities;
 }
