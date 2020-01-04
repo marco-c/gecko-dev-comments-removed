@@ -1426,18 +1426,19 @@ class ADBDevice(ADBCommand):
             if self._mkdir_p is None or self._mkdir_p:
                 
                 
-                if self.shell_bool('mkdir -p %s' % path, timeout=timeout):
+                if self.shell_bool('mkdir -p %s' % path, timeout=timeout,
+                                   root=root):
                     self._mkdir_p = True
                     return
             
             
-            if not self.is_dir(posixpath.dirname(path)):
+            if not self.is_dir(posixpath.dirname(path), root=root):
                 parts = path.split('/')
                 name = "/"
                 for part in parts[:-1]:
                     if part != "":
                         name = posixpath.join(name, part)
-                        if not self.is_dir(name):
+                        if not self.is_dir(name, root=root):
                             
                             
                             self.shell_output('mkdir %s' % name,
