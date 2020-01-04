@@ -341,7 +341,8 @@ nsCSPContext::GetReferrerPolicy(uint32_t* outPolicy, bool* outIsSet)
     mPolicies[i]->getReferrerPolicy(refpol);
     
     
-    if (!refpol.IsEmpty()) {
+    
+    if (!mPolicies[i]->getReportOnlyFlag() && !refpol.IsEmpty()) {
       
       
       
