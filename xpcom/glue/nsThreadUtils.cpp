@@ -142,13 +142,11 @@ NS_IsMainThread()
 }
 #endif
 
-
-
-
 NS_METHOD
-NS_DispatchToCurrentThread(nsIRunnable* aEvent)
+NS_DispatchToCurrentThread(already_AddRefed<nsIRunnable>&& aEvent)
 {
-  nsCOMPtr<nsIRunnable> deathGrip = aEvent;
+  nsresult rv;
+  nsCOMPtr<nsIRunnable> event(aEvent);
 #ifdef MOZILLA_INTERNAL_API
   nsIThread* thread = NS_GetCurrentThread();
   if (!thread) {
@@ -156,12 +154,32 @@ NS_DispatchToCurrentThread(nsIRunnable* aEvent)
   }
 #else
   nsCOMPtr<nsIThread> thread;
-  nsresult rv = NS_GetCurrentThread(getter_AddRefs(thread));
+  rv = NS_GetCurrentThread(getter_AddRefs(thread));
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
 #endif
-  return thread->Dispatch(aEvent, NS_DISPATCH_NORMAL);
+  
+  
+  nsIRunnable* temp = event.get();
+  rv = thread->Dispatch(event.forget(), NS_DISPATCH_NORMAL);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    
+    
+    
+    NS_RELEASE(temp);
+  }
+  return rv;
+}
+
+
+
+
+NS_METHOD
+NS_DispatchToCurrentThread(nsIRunnable* aEvent)
+{
+  nsCOMPtr<nsIRunnable> event(aEvent);
+  return NS_DispatchToCurrentThread(event.forget());
 }
 
 NS_METHOD
