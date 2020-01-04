@@ -298,7 +298,7 @@ nsLeafBoxFrame::Reflow(nsPresContext*   aPresContext,
 
   nsRect r(mRect.x, mRect.y, computedSize.width, computedSize.height);
 
-  SetBounds(state, r);
+  SetXULBounds(state, r);
  
   
   Layout(state);

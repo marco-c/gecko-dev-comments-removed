@@ -2906,8 +2906,8 @@ public:
   
   
   
-  virtual void SetBounds(nsBoxLayoutState& aBoxLayoutState, const nsRect& aRect,
-                         bool aRemoveOverflowAreas = false) = 0;
+  virtual void SetXULBounds(nsBoxLayoutState& aBoxLayoutState, const nsRect& aRect,
+                            bool aRemoveOverflowAreas = false) = 0;
   nsresult Layout(nsBoxLayoutState& aBoxLayoutState);
   
   

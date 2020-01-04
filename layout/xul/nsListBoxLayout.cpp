@@ -161,7 +161,7 @@ nsListBoxLayout::LayoutInternal(nsIFrame* aBox, nsBoxLayoutState& aState)
       childRect.height = rowHeight;
 
       childRect.Deflate(margin);
-      box->SetBounds(aState, childRect);
+      box->SetXULBounds(aState, childRect);
       box->Layout(aState);
     } else {
       
@@ -175,7 +175,7 @@ nsListBoxLayout::LayoutInternal(nsIFrame* aBox, nsBoxLayoutState& aState)
         redrawStart = newPos;
 
       childRect.y = newPos;
-      box->SetBounds(aState, childRect);
+      box->SetXULBounds(aState, childRect);
     }
 
     

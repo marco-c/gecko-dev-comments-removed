@@ -703,7 +703,7 @@ nsBoxFrame::Reflow(nsPresContext*          aPresContext,
   nsSize physicalSize = computedSize.GetPhysicalSize(wm);
   nsRect r(mRect.x, mRect.y, physicalSize.width, physicalSize.height);
 
-  SetBounds(state, r);
+  SetXULBounds(state, r);
  
   
   Layout(state);
@@ -1924,7 +1924,7 @@ nsBoxFrame::LayoutChildAt(nsBoxLayoutState& aState, nsIFrame* aBox, const nsRect
 {
   
   nsRect oldRect(aBox->GetRect());
-  aBox->SetBounds(aState, aRect);
+  aBox->SetXULBounds(aState, aRect);
 
   bool layout = NS_SUBTREE_DIRTY(aBox);
   

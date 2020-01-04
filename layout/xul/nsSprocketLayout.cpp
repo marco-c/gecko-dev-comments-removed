@@ -455,7 +455,7 @@ nsSprocketLayout::Layout(nsIFrame* aBox, nsBoxLayoutState& aState)
       
       
 
-      child->SetBounds(aState, childRect);
+      child->SetXULBounds(aState, childRect);
       bool sizeChanged = (childRect.width != oldRect.width ||
                             childRect.height != oldRect.height);
 
@@ -474,7 +474,7 @@ nsSprocketLayout::Layout(nsIFrame* aBox, nsBoxLayoutState& aState)
           childRect.height = maxSize.height;
            
         
-        child->SetBounds(aState, childRect);
+        child->SetXULBounds(aState, childRect);
       }
 
       
@@ -550,7 +550,7 @@ nsSprocketLayout::Layout(nsIFrame* aBox, nsBoxLayoutState& aState)
         if (childRect.width >= margin.left + margin.right && childRect.height >= margin.top + margin.bottom) 
           childRect.Deflate(margin);
             
-        child->SetBounds(aState, newChildRect);
+        child->SetXULBounds(aState, newChildRect);
 
         
         if (count == 0)
@@ -608,7 +608,7 @@ nsSprocketLayout::Layout(nsIFrame* aBox, nsBoxLayoutState& aState)
       if (tmpClientRect.height > originalSize.height)
         bounds.height = tmpClientRect.height;
 
-      aBox->SetBounds(aState, bounds);
+      aBox->SetXULBounds(aState, bounds);
     }
   }
 
@@ -628,7 +628,7 @@ nsSprocketLayout::Layout(nsIFrame* aBox, nsBoxLayoutState& aState)
       nsRect childRect(child->GetRect());
       childRect.x += (x - origX);
       childRect.y += (y - origY);
-      child->SetBounds(aState, childRect);
+      child->SetXULBounds(aState, childRect);
       child = nsBox::GetNextBox(child);
     }
   }
@@ -1003,7 +1003,7 @@ nsSprocketLayout::AlignChildren(nsIFrame* aBox,
     }
 
     if (childRect.TopLeft() != child->GetPosition()) {
-      child->SetBounds(aState, childRect);
+      child->SetXULBounds(aState, childRect);
     }
 
     child = nsBox::GetNextBox(child);
@@ -1135,7 +1135,7 @@ nsSprocketLayout::ChildResized(nsIFrame* aBox,
         if (rect.width >= margin.left + margin.right && rect.height >= margin.top + margin.bottom) 
           rect.Deflate(margin);
 
-        aChild->SetBounds(aState, rect);
+        aChild->SetXULBounds(aState, rect);
         aChild->Layout(aState);
       }
 

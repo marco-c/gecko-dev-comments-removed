@@ -336,7 +336,7 @@ nsStackLayout::Layout(nsIFrame* aBox, nsBoxLayoutState& aState)
           }
 
           
-          child->SetBounds(aState, childRect);
+          child->SetXULBounds(aState, childRect);
 
           
           child->Layout(aState);
@@ -377,7 +377,7 @@ nsStackLayout::Layout(nsIFrame* aBox, nsBoxLayoutState& aState)
      if (clientRect.height > bounds.height)
        bounds.height = clientRect.height;
 
-     aBox->SetBounds(aState, bounds);
+     aBox->SetXULBounds(aState, bounds);
    }
 
    return NS_OK;
