@@ -616,8 +616,7 @@ DataTransfer::GetDataAtInternal(const nsAString& aFormat, uint32_t aIndex,
   
   
   bool checkFormatItemPrincipal = mIsCrossDomainSubFrameDrop ||
-      (mEventMessage != eDrop && mEventMessage != eLegacyDragDrop &&
-       mEventMessage != ePaste);
+      (mEventMessage != eDrop && mEventMessage != ePaste);
   MOZ_ASSERT(aSubjectPrincipal);
 
   RefPtr<DataTransferItem> item = mItems->MozItemByTypeAt(format, aIndex);
