@@ -1635,6 +1635,11 @@ GetPropagatedScrollbarStylesForViewport(nsPresContext* aPresContext,
   Element* docElement = document->GetRootElement();
 
   
+  if (!docElement) {
+    return nullptr;
+  }
+
+  
   nsStyleSet *styleSet = aPresContext->StyleSet();
   RefPtr<nsStyleContext> rootStyle;
   rootStyle = styleSet->ResolveStyleFor(docElement, nullptr);

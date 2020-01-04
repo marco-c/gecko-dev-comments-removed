@@ -7895,6 +7895,13 @@ nsCSSFrameConstructor::ContentRemoved(nsIContent*  aContainer,
     *aDestroyedFramesFor = aChild;
   }
 
+  if (aChild->IsHTMLElement(nsGkAtoms::body) ||
+      (!aContainer && aChild->IsElement())) {
+    
+    
+    mPresShell->GetPresContext()->UpdateViewportScrollbarStylesOverride();
+  }
+
   
   
 
