@@ -306,8 +306,10 @@ public class Favicons {
         }
 
         
+        
+        
         final LoadFaviconTask task =
-            new LoadFaviconTask(context, pageURL, targetURL, 0, callback, targetSize, true);
+            new LoadFaviconTask(context, pageURL, targetURL, 0, callback, targetSize,  true);
         final int taskId = task.getId();
         synchronized (loadTasks) {
             loadTasks.put(taskId, task);
