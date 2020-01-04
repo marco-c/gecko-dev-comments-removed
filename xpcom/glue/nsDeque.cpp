@@ -13,37 +13,7 @@
 
 #include "mozilla/CheckedInt.h"
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#define modasgn(x,y) if (x<0) x+=y; x%=y
-#define modulus(x,y) ((x<0)?(x+y)%(y):(x)%(y))
+#define modulus(x,y) ((x)%(y))
 
 
 
@@ -165,7 +135,7 @@ nsDeque::Erase()
 bool
 nsDeque::GrowCapacity()
 {
-  mozilla::CheckedInt<int32_t> newCapacity = mCapacity;
+  mozilla::CheckedInt<size_t> newCapacity = mCapacity;
   newCapacity *= 4;
 
   NS_ASSERTION(newCapacity.isValid(), "Overflow");
@@ -174,7 +144,7 @@ nsDeque::GrowCapacity()
   }
 
   
-  mozilla::CheckedInt<int32_t> newByteSize = newCapacity;
+  mozilla::CheckedInt<size_t> newByteSize = newCapacity;
   newByteSize *= sizeof(void*);
 
   NS_ASSERTION(newByteSize.isValid(), "Overflow");
@@ -259,8 +229,13 @@ nsDeque::Push(void* aItem, const fallible_t&)
 bool
 nsDeque::PushFront(void* aItem, const fallible_t&)
 {
-  mOrigin--;
-  modasgn(mOrigin, mCapacity);
+  
+  if (mOrigin == 0) {
+    mOrigin = mCapacity - 1;
+  } else {
+    mOrigin--;
+  }
+  
   if (mSize == mCapacity) {
     if (!GrowCapacity()) {
       return false;
@@ -284,7 +259,7 @@ nsDeque::Pop()
   void* result = 0;
   if (mSize > 0) {
     --mSize;
-    int32_t offset = modulus(mSize + mOrigin, mCapacity);
+    size_t offset = modulus(mSize + mOrigin, mCapacity);
     result = mData[offset];
     mData[offset] = 0;
     if (!mSize) {
@@ -360,10 +335,10 @@ nsDeque::PeekFront()
 
 
 void*
-nsDeque::ObjectAt(int32_t aIndex) const
+nsDeque::ObjectAt(size_t aIndex) const
 {
   void* result = 0;
-  if (aIndex >= 0 && aIndex < mSize) {
+  if (aIndex < mSize) {
     result = mData[modulus(mOrigin + aIndex, mCapacity)];
   }
   return result;
@@ -380,7 +355,7 @@ nsDeque::ObjectAt(int32_t aIndex) const
 void
 nsDeque::ForEach(nsDequeFunctor& aFunctor) const
 {
-  for (int32_t i = 0; i < mSize; ++i) {
+  for (size_t i = 0; i < mSize; ++i) {
     aFunctor(ObjectAt(i));
   }
 }

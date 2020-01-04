@@ -74,7 +74,7 @@ public:
 
 
 
-  inline int32_t GetSize() const { return mSize; }
+  inline size_t GetSize() const { return mSize; }
 
   
 
@@ -138,7 +138,7 @@ public:
 
 
 
-  void* ObjectAt(int aIndex) const;
+  void* ObjectAt(size_t aIndex) const;
 
   
 
@@ -160,9 +160,9 @@ public:
   size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
 
 protected:
-  int32_t         mSize;
-  int32_t         mCapacity;
-  int32_t         mOrigin;
+  size_t         mSize;
+  size_t         mCapacity;
+  size_t         mOrigin;
   nsDequeFunctor* mDeallocator;
   void*           mBuffer[8];
   void**          mData;
