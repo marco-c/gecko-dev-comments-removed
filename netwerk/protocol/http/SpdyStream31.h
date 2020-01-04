@@ -88,6 +88,7 @@ public:
   int64_t  LocalWindow()  { return mLocalWindow; }
 
   bool     BlockedOnRwin() { return mBlockedOnRwin; }
+  bool     ChannelPipeFull();
 
   
   
