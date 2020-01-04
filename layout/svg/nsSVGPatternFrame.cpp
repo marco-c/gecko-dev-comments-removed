@@ -381,7 +381,7 @@ nsSVGPatternFrame::PaintPattern(const DrawTarget* aDrawTarget,
 
   if (aGraphicOpacity != 1.0f) {
     gfx->Save();
-    gfx->PushGroup(gfxContentType::COLOR_ALPHA);
+    gfx->PushGroupForBlendBack(gfxContentType::COLOR_ALPHA, aGraphicOpacity);
   }
 
   
@@ -417,8 +417,7 @@ nsSVGPatternFrame::PaintPattern(const DrawTarget* aDrawTarget,
   patternWithChildren->mSource = nullptr;
 
   if (aGraphicOpacity != 1.0f) {
-    gfx->PopGroupToSource();
-    gfx->Paint(aGraphicOpacity);
+    gfx->PopGroupAndBlend();
     gfx->Restore();
   }
 
