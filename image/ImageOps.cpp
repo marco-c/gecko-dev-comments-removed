@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- *
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "ImageOps.h"
 
@@ -24,14 +24,14 @@ using namespace mozilla::gfx;
 namespace mozilla {
 namespace image {
 
-/* static */ already_AddRefed<Image>
+ already_AddRefed<Image>
 ImageOps::Freeze(Image* aImage)
 {
   nsRefPtr<Image> frozenImage = new FrozenImage(aImage);
   return frozenImage.forget();
 }
 
-/* static */ already_AddRefed<imgIContainer>
+ already_AddRefed<imgIContainer>
 ImageOps::Freeze(imgIContainer* aImage)
 {
   nsCOMPtr<imgIContainer> frozenImage =
@@ -39,14 +39,14 @@ ImageOps::Freeze(imgIContainer* aImage)
   return frozenImage.forget();
 }
 
-/* static */ already_AddRefed<Image>
+ already_AddRefed<Image>
 ImageOps::Clip(Image* aImage, nsIntRect aClip)
 {
   nsRefPtr<Image> clippedImage = new ClippedImage(aImage, aClip);
   return clippedImage.forget();
 }
 
-/* static */ already_AddRefed<imgIContainer>
+ already_AddRefed<imgIContainer>
 ImageOps::Clip(imgIContainer* aImage, nsIntRect aClip)
 {
   nsCOMPtr<imgIContainer> clippedImage =
@@ -54,14 +54,14 @@ ImageOps::Clip(imgIContainer* aImage, nsIntRect aClip)
   return clippedImage.forget();
 }
 
-/* static */ already_AddRefed<Image>
+ already_AddRefed<Image>
 ImageOps::Orient(Image* aImage, Orientation aOrientation)
 {
   nsRefPtr<Image> orientedImage = new OrientedImage(aImage, aOrientation);
   return orientedImage.forget();
 }
 
-/* static */ already_AddRefed<imgIContainer>
+ already_AddRefed<imgIContainer>
 ImageOps::Orient(imgIContainer* aImage, Orientation aOrientation)
 {
   nsCOMPtr<imgIContainer> orientedImage =
@@ -69,14 +69,14 @@ ImageOps::Orient(imgIContainer* aImage, Orientation aOrientation)
   return orientedImage.forget();
 }
 
-/* static */ already_AddRefed<imgIContainer>
+ already_AddRefed<imgIContainer>
 ImageOps::CreateFromDrawable(gfxDrawable* aDrawable)
 {
   nsCOMPtr<imgIContainer> drawableImage = new DynamicImage(aDrawable);
   return drawableImage.forget();
 }
 
-/* static */ already_AddRefed<gfx::SourceSurface>
+ already_AddRefed<gfx::SourceSurface>
 ImageOps::DecodeToSurface(nsIInputStream* aInputStream,
                           const nsACString& aMimeType,
                           uint32_t aFlags)
@@ -85,7 +85,7 @@ ImageOps::DecodeToSurface(nsIInputStream* aInputStream,
 
   nsresult rv;
 
-  // Prepare the input stream.
+  
   nsCOMPtr<nsIInputStream> inputStream = aInputStream;
   if (!NS_InputStreamIsBuffered(aInputStream)) {
     nsCOMPtr<nsIInputStream> bufStream;
@@ -96,14 +96,14 @@ ImageOps::DecodeToSurface(nsIInputStream* aInputStream,
     }
   }
 
-  // Figure out how much data we've been passed.
+  
   uint64_t length;
   rv = inputStream->Available(&length);
   if (NS_FAILED(rv) || length > UINT32_MAX) {
     return nullptr;
   }
 
-  // Write the data into a SourceBuffer.
+  
   nsRefPtr<SourceBuffer> sourceBuffer = new SourceBuffer();
   sourceBuffer->ExpectLength(length);
   rv = sourceBuffer->AppendFromInputStream(inputStream, length);
@@ -112,7 +112,7 @@ ImageOps::DecodeToSurface(nsIInputStream* aInputStream,
   }
   sourceBuffer->Complete(NS_OK);
 
-  // Create a decoder.
+  
   DecoderType decoderType =
     DecoderFactory::GetDecoderType(PromiseFlatCString(aMimeType).get());
   nsRefPtr<Decoder> decoder =
@@ -123,19 +123,19 @@ ImageOps::DecodeToSurface(nsIInputStream* aInputStream,
     return nullptr;
   }
 
-  // Run the decoder synchronously.
+  
   decoder->Decode();
   if (!decoder->GetDecodeDone() || decoder->HasError()) {
     return nullptr;
   }
 
-  // Pull out the surface.
+  
   RawAccessFrameRef frame = decoder->GetCurrentFrameRef();
   if (!frame) {
     return nullptr;
   }
 
-  nsRefPtr<SourceSurface> surface = frame->GetSurface();
+  RefPtr<SourceSurface> surface = frame->GetSurface();
   if (!surface) {
     return nullptr;
   }
@@ -143,5 +143,5 @@ ImageOps::DecodeToSurface(nsIInputStream* aInputStream,
   return surface.forget();
 }
 
-} // namespace image
-} // namespace mozilla
+} 
+} 

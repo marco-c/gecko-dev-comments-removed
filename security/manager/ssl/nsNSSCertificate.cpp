@@ -823,7 +823,7 @@ nsNSSCertificate::GetChain(nsIArray** _rvChain)
   mozilla::pkix::Time now(mozilla::pkix::Now());
 
   ScopedCERTCertList nssChain;
-  nsRefPtr<SharedCertVerifier> certVerifier(GetDefaultCertVerifier());
+  RefPtr<SharedCertVerifier> certVerifier(GetDefaultCertVerifier());
   NS_ENSURE_TRUE(certVerifier, NS_ERROR_UNEXPECTED);
 
   
@@ -1384,7 +1384,7 @@ nsNSSCertificate::hasValidEVOidTag(SECOidTag& resultOidTag, bool& validEV)
 
   EnsureIdentityInfoLoaded();
 
-  nsRefPtr<mozilla::psm::SharedCertVerifier>
+  RefPtr<mozilla::psm::SharedCertVerifier>
     certVerifier(mozilla::psm::GetDefaultCertVerifier());
   NS_ENSURE_TRUE(certVerifier, NS_ERROR_UNEXPECTED);
 

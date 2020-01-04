@@ -140,7 +140,7 @@ protected:
     
     
     
-    nsRefPtr<mozilla::gfx::DrawTarget> mFramebufferTarget;
+    mozilla::RefPtr<mozilla::gfx::DrawTarget> mFramebufferTarget;
     ANativeWindowBuffer* mFramebuffer;
     
     
@@ -150,7 +150,7 @@ protected:
     
     
     
-    nsRefPtr<mozilla::gfx::DrawTarget> mBackBuffer;
+    mozilla::RefPtr<mozilla::gfx::DrawTarget> mBackBuffer;
 
     virtual ~nsWindow();
 

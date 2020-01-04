@@ -445,7 +445,7 @@ private:
         sp<GraphicBuffer> mGraphicBuffer;
 
         
-        nsRefPtr<TextureClient> mTextureClient;
+        mozilla::RefPtr<TextureClient> mTextureClient;
 
         
         

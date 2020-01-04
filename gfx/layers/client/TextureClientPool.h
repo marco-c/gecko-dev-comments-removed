@@ -8,7 +8,7 @@
 
 #include "mozilla/gfx/Types.h"
 #include "mozilla/gfx/Point.h"
-#include "mozilla/nsRefPtr.h"
+#include "mozilla/RefPtr.h"
 #include "TextureClient.h"
 #include "nsITimer.h"
 #include <stack>
@@ -129,10 +129,10 @@ private:
   
   
   
-  std::stack<nsRefPtr<TextureClient> > mTextureClients;
-  std::stack<nsRefPtr<TextureClient> > mTextureClientsDeferred;
+  std::stack<RefPtr<TextureClient> > mTextureClients;
+  std::stack<RefPtr<TextureClient> > mTextureClientsDeferred;
   nsRefPtr<nsITimer> mTimer;
-  nsRefPtr<CompositableForwarder> mSurfaceAllocator;
+  RefPtr<CompositableForwarder> mSurfaceAllocator;
 };
 
 } 

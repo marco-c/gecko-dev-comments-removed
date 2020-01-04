@@ -14,7 +14,7 @@
 #include "gfxUtils.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/Helpers.h"
-#include "mozilla/nsRefPtr.h"
+#include "mozilla/RefPtr.h"
 #include "nsDisplayList.h"
 #include "nsGkAtoms.h"
 #include "nsLayoutUtils.h"
@@ -314,9 +314,9 @@ nsSVGPathGeometryFrame::GetFrameForPoint(const gfxPoint& aPoint)
   
   
   
-  nsRefPtr<DrawTarget> drawTarget =
+  RefPtr<DrawTarget> drawTarget =
     gfxPlatform::GetPlatform()->ScreenReferenceDrawTarget();
-  nsRefPtr<Path> path = content->GetOrBuildPath(*drawTarget, fillRule);
+  RefPtr<Path> path = content->GetOrBuildPath(*drawTarget, fillRule);
   if (!path) {
     return nullptr; 
   }
@@ -335,7 +335,7 @@ nsSVGPathGeometryFrame::GetFrameForPoint(const gfxPoint& aPoint)
       
       
       point = ToMatrix(userToOuterSVG) * point;
-      nsRefPtr<PathBuilder> builder =
+      RefPtr<PathBuilder> builder =
         path->TransformedCopyToBuilder(ToMatrix(userToOuterSVG), fillRule);
       path = builder->Finish();
     }
@@ -519,7 +519,7 @@ nsSVGPathGeometryFrame::GetBBoxContribution(const Matrix &aToBBoxUserspace,
     bbox = simpleBounds;
   } else {
     
-    nsRefPtr<DrawTarget> tmpDT;
+    RefPtr<DrawTarget> tmpDT;
 #ifdef XP_WIN
     
     
@@ -535,15 +535,15 @@ nsSVGPathGeometryFrame::GetBBoxContribution(const Matrix &aToBBoxUserspace,
 #endif
 
     FillRule fillRule = nsSVGUtils::ToFillRule(StyleSVG()->mFillRule);
-    nsRefPtr<Path> pathInUserSpace = element->GetOrBuildPath(*tmpDT, fillRule);
+    RefPtr<Path> pathInUserSpace = element->GetOrBuildPath(*tmpDT, fillRule);
     if (!pathInUserSpace) {
       return bbox;
     }
-    nsRefPtr<Path> pathInBBoxSpace;
+    RefPtr<Path> pathInBBoxSpace;
     if (aToBBoxUserspace.IsIdentity()) {
       pathInBBoxSpace = pathInUserSpace;
     } else {
-      nsRefPtr<PathBuilder> builder =
+      RefPtr<PathBuilder> builder =
         pathInUserSpace->TransformedCopyToBuilder(aToBBoxUserspace, fillRule);
       pathInBBoxSpace = builder->Finish();
       if (!pathInBBoxSpace) {
@@ -603,9 +603,9 @@ nsSVGPathGeometryFrame::GetBBoxContribution(const Matrix &aToBBoxUserspace,
         Matrix outerSVGToUser = ToMatrix(userToOuterSVG);
         outerSVGToUser.Invert();
         Matrix outerSVGToBBox = aToBBoxUserspace * outerSVGToUser;
-        nsRefPtr<PathBuilder> builder =
+        RefPtr<PathBuilder> builder =
           pathInUserSpace->TransformedCopyToBuilder(ToMatrix(userToOuterSVG));
-        nsRefPtr<Path> pathInOuterSVGSpace = builder->Finish();
+        RefPtr<Path> pathInOuterSVGSpace = builder->Finish();
         strokeBBoxExtents =
           pathInOuterSVGSpace->GetStrokedBounds(strokeOptions, outerSVGToBBox);
       } else {
@@ -753,7 +753,7 @@ nsSVGPathGeometryFrame::Render(gfxContext* aContext,
   if (GetStateBits() & NS_STATE_SVG_CLIPPATH_CHILD) {
     
     
-    nsRefPtr<Path> path = element->GetOrBuildPath(*drawTarget, fillRule);
+    RefPtr<Path> path = element->GetOrBuildPath(*drawTarget, fillRule);
     if (path) {
       ColorPattern white(ToDeviceColor(Color(1.0f, 1.0f, 1.0f, 1.0f)));
       drawTarget->Fill(path, white,
@@ -763,7 +763,7 @@ nsSVGPathGeometryFrame::Render(gfxContext* aContext,
   }
 
   nsSVGPathGeometryElement::SimplePath simplePath;
-  nsRefPtr<Path> path;
+  RefPtr<Path> path;
 
   element->GetAsSimplePath(&simplePath);
   if (!simplePath.IsPath()) {
@@ -810,7 +810,7 @@ nsSVGPathGeometryFrame::Render(gfxContext* aContext,
       gfxMatrix outerSVGToUser = userToOuterSVG;
       outerSVGToUser.Invert();
       aContext->Multiply(outerSVGToUser);
-      nsRefPtr<PathBuilder> builder =
+      RefPtr<PathBuilder> builder =
         path->TransformedCopyToBuilder(ToMatrix(userToOuterSVG), fillRule);
       path = builder->Finish();
     }

@@ -35,7 +35,7 @@
 #include "mozilla/gfx/2D.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/Likely.h"
-#include "mozilla/nsRefPtr.h"
+#include "mozilla/RefPtr.h"
 #include "mozilla/Move.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/Services.h"
@@ -495,7 +495,7 @@ RasterImage::CopyFrame(uint32_t aWhichFrame, uint32_t aFlags)
   
 
   IntSize size(mSize.width, mSize.height);
-  nsRefPtr<DataSourceSurface> surf =
+  RefPtr<DataSourceSurface> surf =
     Factory::CreateDataSourceSurface(size,
                                      SurfaceFormat::B8G8R8A8,
                                       true);
@@ -509,7 +509,7 @@ RasterImage::CopyFrame(uint32_t aWhichFrame, uint32_t aFlags)
     return nullptr;
   }
 
-  nsRefPtr<DrawTarget> target =
+  RefPtr<DrawTarget> target =
     Factory::CreateDrawTargetForData(BackendType::CAIRO,
                                      mapping.mData,
                                      size,
@@ -527,7 +527,7 @@ RasterImage::CopyFrame(uint32_t aWhichFrame, uint32_t aFlags)
     target->FillRect(rect, ColorPattern(frameRef->SinglePixelColor()),
                      DrawOptions(1.0f, CompositionOp::OP_SOURCE));
   } else {
-    nsRefPtr<SourceSurface> srcSurf = frameRef->GetSurface();
+    RefPtr<SourceSurface> srcSurf = frameRef->GetSurface();
     if (!srcSurf) {
       RecoverFromInvalidFrames(mSize, aFlags);
       return nullptr;
@@ -561,7 +561,7 @@ RasterImage::GetFrameAtSize(const IntSize& aSize,
   return GetFrameInternal(aSize, aWhichFrame, aFlags).second().forget();
 }
 
-Pair<DrawResult, nsRefPtr<SourceSurface>>
+Pair<DrawResult, RefPtr<SourceSurface>>
 RasterImage::GetFrameInternal(const IntSize& aSize,
                               uint32_t aWhichFrame,
                               uint32_t aFlags)
@@ -569,15 +569,15 @@ RasterImage::GetFrameInternal(const IntSize& aSize,
   MOZ_ASSERT(aWhichFrame <= FRAME_MAX_VALUE);
 
   if (aSize.IsEmpty()) {
-    return MakePair(DrawResult::BAD_ARGS, nsRefPtr<SourceSurface>());
+    return MakePair(DrawResult::BAD_ARGS, RefPtr<SourceSurface>());
   }
 
   if (aWhichFrame > FRAME_MAX_VALUE) {
-    return MakePair(DrawResult::BAD_ARGS, nsRefPtr<SourceSurface>());
+    return MakePair(DrawResult::BAD_ARGS, RefPtr<SourceSurface>());
   }
 
   if (mError) {
-    return MakePair(DrawResult::BAD_IMAGE, nsRefPtr<SourceSurface>());
+    return MakePair(DrawResult::BAD_IMAGE, RefPtr<SourceSurface>());
   }
 
   
@@ -587,12 +587,12 @@ RasterImage::GetFrameInternal(const IntSize& aSize,
     LookupFrame(GetRequestedFrameIndex(aWhichFrame), aSize, aFlags);
   if (!frameRef) {
     
-    return MakePair(DrawResult::TEMPORARY_ERROR, nsRefPtr<SourceSurface>());
+    return MakePair(DrawResult::TEMPORARY_ERROR, RefPtr<SourceSurface>());
   }
 
   
   
-  nsRefPtr<SourceSurface> frameSurf;
+  RefPtr<SourceSurface> frameSurf;
   if (!frameRef->NeedsPadding() &&
       frameRef->GetSize() == aSize) {
     frameSurf = frameRef->GetSurface();
@@ -620,7 +620,7 @@ RasterImage::GetCurrentImage(ImageContainer* aContainer, uint32_t aFlags)
   MOZ_ASSERT(aContainer);
 
   DrawResult drawResult;
-  nsRefPtr<SourceSurface> surface;
+  RefPtr<SourceSurface> surface;
   Tie(drawResult, surface) =
     GetFrameInternal(mSize, FRAME_CURRENT, aFlags | FLAG_ASYNC_NOTIFY);
   if (!surface) {

@@ -8,7 +8,7 @@
 #include <fcntl.h>
 #include "BluetoothSocketObserver.h"
 #include "BluetoothUnixSocketConnector.h"
-#include "mozilla/nsRefPtr.h"
+#include "mozilla/RefPtr.h"
 #include "nsISupportsImpl.h" 
 #include "nsXULAppAPI.h"
 

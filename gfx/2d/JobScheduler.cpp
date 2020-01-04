@@ -65,7 +65,7 @@ void
 JobScheduler::SubmitJob(Job* aJob)
 {
   MOZ_ASSERT(aJob);
-  nsRefPtr<SyncObject> start = aJob->GetStartSync();
+  RefPtr<SyncObject> start = aJob->GetStartSync();
   if (start && start->Register(aJob)) {
     
     
@@ -203,7 +203,7 @@ void SyncObject::SubmitWaitingJobs()
   
   
   
-  nsRefPtr<SyncObject> kungFuDeathGrip(this);
+  RefPtr<SyncObject> kungFuDeathGrip(this);
 
   
   Job* waitingJobs = nullptr;

@@ -1227,7 +1227,7 @@ void nsPluginInstanceOwner::RenderCoreAnimation(CGContextRef aCGContext,
     
     mIOSurface = MacIOSurface::CreateIOSurface(aWidth, aHeight, scaleFactor);
     if (mIOSurface) {
-      nsRefPtr<MacIOSurface> attachSurface = MacIOSurface::LookupSurface(
+      RefPtr<MacIOSurface> attachSurface = MacIOSurface::LookupSurface(
                                               mIOSurface->GetIOSurfaceID(),
                                               scaleFactor);
       if (attachSurface) {

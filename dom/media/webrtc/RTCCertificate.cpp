@@ -305,7 +305,7 @@ RTCCertificate::~RTCCertificate()
 
 
 
-nsRefPtr<DtlsIdentity>
+RefPtr<DtlsIdentity>
 RTCCertificate::CreateDtlsIdentity() const
 {
   nsNSSShutDownPreventionLock locker;
@@ -314,7 +314,7 @@ RTCCertificate::CreateDtlsIdentity() const
   }
   SECKEYPrivateKey* key = SECKEY_CopyPrivateKey(mPrivateKey);
   CERTCertificate* cert = CERT_DupCertificate(mCertificate);
-  nsRefPtr<DtlsIdentity> id = new DtlsIdentity(key, cert, mAuthType);
+  RefPtr<DtlsIdentity> id = new DtlsIdentity(key, cert, mAuthType);
   return id;
 }
 

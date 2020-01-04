@@ -15,7 +15,7 @@
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/dom/SVGSVGElement.h"
 #include "mozilla/gfx/2D.h"
-#include "mozilla/nsRefPtr.h"
+#include "mozilla/RefPtr.h"
 #include "nsIDOMEvent.h"
 #include "nsIPresShell.h"
 #include "nsIStreamListener.h"
@@ -726,7 +726,7 @@ VectorImage::GetFrameAtSize(const IntSize& aSize,
 
   
   
-  nsRefPtr<DrawTarget> dt = gfxPlatform::GetPlatform()->
+  RefPtr<DrawTarget> dt = gfxPlatform::GetPlatform()->
     CreateOffscreenContentDrawTarget(aSize, SurfaceFormat::B8G8R8A8);
   if (!dt) {
     NS_ERROR("Could not create a DrawTarget");
@@ -862,7 +862,7 @@ VectorImage::Draw(gfxContext* aContext,
 
   
   if (result) {
-    nsRefPtr<SourceSurface> surface = result.DrawableRef()->GetSurface();
+    RefPtr<SourceSurface> surface = result.DrawableRef()->GetSurface();
     if (surface) {
       nsRefPtr<gfxDrawable> svgDrawable =
         new gfxSurfaceDrawable(surface, result.DrawableRef()->GetSize());
@@ -929,7 +929,7 @@ VectorImage::CreateSurfaceAndShow(const SVGDrawingParameters& aParams)
 
   
   
-  nsRefPtr<SourceSurface> surface = frame->GetSurface();
+  RefPtr<SourceSurface> surface = frame->GetSurface();
   if (!surface) {
     return Show(svgDrawable, aParams);
   }

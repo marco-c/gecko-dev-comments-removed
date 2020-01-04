@@ -71,7 +71,7 @@ private:
   FRIEND_TEST(ThreadProfile, MemoryMeasure);
   ThreadInfo* mThreadInfo;
 
-  const nsRefPtr<ProfileBuffer> mBuffer;
+  const mozilla::RefPtr<ProfileBuffer> mBuffer;
 
   
   

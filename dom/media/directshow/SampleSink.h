@@ -10,7 +10,7 @@
 #include "BaseFilter.h"
 #include "DirectShowUtils.h"
 #include "nsAutoPtr.h"
-#include "mozilla/nsRefPtr.h"
+#include "mozilla/RefPtr.h"
 #include "mozilla/ReentrantMonitor.h"
 
 namespace mozilla {
@@ -35,7 +35,7 @@ public:
 
   
   
-  HRESULT Extract(nsRefPtr<IMediaSample>& aOutSample);
+  HRESULT Extract(RefPtr<IMediaSample>& aOutSample);
 
   
   
@@ -54,7 +54,7 @@ public:
 private:
   
   ReentrantMonitor mMonitor;
-  nsRefPtr<IMediaSample> mSample;
+  RefPtr<IMediaSample> mSample;
 
   
   WAVEFORMATEX mAudioFormat;

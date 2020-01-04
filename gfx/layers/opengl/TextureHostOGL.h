@@ -16,7 +16,7 @@
 #include "mozilla/GfxMessageUtils.h"    
 #include "mozilla/Assertions.h"         
 #include "mozilla/Attributes.h"         
-#include "mozilla/nsRefPtr.h"             
+#include "mozilla/RefPtr.h"             
 #include "mozilla/gfx/Matrix.h"         
 #include "mozilla/gfx/Point.h"          
 #include "mozilla/gfx/Types.h"          
@@ -212,7 +212,7 @@ public:
 
 protected:
   nsRefPtr<gl::TextureImage> mTexImage;
-  nsRefPtr<CompositorOGL> mCompositor;
+  RefPtr<CompositorOGL> mCompositor;
   TextureFlags mFlags;
   bool mIterating;
 };
@@ -269,7 +269,7 @@ public:
 protected:
   void DeleteTextureHandle();
 
-  nsRefPtr<CompositorOGL> mCompositor;
+  RefPtr<CompositorOGL> mCompositor;
   GLuint mTextureHandle;
   GLenum mTextureTarget;
   gfx::IntSize mSize;
@@ -319,7 +319,7 @@ public:
   gl::GLContext* gl() const;
 
 protected:
-  nsRefPtr<CompositorOGL> mCompositor;
+  RefPtr<CompositorOGL> mCompositor;
   mozilla::gl::AndroidSurfaceTexture* const mSurfTex;
   const gfx::SurfaceFormat mFormat;
   const GLenum mTextureTarget;
@@ -367,8 +367,8 @@ public:
 protected:
   mozilla::gl::AndroidSurfaceTexture* const mSurfTex;
   const gfx::IntSize mSize;
-  nsRefPtr<CompositorOGL> mCompositor;
-  nsRefPtr<SurfaceTextureSource> mTextureSource;
+  RefPtr<CompositorOGL> mCompositor;
+  RefPtr<SurfaceTextureSource> mTextureSource;
 };
 
 #endif 
@@ -411,7 +411,7 @@ public:
   gl::GLContext* gl() const;
 
 protected:
-  nsRefPtr<CompositorOGL> mCompositor;
+  RefPtr<CompositorOGL> mCompositor;
   const EGLImage mImage;
   const gfx::SurfaceFormat mFormat;
   const GLenum mTextureTarget;
@@ -463,8 +463,8 @@ protected:
   const EGLSync mSync;
   const gfx::IntSize mSize;
   const bool mHasAlpha;
-  nsRefPtr<CompositorOGL> mCompositor;
-  nsRefPtr<EGLImageTextureSource> mTextureSource;
+  RefPtr<CompositorOGL> mCompositor;
+  RefPtr<EGLImageTextureSource> mTextureSource;
 };
 
 } 

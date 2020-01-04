@@ -6,7 +6,7 @@
 
 #include "DirectShowReader.h"
 #include "MediaDecoderReader.h"
-#include "mozilla/nsRefPtr.h"
+#include "mozilla/RefPtr.h"
 #include "DirectShowUtils.h"
 #include "AudioSinkFilter.h"
 #include "SourceFilter.h"
@@ -110,7 +110,7 @@ DirectShowReader::ReadMetadata(MediaInfo* aInfo,
                         nullptr,
                         CLSCTX_INPROC_SERVER,
                         IID_IGraphBuilder,
-                        reinterpret_cast<void**>(static_cast<IGraphBuilder**>(getter_AddRefs(mGraph))));
+                        reinterpret_cast<void**>(static_cast<IGraphBuilder**>(byRef(mGraph))));
   NS_ENSURE_TRUE(SUCCEEDED(hr) && mGraph, NS_ERROR_FAILURE);
 
   rv = ParseMP3Headers(&mMP3FrameParser, mDecoder->GetResource());
@@ -126,10 +126,10 @@ DirectShowReader::ReadMetadata(MediaInfo* aInfo,
   #endif
 
   
-  hr = mGraph->QueryInterface(static_cast<IMediaControl**>(getter_AddRefs(mControl)));
+  hr = mGraph->QueryInterface(static_cast<IMediaControl**>(byRef(mControl)));
   NS_ENSURE_TRUE(SUCCEEDED(hr) && mControl, NS_ERROR_FAILURE);
 
-  hr = mGraph->QueryInterface(static_cast<IMediaSeeking**>(getter_AddRefs(mMediaSeeking)));
+  hr = mGraph->QueryInterface(static_cast<IMediaSeeking**>(byRef(mMediaSeeking)));
   NS_ENSURE_TRUE(SUCCEEDED(hr) && mMediaSeeking, NS_ERROR_FAILURE);
 
   
@@ -147,26 +147,26 @@ DirectShowReader::ReadMetadata(MediaInfo* aInfo,
   NS_ENSURE_TRUE(SUCCEEDED(hr), NS_ERROR_FAILURE);
 
   
-  nsRefPtr<IBaseFilter> demuxer;
+  RefPtr<IBaseFilter> demuxer;
   hr = CreateAndAddFilter(mGraph,
                           CLSID_MPEG1Splitter,
                           L"MPEG1Splitter",
-                          getter_AddRefs(demuxer));
+                          byRef(demuxer));
   NS_ENSURE_TRUE(SUCCEEDED(hr), NS_ERROR_FAILURE);
 
   
-  nsRefPtr<IBaseFilter> decoder;
+  RefPtr<IBaseFilter> decoder;
   
   
   
   hr = CreateAndAddFilter(mGraph,
                           CLSID_MPEG_LAYER_3_DECODER_FILTER,
                           L"MPEG Layer 3 Decoder",
-                          getter_AddRefs(decoder));
+                          byRef(decoder));
   if (FAILED(hr)) {
     
     
-    hr = AddMP3DMOWrapperFilter(mGraph, getter_AddRefs(decoder));
+    hr = AddMP3DMOWrapperFilter(mGraph, byRef(decoder));
     NS_ENSURE_TRUE(SUCCEEDED(hr), NS_ERROR_FAILURE);
   }
 
@@ -244,8 +244,8 @@ DirectShowReader::Finish(HRESULT aStatus)
 
   LOG("DirectShowReader::Finish(0x%x)", aStatus);
   
-  nsRefPtr<IMediaEventSink> eventSink;
-  HRESULT hr = mGraph->QueryInterface(static_cast<IMediaEventSink**>(getter_AddRefs(eventSink)));
+  RefPtr<IMediaEventSink> eventSink;
+  HRESULT hr = mGraph->QueryInterface(static_cast<IMediaEventSink**>(byRef(eventSink)));
   if (SUCCEEDED(hr) && eventSink) {
     eventSink->Notify(EC_COMPLETE, aStatus, 0);
   }
@@ -308,7 +308,7 @@ DirectShowReader::DecodeAudioData()
 
   
   
-  nsRefPtr<IMediaSample> sample;
+  RefPtr<IMediaSample> sample;
   hr = sink->Extract(sample);
   if (FAILED(hr) || hr == S_FALSE) {
     return Finish(hr);

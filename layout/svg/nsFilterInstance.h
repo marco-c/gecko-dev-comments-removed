@@ -68,7 +68,7 @@ public:
                                                 const nsTArray<nsStyleFilter>& aFilterChain,
                                                 const UserSpaceMetrics& aMetrics,
                                                 const gfxRect& aBBox,
-                                                nsTArray<nsRefPtr<SourceSurface>>& aOutAdditionalImages);
+                                                nsTArray<mozilla::RefPtr<SourceSurface>>& aOutAdditionalImages);
 
   
 
@@ -157,7 +157,7 @@ public:
 
   nsresult Render(gfxContext* aContext);
 
-  const FilterDescription& ExtractDescriptionAndAdditionalImages(nsTArray<nsRefPtr<SourceSurface>>& aOutAdditionalImages)
+  const FilterDescription& ExtractDescriptionAndAdditionalImages(nsTArray<mozilla::RefPtr<SourceSurface>>& aOutAdditionalImages)
   {
     mInputImages.SwapElements(aOutAdditionalImages);
     return mFilterDescription;
@@ -206,7 +206,7 @@ private:
 
     
     
-    nsRefPtr<SourceSurface> mSourceSurface;
+    mozilla::RefPtr<SourceSurface> mSourceSurface;
 
     
     
@@ -364,7 +364,7 @@ private:
 
   gfxMatrix               mPaintTransform;
 
-  nsTArray<nsRefPtr<SourceSurface>> mInputImages;
+  nsTArray<mozilla::RefPtr<SourceSurface>> mInputImages;
   nsTArray<FilterPrimitiveDescription> mPrimitiveDescriptions;
   FilterDescription mFilterDescription;
   bool mInitialized;

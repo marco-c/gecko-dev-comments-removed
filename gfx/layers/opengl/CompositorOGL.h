@@ -14,7 +14,7 @@
 #include "Units.h"                      
 #include "mozilla/Assertions.h"         
 #include "mozilla/Attributes.h"         
-#include "mozilla/nsRefPtr.h"             
+#include "mozilla/RefPtr.h"             
 #include "mozilla/gfx/2D.h"             
 #include "mozilla/gfx/BaseSize.h"       
 #include "mozilla/gfx/Point.h"          
@@ -106,7 +106,7 @@ protected:
 
   GLenum mTextureTarget;
   nsTArray<GLuint> mTextures;
-  nsRefPtr<gl::GLContext> mGL;
+  RefPtr<gl::GLContext> mGL;
 };
 
 
@@ -144,7 +144,7 @@ protected:
   void DestroyTextures();
 
   GLenum mTextureTarget;
-  nsRefPtr<gl::GLContext> mGL;
+  RefPtr<gl::GLContext> mGL;
   nsTArray<GLuint> mCreatedTextures;
   nsTArray<GLuint> mUnusedTextures;
 };
@@ -346,7 +346,7 @@ private:
   GLenum mFBOTextureTarget;
 
   
-  nsRefPtr<CompositingRenderTargetOGL> mCurrentRenderTarget;
+  RefPtr<CompositingRenderTargetOGL> mCurrentRenderTarget;
 #ifdef DEBUG
   CompositingRenderTargetOGL* mWindowRenderTarget;
 #endif
@@ -442,7 +442,7 @@ private:
 
   GLint FlipY(GLint y) const { return mViewportSize.height - y; }
 
-  nsRefPtr<CompositorTexturePoolOGL> mTexturePool;
+  RefPtr<CompositorTexturePoolOGL> mTexturePool;
 
   ContextStateTrackerOGL mContextStateTracker;
 

@@ -9,7 +9,7 @@
 #include "GLContext.h"                  
 #include "gfxTypes.h"
 #include "mozilla/Assertions.h"         
-#include "mozilla/nsRefPtr.h"             
+#include "mozilla/RefPtr.h"             
 #include "mozilla/gfx/Matrix.h"         
 #include "mozilla/gfx/Rect.h"           
 #include "mozilla/gfx/Types.h"
@@ -476,7 +476,7 @@ public:
   }
 
 protected:
-  nsRefPtr<GLContext> mGL;
+  RefPtr<GLContext> mGL;
   
   GLuint mProgram;
   ProgramProfileOGL mProfile;

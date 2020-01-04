@@ -99,7 +99,7 @@ public:
 
 
   nsresult BuildPrimitives(nsTArray<FilterPrimitiveDescription>& aPrimitiveDescrs,
-                           nsTArray<nsRefPtr<SourceSurface>>& aInputImages);
+                           nsTArray<mozilla::RefPtr<SourceSurface>>& aInputImages);
 
   
 

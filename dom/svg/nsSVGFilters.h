@@ -98,7 +98,7 @@ public:
     GetPrimitiveDescription(nsSVGFilterInstance* aInstance,
                             const IntRect& aFilterSubregion,
                             const nsTArray<bool>& aInputsAreTainted,
-                            nsTArray<nsRefPtr<SourceSurface>>& aInputImages) = 0;
+                            nsTArray<mozilla::RefPtr<SourceSurface>>& aInputImages) = 0;
 
   
   

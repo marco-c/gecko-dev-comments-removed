@@ -214,7 +214,7 @@ private:
 
   
   
-  nsRefPtr<SourceSurfaceCairo> mSnapshot;
+  RefPtr<SourceSurfaceCairo> mSnapshot;
   static cairo_surface_t *mDummySurface;
 };
 

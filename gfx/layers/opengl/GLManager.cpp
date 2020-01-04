@@ -8,7 +8,7 @@
 #include "GLContext.h"                  
 #include "mozilla/Assertions.h"         
 #include "mozilla/Attributes.h"         
-#include "mozilla/nsRefPtr.h"             
+#include "mozilla/RefPtr.h"             
 #include "mozilla/layers/Compositor.h"  
 #include "mozilla/layers/LayerManagerComposite.h"
 #include "mozilla/layers/LayersTypes.h"
@@ -56,7 +56,7 @@ public:
   }
 
 private:
-  nsRefPtr<CompositorOGL> mImpl;
+  RefPtr<CompositorOGL> mImpl;
 };
 
  GLManager*

@@ -7,7 +7,7 @@
 
 #include "ClientLayerManager.h"         
 #include "Layers.h"                     
-#include "mozilla/nsRefPtr.h"             
+#include "mozilla/RefPtr.h"             
 #include "mozilla/layers/TiledContentClient.h"
 #include "nsDebug.h"                    
 #include "nsRegion.h"                   
@@ -132,7 +132,7 @@ private:
 
   void EndPaint();
 
-  nsRefPtr<TiledContentClient> mContentClient;
+  RefPtr<TiledContentClient> mContentClient;
   nsIntRegion mLowPrecisionValidRegion;
   BasicTiledLayerPaintData mPaintData;
 };

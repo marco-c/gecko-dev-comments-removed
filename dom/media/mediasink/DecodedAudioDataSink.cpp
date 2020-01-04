@@ -262,7 +262,7 @@ DecodedAudioDataSink::InitializeAudioStream()
   
   
   
-  nsRefPtr<AudioStream> audioStream(new AudioStream());
+  RefPtr<AudioStream> audioStream(new AudioStream());
   nsresult rv = audioStream->Init(mInfo.mChannels, mInfo.mRate, mChannel);
   if (NS_FAILED(rv)) {
     audioStream->Shutdown();

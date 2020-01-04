@@ -2566,7 +2566,7 @@ MediaManager::Observe(nsISupports* aSubject, const char* aTopic,
         }
       }
       nsRefPtr<nsRunnable> mReply;
-      nsRefPtr<MediaEngine> mBackend;
+      RefPtr<MediaEngine> mBackend;
     };
 
     
@@ -2579,7 +2579,7 @@ MediaManager::Observe(nsISupports* aSubject, const char* aTopic,
     
     nsRefPtr<MediaManager> that(sSingleton);
     
-    nsRefPtr<MediaEngine> temp;
+    RefPtr<MediaEngine> temp;
     {
       MutexAutoLock lock(mMutex);
       temp = mBackend.forget();

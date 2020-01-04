@@ -11,7 +11,7 @@
 #include <vector>
 
 #include "mozilla/LinkedList.h"
-#include "mozilla/nsRefPtr.h"
+#include "mozilla/RefPtr.h"
 #include "mozilla/WeakPtr.h"
 #include "nsString.h"
 #include "nsWrapperCache.h"
@@ -59,8 +59,8 @@ struct LinkedProgramInfo final
     MOZ_DECLARE_WEAKREFERENCE_TYPENAME(LinkedProgramInfo)
 
     WebGLProgram* const prog;
-    std::vector<nsRefPtr<WebGLActiveInfo>> activeAttribs;
-    std::vector<nsRefPtr<WebGLActiveInfo>> activeUniforms;
+    std::vector<RefPtr<WebGLActiveInfo>> activeAttribs;
+    std::vector<RefPtr<WebGLActiveInfo>> activeUniforms;
 
     
     
@@ -68,7 +68,7 @@ struct LinkedProgramInfo final
     std::map<nsCString, const WebGLActiveInfo*> uniformMap;
     std::map<nsCString, const nsCString>* fragDataMap;
 
-    std::vector<nsRefPtr<UniformBlockInfo>> uniformBlocks;
+    std::vector<RefPtr<UniformBlockInfo>> uniformBlocks;
 
     
     std::set<GLuint> activeAttribLocs;
@@ -98,7 +98,7 @@ struct LinkedProgramInfo final
     }
 
     bool FindUniformBlock(const nsCString& baseUserName,
-                          nsRefPtr<const UniformBlockInfo>* const out_info) const
+                          RefPtr<const UniformBlockInfo>* const out_info) const
     {
         const size_t count = uniformBlocks.size();
         for (size_t i = 0; i < count; i++) {
@@ -211,7 +211,7 @@ private:
     std::vector<nsCString> mTransformFeedbackVaryings;
     GLenum mTransformFeedbackBufferMode;
     nsCString mLinkLog;
-    nsRefPtr<const webgl::LinkedProgramInfo> mMostRecentLinkInfo;
+    RefPtr<const webgl::LinkedProgramInfo> mMostRecentLinkInfo;
     
     
     std::vector<std::string> mTempMappedVaryings;

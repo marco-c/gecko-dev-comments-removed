@@ -8,7 +8,7 @@
 #include <fcntl.h>
 #include "mozilla/dom/workers/Workers.h"
 #include "mozilla/ipc/UnixSocketConnector.h"
-#include "mozilla/nsRefPtr.h"
+#include "mozilla/RefPtr.h"
 #include "nsISupportsImpl.h" 
 #include "nsXULAppAPI.h"
 #include "RilSocketConsumer.h"
@@ -77,7 +77,7 @@ private:
 
 
 
-  nsRefPtr<RilSocket> mRilSocket;
+  RefPtr<RilSocket> mRilSocket;
 
   
 

@@ -127,7 +127,7 @@ public:
     
     
     DrawTargetWillChange();
-    nsRefPtr<DataSourceSurface> copy(this);
+    RefPtr<DataSourceSurface> copy(this);
     return copy.forget();
   }
 

@@ -101,11 +101,11 @@ struct RunnableMethodTraits<PluginInstanceChild>
 
 
 
-static nsRefPtr<DrawTarget>
+static RefPtr<DrawTarget>
 CreateDrawTargetForSurface(gfxASurface *aSurface)
 {
   SurfaceFormat format = aSurface->GetSurfaceFormat();
-  nsRefPtr<DrawTarget> drawTarget =
+  RefPtr<DrawTarget> drawTarget =
     Factory::CreateDrawTargetForCairoSurface(aSurface->CairoSurface(),
                                              aSurface->GetSize(),
                                              &format);
@@ -995,7 +995,7 @@ PluginInstanceChild::AnswerNPP_HandleEvent_IOSurface(const NPRemoteEvent& event,
 
     NPCocoaEvent evcopy = event.event;
     mContentsScaleFactor = event.contentsScaleFactor;
-    nsRefPtr<MacIOSurface> surf = MacIOSurface::LookupSurface(surfaceid,
+    RefPtr<MacIOSurface> surf = MacIOSurface::LookupSurface(surfaceid,
                                                             mContentsScaleFactor);
     if (!surf) {
         NS_ERROR("Invalid IOSurface.");
@@ -3236,7 +3236,7 @@ PluginInstanceChild::PaintRectToSurface(const nsIntRect& aRect,
 #endif
 
     if (mIsTransparent && !CanPaintOnBackground()) {
-        nsRefPtr<DrawTarget> dt = CreateDrawTargetForSurface(renderSurface);
+        RefPtr<DrawTarget> dt = CreateDrawTargetForSurface(renderSurface);
         gfx::Rect rect(plPaintRect.x, plPaintRect.y,
                        plPaintRect.width, plPaintRect.height);
         
@@ -3251,7 +3251,7 @@ PluginInstanceChild::PaintRectToSurface(const nsIntRect& aRect,
     PaintRectToPlatformSurface(plPaintRect, renderSurface);
 
     if (renderSurface != aSurface) {
-      nsRefPtr<DrawTarget> dt;
+      RefPtr<DrawTarget> dt;
       if (aSurface == mCurrentSurface &&
           aSurface->GetType() == gfxSurfaceType::Image &&
           aSurface->GetSurfaceFormat() == SurfaceFormat::B8G8R8X8) {
@@ -3270,7 +3270,7 @@ PluginInstanceChild::PaintRectToSurface(const nsIntRect& aRect,
         
         dt = CreateDrawTargetForSurface(aSurface);
       }
-      nsRefPtr<SourceSurface> surface =
+      RefPtr<SourceSurface> surface =
         gfxPlatform::GetSourceSurfaceForSurface(dt, renderSurface);
       dt->CopySurface(surface, aRect, aRect.TopLeft());
     }
@@ -3327,8 +3327,8 @@ PluginInstanceChild::PaintRectWithAlphaExtraction(const nsIntRect& aRect,
     
     PaintRectToSurface(rect, aSurface, Color(1.f, 1.f, 1.f));
     {
-        nsRefPtr<DrawTarget> dt = CreateDrawTargetForSurface(whiteImage);
-        nsRefPtr<SourceSurface> surface =
+        RefPtr<DrawTarget> dt = CreateDrawTargetForSurface(whiteImage);
+        RefPtr<SourceSurface> surface =
             gfxPlatform::GetSourceSurfaceForSurface(dt, aSurface);
         dt->CopySurface(surface, rect, IntPoint());
     }
@@ -3371,8 +3371,8 @@ PluginInstanceChild::PaintRectWithAlphaExtraction(const nsIntRect& aRect,
     
     
     if (!useSurfaceSubimageForBlack) {
-        nsRefPtr<DrawTarget> dt = CreateDrawTargetForSurface(aSurface);
-        nsRefPtr<SourceSurface> surface =
+        RefPtr<DrawTarget> dt = CreateDrawTargetForSurface(aSurface);
+        RefPtr<SourceSurface> surface =
             gfxPlatform::GetSourceSurfaceForSurface(dt, blackImage);
         dt->CopySurface(surface,
                         IntRect(0, 0, rect.width, rect.height),
@@ -3510,8 +3510,8 @@ PluginInstanceChild::ShowPluginFrame()
         {
             nsRefPtr<gfxASurface> surface =
                 mHelperSurface ? mHelperSurface : mCurrentSurface;
-            nsRefPtr<DrawTarget> dt = CreateDrawTargetForSurface(surface);
-            nsRefPtr<SourceSurface> backgroundSurface =
+            RefPtr<DrawTarget> dt = CreateDrawTargetForSurface(surface);
+            RefPtr<SourceSurface> backgroundSurface =
                 gfxPlatform::GetSourceSurfaceForSurface(dt, mBackground);
             dt->CopySurface(backgroundSurface, rect, rect.TopLeft());
         }
@@ -3636,8 +3636,8 @@ PluginInstanceChild::ReadbackDifferenceRect(const nsIntRect& rect)
          mSurfaceDifferenceRect.width, mSurfaceDifferenceRect.height));
 
     
-    nsRefPtr<DrawTarget> dt = CreateDrawTargetForSurface(mCurrentSurface);
-    nsRefPtr<SourceSurface> source =
+    RefPtr<DrawTarget> dt = CreateDrawTargetForSurface(mCurrentSurface);
+    RefPtr<SourceSurface> source =
         gfxPlatform::GetSourceSurfaceForSurface(dt, mBackSurface);
     
     nsIntRegion result;

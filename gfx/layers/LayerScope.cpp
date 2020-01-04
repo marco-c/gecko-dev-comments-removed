@@ -1052,7 +1052,7 @@ SenderHelper::SendTextureSource(GLContext* aGLContext,
 
     
     
-    nsRefPtr<DataSourceSurface> img =
+    RefPtr<DataSourceSurface> img =
         aGLContext->ReadTexImageHelper()->ReadTexImage(0, textureTarget,
                                                          size,
                                                          shaderConfig, aFlipY);

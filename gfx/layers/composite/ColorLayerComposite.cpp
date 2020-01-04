@@ -4,7 +4,7 @@
 
 
 #include "ColorLayerComposite.h"
-#include "mozilla/nsRefPtr.h"             
+#include "mozilla/RefPtr.h"             
 #include "mozilla/gfx/Matrix.h"         
 #include "mozilla/gfx/Point.h"          
 #include "mozilla/gfx/Rect.h"           

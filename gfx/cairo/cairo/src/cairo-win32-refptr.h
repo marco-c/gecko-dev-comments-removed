@@ -63,7 +63,7 @@ public:
     RefPtr(T* t) : ptr(ref(t)) {}
 
     template<typename U>
-    RefPtr(const nsRefPtr<U>& o) : ptr(ref(o.get())) {}
+    RefPtr(const RefPtr<U>& o) : ptr(ref(o.get())) {}
 
     ~RefPtr() { unref(ptr); }
 
@@ -81,7 +81,7 @@ public:
     }
 
     template<typename U>
-    RefPtr& operator=(const nsRefPtr<U>& o) {
+    RefPtr& operator=(const RefPtr<U>& o) {
         assign(ref(o.get()));
         return *this;
     }
@@ -147,18 +147,18 @@ template<typename T>
 class TemporaryRef
 {
     
-    friend class nsRefPtr<T>;
+    friend class RefPtr<T>;
 
-    typedef typename nsRefPtr<T>::dontRef dontRef;
+    typedef typename RefPtr<T>::dontRef dontRef;
 
 public:
-    TemporaryRef(T* t) : ptr(nsRefPtr<T>::ref(t)) {}
+    TemporaryRef(T* t) : ptr(RefPtr<T>::ref(t)) {}
     TemporaryRef(const TemporaryRef& o) : ptr(o.drop()) {}
 
     template<typename U>
     TemporaryRef(const TemporaryRef<U>& o) : ptr(o.drop()) {}
 
-    ~TemporaryRef() { nsRefPtr<T>::unref(ptr); }
+    ~TemporaryRef() { RefPtr<T>::unref(ptr); }
 
     T* drop() const {
         T* tmp = ptr;

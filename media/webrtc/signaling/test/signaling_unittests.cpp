@@ -1136,7 +1136,7 @@ class SignalingAgent {
 
     ASSERT_TRUE(info) << "No such local stream id: " << streamId;
 
-    nsRefPtr<MediaPipeline> pipeline;
+    RefPtr<MediaPipeline> pipeline;
 
     mozilla::SyncRunnable::DispatchToThread(
         gMainThread,
@@ -1183,7 +1183,7 @@ class SignalingAgent {
 
     ASSERT_TRUE(info) << "No such remote stream id: " << streamId;
 
-    nsRefPtr<MediaPipeline> pipeline;
+    RefPtr<MediaPipeline> pipeline;
 
     mozilla::SyncRunnable::DispatchToThread(
         gMainThread,
@@ -1506,7 +1506,7 @@ class SignalingAgent {
   
   
   
-  nsRefPtr<mozilla::MediaPipeline> GetMediaPipeline(
+  mozilla::RefPtr<mozilla::MediaPipeline> GetMediaPipeline(
     bool local, size_t stream, bool video) {
     SourceStreamInfo* streamInfo;
     if (local) {
@@ -4051,7 +4051,7 @@ TEST_P(SignalingTest, MaxFsFrCalleeCodec)
 
   
   
-  nsRefPtr<mozilla::MediaPipeline> pipeline =
+  mozilla::RefPtr<mozilla::MediaPipeline> pipeline =
     a2_->GetMediaPipeline(1, 0, 1);
   ASSERT_TRUE(pipeline);
   mozilla::MediaSessionConduit *conduit = pipeline->Conduit();
@@ -4096,7 +4096,7 @@ TEST_P(SignalingTest, MaxFsFrCallerCodec)
 
   
   
-  nsRefPtr<mozilla::MediaPipeline> pipeline =
+  mozilla::RefPtr<mozilla::MediaPipeline> pipeline =
     a1_->GetMediaPipeline(1, 0, 1);
   ASSERT_TRUE(pipeline);
   mozilla::MediaSessionConduit *conduit = pipeline->Conduit();

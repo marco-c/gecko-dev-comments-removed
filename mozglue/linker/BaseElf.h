@@ -81,7 +81,7 @@ public:
   
   
 
-  nsRefPtr<Mappable> mappable;
+  mozilla::RefPtr<Mappable> mappable;
 
   
   MappedPtr base;

@@ -38,7 +38,7 @@ public:
 
 private:
   
-  nsRefPtr<mozilla::gfx::DrawTarget> mBufferDrawTarget;
+  RefPtr<mozilla::gfx::DrawTarget> mBufferDrawTarget;
 };
 
 class X11BasicCompositor : public BasicCompositor

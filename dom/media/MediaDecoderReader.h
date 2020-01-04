@@ -268,7 +268,7 @@ public:
   
   void DispatchNotifyDataArrived(uint32_t aLength, int64_t aOffset, bool aThrottleUpdates)
   {
-    nsRefPtr<nsRunnable> r =
+    RefPtr<nsRunnable> r =
       NS_NewRunnableMethodWithArg<media::Interval<int64_t>>(this, aThrottleUpdates ? &MediaDecoderReader::ThrottledNotifyDataArrived
                                                                                    : &MediaDecoderReader::NotifyDataArrived,
                                                             media::Interval<int64_t>(aOffset, aOffset + aLength));
