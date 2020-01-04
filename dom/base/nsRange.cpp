@@ -31,7 +31,6 @@
 #include "mozilla/dom/RangeBinding.h"
 #include "mozilla/dom/DOMRect.h"
 #include "mozilla/dom/ShadowRoot.h"
-#include "mozilla/dom/Selection.h"
 #include "mozilla/Telemetry.h"
 #include "mozilla/Likely.h"
 #include "nsCSSFrameConstructor.h"
@@ -195,26 +194,6 @@ nsRange::~nsRange()
   DoSetRange(nullptr, 0, nullptr, 0, nullptr);
 }
 
-nsRange::nsRange(nsINode* aNode)
-  : mRoot(nullptr)
-  , mStartOffset(0)
-  , mEndOffset(0)
-  , mIsPositioned(false)
-  , mIsDetached(false)
-  , mMaySpanAnonymousSubtrees(false)
-  , mIsGenerated(false)
-  , mStartOffsetWasIncremented(false)
-  , mEndOffsetWasIncremented(false)
-  , mEnableGravitationOnElementRemoval(true)
-#ifdef DEBUG
-  , mAssertNextInsertOrAppendIndex(-1)
-  , mAssertNextInsertOrAppendNode(nullptr)
-#endif
-{
-  MOZ_ASSERT(aNode, "range isn't in a document!");
-  mOwner = aNode->OwnerDoc();
-}
-
 
 nsresult
 nsRange::CreateRange(nsINode* aStartParent, int32_t aStartOffset,
@@ -290,10 +269,6 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(nsRange)
   NS_IMPL_CYCLE_COLLECTION_UNLINK_PRESERVED_WRAPPER
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mOwner);
   tmp->Reset();
-
-  
-  
-  NS_IMPL_CYCLE_COLLECTION_UNLINK(mSelection);
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(nsRange)
@@ -301,7 +276,6 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(nsRange)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mStartParent)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mEndParent)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mRoot)
-  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mSelection)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE_SCRIPT_OBJECTS
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
@@ -905,7 +879,7 @@ nsRange::DoSetRange(nsINode* aStartN, int32_t aStartOffset,
         RegisterCommonAncestor(newCommonAncestor);
       } else {
         NS_ASSERTION(!mIsPositioned, "unexpected disconnected nodes");
-        mSelection = nullptr;
+        mInSelection = false;
       }
     }
   }
@@ -913,12 +887,6 @@ nsRange::DoSetRange(nsINode* aStartN, int32_t aStartOffset,
   
   
   mRoot = aRoot;
-
-  
-  
-  if (mSelection) {
-    mSelection->NotifySelectionListeners();
-  }
 }
 
 static int32_t
@@ -927,28 +895,6 @@ IndexOf(nsINode* aChild)
   nsINode* parent = aChild->GetParentNode();
 
   return parent ? parent->IndexOf(aChild) : -1;
-}
-
-void
-nsRange::SetSelection(mozilla::dom::Selection* aSelection)
-{
-  if (mSelection == aSelection) {
-    return;
-  }
-  
-  
-  
-  
-  MOZ_ASSERT(!aSelection || !mSelection);
-
-  mSelection = aSelection;
-  nsINode* commonAncestor = GetCommonAncestor();
-  NS_ASSERTION(commonAncestor, "unexpected disconnected nodes");
-  if (mSelection) {
-    RegisterCommonAncestor(commonAncestor);
-  } else {
-    UnregisterCommonAncestor(commonAncestor);
-  }
 }
 
 nsINode*

@@ -93,9 +93,6 @@ public:
       return NS_OK;
     }
 
-    AutoHideSelectionChanges hideSelectionChanges
-      (mFrame->GetConstFrameSelection());
-
     if (mFrame) {
       
       
@@ -1250,8 +1247,6 @@ nsTextEditorState::PrepareEditor(const nsAString *aValue)
     
     return NS_OK;
   }
-
-  AutoHideSelectionChanges hideSelectionChanges(GetConstFrameSelection());
 
   
   InitializationGuard guard(*this);
