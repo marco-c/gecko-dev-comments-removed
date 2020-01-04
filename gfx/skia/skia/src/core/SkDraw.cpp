@@ -1404,7 +1404,7 @@ bool SkDraw::ShouldDrawTextAsPaths(const SkPaint& paint, const SkMatrix& ctm) {
     }
 
     
-    if (paint.getTypeface()->hasColorGlyphs()) {
+    if (paint.getTypeface() && paint.getTypeface()->hasColorGlyphs()) {
       return false;
     }
 
