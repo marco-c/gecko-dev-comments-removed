@@ -216,7 +216,11 @@ public:
   }
 
 private:
-  static mozilla::Atomic<size_t> sAmount;
+  
+  
+  
+  
+  static mozilla::Atomic<ptrdiff_t> sAmount;
 };
 
 } 
