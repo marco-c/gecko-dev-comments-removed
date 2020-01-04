@@ -77,6 +77,13 @@ void
 TraceManuallyBarrieredEdge(JSTracer* trc, T* thingp, const char* name);
 
 
+
+
+template <typename T>
+void
+TraceWeakEdge(JSTracer* trc, WeakRef<T>* thingp, const char* name);
+
+
 template <typename T>
 void
 TraceRange(JSTracer* trc, size_t len, WriteBarrieredBase<T>* vec, const char* name);

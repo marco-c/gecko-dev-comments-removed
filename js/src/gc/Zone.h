@@ -294,6 +294,11 @@ struct Zone : public JS::shadow::Zone,
 
     
     
+    using WeakEdges = js::Vector<js::gc::TenuredCell**, 0, js::SystemAllocPolicy>;
+    WeakEdges gcWeakRefs;
+
+    
+    
     
     
     ZoneSet gcZoneGroupEdges;

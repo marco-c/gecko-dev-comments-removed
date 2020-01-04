@@ -597,6 +597,11 @@ class ReadBarriered : public ReadBarrieredBase<T>
 
 
 
+template <typename T>
+using WeakRef = ReadBarriered<T>;
+
+
+
 template <>
 class BarrieredBaseMixins<JS::Value> : public ValueOperations<WriteBarrieredBase<JS::Value>>
 {};

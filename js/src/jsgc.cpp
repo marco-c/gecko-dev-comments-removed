@@ -4998,6 +4998,16 @@ GCRuntime::beginSweepingZoneGroup()
         }
     }
 
+    
+    for (GCZoneGroupIter zone(rt); !zone.done(); zone.next()) {
+        for (auto edge : zone->gcWeakRefs) {
+            
+            if (*edge && IsAboutToBeFinalizedDuringSweep(**edge))
+                *edge = nullptr;
+        }
+        zone->gcWeakRefs.clear();
+    }
+
     FreeOp fop(rt);
     SweepAtomsTask sweepAtomsTask(rt);
     SweepInnerViewsTask sweepInnerViewsTask(rt);
