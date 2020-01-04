@@ -4,11 +4,9 @@
 
 
 #include "nsParentalControlsService.h"
+#include "AndroidBridge.h"
 #include "nsString.h"
 #include "nsIFile.h"
-#include "GeneratedJNIWrappers.h"
-
-namespace java = mozilla::java;
 
 NS_IMPL_ISUPPORTS(nsParentalControlsService, nsIParentalControlsService)
 
@@ -16,7 +14,7 @@ nsParentalControlsService::nsParentalControlsService() :
   mEnabled(false)
 {
   if (mozilla::jni::IsAvailable()) {
-    mEnabled = java::Restrictions::IsUserRestricted();
+    mEnabled = mozilla::widget::Restrictions::IsUserRestricted();
   }
 }
 
@@ -94,7 +92,7 @@ nsParentalControlsService::IsAllowed(int16_t aAction,
       NS_ENSURE_SUCCESS(rv, rv);
     }
 
-    *_retval = java::Restrictions::IsAllowed(aAction,
+    *_retval = mozilla::widget::Restrictions::IsAllowed(aAction,
                                                     NS_ConvertUTF8toUTF16(url));
     return rv;
   }

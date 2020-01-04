@@ -5,6 +5,7 @@
 
 
 #include <android/log.h>
+#include "AndroidBridge.h"
 #include "ANPBase.h"
 #include "nsIPluginInstanceOwner.h"
 #include "nsPluginInstanceOwner.h"

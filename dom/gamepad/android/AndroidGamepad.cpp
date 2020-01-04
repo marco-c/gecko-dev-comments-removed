@@ -4,19 +4,19 @@
 
 
 
-#include "GeneratedJNIWrappers.h"
+#include "AndroidBridge.h"
 
 namespace mozilla {
 namespace dom {
 
 void StartGamepadMonitoring()
 {
-  java::GeckoAppShell::StartMonitoringGamepad();
+  widget::GeckoAppShell::StartMonitoringGamepad();
 }
 
 void StopGamepadMonitoring()
 {
-  java::GeckoAppShell::StopMonitoringGamepad();
+  widget::GeckoAppShell::StopMonitoringGamepad();
 }
 
 } 
