@@ -53,6 +53,12 @@
 #include "nsThreadUtils.h"
 #include "nsXULAppAPI.h"
 
+#include "nsIWindowMediator.h"
+#include "mozIDOMWindow.h"
+#include "nsPIDOMWindow.h"
+#include "nsIWidget.h"
+#include "mozilla/WidgetUtils.h"
+
 using namespace mozilla;
 
 #define CHECK_mWorkingPath()                    \
@@ -73,6 +79,33 @@ using namespace mozilla;
 #ifndef DRIVE_REMOTE
 #define DRIVE_REMOTE 4
 #endif
+
+static HWND
+GetMostRecentNavigatorHWND()
+{
+  nsresult rv;
+  nsCOMPtr<nsIWindowMediator> winMediator(
+      do_GetService(NS_WINDOWMEDIATOR_CONTRACTID, &rv));
+  if (NS_FAILED(rv)) {
+    return nullptr;
+  }
+
+  nsCOMPtr<mozIDOMWindowProxy> navWin;
+  rv = winMediator->GetMostRecentWindow(MOZ_UTF16("navigator:browser"),
+                                        getter_AddRefs(navWin));
+  if (NS_FAILED(rv) || !navWin) {
+    return nullptr;
+  }
+
+  nsPIDOMWindowOuter* win = nsPIDOMWindowOuter::From(navWin);
+  nsCOMPtr<nsIWidget> widget = widget::WidgetUtils::DOMWindowToWidget(win);
+  if (!widget) {
+    return nullptr;
+  }
+
+  return reinterpret_cast<HWND>(widget->GetNativeData(NS_NATIVE_WINDOW));
+}
+
 
 
 
@@ -107,36 +140,27 @@ private:
 
 
 
-class AsyncLocalFileWinOperation : public Runnable
+class AsyncRevealOperation : public Runnable
 {
 public:
-  enum FileOp { RevealOp, LaunchOp };
-
-  AsyncLocalFileWinOperation(AsyncLocalFileWinOperation::FileOp aOperation,
-                             const nsAString& aResolvedPath) :
-    mOperation(aOperation),
-    mResolvedPath(aResolvedPath)
+  explicit AsyncRevealOperation(const nsAString& aResolvedPath)
+    : mResolvedPath(aResolvedPath)
   {
   }
 
   NS_IMETHOD Run()
   {
     MOZ_ASSERT(!NS_IsMainThread(),
-               "AsyncLocalFileWinOperation should not be run on the main thread!");
+               "AsyncRevealOperation should not be run on the main thread!");
 
-    CoInitialize(nullptr);
-    switch (mOperation) {
-      case RevealOp: {
-        Reveal();
-      }
-      break;
-      case LaunchOp: {
-        Launch();
-      }
-      break;
+    bool doCoUninitialize = SUCCEEDED(
+      CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE));
+    Reveal();
+    if (doCoUninitialize) {
+      CoUninitialize();
     }
-    CoUninitialize();
 
+    
     
     nsCOMPtr<nsIRunnable> resultrunnable = new AsyncLocalFileWinDone();
     NS_DispatchToMainThread(resultrunnable);
@@ -205,82 +229,6 @@ private:
 
     return SUCCEEDED(hr) ? NS_OK : NS_ERROR_FAILURE;
   }
-
-  
-  nsresult Launch()
-  {
-    
-    SHELLEXECUTEINFOW seinfo;
-    memset(&seinfo, 0, sizeof(seinfo));
-    seinfo.cbSize = sizeof(SHELLEXECUTEINFOW);
-    seinfo.hwnd   = nullptr;
-    seinfo.lpVerb = nullptr;
-    seinfo.lpFile = mResolvedPath.get();
-    seinfo.lpParameters =  nullptr;
-    seinfo.lpDirectory  = nullptr;
-    seinfo.nShow  = SW_SHOWNORMAL;
-
-    
-    
-    
-    WCHAR workingDirectory[MAX_PATH + 1] = { L'\0' };
-    wcsncpy(workingDirectory,  mResolvedPath.get(), MAX_PATH);
-    if (PathRemoveFileSpecW(workingDirectory)) {
-      seinfo.lpDirectory = workingDirectory;
-    } else {
-      NS_WARNING("Could not set working directory for launched file.");
-    }
-
-    if (ShellExecuteExW(&seinfo)) {
-      return NS_OK;
-    }
-    DWORD r = GetLastError();
-    
-    
-    if (r == SE_ERR_NOASSOC) {
-      nsAutoString shellArg;
-      shellArg.AssignLiteral(MOZ_UTF16("shell32.dll,OpenAs_RunDLL "));
-      shellArg.Append(mResolvedPath);
-      seinfo.lpFile = L"RUNDLL32.EXE";
-      seinfo.lpParameters = shellArg.get();
-      if (ShellExecuteExW(&seinfo)) {
-        return NS_OK;
-      }
-      r = GetLastError();
-    }
-    if (r < 32) {
-      switch (r) {
-        case 0:
-        case SE_ERR_OOM:
-          return NS_ERROR_OUT_OF_MEMORY;
-        case ERROR_FILE_NOT_FOUND:
-          return NS_ERROR_FILE_NOT_FOUND;
-        case ERROR_PATH_NOT_FOUND:
-          return NS_ERROR_FILE_UNRECOGNIZED_PATH;
-        case ERROR_BAD_FORMAT:
-          return NS_ERROR_FILE_CORRUPTED;
-        case SE_ERR_ACCESSDENIED:
-          return NS_ERROR_FILE_ACCESS_DENIED;
-        case SE_ERR_ASSOCINCOMPLETE:
-        case SE_ERR_NOASSOC:
-          return NS_ERROR_UNEXPECTED;
-        case SE_ERR_DDEBUSY:
-        case SE_ERR_DDEFAIL:
-        case SE_ERR_DDETIMEOUT:
-          return NS_ERROR_NOT_AVAILABLE;
-        case SE_ERR_DLLNOTFOUND:
-          return NS_ERROR_FAILURE;
-        case SE_ERR_SHARE:
-          return NS_ERROR_FILE_IS_LOCKED;
-        default:
-          return NS_ERROR_FILE_EXECUTION_FAILED;
-      }
-    }
-    return NS_OK;
-  }
-
-  
-  AsyncLocalFileWinOperation::FileOp mOperation;
 
   
   nsString mResolvedPath;
@@ -3313,9 +3261,7 @@ nsLocalFile::Reveal()
     return rv;
   }
 
-  nsCOMPtr<nsIRunnable> runnable =
-    new AsyncLocalFileWinOperation(AsyncLocalFileWinOperation::RevealOp,
-                                   mResolvedPath);
+  nsCOMPtr<nsIRunnable> runnable = new AsyncRevealOperation(mResolvedPath);
 
   
   
@@ -3336,20 +3282,73 @@ nsLocalFile::Launch()
   }
 
   
-  nsCOMPtr<nsIThreadManager> tm = do_GetService(NS_THREADMANAGER_CONTRACTID);
-  nsCOMPtr<nsIThread> mythread;
-  rv = tm->NewThread(0, 0, getter_AddRefs(mythread));
-  if (NS_FAILED(rv)) {
-    return rv;
+  SHELLEXECUTEINFOW seinfo;
+  memset(&seinfo, 0, sizeof(seinfo));
+  seinfo.cbSize = sizeof(SHELLEXECUTEINFOW);
+  seinfo.fMask = SEE_MASK_ASYNCOK;
+  seinfo.hwnd = GetMostRecentNavigatorHWND();
+  seinfo.lpVerb = nullptr;
+  seinfo.lpFile = mResolvedPath.get();
+  seinfo.lpParameters = nullptr;
+  seinfo.lpDirectory = nullptr;
+  seinfo.nShow = SW_SHOWNORMAL;
+
+  
+  
+  
+  WCHAR workingDirectory[MAX_PATH + 1] = { L'\0' };
+  wcsncpy(workingDirectory, mResolvedPath.get(), MAX_PATH);
+  if (PathRemoveFileSpecW(workingDirectory)) {
+    seinfo.lpDirectory = workingDirectory;
+  } else {
+    NS_WARNING("Could not set working directory for launched file.");
   }
 
-  nsCOMPtr<nsIRunnable> runnable =
-    new AsyncLocalFileWinOperation(AsyncLocalFileWinOperation::LaunchOp,
-                                   mResolvedPath);
-
+  if (ShellExecuteExW(&seinfo)) {
+    return NS_OK;
+  }
+  DWORD r = GetLastError();
   
   
-  mythread->Dispatch(runnable, NS_DISPATCH_NORMAL);
+  if (r == SE_ERR_NOASSOC) {
+    nsAutoString shellArg;
+    shellArg.AssignLiteral(MOZ_UTF16("shell32.dll,OpenAs_RunDLL "));
+    shellArg.Append(mResolvedPath);
+    seinfo.lpFile = L"RUNDLL32.EXE";
+    seinfo.lpParameters = shellArg.get();
+    if (ShellExecuteExW(&seinfo)) {
+      return NS_OK;
+    }
+    r = GetLastError();
+  }
+  if (r < 32) {
+    switch (r) {
+      case 0:
+      case SE_ERR_OOM:
+        return NS_ERROR_OUT_OF_MEMORY;
+      case ERROR_FILE_NOT_FOUND:
+        return NS_ERROR_FILE_NOT_FOUND;
+      case ERROR_PATH_NOT_FOUND:
+        return NS_ERROR_FILE_UNRECOGNIZED_PATH;
+      case ERROR_BAD_FORMAT:
+        return NS_ERROR_FILE_CORRUPTED;
+      case SE_ERR_ACCESSDENIED:
+        return NS_ERROR_FILE_ACCESS_DENIED;
+      case SE_ERR_ASSOCINCOMPLETE:
+      case SE_ERR_NOASSOC:
+        return NS_ERROR_UNEXPECTED;
+      case SE_ERR_DDEBUSY:
+      case SE_ERR_DDEFAIL:
+      case SE_ERR_DDETIMEOUT:
+        return NS_ERROR_NOT_AVAILABLE;
+      case SE_ERR_DLLNOTFOUND:
+        return NS_ERROR_FAILURE;
+      case SE_ERR_SHARE:
+        return NS_ERROR_FILE_IS_LOCKED;
+      default:
+        return NS_ERROR_FILE_EXECUTION_FAILED;
+    }
+  }
   return NS_OK;
 }
 
