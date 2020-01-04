@@ -252,7 +252,7 @@ private:
 
   
   
-  void SetChained(bool aIsChained);
+  void SetChained();
 
   
   

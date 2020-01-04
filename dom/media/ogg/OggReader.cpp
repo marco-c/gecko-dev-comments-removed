@@ -22,6 +22,8 @@ extern "C" {
 #include "MediaMetadataManager.h"
 #include "nsISeekableStream.h"
 #include "gfx2DGlue.h"
+#include "mozilla/Telemetry.h"
+#include "nsPrintfCString.h"
 
 using namespace mozilla::gfx;
 using namespace mozilla::media;
@@ -148,6 +150,17 @@ OggReader::~OggReader()
 {
   ogg_sync_clear(&mOggState);
   MOZ_COUNT_DTOR(OggReader);
+  if (HasAudio() || HasVideo()) {
+    
+    
+    ReentrantMonitorAutoEnter mon(mMonitor);
+    bool isChained = mIsChained;
+    nsCOMPtr<nsIRunnable> task = NS_NewRunnableFunction([=]() -> void {
+      LOG(LogLevel::Debug, (nsPrintfCString("Reporting telemetry MEDIA_OGG_LOADED_IS_CHAINED=%d", isChained).get()));
+      Telemetry::Accumulate(Telemetry::ID::MEDIA_OGG_LOADED_IS_CHAINED, isChained);
+    });
+    AbstractThread::MainThread()->Dispatch(task.forget());
+  }
 }
 
 nsresult OggReader::Init() {
@@ -704,10 +717,13 @@ bool OggReader::DecodeAudioData()
   return true;
 }
 
-void OggReader::SetChained(bool aIsChained) {
+void OggReader::SetChained() {
   {
     ReentrantMonitorAutoEnter mon(mMonitor);
-    mIsChained = aIsChained;
+    if (mIsChained) {
+      return;
+    }
+    mIsChained = true;
   }
   mOnMediaNotSeekable.Notify();
 }
@@ -800,7 +816,7 @@ bool OggReader::ReadOggChain()
   }
 
   if (chained) {
-    SetChained(true);
+    SetChained();
     {
       auto t = mDecodedAudioFrames * USECS_PER_S / mInfo.mAudio.mRate;
       mTimedMetadataEvent.Notify(
@@ -1139,7 +1155,7 @@ int64_t OggReader::RangeEndTime(int64_t aStartOffset,
       
       
       
-      SetChained(true);
+      SetChained();
       endTime = -1;
       break;
     }
@@ -1913,7 +1929,7 @@ media::TimeIntervals OggReader::GetBuffered()
         
         
         
-        SetChained(true);
+        SetChained();
         return buffered;
       }
     }
