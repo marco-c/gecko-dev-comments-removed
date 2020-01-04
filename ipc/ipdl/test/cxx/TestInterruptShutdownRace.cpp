@@ -1,5 +1,6 @@
 #include "TestInterruptShutdownRace.h"
 
+#include "base/task.h"
 #include "IPDLUnitTests.h"      
 #include "IPDLUnitTestSubprocess.h"
 

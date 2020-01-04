@@ -1,5 +1,6 @@
 #include "TestBridgeMain.h"
 
+#include "base/task.h"
 #include "IPDLUnitTests.h"      
 #include "IPDLUnitTestSubprocess.h"
 
