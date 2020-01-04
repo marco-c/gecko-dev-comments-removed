@@ -107,6 +107,12 @@ static PRLogModuleInfo* gMediaElementEventsLog;
 
 #include "mozilla/EventStateManager.h"
 
+#if defined(MOZ_B2G) && !defined(MOZ_GRAPHENE)
+
+
+#define PAUSE_MEDIA_ELEMENT_FROM_AUDIOCHANNEL
+#endif
+
 using namespace mozilla::layers;
 using mozilla::net::nsMediaFragmentURIParser;
 
@@ -4232,12 +4238,15 @@ bool HTMLMediaElement::IsBeingDestroyed()
 void HTMLMediaElement::NotifyOwnerDocumentActivityChanged()
 {
   bool pauseElement = NotifyOwnerDocumentActivityChangedInternal();
-  if (pauseElement && mAudioChannelAgent &&
+  if (pauseElement && mAudioChannelAgent
+#ifdef PAUSE_MEDIA_ELEMENT_FROM_AUDIOCHANNEL
       
       
       
       
-      (!UseAudioChannelAPI() || !ComputedMuted())) {
+      && !ComputedMuted()
+#endif
+      ) {
     
     
     
@@ -4261,13 +4270,15 @@ HTMLMediaElement::NotifyOwnerDocumentActivityChangedInternal()
   }
 
   bool pauseElement = !IsActive();
+#ifdef PAUSE_MEDIA_ELEMENT_FROM_AUDIOCHANNEL
   
   
   
   
-  if (UseAudioChannelAPI() && mAudioChannelAgent) {
+  if (mAudioChannelAgent) {
     pauseElement |= ComputedMuted();
   }
+#endif
 
   SuspendOrResumeElement(pauseElement, !IsActive());
 
@@ -4701,10 +4712,9 @@ nsresult HTMLMediaElement::UpdateChannelMuteState(float aVolume, bool aMuted)
     }
   }
 
-  if (UseAudioChannelAPI()) {
-    SuspendOrResumeElement(ComputedMuted(), false);
-  }
-
+#ifdef PAUSE_MEDIA_ELEMENT_FROM_AUDIOCHANNEL
+  SuspendOrResumeElement(ComputedMuted(), false);
+#endif
   return NS_OK;
 }
 
@@ -4739,12 +4749,6 @@ HTMLMediaElement::IsPlayingThroughTheAudioChannel() const
   }
 
   
-  
-  if (mPausedForInactiveDocumentOrChannel) {
-    return false;
-  }
-
-  
   if (HasAttr(kNameSpaceID_None, nsGkAtoms::loop)) {
     return true;
   }
@@ -4757,11 +4761,6 @@ HTMLMediaElement::IsPlayingThroughTheAudioChannel() const
 
   
   if (mPlayingThroughTheAudioChannelBeforeSeek) {
-    return true;
-  }
-
-  
-  if (mSrcAttrStream) {
     return true;
   }
 
@@ -4820,9 +4819,9 @@ NS_IMETHODIMP HTMLMediaElement::WindowVolumeChanged(float aVolume, bool aMuted)
 
   UpdateChannelMuteState(aVolume, aMuted);
 
-  if (UseAudioChannelAPI()) {
-    mPaused.SetCanPlay(!aMuted);
-  }
+#ifdef PAUSE_MEDIA_ELEMENT_FROM_AUDIOCHANNEL
+  mPaused.SetCanPlay(!aMuted);
+#endif
 
   return NS_OK;
 }
