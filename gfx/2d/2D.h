@@ -19,6 +19,8 @@
 
 #include "mozilla/GenericRefCounted.h"
 
+#include "mozilla/Atomics.h"
+
 
 
 
@@ -373,14 +375,15 @@ class DataSourceSurface : public SourceSurface
 public:
   MOZ_DECLARE_REFCOUNTED_VIRTUAL_TYPENAME(DataSourceSurface, override)
   DataSourceSurface()
-    : mIsMapped(false)
+    : mMapCount(0)
+    , mIsReadMap(false)
   {
   }
 
 #ifdef DEBUG
   virtual ~DataSourceSurface()
   {
-    MOZ_ASSERT(!mIsMapped, "Someone forgot to call Unmap()");
+    MOZ_ASSERT(mMapCount == 0, "Someone forgot to call Unmap()");
   }
 #endif
 
@@ -458,18 +461,22 @@ public:
   
 
 
-  virtual bool Map(MapType, MappedSurface *aMappedSurface)
+  virtual bool Map(MapType aMapType, MappedSurface *aMappedSurface)
   {
     aMappedSurface->mData = GetData();
     aMappedSurface->mStride = Stride();
-    mIsMapped = !!aMappedSurface->mData;
-    return mIsMapped;
+    if (!aMappedSurface->mData) {
+      return false;
+    }
+    mMapCount++;
+    mIsReadMap = aMapType == MapType::READ;
+    return true;
   }
 
   virtual void Unmap()
   {
-    MOZ_ASSERT(mIsMapped);
-    mIsMapped = false;
+    MOZ_ASSERT(mMapCount > 0);
+    mMapCount--;
   }
 
   
@@ -479,7 +486,8 @@ public:
   virtual already_AddRefed<DataSourceSurface> GetDataSurface() override;
 
 protected:
-  bool mIsMapped;
+  Atomic<int32_t> mMapCount;
+  DebugOnly<bool> mIsReadMap;
 };
 
 
