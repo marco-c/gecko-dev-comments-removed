@@ -1,7 +1,11 @@
 "use strict";
 
 
-SpecialPowers.importInMainProcess("resource://gre/modules/ContactService.jsm");
+if (SpecialPowers.isMainProcess()) {
+  SpecialPowers.Cu.import("resource://gre/modules/ContactService.jsm");
+} else {
+  SpecialPowers.loadChromeScript(SimpleTest.getTestFileURL('contacts_chromescript.js'));
+}
 
 
 var isAndroid = (navigator.userAgent.indexOf("Android") !== -1);
