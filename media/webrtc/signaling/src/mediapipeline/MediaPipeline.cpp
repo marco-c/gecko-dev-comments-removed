@@ -984,59 +984,24 @@ void MediaPipelineTransmit::PipelineListener::ProcessAudioChunk(
   
   
 
-  if (samplenum_10ms_ !=  rate/100) {
+  uint32_t audio_10ms = rate / 100;
+
+  if (!packetizer_ ||
+      packetizer_->PacketSize() != audio_10ms ||
+      packetizer_->Channels() != outputChannels) {
     
-    samplenum_10ms_ = rate/100;
-    
-    
-    samples_10ms_buffer_ = new int16_t[samplenum_10ms_];
-    buffer_current_ = 0;
+    packetizer_ = new AudioPacketizer<int16_t, int16_t>(audio_10ms, outputChannels);
+   }
+
+  packetizer_->Input(convertedSamples, chunk.mDuration);
+
+  while (packetizer_->PacketsAvailable()) {
+    uint32_t samplesPerPacket = packetizer_->PacketSize() *
+                                packetizer_->Channels();
+    conduit->SendAudioFrame(packetizer_->Output(),
+                            samplesPerPacket ,
+                            rate, 0);
   }
-
-  
-  
-  
-  int64_t chunk_remaining;
-  int64_t tocpy;
-  int16_t *samples_tmp = convertedSamples.get();
-
-  chunk_remaining = chunk.mDuration;
-
-  MOZ_ASSERT(chunk_remaining >= 0);
-
-  if (buffer_current_) {
-    tocpy = std::min(chunk_remaining, samplenum_10ms_ - buffer_current_);
-    memcpy(&samples_10ms_buffer_[buffer_current_], samples_tmp, tocpy * sizeof(int16_t));
-    buffer_current_ += tocpy;
-    samples_tmp += tocpy;
-    chunk_remaining -= tocpy;
-
-    if (buffer_current_ == samplenum_10ms_) {
-      
-      conduit->SendAudioFrame(samples_10ms_buffer_, samplenum_10ms_, rate, 0);
-      buffer_current_ = 0;
-    } else {
-      
-      return;
-    }
-  }
-
-  
-  tocpy = (chunk_remaining / samplenum_10ms_) * samplenum_10ms_;
-  if (tocpy > 0) {
-    conduit->SendAudioFrame(samples_tmp, tocpy, rate, 0);
-    samples_tmp += tocpy;
-    chunk_remaining -= tocpy;
-  }
-  
-
-  MOZ_ASSERT(chunk_remaining < samplenum_10ms_);
-
-  if (chunk_remaining) {
-    memcpy(samples_10ms_buffer_, samples_tmp, chunk_remaining * sizeof(int16_t));
-    buffer_current_ = chunk_remaining;
-  }
-
 }
 
 #if !defined(MOZILLA_EXTERNAL_LINKAGE)
