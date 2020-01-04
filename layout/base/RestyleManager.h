@@ -671,9 +671,11 @@ private:
   
   
   enum RestyleResult {
+    
+    eRestyleResult_None,
 
     
-    eRestyleResult_Stop = 1,
+    eRestyleResult_Stop,
 
     
     
