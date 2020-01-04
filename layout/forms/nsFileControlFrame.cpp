@@ -291,7 +291,12 @@ nsFileControlFrame::DnDListener::IsValidDropData(nsIDOMDataTransfer* aDOMDataTra
   NS_ENSURE_TRUE(dataTransfer, false);
 
   
-  RefPtr<DOMStringList> types = dataTransfer->Types();
+  ErrorResult rv;
+  RefPtr<DOMStringList> types = dataTransfer->GetTypes(rv);
+  if (NS_WARN_IF(rv.Failed())) {
+    return false;
+  }
+
   return types->Contains(NS_LITERAL_STRING("Files"));
 }
 
