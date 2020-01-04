@@ -265,7 +265,7 @@ html, body, #app, #memory-tool {
 
 
   flex: 1;
-  background-color: var(--theme-toolbar-background);
+  background-color: var(--theme-body-background);
 
   
 
