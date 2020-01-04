@@ -166,42 +166,46 @@ public:
   template <typename PixelType, typename Func>
   WriteState WritePixels(Func aFunc)
   {
-    MOZ_ASSERT(mPixelSize == 1 || mPixelSize == 4);
-    MOZ_ASSERT_IF(mPixelSize == 1, sizeof(PixelType) == sizeof(uint8_t));
-    MOZ_ASSERT_IF(mPixelSize == 4, sizeof(PixelType) == sizeof(uint32_t));
+    Maybe<WriteState> result;
+    while (!(result = DoWritePixelsToRow<PixelType>(Forward<Func>(aFunc)))) { }
 
-    while (!IsSurfaceFinished()) {
-      PixelType* rowPtr = reinterpret_cast<PixelType*>(mRowPointer);
+    return *result;
+  }
 
-      for (; mCol < mInputSize.width; ++mCol) {
-        NextPixel<PixelType> result = aFunc();
-        if (result.template is<PixelType>()) {
-          rowPtr[mCol] = result.template as<PixelType>();
-          continue;
-        }
+  
 
-        switch (result.template as<WriteState>()) {
-          case WriteState::NEED_MORE_DATA:
-            return WriteState::NEED_MORE_DATA;
 
-          case WriteState::FINISHED:
-            ZeroOutRestOfSurface<PixelType>();
-            return WriteState::FINISHED;
 
-          case WriteState::FAILURE:
-            
-            
-            
-            
-            return WriteState::FAILURE;
-        }
-      }
 
-      AdvanceRow();  
-    }
 
-    
-    return WriteState::FINISHED;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  template <typename PixelType, typename Func>
+  WriteState WritePixelsToRow(Func aFunc)
+  {
+    return DoWritePixelsToRow<PixelType>(Forward<Func>(aFunc))
+           .valueOr(WriteState::NEED_MORE_DATA);
   }
 
   
@@ -442,6 +446,60 @@ protected:
 
 private:
 
+  
+
+
+
+
+
+
+
+
+
+
+  template <typename PixelType, typename Func>
+  Maybe<WriteState> DoWritePixelsToRow(Func aFunc)
+  {
+    MOZ_ASSERT(mPixelSize == 1 || mPixelSize == 4);
+    MOZ_ASSERT_IF(mPixelSize == 1, sizeof(PixelType) == sizeof(uint8_t));
+    MOZ_ASSERT_IF(mPixelSize == 4, sizeof(PixelType) == sizeof(uint32_t));
+
+    if (IsSurfaceFinished()) {
+      return Some(WriteState::FINISHED);  
+    }
+
+    PixelType* rowPtr = reinterpret_cast<PixelType*>(mRowPointer);
+
+    for (; mCol < mInputSize.width; ++mCol) {
+      NextPixel<PixelType> result = aFunc();
+      if (result.template is<PixelType>()) {
+        rowPtr[mCol] = result.template as<PixelType>();
+        continue;
+      }
+
+      switch (result.template as<WriteState>()) {
+        case WriteState::NEED_MORE_DATA:
+          return Some(WriteState::NEED_MORE_DATA);
+
+        case WriteState::FINISHED:
+          ZeroOutRestOfSurface<PixelType>();
+          return Some(WriteState::FINISHED);
+
+        case WriteState::FAILURE:
+          
+          
+          
+          
+          return Some(WriteState::FAILURE);
+      }
+    }
+
+    AdvanceRow();  
+
+    return IsSurfaceFinished() ? Some(WriteState::FINISHED)
+                               : Nothing();
+  }
+
   template <typename PixelType>
   void ZeroOutRestOfSurface()
   {
@@ -544,6 +602,19 @@ public:
   WriteState WritePixels(Func aFunc)
   {
     return mHead->WritePixels<PixelType>(Forward<Func>(aFunc));
+  }
+
+  
+
+
+
+
+
+
+  template <typename PixelType, typename Func>
+  WriteState WritePixelsToRow(Func aFunc)
+  {
+    return mHead->WritePixelsToRow<PixelType>(Forward<Func>(aFunc));
   }
 
   
