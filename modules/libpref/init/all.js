@@ -4557,11 +4557,10 @@ pref("dom.mozPermissionSettings.enabled", false);
 
 
 
-#ifdef XP_WIN
-pref("dom.w3c_touch_events.enabled", 2);
-#endif
 
-#if MOZ_WIDGET_GTK == 3
+#if defined(XP_WIN) || defined(XP_MACOSX)
+pref("dom.w3c_touch_events.enabled", 0);
+#else
 pref("dom.w3c_touch_events.enabled", 2);
 #endif
 
