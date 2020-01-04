@@ -505,6 +505,9 @@ private:
     bool AsyncPanZoomEnabled() const;
 
     
+    bool mDocShellIsActive;
+
+    
     
     
     
