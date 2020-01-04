@@ -582,11 +582,22 @@ function getRuleViewRuleEditor(view, childrenIndex, nodeIndex) {
 
 
 
-var addProperty = Task.async(function*(view, ruleIndex, name, value) {
+
+
+
+
+
+
+
+
+var addProperty = Task.async(function*(view, ruleIndex, name, value,
+                                       commitValueWith = "VK_RETURN",
+                                       blurNewProperty = true) {
   info("Adding new property " + name + ":" + value + " to rule " + ruleIndex);
 
   let ruleEditor = getRuleViewRuleEditor(view, ruleIndex);
   let editor = yield focusNewRuleViewProperty(ruleEditor);
+  let numOfProps = ruleEditor.rule.textProps.length;
 
   info("Adding name " + name);
   editor.input.value = name;
@@ -599,14 +610,26 @@ var addProperty = Task.async(function*(view, ruleIndex, name, value) {
   let textProps = ruleEditor.rule.textProps;
   let textProp = textProps[textProps.length - 1];
 
+  is(ruleEditor.rule.textProps.length, numOfProps + 1,
+     "A new test property was added");
+  is(editor, inplaceEditor(textProp.editor.valueSpan),
+     "The inplace editor appeared for the value");
+
   info("Adding value " + value);
+  
+  
+  let onPreview = view.once("ruleview-changed");
   editor.input.value = value;
+  yield onPreview;
+
   let onValueAdded = view.once("ruleview-changed");
-  EventUtils.synthesizeKey("VK_RETURN", {}, view.styleWindow);
+  EventUtils.synthesizeKey(commitValueWith, {}, view.styleWindow);
   yield onValueAdded;
 
-  
-  view.styleDocument.activeElement.blur();
+  if (blurNewProperty) {
+    view.styleDocument.activeElement.blur();
+  }
+
   return textProp;
 });
 
