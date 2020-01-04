@@ -12,7 +12,7 @@ function run_test()
                      crashType = CrashTestUtils.CRASH_RUNTIMEABORT;
                      crashReporter.annotateCrashReport("TestKey", "TestValue");
                      crashReporter.appendAppNotesToCrashReport("!!!foo!!!");
-		   },
+                   },
                    function(mdump, extra) {
                      do_check_eq(extra.TestKey, "TestValue");
                      do_check_true('StartupTime' in extra);
