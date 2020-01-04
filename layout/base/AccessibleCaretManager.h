@@ -58,7 +58,7 @@ public:
 
   
   
-  virtual nsresult PressCaret(const nsPoint& aPoint);
+  virtual nsresult PressCaret(const nsPoint& aPoint, EventClassID aEventClass);
 
   
   
