@@ -212,6 +212,16 @@ task_description_schema = Schema({
             Extra: basestring,  
         },
     }),
+
+    
+    
+    
+    Optional('when'): Any({
+        
+        
+        
+        Optional('files-changed'): [basestring],
+    }),
 })
 
 GROUP_NAMES = {
