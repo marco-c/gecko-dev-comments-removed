@@ -1159,12 +1159,6 @@ nsIFrame::Extend3DContext() const
     return false;
   }
 
-  
-  
-  if (HasOpacity() && Combines3DTransformWithAncestors()) {
-    return false;
-  }
-
   nsRect temp;
   return !nsFrame::ShouldApplyOverflowClipping(this, disp) &&
          !GetClipPropClipRect(disp, &temp, GetSize()) &&
@@ -1881,7 +1875,8 @@ static bool
 ItemParticipatesIn3DContext(nsIFrame* aAncestor, nsDisplayItem* aItem)
 {
   nsIFrame* transformFrame;
-  if (aItem->GetType() == nsDisplayItem::TYPE_TRANSFORM) {
+  if (aItem->GetType() == nsDisplayItem::TYPE_TRANSFORM ||
+      aItem->GetType() == nsDisplayItem::TYPE_OPACITY) {
     transformFrame = aItem->Frame();
   } else if (aItem->GetType() == nsDisplayItem::TYPE_PERSPECTIVE) {
     transformFrame = static_cast<nsDisplayPerspective*>(aItem)->TransformFrame();
@@ -1911,16 +1906,21 @@ WrapSeparatorTransform(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
 static void
 CreateOpacityItem(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
                   nsDisplayList& aList, bool aItemForEventsOnly,
-                  const DisplayItemScrollClip* aScrollClip)
+                  const DisplayItemScrollClip* aScrollClip,
+                  bool aParticipatesInPreserve3D)
 {
   
   
   
   DisplayListClipState::AutoSaveRestore opacityClipState(aBuilder);
   opacityClipState.Clear();
-  aList.AppendNewToTop(
+  nsDisplayOpacity* opacity =
       new (aBuilder) nsDisplayOpacity(aBuilder, aFrame, &aList,
-                                      aScrollClip, aItemForEventsOnly));
+                                      aScrollClip, aItemForEventsOnly);
+  if (opacity) {
+    opacity->SetParticipatesInPreserve3D(aParticipatesInPreserve3D);
+    aList.AppendToTop(opacity);
+  }
 }
 
 void
@@ -2021,7 +2021,7 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
     aBuilder->EnterSVGEffectsContents(&hoistedScrollInfoItemsStorage);
   }
 
-  bool useOpacity = HasVisualOpacity() && !nsSVGUtils::CanOptimizeOpacity(this);
+  bool useOpacity = HasVisualOpacity() && !nsSVGUtils::CanOptimizeOpacity(this) && !usingSVGEffects;
   bool useBlendMode = disp->mMixBlendMode != NS_STYLE_BLEND_NORMAL;
   bool useStickyPosition = disp->mPosition == NS_STYLE_POSITION_STICKY &&
     IsScrollFrameActive(aBuilder,
@@ -2172,8 +2172,6 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
     clipState.ExitStackingContextContents(&containerItemScrollClip);
   }
 
-  bool is3DContextRoot = Extend3DContext() && !Combines3DTransformWithAncestors();
-
   
 
 
@@ -2190,18 +2188,6 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
     aBuilder->ExitSVGEffectsContents();
     resultList.AppendToTop(&hoistedScrollInfoItemsStorage);
   }
-  else if (useOpacity && !resultList.IsEmpty() && !is3DContextRoot) {
-    
-
-
-
-
-
-
-    CreateOpacityItem(aBuilder, this, resultList, opacityItemForEventsOnly,
-                      containerItemScrollClip);
-    useOpacity = false;
-  }
 
   
 
@@ -2214,36 +2200,49 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
 
 
 
-  if (isTransformed && !resultList.IsEmpty()) {
-    if (!resultList.IsEmpty() && Extend3DContext()) {
-      
-      
-      nsDisplayList nonparticipants;
-      nsDisplayList participants;
-      int index = 1;
+  bool hasPreserve3DChildren = false;
+  if (isTransformed && !resultList.IsEmpty() && Extend3DContext()) {
+    
+    
+    nsDisplayList nonparticipants;
+    nsDisplayList participants;
+    int index = 1;
 
-      while (nsDisplayItem* item = resultList.RemoveBottom()) {
-        if (ItemParticipatesIn3DContext(this, item) && !item->GetClip().HasClip()) {
-          
-          WrapSeparatorTransform(aBuilder, this, dirtyRect,
-                                 &nonparticipants, &participants, index++);
-          participants.AppendToTop(item);
-        } else {
-          
-          
-          
-          
-          
-          
-          
-          nonparticipants.AppendToTop(item);
-        }
+    while (nsDisplayItem* item = resultList.RemoveBottom()) {
+      if (ItemParticipatesIn3DContext(this, item) && !item->GetClip().HasClip()) {
+        
+        WrapSeparatorTransform(aBuilder, this, dirtyRect,
+                               &nonparticipants, &participants, index++);
+        participants.AppendToTop(item);
+        hasPreserve3DChildren = true;
+      } else {
+        
+        
+        
+        
+        
+        
+        
+        nonparticipants.AppendToTop(item);
       }
-      WrapSeparatorTransform(aBuilder, this, dirtyRect,
-                             &nonparticipants, &participants, index++);
-      resultList.AppendToTop(&participants);
     }
+    WrapSeparatorTransform(aBuilder, this, dirtyRect,
+                           &nonparticipants, &participants, index++);
+    resultList.AppendToTop(&participants);
+  }
 
+  
+
+
+
+
+
+  if (useOpacity && !resultList.IsEmpty()) {
+    CreateOpacityItem(aBuilder, this, resultList,
+                      opacityItemForEventsOnly, containerItemScrollClip, hasPreserve3DChildren);
+  }
+
+  if (isTransformed && !resultList.IsEmpty()) {
     
     if (!HasPerspective() && !useFixedPosition && !useStickyPosition) {
       clipState.ExitStackingContextContents(&containerItemScrollClip);
@@ -2274,14 +2273,6 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
         new (aBuilder) nsDisplayPerspective(
           aBuilder, this,
           GetContainingBlock()->GetContent()->GetPrimaryFrame(), &resultList));
-    }
-
-    
-
-
-    if (useOpacity && !usingSVGEffects) {
-      CreateOpacityItem(aBuilder, this, resultList, opacityItemForEventsOnly,
-                        containerItemScrollClip);
     }
   }
 
