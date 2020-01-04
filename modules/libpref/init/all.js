@@ -220,6 +220,9 @@ pref("ui.use_native_colors", true);
 pref("ui.click_hold_context_menus", false);
 
 pref("ui.menu.incremental_search.timeout", 1000);
+
+pref("ui.popup.disable_autohide", false);
+
 pref("browser.display.use_document_fonts",  1);  
 
 
@@ -2024,6 +2027,10 @@ pref("security.cert_pinning.enforcement_level", 0);
 
 
 pref("security.cert_pinning.process_headers_from_non_builtin_roots", false);
+
+
+
+pref("security.view-source.reachable-from-inner-protocol", false);
 
 
 
