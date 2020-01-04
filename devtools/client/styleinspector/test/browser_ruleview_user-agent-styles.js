@@ -160,6 +160,14 @@ function* compareAppliedStylesWithUI(inspector, view, filter) {
     filter: filter
   });
 
+  
+  
+  let entryMap = new Map();
+  for (let entry of entries) {
+    entryMap.set(entry.rule, entry);
+  }
+  entries = [...entryMap.values()];
+
   let elementStyle = view._elementStyle;
   is(elementStyle.rules.length, entries.length,
     "Should have correct number of rules (" + entries.length + ")");

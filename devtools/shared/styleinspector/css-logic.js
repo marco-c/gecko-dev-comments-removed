@@ -43,36 +43,6 @@ const Services = require("Services");
 const DevToolsUtils = require("devtools/shared/DevToolsUtils");
 const { getRootBindingParent } = require("devtools/shared/layout/utils");
 
-var pseudos = new Set([
-  ":after",
-  ":before",
-  ":first-letter",
-  ":first-line",
-  ":selection",
-  ":-moz-color-swatch",
-  ":-moz-focus-inner",
-  ":-moz-focus-outer",
-  ":-moz-list-bullet",
-  ":-moz-list-number",
-  ":-moz-math-anonymous",
-  ":-moz-math-stretchy",
-  ":-moz-meter-bar",
-  ":-moz-number-spin-box",
-  ":-moz-number-spin-down",
-  ":-moz-number-spin-up",
-  ":-moz-number-text",
-  ":-moz-number-wrapper",
-  ":-moz-placeholder",
-  ":-moz-progress-bar",
-  ":-moz-range-progress",
-  ":-moz-range-thumb",
-  ":-moz-range-track",
-  ":-moz-selection"
-]);
-
-const PSEUDO_ELEMENT_SET = pseudos;
-exports.PSEUDO_ELEMENT_SET = PSEUDO_ELEMENT_SET;
-
 
 
 if (Cu) {
@@ -1676,18 +1646,6 @@ CssSelector.prototype = {
   get ruleLine()
   {
     return this.cssRule.line;
-  },
-
-  
-
-
-
-  get pseudoElements()
-  {
-    if (!CssSelector._pseudoElements) {
-      CssSelector._pseudoElements = PSEUDO_ELEMENT_SET;
-    }
-    return CssSelector._pseudoElements;
   },
 
   

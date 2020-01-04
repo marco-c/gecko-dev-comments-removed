@@ -12,7 +12,6 @@ const {Arg, Option, method, RetVal, types} = protocol;
 const events = require("sdk/event/core");
 const {Class} = require("sdk/core/heritage");
 const {LongStringActor} = require("devtools/server/actors/string");
-const {PSEUDO_ELEMENT_SET} = require("devtools/shared/styleinspector/css-logic");
 
 
 const {UPDATE_PRESERVING_RULES, UPDATE_GENERAL} =
@@ -37,22 +36,10 @@ exports.ELEMENT_STYLE = ELEMENT_STYLE;
 
 
 
-PSEUDO_ELEMENT_SET.delete(":-moz-meter-bar");
-PSEUDO_ELEMENT_SET.delete(":-moz-list-bullet");
-PSEUDO_ELEMENT_SET.delete(":-moz-list-number");
-PSEUDO_ELEMENT_SET.delete(":-moz-focus-inner");
-PSEUDO_ELEMENT_SET.delete(":-moz-focus-outer");
-PSEUDO_ELEMENT_SET.delete(":-moz-math-anonymous");
-PSEUDO_ELEMENT_SET.delete(":-moz-math-stretchy");
-
-const PSEUDO_ELEMENTS = Array.from(PSEUDO_ELEMENT_SET);
-
-exports.PSEUDO_ELEMENTS = PSEUDO_ELEMENTS;
-
-
-
-const PSEUDO_ELEMENTS_TO_READ = PSEUDO_ELEMENTS.filter(pseudo => {
-  return pseudo !== ":before" && pseudo !== ":after";
+loader.lazyGetter(this, "PSEUDO_ELEMENTS_TO_READ", () => {
+  return DOMUtils.getCSSPseudoElementNames().filter(pseudo => {
+    return pseudo !== ":before" && pseudo !== ":after";
+  });
 });
 
 const XHTML_NS = "http://www.w3.org/1999/xhtml";
