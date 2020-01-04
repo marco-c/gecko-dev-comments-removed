@@ -9,6 +9,7 @@ module.metadata = {
 };
 
 const { Cc, Ci } = require("chrome");
+const { Services } = require("resource://gre/modules/Services.jsm");
 const { setTimeout } = require("../timers");
 const { platform } = require("../system");
 const { getMostRecentBrowserWindow, getOwnerBrowserWindow,
@@ -186,6 +187,13 @@ function display(panel, options, anchor) {
     panel.setAttribute("flip", "both");
   }
 
+  panel.viewFrame = document.importNode(panel.backgroundFrame, false);
+  panel.appendChild(panel.viewFrame);
+
+  let {privateBrowsingId} = getDocShell(panel.viewFrame).getOriginAttributes();
+  let principal = Services.scriptSecurityManager.createNullPrincipal({privateBrowsingId});
+  getDocShell(panel.viewFrame).createAboutBlankContentViewer(principal);
+
   
   
   panel.firstChild.style.width = width + "px";
@@ -252,10 +260,8 @@ function make(document, options) {
   document = document || getMostRecentBrowserWindow().document;
   let panel = document.createElementNS(XUL_NS, "panel");
   panel.setAttribute("type", "arrow");
-  panel.setAttribute("sdkscriptenabled", "" + options.allowJavascript);
+  panel.setAttribute("sdkscriptenabled", options.allowJavascript);
 
-  
-  
   
   
   attach(panel, document);
@@ -269,34 +275,29 @@ function make(document, options) {
     
     
     browser: false,
-    
-    
-    uri: "data:text/plain;charset=utf-8,"
   };
 
   let backgroundFrame = createFrame(addonWindow, frameOptions);
   setupPanelFrame(backgroundFrame);
 
-  let viewFrame = createFrame(panel, frameOptions);
-  setupPanelFrame(viewFrame);
+  getDocShell(backgroundFrame).inheritPrivateBrowsingId = false;
 
-  function onDisplayChange({type, target}) {
-    
-    
-    
-    if (target !== this) return;
+  function onPopupShowing({type, target}) {
+    if (target === this) {
+      let attrs = getDocShell(backgroundFrame).getOriginAttributes();
+      getDocShell(panel.viewFrame).setOriginAttributes(attrs);
 
-    try {
-      swapFrameLoaders(backgroundFrame, viewFrame);
-      
-      let shouldEnableScript = panel.getAttribute("sdkscriptenabled") == "true";
-      getDocShell(backgroundFrame).allowJavascript = shouldEnableScript;
-      getDocShell(viewFrame).allowJavascript = shouldEnableScript;
+      swapFrameLoaders(backgroundFrame, panel.viewFrame);
     }
-    catch(error) {
-      console.exception(error);
+  }
+
+  function onPopupHiding({type, target}) {
+    if (target === this) {
+      swapFrameLoaders(backgroundFrame, panel.viewFrame);
+
+      panel.viewFrame.remove();
+      panel.viewFrame = null;
     }
-    events.emit(type, { subject: panel });
   }
 
   function onContentReady({target, type}) {
@@ -316,14 +317,15 @@ function make(document, options) {
       events.emit(type, { subject: panel });
   }
 
-  function onPanelStateChange({type}) {
-    events.emit(type, { subject: panel })
+  function onPanelStateChange({target, type}) {
+    if (target === this)
+      events.emit(type, { subject: panel })
   }
 
-  panel.addEventListener("popupshowing", onDisplayChange, false);
-  panel.addEventListener("popuphiding", onDisplayChange, false);
-  panel.addEventListener("popupshown", onPanelStateChange, false);
-  panel.addEventListener("popuphidden", onPanelStateChange, false);
+  panel.addEventListener("popupshowing", onPopupShowing);
+  panel.addEventListener("popuphiding", onPopupHiding);
+  for (let event of ["popupshowing", "popuphiding", "popupshown", "popuphidden"])
+    panel.addEventListener(event, onPanelStateChange);
 
   panel.addEventListener("click", onPanelClick, false);
 
@@ -339,9 +341,8 @@ function make(document, options) {
 
   events.on("document-element-inserted", onContentChange);
 
-
   panel.backgroundFrame = backgroundFrame;
-  panel.viewFrame = viewFrame;
+  panel.viewFrame = null;
 
   
   
@@ -368,9 +369,7 @@ exports.detach = detach;
 
 function dispose(panel) {
   panel.backgroundFrame.remove();
-  panel.viewFrame.remove();
   panel.backgroundFrame = null;
-  panel.viewFrame = null;
   events.off("document-element-inserted", panel.onContentChange);
   panel.onContentChange = null;
   detach(panel);
@@ -392,11 +391,7 @@ function style(panel) {
     let contentDocument = getContentDocument(panel);
     let window = document.defaultView;
     let node = document.getAnonymousElementByAttribute(panel, "class",
-                                                       "panel-arrowcontent") ||
-               
-               
-                document.getAnonymousElementByAttribute(panel, "class",
-                                                        "panel-inner-arrowcontent");
+                                                       "panel-arrowcontent");
 
     let { color, fontFamily, fontSize, fontWeight } = window.getComputedStyle(node);
 
@@ -424,10 +419,7 @@ function style(panel) {
 }
 exports.style = style;
 
-var getContentFrame = panel =>
-    (isOpen(panel) || isOpening(panel)) ?
-    panel.firstChild :
-    panel.backgroundFrame
+var getContentFrame = panel => panel.viewFrame || panel.backgroundFrame;
 exports.getContentFrame = getContentFrame;
 
 function getContentDocument(panel) {
@@ -436,7 +428,10 @@ function getContentDocument(panel) {
 exports.getContentDocument = getContentDocument;
 
 function setURL(panel, url) {
-  getContentFrame(panel).setAttribute("src", url ? data.url(url) : url);
+  let frame = getContentFrame(panel);
+  let webNav = getDocShell(frame).QueryInterface(Ci.nsIWebNavigation);
+
+  webNav.loadURI(url ? data.url(url) : "about:blank", 0, null, null, null);
 }
 
 exports.setURL = setURL;
