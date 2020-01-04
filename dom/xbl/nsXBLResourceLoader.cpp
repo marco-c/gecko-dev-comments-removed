@@ -113,11 +113,6 @@ nsXBLResourceLoader::LoadResources(bool* aResult)
       continue;
 
     if (curr->mType == nsGkAtoms::image) {
-      if (!nsContentUtils::CanLoadImage(url, doc, doc, docPrincipal)) {
-        
-        continue;
-      }
-
       
       
       

@@ -2188,21 +2188,17 @@ nsTreeBodyFrame::GetImage(int32_t aRowIndex, nsTreeColumn* aCol, bool aUseContex
 
       
       
-      if (nsContentUtils::CanLoadImage(srcURI, mContent, doc,
-                                       mContent->NodePrincipal())) {
-        nsresult rv = nsContentUtils::LoadImage(srcURI,
-                                                mContent,
-                                                doc,
-                                                mContent->NodePrincipal(),
-                                                doc->GetDocumentURI(),
-                                                doc->GetReferrerPolicy(),
-                                                imgNotificationObserver,
-                                                nsIRequest::LOAD_NORMAL,
-                                                EmptyString(),
-                                                getter_AddRefs(imageRequest));
-        NS_ENSURE_SUCCESS(rv, rv);
-                                  
-      }
+      nsresult rv = nsContentUtils::LoadImage(srcURI,
+                                              mContent,
+                                              doc,
+                                              mContent->NodePrincipal(),
+                                              doc->GetDocumentURI(),
+                                              doc->GetReferrerPolicy(),
+                                              imgNotificationObserver,
+                                              nsIRequest::LOAD_NORMAL,
+                                              EmptyString(),
+                                              getter_AddRefs(imageRequest));
+      NS_ENSURE_SUCCESS(rv, rv);
     }
     listener->UnsuppressInvalidation();
 
