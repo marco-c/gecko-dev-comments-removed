@@ -338,24 +338,6 @@ var waitForSuccess = Task.async(function*(validatorFn, desc = "untitled") {
 
 
 
-function addStyle(doc, style) {
-  info("Adding a new style tag to the document with style content: " +
-    style.substring(0, 50));
-  let node = doc.createElement("style");
-  node.setAttribute("type", "text/css");
-  node.textContent = style;
-  doc.getElementsByTagName("head")[0].appendChild(node);
-  return node;
-}
-
-
-
-
-
-
-
-
-
 
 var getFontFamilyDataURL = Task.async(function*(font, nodeFront) {
   let fillStyle = (Services.prefs.getCharPref("devtools.theme") === "light") ?
