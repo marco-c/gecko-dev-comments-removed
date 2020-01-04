@@ -35,7 +35,7 @@ public:
                 layers::LayersBackend aLayersBackend = layers::LayersBackend::LAYERS_NONE,
                 layers::ImageContainer* aImageContainer = nullptr);
 
-  bool SupportsMimeType(const nsACString& aMimeType);
+  bool SupportsMimeType(const nsACString& aMimeType) const;
 
 #ifdef MOZ_EME
   
@@ -52,7 +52,9 @@ private:
   
   bool StartupPDM(PlatformDecoderModule* aPDM);
   
-  already_AddRefed<PlatformDecoderModule> GetDecoder(const nsACString& aMimeType);
+  already_AddRefed<PlatformDecoderModule>
+  GetDecoder(const nsACString& aMimeType) const;
+
   already_AddRefed<MediaDataDecoder>
   CreateDecoderWithPDM(PlatformDecoderModule* aPDM,
                        const TrackInfo& aConfig,
