@@ -46,7 +46,8 @@ class SyntaxParseHandler
         NodeThrow,
         NodeEmptyStatement,
 
-        NodeDeclaration,
+        NodeVarDeclaration,
+        NodeLexicalDeclaration,
 
         NodeFunctionDefinition,
 
@@ -376,14 +377,17 @@ class SyntaxParseHandler
     }
 
     Node newDeclarationList(ParseNodeKind kind, JSOp op = JSOP_NOP) {
-        return NodeDeclaration;
+        if (kind == PNK_VAR)
+            return NodeVarDeclaration;
+        MOZ_ASSERT(kind == PNK_LET || kind == PNK_CONST);
+        return NodeLexicalDeclaration;
     }
     Node newDeclarationList(ParseNodeKind kind, Node kid, JSOp op = JSOP_NOP) {
-        return NodeDeclaration;
+        return newDeclarationList(kind, op);
     }
 
     bool isDeclarationList(Node node) {
-        return node == NodeDeclaration;
+        return node == NodeVarDeclaration || node == NodeLexicalDeclaration;
     }
 
     Node singleBindingFromDeclaration(Node decl) {
@@ -419,7 +423,8 @@ class SyntaxParseHandler
                    list == NodeUnparenthesizedArray ||
                    list == NodeUnparenthesizedObject ||
                    list == NodeUnparenthesizedCommaExpr ||
-                   list == NodeDeclaration ||
+                   list == NodeVarDeclaration ||
+                   list == NodeLexicalDeclaration ||
                    list == NodeFunctionCall);
     }
 
@@ -442,7 +447,7 @@ class SyntaxParseHandler
     }
 
     bool isStatementPermittedAfterReturnStatement(Node pn) {
-        return pn == NodeFunctionDefinition || pn == NodeDeclaration ||
+        return pn == NodeFunctionDefinition || pn == NodeVarDeclaration ||
                pn == NodeBreak ||
                pn == NodeThrow ||
                pn == NodeEmptyStatement;

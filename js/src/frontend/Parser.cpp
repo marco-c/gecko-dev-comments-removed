@@ -4322,12 +4322,10 @@ Parser<ParseHandler>::declarationList(YieldHandling yieldHandling,
     return decl;
 }
 
-template <>
-ParseNode*
-Parser<FullParseHandler>::lexicalDeclaration(YieldHandling yieldHandling, bool isConst)
+template <typename ParseHandler>
+typename ParseHandler::Node
+Parser<ParseHandler>::lexicalDeclaration(YieldHandling yieldHandling, bool isConst)
 {
-    handler.disableSyntaxParser();
-
     
 
 
@@ -4339,19 +4337,11 @@ Parser<FullParseHandler>::lexicalDeclaration(YieldHandling yieldHandling, bool i
 
 
 
-    ParseNode* decl = declarationList(yieldHandling, isConst ? PNK_CONST : PNK_LET);
+    Node decl = declarationList(yieldHandling, isConst ? PNK_CONST : PNK_LET);
     if (!decl || !MatchOrInsertSemicolonAfterExpression(tokenStream))
         return null();
 
     return decl;
-}
-
-template <>
-SyntaxParseHandler::Node
-Parser<SyntaxParseHandler>::lexicalDeclaration(YieldHandling, bool)
-{
-    JS_ALWAYS_FALSE(abortIfSyntaxParser());
-    return SyntaxParseHandler::NodeFailure;
 }
 
 template <>
@@ -6899,8 +6889,6 @@ Parser<ParseHandler>::statementListItem(YieldHandling yieldHandling,
       
       case TOK_LET:
       case TOK_CONST:
-        if (!abortIfSyntaxParser())
-            return null();
         
         
         return lexicalDeclaration(yieldHandling,  tt == TOK_CONST);
