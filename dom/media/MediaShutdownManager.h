@@ -7,14 +7,14 @@
 #if !defined(MediaShutdownManager_h_)
 #define MediaShutdownManager_h_
 
-#include "nsIObserver.h"
 #include "mozilla/Monitor.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/StaticPtr.h"
-#include "nsIThread.h"
 #include "nsCOMPtr.h"
-#include "nsTHashtable.h"
+#include "nsIAsyncShutdown.h"
+#include "nsIThread.h"
 #include "nsHashKeys.h"
+#include "nsTHashtable.h"
 
 namespace mozilla {
 
@@ -57,10 +57,10 @@ class MediaDecoder;
 
 
 
-class MediaShutdownManager : public nsIObserver {
+class MediaShutdownManager : public nsIAsyncShutdownBlocker {
 public:
   NS_DECL_ISUPPORTS
-  NS_DECL_NSIOBSERVER
+  NS_DECL_NSIASYNCSHUTDOWNBLOCKER
 
   
   
@@ -79,8 +79,6 @@ private:
 
   MediaShutdownManager();
   virtual ~MediaShutdownManager();
-
-  void Shutdown();
 
   
   
