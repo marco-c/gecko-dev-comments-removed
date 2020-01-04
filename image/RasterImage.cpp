@@ -60,10 +60,6 @@ namespace image {
 using std::ceil;
 using std::min;
 
-
-
-static int32_t sMaxDecodeCount = 0;
-
 #ifndef DEBUG
 NS_IMPL_ISUPPORTS(RasterImage, imgIContainer, nsIProperties)
 #else
@@ -112,13 +108,6 @@ RasterImage::~RasterImage()
 
   
   Telemetry::Accumulate(Telemetry::IMAGE_DECODE_COUNT, mDecodeCount);
-
-  if (mDecodeCount > sMaxDecodeCount) {
-    sMaxDecodeCount = mDecodeCount;
-    
-    Telemetry::ClearHistogram(Telemetry::IMAGE_MAX_DECODE_COUNT);
-    Telemetry::Accumulate(Telemetry::IMAGE_MAX_DECODE_COUNT, sMaxDecodeCount);
-  }
 }
 
 nsresult
