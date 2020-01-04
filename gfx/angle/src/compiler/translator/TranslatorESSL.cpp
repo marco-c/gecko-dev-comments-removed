@@ -25,8 +25,7 @@ void TranslatorESSL::initBuiltInFunctionEmulator(BuiltInFunctionEmulator *emu, i
     }
 }
 
-void TranslatorESSL::translate(TIntermNode *root, int compileOptions)
-{
+void TranslatorESSL::translate(TIntermNode *root, int) {
     TInfoSinkBase& sink = getInfoSink().obj;
 
     int shaderVer = getShaderVersion();
@@ -35,12 +34,10 @@ void TranslatorESSL::translate(TIntermNode *root, int compileOptions)
         sink << "#version " << shaderVer << " es\n";
     }
 
-    
-    writeExtensionBehavior();
+    writePragma();
 
     
-    
-    writePragma(compileOptions);
+    writeExtensionBehavior();
 
     bool precisionEmulation = getResources().WEBGL_debug_shader_precision && getPragma().debugShaderPrecision;
 
@@ -49,7 +46,7 @@ void TranslatorESSL::translate(TIntermNode *root, int compileOptions)
         EmulatePrecision emulatePrecision(getSymbolTable(), shaderVer);
         root->traverse(&emulatePrecision);
         emulatePrecision.updateTree();
-        emulatePrecision.writeEmulationHelpers(sink, shaderVer, SH_ESSL_OUTPUT);
+        emulatePrecision.writeEmulationHelpers(sink, SH_ESSL_OUTPUT);
     }
 
     RecordConstantPrecision(root, getTemporaryIndex());
@@ -78,23 +75,10 @@ void TranslatorESSL::translate(TIntermNode *root, int compileOptions)
     
     getArrayBoundsClamper().OutputClampingFunctionDefinition(sink);
 
-    if (getShaderType() == GL_COMPUTE_SHADER && isComputeShaderLocalSizeDeclared())
-    {
-        const sh::WorkGroupSize &localSize = getComputeShaderLocalSize();
-        sink << "layout (local_size_x=" << localSize[0] << ", local_size_y=" << localSize[1]
-             << ", local_size_z=" << localSize[2] << ") in;\n";
-    }
-
     
     TOutputESSL outputESSL(sink, getArrayIndexClampingStrategy(), getHashFunction(), getNameMap(),
                            getSymbolTable(), shaderVer, precisionEmulation);
     root->traverse(&outputESSL);
-}
-
-bool TranslatorESSL::shouldFlattenPragmaStdglInvariantAll()
-{
-    
-    return false;
 }
 
 void TranslatorESSL::writeExtensionBehavior() {

@@ -27,7 +27,6 @@
 
 #include "KHR/khrplatform.h"
 
-#include <array>
 #include <map>
 #include <string>
 #include <vector>
@@ -49,39 +48,36 @@ typedef unsigned int GLenum;
 
 
 
-#define ANGLE_SH_VERSION 155
+#define ANGLE_SH_VERSION 146
 
 typedef enum {
-    SH_GLES2_SPEC,
-    SH_WEBGL_SPEC,
+  SH_GLES2_SPEC = 0x8B40,
+  SH_WEBGL_SPEC = 0x8B41,
 
-    SH_GLES3_SPEC,
-    SH_WEBGL2_SPEC,
+  SH_GLES3_SPEC = 0x8B86,
+  SH_WEBGL2_SPEC = 0x8B87,
 
-    SH_GLES3_1_SPEC,
-    SH_WEBGL3_SPEC,
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    SH_CSS_SHADERS_SPEC
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  SH_CSS_SHADERS_SPEC = 0x8B42
 } ShShaderSpec;
 
 typedef enum
@@ -117,120 +113,101 @@ typedef enum
 
 
 typedef enum {
-    SH_VALIDATE                           = 0,
-    SH_VALIDATE_LOOP_INDEXING             = 0x0001,
-    SH_INTERMEDIATE_TREE                  = 0x0002,
-    SH_OBJECT_CODE                        = 0x0004,
-    SH_VARIABLES                          = 0x0008,
-    SH_LINE_DIRECTIVES                    = 0x0010,
-    SH_SOURCE_PATH                        = 0x0020,
-    SH_UNROLL_FOR_LOOP_WITH_INTEGER_INDEX = 0x0040,
-    
-    
-    
-    
-    SH_UNROLL_FOR_LOOP_WITH_SAMPLER_ARRAY_INDEX = 0x0080,
+  SH_VALIDATE                = 0,
+  SH_VALIDATE_LOOP_INDEXING  = 0x0001,
+  SH_INTERMEDIATE_TREE       = 0x0002,
+  SH_OBJECT_CODE             = 0x0004,
+  SH_VARIABLES               = 0x0008,
+  SH_LINE_DIRECTIVES         = 0x0010,
+  SH_SOURCE_PATH             = 0x0020,
+  SH_UNROLL_FOR_LOOP_WITH_INTEGER_INDEX = 0x0040,
+  
+  
+  
+  
+  SH_UNROLL_FOR_LOOP_WITH_SAMPLER_ARRAY_INDEX = 0x0080,
 
-    
-    SH_EMULATE_BUILT_IN_FUNCTIONS = 0x0100,
+  
+  SH_EMULATE_BUILT_IN_FUNCTIONS = 0x0100,
 
-    
-    
-    
-    
-    
-    
-    SH_TIMING_RESTRICTIONS = 0x0200,
+  
+  
+  
+  
+  
+  
+  SH_TIMING_RESTRICTIONS = 0x0200,
 
-    
-    
-    
-    
-    
-    
-    SH_DEPENDENCY_GRAPH = 0x0400,
+  
+  
+  
+  
+  
+  
+  SH_DEPENDENCY_GRAPH = 0x0400,
 
-    
-    
-    
-    
-    
-    
-    SH_ENFORCE_PACKING_RESTRICTIONS = 0x0800,
+  
+  
+  
+  
+  
+  
+  SH_ENFORCE_PACKING_RESTRICTIONS = 0x0800,
 
-    
-    
-    
-    
-    
-    
-    SH_CLAMP_INDIRECT_ARRAY_BOUNDS = 0x1000,
+  
+  
+  
+  
+  
+  
+  SH_CLAMP_INDIRECT_ARRAY_BOUNDS = 0x1000,
 
-    
-    SH_LIMIT_EXPRESSION_COMPLEXITY = 0x2000,
+  
+  SH_LIMIT_EXPRESSION_COMPLEXITY = 0x2000,
 
-    
-    SH_LIMIT_CALL_STACK_DEPTH = 0x4000,
+  
+  SH_LIMIT_CALL_STACK_DEPTH = 0x4000,
 
-    
-    
-    
-    
-    SH_INIT_GL_POSITION = 0x8000,
+  
+  
+  
+  
+  SH_INIT_GL_POSITION = 0x8000,
 
-    
-    
-    
-    
-    
-    SH_UNFOLD_SHORT_CIRCUIT = 0x10000,
+  
+  
+  
+  
+  
+  SH_UNFOLD_SHORT_CIRCUIT = 0x10000,
 
-    
-    
-    SH_INIT_OUTPUT_VARIABLES = 0x20000,
-    
-    SH_INIT_VARYINGS_WITHOUT_STATIC_USE = 0x20000,
+  
+  
+  
+  
+  SH_INIT_VARYINGS_WITHOUT_STATIC_USE = 0x20000,
 
-    
-    
-    SH_SCALARIZE_VEC_AND_MAT_CONSTRUCTOR_ARGS = 0x40000,
+  
+  
+  SH_SCALARIZE_VEC_AND_MAT_CONSTRUCTOR_ARGS = 0x40000,
 
-    
-    
-    
-    SH_REGENERATE_STRUCT_NAMES = 0x80000,
+  
+  
+  
+  SH_REGENERATE_STRUCT_NAMES = 0x80000,
 
-    
-    
-    
-    SH_DONT_PRUNE_UNUSED_FUNCTIONS = 0x100000,
+  
+  
+  
+  SH_DONT_PRUNE_UNUSED_FUNCTIONS = 0x100000,
 
-    
-    
-    SH_REMOVE_POW_WITH_CONSTANT_EXPONENT = 0x200000,
+  
+  
+  SH_REMOVE_POW_WITH_CONSTANT_EXPONENT = 0x200000,
 
-    
-    
-    SH_REWRITE_DO_WHILE_LOOPS = 0x400000,
-
-    
-    
-    
-    SH_EXPAND_SELECT_HLSL_INTEGER_POW_EXPRESSIONS = 0x800000,
-
-    
-    
-    
-    SH_FLATTEN_PRAGMA_STDGL_INVARIANT_ALL = 0x1000000,
-
-    
-    
-    
-    SH_HLSL_GET_DIMENSIONS_IGNORES_BASE_LEVEL = 0x2000000,
-
-    
-    
-    SH_REWRITE_TEXELFETCHOFFSET_TO_TEXELFETCH = 0x4000000,
+  
+  
+  SH_REWRITE_DO_WHILE_LOOPS = 0x400000,
 } ShCompileOptions;
 
 
@@ -333,68 +310,6 @@ typedef struct
     
     
     int MaxFunctionParameters;
-
-    
-
-    
-    int MaxImageUnits;
-
-    
-    int MaxVertexImageUniforms;
-
-    
-    int MaxFragmentImageUniforms;
-
-    
-    int MaxComputeImageUniforms;
-
-    
-    int MaxCombinedImageUniforms;
-
-    
-    int MaxCombinedShaderOutputResources;
-
-    
-    std::array<int, 3> MaxComputeWorkGroupCount;
-    
-    std::array<int, 3> MaxComputeWorkGroupSize;
-
-    
-    int MaxComputeUniformComponents;
-
-    
-    int MaxComputeTextureImageUnits;
-
-    
-    int MaxComputeAtomicCounters;
-
-    
-    int MaxComputeAtomicCounterBuffers;
-
-    
-    int MaxVertexAtomicCounters;
-
-    
-    int MaxFragmentAtomicCounters;
-
-    
-    int MaxCombinedAtomicCounters;
-
-    
-    int MaxAtomicCounterBindings;
-
-    
-    int MaxVertexAtomicCounterBuffers;
-
-    
-    int MaxFragmentAtomicCounterBuffers;
-
-    
-    int MaxCombinedAtomicCounterBuffers;
-
-    
-    int MaxAtomicCounterBufferSize;
-
 } ShBuiltInResources;
 
 
@@ -510,7 +425,6 @@ COMPILER_EXPORT const std::vector<sh::Varying> *ShGetVaryings(const ShHandle han
 COMPILER_EXPORT const std::vector<sh::Attribute> *ShGetAttributes(const ShHandle handle);
 COMPILER_EXPORT const std::vector<sh::OutputVariable> *ShGetOutputVariables(const ShHandle handle);
 COMPILER_EXPORT const std::vector<sh::InterfaceBlock> *ShGetInterfaceBlocks(const ShHandle handle);
-COMPILER_EXPORT sh::WorkGroupSize ShGetComputeShaderLocalGroupSize(const ShHandle handle);
 
 typedef struct
 {
@@ -525,9 +439,11 @@ typedef struct
 
 
 
+
 COMPILER_EXPORT bool ShCheckVariablesWithinPackingLimits(
     int maxVectors,
-    const std::vector<sh::ShaderVariable> &variables);
+    ShVariableInfo *varInfoArray,
+    size_t varInfoArraySize);
 
 
 

@@ -310,9 +310,23 @@ bool FramebufferD3D::checkStatus() const
     }
 
     
-    if (!mState.colorAttachmentsAreUniqueImages())
+    const auto &colorAttachments = mState.getColorAttachments();
+    for (size_t colorAttachment = 0; colorAttachment < colorAttachments.size(); colorAttachment++)
     {
-        return false;
+        const gl::FramebufferAttachment &attachment = colorAttachments[colorAttachment];
+        if (attachment.isAttached())
+        {
+            for (size_t prevColorAttachment = 0; prevColorAttachment < colorAttachment; prevColorAttachment++)
+            {
+                const gl::FramebufferAttachment &prevAttachment = colorAttachments[prevColorAttachment];
+                if (prevAttachment.isAttached() &&
+                    (attachment.id() == prevAttachment.id() &&
+                     attachment.type() == prevAttachment.type()))
+                {
+                    return false;
+                }
+            }
+        }
     }
 
     

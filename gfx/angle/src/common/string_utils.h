@@ -47,21 +47,6 @@ bool HexStringToUInt(const std::string &input, unsigned int *uintOut);
 bool ReadFileToString(const std::string &path, std::string *stringOut);
 
 Optional<std::vector<wchar_t>> WidenString(size_t length, const char *cString);
-
-
-
-
-bool BeginsWith(const std::string &str, const char *prefix);
-
-
-
-
-bool BeginsWith(const char *str, const char *prefix);
-
-
-
-
-bool EndsWith(const std::string& str, const char* suffix);
 }
 
 #endif 

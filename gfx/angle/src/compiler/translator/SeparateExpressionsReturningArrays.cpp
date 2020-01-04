@@ -12,7 +12,6 @@
 #include "compiler/translator/SeparateExpressionsReturningArrays.h"
 
 #include "compiler/translator/IntermNode.h"
-#include "compiler/translator/IntermNodePatternMatcher.h"
 
 namespace
 {
@@ -33,14 +32,11 @@ class SeparateExpressionsTraverser : public TIntermTraverser
     
     
     bool mFoundArrayExpression;
-
-    IntermNodePatternMatcher mPatternToSeparateMatcher;
 };
 
 SeparateExpressionsTraverser::SeparateExpressionsTraverser()
     : TIntermTraverser(true, false, false),
-      mFoundArrayExpression(false),
-      mPatternToSeparateMatcher(IntermNodePatternMatcher::kExpressionReturningArray)
+      mFoundArrayExpression(false)
 {
 }
 
@@ -78,24 +74,30 @@ bool SeparateExpressionsTraverser::visitBinary(Visit visit, TIntermBinary *node)
         return false;
 
     
-    if (!mPatternToSeparateMatcher.match(node, getParentNode()))
+    if (!node->getType().isArray() || parentNodeIsBlock())
         return true;
 
-    ASSERT(node->getOp() == EOpAssign);
+    switch (node->getOp())
+    {
+      case EOpAssign:
+        {
+            mFoundArrayExpression = true;
 
-    mFoundArrayExpression = true;
+            TIntermSequence insertions;
+            insertions.push_back(CopyAssignmentNode(node));
+            
+            
+            
+            insertions.push_back(createTempInitDeclaration(node->getLeft()));
+            insertStatementsInParentBlock(insertions);
 
-    TIntermSequence insertions;
-    insertions.push_back(CopyAssignmentNode(node));
-    
-    
-    
-    insertions.push_back(createTempInitDeclaration(node->getLeft()));
-    insertStatementsInParentBlock(insertions);
-
-    queueReplacement(node, createTempSymbol(node->getType()), OriginalNode::IS_DROPPED);
-
-    return false;
+            NodeUpdateEntry replaceVariable(getParentNode(), node, createTempSymbol(node->getType()), false);
+            mReplacements.push_back(replaceVariable);
+        }
+        return false;
+      default:
+        return true;
+    }
 }
 
 bool SeparateExpressionsTraverser::visitAggregate(Visit visit, TIntermAggregate *node)
@@ -103,20 +105,43 @@ bool SeparateExpressionsTraverser::visitAggregate(Visit visit, TIntermAggregate 
     if (mFoundArrayExpression)
         return false; 
 
-    if (!mPatternToSeparateMatcher.match(node, getParentNode()))
-        return true;
+    if (getParentNode() != nullptr)
+    {
+        TIntermBinary *parentBinary = getParentNode()->getAsBinaryNode();
+        bool parentIsAssignment = (parentBinary != nullptr &&
+            (parentBinary->getOp() == EOpAssign || parentBinary->getOp() == EOpInitialize));
 
-    ASSERT(node->isConstructor() || node->getOp() == EOpFunctionCall);
+        if (!node->getType().isArray() || parentNodeIsBlock() || parentIsAssignment)
+            return true;
 
-    mFoundArrayExpression = true;
+        if (node->isConstructor())
+        {
+            mFoundArrayExpression = true;
 
-    TIntermSequence insertions;
-    insertions.push_back(createTempInitDeclaration(CopyAggregateNode(node)));
-    insertStatementsInParentBlock(insertions);
+            TIntermSequence insertions;
+            insertions.push_back(createTempInitDeclaration(CopyAggregateNode(node)));
+            insertStatementsInParentBlock(insertions);
 
-    queueReplacement(node, createTempSymbol(node->getType()), OriginalNode::IS_DROPPED);
+            NodeUpdateEntry replaceVariable(getParentNode(), node, createTempSymbol(node->getType()), false);
+            mReplacements.push_back(replaceVariable);
 
-    return false;
+            return false;
+        }
+        else if (node->getOp() == EOpFunctionCall)
+        {
+            mFoundArrayExpression = true;
+
+            TIntermSequence insertions;
+            insertions.push_back(createTempInitDeclaration(CopyAggregateNode(node)));
+            insertStatementsInParentBlock(insertions);
+
+            NodeUpdateEntry replaceVariable(getParentNode(), node, createTempSymbol(node->getType()), false);
+            mReplacements.push_back(replaceVariable);
+
+            return false;
+        }
+    }
+    return true;
 }
 
 void SeparateExpressionsTraverser::nextIteration()

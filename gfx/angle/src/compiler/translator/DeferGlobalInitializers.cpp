@@ -130,7 +130,7 @@ bool DeferGlobalInitializersTraverser::visitBinary(Visit visit, TIntermBinary *n
                 ASSERT(symbolNode->getQualifier() == EvqGlobal);
             }
             
-            queueReplacement(node, symbolNode, OriginalNode::IS_DROPPED);
+            mReplacements.push_back(NodeUpdateEntry(getParentNode(), node, symbolNode, false));
         }
     }
     return false;

@@ -85,9 +85,6 @@ class TCompiler : public TShHandleBase
     int getShaderVersion() const { return shaderVersion; }
     TInfoSink& getInfoSink() { return infoSink; }
 
-    bool isComputeShaderLocalSizeDeclared() const { return mComputeShaderLocalSizeDeclared; }
-    const sh::WorkGroupSize &getComputeShaderLocalSize() { return mComputeShaderLocalSize; }
-
     
     void clearResults();
 
@@ -135,7 +132,9 @@ class TCompiler : public TShHandleBase
     bool enforcePackingRestrictions();
     
     
-    void initializeOutputVariables(TIntermNode *root);
+    
+    
+    void initializeVaryingsWithoutStaticUse(TIntermNode* root);
     
     
     
@@ -154,21 +153,12 @@ class TCompiler : public TShHandleBase
     const TExtensionBehavior& getExtensionBehavior() const;
     const char *getSourcePath() const;
     const TPragma& getPragma() const { return mPragma; }
-    void writePragma(int compileOptions);
+    void writePragma();
     unsigned int *getTemporaryIndex() { return &mTemporaryIndex; }
-    
-    bool isVaryingDefined(const char *varyingName);
 
     const ArrayBoundsClamper& getArrayBoundsClamper() const;
     ShArrayIndexClampingStrategy getArrayIndexClampingStrategy() const;
     const BuiltInFunctionEmulator& getBuiltInFunctionEmulator() const;
-
-    virtual bool shouldCollectVariables(int compileOptions)
-    {
-        return (compileOptions & SH_VARIABLES) != 0;
-    }
-
-    virtual bool shouldFlattenPragmaStdglInvariantAll() = 0;
 
     std::vector<sh::Attribute> attributes;
     std::vector<sh::OutputVariable> outputVariables;
@@ -176,7 +166,11 @@ class TCompiler : public TShHandleBase
     std::vector<sh::ShaderVariable> expandedUniforms;
     std::vector<sh::Varying> varyings;
     std::vector<sh::InterfaceBlock> interfaceBlocks;
-    bool variablesCollected;
+
+    virtual bool shouldCollectVariables(int compileOptions)
+    {
+        return (compileOptions & SH_VARIABLES) != 0;
+    }
 
   private:
     
@@ -234,10 +228,6 @@ class TCompiler : public TShHandleBase
     int shaderVersion;
     TInfoSink infoSink;  
     const char *mSourcePath; 
-
-    
-    bool mComputeShaderLocalSizeDeclared;
-    sh::WorkGroupSize mComputeShaderLocalSize;
 
     
     ShHashFunction64 hashFunction;

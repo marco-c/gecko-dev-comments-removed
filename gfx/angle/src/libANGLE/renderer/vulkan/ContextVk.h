@@ -55,7 +55,10 @@ class ContextVk : public ContextImpl
                                 const gl::IndexRange &indexRange) override;
 
     
-    GLenum getResetStatus() override;
+    void notifyDeviceLost() override;
+    bool isDeviceLost() const override;
+    bool testDeviceLost() override;
+    bool testDeviceResettable() override;
 
     
     std::string getVendorString() const override;
@@ -108,8 +111,7 @@ class ContextVk : public ContextImpl
     FenceSyncImpl *createFenceSync() override;
 
     
-    TransformFeedbackImpl *createTransformFeedback(
-        const gl::TransformFeedbackState &state) override;
+    TransformFeedbackImpl *createTransformFeedback() override;
 
     
     SamplerImpl *createSampler() override;

@@ -31,14 +31,6 @@ template <typename QueryT>
 void CastStateValues(Context *context, GLenum nativeType, GLenum pname,
                      unsigned int numParams, QueryT *outParams);
 
-
-template <typename QueryT>
-void CastIndexedStateValues(Context *context,
-                            GLenum nativeType,
-                            GLenum pname,
-                            GLuint index,
-                            unsigned int numParams,
-                            QueryT *outParams);
 }
 
 #endif  

@@ -10,9 +10,9 @@
 #ifndef GLSLANG_SHADERVARS_H_
 #define GLSLANG_SHADERVARS_H_
 
-#include <algorithm>
 #include <string>
 #include <vector>
+#include <algorithm>
 
 
 
@@ -203,9 +203,6 @@ struct COMPILER_EXPORT InterfaceBlock
     
     std::string fieldPrefix() const;
 
-    
-    bool isSameInterfaceBlockAtLinkTime(const InterfaceBlock &other) const;
-
     std::string name;
     std::string mappedName;
     std::string instanceName;
@@ -214,32 +211,6 @@ struct COMPILER_EXPORT InterfaceBlock
     bool isRowMajorLayout;
     bool staticUse;
     std::vector<InterfaceBlockField> fields;
-};
-
-struct COMPILER_EXPORT WorkGroupSize
-{
-    void fill(int fillValue);
-    void setLocalSize(int localSizeX, int localSizeY, int localSizeZ);
-
-    int &operator[](size_t index);
-    int operator[](size_t index) const;
-    size_t size() const;
-
-    
-    
-    
-    bool isWorkGroupSizeMatching(const WorkGroupSize &right) const;
-
-    
-    bool isAnyValueSet() const;
-
-    
-    bool isDeclared() const;
-
-    
-    bool isLocalSizeValid() const;
-
-    int localSizeQualifiers[3];
 };
 
 }  

@@ -44,7 +44,6 @@ class PackUnpackTest : public ANGLETest
         );
 
         
-        
         const std::string sNormFS = SHADER_SOURCE
         (   #version 300 es\n
             precision mediump float;
@@ -55,21 +54,6 @@ class PackUnpackTest : public ANGLETest
             {
                 uint u = packSnorm2x16(v);
                 vec2 r = unpackSnorm2x16(u);
-                fragColor = vec4(r, 0.0, 1.0);
-            }
-        );
-
-        
-        const std::string uNormFS = SHADER_SOURCE
-        (   #version 300 es\n
-            precision mediump float;
-            uniform mediump vec2 v;
-            layout(location = 0) out mediump vec4 fragColor;
-
-            void main()
-            {
-                uint u = packUnorm2x16(v);
-                vec2 r = unpackUnorm2x16(u);
                 fragColor = vec4(r, 0.0, 1.0);
             }
         );
@@ -88,12 +72,10 @@ class PackUnpackTest : public ANGLETest
                  fragColor = vec4(r, 0.0, 1.0);
              }
         );
-        
 
         mSNormProgram = CompileProgram(vs, sNormFS);
-        mUNormProgram = CompileProgram(vs, uNormFS);
         mHalfProgram = CompileProgram(vs, halfFS);
-        if (mSNormProgram == 0 || mUNormProgram == 0 || mHalfProgram == 0)
+        if (mSNormProgram == 0 || mHalfProgram == 0)
         {
             FAIL() << "shader compilation failed.";
         }
@@ -117,7 +99,6 @@ class PackUnpackTest : public ANGLETest
         glDeleteTextures(1, &mOffscreenTexture2D);
         glDeleteFramebuffers(1, &mOffscreenFramebuffer);
         glDeleteProgram(mSNormProgram);
-        glDeleteProgram(mUNormProgram);
         glDeleteProgram(mHalfProgram);
 
         ANGLETest::TearDown();
@@ -150,7 +131,6 @@ class PackUnpackTest : public ANGLETest
     }
 
     GLuint mSNormProgram;
-    GLuint mUNormProgram;
     GLuint mHalfProgram;
     GLuint mOffscreenFramebuffer;
     GLuint mOffscreenTexture2D;
@@ -164,17 +144,6 @@ TEST_P(PackUnpackTest, PackUnpackSnormNormal)
     compareBeforeAfter(mSNormProgram, -0.35f, 0.75f);
     compareBeforeAfter(mSNormProgram, 0.00392f, -0.99215f);
     compareBeforeAfter(mSNormProgram, 1.0f, -0.00392f);
-}
-
-
-
-TEST_P(PackUnpackTest, PackUnpackUnormNormal)
-{
-    
-    compareBeforeAfter(mUNormProgram, 0.5f, 0.2f, 0.5f, 0.2f);
-    compareBeforeAfter(mUNormProgram, 0.35f, 0.75f, 0.35f, 0.75f);
-    compareBeforeAfter(mUNormProgram, 0.00392f, 0.99215f, 0.00392f, 0.99215f);
-    compareBeforeAfter(mUNormProgram, 1.0f, 0.00392f, 1.0f, 0.00392f);
 }
 
 
@@ -204,15 +173,6 @@ TEST_P(PackUnpackTest, PackUnpackSnormSubnormal)
 }
 
 
-
-TEST_P(PackUnpackTest, PackUnpackUnormSubnormal)
-{
-    
-    
-    compareBeforeAfter(mUNormProgram, 0.00001f, -0.00001f, 0.00001f, 0.0f);
-}
-
-
 TEST_P(PackUnpackTest, PackUnpackHalfSubnormal)
 {
     
@@ -227,25 +187,10 @@ TEST_P(PackUnpackTest, PackUnpackSnormZero)
 }
 
 
-
-TEST_P(PackUnpackTest, PackUnpackUnormZero)
-{
-    compareBeforeAfter(mUNormProgram, 0.00000f, -0.00000f, 0.00000f, 0.00000f);
-}
-
-
 TEST_P(PackUnpackTest, PackUnpackHalfZero)
 {
     
     compareBeforeAfter(mHalfProgram, 0.00000f, -0.00000f);
-}
-
-
-
-TEST_P(PackUnpackTest, PackUnpackUnormOverflow)
-{
-    
-    compareBeforeAfter(mUNormProgram, 67000.0f, -67000.0f, 1.0f, 0.0f);
 }
 
 

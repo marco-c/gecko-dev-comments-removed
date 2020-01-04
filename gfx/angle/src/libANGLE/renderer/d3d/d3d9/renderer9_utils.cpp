@@ -306,7 +306,7 @@ GLsizei GetSamplesCount(D3DMULTISAMPLE_TYPE type)
 
 bool IsFormatChannelEquivalent(D3DFORMAT d3dformat, GLenum format)
 {
-    GLenum internalFormat  = d3d9::GetD3DFormatInfo(d3dformat).info->glInternalFormat;
+    GLenum internalFormat = d3d9::GetD3DFormatInfo(d3dformat).internalFormat;
     GLenum convertedFormat = gl::GetInternalFormatInfo(internalFormat).format;
     return convertedFormat == format;
 }
@@ -646,13 +646,9 @@ WorkaroundsD3D GenerateWorkarounds()
     workarounds.mrtPerfWorkaround = true;
     workarounds.setDataFasterThanImageUpload = false;
     workarounds.useInstancedPointSpriteEmulation = false;
-
-    
-    workarounds.expandIntegerPowExpressions = true;
-
     return workarounds;
 }
 
-}  
+}
 
-}  
+}

@@ -267,10 +267,4 @@ HRESULT GetOptionalSinglePropertyValue(const ComPtr<ABI::Windows::Foundation::Co
     return result;
 }
 
-RECT InspectableNativeWindow::clientRect(const Size &size)
-{
-    
-    
-    return {0, 0, lround(size.Width * mSwapChainScale), lround(size.Height * mSwapChainScale)};
-}
 }

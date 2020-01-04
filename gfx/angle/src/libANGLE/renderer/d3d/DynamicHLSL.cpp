@@ -720,9 +720,7 @@ bool DynamicHLSL::generateShaderLinkHLSL(const gl::ContextState &data,
         ASSERT(!varying.isBuiltIn() && !varying.isStruct());
 
         
-        
-        
-        if (packedVarying.vertexOnly || (!varying.staticUse && !packedVarying.isStructField()))
+        if (registerInfo.packedVarying->vertexOnly)
             continue;
 
         pixelStream << "    ";

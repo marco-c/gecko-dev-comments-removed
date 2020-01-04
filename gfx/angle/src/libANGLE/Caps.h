@@ -14,7 +14,6 @@
 #include <set>
 #include <string>
 #include <vector>
-#include <array>
 
 namespace gl
 {
@@ -290,9 +289,6 @@ struct Extensions
     bool syncQuery;
 
     
-    bool copyTexture;
-
-    
 
     
     bool colorBufferFloat;
@@ -362,29 +358,16 @@ struct Caps
     GLfloat maxLODBias;
     GLuint maxCubeMapTextureSize;
     GLuint maxRenderbufferSize;
+    GLuint maxDrawBuffers;
+    GLuint maxColorAttachments;
+    GLuint maxViewportWidth;
+    GLuint maxViewportHeight;
     GLfloat minAliasedPointSize;
     GLfloat maxAliasedPointSize;
     GLfloat minAliasedLineWidth;
     GLfloat maxAliasedLineWidth;
 
     
-    GLuint maxDrawBuffers;
-    GLuint maxFramebufferWidth;
-    GLuint maxFramebufferHeight;
-    GLuint maxFramebufferSamples;
-    GLuint maxColorAttachments;
-    GLuint maxViewportWidth;
-    GLuint maxViewportHeight;
-    GLuint maxSampleMaskWords;
-    GLuint maxColorTextureSamples;
-    GLuint maxDepthTextureSamples;
-    GLuint maxIntegerSamples;
-    GLuint64 maxServerWaitTimeout;
-
-    
-    GLint maxVertexAttribRelativeOffset;
-    GLint maxVertexAttribBindings;
-    GLint maxVertexAttribStride;
     GLuint maxElementsIndices;
     GLuint maxElementsVertices;
     std::vector<GLenum> compressedTextureFormats;
@@ -402,6 +385,7 @@ struct Caps
     TypePrecision fragmentHighpInt;
     TypePrecision fragmentMediumpInt;
     TypePrecision fragmentLowpInt;
+    GLuint64 maxServerWaitTimeout;
 
     
     GLuint maxVertexAttributes;
@@ -410,10 +394,6 @@ struct Caps
     GLuint maxVertexUniformBlocks;
     GLuint maxVertexOutputComponents;
     GLuint maxVertexTextureImageUnits;
-    GLuint maxVertexAtomicCounterBuffers;
-    GLuint maxVertexAtomicCounters;
-    GLuint maxVertexImageUniforms;
-    GLuint maxVertexShaderStorageBlocks;
 
     
     GLuint maxFragmentUniformComponents;
@@ -421,28 +401,8 @@ struct Caps
     GLuint maxFragmentUniformBlocks;
     GLuint maxFragmentInputComponents;
     GLuint maxTextureImageUnits;
-    GLuint maxFragmentAtomicCounterBuffers;
-    GLuint maxFragmentAtomicCounters;
-    GLuint maxFragmentImageUniforms;
-    GLuint maxFragmentShaderStorageBlocks;
-    GLint minProgramTextureGatherOffset;
-    GLuint maxProgramTextureGatherOffset;
     GLint minProgramTexelOffset;
     GLint maxProgramTexelOffset;
-
-    
-    std::array<GLuint, 3> maxComputeWorkGroupCount;
-    std::array<GLuint, 3> maxComputeWorkGroupSize;
-    GLuint maxComputeWorkGroupInvocations;
-    GLuint maxComputeUniformBlocks;
-    GLuint maxComputeTextureImageUnits;
-    GLuint maxComputeSharedMemorySize;
-    GLuint maxComputeUniformComponents;
-    GLuint maxComputeAtomicCounterBuffers;
-    GLuint maxComputeAtomicCounters;
-    GLuint maxComputeImageUniforms;
-    GLuint maxCombinedComputeUniformComponents;
-    GLuint maxComputeShaderStorageBlocks;
 
     
     GLuint maxUniformBufferBindings;
@@ -454,20 +414,6 @@ struct Caps
     GLuint maxVaryingComponents;
     GLuint maxVaryingVectors;
     GLuint maxCombinedTextureImageUnits;
-    GLuint maxCombinedShaderOutputResources;
-
-    
-    GLuint maxUniformLocations;
-    GLuint maxAtomicCounterBufferBindings;
-    GLuint maxAtomicCounterBufferSize;
-    GLuint maxCombinedAtomicCounterBuffers;
-    GLuint maxCombinedAtomicCounters;
-    GLuint maxImageUnits;
-    GLuint maxCombinedImageUniforms;
-    GLuint maxShaderStorageBufferBindings;
-    GLuint64 maxShaderStorageBlockSize;
-    GLuint maxCombinedShaderStorageBlocks;
-    GLuint shaderStorageBufferOffsetAlignment;
 
     
     GLuint maxTransformFeedbackInterleavedComponents;

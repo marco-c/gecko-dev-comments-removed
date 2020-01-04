@@ -902,16 +902,15 @@ TEST_F(IfTest, DefinedOperatorValidAfterMacroExpansion)
         "#if !foo bar\n"
         "pass\n"
         "#endif\n";
-    ASSERT_TRUE(mPreprocessor.init(1, &str, 0));
+    const char *expected =
+        "\n"
+        "\n"
+        "pass\n"
+        "\n";
 
-    EXPECT_CALL(mDiagnostics, print(pp::Diagnostics::PP_CONDITIONAL_UNEXPECTED_TOKEN,
-                                    pp::SourceLocation(0, 2), "defined"));
-    EXPECT_CALL(mDiagnostics, print(pp::Diagnostics::PP_CONDITIONAL_UNEXPECTED_TOKEN,
-                                    pp::SourceLocation(0, 2), "bar"));
-
-    pp::Token token;
-    mPreprocessor.lex(&token);
+    preprocess(str, expected);
 }
+
 
 
 
@@ -924,14 +923,15 @@ TEST_F(IfTest, UnterminatedDefinedInMacro)
         "#endif\n";
     ASSERT_TRUE(mPreprocessor.init(1, &str, 0));
 
-    EXPECT_CALL(mDiagnostics, print(pp::Diagnostics::PP_CONDITIONAL_UNEXPECTED_TOKEN,
-                                    pp::SourceLocation(0, 2), "defined"));
-    EXPECT_CALL(mDiagnostics, print(pp::Diagnostics::PP_CONDITIONAL_UNEXPECTED_TOKEN,
-                                    pp::SourceLocation(0, 2), "("));
+    EXPECT_CALL(mDiagnostics,
+                print(pp::Diagnostics::PP_UNEXPECTED_TOKEN, pp::SourceLocation(0, 2), "\n"));
+    EXPECT_CALL(mDiagnostics, print(pp::Diagnostics::PP_INVALID_EXPRESSION,
+                                    pp::SourceLocation(0, 2), "syntax error"));
 
     pp::Token token;
     mPreprocessor.lex(&token);
 }
+
 
 
 
@@ -944,10 +944,10 @@ TEST_F(IfTest, UnterminatedDefinedInMacro2)
         "#endif\n";
     ASSERT_TRUE(mPreprocessor.init(1, &str, 0));
 
-    EXPECT_CALL(mDiagnostics, print(pp::Diagnostics::PP_CONDITIONAL_UNEXPECTED_TOKEN,
-                                    pp::SourceLocation(0, 2), "defined"));
-    EXPECT_CALL(mDiagnostics, print(pp::Diagnostics::PP_CONDITIONAL_UNEXPECTED_TOKEN,
-                                    pp::SourceLocation(0, 2), "("));
+    EXPECT_CALL(mDiagnostics,
+                print(pp::Diagnostics::PP_UNEXPECTED_TOKEN, pp::SourceLocation(0, 2), "\n"));
+    EXPECT_CALL(mDiagnostics, print(pp::Diagnostics::PP_INVALID_EXPRESSION,
+                                    pp::SourceLocation(0, 2), "syntax error"));
 
     pp::Token token;
     mPreprocessor.lex(&token);

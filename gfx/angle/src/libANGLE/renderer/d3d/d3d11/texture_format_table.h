@@ -14,9 +14,9 @@
 
 #include "common/angleutils.h"
 #include "common/platform.h"
-#include "libANGLE/renderer/Format.h"
 #include "libANGLE/renderer/renderer_utils.h"
 #include "libANGLE/renderer/d3d/formatutilsD3D.h"
+#include "libANGLE/renderer/d3d/d3d11/texture_format_table_autogen.h"
 
 namespace rx
 {
@@ -26,28 +26,39 @@ struct Renderer11DeviceCaps;
 namespace d3d11
 {
 
-
-
-
-
-struct Format final : angle::NonCopyable
+struct LoadImageFunctionInfo
 {
-    Format();
-    Format(GLenum internalFormat,
-           angle::Format::ID formatID,
-           DXGI_FORMAT texFormat,
-           DXGI_FORMAT srvFormat,
-           DXGI_FORMAT rtvFormat,
-           DXGI_FORMAT dsvFormat,
-           DXGI_FORMAT blitSRVFormat,
-           GLenum swizzleFormat,
-           InitializeTextureDataFunction internalFormatInitializer,
-           const Renderer11DeviceCaps &deviceCaps);
+    LoadImageFunctionInfo() : loadFunction(nullptr), requiresConversion(false) {}
+    LoadImageFunctionInfo(LoadImageFunction loadFunction, bool requiresConversion)
+        : loadFunction(loadFunction), requiresConversion(requiresConversion)
+    {
+    }
 
-    static const Format &Get(GLenum internalFormat, const Renderer11DeviceCaps &deviceCaps);
+    LoadImageFunction loadFunction;
+    bool requiresConversion;
+};
 
-    GLenum internalFormat;
-    const angle::Format &format;
+struct ANGLEFormatSet
+{
+    ANGLEFormatSet();
+    ANGLEFormatSet(ANGLEFormat format,
+                   GLenum glInternalFormat,
+                   DXGI_FORMAT texFormat,
+                   DXGI_FORMAT srvFormat,
+                   DXGI_FORMAT rtvFormat,
+                   DXGI_FORMAT dsvFormat,
+                   DXGI_FORMAT blitSRVFormat,
+                   ANGLEFormat swizzleFormat,
+                   MipGenerationFunction mipGenerationFunction,
+                   ColorReadFunction colorReadFunction);
+    ANGLEFormatSet(const ANGLEFormatSet &) = default;
+    ANGLEFormatSet &operator=(const ANGLEFormatSet &) = default;
+
+    ANGLEFormat format;
+
+    
+    
+    GLenum glInternalFormat;
 
     DXGI_FORMAT texFormat;
     DXGI_FORMAT srvFormat;
@@ -56,12 +67,31 @@ struct Format final : angle::NonCopyable
 
     DXGI_FORMAT blitSRVFormat;
 
-    const Format &swizzle;
+    ANGLEFormat swizzleFormat;
+
+    MipGenerationFunction mipGenerationFunction;
+    ColorReadFunction colorReadFunction;
+};
+
+struct TextureFormat : public angle::NonCopyable
+{
+    TextureFormat(GLenum internalFormat,
+                  const ANGLEFormat angleFormat,
+                  InitializeTextureDataFunction internalFormatInitializer);
+
+    const ANGLEFormatSet *formatSet;
+    const ANGLEFormatSet *swizzleFormatSet;
 
     InitializeTextureDataFunction dataInitializerFunction;
+    typedef std::map<GLenum, LoadImageFunctionInfo> LoadFunctionMap;
 
     LoadFunctionMap loadFunctions;
 };
+
+const ANGLEFormatSet &GetANGLEFormatSet(ANGLEFormat angleFormat);
+
+const TextureFormat &GetTextureFormatInfo(GLenum internalformat,
+                                          const Renderer11DeviceCaps &renderer11DeviceCaps);
 
 }  
 

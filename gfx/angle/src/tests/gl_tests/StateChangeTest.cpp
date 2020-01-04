@@ -262,7 +262,7 @@ TEST_P(StateChangeTest, FramebufferIncompleteStencilAttachment)
 
 TEST_P(StateChangeTest, FramebufferIncompleteDepthStencilAttachment)
 {
-    if (getClientMajorVersion() < 3 && !extensionEnabled("GL_OES_packed_depth_stencil"))
+    if (getClientVersion() < 3 && !extensionEnabled("GL_OES_packed_depth_stencil"))
     {
         std::cout << "Test skipped because packed depth+stencil not availble." << std::endl;
         return;
@@ -272,7 +272,6 @@ TEST_P(StateChangeTest, FramebufferIncompleteDepthStencilAttachment)
     {
         
         std::cout << "Test disabled on Windows Intel OpenGL." << std::endl;
-        return;
     }
 
     glBindFramebuffer(GL_FRAMEBUFFER, mFramebuffer);

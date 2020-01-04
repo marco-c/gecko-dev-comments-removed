@@ -88,12 +88,12 @@ bool CoreWindowNativeWindow::initialize(EGLNativeWindowType window, IPropertySet
         }
         else
         {
-            Size coreWindowSize;
+            SIZE coreWindowSize;
             result = GetCoreWindowSizeInPixels(mCoreWindow, &coreWindowSize);
 
             if (SUCCEEDED(result))
             {
-                mClientRect = clientRect(coreWindowSize);
+                mClientRect = { 0, 0, static_cast<long>(coreWindowSize.cx * mSwapChainScale), static_cast<long>(coreWindowSize.cy * mSwapChainScale) };
             }
         }
     }
@@ -167,6 +167,17 @@ HRESULT CoreWindowNativeWindow::createSwapChain(ID3D11Device *device,
     HRESULT result = factory->CreateSwapChainForCoreWindow(device, mCoreWindow.Get(), &swapChainDesc, nullptr, newSwapChain.ReleaseAndGetAddressOf());
     if (SUCCEEDED(result))
     {
+
+#if (WINAPI_FAMILY == WINAPI_FAMILY_PHONE_APP)
+        
+        
+        
+        if (newSwapChain->ResizeBuffers(swapChainDesc.BufferCount, swapChainDesc.Width, swapChainDesc.Height, swapChainDesc.Format, DXGI_SWAP_CHAIN_FLAG_NONPREROTATED | DXGI_SWAP_CHAIN_FLAG_GDI_COMPATIBLE) == DXGI_ERROR_UNSUPPORTED)
+        {
+            mSupportsSwapChainResize = false;
+        }
+#endif 
+
         result = newSwapChain.CopyTo(swapChain);
     }
 
@@ -183,16 +194,14 @@ HRESULT CoreWindowNativeWindow::createSwapChain(ID3D11Device *device,
     return result;
 }
 
-inline HRESULT CoreWindowNativeWindow::scaleSwapChain(const Size &windowSize,
-                                                      const RECT &clientRect)
+inline HRESULT CoreWindowNativeWindow::scaleSwapChain(const SIZE &windowSize, const RECT &clientRect)
 {
     
     
     return S_OK;
 }
 
-HRESULT GetCoreWindowSizeInPixels(const ComPtr<ABI::Windows::UI::Core::ICoreWindow> &coreWindow,
-                                  Size *windowSize)
+HRESULT GetCoreWindowSizeInPixels(const ComPtr<ABI::Windows::UI::Core::ICoreWindow>& coreWindow, SIZE *windowSize)
 {
     ABI::Windows::Foundation::Rect bounds;
     HRESULT result = coreWindow->get_Bounds(&bounds);
@@ -221,9 +230,9 @@ static float GetLogicalDpi()
     return 96.0f;
 }
 
-float ConvertDipsToPixels(float dips)
+long ConvertDipsToPixels(float dips)
 {
     static const float dipsPerInch = 96.0f;
-    return dips * GetLogicalDpi() / dipsPerInch;
+    return lround((dips * GetLogicalDpi() / dipsPerInch));
 }
 }

@@ -68,7 +68,7 @@ class InspectableNativeWindow
     }
 
     
-    void setNewClientSize(const Size &newWindowSize)
+    void setNewClientSize(const SIZE &newWindowSize)
     {
         
         ASSERT(mSupportsSwapChainResize);
@@ -78,7 +78,8 @@ class InspectableNativeWindow
             
             if (!mSwapChainSizeSpecified)
             {
-                mNewClientRect     = clientRect(newWindowSize);
+                
+                mNewClientRect = { 0, 0, static_cast<long>(newWindowSize.cx * mSwapChainScale), static_cast<long>(newWindowSize.cy * mSwapChainScale) };
                 mClientRectChanged = true;
 
                 
@@ -98,8 +99,7 @@ class InspectableNativeWindow
     }
 
   protected:
-    virtual HRESULT scaleSwapChain(const Size &windowSize, const RECT &clientRect) = 0;
-    RECT clientRect(const Size &size);
+    virtual HRESULT scaleSwapChain(const SIZE &windowSize, const RECT &clientRect) = 0;
 
     bool mSupportsSwapChainResize; 
     bool mSwapChainSizeSpecified;  

@@ -47,6 +47,7 @@ void Trim11::trim()
 
 #if defined (ANGLE_ENABLE_WINDOWS_STORE)
     ID3D11Device* device = mRenderer->getDevice();
+    
     IDXGIDevice3 *dxgiDevice3 = d3d11::DynamicCastComObject<IDXGIDevice3>(device);
     if (dxgiDevice3)
     {
