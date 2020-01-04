@@ -80,8 +80,7 @@ public:
     : mResult(NS_OK)
 #ifdef DEBUG
     , mMightHaveUnreportedJSException(false)
-    , mHasMessage(false)
-    , mHasDOMExceptionInfo(false)
+    , mUnionState(HasNothing)
 #endif
   {
   }
@@ -91,10 +90,9 @@ public:
     MOZ_ASSERT_IF(IsErrorWithMessage(), !mMessage);
     MOZ_ASSERT_IF(IsDOMException(), !mDOMExceptionInfo);
     MOZ_ASSERT(!mMightHaveUnreportedJSException);
-    MOZ_ASSERT(!mHasMessage);
-    MOZ_ASSERT(!mHasDOMExceptionInfo);
+    MOZ_ASSERT(mUnionState == HasNothing);
   }
-#endif
+#endif 
 
   ErrorResult(ErrorResult&& aRHS)
     
@@ -229,6 +227,15 @@ protected:
   }
 
 private:
+#ifdef DEBUG
+  enum UnionState {
+    HasMessage,
+    HasDOMExceptionInfo,
+    HasJSException,
+    HasNothing
+  };
+#endif 
+
   friend struct IPC::ParamTraits<ErrorResult>;
   void SerializeMessage(IPC::Message* aMsg) const;
   bool DeserializeMessage(const IPC::Message* aMsg, void** aIter);
@@ -254,8 +261,8 @@ private:
     uint16_t argCount = dom::GetErrorArgCount(errorNumber);
     dom::StringArrayAppender::Append(messageArgsArray, argCount, messageArgs...);
 #ifdef DEBUG
-    mHasMessage = true;
-#endif
+    mUnionState = HasMessage;
+#endif 
   }
 
   void AssignErrorCode(nsresult aRv) {
@@ -307,15 +314,12 @@ private:
   
   
   bool mMightHaveUnreportedJSException;
-  
-  
-  
-  bool mHasMessage;
+
   
   
   
   
-  bool mHasDOMExceptionInfo;
+  UnionState mUnionState;
 #endif
 
   
