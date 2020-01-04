@@ -542,46 +542,6 @@ public:
   
 
 
-
-
-
-
-
-
-
-
-
-
-
-  enum {
-    
-
-
-
-
-    AGR_IGNORE_BACKGROUND_ATTACHMENT_FIXED = 0x01
-  };
-  static nsIFrame* GetAnimatedGeometryRootFor(nsDisplayItem* aItem,
-                                              nsDisplayListBuilder* aBuilder,
-                                              uint32_t aFlags = 0);
-  
-
-
-
-
-  static nsIFrame* GetAnimatedGeometryRootForInit(nsDisplayItem* aItem,
-                                                  nsDisplayListBuilder* aBuilder);
-
-  
-
-
-
-  static nsIFrame* GetAnimatedGeometryRootForFrame(nsDisplayListBuilder* aBuilder,
-                                                   nsIFrame* aFrame);
-
-  
-
-
   static nsIScrollableFrame* GetScrollableFrameFor(const nsIFrame *aScrolledFrame);
 
   

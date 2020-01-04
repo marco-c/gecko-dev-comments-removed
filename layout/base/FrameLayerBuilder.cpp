@@ -454,7 +454,7 @@ public:
                   const nsIntRect& aVisibleRect,
                   const DisplayItemClip& aClip,
                   LayerState aLayerState);
-  const nsIFrame* GetAnimatedGeometryRoot() { return mAnimatedGeometryRoot; }
+  AnimatedGeometryRoot* GetAnimatedGeometryRoot() { return mAnimatedGeometryRoot; }
 
   
 
@@ -537,11 +537,11 @@ public:
 
 
 
-  const nsIFrame* mAnimatedGeometryRoot;
+  AnimatedGeometryRoot* mAnimatedGeometryRoot;
   
 
 
-  const nsIFrame* mAnimatedGeometryRootForScrollMetadata;
+  AnimatedGeometryRoot* mAnimatedGeometryRootForScrollMetadata;
   
 
 
@@ -679,13 +679,13 @@ struct NewLayerEntry {
   
   
   RefPtr<Layer> mLayer;
-  const nsIFrame* mAnimatedGeometryRoot;
+  AnimatedGeometryRoot* mAnimatedGeometryRoot;
   
   
   
   
   
-  const nsIFrame* mAnimatedGeometryRootForScrollMetadata;
+  AnimatedGeometryRoot* mAnimatedGeometryRootForScrollMetadata;
   const nsIFrame* mFixedPosFrameForLayerData;
   
   
@@ -745,10 +745,10 @@ class PaintedLayerDataNode {
 public:
   PaintedLayerDataNode(PaintedLayerDataTree& aTree,
                        PaintedLayerDataNode* aParent,
-                       const nsIFrame* aAnimatedGeometryRoot);
+                       AnimatedGeometryRoot* aAnimatedGeometryRoot);
   ~PaintedLayerDataNode();
 
-  const nsIFrame* AnimatedGeometryRoot() const { return mAnimatedGeometryRoot; }
+  AnimatedGeometryRoot* GetAnimatedGeometryRoot() const { return mAnimatedGeometryRoot; }
 
   
 
@@ -761,7 +761,7 @@ public:
 
 
 
-  PaintedLayerDataNode* AddChildNodeFor(const nsIFrame* aAnimatedGeometryRoot);
+  PaintedLayerDataNode* AddChildNodeFor(AnimatedGeometryRoot* aAnimatedGeometryRoot);
 
   
 
@@ -843,7 +843,7 @@ protected:
 
   PaintedLayerDataTree& mTree;
   PaintedLayerDataNode* mParent;
-  const nsIFrame* mAnimatedGeometryRoot;
+  AnimatedGeometryRoot* mAnimatedGeometryRoot;
 
   
 
@@ -933,7 +933,7 @@ public:
 
 
 
-  void AddingOwnLayer(const nsIFrame* aAnimatedGeometryRoot,
+  void AddingOwnLayer(AnimatedGeometryRoot* aAnimatedGeometryRoot,
                       const nsIntRect* aRect,
                       nscolor* aOutUniformBackgroundColor);
 
@@ -943,7 +943,7 @@ public:
 
 
   template<typename NewPaintedLayerCallbackType>
-  PaintedLayerData* FindPaintedLayerFor(const nsIFrame* aAnimatedGeometryRoot,
+  PaintedLayerData* FindPaintedLayerFor(AnimatedGeometryRoot* aAnimatedGeometryRoot,
                                         const nsIntRect& aVisibleRect,
                                         bool aForceOwnLayer,
                                         bool aBackfaceidden,
@@ -960,7 +960,7 @@ public:
 
 
 
-  const nsIFrame* GetParentAnimatedGeometryRoot(const nsIFrame* aAnimatedGeometryRoot);
+  AnimatedGeometryRoot* GetParentAnimatedGeometryRoot(AnimatedGeometryRoot* aAnimatedGeometryRoot);
 
   
 
@@ -971,14 +971,14 @@ public:
 
 
 
-  bool IsClippedWithRespectToParentAnimatedGeometryRoot(const nsIFrame* aAnimatedGeometryRoot,
+  bool IsClippedWithRespectToParentAnimatedGeometryRoot(AnimatedGeometryRoot* aAnimatedGeometryRoot,
                                                         nsIntRect* aOutClip);
 
   
 
 
 
-  void NodeWasFinished(const nsIFrame* aAnimatedGeometryRoot);
+  void NodeWasFinished(AnimatedGeometryRoot* aAnimatedGeometryRoot);
 
   nsDisplayListBuilder* Builder() const;
   ContainerState& ContState() const { return mContainerState; }
@@ -990,14 +990,14 @@ protected:
 
 
 
-  void FinishPotentiallyIntersectingNodes(const nsIFrame* aAnimatedGeometryRoot,
+  void FinishPotentiallyIntersectingNodes(AnimatedGeometryRoot* aAnimatedGeometryRoot,
                                           const nsIntRect* aRect);
 
   
 
 
 
-  PaintedLayerDataNode* EnsureNodeFor(const nsIFrame* aAnimatedGeometryRoot);
+  PaintedLayerDataNode* EnsureNodeFor(AnimatedGeometryRoot* aAnimatedGeometryRoot);
 
   
 
@@ -1006,8 +1006,8 @@ protected:
 
 
   PaintedLayerDataNode*
-    FindNodeForAncestorAnimatedGeometryRoot(const nsIFrame* aAnimatedGeometryRoot,
-                                            const nsIFrame** aOutAncestorChild);
+    FindNodeForAncestorAnimatedGeometryRoot(AnimatedGeometryRoot* aAnimatedGeometryRoot,
+                                            AnimatedGeometryRoot** aOutAncestorChild);
 
   ContainerState& mContainerState;
   UniquePtr<PaintedLayerDataNode> mRoot;
@@ -1024,7 +1024,7 @@ protected:
 
 
 
-  nsDataHashtable<nsPtrHashKey<const nsIFrame>, PaintedLayerDataNode*> mNodes;
+  nsDataHashtable<nsPtrHashKey<AnimatedGeometryRoot>, PaintedLayerDataNode*> mNodes;
 };
 
 
@@ -1060,11 +1060,11 @@ public:
     bool isAtRoot = !aContainerItem || (aContainerItem->Frame() == mBuilder->RootReferenceFrame());
     MOZ_ASSERT_IF(isAtRoot, mContainerReferenceFrame == mBuilder->RootReferenceFrame());
     mContainerAnimatedGeometryRoot = isAtRoot
-      ? mContainerReferenceFrame
-      : aContainerItem->AnimatedGeometryRoot();
+      ? aBuilder->GetRootAnimatedGeometryRoot()
+      : aContainerItem->GetAnimatedGeometryRoot();
     MOZ_ASSERT(!mBuilder->IsPaintingToWindow() ||
       nsLayoutUtils::IsAncestorFrameCrossDoc(mBuilder->RootReferenceFrame(),
-                                             mContainerAnimatedGeometryRoot));
+                                             *mContainerAnimatedGeometryRoot));
     NS_ASSERTION(!aContainerItem || !aContainerItem->ShouldFixToViewport(mBuilder),
                  "Container items never return true for ShouldFixToViewport");
     mContainerFixedPosFrame =
@@ -1188,7 +1188,7 @@ protected:
   friend class PaintedLayerData;
 
   LayerManager::PaintedLayerCreationHint
-    GetLayerCreationHint(const nsIFrame* aAnimatedGeometryRoot);
+    GetLayerCreationHint(AnimatedGeometryRoot* aAnimatedGeometryRoot);
 
   
 
@@ -1200,14 +1200,14 @@ protected:
 
 
 
-  already_AddRefed<PaintedLayer> AttemptToRecyclePaintedLayer(const nsIFrame* aAnimatedGeometryRoot,
+  already_AddRefed<PaintedLayer> AttemptToRecyclePaintedLayer(AnimatedGeometryRoot* aAnimatedGeometryRoot,
                                                               nsDisplayItem* aItem,
                                                               const nsPoint& aTopLeft);
   
 
 
   PaintedDisplayItemLayerUserData* RecyclePaintedLayer(PaintedLayer* aLayer,
-                                                       const nsIFrame* aAnimatedGeometryRoot,
+                                                       AnimatedGeometryRoot* aAnimatedGeometryRoot,
                                                        bool& didResetScrollPositionForLayerPixelAlignment);
 
   
@@ -1217,7 +1217,7 @@ protected:
 
   void PreparePaintedLayerForUse(PaintedLayer* aLayer,
                                  PaintedDisplayItemLayerUserData* aData,
-                                 const nsIFrame* aAnimatedGeometryRoot,
+                                 AnimatedGeometryRoot* aAnimatedGeometryRoot,
                                  const nsIFrame* aReferenceFrame,
                                  const nsPoint& aTopLeft,
                                  bool aDidResetScrollPositionForLayerPixelAlignment);
@@ -1277,7 +1277,7 @@ protected:
 
 
 
-  const nsIFrame* FindFixedPosFrameForLayerData(const nsIFrame* aAnimatedGeometryRoot,
+  const nsIFrame* FindFixedPosFrameForLayerData(AnimatedGeometryRoot* aAnimatedGeometryRoot,
                                                 bool aDisplayItemFixedToViewport);
   
 
@@ -1317,7 +1317,7 @@ protected:
 
 
   nsIntRegion ComputeOpaqueRect(nsDisplayItem* aItem,
-                                const nsIFrame* aAnimatedGeometryRoot,
+                                AnimatedGeometryRoot* aAnimatedGeometryRoot,
                                 const nsIFrame* aFixedPosFrame,
                                 const DisplayItemClip& aClip,
                                 nsDisplayList* aList,
@@ -1343,8 +1343,8 @@ protected:
 
   PaintedLayerData NewPaintedLayerData(nsDisplayItem* aItem,
                                        const nsIntRect& aVisibleRect,
-                                       const nsIFrame* aAnimatedGeometryRoot,
-                                       const nsIFrame* aAnimatedGeometryRootForScrollMetadata,
+                                       AnimatedGeometryRoot* aAnimatedGeometryRoot,
+                                       AnimatedGeometryRoot* aAnimatedGeometryRootForScrollMetadata,
                                        const nsPoint& aTopLeft,
                                        bool aShouldFixToViewport);
 
@@ -1370,14 +1370,14 @@ protected:
     uint32_t aRoundedRectClipCount = UINT32_MAX);
 
   bool ChooseAnimatedGeometryRoot(const nsDisplayList& aList,
-                                  const nsIFrame **aAnimatedGeometryRoot);
+                                  AnimatedGeometryRoot **aAnimatedGeometryRoot);
 
   nsDisplayListBuilder*            mBuilder;
   LayerManager*                    mManager;
   FrameLayerBuilder*               mLayerBuilder;
   nsIFrame*                        mContainerFrame;
   nsIFrame*                        mContainerReferenceFrame;
-  const nsIFrame*                  mContainerAnimatedGeometryRoot;
+  AnimatedGeometryRoot*            mContainerAnimatedGeometryRoot;
   const nsIFrame*                  mContainerFixedPosFrame;
   ContainerLayer*                  mContainerLayer;
   nsRect                           mContainerBounds;
@@ -2087,16 +2087,16 @@ RoundToMatchResidual(double aValue, double aOldResidual)
 }
 
 static void
-ResetScrollPositionForLayerPixelAlignment(const nsIFrame* aAnimatedGeometryRoot)
+ResetScrollPositionForLayerPixelAlignment(AnimatedGeometryRoot* aAnimatedGeometryRoot)
 {
-  nsIScrollableFrame* sf = nsLayoutUtils::GetScrollableFrameFor(aAnimatedGeometryRoot);
+  nsIScrollableFrame* sf = nsLayoutUtils::GetScrollableFrameFor(*aAnimatedGeometryRoot);
   if (sf) {
     sf->ResetScrollPositionForLayerPixelAlignment();
   }
 }
 
 static void
-InvalidateEntirePaintedLayer(PaintedLayer* aLayer, const nsIFrame* aAnimatedGeometryRoot, const char *aReason)
+InvalidateEntirePaintedLayer(PaintedLayer* aLayer, AnimatedGeometryRoot* aAnimatedGeometryRoot, const char *aReason)
 {
 #ifdef MOZ_DUMP_PAINTING
   if (nsLayoutUtils::InvalidationDebuggingIsEnabled()) {
@@ -2110,18 +2110,17 @@ InvalidateEntirePaintedLayer(PaintedLayer* aLayer, const nsIFrame* aAnimatedGeom
 }
 
 LayerManager::PaintedLayerCreationHint
-ContainerState::GetLayerCreationHint(const nsIFrame* aAnimatedGeometryRoot)
+ContainerState::GetLayerCreationHint(AnimatedGeometryRoot* aAnimatedGeometryRoot)
 {
   
   
 
   
   
-  nsIFrame* fParent;
-  for (const nsIFrame* f = aAnimatedGeometryRoot;
-       f != mContainerAnimatedGeometryRoot;
-       f = nsLayoutUtils::GetAnimatedGeometryRootForFrame(mBuilder, fParent)) {
-    fParent = nsLayoutUtils::GetCrossDocParentFrame(f);
+  for (AnimatedGeometryRoot* agr = aAnimatedGeometryRoot;
+       agr != mContainerAnimatedGeometryRoot;
+       agr = agr->mParentAGR) {
+    nsIFrame* fParent = nsLayoutUtils::GetCrossDocParentFrame(*agr);
     if (!fParent) {
       break;
     }
@@ -2142,7 +2141,7 @@ ContainerState::GetLayerCreationHint(const nsIFrame* aAnimatedGeometryRoot)
 }
 
 already_AddRefed<PaintedLayer>
-ContainerState::AttemptToRecyclePaintedLayer(const nsIFrame* aAnimatedGeometryRoot,
+ContainerState::AttemptToRecyclePaintedLayer(AnimatedGeometryRoot* aAnimatedGeometryRoot,
                                              nsDisplayItem* aItem,
                                              const nsPoint& aTopLeft)
 {
@@ -2199,7 +2198,7 @@ ContainerState::CreatePaintedLayer(PaintedLayerData* aData)
 
 PaintedDisplayItemLayerUserData*
 ContainerState::RecyclePaintedLayer(PaintedLayer* aLayer,
-                                    const nsIFrame* aAnimatedGeometryRoot,
+                                    AnimatedGeometryRoot* aAnimatedGeometryRoot,
                                     bool& didResetScrollPositionForLayerPixelAlignment)
 {
   
@@ -2253,7 +2252,7 @@ ContainerState::RecyclePaintedLayer(PaintedLayer* aLayer,
 static void
 ComputeAndSetIgnoreInvalidationRect(PaintedLayer* aLayer,
                                     PaintedDisplayItemLayerUserData* aData,
-                                    const nsIFrame* aAnimatedGeometryRoot,
+                                    AnimatedGeometryRoot* aAnimatedGeometryRoot,
                                     nsDisplayListBuilder* aBuilder,
                                     const nsIntPoint& aLayerTranslation)
 {
@@ -2262,7 +2261,7 @@ ComputeAndSetIgnoreInvalidationRect(PaintedLayer* aLayer,
     return;
   }
 
-  const nsIFrame* parentFrame = aAnimatedGeometryRoot->GetParent();
+  const nsIFrame* parentFrame = (*aAnimatedGeometryRoot)->GetParent();
 
   
   
@@ -2336,7 +2335,7 @@ ComputeAndSetIgnoreInvalidationRect(PaintedLayer* aLayer,
 void
 ContainerState::PreparePaintedLayerForUse(PaintedLayer* aLayer,
                                           PaintedDisplayItemLayerUserData* aData,
-                                          const nsIFrame* aAnimatedGeometryRoot,
+                                          AnimatedGeometryRoot* aAnimatedGeometryRoot,
                                           const nsIFrame* aReferenceFrame,
                                           const nsPoint& aTopLeft,
                                           bool didResetScrollPositionForLayerPixelAlignment)
@@ -2352,8 +2351,8 @@ ContainerState::PreparePaintedLayerForUse(PaintedLayer* aLayer,
 
   
   
-  nsPoint offset = aAnimatedGeometryRoot->GetOffsetToCrossDoc(aReferenceFrame);
-  nscoord appUnitsPerDevPixel = aAnimatedGeometryRoot->PresContext()->AppUnitsPerDevPixel();
+  nsPoint offset = (*aAnimatedGeometryRoot)->GetOffsetToCrossDoc(aReferenceFrame);
+  nscoord appUnitsPerDevPixel = (*aAnimatedGeometryRoot)->PresContext()->AppUnitsPerDevPixel();
   gfxPoint scaledOffset(
       NSAppUnitsToDoublePixels(offset.x, appUnitsPerDevPixel)*mParameters.mXScale,
       NSAppUnitsToDoublePixels(offset.y, appUnitsPerDevPixel)*mParameters.mYScale);
@@ -2638,13 +2637,13 @@ PaintedLayerData::GetContainerForImageLayer(nsDisplayListBuilder* aBuilder)
 
 PaintedLayerDataNode::PaintedLayerDataNode(PaintedLayerDataTree& aTree,
                                            PaintedLayerDataNode* aParent,
-                                           const nsIFrame* aAnimatedGeometryRoot)
+                                           AnimatedGeometryRoot* aAnimatedGeometryRoot)
   : mTree(aTree)
   , mParent(aParent)
   , mAnimatedGeometryRoot(aAnimatedGeometryRoot)
   , mAllDrawingAboveBackground(false)
 {
-  MOZ_ASSERT(nsLayoutUtils::IsAncestorFrameCrossDoc(mTree.Builder()->RootReferenceFrame(), mAnimatedGeometryRoot));
+  MOZ_ASSERT(nsLayoutUtils::IsAncestorFrameCrossDoc(mTree.Builder()->RootReferenceFrame(), *mAnimatedGeometryRoot));
   mHasClip = mTree.IsClippedWithRespectToParentAnimatedGeometryRoot(mAnimatedGeometryRoot, &mClipRect);
 }
 
@@ -2655,9 +2654,9 @@ PaintedLayerDataNode::~PaintedLayerDataNode()
 }
 
 PaintedLayerDataNode*
-PaintedLayerDataNode::AddChildNodeFor(const nsIFrame* aAnimatedGeometryRoot)
+PaintedLayerDataNode::AddChildNodeFor(AnimatedGeometryRoot* aAnimatedGeometryRoot)
 {
-  MOZ_ASSERT(mTree.GetParentAnimatedGeometryRoot(aAnimatedGeometryRoot) == mAnimatedGeometryRoot);
+  MOZ_ASSERT(aAnimatedGeometryRoot->mParentAGR == mAnimatedGeometryRoot);
   UniquePtr<PaintedLayerDataNode> child =
     MakeUnique<PaintedLayerDataNode>(mTree, this, aAnimatedGeometryRoot);
   mChildren.AppendElement(Move(child));
@@ -2790,31 +2789,6 @@ PaintedLayerDataTree::Builder() const
   return mContainerState.Builder();
 }
 
-const nsIFrame*
-PaintedLayerDataTree::GetParentAnimatedGeometryRoot(const nsIFrame* aAnimatedGeometryRoot)
-{
-  MOZ_ASSERT(aAnimatedGeometryRoot);
-  MOZ_ASSERT(nsLayoutUtils::IsAncestorFrameCrossDoc(Builder()->RootReferenceFrame(), aAnimatedGeometryRoot));
-
-  if (aAnimatedGeometryRoot == Builder()->RootReferenceFrame()) {
-    return nullptr;
-  }
-
-  nsIFrame* agr = Builder()->FindAnimatedGeometryRootFor(
-    const_cast<nsIFrame*>(aAnimatedGeometryRoot));
-  MOZ_ASSERT_IF(agr, nsLayoutUtils::IsAncestorFrameCrossDoc(Builder()->RootReferenceFrame(), agr));
-  if (agr != aAnimatedGeometryRoot) {
-    return agr;
-  }
-  
-  
-  nsIFrame* parent = nsLayoutUtils::GetCrossDocParentFrame(aAnimatedGeometryRoot);
-  if (!parent) {
-    return nullptr;
-  }
-  return Builder()->FindAnimatedGeometryRootFor(parent);
-}
-
 void
 PaintedLayerDataTree::Finish()
 {
@@ -2826,13 +2800,13 @@ PaintedLayerDataTree::Finish()
 }
 
 void
-PaintedLayerDataTree::NodeWasFinished(const nsIFrame* aAnimatedGeometryRoot)
+PaintedLayerDataTree::NodeWasFinished(AnimatedGeometryRoot* aAnimatedGeometryRoot)
 {
   mNodes.Remove(aAnimatedGeometryRoot);
 }
 
 void
-PaintedLayerDataTree::AddingOwnLayer(const nsIFrame* aAnimatedGeometryRoot,
+PaintedLayerDataTree::AddingOwnLayer(AnimatedGeometryRoot* aAnimatedGeometryRoot,
                                      const nsIntRect* aRect,
                                      nscolor* aOutUniformBackgroundColor)
 {
@@ -2853,7 +2827,7 @@ PaintedLayerDataTree::AddingOwnLayer(const nsIFrame* aAnimatedGeometryRoot,
 
 template<typename NewPaintedLayerCallbackType>
 PaintedLayerData*
-PaintedLayerDataTree::FindPaintedLayerFor(const nsIFrame* aAnimatedGeometryRoot,
+PaintedLayerDataTree::FindPaintedLayerFor(AnimatedGeometryRoot* aAnimatedGeometryRoot,
                                           const nsIntRect& aVisibleRect,
                                           bool aForceOwnLayer,
                                           bool aBackfaceHidden,
@@ -2873,10 +2847,10 @@ PaintedLayerDataTree::FindPaintedLayerFor(const nsIFrame* aAnimatedGeometryRoot,
 }
 
 void
-PaintedLayerDataTree::FinishPotentiallyIntersectingNodes(const nsIFrame* aAnimatedGeometryRoot,
+PaintedLayerDataTree::FinishPotentiallyIntersectingNodes(AnimatedGeometryRoot* aAnimatedGeometryRoot,
                                                          const nsIntRect* aRect)
 {
-  const nsIFrame* ancestorThatIsChildOfCommonAncestor = nullptr;
+  AnimatedGeometryRoot* ancestorThatIsChildOfCommonAncestor = nullptr;
   PaintedLayerDataNode* ancestorNode =
     FindNodeForAncestorAnimatedGeometryRoot(aAnimatedGeometryRoot,
                                             &ancestorThatIsChildOfCommonAncestor);
@@ -2887,7 +2861,7 @@ PaintedLayerDataTree::FinishPotentiallyIntersectingNodes(const nsIFrame* aAnimat
     return;
   }
 
-  if (ancestorNode->AnimatedGeometryRoot() == aAnimatedGeometryRoot) {
+  if (ancestorNode->GetAnimatedGeometryRoot() == aAnimatedGeometryRoot) {
     
     
     MOZ_ASSERT(!ancestorThatIsChildOfCommonAncestor);
@@ -2904,8 +2878,8 @@ PaintedLayerDataTree::FinishPotentiallyIntersectingNodes(const nsIFrame* aAnimat
   
   
   MOZ_ASSERT(ancestorThatIsChildOfCommonAncestor);
-  MOZ_ASSERT(nsLayoutUtils::IsAncestorFrameCrossDoc(ancestorThatIsChildOfCommonAncestor, aAnimatedGeometryRoot));
-  MOZ_ASSERT(GetParentAnimatedGeometryRoot(ancestorThatIsChildOfCommonAncestor) == ancestorNode->AnimatedGeometryRoot());
+  MOZ_ASSERT(nsLayoutUtils::IsAncestorFrameCrossDoc(*ancestorThatIsChildOfCommonAncestor, *aAnimatedGeometryRoot));
+  MOZ_ASSERT(ancestorThatIsChildOfCommonAncestor->mParentAGR == ancestorNode->GetAnimatedGeometryRoot());
 
   
   MOZ_ASSERT(!mNodes.Get(ancestorThatIsChildOfCommonAncestor));
@@ -2921,7 +2895,7 @@ PaintedLayerDataTree::FinishPotentiallyIntersectingNodes(const nsIFrame* aAnimat
 }
 
 PaintedLayerDataNode*
-PaintedLayerDataTree::EnsureNodeFor(const nsIFrame* aAnimatedGeometryRoot)
+PaintedLayerDataTree::EnsureNodeFor(AnimatedGeometryRoot* aAnimatedGeometryRoot)
 {
   MOZ_ASSERT(aAnimatedGeometryRoot);
   PaintedLayerDataNode* node = mNodes.Get(aAnimatedGeometryRoot);
@@ -2929,10 +2903,10 @@ PaintedLayerDataTree::EnsureNodeFor(const nsIFrame* aAnimatedGeometryRoot)
     return node;
   }
 
-  const nsIFrame* parentAnimatedGeometryRoot = GetParentAnimatedGeometryRoot(aAnimatedGeometryRoot);
+  AnimatedGeometryRoot* parentAnimatedGeometryRoot = aAnimatedGeometryRoot->mParentAGR;
   if (!parentAnimatedGeometryRoot) {
     MOZ_ASSERT(!mRoot);
-    MOZ_ASSERT(aAnimatedGeometryRoot == Builder()->RootReferenceFrame());
+    MOZ_ASSERT(*aAnimatedGeometryRoot == Builder()->RootReferenceFrame());
     mRoot = MakeUnique<PaintedLayerDataNode>(*this, nullptr, aAnimatedGeometryRoot);
     node = mRoot.get();
   } else {
@@ -2946,10 +2920,10 @@ PaintedLayerDataTree::EnsureNodeFor(const nsIFrame* aAnimatedGeometryRoot)
 }
 
 bool
-PaintedLayerDataTree::IsClippedWithRespectToParentAnimatedGeometryRoot(const nsIFrame* aAnimatedGeometryRoot,
+PaintedLayerDataTree::IsClippedWithRespectToParentAnimatedGeometryRoot(AnimatedGeometryRoot* aAnimatedGeometryRoot,
                                                                        nsIntRect* aOutClip)
 {
-  nsIScrollableFrame* scrollableFrame = nsLayoutUtils::GetScrollableFrameFor(aAnimatedGeometryRoot);
+  nsIScrollableFrame* scrollableFrame = nsLayoutUtils::GetScrollableFrameFor(*aAnimatedGeometryRoot);
   if (!scrollableFrame) {
     return false;
   }
@@ -2960,8 +2934,8 @@ PaintedLayerDataTree::IsClippedWithRespectToParentAnimatedGeometryRoot(const nsI
 }
 
 PaintedLayerDataNode*
-PaintedLayerDataTree::FindNodeForAncestorAnimatedGeometryRoot(const nsIFrame* aAnimatedGeometryRoot,
-                                                              const nsIFrame** aOutAncestorChild)
+PaintedLayerDataTree::FindNodeForAncestorAnimatedGeometryRoot(AnimatedGeometryRoot* aAnimatedGeometryRoot,
+                                                              AnimatedGeometryRoot** aOutAncestorChild)
 {
   if (!aAnimatedGeometryRoot) {
     return nullptr;
@@ -2971,12 +2945,11 @@ PaintedLayerDataTree::FindNodeForAncestorAnimatedGeometryRoot(const nsIFrame* aA
     return node;
   }
   *aOutAncestorChild = aAnimatedGeometryRoot;
-  return FindNodeForAncestorAnimatedGeometryRoot(
-    GetParentAnimatedGeometryRoot(aAnimatedGeometryRoot), aOutAncestorChild);
+  return FindNodeForAncestorAnimatedGeometryRoot(aAnimatedGeometryRoot->mParentAGR, aOutAncestorChild);
 }
 
 const nsIFrame*
-ContainerState::FindFixedPosFrameForLayerData(const nsIFrame* aAnimatedGeometryRoot,
+ContainerState::FindFixedPosFrameForLayerData(AnimatedGeometryRoot* aAnimatedGeometryRoot,
                                               bool aDisplayItemFixedToViewport)
 {
   if (!mManager->IsWidgetLayerManager()) {
@@ -2987,7 +2960,7 @@ ContainerState::FindFixedPosFrameForLayerData(const nsIFrame* aAnimatedGeometryR
   nsPresContext* presContext = mContainerFrame->PresContext();
   nsIFrame* viewport = presContext->PresShell()->GetRootFrame();
 
-  if (viewport == aAnimatedGeometryRoot && aDisplayItemFixedToViewport &&
+  if (viewport == *aAnimatedGeometryRoot && aDisplayItemFixedToViewport &&
       nsLayoutUtils::ViewportHasDisplayPort(presContext)) {
     
     return viewport;
@@ -2996,7 +2969,7 @@ ContainerState::FindFixedPosFrameForLayerData(const nsIFrame* aAnimatedGeometryR
   if (!viewport->GetFirstChild(nsIFrame::kFixedList)) {
     return nullptr;
   }
-  for (const nsIFrame* f = aAnimatedGeometryRoot; f; f = f->GetParent()) {
+  for (const nsIFrame* f = *aAnimatedGeometryRoot; f; f = f->GetParent()) {
     if (nsLayoutUtils::IsFixedPosFrameInDisplayPort(f)) {
       return f;
     }
@@ -3593,8 +3566,8 @@ PaintedLayerData::AccumulateEventRegions(ContainerState* aState, nsDisplayLayerE
 PaintedLayerData
 ContainerState::NewPaintedLayerData(nsDisplayItem* aItem,
                                     const nsIntRect& aVisibleRect,
-                                    const nsIFrame* aAnimatedGeometryRoot,
-                                    const nsIFrame* aAnimatedGeometryRootForScrollMetadata,
+                                    AnimatedGeometryRoot* aAnimatedGeometryRoot,
+                                    AnimatedGeometryRoot* aAnimatedGeometryRootForScrollMetadata,
                                     const nsPoint& aTopLeft,
                                     bool aShouldFixToViewport)
 {
@@ -3704,7 +3677,7 @@ PaintInactiveLayer(nsDisplayListBuilder* aBuilder,
 
 bool
 ContainerState::ChooseAnimatedGeometryRoot(const nsDisplayList& aList,
-                                           const nsIFrame **aAnimatedGeometryRoot)
+                                           AnimatedGeometryRoot **aAnimatedGeometryRoot)
 {
   for (nsDisplayItem* item = aList.GetBottom(); item; item = item->GetAbove()) {
     LayerState layerState = item->GetLayerState(mBuilder, mManager, mParameters);
@@ -3716,7 +3689,7 @@ ContainerState::ChooseAnimatedGeometryRoot(const nsDisplayList& aList,
 
     
     
-    *aAnimatedGeometryRoot = item->AnimatedGeometryRoot();
+    *aAnimatedGeometryRoot = item->GetAnimatedGeometryRoot();
     return true;
   }
   return false;
@@ -3724,7 +3697,7 @@ ContainerState::ChooseAnimatedGeometryRoot(const nsDisplayList& aList,
 
 nsIntRegion
 ContainerState::ComputeOpaqueRect(nsDisplayItem* aItem,
-                                  const nsIFrame* aAnimatedGeometryRoot,
+                                  AnimatedGeometryRoot* aAnimatedGeometryRoot,
                                   const nsIFrame* aFixedPosFrame,
                                   const DisplayItemClip& aClip,
                                   nsDisplayList* aList,
@@ -3755,11 +3728,11 @@ ContainerState::ComputeOpaqueRect(nsDisplayItem* aItem,
     }
     opaquePixels = ScaleRegionToInsidePixels(opaqueClipped, snapOpaque);
 
-    nsIScrollableFrame* sf = nsLayoutUtils::GetScrollableFrameFor(aAnimatedGeometryRoot);
+    nsIScrollableFrame* sf = nsLayoutUtils::GetScrollableFrameFor(*aAnimatedGeometryRoot);
     if (sf) {
       nsRect displayport;
       bool usingDisplayport =
-        nsLayoutUtils::GetDisplayPort(aAnimatedGeometryRoot->GetContent(), &displayport);
+        nsLayoutUtils::GetDisplayPort((*aAnimatedGeometryRoot)->GetContent(), &displayport);
       if (!usingDisplayport) {
         
         
@@ -3783,15 +3756,15 @@ IsCaretWithCustomClip(nsDisplayItem* aItem, nsDisplayItem::Type aItemType)
 }
 
 static DisplayItemClip
-GetScrollClipIntersection(nsDisplayListBuilder* aBuilder, const nsIFrame* aAnimatedGeometryRoot,
-                          const nsIFrame* aStopAtAnimatedGeometryRoot, bool aIsCaret)
+GetScrollClipIntersection(nsDisplayListBuilder* aBuilder, AnimatedGeometryRoot* aAnimatedGeometryRoot,
+                          AnimatedGeometryRoot* aStopAtAnimatedGeometryRoot, bool aIsCaret)
 {
   DisplayItemClip resultClip;
   nsIFrame* fParent;
-  for (const nsIFrame* f = aAnimatedGeometryRoot;
-       f != aStopAtAnimatedGeometryRoot;
-       f = nsLayoutUtils::GetAnimatedGeometryRootForFrame(aBuilder, fParent)) {
-    fParent = nsLayoutUtils::GetCrossDocParentFrame(f);
+  for (AnimatedGeometryRoot* agr = aAnimatedGeometryRoot;
+       agr != aStopAtAnimatedGeometryRoot;
+       agr = agr->mParentAGR) {
+    fParent = nsLayoutUtils::GetCrossDocParentFrame(*agr);
     if (!fParent) {
       
       
@@ -3801,7 +3774,7 @@ GetScrollClipIntersection(nsDisplayListBuilder* aBuilder, const nsIFrame* aAnima
       return DisplayItemClip();
     }
 
-    nsIScrollableFrame* scrollFrame = nsLayoutUtils::GetScrollableFrameFor(f);
+    nsIScrollableFrame* scrollFrame = nsLayoutUtils::GetScrollableFrameFor(*agr);
     if (!scrollFrame) {
       continue;
     }
@@ -3834,7 +3807,7 @@ ContainerState::ProcessDisplayItems(nsDisplayList* aList)
   PROFILER_LABEL("ContainerState", "ProcessDisplayItems",
     js::ProfileEntry::Category::GRAPHICS);
 
-  const nsIFrame* lastAnimatedGeometryRoot = mContainerReferenceFrame;
+  AnimatedGeometryRoot* lastAnimatedGeometryRoot = mContainerAnimatedGeometryRoot;
   nsPoint topLeft(0,0);
 
   
@@ -3842,7 +3815,7 @@ ContainerState::ProcessDisplayItems(nsDisplayList* aList)
   
   if (mFlattenToSingleLayer) {
     if (ChooseAnimatedGeometryRoot(*aList, &lastAnimatedGeometryRoot)) {
-      topLeft = lastAnimatedGeometryRoot->GetOffsetToCrossDoc(mContainerReferenceFrame);
+      topLeft = (*lastAnimatedGeometryRoot)->GetOffsetToCrossDoc(mContainerReferenceFrame);
     }
   }
 
@@ -3896,9 +3869,9 @@ ContainerState::ProcessDisplayItems(nsDisplayList* aList)
     }
 
     bool forceInactive;
-    const nsIFrame* animatedGeometryRoot;
-    const nsIFrame* animatedGeometryRootForScrollMetadata = nullptr;
-    const nsIFrame* realAnimatedGeometryRootOfItem = item->AnimatedGeometryRoot();
+    AnimatedGeometryRoot* animatedGeometryRoot;
+    AnimatedGeometryRoot* animatedGeometryRootForScrollMetadata = nullptr;
+    AnimatedGeometryRoot* realAnimatedGeometryRootOfItem = item->GetAnimatedGeometryRoot();
     if (mFlattenToSingleLayer) {
       forceInactive = true;
       animatedGeometryRoot = lastAnimatedGeometryRoot;
@@ -3906,11 +3879,7 @@ ContainerState::ProcessDisplayItems(nsDisplayList* aList)
       forceInactive = false;
       if (mManager->IsWidgetLayerManager()) {
         animatedGeometryRoot = realAnimatedGeometryRootOfItem;
-        
-        
-        
-        animatedGeometryRootForScrollMetadata = nsLayoutUtils::GetAnimatedGeometryRootFor(
-          item, mBuilder, nsLayoutUtils::AGR_IGNORE_BACKGROUND_ATTACHMENT_FIXED);
+        animatedGeometryRootForScrollMetadata = item->AnimatedGeometryRootForScrollMetadata();
       } else {
         
         
@@ -3918,10 +3887,7 @@ ContainerState::ProcessDisplayItems(nsDisplayList* aList)
         animatedGeometryRoot = mContainerAnimatedGeometryRoot;
 
       }
-      if (animatedGeometryRoot != lastAnimatedGeometryRoot) {
-        lastAnimatedGeometryRoot = animatedGeometryRoot;
-        topLeft = animatedGeometryRoot->GetOffsetToCrossDoc(mContainerReferenceFrame);
-      }
+      topLeft = (*animatedGeometryRoot)->GetOffsetToCrossDoc(mContainerReferenceFrame);
     }
     if (!animatedGeometryRootForScrollMetadata) {
       animatedGeometryRootForScrollMetadata = animatedGeometryRoot;
@@ -3937,7 +3903,7 @@ ContainerState::ProcessDisplayItems(nsDisplayList* aList)
       item->SetClip(mBuilder, clip);
     }
 
-    bool shouldFixToViewport = !animatedGeometryRoot->GetParent() &&
+    bool shouldFixToViewport = !(*animatedGeometryRoot)->GetParent() &&
       item->ShouldFixToViewport(mBuilder);
 
     
@@ -4056,13 +4022,11 @@ ContainerState::ProcessDisplayItems(nsDisplayList* aList)
         clipRectUntyped = layerClipRect.ToUnknownRect();
         clipPtr = &clipRectUntyped;
       }
-      if (animatedGeometryRoot == item->Frame() &&
-          animatedGeometryRoot != mBuilder->RootReferenceFrame()) {
+      if (*animatedGeometryRoot == item->Frame() &&
+          *animatedGeometryRoot != mBuilder->RootReferenceFrame()) {
         
         
-        const nsIFrame* clipAnimatedGeometryRoot =
-          mPaintedLayerDataTree.GetParentAnimatedGeometryRoot(animatedGeometryRoot);
-        mPaintedLayerDataTree.AddingOwnLayer(clipAnimatedGeometryRoot,
+        mPaintedLayerDataTree.AddingOwnLayer(animatedGeometryRoot->mParentAGR,
 					     clipPtr,
 					     uniformColorPtr);
       } else if (prerenderedTransform) {
@@ -4718,14 +4682,14 @@ ContainerState::CollectOldLayers()
 }
 
 struct OpaqueRegionEntry {
-  const nsIFrame* mAnimatedGeometryRoot;
+  AnimatedGeometryRoot* mAnimatedGeometryRoot;
   const nsIFrame* mFixedPosFrameForLayerData;
   nsIntRegion mOpaqueRegion;
 };
 
 static OpaqueRegionEntry*
 FindOpaqueRegionEntry(nsTArray<OpaqueRegionEntry>& aEntries,
-                      const nsIFrame* aAnimatedGeometryRoot,
+                      AnimatedGeometryRoot* aAnimatedGeometryRoot,
                       const nsIFrame* aFixedPosFrameForLayerData)
 {
   for (uint32_t i = 0; i < aEntries.Length(); ++i) {
@@ -4767,10 +4731,10 @@ ContainerState::SetupScrollingMetadata(NewLayerEntry* aEntry)
   nsTArray<RefPtr<Layer>> maskLayers;
 
   nsIFrame* fParent;
-  for (const nsIFrame* f = aEntry->mAnimatedGeometryRootForScrollMetadata;
-       f != mContainerAnimatedGeometryRoot;
-       f = nsLayoutUtils::GetAnimatedGeometryRootForFrame(this->mBuilder, fParent)) {
-    fParent = nsLayoutUtils::GetCrossDocParentFrame(f);
+  for (AnimatedGeometryRoot* agr = aEntry->mAnimatedGeometryRootForScrollMetadata;
+       agr != mContainerAnimatedGeometryRoot;
+       agr = agr->mParentAGR) {
+    fParent = nsLayoutUtils::GetCrossDocParentFrame(*agr);
     if (!fParent) {
       
       
@@ -4784,7 +4748,7 @@ ContainerState::SetupScrollingMetadata(NewLayerEntry* aEntry)
       return;
     }
 
-    nsIScrollableFrame* scrollFrame = nsLayoutUtils::GetScrollableFrameFor(f);
+    nsIScrollableFrame* scrollFrame = nsLayoutUtils::GetScrollableFrameFor(*agr);
     if (!scrollFrame) {
       continue;
     }
@@ -4881,7 +4845,7 @@ ContainerState::PostprocessRetainedLayers(nsIntRegion* aOpaqueRegionForContainer
     
     
     
-    const nsIFrame* animatedGeometryRootForOpaqueness =
+    AnimatedGeometryRoot* animatedGeometryRootForOpaqueness =
         mFlattenToSingleLayer ? mContainerAnimatedGeometryRoot : e->mAnimatedGeometryRoot;
     OpaqueRegionEntry* data = FindOpaqueRegionEntry(opaqueRegions,
         animatedGeometryRootForOpaqueness, e->mFixedPosFrameForLayerData);
@@ -4911,10 +4875,9 @@ ContainerState::PostprocessRetainedLayers(nsIntRegion* aOpaqueRegionForContainer
     }
 
     if (!e->mOpaqueRegion.IsEmpty()) {
-      const nsIFrame* animatedGeometryRootToCover = animatedGeometryRootForOpaqueness;
+      AnimatedGeometryRoot* animatedGeometryRootToCover = animatedGeometryRootForOpaqueness;
       if (e->mOpaqueForAnimatedGeometryRootParent &&
-          nsLayoutUtils::GetAnimatedGeometryRootForFrame(mBuilder, e->mAnimatedGeometryRoot->GetParent())
-            == mContainerAnimatedGeometryRoot) {
+          e->mAnimatedGeometryRoot->mParentAGR == mContainerAnimatedGeometryRoot) {
         animatedGeometryRootToCover = mContainerAnimatedGeometryRoot;
         data = FindOpaqueRegionEntry(opaqueRegions,
             animatedGeometryRootToCover, e->mFixedPosFrameForLayerData);

@@ -116,6 +116,47 @@ typedef mozilla::EnumSet<mozilla::gfx::CompositionOp> BlendModeSet;
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+struct AnimatedGeometryRoot
+{
+  AnimatedGeometryRoot(nsIFrame* aFrame, AnimatedGeometryRoot* aParent)
+    : mFrame(aFrame)
+    , mParentAGR(aParent)
+  {}
+
+  operator nsIFrame*() { return mFrame; }
+
+  nsIFrame* operator ->() const { return mFrame; }
+
+  void* operator new(size_t aSize,
+                     nsDisplayListBuilder* aBuilder) CPP_THROW_NEW;
+
+  nsIFrame* mFrame;
+  AnimatedGeometryRoot* mParentAGR;
+};
+
+
+
+
+
+
+
+
+
+
 class nsDisplayListBuilder {
   
 
@@ -178,7 +219,7 @@ public:
     EVENT_DELIVERY,
     PLUGIN_GEOMETRY,
     IMAGE_VISIBILITY,
-    OTHER
+    TRANSFORM_COMPUTATION
   };
   nsDisplayListBuilder(nsIFrame* aReferenceFrame, Mode aMode, bool aBuildCaret);
   ~nsDisplayListBuilder();
@@ -249,18 +290,6 @@ public:
 
   const nsIFrame* FindReferenceFrameFor(const nsIFrame *aFrame,
                                         nsPoint* aOffset = nullptr);
-
-  
-
-
-
-  bool IsAnimatedGeometryRoot(nsIFrame* aFrame, nsIFrame** aParent = nullptr);
-
-  
-
-
-
-  nsIFrame* FindAnimatedGeometryRootFor(nsIFrame* aFrame);
 
   
 
@@ -377,9 +406,13 @@ public:
   const nsIFrame* GetCurrentFrame() { return mCurrentFrame; }
   const nsIFrame* GetCurrentReferenceFrame() { return mCurrentReferenceFrame; }
   const nsPoint& GetCurrentFrameOffsetToReferenceFrame() { return mCurrentOffsetToReferenceFrame; }
-  const nsIFrame* GetCurrentAnimatedGeometryRoot() {
-    return mCurrentAnimatedGeometryRoot;
+  AnimatedGeometryRoot* GetCurrentAnimatedGeometryRoot() {
+    return mCurrentAGR;
   }
+  AnimatedGeometryRoot* GetRootAnimatedGeometryRoot() {
+    return &mRootAGR;
+  }
+
   void RecomputeCurrentAnimatedGeometryRoot();
 
   
@@ -606,6 +639,7 @@ public:
                                                  nsDisplayItem* aItem,
                                                  nsIFrame* aFrame,
                                                  nsCSSProperty aProperty);
+
   
 
 
@@ -622,10 +656,10 @@ public:
       : mBuilder(aBuilder),
         mPrevFrame(aBuilder->mCurrentFrame),
         mPrevReferenceFrame(aBuilder->mCurrentReferenceFrame),
-        mPrevAnimatedGeometryRoot(mBuilder->mCurrentAnimatedGeometryRoot),
         mPrevLayerEventRegions(aBuilder->mLayerEventRegions),
         mPrevOffset(aBuilder->mCurrentOffsetToReferenceFrame),
         mPrevDirtyRect(aBuilder->mDirtyRect),
+        mPrevAGR(aBuilder->mCurrentAGR),
         mPrevIsAtRootOfPseudoStackingContext(aBuilder->mIsAtRootOfPseudoStackingContext),
         mPrevAncestorHasApzAwareEventHandler(aBuilder->mAncestorHasApzAwareEventHandler)
     {
@@ -641,14 +675,12 @@ public:
       }
       if (aBuilder->mCurrentFrame == aForChild->GetParent()) {
         if (aBuilder->IsAnimatedGeometryRoot(aForChild)) {
-          aBuilder->mCurrentAnimatedGeometryRoot = aForChild;
+          aBuilder->mCurrentAGR = aBuilder->WrapAGRForFrame(aForChild, aBuilder->mCurrentAGR);
         }
-      } else {
-        aBuilder->mCurrentAnimatedGeometryRoot =
-          aBuilder->FindAnimatedGeometryRootFor(aForChild);
+      } else if (aForChild != aBuilder->mCurrentFrame) {
+        aBuilder->mCurrentAGR = aBuilder->FindAnimatedGeometryRootFor(aForChild);
       }
-      MOZ_ASSERT(nsLayoutUtils::IsAncestorFrameCrossDoc(aBuilder->RootReferenceFrame(),
-          aBuilder->mCurrentAnimatedGeometryRoot));
+      MOZ_ASSERT(nsLayoutUtils::IsAncestorFrameCrossDoc(aBuilder->RootReferenceFrame(), *aBuilder->mCurrentAGR));
       aBuilder->mCurrentFrame = aForChild;
       aBuilder->mDirtyRect = aDirtyRect;
       aBuilder->mIsAtRootOfPseudoStackingContext = aIsRoot;
@@ -665,15 +697,19 @@ public:
     const nsIFrame* GetPrevAnimatedGeometryRoot() const {
       return mPrevAnimatedGeometryRoot;
     }
+    bool IsAnimatedGeometryRoot() const {
+      return *mBuilder->mCurrentAGR == mBuilder->mCurrentFrame;
+
+    }
     ~AutoBuildingDisplayList() {
       mBuilder->mCurrentFrame = mPrevFrame;
       mBuilder->mCurrentReferenceFrame = mPrevReferenceFrame;
       mBuilder->mLayerEventRegions = mPrevLayerEventRegions;
       mBuilder->mCurrentOffsetToReferenceFrame = mPrevOffset;
       mBuilder->mDirtyRect = mPrevDirtyRect;
+      mBuilder->mCurrentAGR = mPrevAGR;
       mBuilder->mIsAtRootOfPseudoStackingContext = mPrevIsAtRootOfPseudoStackingContext;
       mBuilder->mAncestorHasApzAwareEventHandler = mPrevAncestorHasApzAwareEventHandler;
-      mBuilder->mCurrentAnimatedGeometryRoot = mPrevAnimatedGeometryRoot;
     }
   private:
     nsDisplayListBuilder* mBuilder;
@@ -683,6 +719,7 @@ public:
     nsDisplayLayerEventRegions* mPrevLayerEventRegions;
     nsPoint               mPrevOffset;
     nsRect                mPrevDirtyRect;
+    AnimatedGeometryRoot* mPrevAGR;
     bool                  mPrevIsAtRootOfPseudoStackingContext;
     bool                  mPrevAncestorHasApzAwareEventHandler;
   };
@@ -975,14 +1012,6 @@ public:
 
   bool IsInWillChangeBudget(nsIFrame* aFrame, const nsSize& aSize);
 
-  
-
-
-
-
-  bool GetCachedAnimatedGeometryRoot(const nsIFrame* aFrame,
-                                     nsIFrame** aOutResult);
-
   void SetCommittedScrollInfoItemList(nsDisplayList* aScrollInfoItemStorage) {
     mCommittedScrollInfoItems = aScrollInfoItemStorage;
   }
@@ -1066,6 +1095,30 @@ private:
   void MarkOutOfFlowFrameForDisplay(nsIFrame* aDirtyFrame, nsIFrame* aFrame,
                                     const nsRect& aDirtyRect);
 
+  
+
+
+
+  bool IsAnimatedGeometryRoot(nsIFrame* aFrame, nsIFrame** aParent = nullptr);
+
+  
+
+
+
+  nsIFrame* FindAnimatedGeometryRootFrameFor(nsIFrame* aFrame);
+
+  friend class nsDisplayCanvasBackgroundImage;
+  friend class nsDisplayBackgroundImage;
+  AnimatedGeometryRoot* FindAnimatedGeometryRootFor(nsDisplayItem* aItem);
+
+  AnimatedGeometryRoot* WrapAGRForFrame(nsIFrame* aAnimatedGeometryRoot,
+                                        AnimatedGeometryRoot* aParent = nullptr);
+
+  friend class nsDisplayItem;
+  AnimatedGeometryRoot* FindAnimatedGeometryRootFor(nsIFrame* aFrame);
+
+  nsDataHashtable<nsPtrHashKey<nsIFrame>, AnimatedGeometryRoot*> mFrameToAnimatedGeometryRootMap;
+
   struct PresShellState {
     nsIPresShell* mPresShell;
     nsIFrame*     mCaretFrame;
@@ -1092,7 +1145,7 @@ private:
     uint32_t mBudget;
   };
 
-  nsIFrame*                      mReferenceFrame;
+  nsIFrame* const                mReferenceFrame;
   nsIFrame*                      mIgnoreScrollFrame;
   nsDisplayLayerEventRegions*    mLayerEventRegions;
   PLArenaPool                    mPool;
@@ -1109,11 +1162,10 @@ private:
   const nsIFrame*                mCurrentReferenceFrame;
   
   nsPoint                        mCurrentOffsetToReferenceFrame;
-  
-  nsIFrame*                      mCurrentAnimatedGeometryRoot;
 
-  
-  nsDataHashtable<nsPtrHashKey<nsIFrame>, nsIFrame*> mAnimatedGeometryRootCache;
+  AnimatedGeometryRoot*          mCurrentAGR;
+  AnimatedGeometryRoot           mRootAGR;
+
   
   nsDataHashtable<nsPtrHashKey<nsPresContext>, DocumentWillChangeBudget>
                                  mWillChangeBudget;
@@ -1695,9 +1747,13 @@ public:
 
   virtual const nsIFrame* ReferenceFrameForChildren() const { return mReferenceFrame; }
 
-  nsIFrame* AnimatedGeometryRoot() const {
+  AnimatedGeometryRoot* GetAnimatedGeometryRoot() const {
     MOZ_ASSERT(mAnimatedGeometryRoot, "Must have cached AGR before accessing it!");
     return mAnimatedGeometryRoot;
+  }
+
+  virtual struct AnimatedGeometryRoot* AnimatedGeometryRootForScrollMetadata() const {
+    return GetAnimatedGeometryRoot();
   }
 
   
@@ -1759,7 +1815,7 @@ protected:
   const DisplayItemClip* mClip;
   
   const nsIFrame* mReferenceFrame;
-  nsIFrame* mAnimatedGeometryRoot;
+  struct AnimatedGeometryRoot* mAnimatedGeometryRoot;
   
   nsPoint   mToReferenceFrame;
   
@@ -2599,6 +2655,10 @@ public:
 
   virtual bool ShouldFixToViewport(nsDisplayListBuilder* aBuilder) override;
 
+  AnimatedGeometryRoot* AnimatedGeometryRootForScrollMetadata() const override {
+    return mAnimatedGeometryRootForScrollMetadata;
+  }
+
 protected:
   typedef class mozilla::layers::ImageContainer ImageContainer;
   typedef class mozilla::layers::ImageLayer ImageLayer;
@@ -2630,6 +2690,7 @@ protected:
   nsCOMPtr<imgIContainer> mImage;
   RefPtr<ImageContainer> mImageContainer;
   LayoutDeviceRect mImageLayerDestRect;
+  AnimatedGeometryRoot* mAnimatedGeometryRootForScrollMetadata;
   
   nsRect mBounds;
   nsRect mDestArea;
@@ -3948,15 +4009,6 @@ public:
              mFrame->Combines3DTransformWithAncestors()));
   }
 
-  
-
-
-
-
-  bool IsReferenceFrameBoundary() {
-    return !mTransformGetter && !mIsTransformSeparator;
-  }
-
 private:
   void ComputeBounds(nsDisplayListBuilder* aBuilder);
   void SetReferenceFrameToAncestor(nsDisplayListBuilder* aBuilder);
@@ -3975,6 +4027,7 @@ private:
   
   Matrix4x4 mTransformPreserves3D;
   ComputeTransformFunction mTransformGetter;
+  AnimatedGeometryRoot* mAnimatedGeometryRootForChildren;
   nsRect mChildrenVisibleRect;
   uint32_t mIndex;
   nsRect mBounds;

@@ -2508,13 +2508,9 @@ nsIFrame::BuildDisplayListForChild(nsDisplayListBuilder*   aBuilder,
       
 
       if (aBuilder->IsBuildingLayerEventRegions()) {
-        MOZ_ASSERT(buildingForChild.GetPrevAnimatedGeometryRoot() ==
-                   aBuilder->FindAnimatedGeometryRootFor(child->GetParent()));
-
         
         
-        nsIFrame *animatedGeometryRoot = aBuilder->FindAnimatedGeometryRootFor(child);
-        if (animatedGeometryRoot != buildingForChild.GetPrevAnimatedGeometryRoot()) {
+        if (buildingForChild.IsAnimatedGeometryRoot()) {
           nsDisplayLayerEventRegions* eventRegions =
             new (aBuilder) nsDisplayLayerEventRegions(aBuilder, child);
           eventRegions->AddFrame(aBuilder, child);
