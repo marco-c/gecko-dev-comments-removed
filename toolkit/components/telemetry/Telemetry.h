@@ -69,6 +69,18 @@ void Accumulate(const char* name, uint32_t sample);
 
 
 
+
+
+
+void Accumulate(const char *name, const nsCString& key, uint32_t sample = 1);
+
+
+
+
+
+
+
+
 void AccumulateTimeDelta(ID id, TimeStamp start, TimeStamp end = TimeStamp::Now());
 
 
