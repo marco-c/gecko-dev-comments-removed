@@ -684,11 +684,6 @@ bool IsMinContent(const nsStyleCoord& aCoord)
 
 
 
-
-
-
-
-
 static uint32_t
 FindLine(const nsString& aName, int32_t* aNth,
          uint32_t aFromIndex, uint32_t aImplicitLine,
@@ -728,6 +723,10 @@ RFindLine(const nsString& aName, int32_t* aNth,
           const nsTArray<nsTArray<nsString>>& aNameList)
 {
   MOZ_ASSERT(aNth && *aNth > 0);
+  if (MOZ_UNLIKELY(aFromIndex == 0)) {
+    return 0; 
+  }
+  --aFromIndex; 
   int32_t nth = *aNth;
   const uint32_t len = aNameList.Length();
   
@@ -737,8 +736,7 @@ RFindLine(const nsString& aName, int32_t* aNth,
       return aImplicitLine;
     }
   }
-  uint32_t i = aFromIndex == 0 ? len : std::min(aFromIndex, len);
-  for (; i; --i) {
+  for (uint32_t i = std::min(aFromIndex, len); i; --i) {
     if (i == aImplicitLine || aNameList[i - 1].Contains(aName)) {
       if (--nth == 0) {
         return i;
@@ -749,6 +747,22 @@ RFindLine(const nsString& aName, int32_t* aNth,
   *aNth = nth;
   return 0;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 static uint32_t
 FindNamedLine(const nsString& aName, int32_t* aNth,
@@ -1354,7 +1368,7 @@ nsGridContainerFrame::ResolveLineRangeHelper(
       return LinePair(kAutoLine, 1); 
     }
 
-    uint32_t from = aEnd.mInteger < 0 ? aExplicitGridEnd : 0;
+    uint32_t from = aEnd.mInteger < 0 ? aExplicitGridEnd + 1: 0;
     auto end = ResolveLine(aEnd, aEnd.mInteger, from, aLineNameList, aAreaStart,
                            aAreaEnd, aExplicitGridEnd, eLineRangeSideEnd,
                            aStyle);
@@ -1388,7 +1402,7 @@ nsGridContainerFrame::ResolveLineRangeHelper(
       return LinePair(start, 1); 
     }
   } else {
-    uint32_t from = aStart.mInteger < 0 ? aExplicitGridEnd : 0;
+    uint32_t from = aStart.mInteger < 0 ? aExplicitGridEnd + 1: 0;
     start = ResolveLine(aStart, aStart.mInteger, from, aLineNameList,
                         aAreaStart, aAreaEnd, aExplicitGridEnd,
                         eLineRangeSideStart, aStyle);
@@ -1417,7 +1431,7 @@ nsGridContainerFrame::ResolveLineRangeHelper(
       from = start;
     }
   } else {
-    from = aEnd.mInteger < 0 ? aExplicitGridEnd : 0;
+    from = aEnd.mInteger < 0 ? aExplicitGridEnd + 1: 0;
   }
   auto end = ResolveLine(aEnd, nth, from, aLineNameList, aAreaStart,
                          aAreaEnd, aExplicitGridEnd, eLineRangeSideEnd, aStyle);
@@ -1493,9 +1507,10 @@ nsGridContainerFrame::ResolveAbsPosLineRange(
     if (aEnd.IsAuto()) {
       return LineRange(kAutoLine, kAutoLine);
     }
-    int32_t end = ResolveLine(aEnd, aEnd.mInteger, 0, aLineNameList, aAreaStart,
-                              aAreaEnd, aExplicitGridEnd, eLineRangeSideEnd,
-                              aStyle);
+    uint32_t from = aEnd.mInteger < 0 ? aExplicitGridEnd + 1: 0;
+    int32_t end =
+      ResolveLine(aEnd, aEnd.mInteger, from, aLineNameList, aAreaStart,
+                  aAreaEnd, aExplicitGridEnd, eLineRangeSideEnd, aStyle);
     if (aEnd.mHasSpan) {
       ++end;
     }
@@ -1505,8 +1520,9 @@ nsGridContainerFrame::ResolveAbsPosLineRange(
   }
 
   if (aEnd.IsAuto()) {
+    uint32_t from = aStart.mInteger < 0 ? aExplicitGridEnd + 1: 0;
     int32_t start =
-      ResolveLine(aStart, aStart.mInteger, 0, aLineNameList, aAreaStart,
+      ResolveLine(aStart, aStart.mInteger, from, aLineNameList, aAreaStart,
                   aAreaEnd, aExplicitGridEnd, eLineRangeSideStart, aStyle);
     if (aStart.mHasSpan) {
       start = std::max(aGridEnd - start, aGridStart);
