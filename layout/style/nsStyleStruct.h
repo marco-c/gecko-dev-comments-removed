@@ -2178,6 +2178,7 @@ struct nsStyleVisibility
   uint8_t mDirection;                  
   uint8_t mVisible;                    
   uint8_t mPointerEvents;              
+  uint8_t mImageRendering;             
   uint8_t mWritingMode;                
   uint8_t mTextOrientation;            
   uint8_t mColorAdjust;                
@@ -3241,7 +3242,6 @@ struct nsStyleSVG
   uint8_t          mColorInterpolation; 
   uint8_t          mColorInterpolationFilters; 
   uint8_t          mFillRule;         
-  uint8_t          mImageRendering;   
   uint8_t          mPaintOrder;       
   uint8_t          mShapeRendering;   
   uint8_t          mStrokeLinecap;    

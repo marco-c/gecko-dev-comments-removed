@@ -6389,6 +6389,13 @@ nsRuleNode::ComputeVisibilityData(void* aStartStruct,
               NS_STYLE_POINTER_EVENTS_AUTO, 0, 0, 0, 0);
 
   
+  SetDiscrete(*aRuleData->ValueForImageRendering(),
+              visibility->mImageRendering, conditions,
+              SETDSC_ENUMERATED | SETDSC_UNSET_INHERIT,
+              parentVisibility->mImageRendering,
+              NS_STYLE_IMAGE_RENDERING_AUTO, 0, 0, 0, 0);
+
+  
   SetDiscrete(*aRuleData->ValueForWritingMode(), visibility->mWritingMode,
               conditions,
               SETDSC_ENUMERATED | SETDSC_UNSET_INHERIT,
@@ -9204,13 +9211,6 @@ nsRuleNode::ComputeSVGData(void* aStartStruct,
               SETDSC_ENUMERATED | SETDSC_UNSET_INHERIT,
               parentSVG->mFillRule,
               NS_STYLE_FILL_RULE_NONZERO, 0, 0, 0, 0);
-
-  
-  SetDiscrete(*aRuleData->ValueForImageRendering(),
-              svg->mImageRendering, conditions,
-              SETDSC_ENUMERATED | SETDSC_UNSET_INHERIT,
-              parentSVG->mImageRendering,
-              NS_STYLE_IMAGE_RENDERING_AUTO, 0, 0, 0, 0);
 
   
   const nsCSSValue* markerEndValue = aRuleData->ValueForMarkerEnd();
