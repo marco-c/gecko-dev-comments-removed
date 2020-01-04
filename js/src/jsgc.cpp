@@ -2044,6 +2044,7 @@ static const AllocKind AllocKindsToRelocate[] = {
     AllocKind::OBJECT12_BACKGROUND,
     AllocKind::OBJECT16,
     AllocKind::OBJECT16_BACKGROUND,
+    AllocKind::SCRIPT,
     AllocKind::SHAPE,
     AllocKind::ACCESSOR_SHAPE,
     AllocKind::FAT_INLINE_STRING,
@@ -2404,6 +2405,14 @@ MovingTracer::onStringEdge(JSString** stringp)
 }
 
 void
+MovingTracer::onScriptEdge(JSScript** scriptp)
+{
+    JSScript* script = *scriptp;
+    if (IsForwarded(script))
+        *scriptp = Forwarded(script);
+}
+
+void
 Zone::prepareForCompacting()
 {
     FreeOp* fop = runtimeFromMainThread()->defaultFreeOp();
@@ -2760,6 +2769,7 @@ GCRuntime::updatePointersToRelocatedCells(Zone* zone)
     for (CompartmentsInZoneIter comp(zone); !comp.done(); comp.next())
         comp->fixupAfterMovingGC();
     JSCompartment::fixupCrossCompartmentWrappersAfterMovingGC(&trc);
+    rt->spsProfiler.fixupStringsMapAfterMovingGC();
 
     
     
@@ -7363,6 +7373,7 @@ js::gc::CheckHashTablesAfterMovingGC(JSRuntime* rt)
 
 
 
+    rt->spsProfiler.checkStringsMapAfterMovingGC();
     for (ZonesIter zone(rt, SkipAtoms); !zone.done(); zone.next()) {
         zone->checkUniqueIdTableAfterMovingGC();
 
@@ -7378,6 +7389,7 @@ js::gc::CheckHashTablesAfterMovingGC(JSRuntime* rt)
         c->checkInitialShapesTableAfterMovingGC();
         c->checkWrapperMapAfterMovingGC();
         c->checkBaseShapeTableAfterMovingGC();
+        c->checkScriptMapsAfterMovingGC();
         if (c->debugScopes)
             c->debugScopes->checkHashTablesAfterMovingGC(rt);
     }

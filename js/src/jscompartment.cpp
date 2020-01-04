@@ -638,7 +638,6 @@ JSCompartment::traceRoots(JSTracer* trc, js::gc::GCRuntime::TraceOrMarkRuntime t
     
     
     
-    
     if (scriptCountsMap &&
         trc->runtime()->profilingScripts &&
         !trc->runtime()->isHeapMinorCollecting())
@@ -821,18 +820,7 @@ JSCompartment::fixupAfterMovingGC()
     fixupInitialShapeTable();
     objectGroups.fixupTablesAfterMovingGC();
     dtoaCache.purge();
-
-#ifdef DEBUG
-    
-    
-    
-    
-    
-    if (scriptCountsMap) {
-        for (ScriptCountsMap::Range r = scriptCountsMap->all(); !r.empty(); r.popFront())
-            MOZ_ASSERT(!IsForwarded(r.front().key()));
-    }
-#endif
+    fixupScriptMapsAfterMovingGC();
 }
 
 void
@@ -842,6 +830,59 @@ JSCompartment::fixupGlobal()
     if (global)
         global_.set(MaybeForwarded(global));
 }
+
+void
+JSCompartment::fixupScriptMapsAfterMovingGC()
+{
+    
+    
+
+    if (scriptCountsMap) {
+        for (ScriptCountsMap::Enum e(*scriptCountsMap); !e.empty(); e.popFront()) {
+            JSScript* script = e.front().key();
+            if (!IsAboutToBeFinalizedUnbarriered(&script) && script != e.front().key())
+                e.rekeyFront(script);
+        }
+    }
+
+    if (debugScriptMap) {
+        for (DebugScriptMap::Enum e(*debugScriptMap); !e.empty(); e.popFront()) {
+            JSScript* script = e.front().key();
+            if (!IsAboutToBeFinalizedUnbarriered(&script) && script != e.front().key())
+                e.rekeyFront(script);
+        }
+    }
+}
+
+#ifdef JSGC_HASH_TABLE_CHECKS
+void
+JSCompartment::checkScriptMapsAfterMovingGC()
+{
+    if (scriptCountsMap) {
+        for (auto r = scriptCountsMap->all(); !r.empty(); r.popFront()) {
+            JSScript* script = r.front().key();
+            CheckGCThingAfterMovingGC(script);
+            auto ptr = scriptCountsMap->lookup(script);
+            MOZ_RELEASE_ASSERT(ptr.found() && &*ptr == &r.front());
+        }
+    }
+
+    if (debugScriptMap) {
+        for (auto r = debugScriptMap->all(); !r.empty(); r.popFront()) {
+            JSScript* script = r.front().key();
+            CheckGCThingAfterMovingGC(script);
+            DebugScript* ds = r.front().value();
+            for (uint32_t i = 0; i < ds->numSites; i++) {
+                BreakpointSite* site = ds->breakpoints[i];
+                if (site)
+                    CheckGCThingAfterMovingGC(site->script);
+            }
+            auto ptr = debugScriptMap->lookup(script);
+            MOZ_RELEASE_ASSERT(ptr.found() && &*ptr == &r.front());
+        }
+    }
+}
+#endif
 
 void
 JSCompartment::purge()

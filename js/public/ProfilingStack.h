@@ -14,6 +14,7 @@
 #include "js/Utility.h"
 
 struct JSRuntime;
+class JSTracer;
 
 namespace js {
 
@@ -172,6 +173,8 @@ class ProfileEntry
     
     JS_FRIEND_API(jsbytecode*) pc() const volatile;
     JS_FRIEND_API(void) setPC(jsbytecode* pc) volatile;
+
+    void trace(JSTracer* trc);
 
     
     
