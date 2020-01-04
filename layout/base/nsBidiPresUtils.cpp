@@ -1257,8 +1257,14 @@ nsBidiPresUtils::ReorderFrames(nsIFrame* aFirstFrameOnLine,
                                const nsSize& aContainerSize,
                                nscoord aStart)
 {
+  nsSize containerSize(aContainerSize);
+
   
   if (aFirstFrameOnLine->GetType() == nsGkAtoms::lineFrame) {
+    
+    
+    containerSize = aFirstFrameOnLine->GetSize();
+
     aFirstFrameOnLine = aFirstFrameOnLine->GetFirstPrincipalChild();
     if (!aFirstFrameOnLine) {
       return 0;
@@ -1270,7 +1276,7 @@ nsBidiPresUtils::ReorderFrames(nsIFrame* aFirstFrameOnLine,
 
   BidiLineData bld(aFirstFrameOnLine, aNumFramesOnLine);
   return RepositionInlineFrames(&bld, aFirstFrameOnLine, aLineWM,
-                                aContainerSize, aStart);
+                                containerSize, aStart);
 }
 
 nsIFrame*
