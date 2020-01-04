@@ -7,6 +7,7 @@
 #include "EditorEventListener.h"
 
 #include "mozilla/Assertions.h"         
+#include "mozilla/EditorBase.h"         
 #include "mozilla/EventListenerManager.h" 
 #include "mozilla/IMEStateManager.h"    
 #include "mozilla/Preferences.h"        
@@ -18,7 +19,6 @@
 #include "nsAString.h"
 #include "nsCaret.h"                    
 #include "nsDebug.h"                    
-#include "nsEditor.h"                   
 #include "nsFocusManager.h"             
 #include "nsGkAtoms.h"                  
 #include "nsIClipboard.h"               
@@ -98,7 +98,7 @@ DoCommandCallback(Command aCommand, void* aData)
 }
 
 EditorEventListener::EditorEventListener()
-  : mEditor(nullptr)
+  : mEditorBase(nullptr)
   , mCommitText(false)
   , mInTransaction(false)
   , mMouseDownOrUpConsumedByIME(false)
@@ -112,16 +112,16 @@ EditorEventListener::EditorEventListener()
 
 EditorEventListener::~EditorEventListener()
 {
-  if (mEditor) {
+  if (mEditorBase) {
     NS_WARNING("We're not uninstalled");
     Disconnect();
   }
 }
 
 nsresult
-EditorEventListener::Connect(nsEditor* aEditor)
+EditorEventListener::Connect(EditorBase* aEditorBase)
 {
-  NS_ENSURE_ARG(aEditor);
+  NS_ENSURE_ARG(aEditorBase);
 
 #ifdef HANDLE_NATIVE_TEXT_DIRECTION_SWITCH
   nsIBidiKeyboard* bidiKeyboard = nsContentUtils::GetBidiKeyboard();
@@ -132,7 +132,7 @@ EditorEventListener::Connect(nsEditor* aEditor)
   }
 #endif
 
-  mEditor = aEditor;
+  mEditorBase = aEditorBase;
 
   nsresult rv = InstallToEditor();
   if (NS_FAILED(rv)) {
@@ -144,9 +144,9 @@ EditorEventListener::Connect(nsEditor* aEditor)
 nsresult
 EditorEventListener::InstallToEditor()
 {
-  NS_PRECONDITION(mEditor, "The caller must set mEditor");
+  NS_PRECONDITION(mEditorBase, "The caller must set mEditorBase");
 
-  nsCOMPtr<EventTarget> piTarget = mEditor->GetDOMEventTarget();
+  nsCOMPtr<EventTarget> piTarget = mEditorBase->GetDOMEventTarget();
   NS_ENSURE_TRUE(piTarget, NS_ERROR_FAILURE);
 
   
@@ -214,7 +214,7 @@ EditorEventListener::InstallToEditor()
 void
 EditorEventListener::Disconnect()
 {
-  if (!mEditor) {
+  if (!mEditorBase) {
     return;
   }
   UninstallFromEditor();
@@ -224,22 +224,22 @@ EditorEventListener::Disconnect()
     nsCOMPtr<nsIDOMElement> domFocus;
     fm->GetFocusedElement(getter_AddRefs(domFocus));
     nsCOMPtr<nsINode> focusedElement = do_QueryInterface(domFocus);
-    mozilla::dom::Element* root = mEditor->GetRoot();
+    mozilla::dom::Element* root = mEditorBase->GetRoot();
     if (focusedElement && root &&
         nsContentUtils::ContentIsDescendantOf(focusedElement, root)) {
       
       
-      mEditor->FinalizeSelection();
+      mEditorBase->FinalizeSelection();
     }
   }
 
-  mEditor = nullptr;
+  mEditorBase = nullptr;
 }
 
 void
 EditorEventListener::UninstallFromEditor()
 {
-  nsCOMPtr<EventTarget> piTarget = mEditor->GetDOMEventTarget();
+  nsCOMPtr<EventTarget> piTarget = mEditorBase->GetDOMEventTarget();
   if (!piTarget) {
     return;
   }
@@ -301,9 +301,9 @@ EditorEventListener::UninstallFromEditor()
 already_AddRefed<nsIPresShell>
 EditorEventListener::GetPresShell()
 {
-  NS_PRECONDITION(mEditor,
+  NS_PRECONDITION(mEditorBase,
     "The caller must check whether this is connected to an editor");
-  return mEditor->GetPresShell();
+  return mEditorBase->GetPresShell();
 }
 
 nsPresContext*
@@ -316,9 +316,9 @@ EditorEventListener::GetPresContext()
 nsIContent*
 EditorEventListener::GetFocusedRootContent()
 {
-  NS_ENSURE_TRUE(mEditor, nullptr);
+  NS_ENSURE_TRUE(mEditorBase, nullptr);
 
-  nsCOMPtr<nsIContent> focusedContent = mEditor->GetFocusedContent();
+  nsCOMPtr<nsIContent> focusedContent = mEditorBase->GetFocusedContent();
   if (!focusedContent) {
     return nullptr;
   }
@@ -336,9 +336,9 @@ EditorEventListener::GetFocusedRootContent()
 bool
 EditorEventListener::EditorHasFocus()
 {
-  NS_PRECONDITION(mEditor,
+  NS_PRECONDITION(mEditorBase,
     "The caller must check whether this is connected to an editor");
-  nsCOMPtr<nsIContent> focusedContent = mEditor->GetFocusedContent();
+  nsCOMPtr<nsIContent> focusedContent = mEditorBase->GetFocusedContent();
   if (!focusedContent) {
     return false;
   }
@@ -351,9 +351,9 @@ NS_IMPL_ISUPPORTS(EditorEventListener, nsIDOMEventListener)
 NS_IMETHODIMP
 EditorEventListener::HandleEvent(nsIDOMEvent* aEvent)
 {
-  NS_ENSURE_TRUE(mEditor, NS_ERROR_FAILURE);
+  NS_ENSURE_TRUE(mEditorBase, NS_ERROR_FAILURE);
 
-  nsCOMPtr<nsIEditor> kungFuDeathGrip = mEditor;
+  nsCOMPtr<nsIEditor> kungFuDeathGrip = mEditorBase;
 
   WidgetEvent* internalEvent = aEvent->WidgetEventPtr();
 
@@ -550,8 +550,8 @@ EditorEventListener::KeyUp(nsIDOMKeyEvent* aKeyEvent)
   aKeyEvent->GetKeyCode(&keyCode);
   if ((keyCode == nsIDOMKeyEvent::DOM_VK_SHIFT ||
        keyCode == nsIDOMKeyEvent::DOM_VK_CONTROL) &&
-      mShouldSwitchTextDirection && mEditor->IsPlaintextEditor()) {
-    mEditor->SwitchTextDirectionTo(mSwitchToRTL ?
+      mShouldSwitchTextDirection && mEditorBase->IsPlaintextEditor()) {
+    mEditorBase->SwitchTextDirectionTo(mSwitchToRTL ?
       nsIPlaintextEditor::eEditorRightToLeft :
       nsIPlaintextEditor::eEditorLeftToRight);
     mShouldSwitchTextDirection = false;
@@ -589,7 +589,7 @@ EditorEventListener::KeyPress(nsIDOMKeyEvent* aKeyEvent)
 {
   NS_ENSURE_TRUE(aKeyEvent, NS_OK);
 
-  if (!mEditor->IsAcceptableInputEvent(aKeyEvent->AsEvent())) {
+  if (!mEditorBase->IsAcceptableInputEvent(aKeyEvent->AsEvent())) {
     return NS_OK;
   }
 
@@ -605,7 +605,7 @@ EditorEventListener::KeyPress(nsIDOMKeyEvent* aKeyEvent)
     return NS_OK;
   }
 
-  nsresult rv = mEditor->HandleKeyPressEvent(aKeyEvent);
+  nsresult rv = mEditorBase->HandleKeyPressEvent(aKeyEvent);
   NS_ENSURE_SUCCESS(rv, rv);
 
   aKeyEvent->AsEvent()->GetDefaultPrevented(&defaultPrevented);
@@ -631,7 +631,7 @@ EditorEventListener::KeyPress(nsIDOMKeyEvent* aKeyEvent)
     NS_ENSURE_TRUE(widget, NS_OK);
   }
 
-  nsCOMPtr<nsIDocument> doc = mEditor->GetDocument();
+  nsCOMPtr<nsIDocument> doc = mEditorBase->GetDocument();
   bool handled = widget->ExecuteNativeKeyBinding(
                            nsIWidget::NativeKeyBindingsForRichTextEditor,
                            *keyEvent, DoCommandCallback, doc);
@@ -645,8 +645,8 @@ nsresult
 EditorEventListener::MouseClick(nsIDOMMouseEvent* aMouseEvent)
 {
   
-  if (mEditor->IsReadonly() || mEditor->IsDisabled() ||
-      !mEditor->IsAcceptableInputEvent(aMouseEvent->AsEvent())) {
+  if (mEditorBase->IsReadonly() || mEditorBase->IsDisabled() ||
+      !mEditorBase->IsAcceptableInputEvent(aMouseEvent->AsEvent())) {
     return NS_OK;
   }
 
@@ -669,7 +669,7 @@ EditorEventListener::MouseClick(nsIDOMMouseEvent* aMouseEvent)
 
   
   
-  mEditor->ForceCompositionEnd();
+  mEditorBase->ForceCompositionEnd();
 
   int16_t button = -1;
   aMouseEvent->GetButton(&button);
@@ -697,7 +697,7 @@ EditorEventListener::HandleMiddleClickPaste(nsIDOMMouseEvent* aMouseEvent)
     return NS_ERROR_NULL_POINTER;
   }
 
-  RefPtr<Selection> selection = mEditor->GetSelection();
+  RefPtr<Selection> selection = mEditorBase->GetSelection();
   if (selection) {
     selection->Collapse(parent, offset);
   }
@@ -709,7 +709,7 @@ EditorEventListener::HandleMiddleClickPaste(nsIDOMMouseEvent* aMouseEvent)
 
   nsCOMPtr<nsIEditorMailSupport> mailEditor;
   if (ctrlKey) {
-    mailEditor = do_QueryObject(mEditor);
+    mailEditor = do_QueryObject(mEditorBase);
   }
 
   nsresult rv;
@@ -727,7 +727,7 @@ EditorEventListener::HandleMiddleClickPaste(nsIDOMMouseEvent* aMouseEvent)
   if (mailEditor) {
     mailEditor->PasteAsQuotation(clipboard);
   } else {
-    mEditor->Paste(clipboard);
+    mEditorBase->Paste(clipboard);
   }
 
   
@@ -765,23 +765,23 @@ EditorEventListener::MouseDown(nsIDOMMouseEvent* aMouseEvent)
 {
   
   
-  mEditor->ForceCompositionEnd();
+  mEditorBase->ForceCompositionEnd();
   return NS_OK;
 }
 
 nsresult
 EditorEventListener::HandleText(nsIDOMEvent* aTextEvent)
 {
-  if (!mEditor->IsAcceptableInputEvent(aTextEvent)) {
+  if (!mEditorBase->IsAcceptableInputEvent(aTextEvent)) {
     return NS_OK;
   }
 
   
-  if (mEditor->IsReadonly() || mEditor->IsDisabled()) {
+  if (mEditorBase->IsReadonly() || mEditorBase->IsDisabled()) {
     return NS_OK;
   }
 
-  return mEditor->UpdateIMEComposition(aTextEvent);
+  return mEditorBase->UpdateIMEComposition(aTextEvent);
 }
 
 
@@ -904,7 +904,7 @@ EditorEventListener::Drop(nsIDOMDragEvent* aDragEvent)
 
   if (!dropParent->IsEditable() || !CanDrop(aDragEvent)) {
     
-    if ((mEditor->IsReadonly() || mEditor->IsDisabled()) &&
+    if ((mEditorBase->IsReadonly() || mEditorBase->IsDisabled()) &&
         !IsFileControlTextBox()) {
       
       
@@ -917,14 +917,14 @@ EditorEventListener::Drop(nsIDOMDragEvent* aDragEvent)
 
   aDragEvent->AsEvent()->StopPropagation();
   aDragEvent->AsEvent()->PreventDefault();
-  return mEditor->InsertFromDrop(aDragEvent->AsEvent());
+  return mEditorBase->InsertFromDrop(aDragEvent->AsEvent());
 }
 
 bool
 EditorEventListener::CanDrop(nsIDOMDragEvent* aEvent)
 {
   
-  if (mEditor->IsReadonly() || mEditor->IsDisabled()) {
+  if (mEditorBase->IsReadonly() || mEditorBase->IsDisabled()) {
     return false;
   }
 
@@ -943,7 +943,7 @@ EditorEventListener::CanDrop(nsIDOMDragEvent* aEvent)
   
   if (!types->Contains(NS_LITERAL_STRING(kTextMime)) &&
       !types->Contains(NS_LITERAL_STRING(kMozTextInternal)) &&
-      (mEditor->IsPlaintextEditor() ||
+      (mEditorBase->IsPlaintextEditor() ||
        (!types->Contains(NS_LITERAL_STRING(kHTMLMime)) &&
         !types->Contains(NS_LITERAL_STRING(kFileMime))))) {
     return false;
@@ -961,7 +961,7 @@ EditorEventListener::CanDrop(nsIDOMDragEvent* aEvent)
   
   
 
-  nsCOMPtr<nsIDOMDocument> domdoc = mEditor->GetDOMDocument();
+  nsCOMPtr<nsIDOMDocument> domdoc = mEditorBase->GetDOMDocument();
   NS_ENSURE_TRUE(domdoc, false);
 
   nsCOMPtr<nsIDOMDocument> sourceDoc;
@@ -981,7 +981,7 @@ EditorEventListener::CanDrop(nsIDOMDragEvent* aEvent)
     return true;
   }
 
-  RefPtr<Selection> selection = mEditor->GetSelection();
+  RefPtr<Selection> selection = mEditorBase->GetSelection();
   if (!selection) {
     return false;
   }
@@ -1025,22 +1025,22 @@ EditorEventListener::CanDrop(nsIDOMDragEvent* aEvent)
 nsresult
 EditorEventListener::HandleStartComposition(nsIDOMEvent* aCompositionEvent)
 {
-  if (!mEditor->IsAcceptableInputEvent(aCompositionEvent)) {
+  if (!mEditorBase->IsAcceptableInputEvent(aCompositionEvent)) {
     return NS_OK;
   }
   WidgetCompositionEvent* compositionStart =
     aCompositionEvent->WidgetEventPtr()->AsCompositionEvent();
-  return mEditor->BeginIMEComposition(compositionStart);
+  return mEditorBase->BeginIMEComposition(compositionStart);
 }
 
 void
 EditorEventListener::HandleEndComposition(nsIDOMEvent* aCompositionEvent)
 {
-  if (!mEditor->IsAcceptableInputEvent(aCompositionEvent)) {
+  if (!mEditorBase->IsAcceptableInputEvent(aCompositionEvent)) {
     return;
   }
 
-  mEditor->EndIMEComposition();
+  mEditorBase->EndIMEComposition();
 }
 
 nsresult
@@ -1049,13 +1049,13 @@ EditorEventListener::Focus(nsIDOMEvent* aEvent)
   NS_ENSURE_TRUE(aEvent, NS_OK);
 
   
-  if (mEditor->IsDisabled()) {
+  if (mEditorBase->IsDisabled()) {
     return NS_OK;
   }
 
   
   SpellCheckIfNeeded();
-  if (!mEditor) {
+  if (!mEditorBase) {
     
     
     return NS_OK;
@@ -1080,7 +1080,7 @@ EditorEventListener::Focus(nsIDOMEvent* aEvent)
     
     
     
-    nsCOMPtr<nsIContent> editableRoot = mEditor->FindSelectionRoot(node);
+    nsCOMPtr<nsIContent> editableRoot = mEditorBase->FindSelectionRoot(node);
 
     
     
@@ -1096,13 +1096,13 @@ EditorEventListener::Focus(nsIDOMEvent* aEvent)
     }
   }
 
-  mEditor->OnFocus(target);
+  mEditorBase->OnFocus(target);
 
   nsCOMPtr<nsIPresShell> ps = GetPresShell();
   NS_ENSURE_TRUE(ps, NS_OK);
-  nsCOMPtr<nsIContent> focusedContent = mEditor->GetFocusedContentForIME();
+  nsCOMPtr<nsIContent> focusedContent = mEditorBase->GetFocusedContentForIME();
   IMEStateManager::OnFocusInEditor(ps->GetPresContext(), focusedContent,
-                                   mEditor);
+                                   mEditorBase);
 
   return NS_OK;
 }
@@ -1120,7 +1120,7 @@ EditorEventListener::Blur(nsIDOMEvent* aEvent)
   nsCOMPtr<nsIDOMElement> element;
   fm->GetFocusedElement(getter_AddRefs(element));
   if (!element) {
-    mEditor->FinalizeSelection();
+    mEditorBase->FinalizeSelection();
   }
   return NS_OK;
 }
@@ -1131,17 +1131,17 @@ EditorEventListener::SpellCheckIfNeeded()
   
   
   uint32_t currentFlags = 0;
-  mEditor->GetFlags(&currentFlags);
+  mEditorBase->GetFlags(&currentFlags);
   if(currentFlags & nsIPlaintextEditor::eEditorSkipSpellCheck) {
     currentFlags ^= nsIPlaintextEditor::eEditorSkipSpellCheck;
-    mEditor->SetFlags(currentFlags);
+    mEditorBase->SetFlags(currentFlags);
   }
 }
 
 bool
 EditorEventListener::IsFileControlTextBox()
 {
-  dom::Element* root = mEditor->GetRoot();
+  Element* root = mEditorBase->GetRoot();
   if (!root || !root->ChromeOnlyAccess()) {
     return false;
   }
@@ -1172,12 +1172,12 @@ EditorEventListener::ShouldHandleNativeKeyBindings(nsIDOMKeyEvent* aKeyEvent)
   }
 
   nsCOMPtr<nsIHTMLEditor> htmlEditor =
-    do_QueryInterface(static_cast<nsIEditor*>(mEditor));
+    do_QueryInterface(static_cast<nsIEditor*>(mEditorBase));
   if (!htmlEditor) {
     return false;
   }
 
-  nsCOMPtr<nsIDocument> doc = mEditor->GetDocument();
+  nsCOMPtr<nsIDocument> doc = mEditorBase->GetDocument();
   if (doc->HasFlag(NODE_IS_EDITABLE)) {
     
     return true;

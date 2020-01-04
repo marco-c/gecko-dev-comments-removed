@@ -118,7 +118,7 @@ public:
   virtual bool IsAcceptableInputEvent(nsIDOMEvent* aEvent) override;
   virtual already_AddRefed<nsIContent> GetInputEventTargetContent() override;
   virtual bool IsEditable(nsINode* aNode) override;
-  using nsEditor::IsEditable;
+  using EditorBase::IsEditable;
 
   
   NS_DECL_NSIMUTATIONOBSERVER_CONTENTAPPENDED
@@ -283,7 +283,7 @@ public:
 protected:
   virtual ~HTMLEditor();
 
-  using nsEditor::IsBlockNode;
+  using EditorBase::IsBlockNode;
   virtual bool IsBlockNode(nsINode *aNode) override;
 
 public:

@@ -6,9 +6,9 @@
 #ifndef mozilla_TextEditor_h
 #define mozilla_TextEditor_h
 
+#include "mozilla/EditorBase.h"
 #include "nsCOMPtr.h"
 #include "nsCycleCollectionParticipant.h"
-#include "nsEditor.h"
 #include "nsIEditor.h"
 #include "nsIEditorMailSupport.h"
 #include "nsIPlaintextEditor.h"
@@ -40,13 +40,13 @@ class Selection;
 
 
 
-class TextEditor : public nsEditor
+class TextEditor : public EditorBase
                  , public nsIPlaintextEditor
                  , public nsIEditorMailSupport
 {
 public:
   NS_DECL_ISUPPORTS_INHERITED
-  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(TextEditor, nsEditor)
+  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(TextEditor, EditorBase)
 
   enum ETypingAction
   {

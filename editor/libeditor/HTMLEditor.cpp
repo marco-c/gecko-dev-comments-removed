@@ -234,8 +234,8 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INHERITED(HTMLEditor, TextEditor)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mAddRowAfterButton)
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
-NS_IMPL_ADDREF_INHERITED(HTMLEditor, nsEditor)
-NS_IMPL_RELEASE_INHERITED(HTMLEditor, nsEditor)
+NS_IMPL_ADDREF_INHERITED(HTMLEditor, EditorBase)
+NS_IMPL_RELEASE_INHERITED(HTMLEditor, EditorBase)
 
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION_INHERITED(HTMLEditor)
   NS_INTERFACE_MAP_ENTRY(nsIHTMLEditor)
@@ -355,7 +355,7 @@ HTMLEditor::GetRootElement(nsIDOMElement** aRootElement)
   NS_ENSURE_ARG_POINTER(aRootElement);
 
   if (mRootElement) {
-    return nsEditor::GetRootElement(aRootElement);
+    return EditorBase::GetRootElement(aRootElement);
   }
 
   *aRootElement = nullptr;
@@ -610,7 +610,7 @@ HTMLEditor::HandleKeyPressEvent(nsIDOMKeyEvent* aKeyEvent)
   if (IsReadonly() || IsDisabled()) {
     
     
-    return nsEditor::HandleKeyPressEvent(aKeyEvent);
+    return EditorBase::HandleKeyPressEvent(aKeyEvent);
   }
 
   WidgetKeyboardEvent* nativeKeyEvent =
@@ -629,7 +629,7 @@ HTMLEditor::HandleKeyPressEvent(nsIDOMKeyEvent* aKeyEvent)
     case NS_VK_DELETE:
       
       
-      return nsEditor::HandleKeyPressEvent(aKeyEvent);
+      return EditorBase::HandleKeyPressEvent(aKeyEvent);
     case NS_VK_TAB: {
       if (IsPlaintextEditor()) {
         
@@ -830,7 +830,7 @@ HTMLEditor::SetDocumentTitle(const nsAString& aTitle)
 
   
   AutoTransactionsConserveSelection dontChangeSelection(this);
-  return nsEditor::DoTransaction(transaction);
+  return EditorBase::DoTransaction(transaction);
 }
 
 
@@ -3109,7 +3109,7 @@ HTMLEditor::DeleteSelectionImpl(EDirection aAction,
 {
   MOZ_ASSERT(aStripWrappers == eStrip || aStripWrappers == eNoStrip);
 
-  nsresult res = nsEditor::DeleteSelectionImpl(aAction, aStripWrappers);
+  nsresult res = EditorBase::DeleteSelectionImpl(aAction, aStripWrappers);
   NS_ENSURE_SUCCESS(res, res);
 
   
@@ -3174,7 +3174,7 @@ HTMLEditor::DeleteNode(nsIDOMNode* aNode)
     return NS_ERROR_FAILURE;
   }
 
-  return nsEditor::DeleteNode(aNode);
+  return EditorBase::DeleteNode(aNode);
 }
 
 nsresult
@@ -3187,7 +3187,7 @@ HTMLEditor::DeleteText(nsGenericDOMDataNode& aCharData,
     return NS_ERROR_FAILURE;
   }
 
-  return nsEditor::DeleteText(aCharData, aOffset, aLength);
+  return EditorBase::DeleteText(aCharData, aOffset, aLength);
 }
 
 nsresult
@@ -3201,8 +3201,8 @@ HTMLEditor::InsertTextImpl(const nsAString& aStringToInsert,
     return NS_ERROR_FAILURE;
   }
 
-  return nsEditor::InsertTextImpl(aStringToInsert, aInOutNode, aInOutOffset,
-                                  aDoc);
+  return EditorBase::InsertTextImpl(aStringToInsert, aInOutNode, aInOutOffset,
+                                    aDoc);
 }
 
 void
@@ -3472,7 +3472,7 @@ HTMLEditor::StartOperation(EditAction opID,
   
   nsCOMPtr<nsIEditRules> kungFuDeathGrip(mRules);
 
-  nsEditor::StartOperation(opID, aDirection);  
+  EditorBase::StartOperation(opID, aDirection);  
   if (mRules) return mRules->BeforeEdit(mAction, mDirection);
   return NS_OK;
 }
@@ -3490,7 +3490,7 @@ HTMLEditor::EndOperation()
   
   nsresult res = NS_OK;
   if (mRules) res = mRules->AfterEdit(mAction, mDirection);
-  nsEditor::EndOperation();  
+  EditorBase::EndOperation();  
   return res;
 }
 
@@ -3562,7 +3562,7 @@ HTMLEditor::SelectEntireDocument(Selection* aSelection)
     return aSelection->Collapse(rootElement, 0);
   }
 
-  return nsEditor::SelectEntireDocument(aSelection);
+  return EditorBase::SelectEntireDocument(aSelection);
 }
 
 NS_IMETHODIMP
@@ -4371,7 +4371,7 @@ HTMLEditor::IsEmptyNodeImpl(nsINode* aNode,
        child;
        child = child->GetNextSibling()) {
     
-    if (nsEditor::IsEditable(child)) {
+    if (EditorBase::IsEditable(child)) {
       if (child->NodeType() == nsIDOMNode::TEXT_NODE) {
         nsresult rv = IsVisTextNode(child, outIsEmptyNode, aSafeToAskFrames);
         NS_ENSURE_SUCCESS(rv, rv);
@@ -4826,7 +4826,7 @@ HTMLEditor::GetElementOrigin(nsIDOMElement* aElement,
 nsresult
 HTMLEditor::EndUpdateViewBatch()
 {
-  nsresult res = nsEditor::EndUpdateViewBatch();
+  nsresult res = EditorBase::EndUpdateViewBatch();
   NS_ENSURE_SUCCESS(res, res);
 
   
@@ -5178,7 +5178,7 @@ HTMLEditor::OurWindowHasFocus()
 bool
 HTMLEditor::IsAcceptableInputEvent(nsIDOMEvent* aEvent)
 {
-  if (!nsEditor::IsAcceptableInputEvent(aEvent)) {
+  if (!EditorBase::IsAcceptableInputEvent(aEvent)) {
     return false;
   }
 

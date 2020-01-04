@@ -5,11 +5,11 @@
 
 #include "CompositionTransaction.h"
 
+#include "mozilla/EditorBase.h"         
 #include "mozilla/dom/Selection.h"      
 #include "mozilla/dom/Text.h"           
 #include "nsAString.h"                  
 #include "nsDebug.h"                    
-#include "nsEditor.h"                   
 #include "nsError.h"                    
 #include "nsIPresShell.h"               
 #include "nsRange.h"                    
@@ -25,13 +25,13 @@ CompositionTransaction::CompositionTransaction(
                           uint32_t aReplaceLength,
                           TextRangeArray* aTextRangeArray,
                           const nsAString& aStringToInsert,
-                          nsEditor& aEditor)
+                          EditorBase& aEditorBase)
   : mTextNode(&aTextNode)
   , mOffset(aOffset)
   , mReplaceLength(aReplaceLength)
   , mRanges(aTextRangeArray)
   , mStringToInsert(aStringToInsert)
-  , mEditor(aEditor)
+  , mEditorBase(aEditorBase)
   , mFixed(false)
 {
 }
@@ -58,7 +58,7 @@ CompositionTransaction::DoTransaction()
 {
   
   nsCOMPtr<nsISelectionController> selCon;
-  mEditor.GetSelectionController(getter_AddRefs(selCon));
+  mEditorBase.GetSelectionController(getter_AddRefs(selCon));
   NS_ENSURE_TRUE(selCon, NS_ERROR_NOT_INITIALIZED);
 
   
@@ -81,7 +81,7 @@ CompositionTransaction::UndoTransaction()
 {
   
   
-  RefPtr<Selection> selection = mEditor.GetSelection();
+  RefPtr<Selection> selection = mEditorBase.GetSelection();
   NS_ENSURE_TRUE(selection, NS_ERROR_NOT_INITIALIZED);
 
   nsresult res = mTextNode->DeleteData(mOffset, mStringToInsert.Length());
@@ -142,19 +142,19 @@ CompositionTransaction::GetTxnDescription(nsAString& aString)
 nsresult
 CompositionTransaction::SetSelectionForRanges()
 {
-  return SetIMESelection(mEditor, mTextNode, mOffset,
+  return SetIMESelection(mEditorBase, mTextNode, mOffset,
                          mStringToInsert.Length(), mRanges);
 }
 
 
 nsresult
-CompositionTransaction::SetIMESelection(nsEditor& aEditor,
+CompositionTransaction::SetIMESelection(EditorBase& aEditorBase,
                                         Text* aTextNode,
                                         uint32_t aOffsetInNode,
                                         uint32_t aLengthOfCompositionString,
                                         const TextRangeArray* aRanges)
 {
-  RefPtr<Selection> selection = aEditor.GetSelection();
+  RefPtr<Selection> selection = aEditorBase.GetSelection();
   NS_ENSURE_TRUE(selection, NS_ERROR_NOT_INITIALIZED);
 
   nsresult rv = selection->StartBatchChanges();
@@ -169,7 +169,7 @@ CompositionTransaction::SetIMESelection(nsEditor& aEditor,
   };
 
   nsCOMPtr<nsISelectionController> selCon;
-  aEditor.GetSelectionController(getter_AddRefs(selCon));
+  aEditorBase.GetSelectionController(getter_AddRefs(selCon));
   NS_ENSURE_TRUE(selCon, NS_ERROR_NOT_INITIALIZED);
 
   for (uint32_t i = 0; i < ArrayLength(kIMESelections); ++i) {
@@ -202,7 +202,8 @@ CompositionTransaction::SetIMESelection(nsEditor& aEditor,
     
     if (textRange.mRangeType == TextRangeType::eCaret) {
       NS_ASSERTION(!setCaret, "The ranges already has caret position");
-      NS_ASSERTION(!textRange.Length(), "nsEditor doesn't support wide caret");
+      NS_ASSERTION(!textRange.Length(),
+                   "EditorBase doesn't support wide caret");
       int32_t caretOffset = static_cast<int32_t>(
         aOffsetInNode +
           std::min(textRange.mStartOffset, aLengthOfCompositionString));
@@ -215,7 +216,7 @@ CompositionTransaction::SetIMESelection(nsEditor& aEditor,
       }
       
       
-      aEditor.HideCaret(false);
+      aEditorBase.HideCaret(false);
       continue;
     }
 
@@ -287,7 +288,7 @@ CompositionTransaction::SetIMESelection(nsEditor& aEditor,
 
     
     
-    aEditor.HideCaret(true);
+    aEditorBase.HideCaret(true);
   }
 
   rv = selection->EndBatchChangesInternal();

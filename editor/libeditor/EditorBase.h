@@ -3,8 +3,8 @@
 
 
 
-#ifndef __editor_h__
-#define __editor_h__
+#ifndef mozilla_EditorBase_h
+#define mozilla_EditorBase_h
 
 #include "mozilla/Assertions.h"         
 #include "mozilla/OwningNonNull.h"      
@@ -49,47 +49,12 @@ class nsRange;
 class nsString;
 class nsTransactionManager;
 
-namespace mozilla {
-class AddStyleSheetTransaction;
-class AutoRules;
-class AutoSelectionRestorer;
-class AutoTransactionsConserveSelection;
-class ChangeAttributeTransaction;
-class CompositionTransaction;
-class CreateElementTransaction;
-class DeleteNodeTransaction;
-class DeleteTextTransaction;
-class EditAggregateTransaction;
-class ErrorResult;
-class InsertNodeTransaction;
-class InsertTextTransaction;
-class JoinNodeTransaction;
-class RemoveStyleSheetTransaction;
-class SplitNodeTransaction;
-class TextComposition;
-struct EditorDOMPoint;
-
-namespace dom {
-class DataTransfer;
-class Element;
-class EventTarget;
-class Selection;
-class Text;
-} 
-} 
-
-namespace mozilla {
-namespace widget {
-struct IMEState;
-} 
-} 
-
-#define kMOZEditorBogusNodeAttrAtom nsGkAtoms::mozeditorbogusnode
-#define kMOZEditorBogusNodeValue NS_LITERAL_STRING("TRUE")
 
 
 
-enum class EditAction : int32_t {
+
+enum class EditAction : int32_t
+{
   ignore = -1,
   none = 0,
   undo,
@@ -134,22 +99,57 @@ inline bool operator!(const EditAction& aOp)
   return aOp == EditAction::none;
 }
 
+namespace mozilla {
+class AddStyleSheetTransaction;
+class AutoRules;
+class AutoSelectionRestorer;
+class AutoTransactionsConserveSelection;
+class ChangeAttributeTransaction;
+class CompositionTransaction;
+class CreateElementTransaction;
+class DeleteNodeTransaction;
+class DeleteTextTransaction;
+class EditAggregateTransaction;
+class ErrorResult;
+class InsertNodeTransaction;
+class InsertTextTransaction;
+class JoinNodeTransaction;
+class RemoveStyleSheetTransaction;
+class SplitNodeTransaction;
+class TextComposition;
+struct EditorDOMPoint;
+
+namespace dom {
+class DataTransfer;
+class Element;
+class EventTarget;
+class Selection;
+class Text;
+} 
+
+namespace widget {
+struct IMEState;
+} 
+
+#define kMOZEditorBogusNodeAttrAtom nsGkAtoms::mozeditorbogusnode
+#define kMOZEditorBogusNodeValue NS_LITERAL_STRING("TRUE")
 
 
 
 
 
-class nsEditor : public nsIEditor,
-                 public nsIEditorIMESupport,
-                 public nsSupportsWeakReference,
-                 public nsIPhonetic
+
+
+
+class EditorBase : public nsIEditor
+                 , public nsIEditorIMESupport
+                 , public nsSupportsWeakReference
+                 , public nsIPhonetic
 {
 public:
-  typedef mozilla::ErrorResult        ErrorResult;
-  typedef mozilla::dom::Element       Element;
-  typedef mozilla::dom::Selection     Selection;
-  typedef mozilla::dom::Text          Text;
-  template<typename T> using OwningNonNull = mozilla::OwningNonNull<T>;
+  typedef dom::Element Element;
+  typedef dom::Selection Selection;
+  typedef dom::Text Text;
 
   enum IterDirection
   {
@@ -160,22 +160,20 @@ public:
   
 
 
-  nsEditor();
+
+  EditorBase();
 
 protected:
   
 
 
-  virtual ~nsEditor();
+
+  virtual ~EditorBase();
 
 public:
-
-
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
-  NS_DECL_CYCLE_COLLECTION_CLASS_AMBIGUOUS(nsEditor,
-                                           nsIEditor)
+  NS_DECL_CYCLE_COLLECTION_CLASS_AMBIGUOUS(EditorBase, nsIEditor)
 
-  
   already_AddRefed<nsIDOMDocument> GetDOMDocument();
   already_AddRefed<nsIDocument> GetDocument();
   already_AddRefed<nsIPresShell> GetPresShell();
@@ -198,8 +196,7 @@ public:
   NS_DECL_NSIPHONETIC
 
 public:
-
-  virtual bool IsModifiableNode(nsINode *aNode);
+  virtual bool IsModifiableNode(nsINode* aNode);
 
   virtual nsresult InsertTextImpl(const nsAString& aStringToInsert,
                                   nsCOMPtr<nsINode>* aInOutNode,
@@ -214,6 +211,8 @@ public:
   already_AddRefed<Element> DeleteSelectionAndCreateElement(nsIAtom& aTag);
 
   
+
+
   nsresult DeleteNode(nsINode* aNode);
   nsresult InsertNode(nsIContent& aNode, nsINode& aParent, int32_t aPosition);
   enum ECloneAttributes { eDontCloneAttributes, eCloneAttributes };
@@ -240,10 +239,13 @@ public:
 
 
 
+
   already_AddRefed<Element> CreateHTMLContent(nsIAtom* aTag);
 
   
-  virtual nsresult BeginIMEComposition(mozilla::WidgetCompositionEvent* aEvent);
+
+
+  virtual nsresult BeginIMEComposition(WidgetCompositionEvent* aEvent);
   virtual nsresult UpdateIMEComposition(nsIDOMEvent* aDOMTextEvent) = 0;
   void EndIMEComposition();
 
@@ -256,40 +258,45 @@ protected:
   
 
 
-  already_AddRefed<mozilla::ChangeAttributeTransaction>
-  CreateTxnForSetAttribute(Element& aElement, nsIAtom& aAttribute,
-                           const nsAString& aValue);
+
+  already_AddRefed<ChangeAttributeTransaction>
+    CreateTxnForSetAttribute(Element& aElement, nsIAtom& aAttribute,
+                             const nsAString& aValue);
 
   
 
 
-  already_AddRefed<mozilla::ChangeAttributeTransaction>
-  CreateTxnForRemoveAttribute(Element& aElement, nsIAtom& aAttribute);
+
+  already_AddRefed<ChangeAttributeTransaction>
+    CreateTxnForRemoveAttribute(Element& aElement, nsIAtom& aAttribute);
 
   
 
-  already_AddRefed<mozilla::CreateElementTransaction>
-  CreateTxnForCreateElement(nsIAtom& aTag,
-                            nsINode& aParent,
-                            int32_t aPosition);
+
+  already_AddRefed<CreateElementTransaction>
+    CreateTxnForCreateElement(nsIAtom& aTag,
+                              nsINode& aParent,
+                              int32_t aPosition);
 
   already_AddRefed<Element> CreateNode(nsIAtom* aTag, nsINode* aParent,
                                        int32_t aPosition);
 
   
 
-  already_AddRefed<mozilla::InsertNodeTransaction>
-  CreateTxnForInsertNode(nsIContent& aNode, nsINode& aParent, int32_t aOffset);
+
+  already_AddRefed<InsertNodeTransaction>
+    CreateTxnForInsertNode(nsIContent& aNode, nsINode& aParent,
+                           int32_t aOffset);
 
   
 
-  nsresult CreateTxnForDeleteNode(
-             nsINode* aNode,
-             mozilla::DeleteNodeTransaction** aTransaction);
+
+  nsresult CreateTxnForDeleteNode(nsINode* aNode,
+                                  DeleteNodeTransaction** aTransaction);
 
   nsresult CreateTxnForDeleteSelection(
              EDirection aAction,
-             mozilla::EditAggregateTransaction** aTransaction,
+             EditAggregateTransaction** aTransaction,
              nsINode** aNode,
              int32_t* aOffset,
              int32_t* aLength);
@@ -297,7 +304,7 @@ protected:
   nsresult CreateTxnForDeleteInsertionPoint(
              nsRange* aRange,
              EDirection aAction,
-             mozilla::EditAggregateTransaction* aTransaction,
+             EditAggregateTransaction* aTransaction,
              nsINode** aNode,
              int32_t* aOffset,
              int32_t* aLength);
@@ -306,44 +313,47 @@ protected:
   
 
 
+
   already_AddRefed<mozilla::InsertTextTransaction>
-  CreateTxnForInsertText(const nsAString& aStringToInsert, Text& aTextNode,
-                         int32_t aOffset);
+    CreateTxnForInsertText(const nsAString& aStringToInsert, Text& aTextNode,
+                           int32_t aOffset);
 
   
+
+
   already_AddRefed<mozilla::CompositionTransaction>
-  CreateTxnForComposition(const nsAString& aStringToInsert);
+    CreateTxnForComposition(const nsAString& aStringToInsert);
 
   
+
 
   NS_IMETHOD CreateTxnForAddStyleSheet(
-               mozilla::StyleSheetHandle aSheet,
-               mozilla::AddStyleSheetTransaction** aTransaction);
+               StyleSheetHandle aSheet,
+               AddStyleSheetTransaction** aTransaction);
 
   
 
+
   NS_IMETHOD CreateTxnForRemoveStyleSheet(
-               mozilla::StyleSheetHandle aSheet,
-               mozilla::RemoveStyleSheetTransaction** aTransaction);
+               StyleSheetHandle aSheet,
+               RemoveStyleSheetTransaction** aTransaction);
 
   nsresult DeleteText(nsGenericDOMDataNode& aElement,
                       uint32_t aOffset, uint32_t aLength);
 
+  already_AddRefed<DeleteTextTransaction>
+    CreateTxnForDeleteText(nsGenericDOMDataNode& aElement,
+                           uint32_t aOffset, uint32_t aLength);
 
+  already_AddRefed<DeleteTextTransaction>
+    CreateTxnForDeleteCharacter(nsGenericDOMDataNode& aData, uint32_t aOffset,
+                                EDirection aDirection);
 
-  already_AddRefed<mozilla::DeleteTextTransaction>
-  CreateTxnForDeleteText(nsGenericDOMDataNode& aElement,
-                         uint32_t aOffset, uint32_t aLength);
+  already_AddRefed<SplitNodeTransaction>
+    CreateTxnForSplitNode(nsIContent& aNode, uint32_t aOffset);
 
-  already_AddRefed<mozilla::DeleteTextTransaction>
-  CreateTxnForDeleteCharacter(nsGenericDOMDataNode& aData, uint32_t aOffset,
-                              EDirection aDirection);
-
-  already_AddRefed<mozilla::SplitNodeTransaction>
-  CreateTxnForSplitNode(nsIContent& aNode, uint32_t aOffset);
-
-  already_AddRefed<mozilla::JoinNodeTransaction>
-  CreateTxnForJoinNode(nsINode& aLeftNode, nsINode& aRightNode);
+  already_AddRefed<JoinNodeTransaction>
+    CreateTxnForJoinNode(nsINode& aLeftNode, nsINode& aRightNode);
 
   
 
@@ -354,24 +364,38 @@ protected:
 
   nsresult DeleteSelectionAndPrepareToCreateNode();
 
+  
+
+
+  void DoAfterDoTransaction(nsITransaction *aTxn);
 
   
-  void DoAfterDoTransaction(nsITransaction *aTxn);
-  
+
+
+
   void DoAfterUndoTransaction();
+
   
+
+
   void DoAfterRedoTransaction();
 
-  typedef enum {
+  enum TDocumentListenerNotification
+  {
     eDocumentCreated,
     eDocumentToBeDestroyed,
     eDocumentStateChanged
-  } TDocumentListenerNotification;
+  };
 
   
-  NS_IMETHOD NotifyDocumentListeners(TDocumentListenerNotification aNotificationType);
+
+
+  NS_IMETHOD NotifyDocumentListeners(
+               TDocumentListenerNotification aNotificationType);
 
   
+
+
   virtual nsresult SelectEntireDocument(Selection* aSelection);
 
   
@@ -384,22 +408,20 @@ protected:
 
 
 
+
   NS_IMETHOD ScrollSelectionIntoView(bool aScrollToAnchor);
 
-  
   virtual bool IsBlockNode(nsINode* aNode);
 
   
-  nsIContent* FindNextLeafNode(nsINode  *aCurrentNode,
-                               bool      aGoForward,
-                               bool      bNoBlockCrossing);
 
-  
+
+  nsIContent* FindNextLeafNode(nsINode* aCurrentNode,
+                               bool aGoForward,
+                               bool bNoBlockCrossing);
+
   virtual nsresult InstallEventListeners();
-
   virtual void CreateEventListeners();
-
-  
   virtual void RemoveEventListeners();
 
   
@@ -411,35 +433,42 @@ protected:
   {
     
     
-    return !IsPasswordEditor() && !IsReadonly() && !IsDisabled() && !ShouldSkipSpellCheck();
+    
+    return !IsPasswordEditor() && !IsReadonly() && !IsDisabled() &&
+           !ShouldSkipSpellCheck();
   }
 
   
 
 
 
-  void EnsureComposition(mozilla::WidgetCompositionEvent* aCompositionEvent);
+  void EnsureComposition(WidgetCompositionEvent* aCompositionEvent);
 
-  nsresult GetSelection(mozilla::SelectionType aSelectionType,
+  nsresult GetSelection(SelectionType aSelectionType,
                         nsISelection** aSelection);
 
 public:
-
   
+
+
 
   NS_IMETHOD StartOperation(EditAction opID,
                             nsIEditor::EDirection aDirection);
 
   
 
+
+
   NS_IMETHOD EndOperation();
 
   
 
-  bool     ArePreservingSelection();
-  void     PreserveSelectionAcrossActions(Selection* aSel);
+
+
+  bool ArePreservingSelection();
+  void PreserveSelectionAcrossActions(Selection* aSel);
   nsresult RestorePreservedSelection(Selection* aSel);
-  void     StopPreservingSelection();
+  void StopPreservingSelection();
 
   
 
@@ -462,6 +491,7 @@ public:
 
 
 
+
   nsresult JoinNodesImpl(nsINode* aNodeToKeep,
                          nsINode* aNodeToJoin,
                          nsINode* aParent);
@@ -470,8 +500,8 @@ public:
 
 
 
-  static int32_t GetChildOffset(nsIDOMNode *aChild,
-                                nsIDOMNode *aParent);
+  static int32_t GetChildOffset(nsIDOMNode* aChild,
+                                nsIDOMNode* aParent);
 
   
 
@@ -487,9 +517,13 @@ public:
 
 
 
+
   static nsresult GetLengthOfDOMNode(nsIDOMNode *aNode, uint32_t &aCount);
 
   
+
+
+
 
 
 
@@ -501,6 +535,8 @@ public:
                            bool aNoBlockCrossing = false);
 
   
+
+
   nsIContent* GetPriorNode(nsINode* aParentNode,
                            int32_t aOffset,
                            bool aEditableNode,
@@ -514,98 +550,126 @@ public:
 
 
 
+
+
   nsIContent* GetNextNode(nsINode* aCurrentNode,
                           bool aEditableNode,
                           bool bNoBlockCrossing = false);
 
   
+
+
   nsIContent* GetNextNode(nsINode* aParentNode,
                           int32_t aOffset,
                           bool aEditableNode,
                           bool aNoBlockCrossing = false);
 
   
-  nsIContent* FindNode(nsINode *aCurrentNode,
-                       bool     aGoForward,
-                       bool     aEditableNode,
-                       bool     bNoBlockCrossing);
+
+
+  nsIContent* FindNode(nsINode* aCurrentNode,
+                       bool aGoForward,
+                       bool aEditableNode,
+                       bool bNoBlockCrossing);
   
 
 
 
-  nsIContent* GetRightmostChild(nsINode *aCurrentNode,
-                                bool     bNoBlockCrossing = false);
+  nsIContent* GetRightmostChild(nsINode* aCurrentNode,
+                                bool bNoBlockCrossing = false);
 
   
 
 
 
   nsIContent* GetLeftmostChild(nsINode *aCurrentNode,
-                               bool     bNoBlockCrossing = false);
+                               bool bNoBlockCrossing = false);
 
   
-  static inline bool NodeIsType(nsIDOMNode *aNode, nsIAtom *aTag)
+
+
+  static inline bool NodeIsType(nsIDOMNode* aNode, nsIAtom* aTag)
   {
     return GetTag(aNode) == aTag;
   }
 
   
+
+
   bool CanContain(nsINode& aParent, nsIContent& aChild);
   bool CanContainTag(nsINode& aParent, nsIAtom& aTag);
   bool TagCanContain(nsIAtom& aParentTag, nsIContent& aChild);
   virtual bool TagCanContainTag(nsIAtom& aParentTag, nsIAtom& aChildTag);
 
   
+
+
   bool IsRoot(nsIDOMNode* inNode);
   bool IsRoot(nsINode* inNode);
   bool IsEditorRoot(nsINode* aNode);
 
   
+
+
   bool IsDescendantOfRoot(nsIDOMNode* inNode);
   bool IsDescendantOfRoot(nsINode* inNode);
   bool IsDescendantOfEditorRoot(nsINode* aNode);
 
   
+
+
   virtual bool IsContainer(nsINode* aNode);
   virtual bool IsContainer(nsIDOMNode* aNode);
 
   
-  bool IsEditable(nsIDOMNode *aNode);
+
+
+  bool IsEditable(nsIDOMNode* aNode);
   virtual bool IsEditable(nsINode* aNode);
 
   
+
+
   bool IsMozEditorBogusNode(nsINode* aNode);
 
   
+
+
   uint32_t CountEditableChildren(nsINode* aNode);
 
   
+
+
   nsINode* GetFirstEditableNode(nsINode* aRoot);
 
   
 
 
-  mozilla::TextComposition* GetComposition() const;
+  TextComposition* GetComposition() const;
+
   
 
 
   bool IsIMEComposing() const;
+
   
 
 
   bool ShouldHandleIMEComposition() const;
 
   
-  static nsresult GetTagString(nsIDOMNode *aNode, nsAString& outString);
-  static nsIAtom *GetTag(nsIDOMNode *aNode);
 
-  bool NodesSameType(nsIDOMNode *aNode1, nsIDOMNode *aNode2);
+
+  static nsresult GetTagString(nsIDOMNode* aNode, nsAString& outString);
+  static nsIAtom* GetTag(nsIDOMNode* aNode);
+
+  bool NodesSameType(nsIDOMNode* aNode1, nsIDOMNode* aNode2);
   virtual bool AreNodesSameType(nsIContent* aNode1, nsIContent* aNode2);
 
-  static bool IsTextNode(nsIDOMNode *aNode);
-  static bool IsTextNode(nsINode *aNode);
+  static bool IsTextNode(nsIDOMNode* aNode);
+  static bool IsTextNode(nsINode* aNode);
 
-  static nsCOMPtr<nsIDOMNode> GetChildAt(nsIDOMNode *aParent, int32_t aOffset);
+  static nsCOMPtr<nsIDOMNode> GetChildAt(nsIDOMNode* aParent, int32_t aOffset);
   static nsIContent* GetNodeAtRangeOffsetPoint(nsIDOMNode* aParentOrNode,
                                                int32_t aOffset);
 
@@ -622,23 +686,32 @@ public:
                                       nsINode** aEndNode,
                                       int32_t* aEndOffset);
 #if DEBUG_JOE
-  static void DumpNode(nsIDOMNode *aNode, int32_t indent=0);
+  static void DumpNode(nsIDOMNode* aNode, int32_t indent = 0);
 #endif
-  Selection* GetSelection(mozilla::SelectionType aSelectionType =
-                            mozilla::SelectionType::eNormal);
+  Selection* GetSelection(SelectionType aSelectionType =
+                                          SelectionType::eNormal);
 
   
-  
-  nsresult CreateRange(nsIDOMNode *aStartParent, int32_t aStartOffset,
-                       nsIDOMNode *aEndParent, int32_t aEndOffset,
+
+
+
+  nsresult CreateRange(nsIDOMNode* aStartParent, int32_t aStartOffset,
+                       nsIDOMNode* aEndParent, int32_t aEndOffset,
                        nsRange** aRange);
 
   
+
+
+
   nsresult AppendNodeToSelectionAsRange(nsIDOMNode *aNode);
+
   
+
+
+
   nsresult ClearSelection();
 
-  nsresult IsPreformatted(nsIDOMNode *aNode, bool *aResult);
+  nsresult IsPreformatted(nsIDOMNode* aNode, bool* aResult);
 
   enum class EmptyContainers { no, yes };
   int32_t SplitNodeDeep(nsIContent& aNode, nsIContent& aSplitPointParent,
@@ -647,13 +720,13 @@ public:
                           EmptyContainers::yes,
                         nsIContent** outLeftNode = nullptr,
                         nsIContent** outRightNode = nullptr);
-  mozilla::EditorDOMPoint JoinNodeDeep(nsIContent& aLeftNode,
-                                       nsIContent& aRightNode);
+  EditorDOMPoint JoinNodeDeep(nsIContent& aLeftNode,
+                              nsIContent& aRightNode);
 
   nsresult GetString(const nsAString& name, nsAString& value);
 
-  void BeginUpdateViewBatch(void);
-  virtual nsresult EndUpdateViewBatch(void);
+  void BeginUpdateViewBatch();
+  virtual nsresult EndUpdateViewBatch();
 
   bool GetShouldTxnSetSelection();
 
@@ -661,27 +734,35 @@ public:
 
   nsresult HandleInlineSpellCheck(EditAction action,
                                   Selection* aSelection,
-                                    nsIDOMNode *previousSelectedNode,
-                                    int32_t previousSelectedOffset,
-                                    nsIDOMNode *aStartNode,
-                                    int32_t aStartOffset,
-                                    nsIDOMNode *aEndNode,
-                                    int32_t aEndOffset);
+                                  nsIDOMNode* previousSelectedNode,
+                                  int32_t previousSelectedOffset,
+                                  nsIDOMNode* aStartNode,
+                                  int32_t aStartOffset,
+                                  nsIDOMNode* aEndNode,
+                                  int32_t aEndOffset);
 
-  virtual already_AddRefed<mozilla::dom::EventTarget> GetDOMEventTarget() = 0;
+  virtual already_AddRefed<dom::EventTarget> GetDOMEventTarget() = 0;
 
   
+
+
   Element* GetRoot();
 
   
-  
+
+
+
   virtual Element* GetEditorRoot();
 
   
-  
+
+
+
   Element* GetExposedRoot();
 
   
+
+
   bool IsPlaintextEditor() const
   {
     return (mFlags & nsIPlaintextEditor::eEditorPlaintextMask) != 0;
@@ -759,56 +840,77 @@ public:
   }
 
   
+
+
   virtual already_AddRefed<nsIContent> GetInputEventTargetContent() = 0;
 
   
+
+
   virtual already_AddRefed<nsIContent> GetFocusedContent();
 
   
-  
+
+
+
   virtual already_AddRefed<nsIContent> GetFocusedContentForIME();
 
   
-  
-  
+
+
+
+
   virtual bool IsActiveInDOMWindow();
 
   
-  
-  
-  
+
+
+
+
+
   virtual bool IsAcceptableInputEvent(nsIDOMEvent* aEvent);
 
   
-  
-  
-  
-  
+
+
+
+
+
+
   virtual already_AddRefed<nsIContent> FindSelectionRoot(nsINode* aNode);
 
   
-  
-  
+
+
+
+
   nsresult InitializeSelection(nsIDOMEventTarget* aFocusEventTarget);
 
   
-  
-  
+
+
+
+
   void OnFocus(nsIDOMEventTarget* aFocusEventTarget);
 
   
-  
-  
-  virtual nsresult InsertFromDataTransfer(mozilla::dom::DataTransfer *aDataTransfer,
+
+
+
+
+  virtual nsresult InsertFromDataTransfer(dom::DataTransfer* aDataTransfer,
                                           int32_t aIndex,
-                                          nsIDOMDocument *aSourceDoc,
-                                          nsIDOMNode *aDestinationNode,
+                                          nsIDOMDocument* aSourceDoc,
+                                          nsIDOMNode* aDestinationNode,
                                           int32_t aDestOffset,
                                           bool aDoDeleteSelection) = 0;
 
   virtual nsresult InsertFromDrop(nsIDOMEvent* aDropEvent) = 0;
 
-  virtual already_AddRefed<nsIDOMNode> FindUserSelectAllNode(nsIDOMNode* aNode) { return nullptr; }
+  virtual already_AddRefed<nsIDOMNode> FindUserSelectAllNode(nsIDOMNode* aNode)
+  {
+    return nullptr;
+  }
 
   
 
@@ -831,33 +933,41 @@ public:
   void HideCaret(bool aHide);
 
 protected:
-  enum Tristate {
+  enum Tristate
+  {
     eTriUnset,
     eTriFalse,
     eTriTrue
   };
+
   
-  nsCString mContentMIMEType;       
+  nsCString mContentMIMEType;
 
   nsCOMPtr<nsIInlineSpellChecker> mInlineSpellChecker;
 
   RefPtr<nsTransactionManager> mTxnMgr;
-  nsCOMPtr<Element> mRootElement; 
-  RefPtr<Text>    mIMETextNode; 
-  nsCOMPtr<mozilla::dom::EventTarget> mEventTarget; 
+  
+  nsCOMPtr<Element> mRootElement;
+  
+  RefPtr<Text> mIMETextNode;
+  
+  nsCOMPtr<dom::EventTarget> mEventTarget;
   nsCOMPtr<nsIDOMEventListener> mEventListener;
-  nsWeakPtr        mSelConWeak;          
-  nsWeakPtr        mPlaceHolderTxn;      
-  nsWeakPtr        mDocWeak;             
-  nsIAtom          *mPlaceHolderName;    
   
-  mozilla::SelectionState* mSelState;
-  nsString         *mPhonetic;
+  nsWeakPtr mSelConWeak;
+  
+  nsWeakPtr mPlaceHolderTxn;
+  
+  nsWeakPtr mDocWeak;
+  
+  nsIAtom* mPlaceHolderName;
+  
+  SelectionState* mSelState;
+  nsString* mPhonetic;
   
   
-  RefPtr<mozilla::TextComposition> mComposition;
+  RefPtr<TextComposition> mComposition;
 
-  
   
   nsTArray<OwningNonNull<nsIEditActionListener>> mActionListeners;
   
@@ -866,40 +976,54 @@ protected:
   nsTArray<OwningNonNull<nsIDocumentStateListener>> mDocStateListeners;
 
   
-  mozilla::SelectionState mSavedSel;
+  SelectionState mSavedSel;
   
-  mozilla::RangeUpdater mRangeUpdater;
+  RangeUpdater mRangeUpdater;
 
-  uint32_t          mModCount;     
-  uint32_t          mFlags;        
+  
+  uint32_t mModCount;
+  
+  uint32_t mFlags;
 
-  int32_t           mUpdateCount;
+  int32_t mUpdateCount;
 
-  int32_t           mPlaceHolderBatch;   
-  EditAction        mAction;             
+  
+  int32_t mPlaceHolderBatch;
+  
+  EditAction mAction;
 
-  uint32_t          mIMETextOffset;    
+  
+  uint32_t mIMETextOffset;
   
   
-  uint32_t          mIMETextLength;
+  uint32_t mIMETextLength;
 
-  EDirection        mDirection;          
-  int8_t            mDocDirtyState;      
-  uint8_t           mSpellcheckCheckboxState; 
+  
+  EDirection mDirection;
+  
+  int8_t mDocDirtyState;
+  
+  uint8_t mSpellcheckCheckboxState;
 
-  bool mShouldTxnSetSelection;  
-  bool mDidPreDestroy;    
-  bool mDidPostCreate;    
+  
+  bool mShouldTxnSetSelection;
+  
+  bool mDidPreDestroy;
+  
+  bool mDidPostCreate;
   bool mDispatchInputEvent;
-  bool mIsInEditAction;   
-  bool mHidingCaret;      
+  
+  bool mIsInEditAction;
+  
+  bool mHidingCaret;
 
   friend bool NSCanUnload(nsISupports* serviceMgr);
-  friend class mozilla::AutoRules;
-  friend class mozilla::AutoSelectionRestorer;
-  friend class mozilla::AutoTransactionsConserveSelection;
-  friend class mozilla::RangeUpdater;
+  friend class AutoRules;
+  friend class AutoSelectionRestorer;
+  friend class AutoTransactionsConserveSelection;
+  friend class RangeUpdater;
 };
 
+} 
 
-#endif
+#endif 

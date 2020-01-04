@@ -5,11 +5,12 @@
 
 #include "InsertNodeTransaction.h"
 
+#include "mozilla/EditorBase.h"         
+
 #include "mozilla/dom/Selection.h"      
 
 #include "nsAString.h"
 #include "nsDebug.h"                    
-#include "nsEditor.h"                   
 #include "nsError.h"                    
 #include "nsIContent.h"                 
 #include "nsMemory.h"                   
@@ -23,11 +24,11 @@ using namespace dom;
 InsertNodeTransaction::InsertNodeTransaction(nsIContent& aNode,
                                              nsINode& aParent,
                                              int32_t aOffset,
-                                             nsEditor& aEditor)
+                                             EditorBase& aEditorBase)
   : mNode(&aNode)
   , mParent(&aParent)
   , mOffset(aOffset)
-  , mEditor(aEditor)
+  , mEditorBase(aEditorBase)
 {
 }
 
@@ -58,15 +59,15 @@ InsertNodeTransaction::DoTransaction()
   
   nsCOMPtr<nsIContent> ref = mParent->GetChildAt(mOffset);
 
-  mEditor.MarkNodeDirty(GetAsDOMNode(mNode));
+  mEditorBase.MarkNodeDirty(GetAsDOMNode(mNode));
 
   ErrorResult rv;
   mParent->InsertBefore(*mNode, ref, rv);
   NS_ENSURE_TRUE(!rv.Failed(), rv.StealNSResult());
 
   
-  if (mEditor.GetShouldTxnSetSelection()) {
-    RefPtr<Selection> selection = mEditor.GetSelection();
+  if (mEditorBase.GetShouldTxnSetSelection()) {
+    RefPtr<Selection> selection = mEditorBase.GetSelection();
     NS_ENSURE_TRUE(selection, NS_ERROR_NULL_POINTER);
     
     selection->Collapse(mParent, mOffset + 1);

@@ -12,11 +12,12 @@
 #include "nsISupportsImpl.h"            
 #include "nscore.h"                     
 
-class nsEditor;
 class nsIContent;
 class nsINode;
 
 namespace mozilla {
+
+class EditorBase;
 
 
 
@@ -32,7 +33,8 @@ public:
 
 
 
-  SplitNodeTransaction(nsEditor& aEditor, nsIContent& aNode, int32_t aOffset);
+  SplitNodeTransaction(EditorBase& aEditorBase, nsIContent& aNode,
+                       int32_t aOffset);
 
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(SplitNodeTransaction,
@@ -47,7 +49,7 @@ public:
 protected:
   virtual ~SplitNodeTransaction();
 
-  nsEditor& mEditor;
+  EditorBase& mEditorBase;
 
   
   nsCOMPtr<nsIContent> mExistingRightNode;

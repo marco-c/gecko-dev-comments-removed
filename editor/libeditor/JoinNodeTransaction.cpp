@@ -4,9 +4,10 @@
 
 
 #include "JoinNodeTransaction.h"
+
+#include "mozilla/EditorBase.h"         
 #include "nsAString.h"
 #include "nsDebug.h"                    
-#include "nsEditor.h"                   
 #include "nsError.h"                    
 #include "nsIContent.h"                 
 #include "nsIDOMCharacterData.h"        
@@ -17,10 +18,10 @@ namespace mozilla {
 
 using namespace dom;
 
-JoinNodeTransaction::JoinNodeTransaction(nsEditor& aEditor,
+JoinNodeTransaction::JoinNodeTransaction(EditorBase& aEditorBase,
                                          nsINode& aLeftNode,
                                          nsINode& aRightNode)
-  : mEditor(aEditor)
+  : mEditorBase(aEditorBase)
   , mLeftNode(&aLeftNode)
   , mRightNode(&aRightNode)
   , mOffset(0)
@@ -38,7 +39,7 @@ NS_INTERFACE_MAP_END_INHERITING(EditTransactionBase)
 nsresult
 JoinNodeTransaction::CheckValidity()
 {
-  if (!mEditor.IsModifiableNode(mLeftNode->GetParentNode())) {
+  if (!mEditorBase.IsModifiableNode(mLeftNode->GetParentNode())) {
     return NS_ERROR_FAILURE;
   }
   return NS_OK;
@@ -64,7 +65,7 @@ JoinNodeTransaction::DoTransaction()
   mParent = leftParent;
   mOffset = mLeftNode->Length();
 
-  return mEditor.JoinNodesImpl(mRightNode, mLeftNode, mParent);
+  return mEditorBase.JoinNodesImpl(mRightNode, mLeftNode, mParent);
 }
 
 

@@ -5,11 +5,11 @@
 
 #include "InsertTextTransaction.h"
 
+#include "mozilla/EditorBase.h"         
 #include "mozilla/dom/Selection.h"      
 #include "mozilla/dom/Text.h"           
 #include "nsAString.h"                  
 #include "nsDebug.h"                    
-#include "nsEditor.h"                   
 #include "nsError.h"                    
 #include "nsQueryObject.h"              
 
@@ -20,11 +20,11 @@ using namespace dom;
 InsertTextTransaction::InsertTextTransaction(Text& aTextNode,
                                              uint32_t aOffset,
                                              const nsAString& aStringToInsert,
-                                             nsEditor& aEditor)
+                                             EditorBase& aEditorBase)
   : mTextNode(&aTextNode)
   , mOffset(aOffset)
   , mStringToInsert(aStringToInsert)
-  , mEditor(aEditor)
+  , mEditorBase(aEditorBase)
 {
 }
 
@@ -51,8 +51,8 @@ InsertTextTransaction::DoTransaction()
   NS_ENSURE_SUCCESS(res, res);
 
   
-  if (mEditor.GetShouldTxnSetSelection()) {
-    RefPtr<Selection> selection = mEditor.GetSelection();
+  if (mEditorBase.GetShouldTxnSetSelection()) {
+    RefPtr<Selection> selection = mEditorBase.GetSelection();
     NS_ENSURE_TRUE(selection, NS_ERROR_NULL_POINTER);
     res = selection->Collapse(mTextNode,
                               mOffset + mStringToInsert.Length());

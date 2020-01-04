@@ -11,7 +11,6 @@
 #include "nsCycleCollectionParticipant.h"
 #include "nsISupportsImpl.h"
 
-class nsEditor;
 class nsIAtom;
 class nsIContent;
 class nsINode;
@@ -21,6 +20,7 @@ class nsINode;
 
 namespace mozilla {
 
+class EditorBase;
 namespace dom {
 class Element;
 } 
@@ -38,7 +38,7 @@ public:
 
 
 
-  CreateElementTransaction(nsEditor& aEditor,
+  CreateElementTransaction(EditorBase& aEditorBase,
                            nsIAtom& aTag,
                            nsINode& aParent,
                            int32_t aOffsetInParent);
@@ -57,7 +57,7 @@ protected:
   virtual ~CreateElementTransaction();
 
   
-  nsEditor* mEditor;
+  EditorBase* mEditorBase;
 
   
   nsCOMPtr<nsIAtom> mTag;

@@ -12,10 +12,11 @@
 #include "nsID.h"                       
 #include "nscore.h"                     
 
-class nsEditor;
 class nsINode;
 
 namespace mozilla {
+
+class EditorBase;
 
 
 
@@ -31,7 +32,7 @@ public:
 
 
 
-  JoinNodeTransaction(nsEditor& aEditor,
+  JoinNodeTransaction(EditorBase& aEditorBase,
                       nsINode& aLeftNode, nsINode& aRightNode);
 
   
@@ -46,7 +47,7 @@ public:
   NS_DECL_EDITTRANSACTIONBASE
 
 protected:
-  nsEditor&  mEditor;
+  EditorBase& mEditorBase;
 
   
   

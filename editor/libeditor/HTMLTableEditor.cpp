@@ -16,7 +16,6 @@
 #include "nsAlgorithm.h"
 #include "nsCOMPtr.h"
 #include "nsDebug.h"
-#include "nsEditor.h"
 #include "nsError.h"
 #include "nsGkAtoms.h"
 #include "nsIAtom.h"
@@ -1978,13 +1977,13 @@ HTMLEditor::SwitchTableCellHeaderType(nsIDOMElement* aSourceCell,
   AutoSelectionRestorer selectionRestorer(selection, this);
 
   
-  nsCOMPtr<nsIAtom> atom = nsEditor::GetTag(aSourceCell);
+  nsCOMPtr<nsIAtom> atom = EditorBase::GetTag(aSourceCell);
   nsIAtom* newCellType = atom == nsGkAtoms::td ? nsGkAtoms::th : nsGkAtoms::td;
 
   
   
   nsCOMPtr<Element> newNode = ReplaceContainer(sourceCell, newCellType,
-      nullptr, nullptr, nsEditor::eCloneAttributes);
+      nullptr, nullptr, EditorBase::eCloneAttributes);
   NS_ENSURE_TRUE(newNode, NS_ERROR_FAILURE);
 
   
@@ -3251,7 +3250,7 @@ HTMLEditor::GetSelectedOrParentTableElement(nsAString& aTagName,
       }
       else
       {
-        nsCOMPtr<nsIAtom> atom = nsEditor::GetTag(selectedNode);
+        nsCOMPtr<nsIAtom> atom = EditorBase::GetTag(selectedNode);
 
         if (atom == nsGkAtoms::td) {
           tableOrCellElement = do_QueryInterface(selectedNode);

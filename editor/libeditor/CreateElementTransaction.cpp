@@ -12,11 +12,11 @@
 #include "mozilla/dom/Selection.h"
 
 #include "mozilla/Casting.h"
+#include "mozilla/EditorBase.h"
 
 #include "nsAlgorithm.h"
 #include "nsAString.h"
 #include "nsDebug.h"
-#include "nsEditor.h"
 #include "nsError.h"
 #include "nsIContent.h"
 #include "nsIDOMCharacterData.h"
@@ -32,12 +32,12 @@ namespace mozilla {
 
 using namespace dom;
 
-CreateElementTransaction::CreateElementTransaction(nsEditor& aEditor,
+CreateElementTransaction::CreateElementTransaction(EditorBase& aEditorBase,
                                                    nsIAtom& aTag,
                                                    nsINode& aParent,
                                                    int32_t aOffsetInParent)
   : EditTransactionBase()
-  , mEditor(&aEditor)
+  , mEditorBase(&aEditorBase)
   , mTag(&aTag)
   , mParent(&aParent)
   , mOffsetInParent(aOffsetInParent)
@@ -63,13 +63,13 @@ NS_INTERFACE_MAP_END_INHERITING(EditTransactionBase)
 NS_IMETHODIMP
 CreateElementTransaction::DoTransaction()
 {
-  MOZ_ASSERT(mEditor && mTag && mParent);
+  MOZ_ASSERT(mEditorBase && mTag && mParent);
 
-  mNewNode = mEditor->CreateHTMLContent(mTag);
+  mNewNode = mEditorBase->CreateHTMLContent(mTag);
   NS_ENSURE_STATE(mNewNode);
 
   
-  mEditor->MarkNodeDirty(GetAsDOMNode(mNewNode));
+  mEditorBase->MarkNodeDirty(GetAsDOMNode(mNewNode));
 
   
   ErrorResult rv;
@@ -88,12 +88,12 @@ CreateElementTransaction::DoTransaction()
   NS_ENSURE_TRUE(!rv.Failed(), rv.StealNSResult());
 
   
-  if (!mEditor->GetShouldTxnSetSelection()) {
+  if (!mEditorBase->GetShouldTxnSetSelection()) {
     
     return NS_OK;
   }
 
-  RefPtr<Selection> selection = mEditor->GetSelection();
+  RefPtr<Selection> selection = mEditorBase->GetSelection();
   NS_ENSURE_TRUE(selection, NS_ERROR_NULL_POINTER);
 
   rv = selection->CollapseNative(mParent, mParent->IndexOf(mNewNode) + 1);
@@ -105,7 +105,7 @@ CreateElementTransaction::DoTransaction()
 NS_IMETHODIMP
 CreateElementTransaction::UndoTransaction()
 {
-  MOZ_ASSERT(mEditor && mParent);
+  MOZ_ASSERT(mEditorBase && mParent);
 
   ErrorResult rv;
   mParent->RemoveChild(*mNewNode, rv);
@@ -116,7 +116,7 @@ CreateElementTransaction::UndoTransaction()
 NS_IMETHODIMP
 CreateElementTransaction::RedoTransaction()
 {
-  MOZ_ASSERT(mEditor && mParent);
+  MOZ_ASSERT(mEditorBase && mParent);
 
   
   

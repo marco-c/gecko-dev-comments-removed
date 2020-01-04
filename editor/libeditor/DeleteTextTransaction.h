@@ -14,10 +14,9 @@
 #include "nsString.h"
 #include "nscore.h"
 
-class nsEditor;
-
 namespace mozilla {
 
+class EditorBase;
 class RangeUpdater;
 
 
@@ -34,7 +33,7 @@ public:
 
 
 
-  DeleteTextTransaction(nsEditor& aEditor,
+  DeleteTextTransaction(EditorBase& aEditorBase,
                         nsGenericDOMDataNode& aCharData,
                         uint32_t aOffset,
                         uint32_t aNumCharsToDelete,
@@ -54,7 +53,7 @@ public:
 
 protected:
   
-  nsEditor& mEditor;
+  EditorBase& mEditorBase;
 
   
   RefPtr<nsGenericDOMDataNode> mCharData;

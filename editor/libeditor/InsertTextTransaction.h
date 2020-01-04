@@ -13,7 +13,6 @@
 #include "nsString.h"                   
 #include "nscore.h"                     
 
-class nsEditor;
 class nsITransaction;
 
 #define NS_INSERTTEXTTXN_IID \
@@ -22,6 +21,7 @@ class nsITransaction;
 
 namespace mozilla {
 
+class EditorBase;
 namespace dom {
 class Text;
 } 
@@ -41,7 +41,7 @@ public:
 
 
   InsertTextTransaction(dom::Text& aTextNode, uint32_t aOffset,
-                        const nsAString& aString, nsEditor& aEditor);
+                        const nsAString& aString, EditorBase& aEditorBase);
 
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(InsertTextTransaction,
@@ -72,7 +72,7 @@ private:
   nsString mStringToInsert;
 
   
-  nsEditor& mEditor;
+  EditorBase& mEditorBase;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(InsertTextTransaction, NS_INSERTTEXTTXN_IID)

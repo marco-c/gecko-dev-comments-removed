@@ -12,9 +12,9 @@
 #include "nsIContent.h"                 
 #include "nsISupportsImpl.h"            
 
-class nsEditor;
-
 namespace mozilla {
+
+class EditorBase;
 
 
 
@@ -29,7 +29,7 @@ public:
 
 
   InsertNodeTransaction(nsIContent& aNode, nsINode& aParent, int32_t aOffset,
-                        nsEditor& aEditor);
+                        EditorBase& aEditorBase);
 
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(InsertNodeTransaction,
@@ -50,7 +50,7 @@ protected:
   int32_t mOffset;
 
   
-  nsEditor& mEditor;
+  EditorBase& mEditorBase;
 };
 
 } 

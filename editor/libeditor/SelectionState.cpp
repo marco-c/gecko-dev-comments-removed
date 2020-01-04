@@ -11,7 +11,6 @@
 #include "nsAString.h"                  
 #include "nsCycleCollectionParticipant.h"
 #include "nsDebug.h"                    
-#include "nsEditor.h"                   
 #include "nsError.h"                    
 #include "nsIContent.h"                 
 #include "nsIDOMCharacterData.h"        

@@ -14,11 +14,11 @@
 #include "nsRange.h"
 #include "nscore.h"
 
-class nsEditor;
 class nsINode;
 
 namespace mozilla {
 
+class EditorBase;
 class RangeUpdater;
 
 
@@ -32,7 +32,7 @@ public:
 
 
 
-  nsresult Init(nsEditor* aEditor,
+  nsresult Init(EditorBase* aEditorBase,
                 nsRange* aRange,
                 RangeUpdater* aRangeUpdater);
 
@@ -67,7 +67,7 @@ protected:
   RefPtr<nsRange> mRange;
 
   
-  nsEditor* mEditor;
+  EditorBase* mEditorBase;
 
   
   RangeUpdater* mRangeUpdater;
