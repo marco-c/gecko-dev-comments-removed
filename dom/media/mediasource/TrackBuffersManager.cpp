@@ -308,6 +308,13 @@ TrackBuffersManager::CompleteResetParserState()
   MOZ_ASSERT(OnTaskQueue());
   MSE_DEBUG("");
 
+  
+  
+  NS_ASSERTION(!mDemuxerInitRequest.Exists(), "Previous AppendBuffer didn't complete");
+  if (mDemuxerInitRequest.Exists()) {
+    mDemuxerInitRequest.Disconnect();
+  }
+
   for (auto& track : GetTracksList()) {
     
     
@@ -882,7 +889,7 @@ TrackBuffersManager::OnDemuxerInitDone(nsresult)
   if (!mInputDemuxer) {
     
     
-    NS_WARNING("mInputDemuxer has been destroyed");
+    NS_ASSERTION(false, "mInputDemuxer has been destroyed");
     RejectAppend(NS_ERROR_ABORT, __func__);
   }
 
