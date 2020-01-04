@@ -25,18 +25,6 @@ var ProcessHangMonitor = {
 
 
 
-  get HANG_EXPIRATION_TIME() {
-    try {
-      return Services.prefs.getIntPref("browser.hangNotification.expiration");
-    } catch (ex) {
-      return 10000;
-    }
-  },
-
-  
-
-
-
   get WAIT_EXPIRATION_TIME() {
     try {
       return Services.prefs.getIntPref("browser.hangNotification.waitPeriod");
@@ -49,11 +37,10 @@ var ProcessHangMonitor = {
 
 
 
-
-
-  _activeReports: new Map(),
+  _activeReports: new Set(),
 
   
+
 
 
 
@@ -64,6 +51,7 @@ var ProcessHangMonitor = {
 
   init: function() {
     Services.obs.addObserver(this, "process-hang-report", false);
+    Services.obs.addObserver(this, "clear-hang-report", false);
     Services.obs.addObserver(this, "xpcom-shutdown", false);
     Services.ww.registerNotification(this);
   },
@@ -148,16 +136,9 @@ var ProcessHangMonitor = {
           this.removePausedReport(stashedReport);
 
           
-          let timer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
-          timer.initWithCallback(this, this.HANG_EXPIRATION_TIME, timer.TYPE_ONE_SHOT);
-
           
-          
-          
-          
-          
-          
-          this._activeReports.set(report, timer);
+          this._activeReports.add(report);
+          this.updateWindows();
           break;
         }
       }
@@ -189,11 +170,16 @@ var ProcessHangMonitor = {
       case "xpcom-shutdown":
         Services.obs.removeObserver(this, "xpcom-shutdown");
         Services.obs.removeObserver(this, "process-hang-report");
+        Services.obs.removeObserver(this, "clear-hang-report");
         Services.ww.unregisterNotification(this);
         break;
 
       case "process-hang-report":
         this.reportHang(subject.QueryInterface(Ci.nsIHangReport));
+        break;
+
+      case "clear-hang-report":
+        this.clearHang(subject.QueryInterface(Ci.nsIHangReport));
         break;
 
       case "domwindowopened":
@@ -214,7 +200,7 @@ var ProcessHangMonitor = {
 
   findActiveReport: function(browser) {
     let frameLoader = browser.QueryInterface(Ci.nsIFrameLoaderOwner).frameLoader;
-    for (let [report, timer] of this._activeReports) {
+    for (let report of this._activeReports) {
       if (report.isReportForBrowser(frameLoader)) {
         return report;
       }
@@ -240,10 +226,6 @@ var ProcessHangMonitor = {
 
 
   removeActiveReport: function(report) {
-    let timer = this._activeReports.get(report);
-    if (timer) {
-      timer.cancel();
-    }
     this._activeReports.delete(report);
     this.updateWindows();
   },
@@ -382,9 +364,6 @@ var ProcessHangMonitor = {
   reportHang: function(report) {
     
     if (this._activeReports.has(report)) {
-      let timer = this._activeReports.get(report);
-      timer.cancel();
-      timer.initWithCallback(this, this.HANG_EXPIRATION_TIME, timer.TYPE_ONE_SHOT);
       
       
       this.updateWindows();
@@ -407,24 +386,13 @@ var ProcessHangMonitor = {
       Services.telemetry.getHistogramById("PLUGIN_HANG_NOTICE_COUNT").add();
     }
 
-    
-    let timer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
-    timer.initWithCallback(this, this.HANG_EXPIRATION_TIME, timer.TYPE_ONE_SHOT);
-
-    this._activeReports.set(report, timer);
+    this._activeReports.add(report);
     this.updateWindows();
   },
 
-  
-
-
-  notify: function(timer) {
-    for (let [otherReport, otherTimer] of this._activeReports) {
-      if (otherTimer === timer) {
-        this.removeActiveReport(otherReport);
-        otherReport.userCanceled();
-        break;
-      }
-    }
+  clearHang: function(report) {
+    this.removeActiveReport(report);
+    this.removePausedReport(report);
+    report.userCanceled();
   },
 };

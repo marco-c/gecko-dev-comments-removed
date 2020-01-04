@@ -126,8 +126,7 @@ add_task(function* waitForScriptTest() {
   
   
 
-  yield pushPrefs(["browser.hangNotification.waitPeriod", 1000],
-                  ["browser.hangNotification.expiration", 2000]);
+  yield pushPrefs(["browser.hangNotification.waitPeriod", 1000]);
 
   function nocbcheck() {
     ok(false, "received a callback?");
@@ -142,9 +141,9 @@ add_task(function* waitForScriptTest() {
   Services.obs.notifyObservers(gTestHangReport, "process-hang-report", null);
   is(notification.currentNotification, null, "no notification should be visible");
 
-  
-  
-  yield promiseReportCallMade(gTestHangReport.TEST_CALLBACK_CANCELED);
+  gTestHangReport.testCallback = function() {};
+  Services.obs.notifyObservers(gTestHangReport, "clear-hang-report", null);
+  gTestHangReport.testCallback = oldcb;
 
   yield popPrefs();
 });
@@ -161,7 +160,9 @@ add_task(function* hangGoesAwayTest() {
   Services.obs.notifyObservers(gTestHangReport, "process-hang-report", null);
   yield promise;
 
-  yield promiseReportCallMade(gTestHangReport.TEST_CALLBACK_CANCELED);
+  promise = promiseReportCallMade(gTestHangReport.TEST_CALLBACK_CANCELED);
+  Services.obs.notifyObservers(gTestHangReport, "clear-hang-report", null);
+  yield promise;
 
   yield popPrefs();
 });
