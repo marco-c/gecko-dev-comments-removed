@@ -329,6 +329,9 @@ public class RecentTabsPanel extends HomeFragment
                 }
             }
 
+            
+            GeckoProfile.get(context).waitForOldSessionDataProcessing();
+
             final String jsonString = GeckoProfile.get(context).readSessionFile(true);
             if (jsonString == null) {
                 

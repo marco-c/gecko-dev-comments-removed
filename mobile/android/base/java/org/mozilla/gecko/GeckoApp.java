@@ -77,6 +77,7 @@ import android.os.Process;
 import android.os.StrictMode;
 import android.provider.ContactsContract;
 import android.provider.MediaStore.Images.Media;
+import android.support.annotation.WorkerThread;
 import android.support.design.widget.Snackbar;
 import android.text.TextUtils;
 import android.util.AttributeSet;
@@ -201,6 +202,8 @@ public abstract class GeckoApp
 
     protected boolean mLastSessionCrashed;
     protected boolean mShouldRestore;
+    private boolean mSessionRestoreParsingFinished = false;
+
     protected boolean mInitialized;
     protected boolean mWindowFocusInitialized;
     private Telemetry.Timer mJavaUiStartupTimer;
@@ -1276,6 +1279,43 @@ public abstract class GeckoApp
             mPrivateBrowsingSession = savedInstanceState.getString(SAVED_STATE_PRIVATE_SESSION);
         }
 
+        ThreadUtils.postToBackgroundThread(new Runnable() {
+            @Override
+            public void run() {
+                
+                String restoreMessage = null;
+                if (!mIsRestoringActivity && mShouldRestore) {
+                    try {
+                        
+                        
+                        
+                        
+                        
+                        
+                        final SafeIntent intent = new SafeIntent(getIntent());
+                        restoreMessage = restoreSessionTabs(invokedWithExternalURL(getIntentURI(intent)));
+                    } catch (SessionRestoreException e) {
+                        
+                        Log.e(LOGTAG, "An error occurred during restore", e);
+                        mShouldRestore = false;
+                    }
+                }
+
+                synchronized (this) {
+                    mSessionRestoreParsingFinished = true;
+                    notifyAll();
+                }
+
+                
+                if (!mIsRestoringActivity) {
+                    GeckoAppShell.notifyObservers("Session:Restore", restoreMessage);
+                }
+
+                
+                getProfile().updateSessionFile(mShouldRestore);
+            }
+        });
+
         
         ThreadUtils.postToBackgroundThread(new Runnable() {
             @Override
@@ -1490,25 +1530,16 @@ public abstract class GeckoApp
         initializeChrome();
 
         
-        if (!mIsRestoringActivity) {
-            String restoreMessage = null;
-            if (mShouldRestore) {
+        
+        
+        synchronized (this) {
+            while (!mSessionRestoreParsingFinished) {
                 try {
+                    wait();
+                } catch (final InterruptedException e) {
                     
-                    
-                    
-                    
-                    
-                    
-                    restoreMessage = restoreSessionTabs(isExternalURL);
-                } catch (SessionRestoreException e) {
-                    
-                    Log.e(LOGTAG, "An error occurred during restore", e);
-                    mShouldRestore = false;
                 }
             }
-
-            GeckoAppShell.notifyObservers("Session:Restore", restoreMessage);
         }
 
         
@@ -1539,9 +1570,6 @@ public abstract class GeckoApp
 
             processTabQueue();
         }
-
-        
-        getProfile().updateSessionFile(mShouldRestore);
 
         recordStartupActionTelemetry(passedUri, action);
 
@@ -1651,6 +1679,7 @@ public abstract class GeckoApp
         });
     }
 
+    @WorkerThread
     private String restoreSessionTabs(final boolean isExternalURL) throws SessionRestoreException {
         try {
             String sessionString = getProfile().readSessionFile(false);
@@ -1666,7 +1695,7 @@ public abstract class GeckoApp
                 final JSONObject windowObject = new JSONObject();
                 SessionParser parser = new SessionParser() {
                     @Override
-                    public void onTabRead(SessionTab sessionTab) {
+                    public void onTabRead(final SessionTab sessionTab) {
                         JSONObject tabObject = sessionTab.getTabObject();
 
                         int flags = Tabs.LOADURL_NEW_TAB;
@@ -1674,8 +1703,13 @@ public abstract class GeckoApp
                         flags |= (tabObject.optBoolean("desktopMode") ? Tabs.LOADURL_DESKTOP : 0);
                         flags |= (tabObject.optBoolean("isPrivate") ? Tabs.LOADURL_PRIVATE : 0);
 
-                        Tab tab = Tabs.getInstance().loadUrl(sessionTab.getUrl(), flags);
-                        tab.updateTitle(sessionTab.getTitle());
+                        final Tab tab = Tabs.getInstance().loadUrl(sessionTab.getUrl(), flags);
+                        ThreadUtils.postToUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                tab.updateTitle(sessionTab.getTitle());
+                            }
+                        });
 
                         try {
                             tabObject.put("tabId", tab.getId());
