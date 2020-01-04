@@ -705,6 +705,8 @@ private:
   void RecordLongtermICEStatistics();
 
   void OnNegotiationNeeded();
+  static void MaybeFireNegotiationNeeded_static(const std::string& pcHandle);
+  void MaybeFireNegotiationNeeded();
 
   
   
@@ -797,7 +799,7 @@ private:
 
   bool mTrickle;
 
-  bool mShouldSuppressNegotiationNeeded;
+  bool mNegotiationNeeded;
 
   
   uint16_t mMaxReceiving[SdpMediaSection::kMediaTypes];
