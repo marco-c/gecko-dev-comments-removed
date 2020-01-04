@@ -43,7 +43,17 @@ NS_IMPL_ISUPPORTS(CSPService, nsIContentPolicy, nsIChannelEventSink)
 
 
 bool
-subjectToCSP(nsIURI* aURI) {
+subjectToCSP(nsIURI* aURI, nsContentPolicyType aContentType) {
+  
+  
+  
+  
+  if (aContentType == nsIContentPolicy::TYPE_CSP_REPORT ||
+      aContentType == nsIContentPolicy::TYPE_REFRESH ||
+      aContentType == nsIContentPolicy::TYPE_DOCUMENT) {
+    return false;
+  }
+
   
   
   
@@ -121,17 +131,7 @@ CSPService::ShouldLoad(uint32_t aContentType,
   
   
   
-  if (!sCSPEnabled || !subjectToCSP(aContentLocation)) {
-    return NS_OK;
-  }
-
-  
-  
-  
-  
-  if (aContentType == nsIContentPolicy::TYPE_CSP_REPORT ||
-    aContentType == nsIContentPolicy::TYPE_REFRESH ||
-    aContentType == nsIContentPolicy::TYPE_DOCUMENT) {
+  if (!sCSPEnabled || !subjectToCSP(aContentLocation, aContentType)) {
     return NS_OK;
   }
 
@@ -252,20 +252,20 @@ CSPService::AsyncOnChannelRedirect(nsIChannel *oldChannel,
   nsresult rv = newChannel->GetURI(getter_AddRefs(newUri));
   NS_ENSURE_SUCCESS(rv, rv);
 
-  
-  
-  
-  
-  
-  if (!sCSPEnabled || !subjectToCSP(newUri)) {
-    return NS_OK;
-  }
-
-  nsCOMPtr<nsILoadInfo> loadInfo;
-  rv = oldChannel->GetLoadInfo(getter_AddRefs(loadInfo));
+  nsCOMPtr<nsILoadInfo> loadInfo = oldChannel->GetLoadInfo();
 
   
   if (!loadInfo) {
+    return NS_OK;
+  }
+
+  
+  
+  
+  
+  
+  nsContentPolicyType policyType = loadInfo->InternalContentPolicyType();
+  if (!sCSPEnabled || !subjectToCSP(newUri, policyType)) {
     return NS_OK;
   }
 
@@ -279,7 +279,6 @@ CSPService::AsyncOnChannelRedirect(nsIChannel *oldChannel,
   nsCOMPtr<nsIURI> originalUri;
   rv = oldChannel->GetOriginalURI(getter_AddRefs(originalUri));
   NS_ENSURE_SUCCESS(rv, rv);
-  nsContentPolicyType policyType = loadInfo->InternalContentPolicyType();
 
   bool isPreload = nsContentUtils::IsPreloadType(policyType);
 
