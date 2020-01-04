@@ -392,7 +392,7 @@ MediaDecoderStateMachine::CreateMediaSink(bool aAudioCaptured)
   RefPtr<media::MediaSink> mediaSink =
     new VideoSink(mTaskQueue, audioSink, mVideoQueue,
                   mDecoder->GetVideoFrameContainer(), mRealTime,
-                  mDecoder->GetFrameStatistics(), AUDIO_DURATION_USECS,
+                  mDecoder->GetFrameStatistics(),
                   sVideoQueueSendToCompositorSize);
   return mediaSink.forget();
 }
@@ -892,19 +892,6 @@ MediaDecoderStateMachine::OnVideoDecoded(MediaData* aVideoSample)
       }
       if (mIsVideoPrerolling && DonePrerollingVideo()) {
         StopPrerollingVideo();
-      }
-
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      if (VideoQueue().GetSize() <= 2) {
-        ScheduleStateMachine();
       }
 
       

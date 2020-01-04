@@ -35,7 +35,6 @@ public:
             VideoFrameContainer* aContainer,
             bool aRealTime,
             FrameStatistics& aFrameStats,
-            int aDelayDuration,
             uint32_t aVQueueSentToCompositerSize);
 
   const PlaybackParams& GetPlaybackParams() const override;
@@ -74,7 +73,7 @@ private:
   virtual ~VideoSink();
 
   
-  void OnVideoQueueEvent();
+  void OnVideoQueueEvent(RefPtr<MediaData>&& aSample);
   void ConnectListener();
   void DisconnectListener();
 
@@ -138,10 +137,6 @@ private:
 
   
   DelayedScheduler mUpdateScheduler;
-
-  
-  
-  const int mDelayDuration;
 
   
   
