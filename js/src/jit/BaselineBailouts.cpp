@@ -706,6 +706,8 @@ InitFromBailout(JSContext* cx, HandleScript caller, jsbytecode* callerPC,
                 {
                     scopeChain = fun->environment();
                 }
+            } else if (script->module()) {
+                scopeChain = script->module()->environment();
             } else {
                 
                 
