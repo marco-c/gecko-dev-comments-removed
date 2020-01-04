@@ -160,6 +160,7 @@ public:
   
   bool MaybeSetPendingException(JSContext* cx)
   {
+    WouldReportJSException();
     if (!Failed()) {
       return false;
     }
@@ -184,7 +185,6 @@ public:
 
   bool IsErrorWithMessage() const { return ErrorCode() == NS_ERROR_TYPE_ERR || ErrorCode() == NS_ERROR_RANGE_ERR; }
 
-  
   
   
   
