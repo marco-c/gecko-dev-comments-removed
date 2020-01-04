@@ -7,6 +7,7 @@
 #ifndef jscompartment_h
 #define jscompartment_h
 
+#include "mozilla/LinkedList.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/Variant.h"
@@ -28,6 +29,10 @@ class JitCompartment;
 
 namespace gc {
 template<class Node> class ComponentFinder;
+} 
+
+namespace wasm {
+class Module;
 } 
 
 struct NativeIterator;
@@ -464,6 +469,9 @@ struct JSCompartment
 
     
     mozilla::LinkedList<js::UnboxedLayout> unboxedLayouts;
+
+    
+    mozilla::LinkedList<js::wasm::Module> wasmModules;
 
   private:
     
