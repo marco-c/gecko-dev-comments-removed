@@ -359,7 +359,6 @@ BytecodeEmitter::emitDupAt(unsigned slotFromTop)
 
 const char js_with_statement_str[] = "with statement";
 const char js_finally_block_str[]  = "finally block";
-const char js_script_str[]         = "script";
 
 static const char * const statementName[] = {
     "label statement",       
