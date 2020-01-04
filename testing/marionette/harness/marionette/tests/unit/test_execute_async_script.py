@@ -111,6 +111,19 @@ marionetteScriptFinished(4);
             "marionetteScriptFinished(global.barfoo);", new_sandbox=False),
                          [42, 23])
 
+    
+    
+    
+    
+    
+    
+    
+    
+    def test_introspection_of_arguments(self):
+        self.marionette.execute_async_script(
+            "arguments[0].cheese; __webDriverCallback();",
+            script_args=[], sandbox=None)
+
 
 class TestExecuteAsyncChrome(TestExecuteAsyncContent):
     def setUp(self):

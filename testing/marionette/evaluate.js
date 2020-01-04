@@ -112,7 +112,10 @@ evaluate.sandbox = function(sb, script, args = [], opts = {}) {
       sb[CALLBACK] = sb[COMPLETE];
       sb[ARGUMENTS] = Cu.cloneInto(args, sb, {wrapReflectors: true});
 
-      script = `${ARGUMENTS}.push(${CALLBACK});` +
+      
+      
+      
+      script = `${ARGUMENTS}.push(rv => ${CALLBACK}(rv));` +
           `(function() { ${script} }).apply(null, ${ARGUMENTS})`;
 
       
