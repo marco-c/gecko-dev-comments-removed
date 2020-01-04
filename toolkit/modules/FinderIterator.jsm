@@ -27,6 +27,9 @@ this.FinderIterator = {
   running: false,
 
   
+  get kIterationSizeMax() kIterationSizeMax,
+
+  
 
 
 
