@@ -1892,13 +1892,8 @@ MacroAssemblerARMCompat::callWithExitFrame(JitCode* target, Register dynStack)
 void
 MacroAssemblerARMCompat::callJit(Register callee)
 {
-    MOZ_ASSERT((asMasm().framePushed() & 3) == 0);
-    if ((asMasm().framePushed() & 7) == 4) {
-        ma_callJitHalfPush(callee);
-    } else {
-        asMasm().adjustFrame(sizeof(void*));
-        ma_callJit(callee);
-    }
+    MOZ_ASSERT((asMasm().framePushed() & 7) == 4);
+    ma_callJitHalfPush(callee);
 }
 
 void
@@ -3658,15 +3653,6 @@ MacroAssemblerARMCompat::storeTypeTag(ImmTag tag, const BaseIndex& dest)
 
 
 
-void
-MacroAssemblerARM::ma_callJit(const Register r)
-{
-    
-    
-    
-    as_sub(sp, sp, Imm8(4));
-    as_blx(r);
-}
 void
 MacroAssemblerARM::ma_callJitNoPush(const Register r)
 {

@@ -423,9 +423,7 @@ class MacroAssemblerARM : public Assembler
 
     BufferOffset ma_vstr(VFPRegister src, Register base, Register index, int32_t shift,
                          int32_t offset, Condition cc = Always);
-    
-    
-    void ma_callJit(const Register reg);
+
     
     void ma_callJitNoPush(const Register reg);
     
