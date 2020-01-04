@@ -1598,11 +1598,11 @@ JS_strdup(JSRuntime* rt, const char* s);
 
 
 extern JS_PUBLIC_API(bool)
-JS_AddExtraGCRootsTracer(JSRuntime* rt, JSTraceDataOp traceOp, void* data);
+JS_AddExtraGCRootsTracer(JSContext* cx, JSTraceDataOp traceOp, void* data);
 
 
 extern JS_PUBLIC_API(void)
-JS_RemoveExtraGCRootsTracer(JSRuntime* rt, JSTraceDataOp traceOp, void* data);
+JS_RemoveExtraGCRootsTracer(JSContext* cx, JSTraceDataOp traceOp, void* data);
 
 
 
