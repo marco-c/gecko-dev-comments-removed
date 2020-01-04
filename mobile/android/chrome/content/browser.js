@@ -325,7 +325,6 @@ const kStateActive = 0x00000001;
 const kXLinkNamespace = "http://www.w3.org/1999/xlink";
 
 const kDefaultCSSViewportWidth = 980;
-const kDefaultCSSViewportHeight = 480;
 
 const kViewportRemeasureThrottle = 500;
 
@@ -2117,12 +2116,6 @@ var BrowserApp = {
     this.setLocalizedPref("intl.accept_languages", result);
   },
 
-  get defaultBrowserWidth() {
-    delete this.defaultBrowserWidth;
-    let width = Services.prefs.getIntPref("browser.viewport.desktopWidth");
-    return this.defaultBrowserWidth = width;
-  },
-
   
   get selectedTab() {
     return this._selectedTab;
@@ -3419,8 +3412,6 @@ function Tab(aURL, aParams) {
   this.desktopMode = false;
   this.originalURI = null;
   this.hasTouchListener = false;
-  this.browserWidth = 0;
-  this.browserHeight = 0;
   this.tilesData = null;
 
   this.create(aURL, aParams);
@@ -3469,7 +3460,6 @@ Tab.prototype = {
     this.browser = document.createElement("browser");
     this.browser.setAttribute("type", "content-targetable");
     this.browser.setAttribute("messagemanagergroup", "browsers");
-    this.setBrowserSize(kDefaultCSSViewportWidth, kDefaultCSSViewportHeight);
 
     
     
@@ -4620,13 +4610,6 @@ Tab.prototype = {
     if (!sameDocument) {
       
       
-
-      
-      
-      
-      
-      this.setBrowserSize(kDefaultCSSViewportWidth, kDefaultCSSViewportHeight, true);
-
       this.contentDocumentIsDisplayed = false;
       this.hasTouchListener = false;
     } else {
@@ -4740,12 +4723,13 @@ Tab.prototype = {
   },
 
   
-  updateViewportMetadata: function updateViewportMetadata(aMetadata, aInitialLoad) {
+  updateViewportMetadata: function updateViewportMetadata(aMetadata) {
     if (Services.prefs.getBoolPref("browser.ui.zoom.force-user-scalable")) {
       aMetadata.allowZoom = true;
       aMetadata.allowDoubleTapZoom = true;
       aMetadata.minZoom = aMetadata.maxZoom = NaN;
     }
+    this.recomputeDoubleTapToZoomAllowed();
 
     let scaleRatio = window.devicePixelRatio;
 
@@ -4760,125 +4744,30 @@ Tab.prototype = {
 
     ViewportHandler.setMetadataForDocument(this.browser.contentDocument, aMetadata);
     this.sendViewportMetadata();
-
-    this.updateViewportSize(gScreenWidth, aInitialLoad);
   },
 
-  
-  updateViewportSize: function updateViewportSize(aOldScreenWidth, aInitialLoad) {
-    
-    
-    
-    
-    
+  viewportSizeUpdated: function viewportSizeUpdated() {
+    if (this.recomputeDoubleTapToZoomAllowed()) {
+      this.sendViewportMetadata();
+    }
+    this.sendViewportUpdate(); 
+  },
 
-    let browser = this.browser;
-    if (!browser)
-      return;
-
-    let viewportW, viewportH;
-
+  recomputeDoubleTapToZoomAllowed: function recomputeDoubleTapToZoomAllowed() {
     let metadata = this.metadata;
-    if (metadata.autoSize) {
-      viewportW = gScreenWidth / window.devicePixelRatio;
-      viewportH = gScreenHeight / window.devicePixelRatio;
-    } else {
-      viewportW = metadata.width;
-      viewportH = metadata.height;
-
-      
-      let maxInitialZoom = metadata.defaultZoom || metadata.maxZoom;
-      if (maxInitialZoom && viewportW) {
-        viewportW = Math.max(viewportW, gScreenWidth / maxInitialZoom);
-      }
-
-      let validW = viewportW > 0;
-      let validH = viewportH > 0;
-
-      if (!validW)
-        viewportW = validH ? (viewportH * (gScreenWidth / gScreenHeight)) : BrowserApp.defaultBrowserWidth;
-      if (!validH)
-        viewportH = viewportW * (gScreenHeight / gScreenWidth);
-    }
-
-    
-    
-    
-    
-    
-    
-    let oldBrowserWidth = this.browserWidth;
-    this.setBrowserSize(viewportW, viewportH);
-
-    
-    
-    
-    
-    
-    
-    
-    
-    if (!this.contentDocumentIsDisplayed) {
-      return;
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    let zoom = this.restoredSessionZoom() || metadata.defaultZoom;
-    if (!zoom || !aInitialLoad) {
-      let zoomScale = (gScreenWidth * oldBrowserWidth) / (aOldScreenWidth * viewportW);
-      zoom = this.clampZoom(this._zoom * zoomScale);
-    }
-    this.setResolution(zoom, false);
-    this.setScrollClampingSize(zoom);
-
-    let minScale = 1.0;
-    if (this.browser.contentDocument) {
-      
-      
-      let cwu = this.browser.contentWindow.QueryInterface(Ci.nsIInterfaceRequestor).getInterface(Ci.nsIDOMWindowUtils);
-      let cssPageRect = cwu.getRootBounds();
-
-      minScale = gScreenWidth / cssPageRect.width;
-    }
-    minScale = this.clampZoom(minScale);
-    viewportH = Math.max(viewportH, gScreenHeight / minScale);
-
-    
-    
-    
-    
-    
-    this.setBrowserSize(viewportW, viewportH);
-    this.setScrollClampingSize(zoom);
-
-    
-    let win = this.browser.contentWindow;
-    this.userScrollPos.x = win.scrollX;
-    this.userScrollPos.y = win.scrollY;
-
-    this.sendViewportUpdate();
-
     if (metadata.allowZoom && !Services.prefs.getBoolPref("browser.ui.zoom.force-user-scalable")) {
       
       
       var oldAllowDoubleTapZoom = metadata.allowDoubleTapZoom;
-      var newAllowDoubleTapZoom = (!metadata.isSpecified) || (viewportW > gScreenWidth / window.devicePixelRatio);
+      
+      
+      var newAllowDoubleTapZoom = (!metadata.isSpecified) || (window.innerWidth > gScreenWidth / window.devicePixelRatio);
       if (oldAllowDoubleTapZoom !== newAllowDoubleTapZoom) {
         metadata.allowDoubleTapZoom = newAllowDoubleTapZoom;
-        this.sendViewportMetadata();
+        return true;
       }
     }
+    return false;
   },
 
   sendViewportMetadata: function sendViewportMetadata() {
@@ -4893,22 +4782,6 @@ Tab.prototype = {
       isRTL: metadata.isRTL,
       tabID: this.id
     });
-  },
-
-  setBrowserSize: function(aWidth, aHeight, aForce) {
-    if (!aForce) {
-      if (fuzzyEquals(this.browserWidth, aWidth) && fuzzyEquals(this.browserHeight, aHeight)) {
-        return;
-      }
-    }
-
-    this.browserWidth = aWidth;
-    this.browserHeight = aHeight;
-
-    if (!this.browser.contentWindow)
-      return;
-    let cwu = this.browser.contentWindow.QueryInterface(Ci.nsIInterfaceRequestor).getInterface(Ci.nsIDOMWindowUtils);
-    cwu.setCSSViewport(aWidth, aHeight);
   },
 
   
@@ -4937,32 +4810,17 @@ Tab.prototype = {
           }
           this.contentDocumentIsDisplayed = true;
 
-          
-          
-          
-          
-          
-          this.setBrowserSize(kDefaultCSSViewportWidth, kDefaultCSSViewportHeight);
-          let zoom = this.restoredSessionZoom() || gScreenWidth / this.browserWidth;
-          this.setResolution(zoom, true);
-          ViewportHandler.updateMetadata(this, true);
-
-          
-          
-          
-          
-          
+          ViewportHandler.updateMetadata(this);
+          let zoom = this.restoredSessionZoom();
+          if (zoom) {
+            this.setResolution(zoom, true);
+          }
 
           if (!this.restoredSessionZoom() && contentDocument.mozSyntheticDocument) {
-            
-            
-            
-            
-            
             let fitZoom = Math.min(gScreenWidth / contentDocument.body.scrollWidth,
                                    gScreenHeight / contentDocument.body.scrollHeight);
             this.setResolution(fitZoom, false);
-            this.sendViewportUpdate();
+            this.sendViewportUpdate();  
           }
         }
 
@@ -4987,7 +4845,7 @@ Tab.prototype = {
         break;
       case "nsPref:changed":
         if (aData == "browser.ui.zoom.force-user-scalable")
-          ViewportHandler.updateMetadata(this, false);
+          ViewportHandler.updateMetadata(this);
         break;
     }
   },
@@ -6463,7 +6321,7 @@ var ViewportHandler = {
         let browser = BrowserApp.getBrowserForDocument(document);
         let tab = BrowserApp.getTabForBrowser(browser);
         if (tab)
-          this.updateMetadata(tab, false);
+          this.updateMetadata(tab);
         break;
     }
   },
@@ -6476,12 +6334,12 @@ var ViewportHandler = {
         if (window.outerWidth == 0 || window.outerHeight == 0)
           break;
 
-        let oldScreenWidth = gScreenWidth;
         gScreenWidth = window.outerWidth * window.devicePixelRatio;
         gScreenHeight = window.outerHeight * window.devicePixelRatio;
         let tabs = BrowserApp.tabs;
-        for (let i = 0; i < tabs.length; i++)
-          tabs[i].updateViewportSize(oldScreenWidth);
+        for (let i = 0; i < tabs.length; i++) {
+          tabs[i].viewportSizeUpdated();
+        }
         break;
       default:
         return;
@@ -6496,11 +6354,11 @@ var ViewportHandler = {
     }
   },
 
-  updateMetadata: function updateMetadata(tab, aInitialLoad) {
+  updateMetadata: function updateMetadata(tab) {
     let contentWindow = tab.browser.contentWindow;
     if (contentWindow.document.documentElement) {
       let metadata = this.getViewportMetadata(contentWindow);
-      tab.updateViewportMetadata(metadata, aInitialLoad);
+      tab.updateViewportMetadata(metadata);
     }
   },
 
@@ -6518,8 +6376,6 @@ var ViewportHandler = {
       return new ViewportMetadata({
         minZoom: kViewportMinScale,
         maxZoom: kViewportMaxScale,
-        width: kDefaultCSSViewportWidth,
-        height: -1,
         allowZoom: true,
         allowDoubleTapZoom: true,
         isSpecified: false
@@ -6541,8 +6397,6 @@ var ViewportHandler = {
 
     let widthStr = windowUtils.getDocumentMetadata("viewport-width");
     let heightStr = windowUtils.getDocumentMetadata("viewport-height");
-    let width = this.clamp(parseInt(widthStr), kViewportMinWidth, kViewportMaxWidth) || 0;
-    let height = this.clamp(parseInt(heightStr), kViewportMinHeight, kViewportMaxHeight) || 0;
 
     
     
@@ -6555,15 +6409,12 @@ var ViewportHandler = {
     
     let allowDoubleTapZoom = allowZoom;
 
-    let autoSize = true;
-
     if (isNaN(scale) && isNaN(minScale) && isNaN(maxScale) && allowZoomStr == "" && widthStr == "" && heightStr == "") {
       
       let handheldFriendly = windowUtils.getDocumentMetadata("HandheldFriendly");
       if (handheldFriendly == "true") {
         return new ViewportMetadata({
           defaultZoom: 1,
-          autoSize: true,
           allowZoom: true,
           allowDoubleTapZoom: false
         });
@@ -6573,7 +6424,6 @@ var ViewportHandler = {
       if (doctype && /(WAP|WML|Mobile)/.test(doctype.publicId)) {
         return new ViewportMetadata({
           defaultZoom: 1,
-          autoSize: true,
           allowZoom: true,
           allowDoubleTapZoom: false
         });
@@ -6583,18 +6433,12 @@ var ViewportHandler = {
       let defaultZoom = Services.prefs.getIntPref("browser.viewport.defaultZoom");
       if (defaultZoom >= 0) {
         scale = defaultZoom / 1000;
-        autoSize = false;
       }
     }
 
     scale = this.clamp(scale, kViewportMinScale, kViewportMaxScale);
     minScale = this.clamp(minScale, kViewportMinScale, kViewportMaxScale);
     maxScale = this.clamp(maxScale, (isNaN(minScale) ? kViewportMinScale : minScale), kViewportMaxScale);
-    if (autoSize) {
-      
-      autoSize = (widthStr == "device-width" ||
-                  (!widthStr && (heightStr == "device-height" || scale == 1.0)));
-    }
 
     let isRTL = aWindow.document.documentElement.dir == "rtl";
 
@@ -6602,9 +6446,6 @@ var ViewportHandler = {
       defaultZoom: scale,
       minZoom: minScale,
       maxZoom: maxScale,
-      width: width,
-      height: height,
-      autoSize: autoSize,
       allowZoom: allowZoom,
       allowDoubleTapZoom: allowDoubleTapZoom,
       isSpecified: hasMetaViewport,
@@ -6653,16 +6494,10 @@ var ViewportHandler = {
 
 
 
-
-
-
 function ViewportMetadata(aMetadata = {}) {
-  this.width = ("width" in aMetadata) ? aMetadata.width : 0;
-  this.height = ("height" in aMetadata) ? aMetadata.height : 0;
   this.defaultZoom = ("defaultZoom" in aMetadata) ? aMetadata.defaultZoom : 0;
   this.minZoom = ("minZoom" in aMetadata) ? aMetadata.minZoom : 0;
   this.maxZoom = ("maxZoom" in aMetadata) ? aMetadata.maxZoom : 0;
-  this.autoSize = ("autoSize" in aMetadata) ? aMetadata.autoSize : false;
   this.allowZoom = ("allowZoom" in aMetadata) ? aMetadata.allowZoom : true;
   this.allowDoubleTapZoom = ("allowDoubleTapZoom" in aMetadata) ? aMetadata.allowDoubleTapZoom : true;
   this.isSpecified = ("isSpecified" in aMetadata) ? aMetadata.isSpecified : false;
@@ -6671,24 +6506,18 @@ function ViewportMetadata(aMetadata = {}) {
 }
 
 ViewportMetadata.prototype = {
-  width: null,
-  height: null,
   defaultZoom: null,
   minZoom: null,
   maxZoom: null,
-  autoSize: null,
   allowZoom: null,
   allowDoubleTapZoom: null,
   isSpecified: null,
   isRTL: null,
 
   toString: function() {
-    return "width=" + this.width
-         + "; height=" + this.height
-         + "; defaultZoom=" + this.defaultZoom
+    return "; defaultZoom=" + this.defaultZoom
          + "; minZoom=" + this.minZoom
          + "; maxZoom=" + this.maxZoom
-         + "; autoSize=" + this.autoSize
          + "; allowZoom=" + this.allowZoom
          + "; allowDoubleTapZoom=" + this.allowDoubleTapZoom
          + "; isSpecified=" + this.isSpecified

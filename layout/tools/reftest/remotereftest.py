@@ -381,6 +381,9 @@ class RemoteReftest(RefTest):
         
         prefs["media.gmp-manager.url.override"] = "http://127.0.0.1:8888/dummy-gmp-manager.xml";
         prefs["layout.css.devPixelsPerPx"] = "1.0"
+        
+        
+        prefs["apz.allow_zooming"] = False
 
         
         prefs["gfx.canvas.azure.accelerated"] = False
