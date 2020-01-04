@@ -1,0 +1,92 @@
+
+
+
+
+
+#ifndef PlaceholderTransaction_h
+#define PlaceholderTransaction_h
+
+#include "EditAggregateTxn.h"
+#include "EditorUtils.h"
+#include "nsIAbsorbingTransaction.h"
+#include "nsIDOMNode.h"
+#include "nsCOMPtr.h"
+#include "nsWeakPtr.h"
+#include "nsWeakReference.h"
+#include "nsAutoPtr.h"
+
+namespace mozilla {
+
+class CompositionTransaction;
+
+
+
+
+
+
+
+
+class PlaceholderTransaction final : public EditAggregateTxn,
+                                     public nsIAbsorbingTransaction,
+                                     public nsSupportsWeakReference
+{
+public:
+  NS_DECL_ISUPPORTS_INHERITED
+
+  PlaceholderTransaction();
+
+  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(PlaceholderTransaction,
+                                           EditAggregateTxn)
+
+
+  NS_DECL_EDITTXN
+
+  NS_IMETHOD RedoTransaction() override;
+  NS_IMETHOD Merge(nsITransaction* aTransaction, bool* aDidMerge) override;
+
+
+
+  NS_IMETHOD Init(nsIAtom* aName, nsSelectionState* aSelState,
+                  nsEditor* aEditor) override;
+
+  NS_IMETHOD GetTxnName(nsIAtom** aName) override;
+
+  NS_IMETHOD StartSelectionEquals(nsSelectionState* aSelState,
+                                  bool* aResult) override;
+
+  NS_IMETHOD EndPlaceHolderBatch() override;
+
+  NS_IMETHOD ForwardEndBatchTo(
+               nsIAbsorbingTransaction* aForwardingAddress) override;
+
+  NS_IMETHOD Commit() override;
+
+  nsresult RememberEndingSelection();
+
+protected:
+  virtual ~PlaceholderTransaction();
+
+  
+  bool mAbsorb;
+  nsWeakPtr mForwarding;
+  
+  mozilla::CompositionTransaction* mCompositionTransaction;
+  
+  bool mCommitted;
+
+  
+  
+  
+  
+
+  
+  nsAutoPtr<nsSelectionState> mStartSel;
+  nsSelectionState mEndSel;
+
+  
+  nsEditor* mEditor;
+};
+
+} 
+
+#endif 

@@ -22,7 +22,7 @@
 #include "InsertNodeTransaction.h"      
 #include "InsertTextTransaction.h"      
 #include "JoinNodeTransaction.h"        
-#include "PlaceholderTxn.h"             
+#include "PlaceholderTransaction.h"     
 #include "SplitNodeTxn.h"               
 #include "TextEditUtils.h"              
 #include "mozFlushType.h"               
@@ -672,29 +672,31 @@ NS_IMETHODIMP
 nsEditor::DoTransaction(nsITransaction* aTxn)
 {
   if (mPlaceHolderBatch && !mPlaceHolderTxn) {
-    nsCOMPtr<nsIAbsorbingTransaction> plcTxn = new PlaceholderTxn();
+    nsCOMPtr<nsIAbsorbingTransaction> placeholderTransaction =
+      new PlaceholderTransaction();
 
     
-    mPlaceHolderTxn = do_GetWeakReference(plcTxn);
-    plcTxn->Init(mPlaceHolderName, mSelState, this);
+    mPlaceHolderTxn = do_GetWeakReference(placeholderTransaction);
+    placeholderTransaction->Init(mPlaceHolderName, mSelState, this);
     
     mSelState = nullptr;
 
     
-    nsCOMPtr<nsITransaction> theTxn = do_QueryInterface(plcTxn);
+    nsCOMPtr<nsITransaction> transaction =
+      do_QueryInterface(placeholderTransaction);
     
-    DoTransaction(theTxn);
+    DoTransaction(transaction);
 
     if (mTxnMgr) {
       nsCOMPtr<nsITransaction> topTxn = mTxnMgr->PeekUndoStack();
       if (topTxn) {
-        plcTxn = do_QueryInterface(topTxn);
-        if (plcTxn) {
+        placeholderTransaction = do_QueryInterface(topTxn);
+        if (placeholderTransaction) {
           
           
           
           
-          mPlaceHolderTxn = do_GetWeakReference(plcTxn);
+          mPlaceHolderTxn = do_GetWeakReference(placeholderTransaction);
         }
       }
     }
