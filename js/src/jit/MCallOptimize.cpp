@@ -3084,7 +3084,7 @@ IonBuilder::inlineSimd(CallInfo& callInfo, JSFunction* target, SimdType type)
         
         MOZ_CRASH("SIMD constructor call not expected.");
       case SimdOperation::Fn_check:
-        return inlineSimdCheck(callInfo, native, simdType);
+        return inlineSimdCheck(callInfo, native, type);
       case SimdOperation::Fn_splat:
         return inlineSimdSplat(callInfo, native, simdType);
       case SimdOperation::Fn_extractLane:
@@ -3348,29 +3348,54 @@ IonBuilder::canInlineSimd(CallInfo& callInfo, JSNative native, unsigned numArgs,
 }
 
 IonBuilder::InliningStatus
-IonBuilder::inlineSimdCheck(CallInfo& callInfo, JSNative native, MIRType mirType)
+IonBuilder::inlineSimdCheck(CallInfo& callInfo, JSNative native, SimdType type)
 {
     InlineTypedObject* templateObj = nullptr;
     if (!canInlineSimd(callInfo, native, 1, &templateObj))
         return InliningStatus_NotInlined;
 
-    MSimdUnbox* unbox = MSimdUnbox::New(alloc(), callInfo.getArg(0), mirType);
-    current->add(unbox);
-    current->push(callInfo.getArg(0));
+    
+    
+    MDefinition *arg = unboxSimd(callInfo.getArg(0), type);
 
-    callInfo.setImplicitlyUsedUnchecked();
-    return InliningStatus_Inlined;
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    return boxSimd(callInfo, arg, templateObj);
+}
+
+
+
+
+
+
+MDefinition*
+IonBuilder::unboxSimd(MDefinition* ins, SimdType type)
+{
+    MIRType mirType = SimdTypeToMIRType(type);
+
+    MSimdUnbox* unbox = MSimdUnbox::New(alloc(), ins, mirType);
+    current->add(unbox);
+    return unbox;
 }
 
 IonBuilder::InliningStatus
-IonBuilder::boxSimd(CallInfo& callInfo, MInstruction* ins, InlineTypedObject* templateObj)
+IonBuilder::boxSimd(CallInfo& callInfo, MDefinition* ins, InlineTypedObject* templateObj)
 {
     MSimdBox* obj = MSimdBox::New(alloc(), constraints(), ins, templateObj,
                                   templateObj->group()->initialHeap(constraints()));
 
     
-    if (!ins->block())
-        current->add(ins);
+    if (!ins->block() && ins->isInstruction())
+        current->add(ins->toInstruction());
     current->add(obj);
     current->push(obj);
 
