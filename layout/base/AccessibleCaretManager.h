@@ -130,6 +130,10 @@ protected:
   
   void HideCarets();
 
+  
+  
+  void DoNotShowCarets();
+
   void UpdateCaretsForCursorMode(UpdateCaretsHint aHint);
   void UpdateCaretsForSelectionMode(UpdateCaretsHint aHint);
 
@@ -239,6 +243,11 @@ protected:
   
   
   static const int32_t kBoundaryAppUnits = 61;
+
+  
+  
+  
+  static bool sCaretsExtendedVisibility;
 };
 
 std::ostream& operator<<(std::ostream& aStream,

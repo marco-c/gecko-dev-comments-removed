@@ -7,6 +7,7 @@
 
 #include "mozilla/dom/Selection.h"      
 #include "mozilla/dom/Text.h"           
+#include "mozilla/Preferences.h"        
 #include "nsAString.h"                  
 #include "nsDebug.h"                    
 #include "nsEditor.h"                   
@@ -17,6 +18,10 @@
 
 using namespace mozilla;
 using namespace mozilla::dom;
+
+ bool
+IMETextTxn::sCaretsExtendedVisibility = false;
+
 
 IMETextTxn::IMETextTxn(Text& aTextNode, uint32_t aOffset,
                        uint32_t aReplaceLength,
@@ -32,6 +37,12 @@ IMETextTxn::IMETextTxn(Text& aTextNode, uint32_t aOffset,
   , mEditor(aEditor)
   , mFixed(false)
 {
+  static bool addedPrefs = false;
+  if (!addedPrefs) {
+    mozilla::Preferences::AddBoolVarCache(&sCaretsExtendedVisibility,
+                                          "layout.accessiblecaret.extendedvisibility");
+    addedPrefs = true;
+  }
 }
 
 IMETextTxn::~IMETextTxn()
@@ -297,11 +308,16 @@ IMETextTxn::SetIMESelection(nsEditor& aEditor,
     rv = selection->Collapse(aTextNode, caretOffset);
     NS_ASSERTION(NS_SUCCEEDED(rv),
                  "Failed to set caret at the end of composition string");
+
     
-    aEditor.HideCaret(true);
+    
+    
+    if (!sCaretsExtendedVisibility) {
+      aEditor.HideCaret(true);
+    }
   }
 
-  rv = selection->EndBatchChanges();
+  rv = selection->EndBatchChangesInternal();
   NS_ASSERTION(NS_SUCCEEDED(rv), "Failed to end batch changes");
 
   return rv;

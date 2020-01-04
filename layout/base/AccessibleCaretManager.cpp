@@ -61,14 +61,27 @@ std::ostream& operator<<(std::ostream& aStream,
 }
 #undef AC_PROCESS_ENUM_TO_STREAM
 
+ bool
+AccessibleCaretManager::sCaretsExtendedVisibility = false;
+
+
 AccessibleCaretManager::AccessibleCaretManager(nsIPresShell* aPresShell)
   : mPresShell(aPresShell)
 {
-  if (mPresShell) {
-    mFirstCaret = MakeUnique<AccessibleCaret>(mPresShell);
-    mSecondCaret = MakeUnique<AccessibleCaret>(mPresShell);
+  if (!mPresShell) {
+    return;
+  }
 
-    mCaretTimeoutTimer = do_CreateInstance("@mozilla.org/timer;1");
+  mFirstCaret = MakeUnique<AccessibleCaret>(mPresShell);
+  mSecondCaret = MakeUnique<AccessibleCaret>(mPresShell);
+
+  mCaretTimeoutTimer = do_CreateInstance("@mozilla.org/timer;1");
+
+  static bool addedPrefs = false;
+  if (!addedPrefs) {
+    Preferences::AddBoolVarCache(&sCaretsExtendedVisibility,
+                                 "layout.accessiblecaret.extendedvisibility");
+    addedPrefs = true;
   }
 }
 
@@ -81,15 +94,39 @@ nsresult
 AccessibleCaretManager::OnSelectionChanged(nsIDOMDocument* aDoc,
                                            nsISelection* aSel, int16_t aReason)
 {
+  Selection* selection = GetSelection();
   AC_LOG("%s: aSel: %p, GetSelection(): %p, aReason: %d", __FUNCTION__,
-         aSel, GetSelection(), aReason);
+         aSel, selection, aReason);
+  if (aSel != selection) {
+    return NS_OK;
+  }
 
-  if (aSel != GetSelection()) {
+  
+  
+  if (aReason & nsISelectionListener::IME_REASON) {
+    if (GetCaretMode() == CaretMode::Cursor) {
+      
+      
+      FlushLayout();
+      UpdateCarets();
+    } else {
+      
+      
+    }
     return NS_OK;
   }
 
   
   if (aReason == nsISelectionListener::NO_REASON) {
+    
+    
+    if (sCaretsExtendedVisibility &&
+        (mFirstCaret->IsLogicallyVisible() || mSecondCaret->IsLogicallyVisible())) {
+        FlushLayout();
+        UpdateCarets();
+        return NS_OK;
+    }
+    
     HideCarets();
     return NS_OK;
   }
@@ -125,6 +162,18 @@ AccessibleCaretManager::HideCarets()
     AC_LOG("%s", __FUNCTION__);
     mFirstCaret->SetAppearance(Appearance::None);
     mSecondCaret->SetAppearance(Appearance::None);
+    DispatchCaretStateChangedEvent(CaretChangedReason::Visibilitychange);
+    CancelCaretTimeoutTimer();
+  }
+}
+
+void
+AccessibleCaretManager::DoNotShowCarets()
+{
+  if (mFirstCaret->IsLogicallyVisible() || mSecondCaret->IsLogicallyVisible()) {
+    AC_LOG("%s", __FUNCTION__);
+    mFirstCaret->SetAppearance(Appearance::NormalNotShown);
+    mSecondCaret->SetAppearance(Appearance::NormalNotShown);
     DispatchCaretStateChangedEvent(CaretChangedReason::Visibilitychange);
     CancelCaretTimeoutTimer();
   }
@@ -459,7 +508,12 @@ AccessibleCaretManager::OnScrollStart()
     mFirstCaretAppearanceOnScrollStart = mFirstCaret->GetAppearance();
   }
 
-  HideCarets();
+  
+  if (sCaretsExtendedVisibility) {
+    DoNotShowCarets();
+  } else {
+    HideCarets();
+  }
 }
 
 void
@@ -1091,6 +1145,8 @@ AccessibleCaretManager::DispatchCaretStateChangedEvent(CaretChangedReason aReaso
   init.mCollapsed = sel->IsCollapsed();
   init.mCaretVisible = mFirstCaret->IsLogicallyVisible() ||
                        mSecondCaret->IsLogicallyVisible();
+  init.mCaretVisuallyVisible = mFirstCaret->IsVisuallyVisible() ||
+                                mSecondCaret->IsVisuallyVisible();
   sel->Stringify(init.mSelectedTextContent);
 
   RefPtr<CaretStateChangedEvent> event =

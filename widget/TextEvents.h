@@ -16,6 +16,7 @@
 #include "mozilla/FontRange.h"
 #include "nsCOMPtr.h"
 #include "nsIDOMKeyEvent.h"
+#include "nsISelectionListener.h"
 #include "nsITransferable.h"
 #include "nsRect.h"
 #include "nsStringGlue.h"
@@ -662,6 +663,7 @@ public:
     , mExpandToClusterBoundary(true)
     , mSucceeded(false)
     , mUseNativeLineBreak(true)
+    , mReason(nsISelectionListener::NO_REASON)
   {
   }
 
@@ -686,6 +688,9 @@ public:
   bool mSucceeded;
   
   bool mUseNativeLineBreak;
+  
+  
+  int16_t mReason;
 };
 
 
