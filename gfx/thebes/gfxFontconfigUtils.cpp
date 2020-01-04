@@ -623,7 +623,7 @@ gfxFontconfigUtils::UpdateFontListInternal(bool aForce)
                         if (added) {
                             entry->mKey = family;
                         } else {
-                            mFontsByFamily.RawRemoveEntry(entry);
+                            mFontsByFamily.RemoveEntry(entry);
                         }
                     }
                 }
