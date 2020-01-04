@@ -74,6 +74,15 @@ public:
 
 
 
+  bool
+  UseMinidump(nsIFile* aMinidump);
+
+  
+
+
+
+
+
 
 
 
