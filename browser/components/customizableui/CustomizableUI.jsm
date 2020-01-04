@@ -726,11 +726,12 @@ var CustomizableUIInternal = {
           continue;
         }
 
+        let widget = null;
         
         
         if (provider == CustomizableUI.PROVIDER_API) {
-          let widgetInfo = gPalette.get(id);
-          if (!widgetInfo.removable && aArea != widgetInfo.defaultArea) {
+          widget = gPalette.get(id);
+          if (!widget.removable && aArea != widget.defaultArea) {
             placementsToRemove.add(id);
             continue;
           }
@@ -740,11 +741,8 @@ var CustomizableUIInternal = {
           continue;
         } 
 
-        if (inPrivateWindow && provider == CustomizableUI.PROVIDER_API) {
-          let widget = gPalette.get(id);
-          if (!widget.showInPrivateBrowsing && inPrivateWindow) {
-            continue;
-          }
+        if (inPrivateWindow && widget && !widget.showInPrivateBrowsing) {
+          continue;
         }
 
         this.ensureButtonContextMenu(node, aAreaNode);
@@ -756,6 +754,10 @@ var CustomizableUIInternal = {
           }
         }
 
+        
+        if (widget) {
+          widget.currentArea = aArea;
+        }
         this.insertWidgetBefore(node, currentNode, container, aArea);
         if (gResetting) {
           this.notifyListeners("onWidgetReset", node, container);
