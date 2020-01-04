@@ -128,6 +128,12 @@ CSSStyleSheet*
 nsLayoutStylesheetCache::UASheet()
 {
   EnsureGlobal();
+
+  if (!gStyleCache->mUASheet) {
+    LoadSheetURL("resource://gre-resources/ua.css",
+                 gStyleCache->mUASheet, eAgentSheetFeatures);
+  }
+
   return gStyleCache->mUASheet;
 }
 
@@ -346,8 +352,6 @@ nsLayoutStylesheetCache::nsLayoutStylesheetCache()
                mQuirkSheet, eAgentSheetFeatures);
   LoadSheetURL("resource://gre/res/svg.css",
                mSVGSheet, eAgentSheetFeatures);
-  LoadSheetURL("resource://gre-resources/ua.css",
-               mUASheet, eAgentSheetFeatures);
   LoadSheetURL("chrome://global/content/xul.css",
                mXULSheet, eAgentSheetFeatures);
 
@@ -388,6 +392,8 @@ nsLayoutStylesheetCache::EnsureGlobal()
   
   
   
+  Preferences::RegisterCallback(&DependentPrefChanged,
+                                "layout.css.grid.enabled");
 }
 
 void
@@ -790,7 +796,7 @@ nsLayoutStylesheetCache::DependentPrefChanged(const char* aPref, void* aData)
   
   
   
-  
+  InvalidateSheet(gStyleCache->mUASheet); 
 }
 
  void
