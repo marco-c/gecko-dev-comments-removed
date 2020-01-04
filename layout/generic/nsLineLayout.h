@@ -499,13 +499,35 @@ protected:
   };
   PerFrameData* mFrameFreeList;
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   struct PerSpanData {
     union {
       PerSpanData* mParent;
       PerSpanData* mNextFreeSpan;
     };
+
+    
+    
+    
+    
     PerFrameData* mFrame;
+
+    
     PerFrameData* mFirstFrame;
+
+    
+    
+    
+    
     PerFrameData* mLastFrame;
 
     const nsHTMLReflowState* mReflowState;

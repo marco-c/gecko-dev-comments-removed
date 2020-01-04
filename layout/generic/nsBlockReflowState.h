@@ -16,11 +16,46 @@ class nsBlockFrame;
 class nsFrameList;
 class nsOverflowContinuationTracker;
 
-  
+
+
+
+
+
+
 #define BRS_UNCONSTRAINEDBSIZE    0x00000001
-#define BRS_ISBSTARTMARGINROOT    0x00000002  // Is this frame a root for block
-#define BRS_ISBENDMARGINROOT      0x00000004  //  direction start/end margin collapsing?
-#define BRS_APPLYBSTARTMARGIN     0x00000008  // See ShouldApplyTopMargin
+
+
+
+
+
+
+#define BRS_ISBSTARTMARGINROOT    0x00000002
+
+
+
+
+
+
+#define BRS_ISBENDMARGINROOT      0x00000004
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#define BRS_APPLYBSTARTMARGIN     0x00000008
 #define BRS_ISFIRSTINFLOW         0x00000010
 
 #define BRS_HAVELINEADJACENTTOTOP 0x00000020
@@ -35,6 +70,9 @@ class nsOverflowContinuationTracker;
 
 #define BRS_FLOAT_FRAGMENTS_INSIDE_COLUMN_ENABLED 0x00000400
 #define BRS_LASTFLAG              BRS_FLOAT_FRAGMENTS_INSIDE_COLUMN_ENABLED
+
+
+
 
 class nsBlockReflowState {
 public:
