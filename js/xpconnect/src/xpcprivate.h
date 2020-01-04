@@ -354,7 +354,6 @@ private:
 
 
 
-class XPCJSContextStack;
 class WatchdogManager;
 
 enum WatchdogTimestampCategory
@@ -419,9 +418,6 @@ class XPCJSRuntime : public mozilla::CycleCollectedJSRuntime
 public:
     static XPCJSRuntime* newXPCJSRuntime();
     static XPCJSRuntime* Get() { return nsXPConnect::XPConnect()->GetRuntime(); }
-
-    XPCJSContextStack* GetJSContextStack() {return mJSContextStack;}
-    void DestroyJSContextStack();
 
     void RemoveWrappedJS(nsXPCWrappedJS* wrapper);
     void AssertInvalidWrappedJSNotInTable(nsXPCWrappedJS* wrapper) const;
@@ -614,7 +610,6 @@ private:
     jsid mStrIDs[IDX_TOTAL_COUNT];
     JS::Value mStrJSVals[IDX_TOTAL_COUNT];
 
-    XPCJSContextStack*       mJSContextStack;
     XPCCallContext*          mCallContext;
     AutoMarkingPtr*          mAutoRoots;
     jsid                     mResolveName;
@@ -2669,27 +2664,6 @@ private:
 
 
 
-class XPCJSContextStack
-{
-public:
-    explicit XPCJSContextStack(XPCJSRuntime* aRuntime)
-      : mRuntime(aRuntime)
-      , mSafeJSContext(nullptr)
-    { }
-
-    virtual ~XPCJSContextStack();
-
-    void InitSafeJSContext();
-    JSContext* GetSafeJSContext();
-
-private:
-    XPCJSRuntime* mRuntime;
-    JSContext*  mSafeJSContext;
-};
-
-
-
-
 
 class nsXPCComponentsBase : public nsIXPCComponentsBase
 {
@@ -3172,7 +3146,7 @@ xpc_GetJSPrivate(JSObject* obj)
 inline JSContext*
 xpc_GetSafeJSContext()
 {
-    return XPCJSRuntime::Get()->GetJSContextStack()->GetSafeJSContext();
+    return XPCJSRuntime::Get()->Context();
 }
 
 namespace xpc {

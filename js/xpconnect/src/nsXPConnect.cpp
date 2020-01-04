@@ -72,7 +72,6 @@ nsXPConnect::nsXPConnect()
 nsXPConnect::~nsXPConnect()
 {
     mRuntime->DeleteSingletonScopes();
-    mRuntime->DestroyJSContextStack();
 
     
     
@@ -124,8 +123,10 @@ nsXPConnect::InitStatics()
     gScriptSecurityManager->GetSystemPrincipal(&gSystemPrincipal);
     MOZ_RELEASE_ASSERT(gSystemPrincipal);
 
-    
-    gSelf->mRuntime->GetJSContextStack()->InitSafeJSContext();
+    if (!JS::InitSelfHostedCode(gSelf->mRuntime->Context()))
+        MOZ_CRASH("InitSelfHostedCode failed");
+    if (!gSelf->mRuntime->JSContextInitialized(gSelf->mRuntime->Context()))
+        MOZ_CRASH("JSContextInitialized failed");
 
     
     gSelf->mRuntime->InitSingletonScopes();
@@ -982,7 +983,7 @@ nsXPConnect::JSToVariant(JSContext* ctx, HandleValue value, nsIVariant** _retval
 JSContext*
 nsXPConnect::GetSafeJSContext()
 {
-    return GetRuntime()->GetJSContextStack()->GetSafeJSContext();
+    return GetRuntime()->Context();
 }
 
 nsIPrincipal*
