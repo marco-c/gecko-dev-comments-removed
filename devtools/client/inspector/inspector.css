@@ -27,7 +27,7 @@
   max-width: 150px;
 }
 
-.inspector-tabpanel {
+.inspector-tabpanel > * {
   
 
 
