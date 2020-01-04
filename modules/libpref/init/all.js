@@ -1843,7 +1843,7 @@ pref("network.cookie.thirdparty.sessionOnly", false);
 pref("network.cookie.lifetimePolicy",       0); 
 pref("network.cookie.alwaysAcceptSessionCookies", false);
 pref("network.cookie.prefsMigrated",        false);
-pref("network.cookie.lifetime.days",        90);
+pref("network.cookie.lifetime.days",        90); 
 
 
 pref("network.proxy.autoconfig_url", "");
