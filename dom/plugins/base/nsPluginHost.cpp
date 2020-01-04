@@ -1330,11 +1330,35 @@ nsPluginHost::FindNativePluginForExtension(const nsACString & aExtension,
   return preferredPlugin;
 }
 
+static nsresult CreateNPAPIPlugin(nsPluginTag *aPluginTag,
+                                  nsNPAPIPlugin **aOutNPAPIPlugin)
+{
+  
+  if (!nsNPAPIPlugin::RunPluginOOP(aPluginTag)) {
+    if (aPluginTag->mFullPath.IsEmpty())
+      return NS_ERROR_FAILURE;
+    nsCOMPtr<nsIFile> file = do_CreateInstance("@mozilla.org/file/local;1");
+    file->InitWithPath(NS_ConvertUTF8toUTF16(aPluginTag->mFullPath));
+    nsPluginFile pluginFile(file);
+    PRLibrary* pluginLibrary = nullptr;
+
+    if (NS_FAILED(pluginFile.LoadPlugin(&pluginLibrary)) || !pluginLibrary)
+      return NS_ERROR_FAILURE;
+
+    aPluginTag->mLibrary = pluginLibrary;
+  }
+
+  nsresult rv;
+  rv = nsNPAPIPlugin::CreatePlugin(aPluginTag, aOutNPAPIPlugin);
+
+  return rv;
+}
+
 nsresult nsPluginHost::EnsurePluginLoaded(nsPluginTag* aPluginTag)
 {
   nsRefPtr<nsNPAPIPlugin> plugin = aPluginTag->mPlugin;
   if (!plugin) {
-    nsresult rv = nsNPAPIPlugin::CreatePlugin(aPluginTag, getter_AddRefs(plugin));
+    nsresult rv = CreateNPAPIPlugin(aPluginTag, getter_AddRefs(plugin));
     if (NS_FAILED(rv)) {
       return rv;
     }
@@ -2230,6 +2254,14 @@ nsresult nsPluginHost::ScanPluginsDirectory(nsIFile *pluginsDir,
     if (!seenBefore) {
       
       *aPluginsChanged = true;
+    }
+
+    
+    
+    if (!nsNPAPIPlugin::RunPluginOOP(pluginTag)) {
+      if (HaveSamePlugin(pluginTag)) {
+        continue;
+      }
     }
 
     
