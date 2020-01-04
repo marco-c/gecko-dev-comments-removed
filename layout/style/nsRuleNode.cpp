@@ -2348,6 +2348,11 @@ nsRuleNode::WalkRuleTree(const nsStyleStructID aSID,
     
     
     PropagateDependentBit(aSID, ruleNode, startStruct);
+    if (isReset) {
+      
+      
+      aContext->AddStyleBit(nsCachedStyleData::GetBitForSID(aSID));
+    }
     return startStruct;
   }
   if ((!startStruct && !isReset &&
@@ -2717,8 +2722,7 @@ nsRuleNode::SetDefaultOnRoot(const nsStyleStructID aSID, nsStyleContext* aContex
     /* Propagate the bit down. */                                             \
     PropagateDependentBit(eStyleStruct_##type_, aHighestNode, data_);         \
     /* Tell the style context that it doesn't own the data */                 \
-    aContext->                                                                \
-      AddStyleBit(nsCachedStyleData::GetBitForSID(eStyleStruct_##type_));     \
+    aContext->AddStyleBit(NS_STYLE_INHERIT_BIT(type_));                       \
   }                                                                           \
   /* Always cache inherited data on the style context */                      \
   aContext->SetStyle##type_(data_);                                           \
@@ -2753,6 +2757,9 @@ nsRuleNode::SetDefaultOnRoot(const nsStyleStructID aSID, nsStyleContext* aContex
       SetStyleData(eStyleStruct_##type_, data_);                              \
     /* Propagate the bit down. */                                             \
     PropagateDependentBit(eStyleStruct_##type_, aHighestNode, data_);         \
+    /* Tell the context that we've gotten the data (separate meaning */       \
+    /* of mBits when the cached data pointer is null) */                      \
+    aContext->AddStyleBit(NS_STYLE_INHERIT_BIT(type_));                       \
   } else if (conditions.Cacheable()) {                                        \
     if (!mStyleData.mResetData) {                                             \
       mStyleData.mResetData = new (mPresContext) nsConditionalResetStyleData; \
@@ -2760,8 +2767,7 @@ nsRuleNode::SetDefaultOnRoot(const nsStyleStructID aSID, nsStyleContext* aContex
     mStyleData.mResetData->                                                   \
       SetStyleData(eStyleStruct_##type_, mPresContext, data_, conditions);    \
     /* Tell the style context that it doesn't own the data */                 \
-    aContext->                                                                \
-      AddStyleBit(nsCachedStyleData::GetBitForSID(eStyleStruct_##type_));     \
+    aContext->AddStyleBit(NS_STYLE_INHERIT_BIT(type_));                       \
     aContext->SetStyle(eStyleStruct_##type_, data_);                          \
   } else {                                                                    \
     /* We can't be cached in the rule node.  We have to be put right */       \
@@ -9406,8 +9412,14 @@ nsRuleNode::GetStyleData(nsStyleStructID aSID,
   
   if (!(HasAnimationData() && ParentHasPseudoElementData(aContext))) {
     data = mStyleData.GetStyleData(aSID, aContext);
-    if (MOZ_LIKELY(data != nullptr))
+    if (MOZ_LIKELY(data != nullptr)) {
+      
+      
+      if (nsCachedStyleData::IsReset(aSID)) {
+        aContext->AddStyleBit(nsCachedStyleData::GetBitForSID(aSID));
+      }
       return data; 
+    }
   }
 
   if (MOZ_UNLIKELY(!aComputeData))
