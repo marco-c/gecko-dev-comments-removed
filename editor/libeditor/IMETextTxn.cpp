@@ -213,7 +213,7 @@ IMETextTxn::SetIMESelection(nsEditor& aEditor,
 
     
     
-    if (textRange.mRangeType == TextRangeType::NS_TEXTRANGE_CARETPOSITION) {
+    if (textRange.mRangeType == TextRangeType::eCaret) {
       NS_ASSERTION(!setCaret, "The ranges already has caret position");
       NS_ASSERTION(!textRange.Length(), "nsEditor doesn't support wide caret");
       int32_t caretOffset = static_cast<int32_t>(
