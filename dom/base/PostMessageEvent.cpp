@@ -81,7 +81,7 @@ PostMessageEvent::Run()
 
   MOZ_ASSERT(targetWindow->IsInnerWindow(),
              "we ordered an inner window!");
-  JSAutoCompartment ac(cx, targetWindow->GetWrapperPreserveColor());
+  JSAutoCompartment ac(cx, targetWindow->GetWrapper());
 
   
   
