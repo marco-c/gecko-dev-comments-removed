@@ -591,6 +591,12 @@ var TelemetryStorageImpl = {
         this._log.error("shutdown - the pending pings removal task failed", ex);
       });
     }
+
+    
+    
+    
+    
+    yield this.promisePendingPingSaves();
   }),
 
   
