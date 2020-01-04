@@ -35,6 +35,11 @@ class GeckoInstance(object):
         "datareporting.policy.dataSubmissionEnabled": False,
         "datareporting.policy.dataSubmissionPolicyAccepted": False,
         "dom.ipc.reportProcessHangs": False,
+        
+        
+        
+        "extensions.enabledScopes": 5,
+        "extensions.autoDisableScopes": 10,
         "focusmanager.testmode": True,
         "marionette.defaultPrefs.enabled": True,
         "startup.homepage_welcome_url": "about:blank",
@@ -204,8 +209,6 @@ class DesktopInstance(GeckoInstance):
         'browser.tabs.warnOnOpen': False,
         'browser.uitour.enabled': False,
         'dom.report_all_js_exceptions': True,
-        'extensions.enabledScopes': 5,
-        'extensions.autoDisableScopes': 10,
         'extensions.getAddons.cache.enabled': False,
         'extensions.installDistroAddons': False,
         'extensions.logging.enabled': True,
