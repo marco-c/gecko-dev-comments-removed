@@ -112,18 +112,13 @@ js::SetReturnValueForClosingGenerator(JSContext* cx, AbstractFramePtr frame)
     GeneratorObject& genObj = callObj.getSlot(shape->slot()).toObject().as<GeneratorObject>();
     genObj.setClosed();
 
-    Value v;
-    if (genObj.is<StarGeneratorObject>()) {
-        
-        shape = callObj.lookup(cx, cx->names().dotGenRVal);
-        v = callObj.getSlot(shape->slot());
-    } else {
-        
-        MOZ_ASSERT(genObj.is<LegacyGeneratorObject>());
-        v = UndefinedValue();
-    }
+    
+    if (genObj.is<StarGeneratorObject>())
+        return;
 
-    frame.setReturnValue(v);
+    
+    MOZ_ASSERT(genObj.is<LegacyGeneratorObject>());
+    frame.setReturnValue(UndefinedValue());
 }
 
 bool
@@ -137,13 +132,8 @@ js::GeneratorThrowOrClose(JSContext* cx, AbstractFramePtr frame, Handle<Generato
         MOZ_ASSERT(resumeKind == GeneratorObject::CLOSE);
 
         if (genObj->is<StarGeneratorObject>()) {
-            
-            
-            
             MOZ_ASSERT(arg.isObject());
-            CallObject& callObj = frame.callObj();
-            Shape* shape = callObj.lookup(cx, cx->names().dotGenRVal);
-            callObj.setSlot(shape->slot(), arg);
+            frame.setReturnValue(arg);
         } else {
             MOZ_ASSERT(arg.isUndefined());
         }
