@@ -42,6 +42,8 @@
 #include "mozilla/CDMProxy.h"
 #endif
 
+#include "DecoderDoctorDiagnostics.h"
+
 namespace mozilla {
 
 extern already_AddRefed<PlatformDecoderModule> CreateAgnosticDecoderModule();
@@ -158,6 +160,14 @@ PDMFactory::CreateDecoder(const TrackInfo& aConfig,
                                 aDiagnostics,
                                 aLayersBackend,
                                 aImageContainer);
+  }
+
+  if (aDiagnostics) {
+    
+    
+    if (mFFmpegFailedToLoad) {
+      aDiagnostics->SetFFmpegFailedToLoad();
+    }
   }
 
   for (auto& current : mCurrentPDMs) {
@@ -292,7 +302,9 @@ PDMFactory::CreatePDMs()
 #ifdef MOZ_FFMPEG
   if (sFFmpegDecoderEnabled) {
     m = FFmpegRuntimeLinker::CreateDecoderModule();
-    StartupPDM(m);
+    if (!StartupPDM(m)) {
+      mFFmpegFailedToLoad = true;
+    }
   }
 #endif
 #ifdef MOZ_APPLEMEDIA
@@ -335,6 +347,14 @@ already_AddRefed<PlatformDecoderModule>
 PDMFactory::GetDecoder(const nsACString& aMimeType,
                        DecoderDoctorDiagnostics* aDiagnostics) const
 {
+  if (aDiagnostics) {
+    
+    
+    if (mFFmpegFailedToLoad) {
+      aDiagnostics->SetFFmpegFailedToLoad();
+    }
+  }
+
   RefPtr<PlatformDecoderModule> pdm;
   for (auto& current : mCurrentPDMs) {
     if (current->SupportsMimeType(aMimeType, aDiagnostics)) {

@@ -44,9 +44,14 @@ public:
   void SetCanPlay() { mCanPlay = true; }
   bool CanPlay() const { return mCanPlay; }
 
+  void SetFFmpegFailedToLoad() { mFFmpegFailedToLoad = true; }
+  bool DidFFmpegFailToLoad() const { return mFFmpegFailedToLoad; }
+
 private:
   
   bool mCanPlay = false;
+
+  bool mFFmpegFailedToLoad = false;
 };
 
 } 
