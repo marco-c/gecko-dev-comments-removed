@@ -89,8 +89,6 @@ let MemoryCallTreeView = Heritage.extend(DetailsSubview, {
       
       hidden: inverted,
       
-      sortingPredicate: (a, b) => a.frame.allocations < b.frame.allocations ? 1 : -1,
-      
       
       autoExpandDepth: inverted ? 0 : undefined,
       
@@ -98,6 +96,12 @@ let MemoryCallTreeView = Heritage.extend(DetailsSubview, {
       visibleCells: {
         selfCount: true,
         count: true,
+        selfSize: true,
+        size: true,
+        selfCountPercentage: true,
+        countPercentage: true,
+        selfSizePercentage: true,
+        sizePercentage: true,
         function: true
       }
     });
