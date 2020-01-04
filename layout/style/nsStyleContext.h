@@ -285,8 +285,12 @@ public:
 
 
 
-  bool HasCachedInheritedStyleData(nsStyleStructID aSID)
-    { return mBits & nsCachedStyleData::GetBitForSID(aSID); }
+
+
+  bool HasCachedInheritedStyleData(nsStyleStructID aSID) {
+    return (mBits & nsCachedStyleData::GetBitForSID(aSID)) &&
+           GetCachedStyleData(aSID);
+  }
 
   nsRuleNode* RuleNode() { return mRuleNode; }
   void AddStyleBit(const uint64_t& aBit) { mBits |= aBit; }
@@ -607,10 +611,18 @@ private:
   
   
   
+  
   nsResetStyleData*       mCachedResetData; 
   nsInheritedStyleData    mCachedInheritedData; 
-  uint64_t                mBits; 
-                                 
+
+  
+  
+  
+  
+  
+  
+  uint64_t                mBits;
+
   uint32_t                mRefCnt;
 
 #ifdef DEBUG
