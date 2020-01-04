@@ -5,11 +5,10 @@
 
 package org.mozilla.gecko.gfx;
 
-import org.mozilla.gecko.annotation.WrapForJNI;
 import org.mozilla.gecko.AppConstants;
 import org.mozilla.gecko.GeckoAppShell;
-import org.mozilla.gecko.GeckoEvent;
-import org.mozilla.gecko.GeckoThread;
+import org.mozilla.gecko.annotation.WrapForJNI;
+import org.mozilla.gecko.mozglue.JNIObject;
 import org.mozilla.gecko.util.ThreadUtils;
 
 import android.util.Log;
@@ -30,7 +29,7 @@ import javax.microedition.khronos.egl.EGLSurface;
 
 
 
-public class GLController {
+public class GLController extends JNIObject {
     private static final int EGL_CONTEXT_CLIENT_VERSION = 0x3098;
     private static final String LOGTAG = "GeckoGLController";
 
@@ -69,6 +68,28 @@ public class GLController {
         EGL10.EGL_NONE
     };
 
+    @WrapForJNI @Override 
+    protected native void disposeNative();
+
+    
+    @WrapForJNI
+     native void setLayerClient(GeckoLayerClient layerClient);
+
+    
+    @WrapForJNI
+    private native void createCompositor(int width, int height);
+
+    
+    @WrapForJNI
+    private native void pauseCompositor();
+
+    
+    @WrapForJNI
+    private native void syncResumeResizeCompositor(int width, int height);
+
+    @WrapForJNI
+     native void syncInvalidateAndScheduleComposite();
+
     private GLController() {
     }
 
@@ -99,7 +120,7 @@ public class GLController {
         
         
         if (mCompositorCreated) {
-            GeckoAppShell.sendEventToGeckoSync(GeckoEvent.createCompositorPauseEvent());
+            pauseCompositor();
         }
     }
 
@@ -143,7 +164,7 @@ public class GLController {
         
         
         if (mView.getLayerClient().isGeckoReady()) {
-            GeckoAppShell.sendEventToGeckoSync(GeckoEvent.createCompositorCreateEvent(mWidth, mHeight));
+            createCompositor(mWidth, mHeight);
         }
     }
 
@@ -270,8 +291,7 @@ public class GLController {
         
         
         if (mCompositorCreated) {
-            GeckoAppShell.scheduleResumeComposition(width, height);
-            GeckoAppShell.sendEventToGecko(GeckoEvent.createCompositorResumeEvent());
+            syncResumeResizeCompositor(width, height);
             mView.requestRender();
         }
     }

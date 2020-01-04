@@ -753,13 +753,7 @@ class GeckoLayerClient implements LayerView.Listener, PanZoomTarget
     
     @Override
     public void renderRequested() {
-        try {
-            GeckoAppShell.invalidateAndScheduleComposite();
-        } catch (UnsupportedOperationException uoe) {
-            
-            
-            Log.d(LOGTAG, "Dropping renderRequested call before libxul load.");
-        }
+        mView.getGLController().syncInvalidateAndScheduleComposite();
     }
 
     
