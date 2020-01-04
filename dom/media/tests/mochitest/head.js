@@ -553,6 +553,14 @@ CommandChain.prototype = {
     return this.commands.indexOf(functionOrName, start);
   },
 
+  mustHaveIndexOf: function(functionOrName, start) {
+    var index = this.indexOf(functionOrName, start);
+    if (index == -1) {
+      throw new Error("Unknown test: " + functionOrName);
+    }
+    return index;
+  },
+
   
 
 
@@ -575,7 +583,7 @@ CommandChain.prototype = {
   },
 
   _insertHelper: function(functionOrName, commands, delta, all, start) {
-    var index = this.indexOf(functionOrName);
+    var index = this.mustHaveIndexOf(functionOrName);
     start = start || 0;
     for (; index !== -1; index = this.indexOf(functionOrName, index)) {
       if (!start) {
@@ -597,33 +605,21 @@ CommandChain.prototype = {
 
 
   remove: function(functionOrName) {
-    var index = this.indexOf(functionOrName);
-    if (index >= 0) {
-      return this.commands.splice(index, 1);
-    }
-    return [];
+    return this.commands.splice(this.mustHaveIndexOf(functionOrName), 1);
   },
 
   
 
 
   removeAfter: function(functionOrName, start) {
-    var index = this.indexOf(functionOrName, start);
-    if (index >= 0) {
-      return this.commands.splice(index + 1);
-    }
-    return [];
+    return this.commands.splice(this.mustHaveIndexOf(functionOrName, start) + 1);
   },
 
   
 
 
   removeBefore: function(functionOrName) {
-    var index = this.indexOf(functionOrName);
-    if (index >= 0) {
-      return this.commands.splice(0, index);
-    }
-    return [];
+    return this.commands.splice(0, this.mustHaveIndexOf(functionOrName));
   },
 
   
