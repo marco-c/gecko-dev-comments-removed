@@ -542,7 +542,8 @@ SourceBuffer::PrepareAppend(const uint8_t* aData, uint32_t aLength, ErrorResult&
   
   
   if (!mMediaSource->GetDecoder() ||
-      mMediaSource->GetDecoder()->IsEndedOrShutdown()) {
+      mMediaSource->GetDecoder()->OwnerHasError()) {
+    MSE_DEBUG("HTMLMediaElement.error is not null");
     aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
     return nullptr;
   }
