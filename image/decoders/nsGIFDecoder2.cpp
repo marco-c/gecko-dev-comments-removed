@@ -1145,8 +1145,7 @@ nsGIFDecoder2::WriteInternal(const char* aBuffer, uint32_t aCount)
         mGIFStruct.state = gif_error;
         return;
       }
-
-      
+      MOZ_FALLTHROUGH; 
     }
 
     case gif_image_header_continue: {
