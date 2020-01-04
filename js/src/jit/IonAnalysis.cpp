@@ -2050,13 +2050,13 @@ jit::MakeMRegExpHoistable(MIRGraph& graph)
 
             
             regexp->setMovable();
+            regexp->setDoNotClone();
 
             
             
             
             RegExpObject* source = regexp->source();
             if (source->sticky() || source->global()) {
-                MOZ_ASSERT(regexp->mustClone());
                 MConstant* zero = MConstant::New(graph.alloc(), Int32Value(0));
                 regexp->block()->insertAfter(regexp, zero);
 

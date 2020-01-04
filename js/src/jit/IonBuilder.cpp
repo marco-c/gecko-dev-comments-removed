@@ -13148,20 +13148,7 @@ IonBuilder::jsop_delelem()
 bool
 IonBuilder::jsop_regexp(RegExpObject* reobj)
 {
-    
-    
-    
-    
-    
-    
-    
-    
-
-    bool mustClone = true;
-    if (!reobj->global() && !reobj->sticky())
-        mustClone = false;
-
-    MRegExp* regexp = MRegExp::New(alloc(), constraints(), reobj, mustClone);
+    MRegExp* regexp = MRegExp::New(alloc(), constraints(), reobj);
     current->add(regexp);
     current->push(regexp);
 
