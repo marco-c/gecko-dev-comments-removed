@@ -833,6 +833,13 @@ TextureClient::CreateForRawBufferAccess(ISurfaceAllocator* aAllocator,
     return nullptr;
   }
 
+  if (aFormat == SurfaceFormat::B8G8R8X8 &&
+      (aAllocFlags != TextureAllocationFlags::ALLOC_CLEAR_BUFFER_BLACK) &&
+      aMoz2DBackend == gfx::BackendType::SKIA) {
+    
+    aAllocFlags = TextureAllocationFlags::ALLOC_CLEAR_BUFFER_WHITE;
+  }
+
   TextureData* texData = BufferTextureData::Create(aSize, aFormat, aMoz2DBackend,
                                                    aTextureFlags, aAllocFlags,
                                                    aAllocator);
