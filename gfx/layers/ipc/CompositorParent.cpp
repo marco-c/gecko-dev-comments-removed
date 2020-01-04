@@ -551,6 +551,9 @@ CompositorParent::CompositorParent(nsIWidget* aWidget,
   , mForceCompositionTask(nullptr)
   , mCompositorThreadHolder(sCompositorThreadHolder)
   , mCompositorScheduler(nullptr)
+#if defined(XP_WIN) || defined(MOZ_WIDGET_GTK)
+  , mLastPluginUpdateLayerTreeId(0)
+#endif
 {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(CompositorThread(),
@@ -2007,12 +2010,48 @@ CrossProcessCompositorParent::ShadowLayersUpdated(
 
 #if defined(XP_WIN) || defined(MOZ_WIDGET_GTK)
 
-void
+
+
+#define PLUGINS_LOG(...)
+
+bool
 CompositorParent::UpdatePluginWindowState(uint64_t aId)
 {
   CompositorParent::LayerTreeState& lts = sIndirectLayerTrees[aId];
+  
   if (!lts.mUpdatedPluginDataAvailable) {
-    return;
+    PLUGINS_LOG("[%" PRIu64 "] no plugin data", aId);
+    return false;
+  }
+
+  
+  
+  
+  bool pluginMetricsChanged = false;
+
+  
+  if (mLastPluginUpdateLayerTreeId == aId) {
+    
+    if (!mCachedPluginData.Length() && !lts.mPluginData.Length()) {
+      PLUGINS_LOG("[%" PRIu64 "] no data, no changes", aId);
+      return false;
+    }
+
+    if (mCachedPluginData.Length() == lts.mPluginData.Length()) {
+      
+      for (uint32_t idx = 0; idx < lts.mPluginData.Length(); idx++) {
+        if (!(mCachedPluginData[idx] == lts.mPluginData[idx])) {
+          pluginMetricsChanged = true;
+          break;
+        }
+      }
+    } else {
+      
+      pluginMetricsChanged = true;
+    }
+  } else {
+    
+    pluginMetricsChanged = true;
   }
 
   if (!lts.mPluginData.Length()) {
@@ -2020,28 +2059,45 @@ CompositorParent::UpdatePluginWindowState(uint64_t aId)
     
     
     
+    mPluginsLayerOffset = nsIntPoint(0,0);
+    mPluginsLayerVisibleRegion.SetEmpty();
     uintptr_t parentWidget = (uintptr_t)lts.mParent->GetWidget();
     unused << lts.mParent->SendHideAllPlugins(parentWidget);
     lts.mUpdatedPluginDataAvailable = false;
-    return;
-  }
-
-  
-  
-  
-  LayerTransactionParent* layerTree = lts.mLayerTree;
-  Layer* contentRoot = layerTree->GetRoot();
-  if (contentRoot) {
-    nsIntPoint offset;
-    nsIntRegion visibleRegion;
-    if (contentRoot->GetVisibleRegionRelativeToRootLayer(visibleRegion,
-                                                          &offset)) {
-      unused <<
-        lts.mParent->SendUpdatePluginConfigurations(offset, visibleRegion,
-                                                    lts.mPluginData);
-      lts.mUpdatedPluginDataAvailable = false;
+    PLUGINS_LOG("[%" PRIu64 "] hide all", aId);
+  } else {
+    
+    
+    
+    LayerTransactionParent* layerTree = lts.mLayerTree;
+    Layer* contentRoot = layerTree->GetRoot();
+    if (contentRoot) {
+      nsIntPoint offset;
+      nsIntRegion visibleRegion;
+      if (contentRoot->GetVisibleRegionRelativeToRootLayer(visibleRegion,
+                                                            &offset)) {
+        
+        
+        if (!pluginMetricsChanged &&
+            mPluginsLayerVisibleRegion == visibleRegion &&
+            mPluginsLayerOffset == offset) {
+          PLUGINS_LOG("[%" PRIu64 "] no change", aId);
+          return false;
+        }
+        mPluginsLayerOffset = offset;
+        mPluginsLayerVisibleRegion = visibleRegion;
+        unused <<
+          lts.mParent->SendUpdatePluginConfigurations(offset, visibleRegion,
+                                                      lts.mPluginData);
+        lts.mUpdatedPluginDataAvailable = false;
+        PLUGINS_LOG("[%" PRIu64 "] updated", aId);
+      }
     }
   }
+
+  mLastPluginUpdateLayerTreeId = aId;
+  mCachedPluginData = lts.mPluginData;
+  return true;
 }
 #endif 
 

@@ -386,7 +386,7 @@ public:
 
 
 
-  static void UpdatePluginWindowState(uint64_t aId);
+  void UpdatePluginWindowState(uint64_t aId);
 #endif
 
   
@@ -477,6 +477,14 @@ protected:
 
   nsRefPtr<CompositorThreadHolder> mCompositorThreadHolder;
   nsRefPtr<CompositorVsyncScheduler> mCompositorScheduler;
+
+#if defined(XP_WIN) || defined(MOZ_WIDGET_GTK)
+  
+  uint64_t mLastPluginUpdateLayerTreeId;
+  nsIntPoint mPluginsLayerOffset;
+  nsIntRegion mPluginsLayerVisibleRegion;
+  nsTArray<PluginWindowData> mCachedPluginData;
+#endif
 
   DISALLOW_EVIL_CONSTRUCTORS(CompositorParent);
 };
