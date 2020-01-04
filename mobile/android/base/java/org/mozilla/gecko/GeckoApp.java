@@ -278,7 +278,7 @@ public abstract class GeckoApp
     public void onTabChanged(Tab tab, Tabs.TabEvents msg, Object data) {
         
         
-        switch(msg) {
+        switch (msg) {
             case UNSELECTED:
                 hidePlugins(tab);
                 break;

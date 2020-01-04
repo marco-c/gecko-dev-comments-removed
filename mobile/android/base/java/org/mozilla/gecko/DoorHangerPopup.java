@@ -148,7 +148,7 @@ public class DoorHangerPopup extends AnchoredPopup
     
     @Override
     public void onTabChanged(final Tab tab, final Tabs.TabEvents msg, final Object data) {
-        switch(msg) {
+        switch (msg) {
             case CLOSED:
                 
                 
