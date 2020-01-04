@@ -699,6 +699,15 @@ WebGLContext::AssertCachedBindings()
         AssertUintParamCorrect(gl, LOCAL_GL_FRAMEBUFFER_BINDING, bound);
     }
 
+    GLint stencilBits = 0;
+    if (GetStencilBits(&stencilBits)) { 
+        const GLuint stencilRefMask = (1 << stencilBits) - 1;
+
+        AssertMaskedUintParamCorrect(gl, LOCAL_GL_STENCIL_REF,      stencilRefMask, mStencilRefFront);
+        AssertMaskedUintParamCorrect(gl, LOCAL_GL_STENCIL_BACK_REF, stencilRefMask, mStencilRefBack);
+    }
+
+    
     GLuint bound = mCurrentProgram ? mCurrentProgram->mGLName : 0;
     AssertUintParamCorrect(gl, LOCAL_GL_CURRENT_PROGRAM, bound);
 
@@ -730,7 +739,7 @@ WebGLContext::AssertCachedBindings()
 }
 
 void
-WebGLContext::AssertCachedState()
+WebGLContext::AssertCachedGlobalState()
 {
 #ifdef DEBUG
     MakeContextCurrent();
@@ -770,14 +779,6 @@ WebGLContext::AssertCachedState()
     MOZ_ASSERT(IsCacheCorrect(mDepthClearValue, depthClearValue));
 
     AssertUintParamCorrect(gl, LOCAL_GL_STENCIL_CLEAR_VALUE, mStencilClearValue);
-
-    GLint stencilBits = 0;
-    if (GetStencilBits(&stencilBits)) {
-        const GLuint stencilRefMask = (1 << stencilBits) - 1;
-
-        AssertMaskedUintParamCorrect(gl, LOCAL_GL_STENCIL_REF,      stencilRefMask, mStencilRefFront);
-        AssertMaskedUintParamCorrect(gl, LOCAL_GL_STENCIL_BACK_REF, stencilRefMask, mStencilRefBack);
-    }
 
     
     

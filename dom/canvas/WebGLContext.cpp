@@ -984,6 +984,9 @@ WebGLContext::SetDimensions(int32_t signedWidth, int32_t signedHeight)
 
     mOptions.antialias = gl->Caps().antialias;
 
+    
+    
+
     MakeContextCurrent();
 
     gl->fViewport(0, 0, mWidth, mHeight);
@@ -991,20 +994,13 @@ WebGLContext::SetDimensions(int32_t signedWidth, int32_t signedHeight)
     mViewportHeight = mHeight;
 
     gl->fScissor(0, 0, mWidth, mHeight);
-
-    
-    
     gl->fBindFramebuffer(LOCAL_GL_FRAMEBUFFER, 0);
 
+    
+    
+
     AssertCachedBindings();
-    AssertCachedState();
-
-    
-    
-    mBackbufferNeedsClear = true;
-    ClearBackbufferIfNeeded();
-
-    mShouldPresent = true;
+    AssertCachedGlobalState();
 
     MOZ_ASSERT(gl->Caps().color);
 
@@ -1020,8 +1016,14 @@ WebGLContext::SetDimensions(int32_t signedWidth, int32_t signedHeight)
     MOZ_ASSERT(gl->Caps().antialias == mOptions.antialias);
     MOZ_ASSERT(gl->Caps().preserve == mOptions.preserveDrawingBuffer);
 
-    AssertCachedBindings();
-    AssertCachedState();
+    
+    
+    mBackbufferNeedsClear = true;
+    ClearBackbufferIfNeeded();
+
+    mShouldPresent = true;
+
+    
 
     reporter.SetSuccessful();
 
@@ -1416,8 +1418,7 @@ WebGLContext::ForceClearFramebufferWithDefaultValues(GLbitfield clearBits,
 
     
     
-    AssertCachedState(); 
-                         
+    AssertCachedGlobalState();
 
     
     gl->fDisable(LOCAL_GL_SCISSOR_TEST);
