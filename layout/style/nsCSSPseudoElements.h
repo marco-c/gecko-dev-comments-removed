@@ -10,6 +10,7 @@
 
 #include "nsIAtom.h"
 #include "mozilla/CSSEnabledState.h"
+#include "mozilla/Compiler.h"
 
 
 
@@ -105,6 +106,16 @@ public:
 
 private:
   
+
+  
+  
+#if defined(ANDROID) && defined(__i386__) && defined(__GNUC__) && \
+    !defined(__clang__)
+#if (MOZ_GCC_VERSION_AT_LEAST(4,8,0) && MOZ_GCC_VERSION_AT_MOST(4,8,4)) || \
+    (MOZ_GCC_VERSION_AT_LEAST(4,9,0) && MOZ_GCC_VERSION_AT_MOST(4,9,2))
+   __attribute__((noinline))
+#endif
+#endif
   static bool PseudoElementHasFlags(const Type aType, uint32_t aFlags)
   {
     MOZ_ASSERT(aType < Type::Count);
