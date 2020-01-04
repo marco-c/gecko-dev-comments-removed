@@ -432,7 +432,7 @@ ConfigSecureServerWithNamedCert(PRFileDesc *fd, const char *certName,
     
     
     
-    ScopedPLArenaPool arena(PORT_NewArena(DER_DEFAULT_CHUNKSIZE));
+    UniquePLArenaPool arena(PORT_NewArena(DER_DEFAULT_CHUNKSIZE));
     if (!arena) {
       PrintPRError("PORT_NewArena failed");
       return SECFailure;
@@ -443,7 +443,7 @@ ConfigSecureServerWithNamedCert(PRFileDesc *fd, const char *certName,
       PrintPRError("PORT_ArenaAlloc failed");
       return SECFailure;
     }
-    certList->arena = arena.forget();
+    certList->arena = arena.release();
     
     
     certList->certs = reinterpret_cast<SECItem*>(

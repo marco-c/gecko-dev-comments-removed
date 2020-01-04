@@ -935,9 +935,9 @@ GatherBaselineRequirementsTelemetry(const ScopedCERTCertList& certList)
     return;
   }
 
-  ScopedPLArenaPool arena(PORT_NewArena(DER_DEFAULT_CHUNKSIZE));
+  UniquePLArenaPool arena(PORT_NewArena(DER_DEFAULT_CHUNKSIZE));
   CERTGeneralName* subjectAltNames =
-    CERT_DecodeAltNameExtension(arena, &altNameExtension);
+    CERT_DecodeAltNameExtension(arena.get(), &altNameExtension);
   
   
   
