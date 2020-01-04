@@ -2,6 +2,8 @@
 
 
 
+requestLongerTimeout(2);
+
 const CHROMEUTILS_URL = "chrome://mochikit/content/tests/SimpleTest/ChromeUtils.js";
 var ChromeUtils = {};
 
