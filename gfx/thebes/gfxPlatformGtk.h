@@ -16,6 +16,11 @@ extern "C" {
 }
 #endif
 
+#ifdef MOZ_X11
+struct _XDisplay;
+typedef struct _XDisplay Display;
+#endif 
+
 class gfxFontconfigUtils;
 
 class gfxPlatformGtk : public gfxPlatform {
@@ -138,6 +143,12 @@ public:
     already_AddRefed<mozilla::gfx::VsyncSource> CreateHardwareVsyncSource() override;
 #endif
 
+#ifdef MOZ_X11
+    Display* GetCompositorDisplay() {
+      return mCompositorDisplay;
+    }
+#endif 
+
 protected:
     static gfxFontconfigUtils *sFontconfigUtils;
 
@@ -149,6 +160,8 @@ private:
 
 #ifdef MOZ_X11
     static bool sUseXRender;
+
+    Display* mCompositorDisplay;
 #endif
 
     

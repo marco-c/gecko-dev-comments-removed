@@ -947,8 +947,8 @@ GLContextGLX::MakeCurrentImpl(bool aForce)
             
             
             
-            const bool isASAP = (gfxPrefs::LayoutFrameRate() == 0);
-            mGLX->xSwapInterval(mDisplay, mDrawable, isASAP ? 0 : 1);
+            int interval = gfxPlatform::IsInLayoutAsapMode() ? 0 : 1;
+            mGLX->xSwapInterval(mDisplay, mDrawable, interval);
         }
     }
 
@@ -1117,7 +1117,7 @@ GLContextProviderGLX::CreateForWindow(nsIWidget* aWidget, bool aForceAccelerated
     
     
 
-    Display* display = (Display*)aWidget->GetNativeData(NS_NATIVE_DISPLAY);
+    Display* display = (Display*)aWidget->GetNativeData(NS_NATIVE_COMPOSITOR_DISPLAY);
     if (!display) {
         NS_ERROR("X Display required for GLX Context provider");
         return nullptr;
