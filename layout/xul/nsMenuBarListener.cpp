@@ -408,6 +408,11 @@ nsMenuBarListener::MouseDown(nsIDOMEvent* aMouseEvent)
 nsresult
 nsMenuBarListener::HandleEvent(nsIDOMEvent* aEvent)
 {
+  
+  if (!mMenuBarFrame->StyleVisibility()->IsVisible()) {
+    return NS_OK;
+  }
+
   nsAutoString eventType;
   aEvent->GetType(eventType);
   
