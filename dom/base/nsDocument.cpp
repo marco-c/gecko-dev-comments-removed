@@ -174,7 +174,6 @@
 #include "nsSMILAnimationController.h"
 #include "imgIContainer.h"
 #include "nsSVGUtils.h"
-#include "SVGElementFactory.h"
 
 #include "nsRefreshDriver.h"
 
@@ -192,7 +191,6 @@
 #include "nsTextNode.h"
 #include "mozilla/dom/Link.h"
 #include "mozilla/dom/HTMLElementBinding.h"
-#include "mozilla/dom/SVGElementBinding.h"
 #include "nsXULAppAPI.h"
 #include "mozilla/dom/Touch.h"
 #include "mozilla/dom/TouchEvent.h"
@@ -6257,18 +6255,11 @@ nsDocument::RegisterElement(JSContext* aCx, const nsAString& aType,
   JS::Rooted<JSObject*> protoObject(aCx);
   {
     JS::Rooted<JSObject*> htmlProto(aCx);
-    JS::Rooted<JSObject*> svgProto(aCx);
     {
       JSAutoCompartment ac(aCx, global);
 
       htmlProto = HTMLElementBinding::GetProtoObjectHandle(aCx);
       if (!htmlProto) {
-        rv.Throw(NS_ERROR_OUT_OF_MEMORY);
-        return;
-      }
-
-      svgProto = SVGElementBinding::GetProtoObjectHandle(aCx);
-      if (!svgProto) {
         rv.Throw(NS_ERROR_OUT_OF_MEMORY);
         return;
       }
@@ -6323,20 +6314,13 @@ nsDocument::RegisterElement(JSContext* aCx, const nsAString& aType,
 
       JS::Rooted<JSObject*> protoProto(aCx, protoObject);
 
-      if (!JS_WrapObject(aCx, &htmlProto) || !JS_WrapObject(aCx, &svgProto)) {
+      if (!JS_WrapObject(aCx, &htmlProto)) {
         rv.Throw(NS_ERROR_DOM_NOT_SUPPORTED_ERR);
         return;
       }
 
-      
-      
       while (protoProto) {
         if (protoProto == htmlProto) {
-          break;
-        }
-
-        if (protoProto == svgProto) {
-          namespaceID = kNameSpaceID_SVG;
           break;
         }
 
@@ -6350,20 +6334,15 @@ nsDocument::RegisterElement(JSContext* aCx, const nsAString& aType,
     
     if (!lcName.IsEmpty()) {
       
-      bool known = false;
       nameAtom = NS_Atomize(lcName);
-      if (namespaceID == kNameSpaceID_XHTML) {
-        nsIParserService* ps = nsContentUtils::GetParserService();
-        if (!ps) {
-          rv.Throw(NS_ERROR_UNEXPECTED);
-          return;
-        }
-
-        known =
-          ps->HTMLCaseSensitiveAtomTagToId(nameAtom) != eHTMLTag_userdefined;
-      } else {
-        known = SVGElementFactory::Exists(nameAtom);
+      nsIParserService* ps = nsContentUtils::GetParserService();
+      if (!ps) {
+        rv.Throw(NS_ERROR_UNEXPECTED);
+        return;
       }
+
+      bool known =
+        ps->HTMLCaseSensitiveAtomTagToId(nameAtom) != eHTMLTag_userdefined;
 
       
       
@@ -6373,12 +6352,6 @@ nsDocument::RegisterElement(JSContext* aCx, const nsAString& aType,
         return;
       }
     } else {
-      
-      if (namespaceID == kNameSpaceID_SVG) {
-        rv.Throw(NS_ERROR_UNEXPECTED);
-        return;
-      }
-
       nameAtom = typeAtom;
     }
   } 
