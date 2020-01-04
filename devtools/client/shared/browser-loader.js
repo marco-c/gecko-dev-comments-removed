@@ -101,6 +101,12 @@ function BrowserLoaderBuilder({ baseURI, window, useOnlyShared }) {
     paths: Object.assign({}, dynamicPaths, loaderOptions.paths),
     invisibleToDebugger: loaderOptions.invisibleToDebugger,
     requireHook: (id, require) => {
+      
+      
+      if (devtools.isLoaderPluginId(id)) {
+        return devtools.require(id);
+      }
+
       const uri = require.resolve(id);
       let isBrowserDir = BROWSER_BASED_DIRS.filter(dir => {
         return uri.startsWith(dir);

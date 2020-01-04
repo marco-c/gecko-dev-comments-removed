@@ -9,45 +9,21 @@
 
 
 
-const { Cu } = require("chrome");
-const { NetUtil } = Cu.import("resource://gre/modules/NetUtil.jsm", {});
 const Services = require("Services");
 const { gDevTools } = require("devtools/client/framework/devtools");
 
-const VARIABLES_URI = "chrome://devtools/skin/variables.css";
+const variableFileContents = require("raw!devtools/client/themes/variables.css");
+
 const THEME_SELECTOR_STRINGS = {
   light: ":root.theme-light {",
   dark: ":root.theme-dark {"
 };
-
-let variableFileContents;
-
-
-
-
-function readURI(uri) {
-  let stream = NetUtil.newChannel({
-    uri: NetUtil.newURI(uri, "UTF-8"),
-    loadUsingSystemPrincipal: true}
-  ).open2();
-
-  let count = stream.available();
-  let data = NetUtil.readInputStreamToString(stream, count, {
-    charset: "UTF-8"
-  });
-  stream.close();
-  return data;
-}
 
 
 
 
 
 function getThemeFile(name) {
-  if (!variableFileContents) {
-    variableFileContents = readURI(VARIABLES_URI);
-  }
-
   
   let selector = THEME_SELECTOR_STRINGS[name] ||
                  THEME_SELECTOR_STRINGS.light;
