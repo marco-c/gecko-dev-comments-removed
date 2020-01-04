@@ -10,7 +10,6 @@
 #include "nsIURI.h"
 #include "nsSubstring.h"
 #include "mozilla/Attributes.h"
-#include "mozilla/LazyIdleThread.h"
 
 
 
@@ -18,7 +17,7 @@
 class nsHttpNegotiateAuth final : public nsIHttpAuthenticator
 {
 public:
-    NS_DECL_THREADSAFE_ISUPPORTS
+    NS_DECL_ISUPPORTS
     NS_DECL_NSIHTTPAUTHENTICATOR
 
 private:
@@ -38,7 +37,5 @@ private:
                           int32_t             port,
                           const char         *baseStart,
                           const char         *baseEnd);
-    
-    RefPtr<mozilla::LazyIdleThread> mNegotiateThread;
 };
 #endif 
