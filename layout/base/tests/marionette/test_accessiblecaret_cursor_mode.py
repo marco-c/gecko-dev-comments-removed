@@ -53,18 +53,18 @@ class AccessibleCaretCursorModeTestCase(MarionetteTestCase):
 
         
         el.tap()
-        sel.move_caret_to_front()
-        caret0_x, caret0_y = sel.caret_location()
-        touch_caret0_x, touch_caret0_y = sel.touch_caret_location()
-        sel.move_caret_by_offset(1)
-        touch_caret1_x, touch_caret1_y = sel.touch_caret_location()
+        sel.move_cursor_to_front()
+        cursor0_x, cursor0_y = sel.cursor_location()
+        first_caret0_x, first_caret0_y = sel.first_caret_location()
+        sel.move_cursor_by_offset(1)
+        first_caret1_x, first_caret1_y = sel.first_caret_location()
 
         
-        el.tap(caret0_x, caret0_y)
+        el.tap(cursor0_x, cursor0_y)
 
         
-        self.actions.flick(el, touch_caret0_x, touch_caret0_y,
-                           touch_caret1_x, touch_caret1_y).perform()
+        self.actions.flick(el, first_caret0_x, first_caret0_y,
+                           first_caret1_x, first_caret1_y).perform()
 
         self.actions.key_down(content_to_add).key_up(content_to_add).perform()
         self.assertEqual(target_content, sel.content)
@@ -81,11 +81,11 @@ class AccessibleCaretCursorModeTestCase(MarionetteTestCase):
 
         
         el.tap()
-        sel.move_caret_to_front()
-        el.tap(*sel.caret_location())
+        sel.move_cursor_to_front()
+        el.tap(*sel.cursor_location())
 
         
-        src_x, src_y = sel.touch_caret_location()
+        src_x, src_y = sel.first_caret_location()
         dest_x, dest_y = el.size['width'], el.size['height']
         self.actions.flick(el, src_x, src_y, dest_x, dest_y).perform()
 
@@ -104,17 +104,17 @@ class AccessibleCaretCursorModeTestCase(MarionetteTestCase):
 
         
         el.tap()
-        sel.move_caret_to_front()
-        dest_x, dest_y = sel.touch_caret_location()
+        sel.move_cursor_to_front()
+        dest_x, dest_y = sel.first_caret_location()
 
         
         
         
         el.tap()
-        sel.move_caret_to_end()
-        sel.move_caret_by_offset(1, backward=True)
-        el.tap(*sel.caret_location())
-        src_x, src_y = sel.touch_caret_location()
+        sel.move_cursor_to_end()
+        sel.move_cursor_by_offset(1, backward=True)
+        el.tap(*sel.cursor_location())
+        src_x, src_y = sel.first_caret_location()
 
         
         self.actions.flick(el, src_x, src_y, dest_x, dest_y).perform()
@@ -143,13 +143,13 @@ class AccessibleCaretCursorModeTestCase(MarionetteTestCase):
         
         
         el.tap()
-        sel.move_caret_to_end()
-        sel.move_caret_by_offset(1, backward=True)
-        el.tap(*sel.caret_location())
+        sel.move_cursor_to_end()
+        sel.move_cursor_by_offset(1, backward=True)
+        el.tap(*sel.cursor_location())
 
         
         
-        src_x, src_y = sel.touch_caret_location()
+        src_x, src_y = sel.first_caret_location()
         dest_x, dest_y = 0, 0
         self.actions.wait(timeout).flick(el, src_x, src_y, dest_x, dest_y).perform()
 
@@ -164,7 +164,7 @@ class AccessibleCaretCursorModeTestCase(MarionetteTestCase):
         target_content = sel.content + string.ascii_letters + content_to_add
 
         el.tap()
-        sel.move_caret_to_end()
+        sel.move_cursor_to_end()
 
         
         
@@ -173,7 +173,7 @@ class AccessibleCaretCursorModeTestCase(MarionetteTestCase):
         
         
         
-        src_x, src_y = sel.touch_caret_location()
+        src_x, src_y = sel.first_caret_location()
         dest_x, dest_y = 0, 0
         self.actions.flick(el, src_x, src_y, dest_x, dest_y).perform()
 
@@ -192,9 +192,9 @@ class AccessibleCaretCursorModeTestCase(MarionetteTestCase):
         
         
         el.tap()
-        sel.move_caret_to_front()
-        el.tap(*sel.caret_location())
-        x, y = sel.touch_caret_location()
+        sel.move_cursor_to_front()
+        el.tap(*sel.cursor_location())
+        x, y = sel.first_caret_location()
 
         
         self.actions.flick(el, x, y, x, y + 50).perform()

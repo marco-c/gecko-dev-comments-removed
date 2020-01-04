@@ -96,9 +96,9 @@ class AccessibleCaretSelectionModeTestCase(MarionetteTestCase):
 
         
         el.tap()
-        sel.move_caret_to_front()
-        sel.move_caret_by_offset(offset)
-        x, y = sel.caret_location()
+        sel.move_cursor_to_front()
+        sel.move_cursor_by_offset(offset)
+        x, y = sel.cursor_location()
 
         return x, y
 
@@ -192,12 +192,12 @@ class AccessibleCaretSelectionModeTestCase(MarionetteTestCase):
         
         el.tap()
         sel.select_all()
-        (_, _), (end_caret_x, end_caret_y) = sel.selection_carets_location()
+        end_caret_x, end_caret_y = sel.second_caret_location()
 
         self.long_press_on_word(el, 0)
 
         
-        (caret1_x, caret1_y), (caret2_x, caret2_y) = sel.selection_carets_location()
+        (caret1_x, caret1_y), (caret2_x, caret2_y) = sel.carets_location()
         self.actions.flick(el, caret2_x, caret2_y, end_caret_x, end_caret_y).perform()
 
         
@@ -232,7 +232,7 @@ class AccessibleCaretSelectionModeTestCase(MarionetteTestCase):
         
         
         sel.select_all()
-        (_, _), (end_caret_x, end_caret_y) = sel.selection_carets_location()
+        end_caret_x, end_caret_y = sel.second_caret_location()
         el.tap()
 
         
@@ -247,11 +247,11 @@ class AccessibleCaretSelectionModeTestCase(MarionetteTestCase):
         self.long_press_on_location(el, x, y)
 
         
-        (caret1_x, caret1_y), (caret2_x, caret2_y) = sel.selection_carets_location()
+        (caret1_x, caret1_y), (caret2_x, caret2_y) = sel.carets_location()
         self.actions.flick(el, caret2_x, caret2_y, end_caret_x, end_caret_y).perform()
 
         
-        (caret1_x, caret1_y), (caret2_x, caret2_y) = sel.selection_carets_location()
+        (caret1_x, caret1_y), (caret2_x, caret2_y) = sel.carets_location()
         self.actions.flick(el, caret2_x, caret2_y, caret1_x, caret1_y).perform()
 
         self.assertEqual(target_content, sel.selected_content)
@@ -343,14 +343,14 @@ class AccessibleCaretSelectionModeTestCase(MarionetteTestCase):
 
         
         
-        (caret1_x, caret1_y), (caret2_x, caret2_y) = sel.selection_carets_location()
+        (caret1_x, caret1_y), (caret2_x, caret2_y) = sel.carets_location()
         self.actions.flick(el, caret1_x, caret1_y, caret2_x, caret2_y).perform()
 
         
         
         
         
-        (caret3_x, caret3_y), (caret4_x, caret4_y) = sel.selection_carets_location()
+        (caret3_x, caret3_y), (caret4_x, caret4_y) = sel.carets_location()
 
         
         caret_width = float(self.marionette.get_pref('layout.accessiblecaret.width'))
@@ -371,9 +371,12 @@ class AccessibleCaretSelectionModeTestCase(MarionetteTestCase):
         self.assertEqual(target_content, sel.selected_content)
 
     def test_drag_caret_over_non_selectable_field(self):
-        '''Testing drag caret over non selectable field.
-        So that the selected content should exclude non selectable field and
-        end selection caret should appear in last range's position.'''
+        '''Test dragging the caret over a non-selectable field.
+
+        The selected content should exclude non-selectable elements and the
+        second caret should appear in last range's position.
+
+        '''
         self.open_test_html_multirange()
         body = self.marionette.find_element(By.ID, 'bd')
         sel3 = self.marionette.find_element(By.ID, 'sel3')
@@ -383,27 +386,27 @@ class AccessibleCaretSelectionModeTestCase(MarionetteTestCase):
         
         self.long_press_on_word(sel4, 3)
         sel = SelectionManager(body)
-        (_, _), (end_caret_x, end_caret_y) = sel.selection_carets_location()
+        end_caret_x, end_caret_y = sel.second_caret_location()
 
         self.long_press_on_word(sel6, 0)
-        (_, _), (end_caret2_x, end_caret2_y) = sel.selection_carets_location()
+        end_caret2_x, end_caret2_y = sel.second_caret_location()
 
         
         self.long_press_on_word(sel3, 3)
 
         
-        (caret1_x, caret1_y), (caret2_x, caret2_y) = sel.selection_carets_location()
+        (caret1_x, caret1_y), (caret2_x, caret2_y) = sel.carets_location()
         self.actions.flick(body, caret2_x, caret2_y, end_caret_x, end_caret_y, 1).perform()
         self.assertEqual(self.to_unix_line_ending(sel.selected_content.strip()),
                          'this 3\nuser can select this')
 
-        (caret1_x, caret1_y), (caret2_x, caret2_y) = sel.selection_carets_location()
+        (caret1_x, caret1_y), (caret2_x, caret2_y) = sel.carets_location()
         self.actions.flick(body, caret2_x, caret2_y, end_caret2_x, end_caret2_y, 1).perform()
         self.assertEqual(self.to_unix_line_ending(sel.selected_content.strip()),
                          'this 3\nuser can select this 4\nuser can select this 5\nuser')
 
         
-        (caret1_x, caret1_y), (caret2_x, caret2_y) = sel.selection_carets_location()
+        (caret1_x, caret1_y), (caret2_x, caret2_y) = sel.carets_location()
         self.actions.flick(body, caret1_x, caret1_y, end_caret_x, end_caret_y, 1).perform()
         self.assertEqual(self.to_unix_line_ending(sel.selected_content.strip()),
                          '4\nuser can select this 5\nuser')
@@ -420,13 +423,13 @@ class AccessibleCaretSelectionModeTestCase(MarionetteTestCase):
         
         self.long_press_on_word(sel2, 0)
         sel = SelectionManager(body)
-        (start_caret_x, start_caret_y), (end_caret_x, end_caret_y) = sel.selection_carets_location()
+        (start_caret_x, start_caret_y), (end_caret_x, end_caret_y) = sel.carets_location()
 
         
         self.long_press_on_word(sel1, 2)
 
         
-        (caret1_x, caret1_y), (caret2_x, caret2_y) = sel.selection_carets_location()
+        (caret1_x, caret1_y), (caret2_x, caret2_y) = sel.carets_location()
         self.actions.flick(body, caret2_x, caret2_y, start_caret_x, start_caret_y).perform()
 
         
@@ -449,9 +452,9 @@ class AccessibleCaretSelectionModeTestCase(MarionetteTestCase):
         self.marionette.set_orientation('portrait')
         self.long_press_on_word(longtext, 12)
         sel = SelectionManager(body)
-        (p_start_caret_x, p_start_caret_y), (p_end_caret_x, p_end_caret_y) = sel.selection_carets_location()
+        (p_start_caret_x, p_start_caret_y), (p_end_caret_x, p_end_caret_y) = sel.carets_location()
         self.marionette.set_orientation('landscape')
-        (l_start_caret_x, l_start_caret_y), (l_end_caret_x, l_end_caret_y) = sel.selection_carets_location()
+        (l_start_caret_x, l_start_caret_y), (l_end_caret_x, l_end_caret_y) = sel.carets_location()
 
         
         self.actions.flick(body, l_end_caret_x, l_end_caret_y,
@@ -539,7 +542,7 @@ class AccessibleCaretSelectionModeTestCase(MarionetteTestCase):
         
         
         
-        (caret1_x, caret1_y), (caret2_x, caret2_y) = sel.selection_carets_location()
+        (caret1_x, caret1_y), (caret2_x, caret2_y) = sel.carets_location()
         self.actions.flick(el, caret2_x, caret2_y, caret1_x, caret1_y).perform()
         self.assertEqual(words[0][0], sel.selected_content)
 
@@ -556,7 +559,7 @@ class AccessibleCaretSelectionModeTestCase(MarionetteTestCase):
         target_content = words[1]
 
         self.long_press_on_word(el, 1)
-        (caret1_x, caret1_y), (caret2_x, caret2_y) = sel.selection_carets_location()
+        (caret1_x, caret1_y), (caret2_x, caret2_y) = sel.carets_location()
 
         
         self.actions.flick(el, caret1_x, caret1_y, caret1_x, caret1_y - 50).perform()
