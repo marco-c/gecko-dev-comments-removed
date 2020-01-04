@@ -367,13 +367,7 @@ public:
 
 
 
-  virtual void ReconstructStyleDataExternal();
-  void ReconstructStyleDataInternal();
-#ifdef MOZILLA_INTERNAL_API
-  void ReconstructStyleData() { ReconstructStyleDataInternal(); }
-#else
-  void ReconstructStyleData() { ReconstructStyleDataExternal(); }
-#endif
+  void ReconstructStyleData();
 
   
 
