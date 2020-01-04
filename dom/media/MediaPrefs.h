@@ -150,7 +150,9 @@ private:
   
   DECL_MEDIA_PREF("media.ogg.enabled",                        OggEnabled, bool, true);
   DECL_MEDIA_PREF("media.format-reader.ogg",                  OggFormatReader, bool, true);
+  
   DECL_MEDIA_PREF("media.ogg.flac.enabled",                   FlacInOgg, bool, false);
+  DECL_MEDIA_PREF("media.flac.enabled",                       FlacEnabled, bool, true);
 
 public:
   
