@@ -46,9 +46,9 @@ import android.widget.EditText;
 import android.widget.ListAdapter;
 import android.widget.TextView;
 
-import com.jayway.android.robotium.solo.Condition;
-import com.jayway.android.robotium.solo.Solo;
-import com.jayway.android.robotium.solo.Timeout;
+import com.robotium.solo.Condition;
+import com.robotium.solo.Solo;
+import com.robotium.solo.Timeout;
 
 
 
@@ -103,6 +103,14 @@ abstract class BaseTest extends BaseRobocopTest {
         
         throwIfHttpGetFails();
         throwIfScreenNotOn();
+    }
+
+    protected GeckoProfile getTestProfile() {
+        if (mProfile.startsWith("/")) {
+            return GeckoProfile.get(getActivity(), "default", mProfile);
+        }
+
+        return GeckoProfile.get(getActivity(), mProfile);
     }
 
     protected void initializeProfile() {

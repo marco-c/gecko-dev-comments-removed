@@ -11,7 +11,7 @@ import org.mozilla.gecko.R;
 
 import android.util.DisplayMetrics;
 
-import com.jayway.android.robotium.solo.Condition;
+import com.robotium.solo.Condition;
 
 
 

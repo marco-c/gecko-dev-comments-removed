@@ -26,9 +26,9 @@ import android.view.View;
 import android.widget.TextView;
 import android.widget.RelativeLayout;
 
-import com.jayway.android.robotium.solo.Condition;
-import com.jayway.android.robotium.solo.RobotiumUtils;
-import com.jayway.android.robotium.solo.Solo;
+import com.robotium.solo.Condition;
+import com.robotium.solo.RobotiumUtils;
+import com.robotium.solo.Solo;
 
 
 
