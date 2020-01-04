@@ -1,4 +1,4 @@
- 
+
 
 
 
@@ -7046,12 +7046,6 @@ AddonWrapper.prototype = {
     if (addon._installLocation.name == KEY_APP_TEMPORARY)
       return false;
 
-    return (addon._installLocation.name == KEY_APP_SYSTEM_DEFAULTS ||
-            addon._installLocation.name == KEY_APP_SYSTEM_ADDONS);
-  },
-
-  get isSystem() {
-    let addon = addonFor(this);
     return (addon._installLocation.name == KEY_APP_SYSTEM_DEFAULTS ||
             addon._installLocation.name == KEY_APP_SYSTEM_ADDONS);
   },
