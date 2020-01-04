@@ -48,7 +48,6 @@ import org.mozilla.gecko.util.NativeJSObject;
 import org.mozilla.gecko.util.ThreadUtils;
 
 import android.annotation.TargetApi;
-import android.app.ActionBar;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.Fragment;
@@ -76,6 +75,7 @@ import android.preference.SwitchPreference;
 import android.preference.TwoStatePreference;
 import android.support.design.widget.Snackbar;
 import android.support.design.widget.TextInputLayout;
+import android.support.v7.app.ActionBar;
 import android.text.Editable;
 import android.text.InputType;
 import android.text.TextUtils;
@@ -99,7 +99,7 @@ import java.util.Locale;
 import java.util.Map;
 
 public class GeckoPreferences
-extends PreferenceActivity
+extends AppCompatPreferenceActivity
 implements
 GeckoActivityStatus,
 GeckoEventListener,
@@ -208,10 +208,7 @@ OnSharedPreferenceChangeListener
             if (newTitle != null) {
                 Log.v(LOGTAG, "Setting action bar title to " + newTitle);
 
-                final ActionBar actionBar = getActionBar();
-                if (actionBar != null) {
-                    actionBar.setTitle(newTitle);
-                }
+                setTitle(newTitle);
             }
         }
     }
@@ -245,7 +242,7 @@ OnSharedPreferenceChangeListener
         BrowserLocaleManager.getInstance().updateConfiguration(getApplicationContext(), newLocale);
         this.lastLocale = newLocale;
 
-        if (Versions.feature11Plus && isMultiPane()) {
+        if (isMultiPane()) {
             
             invalidateHeaders();
 
@@ -318,32 +315,35 @@ OnSharedPreferenceChangeListener
         
         
         
-
+        
+        
         if (Versions.feature11Plus) {
             if (!getIntent().hasExtra(PreferenceActivity.EXTRA_SHOW_FRAGMENT)) {
                 
                 setupTopLevelFragmentIntent();
-
-                
-                
-                setTitle(R.string.pref_header_general);
-            }
-
-            if (onIsMultiPane()) {
-                
-                
-                updateActionBarTitle(R.string.settings_title);
-
-                if (Build.VERSION.SDK_INT < 13) {
-                    
-                    
-                    
-                    localeSwitchingIsEnabled = false;
-                }
             }
         }
 
+        
+        
+        
+        
         super.onCreate(savedInstanceState);
+
+        if (Versions.feature11Plus && onIsMultiPane()) {
+            
+            
+            updateActionBarTitle(R.string.settings_title);
+
+            if (Build.VERSION.SDK_INT < 13) {
+                
+                
+                
+                localeSwitchingIsEnabled = false;
+                throw new IllegalStateException("foobar");
+            }
+        }
+
         initActionBar();
 
         
@@ -402,7 +402,7 @@ OnSharedPreferenceChangeListener
 
     private void initActionBar() {
         if (Versions.feature14Plus) {
-            final ActionBar actionBar = getActionBar();
+            final ActionBar actionBar = getSupportActionBar();
             if (actionBar != null) {
                 actionBar.setHomeButtonEnabled(true);
                 actionBar.setDisplayHomeAsUpEnabled(true);
