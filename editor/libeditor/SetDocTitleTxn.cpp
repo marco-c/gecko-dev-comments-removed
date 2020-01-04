@@ -25,8 +25,7 @@ using namespace mozilla;
 
 SetDocTitleTxn::SetDocTitleTxn()
   : EditTxn()
-  , mEditor(nullptr)
-  , mIsTransient(false)
+, mIsTransient(false)
 {
 }
 

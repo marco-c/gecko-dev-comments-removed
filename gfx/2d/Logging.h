@@ -260,10 +260,7 @@ public:
   
   
   explicit Log(int aOptions = Log::DefaultOptions(L == LOG_CRITICAL),
-               LogReason aReason = LogReason::MustBeMoreThanThis)
-  : mOptions(0)
-  , mLogIt(false)
-  {
+               LogReason aReason = LogReason::MustBeMoreThanThis) {
     Init(aOptions, BasicLogger::ShouldOutputMessage(L), aReason);
   }
 
