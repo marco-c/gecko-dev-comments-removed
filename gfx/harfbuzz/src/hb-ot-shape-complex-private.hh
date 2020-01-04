@@ -241,9 +241,6 @@ hb_ot_shape_complex_categorize (const hb_ot_shape_planner_t *planner)
     
     case HB_SCRIPT_SINHALA:
 
-    
-    case HB_SCRIPT_JAVANESE:
-
       
 
 
@@ -316,7 +313,7 @@ hb_ot_shape_complex_categorize (const hb_ot_shape_planner_t *planner)
 
     
     case HB_SCRIPT_EGYPTIAN_HIEROGLYPHS:
-    
+    case HB_SCRIPT_JAVANESE:
     case HB_SCRIPT_KAITHI:
     case HB_SCRIPT_MEETEI_MAYEK:
     case HB_SCRIPT_TAI_THAM:
@@ -344,6 +341,15 @@ hb_ot_shape_complex_categorize (const hb_ot_shape_planner_t *planner)
     
     case HB_SCRIPT_SIDDHAM:
     case HB_SCRIPT_TIRHUTA:
+
+    
+    case HB_SCRIPT_AHOM:
+    
+
+    
+    case HB_SCRIPT_BHAIKSUKI:
+    case HB_SCRIPT_MARCHEN:
+    case HB_SCRIPT_NEWA:
 
       
 

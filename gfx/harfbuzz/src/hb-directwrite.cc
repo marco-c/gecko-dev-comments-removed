@@ -25,11 +25,7 @@
 #define HB_SHAPER directwrite
 #include "hb-shaper-impl-private.hh"
 
-#ifndef HB_DIRECTWRITE_EXPERIMENTAL_JUSTIFICATION
-  #include <DWrite.h>
-#else
-  #include <DWrite_1.h>
-#endif
+#include <DWrite_1.h>
 
 #include "hb-directwrite.h"
 
@@ -49,163 +45,161 @@ HB_SHAPER_DATA_ENSURE_DECLARE(directwrite, font)
 
 
 
-struct hb_directwrite_shaper_face_data_t {
-  HANDLE fh;
-  wchar_t face_name[LF_FACESIZE];
+
+
+
+
+class DWriteFontFileLoader : public IDWriteFontFileLoader
+{
+private:
+  IDWriteFontFileStream *mFontFileStream;
+public:
+  DWriteFontFileLoader (IDWriteFontFileStream *fontFileStream) {
+    mFontFileStream = fontFileStream;
+  }
+
+  
+  IFACEMETHOD(QueryInterface)(IID const& iid, OUT void** ppObject) { return S_OK; }
+  IFACEMETHOD_(ULONG, AddRef)() { return 1; }
+  IFACEMETHOD_(ULONG, Release)() { return 1; }
+
+  
+  virtual HRESULT STDMETHODCALLTYPE CreateStreamFromKey(void const* fontFileReferenceKey,
+    UINT32 fontFileReferenceKeySize,
+    OUT IDWriteFontFileStream** fontFileStream)
+  {
+    *fontFileStream = mFontFileStream;
+    return S_OK;
+  }
+};
+
+class DWriteFontFileStream : public IDWriteFontFileStream
+{
+private:
+  uint8_t *mData;
+  uint32_t mSize;
+public:
+  DWriteFontFileStream(uint8_t *aData, uint32_t aSize)
+  {
+    mData = aData;
+    mSize = aSize;
+  }
+
+  
+  IFACEMETHOD(QueryInterface)(IID const& iid, OUT void** ppObject) { return S_OK; }
+  IFACEMETHOD_(ULONG, AddRef)() { return 1; }
+  IFACEMETHOD_(ULONG, Release)() { return 1; }
+
+  
+  virtual HRESULT STDMETHODCALLTYPE ReadFileFragment(void const** fragmentStart,
+    UINT64 fileOffset,
+    UINT64 fragmentSize,
+    OUT void** fragmentContext)
+  {
+    
+    if (fileOffset + fragmentSize > mSize) {
+      return E_FAIL;
+    }
+
+    
+    size_t index = static_cast<size_t> (fileOffset);
+
+    
+    *fragmentStart = &mData[index];
+    *fragmentContext = nullptr;
+    return S_OK;
+  }
+
+  virtual void STDMETHODCALLTYPE ReleaseFileFragment(void* fragmentContext) { }
+
+  virtual HRESULT STDMETHODCALLTYPE GetFileSize(OUT UINT64* fileSize)
+  {
+    *fileSize = mSize;
+    return S_OK;
+  }
+
+  virtual HRESULT STDMETHODCALLTYPE GetLastWriteTime(OUT UINT64* lastWriteTime)
+  {
+    return E_NOTIMPL;
+  }
 };
 
 
-static void
-_hb_generate_unique_face_name(wchar_t *face_name, unsigned int *plen)
-{
-  
-
-  const char *enc = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+-";
-  UUID id;
-  UuidCreate ((UUID*)&id);
-  ASSERT_STATIC (2 + 3 * (16 / 2) < LF_FACESIZE);
-  unsigned int name_str_len = 0;
-  face_name[name_str_len++] = 'F';
-  face_name[name_str_len++] = '_';
-  unsigned char *p = (unsigned char *)&id;
-  for (unsigned int i = 0; i < 16; i += 2)
-  {
-    
 
 
 
 
-    face_name[name_str_len++] = enc[p[i] >> 3];
-    face_name[name_str_len++] = enc[((p[i] << 2) | (p[i + 1] >> 6)) & 0x1f];
-    face_name[name_str_len++] = enc[p[i + 1] & 0x3f];
-  }
-  face_name[name_str_len] = 0;
-  if (plen)
-    *plen = name_str_len;
-}
-
-
-static hb_blob_t *
-_hb_rename_font(hb_blob_t *blob, wchar_t *new_name)
-{
-  
-
-
-
-
-
-
-
-
-  blob = OT::Sanitizer<OT::OpenTypeFontFile>::sanitize (blob);
-
-  unsigned int length, new_length, name_str_len;
-  const char *orig_sfnt_data = hb_blob_get_data (blob, &length);
-
-  _hb_generate_unique_face_name (new_name, &name_str_len);
-
-  static const uint16_t name_IDs[] = { 1, 2, 3, 4, 6 };
-
-  unsigned int name_table_length = OT::name::min_size +
-    ARRAY_LENGTH(name_IDs) * OT::NameRecord::static_size +
-    name_str_len * 2; 
-  unsigned int name_table_offset = (length + 3) & ~3;
-
-  new_length = name_table_offset + ((name_table_length + 3) & ~3);
-  void *new_sfnt_data = calloc(1, new_length);
-  if (!new_sfnt_data)
-  {
-    hb_blob_destroy (blob);
-    return NULL;
-  }
-
-  memcpy(new_sfnt_data, orig_sfnt_data, length);
-
-  OT::name &name = OT::StructAtOffset<OT::name> (new_sfnt_data, name_table_offset);
-  name.format.set (0);
-  name.count.set (ARRAY_LENGTH (name_IDs));
-  name.stringOffset.set (name.get_size());
-  for (unsigned int i = 0; i < ARRAY_LENGTH (name_IDs); i++)
-  {
-    OT::NameRecord &record = name.nameRecord[i];
-    record.platformID.set(3);
-    record.encodingID.set(1);
-    record.languageID.set(0x0409u); 
-    record.nameID.set(name_IDs[i]);
-    record.length.set(name_str_len * 2);
-    record.offset.set(0);
-  }
-
-  
-  unsigned char *p = &OT::StructAfter<unsigned char>(name);
-  for (unsigned int i = 0; i < name_str_len; i++)
-  {
-    *p++ = new_name[i] >> 8;
-    *p++ = new_name[i] & 0xff;
-  }
-
-  
-  const OT::OpenTypeFontFile &file = *(OT::OpenTypeFontFile *) (new_sfnt_data);
-  unsigned int face_count = file.get_face_count ();
-  for (unsigned int face_index = 0; face_index < face_count; face_index++)
-  {
-    
-
-    const OT::OpenTypeFontFace &face = file.get_face (face_index);
-    unsigned int index;
-    if (face.find_table_index (HB_OT_TAG_name, &index))
-    {
-      OT::TableRecord &record = const_cast<OT::TableRecord &> (face.get_table (index));
-      record.checkSum.set_for_data (&name, name_table_length);
-      record.offset.set (name_table_offset);
-      record.length.set (name_table_length);
-    }
-    else if (face_index == 0) 
-    {
-      free (new_sfnt_data);
-      hb_blob_destroy (blob);
-      return NULL;
-    }
-  }
-
-  
-
-
-
-  hb_blob_destroy (blob);
-  return hb_blob_create ((const char *)new_sfnt_data, new_length,
-    HB_MEMORY_MODE_WRITABLE, NULL, free);
-}
+struct hb_directwrite_shaper_face_data_t {
+  IDWriteFactory *dwriteFactory;
+  IDWriteFontFile *fontFile;
+  IDWriteFontFileStream *fontFileStream;
+  IDWriteFontFileLoader *fontFileLoader;
+  IDWriteFontFace *fontFace;
+  hb_blob_t *faceBlob;
+};
 
 hb_directwrite_shaper_face_data_t *
 _hb_directwrite_shaper_face_data_create(hb_face_t *face)
 {
   hb_directwrite_shaper_face_data_t *data =
-    (hb_directwrite_shaper_face_data_t *) calloc (1, sizeof (hb_directwrite_shaper_face_data_t));
+    (hb_directwrite_shaper_face_data_t *) malloc (sizeof (hb_directwrite_shaper_face_data_t));
   if (unlikely (!data))
     return NULL;
 
+  
+  IDWriteFactory* dwriteFactory;
+  DWriteCreateFactory (
+    DWRITE_FACTORY_TYPE_SHARED,
+    __uuidof (IDWriteFactory),
+    (IUnknown**) &dwriteFactory
+  );
+
+  HRESULT hr;
   hb_blob_t *blob = hb_face_reference_blob (face);
-  if (unlikely (!hb_blob_get_length (blob)))
-    DEBUG_MSG(DIRECTWRITE, face, "Face has empty blob");
+  IDWriteFontFileStream *fontFileStream = new DWriteFontFileStream (
+    (uint8_t*) hb_blob_get_data (blob, NULL), hb_blob_get_length (blob));
 
-  blob = _hb_rename_font (blob, data->face_name);
-  if (unlikely (!blob))
-  {
-    free(data);
-    return NULL;
+  IDWriteFontFileLoader *fontFileLoader = new DWriteFontFileLoader (fontFileStream);
+  dwriteFactory->RegisterFontFileLoader (fontFileLoader);
+
+  IDWriteFontFile *fontFile;
+  uint64_t fontFileKey = 0;
+  hr = dwriteFactory->CreateCustomFontFileReference (&fontFileKey, sizeof (fontFileKey),
+      fontFileLoader, &fontFile);
+
+#define FAIL(...) \
+  HB_STMT_START { \
+    DEBUG_MSG (DIRECTWRITE, NULL, __VA_ARGS__); \
+    return false; \
+  } HB_STMT_END;
+
+  if (FAILED (hr)) {
+    FAIL ("Failed to load font file from data!");
+    return false;
   }
 
-  DWORD num_fonts_installed;
-  data->fh = AddFontMemResourceEx ((void *)hb_blob_get_data(blob, NULL),
-    hb_blob_get_length (blob),
-    0, &num_fonts_installed);
-  if (unlikely (!data->fh))
-  {
-    DEBUG_MSG (DIRECTWRITE, face, "Face AddFontMemResourceEx() failed");
-    free (data);
-    return NULL;
+  BOOL isSupported;
+  DWRITE_FONT_FILE_TYPE fileType;
+  DWRITE_FONT_FACE_TYPE faceType;
+  UINT32 numberOfFaces;
+  hr = fontFile->Analyze (&isSupported, &fileType, &faceType, &numberOfFaces);
+  if (FAILED (hr) || !isSupported) {
+    FAIL ("Font file is not supported.");
+    return false;
   }
+
+#undef FAIL
+
+  IDWriteFontFace *fontFace;
+  dwriteFactory->CreateFontFace (faceType, 1, &fontFile, 0,
+    DWRITE_FONT_SIMULATIONS_NONE, &fontFace);
+
+  data->dwriteFactory = dwriteFactory;
+  data->fontFile = fontFile;
+  data->fontFileStream = fontFileStream;
+  data->fontFileLoader = fontFileLoader;
+  data->fontFace = fontFace;
+  data->faceBlob = blob;
 
   return data;
 }
@@ -213,8 +207,23 @@ _hb_directwrite_shaper_face_data_create(hb_face_t *face)
 void
 _hb_directwrite_shaper_face_data_destroy(hb_directwrite_shaper_face_data_t *data)
 {
-  RemoveFontMemResourceEx(data->fh);
-  free(data);
+  if (data->fontFace)
+    data->fontFace->Release ();
+  if (data->fontFile)
+    data->fontFile->Release ();
+  if (data->dwriteFactory) {
+    if (data->fontFileLoader)
+      data->dwriteFactory->UnregisterFontFileLoader(data->fontFileLoader);
+    data->dwriteFactory->Release();
+  }
+  if (data->fontFileLoader)
+    delete data->fontFileLoader;
+  if (data->fontFileStream)
+    delete data->fontFileStream;
+  if (data->faceBlob)
+    hb_blob_destroy (data->faceBlob);
+  if (data)
+    free (data);
 }
 
 
@@ -223,26 +232,7 @@ _hb_directwrite_shaper_face_data_destroy(hb_directwrite_shaper_face_data_t *data
 
 
 struct hb_directwrite_shaper_font_data_t {
-  HDC hdc;
-  LOGFONTW log_font;
-  HFONT hfont;
 };
-
-static bool
-populate_log_font (LOGFONTW  *lf,
-       hb_font_t *font)
-{
-  memset (lf, 0, sizeof (*lf));
-  lf->lfHeight = -font->y_scale;
-  lf->lfCharSet = DEFAULT_CHARSET;
-
-  hb_face_t *face = font->face;
-  hb_directwrite_shaper_face_data_t *face_data = HB_SHAPER_DATA_GET (face);
-
-  memcpy (lf->lfFaceName, face_data->face_name, sizeof (lf->lfFaceName));
-
-  return true;
-}
 
 hb_directwrite_shaper_font_data_t *
 _hb_directwrite_shaper_font_data_create (hb_font_t *font)
@@ -250,33 +240,9 @@ _hb_directwrite_shaper_font_data_create (hb_font_t *font)
   if (unlikely (!hb_directwrite_shaper_face_data_ensure (font->face))) return NULL;
 
   hb_directwrite_shaper_font_data_t *data =
-    (hb_directwrite_shaper_font_data_t *) calloc (1, sizeof (hb_directwrite_shaper_font_data_t));
+    (hb_directwrite_shaper_font_data_t *) malloc (sizeof (hb_directwrite_shaper_font_data_t));
   if (unlikely (!data))
     return NULL;
-
-  data->hdc = GetDC (NULL);
-
-  if (unlikely (!populate_log_font (&data->log_font, font)))
-  {
-    DEBUG_MSG (DIRECTWRITE, font, "Font populate_log_font() failed");
-    _hb_directwrite_shaper_font_data_destroy (data);
-    return NULL;
-  }
-
-  data->hfont = CreateFontIndirectW (&data->log_font);
-  if (unlikely (!data->hfont))
-  {
-    DEBUG_MSG (DIRECTWRITE, font, "Font CreateFontIndirectW() failed");
-    _hb_directwrite_shaper_font_data_destroy (data);
-     return NULL;
-  }
-
-  if (!SelectObject (data->hdc, data->hfont))
-  {
-    DEBUG_MSG (DIRECTWRITE, font, "Font SelectObject() failed");
-    _hb_directwrite_shaper_font_data_destroy (data);
-     return NULL;
-  }
 
   return data;
 }
@@ -284,27 +250,7 @@ _hb_directwrite_shaper_font_data_create (hb_font_t *font)
 void
 _hb_directwrite_shaper_font_data_destroy (hb_directwrite_shaper_font_data_t *data)
 {
-  if (data->hdc)
-    ReleaseDC (NULL, data->hdc);
-  if (data->hfont)
-    DeleteObject (data->hfont);
   free (data);
-}
-
-LOGFONTW *
-hb_directwrite_font_get_logfontw (hb_font_t *font)
-{
-  if (unlikely (!hb_directwrite_shaper_font_data_ensure (font))) return NULL;
-  hb_directwrite_shaper_font_data_t *font_data =  HB_SHAPER_DATA_GET (font);
-  return &font_data->log_font;
-}
-
-HFONT
-hb_directwrite_font_get_hfont (hb_font_t *font)
-{
-  if (unlikely (!hb_directwrite_shaper_font_data_ensure (font))) return NULL;
-  hb_directwrite_shaper_font_data_t *font_data =  HB_SHAPER_DATA_GET (font);
-  return font_data->hfont;
 }
 
 
@@ -444,7 +390,8 @@ public:
 
   IFACEMETHODIMP GetLocaleName(uint32_t textPosition,
     uint32_t* textLength,
-    wchar_t const** localeName) {
+    wchar_t const** localeName)
+  {
     return S_OK;
   }
 
@@ -469,7 +416,8 @@ public:
   {
     SetCurrentRun(textPosition);
     SplitCurrentRun(textPosition);
-    while (textLength > 0) {
+    while (textLength > 0)
+    {
       Run *run = FetchNextRun(&textLength);
       run->mScript = *scriptAnalysis;
     }
@@ -502,10 +450,12 @@ protected:
     Run *origRun = mCurrentRun;
     
     
-    if (*textLength < mCurrentRun->mTextLength) {
-      SplitCurrentRun(mCurrentRun->mTextStart + *textLength);
+    if (*textLength < mCurrentRun->mTextLength)
+    {
+      SplitCurrentRun (mCurrentRun->mTextStart + *textLength);
     }
-    else {
+    else
+    {
       
       mCurrentRun = mCurrentRun->nextRun;
     }
@@ -522,12 +472,14 @@ protected:
     
     
 
-    if (mCurrentRun && mCurrentRun->ContainsTextPosition(textPosition)) {
+    if (mCurrentRun && mCurrentRun->ContainsTextPosition (textPosition))
+    {
       return;
     }
 
     for (Run *run = &mRunHead; run; run = run->nextRun) {
-      if (run->ContainsTextPosition(textPosition)) {
+      if (run->ContainsTextPosition (textPosition))
+      {
         mCurrentRun = run;
         return;
       }
@@ -538,13 +490,15 @@ protected:
 
   void SplitCurrentRun(uint32_t splitPosition)
   {
-    if (!mCurrentRun) {
+    if (!mCurrentRun)
+    {
       
       
       return;
     }
     
-    if (splitPosition <= mCurrentRun->mTextStart) {
+    if (splitPosition <= mCurrentRun->mTextStart)
+    {
       
       
       return;
@@ -600,32 +554,11 @@ _hb_directwrite_shape(hb_shape_plan_t    *shape_plan,
   hb_face_t *face = font->face;
   hb_directwrite_shaper_face_data_t *face_data = HB_SHAPER_DATA_GET (face);
   hb_directwrite_shaper_font_data_t *font_data = HB_SHAPER_DATA_GET (font);
+  IDWriteFactory *dwriteFactory = face_data->dwriteFactory;
+  IDWriteFontFace *fontFace = face_data->fontFace;
 
-  
-#ifndef HB_DIRECTWRITE_EXPERIMENTAL_JUSTIFICATION
-  IDWriteFactory* dwriteFactory;
-#else
-  IDWriteFactory1* dwriteFactory;
-#endif
-  DWriteCreateFactory (
-    DWRITE_FACTORY_TYPE_SHARED,
-    __uuidof (IDWriteFactory),
-    (IUnknown**) &dwriteFactory
-  );
-
-  IDWriteGdiInterop *gdiInterop;
-  dwriteFactory->GetGdiInterop (&gdiInterop);
-  IDWriteFontFace* fontFace;
-  gdiInterop->CreateFontFaceFromHdc (font_data->hdc, &fontFace);
-
-#ifndef HB_DIRECTWRITE_EXPERIMENTAL_JUSTIFICATION
   IDWriteTextAnalyzer* analyzer;
   dwriteFactory->CreateTextAnalyzer(&analyzer);
-#else
-  IDWriteTextAnalyzer* analyzer0;
-  dwriteFactory->CreateTextAnalyzer (&analyzer0);
-  IDWriteTextAnalyzer1* analyzer = (IDWriteTextAnalyzer1*) analyzer0;
-#endif
 
   unsigned int scratch_size;
   hb_buffer_t::scratch_buffer_t *scratch = buffer->get_scratch_buffer (&scratch_size);
@@ -653,7 +586,7 @@ _hb_directwrite_shape(hb_shape_plan_t    *shape_plan,
       textString[chars_len++] = 0xFFFDu;
     else {
       textString[chars_len++] = 0xD800u + ((c - 0x10000u) >> 10);
-      textString[chars_len++] = 0xDC00u + ((c - 0x10000u) & ((1 << 10) - 1));
+      textString[chars_len++] = 0xDC00u + ((c - 0x10000u) & ((1u << 10) - 1));
     }
   }
 
@@ -672,7 +605,6 @@ _hb_directwrite_shape(hb_shape_plan_t    *shape_plan,
     }
   }
 
-  HRESULT hr;
   
 
   DWRITE_READING_DIRECTION readingDirection = buffer->props.direction ? 
@@ -688,6 +620,7 @@ _hb_directwrite_shape(hb_shape_plan_t    *shape_plan,
 
   TextAnalysis analysis(textString, textLength, NULL, readingDirection);
   TextAnalysis::Run *runHead;
+  HRESULT hr;
   hr = analysis.GenerateResults(analyzer, &runHead);
 
 #define FAIL(...) \
@@ -731,11 +664,11 @@ _hb_directwrite_shape(hb_shape_plan_t    *shape_plan,
     (const DWRITE_TYPOGRAPHIC_FEATURES*) &singleFeatures;
   const uint32_t featureRangeLengths[] = { textLength };
 
-retry_getglyphs:
-  uint16_t* clusterMap = (uint16_t*) malloc (maxGlyphCount * sizeof (uint16_t));
-  uint16_t* glyphIndices = (uint16_t*) malloc (maxGlyphCount * sizeof (uint16_t));
+  uint16_t* clusterMap = (uint16_t*) malloc (textLength * sizeof (uint16_t));
   DWRITE_SHAPING_TEXT_PROPERTIES* textProperties = (DWRITE_SHAPING_TEXT_PROPERTIES*)
-    malloc (maxGlyphCount * sizeof (DWRITE_SHAPING_TEXT_PROPERTIES));
+    malloc (textLength * sizeof (DWRITE_SHAPING_TEXT_PROPERTIES));
+retry_getglyphs:
+  uint16_t* glyphIndices = (uint16_t*) malloc (maxGlyphCount * sizeof (uint16_t));
   DWRITE_SHAPING_GLYPH_PROPERTIES* glyphProperties = (DWRITE_SHAPING_GLYPH_PROPERTIES*)
     malloc (maxGlyphCount * sizeof (DWRITE_SHAPING_GLYPH_PROPERTIES));
 
@@ -746,9 +679,7 @@ retry_getglyphs:
 
   if (unlikely (hr == HRESULT_FROM_WIN32 (ERROR_INSUFFICIENT_BUFFER)))
   {
-    free (clusterMap);
     free (glyphIndices);
-    free (textProperties);
     free (glyphProperties);
 
     maxGlyphCount *= 2;
@@ -799,106 +730,109 @@ retry_getglyphs:
     return false;
   }
 
-#ifdef HB_DIRECTWRITE_EXPERIMENTAL_JUSTIFICATION
-
-  DWRITE_JUSTIFICATION_OPPORTUNITY* justificationOpportunities =
-    (DWRITE_JUSTIFICATION_OPPORTUNITY*)
-    malloc (maxGlyphCount * sizeof (DWRITE_JUSTIFICATION_OPPORTUNITY));
-  hr = analyzer->GetJustificationOpportunities (fontFace, fontEmSize,
-    runHead->mScript, textLength, glyphCount, textString, clusterMap,
-    glyphProperties, justificationOpportunities);
-
-  if (FAILED (hr))
-  {
-    FAIL ("Analyzer failed to get justification opportunities.");
-    return false;
-  }
-
   
-  float lineWidth = 60000;
+  float lineWidth = 0;
 
-  float* justifiedGlyphAdvances =
-    (float*) malloc (maxGlyphCount * sizeof (float));
-  DWRITE_GLYPH_OFFSET* justifiedGlyphOffsets = (DWRITE_GLYPH_OFFSET*)
-    malloc (glyphCount * sizeof (DWRITE_GLYPH_OFFSET));
-  hr = analyzer->JustifyGlyphAdvances (lineWidth, glyphCount, justificationOpportunities,
-    glyphAdvances, glyphOffsets, justifiedGlyphAdvances, justifiedGlyphOffsets);
+  IDWriteTextAnalyzer1* analyzer1;
+  analyzer->QueryInterface (&analyzer1);
 
-  if (FAILED (hr))
+  if (analyzer1 && lineWidth)
   {
-    FAIL ("Analyzer failed to get justified glyph advances.");
-    return false;
-  }
 
-  DWRITE_SCRIPT_PROPERTIES scriptProperties;
-  hr = analyzer->GetScriptProperties (runHead->mScript, &scriptProperties);
-  if (FAILED (hr))
-  {
-    FAIL ("Analyzer failed to get script properties.");
-    return false;
-  }
-  uint32_t justificationCharacter = scriptProperties.justificationCharacter;
+    DWRITE_JUSTIFICATION_OPPORTUNITY* justificationOpportunities =
+      (DWRITE_JUSTIFICATION_OPPORTUNITY*)
+      malloc (maxGlyphCount * sizeof (DWRITE_JUSTIFICATION_OPPORTUNITY));
+    hr = analyzer1->GetJustificationOpportunities (fontFace, fontEmSize,
+      runHead->mScript, textLength, glyphCount, textString, clusterMap,
+      glyphProperties, justificationOpportunities);
 
-  
-  if (justificationCharacter != 32)
-  {
-retry_getjustifiedglyphs:
-    uint16_t* modifiedClusterMap = (uint16_t*) malloc (maxGlyphCount * sizeof (uint16_t));
-    uint16_t* modifiedGlyphIndices = (uint16_t*) malloc (maxGlyphCount * sizeof (uint16_t));
-    float* modifiedGlyphAdvances = (float*) malloc (maxGlyphCount * sizeof (float));
-    DWRITE_GLYPH_OFFSET* modifiedGlyphOffsets = (DWRITE_GLYPH_OFFSET*)
-      malloc (maxGlyphCount * sizeof (DWRITE_GLYPH_OFFSET));
-    uint32_t actualGlyphsCount;
-    hr = analyzer->GetJustifiedGlyphs (fontFace, fontEmSize, runHead->mScript,
+    if (FAILED (hr))
+    {
+      FAIL ("Analyzer failed to get justification opportunities.");
+      return false;
+    }
+
+    float* justifiedGlyphAdvances =
+      (float*) malloc (maxGlyphCount * sizeof (float));
+    DWRITE_GLYPH_OFFSET* justifiedGlyphOffsets = (DWRITE_GLYPH_OFFSET*)
+      malloc (glyphCount * sizeof (DWRITE_GLYPH_OFFSET));
+    hr = analyzer1->JustifyGlyphAdvances (lineWidth, glyphCount, justificationOpportunities,
+      glyphAdvances, glyphOffsets, justifiedGlyphAdvances, justifiedGlyphOffsets);
+
+    if (FAILED (hr))
+    {
+      FAIL("Analyzer failed to get justified glyph advances.");
+      return false;
+    }
+
+    DWRITE_SCRIPT_PROPERTIES scriptProperties;
+    hr = analyzer1->GetScriptProperties (runHead->mScript, &scriptProperties);
+    if (FAILED (hr))
+    {
+      FAIL("Analyzer failed to get script properties.");
+      return false;
+    }
+    uint32_t justificationCharacter = scriptProperties.justificationCharacter;
+
+    
+    if (justificationCharacter != 32)
+    {
+      uint16_t* modifiedClusterMap = (uint16_t*) malloc (textLength * sizeof (uint16_t));
+    retry_getjustifiedglyphs:
+      uint16_t* modifiedGlyphIndices = (uint16_t*) malloc (maxGlyphCount * sizeof (uint16_t));
+      float* modifiedGlyphAdvances = (float*) malloc (maxGlyphCount * sizeof (float));
+      DWRITE_GLYPH_OFFSET* modifiedGlyphOffsets = (DWRITE_GLYPH_OFFSET*)
+        malloc (maxGlyphCount * sizeof (DWRITE_GLYPH_OFFSET));
+      uint32_t actualGlyphsCount;
+      hr = analyzer1->GetJustifiedGlyphs (fontFace, fontEmSize, runHead->mScript,
         textLength, glyphCount, maxGlyphCount, clusterMap, glyphIndices,
         glyphAdvances, justifiedGlyphAdvances, justifiedGlyphOffsets,
         glyphProperties, &actualGlyphsCount, modifiedClusterMap, modifiedGlyphIndices,
         modifiedGlyphAdvances, modifiedGlyphOffsets);
 
-    if (hr == HRESULT_FROM_WIN32 (ERROR_INSUFFICIENT_BUFFER))
-    {
-      maxGlyphCount = actualGlyphsCount;
-      free (modifiedClusterMap);
-      free (modifiedGlyphIndices);
-      free (modifiedGlyphAdvances);
-      free (modifiedGlyphOffsets);
+      if (hr == HRESULT_FROM_WIN32 (ERROR_INSUFFICIENT_BUFFER))
+      {
+        maxGlyphCount = actualGlyphsCount;
+        free (modifiedGlyphIndices);
+        free (modifiedGlyphAdvances);
+        free (modifiedGlyphOffsets);
 
-      maxGlyphCount = actualGlyphsCount;
+        maxGlyphCount = actualGlyphsCount;
 
-      goto retry_getjustifiedglyphs;
+        goto retry_getjustifiedglyphs;
+      }
+      if (FAILED (hr))
+      {
+        FAIL ("Analyzer failed to get justified glyphs.");
+        return false;
+      }
+
+      free (clusterMap);
+      free (glyphIndices);
+      free (glyphAdvances);
+      free (glyphOffsets);
+
+      glyphCount = actualGlyphsCount;
+      clusterMap = modifiedClusterMap;
+      glyphIndices = modifiedGlyphIndices;
+      glyphAdvances = modifiedGlyphAdvances;
+      glyphOffsets = modifiedGlyphOffsets;
+
+      free (justifiedGlyphAdvances);
+      free (justifiedGlyphOffsets);
     }
-    if (FAILED (hr))
+    else
     {
-      FAIL ("Analyzer failed to get justified glyphs.");
-      return false;
+      free (glyphAdvances);
+      free (glyphOffsets);
+
+      glyphAdvances = justifiedGlyphAdvances;
+      glyphOffsets = justifiedGlyphOffsets;
     }
 
-    free (clusterMap);
-    free (glyphIndices);
-    free (glyphAdvances);
-    free (glyphOffsets);
+    free (justificationOpportunities);
 
-    glyphCount = actualGlyphsCount;
-    clusterMap = modifiedClusterMap;
-    glyphIndices = modifiedGlyphIndices;
-    glyphAdvances = modifiedGlyphAdvances;
-    glyphOffsets = modifiedGlyphOffsets;
-
-    free(justifiedGlyphAdvances);
-    free(justifiedGlyphOffsets);
   }
-  else
-  {
-    free(glyphAdvances);
-    free(glyphOffsets);
-
-    glyphAdvances = justifiedGlyphAdvances;
-    glyphOffsets = justifiedGlyphOffsets;
-  }
-
-  free(justificationOpportunities);
-
-#endif
 
   
 

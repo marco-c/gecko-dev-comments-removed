@@ -148,20 +148,50 @@ create_ct_font (CGFontRef cg_font, CGFloat font_size)
 
   
 
+
+
+  if (&CTGetCoreTextVersion != NULL && CTGetCoreTextVersion() <= kCTVersionNumber10_9)
+    return ct_font;
+
+  CFURLRef original_url = (CFURLRef)CTFontCopyAttribute(ct_font, kCTFontURLAttribute);
+
+  
+
   {
     CTFontDescriptorRef last_resort_font_desc = get_last_resort_font_desc ();
     CTFontRef new_ct_font = CTFontCreateCopyWithAttributes (ct_font, 0.0, NULL, last_resort_font_desc);
     CFRelease (last_resort_font_desc);
     if (new_ct_font)
     {
-      CFRelease (ct_font);
-      ct_font = new_ct_font;
+      
+
+
+
+
+
+
+
+
+      CFURLRef new_url = (CFURLRef) CTFontCopyAttribute (new_ct_font, kCTFontURLAttribute);
+      
+      
+      if (!original_url || !new_url || CFEqual (original_url, new_url)) {
+        CFRelease (ct_font);
+        ct_font = new_ct_font;
+      } else {
+        CFRelease (new_ct_font);
+        DEBUG_MSG (CORETEXT, ct_font, "Discarding reconfigured CTFont, location changed.");
+      }
+      if (new_url)
+        CFRelease (new_url);
     }
     else
       DEBUG_MSG (CORETEXT, ct_font, "Font copy with empty cascade list failed");
   }
 
- return ct_font;
+  if (original_url)
+    CFRelease (original_url);
+  return ct_font;
 }
 
 struct hb_coretext_shaper_face_data_t {
@@ -695,7 +725,7 @@ _hb_coretext_shape (hb_shape_plan_t    *shape_plan,
       pchars[chars_len++] = 0xFFFDu;
     else {
       pchars[chars_len++] = 0xD800u + ((c - 0x10000u) >> 10);
-      pchars[chars_len++] = 0xDC00u + ((c - 0x10000u) & ((1 << 10) - 1));
+      pchars[chars_len++] = 0xDC00u + ((c - 0x10000u) & ((1u << 10) - 1));
     }
   }
 

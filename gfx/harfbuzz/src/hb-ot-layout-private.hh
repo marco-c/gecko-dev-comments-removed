@@ -228,13 +228,14 @@ _next_syllable (hb_buffer_t *buffer, unsigned int start)
 
 
 
-
-
 enum hb_unicode_props_flags_t {
-  UPROPS_MASK_ZWJ       = 0x20u,
-  UPROPS_MASK_ZWNJ      = 0x40u,
-  UPROPS_MASK_IGNORABLE = 0x80u,
-  UPROPS_MASK_GEN_CAT   = 0x1Fu
+  UPROPS_MASK_GEN_CAT	= 0x001Fu,
+  UPROPS_MASK_IGNORABLE	= 0x0020u,
+  UPROPS_MASK_FVS	= 0x0040u, 
+
+  
+  UPROPS_MASK_Cf_ZWJ	= 0x0100u,
+  UPROPS_MASK_Cf_ZWNJ	= 0x0200u
 };
 HB_MARK_AS_FLAG_T (hb_unicode_props_flags_t);
 
@@ -253,8 +254,17 @@ _hb_glyph_info_set_unicode_props (hb_glyph_info_t *info, hb_buffer_t *buffer)
     {
       buffer->scratch_flags |= HB_BUFFER_SCRATCH_FLAG_HAS_DEFAULT_IGNORABLES;
       props |=  UPROPS_MASK_IGNORABLE;
-      if (u == 0x200Cu) props |= UPROPS_MASK_ZWNJ;
-      if (u == 0x200Du) props |= UPROPS_MASK_ZWJ;
+      if (u == 0x200Cu) props |= UPROPS_MASK_Cf_ZWNJ;
+      if (u == 0x200Du) props |= UPROPS_MASK_Cf_ZWJ;
+      
+
+
+
+
+
+
+
+      if (unlikely (hb_in_range (u, 0x180Bu, 0x180Du))) props |= UPROPS_MASK_FVS;
     }
     else if (unlikely (HB_UNICODE_GENERAL_CATEGORY_IS_NON_ENCLOSING_MARK_OR_MODIFIER_SYMBOL (gen_cat)))
     {
@@ -350,31 +360,44 @@ static inline bool _hb_glyph_info_ligated (const hb_glyph_info_t *info);
 static inline hb_bool_t
 _hb_glyph_info_is_default_ignorable (const hb_glyph_info_t *info)
 {
-  return (info->unicode_props() & UPROPS_MASK_IGNORABLE) && !_hb_glyph_info_ligated (info);
+  return (info->unicode_props() & UPROPS_MASK_IGNORABLE) &&
+	 !_hb_glyph_info_ligated (info);
+}
+static inline hb_bool_t
+_hb_glyph_info_is_default_ignorable_and_not_fvs (const hb_glyph_info_t *info)
+{
+  return ((info->unicode_props() & (UPROPS_MASK_IGNORABLE|UPROPS_MASK_FVS))
+	  == UPROPS_MASK_IGNORABLE) &&
+	 !_hb_glyph_info_ligated (info);
 }
 
+static inline bool
+_hb_glyph_info_is_unicode_format (const hb_glyph_info_t *info)
+{
+  return _hb_glyph_info_get_general_category (info) ==
+	 HB_UNICODE_GENERAL_CATEGORY_FORMAT;
+}
 static inline hb_bool_t
 _hb_glyph_info_is_zwnj (const hb_glyph_info_t *info)
 {
-  return !!(info->unicode_props() & UPROPS_MASK_ZWNJ);
+  return _hb_glyph_info_is_unicode_format (info) && (info->unicode_props() & UPROPS_MASK_Cf_ZWNJ);
 }
-
 static inline hb_bool_t
 _hb_glyph_info_is_zwj (const hb_glyph_info_t *info)
 {
-  return !!(info->unicode_props() & UPROPS_MASK_ZWJ);
+  return _hb_glyph_info_is_unicode_format (info) && (info->unicode_props() & UPROPS_MASK_Cf_ZWJ);
 }
-
 static inline hb_bool_t
 _hb_glyph_info_is_joiner (const hb_glyph_info_t *info)
 {
-  return !!(info->unicode_props() & (UPROPS_MASK_ZWNJ | UPROPS_MASK_ZWJ));
+  return _hb_glyph_info_is_unicode_format (info) && (info->unicode_props() & (UPROPS_MASK_Cf_ZWNJ|UPROPS_MASK_Cf_ZWJ));
 }
-
 static inline void
 _hb_glyph_info_flip_joiners (hb_glyph_info_t *info)
 {
-  info->unicode_props() ^= UPROPS_MASK_ZWNJ | UPROPS_MASK_ZWJ;
+  if (!_hb_glyph_info_is_unicode_format (info))
+    return;
+  info->unicode_props() ^= UPROPS_MASK_Cf_ZWNJ | UPROPS_MASK_Cf_ZWJ;
 }
 
 

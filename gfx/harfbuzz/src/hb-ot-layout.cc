@@ -70,12 +70,18 @@ _hb_ot_layout_create (hb_face_t *face)
     unsigned int gsub_len = hb_blob_get_length (layout->gsub_blob);
     unsigned int gpos_len = hb_blob_get_length (layout->gpos_blob);
     if (0
-      || (442 == gdef_len && 42038 == gpos_len && 2874 == gsub_len) 
-      || (430 == gdef_len && 40662 == gpos_len && 2874 == gsub_len) 
-      || (442 == gdef_len && 39116 == gpos_len && 2874 == gsub_len) 
-      || (430 == gdef_len && 39374 == gpos_len && 2874 == gsub_len) 
-      || (490 == gdef_len && 41638 == gpos_len && 3046 == gsub_len) 
-      || (478 == gdef_len && 41902 == gpos_len && 3046 == gsub_len) 
+      
+      || (442 == gdef_len && 42038 == gpos_len && 2874 == gsub_len)
+      
+      || (430 == gdef_len && 40662 == gpos_len && 2874 == gsub_len)
+      
+      || (442 == gdef_len && 39116 == gpos_len && 2874 == gsub_len)
+      
+      || (430 == gdef_len && 39374 == gpos_len && 2874 == gsub_len)
+      
+      || (490 == gdef_len && 41638 == gpos_len && 3046 == gsub_len)
+      
+      || (478 == gdef_len && 41902 == gpos_len && 3046 == gsub_len)
     )
     {
       
@@ -86,6 +92,45 @@ _hb_ot_layout_create (hb_face_t *face)
 
      if (3 == layout->gdef->get_glyph_class (5))
        layout->gdef = &OT::Null(OT::GDEF);
+    }
+    else if (0
+      
+      || (898 == gdef_len && 46470 == gpos_len && 12554 == gsub_len)
+      
+      || (910 == gdef_len && 47732 == gpos_len && 12566 == gsub_len)
+      
+      || (928 == gdef_len && 59332 == gpos_len && 23298 == gsub_len)
+      
+      || (940 == gdef_len && 60732 == gpos_len && 23310 == gsub_len)
+      
+      || (994 == gdef_len && 60336 == gpos_len && 24474 == gsub_len)
+      
+      || (1006 == gdef_len && 61740 == gpos_len && 24470 == gsub_len)
+      
+      || (832 == gdef_len && 47162 == gpos_len && 7324 == gsub_len)
+      
+      || (844 == gdef_len && 45474 == gpos_len && 7302 == gsub_len)
+      
+      || (192 == gdef_len && 7254 == gpos_len && 12638 == gsub_len)
+      
+      || (192 == gdef_len && 7254 == gpos_len && 12690 == gsub_len)
+      
+      
+      || (188 == gdef_len && 3852 == gpos_len && 248 == gsub_len)
+      
+      
+      || (188 == gdef_len && 3426 == gpos_len && 264 == gsub_len)
+    )
+    {
+      
+
+
+
+
+
+
+
+      layout->gdef = &OT::Null(OT::GDEF);
     }
   }
 

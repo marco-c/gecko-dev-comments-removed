@@ -3,6 +3,7 @@
 
 from __future__ import print_function
 import sys
+import array
 from gi.repository import HarfBuzz as hb
 from gi.repository import GLib
 
@@ -39,7 +40,26 @@ class Debugger(object):
 		return True
 debugger = Debugger()
 hb.buffer_set_message_func (buf, debugger.message, 1, 0)
-hb.buffer_add_utf8 (buf, text.encode('utf-8'), 0, -1)
+
+
+
+
+
+
+
+if False:
+	
+	
+	
+	hb.buffer_add_utf8 (buf, text.encode('utf-8'), 0, -1)
+	
+	
+elif sys.maxunicode == 0x10FFFF:
+	hb.buffer_add_utf32 (buf, array.array('I', text.encode('utf-32')), 0, -1)
+else:
+	hb.buffer_add_utf16 (buf, array.array('H', text.encode('utf-16')), 0, -1)
+
+
 hb.buffer_guess_segment_properties (buf)
 
 hb.shape (font, buf, [])

@@ -183,6 +183,12 @@ hb_buffer_t::shift_forward (unsigned int count)
   if (unlikely (!ensure (len + count))) return false;
 
   memmove (info + idx + count, info + idx, (len - idx) * sizeof (info[0]));
+  if (idx + count > len)
+  {
+    
+
+    memset (info + len, 0, (idx + count - len) * sizeof (info[0]));
+  }
   len += count;
   idx += count;
 
@@ -425,6 +431,8 @@ hb_buffer_t::move_to (unsigned int i)
   {
     
     unsigned int count = out_len - i;
+
+    
 
     if (unlikely (idx < count && !shift_forward (count + 32))) return false;
 

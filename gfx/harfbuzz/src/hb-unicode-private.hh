@@ -115,6 +115,8 @@ HB_UNICODE_FUNCS_IMPLEMENT_CALLBACKS_SIMPLE
     
 
     if (unlikely (unicode == 0x0FC6u)) return 254;
+    
+    if (unlikely (unicode == 0x0F39u)) return 127;
 
     return _hb_modified_combining_class[combining_class (unicode)];
   }
@@ -180,8 +182,8 @@ HB_UNICODE_FUNCS_IMPLEMENT_CALLBACKS_SIMPLE
 	case 0x17: return hb_in_range (ch, 0x17B4u, 0x17B5u);
 	case 0x18: return hb_in_range (ch, 0x180Bu, 0x180Eu);
 	case 0x20: return hb_in_ranges (ch, 0x200Bu, 0x200Fu,
-							    0x202Au, 0x202Eu,
-							    0x2060u, 0x206Fu);
+					    0x202Au, 0x202Eu,
+					    0x2060u, 0x206Fu);
 	case 0xFE: return hb_in_range (ch, 0xFE00u, 0xFE0Fu) || ch == 0xFEFFu;
 	case 0xFF: return hb_in_range (ch, 0xFFF0u, 0xFFF8u);
 	default: return false;
@@ -344,9 +346,11 @@ extern HB_INTERNAL const hb_unicode_funcs_t _hb_unicode_funcs_nil;
 #define HB_MODIFIED_COMBINING_CLASS_CCC122 122 /* mai * */
 
 
+
+
 #define HB_MODIFIED_COMBINING_CLASS_CCC129 129 /* sign aa */
 #define HB_MODIFIED_COMBINING_CLASS_CCC130 130 /* sign i */
-#define HB_MODIFIED_COMBINING_CLASS_CCC132 132 /* sign u */
+#define HB_MODIFIED_COMBINING_CLASS_CCC132 128 /* sign u */
 
 
 

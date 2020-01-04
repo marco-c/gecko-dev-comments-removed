@@ -267,19 +267,16 @@ struct Sequence
 
     
 
-
-
-
-
-
-
-    if (unlikely (!count)) return_trace (false);
-
-    
-
     if (unlikely (count == 1))
     {
       c->replace_glyph (substitute.array[0]);
+      return_trace (true);
+    }
+    
+
+    else if (unlikely (count == 0))
+    {
+      c->buffer->delete_glyph ();
       return_trace (true);
     }
 

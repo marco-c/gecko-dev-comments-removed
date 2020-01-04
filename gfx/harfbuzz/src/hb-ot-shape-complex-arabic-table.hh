@@ -19,6 +19,7 @@
 
 #define X	JOINING_TYPE_X
 #define R	JOINING_TYPE_R
+#define T	JOINING_TYPE_T
 #define U	JOINING_TYPE_U
 #define A	JOINING_GROUP_ALAPH
 #define DR	JOINING_GROUP_DALATH_RISH
@@ -76,9 +77,11 @@ static const uint8_t joining_table[] =
 
   
 
-   D,D,D,D,D,D,D,D,D,D,R,R,R,U,R,D,D,R,R,D,D,
+   D,D,D,D,D,D,D,D,D,D,R,R,R,U,R,D,D,R,R,D,D,X,D,D,D,R,D,D,D,D,X,X,
+   X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,
+   X,X,U,
 
-#define joining_offset_0x1806u 693
+#define joining_offset_0x1806u 739
 
   
 
@@ -86,41 +89,46 @@ static const uint8_t joining_table[] =
    D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,
    D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,
    D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,X,X,X,X,X,X,X,X,
-   U,U,U,U,U,U,U,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,
+   U,U,U,U,U,T,T,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,
    D,D,D,D,D,D,D,D,D,X,D,
 
-#define joining_offset_0x200cu 858
+#define joining_offset_0x200cu 904
 
   
 
-                           U,C,
+                           U,C,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,
+   X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,U,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,
+   X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,
+   X,X,X,X,X,X,U,U,U,U,
 
-#define joining_offset_0x2066u 860
-
-  
-
-               U,U,U,U,
-
-#define joining_offset_0xa840u 864
+#define joining_offset_0xa840u 998
 
   
 
    D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,
    D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,L,U,
 
-#define joining_offset_0x10ac0u 916
+#define joining_offset_0x10ac0u 1050
 
   
 
    D,D,D,D,D,R,U,R,U,R,R,U,U,L,R,R,R,R,R,D,D,D,D,L,D,D,D,D,D,R,D,D,
    D,R,U,U,R,X,X,X,X,X,X,D,D,D,D,R,
 
-#define joining_offset_0x10b80u 964
+#define joining_offset_0x10b80u 1098
 
   
 
    D,R,D,R,R,R,D,D,D,R,D,D,R,D,R,R,D,R,X,X,X,X,X,X,X,X,X,X,X,X,X,X,
    X,X,X,X,X,X,X,X,X,R,R,R,R,D,D,U,
+
+#define joining_offset_0x1e900u 1146
+
+  
+
+   D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,
+   D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,
+   D,D,D,D,
 
 }; 
 
@@ -131,7 +139,7 @@ joining_type (hb_codepoint_t u)
   switch (u >> 12)
   {
     case 0x0u:
-      if (hb_in_range (u, 0x0600u, 0x08B4u)) return joining_table[u - 0x0600u + joining_offset_0x0600u];
+      if (hb_in_range (u, 0x0600u, 0x08E2u)) return joining_table[u - 0x0600u + joining_offset_0x0600u];
       break;
 
     case 0x1u:
@@ -139,8 +147,7 @@ joining_type (hb_codepoint_t u)
       break;
 
     case 0x2u:
-      if (hb_in_range (u, 0x200Cu, 0x200Du)) return joining_table[u - 0x200Cu + joining_offset_0x200cu];
-      if (hb_in_range (u, 0x2066u, 0x2069u)) return joining_table[u - 0x2066u + joining_offset_0x2066u];
+      if (hb_in_range (u, 0x200Cu, 0x2069u)) return joining_table[u - 0x200Cu + joining_offset_0x200cu];
       break;
 
     case 0xAu:
@@ -152,6 +159,10 @@ joining_type (hb_codepoint_t u)
       if (hb_in_range (u, 0x10B80u, 0x10BAFu)) return joining_table[u - 0x10B80u + joining_offset_0x10b80u];
       break;
 
+    case 0x1Eu:
+      if (hb_in_range (u, 0x1E900u, 0x1E943u)) return joining_table[u - 0x1E900u + joining_offset_0x1e900u];
+      break;
+
     default:
       break;
   }
@@ -160,6 +171,7 @@ joining_type (hb_codepoint_t u)
 
 #undef X
 #undef R
+#undef T
 #undef U
 #undef A
 #undef DR

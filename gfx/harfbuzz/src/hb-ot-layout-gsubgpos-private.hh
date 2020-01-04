@@ -319,7 +319,7 @@ struct hb_apply_context_t :
       if (!c->check_glyph_property (&info, lookup_props))
 	return SKIP_YES;
 
-      if (unlikely (_hb_glyph_info_is_default_ignorable (&info) &&
+      if (unlikely (_hb_glyph_info_is_default_ignorable_and_not_fvs (&info) &&
 		    (ignore_zwnj || !_hb_glyph_info_is_zwnj (&info)) &&
 		    (ignore_zwj || !_hb_glyph_info_is_zwj (&info))))
 	return SKIP_MAYBE;
@@ -996,10 +996,13 @@ static inline bool apply_lookup (hb_apply_context_t *c,
 
     
 
-    
-
-
-    end = MAX (MIN((int) match_positions[idx] + 1, (int) new_len), int (end) + delta);
+    end = int (end) + delta;
+    if (end <= match_positions[idx])
+    {
+      
+      assert (end == match_positions[idx]);
+      break;
+    }
 
     unsigned int next = idx + 1; 
 

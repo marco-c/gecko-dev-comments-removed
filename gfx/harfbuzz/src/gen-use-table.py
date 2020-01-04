@@ -145,21 +145,23 @@ globals().update(property_values)
 def is_BASE(U, UISC, UGC):
 	return (UISC in [Number, Consonant, Consonant_Head_Letter,
 			
-			Tone_Letter] or
+			Tone_Letter,
+			Vowel_Independent 
+			] or
 		(UGC == Lo and UISC in [Avagraha, Bindu, Consonant_Final, Consonant_Medial,
 					Consonant_Subjoined, Vowel, Vowel_Dependent]))
-def is_BASE_VOWEL(U, UISC, UGC):
-	return UISC == Vowel_Independent
 def is_BASE_IND(U, UISC, UGC):
 	
 	return (UISC in [Consonant_Dead, Modifying_Letter] or
-		(UGC == Po and not is_BASE_OTHER(U, UISC, UGC))) 
+		(UGC == Po and not U in [0x104E, 0x2022]) or
+		False 
+		)
 def is_BASE_NUM(U, UISC, UGC):
 	return UISC == Brahmi_Joining_Number
 def is_BASE_OTHER(U, UISC, UGC):
 	if UISC == Consonant_Placeholder: return True 
-	return U in [0x00A0, 0x00D7, 0x2015, 0x2022, 0x25CC,
-		     0x25FB, 0x25FC, 0x25FD, 0x25FE]
+	
+	return U in [0x2015, 0x2022, 0x25FB, 0x25FC, 0x25FD, 0x25FE]
 def is_CGJ(U, UISC, UGC):
 	return U == 0x034F
 def is_CONS_FINAL(U, UISC, UGC):
@@ -216,7 +218,6 @@ def is_VOWEL_MOD(U, UISC, UGC):
 
 use_mapping = {
 	'B':	is_BASE,
-	'IV':	is_BASE_VOWEL,
 	'IND':	is_BASE_IND,
 	'N':	is_BASE_NUM,
 	'GB':	is_BASE_OTHER,

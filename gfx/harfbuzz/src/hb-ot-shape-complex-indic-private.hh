@@ -60,11 +60,10 @@ enum indic_category_t {
   OT_Repha = 15, 
   OT_Ra = 16,
   OT_CM = 17,  
-  OT_Symbol = 18, 
-  OT_CM2 = 31 
+  OT_Symbol = 18 
 };
 
-#define MEDIAL_FLAGS (FLAG (OT_CM) | FLAG (OT_CM2))
+#define MEDIAL_FLAGS (FLAG (OT_CM))
 
 
 
