@@ -576,12 +576,8 @@ StyleSheetEditor.prototype = {
 
 
   _highlightSelectorAt: Task.async(function*(x, y) {
-    
-    let info;
-    try {
-      let pos = this.sourceEditor.getPositionFromCoords({left: x, top: y});
-      info = this.sourceEditor.getInfoAt(pos);
-    } catch (e) {}
+    let pos = this.sourceEditor.getPositionFromCoords({left: x, top: y});
+    let info = this.sourceEditor.getInfoAt(pos);
     if (!info || info.state !== "selector") {
       return;
     }
