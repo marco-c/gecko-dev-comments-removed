@@ -2584,7 +2584,7 @@ UpdatePropertyType(ExclusiveContext* cx, HeapTypeSet* types, NativeObject* obj, 
 
 
         MOZ_ASSERT_IF(TypeSet::IsUntrackedValue(value),
-                      obj->is<CallObject>() || IsExtensibleLexicalScope(obj));
+                      obj->is<LexicalScopeBase>() || IsExtensibleLexicalScope(obj));
         if ((indexed || !value.isUndefined() || !CanHaveEmptyPropertyTypesForOwnProperty(obj)) &&
             !TypeSet::IsUntrackedValue(value))
         {
