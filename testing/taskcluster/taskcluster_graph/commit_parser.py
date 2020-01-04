@@ -350,6 +350,7 @@ def parse_commit(message, jobs):
             
             'build_type': name,
             'interactive': args.interactive,
+            'when': task.get('when', {})
         })
 
     
