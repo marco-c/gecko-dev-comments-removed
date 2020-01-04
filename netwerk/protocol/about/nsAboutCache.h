@@ -18,12 +18,10 @@
 #include "nsTArray.h"
 
 class nsAboutCache final : public nsIAboutModule
-                         , public nsICacheStorageVisitor
 {
 public:
     NS_DECL_ISUPPORTS
     NS_DECL_NSIABOUTMODULE
-    NS_DECL_NSICACHESTORAGEVISITOR
 
     nsAboutCache() {}
 
@@ -37,45 +35,62 @@ public:
 protected:
     virtual ~nsAboutCache() {}
 
-    nsresult ParseURI(nsIURI * uri, nsACString & storage);
+    class Channel final : public nsIChannel
+                        , public nsICacheStorageVisitor
+    {
+        NS_DECL_ISUPPORTS
+        NS_DECL_NSICACHESTORAGEVISITOR
+        NS_FORWARD_SAFE_NSICHANNEL(mChannel)
+        NS_FORWARD_SAFE_NSIREQUEST(mChannel)
 
-    
-    
-    
-    nsresult VisitNextStorage();
-    
-    
-    
-    void FireVisitStorage();
-    
-    
-    
-    nsresult VisitStorage(nsACString const & storageName);
+    private:
+        virtual ~Channel() {}
 
-    
-    
-    void FlushBuffer();
+    public:
+        nsresult Init(nsIURI* aURI, nsILoadInfo* aLoadInfo);
+        nsresult ParseURI(nsIURI * uri, nsACString & storage);
 
-    
-    
-    bool mOverview;
+        
+        
+        
+        nsresult VisitNextStorage();
+        
+        
+        
+        void FireVisitStorage();
+        
+        
+        
+        nsresult VisitStorage(nsACString const & storageName);
 
-    
-    
-    bool mEntriesHeaderAdded;
+        
+        
+        void FlushBuffer();
 
-    
-    nsCOMPtr<nsILoadContextInfo> mLoadInfo;
-    nsCString mContextString;
+        
+        
+        bool mOverview;
 
-    
-    nsTArray<nsCString> mStorageList;
-    nsCString mStorageName;
-    nsCOMPtr<nsICacheStorage> mStorage;
+        
+        
+        bool mEntriesHeaderAdded;
 
-    
-    nsCString mBuffer;
-    nsCOMPtr<nsIOutputStream> mStream;
+        
+        nsCOMPtr<nsILoadContextInfo> mLoadInfo;
+        nsCString mContextString;
+
+        
+        nsTArray<nsCString> mStorageList;
+        nsCString mStorageName;
+        nsCOMPtr<nsICacheStorage> mStorage;
+
+        
+        nsCString mBuffer;
+        nsCOMPtr<nsIOutputStream> mStream;
+
+        
+        nsCOMPtr<nsIChannel> mChannel;
+    };
 };
 
 #define NS_ABOUT_CACHE_MODULE_CID                    \
