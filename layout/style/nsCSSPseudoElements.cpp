@@ -36,7 +36,8 @@ static const nsStaticAtom CSSPseudoElements_info[] = {
 
 
 
-static const uint32_t CSSPseudoElements_flags[] = {
+ const uint32_t
+nsCSSPseudoElements::kPseudoElementFlags[] = {
 #define CSS_PSEUDO_ELEMENT(name_, value_, flags_) \
   flags_,
 #include "nsCSSPseudoElementList.h"
@@ -103,15 +104,6 @@ nsCSSPseudoElements::GetPseudoAtom(Type aType)
   NS_ASSERTION(aType < Type::Count, "Unexpected type");
   return *CSSPseudoElements_info[
     static_cast<CSSPseudoElementTypeBase>(aType)].mAtom;
-}
-
- uint32_t
-nsCSSPseudoElements::FlagsForPseudoElement(const Type aType)
-{
-  CSSPseudoElementTypeBase index = static_cast<CSSPseudoElementTypeBase>(aType);
-  NS_ASSERTION(index < ArrayLength(CSSPseudoElements_flags),
-               "argument must be a pseudo-element");
-  return CSSPseudoElements_flags[index];
 }
 
  bool
