@@ -545,7 +545,8 @@ class ObjectType extends Type {
     return baseType == "object";
   }
 
-  normalize(value, context) {
+  
+  normalize(value, context) { 
     let v = this.normalizeBase("object", value, context);
     if (v.error) {
       return v;
@@ -1070,7 +1071,8 @@ this.Schemas = {
     ns.set(symbol, value);
   },
 
-  parseType(path, type, extraProperties = []) {
+  
+  parseType(path, type, extraProperties = []) { 
     let allowedProperties = new Set(extraProperties);
 
     
