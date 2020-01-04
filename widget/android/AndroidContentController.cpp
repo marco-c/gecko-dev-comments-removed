@@ -48,21 +48,22 @@ AndroidContentController::DispatchSingleTapToObservers(const LayoutDevicePoint& 
                                                        const ScrollableLayerGuid& aGuid) const
 {
     nsIContent* content = nsLayoutUtils::FindContentFor(aGuid.mScrollId);
-    nsIPresShell* shell = content
-        ? mozilla::layers::APZCCallbackHelper::GetRootContentDocumentPresShellForContent(content)
+    nsPresContext* context = content
+        ? mozilla::layers::APZCCallbackHelper::GetPresContextForContent(content)
         : nullptr;
 
-    if (!shell || !shell->GetPresContext()) {
-        return;
+    if (!context) {
+      return;
     }
 
     CSSPoint point = mozilla::layers::APZCCallbackHelper::ApplyCallbackTransform(
-        aPoint / shell->GetPresContext()->CSSToDevPixelScale(), aGuid);
+        aPoint / context->CSSToDevPixelScale(), aGuid);
 
-    if (shell->ScaleToResolution()) {
+    nsPresContext* rcdContext = context->GetToplevelContentDocumentPresContext();
+    if (rcdContext && rcdContext->PresShell()->ScaleToResolution()) {
         
         
-        const float resolution = shell->GetResolution();
+        const float resolution = rcdContext->PresShell()->GetResolution();
         point.x /= resolution;
         point.y /= resolution;
     }
