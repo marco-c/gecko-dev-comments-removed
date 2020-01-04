@@ -31,32 +31,7 @@ const errors = [
 
 this.EXPORTED_SYMBOLS = ["error"].concat(errors);
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-const XPCOM_EXCEPTIONS = [];
-{
-  for (let prop in Cr) {
-    XPCOM_EXCEPTIONS.push(Cr[prop]);
-  }
-}
-
 this.error = {};
-
-
-
-
-error.isSuccess = status => status === "success";
 
 
 
@@ -72,7 +47,7 @@ error.isSuccess = status => status === "success";
 error.isError = function(val) {
   if (val === null || typeof val != "object") {
     return false;
-  } else if ("result" in val && val.result in XPCOM_EXCEPTIONS) {
+  } else if ("result" in val) {
     return true;
   } else {
     return Object.getPrototypeOf(val) == "Error";
