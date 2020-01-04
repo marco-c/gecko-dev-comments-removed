@@ -1284,6 +1284,11 @@ nsDocumentViewer::PageHide(bool aIsUnload)
     return NS_ERROR_NULL_POINTER;
   }
 
+  if (aIsUnload) {
+    
+    nsJSContext::PokeGC(JS::gcreason::PAGE_HIDE, NS_GC_DELAY * 2);
+  }
+
   mDocument->OnPageHide(!aIsUnload, nullptr);
 
   
@@ -1293,10 +1298,6 @@ nsDocumentViewer::PageHide(bool aIsUnload)
     window->PageHidden();
 
   if (aIsUnload) {
-    
-    nsJSContext::PokeGC(JS::gcreason::PAGE_HIDE, NS_GC_DELAY * 2);
-
-    
     NS_ENSURE_STATE(mDocument);
 
     
