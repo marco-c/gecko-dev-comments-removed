@@ -1104,7 +1104,7 @@ var Histogram = {
               + " ".repeat(Math.max(0, labelPadTo - String(label).length)) + label 
               + " |" + "#".repeat(Math.round(MAX_BAR_CHARS * barValue / maxBarValue)) 
               + "  " + value 
-              + "  " + Math.round(100 * value / aHgram.sum) + "%"; 
+              + "  " + Math.round(100 * value / aHgram.sample_count) + "%"; 
 
       
       let belowEm = Math.round(MAX_BAR_HEIGHT * (barValue / maxBarValue) * 10) / 10;
