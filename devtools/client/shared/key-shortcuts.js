@@ -143,6 +143,7 @@ KeyShortcuts.parseElectronKey = function (window, str) {
     shortcut.keyCode = KeyCodes[key];
     
     shortcut.keyCodeString = key;
+    shortcut.key = key;
   } else {
     console.error("Unsupported key:", key);
     return null;
@@ -199,11 +200,17 @@ KeyShortcuts.prototype = {
     }
     if (shortcut.keyCode) {
       return event.keyCode == shortcut.keyCode;
+    } else if (event.key in ElectronKeysMapping) {
+      return ElectronKeysMapping[event.key] === shortcut.key;
     }
+
+    
+    let key = event.key || String.fromCharCode(event.keyCode);
+
     
     
     
-    return event.key.toLowerCase() == shortcut.key ||
+    return key.toLowerCase() == shortcut.key ||
       (shortcut.key.match(/[0-9]/) &&
        event.keyCode == shortcut.key.charCodeAt(0));
   },
