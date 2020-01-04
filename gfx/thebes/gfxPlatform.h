@@ -272,10 +272,6 @@ public:
     virtual bool UseAcceleratedCanvas();
     virtual void InitializeSkiaCacheLimits();
 
-    
-    
-    virtual bool UseProgressivePaint();
-
     static bool AsyncPanZoomEnabled();
 
     virtual void GetAzureBackendInfo(mozilla::widget::InfoObject &aObj) {

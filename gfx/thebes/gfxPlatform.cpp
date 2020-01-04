@@ -2358,12 +2358,6 @@ gfxPlatform::AsyncPanZoomEnabled()
 }
 
  bool
-gfxPlatform::UseProgressivePaint()
-{
-  return gfxPrefs::ProgressivePaintDoNotUseDirectly();
-}
-
- bool
 gfxPlatform::PerfWarnings()
 {
   return gfxPrefs::PerfWarnings();
