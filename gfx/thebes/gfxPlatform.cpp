@@ -900,7 +900,7 @@ gfxPlatform::GetSourceSurfaceForSurface(DrawTarget *aTarget, gfxASurface *aSurfa
     
     NativeSurface surf;
     surf.mFormat = format;
-    surf.mType = NativeSurfaceType::CAIRO_SURFACE;
+    surf.mType = NativeSurfaceType::CAIRO_CONTEXT;
     surf.mSurface = aSurface->CairoSurface();
     surf.mSize = aSurface->GetSize();
     
@@ -958,7 +958,7 @@ gfxPlatform::GetSourceSurfaceForSurface(DrawTarget *aTarget, gfxASurface *aSurfa
     
     NativeSurface surf;
     surf.mFormat = format;
-    surf.mType = NativeSurfaceType::CAIRO_SURFACE;
+    surf.mType = NativeSurfaceType::CAIRO_CONTEXT;
     surf.mSurface = aSurface->CairoSurface();
     surf.mSize = aSurface->GetSize();
     RefPtr<DrawTarget> drawTarget =
