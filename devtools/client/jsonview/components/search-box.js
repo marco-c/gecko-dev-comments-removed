@@ -7,46 +7,49 @@
 "use strict";
 
 define(function(require, exports, module) {
+  const React = require("devtools/client/shared/vendor/react");
 
-const React = require("devtools/client/shared/vendor/react");
+  const DOM = React.DOM;
 
-const DOM = React.DOM;
+  
+  const searchDelay = 250;
 
-
-const searchDelay = 250;
-
-
-
+  
 
 
-var SearchBox = React.createClass({
-  displayName: "SearchBox",
 
-  render: function() {
-    return (
-      DOM.input({className: "searchBox",
-        placeholder: Locale.$STR("jsonViewer.filterJSON"),
-        onChange: this.onSearch})
-    )
-  },
+  let SearchBox = React.createClass({
+    propTypes: {
+      actions: React.PropTypes.object,
+    },
 
-  onSearch: function(event) {
-    var searchBox = event.target;
-    var win = searchBox.ownerDocument.defaultView;
+    displayName: "SearchBox",
 
-    if (this.searchTimeout) {
-      win.clearTimeout(this.searchTimeout);
-    }
+    onSearch: function(event) {
+      let searchBox = event.target;
+      let win = searchBox.ownerDocument.defaultView;
 
-    var callback = this.doSearch.bind(this, searchBox);
-    this.searchTimeout = win.setTimeout(callback, searchDelay);
-  },
+      if (this.searchTimeout) {
+        win.clearTimeout(this.searchTimeout);
+      }
 
-  doSearch: function(searchBox) {
-    this.props.actions.onSearch(searchBox.value);
-  }
-});
+      let callback = this.doSearch.bind(this, searchBox);
+      this.searchTimeout = win.setTimeout(callback, searchDelay);
+    },
 
+    doSearch: function(searchBox) {
+      this.props.actions.onSearch(searchBox.value);
+    },
 
-exports.SearchBox = SearchBox;
+    render: function() {
+      return (
+        DOM.input({className: "searchBox",
+          placeholder: Locale.$STR("jsonViewer.filterJSON"),
+          onChange: this.onSearch})
+      );
+    },
+  });
+
+  
+  exports.SearchBox = SearchBox;
 });

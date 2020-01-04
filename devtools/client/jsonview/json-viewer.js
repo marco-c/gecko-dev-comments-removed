@@ -4,95 +4,95 @@
 
 
 
+
+"use strict";
+
 define(function(require, exports, module) {
+  
+  const ReactDOM = require("devtools/client/shared/vendor/react-dom");
+  const { createFactories } = require("devtools/client/shared/components/reps/rep-utils");
+  const { MainTabbedArea } = createFactories(require("./components/main-tabbed-area"));
+
+  const json = document.getElementById("json");
+  const headers = document.getElementById("headers");
+
+  let jsonData;
+
+  try {
+    jsonData = JSON.parse(json.textContent);
+  } catch (err) {
+    jsonData = err + "";
+  }
+
+  
+  let input = {
+    jsonText: json.textContent,
+    jsonPretty: null,
+    json: jsonData,
+    headers: JSON.parse(headers.textContent),
+    tabActive: 1,
+    prettified: false
+  };
+
+  json.remove();
+  headers.remove();
+
+  
 
 
-const ReactDOM = require("devtools/client/shared/vendor/react-dom");
-const { createFactories } = require("devtools/client/shared/components/reps/rep-utils");
-const { MainTabbedArea } = createFactories(require("./components/main-tabbed-area"));
 
-const json = document.getElementById("json");
-const headers = document.getElementById("headers");
+  input.actions = {
+    onCopyJson: function() {
+      let value = input.prettified ? input.jsonPretty : input.jsonText;
+      postChromeMessage("copy", value);
+    },
 
-var jsonData;
+    onSaveJson: function() {
+      let value = input.prettified ? input.jsonPretty : input.jsonText;
+      postChromeMessage("save", value);
+    },
 
-try {
-  jsonData = JSON.parse(json.textContent);
-} catch (err) {
-  jsonData = err + "";
-}
+    onCopyHeaders: function() {
+      postChromeMessage("copy-headers", input.headers);
+    },
 
+    onSearch: function(value) {
+      theApp.setState({searchFilter: value});
+    },
 
-var input = {
-  jsonText: json.textContent,
-  jsonPretty : null,
-  json: jsonData,
-  headers: JSON.parse(headers.textContent),
-  tabActive: 1,
-  prettified: false
-}
-
-json.remove();
-headers.remove();
-
-
-
-
-
-input.actions = {
-  onCopyJson: function() {
-    var value = input.prettified ? input.jsonPretty : input.jsonText;
-    postChromeMessage("copy", value);
-  },
-
-  onSaveJson: function() {
-    var value = input.prettified ? input.jsonPretty : input.jsonText;
-    postChromeMessage("save", value);
-  },
-
-  onCopyHeaders: function() {
-    postChromeMessage("copy-headers", input.headers);
-  },
-
-  onSearch: function(value) {
-    theApp.setState({searchFilter: value});
-  },
-
-  onPrettify: function(data) {
-    if (input.prettified) {
-      theApp.setState({jsonText: input.jsonText});
-    } else {
-      if (!input.jsonPretty) {
-        input.jsonPretty = JSON.stringify(jsonData, null, "  ");
+    onPrettify: function(data) {
+      if (input.prettified) {
+        theApp.setState({jsonText: input.jsonText});
+      } else {
+        if (!input.jsonPretty) {
+          input.jsonPretty = JSON.stringify(jsonData, null, "  ");
+        }
+        theApp.setState({jsonText: input.jsonPretty});
       }
-      theApp.setState({jsonText: input.jsonPretty});
-    }
 
-    input.prettified = !input.prettified;
-  },
-}
+      input.prettified = !input.prettified;
+    },
+  };
 
-
+  
 
 
 
-var content = document.getElementById("content");
-var theApp = ReactDOM.render(MainTabbedArea(input), content);
+  let content = document.getElementById("content");
+  let theApp = ReactDOM.render(MainTabbedArea(input), content);
 
-var onResize = event => {
-  window.document.body.style.height = window.innerHeight + "px";
-  window.document.body.style.width = window.innerWidth + "px";
-}
+  let onResize = event => {
+    window.document.body.style.height = window.innerHeight + "px";
+    window.document.body.style.width = window.innerWidth + "px";
+  };
 
-window.addEventListener("resize", onResize);
-onResize();
+  window.addEventListener("resize", onResize);
+  onResize();
 
-
-
-var event = new CustomEvent("JSONViewInitialized", {});
-window.jsonViewInitialized = true;
-window.dispatchEvent(event);
-
-
+  
+  
+  let event = new CustomEvent("JSONViewInitialized", {});
+  window.jsonViewInitialized = true;
+  window.dispatchEvent(event);
 });
 

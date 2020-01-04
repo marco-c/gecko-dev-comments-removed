@@ -4,66 +4,76 @@
 
 
 
+"use strict";
+
 define(function(require, exports, module) {
+  const React = require("devtools/client/shared/vendor/react");
+  const { createFactories } = require("devtools/client/shared/components/reps/rep-utils");
+  const { Headers } = createFactories(require("./headers"));
+  const { Toolbar, ToolbarButton } = createFactories(require("./reps/toolbar"));
 
-const React = require("devtools/client/shared/vendor/react");
-const { createFactories } = require("devtools/client/shared/components/reps/rep-utils");
-const { Headers } = createFactories(require("./headers"));
-const { Toolbar, ToolbarButton } = createFactories(require("./reps/toolbar"));
-
-const DOM = React.DOM;
-
-
-
-
-
-var HeadersPanel = React.createClass({
-  displayName: "HeadersPanel",
-
-  getInitialState: function() {
-    return {
-      data: {}
-    };
-  },
-
-  render: function() {
-    var data = this.props.data;
-
-    return (
-      DOM.div({className: "headersPanelBox"},
-        HeadersToolbar({actions: this.props.actions}),
-        DOM.div({className: "panelContent"},
-          Headers({data: data})
-        )
-      )
-    );
-  }
-});
-
-
-
-
-
-var HeadersToolbar = React.createFactory(React.createClass({
-  displayName: "HeadersToolbar",
-
-  render: function() {
-    return (
-      Toolbar({},
-        ToolbarButton({className: "btn copy", onClick: this.onCopy},
-          Locale.$STR("jsonViewer.Copy")
-        )
-      )
-    )
-  },
+  const DOM = React.DOM;
 
   
 
-  onCopy: function(event) {
-    this.props.actions.onCopyHeaders();
-  },
-}));
 
 
-exports.HeadersPanel = HeadersPanel;
+  let HeadersPanel = React.createClass({
+    propTypes: {
+      actions: React.PropTypes.object,
+      data: React.PropTypes.object,
+    },
+
+    displayName: "HeadersPanel",
+
+    getInitialState: function() {
+      return {
+        data: {}
+      };
+    },
+
+    render: function() {
+      let data = this.props.data;
+
+      return (
+        DOM.div({className: "headersPanelBox"},
+          HeadersToolbar({actions: this.props.actions}),
+          DOM.div({className: "panelContent"},
+            Headers({data: data})
+          )
+        )
+      );
+    }
+  });
+
+  
+
+
+
+  let HeadersToolbar = React.createFactory(React.createClass({
+    propTypes: {
+      actions: React.PropTypes.object,
+    },
+
+    displayName: "HeadersToolbar",
+
+    
+
+    onCopy: function(event) {
+      this.props.actions.onCopyHeaders();
+    },
+
+    render: function() {
+      return (
+        Toolbar({},
+          ToolbarButton({className: "btn copy", onClick: this.onCopy},
+            Locale.$STR("jsonViewer.Copy")
+          )
+        )
+      );
+    },
+  }));
+
+  
+  exports.HeadersPanel = HeadersPanel;
 });

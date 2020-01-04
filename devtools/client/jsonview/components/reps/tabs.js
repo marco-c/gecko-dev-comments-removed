@@ -7,12 +7,10 @@
 "use strict";
 
 define(function(require, exports, module) {
+  const React = require("devtools/client/shared/vendor/react");
+  const DOM = React.DOM;
 
-const React = require("devtools/client/shared/vendor/react");
-const DOM = React.DOM;
-
-
-
+  
 
 
 
@@ -31,162 +29,163 @@ const DOM = React.DOM;
 
 
 
-var Tabs = React.createClass({
-  displayName: "Tabs",
 
-  propTypes: {
-    className: React.PropTypes.oneOfType([
-      React.PropTypes.array,
-      React.PropTypes.string,
-      React.PropTypes.object
-    ]),
-    tabActive: React.PropTypes.number,
-    onMount: React.PropTypes.func,
-    onBeforeChange: React.PropTypes.func,
-    onAfterChange: React.PropTypes.func,
-    children: React.PropTypes.oneOfType([
-      React.PropTypes.array,
-      React.PropTypes.element
-    ]).isRequired
-  },
+  let Tabs = React.createClass({
+    propTypes: {
+      className: React.PropTypes.oneOfType([
+        React.PropTypes.array,
+        React.PropTypes.string,
+        React.PropTypes.object
+      ]),
+      tabActive: React.PropTypes.number,
+      onMount: React.PropTypes.func,
+      onBeforeChange: React.PropTypes.func,
+      onAfterChange: React.PropTypes.func,
+      children: React.PropTypes.oneOfType([
+        React.PropTypes.array,
+        React.PropTypes.element
+      ]).isRequired
+    },
 
-  getDefaultProps: function () {
-    return {
-      tabActive: 1
-    };
-  },
+    displayName: "Tabs",
 
-  getInitialState: function () {
-    return {
-      tabActive: this.props.tabActive
-    };
-  },
+    getDefaultProps: function() {
+      return {
+        tabActive: 1
+      };
+    },
 
-  componentDidMount: function() {
-    var index = this.state.tabActive;
-    if (this.props.onMount) {
-      this.props.onMount(index);
-    }
-  },
+    getInitialState: function() {
+      return {
+        tabActive: this.props.tabActive
+      };
+    },
 
-  componentWillReceiveProps: function(newProps){
-    if (newProps.tabActive) {
-      this.setState({tabActive: newProps.tabActive})
-    }
-  },
-
-  render: function () {
-    var classNames = ["tabs", this.props.className].join(" ");
-
-    return (
-      DOM.div({className: classNames},
-        this.getMenuItems(),
-        this.getSelectedPanel()
-      )
-    );
-  },
-
-  setActive: function(index, e) {
-    var onAfterChange = this.props.onAfterChange;
-    var onBeforeChange = this.props.onBeforeChange;
-
-    if (onBeforeChange) {
-      var cancel = onBeforeChange(index);
-      if (cancel) {
-        return;
+    componentDidMount: function() {
+      let index = this.state.tabActive;
+      if (this.props.onMount) {
+        this.props.onMount(index);
       }
-    }
+    },
 
-    var newState = {
-      tabActive: index
-    };
-
-    this.setState(newState, () => {
-      if (onAfterChange) {
-        onAfterChange(index);
+    componentWillReceiveProps: function(newProps) {
+      if (newProps.tabActive) {
+        this.setState({tabActive: newProps.tabActive});
       }
-    });
+    },
 
-    e.preventDefault();
-  },
+    setActive: function(index, e) {
+      let onAfterChange = this.props.onAfterChange;
+      let onBeforeChange = this.props.onBeforeChange;
 
-  getMenuItems: function () {
-    if (!this.props.children) {
-      throw new Error("Tabs must contain at least one Panel");
-    }
+      if (onBeforeChange) {
+        let cancel = onBeforeChange(index);
+        if (cancel) {
+          return;
+        }
+      }
 
-    if (!Array.isArray(this.props.children)) {
-      this.props.children = [this.props.children];
-    }
+      let newState = {
+        tabActive: index
+      };
 
-    var menuItems = this.props.children
-      .map(function(panel) {
-        return typeof panel === "function" ? panel() : panel;
-      }).filter(function(panel) {
-        return panel;
-      }).map(function(panel, index) {
-        var ref = ("tab-menu-" + (index + 1));
-        var title = panel.props.title;
-        var tabClassName = panel.props.className;
+      this.setState(newState, () => {
+        if (onAfterChange) {
+          onAfterChange(index);
+        }
+      });
 
-        var classes = [
-          "tabs-menu-item",
-          tabClassName,
-          this.state.tabActive === (index + 1) && "is-active"
-        ].join(" ");
+      e.preventDefault();
+    },
 
-        return (
-          DOM.li({ref: ref, key: index, className: classes},
-            DOM.a({href: "#", onClick: this.setActive.bind(this, index + 1)},
-              title
+    getMenuItems: function() {
+      if (!this.props.children) {
+        throw new Error("Tabs must contain at least one Panel");
+      }
+
+      if (!Array.isArray(this.props.children)) {
+        this.props.children = [this.props.children];
+      }
+
+      let menuItems = this.props.children
+        .map(function(panel) {
+          return typeof panel === "function" ? panel() : panel;
+        }).filter(function(panel) {
+          return panel;
+        }).map(function(panel, index) {
+          let ref = ("tab-menu-" + (index + 1));
+          let title = panel.props.title;
+          let tabClassName = panel.props.className;
+
+          let classes = [
+            "tabs-menu-item",
+            tabClassName,
+            this.state.tabActive === (index + 1) && "is-active"
+          ].join(" ");
+
+          return (
+            DOM.li({ref: ref, key: index, className: classes},
+              DOM.a({href: "#", onClick: this.setActive.bind(this, index + 1)},
+                title
+              )
             )
+          );
+        }.bind(this));
+
+      return (
+        DOM.nav({className: "tabs-navigation"},
+          DOM.ul({className: "tabs-menu"},
+            menuItems
           )
-        );
-      }.bind(this));
-
-    return (
-      DOM.nav({className: "tabs-navigation"},
-        DOM.ul({className: "tabs-menu"},
-          menuItems
         )
-      )
-    );
-  },
+      );
+    },
 
-  getSelectedPanel: function () {
-    var index = this.state.tabActive - 1;
-    var panel = this.props.children[index];
+    getSelectedPanel: function() {
+      let index = this.state.tabActive - 1;
+      let panel = this.props.children[index];
 
-    return (
-      DOM.article({ref: "tab-panel", className: "tab-panel"},
-        panel
-      )
-    );
-  }
-});
+      return (
+        DOM.article({ref: "tab-panel", className: "tab-panel"},
+          panel
+        )
+      );
+    },
 
+    render: function() {
+      let classNames = ["tabs", this.props.className].join(" ");
 
+      return (
+        DOM.div({className: classNames},
+          this.getMenuItems(),
+          this.getSelectedPanel()
+        )
+      );
+    },
+  });
 
-
-var Panel = React.createClass({
-  displayName: "Panel",
-
-  propTypes: {
-    title: React.PropTypes.string.isRequired,
-    children: React.PropTypes.oneOfType([
-      React.PropTypes.array,
-      React.PropTypes.element
-    ]).isRequired
-  },
-
-  render: function () {
-    return DOM.div({},
-      this.props.children
-    );
-  }
-});
+  
 
 
-exports.TabPanel = Panel;
-exports.Tabs = Tabs;
+  let Panel = React.createClass({
+    propTypes: {
+      title: React.PropTypes.string.isRequired,
+      children: React.PropTypes.oneOfType([
+        React.PropTypes.array,
+        React.PropTypes.element
+      ]).isRequired
+    },
+
+    displayName: "Panel",
+
+    render: function() {
+      return DOM.div({},
+        this.props.children
+      );
+    }
+  });
+
+  
+  exports.TabPanel = Panel;
+  exports.Tabs = Tabs;
 });

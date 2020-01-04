@@ -4,97 +4,110 @@
 
 
 
+"use strict";
+
 define(function(require, exports, module) {
+  const React = require("devtools/client/shared/vendor/react");
 
-const React = require("devtools/client/shared/vendor/react");
+  
+  const DOM = React.DOM;
+  const PropTypes = React.PropTypes;
 
-
-const DOM = React.DOM;
-
-
-
-
+  
 
 
-var Headers = React.createClass({
-  displayName: "Headers",
 
-  getInitialState: function() {
-    return {};
-  },
 
-  render: function() {
-    var data = this.props.data;
+  let Headers = React.createClass({
+    propTypes: {
+      data: PropTypes.object,
+    },
 
-    return (
-      DOM.div({className: "netInfoHeadersTable"},
-        DOM.div({className: "netHeadersGroup"},
-          DOM.div({className: "netInfoHeadersGroup"},
-            DOM.span({className: "netHeader twisty"},
-              Locale.$STR("jsonViewer.responseHeaders")
+    displayName: "Headers",
+
+    getInitialState: function() {
+      return {};
+    },
+
+    render: function() {
+      let data = this.props.data;
+
+      return (
+        DOM.div({className: "netInfoHeadersTable"},
+          DOM.div({className: "netHeadersGroup"},
+            DOM.div({className: "netInfoHeadersGroup"},
+              DOM.span({className: "netHeader twisty"},
+                Locale.$STR("jsonViewer.responseHeaders")
+              )
+            ),
+            DOM.table({cellPadding: 0, cellSpacing: 0},
+              HeaderList({headers: data.response})
             )
           ),
-          DOM.table({cellPadding: 0, cellSpacing: 0},
-            HeaderList({headers: data.response})
-          )
-        ),
-        DOM.div({className: "netHeadersGroup"},
-          DOM.div({className: "netInfoHeadersGroup"},
-            DOM.span({className: "netHeader twisty"},
-              Locale.$STR("jsonViewer.requestHeaders")
+          DOM.div({className: "netHeadersGroup"},
+            DOM.div({className: "netInfoHeadersGroup"},
+              DOM.span({className: "netHeader twisty"},
+                Locale.$STR("jsonViewer.requestHeaders")
+              )
+            ),
+            DOM.table({cellPadding: 0, cellSpacing: 0},
+              HeaderList({headers: data.request})
             )
-          ),
-          DOM.table({cellPadding: 0, cellSpacing: 0},
-            HeaderList({headers: data.request})
           )
         )
-      )
-    );
-  }
-});
+      );
+    }
+  });
+
+  
 
 
 
+  let HeaderList = React.createFactory(React.createClass({
+    propTypes: {
+      headers: PropTypes.arrayOf(PropTypes.shape({
+        name: PropTypes.string,
+        value: PropTypes.string
+      }))
+    },
 
+    displayName: "HeaderList",
 
-var HeaderList = React.createFactory(React.createClass({
-  displayName: "HeaderList",
+    getInitialState: function() {
+      return {
+        headers: []
+      };
+    },
 
-  getInitialState: function() {
-    return {
-      headers: []
-    };
-  },
+    render: function() {
+      let headers = this.props.headers;
 
-  render: function() {
-    var headers = this.props.headers;
+      headers.sort(function(a, b) {
+        return a.name > b.name ? 1 : -1;
+      });
 
-    headers.sort(function(a, b) {
-      return a.name > b.name ? 1 : -1;
-    });
-
-    var rows = [];
-    headers.forEach(header => {
-      rows.push(
-        DOM.tr({key: header.name},
-          DOM.td({className: "netInfoParamName"},
-            DOM.span({title: header.name}, header.name)
-          ),
-          DOM.td({className: "netInfoParamValue"},
-            DOM.code({}, header.value)
+      let rows = [];
+      headers.forEach(header => {
+        rows.push(
+          DOM.tr({key: header.name},
+            DOM.td({className: "netInfoParamName"},
+              DOM.span({title: header.name}, header.name)
+            ),
+            DOM.td({className: "netInfoParamValue"},
+              DOM.code({}, header.value)
+            )
           )
+        );
+      });
+
+      return (
+        DOM.tbody({},
+          rows
         )
-      )
-    });
+      );
+    }
+  }));
 
-    return (
-      DOM.tbody({},
-        rows
-      )
-    )
-  }
-}));
-
-
-exports.Headers = Headers;
+  
+  exports.Headers = Headers;
 });

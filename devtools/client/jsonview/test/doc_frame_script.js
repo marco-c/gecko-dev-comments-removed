@@ -12,11 +12,12 @@
 
 
 
+
 let EventUtils = {};
 EventUtils.window = content;
 EventUtils.parent = EventUtils.window;
-EventUtils._EU_Ci = Components.interfaces;
-EventUtils._EU_Cc = Components.classes;
+EventUtils._EU_Ci = Components.interfaces; 
+EventUtils._EU_Cc = Components.classes; 
 EventUtils.navigator = content.navigator;
 EventUtils.KeyboardEvent = content.KeyboardEvent;
 
@@ -80,7 +81,7 @@ addMessageListener("Test:JsonView:WaitForFilter", function(msg) {
   }
 
   
-  var observer = new content.MutationObserver(function(mutations) {
+  let observer = new content.MutationObserver(function(mutations) {
     for (let i = 0; i < mutations.length; i++) {
       let mutation = mutations[i];
       if (mutation.attributeName == "class") {

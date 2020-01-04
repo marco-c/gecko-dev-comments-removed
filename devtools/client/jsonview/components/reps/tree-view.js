@@ -4,258 +4,264 @@
 
 
 
+"use strict";
+
 define(function(require, exports, module) {
+  
+  const React = require("devtools/client/shared/vendor/react");
+  const { createFactories } = require("devtools/client/shared/components/reps/rep-utils");
+  const { Rep } = createFactories(require("devtools/client/shared/components/reps/rep"));
+  const { StringRep } = require("devtools/client/shared/components/reps/string");
+  const DOM = React.DOM;
 
-
-const React = require("devtools/client/shared/vendor/react");
-const { createFactories } = require("devtools/client/shared/components/reps/rep-utils");
-const { Rep } = createFactories(require("devtools/client/shared/components/reps/rep"));
-const { StringRep } = require("devtools/client/shared/components/reps/string");
-const DOM = React.DOM;
-
-var uid = 0;
-
-
-
-
-var TreeView = React.createClass({
-  displayName: "TreeView",
-
-  getInitialState: function() {
-    return {
-      data: {},
-      searchFilter: null
-    };
-  },
+  let uid = 0;
 
   
 
-  render: function() {
-    var mode = this.props.mode;
-    var root = this.state.data;
 
-    var children = [];
+  let TreeView = React.createClass({
+    propTypes: {
+      searchFilter: React.PropTypes.string,
+      data: React.PropTypes.any,
+      mode: React.PropTypes.string,
+    },
 
-    if (Array.isArray(root)) {
-      for (var i=0; i<root.length; i++) {
-        var child = root[i];
-        children.push(TreeNode({
-          key: child.key,
-          data: child,
-          mode: mode,
-          searchFilter: this.state.searchFilter || this.props.searchFilter
-        }));
-      }
-    } else {
-      children.push(React.addons.createFragment(root));
-    }
+    displayName: "TreeView",
 
-    return (
-      DOM.div({className: "domTable", cellPadding: 0, cellSpacing: 0},
-        children
-      )
-    );
-  },
-
-  
-
-  componentDidMount: function() {
-    var members = initMembers(this.props.data, 0);
-    this.setState({data: members, searchFilter: this.props.searchFilter});
-  },
-
-  componentWillReceiveProps: function(nextProps) {
-    var updatedState = {
-      searchFilter: nextProps.searchFilter
-    };
-
-    if (this.props.data !== nextProps.data) {
-      updatedState.data = initMembers(nextProps.data, 0);
-    }
-
-    this.setState(updatedState);
-  }
-});
-
-
-
-
-var TreeNode = React.createFactory(React.createClass({
-  displayName: "TreeNode",
-
-  getInitialState: function() {
-    return { data: {}, searchFilter: null };
-  },
-
-  componentDidMount: function() {
-    this.setState({data: this.props.data});
-  },
-
-  render: function() {
-    var member = this.state.data;
-    var mode = this.props.mode;
-
-    var classNames = ["memberRow"];
-    classNames.push(member.type + "Row");
-
-    if (member.hasChildren) {
-      classNames.push("hasChildren");
-    }
-
-    if (member.open) {
-      classNames.push("opened");
-    }
-
-    if (!member.children) {
-      
-      var isString = typeof(member.value) == "string";
-      if (member.hasChildren && !isString) {
-        member.children = initMembers(member.value);
-      } else {
-        member.children = [];
-      }
-    }
-
-    var children = [];
-    if (member.open && member.children.length) {
-      for (var i in member.children) {
-        var child = member.children[i];
-        children.push(TreeNode({
-          key: child.key,
-          data: child,
-          mode: mode,
-          searchFilter: this.state.searchFilter || this.props.searchFilter
-        }));
+    getInitialState: function() {
+      return {
+        data: {},
+        searchFilter: null
       };
-    }
-
-    var filter = this.props.searchFilter || "";
-    var name = member.name || "";
-    var value = member.value || "";
+    },
 
     
-    filter = filter.toLowerCase();
-    name = name.toLowerCase();
 
-    if (filter && (name.indexOf(filter) < 0)) {
-      
-      
-      if (!member.valueString) {
-        member.valueString = JSON.stringify(value).toLowerCase();
+    componentDidMount: function() {
+      let members = initMembers(this.props.data, 0);
+      this.setState({ 
+        data: members,
+        searchFilter:
+        this.props.searchFilter
+      });
+    },
+
+    componentWillReceiveProps: function(nextProps) {
+      let updatedState = {
+        searchFilter: nextProps.searchFilter
+      };
+
+      if (this.props.data !== nextProps.data) {
+        updatedState.data = initMembers(nextProps.data, 0);
       }
 
-      if (member.valueString && member.valueString.indexOf(filter) < 0) {
-        classNames.push("hidden");
-      }
-    }
+      this.setState(updatedState);
+    },
 
-    return (
-      DOM.div({className: classNames.join(" ")},
-        DOM.span({className: "memberLabelCell", onClick: this.onClick},
-          DOM.span({className: "memberIcon"}),
-          DOM.span({className: "memberLabel " + member.type + "Label"},
-            member.name)
-        ),
-        DOM.span({className: "memberValueCell"},
-          DOM.span({},
-            Rep({
-              object: member.value,
-              mode: this.props.mode,
-              member: member
-            })
-          )
-        ),
-        DOM.div({className: "memberChildren"},
+    
+
+    render: function() {
+      let mode = this.props.mode;
+      let root = this.state.data;
+
+      let children = [];
+
+      if (Array.isArray(root)) {
+        for (let i = 0; i < root.length; i++) {
+          let child = root[i];
+          children.push(TreeNode({
+            key: child.key,
+            data: child,
+            mode: mode,
+            searchFilter: this.state.searchFilter || this.props.searchFilter
+          }));
+        }
+      } else {
+        children.push(React.addons.createFragment(root));
+      }
+
+      return (
+        DOM.div({className: "domTable", cellPadding: 0, cellSpacing: 0},
           children
         )
-      )
-    )
-  },
-
-  onClick: function(e) {
-    var member = this.state.data;
-    member.open = !member.open;
-
-    this.setState({data: member});
-
-    e.stopPropagation();
-  },
-}));
-
-
-
-function initMembers(parent) {
-  var members = getMembers(parent);
-  return members;
-}
-
-function getMembers(object) {
-  var members = [];
-  getObjectProperties(object, function(prop, value) {
-    var valueType = typeof(value);
-    var hasChildren = (valueType === "object" && hasProperties(value));
-
-    
-    
-    if (StringRep.isCropped(value)) {
-      hasChildren = true;
-    }
-
-    var type = getType(value);
-    var member = createMember(type, prop, value, hasChildren);
-    members.push(member);
+      );
+    },
   });
 
-  return members;
-}
-
-function createMember(type, name, value, hasChildren) {
-  var member = {
-    name: name,
-    type: type,
-    rowClass: "memberRow-" + type,
-    open: "",
-    hasChildren: hasChildren,
-    value: value,
-    open: false,
-    key: uid++
-  };
-
-  return member;
-}
-
-function getObjectProperties(obj, callback) {
-  for (var p in obj) {
-    try {
-      callback.call(this, p, obj[p]);
-    }
-    catch (e) {
-      console.error(e)
-    }
-  }
-}
-
-function hasProperties(obj) {
-  if (typeof(obj) == "string") {
-    return false;
-  }
-
-  try {
-    for (var name in obj) {
-      return true;
-    }
-  }
-  catch (exc) {
-  }
-
-  return false;
-}
-
-function getType(object) {
   
-  return "dom";
-}
 
 
-exports.TreeView = TreeView;
+  let TreeNode = React.createFactory(React.createClass({
+    propTypes: {
+      searchFilter: React.PropTypes.string,
+      data: React.PropTypes.object,
+      mode: React.PropTypes.string,
+    },
+
+    displayName: "TreeNode",
+
+    getInitialState: function() {
+      return {
+        data: this.props.data,
+        searchFilter: null
+      };
+    },
+
+    onClick: function(e) {
+      let member = this.state.data;
+      member.open = !member.open;
+
+      this.setState({data: member});
+
+      e.stopPropagation();
+    },
+
+    render: function() {
+      let member = this.state.data;
+      let mode = this.props.mode;
+
+      let classNames = ["memberRow"];
+      classNames.push(member.type + "Row");
+
+      if (member.hasChildren) {
+        classNames.push("hasChildren");
+      }
+
+      if (member.open) {
+        classNames.push("opened");
+      }
+
+      if (!member.children) {
+        
+        let isString = typeof (member.value) == "string";
+        if (member.hasChildren && !isString) {
+          member.children = initMembers(member.value);
+        } else {
+          member.children = [];
+        }
+      }
+
+      let children = [];
+      if (member.open && member.children.length) {
+        for (let i in member.children) {
+          let child = member.children[i];
+          children.push(TreeNode({
+            key: child.key,
+            data: child,
+            mode: mode,
+            searchFilter: this.state.searchFilter || this.props.searchFilter
+          }));
+        }
+      }
+
+      let filter = this.props.searchFilter || "";
+      let name = member.name || "";
+      let value = member.value || "";
+
+      
+      filter = filter.toLowerCase();
+      name = name.toLowerCase();
+
+      if (filter && (name.indexOf(filter) < 0)) {
+        
+        
+        if (!member.valueString) {
+          member.valueString = JSON.stringify(value).toLowerCase();
+        }
+
+        if (member.valueString && member.valueString.indexOf(filter) < 0) {
+          classNames.push("hidden");
+        }
+      }
+
+      return (
+        DOM.div({className: classNames.join(" ")},
+          DOM.span({className: "memberLabelCell", onClick: this.onClick},
+            DOM.span({className: "memberIcon"}),
+            DOM.span({className: "memberLabel " + member.type + "Label"},
+              member.name)
+          ),
+          DOM.span({className: "memberValueCell"},
+            DOM.span({},
+              Rep({
+                object: member.value,
+                mode: this.props.mode,
+                member: member
+              })
+            )
+          ),
+          DOM.div({className: "memberChildren"},
+            children
+          )
+        )
+      );
+    },
+  }));
+
+  
+
+  function initMembers(parent) {
+    let members = getMembers(parent);
+    return members;
+  }
+
+  function getMembers(object) {
+    let members = [];
+    getObjectProperties(object, function(prop, value) {
+      let valueType = typeof (value);
+      let hasChildren = (valueType === "object" && hasProperties(value));
+
+      
+      
+      if (StringRep.isCropped(value)) {
+        hasChildren = true;
+      }
+
+      let type = getType(value);
+      let member = createMember(type, prop, value, hasChildren);
+      members.push(member);
+    });
+
+    return members;
+  }
+
+  function createMember(type, name, value, hasChildren) {
+    let member = {
+      name: name,
+      type: type,
+      rowClass: "memberRow-" + type,
+      hasChildren: hasChildren,
+      value: value,
+      open: false,
+      key: uid++
+    };
+
+    return member;
+  }
+
+  function getObjectProperties(obj, callback) {
+    for (let p in obj) {
+      try {
+        callback.call(this, p, obj[p]);
+      } catch (e) {
+        
+      }
+    }
+  }
+
+  function hasProperties(obj) {
+    if (typeof (obj) == "string") {
+      return false;
+    }
+
+    return Object.keys(obj).length > 1;
+  }
+
+  function getType(object) {
+    
+    return "dom";
+  }
+
+  
+  exports.TreeView = TreeView;
 });

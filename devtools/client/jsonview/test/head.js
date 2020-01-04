@@ -2,6 +2,9 @@
 
 
 
+
+
+
 "use strict";
 
 
@@ -81,7 +84,8 @@ function getElementCount(selector) {
     selector: selector
   };
 
-  return executeInContent("Test:JsonView:GetElementCount", data).then(result => {
+  return executeInContent("Test:JsonView:GetElementCount", data)
+  .then(result => {
     return result.count;
   });
 }
@@ -93,7 +97,8 @@ function getElementText(selector) {
     selector: selector
   };
 
-  return executeInContent("Test:JsonView:GetElementText", data).then(result => {
+  return executeInContent("Test:JsonView:GetElementText", data)
+  .then(result => {
     return result.text;
   });
 }
@@ -125,9 +130,9 @@ function sendString(str, selector) {
   return executeInContent("Test:JsonView:SendString", data);
 }
 
-function waitForTime(aDelay) {
+function waitForTime(delay) {
   let deferred = promise.defer();
-  setTimeout(deferred.resolve, aDelay);
+  setTimeout(deferred.resolve, delay);
   return deferred.promise;
 }
 

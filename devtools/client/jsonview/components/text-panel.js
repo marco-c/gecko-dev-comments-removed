@@ -4,76 +4,92 @@
 
 
 
+"use strict";
+
 define(function(require, exports, module) {
-
-const React = require("devtools/client/shared/vendor/react");
-const { createFactories } = require("devtools/client/shared/components/reps/rep-utils");
-const { Toolbar, ToolbarButton } = createFactories(require("./reps/toolbar"));
-const DOM = React.DOM;
-
-
-
-
-
-var TextPanel = React.createClass({
-  displayName: "TextPanel",
-
-  getInitialState: function() {
-    return {};
-  },
-
-  render: function() {
-    return (
-      DOM.div({className: "textPanelBox"},
-        TextToolbar({actions: this.props.actions}),
-        DOM.div({className: "panelContent"},
-          DOM.pre({className: "data"},
-            this.props.data
-          )
-        )
-      )
-    );
-  }
-});
-
-
-
-
-
-var TextToolbar = React.createFactory(React.createClass({
-  displayName: "TextToolbar",
-
-  render: function() {
-    return (
-      Toolbar({},
-        ToolbarButton({className: "btn prettyprint",onClick: this.onPrettify},
-          Locale.$STR("jsonViewer.PrettyPrint")
-        ),
-        ToolbarButton({className: "btn save", onClick: this.onSave},
-          Locale.$STR("jsonViewer.Save")
-        ),
-        ToolbarButton({className: "btn copy", onClick: this.onCopy},
-          Locale.$STR("jsonViewer.Copy")
-        )
-      )
-    )
-  },
+  const React = require("devtools/client/shared/vendor/react");
+  const { createFactories } = require("devtools/client/shared/components/reps/rep-utils");
+  const { Toolbar, ToolbarButton } = createFactories(require("./reps/toolbar"));
+  const DOM = React.DOM;
 
   
 
-  onPrettify: function(event) {
-    this.props.actions.onPrettify();
-  },
-
-  onSave: function(event) {
-    this.props.actions.onSaveJson();
-  },
-
-  onCopy: function(event) {
-    this.props.actions.onCopyJson();
-  },
-}));
 
 
-exports.TextPanel = TextPanel;
+  let TextPanel = React.createClass({
+    propTypes: {
+      actions: React.PropTypes.object,
+      data: React.PropTypes.string
+    },
+
+    displayName: "TextPanel",
+
+    getInitialState: function() {
+      return {};
+    },
+
+    render: function() {
+      return (
+        DOM.div({className: "textPanelBox"},
+          TextToolbar({actions: this.props.actions}),
+          DOM.div({className: "panelContent"},
+            DOM.pre({className: "data"},
+              this.props.data
+            )
+          )
+        )
+      );
+    }
+  });
+
+  
+
+
+
+  let TextToolbar = React.createFactory(React.createClass({
+    propTypes: {
+      actions: React.PropTypes.object,
+    },
+
+    displayName: "TextToolbar",
+
+    
+
+    onPrettify: function(event) {
+      this.props.actions.onPrettify();
+    },
+
+    onSave: function(event) {
+      this.props.actions.onSaveJson();
+    },
+
+    onCopy: function(event) {
+      this.props.actions.onCopyJson();
+    },
+
+    render: function() {
+      return (
+        Toolbar({},
+          ToolbarButton({
+            className: "btn prettyprint",
+            onClick: this.onPrettify},
+            Locale.$STR("jsonViewer.PrettyPrint")
+          ),
+          ToolbarButton({
+            className: "btn save",
+            onClick: this.onSave},
+            Locale.$STR("jsonViewer.Save")
+          ),
+          ToolbarButton({
+            className: "btn copy",
+            onClick: this.onCopy},
+            Locale.$STR("jsonViewer.Copy")
+          )
+        )
+      );
+    },
+  }));
+
+  
+  exports.TextPanel = TextPanel;
 });

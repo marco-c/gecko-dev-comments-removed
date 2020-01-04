@@ -4,105 +4,120 @@
 
 
 
+"use strict";
+
 define(function(require, exports, module) {
-
-const React = require("devtools/client/shared/vendor/react");
-const { createFactories } = require("devtools/client/shared/components/reps/rep-utils");
-const { TreeView } = createFactories(require("./reps/tree-view"));
-const { SearchBox } = createFactories(require("./search-box"));
-const { Toolbar, ToolbarButton } = createFactories(require("./reps/toolbar"));
-const DOM = React.DOM;
-
-
-
-
-
-
-var JsonPanel = React.createClass({
-  displayName: "JsonPanel",
-
-  getInitialState: function() {
-    return {};
-  },
-
-  componentDidMount: function() {
-    document.addEventListener("keypress", this.onKeyPress, true);
-  },
-
-  componentWillUnmount: function() {
-    document.removeEventListener("keypress", this.onKeyPress, true);
-  },
-
-  onKeyPress: function(e) {
-    
-  },
-
-  render: function() {
-    var content;
-    var data = this.props.data;
-
-    try {
-      if (typeof data == "object") {
-        content = TreeView({
-          data: this.props.data,
-          mode: "tiny",
-          searchFilter: this.props.searchFilter
-        });
-      } else {
-        content = DOM.div({className: "jsonParseError"},
-          data + ""
-        );
-      }
-    } catch (err) {
-      content = DOM.div({className: "jsonParseError"},
-        err + ""
-      );
-    }
-
-    return (
-      DOM.div({className: "jsonPanelBox"},
-        JsonToolbar({actions: this.props.actions}),
-        DOM.div({className: "panelContent"},
-          content
-        )
-      )
-    );
-  }
-});
-
-
-
-
-var JsonToolbar = React.createFactory(React.createClass({
-  displayName: "JsonToolbar",
-
-  render: function() {
-    return (
-      Toolbar({},
-        ToolbarButton({className: "btn save", onClick: this.onSave},
-          Locale.$STR("jsonViewer.Save")
-        ),
-        ToolbarButton({className: "btn copy", onClick: this.onCopy},
-          Locale.$STR("jsonViewer.Copy")
-        ),
-        SearchBox({
-          actions: this.props.actions
-        })
-      )
-    )
-  },
+  const React = require("devtools/client/shared/vendor/react");
+  const { createFactories } = require("devtools/client/shared/components/reps/rep-utils");
+  const { TreeView } = createFactories(require("./reps/tree-view"));
+  const { SearchBox } = createFactories(require("./search-box"));
+  const { Toolbar, ToolbarButton } = createFactories(require("./reps/toolbar"));
+  const DOM = React.DOM;
 
   
 
-  onSave: function(event) {
-    this.props.actions.onSaveJson();
-  },
-
-  onCopy: function(event) {
-    this.props.actions.onCopyJson();
-  },
-}));
 
 
-exports.JsonPanel = JsonPanel;
+
+  let JsonPanel = React.createClass({
+    propTypes: {
+      data: React.PropTypes.oneOfType([
+        React.PropTypes.string,
+        React.PropTypes.array,
+        React.PropTypes.object
+      ]),
+      searchFilter: React.PropTypes.string,
+      actions: React.PropTypes.object,
+    },
+
+    displayName: "JsonPanel",
+
+    getInitialState: function() {
+      return {};
+    },
+
+    componentDidMount: function() {
+      document.addEventListener("keypress", this.onKeyPress, true);
+    },
+
+    componentWillUnmount: function() {
+      document.removeEventListener("keypress", this.onKeyPress, true);
+    },
+
+    onKeyPress: function(e) {
+      
+    },
+
+    render: function() {
+      let content;
+      let data = this.props.data;
+
+      try {
+        if (typeof data == "object") {
+          content = TreeView({
+            data: this.props.data,
+            mode: "tiny",
+            searchFilter: this.props.searchFilter
+          });
+        } else {
+          content = DOM.div({className: "jsonParseError"},
+            data + ""
+          );
+        }
+      } catch (err) {
+        content = DOM.div({className: "jsonParseError"},
+          err + ""
+        );
+      }
+
+      return (
+        DOM.div({className: "jsonPanelBox"},
+          JsonToolbar({actions: this.props.actions}),
+          DOM.div({className: "panelContent"},
+            content
+          )
+        )
+      );
+    }
+  });
+
+  
+
+
+  let JsonToolbar = React.createFactory(React.createClass({
+    propTypes: {
+      actions: React.PropTypes.object,
+    },
+
+    displayName: "JsonToolbar",
+
+    
+
+    onSave: function(event) {
+      this.props.actions.onSaveJson();
+    },
+
+    onCopy: function(event) {
+      this.props.actions.onCopyJson();
+    },
+
+    render: function() {
+      return (
+        Toolbar({},
+          ToolbarButton({className: "btn save", onClick: this.onSave},
+            Locale.$STR("jsonViewer.Save")
+          ),
+          ToolbarButton({className: "btn copy", onClick: this.onCopy},
+            Locale.$STR("jsonViewer.Copy")
+          ),
+          SearchBox({
+            actions: this.props.actions
+          })
+        )
+      );
+    },
+  }));
+
+  
+  exports.JsonPanel = JsonPanel;
 });
