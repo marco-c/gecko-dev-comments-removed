@@ -177,6 +177,15 @@ FetchDriver::HttpFetch()
                           ios);
   NS_ENSURE_SUCCESS(rv, rv);
 
+  
+  if (mRequest->Mode() == RequestMode::No_cors &&
+      mRequest->UnsafeRequest() &&
+      (!mRequest->HasSimpleMethod() ||
+       !mRequest->Headers()->HasOnlySimpleHeaders())) {
+    MOZ_ASSERT(false, "The API should have caught this");
+    return NS_ERROR_DOM_BAD_URI;
+  }
+
   rv = SetTainting();
   NS_ENSURE_SUCCESS(rv, rv);
 
@@ -410,21 +419,11 @@ FetchDriver::HttpFetch()
   
   
   
-  if (IsUnsafeRequest()) {
-    if (mRequest->Mode() == RequestMode::No_cors) {
-      return NS_ERROR_DOM_BAD_URI;
-    }
-
-    mRequest->SetRedirectMode(RequestRedirect::Error);
-
+  if (mRequest->Mode() == RequestMode::Cors) {
     nsAutoTArray<nsCString, 5> unsafeHeaders;
     mRequest->Headers()->GetUnsafeHeaders(unsafeHeaders);
-
-    nsCOMPtr<nsIHttpChannelInternal> internalChan = do_QueryInterface(httpChan);
-    NS_ENSURE_TRUE(internalChan, NS_ERROR_DOM_BAD_URI);
-
-    rv = internalChan->SetCorsPreflightParameters(unsafeHeaders);
-    NS_ENSURE_SUCCESS(rv, rv);
+    nsCOMPtr<nsILoadInfo> loadInfo = chan->GetLoadInfo();
+    loadInfo->SetCorsPreflightInfo(unsafeHeaders, false);
   }
 
   rv = chan->AsyncOpen2(this);
@@ -432,15 +431,6 @@ FetchDriver::HttpFetch()
 
   
   return NS_OK;
-}
-
-bool
-FetchDriver::IsUnsafeRequest()
-{
-  return mHasBeenCrossSite &&
-         (mRequest->UnsafeRequest() &&
-          (!mRequest->HasSimpleMethod() ||
-           !mRequest->Headers()->HasOnlySimpleHeaders()));
 }
 
 already_AddRefed<InternalResponse>
@@ -763,15 +753,9 @@ FetchDriver::AsyncOnChannelRedirect(nsIChannel* aOldChannel,
 
   
   
-  MOZ_ASSERT(mRequest->GetRedirectMode() == RequestRedirect::Follow ||
-             (mRequest->GetRedirectMode() == RequestRedirect::Error &&
-              IsUnsafeRequest()));
+  MOZ_ASSERT(mRequest->GetRedirectMode() == RequestRedirect::Follow);
 
   
-  if (NS_WARN_IF(mRequest->GetRedirectMode() == RequestRedirect::Error)) {
-    aOldChannel->Cancel(NS_BINDING_FAILED);
-    return NS_BINDING_FAILED;
-  }
 
   
   
@@ -826,20 +810,6 @@ FetchDriver::AsyncOnChannelRedirect(nsIChannel* aOldChannel,
   
   
   
-  
-  
-  
-  
-
-  if (IsUnsafeRequest()) {
-    
-    
-    
-
-    
-    aOldChannel->Cancel(NS_BINDING_FAILED);
-    return NS_BINDING_FAILED;
-  }
 
   
   
