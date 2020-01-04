@@ -2569,15 +2569,7 @@ MediaDecoderStateMachine::GetStatistics()
 void MediaDecoderStateMachine::StartBuffering()
 {
   MOZ_ASSERT(OnTaskQueue());
-
-  if (mState != DECODER_STATE_DECODING) {
-    
-    
-    
-    
-    
-    return;
-  }
+  MOZ_ASSERT(mState == DECODER_STATE_DECODING);
 
   if (IsPlaying()) {
     StopPlayback();
