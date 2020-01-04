@@ -1447,12 +1447,6 @@ NS_INTERFACE_MAP_END
 NS_IMPL_ADDREF(StyleRule)
 NS_IMPL_RELEASE(StyleRule)
 
-void
-StyleRule::RuleMatched()
-{
-  mDeclaration->SetImmutable();
-}
-
  int32_t
 StyleRule::GetType() const
 {

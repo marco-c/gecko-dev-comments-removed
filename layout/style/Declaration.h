@@ -76,6 +76,7 @@ private:
 
 
 
+
 class Declaration final : public nsIStyleRule {
 public:
   

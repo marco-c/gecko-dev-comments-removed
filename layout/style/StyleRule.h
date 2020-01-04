@@ -328,12 +328,6 @@ public:
   DeclarationChanged(Declaration* aDecl, bool aHandleContainer);
 
   
-
-
-
-  void RuleMatched();
-
-  
   void GetCssText(nsAString& aCssText);
   void SetCssText(const nsAString& aCssText);
   void GetSelectorText(nsAString& aSelectorText);
