@@ -673,12 +673,11 @@ ImageContainer::NotifyComposite(const ImageCompositeNotification& aNotification)
   }
 }
 
-static ImageContainer::ProducerID sProducerID = 0;
-
 ImageContainer::ProducerID
 ImageContainer::AllocateProducerID()
 {
-  NS_ASSERTION(NS_IsMainThread(), "Should be on main thread.");
+  
+  static Atomic<ImageContainer::ProducerID> sProducerID(0u);
   return ++sProducerID;
 }
 
