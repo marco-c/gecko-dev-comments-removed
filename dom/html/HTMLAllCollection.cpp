@@ -173,7 +173,7 @@ HTMLAllCollection::GetSupportedNames(unsigned aFlags, nsTArray<nsString>& aNames
 
   
   
-  nsAutoTArray<nsIAtom*, 8> atoms;
+  AutoTArray<nsIAtom*, 8> atoms;
   for (uint32_t i = 0; i < Length(); ++i) {
     nsIContent *content = Item(i);
     if (content->HasID()) {

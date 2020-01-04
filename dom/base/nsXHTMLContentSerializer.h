@@ -152,7 +152,7 @@ protected:
   };
 
   
-  nsAutoTArray<olState, 8> mOLStateStack;
+  AutoTArray<olState, 8> mOLStateStack;
 
   bool HasNoChildren(nsIContent* aContent);
 };

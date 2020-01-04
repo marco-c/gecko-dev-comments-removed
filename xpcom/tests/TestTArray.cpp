@@ -340,12 +340,12 @@ static bool test_move_array() {
   
   nsTArray<Countable> copyCountableArray2(Move(differentAllocatorCountableArray));
   
-  nsAutoTArray<Countable, 3> autoCountableArray(Move(copyCountableArray2));
+  AutoTArray<Countable, 3> autoCountableArray(Move(copyCountableArray2));
   
   copyCountableArray2 = Move(autoCountableArray);
   
   FallibleTArray<Countable> differentAllocatorCountableArray2(Move(copyCountableArray2));
-  nsAutoTArray<Countable, 4> autoCountableArray2(Move(differentAllocatorCountableArray2));
+  AutoTArray<Countable, 4> autoCountableArray2(Move(differentAllocatorCountableArray2));
   differentAllocatorCountableArray2 = Move(autoCountableArray2);
 
   if (Countable::Count() != 12)
@@ -389,12 +389,12 @@ static bool test_move_array() {
   
   nsTArray<Moveable> copyMoveableArray2(Move(differentAllocatorMoveableArray));
   
-  nsAutoTArray<Moveable, 3> autoMoveableArray(Move(copyMoveableArray2));
+  AutoTArray<Moveable, 3> autoMoveableArray(Move(copyMoveableArray2));
   
   copyMoveableArray2 = Move(autoMoveableArray);
   
   FallibleTArray<Moveable> differentAllocatorMoveableArray2(Move(copyMoveableArray2));
-  nsAutoTArray<Moveable, 4> autoMoveableArray2(Move(differentAllocatorMoveableArray2));
+  AutoTArray<Moveable, 4> autoMoveableArray2(Move(differentAllocatorMoveableArray2));
   differentAllocatorMoveableArray2 = Move(autoMoveableArray2);
 
   if (Moveable::Count() != 8)
@@ -595,12 +595,12 @@ static bool test_ptrarray() {
 #ifdef DEBUG
 static bool test_autoarray() {
   uint32_t data[] = {4,6,8,2,4,1,5,7,3};
-  nsAutoTArray<uint32_t, MOZ_ARRAY_LENGTH(data)> array;
+  AutoTArray<uint32_t, MOZ_ARRAY_LENGTH(data)> array;
 
   void* hdr = array.DebugGetHeader();
   if (hdr == nsTArray<uint32_t>().DebugGetHeader())
     return false;
-  if (hdr == nsAutoTArray<uint32_t, MOZ_ARRAY_LENGTH(data)>().DebugGetHeader())
+  if (hdr == AutoTArray<uint32_t, MOZ_ARRAY_LENGTH(data)>().DebugGetHeader())
     return false;
 
   array.AppendElement(1u);
@@ -642,7 +642,7 @@ static bool test_autoarray() {
   array.Compact();
   array.AppendElements(data, ArrayLength(data));
   uint32_t data3[] = {5, 7, 11};
-  nsAutoTArray<uint32_t, MOZ_ARRAY_LENGTH(data3)> array3;
+  AutoTArray<uint32_t, MOZ_ARRAY_LENGTH(data3)> array3;
   array3.AppendElements(data3, ArrayLength(data3));  
   array.SwapElements(array3);
   for (i = 0; i < ArrayLength(data); ++i) {
@@ -775,8 +775,8 @@ static bool test_swap() {
 
   
   {
-    nsAutoTArray<int, 8> a;
-    nsAutoTArray<int, 6> b;
+    AutoTArray<int, 8> a;
+    AutoTArray<int, 6> b;
 
     a.AppendElements(data1, ArrayLength(data1));
     b.AppendElements(data2, ArrayLength(data2));
@@ -794,8 +794,8 @@ static bool test_swap() {
   
   
   {
-    nsAutoTArray<int, 3> a;
-    nsAutoTArray<int, 3> b;
+    AutoTArray<int, 3> a;
+    AutoTArray<int, 3> b;
 
     a.AppendElements(data1, ArrayLength(data1));
     a.RemoveElementAt(3);
@@ -827,8 +827,8 @@ static bool test_swap() {
   
   
   {
-    nsAutoTArray<int, 3> a;
-    nsAutoTArray<int, 2> b;
+    AutoTArray<int, 3> a;
+    AutoTArray<int, 2> b;
     a.AppendElements(data1, ArrayLength(data1));
     a.RemoveElementAt(3);
 
@@ -851,8 +851,8 @@ static bool test_swap() {
 
   
   {
-    nsAutoTArray<int, 1> a;
-    nsAutoTArray<int, 3> b;
+    AutoTArray<int, 1> a;
+    AutoTArray<int, 3> b;
 
     a.AppendElements(data1, ArrayLength(data1));
     b.AppendElements(data2, ArrayLength(data2));
@@ -866,7 +866,7 @@ static bool test_swap() {
   
   {
     nsTArray<int> a;
-    nsAutoTArray<int, 3> b;
+    AutoTArray<int, 3> b;
 
     b.AppendElements(data2, ArrayLength(data2));
     CHECK_IS_USING_AUTO(b);
@@ -881,8 +881,8 @@ static bool test_swap() {
   
   {
     const unsigned size = 8192;
-    nsAutoTArray<unsigned, size> a;
-    nsAutoTArray<unsigned, size> b;
+    AutoTArray<unsigned, size> a;
+    AutoTArray<unsigned, size> b;
 
     for (unsigned i = 0; i < size; i++) {
       a.AppendElement(i);
@@ -929,7 +929,7 @@ static bool test_swap() {
   
   {
     nsTArray<int> a;
-    nsAutoTArray<int, 3> b;
+    AutoTArray<int, 3> b;
 
     a.AppendElements(data1, ArrayLength(data1));
 
@@ -946,8 +946,8 @@ static bool test_swap() {
 
   
   {
-    nsAutoTArray<int, 16> a;
-    nsAutoTArray<int, 3> b;
+    AutoTArray<int, 16> a;
+    AutoTArray<int, 3> b;
 
     a.AppendElements(data1, ArrayLength(data1));
 
@@ -964,7 +964,7 @@ static bool test_swap() {
 
   
   {
-    nsAutoTArray<int, 8> a;
+    AutoTArray<int, 8> a;
     nsTArray<int> b;
 
     a.SwapElements(b);
@@ -978,8 +978,8 @@ static bool test_swap() {
   
   
   {
-    nsAutoTArray<int, 2> a;
-    nsAutoTArray<int, 1> b;
+    AutoTArray<int, 2> a;
+    AutoTArray<int, 1> b;
 
     a.AppendElements(data1, ArrayLength(data1));
 
@@ -1047,8 +1047,8 @@ static bool test_conversion_operator() {
 
   nsTArray<int> t;
   const nsTArray<int> tconst;
-  nsAutoTArray<int, 8> tauto;
-  const nsAutoTArray<int, 8> tautoconst;
+  AutoTArray<int, 8> tauto;
+  const AutoTArray<int, 8> tautoconst;
 
 #define CHECK_ARRAY_CAST(type)                                 \
   do {                                                         \
@@ -1103,7 +1103,7 @@ static bool test_SetLengthAndRetainStorage_no_ctor() {
   AutoInfallibleTArray<int, N> iauto;
 
   nsTArray<int> t;
-  nsAutoTArray<int, N> tauto;
+  AutoTArray<int, N> tauto;
 
 #define LPAREN (
 #define RPAREN )
@@ -1129,7 +1129,7 @@ static bool test_SetLengthAndRetainStorage_no_ctor() {
     static_cast<BufAccessor<InfallibleTArray<int> >&>(i).GetHdr(),
     static_cast<BufAccessor<AutoInfallibleTArray<int, N> >&>(iauto).GetHdr(),
     static_cast<BufAccessor<nsTArray<int> >&>(t).GetHdr(),
-    static_cast<BufAccessor<nsAutoTArray<int, N> >&>(tauto).GetHdr(),
+    static_cast<BufAccessor<AutoTArray<int, N> >&>(tauto).GetHdr(),
     nullptr
   };
 
@@ -1152,7 +1152,7 @@ static bool test_SetLengthAndRetainStorage_no_ctor() {
     static_cast<BufAccessor<InfallibleTArray<int> >&>(i).GetHdr(),
     static_cast<BufAccessor<AutoInfallibleTArray<int, N> >&>(iauto).GetHdr(),
     static_cast<BufAccessor<nsTArray<int> >&>(t).GetHdr(),
-    static_cast<BufAccessor<nsAutoTArray<int, N> >&>(tauto).GetHdr(),
+    static_cast<BufAccessor<AutoTArray<int, N> >&>(tauto).GetHdr(),
     nullptr
   };
 

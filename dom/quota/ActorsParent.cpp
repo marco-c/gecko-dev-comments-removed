@@ -2476,7 +2476,7 @@ QuotaObject::MaybeUpdateSize(int64_t aSize, bool aTruncate)
   if (newTemporaryStorageUsage > quotaManager->mTemporaryStorageLimit) {
     
 
-    nsAutoTArray<RefPtr<DirectoryLockImpl>, 10> locks;
+    AutoTArray<RefPtr<DirectoryLockImpl>, 10> locks;
 
     uint64_t sizeToBeFreed =
       quotaManager->LockedCollectOriginsForEviction(delta, locks);
@@ -3801,7 +3801,7 @@ QuotaManager::OpenDirectoryInternal(Nullable<PersistenceType> aPersistenceType,
 
   
   
-  nsAutoTArray<nsAutoPtr<nsTHashtable<nsCStringHashKey>>,
+  AutoTArray<nsAutoPtr<nsTHashtable<nsCStringHashKey>>,
                Client::TYPE_MAX> origins;
   origins.SetLength(Client::TYPE_MAX);
 

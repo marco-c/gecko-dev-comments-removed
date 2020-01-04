@@ -3366,7 +3366,7 @@ nsDocument::NodesFromRectHelper(float aX, float aY,
   if (!rootFrame)
     return NS_OK; 
 
-  nsAutoTArray<nsIFrame*,8> outFrames;
+  AutoTArray<nsIFrame*,8> outFrames;
   nsLayoutUtils::GetFramesForArea(rootFrame, rect, outFrames,
     nsLayoutUtils::IGNORE_PAINT_SUPPRESSION | nsLayoutUtils::IGNORE_CROSS_DOC |
     (aIgnoreRootScrollFrame ? nsLayoutUtils::IGNORE_ROOT_SCROLL_FRAME : 0));
@@ -11188,7 +11188,7 @@ nsDocument::RestorePreviousFullScreenState()
   }
 
   nsCOMPtr<nsIDocument> fullScreenDoc = GetFullscreenLeaf(this);
-  nsAutoTArray<nsDocument*, 8> exitDocs;
+  AutoTArray<nsDocument*, 8> exitDocs;
 
   nsIDocument* doc = fullScreenDoc;
   
@@ -11805,7 +11805,7 @@ nsDocument::ApplyFullscreen(const FullscreenRequest& aRequest)
   
   
   
-  nsAutoTArray<nsIDocument*, 8> changed;
+  AutoTArray<nsIDocument*, 8> changed;
 
   
   

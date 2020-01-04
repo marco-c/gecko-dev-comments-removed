@@ -419,7 +419,7 @@ private:
   
   
   
-  nsAutoTArray<uint32_t, 8> mOrder;
+  AutoTArray<uint32_t, 8> mOrder;
 
   
   nsTArray<nsString> mVariableOrder;

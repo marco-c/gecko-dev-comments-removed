@@ -26,7 +26,7 @@ ParsePluginMimeDescription(const char *mdesc, nsPluginInfo &info)
 
     char *mdescDup = PL_strdup(mdesc); 
     char anEmptyString[] = "";
-    nsAutoTArray<char*, 8> tmpMimeTypeArr;
+    AutoTArray<char*, 8> tmpMimeTypeArr;
     char delimiters[] = {':',':',';'};
     int mimeTypeVariantCount = 0;
     char *p = mdescDup; 

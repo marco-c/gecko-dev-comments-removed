@@ -966,7 +966,7 @@ nsDisplayListBuilder::MarkFramesForDisplayList(nsIFrame* aDirtyFrame,
 void
 nsDisplayListBuilder::MarkPreserve3DFramesForDisplayList(nsIFrame* aDirtyFrame, const nsRect& aDirtyRect)
 {
-  nsAutoTArray<nsIFrame::ChildList,4> childListArray;
+  AutoTArray<nsIFrame::ChildList,4> childListArray;
   aDirtyFrame->GetChildLists(&childListArray);
   nsIFrame::ChildListArrayIterator lists(childListArray);
   for (; !lists.IsDone(); lists.Next()) {
@@ -1181,13 +1181,6 @@ nsDisplayListBuilder::AdjustWindowDraggingRegion(nsIFrame* aFrame)
     return;
   }
 
-  const nsStyleUIReset* styleUI = aFrame->StyleUIReset();
-  if (styleUI->mWindowDragging == NS_STYLE_WINDOW_DRAGGING_DEFAULT) {
-    
-    
-    return;
-  }
-
   LayoutDeviceToLayoutDeviceMatrix4x4 referenceFrameToRootReferenceFrame;
 
   
@@ -1237,21 +1230,14 @@ nsDisplayListBuilder::AdjustWindowDraggingRegion(nsIFrame* aFrame)
     transformedDevPixelBorderBox.Round();
     LayoutDeviceIntRect transformedDevPixelBorderBoxInt;
     if (transformedDevPixelBorderBox.ToIntRect(&transformedDevPixelBorderBoxInt)) {
+      const nsStyleUserInterface* styleUI = aFrame->StyleUserInterface();
       if (styleUI->mWindowDragging == NS_STYLE_WINDOW_DRAGGING_DRAG) {
         mWindowDraggingRegion.OrWith(transformedDevPixelBorderBoxInt);
       } else {
-        mWindowNoDraggingRegion.OrWith(transformedDevPixelBorderBoxInt);
+        mWindowDraggingRegion.SubOut(transformedDevPixelBorderBoxInt);
       }
     }
   }
-}
-
-LayoutDeviceIntRegion
-nsDisplayListBuilder::GetWindowDraggingRegion() const
-{
-  LayoutDeviceIntRegion result;
-  result.Sub(mWindowDraggingRegion, mWindowNoDraggingRegion);;
-  return result;
 }
 
 const uint32_t gWillChangeAreaMultiplier = 3;
@@ -1485,7 +1471,7 @@ nsDisplayList::ComputeVisibilityForSublist(nsDisplayListBuilder* aBuilder,
 
   bool anyVisible = false;
 
-  nsAutoTArray<nsDisplayItem*, 512> elements;
+  AutoTArray<nsDisplayItem*, 512> elements;
   MoveListTo(this, &elements);
 
   for (int32_t i = elements.Length() - 1; i >= 0; --i) {
@@ -1922,7 +1908,7 @@ void nsDisplayList::HitTest(nsDisplayListBuilder* aBuilder, const nsRect& aRect,
     aState->mItemBuffer.AppendElement(item);
   }
 
-  nsAutoTArray<FramesWithDepth, 16> temp;
+  AutoTArray<FramesWithDepth, 16> temp;
   for (int32_t i = aState->mItemBuffer.Length() - 1; i >= itemBufferStart; --i) {
     
     
@@ -1942,7 +1928,7 @@ void nsDisplayList::HitTest(nsDisplayListBuilder* aBuilder, const nsRect& aRect,
       if (!item->GetClip().MayIntersect(aRect)) {
         continue;
       }
-      nsAutoTArray<nsIFrame*, 1> neverUsed;
+      AutoTArray<nsIFrame*, 1> neverUsed;
       
       
       
@@ -1953,7 +1939,7 @@ void nsDisplayList::HitTest(nsDisplayListBuilder* aBuilder, const nsRect& aRect,
       continue;
     }
     if (same3DContext || item->GetClip().MayIntersect(r)) {
-      nsAutoTArray<nsIFrame*, 16> outFrames;
+      AutoTArray<nsIFrame*, 16> outFrames;
       item->HitTest(aBuilder, aRect, aState, &outFrames);
 
       
@@ -3677,7 +3663,7 @@ nsDisplayBoxShadowOuter::Paint(nsDisplayListBuilder* aBuilder,
   nsPoint offset = ToReferenceFrame();
   nsRect borderRect = mFrame->VisualBorderRectRelativeToSelf() + offset;
   nsPresContext* presContext = mFrame->PresContext();
-  nsAutoTArray<nsRect,10> rects;
+  AutoTArray<nsRect,10> rects;
   ComputeDisjointRectangles(mVisibleRegion, &rects);
 
   PROFILER_LABEL("nsDisplayBoxShadowOuter", "Paint",
@@ -3765,7 +3751,7 @@ nsDisplayBoxShadowInner::Paint(nsDisplayListBuilder* aBuilder,
   nsPoint offset = ToReferenceFrame();
   nsRect borderRect = nsRect(offset, mFrame->GetSize());
   nsPresContext* presContext = mFrame->PresContext();
-  nsAutoTArray<nsRect,10> rects;
+  AutoTArray<nsRect,10> rects;
   ComputeDisjointRectangles(mVisibleRegion, &rects);
 
   PROFILER_LABEL("nsDisplayBoxShadowInner", "Paint",

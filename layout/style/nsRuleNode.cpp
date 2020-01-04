@@ -3956,7 +3956,7 @@ nsRuleNode::SetGenericFont(nsPresContext* aPresContext,
                            nsStyleFont* aFont)
 {
   
-  nsAutoTArray<nsStyleContext*, 8> contextPath;
+  AutoTArray<nsStyleContext*, 8> contextPath;
   contextPath.AppendElement(aContext);
   nsStyleContext* higherContext = aContext->GetParent();
   while (higherContext) {
@@ -4863,6 +4863,13 @@ nsRuleNode::ComputeUserInterfaceData(void* aStartStruct,
               parentUI->mUserFocus,
               NS_STYLE_USER_FOCUS_NONE, 0, 0, 0, 0);
 
+  
+  SetDiscrete(*aRuleData->ValueForWindowDragging(),
+              ui->mWindowDragging, conditions,
+              SETDSC_ENUMERATED | SETDSC_UNSET_INHERIT,
+              parentUI->mWindowDragging,
+              NS_STYLE_WINDOW_DRAGGING_NO_DRAG, 0, 0, 0, 0);
+
   COMPUTE_END_INHERITED(UserInterface, ui)
 }
 
@@ -4897,13 +4904,6 @@ nsRuleNode::ComputeUIResetData(void* aStartStruct,
               SETDSC_INTEGER | SETDSC_UNSET_INITIAL,
               parentUI->mForceBrokenImageIcon,
               0, 0, 0, 0, 0);
-
-  
-  SetDiscrete(*aRuleData->ValueForWindowDragging(),
-              ui->mWindowDragging, conditions,
-              SETDSC_ENUMERATED | SETDSC_UNSET_INITIAL,
-              parentUI->mWindowDragging,
-              NS_STYLE_WINDOW_DRAGGING_DEFAULT, 0, 0, 0, 0);
 
   
   SetDiscrete(*aRuleData->ValueForWindowShadow(),
@@ -6686,8 +6686,8 @@ template <class ComputedValueItem>
 static void
 SetImageLayerList(nsStyleContext* aStyleContext,
                   const nsCSSValue& aValue,
-                  nsAutoTArray< nsStyleImageLayers::Layer, 1> &aLayers,
-                  const nsAutoTArray<nsStyleImageLayers::Layer, 1> &aParentLayers,
+                  AutoTArray< nsStyleImageLayers::Layer, 1> &aLayers,
+                  const AutoTArray<nsStyleImageLayers::Layer, 1> &aParentLayers,
                   ComputedValueItem nsStyleImageLayers::Layer::* aResultLocation,
                   ComputedValueItem aInitialValue,
                   uint32_t aParentItemCount,
@@ -6751,8 +6751,8 @@ template <class ComputedValueItem>
 static void
 SetImageLayerPairList(nsStyleContext* aStyleContext,
                       const nsCSSValue& aValue,
-                      nsAutoTArray< nsStyleImageLayers::Layer, 1> &aLayers,
-                      const nsAutoTArray<nsStyleImageLayers::Layer, 1>
+                      AutoTArray< nsStyleImageLayers::Layer, 1> &aLayers,
+                      const AutoTArray<nsStyleImageLayers::Layer, 1>
                                                                  &aParentLayers,
                       ComputedValueItem nsStyleImageLayers::Layer::*
                                                                 aResultLocation,
@@ -6818,7 +6818,7 @@ SetImageLayerPairList(nsStyleContext* aStyleContext,
 
 template <class ComputedValueItem>
 static void
-FillBackgroundList(nsAutoTArray< nsStyleImageLayers::Layer, 1> &aLayers,
+FillBackgroundList(AutoTArray< nsStyleImageLayers::Layer, 1> &aLayers,
     ComputedValueItem nsStyleImageLayers::Layer::* aResultLocation,
     uint32_t aItemCount, uint32_t aFillCount)
 {
@@ -10040,7 +10040,7 @@ nsRuleNode::Sweep()
     return true;
   }
 
-  nsAutoTArray<nsRuleNode*, 70> sweepQueue;
+  AutoTArray<nsRuleNode*, 70> sweepQueue;
   sweepQueue.AppendElement(this);
   while (!sweepQueue.IsEmpty()) {
     nsTArray<nsRuleNode*>::index_type last = sweepQueue.Length() - 1;

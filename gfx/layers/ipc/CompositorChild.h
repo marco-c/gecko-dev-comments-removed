@@ -195,7 +195,7 @@ private:
   DISALLOW_EVIL_CONSTRUCTORS(CompositorChild);
 
   
-  nsAutoTArray<ClientLayerManager*,0> mOverfillObservers;
+  AutoTArray<ClientLayerManager*,0> mOverfillObservers;
 
   
   bool mCanSend;

@@ -1087,7 +1087,7 @@ public:
   bool mTryParts;
 
 private:
-  nsAutoTArray<nsGlyphTable*,16> mTablesTried;
+  AutoTArray<nsGlyphTable*,16> mTablesTried;
   bool&       mGlyphFound;
 };
 
@@ -1653,7 +1653,7 @@ nsMathMLChar::StretchInternal(nsPresContext*           aPresContext,
 
     
     
-    nsAutoTArray<nsString, 16> mathFallbacks;
+    AutoTArray<nsString, 16> mathFallbacks;
     gfxFontUtils::GetPrefsFontList("font.name.serif.x-math", mathFallbacks);
     gfxFontUtils::AppendPrefsFontList("font.name-list.serif.x-math",
                                       mathFallbacks);

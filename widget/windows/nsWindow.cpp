@@ -5227,11 +5227,18 @@ nsWindow::ProcessMessage(UINT msg, WPARAM& wParam, LPARAM& lParam,
                                     WidgetMouseEvent::eLeftButton :
                                     WidgetMouseEvent::eRightButton,
                                   MOUSE_INPUT_SOURCE());
-      if (lParam != -1 && !result && mCustomNonClient &&
-          mDraggableRegion.Contains(GET_X_LPARAM(pos), GET_Y_LPARAM(pos))) {
-        
-        DisplaySystemMenu(mWnd, mSizeMode, mIsRTL, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
-        result = true;
+      if (lParam != -1 && !result && mCustomNonClient) {
+        WidgetMouseEvent event(true, eMouseHitTest, this,
+                               WidgetMouseEvent::eReal,
+                               WidgetMouseEvent::eNormal);
+        event.refPoint = LayoutDeviceIntPoint(GET_X_LPARAM(pos), GET_Y_LPARAM(pos));
+        event.inputSource = MOUSE_INPUT_SOURCE();
+        event.mFlags.mOnlyChromeDispatch = true;
+        if (DispatchWindowEvent(&event)) {
+          
+          DisplaySystemMenu(mWnd, mSizeMode, mIsRTL, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
+          result = true;
+        }
       }
     }
     break;
@@ -5942,11 +5949,24 @@ nsWindow::ClientMarginHitTestPoint(int32_t mx, int32_t my)
     if (pt.x == mCachedHitTestPoint.x && pt.y == mCachedHitTestPoint.y &&
         TimeStamp::Now() - mCachedHitTestTime < TimeDuration::FromMilliseconds(HITTEST_CACHE_LIFETIME_MS)) {
       return mCachedHitTestResult;
-    }
-    if (mDraggableRegion.Contains(pt.x, pt.y)) {
+    } else if (mDraggableRegion.Contains(pt.x, pt.y)) {
       testResult = HTCAPTION;
     } else {
-      testResult = HTCLIENT;
+      WidgetMouseEvent event(true, eMouseHitTest, this,
+                             WidgetMouseEvent::eReal,
+                             WidgetMouseEvent::eNormal);
+      event.refPoint = LayoutDeviceIntPoint(pt.x, pt.y);
+      event.inputSource = MOUSE_INPUT_SOURCE();
+      event.mFlags.mOnlyChromeDispatch = true;
+      bool result = ConvertStatus(DispatchInputEvent(&event));
+      if (result) {
+        
+        testResult = testResult == HTCLIENT ? HTCAPTION : testResult;
+      } else {
+        
+        
+        testResult = HTCLIENT;
+      }
     }
     mCachedHitTestPoint = pt;
     mCachedHitTestTime = TimeStamp::Now();
@@ -6624,7 +6644,7 @@ static HRGN
 CreateHRGNFromArray(const nsTArray<LayoutDeviceIntRect>& aRects)
 {
   int32_t size = sizeof(RGNDATAHEADER) + sizeof(RECT)*aRects.Length();
-  nsAutoTArray<uint8_t,100> buf;
+  AutoTArray<uint8_t,100> buf;
   buf.SetLength(size);
   RGNDATA* data = reinterpret_cast<RGNDATA*>(buf.Elements());
   RECT* rects = reinterpret_cast<RECT*>(data->Buffer);
@@ -7406,7 +7426,7 @@ nsWindow::GetPopupsToRollup(nsIRollupListener* aRollupListener,
   
   
   *aPopupsToRollup = UINT32_MAX;
-  nsAutoTArray<nsIWidget*, 5> widgetChain;
+  AutoTArray<nsIWidget*, 5> widgetChain;
   uint32_t sameTypeCount =
     aRollupListener->GetSubmenuWidgetChain(&widgetChain);
   for (uint32_t i = 0; i < widgetChain.Length(); ++i) {

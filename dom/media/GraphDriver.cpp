@@ -1098,7 +1098,7 @@ AudioCallbackDriver::EnqueueStreamAndPromiseForOperation(MediaStream* aStream,
 
 void AudioCallbackDriver::CompleteAudioContextOperations(AsyncCubebOperation aOperation)
 {
-  nsAutoTArray<StreamAndPromiseForOperation, 1> array;
+  AutoTArray<StreamAndPromiseForOperation, 1> array;
 
   
   

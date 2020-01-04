@@ -913,7 +913,7 @@ gfxFcFontSet::SortPreferredFonts(bool &aWaitForUserFont)
     
     
     
-    nsAutoTArray<LangSupportEntry,10> requiredLangs;
+    AutoTArray<LangSupportEntry,10> requiredLangs;
     for (int v = 0; ; ++v) {
         FcChar8 *lang;
         FcResult result = FcPatternGetString(mSortPattern, FC_LANG, v, &lang);
@@ -1289,7 +1289,7 @@ gfxPangoFontGroup::FindGenericFontsPFG(FontFamilyType aGenericType,
                                        nsIAtom *aLanguage,
                                        void *aClosure)
 {
-    nsAutoTArray<nsString, 5> resolvedGenerics;
+    AutoTArray<nsString, 5> resolvedGenerics;
     ResolveGenericFontNamesPFG(aGenericType, aLanguage, resolvedGenerics);
     uint32_t g = 0, numGenerics = resolvedGenerics.Length();
     for (g = 0; g < numGenerics; g++) {
@@ -1494,7 +1494,7 @@ gfxPangoFontGroup::MakeFontSet(PangoLanguage *aLang, gfxFloat aSizeAdjustFactor,
         langGroup = do_GetAtom(lang);
     }
 
-    nsAutoTArray<nsString, 20> fcFamilyList;
+    AutoTArray<nsString, 20> fcFamilyList;
     EnumerateFontListPFG(langGroup ? langGroup.get() : mStyle.language.get(),
                          &fcFamilyList);
 

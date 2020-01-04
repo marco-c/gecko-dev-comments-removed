@@ -73,7 +73,7 @@ private:
     };
     
     
-    nsAutoTArray<FontSetByLangEntry,1> mFontSets;
+    AutoTArray<FontSetByLangEntry,1> mFontSets;
 
     gfxFloat mSizeAdjustFactor;
     PangoLanguage *mPangoLanguage;

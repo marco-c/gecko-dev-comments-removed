@@ -97,7 +97,7 @@ public:
 
 
 class MOZ_STACK_CLASS AutoRubyTextContainerArray final
-  : public nsAutoTArray<nsRubyTextContainerFrame*, RTC_ARRAY_SIZE>
+  : public AutoTArray<nsRubyTextContainerFrame*, RTC_ARRAY_SIZE>
 {
 public:
   explicit AutoRubyTextContainerArray(nsRubyBaseContainerFrame* aBaseContainer);
@@ -131,7 +131,7 @@ private:
 struct MOZ_STACK_CLASS RubyColumn
 {
   nsRubyBaseFrame* mBaseFrame;
-  nsAutoTArray<nsRubyTextFrame*, RTC_ARRAY_SIZE> mTextFrames;
+  AutoTArray<nsRubyTextFrame*, RTC_ARRAY_SIZE> mTextFrames;
   bool mIsIntraLevelWhitespace;
 
   RubyColumn() : mBaseFrame(nullptr), mIsIntraLevelWhitespace(false) { }
@@ -204,7 +204,7 @@ private:
   
   
   
-  nsAutoTArray<nsRubyContentFrame*, RTC_ARRAY_SIZE + 1> mFrames;
+  AutoTArray<nsRubyContentFrame*, RTC_ARRAY_SIZE + 1> mFrames;
   
   bool mAtIntraLevelWhitespace;
 };

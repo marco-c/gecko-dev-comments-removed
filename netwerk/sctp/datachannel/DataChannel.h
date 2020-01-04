@@ -263,13 +263,13 @@ private:
   
   
   bool mAllocateEven;
-  nsAutoTArray<RefPtr<DataChannel>,16> mStreams;
+  AutoTArray<RefPtr<DataChannel>,16> mStreams;
   nsDeque mPending; 
   
   nsTArray<nsAutoPtr<QueuedDataMessage> > mQueuedData;
 
   
-  nsAutoTArray<uint16_t,4> mStreamsResetting;
+  AutoTArray<uint16_t,4> mStreamsResetting;
 
   struct socket *mMasterSocket; 
   struct socket *mSocket; 

@@ -566,7 +566,7 @@ nsCSSSelector::ToString(nsAString& aString, CSSStyleSheet* aSheet,
 
   
   
-  nsAutoTArray<const nsCSSSelector*, 8> stack;
+  AutoTArray<const nsCSSSelector*, 8> stack;
   for (const nsCSSSelector *s = this; s; s = s->mNext) {
     stack.AppendElement(s);
   }

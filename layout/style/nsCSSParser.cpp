@@ -619,7 +619,7 @@ protected:
   void SkipUntilOneOf(const char16_t* aStopSymbolChars);
   
   
-  typedef nsAutoTArray<char16_t, 16> StopSymbolCharStack;
+  typedef AutoTArray<char16_t, 16> StopSymbolCharStack;
   void SkipUntilAllOf(const StopSymbolCharStack& aStopSymbolChars);
   
   
@@ -2490,7 +2490,7 @@ CSSParserImpl::ResolveValueWithVariableReferencesRec(
   MOZ_ASSERT(aResult.IsEmpty());
 
   
-  nsAutoTArray<char16_t, 16> stack;
+  AutoTArray<char16_t, 16> stack;
 
   
   nsString value;
@@ -4126,7 +4126,7 @@ CSSParserImpl::ParseFontFeatureValueSet(nsCSSFontFeatureValuesRule
   }
 
   
-  nsAutoTArray<gfxFontFeatureValueSet::ValueList, 5> values;
+  AutoTArray<gfxFontFeatureValueSet::ValueList, 5> values;
 
   
   for (;;) {
@@ -4169,7 +4169,7 @@ CSSParserImpl::ParseFontFeatureValueSet(nsCSSFontFeatureValuesRule
     }
 
     
-    nsAutoTArray<uint32_t,4>   featureSelectors;
+    AutoTArray<uint32_t,4>   featureSelectors;
 
     nsCSSValue intValue;
     while (ParseNonNegativeInteger(intValue)) {
@@ -5008,7 +5008,7 @@ bool
 CSSParserImpl::SkipUntil(char16_t aStopSymbol)
 {
   nsCSSToken* tk = &mToken;
-  nsAutoTArray<char16_t, 16> stack;
+  AutoTArray<char16_t, 16> stack;
   stack.AppendElement(aStopSymbol);
   for (;;) {
     if (!GetToken(true)) {
@@ -5044,7 +5044,7 @@ bool
 CSSParserImpl::SkipBalancedContentUntil(char16_t aStopSymbol)
 {
   nsCSSToken* tk = &mToken;
-  nsAutoTArray<char16_t, 16> stack;
+  AutoTArray<char16_t, 16> stack;
   stack.AppendElement(aStopSymbol);
   for (;;) {
     if (!GetToken(true)) {
@@ -16794,7 +16794,7 @@ CSSParserImpl::ParseValueWithVariables(CSSVariableDeclarations::Type* aType,
   
   
   
-  nsAutoTArray<uint32_t, 16> references;
+  AutoTArray<uint32_t, 16> references;
 
   if (!GetToken(false)) {
     

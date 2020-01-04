@@ -334,8 +334,8 @@ nsRubyBaseContainerFrame::Reflow(nsPresContext* aPresContext,
   
   
   
-  nsAutoTArray<UniquePtr<nsHTMLReflowState>, RTC_ARRAY_SIZE> reflowStates;
-  nsAutoTArray<UniquePtr<nsLineLayout>, RTC_ARRAY_SIZE> lineLayouts;
+  AutoTArray<UniquePtr<nsHTMLReflowState>, RTC_ARRAY_SIZE> reflowStates;
+  AutoTArray<UniquePtr<nsLineLayout>, RTC_ARRAY_SIZE> lineLayouts;
   reflowStates.SetCapacity(rtcCount);
   lineLayouts.SetCapacity(rtcCount);
 
@@ -451,7 +451,7 @@ nsRubyBaseContainerFrame::Reflow(nsPresContext* aPresContext,
 struct MOZ_STACK_CLASS nsRubyBaseContainerFrame::PullFrameState
 {
   ContinuationTraversingState mBase;
-  nsAutoTArray<ContinuationTraversingState, RTC_ARRAY_SIZE> mTexts;
+  AutoTArray<ContinuationTraversingState, RTC_ARRAY_SIZE> mTexts;
   const AutoRubyTextContainerArray& mTextContainers;
 
   PullFrameState(nsRubyBaseContainerFrame* aBaseContainer,
