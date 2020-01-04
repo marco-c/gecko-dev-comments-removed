@@ -6,6 +6,8 @@
 
 "use strict";
 
+
+
 var { Ci, Cu } = require("chrome");
 var Services = require("Services");
 var { XPCOMUtils } = require("resource://gre/modules/XPCOMUtils.jsm");
@@ -559,34 +561,36 @@ BrowserTabList.prototype._listenForEventsIf =
 
 
 
-BrowserTabList.prototype._listenForMessagesIf = function (aShouldListen, aGuard, aMessageNames) {
-  if (!aShouldListen !== !this[aGuard]) {
-    let op = aShouldListen ? "addMessageListener" : "removeMessageListener";
-    for (let win of allAppShellDOMWindows(DebuggerServer.chromeWindowType)) {
-      for (let name of aMessageNames) {
-        win.messageManager[op](name, this);
+BrowserTabList.prototype._listenForMessagesIf =
+  function (shouldListen, guard, messageNames) {
+    if (!shouldListen !== !this[guard]) {
+      let op = shouldListen ? "addMessageListener" : "removeMessageListener";
+      for (let win of allAppShellDOMWindows(DebuggerServer.chromeWindowType)) {
+        for (let name of messageNames) {
+          win.messageManager[op](name, this);
+        }
+      }
+      this[guard] = shouldListen;
+    }
+  };
+
+
+
+
+BrowserTabList.prototype.receiveMessage = DevToolsUtils.makeInfallible(
+  function (message) {
+    let browser = message.target;
+    switch (message.name) {
+      case "DOMTitleChanged": {
+        let actor = this._actorByBrowser.get(browser);
+        if (actor) {
+          this._notifyListChanged();
+          this._checkListening();
+        }
+        break;
       }
     }
-    this[aGuard] = aShouldListen;
-  }
-};
-
-
-
-
-BrowserTabList.prototype.receiveMessage = DevToolsUtils.makeInfallible(function (message) {
-  let browser = message.target;
-  switch (message.name) {
-    case "DOMTitleChanged": {
-      let actor = this._actorByBrowser.get(browser);
-      if (actor) {
-        this._notifyListChanged();
-        this._checkListening();
-      }
-      break;
-    }
-  }
-});
+  });
 
 
 
@@ -896,7 +900,9 @@ TabActor.prototype = {
 
   
   
-  _allowSource() { return true; },
+  _allowSource() {
+    return true;
+  },
 
   get exited() {
     return this._exited;
@@ -2047,7 +2053,7 @@ TabActor.prototype = {
       
       
       let console = window.wrappedJSObject.console;
-      isNative = new XPCNativeWrapper(console).IS_NATIVE_CONSOLE
+      isNative = new XPCNativeWrapper(console).IS_NATIVE_CONSOLE;
     } catch (ex) {
       
     }
@@ -2339,12 +2345,10 @@ BrowserAddonList.prototype._adjustListener = function () {
     
     
     AddonManager.addAddonListener(this);
-  } else {
+  } else if (this._actorByAddonId.size === 0) {
     
     
-    if (this._actorByAddonId.size === 0) {
-      AddonManager.removeAddonListener(this);
-    }
+    AddonManager.removeAddonListener(this);
   }
 };
 
