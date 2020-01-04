@@ -35,7 +35,7 @@ GPUParent::Init(base::ProcessId aParentPid,
 }
 
 bool
-GPUParent::RecvBeginShutdown()
+GPUParent::RecvNothing()
 {
   return true;
 }
@@ -48,7 +48,14 @@ GPUParent::ActorDestroy(ActorDestroyReason aWhy)
     ProcessChild::QuickExit();
   }
 
+#ifndef NS_FREE_PERMANENT_DATA
+  
+  
+  
+  ProcessChild::QuickExit();
+#else
   XRE_ShutdownChildProcess();
+#endif
 }
 
 } 

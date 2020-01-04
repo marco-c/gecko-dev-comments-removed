@@ -4,9 +4,11 @@
 
 
 
-#include "gfxPrefs.h"
 #include "GPUProcessHost.h"
+#include "chrome/common/process_watcher.h"
+#include "gfxPrefs.h"
 #include "mozilla/gfx/Logging.h"
+#include "nsITimer.h"
 
 namespace mozilla {
 namespace gfx {
@@ -15,7 +17,8 @@ GPUProcessHost::GPUProcessHost(Listener* aListener)
  : GeckoChildProcessHost(GeckoProcessType_GPU),
    mListener(aListener),
    mTaskFactory(this),
-   mLaunchPhase(LaunchPhase::Unlaunched)
+   mLaunchPhase(LaunchPhase::Unlaunched),
+   mShutdownRequested(false)
 {
   MOZ_COUNT_CTOR(GPUProcessHost);
 }
@@ -115,7 +118,7 @@ GPUProcessHost::InitAfterConnect(bool aSucceeded)
   mLaunchPhase = LaunchPhase::Complete;
 
   if (aSucceeded) {
-    mGPUChild = MakeUnique<GPUChild>();
+    mGPUChild = MakeUnique<GPUChild>(this);
     DebugOnly<bool> rv =
       mGPUChild->Open(GetChannel(), base::GetProcId(GetChildProcessHandle()));
     MOZ_ASSERT(rv);
@@ -129,8 +132,64 @@ GPUProcessHost::InitAfterConnect(bool aSucceeded)
 void
 GPUProcessHost::Shutdown()
 {
+  MOZ_ASSERT(!mShutdownRequested);
+
   mListener = nullptr;
+
+  if (mGPUChild) {
+    
+    
+    mShutdownRequested = true;
+
+#ifdef NS_FREE_PERMANENT_DATA
+    mGPUChild->Close();
+#else
+    
+    
+    KillHard("NormalShutdown");
+#endif
+
+    
+    return;
+  }
+
   DestroyProcess();
+}
+
+void
+GPUProcessHost::OnChannelClosed()
+{
+  if (!mShutdownRequested) {
+    
+    if (mListener) {
+      mListener->OnProcessUnexpectedShutdown(this);
+    }
+  }
+
+  
+  GPUChild::Destroy(Move(mGPUChild));
+  MOZ_ASSERT(!mGPUChild);
+
+  
+  
+  
+  
+  if (mShutdownRequested) {
+    DestroyProcess();
+  }
+}
+
+void
+GPUProcessHost::KillHard(const char* aReason)
+{
+  ProcessHandle handle = GetChildProcessHandle();
+  if (!base::KillProcess(handle, base::PROCESS_END_KILLED_BY_USER, false)) {
+    NS_WARNING("failed to kill subprocess!");
+  }
+
+  SetAlreadyDead();
+  XRE_GetIOMessageLoop()->PostTask(
+    NewRunnableFunction(&ProcessWatcher::EnsureProcessTerminated, handle, true));
 }
 
 void
