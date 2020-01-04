@@ -18,12 +18,9 @@
 
 
 
-
-
 nsresult
 net_NewTransportEventSinkProxy(nsITransportEventSink **aResult,
                                nsITransportEventSink *aSink,
-                               nsIEventTarget *aTarget,
-                               bool aCoalesceAllEvents = false);
+                               nsIEventTarget *aTarget);
 
 #endif 

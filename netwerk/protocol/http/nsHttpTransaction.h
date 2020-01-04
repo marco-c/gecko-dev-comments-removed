@@ -300,6 +300,7 @@ private:
     bool                            mReuseOnRestart;
     bool                            mContentDecoding;
     bool                            mContentDecodingCheck;
+    bool                            mDeferredSendProgress;
 
     
     

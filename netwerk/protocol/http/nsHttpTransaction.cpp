@@ -130,6 +130,7 @@ nsHttpTransaction::nsHttpTransaction()
     , mReuseOnRestart(false)
     , mContentDecoding(false)
     , mContentDecodingCheck(false)
+    , mDeferredSendProgress(false)
     , mReportedStart(false)
     , mReportedResponseHeader(false)
     , mForTakeResponseHead(nullptr)
@@ -275,11 +276,9 @@ nsHttpTransaction::Init(uint32_t caps,
 
     
     
-    
-    
     rv = net_NewTransportEventSinkProxy(getter_AddRefs(mTransportSink),
-                                        eventsink, target,
-                                        !activityDistributorActive);
+                                        eventsink, target);
+
     if (NS_FAILED(rv)) return rv;
 
     mConnInfo = cinfo;
@@ -347,9 +346,17 @@ nsHttpTransaction::Init(uint32_t caps,
                                mReqHeaderBuf.Length());
     if (NS_FAILED(rv)) return rv;
 
-    if (requestBody) {
-        mHasRequestBody = true;
+    mHasRequestBody = !!requestBody;
+    if (mHasRequestBody) {
+        
+        
+        uint64_t size;
+        if (NS_SUCCEEDED(requestBody->Available(&size)) && !size) {
+            mHasRequestBody = false;
+        }
+    }
 
+    if (mHasRequestBody) {
         
         nsCOMPtr<nsIMultiplexInputStream> multi =
             do_CreateInstance(kMultiplexInputStream, &rv);
@@ -585,6 +592,15 @@ nsHttpTransaction::OnTransportStatus(nsITransport* transport,
             return;
         }
 
+        if (mReader) {
+            
+            LOG(("nsHttpTransaction::OnSocketStatus [this=%p] "
+                 "Skipping Re-Entrant NS_NET_STATUS_SENDING_TO\n", this));
+            
+            mDeferredSendProgress = true;
+            return;
+        }
+
         nsCOMPtr<nsISeekableStream> seekable = do_QueryInterface(mRequestStream);
         if (!seekable) {
             LOG(("nsHttpTransaction::OnTransportStatus %p "
@@ -680,11 +696,18 @@ nsHttpTransaction::ReadSegments(nsAHttpSegmentReader *reader,
         mConnection->GetSecurityInfo(getter_AddRefs(mSecurityInfo));
     }
 
+    mDeferredSendProgress = false;
     mReader = reader;
-
     nsresult rv = mRequestStream->ReadSegments(ReadRequestSegment, this, count, countRead);
-
     mReader = nullptr;
+
+    if (mDeferredSendProgress && mConnection && mConnection->Transport()) {
+        
+        
+        
+        OnTransportStatus(mConnection->Transport(), NS_NET_STATUS_SENDING_TO, 0);
+    }
+    mDeferredSendProgress = false;
 
     if (mForceRestart) {
         
