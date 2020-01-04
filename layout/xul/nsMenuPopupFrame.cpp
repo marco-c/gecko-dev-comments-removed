@@ -1414,7 +1414,11 @@ nsMenuPopupFrame::SetPopupPosition(nsIFrame* aAnchorFrame, bool aIsMove, bool aS
                        margin.top + offsetForContextMenu.y);
 
     
+#ifdef XP_MACOSX
+    hFlip = FlipStyle_Outside;
+#else
     vFlip = FlipStyle_Outside;
+#endif 
   }
 
   
