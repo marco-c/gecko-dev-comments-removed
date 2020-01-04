@@ -121,6 +121,12 @@ struct MaiAtkObject
   void FireTextChangeEvent(const nsString& aStr, int32_t aStart, uint32_t aLen,
                            bool aIsInsert, bool aIsFromUser);
 
+  
+
+
+
+  void FireAtkShowHideEvent(AtkObject* aParent, bool aIsAdded, bool aFromUser);
+
 private:
   
 
