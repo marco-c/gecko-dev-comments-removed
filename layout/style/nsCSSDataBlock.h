@@ -14,7 +14,7 @@
 
 #include "mozilla/MemoryReporting.h"
 #include "nsCSSProps.h"
-#include "nsCSSPropertySet.h"
+#include "nsCSSPropertyIDSet.h"
 #include "nsCSSValue.h"
 #include "nsStyleStruct.h"
 #include "imgRequestProxy.h"
@@ -316,11 +316,11 @@ private:
 
 
 
-  nsCSSPropertySet mPropertiesSet;
+  nsCSSPropertyIDSet mPropertiesSet;
   
 
 
-  nsCSSPropertySet mPropertiesImportant;
+  nsCSSPropertyIDSet mPropertiesImportant;
 
   
 

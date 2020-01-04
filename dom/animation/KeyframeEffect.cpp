@@ -16,7 +16,7 @@
 #include "Layers.h" 
 #include "nsComputedDOMStyle.h" 
 #include "nsContentUtils.h"  
-#include "nsCSSPropertySet.h"
+#include "nsCSSPropertyIDSet.h"
 #include "nsCSSProps.h" 
 #include "nsCSSPseudoElements.h" 
 #include "nsDOMMutationObserver.h" 
@@ -575,8 +575,8 @@ KeyframeEffectReadOnly::UpdateProperties(nsStyleContext* aStyleContext)
   }
 
   
-  nsCSSPropertySet winningInCascadeProperties;
-  nsCSSPropertySet runningOnCompositorProperties;
+  nsCSSPropertyIDSet winningInCascadeProperties;
+  nsCSSPropertyIDSet runningOnCompositorProperties;
 
   for (const AnimationProperty& property : mProperties) {
     if (property.mWinsInCascade) {
@@ -611,7 +611,7 @@ KeyframeEffectReadOnly::UpdateProperties(nsStyleContext* aStyleContext)
 
 void
 KeyframeEffectReadOnly::ComposeStyle(RefPtr<AnimValuesStyleRule>& aStyleRule,
-                                     nsCSSPropertySet& aSetProperties)
+                                     nsCSSPropertyIDSet& aSetProperties)
 {
   ComputedTiming computedTiming = GetComputedTiming();
   mProgressOnLastCompose = computedTiming.mProgress;

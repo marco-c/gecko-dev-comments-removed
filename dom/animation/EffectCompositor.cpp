@@ -18,7 +18,7 @@
 #include "mozilla/RestyleManagerHandle.h"
 #include "mozilla/RestyleManagerHandleInlines.h"
 #include "nsComputedDOMStyle.h" 
-#include "nsCSSPropertySet.h"
+#include "nsCSSPropertyIDSet.h"
 #include "nsCSSProps.h"
 #include "nsIPresShell.h"
 #include "nsLayoutUtils.h"
@@ -598,7 +598,7 @@ EffectCompositor::ComposeAnimationRule(dom::Element* aElement,
   
   
   
-  nsCSSPropertySet properties;
+  nsCSSPropertyIDSet properties;
 
   for (KeyframeEffectReadOnly* effect : Reversed(sortedEffectList)) {
     effect->GetAnimation()->ComposeStyle(animationRule, properties);
@@ -613,12 +613,12 @@ EffectCompositor::ComposeAnimationRule(dom::Element* aElement,
  void
 EffectCompositor::GetOverriddenProperties(nsStyleContext* aStyleContext,
                                           EffectSet& aEffectSet,
-                                          nsCSSPropertySet&
+                                          nsCSSPropertyIDSet&
                                             aPropertiesOverridden)
 {
   AutoTArray<nsCSSPropertyID, LayerAnimationInfo::kRecords> propertiesToTrack;
   {
-    nsCSSPropertySet propertiesToTrackAsSet;
+    nsCSSPropertyIDSet propertiesToTrackAsSet;
     for (KeyframeEffectReadOnly* effect : aEffectSet) {
       for (const AnimationProperty& property : effect->Properties()) {
         if (nsCSSProps::PropHasFlags(property.mProperty,
@@ -670,13 +670,13 @@ EffectCompositor::UpdateCascadeResults(EffectSet& aEffectSet,
   
   
   
-  nsCSSPropertySet overriddenProperties;
+  nsCSSPropertyIDSet overriddenProperties;
   if (aStyleContext) {
     GetOverriddenProperties(aStyleContext, aEffectSet, overriddenProperties);
   }
 
   bool changed = false;
-  nsCSSPropertySet animatedProperties;
+  nsCSSPropertyIDSet animatedProperties;
 
   
   for (KeyframeEffectReadOnly* effect : Reversed(sortedEffectList)) {
