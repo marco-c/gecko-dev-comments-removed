@@ -11,6 +11,7 @@
 
 #include "nsAttrAndChildArray.h"
 
+#include "mozilla/CheckedInt.h"
 #include "mozilla/MathAlgorithms.h"
 #include "mozilla/MemoryReporting.h"
 
@@ -22,6 +23,8 @@
 #include "nsUnicharUtils.h"
 #include "nsAutoPtr.h"
 #include "nsContentUtils.h" 
+
+using mozilla::CheckedUint32;
 
 
 
