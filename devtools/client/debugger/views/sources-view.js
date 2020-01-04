@@ -20,6 +20,7 @@ function SourcesView(DebuggerController, DebuggerView) {
   this.Breakpoints = DebuggerController.Breakpoints;
   this.SourceScripts = DebuggerController.SourceScripts;
   this.DebuggerView = DebuggerView;
+  this.Parser = DebuggerController.Parser;
 
   this.togglePrettyPrint = this.togglePrettyPrint.bind(this);
   this.toggleBlackBoxing = this.toggleBlackBoxing.bind(this);
@@ -28,6 +29,7 @@ function SourcesView(DebuggerController, DebuggerView) {
   this._onEditorLoad = this._onEditorLoad.bind(this);
   this._onEditorUnload = this._onEditorUnload.bind(this);
   this._onEditorCursorActivity = this._onEditorCursorActivity.bind(this);
+  this._onMouseDown = this._onMouseDown.bind(this);
   this._onSourceSelect = this._onSourceSelect.bind(this);
   this._onStopBlackBoxing = this._onStopBlackBoxing.bind(this);
   this._onBreakpointRemoved = this._onBreakpointRemoved.bind(this);
@@ -69,9 +71,15 @@ SourcesView.prototype = Heritage.extend(WidgetMethods, {
     this._newTabMenuItem = document.getElementById("debugger-sources-context-newtab");
     this._copyUrlMenuItem = document.getElementById("debugger-sources-context-copyurl");
 
+    this._noResultsFoundToolTip = new Tooltip(document);
+    this._noResultsFoundToolTip.defaultPosition = FUNCTION_SEARCH_POPUP_POSITION;
+
     if (Prefs.prettyPrintEnabled) {
       this._prettyPrintButton.removeAttribute("hidden");
     }
+
+    this._editorContainer = document.getElementById("editor");
+    this._editorContainer.addEventListener("mousedown", this._onMouseDown, false);
 
     window.on(EVENTS.EDITOR_LOADED, this._onEditorLoad, false);
     window.on(EVENTS.EDITOR_UNLOADED, this._onEditorUnload, false);
@@ -968,6 +976,81 @@ SourcesView.prototype = Heritage.extend(WidgetMethods, {
     aEditor.off("cursorActivity", this._onEditorCursorActivity);
   },
 
+  _onMouseDown: function(e) {
+    this.hideNoResultsTooltip();
+
+    if (!e.metaKey) {
+      return;
+    }
+
+    let editor = this.DebuggerView.editor;
+    let identifier = this._findIdentifier(e.clientX, e.clientY);
+
+    if (!identifier) {
+        return;
+    }
+
+    let foundDefinitions = this._getFunctionDefinitions(identifier);
+
+    if (!foundDefinitions || !foundDefinitions.definitions) {
+      return;
+    }
+
+    this._showFunctionDefinitionResults(identifier, foundDefinitions.definitions, editor);
+  },
+
+  
+
+
+
+  _findDefinition: function(parsedSource, aName) {
+    let functionDefinitions = parsedSource.getNamedFunctionDefinitions(aName);
+
+    let resultList = [];
+
+    if (!functionDefinitions || !functionDefinitions.length || !functionDefinitions[0].length) {
+      return {
+        definitions: resultList
+      };
+    }
+
+    
+    
+    for (let i=0; i<functionDefinitions.length; i++) {
+      let functionDefinition = {
+        source: functionDefinitions[i].sourceUrl,
+        startLine: functionDefinitions[i][0].functionLocation.start.line,
+        startColumn: functionDefinitions[i][0].functionLocation.start.column,
+        name: functionDefinitions[i][0].functionName
+      }
+
+      resultList.push(functionDefinition)
+    }
+
+    return {
+     definitions: resultList
+    };
+  },
+
+  
+
+
+
+
+
+
+  _findIdentifier: function(x, y) {
+    let parsedSource = SourceUtils.parseSource(this.DebuggerView, this.Parser);
+    let identifierInfo = SourceUtils.findIdentifier(this.DebuggerView.editor, parsedSource, x, y);
+
+    
+    if (!identifierInfo) {
+        return;
+    }
+
+    return identifierInfo;
+  },
+
   
 
 
@@ -984,6 +1067,60 @@ SourcesView.prototype = Heritage.extend(WidgetMethods, {
     } else {
       this.unhighlightBreakpoint();
     }
+  },
+
+  
+
+
+
+  _showFunctionDefinitionResults: function(aHoveredFunction, aDefinitionList, aEditor) {
+    let definitions = aDefinitionList;
+    let hoveredFunction = aHoveredFunction;
+
+    
+    if (definitions.length == 0) {
+      this._noResultsFoundToolTip.setTextContent({
+          messages: [L10N.getStr("noMatchingStringsText")]
+      });
+
+      this._markedIdentifier = aEditor.markText(
+        { line: hoveredFunction.location.start.line - 1, ch: hoveredFunction.location.start.column },
+        { line: hoveredFunction.location.end.line - 1, ch: hoveredFunction.location.end.column });
+
+      this._noResultsFoundToolTip.show(this._markedIdentifier.anchor);
+
+    } else if(definitions.length == 1) {
+      this.DebuggerView.setEditorLocation(definitions[0].source, definitions[0].startLine);
+    } else {
+      
+      this.DebuggerView.setEditorLocation(definitions[0].source, definitions[0].startLine);
+    }
+},
+
+  
+
+
+  hideNoResultsTooltip: function() {
+    this._noResultsFoundToolTip.hide();
+    if (this._markedIdentifier) {
+      this._markedIdentifier.clear();
+      this._markedIdentifier = null;
+    }
+  },
+
+  
+
+
+  _getFunctionDefinitions: function(aIdentifierInfo) {
+    let parsedSource = SourceUtils.parseSource(this.DebuggerView, this.Parser);
+    let definition_info = this._findDefinition(parsedSource, aIdentifierInfo.name);
+
+    
+    if (!definition_info) {
+      return;
+    }
+
+    return definition_info;
   },
 
   
@@ -1291,7 +1428,9 @@ SourcesView.prototype = Heritage.extend(WidgetMethods, {
   _cbPanel: null,
   _cbTextbox: null,
   _selectedBreakpointItem: null,
-  _conditionalPopupVisible: false
+  _conditionalPopupVisible: false,
+  _noResultsFoundToolTip: null,
+  _markedIdentifier: null
 });
 
 DebuggerView.Sources = new SourcesView(DebuggerController, DebuggerView);
