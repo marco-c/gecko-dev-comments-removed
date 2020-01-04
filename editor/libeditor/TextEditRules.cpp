@@ -491,8 +491,8 @@ GetTextNode(Selection* selection,
     
     NS_ENSURE_TRUE(node, nullptr);
     
-    NodeFilterHolder filter;
-    RefPtr<NodeIterator> iter = new NodeIterator(node, nsIDOMNodeFilter::SHOW_TEXT, filter);
+    RefPtr<NodeIterator> iter =
+      new NodeIterator(node, nsIDOMNodeFilter::SHOW_TEXT, NodeFilterHolder());
     while (!editor->IsTextNode(selNode)) {
       if (NS_FAILED(res = iter->NextNode(getter_AddRefs(selNode))) || !selNode) {
         return nullptr;
