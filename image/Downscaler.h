@@ -83,6 +83,9 @@ public:
   uint8_t* RowBuffer() { return mRowBuffer.get(); }
 
   
+  void ClearRow(uint32_t aStartingAtCol = 0);
+
+  
   void CommitRow();
 
   
@@ -150,6 +153,7 @@ public:
   }
 
   uint8_t* RowBuffer() { return nullptr; }
+  void ClearRow(uint32_t = 0);
   void CommitRow() { }
   bool HasInvalidation() const { return false; }
   DownscalerInvalidRect TakeInvalidRect() { return DownscalerInvalidRect(); }
