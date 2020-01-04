@@ -458,7 +458,7 @@ private:
     , mLineOrPageDeltaX(0)
     , mLineOrPageDeltaY(0)
     , mScrollType(SCROLL_DEFAULT)
-    , overflowDeltaX(0.0)
+    , mOverflowDeltaX(0.0)
     , overflowDeltaY(0.0)
     , mViewPortIsOverscrolled(false)
     , mCanTriggerSwipe(false)
@@ -482,7 +482,7 @@ public:
     , mLineOrPageDeltaX(0)
     , mLineOrPageDeltaY(0)
     , mScrollType(SCROLL_DEFAULT)
-    , overflowDeltaX(0.0)
+    , mOverflowDeltaX(0.0)
     , overflowDeltaY(0.0)
     , mViewPortIsOverscrolled(false)
     , mCanTriggerSwipe(false)
@@ -508,7 +508,7 @@ public:
   bool TriggersSwipe() const
   {
     return mCanTriggerSwipe && mViewPortIsOverscrolled &&
-           this->overflowDeltaX != 0.0;
+           this->mOverflowDeltaX != 0.0;
   }
 
   
@@ -588,7 +588,7 @@ public:
   
   
   
-  double overflowDeltaX;
+  double mOverflowDeltaX;
   double overflowDeltaY;
 
   
@@ -621,7 +621,7 @@ public:
     mLineOrPageDeltaX = aEvent.mLineOrPageDeltaX;
     mLineOrPageDeltaY = aEvent.mLineOrPageDeltaY;
     mScrollType = aEvent.mScrollType;
-    overflowDeltaX = aEvent.overflowDeltaX;
+    mOverflowDeltaX = aEvent.mOverflowDeltaX;
     overflowDeltaY = aEvent.overflowDeltaY;
     mViewPortIsOverscrolled = aEvent.mViewPortIsOverscrolled;
     mCanTriggerSwipe = aEvent.mCanTriggerSwipe;
