@@ -31,14 +31,10 @@ loop.store.StandaloneAppStore = (function() {
     if (!options.sdk) {
       throw new Error("Missing option sdk");
     }
-    if (!options.conversation) {
-      throw new Error("Missing option conversation");
-    }
 
     this._dispatcher = options.dispatcher;
     this._storeState = {};
     this._sdk = options.sdk;
-    this._conversation = options.conversation;
 
     this._dispatcher.register(this, [
       "extractTokenInfo"
@@ -131,10 +127,6 @@ loop.store.StandaloneAppStore = (function() {
         token = result[1];
       }
       
-
-      if (token) {
-        this._conversation.set({loopToken: token});
-      }
 
       this.setStoreState({
         windowType: windowType,

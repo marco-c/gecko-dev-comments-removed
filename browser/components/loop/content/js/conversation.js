@@ -135,9 +135,6 @@ loop.conversation = (function(mozL10n) {
     });
 
     
-    loop.conversation._sdkDriver = sdkDriver;
-
-    
     var conversationAppStore = new loop.store.ConversationAppStore({
       dispatcher: dispatcher,
       mozLoop: navigator.mozLoop
