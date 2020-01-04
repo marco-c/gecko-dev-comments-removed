@@ -567,6 +567,13 @@ addMessageListener("Browser:Thumbnail:GetOriginalURL", function (aMessage) {
 
 
 
+
+addMessageListener("Browser:CreateAboutBlank", function(aMessage) {
+  docShell.createAboutBlankContentViewer(aMessage.data);
+});
+
+
+
 var AddonsChild = RemoteAddonsChild.init(this);
 if (AddonsChild) {
   addEventListener("unload", () => {
