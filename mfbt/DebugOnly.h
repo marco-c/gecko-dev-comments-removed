@@ -33,6 +33,7 @@ namespace mozilla {
 
 
 
+
 template<typename T>
 class DebugOnly
 {
