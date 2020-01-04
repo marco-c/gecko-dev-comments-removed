@@ -223,8 +223,10 @@ NetworkResponseListener.prototype = {
     
     
     
+    
     let channel = this.request;
-    if (channel instanceof Ci.nsIEncodedChannel &&
+    if (!this.httpActivity.fromServiceWorker &&
+        channel instanceof Ci.nsIEncodedChannel &&
         channel.contentEncodings &&
         !channel.applyConversion) {
       let encodingHeader = channel.getResponseHeader("Content-Encoding");
@@ -860,6 +862,7 @@ NetworkMonitor.prototype = {
     event.startedDateTime = (timestamp ? new Date(Math.round(timestamp / 1000)) : new Date()).toISOString();
     event.fromCache = fromCache;
     event.fromServiceWorker = fromServiceWorker;
+    httpActivity.fromServiceWorker = fromServiceWorker;
 
     if (extraStringData) {
       event.headersSize = extraStringData.length;
