@@ -3008,7 +3008,7 @@ EventStateManager::PostHandleEvent(nsPresContext* aPresContext,
     
     
   }
-  case NS_POINTER_UP: {
+  case ePointerUp: {
     WidgetPointerEvent* pointerEvent = aEvent->AsPointerEvent();
     
     
@@ -4164,7 +4164,7 @@ EventStateManager::GenerateMouseEnterExit(WidgetMouseEvent* aMouseEvent)
       }
     }
     break;
-  case NS_POINTER_UP:
+  case ePointerUp:
     {
       
       nsCOMPtr<nsIContent> targetElement = GetEventTargetContent(aMouseEvent);

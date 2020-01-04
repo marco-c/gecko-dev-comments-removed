@@ -6358,7 +6358,7 @@ PresShell::UpdateActivePointerState(WidgetGUIEvent* aEvent)
                               new PointerInfo(true, pointerEvent->inputSource, pointerEvent->isPrimary));
     }
     break;
-  case NS_POINTER_UP:
+  case ePointerUp:
     
     if (WidgetPointerEvent* pointerEvent = aEvent->AsPointerEvent()) {
       if(pointerEvent->inputSource != nsIDOMMouseEvent::MOZ_SOURCE_TOUCH) {
@@ -6675,7 +6675,7 @@ DispatchPointerFromMouseOrTouch(PresShell* aShell,
       pointerMessage = NS_POINTER_MOVE;
       break;
     case eMouseUp:
-      pointerMessage = NS_POINTER_UP;
+      pointerMessage = ePointerUp;
       break;
     case eMouseDown:
       pointerMessage = ePointerDown;
@@ -6701,7 +6701,7 @@ DispatchPointerFromMouseOrTouch(PresShell* aShell,
       pointerMessage = NS_POINTER_MOVE;
       break;
     case NS_TOUCH_END:
-      pointerMessage = NS_POINTER_UP;
+      pointerMessage = ePointerUp;
       break;
     case NS_TOUCH_START:
       pointerMessage = ePointerDown;
@@ -7465,7 +7465,7 @@ PresShell::HandleEvent(nsIFrame* aFrame,
             frame = capturingFrame;
           }
 
-          if (pointerEvent->mMessage == NS_POINTER_UP ||
+          if (pointerEvent->mMessage == ePointerUp ||
               pointerEvent->mMessage == ePointerCancel) {
             
             
