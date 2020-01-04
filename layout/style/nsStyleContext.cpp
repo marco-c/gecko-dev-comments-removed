@@ -644,6 +644,24 @@ nsStyleContext::ApplyStyleFixups(bool aSkipParentDisplayBasedStyleFixup)
 
   
   
+  
+  
+  
+  if (mPseudoTag == nsCSSAnonBoxes::mozText && mParent &&
+      mParent->StyleVisibility()->mWritingMode !=
+        NS_STYLE_WRITING_MODE_HORIZONTAL_TB &&
+      mParent->StyleText()->mTextCombineUpright ==
+        NS_STYLE_TEXT_COMBINE_UPRIGHT_ALL) {
+    MOZ_ASSERT(!PeekStyleVisibility(), "If StyleVisibility was already "
+               "computed, some properties may have been computed "
+               "incorrectly based on the old writing mode value");
+    nsStyleVisibility* mutableVis = GET_UNIQUE_STYLE_DATA(Visibility);
+    mutableVis->mWritingMode = NS_STYLE_WRITING_MODE_HORIZONTAL_TB;
+    AddStyleBit(NS_STYLE_IS_TEXT_COMBINED);
+  }
+
+  
+  
   if (mParent && mParent->HasTextDecorationLines()) {
     mBits |= NS_STYLE_HAS_TEXT_DECORATION_LINES;
   } else {

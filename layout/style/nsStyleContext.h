@@ -211,6 +211,11 @@ public:
 
   
   
+  bool IsTextCombined() const
+    { return !!(mBits & NS_STYLE_IS_TEXT_COMBINED); }
+
+  
+  
   
   
   bool HasPseudoElementData() const
