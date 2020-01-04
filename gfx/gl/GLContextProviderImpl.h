@@ -39,8 +39,34 @@ public:
 
 
 
+
     static already_AddRefed<GLContext>
-    CreateForWindow(nsIWidget* widget, bool aForceAccelerated);
+    CreateForCompositorWidget(mozilla::widget::CompositorWidget* aCompositorWidget, bool aForceAccelerated);
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    static already_AddRefed<GLContext>
+    CreateForWindow(nsIWidget* aWidget, bool aForceAccelerated);
 
     
 
