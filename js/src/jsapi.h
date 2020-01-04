@@ -5042,7 +5042,7 @@ JS_SetDefaultLocale(JSContext* cx, const char* locale);
 
 
 extern JS_PUBLIC_API(JS::UniqueChars)
-JS_GetDefaultLocale(JSRuntime* rt);
+JS_GetDefaultLocale(JSContext* cx);
 
 
 
