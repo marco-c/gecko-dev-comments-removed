@@ -226,6 +226,12 @@ public:
   }
 
   
+  
+  
+  
+  void ChangeCompositor(Compositor* aNewCompositor);
+
+  
 
 
 
@@ -331,6 +337,8 @@ private:
                                bool aGrayscaleEffect,
                                bool aInvertEffect,
                                float aContrastEffect);
+
+  void ChangeCompositorInternal(Compositor* aNewCompositor);
 
   float mWarningLevel;
   mozilla::TimeStamp mWarnTime;
@@ -481,6 +489,9 @@ public:
   bool GetShadowTransformSetByAnimation() { return mShadowTransformSetByAnimation; }
   bool HasLayerBeenComposited() { return mLayerComposited; }
   gfx::IntRect GetClearRect() { return mClearRect; }
+
+  
+  bool HasStaleCompositor() const;
 
   
 

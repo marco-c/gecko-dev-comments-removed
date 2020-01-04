@@ -487,6 +487,9 @@ protected:
 
   nsIDocument* GetDocument() const;
 
+  
+  void OnRenderingDeviceReset();
+
 protected:
   
 

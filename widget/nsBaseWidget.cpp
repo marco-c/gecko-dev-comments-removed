@@ -62,6 +62,7 @@
 #include "TouchEvents.h"
 #include "WritingModes.h"
 #include "InputData.h"
+#include "FrameLayerBuilder.h"
 #ifdef ACCESSIBILITY
 #include "nsAccessibilityService.h"
 #endif
@@ -290,6 +291,47 @@ void nsBaseWidget::DestroyLayerManager()
     mLayerManager = nullptr;
   }
   DestroyCompositor();
+}
+
+void
+nsBaseWidget::OnRenderingDeviceReset()
+{
+  if (!mLayerManager || !mCompositorParent) {
+    return;
+  }
+
+  nsTArray<LayersBackend> backendHints;
+  gfxPlatform::GetPlatform()->GetCompositorBackends(ComputeShouldAccelerate(), backendHints);
+
+  
+  
+  
+  
+  
+  
+  RefPtr<ClientLayerManager> clm = mLayerManager->AsClientLayerManager();
+  if (!ComputeShouldAccelerate() &&
+      clm->GetTextureFactoryIdentifier().mParentBackend != LayersBackend::LAYERS_BASIC)
+  {
+    return;
+  }
+
+  
+  TextureFactoryIdentifier identifier;
+  if (!mCompositorParent->ResetCompositor(backendHints, &identifier)) {
+    
+    return;
+  }
+
+  
+  FrameLayerBuilder::InvalidateAllLayers(mLayerManager);
+
+  
+  clm->UpdateTextureFactoryIdentifier(identifier);
+  if (ShadowLayerForwarder* lf = clm->AsShadowForwarder()) {
+    lf->IdentifyTextureHost(identifier);
+  }
+  ImageBridgeChild::IdentifyCompositorTextureHost(identifier);
 }
 
 void

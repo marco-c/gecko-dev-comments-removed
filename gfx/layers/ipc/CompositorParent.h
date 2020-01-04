@@ -22,6 +22,7 @@
 #include "base/thread.h"                
 #include "mozilla/Assertions.h"         
 #include "mozilla/Attributes.h"         
+#include "mozilla/Maybe.h"
 #include "mozilla/Monitor.h"            
 #include "mozilla/RefPtr.h"             
 #include "mozilla/TimeStamp.h"          
@@ -282,6 +283,20 @@ public:
 
 
 
+
+
+
+
+  bool ResetCompositor(const nsTArray<LayersBackend>& aBackendHints,
+                       TextureFactoryIdentifier* aOutIdentifier);
+
+  
+
+
+
+
+
+
   void ForceIsFirstPaint();
   void Destroy();
 
@@ -502,6 +517,9 @@ protected:
   void Invalidate();
 
   RefPtr<Compositor> NewCompositor(const nsTArray<LayersBackend>& aBackendHints);
+  void ResetCompositorTask(const nsTArray<LayersBackend>& aBackendHints,
+                           Maybe<TextureFactoryIdentifier>* aOutNewIdentifier);
+  Maybe<TextureFactoryIdentifier> ResetCompositorImpl(const nsTArray<LayersBackend>& aBackendHints);
 
   
 
@@ -541,6 +559,7 @@ protected:
 
   mozilla::Monitor mPauseCompositionMonitor;
   mozilla::Monitor mResumeCompositionMonitor;
+  mozilla::Monitor mResetCompositorMonitor;
 
   uint64_t mCompositorID;
   const uint64_t mRootLayerTreeID;
