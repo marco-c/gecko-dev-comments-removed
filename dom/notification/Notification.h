@@ -97,16 +97,6 @@ public:
 
 
 
-
-
-
-
-
-
-
-
-
-
 class Notification : public DOMEventTargetHelper
 {
   friend class CloseNotificationRunnable;

@@ -409,6 +409,22 @@ public:
   }
 };
 
+class ReleaseNotificationRunnable final : public NotificationWorkerRunnable
+{
+  Notification* mNotification;
+public:
+  explicit ReleaseNotificationRunnable(Notification* aNotification)
+    : NotificationWorkerRunnable(aNotification->mWorkerPrivate)
+    , mNotification(aNotification)
+  {}
+
+  void
+  WorkerRunInternal(JSContext* aCx, WorkerPrivate* aWorkerPrivate) override
+  {
+    mNotification->ReleaseObject();
+  }
+};
+
 
 
 class NotificationRef final {
@@ -452,18 +468,31 @@ public:
   ~NotificationRef()
   {
     if (Initialized() && mNotification) {
-      if (mNotification->mWorkerPrivate && NS_IsMainThread()) {
-        nsRefPtr<ReleaseNotificationControlRunnable> r =
-          new ReleaseNotificationControlRunnable(mNotification);
-        AutoSafeJSContext cx;
-        if (!r->Dispatch(cx)) {
-          MOZ_CRASH("Will leak worker thread Notification!");
+      Notification* notification = mNotification;
+      mNotification = nullptr;
+      if (notification->mWorkerPrivate && NS_IsMainThread()) {
+        
+        
+        
+        
+        
+        
+        
+        
+        nsRefPtr<ReleaseNotificationRunnable> r =
+          new ReleaseNotificationRunnable(notification);
+
+        AutoJSAPI jsapi;
+        jsapi.Init();
+        if (!r->Dispatch(jsapi.cx())) {
+          nsRefPtr<ReleaseNotificationControlRunnable> r =
+            new ReleaseNotificationControlRunnable(notification);
+          MOZ_ALWAYS_TRUE(r->Dispatch(jsapi.cx()));
         }
       } else {
-        mNotification->AssertIsOnTargetThread();
-        mNotification->ReleaseObject();
+        notification->AssertIsOnTargetThread();
+        notification->ReleaseObject();
       }
-      mNotification = nullptr;
     }
   }
 
@@ -973,44 +1002,6 @@ protected:
     AssertIsOnMainThread();
 
     MOZ_ASSERT(mNotificationRef);
-    Notification* notification = mNotificationRef->GetNotification();
-    if (!notification) {
-      return;
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    class ReleaseNotificationRunnable final : public NotificationWorkerRunnable
-    {
-      UniquePtr<NotificationRef> mNotificationRef;
-    public:
-      explicit ReleaseNotificationRunnable(UniquePtr<NotificationRef> aRef)
-        : NotificationWorkerRunnable(aRef->GetNotification()->mWorkerPrivate)
-        , mNotificationRef(Move(aRef))
-      {}
-
-      void
-      WorkerRunInternal(JSContext* aCx, WorkerPrivate* aWorkerPrivate) override
-      {
-        UniquePtr<NotificationRef> ref;
-        mozilla::Swap(ref, mNotificationRef);
-        
-      }
-    };
-
-    nsRefPtr<ReleaseNotificationRunnable> r =
-      new ReleaseNotificationRunnable(Move(mNotificationRef));
-    notification = nullptr;
-
-    AutoJSAPI jsapi;
-    jsapi.Init();
-    r->Dispatch(jsapi.cx());
   }
 };
 
