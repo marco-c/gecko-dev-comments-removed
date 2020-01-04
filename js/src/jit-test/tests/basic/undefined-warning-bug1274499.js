@@ -1,0 +1,13 @@
+options("strict", "werror");
+
+var o = {};
+var failureCode = 0;
+
+try {
+    
+    if (o.a || o.b)
+        failureCode = 1;
+} catch (e) {
+    failureCode = 2
+}
+assertEq(failureCode, 0);
