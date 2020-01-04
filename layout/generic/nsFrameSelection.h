@@ -362,6 +362,7 @@ public:
 
 
 
+
   
   nsresult ScrollSelectionIntoView(SelectionType aType,
                                    SelectionRegion aRegion,
