@@ -38,8 +38,7 @@ var ActionBarHandler = {
     if (!this._selectionID && e.collapsed) {
       switch (e.reason) {
         case 'longpressonemptycontent':
-        
-          
+        case 'taponcaret':
           
           
           this._init();
