@@ -1242,7 +1242,8 @@ WebGLContext::DoReadPixelsAndConvert(const webgl::FormatInfo* srcFormat, GLint x
         MOZ_RELEASE_ASSERT(!IsWebGL2()); 
         MOZ_ASSERT(!mBoundPixelPackBuffer); 
 
-        const GLenum readType = LOCAL_GL_HALF_FLOAT_OES;
+        
+        const GLenum readType = LOCAL_GL_HALF_FLOAT;
 
         const char funcName[] = "readPixels";
         const auto readBytesPerPixel = webgl::BytesPerPixel({format, readType});
