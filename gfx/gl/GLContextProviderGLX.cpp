@@ -1130,96 +1130,75 @@ GLContextProviderGLX::CreateForWindow(nsIWidget *aWidget)
     return glContext.forget();
 }
 
-static bool
-ChooseConfig(GLXLibrary* glx, Display* display, int screen, const SurfaceCaps& minCaps,
-             ScopedXFree<GLXFBConfig>* const out_scopedConfigArr,
-             GLXFBConfig* const out_config, int* const out_visid)
+static already_AddRefed<GLContextGLX>
+CreateOffscreenPixmapContext(const IntSize& size)
 {
-    ScopedXFree<GLXFBConfig>& scopedConfigArr = *out_scopedConfigArr;
+    GLXLibrary& glx = sGLXLibrary;
+    if (!glx.EnsureInitialized()) {
+        return nullptr;
+    }
 
-    if (minCaps.antialias)
-        return false;
+    Display *display = DefaultXDisplay();
+    int xscreen = DefaultScreen(display);
 
     int attribs[] = {
         LOCAL_GLX_DRAWABLE_TYPE, LOCAL_GLX_PIXMAP_BIT,
         LOCAL_GLX_X_RENDERABLE, True,
-        LOCAL_GLX_RED_SIZE, 8,
-        LOCAL_GLX_GREEN_SIZE, 8,
-        LOCAL_GLX_BLUE_SIZE, 8,
-        LOCAL_GLX_ALPHA_SIZE, minCaps.alpha ? 8 : 0,
-        LOCAL_GLX_DEPTH_SIZE, minCaps.depth ? 16 : 0,
-        LOCAL_GLX_STENCIL_SIZE, minCaps.stencil ? 8 : 0,
         0
     };
-
     int numConfigs = 0;
-    scopedConfigArr = glx->xChooseFBConfig(display, screen, attribs, &numConfigs);
-    if (!scopedConfigArr || !numConfigs)
-        return false;
 
-    
-    
-    
-    
-    
-    
+    ScopedXFree<GLXFBConfig> cfgs;
+    cfgs = glx.xChooseFBConfig(display,
+                               xscreen,
+                               attribs,
+                               &numConfigs);
+    if (!cfgs) {
+        return nullptr;
+    }
 
-    
+    MOZ_ASSERT(numConfigs > 0,
+               "glXChooseFBConfig() failed to match our requested format and "
+               "violated its spec!");
+
+    int visid = None;
+    int chosenIndex = 0;
 
     for (int i = 0; i < numConfigs; ++i) {
-        GLXFBConfig curConfig = scopedConfigArr[i];
+        int dtype;
 
-        int visid;
-        if (glx->xGetFBConfigAttrib(display, curConfig, LOCAL_GLX_VISUAL_ID, &visid)
-            != Success)
+        if (glx.xGetFBConfigAttrib(display, cfgs[i], LOCAL_GLX_DRAWABLE_TYPE, &dtype) != Success
+            || !(dtype & LOCAL_GLX_PIXMAP_BIT))
+        {
+            continue;
+        }
+        if (glx.xGetFBConfigAttrib(display, cfgs[i], LOCAL_GLX_VISUAL_ID, &visid) != Success
+            || visid == 0)
         {
             continue;
         }
 
-        if (!visid)
-            continue;
-
-        *out_config = curConfig;
-        *out_visid = visid;
-        return true;
+        chosenIndex = i;
+        break;
     }
 
-    return false;
-}
-
-static already_AddRefed<GLContextGLX>
-CreateOffscreenPixmapContext(const IntSize& size, const SurfaceCaps& minCaps)
-{
-    GLXLibrary* glx = &sGLXLibrary;
-    if (!glx->EnsureInitialized())
-        return nullptr;
-
-    Display* display = DefaultXDisplay();
-    int screen = DefaultScreen(display);
-
-    ScopedXFree<GLXFBConfig> scopedConfigArr;
-    GLXFBConfig config;
-    int visid;
-    if (!ChooseConfig(glx, display, screen, minCaps, &scopedConfigArr, &config, &visid)) {
-        NS_WARNING("Failed to find a compatible config.");
+    if (!visid) {
+        NS_WARNING("glXChooseFBConfig() didn't give us any configs with visuals!");
         return nullptr;
     }
 
-    Visual* visual;
+    Visual *visual;
     int depth;
     FindVisualAndDepth(display, visid, &visual, &depth);
-
     ScopedXErrorHandler xErrorHandler;
+    GLXPixmap glxpixmap = 0;
     bool error = false;
-    
-    Drawable drawable;
-    GLXPixmap pixmap;
 
-    gfx::IntSize dummySize(16, 16);
-    RefPtr<gfxXlibSurface> surface = gfxXlibSurface::Create(DefaultScreenOfDisplay(display),
-                                                            visual,
-                                                            dummySize);
-    if (surface->CairoStatus() != 0) {
+    IntSize dummySize(16, 16);
+    nsRefPtr<gfxXlibSurface> xsurface = gfxXlibSurface::Create(DefaultScreenOfDisplay(display),
+                                                               visual,
+                                                               dummySize);
+    if (xsurface->CairoStatus() != 0) {
         error = true;
         goto DONE_CREATING_PIXMAP;
     }
@@ -1227,60 +1206,73 @@ CreateOffscreenPixmapContext(const IntSize& size, const SurfaceCaps& minCaps)
     
     
     
-    drawable = surface->XDrawable();
-    if (glx->GLXVersionCheck(1, 3)) {
-        pixmap = glx->xCreatePixmap(display, config, drawable, nullptr);
+    if (glx.GLXVersionCheck(1, 3)) {
+        glxpixmap = glx.xCreatePixmap(display,
+                                          cfgs[chosenIndex],
+                                          xsurface->XDrawable(),
+                                          nullptr);
     } else {
-        pixmap = glx->xCreateGLXPixmapWithConfig(display, config, drawable);
+        glxpixmap = glx.xCreateGLXPixmapWithConfig(display,
+                                                       cfgs[chosenIndex],
+                                                       xsurface->
+                                                       XDrawable());
     }
-
-    if (pixmap == 0) {
+    if (glxpixmap == 0) {
         error = true;
     }
 
 DONE_CREATING_PIXMAP:
 
+    nsRefPtr<GLContextGLX> glContext;
     bool serverError = xErrorHandler.SyncAndGetError(display);
-    if (error || serverError)
-        return nullptr;
 
-    GLContextGLX* shareContext = GetGlobalContextGLX();
-    return GLContextGLX::CreateGLContext(minCaps, shareContext, true, display, pixmap,
-                                         config, true, surface);
+    if (!error && 
+        !serverError)
+    {
+        
+        SurfaceCaps dummyCaps = SurfaceCaps::Any();
+        GLContextGLX* shareContext = GetGlobalContextGLX();
+
+        glContext = GLContextGLX::CreateGLContext(dummyCaps,
+                                                  shareContext,
+                                                  true,
+                                                  display,
+                                                  glxpixmap,
+                                                  cfgs[chosenIndex],
+                                                  true,
+                                                  xsurface);
+    }
+
+    return glContext.forget();
 }
 
- already_AddRefed<GLContext>
+already_AddRefed<GLContext>
 GLContextProviderGLX::CreateHeadless(CreateContextFlags)
 {
     IntSize dummySize = IntSize(16, 16);
-    SurfaceCaps dummyCaps = SurfaceCaps::Any();
-    return CreateOffscreenPixmapContext(dummySize, dummyCaps);
+    nsRefPtr<GLContext> glContext = CreateOffscreenPixmapContext(dummySize);
+    if (!glContext)
+        return nullptr;
+
+    return glContext.forget();
 }
 
- already_AddRefed<GLContext>
+already_AddRefed<GLContext>
 GLContextProviderGLX::CreateOffscreen(const IntSize& size,
-                                      const SurfaceCaps& minCaps,
+                                      const SurfaceCaps& caps,
                                       CreateContextFlags flags)
 {
-    SurfaceCaps minBackbufferCaps = minCaps;
-    if (minCaps.antialias) {
-        minBackbufferCaps.antialias = false;
-        minBackbufferCaps.depth = false;
-        minBackbufferCaps.stencil = false;
-    }
-
-    RefPtr<GLContext> gl;
-    gl = CreateOffscreenPixmapContext(size, minBackbufferCaps);
-    if (!gl)
+    nsRefPtr<GLContext> glContext = CreateHeadless(flags);
+    if (!glContext)
         return nullptr;
 
-    if (!gl->InitOffscreen(size, minCaps))
+    if (!glContext->InitOffscreen(size, caps))
         return nullptr;
 
-    return gl.forget();
+    return glContext.forget();
 }
 
- GLContext*
+GLContext*
 GLContextProviderGLX::GetGlobalContext()
 {
     static bool checkedContextSharing = false;
@@ -1301,19 +1293,17 @@ GLContextProviderGLX::GetGlobalContext()
         triedToCreateContext = true;
 
         IntSize dummySize = IntSize(16, 16);
-        SurfaceCaps dummyCaps = SurfaceCaps::Any();
         
         
         
-        RefPtr<GLContext> holder;
-        holder = CreateOffscreenPixmapContext(dummySize, dummyCaps);
+        nsRefPtr<GLContext> holder = CreateOffscreenPixmapContext(dummySize);
         gGlobalContext = holder;
     }
 
     return gGlobalContext;
 }
 
- void
+void
 GLContextProviderGLX::Shutdown()
 {
     gGlobalContext = nullptr;
