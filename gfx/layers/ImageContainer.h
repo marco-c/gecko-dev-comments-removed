@@ -280,7 +280,7 @@ public:
   void RecycleBuffer(mozilla::UniquePtr<uint8_t[]> aBuffer, uint32_t aSize);
   
   mozilla::UniquePtr<uint8_t[]> GetBuffer(uint32_t aSize);
-
+  virtual void ClearRecycledBuffers();
 private:
   typedef mozilla::Mutex Mutex;
 
@@ -417,6 +417,12 @@ public:
 
 
   void ClearAllImages();
+
+  
+
+
+
+  void ClearCachedResources();
 
   
 
