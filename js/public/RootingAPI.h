@@ -586,6 +586,14 @@ namespace js {
 
 
 
+#ifdef XP_WIN
+# define JS_ALIGNAS(n) __declspec(align(n))
+#else
+# define JS_ALIGNAS(n) alignas(n)
+#endif
+
+
+
 
 
 
@@ -593,14 +601,14 @@ namespace js {
 
 
 template <typename T>
-class alignas(8) DispatchWrapper
+class JS_ALIGNAS(8) DispatchWrapper
 {
     static_assert(JS::MapTypeToRootKind<T>::kind == JS::RootKind::Traceable,
                   "DispatchWrapper is intended only for usage with a Traceable");
 
     using TraceFn = void (*)(JSTracer*, T*, const char*);
     TraceFn tracer;
-    alignas(gc::CellSize) T storage;
+    JS_ALIGNAS(gc::CellSize) T storage;
 
   public:
     template <typename U>
@@ -623,6 +631,8 @@ class alignas(8) DispatchWrapper
         wrapper->tracer(trc, &wrapper->storage, name);
     }
 };
+
+#undef JS_ALIGNAS
 
 } 
 
