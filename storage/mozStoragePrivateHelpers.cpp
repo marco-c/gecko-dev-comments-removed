@@ -94,6 +94,11 @@ checkAndLogStatementPerformance(sqlite3_stmt *aStatement)
   if (::strstr(sql, "/* do not warn (bug "))
     return;
 
+  
+  
+  if (::strstr(sql, "CREATE INDEX") || ::strstr(sql, "CREATE UNIQUE INDEX"))
+    return;
+
   nsAutoCString message("Suboptimal indexes for the SQL statement ");
 #ifdef MOZ_STORAGE_SORTWARNING_SQL_DUMP
   message.Append('`');
