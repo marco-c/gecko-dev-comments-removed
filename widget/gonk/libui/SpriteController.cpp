@@ -141,10 +141,9 @@ void SpriteController::doUpdateSprites() {
 
     
     bool surfaceChanged = false;
+#ifdef HAVE_ANDROID_OS
     for (size_t i = 0; i < numSprites; i++) {
         SpriteUpdate& update = updates.editItemAt(i);
-
-#ifdef HAVE_ANDROID_OS
         if (update.state.surfaceControl == NULL && update.state.wantSurfaceVisible()) {
             update.state.surfaceWidth = update.state.icon.bitmap.width();
             update.state.surfaceHeight = update.state.icon.bitmap.height();
@@ -156,15 +155,14 @@ void SpriteController::doUpdateSprites() {
                 update.surfaceChanged = surfaceChanged = true;
             }
         }
-#endif
     }
+#endif
 
     
+#ifdef HAVE_ANDROID_OS
     bool haveGlobalTransaction = false;
     for (size_t i = 0; i < numSprites; i++) {
         SpriteUpdate& update = updates.editItemAt(i);
-
-#ifdef HAVE_ANDROID_OS
         if (update.state.surfaceControl != NULL && update.state.wantSurfaceVisible()) {
             int32_t desiredWidth = update.state.icon.bitmap.width();
             int32_t desiredHeight = update.state.icon.bitmap.height();
@@ -197,8 +195,8 @@ void SpriteController::doUpdateSprites() {
                 }
             }
         }
-#endif
     }
+#endif
 #ifdef HAVE_ANDROID_OS
     if (haveGlobalTransaction) {
         SurfaceComposerClient::closeGlobalTransaction();
@@ -258,16 +256,15 @@ void SpriteController::doUpdateSprites() {
 #endif
     }
 
+#ifdef HAVE_ANDROID_OS
     
     bool haveTransaction = false;
     for (size_t i = 0; i < numSprites; i++) {
         SpriteUpdate& update = updates.editItemAt(i);
-
         bool wantSurfaceVisibleAndDrawn = update.state.wantSurfaceVisible()
                 && update.state.surfaceDrawn;
         bool becomingVisible = wantSurfaceVisibleAndDrawn && !update.state.surfaceVisible;
         bool becomingHidden = !wantSurfaceVisibleAndDrawn && update.state.surfaceVisible;
-#ifdef HAVE_ANDROID_OS
         if (update.state.surfaceControl != NULL && (becomingVisible || becomingHidden
                 || (wantSurfaceVisibleAndDrawn && (update.state.dirty & (DIRTY_ALPHA
                         | DIRTY_POSITION | DIRTY_TRANSFORMATION_MATRIX | DIRTY_LAYER
@@ -337,8 +334,8 @@ void SpriteController::doUpdateSprites() {
                 }
             }
         }
-#endif
     }
+#endif
 
 #ifdef HAVE_ANDROID_OS
     if (haveTransaction) {
@@ -346,6 +343,7 @@ void SpriteController::doUpdateSprites() {
     }
 #endif
 
+#ifdef HAVE_ANDROID_OS
     
     if (surfaceChanged) { 
         AutoMutex _l(mLock);
@@ -353,15 +351,14 @@ void SpriteController::doUpdateSprites() {
         for (size_t i = 0; i < numSprites; i++) {
             const SpriteUpdate& update = updates.itemAt(i);
 
-#ifdef HAVE_ANDROID_OS
             if (update.surfaceChanged) {
                 update.sprite->setSurfaceLocked(update.state.surfaceControl,
                         update.state.surfaceWidth, update.state.surfaceHeight,
                         update.state.surfaceDrawn, update.state.surfaceVisible);
             }
-#endif
         }
     } 
+#endif
 
     
     
