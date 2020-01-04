@@ -51,6 +51,8 @@ function promiseLoadEvent(browser, url, eventType="load") {
 
 const PENDING_VISIT_WAIT = 6000;
 
+const PENDING_VISIT_WAIT_LONG = 20000;
+
 
 var gVisitURLs = [];
 function visitObserver(subject, topic, data) {
@@ -89,7 +91,7 @@ add_task(function* () {
   
   gVisitURLs = [];
   yield promiseLoadEvent(gBrowser, "http://example.org/tests/robocop/robocop_blank_01.html");
-  yield sleep(PENDING_VISIT_WAIT);
+  yield sleep(PENDING_VISIT_WAIT_LONG);
 
   do_print("visit counts: " + gVisitURLs.length);
   ok(gVisitURLs.length == 1, "Simple visit makes 1 history item");
