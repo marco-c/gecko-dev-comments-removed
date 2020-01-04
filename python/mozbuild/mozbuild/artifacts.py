@@ -160,43 +160,58 @@ class MacArtifactJob(ArtifactJob):
             bundle_name = 'Nightly.app'
             source = mozpath.join(tempdir, bundle_name)
 
-            paths = [
-                'Contents/MacOS/crashreporter.app/Contents/MacOS/crashreporter',
-                'Contents/MacOS/firefox',
-                'Contents/MacOS/firefox-bin',
-                'Contents/MacOS/libfreebl3.dylib',
-                'Contents/MacOS/liblgpllibs.dylib',
+            
+            paths_no_keep_path = ('Contents/MacOS', [
+                'crashreporter.app/Contents/MacOS/crashreporter',
+                'firefox',
+                'firefox-bin',
+                'libfreebl3.dylib',
+                'liblgpllibs.dylib',
                 
-                'Contents/MacOS/libmozglue.dylib',
-                'Contents/MacOS/libnss3.dylib',
-                'Contents/MacOS/libnssckbi.dylib',
-                'Contents/MacOS/libnssdbm3.dylib',
-                'Contents/MacOS/libplugin_child_interpose.dylib',
-                
-                
-                'Contents/MacOS/libsoftokn3.dylib',
-                'Contents/MacOS/plugin-container.app/Contents/MacOS/plugin-container',
-                'Contents/MacOS/updater.app/Contents/MacOS/updater',
-                
-                'Contents/MacOS/XUL',
-                'Contents/Resources/browser/components/components.manifest',
-                'Contents/Resources/browser/components/libbrowsercomps.dylib',
-                'Contents/Resources/dependentlibs.list',
-                
-                'Contents/Resources/gmp-clearkey/0.1/libclearkey.dylib',
+                'libmozglue.dylib',
+                'libnss3.dylib',
+                'libnssckbi.dylib',
+                'libnssdbm3.dylib',
+                'libplugin_child_interpose.dylib',
                 
                 
-                'Contents/Resources/webapprt-stub',
-            ]
+                'libsoftokn3.dylib',
+                'plugin-container.app/Contents/MacOS/plugin-container',
+                'updater.app/Contents/MacOS/updater',
+                
+                'XUL',
+            ])
+
+            
+            paths_keep_path = ('Contents/Resources', [
+                'browser/components/libbrowsercomps.dylib',
+                'dependentlibs.list',
+                
+                'gmp-clearkey/0.1/libclearkey.dylib',
+                
+                
+                'webapprt-stub',
+            ])
 
             with JarWriter(file=processed_filename, optimize=False, compress_level=5) as writer:
-                finder = FileFinder(source)
+                root, paths = paths_no_keep_path
+                finder = FileFinder(mozpath.join(source, root))
                 for path in paths:
                     for p, f in finder.find(path):
                         self.log(logging.INFO, 'artifact',
                             {'path': path},
                             'Adding {path} to processed archive')
-                        writer.add(os.path.basename(p).encode('utf-8'), f, mode=os.stat(mozpath.join(source, p)).st_mode)
+                        writer.add(os.path.basename(p).encode('utf-8'), f, mode=os.stat(mozpath.join(finder.base, p)).st_mode)
+
+                root, paths = paths_keep_path
+                finder = FileFinder(mozpath.join(source, root))
+                for path in paths:
+                    for p, f in finder.find(path):
+                        self.log(logging.INFO, 'artifact',
+                            {'path': path},
+                            'Adding {path} to processed archive')
+                        writer.add(p.encode('utf-8'), f, mode=os.stat(mozpath.join(finder.base, p)).st_mode)
+
         finally:
             try:
                 shutil.rmtree(tempdir)
