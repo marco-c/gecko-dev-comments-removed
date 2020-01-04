@@ -14,9 +14,6 @@ const {interfaces: Ci, utils: Cu} = Components;
 Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
-XPCOMUtils.defineLazyModuleGetter(this, "BinarySearch",
-  "resource://gre/modules/BinarySearch.jsm");
-
 XPCOMUtils.defineLazyModuleGetter(this, "PlacesUtils",
   "resource://gre/modules/PlacesUtils.jsm");
 
@@ -140,14 +137,22 @@ Links.prototype = {
 
 
   init: function PlacesProvider_init() {
-    PlacesUtils.history.addObserver(this.historyObserver, true);
+    try {
+      PlacesUtils.history.addObserver(this.historyObserver, true);
+    } catch (e) {
+      Cu.reportError(e);
+    }
   },
 
   
 
 
-  destroy: function PlacesProvider_destroy() {
-    PlacesUtils.history.removeObserver(this.historyObserver);
+  uninit: function PlacesProvider_uninit() {
+    try {
+      PlacesUtils.history.removeObserver(this.historyObserver);
+    } catch (e) {
+      Cu.reportError(e);
+    }
   },
 
   

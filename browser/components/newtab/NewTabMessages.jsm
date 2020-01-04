@@ -7,12 +7,15 @@
 
 
 
+
 "use strict";
 
 const {utils: Cu} = Components;
 Cu.import("resource://gre/modules/Preferences.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
+XPCOMUtils.defineLazyModuleGetter(this, "PlacesProvider",
+                                  "resource:///modules/PlacesProvider.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "PreviewProvider",
                                   "resource:///modules/PreviewProvider.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "NewTabPrefsProvider",
@@ -27,15 +30,23 @@ const PREF_ENABLED = "browser.newtabpage.remote";
 
 
 const ACTIONS = {
+  inboundActions: [
+    "REQUEST_PREFS",
+    "REQUEST_THUMB",
+    "REQUEST_FRECENT",
+  ],
   prefs: {
     inPrefs: "REQUEST_PREFS",
     outPrefs: "RECEIVE_PREFS",
-    action_types: new Set(["REQUEST_PREFS"]),
   },
   preview: {
     inThumb: "REQUEST_THUMB",
     outThumb: "RECEIVE_THUMB",
-    action_types: new Set(["REQUEST_THUMB"]),
+  },
+  links: {
+    inFrecent: "REQUEST_FRECENT",
+    outFrecent: "RECEIVE_FRECENT",
+    outPlacesChange: "RECEIVE_PLACES_CHANGE",
   },
 };
 
@@ -45,22 +56,33 @@ let NewTabMessages = {
 
   
 
-  
-
-
-  handlePrefRequest(actionName, {target}) {
-    if (ACTIONS.prefs.inPrefs === actionName) {
-      let results = NewTabPrefsProvider.prefs.newtabPagePrefs;
-      NewTabWebChannel.send(ACTIONS.prefs.outPrefs, results, target);
+  handleContentRequest(actionName, {data, target}) {
+    switch (actionName) {
+      case ACTIONS.prefs.inPrefs:
+        
+        let results = NewTabPrefsProvider.prefs.newtabPagePrefs;
+        NewTabWebChannel.send(ACTIONS.prefs.outPrefs, results, target);
+        break;
+      case ACTIONS.preview.inThumb:
+        
+        PreviewProvider.getThumbnail(data).then(imgData => {
+          NewTabWebChannel.send(ACTIONS.preview.outThumb, {url: data, imgData}, target);
+        });
+        break;
+      case ACTIONS.links.inFrecent:
+        
+        PlacesProvider.links.getLinks().then(links => {
+          NewTabWebChannel.send(ACTIONS.links.outFrecent, links, target);
+        });
+        break;
     }
   },
 
-  handlePreviewRequest(actionName, {data, target}) {
-    if (ACTIONS.preview.inThumb === actionName) {
-      PreviewProvider.getThumbnail(data).then(imgData => {
-        NewTabWebChannel.send(ACTIONS.preview.outThumb, {url: data, imgData}, target);
-      });
-    }
+  
+
+
+  handlePlacesChange(type, data) {
+    NewTabWebChannel.broadcast(ACTIONS.links.outPlacesChange, {type, data});
   },
 
   
@@ -83,25 +105,29 @@ let NewTabMessages = {
   },
 
   init() {
-    this.handlePrefRequest = this.handlePrefRequest.bind(this);
-    this.handlePreviewRequest = this.handlePreviewRequest.bind(this);
-    this.handlePrefChange = this.handlePrefChange.bind(this);
+    this.handleContentRequest = this.handleContentRequest.bind(this);
     this._handleEnabledChange = this._handleEnabledChange.bind(this);
 
+    PlacesProvider.links.init();
     NewTabPrefsProvider.prefs.init();
     NewTabWebChannel.init();
 
     this._prefs.enabled = Preferences.get(PREF_ENABLED, false);
 
     if (this._prefs.enabled) {
-      NewTabWebChannel.on(ACTIONS.prefs.inPrefs, this.handlePrefRequest);
-      NewTabWebChannel.on(ACTIONS.preview.inThumb, this.handlePreviewRequest);
-
+      for (let action of ACTIONS.inboundActions) {
+        NewTabWebChannel.on(action, this.handleContentRequest);
+      }
       NewTabPrefsProvider.prefs.on(PREF_ENABLED, this._handleEnabledChange);
 
       for (let pref of NewTabPrefsProvider.newtabPagePrefSet) {
         NewTabPrefsProvider.prefs.on(pref, this.handlePrefChange);
       }
+
+      PlacesProvider.links.on("deleteURI", this.handlePlacesChange);
+      PlacesProvider.links.on("clearHistory", this.handlePlacesChange);
+      PlacesProvider.links.on("linkChanged", this.handlePlacesChange);
+      PlacesProvider.links.on("manyLinksChanged", this.handlePlacesChange);
     }
   },
 
@@ -111,13 +137,16 @@ let NewTabMessages = {
     if (this._prefs.enabled) {
       NewTabPrefsProvider.prefs.off(PREF_ENABLED, this._handleEnabledChange);
 
-      NewTabWebChannel.off(ACTIONS.prefs.inPrefs, this.handlePrefRequest);
-      NewTabWebChannel.off(ACTIONS.prefs.inThumb, this.handlePreviewRequest);
+      for (let action of ACTIONS.inboundActions) {
+        NewTabWebChannel.off(action, this.handleContentRequest);
+      }
+
       for (let pref of NewTabPrefsProvider.newtabPagePrefSet) {
         NewTabPrefsProvider.prefs.off(pref, this.handlePrefChange);
       }
     }
 
+    PlacesProvider.links.uninit();
     NewTabPrefsProvider.prefs.uninit();
     NewTabWebChannel.uninit();
   }
