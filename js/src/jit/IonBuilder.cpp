@@ -11110,7 +11110,7 @@ IonBuilder::jsop_getprop(PropertyName* name)
 
     
     trackOptimizationAttempt(TrackedStrategy::GetProp_SharedCache);
-    if (!getPropTrySharedStub(&emitted, obj) || emitted)
+    if (!getPropTrySharedStub(&emitted, obj, types) || emitted)
         return emitted;
 
     
@@ -12050,7 +12050,7 @@ IonBuilder::getPropTryCache(bool* emitted, MDefinition* obj, PropertyName* name,
 }
 
 bool
-IonBuilder::getPropTrySharedStub(bool* emitted, MDefinition* obj)
+IonBuilder::getPropTrySharedStub(bool* emitted, MDefinition* obj, TemporaryTypeSet* types)
 {
     MOZ_ASSERT(*emitted == false);
 
@@ -12065,6 +12065,15 @@ IonBuilder::getPropTrySharedStub(bool* emitted, MDefinition* obj)
 
     if (!resumeAfter(stub))
         return false;
+
+    
+    
+    
+    
+    if (*pc != JSOP_CALLPROP || !IsNullOrUndefined(obj->type())) {
+        if (!pushTypeBarrier(stub, types, BarrierKind::TypeSet))
+            return false;
+    }
 
     *emitted = true;
     return true;
