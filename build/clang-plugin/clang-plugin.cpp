@@ -1200,7 +1200,11 @@ void DiagnosticsMatcher::TrivialCtorDtorChecker::run(
       "class %0 must have trivial constructors and destructors");
   const CXXRecordDecl *node = Result.Nodes.getNodeAs<CXXRecordDecl>("node");
 
-  bool badCtor = !node->hasTrivialDefaultConstructor();
+  
+  
+  
+  bool badCtor = !(node->hasConstexprDefaultConstructor() ||
+                   node->hasTrivialDefaultConstructor());
   bool badDtor = !node->hasTrivialDestructor();
   if (badCtor || badDtor)
     Diag.Report(node->getLocStart(), errorID) << node;

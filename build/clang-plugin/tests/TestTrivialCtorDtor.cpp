@@ -5,6 +5,15 @@ struct MOZ_TRIVIAL_CTOR_DTOR EmptyClass{};
 template <class T>
 struct MOZ_TRIVIAL_CTOR_DTOR TemplateEmptyClass{};
 
+struct MOZ_TRIVIAL_CTOR_DTOR NonEmptyClass {
+  void *m;
+};
+
+template <class T>
+struct MOZ_TRIVIAL_CTOR_DTOR TemplateNonEmptyClass {
+  T* m;
+};
+
 struct MOZ_TRIVIAL_CTOR_DTOR BadUserDefinedCtor { 
   BadUserDefinedCtor() {}
 };
@@ -17,7 +26,7 @@ struct MOZ_TRIVIAL_CTOR_DTOR BadVirtualDtor {
   virtual ~BadVirtualDtor() {}
 };
 
-struct MOZ_TRIVIAL_CTOR_DTOR BadVirtualMember { 
+struct MOZ_TRIVIAL_CTOR_DTOR OkVirtualMember {
   virtual void f();
 };
 
@@ -53,6 +62,22 @@ struct MOZ_TRIVIAL_CTOR_DTOR BadNonTrivialDtorInMember {
   NonTrivialDtor m;
 };
 
-struct MOZ_TRIVIAL_CTOR_DTOR BadVirtualMemberInMember { 
+struct MOZ_TRIVIAL_CTOR_DTOR OkVirtualMemberInMember {
   VirtualMember m;
+};
+
+struct MOZ_TRIVIAL_CTOR_DTOR OkConstExprConstructor {
+  constexpr OkConstExprConstructor() {}
+};
+
+struct MOZ_TRIVIAL_CTOR_DTOR OkConstExprConstructorInMember {
+  OkConstExprConstructor m;
+};
+
+
+
+
+struct MOZ_TRIVIAL_CTOR_DTOR BadUnfortunateError { 
+  OkConstExprConstructor m;
+  void *n;
 };
