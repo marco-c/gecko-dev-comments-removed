@@ -5098,17 +5098,19 @@ MacroAssembler::reserveStack(uint32_t amount)
 
 
 
-void
+CodeOffsetLabel
 MacroAssembler::call(Register reg)
 {
     as_blx(reg);
+    return CodeOffsetLabel(currentOffset());
 }
 
-void
+CodeOffsetLabel
 MacroAssembler::call(Label* label)
 {
     
     as_bl(label, Always);
+    return CodeOffsetLabel(currentOffset());
 }
 
 void
@@ -5146,6 +5148,20 @@ MacroAssembler::call(JitCode* c)
     ScratchRegisterScope scratch(*this);
     ma_movPatchable(ImmPtr(c->raw()), scratch, Always, rs);
     callJitNoProfiler(scratch);
+}
+
+CodeOffsetLabel
+MacroAssembler::callWithPatch()
+{
+    
+    as_bl(BOffImm(), Always,  nullptr);
+    return CodeOffsetLabel(currentOffset());
+}
+void
+MacroAssembler::patchCall(uint32_t callerOffset, uint32_t calleeOffset)
+{
+    BufferOffset inst(callerOffset - 4);
+    as_bl(BufferOffset(calleeOffset).diffB<BOffImm>(inst), Always, inst);
 }
 
 void

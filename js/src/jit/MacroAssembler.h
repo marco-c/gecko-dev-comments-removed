@@ -476,9 +476,9 @@ class MacroAssembler : public MacroAssemblerSpecific
     
     
 
-    void call(Register reg) PER_SHARED_ARCH;
+    CodeOffsetLabel call(Register reg) PER_SHARED_ARCH;
+    CodeOffsetLabel call(Label* label) PER_SHARED_ARCH;
     void call(const Address& addr) DEFINED_ON(x86_shared);
-    void call(Label* label) PER_SHARED_ARCH;
     void call(ImmWord imm) PER_SHARED_ARCH;
     
     void call(ImmPtr imm) PER_SHARED_ARCH;
@@ -488,6 +488,10 @@ class MacroAssembler : public MacroAssemblerSpecific
 
     inline void call(const CallSiteDesc& desc, const Register reg);
     inline void call(const CallSiteDesc& desc, Label* label);
+    inline void call(const CallSiteDesc& desc, AsmJSInternalCallee callee);
+
+    CodeOffsetLabel callWithPatch() PER_SHARED_ARCH;
+    void patchCall(uint32_t callerOffset, uint32_t calleeOffset) PER_SHARED_ARCH;
 
     
     
