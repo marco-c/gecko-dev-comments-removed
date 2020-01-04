@@ -2102,6 +2102,11 @@ ContainerState::GetLayerCreationHint(AnimatedGeometryRoot* aAnimatedGeometryRoot
   
 
   
+  if (mParameters.mLayerCreationHint == LayerManager::SCROLLABLE) {
+    return LayerManager::SCROLLABLE;
+  }
+
+  
   
   for (AnimatedGeometryRoot* agr = aAnimatedGeometryRoot;
        agr != mContainerAnimatedGeometryRoot;
@@ -4012,6 +4017,7 @@ ContainerState::ProcessDisplayItems(nsDisplayList* aList)
 
       ContainerLayerParameters params = mParameters;
       params.mBackgroundColor = uniformColor;
+      params.mLayerCreationHint = GetLayerCreationHint(animatedGeometryRoot);
       params.mScrollClip = agrScrollClip;
       params.mScrollClipForPerspectiveChild = nullptr;
 
