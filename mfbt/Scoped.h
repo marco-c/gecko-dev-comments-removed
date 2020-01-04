@@ -42,17 +42,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
 #include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/GuardObjects.h"
@@ -217,22 +206,6 @@ private:                                                                      \
   explicit name(name&) = delete;                                              \
   name& operator=(name&) = delete;                                            \
 };
-
-
-
-
-
-
-
-
-template<typename T>
-struct ScopedFreePtrTraits
-{
-  typedef T* type;
-  static T* empty() { return nullptr; }
-  static void release(T* aPtr) { free(aPtr); }
-};
-SCOPED_TEMPLATE(ScopedFreePtr, ScopedFreePtrTraits)
 
 
 
