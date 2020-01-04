@@ -550,8 +550,7 @@ public:
 
 
   static nsIFrame* GetAnimatedGeometryRootFor(nsDisplayItem* aItem,
-                                              nsDisplayListBuilder* aBuilder,
-                                              mozilla::layers::LayerManager* aManager);
+                                              nsDisplayListBuilder* aBuilder);
 
   
 
