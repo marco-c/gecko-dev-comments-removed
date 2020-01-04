@@ -84,6 +84,13 @@ void AccumulateTimeDelta(ID id, TimeStamp start, TimeStamp end = TimeStamp::Now(
 
 
 
+void ClearHistogram(ID id);
+
+
+
+
+
+
 
 
 
