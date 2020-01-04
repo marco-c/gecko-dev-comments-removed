@@ -62,6 +62,7 @@ var AddonWatcher = {
 
 
   _latestWakeup: Date.now(),
+  _latestSnapshot: null,
 
   
 
@@ -168,7 +169,7 @@ var AddonWatcher = {
       return true;
     }
 
-    let diff = snapshot.processData.subtract(previousSnapshot.processData);
+    let diff = currentSnapshot.processData.subtract(previousSnapshot.processData);
     if (diff.totalCPUTime >= deltaT * THREAD_TAKES_LOTS_OF_CPU_FACTOR ) {
       
       
@@ -198,7 +199,7 @@ var AddonWatcher = {
 
     return Task.spawn(function*() {
       try {
-        let previousSnapshot = this._latestSnapshot; 
+        let previousSnapshot = this._latestSnapshot;
         let snapshot = this._latestSnapshot = yield this._monitor.promiseSnapshot();
         let isSystemTooBusy = this._isSystemTooBusy(currentWakeup - previousWakeup, snapshot, previousSnapshot);
 
@@ -242,7 +243,7 @@ var AddonWatcher = {
             
             
             
-            continue;
+            return;
           }
 
           
