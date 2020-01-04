@@ -4845,11 +4845,11 @@ pref("dom.netinfo.enabled", false);
 #ifdef XP_WIN
 
 
-pref("memory.low_virtual_memory_threshold_mb", 128);
+pref("memory.low_virtual_memory_threshold_mb", 256);
 
 
 
-pref("memory.low_commit_space_threshold_mb", 128);
+pref("memory.low_commit_space_threshold_mb", 256);
 
 
 
