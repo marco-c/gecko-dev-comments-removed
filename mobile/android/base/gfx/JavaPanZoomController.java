@@ -1045,14 +1045,11 @@ class JavaPanZoomController
 
         ZoomConstraints constraints = mTarget.getZoomConstraints();
 
-        if (constraints.getMinZoom() > 0)
+        if (constraints.getMinZoom() > 0 || !constraints.getAllowZoom()) {
             minZoomFactor = constraints.getMinZoom();
-        if (constraints.getMaxZoom() > 0)
+        }
+        if (constraints.getMaxZoom() > 0 || !constraints.getAllowZoom()) {
             maxZoomFactor = constraints.getMaxZoom();
-
-        if (!constraints.getAllowZoom()) {
-            
-            maxZoomFactor = minZoomFactor = constraints.getDefaultZoom();
         }
 
         
