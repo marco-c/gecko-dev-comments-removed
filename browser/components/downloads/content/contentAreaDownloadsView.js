@@ -11,5 +11,7 @@ var ContentAreaDownloadsView = {
     if (!PrivateBrowsingUtils.isContentWindowPrivate(window)) {
       view.place = "place:transition=7&sort=4";
     }
+    
+    document.getElementById("downloadsRichListBox").focus();
   },
 };
