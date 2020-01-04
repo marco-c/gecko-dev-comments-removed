@@ -188,6 +188,11 @@ private:
   nsresult StartGettingReports();
   nsresult FinishReporting();
 
+  void DispatchReporter(nsIMemoryReporter* aReporter, bool aIsAsync,
+                        nsIHandleReportCallback* aHandleReport,
+                        nsISupports* aHandleReportData,
+                        bool aAnonymize);
+
   static void TimeoutCallback(nsITimer* aTimer, void* aData);
   
   
@@ -205,6 +210,9 @@ private:
 
   uint32_t mNextGeneration;
 
+  
+  
+  
   struct PendingProcessesState
   {
     uint32_t                             mGeneration;
@@ -233,7 +241,36 @@ private:
   
   
   
+  struct PendingReportersState
+  {
+    
+    uint32_t mReportsPending;
+
+    
+    nsCOMPtr<nsIFinishReportingCallback> mFinishReporting;
+    nsCOMPtr<nsISupports> mFinishReportingData;
+
+    
+    FILE* mDMDFile;
+
+    PendingReportersState(nsIFinishReportingCallback* aFinishReporting,
+                        nsISupports* aFinishReportingData,
+                        FILE* aDMDFile)
+      : mReportsPending(0)
+      , mFinishReporting(aFinishReporting)
+      , mFinishReportingData(aFinishReportingData)
+      , mDMDFile(aDMDFile)
+    {
+    }
+  };
+
+  
+  
+  
   PendingProcessesState* mPendingProcessesState;
+
+  
+  PendingReportersState* mPendingReportersState;
 
   PendingProcessesState* GetStateForGeneration(uint32_t aGeneration);
   static bool StartChildReport(mozilla::dom::ContentParent* aChild,
