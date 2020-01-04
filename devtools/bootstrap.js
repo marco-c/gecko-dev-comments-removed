@@ -79,11 +79,59 @@ function reload(event) {
 
   
   const {devtools} = Cu.import("resource://devtools/shared/Loader.jsm", {});
-  devtools.reload(reloadToolbox);
+  devtools.reload();
 
   
-  const {gDevTools} = devtools.require("devtools/client/framework/devtools");
-  gDevTools.reload();
+  let windowsEnum = Services.wm.getEnumerator(null);
+  while (windowsEnum.hasMoreElements()) {
+    let window = windowsEnum.getNext();
+    let windowtype = window.document.documentElement.getAttribute("windowtype");
+    if (windowtype == "navigator:browser" && window.gBrowser) {
+      
+      for (let tab of window.gBrowser.tabs) {
+        let browser = tab.linkedBrowser;
+        let location = browser.documentURI.spec;
+        let mm = browser.messageManager;
+        
+        if (location.startsWith("about:debugging") ||
+            location.startsWith("chrome://devtools/")) {
+          browser.reload();
+        }
+        
+        mm.loadFrameScript("data:text/javascript,new " + function () {
+          let isJSONView = content.document.baseURI.startsWith("resource://devtools/");
+          if (isJSONView) {
+            content.location.reload();
+          }
+        }, false);
+      }
+    } else if (windowtype === "devtools:webide") {
+      window.location.reload();
+    } else if (windowtype === "devtools:webconsole") {
+      
+      
+      
+      let HUDService = devtools.require("devtools/client/webconsole/hudservice");
+      HUDService.toggleBrowserConsole()
+        .then(() => {
+          HUDService.toggleBrowserConsole();
+        });
+    }
+  }
+
+  if (reloadToolbox) {
+    
+    
+    
+    
+    let {setTimeout} = Cu.import("resource://gre/modules/Timer.jsm", {});
+    setTimeout(() => {
+      let { TargetFactory } = devtools.require("devtools/client/framework/target");
+      let { gDevTools } = devtools.require("devtools/client/framework/devtools");
+      let target = TargetFactory.forTab(top.gBrowser.selectedTab);
+      gDevTools.showToolbox(target);
+    }, 1000);
+  }
 }
 
 let listener;
