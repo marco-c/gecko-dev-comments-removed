@@ -2,6 +2,7 @@
 
 
 
+
 """output formats for Talos"""
 
 import filter
@@ -519,7 +520,7 @@ class PerfherderOutput(Output):
                         
                         if len(vals) > 0:
                             varray = [float(v) for v in vals]
-                            subtest['value'] = "%.2f" % filter.mean(varray)
+                            subtest['value'] = filter.mean(varray)
             if counter_subtests:
                 suites.append({'name': test.name(), 'subtests': counter_subtests})
         return test_results
