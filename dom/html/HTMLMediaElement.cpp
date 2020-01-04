@@ -1591,6 +1591,11 @@ HTMLMediaElement::Seek(double aTime,
 
   mPlayingBeforeSeek = IsPotentiallyPlaying();
   
+  if (mPlayingThroughTheAudioChannel) {
+    mPlayingThroughTheAudioChannelBeforeSeek = true;
+  }
+
+  
   
   LOG(LogLevel::Debug, ("%p SetCurrentTime(%f) starting seek", this, aTime));
   nsresult rv = mDecoder->Seek(aTime, aSeekType);
@@ -3545,10 +3550,6 @@ void HTMLMediaElement::PlaybackEnded()
 void HTMLMediaElement::SeekStarted()
 {
   DispatchAsyncEvent(NS_LITERAL_STRING("seeking"));
-  
-  if(mPlayingThroughTheAudioChannel) {
-    mPlayingThroughTheAudioChannelBeforeSeek = true;
-  }
 }
 
 void HTMLMediaElement::SeekCompleted()
