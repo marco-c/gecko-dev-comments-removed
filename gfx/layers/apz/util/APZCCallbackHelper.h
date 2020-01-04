@@ -141,6 +141,7 @@ public:
     
 
     static void SendSetAllowedTouchBehaviorNotification(nsIWidget* aWidget,
+                                                        nsIDocument* aDocument,
                                                         const WidgetTouchEvent& aEvent,
                                                         uint64_t aInputBlockId,
                                                         const SetAllowedTouchBehaviorCallback& aCallback);

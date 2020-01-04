@@ -8,6 +8,7 @@
 
 #include "mozilla/layers/APZUtils.h" 
 
+class nsIFrame;
 class nsIWidget;
 
 namespace mozilla {
@@ -31,6 +32,7 @@ public:
 
 
   static TouchBehaviorFlags GetAllowedTouchBehavior(nsIWidget* aWidget,
+                                                    nsIFrame* aRootFrame,
                                                     const LayoutDeviceIntPoint& aPoint);
 };
 
