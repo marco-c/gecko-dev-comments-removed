@@ -101,7 +101,8 @@ class TTest(object):
         
         test_results = results.TestResults(
             test_config,
-            global_counters
+            global_counters,
+            browser_config.get('framework')
         )
 
         for i in range(test_config['cycles']):
