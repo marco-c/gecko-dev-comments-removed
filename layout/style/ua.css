@@ -39,7 +39,8 @@
   page-break-inside: inherit;
   vertical-align: inherit; 
   line-height: inherit; 
-  align-self: inherit; 
+  align-self: inherit;
+  justify-self: inherit;
   order: inherit;   
   
   -moz-transform: inherit;
