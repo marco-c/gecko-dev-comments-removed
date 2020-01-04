@@ -66,6 +66,14 @@ JS_Init(void);
 
 
 
+extern JS_PUBLIC_API(const char*)
+JS_InitWithFailureDiagnostic(void);
+
+
+
+
+
+
 
 
 
