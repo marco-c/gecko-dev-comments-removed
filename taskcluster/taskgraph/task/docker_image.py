@@ -75,6 +75,7 @@ class DockerImageTask(base.Task):
             if os.environ.get('TASK_ID'):
                 
                 
+                
                 destination = os.path.join(
                     os.environ['HOME'],
                     "docker_image_contexts/{}/context.tar.gz".format(image_name))
