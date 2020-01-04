@@ -244,10 +244,8 @@ struct AnimationCollection : public LinkedListElement<AnimationCollection>
 
   enum CanAnimateFlags {
     
-    CanAnimate_HasGeometricProperty = 1,
     
-    
-    CanAnimate_AllowPartial = 2
+    CanAnimate_AllowPartial = 1
   };
 
   enum class RestyleType {
