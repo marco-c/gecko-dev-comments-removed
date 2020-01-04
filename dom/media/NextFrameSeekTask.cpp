@@ -247,19 +247,7 @@ void
 NextFrameSeekTask::MaybeFinishSeek()
 {
   AssertOwnerThread();
-
-  const bool audioSeekComplete = IsAudioSeekComplete();
-
-  const bool videoSeekComplete = IsVideoSeekComplete();
-  if (!videoSeekComplete) {
-    
-    EnsureVideoDecodeTaskQueued();
-  }
-
-  SAMPLE_LOG("CheckIfSeekComplete() audioSeekComplete=%d videoSeekComplete=%d",
-    audioSeekComplete, videoSeekComplete);
-
-  if (audioSeekComplete && videoSeekComplete) {
+  if (IsAudioSeekComplete() && IsVideoSeekComplete()) {
     UpdateSeekTargetTime();
     Resolve(__func__); 
   }
@@ -318,6 +306,11 @@ NextFrameSeekTask::OnVideoDecoded(MediaData* aVideoSample)
 
   if (aVideoSample->mTime > mCurrentTimeBeforeSeek) {
     mSeekedVideoData = aVideoSample;
+  }
+
+  if (NeedMoreVideo()) {
+    EnsureVideoDecodeTaskQueued();
+    return;
   }
 
   MaybeFinishSeek();
