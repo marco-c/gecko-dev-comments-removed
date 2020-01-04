@@ -207,7 +207,6 @@ public:
 
   
   void ComputeBlockAvailSpace(nsIFrame* aFrame,
-                              const nsStyleDisplay* aDisplay,
                               const nsFlowAreaRect& aFloatAvailableSpace,
                               bool aBlockAvoidsFloats,
                               mozilla::LogicalRect& aResult);
