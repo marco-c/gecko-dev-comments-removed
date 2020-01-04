@@ -14,6 +14,7 @@
 #include "mozilla/gfx/Rect.h"           
 #include "mozilla/gfx/ScaleFactor.h"    
 #include "mozilla/gfx/Logging.h"        
+#include "mozilla/StaticPtr.h"          
 #include "mozilla/TimeStamp.h"          
 #include "nsString.h"
 #include "nsStyleCoord.h"               
@@ -786,7 +787,7 @@ struct ScrollSnapInfo {
 struct ScrollMetadata {
   friend struct IPC::ParamTraits<mozilla::layers::ScrollMetadata>;
 public:
-  static const ScrollMetadata sNullMetadata;   
+  static StaticAutoPtr<const ScrollMetadata> sNullMetadata;   
 
   ScrollMetadata()
     : mMetrics()
