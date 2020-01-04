@@ -379,19 +379,18 @@ var gMainPane = {
       
 
       tabs = win.gBrowser.visibleTabs.slice(win.gBrowser._numPinnedTabs);
-      
       tabs = tabs.filter(this.isNotAboutPreferences);
     }
-    
+
     return tabs;
   },
-  
+
   
 
 
   isNotAboutPreferences: function (aElement, aIndex, aArray)
   {
-    return (aElement.linkedBrowser.currentURI.spec.startsWith != "about:preferences");
+    return !aElement.linkedBrowser.currentURI.spec.startsWith("about:preferences");
   },
 
   
