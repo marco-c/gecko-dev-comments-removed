@@ -35,7 +35,6 @@ class RegExpStatics
 
     
     RelocatablePtrString    pendingInput;
-    RegExpFlag              flags;
 
     
 
@@ -90,8 +89,6 @@ class RegExpStatics
     }
 
     JSString* getPendingInput() const { return pendingInput; }
-
-    RegExpFlag getFlags() const { return flags; }
 
     void mark(JSTracer* trc) {
         
@@ -382,7 +379,6 @@ RegExpStatics::clear()
     lazyIndex = size_t(-1);
     lazySticky = false;
     pendingInput = nullptr;
-    flags = RegExpFlag(0);
     pendingLazyEvaluation = false;
 }
 

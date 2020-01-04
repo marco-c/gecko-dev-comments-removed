@@ -920,27 +920,12 @@ js::CloneRegExpObject(JSContext* cx, JSObject* obj_)
 
     Rooted<JSAtom*> source(cx, regex->getSource());
 
-    
-    RegExpStatics* currentStatics = regex->getProto()->global().getRegExpStatics(cx);
-    if (!currentStatics)
+    RegExpGuard g(cx);
+    if (!regex->getShared(cx, &g))
         return nullptr;
 
-    RegExpFlag origFlags = regex->getFlags();
-    RegExpFlag staticsFlags = currentStatics->getFlags();
-    if ((origFlags & staticsFlags) != staticsFlags) {
-        
-        
-        clone->initAndZeroLastIndex(source, RegExpFlag(origFlags | staticsFlags), cx);
-    } else {
-        
-        
-        RegExpGuard g(cx);
-        if (!regex->getShared(cx, &g))
-            return nullptr;
-
-        clone->initAndZeroLastIndex(source, g->getFlags(), cx);
-        clone->setShared(*g.re());
-    }
+    clone->initAndZeroLastIndex(source, g->getFlags(), cx);
+    clone->setShared(*g.re());
 
     return clone;
 }
