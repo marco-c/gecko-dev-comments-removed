@@ -148,6 +148,7 @@ LayerManagerComposite::Destroy()
       RootLayer()->Destroy();
     }
     mRoot = nullptr;
+    mClonedLayerTreeProperties = nullptr;
     mDestroyed = true;
   }
 }
@@ -175,8 +176,6 @@ LayerManagerComposite::BeginTransaction()
   }
   
   mIsCompositorReady = true;
-
-  mClonedLayerTreeProperties = LayerProperties::CloneFrom(GetRoot());
 }
 
 void
@@ -282,40 +281,9 @@ LayerManagerComposite::EndTransaction(const TimeStamp& aTimeStamp,
   
   mCompositor->SetCompositionTime(aTimeStamp);
 
-  if (mRoot && mClonedLayerTreeProperties) {
-    MOZ_ASSERT(!mTarget);
-    nsIntRegion invalid =
-      mClonedLayerTreeProperties->ComputeDifferences(mRoot, nullptr, &mGeometryChanged);
-    mClonedLayerTreeProperties = nullptr;
-
-    mInvalidRegion.Or(mInvalidRegion, invalid);
-  } else if (!mTarget) {
-    mInvalidRegion.Or(mInvalidRegion, mRenderBounds);
-  }
-
-  if (mInvalidRegion.IsEmpty() && !mTarget) {
-    
-    return;
-  }
-
-  
-  
-  InvalidateDebugOverlay(mRenderBounds);
-
- if (mRoot && !(aFlags & END_NO_IMMEDIATE_REDRAW)) {
+  if (mRoot && !(aFlags & END_NO_IMMEDIATE_REDRAW)) {
     MOZ_ASSERT(!aTimeStamp.IsNull());
-    
-    
-    mRoot->ComputeEffectiveTransforms(gfx::Matrix4x4());
-
-    nsIntRegion opaque;
-    ApplyOcclusionCulling(mRoot, opaque);
-
-    Render();
-#if defined(MOZ_WIDGET_ANDROID) || defined(MOZ_WIDGET_GONK)
-    RenderToPresentationSurface();
-#endif
-    mGeometryChanged = false;
+    UpdateAndRender();
   } else {
     
     mGeometryChanged = true;
@@ -328,6 +296,70 @@ LayerManagerComposite::EndTransaction(const TimeStamp& aTimeStamp,
   Log();
   MOZ_LAYERS_LOG(("]----- EndTransaction"));
 #endif
+}
+
+void
+LayerManagerComposite::UpdateAndRender()
+{
+  nsIntRegion invalid;
+
+  if (mClonedLayerTreeProperties) {
+    
+    
+    
+    
+    nsIntRegion changed = mClonedLayerTreeProperties->ComputeDifferences(mRoot, nullptr, &mGeometryChanged);
+
+    if (mTarget) {
+      
+      
+      
+      
+      mInvalidRegion.Or(mInvalidRegion, changed);
+    } else {
+      invalid = Move(changed);
+    }
+  }
+
+  if (mTarget) {
+    invalid.Or(invalid, mTargetBounds);
+  } else {
+    
+    
+    if (!mClonedLayerTreeProperties) {
+      invalid.Or(invalid, mRenderBounds);
+    }
+
+    
+    
+    invalid.Or(invalid, mInvalidRegion);
+    mInvalidRegion.SetEmpty();
+  }
+
+  
+  mClonedLayerTreeProperties = LayerProperties::CloneFrom(GetRoot());
+
+  if (invalid.IsEmpty()) {
+    
+    return;
+  }
+
+  
+  
+  InvalidateDebugOverlay(mRenderBounds);
+
+  
+  
+  mRoot->ComputeEffectiveTransforms(gfx::Matrix4x4());
+
+  nsIntRegion opaque;
+  ApplyOcclusionCulling(mRoot, opaque);
+
+  Render(invalid);
+#if defined(MOZ_WIDGET_ANDROID) || defined(MOZ_WIDGET_GONK)
+  RenderToPresentationSurface();
+#endif
+  mGeometryChanged = false;
 }
 
 already_AddRefed<DrawTarget>
@@ -641,7 +673,7 @@ LayerManagerComposite::PopGroupForLayerEffects(RefPtr<CompositingRenderTarget> a
 }
 
 void
-LayerManagerComposite::Render()
+LayerManagerComposite::Render(const nsIntRegion& aInvalidRegion)
 {
   PROFILER_LABEL("LayerManagerComposite", "Render",
     js::ProfileEntry::Category::GRAPHICS);
@@ -701,8 +733,6 @@ LayerManagerComposite::Render()
       }
     }
     mCompositor->EndFrameForExternalComposition(Matrix());
-    
-    mInvalidRegion.SetEmpty();
     mLastFrameMissedHWC = false;
     return;
   } else if (!mTarget && !haveLayerEffects) {
@@ -718,15 +748,6 @@ LayerManagerComposite::Render()
     }
   }
 
-  nsIntRegion invalid;
-  if (mTarget) {
-    invalid = mTargetBounds;
-  } else {
-    invalid = mInvalidRegion;
-    
-    mInvalidRegion.SetEmpty();
-  }
-
   ParentLayerIntRect clipRect;
   Rect bounds(mRenderBounds.x, mRenderBounds.y, mRenderBounds.width, mRenderBounds.height);
   Rect actualBounds;
@@ -736,10 +757,10 @@ LayerManagerComposite::Render()
   if (mRoot->GetClipRect()) {
     clipRect = *mRoot->GetClipRect();
     Rect rect(clipRect.x, clipRect.y, clipRect.width, clipRect.height);
-    mCompositor->BeginFrame(invalid, &rect, bounds, nullptr, &actualBounds);
+    mCompositor->BeginFrame(aInvalidRegion, &rect, bounds, nullptr, &actualBounds);
   } else {
     gfx::Rect rect;
-    mCompositor->BeginFrame(invalid, nullptr, bounds, &rect, &actualBounds);
+    mCompositor->BeginFrame(aInvalidRegion, nullptr, bounds, &rect, &actualBounds);
     clipRect = ParentLayerIntRect(rect.x, rect.y, rect.width, rect.height);
   }
 

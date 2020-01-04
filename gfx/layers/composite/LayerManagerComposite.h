@@ -300,7 +300,12 @@ private:
   
 
 
-  void Render();
+  void UpdateAndRender();
+
+  
+
+
+  void Render(const nsIntRegion& aInvalidRegion);
 #if defined(MOZ_WIDGET_ANDROID) || defined(MOZ_WIDGET_GONK)
   void RenderToPresentationSurface();
 #endif
