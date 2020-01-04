@@ -152,6 +152,13 @@ struct nsXREAppData
 
 
 
+
+
+#define NS_XRE_DLL_BLOCKLIST_ENABLED (1 << 2)
+
+
+
+
 #define NS_XRE_ENABLE_CRASH_REPORTER (1 << 3)
 
 #endif 
