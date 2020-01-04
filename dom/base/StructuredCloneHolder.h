@@ -36,6 +36,8 @@ public:
   StructuredCloneHolderBase(StructuredCloneScope aScope = StructuredCloneScope::SameProcessSameThread);
   virtual ~StructuredCloneHolderBase();
 
+  StructuredCloneHolderBase(StructuredCloneHolderBase&& aOther) = default;
+
   
   
 
@@ -149,6 +151,8 @@ public:
                                  TransferringSupport aSupportsTransferring,
                                  StructuredCloneScope aStructuredCloneScope);
   virtual ~StructuredCloneHolder();
+
+  StructuredCloneHolder(StructuredCloneHolder&& aOther) = default;
 
   
 
