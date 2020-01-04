@@ -23,7 +23,6 @@ class nsStyleContext;
 
 struct nsRect;
 
-typedef nsContainerFrame nsSVGContainerFrameBase;
 
 
 
@@ -36,14 +35,13 @@ typedef nsContainerFrame nsSVGContainerFrameBase;
 
 
 
-
-class nsSVGContainerFrame : public nsSVGContainerFrameBase
+class nsSVGContainerFrame : public nsContainerFrame
 {
   friend nsIFrame* NS_NewSVGContainerFrame(nsIPresShell* aPresShell,
                                            nsStyleContext* aContext);
 protected:
   explicit nsSVGContainerFrame(nsStyleContext* aContext)
-    : nsSVGContainerFrameBase(aContext)
+    : nsContainerFrame(aContext)
   {
     AddStateBits(NS_FRAME_SVG_LAYOUT);
   }
@@ -80,7 +78,7 @@ public:
 
   virtual bool IsFrameOfType(uint32_t aFlags) const override
   {
-    return nsSVGContainerFrameBase::IsFrameOfType(
+    return nsContainerFrame::IsFrameOfType(
             aFlags & ~(nsIFrame::eSVG | nsIFrame::eSVGContainer));
   }
 
