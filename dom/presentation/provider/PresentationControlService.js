@@ -14,6 +14,8 @@ Cu.import("resource://gre/modules/Services.jsm");
 
 Cu.import("resource://gre/modules/NetUtil.jsm");
 
+Cu.import("resource://gre/modules/Timer.jsm");
+
 
 XPCOMUtils.defineLazyModuleGetter(this, "ControllerStateMachine", 
                                   "resource://gre/modules/presentation/ControllerStateMachine.jsm");
@@ -22,6 +24,7 @@ XPCOMUtils.defineLazyModuleGetter(this, "ReceiverStateMachine",
                                   "resource://gre/modules/presentation/ReceiverStateMachine.jsm");
 
 const kProtocolVersion = 1; 
+const kLocalCertName = "presentation";
 
 const DEBUG = Services.prefs.getBoolPref("dom.presentation.tcp_server.debug");
 function log(aMsg) {
@@ -49,7 +52,7 @@ PresentationControlService.prototype = {
 
   _controlChannels: [],
 
-  startServer: function(aPort) {
+  startServer: function(aEncrypted, aPort) {
     if (this._isServiceInit()) {
       DEBUG && log("PresentationControlService - server socket has been initialized");  
       throw Cr.NS_ERROR_FAILURE;
@@ -61,16 +64,48 @@ PresentationControlService.prototype = {
 
     let serverSocketPort = (typeof aPort !== "undefined" && aPort !== 0) ? aPort : -1;
 
-    this._serverSocket = Cc["@mozilla.org/network/server-socket;1"]
-                         .createInstance(Ci.nsIServerSocket);
+    if (aEncrypted) {
+      let self = this;
+      let localCertService = Cc["@mozilla.org/security/local-cert-service;1"]
+                               .getService(Ci.nsILocalCertService);
+      localCertService.getOrCreateCert(kLocalCertName, {
+        handleCert: function(aCert, aRv) {
+          DEBUG && log("PresentationControlService - handleCert");  
+          if (aRv) {
+            self._notifyServerStopped(aRv);
+          } else {
+            self._serverSocket = Cc["@mozilla.org/network/tls-server-socket;1"]
+                                   .createInstance(Ci.nsITLSServerSocket);
 
+            self._serverSocketInit(serverSocketPort, aCert);
+          }
+        }
+      });
+    } else {
+      this._serverSocket = Cc["@mozilla.org/network/server-socket;1"]
+                             .createInstance(Ci.nsIServerSocket);
+
+      this._serverSocketInit(serverSocketPort, null);
+    }
+  },
+
+  _serverSocketInit: function(aPort, aCert) {
     if (!this._serverSocket) {
       DEBUG && log("PresentationControlService - create server socket fail."); 
       throw Cr.NS_ERROR_FAILURE;
     }
 
     try {
-      this._serverSocket.init(serverSocketPort, false, -1);
+      this._serverSocket.init(aPort, false, -1);
+
+      if (aCert) {
+        this._serverSocket.serverCert = aCert;
+        this._serverSocket.setSessionCache(false);
+        this._serverSocket.setSessionTickets(false);
+        let requestCert = Ci.nsITLSServerSocket.REQUEST_NEVER;
+        this._serverSocket.setRequestClientCertificate(requestCert);
+      }
+
       this._serverSocket.asyncListen(this);
     } catch (e) {
       
@@ -86,6 +121,24 @@ PresentationControlService.prototype = {
     
     Services.obs.addObserver(this, "network-active-changed", false);
     Services.obs.addObserver(this, "network:offline-status-changed", false);
+
+    this._notifyServerReady();
+  },
+
+  _notifyServerReady: function() {
+    Services.tm.mainThread.dispatch(() => {
+      if (this._listener) {
+        this._listener.onServerReady(this._port, this.certFingerprint);
+      }
+    }, Ci.nsIThread.DISPATCH_NORMAL);
+  },
+
+  _notifyServerStopped: function(aRv) {
+    Services.tm.mainThread.dispatch(() => {
+      if (this._listener) {
+        this._listener.onServerStopped(aRv);
+      }
+    }, Ci.nsIThread.DISPATCH_NORMAL);
   },
 
   isCompatibleServer: function(aVersion) {
@@ -107,6 +160,14 @@ PresentationControlService.prototype = {
 
   get version() {
     return kProtocolVersion;
+  },
+
+  get certFingerprint() {
+    if (!this._serverSocket.serverCert) {
+      return null;
+    }
+
+    return this._serverSocket.serverCert.sha256Fingerprint;
   },
 
   set listener(aListener) {
@@ -265,6 +326,8 @@ PresentationControlService.prototype = {
 
       Services.obs.removeObserver(this, "network-active-changed");
       Services.obs.removeObserver(this, "network:offline-status-changed");
+
+      this._notifyServerStopped(Cr.NS_OK);
     }
     this._port = 0;
   },
@@ -304,14 +367,10 @@ PresentationControlService.prototype = {
 
     
     if (this._isServiceInit()) {
-      let port = this._port;
       this.close();
 
       try {
         this.startServer();
-        if (this._listener && this._port !== port) {
-           this._listener.onPortChange(this._port);
-        }
       } catch (e) {
         DEBUG && log("PresentationControlService - restart service fail: " + e); 
       }
@@ -392,6 +451,9 @@ function discriptionAsJson(aDescription) {
   return json;
 }
 
+const kDisconnectTimeout = 5000;
+const kTerminateTimeout = 5000;
+
 function TCPControlChannel(presentationService,
                            transport,
                            deviceInfo,
@@ -402,6 +464,11 @@ function TCPControlChannel(presentationService,
   this._transport = transport;
 
   this._presentationService = presentationService;
+
+  if (direction === "receiver") {
+    
+    this._setSecurityObserver(this);
+  }
 
   let currentThread = Services.tm.currentThread;
   transport.setEventSink(this, currentThread);
@@ -414,19 +481,26 @@ function TCPControlChannel(presentationService,
                         currentThread);
 
   this._output = this._transport
-                     .openOutputStream(Ci.nsITransport.OPEN_UNBUFFERED, 0, 0);
+                     .openOutputStream(Ci.nsITransport.OPEN_UNBUFFERED, 0, 0)
+                     .QueryInterface(Ci.nsIAsyncOutputStream);
+
+  this._outgoingMsgs = [];
+
 
   this._stateMachine =
     (direction === "sender") ? new ControllerStateMachine(this, presentationService.id)
                              : new ReceiverStateMachine(this);
-  
-  if (this._direction === "receiver") {
+
+  if (direction === "receiver" && !transport.securityInfo) {
+    
+    this._outgoingEnabled = true;
     this._createInputStreamPump();
   }
 }
 
 TCPControlChannel.prototype = {
-  _connected: false,
+  _outgoingEnabled: false,
+  _incomingEnabled: false,
   _pendingOpen: false,
   _pendingOffer: null,
   _pendingAnswer: null,
@@ -454,10 +528,29 @@ TCPControlChannel.prototype = {
     if (!this._terminatingId) {
       this._terminatingId = aPresentationId;
       this._stateMachine.terminate(aPresentationId);
+
+      
+      this._terminateTimer = setTimeout(() => {
+        DEBUG && log("TCPControlChannel - terminate timeout: " + aPresentationId); 
+        delete this._terminateTimer;
+        if (this._pendingDisconnect) {
+          this._pendingDisconnect();
+        } else {
+          this.disconnect(Cr.NS_OK);
+        }
+      }, kTerminateTimeout);
     } else {
       this._stateMachine.terminateAck(aPresentationId);
       delete this._terminatingId;
     }
+  },
+
+  _flushOutgoing: function() {
+    if (!this._outgoingEnabled || this._outgoingMsgs.length === 0) {
+      return;
+    }
+
+    this._output.asyncWait(this, 0, 0, Services.tm.currentThread);
   },
 
   
@@ -480,15 +573,57 @@ TCPControlChannel.prototype = {
     }
   },
 
+  _setSecurityObserver: function(observer) {
+    if (this._transport && this._transport.securityInfo) {
+      DEBUG && log("TCPControlChannel - setSecurityObserver: " + observer); 
+      let connectionInfo = this._transport.securityInfo
+                               .QueryInterface(Ci.nsITLSServerConnectionInfo);
+      connectionInfo.setSecurityObserver(observer);
+    }
+  },
+
+  
+  onHandshakeDone: function(socket, clientStatus) {
+    log("TCPControlChannel - onHandshakeDone: TLS version: " + clientStatus.tlsVersionUsed.toString(16));
+    this._setSecurityObserver(null);
+
+    
+    this._outgoingEnabled = true;
+    this._createInputStreamPump();
+  },
+
+  
+  onOutputStreamReady: function() {
+    DEBUG && log("TCPControlChannel - onOutputStreamReady"); 
+    if (this._outgoingMsgs.length === 0) {
+      return;
+    }
+
+    try {
+      this._send(this._outgoingMsgs[0]);
+    } catch (e) {
+      if (e.result === Cr.NS_BASE_STREAM_WOULD_BLOCK) {
+        this._output.asyncWait(this, 0, 0, Services.tm.currentThread);
+        return;
+      }
+
+      this._closeTransport();
+      return;
+    }
+    this._outgoingMsgs.shift();
+    this._flushOutgoing();
+  },
+
   
   
   onInputStreamReady: function(aStream) {
+    DEBUG && log("TCPControlChannel - onInputStreamReady"); 
     try {
       aStream.available();
     } catch (e) {
       DEBUG && log("TCPControlChannel - onInputStreamReady error: " + e.name); 
       
-      this._listener.notifyDisconnected(e.result);
+      this._notifyDisconnected(e.result);
     }
   },
 
@@ -497,11 +632,8 @@ TCPControlChannel.prototype = {
     DEBUG && log("TCPControlChannel - onTransportStatus: " + aStatus.toString(16) +
                  " with role: " + this._direction); 
     if (aStatus === Ci.nsISocketTransport.STATUS_CONNECTED_TO) {
-      this._connected = true;
-
-      if (!this._pump) {
-        this._createInputStreamPump();
-      }
+      this._outgoingEnabled = true;
+      this._createInputStreamPump();
     }
   },
 
@@ -509,6 +641,7 @@ TCPControlChannel.prototype = {
   onStartRequest: function() {
     DEBUG && log("TCPControlChannel - onStartRequest with role: " +
                  this._direction); 
+    this._incomingEnabled = true;
   },
 
   
@@ -540,6 +673,10 @@ TCPControlChannel.prototype = {
   },
 
   _createInputStreamPump: function() {
+    if (this._pump) {
+      return;
+    }
+
     DEBUG && log("TCPControlChannel - create pump with role: " +
                  this._direction); 
     this._pump = Cc["@mozilla.org/network/input-stream-pump;1"].
@@ -608,7 +745,7 @@ TCPControlChannel.prototype = {
 
 
   _onOffer: function(aOffer) {
-    if (!this._connected) {
+    if (!this._incomingEnabled) {
       return;
     }
     if (!this._listener) {
@@ -621,7 +758,7 @@ TCPControlChannel.prototype = {
   },
 
   _onAnswer: function(aAnswer) {
-    if (!this._connected) {
+    if (!this._incomingEnabled) {
       return;
     }
     if (!this._listener) {
@@ -634,7 +771,6 @@ TCPControlChannel.prototype = {
   },
 
   _notifyConnected: function() {
-    this._connected = true;
     this._pendingClose = false;
     this._pendingCloseReason = Cr.NS_OK;
 
@@ -649,7 +785,6 @@ TCPControlChannel.prototype = {
   },
 
   _notifyDisconnected: function(aReason) {
-    this._connected = false;
     this._pendingOpen = false;
     this._pendingOffer = null;
     this._pendingAnswer = null;
@@ -681,28 +816,62 @@ TCPControlChannel.prototype = {
     this._listener.notifyReconnected();
   },
 
-  _closeTransport: function() {
-    if (this._connected) {
-      this._transport.setEventSink(null, null);
-      this._pump = null;
-
-      this._input.close();
+  _closeOutgoing: function() {
+    if (this._outgoingEnabled) {
       this._output.close();
-      this._presentationService.releaseControlChannel(this);
+      this._outgoingEnabled = false;
     }
+  },
+  _closeIncoming: function() {
+    if (this._incomingEnabled) {
+      this._pump = null;
+      this._input.close();
+      this._incomingEnabled = false;
+    }
+  },
+  _closeTransport: function() {
+    if (this._disconnectTimer) {
+      clearTimeout(this._disconnectTimer);
+      delete this._disconnectTimer;
+    }
+
+    if (this._terminateTimer) {
+      clearTimeout(this._terminateTimer);
+      delete this._terminateTimer;
+    }
+
+    delete this._pendingDisconnect;
+
+    this._transport.setEventSink(null, null);
+
+    this._closeIncoming();
+    this._closeOutgoing();
+    this._presentationService.releaseControlChannel(this);
   },
 
   disconnect: function(aReason) {
     DEBUG && log("TCPControlChannel - disconnect with reason: " + aReason); 
 
-    if (this._connected) {
+    
+    if (this._terminateTimer) {
+      
+      if (!this._pendingDisconnect) {
+        this._pendingDisconnect = this.disconnect.bind(this, aReason);
+      }
+      return;
+    }
+
+    if (this._outgoingEnabled && !this._disconnectTimer) {
       
       aReason = !aReason ? Cr.NS_OK : aReason;
+
       this._stateMachine.onChannelClosed(aReason, false);
 
-      this._closeTransport();
-
-      this._connected = false;
+      
+      this._disconnectTimer = setTimeout(() => {
+        DEBUG && log("TCPControlChannel - disconnect timeout"); 
+        this._closeTransport();
+      }, kDisconnectTimeout);
     }
   },
 
@@ -718,7 +887,8 @@ TCPControlChannel.prototype = {
 
   
   sendCommand: function(command) {
-    this._send(command);
+    this._outgoingMsgs.push(command);
+    this._flushOutgoing();
   },
 
   notifyDeviceConnected: function(deviceId) {
@@ -731,9 +901,8 @@ TCPControlChannel.prototype = {
   },
 
   notifyDisconnected: function(reason) {
-    this._notifyDisconnected(reason);
     this._closeTransport();
-    this._connected = false;
+    this._notifyDisconnected(reason);
   },
 
   notifyLaunch: function(presentationId, url) {
@@ -757,6 +926,12 @@ TCPControlChannel.prototype = {
       return;
     }
 
+    
+    if (this._terminateTimer) {
+      clearTimeout(this._terminateTimer);
+      delete this._terminateTimer;
+    }
+
     if (this._terminatingId !== presentationId) {
       
       
@@ -765,6 +940,9 @@ TCPControlChannel.prototype = {
     }
 
     delete this._terminatingId;
+    if (this._pendingDisconnect) {
+      this._pendingDisconnect();
+    }
   },
 
   notifyReconnect: function(presentationId, url) {

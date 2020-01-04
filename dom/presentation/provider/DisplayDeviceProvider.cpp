@@ -265,24 +265,22 @@ DisplayDeviceProvider::StartTCPService()
 
 
 
-  if (!servicePort) {
-    rv = mPresentationService->SetListener(mWrappedListener);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return rv;
-    }
-
-    rv = mPresentationService->StartServer(0);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return rv;
-    }
-
-    rv = mPresentationService->GetPort(&servicePort);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return rv;
-    }
+  if (servicePort) {
+    mPort = servicePort;
+    return NS_OK;
   }
 
-  mPort = servicePort;
+  rv = mPresentationService->SetListener(mWrappedListener);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
+  
+  rv = mPresentationService->StartServer( false,
+                                          0);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
 
   return NS_OK;
 }
@@ -367,10 +365,26 @@ DisplayDeviceProvider::ForceDiscovery()
 
 
 NS_IMETHODIMP
-DisplayDeviceProvider::OnPortChange(uint16_t aPort)
+DisplayDeviceProvider::OnServerReady(uint16_t aPort,
+                                     const nsACString& aCertFingerprint)
 {
   MOZ_ASSERT(NS_IsMainThread());
   mPort = aPort;
+
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+DisplayDeviceProvider::OnServerStopped(nsresult aResult)
+{
+  MOZ_ASSERT(NS_IsMainThread());
+
+  
+  if (NS_FAILED(aResult)) {
+    return NS_DispatchToMainThread(
+             NewRunnableMethod(this, &DisplayDeviceProvider::StartTCPService));
+  }
+
   return NS_OK;
 }
 

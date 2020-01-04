@@ -70,8 +70,16 @@ var handlers = [
     }
   },
   function _closingHandler(stateMachine, command) {
-    
-    DEBUG && debug("unexpected command: " + JSON.stringify(command)); 
+    switch (command.type) {
+      case CommandType.DISCONNECT:
+        stateMachine.state = State.CLOSED;
+        stateMachine._notifyDisconnected(command.reason);
+        break;
+      default:
+        debug("unexpected command: " + JSON.stringify(command));
+        
+        break;
+    }
   },
   function _closedHandler(stateMachine, command) {
     
