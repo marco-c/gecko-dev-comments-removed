@@ -94,6 +94,23 @@ TEST(ImageSurfaceSink, NullSurfaceSink)
   EXPECT_TRUE(invalidRect.isNothing());
 }
 
+TEST(ImageSurfaceSink, SurfaceSinkInitialization)
+{
+  WithSurfaceSink<Orient::NORMAL>([](Decoder* aDecoder, SurfaceSink* aSink) {
+    
+    EXPECT_FALSE(aSink->IsSurfaceFinished());
+    Maybe<SurfaceInvalidRect> invalidRect = aSink->TakeInvalidRect();
+    EXPECT_TRUE(invalidRect.isNothing());
+
+    
+    
+    
+    
+    
+    CheckGeneratedImage(aDecoder, IntRect(0, 0, 0, 0));
+  });
+}
+
 TEST(ImageSurfaceSink, SurfaceSinkWritePixels)
 {
   WithSurfaceSink<Orient::NORMAL>([](Decoder* aDecoder, SurfaceSink* aSink) {
@@ -437,6 +454,28 @@ TEST(ImageSurfaceSink, SurfaceSinkFlipVertically)
       RawAccessFrameRef currentFrame = aDecoder->GetCurrentFrameRef();
       RefPtr<SourceSurface> surface = currentFrame->GetSurface();
       EXPECT_TRUE(IsSolidColor(surface, BGRAColor::Green()));
+    }
+  });
+}
+
+TEST(ImageSurfaceSink, PalettedSurfaceSinkInitialization)
+{
+  WithPalettedSurfaceSink(IntRect(0, 0, 100, 100),
+                          [](Decoder* aDecoder, PalettedSurfaceSink* aSink) {
+    
+    EXPECT_FALSE(aSink->IsSurfaceFinished());
+    Maybe<SurfaceInvalidRect> invalidRect = aSink->TakeInvalidRect();
+    EXPECT_TRUE(invalidRect.isNothing());
+
+    
+    RawAccessFrameRef currentFrame = aDecoder->GetCurrentFrameRef();
+    uint8_t* imageData = nullptr;
+    uint32_t imageLength = 0;
+    currentFrame->GetImageData(&imageData, &imageLength);
+    ASSERT_TRUE(imageData != nullptr);
+    ASSERT_EQ(100u * 100u, imageLength);
+    for (uint32_t i = 0; i < imageLength; ++i) {
+      ASSERT_EQ(uint8_t(0), imageData[i]);
     }
   });
 }
