@@ -274,6 +274,13 @@ static_assert((CSS_PROPERTY_PARSE_PROPERTY_MASK &
 
 
 
+
+
+#define CSS_PROPERTY_LOGICAL_SINGLE_CUSTOM_VALMAPPING (1u << 31)
+
+
+
+
 enum nsStyleAnimType {
   
   
@@ -534,6 +541,9 @@ private:
 
 public:
   
+
+
+
 
 
 

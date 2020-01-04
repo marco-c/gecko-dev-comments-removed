@@ -13,6 +13,7 @@
 #include "CSSVariableImageTable.h"
 #include "mozilla/css/Declaration.h"
 #include "mozilla/css/ImageLoader.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/WritingModes.h"
 #include "nsIDocument.h"
@@ -37,6 +38,50 @@ MoveValue(nsCSSValue* aSource, nsCSSValue* aDest)
     memcpy(aDest, aSource, sizeof(nsCSSValue));
     new (aSource) nsCSSValue();
     return changed;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+static const nsCSSValue*
+ConvertBoxOrientToFlexDirection(const nsCSSValue* aBoxOrientVal,
+                                const nsRuleData* aRuleData,
+                                Maybe<nsCSSValue>& aConvertedValStorage)
+{
+  MOZ_ASSERT(aBoxOrientVal, "expecting a non-null value to convert");
+  MOZ_ASSERT(aConvertedValStorage.isNothing(),
+             "expecting outparam for converted-value to be initially empty");
+
+  if (aBoxOrientVal->GetUnit() != eCSSUnit_Enumerated) {
+    
+    
+    return aBoxOrientVal;
+  }
+
+  
+
+  WritingMode wm(aRuleData->mStyleContext);
+  
+  
+  bool isRow = wm.IsVertical() !=
+    (aBoxOrientVal->GetIntValue() == NS_STYLE_BOX_ORIENT_HORIZONTAL);
+
+  aConvertedValStorage.emplace(isRow ? NS_STYLE_FLEX_DIRECTION_ROW :
+                                       NS_STYLE_FLEX_DIRECTION_COLUMN,
+                               eCSSUnit_Enumerated);
+  return aConvertedValStorage.ptr();
 }
 
 static bool
@@ -139,6 +184,18 @@ MapSinglePropertyInto(nsCSSProperty aSrcProp,
     MOZ_ASSERT(aSrcValue->GetUnit() != eCSSUnit_Null, "oops");
 
     
+    Maybe<nsCSSValue> convertedVal; 
+    bool hasCustomValMapping =
+        nsCSSProps::PropHasFlags(aSrcProp,
+                                 CSS_PROPERTY_LOGICAL_SINGLE_CUSTOM_VALMAPPING);
+    if (hasCustomValMapping) {
+        if (aSrcProp == eCSSProperty_webkit_box_orient) {
+            aSrcValue = ConvertBoxOrientToFlexDirection(aSrcValue, aRuleData,
+                                                        convertedVal);
+        }
+    }
+
+    
     
     
     
@@ -187,6 +244,9 @@ EnsurePhysicalProperty(nsCSSProperty aProperty, nsRuleData* aRuleData)
     return aProperty;
   }
 
+  bool isSingleProperty =
+      nsCSSProps::PropHasFlags(aProperty,
+                               CSS_PROPERTY_LOGICAL_SINGLE_CUSTOM_VALMAPPING);
   bool isAxisProperty =
     nsCSSProps::PropHasFlags(aProperty, CSS_PROPERTY_LOGICAL_AXIS);
   bool isBlock =
@@ -194,7 +254,9 @@ EnsurePhysicalProperty(nsCSSProperty aProperty, nsRuleData* aRuleData)
 
   int index;
 
-  if (isAxisProperty) {
+  if (isSingleProperty) {
+    index = 0; 
+  } else if (isAxisProperty) {
     LogicalAxis logicalAxis = isBlock ? eLogicalAxisBlock : eLogicalAxisInline;
     uint8_t wm = aRuleData->mStyleContext->StyleVisibility()->mWritingMode;
     PhysicalAxis axis =
@@ -234,7 +296,8 @@ EnsurePhysicalProperty(nsCSSProperty aProperty, nsRuleData* aRuleData)
   const nsCSSProperty* props = nsCSSProps::LogicalGroup(aProperty);
 #ifdef DEBUG
   {
-    size_t len = isAxisProperty ? 2 : 4;
+    
+    size_t len = isSingleProperty ? 1 : (isAxisProperty ? 2 : 4);
     for (size_t i = 0; i < len; i++) {
       MOZ_ASSERT(props[i] != eCSSProperty_UNKNOWN,
                  "unexpected logical group length");
