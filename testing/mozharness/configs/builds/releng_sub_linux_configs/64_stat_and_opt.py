@@ -1,6 +1,7 @@
 import os
 
 config = {
+    
     'default_actions': [
         'clobber',
         'clone-tools',
