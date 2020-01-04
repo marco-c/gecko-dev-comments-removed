@@ -2495,20 +2495,6 @@ js::GetPrototypeIfOrdinary(JSContext* cx, HandleObject obj, bool* isOrdinary,
 
 
 
-
-
-
-
-static const bool ImmutablePrototypesEnabled = true;
-
-JS_FRIEND_API(bool)
-JS_ImmutablePrototypesEnabled()
-{
-    return ImmutablePrototypesEnabled;
-}
-
-
-
 bool
 js::SetPrototype(JSContext* cx, HandleObject obj, HandleObject proto, JS::ObjectOpResult& result)
 {
@@ -2527,7 +2513,7 @@ js::SetPrototype(JSContext* cx, HandleObject obj, HandleObject proto, JS::Object
         return result.succeed();
 
     
-    if (obj->staticPrototypeIsImmutable() && ImmutablePrototypesEnabled)
+    if (obj->staticPrototypeIsImmutable())
         return result.fail(JSMSG_CANT_SET_PROTO);
 
     
