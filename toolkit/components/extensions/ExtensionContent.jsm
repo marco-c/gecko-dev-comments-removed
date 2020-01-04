@@ -223,7 +223,10 @@ function ExtensionContext(extensionId, contentWindow)
                                  {id: extensionId, frameId}, delegate);
 
   let chromeObj = Cu.createObjectIn(this.sandbox, {defineAs: "browser"});
-  this.sandbox.wrappedJSObject.chrome = this.sandbox.wrappedJSObject.browser;
+
+  
+  
+  Cu.waiveXrays(this.sandbox).chrome = Cu.waiveXrays(this.sandbox).browser;
   injectAPI(api(this), chromeObj);
 
   this.onClose = new Set();
