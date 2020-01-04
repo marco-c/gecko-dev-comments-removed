@@ -40,8 +40,8 @@ enum nsLinkState {
 
 
 #define NS_ICONTENT_IID \
-{ 0x52cebfc8, 0x79ba, 0x4e38, \
-  { 0x8a, 0x4c, 0x7f, 0x9d, 0xb1, 0xa2, 0xb6, 0x1d } }
+{ 0x8e1bab9d, 0x8815, 0x4d2c, \
+  { 0xa2, 0x4d, 0x7a, 0xba, 0x52, 0x39, 0xdc, 0x22 } }
 
 
 
@@ -582,9 +582,11 @@ public:
 
 
 
-  virtual void PerformAccesskey(bool aKeyCausesActivation,
+
+  virtual bool PerformAccesskey(bool aKeyCausesActivation,
                                 bool aIsTrustedEvent)
   {
+    return false;
   }
 
   
