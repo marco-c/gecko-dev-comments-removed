@@ -117,7 +117,6 @@ static MOZ_CONSTEXPR_VAR Register AsmJSIonExitRegCallee = t0;
 static MOZ_CONSTEXPR_VAR Register AsmJSIonExitRegE0 = a0;
 static MOZ_CONSTEXPR_VAR Register AsmJSIonExitRegE1 = a1;
 static MOZ_CONSTEXPR_VAR Register AsmJSIonExitRegE2 = a2;
-static MOZ_CONSTEXPR_VAR Register AsmJSIonExitRegE3 = a3;
 
 
 

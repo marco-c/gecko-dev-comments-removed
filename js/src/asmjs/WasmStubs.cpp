@@ -617,7 +617,6 @@ wasm::GenerateJitExit(MacroAssembler& masm, const Import& import, bool usesHeap)
         Register reg0 = AsmJSIonExitRegE0;
         Register reg1 = AsmJSIonExitRegE1;
         Register reg2 = AsmJSIonExitRegE2;
-        Register reg3 = AsmJSIonExitRegE3;
 
         
         
@@ -629,13 +628,12 @@ wasm::GenerateJitExit(MacroAssembler& masm, const Import& import, bool usesHeap)
         
         
         
-        size_t offsetOfActivation = JSRuntime::offsetOfActivation();
-        size_t offsetOfJitTop = offsetof(JSRuntime, jitTop);
-        size_t offsetOfJitActivation = offsetof(JSRuntime, jitActivation);
-        size_t offsetOfProfilingActivation = JSRuntime::offsetOfProfilingActivation();
+        size_t offsetOfActivation = JSContext::offsetOfActivation();
+        size_t offsetOfJitTop = offsetof(JSContext, jitTop);
+        size_t offsetOfJitActivation = offsetof(JSContext, jitActivation);
+        size_t offsetOfProfilingActivation = JSContext::offsetOfProfilingActivation();
         masm.loadWasmActivation(reg0);
-        masm.loadPtr(Address(reg0, WasmActivation::offsetOfContext()), reg3);
-        masm.loadPtr(Address(reg3, JSContext::offsetOfRuntime()), reg0);
+        masm.loadPtr(Address(reg0, WasmActivation::offsetOfContext()), reg0);
         masm.loadPtr(Address(reg0, offsetOfActivation), reg1);
 
         

@@ -103,6 +103,10 @@ class ExclusiveContext : public ContextFriendFields,
     
     HelperThread* helperThread_;
 
+    
+    
+    using ContextFriendFields::runtime_;
+
   public:
     enum ContextKind {
         Context_JS,
@@ -322,9 +326,12 @@ struct JSContext : public js::ExclusiveContext,
     JSRuntime* runtime() { return this; }
     js::PerThreadData& mainThread() { return this->JSRuntime::mainThread; }
 
-    static size_t offsetOfRuntime() {
-        return offsetof(JSContext, runtime_);
+    static size_t offsetOfActivation() {
+        return offsetof(JSContext, activation_);
     }
+    static size_t offsetOfProfilingActivation() {
+        return offsetof(JSContext, profilingActivation_);
+     }
     static size_t offsetOfCompartment() {
         return offsetof(JSContext, compartment_);
     }
@@ -388,16 +395,16 @@ struct JSContext : public js::ExclusiveContext,
     bool currentlyRunning() const;
 
     bool currentlyRunningInInterpreter() const {
-        return runtime_->activation()->isInterpreter();
+        return activation()->isInterpreter();
     }
     bool currentlyRunningInJit() const {
-        return runtime_->activation()->isJit();
+        return activation()->isJit();
     }
     js::InterpreterFrame* interpreterFrame() const {
-        return runtime_->activation()->asInterpreter()->current();
+        return activation()->asInterpreter()->current();
     }
     js::InterpreterRegs& interpreterRegs() const {
-        return runtime_->activation()->asInterpreter()->regs();
+        return activation()->asInterpreter()->regs();
     }
 
     
@@ -415,11 +422,11 @@ struct JSContext : public js::ExclusiveContext,
 
     
     inline js::Nursery& nursery() {
-        return runtime_->gc.nursery;
+        return gc.nursery;
     }
 
     void minorGC(JS::gcreason::Reason reason) {
-        runtime_->gc.minorGC(this, reason);
+        gc.minorGC(this, reason);
     }
 
   public:

@@ -693,6 +693,7 @@ struct JSRuntime : public JS::shadow::Runtime,
     friend void js::AssertCurrentThreadCanLock(js::RuntimeLock which);
 #endif
 
+  protected:
     
 
 
