@@ -171,6 +171,10 @@ public:
   
   void
   TransitionWaitingToActive();
+
+  
+  bool
+  IsIdle() const;
 };
 
 } 
