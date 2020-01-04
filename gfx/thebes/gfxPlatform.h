@@ -611,9 +611,12 @@ public:
 
     
     
-    virtual bool UpdateForDeviceReset() {
-      return false;
-    }
+    virtual void SchedulePaintIfDeviceReset() {}
+
+    
+    
+    
+    virtual void UpdateRenderModeIfDeviceReset() {}
 
     
 
