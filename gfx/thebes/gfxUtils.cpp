@@ -391,12 +391,6 @@ gfxUtils::ConvertBGRAtoRGBA(uint8_t* aData, uint32_t aLength)
     }
 }
 
-static bool
-IsSafeImageTransformComponent(gfxFloat aValue)
-{
-  return aValue >= -32768 && aValue <= 32767;
-}
-
 #if !defined(MOZ_GFX_OPTIMIZE_MOBILE)
 
 
@@ -467,83 +461,6 @@ CreateSamplingRestrictedDrawable(gfxDrawable* aDrawable,
     return drawable.forget();
 }
 #endif 
-
-
-
-struct MOZ_STACK_CLASS AutoCairoPixmanBugWorkaround
-{
-    AutoCairoPixmanBugWorkaround(gfxContext*      aContext,
-                                 const gfxMatrix& aDeviceSpaceToImageSpace,
-                                 const gfxRect&   aFill,
-                                 const gfxASurface* aSurface)
-     : mContext(aContext), mSucceeded(true), mPushedGroup(false)
-    {
-        
-        if (!aSurface || aSurface->GetType() == gfxSurfaceType::Quartz)
-            return;
-
-        if (!IsSafeImageTransformComponent(aDeviceSpaceToImageSpace._11) ||
-            !IsSafeImageTransformComponent(aDeviceSpaceToImageSpace._21) ||
-            !IsSafeImageTransformComponent(aDeviceSpaceToImageSpace._12) ||
-            !IsSafeImageTransformComponent(aDeviceSpaceToImageSpace._22)) {
-            NS_WARNING("Scaling up too much, bailing out");
-            mSucceeded = false;
-            return;
-        }
-
-        if (IsSafeImageTransformComponent(aDeviceSpaceToImageSpace._31) &&
-            IsSafeImageTransformComponent(aDeviceSpaceToImageSpace._32))
-            return;
-
-        
-        
-        gfxMatrix currentMatrix = mContext->CurrentMatrix();
-        mContext->Save();
-
-        
-        
-        
-        mContext->SetMatrix(gfxMatrix());
-        gfxRect bounds = currentMatrix.TransformBounds(aFill);
-        bounds.RoundOut();
-        mContext->Clip(bounds);
-        mContext->SetMatrix(currentMatrix);
-        mContext->PushGroupForBlendBack(gfxContentType::COLOR_ALPHA);
-        mContext->SetOp(CompositionOp::OP_OVER);
-
-        mPushedGroup = true;
-    }
-
-    ~AutoCairoPixmanBugWorkaround()
-    {
-        if (mPushedGroup) {
-            mContext->PopGroupAndBlend();
-            mContext->Restore();
-        }
-    }
-
-    bool PushedGroup() { return mPushedGroup; }
-    bool Succeeded() { return mSucceeded; }
-
-private:
-    gfxContext* mContext;
-    bool mSucceeded;
-    bool mPushedGroup;
-};
-
-static gfxMatrix
-DeviceToImageTransform(gfxContext* aContext)
-{
-    gfxFloat deviceX, deviceY;
-    RefPtr<gfxASurface> currentTarget =
-        aContext->CurrentSurface(&deviceX, &deviceY);
-    gfxMatrix deviceToUser = aContext->CurrentMatrix();
-    if (!deviceToUser.Invert()) {
-        return gfxMatrix(0, 0, 0, 0, 0, 0); 
-    }
-    deviceToUser.Translate(-gfxPoint(-deviceX, -deviceY));
-    return deviceToUser;
-}
 
 
 #ifdef MOZ_GFX_OPTIMIZE_MOBILE
@@ -723,14 +640,6 @@ gfxUtils::DrawPixelSnapped(gfxContext*         aContext,
     gfxRect imageRect(gfxPoint(0, 0), aImageSize);
     gfxRect region(aRegion.Rect());
     ExtendMode extendMode = aRegion.GetExtendMode();
-
-    RefPtr<gfxASurface> currentTarget = aContext->CurrentSurface();
-    gfxMatrix deviceSpaceToImageSpace = DeviceToImageTransform(aContext);
-
-    AutoCairoPixmanBugWorkaround workaround(aContext, deviceSpaceToImageSpace,
-                                            region, currentTarget);
-    if (!workaround.Succeeded())
-        return;
 
     RefPtr<gfxDrawable> drawable = aDrawable;
 
