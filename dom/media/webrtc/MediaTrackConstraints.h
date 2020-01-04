@@ -95,12 +95,18 @@ public:
       Intersect(aOther);
 
       if (aOther.mIdeal.isSome()) {
+        
+        
         if (mIdeal.isNothing()) {
-          mIdeal.emplace(aOther.mIdeal.value());
+          mIdeal.emplace(aOther.Get(0));
           mMergeDenominator = 1;
         } else {
-          *mIdeal += aOther.mIdeal.value();
-          mMergeDenominator = std::max(2U, mMergeDenominator + 1);
+          if (!mMergeDenominator) {
+            *mIdeal = Get(0);
+            mMergeDenominator = 1;
+          }
+          *mIdeal += aOther.Get(0);
+          mMergeDenominator++;
         }
       }
       return true;
