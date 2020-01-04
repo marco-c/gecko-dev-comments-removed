@@ -19,15 +19,12 @@ namespace mozilla {
 
 struct unused_t
 {
+  template<typename T>
+  inline void
+  operator<<(const T& ) const {}
 };
 
 extern MFBT_DATA const unused_t unused;
-
-template<typename T>
-inline void
-operator<<(const unused_t& , const T& )
-{
-}
 
 } 
 
