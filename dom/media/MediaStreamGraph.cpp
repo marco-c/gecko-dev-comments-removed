@@ -361,9 +361,15 @@ MediaStreamGraphImpl::UpdateStreamOrder()
     }
   }
 
+  bool switching = false;
+  {
+    MonitorAutoLock mon(mMonitor);
+    switching = CurrentDriver()->Switching();
+  }
+
   if (audioTrackPresent && mRealtime &&
       !CurrentDriver()->AsAudioCallbackDriver() &&
-      !CurrentDriver()->Switching()) {
+      !switching) {
     MonitorAutoLock mon(mMonitor);
     if (mLifecycleState == LIFECYCLE_RUNNING) {
       AudioCallbackDriver* driver = new AudioCallbackDriver(this);
@@ -621,8 +627,15 @@ MediaStreamGraphImpl::CreateOrDestroyAudioStreams(MediaStream* aStream)
       audioOutputStream->mLastTickWritten = 0;
       audioOutputStream->mTrackID = tracks->GetID();
 
+      bool switching = false;
+
+      {
+        MonitorAutoLock lock(mMonitor);
+        switching = CurrentDriver()->Switching();
+      }
+
       if (!CurrentDriver()->AsAudioCallbackDriver() &&
-          !CurrentDriver()->Switching()) {
+          !switching) {
         MonitorAutoLock mon(mMonitor);
         if (mLifecycleState == LIFECYCLE_RUNNING) {
           AudioCallbackDriver* driver = new AudioCallbackDriver(this);
@@ -1164,8 +1177,13 @@ MediaStreamGraphImpl::Process()
 
   
   
+  bool switching = false;
+  {
+    MonitorAutoLock lock(mMonitor);
+    switching = CurrentDriver()->Switching();
+  }
   if (CurrentDriver()->AsAudioCallbackDriver() &&
-      CurrentDriver()->Switching()) {
+      switching) {
     bool isStarted;
     {
       MonitorAutoLock mon(mMonitor);
@@ -3023,6 +3041,16 @@ MediaStreamGraphImpl::ApplyAudioContextOperationImpl(
 
   SuspendOrResumeStreams(aOperation, aStreams);
 
+  bool switching = false;
+  GraphDriver* nextDriver = nullptr;
+  {
+    MonitorAutoLock lock(mMonitor);
+    switching = CurrentDriver()->Switching();
+    if (switching) {
+      nextDriver = CurrentDriver()->NextDriver();
+    }
+  }
+
   
   
   
@@ -3032,12 +3060,13 @@ MediaStreamGraphImpl::ApplyAudioContextOperationImpl(
   if (aOperation == AudioContextOperation::Resume) {
     if (!CurrentDriver()->AsAudioCallbackDriver()) {
       AudioCallbackDriver* driver;
-      if (CurrentDriver()->Switching()) {
-        MOZ_ASSERT(CurrentDriver()->NextDriver()->AsAudioCallbackDriver());
-        driver = CurrentDriver()->NextDriver()->AsAudioCallbackDriver();
+      if (switching) {
+        MOZ_ASSERT(nextDriver->AsAudioCallbackDriver());
+        driver = nextDriver->AsAudioCallbackDriver();
       } else {
         driver = new AudioCallbackDriver(this);
         mMixer.AddCallback(driver);
+        MonitorAutoLock lock(mMonitor);
         CurrentDriver()->SwitchAtNextIteration(driver);
       }
       driver->EnqueueStreamAndPromiseForOperation(aDestinationStream,
@@ -3071,19 +3100,20 @@ MediaStreamGraphImpl::ApplyAudioContextOperationImpl(
                                             aOperation);
 
       SystemClockDriver* driver;
-      if (CurrentDriver()->NextDriver()) {
-        MOZ_ASSERT(!CurrentDriver()->NextDriver()->AsAudioCallbackDriver());
+      if (nextDriver) {
+        MOZ_ASSERT(!nextDriver->AsAudioCallbackDriver());
       } else {
         driver = new SystemClockDriver(this);
         mMixer.RemoveCallback(CurrentDriver()->AsAudioCallbackDriver());
+        MonitorAutoLock lock(mMonitor);
         CurrentDriver()->SwitchAtNextIteration(driver);
       }
       
       
       
-    } else if (!audioTrackPresent && CurrentDriver()->Switching()) {
-      MOZ_ASSERT(CurrentDriver()->NextDriver()->AsAudioCallbackDriver());
-      CurrentDriver()->NextDriver()->AsAudioCallbackDriver()->
+    } else if (!audioTrackPresent && switching) {
+      MOZ_ASSERT(nextDriver->AsAudioCallbackDriver());
+      nextDriver->AsAudioCallbackDriver()->
         EnqueueStreamAndPromiseForOperation(aDestinationStream, aPromise,
                                             aOperation);
     } else {
