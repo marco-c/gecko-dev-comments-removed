@@ -17,7 +17,7 @@
 
 #include "nsIUploadChannel.h"
 
-#include "NetwerkTestLogging.h"
+#include "mozilla/Logging.h"
 
 
 

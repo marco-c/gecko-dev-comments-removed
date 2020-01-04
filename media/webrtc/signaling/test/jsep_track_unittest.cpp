@@ -11,7 +11,6 @@
 
 #include "FakeMediaStreams.h"
 #include "FakeMediaStreamsImpl.h"
-#include "FakeLogging.h"
 
 #include "signaling/src/jsep/JsepTrack.h"
 #include "signaling/src/sdp/SipccSdp.h"

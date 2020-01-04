@@ -14,7 +14,7 @@
 #include "nsComponentManagerUtils.h"
 #include "nsStringAPI.h"
 #include "nsCOMPtr.h"
-#include "NetwerkTestLogging.h"
+#include "mozilla/Logging.h"
 
 
 
