@@ -3,13 +3,7 @@
 
 "use strict";
 
-
-
-
-const {classes: Cc, interfaces: Ci, utils: Cu} = Components;
-
 Cu.import("resource://gre/modules/Promise.jsm");
-Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
 const MANIFEST_URL = "app://system.gaiamobile.org/manifest.webapp";
 
