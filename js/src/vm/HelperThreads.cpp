@@ -1171,7 +1171,7 @@ GlobalHelperThreadState::finishParseTask(JSContext* maybecx, JSRuntime* rt, Pars
         return nullptr;
 
     RootedScript script(rt, parseTask->script);
-    assertSameCompartment(cx, script);
+    releaseAssertSameCompartment(cx, script);
 
     
     if (parseTask->outOfMemory) {
