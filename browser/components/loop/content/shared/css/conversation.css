@@ -208,6 +208,7 @@ html[dir="rtl"] .conversation-toolbar-btn-box.btn-edit-entry {
   height: 28px;
   background-size: 28px;
   background-image: url("../img/svg/settings.svg");
+  background-color: transparent;
 }
 
 .btn-settings:hover,
@@ -276,6 +277,10 @@ html[dir="rtl"] .conversation-toolbar-btn-box.btn-edit-entry {
 
 
 
+
+
+
+
 .call-window {
   display: flex;
   flex-direction: column;
@@ -333,6 +338,19 @@ html[dir="rtl"] .conversation-toolbar-btn-box.btn-edit-entry {
 .direct-call-failure > .failure-info,
 .room-failure > .failure-info {
   flex: auto;
+}
+
+.direct-call-failure > .settings-control,
+.room-failure > .settings-control {
+  position: absolute;
+  top: 1rem;
+  right: .5rem;
+}
+
+html[dir="rtl"] .direct-call-failure > .settings-control,
+html[dir="rtl"] .room-failure > .settings-control {
+  left: .5rem;
+  right: auto;
 }
 
 .failure-info {
@@ -448,6 +466,11 @@ html[dir="rtl"] .conversation-toolbar-btn-box.btn-edit-entry {
 html[dir="rtl"] .settings-menu.dropdown-menu {
   left: 14px;
   right: auto;
+}
+
+.settings-menu.dropdown-menu.menu-below {
+  top: 11.5rem;
+  bottom: auto;
 }
 
 
