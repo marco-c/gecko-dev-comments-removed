@@ -135,7 +135,7 @@ SharedPlanarYCbCrImage::AllocateAndGetNewBuffer(uint32_t aSize)
     
     return mapped.y.data;
   } else {
-    MOZ_CRASH();
+    MOZ_CRASH("GFX: Cannot borrow mapped YCbCr data");
   }
 }
 
@@ -191,7 +191,8 @@ SharedPlanarYCbCrImage::Allocate(PlanarYCbCrData& aData)
   
   
   if (!mTextureClient->Lock(OpenMode::OPEN_READ) || !mTextureClient->BorrowMappedYCbCrData(mapped)) {
-    MOZ_CRASH();
+    MOZ_CRASH("GFX: Cannot lock or borrow mapped YCbCr");
+    return false;
   }
 
   aData.mYChannel = mapped.y.data;
