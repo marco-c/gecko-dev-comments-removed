@@ -457,10 +457,11 @@ nsBoxFrame::GetInitialOrientation(bool& aIsHorizontal)
 
   
   const nsStyleXUL* boxInfo = StyleXUL();
-  if (boxInfo->mBoxOrient == NS_STYLE_BOX_ORIENT_HORIZONTAL)
+  if (boxInfo->mBoxOrient == StyleBoxOrient::Horizontal) {
     aIsHorizontal = true;
-  else 
+  } else {
     aIsHorizontal = false;
+  }
 
   
   
