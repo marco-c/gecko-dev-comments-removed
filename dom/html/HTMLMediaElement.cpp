@@ -130,7 +130,10 @@ public:
   {
     MOZ_GUARD_OBJECT_NOTIFIER_INIT;
     if (mShouldNotify) {
-      mElement->NotifyAudioChannelAgent(false);
+      
+      if (mElement->MaybeCreateAudioChannelAgent()) {
+        mElement->NotifyAudioChannelAgent(false);
+      }
     }
   }
   ~AutoNotifyAudioChannelAgent()
