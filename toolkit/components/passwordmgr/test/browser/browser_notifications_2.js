@@ -1,3 +1,9 @@
+add_task(function* setup() {
+  yield SpecialPowers.pushPrefEnv({"set": [
+    ["signon.rememberSignons.visibilityToggle", true]
+  ]});
+});
+
 
 
 
