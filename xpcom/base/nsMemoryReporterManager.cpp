@@ -1438,7 +1438,6 @@ nsMemoryReporterManager::GetReportsExtended(
                                          aFinishReporting,
                                          aFinishReportingData,
                                          aDMDDumpIdent);
-  mGetReportsState->mChildrenPending = new nsTArray<nsRefPtr<mozilla::dom::ContentParent>>();
 
   if (aMinimize) {
     rv = MinimizeMemoryUsage(NS_NewRunnableMethod(
@@ -1479,7 +1478,7 @@ nsMemoryReporterManager::StartGettingReports()
     
 
     for (size_t i = 0; i < childWeakRefs.Length(); ++i) {
-      s->mChildrenPending->AppendElement(childWeakRefs[i]);
+      s->mChildrenPending.AppendElement(childWeakRefs[i]);
     }
 
     nsCOMPtr<nsITimer> timer = do_CreateInstance(NS_TIMER_CONTRACTID);
@@ -1676,29 +1675,29 @@ nsMemoryReporterManager::EndProcessReport(uint32_t aGeneration, bool aSuccess)
                        aGeneration, s->mNumProcessesCompleted,
                        aSuccess ? "completed" : "exited during report",
                        s->mNumProcessesRunning,
-                       static_cast<unsigned>(s->mChildrenPending->Length()));
+                       static_cast<unsigned>(s->mChildrenPending.Length()));
 
   
   while (s->mNumProcessesRunning < s->mConcurrencyLimit &&
-         !s->mChildrenPending->IsEmpty()) {
+         !s->mChildrenPending.IsEmpty()) {
     
     nsRefPtr<ContentParent> nextChild;
-    nextChild.swap(s->mChildrenPending->LastElement());
-    s->mChildrenPending->TruncateLength(s->mChildrenPending->Length() - 1);
+    nextChild.swap(s->mChildrenPending.LastElement());
+    s->mChildrenPending.TruncateLength(s->mChildrenPending.Length() - 1);
     
     if (StartChildReport(nextChild, s)) {
       ++s->mNumProcessesRunning;
       MEMORY_REPORTING_LOG("HandleChildReports (aGen=%u): started child report"
                            " (%u running, %u pending)\n",
                            aGeneration, s->mNumProcessesRunning,
-                           static_cast<unsigned>(s->mChildrenPending->Length()));
+                           static_cast<unsigned>(s->mChildrenPending.Length()));
     }
   }
 
   
   
   if (s->mNumProcessesRunning == 0) {
-    MOZ_ASSERT(s->mChildrenPending->IsEmpty());
+    MOZ_ASSERT(s->mChildrenPending.IsEmpty());
     if (s->mTimer) {
       s->mTimer->Cancel();
     }
@@ -1718,7 +1717,7 @@ nsMemoryReporterManager::TimeoutCallback(nsITimer* aTimer, void* aData)
   MOZ_RELEASE_ASSERT(s, "mgr->mGetReportsState");
   MEMORY_REPORTING_LOG("TimeoutCallback (s->gen=%u; %u running, %u pending)\n",
                        s->mGeneration, s->mNumProcessesRunning,
-                       static_cast<unsigned>(s->mChildrenPending->Length()));
+                       static_cast<unsigned>(s->mChildrenPending.Length()));
 
   
   
@@ -1749,9 +1748,27 @@ nsMemoryReporterManager::FinishReporting()
   return rv;
 }
 
-nsMemoryReporterManager::GetReportsState::~GetReportsState()
+nsMemoryReporterManager::GetReportsState::GetReportsState(
+    uint32_t aGeneration, bool aAnonymize, bool aMinimize,
+    uint32_t aConcurrencyLimit,
+    nsIHandleReportCallback* aHandleReport,
+    nsISupports* aHandleReportData,
+    nsIFinishReportingCallback* aFinishReporting,
+    nsISupports* aFinishReportingData,
+    const nsAString& aDMDDumpIdent)
+  : mGeneration(aGeneration)
+  , mAnonymize(aAnonymize)
+  , mMinimize(aMinimize)
+  , mChildrenPending()
+  , mNumProcessesRunning(1) 
+  , mNumProcessesCompleted(0)
+  , mConcurrencyLimit(aConcurrencyLimit)
+  , mHandleReport(aHandleReport)
+  , mHandleReportData(aHandleReportData)
+  , mFinishReporting(aFinishReporting)
+  , mFinishReportingData(aFinishReportingData)
+  , mDMDDumpIdent(aDMDDumpIdent)
 {
-  delete mChildrenPending;
 }
 
 static void

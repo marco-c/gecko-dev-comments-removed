@@ -211,10 +211,7 @@ private:
     bool                                 mAnonymize;
     bool                                 mMinimize;
     nsCOMPtr<nsITimer>                   mTimer;
-    
-    
-    
-    nsTArray<nsRefPtr<mozilla::dom::ContentParent>>* mChildrenPending;
+    nsTArray<nsRefPtr<mozilla::dom::ContentParent>> mChildrenPending;
     uint32_t                             mNumProcessesRunning;
     uint32_t                             mNumProcessesCompleted;
     uint32_t                             mConcurrencyLimit;
@@ -230,23 +227,7 @@ private:
                     nsISupports* aHandleReportData,
                     nsIFinishReportingCallback* aFinishReporting,
                     nsISupports* aFinishReportingData,
-                    const nsAString& aDMDDumpIdent)
-      : mGeneration(aGeneration)
-      , mAnonymize(aAnonymize)
-      , mMinimize(aMinimize)
-      , mChildrenPending(nullptr)
-      , mNumProcessesRunning(1) 
-      , mNumProcessesCompleted(0)
-      , mConcurrencyLimit(aConcurrencyLimit)
-      , mHandleReport(aHandleReport)
-      , mHandleReportData(aHandleReportData)
-      , mFinishReporting(aFinishReporting)
-      , mFinishReportingData(aFinishReportingData)
-      , mDMDDumpIdent(aDMDDumpIdent)
-    {
-    }
-
-    ~GetReportsState();
+                    const nsAString& aDMDDumpIdent);
   };
 
   
