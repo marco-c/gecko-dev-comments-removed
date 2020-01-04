@@ -4,7 +4,8 @@
 
 
 
-const IGNORE = ["escapeAddonURI", "shouldAutoUpdate", "getStartupChanges",
+const IGNORE = ["getPreferredIconURL", "escapeAddonURI",
+                "shouldAutoUpdate", "getStartupChanges",
                 "addTypeListener", "removeTypeListener",
                 "addAddonListener", "removeAddonListener",
                 "addInstallListener", "removeInstallListener",

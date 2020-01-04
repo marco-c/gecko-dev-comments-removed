@@ -2313,6 +2313,76 @@ var AddonManagerInternal = {
 
 
 
+
+
+
+
+
+
+
+  getPreferredIconURL: function AMI_getPreferredIconURL(aAddon, aSize, aWindow = undefined) {
+    if (aWindow && aWindow.devicePixelRatio) {
+      aSize *= aWindow.devicePixelRatio;
+    }
+
+    let icons = aAddon.icons;
+
+    
+    if (!icons) {
+      icons = {};
+      if (aAddon.iconURL) {
+        icons[32] = aAddon.iconURL;
+        icons[48] = aAddon.iconURL;
+      }
+      if (aAddon.icon64URL) {
+        icons[64] = aAddon.icon64URL;
+      }
+    }
+
+    
+    if (icons[aSize]) {
+      return icons[aSize];
+    }
+
+    let bestSize = null;
+
+    for (let size of Object.keys(icons)) {
+      size = parseInt(size, 10);
+      if (isNaN(size)) {
+        throw Components.Exception("Invalid icon size, must be an integer",
+                                   Cr.NS_ERROR_ILLEGAL_VALUE);
+      }
+
+      if (!bestSize) {
+        bestSize = size;
+        continue;
+      }
+
+      if (size > aSize && bestSize > aSize) {
+        
+        
+        bestSize = Math.min(bestSize, size);
+      }
+      else {
+        
+        
+        bestSize = Math.max(bestSize, size);
+      }
+    }
+
+    return icons[bestSize] || null;
+  },
+
+  
+
+
+
+
+
+
+
+
+
   getAddonByID: function AMI_getAddonByID(aID) {
     if (!gStarted)
       throw Components.Exception("AddonManager is not initialized",
@@ -3228,6 +3298,10 @@ this.AddonManager = {
 
   escapeAddonURI: function AM_escapeAddonURI(aAddon, aUri, aAppVersion) {
     return AddonManagerInternal.escapeAddonURI(aAddon, aUri, aAppVersion);
+  },
+
+  getPreferredIconURL: function AM_getPreferredIconURL(aAddon, aSize, aWindow = undefined) {
+    return AddonManagerInternal.getPreferredIconURL(aAddon, aSize, aWindow);
   },
 
   get shutdown() {
