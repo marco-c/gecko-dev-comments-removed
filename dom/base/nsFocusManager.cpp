@@ -42,6 +42,7 @@
 #include "nsStyleCoord.h"
 #include "TabChild.h"
 #include "nsFrameLoader.h"
+#include "nsNumberControlFrame.h"
 
 #include "mozilla/ContentEvents.h"
 #include "mozilla/dom/Element.h"
@@ -310,6 +311,24 @@ nsFocusManager::GetFocusedDescendant(nsPIDOMWindowOuter* aWindow, bool aDeep,
 nsIContent*
 nsFocusManager::GetRedirectedFocus(nsIContent* aContent)
 {
+  
+  if (aContent->IsHTMLElement(nsGkAtoms::input)) {
+    bool typeIsNumber =
+      static_cast<dom::HTMLInputElement*>(aContent)->GetType() ==
+        NS_FORM_INPUT_NUMBER;
+
+    if (typeIsNumber) {
+      nsNumberControlFrame* numberControlFrame =
+        do_QueryFrame(aContent->GetPrimaryFrame());
+
+      if (numberControlFrame) {
+        HTMLInputElement* textControl =
+          numberControlFrame->GetAnonTextControl();
+        return static_cast<nsIContent*>(textControl);
+      }
+    }
+  }
+
 #ifdef MOZ_XUL
   if (aContent->IsXULElement()) {
     nsCOMPtr<nsIDOMNode> inputField;
