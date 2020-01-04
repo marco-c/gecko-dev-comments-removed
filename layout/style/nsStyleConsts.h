@@ -55,7 +55,7 @@ static inline css::Side operator++(css::Side& side, int) {
   ((((side_) + !!(second_))*2 + ((side_) + !(parallel_))%2) % 8)
 
 
-enum class StyleBasicShape : uint8_t{
+enum class StyleBasicShapeType : uint8_t {
   Polygon,
   Circle,
   Ellipse,
