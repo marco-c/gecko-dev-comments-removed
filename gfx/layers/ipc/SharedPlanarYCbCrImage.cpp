@@ -13,8 +13,7 @@
 #include "mozilla/ipc/SharedMemory.h"   
 #include "mozilla/layers/ImageClient.h"  
 #include "mozilla/layers/LayersSurfaces.h"  
-#include "mozilla/layers/TextureClient.h"
-#include "mozilla/layers/BufferTexture.h"
+#include "mozilla/layers/TextureClient.h"  
 #include "mozilla/layers/YCbCrImageDataSerializer.h"
 #include "mozilla/layers/ImageBridgeChild.h"  
 #include "mozilla/mozalloc.h"           
@@ -66,9 +65,7 @@ SharedPlanarYCbCrImage::GetTextureClient(CompositableClient* aClient)
 uint8_t*
 SharedPlanarYCbCrImage::GetBuffer()
 {
-  
-  MOZ_ASSERT(false);
-  return nullptr;
+  return mTextureClient ? mTextureClient->GetBuffer() : nullptr;
 }
 
 already_AddRefed<gfx::SourceSurface>
@@ -92,13 +89,15 @@ SharedPlanarYCbCrImage::SetData(const PlanarYCbCrData& aData)
     return false;
   }
 
+  MOZ_ASSERT(mTextureClient->AsTextureClientYCbCr());
+
   TextureClientAutoLock autoLock(mTextureClient, OpenMode::OPEN_WRITE_ONLY);
   if (!autoLock.Succeeded()) {
     MOZ_ASSERT(false, "Failed to lock the texture.");
     return false;
   }
 
-  if (!UpdateYCbCrTextureClient(mTextureClient, aData)) {
+  if (!mTextureClient->AsTextureClientYCbCr()->UpdateYCbCr(aData)) {
     MOZ_ASSERT(false, "Failed to copy YCbCr data into the TextureClient");
     return false;
   }
@@ -129,18 +128,8 @@ SharedPlanarYCbCrImage::AllocateAndGetNewBuffer(uint32_t aSize)
   
   mBufferSize = size;
 
-  MappedYCbCrTextureData mapped;
-  if (mTextureClient->BorrowMappedYCbCrData(mapped)) {
-    
-    
-    
-    
-    
-    
-    return mapped.y.data;
-  } else {
-    MOZ_CRASH();
-  }
+  YCbCrImageDataSerializer serializer(mTextureClient->GetBuffer(), mTextureClient->GetBufferSize());
+  return serializer.GetData();
 }
 
 bool
@@ -158,11 +147,7 @@ SharedPlanarYCbCrImage::SetDataNoCopy(const Data &aData)
 
 
 
-  MappedYCbCrTextureData mapped;
-  if(!mTextureClient->BorrowMappedYCbCrData(mapped)) {
-    MOZ_CRASH();
-  }
-  YCbCrImageDataSerializer serializer(mapped.metadata, mBufferSize);
+  YCbCrImageDataSerializer serializer(mTextureClient->GetBuffer(), mTextureClient->GetBufferSize());
   uint8_t *base = serializer.GetData();
   uint32_t yOffset = aData.mYChannel - base;
   uint32_t cbOffset = aData.mCbChannel - base;
@@ -198,18 +183,15 @@ SharedPlanarYCbCrImage::Allocate(PlanarYCbCrData& aData)
     return false;
   }
 
-  MappedYCbCrTextureData mapped;
-  
-  
-  
-  
-  if (!mTextureClient->Lock(OpenMode::OPEN_READ) || !mTextureClient->BorrowMappedYCbCrData(mapped)) {
-    MOZ_CRASH();
-  }
+  YCbCrImageDataSerializer serializer(mTextureClient->GetBuffer(), mTextureClient->GetBufferSize());
+  serializer.InitializeBufferInfo(aData.mYSize,
+                                  aData.mCbCrSize,
+                                  aData.mStereoMode);
+  MOZ_ASSERT(serializer.IsValid());
 
-  aData.mYChannel = mapped.y.data;
-  aData.mCbChannel = mapped.cb.data;
-  aData.mCrChannel = mapped.cr.data;
+  aData.mYChannel = serializer.GetYData();
+  aData.mCbChannel = serializer.GetCbData();
+  aData.mCrChannel = serializer.GetCrData();
 
   
   mData.mYChannel = aData.mYChannel;
@@ -235,8 +217,6 @@ SharedPlanarYCbCrImage::Allocate(PlanarYCbCrData& aData)
   mBufferSize = YCbCrImageDataSerializer::ComputeMinBufferSize(mData.mYSize,
                                                                mData.mCbCrSize);
   mSize = mData.mPicSize;
-
-  mTextureClient->Unlock();
 
   return mBufferSize > 0;
 }

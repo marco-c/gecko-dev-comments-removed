@@ -111,6 +111,12 @@ public:
 
 
 
+  virtual void RemoveTexture(TextureClient* aTexture) = 0;
+
+  
+
+
+
   virtual void HoldUntilTransaction(TextureClient* aClient)
   {
     if (aClient) {
