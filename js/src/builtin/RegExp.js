@@ -602,3 +602,9 @@ function RegExpTest(string) {
     
     return RegExpExec(R, S, true);
 }
+
+
+function RegExpSpecies() {
+    
+    return this;
+}
