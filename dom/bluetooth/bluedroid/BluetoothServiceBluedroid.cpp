@@ -2633,12 +2633,16 @@ BluetoothServiceBluedroid::BackendErrorNotification(bool aCrashed)
 
 
 
+
   BluetoothHfpManager* hfp = BluetoothHfpManager::Get();
   NS_ENSURE_TRUE_VOID(hfp);
   hfp->HandleBackendError();
   BluetoothA2dpManager* a2dp = BluetoothA2dpManager::Get();
   NS_ENSURE_TRUE_VOID(a2dp);
   a2dp->HandleBackendError();
+  BluetoothHidManager* hid = BluetoothHidManager::Get();
+  NS_ENSURE_TRUE_VOID(hid);
+  hid->HandleBackendError();
 
   mIsRestart = true;
   BT_LOGR("Recovery step2: stop bluetooth");

@@ -93,6 +93,7 @@ public:
   
   IMPL_EVENT_HANDLER(a2dpstatuschanged);
   IMPL_EVENT_HANDLER(hfpstatuschanged);
+  IMPL_EVENT_HANDLER(hidstatuschanged);
   IMPL_EVENT_HANDLER(scostatuschanged);
   IMPL_EVENT_HANDLER(requestmediaplaystatus);
   
