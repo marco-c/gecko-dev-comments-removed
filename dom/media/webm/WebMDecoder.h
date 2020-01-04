@@ -21,6 +21,16 @@ public:
     return new WebMDecoder(aOwner);
   }
   virtual MediaDecoderStateMachine* CreateStateMachine();
+
+  
+  static bool IsEnabled();
+
+  
+  
+  
+  
+  static bool CanHandleMediaType(const nsACString& aMIMETypeExcludingCodecs,
+                                 const nsAString& aCodecs);
 };
 
 } 
