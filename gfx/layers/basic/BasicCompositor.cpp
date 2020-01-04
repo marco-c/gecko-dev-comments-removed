@@ -626,11 +626,11 @@ BasicCompositor::EndFrame()
   
   
   
-  LayoutDeviceIntRegion::OldRectIterator iter(mInvalidRegion);
-  for (const LayoutDeviceIntRect *r = iter.Next(); r; r = iter.Next()) {
+  for (auto iter = mInvalidRegion.RectIter(); !iter.Done(); iter.Next()) {
+    const LayoutDeviceIntRect& r = iter.Get();
     dest->CopySurface(source,
-                      IntRect(r->x - mInvalidRect.x, r->y - mInvalidRect.y, r->width, r->height),
-                      IntPoint(r->x - offset.x, r->y - offset.y));
+                      IntRect(r.x - mInvalidRect.x, r.y - mInvalidRect.y, r.width, r.height),
+                      IntPoint(r.x - offset.x, r.y - offset.y));
   }
   if (!mTarget) {
     mWidget->EndRemoteDrawingInRegion(mDrawTarget, mInvalidRegion);
