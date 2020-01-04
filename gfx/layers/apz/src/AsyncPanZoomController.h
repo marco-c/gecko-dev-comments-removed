@@ -624,7 +624,10 @@ protected:
   static AxisLockMode GetAxisLockMode();
 
   
-  nsEventStatus GenerateSingleTap(const ScreenIntPoint& aPoint, mozilla::Modifiers aModifiers);
+  
+  nsEventStatus GenerateSingleTap(GeckoContentController::TapType aType,
+                                  const ScreenIntPoint& aPoint,
+                                  mozilla::Modifiers aModifiers);
 
   
   void OnTouchEndOrCancel();

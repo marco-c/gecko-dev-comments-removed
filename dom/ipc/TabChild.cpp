@@ -1808,6 +1808,11 @@ TabChild::HandleTap(GeckoContentController::TapType aType,
           aInputBlockId);
     }
     break;
+  case GeckoContentController::TapType::eLongTapUp:
+    if (mGlobal && mTabChildGlobal) {
+      mAPZEventState->ProcessLongTapUp();
+    }
+    break;
   case GeckoContentController::TapType::eSentinel:
     
     
