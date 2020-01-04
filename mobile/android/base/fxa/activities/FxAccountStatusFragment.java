@@ -242,6 +242,13 @@ public class FxAccountStatusFragment
 
   @Override
   public boolean onPreferenceClick(Preference preference) {
+    if (preference == profilePreference) {
+      if (!AppConstants.MOZ_ANDROID_NATIVE_ACCOUNT_UI) {
+        
+        ActivityUtils.openURLInFennec(getActivity().getApplicationContext(), "about:accounts?action=avatar");
+      }
+    }
+
     if (preference == manageAccountPreference) {
       
       ActivityUtils.openURLInFennec(getActivity().getApplicationContext(), "about:accounts?action=manage");
@@ -482,7 +489,6 @@ public class FxAccountStatusFragment
     FxAccountSyncStatusHelper.getInstance().startObserving(syncStatusDelegate);
 
     if (AppConstants.MOZ_ANDROID_FIREFOX_ACCOUNT_PROFILES) {
-      profilePreference.getIntent().setData(Uri.parse("about:accounts?action=avatar"));
       
       final IntentFilter intentFilter = new IntentFilter();
       intentFilter.addAction(FxAccountConstants.ACCOUNT_PROFILE_JSON_UPDATED_ACTION);

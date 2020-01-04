@@ -32,7 +32,7 @@ public class FxAccountConstants {
   
   public static final String KEY_PROFILE_JSON_AVATAR = "avatar";
   
-  public static final String KEY_PROFILE_JSON_USERNAME = "username";
+  public static final String KEY_PROFILE_JSON_USERNAME = "displayName";
 
   
   public static final long MINIMUM_TIME_TO_WAIT_AFTER_AGE_CHECK_FAILED_IN_MILLISECONDS = 15 * 60 * 1000;
