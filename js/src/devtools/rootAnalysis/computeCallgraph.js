@@ -65,7 +65,11 @@ function nearestAncestorMethods(csu, method)
     return functions;
 }
 
-function findVirtualFunctions(initialCSU, field, suppressed)
+
+
+
+
+function findVirtualFunctions(initialCSU, field)
 {
     var worklist = [initialCSU];
     var functions = new Set();
@@ -74,12 +78,16 @@ function findVirtualFunctions(initialCSU, field, suppressed)
     
     
     
+    
+    
+    
+    
+    
+
     while (worklist.length) {
         var csu = worklist.pop();
-        if (isSuppressedVirtualMethod(csu, field)) {
-            suppressed[0] = true;
-            return new Set();
-        }
+        if (isSuppressedVirtualMethod(csu, field))
+            return [ new Set(), true ];
         if (isOverridableField(initialCSU, csu, field)) {
             
             
@@ -111,7 +119,7 @@ function findVirtualFunctions(initialCSU, field, suppressed)
             worklist.push(...subclasses.get(csu));
     }
 
-    return functions;
+    return [ functions, false ];
 }
 
 var memoized = new Map();
@@ -148,42 +156,42 @@ function getCallees(edge)
             var field = callee.Exp[0].Field;
             var fieldName = field.Name[0];
             var csuName = field.FieldCSU.Type.Name;
-            var functions = null;
+            var functions;
             if ("FieldInstanceFunction" in field) {
-                var suppressed = [ false ];
-                functions = findVirtualFunctions(csuName, fieldName, suppressed);
-                if (suppressed[0]) {
+                let suppressed;
+                [ functions, suppressed ] = findVirtualFunctions(csuName, fieldName, suppressed);
+                if (suppressed) {
                     
                     
                     callees.push({'kind': "field", 'csu': csuName, 'field': fieldName,
                                   'suppressed': true});
                 }
-            }
-            if (functions) {
-                
-                
-                
-                
-                
-                
-                var targets = [];
-                var fullyResolved = true;
-                for (var name of functions) {
-                    if (name === null) {
-                        
-                        callees.push({'kind': "field", 'csu': csuName, 'field': fieldName});
-                        fullyResolved = false;
-                    } else {
-                        callees.push({'kind': "direct", 'name': name});
-                        targets.push({'kind': "direct", 'name': name});
-                    }
-                }
-                if (fullyResolved)
-                    callees.push({'kind': "resolved-field", 'csu': csuName, 'field': fieldName, 'callees': targets});
             } else {
-                
-                callees.push({'kind': "field", 'csu': csuName, 'field': fieldName});
+                functions = new Set([null]); 
             }
+
+            
+            
+            
+            
+            
+            
+            var targets = [];
+            var fullyResolved = true;
+            for (var name of functions) {
+                if (name === null) {
+                    
+                    
+                    
+                    callees.push({'kind': "field", 'csu': csuName, 'field': fieldName});
+                    fullyResolved = false;
+                } else {
+                    callees.push({'kind': "direct", 'name': name});
+                    targets.push({'kind': "direct", 'name': name});
+                }
+            }
+            if (fullyResolved)
+                callees.push({'kind': "resolved-field", 'csu': csuName, 'field': fieldName, 'callees': targets});
         } else if (callee.Exp[0].Kind == "Var") {
             
             callees.push({'kind': "indirect", 'variable': callee.Exp[0].Variable.Name[0]});
@@ -228,7 +236,6 @@ function getTags(functionName, body) {
     var tags = new Set();
     var annotations = getAnnotations(body);
     if (functionName in annotations) {
-        print("crawling through");
         for (var [ annName, annValue ] of annotations[functionName]) {
             if (annName == 'Tag')
                 tags.add(annValue);
