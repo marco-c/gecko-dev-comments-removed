@@ -185,7 +185,12 @@ function RegExpReplace(string, replaceValue) {
     if (!functionalReplace) {
         
         replaceValue = ToString(replaceValue);
-        firstDollarIndex = callFunction(std_String_indexOf, replaceValue, "$");
+
+        
+        
+        
+        if (replaceValue.length > 1)
+            firstDollarIndex = callFunction(std_String_indexOf, replaceValue, "$");
     }
 
     
