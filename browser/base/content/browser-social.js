@@ -1359,7 +1359,8 @@ SocialMarks = {
     let providers = this.getProviders();
 
     
-    for (let m of document.getElementsByClassName("context-socialmarks")) {
+    let menus = [...document.getElementsByClassName("context-socialmarks")];
+    for (let m of menus) {
       m.parentNode.removeChild(m);
     }
 
