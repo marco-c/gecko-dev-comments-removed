@@ -309,12 +309,6 @@ public:
 
 
 
-  void MarkStreamBlocking(MediaStream* aStream);
-  
-
-
-
-
 
   void RecomputeBlockingAt(MediaStream* aStream,
                            GraphTime aTime, GraphTime aEndBlockingDecisions,
