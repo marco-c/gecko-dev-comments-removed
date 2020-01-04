@@ -1779,9 +1779,6 @@ var Impl = {
 
         reset();
       }.bind(this));
-
-      reset();
-      return Promise.resolve();
     };
 
     
