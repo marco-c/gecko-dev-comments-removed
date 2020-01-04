@@ -357,6 +357,11 @@ var gAdvancedPane = {
     this.observer = {
       onNetworkCacheDiskConsumption: function(consumption) {
         var size = DownloadUtils.convertByteUnits(consumption);
+        
+        
+        if (!prefStrBundle.getFormattedString) {
+          return;
+        }
         actualSizeLabel.value = prefStrBundle.getFormattedString("actualDiskCacheSize", size);
       },
 
@@ -385,6 +390,11 @@ var gAdvancedPane = {
         var actualSizeLabel = document.getElementById("actualAppCacheSize");
         var sizeStrings = DownloadUtils.convertByteUnits(aConsumption);
         var prefStrBundle = document.getElementById("bundlePreferences");
+        
+        
+        if (!prefStrBundle.getFormattedString) {
+          return;
+        }
         var sizeStr = prefStrBundle.getFormattedString("actualAppCacheSize", sizeStrings);
         actualSizeLabel.value = sizeStr;
       }
