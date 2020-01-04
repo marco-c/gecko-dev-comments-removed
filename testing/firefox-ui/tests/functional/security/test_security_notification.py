@@ -35,7 +35,7 @@ class TestSecurityNotification(FirefoxTestCase):
             time.sleep(1)
 
             
-            text = self.marionette.find_element(By.ID, 'technicalContentText')
+            text = self.marionette.find_element(By.ID, 'badCertTechnicalInfo')
             self.assertIn(self.urls[0][8:], text.get_attribute('textContent'))
 
             
