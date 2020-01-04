@@ -180,51 +180,13 @@ element.Store = class {
     let wrappedEl = new XPCNativeWrapper(el);
     if (!el ||
         !(wrappedEl.ownerDocument == wrappedFrame.document) ||
-        this.isDisconnected(wrappedEl, wrappedFrame, wrappedShadowRoot)) {
+        element.isDisconnected(wrappedEl, wrappedFrame, wrappedShadowRoot)) {
       throw new StaleElementReferenceError(
           "The element reference is stale. Either the element " +
           "is no longer attached to the DOM or the page has been refreshed.");
     }
 
     return el;
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  isDisconnected(el, frame, shadowRoot = undefined) {
-    
-    if (shadowRoot && frame.ShadowRoot) {
-      if (el.compareDocumentPosition(shadowRoot) &
-          DOCUMENT_POSITION_DISCONNECTED) {
-        return true;
-      }
-
-      
-      let parent = shadowRoot.host;
-      while (parent && !(parent instanceof frame.ShadowRoot)) {
-        parent = parent.parentNode;
-      }
-      return this.isDisconnected(shadowRoot.host, parent, frame);
-
-    
-    } else {
-      let docEl = frame.document.documentElement;
-      return el.compareDocumentPosition(docEl) &
-          DOCUMENT_POSITION_DISCONNECTED;
-    }
   }
 
   
@@ -741,6 +703,44 @@ element.makeWebElement = function(uuid) {
 element.generateUUID = function() {
   let uuid = uuidGen.generateUUID().toString();
   return uuid.substring(1, uuid.length - 1);
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+element.isDisconnected = function(el, frame, shadowRoot = undefined) {
+  
+  if (shadowRoot && frame.ShadowRoot) {
+    if (el.compareDocumentPosition(shadowRoot) &
+        DOCUMENT_POSITION_DISCONNECTED) {
+      return true;
+    }
+
+    
+    let parent = shadowRoot.host;
+    while (parent && !(parent instanceof frame.ShadowRoot)) {
+      parent = parent.parentNode;
+    }
+    return element.isDisconnected(shadowRoot.host, frame, parent);
+
+  
+  } else {
+    let docEl = frame.document.documentElement;
+    return el.compareDocumentPosition(docEl) &
+        DOCUMENT_POSITION_DISCONNECTED;
+  }
 };
 
 
