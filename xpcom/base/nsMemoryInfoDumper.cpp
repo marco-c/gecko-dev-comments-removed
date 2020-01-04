@@ -448,7 +448,9 @@ public:
 
   void Write(const char* aStr)
   {
-    (void)mGZWriter->Write(aStr);
+    
+    
+    Unused << mGZWriter->Write(aStr);
   }
 
   nsresult Finish() { return mGZWriter->Finish(); }

@@ -35,12 +35,12 @@ public:
 
 
 
-  nsresult Write(const char* aStr)
+  MOZ_MUST_USE nsresult Write(const char* aStr)
   {
     return nsIGZFileWriter::Write(aStr);
   }
 
-  nsresult Write(const char* aStr, uint32_t aLen)
+  MOZ_MUST_USE nsresult Write(const char* aStr, uint32_t aLen)
   {
     return nsIGZFileWriter::Write(aStr, aLen);
   }
