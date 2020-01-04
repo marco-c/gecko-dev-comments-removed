@@ -65,6 +65,8 @@ GetAudioChannelsSuperset(uint32_t aChannels1, uint32_t aChannels2);
 
 
 
+const float SQRT_ONE_HALF = sqrt(0.5);
+
 struct DownMixMatrix {
   
   
@@ -83,19 +85,19 @@ gDownMixMatrices[CUSTOM_CHANNEL_LAYOUTS*(CUSTOM_CHANNEL_LAYOUTS - 1)/2] =
   { { 0, IGNORE, IGNORE }, IGNORE, { 1.0f, IGNORE_F, IGNORE_F } },
   { { 0, 0, 0, 0 }, IGNORE, { 0.25f, 0.25f, 0.25f, 0.25f } },
   { { 0, IGNORE, IGNORE, IGNORE, IGNORE }, IGNORE, { 1.0f, IGNORE_F, IGNORE_F, IGNORE_F, IGNORE_F } },
-  { { 0, 0, 0, IGNORE, 0, 0 }, IGNORE, { 0.7071f, 0.7071f, 1.0f, IGNORE_F, 0.5f, 0.5f } },
+  { { 0, 0, 0, IGNORE, 0, 0 }, IGNORE, { SQRT_ONE_HALF, SQRT_ONE_HALF, 1.0f, IGNORE_F, 0.5f, 0.5f } },
   
   { { 0, 1, IGNORE }, IGNORE, { 1.0f, 1.0f, IGNORE_F } },
   { { 0, 1, 0, 1 }, IGNORE, { 0.5f, 0.5f, 0.5f, 0.5f } },
   { { 0, 1, IGNORE, IGNORE, IGNORE }, IGNORE, { 1.0f, 1.0f, IGNORE_F, IGNORE_F, IGNORE_F } },
-  { { 0, 1, 0, IGNORE, 0, 1 }, 1, { 1.0f, 1.0f, 0.7071f, IGNORE_F, 0.7071f, 0.7071f } },
+  { { 0, 1, 0, IGNORE, 0, 1 }, 1, { 1.0f, 1.0f, SQRT_ONE_HALF, IGNORE_F, SQRT_ONE_HALF, SQRT_ONE_HALF } },
   
   { { 0, 1, 2, IGNORE }, IGNORE, { 1.0f, 1.0f, 1.0f, IGNORE_F } },
   { { 0, 1, 2, IGNORE, IGNORE }, IGNORE, { 1.0f, 1.0f, 1.0f, IGNORE_F, IGNORE_F } },
   { { 0, 1, 2, IGNORE, IGNORE, IGNORE }, IGNORE, { 1.0f, 1.0f, 1.0f, IGNORE_F, IGNORE_F, IGNORE_F } },
   
   { { 0, 1, 2, 3, IGNORE }, IGNORE, { 1.0f, 1.0f, 1.0f, 1.0f, IGNORE_F } },
-  { { 0, 1, 0, IGNORE, 2, 3 }, 1, { 1.0f, 1.0f, 0.7071f, IGNORE_F, 1.0f, 1.0f } },
+  { { 0, 1, 0, IGNORE, 2, 3 }, 1, { 1.0f, 1.0f, SQRT_ONE_HALF, IGNORE_F, 1.0f, 1.0f } },
   
   { { 0, 1, 2, 3, 4, IGNORE }, IGNORE, { 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, IGNORE_F } }
 };
