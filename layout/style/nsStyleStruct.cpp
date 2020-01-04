@@ -3002,11 +3002,16 @@ nsChangeHint nsStyleDisplay::CalcDifference(const nsStyleDisplay& aOther) const
   
   
   
-  
   uint8_t willChangeBitsChanged =
     mWillChangeBitField ^ aOther.mWillChangeBitField;
-  if (willChangeBitsChanged) {
+  if (willChangeBitsChanged & (NS_STYLE_WILL_CHANGE_STACKING_CONTEXT |
+                               NS_STYLE_WILL_CHANGE_SCROLL |
+                               NS_STYLE_WILL_CHANGE_OPACITY)) {
     NS_UpdateHint(hint, nsChangeHint_RepaintFrame);
+  }
+
+  if (willChangeBitsChanged & NS_STYLE_WILL_CHANGE_FIXPOS_CB) {
+    NS_UpdateHint(hint, nsChangeHint_UpdateContainingBlock);
   }
 
   
