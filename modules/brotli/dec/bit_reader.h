@@ -63,7 +63,7 @@ void BrotliInitBitReader(BrotliBitReader* const br, BrotliInput input);
 
 
 int BrotliWarmupBitReader(BrotliBitReader* const br);
-
+static BROTLI_INLINE void BrotliPullByte(BrotliBitReader* const br);
 
 
 
