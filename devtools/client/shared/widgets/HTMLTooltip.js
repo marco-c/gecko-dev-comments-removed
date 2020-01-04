@@ -115,6 +115,8 @@ HTMLTooltip.prototype = {
 
 
 
+
+
   setContent: function (content, width, height) {
     let themeHeight = EXTRA_HEIGHT[this.type] + 2 * EXTRA_BORDER[this.type];
     let themeWidth = 2 * EXTRA_BORDER[this.type];
@@ -207,7 +209,8 @@ HTMLTooltip.prototype = {
     container.setAttribute("type", this.type);
     container.classList.add("tooltip-container");
 
-    let html = '<div class="tooltip-panel"></div>';
+    let html = '<div class="tooltip-filler"></div>';
+    html += '<div class="tooltip-panel"></div>';
 
     if (this.type === TYPE.ARROW) {
       html += '<div class="tooltip-arrow"></div>';
