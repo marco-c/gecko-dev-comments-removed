@@ -248,35 +248,37 @@ static_assert((CSS_PROPERTY_PARSE_PROPERTY_MASK &
 #define CSS_PROPERTY_LOGICAL_END_EDGE             (1<<26)
 
 
-#define CSS_PROPERTY_CAN_ANIMATE_ON_COMPOSITOR    (1<<27)
+
+
+
+#define CSS_PROPERTY_LOGICAL_SINGLE_CUSTOM_VALMAPPING (1<<27)
+
+
+#define CSS_PROPERTY_CAN_ANIMATE_ON_COMPOSITOR    (1<<28)
 
 
 
 
-#define CSS_PROPERTY_INTERNAL                     (1<<28)
-
-
-
-
-
-
-#define CSS_PROPERTY_FIXPOS_CB                    (1<<29)
-
-
-
-
-
-
-
-
-#define CSS_PROPERTY_ABSPOS_CB                    (1<<30)
+#define CSS_PROPERTY_INTERNAL                     (1<<29)
 
 
 
 
 
 
-#define CSS_PROPERTY_LOGICAL_SINGLE_CUSTOM_VALMAPPING (1u << 31)
+#define CSS_PROPERTY_FIXPOS_CB                    (1<<30)
+
+
+
+
+
+
+
+
+#define CSS_PROPERTY_ABSPOS_CB                    (1u<<31)
+
+
+
 
 
 
