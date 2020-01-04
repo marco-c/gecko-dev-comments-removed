@@ -25,6 +25,15 @@ public:
   virtual already_AddRefed<FileSystemBase>
   Clone() override;
 
+  virtual bool
+  ShouldCreateDirectory() override
+  {
+    MOZ_CRASH("This should not be called.");
+    
+    
+    return false;
+  }
+
   virtual nsISupports*
   GetParentObject() const override;
 
@@ -63,6 +72,9 @@ public:
     MOZ_CRASH("This should not be called on the PBackground thread.");
     return nullptr;
   }
+
+  virtual bool
+  ShouldCreateDirectory() override { return false; }
 
   virtual nsISupports*
   GetParentObject() const override
