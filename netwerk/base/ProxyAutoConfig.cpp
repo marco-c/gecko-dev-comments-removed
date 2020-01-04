@@ -679,7 +679,7 @@ private:
 
 
 
-    JS_SetNativeStackQuota(mRuntime, 128 * sizeof(size_t) * 1024);
+    JS_SetNativeStackQuota(mContext, 128 * sizeof(size_t) * 1024);
 
     JS::SetWarningReporter(mContext, PACWarningReporter);
 

@@ -24155,10 +24155,11 @@ NormalJSRuntime::Init()
     return false;
   }
 
-  
-  JS_SetNativeStackQuota(mRuntime, 128 * sizeof(size_t) * 1024);
-
   mContext = JS_GetContext(mRuntime);
+
+  
+  JS_SetNativeStackQuota(mContext, 128 * sizeof(size_t) * 1024);
+
   if (NS_WARN_IF(!JS::InitSelfHostedCode(mContext))) {
     return false;
   }
