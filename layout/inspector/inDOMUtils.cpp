@@ -1204,7 +1204,7 @@ GetStatesForPseudoClass(const nsAString& aStatePseudo)
     EventStates()
   };
   static_assert(MOZ_ARRAY_LENGTH(sPseudoClassStates) ==
-                nsCSSPseudoClasses::ePseudoClass_NotPseudoClass + 1,
+                static_cast<size_t>(CSSPseudoClassType::NotPseudo) + 1,
                 "Length of PseudoClassStates array is incorrect");
 
   nsCOMPtr<nsIAtom> atom = NS_Atomize(aStatePseudo);
@@ -1212,12 +1212,13 @@ GetStatesForPseudoClass(const nsAString& aStatePseudo)
   
   
   if (nsCSSPseudoClasses::GetPseudoType(atom) ==
-      nsCSSPseudoClasses::ePseudoClass_mozAnyLink) {
+      CSSPseudoClassType::mozAnyLink) {
     return EventStates();
   }
   
   
-  return sPseudoClassStates[nsCSSPseudoClasses::GetPseudoType(atom)];
+  CSSPseudoClassType type = nsCSSPseudoClasses::GetPseudoType(atom);
+  return sPseudoClassStates[static_cast<CSSPseudoClassTypeBase>(type)];
 }
 
 NS_IMETHODIMP
