@@ -3563,7 +3563,9 @@ js::detail::CopyScript(JSContext* cx, HandleObject scriptStaticScope, HandleScri
     
     dst->data = data.forget();
     dst->dataSize_ = size;
-    memcpy(dst->data, src->data, size);
+    MOZ_ASSERT(bool(dst->data) == bool(src->data));
+    if (dst->data)
+        memcpy(dst->data, src->data, size);
 
     
     dst->setCode(src->code());
