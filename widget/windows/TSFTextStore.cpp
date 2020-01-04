@@ -4626,6 +4626,17 @@ TSFTextStore::OnTextChangeInternal(const IMENotification& aIMENotification)
     return NS_OK;
   }
 
+  if (mComposition.IsComposing() &&
+      !textChangeData.mIncludingChangesDuringComposition) {
+    
+    
+    
+    
+    
+    
+    return NS_OK;
+  }
+
   mDeferNotifyingTSF = false;
 
   if (IsReadLocked()) {
