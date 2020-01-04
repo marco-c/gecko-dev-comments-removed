@@ -84,7 +84,7 @@ GCRuntime::tryNewNurseryObject(JSContext* cx, size_t thingSize, size_t nDynamicS
         return obj;
 
     if (allowGC && !rt->mainThread.suppressGC) {
-        minorGC(cx, JS::gcreason::OUT_OF_NURSERY);
+        minorGC(JS::gcreason::OUT_OF_NURSERY);
 
         
         if (nursery.isEnabled()) {
@@ -227,7 +227,7 @@ GCRuntime::gcIfNeededPerAllocation(JSContext* cx)
     
     
     if (rt->hasPendingInterrupt())
-        gcIfRequested(cx);
+        gcIfRequested();
 
     
     
