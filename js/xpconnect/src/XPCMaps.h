@@ -83,7 +83,7 @@ public:
             r.front().value()->DebugDump(depth);
     }
 
-    void UpdateWeakPointersAfterGC(XPCJSRuntime* runtime);
+    void UpdateWeakPointersAfterGC(XPCJSContext* context);
 
     void ShutdownMarker();
 

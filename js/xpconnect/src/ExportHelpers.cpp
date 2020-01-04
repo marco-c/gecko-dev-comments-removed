@@ -365,7 +365,7 @@ NewFunctionForwarder(JSContext* cx, HandleId idArg, HandleObject callable,
 {
     RootedId id(cx, idArg);
     if (id == JSID_VOIDHANDLE)
-        id = GetRTIdByIndex(cx, XPCJSRuntime::IDX_EMPTYSTRING);
+        id = GetJSIDByIndex(cx, XPCJSContext::IDX_EMPTYSTRING);
 
     
     

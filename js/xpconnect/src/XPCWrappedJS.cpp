@@ -249,7 +249,7 @@ nsXPCWrappedJS::AddRef(void)
 
     if (2 == cnt && IsValid()) {
         GetJSObject(); 
-        mClass->GetRuntime()->AddWrappedJSRoot(this);
+        mClass->GetContext()->AddWrappedJSRoot(this);
     }
 
     return cnt;
@@ -350,10 +350,10 @@ nsXPCWrappedJS::GetNewOrUsed(JS::HandleObject jsObj,
 
     
     RefPtr<nsXPCWrappedJS> root = rootComp->GetWrappedJSMap()->Find(rootJSObj);
-    MOZ_ASSERT_IF(root, !nsXPConnect::GetRuntimeInstance()->GetMultiCompartmentWrappedJSMap()->
+    MOZ_ASSERT_IF(root, !nsXPConnect::GetContextInstance()->GetMultiCompartmentWrappedJSMap()->
                         Find(rootJSObj));
     if (!root) {
-        root = nsXPConnect::GetRuntimeInstance()->GetMultiCompartmentWrappedJSMap()->
+        root = nsXPConnect::GetContextInstance()->GetMultiCompartmentWrappedJSMap()->
             Find(rootJSObj);
     }
 
@@ -420,7 +420,7 @@ nsXPCWrappedJS::nsXPCWrappedJS(JSContext* cx,
         
         if (mRoot->IsMultiCompartment()) {
             xpc::CompartmentPrivate::Get(mRoot->mJSObj)->GetWrappedJSMap()->Remove(mRoot);
-            MOZ_RELEASE_ASSERT(nsXPConnect::GetRuntimeInstance()->
+            MOZ_RELEASE_ASSERT(nsXPConnect::GetContextInstance()->
                     GetMultiCompartmentWrappedJSMap()->Add(cx, mRoot));
         }
     }
@@ -432,7 +432,7 @@ nsXPCWrappedJS::~nsXPCWrappedJS()
 }
 
 void
-XPCJSRuntime::RemoveWrappedJS(nsXPCWrappedJS* wrapper)
+XPCJSContext::RemoveWrappedJS(nsXPCWrappedJS* wrapper)
 {
     AssertInvalidWrappedJSNotInTable(wrapper);
     if (!wrapper->IsValid())
@@ -465,7 +465,7 @@ NotHasWrapperAssertionCallback(JSContext* cx, void* data, JSCompartment* comp)
 #endif
 
 void
-XPCJSRuntime::AssertInvalidWrappedJSNotInTable(nsXPCWrappedJS* wrapper) const
+XPCJSContext::AssertInvalidWrappedJSNotInTable(nsXPCWrappedJS* wrapper) const
 {
 #ifdef DEBUG
     if (!wrapper->IsValid()) {
@@ -482,20 +482,20 @@ nsXPCWrappedJS::Destroy()
     MOZ_ASSERT(1 == int32_t(mRefCnt), "should be stabilized for deletion");
 
     if (IsRootWrapper())
-        nsXPConnect::GetRuntimeInstance()->RemoveWrappedJS(this);
+        nsXPConnect::GetContextInstance()->RemoveWrappedJS(this);
     Unlink();
 }
 
 void
 nsXPCWrappedJS::Unlink()
 {
-    nsXPConnect::GetRuntimeInstance()->AssertInvalidWrappedJSNotInTable(this);
+    nsXPConnect::GetContextInstance()->AssertInvalidWrappedJSNotInTable(this);
 
     if (IsValid()) {
-        XPCJSRuntime* rt = nsXPConnect::GetRuntimeInstance();
-        if (rt) {
+        XPCJSContext* cx = nsXPConnect::GetContextInstance();
+        if (cx) {
             if (IsRootWrapper())
-                rt->RemoveWrappedJS(this);
+                cx->RemoveWrappedJS(this);
 
             if (mRefCnt > 1)
                 RemoveFromRootSet();
@@ -530,8 +530,8 @@ nsXPCWrappedJS::Unlink()
 
     mClass = nullptr;
     if (mOuter) {
-        XPCJSRuntime* rt = nsXPConnect::GetRuntimeInstance();
-        if (rt->GCIsRunning()) {
+        XPCJSContext* cx = nsXPConnect::GetContextInstance();
+        if (cx->GCIsRunning()) {
             DeferredFinalize(mOuter.forget().take());
         } else {
             mOuter = nullptr;

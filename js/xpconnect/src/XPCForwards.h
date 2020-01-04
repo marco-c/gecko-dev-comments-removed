@@ -12,7 +12,7 @@
 
 
 class nsXPConnect;
-class XPCJSRuntime;
+class XPCJSContext;
 class XPCContext;
 class XPCCallContext;
 

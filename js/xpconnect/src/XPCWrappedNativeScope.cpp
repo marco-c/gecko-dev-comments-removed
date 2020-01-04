@@ -237,7 +237,7 @@ XPCWrappedNativeScope::AttachComponentsObject(JSContext* aCx)
     if (c)
         attrs |= JSPROP_PERMANENT;
 
-    RootedId id(aCx, XPCJSRuntime::Get()->GetStringID(XPCJSRuntime::IDX_COMPONENTS));
+    RootedId id(aCx, XPCJSContext::Get()->GetStringID(XPCJSContext::IDX_COMPONENTS));
     return JS_DefinePropertyById(aCx, global, id, components, attrs);
 }
 
@@ -483,7 +483,7 @@ XPCWrappedNativeScope::~XPCWrappedNativeScope()
 
 
 void
-XPCWrappedNativeScope::TraceWrappedNativesInAllScopes(JSTracer* trc, XPCJSRuntime* rt)
+XPCWrappedNativeScope::TraceWrappedNativesInAllScopes(JSTracer* trc, XPCJSContext* cx)
 {
     
     
@@ -512,7 +512,7 @@ SuspectDOMExpandos(JSObject* obj, nsCycleCollectionNoteRootCallback& cb)
 
 
 void
-XPCWrappedNativeScope::SuspectAllWrappers(XPCJSRuntime* rt,
+XPCWrappedNativeScope::SuspectAllWrappers(XPCJSContext* cx,
                                           nsCycleCollectionNoteRootCallback& cb)
 {
     for (XPCWrappedNativeScope* cur = gScopes; cur; cur = cur->mNext) {
@@ -529,7 +529,7 @@ XPCWrappedNativeScope::SuspectAllWrappers(XPCJSRuntime* rt,
 
 
 void
-XPCWrappedNativeScope::UpdateWeakPointersAfterGC(XPCJSRuntime* rt)
+XPCWrappedNativeScope::UpdateWeakPointersAfterGC(XPCJSContext* cx)
 {
     
     

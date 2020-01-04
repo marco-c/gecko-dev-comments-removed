@@ -30,7 +30,7 @@ function testBody() {
 
   simulateActivityCallback(true);
   busyWait(1000); 
-  var stateChange = Cu.getWatchdogTimestamp("RuntimeStateChange");
+  var stateChange = Cu.getWatchdogTimestamp("ContextStateChange");
   startHibernation = Cu.getWatchdogTimestamp("WatchdogHibernateStart");
   stopHibernation = Cu.getWatchdogTimestamp("WatchdogHibernateStop");
   do_log_info("Post-hibernation statistics:");

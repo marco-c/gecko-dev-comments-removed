@@ -60,18 +60,18 @@ const char XPC_XPCONNECT_CONTRACTID[]     = "@mozilla.org/js/xpc/XPConnect;1";
 
 
 nsXPConnect::nsXPConnect()
-    :   mRuntime(nullptr),
+    :   mContext(nullptr),
         mShuttingDown(false)
 {
-    mRuntime = XPCJSRuntime::newXPCJSRuntime();
-    if (!mRuntime) {
-        NS_RUNTIMEABORT("Couldn't create XPCJSRuntime.");
+    mContext = XPCJSContext::newXPCJSContext();
+    if (!mContext) {
+        NS_RUNTIMEABORT("Couldn't create XPCJSContext.");
     }
 }
 
 nsXPConnect::~nsXPConnect()
 {
-    mRuntime->DeleteSingletonScopes();
+    mContext->DeleteSingletonScopes();
 
     
     
@@ -79,17 +79,17 @@ nsXPConnect::~nsXPConnect()
     
     
     
-    mRuntime->GarbageCollect(JS::gcreason::XPCONNECT_SHUTDOWN);
+    mContext->GarbageCollect(JS::gcreason::XPCONNECT_SHUTDOWN);
 
     mShuttingDown = true;
     XPCWrappedNativeScope::SystemIsBeingShutDown();
-    mRuntime->SystemIsBeingShutDown();
+    mContext->SystemIsBeingShutDown();
 
     
     
     
     
-    mRuntime->GarbageCollect(JS::gcreason::XPCONNECT_SHUTDOWN);
+    mContext->GarbageCollect(JS::gcreason::XPCONNECT_SHUTDOWN);
 
     NS_RELEASE(gSystemPrincipal);
     gScriptSecurityManager = nullptr;
@@ -97,7 +97,7 @@ nsXPConnect::~nsXPConnect()
     
     XPC_LOG_FINISH();
 
-    delete mRuntime;
+    delete mContext;
 
     gSelf = nullptr;
     gOnceAliveNowDead = true;
@@ -109,8 +109,8 @@ nsXPConnect::InitStatics()
 {
     gSelf = new nsXPConnect();
     gOnceAliveNowDead = false;
-    if (!gSelf->mRuntime) {
-        NS_RUNTIMEABORT("Couldn't create XPCJSRuntime.");
+    if (!gSelf->mContext) {
+        NS_RUNTIMEABORT("Couldn't create XPCJSContext.");
     }
 
     
@@ -123,13 +123,13 @@ nsXPConnect::InitStatics()
     gScriptSecurityManager->GetSystemPrincipal(&gSystemPrincipal);
     MOZ_RELEASE_ASSERT(gSystemPrincipal);
 
-    if (!JS::InitSelfHostedCode(gSelf->mRuntime->Context()))
+    if (!JS::InitSelfHostedCode(gSelf->mContext->Context()))
         MOZ_CRASH("InitSelfHostedCode failed");
-    if (!gSelf->mRuntime->JSContextInitialized(gSelf->mRuntime->Context()))
+    if (!gSelf->mContext->JSContextInitialized(gSelf->mContext->Context()))
         MOZ_CRASH("JSContextInitialized failed");
 
     
-    gSelf->mRuntime->InitSingletonScopes();
+    gSelf->mContext->InitSingletonScopes();
 }
 
 nsXPConnect*
@@ -152,11 +152,11 @@ nsXPConnect::ReleaseXPConnectSingleton()
 }
 
 
-XPCJSRuntime*
-nsXPConnect::GetRuntimeInstance()
+XPCJSContext*
+nsXPConnect::GetContextInstance()
 {
     nsXPConnect* xpc = XPConnect();
-    return xpc->GetRuntime();
+    return xpc->GetContext();
 }
 
 
@@ -321,7 +321,7 @@ nsXPConnect::GetInfoForName(const char * name, nsIInterfaceInfo** info)
 NS_IMETHODIMP
 nsXPConnect::GarbageCollect(uint32_t reason)
 {
-    GetRuntime()->GarbageCollect(reason);
+    GetContext()->GarbageCollect(reason);
     return NS_OK;
 }
 
@@ -762,7 +762,7 @@ nsXPConnect::GetCurrentNativeCallContext(nsAXPCNativeCallContext * *aCurrentNati
 {
     MOZ_ASSERT(aCurrentNativeCallContext, "bad param");
 
-    *aCurrentNativeCallContext = XPCJSRuntime::Get()->GetCallContext();
+    *aCurrentNativeCallContext = XPCJSContext::Get()->GetCallContext();
     return NS_OK;
 }
 
@@ -770,8 +770,8 @@ NS_IMETHODIMP
 nsXPConnect::SetFunctionThisTranslator(const nsIID & aIID,
                                        nsIXPCFunctionThisTranslator* aTranslator)
 {
-    XPCJSRuntime* rt = GetRuntime();
-    IID2ThisTranslatorMap* map = rt->GetThisTranslatorMap();
+    XPCJSContext* cx = GetContext();
+    IID2ThisTranslatorMap* map = cx->GetThisTranslatorMap();
     map->Add(aIID, aTranslator);
     return NS_OK;
 }
@@ -860,13 +860,13 @@ nsXPConnect::DebugDump(int16_t depth)
     XPC_LOG_INDENT();
         XPC_LOG_ALWAYS(("gSelf @ %x", gSelf));
         XPC_LOG_ALWAYS(("gOnceAliveNowDead is %d", (int)gOnceAliveNowDead));
-        if (mRuntime) {
+        if (mContext) {
             if (depth)
-                mRuntime->DebugDump(depth);
+                mContext->DebugDump(depth);
             else
-                XPC_LOG_ALWAYS(("XPCJSRuntime @ %x", mRuntime));
+                XPC_LOG_ALWAYS(("XPCJSContext @ %x", mContext));
         } else
-            XPC_LOG_ALWAYS(("mRuntime is null"));
+            XPC_LOG_ALWAYS(("mContext is null"));
         XPCWrappedNativeScope::DebugDumpAllScopes(depth);
     XPC_LOG_OUTDENT();
 #endif
@@ -1068,7 +1068,7 @@ SetLocationForGlobal(JSObject* global, nsIURI* locationURI)
 NS_IMETHODIMP
 nsXPConnect::NotifyDidPaint()
 {
-    JS::NotifyDidPaint(GetRuntime()->Context());
+    JS::NotifyDidPaint(GetContext()->Context());
     return NS_OK;
 }
 
