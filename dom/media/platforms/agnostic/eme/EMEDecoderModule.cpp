@@ -84,12 +84,12 @@ public:
       return;
     }
 
-    if (aDecrypted.mStatus == GMPNoKeyErr) {
+    if (aDecrypted.mStatus == NoKeyErr) {
       
       
       
       Input(aDecrypted.mSample);
-    } else if (GMP_FAILED(aDecrypted.mStatus)) {
+    } else if (aDecrypted.mStatus != Ok) {
       if (mCallback) {
         mCallback->Error(MediaDataDecoderError::FATAL_ERROR);
       }
