@@ -5,7 +5,11 @@
 
 
 
+#include "jsapi.h"
+
 #include "jsapi-tests/tests.h"
+
+using namespace JS;
 
 static bool executor_called = false;
 
