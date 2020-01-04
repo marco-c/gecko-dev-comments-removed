@@ -1599,6 +1599,14 @@ Navigator::HasFeature(const nsAString& aName, ErrorResult& aRv)
   }
 
   
+#ifdef MOZ_B2G
+  if (aName.EqualsLiteral("web-extensions")) {
+    p->MaybeResolve(true);
+    return p.forget();
+  }
+#endif
+
+  
   const char manifestFeatures[][64] = {
     "manifest.origin"
   , "manifest.redirects"
