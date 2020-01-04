@@ -362,7 +362,7 @@ protected:
                      nsIURI* aReferrer,
                      bool aSendReferrer,
                      uint32_t aReferrerPolicy,
-                     nsISupports* aOwner,
+                     nsIPrincipal* aTriggeringPrincipal,
                      const char* aTypeHint,
                      const nsAString& aFileName,
                      nsIInputStream* aPostData,
@@ -405,7 +405,8 @@ protected:
   
   
   
-  bool OnNewURI(nsIURI* aURI, nsIChannel* aChannel, nsISupports* aOwner,
+  bool OnNewURI(nsIURI* aURI, nsIChannel* aChannel,
+                nsIPrincipal* aTriggeringPrincipal,
                 uint32_t aLoadType,
                 bool aFireOnLocationChange,
                 bool aAddToGlobalHistory,
@@ -423,7 +424,7 @@ protected:
   
   
   nsresult AddToSessionHistory(nsIURI* aURI, nsIChannel* aChannel,
-                               nsISupports* aOwner,
+                               nsIPrincipal* aTriggeringPrincipal,
                                bool aCloneChildren,
                                nsISHEntry** aNewEntry);
   nsresult AddChildSHEntryToParent(nsISHEntry* aNewEntry, int32_t aChildOffset,
