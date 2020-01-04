@@ -106,6 +106,16 @@ FrameAnimator::AdvanceFrame(TimeStamp aTime)
     
     if (!mDoneDecoding) {
       
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      mCurrentAnimationFrameTime = aTime;
       return ret;
     }
 
