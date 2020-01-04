@@ -4,7 +4,7 @@
 
 %filter substitution
 
-%define toolbarHighlight hsla(0,0%,100%,.05)
+%define toolbarHighlight hsla(0,0%,100%,.15)
 %define toolbarHighlightLWT rgba(255,255,255,.4)
 
 %define navbarInsetHighlight hsla(0,0%,100%,.4)
