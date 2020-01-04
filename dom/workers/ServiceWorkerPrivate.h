@@ -195,11 +195,6 @@ private:
 
   
   
-  
-  bool mIsPushWorker;
-
-  
-  
   RefPtr<KeepAliveToken> mKeepAliveToken;
 
   uint64_t mDebuggerCount;

@@ -1920,11 +1920,8 @@ ServiceWorkerManager::StopControllingADocument(ServiceWorkerRegistrationInfo* aR
     } else {
       
       
-      if (aRegistration->GetActive()) {
-        ServiceWorkerPrivate* serviceWorkerPrivate =
-          aRegistration->GetActive()->WorkerPrivate();
-        serviceWorkerPrivate->NoteStoppedControllingDocuments();
-      }
+      
+      
       aRegistration->TryToActivateAsync();
     }
   }
