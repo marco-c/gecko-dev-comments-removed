@@ -7866,11 +7866,19 @@ IsInlineFrame(nsIFrame *aFrame)
 
 static nsRect
 UnionBorderBoxes(nsIFrame* aFrame, bool aApplyTransform,
+                 bool& aOutValid,
                  const nsSize* aSizeOverride = nullptr,
                  const nsOverflowAreas* aOverflowOverride = nullptr)
 {
   const nsRect bounds(nsPoint(0, 0),
                       aSizeOverride ? *aSizeOverride : aFrame->GetSize());
+
+  
+  
+  
+  
+  
+  aOutValid = !aFrame->IsFrameOfType(nsIFrame::eSVGContainer);
 
   
   
@@ -7934,8 +7942,13 @@ UnionBorderBoxes(nsIFrame* aFrame, bool aApplyTransform,
       
       
       
-      nsRect childRect = UnionBorderBoxes(child, true) +
+      bool validRect = true;
+      nsRect childRect = UnionBorderBoxes(child, true, validRect) +
                          child->GetPosition();
+
+      if (!validRect) {
+        continue;
+      }
 
       if (hasClipPropClip) {
         
@@ -7951,7 +7964,15 @@ UnionBorderBoxes(nsIFrame* aFrame, bool aApplyTransform,
       if (doTransform && !child->Combines3DTransformWithAncestors()) {
         childRect = nsDisplayTransform::TransformRect(childRect, aFrame, &bounds);
       }
-      u.UnionRectEdges(u, childRect);
+
+      
+      
+      if (!aOutValid && validRect) {
+        u = childRect;
+        aOutValid = true;
+      } else {
+        u.UnionRectEdges(u, childRect);
+      }
     }
   }
 
@@ -7998,11 +8019,12 @@ ComputeAndIncludeOutlineArea(nsIFrame* aFrame, nsOverflowAreas& aOverflowAreas,
   
   
   nsRect innerRect;
+  bool validRect;
   if (frameForArea == aFrame) {
-    innerRect = UnionBorderBoxes(aFrame, false, &aNewSize, &aOverflowAreas);
+    innerRect = UnionBorderBoxes(aFrame, false, validRect, &aNewSize, &aOverflowAreas);
   } else {
     for (; frameForArea; frameForArea = frameForArea->GetNextSibling()) {
-      nsRect r(UnionBorderBoxes(frameForArea, true));
+      nsRect r(UnionBorderBoxes(frameForArea, true, validRect));
 
       
       
