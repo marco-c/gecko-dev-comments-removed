@@ -9,7 +9,17 @@ namespace mozilla {
 namespace detail {
 void log_print(const PRLogModuleInfo* aModule,
                       LogLevel aLevel,
-                      const char* aFmt, ...) { }
+                      const char* aFmt, ...)
+  {
+    
+    va_list ap;
+    va_start(ap, aFmt);
+    char* buff = PR_vsmprintf(aFmt, ap);
+    PR_LogPrint("%s", buff);
+    PR_smprintf_free(buff);
+    va_end(ap);
+  }
+
 }
 }
 
