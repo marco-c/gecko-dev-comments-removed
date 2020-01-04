@@ -12,6 +12,8 @@ Cu.import("chrome://marionette/content/error.js");
 Cu.import("chrome://marionette/content/element.js");
 Cu.import("chrome://marionette/content/event.js");
 
+Cu.importGlobalProperties(["File"]);
+
 this.EXPORTED_SYMBOLS = ["interaction"];
 
 
@@ -229,7 +231,14 @@ interaction.selectOption = function(el) {
 
 
 
-interaction.uploadFile = function(el, file) {
+interaction.uploadFile = function(el, path) {
+  let file;
+  try {
+    file = new File(path);
+  } catch (e) {
+    throw new InvalidArgumentError("File not found: " + path);
+  }
+
   let fs = Array.prototype.slice.call(el.files);
   fs.push(file);
 

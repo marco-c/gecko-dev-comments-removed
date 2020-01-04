@@ -62,10 +62,6 @@ var capabilities = {};
 var actions = new action.Chain(checkForInterrupted);
 
 
-
-var fileInputElement;
-
-
 var onunload;
 
 
@@ -252,12 +248,12 @@ var deleteAllCookiesFn = dispatch(deleteAllCookies);
 var executeFn = dispatch(execute);
 var executeInSandboxFn = dispatch(executeInSandbox);
 var executeSimpleTestFn = dispatch(executeSimpleTest);
+var sendKeysToElementFn = dispatch(sendKeysToElement);
 
 
 
 
 function startListeners() {
-  addMessageListenerId("Marionette:receiveFiles", receiveFiles);
   addMessageListenerId("Marionette:newSession", newSession);
   addMessageListenerId("Marionette:execute", executeFn);
   addMessageListenerId("Marionette:executeInSandbox", executeInSandboxFn);
@@ -287,7 +283,7 @@ function startListeners() {
   addMessageListenerId("Marionette:getElementRect", getElementRectFn);
   addMessageListenerId("Marionette:isElementEnabled", isElementEnabledFn);
   addMessageListenerId("Marionette:isElementSelected", isElementSelectedFn);
-  addMessageListenerId("Marionette:sendKeysToElement", sendKeysToElement);
+  addMessageListenerId("Marionette:sendKeysToElement", sendKeysToElementFn);
   addMessageListenerId("Marionette:clearElement", clearElementFn);
   addMessageListenerId("Marionette:switchToFrame", switchToFrame);
   addMessageListenerId("Marionette:switchToParentFrame", switchToParentFrame);
@@ -362,7 +358,6 @@ function restart(msg) {
 
 
 function deleteSession(msg) {
-  removeMessageListenerId("Marionette:receiveFiles", receiveFiles);
   removeMessageListenerId("Marionette:newSession", newSession);
   removeMessageListenerId("Marionette:execute", executeFn);
   removeMessageListenerId("Marionette:executeInSandbox", executeInSandboxFn);
@@ -392,7 +387,7 @@ function deleteSession(msg) {
   removeMessageListenerId("Marionette:getElementRect", getElementRectFn);
   removeMessageListenerId("Marionette:isElementEnabled", isElementEnabledFn);
   removeMessageListenerId("Marionette:isElementSelected", isElementSelectedFn);
-  removeMessageListenerId("Marionette:sendKeysToElement", sendKeysToElement);
+  removeMessageListenerId("Marionette:sendKeysToElement", sendKeysToElementFn);
   removeMessageListenerId("Marionette:clearElement", clearElementFn);
   removeMessageListenerId("Marionette:switchToFrame", switchToFrame);
   removeMessageListenerId("Marionette:switchToParentFrame", switchToParentFrame);
@@ -587,29 +582,6 @@ function* executeSimpleTest(script, args, timeout, opts) {
 
 function setTestName(msg) {
   marionetteTestName = msg.json.value;
-  sendOk(msg.json.command_id);
-}
-
-
-
-
-
-function receiveFiles(msg) {
-  if ("error" in msg.json) {
-    let err = new InvalidArgumentError(msg.json.error);
-    sendError(err, msg.json.command_id);
-    return;
-  }
-
-  if (!fileInputElement) {
-    let err = new InvalidElementStateError("receiveFiles called with no valid fileInputElement");
-    sendError(err, msg.json.command_id);
-    return;
-  }
-
-  interaction.uploadFile(fileInputElement, msg.json.file);
-  fileInputElement = null;
-
   sendOk(msg.json.command_id);
 }
 
@@ -1308,28 +1280,14 @@ function isElementSelected(id) {
       el, capabilities.raisesAccessibilityExceptions);
 }
 
-
-
-
-function sendKeysToElement(msg) {
-  let command_id = msg.json.command_id;
-  let val = msg.json.value;
-  let id = msg.json.id;
+function* sendKeysToElement(id, val) {
   let el = seenEls.get(id, curContainer);
-
   if (el.type == "file") {
-    let p = val.join("");
-        fileInputElement = el;
-        
-        
-        
-        sendSyncMessage("Marionette:getFiles",
-            {value: p, command_id: command_id});
+    let path = val.join("");
+    yield interaction.uploadFile(el, path);
   } else {
-    let promise = interaction.sendKeysToElement(
-        el, val, false, capabilities.raisesAccessibilityExceptions)
-      .then(() => sendOk(command_id))
-      .catch(e => sendError(e, command_id));
+    yield interaction.sendKeysToElement(
+        el, val, false, capabilities.raisesAccessibilityExceptions);
   }
 }
 
