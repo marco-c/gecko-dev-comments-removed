@@ -63,28 +63,19 @@ enum RegExpRunStatus
     RegExpRunStatus_Success_NotFound
 };
 
-class RegExpObjectBuilder
-{
-    ExclusiveContext* cx;
-    Rooted<RegExpObject*> reobj_;
+extern RegExpObject*
+RegExpAlloc(ExclusiveContext* cx);
 
-    bool getOrCreate();
-    bool getOrCreateClone(HandleObjectGroup group);
+extern RegExpObject*
+InitializeRegExp(ExclusiveContext* cx, Handle<RegExpObject*> regexp, HandleAtom source,
+                 RegExpFlag flags);
 
-  public:
-    explicit RegExpObjectBuilder(ExclusiveContext* cx, RegExpObject* reobj = nullptr);
 
-    RegExpObject* reobj() { return reobj_; }
+extern JSObject*
+CloneRegExpObject(JSContext* cx, JSObject* regexp);
 
-    RegExpObject* build(HandleAtom source, RegExpFlag flags);
-    RegExpObject* build(HandleAtom source, RegExpShared& shared);
-
-    
-    RegExpObject* clone(Handle<RegExpObject*> other);
-};
-
-JSObject*
-CloneRegExpObject(JSContext* cx, JSObject* obj);
+extern JSObject*
+CreateRegExpPrototype(JSContext* cx, JSProtoKey key);
 
 
 
@@ -457,7 +448,9 @@ class RegExpObject : public NativeObject
     static void trace(JSTracer* trc, JSObject* obj);
 
   private:
-    friend class RegExpObjectBuilder;
+    friend RegExpObject*
+    InitializeRegExp(ExclusiveContext* cx, Handle<RegExpObject*> regexp, HandleAtom source,
+                     RegExpFlag flags);
 
     bool init(ExclusiveContext* cx, HandleAtom source, RegExpFlag flags);
 

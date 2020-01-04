@@ -141,10 +141,12 @@ js::ExecuteRegExpLegacy(JSContext* cx, RegExpStatics* res, RegExpObject& reobj,
 }
 
 
-bool
-RegExpInitialize(JSContext* cx, RegExpObjectBuilder& builder,
-                 HandleValue patternValue, HandleValue flagsValue,
-                 RegExpStaticsUse staticsUse, MutableHandleObject result)
+
+
+
+static bool
+RegExpInitialize(JSContext* cx, Handle<RegExpObject*> obj, HandleValue patternValue,
+                 HandleValue flagsValue, RegExpStaticsUse staticsUse)
 {
     RootedAtom pattern(cx);
     if (patternValue.isUndefined()) {
@@ -183,12 +185,10 @@ RegExpInitialize(JSContext* cx, RegExpObjectBuilder& builder,
     }
 
     
-    RootedObject reobj(cx, builder.build(pattern, flags));
-    if (!reobj)
+    if (!InitializeRegExp(cx, obj, pattern, flags))
         return false;
 
     
-    result.set(reobj);
     return true;
 }
 
@@ -236,7 +236,7 @@ regexp_compile_impl(JSContext* cx, const CallArgs& args)
 {
     MOZ_ASSERT(IsRegExpObject(args.thisv()));
 
-    RegExpObjectBuilder builder(cx, &args.thisv().toObject().as<RegExpObject>());
+    Rooted<RegExpObject*> regexp(cx, &args.thisv().toObject().as<RegExpObject>());
 
     
     RootedValue patternValue(cx, args.get(0));
@@ -268,11 +268,10 @@ regexp_compile_impl(JSContext* cx, const CallArgs& args)
         }
 
         
-        RegExpObject* reobj = builder.build(sourceAtom, flags);
-        if (!reobj)
+        if (!InitializeRegExp(cx, regexp, sourceAtom, flags))
             return false;
 
-        args.rval().setObject(*reobj);
+        args.rval().setObject(*regexp);
         return true;
     }
 
@@ -281,11 +280,10 @@ regexp_compile_impl(JSContext* cx, const CallArgs& args)
     RootedValue F(cx, args.get(1));
 
     
-    RootedObject reobj(cx);
-    if (!RegExpInitialize(cx, builder, P, F, UseRegExpStatics, &reobj))
+    if (!RegExpInitialize(cx, regexp, P, F, UseRegExpStatics))
         return false;
 
-    args.rval().setObject(*reobj);
+    args.rval().setObject(*regexp);
     return true;
 }
 
@@ -331,7 +329,6 @@ js::regexp_construct(JSContext* cx, unsigned argc, Value* vp)
         }
     }
 
-    RegExpObjectBuilder builder(cx);
     RootedValue patternValue(cx, args.get(0));
 
     
@@ -371,11 +368,15 @@ js::regexp_construct(JSContext* cx, unsigned argc, Value* vp)
 
         
         
-        RegExpObject* reobj = builder.build(sourceAtom, flags);
-        if (!reobj)
+        Rooted<RegExpObject*> regexp(cx, RegExpAlloc(cx));
+        if (!regexp)
             return false;
 
-        args.rval().setObject(*reobj);
+        
+        if (!InitializeRegExp(cx, regexp, sourceAtom, flags))
+            return false;
+
+        args.rval().setObject(*regexp);
         return true;
     }
 
@@ -403,11 +404,15 @@ js::regexp_construct(JSContext* cx, unsigned argc, Value* vp)
     }
 
     
-    RootedObject reobj(cx);
-    if (!RegExpInitialize(cx, builder, P, F, UseRegExpStatics, &reobj))
+    Rooted<RegExpObject*> regexp(cx, RegExpAlloc(cx));
+    if (!regexp)
         return false;
 
-    args.rval().setObject(*reobj);
+    
+    if (!RegExpInitialize(cx, regexp, P, F, UseRegExpStatics))
+        return false;
+
+    args.rval().setObject(*regexp);
     return true;
 }
 
@@ -424,12 +429,14 @@ js::regexp_construct_no_statics(JSContext* cx, unsigned argc, Value* vp)
     
 
     
-    RegExpObjectBuilder builder(cx);
-    RootedObject reobj(cx);
-    if (!RegExpInitialize(cx, builder, args[0], args.get(1), DontUseRegExpStatics, &reobj))
+    Rooted<RegExpObject*> regexp(cx, RegExpAlloc(cx));
+    if (!regexp)
         return false;
 
-    args.rval().setObject(*reobj);
+    if (!RegExpInitialize(cx, regexp, args[0], args.get(1), DontUseRegExpStatics))
+        return false;
+
+    args.rval().setObject(*regexp);
     return true;
 }
 
@@ -693,12 +700,8 @@ js::CreateRegExpPrototype(JSContext* cx, JSProtoKey key)
         return nullptr;
     proto->NativeObject::setPrivate(nullptr);
 
-    HandlePropertyName empty = cx->names().empty;
-    RegExpObjectBuilder builder(cx, proto);
-    if (!builder.build(empty, RegExpFlag(0)))
-        return nullptr;
-
-    return proto;
+    RootedAtom source(cx, cx->names().empty);
+    return InitializeRegExp(cx, proto, source, RegExpFlag(0));
 }
 
 static bool
