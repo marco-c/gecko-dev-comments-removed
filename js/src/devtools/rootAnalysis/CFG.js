@@ -37,7 +37,7 @@ function isMatchingDestructor(constructor, edge)
         return false;
     var variable = callee.Variable;
     assert(variable.Kind == "Func");
-    if (!/::~/.test(variable.Name[0]))
+    if (variable.Name[1].charAt(0) != '~')
         return false;
 
     var constructExp = constructor.PEdgeCallInstance.Exp;
@@ -49,6 +49,9 @@ function isMatchingDestructor(constructor, edge)
 
     return sameVariable(constructExp.Variable, destructExp.Variable);
 }
+
+
+
 
 
 
@@ -67,7 +70,7 @@ function allRAIIGuardedCallPoints(body, isConstructor)
             continue;
         var variable = callee.Variable;
         assert(variable.Kind == "Func");
-        if (!isConstructor(variable.Name[0]))
+        if (!isConstructor(variable.Name))
             continue;
         if (!("PEdgeCallInstance" in edge))
             continue;
