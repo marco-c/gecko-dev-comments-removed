@@ -6,7 +6,7 @@
 
 
 function run_test() {
-  if (!IS_MAR_CHECKS_ENABLED) {
+  if (!MOZ_VERIFY_MAR_SIGNATURE) {
     return;
   }
 

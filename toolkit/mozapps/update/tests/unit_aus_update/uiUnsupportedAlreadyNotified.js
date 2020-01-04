@@ -2,7 +2,7 @@
 
 
 
-Components.utils.import("resource://testing-common/MockRegistrar.jsm");
+Cu.import("resource://testing-common/MockRegistrar.jsm");
 
 function run_test() {
   setupTestCommon();
@@ -12,9 +12,8 @@ function run_test() {
             "update when the unsupported notification has already been " +
             "shown (bug 843497)");
 
-  setUpdateURLOverride();
-  
-  overrideXHR(callHandleEvent);
+  start_httpserver();
+  setUpdateURLOverride(gURLData + gHTTPHandlerPath);
   standardInit();
 
   let windowWatcherCID =
@@ -51,22 +50,7 @@ function check_test() {
   Assert.ok(true,
             PREF_APP_UPDATE_BACKGROUNDERRORS + " preference should not exist");
 
-  doTestFinish();
-}
-
-
-
-function callHandleEvent(aXHR) {
-  aXHR.status = 400;
-  aXHR.responseText = gResponseBody;
-  try {
-    let parser = Cc["@mozilla.org/xmlextras/domparser;1"].
-                 createInstance(Ci.nsIDOMParser);
-    aXHR.responseXML = parser.parseFromString(gResponseBody, "application/xml");
-  } catch (e) {
-  }
-  let e = { target: aXHR };
-  aXHR.onload(e);
+  stop_httpserver(doTestFinish);
 }
 
 function check_showUpdateAvailable() {

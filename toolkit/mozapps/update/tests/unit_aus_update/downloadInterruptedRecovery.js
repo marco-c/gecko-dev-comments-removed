@@ -22,11 +22,8 @@ function run_test() {
             "mar download interrupted recovery");
 
   Services.prefs.setBoolPref(PREF_APP_UPDATE_STAGING_ENABLED, false);
-  
   start_httpserver();
-  setUpdateURLOverride(gURLData + "update.xml");
-  
-  overrideXHR(callHandleEvent);
+  setUpdateURLOverride(gURLData + gHTTPHandlerPath);
   standardInit();
   do_execute_soon(run_test_pt1);
 }
@@ -34,21 +31,6 @@ function run_test() {
 
 function finish_test() {
   stop_httpserver(doTestFinish);
-}
-
-
-
-function callHandleEvent(aXHR) {
-  aXHR.status = 400;
-  aXHR.responseText = gResponseBody;
-  try {
-    let parser = Cc["@mozilla.org/xmlextras/domparser;1"].
-                 createInstance(Ci.nsIDOMParser);
-    aXHR.responseXML = parser.parseFromString(gResponseBody, "application/xml");
-  } catch (e) {
-  }
-  let e = { target: aXHR };
-  aXHR.onload(e);
 }
 
 
