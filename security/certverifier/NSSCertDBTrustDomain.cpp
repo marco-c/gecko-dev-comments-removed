@@ -914,7 +914,8 @@ NSSCertDBTrustDomain::CheckValidityIsAcceptable(Time notBefore, Time notAfter,
     return Success;
   }
 
-  Duration DURATION_39_MONTHS((3 * 365 + 3 * 31) * Time::ONE_DAY_IN_SECONDS);
+  Duration DURATION_27_MONTHS_PLUS_SLOP((2 * 365 + 3 * 31 + 7) *
+                                        Time::ONE_DAY_IN_SECONDS);
   Duration maxValidityDuration(UINT64_MAX);
   Duration validityDuration(notBefore, notAfter);
 
@@ -924,10 +925,7 @@ NSSCertDBTrustDomain::CheckValidityIsAcceptable(Time notBefore, Time notAfter,
     case ValidityCheckingMode::CheckForEV:
       
       
-      
-      
-      
-      maxValidityDuration = DURATION_39_MONTHS;
+      maxValidityDuration = DURATION_27_MONTHS_PLUS_SLOP;
       break;
     default:
       PR_NOT_REACHED("We're not handling every ValidityCheckingMode type");
