@@ -7,7 +7,6 @@
 const {Cc, Ci, Cu} = require("chrome");
 const {angleUtils} = require("devtools/shared/css-angle");
 const {colorUtils} = require("devtools/client/shared/css-color");
-const {getCSSLexer} = require("devtools/shared/css-lexer");
 const Services = require("Services");
 const EventEmitter = require("devtools/shared/event-emitter");
 
@@ -164,7 +163,7 @@ OutputParser.prototype = {
     text = text.trim();
     this.parsed.length = 0;
 
-    let tokenStream = getCSSLexer(text);
+    let tokenStream = DOMUtils.getCSSLexer(text);
     let parenDepth = 0;
     let outerMostFunctionTakesColor = false;
 
@@ -490,7 +489,7 @@ OutputParser.prototype = {
 
   _sanitizeURL: function(url) {
     
-    let urlTokenizer = getCSSLexer(url);
+    let urlTokenizer = DOMUtils.getCSSLexer(url);
     
     while (urlTokenizer.nextToken()) {
       

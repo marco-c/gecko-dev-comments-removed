@@ -17,7 +17,6 @@
 const {Cc, Ci, Cu} = require("chrome");
 loader.lazyRequireGetter(this, "CSS", "CSS");
 const promise = require("promise");
-const {getCSSLexer} = require("devtools/shared/css-lexer");
 Cu.import("resource://gre/modules/Task.jsm", this);
 loader.lazyGetter(this, "DOMUtils", () => {
   return Cc["@mozilla.org/inspector/dom-utils;1"].getService(Ci.inIDOMUtils);
@@ -52,7 +51,7 @@ const COMMENT_PARSING_HEURISTIC_BYPASS_CHAR = "!";
 
 
 function* cssTokenizer(string) {
-  let lexer = getCSSLexer(string);
+  let lexer = DOMUtils.getCSSLexer(string);
   while (true) {
     let token = lexer.nextToken();
     if (!token) {
@@ -85,7 +84,7 @@ function* cssTokenizer(string) {
 
 
 function cssTokenizerWithLineColumn(string) {
-  let lexer = getCSSLexer(string);
+  let lexer = DOMUtils.getCSSLexer(string);
   let result = [];
   let prevToken = undefined;
   while (true) {
@@ -293,7 +292,7 @@ function parseDeclarationsInternal(inputString, parseComments,
     throw new Error("empty input string");
   }
 
-  let lexer = getCSSLexer(inputString);
+  let lexer = DOMUtils.getCSSLexer(inputString);
 
   let declarations = [getEmptyDeclaration()];
   let lastProp = declarations[0];
@@ -575,7 +574,7 @@ RuleRewriter.prototype = {
 
 
   sanitizePropertyValue: function(text) {
-    let lexer = getCSSLexer(text);
+    let lexer = DOMUtils.getCSSLexer(text);
 
     let result = "";
     let previousOffset = 0;
