@@ -42,6 +42,7 @@ SEARCH_PATHS = [
 
 
 MACH_MODULES = [
+    'marionette/mach_test_package_commands.py',
     'mochitest/mach_test_package_commands.py',
     'reftest/mach_test_package_commands.py',
     'tools/mach/mach/commands/commandinfo.py',
