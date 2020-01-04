@@ -3222,8 +3222,11 @@ nsTableFrame::ReflowChildren(TableReflowInput& aReflowInput,
       
       prevKidFrame = kidFrame;
 
+      MOZ_ASSERT(!NS_FRAME_IS_NOT_COMPLETE(aStatus) || isPaginated,
+                 "Table contents should only fragment in paginated contexts");
+
       
-      if (NS_FRAME_IS_NOT_COMPLETE(aStatus)) {
+      if (isPaginated && NS_FRAME_IS_NOT_COMPLETE(aStatus)) {
         nsIFrame* kidNextInFlow = kidFrame->GetNextInFlow();
         if (!kidNextInFlow) {
           
