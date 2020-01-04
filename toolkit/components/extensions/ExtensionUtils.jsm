@@ -634,6 +634,28 @@ function injectAPI(source, dest) {
 
 
 
+
+
+
+function promiseDocumentReady(doc) {
+  if (doc.readyState == "interactive" || doc.readyState == "complete") {
+    return Promise.resolve(doc);
+  }
+
+  return new Promise(resolve => {
+    doc.addEventListener("DOMContentLoaded", function onReady(event) {
+      if (event.target === event.currentTarget) {
+        doc.removeEventListener("DOMContentLoaded", onReady, true);
+        resolve(doc);
+      }
+    }, true);
+  });
+}
+
+
+
+
+
 var nextBrokerId = 1;
 
 var MESSAGES = [
@@ -1011,6 +1033,7 @@ this.ExtensionUtils = {
   ignoreEvent,
   injectAPI,
   instanceOf,
+  promiseDocumentReady,
   runSafe,
   runSafeSync,
   runSafeSyncWithoutClone,
