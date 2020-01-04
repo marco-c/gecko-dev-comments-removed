@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_indexeddb_idbwrappercache_h__
-#define mozilla_dom_indexeddb_idbwrappercache_h__
+#ifndef mozilla_dom_idbwrappercache_h__
+#define mozilla_dom_idbwrappercache_h__
 
 #include "js/RootingAPI.h"
 #include "mozilla/DOMEventTargetHelper.h"
@@ -16,7 +16,6 @@ class nsPIDOMWindowInnter;
 
 namespace mozilla {
 namespace dom {
-namespace indexedDB {
 
 class IDBWrapperCache : public DOMEventTargetHelper
 {
@@ -50,7 +49,6 @@ protected:
   virtual ~IDBWrapperCache();
 };
 
-} 
 } 
 } 
 

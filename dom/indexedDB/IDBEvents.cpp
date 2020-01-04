@@ -44,6 +44,8 @@ CreateGenericEvent(EventTarget* aOwner,
   return event.forget();
 }
 
+} 
+
 
 already_AddRefed<IDBVersionChangeEvent>
 IDBVersionChangeEvent::CreateInternal(EventTarget* aOwner,
@@ -91,6 +93,5 @@ IDBVersionChangeEvent::WrapObjectInternal(JSContext* aCx, JS::Handle<JSObject*> 
   return IDBVersionChangeEventBinding::Wrap(aCx, this, aGivenProto);
 }
 
-} 
 } 
 } 

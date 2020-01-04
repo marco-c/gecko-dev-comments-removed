@@ -4,14 +4,14 @@
 
 
 
-#ifndef mozilla_dom_indexeddb_idbrequest_h__
-#define mozilla_dom_indexeddb_idbrequest_h__
+#ifndef mozilla_dom_idbrequest_h__
+#define mozilla_dom_idbrequest_h__
 
 #include "js/RootingAPI.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/EventForwards.h"
 #include "mozilla/dom/IDBRequestBinding.h"
-#include "mozilla/dom/indexedDB/IDBWrapperCache.h"
+#include "mozilla/dom/IDBWrapperCache.h"
 #include "nsAutoPtr.h"
 #include "nsCycleCollectionParticipant.h"
 
@@ -28,17 +28,14 @@ class ErrorResult;
 namespace dom {
 
 class DOMError;
-template <typename> struct Nullable;
-class OwningIDBObjectStoreOrIDBIndexOrIDBCursor;
-
-namespace indexedDB {
-
 class IDBCursor;
 class IDBDatabase;
 class IDBFactory;
 class IDBIndex;
 class IDBObjectStore;
 class IDBTransaction;
+template <typename> struct Nullable;
+class OwningIDBObjectStoreOrIDBIndexOrIDBCursor;
 
 class IDBRequest
   : public IDBWrapperCache
@@ -285,7 +282,6 @@ private:
   ~IDBOpenDBRequest();
 };
 
-} 
 } 
 } 
 

@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_indexeddb_idbobjectstore_h__
-#define mozilla_dom_indexeddb_idbobjectstore_h__
+#ifndef mozilla_dom_idbobjectstore_h__
+#define mozilla_dom_idbobjectstore_h__
 
 #include "js/RootingAPI.h"
 #include "mozilla/dom/IDBCursorBinding.h"
@@ -27,25 +27,31 @@ class ErrorResult;
 namespace dom {
 
 class DOMStringList;
-template <typename> class Sequence;
-
-namespace indexedDB {
-
 class IDBCursor;
 class IDBRequest;
 class IDBTransaction;
-class IndexUpdateInfo;
+template <typename> class Sequence;
+
+namespace indexedDB {
 class Key;
 class KeyPath;
+class IndexUpdateInfo;
 class ObjectStoreSpec;
 struct StructuredCloneReadInfo;
+} 
 
 class IDBObjectStore final
   : public nsISupports
   , public nsWrapperCache
 {
+  typedef indexedDB::IndexUpdateInfo IndexUpdateInfo;
+  typedef indexedDB::Key Key;
+  typedef indexedDB::KeyPath KeyPath;
+  typedef indexedDB::ObjectStoreSpec ObjectStoreSpec;
+  typedef indexedDB::StructuredCloneReadInfo StructuredCloneReadInfo;
+
   
-  friend class IDBCursor; 
+  friend class IDBCursor;
 
   static const JSClass sDummyPropJSClass;
 
@@ -339,7 +345,6 @@ private:
                      ErrorResult& aRv);
 };
 
-} 
 } 
 } 
 

@@ -122,6 +122,10 @@ private:
   nsTArray<RefPtr<FileManager> > mDefaultStorageFileManagers;
 };
 
+} 
+
+using namespace mozilla::dom::indexedDB;
+
 namespace {
 
 NS_DEFINE_IID(kIDBRequestIID, PRIVATE_IDBREQUEST_IID);
@@ -1354,6 +1358,5 @@ DeleteFilesRunnable::UnblockOpen()
   mState = State_Completed;
 }
 
-} 
 } 
 } 

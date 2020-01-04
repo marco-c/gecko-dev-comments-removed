@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_indexeddb_idbfilehandle_h__
-#define mozilla_dom_indexeddb_idbfilehandle_h__
+#ifndef mozilla_dom_idbfilehandle_h__
+#define mozilla_dom_idbfilehandle_h__
 
 #include "IDBFileRequest.h"
 #include "js/TypeDecls.h"
@@ -22,9 +22,6 @@ namespace mozilla {
 namespace dom {
 
 struct IDBFileMetadataParameters;
-
-namespace indexedDB {
-
 class IDBFileRequest;
 class IDBMutableFile;
 
@@ -146,7 +143,6 @@ private:
   GenerateFileRequest() override;
 };
 
-} 
 } 
 } 
 

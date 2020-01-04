@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_indexeddb_idbfilerequest_h__
-#define mozilla_dom_indexeddb_idbfilerequest_h__
+#ifndef mozilla_dom_idbfilerequest_h__
+#define mozilla_dom_idbfilerequest_h__
 
 #include "DOMRequest.h"
 #include "js/TypeDecls.h"
@@ -22,7 +22,6 @@ namespace mozilla {
 class EventChainPreVisitor;
 
 namespace dom {
-namespace indexedDB {
 
 class IDBFileHandle;
 
@@ -90,7 +89,6 @@ private:
   FireProgressEvent(uint64_t aLoaded, uint64_t aTotal);
 };
 
-} 
 } 
 } 
 

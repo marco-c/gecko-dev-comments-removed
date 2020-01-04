@@ -4,13 +4,13 @@
 
 
 
-#ifndef mozilla_dom_indexeddb_idbkeyrange_h__
-#define mozilla_dom_indexeddb_idbkeyrange_h__
+#ifndef mozilla_dom_idbkeyrange_h__
+#define mozilla_dom_idbkeyrange_h__
 
 #include "js/RootingAPI.h"
 #include "js/Value.h"
 #include "mozilla/Attributes.h"
-#include "mozilla/dom/indexedDB/IndexedDatabaseManager.h"
+#include "mozilla/dom/IndexedDatabaseManager.h"
 #include "mozilla/dom/indexedDB/Key.h"
 #include "nsCOMPtr.h"
 #include "nsCycleCollectionParticipant.h"
@@ -29,16 +29,16 @@ namespace dom {
 class GlobalObject;
 
 namespace indexedDB {
-
 class SerializedKeyRange;
+} 
 
 class IDBKeyRange
   : public nsISupports
 {
 protected:
   nsCOMPtr<nsISupports> mGlobal;
-  Key mLower;
-  Key mUpper;
+  indexedDB::Key mLower;
+  indexedDB::Key mUpper;
   JS::Heap<JS::Value> mCachedLowerVal;
   JS::Heap<JS::Value> mCachedUpperVal;
 
@@ -63,7 +63,7 @@ public:
             IDBKeyRange** aKeyRange);
 
   static already_AddRefed<IDBKeyRange>
-  FromSerialized(const SerializedKeyRange& aKeyRange);
+  FromSerialized(const indexedDB::SerializedKeyRange& aKeyRange);
 
   static already_AddRefed<IDBKeyRange>
   Only(const GlobalObject& aGlobal,
@@ -99,27 +99,27 @@ public:
 #endif
 
   void
-  ToSerialized(SerializedKeyRange& aKeyRange) const;
+  ToSerialized(indexedDB::SerializedKeyRange& aKeyRange) const;
 
-  const Key&
+  const indexedDB::Key&
   Lower() const
   {
     return mLower;
   }
 
-  Key&
+  indexedDB::Key&
   Lower()
   {
     return mLower;
   }
 
-  const Key&
+  const indexedDB::Key&
   Upper() const
   {
     return mIsOnly ? mLower : mUpper;
   }
 
-  Key&
+  indexedDB::Key&
   Upper()
   {
     return mIsOnly ? mLower : mUpper;
@@ -206,7 +206,6 @@ public:
   WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto, JS::MutableHandle<JSObject*> aReflector);
 };
 
-} 
 } 
 } 
 

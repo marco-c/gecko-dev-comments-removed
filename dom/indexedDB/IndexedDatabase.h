@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_indexeddb_indexeddatabase_h__
-#define mozilla_dom_indexeddb_indexeddatabase_h__
+#ifndef mozilla_dom_indexeddatabase_h__
+#define mozilla_dom_indexeddatabase_h__
 
 #include "js/StructuredClone.h"
 #include "nsAutoPtr.h"
@@ -16,12 +16,12 @@ namespace mozilla {
 namespace dom {
 
 class Blob;
+class IDBDatabase;
+class IDBMutableFile;
 
 namespace indexedDB {
 
 class FileInfo;
-class IDBDatabase;
-class IDBMutableFile;
 class SerializedStructuredCloneReadInfo;
 
 struct StructuredCloneFile

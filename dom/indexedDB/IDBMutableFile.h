@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_indexeddb_idbmutablefile_h__
-#define mozilla_dom_indexeddb_idbmutablefile_h__
+#ifndef mozilla_dom_idbmutablefile_h__
+#define mozilla_dom_idbmutablefile_h__
 
 #include "js/TypeDecls.h"
 #include "mozilla/Atomics.h"
@@ -29,12 +29,12 @@ namespace dom {
 
 class DOMRequest;
 class File;
-
-namespace indexedDB {
-
-class BackgroundMutableFileChild;
 class IDBDatabase;
 class IDBFileHandle;
+
+namespace indexedDB {
+class BackgroundMutableFileChild;
+}
 
 class IDBMutableFile final
   : public DOMEventTargetHelper
@@ -51,7 +51,7 @@ class IDBMutableFile final
 
 public:
   IDBMutableFile(IDBDatabase* aDatabase,
-                 BackgroundMutableFileChild* aActor,
+                 indexedDB::BackgroundMutableFileChild* aActor,
                  const nsAString& aName,
                  const nsAString& aType);
 
@@ -134,7 +134,6 @@ private:
   ~IDBMutableFile();
 };
 
-} 
 } 
 } 
 
