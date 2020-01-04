@@ -11,9 +11,13 @@ const Cc = Components.classes;
 const Cu = Components.utils;
 const Cr = Components.results;
 
+const INTEGER = /^[1-9]\d*$/;
+
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
 
+XPCOMUtils.defineLazyModuleGetter(this, "AddonManager",
+                                  "resource://gre/modules/AddonManager.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "AppConstants",
                                   "resource://gre/modules/AppConstants.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "LanguageDetector",
@@ -391,6 +395,152 @@ class BaseContext {
   }
 }
 
+
+
+let IconDetails = {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  normalize(details, extension, context = null) {
+    let result = {};
+
+    try {
+      if (details.imageData) {
+        let imageData = details.imageData;
+
+        
+        
+        
+        
+        
+        if (instanceOf(imageData, "ImageData")) {
+          imageData = {"19": imageData};
+        }
+
+        for (let size of Object.keys(imageData)) {
+          if (!INTEGER.test(size)) {
+            throw new Error(`Invalid icon size ${size}, must be an integer`);
+          }
+          result[size] = this.convertImageDataToDataURL(imageData[size], context);
+        }
+      }
+
+      if (details.path) {
+        let path = details.path;
+        if (typeof path != "object") {
+          path = {"19": path};
+        }
+
+        let baseURI = context ? context.uri : extension.baseURI;
+
+        for (let size of Object.keys(path)) {
+          if (!INTEGER.test(size)) {
+            throw new Error(`Invalid icon size ${size}, must be an integer`);
+          }
+
+          let url = baseURI.resolve(path[size]);
+
+          
+          
+          
+          
+          Services.scriptSecurityManager.checkLoadURIStrWithPrincipal(
+            extension.principal, url,
+            Services.scriptSecurityManager.DISALLOW_SCRIPT);
+
+          result[size] = url;
+        }
+      }
+    } catch (e) {
+      
+      if (context) {
+        throw e;
+      }
+      
+      
+      
+      extension.manifestError(`Invalid icon data: ${e}`);
+    }
+
+    return result;
+  },
+
+  
+  
+  getURL(icons, window, extension, size = 16) {
+    const DEFAULT = "chrome://browser/content/extension.svg";
+
+    size *= window.devicePixelRatio;
+
+    let bestSize = null;
+    if (icons[size]) {
+      bestSize = size;
+    } else if (icons[2 * size]) {
+      bestSize = 2 * size;
+    } else {
+      let sizes = Object.keys(icons)
+                        .map(key => parseInt(key, 10))
+                        .sort((a, b) => a - b);
+
+      bestSize = sizes.find(candidate => candidate > size) || sizes.pop();
+    }
+
+    if (bestSize) {
+      return {size: bestSize, icon: icons[bestSize]};
+    }
+
+    return {size, icon: DEFAULT};
+  },
+
+  convertImageURLToDataURL(imageURL, context, browserWindow, size = 18) {
+    return new Promise((resolve, reject) => {
+      let image = new context.contentWindow.Image();
+      image.onload = function() {
+        let canvas = context.contentWindow.document.createElement("canvas");
+        let ctx = canvas.getContext("2d");
+        let dSize = size * browserWindow.devicePixelRatio;
+
+        
+        
+        
+        let dWidth, dHeight, dx, dy;
+        if (this.width > this.height) {
+          dWidth = dSize;
+          dHeight = image.height * (dSize / image.width);
+          dx = 0;
+          dy = (dSize - dHeight) / 2;
+        } else {
+          dWidth = image.width * (dSize / image.height);
+          dHeight = dSize;
+          dx = (dSize - dWidth) / 2;
+          dy = 0;
+        }
+
+        ctx.drawImage(this, 0, 0, this.width, this.height, dx, dy, dWidth, dHeight);
+        resolve(canvas.toDataURL("image/png"));
+      };
+      image.onerror = reject;
+      image.src = imageURL;
+    });
+  },
+
+  convertImageDataToDataURL(imageData, context) {
+    let document = context.contentWindow.document;
+    let canvas = document.createElementNS("http://www.w3.org/1999/xhtml", "canvas");
+    canvas.width = imageData.width;
+    canvas.height = imageData.height;
+    canvas.getContext("2d").putImageData(imageData, 0, 0);
+
+    return canvas.toDataURL("image/png");
+  },
+};
+
 function LocaleData(data) {
   this.defaultLocale = data.defaultLocale;
   this.selectedLocale = data.selectedLocale;
@@ -407,6 +557,7 @@ function LocaleData(data) {
     this.messages.set(this.BUILTIN, data.builtinMessages);
   }
 }
+
 
 LocaleData.prototype = {
   
@@ -1256,6 +1407,7 @@ this.ExtensionUtils = {
   BaseContext,
   DefaultWeakMap,
   EventManager,
+  IconDetails,
   LocaleData,
   Messenger,
   PlatformInfo,
