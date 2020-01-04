@@ -379,6 +379,10 @@ private:
   virtual void SetElementVisibility(bool aIsVisible);
 
   
+  
+  void SetForcedHidden(bool aForcedHidden);
+
+  
 
 
 
@@ -702,6 +706,12 @@ protected:
   
   
   nsAutoPtr<MediaInfo> mInfo;
+
+  
+  bool mElementVisible;
+
+  
+  bool mForcedHidden;
 
   
   bool mIsDormant;
