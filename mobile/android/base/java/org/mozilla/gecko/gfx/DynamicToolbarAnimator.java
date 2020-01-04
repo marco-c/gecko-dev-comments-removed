@@ -377,7 +377,8 @@ public class DynamicToolbarAnimator {
 
         
         
-        if (event.getActionMasked() != MotionEvent.ACTION_MOVE ||
+        if (event.getToolType(0) == MotionEvent.TOOL_TYPE_MOUSE ||
+            event.getActionMasked() != MotionEvent.ACTION_MOVE ||
             event.getPointerCount() != 1)
         {
             if (mTouchStart != null) {
