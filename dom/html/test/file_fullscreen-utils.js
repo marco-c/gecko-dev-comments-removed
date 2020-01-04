@@ -38,7 +38,10 @@ function addFullscreenChangeContinuation(type, callback, inDoc) {
       
       
       
-      return doc.mozFullScreenElement || inNormalMode();
+      
+      
+      var topDoc = doc.defaultView.top.document;
+      return topDoc.mozFullScreenElement || inNormalMode();
     } else {
       throw "'type' must be either 'enter', or 'exit'.";
     }
