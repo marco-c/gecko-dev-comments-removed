@@ -7105,6 +7105,10 @@ AddonWrapper.prototype = {
     return getExternalType(addonFor(this).type);
   },
 
+  get isWebExtension() {
+    return addonFor(this).type == "webextension";
+  },
+
   get temporarilyInstalled() {
     return addonFor(this)._installLocation == TemporaryInstallLocation;
   },
@@ -7543,6 +7547,7 @@ function PrivateWrapper(aAddon) {
 
 PrivateWrapper.prototype = Object.create(AddonWrapper.prototype);
 Object.assign(PrivateWrapper.prototype, {
+
   addonId() {
     return this.id;
   },
@@ -7554,43 +7559,10 @@ Object.assign(PrivateWrapper.prototype, {
 
 
 
-  getDebugGlobal(global) {
+  setDebugGlobal(global) {
     let activeAddon = XPIProvider.activeAddons.get(this.id);
     if (activeAddon) {
-      return activeAddon.debugGlobal;
-    }
-
-    return null;
-  },
-
-  
-
-
-
-
-
-
-  setDebugGlobal(global) {
-    if (!global) {
-      
-      
-      
-      
-      AddonManagerPrivate.callAddonListeners("onPropertyChanged",
-                                             addonFor(this),
-                                             ["debugGlobal"]);
-    } else {
-      let activeAddon = XPIProvider.activeAddons.get(this.id);
-      if (activeAddon) {
-        let globalChanged = activeAddon.debugGlobal != global;
-        activeAddon.debugGlobal = global;
-
-        if (globalChanged) {
-          AddonManagerPrivate.callAddonListeners("onPropertyChanged",
-                                                 addonFor(this),
-                                                 ["debugGlobal"]);
-        }
-      }
+      activeAddon.debugGlobal = global;
     }
   }
 });
