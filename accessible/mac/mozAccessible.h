@@ -113,9 +113,6 @@ static const uintptr_t IS_PROXY = 1;
 - (NSWindow*)window;
 
 
-- (NSString*)customDescription;
-
-
 - (id)value;
 
 
