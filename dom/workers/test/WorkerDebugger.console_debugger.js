@@ -24,6 +24,10 @@ function magic() {
 
   setConsoleEventHandler(function(consoleData) {
     is(consoleData.arguments[0], "Random message.", "Random message ok!");
+
+    
+    setConsoleEventHandler(null);
+
     finish();
   });
 }
