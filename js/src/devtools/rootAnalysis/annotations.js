@@ -68,8 +68,8 @@ var ignoreClasses = {
 
 
 var ignoreCallees = {
-    "js::Class.trace" : true,
-    "js::Class.finalize" : true,
+    "js::ClassOps.trace" : true,
+    "js::ClassOps.finalize" : true,
     "JSRuntime.destroyPrincipals" : true,
     "icu_50::UObject.__deleting_dtor" : true, 
     "mozilla::CycleCollectedJSRuntime.DescribeCustomObjects" : true, 

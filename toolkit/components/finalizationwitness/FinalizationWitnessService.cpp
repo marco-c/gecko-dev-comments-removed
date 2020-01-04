@@ -116,9 +116,7 @@ void Finalize(JSFreeOp *fop, JSObject *objSelf)
   
 }
 
-static const JSClass sWitnessClass = {
-  "FinalizationWitness",
-  JSCLASS_HAS_RESERVED_SLOTS(WITNESS_INSTANCES_SLOTS),
+static const JSClassOps sWitnessClassOps = {
   nullptr ,
   nullptr ,
   nullptr ,
@@ -127,6 +125,12 @@ static const JSClass sWitnessClass = {
   nullptr ,
   nullptr ,
   Finalize 
+};
+
+static const JSClass sWitnessClass = {
+  "FinalizationWitness",
+  JSCLASS_HAS_RESERVED_SLOTS(WITNESS_INSTANCES_SLOTS),
+  &sWitnessClassOps
 };
 
 bool IsWitness(JS::Handle<JS::Value> v)

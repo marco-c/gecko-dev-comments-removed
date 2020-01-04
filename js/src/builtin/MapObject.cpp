@@ -104,9 +104,7 @@ namespace {
 
 } 
 
-const Class MapIteratorObject::class_ = {
-    "Map Iterator",
-    JSCLASS_HAS_RESERVED_SLOTS(MapIteratorObject::SlotCount),
+static const ClassOps MapIteratorObjectClassOps = {
     nullptr, 
     nullptr, 
     nullptr, 
@@ -115,6 +113,12 @@ const Class MapIteratorObject::class_ = {
     nullptr, 
     nullptr, 
     MapIteratorObject::finalize
+};
+
+const Class MapIteratorObject::class_ = {
+    "Map Iterator",
+    JSCLASS_HAS_RESERVED_SLOTS(MapIteratorObject::SlotCount),
+    &MapIteratorObjectClassOps
 };
 
 const JSFunctionSpec MapIteratorObject::methods[] = {
@@ -259,10 +263,7 @@ MapIteratorObject::createResultPair(JSContext* cx)
 
 
 
-const Class MapObject::class_ = {
-    "Map",
-    JSCLASS_HAS_PRIVATE |
-    JSCLASS_HAS_CACHED_PROTO(JSProto_Map),
+const ClassOps MapObject::classOps_ = {
     nullptr, 
     nullptr, 
     nullptr, 
@@ -275,6 +276,13 @@ const Class MapObject::class_ = {
     nullptr, 
     nullptr, 
     mark
+};
+
+const Class MapObject::class_ = {
+    "Map",
+    JSCLASS_HAS_PRIVATE |
+    JSCLASS_HAS_CACHED_PROTO(JSProto_Map),
+    &MapObject::classOps_
 };
 
 const JSPropertySpec MapObject::properties[] = {
@@ -870,9 +878,7 @@ class SetIteratorObject : public NativeObject
 
 } 
 
-const Class SetIteratorObject::class_ = {
-    "Set Iterator",
-    JSCLASS_HAS_RESERVED_SLOTS(SetIteratorObject::SlotCount),
+static const ClassOps SetIteratorObjectClassOps = {
     nullptr, 
     nullptr, 
     nullptr, 
@@ -881,6 +887,12 @@ const Class SetIteratorObject::class_ = {
     nullptr, 
     nullptr, 
     SetIteratorObject::finalize
+};
+
+const Class SetIteratorObject::class_ = {
+    "Set Iterator",
+    JSCLASS_HAS_RESERVED_SLOTS(SetIteratorObject::SlotCount),
+    &SetIteratorObjectClassOps
 };
 
 const JSFunctionSpec SetIteratorObject::methods[] = {
@@ -1006,10 +1018,7 @@ SetIteratorObject::next(JSContext* cx, unsigned argc, Value* vp)
 
 
 
-const Class SetObject::class_ = {
-    "Set",
-    JSCLASS_HAS_PRIVATE |
-    JSCLASS_HAS_CACHED_PROTO(JSProto_Set),
+const ClassOps SetObject::classOps_ = {
     nullptr, 
     nullptr, 
     nullptr, 
@@ -1022,6 +1031,13 @@ const Class SetObject::class_ = {
     nullptr, 
     nullptr, 
     mark
+};
+
+const Class SetObject::class_ = {
+    "Set",
+    JSCLASS_HAS_PRIVATE |
+    JSCLASS_HAS_CACHED_PROTO(JSProto_Set),
+    &SetObject::classOps_
 };
 
 const JSPropertySpec SetObject::properties[] = {

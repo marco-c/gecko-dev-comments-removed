@@ -529,11 +529,8 @@ void FunctionDeclaration::trace(JSTracer* trc)
 
 
 
- const Class
-ModuleObject::class_ = {
-    "Module",
-    JSCLASS_HAS_RESERVED_SLOTS(ModuleObject::SlotCount) |
-    JSCLASS_IS_ANONYMOUS,
+ const ClassOps
+ModuleObject::classOps_ = {
     nullptr,        
     nullptr,        
     nullptr,        
@@ -546,6 +543,14 @@ ModuleObject::class_ = {
     nullptr,        
     nullptr,        
     ModuleObject::trace
+};
+
+ const Class
+ModuleObject::class_ = {
+    "Module",
+    JSCLASS_HAS_RESERVED_SLOTS(ModuleObject::SlotCount) |
+    JSCLASS_IS_ANONYMOUS,
+    &ModuleObject::classOps_
 };
 
 #define DEFINE_ARRAY_SLOT_ACCESSOR(cls, name, slot)                           \

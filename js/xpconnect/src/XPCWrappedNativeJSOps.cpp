@@ -620,39 +620,34 @@ XPC_WN_NoHelper_Resolve(JSContext* cx, HandleObject obj, HandleId id, bool* reso
                                  resolvedp);
 }
 
+static const js::ClassOps XPC_WN_NoHelper_JSClassOps = {
+    XPC_WN_OnlyIWrite_AddPropertyStub, 
+    XPC_WN_CantDeletePropertyStub,     
+    nullptr,                           
+    nullptr,                           
+    XPC_WN_Shared_Enumerate,           
+    XPC_WN_NoHelper_Resolve,           
+    nullptr,                           
+    XPC_WN_NoHelper_Finalize,          
+    nullptr,                           
+    nullptr,                           
+    nullptr,                           
+    XPCWrappedNative::Trace,           
+};
+
 static const js::ClassExtension XPC_WN_JSClassExtension = {
     nullptr, 
     WrappedNativeObjectMoved
 };
 
 const js::Class XPC_WN_NoHelper_JSClass = {
-    "XPCWrappedNative_NoHelper",    
+    "XPCWrappedNative_NoHelper",
     WRAPPER_FLAGS |
     JSCLASS_IS_WRAPPED_NATIVE |
-    JSCLASS_PRIVATE_IS_NSISUPPORTS, 
-
-    
-    XPC_WN_OnlyIWrite_AddPropertyStub, 
-    XPC_WN_CantDeletePropertyStub,     
-    nullptr,                           
-    nullptr,                           
-
-    XPC_WN_Shared_Enumerate,           
-    XPC_WN_NoHelper_Resolve,           
-    nullptr,                           
-    XPC_WN_NoHelper_Finalize,          
-
-    
-    nullptr,                         
-    nullptr,                         
-    nullptr,                         
-    XPCWrappedNative::Trace,         
+    JSCLASS_PRIVATE_IS_NSISUPPORTS,
+    &XPC_WN_NoHelper_JSClassOps,
     JS_NULL_CLASS_SPEC,
-
-    
     &XPC_WN_JSClassExtension,
-
-    
     JS_NULL_OBJECT_OPS
 };
 
@@ -984,73 +979,75 @@ XPCNativeScriptableShared::XPCNativeScriptableShared(uint32_t aFlags,
     if (mFlags.IsGlobalObject())
         mJSClass.flags |= XPCONNECT_GLOBAL_FLAGS;
 
-    JSAddPropertyOp addProperty;
-    if (mFlags.WantAddProperty())
-        addProperty = XPC_WN_Helper_AddProperty;
-    else if (mFlags.UseJSStubForAddProperty())
-        addProperty = nullptr;
-    else if (mFlags.AllowPropModsDuringResolve())
-        addProperty = XPC_WN_MaybeResolvingPropertyStub;
-    else
-        addProperty = XPC_WN_CannotModifyPropertyStub;
-    mJSClass.addProperty = addProperty;
+    
 
-    JSDeletePropertyOp delProperty;
-    if (mFlags.UseJSStubForDelProperty())
-        delProperty = nullptr;
+    
+    
+    js::ClassOps* cOps = new js::ClassOps;
+    memset(cOps, 0, sizeof(js::ClassOps));
+    mJSClass.cOps = cOps;
+
+    if (mFlags.WantAddProperty())
+        cOps->addProperty = XPC_WN_Helper_AddProperty;
+    else if (mFlags.UseJSStubForAddProperty())
+        cOps->addProperty = nullptr;
     else if (mFlags.AllowPropModsDuringResolve())
-        delProperty = XPC_WN_MaybeResolvingDeletePropertyStub;
+        cOps->addProperty = XPC_WN_MaybeResolvingPropertyStub;
     else
-        delProperty = XPC_WN_CantDeletePropertyStub;
-    mJSClass.delProperty = delProperty;
+        cOps->addProperty = XPC_WN_CannotModifyPropertyStub;
+
+    if (mFlags.UseJSStubForDelProperty())
+        cOps->delProperty = nullptr;
+    else if (mFlags.AllowPropModsDuringResolve())
+        cOps->delProperty = XPC_WN_MaybeResolvingDeletePropertyStub;
+    else
+        cOps->delProperty = XPC_WN_CantDeletePropertyStub;
 
     if (mFlags.WantGetProperty())
-        mJSClass.getProperty = XPC_WN_Helper_GetProperty;
+        cOps->getProperty = XPC_WN_Helper_GetProperty;
     else
-        mJSClass.getProperty = nullptr;
+        cOps->getProperty = nullptr;
 
-    JSSetterOp setProperty;
     if (mFlags.WantSetProperty())
-        setProperty = XPC_WN_Helper_SetProperty;
+        cOps->setProperty = XPC_WN_Helper_SetProperty;
     else if (mFlags.UseJSStubForSetProperty())
-        setProperty = nullptr;
+        cOps->setProperty = nullptr;
     else if (mFlags.AllowPropModsDuringResolve())
-        setProperty = XPC_WN_MaybeResolvingSetPropertyStub;
+        cOps->setProperty = XPC_WN_MaybeResolvingSetPropertyStub;
     else
-        setProperty = XPC_WN_CannotModifySetPropertyStub;
-    mJSClass.setProperty = setProperty;
+        cOps->setProperty = XPC_WN_CannotModifySetPropertyStub;
 
     MOZ_ASSERT_IF(mFlags.WantEnumerate(), !mFlags.WantNewEnumerate());
     MOZ_ASSERT_IF(mFlags.WantNewEnumerate(), !mFlags.WantEnumerate());
 
     
     if (mFlags.WantNewEnumerate())
-        mJSClass.enumerate = nullptr;
+        cOps->enumerate = nullptr;
     else if (mFlags.WantEnumerate())
-        mJSClass.enumerate = XPC_WN_Helper_Enumerate;
+        cOps->enumerate = XPC_WN_Helper_Enumerate;
     else
-        mJSClass.enumerate = XPC_WN_Shared_Enumerate;
+        cOps->enumerate = XPC_WN_Shared_Enumerate;
 
     
-    mJSClass.resolve = XPC_WN_Helper_Resolve;
+    cOps->resolve = XPC_WN_Helper_Resolve;
 
     if (mFlags.WantFinalize())
-        mJSClass.finalize = XPC_WN_Helper_Finalize;
+        cOps->finalize = XPC_WN_Helper_Finalize;
     else
-        mJSClass.finalize = XPC_WN_NoHelper_Finalize;
+        cOps->finalize = XPC_WN_NoHelper_Finalize;
 
     if (mFlags.WantCall())
-        mJSClass.call = XPC_WN_Helper_Call;
+        cOps->call = XPC_WN_Helper_Call;
     if (mFlags.WantConstruct())
-        mJSClass.construct = XPC_WN_Helper_Construct;
+        cOps->construct = XPC_WN_Helper_Construct;
 
     if (mFlags.WantHasInstance())
-        mJSClass.hasInstance = XPC_WN_Helper_HasInstance;
+        cOps->hasInstance = XPC_WN_Helper_HasInstance;
 
     if (mFlags.IsGlobalObject())
-        mJSClass.trace = JS_GlobalObjectTraceHook;
+        cOps->trace = JS_GlobalObjectTraceHook;
     else
-        mJSClass.trace = XPCWrappedNative::Trace;
+        cOps->trace = XPCWrappedNative::Trace;
 
     
 
@@ -1259,56 +1256,39 @@ XPC_WN_ModsAllowed_Proto_Resolve(JSContext* cx, HandleObject obj, HandleId id, b
                                  JSPROP_ENUMERATE, resolvep);
 }
 
+static const js::ClassOps XPC_WN_ModsAllowed_Proto_JSClassOps = {
+    nullptr,                            
+    nullptr,                            
+    nullptr,                            
+    nullptr,                            
+    XPC_WN_Shared_Proto_Enumerate,      
+    XPC_WN_ModsAllowed_Proto_Resolve,   
+    nullptr,                            
+    XPC_WN_Shared_Proto_Finalize,       
+    nullptr,                            
+    nullptr,                            
+    nullptr,                            
+    XPC_WN_Shared_Proto_Trace,          
+};
+
 static const js::ClassExtension XPC_WN_Shared_Proto_ClassExtension = {
     nullptr,    
     XPC_WN_Shared_Proto_ObjectMoved
 };
 
 const js::Class XPC_WN_ModsAllowed_WithCall_Proto_JSClass = {
-    "XPC_WN_ModsAllowed_WithCall_Proto_JSClass", 
-    WRAPPER_FLAGS, 
-
-    
-    nullptr,                        
-    nullptr,                        
-    nullptr,                        
-    nullptr,                        
-    XPC_WN_Shared_Proto_Enumerate,  
-    XPC_WN_ModsAllowed_Proto_Resolve, 
-    nullptr,                        
-    XPC_WN_Shared_Proto_Finalize,   
-
-    
-    nullptr,                        
-    nullptr,                        
-    nullptr,                        
-    XPC_WN_Shared_Proto_Trace,      
-
+    "XPC_WN_ModsAllowed_WithCall_Proto_JSClass",
+    WRAPPER_FLAGS,
+    &XPC_WN_ModsAllowed_Proto_JSClassOps,
     JS_NULL_CLASS_SPEC,
     &XPC_WN_Shared_Proto_ClassExtension,
     XPC_WN_WithCall_ObjectOps
 };
 
 const js::Class XPC_WN_ModsAllowed_NoCall_Proto_JSClass = {
-    "XPC_WN_ModsAllowed_NoCall_Proto_JSClass", 
-    WRAPPER_FLAGS,                  
-
-    
-    nullptr,                        
-    nullptr,                        
-    nullptr,                        
-    nullptr,                        
-    XPC_WN_Shared_Proto_Enumerate,  
-    XPC_WN_ModsAllowed_Proto_Resolve, 
-    nullptr,                        
-    XPC_WN_Shared_Proto_Finalize,   
-
-    
-    nullptr,                         
-    nullptr,                         
-    nullptr,                         
-    XPC_WN_Shared_Proto_Trace,      
-
+    "XPC_WN_ModsAllowed_NoCall_Proto_JSClass",
+    WRAPPER_FLAGS,
+    &XPC_WN_ModsAllowed_Proto_JSClassOps,
     JS_NULL_CLASS_SPEC,
     &XPC_WN_Shared_Proto_ClassExtension,
     XPC_WN_NoCall_ObjectOps
@@ -1367,11 +1347,7 @@ XPC_WN_NoMods_Proto_Resolve(JSContext* cx, HandleObject obj, HandleId id, bool* 
                                  JSPROP_ENUMERATE, resolvedp);
 }
 
-const js::Class XPC_WN_NoMods_WithCall_Proto_JSClass = {
-    "XPC_WN_NoMods_WithCall_Proto_JSClass",    
-    WRAPPER_FLAGS,                             
-
-    
+static const js::ClassOps XPC_WN_NoMods_Proto_JSClassOps = {
     XPC_WN_OnlyIWrite_Proto_AddPropertyStub,   
     XPC_WN_CantDeletePropertyStub,             
     nullptr,                                   
@@ -1380,38 +1356,25 @@ const js::Class XPC_WN_NoMods_WithCall_Proto_JSClass = {
     XPC_WN_NoMods_Proto_Resolve,               
     nullptr,                                   
     XPC_WN_Shared_Proto_Finalize,              
+    nullptr,                                   
+    nullptr,                                   
+    nullptr,                                   
+    XPC_WN_Shared_Proto_Trace,                 
+};
 
-    
-    nullptr,                         
-    nullptr,                         
-    nullptr,                         
-    XPC_WN_Shared_Proto_Trace,      
-
+const js::Class XPC_WN_NoMods_WithCall_Proto_JSClass = {
+    "XPC_WN_NoMods_WithCall_Proto_JSClass",
+    WRAPPER_FLAGS,
+    &XPC_WN_NoMods_Proto_JSClassOps,
     JS_NULL_CLASS_SPEC,
     &XPC_WN_Shared_Proto_ClassExtension,
     XPC_WN_WithCall_ObjectOps
 };
 
 const js::Class XPC_WN_NoMods_NoCall_Proto_JSClass = {
-    "XPC_WN_NoMods_NoCall_Proto_JSClass",      
-    WRAPPER_FLAGS,                             
-
-    
-    XPC_WN_OnlyIWrite_Proto_AddPropertyStub,   
-    XPC_WN_CantDeletePropertyStub,             
-    nullptr,                                   
-    nullptr,                                   
-    XPC_WN_Shared_Proto_Enumerate,             
-    XPC_WN_NoMods_Proto_Resolve,               
-    nullptr,                                   
-    XPC_WN_Shared_Proto_Finalize,              
-
-    
-    nullptr,                         
-    nullptr,                         
-    nullptr,                         
-    XPC_WN_Shared_Proto_Trace,      
-
+    "XPC_WN_NoMods_NoCall_Proto_JSClass",
+    WRAPPER_FLAGS,
+    &XPC_WN_NoMods_Proto_JSClassOps,
     JS_NULL_CLASS_SPEC,
     &XPC_WN_Shared_Proto_ClassExtension,
     XPC_WN_NoCall_ObjectOps
@@ -1488,31 +1451,31 @@ static_assert(((WRAPPER_FLAGS >> JSCLASS_RESERVED_SLOTS_SHIFT) &
                JSCLASS_RESERVED_SLOTS_MASK) == 0,
               "WRAPPER_FLAGS should not include any reserved slots");
 
+static const js::ClassOps XPC_WN_Tearoff_JSClassOps = {
+    XPC_WN_OnlyIWrite_AddPropertyStub,  
+    XPC_WN_CantDeletePropertyStub,      
+    nullptr,                            
+    nullptr,                            
+    XPC_WN_TearOff_Enumerate,           
+    XPC_WN_TearOff_Resolve,             
+    nullptr,                            
+    XPC_WN_TearOff_Finalize,            
+    nullptr,                            
+    nullptr,                            
+    nullptr,                            
+    nullptr,                            
+};
+
 static const js::ClassExtension XPC_WN_Tearoff_JSClassExtension = {
-    nullptr,                               
+    nullptr,                            
     XPC_WN_TearOff_ObjectMoved
 };
 
 const js::Class XPC_WN_Tearoff_JSClass = {
-    "WrappedNative_TearOff",                   
+    "WrappedNative_TearOff",
     WRAPPER_FLAGS |
-    JSCLASS_HAS_RESERVED_SLOTS(XPC_WN_TEAROFF_RESERVED_SLOTS), 
-    XPC_WN_OnlyIWrite_AddPropertyStub,         
-    XPC_WN_CantDeletePropertyStub,             
-    nullptr,                                   
-    nullptr,                                   
-    XPC_WN_TearOff_Enumerate,                  
-    XPC_WN_TearOff_Resolve,                    
-    nullptr,                                   
-    XPC_WN_TearOff_Finalize,                   
-
-    
-    nullptr,                                   
-    nullptr,                                   
-    nullptr,                                   
-    nullptr,                                   
+    JSCLASS_HAS_RESERVED_SLOTS(XPC_WN_TEAROFF_RESERVED_SLOTS),
+    &XPC_WN_Tearoff_JSClassOps,
     JS_NULL_CLASS_SPEC,
-
-    
     &XPC_WN_Tearoff_JSClassExtension
 };

@@ -1428,9 +1428,7 @@ FinalizeStub(JSFreeOp* fop, JSObject* obj)
 {
 }
 
-static const JSClass XPCOutParamClass = {
-    "XPCOutParam",
-    0,
+static const JSClassOps XPCOutParamClassOps = {
     nullptr,   
     nullptr,   
     nullptr,   
@@ -1443,6 +1441,12 @@ static const JSClass XPCOutParamClass = {
     nullptr,   
     nullptr,   
     nullptr    
+};
+
+static const JSClass XPCOutParamClass = {
+    "XPCOutParam",
+    0,
+    &XPCOutParamClassOps
 };
 
 bool

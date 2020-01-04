@@ -175,7 +175,7 @@ js::Nursery::allocateObject(JSContext* cx, size_t size, size_t numDynamic, const
 
 
 
-    MOZ_ASSERT_IF(clasp->finalize, clasp->flags & JSCLASS_SKIP_NURSERY_FINALIZE);
+    MOZ_ASSERT_IF(clasp->hasFinalize(), clasp->flags & JSCLASS_SKIP_NURSERY_FINALIZE);
 
     
     JSObject* obj = static_cast<JSObject*>(allocate(size));

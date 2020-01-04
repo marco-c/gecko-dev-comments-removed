@@ -189,9 +189,7 @@ TypedObjectMemory(HandleValue v)
     return reinterpret_cast<Elem>(obj.typedMem());
 }
 
-const Class SimdTypeDescr::class_ = {
-    "SIMD",
-    JSCLASS_HAS_RESERVED_SLOTS(JS_DESCR_SLOTS) | JSCLASS_BACKGROUND_FINALIZE,
+static const ClassOps SimdTypeDescrClassOps = {
     nullptr, 
     nullptr, 
     nullptr, 
@@ -200,7 +198,13 @@ const Class SimdTypeDescr::class_ = {
     nullptr, 
     nullptr, 
     TypeDescr::finalize,
-    call
+    SimdTypeDescr::call
+};
+
+const Class SimdTypeDescr::class_ = {
+    "SIMD",
+    JSCLASS_HAS_RESERVED_SLOTS(JS_DESCR_SLOTS) | JSCLASS_BACKGROUND_FINALIZE,
+    &SimdTypeDescrClassOps
 };
 
 namespace {
@@ -424,15 +428,19 @@ SimdTypeDescr::call(JSContext* cx, unsigned argc, Value* vp)
 
 
 
+static const ClassOps SimdObjectClassOps = {
+    nullptr, 
+    nullptr, 
+    nullptr, 
+    nullptr, 
+    nullptr, 
+    SimdObject::resolve
+};
+
 const Class SimdObject::class_ = {
     "SIMD",
     JSCLASS_HAS_RESERVED_SLOTS(uint32_t(SimdType::Count)),
-    nullptr, 
-    nullptr, 
-    nullptr, 
-    nullptr, 
-    nullptr, 
-    resolve  
+    &SimdObjectClassOps
 };
 
 bool

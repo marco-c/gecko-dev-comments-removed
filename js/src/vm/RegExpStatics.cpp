@@ -34,9 +34,7 @@ resc_trace(JSTracer* trc, JSObject* obj)
         static_cast<RegExpStatics*>(pdata)->mark(trc);
 }
 
-const Class RegExpStaticsObject::class_ = {
-    "RegExpStatics",
-    JSCLASS_HAS_PRIVATE,
+static const ClassOps RegExpStaticsObjectClassOps = {
     nullptr, 
     nullptr, 
     nullptr, 
@@ -49,6 +47,12 @@ const Class RegExpStaticsObject::class_ = {
     nullptr, 
     nullptr, 
     resc_trace
+};
+
+const Class RegExpStaticsObject::class_ = {
+    "RegExpStatics",
+    JSCLASS_HAS_PRIVATE,
+    &RegExpStaticsObjectClassOps
 };
 
 RegExpStaticsObject*

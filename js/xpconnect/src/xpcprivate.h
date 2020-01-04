@@ -1650,8 +1650,8 @@ public:
     XPCNativeScriptableShared(uint32_t aFlags, char* aName, bool aPopulate);
 
     ~XPCNativeScriptableShared() {
-        if (mJSClass.name)
-            free((void*)mJSClass.name);
+        free((void*)mJSClass.name);
+        free((void*)mJSClass.cOps);
         MOZ_COUNT_DTOR(XPCNativeScriptableShared);
     }
 
@@ -1667,6 +1667,10 @@ public:
 
 private:
     XPCNativeScriptableFlags mFlags;
+
+    
+    
+    
     js::Class mJSClass;
 };
 

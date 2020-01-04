@@ -716,6 +716,21 @@ js::proxy_FunToString(JSContext* cx, HandleObject proxy, unsigned indent)
     return Proxy::fun_toString(cx, proxy, indent);
 }
 
+const ClassOps js::ProxyClassOps = {
+    nullptr,                 
+    nullptr,                 
+    nullptr,                 
+    nullptr,                 
+    nullptr,                 
+    nullptr,                 
+    nullptr,                 
+    js::proxy_Finalize,      
+    nullptr,                 
+    js::proxy_HasInstance,   
+    nullptr,                 
+    js::proxy_Trace,         
+};
+
 const ClassExtension js::ProxyClassExtension = PROXY_MAKE_EXT(
     js::proxy_ObjectMoved
 );

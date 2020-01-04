@@ -91,8 +91,8 @@ class ProxyObject : public JSObject
         
         
         return clasp->isProxy() &&
-               clasp->trace == proxy_Trace &&
-               !clasp->call && !clasp->construct;
+               clasp->isTrace(proxy_Trace) &&
+               !clasp->getCall() && !clasp->getConstruct();
     }
 
   public:

@@ -289,6 +289,21 @@ SavedFrame::finishSavedFrameInit(JSContext* cx, HandleObject ctor, HandleObject 
     return FreezeObject(cx, proto);
 }
 
+static const ClassOps SavedFrameClassOps = {
+    nullptr,                    
+    nullptr,                    
+    nullptr,                    
+    nullptr,                    
+    nullptr,                    
+    nullptr,                    
+    nullptr,                    
+    SavedFrame::finalize,       
+    nullptr,                    
+    nullptr,                    
+    nullptr,                    
+    nullptr,                    
+};
+
 const ClassSpec SavedFrame::classSpec_ = {
     GenericCreateConstructor<SavedFrame::construct, 0, gc::AllocKind::FUNCTION>,
     GenericCreatePrototype,
@@ -306,18 +321,7 @@ const ClassSpec SavedFrame::classSpec_ = {
     JSCLASS_HAS_RESERVED_SLOTS(SavedFrame::JSSLOT_COUNT) |
     JSCLASS_HAS_CACHED_PROTO(JSProto_SavedFrame) |
     JSCLASS_IS_ANONYMOUS,
-    nullptr,                    
-    nullptr,                    
-    nullptr,                    
-    nullptr,                    
-    nullptr,                    
-    nullptr,                    
-    nullptr,                    
-    SavedFrame::finalize,       
-    nullptr,                    
-    nullptr,                    
-    nullptr,                    
-    nullptr,                    
+    &SavedFrameClassOps,
     &SavedFrame::classSpec_
 };
 

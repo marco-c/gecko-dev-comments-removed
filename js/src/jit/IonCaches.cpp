@@ -484,7 +484,7 @@ IsCacheableNoProperty(JSObject* obj, JSObject* holder, Shape* shape, jsbytecode*
 
     
     
-    if (obj->getClass()->getProperty)
+    if (obj->getClass()->getGetProperty())
         return false;
 
     
@@ -3280,7 +3280,7 @@ IsPropertyAddInlineable(JSContext* cx, NativeObject* obj, HandleId id, ConstantO
         return false;
 
     
-    if (obj->getClass()->addProperty)
+    if (obj->getClass()->getAddProperty())
         return false;
 
     if (!obj->nonProxyIsExtensible() || !shape->writable())

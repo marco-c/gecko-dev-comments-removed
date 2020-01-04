@@ -927,7 +927,7 @@ IsCacheableSetPropAddSlot(JSContext* cx, JSObject* obj, Shape* oldShape,
 
     
     if (ClassMayResolveId(cx->names(), obj->getClass(), id, obj) ||
-        obj->getClass()->addProperty)
+        obj->getClass()->getAddProperty())
     {
         return false;
     }
