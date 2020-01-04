@@ -280,9 +280,23 @@ DevToolsLoader.prototype = {
         factory(this.require, this.exports, this.module);
       },
     };
+
+    
     
     XPCOMUtils.defineLazyGetter(this._provider.globals, "console", () => {
       return Cu.import("resource://gre/modules/Console.jsm", {}).console;
+    });
+    XPCOMUtils.defineLazyGetter(this._provider.globals, "clearTimeout", () => {
+      return Cu.import("resource://gre/modules/Timer.jsm", {}).clearTimeout;
+    });
+    XPCOMUtils.defineLazyGetter(this._provider.globals, "setTimeout", () => {
+      return Cu.import("resource://gre/modules/Timer.jsm", {}).setTimeout;
+    });
+    XPCOMUtils.defineLazyGetter(this._provider.globals, "clearInterval", () => {
+      return Cu.import("resource://gre/modules/Timer.jsm", {}).clearInterval;
+    });
+    XPCOMUtils.defineLazyGetter(this._provider.globals, "setInterval", () => {
+      return Cu.import("resource://gre/modules/Timer.jsm", {}).setInterval;
     });
 
     this._provider.load();
