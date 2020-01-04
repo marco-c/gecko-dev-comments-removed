@@ -25,6 +25,7 @@ class gfxVarReceiver;
       \
   _(ContentBackend,             BackendType,      BackendType::NONE)    \
   _(TileSize,                   IntSize,          IntSize(-1, -1))      \
+  _(UseXRender,                 bool,             false)                \
   /* Add new entries above this line. */
 
 

@@ -79,7 +79,7 @@ ContentClient::CreateContentClient(CompositableForwarder* aForwarder)
   
   
   if (!gfxPlatformGtk::GetPlatform()->UseImageOffscreenSurfaces() ||
-      !gfxPlatformGtk::GetPlatform()->UseXRender())
+      !gfxVars::UseXRender())
 #endif
   {
     useDoubleBuffering = (LayerManagerComposite::SupportsDirectTexturing() &&
