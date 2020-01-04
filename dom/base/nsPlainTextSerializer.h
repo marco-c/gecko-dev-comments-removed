@@ -128,15 +128,6 @@ private:
   uint32_t         mHeadLevel;
   bool             mAtFirstColumn;
 
-  
-  
-  
-  
-  
-  
-  
-  bool             mDontWrapAnyQuotes;  
-
   bool             mStructs;            
 
   

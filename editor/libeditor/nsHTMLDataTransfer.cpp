@@ -1658,9 +1658,6 @@ NS_IMETHODIMP nsHTMLEditor::PasteAsPlaintextQuotation(int32_t aSelectionType)
 NS_IMETHODIMP
 nsHTMLEditor::InsertTextWithQuotations(const nsAString &aStringToInsert)
 {
-  if (mWrapToWindow)
-    return InsertText(aStringToInsert);
-
   
   BeginTransaction();
 
@@ -1761,9 +1758,6 @@ nsHTMLEditor::InsertAsPlaintextQuotation(const nsAString & aQuotedText,
                                          bool aAddCites,
                                          nsIDOMNode **aNodeInserted)
 {
-  if (mWrapToWindow)
-    return nsPlaintextEditor::InsertAsQuotation(aQuotedText, aNodeInserted);
-
   
   RefPtr<Selection> selection = GetSelection();
   NS_ENSURE_TRUE(selection, NS_ERROR_NULL_POINTER);

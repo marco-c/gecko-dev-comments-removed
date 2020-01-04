@@ -74,7 +74,6 @@ nsPlainTextSerializer::nsPlainTextSerializer()
   mCiteQuoteLevel = 0;
   mStructs = true;       
   mHeaderStrategy = 1 ;   
-  mDontWrapAnyQuotes = false;                 
   mHasWrittenCiteBlockquote = false;
   mSpanLevel = 0;
   for (int32_t i = 0; i <= 6; i++) {
@@ -178,15 +177,6 @@ nsPlainTextSerializer::Init(uint32_t aFlags, uint32_t aWrapColumn,
 
     mHeaderStrategy =
       Preferences::GetInt(PREF_HEADER_STRATEGY, mHeaderStrategy);
-
-    
-    
-    
-    if (mFlags & nsIDocumentEncoder::OutputWrap || mWrapColumn > 0) {
-      mDontWrapAnyQuotes =
-        Preferences::GetBool("mail.compose.wrap_to_window_width",
-                             mDontWrapAnyQuotes);
-    }
   }
 
   
@@ -1588,8 +1578,7 @@ nsPlainTextSerializer::Write(const nsAString& aStr)
   
   
   if ((mPreFormattedMail && !mWrapColumn) || (IsInPre() && !mPreFormattedMail)
-      || ((mSpanLevel > 0 || mDontWrapAnyQuotes)
-          && mEmptyLines >= 0 && str.First() == char16_t('>'))) {
+      || (mSpanLevel > 0 && mEmptyLines >= 0 && str.First() == char16_t('>'))) {
     
 
     

@@ -69,7 +69,6 @@ using namespace mozilla::dom;
 nsPlaintextEditor::nsPlaintextEditor()
 : nsEditor()
 , mRules(nullptr)
-, mWrapToWindow(false)
 , mWrapColumn(0)
 , mMaxTextLength(-1)
 , mInitTriggerCounter(0)
@@ -1046,26 +1045,16 @@ nsPlaintextEditor::SetWrapWidth(int32_t aWrapColumn)
     styleValue.AppendLiteral("font-family: -moz-fixed; ");
 
   
-  
-  
-  
-  if (IsMailEditor())
-  {
-    mWrapToWindow =
-      Preferences::GetBool("mail.compose.wrap_to_window_width", mWrapToWindow);
-  }
-
-  
-  if (aWrapColumn > 0 && !mWrapToWindow)        
-  {
+  if (aWrapColumn > 0) {
+    
     styleValue.AppendLiteral("white-space: pre-wrap; width: ");
     styleValue.AppendInt(aWrapColumn);
     styleValue.AppendLiteral("ch;");
-  }
-  else if (mWrapToWindow || aWrapColumn == 0)
+  } else if (aWrapColumn == 0) {
     styleValue.AppendLiteral("white-space: pre-wrap;");
-  else
+  } else {
     styleValue.AppendLiteral("white-space: pre;");
+  }
 
   return rootElement->SetAttr(kNameSpaceID_None, nsGkAtoms::style, styleValue, true);
 }
