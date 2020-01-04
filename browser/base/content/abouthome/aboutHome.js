@@ -56,9 +56,21 @@ window.addEventListener("pagehide", function() {
 });
 
 window.addEventListener("keypress", ev => {
-  
-  if (document.activeElement.id == "searchText") 
+  if (ev.defaultPrevented) {
     return;
+  }
+
+  
+  
+  
+  
+  
+  if (document.activeElement && document.activeElement != document.body &&
+      document.activeElement != document.documentElement &&
+      !["a", "button"].includes(document.activeElement.localName) &&
+      !document.activeElement.matches("input:-moz-any([type=button],[type=submit])")) {
+    return;
+  }
 
   let modifiers = ev.ctrlKey + ev.altKey + ev.metaKey;
   
