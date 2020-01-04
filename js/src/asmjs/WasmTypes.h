@@ -772,15 +772,15 @@ typedef EnumeratedArray<JumpTarget, JumpTarget::Limit, Uint32Vector> JumpSiteArr
 
 
 
-struct CompileArgs
+struct SignalUsage
 {
-    bool useSignalHandlersForOOB;
-    bool useSignalHandlersForInterrupt;
+    bool forOOB;
+    bool forInterrupt;
 
-    CompileArgs() = default;
-    explicit CompileArgs(ExclusiveContext* cx);
-    bool operator==(CompileArgs rhs) const;
-    bool operator!=(CompileArgs rhs) const { return !(*this == rhs); }
+    SignalUsage() = default;
+    explicit SignalUsage(ExclusiveContext* cx);
+    bool operator==(SignalUsage rhs) const;
+    bool operator!=(SignalUsage rhs) const { return !(*this == rhs); }
 };
 
 

@@ -271,23 +271,22 @@ wasm::AddressOf(SymbolicAddress imm, ExclusiveContext* cx)
     MOZ_CRASH("Bad SymbolicAddress");
 }
 
-CompileArgs::CompileArgs(ExclusiveContext* cx)
+SignalUsage::SignalUsage(ExclusiveContext* cx)
   :
 #ifdef ASMJS_MAY_USE_SIGNAL_HANDLERS_FOR_OOB
     
     
-    useSignalHandlersForOOB(cx->canUseSignalHandlers() &&
-                            gc::SystemPageSize() <= PageSize &&
-                            PageSize % gc::SystemPageSize() == 0),
+    forOOB(cx->canUseSignalHandlers() &&
+           gc::SystemPageSize() <= PageSize &&
+           PageSize % gc::SystemPageSize() == 0),
 #else
-    useSignalHandlersForOOB(false),
+    forOOB(false),
 #endif
-    useSignalHandlersForInterrupt(cx->canUseSignalHandlers())
+    forInterrupt(cx->canUseSignalHandlers())
 {}
 
 bool
-CompileArgs::operator==(CompileArgs rhs) const
+SignalUsage::operator==(SignalUsage rhs) const
 {
-    return useSignalHandlersForOOB == rhs.useSignalHandlersForOOB &&
-           useSignalHandlersForInterrupt == rhs.useSignalHandlersForInterrupt;
+    return forOOB == rhs.forOOB && forInterrupt == rhs.forInterrupt;
 }
