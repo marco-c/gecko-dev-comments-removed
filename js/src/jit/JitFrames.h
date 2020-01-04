@@ -282,10 +282,9 @@ struct ResumeFromException
 
 void HandleException(ResumeFromException* rfe);
 
-void EnsureExitFrame(CommonFrameLayout* frame);
+void EnsureBareExitFrame(JSContext* cx, JitFrameLayout* frame);
 
 void MarkJitActivations(JSRuntime* rt, JSTracer* trc);
-void MarkIonCompilerRoots(JSTracer* trc);
 
 JSCompartment*
 TopmostIonActivationCompartment(JSRuntime* rt);
@@ -468,18 +467,6 @@ class IonAccessorICFrameLayout : public CommonFrameLayout
     }
     static size_t Size() {
         return sizeof(IonAccessorICFrameLayout);
-    }
-};
-
-
-class IonUnwoundRectifierFrameLayout : public RectifierFrameLayout
-{
-  public:
-    static inline size_t Size() {
-        
-        
-        
-        return sizeof(IonUnwoundRectifierFrameLayout);
     }
 };
 

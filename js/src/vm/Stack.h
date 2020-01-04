@@ -1581,9 +1581,6 @@ class JitActivationIterator : public ActivationIterator
         settle();
         return *this;
     }
-
-    
-    void jitStackRange(uintptr_t*& min, uintptr_t*& end);
 };
 
 } 

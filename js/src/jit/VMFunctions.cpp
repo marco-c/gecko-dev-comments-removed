@@ -710,8 +710,7 @@ DebugEpilogue(JSContext* cx, BaselineFrame* frame, jsbytecode* pc, bool ok)
         
 
         JitFrameLayout* prefix = frame->framePrefix();
-        EnsureExitFrame(prefix);
-        cx->runtime()->jitTop = (uint8_t*)prefix;
+        EnsureBareExitFrame(cx, prefix);
         return false;
     }
 
