@@ -14,6 +14,7 @@
 #include "mozilla/storage/StatementCache.h"
 #include "mozilla/Attributes.h"
 #include "nsIEventTarget.h"
+#include "Shutdown.h"
 
 
 
@@ -41,11 +42,7 @@
 
 
 
-#define TOPIC_SIMULATE_PLACES_MUST_CLOSE_1 "test-simulate-places-shutdown-phase-1"
-
-
-
-#define TOPIC_SIMULATE_PLACES_MUST_CLOSE_2 "test-simulate-places-shutdown-phase-2"
+#define TOPIC_SIMULATE_PLACES_SHUTDOWN "test-simulate-places-shutdown"
 
 class nsIRunnable;
 
@@ -64,7 +61,8 @@ enum JournalMode {
 , JOURNAL_WAL
 };
 
-class DatabaseShutdown;
+class ClientsShutdownBlocker;
+class ConnectionShutdownBlocker;
 
 class Database final : public nsIObserver
                      , public nsSupportsWeakReference
@@ -87,7 +85,7 @@ public:
   
 
 
-  already_AddRefed<nsIAsyncShutdownClient> GetConnectionShutdown();
+  already_AddRefed<nsIAsyncShutdownClient> GetClientsShutdown();
 
   
 
@@ -269,7 +267,7 @@ protected:
 
   nsresult UpdateBookmarkRootTitles();
 
-  friend class DatabaseShutdown;
+  friend class ConnectionShutdownBlocker;
 
 private:
   ~Database();
@@ -295,7 +293,8 @@ private:
 
 
 
-  already_AddRefed<nsIAsyncShutdownClient> GetShutdownPhase();
+  already_AddRefed<nsIAsyncShutdownClient> GetProfileChangeTeardownPhase();
+  already_AddRefed<nsIAsyncShutdownClient> GetProfileBeforeChangePhase();
 
   
 
@@ -304,7 +303,8 @@ private:
 
 
 
-  RefPtr<DatabaseShutdown> mConnectionShutdown;
+  RefPtr<ClientsShutdownBlocker> mClientsShutdown;
+  RefPtr<ConnectionShutdownBlocker> mConnectionShutdown;
 };
 
 } 

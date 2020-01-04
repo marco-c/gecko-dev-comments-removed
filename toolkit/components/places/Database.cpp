@@ -297,269 +297,6 @@ CreateRoot(nsCOMPtr<mozIStorageConnection>& aDBConn,
 
 
 
-class DatabaseShutdown final:
-    public nsIAsyncShutdownBlocker,
-    public nsIAsyncShutdownCompletionCallback,
-    public mozIStorageCompletionCallback
-{
-public:
-  NS_DECL_THREADSAFE_ISUPPORTS
-  NS_DECL_NSIASYNCSHUTDOWNBLOCKER
-  NS_DECL_NSIASYNCSHUTDOWNCOMPLETIONCALLBACK
-  NS_DECL_MOZISTORAGECOMPLETIONCALLBACK
-
-  explicit DatabaseShutdown(Database* aDatabase);
-
-  already_AddRefed<nsIAsyncShutdownClient> GetClient();
-
-  
-
-
-
-  static bool IsStarted() {
-    return sIsStarted;
-  }
-
-private:
-  nsCOMPtr<nsIAsyncShutdownBarrier> mBarrier;
-  nsCOMPtr<nsIAsyncShutdownClient> mParentClient;
-
-  
-  
-  
-  RefPtr<Database> mDatabase;
-
-  
-  
-  enum State {
-    NOT_STARTED,
-
-    
-    
-    RECEIVED_BLOCK_SHUTDOWN,
-    
-    CALLED_WAIT_CLIENTS,
-
-    
-    
-    RECEIVED_DONE,
-    
-    NOTIFIED_OBSERVERS_PLACES_WILL_CLOSE_CONNECTION,
-    
-    CALLED_STORAGESHUTDOWN,
-
-    
-    
-    RECEIVED_STORAGESHUTDOWN_COMPLETE,
-    
-    NOTIFIED_OBSERVERS_PLACES_CONNECTION_CLOSED,
-  };
-  State mState;
-
-  
-  
-  uint16_t mCounter;
-  static uint16_t sCounter;
-
-  static Atomic<bool> sIsStarted;
-
-  ~DatabaseShutdown() {}
-};
-uint16_t DatabaseShutdown::sCounter = 0;
-Atomic<bool> DatabaseShutdown::sIsStarted(false);
-
-DatabaseShutdown::DatabaseShutdown(Database* aDatabase)
-  : mDatabase(aDatabase)
-  , mState(NOT_STARTED)
-  , mCounter(sCounter++)
-{
-  MOZ_ASSERT(NS_IsMainThread());
-  nsCOMPtr<nsIAsyncShutdownService> asyncShutdownSvc = services::GetAsyncShutdown();
-  MOZ_ASSERT(asyncShutdownSvc);
-
-  if (asyncShutdownSvc) {
-    DebugOnly<nsresult> rv = asyncShutdownSvc->MakeBarrier(
-      NS_LITERAL_STRING("Places Database shutdown"),
-      getter_AddRefs(mBarrier)
-    );
-    MOZ_ASSERT(NS_SUCCEEDED(rv));
-  }
-}
-
-already_AddRefed<nsIAsyncShutdownClient>
-DatabaseShutdown::GetClient()
-{
-  nsCOMPtr<nsIAsyncShutdownClient> client;
-  if (mBarrier) {
-    DebugOnly<nsresult> rv = mBarrier->GetClient(getter_AddRefs(client));
-    MOZ_ASSERT(NS_SUCCEEDED(rv));
-  }
-  return client.forget();
-}
-
-
-NS_IMETHODIMP
-DatabaseShutdown::GetName(nsAString& aName)
-{
-  if (mCounter > 0) {
-    
-    
-    nsPrintfCString name("Places DatabaseShutdown: Blocking profile-before-change (%x)", this);
-    aName = NS_ConvertUTF8toUTF16(name);
-  } else {
-    aName = NS_LITERAL_STRING("Places DatabaseShutdown: Blocking profile-before-change");
-  }
-  return NS_OK;
-}
-
-
-NS_IMETHODIMP DatabaseShutdown::GetState(nsIPropertyBag** aState)
-{
-  nsresult rv;
-  nsCOMPtr<nsIWritablePropertyBag2> bag =
-    do_CreateInstance("@mozilla.org/hash-property-bag;1", &rv);
-  if (NS_WARN_IF(NS_FAILED(rv))) return rv;
-
-  
-  RefPtr<nsVariant> progress = new nsVariant();
-
-  rv = progress->SetAsUint8(mState);
-  if (NS_WARN_IF(NS_FAILED(rv))) return rv;
-
-  rv = bag->SetPropertyAsInterface(NS_LITERAL_STRING("progress"), progress);
-  if (NS_WARN_IF(NS_FAILED(rv))) return rv;
-
-  
-  if (!mBarrier) {
-    return NS_OK;
-  }
-  nsCOMPtr<nsIPropertyBag> barrierState;
-  rv = mBarrier->GetState(getter_AddRefs(barrierState));
-  if (NS_FAILED(rv)) {
-    return NS_OK;
-  }
-
-  RefPtr<nsVariant> barrier = new nsVariant();
-
-  rv = barrier->SetAsInterface(NS_GET_IID(nsIPropertyBag), barrierState);
-  if (NS_WARN_IF(NS_FAILED(rv))) return rv;
-
-  rv = bag->SetPropertyAsInterface(NS_LITERAL_STRING("Barrier"), barrier);
-  if (NS_WARN_IF(NS_FAILED(rv))) return rv;
-
-  return NS_OK;
-}
-
-
-
-
-
-
-
-
-
-NS_IMETHODIMP
-DatabaseShutdown::BlockShutdown(nsIAsyncShutdownClient* aParentClient)
-{
-  mParentClient = aParentClient;
-  mState = RECEIVED_BLOCK_SHUTDOWN;
-  sIsStarted = true;
-
-  if (NS_WARN_IF(!mBarrier)) {
-    return NS_ERROR_NOT_AVAILABLE;
-  }
-
-  
-  
-  DebugOnly<nsresult> rv = mBarrier->Wait(this);
-  MOZ_ASSERT(NS_SUCCEEDED(rv));
-
-  mState = CALLED_WAIT_CLIENTS;
-  return NS_OK;
-}
-
-
-
-
-
-
-
-NS_IMETHODIMP
-DatabaseShutdown::Done()
-{
-  mState = RECEIVED_DONE;
-
-  
-  nsCOMPtr<nsIObserverService> os = services::GetObserverService();
-  MOZ_ASSERT(os);
-  if (os) {
-    (void)os->NotifyObservers(nullptr, TOPIC_PLACES_WILL_CLOSE_CONNECTION, nullptr);
-  }
-  mState = NOTIFIED_OBSERVERS_PLACES_WILL_CLOSE_CONNECTION;
-
-  
-  
-  
-  MOZ_ASSERT(Database::gDatabase == nullptr || Database::gDatabase == mDatabase);
-  Database::gDatabase = nullptr;
-
-  mDatabase->Shutdown();
-  mState = CALLED_STORAGESHUTDOWN;
-  return NS_OK;
-}
-
-
-
-
-
-
-
-
-
-NS_IMETHODIMP
-DatabaseShutdown::Complete(nsresult, nsISupports*)
-{
-  MOZ_ASSERT(NS_IsMainThread());
-  mState = RECEIVED_STORAGESHUTDOWN_COMPLETE;
-  mDatabase = nullptr;
-
-  nsresult rv;
-  if (mParentClient) {
-    
-    rv = mParentClient->RemoveBlocker(this);
-    if (NS_WARN_IF(NS_FAILED(rv))) return rv;
-  }
-
-  nsCOMPtr<nsIObserverService> os = mozilla::services::GetObserverService();
-  MOZ_ASSERT(os);
-  if (os) {
-    rv = os->NotifyObservers(nullptr,
-                             TOPIC_PLACES_CONNECTION_CLOSED,
-                             nullptr);
-    MOZ_ASSERT(NS_SUCCEEDED(rv));
-  }
-  mState = NOTIFIED_OBSERVERS_PLACES_CONNECTION_CLOSED;
-
-  if (NS_WARN_IF(!mBarrier)) {
-    return NS_ERROR_NOT_AVAILABLE;
-  }
-
-  NS_ReleaseOnMainThread(mBarrier.forget());
-  NS_ReleaseOnMainThread(mParentClient.forget());
-
-  return NS_OK;
-}
-
-NS_IMPL_ISUPPORTS(
-  DatabaseShutdown
-, nsIAsyncShutdownBlocker
-, nsIAsyncShutdownCompletionCallback
-, mozIStorageCompletionCallback
-)
-
-
-
-
 PLACES_FACTORY_SINGLETON_IMPLEMENTATION(Database, gDatabase)
 
 NS_IMPL_ISUPPORTS(Database
@@ -574,30 +311,18 @@ Database::Database()
   , mDBPageSize(0)
   , mDatabaseStatus(nsINavHistoryService::DATABASE_STATUS_OK)
   , mClosed(false)
-  , mConnectionShutdown(new DatabaseShutdown(this))
+  , mClientsShutdown(new ClientsShutdownBlocker())
+  , mConnectionShutdown(new ConnectionShutdownBlocker(this))
 {
   MOZ_ASSERT(!XRE_IsContentProcess(),
              "Cannot instantiate Places in the content process");
   
   MOZ_ASSERT(!gDatabase);
   gDatabase = this;
-
-  
-  nsCOMPtr<nsIAsyncShutdownClient> shutdownPhase = GetShutdownPhase();
-  MOZ_ASSERT(shutdownPhase);
-
-  if (shutdownPhase) {
-    DebugOnly<nsresult> rv = shutdownPhase->AddBlocker(
-      static_cast<nsIAsyncShutdownBlocker*>(mConnectionShutdown.get()),
-      NS_LITERAL_STRING(__FILE__),
-      __LINE__,
-      NS_LITERAL_STRING(""));
-    MOZ_ASSERT(NS_SUCCEEDED(rv));
-  }
 }
 
 already_AddRefed<nsIAsyncShutdownClient>
-Database::GetShutdownPhase()
+Database::GetProfileChangeTeardownPhase()
 {
   nsCOMPtr<nsIAsyncShutdownService> asyncShutdownSvc = services::GetAsyncShutdown();
   MOZ_ASSERT(asyncShutdownSvc);
@@ -605,6 +330,24 @@ Database::GetShutdownPhase()
     return nullptr;
   }
 
+  
+  nsCOMPtr<nsIAsyncShutdownClient> shutdownPhase;
+  DebugOnly<nsresult> rv = asyncShutdownSvc->
+    GetProfileChangeTeardown(getter_AddRefs(shutdownPhase));
+  MOZ_ASSERT(NS_SUCCEEDED(rv));
+  return shutdownPhase.forget();
+}
+
+already_AddRefed<nsIAsyncShutdownClient>
+Database::GetProfileBeforeChangePhase()
+{
+  nsCOMPtr<nsIAsyncShutdownService> asyncShutdownSvc = services::GetAsyncShutdown();
+  MOZ_ASSERT(asyncShutdownSvc);
+  if (NS_WARN_IF(!asyncShutdownSvc)) {
+    return nullptr;
+  }
+
+  
   nsCOMPtr<nsIAsyncShutdownClient> shutdownPhase;
   DebugOnly<nsresult> rv = asyncShutdownSvc->
     GetProfileBeforeChange(getter_AddRefs(shutdownPhase));
@@ -649,19 +392,19 @@ Database::GetStatement(const nsACString& aQuery) const
 }
 
 already_AddRefed<nsIAsyncShutdownClient>
-Database::GetConnectionShutdown()
+Database::GetClientsShutdown()
 {
-  MOZ_ASSERT(mConnectionShutdown);
-
-  return mConnectionShutdown->GetClient();
+  MOZ_ASSERT(mClientsShutdown);
+  return mClientsShutdown->GetClient();
 }
 
 
 already_AddRefed<Database>
 Database::GetDatabase()
 {
-  if (DatabaseShutdown::IsStarted())
+  if (PlacesShutdownBlocker::IsStarted()) {
     return nullptr;
+  }
   return GetSingleton();
 }
 
@@ -731,6 +474,36 @@ Database::Init()
     new PlacesEvent(TOPIC_PLACES_INIT_COMPLETE);
   rv = NS_DispatchToMainThread(completeEvent);
   NS_ENSURE_SUCCESS(rv, rv);
+
+  
+  
+  {
+    
+    nsCOMPtr<nsIAsyncShutdownClient> shutdownPhase = GetProfileChangeTeardownPhase();
+    MOZ_ASSERT(shutdownPhase);
+    if (shutdownPhase) {
+      DebugOnly<nsresult> rv = shutdownPhase->AddBlocker(
+        static_cast<nsIAsyncShutdownBlocker*>(mClientsShutdown.get()),
+        NS_LITERAL_STRING(__FILE__),
+        __LINE__,
+        NS_LITERAL_STRING(""));
+      MOZ_ASSERT(NS_SUCCEEDED(rv));
+    }
+  }
+
+  {
+    
+    nsCOMPtr<nsIAsyncShutdownClient> shutdownPhase = GetProfileBeforeChangePhase();
+    MOZ_ASSERT(shutdownPhase);
+    if (shutdownPhase) {
+      DebugOnly<nsresult> rv = shutdownPhase->AddBlocker(
+        static_cast<nsIAsyncShutdownBlocker*>(mConnectionShutdown.get()),
+        NS_LITERAL_STRING(__FILE__),
+        __LINE__,
+        NS_LITERAL_STRING(""));
+      MOZ_ASSERT(NS_SUCCEEDED(rv));
+    }
+  }
 
   
   nsCOMPtr<nsIObserverService> os = mozilla::services::GetObserverService();
@@ -1859,19 +1632,18 @@ Database::MigrateV30Up() {
 void
 Database::Shutdown()
 {
-
   
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(!mClosed);
 
   
-  nsCOMPtr<mozIStorageCompletionCallback> closeListener = mConnectionShutdown.forget();
+  mClientsShutdown = nullptr;
+  nsCOMPtr<mozIStorageCompletionCallback> connectionShutdown = mConnectionShutdown.forget();
 
   if (!mMainConn) {
     
-    
     mClosed = true;
-    (void)closeListener->Complete(NS_OK, nullptr);
+    (void)connectionShutdown->Complete(NS_OK, nullptr);
     return;
   }
 
@@ -1930,7 +1702,7 @@ Database::Shutdown()
 
   mClosed = true;
 
-  (void)mMainConn->AsyncClose(closeListener);
+  (void)mMainConn->AsyncClose(connectionShutdown);
 }
 
 
@@ -1942,8 +1714,7 @@ Database::Observe(nsISupports *aSubject,
                   const char16_t *aData)
 {
   MOZ_ASSERT(NS_IsMainThread());
-  if (strcmp(aTopic, TOPIC_PROFILE_CHANGE_TEARDOWN) == 0 ||
-      strcmp(aTopic, TOPIC_SIMULATE_PLACES_MUST_CLOSE_1) == 0) {
+  if (strcmp(aTopic, TOPIC_PROFILE_CHANGE_TEARDOWN) == 0) {
     
     if (IsShutdownStarted()) {
       return NS_OK;
@@ -1972,7 +1743,10 @@ Database::Observe(nsISupports *aSubject,
 
     
     (void)os->NotifyObservers(nullptr, TOPIC_PLACES_SHUTDOWN, nullptr);
-  } else if (strcmp(aTopic, TOPIC_SIMULATE_PLACES_MUST_CLOSE_2) == 0) {
+  } else if (strcmp(aTopic, TOPIC_SIMULATE_PLACES_SHUTDOWN) == 0) {
+    
+    
+
     
     if (IsShutdownStarted()) {
       return NS_OK;
@@ -1980,12 +1754,29 @@ Database::Observe(nsISupports *aSubject,
 
     
     
-    nsCOMPtr<nsIAsyncShutdownClient> shutdownPhase = GetShutdownPhase();
-    if (shutdownPhase) {
-      shutdownPhase->RemoveBlocker(mConnectionShutdown.get());
+    
+    
+    {
+      nsCOMPtr<nsIAsyncShutdownClient> shutdownPhase = GetProfileChangeTeardownPhase();
+      if (shutdownPhase) {
+        shutdownPhase->RemoveBlocker(mClientsShutdown.get());
+      }
+      (void)mClientsShutdown->BlockShutdown(nullptr);
     }
 
-    return mConnectionShutdown->BlockShutdown(nullptr);
+    
+    
+    while (mClientsShutdown->State() != PlacesShutdownBlocker::States::RECEIVED_DONE) {
+      (void)NS_ProcessNextEvent();
+    }
+
+    {
+      nsCOMPtr<nsIAsyncShutdownClient> shutdownPhase = GetProfileBeforeChangePhase();
+      if (shutdownPhase) {
+        shutdownPhase->RemoveBlocker(mConnectionShutdown.get());
+      }
+      (void)mConnectionShutdown->BlockShutdown(nullptr);
+    }
   }
   return NS_OK;
 }
