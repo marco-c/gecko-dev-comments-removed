@@ -196,7 +196,9 @@ TransactionsHistory.__proto__ = {
   
   
   _undoPosition: 0,
-  get undoPosition() this._undoPosition,
+  get undoPosition() {
+    return this._undoPosition;
+  },
 
   
   get topUndoEntry() {

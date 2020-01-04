@@ -40,12 +40,16 @@ Protocol.prototype = {
   
 
 
-  get scheme() PageThumbs.scheme,
+  get scheme() {
+    return PageThumbs.scheme;
+  },
 
   
 
 
-  get defaultPort() -1,
+  get defaultPort() {
+    return -1;
+  },
 
   
 
@@ -92,7 +96,7 @@ Protocol.prototype = {
 
 
 
-  allowPort: function () false,
+  allowPort: () => false,
 
   classID: Components.ID("{5a4ae9b5-f475-48ae-9dce-0b4c1d347884}"),
   QueryInterface: XPCOMUtils.generateQI([Ci.nsIProtocolHandler])

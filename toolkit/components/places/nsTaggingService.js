@@ -522,7 +522,9 @@ TagAutoCompleteResult.prototype = {
     return this._results.length;
   },
 
-  get typeAheadResult() false,
+  get typeAheadResult() {
+    return false;
+  },
 
   
 

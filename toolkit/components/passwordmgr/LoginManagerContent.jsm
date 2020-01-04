@@ -955,7 +955,7 @@ var LoginManagerContent = {
         
         var username = usernameField.value.toLowerCase();
 
-        let matchingLogins = logins.filter(function(l)
+        let matchingLogins = logins.filter(l =>
                                            l.username.toLowerCase() == username);
         if (matchingLogins.length == 0) {
           log("Password not filled. None of the stored logins match the username already present.");
@@ -982,9 +982,9 @@ var LoginManagerContent = {
         
         let matchingLogins;
         if (usernameField)
-          matchingLogins = logins.filter(function(l) l.username);
+          matchingLogins = logins.filter(l => l.username);
         else
-          matchingLogins = logins.filter(function(l) !l.username);
+          matchingLogins = logins.filter(l => !l.username);
 
         if (matchingLogins.length != 1) {
           log("Multiple logins for form, so not filling any.");

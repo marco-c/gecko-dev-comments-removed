@@ -769,8 +769,8 @@ this.Download.prototype = {
     if (!this._promiseCanceled) {
       
       let deferCanceled = Promise.defer();
-      this._currentAttempt.then(function () deferCanceled.resolve(),
-                                function () deferCanceled.resolve());
+      this._currentAttempt.then(() => deferCanceled.resolve(),
+                                () => deferCanceled.resolve());
       this._promiseCanceled = deferCanceled.promise;
 
       

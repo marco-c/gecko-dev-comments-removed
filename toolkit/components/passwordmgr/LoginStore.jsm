@@ -281,7 +281,10 @@ LoginStore.prototype = {
   
 
 
-  saveSoon: function () this._saver.arm(),
+  saveSoon: function ()
+  {
+    return this._saver.arm();
+  },
 
   
 
