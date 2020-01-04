@@ -570,7 +570,7 @@ WebAudioDecodeJob::OnFailure(ErrorCode aErrorCode)
   const char* errorMessage;
   switch (aErrorCode) {
   case NoError:
-    MOZ_ASSERT(false, "Who passed NoError to OnFailure?");
+    MOZ_FALLTHROUGH_ASSERT("Who passed NoError to OnFailure?");
     
     
   case UnknownError:
