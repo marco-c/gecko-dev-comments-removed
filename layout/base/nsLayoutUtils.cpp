@@ -4581,9 +4581,6 @@ nsLayoutUtils::IntrinsicForAxis(PhysicalAxis        aAxis,
 #endif
     if (MOZ_UNLIKELY(aAxis != ourInlineAxis)) {
       
-      if (aFlags & BAIL_IF_REFLOW_NEEDED) {
-        return NS_INTRINSIC_WIDTH_UNKNOWN;
-      }
       
       
       
