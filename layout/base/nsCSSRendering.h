@@ -252,16 +252,6 @@ public:
   bool IsAnimatedImage();
 
   
-
-
-
-
-
-
-  bool IsContainerAvailable(LayerManager* aManager,
-                            nsDisplayListBuilder* aBuilder);
-
-  
   already_AddRefed<imgIContainer> GetImage();
 
   bool IsReady() const { return mPrepareResult == DrawResult::SUCCESS; }

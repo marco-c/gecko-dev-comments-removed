@@ -428,8 +428,7 @@ public:
   virtual void Paint(nsDisplayListBuilder* aBuilder,
                      nsRenderingContext* aCtx) override;
 
-  virtual bool CanOptimizeToImageLayer(LayerManager* aManager,
-                                       nsDisplayListBuilder* aBuilder) override;
+  virtual already_AddRefed<imgIContainer> GetImage() override;
 
   
 
@@ -442,7 +441,7 @@ public:
 
 
 
-  nsRect GetDestRect(bool* aSnap = nullptr);
+  virtual nsRect GetDestRect() override;
 
   virtual LayerState GetLayerState(nsDisplayListBuilder* aBuilder,
                                    LayerManager* aManager,
