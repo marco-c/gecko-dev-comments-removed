@@ -8,13 +8,20 @@ checkSdpAfterEndOfTrickle: function(sdp, testOptions, label) {
   info("EOC-SDP: " + JSON.stringify(sdp));
 
   ok(sdp.sdp.includes("a=end-of-candidates"), label + ": SDP contains end-of-candidates");
-  ok(!sdp.sdp.includes("c=IN IP4 0.0.0.0"), label + ": SDP contains non-zero IP c line");
+  sdputils.checkSdpCLineNotDefault(sdp.sdp, label);
 
   if (testOptions.rtcpmux) {
     ok(sdp.sdp.includes("a=rtcp-mux"), label + ": SDP contains rtcp-mux");
   } else {
     ok(sdp.sdp.includes("a=rtcp:"), label + ": SDP contains rtcp port");
   }
+},
+
+
+
+checkSdpCLineNotDefault: function(sdpStr, label) {
+  info("CLINE-NO-DEFAULT-ADDR-SDP: " + JSON.stringify(sdpStr));
+  ok(!sdpStr.includes("c=IN IP4 0.0.0.0"), label + ": SDP contains non-zero IP c line");
 },
 
 

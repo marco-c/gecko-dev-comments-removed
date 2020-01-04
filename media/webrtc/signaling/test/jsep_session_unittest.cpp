@@ -628,6 +628,14 @@ protected:
         
         mDefaultCandidates[level][component] =
           std::make_pair("192.168.0.1", port);
+        session.UpdateDefaultCandidate(
+            mDefaultCandidates[level][RTP].first,
+            mDefaultCandidates[level][RTP].second,
+            
+            
+            mDefaultCandidates[level][RTCP].first,
+            mDefaultCandidates[level][RTCP].second,
+            level);
       }
 
       void FinishGathering(JsepSession& session) const
@@ -635,7 +643,9 @@ protected:
         
         for (auto levelAndCandidates : mDefaultCandidates) {
           ASSERT_EQ(1U, levelAndCandidates.second.count(RTP));
-          session.EndOfLocalCandidates(
+          
+          
+          session.UpdateDefaultCandidate(
               levelAndCandidates.second[RTP].first,
               levelAndCandidates.second[RTP].second,
               
@@ -643,6 +653,7 @@ protected:
               levelAndCandidates.second[RTCP].first,
               levelAndCandidates.second[RTCP].second,
               levelAndCandidates.first);
+          session.EndOfLocalCandidates(levelAndCandidates.first);
         }
       }
 
