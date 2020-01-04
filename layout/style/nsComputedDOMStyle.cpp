@@ -443,7 +443,9 @@ nsComputedDOMStyle::GetStyleContextForElementNoFlush(Element* aElement,
   
   
   nsIPresShell *presShell = GetPresShellForContent(aElement);
+  bool inDocWithShell = true;
   if (!presShell) {
+    inDocWithShell = false;
     presShell = aPresShell;
     if (!presShell)
       return nullptr;
@@ -452,7 +454,7 @@ nsComputedDOMStyle::GetStyleContextForElementNoFlush(Element* aElement,
   
   
   
-  if (!aPseudo && aStyleType == eAll &&
+  if (!aPseudo && aStyleType == eAll && inDocWithShell &&
       !aElement->IsHTMLElement(nsGkAtoms::area)) {
     nsIFrame* frame = nsLayoutUtils::GetStyleFrame(aElement);
     if (frame) {
@@ -491,7 +493,8 @@ nsComputedDOMStyle::GetStyleContextForElementNoFlush(Element* aElement,
       return nullptr;
     }
     nsIFrame* frame = nsLayoutUtils::GetStyleFrame(aElement);
-    Element* pseudoElement = frame ? frame->GetPseudoElement(type) : nullptr;
+    Element* pseudoElement =
+      frame && inDocWithShell ? frame->GetPseudoElement(type) : nullptr;
     sc = styleSet->ResolvePseudoElementStyle(aElement, type, parentContext,
                                              pseudoElement);
   } else {
