@@ -522,6 +522,8 @@ BufferTextureHost::Upload(nsIntRegion *aRegion)
     
     
     
+    
+    
     return false;
   }
   if (!mCompositor) {
@@ -651,9 +653,19 @@ ShmemTextureHost::ShmemTextureHost(const ipc::Shmem& aShmem,
                                    ISurfaceAllocator* aDeallocator,
                                    TextureFlags aFlags)
 : BufferTextureHost(aDesc, aFlags)
-, mShmem(MakeUnique<ipc::Shmem>(aShmem))
 , mDeallocator(aDeallocator)
 {
+  if (aShmem.IsReadable()) {
+    mShmem = MakeUnique<ipc::Shmem>(aShmem);
+  } else {
+    
+    
+    
+    
+    
+    gfxCriticalError() << "Failed to create a valid ShmemTextureHost";
+  }
+
   MOZ_COUNT_CTOR(ShmemTextureHost);
 }
 

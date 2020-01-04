@@ -4297,13 +4297,16 @@ class _GenerateProtocolActorCode(ipdl.ast.Visitor):
                      init=ExprCall(p.lookupSharedMemory(), args=[ idvar ]))
         ])
 
-        failif = StmtIf(ExprNot(rawvar))
-        failif.addifstmt(StmtReturn(_Result.ValuError))
+        
+        
+        
+        
+        lookupif = StmtIf(rawvar)
+        lookupif.addifstmt(StmtExpr(p.removeShmemId(idvar)))
+        lookupif.addifstmt(StmtExpr(_shmemDealloc(rawvar)))
 
         case.addstmts([
-            failif,
-            StmtExpr(p.removeShmemId(idvar)),
-            StmtExpr(_shmemDealloc(rawvar)),
+            lookupif,
             StmtReturn(_Result.Processed)
         ])
 
@@ -4669,7 +4672,12 @@ class _GenerateProtocolActorCode(ipdl.ast.Visitor):
             StmtDecl(Decl(_rawShmemType(ptr=1), rawvar.name),
                      init=_lookupShmem(idvar)),
             iffound,
-            StmtReturn.FALSE
+            
+            
+            
+            
+            StmtExpr(ExprAssn(ExprDeref(var), ExprCall(ExprVar('Shmem'), args=[]) )),
+            StmtReturn.TRUE
         ])
 
         self.cls.addstmts([ write, Whitespace.NL, read, Whitespace.NL ])
