@@ -240,12 +240,6 @@ struct AnimationCollection : public LinkedListElement<AnimationCollection>
 
   void EnsureStyleRuleFor(TimeStamp aRefreshTime);
 
-  enum CanAnimateFlags {
-    
-    
-    CanAnimate_AllowPartial = 1
-  };
-
   enum class RestyleType {
     
     
@@ -268,8 +262,7 @@ struct AnimationCollection : public LinkedListElement<AnimationCollection>
 private:
   static bool
   CanAnimatePropertyOnCompositor(const dom::Element *aElement,
-                                 nsCSSProperty aProperty,
-                                 CanAnimateFlags aFlags);
+                                 nsCSSProperty aProperty);
 
   bool CanThrottleAnimation(TimeStamp aTime);
   bool CanThrottleTransformChanges(TimeStamp aTime);
@@ -285,14 +278,7 @@ public:
   
   
   
-  
-  
-  
-  
-  
-  
-  
-  bool CanPerformOnCompositorThread(CanAnimateFlags aFlags) const;
+  bool CanPerformOnCompositorThread() const;
 
   bool HasCurrentAnimationOfProperty(nsCSSProperty aProperty) const;
 
