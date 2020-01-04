@@ -127,6 +127,12 @@ def robustcheckout(ui, url, dest, upstream=None, revision=None, branch=None,
     if revision and branch:
         raise error.Abort('cannot specify both --revision and --branch')
 
+    
+    if revision:
+        if len(revision) < 12 or len(revision) > 40 or not re.match('^[a-f0-9]+$', revision):
+            raise error.Abort('--revision must be a SHA-1 fragment 12-40 '
+                              'characters long')
+
     sharebase = sharebase or ui.config('share', 'pool')
     if not sharebase:
         raise error.Abort('share base directory not defined; refusing to operate',
@@ -241,13 +247,19 @@ def _docheckout(ui, url, dest, upstream, revision, branch, purge, sharebase):
     
 
     repo = hg.repository(ui, dest)
+
+    
+    
     havewantedrev = False
-    if revision:
-        havewantedrev = revision in repo
-    else:
-        assert branch
-        
-        
+    if revision and revision in repo:
+        ctx = repo[revision]
+
+        if not ctx.hex().startswith(revision):
+            raise error.Abort('--revision argument is ambiguous',
+                              hint='must be the first 12+ characters of a '
+                                   'SHA-1 fragment')
+
+        havewantedrev = True
 
     if not havewantedrev:
         ui.write('(pulling to obtain %s)\n' % (revision or branch,))
