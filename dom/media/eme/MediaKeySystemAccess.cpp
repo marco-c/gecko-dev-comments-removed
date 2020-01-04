@@ -33,6 +33,10 @@
 #include "gmp-video-decode.h"
 #include "DecoderDoctorDiagnostics.h"
 #include "WebMDecoder.h"
+#include "mozilla/StaticPtr.h"
+#include "mozilla/ClearOnShutdown.h"
+#include "nsUnicharUtils.h"
+#include "mozilla/dom/MediaSource.h"
 
 namespace mozilla {
 namespace dom {
@@ -313,252 +317,797 @@ MediaKeySystemAccess::GetKeySystemStatus(const nsAString& aKeySystem,
   return MediaKeySystemStatus::Cdm_not_supported;
 }
 
+typedef nsCString GMPCodecString;
+
+#define GMP_CODEC_AAC NS_LITERAL_CSTRING("aac")
+#define GMP_CODEC_OPUS NS_LITERAL_CSTRING("opus")
+#define GMP_CODEC_VORBIS NS_LITERAL_CSTRING("vorbis")
+#define GMP_CODEC_H264 NS_LITERAL_CSTRING("h264")
+#define GMP_CODEC_VP8 NS_LITERAL_CSTRING("vp8")
+#define GMP_CODEC_VP9 NS_LITERAL_CSTRING("vp9")
+
+GMPCodecString
+ToGMPAPICodecString(const nsString& aCodec)
+{
+  if (IsAACCodecString(aCodec)) {
+    return GMP_CODEC_AAC;
+  }
+  if (aCodec.EqualsLiteral("opus")) {
+    return GMP_CODEC_OPUS;
+  }
+  if (aCodec.EqualsLiteral("vorbis")) {
+    return GMP_CODEC_VORBIS;
+  }
+  if (IsH264CodecString(aCodec)) {
+    return GMP_CODEC_H264;
+  }
+  if (IsVP8CodecString(aCodec)) {
+    return GMP_CODEC_VP8;
+  }
+  if (IsVP9CodecString(aCodec)) {
+    return GMP_CODEC_VP9;
+  }
+  return EmptyCString();
+}
+
+
+
+struct KeySystemContainerSupport
+{
+  bool IsSupported() const
+  {
+    return !mCodecsDecoded.IsEmpty() || !mCodecsDecrypted.IsEmpty();
+  }
+
+  
+  
+  bool DecryptsAndDecodes(GMPCodecString aCodec) const
+  {
+    return mCodecsDecoded.Contains(aCodec);
+  }
+
+  
+  bool Decrypts(GMPCodecString aCodec) const
+  {
+    return mCodecsDecrypted.Contains(aCodec);
+  }
+
+  void SetCanDecryptAndDecode(GMPCodecString aCodec)
+  {
+    
+    MOZ_ASSERT(!Decrypts(aCodec));
+    
+    MOZ_ASSERT(!DecryptsAndDecodes(aCodec));
+    mCodecsDecoded.AppendElement(aCodec);
+  }
+
+  void SetCanDecrypt(GMPCodecString aCodec)
+  {
+    
+    MOZ_ASSERT(!Decrypts(aCodec));
+    
+    MOZ_ASSERT(!DecryptsAndDecodes(aCodec));
+    mCodecsDecrypted.AppendElement(aCodec);
+  }
+
+private:
+  nsTArray<GMPCodecString> mCodecsDecoded;
+  nsTArray<GMPCodecString> mCodecsDecrypted;
+};
+
+enum class KeySystemFeatureSupport
+{
+  Prohibited = 1,
+  Requestable = 2,
+  Required = 3,
+};
+
+struct KeySystemConfig
+{
+  nsString mKeySystem;
+  nsTArray<nsString> mInitDataTypes;
+  KeySystemFeatureSupport mPersistentState = KeySystemFeatureSupport::Prohibited;
+  KeySystemFeatureSupport mDistinctiveIdentifier = KeySystemFeatureSupport::Prohibited;
+  nsTArray<MediaKeySessionType> mSessionTypes;
+  nsTArray<nsString> mVideoRobustness;
+  nsTArray<nsString> mAudioRobustness;
+  KeySystemContainerSupport mMP4;
+  KeySystemContainerSupport mWebM;
+};
+
+StaticAutoPtr<nsTArray<KeySystemConfig>> sKeySystemConfigs;
+
+static const nsTArray<KeySystemConfig>&
+GetSupportedKeySystems()
+{
+  if (!sKeySystemConfigs) {
+    sKeySystemConfigs = new nsTArray<KeySystemConfig>();
+    ClearOnShutdown(&sKeySystemConfigs);
+
+    {
+      KeySystemConfig clearkey;
+      clearkey.mKeySystem = NS_LITERAL_STRING("org.w3.clearkey");
+      clearkey.mInitDataTypes.AppendElement(NS_LITERAL_STRING("cenc"));
+      clearkey.mInitDataTypes.AppendElement(NS_LITERAL_STRING("keyids"));
+      clearkey.mInitDataTypes.AppendElement(NS_LITERAL_STRING("webm"));
+      clearkey.mPersistentState = KeySystemFeatureSupport::Requestable;
+      clearkey.mDistinctiveIdentifier = KeySystemFeatureSupport::Prohibited;
+      clearkey.mSessionTypes.AppendElement(MediaKeySessionType::Temporary);
+      clearkey.mSessionTypes.AppendElement(MediaKeySessionType::Persistent_license);
+#if defined(XP_WIN)
+      
+      if (WMFDecoderModule::HasAAC()) {
+        clearkey.mMP4.SetCanDecryptAndDecode(GMP_CODEC_AAC);
+      } else {
+        clearkey.mMP4.SetCanDecrypt(GMP_CODEC_AAC);
+      }
+      if (WMFDecoderModule::HasH264()) {
+        clearkey.mMP4.SetCanDecryptAndDecode(GMP_CODEC_H264);
+      } else {
+        clearkey.mMP4.SetCanDecrypt(GMP_CODEC_H264);
+      }
+#else
+      clearkey.mMP4.SetCanDecrypt(GMP_CODEC_AAC);
+      clearkey.mMP4.SetCanDecrypt(GMP_CODEC_H264);
+#endif
+      clearkey.mWebM.SetCanDecrypt(GMP_CODEC_VORBIS);
+      clearkey.mWebM.SetCanDecrypt(GMP_CODEC_OPUS);
+      clearkey.mWebM.SetCanDecrypt(GMP_CODEC_VP8);
+      clearkey.mWebM.SetCanDecrypt(GMP_CODEC_VP9);
+      sKeySystemConfigs->AppendElement(Move(clearkey));
+    }
+    {
+      KeySystemConfig widevine;
+      widevine.mKeySystem = NS_LITERAL_STRING("com.widevine.alpha");
+      widevine.mInitDataTypes.AppendElement(NS_LITERAL_STRING("cenc"));
+      widevine.mInitDataTypes.AppendElement(NS_LITERAL_STRING("keyids"));
+      widevine.mInitDataTypes.AppendElement(NS_LITERAL_STRING("webm"));
+      widevine.mPersistentState = KeySystemFeatureSupport::Requestable;
+      widevine.mDistinctiveIdentifier = KeySystemFeatureSupport::Prohibited;
+      widevine.mSessionTypes.AppendElement(MediaKeySessionType::Temporary);
+      widevine.mAudioRobustness.AppendElement(NS_LITERAL_STRING("SW_SECURE_CRYPTO"));
+      widevine.mVideoRobustness.AppendElement(NS_LITERAL_STRING("SW_SECURE_DECODE"));
+#if defined(XP_WIN)
+      
+      
+      
+      
+      
+      if (WMFDecoderModule::HasAAC()) {
+        widevine.mMP4.SetCanDecrypt(GMP_CODEC_AAC);
+      }
+#else
+      widevine.mMP4.SetCanDecrypt(GMP_CODEC_AAC);
+#endif
+      widevine.mMP4.SetCanDecryptAndDecode(GMP_CODEC_H264);
+      
+      
+      
+      
+      
+      sKeySystemConfigs->AppendElement(Move(widevine));
+    }
+    {
+      KeySystemConfig primetime;
+      primetime.mKeySystem = NS_LITERAL_STRING("com.adobe.primetime");
+      primetime.mInitDataTypes.AppendElement(NS_LITERAL_STRING("cenc"));
+      primetime.mPersistentState = KeySystemFeatureSupport::Required;
+      primetime.mDistinctiveIdentifier = KeySystemFeatureSupport::Required;
+      primetime.mSessionTypes.AppendElement(MediaKeySessionType::Temporary);
+      primetime.mMP4.SetCanDecryptAndDecode(GMP_CODEC_AAC);
+      primetime.mMP4.SetCanDecryptAndDecode(GMP_CODEC_H264);
+      sKeySystemConfigs->AppendElement(Move(primetime));
+    }
+  }
+  return *sKeySystemConfigs;
+}
+
+static const KeySystemConfig*
+GetKeySystemConfig(const nsAString& aKeySystem)
+{
+  for (const KeySystemConfig& config : GetSupportedKeySystems()) {
+    if (config.mKeySystem.Equals(aKeySystem)) {
+      return &config;
+    }
+  }
+  return nullptr;
+}
+
+enum CodecType
+{
+  Audio,
+  Video,
+  Invalid
+};
+
 static bool
-GMPDecryptsAndDecodesAAC(mozIGeckoMediaPluginService* aGMPS,
-                         const nsAString& aKeySystem,
+CanDecryptAndDecode(mozIGeckoMediaPluginService* aGMPService,
+                    const nsString& aKeySystem,
+                    const nsString& aContentType,
+                    CodecType aCodecType,
+                    const KeySystemContainerSupport& aContainerSupport,
+                    const nsTArray<GMPCodecString>& aCodecs,
+                    DecoderDoctorDiagnostics* aDiagnostics)
+{
+  MOZ_ASSERT(aCodecType != Invalid);
+  MOZ_ASSERT(HaveGMPFor(aGMPService,
+                        NS_ConvertUTF16toUTF8(aKeySystem),
+                        NS_LITERAL_CSTRING(GMP_API_DECRYPTOR)));
+  for (const GMPCodecString& codec : aCodecs) {
+    MOZ_ASSERT(!codec.IsEmpty());
+
+    nsCString api = (aCodecType == Audio) ? NS_LITERAL_CSTRING(GMP_API_AUDIO_DECODER)
+                                          : NS_LITERAL_CSTRING(GMP_API_VIDEO_DECODER);
+    if (aContainerSupport.DecryptsAndDecodes(codec) &&
+        HaveGMPFor(aGMPService,
+                   NS_ConvertUTF16toUTF8(aKeySystem),
+                   api,
+                   codec)) {
+      
+      continue;
+    }
+
+    if (aContainerSupport.Decrypts(codec) &&
+        NS_SUCCEEDED(MediaSource::IsTypeSupported(aContentType, aDiagnostics))) {
+      
+      
+      continue;
+    }
+
+    
+    
+
+#if defined(XP_WIN)
+    
+    
+    
+    
+    
+    if (codec == GMP_CODEC_AAC &&
+        aKeySystem.EqualsLiteral("com.widevine.alpha") &&
+        !WMFDecoderModule::HasAAC()) {
+      if (aDiagnostics) {
+        aDiagnostics->SetKeySystemIssue(
+          DecoderDoctorDiagnostics::eWidevineWithNoWMF);
+      }
+    }
+#endif
+    return false;
+  }
+  return true;
+}
+
+static bool
+ToSessionType(const nsAString& aSessionType, MediaKeySessionType& aOutType)
+{
+  using MediaKeySessionTypeValues::strings;
+  const char* temporary =
+    strings[static_cast<uint32_t>(MediaKeySessionType::Temporary)].value;
+  if (aSessionType.EqualsASCII(temporary)) {
+    aOutType = MediaKeySessionType::Temporary;
+    return true;
+  }
+  const char* persistentLicense =
+    strings[static_cast<uint32_t>(MediaKeySessionType::Persistent_license)].value;
+  if (aSessionType.EqualsASCII(persistentLicense)) {
+    aOutType = MediaKeySessionType::Persistent_license;
+    return true;
+  }
+  return false;
+}
+
+
+static bool
+IsPersistentSessionType(MediaKeySessionType aSessionType)
+{
+  return aSessionType == MediaKeySessionType::Persistent_license;
+}
+
+CodecType
+GetMajorType(const nsAString& aContentType)
+{
+  if (CaseInsensitiveFindInReadable(NS_LITERAL_STRING("audio/"), aContentType)) {
+    return Audio;
+  }
+  if (CaseInsensitiveFindInReadable(NS_LITERAL_STRING("video/"), aContentType)) {
+    return Video;
+  }
+  return Invalid;
+}
+
+
+static Sequence<MediaKeySystemMediaCapability>
+GetSupportedCapabilities(mozIGeckoMediaPluginService* aGMPService,
+                         const nsTArray<MediaKeySystemMediaCapability>& aRequestedCapabilities,
+                         const MediaKeySystemConfiguration& aPartialConfig,
+                         const KeySystemConfig& aKeySystem,
                          DecoderDoctorDiagnostics* aDiagnostics)
 {
-  MOZ_ASSERT(HaveGMPFor(aGMPS,
-                        NS_ConvertUTF16toUTF8(aKeySystem),
-                        NS_LITERAL_CSTRING(GMP_API_DECRYPTOR)));
-  return HaveGMPFor(aGMPS,
-                    NS_ConvertUTF16toUTF8(aKeySystem),
-                    NS_LITERAL_CSTRING(GMP_API_AUDIO_DECODER),
-                    NS_LITERAL_CSTRING("aac"));
-}
+  
+  
+  
+  
 
-static bool
-GMPDecryptsAndDecodesH264(mozIGeckoMediaPluginService* aGMPS,
-                          const nsAString& aKeySystem,
-                          DecoderDoctorDiagnostics* aDiagnostics)
-{
-  MOZ_ASSERT(HaveGMPFor(aGMPS,
-                        NS_ConvertUTF16toUTF8(aKeySystem),
-                        NS_LITERAL_CSTRING(GMP_API_DECRYPTOR)));
-  return HaveGMPFor(aGMPS,
-                    NS_ConvertUTF16toUTF8(aKeySystem),
-                    NS_LITERAL_CSTRING(GMP_API_VIDEO_DECODER),
-                    NS_LITERAL_CSTRING("h264"));
-}
+  
+  
+  Sequence<MediaKeySystemMediaCapability> supportedCapabilities;
 
-
-
-
-static bool
-GMPDecryptsAndGeckoDecodesH264(mozIGeckoMediaPluginService* aGMPService,
-                               const nsAString& aKeySystem,
-                               const nsAString& aContentType,
-                               DecoderDoctorDiagnostics* aDiagnostics)
-{
-  MOZ_ASSERT(HaveGMPFor(aGMPService,
-                        NS_ConvertUTF16toUTF8(aKeySystem),
-                        NS_LITERAL_CSTRING(GMP_API_DECRYPTOR)));
-  MOZ_ASSERT(IsH264ContentType(aContentType));
-  return !HaveGMPFor(aGMPService,
-                     NS_ConvertUTF16toUTF8(aKeySystem),
-                     NS_LITERAL_CSTRING(GMP_API_VIDEO_DECODER),
-                     NS_LITERAL_CSTRING("h264")) &&
-         MP4Decoder::CanHandleMediaType(aContentType, aDiagnostics);
-}
-
-static bool
-GMPDecryptsAndGeckoDecodesAAC(mozIGeckoMediaPluginService* aGMPService,
-                              const nsAString& aKeySystem,
-                              const nsAString& aContentType,
-                              DecoderDoctorDiagnostics* aDiagnostics)
-{
-  MOZ_ASSERT(HaveGMPFor(aGMPService,
-                        NS_ConvertUTF16toUTF8(aKeySystem),
-                        NS_LITERAL_CSTRING(GMP_API_DECRYPTOR)));
-  MOZ_ASSERT(IsAACContentType(aContentType));
-
-  if (HaveGMPFor(aGMPService,
-    NS_ConvertUTF16toUTF8(aKeySystem),
-    NS_LITERAL_CSTRING(GMP_API_AUDIO_DECODER),
-    NS_LITERAL_CSTRING("aac"))) {
+  
+  for (const MediaKeySystemMediaCapability& capabilities : aRequestedCapabilities) {
     
-    return false;
-  }
-#if defined(XP_WIN)
-  
-  
-  
-  
-  
-  if (aKeySystem.EqualsLiteral("com.widevine.alpha") &&
-      !WMFDecoderModule::HasAAC()) {
-    if (aDiagnostics) {
-      aDiagnostics->SetKeySystemIssue(
-        DecoderDoctorDiagnostics::eWidevineWithNoWMF);
+    const nsString& contentType = capabilities.mContentType;
+    
+    const nsString& robustness = capabilities.mRobustness;
+    
+    if (contentType.IsEmpty()) {
+      EME_LOG("MediaKeySystemConfiguration (label='%s') "
+              "MediaKeySystemMediaCapability('%s','%s') rejected; "
+              "audio or video capability has empty contentType.",
+              NS_ConvertUTF16toUTF8(aPartialConfig.mLabel).get(),
+              NS_ConvertUTF16toUTF8(contentType).get(),
+              NS_ConvertUTF16toUTF8(robustness).get());
+      return Sequence<MediaKeySystemMediaCapability>();
     }
-    return false;
-  }
-#endif
-  return MP4Decoder::CanHandleMediaType(aContentType, aDiagnostics);
-}
-
-static bool
-GMPDecryptsAndGeckoDecodesVorbis(mozIGeckoMediaPluginService* aGMPService,
-                                const nsAString& aKeySystem,
-                                const nsAString& aContentType,
-                                DecoderDoctorDiagnostics* aDiagnostics)
-{
-  MOZ_ASSERT(HaveGMPFor(aGMPService,
-             NS_ConvertUTF16toUTF8(aKeySystem),
-             NS_LITERAL_CSTRING(GMP_API_DECRYPTOR)));
-  MOZ_ASSERT(IsVorbisContentType(aContentType));
-  return !HaveGMPFor(aGMPService,
-                     NS_ConvertUTF16toUTF8(aKeySystem),
-                     NS_LITERAL_CSTRING(GMP_API_AUDIO_DECODER),
-                     NS_LITERAL_CSTRING("vorbis")) &&
-         WebMDecoder::CanHandleMediaType(aContentType);
-}
-
-static bool
-GMPDecryptsAndGeckoDecodesVP8(mozIGeckoMediaPluginService* aGMPService,
-                             const nsAString& aKeySystem,
-                             const nsAString& aContentType,
-                             DecoderDoctorDiagnostics* aDiagnostics)
-{
-  MOZ_ASSERT(HaveGMPFor(aGMPService,
-             NS_ConvertUTF16toUTF8(aKeySystem),
-             NS_LITERAL_CSTRING(GMP_API_DECRYPTOR)));
-  MOZ_ASSERT(IsVP8ContentType(aContentType));
-  return !HaveGMPFor(aGMPService,
-                     NS_ConvertUTF16toUTF8(aKeySystem),
-                     NS_LITERAL_CSTRING(GMP_API_VIDEO_DECODER),
-                     NS_LITERAL_CSTRING("vp8")) &&
-         WebMDecoder::CanHandleMediaType(aContentType);
-}
-
-static bool
-GMPDecryptsAndGeckoDecodesVP9(mozIGeckoMediaPluginService* aGMPService,
-                             const nsAString& aKeySystem,
-                             const nsAString& aContentType,
-                             DecoderDoctorDiagnostics* aDiagnostics)
-{
-  MOZ_ASSERT(HaveGMPFor(aGMPService,
-             NS_ConvertUTF16toUTF8(aKeySystem),
-             NS_LITERAL_CSTRING(GMP_API_DECRYPTOR)));
-  MOZ_ASSERT(IsVP9ContentType(aContentType));
-  return !HaveGMPFor(aGMPService,
-                     NS_ConvertUTF16toUTF8(aKeySystem),
-                     NS_LITERAL_CSTRING(GMP_API_VIDEO_DECODER),
-                     NS_LITERAL_CSTRING("vp9")) &&
-         WebMDecoder::CanHandleMediaType(aContentType);
-}
-
-static bool
-IsSupportedAudio(mozIGeckoMediaPluginService* aGMPService,
-                 const nsAString& aKeySystem,
-                 const nsAString& aAudioType,
-                 DecoderDoctorDiagnostics* aDiagnostics)
-{
-  if (IsAACContentType(aAudioType)) {
-    return GMPDecryptsAndDecodesAAC(aGMPService, aKeySystem, aDiagnostics) ||
-           GMPDecryptsAndGeckoDecodesAAC(aGMPService, aKeySystem, aAudioType, aDiagnostics);
-  }
-  if (IsVorbisContentType(aAudioType) && aKeySystem.EqualsLiteral("org.w3.clearkey")) {
     
-    return GMPDecryptsAndGeckoDecodesVorbis(aGMPService, aKeySystem, aAudioType, aDiagnostics);
+    
+    nsAutoString container;
+    nsTArray<nsString> codecStrings;
+    if (!ParseMIMETypeString(contentType, container, codecStrings)) {
+      EME_LOG("MediaKeySystemConfiguration (label='%s') "
+              "MediaKeySystemMediaCapability('%s','%s') unsupported; "
+              "failed to parse contentType as MIME type.",
+              NS_ConvertUTF16toUTF8(aPartialConfig.mLabel).get(),
+              NS_ConvertUTF16toUTF8(contentType).get(),
+              NS_ConvertUTF16toUTF8(robustness).get());
+      continue;
+    }
+    bool invalid = false;
+    nsTArray<GMPCodecString> codecs;
+    for (const nsString& codecString : codecStrings) {
+      GMPCodecString gmpCodec = ToGMPAPICodecString(codecString);
+      if (gmpCodec.IsEmpty()) {
+        invalid = true;
+        EME_LOG("MediaKeySystemConfiguration (label='%s') "
+                "MediaKeySystemMediaCapability('%s','%s') unsupported; "
+                "'%s' is an invalid codec string.",
+                NS_ConvertUTF16toUTF8(aPartialConfig.mLabel).get(),
+                NS_ConvertUTF16toUTF8(contentType).get(),
+                NS_ConvertUTF16toUTF8(robustness).get(),
+                NS_ConvertUTF16toUTF8(codecString).get());
+        break;
+      }
+      codecs.AppendElement(gmpCodec);
+    }
+    if (invalid) {
+      continue;
+    }
+
+    
+    
+    
+    
+    
+    NS_ConvertUTF16toUTF8 container_utf8(container);
+    const bool isMP4 = DecoderTraits::IsMP4TypeAndEnabled(container_utf8, aDiagnostics);
+    if (isMP4 && !aKeySystem.mMP4.IsSupported()) {
+      EME_LOG("MediaKeySystemConfiguration (label='%s') "
+              "MediaKeySystemMediaCapability('%s','%s') unsupported; "
+              "MP4 requested but unsupported.",
+              NS_ConvertUTF16toUTF8(aPartialConfig.mLabel).get(),
+              NS_ConvertUTF16toUTF8(contentType).get(),
+              NS_ConvertUTF16toUTF8(robustness).get());
+      continue;
+    }
+    const bool isWebM = DecoderTraits::IsWebMTypeAndEnabled(container_utf8);
+    if (isWebM && !aKeySystem.mWebM.IsSupported()) {
+      EME_LOG("MediaKeySystemConfiguration (label='%s') "
+              "MediaKeySystemMediaCapability('%s','%s') unsupported; "
+              "WebM requested but unsupported.",
+              NS_ConvertUTF16toUTF8(aPartialConfig.mLabel).get(),
+              NS_ConvertUTF16toUTF8(contentType).get(),
+              NS_ConvertUTF16toUTF8(robustness).get());
+      continue;
+    }
+    if (!isMP4 && !isWebM) {
+      EME_LOG("MediaKeySystemConfiguration (label='%s') "
+              "MediaKeySystemMediaCapability('%s','%s') unsupported; "
+              "Unsupported or unrecognized container requested.",
+              NS_ConvertUTF16toUTF8(aPartialConfig.mLabel).get(),
+              NS_ConvertUTF16toUTF8(contentType).get(),
+              NS_ConvertUTF16toUTF8(robustness).get());
+      continue;
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+
+    
+    const auto majorType = GetMajorType(container);
+    if (codecs.IsEmpty()) {
+      
+      
+      if (isMP4) {
+        if (majorType == Audio) {
+          codecs.AppendElement(GMP_CODEC_AAC);
+        } else if (majorType == Video) {
+          codecs.AppendElement(GMP_CODEC_H264);
+        }
+      } else if (isWebM) {
+        if (majorType == Audio) {
+          codecs.AppendElement(GMP_CODEC_VORBIS);
+        } else if (majorType == Video) {
+          codecs.AppendElement(GMP_CODEC_VP8);
+        }
+      }
+      
+      
+    }
+
+    
+    if (majorType == Invalid) {
+      EME_LOG("MediaKeySystemConfiguration (label='%s') "
+              "MediaKeySystemMediaCapability('%s','%s') unsupported; "
+              "MIME type is not an audio or video MIME type.",
+              NS_ConvertUTF16toUTF8(aPartialConfig.mLabel).get(),
+              NS_ConvertUTF16toUTF8(contentType).get(),
+              NS_ConvertUTF16toUTF8(robustness).get());
+      continue;
+    }
+
+    
+    
+    
+    if (!robustness.IsEmpty()) {
+      if (majorType == Audio && !aKeySystem.mAudioRobustness.Contains(robustness)) {
+        EME_LOG("MediaKeySystemConfiguration (label='%s') "
+                "MediaKeySystemMediaCapability('%s','%s') unsupported; "
+                "unsupported robustness string.",
+                NS_ConvertUTF16toUTF8(aPartialConfig.mLabel).get(),
+                NS_ConvertUTF16toUTF8(contentType).get(),
+                NS_ConvertUTF16toUTF8(robustness).get());
+        continue;
+      }
+      if (majorType == Video && !aKeySystem.mVideoRobustness.Contains(robustness)) {
+        EME_LOG("MediaKeySystemConfiguration (label='%s') "
+                "MediaKeySystemMediaCapability('%s','%s') unsupported; "
+                "unsupported robustness string.",
+                NS_ConvertUTF16toUTF8(aPartialConfig.mLabel).get(),
+                NS_ConvertUTF16toUTF8(contentType).get(),
+                NS_ConvertUTF16toUTF8(robustness).get());
+        continue;
+      }
+      
+    }
+
+    
+    
+    
+    
+    const auto& containerSupport = isMP4 ? aKeySystem.mMP4 : aKeySystem.mWebM;
+    if (!CanDecryptAndDecode(aGMPService,
+                             aKeySystem.mKeySystem,
+                             contentType,
+                             majorType,
+                             containerSupport,
+                             codecs,
+                             aDiagnostics)) {
+        EME_LOG("MediaKeySystemConfiguration (label='%s') "
+                "MediaKeySystemMediaCapability('%s','%s') unsupported; "
+                "codec unsupported by CDM requested.",
+                NS_ConvertUTF16toUTF8(aPartialConfig.mLabel).get(),
+                NS_ConvertUTF16toUTF8(contentType).get(),
+                NS_ConvertUTF16toUTF8(robustness).get());
+        continue;
+    }
+
+    
+    if (!supportedCapabilities.AppendElement(capabilities, mozilla::fallible)) {
+      NS_WARNING("GetSupportedCapabilities: Malloc failure");
+      return Sequence<MediaKeySystemMediaCapability>();
+    }
+
+    
+    
   }
-  return false;
+  return Move(supportedCapabilities);
 }
 
-static bool
-IsSupportedVideo(mozIGeckoMediaPluginService* aGMPService,
-                 const nsAString& aKeySystem,
-                 const nsAString& aVideoType,
-                 DecoderDoctorDiagnostics* aDiagnostics)
-{
-  if (IsH264ContentType(aVideoType)) {
-    return GMPDecryptsAndDecodesH264(aGMPService, aKeySystem, aDiagnostics) ||
-           GMPDecryptsAndGeckoDecodesH264(aGMPService, aKeySystem, aVideoType, aDiagnostics);
-  }
-  if (IsVP8ContentType(aVideoType) && aKeySystem.EqualsLiteral("org.w3.clearkey")) {
-    return GMPDecryptsAndGeckoDecodesVP8(aGMPService, aKeySystem, aVideoType, aDiagnostics);
-  }
-  if (IsVP9ContentType(aVideoType) && aKeySystem.EqualsLiteral("org.w3.clearkey")) {
-    return GMPDecryptsAndGeckoDecodesVP9(aGMPService, aKeySystem, aVideoType, aDiagnostics);
-  }
-  return false;
-}
+
+
+
 
 static bool
-IsSupportedInitDataType(const nsString& aCandidate, const nsAString& aKeySystem)
+CheckRequirement(const MediaKeysRequirement aRequirement,
+                 const KeySystemFeatureSupport aFeatureSupport,
+                 MediaKeysRequirement& aOutRequirement)
 {
   
+  MediaKeysRequirement requirement = aRequirement;
   
-  return aCandidate.EqualsLiteral("cenc") ||
-    ((aKeySystem.EqualsLiteral("org.w3.clearkey")
-    || aKeySystem.EqualsLiteral("com.widevine.alpha")) &&
-    (aCandidate.EqualsLiteral("keyids") || aCandidate.EqualsLiteral("webm")));
+  
+  if (aRequirement == MediaKeysRequirement::Optional &&
+      aFeatureSupport == KeySystemFeatureSupport::Prohibited) {
+    requirement = MediaKeysRequirement::Not_allowed;
+  }
+
+  
+  switch (requirement) {
+    case MediaKeysRequirement::Required: {
+      
+      
+      if (aFeatureSupport == KeySystemFeatureSupport::Prohibited) {
+        return false;
+      }
+      break;
+    }
+    case MediaKeysRequirement::Optional: {
+      
+      break;
+    }
+    case MediaKeysRequirement::Not_allowed: {
+      
+      
+      if (aFeatureSupport == KeySystemFeatureSupport::Required) {
+        return false;
+      }
+      break;
+    }
+    default: {
+      return false;
+    }
+  }
+
+  
+  
+  aOutRequirement = requirement;
+
+  return true;
 }
+
+
+
+
+
+
+
+static Sequence<nsString>
+UnboxSessionTypes(const Optional<Sequence<nsString>>& aSessionTypes)
+{
+  Sequence<nsString> sessionTypes;
+  if (aSessionTypes.WasPassed()) {
+    sessionTypes = aSessionTypes.Value();
+  } else {
+    using MediaKeySessionTypeValues::strings;
+    const char* temporary = strings[static_cast<uint32_t>(MediaKeySessionType::Temporary)].value;
+    
+    sessionTypes.AppendElement(NS_ConvertUTF8toUTF16(nsDependentCString(temporary)), mozilla::fallible);
+  }
+  return sessionTypes;
+}
+
 
 static bool
 GetSupportedConfig(mozIGeckoMediaPluginService* aGMPService,
-                   const nsAString& aKeySystem,
+                   const KeySystemConfig& aKeySystem,
                    const MediaKeySystemConfiguration& aCandidate,
                    MediaKeySystemConfiguration& aOutConfig,
                    DecoderDoctorDiagnostics* aDiagnostics)
 {
+  
   MediaKeySystemConfiguration config;
+  
+  
   config.mLabel = aCandidate.mLabel;
-  if (aCandidate.mInitDataTypes.WasPassed()) {
-    nsTArray<nsString> initDataTypes;
-    for (const nsString& candidate : aCandidate.mInitDataTypes.Value()) {
-      if (IsSupportedInitDataType(candidate, aKeySystem)) {
-        initDataTypes.AppendElement(candidate);
+  
+  
+  if (!aCandidate.mInitDataTypes.IsEmpty()) {
+    
+    nsTArray<nsString> supportedTypes;
+    
+    for (const nsString& initDataType : aCandidate.mInitDataTypes) {
+      
+      
+      
+      
+      if (aKeySystem.mInitDataTypes.Contains(initDataType)) {
+        supportedTypes.AppendElement(initDataType);
       }
     }
-    if (initDataTypes.IsEmpty()) {
+    
+    if (supportedTypes.IsEmpty()) {
+      EME_LOG("MediaKeySystemConfiguration (label='%s') rejected; "
+              "no supported initDataTypes provided.",
+              NS_ConvertUTF16toUTF8(aCandidate.mLabel).get());
       return false;
     }
-    config.mInitDataTypes.Construct();
-    config.mInitDataTypes.Value().Assign(initDataTypes);
-  }
-  if (aCandidate.mAudioCapabilities.WasPassed()) {
-    nsTArray<MediaKeySystemMediaCapability> caps;
-    for (const MediaKeySystemMediaCapability& cap : aCandidate.mAudioCapabilities.Value()) {
-      if (IsSupportedAudio(aGMPService, aKeySystem, cap.mContentType, aDiagnostics)) {
-        caps.AppendElement(cap);
-      }
+    
+    if (!config.mInitDataTypes.Assign(supportedTypes)) {
+      return false;
     }
+  }
+
+  if (!CheckRequirement(aCandidate.mDistinctiveIdentifier,
+                        aKeySystem.mDistinctiveIdentifier,
+                        config.mDistinctiveIdentifier)) {
+    EME_LOG("MediaKeySystemConfiguration (label='%s') rejected; "
+            "distinctiveIdentifier requirement not satisfied.",
+            NS_ConvertUTF16toUTF8(aCandidate.mLabel).get());
+    return false;
+  }
+
+  if (!CheckRequirement(aCandidate.mPersistentState,
+                        aKeySystem.mPersistentState,
+                        config.mPersistentState)) {
+    EME_LOG("MediaKeySystemConfiguration (label='%s') rejected; "
+            "persistentState requirement not satisfied.",
+            NS_ConvertUTF16toUTF8(aCandidate.mLabel).get());
+    return false;
+  }
+
+  Sequence<nsString> sessionTypes(UnboxSessionTypes(aCandidate.mSessionTypes));
+  if (sessionTypes.IsEmpty()) {
+    
+    return false;
+  }
+
+  
+  for (const auto& sessionTypeString : sessionTypes) {
+    
+    MediaKeySessionType sessionType;
+    if (!ToSessionType(sessionTypeString, sessionType)) {
+      
+      EME_LOG("MediaKeySystemConfiguration (label='%s') rejected; "
+              "invalid session type specified.",
+              NS_ConvertUTF16toUTF8(aCandidate.mLabel).get());
+      return false;
+    }
+    
+    
+    
+    if (config.mPersistentState == MediaKeysRequirement::Not_allowed &&
+        IsPersistentSessionType(sessionType)) {
+      EME_LOG("MediaKeySystemConfiguration (label='%s') rejected; "
+              "persistent session requested but keysystem doesn't"
+              "support persistent state.",
+              NS_ConvertUTF16toUTF8(aCandidate.mLabel).get());
+      return false;
+    }
+    
+    
+    
+    if (!aKeySystem.mSessionTypes.Contains(sessionType)) {
+      EME_LOG("MediaKeySystemConfiguration (label='%s') rejected; "
+              "session type '%s' unsupported by keySystem.",
+              NS_ConvertUTF16toUTF8(aCandidate.mLabel).get(),
+              NS_ConvertUTF16toUTF8(sessionTypeString).get());
+      return false;
+    }
+    
+    
+    
+    
+    if (config.mPersistentState == MediaKeysRequirement::Optional &&
+        IsPersistentSessionType(sessionType)) {
+      config.mPersistentState = MediaKeysRequirement::Required;
+    }
+  }
+  
+  config.mSessionTypes.Construct(Move(sessionTypes));
+
+  
+  
+  
+  
+
+  
+  if (!aCandidate.mVideoCapabilities.IsEmpty()) {
+    
+    
+    
+    
+    Sequence<MediaKeySystemMediaCapability> caps =
+      GetSupportedCapabilities(aGMPService,
+                               aCandidate.mVideoCapabilities,
+                               config,
+                               aKeySystem,
+                               aDiagnostics);
+    
     if (caps.IsEmpty()) {
+      EME_LOG("MediaKeySystemConfiguration (label='%s') rejected; "
+              "no supported video capabilities.",
+              NS_ConvertUTF16toUTF8(aCandidate.mLabel).get());
       return false;
     }
-    config.mAudioCapabilities.Construct();
-    config.mAudioCapabilities.Value().Assign(caps);
+    
+    config.mVideoCapabilities = Move(caps);
+  } else {
+    
+    
   }
-  if (aCandidate.mVideoCapabilities.WasPassed()) {
-    nsTArray<MediaKeySystemMediaCapability> caps;
-    for (const MediaKeySystemMediaCapability& cap : aCandidate.mVideoCapabilities.Value()) {
-      if (IsSupportedVideo(aGMPService, aKeySystem, cap.mContentType, aDiagnostics)) {
-        caps.AppendElement(cap);
-      }
-    }
+
+  
+  if (!aCandidate.mAudioCapabilities.IsEmpty()) {
+    
+    
+    
+    Sequence<MediaKeySystemMediaCapability> caps =
+      GetSupportedCapabilities(aGMPService,
+                               aCandidate.mAudioCapabilities,
+                               config,
+                               aKeySystem,
+                               aDiagnostics);
+    
     if (caps.IsEmpty()) {
+      EME_LOG("MediaKeySystemConfiguration (label='%s') rejected; "
+              "no supported audio capabilities.",
+              NS_ConvertUTF16toUTF8(aCandidate.mLabel).get());
       return false;
     }
-    config.mVideoCapabilities.Construct();
-    config.mVideoCapabilities.Value().Assign(caps);
+    
+    config.mAudioCapabilities = Move(caps);
+  } else {
+    
+    
   }
+
+  
+  
+  if (config.mDistinctiveIdentifier == MediaKeysRequirement::Optional) {
+    
+    
+    
+    if (aKeySystem.mDistinctiveIdentifier == KeySystemFeatureSupport::Required) {
+      
+      config.mDistinctiveIdentifier = MediaKeysRequirement::Required;
+    } else {
+      
+      
+      config.mDistinctiveIdentifier = MediaKeysRequirement::Not_allowed;
+    }
+  }
+
+  
+  
+  if (config.mPersistentState == MediaKeysRequirement::Optional) {
+    
+    
+    if (aKeySystem.mPersistentState == KeySystemFeatureSupport::Required) {
+      
+      config.mPersistentState = MediaKeysRequirement::Required;
+    } else {
+      
+      
+      config.mPersistentState = MediaKeysRequirement::Not_allowed;
+    }
+  }
+
+  
 
 #if defined(XP_WIN)
   
   
-  if (aKeySystem.EqualsLiteral("com.widevine.alpha") &&
-      (!aCandidate.mAudioCapabilities.WasPassed() ||
-       !aCandidate.mVideoCapabilities.WasPassed()) &&
+  if (aKeySystem.mKeySystem.EqualsLiteral("com.widevine.alpha") &&
+      (aCandidate.mAudioCapabilities.IsEmpty() ||
+       aCandidate.mVideoCapabilities.IsEmpty()) &&
      !WMFDecoderModule::HasAAC()) {
     if (aDiagnostics) {
       aDiagnostics->SetKeySystemIssue(
         DecoderDoctorDiagnostics::eWidevineWithNoWMF);
     }
+    EME_LOG("MediaKeySystemConfiguration (label='%s') rejected; "
+            "WMF required for Widevine decoding, but it's not available.",
+            NS_ConvertUTF16toUTF8(aCandidate.mLabel).get());
     return false;
   }
 #endif
 
+  
   aOutConfig = config;
 
   return true;
@@ -576,16 +1125,19 @@ MediaKeySystemAccess::GetSupportedConfig(const nsAString& aKeySystem,
   if (NS_WARN_IF(!mps)) {
     return false;
   }
-
+  const KeySystemConfig* implementation = nullptr;
   if (!HaveGMPFor(mps,
                   NS_ConvertUTF16toUTF8(aKeySystem),
-                  NS_LITERAL_CSTRING(GMP_API_DECRYPTOR))) {
+                  NS_LITERAL_CSTRING(GMP_API_DECRYPTOR)) ||
+      !(implementation = GetKeySystemConfig(aKeySystem))) {
     return false;
   }
-
-  for (const MediaKeySystemConfiguration& config : aConfigs) {
-    if (mozilla::dom::GetSupportedConfig(
-          mps, aKeySystem, config, aOutConfig, aDiagnostics)) {
+  for (const MediaKeySystemConfiguration& candidate : aConfigs) {
+    if (mozilla::dom::GetSupportedConfig(mps,
+                                         *implementation,
+                                         candidate,
+                                         aOutConfig,
+                                         aDiagnostics)) {
       return true;
     }
   }

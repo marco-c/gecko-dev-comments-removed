@@ -81,6 +81,21 @@ MediaKeySystemAccessManager::Request(DetailedPromise* aPromise,
 {
   EME_LOG("MediaKeySystemAccessManager::Request %s", NS_ConvertUTF16toUTF8(aKeySystem).get());
 
+  if (aKeySystem.IsEmpty()) {
+    aPromise->MaybeReject(NS_ERROR_DOM_TYPE_ERR,
+                          NS_LITERAL_CSTRING("Key system string is empty"));
+    
+    
+    return;
+  }
+  if (aConfigs.IsEmpty()) {
+    aPromise->MaybeReject(NS_ERROR_DOM_TYPE_ERR,
+                          NS_LITERAL_CSTRING("Candidate MediaKeySystemConfigs is empty"));
+    
+    
+    return;
+  }
+
   DecoderDoctorDiagnostics diagnostics;
 
   
