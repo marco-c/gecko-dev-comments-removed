@@ -171,8 +171,8 @@ XPCWrappedNative::WrapNewGlobal(xpcObjectHelper& nativeHelper,
 
     
     
-    XPCNativeScriptableInfo* si = XPCNativeScriptableInfo::Construct(&sciWrapper);
-    MOZ_ASSERT(si);
+    AutoMarkingNativeScriptableInfoPtr si(cx, XPCNativeScriptableInfo::Construct(&sciWrapper));
+    MOZ_ASSERT(si.get());
 
     
     const JSClass* clasp = si->GetJSClass();
@@ -622,6 +622,12 @@ void
 XPCWrappedNative::UpdateScriptableInfo(XPCNativeScriptableInfo* si)
 {
     MOZ_ASSERT(mScriptableInfo, "UpdateScriptableInfo expects an existing scriptable info");
+
+    
+    JSContext* cx = GetRuntime()->Context();
+    if (IsIncrementalBarrierNeeded(cx))
+        mScriptableInfo->Mark();
+
     mScriptableInfo = si;
 }
 
