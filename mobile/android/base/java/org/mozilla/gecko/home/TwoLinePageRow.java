@@ -146,11 +146,24 @@ public class TwoLinePageRow extends LinearLayout
 
         
         
+        
+        
+        
+        
+        
         final String tabUrl = tab.getURL();
-        if (!pageUrl.equals(tabUrl) && !pageUrl.equals(data)) {
+        if (!pageUrl.equals(ReaderModeUtils.stripAboutReaderUrl(tabUrl)) &&
+            !pageUrl.equals(ReaderModeUtils.stripAboutReaderUrl(data))) {
             return;
         }
 
+        
+        
+        
+        
+        
+        
+        
         switch (msg) {
             case ADDED:
             case CLOSED:
