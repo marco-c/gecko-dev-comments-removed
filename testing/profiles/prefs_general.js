@@ -78,6 +78,9 @@ user_pref("geo.wifi.scan", false);
 user_pref("geo.wifi.logging.enabled", true);
 
 
+user_pref("dom.push.connection.enabled", false);
+
+
 user_pref("urlclassifier.updateinterval", 172800);
 
 user_pref("browser.safebrowsing.downloads.remote.url", "http://%(server)s/safebrowsing-dummy/update");

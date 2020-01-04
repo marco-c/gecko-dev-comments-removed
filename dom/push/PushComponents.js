@@ -255,6 +255,17 @@ Object.assign(PushServiceParent.prototype, {
     let name = requestName.slice("Push:".length);
     return "PushService:" + name + ":" + suffix;
   },
+
+  
+
+  replaceServiceBackend(options) {
+    this._service.changeTestServer(options.serverURI, options);
+  },
+
+  restoreServiceBackend() {
+    var defaultServerURL = Services.prefs.getCharPref("dom.push.serverURL");
+    this._service.changeTestServer(defaultServerURL);
+  },
 });
 
 
