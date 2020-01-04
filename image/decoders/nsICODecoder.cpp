@@ -312,6 +312,11 @@ nsICODecoder::ReadDirEntry(const char* aData)
   }
 
   if (mCurrIcon == mNumIcons) {
+    PostSize(GetRealWidth(mDirEntry), GetRealHeight(mDirEntry));
+    if (IsMetadataDecode()) {
+      return Transition::Terminate(ICOState::SUCCESS);
+    }
+
     size_t offsetToResource = mDirEntry.mImageOffset - FirstResourceOffset();
     return Transition::ToUnbuffered(ICOState::FOUND_RESOURCE,
                                     ICOState::SKIP_TO_RESOURCE,
@@ -382,15 +387,6 @@ nsICODecoder::ReadPNG(const char* aData, uint32_t aLen)
     return Transition::Terminate(ICOState::FAILURE);
   }
 
-  if (!HasSize() && mContainedDecoder->HasSize()) {
-    nsIntSize size = mContainedDecoder->GetSize();
-    PostSize(size.width, size.height);
-
-    if (IsMetadataDecode()) {
-      return Transition::Terminate(ICOState::SUCCESS);
-    }
-  }
-
   
   
   if (!IsMetadataDecode() &&
@@ -442,14 +438,6 @@ nsICODecoder::ReadBIH(const char* aData)
   
   if (!WriteToContainedDecoder(mBIHraw, sizeof(mBIHraw))) {
     return Transition::Terminate(ICOState::FAILURE);
-  }
-
-  nsIntSize size = mContainedDecoder->GetSize();
-  PostSize(size.width, size.height);
-
-  
-  if (IsMetadataDecode()) {
-    return Transition::Terminate(ICOState::SUCCESS);
   }
 
   
@@ -574,6 +562,20 @@ nsICODecoder::ReadMaskRow(const char* aData)
   return Transition::To(ICOState::READ_MASK_ROW, mMaskRowSize);
 }
 
+LexerTransition<ICOState>
+nsICODecoder::FinishResource()
+{
+  
+  
+  IntSize expectedSize(GetRealWidth(mDirEntry), GetRealHeight(mDirEntry));
+  if (mContainedDecoder->HasSize() &&
+      mContainedDecoder->GetSize() != expectedSize) {
+    return Transition::Terminate(ICOState::FAILURE);
+  }
+
+  return Transition::Terminate(ICOState::SUCCESS);
+}
+
 void
 nsICODecoder::WriteInternal(const char* aBuffer, uint32_t aCount)
 {
@@ -608,7 +610,7 @@ nsICODecoder::WriteInternal(const char* aBuffer, uint32_t aCount)
         case ICOState::SKIP_MASK:
           return Transition::ContinueUnbuffered(ICOState::SKIP_MASK);
         case ICOState::FINISHED_RESOURCE:
-          return Transition::Terminate(ICOState::SUCCESS);
+          return FinishResource();
         default:
           MOZ_ASSERT_UNREACHABLE("Unknown ICOState");
           return Transition::Terminate(ICOState::FAILURE);
