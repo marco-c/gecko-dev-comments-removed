@@ -6,6 +6,7 @@
 #ifndef MOZILLA_SVGCONTEXTPAINT_H_
 #define MOZILLA_SVGCONTEXTPAINT_H_
 
+#include "DrawMode.h"
 #include "gfxMatrix.h"
 #include "gfxPattern.h"
 #include "gfxTypes.h"
@@ -61,6 +62,8 @@ public:
     return GetStrokePattern(aDrawTarget, GetStrokeOpacity(), aCTM);
   }
 
+  static SVGContextPaint* GetContextPaint(nsIContent* aContent);
+
   
   
   void InitStrokeGeometry(gfxContext *aContext,
@@ -114,6 +117,11 @@ struct SVGContextPaintImpl : public SVGContextPaint
 protected:
   typedef mozilla::gfx::DrawTarget DrawTarget;
 public:
+  DrawMode Init(const DrawTarget* aDrawTarget,
+                const gfxMatrix& aContextMatrix,
+                nsIFrame* aFrame,
+                SVGContextPaint* aOuterContextPaint);
+
   already_AddRefed<gfxPattern> GetFillPattern(const DrawTarget* aDrawTarget,
                                               float aOpacity,
                                               const gfxMatrix& aCTM) override;
