@@ -13,6 +13,7 @@
 #include "FFmpegLog.h"
 #include "FFmpegDataDecoder.h"
 #include "prsystem.h"
+#include "FFmpegDecoderModule.h"
 
 namespace mozilla
 {
@@ -90,7 +91,11 @@ FFmpegDataDecoder<LIBAV_VER>::InitDecoder()
   mCodecContext->opaque = this;
 
   
-  mCodecContext->request_sample_fmt = AV_SAMPLE_FMT_FLT;
+  uint32_t major, minor;
+  FFmpegDecoderModule<LIBAV_VER>::GetVersion(major, minor);
+  
+  mCodecContext->request_sample_fmt = major == 53 && minor <= 34 ?
+    AV_SAMPLE_FMT_S16 : AV_SAMPLE_FMT_FLT;
 
   
   mCodecContext->get_format = ChoosePixelFormat;
