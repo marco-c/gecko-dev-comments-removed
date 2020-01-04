@@ -88,7 +88,6 @@ LoadInfo::LoadInfo(nsIPrincipal* aLoadingPrincipal,
   
   if (mSecurityFlags & nsILoadInfo::SEC_SANDBOXED) {
     mSecurityFlags ^= nsILoadInfo::SEC_FORCE_INHERIT_PRINCIPAL;
-    mSecurityFlags |= nsILoadInfo::SEC_FORCE_INHERIT_PRINCIPAL_WAS_DROPPED;
   }
 
   if (aLoadingContext) {
@@ -195,7 +194,6 @@ LoadInfo::LoadInfo(nsPIDOMWindowOuter* aOuterWindow,
   
   if (mSecurityFlags & nsILoadInfo::SEC_SANDBOXED) {
     mSecurityFlags ^= nsILoadInfo::SEC_FORCE_INHERIT_PRINCIPAL;
-    mSecurityFlags |= nsILoadInfo::SEC_FORCE_INHERIT_PRINCIPAL_WAS_DROPPED;
   }
 
   
