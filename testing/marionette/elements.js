@@ -98,7 +98,8 @@ Accessibility.prototype = {
   getAccessibleObject(element, mustHaveAccessible = false) {
     let acc = this.accessibleRetrieval.getAccessibleFor(element);
     if (!acc && mustHaveAccessible) {
-      this.handleErrorMessage('Element does not have an accessible object');
+      this.handleErrorMessage('Element does not have an accessible object',
+        element);
     }
     return acc;
   },
@@ -179,9 +180,13 @@ Accessibility.prototype = {
 
 
 
-  handleErrorMessage(message) {
+
+  handleErrorMessage(message, element) {
     if (!message) {
       return;
+    }
+    if (element) {
+      message += ` -> id: ${element.id}, tagName: ${element.tagName}, className: ${element.className}\n`;
     }
     if (this.strict) {
       throw new ElementNotAccessibleError(message);
