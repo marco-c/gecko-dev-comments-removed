@@ -84,6 +84,8 @@ public class TwoLinePageRow extends LinearLayout
     
     private String mPageUrl;
 
+    private boolean mHasReaderCacheItem;
+
     public TwoLinePageRow(Context context) {
         this(context, null);
     }
@@ -194,8 +196,9 @@ public class TwoLinePageRow extends LinearLayout
 
 
 
-    private void updateDisplayedUrl(String url) {
+    private void updateDisplayedUrl(String url, boolean hasReaderCacheItem) {
         mPageUrl = url;
+        mHasReaderCacheItem = hasReaderCacheItem;
         updateDisplayedUrl();
     }
 
@@ -206,7 +209,14 @@ public class TwoLinePageRow extends LinearLayout
 
     protected void updateDisplayedUrl() {
         boolean isPrivate = Tabs.getInstance().getSelectedTab().isPrivate();
-        Tab tab = Tabs.getInstance().getFirstTabForUrl(mPageUrl, isPrivate);
+
+        
+        
+        
+        final String navigationUrl = mHasReaderCacheItem ? ReaderModeUtils.getAboutReaderForUrl(mPageUrl) : mPageUrl;
+        Tab tab = Tabs.getInstance().getFirstTabForUrl(navigationUrl, isPrivate);
+
+
         if (!mShowIcons || tab == null) {
             setUrl(mPageUrl);
             setSwitchToTabIcon(NO_ICON);
@@ -261,7 +271,7 @@ public class TwoLinePageRow extends LinearLayout
             ReaderModeUtils.getUrlFromAboutReader(url) : url;
         mLoadFaviconJobId = Favicons.getSizedFaviconForPageFromLocal(getContext(), pageURL, mFaviconListener);
 
-        updateDisplayedUrl(url);
+        updateDisplayedUrl(url, hasReaderCacheItem);
 
         mReaderCached.setVisibility(hasReaderCacheItem ? View.VISIBLE : View.INVISIBLE);
     }
