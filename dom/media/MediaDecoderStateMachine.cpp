@@ -3,6 +3,7 @@
 
 
 
+
 #ifdef XP_WIN
 
 #include "windows.h"
@@ -880,7 +881,9 @@ MediaDecoderStateMachine::OnVideoDecoded(MediaData* aVideoSample)
       
       
       
-      if (VideoQueue().GetSize() == 1) {
+      
+      
+      if (VideoQueue().GetSize() <= 2) {
         ScheduleStateMachine();
       }
 
