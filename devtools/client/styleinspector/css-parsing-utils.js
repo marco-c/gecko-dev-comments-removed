@@ -4,15 +4,93 @@
 
 
 
+
+
+
+
+
+
+
+
 "use strict";
 
 const {cssTokenizer} = require("devtools/client/sourceeditor/css-tokenizer");
+const {Cc, Ci, Cu} = require("chrome");
+Cu.importGlobalProperties(["CSS"]);
+const promise = require("promise");
+Cu.import("resource://gre/modules/Task.jsm", this);
+loader.lazyGetter(this, "DOMUtils", () => {
+  return Cc["@mozilla.org/inspector/dom-utils;1"].getService(Ci.inIDOMUtils);
+});
 
 const SELECTOR_ATTRIBUTE = exports.SELECTOR_ATTRIBUTE = 1;
 const SELECTOR_ELEMENT = exports.SELECTOR_ELEMENT = 2;
 const SELECTOR_PSEUDO_CLASS = exports.SELECTOR_PSEUDO_CLASS = 3;
 
 
+const NEWLINE_RX = /[\r\n]/;
+
+
+
+const EMPTY_COMMENT_START_RX = /^\/\*!?[ \r\n\t\f]*$/;
+
+const EMPTY_COMMENT_END_RX = /^[ \r\n\t\f]*\*\//;
+
+const BLANK_LINE_RX = /^[ \t]*(?:\r\n|\n|\r|\f|$)/;
+
+
+
+
+const COMMENT_PARSING_HEURISTIC_BYPASS_CHAR = "!";
+
+
+
+
+
+
+
+
+
+
+function escapeCSSComment(inputString) {
+  let result = inputString.replace(/\/(\\*)\*/g, "/\\$1*");
+  return result.replace(/\*(\\*)\//g, "*\\$1/");
+}
+
+
+
+
+
+
+
+
+
+
+function unescapeCSSComment(inputString) {
+  let result = inputString.replace(/\/\\(\\*)\*/g, "/$1*");
+  return result.replace(/\*\\(\\*)\//g, "*$1/");
+}
+
+
+
+
+
+
+
+
+
+
+function shouldParsePropertyInComment(name) {
+  try {
+    
+    
+    
+    DOMUtils.cssPropertyIsShorthand(name);
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
 
 
 
@@ -26,35 +104,181 @@ const SELECTOR_PSEUDO_CLASS = exports.SELECTOR_PSEUDO_CLASS = 3;
 
 
 
-function parseDeclarations(inputString) {
+
+
+
+function parseCommentDeclarations(commentText, startOffset, endOffset) {
+  let commentOverride = false;
+  if (commentText === "") {
+    return [];
+  } else if (commentText[0] === COMMENT_PARSING_HEURISTIC_BYPASS_CHAR) {
+    
+    
+    
+    commentOverride = true;
+    commentText = commentText.substring(1);
+  }
+
+  let rewrittenText = unescapeCSSComment(commentText);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  let rewrites = new Array(rewrittenText.length + 1).fill(0);
+
+  let commentRe = /\/\\*\*|\*\\*\//g;
+  while (true) {
+    let matchData = commentRe.exec(rewrittenText);
+    if (!matchData) {
+      break;
+    }
+    rewrites[matchData.index] = 1;
+  }
+
+  let delta = 0;
+  for (let i = 0; i <= rewrittenText.length; ++i) {
+    delta += rewrites[i];
+    
+    
+    
+    rewrites[i] = startOffset + 2 + i + delta;
+    if (commentOverride) {
+      ++rewrites[i];
+    }
+  }
+
+  
+  
+  
+  
+  let newDecls = parseDeclarationsInternal(rewrittenText, false,
+                                           true, commentOverride);
+  for (let decl of newDecls) {
+    decl.offsets[0] = rewrites[decl.offsets[0]];
+    decl.offsets[1] = rewrites[decl.offsets[1]];
+    decl.colonOffsets[0] = rewrites[decl.colonOffsets[0]];
+    decl.colonOffsets[1] = rewrites[decl.colonOffsets[1]];
+    decl.commentOffsets = [startOffset, endOffset];
+  }
+  return newDecls;
+}
+
+
+
+
+
+
+
+
+function getEmptyDeclaration() {
+  return {name: "", value: "", priority: "",
+          terminator: "",
+          offsets: [undefined, undefined],
+          colonOffsets: false};
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function parseDeclarationsInternal(inputString, parseComments,
+                                   inComment, commentOverride) {
   if (inputString === null || inputString === undefined) {
     throw new Error("empty input string");
   }
 
-  let tokens = cssTokenizer(inputString);
+  let lexer = DOMUtils.getCSSLexer(inputString);
 
-  let declarations = [{name: "", value: "", priority: ""}];
+  let declarations = [getEmptyDeclaration()];
+  let lastProp = declarations[0];
 
-  let current = "", hasBang = false, lastProp;
-  for (let token of tokens) {
-    lastProp = declarations[declarations.length - 1];
+  let current = "", hasBang = false;
+  while (true) {
+    let token = lexer.nextToken();
+    if (!token) {
+      break;
+    }
+
+    
+    
+    if (token.tokenType === "htmlcomment") {
+      continue;
+    }
+
+    
+    
+    if (token.tokenType !== "whitespace" && token.tokenType !== "comment") {
+      if (lastProp.offsets[0] === undefined) {
+        lastProp.offsets[0] = token.startOffset;
+      }
+      lastProp.offsets[1] = token.endOffset;
+    } else if (lastProp.name && !current && !hasBang &&
+               !lastProp.priority && lastProp.colonOffsets[1]) {
+      
+      lastProp.colonOffsets[1] = token.endOffset;
+    }
 
     if (token.tokenType === "symbol" && token.text === ":") {
       if (!lastProp.name) {
         
         lastProp.name = current.trim();
+        lastProp.colonOffsets = [token.startOffset, token.endOffset];
         current = "";
         hasBang = false;
+
+        
+        
+        if (inComment && !commentOverride &&
+            !shouldParsePropertyInComment(lastProp.name)) {
+          lastProp.name = null;
+          break;
+        }
       } else {
         
         
         current += ":";
       }
     } else if (token.tokenType === "symbol" && token.text === ";") {
+      lastProp.terminator = "";
+      
+      
+      
+      if (inComment && !lastProp.name) {
+        current = "";
+        break;
+      }
       lastProp.value = current.trim();
       current = "";
       hasBang = false;
-      declarations.push({name: "", value: "", priority: ""});
+      declarations.push(getEmptyDeclaration());
+      lastProp = declarations[declarations.length - 1];
     } else if (token.tokenType === "ident") {
       if (token.text === "important" && hasBang) {
         lastProp.priority = "important";
@@ -68,9 +292,20 @@ function parseDeclarations(inputString) {
     } else if (token.tokenType === "symbol" && token.text === "!") {
       hasBang = true;
     } else if (token.tokenType === "whitespace") {
-      current += " ";
+      if (current !== "") {
+        current += " ";
+      }
     } else if (token.tokenType === "comment") {
-      
+      if (parseComments && !lastProp.name && !lastProp.value) {
+        let commentText = inputString.substring(token.startOffset + 2,
+                                                token.endOffset - 2);
+        let newDecls = parseCommentDeclarations(commentText, token.startOffset,
+                                                token.endOffset);
+
+        
+        let lastDecl = declarations.pop();
+        declarations = [...declarations, ...newDecls, lastDecl];
+      }
     } else {
       current += inputString.substring(token.startOffset, token.endOffset);
     }
@@ -80,10 +315,21 @@ function parseDeclarations(inputString) {
   if (current) {
     if (!lastProp.name) {
       
-      lastProp.name = current.trim();
+      if (!inComment) {
+        
+        lastProp.name = current.trim();
+      }
     } else {
       
-      lastProp.value += current.trim();
+      lastProp.value = current.trim();
+      let terminator = lexer.performEOFFixup("", true);
+      lastProp.terminator = terminator + ";";
+      
+      
+      
+      if (terminator) {
+        lastProp.offsets[1] = inputString.length;
+      }
     }
   }
 
@@ -92,6 +338,539 @@ function parseDeclarations(inputString) {
 
   return declarations;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function parseDeclarations(inputString, parseComments = false) {
+  return parseDeclarationsInternal(inputString, parseComments, false, false);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function RuleRewriter(rule, inputString) {
+  this.rule = rule;
+  this.inputString = inputString;
+  
+  this.hasNewLine = /[\r\n]/.test(this.inputString);
+  
+  
+  this.changedDeclarations = {};
+  
+  this.declarations = parseDeclarations(this.inputString, true);
+
+  this.decl = null;
+  this.result = null;
+  
+  
+  this.editPromise = null;
+
+  
+  
+  
+  
+  this.defaultIndentation = null;
+}
+
+RuleRewriter.prototype = {
+  
+
+
+
+
+
+  completeInitialization: function(index) {
+    if (index < 0) {
+      throw new Error("Invalid index " + index + ". Expected positive integer");
+    }
+    
+    
+    
+    if (index < this.declarations.length) {
+      this.decl = this.declarations[index];
+      this.result = this.inputString.substring(0, this.decl.offsets[0]);
+    } else {
+      this.decl = null;
+      this.result = this.inputString;
+    }
+  },
+
+  
+
+
+
+
+
+
+
+
+
+  getIndentation: function(string, offset) {
+    let originalOffset = offset;
+    for (--offset; offset >= 0; --offset) {
+      let c = string[offset];
+      if (c === "\r" || c === "\n" || c === "\f") {
+        return string.substring(offset + 1, originalOffset);
+      }
+      if (c !== " " && c !== "\t") {
+        
+        
+        
+        originalOffset = offset;
+      }
+    }
+    
+    return "";
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+  sanitizePropertyValue: function(text) {
+    let lexer = DOMUtils.getCSSLexer(text);
+
+    let result = "";
+    let previousOffset = 0;
+    let braceDepth = 0;
+    while (true) {
+      let token = lexer.nextToken();
+      if (!token) {
+        break;
+      }
+
+      if (token.tokenType === "symbol") {
+        switch (token.text) {
+          case ";":
+            
+            
+            
+            result += text.substring(previousOffset, token.startOffset);
+            previousOffset = token.endOffset;
+            break;
+
+          case "{":
+            ++braceDepth;
+            break;
+
+          case "}":
+            --braceDepth;
+            if (braceDepth < 0) {
+              
+              braceDepth = 0;
+              
+              result += text.substring(previousOffset, token.startOffset);
+              
+              result += "\\" + token.text;
+              previousOffset = token.endOffset;
+            }
+            break;
+        }
+      }
+    }
+
+    
+    result += text.substring(previousOffset, text.length) +
+      lexer.performEOFFixup("", true);
+    return result;
+  },
+
+  
+
+
+
+
+
+
+
+
+  skipWhitespaceBackward: function(string, index) {
+    for (--index;
+         index >= 0 && (string[index] === " " || string[index] === "\t");
+         --index) {
+      
+    }
+    return index;
+  },
+
+  
+
+
+
+
+
+
+  maybeTerminateDecl: function(index) {
+    if (index < 0 || index >= this.declarations.length
+        
+        || ("commentOffsets" in this.declarations[index])) {
+      return;
+    }
+
+    let termDecl = this.declarations[index];
+    let endIndex = termDecl.offsets[1];
+    
+    
+    
+    endIndex = this.skipWhitespaceBackward(this.result, endIndex) + 1;
+
+    let trailingText = this.result.substring(endIndex);
+    if (termDecl.terminator) {
+      
+      
+      this.result = this.result.substring(0, endIndex) + termDecl.terminator +
+        trailingText;
+      
+      
+      this.changedDeclarations[index] =
+        termDecl.value + termDecl.terminator.slice(0, -1);
+    }
+    
+    
+    
+    if (this.hasNewLine && !NEWLINE_RX.test(trailingText)) {
+      this.result += "\n";
+    }
+  },
+
+  
+
+
+
+
+
+
+
+
+  sanitizeText: function(text, index) {
+    let sanitizedText = this.sanitizePropertyValue(text);
+    if (sanitizedText !== text) {
+      this.changedDeclarations[index] = sanitizedText;
+    }
+    return sanitizedText;
+  },
+
+  
+
+
+
+
+
+
+  renameProperty: function(index, name, newName) {
+    this.completeInitialization(index);
+    this.result += CSS.escape(newName);
+    
+    
+    this.completeCopying(this.decl.colonOffsets[0]);
+  },
+
+  
+
+
+
+
+
+
+
+  setPropertyEnabled: function(index, name, isEnabled) {
+    this.completeInitialization(index);
+    const decl = this.decl;
+    let copyOffset = decl.offsets[1];
+    if (isEnabled) {
+      
+      let commentStart = decl.commentOffsets[0];
+      if (EMPTY_COMMENT_START_RX.test(this.result.substring(commentStart))) {
+        this.result = this.result.substring(0, commentStart);
+      } else {
+        this.result += "*/ ";
+      }
+
+      
+      
+      let commentNamePart =
+          this.inputString.substring(decl.offsets[0],
+                                     decl.colonOffsets[1]);
+      this.result += unescapeCSSComment(commentNamePart);
+
+      
+      
+      
+      let newText = this.inputString.substring(decl.colonOffsets[1],
+                                               decl.offsets[1]);
+      newText = unescapeCSSComment(newText).trimRight();
+      this.result += this.sanitizeText(newText, index) + ";";
+
+      
+      let trailingText = this.inputString.substring(decl.offsets[1]);
+      if (EMPTY_COMMENT_END_RX.test(trailingText)) {
+        copyOffset = decl.commentOffsets[1];
+      } else {
+        this.result += " /*";
+      }
+    } else {
+      
+      
+      let declText = this.inputString.substring(decl.offsets[0],
+                                                decl.offsets[1]);
+      this.result += "/*" + COMMENT_PARSING_HEURISTIC_BYPASS_CHAR +
+        " " + escapeCSSComment(declText) + " */";
+    }
+    this.completeCopying(copyOffset);
+  },
+
+  
+
+
+
+
+
+
+
+  getDefaultIndentation: function() {
+    return this.rule.parentStyleSheet.guessIndentation();
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  internalCreateProperty: Task.async(function*(index, name, value, priority) {
+    this.completeInitialization(index);
+    let newIndentation = "";
+    if (this.hasNewLine) {
+      if (this.declarations.length > 0) {
+        newIndentation = this.getIndentation(this.inputString,
+                                             this.declarations[0].offsets[0]);
+      } else if (this.defaultIndentation) {
+        newIndentation = this.defaultIndentation;
+      } else {
+        newIndentation = yield this.getDefaultIndentation();
+      }
+    }
+
+    this.maybeTerminateDecl(index - 1);
+
+    
+    
+    
+    
+    let savedWhitespace = "";
+    if (this.hasNewLine) {
+      let wsOffset = this.skipWhitespaceBackward(this.result,
+                                                 this.result.length);
+      if (this.result[wsOffset] === "\r" || this.result[wsOffset] === "\n") {
+        savedWhitespace = this.result.substring(wsOffset + 1);
+        this.result = this.result.substring(0, wsOffset + 1);
+      }
+    }
+
+    this.result += newIndentation + CSS.escape(name) + ": " +
+      this.sanitizeText(value, index);
+
+    if (priority === "important") {
+      this.result += " !important";
+    }
+    this.result += ";";
+    if (this.hasNewLine) {
+      this.result += "\n";
+    }
+    this.result += savedWhitespace;
+
+    if (this.decl) {
+      
+      
+      this.completeCopying(this.decl.offsets[0]);
+    }
+  }),
+
+  
+
+
+
+
+
+
+
+
+  createProperty: function(index, name, value, priority) {
+    this.editPromise = this.internalCreateProperty(index, name, value,
+                                                   priority);
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  setProperty: function(index, name, value, priority) {
+    this.completeInitialization(index);
+    
+    
+    if (!this.decl) {
+      return this.createProperty(index, name, value, priority);
+    }
+
+    
+    
+    this.result += this.inputString.substring(this.decl.offsets[0],
+                                              this.decl.colonOffsets[1]) +
+      this.sanitizeText(value, index);
+
+    if (priority === "important") {
+      this.result += " !important";
+    }
+    this.result += ";";
+    this.completeCopying(this.decl.offsets[1]);
+  },
+
+  
+
+
+
+
+
+  removeProperty: function(index, name) {
+    this.completeInitialization(index);
+    let copyOffset = this.decl.offsets[1];
+    
+    
+    
+    
+    if (this.hasNewLine) {
+      let nlOffset = this.skipWhitespaceBackward(this.result,
+                                                 this.decl.offsets[0]);
+      if (nlOffset < 0 || this.result[nlOffset] === "\r" ||
+          this.result[nlOffset] === "\n") {
+        let trailingText = this.inputString.substring(copyOffset);
+        let match = BLANK_LINE_RX.exec(trailingText);
+        if (match) {
+          this.result = this.result.substring(0, nlOffset + 1);
+          copyOffset += match[0].length;
+        }
+      }
+    }
+    this.completeCopying(copyOffset);
+  },
+
+  
+
+
+
+
+
+
+  completeCopying: function(copyOffset) {
+    
+    this.result += this.inputString.substring(copyOffset);
+  },
+
+  
+
+
+
+
+
+  apply: function() {
+    return promise.resolve(this.editPromise).then(() => {
+      return this.rule.setRuleText(this.result);
+    });
+  },
+
+  
+
+
+
+
+
+
+
+
+
+  getResult: function() {
+    return {changed: this.changedDeclarations, text: this.result};
+  },
+};
 
 
 
@@ -213,6 +992,12 @@ function parseSingleValue(value) {
   };
 }
 
+exports.escapeCSSComment = escapeCSSComment;
+
+exports._unescapeCSSComment = unescapeCSSComment;
 exports.parseDeclarations = parseDeclarations;
+
+exports._parseCommentDeclarations = parseCommentDeclarations;
+exports.RuleRewriter = RuleRewriter;
 exports.parsePseudoClassesAndAttributes = parsePseudoClassesAndAttributes;
 exports.parseSingleValue = parseSingleValue;
