@@ -851,13 +851,7 @@ OnSharedPreferenceChangeListener
                 } else if (PREFS_HOMEPAGE.equals(key)) {
                         String setUrl = GeckoSharedPrefs.forProfile(getBaseContext()).getString(PREFS_HOMEPAGE, AboutPages.HOME);
                         setHomePageSummary(pref, setUrl);
-                        pref.setOnPreferenceChangeListener(new OnPreferenceChangeListener() {
-                            @Override
-                            public boolean onPreferenceChange(final Preference preference, final Object newValue) {
-                                setHomePageSummary(pref, String.valueOf(newValue));
-                                return true;
-                            }
-                        });
+                        pref.setOnPreferenceChangeListener(this);
                 } else if (PREFS_FAQ_LINK.equals(key)) {
                     
                     final String VERSION = AppConstants.MOZ_APP_VERSION;
@@ -1175,6 +1169,10 @@ OnSharedPreferenceChangeListener
             
             
             return false;
+        }
+
+        if (PREFS_HOMEPAGE.equals(prefName)) {
+            setHomePageSummary(preference, String.valueOf(newValue));
         }
 
         if (PREFS_BROWSER_LOCALE.equals(prefName)) {
