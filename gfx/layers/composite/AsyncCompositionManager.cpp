@@ -40,6 +40,7 @@
 #endif
 #include "GeckoProfiler.h"
 #include "FrameUniformityData.h"
+#include "TreeTraversal.h"
 
 struct nsCSSValueSharedList;
 
@@ -734,6 +735,40 @@ ExpandRootClipRect(Layer* aLayer, const ScreenMargin& aFixedLayerMargins)
   }
 }
 
+#ifdef MOZ_ANDROID_APZ
+static void
+MoveScrollbarForLayerMargin(Layer* aRoot, FrameMetrics::ViewID aRootScrollId,
+                            const ScreenMargin& aFixedLayerMargins)
+{
+  
+  
+  
+  
+  Layer* scrollbar = BreadthFirstSearch(aRoot,
+    [aRootScrollId](Layer* aNode) {
+      return (aNode->GetScrollbarDirection() == Layer::HORIZONTAL &&
+              aNode->GetScrollbarTargetContainerId() == aRootScrollId);
+    });
+  if (scrollbar) {
+    
+    
+    
+    
+    
+    TranslateShadowLayer(scrollbar, gfxPoint(0, -aFixedLayerMargins.bottom), true);
+    if (scrollbar->GetParent()) {
+      
+      
+      
+      
+      
+      
+      ExpandRootClipRect(scrollbar->GetParent(), aFixedLayerMargins);
+    }
+  }
+}
+#endif
+
 bool
 AsyncCompositionManager::ApplyAsyncContentTransformToTree(Layer *aLayer,
                                                           bool* aOutFoundRoot)
@@ -805,6 +840,7 @@ AsyncCompositionManager::ApplyAsyncContentTransformToTree(Layer *aLayer,
             (aLayer->GetParent() == nullptr &&          
              i + 1 >= aLayer->GetFrameMetricsCount());
       if (*aOutFoundRoot) {
+        mRootScrollableId = metrics.GetScrollId();
         CSSToLayerScale geckoZoom = metrics.LayersPixelsPerCSSPixel().ToScaleFactor();
         if (mIsFirstPaint) {
           LayerIntPoint scrollOffsetLayerPixels = RoundedToInt(metrics.GetScrollOffset() * geckoZoom);
@@ -822,6 +858,7 @@ AsyncCompositionManager::ApplyAsyncContentTransformToTree(Layer *aLayer,
               geckoZoom * asyncTransformWithoutOverscroll.mScale,
               metrics.GetScrollableRect(), displayPort, geckoZoom, mLayersUpdated,
               mPaintSyncId, fixedLayerMargins);
+          mFixedLayerMargins = fixedLayerMargins;
           mLayersUpdated = false;
         }
         mIsFirstPaint = false;
@@ -1312,6 +1349,9 @@ AsyncCompositionManager::TransformShadowTree(TimeStamp aCurrentFrame,
     if (ApplyAsyncContentTransformToTree(root, &foundRoot)) {
 #if defined(MOZ_ANDROID_APZ)
       MOZ_ASSERT(foundRoot);
+      if (foundRoot && mFixedLayerMargins != ScreenMargin()) {
+        MoveScrollbarForLayerMargin(root, mRootScrollableId, mFixedLayerMargins);
+      }
 #endif
     } else {
       nsAutoTArray<Layer*,1> scrollableLayers;

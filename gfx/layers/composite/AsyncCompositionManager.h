@@ -227,6 +227,14 @@ private:
 
   gfx::Matrix mWorldTransform;
   LayerTransformRecorder mLayerTransformRecorder;
+
+#ifdef MOZ_ANDROID_APZ
+  
+  
+  
+  FrameMetrics::ViewID mRootScrollableId;
+  ScreenMargin mFixedLayerMargins;
+#endif
 };
 
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(AsyncCompositionManager::TransformsToSkip)
