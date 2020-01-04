@@ -19,7 +19,10 @@
 #ifndef wasm_h
 #define wasm_h
 
+#include "NamespaceImports.h"
+
 #include "gc/Rooting.h"
+#include "js/Class.h"
 
 namespace js {
 
@@ -46,10 +49,18 @@ static const uint64_t MappedSize = 2 * Uint32Range + PageSize;
 
 
 bool
-Eval(JSContext* cx, JS::Handle<ArrayBufferObject*> code,
-     JS::HandleObject importObj, JS::MutableHandleObject exportObj);
+Eval(JSContext* cx, Handle<ArrayBufferObject*> code, HandleObject importObj,
+     MutableHandleObject exportObj);
 
 }  
+
+
+
+extern const Class WasmClass;
+
+JSObject*
+InitWasmClass(JSContext* cx, HandleObject global);
+
 }  
 
 #endif 
