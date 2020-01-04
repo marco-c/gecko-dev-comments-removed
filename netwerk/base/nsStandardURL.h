@@ -149,7 +149,8 @@ protected:
     
     enum RefHandlingEnum {
         eIgnoreRef,
-        eHonorRef
+        eHonorRef,
+        eReplaceRef
     };
 
     
@@ -162,10 +163,12 @@ protected:
 
     
     nsresult CloneInternal(RefHandlingEnum aRefHandlingMode,
+                           const nsACString& newRef,
                            nsIURI** aClone);
     
     
     nsresult CopyMembers(nsStandardURL * source, RefHandlingEnum mode,
+                         const nsACString& newRef,
                          bool copyCached = false);
 
     

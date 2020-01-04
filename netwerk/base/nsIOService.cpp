@@ -624,6 +624,12 @@ nsIOService::NewURI(const nsACString &aSpec, const char *aCharset, nsIURI *aBase
         if (!aBaseURI)
             return NS_ERROR_MALFORMED_URI;
 
+        if (!aSpec.IsEmpty() && aSpec[0] == '#') {
+            
+            
+            return aBaseURI->CloneWithNewRef(aSpec, result);
+        }
+
         rv = aBaseURI->GetScheme(scheme);
         if (NS_FAILED(rv)) return rv;
     }

@@ -1310,7 +1310,7 @@ nsStandardURL::SetSpec(const nsACString &input)
 
     
     nsStandardURL prevURL(false,false);
-    prevURL.CopyMembers(this, eHonorRef);
+    prevURL.CopyMembers(this, eHonorRef, EmptyCString());
     Clear();
 
     if (IsSpecialProtocol(filteredURI)) {
@@ -1351,7 +1351,7 @@ nsStandardURL::SetSpec(const nsACString &input)
         Clear();
         
         
-        CopyMembers(&prevURL, eHonorRef);
+        CopyMembers(&prevURL, eHonorRef, EmptyCString());
         return rv;
     }
 
@@ -2041,18 +2041,25 @@ nsStandardURL::StartClone()
 NS_IMETHODIMP
 nsStandardURL::Clone(nsIURI **result)
 {
-    return CloneInternal(eHonorRef, result);
+    return CloneInternal(eHonorRef, EmptyCString(), result);
 }
 
 
 NS_IMETHODIMP
 nsStandardURL::CloneIgnoringRef(nsIURI **result)
 {
-    return CloneInternal(eIgnoreRef, result);
+    return CloneInternal(eIgnoreRef, EmptyCString(), result);
+}
+
+NS_IMETHODIMP
+nsStandardURL::CloneWithNewRef(const nsACString& newRef, nsIURI **result)
+{
+    return CloneInternal(eReplaceRef, newRef, result);
 }
 
 nsresult
 nsStandardURL::CloneInternal(nsStandardURL::RefHandlingEnum refHandlingMode,
+                             const nsACString& newRef,
                              nsIURI **result)
 
 {
@@ -2062,14 +2069,15 @@ nsStandardURL::CloneInternal(nsStandardURL::RefHandlingEnum refHandlingMode,
 
     
     
-    clone->CopyMembers(this, refHandlingMode, true);
+    clone->CopyMembers(this, refHandlingMode, newRef, true);
 
     clone.forget(result);
     return NS_OK;
 }
 
 nsresult nsStandardURL::CopyMembers(nsStandardURL * source,
-    nsStandardURL::RefHandlingEnum refHandlingMode, bool copyCached)
+    nsStandardURL::RefHandlingEnum refHandlingMode, const nsACString& newRef,
+    bool copyCached)
 {
     mSpec = source->mSpec;
     mDefaultPort = source->mDefaultPort;
@@ -2106,6 +2114,8 @@ nsresult nsStandardURL::CopyMembers(nsStandardURL * source,
 
     if (refHandlingMode == eIgnoreRef) {
         SetRef(EmptyCString());
+    } else if (refHandlingMode == eReplaceRef) {
+        SetRef(newRef);
     }
 
     return NS_OK;

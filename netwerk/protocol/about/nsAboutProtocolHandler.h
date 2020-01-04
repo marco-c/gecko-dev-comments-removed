@@ -70,7 +70,8 @@ public:
     
     
     
-    virtual nsSimpleURI* StartClone(RefHandlingEnum aRefHandlingMode);
+    virtual nsSimpleURI* StartClone(RefHandlingEnum aRefHandlingMode,
+                                    const nsACString& newRef);
     NS_IMETHOD Read(nsIObjectInputStream* aStream);
     NS_IMETHOD Write(nsIObjectOutputStream* aStream);
     NS_IMETHOD GetClassIDNoAlloc(nsCID *aClassIDNoAlloc);
