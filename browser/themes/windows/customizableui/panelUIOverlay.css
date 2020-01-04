@@ -223,9 +223,7 @@ menu.subviewbutton > .menu-right:-moz-locale-dir(rtl) {
   }
 
   #BMB_bookmarksPopup menupopup[placespopup=true] > hbox {
-    
-    
-    box-shadow: 0 0 4px rgba(0,0,0,0.02);
+    box-shadow: none;
     background: -moz-field;
     border: 1px solid ThreeDShadow;
   }
