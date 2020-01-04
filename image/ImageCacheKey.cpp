@@ -10,6 +10,10 @@
 #include "ImageURL.h"
 #include "nsHostObjectProtocolHandler.h"
 #include "nsString.h"
+#include "mozilla/dom/workers/ServiceWorkerManager.h"
+#include "nsIDOMDocument.h"
+#include "nsIDocument.h"
+#include "nsPrintfCString.h"
 
 namespace mozilla {
 
@@ -42,8 +46,9 @@ BlobSerial(ImageURL* aURI)
   return Nothing();
 }
 
-ImageCacheKey::ImageCacheKey(nsIURI* aURI)
+ImageCacheKey::ImageCacheKey(nsIURI* aURI, nsIDOMDocument* aDocument)
   : mURI(new ImageURL(aURI))
+  , mControlledDocument(GetControlledDocumentToken(aDocument))
   , mIsChrome(URISchemeIs(mURI, "chrome"))
 {
   MOZ_ASSERT(NS_IsMainThread());
@@ -52,11 +57,12 @@ ImageCacheKey::ImageCacheKey(nsIURI* aURI)
     mBlobSerial = BlobSerial(mURI);
   }
 
-  mHash = ComputeHash(mURI, mBlobSerial);
+  mHash = ComputeHash(mURI, mBlobSerial, mControlledDocument);
 }
 
-ImageCacheKey::ImageCacheKey(ImageURL* aURI)
+ImageCacheKey::ImageCacheKey(ImageURL* aURI, nsIDOMDocument* aDocument)
   : mURI(aURI)
+  , mControlledDocument(GetControlledDocumentToken(aDocument))
   , mIsChrome(URISchemeIs(mURI, "chrome"))
 {
   MOZ_ASSERT(aURI);
@@ -65,12 +71,13 @@ ImageCacheKey::ImageCacheKey(ImageURL* aURI)
     mBlobSerial = BlobSerial(mURI);
   }
 
-  mHash = ComputeHash(mURI, mBlobSerial);
+  mHash = ComputeHash(mURI, mBlobSerial, mControlledDocument);
 }
 
 ImageCacheKey::ImageCacheKey(const ImageCacheKey& aOther)
   : mURI(aOther.mURI)
   , mBlobSerial(aOther.mBlobSerial)
+  , mControlledDocument(aOther.mControlledDocument)
   , mHash(aOther.mHash)
   , mIsChrome(aOther.mIsChrome)
 { }
@@ -78,6 +85,7 @@ ImageCacheKey::ImageCacheKey(const ImageCacheKey& aOther)
 ImageCacheKey::ImageCacheKey(ImageCacheKey&& aOther)
   : mURI(Move(aOther.mURI))
   , mBlobSerial(Move(aOther.mBlobSerial))
+  , mControlledDocument(aOther.mControlledDocument)
   , mHash(aOther.mHash)
   , mIsChrome(aOther.mIsChrome)
 { }
@@ -85,6 +93,10 @@ ImageCacheKey::ImageCacheKey(ImageCacheKey&& aOther)
 bool
 ImageCacheKey::operator==(const ImageCacheKey& aOther) const
 {
+  
+  if (mControlledDocument != aOther.mControlledDocument) {
+    return false;
+  }
   if (mBlobSerial || aOther.mBlobSerial) {
     
     
@@ -104,11 +116,13 @@ ImageCacheKey::Spec() const
 
  uint32_t
 ImageCacheKey::ComputeHash(ImageURL* aURI,
-                           const Maybe<uint64_t>& aBlobSerial)
+                           const Maybe<uint64_t>& aBlobSerial,
+                           void* aControlledDocument)
 {
   
   
 
+  nsPrintfCString ptr("%p", aControlledDocument);
   if (aBlobSerial) {
     
     
@@ -117,13 +131,32 @@ ImageCacheKey::ComputeHash(ImageURL* aURI,
     
     nsAutoCString ref;
     aURI->GetRef(ref);
-    return HashGeneric(*aBlobSerial, HashString(ref));
+    return HashGeneric(*aBlobSerial, HashString(ref + ptr));
   }
 
   
   nsAutoCString spec;
   aURI->GetSpec(spec);
-  return HashString(spec);
+  return HashString(spec + ptr);
+}
+
+ void*
+ImageCacheKey::GetControlledDocumentToken(nsIDOMDocument* aDocument)
+{
+  
+  
+  
+  void* pointer = nullptr;
+  using dom::workers::ServiceWorkerManager;
+  RefPtr<ServiceWorkerManager> swm = ServiceWorkerManager::GetInstance();
+  nsCOMPtr<nsIDocument> doc = do_QueryInterface(aDocument);
+  if (doc && swm) {
+    ErrorResult rv;
+    if (swm->IsControlled(doc, rv)) {
+      pointer = doc;
+    }
+  }
+  return pointer;
 }
 
 } 

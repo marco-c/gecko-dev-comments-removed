@@ -52,6 +52,7 @@
 #include "nsIHttpChannelInternal.h"
 #include "nsILoadContext.h"
 #include "nsILoadGroupChild.h"
+#include "nsIDOMDocument.h"
 
 using namespace mozilla;
 using namespace mozilla::image;
@@ -1341,7 +1342,7 @@ imgLoader::FindEntryProperties(nsIURI* uri,
 {
   *_retval = nullptr;
 
-  ImageCacheKey key(uri);
+  ImageCacheKey key(uri, doc);
   imgCacheTable& cache = GetCache(key);
 
   RefPtr<imgCacheEntry> entry;
@@ -2087,7 +2088,8 @@ imgLoader::LoadImage(nsIURI* aURI,
   
   
   
-  ImageCacheKey key(aURI);
+  nsCOMPtr<nsIDOMDocument> doc = do_QueryInterface(aCX);
+  ImageCacheKey key(aURI, doc);
   imgCacheTable& cache = GetCache(key);
 
   if (cache.Get(key, getter_AddRefs(entry)) && entry) {
@@ -2311,7 +2313,8 @@ imgLoader::LoadImageWithChannel(nsIChannel* channel,
 
   nsCOMPtr<nsIURI> uri;
   channel->GetURI(getter_AddRefs(uri));
-  ImageCacheKey key(uri);
+  nsCOMPtr<nsIDOMDocument> doc = do_QueryInterface(aCX);
+  ImageCacheKey key(uri, doc);
 
   nsLoadFlags requestFlags = nsIRequest::LOAD_NORMAL;
   channel->GetLoadFlags(&requestFlags);
@@ -2405,7 +2408,7 @@ imgLoader::LoadImageWithChannel(nsIChannel* channel,
     
     
     
-    ImageCacheKey originalURIKey(originalURI);
+    ImageCacheKey originalURIKey(originalURI, doc);
 
     
     
