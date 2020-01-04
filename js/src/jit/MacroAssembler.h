@@ -668,6 +668,9 @@ class MacroAssembler : public MacroAssemblerSpecific
     inline void enterFakeExitFrame(enum ExitFrameTokenValues token);
 
     
+    inline void enterFakeExitFrameForNative(bool isConstructing);
+
+    
     inline void leaveExitFrame(size_t extraFrame = 0);
 
   private:

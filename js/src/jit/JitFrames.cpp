@@ -1361,11 +1361,14 @@ MarkJitExitFrame(JSTracer* trc, const JitFrameIterator& frame)
     
     
     
+    
     if (frame.isExitFrameLayout<NativeExitFrameLayout>()) {
         NativeExitFrameLayout* native = frame.exitFrame()->as<NativeExitFrameLayout>();
         size_t len = native->argc() + 2;
         Value* vp = native->vp();
         TraceRootRange(trc, len, vp, "ion-native-args");
+        if (frame.isExitFrameLayout<ConstructNativeExitFrameLayout>())
+            TraceRoot(trc, vp + len, "ion-native-new-target");
         return;
     }
 
