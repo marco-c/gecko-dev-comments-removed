@@ -210,7 +210,6 @@ loop.store = loop.store || {};
     
 
 
-
     _onRoomsRefresh: function() {
       this.dispatchAction(new sharedActions.UpdateRoomList({
         roomList: []
@@ -340,7 +339,7 @@ loop.store = loop.store || {};
     emailRoomUrl: function(actionData) {
       var from = actionData.from;
       loop.shared.utils.composeCallUrlEmail(actionData.roomUrl, null,
-        actionData.roomDescription, from);
+        actionData.roomDescription);
 
       var bucket = this._constants.SHARING_ROOM_URL["EMAIL_FROM_" + (from || "").toUpperCase()];
       if (typeof bucket === "undefined") {
@@ -387,9 +386,7 @@ loop.store = loop.store || {};
     
 
 
-
-
-    addSocialShareProvider: function(actionData) {
+    addSocialShareProvider: function() {
       loop.request("AddSocialShareProvider");
     },
 

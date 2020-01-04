@@ -398,8 +398,7 @@ var inChrome = typeof Components != "undefined" && "utils" in Components;
 
 
 
-
-  function composeCallUrlEmail(callUrl, recipient, contextDescription, from) {
+  function composeCallUrlEmail(callUrl, recipient, contextDescription) {
     if (!isDesktop()) {
       console.warn("composeCallUrlEmail isn't available for Loop standalone.");
       return;

@@ -694,7 +694,7 @@ loop.OTSdkDriver = (function() {
             }
           }.bind(this),
 
-          close: function(e) {
+          close: function() {
             
             console.log("Subscribed data channel closed!");
           }
@@ -714,9 +714,7 @@ loop.OTSdkDriver = (function() {
 
 
 
-
-
-    _onReadyForDataChannel: function(event) {
+    _onReadyForDataChannel: function() {
       
       
       if (!this._useDataChannels) {
@@ -734,7 +732,7 @@ loop.OTSdkDriver = (function() {
         this._publisherChannel = channel;
 
         channel.on({
-          close: function(e) {
+          close: function() {
             
             console.log("Published data channel closed!");
           }
@@ -994,9 +992,7 @@ loop.OTSdkDriver = (function() {
 
 
 
-
-
-    _onVideoEnabled: function(event) {
+    _onVideoEnabled: function() {
       var sdkSubscriberVideo = this._mockSubscribeEl.querySelector("video");
       if (!sdkSubscriberVideo) {
         console.error("sdkSubscriberVideo unexpectedly falsy!");
@@ -1014,9 +1010,7 @@ loop.OTSdkDriver = (function() {
 
 
 
-
-
-    _onVideoDisabled: function(event) {
+    _onVideoDisabled: function() {
       this.dispatcher.dispatch(new sharedActions.RemoteVideoStatus({
         videoEnabled: false
       }));
