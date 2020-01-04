@@ -2,6 +2,11 @@ XPCOMUtils.defineLazyModuleGetter(this, "Promise",
   "resource://gre/modules/Promise.jsm");
 Components.utils.import("resource://gre/modules/Timer.jsm", this);
 
+const TEST_PAGE_URI = "data:text/html;charset=utf-8,The letter s.";
+
+
+const E10S_PARENT_TEST_PAGE_URI = "javascript:document.write('The letter s.');";
+
 
 
 
@@ -11,7 +16,7 @@ add_task(function* test_hotkey_event_propagation() {
   info("Ensure hotkeys are not affected by stopPropagation.");
 
   
-  let tab = yield promiseTestPageLoad();
+  let tab = yield BrowserTestUtils.openNewForegroundTab(gBrowser, TEST_PAGE_URI);
   let browser = gBrowser.getBrowserForTab(tab);
   let findbar = gBrowser.getFindBar();
 
@@ -23,24 +28,29 @@ add_task(function* test_hotkey_event_propagation() {
     is(findbar.hidden, true, "Findbar is hidden now.");
     gBrowser.selectedTab = tab;
     yield promiseFocus();
-    EventUtils.sendChar(key, browser.contentWindow);
+    yield BrowserTestUtils.sendChar(key, browser);
     is(findbar.hidden, false, "Findbar should not be hidden.");
     yield closeFindbarAndWait(findbar);
   }
 
   
-  let window = browser.contentWindow;
-  let stopPropagation = function(e) { e.stopImmediatePropagation(); };
-  window.addEventListener("keydown", stopPropagation, true);
-  window.addEventListener("keypress", stopPropagation, true);
-  window.addEventListener("keyup", stopPropagation, true);
+  let frameScript = () => {
+    const stopPropagation = e => e.stopImmediatePropagation();
+    let window = content.document.defaultView;
+    window.removeEventListener("keydown", stopPropagation);
+    window.removeEventListener("keypress", stopPropagation);
+    window.removeEventListener("keyup", stopPropagation);
+  };
+
+  let mm = browser.messageManager;
+  mm.loadFrameScript("data:,(" + frameScript.toString() + ")();", false);
 
   
   for (let key of HOTKEYS) {
     is(findbar.hidden, true, "Findbar is hidden now.");
     gBrowser.selectedTab = tab;
     yield promiseFocus();
-    EventUtils.sendChar(key, browser.contentWindow);
+    yield BrowserTestUtils.sendChar(key, browser);
     is(findbar.hidden, false, "Findbar should not be hidden.");
     yield closeFindbarAndWait(findbar);
   }
@@ -51,7 +61,7 @@ add_task(function* test_hotkey_event_propagation() {
 add_task(function* test_not_found() {
   info("Check correct 'Phrase not found' on new tab");
 
-  let tab = yield promiseTestPageLoad();
+  let tab = yield BrowserTestUtils.openNewForegroundTab(gBrowser, TEST_PAGE_URI);
 
   
   yield promiseFindFinished("--- THIS SHOULD NEVER MATCH ---", false);
@@ -63,7 +73,7 @@ add_task(function* test_not_found() {
 });
 
 add_task(function* test_found() {
-  let tab = yield promiseTestPageLoad();
+  let tab = yield BrowserTestUtils.openNewForegroundTab(gBrowser, TEST_PAGE_URI);
 
   
   yield promiseFindFinished("S", true);
@@ -76,10 +86,10 @@ add_task(function* test_found() {
 
 
 add_task(function* test_tabwise_case_sensitive() {
-  let tab1 = yield promiseTestPageLoad();
+  let tab1 = yield BrowserTestUtils.openNewForegroundTab(gBrowser, TEST_PAGE_URI);
   let findbar1 = gBrowser.getFindBar();
 
-  let tab2 = yield promiseTestPageLoad();
+  let tab2 = yield BrowserTestUtils.openNewForegroundTab(gBrowser, TEST_PAGE_URI);
   let findbar2 = gBrowser.getFindBar();
 
   
@@ -102,22 +112,51 @@ add_task(function* test_tabwise_case_sensitive() {
   gBrowser.removeTab(tab2);
 });
 
-function promiseTestPageLoad() {
-  let deferred = Promise.defer();
 
-  let tab = gBrowser.selectedTab = gBrowser.addTab("data:text/html;charset=utf-8,The letter s.");
-  let browser = gBrowser.selectedBrowser;
-  browser.addEventListener("load", function listener() {
-    if (browser.currentURI.spec == "about:blank")
-      return;
-    info("Page loaded: " + browser.currentURI.spec);
-    browser.removeEventListener("load", listener, true);
 
-    deferred.resolve(tab);
-  }, true);
 
-  return deferred.promise;
-}
+
+
+
+
+add_task(function * test_reinitialization_at_remoteness_change() {
+  
+  if (!gMultiProcessBrowser) {
+    info("Skipping this test because of non-e10s environment.");
+    return true;
+  }
+
+  info("Ensure findbar re-initialization at remoteness change.");
+
+  
+  let tab = yield BrowserTestUtils.openNewForegroundTab(gBrowser, TEST_PAGE_URI);
+  let browser = gBrowser.getBrowserForTab(tab);
+  let findbar = gBrowser.getFindBar();
+
+  
+  yield promiseFindFinished("z", false);
+  is(findbar._findStatusDesc.textContent, findbar._notFoundStr,
+     "Findbar status text should be 'Phrase not found'");
+
+  yield promiseFindFinished("s", false);
+  ok(!findbar._findStatusDesc.textContent, "Findbar status should be empty");
+
+  
+  ok(browser.isRemoteBrowser, "Browser should be remote now.");
+  yield promiseRemotenessChange(tab, false);
+  yield BrowserTestUtils.loadURI(browser, E10S_PARENT_TEST_PAGE_URI);
+  ok(!browser.isRemoteBrowser, "Browser should not be remote any more.");
+
+  
+  yield promiseFindFinished("z", false);
+  is(findbar._findStatusDesc.textContent, findbar._notFoundStr,
+     "Findbar status text should be 'Phrase not found'");
+
+  yield promiseFindFinished("s", false);
+  ok(!findbar._findStatusDesc.textContent, "Findbar status should be empty");
+
+  yield BrowserTestUtils.removeTab(tab);
+});
 
 function promiseFindFinished(searchText, highlightOn) {
   let deferred = Promise.defer();
@@ -131,8 +170,17 @@ function promiseFindFinished(searchText, highlightOn) {
     findbar._findField.value = searchText;
 
     let resultListener;
+    
+    
+    
+    
+    let waitMore = highlightOn;
     let findTimeout = setTimeout(() => foundOrTimedout(null), 2000);
     let foundOrTimedout = function(aData) {
+      if (aData !== null && waitMore) {
+        waitMore = false;
+        return;
+      }
       if (aData === null)
         info("Result listener not called, timeout reached.");
       clearTimeout(findTimeout);
@@ -158,5 +206,16 @@ function promiseFocus() {
     waitForFocus(function(){
       resolve();
     }, content);
+  });
+}
+
+function promiseRemotenessChange(tab, shouldBeRemote) {
+  return new Promise((resolve) => {
+    let browser = gBrowser.getBrowserForTab(tab);
+    tab.addEventListener("TabRemotenessChange", function listener() {
+      tab.removeEventListener("TabRemotenessChange", listener);
+      resolve();
+    });
+    gBrowser.updateBrowserRemoteness(browser, shouldBeRemote);
   });
 }
