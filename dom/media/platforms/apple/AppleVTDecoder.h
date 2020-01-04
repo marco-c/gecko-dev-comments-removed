@@ -43,8 +43,7 @@ private:
   VTDecompressionSessionRef mSession;
 
   
-  nsresult ProcessDecode(MediaRawData* aSample) override;
-  nsresult DoDecode(MediaRawData* aSample);
+  nsresult DoDecode(MediaRawData* aSample) override;
   
   nsresult InitializeSession();
   nsresult WaitForAsynchronousFrames();
