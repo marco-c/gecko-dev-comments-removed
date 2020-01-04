@@ -258,7 +258,10 @@ Elf::Elf(std::ifstream &file)
                 segment->addSection(sections[j]);
         
         
-        assert(segment->getFileSize() == phdr.p_filesz);
+        
+        
+        unsigned int gold_adjustment = segment->getAddr() - phdr.p_vaddr;
+        assert(segment->getFileSize() == phdr.p_filesz - gold_adjustment);
         
         
         
@@ -267,7 +270,7 @@ Elf::Elf(std::ifstream &file)
             unsigned int align = segment->getAlign();
             memsize = (memsize + align - 1) & ~(align - 1);
         }
-        assert(memsize == phdr.p_memsz);
+        assert(memsize == phdr.p_memsz - gold_adjustment);
         segments.push_back(segment);
     }
 
