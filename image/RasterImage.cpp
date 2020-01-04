@@ -1679,9 +1679,9 @@ RasterImage::NotifyProgress(Progress aProgress,
   MOZ_ASSERT(NS_IsMainThread());
 
   
-  RefPtr<RasterImage> image(this);
+  RefPtr<RasterImage> image = this;
 
-  bool wasDefaultFlags = aSurfaceFlags == DefaultSurfaceFlags();
+  const bool wasDefaultFlags = aSurfaceFlags == DefaultSurfaceFlags();
 
   if (!aInvalidRect.IsEmpty() && wasDefaultFlags) {
     
