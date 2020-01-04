@@ -321,17 +321,12 @@ public:
 
 
 
-  bool GetUpgradeInsecureRequests() const
+  bool GetUpgradeInsecureRequests(bool aPreload) const
   {
+    if (aPreload) {
+      return mUpgradeInsecurePreloads;
+    }
     return mUpgradeInsecureRequests;
-  }
-
-  
-
-
-  bool GetUpgradeInsecurePreloads() const
-  {
-    return mUpgradeInsecurePreloads;
   }
 
   
