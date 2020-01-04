@@ -70,18 +70,13 @@ Reflect_apply(JSContext* cx, unsigned argc, Value* vp)
     }
 
     
-    FastInvokeGuard fig(cx, args.get(0));
+    FastCallGuard fig(cx, args.get(0));
     InvokeArgs& invokeArgs = fig.args();
     if (!InitArgsFromArrayLike(cx, args.get(2), &invokeArgs))
         return false;
-    invokeArgs.setCallee(args.get(0));
-    invokeArgs.setThis(args.get(1));
 
     
-    if (!fig.invoke(cx))
-        return false;
-    args.rval().set(invokeArgs.rval());
-    return true;
+    return fig.call(cx, args.get(0), args.get(1), args.rval());
 }
 
 

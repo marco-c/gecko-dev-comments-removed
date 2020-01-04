@@ -73,11 +73,6 @@ Invoke(JSContext* cx, const AnyInvokeArgs& args)
 }
 
 
-extern bool
-Invoke(JSContext* cx, const Value& thisv, const Value& fval, unsigned argc, const Value* argv,
-       MutableHandleValue rval);
-
-
 
 
 
