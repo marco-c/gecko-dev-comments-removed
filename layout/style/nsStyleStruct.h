@@ -1409,8 +1409,7 @@ struct nsStylePosition {
   
 
 
-
-  uint16_t ComputedAlignContent(const nsStyleDisplay* aDisplay) const;
+  uint16_t ComputedAlignContent() const { return mAlignContent; }
 
   
 
@@ -1462,9 +1461,6 @@ struct nsStylePosition {
   mozilla::StyleBoxSizing mBoxSizing;   
 private:
   friend class nsRuleNode;
-  
-  uint8_t MapLeftRightToStart(uint8_t aAlign, mozilla::LogicalAxis aAxis,
-                              const nsStyleDisplay* aDisplay) const;
 
   uint16_t      mAlignContent;          
   uint8_t       mAlignItems;            

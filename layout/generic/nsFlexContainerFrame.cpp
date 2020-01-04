@@ -3797,8 +3797,7 @@ nsFlexContainerFrame::DoFlexLayout(nsPresContext*           aPresContext,
   
   CrossAxisPositionTracker
     crossAxisPosnTracker(lines.getFirst(),
-                         aReflowState.mStylePosition->ComputedAlignContent(
-                           aReflowState.mStyleDisplay),
+                         aReflowState.mStylePosition->ComputedAlignContent(),
                          contentBoxCrossSize, isCrossSizeDefinite,
                          aAxisTracker);
 
