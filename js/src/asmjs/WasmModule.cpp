@@ -640,28 +640,35 @@ Module::sendCodeRangesToProfiler(JSContext* cx)
 #endif
 }
 
-void
-Module::setProfilingEnabled(bool enabled, JSContext* cx)
+bool
+Module::setProfilingEnabled(JSContext* cx, bool enabled)
 {
     MOZ_ASSERT(dynamicallyLinked_);
     MOZ_ASSERT(!activation());
 
     if (profilingEnabled_ == enabled)
-        return;
+        return true;
 
     
     
     
     
     if (enabled) {
-        funcLabels_.resize(funcNames_.length());
+        if (!funcLabels_.resize(funcNames_.length())) {
+            ReportOutOfMemory(cx);
+            return false;
+        }
         for (const CodeRange& codeRange : codeRanges_) {
             if (!codeRange.isFunction())
                 continue;
             unsigned lineno = codeRange.funcLineNumber();
             const char* name = funcNames_[codeRange.funcNameIndex()].get();
-            funcLabels_[codeRange.funcNameIndex()] =
-                UniqueChars(JS_smprintf("%s (%s:%u)", name, filename_.get(), lineno));
+            UniqueChars label(JS_smprintf("%s (%s:%u)", name, filename_.get(), lineno));
+            if (!label) {
+                ReportOutOfMemory(cx);
+                return false;
+            }
+            funcLabels_[codeRange.funcNameIndex()] = Move(label);
         }
     } else {
         funcLabels_.clear();
@@ -693,6 +700,7 @@ Module::setProfilingEnabled(bool enabled, JSContext* cx)
     }
 
     profilingEnabled_ = enabled;
+    return true;
 }
 
 Module::ImportExit&
@@ -1052,8 +1060,10 @@ Module::callExport(JSContext* cx, uint32_t exportIndex, CallArgs args)
     
     
     
-    if (profilingEnabled() != cx->runtime()->spsProfiler.enabled() && !activation())
-        setProfilingEnabled(cx->runtime()->spsProfiler.enabled(), cx);
+    if (profilingEnabled() != cx->runtime()->spsProfiler.enabled() && !activation()) {
+        if (!setProfilingEnabled(cx, cx->runtime()->spsProfiler.enabled()))
+            return false;
+    }
 
     
     
