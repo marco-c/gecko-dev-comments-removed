@@ -367,18 +367,19 @@ KeyframeEffectReadOnly::GetComputedTimingAt(
 }
 
 StickyTimeDuration
-KeyframeEffectReadOnly::ActiveDuration(const StickyTimeDuration& aIterationDuration,
-                                       double aIterationCount)
+KeyframeEffectReadOnly::ActiveDuration(
+  const StickyTimeDuration& aIterationDuration,
+  double aIterationCount)
 {
-  if (IsInfinite(aIterationCount)) {
-    
-    
-    
-    const StickyTimeDuration zeroDuration;
-    return aIterationDuration == zeroDuration ?
-           zeroDuration :
-           StickyTimeDuration::Forever();
+  
+  
+  
+  const StickyTimeDuration zeroDuration;
+  if (aIterationDuration == zeroDuration ||
+      aIterationCount == 0.0) {
+    return zeroDuration;
   }
+
   return aIterationDuration.MultDouble(aIterationCount);
 }
 
