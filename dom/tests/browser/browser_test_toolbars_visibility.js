@@ -1,7 +1,9 @@
 
 
 
-const CONTENT_PAGE = "http://www.example.com/browser/dom/tests/browser/test_new_window_from_content_child.html";
+const ROOT = "http://www.example.com/browser/dom/tests/browser/";
+const CONTENT_PAGE = ROOT + "test_new_window_from_content_child.html";
+const TARGET_PAGE = ROOT + "dummy.html";
 
 
 
@@ -199,7 +201,7 @@ add_task(function*() {
 add_task(function* () {
   
   let defaultWindowPromise = BrowserTestUtils.waitForNewWindow();
-  window.open("about:robots", "_blank");
+  window.open(TARGET_PAGE, "_blank");
   let defaultWindow = yield defaultWindowPromise;
 
   
@@ -209,7 +211,7 @@ add_task(function* () {
   
   let features = "location=no, personalbar=no, toolbar=no, scrollbars=no, menubar=no, status=no";
   let popupWindowPromise = BrowserTestUtils.waitForNewWindow();
-  window.open("about:robots", "_blank", features);
+  window.open(TARGET_PAGE, "_blank", features);
   let popupWindow = yield popupWindowPromise;
 
   
