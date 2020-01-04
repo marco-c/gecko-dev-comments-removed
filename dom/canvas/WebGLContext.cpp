@@ -119,6 +119,7 @@ WebGLContext::WebGLContext()
     , mBufferFetchingHasPerVertex(false)
     , mMaxFetchedVertices(0)
     , mMaxFetchedInstances(0)
+    , mLayerIsMirror(false)
     , mBypassShaderValidation(false)
     , mContextLossHandler(this)
     , mNeedsFakeNoAlpha(false)
@@ -1383,6 +1384,10 @@ WebGLContext::GetCanvasLayer(nsDisplayListBuilder* builder,
     canvasLayer->Updated();
 
     mResetLayer = false;
+    
+    
+    
+    mLayerIsMirror = aMirror;
 
     return canvasLayer.forget();
 }
@@ -2354,6 +2359,14 @@ WebGLContext::GetUnpackSize(bool isFunc3D, uint32_t width, uint32_t height,
 already_AddRefed<layers::SharedSurfaceTextureClient>
 WebGLContext::GetVRFrame()
 {
+    if (!mLayerIsMirror) {
+        
+
+
+
+        return nullptr;
+    }
+
     VRManagerChild* vrmc = VRManagerChild::Get();
     if (!vrmc) {
         return nullptr;
