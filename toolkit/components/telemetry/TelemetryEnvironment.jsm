@@ -88,8 +88,20 @@ this.TelemetryEnvironment = {
   RECORD_PREF_VALUE: 2, 
 
   
-  _watchPreferences: function(prefMap) {
+  testWatchPreferences: function(prefMap) {
     return getGlobal()._watchPreferences(prefMap);
+  },
+
+  
+
+
+
+
+
+
+
+  testReset: function() {
+    return getGlobal().reset();
   },
 };
 
@@ -1412,4 +1424,9 @@ EnvironmentCache.prototype = {
       }
     }
   },
+
+  reset: function () {
+    this._shutdown = false;
+    this._delayedInitFinished = false;
+  }
 };

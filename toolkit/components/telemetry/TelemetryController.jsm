@@ -135,29 +135,39 @@ this.TelemetryController = Object.freeze({
     PREF_LOG_DUMP: PREF_LOG_DUMP,
     PREF_SERVER: PREF_SERVER,
   }),
+
   
 
 
-  initLogging: function() {
+  testInitLogging: function() {
     configureLogging();
   },
+
   
 
 
-  reset: function() {
+  testReset: function() {
     return Impl.reset();
   },
+
   
 
 
-  setup: function() {
+  testSetup: function() {
     return Impl.setupTelemetry(true);
   },
 
   
 
 
-  setupContent: function() {
+  testShutdown: function() {
+    return Impl.shutdown();
+  },
+
+  
+
+
+  testSetupContent: function() {
     return Impl.setupContentTelemetry(true);
   },
 
@@ -296,13 +306,6 @@ this.TelemetryController = Object.freeze({
 
   get clientID() {
     return Impl.clientID;
-  },
-
-  
-
-
-  get shutdown() {
-    return Impl._shutdownBarrier.client;
   },
 
   
@@ -622,6 +625,9 @@ var Impl = {
 
 
 
+
+
+
   setupTelemetry: function setupTelemetry(testing) {
     this._initStarted = true;
     this._testMode = testing;
@@ -656,6 +662,10 @@ var Impl = {
 
     
     
+    TelemetrySession.earlyInit(this._testMode);
+
+    
+    
     
     
     this._clientID = ClientID.getCachedClientID();
@@ -675,6 +685,9 @@ var Impl = {
         
         this._clientID = yield ClientID.getClientID();
 
+        
+        yield TelemetrySession.delayedInit();
+        
         
         
         TelemetryStorage.runCleanPingArchiveTask();
@@ -713,6 +726,7 @@ var Impl = {
       this._log.trace("setupContentTelemetry - Content process recording disabled.");
       return;
     }
+    TelemetrySession.setupContent(testing);
   },
 
   
@@ -732,6 +746,8 @@ var Impl = {
 
       
       yield TelemetrySend.shutdown();
+
+      yield TelemetrySession.shutdown();
 
       
       yield this._shutdownBarrier.wait();
@@ -893,12 +909,22 @@ var Impl = {
     this._clientID = null;
     this._detachObservers();
 
+    yield TelemetrySession.testReset();
+
+    this._connectionsBarrier = new AsyncShutdown.Barrier(
+      "TelemetryController: Waiting for pending ping activity"
+    );
+    this._shutdownBarrier = new AsyncShutdown.Barrier(
+      "TelemetryController: Waiting for clients."
+    );
+
     
     
     let controllerSetup = this.setupTelemetry(true);
 
     yield TelemetrySend.reset();
     yield TelemetryStorage.reset();
+    yield TelemetryEnvironment.testReset();
 
     yield controllerSetup;
   }),

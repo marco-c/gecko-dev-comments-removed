@@ -628,7 +628,7 @@ this.TelemetrySession = Object.freeze({
   
 
 
-  reset: function() {
+  testReset: function() {
     Impl._sessionId = null;
     Impl._subsessionId = null;
     Impl._previousSessionId = null;
@@ -637,38 +637,43 @@ this.TelemetrySession = Object.freeze({
     Impl._profileSubsessionCounter = 0;
     Impl._subsessionStartActiveTicks = 0;
     Impl._subsessionStartTimeMonotonic = 0;
-    this.uninstall();
-    return this.setup();
+    this.testUninstall();
   },
   
 
 
-
-
-  shutdown: function(aForceSavePending = true) {
-    return Impl.shutdownChromeProcess(aForceSavePending);
+  shutdown: function() {
+    return Impl.shutdownChromeProcess();
   },
   
 
 
-  setup: function() {
-    return Impl.setupChromeProcess(true);
+  setupContent: function(testing = false) {
+    return Impl.setupContentProcess(testing);
   },
   
 
 
-  setupContent: function() {
-    return Impl.setupContentProcess(true);
-  },
-  
-
-
-  uninstall: function() {
+  testUninstall: function() {
     try {
       Impl.uninstall();
     } catch (ex) {
       
     }
+  },
+  
+
+
+  earlyInit: function(aTesting = false) {
+    return Impl.earlyInit(aTesting);
+  },
+  
+
+
+
+
+  delayedInit: function() {
+    return Impl.delayedInit();
   },
   
 
@@ -733,16 +738,14 @@ var Impl = {
   
   _delayedInitTask: null,
   
-  _delayedInitTaskDeferred: null,
-  
   _totalMemoryTimeout: undefined,
+  _testing: false,
   
   _totalMemory: null,
   
   _childrenToHearFrom: null,
   
   _nextTotalMemoryId: 1,
-  _testing: false,
 
 
   get _log() {
@@ -1399,24 +1402,20 @@ var Impl = {
   
 
 
-  setupChromeProcess: function setupChromeProcess(testing) {
+  earlyInit: function(testing) {
+    this._log.trace("earlyInit");
+
     this._initStarted = true;
-    this._log.trace("setupChromeProcess");
     this._testing = testing;
 
-    if (this._delayedInitTask) {
-      this._log.error("setupChromeProcess - init task already running");
-      return this._delayedInitTaskDeferred.promise;
-    }
-
     if (this._initialized && !testing) {
-      this._log.error("setupChromeProcess - already initialized");
-      return Promise.resolve();
+      this._log.error("earlyInit - already initialized");
+      return;
     }
 
     if (!Telemetry.canRecordBase && !testing) {
-      this._log.config("setupChromeProcess - Telemetry recording is disabled, skipping Chrome process setup.");
-      return Promise.resolve();
+      this._log.config("earlyInit - Telemetry recording is disabled, skipping Chrome process setup.");
+      return;
     }
 
     
@@ -1443,10 +1442,6 @@ var Impl = {
       Preferences.set(PREF_PREVIOUS_BUILDID, thisBuildID);
     }
 
-    TelemetryController.shutdown.addBlocker("TelemetrySession: shutting down",
-                                      () => this.shutdownChromeProcess(),
-                                      () => this._getState());
-
     Services.obs.addObserver(this, "sessionstore-windows-restored", false);
     if (AppConstants.platform === "android") {
       Services.obs.addObserver(this, "application-background", false);
@@ -1458,12 +1453,17 @@ var Impl = {
     ppml.addMessageListener(MESSAGE_TELEMETRY_PAYLOAD, this);
     ppml.addMessageListener(MESSAGE_TELEMETRY_THREAD_HANGS, this);
     ppml.addMessageListener(MESSAGE_TELEMETRY_USS, this);
+},
 
-    
-    
-    
-    this._delayedInitTaskDeferred = Promise.defer();
-    this._delayedInitTask = new DeferredTask(function* () {
+
+
+
+
+
+  delayedInit:function() {
+    this._log.trace("delayedInit");
+
+    this._delayedInitTask = Task.spawn(function* () {
       try {
         this._initialized = true;
 
@@ -1484,7 +1484,7 @@ var Impl = {
           
           
           
-          if (!testing) {
+          if (!this._testing) {
             yield this._saveAbortedSessionPing();
           }
 
@@ -1497,17 +1497,14 @@ var Impl = {
           TelemetryScheduler.init();
         }
 
-        this._delayedInitTaskDeferred.resolve();
-      } catch (e) {
-        this._delayedInitTaskDeferred.reject(e);
-      } finally {
         this._delayedInitTask = null;
-        this._delayedInitTaskDeferred = null;
+      } catch (e) {
+        this._delayedInitTask = null;
+        throw e;
       }
-    }.bind(this), testing ? TELEMETRY_TEST_DELAY : TELEMETRY_DELAY);
+    }.bind(this));
 
-    this._delayedInitTask.arm();
-    return this._delayedInitTaskDeferred.promise;
+    return this._delayedInitTask;
   },
 
   
@@ -1844,12 +1841,6 @@ var Impl = {
     }
 
     switch (aTopic) {
-    case "profile-after-change":
-      
-      return this.setupChromeProcess();
-    case "app-startup":
-      
-      return this.setupContentProcess();
     case "content-child-shutdown":
       
       Services.obs.removeObserver(this, "content-child-shutdown");
@@ -1927,10 +1918,8 @@ var Impl = {
   
 
 
-
-
-  shutdownChromeProcess: function(testing = false) {
-    this._log.trace("shutdownChromeProcess - testing: " + testing);
+  shutdownChromeProcess: function() {
+    this._log.trace("shutdownChromeProcess");
 
     let cleanup = () => {
       if (IS_UNIFIED_TELEMETRY) {
@@ -1960,7 +1949,6 @@ var Impl = {
     
     
     
-    
 
     
     if (!this._initStarted) {
@@ -1973,8 +1961,8 @@ var Impl = {
       return cleanup();
      }
 
-    
-    return this._delayedInitTask.finalize().then(cleanup);
+     
+     return this._delayedInitTask.then(cleanup);
    },
 
   

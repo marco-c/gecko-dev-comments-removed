@@ -447,6 +447,13 @@ this.TelemetryStorage = {
   _testGetArchivedPingDataFromFileName: function(aFileName) {
     return TelemetryStorageImpl._getArchivedPingDataFromFileName(aFileName);
   },
+
+  
+
+
+  testClearPendingPings: function() {
+    return TelemetryStorageImpl.runRemovePendingPingsTask();
+  }
 };
 
 
