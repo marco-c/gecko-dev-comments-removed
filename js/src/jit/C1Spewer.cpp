@@ -4,7 +4,7 @@
 
 
 
-#ifdef JS_JITSPEW
+#ifdef DEBUG
 
 #include "jit/C1Spewer.h"
 

@@ -7,7 +7,7 @@
 #ifndef jit_C1Spewer_h
 #define jit_C1Spewer_h
 
-#ifdef JS_JITSPEW
+#ifdef DEBUG
 
 #include "NamespaceImports.h"
 

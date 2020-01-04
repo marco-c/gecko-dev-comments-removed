@@ -287,7 +287,7 @@ CollectInterpreterStackScripts(JSContext* cx, const Debugger::ExecutionObservabl
     return true;
 }
 
-#ifdef JS_JITSPEW
+#ifdef DEBUG
 static const char*
 ICEntryKindToString(ICEntry::Kind kind)
 {

@@ -688,7 +688,7 @@ class MDefinition : public MNode
         uses_.remove(use);
     }
 
-#if defined(DEBUG) || defined(JS_JITSPEW)
+#ifdef DEBUG
     
     
     
