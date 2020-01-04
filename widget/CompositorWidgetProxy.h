@@ -24,6 +24,7 @@ class Composer2D;
 } 
 namespace gfx {
 class DrawTarget;
+class SourceSurface;
 } 
 namespace widget {
 
@@ -182,9 +183,17 @@ public:
 
 
   virtual already_AddRefed<gfx::DrawTarget>
-  CreateBackBufferDrawTarget(gfx::DrawTarget* aScreenTarget,
-                             const LayoutDeviceIntRect& aRect,
-                             const LayoutDeviceIntRect& aClearRect);
+  GetBackBufferDrawTarget(gfx::DrawTarget* aScreenTarget,
+                          const LayoutDeviceIntRect& aRect,
+                          const LayoutDeviceIntRect& aClearRect);
+
+  
+
+
+
+
+
+  virtual already_AddRefed<gfx::SourceSurface> EndBackBufferDrawing();
 
   
 
@@ -198,7 +207,6 @@ public:
 protected:
   virtual ~CompositorWidgetProxy();
 
-private:
   
   RefPtr<gfx::DrawTarget> mLastBackBuffer;
 };
