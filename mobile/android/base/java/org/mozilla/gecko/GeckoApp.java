@@ -1149,6 +1149,9 @@ public abstract class GeckoApp
         GeckoAppShell.setContextGetter(this);
         GeckoAppShell.setApplicationContext(getApplicationContext());
         GeckoAppShell.setGeckoInterface(this);
+        
+        
+        GeckoAppShell.setNotificationClient(makeNotificationClient());
 
         Tabs.getInstance().attachToContext(this);
         try {
@@ -1422,7 +1425,6 @@ public abstract class GeckoApp
             }
         });
 
-        GeckoAppShell.setNotificationClient(makeNotificationClient());
         IntentHelper.init(this);
     }
 
