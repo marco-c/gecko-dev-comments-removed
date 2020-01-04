@@ -1472,6 +1472,82 @@ ContentEventHandler::GetFirstFrameHavingFlatTextInRange(nsRange* aRange)
   return FrameAndNodeOffset(firstFrame, nodePosition.mOffset);
 }
 
+ContentEventHandler::FrameRelativeRect
+ContentEventHandler::GetLineBreakerRectBefore(nsIFrame* aFrame)
+{
+  
+  
+  MOZ_ASSERT(ShouldBreakLineBefore(aFrame->GetContent(), mRootContent));
+
+  nsIFrame* frameForFontMetrics = aFrame;
+
+  
+  
+  
+  if (aFrame->GetType() != nsGkAtoms::brFrame && aFrame->GetParent()) {
+    frameForFontMetrics = aFrame->GetParent();
+  }
+
+  
+  
+  
+  
+
+  FrameRelativeRect result(aFrame);
+
+  RefPtr<nsFontMetrics> fontMetrics =
+    nsLayoutUtils::GetInflatedFontMetricsForFrame(frameForFontMetrics);
+  if (NS_WARN_IF(!fontMetrics)) {
+    return FrameRelativeRect();
+  }
+
+  const WritingMode kWritingMode = frameForFontMetrics->GetWritingMode();
+  nscoord baseline = aFrame->GetCaretBaseline();
+  if (kWritingMode.IsVertical()) {
+    if (kWritingMode.IsLineInverted()) {
+      result.mRect.x = baseline - fontMetrics->MaxDescent();
+    } else {
+      result.mRect.x = baseline - fontMetrics->MaxAscent();
+    }
+    result.mRect.width = fontMetrics->MaxHeight();
+  } else {
+    result.mRect.y = baseline - fontMetrics->MaxAscent();
+    result.mRect.height = fontMetrics->MaxHeight();
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (aFrame->GetType() != nsGkAtoms::brFrame) {
+    if (kWritingMode.IsVertical()) {
+      if (kWritingMode.IsLineInverted()) {
+        
+        result.mRect.x = 0;
+      } else {
+        
+        result.mRect.x = aFrame->GetRect().XMost() - result.mRect.width;
+      }
+      result.mRect.y = -mPresContext->AppUnitsPerDevPixel();
+    } else {
+      
+      result.mRect.x = -mPresContext->AppUnitsPerDevPixel();
+      result.mRect.y = 0;
+    }
+  }
+  return result;
+}
+
 nsresult
 ContentEventHandler::OnQueryTextRectArray(WidgetQueryContentEvent* aEvent)
 {
@@ -1481,6 +1557,8 @@ ContentEventHandler::OnQueryTextRectArray(WidgetQueryContentEvent* aEvent)
   }
 
   LineBreakType lineBreakType = GetLineBreakType(aEvent);
+  const uint32_t kBRLength = GetBRLength(lineBreakType);
+
   RefPtr<nsRange> range = new nsRange(mRootContent);
 
   LayoutDeviceIntRect rect;
@@ -1494,8 +1572,16 @@ ContentEventHandler::OnQueryTextRectArray(WidgetQueryContentEvent* aEvent)
     }
 
     
+    
+
+    
     FrameAndNodeOffset firstFrame = GetFirstFrameHavingFlatTextInRange(range);
     if (NS_WARN_IF(!firstFrame.IsValid())) {
+      return NS_ERROR_FAILURE;
+    }
+
+    nsIContent* firstContent = firstFrame.mFrame->GetContent();
+    if (NS_WARN_IF(!firstContent)) {
       return NS_ERROR_FAILURE;
     }
 
@@ -1507,13 +1593,25 @@ ContentEventHandler::OnQueryTextRectArray(WidgetQueryContentEvent* aEvent)
     }
 
     AutoTArray<nsRect, 16> charRects;
-    rv = firstFrame->GetCharacterRectsInRange(firstFrame.mStartOffsetInNode,
-                                              kEndOffset - offset, charRects);
-    if (NS_WARN_IF(NS_FAILED(rv)) || NS_WARN_IF(charRects.IsEmpty())) {
-      return rv;
+
+    bool isLineBreaker = ShouldBreakLineBefore(firstContent, mRootContent);
+    if (isLineBreaker) {
+      
+      
+      
+      FrameRelativeRect brRect = GetLineBreakerRectBefore(firstFrame);
+      charRects.AppendElement(brRect.RectRelativeTo(firstFrame));
+    } else {
+      rv = firstFrame->GetCharacterRectsInRange(firstFrame.mStartOffsetInNode,
+                                                kEndOffset - offset, charRects);
+      if (NS_WARN_IF(NS_FAILED(rv)) || NS_WARN_IF(charRects.IsEmpty())) {
+        
+        
+        return rv;
+      }
     }
 
-    for (size_t i = 0; i < charRects.Length(); i++) {
+    for (size_t i = 0; i < charRects.Length() && offset < kEndOffset; i++) {
       nsRect charRect = charRects[i];
       charRect.x += frameRect.x;
       charRect.y += frameRect.y;
@@ -1524,6 +1622,25 @@ ContentEventHandler::OnQueryTextRectArray(WidgetQueryContentEvent* aEvent)
       
       EnsureNonEmptyRect(rect);
 
+      aEvent->mReply.mRectArray.AppendElement(rect);
+      offset++;
+
+      
+      
+      if (!isLineBreaker || kBRLength == 1) {
+        continue;
+      }
+
+      MOZ_ASSERT(kBRLength == 2);
+
+      
+      
+      if (offset == kEndOffset) {
+        break;
+      }
+
+      
+      
       aEvent->mReply.mRectArray.AppendElement(rect);
       offset++;
     }
@@ -2293,6 +2410,34 @@ ContentEventHandler::OnSelectionEvent(WidgetSelectionEvent* aEvent)
     false, nsIPresShell::ScrollAxis(), nsIPresShell::ScrollAxis());
   aEvent->mSucceeded = true;
   return NS_OK;
+}
+
+nsRect
+ContentEventHandler::FrameRelativeRect::RectRelativeTo(
+                                          nsIFrame* aDestFrame) const
+{
+  if (!mBaseFrame || NS_WARN_IF(!aDestFrame)) {
+    return nsRect();
+  }
+
+  if (NS_WARN_IF(aDestFrame->PresContext() != mBaseFrame->PresContext())) {
+    return nsRect();
+  }
+
+  if (aDestFrame == mBaseFrame) {
+    return mRect;
+  }
+
+  nsIFrame* rootFrame = mBaseFrame->PresContext()->PresShell()->GetRootFrame();
+  nsRect baseFrameRectInRootFrame =
+    nsLayoutUtils::TransformFrameRectToAncestor(mBaseFrame, nsRect(),
+                                                rootFrame);
+  nsRect destFrameRectInRootFrame =
+    nsLayoutUtils::TransformFrameRectToAncestor(aDestFrame, nsRect(),
+                                                rootFrame);
+  nsPoint difference =
+    destFrameRectInRootFrame.TopLeft() - baseFrameRectInRootFrame.TopLeft();
+  return mRect - difference;
 }
 
 } 

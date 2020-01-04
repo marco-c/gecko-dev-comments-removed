@@ -342,6 +342,40 @@ protected:
   
   FrameAndNodeOffset GetFirstFrameHavingFlatTextInRange(nsRange* aRange);
 
+  struct MOZ_STACK_CLASS FrameRelativeRect final
+  {
+    
+    nsRect mRect;
+    nsIFrame* mBaseFrame;
+
+    FrameRelativeRect()
+      : mBaseFrame(nullptr)
+    {
+    }
+
+    explicit FrameRelativeRect(nsIFrame* aBaseFrame)
+      : mBaseFrame(aBaseFrame)
+    {
+    }
+
+    FrameRelativeRect(const nsRect& aRect, nsIFrame* aBaseFrame)
+      : mRect(aRect)
+      , mBaseFrame(aBaseFrame)
+    {
+    }
+
+    bool IsValid() const { return mBaseFrame != nullptr; }
+
+    
+    nsRect RectRelativeTo(nsIFrame* aBaseFrame) const;
+  };
+
+  
+  
+  
+  
+  FrameRelativeRect GetLineBreakerRectBefore(nsIFrame* aFrame);
+
   
   
   
