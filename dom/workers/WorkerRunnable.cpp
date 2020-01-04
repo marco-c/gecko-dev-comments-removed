@@ -327,7 +327,6 @@ WorkerRunnable::Run()
     maybeJSAPI->Init();
     jsapi = maybeJSAPI.ptr();
     cx = jsapi->cx();
-    jsapi->TakeOwnershipOfErrorReporting();
   }
 
   

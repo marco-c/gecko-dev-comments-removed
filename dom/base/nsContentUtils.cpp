@@ -6492,10 +6492,6 @@ nsContentUtils::IsPatternMatching(nsAString& aValue, nsAString& aPattern,
 
   
   
-  jsapi.TakeOwnershipOfErrorReporting();
-
-  
-  
   JSAutoCompartment ac(cx, xpc::UnprivilegedJunkScope());
 
   

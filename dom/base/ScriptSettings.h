@@ -268,13 +268,6 @@ public:
   bool CxPusherIsStackTop() const { return mCxPusher->IsStackTop(); }
 
   
-  
-  
-  
-  void TakeOwnershipOfErrorReporting();
-  bool OwnsErrorReporting() { return true; }
-  
-  
   void ReportException();
 
   bool HasException() const {
