@@ -6,6 +6,7 @@
 
 
 #include "ds/TraceableFifo.h"
+#include "gc/Policy.h"
 #include "js/GCHashTable.h"
 #include "js/GCVector.h"
 #include "js/RootingAPI.h"

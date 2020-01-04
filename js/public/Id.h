@@ -1,24 +1,24 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
+ * vim: set ts=8 sts=4 et sw=4 tw=99:
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef js_Id_h
 #define js_Id_h
 
-
-
-
-
-
-
-
-
-
-
-
-
+// A jsid is an identifier for a property or method of an object which is
+// either a 31-bit unsigned integer, interned string or symbol.
+//
+// Also, there is an additional jsid value, JSID_VOID, which does not occur in
+// JS scripts but may be used to indicate the absence of a valid jsid.  A void
+// jsid is not a valid id and only arises as an exceptional API return value,
+// such as in JS_NextProperty. Embeddings must not pass JSID_VOID into JSAPI
+// entry points expecting a jsid and do not need to handle JSID_VOID in hooks
+// receiving a jsid except when explicitly noted in the API contract.
+//
+// A jsid is not implicitly convertible to or from a Value; JS_ValueToId or
+// JS_IdToValue must be used instead.
 
 #include "jstypes.h"
 
@@ -41,8 +41,8 @@ struct jsid
 #define JSID_TYPE_SYMBOL                 0x4
 #define JSID_TYPE_MASK                   0x7
 
-
-
+// Avoid using canonical 'id' for jsid parameters since this is a magic word in
+// Objective-C++ which, apparently, wants to be able to #include jsapi.h.
 #define id iden
 
 static MOZ_ALWAYS_INLINE bool
@@ -58,13 +58,13 @@ JSID_TO_STRING(jsid id)
     return (JSString*)JSID_BITS(id);
 }
 
-
-
-
-
-
-
-
+/**
+ * Only JSStrings that have been interned via the JSAPI can be turned into
+ * jsids by API clients.
+ *
+ * N.B. if a jsid is backed by a string which has not been interned, that
+ * string must be appropriately rooted to avoid being collected by the GC.
+ */
 JS_PUBLIC_API(jsid)
 INTERNED_STRING_TO_JSID(JSContext* cx, JSString* str);
 
@@ -172,6 +172,9 @@ template <>
 struct GCPolicy<jsid>
 {
     static jsid initial() { return JSID_VOID; }
+    static void trace(JSTracer* trc, jsid* idp, const char* name) {
+        js::UnsafeTraceManuallyBarrieredEdge(trc, idp, name);
+    }
 };
 
 template <>
@@ -180,8 +183,8 @@ struct BarrierMethods<jsid>
     static void postBarrier(jsid* idp, jsid prev, jsid next) {}
 };
 
-
-
+// If the jsid is a GC pointer type, convert to that type and call |f| with
+// the pointer. If the jsid is not a GC type, calls F::defaultValue.
 template <typename F, typename... Args>
 auto
 DispatchTyped(F f, jsid& id, Args&&... args)
@@ -197,6 +200,6 @@ DispatchTyped(F f, jsid& id, Args&&... args)
 
 #undef id
 
-} 
+} // namespace js
 
-#endif 
+#endif /* js_Id_h */

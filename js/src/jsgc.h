@@ -52,51 +52,6 @@ enum State {
 };
 
 
-#define FOR_EACH_PUBLIC_GC_POINTER_TYPE(D) \
-    D(JS::Symbol*) \
-    D(JSAtom*) \
-    D(JSFunction*) \
-    D(JSObject*) \
-    D(JSScript*) \
-    D(JSString*) \
-    D(JS::Value) \
-    D(jsid)
-
-
-#define FOR_EACH_GC_POINTER_TYPE(D) \
-    FOR_EACH_PUBLIC_GC_POINTER_TYPE(D) \
-    D(AccessorShape*) \
-    D(BaseShape*) \
-    D(UnownedBaseShape*) \
-    D(jit::JitCode*) \
-    D(NativeObject*) \
-    D(ArrayObject*) \
-    D(ArgumentsObject*) \
-    D(ArrayBufferObject*) \
-    D(ArrayBufferObjectMaybeShared*) \
-    D(ArrayBufferViewObject*) \
-    D(DebugScopeObject*) \
-    D(GlobalObject*) \
-    D(ModuleObject*) \
-    D(ModuleEnvironmentObject*) \
-    D(ModuleNamespaceObject*) \
-    D(NestedScopeObject*) \
-    D(PlainObject*) \
-    D(SavedFrame*) \
-    D(ScopeObject*) \
-    D(ScriptSourceObject*) \
-    D(SharedArrayBufferObject*) \
-    D(ImportEntryObject*) \
-    D(ExportEntryObject*) \
-    D(LazyScript*) \
-    D(Shape*) \
-    D(JSFlatString*) \
-    D(JSLinearString*) \
-    D(PropertyName*) \
-    D(js::ObjectGroup*) \
-    D(TaggedProto)
-
-
 template <typename T> struct MapTypeToFinalizeKind {};
 template <> struct MapTypeToFinalizeKind<JSScript>          { static const AllocKind kind = AllocKind::SCRIPT; };
 template <> struct MapTypeToFinalizeKind<LazyScript>        { static const AllocKind kind = AllocKind::LAZY_SCRIPT; };

@@ -7,6 +7,7 @@
 #ifndef GCHashTable_h
 #define GCHashTable_h
 
+#include "js/GCPolicyAPI.h"
 #include "js/HashTable.h"
 #include "js/RootingAPI.h"
 #include "js/TracingAPI.h"
@@ -17,7 +18,7 @@ namespace js {
 template <typename Key, typename Value>
 struct DefaultMapSweepPolicy {
     static bool needsSweep(Key* key, Value* value) {
-        return DefaultGCPolicy<Key>::needsSweep(key) || DefaultGCPolicy<Value>::needsSweep(value);
+        return GCPolicy<Key>::needsSweep(key) || GCPolicy<Value>::needsSweep(value);
     }
 };
 
@@ -61,8 +62,8 @@ class GCHashMap : public HashMap<Key, Value, HashPolicy, AllocPolicy>,
         if (!this->initialized())
             return;
         for (typename Base::Enum e(*this); !e.empty(); e.popFront()) {
-            DefaultGCPolicy<Value>::trace(trc, &e.front().value(), "hashmap value");
-            DefaultGCPolicy<Key>::trace(trc, &e.front().mutableKey(), "hashmap key");
+            GCPolicy<Value>::trace(trc, &e.front().value(), "hashmap value");
+            GCPolicy<Key>::trace(trc, &e.front().mutableKey(), "hashmap key");
         }
     }
 
@@ -238,14 +239,14 @@ class GCHashSet : public HashSet<T, HashPolicy, AllocPolicy>,
         if (!this->initialized())
             return;
         for (typename Base::Enum e(*this); !e.empty(); e.popFront())
-            DefaultGCPolicy<T>::trace(trc, &e.mutableFront(), "hashset element");
+            GCPolicy<T>::trace(trc, &e.mutableFront(), "hashset element");
     }
 
     void sweep() {
         if (!this->initialized())
             return;
         for (typename Base::Enum e(*this); !e.empty(); e.popFront()) {
-            if (DefaultGCPolicy<T>::needsSweep(&e.mutableFront()))
+            if (GCPolicy<T>::needsSweep(&e.mutableFront()))
                 e.removeFront();
         }
     }
