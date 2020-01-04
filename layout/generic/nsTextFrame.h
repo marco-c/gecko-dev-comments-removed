@@ -393,7 +393,8 @@ public:
   void PaintText(nsRenderingContext* aRenderingContext, nsPoint aPt,
                  const nsRect& aDirtyRect, const nsCharClipDisplayItem& aItem,
                  gfxTextContextPaint* aContextPaint = nullptr,
-                 DrawPathCallbacks* aCallbacks = nullptr);
+                 DrawPathCallbacks* aCallbacks = nullptr,
+                 float aOpacity = 1.0f);
   
   
   
