@@ -4,7 +4,7 @@
 
 function test() {
   waitForExplicitFinish();
-  gBrowser.selectedTab = gBrowser.addTab("data:text/html,<iframe width='700' height='700' src='about:certerror'></iframe>");
+  gBrowser.selectedTab = gBrowser.addTab("data:text/html,<iframe width='700' height='700' src='about:certerror?e=nssBadCert&u='></iframe>");
   
   BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser).then(testIframeCert);
 }
@@ -12,7 +12,7 @@ function test() {
 function testIframeCert(e) {
   
   var doc = gBrowser.contentDocument.getElementsByTagName('iframe')[0].contentDocument;
-  var aP = doc.getElementById("advancedPanel");
+  var aP = doc.getElementById("badCertAdvancedPanel");
   ok(aP, "Advanced content should exist");
   is_element_hidden(aP, "Advanced content should not be visible by default")
 
