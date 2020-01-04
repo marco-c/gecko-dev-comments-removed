@@ -689,8 +689,7 @@ nsScriptLoader::CreateModuleScript(nsModuleLoadRequest* aRequest)
   }
 
   nsAutoMicroTask mt;
-  AutoEntryScript aes(globalObject, "CompileModule", true,
-                      context->GetNativeContext());
+  AutoEntryScript aes(globalObject, "CompileModule", true);
 
   bool oldProcessingScriptTag = context->GetProcessingScriptTag();
   context->SetProcessingScriptTag(true);
@@ -1978,8 +1977,7 @@ nsScriptLoader::EvaluateScript(nsScriptLoadRequest* aRequest)
   
   
   nsAutoMicroTask mt;
-  AutoEntryScript aes(globalObject, "<script> element", true,
-                      context->GetNativeContext());
+  AutoEntryScript aes(globalObject, "<script> element", true);
   JS::Rooted<JSObject*> global(aes.cx(),
                                globalObject->GetGlobalJSObject());
 

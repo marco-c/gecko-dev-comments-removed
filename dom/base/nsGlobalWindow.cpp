@@ -12272,7 +12272,7 @@ nsGlobalWindow::RunTimeoutHandler(nsTimeout* aTimeout,
     
     
     nsAutoMicroTask mt;
-    AutoEntryScript aes(this, reason, true, aScx->GetNativeContext());
+    AutoEntryScript aes(this, reason, true);
     JS::CompileOptions options(aes.cx());
     options.setFileAndLine(filename, lineNo)
            .setVersion(JSVERSION_DEFAULT);
