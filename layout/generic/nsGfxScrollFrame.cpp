@@ -2743,25 +2743,29 @@ ScrollFrameHelper::ScrollToImpl(nsPoint aPt, const nsRect& aRange, nsIAtom* aOri
         usingDisplayPort, displayPort.IsEqualEdges(oldDisplayPort),
         mScrollableByAPZ, HasPluginFrames());
     if (usingDisplayPort && displayPort.IsEqualEdges(oldDisplayPort)) {
-      if (LastScrollOrigin() == nsGkAtoms::apz) {
-        schedulePaint = false;
-        PAINT_SKIP_LOG("Skipping due to APZ scroll\n");
-      } else if (mScrollableByAPZ && !HasPluginFrames()) {
-        nsIWidget* widget = presContext->GetNearestWidget();
-        LayerManager* manager = widget ? widget->GetLayerManager() : nullptr;
-        if (manager) {
-          mozilla::layers::FrameMetrics::ViewID id;
-          DebugOnly<bool> success = nsLayoutUtils::FindIDFor(content, &id);
-          MOZ_ASSERT(success); 
-
-          
-          
-          
+      bool haveScrollLinkedEffects = content->GetComposedDoc()->HasScrollLinkedEffect();
+      bool apzDisabled = haveScrollLinkedEffects && gfxPrefs::APZDisableForScrollLinkedEffects();
+      if (!apzDisabled) {
+        if (LastScrollOrigin() == nsGkAtoms::apz) {
           schedulePaint = false;
-          manager->SetPendingScrollUpdateForNextTransaction(id,
-              { mScrollGeneration, CSSPoint::FromAppUnits(GetScrollPosition()) });
-          mOuter->SchedulePaint(nsIFrame::PAINT_COMPOSITE_ONLY);
-          PAINT_SKIP_LOG("Skipping due to APZ-forwarded main-thread scroll\n");
+          PAINT_SKIP_LOG("Skipping due to APZ scroll\n");
+        } else if (mScrollableByAPZ && !HasPluginFrames()) {
+          nsIWidget* widget = presContext->GetNearestWidget();
+          LayerManager* manager = widget ? widget->GetLayerManager() : nullptr;
+          if (manager) {
+            mozilla::layers::FrameMetrics::ViewID id;
+            DebugOnly<bool> success = nsLayoutUtils::FindIDFor(content, &id);
+            MOZ_ASSERT(success); 
+
+            
+            
+            
+            schedulePaint = false;
+            manager->SetPendingScrollUpdateForNextTransaction(id,
+                { mScrollGeneration, CSSPoint::FromAppUnits(GetScrollPosition()) });
+            mOuter->SchedulePaint(nsIFrame::PAINT_COMPOSITE_ONLY);
+            PAINT_SKIP_LOG("Skipping due to APZ-forwarded main-thread scroll\n");
+          }
         }
       }
     }
