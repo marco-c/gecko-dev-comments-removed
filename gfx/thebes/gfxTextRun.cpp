@@ -1649,13 +1649,19 @@ gfxFontGroup::AddPlatformFont(const nsAString& aName,
     }
 
     
+    gfxPlatformFontList* fontList = gfxPlatformFontList::PlatformFontList();
     if (!family) {
-        gfxPlatformFontList* fontList = gfxPlatformFontList::PlatformFontList();
         family = fontList->FindFamily(aName, &mStyle, mDevToCssSize);
     }
 
     if (family) {
         aFamilyList.AppendElement(family);
+        
+        
+        if (family->LinkedSystemFamily()) {
+            fontList->AppendLinkedSystemFamilies(mStyle.language,
+                                                 aFamilyList);
+        }
     }
 }
 
