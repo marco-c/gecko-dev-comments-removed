@@ -461,24 +461,30 @@ WebContentConverterRegistrar.prototype = {
 
     
     
+    let haveWindow = aWindowOrBrowser &&
+                     (aWindowOrBrowser instanceof Ci.nsIDOMWindow);
+    let uri;
+    if (haveWindow) {
+      uri = Utils.checkAndGetURI(aURIString, aWindowOrBrowser);
+    } else if (aWindowOrBrowser) {
+      
+      uri = Utils.makeURI(aURIString, null);
+    }
+
+    
+    
     
     let contentType = Utils.resolveContentType(aContentType);
     if (contentType != TYPE_MAYBE_FEED)
       return;
 
     if (aWindowOrBrowser) {
-      let haveWindow = (aWindowOrBrowser instanceof Ci.nsIDOMWindow);
-      let uri;
       let notificationBox;
       if (haveWindow) {
-        uri = Utils.checkAndGetURI(aURIString, aWindowOrBrowser);
-
         let browserWindow = this._getBrowserWindowForContentWindow(aWindowOrBrowser);
         let browserElement = this._getBrowserForContentWindow(browserWindow, aWindowOrBrowser);
         notificationBox = browserElement.getTabBrowser().getNotificationBox(browserElement);
       } else {
-        
-        uri = Utils.makeURI(aURIString, null);
         notificationBox = aWindowOrBrowser.getTabBrowser()
                                           .getNotificationBox(aWindowOrBrowser);
       }
