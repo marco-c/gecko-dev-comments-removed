@@ -76,12 +76,8 @@ this.ExtensionStorage = {
 
 
 
-  sanitize(value, global) {
-    
-    
-    let JSON_ = Cu.waiveXrays(global.JSON);
-
-    let json = JSON_.stringify(value, jsonReplacer);
+  sanitize(value, context) {
+    let json = context.jsonStringify(value, jsonReplacer);
     return JSON.parse(json);
   },
 
@@ -133,11 +129,11 @@ this.ExtensionStorage = {
     });
   },
 
-  set(extensionId, items, global) {
+  set(extensionId, items, context) {
     return this.read(extensionId).then(extData => {
       let changes = {};
       for (let prop in items) {
-        let item = this.sanitize(items[prop], global);
+        let item = this.sanitize(items[prop], context);
         changes[prop] = {oldValue: extData[prop], newValue: item};
         extData[prop] = item;
       }
