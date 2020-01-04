@@ -559,7 +559,7 @@ add_task(function* test_saveLoadPing() {
   }
 
   
-  let pings = [for (req of requests) decodeRequestPayload(req)];
+  let pings = Array.from(requests, decodeRequestPayload);
 
   
   
