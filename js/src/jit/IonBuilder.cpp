@@ -2716,6 +2716,21 @@ IonBuilder::processNextTableSwitchCase(CFGState& state)
         current->end(MGoto::New(alloc(), successor));
         if (!successor->addPredecessor(alloc(), current))
             return ControlStatus_Error;
+    } else {
+        
+        
+        
+        if (state.tableswitch.ins->getDefault() != successor) {
+            MConstant* constant = successor->begin()->toConstant();
+            for (uint32_t j = 0; j < successor->stackDepth(); j++) {
+                MDefinition* ins = successor->getSlot(j);
+                if (ins != state.tableswitch.ins->getOperand(0))
+                    continue;
+
+                constant->setDependency(state.tableswitch.ins);
+                successor->setSlot(j, constant);
+            }
+        }
     }
 
     
@@ -3368,8 +3383,14 @@ IonBuilder::tableSwitch(JSOp op, jssrcnote* sn)
 
         
         
-        if (casepc != pc)
+        if (casepc != pc) {
             tableswitch->addBlock(caseblock);
+
+            
+            
+            MConstant* constant = MConstant::New(alloc(), Int32Value(i + low));
+            caseblock->add(constant);
+        }
 
         pc2 += JUMP_OFFSET_LEN;
     }
