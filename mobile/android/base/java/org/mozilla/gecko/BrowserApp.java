@@ -153,6 +153,8 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.lang.reflect.Method;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.net.URLEncoder;
 import java.util.EnumSet;
 import java.util.HashSet;
@@ -179,9 +181,13 @@ public class BrowserApp extends GeckoApp
 
     private static final int TABS_ANIMATION_DURATION = 450;
 
-    private static final String ADD_SHORTCUT_TOAST = "add_shortcut_toast";
     public static final String GUEST_BROWSING_ARG = "--guest";
-    public static final String INTENT_KEY_SWITCHBOARD_UUID = "switchboard-uuid";
+
+    
+    private static final String INTENT_KEY_SWITCHBOARD_UUID = "switchboard-uuid";
+    private static final String INTENT_KEY_SWITCHBOARD_HOST = "switchboard-host";
+
+    private static final String DEFAULT_SWITCHBOARD_HOST = "switchboard.services.mozilla.com";
 
     private static final String STATE_ABOUT_HOME_TOP_PADDING = "abouthome_top_padding";
 
@@ -587,20 +593,7 @@ public class BrowserApp extends GeckoApp
 
         final Context appContext = getApplicationContext();
 
-        if (!Experiments.isDisabled(new SafeIntent(intent)) && AppConstants.MOZ_SWITCHBOARD) {
-            
-            SwitchBoard.initDefaultServerUrls("https://switchboard.services.mozilla.com/urls", "https://switchboard.services.mozilla.com/v1", true);
-
-            final String switchboardUUID = ContextUtils.getStringExtra(intent, INTENT_KEY_SWITCHBOARD_UUID);
-            SwitchBoard.setUUIDFromExtra(switchboardUUID);
-
-            
-            new AsyncConfigLoader(this, AsyncConfigLoader.UPDATE_SERVER, switchboardUUID).execute();
-
-            
-            
-            new AsyncConfigLoader(this, AsyncConfigLoader.CONFIG_SERVER, switchboardUUID).execute();
-        }
+        initSwitchboard(intent);
 
         mBrowserChrome = (ViewGroup) findViewById(R.id.browser_chrome);
         mActionBarFlipper = (ViewFlipper) findViewById(R.id.browser_actionbar);
@@ -779,6 +772,41 @@ public class BrowserApp extends GeckoApp
                        })
                       .run();
         }
+    }
+
+    
+
+
+
+    private void initSwitchboard(Intent intent) {
+        if (Experiments.isDisabled(new SafeIntent(intent)) || !AppConstants.MOZ_SWITCHBOARD) {
+            return;
+        }
+
+        final String hostExtra = ContextUtils.getStringExtra(intent, INTENT_KEY_SWITCHBOARD_HOST);
+        final String host = TextUtils.isEmpty(hostExtra) ? DEFAULT_SWITCHBOARD_HOST : hostExtra;
+
+        final String configServerUpdateUrl;
+        final String configServerUrl;
+        try {
+            configServerUpdateUrl = new URL("https", host, "urls").toString();
+            configServerUrl = new URL("https", host, "v1").toString();
+        } catch (MalformedURLException e) {
+            Log.e(LOGTAG, "Error creating Switchboard server URL", e);
+            return;
+        }
+
+        SwitchBoard.initDefaultServerUrls(configServerUpdateUrl, configServerUrl, true);
+
+        final String switchboardUUID = ContextUtils.getStringExtra(intent, INTENT_KEY_SWITCHBOARD_UUID);
+        SwitchBoard.setUUIDFromExtra(switchboardUUID);
+
+        
+        new AsyncConfigLoader(this, AsyncConfigLoader.UPDATE_SERVER, switchboardUUID).execute();
+
+        
+        
+        new AsyncConfigLoader(this, AsyncConfigLoader.CONFIG_SERVER, switchboardUUID).execute();
     }
 
     private void showUpdaterPermissionSnackbar() {
