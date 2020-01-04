@@ -498,6 +498,13 @@ this.worker = new WorkerDebuggerLoader({
     
     "": "resource://gre/modules/commonjs/",
     
+    
+    
+    
+    
+    
+    "devtools/shared/platform": "resource://devtools/shared/platform/chrome",
+    
     "devtools": "resource://devtools",
     
     "promise": "resource://gre/modules/Promise-backend.js",

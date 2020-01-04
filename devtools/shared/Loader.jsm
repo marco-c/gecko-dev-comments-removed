@@ -33,6 +33,13 @@ BuiltinProvider.prototype = {
       
       "": "resource://gre/modules/commonjs/",
       
+      
+      
+      
+      
+      
+      "devtools/shared/platform": "resource://devtools/shared/platform/chrome",
+      
       "devtools": "resource://devtools",
       
       "gcli": "resource://devtools/shared/gcli/source/lib/gcli",
