@@ -740,16 +740,13 @@ public class BrowserApp extends GeckoApp
 
         if (AppConstants.MOZ_SWITCHBOARD) {
             
-            Log.d(LOGTAG, "init Server Urls");
-            SwitchBoard.initDefaultServerUrls("https://mozilla-switchboard.herokuapp.com/SwitchboardURLs.php", "https://mozilla-switchboard.herokuapp.com/SwitchboardDriver.php", true);
+            SwitchBoard.initDefaultServerUrls("https://switchboard-server.dev.mozaws.net/urls", "https://switchboard-server.dev.mozaws.net/v1", true);
 
             
-            Log.d(LOGTAG, "update server urls from remote");
             new AsyncConfigLoader(this, AsyncConfigLoader.UPDATE_SERVER).execute();
 
             
             
-            Log.d(LOGTAG, "update app config");
             new AsyncConfigLoader(this, AsyncConfigLoader.CONFIG_SERVER).execute();
         }
 
