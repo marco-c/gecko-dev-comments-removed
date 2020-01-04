@@ -49,6 +49,8 @@ const { getRootBindingParent } = require("devtools/shared/layout/utils");
 
 loader.lazyRequireGetter(this, "CSS", "CSS");
 
+loader.lazyRequireGetter(this, "CSSLexer", "devtools/shared/css-lexer");
+
 function CssLogic() {
   
   this._propertyInfos = {};
@@ -992,7 +994,7 @@ CssLogic.prettifyCSS = function(text, ruleCount) {
   
   let indent = "";
   let indentLevel = 0;
-  let tokens = domUtils.getCSSLexer(text);
+  let tokens = CSSLexer.getCSSLexer(text);
   let result = "";
   let pushbackToken = undefined;
 
