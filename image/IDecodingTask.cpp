@@ -6,11 +6,13 @@
 #include "IDecodingTask.h"
 
 #include "gfxPrefs.h"
+#include "nsProxyRelease.h"
 #include "nsThreadUtils.h"
 
 #include "Decoder.h"
 #include "DecodePool.h"
 #include "RasterImage.h"
+#include "SurfaceCache.h"
 
 namespace mozilla {
 
@@ -88,8 +90,10 @@ IDecodingTask::Resume()
 
 
 
-DecodingTask::DecodingTask(NotNull<Decoder*> aDecoder)
-  : mDecoder(aDecoder)
+DecodingTask::DecodingTask(NotNull<RasterImage*> aImage,
+                           NotNull<Decoder*> aDecoder)
+  : mImage(aImage)
+  , mDecoder(aDecoder)
 {
   MOZ_ASSERT(!mDecoder->IsMetadataDecode(),
              "Use MetadataDecodingTask for metadata decodes");
@@ -97,34 +101,72 @@ DecodingTask::DecodingTask(NotNull<Decoder*> aDecoder)
              "Use AnimationDecodingTask for animation decodes");
 }
 
+DecodingTask::~DecodingTask()
+{
+  
+  RefPtr<RasterImage> image = mImage;
+  NS_ReleaseOnMainThread(image.forget());
+}
+
 void
 DecodingTask::Run()
 {
-  while (true) {
-    LexerResult result = mDecoder->Decode(WrapNotNull(this));
+  LexerResult result = mDecoder->Decode(WrapNotNull(this));
 
-    if (result.is<TerminalState>()) {
-      NotifyDecodeComplete(mDecoder->GetImage(), mDecoder);
-      return;  
-    }
+  
+  
+  if (!mSurface) {
+    mSurface = mDecoder->GetCurrentFrameRef().get();
 
-    MOZ_ASSERT(result.is<Yield>());
-
-    
-    if (mDecoder->HasProgress()) {
-      NotifyProgress(mDecoder->GetImage(), mDecoder);
-    }
-
-    if (result == LexerResult(Yield::NEED_MORE_DATA)) {
+    if (mSurface) {
       
-      
-      
-      return;
-    }
+      NotNull<RefPtr<ISurfaceProvider>> provider =
+        WrapNotNull(new SimpleSurfaceProvider(WrapNotNull(mSurface.get())));
+      InsertOutcome outcome =
+        SurfaceCache::Insert(provider, ImageKey(mImage.get()),
+                             RasterSurfaceKey(mDecoder->OutputSize(),
+                                              mDecoder->GetSurfaceFlags(),
+                                               0));
 
-    
-    
+      if (outcome == InsertOutcome::FAILURE) {
+        
+        
+        
+        result = mDecoder->TerminateFailure();
+      } else if (outcome == InsertOutcome::FAILURE_ALREADY_PRESENT) {
+        
+        
+        mDecoder->Abort();
+        result = mDecoder->TerminateFailure();
+      }
+    }
   }
+
+  MOZ_ASSERT(mSurface.get() == mDecoder->GetCurrentFrameRef().get(),
+             "DecodingTask and Decoder have different surfaces?");
+
+  if (result.is<TerminalState>()) {
+    NotifyDecodeComplete(mImage, mDecoder);
+    return;  
+  }
+
+  MOZ_ASSERT(result.is<Yield>());
+
+  
+  if (mDecoder->HasProgress()) {
+    NotifyProgress(mImage, mDecoder);
+  }
+
+  if (result == LexerResult(Yield::NEED_MORE_DATA)) {
+    
+    
+    return;
+  }
+
+  
+  MOZ_ASSERT_UNREACHABLE("Unexpected yield during single-frame image decode");
+  mDecoder->TerminateFailure();
+  NotifyDecodeComplete(mImage, mDecoder);
 }
 
 bool
