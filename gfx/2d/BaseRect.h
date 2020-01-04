@@ -134,8 +134,6 @@ struct BaseRect {
   
   
   
-  
-  
   MOZ_MUST_USE Sub Union(const Sub& aRect) const
   {
     if (IsEmpty()) {
@@ -146,8 +144,6 @@ struct BaseRect {
       return UnionEdges(aRect);
     }
   }
-  
-  
   
   
   
