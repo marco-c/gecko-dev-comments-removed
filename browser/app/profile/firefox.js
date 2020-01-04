@@ -1406,7 +1406,7 @@ pref("security.insecure_password.ui.enabled", false);
 pref("security.cert_pinning.enforcement_level", 1);
 
 
-pref("security.pki.sha1_enforcement_level", 2);
+pref("security.pki.sha1_enforcement_level", 0);
 
 
 
