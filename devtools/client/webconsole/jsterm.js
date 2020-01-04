@@ -6,9 +6,9 @@
 
 "use strict";
 
-const {Cc, Ci, Cu} = require("chrome");
+const {Ci, Cu} = require("chrome");
 
-const {Utils: WebConsoleUtils, CONSOLE_WORKER_IDS} =
+const {Utils: WebConsoleUtils} =
   require("devtools/shared/webconsole/utils");
 const promise = require("promise");
 const Debugger = require("Debugger");
@@ -315,7 +315,7 @@ JSTerm.prototype = {
       errorMessage += " ";
       errorDocLink = this.hud.document.createElementNS(XHTML_NS, "a");
       errorDocLink.className = "learn-more-link webconsole-learn-more-link";
-      errorDocLink.textContent = "[" + l10n.getStr("webConsoleMoreInfoLabel") + "]";
+      errorDocLink.textContent = `[${l10n.getStr("webConsoleMoreInfoLabel")}]`;
       errorDocLink.title = errorDocURL;
       errorDocLink.href = "#";
       errorDocLink.draggable = false;
@@ -326,7 +326,7 @@ JSTerm.prototype = {
 
     
     
-    if (typeof(response.exception) === "string") {
+    if (typeof response.exception === "string") {
       errorMessage = new Error(errorMessage).toString();
     }
     let result = response.result;
@@ -372,7 +372,8 @@ JSTerm.prototype = {
       return;
     }
 
-    let msg = new Messages.JavaScriptEvalOutput(response, errorMessage, errorDocLink);
+    let msg = new Messages.JavaScriptEvalOutput(response,
+                                                errorMessage, errorDocLink);
     this.hud.output.addMessage(msg);
 
     if (callback) {
@@ -424,7 +425,7 @@ JSTerm.prototype = {
     
     executeString = executeString || this.getInputValue();
     if (!executeString) {
-      return;
+      return null;
     }
 
     let selectedNodeActor = null;
@@ -1023,6 +1024,7 @@ JSTerm.prototype = {
   },
 
   
+  
 
 
 
@@ -1213,7 +1215,7 @@ JSTerm.prototype = {
         }
         break;
 
-      case Ci.nsIDOMKeyEvent.DOM_VK_RIGHT: {
+      case Ci.nsIDOMKeyEvent.DOM_VK_RIGHT:
         let cursorAtTheEnd = this.inputNode.selectionStart ==
                              this.inputNode.selectionEnd &&
                              this.inputNode.selectionStart ==
@@ -1231,7 +1233,7 @@ JSTerm.prototype = {
           this.clearCompletion();
         }
         break;
-      }
+
       case Ci.nsIDOMKeyEvent.DOM_VK_TAB:
         
         if (this.complete(this.COMPLETE_HINT_ONLY) &&
@@ -1247,6 +1249,7 @@ JSTerm.prototype = {
         break;
     }
   },
+  
 
   
 
