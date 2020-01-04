@@ -1100,7 +1100,12 @@ void MediaDecoderStateMachine::RecomputeDuration()
     return;
   }
 
-  if (duration < mObservedDuration.Ref()) {
+  
+  
+  
+  
+  if (mExplicitDuration.Ref().isNothing() &&
+      duration < mObservedDuration.Ref()) {
     duration = mObservedDuration;
   }
 
