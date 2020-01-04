@@ -200,6 +200,22 @@ MediaStreamTrack::RemovePrincipalChangeObserver(
   return mPrincipalChangeObservers.RemoveElement(aObserver);
 }
 
+already_AddRefed<MediaStreamTrack>
+MediaStreamTrack::Clone()
+{
+  
+  
+  
+  RefPtr<DOMMediaStream> newStream =
+    new DOMMediaStream(mOwningStream->GetParentObject(), nullptr);
+
+  MediaStreamGraph* graph = Graph();
+  newStream->InitOwnedStreamCommon(graph);
+  newStream->InitPlaybackStreamCommon(graph);
+
+  return newStream->CreateClonedDOMTrack(*this, mTrackID);
+}
+
 DOMMediaStream*
 MediaStreamTrack::GetInputDOMStream()
 {

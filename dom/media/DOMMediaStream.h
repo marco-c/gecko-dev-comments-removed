@@ -519,6 +519,14 @@ public:
                                       MediaStreamTrackSource* aSource);
 
   
+
+
+
+
+  already_AddRefed<MediaStreamTrack> CreateClonedDOMTrack(MediaStreamTrack& aTrack,
+                                                          TrackID aCloneTrackID);
+
+  
   
   
   
