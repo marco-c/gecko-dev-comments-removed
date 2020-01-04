@@ -26,7 +26,6 @@ this.EXPORTED_SYMBOLS = ["DevToolsLoader", "devtools", "BuiltinProvider",
 var loaderModules = {
   "Services": Object.create(Services),
   "toolkit/loader": Loader,
-  promise,
   PromiseDebugging,
   ChromeUtils,
   ThreadSafeChromeUtils,
@@ -82,6 +81,24 @@ XPCOMUtils.defineLazyGetter(loaderModules, "URL", () => {
   return sandbox.URL;
 });
 
+const loaderPaths = {
+  
+  "": "resource://gre/modules/commonjs/",
+  
+  "devtools": "resource://devtools",
+  
+  "gcli": "resource://devtools/shared/gcli/source/lib/gcli",
+  
+  "acorn": "resource://devtools/acorn",
+  
+  "acorn/util/walk": "resource://devtools/acorn/walk.js",
+  
+  "source-map": "resource://devtools/shared/sourcemap/source-map.js",
+  
+  
+  "xpcshell-test": "resource://test",
+};
+
 var sharedGlobalBlocklist = ["sdk/indexed-db"];
 
 
@@ -91,27 +108,31 @@ var sharedGlobalBlocklist = ["sdk/indexed-db"];
 function BuiltinProvider() {}
 BuiltinProvider.prototype = {
   load: function() {
+    
+    let paths = {};
+    for (let path in loaderPaths) {
+      paths[path] = loaderPaths[path];
+    }
+    let modules = {};
+    for (let name in loaderModules) {
+      XPCOMUtils.defineLazyGetter(modules, name, (function (name) {
+        return loaderModules[name];
+      }).bind(null, name));
+    }
+    
+    
+    
+    
+    
+    if (this.invisibleToDebugger) {
+      paths["promise"] = "resource://gre/modules/Promise-backend.js";
+    } else {
+      modules["promise"] = promise;
+    }
     this.loader = new Loader.Loader({
       id: "fx-devtools",
-      modules: loaderModules,
-      paths: {
-        
-        "": "resource://gre/modules/commonjs/",
-        
-        "devtools": "resource://devtools",
-        
-        "gcli": "resource://devtools/shared/gcli/source/lib/gcli",
-        
-        "acorn": "resource://devtools/acorn",
-        
-        "acorn/util/walk": "resource://devtools/acorn/walk.js",
-        
-        "source-map": "resource://devtools/shared/sourcemap/source-map.js",
-        
-        
-        "xpcshell-test": "resource://test"
-        
-      },
+      modules,
+      paths,
       globals: this.globals,
       invisibleToDebugger: this.invisibleToDebugger,
       sharedGlobal: true,

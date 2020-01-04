@@ -27,6 +27,11 @@ function visible_loader() {
   } catch(e) {
     do_throw("debugger could not add visible value");
   }
+
+  
+  
+  const promise = Cu.import("resource://gre/modules/Promise.jsm", {}).Promise;
+  do_check_eq(loader.require("promise"), promise);
 }
 
 function invisible_loader() {
@@ -43,4 +48,11 @@ function invisible_loader() {
   } catch(e) {
     do_check_true(true);
   }
+
+  
+  
+  
+  const promise = loader.require("promise");
+  const promiseModule = loader._provider.loader.modules["resource://gre/modules/Promise-backend.js"];
+  do_check_eq(promise, promiseModule.exports);
 }
