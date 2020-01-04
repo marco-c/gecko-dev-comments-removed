@@ -596,7 +596,7 @@ protected:
 
 
 
-  void RequestContentRepaint(FrameMetrics& aFrameMetrics, bool aThrottled = true);
+  void RequestContentRepaint(FrameMetrics& aFrameMetrics);
 
   
 
@@ -699,14 +699,11 @@ private:
   
   FrameMetrics mLastContentPaintMetrics;
   
-  
-  
   FrameMetrics mLastPaintRequestMetrics;
   
   
   
-  
-  FrameMetrics mLastDispatchedPaintMetrics;
+  FrameMetrics mExpectedGeckoMetrics;
 
   AxisX mX;
   AxisY mY;

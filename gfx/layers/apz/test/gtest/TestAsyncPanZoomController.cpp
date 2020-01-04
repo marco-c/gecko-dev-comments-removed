@@ -819,7 +819,8 @@ protected:
     MakeApzcZoomable();
 
     if (aShouldTriggerPinch) {
-      EXPECT_CALL(*mcc, RequestContentRepaint(_)).Times(1);
+      
+      EXPECT_CALL(*mcc, RequestContentRepaint(_)).Times(2);
     } else {
       EXPECT_CALL(*mcc, RequestContentRepaint(_)).Times(0);
     }
@@ -1248,7 +1249,8 @@ protected:
   void DoPanTest(bool aShouldTriggerScroll, bool aShouldBeConsumed, uint32_t aBehavior)
   {
     if (aShouldTriggerScroll) {
-      EXPECT_CALL(*mcc, RequestContentRepaint(_)).Times(1);
+      
+      EXPECT_CALL(*mcc, RequestContentRepaint(_)).Times(2);
     } else {
       EXPECT_CALL(*mcc, RequestContentRepaint(_)).Times(0);
     }
@@ -1357,8 +1359,6 @@ TEST_F(APZCPanningTester, PanWithPreventDefault) {
 }
 
 TEST_F(APZCBasicTester, Fling) {
-  EXPECT_CALL(*mcc, RequestContentRepaint(_)).Times(1);
-
   int touchStart = 50;
   int touchEnd = 10;
   ParentLayerPoint pointOut;
@@ -2423,9 +2423,7 @@ TEST_F(APZHitTestingTester, HitTesting2) {
   EXPECT_EQ(ScreenPoint(25, 25), transformToGecko * ParentLayerPoint(12.5, 75));
 
   
-  
-  
-  
+  EXPECT_CALL(*mcc, RequestContentRepaint(_)).Times(1);
   ApzcPanNoFling(apzcroot, mcc, 100, 50);
 
   
@@ -2434,8 +2432,7 @@ TEST_F(APZHitTestingTester, HitTesting2) {
   
   EXPECT_EQ(ParentLayerPoint(75, 75), transformToApzc * ScreenPoint(75, 75));
   
-  
-  EXPECT_EQ(ScreenPoint(75, 125), transformToGecko * ParentLayerPoint(75, 75));
+  EXPECT_EQ(ScreenPoint(75, 75), transformToGecko * ParentLayerPoint(75, 75));
 
   
   hit = GetTargetAPZC(ScreenPoint(25, 25));
@@ -2443,8 +2440,7 @@ TEST_F(APZHitTestingTester, HitTesting2) {
   
   EXPECT_EQ(ParentLayerPoint(25, 25), transformToApzc * ScreenPoint(25, 25));
   
-  
-  EXPECT_EQ(ScreenPoint(25, 75), transformToGecko * ParentLayerPoint(25, 25));
+  EXPECT_EQ(ScreenPoint(25, 25), transformToGecko * ParentLayerPoint(25, 25));
 }
 
 TEST_F(APZCTreeManagerTester, ScrollablePaintedLayers) {
