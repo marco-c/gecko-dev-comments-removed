@@ -105,7 +105,8 @@ private:
     unsigned numberOfPartialsForRange(unsigned rangeIndex) const;
 
     
-    void createBandLimitedTables();
+    void createBandLimitedTables(float fundamentalFrequency);
+    float m_lowestRequestedFundamentalFrequency;
     nsTArray<nsAutoPtr<AlignedAudioFloatArray> > m_bandLimitedTables;
 };
 
