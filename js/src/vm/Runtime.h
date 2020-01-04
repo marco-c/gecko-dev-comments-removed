@@ -1191,9 +1191,6 @@ struct JSRuntime : public JS::shadow::Runtime,
     JS::AsmJSCacheOps   asmJSCacheOps;
 
     
-    js::wasm::Module*   linkedWasmModules;
-
-    
 
 
 

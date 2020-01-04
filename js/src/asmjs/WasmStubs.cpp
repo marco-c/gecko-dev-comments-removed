@@ -99,7 +99,7 @@ static const unsigned FramePushedForEntrySP = FramePushedAfterSave + sizeof(void
 
 
 static bool
-GenerateEntry(ModuleGenerator& mg, unsigned exportIndex, Module::HeapBool usesHeap)
+GenerateEntry(ModuleGenerator& mg, unsigned exportIndex, bool usesHeap)
 {
     MacroAssembler& masm = mg.masm();
     const MallocSig& sig = mg.exportSig(exportIndex);
@@ -335,27 +335,9 @@ FillArgumentArray(MacroAssembler& masm, const MallocSig::ArgVector& args, unsign
 
 
 
-
-static void
-CheckForHeapDetachment(MacroAssembler& masm, Register scratch, Label* onDetached)
-{
-    MOZ_ASSERT(int(masm.framePushed()) >= int(ShadowStackSpace));
-    AssertStackAlignment(masm, ABIStackAlignment);
-#if defined(JS_CODEGEN_X86)
-    CodeOffset offset = masm.movlWithPatch(PatchedAbsoluteAddress(), scratch);
-    masm.append(AsmJSGlobalAccess(offset, HeapGlobalDataOffset));
-    masm.branchTestPtr(Assembler::Zero, scratch, scratch, onDetached);
-#else
-    masm.branchTestPtr(Assembler::Zero, HeapReg, HeapReg, onDetached);
-#endif
-}
-
-
-
-
 static bool
-GenerateInterpExitStub(ModuleGenerator& mg, unsigned importIndex, Module::HeapBool usesHeap,
-                       Label* throwLabel, Label* onDetached, ProfilingOffsets* offsets)
+GenerateInterpExitStub(ModuleGenerator& mg, unsigned importIndex, Label* throwLabel,
+                       ProfilingOffsets* offsets)
 {
     MacroAssembler& masm = mg.masm();
     const MallocSig& sig = mg.importSig(importIndex);
@@ -440,13 +422,6 @@ GenerateInterpExitStub(ModuleGenerator& mg, unsigned importIndex, Module::HeapBo
         MOZ_CRASH("SIMD types shouldn't be returned from a FFI");
     }
 
-    
-    
-    if (usesHeap) {
-        masm.loadAsmJSHeapRegisterFromGlobalData();
-        CheckForHeapDetachment(masm, ABIArgGenerator::NonReturn_VolatileReg0, onDetached);
-    }
-
     GenerateExitEpilogue(masm, framePushed, ExitReason::ImportInterp, offsets);
 
     if (masm.oom())
@@ -466,8 +441,8 @@ static const unsigned MaybeSavedGlobalReg = 0;
 
 
 static bool
-GenerateJitExitStub(ModuleGenerator& mg, unsigned importIndex, Module::HeapBool usesHeap,
-                    Label* throwLabel, Label* onDetached, ProfilingOffsets* offsets)
+GenerateJitExitStub(ModuleGenerator& mg, unsigned importIndex, bool usesHeap,
+                    Label* throwLabel, ProfilingOffsets* offsets)
 {
     MacroAssembler& masm = mg.masm();
     const MallocSig& sig = mg.importSig(importIndex);
@@ -536,7 +511,6 @@ GenerateJitExitStub(ModuleGenerator& mg, unsigned importIndex, Module::HeapBool 
     argOffset += sig.args().length() * sizeof(Value);
     MOZ_ASSERT(argOffset == jitFrameBytes);
 
-    
     
     
     
@@ -700,10 +674,8 @@ GenerateJitExitStub(ModuleGenerator& mg, unsigned importIndex, Module::HeapBool 
 
     
     
-    if (usesHeap) {
+    if (usesHeap)
         masm.loadAsmJSHeapRegisterFromGlobalData();
-        CheckForHeapDetachment(masm, ABIArgGenerator::NonReturn_VolatileReg0, onDetached);
-    }
 
     GenerateExitEpilogue(masm, masm.framePushed(), ExitReason::ImportJit, offsets);
 
@@ -762,32 +734,6 @@ GenerateJitExitStub(ModuleGenerator& mg, unsigned importIndex, Module::HeapBool 
 
     offsets->end = masm.currentOffset();
     return true;
-}
-
-
-
-
-
-static bool
-GenerateOnDetachedStub(ModuleGenerator& mg, Label* onDetached, Label* throwLabel)
-{
-    MacroAssembler& masm = mg.masm();
-
-    masm.haltingAlign(CodeAlignment);
-    Offsets offsets;
-    offsets.begin = masm.currentOffset();
-    masm.bind(onDetached);
-
-    
-    masm.assertStackAlignment(ABIStackAlignment);
-    masm.call(SymbolicAddress::OnDetached);
-    masm.jump(throwLabel);
-
-    if (masm.oom())
-        return false;
-
-    offsets.end = masm.currentOffset();
-    return mg.defineInlineStub(offsets);
 }
 
 
@@ -929,7 +875,7 @@ static const LiveRegisterSet AllRegsExceptSP(
 
 
 static bool
-GenerateAsyncInterruptStub(ModuleGenerator& mg, Module::HeapBool usesHeap, Label* throwLabel)
+GenerateAsyncInterruptStub(ModuleGenerator& mg, Label* throwLabel)
 {
     MacroAssembler& masm = mg.masm();
 
@@ -1126,7 +1072,7 @@ GenerateThrowStub(ModuleGenerator& mg, Label* throwLabel)
 }
 
 bool
-wasm::GenerateStubs(ModuleGenerator& mg, Module::HeapBool usesHeap)
+wasm::GenerateStubs(ModuleGenerator& mg, bool usesHeap)
 {
     for (unsigned i = 0; i < mg.numDeclaredExports(); i++) {
         if (!GenerateEntry(mg, i, usesHeap))
@@ -1135,26 +1081,17 @@ wasm::GenerateStubs(ModuleGenerator& mg, Module::HeapBool usesHeap)
 
     Label onThrow;
 
-    {
-        Label onDetached;
+    for (size_t i = 0; i < mg.numDeclaredImports(); i++) {
+        ProfilingOffsets interp;
+        if (!GenerateInterpExitStub(mg, i, &onThrow, &interp))
+            return false;
 
-        for (size_t i = 0; i < mg.numDeclaredImports(); i++) {
-            ProfilingOffsets interp;
-            if (!GenerateInterpExitStub(mg, i, usesHeap, &onThrow, &onDetached, &interp))
-                return false;
+        ProfilingOffsets jit;
+        if (!GenerateJitExitStub(mg, i, usesHeap, &onThrow, &jit))
+            return false;
 
-            ProfilingOffsets jit;
-            if (!GenerateJitExitStub(mg, i, usesHeap, &onThrow, &onDetached, &jit))
-                return false;
-
-            if (!mg.defineImport(i, interp, jit))
-                return false;
-        }
-
-        if (onDetached.used()) {
-            if (!GenerateOnDetachedStub(mg, &onDetached, &onThrow))
-                return false;
-        }
+        if (!mg.defineImport(i, interp, jit))
+            return false;
     }
 
     if (mg.masm().asmStackOverflowLabel()->used()) {
@@ -1178,7 +1115,7 @@ wasm::GenerateStubs(ModuleGenerator& mg, Module::HeapBool usesHeap)
         return false;
 
     
-    if (!GenerateAsyncInterruptStub(mg, usesHeap, &onThrow))
+    if (!GenerateAsyncInterruptStub(mg, &onThrow))
         return false;
 
     if (onThrow.used()) {

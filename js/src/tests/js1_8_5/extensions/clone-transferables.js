@@ -3,14 +3,10 @@
 
 
 function test() {
-    
-    
-    
     for (var size of [0, 8, 16, 200, 1000, 4096, -8, -200, -8192, -65536]) {
-        var buffer_ctor = (size < 0) ? AsmJSArrayBuffer : ArrayBuffer;
         size = Math.abs(size);
 
-        var old = new buffer_ctor(size);
+        var old = new ArrayBuffer(size);
         var copy = deserialize(serialize(old, [old]));
         assertEq(old.byteLength, 0);
         assertEq(copy.byteLength, size);
@@ -29,7 +25,7 @@ function test() {
         for (var ctor of constructors) {
             var dataview = (ctor === DataView);
 
-            var buf = new buffer_ctor(size);
+            var buf = new ArrayBuffer(size);
             var old_arr = new ctor(buf);
             assertEq(buf.byteLength, size);
             assertEq(buf, old_arr.buffer);
@@ -52,7 +48,7 @@ function test() {
         for (var ctor of constructors) {
             var dataview = (ctor === DataView);
 
-            var buf = new buffer_ctor(size);
+            var buf = new ArrayBuffer(size);
             var old_arr = new ctor(buf);
             var dv = new DataView(buf); 
             var copy_arr = deserialize(serialize(old_arr, [ buf ]));
@@ -69,7 +65,7 @@ function test() {
 
         
         if (size >= 4) {
-            old = new buffer_ctor(size);
+            old = new ArrayBuffer(size);
             var view = new Int32Array(old);
             view[0] = 1;
             var mutator = { get foo() { view[0] = 2; } };
@@ -81,7 +77,7 @@ function test() {
 
         
         if (size >= 4) {
-            old = new buffer_ctor(size);
+            old = new ArrayBuffer(size);
             var mutator = {
                 get foo() {
                     deserialize(serialize(old, [old]));

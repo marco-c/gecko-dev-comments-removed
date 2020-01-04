@@ -627,7 +627,7 @@ EmulateHeapAccess(EMULATOR_CONTEXT* context, uint8_t* pc, uint8_t* faultingAddre
         uintptr_t base;
         StoreValueFromGPReg(SharedMem<void*>::unshared(&base), sizeof(uintptr_t),
                             AddressOfGPRegisterSlot(context, address.base()));
-        MOZ_RELEASE_ASSERT(reinterpret_cast<uint8_t*>(base) == module.maybeHeap());
+        MOZ_RELEASE_ASSERT(reinterpret_cast<uint8_t*>(base) == module.heap());
     }
     if (address.hasIndex()) {
         uintptr_t index;
@@ -645,11 +645,11 @@ EmulateHeapAccess(EMULATOR_CONTEXT* context, uint8_t* pc, uint8_t* faultingAddre
     MOZ_RELEASE_ASSERT(size_t(faultingAddress - accessAddress) < access.size(),
                        "Given faulting address does not appear to be within computed "
                        "faulting address range");
-    MOZ_RELEASE_ASSERT(accessAddress >= module.maybeHeap(),
+    MOZ_RELEASE_ASSERT(accessAddress >= module.heap(),
                        "Access begins outside the asm.js heap");
-    MOZ_RELEASE_ASSERT(accessAddress + access.size() <= module.maybeHeap() + AsmJSMappedSize,
+    MOZ_RELEASE_ASSERT(accessAddress + access.size() <= module.heap() + AsmJSMappedSize,
                        "Access extends beyond the asm.js heap guard region");
-    MOZ_RELEASE_ASSERT(accessAddress + access.size() > module.maybeHeap() + module.heapLength(),
+    MOZ_RELEASE_ASSERT(accessAddress + access.size() > module.heap() + module.heapLength(),
                        "Computed access address is not actually out of bounds");
 
     
@@ -666,7 +666,7 @@ EmulateHeapAccess(EMULATOR_CONTEXT* context, uint8_t* pc, uint8_t* faultingAddre
     
     
     
-    intptr_t unwrappedOffset = accessAddress - module.maybeHeap().unwrap();
+    intptr_t unwrappedOffset = accessAddress - module.heap().unwrap();
     uint32_t wrappedOffset = uint32_t(unwrappedOffset);
     size_t size = access.size();
     MOZ_RELEASE_ASSERT(wrappedOffset + size > wrappedOffset);
@@ -684,10 +684,10 @@ EmulateHeapAccess(EMULATOR_CONTEXT* context, uint8_t* pc, uint8_t* faultingAddre
         
         
         
-        SharedMem<uint8_t*> wrappedAddress = module.maybeHeap() + wrappedOffset;
-        MOZ_RELEASE_ASSERT(wrappedAddress >= module.maybeHeap());
+        SharedMem<uint8_t*> wrappedAddress = module.heap() + wrappedOffset;
+        MOZ_RELEASE_ASSERT(wrappedAddress >= module.heap());
         MOZ_RELEASE_ASSERT(wrappedAddress + size > wrappedAddress);
-        MOZ_RELEASE_ASSERT(wrappedAddress + size <= module.maybeHeap() + module.heapLength());
+        MOZ_RELEASE_ASSERT(wrappedAddress + size <= module.heap() + module.heapLength());
         switch (access.kind()) {
           case Disassembler::HeapAccess::Load:
             SetRegisterToLoadedValue(context, wrappedAddress.cast<void*>(), size, access.otherOperand());
@@ -762,9 +762,9 @@ HandleFault(PEXCEPTION_POINTERS exception)
     
     
     uint8_t* faultingAddress = reinterpret_cast<uint8_t*>(record->ExceptionInformation[1]);
-    if (!module.maybeHeap() ||
-        faultingAddress < module.maybeHeap() ||
-        faultingAddress >= module.maybeHeap() + AsmJSMappedSize)
+    if (!module.usesHeap() ||
+        faultingAddress < module.heap() ||
+        faultingAddress >= module.heap() + AsmJSMappedSize)
     {
         return false;
     }
@@ -907,9 +907,9 @@ HandleMachException(JSRuntime* rt, const ExceptionRequest& request)
     
     
     uint8_t* faultingAddress = reinterpret_cast<uint8_t*>(request.body.code[1]);
-    if (!module.maybeHeap() ||
-        faultingAddress < module.maybeHeap() ||
-        faultingAddress >= module.maybeHeap() + AsmJSMappedSize)
+    if (!module.usesHeap() ||
+        faultingAddress < module.heap() ||
+        faultingAddress >= module.heap() + AsmJSMappedSize)
     {
         return false;
     }
@@ -1117,9 +1117,9 @@ HandleFault(int signum, siginfo_t* info, void* ctx)
     
     
     uint8_t* faultingAddress = reinterpret_cast<uint8_t*>(info->si_addr);
-    if (!module.maybeHeap() ||
-        faultingAddress < module.maybeHeap() ||
-        faultingAddress >= module.maybeHeap() + AsmJSMappedSize)
+    if (!module.usesHeap() ||
+        faultingAddress < module.heap() ||
+        faultingAddress >= module.heap() + AsmJSMappedSize)
     {
         return false;
     }

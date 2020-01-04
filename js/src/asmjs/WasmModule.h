@@ -328,6 +328,22 @@ AllocateCode(ExclusiveContext* cx, size_t bytes);
 
 
 
+enum class HeapUsage
+{
+    None = false,
+    Unshared = 1,
+    Shared = 2
+};
+
+static inline bool
+UsesHeap(HeapUsage heapUsage)
+{
+    return bool(heapUsage);
+}
+
+
+
+
 
 
 
@@ -375,8 +391,7 @@ class Module
         const uint32_t           functionBytes_;
         const uint32_t           codeBytes_;
         const uint32_t           globalBytes_;
-        const bool               usesHeap_;
-        const bool               sharedHeap_;
+        const HeapUsage          heapUsage_;
         const bool               mutedErrors_;
         const bool               usesSignalHandlersForOOB_;
         const bool               usesSignalHandlersForInterrupt_;
@@ -400,14 +415,11 @@ class Module
 
     
     bool                         dynamicallyLinked_;
-    BufferPtr                    maybeHeap_;
-    Module**                     prev_;
-    Module*                      next_;
+    BufferPtr                    heap_;
 
     
     bool                         profilingEnabled_;
     FuncLabelVector              funcLabels_;
-    bool                         interrupted_;
 
     class AutoMutateCode;
 
@@ -448,16 +460,13 @@ class Module
     static const unsigned OffsetOfImportExitFun = offsetof(ImportExit, fun);
     static const unsigned SizeOfEntryArg = sizeof(EntryArg);
 
-    enum HeapBool { DoesntUseHeap = false, UsesHeap = true };
-    enum SharedBool { UnsharedHeap = false, SharedHeap = true };
     enum MutedBool { DontMuteErrors = false, MuteErrors = true };
 
     Module(CompileArgs args,
            uint32_t functionBytes,
            uint32_t codeBytes,
            uint32_t globalBytes,
-           HeapBool usesHeap,
-           SharedBool sharedHeap,
+           HeapUsage heapUsage,
            MutedBool mutedErrors,
            UniqueCodePtr code,
            ImportVector&& imports,
@@ -474,8 +483,9 @@ class Module
     uint8_t* code() const { return code_.get(); }
     uint8_t* globalData() const { return code() + pod.codeBytes_; }
     uint32_t globalBytes() const { return pod.globalBytes_; }
-    bool usesHeap() const { return pod.usesHeap_; }
-    bool sharedHeap() const { return pod.sharedHeap_; }
+    HeapUsage heapUsage() const { return pod.heapUsage_; }
+    bool usesHeap() const { return UsesHeap(pod.heapUsage_); }
+    bool hasSharedHeap() const { return pod.heapUsage_ == HeapUsage::Shared; }
     bool mutedErrors() const { return pod.mutedErrors_; }
     CompileArgs compileArgs() const;
     const ImportVector& imports() const { return imports_; }
@@ -515,20 +525,8 @@ class Module
 
     
 
-    ArrayBufferObjectMaybeShared* maybeBuffer() const;
-    SharedMem<uint8_t*> maybeHeap() const;
+    SharedMem<uint8_t*> heap() const;
     size_t heapLength() const;
-
-    
-    
-    
-    
-    
-
-    bool changeHeap(Handle<ArrayBufferObject*> newBuffer, JSContext* cx);
-    bool detachHeap(JSContext* cx);
-    void setInterrupted(bool interrupted);
-    Module* nextLinked() const;
 
     
     

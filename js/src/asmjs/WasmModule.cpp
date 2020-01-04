@@ -511,8 +511,9 @@ Module::activation()
 void
 Module::specializeToHeap(ArrayBufferObjectMaybeShared* heap)
 {
+    MOZ_ASSERT(usesHeap());
     MOZ_ASSERT_IF(heap->is<ArrayBufferObject>(), heap->as<ArrayBufferObject>().isAsmJS());
-    MOZ_ASSERT(!maybeHeap_);
+    MOZ_ASSERT(!heap_);
     MOZ_ASSERT(!rawHeapPtr());
 
     uint8_t* ptrBase = heap->dataPointerEither().unwrap();
@@ -550,14 +551,17 @@ Module::specializeToHeap(ArrayBufferObjectMaybeShared* heap)
         Assembler::UpdateBoundsCheck(heapLength, (Instruction*)(access.insnOffset() + code()));
 #endif
 
-    maybeHeap_ = heap;
+    heap_ = heap;
     rawHeapPtr() = ptrBase;
 }
 
 void
 Module::despecializeFromHeap(ArrayBufferObjectMaybeShared* heap)
 {
-    MOZ_ASSERT_IF(maybeHeap_, maybeHeap_ == heap);
+    
+    
+    
+    MOZ_ASSERT_IF(heap_, heap_ == heap);
     MOZ_ASSERT_IF(rawHeapPtr(), rawHeapPtr() == heap->dataPointerEither().unwrap());
 
 #if defined(JS_CODEGEN_X86)
@@ -581,7 +585,7 @@ Module::despecializeFromHeap(ArrayBufferObjectMaybeShared* heap)
     }
 #endif
 
-    maybeHeap_ = nullptr;
+    heap_ = nullptr;
     rawHeapPtr() = nullptr;
 }
 
@@ -700,7 +704,7 @@ Module::importToExit(const Import& import)
  Module::CacheablePod
 Module::zeroPod()
 {
-    CacheablePod pod = {0, 0, 0, false, false, false, false, false};
+    CacheablePod pod = {0, 0, 0, HeapUsage::None, false, false, false};
     return pod;
 }
 
@@ -711,9 +715,6 @@ Module::init()
    interrupt_ = nullptr;
    outOfBounds_ = nullptr;
    dynamicallyLinked_ = false;
-   prev_ = nullptr;
-   next_ = nullptr;
-   interrupted_ = false;
 
     *(double*)(globalData() + NaN64GlobalDataOffset) = GenericNaN();
     *(float*)(globalData() + NaN32GlobalDataOffset) = GenericNaN();
@@ -757,8 +758,7 @@ Module::Module(CompileArgs args,
                uint32_t functionBytes,
                uint32_t codeBytes,
                uint32_t globalBytes,
-               HeapBool usesHeap,
-               SharedBool sharedHeap,
+               HeapUsage heapUsage,
                MutedBool mutedErrors,
                UniqueCodePtr code,
                ImportVector&& imports,
@@ -786,20 +786,16 @@ Module::Module(CompileArgs args,
     const_cast<uint32_t&>(pod.functionBytes_) = functionBytes;
     const_cast<uint32_t&>(pod.codeBytes_) = codeBytes;
     const_cast<uint32_t&>(pod.globalBytes_) = globalBytes;
-    const_cast<bool&>(pod.usesHeap_) = bool(usesHeap);
-    const_cast<bool&>(pod.sharedHeap_) = bool(sharedHeap);
+    const_cast<HeapUsage&>(pod.heapUsage_) = heapUsage;
     const_cast<bool&>(pod.mutedErrors_) = bool(mutedErrors);
     const_cast<bool&>(pod.usesSignalHandlersForOOB_) = args.useSignalHandlersForOOB;
     const_cast<bool&>(pod.usesSignalHandlersForInterrupt_) = args.useSignalHandlersForInterrupt;
 
-    MOZ_ASSERT_IF(sharedHeap, usesHeap);
     init();
 }
 
 Module::~Module()
 {
-    MOZ_ASSERT(!interrupted_);
-
     if (code_) {
         for (unsigned i = 0; i < imports_.length(); i++) {
             ImportExit& exit = importToExit(imports_[i]);
@@ -807,11 +803,6 @@ Module::~Module()
                 exit.baselineScript->removeDependentWasmModule(*this, i);
         }
     }
-
-    if (prev_)
-        *prev_ = next_;
-    if (next_)
-        next_->prev_ = prev_;
 }
 
 void
@@ -822,8 +813,8 @@ Module::trace(JSTracer* trc)
             TraceEdge(trc, &importToExit(import).fun, "wasm function import");
     }
 
-    if (maybeHeap_)
-        TraceEdge(trc, &maybeHeap_, "wasm buffer");
+    if (heap_)
+        TraceEdge(trc, &heap_, "wasm buffer");
 }
 
 CompileArgs
@@ -983,13 +974,6 @@ Module::dynamicallyLink(JSContext* cx, Handle<ArrayBufferObjectMaybeShared*> hea
     dynamicallyLinked_ = true;
 
     
-    next_ = cx->runtime()->linkedWasmModules;
-    prev_ = &cx->runtime()->linkedWasmModules;
-    cx->runtime()->linkedWasmModules = this;
-    if (next_)
-        next_->prev_ = &next_;
-
-    
     
     JitContext jcx(CompileRuntime::get(cx->compartment()->runtimeFromAnyThread()));
     MOZ_ASSERT(IsCompilingAsmJS());
@@ -1007,7 +991,7 @@ Module::dynamicallyLink(JSContext* cx, Handle<ArrayBufferObjectMaybeShared*> hea
     }
 
     
-    if (heap)
+    if (usesHeap())
         specializeToHeap(heap);
 
     
@@ -1017,19 +1001,13 @@ Module::dynamicallyLink(JSContext* cx, Handle<ArrayBufferObjectMaybeShared*> hea
     return true;
 }
 
-ArrayBufferObjectMaybeShared*
-Module::maybeBuffer() const
-{
-    MOZ_ASSERT(dynamicallyLinked_);
-    return maybeHeap_;
-}
-
 SharedMem<uint8_t*>
-Module::maybeHeap() const
+Module::heap() const
 {
     MOZ_ASSERT(dynamicallyLinked_);
-    MOZ_ASSERT_IF(!pod.usesHeap_, rawHeapPtr() == nullptr);
-    return pod.sharedHeap_
+    MOZ_ASSERT(usesHeap());
+    MOZ_ASSERT(rawHeapPtr());
+    return hasSharedHeap()
            ? SharedMem<uint8_t*>::shared(rawHeapPtr())
            : SharedMem<uint8_t*>::unshared(rawHeapPtr());
 }
@@ -1038,7 +1016,8 @@ size_t
 Module::heapLength() const
 {
     MOZ_ASSERT(dynamicallyLinked_);
-    return maybeHeap_ ? maybeHeap_->byteLength() : 0;
+    MOZ_ASSERT(usesHeap());
+    return heap_->byteLength();
 }
 
 void
@@ -1049,65 +1028,6 @@ Module::deoptimizeImportExit(uint32_t importIndex)
     ImportExit& exit = importToExit(import);
     exit.code = code() + import.interpExitCodeOffset();
     exit.baselineScript = nullptr;
-}
-
-bool
-Module::changeHeap(Handle<ArrayBufferObject*> newHeap, JSContext* cx)
-{
-    MOZ_ASSERT(dynamicallyLinked_);
-    MOZ_ASSERT(pod.usesHeap_);
-
-    
-    
-    
-    
-    if (interrupted_)
-        return false;
-
-    AutoMutateCode amc(cx, *this, "Module::changeHeap");
-    if (maybeHeap_)
-        despecializeFromHeap(maybeHeap_);
-    specializeToHeap(newHeap);
-    return true;
-}
-
-bool
-Module::detachHeap(JSContext* cx)
-{
-    MOZ_ASSERT(dynamicallyLinked_);
-    MOZ_ASSERT(pod.usesHeap_);
-
-    
-    
-    
-    if (interrupted_) {
-        JS_ReportError(cx, "attempt to detach from inside interrupt handler");
-        return false;
-    }
-
-    
-    
-    
-    MOZ_ASSERT_IF(activation(), activation()->exitReason() == ExitReason::ImportJit ||
-                                activation()->exitReason() == ExitReason::ImportInterp);
-
-    AutoMutateCode amc(cx, *this, "Module::detachHeap");
-    despecializeFromHeap(maybeHeap_);
-    return true;
-}
-
-void
-Module::setInterrupted(bool interrupted)
-{
-    MOZ_ASSERT(dynamicallyLinked_);
-    interrupted_ = interrupted;
-}
-
-Module*
-Module::nextLinked() const
-{
-    MOZ_ASSERT(dynamicallyLinked_);
-    return next_;
 }
 
 bool
@@ -1177,17 +1097,6 @@ Module::callExport(JSContext* cx, uint32_t exportIndex, CallArgs args)
             break;
           }
         }
-    }
-
-    
-    
-    
-    
-    
-    
-    if (usesHeap() && !maybeHeap_) {
-        JS_ReportErrorNumber(cx, GetErrorMessage, nullptr, JSMSG_OUT_OF_MEMORY);
-        return false;
     }
 
     {
@@ -1518,8 +1427,8 @@ Module::clone(JSContext* cx, const StaticLinkData& linkData) const
 
     
     
-    if (maybeHeap_)
-        out->despecializeFromHeap(maybeHeap_);
+    if (usesHeap())
+        out->despecializeFromHeap(heap_);
 
     if (!out->staticallyLink(cx, linkData))
         return nullptr;
