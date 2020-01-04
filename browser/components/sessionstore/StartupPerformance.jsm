@@ -44,6 +44,11 @@ this.StartupPerformance = {
   
   _hasFired: false,
 
+  
+  _totalNumberOfEagerTabs: 0,
+  _totalNumberOfTabs: 0,
+  _totalNumberOfWindows: 0,
+
   init: function() {
     for (let topic of TOPICS) {
       Services.obs.addObserver(this, topic, false);
@@ -55,6 +60,9 @@ this.StartupPerformance = {
   
   _onRestorationStarts: function(isAutoRestore) {
     this._startTimeStamp = Date.now();
+    this._totalNumberOfEagerTabs = 0;
+    this._totalNumberOfTabs = 0;
+    this._totalNumberOfWindows = 0;
 
     
     
@@ -83,9 +91,14 @@ this.StartupPerformance = {
         let delta = this._latestRestoredTimeStamp - this._startTimeStamp;
         histogram.add(delta);
 
+        Services.telemetry.getHistogramById("FX_SESSION_RESTORE_NUMBER_OF_EAGER_TABS_RESTORED").add(this._totalNumberOfEagerTabs);
+        Services.telemetry.getHistogramById("FX_SESSION_RESTORE_NUMBER_OF_TABS_RESTORED").add(this._totalNumberOfTabs);
+        Services.telemetry.getHistogramById("FX_SESSION_RESTORE_NUMBER_OF_WINDOWS_RESTORED").add(this._totalNumberOfWindows);
+
+
         
         this._startTimeStamp = null;
-      } catch (ex) {
+     } catch (ex) {
         console.error("StartupPerformance: error after resolving promise", ex);
       }
     });
@@ -151,6 +164,8 @@ this.StartupPerformance = {
           
           this._startTimer();
 
+          this._totalNumberOfWindows += 1;
+
           
           
           
@@ -159,8 +174,10 @@ this.StartupPerformance = {
 
           let observer = () => {
             this._latestRestoredTimeStamp = Date.now();
+            this._totalNumberOfEagerTabs += 1;
           };
           win.gBrowser.tabContainer.addEventListener("SSTabRestored", observer);
+          this._totalNumberOfTabs += win.gBrowser.tabContainer.itemCount;
 
           
           this._promiseFinished.then(() => {
