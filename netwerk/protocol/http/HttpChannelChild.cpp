@@ -1808,9 +1808,6 @@ HttpChannelChild::AsyncOpen(nsIStreamListener *listener, nsISupports *aContext)
   
   HttpBaseChannel::SetDocshellUserAgentOverride();
 
-  
-  HttpBaseChannel::SetLoadGroupUserAgentOverride();
-
   MOZ_ASSERT_IF(mPostRedirectChannelShouldUpgrade,
                 mPostRedirectChannelShouldIntercept);
   bool shouldUpgrade = mPostRedirectChannelShouldUpgrade;
