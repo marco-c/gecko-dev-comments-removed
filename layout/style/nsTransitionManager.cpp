@@ -483,9 +483,9 @@ nsTransitionManager::UpdateTransitions(
           
           
           
-          !ExtractComputedValueForTransition(anim->TransitionProperty(),
-                                             aNewStyleContext,
-                                             currentValue) ||
+          !StyleAnimationValue::ExtractComputedValue(anim->TransitionProperty(),
+                                                     aNewStyleContext,
+                                                     currentValue) ||
           currentValue != anim->ToValue()) {
         
         if (anim->HasCurrentEffect()) {
@@ -550,10 +550,12 @@ nsTransitionManager::ConsiderStartingTransition(
 
   StyleAnimationValue startValue, endValue, dummyValue;
   bool haveValues =
-    ExtractComputedValueForTransition(aProperty, aOldStyleContext,
-                                      startValue) &&
-    ExtractComputedValueForTransition(aProperty, aNewStyleContext,
-                                      endValue);
+    StyleAnimationValue::ExtractComputedValue(aProperty,
+                                              aOldStyleContext,
+                                              startValue) &&
+    StyleAnimationValue::ExtractComputedValue(aProperty,
+                                              aNewStyleContext,
+                                              endValue);
 
   bool haveChange = startValue != endValue;
 
@@ -833,9 +835,9 @@ nsTransitionManager::PruneCompletedTransitions(mozilla::dom::Element* aElement,
     
     
     StyleAnimationValue currentValue;
-    if (!ExtractComputedValueForTransition(anim->TransitionProperty(),
-                                           aNewStyleContext,
-                                           currentValue) ||
+    if (!StyleAnimationValue::ExtractComputedValue(anim->TransitionProperty(),
+                                                   aNewStyleContext,
+                                                   currentValue) ||
         currentValue != anim->ToValue()) {
       anim->CancelFromStyle();
       animations.RemoveElementAt(i);
