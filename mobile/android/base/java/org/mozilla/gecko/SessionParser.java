@@ -69,7 +69,13 @@ public abstract class SessionParser {
     public void onClosedTabsRead(final JSONArray closedTabs) throws JSONException {
     }
 
-    public void parse(String... sessionStrings) {
+    
+
+
+
+
+
+    public boolean parse(String... sessionStrings) {
         final LinkedList<SessionTab> sessionTabs = new LinkedList<SessionTab>();
         int totalCount = 0;
         int selectedIndex = -1;
@@ -117,7 +123,7 @@ public abstract class SessionParser {
             }
         } catch (JSONException e) {
             Log.e(LOGTAG, "JSON error", e);
-            return;
+            return false;
         }
 
         
@@ -128,5 +134,7 @@ public abstract class SessionParser {
         for (SessionTab tab : sessionTabs) {
             onTabRead(tab);
         }
+
+        return true;
     }
 }

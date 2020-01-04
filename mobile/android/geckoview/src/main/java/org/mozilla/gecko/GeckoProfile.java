@@ -77,7 +77,6 @@ public final class GeckoProfile {
     private static final String SESSION_FILE_BACKUP = "sessionstore.bak";
     private static final String SESSION_FILE_PREVIOUS = "sessionstore.old";
     private static final long MAX_PREVIOUS_FILE_AGE = 1000 * 3600 * 24; 
-    private static final int SESSION_STORE_EMPTY_JSON_LENGTH = 14; 
 
     private boolean mOldSessionDataProcessed = false;
 
@@ -674,14 +673,10 @@ public final class GeckoProfile {
     
 
 
-
-
-    public boolean sessionFileExistsAndNotEmptyWindow() {
+    public boolean sessionFileExists() {
         File sessionFile = getFile(SESSION_FILE);
 
-        return sessionFile != null &&
-               sessionFile.exists() &&
-               sessionFile.length() != SESSION_STORE_EMPTY_JSON_LENGTH;
+        return sessionFile != null && sessionFile.exists();
     }
 
     
