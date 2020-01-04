@@ -389,7 +389,10 @@ public:
   
   nsIntRect GetScreenAnchorRect() const { return mScreenRect; }
 
-  nsIntPoint GetLastClientOffset() const { return mLastClientOffset; }
+  mozilla::LayoutDeviceIntPoint GetLastClientOffset() const
+  {
+    return mLastClientOffset;
+  }
 
   
   int8_t GetAlignmentPosition() const;
@@ -526,7 +529,7 @@ protected:
   
   
   
-  nsIntPoint mLastClientOffset;
+  mozilla::LayoutDeviceIntPoint mLastClientOffset;
 
   nsPopupType mPopupType; 
   nsPopupState mPopupState; 

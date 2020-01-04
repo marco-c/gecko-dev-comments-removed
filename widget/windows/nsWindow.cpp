@@ -1995,17 +1995,17 @@ NS_METHOD nsWindow::GetRestoredBounds(LayoutDeviceIntRect &aRect)
 
 
 
-nsIntPoint
-nsWindow::GetClientOffsetUntyped()
+LayoutDeviceIntPoint
+nsWindow::GetClientOffset()
 {
   if (!mWnd) {
-    return nsIntPoint(0, 0);
+    return LayoutDeviceIntPoint(0, 0);
   }
 
   RECT r1;
   GetWindowRect(mWnd, &r1);
   LayoutDeviceIntPoint pt = WidgetToScreenOffset();
-  return nsIntPoint(pt.x - r1.left, pt.y - r1.top);
+  return LayoutDeviceIntPoint(pt.x - r1.left, pt.y - r1.top);
 }
 
 void
