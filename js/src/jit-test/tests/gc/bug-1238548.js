@@ -1,0 +1,2 @@
+
+gcparam("highFrequencyHeapGrowthMax", 1);
