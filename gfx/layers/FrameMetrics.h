@@ -74,6 +74,7 @@ public:
     , mIsLayersIdRoot(false)
     , mUsesContainerScrolling(false)
     , mIsScrollInfoLayer(false)
+    , mForceDisableApz(false)
   {
   }
 
@@ -113,7 +114,8 @@ public:
            mAllowVerticalScrollWithWheel == aOther.mAllowVerticalScrollWithWheel &&
            mIsLayersIdRoot == aOther.mIsLayersIdRoot &&
            mUsesContainerScrolling == aOther.mUsesContainerScrolling &&
-           mIsScrollInfoLayer == aOther.mIsScrollInfoLayer;
+           mIsScrollInfoLayer == aOther.mIsScrollInfoLayer &&
+           mForceDisableApz == aOther.mForceDisableApz;
   }
 
   bool operator!=(const FrameMetrics& aOther) const
@@ -554,6 +556,13 @@ public:
     return mIsScrollInfoLayer;
   }
 
+  void SetForceDisableApz(bool aForceDisable) {
+    mForceDisableApz = aForceDisable;
+  }
+  bool IsApzForceDisabled() const {
+    return mForceDisableApz;
+  }
+
 private:
   
   ViewID mScrollId;
@@ -741,6 +750,10 @@ private:
 
   
   bool mIsScrollInfoLayer:1;
+
+  
+  
+  bool mForceDisableApz:1;
 
   
   
