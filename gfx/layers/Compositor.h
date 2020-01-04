@@ -596,6 +596,11 @@ protected:
   
 
 
+  TimeStamp mLastCompositionEndTime;
+
+  
+
+
   TimeStamp mCompositionTime;
   
 
