@@ -509,6 +509,7 @@ class MacroAssembler : public MacroAssemblerSpecific
     
     CodeOffset thunkWithPatch() PER_SHARED_ARCH;
     void patchThunk(uint32_t thunkOffset, uint32_t targetOffset) PER_SHARED_ARCH;
+    static void repatchThunk(uint8_t* code, uint32_t thunkOffset, uint32_t targetOffset) PER_SHARED_ARCH;
 
     
     

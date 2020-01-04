@@ -42,6 +42,8 @@ reMatchArg = re.compile(reBeforeArg + reArgType + reArgName + reArgDefault + reA
 
 def get_normalized_signatures(signature, fileAnnot = None):
     
+    signature = signature.replace('static', '')
+    
     signature = signature.replace(';', ' ')
     
     signature = re.sub(r'\s+', ' ', signature).strip()
