@@ -129,6 +129,23 @@ protected:
   nsCOMPtr<nsIRunnable> mRunnable;
 };
 
+nsCOMPtr<nsISettingsServiceLock>
+GetSettingServiceLock()
+{
+  nsresult rv;
+  nsCOMPtr<nsISettingsService> service = do_GetService(SETTINGS_SERVICE, &rv);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return nullptr;
+  }
+
+  nsCOMPtr<nsISettingsServiceLock> lock;
+  rv = service->CreateLock(nullptr, getter_AddRefs(lock));
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return nullptr;
+  }
+  return lock.forget();
+}
+
 class AudioProfileData final
 {
 public:
@@ -500,6 +517,12 @@ AudioManager::Observe(nsISupports* aSubject,
     for (uint32_t idx = 0; idx < VOLUME_TOTAL_NUMBER; ++idx) {
       if (setting.mKey.EqualsASCII(gVolumeData[idx].mChannelName)) {
         SetVolumeByCategory(gVolumeData[idx].mCategory, volIndex);
+        nsCOMPtr<nsISettingsServiceLock> lock = GetSettingServiceLock();
+        UpdateVolumeSettingToDatabase(lock.get(),
+                                      AppendProfileToVolumeSetting(
+                                        gVolumeData[idx].mChannelName,
+                                        mPresentProfile).get(),
+                                      volIndex);
         return NS_OK;
       }
     }
@@ -664,9 +687,6 @@ AudioManager::~AudioManager() {
   if (NS_FAILED(obs->RemoveObserver(this,  AUDIO_CHANNEL_PROCESS_CHANGED))) {
     NS_WARNING("Failed to remove audio-channel-process-changed!");
   }
-
-  
-  SendVolumeChangeNotification(FindAudioProfileData(mPresentProfile));
 }
 
 static StaticRefPtr<AudioManager> sAudioManager;
@@ -1102,7 +1122,6 @@ AudioManager::AppendProfileToVolumeSetting(const char* aName, AudioOutputProfile
   return topic;
 }
 
-
 void
 AudioManager::InitVolumeFromDatabase()
 {
@@ -1145,33 +1164,33 @@ AudioManager::InitProfileVolumeFailed(const char* aError)
 }
 
 void
+AudioManager::UpdateVolumeSettingToDatabase(nsISettingsServiceLock* aLock,
+                                            const char* aTopic,
+                                            uint32_t aVolIndex)
+{
+  MOZ_ASSERT(aLock);
+
+  mozilla::AutoSafeJSContext cx;
+  JS::Rooted<JS::Value> value(cx);
+  value.setInt32(aVolIndex);
+  aLock->Set(aTopic, value, nullptr, nullptr);
+}
+
+void
 AudioManager::SendVolumeChangeNotification(AudioProfileData* aProfileData)
 {
   MOZ_ASSERT(aProfileData);
-  nsresult rv;
-  nsCOMPtr<nsISettingsService> service = do_GetService(SETTINGS_SERVICE, &rv);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return;
-  }
-
-  nsCOMPtr<nsISettingsServiceLock> lock;
-  rv = service->CreateLock(nullptr, getter_AddRefs(lock));
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return;
-  }
 
   
-  mozilla::AutoSafeJSContext cx;
-  JS::Rooted<JS::Value> value(cx);
+  
+  
+  
+  nsCOMPtr<nsISettingsServiceLock> lock = GetSettingServiceLock();
   for (uint32_t idx = 0; idx < VOLUME_TOTAL_NUMBER; ++idx) {
-    value.setInt32(aProfileData->mVolumeTable[gVolumeData[idx].mCategory]);
-    
-    
-    
-    
-    lock->Set(gVolumeData[idx].mChannelName, value, nullptr, nullptr);
-    lock->Set(AppendProfileToVolumeSetting(gVolumeData[idx].mChannelName,
-               mPresentProfile).get(), value, nullptr, nullptr);
+    uint32_t volSetting = gVolumeData[idx].mCategory;
+    UpdateVolumeSettingToDatabase(lock.get(),
+                                  gVolumeData[idx].mChannelName,
+                                  aProfileData->mVolumeTable[volSetting]);
   }
 }
 
