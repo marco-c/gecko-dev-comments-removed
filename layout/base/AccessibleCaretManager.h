@@ -117,7 +117,11 @@ protected:
 
   
   
-  nsIFrame* ChangeFocus(nsIFrame* aFrame) const;
+  nsIFrame* GetFocusableFrame(nsIFrame* aFrame) const;
+
+  
+  
+  void ChangeFocusToOrClearOldFocus(nsIFrame* aFrame) const;
 
   nsresult SelectWord(nsIFrame* aFrame, const nsPoint& aPoint) const;
   void SetSelectionDragState(bool aState) const;
