@@ -157,6 +157,10 @@ const PanelUI = {
 
       this.panel.addEventListener("popupshown", function onPopupShown() {
         this.removeEventListener("popupshown", onPopupShown);
+        
+        
+        
+        gCustomizationTabPreloader.ensurePreloading();
         deferred.resolve();
       });
 
