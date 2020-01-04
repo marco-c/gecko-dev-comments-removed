@@ -89,8 +89,7 @@ public:
 
 
 
-  void SetWindowDimensions(nscoord aWidth, nscoord aHeight,
-                           bool aDelayResize = false);
+  void SetWindowDimensions(nscoord aWidth, nscoord aHeight);
 
   
 
