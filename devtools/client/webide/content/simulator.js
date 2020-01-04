@@ -3,6 +3,7 @@
 
 
 var Cu = Components.utils;
+var Ci = Components.interfaces;
 
 const { require } = Cu.import("resource://devtools/shared/Loader.jsm", {});
 const { GetDevices, GetDeviceString } = require("devtools/client/shared/devices");
@@ -117,7 +118,27 @@ var SimulatorEditor = {
       this.updateProfileSelector();
       this.updateDeviceSelector();
       this.updateDeviceFields();
+
+      
+      let tvSimMenu = document.querySelector("#tv_simulator_menu");
+      tvSimMenu.style.visibility = (this._simulator.type === "television")?
+                                   "visible" : "hidden";
     });
+  },
+
+  
+  showTVConfigDirectory() {
+    let profD = Services.dirsvc.get("ProfD", Ci.nsIFile);
+    profD.append("extensions");
+    profD.append(this._simulator.addon.id);
+    profD.append("profile");
+    profD.append("dummy");
+    let profileDir = profD.path;
+
+    
+    let nsLocalFile = Components.Constructor("@mozilla.org/file/local;1",
+                                           "nsILocalFile", "initWithPath");
+    new nsLocalFile(profileDir).reveal();
   },
 
   
@@ -317,4 +338,9 @@ window.addEventListener("load", function onLoad() {
 
   
   SimulatorEditor.edit(Simulators._lastConfiguredSimulator);
+
+  document.querySelector("#open-tv-dummy-directory").onclick = e => {
+    SimulatorEditor.showTVConfigDirectory();
+    e.preventDefault();
+  };
 });
