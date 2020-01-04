@@ -212,6 +212,8 @@ class CommonBackend(BuildBackend):
                     topsrcdir=obj.topsrcdir)
 
         elif isinstance(obj, XPIDLFile):
+            
+            
             self._idl_manager.register_idl(obj)
 
         elif isinstance(obj, ConfigFileSubstitution):
@@ -225,32 +227,64 @@ class CommonBackend(BuildBackend):
 
         
         elif isinstance(obj, WebIDLFile):
+            
+            if self.environment.is_artifact_build:
+                return True
+
             self._webidls.sources.add(mozpath.join(obj.srcdir, obj.basename))
 
         elif isinstance(obj, GeneratedEventWebIDLFile):
+            
+            if self.environment.is_artifact_build:
+                return True
+
             self._webidls.generated_events_sources.add(mozpath.join(
                 obj.srcdir, obj.basename))
 
         elif isinstance(obj, TestWebIDLFile):
+            
+            if self.environment.is_artifact_build:
+                return True
+
             self._webidls.test_sources.add(mozpath.join(obj.srcdir,
                 obj.basename))
 
         elif isinstance(obj, PreprocessedTestWebIDLFile):
+            
+            if self.environment.is_artifact_build:
+                return True
+
             self._webidls.preprocessed_test_sources.add(mozpath.join(
                 obj.srcdir, obj.basename))
 
         elif isinstance(obj, GeneratedWebIDLFile):
+            
+            if self.environment.is_artifact_build:
+                return True
+
             self._webidls.generated_sources.add(mozpath.join(obj.srcdir,
                 obj.basename))
 
         elif isinstance(obj, PreprocessedWebIDLFile):
+            
+            if self.environment.is_artifact_build:
+                return True
+
             self._webidls.preprocessed_sources.add(mozpath.join(
                 obj.srcdir, obj.basename))
 
         elif isinstance(obj, ExampleWebIDLInterface):
+            
+            if self.environment.is_artifact_build:
+                return True
+
             self._webidls.example_interfaces.add(obj.name)
 
         elif isinstance(obj, IPDLFile):
+            
+            if self.environment.is_artifact_build:
+                return True
+
             self._ipdl_sources.add(mozpath.join(obj.srcdir, obj.basename))
 
         elif isinstance(obj, UnifiedSources):
