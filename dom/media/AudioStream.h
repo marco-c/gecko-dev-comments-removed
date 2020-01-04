@@ -334,8 +334,7 @@ private:
   nsresult EnsureTimeStretcherInitializedUnlocked();
 
   
-  
-  bool IsValidAudioFormat(Chunk* aChunk);
+  bool Downmix(Chunk* aChunk);
 
   void GetUnprocessed(AudioBufferWriter& aWriter);
   void GetTimeStretched(AudioBufferWriter& aWriter);
@@ -375,8 +374,12 @@ private:
 
   StreamState mState;
   bool mIsFirst;
+  
+  bool mIsMonoAudioEnabled;
 
   DataSource& mDataSource;
+
+  UniquePtr<AudioConverter> mAudioConverter;
 };
 
 } 
