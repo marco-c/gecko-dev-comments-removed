@@ -66,7 +66,7 @@ public:
 
   
   already_AddRefed<MediaKeySession> CreateSession(JSContext* aCx,
-                                                  SessionType aSessionType,
+                                                  MediaKeySessionType aSessionType,
                                                   ErrorResult& aRv);
 
   
