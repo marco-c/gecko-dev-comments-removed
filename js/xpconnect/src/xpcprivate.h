@@ -3475,6 +3475,7 @@ public:
         , wantComponents(true)
         , wantExportHelpers(false)
         , isWebExtensionContentScript(false)
+        , waiveInterposition(false)
         , proto(cx)
         , addonId(cx)
         , writeToGlobalPrototype(false)
@@ -3492,6 +3493,7 @@ public:
     bool wantComponents;
     bool wantExportHelpers;
     bool isWebExtensionContentScript;
+    bool waiveInterposition;
     JS::RootedObject proto;
     nsCString sandboxName;
     JS::RootedString addonId;
@@ -3731,6 +3733,11 @@ public:
     
     
     bool isWebExtensionContentScript;
+
+    
+    
+    
+    bool waiveInterposition;
 
     
     
