@@ -140,6 +140,7 @@ public class Tab {
         mPluginViews = new ArrayList<View>();
         mState = shouldShowProgress(url) ? STATE_LOADING : STATE_SUCCESS;
         mLoadProgress = LOAD_PROGRESS_INIT;
+        mIconRequestBuilder = Icons.with(mAppContext).pageUrl(mUrl);
 
         updateBookmark();
     }
@@ -450,13 +451,6 @@ public class Tab {
         
         if (AboutPages.isBuiltinIconPage(mUrl) && mFavicon != null) {
             return;
-        }
-
-        if (mIconRequestBuilder == null) {
-            
-            
-            
-            mIconRequestBuilder = Icons.with(mAppContext).pageUrl(mUrl);
         }
 
         mRunningIconRequest = mIconRequestBuilder
