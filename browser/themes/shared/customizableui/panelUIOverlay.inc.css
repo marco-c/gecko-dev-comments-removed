@@ -675,8 +675,15 @@ toolbarpaletteitem[place="palette"] > toolbaritem > toolbarbutton {
   list-style-image: url(chrome://browser/skin/sync-horizontalbar.png);
 }
 
+#PanelUI-remotetabs {
+  --panel-ui-sync-illustration-height: 157.5px;
+}
+
 .PanelUI-remotetabs-instruction-label,
 #PanelUI-remotetabs-mobile-promo {
+  
+
+
   margin: 15px;
   text-align: center;
   text-shadow: none;
@@ -687,6 +694,9 @@ toolbarpaletteitem[place="palette"] > toolbaritem > toolbarbutton {
 
 
 .PanelUI-remotetabs-instruction-box {
+  
+
+
   padding-bottom: 30px;
   padding-top: 15px;
 }
@@ -698,6 +708,9 @@ toolbarpaletteitem[place="palette"] > toolbaritem > toolbarbutton {
 
   color: white !important;
   border-radius: 2px;
+  
+
+
   margin-top: 10px;
   margin-bottom: 10px;
   padding: 8px;
@@ -721,7 +734,7 @@ toolbarpaletteitem[place="palette"] > toolbaritem > toolbarbutton {
 }
 
 .fxaSyncIllustration {
-  width: 180px;
+  height: var(--panel-ui-sync-illustration-height);
   list-style-image: url(chrome://browser/skin/fxa/sync-illustration.svg);
 }
 
@@ -742,7 +755,12 @@ toolbarpaletteitem[place="palette"] > toolbaritem > toolbarbutton {
 #PanelUI-remotetabs[mainview] #PanelUI-remotetabs-reauthsync,
 #PanelUI-remotetabs[mainview] #PanelUI-remotetabs-nodevicespane,
 #PanelUI-remotetabs[mainview] #PanelUI-remotetabs-tabsdisabledpane {
-  min-height: 33em;
+  min-height: calc(var(--panel-ui-sync-illustration-height) +
+                   20px + 
+                   16px + 
+                   30px + 
+                   30px + 15px + 
+                   11em);
 }
 
 #PanelUI-remotetabs-tabslist > label[itemtype="client"] {
