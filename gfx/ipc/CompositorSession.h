@@ -51,7 +51,7 @@ public:
   virtual void SetContentController(GeckoContentController* aController) = 0;
 
   
-  virtual already_AddRefed<IAPZCTreeManager> GetAPZCTreeManager() const = 0;
+  virtual RefPtr<IAPZCTreeManager> GetAPZCTreeManager() const = 0;
 
   
   CompositorBridgeChild* GetCompositorBridgeChild();
