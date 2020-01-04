@@ -9,6 +9,7 @@
 
 #include "nsThreadUtils.h"
 #include "LeakRefPtr.h"
+#include "mozilla/DebugOnly.h"
 
 class nsThreadSyncDispatch : public nsRunnable
 {
@@ -16,7 +17,6 @@ public:
   nsThreadSyncDispatch(nsIThread* aOrigin, already_AddRefed<nsIRunnable>&& aTask)
     : mOrigin(aOrigin)
     , mSyncTask(mozilla::Move(aTask))
-    , mResult(NS_ERROR_NOT_INITIALIZED)
   {
   }
 
@@ -25,16 +25,13 @@ public:
     return !!mSyncTask;
   }
 
-  nsresult Result()
-  {
-    return mResult;
-  }
-
 private:
   NS_IMETHOD Run() override
   {
     if (nsIRunnable* task = mSyncTask.get()) {
-      mResult = task->Run();
+      mozilla::DebugOnly<nsresult> result = task->Run();
+      MOZ_ASSERT(NS_SUCCEEDED(result),
+                 "task in sync dispatch should not fail");
       
       
       mSyncTask.release();
@@ -48,7 +45,6 @@ private:
   
   
   mozilla::LeakRefPtr<nsIRunnable> mSyncTask;
-  nsresult mResult;
 };
 
 #endif 
