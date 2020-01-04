@@ -213,6 +213,8 @@ static const JSFunctionSpec SimdTypedObjectMethods[] = {
 namespace js {
 namespace jit {
 
+static_assert(uint64_t(SimdOperation::Last) <= UINT16_MAX, "SimdOperation must fit in uint16_t");
+
 
 
 

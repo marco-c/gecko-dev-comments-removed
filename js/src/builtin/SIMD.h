@@ -878,7 +878,11 @@ GetBooleanSimdType(SimdType t)
 
 
 
-enum class SimdOperation : uint8_t {
+
+
+
+
+enum class SimdOperation {
     
     Constructor,
 
@@ -901,6 +905,8 @@ enum class SimdOperation : uint8_t {
     Fn_fromUint32x4Bits,
     Fn_fromFloat32x4Bits,
     Fn_fromFloat64x2Bits,
+
+    Last = Fn_fromFloat64x2Bits
 };
 
 class SimdObject : public JSObject
