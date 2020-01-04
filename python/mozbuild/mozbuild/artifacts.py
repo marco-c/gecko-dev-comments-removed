@@ -56,7 +56,6 @@ from mozbuild.util import (
     FileAvoidWrite,
 )
 import mozpack.path as mozpath
-from mozversion import mozversion
 from mozregression.download_manager import (
     DownloadManager,
 )
@@ -295,6 +294,7 @@ class ArtifactCache(CacheManager):
         
         
         
+        
         hash = hashlib.sha256(url).hexdigest()[:16]
         fname = hash + '-' + os.path.basename(url)
         self.log(logging.INFO, 'artifact',
@@ -304,18 +304,10 @@ class ArtifactCache(CacheManager):
             dl = self._download_manager.download(url, fname)
             if dl:
                 dl.wait()
-            
-            
-            info = mozversion.get_version(mozpath.join(self._cache_dir, fname))
-            buildid = info['platform_buildid'] or info['application_buildid']
-            if not buildid:
-                raise ValueError('Artifact for {url} existed, but no build ID could be extracted!'.format(url=url))
-            newname = buildid + '-' + os.path.basename(url)
-            os.rename(mozpath.join(self._cache_dir, fname), mozpath.join(self._cache_dir, newname))
             self.log(logging.INFO, 'artifact',
-                {'path': os.path.abspath(mozpath.join(self._cache_dir, newname))},
+                {'path': os.path.abspath(mozpath.join(self._cache_dir, fname))},
                 'Downloaded artifact to {path}')
-            return os.path.abspath(mozpath.join(self._cache_dir, newname))
+            return os.path.abspath(mozpath.join(self._cache_dir, fname))
         finally:
             
             self._download_manager.cancel()
