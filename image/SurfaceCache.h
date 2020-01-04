@@ -281,7 +281,6 @@ struct SurfaceCache
 
 
 
-
   static InsertOutcome InsertPlaceholder(const ImageKey    aImageKey,
                                          const SurfaceKey& aSurfaceKey);
 
@@ -306,7 +305,6 @@ struct SurfaceCache
   static bool CanHold(size_t aSize);
 
   
-
 
 
 
@@ -376,26 +374,9 @@ struct SurfaceCache
 
 
 
-
-
-  static void RemoveEntry(const ImageKey    aImageKey,
-                          const SurfaceKey& aSurfaceKey);
-
-  
-
-
-
-
-
-
-
-
-
-
   static void RemoveImage(const ImageKey aImageKey);
 
   
-
 
 
 

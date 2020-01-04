@@ -655,22 +655,6 @@ public:
     return LookupResult(Move(ref), matchType);
   }
 
-  void RemoveEntry(const ImageKey    aImageKey,
-                   const SurfaceKey& aSurfaceKey)
-  {
-    RefPtr<ImageSurfaceCache> cache = GetImageCache(aImageKey);
-    if (!cache) {
-      return;  
-    }
-
-    RefPtr<CachedSurface> surface = cache->Lookup(aSurfaceKey);
-    if (!surface) {
-      return;  
-    }
-
-    Remove(surface);
-  }
-
   bool CanHold(const Cost aCost) const
   {
     return aCost <= mMaxCost;
@@ -875,6 +859,22 @@ private:
       surface->SetLocked(false);
       StartTracking(surface);
     }
+  }
+
+  void RemoveEntry(const ImageKey    aImageKey,
+                   const SurfaceKey& aSurfaceKey)
+  {
+    RefPtr<ImageSurfaceCache> cache = GetImageCache(aImageKey);
+    if (!cache) {
+      return;  
+    }
+
+    RefPtr<CachedSurface> surface = cache->Lookup(aSurfaceKey);
+    if (!surface) {
+      return;  
+    }
+
+    Remove(surface);
   }
 
   struct SurfaceTracker : public nsExpirationTracker<CachedSurface, 2>
@@ -1092,16 +1092,6 @@ SurfaceCache::UnlockEntries(const ImageKey aImageKey)
   if (sInstance) {
     MutexAutoLock lock(sInstance->GetMutex());
     return sInstance->UnlockEntries(aImageKey);
-  }
-}
-
- void
-SurfaceCache::RemoveEntry(const ImageKey    aImageKey,
-                          const SurfaceKey& aSurfaceKey)
-{
-  if (sInstance) {
-    MutexAutoLock lock(sInstance->GetMutex());
-    sInstance->RemoveEntry(aImageKey, aSurfaceKey);
   }
 }
 
