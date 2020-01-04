@@ -104,7 +104,8 @@ public:
 
   
   
-  virtual void ReleaseMediaResources() {}
+  
+  virtual void ReleaseResources() {}
 
   
   

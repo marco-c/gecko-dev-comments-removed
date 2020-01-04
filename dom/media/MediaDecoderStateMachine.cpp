@@ -1191,7 +1191,7 @@ MediaDecoderStateMachine::SetDormant(bool aDormant)
     
     
     
-    mReader->ReleaseMediaResources();
+    mReader->ReleaseResources();
 
     return;
   }

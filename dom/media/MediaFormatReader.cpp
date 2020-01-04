@@ -1962,7 +1962,7 @@ MediaFormatReader::UpdateBufferedWithPromise() {
   return BufferedUpdatePromise::CreateAndResolve(true, __func__);
 }
 
-void MediaFormatReader::ReleaseMediaResources()
+void MediaFormatReader::ReleaseResources()
 {
   
   
