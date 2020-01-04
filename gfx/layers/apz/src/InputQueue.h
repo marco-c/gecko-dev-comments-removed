@@ -102,6 +102,10 @@ public:
 
 
   void Clear();
+  
+
+
+  bool AllowScrollHandoff() const;
 
 private:
   ~InputQueue();

@@ -895,7 +895,7 @@ private:
   void StartSmoothScroll(ScrollSource aSource);
 
   
-  bool AllowScrollHandoffInWheelTransaction() const;
+  bool AllowScrollHandoffInCurrentBlock() const;
 
   
 

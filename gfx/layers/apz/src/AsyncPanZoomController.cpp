@@ -1534,10 +1534,9 @@ AsyncPanZoomController::CanScroll(Layer::ScrollDirection aDirection) const
 }
 
 bool
-AsyncPanZoomController::AllowScrollHandoffInWheelTransaction() const
+AsyncPanZoomController::AllowScrollHandoffInCurrentBlock() const
 {
-  WheelBlockState* block = mInputQueue->CurrentWheelBlock();
-  return block->AllowScrollHandoff();
+  return mInputQueue->AllowScrollHandoff();
 }
 
 nsEventStatus AsyncPanZoomController::OnScrollWheel(const ScrollWheelInput& aEvent)
@@ -2093,22 +2092,17 @@ bool AsyncPanZoomController::AttemptScroll(const ParentLayerPoint& aStartPoint,
     return true;
   }
 
-  
-  if (aOverscrollHandoffState.mScrollSource == ScrollSource::Wheel &&
-      !AllowScrollHandoffInWheelTransaction())
-  {
-    return true;
-  }
-
-  
-  
-  
-  
-  
-  ++aOverscrollHandoffState.mChainIndex;
-  if (CallDispatchScroll(aEndPoint + overscroll, aEndPoint,
-                         aOverscrollHandoffState)) {
-    return true;
+  if (AllowScrollHandoffInCurrentBlock()) {
+    
+    
+    
+    
+    
+    ++aOverscrollHandoffState.mChainIndex;
+    if (CallDispatchScroll(aEndPoint + overscroll, aEndPoint,
+                           aOverscrollHandoffState)) {
+      return true;
+    }
   }
 
   
