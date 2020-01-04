@@ -1291,15 +1291,15 @@ protected:
   RefPtr<Promise> mFilesAndDirectoriesPromise;
 
   nsString mStaticDocFileList;
+
   
-  
 
 
 
 
 
 
-  nsString mFocusedValue;  
+  nsString mFocusedValue;
 
   
 
@@ -1407,7 +1407,7 @@ private:
         return false;
       }
     }
-    
+
     
     int32_t mFilterMask;
     

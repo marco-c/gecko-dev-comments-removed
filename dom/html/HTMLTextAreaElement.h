@@ -304,9 +304,9 @@ protected:
   bool                     mCanShowInvalidUI;
   
   bool                     mCanShowValidUI;
-  
+
   void FireChangeEventIfNeeded();
-  
+
   nsString mFocusedValue;
 
   
