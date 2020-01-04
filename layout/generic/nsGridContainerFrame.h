@@ -156,6 +156,34 @@ protected:
 
 private:
   
+  struct Fragmentainer {
+    
+
+
+
+    nscoord mToFragmentainerEnd;
+    
+
+
+    bool mIsTopOfPage;
+    
+
+
+    bool mCanBreakAtStart;
+    
+
+
+    bool mCanBreakAtEnd;
+    
+
+
+    bool mIsAutoBSize;
+  };
+
+  Maybe<nsGridContainerFrame::Fragmentainer>
+    GetNearestFragmentainer(const GridReflowState& aState) const;
+
+  
 
 
   nscoord mCachedMinISize;
