@@ -235,7 +235,7 @@ WheelTransaction::OnEvent(WidgetEvent* aEvent)
         
         
         nsIntPoint pt = GetScreenPoint(mouseEvent);
-        nsIntRect r = sTargetFrame->GetScreenRectExternal();
+        nsIntRect r = sTargetFrame->GetScreenRect();
         if (!r.Contains(pt)) {
           EndTransaction();
           return;
