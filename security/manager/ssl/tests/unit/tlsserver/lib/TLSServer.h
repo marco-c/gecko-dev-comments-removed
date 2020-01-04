@@ -44,9 +44,9 @@ extern const char DEFAULT_CERT_NICKNAME[];
 
 
 SECStatus
-ConfigSecureServerWithNamedCert(PRFileDesc *fd, const char *certName,
-                                 ScopedCERTCertificate *cert,
-                                 SSLKEAType *kea);
+ConfigSecureServerWithNamedCert(PRFileDesc* fd, const char* certName,
+                                 UniqueCERTCertificate* cert,
+                                 SSLKEAType* kea);
 
 SECStatus
 InitializeNSS(const char* nssCertDBDir);

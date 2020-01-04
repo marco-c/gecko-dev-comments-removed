@@ -645,7 +645,7 @@ CertVerifier::VerifyCert(CERTCertificate* cert, SECCertificateUsage usage,
 }
 
 SECStatus
-CertVerifier::VerifySSLServerCert(CERTCertificate* peerCert,
+CertVerifier::VerifySSLServerCert(const UniqueCERTCertificate& peerCert,
                       const SECItem* stapledOCSPResponse,
                                   Time time,
                       void* pinarg,
@@ -675,9 +675,10 @@ CertVerifier::VerifySSLServerCert(CERTCertificate* peerCert,
 
   
   
-  SECStatus rv = VerifyCert(peerCert, certificateUsageSSLServer, time, pinarg,
-                            hostname, builtChain, flags, stapledOCSPResponse,
-                            evOidPolicy, ocspStaplingStatus, keySizeStatus,
+  SECStatus rv = VerifyCert(peerCert.get(), certificateUsageSSLServer, time,
+                            pinarg, hostname, builtChain, flags,
+                            stapledOCSPResponse, evOidPolicy,
+                            ocspStaplingStatus, keySizeStatus,
                             sha1ModeResult, pinningTelemetryInfo);
   if (rv != SECSuccess) {
     return rv;

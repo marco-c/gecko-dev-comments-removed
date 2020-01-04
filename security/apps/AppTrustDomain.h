@@ -69,7 +69,7 @@ public:
 private:
    ScopedCERTCertList& mCertChain;
   void* mPinArg; 
-  ScopedCERTCertificate mTrustedRoot;
+  UniqueCERTCertificate mTrustedRoot;
   unsigned int mMinRSABits;
 
   static StaticMutex sMutex;

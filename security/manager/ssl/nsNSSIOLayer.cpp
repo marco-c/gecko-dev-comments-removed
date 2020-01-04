@@ -18,6 +18,7 @@
 #include "mozilla/Casting.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/Logging.h"
+#include "mozilla/Move.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/Telemetry.h"
 #include "nsCharSeparatedTokenizer.h"
@@ -336,14 +337,14 @@ nsNSSSocketInfo::IsAcceptableForHost(const nsACString& hostname, bool* _retval)
   
   
 
-  ScopedCERTCertificate nssCert;
+  UniqueCERTCertificate nssCert;
 
   nsCOMPtr<nsIX509Cert> cert;
   if (NS_FAILED(SSLStatus()->GetServerCert(getter_AddRefs(cert)))) {
     return NS_OK;
   }
   if (cert) {
-    nssCert = cert->GetCert();
+    nssCert.reset(cert->GetCert());
   }
 
   if (!nssCert) {
@@ -1990,14 +1991,14 @@ public:
                          CERTCertificate** pRetCert,
                          SECKEYPrivateKey** pRetKey,
                          nsNSSSocketInfo* info,
-                         CERTCertificate* serverCert)
+                         const UniqueCERTCertificate& serverCert)
     : mRV(SECFailure)
     , mErrorCodeToReport(SEC_ERROR_NO_MEMORY)
     , mPRetCert(pRetCert)
     , mPRetKey(pRetKey)
     , mCANames(caNames)
     , mSocketInfo(info)
-    , mServerCert(serverCert)
+    , mServerCert(serverCert.get())
   {
   }
 
@@ -2038,7 +2039,7 @@ nsNSS_SSLGetClientAuthData(void* arg, PRFileDesc* socket,
   RefPtr<nsNSSSocketInfo> info(
     reinterpret_cast<nsNSSSocketInfo*>(socket->higher->secret));
 
-  ScopedCERTCertificate serverCert(SSL_PeerCertificate(socket));
+  UniqueCERTCertificate serverCert(SSL_PeerCertificate(socket));
   if (!serverCert) {
     NS_NOTREACHED("Missing server certificate should have been detected during "
                   "server cert authentication.");
@@ -2086,7 +2087,7 @@ ClientAuthDataRunnable::RunOnTargetThread()
 
   UniquePLArenaPool arena;
   char** caNameStrings;
-  ScopedCERTCertificate cert;
+  UniqueCERTCertificate cert;
   UniqueSECKEYPrivateKey privKey;
   ScopedCERTCertList certList;
   CERTCertListNode* node;
@@ -2102,7 +2103,7 @@ ClientAuthDataRunnable::RunOnTargetThread()
   
   
   if (socketClientCert) {
-    cert = socketClientCert->GetCert();
+    cert.reset(socketClientCert->GetCert());
     if (!cert) {
       goto loser;
     }
@@ -2113,7 +2114,7 @@ ClientAuthDataRunnable::RunOnTargetThread()
       goto loser;
     }
 
-    *mPRetCert = cert.forget();
+    *mPRetCert = cert.release();
     *mPRetKey = privKey.release();
     mRV = SECSuccess;
     return;
@@ -2161,7 +2162,7 @@ ClientAuthDataRunnable::RunOnTargetThread()
       goto noCert;
     }
 
-    ScopedCERTCertificate low_prio_nonrep_cert;
+    UniqueCERTCertificate lowPrioNonrepCert;
 
     
     while (!CERT_LIST_END(node, certList)) {
@@ -2172,12 +2173,12 @@ ClientAuthDataRunnable::RunOnTargetThread()
         if (hasExplicitKeyUsageNonRepudiation(node->cert)) {
           privKey = nullptr;
           
-          if (!low_prio_nonrep_cert) { 
-            low_prio_nonrep_cert = CERT_DupCertificate(node->cert);
+          if (!lowPrioNonrepCert) { 
+            lowPrioNonrepCert.reset(CERT_DupCertificate(node->cert));
           }
         } else {
           
-          cert = CERT_DupCertificate(node->cert);
+          cert.reset(CERT_DupCertificate(node->cert));
           break;
         }
       }
@@ -2190,8 +2191,8 @@ ClientAuthDataRunnable::RunOnTargetThread()
       node = CERT_LIST_NEXT(node);
     }
 
-    if (!cert && low_prio_nonrep_cert) {
-      cert = low_prio_nonrep_cert.forget();
+    if (!cert && lowPrioNonrepCert) {
+      cert = Move(lowPrioNonrepCert);
       privKey.reset(PK11_FindKeyByAnyCert(cert.get(), wincx));
     }
 
@@ -2235,7 +2236,7 @@ ClientAuthDataRunnable::RunOnTargetThread()
             nsNSSCertificate* obj_cert =
               reinterpret_cast<nsNSSCertificate*>(found_cert.get());
             if (obj_cert) {
-              cert = obj_cert->GetCert();
+              cert.reset(obj_cert->GetCert());
             }
           }
 
@@ -2395,7 +2396,7 @@ ClientAuthDataRunnable::RunOnTargetThread()
         ++i, node = CERT_LIST_NEXT(node)) {
 
         if (i == selectedIndex) {
-          cert = CERT_DupCertificate(node->cert);
+          cert.reset(CERT_DupCertificate(node->cert));
           break;
         }
       }
@@ -2434,7 +2435,7 @@ loser:
 done:
   int error = PR_GetError();
 
-  *mPRetCert = cert.forget();
+  *mPRetCert = cert.release();
   *mPRetKey = privKey.release();
 
   if (mRV == SECFailure) {

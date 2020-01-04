@@ -2,34 +2,29 @@
 
 
 
-
 #include "nsPKCS12Blob.h"
 
-#include "pkix/pkixtypes.h"
-
-#include "prmem.h"
-#include "prprf.h"
-
-#include "nsIFile.h"
-#include "nsNetUtil.h"
-#include "nsIInputStream.h"
+#include "ScopedNSSTypes.h"
+#include "nsCRT.h"
+#include "nsDirectoryServiceDefs.h"
+#include "nsICertificateDialogs.h"
 #include "nsIDirectoryService.h"
-#include "nsThreadUtils.h"
-
+#include "nsIFile.h"
+#include "nsIInputStream.h"
+#include "nsKeygenHandler.h" 
+#include "nsNSSCertificate.h"
 #include "nsNSSComponent.h"
 #include "nsNSSHelper.h"
-#include "nsString.h"
-#include "nsReadableUtils.h"
-#include "nsXPIDLString.h"
-#include "nsDirectoryServiceDefs.h"
 #include "nsNSSHelper.h"
-#include "nsNSSCertificate.h"
-#include "nsKeygenHandler.h" 
-#include "nsPK11TokenDB.h"
-#include "nsICertificateDialogs.h"
 #include "nsNSSShutDown.h"
-#include "nsCRT.h"
-
+#include "nsNetUtil.h"
+#include "nsPK11TokenDB.h"
+#include "nsReadableUtils.h"
+#include "nsString.h"
+#include "nsThreadUtils.h"
+#include "pkix/pkixtypes.h"
+#include "prmem.h"
+#include "prprf.h"
 #include "secerr.h"
 
 using namespace mozilla;
@@ -315,7 +310,7 @@ nsPKCS12Blob::ExportToFile(nsIFile *file,
   for (i=0; i<numCerts; i++) {
     nsNSSCertificate *cert = (nsNSSCertificate *)certs[i];
     
-    ScopedCERTCertificate nssCert(cert->GetCert());
+    UniqueCERTCertificate nssCert(cert->GetCert());
     if (!nssCert) {
       rv = NS_ERROR_FAILURE;
       goto finish;
