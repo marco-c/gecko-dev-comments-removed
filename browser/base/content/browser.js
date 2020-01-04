@@ -979,7 +979,6 @@ var gBrowserInit = {
       
       gURLBar.setAttribute("readonly", "true");
       gURLBar.setAttribute("enablehistory", "false");
-      goSetCommandEnabled("cmd_newNavigatorTab", false);
     }
 
     
@@ -1902,15 +1901,7 @@ function BrowserOpenTab(event) {
       case "tabshifted":
         
         
-        
-        
-        
-        
-        
-        
-        
-        relatedToCurrent = !event.sourceEvent ||
-                           event.sourceEvent.target.localName != "key";
+        relatedToCurrent = true;
         break;
       case "current":
         where = "tab";
@@ -3309,6 +3300,7 @@ var PrintPreviewListener = {
       this._simplifyPageTab = null;
     }
     gBrowser.removeTab(this._printPreviewTab);
+    gBrowser.deactivatePrintPreviewBrowsers();
     this._printPreviewTab = null;
   },
   _toggleAffectedChrome: function () {
@@ -3364,7 +3356,11 @@ var PrintPreviewListener = {
 
     if (this._chromeState.sidebarOpen)
       SidebarUI.show(this._sidebarCommand);
-  }
+  },
+
+  activateBrowser(browser) {
+    gBrowser.activateBrowserForPrintPreview(browser);
+  },
 }
 
 function getMarkupDocumentViewer()
