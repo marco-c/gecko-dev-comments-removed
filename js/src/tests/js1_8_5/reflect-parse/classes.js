@@ -192,6 +192,20 @@ function testClasses() {
                  }`, SyntaxError);
 
     
+    assertClassError(`class NAME {
+                          constructor() { yield 2; }
+                      }`, SyntaxError);
+    assertClassError(`class NAME {
+                          method() { yield 2; }
+                      }`, SyntaxError);
+    assertClassError(`class NAME {
+                          get method() { yield 2; }
+                      }`, SyntaxError);
+    assertClassError(`class NAME {
+                          set method() { yield 2; }
+                      }`, SyntaxError);
+
+    
     assertClassError("class NAME { constructor() { } *get foo() { } }", SyntaxError);
     assertClassError("class NAME { constructor() { } *set foo() { } }", SyntaxError);
 
