@@ -44,14 +44,12 @@ DOMStorage::DOMStorage(nsPIDOMWindowInner* aWindow,
                        DOMStorageManager* aManager,
                        DOMStorageCache* aCache,
                        const nsAString& aDocumentURI,
-                       nsIPrincipal* aPrincipal,
-                       bool aIsPrivate)
+                       nsIPrincipal* aPrincipal)
 : mWindow(aWindow)
 , mManager(aManager)
 , mCache(aCache)
 , mDocumentURI(aDocumentURI)
 , mPrincipal(aPrincipal)
-, mIsPrivate(aIsPrivate)
 , mIsSessionOnly(false)
 {
   mCache->Preload();
@@ -231,8 +229,6 @@ bool
 DOMStorage::CanUseStorage(nsPIDOMWindowInner* aWindow, DOMStorage* aStorage)
 {
   
-  
-  
 
   if (!mozilla::Preferences::GetBool(kStorageEnabled)) {
     return false;
@@ -280,6 +276,17 @@ bool
 DOMStorage::PrincipalEquals(nsIPrincipal* aPrincipal)
 {
   return PrincipalsEqual(mPrincipal, aPrincipal);
+}
+
+bool
+DOMStorage::IsPrivate() const
+{
+  uint32_t privateBrowsingId = 0;
+  nsresult rv = mPrincipal->GetPrivateBrowsingId(&privateBrowsingId);
+  if (NS_FAILED(rv)) {
+    return false;
+  }
+  return privateBrowsingId > 0;
 }
 
 bool

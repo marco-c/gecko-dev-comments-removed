@@ -122,7 +122,7 @@ var SessionStorageInternal = {
       
       
       
-      let storage = storageManager.createStorage(window, principal, "", aDocShell.usePrivateBrowsing);
+      let storage = storageManager.createStorage(window, principal, "");
 
       for (let key of Object.keys(data)) {
         try {
