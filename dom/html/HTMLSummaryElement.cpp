@@ -10,6 +10,8 @@
 #include "mozilla/dom/HTMLUnknownElement.h"
 #include "mozilla/MouseEvents.h"
 #include "mozilla/Preferences.h"
+#include "mozilla/TextEvents.h"
+#include "nsFocusManager.h"
 
 
 nsGenericHTMLElement*
@@ -44,32 +46,97 @@ HTMLSummaryElement::PostHandleEvent(EventChainPostVisitor& aVisitor)
     return rv;
   }
 
-  auto toggleDetails = false;
-  auto* event = aVisitor.mEvent;
-
-  if (event->HasMouseEventMessage()) {
-    auto* mouseEvent = event->AsMouseEvent();
-    toggleDetails = mouseEvent->IsLeftClickEvent();
-  }
-
-  
-
-  if (!toggleDetails || !IsMainSummary()) {
+  if (!IsMainSummary()) {
     return rv;
   }
 
-  auto* details = GetDetails();
-  MOZ_ASSERT(details, "Expected to find details since this is the main summary!");
+  WidgetEvent* const event = aVisitor.mEvent;
 
-  
-  
-  
-  if (details->GetPrimaryFrame()) {
-    details->ToggleOpen();
-    aVisitor.mEventStatus = nsEventStatus_eConsumeNoDefault;
-  }
+  if (event->HasMouseEventMessage()) {
+    WidgetMouseEvent* mouseEvent = event->AsMouseEvent();
+
+    if (mouseEvent->IsLeftClickEvent()) {
+      RefPtr<HTMLDetailsElement> details = GetDetails();
+      MOZ_ASSERT(details,
+                 "Expected to find details since this is the main summary!");
+
+      
+      
+      
+      
+      if (details->GetPrimaryFrame(Flush_Frames)) {
+        details->ToggleOpen();
+        aVisitor.mEventStatus = nsEventStatus_eConsumeNoDefault;
+        return NS_OK;
+      }
+    }
+  } 
+
+  if (event->HasKeyEventMessage()) {
+    WidgetKeyboardEvent* keyboardEvent = event->AsKeyboardEvent();
+    bool dispatchClick = false;
+
+    switch (event->mMessage) {
+      case eKeyPress:
+        if (keyboardEvent->charCode == nsIDOMKeyEvent::DOM_VK_SPACE) {
+          
+          aVisitor.mEventStatus = nsEventStatus_eConsumeNoDefault;
+        }
+
+        dispatchClick = keyboardEvent->keyCode == nsIDOMKeyEvent::DOM_VK_RETURN;
+        break;
+
+      case eKeyUp:
+        dispatchClick = keyboardEvent->keyCode == nsIDOMKeyEvent::DOM_VK_SPACE;
+        break;
+
+      default:
+        break;
+    }
+
+    if (dispatchClick) {
+      rv = DispatchSimulatedClick(this, event->mFlags.mIsTrusted,
+                                  aVisitor.mPresContext);
+      if (NS_SUCCEEDED(rv)) {
+        aVisitor.mEventStatus = nsEventStatus_eConsumeNoDefault;
+      }
+    }
+  } 
 
   return rv;
+}
+
+bool
+HTMLSummaryElement::IsHTMLFocusable(bool aWithMouse, bool* aIsFocusable,
+                                    int32_t* aTabIndex)
+{
+  bool disallowOverridingFocusability =
+    nsGenericHTMLElement::IsHTMLFocusable(aWithMouse, aIsFocusable, aTabIndex);
+
+  if (disallowOverridingFocusability || !IsMainSummary()) {
+    return disallowOverridingFocusability;
+  }
+
+#ifdef XP_MACOSX
+  
+  
+  
+  *aIsFocusable = !aWithMouse || nsFocusManager::sMouseFocusesFormControl;
+#else
+  
+  *aIsFocusable = true;
+#endif
+
+  
+  return false;
+}
+
+int32_t
+HTMLSummaryElement::TabIndexDefault()
+{
+  
+  
+  return IsMainSummary() ? 0 : nsGenericHTMLElement::TabIndexDefault();
 }
 
 bool

@@ -1030,6 +1030,13 @@ protected:
   
 
 
+  nsresult DispatchSimulatedClick(nsGenericHTMLElement* aElement,
+                                  bool aIsTrusted,
+                                  nsPresContext* aPresContext);
+
+  
+
+
 
 
   nsresult NewURIFromString(const nsAString& aURISpec, nsIURI** aURI);
