@@ -22,8 +22,7 @@ DeallocPCacheStorageChild(PCacheStorageChild* aActor)
   delete aActor;
 }
 
-CacheStorageChild::CacheStorageChild(CacheStorage* aListener,
-                                     CacheWorkerHolder* aWorkerHolder)
+CacheStorageChild::CacheStorageChild(CacheStorage* aListener, Feature* aFeature)
   : mListener(aListener)
   , mNumChildActors(0)
   , mDelayedDestroy(false)
@@ -31,7 +30,7 @@ CacheStorageChild::CacheStorageChild(CacheStorage* aListener,
   MOZ_COUNT_CTOR(cache::CacheStorageChild);
   MOZ_ASSERT(mListener);
 
-  SetWorkerHolder(aWorkerHolder);
+  SetFeature(aFeature);
 }
 
 CacheStorageChild::~CacheStorageChild()
@@ -55,7 +54,7 @@ CacheStorageChild::ExecuteOp(nsIGlobalObject* aGlobal, Promise* aPromise,
 {
   mNumChildActors += 1;
   Unused << SendPCacheOpConstructor(
-    new CacheOpChild(GetWorkerHolder(), aGlobal, aParent, aPromise), aArgs);
+    new CacheOpChild(GetFeature(), aGlobal, aParent, aPromise), aArgs);
 }
 
 void
@@ -90,7 +89,6 @@ CacheStorageChild::StartDestroy()
   
   
   
-  
   if (!listener) {
     return;
   }
@@ -115,7 +113,7 @@ CacheStorageChild::ActorDestroy(ActorDestroyReason aReason)
     MOZ_ASSERT(!mListener);
   }
 
-  RemoveWorkerHolder();
+  RemoveFeature();
 }
 
 PCacheOpChild*

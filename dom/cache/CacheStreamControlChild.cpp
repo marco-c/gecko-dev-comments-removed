@@ -135,7 +135,7 @@ CacheStreamControlChild::ActorDestroy(ActorDestroyReason aReason)
 {
   NS_ASSERT_OWNINGTHREAD(CacheStreamControlChild);
   CloseAllReadStreamsWithoutReporting();
-  RemoveWorkerHolder();
+  RemoveFeature();
 }
 
 bool

@@ -229,7 +229,7 @@ FetchRequest(nsIGlobalObject* aGlobal, const RequestOrUSVString& aInput,
 
     RefPtr<WorkerFetchResolver> resolver = WorkerFetchResolver::Create(worker, p);
     if (!resolver) {
-      NS_WARNING("Could not add WorkerFetchResolver workerHolder to worker");
+      NS_WARNING("Could not add WorkerFetchResolver feature to worker");
       aRv.Throw(NS_ERROR_DOM_ABORT_ERR);
       return nullptr;
     }
@@ -819,7 +819,7 @@ public:
 } 
 
 template <class Derived>
-class FetchBodyWorkerHolder final : public workers::WorkerHolder
+class FetchBodyFeature final : public workers::WorkerFeature
 {
   
   
@@ -827,12 +827,12 @@ class FetchBodyWorkerHolder final : public workers::WorkerHolder
   bool mWasNotified;
 
 public:
-  explicit FetchBodyWorkerHolder(FetchBody<Derived>* aBody)
+  explicit FetchBodyFeature(FetchBody<Derived>* aBody)
     : mBody(aBody)
     , mWasNotified(false)
   { }
 
-  ~FetchBodyWorkerHolder()
+  ~FetchBodyFeature()
   { }
 
   bool Notify(workers::Status aStatus) override
@@ -848,7 +848,7 @@ public:
 
 template <class Derived>
 FetchBody<Derived>::FetchBody()
-  : mWorkerHolder(nullptr)
+  : mFeature(nullptr)
   , mBodyUsed(false)
 #ifdef DEBUG
   , mReadDone(false)
@@ -884,8 +884,8 @@ FetchBody<Derived>::AddRefObject()
   AssertIsOnTargetThread();
   DerivedClass()->AddRef();
 
-  if (mWorkerPrivate && !mWorkerHolder) {
-    if (!RegisterWorkerHolder()) {
+  if (mWorkerPrivate && !mFeature) {
+    if (!RegisterFeature()) {
       ReleaseObject();
       return false;
     }
@@ -899,8 +899,8 @@ FetchBody<Derived>::ReleaseObject()
 {
   AssertIsOnTargetThread();
 
-  if (mWorkerPrivate && mWorkerHolder) {
-    UnregisterWorkerHolder();
+  if (mWorkerPrivate && mFeature) {
+    UnregisterFeature();
   }
 
   DerivedClass()->Release();
@@ -908,16 +908,16 @@ FetchBody<Derived>::ReleaseObject()
 
 template <class Derived>
 bool
-FetchBody<Derived>::RegisterWorkerHolder()
+FetchBody<Derived>::RegisterFeature()
 {
   MOZ_ASSERT(mWorkerPrivate);
   mWorkerPrivate->AssertIsOnWorkerThread();
-  MOZ_ASSERT(!mWorkerHolder);
-  mWorkerHolder = new FetchBodyWorkerHolder<Derived>(this);
+  MOZ_ASSERT(!mFeature);
+  mFeature = new FetchBodyFeature<Derived>(this);
 
-  if (!mWorkerHolder->HoldWorker(mWorkerPrivate)) {
-    NS_WARNING("Failed to add workerHolder");
-    mWorkerHolder = nullptr;
+  if (!mWorkerPrivate->AddFeature(mFeature)) {
+    NS_WARNING("Failed to add feature");
+    mFeature = nullptr;
     return false;
   }
 
@@ -926,14 +926,14 @@ FetchBody<Derived>::RegisterWorkerHolder()
 
 template <class Derived>
 void
-FetchBody<Derived>::UnregisterWorkerHolder()
+FetchBody<Derived>::UnregisterFeature()
 {
   MOZ_ASSERT(mWorkerPrivate);
   mWorkerPrivate->AssertIsOnWorkerThread();
-  MOZ_ASSERT(mWorkerHolder);
+  MOZ_ASSERT(mFeature);
 
-  mWorkerHolder->ReleaseWorker();
-  mWorkerHolder = nullptr;
+  mWorkerPrivate->RemoveFeature(mFeature);
+  mFeature = nullptr;
 }
 
 template <class Derived>
@@ -952,7 +952,7 @@ nsresult
 FetchBody<Derived>::BeginConsumeBody()
 {
   AssertIsOnTargetThread();
-  MOZ_ASSERT(!mWorkerHolder);
+  MOZ_ASSERT(!mFeature);
   MOZ_ASSERT(mConsumePromise);
 
   
@@ -1036,7 +1036,7 @@ FetchBody<Derived>::ContinueConsumeBody(nsresult aStatus, uint32_t aResultLength
   
   MOZ_ASSERT(mBodyUsed);
   MOZ_ASSERT(!mReadDone);
-  MOZ_ASSERT_IF(mWorkerPrivate, mWorkerHolder);
+  MOZ_ASSERT_IF(mWorkerPrivate, mFeature);
 #ifdef DEBUG
   mReadDone = true;
 #endif

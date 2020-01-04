@@ -30,7 +30,7 @@
 #include "nsPIDOMWindow.h"
 #include "nsString.h"
 #include "ReportInternalError.h"
-#include "WorkerHolder.h"
+#include "WorkerFeature.h"
 #include "WorkerPrivate.h"
 
 
@@ -461,8 +461,8 @@ IDBRequest::PreHandleEvent(EventChainPreVisitor& aVisitor)
   return NS_OK;
 }
 
-class IDBOpenDBRequest::WorkerHolder final
-  : public mozilla::dom::workers::WorkerHolder
+class IDBOpenDBRequest::WorkerFeature final
+  : public mozilla::dom::workers::WorkerFeature
 {
   WorkerPrivate* mWorkerPrivate;
 #ifdef DEBUG
@@ -473,7 +473,7 @@ class IDBOpenDBRequest::WorkerHolder final
 
 public:
   explicit
-  WorkerHolder(WorkerPrivate* aWorkerPrivate)
+  WorkerFeature(WorkerPrivate* aWorkerPrivate)
     : mWorkerPrivate(aWorkerPrivate)
 #ifdef DEBUG
     , mWorkerPrivateDEBUG(aWorkerPrivate)
@@ -482,20 +482,24 @@ public:
     MOZ_ASSERT(aWorkerPrivate);
     aWorkerPrivate->AssertIsOnWorkerThread();
 
-    MOZ_COUNT_CTOR(IDBOpenDBRequest::WorkerHolder);
+    MOZ_COUNT_CTOR(IDBOpenDBRequest::WorkerFeature);
   }
 
-  ~WorkerHolder()
+  ~WorkerFeature()
   {
 #ifdef DEBUG
     mWorkerPrivateDEBUG->AssertIsOnWorkerThread();
 #endif
 
-    MOZ_COUNT_DTOR(IDBOpenDBRequest::WorkerHolder);
+    MOZ_COUNT_DTOR(IDBOpenDBRequest::WorkerFeature);
+
+    if (mWorkerPrivate) {
+      mWorkerPrivate->RemoveFeature(this);
+    }
   }
 
   void
-  NoteAddWorkerHolderFailed()
+  NoteAddFeatureFailed()
   {
     MOZ_ASSERT(mWorkerPrivate);
     mWorkerPrivate->AssertIsOnWorkerThread();
@@ -573,13 +577,13 @@ IDBOpenDBRequest::CreateForJS(JSContext* aCx,
 
     workerPrivate->AssertIsOnWorkerThread();
 
-    nsAutoPtr<WorkerHolder> workerHolder(new WorkerHolder(workerPrivate));
-    if (NS_WARN_IF(!workerHolder->HoldWorker(workerPrivate))) {
-      workerHolder->NoteAddWorkerHolderFailed();
+    nsAutoPtr<WorkerFeature> feature(new WorkerFeature(workerPrivate));
+    if (NS_WARN_IF(!workerPrivate->AddFeature(feature))) {
+      feature->NoteAddFeatureFailed();
       return nullptr;
     }
 
-    request->mWorkerHolder = Move(workerHolder);
+    request->mWorkerFeature = Move(feature);
   }
 
   return request.forget();
@@ -599,11 +603,11 @@ void
 IDBOpenDBRequest::NoteComplete()
 {
   AssertIsOnOwningThread();
-  MOZ_ASSERT_IF(!NS_IsMainThread(), mWorkerHolder);
+  MOZ_ASSERT_IF(!NS_IsMainThread(), mWorkerFeature);
 
   
   
-  mWorkerHolder = nullptr;
+  mWorkerFeature = nullptr;
 }
 
 NS_IMPL_CYCLE_COLLECTION_CLASS(IDBOpenDBRequest)
@@ -646,7 +650,7 @@ IDBOpenDBRequest::WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto)
 
 bool
 IDBOpenDBRequest::
-WorkerHolder::Notify(Status aStatus)
+WorkerFeature::Notify(Status aStatus)
 {
   MOZ_ASSERT(mWorkerPrivate);
   mWorkerPrivate->AssertIsOnWorkerThread();

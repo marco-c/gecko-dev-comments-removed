@@ -6,7 +6,7 @@
 
 #include "mozilla/dom/cache/ActorChild.h"
 
-#include "mozilla/dom/cache/CacheWorkerHolder.h"
+#include "mozilla/dom/cache/Feature.h"
 #include "nsThreadUtils.h"
 
 namespace mozilla {
@@ -14,42 +14,42 @@ namespace dom {
 namespace cache {
 
 void
-ActorChild::SetWorkerHolder(CacheWorkerHolder* aWorkerHolder)
+ActorChild::SetFeature(Feature* aFeature)
 {
   
   
   
-  if (mWorkerHolder) {
-    MOZ_ASSERT(mWorkerHolder == aWorkerHolder);
+  if (mFeature) {
+    MOZ_ASSERT(mFeature == aFeature);
     return;
   }
 
-  mWorkerHolder = aWorkerHolder;
-  if (mWorkerHolder) {
-    mWorkerHolder->AddActor(this);
+  mFeature = aFeature;
+  if (mFeature) {
+    mFeature->AddActor(this);
   }
 }
 
 void
-ActorChild::RemoveWorkerHolder()
+ActorChild::RemoveFeature()
 {
-  MOZ_ASSERT_IF(!NS_IsMainThread(), mWorkerHolder);
-  if (mWorkerHolder) {
-    mWorkerHolder->RemoveActor(this);
-    mWorkerHolder = nullptr;
+  MOZ_ASSERT_IF(!NS_IsMainThread(), mFeature);
+  if (mFeature) {
+    mFeature->RemoveActor(this);
+    mFeature = nullptr;
   }
 }
 
-CacheWorkerHolder*
-ActorChild::GetWorkerHolder() const
+Feature*
+ActorChild::GetFeature() const
 {
-  return mWorkerHolder;
+  return mFeature;
 }
 
 bool
-ActorChild::WorkerHolderNotified() const
+ActorChild::FeatureNotified() const
 {
-  return mWorkerHolder && mWorkerHolder->Notified();
+  return mFeature && mFeature->Notified();
 }
 
 ActorChild::ActorChild()
@@ -58,7 +58,7 @@ ActorChild::ActorChild()
 
 ActorChild::~ActorChild()
 {
-  MOZ_ASSERT(!mWorkerHolder);
+  MOZ_ASSERT(!mFeature);
 }
 
 } 

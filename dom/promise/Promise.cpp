@@ -2527,7 +2527,7 @@ Promise::AppendCallbacks(PromiseCallback* aResolveCallback,
 #if defined(DOM_PROMISE_DEPRECATED_REPORTING)
   
   mHadRejectCallback = true;
-  RemoveWorkerHolder();
+  RemoveFeature();
 #endif 
 
   mResolveCallbacks.AppendElement(aResolveCallback);
@@ -2767,9 +2767,10 @@ Promise::Settle(JS::Handle<JS::Value> aValue, PromiseState aState)
     MOZ_ASSERT(worker);
     worker->AssertIsOnWorkerThread();
 
-    mWorkerHolder = new PromiseReportRejectWorkerHolder(this);
-    if (NS_WARN_IF(!mWorkerHolder->HoldWorker(worker))) {
-      mWorkerHolder = nullptr;
+    mFeature = new PromiseReportRejectFeature(this);
+    if (NS_WARN_IF(!worker->AddFeature(mFeature))) {
+      
+      mFeature = nullptr;
       
       
       MaybeReportRejectedOnce();
@@ -2818,16 +2819,20 @@ Promise::TriggerPromiseReactions()
 
 #if defined(DOM_PROMISE_DEPRECATED_REPORTING)
 void
-Promise::RemoveWorkerHolder()
+Promise::RemoveFeature()
 {
   NS_ASSERT_OWNINGTHREAD(Promise);
 
-  
-  mWorkerHolder = nullptr;
+  if (mFeature) {
+    workers::WorkerPrivate* worker = GetCurrentThreadWorkerPrivate();
+    MOZ_ASSERT(worker);
+    worker->RemoveFeature(mFeature);
+    mFeature = nullptr;
+  }
 }
 
 bool
-PromiseReportRejectWorkerHolder::Notify(workers::Status aStatus)
+PromiseReportRejectFeature::Notify(workers::Status aStatus)
 {
   MOZ_ASSERT(aStatus > workers::Running);
   mPromise->MaybeReportRejectedOnce();
@@ -2966,7 +2971,7 @@ PromiseWorkerProxy::PromiseWorkerProxy(workers::WorkerPrivate* aWorkerPrivate,
   , mCallbacks(aCallbacks)
   , mCleanUpLock("cleanUpLock")
 #ifdef DEBUG
-  , mWorkerHolderAdded(false)
+  , mFeatureAdded(false)
 #endif
 {
 }
@@ -2974,7 +2979,7 @@ PromiseWorkerProxy::PromiseWorkerProxy(workers::WorkerPrivate* aWorkerPrivate,
 PromiseWorkerProxy::~PromiseWorkerProxy()
 {
   MOZ_ASSERT(mCleanedUp);
-  MOZ_ASSERT(!mWorkerHolderAdded);
+  MOZ_ASSERT(!mFeatureAdded);
   MOZ_ASSERT(!mWorkerPromise);
   MOZ_ASSERT(!mWorkerPrivate);
 }
@@ -3002,13 +3007,13 @@ PromiseWorkerProxy::AddRefObject()
 {
   MOZ_ASSERT(mWorkerPrivate);
   mWorkerPrivate->AssertIsOnWorkerThread();
-  MOZ_ASSERT(!mWorkerHolderAdded);
-  if (NS_WARN_IF(!HoldWorker(mWorkerPrivate))) {
+  MOZ_ASSERT(!mFeatureAdded);
+  if (!mWorkerPrivate->AddFeature(this)) {
     return false;
   }
 
 #ifdef DEBUG
-  mWorkerHolderAdded = true;
+  mFeatureAdded = true;
 #endif
   
   
@@ -3027,7 +3032,7 @@ PromiseWorkerProxy::GetWorkerPrivate() const
   
   
   MOZ_ASSERT(!mCleanedUp);
-  MOZ_ASSERT(mWorkerHolderAdded);
+  MOZ_ASSERT(mFeatureAdded);
 
   return mWorkerPrivate;
 }
@@ -3112,7 +3117,6 @@ PromiseWorkerProxy::CleanUp()
 
     
     
-    
     if (CleanedUp()) {
       return;
     }
@@ -3123,10 +3127,10 @@ PromiseWorkerProxy::CleanUp()
     
     
     
-    MOZ_ASSERT(mWorkerHolderAdded);
-    ReleaseWorker();
+    MOZ_ASSERT(mFeatureAdded);
+    mWorkerPrivate->RemoveFeature(this);
 #ifdef DEBUG
-    mWorkerHolderAdded = false;
+    mFeatureAdded = false;
 #endif
     CleanProperties();
   }

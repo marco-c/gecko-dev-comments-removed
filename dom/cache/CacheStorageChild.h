@@ -22,14 +22,14 @@ namespace cache {
 
 class CacheOpArgs;
 class CacheStorage;
-class CacheWorkerHolder;
 class PCacheChild;
+class Feature;
 
 class CacheStorageChild final : public PCacheStorageChild
                               , public ActorChild
 {
 public:
-  CacheStorageChild(CacheStorage* aListener, CacheWorkerHolder* aWorkerHolder);
+  CacheStorageChild(CacheStorage* aListener, Feature* aFeature);
   ~CacheStorageChild();
 
   

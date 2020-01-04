@@ -861,7 +861,7 @@ ServiceWorkerRegistrationMainThread::GetPushManager(JSContext* aCx,
 
 
 class ServiceWorkerRegistrationWorkerThread final : public ServiceWorkerRegistration
-                                                  , public WorkerHolder
+                                                  , public WorkerFeature
 {
 public:
   NS_DECL_ISUPPORTS_INHERITED
@@ -1188,7 +1188,7 @@ ServiceWorkerRegistrationWorkerThread::InitListener()
   worker->AssertIsOnWorkerThread();
 
   mListener = new WorkerListener(worker, this);
-  if (!HoldWorker(worker)) {
+  if (!worker->AddFeature(this)) {
     mListener = nullptr;
     NS_WARNING("Could not add feature");
     return;
@@ -1247,7 +1247,7 @@ ServiceWorkerRegistrationWorkerThread::ReleaseListener(Reason aReason)
   
   
   mWorkerPrivate->AssertIsOnWorkerThread();
-  ReleaseWorker();
+  mWorkerPrivate->RemoveFeature(this);
 
   mListener->ClearRegistration();
 

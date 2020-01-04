@@ -99,7 +99,7 @@ public:
   , mInnerWindowID(0)
   , mWorkerPrivate(nullptr)
 #ifdef DEBUG
-  , mHasWorkerHolderRegistered(false)
+  , mHasFeatureRegistered(false)
 #endif
   , mIsMainThread(true)
   , mMutex("WebSocketImpl::mMutex")
@@ -166,8 +166,8 @@ public:
   void AddRefObject();
   void ReleaseObject();
 
-  bool RegisterWorkerHolder();
-  void UnregisterWorkerHolder();
+  bool RegisterFeature();
+  void UnregisterFeature();
 
   nsresult CancelInternal();
 
@@ -213,24 +213,24 @@ public:
   uint64_t mInnerWindowID;
 
   WorkerPrivate* mWorkerPrivate;
-  nsAutoPtr<WorkerHolder> mWorkerHolder;
+  nsAutoPtr<WorkerFeature> mWorkerFeature;
 
 #ifdef DEBUG
   
-  bool mHasWorkerHolderRegistered;
+  bool mHasFeatureRegistered;
 
-  bool HasWorkerHolderRegistered()
+  bool HasFeatureRegistered()
   {
     MOZ_ASSERT(mWebSocket);
     MutexAutoLock lock(mWebSocket->mMutex);
-    return mHasWorkerHolderRegistered;
+    return mHasFeatureRegistered;
   }
 
-  void SetHasWorkerHolderRegistered(bool aValue)
+  void SetHasFeatureRegistered(bool aValue)
   {
     MOZ_ASSERT(mWebSocket);
     MutexAutoLock lock(mWebSocket->mMutex);
-    mHasWorkerHolderRegistered = aValue;
+    mHasFeatureRegistered = aValue;
   }
 #endif
 
@@ -640,8 +640,8 @@ WebSocketImpl::Disconnect()
   mWebSocket->DontKeepAliveAnyMore();
   mWebSocket->mImpl = nullptr;
 
-  if (mWorkerPrivate && mWorkerHolder) {
-    UnregisterWorkerHolder();
+  if (mWorkerPrivate && mWorkerFeature) {
+    UnregisterFeature();
   }
 
   
@@ -1264,7 +1264,7 @@ WebSocket::ConstructorCommon(const GlobalObject& aGlobal,
   } else {
     
     
-    if (!webSocket->mImpl->RegisterWorkerHolder()) {
+    if (!webSocket->mImpl->RegisterFeature()) {
       aRv.Throw(NS_ERROR_FAILURE);
       return nullptr;
     }
@@ -2204,10 +2204,10 @@ WebSocket::DontKeepAliveAnyMore()
 
 namespace {
 
-class WebSocketWorkerHolder final : public WorkerHolder
+class WebSocketWorkerFeature final : public WorkerFeature
 {
 public:
-  explicit WebSocketWorkerHolder(WebSocketImpl* aWebSocketImpl)
+  explicit WebSocketWorkerFeature(WebSocketImpl* aWebSocketImpl)
     : mWebSocketImpl(aWebSocketImpl)
   {
   }
@@ -2250,39 +2250,39 @@ WebSocketImpl::ReleaseObject()
 }
 
 bool
-WebSocketImpl::RegisterWorkerHolder()
+WebSocketImpl::RegisterFeature()
 {
   mWorkerPrivate->AssertIsOnWorkerThread();
-  MOZ_ASSERT(!mWorkerHolder);
-  mWorkerHolder = new WebSocketWorkerHolder(this);
+  MOZ_ASSERT(!mWorkerFeature);
+  mWorkerFeature = new WebSocketWorkerFeature(this);
 
-  if (NS_WARN_IF(!mWorkerHolder->HoldWorker(mWorkerPrivate))) {
-    mWorkerHolder = nullptr;
+  if (!mWorkerPrivate->AddFeature(mWorkerFeature)) {
+    NS_WARNING("Failed to register a feature.");
+    mWorkerFeature = nullptr;
     return false;
   }
 
 #ifdef DEBUG
-  SetHasWorkerHolderRegistered(true);
+  SetHasFeatureRegistered(true);
 #endif
 
   return true;
 }
 
 void
-WebSocketImpl::UnregisterWorkerHolder()
+WebSocketImpl::UnregisterFeature()
 {
   MOZ_ASSERT(mDisconnectingOrDisconnected);
   MOZ_ASSERT(mWorkerPrivate);
   mWorkerPrivate->AssertIsOnWorkerThread();
-  MOZ_ASSERT(mWorkerHolder);
+  MOZ_ASSERT(mWorkerFeature);
 
-  
-  mWorkerHolder = nullptr;
-
+  mWorkerPrivate->RemoveFeature(mWorkerFeature);
+  mWorkerFeature = nullptr;
   mWorkerPrivate = nullptr;
 
 #ifdef DEBUG
-  SetHasWorkerHolderRegistered(false);
+  SetHasFeatureRegistered(false);
 #endif
 }
 
@@ -2842,7 +2842,7 @@ WebSocketImpl::Dispatch(already_AddRefed<nsIRunnable> aEvent, uint32_t aFlags)
   MOZ_ASSERT(mWorkerPrivate);
 
 #ifdef DEBUG
-  MOZ_ASSERT(HasWorkerHolderRegistered());
+  MOZ_ASSERT(HasFeatureRegistered());
 #endif
 
   
