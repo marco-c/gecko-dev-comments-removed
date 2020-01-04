@@ -92,7 +92,7 @@ public:
   void RotateImage(layers::Image* aImage, uint32_t aWidth, uint32_t aHeight);
   void Notify(const mozilla::hal::ScreenConfiguration& aConfiguration);
 
-  nsresult TakePhoto(PhotoCallback* aCallback) override;
+  nsresult TakePhoto(MediaEnginePhotoCallback* aCallback) override;
 
   
   
@@ -125,7 +125,7 @@ protected:
   android::sp<android::GonkCameraSource> mCameraSource;
 
   
-  nsTArray<RefPtr<PhotoCallback>> mPhotoCallbacks;
+  nsTArray<RefPtr<MediaEnginePhotoCallback>> mPhotoCallbacks;
   int mRotation;
   int mCameraAngle; 
   bool mBackCamera;

@@ -561,9 +561,10 @@ MediaEngineGonkVideoSource::OnUserError(UserContext aContext, nsresult aError)
   }
 
   
+  
   class TakePhotoError : public nsRunnable {
   public:
-    TakePhotoError(nsTArray<RefPtr<PhotoCallback>>& aCallbacks,
+    TakePhotoError(nsTArray<RefPtr<MediaEnginePhotoCallback>>& aCallbacks,
                    nsresult aRv)
       : mRv(aRv)
     {
@@ -582,7 +583,7 @@ MediaEngineGonkVideoSource::OnUserError(UserContext aContext, nsresult aError)
     }
 
   protected:
-    nsTArray<RefPtr<PhotoCallback>> mCallbacks;
+    nsTArray<RefPtr<MediaEnginePhotoCallback>> mCallbacks;
     nsresult mRv;
   };
 
@@ -605,7 +606,7 @@ MediaEngineGonkVideoSource::OnTakePictureComplete(const uint8_t* aData, uint32_t
   
   class GenerateBlobRunnable : public nsRunnable {
   public:
-    GenerateBlobRunnable(nsTArray<RefPtr<PhotoCallback>>& aCallbacks,
+    GenerateBlobRunnable(nsTArray<RefPtr<MediaEnginePhotoCallback>>& aCallbacks,
                          const uint8_t* aData,
                          uint32_t aLength,
                          const nsAString& aMimeType)
@@ -631,7 +632,7 @@ MediaEngineGonkVideoSource::OnTakePictureComplete(const uint8_t* aData, uint32_t
       return NS_OK;
     }
 
-    nsTArray<RefPtr<PhotoCallback>> mCallbacks;
+    nsTArray<RefPtr<MediaEnginePhotoCallback>> mCallbacks;
     uint8_t* mPhotoData;
     nsString mMimeType;
     uint32_t mPhotoDataLength;
@@ -648,7 +649,7 @@ MediaEngineGonkVideoSource::OnTakePictureComplete(const uint8_t* aData, uint32_t
 }
 
 nsresult
-MediaEngineGonkVideoSource::TakePhoto(PhotoCallback* aCallback)
+MediaEngineGonkVideoSource::TakePhoto(MediaEnginePhotoCallback* aCallback)
 {
   MOZ_ASSERT(NS_IsMainThread());
 

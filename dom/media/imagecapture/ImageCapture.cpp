@@ -77,7 +77,7 @@ ImageCapture::TakePhotoByMediaEngine()
 {
   
   
-  class TakePhotoCallback : public MediaEngineSource::PhotoCallback,
+  class TakePhotoCallback : public MediaEnginePhotoCallback,
                             public DOMMediaStream::PrincipalChangeObserver
   {
   public:
@@ -127,7 +127,7 @@ ImageCapture::TakePhotoByMediaEngine()
   if (domLocalStream) {
     RefPtr<MediaEngineSource> mediaEngine =
       domLocalStream->GetMediaEngine(mVideoStreamTrack->GetTrackID());
-    RefPtr<MediaEngineSource::PhotoCallback> callback =
+    RefPtr<MediaEnginePhotoCallback> callback =
       new TakePhotoCallback(domStream, this);
     return mediaEngine->TakePhoto(callback);
   }

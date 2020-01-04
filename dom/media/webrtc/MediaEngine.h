@@ -78,6 +78,25 @@ protected:
 
 
 
+
+class MediaEnginePhotoCallback {
+public:
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(MediaEnginePhotoCallback)
+
+  
+  
+  virtual nsresult PhotoComplete(already_AddRefed<dom::Blob> aBlob) = 0;
+
+  
+  virtual nsresult PhotoError(nsresult aRv) = 0;
+
+protected:
+  virtual ~MediaEnginePhotoCallback() {}
+};
+
+
+
+
 class MediaEngineSource : public nsISupports
 {
 public:
@@ -130,27 +149,10 @@ public:
   virtual dom::MediaSourceEnum GetMediaSource() const = 0;
 
   
-  
-  class PhotoCallback {
-  public:
-    NS_INLINE_DECL_THREADSAFE_REFCOUNTING(PhotoCallback)
-
-    
-    
-    virtual nsresult PhotoComplete(already_AddRefed<dom::Blob> aBlob) = 0;
-
-    
-    virtual nsresult PhotoError(nsresult aRv) = 0;
-
-  protected:
-    virtual ~PhotoCallback() {}
-  };
-
-  
 
 
 
-  virtual nsresult TakePhoto(PhotoCallback* aCallback) = 0;
+  virtual nsresult TakePhoto(MediaEnginePhotoCallback* aCallback) = 0;
 
   
   bool IsAvailable() {
