@@ -323,12 +323,12 @@ onPromiseSettled(JSContext* cx, HandleObject promise);
 
 
 JS_PUBLIC_API(bool)
-IsDebugger(const JSObject& obj);
+IsDebugger(JSObject& obj);
 
 
 
 JS_PUBLIC_API(bool)
-GetDebuggeeGlobals(JSContext* cx, const JSObject& dbgObj, AutoObjectVector& vector);
+GetDebuggeeGlobals(JSContext* cx, JSObject& dbgObj, AutoObjectVector& vector);
 
 
 
