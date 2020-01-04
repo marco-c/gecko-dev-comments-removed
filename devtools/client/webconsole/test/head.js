@@ -246,53 +246,6 @@ var closeConsole = Task.async(function* (tab) {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-function waitForContextMenu(popup, button, onShown, onHidden) {
-  let deferred = promise.defer();
-
-  function onPopupShown() {
-    info("onPopupShown");
-    popup.removeEventListener("popupshown", onPopupShown);
-
-    onShown && onShown();
-
-    
-    popup.addEventListener("popuphidden", onPopupHidden);
-    executeSoon(() => popup.hidePopup());
-  }
-  function onPopupHidden() {
-    info("onPopupHidden");
-    popup.removeEventListener("popuphidden", onPopupHidden);
-
-    onHidden && onHidden();
-
-    deferred.resolve(popup);
-  }
-
-  popup.addEventListener("popupshown", onPopupShown);
-
-  info("wait for the context menu to open");
-  let eventDetails = {type: "contextmenu", button: 2};
-  EventUtils.synthesizeMouse(button, 2, 2, eventDetails,
-                             button.ownerDocument.defaultView);
-  return deferred.promise;
-}
-
-
-
-
-
-
 var waitForTab = Task.async(function*() {
   info("Waiting for a tab to open");
   yield once(gBrowser.tabContainer, "TabOpen");
