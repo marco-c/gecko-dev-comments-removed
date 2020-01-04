@@ -78,8 +78,7 @@ void
 ImageClient::RemoveTextureWithWaiter(TextureClient* aTexture,
                                      AsyncTransactionWaiter* aAsyncTransactionWaiter)
 {
-  if ((aAsyncTransactionWaiter ||
-      GetForwarder()->IsImageBridgeChild())
+  if ((aAsyncTransactionWaiter || GetForwarder()->UsesImageBridge())
 #ifndef MOZ_WIDGET_GONK
       
       

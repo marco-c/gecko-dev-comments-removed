@@ -48,8 +48,6 @@ protected:
   bool ReceiveCompositableUpdate(const CompositableOperation& aEdit,
                                  EditReplyVector& replyv);
 
-  bool IsOnCompositorSide() const override { return true; }
-
   
 
 
