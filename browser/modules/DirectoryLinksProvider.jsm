@@ -97,9 +97,6 @@ const MIN_VISIBLE_HISTORY_TILES = 8;
 const MAX_VISIBLE_HISTORY_TILES = 15;
 
 
-const PING_SCORE_DIVISOR = 10000;
-
-
 const PING_ACTIONS = ["block", "click", "pin", "sponsored", "sponsored_link", "unpin", "view"];
 
 
@@ -567,48 +564,11 @@ var DirectoryLinksProvider = {
     catch (ex) {}
 
     
+    
     let invalidAction = PING_ACTIONS.indexOf(action) == -1;
     if (!newtabEnhanced || pingEndPoint == "" || invalidAction) {
       return Promise.resolve();
     }
-
-    let actionIndex;
-    let data = {
-      locale: this.locale,
-      tiles: sites.reduce((tiles, site, pos) => {
-        
-        if (site) {
-          
-          let {link} = site;
-          let tilesIndex = tiles.length;
-          if (triggeringSiteIndex == pos) {
-            actionIndex = tilesIndex;
-          }
-
-          
-          let id = link.directoryId;
-          tiles.push({
-            id: id || site.enhancedId,
-            pin: site.isPinned() ? 1 : undefined,
-            pos: pos != tilesIndex ? pos : undefined,
-            past_impressions: pos == triggeringSiteIndex ? pastImpressions : undefined,
-            score: Math.round(link.frecency / PING_SCORE_DIVISOR) || undefined,
-            url: site.enhancedId && "",
-          });
-        }
-        return tiles;
-      }, []),
-    };
-
-    
-    if (actionIndex !== undefined) {
-      data[action] = actionIndex;
-    }
-
-    
-    let ping = this._newXHR();
-    ping.open("POST", pingEndPoint + (action == "view" ? "view" : "click"));
-    ping.send(JSON.stringify(data));
 
     return Task.spawn(function* () {
       
