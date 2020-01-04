@@ -1253,10 +1253,15 @@ GeckoMediaPluginServiceParent::GetNodeId(const nsAString& aOrigin,
 
   nsresult rv;
 
-  if (aOrigin.EqualsLiteral("null") ||
+  if (aGMPName.EqualsLiteral("gmp-widevinecdm") ||
+      aOrigin.EqualsLiteral("null") ||
       aOrigin.IsEmpty() ||
       aTopLevelOrigin.EqualsLiteral("null") ||
       aTopLevelOrigin.IsEmpty()) {
+    
+    
+    
+    
     
     
     
