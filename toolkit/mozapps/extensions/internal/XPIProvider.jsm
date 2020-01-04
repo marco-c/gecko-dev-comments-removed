@@ -7615,6 +7615,16 @@ function defineAddonWrapperProperty(name, getter) {
 ["sourceURI", "releaseNotesURI"].forEach(function(aProp) {
   defineAddonWrapperProperty(aProp, function() {
     let addon = addonFor(this);
+
+    
+    
+    
+    
+    
+    if (aProp == "sourceURI" && this.temporarilyInstalled) {
+      return Services.io.newFileURI(addon._sourceBundle);
+    }
+
     let [target, fromRepo] = chooseValue(addon, addon, aProp);
     if (!target)
       return null;

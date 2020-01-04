@@ -57,6 +57,11 @@ add_task(function* test_implicit_id_temp() {
   addon = yield promiseAddonByID(IMPLICIT_ID_ID);
   do_check_neq(addon, null);
 
+  
+  
+  do_check_eq(addon.sourceURI && addon.sourceURI.spec,
+              Services.io.newFileURI(xpifile).spec);
+
   addon.uninstall();
 });
 
@@ -78,6 +83,11 @@ add_task(function* test_unsigned_no_id_temp_install() {
                                                 "the-addon-sub-dir");
   const addon = yield AddonManager.installTemporaryAddon(addonDir);
   ok(addon.id, "ID should have been auto-generated");
+
+  
+  
+  do_check_eq(addon.sourceURI && addon.sourceURI.spec,
+              Services.io.newFileURI(addonDir).spec);
 
   
   const secondAddon = yield AddonManager.installTemporaryAddon(addonDir);
