@@ -154,9 +154,12 @@ IsAccelAngleSupported(const nsCOMPtr<nsIGfxInfo>& gfxInfo,
                                          nsIGfxInfo::FEATURE_WEBGL_ANGLE,
                                          failureId,
                                          &angleSupport);
-    Telemetry::Accumulate(Telemetry::CANVAS_WEBGL_ACCL_FAILURE_ID,
-                          failureId);
-    if (failureId.IsEmpty()) {
+    if (failureId.IsEmpty() && angleSupport != nsIGfxInfo::FEATURE_STATUS_OK) {
+        
+        
+        failureId = NS_LITERAL_CSTRING("FEATURE_FAILURE_ACCL_ANGLE_NOT_OK");
+    }
+    if (out_failureId->IsEmpty()) {
         *out_failureId = failureId;
     }
     return (angleSupport == nsIGfxInfo::FEATURE_STATUS_OK);
@@ -256,6 +259,10 @@ GetAndInitDisplayForAccelANGLE(GLLibraryEGL& egl, nsACString* const out_failureI
 
     if (!ret) {
         ret = GetAndInitDisplay(egl, EGL_DEFAULT_DISPLAY);
+    }
+
+    if (!ret) {
+        *out_failureId = NS_LITERAL_CSTRING("FEATURE_FAILURE_ACCL_ANGLE_NO_DISP");
     }
 
     return ret;
@@ -458,7 +465,8 @@ GLLibraryEGL::EnsureInitialized(bool forceAccel, nsACString* const out_failureId
     EGLDisplay chosenDisplay = nullptr;
 
     if (IsExtensionSupported(ANGLE_platform_angle_d3d)) {
-        bool accelAngleSupport = IsAccelAngleSupported(gfxInfo, out_failureId);
+        nsCString accelAngleFailureId;
+        bool accelAngleSupport = IsAccelAngleSupported(gfxInfo, &accelAngleFailureId);
         bool shouldTryAccel = forceAccel || accelAngleSupport;
         bool shouldTryWARP = !forceAccel; 
 
@@ -466,11 +474,28 @@ GLLibraryEGL::EnsureInitialized(bool forceAccel, nsACString* const out_failureId
         if (gfxPrefs::WebGLANGLEForceWARP()) {
             shouldTryWARP = true;
             shouldTryAccel = false;
+            if (accelAngleFailureId.IsEmpty()) {
+                accelAngleFailureId = NS_LITERAL_CSTRING("FEATURE_FAILURE_FORCE_WARP");
+            }
         }
 
         
         if (shouldTryAccel) {
             chosenDisplay = GetAndInitDisplayForAccelANGLE(*this, out_failureId);
+        }
+
+        
+        if (!chosenDisplay) {
+            if (accelAngleFailureId.IsEmpty()) {
+                Telemetry::Accumulate(Telemetry::CANVAS_WEBGL_ACCL_FAILURE_ID,
+                                      NS_LITERAL_CSTRING("FEATURE_FAILURE_ACCL_ANGLE_UNKNOWN"));
+            } else {
+                Telemetry::Accumulate(Telemetry::CANVAS_WEBGL_ACCL_FAILURE_ID,
+                                      accelAngleFailureId);
+            }
+        } else {
+            Telemetry::Accumulate(Telemetry::CANVAS_WEBGL_ACCL_FAILURE_ID,
+                                  NS_LITERAL_CSTRING("SUCCESS"));
         }
 
         
