@@ -153,6 +153,10 @@ class FxDesktopBuild(BuildScript, TryToolsMixin, object):
         self.info(pprint.pformat(variant_cfg_dict))
         c.update(variant_cfg_dict)
         
+        
+        self.info("Clearing actions from volatile_config to use default_actions.")
+        rw_config.volatile_config['actions'] = None
+        
         rw_config.set_config(c, overwrite=True)
         rw_config.update_actions()
         self.actions = tuple(rw_config.actions)
