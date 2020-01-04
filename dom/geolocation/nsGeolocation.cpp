@@ -492,6 +492,22 @@ nsGeolocationRequest::Allow(JS::HandleValue aChoices)
   if (mRequester) {
     
     Telemetry::Accumulate(Telemetry::GEOLOCATION_REQUEST_GRANTED, mProtocolType + 10);
+
+    
+    
+    bool isVisible = false;
+    nsCOMPtr<nsPIDOMWindowInner> window = mLocator->GetParentObject();
+
+    if (window) {
+      nsCOMPtr<nsIDocument> doc = window->GetDoc();
+      isVisible = doc && !doc->Hidden();
+    }
+
+    if (IsWatch()) {
+      mozilla::Telemetry::Accumulate(mozilla::Telemetry::GEOLOCATION_WATCHPOSITION_VISIBLE, isVisible);
+    } else {
+      mozilla::Telemetry::Accumulate(mozilla::Telemetry::GEOLOCATION_GETCURRENTPOSITION_VISIBLE, isVisible);
+    }
   }
 
   if (mLocator->ClearPendingRequest(this)) {
