@@ -1046,8 +1046,8 @@ ContentChild::InitXPCOM()
   }
 
   
-  BrowserConfiguration configuration;
-  SendGetBrowserConfiguration(&configuration);
+  ServiceWorkerConfiguration configuration;
+  SendGetServiceWorkerConfiguration(&configuration);
 
   RefPtr<ServiceWorkerManager> swm = ServiceWorkerManager::GetInstance();
   MOZ_ASSERT(swm);
