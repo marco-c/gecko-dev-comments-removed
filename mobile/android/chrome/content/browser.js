@@ -3579,7 +3579,6 @@ Tab.prototype = {
 
     Services.obs.addObserver(this, "before-first-paint", false);
     Services.obs.addObserver(this, "after-viewport-change", false);
-    Services.prefs.addObserver("browser.ui.zoom.force-user-scalable", this, false);
 
     if (aParams.delayLoad) {
       
@@ -3762,7 +3761,6 @@ Tab.prototype = {
 
     Services.obs.removeObserver(this, "before-first-paint");
     Services.obs.removeObserver(this, "after-viewport-change");
-    Services.prefs.removeObserver("browser.ui.zoom.force-user-scalable", this);
 
     
     
@@ -4723,63 +4721,8 @@ Tab.prototype = {
     return ViewportHandler.getMetadataForDocument(this.browser.contentDocument);
   },
 
-  
-  updateViewportMetadata: function updateViewportMetadata(aMetadata) {
-    if (Services.prefs.getBoolPref("browser.ui.zoom.force-user-scalable")) {
-      aMetadata.allowZoom = true;
-      aMetadata.allowDoubleTapZoom = true;
-      aMetadata.minZoom = aMetadata.maxZoom = NaN;
-    }
-    this.recomputeDoubleTapToZoomAllowed();
-
-    let scaleRatio = window.devicePixelRatio;
-
-    if (aMetadata.minZoom > 0)
-      aMetadata.minZoom *= scaleRatio;
-    if (aMetadata.maxZoom > 0)
-      aMetadata.maxZoom *= scaleRatio;
-
-    aMetadata.isRTL = this.browser.contentDocument.documentElement.dir == "rtl";
-
-    ViewportHandler.setMetadataForDocument(this.browser.contentDocument, aMetadata);
-    this.sendViewportMetadata();
-  },
-
   viewportSizeUpdated: function viewportSizeUpdated() {
-    if (this.recomputeDoubleTapToZoomAllowed()) {
-      this.sendViewportMetadata();
-    }
     this.sendViewportUpdate(); 
-  },
-
-  recomputeDoubleTapToZoomAllowed: function recomputeDoubleTapToZoomAllowed() {
-    let metadata = this.metadata;
-    if (metadata.allowZoom && !Services.prefs.getBoolPref("browser.ui.zoom.force-user-scalable")) {
-      
-      
-      var oldAllowDoubleTapZoom = metadata.allowDoubleTapZoom;
-      
-      
-      var newAllowDoubleTapZoom = (!metadata.isSpecified) || (window.innerWidth > gScreenWidth / window.devicePixelRatio);
-      if (oldAllowDoubleTapZoom !== newAllowDoubleTapZoom) {
-        metadata.allowDoubleTapZoom = newAllowDoubleTapZoom;
-        return true;
-      }
-    }
-    return false;
-  },
-
-  sendViewportMetadata: function sendViewportMetadata() {
-    let metadata = this.metadata;
-    Messaging.sendRequest({
-      type: "Tab:ViewportMetadata",
-      allowZoom: metadata.allowZoom,
-      allowDoubleTapZoom: metadata.allowDoubleTapZoom,
-      minZoom: metadata.minZoom || 0,
-      maxZoom: metadata.maxZoom || 0,
-      isRTL: metadata.isRTL,
-      tabID: this.id
-    });
   },
 
   
@@ -4810,7 +4753,6 @@ Tab.prototype = {
           }
           this.contentDocumentIsDisplayed = true;
 
-          ViewportHandler.updateMetadata(this);
           let zoom = this.restoredSessionZoom();
           if (zoom) {
             this.setResolution(zoom, true);
@@ -4842,10 +4784,6 @@ Tab.prototype = {
         if (BrowserApp.selectedTab._mReflozPositioned) {
           BrowserApp.selectedTab.clearReflowOnZoomPendingActions();
         }
-        break;
-      case "nsPref:changed":
-        if (aData == "browser.ui.zoom.force-user-scalable")
-          ViewportHandler.updateMetadata(this);
         break;
     }
   },
@@ -6310,29 +6248,26 @@ var ViewportHandler = {
   _metadata: new WeakMap(),
 
   init: function init() {
-    addEventListener("DOMMetaAdded", this, false);
-    addEventListener("DOMMetaChanged", this, false);
     Services.obs.addObserver(this, "Window:Resize", false);
-  },
-
-  handleEvent: function handleEvent(aEvent) {
-    switch (aEvent.type) {
-      case "DOMMetaChanged":
-      case "DOMMetaAdded":
-        let target = aEvent.originalTarget;
-        if (target.name != "viewport")
-          break;
-        let document = target.ownerDocument;
-        let browser = BrowserApp.getBrowserForDocument(document);
-        let tab = BrowserApp.getTabForBrowser(browser);
-        if (tab)
-          this.updateMetadata(tab);
-        break;
-    }
+    Services.obs.addObserver(this, "zoom-constraints-updated", false);
   },
 
   observe: function(aSubject, aTopic, aData) {
     switch (aTopic) {
+      case "zoom-constraints-updated":
+        
+        
+        let constraints = JSON.parse(aData);
+        let doc = aSubject;
+        constraints.isRTL = doc.documentElement.dir == "rtl";
+        ViewportHandler.setMetadataForDocument(doc, constraints);
+        let tab = BrowserApp.getTabForWindow(doc.defaultView);
+        if (tab) {
+          constraints.type = "Tab:ViewportMetadata";
+          constraints.tabID = tab.id;
+          Messaging.sendRequest(constraints);
+        }
+        return;
       case "Window:Resize":
         if (window.outerWidth == gScreenWidth && window.outerHeight == gScreenHeight)
           break;
@@ -6356,14 +6291,6 @@ var ViewportHandler = {
       let windowUtils = win.QueryInterface(Ci.nsIInterfaceRequestor).getInterface(Ci.nsIDOMWindowUtils);
       windowUtils.setNextPaintSyncId(scrollChange.id);
       win.scrollBy(scrollChange.x, scrollChange.y);
-    }
-  },
-
-  updateMetadata: function updateMetadata(tab) {
-    let contentWindow = tab.browser.contentWindow;
-    if (contentWindow.document.documentElement) {
-      let metadata = this.getViewportMetadata(contentWindow);
-      tab.updateViewportMetadata(metadata);
     }
   },
 
