@@ -78,6 +78,7 @@ private:
   
   static void
   GetOverriddenProperties(nsStyleContext* aStyleContext,
+                          EffectSet& aEffectSet,
                           nsCSSPropertySet& aPropertiesOverridden);
 
   static void
