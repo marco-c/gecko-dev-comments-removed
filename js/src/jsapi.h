@@ -2956,11 +2956,21 @@ JS_NewArrayObject(JSContext* cx, const JS::HandleValueArray& contents);
 extern JS_PUBLIC_API(JSObject*)
 JS_NewArrayObject(JSContext* cx, size_t length);
 
-extern JS_PUBLIC_API(bool)
-JS_IsArrayObject(JSContext* cx, JS::HandleValue value);
+
+
+
+
 
 extern JS_PUBLIC_API(bool)
-JS_IsArrayObject(JSContext* cx, JS::HandleObject obj);
+JS_IsArrayObject(JSContext* cx, JS::HandleValue value, bool* isArray);
+
+
+
+
+
+
+extern JS_PUBLIC_API(bool)
+JS_IsArrayObject(JSContext* cx, JS::HandleObject obj, bool* isArray);
 
 extern JS_PUBLIC_API(bool)
 JS_GetArrayLength(JSContext* cx, JS::Handle<JSObject*> obj, uint32_t* lengthp);
@@ -4725,8 +4735,10 @@ JS_NewDateObject(JSContext* cx, int year, int mon, int mday, int hour, int min, 
 
 
 
+
+
 extern JS_PUBLIC_API(bool)
-JS_ObjectIsDate(JSContext* cx, JS::HandleObject obj);
+JS_ObjectIsDate(JSContext* cx, JS::HandleObject obj, bool* isDate);
 
 
 
@@ -4777,8 +4789,13 @@ extern JS_PUBLIC_API(bool)
 JS_ExecuteRegExpNoStatics(JSContext* cx, JS::HandleObject reobj, char16_t* chars, size_t length,
                           size_t* indexp, bool test, JS::MutableHandleValue rval);
 
+
+
+
+
+
 extern JS_PUBLIC_API(bool)
-JS_ObjectIsRegExp(JSContext* cx, JS::HandleObject obj);
+JS_ObjectIsRegExp(JSContext* cx, JS::HandleObject obj, bool* isRegExp);
 
 extern JS_PUBLIC_API(unsigned)
 JS_GetRegExpFlags(JSContext* cx, JS::HandleObject obj);

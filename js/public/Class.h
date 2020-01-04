@@ -831,21 +831,11 @@ Valueify(const JSClass* c)
 enum ESClassValue {
     ESClass_Object, ESClass_Array, ESClass_Number, ESClass_String,
     ESClass_Boolean, ESClass_RegExp, ESClass_ArrayBuffer, ESClass_SharedArrayBuffer,
-    ESClass_Date, ESClass_Set, ESClass_Map
+    ESClass_Date, ESClass_Set, ESClass_Map,
+
+    
+    ESClass_Other
 };
-
-
-
-
-
-
-
-inline bool
-ObjectClassIs(JSObject& obj, ESClassValue classValue, JSContext* cx);
-
-
-inline bool
-IsObjectWithClass(const JS::Value& v, ESClassValue classValue, JSContext* cx);
 
 
 inline bool

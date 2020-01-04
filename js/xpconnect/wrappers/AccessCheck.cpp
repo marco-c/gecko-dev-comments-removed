@@ -309,7 +309,11 @@ ExposedPropertiesOnly::check(JSContext* cx, HandleObject wrapper, HandleId id, W
         
         
         
-        bool isArray = JS_IsArrayObject(cx, wrappedObject) || JS_IsTypedArrayObject(wrappedObject);
+        bool isArray;
+        if (!JS_IsArrayObject(cx, wrappedObject, &isArray))
+            return false;
+        if (!isArray)
+            isArray = JS_IsTypedArrayObject(wrappedObject);
         bool isIndexedAccessOnArray = isArray && JSID_IS_INT(id) && JSID_TO_INT(id) >= 0;
         bool isLengthAccessOnArray = isArray && JSID_IS_STRING(id) &&
                                      JS_FlatStringEqualsAscii(JSID_TO_FLAT_STRING(id), "length");

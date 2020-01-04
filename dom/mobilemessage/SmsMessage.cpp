@@ -6,8 +6,6 @@
 
 #include "SmsMessage.h"
 #include "nsIDOMClassInfo.h"
-#include "jsapi.h" 
-#include "jsfriendapi.h" 
 #include "mozilla/dom/mobilemessage/Constants.h" 
 
 using namespace mozilla::dom::mobilemessage;

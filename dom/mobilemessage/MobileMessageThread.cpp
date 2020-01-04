@@ -7,7 +7,6 @@
 #include "MobileMessageThread.h"
 #include "nsIDOMClassInfo.h"
 #include "jsapi.h"           
-#include "jsfriendapi.h"     
 #include "nsJSUtils.h"       
 #include "nsTArrayHelpers.h" 
 #include "mozilla/dom/mobilemessage/Constants.h" 
@@ -54,7 +53,11 @@ MobileMessageThread::Create(uint64_t aId,
     }
 
     JS::Rooted<JSObject*> obj(aCx, &aParticipants.toObject());
-    if (!JS_IsArrayObject(aCx, obj)) {
+    bool isArray;
+    if (!JS_IsArrayObject(aCx, obj, &isArray)) {
+      return NS_ERROR_FAILURE;
+    }
+    if (!isArray) {
       return NS_ERROR_INVALID_ARG;
     }
 
