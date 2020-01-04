@@ -46,7 +46,7 @@ const { OS } = Services.appinfo;
 
 
 const CM_STYLES   = [
-  "chrome://devtools/skin/themes/common.css",
+  "chrome://devtools/skin/common.css",
   "chrome://devtools/content/sourceeditor/codemirror/codemirror.css",
   "chrome://devtools/content/sourceeditor/codemirror/dialog/dialog.css",
   "chrome://devtools/content/sourceeditor/codemirror/mozilla.css"
