@@ -3,6 +3,35 @@
 
 
 
+
+
+
+
+
+
+
+
+
+(function(global) {
+  
+
+
+
+  var newGlobal = global.newGlobal;
+  if (typeof newGlobal !== "function") {
+    newGlobal = function newGlobal() {
+      var iframe = global.document.createElement("iframe");
+      global.document.documentElement.appendChild(iframe);
+      var win = iframe.contentWindow;
+      iframe.remove();
+      
+      win.evaluate = win.eval;
+      return win;
+    };
+    global.newGlobal = newGlobal;
+  }
+})(this);
+
 var gPageCompleted;
 var GLOBAL = this + '';
 
@@ -558,16 +587,6 @@ function closeDialog()
       subject.close();
     }
   }
-}
-
-function newGlobal() {
-  var iframe = document.createElement("iframe");
-  document.documentElement.appendChild(iframe);
-  var win = iframe.contentWindow;
-  iframe.remove();
-  
-  win.evaluate = win.eval;
-  return win;
 }
 
 registerDialogCloser();
