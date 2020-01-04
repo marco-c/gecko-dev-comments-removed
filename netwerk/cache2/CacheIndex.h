@@ -695,6 +695,10 @@ public:
   static nsresult IsUpToDate(bool *_retval);
 
   
+  
+  static void OnAsyncEviction(bool aEvicting);
+
+  
   static size_t SizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf);
   static size_t SizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf);
 
@@ -908,6 +912,7 @@ private:
 
   static char const * StateString(EState aState);
   void ChangeState(EState aNewState);
+  void NotifyAsyncGetDiskConsumptionCallbacks();
 
   
   void AllocBuffer();
@@ -1027,6 +1032,11 @@ private:
   bool                          mFrecencyArraySorted;
 
   nsTArray<CacheIndexIterator *> mIterators;
+
+  
+  
+  
+  bool mAsyncGetDiskConsumptionBlocked;
 
   class DiskConsumptionObserver : public nsRunnable
   {

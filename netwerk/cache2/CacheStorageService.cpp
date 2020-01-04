@@ -766,6 +766,11 @@ NS_IMETHODIMP CacheStorageService::Clear()
   nsresult rv;
 
   if (CacheObserver::UseNewCache()) {
+    
+    
+    
+    CacheIndex::OnAsyncEviction(true);
+
     {
       mozilla::MutexAutoLock lock(mLock);
 

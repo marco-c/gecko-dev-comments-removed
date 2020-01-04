@@ -563,6 +563,10 @@ CacheFileContextEvictor::EvictEntries()
     if (mEntries.Length() == 0) {
       LOG(("CacheFileContextEvictor::EvictEntries() - Stopping evicting, there "
            "is no context to evict."));
+
+      
+      
+      CacheIndex::OnAsyncEviction(false);
       return NS_OK;
     }
 
