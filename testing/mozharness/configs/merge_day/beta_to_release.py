@@ -4,7 +4,6 @@ config = {
         "browser/config/version.txt",
         "browser/config/version_display.txt",
         "config/milestone.txt",
-        "mobile/android/confvars.sh",  
         "b2g/confvars.sh",
     ],
     "replacements": [
