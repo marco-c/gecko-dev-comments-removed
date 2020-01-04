@@ -2,14 +2,13 @@
 
 
 
-import os
+from __future__ import unicode_literals
+
 import re
 from abc import ABCMeta, abstractmethod
 
-from mozpack import path as mozpath
-from mozpack.files import FileFinder
-
 from . import result
+from .pathutils import filterpaths
 
 
 class BaseType(object):
@@ -29,10 +28,11 @@ class BaseType(object):
         exclude = lintargs.get('exclude', [])
         exclude.extend(linter.get('exclude', []))
 
-        paths = self._filter(paths, linter.get('include'), exclude)
+        paths, exclude = filterpaths(paths, linter.get('include'), exclude)
         if not paths:
             return
 
+        lintargs['exclude'] = exclude
         if self.batch:
             return self._lint(paths, linter, **lintargs)
 
@@ -42,43 +42,6 @@ class BaseType(object):
             if result:
                 errors.extend(result)
         return errors
-
-    def _filter(self, paths, include=None, exclude=None):
-        if not include and not exclude:
-            return paths
-
-        if include:
-            include = map(os.path.normpath, include)
-
-        if exclude:
-            exclude = map(os.path.normpath, exclude)
-
-        def match(path, patterns):
-            return any(mozpath.match(path, pattern) for pattern in patterns)
-
-        filtered = []
-        for path in paths:
-            if os.path.isfile(path):
-                if include and not match(path, include):
-                    continue
-                elif exclude and match(path, exclude):
-                    continue
-                filtered.append(path)
-            elif os.path.isdir(path):
-                finder = FileFinder(path, find_executables=False, ignore=exclude)
-                if self.batch:
-                    
-                    
-                    
-                    if any(finder.contains(pattern) for pattern in include):
-                        filtered.append(path)
-                else:
-                    
-                    for pattern in include:
-                        filtered.extend([os.path.join(path, p)
-                                         for p, f in finder.find(pattern)])
-
-        return filtered
 
     @abstractmethod
     def _lint(self, path):
