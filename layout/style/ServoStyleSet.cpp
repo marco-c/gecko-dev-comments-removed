@@ -263,7 +263,23 @@ nsresult
 ServoStyleSet::ReplaceSheets(SheetType aType,
                              const nsTArray<RefPtr<ServoStyleSheet>>& aNewSheets)
 {
-  MOZ_CRASH("stylo: not implemented");
+  
+  
+  
+  
+
+  for (ServoStyleSheet* sheet : mSheets[aType]) {
+    Servo_RemoveStyleSheet(sheet->RawSheet(), mRawSet.get());
+  }
+
+  mSheets[aType].Clear();
+  mSheets[aType].AppendElements(aNewSheets);
+
+  for (ServoStyleSheet* sheet : mSheets[aType]) {
+    Servo_AppendStyleSheet(sheet->RawSheet(), mRawSet.get());
+  }
+
+  return NS_OK;
 }
 
 nsresult
