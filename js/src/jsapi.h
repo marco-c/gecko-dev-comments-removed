@@ -603,7 +603,8 @@ typedef bool
 (* JSInterruptCallback)(JSContext* cx);
 
 typedef bool
-(* JSEnqueuePromiseJobCallback)(JSContext* cx, JS::HandleObject job, void* data);
+(* JSEnqueuePromiseJobCallback)(JSContext* cx, JS::HandleObject job,
+                                JS::HandleObject allocationSite, void* data);
 
 typedef void
 (* JSErrorReporter)(JSContext* cx, const char* message, JSErrorReport* report);
@@ -4396,6 +4397,7 @@ extern JS_PUBLIC_API(void)
 JS_RequestInterruptCallback(JSRuntime* rt);
 
 namespace JS {
+
 
 
 
