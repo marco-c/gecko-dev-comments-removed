@@ -22,6 +22,7 @@ import mozinfo
 import mozprocess
 import mozrunner
 import numbers
+import platform
 import re
 import shutil
 import signal
@@ -1631,6 +1632,11 @@ class MochitestDesktop(MochitestBase):
             prefs.update(Preferences.read_prefs(path))
 
         prefs.update(self.extraPrefs(options.extraPrefs))
+
+        
+        if platform.system() in ("Windows", "Microsoft") and \
+           '5.1' in platform.version() and options.e10s:
+            prefs['layers.acceleration.disabled'] = True
 
         
         interpolation = {

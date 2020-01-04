@@ -3,6 +3,7 @@
 
 
 import os
+import platform
 import subprocess
 import sys
 
@@ -119,6 +120,11 @@ class FirefoxBrowser(Browser):
                                       "network.dns.localDomains": ",".join(hostnames)})
         if self.e10s:
             self.profile.set_preferences({"browser.tabs.remote.autostart": True})
+
+        
+        if self.e10s and platform.system() in ("Windows", "Microsoft") and \
+           '5.1' in platform.version():
+            self.profile.set_preferences({"layers.acceleration.disabled": True})
 
         if self.ca_certificate_path is not None:
             self.setup_ssl()

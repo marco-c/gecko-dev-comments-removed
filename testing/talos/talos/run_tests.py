@@ -113,12 +113,7 @@ def run_tests(config, browser_config):
         browser_config['preferences']['xpinstall.signatures.required'] = False
 
     
-    title = config.get('title', '')
     testdate = config.get('testdate', '')
-
-    if browser_config['e10s'] and not title.endswith(".e"):
-        
-        title = "%s.e" % (title,)
 
     
     if not browser_config['process']:
