@@ -1642,23 +1642,38 @@ class MSimdReinterpretCast
 };
 
 
+
+
+
 class MSimdExtractElement
   : public MUnaryInstruction,
     public SimdPolicy<0>::Data
 {
   protected:
     SimdLane lane_;
+    SimdSign sign_;
 
-    MSimdExtractElement(MDefinition* obj, MIRType vecType, MIRType laneType, SimdLane lane)
-      : MUnaryInstruction(obj), lane_(lane)
+    MSimdExtractElement(MDefinition* obj, MIRType vecType, MIRType laneType, SimdLane lane,
+                        SimdSign sign)
+      : MUnaryInstruction(obj), lane_(lane), sign_(sign)
     {
         MOZ_ASSERT(IsSimdType(vecType));
         MOZ_ASSERT(uint32_t(lane) < SimdTypeToLength(vecType));
         MOZ_ASSERT(!IsSimdType(laneType));
+        MOZ_ASSERT((sign != SimdSign::NotApplicable) == IsIntegerSimdType(vecType),
+                   "Signedness must be specified for integer SIMD extractLanes");
+        
+        
+        
+        
+        
+        
         
         
         MOZ_ASSERT(SimdTypeToLaneType(vecType) == laneType ||
-                   (IsBooleanSimdType(vecType) && laneType == MIRType_Int32));
+                   (IsBooleanSimdType(vecType) && laneType == MIRType_Int32) ||
+                   (vecType == MIRType_Int32x4 && laneType == MIRType_Double &&
+                    sign == SimdSign::Unsigned));
 
         setMovable();
         specialization_ = vecType;
@@ -1671,17 +1686,24 @@ class MSimdExtractElement
     static MSimdExtractElement* NewAsmJS(TempAllocator& alloc, MDefinition* obj, MIRType type,
                                          SimdLane lane)
     {
-        return new(alloc) MSimdExtractElement(obj, obj->type(), type, lane);
+        
+        SimdSign sign =
+          IsIntegerSimdType(obj->type()) ? SimdSign::Signed : SimdSign::NotApplicable;
+        return new (alloc) MSimdExtractElement(obj, obj->type(), type, lane, sign);
     }
 
     static MSimdExtractElement* New(TempAllocator& alloc, MDefinition* obj, MIRType vecType,
-                                    MIRType scalarType, SimdLane lane)
+                                    MIRType scalarType, SimdLane lane, SimdSign sign)
     {
-        return new(alloc) MSimdExtractElement(obj, vecType, scalarType, lane);
+        return new(alloc) MSimdExtractElement(obj, vecType, scalarType, lane, sign);
     }
 
     SimdLane lane() const {
         return lane_;
+    }
+
+    SimdSign signedness() const {
+        return sign_;
     }
 
     AliasSet getAliasSet() const override {
@@ -1691,7 +1713,7 @@ class MSimdExtractElement
         if (!ins->isSimdExtractElement())
             return false;
         const MSimdExtractElement* other = ins->toSimdExtractElement();
-        if (other->lane_ != lane_)
+        if (other->lane_ != lane_ || other->sign_ != sign_)
             return false;
         return congruentIfOperandsEqual(other);
     }
