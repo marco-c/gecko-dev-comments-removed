@@ -162,6 +162,17 @@ JitRuntime::generateEnterJIT(JSContext* cx, EnterJitType type)
 
 
 
+    
+    {
+        Label noNewTarget;
+        masm.branchTest32(Assembler::Zero, s2, Imm32(CalleeToken_FunctionConstructing),
+                          &noNewTarget);
+
+        masm.add32(Imm32(1), reg_argc);
+
+        masm.bind(&noNewTarget);
+    }
+
     masm.as_sll(s0, reg_argc, 3); 
     masm.addPtr(reg_argv, s0); 
 
@@ -432,11 +443,33 @@ JitRuntime::generateArgumentsRectifier(JSContext* cx, void** returnAddrOut)
 
     masm.ma_subu(t1, numArgsReg, s3);
 
-    masm.moveValue(UndefinedValue(), ValueOperand(t3, t4));
+    
+    masm.ma_sll(t0, s3, Imm32(3)); 
+    masm.as_addu(t2, sp, t0); 
+    masm.addPtr(Imm32(sizeof(RectifierFrameLayout)), t2);
 
-    masm.movePtr(StackPointer, t2); 
+    {
+        Label notConstructing;
+
+        masm.branchTest32(Assembler::Zero, calleeTokenReg, Imm32(CalleeToken_FunctionConstructing),
+                          &notConstructing);
+
+        
+        masm.subPtr(Imm32(sizeof(Value)), StackPointer);
+        masm.load32(Address(t2, NUNBOX32_TYPE_OFFSET + sizeof(Value)), t0);
+        masm.store32(t0, Address(StackPointer, NUNBOX32_TYPE_OFFSET));
+        masm.load32(Address(t2, NUNBOX32_PAYLOAD_OFFSET + sizeof(Value)), t0);
+        masm.store32(t0, Address(StackPointer, NUNBOX32_PAYLOAD_OFFSET));
+
+        
+        
+        masm.add32(Imm32(1), numArgsReg);
+
+        masm.bind(&notConstructing);
+    }
 
     
+    masm.moveValue(UndefinedValue(), ValueOperand(t3, t4));
     {
         Label undefLoopTop;
         masm.bind(&undefLoopTop);
@@ -447,11 +480,6 @@ JitRuntime::generateArgumentsRectifier(JSContext* cx, void** returnAddrOut)
 
         masm.ma_b(t1, t1, &undefLoopTop, Assembler::NonZero, ShortJump);
     }
-
-    
-    masm.ma_sll(t0, s3, Imm32(3)); 
-    masm.addPtr(t0, t2); 
-    masm.addPtr(Imm32(sizeof(RectifierFrameLayout)), t2);
 
     
     {
