@@ -19,7 +19,6 @@ import org.mozilla.gecko.annotation.JNITarget;
 import org.mozilla.gecko.annotation.RobocopTarget;
 import org.mozilla.gecko.AppConstants.Versions;
 import org.mozilla.gecko.db.BrowserDB;
-import org.mozilla.gecko.favicons.Favicons;
 import org.mozilla.gecko.mozglue.SafeIntent;
 import org.mozilla.gecko.notifications.WhatsNewReceiver;
 import org.mozilla.gecko.reader.ReaderModeUtils;
@@ -113,6 +112,7 @@ public class Tabs implements GeckoEventListener {
             "Content:PageShow",
             "DOMTitleChanged",
             "Link:Favicon",
+            "Link:Touchicon",
             "Link:Feed",
             "Link:OpenSearch",
             "DesktopMode:Changed",
@@ -521,11 +521,7 @@ public class Tabs implements GeckoEventListener {
                 tab.updateTitle(message.getString("title"));
             } else if (event.equals("Link:Favicon")) {
                 
-                if (!Favicons.canDecodeType(message.getString("mime"))) {
-                    return;
-                }
 
-                
                 tab.addFavicon(message.getString("href"), message.getInt("size"), message.getString("mime"));
 
                 
@@ -534,6 +530,8 @@ public class Tabs implements GeckoEventListener {
                 if (tab.getState() != Tab.STATE_LOADING) {
                     tab.loadFavicon();
                 }
+            } else if (event.equals("Link:Touchicon")) {
+                tab.addTouchicon(message.getString("href"), message.getInt("size"), message.getString("mime"));
             } else if (event.equals("Link:Feed")) {
                 tab.setHasFeeds(true);
                 notifyListeners(tab, TabEvents.LINK_FEED);

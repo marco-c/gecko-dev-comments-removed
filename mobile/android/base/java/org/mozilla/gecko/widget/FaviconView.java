@@ -7,7 +7,8 @@ package org.mozilla.gecko.widget;
 
 import org.mozilla.gecko.R;
 import org.mozilla.gecko.favicons.FaviconGenerator;
-import org.mozilla.gecko.favicons.Favicons;
+import org.mozilla.gecko.icons.IconCallback;
+import org.mozilla.gecko.icons.IconResponse;
 import org.mozilla.gecko.util.ThreadUtils;
 
 import android.content.Context;
@@ -21,7 +22,11 @@ import android.util.AttributeSet;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.TypedValue;
+import android.view.View;
 import android.widget.ImageView;
+
+import java.lang.ref.WeakReference;
+
 
 
 
@@ -40,11 +45,6 @@ public class FaviconView extends ImageView {
     
     
     private Bitmap mUnscaledBitmap;
-
-    
-    
-    
-    private String mIconKey;
 
     private int mActualWidth;
     private int mActualHeight;
@@ -150,12 +150,7 @@ public class FaviconView extends ImageView {
         
         
         
-        if (Math.abs(mIconBitmap.getWidth() - mActualWidth) > 3) {
-            mDominantColor = Favicons.getFaviconColor(mIconKey);
-            if (mDominantColor == -1) {
-                mDominantColor = 0;
-            }
-        } else {
+        if (Math.abs(mIconBitmap.getWidth() - mActualWidth) < 3) {
             mDominantColor = 0;
         }
     }
@@ -185,47 +180,18 @@ public class FaviconView extends ImageView {
 
 
 
-
-
-    private void updateImageInternal(Bitmap bitmap, String key, boolean allowScaling) {
-        if (bitmap == null) {
-            Log.w(LOGTAG, "updateImageInternal() called without bitmap");
-
-            
-            showDefaultFavicon(null);
-            return;
-        }
-
+    private void updateImageInternal(IconResponse response, boolean allowScaling) {
         
-        if (mUnscaledBitmap == bitmap) {
+        if (mUnscaledBitmap == response.getBitmap()) {
             return;
         }
-        mUnscaledBitmap = bitmap;
-        mIconBitmap = bitmap;
-        mIconKey = key;
+        mUnscaledBitmap = response.getBitmap();
+        mIconBitmap = response.getBitmap();
+        mDominantColor = response.getColor();
         mScalingExpected = allowScaling;
 
         
         formatImage();
-    }
-
-    public void showDefaultFavicon(final String pageURL) {
-        ThreadUtils.postToBackgroundThread(new Runnable() {
-            @Override
-            public void run() {
-                final Bitmap favicon = FaviconGenerator.generate(getContext(), pageURL).bitmap;
-
-                ThreadUtils.postToUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        
-                        
-                        
-                        updateAndScaleImage(favicon, DEFAULT_FAVICON_KEY);
-                    }
-                });
-            }
-        });
     }
 
     private void showNoImage() {
@@ -240,7 +206,7 @@ public class FaviconView extends ImageView {
         showNoImage();
         mUnscaledBitmap = null;
         mIconBitmap = null;
-        mIconKey = null;
+        mDominantColor = 0;
         mScalingExpected = false;
     }
 
@@ -255,11 +221,8 @@ public class FaviconView extends ImageView {
 
 
 
-
-
-
-    public void updateAndScaleImage(Bitmap bitmap, String key) {
-        updateImageInternal(bitmap, key, true);
+    public void updateAndScaleImage(IconResponse response) {
+        updateImageInternal(response, true);
     }
 
     
@@ -267,14 +230,36 @@ public class FaviconView extends ImageView {
 
 
 
-
-
-
-    public void updateImage(Bitmap bitmap, String key) {
-        updateImageInternal(bitmap, key, false);
+    public void updateImage(IconResponse response) {
+        updateImageInternal(response, false);
     }
 
     public Bitmap getBitmap() {
         return mIconBitmap;
+    }
+
+    
+
+
+    public IconCallback createIconCallback() {
+        return new Callback(this);
+    }
+
+    private static class Callback implements IconCallback {
+        private final WeakReference<FaviconView> viewReference;
+
+        private Callback(FaviconView view) {
+            this.viewReference = new WeakReference<FaviconView>(view);
+        }
+
+        @Override
+        public void onIconResponse(IconResponse response) {
+            final FaviconView view = viewReference.get();
+            if (view == null) {
+                return;
+            }
+
+            view.updateImage(response);
+        }
     }
 }

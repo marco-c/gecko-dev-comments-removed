@@ -5,13 +5,6 @@
 
 package org.mozilla.gecko.home;
 
-import org.mozilla.gecko.db.BrowserContract.TopSites;
-import org.mozilla.gecko.favicons.FaviconGenerator;
-import org.mozilla.gecko.favicons.Favicons;
-import org.mozilla.gecko.R;
-import org.mozilla.gecko.gfx.BitmapUtils;
-import org.mozilla.gecko.util.ThreadUtils;
-
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.text.TextUtils;
@@ -21,13 +14,21 @@ import android.widget.ImageView.ScaleType;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
+import org.mozilla.gecko.R;
+import org.mozilla.gecko.db.BrowserContract.TopSites;
+import org.mozilla.gecko.icons.IconCallback;
+import org.mozilla.gecko.icons.IconResponse;
+import org.mozilla.gecko.icons.Icons;
+
+import java.util.concurrent.Future;
 
 
 
 
 
 
-public class TopSitesGridItemView extends RelativeLayout {
+
+public class TopSitesGridItemView extends RelativeLayout implements IconCallback {
     private static final String LOGTAG = "GeckoTopSitesGridItemView";
 
     
@@ -45,7 +46,6 @@ public class TopSitesGridItemView extends RelativeLayout {
     
     private String mTitle;
     private String mUrl;
-    private String mFaviconURL;
 
     private boolean mThumbnailSet;
 
@@ -55,8 +55,7 @@ public class TopSitesGridItemView extends RelativeLayout {
     
     private boolean mIsDirty;
 
-    
-    private int mLoadId = Favicons.NOT_LOADING;
+    private Future<IconResponse> mOngoingIconRequest;
 
     public TopSitesGridItemView(Context context) {
         this(context, null);
@@ -139,7 +138,7 @@ public class TopSitesGridItemView extends RelativeLayout {
         mTitle = "";
         updateType(TopSites.TYPE_BLANK);
         updateTitleView();
-        setLoadId(Favicons.NOT_LOADING);
+        cancelIconLoading();
         ImageLoader.with(getContext()).cancelRequest(mThumbnailView);
         displayThumbnail(R.drawable.top_site_add);
 
@@ -182,7 +181,7 @@ public class TopSitesGridItemView extends RelativeLayout {
 
         if (changed) {
             updateTitleView();
-            setLoadId(Favicons.NOT_LOADING);
+            cancelIconLoading();
             ImageLoader.with(getContext()).cancelRequest(mThumbnailView);
         }
 
@@ -202,6 +201,23 @@ public class TopSitesGridItemView extends RelativeLayout {
     
 
 
+    public void loadFavicon(String pageUrl) {
+        mOngoingIconRequest = Icons.with(getContext())
+                .pageUrl(pageUrl)
+                .skipNetwork()
+                .build()
+                .execute(this);
+    }
+
+    private void cancelIconLoading() {
+        if (mOngoingIconRequest != null) {
+            mOngoingIconRequest.cancel(true);
+        }
+    }
+
+    
+
+
 
 
     public void displayThumbnail(int resId) {
@@ -211,23 +227,6 @@ public class TopSitesGridItemView extends RelativeLayout {
         mThumbnailSet = false;
     }
 
-    private void generateDefaultIcon() {
-        ThreadUtils.assertOnBackgroundThread();
-
-        final Bitmap bitmap = FaviconGenerator.generate(getContext(), mUrl).bitmap;
-        final int dominantColor = BitmapUtils.getDominantColor(bitmap);
-
-        ThreadUtils.postToUiThread(new Runnable() {
-            @Override
-            public void run() {
-                mThumbnailView.setScaleType(SCALE_TYPE_FAVICON);
-                mThumbnailView.setImageBitmap(bitmap);
-                mThumbnailView.setBackgroundColor(0x7FFFFFFF & dominantColor); 
-                mThumbnailSet = false;
-            }
-        });
-    }
-
     
 
 
@@ -235,17 +234,12 @@ public class TopSitesGridItemView extends RelativeLayout {
 
     public void displayThumbnail(Bitmap thumbnail) {
         if (thumbnail == null) {
-            ThreadUtils.postToBackgroundThread(new Runnable() {
-                @Override
-                public void run() {
-                    generateDefaultIcon();
-                }
-            });
             return;
         }
 
         mThumbnailSet = true;
-        Favicons.cancelFaviconLoad(mLoadId);
+
+        cancelIconLoading();
         ImageLoader.with(getContext()).cancelRequest(mThumbnailView);
 
         mThumbnailView.setScaleType(SCALE_TYPE_THUMBNAIL);
@@ -268,51 +262,6 @@ public class TopSitesGridItemView extends RelativeLayout {
                    .load(imageUrl)
                    .noFade()
                    .into(mThumbnailView);
-    }
-
-    public void displayFavicon(Bitmap favicon, String faviconURL, int expectedLoadId) {
-        if (mLoadId != Favicons.NOT_LOADING &&
-            mLoadId != expectedLoadId) {
-            
-            return;
-        }
-
-        
-        displayFavicon(favicon, faviconURL);
-    }
-
-    
-
-
-
-
-    public void displayFavicon(Bitmap favicon, String faviconURL) {
-        if (mThumbnailSet) {
-            
-            return;
-        }
-
-        if (favicon == null) {
-            ThreadUtils.postToBackgroundThread(new Runnable() {
-                @Override
-                public void run() {
-                    generateDefaultIcon();
-                }
-            });
-            return;
-        }
-
-        if (faviconURL != null) {
-            mFaviconURL = faviconURL;
-        }
-
-        mThumbnailView.setScaleType(SCALE_TYPE_FAVICON);
-        mThumbnailView.setImageBitmap(favicon, false);
-
-        if (mFaviconURL != null) {
-            final int bgColor = Favicons.getFaviconColor(mFaviconURL);
-            mThumbnailView.setBackgroundColorWithOpacityFilter(bgColor);
-        }
     }
 
     
@@ -346,8 +295,18 @@ public class TopSitesGridItemView extends RelativeLayout {
         }
     }
 
-    public void setLoadId(int aLoadId) {
-        Favicons.cancelFaviconLoad(mLoadId);
-        mLoadId = aLoadId;
+    
+
+
+    @Override
+    public void onIconResponse(IconResponse response) {
+        if (mThumbnailSet) {
+            
+            return;
+        }
+
+        mThumbnailView.setScaleType(SCALE_TYPE_FAVICON);
+        mThumbnailView.setImageBitmap(response.getBitmap(), false);
+        mThumbnailView.setBackgroundColorWithOpacityFilter(response.getColor());
     }
 }

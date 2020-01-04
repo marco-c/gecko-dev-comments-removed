@@ -51,6 +51,11 @@ import java.util.concurrent.Callable;
 
             prepareRequest(request);
 
+            if (request.shouldPrepareOnly()) {
+                
+                return null;
+            }
+
             final IconResponse response = loadIcon(request);
 
             if (response != null) {

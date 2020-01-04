@@ -8,10 +8,10 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.mozilla.gecko.R;
 import org.mozilla.gecko.SnackbarBuilder;
-import org.mozilla.gecko.favicons.Favicons;
-import org.mozilla.gecko.favicons.OnFaviconLoadedListener;
-import org.mozilla.gecko.favicons.decoders.FaviconDecoder;
-import org.mozilla.gecko.util.ThreadUtils;
+import org.mozilla.gecko.icons.IconCallback;
+import org.mozilla.gecko.icons.IconDescriptor;
+import org.mozilla.gecko.icons.IconResponse;
+import org.mozilla.gecko.icons.Icons;
 import org.mozilla.gecko.widget.FaviconView;
 
 import android.app.Activity;
@@ -66,7 +66,7 @@ public class SearchEnginePreference extends CustomListPreference {
             mFaviconView = ((FaviconView) view.findViewById(R.id.search_engine_icon));
 
             if (mIconBitmap != null) {
-                mFaviconView.updateAndScaleImage(mIconBitmap, getTitle().toString());
+                mFaviconView.updateAndScaleImage(IconResponse.create(mIconBitmap));
             }
         }
     }
@@ -159,36 +159,21 @@ public class SearchEnginePreference extends CustomListPreference {
         final String iconURI = geckoEngineJSON.getString("iconURI");
         
         try {
-            final int desiredWidth;
-            if (mFaviconView != null) {
-                desiredWidth = mFaviconView.getWidth();
-            } else {
-                
-                
-                
-                if (Favicons.largestFaviconSize == 0) {
-                    desiredWidth = 128;
-                } else {
-                    desiredWidth = Favicons.largestFaviconSize;
-                }
-            }
-
-            Favicons.getSizedFavicon(getContext(), mIdentifier, iconURI,
-                Favicons.LoadType.PRIVILEGED, 
-                desiredWidth, 0,
-                new OnFaviconLoadedListener() {
-                    @Override
-                    public void onFaviconLoaded(String url, String faviconURL, Bitmap favicon) {
-                        synchronized (bitmapLock) {
-                            mIconBitmap = favicon;
+            Icons.with(getContext())
+                    .pageUrl(mIdentifier)
+                    .icon(IconDescriptor.createGenericIcon(iconURI))
+                    .privileged(true)
+                    .build()
+                    .execute(new IconCallback() {
+                        @Override
+                        public void onIconResponse(IconResponse response) {
+                            mIconBitmap = response.getBitmap();
 
                             if (mFaviconView != null) {
-                                mFaviconView.updateAndScaleImage(mIconBitmap, getTitle().toString());
+                                mFaviconView.updateAndScaleImage(response);
                             }
                         }
-                    }
-                }
-            );
+                    });
         } catch (IllegalArgumentException e) {
             Log.e(LOGTAG, "IllegalArgumentException creating Bitmap. Most likely a zero-length bitmap.", e);
         } catch (NullPointerException e) {

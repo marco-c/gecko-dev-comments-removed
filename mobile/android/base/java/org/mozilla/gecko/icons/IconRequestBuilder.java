@@ -8,6 +8,8 @@ package org.mozilla.gecko.icons;
 import android.content.Context;
 import android.support.annotation.CheckResult;
 
+import org.mozilla.gecko.GeckoAppShell;
+
 import ch.boye.httpclientandroidlib.util.TextUtils;
 
 
@@ -87,9 +89,28 @@ public class IconRequestBuilder {
 
 
 
+    public IconRequestBuilder forLauncherIcon() {
+        request.targetSize = GeckoAppShell.getPreferredIconSize();
+        return this;
+    }
+
+    
+
+
+
     @CheckResult
     public IconRequestBuilder executeCallbackOnBackgroundThread() {
         request.backgroundThread = true;
+        return this;
+    }
+
+    
+
+
+
+
+    public IconRequestBuilder prepareOnly() {
+        request.prepareOnly = true;
         return this;
     }
 

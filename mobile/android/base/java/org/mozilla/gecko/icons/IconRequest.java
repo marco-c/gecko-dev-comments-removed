@@ -28,8 +28,9 @@ public class IconRequest {
      boolean backgroundThread;
      boolean skipDisk;
      boolean skipMemory;
+     int targetSize;
+     boolean prepareOnly;
     private IconCallback callback;
-    private int targetSize;
 
      IconRequest(Context context) {
         this.context = context.getApplicationContext();
@@ -41,6 +42,7 @@ public class IconRequest {
         this.skipDisk = false;
         this.skipNetwork = false;
         this.targetSize = context.getResources().getDimensionPixelSize(R.dimen.favicon_bg);
+        this.prepareOnly = false;
     }
 
     
@@ -165,4 +167,10 @@ public class IconRequest {
         icons.remove(getBestIcon());
     }
 
+    
+
+
+     boolean shouldPrepareOnly() {
+        return prepareOnly;
+    }
 }

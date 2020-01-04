@@ -9,7 +9,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.TreeSet;
+import java.util.concurrent.Future;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -18,16 +18,17 @@ import org.json.JSONObject;
 import org.mozilla.gecko.annotation.RobocopTarget;
 import org.mozilla.gecko.db.BrowserDB;
 import org.mozilla.gecko.db.URLMetadata;
-import org.mozilla.gecko.favicons.FaviconGenerator;
-import org.mozilla.gecko.favicons.Favicons;
-import org.mozilla.gecko.favicons.LoadFaviconTask;
-import org.mozilla.gecko.favicons.OnFaviconLoadedListener;
-import org.mozilla.gecko.favicons.RemoteFavicon;
 import org.mozilla.gecko.gfx.BitmapUtils;
+import org.mozilla.gecko.icons.IconCallback;
+import org.mozilla.gecko.icons.IconDescriptor;
+import org.mozilla.gecko.icons.IconRequestBuilder;
+import org.mozilla.gecko.icons.IconResponse;
+import org.mozilla.gecko.icons.Icons;
 import org.mozilla.gecko.reader.ReaderModeUtils;
 import org.mozilla.gecko.reader.ReadingListHelper;
 import org.mozilla.gecko.toolbar.BrowserToolbar.TabEditingState;
 import org.mozilla.gecko.util.ThreadUtils;
+import org.mozilla.gecko.widget.SiteLogins;
 
 import android.content.ContentResolver;
 import android.content.Context;
@@ -39,7 +40,6 @@ import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
-import org.mozilla.gecko.widget.SiteLogins;
 
 public class Tab {
     private static final String LOGTAG = "GeckoTab";
@@ -56,8 +56,9 @@ public class Tab {
     private String mFaviconUrl;
     private String mApplicationId; 
 
-    
-    final TreeSet<RemoteFavicon> mAvailableFavicons = new TreeSet<>();
+    private IconRequestBuilder mIconRequestBuilder;
+    private Future<IconResponse> mRunningIconRequest;
+
     private boolean mHasFeeds;
     private boolean mHasOpenSearch;
     private final SiteIdentity mSiteIdentity;
@@ -434,12 +435,15 @@ public class Tab {
     }
 
     public synchronized void addFavicon(String faviconURL, int faviconSize, String mimeType) {
-        RemoteFavicon favicon = new RemoteFavicon(faviconURL, faviconSize, mimeType);
+        mIconRequestBuilder
+                .icon(IconDescriptor.createFavicon(faviconURL, faviconSize, mimeType))
+                .deferBuild();
+    }
 
-        
-        synchronized (mAvailableFavicons) {
-            mAvailableFavicons.add(favicon);
-        }
+    public synchronized void addTouchicon(String iconUrl, int faviconSize, String mimeType) {
+        mIconRequestBuilder
+                .icon(IconDescriptor.createTouchicon(iconUrl, faviconSize, mimeType))
+                .deferBuild();
     }
 
     public void loadFavicon() {
@@ -448,72 +452,31 @@ public class Tab {
             return;
         }
 
-        
-        if (!mAvailableFavicons.isEmpty()) {
-            RemoteFavicon newFavicon = mAvailableFavicons.first();
-
+        if (mIconRequestBuilder == null) {
             
-            if (newFavicon.faviconUrl.equals(mFaviconUrl)) {
-                return;
-            }
-
-            Favicons.cancelFaviconLoad(mFaviconLoadId);
-            mFaviconUrl = newFavicon.faviconUrl;
-        } else {
             
-            mFaviconUrl = null;
+            
+            mIconRequestBuilder = Icons.with(mAppContext).pageUrl(mUrl);
         }
 
-        final Favicons.LoadType loadType;
-        if (mSiteIdentity.getSecurityMode() == SiteIdentity.SecurityMode.CHROMEUI) {
-            loadType = Favicons.LoadType.PRIVILEGED;
-        } else {
-            loadType = Favicons.LoadType.UNPRIVILEGED;
-        }
-
-        int flags = (isPrivate() || mErrorType != ErrorType.NONE) ? 0 : LoadFaviconTask.FLAG_PERSIST;
-        mFaviconLoadId = Favicons.getSizedFavicon(mAppContext, mUrl, mFaviconUrl,
-                loadType, Favicons.browserToolbarFaviconSize, flags,
-                new OnFaviconLoadedListener() {
+        mRunningIconRequest = mIconRequestBuilder
+                .build()
+                .execute(new IconCallback() {
                     @Override
-                    public void onFaviconLoaded(String pageUrl, String faviconURL, Bitmap favicon) {
-                        
-                        
-                        if (!pageUrl.equals(mUrl)) {
-                            return;
-                        }
+                    public void onIconResponse(IconResponse response) {
+                        mFavicon = response.getBitmap();
 
-                        
-                        if (favicon == null) {
-                            
-                            if (!mAvailableFavicons.isEmpty()) {
-                                
-                                mAvailableFavicons.remove(mAvailableFavicons.first());
-
-                                
-                                
-                                loadFavicon();
-
-                                return;
-                            }
-
-                            
-                            FaviconGenerator.generate(mAppContext, mUrl, this);
-                            return;
-                        }
-
-                        mFavicon = favicon;
-                        mFaviconLoadId = Favicons.NOT_LOADING;
                         Tabs.getInstance().notifyListeners(Tab.this, Tabs.TabEvents.FAVICON);
                     }
-                }
-        );
+                });
     }
 
     public synchronized void clearFavicon() {
         
         
-        Favicons.cancelFaviconLoad(mFaviconLoadId);
+        if (mRunningIconRequest != null) {
+            mRunningIconRequest.cancel(true);
+        }
 
         
         if (mEnteringReaderMode)
@@ -521,7 +484,6 @@ public class Tab {
 
         mFavicon = null;
         mFaviconUrl = null;
-        mAvailableFavicons.clear();
     }
 
     public void setHasFeeds(boolean hasFeeds) {
@@ -663,6 +625,10 @@ public class Tab {
                 
                 
                 clearFavicon();
+
+                
+                mIconRequestBuilder = Icons.with(mAppContext)
+                        .pageUrl(uri);
 
                 
                 if (AboutPages.isBuiltinIconPage(uri)) {

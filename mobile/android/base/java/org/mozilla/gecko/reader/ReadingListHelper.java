@@ -12,7 +12,8 @@ import org.mozilla.gecko.EventDispatcher;
 import org.mozilla.gecko.GeckoAppShell;
 import org.mozilla.gecko.GeckoProfile;
 import org.mozilla.gecko.db.BrowserDB;
-import org.mozilla.gecko.favicons.Favicons;
+import org.mozilla.gecko.icons.IconRequest;
+import org.mozilla.gecko.icons.Icons;
 import org.mozilla.gecko.util.EventCallback;
 import org.mozilla.gecko.util.NativeEventListener;
 import org.mozilla.gecko.util.NativeJSObject;
@@ -21,6 +22,8 @@ import org.mozilla.gecko.util.UIAsyncTask;
 
 import android.content.Context;
 import android.util.Log;
+
+import java.util.concurrent.ExecutionException;
 
 public final class ReadingListHelper implements NativeEventListener {
     private static final String LOGTAG = "GeckoReadingListHelper";
@@ -66,7 +69,35 @@ public final class ReadingListHelper implements NativeEventListener {
         (new UIAsyncTask.WithoutParams<String>(ThreadUtils.getBackgroundHandler()) {
             @Override
             public String doInBackground() {
-                return Favicons.getFaviconURLForPageURL(db, context.getContentResolver(), url);
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+
+                final IconRequest request = Icons.with(context)
+                        .pageUrl(url)
+                        .prepareOnly()
+                        .build();
+
+                try {
+                    request.execute(null).get();
+                    if (request.getIconCount() > 0) {
+                        return request.getBestIcon().getUrl();
+                    }
+                } catch (InterruptedException | ExecutionException e) {
+                    
+                }
+
+                return null;
             }
 
             @Override

@@ -14,6 +14,7 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Future;
 
 import org.mozilla.gecko.GeckoProfile;
 import org.mozilla.gecko.R;
@@ -22,14 +23,15 @@ import org.mozilla.gecko.TelemetryContract;
 import org.mozilla.gecko.db.BrowserContract.Thumbnails;
 import org.mozilla.gecko.db.BrowserContract.TopSites;
 import org.mozilla.gecko.db.BrowserDB;
-import org.mozilla.gecko.favicons.Favicons;
-import org.mozilla.gecko.favicons.OnFaviconLoadedListener;
 import org.mozilla.gecko.gfx.BitmapUtils;
 import org.mozilla.gecko.home.HomeContextMenuInfo.RemoveItemType;
 import org.mozilla.gecko.home.HomePager.OnUrlOpenListener;
 import org.mozilla.gecko.home.PinSiteDialog.OnSiteSelectedListener;
 import org.mozilla.gecko.home.TopSitesGridView.OnEditPinnedSiteListener;
 import org.mozilla.gecko.home.TopSitesGridView.TopSitesGridContextMenuInfo;
+import org.mozilla.gecko.icons.IconCallback;
+import org.mozilla.gecko.icons.IconResponse;
+import org.mozilla.gecko.icons.Icons;
 import org.mozilla.gecko.restrictions.Restrictable;
 import org.mozilla.gecko.restrictions.Restrictions;
 import org.mozilla.gecko.util.StringUtils;
@@ -657,41 +659,12 @@ public class TopSitesPanel extends HomeFragment {
                 return;
             }
 
-            
-            LoadIDAwareFaviconLoadedListener listener = new LoadIDAwareFaviconLoadedListener(view);
-            final int loadId = Favicons.getSizedFaviconForPageFromLocal(context, url, listener);
-            if (loadId == Favicons.LOADED) {
-                
-                return;
-            }
-
-            
-            listener.setLoadId(loadId);
-            view.setLoadId(loadId);
+            view.loadFavicon(url);
         }
 
         @Override
         public View newView(Context context, Cursor cursor, ViewGroup parent) {
             return new TopSitesGridItemView(context);
-        }
-    }
-
-    private static class LoadIDAwareFaviconLoadedListener implements OnFaviconLoadedListener {
-        private volatile int loadId = Favicons.NOT_LOADING;
-        private final TopSitesGridItemView view;
-        public LoadIDAwareFaviconLoadedListener(TopSitesGridItemView view) {
-            this.view = view;
-        }
-
-        public void setLoadId(int id) {
-            this.loadId = id;
-        }
-
-        @Override
-        public void onFaviconLoaded(String url, String faviconURL, Bitmap favicon) {
-            if (TextUtils.equals(this.view.getUrl(), url)) {
-                this.view.displayFavicon(favicon, faviconURL, this.loadId);
-            }
         }
     }
 
