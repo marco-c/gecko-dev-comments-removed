@@ -563,6 +563,23 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<SliceSize, Inst
     }
 
   public:
+    
+    
+    BufferOffset nextInstrOffset()
+    {
+        size_t nextOffset = sizeExcludingCurrentPool();
+        
+        size_t poolOffset =
+          nextOffset + (1 + guardSize_ + headerSize_) * InstSize;
+        if (pool_.checkFull(poolOffset)) {
+            JitSpew(JitSpew_Pools,
+                    "[%d] nextInstrOffset @ %d caused a constant pool spill",
+                    id, nextOffset);
+            finishPool();
+        }
+        return this->nextOffset();
+    }
+
     BufferOffset allocEntry(size_t numInst, unsigned numPoolEntries,
                             uint8_t* inst, uint8_t* data, PoolEntry* pe = nullptr,
                             bool markAsBranch = false)

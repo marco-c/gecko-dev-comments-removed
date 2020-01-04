@@ -89,6 +89,31 @@ class MozBaseAssembler : public js::jit::AssemblerShared {
 
  protected:
   
+  
+  BufferOffset nextInstrOffset() {
+    return armbuffer_.nextInstrOffset();
+  }
+
+  
+  
+  BufferOffset nextOffset() const {
+    return armbuffer_.nextOffset();
+  }
+
+  
+  
+  BufferOffset allocEntry(size_t numInst, unsigned numPoolEntries,
+                          uint8_t* inst, uint8_t* data,
+                          ARMBuffer::PoolEntry* pe = nullptr,
+                          bool markAsBranch = false)
+  {
+    BufferOffset offset = armbuffer_.allocEntry(numInst, numPoolEntries, inst,
+                                                data, pe, markAsBranch);
+    propagateOOM(offset.assigned());
+    return offset;
+  }
+
+  
   BufferOffset Emit(Instr instruction, bool isBranch = false) {
     JS_STATIC_ASSERT(sizeof(instruction) == kInstructionSize);
     return armbuffer_.putInt(*(uint32_t*)(&instruction), isBranch);

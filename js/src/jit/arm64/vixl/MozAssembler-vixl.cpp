@@ -121,25 +121,13 @@ void Assembler::b(Instruction* at, int imm19, Condition cond) {
 
 BufferOffset Assembler::b(Label* label) {
   
-  BufferOffset branch = b(0);
-  Instruction* ins = getInstructionAt(branch);
-  VIXL_ASSERT(ins->IsUncondBranchImm());
-
-  
-  b(ins, LinkAndGetInstructionOffsetTo(branch, label));
-  return branch;
+  return b(LinkAndGetInstructionOffsetTo(nextInstrOffset(), label));
 }
 
 
 BufferOffset Assembler::b(Label* label, Condition cond) {
   
-  BufferOffset branch = b(0, Always);
-  Instruction* ins = getInstructionAt(branch);
-  VIXL_ASSERT(ins->IsCondBranchImm());
-
-  
-  b(ins, LinkAndGetInstructionOffsetTo(branch, label), cond);
-  return branch;
+  return b(LinkAndGetInstructionOffsetTo(nextInstrOffset(), label), cond);
 }
 
 
@@ -155,11 +143,7 @@ void Assembler::bl(Instruction* at, int imm26) {
 
 void Assembler::bl(Label* label) {
   
-  BufferOffset branch = b(0);
-  Instruction* ins = getInstructionAt(branch);
-
-  
-  bl(ins, LinkAndGetInstructionOffsetTo(branch, label));
+  return bl(LinkAndGetInstructionOffsetTo(nextInstrOffset(), label));
 }
 
 
@@ -175,11 +159,7 @@ void Assembler::cbz(Instruction* at, const Register& rt, int imm19) {
 
 void Assembler::cbz(const Register& rt, Label* label) {
   
-  BufferOffset branch = b(0);
-  Instruction* ins = getInstructionAt(branch);
-
-  
-  cbz(ins, rt, LinkAndGetInstructionOffsetTo(branch, label));
+  return cbz(rt, LinkAndGetInstructionOffsetTo(nextInstrOffset(), label));
 }
 
 
@@ -195,11 +175,7 @@ void Assembler::cbnz(Instruction* at, const Register& rt, int imm19) {
 
 void Assembler::cbnz(const Register& rt, Label* label) {
   
-  BufferOffset branch = b(0);
-  Instruction* ins = getInstructionAt(branch);
-
-  
-  cbnz(ins, rt, LinkAndGetInstructionOffsetTo(branch, label));
+  return cbnz(rt, LinkAndGetInstructionOffsetTo(nextInstrOffset(), label));
 }
 
 
@@ -217,11 +193,7 @@ void Assembler::tbz(Instruction* at, const Register& rt, unsigned bit_pos, int i
 
 void Assembler::tbz(const Register& rt, unsigned bit_pos, Label* label) {
   
-  BufferOffset branch = b(0);
-  Instruction* ins = getInstructionAt(branch);
-
-  
-  tbz(ins, rt, bit_pos, LinkAndGetInstructionOffsetTo(branch, label));
+  return tbz(rt, bit_pos, LinkAndGetInstructionOffsetTo(nextInstrOffset(), label));
 }
 
 
@@ -239,11 +211,7 @@ void Assembler::tbnz(Instruction* at, const Register& rt, unsigned bit_pos, int 
 
 void Assembler::tbnz(const Register& rt, unsigned bit_pos, Label* label) {
   
-  BufferOffset branch = b(0);
-  Instruction* ins = getInstructionAt(branch);
-
-  
-  tbnz(ins, rt, bit_pos, LinkAndGetInstructionOffsetTo(branch, label));
+  return tbnz(rt, bit_pos, LinkAndGetInstructionOffsetTo(nextInstrOffset(), label));
 }
 
 
@@ -261,12 +229,7 @@ void Assembler::adr(Instruction* at, const Register& rd, int imm21) {
 
 void Assembler::adr(const Register& rd, Label* label) {
   
-  
-  BufferOffset offset = Emit(0);
-  Instruction* ins = getInstructionAt(offset);
-
-  
-  adr(ins, rd, LinkAndGetByteOffsetTo(offset, label));
+  return adr(rd, LinkAndGetByteOffsetTo(nextInstrOffset(), label));
 }
 
 
@@ -284,13 +247,8 @@ void Assembler::adrp(Instruction* at, const Register& rd, int imm21) {
 
 void Assembler::adrp(const Register& rd, Label* label) {
   VIXL_ASSERT(AllowPageOffsetDependentCode());
-
   
-  BufferOffset offset = Emit(0);
-  Instruction* ins = getInstructionAt(offset);
-
-  
-  adrp(ins, rd, LinkAndGetPageOffsetTo(offset, label));
+  return adrp(rd, LinkAndGetPageOffsetTo(nextInstrOffset(), label));
 }
 
 
