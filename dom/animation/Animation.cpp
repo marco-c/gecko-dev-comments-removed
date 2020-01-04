@@ -16,7 +16,6 @@
 #include "nsDOMMutationObserver.h" 
 #include "nsIDocument.h" 
 #include "nsIPresShell.h" 
-#include "nsLayoutUtils.h" 
 #include "nsThreadUtils.h" 
 #include "nsTransitionManager.h" 
 #include "PendingAnimationTracker.h" 
