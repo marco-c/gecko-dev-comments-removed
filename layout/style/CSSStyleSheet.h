@@ -194,9 +194,6 @@ public:
   
   nsIPrincipal* Principal() const { return mInner->mPrincipal; }
 
-  
-  nsIDocument* GetDocument() const { return mDocument; }
-
   void SetTitle(const nsAString& aTitle) { mTitle = aTitle; }
   void SetMedia(nsMediaList* aMedia);
 
@@ -372,7 +369,6 @@ protected:
   css::ImportRule*      mOwnerRule; 
 
   RefPtr<CSSRuleListImpl> mRuleCollection;
-  nsIDocument*          mDocument; 
   bool                  mDirty; 
   bool                  mInRuleProcessorCache;
   RefPtr<dom::Element> mScopeElement;

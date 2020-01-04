@@ -9,6 +9,7 @@
 
 #include "mozilla/css/SheetParsingMode.h"
 
+class nsIDocument;
 class nsINode;
 
 namespace mozilla {
@@ -21,6 +22,7 @@ class StyleSheet
 public:
   StyleSheet();
   StyleSheet(const StyleSheet& aCopy,
+             nsIDocument* aDocumentToUse,
              nsINode* aOwningNodeToUse);
 
   void SetOwningNode(nsINode* aOwningNode)
@@ -35,7 +37,11 @@ public:
 
   nsINode* GetOwnerNode() const { return mOwningNode; }
 
+  
+  nsIDocument* GetDocument() const { return mDocument; }
+
 protected:
+  nsIDocument*          mDocument; 
   nsINode*              mOwningNode; 
   css::SheetParsingMode mParsingMode;
   bool                  mDisabled;
