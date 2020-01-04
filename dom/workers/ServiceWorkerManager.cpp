@@ -555,7 +555,7 @@ IsFromAuthenticatedOrigin(nsIDocument* aDoc)
   }
 
   while (doc && !nsContentUtils::IsChromeDoc(doc)) {
-    bool trustworthyURI = false;
+    bool trustworthyOrigin = false;
 
     
     
@@ -565,15 +565,8 @@ IsFromAuthenticatedOrigin(nsIDocument* aDoc)
     
     MOZ_ASSERT(!nsContentUtils::IsSystemPrincipal(documentPrincipal));
 
-    
-    nsCOMPtr<nsIURI> uri;
-    documentPrincipal->GetURI(getter_AddRefs(uri));
-    if (NS_WARN_IF(!uri)) {
-      return false;
-    }
-
-    csm->IsURIPotentiallyTrustworthy(uri, &trustworthyURI);
-    if (!trustworthyURI) {
+    csm->IsOriginPotentiallyTrustworthy(documentPrincipal, &trustworthyOrigin);
+    if (!trustworthyOrigin) {
       return false;
     }
 

@@ -544,18 +544,44 @@ nsContentSecurityManager::PerformSecurityCheck(nsIChannel* aChannel,
 }
 
 NS_IMETHODIMP
-nsContentSecurityManager::IsURIPotentiallyTrustworthy(nsIURI* aURI, bool* aIsTrustWorthy)
+nsContentSecurityManager::IsOriginPotentiallyTrustworthy(nsIPrincipal* aPrincipal,
+                                                         bool* aIsTrustWorthy)
 {
   MOZ_ASSERT(NS_IsMainThread());
-  NS_ENSURE_ARG_POINTER(aURI);
+  NS_ENSURE_ARG_POINTER(aPrincipal);
   NS_ENSURE_ARG_POINTER(aIsTrustWorthy);
 
+  if (aPrincipal->GetIsSystemPrincipal()) {
+    *aIsTrustWorthy = true;
+    return NS_OK;
+  }
+
+  
+  
+
   *aIsTrustWorthy = false;
+
+  if (aPrincipal->GetIsNullPrincipal()) {
+    return NS_OK;
+  }
+
+  MOZ_ASSERT(aPrincipal->GetIsCodebasePrincipal(),
+             "Nobody is expected to call us with an nsIExpandedPrincipal");
+
+  nsCOMPtr<nsIURI> uri;
+  aPrincipal->GetURI(getter_AddRefs(uri));
+
   nsAutoCString scheme;
-  nsresult rv = aURI->GetScheme(scheme);
+  nsresult rv = uri->GetScheme(scheme);
   if (NS_FAILED(rv)) {
     return NS_OK;
   }
+
+  
+  
+  
+  NS_WARN_IF_FALSE(!scheme.EqualsLiteral("blob"),
+                   "IsOriginPotentiallyTrustworthy ignoring blob scheme");
 
   
   
@@ -572,7 +598,7 @@ nsContentSecurityManager::IsURIPotentiallyTrustworthy(nsIURI* aURI, bool* aIsTru
   }
 
   nsAutoCString host;
-  rv = aURI->GetHost(host);
+  rv = uri->GetHost(host);
   if (NS_FAILED(rv)) {
     return NS_OK;
   }

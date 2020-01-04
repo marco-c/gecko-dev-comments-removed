@@ -1123,8 +1123,8 @@ var LoginManagerContent = {
 
 
   isDocumentSecure(document) {
-    let docPrincipal = document.nodePrincipal;
-    if (docPrincipal.isSystemPrincipal) {
+    let principal = document.nodePrincipal;
+    if (principal.isSystemPrincipal) {
       return true;
     }
 
@@ -1134,11 +1134,12 @@ var LoginManagerContent = {
     
     
     
-    let uri = docPrincipal.isCodebasePrincipal ? docPrincipal.URI
-                                               : document.documentURIObject;
+    if (!principal.isCodebasePrincipal) {
+      principal = getCodebasePrincipal(document.documentURIObject);
+    }
 
     
-    return gContentSecurityManager.isURIPotentiallyTrustworthy(uri);
+    return gContentSecurityManager.isOriginPotentiallyTrustworthy(principal);
   },
 };
 
