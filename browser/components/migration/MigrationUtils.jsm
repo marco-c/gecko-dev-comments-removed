@@ -529,6 +529,7 @@ this.MigrationUtils = Object.freeze({
     
     const APP_DESC_TO_KEY = {
       "Internet Explorer":                 "ie",
+      "Microsoft Edge":                    "edge",
       "Safari":                            "safari",
       "Firefox":                           "firefox",
       "Google Chrome":                     "chrome",  
