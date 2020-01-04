@@ -103,7 +103,8 @@ nsUrlClassifierStreamUpdater::DownloadDone()
 
 nsresult
 nsUrlClassifierStreamUpdater::FetchUpdate(nsIURI *aUpdateUrl,
-                                          const nsACString & aRequestBody,
+                                          const nsACString & aRequestPayload,
+                                          bool aIsPostRequest,
                                           const nsACString & aStreamTable)
 {
 
@@ -111,7 +112,7 @@ nsUrlClassifierStreamUpdater::FetchUpdate(nsIURI *aUpdateUrl,
   {
     nsCString spec;
     aUpdateUrl->GetSpec(spec);
-    LOG(("Fetching update %s from %s", aRequestBody.Data(), spec.get()));
+    LOG(("Fetching update %s from %s", aRequestPayload.Data(), spec.get()));
   }
 #endif
 
@@ -134,9 +135,26 @@ nsUrlClassifierStreamUpdater::FetchUpdate(nsIURI *aUpdateUrl,
 
   mBeganStream = false;
 
-  
-  if (!aRequestBody.IsEmpty()) {
-    rv = AddRequestBody(aRequestBody);
+  if (!aIsPostRequest) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(mChannel, &rv);
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    rv = httpChannel->SetRequestHeader(NS_LITERAL_CSTRING("X-HTTP-Method-Override"),
+                                       NS_LITERAL_CSTRING("POST"),
+                                       false);
+    NS_ENSURE_SUCCESS(rv, rv);
+  } else if (!aRequestPayload.IsEmpty()) {
+    rv = AddRequestBody(aRequestPayload);
     NS_ENSURE_SUCCESS(rv, rv);
   }
 
@@ -176,13 +194,19 @@ nsUrlClassifierStreamUpdater::FetchUpdate(nsIURI *aUpdateUrl,
 
 nsresult
 nsUrlClassifierStreamUpdater::FetchUpdate(const nsACString & aUpdateUrl,
-                                          const nsACString & aRequestBody,
+                                          const nsACString & aRequestPayload,
+                                          bool aIsPostRequest,
                                           const nsACString & aStreamTable)
 {
   LOG(("(pre) Fetching update from %s\n", PromiseFlatCString(aUpdateUrl).get()));
 
+  nsCString updateUrl(aUpdateUrl);
+  if (!aIsPostRequest) {
+    updateUrl.AppendPrintf("&$req=%s", nsCString(aRequestPayload).get());
+  }
+
   nsCOMPtr<nsIURI> uri;
-  nsresult rv = NS_NewURI(getter_AddRefs(uri), aUpdateUrl);
+  nsresult rv = NS_NewURI(getter_AddRefs(uri), updateUrl);
   NS_ENSURE_SUCCESS(rv, rv);
 
   nsAutoCString urlSpec;
@@ -190,13 +214,14 @@ nsUrlClassifierStreamUpdater::FetchUpdate(const nsACString & aUpdateUrl,
 
   LOG(("(post) Fetching update from %s\n", urlSpec.get()));
 
-  return FetchUpdate(uri, aRequestBody, aStreamTable);
+  return FetchUpdate(uri, aRequestPayload, aIsPostRequest, aStreamTable);
 }
 
 NS_IMETHODIMP
 nsUrlClassifierStreamUpdater::DownloadUpdates(
   const nsACString &aRequestTables,
-  const nsACString &aRequestBody,
+  const nsACString &aRequestPayload,
+  bool aIsPostRequest,
   const nsACString &aUpdateUrl,
   nsIUrlClassifierCallback *aSuccessCallback,
   nsIUrlClassifierCallback *aUpdateErrorCallback,
@@ -208,12 +233,13 @@ nsUrlClassifierStreamUpdater::DownloadUpdates(
   NS_ENSURE_ARG(aDownloadErrorCallback);
 
   if (mIsUpdating) {
-    LOG(("Already updating, queueing update %s from %s", aRequestBody.Data(),
+    LOG(("Already updating, queueing update %s from %s", aRequestPayload.Data(),
          aUpdateUrl.Data()));
     *_retval = false;
     PendingRequest *request = mPendingRequests.AppendElement();
     request->mTables = aRequestTables;
-    request->mRequest = aRequestBody;
+    request->mRequestPayload = aRequestPayload;
+    request->mIsPostRequest = aIsPostRequest;
     request->mUrl = aUpdateUrl;
     request->mSuccessCallback = aSuccessCallback;
     request->mUpdateErrorCallback = aUpdateErrorCallback;
@@ -248,11 +274,12 @@ nsUrlClassifierStreamUpdater::DownloadUpdates(
   rv = mDBService->BeginUpdate(this, aRequestTables);
   if (rv == NS_ERROR_NOT_AVAILABLE) {
     LOG(("Service busy, already updating, queuing update %s from %s",
-         aRequestBody.Data(), aUpdateUrl.Data()));
+         aRequestPayload.Data(), aUpdateUrl.Data()));
     *_retval = false;
     PendingRequest *request = mPendingRequests.AppendElement();
     request->mTables = aRequestTables;
-    request->mRequest = aRequestBody;
+    request->mRequestPayload = aRequestPayload;
+    request->mIsPostRequest = aIsPostRequest;
     request->mUrl = aUpdateUrl;
     request->mSuccessCallback = aSuccessCallback;
     request->mUpdateErrorCallback = aUpdateErrorCallback;
@@ -272,9 +299,8 @@ nsUrlClassifierStreamUpdater::DownloadUpdates(
   *_retval = true;
 
   LOG(("FetchUpdate: %s", aUpdateUrl.Data()));
-  
 
-  return FetchUpdate(aUpdateUrl, aRequestBody, EmptyCString());
+  return FetchUpdate(aUpdateUrl, aRequestPayload, aIsPostRequest, EmptyCString());
 }
 
 
@@ -318,7 +344,9 @@ nsUrlClassifierStreamUpdater::FetchNext()
 
   PendingUpdate &update = mPendingUpdates[0];
   LOG(("Fetching update url: %s\n", update.mUrl.get()));
-  nsresult rv = FetchUpdate(update.mUrl, EmptyCString(),
+  nsresult rv = FetchUpdate(update.mUrl,
+                            EmptyCString(),
+                            true, 
                             update.mTable);
   if (NS_FAILED(rv)) {
     LOG(("Error fetching update url: %s\n", update.mUrl.get()));
@@ -349,7 +377,8 @@ nsUrlClassifierStreamUpdater::FetchNextRequest()
   bool dummy;
   DownloadUpdates(
     request.mTables,
-    request.mRequest,
+    request.mRequestPayload,
+    request.mIsPostRequest,
     request.mUrl,
     request.mSuccessCallback,
     request.mUpdateErrorCallback,

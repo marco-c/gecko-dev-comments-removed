@@ -54,11 +54,13 @@ private:
 
   
   nsresult FetchUpdate(nsIURI *aURI,
-                       const nsACString &aRequestBody,
+                       const nsACString &aRequest,
+                       bool aIsPostRequest,
                        const nsACString &aTable);
   
   nsresult FetchUpdate(const nsACString &aURI,
-                       const nsACString &aRequestBody,
+                       const nsACString &aRequest,
+                       bool aIsPostRequest,
                        const nsACString &aTable);
 
   
@@ -78,7 +80,8 @@ private:
 
   struct PendingRequest {
     nsCString mTables;
-    nsCString mRequest;
+    nsCString mRequestPayload;
+    bool mIsPostRequest;
     nsCString mUrl;
     nsCOMPtr<nsIUrlClassifierCallback> mSuccessCallback;
     nsCOMPtr<nsIUrlClassifierCallback> mUpdateErrorCallback;

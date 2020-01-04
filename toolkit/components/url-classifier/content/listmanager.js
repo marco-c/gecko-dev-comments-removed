@@ -352,8 +352,13 @@ PROT_ListManager.prototype.makeUpdateRequest_ = function(updateUrl, tableData) {
   
   
   
-  var streamerMap = { tableList: null, tableNames: {}, request: "" };
+  var streamerMap = { tableList: null,
+                      tableNames: {},
+                      requestPayload: "",
+                      isPostRequest: true };
+
   let useProtobuf = false;
+  let onceThru = false;
   for (var tableName in this.tablesData) {
     
     if (this.tablesData[tableName].updateUrl != updateUrl) {
@@ -364,11 +369,13 @@ PROT_ListManager.prototype.makeUpdateRequest_ = function(updateUrl, tableData) {
     
     
     let isCurTableProto = tableName.endsWith('-proto');
-    if (useProtobuf && !isCurTableProto) {
-      log('ERROR: Tables for the same updateURL should all be "proto" or none. ' +
-          'Check "browser.safebrowsing.provider.google4.lists"');
+    if (!onceThru) {
+      useProtobuf = isCurTableProto;
+      onceThru = true;
+    } else if (useProtobuf !== isCurTableProto) {
+      log('ERROR: Cannot mix "proto" tables with other types ' +
+          'within the same provider.');
     }
-    useProtobuf = isCurTableProto;
 
     if (this.needsUpdate_[this.tablesData[tableName].updateUrl][tableName]) {
       streamerMap.tableNames[tableName] = true;
@@ -381,8 +388,24 @@ PROT_ListManager.prototype.makeUpdateRequest_ = function(updateUrl, tableData) {
   }
 
   if (useProtobuf) {
+    let tableArray = streamerMap.tableList.split(',');
+
     
-    streamerMap.request = "";
+    
+    
+    
+    
+    let stateArray = [];
+    tableArray.forEach(() => stateArray.push(''));
+
+    let urlUtils = Cc["@mozilla.org/url-classifier/utils;1"]
+                     .getService(Ci.nsIUrlClassifierUtils);
+    let requestPayload =  urlUtils.makeUpdateRequestV4(tableArray,
+                                                stateArray,
+                                                tableArray.length);
+    
+    streamerMap.requestPayload = btoa(requestPayload);
+    streamerMap.isPostRequest = false;
   } else {
     
     
@@ -391,23 +414,26 @@ PROT_ListManager.prototype.makeUpdateRequest_ = function(updateUrl, tableData) {
       var fields = lines[i].split(";");
       var name = fields[0];
       if (streamerMap.tableNames[name]) {
-        streamerMap.request += lines[i] + "\n";
+        streamerMap.requestPayload += lines[i] + "\n";
         delete streamerMap.tableNames[name];
       }
     }
     
     
     for (let tableName in streamerMap.tableNames) {
-      streamerMap.request += tableName + ";\n";
+      streamerMap.requestPayload += tableName + ";\n";
     }
+
+    streamerMap.isPostRequest = true;
   }
 
   log("update request: " + JSON.stringify(streamerMap, undefined, 2) + "\n");
 
   
-  if (streamerMap.request.length > 0) {
+  if (streamerMap.requestPayload.length > 0) {
     this.makeUpdateRequestForEntry_(updateUrl, streamerMap.tableList,
-                                    streamerMap.request);
+                                    streamerMap.requestPayload,
+                                    streamerMap.isPostRequest);
   } else {
     
     log("Not sending empty request");
@@ -416,8 +442,9 @@ PROT_ListManager.prototype.makeUpdateRequest_ = function(updateUrl, tableData) {
 
 PROT_ListManager.prototype.makeUpdateRequestForEntry_ = function(updateUrl,
                                                                  tableList,
-                                                                 request) {
-  log("makeUpdateRequestForEntry_: request " + request +
+                                                                 requestPayload,
+                                                                 isPostRequest) {
+  log("makeUpdateRequestForEntry_: requestPayload " + requestPayload +
       " update: " + updateUrl + " tablelist: " + tableList + "\n");
   var streamer = Cc["@mozilla.org/url-classifier/streamupdater;1"]
                  .getService(Ci.nsIUrlClassifierStreamUpdater);
@@ -426,7 +453,8 @@ PROT_ListManager.prototype.makeUpdateRequestForEntry_ = function(updateUrl,
 
   if (!streamer.downloadUpdates(
         tableList,
-        request,
+        requestPayload,
+        isPostRequest,
         updateUrl,
         BindToObject(this.updateSuccess_, this, tableList, updateUrl),
         BindToObject(this.updateError_, this, tableList, updateUrl),

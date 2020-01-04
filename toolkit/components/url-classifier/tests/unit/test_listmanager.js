@@ -32,30 +32,35 @@ const TEST_TABLE_DATA_LIST = [
 ];
 
 
-const TEST_TABLE_DATA_ANOTHER = {
-  tableName: "test-listmanageranother-digest256",
-  providerName: "google",
-  updateUrl: "http://localhost:5555/safebrowsing/update",
-  gethashUrl: "http://localhost:5555/safebrowsing/gethash-another",
+const TEST_TABLE_DATA_V4 = {
+  tableName: "test-phish-proto",
+  providerName: "google4",
+  updateUrl: "http://localhost:5555/safebrowsing/update?",
+  gethashUrl: "http://localhost:5555/safebrowsing/gethash-v4",
 };
 
 const PREF_NEXTUPDATETIME = "browser.safebrowsing.provider.google.nextupdatetime";
+const PREF_NEXTUPDATETIME_V4 = "browser.safebrowsing.provider.google4.nextupdatetime";
 
 let gListManager = Cc["@mozilla.org/url-classifier/listmanager;1"]
                      .getService(Ci.nsIUrlListManager);
+
+let gUrlUtils = Cc["@mozilla.org/url-classifier/utils;1"]
+                   .getService(Ci.nsIUrlClassifierUtils);
 
 
 let gHttpServ = null;
 let gUpdateResponse = "";
 let gExpectedUpdateRequest = "";
+let gExpectedQueryV4 = "";
 
 
-let gHttpServAnother = null;
+let gHttpServV4 = null;
 
 
 
 let gUpdatedCntForTableData = 0; 
-let gIsAnotherUpdated = false;   
+let gIsV4Updated = false;   
 
 prefBranch.setBoolPref("browser.safebrowsing.debug", true);
 
@@ -66,10 +71,11 @@ TEST_TABLE_DATA_LIST.forEach(function(t) {
                              t.updateUrl,
                              t.gethashUrl);
 });
-gListManager.registerTable(TEST_TABLE_DATA_ANOTHER.tableName,
-                           TEST_TABLE_DATA_ANOTHER.providerName,
-                           TEST_TABLE_DATA_ANOTHER.updateUrl,
-                           TEST_TABLE_DATA_ANOTHER.gethashUrl);
+
+gListManager.registerTable(TEST_TABLE_DATA_V4.tableName,
+                           TEST_TABLE_DATA_V4.providerName,
+                           TEST_TABLE_DATA_V4.updateUrl,
+                           TEST_TABLE_DATA_V4.gethashUrl);
 
 const SERVER_INVOLVED_TEST_CASE_LIST = [
   
@@ -114,12 +120,21 @@ const SERVER_INVOLVED_TEST_CASE_LIST = [
     TEST_TABLE_DATA_LIST.forEach(function(t) {
       gListManager.enableUpdate(t.tableName);
     });
-    gListManager.enableUpdate(TEST_TABLE_DATA_ANOTHER.tableName);
+    gListManager.enableUpdate(TEST_TABLE_DATA_V4.tableName);
 
+    
     gExpectedUpdateRequest = TEST_TABLE_DATA_LIST[0].tableName + ";a:5:s:2-12\n" +
                              TEST_TABLE_DATA_LIST[1].tableName + ";\n" +
                              TEST_TABLE_DATA_LIST[2].tableName + ";\n";
     gUpdateResponse = "n:1000\n";
+
+    
+    
+    
+    let requestV4 = gUrlUtils.makeUpdateRequestV4([TEST_TABLE_DATA_V4.tableName],
+                                                  [""],
+                                                  1);
+    gExpectedQueryV4 = "&$req=" + btoa(requestV4);
 
     forceTableUpdate();
   },
@@ -133,8 +148,8 @@ add_test(function test_getGethashUrl() {
   TEST_TABLE_DATA_LIST.forEach(function (t) {
     equal(gListManager.getGethashUrl(t.tableName), t.gethashUrl);
   });
-  equal(gListManager.getGethashUrl(TEST_TABLE_DATA_ANOTHER.tableName),
-        TEST_TABLE_DATA_ANOTHER.gethashUrl);
+  equal(gListManager.getGethashUrl(TEST_TABLE_DATA_V4.tableName),
+        TEST_TABLE_DATA_V4.gethashUrl);
   run_next_test();
 });
 
@@ -165,36 +180,43 @@ function run_test() {
       return;
     }
 
-    if (gIsAnotherUpdated) {
+    if (gIsV4Updated) {
       run_next_test();  
       return;
     }
 
-    do_print("Waiting for TEST_TABLE_DATA_ANOTHER to be tested ...");
+    do_print("Waiting for TEST_TABLE_DATA_V4 to be tested ...");
   });
 
   gHttpServ.start(4444);
 
   
-  gHttpServAnother = new HttpServer();
-  gHttpServAnother.registerDirectory("/", do_get_cwd());
+  gHttpServV4 = new HttpServer();
+  gHttpServV4.registerDirectory("/", do_get_cwd());
 
-  gHttpServAnother.registerPathHandler("/safebrowsing/update", function(request, response) {
-    let body = NetUtil.readInputStreamToString(request.bodyInputStream,
-                                               request.bodyInputStream.available());
+  gHttpServV4.registerPathHandler("/safebrowsing/update", function(request, response) {
+    
+    equal(request.bodyInputStream.available(), 0);
 
     
-    equal(body, TEST_TABLE_DATA_ANOTHER.tableName + ";\n");
+    equal(request.getHeader("X-HTTP-Method-Override"), "POST");
 
+    
+    equal(request.method, "GET");
+
+    
+    equal(request.queryString, gExpectedQueryV4);
+
+    
+    
     
     response.setHeader("Content-Type",
                        "application/vnd.google.safebrowsing-update", false);
     response.setStatusLine(request.httpVersion, 200, "OK");
-
     let content = "n:1000\n";
     response.bodyOutputStream.write(content, content.length);
 
-    gIsAnotherUpdated = true;
+    gIsV4Updated = true;
 
     if (gUpdatedCntForTableData === SERVER_INVOLVED_TEST_CASE_LIST.length) {
       
@@ -205,7 +227,7 @@ function run_test() {
     do_print("Wait for all sever-involved tests to be done ...");
   });
 
-  gHttpServAnother.start(5555);
+  gHttpServV4.start(5555);
 
   run_next_test();
 }
@@ -214,12 +236,13 @@ function run_test() {
 
 function forceTableUpdate() {
   prefBranch.setCharPref(PREF_NEXTUPDATETIME, "1");
+  prefBranch.setCharPref(PREF_NEXTUPDATETIME_V4, "1");
   gListManager.maybeToggleUpdateChecking();
 }
 
 function disableAllUpdates() {
   TEST_TABLE_DATA_LIST.forEach(t => gListManager.disableUpdate(t.tableName));
-  gListManager.disableUpdate(TEST_TABLE_DATA_ANOTHER.tableName);
+  gListManager.disableUpdate(TEST_TABLE_DATA_V4.tableName);
 }
 
 
@@ -242,4 +265,12 @@ function readFileToString(aFilename) {
   stream.init(f, -1, 0, 0);
   let buf = NetUtil.readInputStreamToString(stream, stream.available());
   return buf;
+}
+
+function buildUpdateRequestV4InBase64() {
+
+  let request =  urlUtils.makeUpdateRequestV4([TEST_TABLE_DATA_V4.tableName],
+                                              [""],
+                                              1);
+  return btoa(request);
 }
