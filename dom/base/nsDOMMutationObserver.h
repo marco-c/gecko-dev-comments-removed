@@ -911,6 +911,8 @@ private:
   typedef nsTArray<Entry> EntryArray;
   nsClassHashtable<nsPtrHashKey<nsINode>, EntryArray> mEntryTable;
   
+  
+  
   nsTArray<nsINode*> mBatchTargets;
 };
 

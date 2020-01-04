@@ -2318,15 +2318,8 @@ KeyframeEffect::Constructor(
 
 void KeyframeEffect::NotifySpecifiedTimingUpdated()
 {
-  nsIDocument* doc = nullptr;
   
-  
-  if (mTarget &&
-      mPseudoType == CSSPseudoElementType::NotPseudo) {
-    doc = mTarget->OwnerDoc();
-  }
-
-  nsAutoAnimationMutationBatch mb(doc);
+  nsAutoAnimationMutationBatch mb(mTarget->OwnerDoc());
 
   if (mAnimation) {
     mAnimation->NotifyEffectTimingUpdated();

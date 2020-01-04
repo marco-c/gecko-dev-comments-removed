@@ -399,6 +399,12 @@ nsAnimationReceiver::RecordAnimationMutation(Animation* aAnimation,
     return;
   }
 
+  
+  if (animationTarget->mPseudoType != CSSPseudoElementType::NotPseudo &&
+      !Subtree()) {
+    return;
+  }
+
   if (nsAutoAnimationMutationBatch::IsBatching()) {
     switch (aMutationType) {
       case eAnimationMutation_Added:
