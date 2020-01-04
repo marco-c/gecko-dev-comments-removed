@@ -265,7 +265,30 @@ public:
   already_AddRefed<nsIPrincipal> GetCurrentPrincipal();
 
   
-  virtual void NotifyDecoderPrincipalChanged() final override;
+  void NotifyDecoderPrincipalChanged() final override;
+
+  
+  
+  class DecoderPrincipalChangeObserver
+  {
+  public:
+    virtual void NotifyDecoderPrincipalChanged() = 0;
+  };
+
+  
+
+
+
+
+
+  void AddDecoderPrincipalChangeObserver(DecoderPrincipalChangeObserver* aObserver);
+
+  
+
+
+
+
+  bool RemoveDecoderPrincipalChangeObserver(DecoderPrincipalChangeObserver* aObserver);
 
   
   
@@ -1110,6 +1133,10 @@ protected:
   
   
   RefPtr<MediaDecoder> mDecoder;
+
+  
+  
+  nsTArray<DecoderPrincipalChangeObserver*> mDecoderPrincipalChangeObservers;
 
   
   WatchManager<HTMLMediaElement> mWatchManager;
