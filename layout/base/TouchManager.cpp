@@ -67,14 +67,12 @@ EvictTouchPoint(RefPtr<dom::Touch>& aTouch,
             event.mTouches.AppendElement(aTouch);
             nsEventStatus status;
             widget->DispatchEvent(&event, status);
-            return;
           }
         }
       }
     }
   }
   if (!node || !aLimitToDocument || node->OwnerDoc() == aLimitToDocument) {
-    
     TouchManager::gCaptureTouchList->Remove(aTouch->Identifier());
   }
 }
