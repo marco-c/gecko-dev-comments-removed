@@ -806,6 +806,8 @@ protected:
   
   Canonical<bool> mMediaSeekableOnlyInBufferedRanges;
 
+  bool mIsVisible;
+
 public:
   AbstractCanonical<media::NullableTimeUnit>* CanonicalDurationOrNull() override;
   AbstractCanonical<double>* CanonicalVolume() {
