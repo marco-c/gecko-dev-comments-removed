@@ -1148,7 +1148,15 @@ this.UITour = {
 
 
 
+
   showHeartbeat(aChromeWindow, aOptions) {
+    let maybeNotifyHeartbeat = (...aParams) => {
+      if (aOptions.privateWindowsOnly) {
+        return;
+      }
+      this.notify(...aParams);
+    };
+
     let nb = aChromeWindow.document.getElementById("high-priority-global-notificationbox");
     let buttons = null;
 
@@ -1157,7 +1165,7 @@ this.UITour = {
         label: aOptions.engagementButtonLabel,
         callback: () => {
           
-          this.notify("Heartbeat:Engaged", { flowId: aOptions.flowId, timestamp: Date.now() });
+          maybeNotifyHeartbeat("Heartbeat:Engaged", { flowId: aOptions.flowId, timestamp: Date.now() });
 
           userEngaged(new Map([
             ["type", "button"],
@@ -1171,7 +1179,7 @@ this.UITour = {
       "chrome://browser/skin/heartbeat-icon.svg", nb.PRIORITY_INFO_HIGH, buttons, function() {
         
         
-        this.notify("Heartbeat:NotificationClosed", { flowId: aOptions.flowId, timestamp: Date.now() });
+        maybeNotifyHeartbeat("Heartbeat:NotificationClosed", { flowId: aOptions.flowId, timestamp: Date.now() });
     }.bind(this));
 
     
@@ -1243,7 +1251,11 @@ this.UITour = {
         let rating = Number(evt.target.getAttribute("data-score"), 10);
 
         
-        this.notify("Heartbeat:Voted", { flowId: aOptions.flowId, score: rating, timestamp: Date.now() });
+        maybeNotifyHeartbeat("Heartbeat:Voted", {
+          flowId: aOptions.flowId,
+          score: rating,
+          timestamp: Date.now(),
+        });
 
         
         userEngaged(new Map([
@@ -1282,7 +1294,7 @@ this.UITour = {
       learnMore.className = "text-link";
       learnMore.href = learnMoreURL.toString();
       learnMore.setAttribute("value", aOptions.learnMoreLabel);
-      learnMore.addEventListener("click", () => this.notify("Heartbeat:LearnMore",
+      learnMore.addEventListener("click", () => maybeNotifyHeartbeat("Heartbeat:LearnMore",
         { flowId: aOptions.flowId, timestamp: Date.now() }));
       frag.appendChild(learnMore);
     }
@@ -1294,7 +1306,10 @@ this.UITour = {
     messageText.classList.add("heartbeat");
 
     
-    this.notify("Heartbeat:NotificationOffered", { flowId: aOptions.flowId, timestamp: Date.now() });
+    maybeNotifyHeartbeat("Heartbeat:NotificationOffered", {
+      flowId: aOptions.flowId,
+      timestamp: Date.now(),
+    });
   },
 
   
