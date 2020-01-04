@@ -2149,16 +2149,13 @@ pref("services.blocklist.gfx.checked", 0);
 
 
 
-pref("services.blocklist.signing.enforced", false);
+pref("services.blocklist.signing.enforced", true);
 
 
-#ifdef RELEASE_BUILD
-pref("services.blocklist.update_enabled", false);
-pref("security.onecrl.via.amo", true);
-#else
 pref("services.blocklist.update_enabled", true);
+
+
 pref("security.onecrl.via.amo", false);
-#endif
 
 
 
@@ -4572,7 +4569,6 @@ pref("gfx.apitrace.enabled",false);
 pref("gfx.content.use-native-pushlayer", true);
 #ifdef MOZ_WIDGET_GTK
 pref("gfx.xrender.enabled",false);
-pref("widget.allow-gtk-dark-theme", false);
 #endif
 #endif
 
