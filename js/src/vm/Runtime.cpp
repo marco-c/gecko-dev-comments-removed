@@ -434,17 +434,14 @@ JSRuntime::~JSRuntime()
 
     MOZ_ASSERT(!exclusiveAccessOwner);
 
-    
     MOZ_ASSERT(!numExclusiveThreads);
-#ifdef DEBUG
-    mainThreadHasExclusiveAccess = true;
-#endif
+    AutoLockForExclusiveAccess lock(this);
 
     
 
 
 
-    FreeScriptData(this);
+    FreeScriptData(this, lock);
 
 #ifdef DEBUG
     
@@ -529,7 +526,7 @@ JSRuntime::addSizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf, JS::Runtim
 
     rtSizes->object += mallocSizeOf(this);
 
-    rtSizes->atomsTable += atoms().sizeOfIncludingThis(mallocSizeOf);
+    rtSizes->atomsTable += atoms(lock).sizeOfIncludingThis(mallocSizeOf);
 
     if (!parentRuntime) {
         rtSizes->atomsTable += mallocSizeOf(staticStrings);
@@ -553,8 +550,8 @@ JSRuntime::addSizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf, JS::Runtim
 
     rtSizes->uncompressedSourceCache += uncompressedSourceCache.sizeOfExcludingThis(mallocSizeOf);
 
-    rtSizes->scriptData += scriptDataTable().sizeOfExcludingThis(mallocSizeOf);
-    for (ScriptDataTable::Range r = scriptDataTable().all(); !r.empty(); r.popFront())
+    rtSizes->scriptData += scriptDataTable(lock).sizeOfExcludingThis(mallocSizeOf);
+    for (ScriptDataTable::Range r = scriptDataTable(lock).all(); !r.empty(); r.popFront())
         rtSizes->scriptData += mallocSizeOf(r.front());
 
     if (jitRuntime_) {

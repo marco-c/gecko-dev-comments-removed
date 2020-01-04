@@ -172,7 +172,7 @@ JSRuntime::createJitRuntime(JSContext* cx)
     jitRuntime_ = jrt;
 
     AutoEnterOOMUnsafeRegion noOOM;
-    if (!jitRuntime_->initialize(cx)) {
+    if (!jitRuntime_->initialize(cx, atomsLock)) {
         
         
         

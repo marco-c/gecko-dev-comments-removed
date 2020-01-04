@@ -7,6 +7,8 @@
 #ifndef gc_FindSCCs_h
 #define gc_FindSCCs_h
 
+#include "mozilla/Move.h"
+
 #include "jsfriendapi.h"
 #include "jsutil.h"
 
@@ -60,7 +62,15 @@ struct GraphNodeBase
 
 
 
-template<class Node>
+
+
+
+
+
+
+
+
+template <typename Node, typename Derived>
 class ComponentFinder
 {
   public:
@@ -156,7 +166,7 @@ class ComponentFinder
 
         Node* old = cur;
         cur = v;
-        cur->findOutgoingEdges(*this);
+        cur->findOutgoingEdges(*static_cast<Derived*>(this));
         cur = old;
 
         if (stackFull)

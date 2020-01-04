@@ -191,11 +191,13 @@ extern const char js_with_str[];
 
 namespace js {
 
+class AutoLockForExclusiveAccess;
+
 
 
 
 void
-MarkAtoms(JSTracer* trc);
+MarkAtoms(JSTracer* trc, AutoLockForExclusiveAccess& lock);
 
 void
 MarkPermanentAtoms(JSTracer* trc);

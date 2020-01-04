@@ -701,7 +701,7 @@ Parser<ParseHandler>::Parser(ExclusiveContext* cx, LifoAlloc* alloc,
 {
     {
         AutoLockForExclusiveAccess lock(cx);
-        cx->perThreadData->addActiveCompilation();
+        cx->perThreadData->addActiveCompilation(lock);
     }
 
     
@@ -742,7 +742,7 @@ Parser<ParseHandler>::~Parser()
 
     {
         AutoLockForExclusiveAccess lock(context);
-        context->perThreadData->removeActiveCompilation();
+        context->perThreadData->removeActiveCompilation(lock);
     }
 }
 
