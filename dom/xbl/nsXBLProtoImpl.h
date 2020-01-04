@@ -117,7 +117,7 @@ public:
   nsXBLProtoImplAnonymousMethod* mDestructor;  
 };
 
-nsresult
+void
 NS_NewXBLProtoImpl(nsXBLPrototypeBinding* aBinding,
                    const char16_t* aClassName,
                    nsXBLProtoImpl** aResult);
