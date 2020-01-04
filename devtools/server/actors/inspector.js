@@ -87,8 +87,10 @@ const FONT_FAMILY_PREVIEW_TEXT_SIZE = 20;
 const PSEUDO_CLASSES = [":hover", ":active", ":focus"];
 const HIDDEN_CLASS = "__fx-devtools-hide-shortcut__";
 const XHTML_NS = "http://www.w3.org/1999/xhtml";
-const XUL_NS = 'http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul';
+const XUL_NS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
 const IMAGE_FETCHING_TIMEOUT = 500;
+const RX_FUNC_NAME = /((var|const|let)\s+)?([\w$.]+\s*[:=]\s*)*(function)?\s*\*?\s*([\w$]+)?\s*$/;
+
 
 
 const PSEUDO_SELECTORS = [
@@ -562,19 +564,13 @@ var NodeActor = exports.NodeActor = protocol.ActorClass({
 
 
 
-    let scriptBeforeFunc = scriptSource.substr(0, script.sourceStart);
-    let lastEnding = Math.max(
-      scriptBeforeFunc.lastIndexOf(";"),
-      scriptBeforeFunc.lastIndexOf("}"),
-      scriptBeforeFunc.lastIndexOf("{"),
-      scriptBeforeFunc.lastIndexOf("("),
-      scriptBeforeFunc.lastIndexOf(","),
-      scriptBeforeFunc.lastIndexOf("!")
-    );
 
-    if (lastEnding !== -1) {
-      let functionPrefix = scriptBeforeFunc.substr(lastEnding + 1);
-      functionSource = functionPrefix + functionSource;
+
+
+    let scriptBeforeFunc = scriptSource.substr(0, script.sourceStart);
+    let matches = scriptBeforeFunc.match(RX_FUNC_NAME);
+    if (matches && matches.length > 0) {
+      functionSource = matches[0].trim() + functionSource;
     }
 
     let dom0 = false;
