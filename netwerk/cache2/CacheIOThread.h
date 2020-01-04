@@ -49,6 +49,7 @@ public:
 
   nsresult Init();
   nsresult Dispatch(nsIRunnable* aRunnable, uint32_t aLevel);
+  nsresult Dispatch(already_AddRefed<nsIRunnable>, uint32_t aLevel);
   
   
   
@@ -81,7 +82,7 @@ private:
   void ThreadFunc();
   void LoopOneLevel(uint32_t aLevel);
   bool EventsPending(uint32_t aLastLevel = LAST_LEVEL);
-  nsresult DispatchInternal(nsIRunnable* aRunnable, uint32_t aLevel);
+  nsresult DispatchInternal(already_AddRefed<nsIRunnable> aRunnable, uint32_t aLevel);
   bool YieldInternal();
 
   static CacheIOThread* sSelf;
