@@ -270,6 +270,41 @@ public class DateTimePicker extends FrameLayout {
         }
 
         
+        try {
+            if (minDateValue != null && !minDateValue.equals("")) {
+                mMinDate.setTime(new SimpleDateFormat(dateFormat).parse(minDateValue));
+            } else {
+                mMinDate.set(DEFAULT_START_YEAR, Calendar.JANUARY, 1);
+            }
+        } catch (Exception ex) {
+            Log.e(LOGTAG, "Error parsing format sting: " + ex);
+            mMinDate.set(DEFAULT_START_YEAR, Calendar.JANUARY, 1);
+        }
+
+        try {
+            if (maxDateValue != null && !maxDateValue.equals("")) {
+                mMaxDate.setTime(new SimpleDateFormat(dateFormat).parse(maxDateValue));
+            } else {
+                mMaxDate.set(DEFAULT_END_YEAR, Calendar.DECEMBER, 31);
+            }
+        } catch (Exception ex) {
+            Log.e(LOGTAG, "Error parsing format string: " + ex);
+            mMaxDate.set(DEFAULT_END_YEAR, Calendar.DECEMBER, 31);
+        }
+
+        
+        try {
+            if (!dateTimeValue.equals("")) {
+                mTempDate.setTime(new SimpleDateFormat(dateFormat).parse(dateTimeValue));
+            } else {
+                mTempDate.setTimeInMillis(System.currentTimeMillis());
+            }
+        } catch (Exception ex) {
+            Log.e(LOGTAG, "Error parsing format string: " + ex);
+            mTempDate.setTimeInMillis(System.currentTimeMillis());
+        }
+
+        
         
         
         if (Versions.feature11Plus &&
@@ -311,41 +346,6 @@ public class DateTimePicker extends FrameLayout {
             }
             mCalendar = null;
         }
-
-        
-        try {
-            if (!dateTimeValue.equals("")) {
-                mTempDate.setTime(new SimpleDateFormat(dateFormat).parse(dateTimeValue));
-            } else {
-                mTempDate.setTimeInMillis(System.currentTimeMillis());
-            }
-        } catch (Exception ex) {
-            Log.e(LOGTAG, "Error parsing format string: " + ex);
-            mTempDate.setTimeInMillis(System.currentTimeMillis());
-        }
-
-	
-	try {
-	    if (minDateValue != null && !minDateValue.equals("")) {
-		mMinDate.setTime(new SimpleDateFormat(dateFormat).parse(minDateValue));
-	    } else {
-		mMinDate.set(DEFAULT_START_YEAR, Calendar.JANUARY, 1);
-	    }
-	} catch (Exception ex) {
-	    Log.e(LOGTAG, "Error parsing format sting: " + ex);
-	    mMinDate.set(DEFAULT_START_YEAR, Calendar.JANUARY, 1);
-	}
-
-	try {
-	    if (maxDateValue != null && !maxDateValue.equals("")) {
-		mMaxDate.setTime(new SimpleDateFormat(dateFormat).parse(maxDateValue));
-	    } else {
-		mMaxDate.set(DEFAULT_END_YEAR, Calendar.DECEMBER, 31);
-	    }
-	} catch (Exception ex) {
-	    Log.e(LOGTAG, "Error parsing format string: " + ex);
-	    mMaxDate.set(DEFAULT_END_YEAR, Calendar.DECEMBER, 31);
-	}
 
         
         mDaySpinner = setupSpinner(R.id.day, 1,
