@@ -2795,10 +2795,6 @@ public:
   
 
 
-  static bool IsScrollFrameWithSnapping(nsIFrame* aFrame);
-  
-
-
 
 
 
