@@ -35,10 +35,12 @@ class AudioConverter;
 class AudioClock
 {
 public:
-  explicit AudioClock(AudioStream* aStream);
+  AudioClock();
+
   
   
-  void Init();
+  void Init(uint32_t aRate);
+
   
   
   void UpdateFrameHistory(uint32_t aServiced, uint32_t aUnderrun);
@@ -71,10 +73,8 @@ public:
   
   
   bool GetPreservesPitch() const;
+
 private:
-  
-  
-  AudioStream* const mAudioStream;
   
   uint32_t mOutRate;
   
