@@ -319,15 +319,6 @@ private:
   
   void ScheduleStateMachineIn(int64_t aMicroseconds);
 
-  void OnDelayedSchedule()
-  {
-    MOZ_ASSERT(OnTaskQueue());
-    mDelayedScheduler.CompleteRequest();
-    ScheduleStateMachine();
-  }
-
-  void NotReached() { MOZ_DIAGNOSTIC_ASSERT(false); }
-
   
   void DiscardStreamData();
   bool HaveEnoughDecodedAudio();
