@@ -57,13 +57,12 @@ class Pickle {
   
   Pickle(const char* data, int data_len, Ownership ownership = BORROWS);
 
-  
-  Pickle(const Pickle& other);
+  Pickle(const Pickle& other) = delete;
 
   Pickle(Pickle&& other);
 
   
-  Pickle& operator=(const Pickle& other);
+  Pickle& operator=(const Pickle& other) = delete;
 
   Pickle& operator=(Pickle&& other);
 

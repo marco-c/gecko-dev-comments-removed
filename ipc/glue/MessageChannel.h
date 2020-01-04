@@ -273,7 +273,7 @@ class MessageChannel : HasResultCodes
     bool HasPendingEvents();
 
     void ProcessPendingRequests(AutoEnterTransaction& aTransaction);
-    bool ProcessPendingRequest(const Message &aUrgent);
+    bool ProcessPendingRequest(Message &&aUrgent);
 
     void MaybeUndeferIncall();
     void EnqueuePendingMessages();
@@ -283,7 +283,7 @@ class MessageChannel : HasResultCodes
     bool DequeueOne(Message *recvd);
 
     
-    void DispatchMessage(const Message &aMsg);
+    void DispatchMessage(Message &&aMsg);
 
     
     
@@ -291,7 +291,7 @@ class MessageChannel : HasResultCodes
     void DispatchUrgentMessage(const Message &aMsg);
     void DispatchAsyncMessage(const Message &aMsg);
     void DispatchRPCMessage(const Message &aMsg);
-    void DispatchInterruptMessage(const Message &aMsg, size_t aStackDepth);
+    void DispatchInterruptMessage(Message &&aMsg, size_t aStackDepth);
 
     
     
@@ -362,7 +362,7 @@ class MessageChannel : HasResultCodes
 
     void DebugAbort(const char* file, int line, const char* cond,
                     const char* why,
-                    bool reply=false) const;
+                    bool reply=false);
 
     
     
