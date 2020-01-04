@@ -123,7 +123,15 @@ SettingsListener.observe('language.current', 'en-US', function(value) {
   Services.prefs.setCharPref(prefName, value);
 
   if (shell.hasStarted() == false) {
-    shell.bootstrap();
+    
+    
+    if (AppConstants.MOZ_B2GDROID) {
+      Cc["@mozilla.org/b2g/b2gdroid-setup;1"]
+        .getService().wrappedJSObject.setWallpaper()
+        .then(() => { shell.bootstrap(); });
+    } else {
+      shell.bootstrap();
+    }
   }
 });
 
@@ -351,7 +359,8 @@ setUpdateTrackingId();
     });
   }
 
-  syncPrefDefault('app.update.url');
+  syncPrefDefault(AppConstants.MOZ_B2GDROID ? 'app.update.url.android'
+                                            : 'app.update.url');
   syncPrefDefault('app.update.channel');
 })();
 
@@ -611,6 +620,8 @@ var settingsToObserve = {
   },
   'app.update.interval': 86400,
   'apz.overscroll.enabled': true,
+  'browser.safebrowsing.enabled': true,
+  'browser.safebrowsing.malware.enabled': true,
   'debug.fps.enabled': {
     prefName: 'layers.acceleration.draw-fps',
     defaultValue: false
