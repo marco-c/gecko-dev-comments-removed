@@ -239,6 +239,12 @@ pref("extensions.blocklist.url", "https://blocklist.addons.mozilla.org/blocklist
 pref("extensions.blocklist.detailsURL", "https://www.mozilla.com/%LOCALE%/blocklist/");
 
 
+pref("services.kinto.base", "https://firefox.settings.services.mozilla.com/v1");
+pref("services.kinto.bucket", "blocklists");
+pref("services.kinto.onecrl.collection", "certificates");
+pref("services.kinto.onecrl.checked", 0);
+
+
 pref("extensions.installDistroAddons", false);
 
 
@@ -929,9 +935,6 @@ pref("layout.accessiblecaret.enabled", true);
 #else
 pref("layout.accessiblecaret.enabled", false);
 #endif
-
-
-pref("layout.accessiblecaret.bar.enabled", false);
 
 
 pref("layout.accessiblecaret.caret_shown_when_long_tapping_on_empty_content", true);
