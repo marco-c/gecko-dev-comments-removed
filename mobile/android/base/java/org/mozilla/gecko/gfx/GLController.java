@@ -64,10 +64,8 @@ public class GLController extends JNIObject {
     public GLController() {
     }
 
-    synchronized void serverSurfaceDestroyed() {
+    void serverSurfaceDestroyed() {
         ThreadUtils.assertOnUiThread();
-
-        mServerSurfaceValid = false;
 
         
         
@@ -79,6 +77,10 @@ public class GLController extends JNIObject {
         
         if (mCompositorCreated) {
             pauseCompositor();
+        }
+
+        synchronized (this) {
+            mServerSurfaceValid = false;
         }
     }
 
