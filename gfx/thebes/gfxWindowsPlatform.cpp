@@ -1799,7 +1799,7 @@ bool DoesD3D11TextureSharingWorkInternal(ID3D11Device *device, DXGI_FORMAT forma
   
   
   if (!TryCreateTexture2D(device, &desc, nullptr, texture)) {
-    gfxCriticalError() << "DoesD3D11TextureSharingWork_TryCreateTextureFailure";
+    gfxCriticalNote << "DoesD3D11TextureSharingWork_TryCreateTextureFailure";
     return false;
   }
 
