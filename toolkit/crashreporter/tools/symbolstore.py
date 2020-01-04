@@ -21,7 +21,6 @@
 
 
 
-import buildconfig
 import errno
 import sys
 import platform
@@ -327,9 +326,13 @@ def make_file_mapping(install_manifests):
 def GetPlatformSpecificDumper(**kwargs):
     """This function simply returns a instance of a subclass of Dumper
     that is appropriate for the current platform."""
-    return {'WINNT': Dumper_Win32,
+    
+    
+    return {'Windows': Dumper_Win32,
+            'Microsoft': Dumper_Win32,
             'Linux': Dumper_Linux,
-            'Darwin': Dumper_Mac}[buildconfig.substs['OS_ARCH']](**kwargs)
+            'Sunos5': Dumper_Solaris,
+            'Darwin': Dumper_Mac}[platform.system()](**kwargs)
 
 def SourceIndex(fileStream, outputPath, vcs_root):
     """Takes a list of files, writes info to a data block in a .stream file"""
@@ -616,9 +619,8 @@ class Dumper:
         for file in files:
             
             try:
-                cmd = [self.dump_syms] + arch.split() + [file]
-                self.output_pid(sys.stderr, ' '.join(cmd))
-                proc = subprocess.Popen(cmd, stdout=subprocess.PIPE)
+                proc = subprocess.Popen([self.dump_syms] + arch.split() + [file],
+                                        stdout=subprocess.PIPE)
                 module_line = proc.stdout.next()
                 if module_line.startswith("MODULE"):
                     
@@ -900,17 +902,10 @@ class Dumper_Mac(Dumper):
         dsymbundle = file + ".dSYM"
         if os.path.exists(dsymbundle):
             shutil.rmtree(dsymbundle)
-        dsymutil = buildconfig.substs['DSYMUTIL']
         
-        try:
-            cmd = ([dsymutil] +
-                   [a.replace('-a ', '--arch=') for a in self.archs if a] +
-                   [file])
-            self.output_pid(sys.stderr, ' '.join(cmd))
-            subprocess.check_call(cmd, stdout=open(os.devnull, 'w'))
-        except subprocess.CalledProcessError as e:
-            self.output_pid(sys.stderr, 'Error running dsymutil: %s' % str(e))
-
+        subprocess.call(["dsymutil"] + [a.replace('-a ', '--arch=') for a in self.archs if a]
+                        + [file],
+                        stdout=open(os.devnull, 'w'))
         if not os.path.exists(dsymbundle):
             
             self.output_pid(sys.stderr, "No symbols found in file: %s" % (file,))

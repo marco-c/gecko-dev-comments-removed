@@ -35,6 +35,7 @@
 
 
 
+#include <Foundation/Foundation.h>
 #include <mach-o/loader.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -46,7 +47,6 @@
 #include "common/byte_cursor.h"
 #include "common/mac/macho_reader.h"
 #include "common/module.h"
-#include "common/scoped_ptr.h"
 #include "common/symbol_data.h"
 
 namespace google_breakpad {
@@ -61,13 +61,20 @@ class DumpSymbols {
         selected_object_file_(),
         selected_object_name_() { }
   ~DumpSymbols() {
+    [input_pathname_ release];
+    [object_filename_ release];
+    [contents_ release];
   }
 
   
   
   
   
-  bool Read(const std::string &filename);
+  
+  
+  
+  
+  bool Read(NSString *filename);
 
   
   
@@ -144,16 +151,16 @@ class DumpSymbols {
 
   
   
-  std::string input_pathname_;
+  NSString *input_pathname_;
 
   
   
   
   
-  std::string object_filename_;
+  NSString *object_filename_;
 
   
-  scoped_array<uint8_t> contents_;
+  NSData *contents_;
 
   
   
