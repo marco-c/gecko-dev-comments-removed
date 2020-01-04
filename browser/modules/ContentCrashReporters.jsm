@@ -17,11 +17,6 @@ XPCOMUtils.defineLazyModuleGetter(this, "CrashSubmit",
   "resource://gre/modules/CrashSubmit.jsm");
 
 this.TabCrashReporter = {
-  get prefs() {
-    delete this.prefs;
-    return this.prefs = Services.prefs.getBranch("browser.tabs.crashReporting.");
-  },
-
   init: function () {
     if (this.initialized)
       return;
@@ -52,66 +47,21 @@ this.TabCrashReporter = {
         if (!browser)
           return;
 
-        this.browserMap.set(browser.permanentKey, aSubject.childID);
+        this.browserMap.set(browser, aSubject.childID);
         break;
     }
   },
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  submitCrashReport: function (aBrowser, aFormData) {
-    let childID = this.browserMap.get(aBrowser.permanentKey);
+  submitCrashReport: function (aBrowser) {
+    let childID = this.browserMap.get(aBrowser);
     let dumpID = this.childMap.get(childID);
     if (!dumpID)
       return
 
-    CrashSubmit.submit(dumpID, {
-      recordSubmission: true,
-      extraExtraKeyVals: {
-        Comments: aFormData.comments,
-        Email: aFormData.email,
-        URL: aFormData.URL,
-      },
-    }).then(null, Cu.reportError);
-
-    this.prefs.setBoolPref("sendReport", true);
-    this.prefs.setBoolPref("includeURL", aFormData.includeURL);
-    this.prefs.setBoolPref("emailMe", aFormData.emailMe);
-    if (aFormData.emailMe) {
-      this.prefs.setCharPref("email", aFormData.email);
-    } else {
-      this.prefs.setCharPref("email", "");
+    if (CrashSubmit.submit(dumpID, { recordSubmission: true })) {
+      this.childMap.set(childID, null); 
+      this.removeSubmitCheckboxesForSameCrash(childID);
     }
-
-    this.childMap.set(childID, null); 
-    this.removeSubmitCheckboxesForSameCrash(childID);
-  },
-
-  dontSubmitCrashReport: function() {
-    this.prefs.setBoolPref("sendReport", false);
   },
 
   removeSubmitCheckboxesForSameCrash: function(childID) {
@@ -129,8 +79,8 @@ this.TabCrashReporter = {
         if (!doc.documentURI.startsWith("about:tabcrashed"))
           continue;
 
-        if (this.browserMap.get(browser.permanentKey) == childID) {
-          this.browserMap.delete(browser.permanentKey);
+        if (this.browserMap.get(browser) == childID) {
+          this.browserMap.delete(browser);
           browser.contentDocument.documentElement.classList.remove("crashDumpAvailable");
           browser.contentDocument.documentElement.classList.add("crashDumpSubmitted");
         }
@@ -147,27 +97,11 @@ this.TabCrashReporter = {
     if (!this.childMap)
       return;
 
-    let dumpID = this.childMap.get(this.browserMap.get(aBrowser.permanentKey));
+    let dumpID = this.childMap.get(this.browserMap.get(aBrowser));
     if (!dumpID)
       return;
 
-    let doc = aBrowser.contentDocument;
-
-    doc.documentElement.classList.add("crashDumpAvailable");
-
-    let sendReport = this.prefs.getBoolPref("sendReport");
-    doc.getElementById("sendReport").checked = sendReport;
-
-    let includeURL = this.prefs.getBoolPref("includeURL");
-    doc.getElementById("includeURL").checked = includeURL;
-
-    let emailMe = this.prefs.getBoolPref("emailMe");
-    doc.getElementById("emailMe").checked = emailMe;
-
-    if (emailMe) {
-      let email = this.prefs.getCharPref("email", "");
-      doc.getElementById("email").value = email;
-    }
+    aBrowser.contentDocument.documentElement.classList.add("crashDumpAvailable");
   },
 
   hideRestoreAllButton: function (aBrowser) {
