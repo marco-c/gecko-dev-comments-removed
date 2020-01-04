@@ -337,6 +337,9 @@ class SimdTypeDescr : public ComplexTypeDescr
         Int8x16   = JS_SIMDTYPEREPR_INT8X16,
         Int16x8   = JS_SIMDTYPEREPR_INT16X8,
         Int32x4   = JS_SIMDTYPEREPR_INT32X4,
+        Uint8x16  = JS_SIMDTYPEREPR_UINT8X16,
+        Uint16x8  = JS_SIMDTYPEREPR_UINT16X8,
+        Uint32x4  = JS_SIMDTYPEREPR_UINT32X4,
         Float32x4 = JS_SIMDTYPEREPR_FLOAT32X4,
         Float64x2 = JS_SIMDTYPEREPR_FLOAT64X2,
         Bool8x16  = JS_SIMDTYPEREPR_BOOL8X16,
@@ -903,6 +906,30 @@ bool GetInt16x8TypeDescr(JSContext* cx, unsigned argc, Value* vp);
 
 
 bool GetInt32x4TypeDescr(JSContext* cx, unsigned argc, Value* vp);
+
+
+
+
+
+
+
+bool GetUint8x16TypeDescr(JSContext* cx, unsigned argc, Value* vp);
+
+
+
+
+
+
+
+bool GetUint16x8TypeDescr(JSContext* cx, unsigned argc, Value* vp);
+
+
+
+
+
+
+
+bool GetUint32x4TypeDescr(JSContext* cx, unsigned argc, Value* vp);
 
 
 
