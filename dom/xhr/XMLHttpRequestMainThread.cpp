@@ -2632,7 +2632,7 @@ XMLHttpRequestMainThread::InitiateFetch(nsIInputStream* aUploadStream,
 
     
     if (mFlagSynchronous) {
-      return NS_ERROR_DOM_NETWORK_ERR;
+      return rv;
     }
   }
 
@@ -2893,7 +2893,7 @@ XMLHttpRequestMainThread::SendInternal(const RequestBodyBase* aBody)
   if (!mChannel) {
     
     if (mFlagSynchronous) {
-      return NS_ERROR_DOM_NETWORK_ERR;
+      return NS_ERROR_FAILURE;
     } else {
       
       
