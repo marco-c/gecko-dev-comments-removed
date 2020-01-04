@@ -3,6 +3,7 @@
 
 
 #include "EditorUtils.h"
+#include "HTMLEditUtils.h"
 #include "TextEditUtils.h"
 #include "TypeInState.h"
 #include "mozilla/Assertions.h"
@@ -20,7 +21,6 @@
 #include "nsError.h"
 #include "nsGkAtoms.h"
 #include "nsHTMLCSSUtils.h"
-#include "nsHTMLEditUtils.h"
 #include "nsHTMLEditor.h"
 #include "nsIAtom.h"
 #include "nsIContent.h"
@@ -582,7 +582,7 @@ nsHTMLEditor::SplitStyleAbovePoint(nsCOMPtr<nsINode>* aNode,
     if (
         (aProperty && node->IsHTMLElement(aProperty)) ||
         
-        (aProperty == nsGkAtoms::href && nsHTMLEditUtils::IsLink(node)) ||
+        (aProperty == nsGkAtoms::href && HTMLEditUtils::IsLink(node)) ||
         
         (!aProperty && NodeIsProperty(node)) ||
         
@@ -729,9 +729,9 @@ nsHTMLEditor::RemoveStyleInside(nsIContent& aNode,
       
       (aProperty && aNode.NodeInfo()->NameAtom() == aProperty) ||
       
-      (aProperty == nsGkAtoms::href && nsHTMLEditUtils::IsLink(&aNode)) ||
+      (aProperty == nsGkAtoms::href && HTMLEditUtils::IsLink(&aNode)) ||
       
-      (aProperty == nsGkAtoms::name && nsHTMLEditUtils::IsNamedAnchor(&aNode)) ||
+      (aProperty == nsGkAtoms::name && HTMLEditUtils::IsNamedAnchor(&aNode)) ||
       
       (!aProperty && NodeIsProperty(aNode))
     )
@@ -853,24 +853,24 @@ nsHTMLEditor::PromoteRangeIfStartsOrEndsInNamedAnchor(nsRange& aRange)
   nsCOMPtr<nsINode> parent = startNode;
 
   while (parent && !parent->IsHTMLElement(nsGkAtoms::body) &&
-         !nsHTMLEditUtils::IsNamedAnchor(parent)) {
+         !HTMLEditUtils::IsNamedAnchor(parent)) {
     parent = parent->GetParentNode();
   }
   NS_ENSURE_TRUE(parent, NS_ERROR_NULL_POINTER);
 
-  if (nsHTMLEditUtils::IsNamedAnchor(parent)) {
+  if (HTMLEditUtils::IsNamedAnchor(parent)) {
     startNode = parent->GetParentNode();
     startOffset = startNode ? startNode->IndexOf(parent) : -1;
   }
 
   parent = endNode;
   while (parent && !parent->IsHTMLElement(nsGkAtoms::body) &&
-         !nsHTMLEditUtils::IsNamedAnchor(parent)) {
+         !HTMLEditUtils::IsNamedAnchor(parent)) {
     parent = parent->GetParentNode();
   }
   NS_ENSURE_TRUE(parent, NS_ERROR_NULL_POINTER);
 
-  if (nsHTMLEditUtils::IsNamedAnchor(parent)) {
+  if (HTMLEditUtils::IsNamedAnchor(parent)) {
     endNode = parent->GetParentNode();
     endOffset = endNode ? endNode->IndexOf(parent) + 1 : 0;
   }

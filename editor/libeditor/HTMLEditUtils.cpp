@@ -3,7 +3,7 @@
 
 
 
-#include "nsHTMLEditUtils.h"
+#include "HTMLEditUtils.h"
 
 #include "TextEditUtils.h"              
 #include "mozilla/ArrayUtils.h"         
@@ -24,21 +24,21 @@
 #include "nsLiteralString.h"            
 #include "nsString.h"                   
 
-using namespace mozilla;
+namespace mozilla {
 
 
 
 
 bool
-nsHTMLEditUtils::IsInlineStyle(nsIDOMNode* aNode)
+HTMLEditUtils::IsInlineStyle(nsIDOMNode* aNode)
 {
-  NS_PRECONDITION(aNode, "null parent passed to nsHTMLEditUtils::IsInlineStyle");
+  MOZ_ASSERT(aNode);
   nsCOMPtr<nsINode> node = do_QueryInterface(aNode);
   return node && IsInlineStyle(node);
 }
 
 bool
-nsHTMLEditUtils::IsInlineStyle(nsINode* aNode)
+HTMLEditUtils::IsInlineStyle(nsINode* aNode)
 {
   MOZ_ASSERT(aNode);
   return aNode->IsAnyOfHTMLElements(nsGkAtoms::b,
@@ -58,15 +58,15 @@ nsHTMLEditUtils::IsInlineStyle(nsINode* aNode)
 
 
 bool
-nsHTMLEditUtils::IsFormatNode(nsIDOMNode* aNode)
+HTMLEditUtils::IsFormatNode(nsIDOMNode* aNode)
 {
-  NS_PRECONDITION(aNode, "null parent passed to nsHTMLEditUtils::IsFormatNode");
+  MOZ_ASSERT(aNode);
   nsCOMPtr<nsINode> node = do_QueryInterface(aNode);
   return node && IsFormatNode(node);
 }
 
 bool
-nsHTMLEditUtils::IsFormatNode(nsINode* aNode)
+HTMLEditUtils::IsFormatNode(nsINode* aNode)
 {
   MOZ_ASSERT(aNode);
   return aNode->IsAnyOfHTMLElements(nsGkAtoms::p,
@@ -83,10 +83,11 @@ nsHTMLEditUtils::IsFormatNode(nsINode* aNode)
 
 
 
+
 bool
-nsHTMLEditUtils::IsNodeThatCanOutdent(nsIDOMNode* aNode)
+HTMLEditUtils::IsNodeThatCanOutdent(nsIDOMNode* aNode)
 {
-  NS_PRECONDITION(aNode, "null parent passed to nsHTMLEditUtils::IsNodeThatCanOutdent");
+  MOZ_ASSERT(aNode);
   nsCOMPtr<nsIAtom> nodeAtom = nsEditor::GetTag(aNode);
   return (nodeAtom == nsGkAtoms::ul)
       || (nodeAtom == nsGkAtoms::ol)
@@ -100,12 +101,8 @@ nsHTMLEditUtils::IsNodeThatCanOutdent(nsIDOMNode* aNode)
 
 
 
-
-
-
-
 bool
-nsHTMLEditUtils::IsHeader(nsINode& aNode)
+HTMLEditUtils::IsHeader(nsINode& aNode)
 {
   return aNode.IsAnyOfHTMLElements(nsGkAtoms::h1,
                                    nsGkAtoms::h2,
@@ -116,19 +113,19 @@ nsHTMLEditUtils::IsHeader(nsINode& aNode)
 }
 
 bool
-nsHTMLEditUtils::IsHeader(nsIDOMNode* aNode)
+HTMLEditUtils::IsHeader(nsIDOMNode* aNode)
 {
+  MOZ_ASSERT(aNode);
   nsCOMPtr<nsINode> node = do_QueryInterface(aNode);
-  NS_PRECONDITION(node, "null parent passed to nsHTMLEditUtils::IsHeader");
+  MOZ_ASSERT(node);
   return IsHeader(*node);
 }
 
 
 
 
-
 bool
-nsHTMLEditUtils::IsParagraph(nsIDOMNode* aNode)
+HTMLEditUtils::IsParagraph(nsIDOMNode* aNode)
 {
   return nsEditor::NodeIsType(aNode, nsGkAtoms::p);
 }
@@ -136,9 +133,8 @@ nsHTMLEditUtils::IsParagraph(nsIDOMNode* aNode)
 
 
 
-
 bool
-nsHTMLEditUtils::IsHR(nsIDOMNode* aNode)
+HTMLEditUtils::IsHR(nsIDOMNode* aNode)
 {
   return nsEditor::NodeIsType(aNode, nsGkAtoms::hr);
 }
@@ -146,17 +142,16 @@ nsHTMLEditUtils::IsHR(nsIDOMNode* aNode)
 
 
 
-
 bool
-nsHTMLEditUtils::IsListItem(nsIDOMNode* aNode)
+HTMLEditUtils::IsListItem(nsIDOMNode* aNode)
 {
-  NS_PRECONDITION(aNode, "null parent passed to nsHTMLEditUtils::IsListItem");
+  MOZ_ASSERT(aNode);
   nsCOMPtr<nsINode> node = do_QueryInterface(aNode);
   return node && IsListItem(node);
 }
 
 bool
-nsHTMLEditUtils::IsListItem(nsINode* aNode)
+HTMLEditUtils::IsListItem(nsINode* aNode)
 {
   MOZ_ASSERT(aNode);
   return aNode->IsAnyOfHTMLElements(nsGkAtoms::li,
@@ -167,17 +162,16 @@ nsHTMLEditUtils::IsListItem(nsINode* aNode)
 
 
 
-
 bool
-nsHTMLEditUtils::IsTableElement(nsIDOMNode* aNode)
+HTMLEditUtils::IsTableElement(nsIDOMNode* aNode)
 {
-  NS_PRECONDITION(aNode, "null node passed to nsHTMLEditor::IsTableElement");
+  MOZ_ASSERT(aNode);
   nsCOMPtr<nsINode> node = do_QueryInterface(aNode);
   return node && IsTableElement(node);
 }
 
 bool
-nsHTMLEditUtils::IsTableElement(nsINode* aNode)
+HTMLEditUtils::IsTableElement(nsINode* aNode)
 {
   MOZ_ASSERT(aNode);
   return aNode->IsAnyOfHTMLElements(nsGkAtoms::table,
@@ -193,16 +187,17 @@ nsHTMLEditUtils::IsTableElement(nsINode* aNode)
 
 
 
+
 bool
-nsHTMLEditUtils::IsTableElementButNotTable(nsIDOMNode* aNode)
+HTMLEditUtils::IsTableElementButNotTable(nsIDOMNode* aNode)
 {
-  NS_PRECONDITION(aNode, "null node passed to nsHTMLEditor::IsTableElementButNotTable");
+  MOZ_ASSERT(aNode);
   nsCOMPtr<nsINode> node = do_QueryInterface(aNode);
   return node && IsTableElementButNotTable(node);
 }
 
 bool
-nsHTMLEditUtils::IsTableElementButNotTable(nsINode* aNode)
+HTMLEditUtils::IsTableElementButNotTable(nsINode* aNode)
 {
   MOZ_ASSERT(aNode);
   return aNode->IsAnyOfHTMLElements(nsGkAtoms::tr,
@@ -218,13 +213,13 @@ nsHTMLEditUtils::IsTableElementButNotTable(nsINode* aNode)
 
 
 bool
-nsHTMLEditUtils::IsTable(nsIDOMNode* aNode)
+HTMLEditUtils::IsTable(nsIDOMNode* aNode)
 {
   return nsEditor::NodeIsType(aNode, nsGkAtoms::table);
 }
 
 bool
-nsHTMLEditUtils::IsTable(nsINode* aNode)
+HTMLEditUtils::IsTable(nsINode* aNode)
 {
   return aNode && aNode->IsHTMLElement(nsGkAtoms::table);
 }
@@ -233,7 +228,7 @@ nsHTMLEditUtils::IsTable(nsINode* aNode)
 
 
 bool
-nsHTMLEditUtils::IsTableRow(nsIDOMNode* aNode)
+HTMLEditUtils::IsTableRow(nsIDOMNode* aNode)
 {
   return nsEditor::NodeIsType(aNode, nsGkAtoms::tr);
 }
@@ -241,17 +236,16 @@ nsHTMLEditUtils::IsTableRow(nsIDOMNode* aNode)
 
 
 
-
 bool
-nsHTMLEditUtils::IsTableCell(nsIDOMNode* aNode)
+HTMLEditUtils::IsTableCell(nsIDOMNode* aNode)
 {
-  NS_PRECONDITION(aNode, "null parent passed to nsHTMLEditUtils::IsTableCell");
+  MOZ_ASSERT(aNode);
   nsCOMPtr<nsINode> node = do_QueryInterface(aNode);
   return node && IsTableCell(node);
 }
 
 bool
-nsHTMLEditUtils::IsTableCell(nsINode* aNode)
+HTMLEditUtils::IsTableCell(nsINode* aNode)
 {
   MOZ_ASSERT(aNode);
   return aNode->IsAnyOfHTMLElements(nsGkAtoms::td, nsGkAtoms::th);
@@ -260,9 +254,8 @@ nsHTMLEditUtils::IsTableCell(nsINode* aNode)
 
 
 
-
 bool
-nsHTMLEditUtils::IsTableCellOrCaption(nsINode& aNode)
+HTMLEditUtils::IsTableCellOrCaption(nsINode& aNode)
 {
   return aNode.IsAnyOfHTMLElements(nsGkAtoms::td, nsGkAtoms::th,
                                    nsGkAtoms::caption);
@@ -271,17 +264,16 @@ nsHTMLEditUtils::IsTableCellOrCaption(nsINode& aNode)
 
 
 
-
 bool
-nsHTMLEditUtils::IsList(nsIDOMNode* aNode)
+HTMLEditUtils::IsList(nsIDOMNode* aNode)
 {
-  NS_PRECONDITION(aNode, "null parent passed to nsHTMLEditUtils::IsList");
+  MOZ_ASSERT(aNode);
   nsCOMPtr<nsINode> node = do_QueryInterface(aNode);
   return node && IsList(node);
 }
 
 bool
-nsHTMLEditUtils::IsList(nsINode* aNode)
+HTMLEditUtils::IsList(nsINode* aNode)
 {
   MOZ_ASSERT(aNode);
   return aNode->IsAnyOfHTMLElements(nsGkAtoms::ul,
@@ -292,9 +284,8 @@ nsHTMLEditUtils::IsList(nsINode* aNode)
 
 
 
-
 bool
-nsHTMLEditUtils::IsOrderedList(nsIDOMNode* aNode)
+HTMLEditUtils::IsOrderedList(nsIDOMNode* aNode)
 {
   return nsEditor::NodeIsType(aNode, nsGkAtoms::ol);
 }
@@ -304,7 +295,7 @@ nsHTMLEditUtils::IsOrderedList(nsIDOMNode* aNode)
 
 
 bool
-nsHTMLEditUtils::IsUnorderedList(nsIDOMNode* aNode)
+HTMLEditUtils::IsUnorderedList(nsIDOMNode* aNode)
 {
   return nsEditor::NodeIsType(aNode, nsGkAtoms::ul);
 }
@@ -312,9 +303,8 @@ nsHTMLEditUtils::IsUnorderedList(nsIDOMNode* aNode)
 
 
 
-
 bool
-nsHTMLEditUtils::IsBlockquote(nsIDOMNode* aNode)
+HTMLEditUtils::IsBlockquote(nsIDOMNode* aNode)
 {
   return nsEditor::NodeIsType(aNode, nsGkAtoms::blockquote);
 }
@@ -322,9 +312,8 @@ nsHTMLEditUtils::IsBlockquote(nsIDOMNode* aNode)
 
 
 
-
 bool
-nsHTMLEditUtils::IsPre(nsIDOMNode* aNode)
+HTMLEditUtils::IsPre(nsIDOMNode* aNode)
 {
   return nsEditor::NodeIsType(aNode, nsGkAtoms::pre);
 }
@@ -332,28 +321,27 @@ nsHTMLEditUtils::IsPre(nsIDOMNode* aNode)
 
 
 
-
 bool
-nsHTMLEditUtils::IsImage(nsINode* aNode)
+HTMLEditUtils::IsImage(nsINode* aNode)
 {
   return aNode && aNode->IsHTMLElement(nsGkAtoms::img);
 }
 
 bool
-nsHTMLEditUtils::IsImage(nsIDOMNode* aNode)
+HTMLEditUtils::IsImage(nsIDOMNode* aNode)
 {
   return nsEditor::NodeIsType(aNode, nsGkAtoms::img);
 }
 
 bool
-nsHTMLEditUtils::IsLink(nsIDOMNode *aNode)
+HTMLEditUtils::IsLink(nsIDOMNode *aNode)
 {
   nsCOMPtr<nsINode> node = do_QueryInterface(aNode);
   return node && IsLink(node);
 }
 
 bool
-nsHTMLEditUtils::IsLink(nsINode* aNode)
+HTMLEditUtils::IsLink(nsINode* aNode)
 {
   MOZ_ASSERT(aNode);
 
@@ -369,14 +357,14 @@ nsHTMLEditUtils::IsLink(nsINode* aNode)
 }
 
 bool
-nsHTMLEditUtils::IsNamedAnchor(nsIDOMNode *aNode)
+HTMLEditUtils::IsNamedAnchor(nsIDOMNode *aNode)
 {
   nsCOMPtr<nsINode> node = do_QueryInterface(aNode);
   return node && IsNamedAnchor(node);
 }
 
 bool
-nsHTMLEditUtils::IsNamedAnchor(nsINode* aNode)
+HTMLEditUtils::IsNamedAnchor(nsINode* aNode)
 {
   MOZ_ASSERT(aNode);
   if (!aNode->IsHTMLElement(nsGkAtoms::a)) {
@@ -391,9 +379,8 @@ nsHTMLEditUtils::IsNamedAnchor(nsINode* aNode)
 
 
 
-
 bool
-nsHTMLEditUtils::IsDiv(nsIDOMNode* aNode)
+HTMLEditUtils::IsDiv(nsIDOMNode* aNode)
 {
   return nsEditor::NodeIsType(aNode, nsGkAtoms::div);
 }
@@ -401,15 +388,14 @@ nsHTMLEditUtils::IsDiv(nsIDOMNode* aNode)
 
 
 
-
 bool
-nsHTMLEditUtils::IsMozDiv(nsIDOMNode* aNode)
+HTMLEditUtils::IsMozDiv(nsIDOMNode* aNode)
 {
   return IsDiv(aNode) && TextEditUtils::HasMozAttr(aNode);
 }
 
 bool
-nsHTMLEditUtils::IsMozDiv(nsINode* aNode)
+HTMLEditUtils::IsMozDiv(nsINode* aNode)
 {
   MOZ_ASSERT(aNode);
   return aNode->IsHTMLElement(nsGkAtoms::div) &&
@@ -419,17 +405,16 @@ nsHTMLEditUtils::IsMozDiv(nsINode* aNode)
 
 
 
-
 bool
-nsHTMLEditUtils::IsMailCite(nsIDOMNode* aNode)
+HTMLEditUtils::IsMailCite(nsIDOMNode* aNode)
 {
-  NS_PRECONDITION(aNode, "null parent passed to nsHTMLEditUtils::IsMailCite");
+  MOZ_ASSERT(aNode);
   nsCOMPtr<nsINode> node = do_QueryInterface(aNode);
   return node && IsMailCite(node);
 }
 
 bool
-nsHTMLEditUtils::IsMailCite(nsINode* aNode)
+HTMLEditUtils::IsMailCite(nsINode* aNode)
 {
   MOZ_ASSERT(aNode);
 
@@ -455,17 +440,16 @@ nsHTMLEditUtils::IsMailCite(nsINode* aNode)
 
 
 
-
 bool
-nsHTMLEditUtils::IsFormWidget(nsIDOMNode* aNode)
+HTMLEditUtils::IsFormWidget(nsIDOMNode* aNode)
 {
-  NS_PRECONDITION(aNode, "null node passed to nsHTMLEditUtils::IsFormWidget");
+  MOZ_ASSERT(aNode);
   nsCOMPtr<nsINode> node = do_QueryInterface(aNode);
   return node && IsFormWidget(node);
 }
 
 bool
-nsHTMLEditUtils::IsFormWidget(nsINode* aNode)
+HTMLEditUtils::IsFormWidget(nsINode* aNode)
 {
   MOZ_ASSERT(aNode);
   return aNode->IsAnyOfHTMLElements(nsGkAtoms::textarea,
@@ -479,9 +463,9 @@ nsHTMLEditUtils::IsFormWidget(nsINode* aNode)
 }
 
 bool
-nsHTMLEditUtils::SupportsAlignAttr(nsIDOMNode* aNode)
+HTMLEditUtils::SupportsAlignAttr(nsIDOMNode* aNode)
 {
-  NS_PRECONDITION(aNode, "null node passed to nsHTMLEditUtils::SupportsAlignAttr");
+  MOZ_ASSERT(aNode);
   nsCOMPtr<nsIAtom> nodeAtom = nsEditor::GetTag(aNode);
   return (nodeAtom == nsGkAtoms::hr)
       || (nodeAtom == nsGkAtoms::table)
@@ -597,7 +581,7 @@ nsHTMLEditUtils::SupportsAlignAttr(nsIDOMNode* aNode)
 
 #define GROUP_FLOW_ELEMENT (GROUP_INLINE_ELEMENT | GROUP_BLOCK)
 
-struct nsElementInfo
+struct ElementInfo final
 {
 #ifdef DEBUG
   eHTMLTags mTag;
@@ -616,7 +600,7 @@ struct nsElementInfo
   { _group, _canContainGroups, _isContainer, _canContainSelf }
 #endif
 
-static const nsElementInfo kElements[eHTMLTag_userdefined] = {
+static const ElementInfo kElements[eHTMLTag_userdefined] = {
   ELEM(a, true, false, GROUP_SPECIAL, GROUP_INLINE_ELEMENT),
   ELEM(abbr, true, true, GROUP_PHRASE, GROUP_INLINE_ELEMENT),
   ELEM(acronym, true, true, GROUP_PHRASE, GROUP_INLINE_ELEMENT),
@@ -789,7 +773,7 @@ static const nsElementInfo kElements[eHTMLTag_userdefined] = {
 };
 
 bool
-nsHTMLEditUtils::CanContain(int32_t aParent, int32_t aChild)
+HTMLEditUtils::CanContain(int32_t aParent, int32_t aChild)
 {
   NS_ASSERTION(aParent > eHTMLTag_unknown && aParent <= eHTMLTag_userdefined,
                "aParent out of range!");
@@ -838,20 +822,22 @@ nsHTMLEditUtils::CanContain(int32_t aParent, int32_t aChild)
     return true;
   }
 
-  const nsElementInfo& parent = kElements[aParent - 1];
+  const ElementInfo& parent = kElements[aParent - 1];
   if (aParent == aChild) {
     return parent.mCanContainSelf;
   }
 
-  const nsElementInfo& child = kElements[aChild - 1];
+  const ElementInfo& child = kElements[aChild - 1];
   return (parent.mCanContainGroups & child.mGroup) != 0;
 }
 
 bool
-nsHTMLEditUtils::IsContainer(int32_t aTag)
+HTMLEditUtils::IsContainer(int32_t aTag)
 {
   NS_ASSERTION(aTag > eHTMLTag_unknown && aTag <= eHTMLTag_userdefined,
                "aTag out of range!");
 
   return kElements[aTag - 1].mIsContainer;
 }
+
+} 
