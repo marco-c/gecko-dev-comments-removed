@@ -120,6 +120,9 @@ test_description_schema = Schema({
     ),
 
     
+    Required('checkout', default=False): bool,
+
+    
     Required('mozharness'): Any({
         
         Required('script'): basestring,
