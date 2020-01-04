@@ -1012,7 +1012,7 @@ nsCSPParser::directive()
   
   
   if (mCurDir.Length() < 1) {
-    const char16_t* params[] = { NS_LITERAL_STRING("directive missing").get() };
+    const char16_t* params[] = { MOZ_UTF16("directive missing") };
     logWarningErrorToConsole(nsIScriptError::warningFlag, "failedToParseUnrecognizedSource",
                              params, ArrayLength(params));
     return;
@@ -1029,7 +1029,7 @@ nsCSPParser::directive()
   
   if (cspDir->equals(nsIContentSecurityPolicy::UPGRADE_IF_INSECURE_DIRECTIVE)) {
     if (mCurDir.Length() > 1) {
-      const char16_t* params[] = { NS_LITERAL_STRING("upgrade-insecure-requests").get() };
+      const char16_t* params[] = { MOZ_UTF16("upgrade-insecure-requests") };
       logWarningErrorToConsole(nsIScriptError::warningFlag,
                                "ignoreSrcForDirective",
                                params, ArrayLength(params));
@@ -1062,7 +1062,7 @@ nsCSPParser::directive()
       mHasHashOrNonce && mUnsafeInlineKeywordSrc) {
     mUnsafeInlineKeywordSrc->invalidate();
     
-    const char16_t* params[] = { NS_LITERAL_STRING("'unsafe-inline'").get() };
+    const char16_t* params[] = { MOZ_UTF16("'unsafe-inline'") };
     logWarningErrorToConsole(nsIScriptError::warningFlag, "ignoringSrcWithinScriptSrc",
                              params, ArrayLength(params));
   }
