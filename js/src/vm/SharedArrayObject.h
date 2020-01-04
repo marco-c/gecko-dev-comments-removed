@@ -57,7 +57,7 @@ class SharedArrayRawBuffer
         length(length),
         waiters_(nullptr)
     {
-        MOZ_ASSERT(buffer == dataPointer());
+        MOZ_ASSERT(buffer == dataPointerShared());
     }
 
   public:
@@ -75,11 +75,12 @@ class SharedArrayRawBuffer
         waiters_ = waiters;
     }
 
-    inline uint8_t* dataPointer() const {
-        return ((uint8_t*)this) + sizeof(SharedArrayRawBuffer);
+    SharedMem<uint8_t*> dataPointerShared() const {
+        uint8_t* ptr = reinterpret_cast<uint8_t*>(const_cast<SharedArrayRawBuffer*>(this));
+        return SharedMem<uint8_t*>::shared(ptr + sizeof(SharedArrayRawBuffer));
     }
 
-    inline uint32_t byteLength() const {
+    uint32_t byteLength() const {
         return length;
     }
 
@@ -143,19 +144,19 @@ class SharedArrayBufferObject : public ArrayBufferObjectMaybeShared
 
     
     
-    void* globalID() const {
+    uintptr_t globalID() const {
         
         
         
-        return dataPointer();
+        return dataPointerShared().asValue();
     }
 
     uint32_t byteLength() const {
         return rawBufferObject()->byteLength();
     }
 
-    uint8_t* dataPointer() const {
-        return rawBufferObject()->dataPointer();
+    SharedMem<uint8_t*> dataPointerShared() const {
+        return rawBufferObject()->dataPointerShared();
     }
 
 private:
