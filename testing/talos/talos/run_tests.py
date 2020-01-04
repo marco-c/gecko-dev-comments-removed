@@ -48,6 +48,14 @@ def buildCommandLine(test):
         raise TalosError("tpmanifest not found in test: %s" % test)
 
     
+    if test['sps_profile']:
+        LOG.info("sps profiling is enabled so talos is reducing the number "
+                 "of cycles, please disregard reported numbers")
+        for cycle_var in ['tppagecycles', 'tpcycles', 'cycles']:
+            if test[cycle_var] > 2:
+                test[cycle_var] = 2
+
+    
     url = ['-tp', test['tpmanifest']]
     CLI_bool_options = ['tpchrome', 'tpmozafterpaint', 'tpdisable_e10s',
                         'tpnoisy', 'rss', 'tprender', 'tploadnocache',
