@@ -228,7 +228,11 @@ public:
 
 
 
-  Accessible* GetAccessible(nsINode* aNode) const;
+  Accessible* GetAccessible(nsINode* aNode) const
+  {
+    return aNode == mDocumentNode ?
+      const_cast<DocAccessible*>(this) : mNodeToAccessibleMap.Get(aNode);
+  }
 
   
 

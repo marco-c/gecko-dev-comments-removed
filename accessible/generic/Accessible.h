@@ -505,12 +505,6 @@ public:
   
 
 
-
-  void TestChildCache(Accessible* aCachedChild) const;
-
-  
-
-
   virtual nsIntRect Bounds() const;
 
   

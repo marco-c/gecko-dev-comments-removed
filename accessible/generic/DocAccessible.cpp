@@ -390,33 +390,6 @@ DocAccessible::DocType(nsAString& aType) const
     docType->GetPublicId(aType);
 }
 
-Accessible*
-DocAccessible::GetAccessible(nsINode* aNode) const
-{
-  Accessible* accessible = mNodeToAccessibleMap.Get(aNode);
-
-  
-  
-  if (!accessible) {
-    if (GetNode() != aNode)
-      return nullptr;
-
-    accessible = const_cast<DocAccessible*>(this);
-  }
-
-#ifdef DEBUG
-  
-  
-  
-  
-  Accessible* parent = accessible->Parent();
-  if (parent)
-    parent->TestChildCache(accessible);
-#endif
-
-  return accessible;
-}
-
 
 
 
@@ -2279,6 +2252,10 @@ DocAccessible::CacheChildrenInSubtree(Accessible* aRoot,
     }
     mt.Done();
   }
+
+#ifdef A11Y_LOG
+  logging::TreeInfo("cached children", logging::eVerbose, aRoot);
+#endif
 
   
   
