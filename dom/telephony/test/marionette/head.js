@@ -536,6 +536,11 @@ var Modem = Modems[0];
   function checkEmulatorCallList(expectedCallList) {
     return emulator.runCmd("telephony list").then(result => {
       log("Call list is now: " + result);
+      
+      is(result.length - 1,
+         expectedCallList.length,
+         "Emulator call list length");
+
       for (let i = 0; i < expectedCallList.length; ++i) {
         is(result[i], expectedCallList[i], "emulator calllist");
       }
@@ -628,14 +633,21 @@ var Modem = Modems[0];
 
   function checkActive(aExpectedCalls, aExpectedCallsInConference) {
     
-    let calls = aExpectedCalls && aExpectedCalls.filter(aExpectedCall => {
-      return aExpectedCall.state === "connected" ||
-             aExpectedCall.state === "alerting" ||
-             aExpectedCall.state === "dialing";
+    let activeCalls = aExpectedCalls && aExpectedCalls.map(aExpectedCall => {
+      let isActive = aExpectedCall.state === "connected" ||
+                     aExpectedCall.state === "alerting" ||
+                     aExpectedCall.state === "dialing";
+      return isActive ? aExpectedCall.reference : null;
     });
 
-    ok(calls.length < 2, "Too many actives call in telephony.calls");
-    let activeCall = calls.length ? calls[0].reference : null;
+    
+    
+    activeCalls = new Set(activeCalls);
+    activeCalls.delete(null);
+    activeCalls = [...activeCalls];
+
+    ok(activeCalls.length < 2, "Too many active calls in telephony.calls");
+    let activeCall = activeCalls.length ? activeCalls[0] : null;
 
     
     let callsInConference = aExpectedCallsInConference || [];
@@ -690,20 +702,22 @@ var Modem = Modems[0];
       }
 
       callsInTelephony.push(aCall);
-      ok(!aCall.secondId, "For a telephony call, the secondId must be null");
     });
 
     
     checkActive(callsInTelephony, CallsInConference);
 
     
-    is(telephony.calls.length,
-       callsInTelephony.length,
-       "Check telephony.calls.length");
+    let references = callsInTelephony.map(aCall => aCall.reference);
+    references = new Set(references);
+    is(telephony.calls.length, references.size, "Check telephony.calls.length");
 
     callsInTelephony.forEach(aExpectedCall => {
       let number = aExpectedCall.number;
-      let call = telephony.calls.find(aCall => aCall.id.number === number);
+      let call = telephony.calls.find(aCall => {
+        return (aCall.id.number === number) ||
+               (Modem.isCDMA() ? (aCall.secondId && aCall.secondId.number === number) : false);
+      });
       if (!call) {
         ok(false, "telephony.calls lost the call(number: " + number + ")");
         return;
@@ -971,22 +985,36 @@ var Modem = Modems[0];
   function remoteDial(number, numberPresentation, name, namePresentation) {
     log("Simulating an incoming call.");
 
+    
+    let promises = [waitForEvent(telephony, "callschanged")];
+    if (Modem.isGSM() ||
+        Modem.isCDMA() && telephony.calls.length == 0) {
+      promises.push(waitForEvent(telephony, "incoming"));
+    }
+
+    
     numberPresentation = numberPresentation || "";
     name = name || "";
     namePresentation = namePresentation || "";
-    emulator.runCmd("telephony call " + number +
-                    "," + numberPresentation +
-                    "," + name +
-                    "," + namePresentation);
+    promises.push(emulator.runCmd("telephony call " + number +
+                                  "," + numberPresentation +
+                                  "," + name +
+                                  "," + namePresentation));
 
-    return waitForEvent(telephony, "incoming")
-      .then(event => {
-        let call = event.call;
-
+    
+    return Promise.all(promises)
+      .then(aResult => {
+        let call = aResult[0].call;
         ok(call);
-        is(call.state, "incoming");
-        checkCallId(number, numberPresentation, name, namePresentation,
-                    call.id.number, call.id.name);
+
+        let isCdmaSecondCall = Modem.isCDMA() &&
+                               navigator.mozTelephony.calls[0].secondId;
+
+        is(call.state, isCdmaSecondCall ? "connected" : "incoming");
+        checkCallId(number, numberPresentation,
+                    name, namePresentation,
+                    isCdmaSecondCall ? call.secondId.number : call.id.number,
+                    isCdmaSecondCall ? call.secondId.name : call.id.name);
 
         return call;
       });
@@ -1019,12 +1047,29 @@ var Modem = Modems[0];
 
 
 
-  function remoteHangUp(call) {
-    log("Remote hanging up the call: " + call.id.number);
+  function remoteHangUp(aIdentifier, aWaitForEvent = true) {
+    let call;
+    let number;
+    if (typeof aIdentifier === "string") { 
+      number = aIdentifier;
+      call = navigator.mozTelephony.calls.find(aCall => {
+        return aCall.id.number === number ||
+               aCall.secondId && aCall.secondId.number === number;
+      });
+    } else { 
+      call = aIdentifier;
+      number = aIdentifier.id.number;
+    }
 
-    emulator.runCmd("telephony cancel " + call.id.number);
+    log("Remote hanging up the call: " + number);
 
-    return waitForNamedStateEvent(call, "disconnected");
+    let promises = [];
+    if (aWaitForEvent) {
+      promises.push(waitForNamedStateEvent(call, "disconnected"));
+    }
+
+    promises.push(emulator.runCmd("telephony cancel " + number));
+    return Promise.all(promises);
   }
 
   
