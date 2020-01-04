@@ -10,6 +10,7 @@
 #include "AnimationCommon.h"
 #include "nsCSSPropertySet.h"
 #include "nsCSSProps.h" 
+#include "nsStyleUtil.h"
 
 namespace mozilla {
 
@@ -51,6 +52,28 @@ ComputedTimingFunction::GetValue(double aPortion) const
   }
   MOZ_ASSERT(mType == nsTimingFunction::Type::StepEnd, "bad type");
   return StepEnd(mSteps, aPortion);
+}
+
+void
+ComputedTimingFunction::AppendToString(nsAString& aResult) const
+{
+  switch (mType) {
+    case nsTimingFunction::Type::CubicBezier:
+      nsStyleUtil::AppendCubicBezierTimingFunction(mTimingFunction.X1(),
+                                                   mTimingFunction.Y1(),
+                                                   mTimingFunction.X2(),
+                                                   mTimingFunction.Y2(),
+                                                   aResult);
+      break;
+    case nsTimingFunction::Type::StepStart:
+    case nsTimingFunction::Type::StepEnd:
+      nsStyleUtil::AppendStepsTimingFunction(mType, mSteps, mStepSyntax,
+                                             aResult);
+      break;
+    default:
+      nsStyleUtil::AppendCubicBezierKeywordTimingFunction(mType, aResult);
+      break;
+  }
 }
 
 
