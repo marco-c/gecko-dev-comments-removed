@@ -491,12 +491,12 @@ CheckUserContextCompatibility(nsIDocShell* aDocShell)
 NS_IMETHODIMP
 nsWindowWatcher::OpenWindowWithoutParent(nsITabParent** aResult)
 {
-  return OpenWindowWithTabParent(nullptr, "", true, 1.0f, aResult);
+  return OpenWindowWithTabParent(nullptr, EmptyCString(), true, 1.0f, aResult);
 }
 
 NS_IMETHODIMP
 nsWindowWatcher::OpenWindowWithTabParent(nsITabParent* aOpeningTabParent,
-                                         const char* aFeatures,
+                                         const nsACString& aFeatures,
                                          bool aCalledFromJS,
                                          float aOpenerFullZoom,
                                          nsITabParent** aResult)
@@ -569,8 +569,7 @@ nsWindowWatcher::OpenWindowWithTabParent(nsITabParent* aOpeningTabParent,
   windowCreator2->SetScreenId(retval);
 #endif
 
-  nsAutoCString features(aFeatures);
-  uint32_t chromeFlags = CalculateChromeFlagsForChild(features);
+  uint32_t chromeFlags = CalculateChromeFlagsForChild(aFeatures);
 
   
   
@@ -616,15 +615,15 @@ nsWindowWatcher::OpenWindowWithTabParent(nsITabParent* aOpeningTabParent,
   
   chromeContext->SetRemoteTabs(true);
 
-  if (PL_strcasestr(features.get(), "width=") ||
-      PL_strcasestr(features.get(), "height=")) {
+  if (PL_strcasestr(aFeatures.BeginReading(), "width=") ||
+      PL_strcasestr(aFeatures.BeginReading(), "height=")) {
     chromeTreeOwner->SetPersistence(false, false, false);
   }
 
   SizeSpec sizeSpec;
-  CalcSizeSpec(features, sizeSpec);
-  SizeOpenedDocShellItem(chromeTreeItem, parentWindowOuter, false, sizeSpec,
-                         &aOpenerFullZoom);
+  CalcSizeSpec(aFeatures, sizeSpec);
+  SizeOpenedWindow(chromeTreeOwner, parentWindowOuter, false, sizeSpec,
+                   &aOpenerFullZoom);
 
   nsCOMPtr<nsITabParent> newTabParent;
   chromeTreeOwner->GetPrimaryTabParent(getter_AddRefs(newTabParent));
@@ -1228,8 +1227,10 @@ nsWindowWatcher::OpenWindowInternal(mozIDOMWindowProxy* aParent,
   }
 
   if (isNewToplevelWindow) {
-    SizeOpenedDocShellItem(newDocShellItem, aParent, isCallerChrome, sizeSpec,
-                           aOpenerFullZoom);
+    nsCOMPtr<nsIDocShellTreeOwner> newTreeOwner;
+    newDocShellItem->GetTreeOwner(getter_AddRefs(newTreeOwner));
+    SizeOpenedWindow(newTreeOwner, aParent, isCallerChrome, sizeSpec,
+                     aOpenerFullZoom);
   }
 
   
@@ -2241,13 +2242,29 @@ nsWindowWatcher::CalcSizeSpec(const nsACString& aFeatures, SizeSpec& aResult)
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
 void
-nsWindowWatcher::SizeOpenedDocShellItem(nsIDocShellTreeItem* aDocShellItem,
-                                        mozIDOMWindowProxy* aParent,
-                                        bool aIsCallerChrome,
-                                        const SizeSpec& aSizeSpec,
-                                        float* aOpenerFullZoom)
+nsWindowWatcher::SizeOpenedWindow(nsIDocShellTreeOwner* aTreeOwner,
+                                  mozIDOMWindowProxy* aParent,
+                                  bool aIsCallerChrome,
+                                  const SizeSpec& aSizeSpec,
+                                  float* aOpenerFullZoom)
 {
+  
+  
+  MOZ_ASSERT(XRE_IsParentProcess());
+
   
   int32_t left = 0, top = 0, width = 100, height = 100;
   
@@ -2256,9 +2273,7 @@ nsWindowWatcher::SizeOpenedDocShellItem(nsIDocShellTreeItem* aDocShellItem,
   bool sizeChromeWidth = true, sizeChromeHeight = true;
 
   
-  nsCOMPtr<nsIDocShellTreeOwner> treeOwner;
-  aDocShellItem->GetTreeOwner(getter_AddRefs(treeOwner));
-  nsCOMPtr<nsIBaseWindow> treeOwnerAsWin(do_QueryInterface(treeOwner));
+  nsCOMPtr<nsIBaseWindow> treeOwnerAsWin(do_QueryInterface(aTreeOwner));
   if (!treeOwnerAsWin) { 
     return;
   }
@@ -2275,7 +2290,7 @@ nsWindowWatcher::SizeOpenedDocShellItem(nsIDocShellTreeItem* aDocShellItem,
     }
   }
 
-  double scale;
+  double scale = 1.0;
   treeOwnerAsWin->GetUnscaledDevicePixelsPerCSSPixel(&scale);
 
   
@@ -2291,16 +2306,16 @@ nsWindowWatcher::SizeOpenedDocShellItem(nsIDocShellTreeItem* aDocShellItem,
   width = NSToIntRound(width / scale);
   height = NSToIntRound(height / scale);
   {
-    
-    nsCOMPtr<nsIBaseWindow> shellWindow(do_QueryInterface(aDocShellItem));
-    if (shellWindow) {
-      int32_t cox, coy;
-      double shellScale;
-      shellWindow->GetSize(&cox, &coy);
-      shellWindow->GetUnscaledDevicePixelsPerCSSPixel(&shellScale);
-      chromeWidth = width - NSToIntRound(cox / shellScale);
-      chromeHeight = height - NSToIntRound(coy / shellScale);
+    int32_t contentWidth, contentHeight;
+    bool hasPrimaryContent = false;
+    aTreeOwner->GetHasPrimaryContent(&hasPrimaryContent);
+    if (hasPrimaryContent) {
+      aTreeOwner->GetPrimaryContentSize(&contentWidth, &contentHeight);
+    } else {
+      aTreeOwner->GetRootShellSize(&contentWidth, &contentHeight);
     }
+    chromeWidth = width - contentWidth;
+    chromeHeight = height - contentHeight;
   }
 
   
@@ -2352,7 +2367,6 @@ nsWindowWatcher::SizeOpenedDocShellItem(nsIDocShellTreeItem* aDocShellItem,
   }
 
   if (!enabled) {
-
     
 
     int32_t oldTop = top, oldLeft = left;
@@ -2451,7 +2465,13 @@ nsWindowWatcher::SizeOpenedDocShellItem(nsIDocShellTreeItem* aDocShellItem,
 
 
     if (!sizeChromeWidth && !sizeChromeHeight) {
-      treeOwner->SizeShellTo(aDocShellItem, width * scale, height * scale);
+      bool hasPrimaryContent = false;
+      aTreeOwner->GetHasPrimaryContent(&hasPrimaryContent);
+      if (hasPrimaryContent) {
+        aTreeOwner->SetPrimaryContentSize(width * scale, height * scale);
+      } else {
+        aTreeOwner->SetRootShellSize(width * scale, height * scale);
+      }
     } else {
       if (!sizeChromeWidth) {
         width += chromeWidth;
