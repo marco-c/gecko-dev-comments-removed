@@ -51,7 +51,7 @@ CompositingRenderTargetOGL::BindRenderTarget()
       
       
       if (mFBO == 0 && !mGL->IsOffscreen()) {
-        mGL->RenewSurface(mCompositor->GetWidget());
+        mGL->RenewSurface(mCompositor->GetWidget()->RealWidget());
         result = mGL->fCheckFramebufferStatus(LOCAL_GL_FRAMEBUFFER);
       }
       if (result != LOCAL_GL_FRAMEBUFFER_COMPLETE) {

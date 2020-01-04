@@ -1256,16 +1256,6 @@ class nsIWidget
 
 
 
-    virtual bool InitCompositor(mozilla::layers::Compositor*) { return true; }
-
-    
-
-
-
-
-
-
-
 
 
 
@@ -1855,12 +1845,6 @@ public:
 
 
     NS_IMETHOD ReparentNativeWidget(nsIWidget* aNewParent) = 0;
-
-    
-
-
-
-    virtual uint32_t GetGLFrameBufferFormat() { return 0;  }
 
     
 
