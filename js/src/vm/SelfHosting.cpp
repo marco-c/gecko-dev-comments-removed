@@ -2021,11 +2021,18 @@ static JSObject*
 CloneObject(JSContext* cx, HandleNativeObject selfHostedObject)
 {
 #ifdef DEBUG
-    AutoCycleDetector detect(cx, selfHostedObject);
-    if (!detect.init())
-        return nullptr;
-    if (detect.foundCycle())
-        MOZ_CRASH("SelfHosted cloning cannot handle cyclic object graphs.");
+    
+    
+    
+    
+    Maybe<AutoCycleDetector> detect;
+    if (js::CurrentThreadCanAccessZone(selfHostedObject->zoneFromAnyThread())) {
+        detect.emplace(cx, selfHostedObject);
+        if (!detect->init())
+            return nullptr;
+        if (detect->foundCycle())
+            MOZ_CRASH("SelfHosted cloning cannot handle cyclic object graphs.");
+    }
 #endif
 
     RootedObject clone(cx);
