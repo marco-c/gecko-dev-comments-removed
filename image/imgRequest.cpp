@@ -1225,12 +1225,10 @@ imgRequest::OnRedirectVerifyCallback(nsresult result)
   mNewRedirectChannel = nullptr;
 
   if (LOG_TEST(LogLevel::Debug)) {
-    nsAutoCString spec;
-    if (mCurrentURI) {
-      mCurrentURI->GetSpec(spec);
-    }
     LOG_MSG_WITH_PARAM(gImgLog,
-                       "imgRequest::OnChannelRedirect", "old", spec.get());
+                       "imgRequest::OnChannelRedirect", "old",
+                       mCurrentURI ? mCurrentURI->GetSpecOrDefault().get()
+                                   : "");
   }
 
   
@@ -1263,12 +1261,9 @@ imgRequest::OnRedirectVerifyCallback(nsresult result)
   mChannel->GetURI(getter_AddRefs(mCurrentURI));
 
   if (LOG_TEST(LogLevel::Debug)) {
-    nsAutoCString spec;
-    if (mCurrentURI) {
-      mCurrentURI->GetSpec(spec);
-    }
-    LOG_MSG_WITH_PARAM(gImgLog, "imgRequest::OnChannelRedirect",
-                       "new", spec.get());
+    LOG_MSG_WITH_PARAM(gImgLog, "imgRequest::OnChannelRedirect", "new",
+                       mCurrentURI ? mCurrentURI->GetSpecOrDefault().get()
+                                   : "");
   }
 
   
