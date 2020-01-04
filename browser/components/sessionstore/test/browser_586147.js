@@ -14,13 +14,6 @@ function test() {
   waitForExplicitFinish();
 
   
-  let tabview = document.getElementById("tab-view");
-  if (tabview) {
-    document.getElementById("tab-view").contentWindow.UI.uninit();
-    TabView.uninit();
-  }
-
-  
   let [origTab] = gBrowser.visibleTabs;
   let hiddenTab = gBrowser.addTab();
 
@@ -52,11 +45,6 @@ function test() {
     
     gBrowser.removeTab(hiddenTab);
     gBrowser.removeTab(extraTab);
-
-    
-    if (tabview) {
-      TabView.init();
-    }
 
     finish();
   });

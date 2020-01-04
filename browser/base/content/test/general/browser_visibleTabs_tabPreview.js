@@ -3,10 +3,6 @@
 
 
 add_task(function* test() {
-  
-  
-  yield new Promise(resolve => TabView._initFrame(resolve));
-
   gPrefService.setBoolPref("browser.ctrlTab.previews", true);
 
   let [origTab] = gBrowser.visibleTabs;

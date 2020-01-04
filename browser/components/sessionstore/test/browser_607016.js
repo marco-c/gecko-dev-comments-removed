@@ -8,10 +8,6 @@ add_task(function* () {
 
   
   
-  yield new Promise(resolve => TabView._initFrame(resolve));
-
-  
-  
   Services.prefs.setBoolPref("browser.sessionstore.restore_on_demand", true);
 
   let state = { windows: [{ tabs: [

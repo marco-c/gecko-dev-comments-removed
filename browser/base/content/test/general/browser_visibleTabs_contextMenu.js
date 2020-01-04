@@ -4,10 +4,6 @@
 
 add_task(function* test() {
   
-  
-  yield new Promise(resolve => TabView._initFrame(resolve));
-
-  
   let [origTab] = gBrowser.visibleTabs;
   is(gBrowser.visibleTabs.length, 1, "there is one visible tab");
   let testTab = gBrowser.addTab();
