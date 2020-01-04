@@ -51,6 +51,7 @@ using namespace js::frontend;
 using namespace js::jit;
 using namespace js::wasm;
 
+using mozilla::CeilingLog2;
 using mozilla::Compression::LZ4;
 using mozilla::HashGeneric;
 using mozilla::IsNaN;
@@ -3699,12 +3700,12 @@ static bool
 CheckAndPrepareArrayAccess(FunctionValidator& f, ParseNode* viewName, ParseNode* indexExpr,
                            bool isSimd, Scalar::Type* viewType)
 {
-    
-    if (!f.encoder().writeVarU32(0))
+    size_t flagsAt;
+    if (!f.encoder().writePatchableU8(&flagsAt))
         return false;
 
-    size_t alignAt;
-    if (!f.encoder().writePatchableVarU8(&alignAt))
+    
+    if (!f.encoder().writeVarU32(0))
         return false;
 
     size_t prepareAt;
@@ -3716,7 +3717,9 @@ CheckAndPrepareArrayAccess(FunctionValidator& f, ParseNode* viewName, ParseNode*
         return false;
 
     
-    f.encoder().patchVarU8(alignAt, TypedArrayElemSize(*viewType));
+    size_t align = TypedArrayElemSize(*viewType);
+    MOZ_ASSERT(IsPowerOfTwo(align));
+    f.encoder().patchVarU8(flagsAt, CeilingLog2(align));
 
     
     
