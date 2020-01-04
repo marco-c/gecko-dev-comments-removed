@@ -238,9 +238,8 @@ protected:
     rv.WouldReportJSException();
     if (rv.Failed()) {
       JS::Rooted<JS::Value> exn(cx);
-      if (rv.IsJSException()) {
-        rv.StealJSException(cx, &exn);
-      } else {
+      { 
+
         
         
         
@@ -696,25 +695,19 @@ Promise::CallInitFunction(const GlobalObject& aGlobal,
              CallbackObject::eRethrowExceptions, Compartment());
   aRv.WouldReportJSException();
 
-  if (aRv.IsJSException()) {
+  if (aRv.Failed()) {
+    
+    
+    
+    
+    
+    
+    
     JS::Rooted<JS::Value> value(cx);
-    aRv.StealJSException(cx, &value);
-
-    
-    
-    if (!JS_WrapValue(cx, &value)) {
-      aRv.Throw(NS_ERROR_UNEXPECTED);
-      return;
-    }
-
+    DebugOnly<bool> conversionResult = ToJSValue(cx, aRv, &value);
+    MOZ_ASSERT(conversionResult);
     MaybeRejectInternal(cx, value);
   }
-
-  
-  
-  
-  
-  
 }
 
  already_AddRefed<Promise>

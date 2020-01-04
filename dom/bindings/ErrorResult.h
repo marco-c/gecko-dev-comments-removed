@@ -194,6 +194,7 @@ public:
   
   
   
+  
   void ThrowJSException(JSContext* cx, JS::Handle<JS::Value> exn);
   bool IsJSException() const { return ErrorCode() == NS_ERROR_DOM_JS_EXCEPTION; }
 
@@ -223,11 +224,6 @@ public:
   bool IsUncatchableException() const {
     return ErrorCode() == NS_ERROR_UNCATCHABLE_EXCEPTION;
   }
-
-  
-  
-  
-  void StealJSException(JSContext* cx, JS::MutableHandle<JS::Value> value);
 
   void MOZ_ALWAYS_INLINE MightThrowJSException()
   {
