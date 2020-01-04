@@ -552,8 +552,7 @@ var gFastSeekTests = [
   
   
   
-  
-  { name:"bug516323.indexed.ogv", type:"video/ogg", keyframes:[0, 3.06] },
+  { name:"bug516323.indexed.ogv", type:"video/ogg", keyframes:[0, 0.46, 3.06] },
 ];
 
 function IsWindows8OrLater() {
