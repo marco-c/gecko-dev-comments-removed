@@ -5,6 +5,7 @@
 
 #include "GPUParent.h"
 #include "gfxConfig.h"
+#include "gfxPlatform.h"
 #include "gfxPrefs.h"
 #include "GPUProcessHost.h"
 #include "VsyncBridgeParent.h"
@@ -39,6 +40,7 @@ GPUParent::Init(base::ProcessId aParentPid,
   
   gfxPrefs::GetSingleton();
   CompositorThreadHolder::Start();
+  gfxPlatform::InitNullMetadata();
   return true;
 }
 

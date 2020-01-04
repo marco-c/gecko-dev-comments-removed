@@ -176,6 +176,11 @@ public:
     
 
 
+    static void InitNullMetadata();
+
+    
+
+
 
     virtual already_AddRefed<gfxASurface>
       CreateOffscreenSurface(const IntSize& aSize,
