@@ -137,7 +137,7 @@ private:
 };
 #endif
 
-#ifdef XP_MACOSX
+#ifdef XP_DARWIN
 
 
 

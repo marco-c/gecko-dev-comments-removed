@@ -13,11 +13,16 @@
 #include "DrawTargetCG.h"
 #include <vector>
 #include <dlfcn.h>
+#ifdef MOZ_WIDGET_UIKIT
+#include <CoreFoundation/CoreFoundation.h>
+#endif
 
+#ifdef MOZ_WIDGET_COCOA
 
 extern "C" {
 CGPathRef CGFontGetGlyphPath(CGFontRef fontRef, CGAffineTransform *textTransform, int unknown, CGGlyph glyph);
 };
+#endif
 
 
 namespace mozilla {
@@ -81,11 +86,12 @@ ScaledFontMac::GetPathForGlyphs(const GlyphBuffer &aBuffer, const DrawTarget *aT
 {
   if (aTarget->GetBackendType() == BackendType::COREGRAPHICS ||
       aTarget->GetBackendType() == BackendType::COREGRAPHICS_ACCELERATED) {
+#ifdef MOZ_WIDGET_COCOA
       CGMutablePathRef path = CGPathCreateMutable();
-
       for (unsigned int i = 0; i < aBuffer.mNumGlyphs; i++) {
           
           CGAffineTransform flip = CGAffineTransformMakeScale(1, -1);
+
           CGPathRef glyphPath = ::CGFontGetGlyphPath(mFont, &flip, 0, aBuffer.mGlyphs[i].mIndex);
 
           CGAffineTransform matrix = CGAffineTransformMake(mSize, 0, 0, mSize,
@@ -97,6 +103,10 @@ ScaledFontMac::GetPathForGlyphs(const GlyphBuffer &aBuffer, const DrawTarget *aT
       RefPtr<Path> ret = new PathCG(path, FillRule::FILL_WINDING);
       CGPathRelease(path);
       return ret.forget();
+#else
+      
+      MOZ_CRASH("This needs implemented");
+#endif
   }
   return ScaledFontBase::GetPathForGlyphs(aBuffer, aTarget);
 }
@@ -108,7 +118,7 @@ ScaledFontMac::CopyGlyphsToBuilder(const GlyphBuffer &aBuffer, PathBuilder *aBui
     ScaledFontBase::CopyGlyphsToBuilder(aBuffer, aBuilder, aBackendType, aTransformHint);
     return;
   }
-
+#ifdef MOZ_WIDGET_COCOA
   PathBuilderCG *pathBuilderCG =
     static_cast<PathBuilderCG*>(aBuilder);
   
@@ -123,6 +133,10 @@ ScaledFontMac::CopyGlyphsToBuilder(const GlyphBuffer &aBuffer, PathBuilder *aBui
     CGPathAddPath(pathBuilderCG->mCGPath, &matrix, glyphPath);
     CGPathRelease(glyphPath);
   }
+#else
+    
+    MOZ_CRASH("This needs implemented");
+#endif
 }
 
 uint32_t
