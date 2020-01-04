@@ -7,9 +7,6 @@
 #ifndef js_StructuredClone_h
 #define js_StructuredClone_h
 
-#include "mozilla/Attributes.h"
-#include "mozilla/BufferList.h"
-
 #include <stdint.h>
 
 #include "jstypes.h"
@@ -148,69 +145,28 @@ struct JSStructuredCloneCallbacks {
     FreeTransferStructuredCloneOp freeTransfer;
 };
 
-enum OwnTransferablePolicy {
-    OwnsTransferablesIfAny,
-    IgnoreTransferablesIfAny,
-    NoTransferables
-};
-
-class MOZ_NON_MEMMOVABLE JSStructuredCloneData : public mozilla::BufferList<js::SystemAllocPolicy>
-{
-    typedef js::SystemAllocPolicy AllocPolicy;
-    typedef mozilla::BufferList<js::SystemAllocPolicy> BufferList;
-
-    static const size_t kInitialSize = 0;
-    static const size_t kInitialCapacity = 4096;
-    static const size_t kStandardCapacity = 4096;
-
-    const JSStructuredCloneCallbacks* callbacks_;
-    void* closure_;
-    OwnTransferablePolicy ownTransferables_;
-
-    void setOptionalCallbacks(const JSStructuredCloneCallbacks* callbacks,
-                              void* closure,
-                              OwnTransferablePolicy policy) {
-        callbacks_ = callbacks;
-        closure_ = closure;
-        ownTransferables_ = policy;
-    }
-
-    friend struct JSStructuredCloneWriter;
-    friend class JS_PUBLIC_API(JSAutoStructuredCloneBuffer);
-
-public:
-    explicit JSStructuredCloneData(AllocPolicy aAP = AllocPolicy())
-        : BufferList(kInitialSize, kInitialCapacity, kStandardCapacity, aAP)
-        , callbacks_(nullptr)
-        , closure_(nullptr)
-        , ownTransferables_(OwnTransferablePolicy::NoTransferables)
-    {}
-    MOZ_IMPLICIT JSStructuredCloneData(BufferList&& buffers)
-        : BufferList(Move(buffers))
-        , callbacks_(nullptr)
-        , closure_(nullptr)
-        , ownTransferables_(OwnTransferablePolicy::NoTransferables)
-    {}
-    JSStructuredCloneData(JSStructuredCloneData&& other) = default;
-    JSStructuredCloneData& operator=(JSStructuredCloneData&& other) = default;
-    ~JSStructuredCloneData();
-
-    using BufferList::BufferList;
-};
-
 
 JS_PUBLIC_API(bool)
-JS_ReadStructuredClone(JSContext* cx, JSStructuredCloneData& data, uint32_t version,
+JS_ReadStructuredClone(JSContext* cx, uint64_t* data, size_t nbytes, uint32_t version,
                        JS::MutableHandleValue vp,
                        const JSStructuredCloneCallbacks* optionalCallbacks, void* closure);
 
+
+
+
+
 JS_PUBLIC_API(bool)
-JS_WriteStructuredClone(JSContext* cx, JS::HandleValue v, JSStructuredCloneData* data,
+JS_WriteStructuredClone(JSContext* cx, JS::HandleValue v, uint64_t** datap, size_t* nbytesp,
                         const JSStructuredCloneCallbacks* optionalCallbacks,
                         void* closure, JS::HandleValue transferable);
 
 JS_PUBLIC_API(bool)
-JS_StructuredCloneHasTransferables(JSStructuredCloneData& data, bool* hasTransferable);
+JS_ClearStructuredClone(uint64_t* data, size_t nbytes,
+                        const JSStructuredCloneCallbacks* optionalCallbacks,
+                        void *closure, bool freeData = true);
+
+JS_PUBLIC_API(bool)
+JS_StructuredCloneHasTransferables(const uint64_t* data, size_t nbytes, bool* hasTransferable);
 
 JS_PUBLIC_API(bool)
 JS_StructuredClone(JSContext* cx, JS::HandleValue v, JS::MutableHandleValue vp,
@@ -218,34 +174,43 @@ JS_StructuredClone(JSContext* cx, JS::HandleValue v, JS::MutableHandleValue vp,
 
 
 class JS_PUBLIC_API(JSAutoStructuredCloneBuffer) {
-    JSStructuredCloneData data_;
+    uint64_t* data_;
+    size_t nbytes_;
     uint32_t version_;
+    enum {
+        OwnsTransferablesIfAny,
+        IgnoreTransferablesIfAny,
+        NoTransferables
+    } ownTransferables_;
+
+    const JSStructuredCloneCallbacks* callbacks_;
+    void* closure_;
 
   public:
     JSAutoStructuredCloneBuffer()
-        : version_(JS_STRUCTURED_CLONE_VERSION)
-    {
-        data_.setOptionalCallbacks(nullptr, nullptr, OwnTransferablePolicy::NoTransferables);
-    }
+        : data_(nullptr), nbytes_(0), version_(JS_STRUCTURED_CLONE_VERSION),
+          ownTransferables_(NoTransferables),
+          callbacks_(nullptr), closure_(nullptr)
+    {}
 
     JSAutoStructuredCloneBuffer(const JSStructuredCloneCallbacks* callbacks, void* closure)
-        : version_(JS_STRUCTURED_CLONE_VERSION)
-    {
-        data_.setOptionalCallbacks(callbacks, closure, OwnTransferablePolicy::NoTransferables);
-    }
+        : data_(nullptr), nbytes_(0), version_(JS_STRUCTURED_CLONE_VERSION),
+          ownTransferables_(NoTransferables),
+          callbacks_(callbacks), closure_(closure)
+    {}
 
     JSAutoStructuredCloneBuffer(JSAutoStructuredCloneBuffer&& other);
     JSAutoStructuredCloneBuffer& operator=(JSAutoStructuredCloneBuffer&& other);
 
     ~JSAutoStructuredCloneBuffer() { clear(); }
 
-    JSStructuredCloneData& data() { return data_; }
-    bool empty() const { return !data_.Size(); }
+    uint64_t* data() const { return data_; }
+    size_t nbytes() const { return nbytes_; }
 
     void clear(const JSStructuredCloneCallbacks* optionalCallbacks=nullptr, void* closure=nullptr);
 
     
-    bool copy(const JSStructuredCloneData& data, uint32_t version=JS_STRUCTURED_CLONE_VERSION,
+    bool copy(const uint64_t* data, size_t nbytes, uint32_t version=JS_STRUCTURED_CLONE_VERSION,
               const JSStructuredCloneCallbacks* callbacks=nullptr, void* closure=nullptr);
 
     
@@ -253,13 +218,15 @@ class JS_PUBLIC_API(JSAutoStructuredCloneBuffer) {
 
 
 
-    void adopt(JSStructuredCloneData&& data, uint32_t version=JS_STRUCTURED_CLONE_VERSION,
+    void adopt(uint64_t* data, size_t nbytes, uint32_t version=JS_STRUCTURED_CLONE_VERSION,
                const JSStructuredCloneCallbacks* callbacks=nullptr, void* closure=nullptr);
 
     
 
 
-    void steal(JSStructuredCloneData* data, uint32_t* versionp=nullptr,
+
+
+    void steal(uint64_t** datap, size_t* nbytesp, uint32_t* versionp=nullptr,
                const JSStructuredCloneCallbacks** callbacks=nullptr, void** closure=nullptr);
 
     
@@ -268,7 +235,7 @@ class JS_PUBLIC_API(JSAutoStructuredCloneBuffer) {
 
 
 
-    void abandon() { data_.ownTransferables_ = OwnTransferablePolicy::IgnoreTransferablesIfAny; }
+    void abandon() { ownTransferables_ = IgnoreTransferablesIfAny; }
 
     bool read(JSContext* cx, JS::MutableHandleValue vp,
               const JSStructuredCloneCallbacks* optionalCallbacks=nullptr, void* closure=nullptr);

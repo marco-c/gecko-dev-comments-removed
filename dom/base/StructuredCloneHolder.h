@@ -8,7 +8,7 @@
 
 #include "js/StructuredClone.h"
 #include "mozilla/Move.h"
-#include "mozilla/UniquePtr.h"
+#include "nsAutoPtr.h"
 #include "nsISupports.h"
 #include "nsTArray.h"
 
@@ -33,8 +33,6 @@ class StructuredCloneHolderBase
 public:
   StructuredCloneHolderBase();
   virtual ~StructuredCloneHolderBase();
-
-  StructuredCloneHolderBase(StructuredCloneHolderBase&& aOther) = default;
 
   
   
@@ -102,14 +100,20 @@ public:
     return !!mBuffer;
   }
 
-  JSStructuredCloneData& BufferData() const
+  uint64_t* BufferData() const
   {
     MOZ_ASSERT(mBuffer, "Write() has never been called.");
     return mBuffer->data();
   }
 
+  size_t BufferSize() const
+  {
+    MOZ_ASSERT(mBuffer, "Write() has never been called.");
+    return mBuffer->nbytes();
+  }
+
 protected:
-  UniquePtr<JSAutoStructuredCloneBuffer> mBuffer;
+  nsAutoPtr<JSAutoStructuredCloneBuffer> mBuffer;
 
 #ifdef DEBUG
   bool mClearCalled;
@@ -155,8 +159,6 @@ public:
                                  ContextSupport aContextSupport);
   virtual ~StructuredCloneHolder();
 
-  StructuredCloneHolder(StructuredCloneHolder&& aOther) = default;
-
   
 
   void Write(JSContext* aCx,
@@ -172,6 +174,12 @@ public:
             JSContext* aCx,
             JS::MutableHandle<JS::Value> aValue,
             ErrorResult &aRv);
+
+  
+  
+  
+  void MoveBufferDataToArray(FallibleTArray<uint8_t>& aArray,
+                             ErrorResult& aRv);
 
   
   bool HasClonedDOMObjects() const
@@ -261,24 +269,28 @@ public:
                                              JSStructuredCloneWriter* aWriter,
                                              JS::Handle<JSObject*> aObj);
 
-  static const JSStructuredCloneCallbacks sCallbacks;
-
 protected:
   
   
   
   void ReadFromBuffer(nsISupports* aParent,
                       JSContext* aCx,
-                      JSStructuredCloneData& aBuffer,
+                      uint64_t* aBuffer,
+                      size_t aBufferLength,
                       JS::MutableHandle<JS::Value> aValue,
                       ErrorResult &aRv);
 
   void ReadFromBuffer(nsISupports* aParent,
                       JSContext* aCx,
-                      JSStructuredCloneData& aBuffer,
+                      uint64_t* aBuffer,
+                      size_t aBufferLength,
                       uint32_t aAlgorithmVersion,
                       JS::MutableHandle<JS::Value> aValue,
                       ErrorResult &aRv);
+
+  
+  void FreeBuffer(uint64_t* aBuffer,
+                  size_t aBufferLength);
 
   bool mSupportsCloning;
   bool mSupportsTransferring;
