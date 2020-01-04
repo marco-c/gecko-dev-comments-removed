@@ -250,7 +250,6 @@ function BrowserElementParent() {
   this._pendingDOMFullscreen = false;
 
   Services.obs.addObserver(this, 'oop-frameloader-crashed',  true);
-  Services.obs.addObserver(this, 'copypaste-docommand',  true);
   Services.obs.addObserver(this, 'ask-children-to-execute-copypaste-command',  true);
   Services.obs.addObserver(this, 'back-docommand',  true);
 
@@ -1293,11 +1292,6 @@ BrowserElementParent.prototype = {
     case 'oop-frameloader-crashed':
       if (this._isAlive() && subject == this._frameLoader) {
         this._fireFatalError();
-      }
-      break;
-    case 'copypaste-docommand':
-      if (this._isAlive() && this._frameElement.isEqualNode(subject.wrappedJSObject)) {
-        this._sendAsyncMsg('do-command', { command: data });
       }
       break;
     case 'ask-children-to-execute-copypaste-command':
