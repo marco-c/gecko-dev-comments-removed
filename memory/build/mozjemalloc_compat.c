@@ -105,7 +105,6 @@ compute_bin_unused_and_bookkeeping(jemalloc_stats_t *stats, unsigned int narenas
     unsigned int i, j;
 
     size_t stats_metadata;
-    size_t ameta; 
     size_t stats_ametadata = 0; 
 
     
@@ -125,9 +124,6 @@ compute_bin_unused_and_bookkeeping(jemalloc_stats_t *stats, unsigned int narenas
                 continue;
             }
 
-            CTL_I_GET("stats.arenas.0.metadata.allocated", ameta, i);
-            stats_ametadata += ameta;
-
             CTL_IJ_GET("stats.arenas.0.bins.0.curruns", curruns, i, j);
             CTL_IJ_GET("stats.arenas.0.bins.0.curregs", curregs, i, j);
 
@@ -136,6 +132,10 @@ compute_bin_unused_and_bookkeeping(jemalloc_stats_t *stats, unsigned int narenas
     }
 
     CTL_GET("stats.metadata", stats_metadata);
+
+    
+    CTL_I_GET("stats.arenas.0.metadata.allocated", stats_ametadata, narenas);
+
     stats->bookkeeping = stats_metadata - stats_ametadata;
     stats->bin_unused = bin_unused;
 }
