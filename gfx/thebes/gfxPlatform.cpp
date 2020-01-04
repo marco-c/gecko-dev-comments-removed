@@ -2064,65 +2064,66 @@ static bool sLayersAccelerationPrefsInitialized = false;
 void
 InitLayersAccelerationPrefs()
 {
-  if (!sLayersAccelerationPrefsInitialized)
-  {
-    
-    
-    
-    
-    MOZ_ASSERT(NS_IsMainThread(), "can only initialize prefs on the main thread");
+  if (sLayersAccelerationPrefsInitialized) {
+    return;
+  }
 
-    gfxPrefs::GetSingleton();
-    sPrefBrowserTabsRemoteAutostart = BrowserTabsRemoteAutostart();
+  
+  
+  
+  
+  MOZ_ASSERT(NS_IsMainThread(), "can only initialize prefs on the main thread");
 
-    nsCOMPtr<nsIGfxInfo> gfxInfo = services::GetGfxInfo();
-    nsCString discardFailureId;
-    int32_t status;
+  gfxPrefs::GetSingleton();
+  sPrefBrowserTabsRemoteAutostart = BrowserTabsRemoteAutostart();
+
+  nsCOMPtr<nsIGfxInfo> gfxInfo = services::GetGfxInfo();
+  nsCString discardFailureId;
+  int32_t status;
 #ifdef XP_WIN
-    if (gfxPrefs::LayersAccelerationForceEnabled()) {
-      sLayersSupportsD3D9 = true;
-      sLayersSupportsD3D11 = true;
-    } else if (!gfxPrefs::LayersAccelerationDisabled() && gfxInfo) {
-      if (NS_SUCCEEDED(gfxInfo->GetFeatureStatus(nsIGfxInfo::FEATURE_DIRECT3D_9_LAYERS, discardFailureId, &status))) {
-        if (status == nsIGfxInfo::FEATURE_STATUS_OK) {
+  if (gfxPrefs::LayersAccelerationForceEnabled()) {
+    sLayersSupportsD3D9 = true;
+    sLayersSupportsD3D11 = true;
+  } else if (!gfxPrefs::LayersAccelerationDisabled() && gfxInfo) {
+    if (NS_SUCCEEDED(gfxInfo->GetFeatureStatus(nsIGfxInfo::FEATURE_DIRECT3D_9_LAYERS, discardFailureId, &status))) {
+      if (status == nsIGfxInfo::FEATURE_STATUS_OK) {
           MOZ_ASSERT(!sPrefBrowserTabsRemoteAutostart || IsVistaOrLater());
           sLayersSupportsD3D9 = true;
-        }
       }
-      if (NS_SUCCEEDED(gfxInfo->GetFeatureStatus(nsIGfxInfo::FEATURE_DIRECT3D_11_LAYERS, discardFailureId, &status))) {
-        if (status == nsIGfxInfo::FEATURE_STATUS_OK) {
-          sLayersSupportsD3D11 = true;
-        }
-      }
-      if (!gfxPrefs::LayersD3D11DisableWARP()) {
-        
+    }
+    if (NS_SUCCEEDED(gfxInfo->GetFeatureStatus(nsIGfxInfo::FEATURE_DIRECT3D_11_LAYERS, discardFailureId, &status))) {
+      if (status == nsIGfxInfo::FEATURE_STATUS_OK) {
         sLayersSupportsD3D11 = true;
       }
-      if (NS_SUCCEEDED(gfxInfo->GetFeatureStatus(nsIGfxInfo::FEATURE_DIRECT3D_11_ANGLE, discardFailureId, &status))) {
-        if (status == nsIGfxInfo::FEATURE_STATUS_OK) {
-          gANGLESupportsD3D11 = true;
-        }
+    }
+    if (!gfxPrefs::LayersD3D11DisableWARP()) {
+      
+      sLayersSupportsD3D11 = true;
+    }
+    if (NS_SUCCEEDED(gfxInfo->GetFeatureStatus(nsIGfxInfo::FEATURE_DIRECT3D_11_ANGLE, discardFailureId, &status))) {
+      if (status == nsIGfxInfo::FEATURE_STATUS_OK) {
+        gANGLESupportsD3D11 = true;
       }
     }
-#endif
-
-    if (Preferences::GetBool("media.hardware-video-decoding.enabled", false) &&
-#ifdef XP_WIN
-        Preferences::GetBool("media.windows-media-foundation.use-dxva", true) &&
-#endif
-        NS_SUCCEEDED(gfxInfo->GetFeatureStatus(nsIGfxInfo::FEATURE_HARDWARE_VIDEO_DECODING,
-                                               discardFailureId, &status))) {
-        if (status == nsIGfxInfo::FEATURE_STATUS_OK || gfxPrefs::HardwareVideoDecodingForceEnabled()) {
-           sLayersSupportsHardwareVideoDecoding = true;
-      }
-    }
-
-    Preferences::AddBoolVarCache(&sLayersHardwareVideoDecodingFailed,
-                                 "media.hardware-video-decoding.failed",
-                                 false);
-
-    sLayersAccelerationPrefsInitialized = true;
   }
+#endif
+
+  if (Preferences::GetBool("media.hardware-video-decoding.enabled", false) &&
+#ifdef XP_WIN
+    Preferences::GetBool("media.windows-media-foundation.use-dxva", true) &&
+#endif
+      NS_SUCCEEDED(gfxInfo->GetFeatureStatus(nsIGfxInfo::FEATURE_HARDWARE_VIDEO_DECODING,
+                                               discardFailureId, &status))) {
+      if (status == nsIGfxInfo::FEATURE_STATUS_OK || gfxPrefs::HardwareVideoDecodingForceEnabled()) {
+         sLayersSupportsHardwareVideoDecoding = true;
+    }
+  }
+
+  Preferences::AddBoolVarCache(&sLayersHardwareVideoDecodingFailed,
+                               "media.hardware-video-decoding.failed",
+                               false);
+
+  sLayersAccelerationPrefsInitialized = true;
 }
 
 bool
