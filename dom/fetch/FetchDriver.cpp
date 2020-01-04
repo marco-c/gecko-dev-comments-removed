@@ -7,6 +7,7 @@
 #include "mozilla/DebugOnly.h"
 #include "mozilla/dom/FetchDriver.h"
 
+#include "nsIAsyncVerifyRedirectCallback.h"
 #include "nsIDocument.h"
 #include "nsIInputStream.h"
 #include "nsIOutputStream.h"
@@ -42,7 +43,7 @@ namespace dom {
 
 NS_IMPL_ISUPPORTS(FetchDriver,
                   nsIStreamListener, nsIChannelEventSink, nsIInterfaceRequestor,
-                  nsIAsyncVerifyRedirectCallback, nsIThreadRetargetableStreamListener)
+                  nsIThreadRetargetableStreamListener)
 
 FetchDriver::FetchDriver(InternalRequest* aRequest, nsIPrincipal* aPrincipal,
                          nsILoadGroup* aLoadGroup)
@@ -459,7 +460,13 @@ FetchDriver::HttpFetch(bool aCORSFlag, bool aCORSPreflightFlag, bool aAuthentica
 
   
   
-  chan->GetNotificationCallbacks(getter_AddRefs(mNotificationCallbacks));
+#ifdef DEBUG
+  {
+    nsCOMPtr<nsIInterfaceRequestor> notificationCallbacks;
+    chan->GetNotificationCallbacks(getter_AddRefs(notificationCallbacks));
+    MOZ_ASSERT(!notificationCallbacks);
+  }
+#endif
   chan->SetNotificationCallbacks(this);
 
   
@@ -915,8 +922,6 @@ FetchDriver::AsyncOnChannelRedirect(nsIChannel* aOldChannel,
 {
   NS_PRECONDITION(aNewChannel, "Redirect without a channel?");
 
-  nsresult rv;
-
   
   if (NS_WARN_IF(mRequest->GetRedirectMode() == RequestRedirect::Error)) {
     aOldChannel->Cancel(NS_BINDING_FAILED);
@@ -970,27 +975,85 @@ FetchDriver::AsyncOnChannelRedirect(nsIChannel* aOldChannel,
   
   
 
-  mRedirectCallback = aCallback;
-  mOldRedirectChannel = aOldChannel;
-  mNewRedirectChannel = aNewChannel;
+  
+  
 
-  nsCOMPtr<nsIChannelEventSink> outer =
-    do_GetInterface(mNotificationCallbacks);
-  if (outer) {
-    
-    
-    
-    rv = outer->AsyncOnChannelRedirect(aOldChannel, aNewChannel, aFlags, this);
-    if (NS_FAILED(rv)) {
-      aOldChannel->Cancel(rv);
-      mRedirectCallback = nullptr;
-      mOldRedirectChannel = nullptr;
-      mNewRedirectChannel = nullptr;
-    }
+  
+  
+  
+  nsCOMPtr<nsIURI> newURI;
+  nsresult rv = NS_GetFinalChannelURI(aNewChannel, getter_AddRefs(newURI));
+  if (NS_FAILED(rv)) {
+    aOldChannel->Cancel(rv);
     return rv;
   }
 
-  (void) OnRedirectVerifyCallback(NS_OK);
+  
+  nsAutoCString newUrl;
+  newURI->GetSpec(newUrl);
+  mRequest->SetURL(newUrl);
+
+  
+  MainFetchOp nextOp = SetTaintingAndGetNextOp(mCORSFlagEverSet);
+
+  if (nextOp.mType == NETWORK_ERROR) {
+    
+    aOldChannel->Cancel(NS_ERROR_DOM_BAD_URI);
+    return NS_ERROR_DOM_BAD_URI;
+  }
+
+  
+  
+  
+  MOZ_ASSERT(nextOp.mType == BASIC_FETCH || nextOp.mType == HTTP_FETCH);
+  MOZ_ASSERT_IF(mCORSFlagEverSet, nextOp.mType == HTTP_FETCH);
+  MOZ_ASSERT_IF(mCORSFlagEverSet, nextOp.mCORSFlag);
+
+  
+  nsLoadFlags flags;
+  rv = aNewChannel->GetLoadFlags(&flags);
+  if (NS_FAILED(rv)) {
+    aOldChannel->Cancel(rv);
+    return rv;
+  }
+
+  if (mRequest->GetCredentialsMode() == RequestCredentials::Same_origin &&
+      mRequest->GetResponseTainting() == InternalRequest::RESPONSETAINT_OPAQUE) {
+    
+    
+    
+    flags |= nsIRequest::LOAD_ANONYMOUS;
+    rv = aNewChannel->SetLoadFlags(flags);
+    if (NS_FAILED(rv)) {
+      aOldChannel->Cancel(rv);
+      return rv;
+    }
+
+  } else if (mRequest->GetCredentialsMode() == RequestCredentials::Omit) {
+    
+    
+    MOZ_ASSERT(flags & nsIRequest::LOAD_ANONYMOUS);
+
+  } else if (mRequest->GetCredentialsMode() == RequestCredentials::Same_origin &&
+             nextOp.mCORSFlag) {
+    
+    
+    
+    
+    
+    
+    MOZ_ASSERT_IF(mCORSFlagEverSet, flags & nsIRequest::LOAD_ANONYMOUS);
+
+  } else {
+    
+    MOZ_ASSERT(!(flags & nsIRequest::LOAD_ANONYMOUS));
+  }
+
+  
+  mCORSFlagEverSet = mCORSFlagEverSet || nextOp.mCORSFlag;
+
+  aCallback->OnRedirectVerifyCallback(NS_OK);
+
   return NS_OK;
 }
 
@@ -1036,111 +1099,18 @@ FetchDriver::GetInterface(const nsIID& aIID, void **aResult)
     return NS_OK;
   }
 
-  nsresult rv;
-
-  if (mNotificationCallbacks) {
-    rv = mNotificationCallbacks->GetInterface(aIID, aResult);
-    if (NS_SUCCEEDED(rv)) {
-      NS_ASSERTION(*aResult, "Lying nsIInterfaceRequestor implementation!");
-      return rv;
-    }
-  }
-  else if (aIID.Equals(NS_GET_IID(nsIStreamListener))) {
+  if (aIID.Equals(NS_GET_IID(nsIStreamListener))) {
     *aResult = static_cast<nsIStreamListener*>(this);
     NS_ADDREF_THIS();
     return NS_OK;
   }
-  else if (aIID.Equals(NS_GET_IID(nsIRequestObserver))) {
+  if (aIID.Equals(NS_GET_IID(nsIRequestObserver))) {
     *aResult = static_cast<nsIRequestObserver*>(this);
     NS_ADDREF_THIS();
     return NS_OK;
   }
 
   return QueryInterface(aIID, aResult);
-}
-
-NS_IMETHODIMP
-FetchDriver::OnRedirectVerifyCallback(nsresult aResult)
-{
-  
-  
-  if (NS_SUCCEEDED(aResult)) {
-    
-    
-    
-    nsCOMPtr<nsIURI> newURI;
-    nsresult rv = NS_GetFinalChannelURI(mNewRedirectChannel, getter_AddRefs(newURI));
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      aResult = rv;
-    } else {
-      
-      nsAutoCString newUrl;
-      newURI->GetSpec(newUrl);
-      mRequest->SetURL(newUrl);
-    }
-  }
-
-  if (NS_FAILED(aResult)) {
-    mOldRedirectChannel->Cancel(aResult);
-  }
-
-  
-  MainFetchOp nextOp = SetTaintingAndGetNextOp(mCORSFlagEverSet);
-
-  if (nextOp.mType == NETWORK_ERROR) {
-    
-    aResult = NS_ERROR_DOM_BAD_URI;
-    mOldRedirectChannel->Cancel(aResult);
-  } else {
-    
-    
-    
-    MOZ_ASSERT(nextOp.mType == BASIC_FETCH || nextOp.mType == HTTP_FETCH);
-    MOZ_ASSERT_IF(mCORSFlagEverSet, nextOp.mType == HTTP_FETCH);
-    MOZ_ASSERT_IF(mCORSFlagEverSet, nextOp.mCORSFlag);
-
-    
-    nsLoadFlags flags;
-    aResult = mNewRedirectChannel->GetLoadFlags(&flags);
-    if (NS_SUCCEEDED(aResult)) {
-      if (mRequest->GetCredentialsMode() == RequestCredentials::Same_origin &&
-          mRequest->GetResponseTainting() == InternalRequest::RESPONSETAINT_OPAQUE) {
-        
-        
-        
-        flags |= nsIRequest::LOAD_ANONYMOUS;
-        aResult = mNewRedirectChannel->SetLoadFlags(flags);
-
-      } else if (mRequest->GetCredentialsMode() == RequestCredentials::Omit) {
-        
-        
-        MOZ_ASSERT(flags & nsIRequest::LOAD_ANONYMOUS);
-
-      } else if (mRequest->GetCredentialsMode() == RequestCredentials::Same_origin &&
-                 nextOp.mCORSFlag) {
-        
-        
-        
-        
-        
-        
-        MOZ_ASSERT_IF(mCORSFlagEverSet, flags & nsIRequest::LOAD_ANONYMOUS);
-
-      } else {
-        
-        MOZ_ASSERT(!(flags & nsIRequest::LOAD_ANONYMOUS));
-      }
-    }
-
-    
-    mCORSFlagEverSet = mCORSFlagEverSet || nextOp.mCORSFlag;
-  }
-
-  mOldRedirectChannel = nullptr;
-  mNewRedirectChannel = nullptr;
-  mRedirectCallback->OnRedirectVerifyCallback(aResult);
-  mRedirectCallback = nullptr;
-  return NS_OK;
 }
 
 void
