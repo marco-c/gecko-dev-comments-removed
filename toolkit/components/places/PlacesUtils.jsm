@@ -1921,6 +1921,7 @@ this.PlacesUtils = {
         { tags_folder: PlacesUtils.tagsFolderId,
           charset_anno: PlacesUtils.CHARSET_ANNO,
           item_guid: aItemGuid });
+    let yieldCounter = 0;
     for (let row of rows) {
       let item;
       if (!rootItem) {
@@ -1959,6 +1960,14 @@ this.PlacesUtils = {
 
       if (item.type == this.TYPE_X_MOZ_PLACE_CONTAINER)
         parentsMap.set(item.guid, item);
+
+      
+      
+      if (++yieldCounter % 50 == 0) {
+        yield new Promise(resolve => {
+          Services.tm.currentThread.dispatch(resolve, Ci.nsIThread.DISPATCH_NORMAL);
+        });
+      }
     }
 
     return rootItem;
