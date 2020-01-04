@@ -1379,10 +1379,18 @@ nsAutoCompleteController::EnterMatch(bool aIsPopupSelection)
     int32_t selectedIndex;
     popup->GetSelectedIndex(&selectedIndex);
     if (selectedIndex >= 0) {
+
+      nsAutoString inputValue;
+      input->GetTextValue(inputValue);
       nsAutoString finalValue;
-      
-      
-      if (!completeSelection || aIsPopupSelection) {
+      if (!completeSelection || aIsPopupSelection ||
+          (mDefaultIndexCompleted &&
+           inputValue.Equals(mPlaceholderCompletionString,
+                             nsCaseInsensitiveStringComparator()))) {
+        
+        
+        
+        
         GetResultValueAt(selectedIndex, true, finalValue);
         value = finalValue;
       } else if (mCompletedSelectionIndex != -1) {
@@ -1392,8 +1400,6 @@ nsAutoCompleteController::EnterMatch(bool aIsPopupSelection)
         
         
         GetResultValueAt(mCompletedSelectionIndex, true, finalValue);
-        nsAutoString inputValue;
-        input->GetTextValue(inputValue);
         nsAutoString completedValue;
         GetResultValueAt(mCompletedSelectionIndex, false, completedValue);
         if (completedValue.Equals(inputValue) && !finalValue.Equals(inputValue)) {
@@ -1405,8 +1411,7 @@ nsAutoCompleteController::EnterMatch(bool aIsPopupSelection)
         
         
       }
-    }
-    else if (shouldComplete) {
+    } else if (shouldComplete) {
       
       
       
@@ -1934,12 +1939,17 @@ nsAutoCompleteController::GetResultValueLabelAt(int32_t aIndex,
     result->GetErrorDescription(_retval);
   } else if (searchResult == nsIAutoCompleteResult::RESULT_SUCCESS ||
              searchResult == nsIAutoCompleteResult::RESULT_SUCCESS_ONGOING) {
-    if (aGetFinalValue)
-      result->GetFinalCompleteValueAt(rowIndex, _retval);
-    else if (aGetValue)
+    if (aGetFinalValue) {
+      
+      
+      if (NS_FAILED(result->GetFinalCompleteValueAt(rowIndex, _retval))) {
+        result->GetValueAt(rowIndex, _retval);
+      }
+    } else if (aGetValue) {
       result->GetValueAt(rowIndex, _retval);
-    else
+    } else {
       result->GetLabelAt(rowIndex, _retval);
+    }
   }
 
   return NS_OK;

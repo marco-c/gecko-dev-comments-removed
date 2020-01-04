@@ -10,15 +10,13 @@ function AutoCompleteInput(aSearches) {
 }
 AutoCompleteInput.prototype = Object.create(AutoCompleteInputBase.prototype);
 
-function run_test() {
-  run_next_test();
-}
-
-add_test(function test_handleEnter() {
+add_test(function test_handleEnter_mouse() {
   doSearch("moz", "mozilla.com", "http://www.mozilla.com", function(aController) {
     do_check_eq(aController.input.textValue, "moz");
     do_check_eq(aController.getFinalCompleteValueAt(0), "http://www.mozilla.com");
-    aController.handleEnter(false);
+    
+    
+    aController.handleEnter(true);
     do_check_eq(aController.input.textValue, "http://www.mozilla.com");
   });
 });
