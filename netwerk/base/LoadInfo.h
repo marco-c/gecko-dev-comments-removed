@@ -18,9 +18,12 @@
 
 class nsINode;
 class nsPIDOMWindowOuter;
-class nsXMLHttpRequest;
 
 namespace mozilla {
+
+namespace dom {
+class XMLHttpRequestMainThread;
+}
 
 namespace net {
 class OptionalLoadInfoArgs;
@@ -117,7 +120,7 @@ private:
   
   
   void SetIncludeCookiesSecFlag();
-  friend class ::nsXMLHttpRequest;
+  friend class mozilla::dom::XMLHttpRequestMainThread;
 
   
   nsCOMPtr<nsIPrincipal>           mLoadingPrincipal;
