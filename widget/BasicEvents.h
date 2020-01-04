@@ -236,25 +236,25 @@ public:
   uint64_t mTime;
   
   
-  TimeStamp timeStamp;
+  TimeStamp mTimeStamp;
 
   WidgetEventTime()
     : mTime(0)
-    , timeStamp(TimeStamp::Now())
+    , mTimeStamp(TimeStamp::Now())
   {
   }
 
   WidgetEventTime(uint64_t aTime,
                   TimeStamp aTimeStamp)
     : mTime(aTime)
-    , timeStamp(aTimeStamp)
+    , mTimeStamp(aTimeStamp)
   {
   }
 
   void AssignEventTime(const WidgetEventTime& aOther)
   {
     mTime = aOther.mTime;
-    timeStamp = aOther.timeStamp;
+    mTimeStamp = aOther.mTimeStamp;
   }
 };
 
