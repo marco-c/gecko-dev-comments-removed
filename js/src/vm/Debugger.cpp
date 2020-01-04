@@ -3824,8 +3824,15 @@ class MOZ_STACK_CLASS Debugger::ScriptQuery
   public:
     
     ScriptQuery(JSContext* cx, Debugger* dbg):
-        cx(cx), debugger(dbg), compartments(cx->runtime()), url(cx), displayURLString(cx),
-        source(cx), innermostForCompartment(cx->runtime()), vector(cx, ScriptVector(cx))
+        cx(cx),
+        debugger(dbg),
+        iterMarker(&cx->runtime()->gc),
+        compartments(cx->runtime()),
+        url(cx),
+        displayURLString(cx),
+        source(cx),
+        innermostForCompartment(cx->runtime()),
+        vector(cx, ScriptVector(cx))
     {}
 
     
@@ -4024,6 +4031,9 @@ class MOZ_STACK_CLASS Debugger::ScriptQuery
 
     
     Debugger* debugger;
+
+    
+    gc::AutoEnterIteration iterMarker;
 
     typedef HashSet<JSCompartment*, DefaultHasher<JSCompartment*>, RuntimeAllocPolicy>
         CompartmentSet;
