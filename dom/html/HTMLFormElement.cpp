@@ -270,7 +270,7 @@ HTMLFormElement::Submit()
 NS_IMETHODIMP
 HTMLFormElement::Reset()
 {
-  InternalFormEvent event(true, NS_FORM_RESET);
+  InternalFormEvent event(true, eFormReset);
   EventDispatcher::Dispatch(static_cast<nsIContent*>(this), nullptr, &event);
   return NS_OK;
 }
@@ -504,8 +504,7 @@ HTMLFormElement::PreHandleEvent(EventChainPreVisitor& aVisitor)
       
       
       mDeferSubmission = true;
-    }
-    else if (msg == NS_FORM_RESET) {
+    } else if (msg == eFormReset) {
       if (mGeneratingReset) {
         aVisitor.mCanHandle = false;
         return NS_OK;
@@ -523,7 +522,7 @@ HTMLFormElement::WillHandleEvent(EventChainPostVisitor& aVisitor)
   
   
   if ((aVisitor.mEvent->mMessage == eFormSubmit ||
-       aVisitor.mEvent->mMessage == NS_FORM_RESET) &&
+       aVisitor.mEvent->mMessage == eFormReset) &&
       aVisitor.mEvent->mFlags.mInBubblingPhase &&
       aVisitor.mEvent->originalTarget != static_cast<nsIContent*>(this)) {
     aVisitor.mEvent->mFlags.mPropagationStopped = true;
@@ -543,7 +542,7 @@ HTMLFormElement::PostHandleEvent(EventChainPostVisitor& aVisitor)
 
     if (aVisitor.mEventStatus == nsEventStatus_eIgnore) {
       switch (msg) {
-        case NS_FORM_RESET:
+        case eFormReset:
         case eFormSubmit: {
           if (mPendingSubmission && msg == eFormSubmit) {
             
@@ -571,8 +570,7 @@ HTMLFormElement::PostHandleEvent(EventChainPostVisitor& aVisitor)
 
     if (msg == eFormSubmit) {
       mGeneratingSubmit = false;
-    }
-    else if (msg == NS_FORM_RESET) {
+    } else if (msg == eFormReset) {
       mGeneratingReset = false;
     }
   }
@@ -592,7 +590,7 @@ HTMLFormElement::DoSubmitOrReset(WidgetEvent* aEvent,
   
 
   
-  if (NS_FORM_RESET == aMessage) {
+  if (eFormReset == aMessage) {
     return DoReset();
   }
 
