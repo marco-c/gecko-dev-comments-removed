@@ -41,9 +41,10 @@ namespace layout {
       kFloatList                    = 0x800,
       kBulletList                   = 0x1000,
       kPushedFloatsList             = 0x2000,
+      kBackdropList                 = 0x4000,
       
       
-      kNoReflowPrincipalList        = 0x4000
+      kNoReflowPrincipalList        = 0x8000
   };
 } 
 } 

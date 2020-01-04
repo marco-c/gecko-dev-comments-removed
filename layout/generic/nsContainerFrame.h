@@ -454,6 +454,7 @@ public:
   NS_DECLARE_FRAME_PROPERTY_FRAMELIST(OverflowProperty)
   NS_DECLARE_FRAME_PROPERTY_FRAMELIST(OverflowContainersProperty)
   NS_DECLARE_FRAME_PROPERTY_FRAMELIST(ExcessOverflowContainersProperty)
+  NS_DECLARE_FRAME_PROPERTY_FRAMELIST(BackdropProperty)
 
 #ifdef DEBUG
   
