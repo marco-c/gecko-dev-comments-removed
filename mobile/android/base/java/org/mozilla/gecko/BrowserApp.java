@@ -200,8 +200,6 @@ public class BrowserApp extends GeckoApp
 
     private static final int TABS_ANIMATION_DURATION = 450;
 
-    public static final String GUEST_BROWSING_ARG = "--guest";
-
     
     private static final String INTENT_KEY_SWITCHBOARD_HOST = "switchboard-host";
 
@@ -319,7 +317,7 @@ public class BrowserApp extends GeckoApp
     @NonNull
     private SearchEngineManager mSearchEngineManager; 
 
-    private TelemetryDispatcher mTelemetryDispatcher; 
+    private TelemetryDispatcher mTelemetryDispatcher;
     private final SessionMeasurements mSessionMeasurements = new SessionMeasurements();
 
     private boolean mHasResumed;
@@ -553,20 +551,6 @@ public class BrowserApp extends GeckoApp
         
         
         
-        
-        final GeckoProfile p = GeckoProfile.get(this);
-
-        if (p != null && !p.inGuestMode()) {
-            
-            
-            
-            
-            GeckoProfile.maybeCleanupGuestProfile(this);
-        }
-
-        
-        
-        
         ((GeckoApplication) getApplication()).prepareLightweightTheme();
         super.onCreate(savedInstanceState);
 
@@ -703,6 +687,7 @@ public class BrowserApp extends GeckoApp
         distribution.addOnDistributionReadyCallback(new DistributionStoreCallback(this, profile.getName()));
 
         mSearchEngineManager = new SearchEngineManager(this, distribution);
+        mTelemetryDispatcher = new TelemetryDispatcher(profile.getDir().getAbsolutePath());
 
         
         final SuggestedSites suggestedSites = new SuggestedSites(appContext, distribution);
@@ -2439,7 +2424,7 @@ public class BrowserApp extends GeckoApp
         
         
         Telemetry.sendUIEvent(TelemetryContract.Event.SEARCH, where);
-        SearchCountMeasurements.incrementSearch(prefs, engineIdentifier, where.toString());
+        SearchCountMeasurements.incrementSearch(prefs, engineIdentifier, where.name());
     }
 
     
@@ -3635,23 +3620,25 @@ public class BrowserApp extends GeckoApp
     }
 
     public void showGuestModeDialog(final GuestModeDialog type) {
+        if ((type == GuestModeDialog.ENTERING) == getProfile().inGuestMode()) {
+            
+            return;
+        }
+
         final Prompt ps = new Prompt(this, new Prompt.PromptCallback() {
             @Override
             public void onPromptFinished(String result) {
                 try {
                     int itemId = new JSONObject(result).getInt("button");
                     if (itemId == 0) {
-                        String args = "";
                         if (type == GuestModeDialog.ENTERING) {
-                            args = GUEST_BROWSING_ARG;
+                            doRestart(GuestSession.GUEST_BROWSING_ARG);
                         } else {
-                            GeckoProfile.leaveGuestSession(BrowserApp.this);
-
                             
-                            GuestSession.hideNotification(BrowserApp.this);
+                            
+                            GuestSession.hideNotification(GeckoAppShell.getApplicationContext());
+                            doRestart();
                         }
-
-                        doRestart(args);
                     }
                 } catch (JSONException ex) {
                     Log.e(LOGTAG, "Exception reading guest mode prompt result", ex);
@@ -3919,11 +3906,7 @@ public class BrowserApp extends GeckoApp
     @Override
     public int getLayout() { return R.layout.gecko_app; }
 
-    @WorkerThread 
     public TelemetryDispatcher getTelemetryDispatcher() {
-        if (mTelemetryDispatcher == null) {
-            mTelemetryDispatcher = new TelemetryDispatcher(getProfile().getDir().getAbsolutePath());
-        }
         return mTelemetryDispatcher;
     }
 

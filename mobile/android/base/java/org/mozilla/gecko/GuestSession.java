@@ -15,29 +15,11 @@ import android.view.Window;
 import android.view.WindowManager;
 
 
-public class GuestSession {
-    public static final String NOTIFICATION_INTENT = "org.mozilla.gecko.GUEST_SESSION_INPROGRESS";
+public final class GuestSession {
     private static final String LOGTAG = "GeckoGuestSession";
 
-    
-
-
-
-
-    public static boolean shouldUse(final Context context, final String args) {
-        
-        if (args != null && args.contains(BrowserApp.GUEST_BROWSING_ARG)) {
-            return true;
-        }
-
-        
-        final GeckoProfile profile = GeckoProfile.getGuestProfile(context);
-        if (profile == null) {
-            return false;
-        }
-
-        return profile.locked();
-    }
+    public static final String NOTIFICATION_INTENT = "org.mozilla.gecko.GUEST_SESSION_INPROGRESS";
+    public static final String GUEST_BROWSING_ARG = "--guest";
 
     private static PendingIntent getNotificationIntent(Context context) {
         Intent intent = new Intent(NOTIFICATION_INTENT);

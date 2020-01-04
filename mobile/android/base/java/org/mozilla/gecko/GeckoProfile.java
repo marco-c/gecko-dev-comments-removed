@@ -26,6 +26,7 @@ import org.mozilla.gecko.distribution.Distribution;
 import org.mozilla.gecko.firstrun.FirstrunAnimationContainer;
 import org.mozilla.gecko.mozglue.SafeIntentUtils;
 import org.mozilla.gecko.preferences.DistroSharedPrefsImport;
+import org.mozilla.gecko.util.FileUtils;
 import org.mozilla.gecko.util.INIParser;
 import org.mozilla.gecko.util.INISection;
 
@@ -66,12 +67,10 @@ public final class GeckoProfile {
         sAcceptDirectoryChanges = true;
     }
 
-    
-    private static final String LOCK_FILE_NAME = ".active_lock";
     public static final String DEFAULT_PROFILE = "default";
     
     public static final String CUSTOM_PROFILE = "";
-    public static final String GUEST_PROFILE = "guest";
+    public static final String GUEST_PROFILE_DIR = "guest";
 
     
     private static final String SESSION_FILE = "sessionstore.js";
@@ -80,11 +79,6 @@ public final class GeckoProfile {
 
     private static final HashMap<String, GeckoProfile> sProfileCache = new HashMap<String, GeckoProfile>();
     private static String sDefaultProfileName;
-
-    
-    private static File sGuestDir;
-    private static GeckoProfile sGuestProfile;
-    private static boolean sShouldCheckForGuestProfile = true;
 
     private final String mName;
     private final File mMozillaDir;
@@ -100,36 +94,28 @@ public final class GeckoProfile {
 
     private File mProfileDir;
 
-    
-    
-    
-    
-    
-    private volatile LockState mLocked = LockState.UNDEFINED;
-    private volatile boolean mInGuestMode;
+    private Boolean mInGuestMode;
 
-    
-    private enum LockState {
-        LOCKED,
-        UNLOCKED,
-        UNDEFINED
-    };
-
-    
-
-
-    public static GeckoProfile getFromArgs(final Context context, final String args) {
-        if (GuestSession.shouldUse(context, args)) {
-            return GeckoProfile.getOrCreateGuestProfile(context);
+    public static GeckoProfile initFromArgs(final Context context, final String args) {
+        if (args != null && args.contains(GuestSession.GUEST_BROWSING_ARG)) {
+            return getGuestProfile(context);
         }
 
-        if (args == null) {
-            return null;
+        
+        
+        
+        
+        if (getGuestDir(context).isDirectory()) {
+            final GeckoProfile guestProfile = getGuestProfile(context);
+            if (guestProfile != null) {
+                removeProfile(context, guestProfile);
+            }
         }
 
         String profileName = null;
         String profilePath = null;
-        if (args.contains("-P")) {
+
+        if (args != null && args.contains("-P")) {
             final Pattern p = Pattern.compile("(?:-P\\s*)(\\w*)(\\s*)");
             final Matcher m = p.matcher(args);
             if (m.find()) {
@@ -137,7 +123,7 @@ public final class GeckoProfile {
             }
         }
 
-        if (args.contains("-profile")) {
+        if (args != null && args.contains("-profile")) {
             final Pattern p = Pattern.compile("(?:-profile\\s*)(\\S*)(\\s*)");
             final Matcher m = p.matcher(args);
             if (m.find()) {
@@ -146,13 +132,14 @@ public final class GeckoProfile {
         }
 
         if (profileName == null && profilePath == null) {
-            return null;
+            
+            return getDefaultProfile(context);
         }
 
         return GeckoProfile.get(context, profileName, profilePath);
     }
 
-    public static GeckoProfile getDefaultProfile(Context context) {
+    private static GeckoProfile getDefaultProfile(Context context) {
         try {
             return get(context, getDefaultProfileName(context));
 
@@ -238,13 +225,7 @@ public final class GeckoProfile {
                 args = null;
             }
 
-            final GeckoProfile fromArgs = GeckoProfile.getFromArgs(context, args);
-            if (fromArgs != null) {
-                return fromArgs;
-            }
-
-            
-            return getDefaultProfile(context);
+            return GeckoProfile.initFromArgs(context, args);
 
         } else if (profileName == null) {
             
@@ -303,148 +284,25 @@ public final class GeckoProfile {
 
     
     @RobocopTarget
-    public static boolean removeProfile(Context context, String profileName) {
-        if (profileName == null) {
-            Log.w(LOGTAG, "Unable to remove profile: null profile name.");
-            return false;
-        }
-
-        final GeckoProfile profile = get(context, profileName);
-        if (profile == null) {
-            return false;
-        }
+    public static boolean removeProfile(final Context context, final GeckoProfile profile) {
         final boolean success = profile.remove();
 
         if (success) {
             
-            GeckoSharedPrefs.forProfileName(context, profileName)
+            GeckoSharedPrefs.forProfileName(context, profile.getName())
                             .edit().clear().apply();
         }
 
         return success;
     }
 
-    
+    private static File getGuestDir(final Context context) {
+        return context.getFileStreamPath(GUEST_PROFILE_DIR);
+    }
+
     @RobocopTarget
-    public static GeckoProfile createGuestProfile(Context context) {
-        try {
-            
-            
-            getGuestDir(context).mkdir();
-            sShouldCheckForGuestProfile = true;
-            GeckoProfile profile = getGuestProfile(context);
-
-            
-            
-            
-            profile.lock();
-
-            
-
-
-
-            profile.enqueueInitialization(profile.getDir());
-
-            return profile;
-        } catch (Exception ex) {
-            Log.e(LOGTAG, "Error creating guest profile", ex);
-        }
-        return null;
-    }
-
-    public static void leaveGuestSession(Context context) {
-        GeckoProfile profile = getGuestProfile(context);
-        if (profile != null) {
-            profile.unlock();
-        }
-    }
-
-    private static File getGuestDir(Context context) {
-        if (sGuestDir == null) {
-            sGuestDir = context.getFileStreamPath("guest");
-        }
-        return sGuestDir;
-    }
-
-    
-
-
-    public static GeckoProfile getOrCreateGuestProfile(Context context) {
-        GeckoProfile p = getGuestProfile(context);
-        if (p == null) {
-            return createGuestProfile(context);
-        }
-
-        return p;
-    }
-
-    public static GeckoProfile getGuestProfile(Context context) {
-        if (sGuestProfile == null) {
-            if (sShouldCheckForGuestProfile) {
-                File guestDir = getGuestDir(context);
-                if (guestDir.exists()) {
-                    sGuestProfile = get(context, GUEST_PROFILE, guestDir);
-                    sGuestProfile.mInGuestMode = true;
-                } else {
-                    sShouldCheckForGuestProfile = false;
-                }
-            }
-        }
-
-        return sGuestProfile;
-    }
-
-    public static boolean maybeCleanupGuestProfile(final Context context) {
-        final GeckoProfile profile = getGuestProfile(context);
-        if (profile == null) {
-            return false;
-        }
-
-        if (!profile.locked()) {
-            profile.mInGuestMode = false;
-
-            
-            removeGuestProfile(context);
-
-            return true;
-        }
-        return false;
-    }
-
-    private static void removeGuestProfile(Context context) {
-        boolean success = false;
-        try {
-            File guestDir = getGuestDir(context);
-            if (guestDir.exists()) {
-                success = delete(guestDir);
-            }
-        } catch (Exception ex) {
-            Log.e(LOGTAG, "Error removing guest profile", ex);
-        }
-
-        if (success) {
-            
-            GeckoSharedPrefs.forProfileName(context, GUEST_PROFILE)
-                            .edit().clear().apply();
-        }
-    }
-
-    public static boolean delete(File file) throws IOException {
-        
-        if (file.delete())
-            return true;
-
-        if (file.isDirectory()) {
-            
-            String files[] = file.list();
-            for (String temp : files) {
-                File fileDelete = new File(file, temp);
-                delete(fileDelete);
-            }
-        }
-
-        
-        return file.delete();
+    public static GeckoProfile getGuestProfile(final Context context) {
+        return get(context, CUSTOM_PROFILE, getGuestDir(context));
     }
 
     private GeckoProfile(Context context, String profileName, File profileDir, BrowserDB.Factory dbFactory) throws NoMozillaDirectoryException {
@@ -472,89 +330,11 @@ public final class GeckoProfile {
         return mDB;
     }
 
-    
-    public boolean locked() {
-        if (mLocked != LockState.UNDEFINED) {
-            return mLocked == LockState.LOCKED;
-        }
-
-        boolean profileExists;
-        synchronized (this) {
-            profileExists = mProfileDir != null && mProfileDir.exists();
-        }
-
-        
-        if (profileExists) {
-            File lockFile = new File(mProfileDir, LOCK_FILE_NAME);
-            boolean res = lockFile.exists();
-            mLocked = res ? LockState.LOCKED : LockState.UNLOCKED;
-        } else {
-            mLocked = LockState.UNLOCKED;
-        }
-
-        return mLocked == LockState.LOCKED;
-    }
-
-    public boolean lock() {
-        try {
-            
-            final File lockFile = new File(getDir(), LOCK_FILE_NAME);
-            final boolean result = lockFile.createNewFile();
-            if (lockFile.exists()) {
-                mLocked = LockState.LOCKED;
-            } else {
-                mLocked = LockState.UNLOCKED;
-            }
-            return result;
-        } catch (IOException ex) {
-            Log.e(LOGTAG, "Error locking profile", ex);
-        }
-        mLocked = LockState.UNLOCKED;
-        return false;
-    }
-
-    public boolean unlock() {
-        final File profileDir;
-        synchronized (this) {
-            
-            profileDir = mProfileDir;
-        }
-
-        if (profileDir == null || !profileDir.exists()) {
-            return true;
-        }
-
-        try {
-            final File lockFile = new File(profileDir, LOCK_FILE_NAME);
-            if (!lockFile.exists()) {
-                mLocked = LockState.UNLOCKED;
-                return true;
-            }
-
-            final boolean result = delete(lockFile);
-            if (result) {
-                mLocked = LockState.UNLOCKED;
-            } else {
-                mLocked = LockState.LOCKED;
-            }
-            return result;
-        } catch (IOException ex) {
-            Log.e(LOGTAG, "Error unlocking profile", ex);
-        }
-
-        mLocked = LockState.LOCKED;
-        return false;
-    }
-
-    @RobocopTarget
-    public boolean inGuestMode() {
-        return mInGuestMode;
-    }
-
     private void setDir(File dir) {
         if (dir != null && dir.exists() && dir.isDirectory()) {
             synchronized (this) {
                 mProfileDir = dir;
+                mInGuestMode = null;
             }
         }
     }
@@ -566,6 +346,28 @@ public final class GeckoProfile {
 
     public boolean isCustomProfile() {
         return CUSTOM_PROFILE.equals(mName);
+    }
+
+    @RobocopTarget
+    public boolean inGuestMode() {
+        if (mInGuestMode != null) {
+            return mInGuestMode;
+        }
+
+        
+        if (!isCustomProfile()) {
+            mInGuestMode = false;
+
+        } else {
+            final Context context = GeckoAppShell.getApplicationContext();
+            try {
+                mInGuestMode = getDir().getCanonicalPath().equals(
+                        getGuestDir(context).getCanonicalPath());
+            } catch (final IOException e) {
+                mInGuestMode = false;
+            }
+        }
+        return mInGuestMode;
     }
 
     
@@ -924,16 +726,27 @@ public final class GeckoProfile {
     private boolean remove() {
         try {
             synchronized (this) {
-                final File dir = getDir();
-                if (dir.exists()) {
-                    delete(dir);
+                if (mProfileDir != null && mProfileDir.exists()) {
+                    FileUtils.delete(mProfileDir);
+                }
+
+                if (isCustomProfile()) {
+                    
+                    return true;
                 }
 
                 try {
-                    mProfileDir = findProfileDir();
-                } catch (NoSuchProfileException noSuchProfile) {
                     
-                    return false;
+                    
+                    
+                    findProfileDir();
+                    mProfileDir = null;
+
+                } catch (final NoSuchProfileException e) {
+                    
+                    
+                    
+                    return true;
                 }
             }
 

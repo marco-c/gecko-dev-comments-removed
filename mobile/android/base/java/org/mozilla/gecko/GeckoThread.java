@@ -383,25 +383,16 @@ public class GeckoThread extends Thread {
     private String addCustomProfileArg(String args) {
         String profileArg = "";
 
-        if (mProfile != null && mProfile.inGuestMode()) {
-            profileArg = " -profile " + mProfile.getDir().getAbsolutePath();
+        
+        final GeckoProfile profile = getProfile();
+        profile.getDir(); 
 
-            if (args == null || !args.contains(BrowserApp.GUEST_BROWSING_ARG)) {
-                profileArg += " " + BrowserApp.GUEST_BROWSING_ARG;
-            }
-
-        } else {
-            
-            final GeckoProfile profile = getProfile();
-            profile.getDir(); 
-
-            
-            if (args == null || !args.matches(".*\\B-(P|profile)\\s+\\S+.*")) {
-                if (profile.isCustomProfile()) {
-                    profileArg = " -profile " + profile.getDir().getAbsolutePath();
-                } else {
-                    profileArg = " -P " + profile.getName();
-                }
+        
+        if (args == null || !args.matches(".*\\B-(P|profile)\\s+\\S+.*")) {
+            if (profile.isCustomProfile()) {
+                profileArg = " -profile " + profile.getDir().getAbsolutePath();
+            } else {
+                profileArg = " -P " + profile.getName();
             }
         }
 
@@ -451,12 +442,7 @@ public class GeckoThread extends Thread {
     public synchronized GeckoProfile getProfile() {
         if (mProfile == null) {
             final Context context = GeckoAppShell.getApplicationContext();
-            mProfile = GeckoProfile.getFromArgs(context, mArgs);
-
-            
-            if (mProfile == null) {
-                mProfile = GeckoProfile.getDefaultProfile(context);
-            }
+            mProfile = GeckoProfile.initFromArgs(context, mArgs);
         }
         return mProfile;
     }
