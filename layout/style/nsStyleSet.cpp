@@ -1521,7 +1521,9 @@ nsStyleSet::RuleNodeWithReplacement(Element* aElement,
   
   
 
-  nsTArray<RuleNodeInfo> rules;
+  
+  
+  nsAutoTArray<RuleNodeInfo, 30> rules;
   for (nsRuleNode* ruleNode = aOldRuleNode; !ruleNode->IsRoot();
        ruleNode = ruleNode->GetParent()) {
     RuleNodeInfo* curRule = rules.AppendElement();
