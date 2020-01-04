@@ -1276,6 +1276,9 @@ public:
   virtual Layer* GetFirstChild() const { return nullptr; }
   virtual Layer* GetLastChild() const { return nullptr; }
   const gfx::Matrix4x4 GetTransform() const;
+  
+  
+  const CSSTransformMatrix GetTransformTyped() const;
   const gfx::Matrix4x4& GetBaseTransform() const { return mTransform; }
   
   virtual float GetPostXScale() const { return mPostXScale; }
@@ -1348,7 +1351,14 @@ public:
 
 
 
+
   const gfx::Matrix4x4 GetLocalTransform();
+
+  
+
+
+
+  const LayerToParentLayerMatrix4x4 GetLocalTransformTyped();
 
   
 
