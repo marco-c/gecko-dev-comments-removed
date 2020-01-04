@@ -31,10 +31,10 @@ class GamepadEventChannelParent;
 
 class GamepadPlatformService final
 {
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(GamepadPlatformService)
  public:
-  ~GamepadPlatformService();
   
-  static GamepadPlatformService* GetParentService();
+  static already_AddRefed<GamepadPlatformService> GetParentService();
 
   
   uint32_t AddGamepad(const char* aID, GamepadMappingType aMapping,
@@ -72,6 +72,7 @@ class GamepadPlatformService final
 
  private:
   GamepadPlatformService();
+  ~GamepadPlatformService();
   template<class T> void NotifyGamepadChange(const T& aInfo);
   void Cleanup();
 

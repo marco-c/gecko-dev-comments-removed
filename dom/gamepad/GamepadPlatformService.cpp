@@ -24,7 +24,7 @@ namespace {
 
 
 
-StaticAutoPtr<GamepadPlatformService> gGamepadPlatformServiceSingleton;
+StaticRefPtr<GamepadPlatformService> gGamepadPlatformServiceSingleton;
 
 } 
 
@@ -39,15 +39,21 @@ GamepadPlatformService::~GamepadPlatformService()
 }
 
 
-GamepadPlatformService*
+already_AddRefed<GamepadPlatformService>
 GamepadPlatformService::GetParentService()
 {
   
   MOZ_ASSERT(XRE_IsParentProcess());
-  if(!gGamepadPlatformServiceSingleton) {
-    gGamepadPlatformServiceSingleton = new GamepadPlatformService();
+  if (!gGamepadPlatformServiceSingleton) {
+    
+    if (IsOnBackgroundThread()) {
+      gGamepadPlatformServiceSingleton = new GamepadPlatformService();
+    } else {
+      return nullptr;
+    }
   }
-  return gGamepadPlatformServiceSingleton;
+  RefPtr<GamepadPlatformService> service(gGamepadPlatformServiceSingleton);
+  return service.forget();
 }
 
 template<class T>
@@ -195,13 +201,21 @@ GamepadPlatformService::MaybeShutdown()
   
   AssertIsOnBackgroundThread();
 
+  
+  
+  
+  
+  
+  RefPtr<GamepadPlatformService> kungFuDeathGrip;
+
   bool isChannelParentEmpty;
   {
     MutexAutoLock autoLock(mMutex);
     isChannelParentEmpty = mChannelParents.IsEmpty();
-  }
-  if(isChannelParentEmpty) {
-    gGamepadPlatformServiceSingleton = nullptr;
+    if(isChannelParentEmpty) {
+      kungFuDeathGrip = gGamepadPlatformServiceSingleton;
+      gGamepadPlatformServiceSingleton = nullptr;
+    }
   }
 }
 
