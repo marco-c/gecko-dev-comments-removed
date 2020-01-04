@@ -424,7 +424,7 @@ TabTarget.prototype = {
           this._title = this._form.title;
 
           attachTab();
-        });
+        }, e => this._remote.reject(e));
     } else if (this.isTabActor) {
       
       

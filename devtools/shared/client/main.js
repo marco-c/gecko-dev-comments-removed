@@ -1638,11 +1638,14 @@ RootClient.prototype = {
         if (browser.frameLoader.tabParent) {
           
           packet.tabId = browser.frameLoader.tabParent.tabId;
+        } else if (browser.outerWindowID) {
+          
+          packet.outerWindowID = browser.outerWindowID;
         } else {
           
           let windowUtils = browser.contentWindow
-            .QueryInterface(Ci.nsIInterfaceRequestor)
-            .getInterface(Ci.nsIDOMWindowUtils);
+                                   .QueryInterface(Ci.nsIInterfaceRequestor)
+                                   .getInterface(Ci.nsIDOMWindowUtils);
           packet.outerWindowID = windowUtils.outerWindowID;
         }
       } else {
