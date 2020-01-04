@@ -61,6 +61,11 @@ def expectedTabProcessLeakCounts():
         'nsTArray_base': 2,
     })
 
+    
+    appendExpectedLeakCounts({
+        'SyncObject': 1
+    })
+
     return leaks
 
 
