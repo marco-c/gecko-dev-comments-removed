@@ -2170,13 +2170,21 @@ public class BrowserApp extends GeckoApp
 
         final Tab tab = Tabs.getInstance().getSelectedTab();
         if (tab != null) {
-            final String userRequested = tab.getUserRequested();
+            final String userSearchTerm = tab.getUserRequested();
 
             
             
-            url = (TextUtils.isEmpty(userRequested) ? tab.getURL() : userRequested);
+            String telemetryMsg;
+            if (!TextUtils.isEmpty(userSearchTerm)) {
+                url = userSearchTerm;
+                telemetryMsg = "urlbar-userEntered";
+            } else {
+                url = tab.getURL();
+                telemetryMsg = url.isEmpty() ? "urlbar-empty" : "urlbar-url";
+            }
+
+            Telemetry.sendUIEvent(TelemetryContract.Event.SEARCH, TelemetryContract.Method.ACTIONBAR, telemetryMsg);
         }
-
         enterEditingMode(url);
     }
 
@@ -2210,7 +2218,13 @@ public class BrowserApp extends GeckoApp
 
         mBrowserToolbar.startEditing(url, animator);
 
-        showHomePagerWithAnimator(panelId, animator);
+        final boolean isUserSearchTerm = !TextUtils.isEmpty(selectedTab.getUserRequested());
+        if (isUserSearchTerm && AppConstants.NIGHTLY_BUILD) {
+            showBrowserSearchAfterAnimation(animator);
+            hideWebContentOnPropertyAnimationEnd(animator);
+        } else {
+            showHomePagerWithAnimator(panelId, animator);
+        }
 
         animator.start();
         Telemetry.startUISession(TelemetryContract.Session.AWESOMESCREEN);
@@ -2622,6 +2636,24 @@ public class BrowserApp extends GeckoApp
         refreshToolbarHeight();
     }
 
+    private void showBrowserSearchAfterAnimation(PropertyAnimator animator) {
+        if (animator == null) {
+            showBrowserSearch();
+            return;
+        }
+
+        animator.addPropertyAnimationListener(new PropertyAnimator.PropertyAnimationListener() {
+            @Override
+            public void onPropertyAnimationStart() {
+            }
+
+            @Override
+            public void onPropertyAnimationEnd() {
+                showBrowserSearch();
+            }
+        });
+    }
+
     private void showBrowserSearch() {
         if (mBrowserSearch.getUserVisibleHint()) {
             return;
@@ -2672,7 +2704,10 @@ public class BrowserApp extends GeckoApp
 
         
         
-        mHomePagerContainer.setVisibility(View.VISIBLE);
+        showHomePager(Tabs.getInstance().getSelectedTab().getMostRecentHomePanel());
+
+        
+        mHideWebContentOnAnimationEnd = false;
 
         mBrowserSearchContainer.setVisibility(View.INVISIBLE);
 
