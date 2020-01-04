@@ -12,6 +12,11 @@
 #include "nsIColorPicker.h"
 #include "nsString.h"
 
+
+
+
+#undef ACTIVATE_GTK3_COLOR_PICKER
+
 class nsIWidget;
 
 class nsColorPicker final : public nsIColorPicker
@@ -31,7 +36,7 @@ private:
                          gpointer user_data);
   static void OnDestroy(GtkWidget* dialog, gpointer user_data);
   
-#if GTK_CHECK_VERSION(3,4,0)
+#if defined(ACTIVATE_GTK3_COLOR_PICKER) && GTK_CHECK_VERSION(3,4,0)
   static void OnColorChanged(GtkColorChooser* color_chooser, GdkRGBA* color,
                              gpointer user_data);
                              
