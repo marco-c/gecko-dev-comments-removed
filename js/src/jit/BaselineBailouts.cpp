@@ -1890,6 +1890,12 @@ jit::FinishBailoutToBaseline(BaselineBailoutInfo* bailoutInfo)
         
         break;
 
+      case Bailout_FirstExecution:
+        
+        
+        
+        break;
+
       
       case Bailout_OverflowInvalidate:
       case Bailout_NonStringInputInvalidate:

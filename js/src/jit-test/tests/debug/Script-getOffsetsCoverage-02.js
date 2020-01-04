@@ -2,6 +2,7 @@
 
 
 
+
 var g = newGlobal();
 var dbg = Debugger(g);
 var coverageInfo = [];

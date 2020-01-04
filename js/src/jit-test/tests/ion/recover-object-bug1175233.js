@@ -28,8 +28,11 @@ function f(j) {
       i: i,
       v: i + i
     };
-    assertRecoveredOnBailout(obj, false); 
-    assertRecoveredOnBailout(obj.v, false); 
+    
+    
+    
+    assertRecoveredOnBailout(obj, true);
+    assertRecoveredOnBailout(obj.v, true);
     if (uceFault(j) || uceFault(j)) {
         
         

@@ -21,7 +21,9 @@ namespace jit {
 
 
 #define JITSPEW_CHANNEL_LIST(_)
-\
+        \
+    _(Prune)                                \
+    /* Information during escape analysis */\
     _(Escape)                               \
     /* Information during alias analysis */ \
     _(Alias)                                \
