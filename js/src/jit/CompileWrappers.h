@@ -43,8 +43,10 @@ class CompileRuntime
     
     const void* addressOfJitStackLimit();
 
+#ifdef DEBUG
     
     const void* addressOfIonBailAfter();
+#endif
 
     
     const void* addressOfJSContext();
