@@ -445,16 +445,6 @@ private:
   
   
   
-  nsresult CheckLoadAllowed(nsIPrincipal* aSourcePrincipal,
-                            nsIURI* aTargetURI,
-                            nsISupports* aContext,
-                            bool aIsPreload);
-
-
-  
-  
-  
-  
   nsresult CreateSheet(nsIURI* aURI,
                        nsIContent* aLinkingContent,
                        nsIPrincipal* aLoaderPrincipal,
