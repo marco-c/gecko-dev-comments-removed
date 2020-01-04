@@ -85,7 +85,6 @@ bool
 SimpleCount::count(CountBase& countBase, mozilla::MallocSizeOf mallocSizeOf, const Node& node)
 {
     Count& count = static_cast<Count&>(countBase);
-    count.total_++;
     if (reportBytes)
         count.totalBytes_ += node.size(mallocSizeOf);
     return true;
@@ -262,7 +261,6 @@ bool
 ByCoarseType::count(CountBase& countBase, mozilla::MallocSizeOf mallocSizeOf, const Node& node)
 {
     Count& count = static_cast<Count&>(countBase);
-    count.total_++;
 
     switch (node.coarseType()) {
       case JS::ubi::CoarseType::Object:
@@ -316,13 +314,13 @@ ByCoarseType::report(JSContext* cx, CountBase& countBase, MutableHandleValue rep
 
 
 
+
+
 template<typename Entry>
 static int compareEntries(const void* lhsVoid, const void* rhsVoid) {
-    size_t lhs = (*static_cast<const Entry* const*>(lhsVoid))->value()->total_;
-    size_t rhs = (*static_cast<const Entry* const*>(rhsVoid))->value()->total_;
+    auto lhs = (*static_cast<const Entry* const*>(lhsVoid))->value()->smallestNodeIdCounted_;
+    auto rhs = (*static_cast<const Entry* const*>(rhsVoid))->value()->smallestNodeIdCounted_;
 
-    
-    
     
     if (lhs < rhs)
         return 1;
@@ -457,7 +455,6 @@ bool
 ByObjectClass::count(CountBase& countBase, mozilla::MallocSizeOf mallocSizeOf, const Node& node)
 {
     Count& count = static_cast<Count&>(countBase);
-    count.total_++;
 
     const char* className = node.jsObjectClassName();
     if (!className)
@@ -551,7 +548,6 @@ bool
 ByUbinodeType::count(CountBase& countBase, mozilla::MallocSizeOf mallocSizeOf, const Node& node)
 {
     Count& count = static_cast<Count&>(countBase);
-    count.total_++;
 
     const char16_t* key = node.typeName();
     MOZ_ASSERT(key);
@@ -706,7 +702,6 @@ bool
 ByAllocationStack::count(CountBase& countBase, mozilla::MallocSizeOf mallocSizeOf, const Node& node)
 {
     Count& count = static_cast<Count&>(countBase);
-    count.total_++;
 
     
     
@@ -875,7 +870,6 @@ bool
 ByFilename::count(CountBase& countBase, mozilla::MallocSizeOf mallocSizeOf, const Node& node)
 {
     Count& count = static_cast<Count&>(countBase);
-    count.total_++;
 
     const char* filename = node.scriptFilename();
     if (!filename)
