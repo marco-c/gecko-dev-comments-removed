@@ -958,7 +958,10 @@ AudioContext::UpdateNodeCount(int32_t aDelta)
   mNodeCount += aDelta;
   MOZ_ASSERT(mNodeCount >= 0);
   
-  if (!firstNode && mDestination) {
+  
+  
+  
+  if (!firstNode && mDestination && !mIsShutDown) {
     mDestination->SetIsOnlyNodeForContext(mNodeCount == 1);
   }
 }
