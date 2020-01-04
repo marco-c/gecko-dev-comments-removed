@@ -86,7 +86,7 @@ public:
   
   void Pause();
   void UnPause();
-  void Stop() { mStopped = true; }
+  void Stop();
 
   
   nsresult SubmitEvent(ATokenBucketEvent *event, nsICancelable **cancelable);
