@@ -4,6 +4,7 @@
 
 
 
+#include "mozilla/AsyncEventDispatcher.h"
 #include "mozilla/dom/TextTrack.h"
 #include "mozilla/dom/TextTrackBinding.h"
 #include "mozilla/dom/TextTrackList.h"
@@ -150,6 +151,10 @@ TextTrack::UpdateActiveCueList()
 
   
   
+  bool hasChanged = false;
+
+  
+  
   
   if (mDirty) {
     mCuePos = 0;
@@ -163,6 +168,7 @@ TextTrack::UpdateActiveCueList()
   for (uint32_t i = mActiveCueList->Length(); i > 0; i--) {
     if ((*mActiveCueList)[i - 1]->EndTime() < playbackTime) {
       mActiveCueList->RemoveCueAt(i - 1);
+      hasChanged = true;
     }
   }
   
@@ -173,6 +179,16 @@ TextTrack::UpdateActiveCueList()
          (*mCueList)[mCuePos]->StartTime() <= playbackTime; mCuePos++) {
     if ((*mCueList)[mCuePos]->EndTime() >= playbackTime) {
       mActiveCueList->AddCue(*(*mCueList)[mCuePos]);
+      hasChanged = true;
+      }
+    }
+
+    if (hasChanged) {
+      RefPtr<AsyncEventDispatcher> asyncDispatcher =
+        new AsyncEventDispatcher(this, NS_LITERAL_STRING("cuechange"), false);
+      asyncDispatcher->PostDOMEvent();
+      if (mTrackElement) {
+        mTrackElement->DispatchTrackRunnable(NS_LITERAL_STRING("cuechange"));
     }
   }
 }
