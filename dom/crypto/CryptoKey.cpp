@@ -974,11 +974,16 @@ CreateECPublicKey(const SECItem* aKeyData, const nsString& aNamedCurve)
     return nullptr;
   }
 
-  SECKEYPublicKey* key = PORT_ArenaZNew(arena, SECKEYPublicKey);
+  
+  
+  
+  
+  ScopedSECKEYPublicKey key(PORT_ArenaZNew(arena, SECKEYPublicKey));
   if (!key) {
     return nullptr;
   }
 
+  key->arena = nullptr; 
   key->keyType = ecKey;
   key->pkcs11Slot = nullptr;
   key->pkcs11ID = CK_INVALID_HANDLE;
