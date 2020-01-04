@@ -469,14 +469,15 @@ class GeckoInputConnection
 
     @Override
     public InputConnection onCreateInputConnection(EditorInfo outAttrs) {
+        
+        outAttrs.inputType = InputType.TYPE_CLASS_TEXT;
+        outAttrs.imeOptions = EditorInfo.IME_ACTION_NONE;
+        outAttrs.actionLabel = null;
+
         if (mIMEState == IME_STATE_DISABLED) {
             hideSoftInput();
             return null;
         }
-
-        outAttrs.inputType = InputType.TYPE_CLASS_TEXT;
-        outAttrs.imeOptions = EditorInfo.IME_ACTION_NONE;
-        outAttrs.actionLabel = null;
 
         if (mIMEState == IME_STATE_PASSWORD ||
             "password".equalsIgnoreCase(mIMETypeHint))
