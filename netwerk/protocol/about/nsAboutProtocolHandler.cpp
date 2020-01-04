@@ -39,7 +39,8 @@ static bool IsSafeToLinkForUntrustedContent(nsIAboutModule *aModule, nsIURI *aUR
 }
 
 
-NS_IMPL_ISUPPORTS(nsAboutProtocolHandler, nsIProtocolHandler, nsISupportsWeakReference)
+NS_IMPL_ISUPPORTS(nsAboutProtocolHandler, nsIProtocolHandler,
+    nsIProtocolHandlerWithDynamicFlags, nsISupportsWeakReference)
 
 
 
@@ -62,6 +63,33 @@ NS_IMETHODIMP
 nsAboutProtocolHandler::GetProtocolFlags(uint32_t *result)
 {
     *result = URI_NORELATIVE | URI_NOAUTH | URI_DANGEROUS_TO_LOAD;
+    return NS_OK;
+}
+
+NS_IMETHODIMP
+nsAboutProtocolHandler::GetFlagsForURI(nsIURI* aURI, uint32_t* aFlags)
+{
+    
+    GetProtocolFlags(aFlags);
+
+    
+    nsCOMPtr<nsIAboutModule> aboutMod;
+    nsresult rv = NS_GetAboutModule(aURI, getter_AddRefs(aboutMod));
+    if (NS_FAILED(rv)) {
+      
+      return NS_OK;
+    }
+    uint32_t aboutModuleFlags = 0;
+    rv = aboutMod->GetURIFlags(aURI, &aboutModuleFlags);
+    
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    
+    if ((aboutModuleFlags & nsIAboutModule::URI_SAFE_FOR_UNTRUSTED_CONTENT) &&
+        !(aboutModuleFlags & nsIAboutModule::MAKE_UNLINKABLE)) {
+        *aFlags = URI_NORELATIVE | URI_NOAUTH | URI_LOADABLE_BY_ANYONE |
+            URI_SAFE_TO_LOAD_IN_SECURE_CONTEXT;
+    }
     return NS_OK;
 }
 

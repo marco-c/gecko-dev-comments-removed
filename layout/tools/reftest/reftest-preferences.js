@@ -64,3 +64,7 @@
 
     
     branch.setBoolPref("dom.allow_XUL_XBL_for_file", true);
+
+    
+    
+    branch.setBoolPref("security.view-source.reachable-from-inner-protocol", true);

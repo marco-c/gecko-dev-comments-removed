@@ -2027,6 +2027,10 @@ pref("security.cert_pinning.process_headers_from_non_builtin_roots", false);
 
 
 
+pref("security.view-source.reachable-from-inner-protocol", false);
+
+
+
 
 pref("ui.key.accelKey", 17);
 pref("ui.key.menuAccessKey", 18);
