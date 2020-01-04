@@ -1155,7 +1155,7 @@ CastToJSFreeOp(FreeOp* fop)
 
 
 extern JS_FRIEND_API(JSFlatString*)
-GetErrorTypeName(JSRuntime* rt, int16_t exnType);
+GetErrorTypeName(JSContext* cx, int16_t exnType);
 
 #ifdef JS_DEBUG
 extern JS_FRIEND_API(unsigned)
