@@ -444,8 +444,8 @@ GeneratePrototypeGuards(JSContext* cx, IonScript* ion, MacroAssembler& masm, JSO
 
 
 
-static bool
-IsCacheableProtoChainForIon(JSObject* obj, JSObject* holder)
+bool
+jit::IsCacheableProtoChainForIonOrCacheIR(JSObject* obj, JSObject* holder)
 {
     while (obj != holder) {
         
@@ -461,10 +461,10 @@ IsCacheableProtoChainForIon(JSObject* obj, JSObject* holder)
     return true;
 }
 
-static bool
-IsCacheableGetPropReadSlotForIon(JSObject* obj, JSObject* holder, Shape* shape)
+bool
+jit::IsCacheableGetPropReadSlotForIonOrCacheIR(JSObject* obj, JSObject* holder, Shape* shape)
 {
-    if (!shape || !IsCacheableProtoChainForIon(obj, holder))
+    if (!shape || !IsCacheableProtoChainForIonOrCacheIR(obj, holder))
         return false;
 
     if (!shape->hasSlot() || !shape->hasDefaultGetter())
@@ -549,7 +549,7 @@ IsOptimizableArgumentsObjectForGetElem(JSObject* obj, Value idval)
 static bool
 IsCacheableGetPropCallNative(JSObject* obj, JSObject* holder, Shape* shape)
 {
-    if (!shape || !IsCacheableProtoChainForIon(obj, holder))
+    if (!shape || !IsCacheableProtoChainForIonOrCacheIR(obj, holder))
         return false;
 
     if (!shape->hasGetterValue() || !shape->getterValue().isObject())
@@ -576,7 +576,7 @@ IsCacheableGetPropCallNative(JSObject* obj, JSObject* holder, Shape* shape)
 static bool
 IsCacheableGetPropCallScripted(JSObject* obj, JSObject* holder, Shape* shape)
 {
-    if (!shape || !IsCacheableProtoChainForIon(obj, holder))
+    if (!shape || !IsCacheableProtoChainForIonOrCacheIR(obj, holder))
         return false;
 
     if (!shape->hasGetterValue() || !shape->getterValue().isObject())
@@ -596,7 +596,7 @@ IsCacheableGetPropCallScripted(JSObject* obj, JSObject* holder, Shape* shape)
 static bool
 IsCacheableGetPropCallPropertyOp(JSObject* obj, JSObject* holder, Shape* shape)
 {
-    if (!shape || !IsCacheableProtoChainForIon(obj, holder))
+    if (!shape || !IsCacheableProtoChainForIonOrCacheIR(obj, holder))
         return false;
 
     if (shape->hasSlot() || shape->hasGetterValue() || shape->hasDefaultGetter())
@@ -1295,7 +1295,7 @@ CanAttachNativeGetProp(JSContext* cx, const GetPropCache& cache,
     RootedScript script(cx);
     jsbytecode* pc;
     cache.getScriptedLocation(&script, &pc);
-    if (IsCacheableGetPropReadSlotForIon(obj, holder, shape) ||
+    if (IsCacheableGetPropReadSlotForIonOrCacheIR(obj, holder, shape) ||
         IsCacheableNoProperty(obj, holder, shape, pc, cache.output()))
     {
         return GetPropertyIC::CanAttachReadSlot;
@@ -2421,7 +2421,7 @@ SetPropertyIC::attachSetSlot(JSContext* cx, HandleScript outerScript, IonScript*
 static bool
 IsCacheableSetPropCallNative(HandleObject obj, HandleObject holder, HandleShape shape)
 {
-    if (!shape || !IsCacheableProtoChainForIon(obj, holder))
+    if (!shape || !IsCacheableProtoChainForIonOrCacheIR(obj, holder))
         return false;
 
     return shape->hasSetterValue() && shape->setterObject() &&
@@ -2432,7 +2432,7 @@ IsCacheableSetPropCallNative(HandleObject obj, HandleObject holder, HandleShape 
 static bool
 IsCacheableSetPropCallScripted(HandleObject obj, HandleObject holder, HandleShape shape)
 {
-    if (!shape || !IsCacheableProtoChainForIon(obj, holder))
+    if (!shape || !IsCacheableProtoChainForIonOrCacheIR(obj, holder))
         return false;
 
     return shape->hasSetterValue() && shape->setterObject() &&
@@ -2446,7 +2446,7 @@ IsCacheableSetPropCallPropertyOp(HandleObject obj, HandleObject holder, HandleSh
     if (!shape)
         return false;
 
-    if (!IsCacheableProtoChainForIon(obj, holder))
+    if (!IsCacheableProtoChainForIonOrCacheIR(obj, holder))
         return false;
 
     if (shape->hasSlot())
@@ -4861,7 +4861,7 @@ IsCacheableNameReadSlot(HandleObject scopeChain, HandleObject obj,
 
     if (obj->is<GlobalObject>()) {
         
-        if (!IsCacheableGetPropReadSlotForIon(obj, holder, shape) &&
+        if (!IsCacheableGetPropReadSlotForIonOrCacheIR(obj, holder, shape) &&
             !IsCacheableNoProperty(obj, holder, shape, pc, output))
             return false;
     } else if (obj->is<ModuleEnvironmentObject>()) {
