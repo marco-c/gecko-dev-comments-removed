@@ -26,9 +26,7 @@
     let inspector = toolbox.getPanel("inspector");
     inspector.searchBox.focus();
 
-    
     let activeElement = getActiveElement(inspector.panelDoc);
-    activeElement = activeElement.ownerDocument.getBindingParent(activeElement);
     is(activeElement, inspector.searchBox, "Search box is focused");
 
     yield toolbox.openSplitConsole();
@@ -45,9 +43,7 @@
 
     info("Making sure that the search box is refocused after closing the " +
          "split console");
-    
     activeElement = getActiveElement(inspector.panelDoc);
-    activeElement = activeElement.ownerDocument.getBindingParent(activeElement);
     is(activeElement, inspector.searchBox, "Search box is focused");
 
     yield toolbox.destroy();

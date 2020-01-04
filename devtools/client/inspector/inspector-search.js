@@ -4,9 +4,6 @@
 
 "use strict";
 
-
-const {Ci} = require("chrome");
-
 const promise = require("promise");
 const {Task} = require("devtools/shared/task");
 
@@ -29,15 +26,24 @@ const MAX_SUGGESTIONS = 15;
 
 
 
-function InspectorSearch(inspector, input) {
+
+
+
+
+function InspectorSearch(inspector, input, clearBtn) {
   this.inspector = inspector;
   this.searchBox = input;
+  this.searchClearButton = clearBtn;
   this._lastSearched = null;
 
+  this.searchClearButton.hidden = true;
+
   this._onKeyDown = this._onKeyDown.bind(this);
-  this._onCommand = this._onCommand.bind(this);
+  this._onInput = this._onInput.bind(this);
+  this._onClearSearch = this._onClearSearch.bind(this);
   this.searchBox.addEventListener("keydown", this._onKeyDown, true);
-  this.searchBox.addEventListener("command", this._onCommand, true);
+  this.searchBox.addEventListener("input", this._onInput, true);
+  this.searchClearButton.addEventListener("click", this._onClearSearch);
 
   
   
@@ -56,8 +62,10 @@ InspectorSearch.prototype = {
 
   destroy: function () {
     this.searchBox.removeEventListener("keydown", this._onKeyDown, true);
-    this.searchBox.removeEventListener("command", this._onCommand, true);
+    this.searchBox.removeEventListener("input", this._onInput, true);
+    this.searchClearButton.removeEventListener("click", this._onClearSearch);
     this.searchBox = null;
+    this.searchClearButton = null;
     this.autocompleter.destroy();
   },
 
@@ -97,7 +105,7 @@ InspectorSearch.prototype = {
     }
   }),
 
-  _onCommand: function () {
+  _onInput: function () {
     if (this.searchBox.value.length === 0) {
       this._onSearch();
     }
@@ -105,8 +113,10 @@ InspectorSearch.prototype = {
 
   _onKeyDown: function (event) {
     if (this.searchBox.value.length === 0) {
+      this.searchClearButton.hidden = true;
       this.searchBox.removeAttribute("filled");
     } else {
+      this.searchClearButton.hidden = false;
       this.searchBox.setAttribute("filled", true);
     }
     if (event.keyCode === event.DOM_VK_RETURN) {
@@ -115,10 +125,15 @@ InspectorSearch.prototype = {
 
     const modifierKey = system.constants.platform === "macosx"
                         ? event.metaKey : event.ctrlKey;
-    if (event.keyCode === Ci.nsIDOMKeyEvent.DOM_VK_G && modifierKey) {
+    if (event.keyCode === event.DOM_VK_G && modifierKey) {
       this._onSearch(event.shiftKey);
       event.preventDefault();
     }
+  },
+
+  _onClearSearch: function () {
+    this.searchBox.value = "";
+    this.searchClearButton.hidden = true;
   }
 };
 

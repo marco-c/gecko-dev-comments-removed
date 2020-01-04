@@ -27,6 +27,18 @@
 
 #inspector-searchlabel {
   overflow: hidden;
+  margin-inline-end: 2px;
+}
+
+#inspector-search {
+  flex: unset;
+}
+
+
+
+#inspector-searchbox {
+  flex: 1;
+  width: 100%;
 }
 
 
