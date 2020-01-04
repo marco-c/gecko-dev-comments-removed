@@ -1,0 +1,7 @@
+function main() {
+  
+  
+  const func = foo(1, 2);
+  const result = func();
+  return result;
+}
