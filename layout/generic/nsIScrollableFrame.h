@@ -441,6 +441,11 @@ public:
   virtual bool DecideScrollableLayer(nsDisplayListBuilder* aBuilder,
                                      nsRect* aDirtyRect,
                                      bool aAllowCreateDisplayPort) = 0;
+
+  
+
+
+  virtual void NotifyImageVisibilityUpdate() = 0;
 };
 
 #endif
