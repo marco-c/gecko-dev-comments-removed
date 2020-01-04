@@ -56,6 +56,15 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+
+
+
+
+
+
+
+
+
 @RunWith(TestRunner.class)
 public class TestClientsEngineStage extends MockSyncClientsEngineStage {
   public final static String LOG_TAG = "TestClientsEngSta";
@@ -601,7 +610,7 @@ public class TestClientsEngineStage extends MockSyncClientsEngineStage {
     assertEquals(uploadHeaderTimestamp, session.config.getPersistedServerClientsTimestamp());
   }
 
-  @Test
+  @Test 
   public void testDownloadHasOurRecord() {
     
     
