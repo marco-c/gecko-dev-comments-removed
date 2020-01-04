@@ -214,6 +214,27 @@ this.BrowserTestUtils = {
 
 
 
+
+
+
+  firstBrowserLoaded(win) {
+    let mm = win.messageManager;
+    return this.waitForMessage(mm, "browser-test-utils:loadEvent", (msg) => {
+      let selectedBrowser = win.gBrowser.selectedBrowser;
+      return msg.target == selectedBrowser;
+    });
+  },
+
+  
+
+
+
+
+
+
+
+
+
   browserStopped(browser) {
     return new Promise(resolve => {
       let wpl = {
@@ -433,11 +454,11 @@ this.BrowserTestUtils = {
     
     
     
-    yield this.waitForEvent(win, "load");
     let startupPromise =
       TestUtils.topicObserved("browser-delayed-startup-finished",
                               subject => subject == win).then(() => win);
-    let loadPromise = this.browserLoaded(win.gBrowser.selectedBrowser);
+
+    let loadPromise = this.firstBrowserLoaded(win);
 
     yield startupPromise;
     yield loadPromise;
