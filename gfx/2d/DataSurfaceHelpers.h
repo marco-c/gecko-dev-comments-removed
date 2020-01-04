@@ -8,6 +8,8 @@
 
 #include "2D.h"
 
+#include "mozilla/UniquePtr.h"
+
 namespace mozilla {
 namespace gfx {
 
@@ -27,9 +29,7 @@ CopySurfaceDataToPackedArray(uint8_t* aSrc, uint8_t* aDst, IntSize aSrcSize,
 
 
 
-
-
-uint8_t*
+UniquePtr<uint8_t[]>
 SurfaceToPackedBGRA(DataSourceSurface *aSurface);
 
 
