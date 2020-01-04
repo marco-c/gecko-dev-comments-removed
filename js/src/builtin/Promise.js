@@ -842,9 +842,21 @@ function UnwrappedPerformPromiseThen(fulfilledHandler, rejectedHandler, promise,
         __proto__: PromiseCapabilityRecordProto,
         promise,
         resolve(resolution) {
+            
+            
+            
+            
+            
+            
+            
+            if (IsFunctionObject(resolve))
+                return resolve(resolution);
             return UnsafeCallWrappedFunction(resolve, undefined, resolution);
         },
         reject(reason) {
+            
+            if (IsFunctionObject(reject))
+                return reject(reason);
             return UnsafeCallWrappedFunction(reject, undefined, reason);
         }
     };
