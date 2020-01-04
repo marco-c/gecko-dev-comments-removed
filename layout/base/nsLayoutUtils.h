@@ -370,15 +370,6 @@ public:
 
 
 
-  static nsIFrame* GetRealPrimaryFrameFor(const nsIContent* aContent);
-
-  
-
-
-
-
-
-
 
 
 
