@@ -37,6 +37,31 @@ enum class ExceptionMode
 };
 
 
+enum class CallingThread
+{
+    
+    ANY,
+    
+    GECKO,
+    
+    UI,
+};
+
+
+enum class DispatchTarget
+{
+    
+    CURRENT,
+    
+    
+    
+    PROXY,
+    
+    
+    GECKO,
+};
+
+
 
 
 
@@ -77,7 +102,8 @@ class Ref
 protected:
     static JNIEnv* FindEnv()
     {
-        return Cls::isMultithreaded ? GetEnvForThread() : GetGeckoThreadEnv();
+        return Cls::callingThread == CallingThread::GECKO ?
+                GetGeckoThreadEnv() : GetEnvForThread();
     }
 
     Type mInstance;
@@ -231,7 +257,7 @@ public:
 };
 
 
-template<class Cls, typename Type>
+template<class Cls, typename Type = jobject>
 class ObjectBase
 {
 protected:
@@ -248,7 +274,7 @@ public:
     using GlobalRef = jni::GlobalRef<Cls>;
     using Param = const Ref&;
 
-    static const bool isMultithreaded = true;
+    static const CallingThread callingThread = CallingThread::ANY;
     static const char name[];
 
     explicit ObjectBase(const Context& ctx) : mCtx(ctx) {}
