@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsHTMLEditorEventListener_h__
-#define nsHTMLEditorEventListener_h__
+#ifndef HTMLEditorEventListener_h
+#define HTMLEditorEventListener_h
 
 #include "nsEditorEventListener.h"
 #include "nscore.h"
@@ -12,15 +12,16 @@
 class nsEditor;
 class nsHTMLEditor;
 
-class nsHTMLEditorEventListener : public nsEditorEventListener
+namespace mozilla {
+
+class HTMLEditorEventListener final : public nsEditorEventListener
 {
 public:
-  nsHTMLEditorEventListener() :
-    nsEditorEventListener()
+  HTMLEditorEventListener()
   {
   }
 
-  virtual ~nsHTMLEditorEventListener()
+  virtual ~HTMLEditorEventListener()
   {
   }
 
@@ -37,5 +38,6 @@ protected:
   inline nsHTMLEditor* GetHTMLEditor();
 };
 
-#endif 
+} 
 
+#endif 
