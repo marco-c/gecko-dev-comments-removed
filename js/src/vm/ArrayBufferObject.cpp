@@ -203,38 +203,36 @@ ArrayBufferObject::fun_isView(JSContext* cx, unsigned argc, Value* vp)
 }
 
 
+
+
 bool
 ArrayBufferObject::class_constructor(JSContext* cx, unsigned argc, Value* vp)
 {
     CallArgs args = CallArgsFromVp(argc, vp);
 
-    
     if (!ThrowIfNotConstructing(cx, args, "ArrayBuffer"))
         return false;
 
-    
-    
-    double length = 0;
-    if (args.hasDefined(0)) {
-        if (!ToNumber(cx, args[0], &length))
-            return false;
-    }
+    int32_t nbytes = 0;
+    if (argc > 0 && !ToInt32(cx, args[0], &nbytes))
+        return false;
 
-    
-    double byteLength = ToLength(length);
-    const double SIZE_LIMIT = 1024.0 * 1024 * 1024;
-    if (length != byteLength || byteLength >= SIZE_LIMIT) {
+    if (nbytes < 0) {
+        
+
+
+
+
         JS_ReportErrorNumber(cx, GetErrorMessage, nullptr, JSMSG_BAD_ARRAY_LENGTH);
         return false;
     }
 
-    
     RootedObject proto(cx);
     RootedObject newTarget(cx, &args.newTarget().toObject());
     if (!GetPrototypeFromConstructor(cx, newTarget, &proto))
         return false;
 
-    JSObject* bufobj = create(cx, uint32_t(byteLength), proto);
+    JSObject* bufobj = create(cx, uint32_t(nbytes), proto);
     if (!bufobj)
         return false;
     args.rval().setObject(*bufobj);

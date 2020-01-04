@@ -267,19 +267,6 @@ ToInteger(JSContext* cx, HandleValue v, double* dp)
 }
 
 
-inline double
-ToLength(double argument)
-{
-    const double MAX_SAFE_INTEGER = 9007199254740991;
-    double len = JS::ToInteger(argument);
-    if (len <= 0)
-        return 0;
-    if (len > MAX_SAFE_INTEGER)
-        return MAX_SAFE_INTEGER;
-    return len;
-}
-
-
 
 
 

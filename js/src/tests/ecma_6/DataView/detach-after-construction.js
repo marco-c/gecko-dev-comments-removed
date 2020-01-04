@@ -1,7 +1,7 @@
 
 
 for (var detachArg of ['change-data', 'same-data']) {
-    var buf = new ArrayBuffer(2);
+    var buf = new ArrayBuffer([1,2]);
     var bufView = new DataView(buf);
 
     detachArrayBuffer(buf, detachArg);
