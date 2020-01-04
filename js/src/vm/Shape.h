@@ -963,6 +963,7 @@ class Shape : public gc::TenuredCell
 
     void fixupAfterMovingGC();
     void fixupGetterSetterForBarrier(JSTracer* trc);
+    void updateBaseShapeAfterMovingGC();
 
     
     static inline size_t offsetOfBase() { return offsetof(Shape, base_); }

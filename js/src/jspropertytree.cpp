@@ -239,7 +239,7 @@ Shape::fixupDictionaryShapeAfterMovingGC()
     
     
     
-    bool listpPointsIntoShape = !base()->isOwned();
+    bool listpPointsIntoShape = !MaybeForwarded(base())->isOwned();
 
 #ifdef DEBUG
     
