@@ -690,8 +690,26 @@ function gKeywordURIFixup({ target: browser, data: fixupInfo }) {
     asciiHost = asciiHost.slice(0, -1);
   }
 
+  let isIPv4Address = host => {
+    let parts = host.split(".");
+    if (parts.length != 4) {
+      return false;
+    }
+    return parts.every(part => {
+      let n = parseInt(part, 10);
+      return n >= 0 && n <= 255;
+    });
+  };
   
-  if (/^\d+$/.test(fixupInfo.originalInput.trim()))
+  
+  
+  
+  
+  
+  
+  
+  
+  if (isIPv4Address(asciiHost) || /^\d+$/.test(asciiHost))
     return;
 
   let onLookupComplete = (request, record, status) => {
