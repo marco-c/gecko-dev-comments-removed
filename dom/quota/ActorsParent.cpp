@@ -108,13 +108,7 @@ namespace quota {
 
 using namespace mozilla::ipc;
 
-const bool QuotaManager::kRunningXPCShellTests =
-#ifdef ENABLE_TESTS
-  !!PR_GetEnv("XPCSHELL_TEST_PROFILE_DIR")
-#else
-  false
-#endif
-  ;
+const bool QuotaManager::kRunningXPCShellTests = !!PR_GetEnv("XPCSHELL_TEST_PROFILE_DIR");
 
 
 
