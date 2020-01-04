@@ -977,8 +977,9 @@ function reorderChildren(parent, orderedChildrenGuids) {
         let i = orderedChildrenGuids.indexOf(a.guid);
         let j = orderedChildrenGuids.indexOf(b.guid);
         
-        return (i == -1 && j == -1) ? 0 :
-                 (i != -1 && j != -1 && i < j) || (i != -1 && j == -1) ? -1 : 1;
+        if (i == -1 && j == -1)
+          return 0;
+        return (i != -1 && j != -1 && i < j) || (i != -1 && j == -1) ? -1 : 1;
        });
 
       

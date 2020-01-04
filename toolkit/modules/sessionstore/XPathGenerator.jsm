@@ -80,9 +80,11 @@ this.XPathGenerator = {
 
 
   quoteArgument: function sss_xph_quoteArgument(aArg) {
-    return !/'/.test(aArg) ? "'" + aArg + "'" :
-           !/"/.test(aArg) ? '"' + aArg + '"' :
-           "concat('" + aArg.replace(/'+/g, "',\"$&\",'") + "')";
+    if (!/'/.test(aArg))
+      return "'" + aArg + "'";
+    if (!/"/.test(aArg))
+      return '"' + aArg + '"';
+    return "concat('" + aArg.replace(/'+/g, "',\"$&\",'") + "')";
   },
 
   

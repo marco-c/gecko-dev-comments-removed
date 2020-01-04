@@ -72,8 +72,12 @@ var Readability = function(uri, doc, options) {
         return rv + '("' + e.textContent + '")';
       }
       var classDesc = e.className && ("." + e.className.replace(/ /g, "."));
-      var elDesc = e.id ? "(#" + e.id + classDesc + ")" :
-                          (classDesc ? "(" + classDesc + ")" : "");
+      var elDesc = "";
+      if (e.id) {
+        elDesc = "(#" + e.id + classDesc + ")";
+      } else if (classDesc) {
+        elDesc = "(" + classDesc + ")";
+      }
       return rv + elDesc;
     }
     this.log = function () {
@@ -743,7 +747,7 @@ Readability.prototype = {
           
           
           
-          var scoreDivider = level === 0 ? 1 : level === 1 ? 2 : level * 3;
+          var scoreDivider = level < 2 ? level + 1 : level * 3;
           ancestor.readability.contentScore += contentScore / scoreDivider;
         });
       });

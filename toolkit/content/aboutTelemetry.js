@@ -1241,7 +1241,10 @@ var Histogram = {
       
       
       
-      return !aIsBHR ? k : k == 1 ? 0 : (k + 1) / 2;
+      if (!aIsBHR) {
+        return k;
+      }
+      return k == 1 ? 0 : (k + 1) / 2;
     }
 
     const labelledValues = Object.keys(aHgram.values)
