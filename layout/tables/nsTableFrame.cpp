@@ -290,10 +290,13 @@ nsTableFrame::UnregisterPositionedTablePart(nsIFrame* aFrame,
                                             nsIFrame* aDestructRoot)
 {
   
-  
-  
-  nsTableFrame* tableFrame = GetTableFramePassingThrough(aDestructRoot, aFrame);
-  if (!tableFrame) {
+  bool didPassThrough;
+  nsTableFrame* tableFrame = GetTableFramePassingThrough(aDestructRoot, aFrame,
+      &didPassThrough);
+  if (!didPassThrough && !tableFrame->GetPrevContinuation()) {
+    
+    
+    
     return;
   }
   tableFrame = static_cast<nsTableFrame*>(tableFrame->FirstContinuation());
@@ -3829,7 +3832,8 @@ nsTableFrame::GetTableFrame(nsIFrame* aFrame)
 
 nsTableFrame*
 nsTableFrame::GetTableFramePassingThrough(nsIFrame* aMustPassThrough,
-                                          nsIFrame* aFrame)
+                                          nsIFrame* aFrame,
+                                          bool* aDidPassThrough)
 {
   MOZ_ASSERT(aMustPassThrough == aFrame ||
              nsLayoutUtils::IsProperAncestorFrame(aMustPassThrough, aFrame),
@@ -3837,11 +3841,11 @@ nsTableFrame::GetTableFramePassingThrough(nsIFrame* aMustPassThrough,
 
   
   
-  bool hitPassThroughFrame = false;
+  *aDidPassThrough = false;
   nsTableFrame* tableFrame = nullptr;
   for (nsIFrame* ancestor = aFrame; ancestor; ancestor = ancestor->GetParent()) {
     if (ancestor == aMustPassThrough) {
-      hitPassThroughFrame = true;
+      *aDidPassThrough = true;
     }
     if (nsGkAtoms::tableFrame == ancestor->GetType()) {
       tableFrame = static_cast<nsTableFrame*>(ancestor);
@@ -3850,7 +3854,7 @@ nsTableFrame::GetTableFramePassingThrough(nsIFrame* aMustPassThrough,
   }
 
   MOZ_ASSERT(tableFrame, "Should have a table frame here");
-  return hitPassThroughFrame ? tableFrame : nullptr;
+  return tableFrame;
 }
 
 bool

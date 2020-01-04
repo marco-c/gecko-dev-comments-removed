@@ -222,7 +222,8 @@ public:
 
 
   static nsTableFrame* GetTableFramePassingThrough(nsIFrame* aMustPassThrough,
-                                                   nsIFrame* aSourceFrame);
+                                                   nsIFrame* aSourceFrame,
+                                                   bool* aDidPassThrough);
 
   typedef void (* DisplayGenericTablePartTraversal)
       (nsDisplayListBuilder* aBuilder, nsFrame* aFrame,
