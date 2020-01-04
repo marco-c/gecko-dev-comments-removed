@@ -103,6 +103,13 @@ FrameAnimator::AdvanceFrame(TimeStamp aTime)
   
   if (mImage->GetNumFrames() == nextFrameIndex) {
     
+    
+    if (!mDoneDecoding) {
+      
+      return ret;
+    }
+
+    
 
     
     if (mLoopRemainingCount < 0 && LoopCount() >= 0) {
