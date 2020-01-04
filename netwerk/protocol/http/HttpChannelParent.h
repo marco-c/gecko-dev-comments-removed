@@ -40,6 +40,7 @@ class PBrowserOrId;
 namespace net {
 
 class HttpChannelParentListener;
+class ChannelEventQueue;
 
 
 

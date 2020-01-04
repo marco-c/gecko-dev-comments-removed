@@ -22,6 +22,7 @@
 #include "nsXULAppAPI.h"
 #include "nsContentSecurityManager.h"
 #include "LoadInfo.h"
+#include "nsServiceManagerUtils.h"
 
 
 class ScopedRequestSuspender {

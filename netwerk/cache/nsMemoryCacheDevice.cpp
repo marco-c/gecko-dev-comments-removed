@@ -27,7 +27,7 @@
 
 
 const char *gMemoryDeviceID      = "memory";
-
+using namespace mozilla;
 
 nsMemoryCacheDevice::nsMemoryCacheDevice()
     : mInitialized(false),

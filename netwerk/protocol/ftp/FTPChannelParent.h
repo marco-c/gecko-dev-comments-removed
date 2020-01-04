@@ -26,6 +26,7 @@ class PBrowserOrId;
 } 
 
 namespace net {
+class ChannelEventQueue;
 
 class FTPChannelParent final : public PFTPChannelParent
                              , public nsIParentChannel

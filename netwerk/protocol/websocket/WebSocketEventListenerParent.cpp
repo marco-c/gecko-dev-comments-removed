@@ -4,6 +4,7 @@
 
 
 
+#include "WebSocketEventService.h"
 #include "WebSocketEventListenerParent.h"
 #include "mozilla/unused.h"
 

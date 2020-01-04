@@ -17,6 +17,8 @@
 #include <algorithm>
 #include "nsContentSecurityManager.h"
 #include "nsHttp.h"
+#include "nsNetUtil.h"
+#include "nsIURI.h"
 
 
 

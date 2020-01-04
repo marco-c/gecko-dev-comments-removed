@@ -27,6 +27,7 @@
 #include <algorithm>
 #include "nsIContentPolicy.h"
 #include "nsContentUtils.h"
+#include "mozilla/UniquePtr.h"
 
 
 #define DEFAULT_CHUNK_SIZE (4096 * 16)  // bytes
@@ -36,6 +37,8 @@
 
 
 #define MAX_RETRY_COUNT 20
+
+using namespace mozilla;
 
 
 

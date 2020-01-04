@@ -2,10 +2,12 @@
 
 
 
+#include "CacheIndex.h"
 #include "CacheLog.h"
 #include "CacheFileUtils.h"
 #include "LoadContextInfo.h"
 #include "mozilla/Tokenizer.h"
+#include "mozilla/Telemetry.h"
 #include "nsCOMPtr.h"
 #include "nsAutoPtr.h"
 #include "nsString.h"

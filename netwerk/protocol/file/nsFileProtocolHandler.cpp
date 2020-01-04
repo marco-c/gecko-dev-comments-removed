@@ -4,6 +4,7 @@
 
 
 
+#include "nsIFile.h"
 #include "nsFileProtocolHandler.h"
 #include "nsFileChannel.h"
 #include "nsStandardURL.h"

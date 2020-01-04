@@ -316,6 +316,30 @@ private:
 
 
 
+class InterceptStreamListener : public nsIStreamListener
+                              , public nsIProgressEventSink
+{
+  RefPtr<HttpChannelChild> mOwner;
+  nsCOMPtr<nsISupports> mContext;
+  virtual ~InterceptStreamListener() {}
+ public:
+  InterceptStreamListener(HttpChannelChild* aOwner, nsISupports* aContext)
+  : mOwner(aOwner)
+  , mContext(aContext)
+  {
+  }
+
+  NS_DECL_ISUPPORTS
+  NS_DECL_NSIREQUESTOBSERVER
+  NS_DECL_NSISTREAMLISTENER
+  NS_DECL_NSIPROGRESSEVENTSINK
+
+  void Cleanup();
+};
+
+
+
+
 
 inline bool
 HttpChannelChild::IsSuspended()
