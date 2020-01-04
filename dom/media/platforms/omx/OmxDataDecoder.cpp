@@ -231,18 +231,7 @@ OmxDataDecoder::DoAsyncShutdown()
   mOmxLayer->SendCommand(OMX_CommandFlush, OMX_ALL, nullptr)
     ->Then(mOmxTaskQueue, __func__,
            [self] () -> RefPtr<OmxCommandPromise> {
-             LOG("DoAsyncShutdown: flush complete, collecting buffers...");
-             self->CollectBufferPromises(OMX_DirMax)
-               ->Then(self->mOmxTaskQueue, __func__,
-                   [self] () {
-                     LOG("DoAsyncShutdown: releasing all buffers.");
-                     self->ReleaseBuffers(OMX_DirInput);
-                     self->ReleaseBuffers(OMX_DirOutput);
-                   },
-                   [self] () {
-                     self->mOmxLayer->Shutdown();
-                   });
-
+             LOG("DoAsyncShutdown: flush complete");
              return self->mOmxLayer->SendCommand(OMX_CommandStateSet, OMX_StateIdle, nullptr);
            },
            [self] () {
@@ -251,8 +240,30 @@ OmxDataDecoder::DoAsyncShutdown()
     ->CompletionPromise()
     ->Then(mOmxTaskQueue, __func__,
            [self] () -> RefPtr<OmxCommandPromise> {
-             LOG("DoAsyncShutdown: OMX_StateIdle");
-             return self->mOmxLayer->SendCommand(OMX_CommandStateSet, OMX_StateLoaded, nullptr);
+             RefPtr<OmxCommandPromise> p =
+               self->mOmxLayer->SendCommand(OMX_CommandStateSet, OMX_StateLoaded, nullptr);
+
+             LOG("DoAsyncShutdown: collecting buffers...");
+             self->CollectBufferPromises(OMX_DirMax)
+               ->Then(self->mOmxTaskQueue, __func__,
+                   [self] () {
+                   
+                   
+                   
+                   
+                   
+                   
+                   
+                   
+                   LOG("DoAsyncShutdown: all buffers collected, releasing buffers...");
+                   self->ReleaseBuffers(OMX_DirInput);
+                   self->ReleaseBuffers(OMX_DirOutput);
+                   },
+                   [self] () {
+                     self->mOmxLayer->Shutdown();
+                   });
+
+             return p;
            },
            [self] () {
              self->mOmxLayer->Shutdown();
