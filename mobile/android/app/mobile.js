@@ -54,13 +54,11 @@ pref("browser.viewport.desktopWidth", 980);
 
 pref("browser.viewport.defaultZoom", -1);
 
-#ifdef MOZ_WIDGET_ANDROID
 
 pref("ui.showHideScrollbars", 1);
 pref("ui.useOverlayScrollbars", 1);
 pref("ui.scrollbarFadeBeginDelay", 450);
 pref("ui.scrollbarFadeDuration", 0);
-#endif
 
 
 pref("ui.caretBlinkCount", 10);

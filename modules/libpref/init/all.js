@@ -3887,10 +3887,6 @@ pref("print.print_paper_size", 0);
 
 pref("print.print_extra_margin", 0); 
 
-pref("layout.css.scroll-behavior.enabled", true);
-pref("layout.css.scroll-behavior.property-enabled", true);
-pref("layout.css.scroll-snap.enabled", true);
-
 
 
 
