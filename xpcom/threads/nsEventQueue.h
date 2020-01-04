@@ -22,7 +22,7 @@ class nsEventQueue
 public:
   typedef mozilla::MutexAutoLock MutexAutoLock;
 
-  nsEventQueue(mozilla::Mutex& aLock);
+  explicit nsEventQueue(mozilla::Mutex& aLock);
   ~nsEventQueue();
 
   
