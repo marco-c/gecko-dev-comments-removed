@@ -97,12 +97,12 @@ var blocklist_contents =
     
     "<certItem issuerName='MBIxEDAOBgNVBAMMB1Rlc3QgQ0E='>" +
     "<serialNumber>oops! more nonsense.</serialNumber>" +
-    "<serialNumber>Y1HQqXGtw7ek2v/QAqBL8jf6rbA=</serialNumber></certItem>" +
+    "<serialNumber>BVio/iQ21GCi2iUven8oJ/gae74=</serialNumber></certItem>" +
     
     
     
     "<certItem issuerName='MBgxFjAUBgNVBAMMDU90aGVyIHRlc3QgQ0E='>" +
-    "<serialNumber>Szin5enUEn9TnVq29c4IMPNFuqE=</serialNumber></certItem>" +
+    "<serialNumber>exJUIJpq50jgqOwQluhVrAzTF74=</serialNumber></certItem>" +
     
     
     
@@ -274,9 +274,9 @@ function run_test() {
                   "MCIxIDAeBgNVBAMMF0Fub3RoZXIgVGVzdCBFbmQtZW50aXR5\n"+
                   "\tVCIlmPM9NkgFQtrs4Oa5TeFcDu6MWRTKSNdePEhOgD8=\n"+
                   "MBIxEDAOBgNVBAMMB1Rlc3QgQ0E=\n" +
-                  " Y1HQqXGtw7ek2v/QAqBL8jf6rbA=\n" +
+                  " BVio/iQ21GCi2iUven8oJ/gae74=\n" +
                   "MBgxFjAUBgNVBAMMDU90aGVyIHRlc3QgQ0E=\n" +
-                  " Szin5enUEn9TnVq29c4IMPNFuqE=\n" +
+                  " exJUIJpq50jgqOwQluhVrAzTF74=\n" +
                   "YW5vdGhlciBpbWFnaW5hcnkgaXNzdWVy\n" +
                   " YW5vdGhlciBzZXJpYWwu\n" +
                   " c2VyaWFsMi4=";
