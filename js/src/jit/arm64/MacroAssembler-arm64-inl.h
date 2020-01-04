@@ -162,14 +162,14 @@ MacroAssembler::rshiftPtrArithmetic(Imm32 imm, Register dest)
     Asr(ARMRegister(dest, 64), ARMRegister(dest, 64), imm.value);
 }
 
-
-
-
 void
-MacroAssemblerCompat::rshift64(Imm32 imm, Register64 dest)
+MacroAssembler::rshift64(Imm32 imm, Register64 dest)
 {
-    asMasm().rshiftPtr(imm, dest.reg);
+    rshiftPtr(imm, dest.reg);
 }
+
+
+
 
 template <typename T>
 void
