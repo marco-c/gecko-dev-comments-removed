@@ -787,6 +787,34 @@ RegExpCompartment::init(JSContext* cx)
     return true;
 }
 
+bool
+RegExpShared::needsSweep(JSRuntime* rt)
+{
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    bool keep = marked() && IsMarked(&source);
+    for (size_t i = 0; i < ArrayLength(compilationArray); i++) {
+        RegExpShared::RegExpCompilation& compilation = compilationArray[i];
+        if (compilation.jitCode && gc::IsAboutToBeFinalized(&compilation.jitCode))
+            keep = false;
+    }
+
+    MOZ_ASSERT(rt->isHeapMajorCollecting());
+    if (keep || rt->gc.isHeapCompacting()) {
+        clearMarked();
+        return false;
+    }
+
+    return true;
+}
+
 void
 RegExpCompartment::sweep(JSRuntime* rt)
 {
@@ -795,30 +823,7 @@ RegExpCompartment::sweep(JSRuntime* rt)
 
     for (Set::Enum e(set_); !e.empty(); e.popFront()) {
         RegExpShared* shared = e.front();
-
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        bool keep = shared->marked() &&
-                    IsMarked(&shared->source);
-        for (size_t i = 0; i < ArrayLength(shared->compilationArray); i++) {
-            RegExpShared::RegExpCompilation& compilation = shared->compilationArray[i];
-            if (compilation.jitCode &&
-                IsAboutToBeFinalized(&compilation.jitCode))
-            {
-                keep = false;
-            }
-        }
-        MOZ_ASSERT(rt->isHeapMajorCollecting());
-        if (keep || rt->gc.isHeapCompacting()) {
-            shared->clearMarked();
-        } else {
+        if (shared->needsSweep(rt)) {
             js_delete(shared);
             e.removeFront();
         }
