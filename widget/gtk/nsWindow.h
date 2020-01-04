@@ -356,7 +356,7 @@ protected:
     
     void DispatchActivateEvent(void);
     void DispatchDeactivateEvent(void);
-    void DispatchResized(int32_t aWidth, int32_t aHeight);
+    void DispatchResized();
 
     
     void ReparentNativeWidgetInternal(nsIWidget* aNewParent,
