@@ -113,7 +113,6 @@ public:
   
   
   
-  
   void DoNotSearchInIndex()   { mDoNotSearchInIndex = true; }
   void DoNotSearchInUpdates() { mDoNotSearchInUpdates = true; }
 
