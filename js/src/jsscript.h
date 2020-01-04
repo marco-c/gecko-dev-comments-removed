@@ -67,7 +67,8 @@ namespace detail {
 
 
 bool
-CopyScript(JSContext* cx, HandleObject scriptStaticScope, HandleScript src, HandleScript dst);
+CopyScript(JSContext* cx, Handle<StaticScope*> scriptStaticScope, HandleScript src,
+           HandleScript dst);
 
 } 
 
@@ -147,7 +148,7 @@ struct BlockScopeArray {
 
 class YieldOffsetArray {
     friend bool
-    detail::CopyScript(JSContext* cx, HandleObject scriptStaticScope, HandleScript src,
+    detail::CopyScript(JSContext* cx, Handle<StaticScope*> scriptStaticScope, HandleScript src,
                        HandleScript dst);
 
     uint32_t*       vector_;   
@@ -921,20 +922,20 @@ GeneratorKindFromBits(unsigned val) {
 
 
 
-template<XDRMode mode>
+template <XDRMode mode>
 bool
-XDRScript(XDRState<mode>* xdr, HandleObject enclosingScope, HandleScript enclosingScript,
-          HandleFunction fun, MutableHandleScript scriptp);
+XDRScript(XDRState<mode>* xdr, Handle<StaticScope*> enclosingScope,
+          HandleScript enclosingScript, HandleFunction fun, MutableHandleScript scriptp);
 
-template<XDRMode mode>
+template <XDRMode mode>
 bool
-XDRLazyScript(XDRState<mode>* xdr, HandleObject enclosingScope, HandleScript enclosingScript,
-              HandleFunction fun, MutableHandle<LazyScript*> lazy);
+XDRLazyScript(XDRState<mode>* xdr, Handle<StaticScope*> enclosingScope,
+              HandleScript enclosingScript, HandleFunction fun, MutableHandle<LazyScript*> lazy);
 
 
 
 
-template<XDRMode mode>
+template <XDRMode mode>
 bool
 XDRScriptConst(XDRState<mode>* xdr, MutableHandleValue vp);
 
@@ -945,13 +946,13 @@ class JSScript : public js::gc::TenuredCell
     template <js::XDRMode mode>
     friend
     bool
-    js::XDRScript(js::XDRState<mode>* xdr, js::HandleObject enclosingScope,
+    js::XDRScript(js::XDRState<mode>* xdr, js::Handle<js::StaticScope*> enclosingScope,
                   js::HandleScript enclosingScript,
                   js::HandleFunction fun, js::MutableHandleScript scriptp);
 
     friend bool
-    js::detail::CopyScript(JSContext* cx, js::HandleObject scriptStaticScope, js::HandleScript src,
-                           js::HandleScript dst);
+    js::detail::CopyScript(JSContext* cx, js::Handle<js::StaticScope*> scriptStaticScope,
+                           js::HandleScript src, js::HandleScript dst);
 
   public:
     
@@ -1229,7 +1230,7 @@ class JSScript : public js::gc::TenuredCell
 
   public:
     static JSScript* Create(js::ExclusiveContext* cx,
-                            js::HandleObject staticScope, bool savedCallerFun,
+                            js::Handle<js::StaticScope*> staticScope, bool savedCallerFun,
                             const JS::ReadOnlyCompileOptions& options,
                             js::HandleObject sourceObject, uint32_t sourceStart,
                             uint32_t sourceEnd);
@@ -1720,7 +1721,7 @@ class JSScript : public js::gc::TenuredCell
 
 
 
-    inline JSObject* enclosingStaticScope() const;
+    inline js::StaticScope* enclosingStaticScope() const;
 
     
     
@@ -1891,13 +1892,13 @@ class JSScript : public js::gc::TenuredCell
 
     
     
-    JSObject* innermostStaticScopeInScript(jsbytecode* pc);
+    js::StaticScope* innermostStaticScopeInScript(jsbytecode* pc);
 
     
     
-    JSObject* innermostStaticScope(jsbytecode* pc);
+    js::StaticScope* innermostStaticScope(jsbytecode* pc);
 
-    JSObject* innermostStaticScope() { return innermostStaticScope(main()); }
+    js::StaticScope* innermostStaticScope() { return innermostStaticScope(main()); }
 
     
 
@@ -2271,7 +2272,7 @@ class LazyScript : public gc::TenuredCell
     }
 
     StaticFunctionScope* staticScope() const { return staticScope_; }
-    JSObject* enclosingScope() const;
+    StaticScope* enclosingScope() const;
 
     
     
@@ -2550,7 +2551,7 @@ DescribeScriptedCallerForCompilation(JSContext* cx, MutableHandleScript maybeScr
                                      LineOption opt = NOT_CALLED_FROM_JSOP_EVAL);
 
 JSScript*
-CloneScriptIntoFunction(JSContext* cx, HandleObject enclosingScope, HandleFunction fun,
+CloneScriptIntoFunction(JSContext* cx, Handle<StaticScope*> enclosingScope, HandleFunction fun,
                         HandleScript src);
 
 JSScript*
@@ -2562,7 +2563,7 @@ CloneGlobalScript(JSContext* cx, Handle<StaticScope*> enclosingScope, HandleScri
 
 namespace JS {
 namespace ubi {
-template<>
+template <>
 struct Concrete<js::LazyScript> : TracerConcrete<js::LazyScript> {
     CoarseType coarseType() const final { return CoarseType::Script; }
     Size size(mozilla::MallocSizeOf mallocSizeOf) const override;

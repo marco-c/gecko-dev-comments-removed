@@ -2225,9 +2225,10 @@ CloneObject(JSContext* cx, HandleNativeObject selfHostedObject)
                                  : selfHostedFunction->getAllocKind();
         MOZ_ASSERT(!CanReuseScriptForClone(cx->compartment(), selfHostedFunction, cx->global()));
         Rooted<ClonedBlockObject*> globalLexical(cx, &cx->global()->lexicalScope());
-        RootedObject staticGlobalLexical(cx, &globalLexical->staticBlock());
+        Rooted<StaticScope*> staticGlobalLexical(cx, &globalLexical->staticBlock());
         clone = CloneFunctionAndScript(cx, selfHostedFunction, globalLexical,
                                        staticGlobalLexical, kind);
+
         
         
         if (clone && hasName) {

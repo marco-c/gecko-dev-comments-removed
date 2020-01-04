@@ -728,7 +728,7 @@ CloneFunctionReuseScript(JSContext* cx, HandleFunction fun, HandleObject parent,
 
 extern JSFunction*
 CloneFunctionAndScript(JSContext* cx, HandleFunction fun, HandleObject parent,
-                       HandleObject newStaticScope,
+                       Handle<StaticScope*> newStaticScope,
                        gc::AllocKind kind = gc::AllocKind::FUNCTION,
                        HandleObject proto = nullptr);
 
@@ -789,7 +789,7 @@ JSString* FunctionToString(JSContext* cx, HandleFunction fun, bool lambdaParen);
 
 template<XDRMode mode>
 bool
-XDRInterpretedFunction(XDRState<mode>* xdr, HandleObject enclosingScope,
+XDRInterpretedFunction(XDRState<mode>* xdr, Handle<StaticScope*> enclosingScope,
                        HandleScript enclosingScript, MutableHandleFunction objp);
 
 
