@@ -10,12 +10,8 @@ function test(constructor) {
     assertDeepEq(Reflect.ownKeys(iter), []);
 
     
-    
     var proto1 = Object.getPrototypeOf(iter);
-
-    var names = Reflect.ownKeys(proto1);
-    names.sort();
-    assertDeepEq(Reflect.ownKeys(proto1), ['next']);
+    assertDeepEq(Reflect.ownKeys(proto1), ['next', Symbol.toStringTag]);
 
     var desc = Object.getOwnPropertyDescriptor(proto1, 'next');
     assertEq(desc.configurable, true);

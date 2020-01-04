@@ -953,6 +953,9 @@ DefinePropertiesAndFunctions(JSContext* cx, HandleObject obj,
 
 typedef HashSet<GlobalObject*, DefaultHasher<GlobalObject*>, SystemAllocPolicy> GlobalObjectSet;
 
+extern bool
+DefineToStringTag(JSContext *cx, HandleObject obj, JSAtom* tag);
+
 
 
 

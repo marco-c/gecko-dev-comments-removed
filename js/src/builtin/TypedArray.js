@@ -1439,6 +1439,21 @@ function TypedArraySpecies() {
 }
 
 
+function TypedArrayToStringTag() {
+    
+    var O = this;
+
+    
+    if (!IsObject(O) || !IsTypedArray(O))
+        return undefined;
+
+    
+    
+    return _NameForTypedArray(O);
+}
+_SetCanonicalName(TypedArrayToStringTag, "get [Symbol.toStringTag]");
+
+
 function ArrayBufferSlice(start, end) {
     
     var O = this;
