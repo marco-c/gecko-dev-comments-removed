@@ -30,14 +30,28 @@ enum class SurfaceType : int8_t {
 };
 
 enum class SurfaceFormat : int8_t {
-  B8G8R8A8,
-  B8G8R8X8,
-  R8G8B8A8,
-  R8G8B8X8,
-  R5G6B5_UINT16,
+  
+  
+  
+  
+  B8G8R8A8,     
+  B8G8R8X8,     
+  R8G8B8A8,     
+  R8G8B8X8,     
+
+  
+  
+  
+  R5G6B5_UINT16,                    
+
+  
   A8,
+
+  
   YUV,
   NV12,
+
+  
   UNKNOWN
 };
 
