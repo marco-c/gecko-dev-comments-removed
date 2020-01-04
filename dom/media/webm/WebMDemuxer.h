@@ -9,8 +9,10 @@
 #include "nsTArray.h"
 #include "MediaDataDemuxer.h"
 #include "NesteggPacketHolder.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/Move.h"
 
+#include "VorbisDecoder.h"
 typedef struct nestegg nestegg;
 
 namespace mozilla {
@@ -199,6 +201,8 @@ private:
   
   int64_t mLastWebMBlockOffset;
   const bool mIsMediaSource;
+
+  VorbisPacketSampleCounter mVorbisCounter;
 };
 
 class WebMTrackDemuxer : public MediaTrackDemuxer
