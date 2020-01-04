@@ -444,9 +444,6 @@ protected:
   
   int64_t GetClock(TimeStamp* aTimeStamp = nullptr) const;
 
-  nsresult DropAudioUpToSeekTarget(MediaData* aSample);
-  nsresult DropVideoUpToSeekTarget(MediaData* aSample);
-
   void SetStartTime(int64_t aStartTimeUsecs);
 
   
@@ -581,14 +578,6 @@ protected:
   void FinishDecodeFirstFrame();
 
   
-  
-  void DecodeSeek();
-
-  void CheckIfSeekComplete();
-  bool IsAudioSeekComplete();
-  bool IsVideoSeekComplete();
-
-  
   void SeekCompleted();
 
   
@@ -699,7 +688,11 @@ private:
   SeekJob mQueuedSeek;
 
   
-  SeekJob mCurrentSeek;
+  RefPtr<media::SeekTask> mSeekTask;
+  MozPromiseRequestHolder<media::SeekTask::SeekTaskPromise> mSeekTaskRequest;
+
+  void OnSeekTaskResolved(media::SeekTaskResolveValue aValue);
+  void OnSeekTaskRejected(media::SeekTaskRejectValue aValue);
 
   
   int64_t mFragmentEndTime;
@@ -823,12 +816,6 @@ private:
   
   
   
-  RefPtr<MediaData> mFirstVideoFrameAfterSeek;
-
-  
-  
-  
-  
   
   
   
@@ -929,21 +916,6 @@ private:
   
   
   bool mDecodeThreadWaiting;
-
-  
-  
-  
-  
-  bool mDropAudioUntilNextDiscontinuity;
-  bool mDropVideoUntilNextDiscontinuity;
-
-  
-  MozPromiseRequestHolder<MediaDecoderReader::SeekPromise> mSeekRequest;
-
-  
-  
-  
-  int64_t mCurrentTimeBeforeSeek;
 
   
   MozPromiseRequestHolder<MediaDecoderReader::MetadataPromise> mMetadataRequest;
