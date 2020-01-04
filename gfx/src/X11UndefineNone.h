@@ -4,9 +4,6 @@
 
 
 
-#ifndef MOZILLA_GFX_X11UNDEFINENONE_H_
-#define MOZILLA_GFX_X11UNDEFINENONE_H_
-
 
 
 
@@ -24,4 +21,3 @@
 #  endif
 #endif
 
-#endif 

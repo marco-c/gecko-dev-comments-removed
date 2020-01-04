@@ -44,7 +44,7 @@ BlockReflowInput::BlockReflowInput(const ReflowInput& aReflowInput,
     mBorderPadding(mReflowInput.ComputedLogicalBorderPadding()),
     mPrevBEndMargin(),
     mLineNumber(0),
-    mFloatBreakType(StyleClear::None_),
+    mFloatBreakType(StyleClear::None),
     mConsumedBSize(aConsumedBSize)
 {
   if (!sFloatFragmentsInsideColumnPrefCached) {
@@ -732,7 +732,7 @@ BlockReflowInput::FlowAndPlaceFloat(nsIFrame* aFloat)
   
   
   
-  if (StyleClear::None_ != floatDisplay->mBreakType) {
+  if (StyleClear::None != floatDisplay->mBreakType) {
     
     mBCoord = ClearFloats(mBCoord, floatDisplay->PhysicalBreakType(wm));
   }
@@ -1103,7 +1103,7 @@ BlockReflowInput::ClearFloats(nscoord aBCoord, StyleClear aBreakType,
 
   nscoord newBCoord = aBCoord;
 
-  if (aBreakType != StyleClear::None_) {
+  if (aBreakType != StyleClear::None) {
     newBCoord = mFloatManager->ClearFloats(newBCoord, aBreakType, aFlags);
   }
 

@@ -2631,7 +2631,7 @@ nsComputedDOMStyle::GetGridTemplateColumnsRows(
   }
 
   
-  if (numSizes == 0 && !aTrackList.HasRepeatAuto()) {
+  if (numSizes == 0) {
     RefPtr<nsROCSSPrimitiveValue> val = new nsROCSSPrimitiveValue;
     val->SetIdent(eCSSKeyword_none);
     return val.forget();
@@ -2647,7 +2647,8 @@ nsComputedDOMStyle::GetGridTemplateColumnsRows(
     const nsTArray<nscoord>& trackSizes = aTrackInfo->mSizes;
     const uint32_t numExplicitTracks = aTrackInfo->mNumExplicitTracks;
     const uint32_t numLeadingImplicitTracks = aTrackInfo->mNumLeadingImplicitTracks;
-    MOZ_ASSERT(numSizes >= numLeadingImplicitTracks + numExplicitTracks);
+    MOZ_ASSERT(numSizes > 0 &&
+               numSizes >= numLeadingImplicitTracks + numExplicitTracks);
 
     
     for (uint32_t i = 0; i < numLeadingImplicitTracks; ++i) {
@@ -2657,7 +2658,7 @@ nsComputedDOMStyle::GetGridTemplateColumnsRows(
     }
 
     
-    if (numExplicitTracks || aTrackList.HasRepeatAuto()) {
+    if (numExplicitTracks) {
       int32_t endOfRepeat = 0;  
       int32_t offsetToLastRepeat = 0;
       if (aTrackList.HasRepeatAuto()) {
@@ -2665,66 +2666,20 @@ nsComputedDOMStyle::GetGridTemplateColumnsRows(
         offsetToLastRepeat = numExplicitTracks + 1 - aTrackList.mLineNameLists.Length();
         endOfRepeat = aTrackList.mRepeatAutoIndex + offsetToLastRepeat + 1;
       }
-
-      uint32_t repeatIndex = 0;
-      uint32_t numRepeatTracks = aTrackInfo->mRemovedRepeatTracks.Length();
-      enum LinePlacement { LinesPrecede, LinesFollow, LinesBetween };
-      auto AppendRemovedAutoFits = [this, aTrackInfo, &valueList, aTrackList,
-                                    &repeatIndex,
-                                    numRepeatTracks](LinePlacement aPlacement)
-      {
-        
-        bool atLeastOneTrackReported = false;
-        while (repeatIndex < numRepeatTracks &&
-             aTrackInfo->mRemovedRepeatTracks[repeatIndex]) {
-          if ((aPlacement == LinesPrecede) ||
-              ((aPlacement == LinesBetween) && atLeastOneTrackReported)) {
-            
-            AppendGridLineNames(valueList,
-                                aTrackList.mRepeatAutoLineNameListAfter,
-                                aTrackList.mRepeatAutoLineNameListBefore);
-          }
-
-          
-          RefPtr<nsROCSSPrimitiveValue> val = new nsROCSSPrimitiveValue;
-          val->SetAppUnits(0);
-          valueList->AppendCSSValue(val.forget());
-          atLeastOneTrackReported = true;
-
-          if (aPlacement == LinesFollow) {
-            
-            AppendGridLineNames(valueList,
-                                aTrackList.mRepeatAutoLineNameListAfter,
-                                aTrackList.mRepeatAutoLineNameListBefore);
-          }
-          repeatIndex++;
-        }
-        repeatIndex++;
-      };
-
       for (int32_t i = 0;; i++) {
         if (aTrackList.HasRepeatAuto()) {
           if (i == aTrackList.mRepeatAutoIndex) {
             const nsTArray<nsString>& lineNames = aTrackList.mLineNameLists[i];
             if (i == endOfRepeat) {
               
+              
               AppendGridLineNames(valueList, lineNames,
-                                  aTrackList.mRepeatAutoLineNameListBefore);
-
-              AppendRemovedAutoFits(LinesBetween);
-
-              AppendGridLineNames(valueList,
-                                  aTrackList.mRepeatAutoLineNameListAfter,
                                   aTrackList.mLineNameLists[i + 1]);
             } else {
               AppendGridLineNames(valueList, lineNames,
                                   aTrackList.mRepeatAutoLineNameListBefore);
-              AppendRemovedAutoFits(LinesFollow);
             }
           } else if (i == endOfRepeat) {
-            
-            AppendRemovedAutoFits(LinesPrecede);
-
             const nsTArray<nsString>& lineNames =
               aTrackList.mLineNameLists[aTrackList.mRepeatAutoIndex + 1];
             AppendGridLineNames(valueList,
@@ -2734,7 +2689,6 @@ nsComputedDOMStyle::GetGridTemplateColumnsRows(
             AppendGridLineNames(valueList,
                                 aTrackList.mRepeatAutoLineNameListAfter,
                                 aTrackList.mRepeatAutoLineNameListBefore);
-            AppendRemovedAutoFits(LinesFollow);
           } else {
             uint32_t j = i > endOfRepeat ? i - offsetToLastRepeat : i;
             const nsTArray<nsString>& lineNames = aTrackList.mLineNameLists[j];
@@ -6099,7 +6053,7 @@ nsComputedDOMStyle::GetShapeSource(
       SetValueToFragmentOrURL(aShapeSource.GetURL(), val);
       return val.forget();
     }
-    case StyleShapeSourceType::None_: {
+    case StyleShapeSourceType::None: {
       RefPtr<nsROCSSPrimitiveValue> val = new nsROCSSPrimitiveValue;
       val->SetIdent(eCSSKeyword_none);
       return val.forget();

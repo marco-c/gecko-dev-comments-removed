@@ -205,7 +205,7 @@ nsRuleNode::EnsureBlockDisplay(StyleDisplay& display,
       break;
     } 
     MOZ_FALLTHROUGH;
-  case StyleDisplay::None_:
+  case StyleDisplay::None:
   case StyleDisplay::Contents:
     
   case StyleDisplay::Table:
@@ -1342,16 +1342,16 @@ struct SetEnumValueHelper
   DEFINE_ENUM_CLASS_SETTER(StyleBoxOrient, Horizontal, Vertical)
   DEFINE_ENUM_CLASS_SETTER(StyleBoxPack, Start, Justify)
   DEFINE_ENUM_CLASS_SETTER(StyleBoxSizing, Content, Border)
-  DEFINE_ENUM_CLASS_SETTER(StyleClear, None_, Both)
+  DEFINE_ENUM_CLASS_SETTER(StyleClear, None, Both)
   DEFINE_ENUM_CLASS_SETTER(StyleFillRule, Nonzero, Evenodd)
-  DEFINE_ENUM_CLASS_SETTER(StyleFloat, None_, InlineEnd)
+  DEFINE_ENUM_CLASS_SETTER(StyleFloat, None, InlineEnd)
   DEFINE_ENUM_CLASS_SETTER(StyleFloatEdge, ContentBox, MarginBox)
-  DEFINE_ENUM_CLASS_SETTER(StyleUserFocus, None_, SelectMenu)
-  DEFINE_ENUM_CLASS_SETTER(StyleUserSelect, None_, MozText)
+  DEFINE_ENUM_CLASS_SETTER(StyleUserFocus, None, SelectMenu)
+  DEFINE_ENUM_CLASS_SETTER(StyleUserSelect, None, MozText)
 #ifdef MOZ_XUL
-  DEFINE_ENUM_CLASS_SETTER(StyleDisplay, None_, Popup)
+  DEFINE_ENUM_CLASS_SETTER(StyleDisplay, None, Popup)
 #else
-  DEFINE_ENUM_CLASS_SETTER(StyleDisplay, None_, InlineBox)
+  DEFINE_ENUM_CLASS_SETTER(StyleDisplay, None, InlineBox)
 #endif
 
 #undef DEF_SET_ENUMERATED_VALUE
@@ -5149,7 +5149,7 @@ nsRuleNode::ComputeUserInterfaceData(void* aStartStruct,
            ui->mUserFocus, conditions,
            SETVAL_ENUMERATED | SETVAL_UNSET_INHERIT,
            parentUI->mUserFocus,
-           StyleUserFocus::None_);
+           StyleUserFocus::None);
 
   
   SetValue(*aRuleData->ValueForPointerEvents(), ui->mPointerEvents,
@@ -6045,7 +6045,7 @@ nsRuleNode::ComputeDisplayData(void* aStartStruct,
   SetValue(*aRuleData->ValueForClear(), display->mBreakType, conditions,
            SETVAL_ENUMERATED | SETVAL_UNSET_INITIAL,
            parentDisplay->mBreakType,
-           StyleClear::None_);
+           StyleClear::None);
 
   
   
@@ -6104,7 +6104,7 @@ nsRuleNode::ComputeDisplayData(void* aStartStruct,
            display->mFloat, conditions,
            SETVAL_ENUMERATED | SETVAL_UNSET_INITIAL,
            parentDisplay->mFloat,
-           StyleFloat::None_);
+           StyleFloat::None);
   
   display->mOriginalFloat = display->mFloat;
 
@@ -6175,7 +6175,7 @@ nsRuleNode::ComputeDisplayData(void* aStartStruct,
            parentDisplay->mResize,
            NS_STYLE_RESIZE_NONE);
 
-  if (display->mDisplay != StyleDisplay::None_) {
+  if (display->mDisplay != StyleDisplay::None) {
     
     
     
@@ -6231,7 +6231,7 @@ nsRuleNode::ComputeDisplayData(void* aStartStruct,
       
       
       EnsureBlockDisplay(display->mDisplay);
-      display->mFloat = StyleFloat::None_;
+      display->mFloat = StyleFloat::None;
 
       
       
@@ -6239,7 +6239,7 @@ nsRuleNode::ComputeDisplayData(void* aStartStruct,
       
       
       
-    } else if (display->mFloat != StyleFloat::None_) {
+    } else if (display->mFloat != StyleFloat::None) {
       
       
       EnsureBlockDisplay(display->mDisplay);
