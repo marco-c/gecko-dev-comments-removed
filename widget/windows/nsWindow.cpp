@@ -1409,7 +1409,7 @@ NS_METHOD nsWindow::Move(double aX, double aY)
 
   
   
-  CSSToLayoutDeviceScale scale = BoundsUseDisplayPixels() ? GetDefaultScale()
+  CSSToLayoutDeviceScale scale = BoundsUseDesktopPixels() ? GetDefaultScale()
                                     : CSSToLayoutDeviceScale(1.0);
   int32_t x = NSToIntRound(aX * scale.scale);
   int32_t y = NSToIntRound(aY * scale.scale);
@@ -1477,7 +1477,7 @@ NS_METHOD nsWindow::Resize(double aWidth, double aHeight, bool aRepaint)
 {
   
   
-  CSSToLayoutDeviceScale scale = BoundsUseDisplayPixels() ? GetDefaultScale()
+  CSSToLayoutDeviceScale scale = BoundsUseDesktopPixels() ? GetDefaultScale()
                                     : CSSToLayoutDeviceScale(1.0);
   int32_t width = NSToIntRound(aWidth * scale.scale);
   int32_t height = NSToIntRound(aHeight * scale.scale);
@@ -1529,7 +1529,7 @@ NS_METHOD nsWindow::Resize(double aX, double aY, double aWidth, double aHeight, 
 {
   
   
-  CSSToLayoutDeviceScale scale = BoundsUseDisplayPixels() ? GetDefaultScale()
+  CSSToLayoutDeviceScale scale = BoundsUseDesktopPixels() ? GetDefaultScale()
                                     : CSSToLayoutDeviceScale(1.0);
   int32_t x = NSToIntRound(aX * scale.scale);
   int32_t y = NSToIntRound(aY * scale.scale);
@@ -3046,7 +3046,7 @@ nsWindow::PrepareForFullscreenTransition(nsISupports** aData)
   nsCOMPtr<nsIScreen> screen = GetWidgetScreen();
   int32_t x, y, width, height;
   screen->GetRectDisplayPix(&x, &y, &width, &height);
-  MOZ_ASSERT(BoundsUseDisplayPixels(),
+  MOZ_ASSERT(BoundsUseDesktopPixels(),
              "Should only be called on top-level window");
   CSSToLayoutDeviceScale scale = GetDefaultScale();
   initData.mBounds.x = NSToIntRound(x * scale.scale);

@@ -183,7 +183,7 @@ public:
   
   
   
-  bool                    BoundsUseDisplayPixels() const {
+  bool                    BoundsUseDesktopPixels() const {
     return mWindowType <= eWindowType_popup;
   }
   NS_IMETHOD              MoveClient(double aX, double aY) override;
