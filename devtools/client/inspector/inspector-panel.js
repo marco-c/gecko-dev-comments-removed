@@ -451,7 +451,7 @@ InspectorPanel.prototype = {
     }
 
     this.setupSidebarToggle();
-    this.setupSidebarWidth();
+    this.setupSidebarSize();
 
     this.sidebar.show(defaultTab);
   },
@@ -465,7 +465,7 @@ InspectorPanel.prototype = {
 
 
 
-  setupSidebarWidth: function () {
+  setupSidebarSize: function () {
     let sidePaneContainer = this.panelDoc.querySelector(
       "#inspector-sidebar-container");
 
@@ -473,21 +473,31 @@ InspectorPanel.prototype = {
       try {
         sidePaneContainer.width = Services.prefs.getIntPref(
           "devtools.toolsidebar-width.inspector");
+        sidePaneContainer.height = Services.prefs.getIntPref(
+          "devtools.toolsidebar-height.inspector");
       } catch (e) {
         
         
+        
+        
+        
         sidePaneContainer.width = 450;
+        sidePaneContainer.height = 450;
       }
     });
 
     this.sidebar.on("hide", () => {
       Services.prefs.setIntPref("devtools.toolsidebar-width.inspector",
         sidePaneContainer.width);
+      Services.prefs.setIntPref("devtools.toolsidebar-height.inspector",
+        sidePaneContainer.height);
     });
 
     this.sidebar.on("destroy", () => {
       Services.prefs.setIntPref("devtools.toolsidebar-width.inspector",
-        sidePaneContainer.width);
+        sidePaneContainer.height);
+      Services.prefs.setIntPref("devtools.toolsidebar-height.inspector",
+        sidePaneContainer.height);
     });
   },
 
