@@ -649,25 +649,8 @@ var gAdvancedPane = {
 
 
 
-
-
-
-
-
-
-
 #ifdef MOZ_UPDATER
   
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -705,12 +688,6 @@ var gAdvancedPane = {
     
     radiogroup.disabled = !canCheck || enabledPref.locked || autoPref.locked;
 
-    var modePref = document.getElementById("app.update.mode");
-    var warnIncompatible = document.getElementById("warnIncompatible");
-    
-    warnIncompatible.disabled = radiogroup.disabled || modePref.locked ||
-                                !enabledPref.value || !autoPref.value;
-
 #ifdef MOZ_MAINTENANCE_SERVICE
     
     
@@ -734,12 +711,10 @@ var gAdvancedPane = {
   
 
 
-
   updateWritePrefs: function ()
   {
     var enabledPref = document.getElementById("app.update.enabled");
     var autoPref = document.getElementById("app.update.auto");
-    var modePref = document.getElementById("app.update.mode");
     var radiogroup = document.getElementById("updateRadioGroup");
     switch (radiogroup.value) {
       case "auto":      
@@ -754,52 +729,6 @@ var gAdvancedPane = {
         enabledPref.value = false;
         autoPref.value = false;
     }
-
-    var warnIncompatible = document.getElementById("warnIncompatible");
-    warnIncompatible.disabled = enabledPref.locked || !enabledPref.value ||
-                                autoPref.locked || !autoPref.value ||
-                                modePref.locked;
-  },
-
-  
-
-
-
-
-
-
-  _modePreference: -1,
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-  readAddonWarn: function ()
-  {
-    var preference = document.getElementById("app.update.mode");
-    var warn = preference.value != 0;
-    gAdvancedPane._modePreference = warn ? preference.value : 1;
-    return warn;
-  },
-
-  
-
-
-
-
-  writeAddonWarn: function ()
-  {
-    var warnIncompatible = document.getElementById("warnIncompatible");
-    return !warnIncompatible.checked ? 0 : gAdvancedPane._modePreference;
   },
 
   
