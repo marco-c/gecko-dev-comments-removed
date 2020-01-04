@@ -15,7 +15,8 @@ const {InplaceEditor, editableField, editableItem} =
       require("devtools/client/shared/inplace-editor");
 const {ELEMENT_STYLE} = require("devtools/server/actors/styles");
 const {OutputParser} = require("devtools/client/shared/output-parser");
-const {PrefObserver, PREF_ORIG_SOURCES} = require("devtools/client/styleeditor/utils");
+const {PrefObserver, PREF_ORIG_SOURCES} =
+      require("devtools/client/styleeditor/utils");
 const {
   createChild,
   appendText,
@@ -266,11 +267,11 @@ ElementStyle.prototype = {
   
 
 
-   _sortRulesForPseudoElement: function() {
-     this.rules = this.rules.sort((a, b) => {
-       return (a.pseudoElement || "z") > (b.pseudoElement || "z");
-     });
-   },
+  _sortRulesForPseudoElement: function() {
+    this.rules = this.rules.sort((a, b) => {
+      return (a.pseudoElement || "z") > (b.pseudoElement || "z");
+    });
+  },
 
   
 
@@ -340,7 +341,7 @@ ElementStyle.prototype = {
 
 
 
-  markOverridden: function(pseudo="") {
+  markOverridden: function(pseudo = "") {
     
     
     
@@ -567,7 +568,8 @@ Rule.prototype = {
 
 
   getOriginalSourceStrings: function() {
-    return this.domRule.getOriginalLocation().then(({href, line, mediaText}) => {
+    return this.domRule.getOriginalLocation().then(({href,
+                                                     line, mediaText}) => {
       let mediaString = mediaText ? " @" + mediaText : "";
       let linePart = line > 0 ? (":" + line) : "";
 
@@ -1162,7 +1164,7 @@ TextProperty.prototype = {
           priority: dummyStyle.getPropertyPriority(prop),
         });
       }
-    } catch(e) {
+    } catch (e) {
       
       
     }
@@ -1189,7 +1191,7 @@ TextProperty.prototype = {
     }
   },
 
-  setValue: function(value, priority, force=false) {
+  setValue: function(value, priority, force = false) {
     let store = this.rule.elementStyle.store;
 
     if (this.editor && value !== this.editor.committed.value || force) {
@@ -1632,7 +1634,7 @@ CssRuleView.prototype = {
       }
 
       clipboardHelper.copyString(text);
-    } catch(e) {
+    } catch (e) {
       console.error(e);
     }
   },
@@ -1765,7 +1767,7 @@ CssRuleView.prototype = {
 
 
 
-  setFilterStyles: function(value="") {
+  setFilterStyles: function(value = "") {
     this.searchField.value = value;
     this.searchField.focus();
     this._onFilterStyles();
@@ -1872,7 +1874,7 @@ CssRuleView.prototype = {
       this.styleWindow.focus();
       let contextmenu = this.inspector.toolbox.textboxContextMenuPopup;
       contextmenu.openPopupAtScreen(event.screenX, event.screenY, true);
-    } catch(e) {
+    } catch (e) {
       console.error(e);
     }
   },
@@ -1952,8 +1954,6 @@ CssRuleView.prototype = {
     this.popup.destroy();
   },
 
-
-
   
 
 
@@ -1978,7 +1978,7 @@ CssRuleView.prototype = {
 
 
 
-  selectElement: function(element, allowRefresh=false) {
+  selectElement: function(element, allowRefresh = false) {
     let refresh = (this._viewedElement === element);
     if (refresh && !allowRefresh) {
       return promise.resolve(undefined);
@@ -2133,7 +2133,7 @@ CssRuleView.prototype = {
   
 
 
-  clear: function(clearDom=true) {
+  clear: function(clearDom = true) {
     this.lastSelectorIcon = null;
 
     if (clearDom) {
@@ -2653,12 +2653,12 @@ CssRuleView.prototype = {
 
 
 
-function RuleEditor(aRuleView, aRule) {
-  this.ruleView = aRuleView;
+function RuleEditor(ruleView, rule) {
+  this.ruleView = ruleView;
   this.doc = this.ruleView.styleDocument;
-  this.rule = aRule;
+  this.rule = rule;
 
-  this.isEditable = !aRule.isSystem;
+  this.isEditable = !rule.isSystem;
   
   
   this.isEditing = false;
@@ -2730,9 +2730,9 @@ RuleEditor.prototype = {
     });
 
     if (this.isSelectorEditable) {
-      this.selectorText.addEventListener("click", aEvent => {
+      this.selectorText.addEventListener("click", event => {
         
-        aEvent.stopPropagation();
+        event.stopPropagation();
       }, false);
 
       editableField({
@@ -2796,7 +2796,7 @@ RuleEditor.prototype = {
 
 
 
-  _locationChanged: function(line, column) {
+  _locationChanged: function() {
     this.updateSourceLink();
   },
 
@@ -2953,13 +2953,13 @@ RuleEditor.prototype = {
 
 
 
-  addProperties: function(aProperties, aSiblingProp) {
-    if (!aProperties || !aProperties.length) {
+  addProperties: function(properties, siblingProp) {
+    if (!properties || !properties.length) {
       return;
     }
 
-    let lastProp = aSiblingProp;
-    for (let p of aProperties) {
+    let lastProp = siblingProp;
+    for (let p of properties) {
       lastProp = this.addProperty(p.name, p.value, p.priority, lastProp);
     }
 
@@ -3020,8 +3020,8 @@ RuleEditor.prototype = {
 
 
 
-  _onNewProperty: function(aValue, aCommit) {
-    if (!aValue || !aCommit) {
+  _onNewProperty: function(value, commit) {
+    if (!value || !commit) {
       return;
     }
 
@@ -3029,7 +3029,7 @@ RuleEditor.prototype = {
     
     
     this.multipleAddedProperties =
-      parseDeclarations(aValue).filter(d => d.name);
+      parseDeclarations(value).filter(d => d.name);
 
     
     
@@ -3743,7 +3743,7 @@ TextPropertyEditor.prototype = {
 
 
 
-  _onValueDone: function(value="", commit, direction) {
+  _onValueDone: function(value = "", commit, direction) {
     let parsedProperties = this._getValueAndExtraProperties(value);
     let val = parseSingleValue(parsedProperties.firstValue);
     let isValueUnchanged = (!commit && !this.ruleEditor.isEditing) ||
