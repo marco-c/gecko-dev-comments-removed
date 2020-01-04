@@ -192,9 +192,6 @@ public interface TelemetryContract {
         SYSTEM("system"),
 
         
-        TABSTRAY("tabstray"),
-
-        
         
         TOAST("toast"),
 
