@@ -1550,6 +1550,29 @@ var AddonDetails = {
   }
 };
 
+var Scalars = {
+  
+
+
+
+  render: function(aPayload) {
+    let scalarsSection = document.getElementById("scalars");
+    removeAllChildNodes(scalarsSection);
+
+    let scalars = aPayload.scalars;
+    const hasData = scalars && Object.keys(scalars).length > 0;
+    setHasData("scalars-section", hasData);
+    if (!hasData) {
+      return;
+    }
+
+    const headingName = bundle.GetStringFromName("namesHeader");
+    const headingValue = bundle.GetStringFromName("valuesHeader");
+    const table = KeyValueTable.render(scalars, headingName, headingValue);
+    scalarsSection.appendChild(table);
+  }
+};
+
 
 
 
@@ -1894,6 +1917,9 @@ function displayPingData(ping, updatePayloadList = false) {
     infoSection.appendChild(KeyValueTable.render(ping.payload.info,
                                                  keysHeader, valuesHeader));
   }
+
+  
+  Scalars.render(payload);
 
   
   let hgramDiv = document.getElementById("histograms");
