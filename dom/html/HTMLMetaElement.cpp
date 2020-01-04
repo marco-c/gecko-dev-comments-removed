@@ -118,18 +118,17 @@ HTMLMetaElement::BindToTree(nsIDocument* aDocument, nsIContent* aParent,
       nsIPrincipal* principal = aDocument->NodePrincipal();
       nsCOMPtr<nsIContentSecurityPolicy> csp;
       nsCOMPtr<nsIDOMDocument> domDoc = do_QueryInterface(aDocument);
-      rv = principal->EnsureCSP(domDoc, getter_AddRefs(csp));
-      NS_ENSURE_SUCCESS(rv, rv);
-
-      
-      
-      
-      rv = csp->AppendPolicy(content,
-                             false, 
-                             true); 
-      NS_ENSURE_SUCCESS(rv, rv);
-
-      aDocument->ApplySettingsFromCSP(false);
+      principal->EnsureCSP(domDoc, getter_AddRefs(csp));
+      if (csp) {
+        
+        
+        
+        rv = csp->AppendPolicy(content,
+                               false, 
+                               true); 
+        NS_ENSURE_SUCCESS(rv, rv);
+        aDocument->ApplySettingsFromCSP(false);
+      }
     }
   }
 
