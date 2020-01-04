@@ -543,6 +543,15 @@ public:
 
 
 
+  MOZ_MUST_USE bool initLengthUninitialized(size_t aRequest);
+
+  
+
+
+
+
+
+
 
   MOZ_MUST_USE bool reserve(size_t aRequest);
 
@@ -966,6 +975,17 @@ Vector<T, N, AP>::initCapacity(size_t aRequest)
 #ifdef DEBUG
   mReserved = aRequest;
 #endif
+  return true;
+}
+
+template<typename T, size_t N, class AP>
+inline bool
+Vector<T, N, AP>::initLengthUninitialized(size_t aRequest)
+{
+  if (!initCapacity(aRequest)) {
+    return false;
+  }
+  infallibleGrowByUninitialized(aRequest);
   return true;
 }
 
