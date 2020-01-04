@@ -349,6 +349,10 @@ protected:
 
   InfallibleTArray<AnimationProperty> mProperties;
 
+  
+  
+  bool mInEffectOnLastAnimationTimingUpdate;
+
 private:
   nsIFrame* GetAnimationFrame() const;
 

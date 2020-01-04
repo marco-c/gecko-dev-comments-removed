@@ -94,6 +94,7 @@ KeyframeEffectReadOnly::KeyframeEffectReadOnly(
   , mTarget(aTarget)
   , mTiming(aTiming)
   , mPseudoType(aPseudoType)
+  , mInEffectOnLastAnimationTimingUpdate(false)
 {
   MOZ_ASSERT(aTarget, "null animation target is not yet supported");
 }
@@ -146,6 +147,19 @@ KeyframeEffectReadOnly::NotifyAnimationTimingUpdated()
   bool isRelevant = mAnimation && mAnimation->IsRelevant();
   if (!isRelevant) {
     ResetIsRunningOnCompositor();
+  }
+
+  
+  
+  bool inEffect = IsInEffect();
+  if (inEffect != mInEffectOnLastAnimationTimingUpdate) {
+    if (mTarget) {
+      EffectSet* effectSet = EffectSet::GetEffectSet(mTarget, mPseudoType);
+      if (effectSet) {
+        effectSet->MarkCascadeNeedsUpdate();
+      }
+    }
+    mInEffectOnLastAnimationTimingUpdate = inEffect;
   }
 }
 
