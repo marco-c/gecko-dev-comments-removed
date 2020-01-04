@@ -15,6 +15,12 @@ function startMiddleClickTestCase(aTestNumber) {
 }
 
 function test() {
-  requestLongerTimeout(10);  
-  startReferrerTest(startMiddleClickTestCase, { userContextId: 3 });
+  waitForExplicitFinish();
+
+  SpecialPowers.pushPrefEnv(
+    {set: [["privacy.userContext.enabled", true]]},
+    function() {
+      requestLongerTimeout(10);  
+      startReferrerTest(startMiddleClickTestCase, { userContextId: 3 });
+    });
 }

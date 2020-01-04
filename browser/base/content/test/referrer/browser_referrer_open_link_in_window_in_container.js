@@ -21,6 +21,12 @@ function startNewWindowTestCase(aTestNumber) {
 }
 
 function test() {
-  requestLongerTimeout(10);  
-  startReferrerTest(startNewWindowTestCase, { userContextId: 1 });
+  waitForExplicitFinish();
+
+  SpecialPowers.pushPrefEnv(
+    {set: [["privacy.userContext.enabled", true]]},
+    function() {
+      requestLongerTimeout(10);  
+      startReferrerTest(startNewWindowTestCase, { userContextId: 1 });
+    });
 }

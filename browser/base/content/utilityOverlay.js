@@ -415,7 +415,7 @@ function checkForMiddleClick(node, event) {
 
 
 
-function createUserContextMenu(event, addCommandAttribute = true) {
+function createUserContextMenu(event, addCommandAttribute = true, excludeUserContextId = 0) {
   while (event.target.hasChildNodes()) {
     event.target.removeChild(event.target.firstChild);
   }
@@ -423,7 +423,28 @@ function createUserContextMenu(event, addCommandAttribute = true) {
   let bundle = document.getElementById("bundle_browser");
   let docfrag = document.createDocumentFragment();
 
+  
+  if (excludeUserContextId) {
+    let menuitem = document.createElement("menuitem");
+    menuitem.setAttribute("usercontextid", "0");
+    menuitem.setAttribute("label", bundle.getString("userContextNone.label"));
+    menuitem.setAttribute("accesskey", bundle.getString("userContextNone.accesskey"));
+
+    
+    
+    
+
+    docfrag.appendChild(menuitem);
+
+    let menuseparator = document.createElement("menuseparator");
+    docfrag.appendChild(menuseparator);
+  }
+
   ContextualIdentityService.getIdentities().forEach(identity => {
+    if (identity.userContextId == excludeUserContextId) {
+      return;
+    }
+
     let menuitem = document.createElement("menuitem");
     menuitem.setAttribute("usercontextid", identity.userContextId);
     menuitem.setAttribute("label", bundle.getString(identity.label));
