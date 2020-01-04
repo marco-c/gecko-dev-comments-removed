@@ -461,6 +461,10 @@ public final class GeckoProfile {
         return mDB;
     }
 
+    public boolean isWebAppProfile() {
+        return mIsWebAppProfile;
+    }
+
     
     public boolean locked() {
         if (mLocked != LockState.UNDEFINED) {
