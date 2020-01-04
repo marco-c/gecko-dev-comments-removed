@@ -231,9 +231,14 @@ ClientLayerManager::BeginTransactionWithTarget(gfxContext* aTarget)
   }
 
   
-  if (!mIsRepeatTransaction && gfxPrefs::APZTestLoggingEnabled()) {
+  if (!mIsRepeatTransaction) {
+    
+    
+    
     ++mPaintSequenceNumber;
-    mApzTestData.StartNewPaint(mPaintSequenceNumber);
+    if (gfxPrefs::APZTestLoggingEnabled()) {
+      mApzTestData.StartNewPaint(mPaintSequenceNumber);
+    }
   }
 }
 
