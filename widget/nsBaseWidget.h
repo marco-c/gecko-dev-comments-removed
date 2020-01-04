@@ -140,7 +140,7 @@ public:
   NS_DECL_ISUPPORTS
 
   
-  NS_IMETHOD              CaptureMouse(bool aCapture) override;
+  virtual void            CaptureMouse(bool aCapture) override {}
   virtual void            CaptureRollupEvents(nsIRollupListener* aListener,
                                               bool aDoCapture) override {}
   virtual nsIWidgetListener*  GetWidgetListener() override;

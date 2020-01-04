@@ -1381,7 +1381,7 @@ class nsIWidget : public nsISupports
 
 
 
-    NS_IMETHOD CaptureMouse(bool aCapture) = 0;
+    virtual void CaptureMouse(bool aCapture) = 0;
 
     
 
