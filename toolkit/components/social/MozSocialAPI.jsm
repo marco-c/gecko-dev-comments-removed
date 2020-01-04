@@ -73,7 +73,6 @@ function injectController(doc, topic, data) {
 
     
     
-    
     hookWindowCloseForPanelClose(window);
 
     SocialService.getProvider(doc.nodePrincipal.origin, function(provider) {
@@ -98,47 +97,7 @@ function attachToWindow(provider, targetWindow) {
     return;
   }
 
-  let port = provider.workerURL ? provider.getWorkerPort(targetWindow) : null;
-
   let mozSocialObj = {
-    
-    
-    getWorker: {
-      enumerable: true,
-      configurable: true,
-      writable: true,
-      value: function() {
-
-        
-        
-        
-        
-        let workerAPI = Cu.cloneInto({
-          port: {
-            postMessage: port.postMessage.bind(port),
-            close: port.close.bind(port),
-            toString: port.toString.bind(port)
-          }
-        }, targetWindow, {cloneFunctions: true});
-
-        
-        let abstractPortPrototype = Object.getPrototypeOf(Object.getPrototypeOf(port));
-        let desc = Object.getOwnPropertyDescriptor(port.__proto__.__proto__, 'onmessage');
-        desc.get = Cu.exportFunction(desc.get.bind(port), targetWindow);
-        desc.set = Cu.exportFunction(desc.set.bind(port), targetWindow);
-        Object.defineProperty(workerAPI.wrappedJSObject.port, 'onmessage', desc);
-
-        return workerAPI;
-      }
-    },
-    hasBeenIdleFor: {
-      enumerable: true,
-      configurable: true,
-      writable: true,
-      value: function() {
-        return false;
-      }
-    },
     openChatWindow: {
       enumerable: true,
       configurable: true,
@@ -238,15 +197,6 @@ function attachToWindow(provider, targetWindow) {
     delete targetWindow.navigator.wrappedJSObject.mozSocial;
     return targetWindow.navigator.wrappedJSObject.mozSocial = contentObj;
   });
-
-  if (port) {
-    targetWindow.addEventListener("unload", function () {
-      
-      
-      
-      schedule(function () { port.close(); });
-    });
-  }
 }
 
 function hookWindowCloseForPanelClose(targetWindow) {

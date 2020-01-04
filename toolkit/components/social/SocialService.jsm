@@ -16,8 +16,6 @@ const ADDON_TYPE_SERVICE     = "service";
 const ID_SUFFIX              = "@services.mozilla.org";
 const STRING_TYPE_NAME       = "type.%ID%.name";
 
-XPCOMUtils.defineLazyModuleGetter(this, "getFrameWorkerHandle", "resource://gre/modules/FrameWorker.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "WorkerAPI", "resource://gre/modules/WorkerAPI.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "MozSocialAPI", "resource://gre/modules/MozSocialAPI.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "closeAllChatWindows", "resource://gre/modules/MozSocialAPI.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "DeferredTask", "resource://gre/modules/DeferredTask.jsm");
@@ -505,7 +503,7 @@ this.SocialService = {
   },
 
   _manifestFromData: function(type, data, installOrigin) {
-    let featureURLs = ['workerURL', 'sidebarURL', 'shareURL', 'statusURL', 'markURL'];
+    let featureURLs = ['sidebarURL', 'shareURL', 'statusURL', 'markURL'];
     let resolveURLs = featureURLs.concat(['postActivationURL']);
 
     if (type == 'directory' || type == 'internal') {
@@ -665,8 +663,6 @@ this.SocialService = {
     
     
     if (ActiveProviders.has(manifest.origin)) {
-      
-      
       let provider = SocialServiceInternal.providers[manifest.origin];
       provider.enabled = false;
       provider = new SocialProvider(manifest);
@@ -693,7 +689,6 @@ this.SocialService = {
 
 
 
-
 function SocialProvider(input) {
   if (!input.name)
     throw new Error("SocialProvider must be passed a name");
@@ -709,7 +704,6 @@ function SocialProvider(input) {
   this.iconURL = input.iconURL;
   this.icon32URL = input.icon32URL;
   this.icon64URL = input.icon64URL;
-  this.workerURL = input.workerURL;
   this.sidebarURL = input.sidebarURL;
   this.shareURL = input.shareURL;
   this.statusURL = input.statusURL;
@@ -723,11 +717,6 @@ function SocialProvider(input) {
   this.ambientNotificationIcons = {};
   this.errorState = null;
   this.frecency = 0;
-
-  
-  
-  let whitelist = Services.prefs.getCharPref("social.whitelist").split(',');
-  this.blessed = whitelist.indexOf(this.origin) >= 0;
 
   try {
     this.domain = etld.getBaseDomainFromHost(originUri.host);
@@ -745,7 +734,6 @@ SocialProvider.prototype = {
     Services.obs.notifyObservers(null, "social:provider-reload", this.origin);
   },
 
-  
   
   _enabled: false,
   get enabled() {
@@ -778,79 +766,12 @@ SocialProvider.prototype = {
 
   
   
-  workerAPI: null,
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  profile: undefined,
-
-  
-  
   
   
   ambientNotificationIcons: null,
 
   
-  updateUserProfile: function(profile) {
-    if (!profile)
-      profile = {};
-    let accountChanged = !this.profile || this.profile.userName != profile.userName;
-    this.profile = profile;
-
-    
-    if (profile.portrait) {
-      try {
-        let portraitUri = Services.io.newURI(profile.portrait, null, null);
-
-        let scheme = portraitUri ? portraitUri.scheme : "";
-        if (scheme != "data" && scheme != "http" && scheme != "https") {
-          profile.portrait = "";
-        }
-      } catch (ex) {
-        profile.portrait = "";
-      }
-    }
-
-    if (profile.iconURL)
-      this.iconURL = profile.iconURL;
-
-    if (!profile.displayName)
-      profile.displayName = profile.userName;
-
-    
-    
-    
-    if (!profile.userName) {
-      this.profile = {};
-      this.ambientNotificationIcons = {};
-      Services.obs.notifyObservers(null, "social:ambient-notification-changed", this.origin);
-    }
-
-    Services.obs.notifyObservers(null, "social:profile-changed", this.origin);
-    if (accountChanged)
-      closeAllChatWindows(this);
-  },
-
-  haveLoggedInUser: function () {
-    return !!(this.profile && this.profile.userName);
-  },
-
-  
   setAmbientNotification: function(notification) {
-    if (!this.profile.userName)
-      throw new Error("unable to set notifications while logged out");
     if (!this.ambientNotificationIcons[notification.name] &&
         Object.keys(this.ambientNotificationIcons).length >= 3) {
       throw new Error("ambient notification limit reached");
@@ -862,47 +783,11 @@ SocialProvider.prototype = {
 
   
   _activate: function _activate() {
-    
-    
-    let workerAPIPort = this.getWorkerPort();
-    if (workerAPIPort)
-      this.workerAPI = new WorkerAPI(this, workerAPIPort);
   },
 
   _terminate: function _terminate() {
     closeAllChatWindows(this);
-    if (this.workerURL) {
-      try {
-        getFrameWorkerHandle(this.workerURL).terminate();
-      } catch (e) {
-        Cu.reportError("SocialProvider FrameWorker termination failed: " + e);
-      }
-    }
-    if (this.workerAPI) {
-      this.workerAPI.terminate();
-    }
     this.errorState = null;
-    this.workerAPI = null;
-    this.profile = undefined;
-  },
-
-  
-
-
-
-
-
-
-
-  getWorkerPort: function getWorkerPort(window) {
-    if (!this.workerURL || !this.enabled)
-      return null;
-    
-    let allowLocalStorage = this.blessed;
-    let handle = getFrameWorkerHandle(this.workerURL, window,
-                                      "SocialProvider:" + this.origin, this.origin,
-                                      allowLocalStorage);
-    return handle.port;
   },
 
   

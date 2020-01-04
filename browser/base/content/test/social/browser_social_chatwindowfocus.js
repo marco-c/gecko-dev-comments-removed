@@ -6,71 +6,10 @@ function isChatFocused(chat) {
   return getChatBar()._isChatFocused(chat);
 }
 
-function openChatViaSidebarMessage(port, data, callback) {
-  port.onmessage = function (e) {
-    if (e.data.topic == "chatbox-opened")
-      callback();
-  }
-  port.postMessage({topic: "test-chatbox-open", data: data});
-}
-
-function openChatViaWorkerMessage(port, data, callback) {
-  
-  
-  let chatbar = getChatBar();
-  let numExpected = chatbar.childElementCount + 1;
-  port.postMessage({topic: "test-worker-chat", data: data});
-  waitForCondition(() => chatbar.childElementCount == numExpected,
-                   function() {
-                      
-                      
-                      
-                      chatbar.openChat({
-                        origin: SocialSidebar.provider.origin,
-                        title: SocialSidebar.provider.name,
-                        url: data,
-                        mode: "minimized"
-                      }, function() { callback(); });
-                   },
-                   "No new chat appeared");
-}
-
-
-var isSidebarLoaded = false;
-
-function startTestAndWaitForSidebar(callback) {
-  let doneCallback;
-  let port = SocialSidebar.provider.getWorkerPort();
-  function maybeCallback() {
-    if (!doneCallback)
-      callback(port);
-    doneCallback = true;
-  }
-  port.onmessage = function(e) {
-    let topic = e.data.topic;
-    switch (topic) {
-      case "got-sidebar-message":
-        
-      case "got-isVisible-response":
-        isSidebarLoaded = true;
-        maybeCallback();
-        break;
-      case "test-init-done":
-        if (isSidebarLoaded)
-          maybeCallback();
-        else
-          port.postMessage({topic: "test-isVisible"});
-        break;
-    }
-  }
-  port.postMessage({topic: "test-init"});
-}
-
 var manifest = { 
   name: "provider 1",
   origin: "https://example.com",
   sidebarURL: "https://example.com/browser/browser/base/content/test/social/social_sidebar.html",
-  workerURL: "https://example.com/browser/browser/base/content/test/social/social_worker.js",
   iconURL: "https://example.com/browser/browser/base/content/test/general/moz.png"
 };
 
@@ -103,58 +42,17 @@ function test() {
     runSocialTestWithProvider(manifest, function (finishcb) {
       SocialSidebar.show();
       runSocialTests(tests, preSubTest, postSubTest, function () {
-        finishcb();
+        ensureBrowserTabClosed(tab).then(finishcb);
       });
     });
   }, true);
-  registerCleanupFunction(function() {
-    gBrowser.removeTab(tab);
-  });
-
 }
 
 var tests = {
   
   
-  
-  
-  testNoFocusWhenViaWorker: function(next) {
-    let chatbar = getChatBar();
-    startTestAndWaitForSidebar(function(port) {
-      openChatViaSidebarMessage(port, {stealFocus: 1}, function() {
-        ok(true, "got chatbox message");
-        is(chatbar.childElementCount, 1, "exactly 1 chat open");
-
-        let browser = gBrowser.selectedTab.linkedBrowser;
-        ContentTask.spawn(browser, null, function* () {
-          is(Services.focus.focusedWindow, content, "tab should still be focused");
-        }).then(() => {
-          
-          openChatViaSidebarMessage(port, {stealFocus: 1}, function() {
-            is(chatbar.childElementCount, 1, "still exactly 1 chat open");
-
-            ContentTask.spawn(browser, null, function* () {
-              is(Services.focus.focusedWindow, content, "tab should still be focused");
-            }).then(() => {
-              
-              openChatViaUser();
-              waitForCondition(() => isChatFocused(chatbar.selectedChat), function() {
-                is(chatbar.childElementCount, 1, "still exactly 1 chat open");
-                is(chatbar.selectedChat, chatbar.firstElementChild,
-                  "chat should be selected");
-                next();
-              }, "chat should be focused");
-            });
-          });
-        });
-      });
-    });
-  },
-
-  
-  
   testFocusWhenViaUser: function(next) {
-    startTestAndWaitForSidebar(function(port) {
+    ensureFrameLoaded(document.getElementById("social-sidebar-browser")).then(() => {
       let chatbar = getChatBar();
       openChatViaUser();
       ok(chatbar.firstElementChild, "chat opened");

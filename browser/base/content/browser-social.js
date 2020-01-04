@@ -65,8 +65,6 @@ SocialUI = {
     mm.loadFrameScript("chrome://browser/content/social-content.js", true);
 
     Services.obs.addObserver(this, "social:ambient-notification-changed", false);
-    Services.obs.addObserver(this, "social:profile-changed", false);
-    Services.obs.addObserver(this, "social:frameworker-error", false);
     Services.obs.addObserver(this, "social:providers-changed", false);
     Services.obs.addObserver(this, "social:provider-reload", false);
     Services.obs.addObserver(this, "social:provider-enabled", false);
@@ -76,6 +74,7 @@ SocialUI = {
 
     CustomizableUI.addListener(this);
     SocialActivationListener.init();
+    messageManager.addMessageListener("Social:Notification", this);
 
     
     
@@ -100,8 +99,6 @@ SocialUI = {
     SocialSidebar.saveWindowState();
 
     Services.obs.removeObserver(this, "social:ambient-notification-changed");
-    Services.obs.removeObserver(this, "social:profile-changed");
-    Services.obs.removeObserver(this, "social:frameworker-error");
     Services.obs.removeObserver(this, "social:providers-changed");
     Services.obs.removeObserver(this, "social:provider-reload");
     Services.obs.removeObserver(this, "social:provider-enabled");
@@ -110,11 +107,21 @@ SocialUI = {
     Services.prefs.removeObserver("social.toast-notifications.enabled", this);
     CustomizableUI.removeListener(this);
     SocialActivationListener.uninit();
+    messageManager.removeMessageListener("Social:Notification", this);
 
     document.getElementById("viewSidebarMenu").removeEventListener("popupshowing", SocialSidebar.populateSidebarMenu, true);
     document.getElementById("social-statusarea-popup").removeEventListener("popupshowing", SocialSidebar.populateSidebarMenu, true);
 
     this._initialized = false;
+  },
+
+  receiveMessage: function(aMessage) {
+    if (aMessage.name == "Social:Notification") {
+      let provider = Social._getProviderFromOrigin(aMessage.data.origin);
+      if (provider) {
+        provider.setAmbientNotification(aMessage.data.detail);
+      }
+    }
   },
 
   observe: function SocialUI_observe(subject, topic, data) {
@@ -148,17 +155,6 @@ SocialUI = {
       
       case "social:ambient-notification-changed":
         SocialStatus.updateButton(data);
-        break;
-      case "social:profile-changed":
-        
-        
-        
-        SocialStatus.updateButton(data);
-        break;
-      case "social:frameworker-error":
-        if (this.enabled && SocialSidebar.provider && SocialSidebar.provider.origin == data) {
-          SocialSidebar.loadFrameworkerFailure();
-        }
         break;
       case "nsPref:changed":
         if (data == "social.toast-notifications.enabled") {
@@ -218,17 +214,12 @@ SocialUI = {
 
   get enabled() {
     
-    if (this._chromeless || PrivateBrowsingUtils.isWindowPrivate(window))
+    if (this._chromeless)
       return false;
     return Social.providers.length > 0;
   },
 
   canShareOrMarkPage: function(aURI) {
-    
-    
-    if (PrivateBrowsingUtils.isWindowPrivate(window))
-      return false;
-
     return (aURI && (aURI.schemeIs('http') || aURI.schemeIs('https')));
   },
 
@@ -287,10 +278,6 @@ SocialActivationListener = {
       options = { bypassContentCheck: true, bypassInstallPanel: true };
     }
 
-    
-    
-    if (PrivateBrowsingUtils.isWindowPrivate(window))
-      return;
     Social.installProvider(data, function(manifest) {
       Social.activateFromOrigin(manifest.origin, function(provider) {
         if (provider.sidebarURL) {
@@ -949,16 +936,6 @@ SocialSidebar = {
   },
 
   _unloadTimeoutId: 0,
-
-  loadFrameworkerFailure: function() {
-    if (this.provider && this.provider.errorState == "frameworker-error") {
-      
-      
-      let sbrowser = document.getElementById("social-sidebar-browser");
-      sbrowser.setAttribute("src", "about:socialerror?mode=workerFailure&origin=" +
-                            encodeURIComponent(this.provider.origin));
-    }
-  },
 
   _provider: null,
   ensureProvider: function() {
