@@ -196,6 +196,87 @@ public abstract class GeckoApp
     protected boolean mShouldRestore;
     private boolean mSessionRestoreParsingFinished = false;
 
+    private static final class LastSessionParser extends SessionParser {
+        private JSONArray tabs;
+        private JSONObject windowObject;
+        private boolean isExternalURL;
+
+        private boolean selectNextTab;
+        private boolean tabsWereSkipped;
+        private boolean tabsWereProcessed;
+
+        public LastSessionParser(JSONArray tabs, JSONObject windowObject, boolean isExternalURL) {
+            this.tabs = tabs;
+            this.windowObject = windowObject;
+            this.isExternalURL = isExternalURL;
+        }
+
+        public boolean allTabsSkipped() {
+            return tabsWereSkipped && !tabsWereProcessed;
+        }
+
+        @Override
+        public void onTabRead(final SessionTab sessionTab) {
+            if (sessionTab.isAboutHomeWithoutHistory()) {
+                
+                
+                
+                
+                
+
+                if (sessionTab.isSelected()) {
+                    
+                    
+                    
+
+                    if (!Tabs.getInstance().selectLastTab()) {
+                        selectNextTab = true;
+                    }
+                }
+
+                
+                tabsWereSkipped = true;
+                return;
+            }
+
+            tabsWereProcessed = true;
+
+            JSONObject tabObject = sessionTab.getTabObject();
+
+            int flags = Tabs.LOADURL_NEW_TAB;
+            flags |= ((isExternalURL || !sessionTab.isSelected()) ? Tabs.LOADURL_DELAY_LOAD : 0);
+            flags |= (tabObject.optBoolean("desktopMode") ? Tabs.LOADURL_DESKTOP : 0);
+            flags |= (tabObject.optBoolean("isPrivate") ? Tabs.LOADURL_PRIVATE : 0);
+
+            final Tab tab = Tabs.getInstance().loadUrl(sessionTab.getUrl(), flags);
+
+            if (selectNextTab) {
+                
+                Tabs.getInstance().selectTab(tab.getId());
+                selectNextTab = false;
+            }
+
+            ThreadUtils.postToUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    tab.updateTitle(sessionTab.getTitle());
+                }
+            });
+
+            try {
+                tabObject.put("tabId", tab.getId());
+            } catch (JSONException e) {
+                Log.e(LOGTAG, "JSON error", e);
+            }
+            tabs.put(tabObject);
+        }
+
+        @Override
+        public void onClosedTabsRead(final JSONArray closedTabData) throws JSONException {
+            windowObject.put("closedTabs", closedTabData);
+        }
+    };
+
     protected boolean mInitialized;
     protected boolean mWindowFocusInitialized;
     private Telemetry.Timer mJavaUiStartupTimer;
@@ -1288,6 +1369,17 @@ public abstract class GeckoApp
                     } catch (SessionRestoreException e) {
                         
                         Log.e(LOGTAG, "An error occurred during restore", e);
+                        
+                        
+                        
+                        
+                        if (mShouldRestore && getProfile().sessionFileExistsAndNotEmptyWindow()) {
+                            
+                            
+                            
+                            Log.d(LOGTAG, "Suspecting a damaged session store file.");
+                            Telemetry.addToHistogram("FENNEC_SESSIONSTORE_DAMAGED_SESSION_FILE", 1);
+                        }
                         mShouldRestore = false;
                     }
                 }
@@ -1680,67 +1772,8 @@ public abstract class GeckoApp
             if (mShouldRestore) {
                 final JSONArray tabs = new JSONArray();
                 final JSONObject windowObject = new JSONObject();
-                SessionParser parser = new SessionParser() {
-                    private boolean selectNextTab;
 
-                    @Override
-                    public void onTabRead(final SessionTab sessionTab) {
-                        if (sessionTab.isAboutHomeWithoutHistory()) {
-                            
-                            
-                            
-                            
-                            
-
-                            if (sessionTab.isSelected()) {
-                                
-                                
-                                
-
-                                if (!Tabs.getInstance().selectLastTab()) {
-                                    selectNextTab = true;
-                                }
-                            }
-
-                            
-                            return;
-                        }
-
-                        JSONObject tabObject = sessionTab.getTabObject();
-
-                        int flags = Tabs.LOADURL_NEW_TAB;
-                        flags |= ((isExternalURL || !sessionTab.isSelected()) ? Tabs.LOADURL_DELAY_LOAD : 0);
-                        flags |= (tabObject.optBoolean("desktopMode") ? Tabs.LOADURL_DESKTOP : 0);
-                        flags |= (tabObject.optBoolean("isPrivate") ? Tabs.LOADURL_PRIVATE : 0);
-
-                        final Tab tab = Tabs.getInstance().loadUrl(sessionTab.getUrl(), flags);
-
-                        if (selectNextTab) {
-                            
-                            Tabs.getInstance().selectTab(tab.getId());
-                            selectNextTab = false;
-                        }
-
-                        ThreadUtils.postToUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                tab.updateTitle(sessionTab.getTitle());
-                            }
-                        });
-
-                        try {
-                            tabObject.put("tabId", tab.getId());
-                        } catch (JSONException e) {
-                            Log.e(LOGTAG, "JSON error", e);
-                        }
-                        tabs.put(tabObject);
-                    }
-
-                    @Override
-                    public void onClosedTabsRead(final JSONArray closedTabData) throws JSONException {
-                        windowObject.put("closedTabs", closedTabData);
-                    }
-                };
+                LastSessionParser parser = new LastSessionParser(tabs, windowObject, isExternalURL);
 
                 if (mPrivateBrowsingSession == null) {
                     parser.parse(sessionString);
@@ -1752,6 +1785,12 @@ public abstract class GeckoApp
                     windowObject.put("tabs", tabs);
                     sessionString = new JSONObject().put("windows", new JSONArray().put(windowObject)).toString();
                 } else {
+                    if (parser.allTabsSkipped()) {
+                        
+                        
+                        
+                        mShouldRestore = false;
+                    }
                     throw new SessionRestoreException("No tabs could be read from session file");
                 }
             }
