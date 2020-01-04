@@ -28,7 +28,7 @@ class AndroidImportPreference extends MultiPrefMultiChoicePreference {
     public static class Handler implements GeckoPreferences.PrefHandler {
         public boolean setupPref(Context context, Preference pref) {
             
-            return Versions.preM && Restrictions.isAllowed(context, Restrictable.IMPORT_SETTINGS);
+            return Versions.preMarshmallow && Restrictions.isAllowed(context, Restrictable.IMPORT_SETTINGS);
         }
 
         public void onChange(Context context, Preference pref, Object newValue) { }
