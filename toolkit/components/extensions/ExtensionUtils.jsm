@@ -150,9 +150,6 @@ class BaseContext {
     if (!options.allowInheritsPrincipal) {
       flags |= ssm.DISALLOW_INHERIT_PRINCIPAL;
     }
-    if (options.dontReportErrors) {
-      flags |= ssm.DONT_REPORT_ERRORS;
-    }
 
     try {
       ssm.checkLoadURIStrWithPrincipal(this.principal, url, flags);
@@ -436,11 +433,7 @@ LocaleData.prototype = {
 
   get acceptLanguages() {
     let result = Preferences.get("intl.accept_languages", "", Ci.nsIPrefLocalizedString);
-    result = result.split(",");
-    result = result.map(lang => {
-      return lang.replace(/-/g, "_").trim();
-    });
-    return result;
+    return result.split(/\s*,\s*/g);
   },
 
 
