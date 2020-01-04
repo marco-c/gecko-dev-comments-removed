@@ -218,10 +218,10 @@ CheckDownscaleDuringDecode(const ImageTestCase& aTestCase)
     
     
     
-    EXPECT_TRUE(RowsAreSolidColor(surface, 0, 4, BGRAColor::Green(),  4));
-    EXPECT_TRUE(RowsAreSolidColor(surface, 6, 3, BGRAColor::Red(),  4));
-    EXPECT_TRUE(RowsAreSolidColor(surface, 11, 3, BGRAColor::Green(),  4));
-    EXPECT_TRUE(RowsAreSolidColor(surface, 16, 4, BGRAColor::Red(),  3));
+    EXPECT_TRUE(RowsAreSolidColor(surface, 0, 4, BGRAColor::Green(),  9));
+    EXPECT_TRUE(RowsAreSolidColor(surface, 6, 3, BGRAColor::Red(),  6));
+    EXPECT_TRUE(RowsAreSolidColor(surface, 11, 3, BGRAColor::Green(),  42));
+    EXPECT_TRUE(RowsAreSolidColor(surface, 16, 4, BGRAColor::Red(),  6));
   });
 }
 
