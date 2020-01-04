@@ -15,7 +15,7 @@ function watchFiles(path, onFileChanged) {
     
     
     
-    const { newPath } = event.data;
+    const { path: newPath } = event.data;
     onFileChanged(newPath);
   };
 
