@@ -52,7 +52,6 @@ class GLContext;
 
 
 
-
 gfx::SurfaceFormat
 UploadImageDataToTexture(GLContext* gl,
                          unsigned char* aData,
@@ -60,7 +59,6 @@ UploadImageDataToTexture(GLContext* gl,
                          gfx::SurfaceFormat aFormat,
                          const nsIntRegion& aDstRegion,
                          GLuint& aTexture,
-                         size_t* aOutUploadSize = nullptr,
                          bool aOverwrite = false,
                          bool aPixelBuffer = false,
                          GLenum aTextureUnit = LOCAL_GL_TEXTURE0,
@@ -74,7 +72,6 @@ UploadSurfaceToTexture(GLContext* gl,
                        gfx::DataSourceSurface *aSurface,
                        const nsIntRegion& aDstRegion,
                        GLuint& aTexture,
-                       size_t* aOutUploadSize = nullptr,
                        bool aOverwrite = false,
                        const gfx::IntPoint& aSrcPoint = gfx::IntPoint(0, 0),
                        bool aPixelBuffer = false,

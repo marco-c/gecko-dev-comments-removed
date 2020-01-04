@@ -203,8 +203,6 @@ public:
 protected:
     friend class GLContext;
 
-    void UpdateUploadSize(size_t amount);
-
     
 
 
@@ -216,9 +214,7 @@ protected:
                  Flags aFlags = NoFlags);
 
     
-    virtual ~TextureImage() {
-        UpdateUploadSize(0);
-    }
+    virtual ~TextureImage() {}
 
     virtual gfx::IntRect GetSrcTileRect();
 
@@ -228,7 +224,6 @@ protected:
     gfx::SurfaceFormat mTextureFormat;
     gfx::Filter mFilter;
     Flags mFlags;
-    size_t mUploadSize;
 };
 
 
