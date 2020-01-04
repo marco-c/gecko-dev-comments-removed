@@ -112,7 +112,12 @@ enum BailoutKind
     Bailout_Debugger,
 
     
+    Bailout_UninitializedThis,
 
+    
+    Bailout_BadDerivedConstructorReturn,
+
+    
 
     
     
@@ -151,7 +156,7 @@ enum BailoutKind
     Bailout_UninitializedLexical,
 
     
-    Bailout_IonExceptionDebugMode,
+    Bailout_IonExceptionDebugMode
 };
 
 inline const char*
@@ -209,6 +214,10 @@ BailoutKindString(BailoutKind kind)
         return "Bailout_InitialState";
       case Bailout_Debugger:
         return "Bailout_Debugger";
+      case Bailout_UninitializedThis:
+        return "Bailout_UninitializedThis";
+      case Bailout_BadDerivedConstructorReturn:
+        return "Bailout_BadDerivedConstructorReturn";
 
       
       case Bailout_OverflowInvalidate:

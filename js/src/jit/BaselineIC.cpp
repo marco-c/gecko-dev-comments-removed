@@ -395,6 +395,8 @@ ICTypeMonitor_Fallback::addMonitorStubForValue(JSContext* cx, JSScript* script, 
     }
 
     if (val.isPrimitive()) {
+        if (val.isMagic(JS_UNINITIALIZED_LEXICAL))
+            return true;
         MOZ_ASSERT(!val.isMagic());
         JSValueType type = val.isDouble() ? JSVAL_TYPE_DOUBLE : val.extractNonDoubleType();
 
@@ -504,9 +506,14 @@ DoTypeMonitorFallback(JSContext* cx, BaselineFrame* frame, ICTypeMonitor_Fallbac
     
     
     
-    if (value.isMagic(JS_OPTIMIZED_OUT)) {
-        res.set(value);
-        return true;
+    
+    if (stub->monitorsThis()) {
+        MOZ_ASSERT_IF(value.isMagic(), value.isMagic(JS_UNINITIALIZED_LEXICAL));
+    } else {
+        if (value.isMagic(JS_OPTIMIZED_OUT)) {
+            res.set(value);
+            return true;
+        }
     }
 
     RootedScript script(cx, frame->script());
@@ -516,7 +523,10 @@ DoTypeMonitorFallback(JSContext* cx, BaselineFrame* frame, ICTypeMonitor_Fallbac
     uint32_t argument;
     if (stub->monitorsThis()) {
         MOZ_ASSERT(pc == script->code());
-        TypeScript::SetThis(cx, script, value);
+        if (value.isMagic(JS_UNINITIALIZED_LEXICAL))
+            TypeScript::SetThis(cx, script, TypeSet::UnknownType());
+        else
+            TypeScript::SetThis(cx, script, value);
     } else if (stub->monitorsArgument(&argument)) {
         MOZ_ASSERT(pc == script->code());
         TypeScript::SetArgument(cx, script, argument, value);
@@ -9636,10 +9646,11 @@ ICCallScriptedCompiler::generateStubCode(MacroAssembler& masm)
 
         
 #ifdef DEBUG
-        Label createdThisIsObject;
-        masm.branchTestObject(Assembler::Equal, JSReturnOperand, &createdThisIsObject);
-        masm.assumeUnreachable("The return of CreateThis must be an object.");
-        masm.bind(&createdThisIsObject);
+        Label createdThisOK;
+        masm.branchTestObject(Assembler::Equal, JSReturnOperand, &createdThisOK);
+        masm.branchTestMagic(Assembler::Equal, JSReturnOperand, &createdThisOK);
+        masm.assumeUnreachable("The return of CreateThis must be an object or uninitialized.");
+        masm.bind(&createdThisOK);
 #endif
 
         

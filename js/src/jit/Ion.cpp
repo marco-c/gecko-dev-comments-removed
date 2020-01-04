@@ -2659,7 +2659,8 @@ EnterIon(JSContext* cx, EnterJitData& data)
     EnterJitCode enter = cx->runtime()->jitRuntime()->enterIon();
 
     
-    MOZ_ASSERT_IF(data.constructing, data.maxArgv[0].isObject());
+    MOZ_ASSERT_IF(data.constructing,
+                  data.maxArgv[0].isObject() || data.maxArgv[0].isMagic(JS_UNINITIALIZED_LEXICAL));
 
     data.result.setInt32(data.numActualArgs);
     {
@@ -2673,8 +2674,12 @@ EnterIon(JSContext* cx, EnterJitData& data)
     MOZ_ASSERT(!cx->runtime()->jitRuntime()->hasIonReturnOverride());
 
     
-    if (!data.result.isMagic() && data.constructing && data.result.isPrimitive())
+    if (!data.result.isMagic() && data.constructing &&
+        data.result.isPrimitive())
+    {
+        MOZ_ASSERT(data.maxArgv[0].isObject());
         data.result = data.maxArgv[0];
+    }
 
     
     cx->runtime()->getJitRuntime(cx)->freeOsrTempData();

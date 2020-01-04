@@ -980,7 +980,7 @@ InitFromBailout(JSContext* cx, HandleScript caller, jsbytecode* callerPC,
 #endif
 
     bool pushedNewTarget = op == JSOP_NEW;
-    
+
     
     
     if (!iter.moreFrames() || catchingException) {
@@ -1877,6 +1877,8 @@ jit::FinishBailoutToBaseline(BaselineBailoutInfo* bailoutInfo)
       case Bailout_NonSimdFloat32x4Input:
       case Bailout_InitialState:
       case Bailout_Debugger:
+      case Bailout_UninitializedThis:
+      case Bailout_BadDerivedConstructorReturn:
         
         break;
 

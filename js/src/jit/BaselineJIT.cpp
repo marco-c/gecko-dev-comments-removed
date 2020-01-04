@@ -111,7 +111,8 @@ EnterBaseline(JSContext* cx, EnterJitData& data)
     EnterJitCode enter = cx->runtime()->jitRuntime()->enterBaseline();
 
     
-    MOZ_ASSERT_IF(data.constructing, data.maxArgv[0].isObject());
+    MOZ_ASSERT_IF(data.constructing, data.maxArgv[0].isObject() ||
+                                     data.maxArgv[0].isMagic(JS_UNINITIALIZED_LEXICAL));
 
     data.result.setInt32(data.numActualArgs);
     {
@@ -132,8 +133,11 @@ EnterBaseline(JSContext* cx, EnterJitData& data)
     MOZ_ASSERT(!cx->runtime()->jitRuntime()->hasIonReturnOverride());
 
     
-    if (!data.result.isMagic() && data.constructing && data.result.isPrimitive())
+    
+    if (!data.result.isMagic() && data.constructing && data.result.isPrimitive()) {
+        MOZ_ASSERT(data.maxArgv[0].isObject());
         data.result = data.maxArgv[0];
+    }
 
     
     cx->runtime()->getJitRuntime(cx)->freeOsrTempData();
@@ -211,7 +215,7 @@ jit::EnterBaselineAtBranch(JSContext* cx, InterpreterFrame* fp, jsbytecode* pc)
                 return JitExec_Aborted;
 
             vals.infallibleAppend(thisv);
-            
+
             if (fp->isFunctionFrame())
                 vals.infallibleAppend(fp->newTarget());
             else
@@ -306,15 +310,6 @@ CanEnterBaselineJIT(JSContext* cx, HandleScript script, InterpreterFrame* osrFra
 MethodStatus
 jit::CanEnterBaselineAtBranch(JSContext* cx, InterpreterFrame* fp, bool newType)
 {
-   
-   if (fp->isConstructing() && fp->functionThis().isPrimitive()) {
-       RootedObject callee(cx, &fp->callee());
-       RootedObject obj(cx, CreateThisForFunction(cx, callee, newType ? SingletonObject : GenericObject));
-       if (!obj)
-           return Method_Skipped;
-       fp->functionThis().setObject(*obj);
-   }
-
    if (!CheckFrame(fp))
        return Method_CantCompile;
 
