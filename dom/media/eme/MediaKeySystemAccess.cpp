@@ -4,6 +4,7 @@
 
 
 
+#include "mozilla/dom/ContentChild.h"
 #include "mozilla/dom/MediaKeySystemAccess.h"
 #include "mozilla/dom/MediaKeySystemAccessBinding.h"
 #include "mozilla/Preferences.h"
@@ -110,10 +111,7 @@ static bool
 AdobePluginFileExists(const nsACString& aVersionStr,
                       const nsAString& aFilename)
 {
-  if (XRE_GetProcessType() != GeckoProcessType_Default) {
-    NS_WARNING("AdobePluginFileExists() lying because it doesn't work with e10s");
-    return true;
-  }
+  MOZ_ASSERT(XRE_GetProcessType() == GeckoProcessType_Default);
 
   nsCOMPtr<nsIFile> path;
   nsresult rv = NS_GetSpecialDirectory(NS_APP_USER_PROFILE_50_DIR, getter_AddRefs(path));
@@ -153,6 +151,61 @@ AdobePluginVoucherExists(const nsACString& aVersionStr)
 }
 #endif
 
+ bool
+MediaKeySystemAccess::IsGMPPresentOnDisk(const nsAString& aKeySystem,
+                                         const nsACString& aVersion,
+                                         nsACString& aOutMessage)
+{
+  MOZ_ASSERT(NS_IsMainThread());
+
+  if (XRE_GetProcessType() != GeckoProcessType_Default) {
+    
+    
+    ContentChild* contentChild = ContentChild::GetSingleton();
+    if (NS_WARN_IF(!contentChild)) {
+      return false;
+    }
+
+    nsCString message;
+    bool result = false;
+    bool ok = contentChild->SendIsGMPPresentOnDisk(nsString(aKeySystem), nsCString(aVersion),
+                                                   &result, &message);
+    aOutMessage = message;
+    return ok && result;
+  }
+
+  bool isPresent = true;
+
+#if XP_WIN
+  if (aKeySystem.EqualsLiteral("com.adobe.primetime")) {
+    if (!AdobePluginDLLExists(aVersion)) {
+      NS_WARNING("Adobe EME plugin disappeared from disk!");
+      aOutMessage = NS_LITERAL_CSTRING("Adobe DLL was expected to be on disk but was not");
+      isPresent = false;
+    }
+    if (!AdobePluginVoucherExists(aVersion)) {
+      NS_WARNING("Adobe EME voucher disappeared from disk!");
+      aOutMessage = NS_LITERAL_CSTRING("Adobe plugin voucher was expected to be on disk but was not");
+      isPresent = false;
+    }
+
+    if (!isPresent) {
+      
+      
+      Preferences::ClearUser("media.gmp-eme-adobe.lastUpdate");
+      Preferences::ClearUser("media.gmp-eme-adobe.version");
+    } else if (!EMEVoucherFileExists()) {
+      
+      
+      aOutMessage = NS_LITERAL_CSTRING("Plugin-container voucher not present");
+      isPresent = false;
+    }
+  }
+#endif
+
+  return isPresent;
+}
+
 static MediaKeySystemStatus
 EnsureMinCDMVersion(mozIGeckoMediaPluginService* aGMPService,
                     const nsAString& aKeySystem,
@@ -179,29 +232,9 @@ EnsureMinCDMVersion(mozIGeckoMediaPluginService* aGMPService,
     return MediaKeySystemStatus::Cdm_not_installed;
   }
 
-#ifdef XP_WIN
-  if (aKeySystem.EqualsLiteral("com.adobe.primetime")) {
-    
-    
-    bool somethingMissing = false;
-    if (!AdobePluginDLLExists(versionStr)) {
-      aOutMessage = NS_LITERAL_CSTRING("Adobe DLL was expected to be on disk but was not");
-      somethingMissing = true;
-    }
-    if (!AdobePluginVoucherExists(versionStr)) {
-      aOutMessage = NS_LITERAL_CSTRING("Adobe plugin voucher was expected to be on disk but was not");
-      somethingMissing = true;
-    }
-    if (somethingMissing) {
-      NS_WARNING("Adobe EME plugin or voucher disappeared from disk!");
-      
-      
-      Preferences::ClearUser("media.gmp-eme-adobe.lastUpdate");
-      Preferences::ClearUser("media.gmp-eme-adobe.version");
-      return MediaKeySystemStatus::Cdm_not_installed;
-    }
+  if (!MediaKeySystemAccess::IsGMPPresentOnDisk(aKeySystem, versionStr, aOutMessage)) {
+    return MediaKeySystemStatus::Cdm_not_installed;
   }
-#endif
 
   nsresult rv;
   int32_t version = versionStr.ToInteger(&rv);
@@ -256,12 +289,6 @@ MediaKeySystemAccess::GetKeySystemStatus(const nsAString& aKeySystem,
       return MediaKeySystemStatus::Cdm_not_supported;
     }
 #endif
-    if (!EMEVoucherFileExists()) {
-      
-      
-      aOutMessage = NS_LITERAL_CSTRING("Plugin-container voucher not present");
-      return MediaKeySystemStatus::Cdm_not_supported;
-    }
     return EnsureMinCDMVersion(mps, aKeySystem, aMinCdmVersion, aOutMessage, aOutCdmVersion);
   }
 #endif
