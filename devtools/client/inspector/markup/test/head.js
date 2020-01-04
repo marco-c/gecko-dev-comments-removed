@@ -277,18 +277,6 @@ function searchUsingSelectorSearch(selector, inspector) {
 
 
 
-function wait(ms) {
-  let def = defer();
-  setTimeout(def.resolve, ms);
-  return def.promise;
-}
-
-
-
-
-
-
-
 
 
 
