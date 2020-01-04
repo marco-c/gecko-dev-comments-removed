@@ -1,3 +1,10 @@
+
+
+
+
+
+
+
 var Ci = SpecialPowers.Ci;
 ok(Ci != null, "Access Ci");
 var Cc = SpecialPowers.Cc;
