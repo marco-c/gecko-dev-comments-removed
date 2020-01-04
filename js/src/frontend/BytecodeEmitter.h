@@ -106,14 +106,22 @@ typedef Vector<jssrcnote, 0> SrcNotesVector;
 
 
 
-
-
-
-
 enum VarEmitOption {
-    DefineVars        = 0,
-    PushInitialValues = 1,
-    InitializeVars    = 2
+    
+    
+    
+    InitializeVars,
+
+    
+    
+    
+    
+    DefineVars,
+
+    
+    
+    
+    PushInitialValues
 };
 
 struct BytecodeEmitter
