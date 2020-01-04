@@ -152,7 +152,7 @@ ImageCapture::TakePhoto(ErrorResult& aResult)
 
     
     
-    task->AttachStream();
+    task->AttachTrack();
   }
 }
 

@@ -28,20 +28,16 @@ class MediaStreamTrack;
 
 
 
-class CaptureTask : public MediaStreamListener,
+class CaptureTask : public MediaStreamTrackListener,
                     public dom::PrincipalChangeObserver<dom::MediaStreamTrack>
 {
 public:
   
-  void NotifyQueuedTrackChanges(MediaStreamGraph* aGraph, TrackID aID,
-                                StreamTime aTrackOffset,
-                                uint32_t aTrackEvents,
-                                const MediaSegment& aQueuedMedia,
-                                MediaStream* aInputStream,
-                                TrackID aInputTrackID) override;
+  void NotifyQueuedChanges(MediaStreamGraph* aGraph,
+                           StreamTime aTrackOffset,
+                           const MediaSegment& aQueuedMedia) override;
 
-  void NotifyEvent(MediaStreamGraph* aGraph,
-                   MediaStreamGraphEvent aEvent) override;
+  void NotifyEnded() override;
 
   
   void PrincipalChanged(dom::MediaStreamTrack* aMediaStreamTrack) override;
@@ -57,11 +53,11 @@ public:
 
   
   
-  void AttachStream();
+  void AttachTrack();
 
   
   
-  void DetachStream();
+  void DetachTrack();
 
   
   CaptureTask(dom::ImageCapture* aImageCapture, TrackID aTrackID)
