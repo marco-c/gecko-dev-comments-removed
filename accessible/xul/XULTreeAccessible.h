@@ -242,9 +242,6 @@ protected:
   virtual ~XULTreeItemAccessible();
 
   
-  virtual void CacheChildren() override;
-
-  
   nsCOMPtr<nsITreeColumn> mColumn;
   nsString mCachedName;
 };

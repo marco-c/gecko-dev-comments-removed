@@ -20,6 +20,7 @@ TextLeafAccessible::
   LinkableAccessible(aContent, aDoc)
 {
   mType = eTextLeafType;
+  mStateFlags |= eNoKidsFromDOM;
 }
 
 TextLeafAccessible::~TextLeafAccessible()
@@ -49,10 +50,4 @@ TextLeafAccessible::Name(nsString& aName)
   
   aName = mText;
   return eNameOK;
-}
-
-void
-TextLeafAccessible::CacheChildren()
-{
-  
 }

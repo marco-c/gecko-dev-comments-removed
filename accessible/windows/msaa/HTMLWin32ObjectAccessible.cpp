@@ -19,6 +19,8 @@ HTMLWin32ObjectOwnerAccessible::
                                  DocAccessible* aDoc, void* aHwnd) :
   AccessibleWrap(aContent, aDoc), mHwnd(aHwnd)
 {
+  mStateFlags |= eNoKidsFromDOM;
+
   
   if (mHwnd) {
     mNativeAccessible = new HTMLWin32ObjectAccessible(mHwnd, aDoc);
@@ -49,15 +51,6 @@ HTMLWin32ObjectOwnerAccessible::NativelyUnavailable() const
   
   return !mHwnd;
 }
-
-
-
-
-void
-HTMLWin32ObjectOwnerAccessible::CacheChildren()
-{
-}
-
 
 
 

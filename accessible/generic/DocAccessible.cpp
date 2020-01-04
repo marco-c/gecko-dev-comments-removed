@@ -2272,8 +2272,9 @@ DocAccessible::CacheChildrenInSubtree(Accessible* aRoot,
     Accessible* child = aRoot->ContentChildAt(idx);
     NS_ASSERTION(child, "Illicit tree change while tree is created!");
     
-    if (child && child->IsContent())
+    if (child && child->IsContent()) {
       CacheChildrenInSubtree(child, aFocusedAcc);
+    }
   }
 
   

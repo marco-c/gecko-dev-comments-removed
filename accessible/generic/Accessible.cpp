@@ -2593,7 +2593,9 @@ Accessible::EnsureChildren()
 
   
   SetChildrenFlag(eEmbeddedChildren); 
-  CacheChildren();
+  if (KidsFromDOM()) {
+    CacheChildren();
+  }
 }
 
 Accessible*

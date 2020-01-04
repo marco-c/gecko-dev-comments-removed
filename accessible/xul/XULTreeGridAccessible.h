@@ -98,9 +98,6 @@ protected:
   virtual ~XULTreeGridRowAccessible();
 
   
-  virtual void CacheChildren() override;
-
-  
   mutable nsRefPtrHashtable<nsPtrHashKey<const void>, XULTreeGridCellAccessible>
     mAccessibleCache;
 };

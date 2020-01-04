@@ -933,7 +933,13 @@ public:
 
 
 
-  bool NoXBLKids() { return mStateFlags & eNoXBLKids; }
+  bool NoXBLKids() const { return mStateFlags & eNoXBLKids; }
+
+  
+
+
+
+  bool KidsFromDOM() const { return !(mStateFlags & eNoKidsFromDOM); }
 
   
 
@@ -1032,8 +1038,9 @@ protected:
     eSurvivingInUpdate = 1 << 8, 
     eRelocated = 1 << 9, 
     eNoXBLKids = 1 << 10, 
+    eNoKidsFromDOM = 1 << 11, 
 
-    eLastStateFlag = eNoXBLKids
+    eLastStateFlag = eNoKidsFromDOM
   };
 
   
@@ -1149,7 +1156,7 @@ protected:
   int32_t mIndexInParent;
 
   static const uint8_t kChildrenFlagsBits = 2;
-  static const uint8_t kStateFlagsBits = 11;
+  static const uint8_t kStateFlagsBits = 12;
   static const uint8_t kContextFlagsBits = 3;
   static const uint8_t kTypeBits = 6;
   static const uint8_t kGenericTypesBits = 15;
