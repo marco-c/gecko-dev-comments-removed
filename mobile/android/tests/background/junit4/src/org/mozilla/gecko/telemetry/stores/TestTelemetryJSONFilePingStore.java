@@ -19,6 +19,7 @@ import org.mozilla.gecko.util.FileUtils;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.FilenameFilter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -68,6 +69,33 @@ public class TestTelemetryJSONFilePingStore {
         
         assertTrue("Store dir exists", testDir.exists());
         assertEquals("Temp dir contains one dir (the store dir)", 1, tempDir.getRoot().list().length);
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void testConstructorStoreAlreadyExistsAsNonDirectory() throws Exception {
+        final File file = tempDir.newFile();
+        new TelemetryJSONFilePingStore(file, "profileName"); 
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void testConstructorDirIsNotReadable() throws Exception {
+        final File dir = tempDir.newFolder();
+        dir.setReadable(false);
+        new TelemetryJSONFilePingStore(dir, "profileName"); 
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void testConstructorDirIsNotWritable() throws Exception {
+        final File dir = tempDir.newFolder();
+        dir.setWritable(false);
+        new TelemetryJSONFilePingStore(dir, "profileName"); 
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void testConstructorDirIsNotExecutable() throws Exception {
+        final File dir = tempDir.newFolder();
+        dir.setExecutable(false);
+        new TelemetryJSONFilePingStore(dir, "profileName"); 
     }
 
     @Test
