@@ -692,20 +692,6 @@ Sanitizer.onStartup = Task.async(function*() {
   shutdownClient.addBlocker("sanitize.js: Sanitize on shutdown",
     () => Sanitizer.onShutdown());
 
-    
-    if (!Services.prefs.getBoolPref("privacy.sanitize.migrateClearSavedPwdsOnExit")) {
-      let deprecatedPref = "privacy.clearOnShutdown.passwords";
-      let doUpdate = Services.prefs.getBoolPref("privacy.sanitize.sanitizeOnShutdown") &&
-                     Services.prefs.prefHasUserValue(deprecatedPref) &&
-                     Services.prefs.getBoolPref(deprecatedPref);
-      if (doUpdate) {
-        Services.logins.removeAllLogins();
-        Services.prefs.setBoolPref("signon.rememberSignons", false);
-      }
-      Services.prefs.clearUserPref(deprecatedPref);
-      Services.prefs.setBoolPref("privacy.sanitize.migrateClearSavedPwdsOnExit", true);
-  }
-
   
   if (Preferences.has(Sanitizer.PREF_SANITIZE_IN_PROGRESS)) {
     
