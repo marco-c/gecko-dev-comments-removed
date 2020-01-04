@@ -46,7 +46,7 @@ namespace mozilla {
 LazyLogModule gMediaStreamGraphLog("MediaStreamGraph");
 #define STREAM_LOG(type, msg) MOZ_LOG(gMediaStreamGraphLog, type, msg)
 
-#define ENABLE_LIFECYCLE_LOG
+
 
 
 

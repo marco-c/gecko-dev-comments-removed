@@ -23,7 +23,7 @@ extern mozilla::LazyLogModule gMediaStreamGraphLog;
 
 
 
-#define ENABLE_LIFECYCLE_LOG
+
 #ifdef ENABLE_LIFECYCLE_LOG
 #ifdef ANDROID
 #include "android/log.h"
@@ -88,18 +88,6 @@ void GraphDriver::SetGraphTime(GraphDriver* aPreviousDriver,
 void GraphDriver::SwitchAtNextIteration(GraphDriver* aNextDriver)
 {
   GraphImpl()->GetMonitor().AssertCurrentThreadOwns();
-  
-  
-  
-  
-  
-  
-  if (aNextDriver->AsAudioCallbackDriver() &&
-      PreviousDriver() &&
-      PreviousDriver()->AsAudioCallbackDriver()->IsSwitchingDevice() &&
-      PreviousDriver() != aNextDriver) {
-    return;
-  }
   LIFECYCLE_LOG("Switching to new driver: %p (%s)",
       aNextDriver, aNextDriver->AsAudioCallbackDriver() ?
       "AudioCallbackDriver" : "SystemClockDriver");
@@ -200,23 +188,19 @@ public:
                     previousDriver,
                     mDriver->GraphImpl());
       MOZ_ASSERT(!mDriver->AsAudioCallbackDriver());
-      
-      
-      
-      if (!previousDriver->AsAudioCallbackDriver()->IsSwitchingDevice()) {
-        RefPtr<AsyncCubebTask> releaseEvent =
-          new AsyncCubebTask(previousDriver->AsAudioCallbackDriver(), AsyncCubebOperation::SHUTDOWN);
-        releaseEvent->Dispatch();
+      RefPtr<AsyncCubebTask> releaseEvent =
+        new AsyncCubebTask(previousDriver->AsAudioCallbackDriver(), AsyncCubebOperation::SHUTDOWN);
+      releaseEvent->Dispatch();
 
-        MonitorAutoLock mon(mDriver->mGraphImpl->GetMonitor());
-        mDriver->SetPreviousDriver(nullptr);
-      }
+      MonitorAutoLock mon(mDriver->mGraphImpl->GetMonitor());
+      mDriver->SetPreviousDriver(nullptr);
     } else {
       MonitorAutoLock mon(mDriver->mGraphImpl->GetMonitor());
       MOZ_ASSERT(mDriver->mGraphImpl->MessagesQueued() ||
                  mDriver->mGraphImpl->mForceShutDown, "Don't start a graph without messages queued.");
       mDriver->mGraphImpl->SwapMessageQueues();
     }
+
     mDriver->RunThread();
     return NS_OK;
   }
@@ -561,10 +545,7 @@ AudioCallbackDriver::AudioCallbackDriver(MediaStreamGraphImpl* aGraphImpl)
   , mAudioChannel(aGraphImpl->AudioChannel())
   , mAddedMixer(false)
   , mInCallback(false)
-#ifdef XP_MACOSX
   , mMicrophoneActive(false)
-  , mCallbackReceivedWhileSwitching(0)
-#endif
 {
   STREAM_LOG(LogLevel::Debug, ("AudioCallbackDriver ctor for graph %p", aGraphImpl));
 }
@@ -819,40 +800,6 @@ AudioCallbackDriver::AutoInCallback::~AutoInCallback() {
   mDriver->mInCallback = false;
 }
 
-#ifdef XP_MACOSX
-bool
-AudioCallbackDriver::OSXDeviceSwitchingWorkaround()
-{
-  MonitorAutoLock mon(GraphImpl()->GetMonitor());
-  if (mSelfReference) {
-    
-    
-    
-    
-    
-    if (mCallbackReceivedWhileSwitching++ >= 10) {
-      STREAM_LOG(LogLevel::Debug, ("Got %d callbacks, switching back to CallbackDriver", mCallbackReceivedWhileSwitching));
-      
-      
-      
-      
-      
-      
-      if (GraphImpl()->CurrentDriver() == this) {
-        mSelfReference.Drop(this);
-        SetNextDriver(nullptr);
-      } else {
-        GraphImpl()->CurrentDriver()->SwitchAtNextIteration(this);
-      }
-
-    }
-    return true;
-  }
-
-  return false;
-}
-#endif 
-
 long
 AudioCallbackDriver::DataCallback(const AudioDataValue* aInputBuffer,
                                   AudioDataValue* aOutputBuffer, long aFrames)
@@ -864,13 +811,6 @@ AudioCallbackDriver::DataCallback(const AudioDataValue* aInputBuffer,
     mGraphImpl->mMixer.AddCallback(this);
     mAddedMixer = true;
   }
-
-#ifdef XP_MACOSX
-  if (OSXDeviceSwitchingWorkaround()) {
-    PodZero(aOutputBuffer, aFrames * mGraphImpl->AudioChannelCount());
-    return aFrames;
-  }
-#endif
 
 #ifdef DEBUG
   
@@ -1081,11 +1021,11 @@ AudioCallbackDriver::DeviceChangedCallback() {
 void
 AudioCallbackDriver::SetMicrophoneActive(bool aActive)
 {
-#ifdef XP_MACOSX
   MonitorAutoLock mon(mGraphImpl->GetMonitor());
 
   mMicrophoneActive = aActive;
 
+#ifdef XP_MACOSX
   PanOutputIfNeeded(mMicrophoneActive);
 #endif
 }

@@ -430,14 +430,6 @@ public:
                                          void* aPromise,
                                          dom::AudioContextOperation aOperation);
 
-  bool IsSwitchingDevice() {
-#ifdef XP_MACOSX
-    return mSelfReference;
-#else
-    return false;
-#endif
-  }
-
   
 
 
@@ -534,20 +526,6 @@ private:
 
 
   bool mMicrophoneActive;
-
-
-#ifdef XP_MACOSX
-
-  
-
-  bool OSXDeviceSwitchingWorkaround();
-  
-
-  SelfReference<AudioCallbackDriver> mSelfReference;
-  
-
-  uint32_t mCallbackReceivedWhileSwitching;
-#endif
 };
 
 class AsyncCubebTask : public nsRunnable
