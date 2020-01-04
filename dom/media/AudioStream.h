@@ -226,6 +226,10 @@ public:
     
     virtual uint32_t Frames() const = 0;
     
+    virtual uint32_t Channels() const = 0;
+    
+    virtual uint32_t Rate() const = 0;
+    
     virtual AudioDataValue* GetWritable() const = 0;
     virtual ~Chunk() {}
   };
@@ -323,7 +327,7 @@ private:
   nsresult EnsureTimeStretcherInitializedUnlocked();
 
   
-  bool Downmix(AudioDataValue* aBuffer, uint32_t aFrames);
+  bool Downmix(Chunk* aChunk);
 
   void GetUnprocessed(AudioBufferWriter& aWriter);
   void GetTimeStretched(AudioBufferWriter& aWriter);
