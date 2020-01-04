@@ -1105,6 +1105,11 @@ MediaFormatReader::Update(TrackType aTrack)
     return;
   }
 
+  if (aTrack == TrackType::kVideoTrack && mSkipRequest.Exists()) {
+    LOGV("Skipping in progress, nothing more to do");
+    return;
+  }
+
   if (UpdateReceivedNewData(aTrack)) {
     LOGV("Nothing more to do");
     return;
@@ -1414,28 +1419,6 @@ MediaFormatReader::SkipVideoDemuxToNextKeyFrame(media::TimeUnit aTimeThreshold)
   MOZ_ASSERT(mVideo.HasPromise());
   LOG("Skipping up to %lld", aTimeThreshold.ToMicroseconds());
 
-  
-  mVideo.mDemuxRequest.DisconnectIfExists();
-
-  
-  
-  
-  
-  
-  mDecoder->NotifyDecodedFrames(0, 0, SizeOfVideoQueueInFrames());
-
-  if (mVideo.mTimeThreshold) {
-    LOGV("Internal Seek pending, cancelling it");
-  }
-  Reset(TrackInfo::kVideoTrack);
-
-  if (mVideo.mError) {
-    
-    
-    mVideo.RejectPromise(DECODE_ERROR, __func__);
-    return;
-  }
-
   mSkipRequest.Begin(mVideo.mTrackDemuxer->SkipToNextRandomAccessPoint(aTimeThreshold)
                           ->Then(OwnerThread(), __func__, this,
                                  &MediaFormatReader::OnVideoSkipCompleted,
@@ -1444,18 +1427,39 @@ MediaFormatReader::SkipVideoDemuxToNextKeyFrame(media::TimeUnit aTimeThreshold)
 }
 
 void
+MediaFormatReader::VideoSkipReset(uint32_t aSkipped)
+{
+  MOZ_ASSERT(OnTaskQueue());
+  
+  
+  
+  
+  
+  if (mDecoder) {
+    mDecoder->NotifyDecodedFrames(0, 0, SizeOfVideoQueueInFrames());
+  }
+
+  
+  mVideo.mDemuxRequest.DisconnectIfExists();
+  Reset(TrackType::kVideoTrack);
+
+  if (mDecoder) {
+    mDecoder->NotifyDecodedFrames(aSkipped, 0, aSkipped);
+  }
+
+  mVideo.mNumSamplesSkippedTotal += aSkipped;
+  mVideo.mNumSamplesSkippedTotalSinceTelemetry += aSkipped;
+}
+
+void
 MediaFormatReader::OnVideoSkipCompleted(uint32_t aSkipped)
 {
   MOZ_ASSERT(OnTaskQueue());
   LOG("Skipping succeeded, skipped %u frames", aSkipped);
   mSkipRequest.Complete();
-  if (mDecoder) {
-    mDecoder->NotifyDecodedFrames(aSkipped, 0, aSkipped);
-  }
-  mVideo.mNumSamplesSkippedTotal += aSkipped;
-  mVideo.mNumSamplesSkippedTotalSinceTelemetry += aSkipped;
-  MOZ_ASSERT(!mVideo.mError); 
-                              
+
+  VideoSkipReset(aSkipped);
+
   NotifyDecodingRequested(TrackInfo::kVideoTrack);
 }
 
@@ -1465,25 +1469,17 @@ MediaFormatReader::OnVideoSkipFailed(MediaTrackDemuxer::SkipFailureHolder aFailu
   MOZ_ASSERT(OnTaskQueue());
   LOG("Skipping failed, skipped %u frames", aFailure.mSkipped);
   mSkipRequest.Complete();
-  if (mDecoder) {
-    mDecoder->NotifyDecodedFrames(aFailure.mSkipped, 0, aFailure.mSkipped);
-  }
+
   MOZ_ASSERT(mVideo.HasPromise());
   switch (aFailure.mFailure) {
     case DemuxerFailureReason::END_OF_STREAM:
+      VideoSkipReset(aFailure.mSkipped);
       NotifyEndOfStream(TrackType::kVideoTrack);
       break;
     case DemuxerFailureReason::WAITING_FOR_DATA:
       
       
-      
-      
-      MOZ_DIAGNOSTIC_ASSERT(!mVideo.mDecodingRequested,
-                            "Reset must have been called");
-      if (!mVideo.mWaitingForData) {
-        mVideo.mNeedDraining = true;
-      }
-      NotifyWaitingForData(TrackType::kVideoTrack);
+      NotifyDecodingRequested(TrackInfo::kVideoTrack);
       break;
     case DemuxerFailureReason::CANCELED:
     case DemuxerFailureReason::SHUTDOWN:
