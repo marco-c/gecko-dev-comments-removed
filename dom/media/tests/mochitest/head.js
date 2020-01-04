@@ -224,6 +224,10 @@ function realCreateHTML(meta) {
   document.body.appendChild(content);
 }
 
+function getMediaElement(label, direction, streamId) {
+  var id = label + '_' + direction + '_' + streamId;
+  return document.getElementById(id);
+}
 
 
 
@@ -235,8 +239,9 @@ function realCreateHTML(meta) {
 
 
 
-function createMediaElement(type, label) {
-  var id = label + '_' + type;
+
+function createMediaElement(label, direction, streamId, audioOnly) {
+  var id = label + '_' + direction + '_' + streamId;
   var element = document.getElementById(id);
 
   
@@ -244,7 +249,12 @@ function createMediaElement(type, label) {
     return element;
   }
 
-  element = document.createElement(type === 'audio' ? 'audio' : 'video');
+  if (!audioOnly) {
+    
+    element = document.createElement('video');
+  } else {
+    element = document.createElement('audio');
+  }
   element.setAttribute('id', id);
   element.setAttribute('height', 100);
   element.setAttribute('width', 150);
