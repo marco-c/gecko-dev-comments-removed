@@ -320,10 +320,13 @@ AsyncExecuteStatements::executeAndProcessStatement(sqlite3_stmt *aStatement,
     }
   } while (hasResults);
 
-#ifdef DEBUG
-  
-  checkAndLogStatementPerformance(aStatement);
+#ifndef MOZ_STORAGE_SORTWARNING_SQL_DUMP
+  if (MOZ_LOG_TEST(gStorageLog, LogLevel::Warning))
 #endif
+  {
+    
+    checkAndLogStatementPerformance(aStatement);
+  }
 
   
   
