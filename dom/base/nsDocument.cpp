@@ -2653,23 +2653,12 @@ nsDocument::ApplySettingsFromCSP(bool aSpeculative)
   }
 
   
-  nsCOMPtr<nsIContentSecurityPolicy> preloadCsp;
-  rv = NodePrincipal()->GetPreloadCsp(getter_AddRefs(preloadCsp));
-  if (preloadCsp) {
-    
-    bool hasReferrerPolicy = false;
-    uint32_t referrerPolicy = mozilla::net::RP_Default;
-    rv = preloadCsp->GetReferrerPolicy(&referrerPolicy, &hasReferrerPolicy);
+  if (!mUpgradeInsecurePreloads) {
+    nsCOMPtr<nsIContentSecurityPolicy> preloadCsp;
+    rv = NodePrincipal()->GetPreloadCsp(getter_AddRefs(preloadCsp));
     NS_ENSURE_SUCCESS_VOID(rv);
-    if (hasReferrerPolicy) {
-      
-      
-      mReferrerPolicy = static_cast<ReferrerPolicy>(referrerPolicy);
-      mReferrerPolicySet = true;
-    }
-    if (!mUpgradeInsecurePreloads) {
-      rv = preloadCsp->GetUpgradeInsecureRequests(&mUpgradeInsecurePreloads);
-      NS_ENSURE_SUCCESS_VOID(rv);
+    if (preloadCsp) {
+      preloadCsp->GetUpgradeInsecureRequests(&mUpgradeInsecurePreloads);
     }
   }
 }
