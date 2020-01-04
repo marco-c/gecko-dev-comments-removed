@@ -168,14 +168,10 @@ ZoomConstraintsClient::RefreshZoomConstraints()
     return;
   }
 
-  nsIFrame* rootFrame = mPresShell->GetRootScrollFrame();
-  if (!rootFrame) {
-    rootFrame = mPresShell->GetRootFrame();
+  LayoutDeviceIntSize screenSize;
+  if (!nsLayoutUtils::GetContentViewerSize(mPresShell->GetPresContext(), screenSize)) {
+    return;
   }
-  nsSize size = nsLayoutUtils::CalculateCompositionSizeForFrame(rootFrame, false);
-  int32_t auPerDevPixel = mPresShell->GetPresContext()->AppUnitsPerDevPixel();
-  LayoutDeviceIntSize screenSize = LayoutDeviceIntSize::FromAppUnitsRounded(
-        size, auPerDevPixel);
 
   nsViewportInfo viewportInfo = nsContentUtils::GetViewportInfo(
     mDocument,
@@ -187,6 +183,7 @@ ZoomConstraintsClient::RefreshZoomConstraints()
   if (zoomConstraints.mAllowDoubleTapZoom) {
     
     
+    int32_t auPerDevPixel = mPresShell->GetPresContext()->AppUnitsPerDevPixel();
     CSSToLayoutDeviceScale scale(
       (float)nsPresContext::AppUnitsPerCSSPixel() / auPerDevPixel);
     if ((viewportInfo.GetSize() * scale).width <= screenSize.width) {
