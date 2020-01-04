@@ -476,17 +476,13 @@ js::SetIntegrityLevel(JSContext* cx, HandleObject obj, IntegrityLevel level)
     assertSameCompartment(cx, obj);
 
     
-    if (!PreventExtensions(cx, obj))
+    if (!PreventExtensions(cx, obj, level))
         return false;
 
     
     AutoIdVector keys(cx);
     if (!GetPropertyKeys(cx, obj, JSITER_HIDDEN | JSITER_OWNONLY | JSITER_SYMBOLS, &keys))
         return false;
-
-    
-    
-    MOZ_ASSERT_IF(obj->isNative(), obj->as<NativeObject>().getDenseCapacity() == 0);
 
     
     if (obj->isNative() && !obj->as<NativeObject>().inDictionaryMode() &&
@@ -2640,7 +2636,7 @@ js::SetPrototype(JSContext* cx, HandleObject obj, HandleObject proto)
 }
 
 bool
-js::PreventExtensions(JSContext* cx, HandleObject obj, ObjectOpResult& result)
+js::PreventExtensions(JSContext* cx, HandleObject obj, ObjectOpResult& result, IntegrityLevel level)
 {
     if (obj->is<ProxyObject>())
         return js::Proxy::preventExtensions(cx, obj, result);
@@ -2660,9 +2656,15 @@ js::PreventExtensions(JSContext* cx, HandleObject obj, ObjectOpResult& result)
     
     
     
+    
     if (obj->isNative()) {
-        if (!NativeObject::sparsifyDenseElements(cx, obj.as<NativeObject>()))
+        if (level == IntegrityLevel::Frozen) {
+            MarkObjectGroupFlags(cx, obj, OBJECT_FLAG_FROZEN);
+            if (!ObjectElements::FreezeElements(cx, obj.as<NativeObject>()))
+                return false;
+        } else if (!NativeObject::sparsifyDenseElements(cx, obj.as<NativeObject>())) {
             return false;
+        }
     }
 
     if (!obj->setFlags(cx, BaseShape::NOT_EXTENSIBLE, JSObject::GENERATE_SHAPE))
@@ -2671,10 +2673,10 @@ js::PreventExtensions(JSContext* cx, HandleObject obj, ObjectOpResult& result)
 }
 
 bool
-js::PreventExtensions(JSContext* cx, HandleObject obj)
+js::PreventExtensions(JSContext* cx, HandleObject obj, IntegrityLevel level)
 {
     ObjectOpResult result;
-    return PreventExtensions(cx, obj, result) && result.checkStrict(cx, obj);
+    return PreventExtensions(cx, obj, result, level) && result.checkStrict(cx, obj);
 }
 
 bool
