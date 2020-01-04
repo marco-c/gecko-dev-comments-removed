@@ -182,13 +182,11 @@ this.AddonWatcher = {
             
             continue;
           }
-        } else {
+        } else if (now - alerts.latestNotificationTimeStamp <= delayBetweenFreezeAlerts) {
           
-          if (now - alerts.latestNotificationTimeStamp <= delayBetweenFreezeAlerts) {
-            
-            
-            continue;
-          }
+          
+          
+          continue;
         }
 
         

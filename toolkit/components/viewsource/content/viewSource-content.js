@@ -648,21 +648,19 @@ var ViewSourceContent = {
             break;
           }
 
-        } else {
-          if (curLine == lineNumber && !("range" in result)) {
-            result.range = content.document.createRange();
-            result.range.setStart(textNode, curPos);
+        } else if (curLine == lineNumber && !("range" in result)) {
+          result.range = content.document.createRange();
+          result.range.setStart(textNode, curPos);
 
-            
-            
-            
-            result.range.setEndAfter(pre.lastChild);
+          
+          
+          
+          result.range.setEndAfter(pre.lastChild);
 
-          } else if (curLine == lineNumber + 1) {
-            result.range.setEnd(textNode, curPos - 1);
-            found = true;
-            break;
-          }
+        } else if (curLine == lineNumber + 1) {
+          result.range.setEnd(textNode, curPos - 1);
+          found = true;
+          break;
         }
       }
     }

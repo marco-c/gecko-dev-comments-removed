@@ -1093,15 +1093,12 @@ function cleanUpMozUpdaterDirs() {
 
 
 
-
-
-function cleanUpUpdatesDir(aRemovePatchFiles = true) {
+function cleanUpUpdatesDir(aBackgroundUpdate) {
+  
   let updateDir;
   try {
     updateDir = getUpdatesDir();
   } catch (e) {
-    LOG("cleanUpUpdatesDir - unable to get the updates patch directory. " +
-        "Exception: " + e);
     return;
   }
 
@@ -1129,7 +1126,7 @@ function cleanUpUpdatesDir(aRemovePatchFiles = true) {
     }
   }
 
-  if (aRemovePatchFiles) {
+  if (!aBackgroundUpdate) {
     let e = updateDir.directoryEntries;
     while (e.hasMoreElements()) {
       let f = e.getNext().QueryInterface(Ci.nsIFile);
@@ -2141,22 +2138,7 @@ UpdateService.prototype = {
       }
       update = new Update(null);
     }
-
-    let parts = status.split(":");
-    update.state = parts[0];
-    if (update.state == STATE_FAILED && parts[1]) {
-      update.errorCode = parseInt(parts[1]);
-    }
-
-
-    if (status != STATE_SUCCEEDED) {
-      
-      
-      um.saveUpdates();
-      
-      
-      cleanUpUpdatesDir(false);
-    }
+    update.state = status;
 
     if (status == STATE_SUCCEEDED) {
       update.statusText = gUpdateBundle.GetStringFromName("installSuccess");
@@ -2176,8 +2158,16 @@ UpdateService.prototype = {
       
       
       
-      if (update.state == STATE_FAILED && update.errorCode) {
-        if (handleUpdateFailure(update, update.errorCode)) {
+      
+      
+      
+      
+      
+      var ary = status.split(":");
+      update.state = ary[0];
+      if (update.state == STATE_FAILED && ary[1]) {
+        if (handleUpdateFailure(update, ary[1])) {
+          cleanUpUpdatesDir(true);
           return;
         }
       }
@@ -3129,13 +3119,7 @@ UpdateManager.prototype = {
     this._ensureUpdates();
     if (this._updates) {
       for (var i = 0; i < this._updates.length; ++i) {
-        
-        
-        
-        
-        if (update.state != STATE_FAILED &&
-            this._updates[i] &&
-            this._updates[i].state != STATE_FAILED &&
+        if (this._updates[i] &&
             this._updates[i].appVersion == update.appVersion &&
             this._updates[i].buildID == update.buildID) {
           
@@ -3212,7 +3196,7 @@ UpdateManager.prototype = {
         }
       }
 
-      this._writeUpdatesToXMLFile(updates.slice(0, 20),
+      this._writeUpdatesToXMLFile(updates.slice(0, 10),
                                   getUpdateFile([FILE_UPDATES_XML]));
     }
   },
@@ -3230,19 +3214,10 @@ UpdateManager.prototype = {
     pingStateAndStatusCodes(update, false, status);
     var parts = status.split(":");
     update.state = parts[0];
-    if (update.state == STATE_FAILED && parts[1]) {
-      update.errorCode = parseInt(parts[1]);
-    }
-    let um = Cc["@mozilla.org/updates/update-manager;1"].
-             getService(Ci.nsIUpdateManager);
-    
-    
-    um.saveUpdates();
 
     
     
-    
-    cleanUpUpdatesDir(false);
+    cleanUpUpdatesDir(true);
 
     if (update.state == STATE_FAILED && parts[1]) {
       updateSucceeded = false;
@@ -3252,6 +3227,17 @@ UpdateManager.prototype = {
     }
     if (update.state == STATE_APPLIED && shouldUseService()) {
       writeStatusFile(getUpdatesDir(), update.state = STATE_APPLIED_SERVICE);
+    }
+    var um = Cc["@mozilla.org/updates/update-manager;1"].
+             getService(Ci.nsIUpdateManager);
+    um.saveUpdates();
+
+    if (update.state != STATE_PENDING &&
+        update.state != STATE_PENDING_SERVICE &&
+        update.state != STATE_PENDING_ELEVATE) {
+      
+      
+      cleanUpUpdatesDir(updateSucceeded);
     }
 
     
@@ -4211,69 +4197,67 @@ Downloader.prototype = {
         
         cleanUpUpdatesDir();
       }
-    } else {
-      if (status == Cr.NS_ERROR_OFFLINE) {
-        
-        
-        
-        
-        LOG("Downloader:onStopRequest - offline, register online observer: true");
-        AUSTLMY.pingDownloadCode(this.isCompleteUpdate,
-                                 AUSTLMY.DWNLD_RETRY_OFFLINE);
-        shouldRegisterOnlineObserver = true;
-        deleteActiveUpdate = false;
+    } else if (status == Cr.NS_ERROR_OFFLINE) {
       
       
       
       
-      
-      } else if ((status == Cr.NS_ERROR_NET_TIMEOUT ||
-                  status == Cr.NS_ERROR_CONNECTION_REFUSED ||
-                  status == Cr.NS_ERROR_NET_RESET ||
-                  status == Cr.NS_ERROR_DOCUMENT_NOT_CACHED) &&
-                 this.updateService._consecutiveSocketErrors < maxFail) {
-        LOG("Downloader:onStopRequest - socket error, shouldRetrySoon: true");
-        let dwnldCode = AUSTLMY.DWNLD_RETRY_CONNECTION_REFUSED;
-        if (status == Cr.NS_ERROR_NET_TIMEOUT) {
-          dwnldCode = AUSTLMY.DWNLD_RETRY_NET_TIMEOUT;
-        } else if (status == Cr.NS_ERROR_NET_RESET) {
-          dwnldCode = AUSTLMY.DWNLD_RETRY_NET_RESET;
-        } else if (status == Cr.NS_ERROR_DOCUMENT_NOT_CACHED) {
-          dwnldCode = AUSTLMY.DWNLD_ERR_DOCUMENT_NOT_CACHED;
-        }
-        AUSTLMY.pingDownloadCode(this.isCompleteUpdate, dwnldCode);
-        shouldRetrySoon = true;
-        deleteActiveUpdate = false;
-      } else if (status != Cr.NS_BINDING_ABORTED &&
-                 status != Cr.NS_ERROR_ABORT) {
-        LOG("Downloader:onStopRequest - non-verification failure");
-        let dwnldCode = AUSTLMY.DWNLD_ERR_BINDING_ABORTED;
-        if (status == Cr.NS_ERROR_ABORT) {
-          dwnldCode = AUSTLMY.DWNLD_ERR_ABORT;
-        }
-        AUSTLMY.pingDownloadCode(this.isCompleteUpdate, dwnldCode);
-
-        
-        state = STATE_DOWNLOAD_FAILED;
-
-        
-        
-
-        this._update.statusText = getStatusTextFromCode(status,
-                                                        Cr.NS_BINDING_FAILED);
-
-        if (AppConstants.platform == "gonk") {
-          
-          
-          
-          this._update.selectedPatch.selected = false;
-        }
-
-        
-        cleanUpUpdatesDir();
-
-        deleteActiveUpdate = true;
+      LOG("Downloader:onStopRequest - offline, register online observer: true");
+      AUSTLMY.pingDownloadCode(this.isCompleteUpdate,
+                               AUSTLMY.DWNLD_RETRY_OFFLINE);
+      shouldRegisterOnlineObserver = true;
+      deleteActiveUpdate = false;
+    
+    
+    
+    
+    
+    } else if ((status == Cr.NS_ERROR_NET_TIMEOUT ||
+                status == Cr.NS_ERROR_CONNECTION_REFUSED ||
+                status == Cr.NS_ERROR_NET_RESET ||
+                status == Cr.NS_ERROR_DOCUMENT_NOT_CACHED) &&
+               this.updateService._consecutiveSocketErrors < maxFail) {
+      LOG("Downloader:onStopRequest - socket error, shouldRetrySoon: true");
+      let dwnldCode = AUSTLMY.DWNLD_RETRY_CONNECTION_REFUSED;
+      if (status == Cr.NS_ERROR_NET_TIMEOUT) {
+        dwnldCode = AUSTLMY.DWNLD_RETRY_NET_TIMEOUT;
+      } else if (status == Cr.NS_ERROR_NET_RESET) {
+        dwnldCode = AUSTLMY.DWNLD_RETRY_NET_RESET;
+      } else if (status == Cr.NS_ERROR_DOCUMENT_NOT_CACHED) {
+        dwnldCode = AUSTLMY.DWNLD_ERR_DOCUMENT_NOT_CACHED;
       }
+      AUSTLMY.pingDownloadCode(this.isCompleteUpdate, dwnldCode);
+      shouldRetrySoon = true;
+      deleteActiveUpdate = false;
+    } else if (status != Cr.NS_BINDING_ABORTED &&
+               status != Cr.NS_ERROR_ABORT) {
+      LOG("Downloader:onStopRequest - non-verification failure");
+      let dwnldCode = AUSTLMY.DWNLD_ERR_BINDING_ABORTED;
+      if (status == Cr.NS_ERROR_ABORT) {
+        dwnldCode = AUSTLMY.DWNLD_ERR_ABORT;
+      }
+      AUSTLMY.pingDownloadCode(this.isCompleteUpdate, dwnldCode);
+
+      
+      state = STATE_DOWNLOAD_FAILED;
+
+      
+      
+
+      this._update.statusText = getStatusTextFromCode(status,
+                                                      Cr.NS_BINDING_FAILED);
+
+      if (AppConstants.platform == "gonk") {
+        
+        
+        
+        this._update.selectedPatch.selected = false;
+      }
+
+      
+      cleanUpUpdatesDir();
+
+      deleteActiveUpdate = true;
     }
     LOG("Downloader:onStopRequest - setting state to: " + state);
     this._patch.state = state;
@@ -4283,10 +4267,8 @@ Downloader.prototype = {
       this._update.installDate = (new Date()).getTime();
       um.activeUpdate = null;
     }
-    else {
-      if (um.activeUpdate) {
-        um.activeUpdate.state = state;
-      }
+    else if (um.activeUpdate) {
+      um.activeUpdate.state = state;
     }
     um.saveUpdates();
 

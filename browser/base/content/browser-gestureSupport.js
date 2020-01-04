@@ -714,22 +714,20 @@ var gHistorySwipeAnimation = {
 
       
       this._positionBox(this._nextBox, 1);
+    } else if (this._canGoForward) {
+      
+      
+      
+      
+      
+      
+      this._nextBox.collapsed = false;
+      let offset = this.isLTR ? 1 : -1;
+      this._positionBox(this._curBox, 0);
+      this._positionBox(this._nextBox, offset + aVal);
     } else {
-      
-      
-      
-      
-      
-      
-      if (this._canGoForward) {
-        this._nextBox.collapsed = false;
-        let offset = this.isLTR ? 1 : -1;
-        this._positionBox(this._curBox, 0);
-        this._positionBox(this._nextBox, offset + aVal);
-      } else {
-        this._prevBox.collapsed = true;
-        this._positionBox(this._curBox, aVal / dampValue);
-      }
+      this._prevBox.collapsed = true;
+      this._positionBox(this._curBox, aVal / dampValue);
     }
   },
 

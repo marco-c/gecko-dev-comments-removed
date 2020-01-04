@@ -4108,10 +4108,8 @@ function updateCharacterEncodingMenuState()
     if (charsetMenu) {
       charsetMenu.removeAttribute("disabled");
     }
-  } else {
-    if (charsetMenu) {
-      charsetMenu.setAttribute("disabled", "true");
-    }
+  } else if (charsetMenu) {
+    charsetMenu.setAttribute("disabled", "true");
   }
 }
 
@@ -7198,6 +7196,8 @@ var gIdentityHandler = {
     if (event.target == this._identityPopup) {
       window.addEventListener("focus", this, true);
     }
+    this._identityPopupMultiView._mainView.style.height =
+      this._identityPopup.getBoundingClientRect().height + "px";
   },
 
   onPopupHidden(event) {
@@ -7827,9 +7827,8 @@ var MousePosTracker = {
     if (hover) {
       if (listener.onMouseEnter)
         listener.onMouseEnter();
-    } else {
-      if (listener.onMouseLeave)
-        listener.onMouseLeave();
+    } else if (listener.onMouseLeave) {
+      listener.onMouseLeave();
     }
   }
 };

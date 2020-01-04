@@ -4325,31 +4325,26 @@ OverflowableToolbar.prototype = {
       
     }
     
-    else {
+    else if (!nowOverflowed) {
       
-      if (!nowOverflowed) {
-        this._collapsed.delete(aNode.id);
-        aNode.removeAttribute("cui-anchorid");
-        aNode.removeAttribute("overflowedItem");
-        CustomizableUIInternal.notifyListeners("onWidgetUnderflow", aNode, this._target);
+      this._collapsed.delete(aNode.id);
+      aNode.removeAttribute("cui-anchorid");
+      aNode.removeAttribute("overflowedItem");
+      CustomizableUIInternal.notifyListeners("onWidgetUnderflow", aNode, this._target);
 
-        if (!this._collapsed.size) {
-          this._toolbar.removeAttribute("overflowing");
-          CustomizableUI.removeListener(this);
-        }
+      if (!this._collapsed.size) {
+        this._toolbar.removeAttribute("overflowing");
+        CustomizableUI.removeListener(this);
       }
+    } else if (aNode.previousSibling) {
       
-      else {
-        if (aNode.previousSibling) {
-          let prevId = aNode.previousSibling.id;
-          let minSize = this._collapsed.get(prevId);
-          this._collapsed.set(aNode.id, minSize);
-        } else {
-          
-          
-          this._moveItemsBackToTheirOrigin();
-        }
-      }
+      let prevId = aNode.previousSibling.id;
+      let minSize = this._collapsed.get(prevId);
+      this._collapsed.set(aNode.id, minSize);
+    } else {
+      
+      
+      this._moveItemsBackToTheirOrigin();
     }
   },
 

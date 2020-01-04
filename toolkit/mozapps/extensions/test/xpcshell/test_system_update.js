@@ -417,10 +417,9 @@ function* verify_state(initialState, finalState = undefined) {
   if (finalState == undefined) {
     finalState = initialState;
   }
-  else {
+  else if (finalState[0]) {
     
-    if (finalState[0])
-      expectedDirs++;
+    expectedDirs++;
   }
 
   do_print("Checking final state.");

@@ -482,16 +482,14 @@ this.DownloadUtils = {
     
     if (aBytes === Infinity) {
       aBytes = "Infinity";
+    } else if (typeof Intl != "undefined") {
+      aBytes = getLocaleNumberFormat(fractionDigits)
+                 .format(aBytes);
     } else {
-      if (typeof Intl != "undefined") {
-        aBytes = getLocaleNumberFormat(fractionDigits)
-                   .format(aBytes);
-      } else {
-        
-        aBytes = aBytes.toFixed(fractionDigits);
-        if (gDecimalSymbol != ".") {
-          aBytes = aBytes.replace(".", gDecimalSymbol);
-        }
+      
+      aBytes = aBytes.toFixed(fractionDigits);
+      if (gDecimalSymbol != ".") {
+        aBytes = aBytes.replace(".", gDecimalSymbol);
       }
     }
 

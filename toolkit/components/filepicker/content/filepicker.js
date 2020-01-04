@@ -775,10 +775,9 @@ function processPath(path)
       }
       ++curFileStart;
     }
-  } else {
+  } else if (!processPathEntry(path, fileArray)) {
     
-    if (!processPathEntry(path, fileArray))
-      return false;
+    return false;
   }
 
   return fileArray;

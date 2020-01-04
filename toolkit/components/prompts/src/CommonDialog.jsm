@@ -241,20 +241,17 @@ CommonDialog.prototype = {
                 this.ui.infoBody.focus();
             else
                 button.focus();
+        } else if (this.args.promptType == "promptPassword") {
+            
+            
+            if (isInitialLoad)
+                this.ui.password1Textbox.select();
+            else
+                this.ui.password1Textbox.focus();
+        } else if (isInitialLoad) {
+                this.ui.loginTextbox.select();
         } else {
-            
-            
-            if (this.args.promptType == "promptPassword") {
-                if (isInitialLoad)
-                    this.ui.password1Textbox.select();
-                else
-                    this.ui.password1Textbox.focus();
-            } else {
-                if (isInitialLoad)
-                    this.ui.loginTextbox.select();
-                else
-                    this.ui.loginTextbox.focus();
-            }
+                this.ui.loginTextbox.focus();
         }
     },
 

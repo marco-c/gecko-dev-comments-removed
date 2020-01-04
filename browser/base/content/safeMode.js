@@ -75,11 +75,9 @@ function onLoad() {
       
       document.documentElement.getButton("extra1").hidden = true;
     }
-  } else {
-    if (!ResetProfile.resetSupported()) {
-      
-      document.documentElement.getButton("extra1").hidden = true;
-      document.getElementById("resetProfileInstead").hidden = true;
-    }
+  } else if (!ResetProfile.resetSupported()) {
+    
+    document.documentElement.getButton("extra1").hidden = true;
+    document.getElementById("resetProfileInstead").hidden = true;
   }
 }

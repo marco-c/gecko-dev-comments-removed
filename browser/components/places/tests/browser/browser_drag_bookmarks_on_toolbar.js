@@ -232,13 +232,11 @@ function nextTest() {
       test.run();
     });
   }
-  else {
+  else if (wasCollapsed) {
     
-    if (wasCollapsed) {
-      promiseSetToolbarVisibility(toolbar, false).then(finish);
-    } else {
-      finish();
-    }
+    promiseSetToolbarVisibility(toolbar, false).then(finish);
+  } else {
+    finish();
   }
 }
 

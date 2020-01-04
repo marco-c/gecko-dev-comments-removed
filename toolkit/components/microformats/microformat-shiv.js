@@ -1211,10 +1211,8 @@ var Microformats;
                                                     if (out.properties.indexOf(propName) === -1) {
                                                         out.properties.push([propName,'v1']);
                                                     }
-                                                } else {
-                                                    if (out.properties.indexOf(propName) === -1) {
-                                                        out.properties.push([propName,'v1']);
-                                                    }
+                                                } else if (out.properties.indexOf(propName) === -1) {
+                                                    out.properties.push([propName,'v1']);
                                                 }
                                             }
                                         }
@@ -3403,12 +3401,10 @@ var Microformats;
                     
                     if (this.z) {
                         out += this.tzZulu;
-                    } else {
-                        if (this.tzH && this.tzH > -1 && this.tzH < 25) {
-                            out += this.tzPN + this.tzH;
-                            if (this.tzM > -1 && this.tzM < 61) {
-                                out += this.tzsep + this.tzM;
-                            }
+                    } else if (this.tzH && this.tzH > -1 && this.tzH < 25) {
+                        out += this.tzPN + this.tzH;
+                        if (this.tzM > -1 && this.tzM < 61) {
+                            out += this.tzsep + this.tzM;
                         }
                     }
                 }
