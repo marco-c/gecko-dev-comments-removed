@@ -1441,22 +1441,7 @@ MessageChannel::DispatchSyncMessage(const Message& aMsg, Message*& aReply)
     MessageChannel*& blockingVar = ShouldBlockScripts() ? gParentProcessBlocker : dummy;
 
     Result rv;
-    if (mTimedOutMessageSeqno && mTimedOutMessagePriority >= prio) {
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        rv = MsgNotAllowed;
-    } else {
+    {
         AutoSetValue<MessageChannel*> blocked(blockingVar, this);
         AutoSetValue<bool> sync(mDispatchingSyncMessage, true);
         AutoSetValue<int> prioSet(mDispatchingSyncMessagePriority, prio);
