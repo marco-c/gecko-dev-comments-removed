@@ -1043,26 +1043,26 @@ nsCSSSelectorList::SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) cons
 namespace mozilla {
 namespace css {
 
-ImportantRule::ImportantRule(Declaration* aDeclaration)
+ImportantStyleData::ImportantStyleData(Declaration* aDeclaration)
   : mDeclaration(aDeclaration)
 {
 }
 
-ImportantRule::~ImportantRule()
+ImportantStyleData::~ImportantStyleData()
 {
 }
 
-NS_IMPL_ISUPPORTS(ImportantRule, nsIStyleRule)
+NS_IMPL_ISUPPORTS(ImportantStyleData, nsIStyleRule)
 
  void
-ImportantRule::MapRuleInfoInto(nsRuleData* aRuleData)
+ImportantStyleData::MapRuleInfoInto(nsRuleData* aRuleData)
 {
   mDeclaration->MapImportantRuleInfoInto(aRuleData);
 }
 
 #ifdef DEBUG
  void
-ImportantRule::List(FILE* out, int32_t aIndent) const
+ImportantStyleData::List(FILE* out, int32_t aIndent) const
 {
   
   nsAutoCString str;
@@ -1497,7 +1497,7 @@ StyleRule::RuleMatched()
     mWasMatched = true;
     mDeclaration->SetImmutable();
     if (mDeclaration->HasImportantData()) {
-      mImportantRule = new ImportantRule(mDeclaration);
+      mImportantRule = new ImportantStyleData(mDeclaration);
     }
   }
 }
