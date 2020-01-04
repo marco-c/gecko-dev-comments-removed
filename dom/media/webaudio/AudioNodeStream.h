@@ -122,7 +122,6 @@ public:
 
 
   void ProduceOutputBeforeInput(GraphTime aFrom);
-  StreamTime GetCurrentPosition();
   bool IsAudioParamStream() const
   {
     return mAudioParamStream;

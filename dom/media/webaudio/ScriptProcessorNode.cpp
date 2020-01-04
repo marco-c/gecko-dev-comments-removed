@@ -280,6 +280,7 @@ public:
   }
 
   virtual void ProcessBlock(AudioNodeStream* aStream,
+                            GraphTime aFrom,
                             const AudioBlock& aInput,
                             AudioBlock* aOutput,
                             bool* aFinished) override
@@ -328,7 +329,7 @@ public:
     *aOutput = mSharedBuffers->GetOutputBuffer();
 
     if (mInputWriteIndex >= mBufferSize) {
-      SendBuffersToMainThread(aStream);
+      SendBuffersToMainThread(aStream, aFrom);
       mInputWriteIndex -= mBufferSize;
     }
   }
@@ -359,12 +360,12 @@ public:
   }
 
 private:
-  void SendBuffersToMainThread(AudioNodeStream* aStream)
+  void SendBuffersToMainThread(AudioNodeStream* aStream, GraphTime aFrom)
   {
     MOZ_ASSERT(!NS_IsMainThread());
 
     
-    StreamTime playbackTick = mSource->GetCurrentPosition();
+    StreamTime playbackTick = mSource->GraphTimeToStreamTime(aFrom);
     
     playbackTick += WEBAUDIO_BLOCK_SIZE;
     
