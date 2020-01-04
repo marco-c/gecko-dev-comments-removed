@@ -975,7 +975,6 @@ class Watchdog
       , mHibernating(false)
       , mInitialized(false)
       , mShuttingDown(false)
-      , mSlowScriptSecondHalfCount(0)
       , mMinScriptRunTimeSeconds(1)
     {}
     ~Watchdog() { MOZ_ASSERT(!Initialized()); }
@@ -1085,10 +1084,6 @@ class Watchdog
         return mMinScriptRunTimeSeconds;
     }
 
-    uint32_t GetSlowScriptSecondHalfCount() { return mSlowScriptSecondHalfCount; }
-    void IncrementSlowScriptSecondHalfCount() { mSlowScriptSecondHalfCount++; }
-    void ResetSlowScriptSecondHalfCount() { mSlowScriptSecondHalfCount = 0; }
-
   private:
     WatchdogManager* mManager;
 
@@ -1098,10 +1093,6 @@ class Watchdog
     bool mHibernating;
     bool mInitialized;
     bool mShuttingDown;
-
-    
-    uint32_t mSlowScriptSecondHalfCount;
-
     mozilla::Atomic<int32_t> mMinScriptRunTimeSeconds;
 };
 
@@ -1165,8 +1156,6 @@ class WatchdogManager : public nsIObserver
 
         
         mTimestamps[TimestampRuntimeStateChange] = PR_Now();
-        if (mWatchdog)
-            mWatchdog->ResetSlowScriptSecondHalfCount();
         mRuntimeState = active ? RUNTIME_ACTIVE : RUNTIME_INACTIVE;
 
         
@@ -1299,39 +1288,16 @@ WatchdogMain(void* arg)
         
         
         
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        PRTime usecs = self->MinScriptRunTimeSeconds() * PR_USEC_PER_SEC;
-        if (manager->IsRuntimeActive()) {
-            uint32_t count = self->GetSlowScriptSecondHalfCount() + 1;
-            if (manager->TimeSinceLastRuntimeStateChange() >= usecs * count / 2) {
-                self->IncrementSlowScriptSecondHalfCount();
-                if (count % 2 == 0) {
-                    bool debuggerAttached = false;
-                    nsCOMPtr<nsIDebug2> dbg = do_GetService("@mozilla.org/xpcom/debug;1");
-                    if (dbg)
-                        dbg->GetIsDebuggerAttached(&debuggerAttached);
-                    if (!debuggerAttached)
-                        JS_RequestInterruptCallback(manager->Runtime()->Context());
-                }
-            }
+        PRTime usecs = self->MinScriptRunTimeSeconds() * PR_USEC_PER_SEC / 2;
+        if (manager->IsRuntimeActive() &&
+            manager->TimeSinceLastRuntimeStateChange() >= usecs)
+        {
+            bool debuggerAttached = false;
+            nsCOMPtr<nsIDebug2> dbg = do_GetService("@mozilla.org/xpcom/debug;1");
+            if (dbg)
+                dbg->GetIsDebuggerAttached(&debuggerAttached);
+            if (!debuggerAttached)
+                JS_RequestInterruptCallback(manager->Runtime()->Context());
         }
     }
 
@@ -1374,6 +1340,7 @@ XPCJSRuntime::InterruptCallback(JSContext* cx)
     
     if (self->mSlowScriptCheckpoint.IsNull()) {
         self->mSlowScriptCheckpoint = TimeStamp::NowLoRes();
+        self->mSlowScriptSecondHalf = false;
         self->mSlowScriptActualWait = mozilla::TimeDuration();
         self->mTimeoutAccumulated = false;
         return true;
@@ -1394,10 +1361,19 @@ XPCJSRuntime::InterruptCallback(JSContext* cx)
     int32_t limit = Preferences::GetInt(prefName, chrome ? 20 : 10);
 
     
-    if (limit == 0 || duration.ToSeconds() < limit)
+    if (limit == 0 || duration.ToSeconds() < limit / 2.0)
         return true;
 
     self->mSlowScriptActualWait += duration;
+
+    
+    
+    
+    if (!self->mSlowScriptSecondHalf) {
+        self->mSlowScriptCheckpoint = TimeStamp::NowLoRes();
+        self->mSlowScriptSecondHalf = true;
+        return true;
+    }
 
     
     
@@ -3345,6 +3321,7 @@ XPCJSRuntime::XPCJSRuntime()
    mObjectHolderRoots(nullptr),
    mWatchdogManager(new WatchdogManager(this)),
    mAsyncSnowWhiteFreer(new AsyncFreeSnowWhite()),
+   mSlowScriptSecondHalf(false),
    mTimeoutAccumulated(false),
    mPendingResult(NS_OK)
 {
@@ -3678,6 +3655,7 @@ XPCJSRuntime::BeforeProcessTask(bool aMightBlock)
 
     
     mSlowScriptCheckpoint = mozilla::TimeStamp::NowLoRes();
+    mSlowScriptSecondHalf = false;
     mSlowScriptActualWait = mozilla::TimeDuration();
     mTimeoutAccumulated = false;
 
@@ -3693,6 +3671,7 @@ XPCJSRuntime::AfterProcessTask(uint32_t aNewRecursionDepth)
 {
     
     mSlowScriptCheckpoint = mozilla::TimeStamp();
+    mSlowScriptSecondHalf = false;
 
     
     MOZ_ASSERT(NS_IsMainThread());
