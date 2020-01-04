@@ -259,13 +259,13 @@ protected:
                         nscoord&             aCurrX);
 
   
-  void PaintText(int32_t              aRowIndex, 
-                 nsTreeColumn*        aColumn,
-                 const nsRect&        aTextRect,
-                 nsPresContext*      aPresContext,
-                 nsRenderingContext& aRenderingContext,
-                 const nsRect&        aDirtyRect,
-                 nscoord&             aCurrX);
+  DrawResult PaintText(int32_t             aRowIndex,
+                       nsTreeColumn*       aColumn,
+                       const nsRect&       aTextRect,
+                       nsPresContext*      aPresContext,
+                       nsRenderingContext& aRenderingContext,
+                       const nsRect&       aDirtyRect,
+                       nscoord&            aCurrX);
 
   
   DrawResult PaintCheckbox(int32_t              aRowIndex, 
