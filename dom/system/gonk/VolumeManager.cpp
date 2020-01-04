@@ -157,6 +157,27 @@ VolumeManager::FindAddVolumeByName(const nsCSubstring& aName)
 }
 
 
+bool
+VolumeManager::RemoveVolumeByName(const nsCSubstring& aName)
+{
+  if (!sVolumeManager) {
+    return false;
+  }
+  VolumeArray::size_type  numVolumes = NumVolumes();
+  VolumeArray::index_type volIndex;
+  for (volIndex = 0; volIndex < numVolumes; volIndex++) {
+    RefPtr<Volume> vol = GetVolume(volIndex);
+    if (vol->Name().Equals(aName)) {
+      sVolumeManager->mVolumeArray.RemoveElementAt(volIndex);
+      return true;
+    }
+  }
+  
+  return false;
+}
+
+
+
 void VolumeManager::InitConfig()
 {
   MOZ_ASSERT(MessageLoop::current() == XRE_GetIOMessageLoop());
@@ -234,6 +255,17 @@ void VolumeManager::InitConfig()
       } else {
         ERR("Invalid volume name '%s'.", volName.get());
       }
+      continue;
+    }
+    if (command.EqualsLiteral("ignore")) {
+      
+      
+      if (!tokenizer.hasMoreTokens()) {
+        ERR("No vol_name in %s line %d", filename, n);
+        continue;
+      }
+      nsCString volName(tokenizer.nextToken());
+      RemoveVolumeByName(volName);
       continue;
     }
     ERR("Unrecognized command: '%s'", command.get());
