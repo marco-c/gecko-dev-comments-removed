@@ -126,6 +126,12 @@ MIRGenerator::needsAsmJSBoundsCheckBranch(const MAsmJSHeapAccess* access) const
 size_t
 MIRGenerator::foldableOffsetRange(const MAsmJSHeapAccess* access) const
 {
+    return foldableOffsetRange(access->needsBoundsCheck());
+}
+
+size_t
+MIRGenerator::foldableOffsetRange(bool accessNeedsBoundsCheck) const
+{
     
     
 
@@ -148,7 +154,7 @@ MIRGenerator::foldableOffsetRange(const MAsmJSHeapAccess* access) const
     
     
     
-    if (sizeof(intptr_t) == sizeof(int32_t) && !access->needsBoundsCheck())
+    if (sizeof(intptr_t) == sizeof(int32_t) && !accessNeedsBoundsCheck)
         return WasmImmediateRange;
 
     

@@ -322,36 +322,40 @@ LIRGeneratorMIPSShared::visitAsmJSUnsignedToFloat32(MAsmJSUnsignedToFloat32* ins
 void
 LIRGeneratorMIPSShared::visitAsmJSLoadHeap(MAsmJSLoadHeap* ins)
 {
-    MDefinition* ptr = ins->ptr();
-    MOZ_ASSERT(ptr->type() == MIRType_Int32);
-    LAllocation ptrAlloc;
+    MOZ_ASSERT(ins->offset() == 0);
+
+    MDefinition* base = ins->base();
+    MOZ_ASSERT(base->type() == MIRType_Int32);
+    LAllocation baseAlloc;
 
     
     
-    if (ptr->isConstant() && !ins->needsBoundsCheck()) {
+    if (base->isConstant() && !ins->needsBoundsCheck()) {
         
-        MOZ_ASSERT(ptr->toConstant()->toInt32() >= 0);
-        ptrAlloc = LAllocation(ptr->toConstant());
+        MOZ_ASSERT(base->toConstant()->toInt32() >= 0);
+        baseAlloc = LAllocation(base->toConstant());
     } else
-        ptrAlloc = useRegisterAtStart(ptr);
+        baseAlloc = useRegisterAtStart(base);
 
-    define(new(alloc()) LAsmJSLoadHeap(ptrAlloc), ins);
+    define(new(alloc()) LAsmJSLoadHeap(baseAlloc), ins);
 }
 
 void
 LIRGeneratorMIPSShared::visitAsmJSStoreHeap(MAsmJSStoreHeap* ins)
 {
-    MDefinition* ptr = ins->ptr();
-    MOZ_ASSERT(ptr->type() == MIRType_Int32);
-    LAllocation ptrAlloc;
+    MOZ_ASSERT(ins->offset() == 0);
 
-    if (ptr->isConstant() && !ins->needsBoundsCheck()) {
-        MOZ_ASSERT(ptr->toConstant()->toInt32() >= 0);
-        ptrAlloc = LAllocation(ptr->toConstant());
+    MDefinition* base = ins->base();
+    MOZ_ASSERT(base->type() == MIRType_Int32);
+    LAllocation baseAlloc;
+
+    if (base->isConstant() && !ins->needsBoundsCheck()) {
+        MOZ_ASSERT(base->toConstant()->toInt32() >= 0);
+        baseAlloc = LAllocation(base->toConstant());
     } else
-        ptrAlloc = useRegisterAtStart(ptr);
+        baseAlloc = useRegisterAtStart(base);
 
-    add(new(alloc()) LAsmJSStoreHeap(ptrAlloc, useRegisterAtStart(ins->value())), ins);
+    add(new(alloc()) LAsmJSStoreHeap(baseAlloc, useRegisterAtStart(ins->value())), ins);
 }
 
 void
@@ -408,6 +412,7 @@ LIRGeneratorMIPSShared::visitCompareExchangeTypedArrayElement(MCompareExchangeTy
 {
     MOZ_ASSERT(ins->arrayType() != Scalar::Float32);
     MOZ_ASSERT(ins->arrayType() != Scalar::Float64);
+    MOZ_ASSERT(ins->offset() == 0);
 
     MOZ_ASSERT(ins->elements()->type() == MIRType_Elements);
     MOZ_ASSERT(ins->index()->type() == MIRType_Int32);
@@ -436,6 +441,7 @@ void
 LIRGeneratorMIPSShared::visitAtomicExchangeTypedArrayElement(MAtomicExchangeTypedArrayElement* ins)
 {
     MOZ_ASSERT(ins->arrayType() <= Scalar::Uint32);
+    MOZ_ASSERT(ins->offset() == 0);
 
     MOZ_ASSERT(ins->elements()->type() == MIRType_Elements);
     MOZ_ASSERT(ins->index()->type() == MIRType_Int32);
@@ -465,12 +471,13 @@ void
 LIRGeneratorMIPSShared::visitAsmJSCompareExchangeHeap(MAsmJSCompareExchangeHeap* ins)
 {
     MOZ_ASSERT(ins->accessType() < Scalar::Float32);
+    MOZ_ASSERT(ins->offset() == 0);
 
-    MDefinition* ptr = ins->ptr();
-    MOZ_ASSERT(ptr->type() == MIRType_Int32);
+    MDefinition* base = ins->base();
+    MOZ_ASSERT(base->type() == MIRType_Int32);
 
     LAsmJSCompareExchangeHeap* lir =
-        new(alloc()) LAsmJSCompareExchangeHeap(useRegister(ptr),
+        new(alloc()) LAsmJSCompareExchangeHeap(useRegister(base),
                                                useRegister(ins->oldValue()),
                                                useRegister(ins->newValue()),
                                                 temp(),
@@ -483,9 +490,10 @@ LIRGeneratorMIPSShared::visitAsmJSCompareExchangeHeap(MAsmJSCompareExchangeHeap*
 void
 LIRGeneratorMIPSShared::visitAsmJSAtomicExchangeHeap(MAsmJSAtomicExchangeHeap* ins)
 {
-    MOZ_ASSERT(ins->ptr()->type() == MIRType_Int32);
+    MOZ_ASSERT(ins->base()->type() == MIRType_Int32);
+    MOZ_ASSERT(ins->offset() == 0);
 
-    const LAllocation ptr = useRegister(ins->ptr());
+    const LAllocation base = useRegister(ins->base());
     const LAllocation value = useRegister(ins->value());
 
     
@@ -493,7 +501,7 @@ LIRGeneratorMIPSShared::visitAsmJSAtomicExchangeHeap(MAsmJSAtomicExchangeHeap* i
     
 
     LAsmJSAtomicExchangeHeap* lir =
-        new(alloc()) LAsmJSAtomicExchangeHeap(ptr, value,
+        new(alloc()) LAsmJSAtomicExchangeHeap(base, value,
                                                temp(),
                                                temp(),
                                                temp());
@@ -504,13 +512,14 @@ void
 LIRGeneratorMIPSShared::visitAsmJSAtomicBinopHeap(MAsmJSAtomicBinopHeap* ins)
 {
     MOZ_ASSERT(ins->accessType() < Scalar::Float32);
+    MOZ_ASSERT(ins->offset() == 0);
 
-    MDefinition* ptr = ins->ptr();
-    MOZ_ASSERT(ptr->type() == MIRType_Int32);
+    MDefinition* base = ins->base();
+    MOZ_ASSERT(base->type() == MIRType_Int32);
 
     if (!ins->hasUses()) {
         LAsmJSAtomicBinopHeapForEffect* lir =
-            new(alloc()) LAsmJSAtomicBinopHeapForEffect(useRegister(ptr),
+            new(alloc()) LAsmJSAtomicBinopHeapForEffect(useRegister(base),
                                                         useRegister(ins->value()),
                                                          temp(),
                                                          temp(),
@@ -521,7 +530,7 @@ LIRGeneratorMIPSShared::visitAsmJSAtomicBinopHeap(MAsmJSAtomicBinopHeap* ins)
     }
 
     LAsmJSAtomicBinopHeap* lir =
-        new(alloc()) LAsmJSAtomicBinopHeap(useRegister(ptr),
+        new(alloc()) LAsmJSAtomicBinopHeap(useRegister(base),
                                            useRegister(ins->value()),
                                             LDefinition::BogusTemp(),
                                             temp(),

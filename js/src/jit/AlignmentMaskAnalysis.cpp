@@ -82,9 +82,9 @@ AlignmentMaskAnalysis::analyze()
             
             
             if (i->isAsmJSLoadHeap())
-                AnalyzeAsmHeapAddress(i->toAsmJSLoadHeap()->ptr(), graph_);
+                AnalyzeAsmHeapAddress(i->toAsmJSLoadHeap()->base(), graph_);
             else if (i->isAsmJSStoreHeap())
-                AnalyzeAsmHeapAddress(i->toAsmJSStoreHeap()->ptr(), graph_);
+                AnalyzeAsmHeapAddress(i->toAsmJSStoreHeap()->base(), graph_);
         }
     }
     return true;
