@@ -627,6 +627,12 @@
   margin-top: -1px;
 }
 
+
+
+.variables-view-watch-expressions .title > .name  {
+  max-width: 14em;
+}
+
 .theme-firebug .variables-view-scope > .title {
   height: auto;
   border: none;
