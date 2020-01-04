@@ -13,7 +13,8 @@
 #include "mozilla/EffectSet.h"
 #include "mozilla/InitializerList.h"
 #include "mozilla/LayerAnimationInfo.h"
-#include "mozilla/RestyleManager.h"
+#include "mozilla/RestyleManagerHandle.h"
+#include "mozilla/RestyleManagerHandleInlines.h"
 #include "nsComputedDOMStyle.h" 
 #include "nsCSSPropertySet.h"
 #include "nsCSSProps.h"
@@ -161,7 +162,10 @@ EffectCompositor::RequestRestyle(dom::Element* aElement,
 
   if (aRestyleType == RestyleType::Layer) {
     
-    mPresContext->RestyleManager()->IncrementAnimationGeneration();
+    MOZ_ASSERT(mPresContext->RestyleManager()->IsGecko(),
+               "stylo: Servo-backed style system should not be using "
+               "EffectCompositor");
+    mPresContext->RestyleManager()->AsGecko()->IncrementAnimationGeneration();
     EffectSet* effectSet =
       EffectSet::GetEffectSet(aElement, aPseudoType);
     if (effectSet) {
@@ -252,7 +256,10 @@ EffectCompositor::GetAnimationRule(dom::Element* aElement,
     return nullptr;
   }
 
-  if (mPresContext->RestyleManager()->SkipAnimationRules()) {
+  MOZ_ASSERT(mPresContext->RestyleManager()->IsGecko(),
+             "stylo: Servo-backed style system should not be using "
+             "EffectCompositor");
+  if (mPresContext->RestyleManager()->AsGecko()->SkipAnimationRules()) {
     
     
     

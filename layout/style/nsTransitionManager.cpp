@@ -32,7 +32,8 @@
 #include "nsDisplayList.h"
 #include "nsStyleChangeList.h"
 #include "nsStyleSet.h"
-#include "mozilla/RestyleManager.h"
+#include "mozilla/RestyleManagerHandle.h"
+#include "mozilla/RestyleManagerHandleInlines.h"
 #include "nsDOMMutationObserver.h"
 
 using mozilla::TimeStamp;
@@ -288,9 +289,12 @@ nsTransitionManager::StyleContextChanged(dom::Element *aElement,
     return;
   }
 
+  MOZ_ASSERT(mPresContext->RestyleManager()->IsGecko(),
+             "ServoRestyleManager should not use nsTransitionManager "
+             "for transitions");
   if (collection &&
       collection->mCheckGeneration ==
-        mPresContext->RestyleManager()->GetAnimationGeneration()) {
+        mPresContext->RestyleManager()->AsGecko()->GetAnimationGeneration()) {
     
     
     
@@ -679,13 +683,17 @@ nsTransitionManager::ConsiderStartingTransition(
     segment.mTimingFunction = Some(computedTimingFunction);
   }
 
+  MOZ_ASSERT(mPresContext->RestyleManager()->IsGecko(),
+             "ServoRestyleManager should not use nsTransitionManager "
+             "for transitions");
+
   RefPtr<CSSTransition> animation =
     new CSSTransition(mPresContext->Document()->GetScopeObject());
   animation->SetOwningElement(
     OwningElementRef(*aElement, aNewStyleContext->GetPseudoType()));
   animation->SetTimeline(timeline);
   animation->SetCreationSequence(
-    mPresContext->RestyleManager()->GetAnimationGeneration());
+    mPresContext->RestyleManager()->AsGecko()->GetAnimationGeneration());
   
   
   
