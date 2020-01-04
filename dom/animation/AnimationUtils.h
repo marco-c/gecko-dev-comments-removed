@@ -15,6 +15,12 @@ class nsIContent;
 
 namespace mozilla {
 
+class ComputedTimingFunction;
+
+namespace dom {
+class Element;
+}
+
 class AnimationUtils
 {
 public:
@@ -44,6 +50,14 @@ public:
 
   static void LogAsyncAnimationFailure(nsCString& aMessage,
                                        const nsIContent* aContent = nullptr);
+
+  
+
+
+
+
+  static Maybe<ComputedTimingFunction>
+    ParseEasing(const dom::Element* aTarget, const nsAString& aEasing);
 };
 
 } 
