@@ -34,7 +34,7 @@ add_task(function* testLastError() {
   
   for (let api of ["extension", "runtime"]) {
     let waitForConsole = new Promise(resolve => {
-      SimpleTest.monitorConsole(resolve, [], true);
+      SimpleTest.monitorConsole(resolve, [{message: /Invalid extension ID/, forbid: true}]);
     });
 
     yield sendMessage({ checkLastError: api });
@@ -45,7 +45,7 @@ add_task(function* testLastError() {
 
   
   let waitForConsole = new Promise(resolve => {
-    SimpleTest.monitorConsole(resolve, [/Unchecked lastError value: Invalid extension ID/], true);
+    SimpleTest.monitorConsole(resolve, [{message: /Unchecked lastError value: Error: Invalid extension ID/}]);
   });
 
   yield sendMessage({});
