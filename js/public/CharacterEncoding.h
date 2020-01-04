@@ -115,6 +115,33 @@ class UTF8CharsZ : public mozilla::RangedPtr<unsigned char>
 
 
 
+class ConstUTF8CharsZ
+{
+    const char* data_;
+
+  public:
+    ConstUTF8CharsZ() : data_(nullptr)
+    {}
+
+    ConstUTF8CharsZ(const char* aBytes, size_t aLength)
+      : data_(aBytes)
+    {
+        MOZ_ASSERT(aBytes[aLength] == '\0');
+    }
+
+    const void* get() const { return data_; }
+
+    const char* c_str() const { return data_; }
+
+    explicit operator bool() const { return data_ != nullptr; }
+};
+
+
+
+
+
+
+
 
 
 class TwoByteChars : public mozilla::Range<char16_t>
