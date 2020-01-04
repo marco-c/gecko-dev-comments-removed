@@ -13,6 +13,8 @@
 #include "mozilla/Mutex.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/Snprintf.h"
+#include "mozilla/Atomics.h"
+#include "mozilla/UniquePtrExtensions.h"
 #include "nsClassHashtable.h"
 #include "nsDebug.h"
 #include "NSPRLogModulesParser.h"
@@ -29,6 +31,11 @@
 
 
 const uint32_t kInitialModuleCount = 256;
+
+
+
+
+const uint32_t kRotateFilesNumber = 4;
 
 namespace mozilla {
 
@@ -65,7 +72,7 @@ int log_pid()
 #endif
 }
 
-}
+} 
 
 LogLevel
 ToLogLevel(int32_t aLevel)
@@ -95,23 +102,63 @@ ToLogStr(LogLevel aLevel) {
   }
 }
 
+namespace detail {
+
+
+
+
+
+
+
+
+class LogFile
+{
+  FILE* mFile;
+  uint32_t mFileNum;
+
+public:
+  LogFile(FILE* aFile, uint32_t aFileNum)
+    : mFile(aFile)
+    , mFileNum(aFileNum)
+    , mNextToRelease(nullptr)
+  {
+  }
+
+  ~LogFile()
+  {
+    fclose(mFile);
+    delete mNextToRelease;
+  }
+
+  FILE* File() const { return mFile; }
+  uint32_t Num() const { return mFileNum; }
+
+  LogFile* mNextToRelease;
+};
+
+} 
+
 class LogModuleManager
 {
 public:
   LogModuleManager()
     : mModulesLock("logmodules")
     , mModules(kInitialModuleCount)
+    , mPrintEntryCount(0)
     , mOutFile(nullptr)
+    , mToReleaseFile(nullptr)
+    , mOutFileNum(0)
     , mMainThread(PR_GetCurrentThread())
     , mAddTimestamp(false)
     , mIsSync(false)
+    , mRotate(0)
   {
   }
 
   ~LogModuleManager()
   {
-    
-    
+    detail::LogFile* logFile = mOutFile.exchange(nullptr);
+    delete logFile;
   }
 
   
@@ -122,6 +169,7 @@ public:
     bool shouldAppend = false;
     bool addTimestamp = false;
     bool isSync = false;
+    int32_t rotate = 0;
     const char* modules = PR_GetEnv("MOZ_LOG");
     if (!modules || !modules[0]) {
       modules = PR_GetEnv("MOZ_LOG_MODULES");
@@ -139,21 +187,29 @@ public:
     }
 
     NSPRLogModulesParser(modules,
-        [&shouldAppend, &addTimestamp, &isSync]
-            (const char* aName, LogLevel aLevel) mutable {
+        [&shouldAppend, &addTimestamp, &isSync, &rotate]
+            (const char* aName, LogLevel aLevel, int32_t aValue) mutable {
           if (strcmp(aName, "append") == 0) {
             shouldAppend = true;
           } else if (strcmp(aName, "timestamp") == 0) {
             addTimestamp = true;
           } else if (strcmp(aName, "sync") == 0) {
             isSync = true;
+          } else if (strcmp(aName, "rotate") == 0) {
+            rotate = (aValue << 20) / kRotateFilesNumber;
           } else {
             LogModule::Get(aName)->SetLevel(aLevel);
           }
     });
 
-    mAddTimestamp = addTimestamp;
+    
+    mAddTimestamp = addTimestamp || rotate > 0;
     mIsSync = isSync;
+    mRotate = rotate;
+
+    if (rotate > 0 && shouldAppend) {
+      NS_WARNING("MOZ_LOG: when you rotate the log, you cannot use append!");
+    }
 
     const char* logFile = PR_GetEnv("MOZ_LOG_FILE");
     if (!logFile || !logFile[0]) {
@@ -173,8 +229,49 @@ public:
         logFile = buf;
       }
 
-      mOutFile = fopen(logFile, shouldAppend ? "a" : "w");
+      mOutFilePath.reset(strdup(logFile));
+
+      if (mRotate > 0) {
+        
+        
+        
+        
+        remove(mOutFilePath.get());
+        for (uint32_t i = 0; i < kRotateFilesNumber; ++i) {
+          RemoveFile(i);
+        }
+      }
+
+      mOutFile = OpenFile(shouldAppend, mOutFileNum);
     }
+  }
+
+  detail::LogFile* OpenFile(bool aShouldAppend, uint32_t aFileNum)
+  {
+    FILE* file;
+
+    if (mRotate > 0) {
+      char buf[2048];
+      snprintf_literal(buf, "%s.%d", mOutFilePath.get(), aFileNum);
+
+      
+      file = fopen(buf, "w");
+    } else {
+      file = fopen(mOutFilePath.get(), aShouldAppend ? "a" : "w");
+    }
+
+    if (!file) {
+      return nullptr;
+    }
+
+    return new detail::LogFile(file, aFileNum);
+  }
+
+  void RemoveFile(uint32_t aFileNum)
+  {
+    char buf[2048];
+    snprintf_literal(buf, "%s.%d", mOutFilePath.get(), aFileNum);
+    remove(buf);
   }
 
   LogModule* CreateOrGetModule(const char* aName)
@@ -215,7 +312,16 @@ public:
       newline = "\n";
     }
 
-    FILE* out = mOutFile ? mOutFile : stderr;
+    FILE* out = stderr;
+
+    
+    
+    ++mPrintEntryCount;
+
+    detail::LogFile* outFile = mOutFile;
+    if (outFile) {
+      out = outFile->File();
+    }
 
     
     
@@ -259,15 +365,72 @@ public:
     if (buffToWrite != buff) {
       PR_smprintf_free(buffToWrite);
     }
+
+    if (mRotate > 0 && outFile) {
+      int32_t fileSize = ftell(out);
+      if (fileSize > mRotate) {
+        uint32_t fileNum = outFile->Num();
+
+        uint32_t nextFileNum = fileNum + 1;
+        if (nextFileNum >= kRotateFilesNumber) {
+          nextFileNum = 0;
+        }
+
+        
+        
+        
+        if (mOutFileNum.compareExchange(fileNum, nextFileNum)) {
+          
+          
+          
+          
+          
+          
+          
+          outFile->mNextToRelease = mToReleaseFile;
+          mToReleaseFile = outFile;
+
+          mOutFile = OpenFile(false, nextFileNum);
+        }
+      }
+    }
+
+    if (--mPrintEntryCount == 0 && mToReleaseFile) {
+      
+      
+      
+      detail::LogFile* release = mToReleaseFile.exchange(nullptr);
+      delete release;
+    }
   }
 
 private:
   OffTheBooksMutex mModulesLock;
   nsClassHashtable<nsCharPtrHashKey, LogModule> mModules;
-  ScopedCloseFile mOutFile;
+
+  
+  
+  
+  Atomic<uint32_t, ReleaseAcquire> mPrintEntryCount;
+  
+  
+  Atomic<detail::LogFile*, ReleaseAcquire> mOutFile;
+  
+  
+  
+  
+  Atomic<detail::LogFile*, Relaxed> mToReleaseFile;
+  
+  
+  
+  Atomic<uint32_t, Relaxed> mOutFileNum;
+  
+  UniqueFreePtr<char[]> mOutFilePath;
+
   PRThread *mMainThread;
   bool mAddTimestamp;
   bool mIsSync;
+  int32_t mRotate;
 };
 
 StaticAutoPtr<LogModuleManager> sLogModuleManager;

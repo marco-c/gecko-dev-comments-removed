@@ -15,7 +15,7 @@ namespace mozilla {
 
 void
 NSPRLogModulesParser(const char* aLogModules,
-                     function<void(const char*, LogLevel)> aCallback)
+                     function<void(const char*, LogLevel, int32_t)> aCallback)
 {
   if (!aLogModules) {
     return;
@@ -28,6 +28,7 @@ NSPRLogModulesParser(const char* aLogModules,
   while (parser.ReadWord(moduleName)) {
     
     LogLevel logLevel = LogLevel::Error;
+    int32_t levelValue = 0;
     if (parser.CheckChar(':')) {
       
       int32_t multiplier = 1;
@@ -38,13 +39,12 @@ NSPRLogModulesParser(const char* aLogModules,
       
       
       
-      int32_t level;
-      if (parser.ReadInteger(&level)) {
-        logLevel = ToLogLevel(level * multiplier);
+      if (parser.ReadInteger(&levelValue)) {
+        logLevel = ToLogLevel(levelValue * multiplier);
       }
     }
 
-    aCallback(moduleName.get(), logLevel);
+    aCallback(moduleName.get(), logLevel, levelValue);
 
     
     parser.SkipWhites();
