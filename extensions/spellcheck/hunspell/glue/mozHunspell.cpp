@@ -160,6 +160,12 @@ NS_IMETHODIMP mozHunspell::SetDictionary(const char16_t *aDictionary)
     mDecoder = nullptr;
     mEncoder = nullptr;
 
+    nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
+    if (obs) {
+      obs->NotifyObservers(nullptr,
+                           SPELLCHECK_DICTIONARY_UPDATE_NOTIFICATION,
+                           nullptr);
+    }
     return NS_OK;
   }
 
@@ -219,6 +225,13 @@ NS_IMETHODIMP mozHunspell::SetDictionary(const char16_t *aDictionary)
     mLanguage.Assign(mDictionary);
   else
     mLanguage = Substring(mDictionary, 0, pos);
+
+  nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
+  if (obs) {
+    obs->NotifyObservers(nullptr,
+                         SPELLCHECK_DICTIONARY_UPDATE_NOTIFICATION,
+                         nullptr);
+  }
 
   return NS_OK;
 }
@@ -591,19 +604,11 @@ NS_IMETHODIMP mozHunspell::RemoveDirectory(nsIFile *aDir)
 {
   mDynamicDirectories.RemoveObject(aDir);
   LoadDictionaryList(true);
-
-#ifdef MOZ_THUNDERBIRD
-  
-
-
-
-
   nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
   if (obs) {
     obs->NotifyObservers(nullptr,
                          SPELLCHECK_DICTIONARY_REMOVE_NOTIFICATION,
                          nullptr);
   }
-#endif
   return NS_OK;
 }

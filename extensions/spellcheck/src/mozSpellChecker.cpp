@@ -428,6 +428,31 @@ mozSpellChecker::SetCurrentDictionary(const nsAString &aDictionary)
   return NS_ERROR_NOT_AVAILABLE;
 }
 
+NS_IMETHODIMP 
+mozSpellChecker::CheckCurrentDictionary()
+{
+  
+  
+  
+
+  if (!mSpellCheckingEngine) {
+    
+    return NS_OK;
+  }
+
+  nsXPIDLString dictname;
+  mSpellCheckingEngine->GetDictionary(getter_Copies(dictname));
+
+  if (!dictname.IsEmpty()) {
+    
+    return NS_OK;
+  }
+
+  
+  mSpellCheckingEngine = nullptr;
+  return NS_OK;
+}
+
 nsresult
 mozSpellChecker::SetupDoc(int32_t *outBlockOffset)
 {

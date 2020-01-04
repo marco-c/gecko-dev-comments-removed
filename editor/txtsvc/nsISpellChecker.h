@@ -114,6 +114,12 @@ public:
 
 
   NS_IMETHOD SetCurrentDictionary(const nsAString &aDictionary) = 0;
+
+  
+
+
+
+  NS_IMETHOD CheckCurrentDictionary() = 0;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(nsISpellChecker, NS_ISPELLCHECKER_IID)
