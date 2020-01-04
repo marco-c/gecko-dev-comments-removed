@@ -307,8 +307,8 @@ intrinsic_AssertionFailed(JSContext* cx, unsigned argc, Value* vp)
 static bool
 intrinsic_DumpMessage(JSContext* cx, unsigned argc, Value* vp)
 {
-#ifdef DEBUG
     CallArgs args = CallArgsFromVp(argc, vp);
+#ifdef DEBUG
     if (args.length() > 0) {
         
         JSString* str = ToString<CanGC>(cx, args[0]);
