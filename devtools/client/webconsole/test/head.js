@@ -82,6 +82,45 @@ function closeTab(tab) {
   return deferred.promise;
 }
 
+
+
+
+
+
+
+
+
+
+
+
+function* loadPageAndGetHud(uri, consoleType) {
+  let { browser } = yield loadTab("data:text/html;charset=utf-8,Loading tab for tests");
+
+  let hud;
+  if (consoleType === "browserConsole") {
+    hud = yield HUDService.openBrowserConsoleOrFocus();
+  } else {
+    hud = yield openConsole();
+  }
+
+  ok(hud, "Console was opened");
+
+  let loaded = loadBrowser(browser);
+  yield BrowserTestUtils.loadURI(gBrowser.selectedBrowser, uri);
+  yield loaded;
+
+  yield waitForMessages({
+    webconsole: hud,
+    messages: [{
+      text: uri,
+      category: CATEGORY_NETWORK,
+      severity: SEVERITY_LOG,
+    }],
+  });
+
+  return hud;
+}
+
 function afterAllTabsLoaded(callback, win) {
   win = win || window;
 
@@ -1595,6 +1634,23 @@ function checkOutputForInputs(hud, inputTests) {
 
 
 
+function waitForFinishedRequest() {
+  registerCleanupFunction(function() {
+    HUDService.lastFinishedRequest.callback = null;
+  });
+
+  return new Promise(resolve => {
+    HUDService.lastFinishedRequest.callback = request => { resolve(request) };
+  });
+}
+
+
+
+
+
+
+
+
 
 function once(target, eventName, useCapture=false) {
   info("Waiting for event: '" + eventName + "' on " + target + ".");
@@ -1651,6 +1707,21 @@ function checkLinkToInspector(hasLinkToInspector, msg) {
 function getSourceActor(sources, URL) {
   let item = sources.getItemForAttachment(a => a.source.url === URL);
   return item && item.value;
+}
+
+
+
+
+
+
+
+
+
+
+function getPacket(client, requestType, args) {
+  return new Promise(resolve => {
+    client[requestType](...args, packet => resolve(packet));
+  });
 }
 
 
