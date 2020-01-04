@@ -107,8 +107,7 @@ function removeTab(aTab, aWindow) {
   let targetWindow = aWindow || window;
   let targetBrowser = targetWindow.gBrowser;
 
-  
-  targetBrowser.removeTab(aTab, {skipPermitUnload: true});
+  targetBrowser.removeTab(aTab);
 }
 
 function waitForNavigation(aTarget) {

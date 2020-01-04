@@ -288,7 +288,7 @@ Tester.prototype = {
     
     if (window.gBrowser) {
       gBrowser.addTab("about:blank", { skipAnimation: true });
-      gBrowser.removeTab(gBrowser.selectedTab, { skipPermitUnload: true });
+      gBrowser.removeCurrentTab();
       gBrowser.stop();
     }
 
