@@ -314,6 +314,22 @@ PodSet(T* aDst, T aSrc, size_t aNElem)
 
 } 
 
+
+
+
+
+
+
+
+#define JS_FRESH_NURSERY_PATTERN 0x2F
+#define JS_SWEPT_NURSERY_PATTERN 0x2B
+#define JS_ALLOCATED_NURSERY_PATTERN 0x2D
+#define JS_FRESH_TENURED_PATTERN 0x4F
+#define JS_MOVED_TENURED_PATTERN 0x49
+#define JS_SWEPT_TENURED_PATTERN 0x4B
+#define JS_ALLOCATED_TENURED_PATTERN 0x4D
+#define JS_SWEPT_CODE_PATTERN 0x3B
+
 static inline void*
 Poison(void* ptr, uint8_t value, size_t num)
 {
