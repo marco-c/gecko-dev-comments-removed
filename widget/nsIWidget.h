@@ -1200,7 +1200,8 @@ class nsIWidget : public nsISupports
 
 
 
-    NS_IMETHOD MakeFullScreen(bool aFullScreen, nsIScreen* aTargetScreen = nullptr) = 0;
+    virtual nsresult MakeFullScreen(bool aFullScreen,
+                                    nsIScreen* aTargetScreen = nullptr) = 0;
 
     
 
@@ -1208,7 +1209,7 @@ class nsIWidget : public nsISupports
 
 
 
-    NS_IMETHOD MakeFullScreenWithNativeTransition(
+    virtual nsresult MakeFullScreenWithNativeTransition(
       bool aFullScreen, nsIScreen* aTargetScreen = nullptr)
     {
       return MakeFullScreen(aFullScreen, aTargetScreen);
