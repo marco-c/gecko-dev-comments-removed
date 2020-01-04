@@ -1938,10 +1938,17 @@ public:
     
     OFFSETS_IN_RENDERED_TEXT
   };
+  enum class TrailingWhitespace {
+    TRIM_TRAILING_WHITESPACE,
+    
+    DONT_TRIM_TRAILING_WHITESPACE
+  };
   virtual RenderedText GetRenderedText(uint32_t aStartOffset = 0,
                                        uint32_t aEndOffset = UINT32_MAX,
                                        TextOffsetType aOffsetType =
-                                           TextOffsetType::OFFSETS_IN_CONTENT_TEXT)
+                                           TextOffsetType::OFFSETS_IN_CONTENT_TEXT,
+                                       TrailingWhitespace aTrimTrailingWhitespace =
+                                           TrailingWhitespace::TRIM_TRAILING_WHITESPACE)
   { return RenderedText(); }
 
   

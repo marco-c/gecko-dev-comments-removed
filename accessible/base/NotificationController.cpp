@@ -230,7 +230,9 @@ NotificationController::WillRefresh(mozilla::TimeStamp aTime)
     nsIContent* containerElm = containerNode->IsElement() ?
       containerNode->AsElement() : nullptr;
 
-    nsIFrame::RenderedText text = textFrame->GetRenderedText();
+    nsIFrame::RenderedText text = textFrame->GetRenderedText(0,
+        UINT32_MAX, nsIFrame::TextOffsetType::OFFSETS_IN_CONTENT_TEXT,
+        nsIFrame::TrailingWhitespace::DONT_TRIM_TRAILING_WHITESPACE);
 
     
     if (textAcc) {
