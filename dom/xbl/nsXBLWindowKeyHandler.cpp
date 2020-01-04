@@ -573,24 +573,23 @@ bool
 nsXBLWindowKeyHandler::WalkHandlersAndExecute(
                          nsIDOMKeyEvent* aKeyEvent,
                          nsIAtom* aEventType,
-                         nsXBLPrototypeHandler* aHandler,
+                         nsXBLPrototypeHandler* aFirstHandler,
                          uint32_t aCharCode,
                          const IgnoreModifierState& aIgnoreModifierState,
                          bool aExecute,
                          bool* aOutReservedForChrome)
 {
-  nsresult rv;
-
   
-  for (nsXBLPrototypeHandler *currHandler = aHandler; currHandler;
-       currHandler = currHandler->GetNextHandler()) {
+  for (nsXBLPrototypeHandler* handler = aFirstHandler;
+       handler;
+       handler = handler->GetNextHandler()) {
     bool stopped = aKeyEvent->AsEvent()->IsDispatchStopped();
     if (stopped) {
       
       return false;
     }
 
-    if (!EventMatched(currHandler, aEventType, aKeyEvent,
+    if (!EventMatched(handler, aEventType, aKeyEvent,
                       aCharCode, aIgnoreModifierState)) {
       continue;  
     }
@@ -598,67 +597,69 @@ nsXBLWindowKeyHandler::WalkHandlersAndExecute(
     
     
     
-    nsCOMPtr<nsIContent> elt = currHandler->GetHandlerElement();
-    nsCOMPtr<Element> commandElt;
+    nsCOMPtr<nsIContent> keyContent = handler->GetHandlerElement();
+    nsCOMPtr<Element> commandElement;
 
     
-    nsCOMPtr<Element> el = GetElement();
-    if (el && elt) {
+    nsCOMPtr<Element> chromeHandlerElement = GetElement();
+    if (chromeHandlerElement && keyContent) {
       
       nsAutoString command;
-      elt->GetAttr(kNameSpaceID_None, nsGkAtoms::command, command);
+      keyContent->GetAttr(kNameSpaceID_None, nsGkAtoms::command, command);
       if (!command.IsEmpty()) {
         
         
-        NS_ASSERTION(elt->IsInDoc(), "elt must be in document");
-        nsIDocument *doc = elt->GetCurrentDoc();
-        if (doc)
-          commandElt = do_QueryInterface(doc->GetElementById(command));
+        NS_ASSERTION(keyContent->IsInDoc(),
+                     "the key element must be in document");
+        nsIDocument* doc = keyContent->GetCurrentDoc();
+        if (doc) {
+          commandElement = do_QueryInterface(doc->GetElementById(command));
+        }
 
-        if (!commandElt) {
-          NS_ERROR("A XUL <key> is observing a command that doesn't exist. Unable to execute key binding!");
+        if (!commandElement) {
+          NS_ERROR("A XUL <key> is observing a command that doesn't exist. "
+                   "Unable to execute key binding!");
           continue;
         }
       }
     }
 
-    if (!commandElt) {
-      commandElt = do_QueryInterface(elt);
+    if (!commandElement) {
+      commandElement = do_QueryInterface(keyContent);
     }
 
-    if (commandElt) {
+    if (commandElement) {
       nsAutoString value;
-      commandElt->GetAttribute(NS_LITERAL_STRING("disabled"), value);
+      commandElement->GetAttribute(NS_LITERAL_STRING("disabled"), value);
       if (value.EqualsLiteral("true")) {
         continue;  
       }
 
       
-      commandElt->GetAttribute(NS_LITERAL_STRING("oncommand"), value);
+      commandElement->GetAttribute(NS_LITERAL_STRING("oncommand"), value);
       if (value.IsEmpty()) {
         continue;  
       }
 
       if (aOutReservedForChrome) {
         
-        commandElt->GetAttribute(NS_LITERAL_STRING("reserved"), value);
+        commandElement->GetAttribute(NS_LITERAL_STRING("reserved"), value);
         *aOutReservedForChrome = value.EqualsLiteral("true");
       }
-    }
-
-    nsCOMPtr<EventTarget> piTarget;
-    nsCOMPtr<Element> element = GetElement();
-    if (element) {
-      piTarget = commandElt;
-    } else {
-      piTarget = mTarget;
     }
 
     if (!aExecute) {
       return true;
     }
 
-    rv = currHandler->ExecuteHandler(piTarget, aKeyEvent->AsEvent());
+    nsCOMPtr<EventTarget> target;
+    if (chromeHandlerElement) {
+      target = commandElement;
+    } else {
+      target = mTarget;
+    }
+
+    nsresult rv = handler->ExecuteHandler(target, aKeyEvent->AsEvent());
     if (NS_SUCCEEDED(rv)) {
       return true;
     }
@@ -675,8 +676,8 @@ nsXBLWindowKeyHandler::WalkHandlersAndExecute(
     if (keyEvent && keyEvent->IsOS()) {
       IgnoreModifierState ignoreModifierState(aIgnoreModifierState);
       ignoreModifierState.mOS = true;
-      return WalkHandlersAndExecute(aKeyEvent, aEventType, aHandler, aCharCode,
-                                    ignoreModifierState, aExecute);
+      return WalkHandlersAndExecute(aKeyEvent, aEventType, aFirstHandler,
+                                    aCharCode, ignoreModifierState, aExecute);
     }
   }
 #endif
