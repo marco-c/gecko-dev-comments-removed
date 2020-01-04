@@ -65,6 +65,9 @@ public:
   virtual void DecodeError() = 0;
 
   
+  virtual bool HasError() const = 0;
+
+  
   
   virtual void LoadAborted() = 0;
 

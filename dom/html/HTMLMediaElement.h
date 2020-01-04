@@ -178,6 +178,9 @@ public:
   virtual void DecodeError() final override;
 
   
+  virtual bool HasError() const final override;
+
+  
   
   virtual void LoadAborted() final override;
 
