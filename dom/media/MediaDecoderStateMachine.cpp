@@ -2679,6 +2679,10 @@ void MediaDecoderStateMachine::StartBuffering()
     return;
   }
 
+  
+  
+  UpdatePlaybackPositionPeriodically();
+
   if (IsPlaying()) {
     StopPlayback();
   }
