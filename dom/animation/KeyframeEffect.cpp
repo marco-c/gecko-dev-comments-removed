@@ -96,7 +96,6 @@ KeyframeEffectReadOnly::KeyframeEffectReadOnly(
   , mPseudoType(aPseudoType)
 {
   MOZ_ASSERT(aTarget, "null animation target is not yet supported");
-  ResetIsRunningOnCompositor();
 }
 
 JSObject*
@@ -467,27 +466,14 @@ KeyframeEffectReadOnly::ComposeStyle(RefPtr<AnimValuesStyleRule>& aStyleRule,
 }
 
 bool
-KeyframeEffectReadOnly::IsPropertyRunningOnCompositor(
-  nsCSSProperty aProperty) const
-{
-  const auto& info = LayerAnimationInfo::sRecords;
-  for (size_t i = 0; i < ArrayLength(mIsPropertyRunningOnCompositor); i++) {
-    if (info[i].mProperty == aProperty) {
-      return mIsPropertyRunningOnCompositor[i];
-    }
-  }
-  return false;
-}
-
-bool
 KeyframeEffectReadOnly::IsRunningOnCompositor() const
 {
   
   
   
   
-  for (bool isPropertyRunningOnCompositor : mIsPropertyRunningOnCompositor) {
-    if (isPropertyRunningOnCompositor) {
+  for (const AnimationProperty& property : mProperties) {
+    if (property.mIsRunningOnCompositor) {
       return true;
     }
   }
@@ -498,19 +484,13 @@ void
 KeyframeEffectReadOnly::SetIsRunningOnCompositor(nsCSSProperty aProperty,
                                                  bool aIsRunning)
 {
-  static_assert(
-    MOZ_ARRAY_LENGTH(LayerAnimationInfo::sRecords) ==
-      MOZ_ARRAY_LENGTH(mIsPropertyRunningOnCompositor),
-    "The length of mIsPropertyRunningOnCompositor should equal to"
-    "the length of LayserAnimationInfo::sRecords");
   MOZ_ASSERT(nsCSSProps::PropHasFlags(aProperty,
                                       CSS_PROPERTY_CAN_ANIMATE_ON_COMPOSITOR),
              "Property being animated on compositor is a recognized "
              "compositor-animatable property");
-  const auto& info = LayerAnimationInfo::sRecords;
-  for (size_t i = 0; i < ArrayLength(mIsPropertyRunningOnCompositor); i++) {
-    if (info[i].mProperty == aProperty) {
-      mIsPropertyRunningOnCompositor[i] = aIsRunning;
+  for (AnimationProperty& property : mProperties) {
+    if (property.mProperty == aProperty) {
+      property.mIsRunningOnCompositor = aIsRunning;
       return;
     }
   }
@@ -523,8 +503,8 @@ KeyframeEffectReadOnly::~KeyframeEffectReadOnly()
 void
 KeyframeEffectReadOnly::ResetIsRunningOnCompositor()
 {
-  for (bool& isPropertyRunningOnCompositor : mIsPropertyRunningOnCompositor) {
-    isPropertyRunningOnCompositor = false;
+  for (AnimationProperty& property : mProperties) {
+    property.mIsRunningOnCompositor = false;
   }
 }
 
@@ -556,9 +536,7 @@ KeyframeEffectReadOnly::UpdateTargetRegistration()
     
     
     
-    for (bool& isRunningOnCompositor : mIsPropertyRunningOnCompositor) {
-      isRunningOnCompositor = false;
-    }
+    ResetIsRunningOnCompositor();
   }
 }
 
@@ -1854,7 +1832,7 @@ KeyframeEffectReadOnly::CanThrottle() const
   }
 
   for (const AnimationProperty& property : mProperties) {
-    if (!IsPropertyRunningOnCompositor(property.mProperty)) {
+    if (!property.mIsRunningOnCompositor) {
       return false;
     }
   }

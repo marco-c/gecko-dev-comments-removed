@@ -118,7 +118,7 @@ struct AnimationPropertySegment
 
 struct AnimationProperty
 {
-  nsCSSProperty mProperty;
+  nsCSSProperty mProperty = eCSSProperty_UNKNOWN;
 
   
   
@@ -136,10 +136,20 @@ struct AnimationProperty
   
   
   
-  bool mWinsInCascade;
+  bool mWinsInCascade = true;
+
+  
+  
+  
+  
+  
+  
+  bool mIsRunningOnCompositor = false;
 
   InfallibleTArray<AnimationPropertySegment> mSegments;
 
+  
+  
   
   
   
@@ -280,8 +290,6 @@ public:
   void ComposeStyle(RefPtr<AnimValuesStyleRule>& aStyleRule,
                     nsCSSPropertySet& aSetProperties);
   
-  bool IsPropertyRunningOnCompositor(nsCSSProperty aProperty) const;
-  
   bool IsRunningOnCompositor() const;
   void SetIsRunningOnCompositor(nsCSSProperty aProperty, bool aIsRunning);
 
@@ -340,17 +348,6 @@ protected:
   nsCSSPseudoElements::Type mPseudoType;
 
   InfallibleTArray<AnimationProperty> mProperties;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  bool mIsPropertyRunningOnCompositor[LayerAnimationInfo::kRecords];
 
 private:
   nsIFrame* GetAnimationFrame() const;
