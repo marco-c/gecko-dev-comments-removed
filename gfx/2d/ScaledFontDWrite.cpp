@@ -3,8 +3,16 @@
 
 
 
+#include "DrawTargetD2D.h"
 #include "ScaledFontDWrite.h"
 #include "PathD2D.h"
+
+#ifdef USE_SKIA
+#include "PathSkia.h"
+#include "skia/include/core/SkPaint.h"
+#include "skia/include/core/SkPath.h"
+#include "skia/include/ports/SkTypeface_win.h"
+#endif
 
 #include <vector>
 
@@ -104,6 +112,20 @@ ScaledFontDWrite::GetPathForGlyphs(const GlyphBuffer &aBuffer, const DrawTarget 
 
   return pathBuilder->Finish();
 }
+
+
+#ifdef USE_SKIA
+SkTypeface*
+ScaledFontDWrite::GetSkTypeface()
+{
+  MOZ_ASSERT(mFont);
+  if (!mTypeface) {
+    IDWriteFactory *factory = DrawTargetD2D::GetDWriteFactory();
+    mTypeface = SkCreateTypefaceFromDWriteFont(factory, mFontFace, mFont, mFontFamily);
+  }
+  return mTypeface;
+}
+#endif
 
 void
 ScaledFontDWrite::CopyGlyphsToBuilder(const GlyphBuffer &aBuffer, PathBuilder *aBuilder, BackendType aBackendType, const Matrix *aTransformHint)
