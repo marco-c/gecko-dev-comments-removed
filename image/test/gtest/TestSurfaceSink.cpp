@@ -48,6 +48,71 @@ WithPalettedSurfaceSink(const IntRect& aFrameRect, Func aFunc)
                                              8, false });
 }
 
+void
+ResetForNextPass(SurfaceFilter* aSink)
+{
+  aSink->ResetToFirstRow();
+  EXPECT_FALSE(aSink->IsSurfaceFinished());
+  Maybe<SurfaceInvalidRect> invalidRect = aSink->TakeInvalidRect();
+  EXPECT_TRUE(invalidRect.isNothing());
+}
+
+template <typename WriteFunc, typename CheckFunc> void
+DoCheckIterativeWrite(SurfaceFilter* aSink,
+                      WriteFunc aWriteFunc,
+                      CheckFunc aCheckFunc)
+{
+  
+  
+  uint32_t row = 0;
+  WriteState result = WriteState::NEED_MORE_DATA;
+  while (result == WriteState::NEED_MORE_DATA) {
+    result = aWriteFunc(row);
+    ++row;
+  }
+  EXPECT_EQ(WriteState::FINISHED, result);
+  EXPECT_EQ(100u, row);
+
+  AssertCorrectPipelineFinalState(aSink,
+                                  IntRect(0, 0, 100, 100),
+                                  IntRect(0, 0, 100, 100));
+
+  
+  aCheckFunc();
+}
+
+template <typename WriteFunc> void
+CheckIterativeWrite(Decoder* aDecoder,
+                    SurfaceSink* aSink,
+                    const IntRect& aOutputRect,
+                    WriteFunc aWriteFunc)
+{
+  
+  auto writeFunc = [&](uint32_t) {
+    return aWriteFunc();
+  };
+
+  DoCheckIterativeWrite(aSink, writeFunc, [&]{
+    CheckGeneratedImage(aDecoder, aOutputRect);
+  });
+}
+
+template <typename WriteFunc> void
+CheckPalettedIterativeWrite(Decoder* aDecoder,
+                            PalettedSurfaceSink* aSink,
+                            const IntRect& aOutputRect,
+                            WriteFunc aWriteFunc)
+{
+  
+  auto writeFunc = [&](uint32_t) {
+    return aWriteFunc();
+  };
+
+  DoCheckIterativeWrite(aSink, writeFunc, [&]{
+    CheckGeneratedPalettedImage(aDecoder, aOutputRect);
+  });
+}
+
 TEST(ImageSurfaceSink, NullSurfaceSink)
 {
   
@@ -68,9 +133,31 @@ TEST(ImageSurfaceSink, NullSurfaceSink)
   Maybe<SurfaceInvalidRect> invalidRect = sink.TakeInvalidRect();
   EXPECT_TRUE(invalidRect.isNothing());
 
-  result = sink.WritePixels<uint32_t>([&]() {
+  uint32_t source = BGRAColor::Red().AsPixel();
+  result = sink.WriteBuffer(&source);
+  EXPECT_EQ(WriteState::FINISHED, result);
+  EXPECT_TRUE(sink.IsSurfaceFinished());
+  invalidRect = sink.TakeInvalidRect();
+  EXPECT_TRUE(invalidRect.isNothing());
+
+  result = sink.WriteBuffer(&source, 0, 1);
+  EXPECT_EQ(WriteState::FINISHED, result);
+  EXPECT_TRUE(sink.IsSurfaceFinished());
+  invalidRect = sink.TakeInvalidRect();
+  EXPECT_TRUE(invalidRect.isNothing());
+
+  result = sink.WriteEmptyRow();
+  EXPECT_EQ(WriteState::FINISHED, result);
+  EXPECT_TRUE(sink.IsSurfaceFinished());
+  invalidRect = sink.TakeInvalidRect();
+  EXPECT_TRUE(invalidRect.isNothing());
+
+  result = sink.WriteUnsafeComputedRow<uint32_t>([&](uint32_t* aRow,
+                                                     uint32_t aLength) {
     gotCalled = true;
-    return AsVariant(BGRAColor::Red().AsPixel());
+    for (uint32_t col = 0; col < aLength; ++col, ++aRow) {
+      *aRow = BGRAColor::Red().AsPixel();
+    }
   });
   EXPECT_FALSE(gotCalled);
   EXPECT_EQ(WriteState::FINISHED, result);
@@ -145,6 +232,206 @@ TEST(ImageSurfaceSink, SurfaceSinkWritePixelsFinish)
   });
 }
 
+TEST(ImageSurfaceSink, SurfaceSinkWriteBuffer)
+{
+  WithSurfaceSink<Orient::NORMAL>([](Decoder* aDecoder, SurfaceSink* aSink) {
+    
+    
+    
+    uint32_t buffer[100];
+    for (int i = 0; i < 100; ++i) {
+      buffer[i] = 20 <= i && i < 80 ? BGRAColor::Green().AsPixel()
+                                    : BGRAColor::Transparent().AsPixel();
+    }
+
+    
+    
+    CheckIterativeWrite(aDecoder, aSink, IntRect(20, 0, 60, 100), [&]{
+      return aSink->WriteBuffer(buffer);
+    });
+  });
+}
+
+TEST(ImageSurfaceSink, SurfaceSinkWriteBufferPartialRow)
+{
+  WithSurfaceSink<Orient::NORMAL>([](Decoder* aDecoder, SurfaceSink* aSink) {
+    
+    
+    uint32_t buffer[100];
+    for (int i = 0; i < 100; ++i) {
+      buffer[i] = BGRAColor::Green().AsPixel();
+    }
+
+    
+    
+    CheckIterativeWrite(aDecoder, aSink, IntRect(20, 0, 60, 100), [&]{
+      return aSink->WriteBuffer(buffer, 20, 60);
+    });
+  });
+}
+
+TEST(ImageSurfaceSink, SurfaceSinkWriteBufferPartialRowStartColOverflow)
+{
+  WithSurfaceSink<Orient::NORMAL>([](Decoder* aDecoder, SurfaceSink* aSink) {
+    
+    
+    uint32_t buffer[100];
+    for (int i = 0; i < 100; ++i) {
+      buffer[i] = BGRAColor::Green().AsPixel();
+    }
+
+    {
+      
+      
+      
+      
+      CheckIterativeWrite(aDecoder, aSink, IntRect(0, 0, 0, 0), [&]{
+        return aSink->WriteBuffer(buffer, 100, 100);
+      });
+    }
+
+    ResetForNextPass(aSink);
+
+    {
+      
+      
+      
+      
+      
+      CheckIterativeWrite(aDecoder, aSink, IntRect(50, 0, 50, 100), [&]{
+        return aSink->WriteBuffer(buffer, 50, 100);
+      });
+    }
+  });
+}
+
+TEST(ImageSurfaceSink, SurfaceSinkWriteBufferPartialRowBufferOverflow)
+{
+  WithSurfaceSink<Orient::NORMAL>([](Decoder* aDecoder, SurfaceSink* aSink) {
+    
+    
+    
+    uint32_t buffer[200];
+    for (int i = 0; i < 200; ++i) {
+      buffer[i] = i < 100 ? BGRAColor::Green().AsPixel()
+                          : BGRAColor::Red().AsPixel();
+    }
+
+    {
+      
+      
+      
+      
+      
+      
+      CheckIterativeWrite(aDecoder, aSink, IntRect(0, 0, 100, 100), [&]{
+        return aSink->WriteBuffer(buffer, 0, 200);
+      });
+    }
+
+    ResetForNextPass(aSink);
+
+    {
+      
+      
+      
+      
+      
+      CheckIterativeWrite(aDecoder, aSink, IntRect(50, 0, 50, 100), [&]{
+        return aSink->WriteBuffer(buffer, 50, 200);
+      });
+    }
+  });
+}
+
+TEST(ImageSurfaceSink, SurfaceSinkWriteBufferFromNullSource)
+{
+  WithSurfaceSink<Orient::NORMAL>([](Decoder* aDecoder, SurfaceSink* aSink) {
+    
+    
+    uint32_t* nullBuffer = nullptr;
+    WriteState result = aSink->WriteBuffer(nullBuffer);
+
+    EXPECT_EQ(WriteState::FAILURE, result);
+    EXPECT_FALSE(aSink->IsSurfaceFinished());
+    Maybe<SurfaceInvalidRect> invalidRect = aSink->TakeInvalidRect();
+    EXPECT_TRUE(invalidRect.isNothing());
+
+    
+    CheckGeneratedImage(aDecoder, IntRect(0, 0, 0, 0));
+  });
+}
+
+TEST(ImageSurfaceSink, SurfaceSinkWriteEmptyRow)
+{
+  WithSurfaceSink<Orient::NORMAL>([](Decoder* aDecoder, SurfaceSink* aSink) {
+    {
+      
+      
+      CheckIterativeWrite(aDecoder, aSink, IntRect(0, 0, 0, 0), [&]{
+        return aSink->WriteEmptyRow();
+      });
+    }
+
+    ResetForNextPass(aSink);
+
+    {
+      
+      
+      uint32_t buffer[100];
+      for (int i = 0; i < 100; ++i) {
+        buffer[i] = BGRAColor::Green().AsPixel();
+      }
+
+      
+      
+      
+      
+      auto writeFunc = [&](uint32_t aRow) {
+        if (aRow < 20 || aRow >= 80) {
+          return aSink->WriteBuffer(buffer);
+        } else {
+          return aSink->WriteEmptyRow();
+        }
+      };
+
+      auto checkFunc = [&]{
+        RawAccessFrameRef currentFrame = aDecoder->GetCurrentFrameRef();
+        RefPtr<SourceSurface> surface = currentFrame->GetSurface();
+
+        EXPECT_TRUE(RowsAreSolidColor(surface, 0, 20, BGRAColor::Green()));
+        EXPECT_TRUE(RowsAreSolidColor(surface, 20, 60, BGRAColor::Transparent()));
+        EXPECT_TRUE(RowsAreSolidColor(surface, 80, 20, BGRAColor::Green()));
+      };
+
+      DoCheckIterativeWrite(aSink, writeFunc, checkFunc);
+    }
+  });
+}
+
+TEST(ImageSurfaceSink, SurfaceSinkWriteUnsafeComputedRow)
+{
+  WithSurfaceSink<Orient::NORMAL>([](Decoder* aDecoder, SurfaceSink* aSink) {
+    
+    uint32_t buffer[100];
+    for (int i = 0; i < 100; ++i) {
+      buffer[i] = BGRAColor::Green().AsPixel();
+    }
+
+    
+    
+    
+    
+    CheckIterativeWrite(aDecoder, aSink, IntRect(50, 0, 50, 100), [&]{
+      return aSink->WriteUnsafeComputedRow<uint32_t>([&](uint32_t* aRow,
+                                                         uint32_t aLength) {
+        EXPECT_EQ(100u, aLength );
+        memcpy(aRow + 50, buffer, 50 * sizeof(uint32_t));
+      });
+    });
+  });
+}
+
 TEST(ImageSurfaceSink, SurfaceSinkProgressivePasses)
 {
   WithSurfaceSink<Orient::NORMAL>([](Decoder* aDecoder, SurfaceSink* aSink) {
@@ -169,11 +456,7 @@ TEST(ImageSurfaceSink, SurfaceSinkProgressivePasses)
     }
 
     {
-      
-      aSink->ResetToFirstRow();
-      EXPECT_FALSE(aSink->IsSurfaceFinished());
-      Maybe<SurfaceInvalidRect> invalidRect = aSink->TakeInvalidRect();
-      EXPECT_TRUE(invalidRect.isNothing());
+      ResetForNextPass(aSink);
 
       
       RawAccessFrameRef currentFrame = aDecoder->GetCurrentFrameRef();
@@ -353,11 +636,7 @@ TEST(ImageSurfaceSink, SurfaceSinkFlipVertically)
     }
 
     {
-      
-      aSink->ResetToFirstRow();
-      EXPECT_FALSE(aSink->IsSurfaceFinished());
-      Maybe<SurfaceInvalidRect> invalidRect = aSink->TakeInvalidRect();
-      EXPECT_TRUE(invalidRect.isNothing());
+      ResetForNextPass(aSink);
 
       
       RawAccessFrameRef currentFrame = aDecoder->GetCurrentFrameRef();
@@ -502,5 +781,206 @@ TEST(ImageSurfaceSink, PalettedSurfaceSinkWritePixelsFor75_75_50_50)
                               Some(IntRect(0, 0, 50, 50)),
                               Some(IntRect(75, 75, 50, 50)),
                               Some(IntRect(75, 75, 50, 50)));
+  });
+}
+
+TEST(ImageSurfaceSink, PalettedSurfaceSinkWriteBuffer)
+{
+  WithPalettedSurfaceSink(IntRect(0, 0, 100, 100),
+                          [](Decoder* aDecoder, PalettedSurfaceSink* aSink) {
+    
+    
+    
+    uint8_t buffer[100];
+    for (int i = 0; i < 100; ++i) {
+      buffer[i] = 20 <= i && i < 80 ? 255 : 0;
+    }
+
+    
+    
+    CheckPalettedIterativeWrite(aDecoder, aSink, IntRect(20, 0, 60, 100), [&]{
+      return aSink->WriteBuffer(buffer);
+    });
+  });
+}
+
+TEST(ImageSurfaceSink, PalettedSurfaceSinkWriteBufferPartialRow)
+{
+  WithPalettedSurfaceSink(IntRect(0, 0, 100, 100),
+                          [](Decoder* aDecoder, PalettedSurfaceSink* aSink) {
+    
+    
+    uint8_t buffer[100];
+    for (int i = 0; i < 100; ++i) {
+      buffer[i] = 255;
+    }
+
+    
+    
+    CheckPalettedIterativeWrite(aDecoder, aSink, IntRect(20, 0, 60, 100), [&]{
+      return aSink->WriteBuffer(buffer, 20, 60);
+    });
+  });
+}
+
+TEST(ImageSurfaceSink, PalettedSurfaceSinkWriteBufferPartialRowStartColOverflow)
+{
+  WithPalettedSurfaceSink(IntRect(0, 0, 100, 100),
+                          [](Decoder* aDecoder, PalettedSurfaceSink* aSink) {
+    
+    
+    uint8_t buffer[100];
+    for (int i = 0; i < 100; ++i) {
+      buffer[i] = 255;
+    }
+
+    {
+      
+      
+      
+      
+      CheckPalettedIterativeWrite(aDecoder, aSink, IntRect(0, 0, 0, 0), [&]{
+        return aSink->WriteBuffer(buffer, 100, 100);
+      });
+    }
+
+    ResetForNextPass(aSink);
+
+    {
+      
+      
+      
+      
+      
+      CheckPalettedIterativeWrite(aDecoder, aSink, IntRect(50, 0, 50, 100), [&]{
+        return aSink->WriteBuffer(buffer, 50, 100);
+      });
+    }
+  });
+}
+
+TEST(ImageSurfaceSink, PalettedSurfaceSinkWriteBufferPartialRowBufferOverflow)
+{
+  WithPalettedSurfaceSink(IntRect(0, 0, 100, 100),
+                          [](Decoder* aDecoder, PalettedSurfaceSink* aSink) {
+    
+    
+    
+    uint8_t buffer[200];
+    for (int i = 0; i < 200; ++i) {
+      buffer[i] = i < 100 ? 255 : 128;
+    }
+
+    {
+      
+      
+      
+      
+      
+      
+      CheckPalettedIterativeWrite(aDecoder, aSink, IntRect(0, 0, 100, 100), [&]{
+        return aSink->WriteBuffer(buffer, 0, 200);
+      });
+    }
+
+    ResetForNextPass(aSink);
+
+    {
+      
+      
+      
+      
+      
+      CheckPalettedIterativeWrite(aDecoder, aSink, IntRect(50, 0, 50, 100), [&]{
+        return aSink->WriteBuffer(buffer, 50, 200);
+      });
+    }
+  });
+}
+
+TEST(ImageSurfaceSink, PalettedSurfaceSinkWriteBufferFromNullSource)
+{
+  WithPalettedSurfaceSink(IntRect(0, 0, 100, 100),
+                          [](Decoder* aDecoder, PalettedSurfaceSink* aSink) {
+    
+    
+    uint8_t* nullBuffer = nullptr;
+    WriteState result = aSink->WriteBuffer(nullBuffer);
+
+    EXPECT_EQ(WriteState::FAILURE, result);
+    EXPECT_FALSE(aSink->IsSurfaceFinished());
+    Maybe<SurfaceInvalidRect> invalidRect = aSink->TakeInvalidRect();
+    EXPECT_TRUE(invalidRect.isNothing());
+
+    
+    CheckGeneratedPalettedImage(aDecoder, IntRect(0, 0, 0, 0));
+  });
+}
+
+TEST(ImageSurfaceSink, PalettedSurfaceSinkWriteEmptyRow)
+{
+  WithPalettedSurfaceSink(IntRect(0, 0, 100, 100),
+                          [](Decoder* aDecoder, PalettedSurfaceSink* aSink) {
+    {
+      
+      
+      CheckPalettedIterativeWrite(aDecoder, aSink, IntRect(0, 0, 0, 0), [&]{
+        return aSink->WriteEmptyRow();
+      });
+    }
+
+    ResetForNextPass(aSink);
+
+    {
+      
+      
+      uint8_t buffer[100];
+      for (int i = 0; i < 100; ++i) {
+        buffer[i] = 255;
+      }
+
+      
+      
+      
+      
+      auto writeFunc = [&](uint32_t aRow) {
+        if (aRow < 20 || aRow >= 80) {
+          return aSink->WriteBuffer(buffer);
+        } else {
+          return aSink->WriteEmptyRow();
+        }
+      };
+
+      auto checkFunc = [&]{
+        EXPECT_TRUE(PalettedRowsAreSolidColor(aDecoder, 0, 20, 255));
+        EXPECT_TRUE(PalettedRowsAreSolidColor(aDecoder, 20, 60, 0));
+        EXPECT_TRUE(PalettedRowsAreSolidColor(aDecoder, 80, 20, 255));
+      };
+
+      DoCheckIterativeWrite(aSink, writeFunc, checkFunc);
+    }
+  });
+}
+
+TEST(ImageSurfaceSink, PalettedSurfaceSinkWriteUnsafeComputedRow)
+{
+  WithPalettedSurfaceSink(IntRect(0, 0, 100, 100),
+                          [](Decoder* aDecoder, PalettedSurfaceSink* aSink) {
+    
+    uint8_t buffer[100];
+    for (int i = 0; i < 100; ++i) {
+      buffer[i] = 255;
+    }
+
+    
+    
+    
+    CheckPalettedIterativeWrite(aDecoder, aSink, IntRect(50, 0, 50, 100), [&]{
+      return aSink->WriteUnsafeComputedRow<uint8_t>([&](uint8_t* aRow,
+                                                        uint32_t aLength) {
+        EXPECT_EQ(100u, aLength );
+        memcpy(aRow + 50, buffer, 50 * sizeof(uint8_t));
+      });
+    });
   });
 }

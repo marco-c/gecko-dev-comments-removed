@@ -42,6 +42,93 @@ private:
 } 
 } 
 
+void
+CheckSurfacePipeMethodResults(SurfacePipe* aPipe,
+                              Decoder* aDecoder,
+                              const IntRect& aRect = IntRect(0, 0, 100, 100))
+{
+  
+  
+  
+  EXPECT_TRUE(aPipe->IsSurfaceFinished());
+  Maybe<SurfaceInvalidRect> invalidRect = aPipe->TakeInvalidRect();
+  EXPECT_TRUE(invalidRect.isSome());
+  EXPECT_EQ(IntRect(0, 0, 100, 100), invalidRect->mInputSpaceRect);
+  EXPECT_EQ(IntRect(0, 0, 100, 100), invalidRect->mOutputSpaceRect);
+
+  
+  CheckGeneratedImage(aDecoder, aRect);
+
+  
+  aPipe->ResetToFirstRow();
+  EXPECT_FALSE(aPipe->IsSurfaceFinished());
+  invalidRect = aPipe->TakeInvalidRect();
+  EXPECT_TRUE(invalidRect.isNothing());
+
+  uint32_t count = 0;
+  auto result = aPipe->WritePixels<uint32_t>([&]() {
+    ++count;
+    return AsVariant(BGRAColor::Transparent().AsPixel());
+  });
+  EXPECT_EQ(WriteState::FINISHED, result);
+  EXPECT_EQ(100u * 100u, count);
+
+  EXPECT_TRUE(aPipe->IsSurfaceFinished());
+  invalidRect = aPipe->TakeInvalidRect();
+  EXPECT_TRUE(invalidRect.isSome());
+  EXPECT_EQ(IntRect(0, 0, 100, 100), invalidRect->mInputSpaceRect);
+  EXPECT_EQ(IntRect(0, 0, 100, 100), invalidRect->mOutputSpaceRect);
+
+  aPipe->ResetToFirstRow();
+  EXPECT_FALSE(aPipe->IsSurfaceFinished());
+  invalidRect = aPipe->TakeInvalidRect();
+  EXPECT_TRUE(invalidRect.isNothing());
+}
+
+void
+CheckPalettedSurfacePipeMethodResults(SurfacePipe* aPipe,
+                                      Decoder* aDecoder,
+                                      const IntRect& aRect
+                                        = IntRect(0, 0, 100, 100))
+{
+  
+  
+  
+  EXPECT_TRUE(aPipe->IsSurfaceFinished());
+  Maybe<SurfaceInvalidRect> invalidRect = aPipe->TakeInvalidRect();
+  EXPECT_TRUE(invalidRect.isSome());
+  EXPECT_EQ(IntRect(0, 0, 100, 100), invalidRect->mInputSpaceRect);
+  EXPECT_EQ(IntRect(0, 0, 100, 100), invalidRect->mOutputSpaceRect);
+
+  
+  CheckGeneratedPalettedImage(aDecoder, aRect);
+
+  
+  aPipe->ResetToFirstRow();
+  EXPECT_FALSE(aPipe->IsSurfaceFinished());
+  invalidRect = aPipe->TakeInvalidRect();
+  EXPECT_TRUE(invalidRect.isNothing());
+
+  uint32_t count = 0;
+  auto result = aPipe->WritePixels<uint8_t>([&]() {
+    ++count;
+    return AsVariant(uint8_t(0));
+  });
+  EXPECT_EQ(WriteState::FINISHED, result);
+  EXPECT_EQ(100u * 100u, count);
+
+  EXPECT_TRUE(aPipe->IsSurfaceFinished());
+  invalidRect = aPipe->TakeInvalidRect();
+  EXPECT_TRUE(invalidRect.isSome());
+  EXPECT_EQ(IntRect(0, 0, 100, 100), invalidRect->mInputSpaceRect);
+  EXPECT_EQ(IntRect(0, 0, 100, 100), invalidRect->mOutputSpaceRect);
+
+  aPipe->ResetToFirstRow();
+  EXPECT_FALSE(aPipe->IsSurfaceFinished());
+  invalidRect = aPipe->TakeInvalidRect();
+  EXPECT_TRUE(invalidRect.isNothing());
+}
+
 TEST(ImageSurfacePipeIntegration, SurfacePipe)
 {
   
@@ -56,34 +143,152 @@ TEST(ImageSurfacePipeIntegration, SurfacePipe)
 
   auto sink = MakeUnique<SurfaceSink>();
   nsresult rv =
-    sink->Configure(SurfaceConfig { decoder.get(), 0, IntSize(100, 100),
+    sink->Configure(SurfaceConfig { decoder, 0, IntSize(100, 100),
                                     SurfaceFormat::B8G8R8A8, false });
   ASSERT_TRUE(NS_SUCCEEDED(rv));
 
   pipe = TestSurfacePipeFactory::SurfacePipeFromPipeline(sink);
 
   
-  int32_t count = 0;
-  auto result = pipe.WritePixels<uint32_t>([&]() {
-    ++count;
-    return AsVariant(BGRAColor::Green().AsPixel());
-  });
-  EXPECT_EQ(WriteState::FINISHED, result);
-  EXPECT_EQ(100 * 100, count);
+  {
+    uint32_t count = 0;
+    auto result = pipe.WritePixels<uint32_t>([&]() {
+      ++count;
+      return AsVariant(BGRAColor::Green().AsPixel());
+    });
+    EXPECT_EQ(WriteState::FINISHED, result);
+    EXPECT_EQ(100u * 100u, count);
+    CheckSurfacePipeMethodResults(&pipe, decoder);
+  }
 
   
   
-  EXPECT_TRUE(pipe.IsSurfaceFinished());
-  Maybe<SurfaceInvalidRect> invalidRect = pipe.TakeInvalidRect();
-  EXPECT_TRUE(invalidRect.isSome());
-  EXPECT_EQ(IntRect(0, 0, 100, 100), invalidRect->mInputSpaceRect);
-  EXPECT_EQ(IntRect(0, 0, 100, 100), invalidRect->mOutputSpaceRect);
+  uint32_t buffer[100];
+  for (int i = 0; i < 100; ++i) {
+    buffer[i] = BGRAColor::Green().AsPixel();
+  }
 
-  CheckGeneratedImage(decoder, IntRect(0, 0, 100, 100));
+  
+  {
+    uint32_t count = 0;
+    WriteState result = WriteState::NEED_MORE_DATA;
+    while (result == WriteState::NEED_MORE_DATA) {
+      result = pipe.WriteBuffer(buffer);
+      ++count;
+    }
+    EXPECT_EQ(WriteState::FINISHED, result);
+    EXPECT_EQ(100u, count);
+    CheckSurfacePipeMethodResults(&pipe, decoder);
+  }
 
-  pipe.ResetToFirstRow();
-  EXPECT_FALSE(pipe.IsSurfaceFinished());
+  
+  
+  {
+    uint32_t count = 0;
+    WriteState result = WriteState::NEED_MORE_DATA;
+    while (result == WriteState::NEED_MORE_DATA) {
+      result = pipe.WriteBuffer(buffer, 0, 100);
+      ++count;
+    }
+    EXPECT_EQ(WriteState::FINISHED, result);
+    EXPECT_EQ(100u, count);
+    CheckSurfacePipeMethodResults(&pipe, decoder);
+  }
 
+  
+  {
+    uint32_t count = 0;
+    WriteState result = WriteState::NEED_MORE_DATA;
+    while (result == WriteState::NEED_MORE_DATA) {
+      result = pipe.WriteEmptyRow();
+      ++count;
+    }
+    EXPECT_EQ(WriteState::FINISHED, result);
+    EXPECT_EQ(100u, count);
+    CheckSurfacePipeMethodResults(&pipe, decoder, IntRect(0, 0, 0, 0));
+  }
+
+  
+  RawAccessFrameRef currentFrame = decoder->GetCurrentFrameRef();
+  currentFrame->Finish();
+}
+
+TEST(ImageSurfacePipeIntegration, PalettedSurfacePipe)
+{
+  
+  RefPtr<Decoder> decoder = CreateTrivialDecoder();
+  ASSERT_TRUE(decoder != nullptr);
+
+  auto sink = MakeUnique<PalettedSurfaceSink>();
+  nsresult rv =
+    sink->Configure(PalettedSurfaceConfig { decoder, 0, IntSize(100, 100),
+                                            IntRect(0, 0, 100, 100),
+                                            SurfaceFormat::B8G8R8A8,
+                                            8, false });
+  ASSERT_TRUE(NS_SUCCEEDED(rv));
+
+  SurfacePipe pipe = TestSurfacePipeFactory::SurfacePipeFromPipeline(sink);
+
+  
+  {
+    uint32_t count = 0;
+    auto result = pipe.WritePixels<uint8_t>([&]() {
+      ++count;
+      return AsVariant(uint8_t(255));
+    });
+    EXPECT_EQ(WriteState::FINISHED, result);
+    EXPECT_EQ(100u * 100u, count);
+    CheckPalettedSurfacePipeMethodResults(&pipe, decoder);
+  }
+
+  
+  
+  uint8_t buffer[100];
+  for (int i = 0; i < 100; ++i) {
+    buffer[i] = 255;
+  }
+
+  
+  {
+    uint32_t count = 0;
+    WriteState result = WriteState::NEED_MORE_DATA;
+    while (result == WriteState::NEED_MORE_DATA) {
+      result = pipe.WriteBuffer(buffer);
+      ++count;
+    }
+    EXPECT_EQ(WriteState::FINISHED, result);
+    EXPECT_EQ(100u, count);
+    CheckPalettedSurfacePipeMethodResults(&pipe, decoder);
+  }
+
+  
+  
+  {
+    uint32_t count = 0;
+    WriteState result = WriteState::NEED_MORE_DATA;
+    while (result == WriteState::NEED_MORE_DATA) {
+      result = pipe.WriteBuffer(buffer, 0, 100);
+      ++count;
+    }
+    EXPECT_EQ(WriteState::FINISHED, result);
+    EXPECT_EQ(100u, count);
+    CheckPalettedSurfacePipeMethodResults(&pipe, decoder);
+  }
+
+  
+  {
+    uint32_t count = 0;
+    WriteState result = WriteState::NEED_MORE_DATA;
+    while (result == WriteState::NEED_MORE_DATA) {
+      result = pipe.WriteEmptyRow();
+      ++count;
+    }
+    EXPECT_EQ(WriteState::FINISHED, result);
+    EXPECT_EQ(100u, count);
+    CheckPalettedSurfacePipeMethodResults(&pipe, decoder, IntRect(0, 0, 0, 0));
+  }
+
+  
   RawAccessFrameRef currentFrame = decoder->GetCurrentFrameRef();
   currentFrame->Finish();
 }
