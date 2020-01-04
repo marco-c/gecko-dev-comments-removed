@@ -87,7 +87,8 @@ class ABIArgGenerator
 };
 
 static constexpr Register ABINonArgReg0 = eax;
-static constexpr Register ABINonArgReg1 = ecx;
+static constexpr Register ABINonArgReg1 = ebx;
+static constexpr Register ABINonArgReg2 = ecx;
 
 
 static constexpr Register ABINonArgReturnReg0 = ecx;
@@ -96,8 +97,9 @@ static constexpr Register ABINonVolatileReg = ebx;
 
 
 
-static constexpr Register WasmTableCallPtrReg = ABINonArgReg0;
+static constexpr Register WasmTableCallScratchReg = ABINonArgReg0;
 static constexpr Register WasmTableCallSigReg = ABINonArgReg1;
+static constexpr Register WasmTableCallIndexReg = ABINonArgReg2;
 
 static constexpr Register OsrFrameReg = edx;
 static constexpr Register PreBarrierReg = edx;
