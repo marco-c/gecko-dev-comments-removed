@@ -45,6 +45,9 @@ AppleDecoderModule::Init()
   Preferences::AddBoolVarCache(&sForceVDA, "media.apple.forcevda", false);
 
   
+  MacIOSurfaceLib::LoadLibrary();
+
+  
   sIsVDAAvailable = AppleVDALinker::Link();
 
   
