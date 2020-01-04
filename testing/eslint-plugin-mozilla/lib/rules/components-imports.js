@@ -1,0 +1,33 @@
+
+
+
+
+
+
+
+
+
+"use strict";
+
+
+
+
+
+var helpers = require("../helpers");
+
+module.exports = function(context) {
+  
+  
+  
+
+  return {
+    ExpressionStatement: function(node) {
+      var scope = context.getScope();
+      var name = helpers.convertExpressionToGlobal(node, scope.type == "global");
+
+      if (name) {
+        helpers.addVarToScope(name, context);
+      }
+    }
+  };
+};

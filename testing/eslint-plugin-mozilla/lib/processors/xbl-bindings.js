@@ -36,15 +36,12 @@ function XMLParser(parser) {
   parser.onopentag = this.onOpenTag.bind(this);
   parser.onclosetag = this.onCloseTag.bind(this);
   parser.ontext = this.onText.bind(this);
-  parser.onopencdata = this.onOpenCDATA.bind(this);
   parser.oncdata = this.onCDATA.bind(this);
-  parser.oncomment = this.onComment.bind(this);
 
   this.document = {
     local: "#document",
     uri: null,
     children: [],
-    comments: [],
   }
   this._currentNode = this.document;
 }
@@ -59,11 +56,8 @@ XMLParser.prototype = {
       namespace: tag.uri,
       attributes: {},
       children: [],
-      comments: [],
       textContent: "",
-      textLine: this.parser.line,
-      textColumn: this.parser.column,
-      textEndLine: this.parser.line
+      textStart: { line: this.parser.line, column: this.parser.column },
     }
 
     for (let attr of Object.keys(tag.attributes)) {
@@ -77,7 +71,6 @@ XMLParser.prototype = {
   },
 
   onCloseTag: function(tagname) {
-    this._currentNode.textEndLine = this.parser.line;
     this._currentNode = this._currentNode.parentNode;
   },
 
@@ -90,61 +83,30 @@ XMLParser.prototype = {
     this.addText(text.replace(entityRegex, "null"));
   },
 
-  onOpenCDATA: function() {
+  onCDATA: function(text) {
     
     this.addText(" ".repeat("<![CDATA[".length));
-  },
-
-  onCDATA: function(text) {
     this.addText(text);
-  },
-
-  onComment: function(text) {
-    this._currentNode.comments.push(text);
   }
 }
 
 
+function buildCodeBlock(tag, prefix, suffix, indent) {
+  prefix = prefix === undefined ? "" : prefix;
+  suffix = suffix === undefined ? "\n}" : suffix;
+  indent = indent === undefined ? 2 : indent;
 
+  let text = tag.textContent;
+  let line = tag.textStart.line;
+  let column = tag.textStart.column;
 
-
-const INDENT_LEVEL = 2;
-
-function indent(count) {
-  return " ".repeat(count * INDENT_LEVEL);
-}
-
-
-let xmlParseError = null;
-
-
-let scriptLines = [];
-
-
-let lineMap = [];
-
-function addSyntheticLine(line, linePos) {
-  lineMap[scriptLines.length] = { line: linePos, offset: null };
-  scriptLines.push(line);
-}
-
-
-
-
-function addNodeLines(node, reindent) {
-  let lines = node.textContent.split("\n");
-  let startLine = node.textLine;
-  let startColumn = node.textColumn;
-
-  
-  
-  let indentFirst = false;
+  let lines = text.split("\n");
 
   
   
   while (lines.length && lines[0].trim() == "") {
-    indentFirst = true;
-    startLine++;
+    column = 0;
+    line++;
     lines.shift();
   }
 
@@ -154,13 +116,9 @@ function addNodeLines(node, reindent) {
     lines.pop();
   }
 
-  if (!indentFirst) {
-    let firstLine = lines.shift();
-    firstLine = " ".repeat(reindent * INDENT_LEVEL) + firstLine;
-    
-    lineMap[scriptLines.length] = { line: startLine, offset: reindent * INDENT_LEVEL - (startColumn - 1) };
-    scriptLines.push(firstLine);
-    startLine++;
+  
+  if (lines.length && column) {
+    lines[0] = " ".repeat(column) + lines[0];
   }
 
   
@@ -169,26 +127,33 @@ function addNodeLines(node, reindent) {
   
   let minIndent = Math.min.apply(null, indents);
 
-  for (let line of lines) {
-    if (line.trim().length == 0) {
-      
-      
-      lineMap[scriptLines.length] = { line: startLine, offset: 0 };
-    } else {
-      line = " ".repeat(reindent * INDENT_LEVEL) + line.substring(minIndent);
-      lineMap[scriptLines.length] = { line: startLine, offset: reindent * INDENT_LEVEL - (minIndent - 1) };
-    }
+  
+  
+  let indentstr = " ".repeat(indent);
+  lines = lines.map(s => s.length ? indentstr + s.substring(minIndent) : s);
 
-    scriptLines.push(line);
-    startLine++;
-  }
+  let block = {
+    script: prefix + lines.join("\n") + suffix + "\n",
+    line: line - prefix.split("\n").length,
+    indent: minIndent - indent
+  };
+  return block;
 }
+
+
+
+
+
+
+let xmlParseError = null;
+
+
+let blocks = [];
 
 module.exports = {
   preprocess: function(text, filename) {
     xmlParseError = null;
-    scriptLines = [];
-    lineMap = [];
+    blocks = [];
 
     
     
@@ -216,33 +181,19 @@ module.exports = {
       return [];
     }
 
-    for (let comment of document.comments) {
-      addSyntheticLine(`/*`, 0);
-      for (let line of comment.split("\n")) {
-        addSyntheticLine(`${line.trim()}`, 0);
-      }
-      addSyntheticLine(`*/`, 0);
-    }
-
-    addSyntheticLine(`var bindings = {`, bindings.textLine);
+    let scripts = [];
 
     for (let binding of bindings.children) {
       if (binding.local != "binding" || binding.namespace != NS_XBL) {
         continue;
       }
 
-      addSyntheticLine(indent(1) + `"${binding.attributes.id}": {`, binding.textLine);
-
       for (let part of binding.children) {
         if (part.namespace != NS_XBL) {
           continue;
         }
 
-        if (part.local == "implementation") {
-          addSyntheticLine(indent(2) + `implementation: {`, part.textLine);
-        } else if (part.local == "handlers") {
-          addSyntheticLine(indent(2) + `handlers: [`, part.textLine);
-        } else {
+        if (part.local != "implementation" && part.local != "handlers") {
           continue;
         }
 
@@ -259,34 +210,22 @@ module.exports = {
               if (item.textContent.trim().length == 0) {
                 continue;
               }
-
-              addSyntheticLine(indent(3) + `get ${item.attributes.name}() {`, item.textLine);
-              
-              
-              addSyntheticLine(indent(4) + `return`, item.textLine);
-              addNodeLines(item, 4);
-              addSyntheticLine(indent(3) + `},`, item.textEndLine);
+              blocks.push(buildCodeBlock(item, "", "", 0));
               break;
             }
             case "constructor":
             case "destructor": {
               
-              addSyntheticLine(indent(3) + `${item.local}() {`, item.textLine);
-              addNodeLines(item, 4);
-              addSyntheticLine(indent(3) + `},`, item.textEndLine);
+              blocks.push(buildCodeBlock(item, `function ${item.local}() {\n`));
               break;
             }
             case "method": {
               
-
               let params = item.children.filter(n => n.local == "parameter" && n.namespace == NS_XBL)
                                         .map(n => n.attributes.name)
                                         .join(", ");
               let body = item.children.filter(n => n.local == "body" && n.namespace == NS_XBL)[0];
-
-              addSyntheticLine(indent(3) + `${item.attributes.name}(${params}) {`, item.textLine);
-              addNodeLines(body, 4);
-              addSyntheticLine(indent(3) + `},`, item.textEndLine);
+              blocks.push(buildCodeBlock(body, `function ${item.attributes.name}(${params}) {\n`));
               break;
             }
             case "property": {
@@ -296,38 +235,24 @@ module.exports = {
                   continue;
                 }
 
-                if (propdef.local == "setter") {
-                  addSyntheticLine(indent(3) + `set ${item.attributes.name}(val) {`, propdef.textLine);
-                } else if (propdef.local == "getter") {
-                  addSyntheticLine(indent(3) + `get ${item.attributes.name}() {`, propdef.textLine);
-                } else {
-                  continue;
-                }
-                addNodeLines(propdef, 4);
-                addSyntheticLine(indent(3) + `},`, propdef.textEndLine);
+                let params = propdef.local == "setter" ? "val" : "";
+                blocks.push(buildCodeBlock(propdef, `function ${item.attributes.name}_${propdef.local}(${params}) {\n`));
               }
               break;
             }
             case "handler": {
               
-              addSyntheticLine(indent(3) + `function(event) {`, item.textLine);
-              addNodeLines(item, 4);
-              addSyntheticLine(indent(3) + `},`, item.textEndLine);
+              blocks.push(buildCodeBlock(item, `function onevent(event) {\n`));
               break;
             }
             default:
               continue;
           }
         }
-
-        addSyntheticLine(indent(2) + (part.local == "implementation" ? `},` : `],`), part.textEndLine);
       }
-      addSyntheticLine(indent(1) + `},`, binding.textEndLine);
     }
-    addSyntheticLine(`};`, bindings.textEndLine);
 
-    let script = scriptLines.join("\n") + "\n";
-    return [script];
+    return blocks.map(b => b.script);
   },
 
   postprocess: function(messages, filename) {
@@ -340,17 +265,11 @@ module.exports = {
     
     let errors = [];
     for (let i = 0; i < messages.length; i++) {
+      let block = blocks[i];
+
       for (let message of messages[i]) {
-        
-        let mapped = lineMap[message.line - 1];
-
-        message.line = mapped.line + 1;
-        if (mapped.offset) {
-          message.column -= mapped.offset;
-        } else {
-          message.column = NaN;
-        }
-
+        message.line += block.line + 1;
+        message.column += block.indent;
         errors.push(message);
       }
     }

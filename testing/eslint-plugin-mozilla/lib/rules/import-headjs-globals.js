@@ -16,23 +16,8 @@
 var fs = require("fs");
 var path = require("path");
 var helpers = require("../helpers");
-var globals = require("../globals");
 
 module.exports = function(context) {
-
-  function importHead(path, node) {
-    try {
-      let stats = fs.statSync(path);
-      if (!stats.isFile()) {
-        return;
-      }
-    } catch (e) {
-      return;
-    }
-
-    let newGlobals = globals.getGlobalsForFile(path);
-    helpers.addGlobals(newGlobals, context.getScope());
-  }
 
   
   
@@ -46,18 +31,18 @@ module.exports = function(context) {
 
       var currentFilePath = helpers.getAbsoluteFilePath(context);
       var dirName = path.dirname(currentFilePath);
-      importHead(path.resolve(dirName, "head.js"), node);
-
-      if (!helpers.getIsXpcshellTest(this)) {
+      var fullHeadjsPath = path.resolve(dirName, "head.js");
+      if (!fs.existsSync(fullHeadjsPath)) {
         return;
       }
 
-      let names = fs.readdirSync(dirName);
-      for (let name of names) {
-        if (name.startsWith("head_") && name.endsWith(".js")) {
-          importHead(path.resolve(dirName, name), node);
-        }
-      }
+      let globals = helpers.getGlobalsForFile(fullHeadjsPath);
+      helpers.addGlobals(globals, context);
+
+      
+      var content = fs.readFileSync(fullHeadjsPath, "utf8");
+      var comments = helpers.getAST(content).comments;
+      helpers.addGlobalsFromComments(fullHeadjsPath, comments, node, context);
     }
   };
 };

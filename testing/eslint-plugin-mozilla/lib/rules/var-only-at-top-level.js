@@ -23,7 +23,7 @@ module.exports = function(context) {
   return {
     "VariableDeclaration": function(node) {
       if (node.kind === "var") {
-        if (helpers.getIsGlobalScope(context.getAncestors())) {
+        if (helpers.getIsGlobalScope(context)) {
           return;
         }
 

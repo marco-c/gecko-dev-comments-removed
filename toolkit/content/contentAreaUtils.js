@@ -1,6 +1,7 @@
-
-
-
+# -*- indent-tabs-mode: nil; js-indent-level: 2 -*- 
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 Components.utils.import("resource://gre/modules/XPCOMUtils.jsm");
 
@@ -24,8 +25,6 @@ XPCOMUtils.defineLazyModuleGetter(this, "Task",
                                   "resource://gre/modules/Task.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "Deprecated",
                                   "resource://gre/modules/Deprecated.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "AppConstants",
-                                  "resource://gre/modules/AppConstants.jsm");
 
 var ContentAreaUtils = {
 
@@ -676,7 +675,7 @@ function initFileInfo(aFI, aURL, aURLCharset, aDocument,
 
 function promiseTargetFile(aFpP,  aSkipPrompt,  aRelatedURI)
 {
-  return Task.spawn(function*() {
+  return Task.spawn(function() {
     let downloadLastDir = new DownloadLastDir(window);
     let prefBranch = Services.prefs.getBranch("browser.download.");
     let useDownloadDir = prefBranch.getBoolPref("useDownloadDir");
@@ -796,6 +795,7 @@ function uniqueFile(aLocalFile)
   return aLocalFile;
 }
 
+#ifdef MOZ_JSDOWNLOADS
 
 
 
@@ -841,6 +841,7 @@ function DownloadURL(aURL, aFileName, aInitiatingDocument) {
     list.add(download);
   }).then(null, Components.utils.reportError);
 }
+#endif
 
 
 const SAVEMODE_FILEONLY      = 0x00;
@@ -1156,10 +1157,10 @@ function getNormalizedLeafName(aFile, aDefaultExtension)
   if (!aDefaultExtension)
     return aFile;
 
-  if (AppConstants.platform == "win") {
-    
-    aFile = aFile.replace(/[\s.]+$/, "");
-  }
+#ifdef XP_WIN
+  
+  aFile = aFile.replace(/[\s.]+$/, "");
+#endif
 
   
   aFile = aFile.replace(/^\.+/, "");
