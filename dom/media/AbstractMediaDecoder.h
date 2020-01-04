@@ -111,7 +111,7 @@ public:
 
   
   
-  virtual void NotifyDataArrived(bool aThrottleUpdates) = 0;
+  virtual void NotifyDataArrived() = 0;
 
   
   virtual void SetPlatformCanOffloadAudio(bool aCanOffloadAudio) {}

@@ -168,9 +168,9 @@ public:
     OwnerThread()->Dispatch(runnable.forget());
   }
 
-  void DispatchNotifyDataArrived(bool aThrottleUpdates)
+  void DispatchNotifyDataArrived()
   {
-    mReader->DispatchNotifyDataArrived(aThrottleUpdates);
+    mReader->DispatchNotifyDataArrived();
   }
 
   

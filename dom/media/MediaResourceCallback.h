@@ -49,7 +49,7 @@ public:
   virtual void NotifyDecodeError() {}
 
   
-  virtual void NotifyDataArrived(bool aThrottleUpdates) {}
+  virtual void NotifyDataArrived() {}
 
   
   virtual void NotifyBytesDownloaded() {}

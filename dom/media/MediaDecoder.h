@@ -433,7 +433,7 @@ public:
 
   
   
-  virtual void NotifyDataArrived(bool aThrottleUpdates) override;
+  virtual void NotifyDataArrived() override;
 
   
   

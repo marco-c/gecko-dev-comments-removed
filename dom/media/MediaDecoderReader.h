@@ -223,18 +223,10 @@ public:
   virtual size_t SizeOfVideoQueueInFrames();
   virtual size_t SizeOfAudioQueueInFrames();
 
-  
-  
-  
-  
-  
-  
-  void DispatchNotifyDataArrived(bool aThrottleUpdates)
+  void DispatchNotifyDataArrived()
   {
     RefPtr<nsRunnable> r = NS_NewRunnableMethod(
-      this,
-      aThrottleUpdates ? &MediaDecoderReader::ThrottledNotifyDataArrived :
-                         &MediaDecoderReader::NotifyDataArrived);
+      this, &MediaDecoderReader::NotifyDataArrived);
 
     OwnerThread()->Dispatch(
       r.forget(), AbstractThread::DontAssertDispatchSuccess);
@@ -351,9 +343,6 @@ protected:
   WatchManager<MediaDecoderReader> mWatchManager;
 
   
-  RefPtr<MediaTimer> mTimer;
-
-  
   Canonical<media::TimeIntervals> mBuffered;
 
   
@@ -361,11 +350,6 @@ protected:
 
   
   Mirror<media::NullableTimeUnit> mDuration;
-
-  
-  MozPromiseRequestHolder<MediaTimerPromise> mThrottledNotify;
-  const TimeDuration mThrottleDuration;
-  TimeStamp mLastThrottledNotify;
 
   
   
@@ -414,11 +398,6 @@ private:
   virtual void UpdateBuffered();
 
   virtual void NotifyDataArrivedInternal() {}
-
-  
-  
-  void ThrottledNotifyDataArrived();
-  void DoThrottledNotify();
 
   
   
