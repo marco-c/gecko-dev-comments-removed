@@ -1155,6 +1155,15 @@ RestyleManager::AnimationsWithDestroyedFrame::StopAnimationsWithoutFrame(
 
     animationManager->StopAnimationsForElement(element, aPseudoType);
     transitionManager->StopTransitionsForElement(element, aPseudoType);
+
+    
+    
+    EffectSet* effectSet = EffectSet::GetEffectSet(element, aPseudoType);
+    if (effectSet) {
+      for (KeyframeEffectReadOnly* effect : *effectSet) {
+        effect->ResetIsRunningOnCompositor();
+      }
+    }
   }
 }
 

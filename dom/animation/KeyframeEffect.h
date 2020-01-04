@@ -312,6 +312,7 @@ public:
   
   bool IsRunningOnCompositor() const;
   void SetIsRunningOnCompositor(nsCSSProperty aProperty, bool aIsRunning);
+  void ResetIsRunningOnCompositor();
 
   
   
@@ -352,7 +353,6 @@ protected:
                           const OptionsType& aOptions,
                           ErrorResult& aRv);
 
-  void ResetIsRunningOnCompositor();
   void ResetWinsInCascade();
 
   

@@ -92,6 +92,7 @@
 
 #include "mozilla/AsyncEventDispatcher.h"
 #include "mozilla/EffectCompositor.h"
+#include "mozilla/EffectSet.h"
 #include "mozilla/EventListenerManager.h"
 #include "mozilla/EventStateManager.h"
 #include "mozilla/EventStates.h"
@@ -700,7 +701,7 @@ nsFrame::DestroyFrom(nsIFrame* aDestructRoot)
     }
   }
 
-  if (HasCSSAnimations() || HasCSSTransitions()) {
+  if (EffectSet::GetEffectSet(this)) {
     
     
     if (presContext->RestyleManager()->IsGecko()) {
