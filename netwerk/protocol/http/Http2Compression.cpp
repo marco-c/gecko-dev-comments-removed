@@ -280,6 +280,7 @@ nvFIFO::operator[] (size_t index) const
 Http2BaseCompressor::Http2BaseCompressor()
   : mOutput(nullptr)
   , mMaxBuffer(kDefaultMaxBuffer)
+  , mMaxBufferSetting(kDefaultMaxBuffer)
 {
   mDynamicReporter = new HpackDynamicTableReporter(this);
   RegisterStrongMemoryReporter(mDynamicReporter);
@@ -340,6 +341,23 @@ Http2BaseCompressor::DumpState()
     LOG(("%sindex %u: %s %s", i < staticLength ? "static " : "", i,
          pair->mName.get(), pair->mValue.get()));
   }
+}
+
+void
+Http2BaseCompressor::SetMaxBufferSizeInternal(uint32_t maxBufferSize)
+{
+  MOZ_ASSERT(maxBufferSize <= mMaxBufferSetting);
+
+  uint32_t removedCount = 0;
+
+  LOG(("Http2BaseCompressor::SetMaxBufferSizeInternal %u called", maxBufferSize));
+
+  while (mHeaderTable.VariableLength() && (mHeaderTable.ByteCount() > maxBufferSize)) {
+    mHeaderTable.RemoveElement();
+    ++removedCount;
+  }
+
+  mMaxBuffer = maxBufferSize;
 }
 
 nsresult
@@ -950,13 +968,29 @@ Http2Decompressor::DoContextUpdate()
   MOZ_ASSERT((mData[mOffset] & 0xE0) == 0x20);
 
   
+  
+  
+  
+  
+  
+  
+  
   uint32_t newMaxSize;
   nsresult rv = DecodeInteger(5, newMaxSize);
   LOG(("Http2Decompressor::DoContextUpdate new maximum size %u", newMaxSize));
   if (NS_FAILED(rv)) {
     return rv;
   }
-  return mCompressor->SetMaxBufferSizeInternal(newMaxSize);
+
+  if (newMaxSize > mMaxBufferSetting) {
+    
+    
+    return NS_ERROR_FAILURE;
+  }
+
+  SetMaxBufferSizeInternal(newMaxSize);
+
+  return NS_OK;
 }
 
 
@@ -1357,27 +1391,6 @@ Http2Compressor::SetMaxBufferSize(uint32_t maxBufferSize)
   } else if (maxBufferSize < mLowestBufferSizeWaiting) {
     mLowestBufferSizeWaiting = maxBufferSize;
   }
-}
-
-nsresult
-Http2Compressor::SetMaxBufferSizeInternal(uint32_t maxBufferSize)
-{
-  if (maxBufferSize > mMaxBufferSetting) {
-    return NS_ERROR_FAILURE;
-  }
-
-  uint32_t removedCount = 0;
-
-  LOG(("Http2Compressor::SetMaxBufferSizeInternal %u called", maxBufferSize));
-
-  while (mHeaderTable.VariableLength() && (mHeaderTable.ByteCount() > maxBufferSize)) {
-    mHeaderTable.RemoveElement();
-    ++removedCount;
-  }
-
-  mMaxBuffer = maxBufferSize;
-
-  return NS_OK;
 }
 
 } 
