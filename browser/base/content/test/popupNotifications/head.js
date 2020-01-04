@@ -50,37 +50,15 @@ function promiseTopicObserved(topic)
 
 
 
-
-
-function promiseTabLoadEvent(tab, url, eventType="load")
+function promiseTabLoadEvent(tab, url)
 {
-  let deferred = Promise.defer();
-  info("Wait tab event: " + eventType);
+  let browser = tab.linkedBrowser;
 
-  function handle(event) {
-    if (event.originalTarget != tab.linkedBrowser.contentDocument ||
-        event.target.location.href == "about:blank" ||
-        (url && event.target.location.href != url)) {
-      info("Skipping spurious '" + eventType + "'' event" +
-           " for " + event.target.location.href);
-      return;
-    }
-    clearTimeout(timeout);
-    tab.linkedBrowser.removeEventListener(eventType, handle, true);
-    info("Tab event received: " + eventType);
-    deferred.resolve(event);
+  if (url) {
+    browser.loadURI(url);
   }
 
-  let timeout = setTimeout(() => {
-    if (tab.linkedBrowser)
-      tab.linkedBrowser.removeEventListener(eventType, handle, true);
-    deferred.reject(new Error("Timed out while waiting for a '" + eventType + "'' event"));
-  }, 30000);
-
-  tab.linkedBrowser.addEventListener(eventType, handle, true, true);
-  if (url)
-    tab.linkedBrowser.loadURI(url);
-  return deferred.promise;
+  return BrowserTestUtils.browserLoaded(browser, false, url);
 }
 
 const PREF_SECURITY_DELAY_INITIAL = Services.prefs.getIntPref("security.notification_enable_delay");
