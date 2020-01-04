@@ -10,11 +10,11 @@
 
 
 :root[devtoolstheme="light"] #developer-toolbar {
-  --gcli-background-color: #ebeced; 
-  --gcli-input-background: #f0f1f2; 
-  --gcli-input-focused-background: #f7f7f7; 
-  --gcli-input-color: #18191a; 
-  --gcli-border-color: #aaaaaa; 
+  --gcli-background-color: #fcfcfc; 
+  --gcli-input-background: #fcfcfc; 
+  --gcli-input-focused-background: #ffffff; 
+  --gcli-input-color: #393f4c; 
+  --gcli-border-color: #dde1e4; 
   --selection-background: #4c9ed9; 
   --selection-color: #f5f7fa; 
 }

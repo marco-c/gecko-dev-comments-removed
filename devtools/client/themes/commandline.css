@@ -8,10 +8,10 @@
 
 
 :root[devtoolstheme="light"] {
-  --gcli-background-color: #ebeced; 
-  --gcli-input-focused-background: #f7f7f7; 
-  --gcli-input-color: #18191a; 
-  --gcli-border-color: #aaaaaa; 
+  --gcli-background-color: #fcfcfc; 
+  --gcli-input-focused-background: #ffffff; 
+  --gcli-input-color: #393f4c; 
+  --gcli-border-color: #dde1e4; 
 }
 
 :root[devtoolstheme="dark"] {
