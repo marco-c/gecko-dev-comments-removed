@@ -2275,117 +2275,130 @@ MediaDecoderStateMachine::RunStateMachine()
   mDelayedScheduler.Reset(); 
   mDispatchedStateMachine = false;
 
-  MediaResource* resource = mResource;
-  NS_ENSURE_TRUE_VOID(resource);
-
   switch (mState) {
-    case DECODER_STATE_DECODING: {
-      if (mPlayState != MediaDecoder::PLAY_STATE_PLAYING && IsPlaying())
-      {
-        
-        
-        StopPlayback();
-      }
-
-      
-      MaybeStartPlayback();
-
-      UpdatePlaybackPositionPeriodically();
-      NS_ASSERTION(!IsPlaying() ||
-                   IsStateMachineScheduled(),
-                   "Must have timer scheduled");
-      MaybeStartBuffering();
+    case DECODER_STATE_DECODING:
+      StepDecoding();
       return;
-    }
-
-    case DECODER_STATE_BUFFERING: {
-      TimeStamp now = TimeStamp::Now();
-      NS_ASSERTION(!mBufferingStart.IsNull(), "Must know buffering start time.");
-
-      
-      
-      
-      if (mReader->UseBufferingHeuristics()) {
-        TimeDuration elapsed = now - mBufferingStart;
-        bool isLiveStream = resource->IsLiveStream();
-        if ((isLiveStream || !CanPlayThrough()) &&
-              elapsed < TimeDuration::FromSeconds(mBufferingWait * mPlaybackRate) &&
-              (mQuickBuffering ? HasLowDecodedData(mQuickBufferingLowDataThresholdUsecs)
-                               : HasLowUndecodedData(mBufferingWait * USECS_PER_S)) &&
-              mResource->IsExpectingMoreData())
-        {
-          DECODER_LOG("Buffering: wait %ds, timeout in %.3lfs %s",
-                      mBufferingWait, mBufferingWait - elapsed.ToSeconds(),
-                      (mQuickBuffering ? "(quick exit)" : ""));
-          ScheduleStateMachineIn(USECS_PER_S);
-          return;
-        }
-      } else if (OutOfDecodedAudio() || OutOfDecodedVideo()) {
-        MOZ_ASSERT(mReader->IsWaitForDataSupported(),
-                   "Don't yet have a strategy for non-heuristic + non-WaitForData");
-        DispatchDecodeTasksIfNeeded();
-        MOZ_ASSERT_IF(!mMinimizePreroll && OutOfDecodedAudio(), mReader->IsRequestingAudioData() || mReader->IsWaitingAudioData());
-        MOZ_ASSERT_IF(!mMinimizePreroll && OutOfDecodedVideo(), mReader->IsRequestingVideoData() || mReader->IsWaitingVideoData());
-        DECODER_LOG("In buffering mode, waiting to be notified: outOfAudio: %d, "
-                    "mAudioStatus: %s, outOfVideo: %d, mVideoStatus: %s",
-                    OutOfDecodedAudio(), AudioRequestStatus(),
-                    OutOfDecodedVideo(), VideoRequestStatus());
-        return;
-      }
-
-      DECODER_LOG("Changed state from BUFFERING to DECODING");
-      DECODER_LOG("Buffered for %.3lfs", (now - mBufferingStart).ToSeconds());
-      SetState(DECODER_STATE_DECODING);
-
-      NS_ASSERTION(IsStateMachineScheduled(), "Must have timer scheduled");
+    case DECODER_STATE_BUFFERING:
+      StepBuffering();
       return;
-    }
-
-    case DECODER_STATE_COMPLETED: {
-      if (mPlayState != MediaDecoder::PLAY_STATE_PLAYING && IsPlaying()) {
-        StopPlayback();
-      }
-      
-      
-      
-      if ((HasVideo() && !mVideoCompleted) ||
-          (HasAudio() && !mAudioCompleted)) {
-        
-        MaybeStartPlayback();
-        UpdatePlaybackPositionPeriodically();
-        NS_ASSERTION(!IsPlaying() ||
-                     IsStateMachineScheduled(),
-                     "Must have timer scheduled");
-        return;
-      }
-
-      
-      
-      StopPlayback();
-
-      if (mPlayState == MediaDecoder::PLAY_STATE_PLAYING &&
-          !mSentPlaybackEndedEvent)
-      {
-        int64_t clockTime = std::max(AudioEndTime(), VideoEndTime());
-        clockTime = std::max(int64_t(0), std::max(clockTime, Duration().ToMicroseconds()));
-        UpdatePlaybackPosition(clockTime);
-
-        
-        UpdateNextFrameStatus();
-
-        mOnPlaybackEvent.Notify(MediaEventType::PlaybackEnded);
-
-        mSentPlaybackEndedEvent = true;
-
-        
-        StopMediaSink();
-      }
-
+    case DECODER_STATE_COMPLETED:
+      StepCompleted();
       return;
-    }
-
     default:
       return;
+  }
+}
+
+void
+MediaDecoderStateMachine::StepDecoding()
+{
+  MOZ_ASSERT(OnTaskQueue());
+
+  if (mPlayState != MediaDecoder::PLAY_STATE_PLAYING && IsPlaying()) {
+    
+    
+    StopPlayback();
+  }
+
+  
+  MaybeStartPlayback();
+
+  UpdatePlaybackPositionPeriodically();
+
+  NS_ASSERTION(!IsPlaying() ||
+               IsStateMachineScheduled(),
+               "Must have timer scheduled");
+
+  MaybeStartBuffering();
+}
+
+void
+MediaDecoderStateMachine::StepBuffering()
+{
+  MOZ_ASSERT(OnTaskQueue());
+
+  TimeStamp now = TimeStamp::Now();
+  NS_ASSERTION(!mBufferingStart.IsNull(), "Must know buffering start time.");
+
+  
+  
+  
+  if (mReader->UseBufferingHeuristics()) {
+    TimeDuration elapsed = now - mBufferingStart;
+    bool isLiveStream = mResource->IsLiveStream();
+    if ((isLiveStream || !CanPlayThrough()) &&
+        elapsed < TimeDuration::FromSeconds(mBufferingWait * mPlaybackRate) &&
+        (mQuickBuffering ? HasLowDecodedData(mQuickBufferingLowDataThresholdUsecs)
+                         : HasLowUndecodedData(mBufferingWait * USECS_PER_S)) &&
+        mResource->IsExpectingMoreData()) {
+      DECODER_LOG("Buffering: wait %ds, timeout in %.3lfs %s",
+                  mBufferingWait, mBufferingWait - elapsed.ToSeconds(),
+                  (mQuickBuffering ? "(quick exit)" : ""));
+      ScheduleStateMachineIn(USECS_PER_S);
+      return;
+    }
+  } else if (OutOfDecodedAudio() || OutOfDecodedVideo()) {
+    MOZ_ASSERT(mReader->IsWaitForDataSupported(),
+               "Don't yet have a strategy for non-heuristic + non-WaitForData");
+    DispatchDecodeTasksIfNeeded();
+    MOZ_ASSERT_IF(!mMinimizePreroll && OutOfDecodedAudio(), mReader->IsRequestingAudioData() || mReader->IsWaitingAudioData());
+    MOZ_ASSERT_IF(!mMinimizePreroll && OutOfDecodedVideo(), mReader->IsRequestingVideoData() || mReader->IsWaitingVideoData());
+    DECODER_LOG("In buffering mode, waiting to be notified: outOfAudio: %d, "
+                "mAudioStatus: %s, outOfVideo: %d, mVideoStatus: %s",
+                OutOfDecodedAudio(), AudioRequestStatus(),
+                OutOfDecodedVideo(), VideoRequestStatus());
+    return;
+  }
+
+  DECODER_LOG("Changed state from BUFFERING to DECODING");
+  DECODER_LOG("Buffered for %.3lfs", (now - mBufferingStart).ToSeconds());
+  SetState(DECODER_STATE_DECODING);
+  NS_ASSERTION(IsStateMachineScheduled(), "Must have timer scheduled");
+}
+
+void
+MediaDecoderStateMachine::StepCompleted()
+{
+  MOZ_ASSERT(OnTaskQueue());
+
+  if (mPlayState != MediaDecoder::PLAY_STATE_PLAYING && IsPlaying()) {
+    StopPlayback();
+  }
+
+  
+  
+  
+  if ((HasVideo() && !mVideoCompleted) ||
+      (HasAudio() && !mAudioCompleted)) {
+    
+    MaybeStartPlayback();
+    UpdatePlaybackPositionPeriodically();
+    NS_ASSERTION(!IsPlaying() ||
+                 IsStateMachineScheduled(),
+                 "Must have timer scheduled");
+    return;
+  }
+
+  
+  
+  StopPlayback();
+
+  if (mPlayState == MediaDecoder::PLAY_STATE_PLAYING &&
+      !mSentPlaybackEndedEvent) {
+    int64_t clockTime = std::max(AudioEndTime(), VideoEndTime());
+    clockTime = std::max(int64_t(0), std::max(clockTime, Duration().ToMicroseconds()));
+    UpdatePlaybackPosition(clockTime);
+
+    
+    UpdateNextFrameStatus();
+
+    mOnPlaybackEvent.Notify(MediaEventType::PlaybackEnded);
+
+    mSentPlaybackEndedEvent = true;
+
+    
+    StopMediaSink();
   }
 }
 
