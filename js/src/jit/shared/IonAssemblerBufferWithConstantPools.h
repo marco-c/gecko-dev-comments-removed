@@ -578,13 +578,6 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<SliceSize, Inst
         
         
         
-        BufferOffset perforation = this->nextOffset();
-        Parent::perforate();
-        JitSpew(JitSpew_Pools, "[%d] Adding a perforation at offset %d", id, perforation.getOffset());
-
-        
-        
-        
         size_t poolOffset = data.getOffset();
 
         unsigned idx = 0;
