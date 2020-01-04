@@ -1628,16 +1628,19 @@ nsHttpTransaction::HandleContentStart()
             
             
             
-            
-            if (mResponseHead->Version() >= NS_HTTP_VERSION_1_1 &&
+            if (mResponseHead->Version() >= NS_HTTP_VERSION_1_0 &&
                 mResponseHead->HasHeaderValue(nsHttp::Transfer_Encoding, "chunked")) {
                 
                 mChunkedDecoder = new nsHttpChunkedDecoder();
-                if (!mChunkedDecoder)
-                    return NS_ERROR_OUT_OF_MEMORY;
-                LOG(("chunked decoder created\n"));
+                LOG(("nsHttpTransaction %p chunked decoder created\n", this));
                 
-                mContentLength = -1;
+                if (mContentLength != int64_t(-1)) {
+                    LOG(("nsHttpTransaction %p chunked with C-L ignores C-L\n", this));
+                    mContentLength = -1;
+                    if (mConnection) {
+                        mConnection->DontReuse();
+                    }
+                }
             }
             else if (mContentLength == int64_t(-1))
                 LOG(("waiting for the server to close the connection.\n"));
