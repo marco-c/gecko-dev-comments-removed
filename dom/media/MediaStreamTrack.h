@@ -22,6 +22,7 @@ class MediaInputPort;
 class MediaStream;
 class MediaStreamGraph;
 class MediaStreamTrackListener;
+class MediaStreamTrackDirectListener;
 class PeerConnectionImpl;
 class PeerIdentity;
 class ProcessedMediaStream;
@@ -300,6 +301,15 @@ public:
 
 
   void RemoveListener(MediaStreamTrackListener* aListener);
+
+  
+
+
+
+
+
+  void AddDirectListener(MediaStreamTrackDirectListener *aListener);
+  void RemoveDirectListener(MediaStreamTrackDirectListener  *aListener);
 
   
 

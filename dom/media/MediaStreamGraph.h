@@ -287,6 +287,66 @@ public:
 
 
 
+
+
+
+class MediaStreamTrackDirectListener : public MediaStreamTrackListener
+{
+public:
+  
+
+
+
+
+
+
+  virtual void NotifyRealtimeTrackData(MediaStreamGraph* aGraph,
+                                       StreamTime aTrackOffset,
+                                       const MediaSegment& aMedia) {}
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  enum class InstallationResult {
+    TRACK_NOT_FOUND_AT_SOURCE,
+    TRACK_TYPE_NOT_SUPPORTED,
+    STREAM_NOT_SUPPORTED,
+    SUCCESS
+  };
+  virtual void NotifyDirectListenerInstalled(InstallationResult aResult) {}
+  virtual void NotifyDirectListenerUninstalled() {}
+
+protected:
+  virtual ~MediaStreamTrackDirectListener() {}
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class MainThreadMediaStreamListener {
 public:
   virtual void NotifyMainThreadStreamFinished() = 0;
@@ -449,6 +509,29 @@ public:
                                 TrackID aTrackID);
   virtual void RemoveTrackListener(MediaStreamTrackListener* aListener,
                                    TrackID aTrackID);
+
+  
+
+
+
+
+
+
+
+  virtual void AddDirectTrackListener(MediaStreamTrackDirectListener* aListener,
+                                      TrackID aTrackID);
+
+  
+
+
+
+
+
+
+
+  virtual void RemoveDirectTrackListener(MediaStreamTrackDirectListener* aListener,
+                                         TrackID aTrackID);
+
   
   
   void SetTrackEnabled(TrackID aTrackID, bool aEnabled);
@@ -549,6 +632,10 @@ public:
                                     TrackID aTrackID);
   virtual void RemoveTrackListenerImpl(MediaStreamTrackListener* aListener,
                                        TrackID aTrackID);
+  virtual void AddDirectTrackListenerImpl(already_AddRefed<MediaStreamTrackDirectListener> aListener,
+                                          TrackID aTrackID);
+  virtual void RemoveDirectTrackListenerImpl(MediaStreamTrackDirectListener* aListener,
+                                             TrackID aTrackID);
   virtual void SetTrackEnabledImpl(TrackID aTrackID, bool aEnabled);
 
   void AddConsumer(MediaInputPort* aPort)
@@ -972,6 +1059,11 @@ protected:
 
   void ResampleAudioToGraphSampleRate(TrackData* aTrackData, MediaSegment* aSegment);
 
+  void AddDirectTrackListenerImpl(already_AddRefed<MediaStreamTrackDirectListener> aListener,
+                                  TrackID aTrackID) override;
+  void RemoveDirectTrackListenerImpl(MediaStreamTrackDirectListener* aListener,
+                                     TrackID aTrackID) override;
+
   void AddTrackInternal(TrackID aID, TrackRate aRate,
                         StreamTime aStart, MediaSegment* aSegment,
                         uint32_t aFlags);
@@ -1010,6 +1102,7 @@ protected:
   nsTArray<TrackData> mUpdateTracks;
   nsTArray<TrackData> mPendingTracks;
   nsTArray<RefPtr<MediaStreamDirectListener> > mDirectListeners;
+  nsTArray<TrackBound<MediaStreamTrackDirectListener>> mDirectTrackListeners;
   bool mPullEnabled;
   bool mUpdateFinished;
   bool mNeedsMixing;
