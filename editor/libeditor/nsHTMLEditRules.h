@@ -341,7 +341,7 @@ protected:
   bool                    mRestoreContentEditableCount;
   RefPtr<nsRange>       mUtilRange;
   uint32_t                mJoinOffset;  
-  nsCOMPtr<nsIDOMNode>    mNewBlock;
+  nsCOMPtr<Element>       mNewBlock;
   RefPtr<nsRangeStore>  mRangeItem;
   StyleCache              mCachedStyles[SIZE_STYLE_TABLE];
 };
