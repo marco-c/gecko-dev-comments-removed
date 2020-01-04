@@ -128,7 +128,6 @@ static constexpr ValueOperand JSReturnOperand = ValueOperand(JSReturnReg);
 static constexpr Register AsmJSIonExitRegCallee = r8;
 static constexpr Register AsmJSIonExitRegE0 = r0;
 static constexpr Register AsmJSIonExitRegE1 = r1;
-static constexpr Register AsmJSIonExitRegE2 = r2;
 
 
 

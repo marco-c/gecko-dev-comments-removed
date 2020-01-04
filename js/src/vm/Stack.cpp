@@ -1386,6 +1386,8 @@ ActivationEntryMonitor::ActivationEntryMonitor(JSContext* cx, jit::CalleeToken e
 
 jit::JitActivation::JitActivation(JSContext* cx, bool active)
   : Activation(cx, Jit),
+    prevJitTop_(cx->runtime()->jitTop),
+    prevJitActivation_(cx->runtime()->jitActivation),
     active_(active),
     rematerializedFrames_(nullptr),
     ionRecovery_(cx),
@@ -1394,14 +1396,8 @@ jit::JitActivation::JitActivation(JSContext* cx, bool active)
     lastProfilingCallSite_(nullptr)
 {
     if (active) {
-        prevJitTop_ = cx->runtime()->jitTop;
-        prevJitActivation_ = cx->runtime()->jitActivation;
         cx->runtime()->jitActivation = this;
-
         registerProfiling();
-    } else {
-        prevJitTop_ = nullptr;
-        prevJitActivation_ = nullptr;
     }
 }
 
@@ -1413,6 +1409,9 @@ jit::JitActivation::~JitActivation()
 
         cx_->runtime()->jitTop = prevJitTop_;
         cx_->runtime()->jitActivation = prevJitActivation_;
+    } else {
+        MOZ_ASSERT(cx_->runtime()->jitTop == prevJitTop_);
+        MOZ_ASSERT(cx_->runtime()->jitActivation == prevJitActivation_);
     }
 
     
@@ -1460,8 +1459,8 @@ jit::JitActivation::setActive(JSContext* cx, bool active)
 
     if (active) {
         *((volatile bool*) active_) = true;
-        prevJitTop_ = cx->runtime()->jitTop;
-        prevJitActivation_ = cx->runtime()->jitActivation;
+        MOZ_ASSERT(prevJitTop_ == cx->runtime()->jitTop);
+        MOZ_ASSERT(prevJitActivation_ == cx->runtime()->jitActivation);
         cx->runtime()->jitActivation = this;
 
         registerProfiling();

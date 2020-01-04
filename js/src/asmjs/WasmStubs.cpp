@@ -649,46 +649,21 @@ wasm::GenerateJitExit(MacroAssembler& masm, const FuncImport& fi, bool usesHeap)
         
         
         MOZ_ASSERT(callee == AsmJSIonExitRegCallee);
-        Register reg0 = AsmJSIonExitRegE0;
-        Register reg1 = AsmJSIonExitRegE1;
-        Register reg2 = AsmJSIonExitRegE2;
+        Register cx = AsmJSIonExitRegE0;
+        Register act = AsmJSIonExitRegE1;
 
         
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        size_t offsetOfActivation = JSContext::offsetOfActivation();
-        size_t offsetOfJitTop = offsetof(JSContext, jitTop);
-        size_t offsetOfJitActivation = offsetof(JSContext, jitActivation);
-        size_t offsetOfProfilingActivation = JSContext::offsetOfProfilingActivation();
-        masm.loadWasmActivation(reg0);
-        masm.loadPtr(Address(reg0, WasmActivation::offsetOfContext()), reg0);
-        masm.loadPtr(Address(reg0, offsetOfActivation), reg1);
+        masm.movePtr(SymbolicAddress::Context, cx);
+        masm.loadPtr(Address(cx, JSContext::offsetOfActivation()), act);
 
         
-        masm.store8(Imm32(1), Address(reg1, JitActivation::offsetOfActiveUint8()));
+        masm.store8(Imm32(1), Address(act, JitActivation::offsetOfActiveUint8()));
 
         
-        masm.loadPtr(Address(reg0, offsetOfJitTop), reg2);
-        masm.storePtr(reg2, Address(reg1, JitActivation::offsetOfPrevJitTop()));
+        masm.storePtr(act, Address(cx, offsetof(JSContext, jitActivation)));
 
         
-        masm.loadPtr(Address(reg0, offsetOfJitActivation), reg2);
-        masm.storePtr(reg2, Address(reg1, JitActivation::offsetOfPrevJitActivation()));
-        
-        masm.storePtr(reg1, Address(reg0, offsetOfJitActivation));
-
-        
-        masm.loadPtr(Address(reg0, offsetOfProfilingActivation), reg2);
-        masm.storePtr(reg2, Address(reg1, Activation::offsetOfPrevProfiling()));
-        
-        masm.storePtr(reg1, Address(reg0, offsetOfProfilingActivation));
+        masm.storePtr(act, Address(cx, JSContext::offsetOfProfilingActivation()));
     }
 
     AssertStackAlignment(masm, JitStackAlignment, sizeOfRetAddr);
@@ -702,38 +677,28 @@ wasm::GenerateJitExit(MacroAssembler& masm, const FuncImport& fi, bool usesHeap)
         
         MOZ_ASSERT(JSReturnReg_Data == AsmJSIonExitRegReturnData);
         MOZ_ASSERT(JSReturnReg_Type == AsmJSIonExitRegReturnType);
-        Register reg0 = AsmJSIonExitRegD0;
-        Register reg1 = AsmJSIonExitRegD1;
-        Register reg2 = AsmJSIonExitRegD2;
+        Register cx = AsmJSIonExitRegD0;
+        Register act = AsmJSIonExitRegD1;
+        Register tmp = AsmJSIonExitRegD2;
 
         
-        
-        
-        
-        
-        
-        size_t offsetOfActivation = JSRuntime::offsetOfActivation();
-        size_t offsetOfJitTop = offsetof(JSRuntime, jitTop);
-        size_t offsetOfJitActivation = offsetof(JSRuntime, jitActivation);
-        size_t offsetOfProfilingActivation = JSRuntime::offsetOfProfilingActivation();
-
-        masm.movePtr(SymbolicAddress::Runtime, reg0);
-        masm.loadPtr(Address(reg0, offsetOfActivation), reg1);
+        masm.movePtr(SymbolicAddress::Context, cx);
+        masm.loadPtr(Address(cx, JSContext::offsetOfActivation()), act);
 
         
-        masm.loadPtr(Address(reg1, JitActivation::offsetOfPrevJitTop()), reg2);
-        masm.storePtr(reg2, Address(reg0, offsetOfJitTop));
+        masm.loadPtr(Address(act, JitActivation::offsetOfPrevJitTop()), tmp);
+        masm.storePtr(tmp, Address(cx, offsetof(JSContext, jitTop)));
 
         
-        masm.loadPtr(Address(reg1, Activation::offsetOfPrevProfiling()), reg2);
-        masm.storePtr(reg2, Address(reg0, offsetOfProfilingActivation));
+        masm.loadPtr(Address(act, JitActivation::offsetOfPrevJitActivation()), tmp);
+        masm.storePtr(tmp, Address(cx, offsetof(JSContext, jitActivation)));
 
         
-        masm.store8(Imm32(0), Address(reg1, JitActivation::offsetOfActiveUint8()));
+        masm.loadPtr(Address(act, Activation::offsetOfPrevProfiling()), tmp);
+        masm.storePtr(tmp, Address(cx, JSContext::offsetOfProfilingActivation()));
 
         
-        masm.loadPtr(Address(reg1, JitActivation::offsetOfPrevJitActivation()), reg2);
-        masm.storePtr(reg2, Address(reg0, offsetOfJitActivation));
+        masm.store8(Imm32(0), Address(act, JitActivation::offsetOfActiveUint8()));
     }
 
     
