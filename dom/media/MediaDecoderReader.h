@@ -79,7 +79,7 @@ public:
     MozPromise<RefPtr<MediaData>, NotDecodedReason, IsExclusive>;
   using VideoDataPromise =
     MozPromise<RefPtr<MediaData>, NotDecodedReason, IsExclusive>;
-  using SeekPromise = MozPromise<int64_t, nsresult, IsExclusive>;
+  using SeekPromise = MozPromise<media::TimeUnit, nsresult, IsExclusive>;
 
   
   

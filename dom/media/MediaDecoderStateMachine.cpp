@@ -1648,7 +1648,7 @@ MediaDecoderStateMachine::InitiateSeek()
                                  &MediaDecoderReader::Seek, seekTarget,
                                  Duration().ToMicroseconds())
     ->Then(OwnerThread(), __func__,
-           [self] (int64_t) -> void {
+           [self] (media::TimeUnit) -> void {
              self->mSeekRequest.Complete();
              
              
