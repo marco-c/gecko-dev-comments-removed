@@ -12,7 +12,8 @@
 #include "gfxPlatform.h"                
 #include "gfxUtils.h"                   
 #include "mozilla/mozalloc.h"           
-#include "nsAutoPtr.h"                  
+#include "mozilla/RefPtr.h"
+#include "mozilla/UniquePtr.h"
 #include "nsAutoRef.h"                  
 #include "nsCOMPtr.h"                   
 #include "nsDebug.h"                    
@@ -44,7 +45,7 @@ public:
     if (mDecodedBuffer) {
       
       
-      mRecycleBin->RecycleBuffer(mDecodedBuffer.forget(), mSize.height * mStride);
+      mRecycleBin->RecycleBuffer(Move(mDecodedBuffer), mSize.height * mStride);
     }
   }
 
@@ -61,12 +62,12 @@ public:
   virtual size_t SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const override
   {
     size_t size = RecyclingPlanarYCbCrImage::SizeOfExcludingThis(aMallocSizeOf);
-    size += mDecodedBuffer.SizeOfExcludingThis(aMallocSizeOf);
+    size += aMallocSizeOf(mDecodedBuffer.get());
     return size;
   }
 
 private:
-  nsAutoArrayPtr<uint8_t> mDecodedBuffer;
+  UniquePtr<uint8_t[]> mDecodedBuffer;
   gfx::IntSize mScaleHint;
   int mStride;
   bool mDelayedConversion;
@@ -125,7 +126,7 @@ BasicPlanarYCbCrImage::SetData(const Data& aData)
     return false;
   }
 
-  gfx::ConvertYCbCrToRGB(aData, format, size, mDecodedBuffer, mStride);
+  gfx::ConvertYCbCrToRGB(aData, format, size, mDecodedBuffer.get(), mStride);
   SetOffscreenFormat(iFormat);
   mSize = size;
 
@@ -154,7 +155,7 @@ BasicPlanarYCbCrImage::GetAsSourceSurface()
     
     
     RefPtr<gfx::DrawTarget> drawTarget
-      = gfxPlatform::GetPlatform()->CreateDrawTargetForData(mDecodedBuffer,
+      = gfxPlatform::GetPlatform()->CreateDrawTargetForData(mDecodedBuffer.get(),
                                                             mSize,
                                                             mStride,
                                                             gfx::ImageFormatToSurfaceFormat(format));
@@ -165,7 +166,7 @@ BasicPlanarYCbCrImage::GetAsSourceSurface()
     surface = drawTarget->Snapshot();
   }
 
-  mRecycleBin->RecycleBuffer(mDecodedBuffer.forget(), mSize.height * mStride);
+  mRecycleBin->RecycleBuffer(Move(mDecodedBuffer), mSize.height * mStride);
 
   mSourceSurface = surface;
   return surface.forget();

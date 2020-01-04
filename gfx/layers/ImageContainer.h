@@ -30,6 +30,7 @@
 #include "mozilla/gfx/2D.h"
 #include "nsDataHashtable.h"
 #include "mozilla/EnumeratedArray.h"
+#include "mozilla/UniquePtr.h"
 
 #ifndef XPCOM_GLUE_AVOID_NSPR
 
@@ -203,9 +204,9 @@ class BufferRecycleBin final {
 public:
   BufferRecycleBin();
 
-  void RecycleBuffer(uint8_t* aBuffer, uint32_t aSize);
+  void RecycleBuffer(mozilla::UniquePtr<uint8_t[]> aBuffer, uint32_t aSize);
   
-  uint8_t* GetBuffer(uint32_t aSize);
+  mozilla::UniquePtr<uint8_t[]> GetBuffer(uint32_t aSize);
 
 private:
   typedef mozilla::Mutex Mutex;
@@ -221,7 +222,7 @@ private:
 
   
   
-  nsTArray<nsAutoArrayPtr<uint8_t> > mRecycledBuffers;
+  nsTArray<mozilla::UniquePtr<uint8_t[]>> mRecycledBuffers;
   
   uint32_t mRecycledBufferSize;
 };
@@ -734,12 +735,10 @@ protected:
   
 
 
-
-
-  uint8_t* AllocateBuffer(uint32_t aSize);
+  mozilla::UniquePtr<uint8_t[]> AllocateBuffer(uint32_t aSize);
 
   RefPtr<BufferRecycleBin> mRecycleBin;
-  nsAutoArrayPtr<uint8_t> mBuffer;
+  mozilla::UniquePtr<uint8_t[]> mBuffer;
 };
 
 
