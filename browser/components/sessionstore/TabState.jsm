@@ -151,26 +151,25 @@ var TabStateInternal = {
 
 
   _collectBaseTabData: function (tab, options) {
-    let tabData = {entries: [], lastAccessed: tab.lastAccessed };
+    let tabData = { entries: [], lastAccessed: tab.lastAccessed };
     let browser = tab.linkedBrowser;
 
-    if (tab.pinned)
+    if (tab.pinned) {
       tabData.pinned = true;
-    else
-      delete tabData.pinned;
+    }
+
     tabData.hidden = tab.hidden;
-    if (browser.audioMuted)
+
+    if (browser.audioMuted) {
       tabData.muted = true;
-    else
-      delete tabData.muted;
+    }
 
     
     tabData.attributes = TabAttributes.get(tab);
 
-    if (tab.__SS_extdata)
+    if (tab.__SS_extdata) {
       tabData.extData = tab.__SS_extdata;
-    else if (tabData.extData)
-      delete tabData.extData;
+    }
 
     
     
