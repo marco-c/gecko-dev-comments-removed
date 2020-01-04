@@ -390,6 +390,8 @@ static bool
 RequiresAdditiveAnimation(const nsTArray<Keyframe>& aKeyframes,
                           nsIDocument* aDocument);
 
+static void
+DistributeRange(const Range<Keyframe>& aKeyframes);
 
 
 
@@ -456,7 +458,8 @@ KeyframeUtils::GetKeyframesFromObject(JSContext* aCx,
 }
 
  void
-KeyframeUtils::ApplyDistributeSpacing(nsTArray<Keyframe>& aKeyframes)
+KeyframeUtils::ApplySpacing(nsTArray<Keyframe>& aKeyframes,
+                            SpacingMode aSpacingMode)
 {
   if (aKeyframes.IsEmpty()) {
     return;
@@ -464,30 +467,36 @@ KeyframeUtils::ApplyDistributeSpacing(nsTArray<Keyframe>& aKeyframes)
 
   
   
-  
-  Keyframe& lastElement = aKeyframes.LastElement();
-  lastElement.mComputedOffset = lastElement.mOffset.valueOr(1.0);
   if (aKeyframes.Length() > 1) {
     Keyframe& firstElement = aKeyframes[0];
     firstElement.mComputedOffset = firstElement.mOffset.valueOr(0.0);
+    
+  } else {
+    Keyframe& lastElement = aKeyframes.LastElement();
+    lastElement.mComputedOffset = lastElement.mOffset.valueOr(1.0);
   }
 
   
-  size_t i = 0;
-  while (i < aKeyframes.Length() - 1) {
-    double start = aKeyframes[i].mComputedOffset;
-    size_t j = i + 1;
-    while (aKeyframes[j].mOffset.isNothing() && j < aKeyframes.Length() - 1) {
-      ++j;
+  const Keyframe* const last = aKeyframes.cend() - 1;
+  RangedPtr<Keyframe> keyframeA(aKeyframes.begin(), aKeyframes.Length());
+  while (keyframeA != last) {
+    
+    RangedPtr<Keyframe> keyframeB = keyframeA + 1;
+    while (keyframeB.get()->mOffset.isNothing() && keyframeB != last) {
+      ++keyframeB;
     }
-    double end = aKeyframes[j].mOffset.valueOr(1.0);
-    size_t n = j - i;
-    for (size_t k = 1; k < n; ++k) {
-      double offset = start + double(k) / n * (end - start);
-      aKeyframes[i + k].mComputedOffset = offset;
+    keyframeB.get()->mComputedOffset = keyframeB.get()->mOffset.valueOr(1.0);
+
+    
+    if (aSpacingMode == SpacingMode::distribute) {
+      DistributeRange(Range<Keyframe>(keyframeA.get(),
+                                      keyframeB - keyframeA + 1));
+    } else {
+      
+      MOZ_ASSERT(false, "not implement yet");
     }
-    i = j;
-    aKeyframes[j].mComputedOffset = end;
+
+    keyframeA = keyframeB;
   }
 }
 
@@ -1323,6 +1332,25 @@ RequiresAdditiveAnimation(const nsTArray<Keyframe>& aKeyframes,
 
   return !propertiesWithFromValue.Equals(properties) ||
          !propertiesWithToValue.Equals(properties);
+}
+
+
+
+
+
+
+
+
+
+static void
+DistributeRange(const Range<Keyframe>& aKeyframes)
+{
+  const size_t n = aKeyframes.length() - 1;
+  const double startOffset = aKeyframes[0].mComputedOffset;
+  const double diffOffset = aKeyframes[n].mComputedOffset - startOffset;
+  for (size_t i = 1; i < n; ++i) {
+    aKeyframes[i].mComputedOffset = startOffset + double(i) / n * diffOffset;
+  }
 }
 
 } 
