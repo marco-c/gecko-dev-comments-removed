@@ -122,6 +122,8 @@ public:
     nsIXULBrowserWindow* GetXULBrowserWindow();
 
     void Destroy();
+    void Detach();
+    void Attach(nsFrameLoader* aFrameLoader);
 
     void RemoveWindowListeners();
     void AddWindowListeners();
@@ -516,6 +518,8 @@ private:
     bool mMarkedDestroying;
     
     bool mIsDestroyed;
+    
+    bool mIsDetached;
     
     bool mAppPackageFileDescriptorSent;
 

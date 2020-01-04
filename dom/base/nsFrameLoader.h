@@ -181,6 +181,8 @@ public:
 
   void SetRemoteBrowser(nsITabParent* aTabParent);
 
+  nsresult SwapRemoteBrowser(nsITabParent* aTabParent);
+
   
 
 
