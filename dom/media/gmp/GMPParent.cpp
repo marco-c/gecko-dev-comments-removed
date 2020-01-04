@@ -35,6 +35,10 @@ using CrashReporter::GetIDFromMinidump;
 
 #include "mozilla/Telemetry.h"
 
+#ifdef XP_WIN
+#include "WMFDecoderModule.h"
+#endif
+
 #ifdef MOZ_WIDEVINE_EME
 #include "mozilla/dom/WidevineCDMManifestBinding.h"
 #include "widevine-adapter/WidevineAdapter.h"
@@ -877,17 +881,31 @@ GMPParent::ReadGMPInfoFile(nsIFile* aFile)
       
       
       
-      for (const nsCString& tag : cap.mAPITags) {
-        if (!tag.EqualsLiteral("com.adobe.primetime")) {
-          continue;
-        }
-        if (!mozilla::supports_sse2()) {
-          return InitPromise::CreateAndReject(NS_ERROR_FAILURE, __func__);
-        }
-        break;
+      if (cap.mAPITags.Contains(NS_LITERAL_CSTRING("com.adobe.primetime")) &&
+          !mozilla::supports_sse2()) {
+        return InitPromise::CreateAndReject(NS_ERROR_FAILURE, __func__);
       }
 #endif 
     }
+
+#ifdef XP_WIN
+    
+    
+    
+    
+    
+    
+    if (cap.mAPIName.EqualsLiteral(GMP_API_VIDEO_DECODER) &&
+        cap.mAPITags.Contains(NS_LITERAL_CSTRING("org.w3.clearkey")) &&
+        !WMFDecoderModule::HasH264()) {
+      continue;
+    }
+    if (cap.mAPIName.EqualsLiteral(GMP_API_AUDIO_DECODER) &&
+        cap.mAPITags.Contains(NS_LITERAL_CSTRING("org.w3.clearkey")) &&
+        !WMFDecoderModule::HasAAC()) {
+      continue;
+    }
+#endif
 
     mCapabilities.AppendElement(Move(cap));
   }
