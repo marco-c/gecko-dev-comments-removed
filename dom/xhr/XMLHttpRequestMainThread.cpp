@@ -1535,7 +1535,10 @@ XMLHttpRequestMainThread::OpenInternal(const nsACString& aMethod,
   mFlagAborted = false;
   mFlagTimedOut = false;
 
-  rv = InitChannel();
+  
+  
+  
+  rv = CreateChannel();
   NS_ENSURE_SUCCESS(rv, rv);
 
   
@@ -2336,7 +2339,7 @@ XMLHttpRequestMainThread::RequestBody<const ArrayBufferView>::GetAsStream(
 
 
 nsresult
-XMLHttpRequestMainThread::InitChannel()
+XMLHttpRequestMainThread::CreateChannel()
 {
   
   
@@ -2404,6 +2407,205 @@ XMLHttpRequestMainThread::InitChannel()
     nsCOMPtr<nsITimedChannel> timedChannel(do_QueryInterface(httpChannel));
     if (timedChannel) {
       timedChannel->SetInitiatorType(NS_LITERAL_STRING("xmlhttprequest"));
+    }
+  }
+
+  return NS_OK;
+}
+
+nsresult
+XMLHttpRequestMainThread::InitiateFetch(nsIInputStream* aUploadStream,
+                                        int64_t aUploadLength,
+                                        nsACString& aUploadContentType)
+{
+  nsresult rv;
+
+  
+  
+  
+  
+  if (HasListenersFor(nsGkAtoms::onprogress) ||
+      (mUpload && mUpload->HasListenersFor(nsGkAtoms::onprogress))) {
+    nsLoadFlags loadFlags;
+    mChannel->GetLoadFlags(&loadFlags);
+    loadFlags &= ~nsIRequest::LOAD_BACKGROUND;
+    loadFlags |= nsIRequest::LOAD_NORMAL;
+    mChannel->SetLoadFlags(loadFlags);
+  }
+
+  nsCOMPtr<nsIHttpChannel> httpChannel(do_QueryInterface(mChannel));
+  if (httpChannel) {
+    
+    if (!mAuthorRequestHeaders.Has("accept")) {
+      mAuthorRequestHeaders.Set("accept", NS_LITERAL_CSTRING("*/*"));
+    }
+
+    mAuthorRequestHeaders.ApplyToChannel(httpChannel);
+
+    if (!IsSystemXHR()) {
+      nsCOMPtr<nsPIDOMWindowInner> owner = GetOwner();
+      nsCOMPtr<nsIDocument> doc = owner ? owner->GetExtantDoc() : nullptr;
+      nsContentUtils::SetFetchReferrerURIWithPolicy(mPrincipal, doc,
+                                                    httpChannel,
+                                                    mozilla::net::RP_Default);
+    }
+
+    
+    
+    
+    
+    
+    nsCOMPtr<nsIUploadChannel2> uploadChannel2 = do_QueryInterface(httpChannel);
+    if (!uploadChannel2) {
+      nsCOMPtr<nsIConsoleService> consoleService =
+        do_GetService(NS_CONSOLESERVICE_CONTRACTID);
+      if (consoleService) {
+        consoleService->LogStringMessage(NS_LITERAL_STRING(
+          "Http channel implementation doesn't support nsIUploadChannel2. "
+          "An extension has supplied a non-functional http protocol handler. "
+          "This will break behavior and in future releases not work at all."
+        ).get());
+      }
+    }
+
+    if (aUploadStream) {
+      
+      
+      nsCOMPtr<nsIInputStream> bufferedStream;
+      if (!NS_InputStreamIsBuffered(aUploadStream)) {
+        rv = NS_NewBufferedInputStream(getter_AddRefs(bufferedStream),
+                                       aUploadStream, 4096);
+        NS_ENSURE_SUCCESS(rv, rv);
+
+        aUploadStream = bufferedStream;
+      }
+
+      
+      
+      nsCOMPtr<nsIUploadChannel2> uploadChannel2(do_QueryInterface(httpChannel));
+      
+      NS_ASSERTION(uploadChannel2, "http must support nsIUploadChannel2");
+      if (uploadChannel2) {
+          uploadChannel2->ExplicitSetUploadStream(aUploadStream,
+                                                  aUploadContentType,
+                                                  mUploadTotal, mRequestMethod,
+                                                  false);
+      } else {
+        
+        
+        if (aUploadContentType.IsEmpty()) {
+          aUploadContentType.AssignLiteral("application/octet-stream");
+        }
+        nsCOMPtr<nsIUploadChannel> uploadChannel =
+          do_QueryInterface(httpChannel);
+        uploadChannel->SetUploadStream(aUploadStream, aUploadContentType,
+                                       mUploadTotal);
+        
+        httpChannel->SetRequestMethod(mRequestMethod);
+      }
+    }
+  }
+
+  
+  
+  
+  
+  if (!IsSystemXHR() && !mIsAnon && mFlagACwithCredentials) {
+    nsCOMPtr<nsILoadInfo> loadInfo = mChannel->GetLoadInfo();
+    static_cast<net::LoadInfo*>(loadInfo.get())->SetIncludeCookiesSecFlag();
+  }
+
+  
+  
+  AddLoadFlags(mChannel, nsIRequest::INHIBIT_PIPELINE);
+
+  
+  
+  nsCOMPtr<nsIClassOfService> cos(do_QueryInterface(mChannel));
+  if (cos) {
+    cos->AddClassFlags(nsIClassOfService::Unblocked);
+  }
+
+  
+  nsCOMPtr<nsIHttpChannelInternal>
+    internalHttpChannel(do_QueryInterface(mChannel));
+  if (internalHttpChannel) {
+    internalHttpChannel->SetResponseTimeoutEnabled(false);
+  }
+
+  if (!mIsAnon) {
+    AddLoadFlags(mChannel, nsIChannel::LOAD_EXPLICIT_CREDENTIALS);
+  }
+
+  
+  
+  
+  
+  if (mRequestMethod.EqualsLiteral("POST")) {
+    AddLoadFlags(mChannel,
+                 nsICachingChannel::LOAD_BYPASS_LOCAL_CACHE |
+                 nsIRequest::INHIBIT_CACHING);
+  } else {
+    
+    
+    
+    
+    
+    
+    
+    
+    AddLoadFlags(mChannel, nsICachingChannel::LOAD_BYPASS_LOCAL_CACHE_IF_BUSY);
+  }
+
+  
+  
+  
+  
+  nsAutoCString contentType;
+  if (NS_FAILED(mChannel->GetContentType(contentType)) ||
+      contentType.IsEmpty() ||
+      contentType.Equals(UNKNOWN_CONTENT_TYPE)) {
+    mChannel->SetContentType(NS_LITERAL_CSTRING("application/xml"));
+  }
+
+  
+  if (!IsSystemXHR()) {
+    nsTArray<nsCString> CORSUnsafeHeaders;
+    mAuthorRequestHeaders.GetCORSUnsafeHeaders(CORSUnsafeHeaders);
+    nsCOMPtr<nsILoadInfo> loadInfo = mChannel->GetLoadInfo();
+    loadInfo->SetCorsPreflightInfo(CORSUnsafeHeaders,
+                                   mFlagHadUploadListenersOnSend);
+  }
+
+  
+  
+  
+  mChannel->GetNotificationCallbacks(getter_AddRefs(mNotificationCallbacks));
+  mChannel->SetNotificationCallbacks(this);
+
+  if (internalHttpChannel) {
+    internalHttpChannel->SetBlockAuthPrompt(ShouldBlockAuthPrompt());
+  }
+
+  
+  
+  
+  nsCOMPtr<nsIStreamListener> listener = new net::nsStreamListenerWrapper(this);
+
+  
+  rv = mChannel->AsyncOpen2(listener);
+  listener = nullptr;
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    
+    
+    mChannel->SetNotificationCallbacks(mNotificationCallbacks);
+    mChannel = nullptr;
+
+    mErrorLoad = true;
+
+    
+    if (mFlagSynchronous) {
+      return rv;
     }
   }
 
@@ -2511,62 +2713,6 @@ XMLHttpRequestMainThread::SendInternal(const RequestBodyBase* aBody)
   
   
   
-  
-  if (HasListenersFor(nsGkAtoms::onprogress) ||
-      (mUpload && mUpload->HasListenersFor(nsGkAtoms::onprogress))) {
-    nsLoadFlags loadFlags;
-    mChannel->GetLoadFlags(&loadFlags);
-    loadFlags &= ~nsIRequest::LOAD_BACKGROUND;
-    loadFlags |= nsIRequest::LOAD_NORMAL;
-    mChannel->SetLoadFlags(loadFlags);
-  }
-
-  
-  
-  
-
-  
-  
-  nsAutoCString method;
-  nsCOMPtr<nsIHttpChannel> httpChannel(do_QueryInterface(mChannel));
-
-  if (httpChannel) {
-    
-    if (!mAuthorRequestHeaders.Has("accept")) {
-      mAuthorRequestHeaders.Set("Accept", NS_LITERAL_CSTRING("*/*"));
-    }
-
-    
-    mAuthorRequestHeaders.ApplyToChannel(httpChannel);
-
-    httpChannel->GetRequestMethod(method); 
-
-    if (!IsSystemXHR()) {
-      nsCOMPtr<nsPIDOMWindowInner> owner = GetOwner();
-      nsCOMPtr<nsIDocument> doc = owner ? owner->GetExtantDoc() : nullptr;
-      nsContentUtils::SetFetchReferrerURIWithPolicy(mPrincipal, doc,
-                                                    httpChannel, mozilla::net::RP_Default);
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    nsCOMPtr<nsIUploadChannel2> uploadChannel2 =
-      do_QueryInterface(httpChannel);
-    if (!uploadChannel2) {
-      nsCOMPtr<nsIConsoleService> consoleService =
-        do_GetService(NS_CONSOLESERVICE_CONTRACTID);
-      if (consoleService) {
-        consoleService->LogStringMessage(NS_LITERAL_STRING(
-          "Http channel implementation doesn't support nsIUploadChannel2. An extension has supplied a non-functional http protocol handler. This will break behavior and in future releases not work at all."
-                                                           ).get());
-      }
-    }
-  }
 
   mUploadTransferred = 0;
   mUploadTotal = 0;
@@ -2574,16 +2720,17 @@ XMLHttpRequestMainThread::SendInternal(const RequestBodyBase* aBody)
   mUploadComplete = true;
   mErrorLoad = false;
   mLoadTotal = 0;
+  nsCOMPtr<nsIInputStream> uploadStream;
+  nsAutoCString uploadContentType;
+  nsCOMPtr<nsIHttpChannel> httpChannel(do_QueryInterface(mChannel));
   if (aBody && httpChannel &&
-      !method.LowerCaseEqualsLiteral("get") &&
-      !method.LowerCaseEqualsLiteral("head")) {
+      !mRequestMethod.EqualsLiteral("GET") &&
+      !mRequestMethod.EqualsLiteral("HEAD")) {
 
     nsAutoCString charset;
     nsAutoCString defaultContentType;
-    nsCOMPtr<nsIInputStream> postDataStream;
-
     uint64_t size_u64;
-    rv = aBody->GetAsStream(getter_AddRefs(postDataStream),
+    rv = aBody->GetAsStream(getter_AddRefs(uploadStream),
                             &size_u64, defaultContentType, charset);
     NS_ENSURE_SUCCESS(rv, rv);
 
@@ -2591,19 +2738,17 @@ XMLHttpRequestMainThread::SendInternal(const RequestBodyBase* aBody)
     mUploadTotal =
       net::InScriptableRange(size_u64) ? static_cast<int64_t>(size_u64) : -1;
 
-    if (postDataStream) {
+    if (uploadStream) {
       
-      nsAutoCString contentType;
-
-      mAuthorRequestHeaders.Get("content-type", contentType);
-      if (contentType.IsVoid()) {
-        contentType = defaultContentType;
+      mAuthorRequestHeaders.Get("content-type", uploadContentType);
+      if (uploadContentType.IsVoid()) {
+        uploadContentType = defaultContentType;
 
         if (!charset.IsEmpty()) {
           
           
-          contentType.Append(NS_LITERAL_CSTRING(";charset="));
-          contentType.Append(charset);
+          uploadContentType.Append(NS_LITERAL_CSTRING(";charset="));
+          uploadContentType.Append(charset);
         }
       }
 
@@ -2611,7 +2756,7 @@ XMLHttpRequestMainThread::SendInternal(const RequestBodyBase* aBody)
       if (!charset.IsEmpty()) {
         
         
-        RequestHeaders::CharsetIterator iter(contentType);
+        RequestHeaders::CharsetIterator iter(uploadContentType);
         const nsCaseInsensitiveCStringComparator cmp;
         while (iter.Next()) {
           if (!iter.Equals(charset, cmp)) {
@@ -2620,130 +2765,15 @@ XMLHttpRequestMainThread::SendInternal(const RequestBodyBase* aBody)
         }
       }
 
-      
-      
-      if (!NS_InputStreamIsBuffered(postDataStream)) {
-        nsCOMPtr<nsIInputStream> bufferedStream;
-        rv = NS_NewBufferedInputStream(getter_AddRefs(bufferedStream),
-                                       postDataStream,
-                                       4096);
-        NS_ENSURE_SUCCESS(rv, rv);
-
-        postDataStream = bufferedStream;
-      }
-
       mUploadComplete = false;
-
-      
-      
-      nsCOMPtr<nsIUploadChannel2> uploadChannel2(do_QueryInterface(httpChannel));
-      
-      NS_ASSERTION(uploadChannel2, "http must support nsIUploadChannel2");
-      if (uploadChannel2) {
-          uploadChannel2->ExplicitSetUploadStream(postDataStream, contentType,
-                                                 mUploadTotal, method, false);
-      }
-      else {
-        
-        
-        if (contentType.IsEmpty()) {
-          contentType.AssignLiteral("application/octet-stream");
-        }
-        nsCOMPtr<nsIUploadChannel> uploadChannel =
-          do_QueryInterface(httpChannel);
-        uploadChannel->SetUploadStream(postDataStream, contentType, mUploadTotal);
-        
-        httpChannel->SetRequestMethod(method);
-      }
     }
   }
 
   ResetResponse();
 
-  if (!IsSystemXHR() && !mIsAnon && mFlagACwithCredentials) {
-    
-    
-    
-    
-    
-
-    
-    nsCOMPtr<nsILoadInfo> loadInfo = mChannel->GetLoadInfo();
-    static_cast<net::LoadInfo*>(loadInfo.get())->SetIncludeCookiesSecFlag();
-  }
-
-  
-  
-  AddLoadFlags(mChannel, nsIRequest::INHIBIT_PIPELINE);
-
-  nsCOMPtr<nsIClassOfService> cos(do_QueryInterface(mChannel));
-  if (cos) {
-    
-    
-    
-    cos->AddClassFlags(nsIClassOfService::Unblocked);
-  }
-
-  nsCOMPtr<nsIHttpChannelInternal>
-    internalHttpChannel(do_QueryInterface(mChannel));
-  if (internalHttpChannel) {
-    
-    internalHttpChannel->SetResponseTimeoutEnabled(false);
-  }
-
-  if (!mIsAnon) {
-    AddLoadFlags(mChannel, nsIChannel::LOAD_EXPLICIT_CREDENTIALS);
-  }
-
-  
-  
-  
-  
-  if (method.EqualsLiteral("POST")) {
-    AddLoadFlags(mChannel,
-                 nsICachingChannel::LOAD_BYPASS_LOCAL_CACHE |
-                 nsIRequest::INHIBIT_CACHING);
-  } else {
-    
-    
-    
-    
-    
-    
-    
-    
-
-    AddLoadFlags(mChannel,
-                 nsICachingChannel::LOAD_BYPASS_LOCAL_CACHE_IF_BUSY);
-  }
-
-  
-  
-  
-  
-  nsAutoCString contentType;
-  if (NS_FAILED(mChannel->GetContentType(contentType)) ||
-      contentType.IsEmpty() ||
-      contentType.Equals(UNKNOWN_CONTENT_TYPE)) {
-    mChannel->SetContentType(NS_LITERAL_CSTRING("application/xml"));
-  }
-
-  
-  mRequestSentTime = PR_Now();
-  StartTimeoutTimer();
-
   
   if (mUpload && mUpload->HasListeners()) {
     mFlagHadUploadListenersOnSend = true;
-  }
-
-  
-  if (!IsSystemXHR()) {
-    nsTArray<nsCString> CORSUnsafeHeaders;
-    mAuthorRequestHeaders.GetCORSUnsafeHeaders(CORSUnsafeHeaders);
-    nsCOMPtr<nsILoadInfo> loadInfo = mChannel->GetLoadInfo();
-    loadInfo->SetCorsPreflightInfo(CORSUnsafeHeaders,
-                                   mFlagHadUploadListenersOnSend);
   }
 
   mIsMappedArrayBuffer = false;
@@ -2762,38 +2792,12 @@ XMLHttpRequestMainThread::SendInternal(const RequestBodyBase* aBody)
     }
   }
 
-  
-  
-  
-  
-  mChannel->GetNotificationCallbacks(getter_AddRefs(mNotificationCallbacks));
-  mChannel->SetNotificationCallbacks(this);
-
-  if (internalHttpChannel) {
-    internalHttpChannel->SetBlockAuthPrompt(ShouldBlockAuthPrompt());
-  }
+  rv = InitiateFetch(uploadStream, mUploadTotal, uploadContentType);
+  NS_ENSURE_SUCCESS(rv, rv);
 
   
-  
-  
-  
-  nsCOMPtr<nsIStreamListener> listener = new net::nsStreamListenerWrapper(this);
-  rv = mChannel->AsyncOpen2(listener);
-  listener = nullptr;
-
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    
-    
-    mChannel->SetNotificationCallbacks(mNotificationCallbacks);
-    mChannel = nullptr;
-
-    mErrorLoad = true;
-
-    
-    if (mFlagSynchronous) {
-      return rv;
-    }
-  }
+  mRequestSentTime = PR_Now();
+  StartTimeoutTimer();
 
   mWaitingForOnStopRequest = true;
 
