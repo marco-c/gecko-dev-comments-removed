@@ -18,7 +18,6 @@ XPCOMUtils.defineLazyGetter(this, "kDebug", () => {
   return Services.prefs.getPrefType(kDebugPref) && Services.prefs.getBoolPref(kDebugPref);
 });
 
-const kContentChangeThresholdPx = 5;
 const kModalHighlightRepaintFreqMs = 10;
 const kHighlightAllPref = "findbar.highlightAll";
 const kModalHighlightPref = "findbar.modalHighlight";
@@ -208,12 +207,14 @@ FinderHighlighter.prototype = {
     let window = this.finder._getWindow();
     let controller = this.finder._getSelectionController(window);
     let doc = window.document;
-    this._found = false;
+    let found = false;
+
+    this.clear();
 
     if (!controller || !doc || !doc.documentElement) {
       
       
-      return this._found;
+      return found;
     }
 
     if (highlight) {
@@ -222,49 +223,40 @@ FinderHighlighter.prototype = {
         entireWord: this.finder._fastFind.entireWord,
         linksOnly, word,
         finder: this.finder,
-        listener: this,
+        onRange: range => {
+          this.highlightRange(range, controller, window);
+          found = true;
+        },
         useCache: true
       });
-      if (this._found)
+      if (found)
         this.finder._outlineLink(true);
     } else {
       this.hide(window);
+      this.clear();
+      this.iterator.reset();
 
       
-      this._found = true;
+      found = true;
     }
 
-    return this._found;
+    return found;
   }),
 
   
 
-  onIteratorBeforeRestart() {
-    this.clear();
-  },
-
-  onIteratorRangeFound(range) {
-    this.highlightRange(range);
-    this._found = true;
-  },
-
-  onIteratorReset() {
-    this.clear();
-  },
-
-  onIteratorRestart() {},
-
-  
 
 
 
 
 
-  highlightRange(range) {
+
+
+
+
+  highlightRange(range, controller, window) {
     let node = range.startContainer;
     let editableNode = this._getEditableNode(node);
-    let window = node.ownerDocument.defaultView;
-    let controller = this.finder._getSelectionController(window);
     if (editableNode) {
       controller = editableNode.editor.selectionController;
     }
@@ -459,8 +451,6 @@ FinderHighlighter.prototype = {
 
 
   onLocationChange() {
-    this.clear();
-
     if (!this._modalHighlightOutline)
       return;
 
@@ -750,14 +740,13 @@ FinderHighlighter.prototype = {
 
     
     let {width, height} = this._getWindowDimensions(window);
-    this._lastWindowDimensions = { width, height };
     maskNode.setAttribute("id", kMaskId);
     maskNode.setAttribute("class", kMaskId + (kDebug ? ` ${kModalIdPrefix}-findbar-debug` : ""));
     maskNode.setAttribute("style", `width: ${width}px; height: ${height}px;`);
     if (this._brightText)
       maskNode.setAttribute("brighttext", "true");
 
-    if (paintContent || this._modalHighlightAllMask) {
+    if (paintContent) {
       
       let maskContent = [];
       const kRectClassName = kModalIdPrefix + "-findbar-modalHighlight-rect";
@@ -806,36 +795,11 @@ FinderHighlighter.prototype = {
 
 
 
-
-
-
-  _scheduleRepaintOfMask(window, contentChanged = false) {
+  _scheduleRepaintOfMask(window) {
     if (this._modalRepaintScheduler)
       window.clearTimeout(this._modalRepaintScheduler);
-
-    
-    
-    if (!this._unconditionalRepaintRequested)
-      this._unconditionalRepaintRequested = !contentChanged;
-
-    this._modalRepaintScheduler = window.setTimeout(() => {
-      if (this._unconditionalRepaintRequested) {
-        this._unconditionalRepaintRequested = false;
-        this._repaintHighlightAllMask(window);
-        return;
-      }
-
-      let { width, height } = this._getWindowDimensions(window);
-      if (!this._modalHighlightRectsMap ||
-          (Math.abs(this._lastWindowDimensions.width - width) < kContentChangeThresholdPx &&
-           Math.abs(this._lastWindowDimensions.height - height) < kContentChangeThresholdPx)) {
-        return;
-      }
-
-      this.iterator.restart(this.finder);
-      this._lastWindowDimensions = { width, height };
-      this._repaintHighlightAllMask(window);
-    }, kModalHighlightRepaintFreqMs);
+    this._modalRepaintScheduler = window.setTimeout(
+      this._repaintHighlightAllMask.bind(this, window), kModalHighlightRepaintFreqMs);
   },
 
   
@@ -874,12 +838,12 @@ FinderHighlighter.prototype = {
       return;
 
     this._highlightListeners = [
-      this._scheduleRepaintOfMask.bind(this, window, true),
+      this._scheduleRepaintOfMask.bind(this, window),
       this.hide.bind(this, window, null)
     ];
-    let target = this.iterator._getDocShell(window).chromeEventHandler;
-    target.addEventListener("MozAfterPaint", this._highlightListeners[0]);
+    window.addEventListener("DOMContentLoaded", this._highlightListeners[0]);
     window.addEventListener("click", this._highlightListeners[1]);
+    window.addEventListener("resize", this._highlightListeners[1]);
   },
 
   
@@ -891,9 +855,9 @@ FinderHighlighter.prototype = {
     if (!this._highlightListeners)
       return;
 
-    let target = this.iterator._getDocShell(window).chromeEventHandler;
-    target.removeEventListener("MozAfterPaint", this._highlightListeners[0]);
+    window.removeEventListener("DOMContentLoaded", this._highlightListeners[0]);
     window.removeEventListener("click", this._highlightListeners[1]);
+    window.removeEventListener("resize", this._highlightListeners[1]);
 
     this._highlightListeners = null;
   },
