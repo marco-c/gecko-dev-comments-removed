@@ -1,30 +1,24 @@
 
 
 
-"use strict";
-
-
-
 
 function test() {
   
   waitForExplicitFinish();
-
   let aboutNewTabService = Components.classes["@mozilla.org/browser/aboutnewtab-service;1"]
                                      .getService(Components.interfaces.nsIAboutNewTabService);
   let newTabURL;
   let testURL = "http://example.com/";
-  let defaultURL = aboutNewTabService.newTabURL;
   let mode;
 
   function doTest(aIsPrivateMode, aWindow, aCallback) {
-    openNewTab(aWindow, function() {
+    openNewTab(aWindow, function () {
       if (aIsPrivateMode) {
         mode = "per window private browsing";
         newTabURL = "about:privatebrowsing";
       } else {
         mode = "normal";
-        newTabURL = "about:newtab";
+        newTabURL = aboutNewTabService.newTabURL;
       }
 
       
@@ -35,18 +29,18 @@ function test() {
       is(aboutNewTabService.newTabURL, testURL, "Custom newtab url is set");
 
       
-      openNewTab(aWindow, function() {
+      openNewTab(aWindow, function () {
         is(aWindow.gBrowser.selectedBrowser.currentURI.spec, testURL,
            "URL of NewTab should be the custom url");
 
         
         aboutNewTabService.resetNewTabURL();
-        is(aboutNewTabService.newTabURL, defaultURL, "No custom newtab url is set");
+        is(aboutNewTabService.newTabURL, "about:newtab", "No custom newtab url is set");
 
         aWindow.gBrowser.removeTab(aWindow.gBrowser.selectedTab);
         aWindow.gBrowser.removeTab(aWindow.gBrowser.selectedTab);
         aWindow.close();
-        aCallback();
+        aCallback()
       });
     });
   }
@@ -78,7 +72,7 @@ function openNewTab(aWindow, aCallback) {
   aWindow.BrowserOpenTab();
 
   let browser = aWindow.gBrowser.selectedBrowser;
-  if (browser.contentDocument.readyState === "complete") {
+  if (browser.contentDocument.readyState == "complete") {
     executeSoon(aCallback);
     return;
   }
