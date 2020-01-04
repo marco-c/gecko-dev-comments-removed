@@ -5,6 +5,7 @@
 
 package org.mozilla.gecko;
 
+import android.content.Intent;
 import android.os.Bundle;
 
 import org.mozilla.gecko.tabs.TabsPanel;
@@ -58,4 +59,13 @@ public abstract class BrowserAppDelegate {
 
 
     public void onTabsTrayHidden(BrowserApp browserApp, TabsPanel tabsPanel) {}
+
+    
+
+
+
+
+
+    public void onActivityResult(BrowserApp browserApp, int requestCode, int resultCode, Intent data) {}
 }
+
