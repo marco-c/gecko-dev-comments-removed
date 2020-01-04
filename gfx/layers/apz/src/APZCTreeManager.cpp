@@ -1357,7 +1357,6 @@ TransformDisplacement(APZCTreeManager* aTreeManager,
   ScreenPoint screenStart = TransformBy(untransformToApzc, aStartPoint);
   ScreenPoint screenEnd = TransformBy(untransformToApzc, aEndPoint);
 
-
   
   ScreenToParentLayerMatrix4x4 transformToApzc = aTreeManager->GetScreenToApzcTransform(aTarget);
   Maybe<ParentLayerPoint> startPoint = UntransformBy(transformToApzc, screenStart);
@@ -1416,13 +1415,15 @@ APZCTreeManager::DispatchScroll(AsyncPanZoomController* aPrev,
 
 void
 APZCTreeManager::DispatchFling(AsyncPanZoomController* aPrev,
-                               ParentLayerPoint& aVelocity,
-                               RefPtr<const OverscrollHandoffChain> aOverscrollHandoffChain,
-                               bool aHandoff)
+                               FlingHandoffState& aHandoffState)
 {
+  const OverscrollHandoffChain* chain = aHandoffState.mChain;
   RefPtr<AsyncPanZoomController> current;
-  uint32_t aOverscrollHandoffChainLength = aOverscrollHandoffChain->Length();
+  uint32_t overscrollHandoffChainLength = chain->Length();
   uint32_t startIndex;
+
+  
+  ParentLayerPoint finalResidualVelocity = aHandoffState.mVelocity;
 
   
   
@@ -1433,65 +1434,71 @@ APZCTreeManager::DispatchFling(AsyncPanZoomController* aPrev,
   
   ParentLayerPoint startPoint;  
   ParentLayerPoint endPoint;
-  ParentLayerPoint usedTransformedVelocity = aVelocity;
 
-  if (aHandoff) {
-    startIndex = aOverscrollHandoffChain->IndexOf(aPrev) + 1;
+  if (aHandoffState.mIsHandoff) {
+    startIndex = chain->IndexOf(aPrev) + 1;
 
     
     
-    if (startIndex >= aOverscrollHandoffChainLength) {
+    if (startIndex >= overscrollHandoffChainLength) {
       return;
     }
   } else {
     startIndex = 0;
   }
 
-  for (; startIndex < aOverscrollHandoffChainLength; startIndex++) {
-    current = aOverscrollHandoffChain->GetApzcAtIndex(startIndex);
+  for (; startIndex < overscrollHandoffChainLength; startIndex++) {
+    current = chain->GetApzcAtIndex(startIndex);
 
     
     if (current == nullptr || current->IsDestroyed()) {
       return;
     }
 
-    endPoint = startPoint + usedTransformedVelocity;
+    endPoint = startPoint + aHandoffState.mVelocity;
 
     
     if (startIndex > 0) {
       if (!TransformDisplacement(this,
-                            aOverscrollHandoffChain->GetApzcAtIndex(startIndex - 1),
-                            current,
-                            startPoint,
-                            endPoint)) {
+                                 chain->GetApzcAtIndex(startIndex - 1),
+                                 current,
+                                 startPoint,
+                                 endPoint)) {
         return;
       }
     }
 
     ParentLayerPoint transformedVelocity = endPoint - startPoint;
-    usedTransformedVelocity = transformedVelocity;
+    aHandoffState.mVelocity = transformedVelocity;
 
-    if (current->AttemptFling(usedTransformedVelocity,
-                              aOverscrollHandoffChain,
-                              aHandoff)) {
-      if (IsZero(usedTransformedVelocity)) {
-        aVelocity = ParentLayerPoint();
-        return;
+    if (current->AttemptFling(aHandoffState)) {
+      
+      
+      ParentLayerPoint residualVelocity = aHandoffState.mVelocity;
+
+      
+      if (IsZero(residualVelocity)) {
+        finalResidualVelocity = ParentLayerPoint();
+        break;
       }
 
       
+      
+      
       if (!FuzzyEqualsAdditive(transformedVelocity.x,
-                               usedTransformedVelocity.x, COORDINATE_EPSILON)) {
-        aVelocity.x = aVelocity.x *
-          (usedTransformedVelocity.x / transformedVelocity.x);
+                               residualVelocity.x, COORDINATE_EPSILON)) {
+        finalResidualVelocity.x *= (residualVelocity.x / transformedVelocity.x);
       }
       if (!FuzzyEqualsAdditive(transformedVelocity.y,
-                               usedTransformedVelocity.y, COORDINATE_EPSILON)) {
-        aVelocity.y = aVelocity.y *
-          (usedTransformedVelocity.y / transformedVelocity.y);
+                               residualVelocity.y, COORDINATE_EPSILON)) {
+        finalResidualVelocity.y *= (residualVelocity.y / transformedVelocity.y);
       }
     }
   }
+
+  
+  
+  aHandoffState.mVelocity = finalResidualVelocity;
 }
 
 bool

@@ -847,9 +847,8 @@ public:
 
 
 
-  bool AttemptFling(ParentLayerPoint& aVelocity,
-                    const RefPtr<const OverscrollHandoffChain>& aOverscrollHandoffChain,
-                    bool aHandoff);
+
+  bool AttemptFling(FlingHandoffState& aHandoffState);
 
 private:
   friend class FlingAnimation;
@@ -873,9 +872,7 @@ private:
   void HandleSmoothScrollOverscroll(const ParentLayerPoint& aVelocity);
 
   
-  void AcceptFling(ParentLayerPoint& aVelocity,
-                   const RefPtr<const OverscrollHandoffChain>& aOverscrollHandoffChain,
-                   bool aHandoff);
+  void AcceptFling(FlingHandoffState& aHandoffState);
 
   
   void StartOverscrollAnimation(const ParentLayerPoint& aVelocity);

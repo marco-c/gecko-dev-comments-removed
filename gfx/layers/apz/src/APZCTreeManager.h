@@ -47,6 +47,7 @@ class AsyncPanZoomController;
 class CompositorParent;
 class OverscrollHandoffChain;
 struct OverscrollHandoffState;
+struct FlingHandoffState;
 class LayerMetricsWrapper;
 class InputQueue;
 class GeckoContentController;
@@ -391,10 +392,11 @@ public:
 
 
 
+
+
+
   void DispatchFling(AsyncPanZoomController* aApzc,
-                     ParentLayerPoint& aVelocity,
-                     RefPtr<const OverscrollHandoffChain> aOverscrollHandoffChain,
-                     bool aHandoff);
+                     FlingHandoffState& aHandoffState);
 
   void StartScrollbarDrag(const ScrollableLayerGuid& aGuid,
                           const AsyncDragMetrics& aDragMetrics);

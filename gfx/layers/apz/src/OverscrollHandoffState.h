@@ -128,6 +128,23 @@ struct OverscrollHandoffState {
   ScrollSource mScrollSource;
 };
 
+
+
+
+struct FlingHandoffState {
+  
+  ParentLayerPoint mVelocity;
+
+  
+  
+  
+  RefPtr<const OverscrollHandoffChain> mChain;
+
+  
+  
+  bool mIsHandoff;
+};
+
 } 
 } 
 
