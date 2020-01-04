@@ -302,6 +302,30 @@ Editor.prototype = {
       
 
       cm = win.CodeMirror(win.document.body, this.config);
+
+      
+      
+      
+      cm.getScrollerElement().addEventListener("wheel", ev => {
+        
+        
+        
+        
+        ev.preventDefault();
+
+        let { deltaX, deltaY } = ev;
+
+        if (ev.deltaMode == ev.DOM_DELTA_LINE) {
+          deltaX *= cm.defaultCharWidth();
+          deltaY *= cm.defaultTextHeight();
+        } else if (ev.deltaMode == ev.DOM_DELTA_PAGE) {
+          deltaX *= cm.getWrapperElement().clientWidth;
+          deltaY *= cm.getWrapperElement().clientHeight;
+        }
+
+        cm.getScrollerElement().scrollBy(deltaX, deltaY);
+      });
+
       cm.getWrapperElement().addEventListener("contextmenu", ev => {
         ev.preventDefault();
 
