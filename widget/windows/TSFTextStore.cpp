@@ -2670,6 +2670,17 @@ TSFTextStore::SetSelectionInternal(const TS_SELECTION_ACP* pSelection,
     return E_FAIL;
   }
 
+  
+  
+  
+  if (currentSel.EqualsExceptDirection(*pSelection)) {
+    MOZ_LOG(sTextStoreLog, LogLevel::Error,
+       ("TSF: 0x%p   TSFTextStore::SetSelectionInternal() Succeeded but "
+        "did nothing because the selection range isn't changing", this));
+    currentSel.SetSelection(*pSelection);
+    return S_OK;
+  }
+
   if (mComposition.IsComposing()) {
     if (aDispatchCompositionChangeEvent) {
       HRESULT hr = RestartCompositionIfNecessary();
@@ -2701,13 +2712,50 @@ TSFTextStore::SetSelectionInternal(const TS_SELECTION_ACP* pSelection,
     return S_OK;
   }
 
+  TS_SELECTION_ACP selectionInContent(*pSelection);
+
+  
+  
+  
+  if (mContentForTSF.IsInitialized() &&
+      mPendingTextChangeData.IsValid() &&
+      !mPendingTextChangeData.mCausedOnlyByComposition) {
+    uint32_t startOffset = static_cast<uint32_t>(selectionInContent.acpStart);
+    uint32_t endOffset = static_cast<uint32_t>(selectionInContent.acpEnd);
+    if (mPendingTextChangeData.mStartOffset >= endOffset) {
+      
+    } else if (mPendingTextChangeData.mRemovedEndOffset <= startOffset) {
+      
+      
+      selectionInContent.acpStart += mPendingTextChangeData.Difference();
+      selectionInContent.acpEnd += mPendingTextChangeData.Difference();
+    } else if (startOffset == endOffset) {
+      
+      
+      
+      
+      
+      selectionInContent.acpStart = mPendingTextChangeData.mAddedEndOffset;
+      selectionInContent.acpEnd = selectionInContent.acpStart;
+    } else {
+      
+      
+      MOZ_LOG(sTextStoreLog, LogLevel::Error,
+         ("TSF: 0x%p   TSFTextStore::SetSelectionInternal() FAILED due to "
+          "there is unknown content change", this));
+      return E_FAIL;
+    }
+  }
+
   CompleteLastActionIfStillIncomplete();
   PendingAction* action = mPendingActions.AppendElement();
   action->mType = PendingAction::SET_SELECTION;
-  action->mSelectionStart = pSelection->acpStart;
-  action->mSelectionLength = pSelection->acpEnd - pSelection->acpStart;
-  action->mSelectionReversed = (pSelection->style.ase == TS_AE_START);
+  action->mSelectionStart = selectionInContent.acpStart;
+  action->mSelectionLength =
+    selectionInContent.acpEnd - selectionInContent.acpStart;
+  action->mSelectionReversed = (selectionInContent.style.ase == TS_AE_START);
 
+  
   currentSel.SetSelection(*pSelection);
 
   return S_OK;
