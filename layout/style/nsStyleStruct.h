@@ -2615,8 +2615,11 @@ private:
 
   
   
+  
   nsTArray<nsStyleCoord> mCoordinates;
+  
   Position mPosition;
+  
   nsStyleCorners mRadius;
 };
 

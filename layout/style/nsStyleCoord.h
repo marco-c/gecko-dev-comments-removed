@@ -367,6 +367,11 @@ public:
   inline void Set(uint8_t aHalfCorner, const nsStyleCoord& aCoord);
 
 protected:
+  
+  
+  
+  
+  
   nsStyleUnit   mUnits[8];
   nsStyleUnion  mValues[8];
 };
