@@ -2816,6 +2816,9 @@ Assembler::bind(Label* label, BufferOffset boff)
         BufferOffset dest = boff.assigned() ? boff : nextOffset();
         BufferOffset b(label);
         do {
+            
+            if (oom())
+                return;
             BufferOffset next;
             more = nextLink(b, &next);
             Instruction branch = *editSrc(b);
@@ -2839,7 +2842,7 @@ Assembler::bind(RepatchLabel* label)
     
     
     BufferOffset dest = nextOffset();
-    if (label->used()) {
+    if (label->used() && !oom()) {
         
         
         BufferOffset branchOff(label->offset());
@@ -2864,7 +2867,7 @@ Assembler::retarget(Label* label, Label* target)
 #ifdef JS_DISASM_ARM
     spewRetarget(label, target);
 #endif
-    if (label->used()) {
+    if (label->used() && !oom()) {
         if (target->bound()) {
             bind(label, BufferOffset(target));
         } else if (target->used()) {
