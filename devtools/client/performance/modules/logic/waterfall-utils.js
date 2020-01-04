@@ -52,11 +52,11 @@ function collapseMarkersIntoNode({ rootNode, markersList, filter }) {
     let finalized = false;
 
     
-    
-    
+    let extendedProps = { index: i };
     if (collapsible) {
-      curr = createParentNode(curr);
+      extendedProps.submarkers = [];
     }
+    curr = extend(curr, extendedProps);
 
     
     

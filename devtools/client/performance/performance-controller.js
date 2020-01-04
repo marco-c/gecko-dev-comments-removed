@@ -30,6 +30,7 @@ Object.defineProperty(this, "EVENTS", {
 
 var React = require("devtools/client/shared/vendor/react");
 var ReactDOM = require("devtools/client/shared/vendor/react-dom");
+var Waterfall = React.createFactory(require("devtools/client/performance/components/waterfall"));
 var JITOptimizationsView = React.createFactory(require("devtools/client/performance/components/jit-optimizations"));
 var RecordingControls = React.createFactory(require("devtools/client/performance/components/recording-controls"));
 var RecordingButton = React.createFactory(require("devtools/client/performance/components/recording-button"));
@@ -52,8 +53,6 @@ var { TIMELINE_BLUEPRINT } = require("devtools/client/performance/modules/marker
 var RecordingUtils = require("devtools/shared/performance/recording-utils");
 var PerformanceUtils = require("devtools/client/performance/modules/utils");
 var { OptimizationsGraph, GraphsController } = require("devtools/client/performance/modules/widgets/graphs");
-var { WaterfallHeader } = require("devtools/client/performance/modules/widgets/waterfall-ticks");
-var { MarkerView } = require("devtools/client/performance/modules/widgets/marker-view");
 var { MarkerDetails } = require("devtools/client/performance/modules/widgets/marker-details");
 var { MarkerBlueprintUtils } = require("devtools/client/performance/modules/marker-blueprint-utils");
 var WaterfallUtils = require("devtools/client/performance/modules/logic/waterfall-utils");
