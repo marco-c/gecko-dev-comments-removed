@@ -110,6 +110,7 @@ function buildOptionListForChildren(node) {
         tagName: tagName,
         textContent: textContent,
         disabled: child.disabled,
+        display: child.style.display,
         
         
         textDirection: getComputedDirection(child),
