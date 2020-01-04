@@ -8,7 +8,7 @@
 
 
 
-var gNow = getExpirablePRTime();
+var gNow = getExpirablePRTime(60);
 
 add_task(function* test_expire_orphans()
 {
@@ -74,23 +74,87 @@ add_task(function* test_expire_orphans_optionalarg()
 
 add_task(function* test_expire_limited()
 {
-  
-  
-  yield PlacesTestUtils.addVisits({
-    uri: uri("http://page1.mozilla.org/"),
-    visitDate: gNow++
-  });
-  yield PlacesTestUtils.addVisits({
-    uri: uri("http://page2.mozilla.org/"),
-    visitDate: gNow++
-  });
+  yield PlacesTestUtils.addVisits([
+    { 
+      uri: "http://old.mozilla.org/",
+      visitDate: gNow++
+    },
+    { 
+      uri: "http://new.mozilla.org/",
+      visitDate: gNow++
+    },
+  ]);
 
   
   yield promiseForceExpirationStep(1);
 
   
-  do_check_false(page_in_database("http://page1.mozilla.org/"));
-  do_check_eq(visits_in_database("http://page2.mozilla.org/"), 1);
+  do_check_eq(visits_in_database("http://new.mozilla.org/"), 1);
+  
+  do_check_false(page_in_database("http://old.mozilla.org/"));
+
+  
+  yield PlacesTestUtils.clearHistory();
+});
+
+add_task(function* test_expire_limited_longurl()
+{
+  let longurl = "http://long.mozilla.org/" + "a".repeat(232);
+  yield PlacesTestUtils.addVisits([
+    { 
+      uri: "http://old.mozilla.org/",
+      visitDate: gNow++
+    },
+    { 
+      uri: longurl,
+      visitDate: gNow++
+    },
+    { 
+      uri: longurl,
+      visitDate: getExpirablePRTime(58)
+    }
+  ]);
+
+  yield promiseForceExpirationStep(1);
+
+  
+  do_check_eq(visits_in_database(longurl), 1);
+  
+  do_check_false(page_in_database("http://old.mozilla.org/"));
+
+  
+  yield PlacesTestUtils.clearHistory();
+});
+
+add_task(function* test_expire_limited_exoticurl()
+{
+  yield PlacesTestUtils.addVisits([
+    { 
+      uri: "http://old.mozilla.org/",
+      visitDate: gNow++
+    },
+    { 
+      uri: "http://download.mozilla.org",
+      visitDate: gNow++,
+      transition: 7
+    },
+    { 
+      uri: "http://nonexpirable-download.mozilla.org",
+      visitDate: getExpirablePRTime(58),
+      transition: 7
+    }
+  ]);
+
+  yield promiseForceExpirationStep(1);
+
+  
+  do_check_eq(visits_in_database("http://nonexpirable-download.mozilla.org/"), 1);
+  
+  
+  
+  do_check_eq(visits_in_database("http://download.mozilla.org/"), 0);
+  
+  do_check_false(page_in_database("http://old.mozilla.org/"));
 
   
   yield PlacesTestUtils.clearHistory();
@@ -98,23 +162,53 @@ add_task(function* test_expire_limited()
 
 add_task(function* test_expire_unlimited()
 {
-  
-  
-  yield PlacesTestUtils.addVisits({
-    uri: uri("http://page1.mozilla.org/"),
-    visitDate: gNow++
-  });
-  yield PlacesTestUtils.addVisits({
-    uri: uri("http://page2.mozilla.org/"),
-    visitDate: gNow++
-  });
+  let longurl = "http://long.mozilla.org/" + "a".repeat(232);
+  yield PlacesTestUtils.addVisits([
+    {
+      uri: "http://old.mozilla.org/",
+      visitDate: gNow++
+    },
+    {
+      uri: "http://new.mozilla.org/",
+      visitDate: gNow++
+    },
+    
+    {
+      uri: "http://download.mozilla.org/",
+      visitDate: gNow++,
+      transition: PlacesUtils.history.TRANSITION_DOWNLOAD
+    },
+    {
+      uri: longurl,
+      visitDate: gNow++
+    },
 
-  
+    
+    {
+      uri: "http://nonexpirable.mozilla.org/",
+      visitDate: getExpirablePRTime(5)
+    },
+    {
+      uri: "http://nonexpirable-download.mozilla.org/",
+      visitDate: getExpirablePRTime(5),
+      transition: PlacesUtils.history.TRANSITION_DOWNLOAD
+    },
+    {
+      uri: longurl,
+      visitDate: getExpirablePRTime(5)
+    }
+  ]);
+
   yield promiseForceExpirationStep(-1);
 
   
-  do_check_false(page_in_database("http://page1.mozilla.org/"));
-  do_check_false(page_in_database("http://page2.mozilla.org/"));
+  do_check_eq(visits_in_database("http://nonexpirable.mozilla.org/"), 1);
+  do_check_eq(visits_in_database("http://nonexpirable-download.mozilla.org/"), 1);
+  do_check_eq(visits_in_database(longurl), 1);
+  
+  do_check_false(page_in_database("http://old.mozilla.org/"));
+  do_check_false(page_in_database("http://download.mozilla.org/"));
+  do_check_false(page_in_database("http://new.mozilla.org/"));
 
   
   yield PlacesTestUtils.clearHistory();

@@ -108,13 +108,15 @@ function clearHistoryEnabled() {
 
 
 
-function getExpirablePRTime() {
+
+
+function getExpirablePRTime(daysAgo = 7) {
   let dateObj = new Date();
   
   dateObj.setHours(0);
   dateObj.setMinutes(0);
   dateObj.setSeconds(0);
   dateObj.setMilliseconds(0);
-  dateObj = new Date(dateObj.getTime() - 8 * 86400000);
+  dateObj = new Date(dateObj.getTime() - (daysAgo + 1) * 86400000);
   return dateObj.getTime() * 1000;
 }

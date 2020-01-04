@@ -18,7 +18,7 @@
 
 
 
-#define DATABASE_SCHEMA_VERSION 31
+#define DATABASE_SCHEMA_VERSION 32
 
 
 #define TOPIC_PLACES_INIT_COMPLETE "places-init-complete"
@@ -191,6 +191,8 @@ public:
 
   already_AddRefed<mozIStorageAsyncStatement> GetAsyncStatement(const nsACString& aQuery) const;
 
+  uint32_t MaxUrlLength();
+
 protected:
   
 
@@ -265,6 +267,7 @@ protected:
   nsresult MigrateV28Up();
   nsresult MigrateV30Up();
   nsresult MigrateV31Up();
+  nsresult MigrateV32Up();
 
   nsresult UpdateBookmarkRootTitles();
 
@@ -306,6 +309,12 @@ private:
 
   RefPtr<ClientsShutdownBlocker> mClientsShutdown;
   RefPtr<ConnectionShutdownBlocker> mConnectionShutdown;
+
+  
+  
+  
+  
+  uint32_t mMaxUrlLength;
 };
 
 } 

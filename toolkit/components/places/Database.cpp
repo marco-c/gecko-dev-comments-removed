@@ -28,6 +28,7 @@
 #include "nsPrintfCString.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/Services.h"
+#include "mozilla/unused.h"
 #include "prtime.h"
 
 #include "nsXULAppAPI.h"
@@ -45,6 +46,18 @@
 
 
 #define PREF_GROWTH_INCREMENT_KIB "places.database.growthIncrementKiB"
+
+
+
+#define PREF_HISTORY_MAXURLLEN "places.history.maxUrlLength"
+
+
+
+
+
+
+
+#define PREF_HISTORY_MAXURLLEN_DEFAULT 2000
 
 
 
@@ -296,6 +309,7 @@ Database::Database()
   , mClosed(false)
   , mClientsShutdown(new ClientsShutdownBlocker())
   , mConnectionShutdown(new ConnectionShutdownBlocker(this))
+  , mMaxUrlLength(0)
 {
   MOZ_ASSERT(!XRE_IsContentProcess(),
              "Cannot instantiate Places in the content process");
@@ -801,6 +815,13 @@ Database::InitSchema(bool* aDatabaseMigrated)
 
       if (currentSchemaVersion < 31) {
         rv = MigrateV31Up();
+        NS_ENSURE_SUCCESS(rv, rv);
+      }
+
+      
+
+      if (currentSchemaVersion < 32) {
+        rv = MigrateV32Up();
         NS_ENSURE_SUCCESS(rv, rv);
       }
 
@@ -1631,6 +1652,103 @@ Database::MigrateV31Up() {
   return NS_OK;
 }
 
+nsresult
+Database::MigrateV32Up() {
+  MOZ_ASSERT(NS_IsMainThread());
+
+  
+  
+  mozilla::Unused << Preferences::ClearUser("places.history.expiration.transient_optimal_database_size");
+  mozilla::Unused << Preferences::ClearUser("places.last_vacuum");
+  mozilla::Unused << Preferences::ClearUser("browser.history_expire_sites");
+  mozilla::Unused << Preferences::ClearUser("browser.history_expire_days.mirror");
+  mozilla::Unused << Preferences::ClearUser("browser.history_expire_days_min");
+
+  
+  
+  
+  
+  nsresult rv = mMainConn->ExecuteSimpleSQL(NS_LITERAL_CSTRING(
+    "CREATE TEMP TABLE moz_migrate_v32_temp ("
+      "host TEXT PRIMARY KEY "
+    ") WITHOUT ROWID "
+  ));
+  NS_ENSURE_SUCCESS(rv, rv);
+  {
+    nsCOMPtr<mozIStorageStatement> stmt;
+    rv = mMainConn->CreateStatement(NS_LITERAL_CSTRING(
+      "INSERT OR IGNORE INTO moz_migrate_v32_temp (host) "
+        "SELECT fixup_url(get_unreversed_host(rev_host)) "
+        "FROM moz_places WHERE LENGTH(url) > :maxlen AND foreign_count = 0"
+    ), getter_AddRefs(stmt));
+    NS_ENSURE_SUCCESS(rv, rv);
+    mozStorageStatementScoper scoper(stmt);
+    rv = stmt->BindInt32ByName(NS_LITERAL_CSTRING("maxlen"), MaxUrlLength());
+    NS_ENSURE_SUCCESS(rv, rv);
+    rv = stmt->Execute();
+    NS_ENSURE_SUCCESS(rv, rv);
+  }
+  
+  {
+    nsCOMPtr<mozIStorageStatement> stmt;
+    rv = mMainConn->CreateStatement(NS_LITERAL_CSTRING(
+      "DELETE FROM moz_places WHERE LENGTH(url) > :maxlen AND foreign_count = 0"
+    ), getter_AddRefs(stmt));
+    NS_ENSURE_SUCCESS(rv, rv);
+    mozStorageStatementScoper scoper(stmt);
+    rv = stmt->BindInt32ByName(NS_LITERAL_CSTRING("maxlen"), MaxUrlLength());
+    NS_ENSURE_SUCCESS(rv, rv);
+    rv = stmt->Execute();
+    NS_ENSURE_SUCCESS(rv, rv);
+  }
+
+  
+  
+  
+  nsCOMPtr<mozIStorageAsyncStatement> expireOrphansStmt;
+  rv = mMainConn->CreateAsyncStatement(NS_LITERAL_CSTRING(
+    "DELETE FROM moz_historyvisits "
+    "WHERE NOT EXISTS (SELECT 1 FROM moz_places WHERE id = place_id)"
+  ), getter_AddRefs(expireOrphansStmt));
+  NS_ENSURE_SUCCESS(rv, rv);
+  nsCOMPtr<mozIStorageAsyncStatement> deleteHostsStmt;
+  rv = mMainConn->CreateAsyncStatement(NS_LITERAL_CSTRING(
+    "DELETE FROM moz_hosts "
+    "WHERE host IN (SELECT host FROM moz_migrate_v32_temp) "
+      "AND NOT EXISTS("
+        "SELECT 1 FROM moz_places "
+          "WHERE rev_host = get_unreversed_host(host || '.') || '.' "
+             "OR rev_host = get_unreversed_host(host || '.') || '.www.' "
+      "); "
+  ), getter_AddRefs(deleteHostsStmt));
+  NS_ENSURE_SUCCESS(rv, rv);
+  nsCOMPtr<mozIStorageAsyncStatement> updateHostsStmt;
+  rv = mMainConn->CreateAsyncStatement(NS_LITERAL_CSTRING(
+    "UPDATE moz_hosts "
+    "SET prefix = (" HOSTS_PREFIX_PRIORITY_FRAGMENT ") "
+    "WHERE host IN (SELECT host FROM moz_migrate_v32_temp) "
+  ), getter_AddRefs(updateHostsStmt));
+  NS_ENSURE_SUCCESS(rv, rv);
+  nsCOMPtr<mozIStorageAsyncStatement> dropTableStmt;
+  rv = mMainConn->CreateAsyncStatement(NS_LITERAL_CSTRING(
+    "DROP TABLE IF EXISTS moz_migrate_v32_temp"
+  ), getter_AddRefs(dropTableStmt));
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  mozIStorageBaseStatement *stmts[] = {
+    expireOrphansStmt,
+    deleteHostsStmt,
+    updateHostsStmt,
+    dropTableStmt
+  };
+  nsCOMPtr<mozIStoragePendingStatement> ps;
+  rv = mMainConn->ExecuteAsync(stmts, ArrayLength(stmts), nullptr,
+                               getter_AddRefs(ps));
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  return NS_OK;
+}
+
 void
 Database::Shutdown()
 {
@@ -1781,6 +1899,19 @@ Database::Observe(nsISupports *aSubject,
     }
   }
   return NS_OK;
+}
+
+uint32_t
+Database::MaxUrlLength() {
+  MOZ_ASSERT(NS_IsMainThread());
+  if (!mMaxUrlLength) {
+    mMaxUrlLength = Preferences::GetInt(PREF_HISTORY_MAXURLLEN,
+                                        PREF_HISTORY_MAXURLLEN_DEFAULT);
+    if (mMaxUrlLength < 255 || mMaxUrlLength > INT32_MAX) {
+      mMaxUrlLength = PREF_HISTORY_MAXURLLEN_DEFAULT;
+    }
+  }
+  return mMaxUrlLength;
 }
 
 

@@ -1095,13 +1095,23 @@ nsNavHistory::CanAddURI(nsIURI* aURI, bool* canAdd)
   NS_ENSURE_ARG_POINTER(canAdd);
 
   
+  *canAdd = false;
+
+  
   if (IsHistoryDisabled()) {
-    *canAdd = false;
+    return NS_OK;
+  }
+
+  
+  nsCString spec;
+  nsresult rv = aURI->GetSpec(spec);
+  NS_ENSURE_SUCCESS(rv, rv);
+  if (!mDB || spec.Length() > mDB->MaxUrlLength()) {
     return NS_OK;
   }
 
   nsAutoCString scheme;
-  nsresult rv = aURI->GetScheme(scheme);
+  rv = aURI->GetScheme(scheme);
   NS_ENSURE_SUCCESS(rv, rv);
 
   
@@ -1128,7 +1138,6 @@ nsNavHistory::CanAddURI(nsIURI* aURI, bool* canAdd)
       scheme.EqualsLiteral("wyciwyg") ||
       scheme.EqualsLiteral("javascript") ||
       scheme.EqualsLiteral("blob")) {
-    *canAdd = false;
     return NS_OK;
   }
   *canAdd = true;
