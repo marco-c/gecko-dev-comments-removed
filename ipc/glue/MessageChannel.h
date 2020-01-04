@@ -74,6 +74,7 @@ class MessageChannel : HasResultCodes
     static const int32_t kNoTimeout;
 
     typedef IPC::Message Message;
+    typedef IPC::MessageInfo MessageInfo;
     typedef mozilla::ipc::Transport Transport;
 
     explicit MessageChannel(MessageListener *aListener);
@@ -639,7 +640,7 @@ class MessageChannel : HasResultCodes
     
     
     
-    std::stack<Message> mInterruptStack;
+    std::stack<MessageInfo> mInterruptStack;
 
     
     

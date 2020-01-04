@@ -1282,7 +1282,7 @@ MessageChannel::Call(Message* aMsg, Message* aReply)
     msg->set_seqno(NextSeqno());
     msg->set_interrupt_remote_stack_depth_guess(mRemoteStackDepthGuess);
     msg->set_interrupt_local_stack_depth(1 + InterruptStackDepth());
-    mInterruptStack.push(*msg);
+    mInterruptStack.push(MessageInfo(*msg));
     mLink->SendMessage(msg.forget());
 
     while (true) {
@@ -1367,7 +1367,7 @@ MessageChannel::Call(Message* aMsg, Message* aReply)
             
             
             {
-                const Message &outcall = mInterruptStack.top();
+                const MessageInfo &outcall = mInterruptStack.top();
 
                 
                 
@@ -1669,9 +1669,11 @@ MessageChannel::DispatchInterruptMessage(const Message& aMsg, size_t stackDepth)
         
         bool defer;
         const char* winner;
-        const Message& parentMsg = (mSide == ChildSide) ? aMsg : mInterruptStack.top();
-        const Message& childMsg = (mSide == ChildSide) ? mInterruptStack.top() : aMsg;
-        switch (mListener->MediateInterruptRace(parentMsg, childMsg))
+        const MessageInfo parentMsgInfo =
+          (mSide == ChildSide) ? MessageInfo(aMsg) : mInterruptStack.top();
+        const MessageInfo childMsgInfo =
+          (mSide == ChildSide) ? mInterruptStack.top() : MessageInfo(aMsg);
+        switch (mListener->MediateInterruptRace(parentMsgInfo, childMsgInfo))
         {
           case RIPChildWins:
             winner = "child";
