@@ -2165,9 +2165,11 @@ MediaDecoderStateMachine::SeekCompleted()
   
   
 
-  if (mDecodingFirstFrame) {
+  
+  
+  if (!mSentFirstFrameLoadedEvent) {
     
-    
+    MOZ_ASSERT(mReader->ForceZeroStartTime());
     FinishDecodeFirstFrame();
   }
 
