@@ -323,6 +323,18 @@ public:
   SourceBufferIterator Iterator();
 
 
+  
+  
+  
+
+  
+
+
+
+
+
+  static const size_t MIN_CHUNK_CAPACITY = 4096;
+
 private:
   friend class SourceBufferIterator;
 
@@ -423,8 +435,6 @@ private:
   
   
   
-
-  static const size_t MIN_CHUNK_CAPACITY = 4096;
 
   
   mutable Mutex mMutex;

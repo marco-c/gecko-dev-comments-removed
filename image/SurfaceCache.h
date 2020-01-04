@@ -399,6 +399,12 @@ struct SurfaceCache
                                     nsTArray<SurfaceMemoryCounter>& aCounters,
                                     MallocSizeOf      aMallocSizeOf);
 
+  
+
+
+
+  static size_t MaximumCapacity();
+
 private:
   virtual ~SurfaceCache() = 0;  
 };
