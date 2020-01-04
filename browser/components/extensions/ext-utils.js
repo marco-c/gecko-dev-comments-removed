@@ -6,6 +6,10 @@ XPCOMUtils.defineLazyModuleGetter(this, "PrivateBrowsingUtils",
                                   "resource://gre/modules/PrivateBrowsingUtils.jsm");
 
 Cu.import("resource://gre/modules/ExtensionUtils.jsm");
+Cu.import("resource://gre/modules/AddonManager.jsm");
+
+const INTEGER = /^[1-9]\d*$/;
+
 var {
   EventManager,
 } = ExtensionUtils;
@@ -19,37 +23,47 @@ var {
 
 global.IconDetails = {
   
-  SIZES: ["19", "38"],
-
+  
+  
+  
+  
+  
+  
   
   
   normalize(details, extension, context=null, localize=false) {
     let result = {};
 
-    if (details.imageData) {
-      let imageData = details.imageData;
+    try {
+      if (details.imageData) {
+        let imageData = details.imageData;
 
-      if (imageData instanceof Cu.getGlobalForObject(imageData).ImageData) {
-        imageData = {"19": imageData};
-      }
+        if (imageData instanceof Cu.getGlobalForObject(imageData).ImageData) {
+          imageData = {"19": imageData};
+        }
 
-      for (let size of this.SIZES) {
-        if (size in imageData) {
+        for (let size of Object.keys(imageData)) {
+          if (!INTEGER.test(size)) {
+            throw new Error(`Invalid icon size ${size}, must be an integer`);
+          }
+
           result[size] = this.convertImageDataToPNG(imageData[size], context);
         }
       }
-    }
 
-    if (details.path) {
-      let path = details.path;
-      if (typeof path != "object") {
-        path = {"19": path};
-      }
+      if (details.path) {
+        let path = details.path;
+        if (typeof path != "object") {
+          path = {"19": path};
+        }
 
-      let baseURI = context ? context.uri : extension.baseURI;
+        let baseURI = context ? context.uri : extension.baseURI;
 
-      for (let size of this.SIZES) {
-        if (size in path) {
+        for (let size of Object.keys(path)) {
+          if (!INTEGER.test(size)) {
+            throw new Error(`Invalid icon size ${size}, must be an integer`);
+          }
+
           let url = path[size];
           if (localize) {
             url = extension.localize(url);
@@ -61,24 +75,22 @@ global.IconDetails = {
           
           
           
-          try {
-            Services.scriptSecurityManager.checkLoadURIStrWithPrincipal(
-              extension.principal, url,
-              Services.scriptSecurityManager.DISALLOW_SCRIPT);
-          } catch (e) {
-            if (context) {
-              throw e;
-            }
-            
-            
-            
-            extension.manifestError(`Access to URL '${url}' denied`);
-            continue;
-          }
+          Services.scriptSecurityManager.checkLoadURIStrWithPrincipal(
+            extension.principal, url,
+            Services.scriptSecurityManager.DISALLOW_SCRIPT);
 
           result[size] = url;
         }
       }
+    } catch (e) {
+      
+      if (context) {
+        throw e;
+      }
+      
+      
+      
+      extension.manifestError(`Invalid icon data: ${e}`);
     }
 
     return result;
@@ -89,12 +101,7 @@ global.IconDetails = {
   getURL(icons, window, extension) {
     const DEFAULT = "chrome://browser/content/extension.svg";
 
-    
-    
-    let res = window.devicePixelRatio;
-    let size = res > 1 ? "38" : "19";
-
-    return icons[size] || icons["19"] || icons["38"] || DEFAULT;
+    return AddonManager.getPreferredIconURL({icons: icons}, 18, window) || DEFAULT;
   },
 
   convertImageDataToPNG(imageData, context) {
