@@ -42,6 +42,7 @@ public:
   nsresult Input(MediaRawData* aSample) override;
   void ProcessDrain() override;
   void ProcessFlush() override;
+  void InitCodecContext() override;
   static AVCodecID GetCodecId(const nsACString& aMimeType);
 
 private:
@@ -63,6 +64,9 @@ private:
   RefPtr<ImageContainer> mImageContainer;
   nsIntSize mDisplay;
   nsIntRect mImage;
+
+  
+  AVCodecParserContext* mCodecParser;
 
   class PtsCorrectionContext {
   public:

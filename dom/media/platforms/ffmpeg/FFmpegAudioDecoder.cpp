@@ -35,6 +35,22 @@ FFmpegAudioDecoder<LIBAV_VER>::Init()
                      : InitPromise::CreateAndReject(DecoderFailureReason::INIT_ERROR, __func__);
 }
 
+void
+FFmpegAudioDecoder<LIBAV_VER>::InitCodecContext()
+{
+  MOZ_ASSERT(mCodecContext);
+  
+  
+  
+  mCodecContext->thread_count = 1;
+  
+  uint32_t major, minor;
+  FFmpegRuntimeLinker::GetVersion(major, minor);
+  
+  mCodecContext->request_sample_fmt =
+    (major == 53) ? AV_SAMPLE_FMT_S16 : AV_SAMPLE_FMT_FLT;
+}
+
 static UniquePtr<AudioDataValue[]>
 CopyAndPackAudio(AVFrame* aFrame, uint32_t aNumChannels, uint32_t aNumAFrames)
 {

@@ -43,6 +43,7 @@ protected:
   virtual void ProcessFlush();
   virtual void ProcessDrain() = 0;
   virtual void ProcessShutdown();
+  virtual void InitCodecContext() {}
   AVFrame*        PrepareFrame();
   nsresult        InitDecoder();
 
@@ -61,7 +62,6 @@ protected:
   
   
   Atomic<bool> mIsFlushing;
-  AVCodecParserContext* mCodecParser;
 
 private:
   static bool sFFmpegInitDone;
