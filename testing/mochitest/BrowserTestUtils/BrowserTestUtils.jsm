@@ -32,6 +32,10 @@ Cc["@mozilla.org/globalmessagemanager;1"]
 XPCOMUtils.defineLazyModuleGetter(this, "E10SUtils",
   "resource:///modules/E10SUtils.jsm");
 
+
+
+Cu.permitCPOWsInScope(this);
+
 var gSendCharCount = 0;
 
 this.BrowserTestUtils = {
