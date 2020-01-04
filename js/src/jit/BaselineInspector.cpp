@@ -122,9 +122,8 @@ GetCacheIRReceiverForNativeReadSlot(ICCacheIR_Monitored* stub, ReceiverGuard* re
     
     
     
-    
-    
 
+    *receiver = ReceiverGuard();
     CacheIRReader reader(stub->stubInfo());
 
     ObjOperandId objId = ObjOperandId(0);
@@ -154,6 +153,29 @@ GetCacheIRReceiverForNativeReadSlot(ICCacheIR_Monitored* stub, ReceiverGuard* re
     return false;
 }
 
+static bool
+GetCacheIRReceiverForUnboxedProperty(ICCacheIR_Monitored* stub, ReceiverGuard* receiver)
+{
+    
+    
+    
+    
+    
+
+    *receiver = ReceiverGuard();
+    CacheIRReader reader(stub->stubInfo());
+
+    ObjOperandId objId = ObjOperandId(0);
+    if (!reader.matchOp(CacheOp::GuardIsObject, objId))
+        return false;
+
+    if (!reader.matchOp(CacheOp::GuardGroup, objId))
+        return false;
+    receiver->group = stub->stubInfo()->getStubField<ObjectGroup*>(stub, reader.stubOffset());
+
+    return reader.matchOp(CacheOp::LoadUnboxedPropertyResult, objId);
+}
+
 bool
 BaselineInspector::maybeInfoForPropertyOp(jsbytecode* pc, ReceiverVector& receivers,
                                           ObjectGroupVector& convertUnboxedGroups)
@@ -176,15 +198,15 @@ BaselineInspector::maybeInfoForPropertyOp(jsbytecode* pc, ReceiverVector& receiv
     while (stub->next()) {
         ReceiverGuard receiver;
         if (stub->isCacheIR_Monitored()) {
-            if (!GetCacheIRReceiverForNativeReadSlot(stub->toCacheIR_Monitored(), &receiver)) {
+            if (!GetCacheIRReceiverForNativeReadSlot(stub->toCacheIR_Monitored(), &receiver) &&
+                !GetCacheIRReceiverForUnboxedProperty(stub->toCacheIR_Monitored(), &receiver))
+            {
                 receivers.clear();
                 return true;
             }
         } else if (stub->isSetProp_Native()) {
             receiver = ReceiverGuard(stub->toSetProp_Native()->group(),
                                      stub->toSetProp_Native()->shape());
-        } else if (stub->isGetProp_Unboxed()) {
-            receiver = ReceiverGuard(stub->toGetProp_Unboxed()->group(), nullptr);
         } else if (stub->isSetProp_Unboxed()) {
             receiver = ReceiverGuard(stub->toSetProp_Unboxed()->group(), nullptr);
         } else {
@@ -805,7 +827,6 @@ BaselineInspector::expectedPropertyAccessInputType(jsbytecode* pc)
             
             return MIRType::Value;
 
-          case ICStub::GetProp_Unboxed:
           case ICStub::GetProp_TypedObject:
           case ICStub::GetProp_CallScripted:
           case ICStub::GetProp_CallNative:
