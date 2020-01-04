@@ -285,6 +285,8 @@ EventListenerManager::AddEventListenerInternal(
   listener->mListenerIsHandler = aHandler;
   listener->mHandlerIsString = false;
   listener->mAllEvents = aAllEvents;
+  listener->mIsChrome = mIsMainThreadELM &&
+    nsContentUtils::LegacyIsCallerChromeOrNativeCode();
 
   
   nsCOMPtr<nsIXPConnectWrappedJS> wjs;
@@ -678,6 +680,15 @@ EventListenerManager::ListenerCanHandle(const Listener* aListener,
       return aListener->mTypeAtom == aEvent->mSpecifiedEventType;
     }
     return aListener->mTypeString.Equals(aEvent->mSpecifiedEventTypeString);
+  }
+  if (!nsContentUtils::IsUnprefixedFullscreenApiEnabled() &&
+      aEvent->IsTrusted() && (aEventMessage == eFullscreenChange ||
+                              aEventMessage == eFullscreenError)) {
+    
+    
+    if (!aEvent->mFlags.mInSystemGroup && !aListener->mIsChrome) {
+      return false;
+    }
   }
   MOZ_ASSERT(mIsMainThreadELM);
   return aListener->mEventMessage == aEventMessage;
