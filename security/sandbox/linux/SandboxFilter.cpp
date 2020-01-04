@@ -404,6 +404,13 @@ class ContentSandboxPolicy : public SandboxPolicyCommon {
       : broker->LStat(path, buf);
   }
 
+  static intptr_t GetPPidTrap(ArgsRef aArgs, void* aux) {
+    
+    
+    
+    return 0;
+  }
+
 public:
   explicit ContentSandboxPolicy(SandboxBrokerClient* aBroker):mBroker(aBroker) { }
   virtual ~ContentSandboxPolicy() { }
@@ -511,6 +518,9 @@ public:
 
     switch (sysno) {
 #ifdef DESKTOP
+    case __NR_getppid:
+      return Trap(GetPPidTrap, nullptr);
+
       
       
     case __NR_mkdir:
