@@ -408,10 +408,8 @@ const gSessionHistoryObserver = {
     
     window.messageManager.broadcastAsyncMessage("Browser:HideSessionRestoreButton");
 
-    if (gURLBar) {
-      
-      gURLBar.editor.transactionManager.clear()
-    }
+    
+    gURLBar.editor.transactionManager.clear()
   }
 };
 
@@ -462,13 +460,12 @@ var gPopupBlockerObserver = {
     if (aEvent.originalTarget != gBrowser.selectedBrowser)
       return;
 
-    if (!this._reportButton && gURLBar)
+    if (!this._reportButton)
       this._reportButton = document.getElementById("page-report-button");
 
     if (!gBrowser.selectedBrowser.blockedPopups) {
       
-      if (gURLBar)
-        this._reportButton.hidden = true;
+      this._reportButton.hidden = true;
 
       
       let notificationBox = gBrowser.getNotificationBox();
@@ -479,8 +476,7 @@ var gPopupBlockerObserver = {
       return;
     }
 
-    if (gURLBar)
-      this._reportButton.hidden = false;
+    this._reportButton.hidden = false;
 
     
     
@@ -997,10 +993,8 @@ var gBrowserInit = {
 
     if (!window.toolbar.visible) {
       
-      if (gURLBar) {
-        gURLBar.setAttribute("readonly", "true");
-        gURLBar.setAttribute("enablehistory", "false");
-      }
+      gURLBar.setAttribute("readonly", "true");
+      gURLBar.setAttribute("enablehistory", "false");
       goSetCommandEnabled("cmd_newNavigatorTab", false);
     }
 
@@ -4340,14 +4334,15 @@ var XULBrowserWindow = {
         this.reloadCommand.removeAttribute("disabled");
       }
 
-      if (gURLBar) {
-        URLBarSetURI(aLocationURI);
+      URLBarSetURI(aLocationURI);
 
-        BookmarkingUI.onLocationChange();
-        SocialUI.updateState();
-        UITour.onLocationChange(location);
-        gTabletModePageCounter.inc();
-      }
+      BookmarkingUI.onLocationChange();
+
+      SocialUI.updateState();
+
+      UITour.onLocationChange(location);
+
+      gTabletModePageCounter.inc();
 
       
       var shouldDisableFind = function shouldDisableFind(aDocument) {
@@ -7288,19 +7283,17 @@ var gPrivateBrowsingUI = {
       }
     }
 
-    if (gURLBar) {
-      let value = gURLBar.getAttribute("autocompletesearchparam") || "";
-      if (!PrivateBrowsingUtils.permanentPrivateBrowsing &&
-          !value.includes("disable-private-actions")) {
-        
-        
-        value += " disable-private-actions";
-      }
-      if (!value.includes("private-window")) {
-        value += " private-window";
-      }
-      gURLBar.setAttribute("autocompletesearchparam", value);
+    let urlBarSearchParam = gURLBar.getAttribute("autocompletesearchparam") || "";
+    if (!PrivateBrowsingUtils.permanentPrivateBrowsing &&
+        !urlBarSearchParam.includes("disable-private-actions")) {
+      
+      
+      urlBarSearchParam += " disable-private-actions";
     }
+    if (!urlBarSearchParam.includes("private-window")) {
+      urlBarSearchParam += " private-window";
+    }
+    gURLBar.setAttribute("autocompletesearchparam", urlBarSearchParam);
   }
 };
 

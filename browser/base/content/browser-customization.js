@@ -85,10 +85,8 @@ var CustomizationHandler = {
     UpdateUrlbarSearchSplitterState();
 
     
-    if (gURLBar) {
-      URLBarSetURI();
-      XULBrowserWindow.asyncUpdateUI();
-    }
+    URLBarSetURI();
+    XULBrowserWindow.asyncUpdateUI();
 
     
     let menubar = document.getElementById("main-menubar");

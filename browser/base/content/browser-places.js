@@ -385,8 +385,7 @@ var PlacesCommandHook = {
     }
 
     
-    if (gURLBar)
-      gURLBar.handleRevert();
+    gURLBar.handleRevert();
 
     
     if (!aShowEditUI)
@@ -460,8 +459,7 @@ var PlacesCommandHook = {
     }
 
     
-    if (gURLBar)
-      gURLBar.handleRevert();
+    gURLBar.handleRevert();
 
     
     if (!aShowEditUI)
