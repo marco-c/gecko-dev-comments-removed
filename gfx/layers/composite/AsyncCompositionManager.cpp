@@ -23,6 +23,7 @@
 #include "mozilla/layers/APZUtils.h"    
 #include "mozilla/layers/Compositor.h"  
 #include "mozilla/layers/CompositorParent.h" 
+#include "mozilla/layers/LayerAnimationUtils.h" 
 #include "mozilla/layers/LayerMetricsWrapper.h" 
 #include "nsCoord.h"                    
 #include "nsDebug.h"                    
@@ -595,6 +596,9 @@ SampleAnimations(Layer* aLayer, TimeStamp aPoint)
     
     
     timing.mFill = dom::FillMode::Both;
+    timing.mFunction =
+      AnimationUtils::TimingFunctionToComputedTimingFunction(
+        animation.easingFunction());
 
     ComputedTiming computedTiming =
       dom::KeyframeEffectReadOnly::GetComputedTimingAt(
