@@ -229,22 +229,18 @@ public:
   
   
   
-  void DispatchNotifyDataArrived(uint32_t aLength,
-                                 int64_t aOffset,
-                                 bool aThrottleUpdates)
+  void DispatchNotifyDataArrived(bool aThrottleUpdates)
   {
-    typedef media::Interval<int64_t> Interval;
-    RefPtr<nsRunnable> r = NS_NewRunnableMethodWithArg<Interval>(
+    RefPtr<nsRunnable> r = NS_NewRunnableMethod(
       this,
       aThrottleUpdates ? &MediaDecoderReader::ThrottledNotifyDataArrived :
-                         &MediaDecoderReader::NotifyDataArrived,
-      Interval(aOffset, aOffset + aLength));
+                         &MediaDecoderReader::NotifyDataArrived);
 
     OwnerThread()->Dispatch(
       r.forget(), AbstractThread::DontAssertDispatchSuccess);
   }
 
-  void NotifyDataArrived(const media::Interval<int64_t>& aInfo)
+  void NotifyDataArrived()
   {
     MOZ_ASSERT(OnTaskQueue());
     NS_ENSURE_TRUE_VOID(!mShutdown);
@@ -422,7 +418,7 @@ private:
 
   
   
-  void ThrottledNotifyDataArrived(const media::Interval<int64_t>& aInterval);
+  void ThrottledNotifyDataArrived();
   void DoThrottledNotify();
 
   

@@ -455,8 +455,7 @@ ChannelMediaResource::CopySegmentToCache(nsIInputStream *aInStream,
 {
   CopySegmentClosure* closure = static_cast<CopySegmentClosure*>(aClosure);
 
-  closure->mResource->mCallback->NotifyDataArrived(aCount, closure->mResource->mOffset,
-                                                   true);
+  closure->mResource->mCallback->NotifyDataArrived( true);
 
   
   RESOURCE_LOG("%p [ChannelMediaResource]: CopySegmentToCache at mOffset [%lld] add "
