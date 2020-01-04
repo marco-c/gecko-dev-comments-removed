@@ -5668,12 +5668,18 @@ BaseCompiler::emitBody()
         if (overhead == 0) {
             
             
-            CHECK(alloc_.ensureBallast());
-            CHECK(stk_.reserve(stk_.length() + 64));
             overhead = 50;
-        } else {
-            overhead -= 1;
+
+            
+            
+            CHECK(alloc_.ensureBallast());
+
+            
+            
+            CHECK(stk_.reserve(stk_.length() + overhead * 2));
         }
+
+        overhead--;
 
         if (done())
             return true;
