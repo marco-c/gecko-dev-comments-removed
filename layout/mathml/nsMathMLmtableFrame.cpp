@@ -65,7 +65,8 @@ ParseStyleValue(nsIAtom* aAttribute, const nsAString& aAttributeValue)
 }
 
 static nsTArray<int8_t>*
-ExtractStyleValues(const nsAString& aString, nsIAtom* aAttribute,
+ExtractStyleValues(const nsAString& aString,
+                   nsIAtom* aAttribute,
                    bool aAllowMultiValues)
 {
   nsTArray<int8_t>* styleArray = nullptr;
@@ -112,8 +113,10 @@ ExtractStyleValues(const nsAString& aString, nsIAtom* aAttribute,
   return styleArray;
 }
 
-static nsresult ReportParseError(nsIFrame* aFrame, const char16_t* aAttribute,
-                                 const char16_t* aValue)
+static nsresult
+ReportParseError(nsIFrame* aFrame,
+                 const char16_t* aAttribute,
+                 const char16_t* aValue)
 {
   nsIContent* content = aFrame->GetContent();
 
@@ -227,7 +230,8 @@ ApplyBorderToStyle(const nsMathMLmtdFrame* aFrame,
 }
 
 static nsMargin
-ComputeBorderOverflow(nsMathMLmtdFrame* aFrame, const nsStyleBorder& aStyleBorder)
+ComputeBorderOverflow(nsMathMLmtdFrame* aFrame,
+                      const nsStyleBorder& aStyleBorder)
 {
   nsMargin overflow;
   int32_t rowIndex;
@@ -262,7 +266,8 @@ ComputeBorderOverflow(nsMathMLmtdFrame* aFrame, const nsStyleBorder& aStyleBorde
 
 
 
-class nsDisplaymtdBorder : public nsDisplayBorder {
+class nsDisplaymtdBorder : public nsDisplayBorder
+{
 public:
   nsDisplaymtdBorder(nsDisplayListBuilder* aBuilder, nsMathMLmtdFrame* aFrame)
     : nsDisplayBorder(aBuilder, aFrame)
@@ -337,7 +342,8 @@ public:
 #endif
 
 static void
-ParseFrameAttribute(nsIFrame* aFrame, nsIAtom* aAttribute,
+ParseFrameAttribute(nsIFrame* aFrame,
+                    nsIAtom* aAttribute,
                     bool aAllowMultiValues)
 {
   nsAutoString attrValue;
@@ -683,26 +689,26 @@ ListMathMLTree(nsIFrame* atLeast)
 
 
 
-NS_QUERYFRAME_HEAD(nsMathMLmtableOuterFrame)
+NS_QUERYFRAME_HEAD(nsMathMLmtableWrapperFrame)
   NS_QUERYFRAME_ENTRY(nsIMathMLFrame)
 NS_QUERYFRAME_TAIL_INHERITING(nsTableWrapperFrame)
 
 nsContainerFrame*
 NS_NewMathMLmtableOuterFrame (nsIPresShell* aPresShell, nsStyleContext* aContext)
 {
-  return new (aPresShell) nsMathMLmtableOuterFrame(aContext);
+  return new (aPresShell) nsMathMLmtableWrapperFrame(aContext);
 }
 
-NS_IMPL_FRAMEARENA_HELPERS(nsMathMLmtableOuterFrame)
+NS_IMPL_FRAMEARENA_HELPERS(nsMathMLmtableWrapperFrame)
  
-nsMathMLmtableOuterFrame::~nsMathMLmtableOuterFrame()
+nsMathMLmtableWrapperFrame::~nsMathMLmtableWrapperFrame()
 {
 }
 
 nsresult
-nsMathMLmtableOuterFrame::AttributeChanged(int32_t  aNameSpaceID,
-                                           nsIAtom* aAttribute,
-                                           int32_t  aModType)
+nsMathMLmtableWrapperFrame::AttributeChanged(int32_t  aNameSpaceID,
+                                             nsIAtom* aAttribute,
+                                             int32_t  aModType)
 {
   
   
@@ -779,7 +785,7 @@ nsMathMLmtableOuterFrame::AttributeChanged(int32_t  aNameSpaceID,
 }
 
 nsIFrame*
-nsMathMLmtableOuterFrame::GetRowFrameAt(int32_t aRowIndex)
+nsMathMLmtableWrapperFrame::GetRowFrameAt(int32_t aRowIndex)
 {
   int32_t rowCount = GetRowCount();
 
@@ -814,10 +820,10 @@ nsMathMLmtableOuterFrame::GetRowFrameAt(int32_t aRowIndex)
 }
 
 void
-nsMathMLmtableOuterFrame::Reflow(nsPresContext*          aPresContext,
-                                 nsHTMLReflowMetrics&     aDesiredSize,
-                                 const nsHTMLReflowState& aReflowState,
-                                 nsReflowStatus&          aStatus)
+nsMathMLmtableWrapperFrame::Reflow(nsPresContext*           aPresContext,
+                                   nsHTMLReflowMetrics&     aDesiredSize,
+                                   const nsHTMLReflowState& aReflowState,
+                                   nsReflowStatus&          aStatus)
 {
   nsAutoString value;
   
@@ -971,7 +977,7 @@ nsMathMLmtableFrame::GetColSpacing(int32_t aColIndex)
 
 nscoord
 nsMathMLmtableFrame::GetColSpacing(int32_t aStartColIndex,
-                                     int32_t aEndColIndex)
+                                  int32_t aEndColIndex)
 {
   if (mUseCSSSpacing) {
     return nsTableFrame::GetColSpacing(aStartColIndex, aEndColIndex);
@@ -1031,7 +1037,7 @@ nsMathMLmtableFrame::GetRowSpacing(int32_t aRowIndex)
 
 nscoord
 nsMathMLmtableFrame::GetRowSpacing(int32_t aStartRowIndex,
-                                     int32_t aEndRowIndex)
+                                   int32_t aEndRowIndex)
 {
   if (mUseCSSSpacing) {
     return nsTableFrame::GetRowSpacing(aStartRowIndex, aEndRowIndex);
@@ -1131,8 +1137,9 @@ nsMathMLmtrFrame::AttributeChanged(int32_t  aNameSpaceID,
 
 
 nsContainerFrame*
-NS_NewMathMLmtdFrame(nsIPresShell* aPresShell, nsStyleContext* aContext,
-                     nsTableFrame* aTableFrame)
+NS_NewMathMLmtdFrame(nsIPresShell*   aPresShell,
+                     nsStyleContext* aContext,
+                     nsTableFrame*   aTableFrame)
 {
   return new (aPresShell) nsMathMLmtdFrame(aContext, aTableFrame);
 }
@@ -1308,7 +1315,7 @@ nsMathMLmtdInnerFrame::~nsMathMLmtdInnerFrame()
 }
 
 void
-nsMathMLmtdInnerFrame::Reflow(nsPresContext*          aPresContext,
+nsMathMLmtdInnerFrame::Reflow(nsPresContext*           aPresContext,
                               nsHTMLReflowMetrics&     aDesiredSize,
                               const nsHTMLReflowState& aReflowState,
                               nsReflowStatus&          aStatus)
