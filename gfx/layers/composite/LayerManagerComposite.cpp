@@ -430,7 +430,7 @@ LayerManagerComposite::UpdateAndRender()
 
   
   
-  InvalidateDebugOverlay(mRenderBounds);
+  InvalidateDebugOverlay(invalid, mRenderBounds);
 
   if (!didEffectiveTransforms) {
     
@@ -521,23 +521,18 @@ LayerManagerComposite::RootLayer() const
 #endif
 
 void
-LayerManagerComposite::InvalidateDebugOverlay(const IntRect& aBounds)
+LayerManagerComposite::InvalidateDebugOverlay(nsIntRegion& aInvalidRegion, const IntRect& aBounds)
 {
   bool drawFps = gfxPrefs::LayersDrawFPS();
   bool drawFrameCounter = gfxPrefs::DrawFrameCounter();
   bool drawFrameColorBars = gfxPrefs::CompositorDrawColorBars();
 
   if (drawFps || drawFrameCounter) {
-    AddInvalidRegion(nsIntRect(0, 0, 256, 256));
+    aInvalidRegion.Or(aInvalidRegion, nsIntRect(0, 0, 256, 256));
   }
   if (drawFrameColorBars) {
-    AddInvalidRegion(nsIntRect(0, 0, 10, aBounds.height));
+    aInvalidRegion.Or(aInvalidRegion, nsIntRect(0, 0, 10, aBounds.height));
   }
-
-  if (drawFrameColorBars) {
-    AddInvalidRegion(nsIntRect(0, 0, 10, aBounds.height));
-  }
-
 }
 
 static uint16_t sFrameCount = 0;

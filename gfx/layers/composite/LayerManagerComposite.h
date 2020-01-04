@@ -328,7 +328,7 @@ private:
   
 
 
-  void InvalidateDebugOverlay(const gfx::IntRect& aBounds);
+  void InvalidateDebugOverlay(nsIntRegion& aInvalidRegion, const gfx::IntRect& aBounds);
 
   
 
