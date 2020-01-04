@@ -1125,8 +1125,16 @@ nsresult SetExceptionHandler(nsIFile* aXREDirectory,
 #else
     
     
-    nsCString package(ANDROID_PACKAGE_NAME "/org.mozilla.gecko.CrashReporter");
-    crashReporterPath = ToNewCString(package);
+    
+    const char* androidPackageName = PR_GetEnv("MOZ_ANDROID_PACKAGE_NAME");
+    if (androidPackageName != nullptr) {
+      nsCString package(androidPackageName);
+      package.Append("/org.mozilla.gecko.CrashReporter");
+      crashReporterPath = ToNewCString(package);
+    } else {
+      nsCString package(ANDROID_PACKAGE_NAME "/org.mozilla.gecko.CrashReporter");
+      crashReporterPath = ToNewCString(package);
+    }
 #endif
   }
 
