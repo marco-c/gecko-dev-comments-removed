@@ -2,21 +2,22 @@
 
 
 
-this.EXPORTED_SYMBOLS = ["checkVersions", "addTestBlocklistClient"];
+this.EXPORTED_SYMBOLS = ["checkVersions", "addTestKintoClient"];
 
 const { classes: Cc, Constructor: CC, interfaces: Ci, utils: Cu } = Components;
 
 Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/Task.jsm");
 Cu.importGlobalProperties(['fetch']);
-const BlocklistClients = Cu.import("resource://services-common/blocklist-clients.js", {});
+const BlocklistClients = Cu.import("resource://services-common/KintoBlocklist.js", {});
 
-const PREF_SETTINGS_SERVER              = "services.settings.server";
-const PREF_BLOCKLIST_CHANGES_PATH       = "services.blocklist.changes.path";
-const PREF_BLOCKLIST_BUCKET             = "services.blocklist.bucket";
-const PREF_BLOCKLIST_LAST_UPDATE        = "services.blocklist.last_update_seconds";
-const PREF_BLOCKLIST_LAST_ETAG          = "services.blocklist.last_etag";
-const PREF_BLOCKLIST_CLOCK_SKEW_SECONDS = "services.blocklist.clock_skew_seconds";
+const PREF_KINTO_CHANGES_PATH       = "services.kinto.changes.path";
+const PREF_KINTO_BASE               = "services.kinto.base";
+const PREF_KINTO_BUCKET             = "services.kinto.bucket";
+const PREF_KINTO_LAST_UPDATE        = "services.kinto.last_update_seconds";
+const PREF_KINTO_LAST_ETAG          = "services.kinto.last_etag";
+const PREF_KINTO_CLOCK_SKEW_SECONDS = "services.kinto.clock_skew_seconds";
+const PREF_KINTO_ONECRL_COLLECTION  = "services.kinto.onecrl.collection";
 
 
 const gBlocklistClients = {
@@ -27,7 +28,7 @@ const gBlocklistClients = {
 };
 
 
-this.addTestBlocklistClient = (name, client) => { gBlocklistClients[name] = client; }
+this.addTestKintoClient = (name, client) => { gBlocklistClients[name] = client; }
 
 
 
@@ -42,14 +43,14 @@ this.checkVersions = function() {
     
     
     
-    let kintoBase = Services.prefs.getCharPref(PREF_SETTINGS_SERVER);
-    let changesEndpoint = kintoBase + Services.prefs.getCharPref(PREF_BLOCKLIST_CHANGES_PATH);
-    let blocklistsBucket = Services.prefs.getCharPref(PREF_BLOCKLIST_BUCKET);
+    let kintoBase = Services.prefs.getCharPref(PREF_KINTO_BASE);
+    let changesEndpoint = kintoBase + Services.prefs.getCharPref(PREF_KINTO_CHANGES_PATH);
+    let blocklistsBucket = Services.prefs.getCharPref(PREF_KINTO_BUCKET);
 
     
     const headers = {};
-    if (Services.prefs.prefHasUserValue(PREF_BLOCKLIST_LAST_ETAG)) {
-      const lastEtag = Services.prefs.getCharPref(PREF_BLOCKLIST_LAST_ETAG);
+    if (Services.prefs.prefHasUserValue(PREF_KINTO_LAST_ETAG)) {
+      const lastEtag = Services.prefs.getCharPref(PREF_KINTO_LAST_ETAG);
       if (lastEtag) {
         headers["If-None-Match"] = lastEtag;
       }
@@ -77,8 +78,8 @@ this.checkVersions = function() {
     
     
     let clockDifference = Math.floor((Date.now() - serverTimeMillis) / 1000);
-    Services.prefs.setIntPref(PREF_BLOCKLIST_CLOCK_SKEW_SECONDS, clockDifference);
-    Services.prefs.setIntPref(PREF_BLOCKLIST_LAST_UPDATE, serverTimeMillis / 1000);
+    Services.prefs.setIntPref(PREF_KINTO_CLOCK_SKEW_SECONDS, clockDifference);
+    Services.prefs.setIntPref(PREF_KINTO_LAST_UPDATE, serverTimeMillis / 1000);
 
     let firstError;
     for (let collectionInfo of versionInfo.data) {
@@ -111,7 +112,7 @@ this.checkVersions = function() {
     
     if (response.headers.has("ETag")) {
       const currentEtag = response.headers.get("ETag");
-      Services.prefs.setCharPref(PREF_BLOCKLIST_LAST_ETAG, currentEtag);
+      Services.prefs.setCharPref(PREF_KINTO_LAST_ETAG, currentEtag);
     }
   });
 };
