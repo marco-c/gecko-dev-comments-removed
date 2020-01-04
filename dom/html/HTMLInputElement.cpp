@@ -3902,7 +3902,7 @@ HTMLInputElement::PostHandleEvent(EventChainPostVisitor& aVisitor)
           
           nsIFocusManager* fm = nsFocusManager::GetFocusManager();
           if (fm && IsSingleLineTextControl(false) &&
-              !aVisitor.mEvent->AsFocusEvent()->fromRaise &&
+              !aVisitor.mEvent->AsFocusEvent()->mFromRaise &&
               SelectTextFieldOnFocus()) {
             nsIDocument* document = GetComposedDoc();
             if (document) {
