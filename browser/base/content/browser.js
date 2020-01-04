@@ -1573,6 +1573,10 @@ if (AppConstants.platform == "macosx") {
   };
 
   gBrowserInit.nonBrowserWindowShutdown = function() {
+    let dockSupport = Cc["@mozilla.org/widget/macdocksupport;1"]
+                      .getService(Ci.nsIMacDockSupport);
+    dockSupport.dockMenu = null;
+
     
     
     if (this._delayedStartupTimeoutId) {
@@ -3366,7 +3370,7 @@ const DOMLinkHandler = {
   addSearch: function(aBrowser, aEngine, aURL) {
     let tab = gBrowser.getTabForBrowser(aBrowser);
     if (!tab)
-      return;
+      return false;
 
     BrowserSearch.addEngine(aBrowser, aEngine, makeURI(aURL));
   },
