@@ -2823,6 +2823,47 @@ public:
     template<class Impl> class Natives;
 };
 
+class Restrictions : public mozilla::jni::ObjectBase<Restrictions, jobject>
+{
+public:
+    explicit Restrictions(const Context& ctx) : ObjectBase<Restrictions, jobject>(ctx) {}
+
+    struct IsAllowed_t {
+        typedef Restrictions Owner;
+        typedef bool ReturnType;
+        typedef bool SetterType;
+        typedef mozilla::jni::Args<
+                int32_t,
+                mozilla::jni::String::Param> Args;
+        static constexpr char name[] = "isAllowed";
+        static constexpr char signature[] =
+                "(ILjava/lang/String;)Z";
+        static const bool isStatic = true;
+        static const mozilla::jni::ExceptionMode exceptionMode =
+                mozilla::jni::ExceptionMode::ABORT;
+    };
+
+    static auto IsAllowed(int32_t, mozilla::jni::String::Param) -> bool;
+
+    struct IsUserRestricted_t {
+        typedef Restrictions Owner;
+        typedef bool ReturnType;
+        typedef bool SetterType;
+        typedef mozilla::jni::Args<> Args;
+        static constexpr char name[] = "isUserRestricted";
+        static constexpr char signature[] =
+                "()Z";
+        static const bool isStatic = true;
+        static const mozilla::jni::ExceptionMode exceptionMode =
+                mozilla::jni::ExceptionMode::ABORT;
+    };
+
+    static auto IsUserRestricted() -> bool;
+
+    static const bool isMultithreaded = false;
+
+};
+
 class SurfaceBits : public mozilla::jni::ObjectBase<SurfaceBits, jobject>
 {
 public:
@@ -3740,6 +3781,22 @@ public:
 
     auto RequestContentRepaintWrapper(float, float, float, float, float) const -> void;
 
+    struct SetScrollingRootContent_t {
+        typedef NativePanZoomController Owner;
+        typedef void ReturnType;
+        typedef void SetterType;
+        typedef mozilla::jni::Args<
+                bool> Args;
+        static constexpr char name[] = "setScrollingRootContent";
+        static constexpr char signature[] =
+                "(Z)V";
+        static const bool isStatic = false;
+        static const mozilla::jni::ExceptionMode exceptionMode =
+                mozilla::jni::ExceptionMode::ABORT;
+    };
+
+    auto SetScrollingRootContent(bool) const -> void;
+
     struct UpdateOverscrollOffset_t {
         typedef NativePanZoomController Owner;
         typedef void ReturnType;
@@ -4064,47 +4121,6 @@ public:
     auto Y(float) const -> void;
 
     static const bool isMultithreaded = true;
-
-};
-
-class Restrictions : public mozilla::jni::ObjectBase<Restrictions, jobject>
-{
-public:
-    explicit Restrictions(const Context& ctx) : ObjectBase<Restrictions, jobject>(ctx) {}
-
-    struct IsAllowed_t {
-        typedef Restrictions Owner;
-        typedef bool ReturnType;
-        typedef bool SetterType;
-        typedef mozilla::jni::Args<
-                int32_t,
-                mozilla::jni::String::Param> Args;
-        static constexpr char name[] = "isAllowed";
-        static constexpr char signature[] =
-                "(ILjava/lang/String;)Z";
-        static const bool isStatic = true;
-        static const mozilla::jni::ExceptionMode exceptionMode =
-                mozilla::jni::ExceptionMode::ABORT;
-    };
-
-    static auto IsAllowed(int32_t, mozilla::jni::String::Param) -> bool;
-
-    struct IsUserRestricted_t {
-        typedef Restrictions Owner;
-        typedef bool ReturnType;
-        typedef bool SetterType;
-        typedef mozilla::jni::Args<> Args;
-        static constexpr char name[] = "isUserRestricted";
-        static constexpr char signature[] =
-                "()Z";
-        static const bool isStatic = true;
-        static const mozilla::jni::ExceptionMode exceptionMode =
-                mozilla::jni::ExceptionMode::ABORT;
-    };
-
-    static auto IsUserRestricted() -> bool;
-
-    static const bool isMultithreaded = false;
 
 };
 
