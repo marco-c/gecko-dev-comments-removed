@@ -1540,6 +1540,12 @@ ContentEventHandler::OnQueryTextRect(WidgetQueryContentEvent* aEvent)
     return rv;
   }
 
+  
+  
+  if (!aEvent->mInput.mLength) {
+    return OnQueryCaretRect(aEvent);
+  }
+
   LineBreakType lineBreakType = GetLineBreakType(aEvent);
   RefPtr<nsRange> range = new nsRange(mRootContent);
   rv = SetRangeFromFlatTextOffset(range, aEvent->mInput.mOffset,
