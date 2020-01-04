@@ -9,6 +9,8 @@
 #include "mozilla/dom/PromiseNativeHandler.h"
 
 #include "jsapi.h"
+#include "jsfriendapi.h"
+#include "jswrapper.h"
 
 namespace mozilla {
 namespace dom {
@@ -307,6 +309,32 @@ WrapperPromiseCallback::Call(JSContext* aCx,
 
   mNextPromise->ResolveInternal(aCx, retValue);
   return NS_OK;
+}
+
+Promise*
+WrapperPromiseCallback::GetDependentPromise()
+{
+  
+  
+  
+  
+  
+  
+  
+  
+  JSObject* callable = mCallback->Callable();
+  
+  
+  callable = js::UncheckedUnwrap(callable);
+  if (JS_IsNativeFunction(callable, Promise::JSCallback)) {
+    JS::Value promiseVal =
+      js::GetFunctionNativeReserved(callable, Promise::SLOT_PROMISE);
+    Promise* promise;
+    UNWRAP_OBJECT(Promise, &promiseVal.toObject(), promise);
+    return promise;
+  }
+
+  return mNextPromise;
 }
 
 
