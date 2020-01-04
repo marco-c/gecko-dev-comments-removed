@@ -55,8 +55,17 @@ MediaStreamPlayback.prototype = {
       });
     });
 
-    
-    this.mediaStream.getTracks().forEach(t => t.stop());
+    var noTrackEnded = Promise.all(this.mediaStream.getTracks().map(t => {
+      let onNextLoop = wait(0);
+      let p = Promise.race([
+        onNextLoop,
+        haveEvent(t, "ended", onNextLoop)
+          .then(() => Promise.reject("Unexpected ended event for track " + t.id),
+                () => Promise.resolve())
+      ]);
+      t.stop();
+      return p;
+    }));
 
     
     
@@ -65,7 +74,8 @@ MediaStreamPlayback.prototype = {
     }
     this.mediaStream.stop();
     return timeout(waitForEnded(), ENDED_TIMEOUT_LENGTH, "ended event never fired")
-             .then(() => ok(true, "ended event successfully fired"));
+             .then(() => ok(true, "ended event successfully fired"))
+             .then(() => noTrackEnded);
   },
 
   
