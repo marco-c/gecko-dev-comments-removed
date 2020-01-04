@@ -40,7 +40,7 @@ add_task(function*() {
   ok(inspector.markup, "There is a markup view");
 
   
-  reloadTab(testActor);
+  testActor.eval("location.reload()");
   yield domContentLoaded;
   yield chooseWithInspectElementContextMenu("img", testActor);
   yield pageLoaded;

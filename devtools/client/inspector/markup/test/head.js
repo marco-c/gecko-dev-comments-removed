@@ -52,73 +52,11 @@ function loadHelperScript(filePath) {
 
 
 
-function reloadPage(inspector) {
+function reloadPage(inspector, testActor) {
   info("Reloading the page");
   let newRoot = inspector.once("new-root");
-  content.location.reload();
+  testActor.reload();
   return newRoot;
-}
-
-
-
-
-
-
-function reloadTab(testActor) {
-  return testActor.eval("location.reload()");
-}
-
-
-
-
-
-
-
-
-function getNode(nodeOrSelector) {
-  info("Getting the node for '" + nodeOrSelector + "'");
-  return typeof nodeOrSelector === "string" ?
-    content.document.querySelector(nodeOrSelector) :
-    nodeOrSelector;
-}
-
-
-
-
-
-
-function getNodeInfo(selector, testActor) {
-  return testActor.getNodeInfo(selector);
-}
-
-
-
-
-
-
-
-
-
-function setNodeAttribute(selector, attributeName, attributeValue, testActor) {
-  return testActor.setAttribute(selector, attributeName, attributeValue);
-}
-
-
-
-
-
-
-
-
-
-
-function selectAndHighlightNode(nodeOrSelector, inspector) {
-  info("Highlighting and selecting the node " + nodeOrSelector);
-
-  let node = getNode(nodeOrSelector);
-  let updated = inspector.toolbox.once("highlighter-ready");
-  inspector.selection.setNode(node, "test-highlight");
-  return updated;
 }
 
 
@@ -241,7 +179,7 @@ var addNewAttributes = Task.async(function*(selector, text, inspector) {
 
 
 var assertAttributes = Task.async(function*(selector, expected, testActor) {
-  let {attributes: actual} = yield getNodeInfo(selector, testActor);
+  let {attributes: actual} = yield testActor.getNodeInfo(selector);
 
   is(actual.length, Object.keys(expected).length,
     "The node " + selector + " has the expected number of attributes.");
@@ -325,7 +263,7 @@ function searchUsingSelectorSearch(selector, inspector) {
 
 function wait(ms) {
   let def = promise.defer();
-  content.setTimeout(def.resolve, ms);
+  setTimeout(def.resolve, ms);
   return def.promise;
 }
 

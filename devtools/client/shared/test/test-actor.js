@@ -496,6 +496,32 @@ var TestActor = exports.TestActor = protocol.ActorClass({
 
 
 
+
+  removeAttribute: protocol.method(function (selector, attribute) {
+    let node = this._querySelector(selector);
+    node.removeAttribute(attribute);
+  }, {
+    request: {
+      selector: Arg(0, "string"),
+      property: Arg(1, "string")
+    },
+    response: {}
+  }),
+
+  
+
+
+  reload: protocol.method(function () {
+    this.content.location.reload();
+  }, {
+    request: {},
+    response: {}
+  }),
+
+  
+
+
+
   reloadFrame: protocol.method(function (selector) {
     let node = this._querySelector(selector);
 
