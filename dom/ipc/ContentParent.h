@@ -1111,6 +1111,15 @@ private:
   virtual bool RecvNotifyBenchmarkResult(const nsString& aCodecName,
                                          const uint32_t& aDecodeFPS) override;
 
+  virtual bool RecvNotifyPushObservers(const nsCString& aScope,
+                                   const nsString& aMessageId) override;
+
+  virtual bool RecvNotifyPushObserversWithData(const nsCString& aScope,
+                                           const nsString& aMessageId,
+                                           InfallibleTArray<uint8_t>&& aData) override;
+
+  virtual bool RecvNotifyPushSubscriptionChangeObservers(const nsCString& aScope) override;
+
   
   
   
