@@ -187,7 +187,9 @@ class RegExpParser
 
     
     
-    widechar ParseClassCharacterEscape();
+    
+    
+    bool ParseClassCharacterEscape(widechar* code);
 
     
     
@@ -205,7 +207,7 @@ class RegExpParser
     
     bool ParseBackReferenceIndex(int* index_out);
 
-    bool ParseClassAtom(char16_t* char_class, CharacterRange* char_range);
+    bool ParseClassAtom(char16_t* char_class, widechar *value);
     RegExpTree* ReportError(unsigned errorNumber);
     void Advance();
     void Advance(int dist) {
