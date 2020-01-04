@@ -35,6 +35,27 @@ var ActionBarHandler = {
       return;
     }
 
+    if (!this._selectionID && e.collapsed) {
+      switch (e.reason) {
+        case 'longpressonemptycontent':
+        
+          
+          
+          
+          this._init();
+          break;
+
+        case 'updateposition':
+          
+          
+          break;
+
+        default:
+          break;
+      }
+      return;
+    }
+
     
     if (!this._selectionID && e.caretVisuallyVisible) {
       this._init();
