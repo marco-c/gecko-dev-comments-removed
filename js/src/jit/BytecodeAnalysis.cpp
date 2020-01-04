@@ -17,7 +17,7 @@ using namespace js::jit;
 BytecodeAnalysis::BytecodeAnalysis(TempAllocator& alloc, JSScript* script)
   : script_(script),
     infos_(alloc),
-    usesScopeChain_(false),
+    usesEnvironmentChain_(false),
     hasTryFinally_(false),
     hasSetArg_(false)
 {
@@ -48,10 +48,10 @@ BytecodeAnalysis::init(TempAllocator& alloc, GSNCache& gsn)
 
     
     
-    usesScopeChain_ = script_->module() ||
-                      (script_->functionDelazifying() &&
-                       script_->functionDelazifying()->needsCallObject());
-    MOZ_ASSERT_IF(script_->hasAnyAliasedBindings(), usesScopeChain_);
+    
+    usesEnvironmentChain_ = script_->module() || script_->initialEnvironmentShape() ||
+                            (script_->functionDelazifying() &&
+                             script_->functionDelazifying()->needsSomeEnvironmentObject());
 
     jsbytecode* end = script_->codeEnd();
 
@@ -168,14 +168,14 @@ BytecodeAnalysis::init(TempAllocator& alloc, GSNCache& gsn)
           case JSOP_LAMBDA_ARROW:
           case JSOP_DEFFUN:
           case JSOP_DEFVAR:
-            usesScopeChain_ = true;
+            usesEnvironmentChain_ = true;
             break;
 
           case JSOP_GETGNAME:
           case JSOP_SETGNAME:
           case JSOP_STRICTSETGNAME:
             if (script_->hasNonSyntacticScope())
-                usesScopeChain_ = true;
+                usesEnvironmentChain_ = true;
             break;
 
           case JSOP_FINALLY:

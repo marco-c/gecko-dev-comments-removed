@@ -53,8 +53,8 @@ enum {
     JOF_REGEXP          = 17,       
     JOF_INT8            = 18,       
     JOF_ATOMOBJECT      = 19,       
-    
-    JOF_SCOPECOORD      = 21,       
+    JOF_SCOPE           = 20,       
+    JOF_ENVCOORD        = 21,       
     JOF_TYPEMASK        = 0x001f,   
 
     JOF_NAME            = 1 << 5,   
@@ -338,37 +338,37 @@ PackLoopEntryDepthHintAndFlags(unsigned loopDepth, bool canIonOsr)
 
 
 static inline uint8_t
-GET_SCOPECOORD_HOPS(jsbytecode* pc)
+GET_ENVCOORD_HOPS(jsbytecode* pc)
 {
     return GET_UINT8(pc);
 }
 
 static inline void
-SET_SCOPECOORD_HOPS(jsbytecode* pc, uint8_t hops)
+SET_ENVCOORD_HOPS(jsbytecode* pc, uint8_t hops)
 {
     SET_UINT8(pc, hops);
 }
 
-static const unsigned SCOPECOORD_HOPS_LEN   = 1;
-static const unsigned SCOPECOORD_HOPS_BITS  = 8;
-static const unsigned SCOPECOORD_HOPS_LIMIT = 1 << SCOPECOORD_HOPS_BITS;
+static const unsigned ENVCOORD_HOPS_LEN   = 1;
+static const unsigned ENVCOORD_HOPS_BITS  = 8;
+static const unsigned ENVCOORD_HOPS_LIMIT = 1 << ENVCOORD_HOPS_BITS;
 
 
 static inline uint32_t
-GET_SCOPECOORD_SLOT(const jsbytecode* pc)
+GET_ENVCOORD_SLOT(const jsbytecode* pc)
 {
     return GET_UINT24(pc);
 }
 
 static inline void
-SET_SCOPECOORD_SLOT(jsbytecode* pc, uint32_t slot)
+SET_ENVCOORD_SLOT(jsbytecode* pc, uint32_t slot)
 {
     SET_UINT24(pc, slot);
 }
 
-static const unsigned SCOPECOORD_SLOT_LEN   = 3;
-static const unsigned SCOPECOORD_SLOT_BITS  = 24;
-static const uint32_t SCOPECOORD_SLOT_LIMIT = 1 << SCOPECOORD_SLOT_BITS;
+static const unsigned ENVCOORD_SLOT_LEN   = 3;
+static const unsigned ENVCOORD_SLOT_BITS  = 24;
+static const uint32_t ENVCOORD_SLOT_LIMIT = 1 << ENVCOORD_SLOT_BITS;
 
 struct JSCodeSpec {
     int8_t              length;         
@@ -681,7 +681,7 @@ IsLocalOp(JSOp op)
 inline bool
 IsAliasedVarOp(JSOp op)
 {
-    return JOF_OPTYPE(op) == JOF_SCOPECOORD;
+    return JOF_OPTYPE(op) == JOF_ENVCOORD;
 }
 
 inline bool

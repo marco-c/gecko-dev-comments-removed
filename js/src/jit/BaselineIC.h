@@ -1629,7 +1629,7 @@ class ICGetName_GlobalLexical : public ICMonitoredStub
 
 
 template <size_t NumHops>
-class ICGetName_Scope : public ICMonitoredStub
+class ICGetName_Env : public ICMonitoredStub
 {
     friend class ICStubSpace;
 
@@ -1638,25 +1638,25 @@ class ICGetName_Scope : public ICMonitoredStub
     mozilla::Array<GCPtrShape, NumHops + 1> shapes_;
     uint32_t offset_;
 
-    ICGetName_Scope(JitCode* stubCode, ICStub* firstMonitorStub,
-                    Handle<ShapeVector> shapes, uint32_t offset);
+    ICGetName_Env(JitCode* stubCode, ICStub* firstMonitorStub,
+                  Handle<ShapeVector> shapes, uint32_t offset);
 
     static Kind GetStubKind() {
-        return (Kind) (GetName_Scope0 + NumHops);
+        return (Kind) (GetName_Env0 + NumHops);
     }
 
   public:
-    void traceScopes(JSTracer* trc) {
+    void traceEnvironments(JSTracer* trc) {
         for (size_t i = 0; i < NumHops + 1; i++)
-            TraceEdge(trc, &shapes_[i], "baseline-scope-stub-shape");
+            TraceEdge(trc, &shapes_[i], "baseline-env-stub-shape");
     }
 
     static size_t offsetOfShape(size_t index) {
         MOZ_ASSERT(index <= NumHops);
-        return offsetof(ICGetName_Scope, shapes_) + (index * sizeof(GCPtrShape));
+        return offsetof(ICGetName_Env, shapes_) + (index * sizeof(GCPtrShape));
     }
     static size_t offsetOfOffset() {
-        return offsetof(ICGetName_Scope, offset_);
+        return offsetof(ICGetName_Env, offset_);
     }
 
     class Compiler : public ICStubCompiler {
@@ -1687,8 +1687,8 @@ class ICGetName_Scope : public ICMonitoredStub
         }
 
         ICStub* getStub(ICStubSpace* space) {
-            return newStub<ICGetName_Scope>(space, getStubCode(), firstMonitorStub_, shapes_,
-                                            offset_);
+            return newStub<ICGetName_Env>(space, getStubCode(), firstMonitorStub_, shapes_,
+                                          offset_);
         }
     };
 };

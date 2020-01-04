@@ -2825,7 +2825,7 @@ SetJitExceptionHandler(JitExceptionHandler handler);
 
 
 extern JS_FRIEND_API(JSObject*)
-GetNearestEnclosingWithScopeObjectForFunction(JSFunction* fun);
+GetNearestEnclosingWithEnvironmentObjectForFunction(JSFunction* fun);
 
 
 

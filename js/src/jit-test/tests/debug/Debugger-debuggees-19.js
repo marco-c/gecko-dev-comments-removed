@@ -6,7 +6,8 @@ var dbg = new Debugger;
 var log;
 dbg.onEnterFrame = function (frame) {
   log += 'e';
-  log += frame.environment.parent.parent.object.label;
+  
+  log += frame.environment.parent.object.label;
 };
 
 var g1 = newGlobal();

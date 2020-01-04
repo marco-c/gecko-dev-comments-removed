@@ -39,14 +39,13 @@ class ArgumentsObject;
 class InterpreterRegs;
 class CallObject;
 class FrameIter;
-class ScopeObject;
+class EnvironmentObject;
 class ScriptFrameIter;
 class SPSProfiler;
 class InterpreterFrame;
-class StaticBlockScope;
-class ClonedBlockObject;
-
-class ScopeCoordinate;
+class LexicalEnvironmentObject;
+class EnvironmentIter;
+class EnvironmentCoordinate;
 
 class SavedFrame;
 
@@ -88,7 +87,7 @@ class Instance;
 
 
 enum MaybeCheckAliasing { CHECK_ALIASING = true, DONT_CHECK_ALIASING = false };
-enum MaybeCheckLexical { CheckLexical = true, DontCheckLexical = false };
+enum MaybeCheckTDZ { CheckTDZ = true, DontCheckTDZ = false };
 
 
 
@@ -197,14 +196,18 @@ class AbstractFramePtr
 
     explicit operator bool() const { return !!ptr_; }
 
-    inline JSObject* scopeChain() const;
+    inline JSObject* environmentChain() const;
     inline CallObject& callObj() const;
-    inline bool initFunctionScopeObjects(JSContext* cx);
-    inline void pushOnScopeChain(ScopeObject& scope);
+    inline bool initFunctionEnvironmentObjects(JSContext* cx);
+    inline bool pushVarEnvironment(JSContext* cx, HandleScope scope);
+    template <typename SpecificEnvironment>
+    inline void pushOnEnvironmentChain(SpecificEnvironment& env);
+    template <typename SpecificEnvironment>
+    inline void popOffEnvironmentChain();
 
     inline JSCompartment* compartment() const;
 
-    inline bool hasCallObj() const;
+    inline bool hasInitialEnvironment() const;
     inline bool isGlobalFrame() const;
     inline bool isModuleFrame() const;
     inline bool isEvalFrame() const;
@@ -236,8 +239,6 @@ class AbstractFramePtr
     inline void initArgsObj(ArgumentsObject& argsobj) const;
     inline bool createSingleton() const;
 
-    inline bool copyRawFrameSlots(MutableHandle<GCVector<Value>> vec) const;
-
     inline Value& unaliasedLocal(uint32_t i);
     inline Value& unaliasedFormal(unsigned i, MaybeCheckAliasing checkAliasing = CHECK_ALIASING);
     inline Value& unaliasedActual(unsigned i, MaybeCheckAliasing checkAliasing = CHECK_ALIASING);
@@ -253,11 +254,6 @@ class AbstractFramePtr
 
     inline HandleValue returnValue() const;
     inline void setReturnValue(const Value& rval) const;
-
-    inline bool freshenBlock(JSContext* cx) const;
-
-    inline void popBlock(JSContext* cx) const;
-    inline void popWith(JSContext* cx) const;
 
     friend void GDBTestInitAbstractFramePtr(AbstractFramePtr&, void*);
     friend void GDBTestInitAbstractFramePtr(AbstractFramePtr&, InterpreterFrame*);
@@ -285,7 +281,7 @@ class InterpreterFrame
         RESUMED_GENERATOR      =        0x2,  
 
         
-        HAS_CALL_OBJ           =        0x4,  
+        HAS_INITIAL_ENV        =        0x4,  
         HAS_ARGS_OBJ           =        0x8,  
 
         
@@ -323,7 +319,7 @@ class InterpreterFrame
     mutable uint32_t    flags_;         
     uint32_t            nactual_;       
     JSScript*           script_;        
-    JSObject*           scopeChain_;    
+    JSObject*           envChain_;      
     Value               rval_;          
     ArgumentsObject*    argsObj_;       
 
@@ -378,7 +374,7 @@ class InterpreterFrame
 
     
     void initExecuteFrame(JSContext* cx, HandleScript script, AbstractFramePtr prev,
-                          const Value& newTargetValue, HandleObject scopeChain);
+                          const Value& newTargetValue, HandleObject envChain);
 
   public:
     
@@ -401,15 +397,13 @@ class InterpreterFrame
 
 
     bool prologue(JSContext* cx);
-    void epilogue(JSContext* cx);
+    void epilogue(JSContext* cx, jsbytecode* pc);
 
     bool checkReturn(JSContext* cx, HandleValue thisv);
 
-    bool initFunctionScopeObjects(JSContext* cx);
+    bool initFunctionEnvironmentObjects(JSContext* cx);
 
     
-
-
 
 
     void initLocals();
@@ -493,17 +487,12 @@ class InterpreterFrame
 
 
 
-
-
-
     inline Value& unaliasedLocal(uint32_t i);
 
     bool hasArgs() const { return isFunctionFrame(); }
     inline Value& unaliasedFormal(unsigned i, MaybeCheckAliasing = CHECK_ALIASING);
     inline Value& unaliasedActual(unsigned i, MaybeCheckAliasing = CHECK_ALIASING);
     template <class Op> inline void unaliasedForEachActual(Op op);
-
-    bool copyRawFrameSlots(MutableHandle<GCVector<Value>> v);
 
     unsigned numFormalArgs() const { MOZ_ASSERT(hasArgs()); return callee().nargs(); }
     unsigned numActualArgs() const { MOZ_ASSERT(hasArgs()); return nactual_; }
@@ -546,17 +535,24 @@ class InterpreterFrame
 
 
 
-    inline HandleObject scopeChain() const;
 
-    inline ScopeObject& aliasedVarScope(ScopeCoordinate sc) const;
+    inline HandleObject environmentChain() const;
+
+    inline EnvironmentObject& aliasedEnvironment(EnvironmentCoordinate ec) const;
     inline GlobalObject& global() const;
     inline CallObject& callObj() const;
     inline JSObject& varObj() const;
-    inline ClonedBlockObject& extensibleLexicalScope() const;
+    inline LexicalEnvironmentObject& extensibleLexicalEnvironment() const;
 
-    inline void pushOnScopeChain(ScopeObject& scope);
-    inline void popOffScopeChain();
-    inline void replaceInnermostScope(ScopeObject& scope);
+    template <typename SpecificEnvironment>
+    inline void pushOnEnvironmentChain(SpecificEnvironment& env);
+    template <typename SpecificEnvironment>
+    inline void popOffEnvironmentChain();
+    inline void replaceInnermostEnvironment(EnvironmentObject& env);
+
+    
+    
+    bool pushVarEnvironment(JSContext* cx, HandleScope scope);
 
     
 
@@ -565,18 +561,13 @@ class InterpreterFrame
 
 
 
-    bool pushBlock(JSContext* cx, StaticBlockScope& block);
-    void popBlock(JSContext* cx);
-    bool freshenBlock(JSContext* cx);
-
-    
 
 
 
 
-
-
-    void popWith(JSContext* cx);
+    bool pushLexicalEnvironment(JSContext* cx, Handle<LexicalScope*> scope);
+    bool freshenLexicalEnvironment(JSContext* cx);
+    bool recreateLexicalEnvironment(JSContext* cx);
 
     
 
@@ -692,11 +683,11 @@ class InterpreterFrame
         markReturnValue();
     }
 
-    void resumeGeneratorFrame(JSObject* scopeChain) {
+    void resumeGeneratorFrame(JSObject* envChain) {
         MOZ_ASSERT(script()->isGenerator());
         MOZ_ASSERT(isFunctionFrame());
-        flags_ |= HAS_CALL_OBJ;
-        scopeChain_ = scopeChain;
+        flags_ |= HAS_INITIAL_ENV;
+        envChain_ = envChain;
     }
 
     
@@ -722,10 +713,10 @@ class InterpreterFrame
 
 
 
-    inline bool hasCallObj() const;
+    inline bool hasInitialEnvironment() const;
 
-    bool hasCallObjUnchecked() const {
-        return flags_ & HAS_CALL_OBJ;
+    bool hasInitialEnvironmentUnchecked() const {
+        return flags_ & HAS_INITIAL_ENV;
     }
 
     bool hasArgsObj() const {
@@ -899,7 +890,7 @@ class InterpreterStack
 
     
     InterpreterFrame* pushExecuteFrame(JSContext* cx, HandleScript script,
-                                       const Value& newTargetValue, HandleObject scopeChain,
+                                       const Value& newTargetValue, HandleObject envChain,
                                        AbstractFramePtr evalInFrame);
 
     
@@ -915,7 +906,7 @@ class InterpreterStack
 
     bool resumeGeneratorCallFrame(JSContext* cx, InterpreterRegs& regs,
                                   HandleFunction callee, HandleValue newTarget,
-                                  HandleObject scopeChain);
+                                  HandleObject envChain);
 
     inline void purge(JSRuntime* rt);
 
@@ -1358,7 +1349,7 @@ class InterpreterActivation : public Activation
     inline void popInlineFrame(InterpreterFrame* frame);
 
     inline bool resumeGeneratorFrame(HandleFunction callee, HandleValue newTarget,
-                                     HandleObject scopeChain);
+                                     HandleObject envChain);
 
     InterpreterFrame* current() const {
         return regs_.fp();
@@ -1438,7 +1429,7 @@ class JitActivation : public Activation
     
     
     
-    typedef Vector<RematerializedFrame*> RematerializedFrameVector;
+    typedef GCVector<RematerializedFrame*> RematerializedFrameVector;
     typedef HashMap<uint8_t*, RematerializedFrameVector> RematerializedFrameTable;
     RematerializedFrameTable* rematerializedFrames_;
 
@@ -1819,7 +1810,7 @@ class FrameIter
     Value       unaliasedActual(unsigned i, MaybeCheckAliasing = CHECK_ALIASING) const;
     template <class Op> inline void unaliasedForEachActual(JSContext* cx, Op op);
 
-    JSObject*  scopeChain(JSContext* cx) const;
+    JSObject*  environmentChain(JSContext* cx) const;
     CallObject& callObj(JSContext* cx) const;
 
     bool        hasArgsObj() const;

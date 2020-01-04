@@ -32,7 +32,9 @@ class BaselineFrame
         HAS_RVAL         = 1 << 0,
 
         
-        HAS_CALL_OBJ     = 1 << 2,
+        
+        
+        HAS_INITIAL_ENV  = 1 << 2,
 
         
         HAS_ARGS_OBJ     = 1 << 4,
@@ -91,7 +93,7 @@ class BaselineFrame
     uint32_t loReturnValue_;              
     uint32_t hiReturnValue_;
     uint32_t frameSize_;
-    JSObject* scopeChain_;                
+    JSObject* envChain_;                  
     ArgumentsObject* argsObj_;            
     uint32_t overrideOffset_;             
     uint32_t flags_;
@@ -112,25 +114,25 @@ class BaselineFrame
     inline uint32_t* addressOfFrameSize() {
         return &frameSize_;
     }
-    JSObject* scopeChain() const {
-        return scopeChain_;
+    JSObject* environmentChain() const {
+        return envChain_;
     }
-    void setScopeChain(JSObject* scopeChain) {
-        scopeChain_ = scopeChain;
+    void setEnvironmentChain(JSObject* envChain) {
+        envChain_ = envChain;
     }
-    inline JSObject** addressOfScopeChain() {
-        return &scopeChain_;
+    inline JSObject** addressOfEnvironmentChain() {
+        return &envChain_;
     }
 
     inline Value* addressOfScratchValue() {
         return reinterpret_cast<Value*>(&loScratchValue_);
     }
 
-    inline void pushOnScopeChain(ScopeObject& scope);
-    inline void popOffScopeChain();
-    inline void replaceInnermostScope(ScopeObject& scope);
-
-    inline void popWith(JSContext* cx);
+    template <typename SpecificEnvironment>
+    inline void pushOnEnvironmentChain(SpecificEnvironment& env);
+    template <typename SpecificEnvironment>
+    inline void popOffEnvironmentChain();
+    inline void replaceInnermostEnvironment(EnvironmentObject& env);
 
     CalleeToken calleeToken() const {
         uint8_t* pointer = (uint8_t*)this + Size() + offsetOfCalleeToken();
@@ -229,8 +231,6 @@ class BaselineFrame
         return UndefinedValue();
     }
 
-    MOZ_MUST_USE bool copyRawFrameSlots(MutableHandle<GCVector<Value>> vec) const;
-
     bool hasReturnValue() const {
         return flags_ & HAS_RVAL;
     }
@@ -247,8 +247,8 @@ class BaselineFrame
         return reinterpret_cast<Value*>(&loReturnValue_);
     }
 
-    bool hasCallObj() const {
-        return flags_ & HAS_CALL_OBJ;
+    bool hasInitialEnvironment() const {
+        return flags_ & HAS_INITIAL_ENV;
     }
 
     inline CallObject& callObj() const;
@@ -260,12 +260,12 @@ class BaselineFrame
         return &flags_;
     }
 
-    inline MOZ_MUST_USE bool pushBlock(JSContext* cx, Handle<StaticBlockScope*> block);
-    inline void popBlock(JSContext* cx);
-    inline MOZ_MUST_USE bool freshenBlock(JSContext* cx);
+    inline MOZ_MUST_USE bool pushLexicalEnvironment(JSContext* cx, Handle<LexicalScope*> scope);
+    inline MOZ_MUST_USE bool freshenLexicalEnvironment(JSContext* cx);
+    inline MOZ_MUST_USE bool recreateLexicalEnvironment(JSContext* cx);
 
-    MOZ_MUST_USE bool initStrictEvalScopeObjects(JSContext* cx);
-    MOZ_MUST_USE bool initFunctionScopeObjects(JSContext* cx);
+    MOZ_MUST_USE bool initFunctionEnvironmentObjects(JSContext* cx);
+    MOZ_MUST_USE bool pushVarEnvironment(JSContext* cx, HandleScope scope);
 
     void initArgsObjUnchecked(ArgumentsObject& argsobj) {
         flags_ |= HAS_ARGS_OBJ;
@@ -432,8 +432,8 @@ class BaselineFrame
     static int reverseOffsetOfScratchValue() {
         return -int(Size()) + offsetof(BaselineFrame, loScratchValue_);
     }
-    static int reverseOffsetOfScopeChain() {
-        return -int(Size()) + offsetof(BaselineFrame, scopeChain_);
+    static int reverseOffsetOfEnvironmentChain() {
+        return -int(Size()) + offsetof(BaselineFrame, envChain_);
     }
     static int reverseOffsetOfArgsObj() {
         return -int(Size()) + offsetof(BaselineFrame, argsObj_);

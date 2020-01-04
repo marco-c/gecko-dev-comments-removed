@@ -635,7 +635,7 @@ ObjectMemoryView::visitFunctionEnvironment(MFunctionEnvironment* ins)
 {
     
     MDefinition* input = ins->input();
-    if (!input->isLambda() || input->toLambda()->scopeChain() != obj_)
+    if (!input->isLambda() || input->toLambda()->environmentChain() != obj_)
         return;
 
     
@@ -648,7 +648,7 @@ ObjectMemoryView::visitFunctionEnvironment(MFunctionEnvironment* ins)
 void
 ObjectMemoryView::visitLambda(MLambda* ins)
 {
-    if (ins->scopeChain() != obj_)
+    if (ins->environmentChain() != obj_)
         return;
 
     

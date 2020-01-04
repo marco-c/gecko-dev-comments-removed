@@ -1003,24 +1003,29 @@ MacroAssembler::fillSlotsWithUninitialized(Address base, Register temp, uint32_t
 }
 
 static void
-FindStartOfUndefinedAndUninitializedSlots(NativeObject* templateObj, uint32_t nslots,
-                                          uint32_t* startOfUndefined, uint32_t* startOfUninitialized)
+FindStartOfUninitializedAndUndefinedSlots(NativeObject* templateObj, uint32_t nslots,
+                                          uint32_t* startOfUninitialized,
+                                          uint32_t* startOfUndefined)
 {
     MOZ_ASSERT(nslots == templateObj->lastProperty()->slotSpan(templateObj->getClass()));
     MOZ_ASSERT(nslots > 0);
+
     uint32_t first = nslots;
     for (; first != 0; --first) {
-        if (!IsUninitializedLexical(templateObj->getSlot(first - 1)))
+        if (templateObj->getSlot(first - 1) != UndefinedValue())
             break;
     }
-    *startOfUninitialized = first;
-    for (; first != 0; --first) {
-        if (templateObj->getSlot(first - 1) != UndefinedValue()) {
-            *startOfUndefined = first;
-            return;
+    *startOfUndefined = first;
+
+    if (first != 0 && IsUninitializedLexical(templateObj->getSlot(first - 1))) {
+        for (; first != 0; --first) {
+            if (!IsUninitializedLexical(templateObj->getSlot(first - 1)))
+                break;
         }
+        *startOfUninitialized = first;
+    } else {
+        *startOfUninitialized = *startOfUndefined;
     }
-    *startOfUndefined = 0;
 }
 
 static void
@@ -1149,23 +1154,27 @@ MacroAssembler::initGCSlots(Register obj, Register temp, NativeObject* templateO
     
     
     
-    uint32_t startOfUndefined = nslots;
+    
     uint32_t startOfUninitialized = nslots;
-    FindStartOfUndefinedAndUninitializedSlots(templateObj, nslots,
-                                              &startOfUndefined, &startOfUninitialized);
-    MOZ_ASSERT(startOfUndefined <= nfixed); 
-    MOZ_ASSERT_IF(startOfUndefined != nfixed, startOfUndefined <= startOfUninitialized);
-    MOZ_ASSERT_IF(!templateObj->is<CallObject>(), startOfUninitialized == nslots);
+    uint32_t startOfUndefined = nslots;
+    FindStartOfUninitializedAndUndefinedSlots(templateObj, nslots,
+                                              &startOfUninitialized, &startOfUndefined);
+    MOZ_ASSERT(startOfUninitialized <= nfixed); 
+    MOZ_ASSERT(startOfUndefined >= startOfUninitialized);
+    MOZ_ASSERT_IF(!templateObj->is<CallObject>(), startOfUninitialized == startOfUndefined);
 
     
-    copySlotsFromTemplate(obj, templateObj, 0, startOfUndefined);
+    copySlotsFromTemplate(obj, templateObj, 0, startOfUninitialized);
 
     
     if (initContents) {
-        fillSlotsWithUndefined(Address(obj, NativeObject::getFixedSlotOffset(startOfUndefined)), temp,
-                               startOfUndefined, Min(startOfUninitialized, nfixed));
         size_t offset = NativeObject::getFixedSlotOffset(startOfUninitialized);
-        fillSlotsWithUninitialized(Address(obj, offset), temp, startOfUninitialized, nfixed);
+        fillSlotsWithUninitialized(Address(obj, offset), temp,
+                                   startOfUninitialized, Min(startOfUndefined, nfixed));
+
+        offset = NativeObject::getFixedSlotOffset(startOfUndefined);
+        fillSlotsWithUndefined(Address(obj, offset), temp,
+                               startOfUndefined, nfixed);
     }
 
     if (ndynamic) {
@@ -1175,11 +1184,14 @@ MacroAssembler::initGCSlots(Register obj, Register temp, NativeObject* templateO
         loadPtr(Address(obj, NativeObject::offsetOfSlots()), obj);
 
         
-        fillSlotsWithUndefined(Address(obj, 0), temp, 0, ndynamic);
-
         
-        fillSlotsWithUninitialized(Address(obj, 0), temp, startOfUninitialized - nfixed,
-                                   nslots - startOfUninitialized);
+        if (startOfUndefined > nfixed) {
+            MOZ_ASSERT(startOfUninitialized != startOfUndefined);
+            fillSlotsWithUninitialized(Address(obj, 0), temp, 0, startOfUndefined - nfixed);
+            fillSlotsWithUndefined(Address(obj, 0), temp, startOfUndefined - nfixed, ndynamic);
+        } else {
+            fillSlotsWithUndefined(Address(obj, 0), temp, 0, ndynamic);
+        }
 
         pop(obj);
     }

@@ -158,6 +158,9 @@ class JS_PUBLIC_API(CallbackTracer) : public JSTracer
     virtual void onLazyScriptEdge(js::LazyScript** lazyp) {
         onChild(JS::GCCellPtr(*lazyp, JS::TraceKind::LazyScript));
     }
+    virtual void onScopeEdge(js::Scope** scopep) {
+        onChild(JS::GCCellPtr(*scopep, JS::TraceKind::Scope));
+    }
 
     
     
@@ -227,6 +230,7 @@ class JS_PUBLIC_API(CallbackTracer) : public JSTracer
     void dispatchToOnEdge(js::BaseShape** basep) { onBaseShapeEdge(basep); }
     void dispatchToOnEdge(js::jit::JitCode** codep) { onJitCodeEdge(codep); }
     void dispatchToOnEdge(js::LazyScript** lazyp) { onLazyScriptEdge(lazyp); }
+    void dispatchToOnEdge(js::Scope** scopep) { onScopeEdge(scopep); }
 
   private:
     friend class AutoTracingName;

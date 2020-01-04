@@ -1,4 +1,3 @@
-
 let s = "";
 let max = 65536;
 for (let i = 0; i < max; i++)

@@ -654,7 +654,7 @@ InitFromBailout(JSContext* cx, HandleScript caller, jsbytecode* callerPC,
         flags |= BaselineFrame::DEBUGGEE;
 
     
-    JSObject* scopeChain = nullptr;
+    JSObject* envChain = nullptr;
     Value returnValue;
     ArgumentsObject* argsObj = nullptr;
     BailoutKind bailoutKind = iter.bailoutKind();
@@ -663,7 +663,8 @@ InitFromBailout(JSContext* cx, HandleScript caller, jsbytecode* callerPC,
         
         
         
-        JitSpew(JitSpew_BaselineBailouts, "      Bailout_ArgumentCheck! (no valid scopeChain)");
+        
+        JitSpew(JitSpew_BaselineBailouts, "      Bailout_ArgumentCheck! (no valid envChain)");
         iter.skip();
 
         
@@ -680,9 +681,18 @@ InitFromBailout(JSContext* cx, HandleScript caller, jsbytecode* callerPC,
     } else {
         Value v = iter.read();
         if (v.isObject()) {
-            scopeChain = &v.toObject();
-            if (fun && fun->needsCallObject())
-                flags |= BaselineFrame::HAS_CALL_OBJ;
+            envChain = &v.toObject();
+            if (fun &&
+                ((fun->needsCallObject() && envChain->is<CallObject>()) ||
+                 (fun->needsNamedLambdaEnvironment() &&
+                  !fun->needsCallObject() &&
+                  envChain->is<LexicalEnvironmentObject>() &&
+                  &envChain->as<LexicalEnvironmentObject>().scope() ==
+                  script->maybeNamedLambdaScope())))
+            {
+                MOZ_ASSERT(!fun->needsExtraBodyVarEnvironment());
+                flags |= BaselineFrame::HAS_INITIAL_ENV;
+            }
         } else {
             MOZ_ASSERT(v.isUndefined() || v.isMagic(JS_OPTIMIZED_OUT));
 
@@ -698,10 +708,10 @@ InitFromBailout(JSContext* cx, HandleScript caller, jsbytecode* callerPC,
                 if (iter.pcOffset() != 0 || iter.resumeAfter() ||
                     (excInfo && excInfo->propagatingIonExceptionForDebugMode()))
                 {
-                    scopeChain = fun->environment();
+                    envChain = fun->environment();
                 }
             } else if (script->module()) {
-                scopeChain = script->module()->environment();
+                envChain = script->module()->environment();
             } else {
                 
                 
@@ -711,7 +721,7 @@ InitFromBailout(JSContext* cx, HandleScript caller, jsbytecode* callerPC,
                 
                 MOZ_ASSERT(!script->isForEval());
                 MOZ_ASSERT(!script->hasNonSyntacticScope());
-                scopeChain = &(script->global().lexicalScope());
+                envChain = &(script->global().lexicalEnvironment());
             }
         }
 
@@ -728,8 +738,8 @@ InitFromBailout(JSContext* cx, HandleScript caller, jsbytecode* callerPC,
                 argsObj = &v.toObject().as<ArgumentsObject>();
         }
     }
-    JitSpew(JitSpew_BaselineBailouts, "      ScopeChain=%p", scopeChain);
-    blFrame->setScopeChain(scopeChain);
+    JitSpew(JitSpew_BaselineBailouts, "      EnvChain=%p", envChain);
+    blFrame->setEnvironmentChain(envChain);
     JitSpew(JitSpew_BaselineBailouts, "      ReturnValue=%016llx", *((uint64_t*) &returnValue));
     blFrame->setReturnValue(returnValue);
 
@@ -1126,7 +1136,7 @@ InitFromBailout(JSContext* cx, HandleScript caller, jsbytecode* callerPC,
             
             
             uint8_t* opReturnAddr;
-            if (scopeChain == nullptr) {
+            if (envChain == nullptr) {
                 
                 
                 MOZ_ASSERT(fun);
@@ -1709,7 +1719,7 @@ CopyFromRematerializedFrame(JSContext* cx, JitActivation* act, uint8_t* fp, size
     MOZ_ASSERT(rematFrame->script() == frame->script());
     MOZ_ASSERT(rematFrame->numActualArgs() == frame->numActualArgs());
 
-    frame->setScopeChain(rematFrame->scopeChain());
+    frame->setEnvironmentChain(rematFrame->environmentChain());
 
     if (frame->isFunctionFrame())
         frame->thisArgument() = rematFrame->thisArgument();
@@ -1769,7 +1779,7 @@ jit::FinishBailoutToBaseline(BaselineBailoutInfo* bailoutInfo)
     
     
     
-    if (topFrame->scopeChain() && !EnsureHasScopeObjects(cx, topFrame))
+    if (topFrame->environmentChain() && !EnsureHasEnvironmentObjects(cx, topFrame))
         return false;
 
     
@@ -1798,7 +1808,7 @@ jit::FinishBailoutToBaseline(BaselineBailoutInfo* bailoutInfo)
             
             
             
-            if (frame->scopeChain() && frame->script()->needsArgsObj()) {
+            if (frame->environmentChain() && frame->script()->needsArgsObj()) {
                 ArgumentsObject* argsObj;
                 if (frame->hasArgsObj()) {
                     argsObj = &frame->argsObj();

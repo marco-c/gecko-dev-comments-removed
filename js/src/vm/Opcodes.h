@@ -119,7 +119,7 @@
 
 
  \
-    macro(JSOP_ENTERWITH, 3,  "enterwith",  NULL,         5,  1,  0, JOF_OBJECT) \
+    macro(JSOP_ENTERWITH, 3,  "enterwith",  NULL,         5,  1,  0, JOF_SCOPE) \
     
 
 
@@ -1409,7 +1409,7 @@
 
 
  \
-    macro(JSOP_GETALIASEDVAR, 136,"getaliasedvar",NULL,      5,  0,  1,  JOF_SCOPECOORD|JOF_NAME|JOF_TYPESET) \
+    macro(JSOP_GETALIASEDVAR, 136,"getaliasedvar",NULL,      5,  0,  1,  JOF_ENVCOORD|JOF_NAME|JOF_TYPESET) \
     
 
 
@@ -1417,7 +1417,7 @@
 
 
  \
-    macro(JSOP_SETALIASEDVAR, 137,"setaliasedvar",NULL,      5,  1,  1,  JOF_SCOPECOORD|JOF_NAME|JOF_SET|JOF_DETECTING) \
+    macro(JSOP_SETALIASEDVAR, 137,"setaliasedvar",NULL,      5,  1,  1,  JOF_ENVCOORD|JOF_NAME|JOF_SET|JOF_DETECTING) \
     \
     
 
@@ -1445,7 +1445,7 @@
 
 
  \
-    macro(JSOP_CHECKALIASEDLEXICAL, 140, "checkaliasedlexical", NULL, 5,  0,  0, JOF_SCOPECOORD|JOF_NAME) \
+    macro(JSOP_CHECKALIASEDLEXICAL, 140, "checkaliasedlexical", NULL, 5,  0,  0, JOF_ENVCOORD|JOF_NAME) \
     
 
 
@@ -1454,7 +1454,7 @@
 
 
  \
-    macro(JSOP_INITALIASEDLEXICAL,  141, "initaliasedlexical",  NULL, 5,  1,  1, JOF_SCOPECOORD|JOF_NAME|JOF_SET|JOF_DETECTING) \
+    macro(JSOP_INITALIASEDLEXICAL,  141, "initaliasedlexical",  NULL, 5,  1,  1, JOF_ENVCOORD|JOF_NAME|JOF_SET|JOF_DETECTING) \
     
 
 
@@ -1747,7 +1747,7 @@
 
 
  \
-    macro(JSOP_THROWSETALIASEDCONST, 170, "throwsetaliasedconst", NULL, 5,  1,  1, JOF_SCOPECOORD|JOF_NAME|JOF_SET|JOF_DETECTING) \
+    macro(JSOP_THROWSETALIASEDCONST, 170, "throwsetaliasedconst", NULL, 5,  1,  1, JOF_ENVCOORD|JOF_NAME|JOF_SET|JOF_DETECTING) \
     
 
 
@@ -1832,9 +1832,35 @@
 
  \
     macro(JSOP_OPTIMIZE_SPREADCALL,178,"optimize-spreadcall", NULL, 1,  1,  2,  JOF_BYTE) \
-    macro(JSOP_UNUSED179,     179,"unused179",  NULL,     1,  0,  0,  JOF_BYTE) \
-    macro(JSOP_UNUSED180,     180,"unused180",  NULL,     1,  0,  0,  JOF_BYTE) \
-    macro(JSOP_UNUSED181,     181,"unused181",  NULL,     1,  0,  0,  JOF_BYTE) \
+    
+
+
+
+
+
+
+
+
+
+
+ \
+    macro(JSOP_THROWSETCALLEE,     179, "throwsetcallee",        NULL, 1,  1,  1, JOF_SET|JOF_BYTE) \
+    
+
+
+
+
+
+ \
+    macro(JSOP_PUSHVARENV,         180, "pushvarenv",           NULL, 5,  0,  0,  JOF_SCOPE) \
+    
+
+
+
+
+
+ \
+    macro(JSOP_POPVARENV,          181, "popvarenv",            NULL,  1,  0,  0,  JOF_BYTE) \
     macro(JSOP_UNUSED182,     182,"unused182",  NULL,     1,  0,  0,  JOF_BYTE) \
     macro(JSOP_UNUSED183,     183,"unused183",  NULL,     1,  0,  0,  JOF_BYTE) \
     \
@@ -1965,7 +1991,18 @@
 
 
  \
-    macro(JSOP_FRESHENBLOCKSCOPE,197,"freshenblockscope", NULL, 1, 0, 0, JOF_BYTE) \
+    macro(JSOP_FRESHENLEXICALENV,197,"freshenlexicalenv", NULL, 1, 0, 0, JOF_BYTE) \
+    
+
+
+
+
+
+
+
+
+ \
+    macro(JSOP_RECREATELEXICALENV,198,"recreatelexicalenv",NULL,1,0,0,JOF_BYTE) \
     
 
 
@@ -1973,7 +2010,7 @@
 
 
  \
-    macro(JSOP_PUSHBLOCKSCOPE,198,"pushblockscope", NULL, 5,  0,  0,  JOF_OBJECT) \
+    macro(JSOP_PUSHLEXICALENV,199,"pushlexicalenv", NULL, 5,  0,  0,  JOF_SCOPE) \
     
 
 
@@ -1981,7 +2018,7 @@
 
 
  \
-    macro(JSOP_POPBLOCKSCOPE, 199,"popblockscope", NULL,  1,  0,  0,  JOF_BYTE) \
+    macro(JSOP_POPLEXICALENV, 200,"poplexicalenv", NULL,  1,  0,  0,  JOF_BYTE) \
     
 
 
@@ -1989,17 +2026,8 @@
 
 
  \
-    macro(JSOP_DEBUGLEAVEBLOCK, 200,"debugleaveblock", NULL, 1,  0,  0,  JOF_BYTE) \
+    macro(JSOP_DEBUGLEAVELEXICALENV, 201,"debugleavelexicalenv", NULL, 1,  0,  0,  JOF_BYTE) \
     \
-    
-
-
-
-
-
-
- \
-    macro(JSOP_GENERATOR,     201,"generator",   NULL,    1,  0,  1,  JOF_BYTE) \
     
 
 
@@ -2072,7 +2100,15 @@
     macro(JSOP_UNUSED209,     209, "unused209",    NULL,  1,  0,  0,  JOF_BYTE) \
     macro(JSOP_UNUSED210,     210, "unused210",    NULL,  1,  0,  0,  JOF_BYTE) \
     macro(JSOP_UNUSED211,     211, "unused211",    NULL,  1,  0,  0,  JOF_BYTE) \
-    macro(JSOP_UNUSED212,     212, "unused212",    NULL,  1,  0,  0,  JOF_BYTE) \
+    
+
+
+
+
+
+
+ \
+    macro(JSOP_GENERATOR,     212,"generator",   NULL,    1,  0,  1,  JOF_BYTE) \
     
 
 

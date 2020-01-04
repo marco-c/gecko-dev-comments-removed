@@ -18,12 +18,14 @@
 #include "jsopcode.h"
 #include "jstypes.h"
 
+#include "frontend/NameAnalysisTypes.h"
 #include "gc/Barrier.h"
 #include "gc/Rooting.h"
 #include "jit/IonCode.h"
 #include "js/UbiNode.h"
 #include "js/UniquePtr.h"
 #include "vm/NativeObject.h"
+#include "vm/Scope.h"
 #include "vm/Shape.h"
 #include "vm/SharedImmutableStringsCache.h"
 
@@ -45,21 +47,17 @@ namespace jit {
 # define BASELINE_DISABLED_SCRIPT ((js::jit::BaselineScript*)0x1)
 
 class BreakpointSite;
-class BindingIter;
 class Debugger;
 class LazyScript;
 class ModuleObject;
-class NestedStaticScope;
-class StaticScope;
 class RegExpObject;
 struct SourceCompressionTask;
 class Shape;
 
 namespace frontend {
     struct BytecodeEmitter;
-    class UpvarCookie;
     class FunctionBox;
-    class ModuleBox;
+    class ModuleSharedContext;
 } 
 
 namespace detail {
@@ -67,7 +65,8 @@ namespace detail {
 
 
 bool
-CopyScript(JSContext* cx, HandleObject scriptStaticScope, HandleScript src, HandleScript dst);
+CopyScript(JSContext* cx, HandleScript src, HandleScript dst,
+           MutableHandle<GCVector<Scope*>> scopes);
 
 } 
 
@@ -113,8 +112,12 @@ namespace js {
 
 
 
-struct BlockScopeNote {
-    static const uint32_t NoBlockScopeIndex = UINT32_MAX;
+struct ScopeNote {
+    
+    static const uint32_t NoScopeIndex = UINT32_MAX;
+
+    
+    static const uint32_t NoScopeNoteIndex = UINT32_MAX;
 
     uint32_t        index;      
                                 
@@ -135,20 +138,25 @@ struct ObjectArray {
     uint32_t length;            
 };
 
+struct ScopeArray {
+    js::GCPtrScope* vector;     
+    uint32_t        length;     
+};
+
 struct TryNoteArray {
     JSTryNote*      vector;     
     uint32_t        length;     
 };
 
-struct BlockScopeArray {
-    BlockScopeNote* vector;     
-    uint32_t        length;     
+struct ScopeNoteArray {
+    ScopeNote* vector;          
+    uint32_t   length;          
 };
 
 class YieldOffsetArray {
     friend bool
-    detail::CopyScript(JSContext* cx, HandleObject scriptStaticScope, HandleScript src,
-                       HandleScript dst);
+    detail::CopyScript(JSContext* cx, HandleScript src, HandleScript dst,
+                       MutableHandle<GCVector<Scope*>> scopes);
 
     uint32_t*       vector_;    
     uint32_t        length_;    
@@ -166,314 +174,6 @@ class YieldOffsetArray {
         return length_;
     }
 };
-
-class Binding
-{
-    
-    
-    uintptr_t bits_;
-
-    static const uintptr_t KIND_MASK = 0x3;
-    static const uintptr_t ALIASED_BIT = 0x4;
-    static const uintptr_t NAME_MASK = ~(KIND_MASK | ALIASED_BIT);
-
-  public:
-    
-    
-    
-    enum Kind { ARGUMENT, VARIABLE, CONSTANT };
-
-    explicit Binding() : bits_(0) {}
-
-    Binding(PropertyName* name, Kind kind, bool aliased) {
-        JS_STATIC_ASSERT(CONSTANT <= KIND_MASK);
-        MOZ_ASSERT((uintptr_t(name) & ~NAME_MASK) == 0);
-        MOZ_ASSERT((uintptr_t(kind) & ~KIND_MASK) == 0);
-        bits_ = uintptr_t(name) | uintptr_t(kind) | (aliased ? ALIASED_BIT : 0);
-    }
-
-    PropertyName* name() const {
-        return (PropertyName*)(bits_ & NAME_MASK);
-    }
-
-    Kind kind() const {
-        return Kind(bits_ & KIND_MASK);
-    }
-
-    bool aliased() const {
-        return bool(bits_ & ALIASED_BIT);
-    }
-
-    static void trace(Binding* self, JSTracer* trc) { self->trace(trc); }
-    void trace(JSTracer* trc);
-};
-
-JS_STATIC_ASSERT(sizeof(Binding) == sizeof(uintptr_t));
-
-
-
-
-
-
-
-class Bindings
-{
-    friend class BindingIter;
-    friend class AliasedFormalIter;
-    template <typename Outer> friend class BindingsOperations;
-    template <typename Outer> friend class MutableBindingsOperations;
-
-    HeapPtr<Shape*> callObjShape_;
-    uintptr_t bindingArrayAndFlag_;
-    uint16_t numArgs_;
-    uint16_t numBlockScoped_;
-    uint16_t numBodyLevelLexicals_;
-    uint16_t numUnaliasedBodyLevelLexicals_;
-    uint32_t aliasedBodyLevelLexicalBegin_;
-    uint32_t numVars_;
-    uint32_t numUnaliasedVars_;
-
-#if JS_BITS_PER_WORD == 32
-    
-    
-    uint32_t padding_;
-#endif
-
-    
-
-
-
-
-
-
-
-
-    static const uintptr_t TEMPORARY_STORAGE_BIT = 0x1;
-    bool bindingArrayUsingTemporaryStorage() const {
-        return bindingArrayAndFlag_ & TEMPORARY_STORAGE_BIT;
-    }
-
-  public:
-    static const uint32_t BODY_LEVEL_LEXICAL_LIMIT = UINT16_LIMIT;
-    static const uint32_t BLOCK_SCOPED_LIMIT = UINT16_LIMIT;
-
-    Binding* bindingArray() const {
-        return reinterpret_cast<Binding*>(bindingArrayAndFlag_ & ~TEMPORARY_STORAGE_BIT);
-    }
-
-    Bindings()
-      : callObjShape_(nullptr), bindingArrayAndFlag_(TEMPORARY_STORAGE_BIT),
-        numArgs_(0), numBlockScoped_(0),
-        numBodyLevelLexicals_(0), numUnaliasedBodyLevelLexicals_(0),
-        numVars_(0), numUnaliasedVars_(0)
-    {}
-
-    
-
-
-
-
-
-
-    static bool initWithTemporaryStorage(ExclusiveContext* cx, MutableHandle<Bindings> self,
-                                         uint32_t numArgs,
-                                         uint32_t numVars,
-                                         uint32_t numBodyLevelLexicals,
-                                         uint32_t numBlockScoped,
-                                         uint32_t numUnaliasedVars,
-                                         uint32_t numUnaliasedBodyLevelLexicals,
-                                         const Binding* bindingArray,
-                                         bool isModule = false);
-
-    
-    static bool initTrivialForScript(ExclusiveContext* cx, HandleScript script);
-
-    
-    
-    
-    
-    
-    
-    void updateNumBlockScoped(unsigned numBlockScoped) {
-        MOZ_ASSERT(!callObjShape_);
-        MOZ_ASSERT(numVars_ == 0);
-        MOZ_ASSERT(numBlockScoped < LOCALNO_LIMIT);
-        MOZ_ASSERT(numBlockScoped >= numBlockScoped_);
-        numBlockScoped_ = numBlockScoped;
-    }
-
-    void setAllLocalsAliased() {
-        numBlockScoped_ = 0;
-    }
-
-    uint8_t* switchToScriptStorage(Binding* newStorage);
-
-    
-
-
-
-    static bool clone(JSContext* cx, MutableHandle<Bindings> self, uint8_t* dstScriptData,
-                      HandleScript srcScript);
-
-    uint32_t numArgs() const { return numArgs_; }
-    uint32_t numVars() const { return numVars_; }
-    uint32_t numBodyLevelLexicals() const { return numBodyLevelLexicals_; }
-    uint32_t numBlockScoped() const { return numBlockScoped_; }
-    uint32_t numBodyLevelLocals() const { return numVars_ + numBodyLevelLexicals_; }
-    uint32_t numUnaliasedBodyLevelLocals() const { return numUnaliasedVars_ + numUnaliasedBodyLevelLexicals_; }
-    uint32_t numAliasedBodyLevelLocals() const { return numBodyLevelLocals() - numUnaliasedBodyLevelLocals(); }
-    uint32_t numLocals() const { return numVars() + numBodyLevelLexicals() + numBlockScoped(); }
-    uint32_t numFixedLocals() const { return numUnaliasedVars() + numUnaliasedBodyLevelLexicals() + numBlockScoped(); }
-    uint32_t lexicalBegin() const { return numArgs() + numVars(); }
-    uint32_t aliasedBodyLevelLexicalBegin() const { return aliasedBodyLevelLexicalBegin_; }
-
-    uint32_t numUnaliasedVars() const { return numUnaliasedVars_; }
-    uint32_t numUnaliasedBodyLevelLexicals() const { return numUnaliasedBodyLevelLexicals_; }
-
-    
-    uint32_t count() const { return numArgs() + numVars() + numBodyLevelLexicals(); }
-
-    
-    Shape* callObjShape() const { return callObjShape_; }
-
-    
-    static BindingIter argumentsBinding(ExclusiveContext* cx, HandleScript script);
-    static BindingIter thisBinding(ExclusiveContext* cx, HandleScript script);
-
-    
-    bool bindingIsAliased(uint32_t bindingIndex);
-
-    
-    bool hasAnyAliasedBindings() const {
-        if (!callObjShape_)
-            return false;
-
-        return !callObjShape_->isEmptyShape();
-    }
-
-    Binding* begin() const { return bindingArray(); }
-    Binding* end() const { return bindingArray() + count(); }
-
-    static void trace(Bindings* self, JSTracer* trc) { self->trace(trc); }
-    void trace(JSTracer* trc);
-};
-
-
-static_assert(sizeof(Bindings) % js::gc::CellSize == 0,
-              "Size of Bindings must be an integral multiple of js::gc::CellSize");
-
-template <class Outer>
-class BindingsOperations
-{
-    const Bindings& bindings() const { return static_cast<const Outer*>(this)->get(); }
-
-  public:
-    
-    const HeapPtr<Shape*>& callObjShape() const {
-        return bindings().callObjShape_;
-    }
-    uint16_t numArgs() const {
-        return bindings().numArgs_;
-    }
-    uint16_t numBlockScoped() const {
-        return bindings().numBlockScoped_;
-    }
-    uint16_t numBodyLevelLexicals() const {
-        return bindings().numBodyLevelLexicals_;
-    }
-    uint16_t aliasedBodyLevelLexicalBegin() const {
-        return bindings().aliasedBodyLevelLexicalBegin_;
-    }
-    uint16_t numUnaliasedBodyLevelLexicals() const {
-        return bindings().numUnaliasedBodyLevelLexicals_;
-    }
-    uint32_t numVars() const {
-        return bindings().numVars_;
-    }
-    uint32_t numUnaliasedVars() const {
-        return bindings().numUnaliasedVars_;
-    }
-
-    
-    bool bindingArrayUsingTemporaryStorage() const {
-        return bindings().bindingArrayUsingTemporaryStorage();
-    }
-    const Binding* bindingArray() const {
-        return bindings().bindingArray();
-    }
-    uint32_t count() const {
-        return bindings().count();
-    }
-
-    
-    uint32_t numBodyLevelLocals() const {
-        return numVars() + numBodyLevelLexicals();
-    }
-    uint32_t numUnaliasedBodyLevelLocals() const {
-        return numUnaliasedVars() + numUnaliasedBodyLevelLexicals();
-    }
-    uint32_t numAliasedBodyLevelLocals() const {
-        return numBodyLevelLocals() - numUnaliasedBodyLevelLocals();
-    }
-    uint32_t numLocals() const {
-        return numVars() + numBodyLevelLexicals() + numBlockScoped();
-    }
-    uint32_t numFixedLocals() const {
-        return numUnaliasedVars() + numUnaliasedBodyLevelLexicals() + numBlockScoped();
-    }
-    uint32_t lexicalBegin() const {
-        return numArgs() + numVars();
-    }
-};
-
-template <class Outer>
-class MutableBindingsOperations : public BindingsOperations<Outer>
-{
-    Bindings& bindings() { return static_cast<Outer*>(this)->get(); }
-
-  public:
-    void setCallObjShape(HandleShape shape) { bindings().callObjShape_ = shape; }
-    void setBindingArray(const Binding* bindingArray, uintptr_t temporaryBit) {
-        bindings().bindingArrayAndFlag_ = uintptr_t(bindingArray) | temporaryBit;
-    }
-    void setNumArgs(uint32_t num) {
-        MOZ_ASSERT(num <= UINT16_MAX);
-        bindings().numArgs_ = num;
-    }
-    void setNumVars(uint32_t num) {
-        bindings().numVars_ = num;
-    }
-    void setNumBodyLevelLexicals(uint32_t num) {
-        MOZ_ASSERT(num <= UINT16_MAX);
-        bindings().numBodyLevelLexicals_ = num;
-    }
-    void setNumBlockScoped(uint32_t num) {
-        MOZ_ASSERT(num <= UINT16_MAX);
-        bindings().numBlockScoped_ = num;
-    }
-    void setNumUnaliasedVars(uint32_t num) {
-        bindings().numUnaliasedVars_ = num;
-    }
-    void setNumUnaliasedBodyLevelLexicals(uint32_t num) {
-        MOZ_ASSERT(num <= UINT16_MAX);
-        bindings().numUnaliasedBodyLevelLexicals_ = num;
-    }
-    void setAliasedBodyLevelLexicalBegin(uint32_t offset) {
-        bindings().aliasedBodyLevelLexicalBegin_ = offset;
-    }
-    uint8_t* switchToScriptStorage(Binding* permanentStorage) {
-        return bindings().switchToScriptStorage(permanentStorage);
-    }
-};
-
-template <>
-class HandleBase<Bindings> : public BindingsOperations<JS::Handle<Bindings>>
-{};
-
-template <>
-class MutableHandleBase<Bindings>
-  : public MutableBindingsOperations<JS::MutableHandle<Bindings>>
-{};
 
 class ScriptCounts
 {
@@ -918,12 +618,12 @@ GeneratorKindFromBits(unsigned val) {
 
 template<XDRMode mode>
 bool
-XDRScript(XDRState<mode>* xdr, HandleObject enclosingScope, HandleScript enclosingScript,
+XDRScript(XDRState<mode>* xdr, HandleScope enclosingScope, HandleScript enclosingScript,
           HandleFunction fun, MutableHandleScript scriptp);
 
 template<XDRMode mode>
 bool
-XDRLazyScript(XDRState<mode>* xdr, HandleObject enclosingScope, HandleScript enclosingScript,
+XDRLazyScript(XDRState<mode>* xdr, HandleScope enclosingScope, HandleScript enclosingScript,
               HandleFunction fun, MutableHandle<LazyScript*> lazy);
 
 
@@ -1030,43 +730,13 @@ class JSScript : public js::gc::TenuredCell
     template <js::XDRMode mode>
     friend
     bool
-    js::XDRScript(js::XDRState<mode>* xdr, js::HandleObject enclosingScope,
-                  js::HandleScript enclosingScript,
-                  js::HandleFunction fun, js::MutableHandleScript scriptp);
+    js::XDRScript(js::XDRState<mode>* xdr, js::HandleScope enclosingScope,
+                  js::HandleScript enclosingScript, js::HandleFunction fun,
+                  js::MutableHandleScript scriptp);
 
     friend bool
-    js::detail::CopyScript(JSContext* cx, js::HandleObject scriptStaticScope, js::HandleScript src,
-                           js::HandleScript dst);
-
-  public:
-    
-    
-    
-    
-
-    
-
-  public:
-    js::Bindings    bindings;   
-
-
-    bool hasAnyAliasedBindings() const {
-        return bindings.hasAnyAliasedBindings();
-    }
-
-    js::Binding* bindingArray() const {
-        return bindings.bindingArray();
-    }
-
-    unsigned numArgs() const {
-        return bindings.numArgs();
-    }
-
-    js::Shape* callObjShape() const {
-        return bindings.callObjShape();
-    }
-
-    
+    js::detail::CopyScript(JSContext* cx, js::HandleScript src, js::HandleScript dst,
+                           js::MutableHandle<JS::GCVector<js::Scope*>> scopes);
 
   private:
     js::SharedScriptData* scriptData_;
@@ -1085,10 +755,6 @@ class JSScript : public js::gc::TenuredCell
     
     
     js::GCPtrObject sourceObject_;
-
-    js::GCPtrFunction function_;
-    js::GCPtrModuleObject module_;
-    js::GCPtrObject enclosingStaticScope_;
 
     
 
@@ -1121,7 +787,10 @@ class JSScript : public js::gc::TenuredCell
     uint32_t        mainOffset_;
 
 
+    uint32_t        nfixed_;    
     uint32_t        nslots_;    
+
+    uint32_t        bodyScopeIndex_; 
 
     
     uint32_t        sourceStart_;
@@ -1153,7 +822,7 @@ class JSScript : public js::gc::TenuredCell
         CONSTS,
         OBJECTS,
         TRYNOTES,
-        BLOCK_SCOPES,
+        SCOPENOTES,
         ARRAY_KIND_BITS
     };
 
@@ -1169,9 +838,6 @@ class JSScript : public js::gc::TenuredCell
 
     
     bool noScriptRval_:1;
-
-    
-    bool savedCallerFun_:1;
 
     
     bool strict_:1;
@@ -1190,7 +856,6 @@ class JSScript : public js::gc::TenuredCell
     
     bool bindingsAccessedDynamically_:1;
     bool funHasExtensibleScope_:1;
-    bool funNeedsDeclEnvObject_:1;
 
     
     bool funHasAnyAliasedFormal_:1;
@@ -1252,6 +917,7 @@ class JSScript : public js::gc::TenuredCell
     bool needsArgsAnalysis_:1;
     bool needsArgsObj_:1;
     bool functionHasThisBinding_:1;
+    bool functionHasExtraBodyVarScope_:1;
 
     
     
@@ -1285,7 +951,7 @@ class JSScript : public js::gc::TenuredCell
     
   protected:
 #if JS_BITS_PER_WORD == 32
-    uint32_t padding_;
+    
 #endif
 
     
@@ -1294,7 +960,6 @@ class JSScript : public js::gc::TenuredCell
 
   public:
     static JSScript* Create(js::ExclusiveContext* cx,
-                            js::HandleObject enclosingScope, bool savedCallerFun,
                             const JS::ReadOnlyCompileOptions& options,
                             js::HandleObject sourceObject, uint32_t sourceStart,
                             uint32_t sourceEnd);
@@ -1306,21 +971,26 @@ class JSScript : public js::gc::TenuredCell
     
     
     static bool partiallyInit(js::ExclusiveContext* cx, JS::Handle<JSScript*> script,
-                              uint32_t nconsts, uint32_t nobjects, uint32_t ntrynotes,
-                              uint32_t nblockscopes, uint32_t nyieldoffsets, uint32_t nTypeSets);
-    static bool fullyInitFromEmitter(js::ExclusiveContext* cx, JS::Handle<JSScript*> script,
+                              uint32_t nscopes, uint32_t nconsts, uint32_t nobjects,
+                              uint32_t ntrynotes, uint32_t nscopenotes, uint32_t nyieldoffsets,
+                              uint32_t nTypeSets);
+
+  private:
+    static void initFromFunctionBox(js::ExclusiveContext* cx, js::HandleScript script,
+                                    js::frontend::FunctionBox* funbox);
+    static void initFromModuleContext(js::ExclusiveContext* cx, js::HandleScript script,
+                                      js::frontend::ModuleSharedContext* modulesc);
+
+  public:
+    static bool fullyInitFromEmitter(js::ExclusiveContext* cx, js::HandleScript script,
                                      js::frontend::BytecodeEmitter* bce);
-    static void linkToFunctionFromEmitter(js::ExclusiveContext* cx, JS::Handle<JSScript*> script,
-                                          js::frontend::FunctionBox* funbox);
-    static void linkToModuleFromEmitter(js::ExclusiveContext* cx, JS::Handle<JSScript*> script,
-                                        js::frontend::ModuleBox* funbox);
+
     
-    static bool fullyInitTrivial(js::ExclusiveContext* cx, JS::Handle<JSScript*> script);
+    static bool initFunctionPrototype(js::ExclusiveContext* cx, js::HandleScript script,
+                                      JS::HandleFunction functionProto);
 
 #ifdef DEBUG
   private:
-    
-    void assertLinkedProperties(js::frontend::BytecodeEmitter* bce) const;
     
     void assertValidJumpTargets() const;
 #endif
@@ -1387,36 +1057,40 @@ class JSScript : public js::gc::TenuredCell
     
     
     size_t nfixed() const {
-        return isGlobalOrEvalCode() ? bindings.numBlockScoped() : bindings.numFixedLocals();
+        return nfixed_;
     }
 
     
     
-    size_t nfixedvars() const {
-        return isGlobalOrEvalCode() ? 0 : bindings.numUnaliasedVars();
-    }
-
-    
-    
-    
-    size_t nbodyfixed() const {
-        return isGlobalOrEvalCode() ? 0 : bindings.numUnaliasedBodyLevelLocals();
+    size_t numAlwaysLiveFixedSlots() const {
+        if (bodyScope()->is<js::FunctionScope>())
+            return bodyScope()->as<js::FunctionScope>().nextFrameSlot();
+        if (bodyScope()->is<js::ModuleScope>())
+            return bodyScope()->as<js::ModuleScope>().nextFrameSlot();
+        return 0;
     }
 
     
     size_t calculateLiveFixed(jsbytecode* pc);
 
-    
-    size_t fixedLexicalBegin() const {
-        return nfixedvars();
-    }
-
-    size_t fixedLexicalEnd() const {
-        return nfixed();
-    }
-
     size_t nslots() const {
         return nslots_;
+    }
+
+    unsigned numArgs() const {
+        if (bodyScope()->is<js::FunctionScope>())
+            return bodyScope()->as<js::FunctionScope>().numPositionalFormalParameters();
+        return 0;
+    }
+
+    inline js::Shape* initialEnvironmentShape() const;
+
+    bool functionHasParameterExprs() const {
+        
+        js::Scope* scope = bodyScope();
+        if (!scope->is<js::FunctionScope>())
+            return false;
+        return scope->as<js::FunctionScope>().hasParameterExprs();
     }
 
     size_t nTypeSets() const {
@@ -1439,8 +1113,6 @@ class JSScript : public js::gc::TenuredCell
         return noScriptRval_;
     }
 
-    bool savedCallerFun() const { return savedCallerFun_; }
-
     bool strict() const {
         return strict_;
     }
@@ -1455,9 +1127,6 @@ class JSScript : public js::gc::TenuredCell
     bool bindingsAccessedDynamically() const { return bindingsAccessedDynamically_; }
     bool funHasExtensibleScope() const {
         return funHasExtensibleScope_;
-    }
-    bool funNeedsDeclEnvObject() const {
-        return funNeedsDeclEnvObject_;
     }
     bool funHasAnyAliasedFormal() const {
         return funHasAnyAliasedFormal_;
@@ -1548,7 +1217,6 @@ class JSScript : public js::gc::TenuredCell
     bool argumentsHasVarBinding() const {
         return argsHasVarBinding_;
     }
-    jsbytecode* argumentsBytecode() const { MOZ_ASSERT(code()[0] == JSOP_ARGUMENTS); return code(); }
     void setArgumentsHasVarBinding();
     bool argumentsAliasesFormals() const {
         return argumentsHasVarBinding() && hasMappedArgsObj();
@@ -1721,9 +1389,10 @@ class JSScript : public js::gc::TenuredCell
 
     inline JSFunction* functionDelazifying() const;
     JSFunction* functionNonDelazifying() const {
-        return function_;
+        if (bodyScope()->is<js::FunctionScope>())
+            return bodyScope()->as<js::FunctionScope>().canonicalFunction();
+        return nullptr;
     }
-    inline void setFunction(JSFunction* fun);
     
 
 
@@ -1731,15 +1400,16 @@ class JSScript : public js::gc::TenuredCell
     inline void ensureNonLazyCanonicalFunction(JSContext* cx);
 
     js::ModuleObject* module() const {
-        return module_;
+        if (bodyScope()->is<js::ModuleScope>())
+            return bodyScope()->as<js::ModuleScope>().module();
+        return nullptr;
     }
-    inline void setModule(js::ModuleObject* module);
 
     bool isGlobalOrEvalCode() const {
-        return !function_ && !module_;
+        return bodyScope()->is<js::GlobalScope>() || bodyScope()->is<js::EvalScope>();
     }
     bool isGlobalCode() const {
-        return isGlobalOrEvalCode() && !isForEval();
+        return bodyScope()->is<js::GlobalScope>();
     }
 
     
@@ -1764,10 +1434,17 @@ class JSScript : public js::gc::TenuredCell
   public:
 
     
-    bool isForEval() const { return isCachedEval() || isActiveEval(); }
+    bool isForEval() const {
+        MOZ_ASSERT_IF(isCachedEval() || isActiveEval(), bodyScope()->is<js::EvalScope>());
+        return isCachedEval() || isActiveEval();
+    }
 
     
-    bool isDirectEvalInFunction() const { return isForEval() && savedCallerFun(); }
+    bool isDirectEvalInFunction() const {
+        if (!isForEval())
+            return false;
+        return bodyScope()->hasOnChain(js::ScopeKind::Function);
+    }
 
     
 
@@ -1791,14 +1468,41 @@ class JSScript : public js::gc::TenuredCell
     inline js::GlobalObject& global() const;
     js::GlobalObject& uninlinedGlobal() const;
 
-    
-    JSObject* enclosingStaticScope() const {
-        return enclosingStaticScope_;
+    uint32_t bodyScopeIndex() const {
+        return bodyScopeIndex_;
     }
 
-    
-    
-    void fixEnclosingStaticGlobalLexicalScope();
+    js::Scope* bodyScope() const {
+        return getScope(bodyScopeIndex_);
+    }
+
+    js::Scope* outermostScope() const {
+        
+        
+        size_t index = 0;
+        return getScope(index);
+    }
+
+    bool functionHasExtraBodyVarScope() const {
+        MOZ_ASSERT_IF(functionHasExtraBodyVarScope_, functionHasParameterExprs());
+        return functionHasExtraBodyVarScope_;
+    }
+
+    js::VarScope* functionExtraBodyVarScope() const {
+        MOZ_ASSERT(functionHasExtraBodyVarScope());
+        for (uint32_t i = 0; i < scopes()->length; i++) {
+            js::Scope* scope = getScope(i);
+            if (scope->kind() == js::ScopeKind::FunctionBodyVar)
+                return &scope->as<js::VarScope>();
+        }
+        MOZ_CRASH("Function extra body var scope not found");
+    }
+
+    inline js::LexicalScope* maybeNamedLambdaScope() const;
+
+    js::Scope* enclosingScope() const {
+        return outermostScope()->enclosing();
+    }
 
   private:
     bool makeTypes(JSContext* cx);
@@ -1859,19 +1563,22 @@ class JSScript : public js::gc::TenuredCell
     void setHasArray(ArrayKind kind) { hasArrayBits |= (1 << kind); }
     void cloneHasArray(JSScript* script) { hasArrayBits = script->hasArrayBits; }
 
-    bool hasConsts() const        { return hasArray(CONSTS);      }
-    bool hasObjects() const       { return hasArray(OBJECTS);     }
-    bool hasTrynotes() const      { return hasArray(TRYNOTES);    }
-    bool hasBlockScopes() const   { return hasArray(BLOCK_SCOPES); }
-    bool hasYieldOffsets() const  { return isGenerator(); }
+    bool hasConsts() const       { return hasArray(CONSTS); }
+    bool hasObjects() const      { return hasArray(OBJECTS); }
+    bool hasTrynotes() const     { return hasArray(TRYNOTES); }
+    bool hasScopeNotes() const   { return hasArray(SCOPENOTES); }
+    bool hasYieldOffsets() const { return isGenerator(); }
 
-    #define OFF(fooOff, hasFoo, t)   (fooOff() + (hasFoo() ? sizeof(t) : 0))
+#define OFF(fooOff, hasFoo, t)   (fooOff() + (hasFoo() ? sizeof(t) : 0))
 
-    size_t constsOffset() const       { return 0; }
-    size_t objectsOffset() const      { return OFF(constsOffset,      hasConsts,      js::ConstArray);      }
-    size_t trynotesOffset() const     { return OFF(objectsOffset,     hasObjects,     js::ObjectArray);     }
-    size_t blockScopesOffset() const  { return OFF(trynotesOffset,    hasTrynotes,    js::TryNoteArray);    }
-    size_t yieldOffsetsOffset() const { return OFF(blockScopesOffset, hasBlockScopes, js::BlockScopeArray); }
+    size_t scopesOffset() const       { return 0; }
+    size_t constsOffset() const       { return scopesOffset() + sizeof(js::ScopeArray); }
+    size_t objectsOffset() const      { return OFF(constsOffset,     hasConsts,     js::ConstArray); }
+    size_t trynotesOffset() const     { return OFF(objectsOffset,    hasObjects,    js::ObjectArray); }
+    size_t scopeNotesOffset() const   { return OFF(trynotesOffset,   hasTrynotes,   js::TryNoteArray); }
+    size_t yieldOffsetsOffset() const { return OFF(scopeNotesOffset, hasScopeNotes, js::ScopeNoteArray); }
+
+#undef OFF
 
     size_t dataSize() const { return dataSize_; }
 
@@ -1885,14 +1592,18 @@ class JSScript : public js::gc::TenuredCell
         return reinterpret_cast<js::ObjectArray*>(data + objectsOffset());
     }
 
+    js::ScopeArray* scopes() const {
+        return reinterpret_cast<js::ScopeArray*>(data + scopesOffset());
+    }
+
     js::TryNoteArray* trynotes() const {
         MOZ_ASSERT(hasTrynotes());
         return reinterpret_cast<js::TryNoteArray*>(data + trynotesOffset());
     }
 
-    js::BlockScopeArray* blockScopes() {
-        MOZ_ASSERT(hasBlockScopes());
-        return reinterpret_cast<js::BlockScopeArray*>(data + blockScopesOffset());
+    js::ScopeNoteArray* scopeNotes() {
+        MOZ_ASSERT(hasScopeNotes());
+        return reinterpret_cast<js::ScopeNoteArray*>(data + scopeNotesOffset());
     }
 
     js::YieldOffsetArray& yieldOffsets() {
@@ -1937,14 +1648,25 @@ class JSScript : public js::gc::TenuredCell
         return arr->vector[index];
     }
 
-    size_t innerObjectsStart() {
-        
-        return savedCallerFun() ? 1 : 0;
-    }
-
     JSObject* getObject(jsbytecode* pc) {
         MOZ_ASSERT(containsPC(pc) && containsPC(pc + sizeof(uint32_t)));
         return getObject(GET_UINT32_INDEX(pc));
+    }
+
+    js::Scope* getScope(size_t index) const {
+        js::ScopeArray* array = scopes();
+        MOZ_ASSERT(index < array->length);
+        return array->vector[index];
+    }
+
+    js::Scope* getScope(jsbytecode* pc) const {
+        
+        
+        
+        MOZ_ASSERT(containsPC(pc) && containsPC(pc + sizeof(uint32_t)));
+        MOZ_ASSERT(js::JOF_OPTYPE(JSOp(*pc)) == JOF_SCOPE,
+                   "Did you mean to use lookupScope(pc)?");
+        return getScope(GET_UINT32_INDEX(pc));
     }
 
     JSVersion getVersion() const {
@@ -1952,8 +1674,11 @@ class JSScript : public js::gc::TenuredCell
     }
 
     inline JSFunction* getFunction(size_t index);
-    inline JSFunction* getCallerFunction();
-    inline JSFunction* functionOrCallerFunction();
+    JSFunction* function() const {
+        if (functionNonDelazifying())
+            return functionNonDelazifying();
+        return nullptr;
+    }
 
     inline js::RegExpObject* getRegExp(size_t index);
     inline js::RegExpObject* getRegExp(jsbytecode* pc);
@@ -1967,17 +1692,10 @@ class JSScript : public js::gc::TenuredCell
     
     
 
-    js::NestedStaticScope* getStaticBlockScope(jsbytecode* pc);
+    js::Scope* lookupScope(jsbytecode* pc);
 
-    
-    
-    JSObject* innermostStaticScopeInScript(jsbytecode* pc);
-
-    
-    
-    JSObject* innermostStaticScope(jsbytecode* pc);
-
-    JSObject* innermostStaticScope() { return innermostStaticScope(main()); }
+    js::Scope* innermostScope(jsbytecode* pc);
+    js::Scope* innermostScope() { return innermostScope(main()); }
 
     
 
@@ -1994,10 +1712,8 @@ class JSScript : public js::gc::TenuredCell
         return JSOp(*pc) == JSOP_RETRVAL;
     }
 
-    bool bindingIsAliased(const js::BindingIter& bi);
     bool formalIsAliased(unsigned argSlot);
     bool formalLivesInArgumentsObject(unsigned argSlot);
-    bool localIsAliased(unsigned localSlot);
 
   private:
     
@@ -2094,155 +1810,8 @@ namespace js {
 
 
 
-
-
-
-
-class BindingIter
-{
-    Binding* bindingArray_;
-    uint32_t numArgs_;
-    uint32_t count_;
-    uint32_t i_;
-    uint32_t unaliasedLocal_;
-
-    friend class ::JSScript;
-    friend class Bindings;
-
-    void init(const Bindings& bindings) {
-        
-        
-        bindingArray_ = bindings.bindingArray();
-        numArgs_ = bindings.numArgs();
-        count_ = bindings.count();
-    }
-
-  public:
-    explicit BindingIter(Handle<Bindings> bindings)
-      : i_(0), unaliasedLocal_(0)
-    {
-        init(bindings);
-    }
-
-    explicit BindingIter(HandleScript script)
-      : i_(0), unaliasedLocal_(0)
-    {
-        init(script->bindings);
-    }
-
-    bool done() const { return i_ == count_; }
-    explicit operator bool() const { return !done(); }
-    BindingIter& operator++() { (*this)++; return *this; }
-
-    void operator++(int) {
-        MOZ_ASSERT(!done());
-        const Binding& binding = **this;
-        if (binding.kind() != Binding::ARGUMENT && !binding.aliased())
-            unaliasedLocal_++;
-        i_++;
-    }
-
-    
-    
-    
-    
-    uint32_t frameIndex() const {
-        MOZ_ASSERT(!done());
-        if (i_ < numArgs_)
-            return i_;
-        MOZ_ASSERT(!(*this)->aliased());
-        return unaliasedLocal_;
-    }
-
-    
-    
-    
-    uint32_t argIndex() const {
-        MOZ_ASSERT(!done());
-        MOZ_ASSERT(i_ < numArgs_);
-        return i_;
-    }
-    uint32_t argOrLocalIndex() const {
-        MOZ_ASSERT(!done());
-        return i_ < numArgs_ ? i_ : i_ - numArgs_;
-    }
-    uint32_t localIndex() const {
-        MOZ_ASSERT(!done());
-        MOZ_ASSERT(i_ >= numArgs_);
-        return i_ - numArgs_;
-    }
-    bool isBodyLevelLexical() const {
-        MOZ_ASSERT(!done());
-        const Binding& binding = **this;
-        return binding.kind() != Binding::ARGUMENT;
-    }
-
-    const Binding& operator*() const { MOZ_ASSERT(!done()); return bindingArray_[i_]; }
-    const Binding* operator->() const { MOZ_ASSERT(!done()); return &bindingArray_[i_]; }
-};
-
-
-
-
-
-
-class AliasedFormalIter
-{
-    const Binding* begin_;
-    const Binding* p_;
-    const Binding* end_;
-    unsigned slot_;
-
-    void settle() {
-        while (p_ != end_ && !p_->aliased())
-            p_++;
-    }
-
-  public:
-    explicit inline AliasedFormalIter(JSScript* script);
-
-    bool done() const { return p_ == end_; }
-    explicit operator bool() const { return !done(); }
-    void operator++(int) { MOZ_ASSERT(!done()); p_++; slot_++; settle(); }
-
-    const Binding& operator*() const { MOZ_ASSERT(!done()); return *p_; }
-    const Binding* operator->() const { MOZ_ASSERT(!done()); return p_; }
-    unsigned frameIndex() const { MOZ_ASSERT(!done()); return p_ - begin_; }
-    unsigned scopeSlot() const { MOZ_ASSERT(!done()); return slot_; }
-};
-
-
-
 class LazyScript : public gc::TenuredCell
 {
-  public:
-    class FreeVariable
-    {
-        
-        uintptr_t bits_;
-
-        static const uintptr_t HOISTED_USE_BIT = 0x1;
-        static const uintptr_t MASK = ~HOISTED_USE_BIT;
-
-      public:
-        explicit FreeVariable()
-          : bits_(0)
-        { }
-
-        explicit FreeVariable(JSAtom* name)
-          : bits_(uintptr_t(name))
-        {
-            
-            
-            
-            MOZ_ASSERT(!IsInsideNursery(name));
-        }
-
-        JSAtom* atom() const { return (JSAtom*)(bits_ & MASK); }
-        void setIsHoistedUse() { bits_ |= HOISTED_USE_BIT; }
-        bool isHoistedUse() const { return bool(bits_ & HOISTED_USE_BIT); }
-    };
-
   private:
     
     
@@ -2253,7 +1822,7 @@ class LazyScript : public gc::TenuredCell
     GCPtrFunction function_;
 
     
-    GCPtrObject enclosingScope_;
+    GCPtrScope enclosingScope_;
 
     
     
@@ -2269,13 +1838,15 @@ class LazyScript : public gc::TenuredCell
 #if JS_BITS_PER_WORD == 32
     uint32_t padding;
 #endif
-  private:
 
+  private:
     struct PackedView {
         
         uint32_t version : 8;
 
-        uint32_t numFreeVariables : 24;
+        uint32_t shouldDeclareArguments : 1;
+        uint32_t hasThisBinding : 1;
+        uint32_t numClosedOverBindings : 22;
         uint32_t numInnerFunctions : 20;
 
         uint32_t generatorKindBits : 2;
@@ -2316,13 +1887,16 @@ class LazyScript : public gc::TenuredCell
                                  uint32_t lineno, uint32_t column);
 
   public:
+    static const uint32_t NumClosedOverBindingsLimit = 1 << 22;
+    static const uint32_t NumInnerFunctionsLimit = 1 << 20;
+
     
     
-    
-    static LazyScript* CreateRaw(ExclusiveContext* cx, HandleFunction fun,
-                                 uint32_t numFreeVariables, uint32_t numInnerFunctions,
-                                 JSVersion version, uint32_t begin, uint32_t end,
-                                 uint32_t lineno, uint32_t column);
+    static LazyScript* Create(ExclusiveContext* cx, HandleFunction fun,
+                              const frontend::AtomVector& closedOverBindings,
+                              Handle<GCVector<JSFunction*, 8>> innerFunctions,
+                              JSVersion version, uint32_t begin, uint32_t end,
+                              uint32_t lineno, uint32_t column);
 
     
     
@@ -2334,7 +1908,7 @@ class LazyScript : public gc::TenuredCell
     
     
     static LazyScript* Create(ExclusiveContext* cx, HandleFunction fun,
-                              HandleScript script, HandleObject enclosingScope,
+                              HandleScript script, HandleScope enclosingScope,
                               HandleScript sourceObjectScript,
                               uint64_t packedData, uint32_t begin, uint32_t end,
                               uint32_t lineno, uint32_t column);
@@ -2359,13 +1933,9 @@ class LazyScript : public gc::TenuredCell
         return bool(script_);
     }
 
-    JSObject* enclosingScope() const {
+    Scope* enclosingScope() const {
         return enclosingScope_;
     }
-
-    
-    
-    void fixEnclosingStaticGlobalLexicalScope();
 
     ScriptSourceObject* sourceObject() const;
     ScriptSource* scriptSource() const {
@@ -2380,20 +1950,20 @@ class LazyScript : public gc::TenuredCell
         return (p_.version == JS_BIT(8) - 1) ? JSVERSION_UNKNOWN : JSVersion(p_.version);
     }
 
-    void setEnclosingScopeAndSource(JSObject* enclosingScope, ScriptSourceObject* sourceObject);
+    void setEnclosingScopeAndSource(Scope* enclosingScope, ScriptSourceObject* sourceObject);
 
-    uint32_t numFreeVariables() const {
-        return p_.numFreeVariables;
+    uint32_t numClosedOverBindings() const {
+        return p_.numClosedOverBindings;
     }
-    FreeVariable* freeVariables() {
-        return (FreeVariable*)table_;
+    JSAtom** closedOverBindings() {
+        return (JSAtom**)table_;
     }
 
     uint32_t numInnerFunctions() const {
         return p_.numInnerFunctions;
     }
     GCPtrFunction* innerFunctions() {
-        return (GCPtrFunction*)&freeVariables()[numFreeVariables()];
+        return (GCPtrFunction*)&closedOverBindings()[numClosedOverBindings()];
     }
 
     GeneratorKind generatorKind() const { return GeneratorKindFromBits(p_.generatorKindBits); }
@@ -2474,6 +2044,20 @@ class LazyScript : public gc::TenuredCell
     }
     void setNeedsHomeObject() {
         p_.needsHomeObject = true;
+    }
+
+    bool shouldDeclareArguments() const {
+        return p_.shouldDeclareArguments;
+    }
+    void setShouldDeclareArguments() {
+        p_.shouldDeclareArguments = true;
+    }
+
+    bool hasThisBinding() const {
+        return p_.hasThisBinding;
+    }
+    void setHasThisBinding() {
+        p_.hasThisBinding = true;
     }
 
     const char* filename() const {
@@ -2584,11 +2168,11 @@ DescribeScriptedCallerForCompilation(JSContext* cx, MutableHandleScript maybeScr
                                      LineOption opt = NOT_CALLED_FROM_JSOP_EVAL);
 
 JSScript*
-CloneScriptIntoFunction(JSContext* cx, HandleObject enclosingScope, HandleFunction fun,
+CloneScriptIntoFunction(JSContext* cx, HandleScope enclosingScope, HandleFunction fun,
                         HandleScript src);
 
 JSScript*
-CloneGlobalScript(JSContext* cx, Handle<StaticScope*> enclosingScope, HandleScript src);
+CloneGlobalScript(JSContext* cx, ScopeKind scopeKind, HandleScript src);
 
 } 
 

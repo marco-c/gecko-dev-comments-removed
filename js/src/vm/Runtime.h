@@ -27,7 +27,7 @@
 #endif
 #include "builtin/AtomicsObject.h"
 #include "ds/FixedSizeHash.h"
-#include "frontend/ParseMaps.h"
+#include "frontend/NameCollections.h"
 #include "gc/GCRuntime.h"
 #include "gc/Tracer.h"
 #include "irregexp/RegExpStack.h"
@@ -44,6 +44,7 @@
 #include "vm/CommonPropertyNames.h"
 #include "vm/DateTime.h"
 #include "vm/MallocProvider.h"
+#include "vm/Scope.h"
 #include "vm/SharedImmutableStringsCache.h"
 #include "vm/SPSProfiler.h"
 #include "vm/Stack.h"
@@ -296,7 +297,9 @@ class PerThreadData
 #endif
 
     
-    unsigned activeCompilations;
+    
+    
+    frontend::NameCollectionPool frontendCollectionPool;
 
     explicit PerThreadData(JSRuntime* runtime);
     ~PerThreadData();
@@ -310,8 +313,6 @@ class PerThreadData
     JSContext* contextFromMainThread();
 
     inline bool exclusiveThreadsPresent();
-    inline void addActiveCompilation(AutoLockForExclusiveAccess& lock);
-    inline void removeActiveCompilation(AutoLockForExclusiveAccess& lock);
 
     
     
@@ -976,26 +977,6 @@ struct JSRuntime : public JS::shadow::Runtime,
     
     
     
-  private:
-    js::frontend::ParseMapPool parseMapPool_;
-    unsigned activeCompilations_;
-  public:
-    js::frontend::ParseMapPool& parseMapPool(js::AutoLockForExclusiveAccess& lock) {
-        return parseMapPool_;
-    }
-    bool hasActiveCompilations() {
-        return activeCompilations_ != 0;
-    }
-    void addActiveCompilation(js::AutoLockForExclusiveAccess& lock) {
-        activeCompilations_++;
-    }
-    void removeActiveCompilation(js::AutoLockForExclusiveAccess& lock) {
-        activeCompilations_--;
-    }
-
-    
-    
-    
     
     
     
@@ -1007,7 +988,6 @@ struct JSRuntime : public JS::shadow::Runtime,
     friend class js::AutoKeepAtoms;
   public:
     bool keepAtoms() {
-        MOZ_ASSERT(CurrentThreadCanAccessRuntime(this));
         return keepAtoms_ != 0 || exclusiveThreadsPresent();
     }
 
@@ -1472,21 +1452,6 @@ PerThreadData::exclusiveThreadsPresent()
     return runtime_->exclusiveThreadsPresent();
 }
 
-inline void
-PerThreadData::addActiveCompilation(AutoLockForExclusiveAccess& lock)
-{
-    activeCompilations++;
-    runtime_->addActiveCompilation(lock);
-}
-
-inline void
-PerThreadData::removeActiveCompilation(AutoLockForExclusiveAccess& lock)
-{
-    MOZ_ASSERT(activeCompilations);
-    activeCompilations--;
-    runtime_->removeActiveCompilation(lock);
-}
-
 
 
 static MOZ_ALWAYS_INLINE void
@@ -1709,6 +1674,20 @@ namespace JS {
 template <typename T>
 struct DeletePolicy<js::GCPtr<T>> : public js::GCManagedDeletePolicy<js::GCPtr<T>>
 {};
+
+
+
+
+
+template <>
+struct DeletePolicy<js::FunctionScope::Data>
+  : public js::GCManagedDeletePolicy<js::FunctionScope::Data>
+{ };
+
+template <>
+struct DeletePolicy<js::ModuleScope::Data>
+  : public js::GCManagedDeletePolicy<js::ModuleScope::Data>
+{ };
 
 } 
 

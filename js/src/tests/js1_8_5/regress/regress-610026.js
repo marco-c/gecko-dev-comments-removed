@@ -10,7 +10,6 @@ var actual;
 
 
 
-
 var s = "{}";
 for (var i = 0; i < 21; i++)
     s += s;
@@ -39,9 +38,9 @@ s += "{}";
 
 try {
     eval(s);
-    actual = "fail: expected InternalError: program too large";
+    actual = "pass";
 } catch (e) {
-    actual = (e.message == "program too large") ? "pass" : "fail: " + e;
+    actual = "fail: " + e;
 }
 
 assertEq(actual, expect);

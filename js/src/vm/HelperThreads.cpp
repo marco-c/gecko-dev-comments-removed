@@ -266,21 +266,10 @@ void
 ScriptParseTask::parse()
 {
     SourceBufferHolder srcBuf(chars, length, SourceBufferHolder::NoOwnership);
-
-    
-    
-    
-    
-    
-    
-    
-    Rooted<ClonedBlockObject*> globalLexical(cx, &cx->global()->lexicalScope());
-    Rooted<StaticScope*> staticScope(cx, &globalLexical->staticBlock());
-    script = frontend::CompileScript(cx, &alloc, globalLexical, staticScope, nullptr,
-                                     options, srcBuf,
-                                      nullptr,
-                                      nullptr,
-                                      sourceObject.address());
+    script = frontend::CompileGlobalScript(cx, alloc, ScopeKind::Global,
+                                           options, srcBuf,
+                                            nullptr,
+                                            sourceObject.address());
 }
 
 ModuleParseTask::ModuleParseTask(ExclusiveContext* cx, JSObject* exclusiveContextGlobal,
@@ -295,7 +284,7 @@ void
 ModuleParseTask::parse()
 {
     SourceBufferHolder srcBuf(chars, length, SourceBufferHolder::NoOwnership);
-    ModuleObject* module = frontend::CompileModule(cx, options, srcBuf, &alloc,
+    ModuleObject* module = frontend::CompileModule(cx, options, srcBuf, alloc,
                                                    sourceObject.address());
     if (module)
         script = module->script();
@@ -1200,7 +1189,7 @@ GlobalHelperThreadState::finishModuleParseTask(JSContext* cx, void* token)
     MOZ_ASSERT(script->module());
 
     RootedModuleObject module(cx, script->module());
-    module->fixScopesAfterCompartmentMerge(cx);
+    module->fixEnvironmentsAfterCompartmentMerge(cx);
     if (!ModuleObject::Freeze(cx, module))
         return nullptr;
 

@@ -486,13 +486,13 @@ BaselineFrameAndStackPointersFromTryNote(JSTryNote* tn, const JitFrameIterator& 
 
 static void
 SettleOnTryNote(JSContext* cx, JSTryNote* tn, const JitFrameIterator& frame,
-                ScopeIter& si, ResumeFromException* rfe, jsbytecode** pc)
+                EnvironmentIter& ei, ResumeFromException* rfe, jsbytecode** pc)
 {
     RootedScript script(cx, frame.baselineFrame()->script());
 
     
     if (cx->isExceptionPending())
-        UnwindScope(cx, si, UnwindScopeToTryPc(script, tn));
+        UnwindEnvironment(cx, ei, UnwindEnvironmentToTryPc(script, tn));
 
     
     BaselineFrameAndStackPointersFromTryNote(tn, frame, &rfe->framePointer, &rfe->stackPointer);
@@ -558,7 +558,7 @@ CloseLiveIteratorsBaselineForUncatchableException(JSContext* cx, const JitFrameI
 }
 
 static bool
-ProcessTryNotesBaseline(JSContext* cx, const JitFrameIterator& frame, ScopeIter& si,
+ProcessTryNotesBaseline(JSContext* cx, const JitFrameIterator& frame, EnvironmentIter& ei,
                         ResumeFromException* rfe, jsbytecode** pc)
 {
     RootedScript script(cx, frame.baselineFrame()->script());
@@ -574,7 +574,7 @@ ProcessTryNotesBaseline(JSContext* cx, const JitFrameIterator& frame, ScopeIter&
             if (cx->isClosingGenerator())
                 continue;
 
-            SettleOnTryNote(cx, tn, frame, si, rfe, pc);
+            SettleOnTryNote(cx, tn, frame, ei, rfe, pc);
 
             
             
@@ -588,7 +588,7 @@ ProcessTryNotesBaseline(JSContext* cx, const JitFrameIterator& frame, ScopeIter&
           }
 
           case JSTRY_FINALLY: {
-            SettleOnTryNote(cx, tn, frame, si, rfe, pc);
+            SettleOnTryNote(cx, tn, frame, ei, rfe, pc);
             rfe->kind = ResumeFromException::RESUME_FINALLY;
             rfe->target = script->baselineScript()->nativeCodeForPC(script, *pc);
             
@@ -607,7 +607,7 @@ ProcessTryNotesBaseline(JSContext* cx, const JitFrameIterator& frame, ScopeIter&
             if (!UnwindIteratorForException(cx, iterObject)) {
                 
                 
-                SettleOnTryNote(cx, tn, frame, si, rfe, pc);
+                SettleOnTryNote(cx, tn, frame, ei, rfe, pc);
                 MOZ_ASSERT(**pc == JSOP_ENDITER);
                 return false;
             }
@@ -676,8 +676,8 @@ HandleExceptionBaseline(JSContext* cx, const JitFrameIterator& frame, ResumeFrom
         }
 
         if (script->hasTrynotes()) {
-            ScopeIter si(cx, frame.baselineFrame(), pc);
-            if (!ProcessTryNotesBaseline(cx, frame, si, rfe, &pc))
+            EnvironmentIter ei(cx, frame.baselineFrame(), pc);
+            if (!ProcessTryNotesBaseline(cx, frame, ei, rfe, &pc))
                 goto again;
             if (rfe->kind != ResumeFromException::RESUME_ENTRY_FRAME) {
                 
@@ -2396,13 +2396,13 @@ InlineFrameIterator::callee(MaybeReadFallback& fallback) const
 }
 
 JSObject*
-InlineFrameIterator::computeScopeChain(Value scopeChainValue, MaybeReadFallback& fallback,
-                                       bool* hasCallObj) const
+InlineFrameIterator::computeEnvironmentChain(Value envChainValue, MaybeReadFallback& fallback,
+                                             bool* hasCallObj) const
 {
-    if (scopeChainValue.isObject()) {
+    if (envChainValue.isObject()) {
         if (hasCallObj) {
             if (fallback.canRecoverResults()) {
-                RootedObject obj(fallback.maybeCx, &scopeChainValue.toObject());
+                RootedObject obj(fallback.maybeCx, &envChainValue.toObject());
                 *hasCallObj = isFunctionFrame() && callee(fallback)->needsCallObject();
                 return obj;
             } else {
@@ -2411,7 +2411,7 @@ InlineFrameIterator::computeScopeChain(Value scopeChainValue, MaybeReadFallback&
             }
         }
 
-        return &scopeChainValue.toObject();
+        return &envChainValue.toObject();
     }
 
     
@@ -2424,7 +2424,7 @@ InlineFrameIterator::computeScopeChain(Value scopeChainValue, MaybeReadFallback&
     
     MOZ_ASSERT(!script()->isForEval());
     MOZ_ASSERT(!script()->hasNonSyntacticScope());
-    return &script()->global().lexicalScope();
+    return &script()->global().lexicalEnvironment();
 }
 
 bool
@@ -2620,7 +2620,7 @@ InlineFrameIterator::dump() const
     for (unsigned i = 0; i < si.numAllocations() - 1; i++) {
         if (isFunction) {
             if (i == 0)
-                fprintf(stderr, "  scope chain: ");
+                fprintf(stderr, "  env chain: ");
             else if (i == 1)
                 fprintf(stderr, "  this: ");
             else if (i - 2 < calleeTemplate()->nargs())

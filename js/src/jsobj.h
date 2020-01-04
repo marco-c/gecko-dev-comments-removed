@@ -458,12 +458,14 @@ class JSObject : public js::gc::Cell
 
 
 
+
     
 
 
 
 
-    inline JSObject* enclosingScope() const;
+
+    inline JSObject* enclosingEnvironment() const;
 
     inline js::GlobalObject& global() const;
 

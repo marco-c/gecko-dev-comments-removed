@@ -12,7 +12,7 @@
 #include "jit/JitAllocPolicy.h"
 #include "jit/JitFrames.h"
 #include "jit/Registers.h"
-#include "vm/ScopeObject.h"
+#include "vm/EnvironmentObject.h"
 
 namespace js {
 namespace jit {
@@ -215,31 +215,24 @@ class CompileInfo
             MOZ_ASSERT(fun_->isTenured());
         }
 
-        osrStaticScope_ = osrPc ? script->getStaticBlockScope(osrPc) : nullptr;
-
         nimplicit_ = StartArgSlot(script)                   
                    + (fun ? 1 : 0);                         
         nargs_ = fun ? fun->nargs() : 0;
-        nbodyfixed_ = script->nbodyfixed();
         nlocals_ = script->nfixed();
-        fixedLexicalBegin_ = script->fixedLexicalBegin();
         nstack_ = Max<unsigned>(script->nslots() - script->nfixed(), MinJITStackSize);
         nslots_ = nimplicit_ + nargs_ + nlocals_ + nstack_;
-        needsCallObject_ = fun ? fun->needsCallObject() : false;
     }
 
     explicit CompileInfo(unsigned nlocals)
-      : script_(nullptr), fun_(nullptr), osrPc_(nullptr), osrStaticScope_(nullptr),
-        constructing_(false), needsCallObject_(false), analysisMode_(Analysis_None),
-        scriptNeedsArgsObj_(false), mayReadFrameArgsDirectly_(false), inlineScriptTree_(nullptr)
+      : script_(nullptr), fun_(nullptr), osrPc_(nullptr), constructing_(false),
+        analysisMode_(Analysis_None), scriptNeedsArgsObj_(false),
+        mayReadFrameArgsDirectly_(false), inlineScriptTree_(nullptr)
     {
         nimplicit_ = 0;
         nargs_ = 0;
-        nbodyfixed_ = 0;
         nlocals_ = nlocals;
         nstack_ = 1;  
         nslots_ = nlocals_ + nstack_;
-        fixedLexicalBegin_ = nlocals;
     }
 
     JSScript* script() const {
@@ -259,9 +252,6 @@ class CompileInfo
     }
     jsbytecode* osrPc() const {
         return osrPc_;
-    }
-    NestedStaticScope* osrStaticScope() const {
-        return osrStaticScope_;
     }
     InlineScriptTree* inlineScriptTree() const {
         return inlineScriptTree_;
@@ -330,15 +320,6 @@ class CompileInfo
     unsigned nargs() const {
         return nargs_;
     }
-    bool needsCallObject() const {
-        MOZ_ASSERT(funMaybeLazy());
-        return needsCallObject_;
-    }
-    
-    
-    unsigned nbodyfixed() const {
-        return nbodyfixed_;
-    }
     
     
     unsigned nlocals() const {
@@ -347,12 +328,8 @@ class CompileInfo
     unsigned ninvoke() const {
         return nslots_ - nstack_;
     }
-    
-    unsigned fixedLexicalBegin() const {
-        return fixedLexicalBegin_;
-    }
 
-    uint32_t scopeChainSlot() const {
+    uint32_t environmentChainSlot() const {
         MOZ_ASSERT(script());
         return 0;
     }
@@ -412,53 +389,12 @@ class CompileInfo
         return nimplicit() + nargs() + nlocals();
     }
 
-    bool isSlotAliased(uint32_t index, NestedStaticScope* staticScope) const {
+    bool isSlotAliased(uint32_t index) const {
         MOZ_ASSERT(index >= startArgSlot());
-
-        if (funMaybeLazy() && index == thisSlot())
-            return false;
-
         uint32_t arg = index - firstArgSlot();
         if (arg < nargs())
             return script()->formalIsAliased(arg);
-
-        uint32_t local = index - firstLocalSlot();
-        if (local < nlocals()) {
-            
-            
-            
-            
-            
-            
-            
-            if (local < nbodyfixed())
-                return false;
-
-            
-            for (; staticScope; staticScope = staticScope->enclosingNestedScope()) {
-                if (!staticScope->is<StaticBlockScope>())
-                    continue;
-                StaticBlockScope& blockScope = staticScope->as<StaticBlockScope>();
-                if (blockScope.localOffset() < local) {
-                    if (local - blockScope.localOffset() < blockScope.numVariables())
-                        return blockScope.isAliased(local - blockScope.localOffset());
-                    return false;
-                }
-            }
-
-            
-            return false;
-        }
-
-        MOZ_ASSERT(index >= firstStackSlot());
         return false;
-    }
-
-    bool isSlotAliasedAtEntry(uint32_t index) const {
-        return isSlotAliased(index, nullptr);
-    }
-    bool isSlotAliasedAtOsr(uint32_t index) const {
-        return isSlotAliased(index, osrStaticScope());
     }
 
     bool hasArguments() const {
@@ -504,14 +440,14 @@ class CompileInfo
         if (slot == thisSlot())
             return true;
 
-        if (needsCallObject() && slot == scopeChainSlot())
+        if (funMaybeLazy()->needsSomeEnvironmentObject() && slot == environmentChainSlot())
             return true;
 
         
         
         
         
-        if (hasArguments() && (slot == scopeChainSlot() || slot == argsObjSlot()))
+        if (hasArguments() && (slot == environmentChainSlot() || slot == argsObjSlot()))
             return true;
 
         return false;
@@ -543,7 +479,7 @@ class CompileInfo
             return true;
 
         
-        if (slot == thisSlot() || slot == scopeChainSlot())
+        if (slot == thisSlot() || slot == environmentChainSlot())
             return true;
 
         if (isObservableFrameSlot(slot))
@@ -567,17 +503,13 @@ class CompileInfo
   private:
     unsigned nimplicit_;
     unsigned nargs_;
-    unsigned nbodyfixed_;
     unsigned nlocals_;
     unsigned nstack_;
     unsigned nslots_;
-    unsigned fixedLexicalBegin_;
     JSScript* script_;
     JSFunction* fun_;
     jsbytecode* osrPc_;
-    NestedStaticScope* osrStaticScope_;
     bool constructing_;
-    bool needsCallObject_;
     AnalysisMode analysisMode_;
 
     

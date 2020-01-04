@@ -360,7 +360,7 @@ class ArgumentsObject : public NativeObject
         return getFixedSlotOffset(INITIAL_LENGTH_SLOT);
     }
 
-    static Value MagicScopeSlotValue(uint32_t slot) {
+    static Value MagicEnvSlotValue(uint32_t slot) {
         
         
         

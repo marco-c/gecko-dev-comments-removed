@@ -132,7 +132,7 @@ struct BaselineScript
     
     
     
-    HeapPtr<JSObject*> templateScope_;
+    HeapPtr<EnvironmentObject*> templateEnv_;
 
     
     FallbackICStubSpace fallbackStubSpace_;
@@ -364,12 +364,12 @@ struct BaselineScript
         method_ = code;
     }
 
-    JSObject* templateScope() const {
-        return templateScope_;
+    EnvironmentObject* templateEnvironment() const {
+        return templateEnv_;
     }
-    void setTemplateScope(JSObject* templateScope) {
-        MOZ_ASSERT(!templateScope_);
-        templateScope_ = templateScope;
+    void setTemplateEnvironment(EnvironmentObject* templateEnv) {
+        MOZ_ASSERT(!templateEnv_);
+        templateEnv_ = templateEnv;
     }
 
     void toggleBarriers(bool enabled, ReprotectCode reprotect = Reprotect) {

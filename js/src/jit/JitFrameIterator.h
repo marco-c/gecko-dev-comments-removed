@@ -651,8 +651,8 @@ class InlineFrameIterator
 
   private:
     void findNextFrame();
-    JSObject* computeScopeChain(Value scopeChainValue, MaybeReadFallback& fallback,
-                                bool* hasCallObj = nullptr) const;
+    JSObject* computeEnvironmentChain(Value envChainValue, MaybeReadFallback& fallback,
+                                      bool* hasCallObj = nullptr) const;
 
   public:
     InlineFrameIterator(JSContext* cx, const JitFrameIterator* iter);
@@ -694,7 +694,7 @@ class InlineFrameIterator
 
     template <class ArgOp, class LocalOp>
     void readFrameArgsAndLocals(JSContext* cx, ArgOp& argOp, LocalOp& localOp,
-                                JSObject** scopeChain, bool* hasCallObj,
+                                JSObject** envChain, bool* hasCallObj,
                                 Value* rval, ArgumentsObject** argsObj, Value* thisv,
                                 ReadFrameArgsBehavior behavior,
                                 MaybeReadFallback& fallback) const
@@ -702,9 +702,9 @@ class InlineFrameIterator
         SnapshotIterator s(si_);
 
         
-        if (scopeChain) {
-            Value scopeChainValue = s.maybeRead(fallback);
-            *scopeChain = computeScopeChain(scopeChainValue, fallback, hasCallObj);
+        if (envChain) {
+            Value envChainValue = s.maybeRead(fallback);
+            *envChain = computeEnvironmentChain(envChainValue, fallback, hasCallObj);
         } else {
             s.skip();
         }
@@ -795,12 +795,12 @@ class InlineFrameIterator
     bool isFunctionFrame() const;
     bool isConstructing() const;
 
-    JSObject* scopeChain(MaybeReadFallback& fallback) const {
+    JSObject* environmentChain(MaybeReadFallback& fallback) const {
         SnapshotIterator s(si_);
 
         
         Value v = s.maybeRead(fallback);
-        return computeScopeChain(v, fallback);
+        return computeEnvironmentChain(v, fallback);
     }
 
     Value thisArgument(MaybeReadFallback& fallback) const {

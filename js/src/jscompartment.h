@@ -33,7 +33,7 @@ namespace gc {
 template <typename Node, typename Derived> class ComponentFinder;
 } 
 
-class ClonedBlockObject;
+class LexicalEnvironmentObject;
 class ScriptSourceObject;
 struct NativeIterator;
 
@@ -267,7 +267,7 @@ class MOZ_RAII AutoSetNewObjectMetadata : private JS::CustomAutoRooter
 } 
 
 namespace js {
-class DebugScopes;
+class DebugEnvironments;
 class ObjectWeakMap;
 class WatchpointMap;
 class WeakMapBase;
@@ -418,6 +418,15 @@ struct JSCompartment
     using CCKeyVector = mozilla::Vector<js::CrossCompartmentKey, 0, js::SystemAllocPolicy>;
     CCKeyVector                  nurseryCCKeys;
 
+    
+    
+    
+    
+    
+    JS::GCHashSet<JSAtom*,
+                  js::DefaultHasher<JSAtom*>,
+                  js::SystemAllocPolicy> varNames_;
+
   public:
     
     int64_t                      lastAnimationTime;
@@ -473,6 +482,7 @@ struct JSCompartment
                                 size_t* crossCompartmentWrappers,
                                 size_t* regexpCompartment,
                                 size_t* savedStacksSet,
+                                size_t* varNamesSet,
                                 size_t* nonSyntacticLexicalScopes,
                                 size_t* jitCompartment,
                                 size_t* privateData);
@@ -513,7 +523,7 @@ struct JSCompartment
     
     
     
-    js::ObjectWeakMap* nonSyntacticLexicalScopes_;
+    js::ObjectWeakMap* nonSyntacticLexicalEnvironments_;
 
   public:
     
@@ -576,10 +586,9 @@ struct JSCompartment
         explicit WrapperEnum(JSCompartment* c) : js::WrapperMap::Enum(c->crossCompartmentWrappers) {}
     };
 
-    js::ClonedBlockObject* getOrCreateNonSyntacticLexicalScope(JSContext* cx,
-                                                               js::HandleObject enclosingStatic,
-                                                               js::HandleObject enclosingScope);
-    js::ClonedBlockObject* getNonSyntacticLexicalScope(JSObject* enclosingScope) const;
+    js::LexicalEnvironmentObject*
+    getOrCreateNonSyntacticLexicalEnvironment(JSContext* cx, js::HandleObject enclosing);
+    js::LexicalEnvironmentObject* getNonSyntacticLexicalEnvironment(JSObject* enclosing) const;
 
     
 
@@ -615,7 +624,7 @@ struct JSCompartment
     void sweepSelfHostingScriptSource();
     void sweepJitCompartment(js::FreeOp* fop);
     void sweepRegExps();
-    void sweepDebugScopes();
+    void sweepDebugEnvironments();
     void sweepNativeIterators();
     void sweepTemplateObjects();
 
@@ -642,6 +651,18 @@ struct JSCompartment
     }
 
     js::SavedStacks& savedStacks() { return savedStacks_; }
+
+    
+    MOZ_MUST_USE bool addToVarNames(JSContext* cx, JS::Handle<JSAtom*> name);
+
+    void removeFromVarNames(JS::Handle<JSAtom*> name) {
+        varNames_.remove(name);
+    }
+
+    
+    bool isInVarNames(JS::Handle<JSAtom*> name) {
+        return varNames_.has(name);
+    }
 
     void findOutgoingEdges(js::gc::ZoneComponentFinder& finder);
 
@@ -772,7 +793,7 @@ struct JSCompartment
     js::DebugScriptMap* debugScriptMap;
 
     
-    js::DebugScopes* debugScopes;
+    js::DebugEnvironments* debugEnvs;
 
     
 

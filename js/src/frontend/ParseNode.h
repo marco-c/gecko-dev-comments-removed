@@ -15,74 +15,10 @@
 namespace js {
 namespace frontend {
 
-template <typename ParseHandler>
-struct ParseContext;
-
+class ParseContext;
 class FullParseHandler;
 class FunctionBox;
-class ModuleBox;
 class ObjectBox;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class PackedScopeCoordinate
-{
-    uint32_t hops_ : SCOPECOORD_HOPS_BITS;
-    uint32_t slot_ : SCOPECOORD_SLOT_BITS;
-
-    void checkInvariants() {
-        static_assert(sizeof(PackedScopeCoordinate) == sizeof(uint32_t),
-                      "Not necessary for correctness, but good for ParseNode memory use");
-    }
-
-  public:
-    
-    
-    
-    
-    static const uint32_t UNKNOWN_HOPS = SCOPECOORD_HOPS_LIMIT - 1;
-    static const uint32_t UNKNOWN_SLOT = SCOPECOORD_SLOT_LIMIT - 1;
-    bool isHopsUnknown() const { return hops_ == UNKNOWN_HOPS; }
-    bool isFree() const { return slot_ == UNKNOWN_SLOT; }
-
-    uint32_t hops() const { MOZ_ASSERT(!isFree()); return hops_; }
-    uint32_t slot() const { MOZ_ASSERT(!isFree()); return slot_; }
-
-    MOZ_MUST_USE bool setSlot(TokenStream& ts, uint32_t newSlot) {
-        if (newSlot >= UNKNOWN_SLOT)
-            return ts.reportError(JSMSG_TOO_MANY_LOCALS);
-        slot_ = newSlot;
-        return true;
-    }
-
-    MOZ_MUST_USE bool setHops(TokenStream& ts, uint32_t newHops) {
-        if (newHops >= UNKNOWN_HOPS)
-            return ts.reportError(JSMSG_TOO_DEEP, js_function_str);
-        hops_ = newHops;
-        return true;
-    }
-
-    MOZ_MUST_USE bool set(TokenStream& ts, uint32_t newHops, uint32_t newSlot) {
-        return setHops(ts, newHops) && setSlot(ts, newSlot);
-    }
-
-    void makeFree() {
-        hops_ = UNKNOWN_HOPS;
-        slot_ = UNKNOWN_SLOT;
-        MOZ_ASSERT(isFree());
-    }
-};
 
 #define FOR_EACH_PARSE_NODE_KIND(F) \
     F(NOP) \
@@ -153,7 +89,6 @@ class PackedScopeCoordinate
     F(ARRAYPUSH) \
     F(LEXICALSCOPE) \
     F(LET) \
-    F(LETBLOCK) \
     F(IMPORT) \
     F(IMPORT_SPEC_LIST) \
     F(IMPORT_SPEC) \
@@ -166,8 +101,7 @@ class PackedScopeCoordinate
     F(FORIN) \
     F(FOROF) \
     F(FORHEAD) \
-    F(ANNEXB_FUNCTION) \
-    F(ARGSBODY) \
+    F(PARAMSBODY) \
     F(SPREAD) \
     F(MUTATEPROTO) \
     F(CLASS) \
@@ -485,32 +419,17 @@ IsDeleteKind(ParseNodeKind kind)
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 enum ParseNodeArity
 {
     PN_NULLARY,                         
     PN_UNARY,                           
     PN_BINARY,                          
-    PN_BINARY_OBJ,                      
     PN_TERNARY,                         
     PN_CODE,                            
     PN_LIST,                            
-    PN_NAME                             
+    PN_NAME,                            
+    PN_SCOPE                            
 };
-
-struct Definition;
 
 class LoopControlStatement;
 class BreakStatement;
@@ -520,28 +439,34 @@ class PropertyAccess;
 
 class ParseNode
 {
-    uint32_t            pn_type   : 16, 
-                        pn_op     : 8,  
-                        pn_arity  : 4,  
-                        pn_parens : 1,  
-                        pn_used   : 1,  
-                        pn_defn   : 1;  
+    uint16_t pn_type;   
+    uint8_t pn_op;      
+    uint8_t pn_arity:4; 
+    bool pn_parens:1;   
 
     ParseNode(const ParseNode& other) = delete;
     void operator=(const ParseNode& other) = delete;
 
   public:
     ParseNode(ParseNodeKind kind, JSOp op, ParseNodeArity arity)
-      : pn_type(kind), pn_op(op), pn_arity(arity), pn_parens(0), pn_used(0), pn_defn(0),
-        pn_pos(0, 0), pn_next(nullptr), pn_link(nullptr)
+      : pn_type(kind),
+        pn_op(op),
+        pn_arity(arity),
+        pn_parens(0),
+        pn_pos(0, 0),
+        pn_next(nullptr)
     {
         MOZ_ASSERT(kind < PNK_LIMIT);
         memset(&pn_u, 0, sizeof pn_u);
     }
 
     ParseNode(ParseNodeKind kind, JSOp op, ParseNodeArity arity, const TokenPos& pos)
-      : pn_type(kind), pn_op(op), pn_arity(arity), pn_parens(0), pn_used(0), pn_defn(0),
-        pn_pos(pos), pn_next(nullptr), pn_link(nullptr)
+      : pn_type(kind),
+        pn_op(op),
+        pn_arity(arity),
+        pn_parens(0),
+        pn_pos(pos),
+        pn_next(nullptr)
     {
         MOZ_ASSERT(kind < PNK_LIMIT);
         memset(&pn_u, 0, sizeof pn_u);
@@ -579,56 +504,27 @@ class ParseNode
     bool isInParens() const                { return pn_parens; }
     bool isLikelyIIFE() const              { return isInParens(); }
     void setInParens(bool enabled)         { pn_parens = enabled; }
-    bool isUsed() const                    { return pn_used; }
-    void setUsed(bool enabled)             { pn_used = enabled; }
-    bool isDefn() const                    { return pn_defn; }
-    void setDefn(bool enabled)             { pn_defn = enabled; }
-
-    static const unsigned NumDefinitionFlagBits = 10;
-    static const unsigned NumListFlagBits = 10;
-    static const unsigned NumBlockIdBits = 22;
-    static_assert(NumDefinitionFlagBits == NumListFlagBits,
-                  "Assumed below to achieve consistent blockid offset");
-    static_assert(NumDefinitionFlagBits + NumBlockIdBits <= 32,
-                  "This is supposed to fit in a single uint32_t");
 
     TokenPos            pn_pos;         
     ParseNode*          pn_next;        
 
-    
-
-
-
-
-
-
-
-
-
-    union {
-        ParseNode*      dn_uses;
-        ParseNode*      pn_link;
-    };
-
     union {
         struct {                        
-            ParseNode*  head;          
-            ParseNode** tail;         
+            ParseNode*  head;           
+            ParseNode** tail;           
             uint32_t    count;          
-            uint32_t    xflags:NumListFlagBits, 
-                        blockid:NumBlockIdBits; 
+            uint32_t    xflags;         
         } list;
         struct {                        
-            ParseNode*  kid1;          
-            ParseNode*  kid2;          
-            ParseNode*  kid3;          
+            ParseNode*  kid1;           
+            ParseNode*  kid2;           
+            ParseNode*  kid3;           
         } ternary;
         struct {                        
             ParseNode*  left;
             ParseNode*  right;
             union {
                 unsigned iflags;        
-                ObjectBox* objbox;      
                 bool isStatic;          
                 uint32_t offset;        
             };
@@ -643,21 +539,17 @@ class ParseNode
                 JSAtom*      atom;      
                 ObjectBox*   objbox;    
                 FunctionBox* funbox;    
-                ModuleBox*   modulebox; 
             };
-            union {
-                ParseNode*  expr;      
+            ParseNode*  expr;           
 
-
-                Definition* lexdef;    
-            };
-            PackedScopeCoordinate scopeCoord;
-            uint32_t    dflags:NumDefinitionFlagBits, 
-                        blockid:NumBlockIdBits;  
 
         } name;
         struct {
-            double      value;          
+            LexicalScope::Data* bindings;
+            ParseNode*          body;
+        } scope;
+        struct {
+            double       value;         
             DecimalPoint decimalPoint;  
         } number;
         class {
@@ -666,13 +558,9 @@ class ParseNode
         } loopControl;
     } pn_u;
 
-#define pn_modulebox    pn_u.name.modulebox
 #define pn_objbox       pn_u.name.objbox
 #define pn_funbox       pn_u.name.funbox
 #define pn_body         pn_u.name.expr
-#define pn_scopecoord   pn_u.name.scopeCoord
-#define pn_dflags       pn_u.name.dflags
-#define pn_blockid      pn_u.name.blockid
 #define pn_head         pn_u.list.head
 #define pn_tail         pn_u.list.tail
 #define pn_count        pn_u.list.count
@@ -684,25 +572,13 @@ class ParseNode
 #define pn_right        pn_u.binary.right
 #define pn_pval         pn_u.binary.pval
 #define pn_iflags       pn_u.binary.iflags
-#define pn_binary_obj   pn_u.binary.objbox
 #define pn_kid          pn_u.unary.kid
 #define pn_prologue     pn_u.unary.prologue
 #define pn_atom         pn_u.name.atom
 #define pn_objbox       pn_u.name.objbox
 #define pn_expr         pn_u.name.expr
-#define pn_lexdef       pn_u.name.lexdef
 #define pn_dval         pn_u.number.value
 
-  protected:
-    void init(TokenKind type, JSOp op, ParseNodeArity arity) {
-        pn_type = type;
-        pn_op = op;
-        pn_arity = arity;
-        pn_parens = false;
-        MOZ_ASSERT(!pn_used);
-        MOZ_ASSERT(!pn_defn);
-        pn_next = pn_link = nullptr;
-    }
 
   public:
     
@@ -711,57 +587,37 @@ class ParseNode
 
     static ParseNode*
     appendOrCreateList(ParseNodeKind kind, JSOp op, ParseNode* left, ParseNode* right,
-                       FullParseHandler* handler, ParseContext<FullParseHandler>* pc);
+                       FullParseHandler* handler, ParseContext* pc);
 
     inline PropertyName* name() const;
     inline JSAtom* atom() const;
 
-    
-
-
-
-
-
     ParseNode* expr() const {
-        MOZ_ASSERT(!pn_used);
         MOZ_ASSERT(pn_arity == PN_NAME || pn_arity == PN_CODE);
         return pn_expr;
     }
 
-    Definition* lexdef() const {
-        MOZ_ASSERT(pn_used || isDeoptimized());
-        MOZ_ASSERT(pn_arity == PN_NAME);
-        return pn_lexdef;
+    bool isEmptyScope() const {
+        MOZ_ASSERT(pn_arity == PN_SCOPE);
+        return !pn_u.scope.bindings;
     }
 
-    ParseNode* maybeExpr()   { return pn_used ? nullptr : expr(); }
-    Definition* maybeLexDef() { return pn_used ? lexdef() : nullptr; }
+    Handle<LexicalScope::Data*> scopeBindings() const {
+        MOZ_ASSERT(!isEmptyScope());
+        
+        
+        return Handle<LexicalScope::Data*>::fromMarkedLocation(&pn_u.scope.bindings);
+    }
 
-    Definition* resolve();
+    ParseNode* scopeBody() const {
+        MOZ_ASSERT(pn_arity == PN_SCOPE);
+        return pn_u.scope.body;
+    }
 
-
-#define PND_LEXICAL             0x01    /* lexical (block-scoped) binding or use of a hoisted
-                                           let or const */
-#define PND_CONST               0x02    /* const binding (orthogonal to let) */
-#define PND_ASSIGNED            0x04    /* set if ever LHS of assignment */
-#define PND_PLACEHOLDER         0x08    /* placeholder definition for lexdep */
-#define PND_BOUND               0x10    /* bound to a stack or global slot */
-#define PND_DEOPTIMIZED         0x20    /* former pn_used name node, pn_lexdef
-                                           still valid, but this use no longer
-                                           optimizable via an upvar opcode */
-#define PND_CLOSED              0x40    /* variable is closed over */
-#define PND_KNOWNALIASED        0x80    /* definition known to be aliased and
-                                           already has a translated pnk_scopecoord */
-#define PND_IMPLICITARGUMENTS  0x100    /* the definition is a placeholder for
-                                           'arguments' that has been converted
-                                           into a definition after the function
-                                           body has been parsed. */
-#define PND_IMPORT             0x200    /* the definition is a module import. */
-
-    static_assert(PND_IMPORT < (1 << NumDefinitionFlagBits), "Not enough bits");
-
-
-#define PND_USE2DEF_FLAGS (PND_ASSIGNED | PND_CLOSED)
+    void setScopeBody(ParseNode* body) {
+        MOZ_ASSERT(pn_arity == PN_SCOPE);
+        pn_u.scope.body = body;
+    }
 
 
 #define PNX_FUNCDEFS    0x01            /* contains top-level function statements */
@@ -770,13 +626,6 @@ class ParseNode
                                            1. array initialiser has holes
                                            2. array initializer has spread node */
 #define PNX_NONCONST    0x08            /* initialiser has non-constants */
-
-    static_assert(PNX_NONCONST < (1 << NumListFlagBits), "Not enough bits");
-
-    uint32_t frameSlot() const {
-        MOZ_ASSERT(pn_arity == PN_CODE || pn_arity == PN_NAME);
-        return pn_scopecoord.slot();
-    }
 
     bool functionIsHoisted() const {
         MOZ_ASSERT(pn_arity == PN_CODE && getKind() == PNK_FUNCTION);
@@ -813,20 +662,6 @@ class ParseNode
         return nullptr;
     }
 
-    inline bool test(unsigned flag) const;
-
-    bool isLexical() const      { return test(PND_LEXICAL) && !isUsed(); }
-    bool isConst() const        { return test(PND_CONST); }
-    bool isPlaceholder() const  { return test(PND_PLACEHOLDER); }
-    bool isDeoptimized() const  { return test(PND_DEOPTIMIZED); }
-    bool isAssigned() const     { return test(PND_ASSIGNED); }
-    bool isClosed() const       { return test(PND_CLOSED); }
-    bool isBound() const        { return test(PND_BOUND); }
-    bool isImplicitArguments() const { return test(PND_IMPLICITARGUMENTS); }
-    bool isHoistedLexicalUse() const { return test(PND_LEXICAL) && isUsed(); }
-    bool isKnownAliased() const { return test(PND_KNOWNALIASED); }
-    bool isImport() const       { return test(PND_IMPORT); }
-
     
     bool isLiteral() const {
         return isKind(PNK_NUMBER) ||
@@ -839,17 +674,32 @@ class ParseNode
     
     bool isDirectivePrologueMember() const { return pn_prologue; }
 
+    
+    bool isForLoopDeclaration() const {
+        if (isKind(PNK_VAR) || isKind(PNK_LET) || isKind(PNK_CONST)) {
+            MOZ_ASSERT(isArity(PN_LIST));
+            MOZ_ASSERT(pn_count > 0);
+            return true;
+        }
+
+        return false;
+    }
+
     ParseNode* generatorExpr() const {
         MOZ_ASSERT(isKind(PNK_GENEXP));
+
         ParseNode* callee = this->pn_head;
-        ParseNode* body = callee->pn_body;
+        MOZ_ASSERT(callee->isKind(PNK_FUNCTION));
+
+        ParseNode* paramsBody = callee->pn_body;
+        MOZ_ASSERT(paramsBody->isKind(PNK_PARAMSBODY));
+
+        ParseNode* body = paramsBody->last();
         MOZ_ASSERT(body->isKind(PNK_STATEMENTLIST));
         MOZ_ASSERT(body->last()->isKind(PNK_LEXICALSCOPE) ||
                    body->last()->isKind(PNK_COMPREHENSIONFOR));
         return body->last();
     }
-
-    inline void markAsAssigned();
 
     
 
@@ -874,7 +724,6 @@ class ParseNode
         pn_tail = &pn_head;
         pn_count = 0;
         pn_xflags = 0;
-        pn_blockid = 0;
     }
 
     void initList(ParseNode* pn) {
@@ -886,7 +735,6 @@ class ParseNode
         pn_tail = &pn->pn_next;
         pn_count = 1;
         pn_xflags = 0;
-        pn_blockid = 0;
     }
 
     void append(ParseNode* pn) {
@@ -1003,22 +851,6 @@ struct BinaryNode : public ParseNode
 #endif
 };
 
-struct BinaryObjNode : public ParseNode
-{
-    BinaryObjNode(ParseNodeKind kind, JSOp op, const TokenPos& pos, ParseNode* left, ParseNode* right,
-                  ObjectBox* objbox)
-      : ParseNode(kind, op, PN_BINARY_OBJ, pos)
-    {
-        pn_left = left;
-        pn_right = right;
-        pn_binary_obj = objbox;
-    }
-
-#ifdef DEBUG
-    void dump(int indent);
-#endif
-};
-
 struct TernaryNode : public ParseNode
 {
     TernaryNode(ParseNodeKind kind, JSOp op, ParseNode* kid1, ParseNode* kid2, ParseNode* kid3)
@@ -1082,8 +914,6 @@ struct CodeNode : public ParseNode
         MOZ_ASSERT(kind == PNK_FUNCTION || kind == PNK_MODULE);
         MOZ_ASSERT(!pn_body);
         MOZ_ASSERT(!pn_objbox);
-        MOZ_ASSERT(pn_dflags == 0);
-        pn_scopecoord.makeFree();
     }
 
   public:
@@ -1094,16 +924,11 @@ struct CodeNode : public ParseNode
 
 struct NameNode : public ParseNode
 {
-    NameNode(ParseNodeKind kind, JSOp op, JSAtom* atom, uint32_t blockid,
-             const TokenPos& pos)
+    NameNode(ParseNodeKind kind, JSOp op, JSAtom* atom, const TokenPos& pos)
       : ParseNode(kind, op, PN_NAME, pos)
     {
         pn_atom = atom;
         pn_expr = nullptr;
-        pn_scopecoord.makeFree();
-        pn_dflags = 0;
-        pn_blockid = blockid;
-        MOZ_ASSERT(pn_blockid == blockid);  
     }
 
 #ifdef DEBUG
@@ -1113,27 +938,20 @@ struct NameNode : public ParseNode
 
 struct LexicalScopeNode : public ParseNode
 {
-    LexicalScopeNode(ObjectBox* blockBox, const TokenPos& pos)
-      : ParseNode(PNK_LEXICALSCOPE, JSOP_NOP, PN_NAME, pos)
+    LexicalScopeNode(LexicalScope::Data* bindings, ParseNode* body)
+      : ParseNode(PNK_LEXICALSCOPE, JSOP_NOP, PN_SCOPE, body->pn_pos)
     {
-        MOZ_ASSERT(!pn_expr);
-        MOZ_ASSERT(pn_dflags == 0);
-        MOZ_ASSERT(pn_blockid == 0);
-        pn_objbox = blockBox;
-        pn_scopecoord.makeFree();
-    }
-
-    LexicalScopeNode(ObjectBox* blockBox, ParseNode* blockNode)
-      : ParseNode(PNK_LEXICALSCOPE, JSOP_NOP, PN_NAME, blockNode->pn_pos)
-    {
-        pn_objbox = blockBox;
-        pn_expr = blockNode;
-        pn_blockid = blockNode->pn_blockid;
+        pn_u.scope.bindings = bindings;
+        pn_u.scope.body = body;
     }
 
     static bool test(const ParseNode& node) {
         return node.isKind(PNK_LEXICALSCOPE);
     }
+
+#ifdef DEBUG
+    void dump(int indent);
+#endif
 };
 
 class LabeledStatement : public ParseNode
@@ -1481,164 +1299,19 @@ struct ClassNode : public TernaryNode {
             return pn_kid3;
 
         MOZ_ASSERT(pn_kid3->is<LexicalScopeNode>());
-        ParseNode* list = pn_kid3->pn_expr;
+        ParseNode* list = pn_kid3->scopeBody();
         MOZ_ASSERT(list->isKind(PNK_CLASSMETHODLIST));
         return list;
     }
-    ObjectBox* scopeObjectBox() const {
+    Handle<LexicalScope::Data*> scopeBindings() const {
         MOZ_ASSERT(pn_kid3->is<LexicalScopeNode>());
-        return pn_kid3->pn_objbox;
+        return pn_kid3->scopeBindings();
     }
 };
 
 #ifdef DEBUG
 void DumpParseTree(ParseNode* pn, int indent = 0);
 #endif
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-struct Definition : public ParseNode
-{
-    bool isFreeVar() const {
-        MOZ_ASSERT(isDefn());
-        return pn_scopecoord.isFree();
-    }
-
-    enum Kind {
-        MISSING = 0,
-        VAR,
-        CONSTANT,
-        LET,
-        ARG,
-        NAMED_LAMBDA,
-        PLACEHOLDER,
-        IMPORT
-    };
-
-    static bool test(const ParseNode& pn) { return pn.isDefn(); }
-
-    bool canHaveInitializer() { return int(kind()) <= int(ARG); }
-
-    static const char* kindString(Kind kind);
-
-    Kind kind() {
-        if (getKind() == PNK_FUNCTION) {
-            if (isOp(JSOP_GETARG))
-                return ARG;
-            if (isOp(JSOP_INITLEXICAL))
-                return LET;
-            return VAR;
-        }
-        MOZ_ASSERT(getKind() == PNK_NAME);
-        if (isOp(JSOP_CALLEE))
-            return NAMED_LAMBDA;
-        if (isPlaceholder())
-            return PLACEHOLDER;
-        if (isOp(JSOP_GETARG))
-            return ARG;
-        if (isImport())
-            return IMPORT;
-        if (isLexical())
-            return isConst() ? CONSTANT : LET;
-        return VAR;
-    }
-};
 
 class ParseNodeAllocator
 {
@@ -1657,39 +1330,6 @@ class ParseNodeAllocator
     LifoAlloc& alloc;
     ParseNode* freelist;
 };
-
-inline bool
-ParseNode::test(unsigned flag) const
-{
-    MOZ_ASSERT(pn_defn || pn_arity == PN_CODE || pn_arity == PN_NAME);
-#ifdef DEBUG
-    if ((flag & PND_ASSIGNED) && pn_defn && !(pn_dflags & flag)) {
-        for (ParseNode* pn = ((Definition*) this)->dn_uses; pn; pn = pn->pn_link) {
-            MOZ_ASSERT(!pn->pn_defn);
-            MOZ_ASSERT(!(pn->pn_dflags & flag));
-        }
-    }
-#endif
-    return !!(pn_dflags & flag);
-}
-
-inline void
-ParseNode::markAsAssigned()
-{
-    MOZ_ASSERT(CodeSpec[pn_op].format & JOF_NAME);
-    if (isUsed())
-        pn_lexdef->pn_dflags |= PND_ASSIGNED;
-    pn_dflags |= PND_ASSIGNED;
-}
-
-inline Definition*
-ParseNode::resolve()
-{
-    if (isDefn())
-        return (Definition*)this;
-    MOZ_ASSERT(lexdef()->isDefn());
-    return (Definition*)lexdef();
-}
 
 inline bool
 ParseNode::isConstant()
@@ -1719,8 +1359,6 @@ class ObjectBox
     ObjectBox(JSObject* object, ObjectBox* traceLink);
     bool isFunctionBox() { return object->is<JSFunction>(); }
     FunctionBox* asFunctionBox();
-    bool isModuleBox();
-    ModuleBox* asModuleBox();
     virtual void trace(JSTracer* trc);
 
     static void TraceList(JSTracer* trc, ObjectBox* listHead);
@@ -1774,15 +1412,26 @@ IsSetterKind(FunctionSyntaxKind kind)
     return kind == Setter || kind == SetterNoExpressionClosure;
 }
 
+static inline bool
+IsMethodDefinitionKind(FunctionSyntaxKind kind)
+{
+    return kind == Method || IsConstructorKind(kind) ||
+           IsGetterKind(kind) || IsSetterKind(kind);
+}
+
 static inline ParseNode*
-FunctionArgsList(ParseNode* fn, unsigned* numFormals)
+FunctionFormalParametersList(ParseNode* fn, unsigned* numFormals)
 {
     MOZ_ASSERT(fn->isKind(PNK_FUNCTION));
     ParseNode* argsBody = fn->pn_body;
-    MOZ_ASSERT(argsBody->isKind(PNK_ARGSBODY));
+    MOZ_ASSERT(argsBody->isKind(PNK_PARAMSBODY));
     *numFormals = argsBody->pn_count;
-    if (*numFormals > 0 && argsBody->last()->isKind(PNK_STATEMENTLIST))
+    if (*numFormals > 0 &&
+        argsBody->last()->isKind(PNK_LEXICALSCOPE) &&
+        argsBody->last()->scopeBody()->isKind(PNK_STATEMENTLIST))
+    {
         (*numFormals)--;
+    }
     MOZ_ASSERT(argsBody->isArity(PN_LIST));
     return argsBody->pn_head;
 }

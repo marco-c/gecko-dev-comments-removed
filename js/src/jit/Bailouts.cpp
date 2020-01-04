@@ -255,18 +255,24 @@ jit::ExceptionHandlerBailout(JSContext* cx, const InlineFrameIterator& frame,
 }
 
 
+
 bool
-jit::EnsureHasScopeObjects(JSContext* cx, AbstractFramePtr fp)
+jit::EnsureHasEnvironmentObjects(JSContext* cx, AbstractFramePtr fp)
 {
     
     MOZ_ASSERT(!fp.isEvalFrame());
 
-    if (fp.isFunctionFrame() &&
-        fp.callee()->needsCallObject() &&
-        !fp.hasCallObj())
-    {
-        return fp.initFunctionScopeObjects(cx);
+    if (fp.isFunctionFrame()) {
+        
+        
+        MOZ_ASSERT(!fp.callee()->needsExtraBodyVarEnvironment());
+
+        if (!fp.hasInitialEnvironment() && fp.callee()->needsFunctionEnvironmentObjects()) {
+            if (!fp.initFunctionEnvironmentObjects(cx))
+                return false;
+        }
     }
+
     return true;
 }
 

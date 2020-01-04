@@ -228,6 +228,10 @@ class ExclusiveContext : public ContextFriendFields,
         return perThreadData->dtoaState;
     }
 
+    frontend::NameCollectionPool& frontendCollectionPool() {
+        return perThreadData->frontendCollectionPool;
+    }
+
     
 
 
@@ -288,9 +292,6 @@ class ExclusiveContext : public ContextFriendFields,
     inline js::Handle<js::GlobalObject*> global() const;
 
     
-    frontend::ParseMapPool& parseMapPool(AutoLockForExclusiveAccess& lock) {
-        return runtime_->parseMapPool(lock);
-    }
     AtomSet& atoms(js::AutoLockForExclusiveAccess& lock) {
         return runtime_->atoms(lock);
     }

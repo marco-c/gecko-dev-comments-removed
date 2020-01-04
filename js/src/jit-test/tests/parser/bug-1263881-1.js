@@ -1,4 +1,3 @@
-
 let moduleRepo = {};
 setModuleResolveHook(function(module, specifier) {
         return moduleRepo[specifier];

@@ -37,7 +37,7 @@ function test_pause_frame()
     do_check_true(!!vars.stopMe.value.actor);
 
     
-    parentEnv = parentEnv.parent.parent.parent;
+    parentEnv = parentEnv.parent.parent;
     do_check_neq(parentEnv, undefined);
     let objClient = gThreadClient.pauseGrip(parentEnv.object);
     objClient.getPrototypeAndProperties(function (aResponse) {

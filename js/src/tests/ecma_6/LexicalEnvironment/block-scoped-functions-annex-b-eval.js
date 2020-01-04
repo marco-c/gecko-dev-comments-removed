@@ -35,4 +35,17 @@ function h() {
 
 h()();
 
+function f2() {
+  
+  
+  eval("{ function a() {} }");
+  const a = 1;
+}
+
+function f3() {
+  
+  eval("{ function a() {} }");
+  let a;
+}
+
 reportCompare(log, "outer-geval-gwith-gtruefalseq");
