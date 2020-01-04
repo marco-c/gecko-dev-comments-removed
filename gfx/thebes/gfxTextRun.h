@@ -232,18 +232,6 @@ public:
         uint32_t    mCurrentChar;
     };
 
-    struct DrawParams
-    {
-        gfxContext* context;
-        DrawMode drawMode = DrawMode::GLYPH_FILL;
-        PropertyProvider* provider = nullptr;
-        
-        gfxFloat* advanceWidth = nullptr;
-        gfxTextContextPaint* contextPaint = nullptr;
-        gfxTextRunDrawCallbacks* callbacks = nullptr;
-        explicit DrawParams(gfxContext* aContext) : context(aContext) {}
-    };
-
     
 
 
@@ -264,7 +252,12 @@ public:
 
 
 
-    void Draw(Range aRange, gfxPoint aPt, const DrawParams& aParams);
+
+    void Draw(gfxContext *aContext, gfxPoint aPt,
+              DrawMode aDrawMode, Range aRange,
+              PropertyProvider *aProvider,
+              gfxFloat *aAdvanceWidth, gfxTextContextPaint *aContextPaint,
+              gfxTextRunDrawCallbacks *aCallbacks = nullptr);
 
     
 
