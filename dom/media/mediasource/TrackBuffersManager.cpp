@@ -172,20 +172,12 @@ TrackBuffersManager::ResetParserState()
   MSE_DEBUG("");
 
   
-  if (mAppendState == AppendState::PARSING_MEDIA_SEGMENT) {
-    nsCOMPtr<nsIRunnable> task =
-      NS_NewRunnableMethod(this, &TrackBuffersManager::FinishCodedFrameProcessing);
-    GetTaskQueue()->Dispatch(task.forget());
-  } else {
-    nsCOMPtr<nsIRunnable> task =
-      NS_NewRunnableMethod(this, &TrackBuffersManager::CompleteResetParserState);
-    GetTaskQueue()->Dispatch(task.forget());
-  }
+  
+  
+  nsCOMPtr<nsIRunnable> task =
+    NS_NewRunnableMethod(this, &TrackBuffersManager::CompleteResetParserState);
+  GetTaskQueue()->Dispatch(task.forget());
 
-  
-  
-  
-  
   
   SetAppendState(AppendState::WAITING_FOR_SEGMENT);
 }
@@ -301,24 +293,6 @@ TrackBuffersManager::Detach()
 {
   MOZ_ASSERT(NS_IsMainThread());
   MSE_DEBUG("");
-}
-
-void
-TrackBuffersManager::FinishCodedFrameProcessing()
-{
-  MOZ_ASSERT(OnTaskQueue());
-
-  if (mProcessingRequest.Exists()) {
-    NS_WARNING("Processing request pending");
-    mProcessingRequest.Disconnect();
-  }
-  
-  
-  
-  
-  
-
-  CompleteResetParserState();
 }
 
 void

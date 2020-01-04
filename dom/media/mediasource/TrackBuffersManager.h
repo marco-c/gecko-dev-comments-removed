@@ -120,8 +120,6 @@ private:
   RefPtr<CodedFrameProcessingPromise> CodedFrameProcessing();
   void CompleteCodedFrameProcessing();
   
-  
-  void FinishCodedFrameProcessing();
   void CompleteResetParserState();
   RefPtr<RangeRemovalPromise>
     CodedFrameRemovalWithPromise(media::TimeInterval aInterval);
