@@ -4601,6 +4601,7 @@ private:
 void
 ServiceWorkerInfo::UpdateState(ServiceWorkerState aState)
 {
+  AssertIsOnMainThread();
 #ifdef DEBUG
   
   
@@ -4613,6 +4614,13 @@ ServiceWorkerInfo::UpdateState(ServiceWorkerState aState)
   
   MOZ_ASSERT_IF(mState == ServiceWorkerState::Activated, aState == ServiceWorkerState::Redundant);
 #endif
+  
+  
+  
+  
+  if (aState == ServiceWorkerState::Activated && mState != aState) {
+    mServiceWorkerPrivate->Activated();
+  }
   mState = aState;
   nsCOMPtr<nsIRunnable> r = new ChangeStateUpdater(mInstances, mState);
   MOZ_ALWAYS_TRUE(NS_SUCCEEDED(NS_DispatchToMainThread(r.forget())));

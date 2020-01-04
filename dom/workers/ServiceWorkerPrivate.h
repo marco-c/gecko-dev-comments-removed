@@ -134,6 +134,9 @@ public:
     return mWorkerPrivate;
   }
 
+  void
+  Activated();
+
 private:
   enum WakeUpReason {
     FetchEvent = 0,
@@ -197,6 +200,10 @@ private:
   
   
   nsTArray<nsCOMPtr<nsISupports>> mSupportsArray;
+
+  
+  
+  nsTArray<RefPtr<WorkerRunnable>> mPendingFunctionalEvents;
 };
 
 } 
