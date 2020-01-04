@@ -992,6 +992,10 @@ private:
   RefPtr<CacheHash>         mRWHash;
 
   
+  
+  bool                      mRWPending;
+
+  
   bool                      mJournalReadSuccessfully;
 
   
