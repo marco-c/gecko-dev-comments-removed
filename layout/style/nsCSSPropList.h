@@ -4399,12 +4399,6 @@ CSS_PROP_SHORTHAND(
 
 
 
-
-
-#ifdef CSS_PROP_STUB_NOT_CSS
-CSS_PROP_STUB_NOT_CSS
-CSS_PROP_STUB_NOT_CSS
-#else
 CSS_PROP_FONT(
     -x-lang,
     _x_lang,
@@ -4438,7 +4432,6 @@ CSS_PROP_FONT(
     nullptr,
     CSS_PROP_NO_OFFSET,
     eStyleAnimType_None)
-#endif 
 #endif 
 #endif 
 
