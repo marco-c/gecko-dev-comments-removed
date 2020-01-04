@@ -3014,29 +3014,38 @@ BaselineCompiler::emit_JSOP_NEWTARGET()
     }
 
     
-    Label constructing, done;
-    masm.branchTestPtr(Assembler::NonZero, frame.addressOfCalleeToken(),
-                       Imm32(CalleeToken_FunctionConstructing), &constructing);
-    masm.moveValue(UndefinedValue(), R0);
-    masm.jump(&done);
+    Label notConstructing, done;
+    masm.branchTestPtr(Assembler::Zero, frame.addressOfCalleeToken(),
+                       Imm32(CalleeToken_FunctionConstructing), &notConstructing);
 
-    masm.bind(&constructing);
-
-    
     Register argvLen = R0.scratchReg();
 
     Address actualArgs(BaselineFrameReg, BaselineFrame::offsetOfNumActualArgs());
     masm.loadPtr(actualArgs, argvLen);
 
-    Label actualArgsSufficient;
+    Label useNFormals;
 
-    masm.branchPtr(Assembler::AboveOrEqual, argvLen, Imm32(function()->nargs()),
-                   &actualArgsSufficient);
-    masm.move32(Imm32(function()->nargs()), argvLen);
-    masm.bind(&actualArgsSufficient);
+    masm.branchPtr(Assembler::Below, argvLen, Imm32(function()->nargs()),
+                   &useNFormals);
 
-    BaseValueIndex newTarget(BaselineFrameReg, argvLen, BaselineFrame::offsetOfArg(0));
-    masm.loadValue(newTarget, R0);
+    {
+        BaseValueIndex newTarget(BaselineFrameReg, argvLen, BaselineFrame::offsetOfArg(0));
+        masm.loadValue(newTarget, R0);
+        masm.jump(&done);
+    }
+
+    masm.bind(&useNFormals);
+
+    {
+        Address newTarget(BaselineFrameReg,
+                          BaselineFrame::offsetOfArg(0) + (function()->nargs() * sizeof(Value)));
+        masm.loadValue(newTarget, R0);
+        masm.jump(&done);
+    }
+
+    
+    masm.bind(&notConstructing);
+    masm.moveValue(UndefinedValue(), R0);
 
     masm.bind(&done);
     frame.push(R0);
