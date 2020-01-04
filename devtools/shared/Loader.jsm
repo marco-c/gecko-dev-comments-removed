@@ -44,9 +44,9 @@ BuiltinProvider.prototype = {
       
       "gcli": "resource://devtools/shared/gcli/source/lib/gcli",
       
-      "acorn": "resource://devtools/acorn",
+      "acorn": "resource://devtools/shared/acorn",
       
-      "acorn/util/walk": "resource://devtools/acorn/walk.js",
+      "acorn/util/walk": "resource://devtools/shared/acorn/walk.js",
       
       "source-map": "resource://devtools/shared/sourcemap/source-map.js",
       
