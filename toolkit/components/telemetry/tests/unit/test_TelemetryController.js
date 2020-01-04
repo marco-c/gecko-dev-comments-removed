@@ -107,14 +107,6 @@ function run_test() {
 
 add_task(function* asyncSetup() {
   yield TelemetryController.testSetup();
-
-  gClientID = yield ClientID.getClientID();
-
-  
-  
-  let promisePingSetup = TelemetryController.testReset();
-  do_check_eq(TelemetryController.clientID, gClientID);
-  yield promisePingSetup;
 });
 
 
@@ -128,6 +120,10 @@ add_task(function* test_overwritePing() {
 
 add_task(function* test_simplePing() {
   PingServer.start();
+  
+  
+  
+  Preferences.set(TelemetryController.Constants.PREF_SERVER, "http://localhost:" + PingServer.port);
 
   yield sendPing(false, false);
   let request = yield PingServer.promiseNextRequest();
@@ -150,8 +146,6 @@ add_task(function* test_disableDataUpload() {
     
     return;
   }
-
-  const PREF_TELEMETRY_SERVER = "toolkit.telemetry.server";
 
   
   Preferences.set(PREF_FHR_UPLOAD_ENABLED, false);
@@ -190,7 +184,7 @@ add_task(function* test_disableDataUpload() {
   PingServer.start();
   
   
-  Preferences.set(PREF_TELEMETRY_SERVER, "http://localhost:" + PingServer.port);
+  Preferences.set(TelemetryController.Constants.PREF_SERVER, "http://localhost:" + PingServer.port);
 
   
   yield TelemetryController.testReset();
@@ -198,17 +192,75 @@ add_task(function* test_disableDataUpload() {
   checkPingFormat(ping, DELETION_PING_TYPE, true, false);
 
   
+  
+  
+  
+  
+  yield TelemetrySend.testWaitOnOutgoingPings();
+  
   Preferences.set(PREF_FHR_UPLOAD_ENABLED, true);
 });
 
 add_task(function* test_pingHasClientId() {
+  const PREF_CACHED_CLIENTID = "toolkit.telemetry.cachedClientID";
+
   
+  
+  Preferences.reset(PREF_CACHED_CLIENTID);
+  yield TelemetryController.testShutdown();
+  yield ClientID._reset();
+  yield TelemetryStorage.testClearPendingPings();
+  
+  let h = Telemetry.getHistogramById("TELEMETRY_PING_SUBMISSION_WAITING_CLIENTID");
+  h.clear();
+
+  
+  let promisePingSetup = TelemetryController.testReset();
   yield sendPing(true, false);
+  Assert.equal(h.snapshot().sum, 1,
+               "We must have a ping waiting for the clientId early during startup.");
+  
+  
+  yield promisePingSetup;
 
   let ping = yield PingServer.promiseNextPing();
-  checkPingFormat(ping, TEST_PING_TYPE, true, false);
+  
+  
+  
+  gClientID = yield ClientID.getClientID();
 
+  checkPingFormat(ping, TEST_PING_TYPE, true, false);
   Assert.equal(ping.clientId, gClientID, "The correct clientId must be reported.");
+
+  
+  yield TelemetryController.testShutdown();
+  yield TelemetryStorage.testClearPendingPings();
+
+  
+  
+  h.clear();
+  promisePingSetup = TelemetryController.testReset();
+  yield sendPing(true, false);
+  yield promisePingSetup;
+
+  
+  Assert.equal(h.snapshot().sum, 0, "We must have used the cached clientId.");
+  ping = yield PingServer.promiseNextPing();
+  checkPingFormat(ping, TEST_PING_TYPE, true, false);
+  Assert.equal(ping.clientId, gClientID,
+               "Telemetry should report the correct cached clientId.");
+
+  
+  
+  Preferences.reset(PREF_CACHED_CLIENTID);
+  yield TelemetryController.testShutdown();
+  yield TelemetryStorage.testClearPendingPings();
+  yield TelemetryController.testReset();
+  yield sendPing(true, false);
+  ping = yield PingServer.promiseNextPing();
+  checkPingFormat(ping, TEST_PING_TYPE, true, false);
+  Assert.equal(ping.clientId, gClientID, "The correct clientId must be reported.");
+  Assert.equal(h.snapshot().sum, 0, "No ping should have been waiting for a clientId.");
 });
 
 add_task(function* test_pingHasEnvironment() {

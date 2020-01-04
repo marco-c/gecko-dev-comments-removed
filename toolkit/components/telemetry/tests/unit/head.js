@@ -77,7 +77,10 @@ const PingServer = {
 
   promiseNextRequest: function() {
     const deferred = this._defers[this._currentDeferred++];
-    return deferred.promise;
+    
+    
+    return new Promise(r => Services.tm.currentThread.dispatch(() => r(deferred.promise),
+                                                               Ci.nsIThread.DISPATCH_NORMAL));
   },
 
   promiseNextPing: function() {
