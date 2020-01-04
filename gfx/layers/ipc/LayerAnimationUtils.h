@@ -1,0 +1,26 @@
+
+
+
+
+
+
+#ifndef mozilla_layers_LayerAnimationUtils_h
+#define mozilla_layers_LayerAnimationUtils_h
+
+namespace mozilla {
+
+class ComputedTimingFunction;
+
+namespace layers {
+
+class AnimationUtils
+{
+public:
+  static Maybe<ComputedTimingFunction> TimingFunctionToComputedTimingFunction(
+    const TimingFunction& aTimingFunction);
+};
+
+} 
+} 
+
+#endif 

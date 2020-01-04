@@ -30,6 +30,7 @@
 #include "mozilla/layers/CompositableClient.h"  
 #include "mozilla/layers/Compositor.h"  
 #include "mozilla/layers/CompositorTypes.h"
+#include "mozilla/layers/LayerAnimationUtils.h"  
 #include "mozilla/layers/LayerManagerComposite.h"  
 #include "mozilla/layers/LayerMetricsWrapper.h" 
 #include "mozilla/layers/LayersMessages.h"  
@@ -470,31 +471,15 @@ Layer::SetAnimations(const AnimationArray& aAnimations)
   mAnimationData.Clear();
   for (uint32_t i = 0; i < mAnimations.Length(); i++) {
     AnimData* data = mAnimationData.AppendElement();
-    InfallibleTArray<nsAutoPtr<ComputedTimingFunction> >& functions =
+    InfallibleTArray<Maybe<ComputedTimingFunction>>& functions =
       data->mFunctions;
     const InfallibleTArray<AnimationSegment>& segments =
       mAnimations.ElementAt(i).segments();
     for (uint32_t j = 0; j < segments.Length(); j++) {
       TimingFunction tf = segments.ElementAt(j).sampleFn();
-      ComputedTimingFunction* ctf = new ComputedTimingFunction();
-      switch (tf.type()) {
-        case TimingFunction::TCubicBezierFunction: {
-          CubicBezierFunction cbf = tf.get_CubicBezierFunction();
-          ctf->Init(nsTimingFunction(cbf.x1(), cbf.y1(), cbf.x2(), cbf.y2()));
-          break;
-        }
-        default: {
-          NS_ASSERTION(tf.type() == TimingFunction::TStepFunction,
-                       "Function must be bezier or step");
-          StepFunction sf = tf.get_StepFunction();
-          nsTimingFunction::Type type = sf.type() == 1 ?
-                                          nsTimingFunction::Type::StepStart :
-                                          nsTimingFunction::Type::StepEnd;
-          ctf->Init(nsTimingFunction(type, sf.steps(),
-                                     nsTimingFunction::Keyword::Explicit));
-          break;
-        }
-      }
+
+      Maybe<ComputedTimingFunction> ctf =
+        AnimationUtils::TimingFunctionToComputedTimingFunction(tf);
       functions.AppendElement(ctf);
     }
 
