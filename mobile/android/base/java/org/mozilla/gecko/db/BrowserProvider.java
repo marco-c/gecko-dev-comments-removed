@@ -18,6 +18,7 @@ import org.mozilla.gecko.db.BrowserContract.History;
 import org.mozilla.gecko.db.BrowserContract.Schema;
 import org.mozilla.gecko.db.BrowserContract.Tabs;
 import org.mozilla.gecko.db.BrowserContract.Thumbnails;
+import org.mozilla.gecko.db.DBUtils.UpdateOperation;
 import org.mozilla.gecko.sync.Utils;
 
 import android.content.ContentProviderOperation;
@@ -1023,37 +1024,32 @@ public class BrowserProvider extends SharedBrowserDatabaseProvider {
             return db.update(TABLE_HISTORY, values, selection, selectionArgs);
         }
 
-        final String[] historyProjection = new String[] {
-            History._ID,   
-            History.URL,   
-            History.VISITS 
-        };
+        trace("Updating history meta data and incrementing visits");
 
-        final Cursor cursor = db.query(TABLE_HISTORY, historyProjection, selection,
-                                       selectionArgs, null, null, null);
+        
+        final ContentValues valuesForUpdate = new ContentValues(values);
 
-        int updated = 0;
-
-        try {
-            while (cursor.moveToNext()) {
-                long id = cursor.getLong(0);
-
-                trace("Updating history entry with ID: " + id);
-
-                long existing = cursor.getLong(2);
-                Long additional = values.getAsLong(History.VISITS);
-
-                
-                values.put(History.VISITS, existing + ((additional != null) ? additional : 1));
-
-                updated += db.update(TABLE_HISTORY, values, "_id = ?",
-                                     new String[] { Long.toString(id) });
+        
+        long incVisits = 1;
+        if (valuesForUpdate.containsKey(History.VISITS)) {
+            
+            Long additional = valuesForUpdate.getAsLong(History.VISITS);
+            if (additional != null) {
+                incVisits = additional;
             }
-        } finally {
-            cursor.close();
+            
+            
+            valuesForUpdate.remove(History.VISITS);
         }
 
-        return updated;
+        
+        final ContentValues visits = new ContentValues();
+        visits.put(History.VISITS, History.VISITS + " + " + incVisits);
+
+        final ContentValues[] valuesAndVisits = { valuesForUpdate,  visits };
+        final UpdateOperation[] ops = { UpdateOperation.ASSIGN, UpdateOperation.EXPRESSION };
+
+        return DBUtils.updateArrays(db, TABLE_HISTORY, valuesAndVisits, ops, selection, selectionArgs);
     }
 
     private void updateFaviconIdsForUrl(SQLiteDatabase db, String pageUrl, Long faviconId) {
