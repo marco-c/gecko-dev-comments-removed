@@ -150,12 +150,14 @@ ShouldWaiveXray(JSContext* cx, JSObject* originalObj)
     return sameOrigin;
 }
 
-JSObject*
+void
 WrapperFactory::PrepareForWrapping(JSContext* cx, HandleObject scope,
-                                   HandleObject objArg, HandleObject objectPassedToWrap)
+                                   HandleObject objArg, HandleObject objectPassedToWrap,
+                                   MutableHandleObject retObj)
 {
     bool waive = ShouldWaiveXray(cx, objectPassedToWrap);
     RootedObject obj(cx, objArg);
+    retObj.set(nullptr);
     
     
     if (js::IsWindow(obj)) {
@@ -167,7 +169,7 @@ WrapperFactory::PrepareForWrapping(JSContext* cx, HandleObject scope,
         obj = js::UncheckedUnwrap(obj);
         if (JS_IsDeadWrapper(obj)) {
             JS_ReportError(cx, "Can't wrap dead object");
-            return nullptr;
+            return;
         }
         MOZ_ASSERT(js::IsWindowProxy(obj));
         
@@ -179,8 +181,10 @@ WrapperFactory::PrepareForWrapping(JSContext* cx, HandleObject scope,
     
     
     
-    if (js::IsWindowProxy(obj))
-        return waive ? WaiveXray(cx, obj) : obj;
+    if (js::IsWindowProxy(obj)) {
+        retObj.set(waive ? WaiveXray(cx, obj) : obj);
+        return;
+    }
 
     
     
@@ -191,8 +195,10 @@ WrapperFactory::PrepareForWrapping(JSContext* cx, HandleObject scope,
     
     
     
-    if (!IS_WN_REFLECTOR(obj) || JS_IsGlobalObject(obj))
-        return waive ? WaiveXray(cx, obj) : obj;
+    if (!IS_WN_REFLECTOR(obj) || JS_IsGlobalObject(obj)) {
+        retObj.set(waive ? WaiveXray(cx, obj) : obj);
+        return;
+    }
 
     XPCWrappedNative* wn = XPCWrappedNative::Get(obj);
 
@@ -211,14 +217,19 @@ WrapperFactory::PrepareForWrapping(JSContext* cx, HandleObject scope,
             
             nsresult rv = wn->GetScriptableInfo()->GetCallback()->
                 PreCreate(wn->Native(), cx, scope, wrapScope.address());
-            NS_ENSURE_SUCCESS(rv, waive ? WaiveXray(cx, obj) : obj);
+            if (NS_FAILED(rv)) {
+                retObj.set(waive ? WaiveXray(cx, obj) : obj);
+                return;
+            }
 
             
             
             
             
-            if (js::GetObjectCompartment(scope) != js::GetObjectCompartment(wrapScope))
-                return waive ? WaiveXray(cx, obj) : obj;
+            if (js::GetObjectCompartment(scope) != js::GetObjectCompartment(wrapScope)) {
+                retObj.set(waive ? WaiveXray(cx, obj) : obj);
+                return;
+            }
 
             RootedObject currentScope(cx, JS_GetGlobalForObject(cx, obj));
             if (MOZ_UNLIKELY(wrapScope != currentScope)) {
@@ -249,7 +260,8 @@ WrapperFactory::PrepareForWrapping(JSContext* cx, HandleObject scope,
                 
                 if (probe != currentScope) {
                     MOZ_ASSERT(probe == wrapScope);
-                    return waive ? WaiveXray(cx, obj) : obj;
+                    retObj.set(waive ? WaiveXray(cx, obj) : obj);
+                    return;
                 }
 
                 
@@ -271,7 +283,8 @@ WrapperFactory::PrepareForWrapping(JSContext* cx, HandleObject scope,
                  AccessCheck::subsumes(js::GetObjectCompartment(wrapScope),
                                        js::GetObjectCompartment(obj)))
             {
-                return waive ? WaiveXray(cx, obj) : obj;
+                retObj.set(waive ? WaiveXray(cx, obj) : obj);
+                return;
             }
         }
     }
@@ -282,7 +295,9 @@ WrapperFactory::PrepareForWrapping(JSContext* cx, HandleObject scope,
     nsresult rv =
         nsXPConnect::XPConnect()->WrapNativeToJSVal(cx, wrapScope, wn->Native(), nullptr,
                                                     &NS_GET_IID(nsISupports), false, &v);
-    NS_ENSURE_SUCCESS(rv, nullptr);
+    if (NS_FAILED(rv)) {
+        return;
+    }
 
     obj.set(&v.toObject());
     MOZ_ASSERT(IS_WN_REFLECTOR(obj), "bad object");
@@ -300,11 +315,12 @@ WrapperFactory::PrepareForWrapping(JSContext* cx, HandleObject scope,
     XPCWrappedNative* newwn = XPCWrappedNative::Get(obj);
     XPCNativeSet* unionSet = XPCNativeSet::GetNewOrUsed(newwn->GetSet(),
                                                         wn->GetSet(), false);
-    if (!unionSet)
-        return nullptr;
+    if (!unionSet) {
+        return;
+    }
     newwn->SetSet(unionSet);
 
-    return waive ? WaiveXray(cx, obj) : obj;
+    retObj.set(waive ? WaiveXray(cx, obj) : obj);
 }
 
 #ifdef DEBUG

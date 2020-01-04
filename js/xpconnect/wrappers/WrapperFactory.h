@@ -45,10 +45,11 @@ class WrapperFactory {
     static bool AllowWaiver(JSObject* wrapper);
 
     
-    static JSObject* PrepareForWrapping(JSContext* cx,
-                                        JS::HandleObject scope,
-                                        JS::HandleObject obj,
-                                        JS::HandleObject objectPassedToWrap);
+    static void PrepareForWrapping(JSContext* cx,
+                                   JS::HandleObject scope,
+                                   JS::HandleObject obj,
+                                   JS::HandleObject objectPassedToWrap,
+                                   JS::MutableHandleObject retObj);
 
     
     static JSObject* Rewrap(JSContext* cx,

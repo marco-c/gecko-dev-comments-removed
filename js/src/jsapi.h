@@ -676,9 +676,10 @@ typedef JSObject*
 
 
 
-typedef JSObject*
+typedef void
 (* JSPreWrapCallback)(JSContext* cx, JS::HandleObject scope, JS::HandleObject obj,
-                      JS::HandleObject objectPassedToWrap);
+                      JS::HandleObject objectPassedToWrap,
+                      JS::MutableHandleObject retObj);
 
 struct JSWrapObjectCallbacks
 {
@@ -4320,11 +4321,14 @@ JS_CheckForInterrupt(JSContext* cx);
 
 
 
-extern JS_PUBLIC_API(JSInterruptCallback)
-JS_SetInterruptCallback(JSContext* cx, JSInterruptCallback callback);
+extern JS_PUBLIC_API(bool)
+JS_AddInterruptCallback(JSContext* cx, JSInterruptCallback callback);
 
-extern JS_PUBLIC_API(JSInterruptCallback)
-JS_GetInterruptCallback(JSContext* cx);
+extern JS_PUBLIC_API(bool)
+JS_DisableInterruptCallback(JSContext* cx);
+
+extern JS_PUBLIC_API(void)
+JS_ResetInterruptCallback(JSContext* cx, bool enable);
 
 extern JS_PUBLIC_API(void)
 JS_RequestInterruptCallback(JSContext* cx);
