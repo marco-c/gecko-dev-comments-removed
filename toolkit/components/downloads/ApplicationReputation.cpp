@@ -398,30 +398,288 @@ PendingLookup::IsBinaryFile()
   return
     
     
+    
+    
+    StringEndsWith(fileName, NS_LITERAL_STRING(".action")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".ad")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".ade")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".adp")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".apk")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".app")) || 
+    
+    StringEndsWith(fileName, NS_LITERAL_STRING(".appref-ms")) || 
+    
+    
+    StringEndsWith(fileName, NS_LITERAL_STRING(".as")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".asp")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".asx")) || 
+    
+    
+    StringEndsWith(fileName, NS_LITERAL_STRING(".bas")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".bash")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".bat")) || 
+    
+    StringEndsWith(fileName, NS_LITERAL_STRING(".bin")) || 
+    
+    StringEndsWith(fileName, NS_LITERAL_STRING(".bz2")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".bzip2")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".cab")) || 
+    
+    
+    StringEndsWith(fileName, NS_LITERAL_STRING(".chi")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".chm")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".class")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".cmd")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".com")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".command")) || 
+    
+    
+    StringEndsWith(fileName, NS_LITERAL_STRING(".cpl")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".crt")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".crx")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".csh")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".dart")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".dc42")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".deb")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".dex")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".diskcopy42")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".dll")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".dmg")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".dmgpart")) || 
+    
+    StringEndsWith(fileName, NS_LITERAL_STRING(".docm")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".docx")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".dotm")) || 
+    
+    StringEndsWith(fileName, NS_LITERAL_STRING(".drv")) || 
+    
+    StringEndsWith(fileName, NS_LITERAL_STRING(".efi")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".eml")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".exe")) || 
+    
+    StringEndsWith(fileName, NS_LITERAL_STRING(".fon")) || 
+    
+    StringEndsWith(fileName, NS_LITERAL_STRING(".gadget")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".grp")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".gz")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".gzip")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".hfs")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".hlp")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".hqx")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".hta")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".htt")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".img")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".imgpart")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".inf")) || 
+    
+    StringEndsWith(fileName, NS_LITERAL_STRING(".ins")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".inx")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".iso")) || 
+    
+    StringEndsWith(fileName, NS_LITERAL_STRING(".isu")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".jar")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".jnlp")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".job")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".js")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".jse")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".ksh")) || 
+    
+    StringEndsWith(fileName, NS_LITERAL_STRING(".lnk")) || 
+    
+    
+    
+    
+    
+    
+    StringEndsWith(fileName, NS_LITERAL_STRING(".mad")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".maf")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".mag")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".mam")) || 
+    
+    StringEndsWith(fileName, NS_LITERAL_STRING(".maq")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".mar")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".mas")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".mat")) || 
+    
+    StringEndsWith(fileName, NS_LITERAL_STRING(".mav")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".maw")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".mda")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".mdb")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".mde")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".mdt")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".mdw")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".mdz")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".mht")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".mhtml")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".mim")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".mmc")) || 
+    
+    
+    StringEndsWith(fileName, NS_LITERAL_STRING(".msc")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".msg")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".msh")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".msh1")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".msh1xml")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".msh2")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".msh2xml")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".mshxml")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".msi")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".msp")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".mst")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".ndif")) || 
+    
+    StringEndsWith(fileName, NS_LITERAL_STRING(".ocx")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".ops")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".osx")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".out")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".paf")) || 
+    
+    
+    
+    
+    StringEndsWith(fileName, NS_LITERAL_STRING(".partial")) || 
+    
+    
+    StringEndsWith(fileName, NS_LITERAL_STRING(".pdf")) || 
+    
+    StringEndsWith(fileName, NS_LITERAL_STRING(".pet")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".pif")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".pkg")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".pl")) || 
+    
+    StringEndsWith(fileName, NS_LITERAL_STRING(".potx")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".ppam")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".ppsx")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".pptm")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".pptx")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".prf")) || 
+    
+    StringEndsWith(fileName, NS_LITERAL_STRING(".ps1")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".ps1xml")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".ps2")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".ps2xml")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".psc1")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".psc2")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".pst")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".pup")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".py")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".pyc")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".pyw")) || 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    StringEndsWith(fileName, NS_LITERAL_STRING(".rb")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".reg")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".rels")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".rgs")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".rpm")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".rtf")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".run")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".scf")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".scr")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".sct")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".search-ms")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".sh")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".shar")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".shb")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".shs")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".sldm")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".sldx")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".slp")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".smi")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".sparsebundle")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".sparseimage")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".spl")) || 
+    
+    StringEndsWith(fileName, NS_LITERAL_STRING(".svg")) ||
+    StringEndsWith(fileName, NS_LITERAL_STRING(".swf")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".swm")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".sys")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".tar")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".taz")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".tbz")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".tbz2")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".tcsh")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".tgz")) || 
+    
+    
+    StringEndsWith(fileName, NS_LITERAL_STRING(".tpz")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".txz")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".tz")) || 
+    
+    StringEndsWith(fileName, NS_LITERAL_STRING(".udf")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".udif")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".url")) || 
+    
+    
+    StringEndsWith(fileName, NS_LITERAL_STRING(".vb")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".vbe")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".vbs")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".vbscript")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".vhd")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".vhdx")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".vmdk")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".vsd")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".vsmacros")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".vss")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".vst")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".vsw")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".website")) ||  
+    StringEndsWith(fileName, NS_LITERAL_STRING(".wim")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".workflow")) || 
+    
+    StringEndsWith(fileName, NS_LITERAL_STRING(".ws")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".wsc")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".wsf")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".wsh")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".xar")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".xbap")) || 
+    
+    StringEndsWith(fileName, NS_LITERAL_STRING(".xlsm")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".xlsx")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".xltm")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".xltx")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".xml")) ||
+    StringEndsWith(fileName, NS_LITERAL_STRING(".xnk")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".xrm-ms")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".xsl")) || 
+    
+    StringEndsWith(fileName, NS_LITERAL_STRING(".xz")) || 
+    StringEndsWith(fileName, NS_LITERAL_STRING(".z")) || 
 #ifdef XP_WIN 
-    StringEndsWith(fileName, NS_LITERAL_STRING(".zip")) ||
+    StringEndsWith(fileName, NS_LITERAL_STRING(".zip")) || 
 #endif
+    StringEndsWith(fileName, NS_LITERAL_STRING(".zipx")); 
     
-    StringEndsWith(fileName, NS_LITERAL_STRING(".apk")) ||
-    
-    StringEndsWith(fileName, NS_LITERAL_STRING(".bas")) ||
-    StringEndsWith(fileName, NS_LITERAL_STRING(".bat")) ||
-    StringEndsWith(fileName, NS_LITERAL_STRING(".cab")) ||
-    StringEndsWith(fileName, NS_LITERAL_STRING(".cmd")) ||
-    StringEndsWith(fileName, NS_LITERAL_STRING(".com")) ||
-    StringEndsWith(fileName, NS_LITERAL_STRING(".exe")) ||
-    StringEndsWith(fileName, NS_LITERAL_STRING(".hta")) ||
-    StringEndsWith(fileName, NS_LITERAL_STRING(".msi")) ||
-    StringEndsWith(fileName, NS_LITERAL_STRING(".pif")) ||
-    StringEndsWith(fileName, NS_LITERAL_STRING(".reg")) ||
-    StringEndsWith(fileName, NS_LITERAL_STRING(".scr")) ||
-    StringEndsWith(fileName, NS_LITERAL_STRING(".vb")) ||
-    StringEndsWith(fileName, NS_LITERAL_STRING(".vbs")) ||
-    
-    StringEndsWith(fileName, NS_LITERAL_STRING(".app")) ||
-    StringEndsWith(fileName, NS_LITERAL_STRING(".dmg")) ||
-    StringEndsWith(fileName, NS_LITERAL_STRING(".osx")) ||
-    StringEndsWith(fileName, NS_LITERAL_STRING(".pkg"));
 }
 
 ClientDownloadRequest::DownloadType
@@ -434,9 +692,25 @@ PendingLookup::GetDownloadType(const nsAString& aFilename) {
   } else if (StringEndsWith(aFilename, NS_LITERAL_STRING(".apk"))) {
     return ClientDownloadRequest::ANDROID_APK;
   } else if (StringEndsWith(aFilename, NS_LITERAL_STRING(".app")) ||
+             StringEndsWith(aFilename, NS_LITERAL_STRING(".cdr")) ||
+             StringEndsWith(aFilename, NS_LITERAL_STRING(".dart")) ||
+             StringEndsWith(aFilename, NS_LITERAL_STRING(".dc42")) ||
+             StringEndsWith(aFilename, NS_LITERAL_STRING(".diskcopy42")) ||
              StringEndsWith(aFilename, NS_LITERAL_STRING(".dmg")) ||
+             StringEndsWith(aFilename, NS_LITERAL_STRING(".dmgpart")) ||
+             StringEndsWith(aFilename, NS_LITERAL_STRING(".dvdr")) ||
+             StringEndsWith(aFilename, NS_LITERAL_STRING(".img")) ||
+             StringEndsWith(aFilename, NS_LITERAL_STRING(".imgpart")) ||
+             StringEndsWith(aFilename, NS_LITERAL_STRING(".iso")) ||
+             StringEndsWith(aFilename, NS_LITERAL_STRING(".mpkg")) ||
+             StringEndsWith(aFilename, NS_LITERAL_STRING(".ndif")) ||
              StringEndsWith(aFilename, NS_LITERAL_STRING(".osx")) ||
-             StringEndsWith(aFilename, NS_LITERAL_STRING(".pkg"))) {
+             StringEndsWith(aFilename, NS_LITERAL_STRING(".pkg")) ||
+             StringEndsWith(aFilename, NS_LITERAL_STRING(".smi")) ||
+             StringEndsWith(aFilename, NS_LITERAL_STRING(".sparsebundle")) ||
+             StringEndsWith(aFilename, NS_LITERAL_STRING(".sparseimage")) ||
+             StringEndsWith(aFilename, NS_LITERAL_STRING(".toast")) ||
+             StringEndsWith(aFilename, NS_LITERAL_STRING(".udif"))) {
     return ClientDownloadRequest::MAC_EXECUTABLE;
   }
 
