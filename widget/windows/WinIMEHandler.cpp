@@ -606,7 +606,7 @@ IMEHandler::MaybeShowOnScreenKeyboard()
       !IsWin8OrLater() ||
       !Preferences::GetBool(kOskEnabled, true) ||
       GetOnScreenKeyboardWindow() ||
-      IMEHandler::IsKeyboardPresentOnSlate()) {
+      !IMEHandler::NeedOnScreenKeyboard()) {
     return;
   }
 
@@ -658,19 +658,26 @@ IMEHandler::WStringStartsWithCaseInsensitive(const std::wstring& aHaystack,
 
 
 
-
-
 bool
-IMEHandler::IsKeyboardPresentOnSlate()
+IMEHandler::NeedOnScreenKeyboard()
 {
   
   if (!IsWin8OrLater()) {
     Preferences::SetString(kOskDebugReason, L"IKPOS: Requires Win8+.");
-    return true;
+    return false;
   }
 
   if (!Preferences::GetBool(kOskDetectPhysicalKeyboard, true)) {
     Preferences::SetString(kOskDebugReason, L"IKPOS: Detection disabled.");
+    return true;
+  }
+
+  
+  
+  
+  
+  
+  if (!InputContextAction::IsUserAction(sLastContextActionCause)) {
     return false;
   }
 
@@ -679,13 +686,13 @@ IMEHandler::IsKeyboardPresentOnSlate()
         != NID_INTEGRATED_TOUCH) {
     Preferences::SetString(kOskDebugReason,
                            L"IKPOS: Touch screen not found.");
-    return true;
+    return false;
   }
 
   
   if (::GetSystemMetrics(SM_SYSTEMDOCKED) != 0) {
     Preferences::SetString(kOskDebugReason, L"IKPOS: System docked.");
-    return true;
+    return false;
   }
 
   
@@ -696,6 +703,10 @@ IMEHandler::IsKeyboardPresentOnSlate()
   
 
   
+  
+  
+  
+
   
   
   
@@ -717,11 +728,11 @@ IMEHandler::IsKeyboardPresentOnSlate()
     if (auto_rotation_state & AR_NOSENSOR) {
       Preferences::SetString(kOskDebugReason,
                              L"IKPOS: Rotation sensor not found.");
-      return true;
+      return false;
     } else if (auto_rotation_state & AR_NOT_SUPPORTED) {
       Preferences::SetString(kOskDebugReason,
                              L"IKPOS: Auto-rotation not supported.");
-      return true;
+      return false;
     }
   }
 
@@ -747,13 +758,13 @@ IMEHandler::IsKeyboardPresentOnSlate()
   if (sPowerPlatformRole != PlatformRoleMobile &&
       sPowerPlatformRole != PlatformRoleSlate) {
     Preferences::SetString(kOskDebugReason, L"IKPOS: PlatformRole is neither Mobile nor Slate.");
-    return true;
+    return false;
   }
 
   
   if (::GetSystemMetrics(SM_CONVERTIBLESLATEMODE) != 0) {
     Preferences::SetString(kOskDebugReason, L"IKPOS: ConvertibleSlateMode is non-zero");
-    return true;
+    return false;
   }
 
   
@@ -761,9 +772,20 @@ IMEHandler::IsKeyboardPresentOnSlate()
   if (sLastContextActionCause == InputContextAction::CAUSE_TOUCH) {
     Preferences::SetString(kOskDebugReason,
       L"IKPOS: Used touch to focus control, ignoring keyboard presence");
-    return false;
+    return true;
   }
+  return !IMEHandler::IsKeyboardPresentOnSlate();
+}
 
+
+
+
+
+
+
+bool
+IMEHandler::IsKeyboardPresentOnSlate()
+{
   const GUID KEYBOARD_CLASS_GUID =
     { 0x4D36E96B, 0xE325,  0x11CE,
       { 0xBF, 0xC1, 0x08, 0x00, 0x2B, 0xE1, 0x03, 0x18 } };
