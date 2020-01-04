@@ -43,6 +43,12 @@ ChooseValidatorCompileOptions(const ShBuiltInResources& resources,
         options |= SH_LIMIT_EXPRESSION_COMPLEXITY;
     }
 
+    
+    
+    
+    
+    options |= SH_UNROLL_FOR_LOOP_WITH_SAMPLER_ARRAY_INDEX;
+
     if (gfxPrefs::WebGLAllANGLEOptions()) {
         return options |
                SH_VALIDATE_LOOP_INDEXING |
@@ -76,11 +82,6 @@ ChooseValidatorCompileOptions(const ShBuiltInResources& resources,
         
         if (gl->Vendor() == gl::GLVendor::Intel) {
             options |= SH_EMULATE_BUILT_IN_FUNCTIONS;
-        }
-
-        
-        if (gl->Vendor() == gl::GLVendor::NVIDIA) {
-            options |= SH_UNROLL_FOR_LOOP_WITH_SAMPLER_ARRAY_INDEX;
         }
 
         
