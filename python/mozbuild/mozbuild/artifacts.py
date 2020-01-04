@@ -638,7 +638,8 @@ class TaskCache(CacheManager):
             
             
             
-            url = self._queue.buildUrl('getLatestArtifact', taskId, artifact_name)
+            replDict = {'taskId': taskId, 'name': artifact_name}
+            url = self._queue.buildUrl('getLatestArtifact', replDict=replDict)
             urls.append(url)
         if not urls:
             raise ValueError('Task for {key} existed, but no artifacts found!'.format(key=key))
