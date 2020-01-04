@@ -149,6 +149,11 @@ BatteryManager::UpdateFromBatteryInfo(const hal::BatteryInformation& aBatteryInf
     mLevel = lround(mLevel * 10.0) / 10.0;
     if (mLevel == 1.0) {
       mRemainingTime = mCharging ? kDefaultRemainingTime : kUnknownRemainingTime;
+    } else if (mRemainingTime != kUnknownRemainingTime) {
+      
+      const double MINUTES_15 = 15.0 * 60.0;
+      mRemainingTime = fmax(lround(mRemainingTime / MINUTES_15) * MINUTES_15,
+                            MINUTES_15);
     }
   }
 
