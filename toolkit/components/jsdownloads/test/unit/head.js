@@ -17,12 +17,11 @@ var Ci = Components.interfaces;
 var Cu = Components.utils;
 var Cr = Components.results;
 
+Cu.import("resource://gre/modules/Integration.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
 XPCOMUtils.defineLazyModuleGetter(this, "DownloadPaths",
                                   "resource://gre/modules/DownloadPaths.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "DownloadIntegration",
-                                  "resource://gre/modules/DownloadIntegration.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "Downloads",
                                   "resource://gre/modules/Downloads.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "FileUtils",
@@ -49,6 +48,9 @@ XPCOMUtils.defineLazyModuleGetter(this, "MockRegistrar",
 XPCOMUtils.defineLazyServiceGetter(this, "gExternalHelperAppService",
            "@mozilla.org/uriloader/external-helper-app-service;1",
            Ci.nsIExternalHelperAppService);
+
+Integration.downloads.defineModuleGetter(this, "DownloadIntegration",
+            "resource://gre/modules/DownloadIntegration.jsm");
 
 const ServerSocket = Components.Constructor(
                                 "@mozilla.org/network/server-socket;1",
@@ -788,22 +790,38 @@ add_task(function test_common_initialize()
     });
 
   
-  DownloadIntegration.dontLoadList = true;
-  DownloadIntegration.dontLoadObservers = true;
   
-  DownloadIntegration.dontCheckParentalControls = true;
   
-  DownloadIntegration.dontCheckApplicationReputation = true;
-  
-  DownloadIntegration.dontOpenFileAndFolder = true;
-  DownloadIntegration._deferTestOpenFile = Promise.defer();
-  DownloadIntegration._deferTestShowDir = Promise.defer();
-  
-  DownloadIntegration.dontCheckRuntimePermissions = true;
-
-  
-  DownloadIntegration._deferTestOpenFile.promise.then(null, () => undefined);
-  DownloadIntegration._deferTestShowDir.promise.then(null, () => undefined);
+  Integration.downloads.register(base => ({
+    __proto__: base,
+    loadPublicDownloadListFromStore: () => Promise.resolve(),
+    shouldKeepBlockedData: () => Promise.resolve(false),
+    shouldBlockForParentalControls: () => Promise.resolve(false),
+    shouldBlockForRuntimePermissions: () => Promise.resolve(false),
+    shouldBlockForReputationCheck: () => Promise.resolve({
+      shouldBlock: false,
+      verdict: "",
+    }),
+    confirmLaunchExecutable: () => Promise.resolve(),
+    launchFile: () => Promise.resolve(),
+    showContainingDirectory: () => Promise.resolve(),
+    
+    allowObservers: false,
+    addListObservers() {
+      return this.allowObservers ? super.addListObservers(...arguments)
+                                 : Promise.resolve();
+    },
+    
+    _allowDirectories: false,
+    set allowDirectories(value) {
+      this._allowDirectories = value;
+      
+      this._downloadsDirectory = null;
+    },
+    _getDirectory(name) {
+      return super._getDirectory(this._allowDirectories ? name : "TmpD");
+    },
+  }));
 
   
   

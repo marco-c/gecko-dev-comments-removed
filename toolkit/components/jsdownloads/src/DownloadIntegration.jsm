@@ -23,6 +23,7 @@ const Ci = Components.interfaces;
 const Cu = Components.utils;
 const Cr = Components.results;
 
+Cu.import("resource://gre/modules/Integration.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
 XPCOMUtils.defineLazyModuleGetter(this, "AsyncShutdown",
@@ -89,6 +90,12 @@ XPCOMUtils.defineLazyServiceGetter(this, "volumeService",
                                    "@mozilla.org/telephony/volume-service;1",
                                    "nsIVolumeService");
 
+
+
+Integration.downloads.defineModuleGetter(this, "gCombinedDownloadIntegration",
+            "resource://gre/modules/DownloadIntegration.jsm",
+            "DownloadIntegration");
+
 const Timer = Components.Constructor("@mozilla.org/timer;1", "nsITimer",
                                      "initWithCallback");
 
@@ -148,29 +155,6 @@ const kVerdictMap = {
 
 this.DownloadIntegration = {
   
-  _testMode: false,
-  testPromptDownloads: 0,
-  dontLoadList: false,
-  dontLoadObservers: false,
-  dontCheckParentalControls: false,
-  shouldBlockInTest: false,
-  dontCheckRuntimePermissions: false,
-  shouldBlockInTestForRuntimePermissions: false,
-#ifdef MOZ_URL_CLASSIFIER
-  dontCheckApplicationReputation: false,
-#else
-  dontCheckApplicationReputation: true,
-#endif
-  shouldBlockInTestForApplicationReputation: false,
-  verdictInTestForApplicationReputation: "",
-  shouldKeepBlockedDataInTest: false,
-  dontOpenFileAndFolder: false,
-  downloadDoneCalled: false,
-  _deferTestOpenFile: null,
-  _deferTestShowDir: null,
-  _deferTestClearPrivateList: null,
-
-  
 
 
 
@@ -180,15 +164,6 @@ this.DownloadIntegration = {
   
 
 
-  get testMode() {
-    return this._testMode;
-  },
-  set testMode(mode) {
-    this._downloadsDirectory = null;
-    return (this._testMode = mode);
-  },
-
-  
 
 
 
@@ -202,13 +177,7 @@ this.DownloadIntegration = {
 
 
 
-
-
-  shouldKeepBlockedData: function() {
-    if (this.shouldBlockInTestForApplicationReputation) {
-      return this.shouldKeepBlockedDataInTest;
-    }
-
+  shouldKeepBlockedData() {
     const FIREFOX_ID = "{ec8030f7-c20a-464f-9b0e-13a3a9e97384}";
     return Services.appinfo.ID == FIREFOX_ID;
   },
@@ -225,41 +194,55 @@ this.DownloadIntegration = {
 
 
 
+  initializePublicDownloadList: Task.async(function* (list) {
+    try {
+      yield this.loadPublicDownloadListFromStore(list);
+    } catch (ex) {
+      Cu.reportError(ex);
+    }
+
+    
+    
+    
+    new DownloadHistoryObserver(list);
+  }),
+
+  
 
 
-  initializePublicDownloadList: function(aList) {
-    return Task.spawn(function task_DI_initializePublicDownloadList() {
-      if (this.dontLoadList) {
-        
-        
-        new DownloadHistoryObserver(aList);
-        return;
-      }
 
-      if (this._store) {
-        throw new Error("initializePublicDownloadList may be called only once.");
-      }
 
-      this._store = new DownloadStore(aList, OS.Path.join(
-                                                OS.Constants.Path.profileDir,
-                                                "downloads.json"));
-      this._store.onsaveitem = this.shouldPersistDownload.bind(this);
 
+
+
+
+
+
+
+
+
+  loadPublicDownloadListFromStore: Task.async(function* (list) {
+    if (this._store) {
+      throw new Error("Initialization may be performed only once.");
+    }
+
+    this._store = new DownloadStore(list, OS.Path.join(
+                                             OS.Constants.Path.profileDir,
+                                             "downloads.json"));
+    this._store.onsaveitem = this.shouldPersistDownload.bind(this);
+
+    try {
       if (this._importedFromSqlite) {
-        try {
-          yield this._store.load();
-        } catch (ex) {
-          Cu.reportError(ex);
-        }
+        yield this._store.load();
       } else {
         let sqliteDBpath = OS.Path.join(OS.Constants.Path.profileDir,
                                         "downloads.sqlite");
 
         if (yield OS.File.exists(sqliteDBpath)) {
-          let sqliteImport = new DownloadImport(aList, sqliteDBpath);
+          let sqliteImport = new DownloadImport(list, sqliteDBpath);
           yield sqliteImport.import();
 
-          let importCount = (yield aList.getAll()).length;
+          let importCount = (yield list.getAll()).length;
           if (importCount > 0) {
             try {
               yield this._store.save();
@@ -275,21 +258,20 @@ this.DownloadIntegration = {
         
         
         OS.File.remove(OS.Path.join(OS.Constants.Path.profileDir,
-                                    "downloads.rdf"));
+                                    "downloads.rdf")).catch(() => {});
 
       }
+    } catch (ex) {
+      Cu.reportError(ex);
+    }
 
-      
-      
-      
-      
-      
-      
-      
-      yield new DownloadAutoSaveView(aList, this._store).initialize();
-      new DownloadHistoryObserver(aList);
-    }.bind(this));
-  },
+    
+    
+    
+    
+    
+    yield new DownloadAutoSaveView(list, this._store).initialize();
+  }),
 
 #ifdef MOZ_WIDGET_GONK
   
@@ -299,35 +281,33 @@ this.DownloadIntegration = {
 
 
 
-  _getDefaultDownloadDirectory: function() {
-    return Task.spawn(function() {
-      let directoryPath;
-      let win = Services.wm.getMostRecentWindow("navigator:browser");
-      let storages = win.navigator.getDeviceStorages("sdcard");
-      let preferredStorageName;
-      
-      storages.forEach((aStorage) => {
-        if (aStorage.default || !preferredStorageName) {
-          preferredStorageName = aStorage.storageName;
-        }
-      });
-
-      
-      if (preferredStorageName) {
-        let volume = volumeService.getVolumeByName(preferredStorageName);
-        if (volume && volume.state === Ci.nsIVolume.STATE_MOUNTED){
-          directoryPath = OS.Path.join(volume.mountPoint, "downloads");
-          yield OS.File.makeDir(directoryPath, { ignoreExisting: true });
-        }
-      }
-      if (directoryPath) {
-        throw new Task.Result(directoryPath);
-      } else {
-        throw new Components.Exception("No suitable storage for downloads.",
-                                       Cr.NS_ERROR_FILE_UNRECOGNIZED_PATH);
+  _getDefaultDownloadDirectory: Task.async(function* () {
+    let directoryPath;
+    let win = Services.wm.getMostRecentWindow("navigator:browser");
+    let storages = win.navigator.getDeviceStorages("sdcard");
+    let preferredStorageName;
+    
+    storages.forEach((aStorage) => {
+      if (aStorage.default || !preferredStorageName) {
+        preferredStorageName = aStorage.storageName;
       }
     });
-  },
+
+    
+    if (preferredStorageName) {
+      let volume = volumeService.getVolumeByName(preferredStorageName);
+      if (volume && volume.state === Ci.nsIVolume.STATE_MOUNTED){
+        directoryPath = OS.Path.join(volume.mountPoint, "downloads");
+        yield OS.File.makeDir(directoryPath, { ignoreExisting: true });
+      }
+    }
+    if (directoryPath) {
+      return directoryPath;
+    } else {
+      throw new Components.Exception("No suitable storage for downloads.",
+                                     Cr.NS_ERROR_FILE_UNRECOGNIZED_PATH);
+    }
+  }),
 #endif
 
   
@@ -347,8 +327,7 @@ this.DownloadIntegration = {
 
 
 
-  shouldPersistDownload: function (aDownload)
-  {
+  shouldPersistDownload(aDownload) {
     
     
     
@@ -377,55 +356,50 @@ this.DownloadIntegration = {
 
 
 
-  getSystemDownloadsDirectory: function DI_getSystemDownloadsDirectory() {
-    return Task.spawn(function() {
-      if (this._downloadsDirectory) {
-        
-        
-        
-        yield undefined;
-        throw new Task.Result(this._downloadsDirectory);
-      }
+  getSystemDownloadsDirectory: Task.async(function* () {
+    if (this._downloadsDirectory) {
+      return this._downloadsDirectory;
+    }
 
-      let directoryPath = null;
+    let directoryPath = null;
 #ifdef XP_MACOSX
-      directoryPath = this._getDirectory("DfltDwnld");
+    directoryPath = this._getDirectory("DfltDwnld");
 #elifdef XP_WIN
-      
-      
-      let version = parseFloat(Services.sysinfo.getProperty("version"));
-      if (version < 6) {
-        directoryPath = yield this._createDownloadsDirectory("Pers");
-      } else {
-        directoryPath = this._getDirectory("DfltDwnld");
-      }
+    
+    
+    let version = parseFloat(Services.sysinfo.getProperty("version"));
+    if (version < 6) {
+      directoryPath = yield this._createDownloadsDirectory("Pers");
+    } else {
+      directoryPath = this._getDirectory("DfltDwnld");
+    }
 #elifdef XP_UNIX
 #ifdef MOZ_WIDGET_ANDROID
-      
-      
-      directoryPath = gEnvironment.get("DOWNLOADS_DIRECTORY");
-      if (!directoryPath) {
-        throw new Components.Exception("DOWNLOADS_DIRECTORY is not set.",
-                                       Cr.NS_ERROR_FILE_UNRECOGNIZED_PATH);
-      }
+    
+    
+    directoryPath = gEnvironment.get("DOWNLOADS_DIRECTORY");
+    if (!directoryPath) {
+      throw new Components.Exception("DOWNLOADS_DIRECTORY is not set.",
+                                     Cr.NS_ERROR_FILE_UNRECOGNIZED_PATH);
+    }
 #elifdef MOZ_WIDGET_GONK
-      directoryPath = this._getDefaultDownloadDirectory();
+    directoryPath = this._getDefaultDownloadDirectory();
 #else
-      
-      
-      try {
-        directoryPath = this._getDirectory("DfltDwnld");
-      } catch(e) {
-        directoryPath = yield this._createDownloadsDirectory("Home");
-      }
-#endif
-#else
+    
+    
+    try {
+      directoryPath = this._getDirectory("DfltDwnld");
+    } catch(e) {
       directoryPath = yield this._createDownloadsDirectory("Home");
+    }
 #endif
-      this._downloadsDirectory = directoryPath;
-      throw new Task.Result(this._downloadsDirectory);
-    }.bind(this));
-  },
+#else
+    directoryPath = yield this._createDownloadsDirectory("Home");
+#endif
+
+    this._downloadsDirectory = directoryPath;
+    return this._downloadsDirectory;
+  }),
   _downloadsDirectory: null,
 
   
@@ -434,80 +408,72 @@ this.DownloadIntegration = {
 
 
 
-  getPreferredDownloadsDirectory: function DI_getPreferredDownloadsDirectory() {
-    return Task.spawn(function() {
-      let directoryPath = null;
+  getPreferredDownloadsDirectory: Task.async(function* () {
+    let directoryPath = null;
 #ifdef MOZ_WIDGET_GONK
-      directoryPath = this._getDefaultDownloadDirectory();
+    directoryPath = this._getDefaultDownloadDirectory();
 #else
-      let prefValue = 1;
+    let prefValue = 1;
 
-      try {
-        prefValue = Services.prefs.getIntPref("browser.download.folderList");
-      } catch(e) {}
+    try {
+      prefValue = Services.prefs.getIntPref("browser.download.folderList");
+    } catch(e) {}
 
-      switch(prefValue) {
-        case 0: 
-          directoryPath = this._getDirectory("Desk");
-          break;
-        case 1: 
+    switch(prefValue) {
+      case 0: 
+        directoryPath = this._getDirectory("Desk");
+        break;
+      case 1: 
+        directoryPath = yield this.getSystemDownloadsDirectory();
+        break;
+      case 2: 
+        try {
+          let directory = Services.prefs.getComplexValue("browser.download.dir",
+                                                         Ci.nsIFile);
+          directoryPath = directory.path;
+          yield OS.File.makeDir(directoryPath, { ignoreExisting: true });
+        } catch(ex) {
+          
           directoryPath = yield this.getSystemDownloadsDirectory();
-          break;
-        case 2: 
-          try {
-            let directory = Services.prefs.getComplexValue("browser.download.dir",
-                                                           Ci.nsIFile);
-            directoryPath = directory.path;
-            yield OS.File.makeDir(directoryPath, { ignoreExisting: true });
-          } catch(ex) {
-            
-            directoryPath = yield this.getSystemDownloadsDirectory();
-          }
-          break;
-        default:
-          directoryPath = yield this.getSystemDownloadsDirectory();
-      }
-#endif
-      throw new Task.Result(directoryPath);
-    }.bind(this));
-  },
-
-  
-
-
-
-
-
-  getTemporaryDownloadsDirectory: function DI_getTemporaryDownloadsDirectory() {
-    return Task.spawn(function() {
-      let directoryPath = null;
-#ifdef XP_MACOSX
-      directoryPath = yield this.getPreferredDownloadsDirectory();
-#elifdef MOZ_WIDGET_ANDROID
-      directoryPath = yield this.getSystemDownloadsDirectory();
-#elifdef MOZ_WIDGET_GONK
-      directoryPath = yield this.getSystemDownloadsDirectory();
-#else
-      directoryPath = this._getDirectory("TmpD");
-#endif
-      throw new Task.Result(directoryPath);
-    }.bind(this));
-  },
-
-  
-
-
-
-
-
-
-
-
-  shouldBlockForParentalControls: function DI_shouldBlockForParentalControls(aDownload) {
-    if (this.dontCheckParentalControls) {
-      return Promise.resolve(this.shouldBlockInTest);
+        }
+        break;
+      default:
+        directoryPath = yield this.getSystemDownloadsDirectory();
     }
+#endif
+    return directoryPath;
+  }),
 
+  
+
+
+
+
+
+  getTemporaryDownloadsDirectory: Task.async(function* () {
+    let directoryPath = null;
+#ifdef XP_MACOSX
+    directoryPath = yield this.getPreferredDownloadsDirectory();
+#elifdef MOZ_WIDGET_ANDROID
+    directoryPath = yield this.getSystemDownloadsDirectory();
+#elifdef MOZ_WIDGET_GONK
+    directoryPath = yield this.getSystemDownloadsDirectory();
+#else
+    directoryPath = this._getDirectory("TmpD");
+#endif
+    return directoryPath;
+  }),
+
+  
+
+
+
+
+
+
+
+
+  shouldBlockForParentalControls(aDownload) {
     let isEnabled = gParentalControlsService &&
                     gParentalControlsService.parentalControlsEnabled;
     let shouldBlock = isEnabled &&
@@ -529,11 +495,7 @@ this.DownloadIntegration = {
 
 
 
-  shouldBlockForRuntimePermissions: function DI_shouldBlockForRuntimePermissions() {
-    if (this.dontCheckRuntimePermissions) {
-      return Promise.resolve(this.shouldBlockInTestForRuntimePermissions);
-    }
-
+  shouldBlockForRuntimePermissions() {
 #ifdef MOZ_WIDGET_ANDROID
     return RuntimePermissions.waitForPermissions(RuntimePermissions.WRITE_EXTERNAL_STORAGE)
                              .then(permissionGranted => !permissionGranted);
@@ -558,13 +520,13 @@ this.DownloadIntegration = {
 
 
 
-  shouldBlockForReputationCheck: function (aDownload) {
-    if (this.dontCheckApplicationReputation) {
-      return Promise.resolve({
-        shouldBlock: this.shouldBlockInTestForApplicationReputation,
-        verdict: this.verdictInTestForApplicationReputation,
-      });
-    }
+  shouldBlockForReputationCheck(aDownload) {
+#ifndef MOZ_URL_CLASSIFIER
+    return Promise.resolve({
+      shouldBlock: false,
+      verdict: "",
+    });
+#else
     let hash;
     let sigInfo;
     let channelRedirects;
@@ -605,6 +567,7 @@ this.DownloadIntegration = {
         });
       });
     return deferred.promise;
+#endif
   },
 
 #ifdef XP_WIN
@@ -614,7 +577,7 @@ this.DownloadIntegration = {
 
 
 
-  _shouldSaveZoneInformation: function() {
+  _shouldSaveZoneInformation() {
     let key = Cc["@mozilla.org/windows-registry-key;1"]
                 .createInstance(Ci.nsIWindowsRegKey);
     try {
@@ -643,220 +606,91 @@ this.DownloadIntegration = {
 
 
 
-  downloadDone: function(aDownload) {
-    return Task.spawn(function () {
+  downloadDone: Task.async(function* (aDownload) {
 #ifdef XP_WIN
-      
-      
-      
-      
-      
-      
-      
-      
-      if (this._shouldSaveZoneInformation()) {
-        let zone;
-        try {
-          zone = gDownloadPlatform.mapUrlToZone(aDownload.source.url);
-        } catch (e) {
-          
-          
-          zone = Ci.mozIDownloadPlatform.ZONE_INTERNET;
-        }
-        try {
-          
-          
-          if (zone >= Ci.mozIDownloadPlatform.ZONE_INTERNET) {
-            let streamPath = aDownload.target.path + ":Zone.Identifier";
-            let stream = yield OS.File.open(streamPath, { create: true });
-            try {
-              yield stream.write(new TextEncoder().encode("[ZoneTransfer]\r\nZoneId=" + zone + "\r\n"));
-            } finally {
-              yield stream.close();
-            }
-          }
-        } catch (ex) {
-          
-          
-          
-          
-          
-          if (!(ex instanceof OS.File.Error) || ex.winLastError != 123) {
-            Cu.reportError(ex);
-          }
-        }
+    
+    
+    
+    
+    
+    
+    
+    
+    if (this._shouldSaveZoneInformation()) {
+      let zone;
+      try {
+        zone = gDownloadPlatform.mapUrlToZone(aDownload.source.url);
+      } catch (e) {
+        
+        
+        zone = Ci.mozIDownloadPlatform.ZONE_INTERNET;
       }
-#endif
-
-      
-      
-      
-      
-      
       try {
         
         
-        
-        
-        let isTemporaryDownload =
-          aDownload.launchWhenSucceeded && (aDownload.source.isPrivate ||
-          Services.prefs.getBoolPref("browser.helperApps.deleteTempFileOnExit"));
-        
-        
-        let options = {};
-        if (isTemporaryDownload) {
-          options.unixMode = 0o400;
-          options.winAttributes = {readOnly: true};
-        } else {
-          options.unixMode = 0o666;
+        if (zone >= Ci.mozIDownloadPlatform.ZONE_INTERNET) {
+          let streamPath = aDownload.target.path + ":Zone.Identifier";
+          let stream = yield OS.File.open(streamPath, { create: true });
+          try {
+            yield stream.write(new TextEncoder().encode("[ZoneTransfer]\r\nZoneId=" + zone + "\r\n"));
+          } finally {
+            yield stream.close();
+          }
         }
-        
-        yield OS.File.setPermissions(aDownload.target.path, options);
       } catch (ex) {
         
         
         
         
         
-        
-        if (!(ex instanceof OS.File.Error) || ex.unixErrno != OS.Constants.libc.EPERM) {
+        if (!(ex instanceof OS.File.Error) || ex.winLastError != 123) {
           Cu.reportError(ex);
         }
       }
-
-      gDownloadPlatform.downloadDone(NetUtil.newURI(aDownload.source.url),
-                                     new FileUtils.File(aDownload.target.path),
-                                     aDownload.contentType,
-                                     aDownload.source.isPrivate);
-      this.downloadDoneCalled = true;
-    }.bind(this));
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  launchDownload: function (aDownload) {
-    let deferred = Task.spawn(function DI_launchDownload_task() {
-      let file = new FileUtils.File(aDownload.target.path);
-
-#ifndef XP_WIN
-      
-      
-      
-      
-      
-      
-      
-      if (file.isExecutable() && !this.dontOpenFileAndFolder) {
-        
-        
-        
-        
-        let shouldLaunch = yield DownloadUIHelper.getPrompter()
-                                   .confirmLaunchExecutable(file.path);
-        if (!shouldLaunch) {
-          return;
-        }
-      }
+    }
 #endif
 
+    
+    
+    
+    
+    
+    try {
       
       
       
-      let fileExtension = null, mimeInfo = null;
-      let match = file.leafName.match(/\.([^.]+)$/);
-      if (match) {
-        fileExtension = match[1];
+      
+      let isTemporaryDownload =
+        aDownload.launchWhenSucceeded && (aDownload.source.isPrivate ||
+        Services.prefs.getBoolPref("browser.helperApps.deleteTempFileOnExit"));
+      
+      
+      let options = {};
+      if (isTemporaryDownload) {
+        options.unixMode = 0o400;
+        options.winAttributes = {readOnly: true};
+      } else {
+        options.unixMode = 0o666;
       }
-
-      try {
-        
-        
-        
-        mimeInfo = gMIMEService.getFromTypeAndExtension(aDownload.contentType,
-                                                        fileExtension);
-      } catch (e) { }
-
-      if (aDownload.launcherPath) {
-        if (!mimeInfo) {
-          
-          
-          
-          throw new Error(
-            "Unable to create nsIMIMEInfo to launch a custom application");
-        }
-
-        
-        let localHandlerApp = Cc["@mozilla.org/uriloader/local-handler-app;1"]
-                                .createInstance(Ci.nsILocalHandlerApp);
-        localHandlerApp.executable = new FileUtils.File(aDownload.launcherPath);
-
-        mimeInfo.preferredApplicationHandler = localHandlerApp;
-        mimeInfo.preferredAction = Ci.nsIMIMEInfo.useHelperApp;
-
-        
-        if (this.dontOpenFileAndFolder) {
-          throw new Task.Result(mimeInfo);
-        }
-
-        mimeInfo.launchWithFile(file);
-        return;
+      
+      yield OS.File.setPermissions(aDownload.target.path, options);
+    } catch (ex) {
+      
+      
+      
+      
+      
+      
+      if (!(ex instanceof OS.File.Error) || ex.unixErrno != OS.Constants.libc.EPERM) {
+        Cu.reportError(ex);
       }
-
-      
-      
-      if (this.dontOpenFileAndFolder) {
-        throw new Task.Result(null);
-      }
-
-      
-      
-      if (mimeInfo) {
-        mimeInfo.preferredAction = Ci.nsIMIMEInfo.useSystemDefault;
-
-        try {
-          mimeInfo.launchWithFile(file);
-          return;
-        } catch (ex) { }
-      }
-
-      
-      
-      try {
-        file.launch();
-        return;
-      } catch (ex) { }
-
-      
-      
-      gExternalProtocolService.loadUrl(NetUtil.newURI(file));
-      yield undefined;
-    }.bind(this));
-
-    if (this.dontOpenFileAndFolder) {
-      deferred.then((value) => { this._deferTestOpenFile.resolve(value); },
-                    (error) => { this._deferTestOpenFile.reject(error); });
     }
 
-    return deferred;
-  },
+    gDownloadPlatform.downloadDone(NetUtil.newURI(aDownload.source.url),
+                                   new FileUtils.File(aDownload.target.path),
+                                   aDownload.contentType,
+                                   aDownload.source.isPrivate);
+  }),
 
   
 
@@ -872,52 +706,111 @@ this.DownloadIntegration = {
 
 
 
-  showContainingDirectory: function (aFilePath) {
-    let deferred = Task.spawn(function DI_showContainingDirectory_task() {
-      let file = new FileUtils.File(aFilePath);
 
-      if (this.dontOpenFileAndFolder) {
-        return;
-      }
 
-      try {
+
+
+
+
+  launchDownload: Task.async(function* (aDownload) {
+    let file = new FileUtils.File(aDownload.target.path);
+
+#ifndef XP_WIN
+    
+    
+    
+    
+    
+    
+    
+    if (file.isExecutable() &&
+        !(yield this.confirmLaunchExecutable(file.path))) {
+      return;
+    }
+#endif
+
+    
+    
+    
+    let fileExtension = null, mimeInfo = null;
+    let match = file.leafName.match(/\.([^.]+)$/);
+    if (match) {
+      fileExtension = match[1];
+    }
+
+    try {
+      
+      
+      
+      mimeInfo = gMIMEService.getFromTypeAndExtension(aDownload.contentType,
+                                                      fileExtension);
+    } catch (e) { }
+
+    if (aDownload.launcherPath) {
+      if (!mimeInfo) {
         
-        file.reveal();
-        return;
-      } catch (ex) { }
-
-      
-      
-      let parent = file.parent;
-      if (!parent) {
+        
+        
         throw new Error(
-          "Unexpected reference to a top-level directory instead of a file");
+          "Unable to create nsIMIMEInfo to launch a custom application");
       }
 
-      try {
-        
-        parent.launch();
-        return;
-      } catch (ex) { }
-
       
-      
-      gExternalProtocolService.loadUrl(NetUtil.newURI(parent));
-      yield undefined;
-    }.bind(this));
+      let localHandlerApp = Cc["@mozilla.org/uriloader/local-handler-app;1"]
+                              .createInstance(Ci.nsILocalHandlerApp);
+      localHandlerApp.executable = new FileUtils.File(aDownload.launcherPath);
 
-    if (this.dontOpenFileAndFolder) {
-      deferred.then((value) => { this._deferTestShowDir.resolve("success"); },
-                    (error) => {
-                      
-                      
-                      
-                      this._deferTestShowDir.promise.then(null, function() {});
-                      this._deferTestShowDir.reject(error);
-                    });
+      mimeInfo.preferredApplicationHandler = localHandlerApp;
+      mimeInfo.preferredAction = Ci.nsIMIMEInfo.useHelperApp;
+
+      this.launchFile(file, mimeInfo);
+      return;
     }
 
-    return deferred;
+    
+    
+    if (mimeInfo) {
+      mimeInfo.preferredAction = Ci.nsIMIMEInfo.useSystemDefault;
+
+      try {
+        this.launchFile(file, mimeInfo);
+        return;
+      } catch (ex) { }
+    }
+
+    
+    
+    try {
+      this.launchFile(file);
+      return;
+    } catch (ex) { }
+
+    
+    
+    gExternalProtocolService.loadUrl(NetUtil.newURI(file));
+  }),
+
+  
+
+
+
+  confirmLaunchExecutable: Task.async(function* (path) {
+    
+    
+    
+    
+    return yield DownloadUIHelper.getPrompter().confirmLaunchExecutable(path);
+  }),
+
+  
+
+
+  launchFile(file, mimeInfo) {
+    if (mimeInfo) {
+      mimeInfo.launchWithFile(file);
+    } else {
+      file.launch();
+    }
   },
 
   
@@ -927,7 +820,49 @@ this.DownloadIntegration = {
 
 
 
-  _createDownloadsDirectory: function DI_createDownloadsDirectory(aName) {
+
+
+
+
+
+
+
+  showContainingDirectory: Task.async(function* (aFilePath) {
+    let file = new FileUtils.File(aFilePath);
+
+    try {
+      
+      file.reveal();
+      return;
+    } catch (ex) { }
+
+    
+    
+    let parent = file.parent;
+    if (!parent) {
+      throw new Error(
+        "Unexpected reference to a top-level directory instead of a file");
+    }
+
+    try {
+      
+      parent.launch();
+      return;
+    } catch (ex) { }
+
+    
+    
+    gExternalProtocolService.loadUrl(NetUtil.newURI(parent));
+  }),
+
+  
+
+
+
+
+
+
+  _createDownloadsDirectory(aName) {
     
     
     
@@ -935,10 +870,17 @@ this.DownloadIntegration = {
                                      DownloadUIHelper.strings.downloadsFolder);
 
     
-    return OS.File.makeDir(directoryPath, { ignoreExisting: true }).
-             then(function() {
-               return directoryPath;
-             });
+    return OS.File.makeDir(directoryPath, { ignoreExisting: true })
+                  .then(() => directoryPath);
+  },
+
+  
+
+
+
+
+  _getDirectory(name) {
+    return Services.dirsvc.get(name, Ci.nsIFile).path;
   },
 
   
@@ -947,26 +889,12 @@ this.DownloadIntegration = {
 
 
 
-  _getDirectory: function DI_getDirectory(aName) {
-    return Services.dirsvc.get(this.testMode ? "TmpD" : aName, Ci.nsIFile).path;
-  },
-
-  
 
 
 
 
 
-
-
-
-
-
-  addListObservers: function DI_addListObservers(aList, aIsPrivate) {
-    if (this.dontLoadObservers) {
-      return Promise.resolve();
-    }
-
+  addListObservers(aList, aIsPrivate) {
     DownloadObserver.registerView(aList, aIsPrivate);
     if (!DownloadObserver.observersAdded) {
       DownloadObserver.observersAdded = true;
@@ -984,7 +912,7 @@ this.DownloadIntegration = {
 
 
 
-  forceSave: function DI_forceSave() {
+  forceSave() {
     if (this._store) {
       return this._store.save();
     }
@@ -1101,8 +1029,8 @@ this.DownloadObserver = {
       return;
     }
     
-    if (DownloadIntegration.testMode) {
-      DownloadIntegration.testPromptDownloads = aDownloadsCount;
+    if (gCombinedDownloadIntegration._testPromptDownloads) {
+      gCombinedDownloadIntegration._testPromptDownloads = aDownloadsCount;
       return;
     }
 
@@ -1144,7 +1072,7 @@ this.DownloadObserver = {
                                      p.ON_LEAVE_PRIVATE_BROWSING);
         break;
       case "last-pb-context-exited":
-        let deferred = Task.spawn(function() {
+        let promise = Task.spawn(function() {
           let list = yield Downloads.getList(Downloads.PRIVATE);
           let downloads = yield list.getAll();
 
@@ -1155,9 +1083,10 @@ this.DownloadObserver = {
           }
         });
         
-        if (DownloadIntegration.testMode) {
-          deferred.then((value) => { DownloadIntegration._deferTestClearPrivateList.resolve("success"); },
-                        (error) => { DownloadIntegration._deferTestClearPrivateList.reject(error); });
+        if (gCombinedDownloadIntegration._testResolveClearPrivateList) {
+          gCombinedDownloadIntegration._testResolveClearPrivateList(promise);
+        } else {
+          promise.catch(ex => Cu.reportError(ex));
         }
         break;
       case "sleep_notification":
@@ -1349,7 +1278,7 @@ this.DownloadAutoSaveView.prototype = {
 
   onDownloadAdded: function (aDownload)
   {
-    if (DownloadIntegration.shouldPersistDownload(aDownload)) {
+    if (gCombinedDownloadIntegration.shouldPersistDownload(aDownload)) {
       this._downloadsMap.set(aDownload, aDownload.getSerializationHash());
       if (this._initialized) {
         this.saveSoon();
@@ -1359,7 +1288,7 @@ this.DownloadAutoSaveView.prototype = {
 
   onDownloadChanged: function (aDownload)
   {
-    if (!DownloadIntegration.shouldPersistDownload(aDownload)) {
+    if (!gCombinedDownloadIntegration.shouldPersistDownload(aDownload)) {
       if (this._downloadsMap.has(aDownload)) {
         this._downloadsMap.delete(aDownload);
         this.saveSoon();

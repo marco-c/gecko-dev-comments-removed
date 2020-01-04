@@ -14,20 +14,6 @@
 
 
 
-function enableObserversTestMode() {
-  DownloadIntegration.testMode = true;
-  DownloadIntegration.dontLoadObservers = false;
-  function cleanup() {
-    DownloadIntegration.testMode = false;
-    DownloadIntegration.dontLoadObservers = true;
-  }
-  do_register_cleanup(cleanup);
-}
-
-
-
-
-
 
 
 
@@ -39,25 +25,39 @@ function notifyPromptObservers(aIsPrivate, aExpectedCount, aExpectedPBCount) {
                    createInstance(Ci.nsISupportsPRBool);
 
   
-  DownloadIntegration.testPromptDownloads = -1;
+  DownloadIntegration._testPromptDownloads = -1;
   Services.obs.notifyObservers(cancelQuit, "quit-application-requested", null);
-  do_check_eq(DownloadIntegration.testPromptDownloads, aExpectedCount);
+  do_check_eq(DownloadIntegration._testPromptDownloads, aExpectedCount);
 
   
-  DownloadIntegration.testPromptDownloads = -1;
+  DownloadIntegration._testPromptDownloads = -1;
   Services.obs.notifyObservers(cancelQuit, "offline-requested", null);
-  do_check_eq(DownloadIntegration.testPromptDownloads, aExpectedCount);
+  do_check_eq(DownloadIntegration._testPromptDownloads, aExpectedCount);
 
   if (aIsPrivate) {
     
-    DownloadIntegration.testPromptDownloads = -1;
+    DownloadIntegration._testPromptDownloads = -1;
     Services.obs.notifyObservers(cancelQuit, "last-pb-context-exiting", null);
-    do_check_eq(DownloadIntegration.testPromptDownloads, aExpectedPBCount);
+    do_check_eq(DownloadIntegration._testPromptDownloads, aExpectedPBCount);
   }
+
+  delete DownloadIntegration._testPromptDownloads;
 }
 
 
 
+
+
+
+
+function allowDirectoriesInTest() {
+  DownloadIntegration.allowDirectories = true;
+  function cleanup() {
+    DownloadIntegration.allowDirectories = false;
+  }
+  do_register_cleanup(cleanup);
+  return cleanup;
+}
 
 XPCOMUtils.defineLazyGetter(this, "gStringBundle", function() {
   return Services.strings.
@@ -68,17 +68,10 @@ XPCOMUtils.defineLazyGetter(this, "gStringBundle", function() {
 
 
 
-add_task(function* test_getSystemDownloadsDirectory()
-{
-  
-  
-  
-  DownloadIntegration.testMode = true;
-  function cleanup() {
-    DownloadIntegration.testMode = false;
-  }
-  do_register_cleanup(cleanup);
 
+
+add_task(function* test_getSystemDownloadsDirectory_exists_or_creates()
+{
   let tempDir = Services.dirsvc.get("TmpD", Ci.nsIFile);
   let downloadDir;
 
@@ -107,11 +100,22 @@ add_task(function* test_getSystemDownloadsDirectory()
     do_check_true(info.isDir);
     yield OS.File.removeEmptyDir(targetPath);
   }
+});
 
-  let downloadDirBefore = yield DownloadIntegration.getSystemDownloadsDirectory();
+
+
+
+
+
+add_task(function* test_getSystemDownloadsDirectory_real()
+{
+  let fakeDownloadDir = yield DownloadIntegration.getSystemDownloadsDirectory();
+
+  let cleanup = allowDirectoriesInTest();
+  let realDownloadDir = yield DownloadIntegration.getSystemDownloadsDirectory();
   cleanup();
-  let downloadDirAfter = yield DownloadIntegration.getSystemDownloadsDirectory();
-  do_check_neq(downloadDirBefore, downloadDirAfter);
+
+  do_check_neq(fakeDownloadDir, realDownloadDir);
 });
 
 
@@ -120,13 +124,15 @@ add_task(function* test_getSystemDownloadsDirectory()
 
 add_task(function* test_getPreferredDownloadsDirectory()
 {
+  let cleanupDirectories = allowDirectoriesInTest();
+
   let folderListPrefName = "browser.download.folderList";
   let dirPrefName = "browser.download.dir";
-  function cleanup() {
+  function cleanupPrefs() {
     Services.prefs.clearUserPref(folderListPrefName);
     Services.prefs.clearUserPref(dirPrefName);
   }
-  do_register_cleanup(cleanup);
+  do_register_cleanup(cleanupPrefs);
 
   
   Services.prefs.setIntPref(folderListPrefName, 1);
@@ -174,7 +180,8 @@ add_task(function* test_getPreferredDownloadsDirectory()
   downloadDir = yield DownloadIntegration.getPreferredDownloadsDirectory();
   do_check_eq(downloadDir, systemDir);
 
-  cleanup();
+  cleanupPrefs();
+  cleanupDirectories();
 });
 
 
@@ -183,6 +190,8 @@ add_task(function* test_getPreferredDownloadsDirectory()
 
 add_task(function* test_getTemporaryDownloadsDirectory()
 {
+  let cleanup = allowDirectoriesInTest();
+
   let downloadDir = yield DownloadIntegration.getTemporaryDownloadsDirectory();
   do_check_neq(downloadDir, "");
 
@@ -193,6 +202,8 @@ add_task(function* test_getTemporaryDownloadsDirectory()
     let tempDir = Services.dirsvc.get("TmpD", Ci.nsIFile);
     do_check_eq(downloadDir, tempDir.path);
   }
+
+  cleanup();
 });
 
 
@@ -202,10 +213,22 @@ add_task(function* test_getTemporaryDownloadsDirectory()
 
 
 
+
+
+add_task(function* test_observers_setup()
+{
+  DownloadIntegration.allowObservers = true;
+  do_register_cleanup(function () {
+    DownloadIntegration.allowObservers = false;
+  });
+});
+
+
+
+
+
 add_task(function* test_notifications()
 {
-  enableObserversTestMode();
-
   for (let isPrivate of [false, true]) {
     mustInterruptResponses();
 
@@ -244,8 +267,6 @@ add_task(function* test_notifications()
 
 add_task(function* test_no_notifications()
 {
-  enableObserversTestMode();
-
   for (let isPrivate of [false, true]) {
     let list = yield promiseNewList(isPrivate);
     let download1 = yield promiseNewDownload(httpUrl("interruptible.txt"));
@@ -274,7 +295,6 @@ add_task(function* test_no_notifications()
 
 add_task(function* test_mix_notifications()
 {
-  enableObserversTestMode();
   mustInterruptResponses();
 
   let publicList = yield promiseNewList();
@@ -306,8 +326,6 @@ add_task(function* test_mix_notifications()
 
 add_task(function* test_suspend_resume()
 {
-  enableObserversTestMode();
-
   
   
   Services.prefs.setIntPref("browser.download.manager.resumeOnWakeDelay", 5);
@@ -387,7 +405,6 @@ add_task(function* test_suspend_resume()
 
 add_task(function* test_exit_private_browsing()
 {
-  enableObserversTestMode();
   mustInterruptResponses();
 
   let privateList = yield promiseNewList(true);
@@ -406,11 +423,12 @@ add_task(function* test_exit_private_browsing()
   do_check_eq((yield privateList.getAll()).length, 2);
 
   
-  DownloadIntegration._deferTestClearPrivateList = Promise.defer();
-  Services.obs.notifyObservers(null, "last-pb-context-exited", null);
-  let result = yield DownloadIntegration._deferTestClearPrivateList.promise;
+  yield new Promise(resolve => {
+    DownloadIntegration._testResolveClearPrivateList = resolve;
+    Services.obs.notifyObservers(null, "last-pb-context-exited", null);
+  });
+  delete DownloadIntegration._testResolveClearPrivateList;
 
-  do_check_eq(result, "success");
   do_check_eq((yield privateList.getAll()).length, 0);
 
   continueResponses();
