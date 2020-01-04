@@ -32,7 +32,9 @@ function test() {
 
     
     window.addEventListener("documentload", function() {
-      runTests(document, window, tab, finish);
+      runTests(document, window, tab, function () {
+        closePDFViewer(window, finish);
+      });
     }, false, true);
   }, true);
 }
@@ -45,6 +47,8 @@ function runTests(document, window, tab, callback) {
   
   ok(document.querySelector('div#viewer'), "document content has viewer UI");
   ok('PDFJS' in window.wrappedJSObject, "window content has PDFJS object");
+  ok('PDFViewerApplication' in window.wrappedJSObject,
+     "window content has viewer object");
 
   
   
@@ -83,4 +87,12 @@ function runTests(document, window, tab, callback) {
   ok(viewBookmark.href.length > 0, 'viewBookmark button has href');
 
   callback();
+}
+
+
+
+
+function closePDFViewer(window, callback) {
+  var viewer = window.wrappedJSObject.PDFViewerApplication;
+  viewer.close().then(callback);
 }

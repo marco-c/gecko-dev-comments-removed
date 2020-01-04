@@ -32,7 +32,9 @@ function test() {
 
     
     window.addEventListener("documentload", function() {
-      runTests(document, window, finish);
+      runTests(document, window, function () {
+        closePDFViewer(window, finish);
+      });
     }, false, true);
   }, true);
 }
@@ -73,4 +75,12 @@ function runTests(document, window, callback) {
   sidebar.click();
 
   callback();
+}
+
+
+
+
+function closePDFViewer(window, callback) {
+  var viewer = window.wrappedJSObject.PDFViewerApplication;
+  viewer.close().then(callback);
 }
