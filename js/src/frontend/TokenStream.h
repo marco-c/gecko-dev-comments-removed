@@ -176,6 +176,24 @@ struct Token
 #endif
 
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    Token()
+      : pos(0, 0)
+    {
+        MOZ_MAKE_MEM_UNDEFINED(&type, sizeof(type));
+    }
+
+    
 
     void setName(PropertyName* name) {
         MOZ_ASSERT(type == TOK_NAME);
