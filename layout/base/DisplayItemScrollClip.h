@@ -63,13 +63,23 @@ public:
 
 
   static const DisplayItemScrollClip*
-  PickInnermost(const DisplayItemScrollClip* aClip1,
+  PickDescendant(const DisplayItemScrollClip* aClip1,
                 const DisplayItemScrollClip* aClip2)
   {
     MOZ_ASSERT(IsAncestor(aClip1, aClip2) || IsAncestor(aClip2, aClip1),
                "one of the scroll clips must be an ancestor of the other");
     return Depth(aClip1) > Depth(aClip2) ? aClip1 : aClip2;
   }
+
+  static const DisplayItemScrollClip*
+  PickAncestor(const DisplayItemScrollClip* aClip1,
+                const DisplayItemScrollClip* aClip2)
+  {
+    MOZ_ASSERT(IsAncestor(aClip1, aClip2) || IsAncestor(aClip2, aClip1),
+               "one of the scroll clips must be an ancestor of the other");
+    return Depth(aClip1) < Depth(aClip2) ? aClip1 : aClip2;
+  }
+
 
   
 

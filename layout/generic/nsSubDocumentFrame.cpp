@@ -473,7 +473,7 @@ nsSubDocumentFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
       
       
       
-      nestedClipState.ClearForStackingContextContents();
+      nestedClipState.EnterStackingContextContents(true);
     }
 
     if (subdocRootFrame) {

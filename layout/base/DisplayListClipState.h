@@ -7,6 +7,7 @@
 #define DISPLAYLISTCLIPSTATE_H_
 
 #include "DisplayItemClip.h"
+#include "DisplayItemScrollClip.h"
 
 #include "mozilla/DebugOnly.h"
 
@@ -15,8 +16,6 @@ class nsIScrollableFrame;
 class nsDisplayListBuilder;
 
 namespace mozilla {
-
-class DisplayItemScrollClip;
 
 
 
@@ -31,6 +30,7 @@ public:
     , mScrollClipContentDescendants(nullptr)
     , mScrollClipContainingBlockDescendants(nullptr)
     , mCrossStackingContextParentScrollClip(nullptr)
+    , mStackingContextAncestorSC(nullptr)
   {}
 
   
@@ -49,6 +49,11 @@ public:
   }
 
   const DisplayItemScrollClip* GetCurrentInnermostScrollClip();
+
+  const DisplayItemScrollClip* CurrentAncestorScrollClipForStackingContextContents()
+  {
+    return mStackingContextAncestorSC;
+  }
 
   class AutoSaveRestore;
   friend class AutoSaveRestore;
@@ -73,6 +78,7 @@ private:
   void SetScrollClipForContainingBlockDescendants(const DisplayItemScrollClip* aScrollClip)
   {
     mScrollClipContainingBlockDescendants = aScrollClip;
+    mStackingContextAncestorSC = DisplayItemScrollClip::PickAncestor(mStackingContextAncestorSC, aScrollClip);
   }
 
   void Clear()
@@ -83,24 +89,19 @@ private:
     
   }
 
-  void ClearForStackingContextContents()
+  void EnterStackingContextContents(bool aClear)
   {
-    mClipContentDescendants = nullptr;
-    mClipContainingBlockDescendants = nullptr;
-    mCurrentCombinedClip = nullptr;
-    mCrossStackingContextParentScrollClip = GetCurrentInnermostScrollClip();
-    mScrollClipContentDescendants = nullptr;
-    mScrollClipContainingBlockDescendants = nullptr;
-  }
-
-  void ClearIncludingScrollClip()
-  {
-    mClipContentDescendants = nullptr;
-    mClipContainingBlockDescendants = nullptr;
-    mCurrentCombinedClip = nullptr;
-    mCrossStackingContextParentScrollClip = nullptr;
-    mScrollClipContentDescendants = nullptr;
-    mScrollClipContainingBlockDescendants = nullptr;
+    if (aClear) {
+      mClipContentDescendants = nullptr;
+      mClipContainingBlockDescendants = nullptr;
+      mCurrentCombinedClip = nullptr;
+      mCrossStackingContextParentScrollClip = GetCurrentInnermostScrollClip();
+      mScrollClipContentDescendants = nullptr;
+      mScrollClipContainingBlockDescendants = nullptr;
+      mStackingContextAncestorSC = nullptr;
+    } else {
+      mStackingContextAncestorSC = GetCurrentInnermostScrollClip();
+    }
   }
 
   
@@ -184,6 +185,13 @@ private:
   const DisplayItemScrollClip* mScrollClipContentDescendants;
   const DisplayItemScrollClip* mScrollClipContainingBlockDescendants;
   const DisplayItemScrollClip* mCrossStackingContextParentScrollClip;
+
+  
+
+
+
+
+  const DisplayItemScrollClip* mStackingContextAncestorSC;
 };
 
 
@@ -198,6 +206,12 @@ public:
   explicit AutoSaveRestore(nsDisplayListBuilder* aBuilder);
   void Restore()
   {
+    if (!mClearedForStackingContextContents) {
+      
+      mSavedState.mStackingContextAncestorSC =
+        DisplayItemScrollClip::PickAncestor(mSavedState.mStackingContextAncestorSC,
+                                            mState.mStackingContextAncestorSC);
+    }
     mState = mSavedState;
 #ifdef DEBUG
     mRestored = true;
@@ -205,7 +219,7 @@ public:
   }
   ~AutoSaveRestore()
   {
-    mState = mSavedState;
+    Restore();
   }
 
   void Clear()
@@ -217,23 +231,45 @@ public:
 #endif
   }
 
-  void ClearForStackingContextContents()
+  void EnterStackingContextContents(bool aClear)
   {
     NS_ASSERTION(!mRestored, "Already restored!");
-    mState.ClearForStackingContextContents();
-#ifdef DEBUG
-    mClipUsed = false;
-#endif
+    mState.EnterStackingContextContents(aClear);
+    mClearedForStackingContextContents = aClear;
   }
 
-
-  void ClearIncludingScrollClip()
+  void ExitStackingContextContents(const DisplayItemScrollClip** aOutContainerSC)
   {
-    NS_ASSERTION(!mRestored, "Already restored!");
-    mState.ClearIncludingScrollClip();
-#ifdef DEBUG
-    mClipUsed = false;
-#endif
+    if (mClearedForStackingContextContents) {
+      
+      
+      
+      *aOutContainerSC = mSavedState.GetCurrentInnermostScrollClip();
+    } else {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      *aOutContainerSC = mState.CurrentAncestorScrollClipForStackingContextContents();
+    }
+    Restore();
   }
 
   void TurnClipIntoScrollClipForContentDescendants(nsDisplayListBuilder* aBuilder, nsIScrollableFrame* aScrollableFrame)
@@ -341,6 +377,7 @@ protected:
   bool mClipUsed;
   bool mRestored;
 #endif
+  bool mClearedForStackingContextContents;
 };
 
 class DisplayListClipState::AutoClipContainingBlockDescendantsToContentBox : public AutoSaveRestore {
