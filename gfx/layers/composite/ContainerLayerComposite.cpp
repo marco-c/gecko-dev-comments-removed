@@ -527,34 +527,15 @@ RenderMinimap(ContainerT* aContainer, LayerManagerComposite* aManager,
   Matrix4x4 transform = Matrix4x4::Scaling(scaleFactor, scaleFactor, 1);
   transform.PostTranslate(horizontalPadding + compositionBounds.x, verticalPadding + compositionBounds.y, 0);
 
-  Rect clipRect = aContainer->GetEffectiveTransform().TransformBounds(
-                    transform.TransformBounds(scrollRect.ToUnknownRect()));
+  Rect transformedScrollRect = transform.TransformBounds(scrollRect.ToUnknownRect());
+
+  Rect clipRect = aContainer->GetEffectiveTransform().TransformBounds(transformedScrollRect);
   clipRect.width++;
   clipRect.height++;
 
-  Rect r;
-  r = transform.TransformBounds(scrollRect.ToUnknownRect());
-  compositor->FillRect(r, backgroundColor, clipRect, aContainer->GetEffectiveTransform());
-
   
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  
-  r = transform.TransformBounds(scrollRect.ToUnknownRect());
-  compositor->SlowDrawRect(r, pageBorderColor, clipRect, aContainer->GetEffectiveTransform());
+  compositor->FillRect(transformedScrollRect, backgroundColor, clipRect, aContainer->GetEffectiveTransform());
+  compositor->SlowDrawRect(transformedScrollRect, pageBorderColor, clipRect, aContainer->GetEffectiveTransform());
 
   
   if (gfxPrefs::APZMinimapVisibilityEnabled()) {
@@ -585,9 +566,8 @@ RenderMinimap(ContainerT* aContainer, LayerManagerComposite* aManager,
   }
 
   
-  r = transform.TransformBounds(dp.ToUnknownRect());
+  Rect r = transform.TransformBounds(dp.ToUnknownRect());
   compositor->FillRect(r, tileActiveColor, clipRect, aContainer->GetEffectiveTransform());
-  r = transform.TransformBounds(dp.ToUnknownRect());
   compositor->SlowDrawRect(r, displayPortColor, clipRect, aContainer->GetEffectiveTransform());
 
   
