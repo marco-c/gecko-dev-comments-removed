@@ -1123,15 +1123,7 @@ public:
   };
 
   const nsRect GetPreserves3DDirtyRect(const nsIFrame *aFrame) const {
-    nsRect dirty = mPreserves3DCtx.mDirtyRect;
-    
-    
-    const nsIFrame *rootPreserves3D = aFrame;
-    while (rootPreserves3D && rootPreserves3D->Combines3DTransformWithAncestors()) {
-      dirty.MoveBy(-rootPreserves3D->GetPosition());
-      rootPreserves3D = rootPreserves3D->GetParent();
-    }
-    return dirty;
+    return mPreserves3DCtx.mDirtyRect;
   }
   void SetPreserves3DDirtyRect(const nsRect &aDirtyRect) {
     mPreserves3DCtx.mDirtyRect = aDirtyRect;
@@ -4080,14 +4072,10 @@ public:
 
 
 
-
-
-
   enum {
     OFFSET_BY_ORIGIN = 1 << 0,
-    BASIS_AT_ORIGIN = 1 << 1,
-    INCLUDE_PRESERVE3D_ANCESTORS = 1 << 2,
-    INCLUDE_PERSPECTIVE = 1 << 3,
+    INCLUDE_PRESERVE3D_ANCESTORS = 1 << 1,
+    INCLUDE_PERSPECTIVE = 1 << 2,
   };
   static Matrix4x4 GetResultingTransformMatrix(const nsIFrame* aFrame,
                                                const nsPoint& aOrigin,
