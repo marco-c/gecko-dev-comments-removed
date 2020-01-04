@@ -1003,12 +1003,12 @@ pref("dom.mozTCPSocket.enabled", true);
 pref("dom.mozContacts.enabled", true);
 
 
-pref("dom.ipc.tabs.disabled", true);
+pref("dom.ipc.tabs.disabled", false);
 pref("dom.ipc.processCount", 100000);
 
 
 
-pref("dom.ipc.processPrelaunch.enabled", false);
+pref("dom.ipc.processPrelaunch.enabled", true);
 
 pref("dom.ipc.processPrelaunch.delayMs", 5000);
 
