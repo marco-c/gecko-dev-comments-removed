@@ -973,12 +973,15 @@ StackFrames.prototype = {
   _insertScopeFrameReferences: function(aScope, aFrame) {
     
     if (this._currentException) {
-      let excRef = aScope.addItem("<exception>", { value: this._currentException });
+      let excRef = aScope.addItem("<exception>", { value: this._currentException },
+                                  { internalItem: true });
       DebuggerView.Variables.controller.addExpander(excRef, this._currentException);
     }
     
     if (this._currentReturnedValue) {
-      let retRef = aScope.addItem("<return>", { value: this._currentReturnedValue });
+      let retRef = aScope.addItem("<return>",
+                                  { value: this._currentReturnedValue },
+                                  { internalItem: true });
       DebuggerView.Variables.controller.addExpander(retRef, this._currentReturnedValue);
     }
     

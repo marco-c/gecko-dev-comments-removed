@@ -1281,8 +1281,10 @@ Scope.prototype = {
 
 
 
-  _createChild: function(aName, aDescriptor) {
-    return new Variable(this, aName, aDescriptor);
+
+
+  _createChild: function(aName, aDescriptor, aOptions) {
+    return new Variable(this, aName, aDescriptor, aOptions);
   },
 
   
@@ -1309,12 +1311,21 @@ Scope.prototype = {
 
 
 
-  addItem: function(aName = "", aDescriptor = {}, aRelaxed = false) {
-    if (this._store.has(aName) && !aRelaxed) {
+
+
+
+
+
+
+
+
+  addItem: function(aName = "", aDescriptor = {}, aOptions = {}) {
+    let {relaxed} = aOptions;
+    if (this._store.has(aName) && !relaxed) {
       return this._store.get(aName);
     }
 
-    let child = this._createChild(aName, aDescriptor);
+    let child = this._createChild(aName, aDescriptor, aOptions);
     this._store.set(aName, child);
     this._variablesView._itemsByElement.set(child._target, child);
     this._variablesView._currHierarchy.set(child.absoluteName, child);
@@ -2147,13 +2158,16 @@ XPCOMUtils.defineLazyGetter(Scope, "ellipsis", () =>
 
 
 
-function Variable(aScope, aName, aDescriptor) {
+
+
+function Variable(aScope, aName, aDescriptor, aOptions) {
   this._setTooltips = this._setTooltips.bind(this);
   this._activateNameInput = this._activateNameInput.bind(this);
   this._activateValueInput = this._activateValueInput.bind(this);
   this.openNodeInInspector = this.openNodeInInspector.bind(this);
   this.highlightDomNode = this.highlightDomNode.bind(this);
   this.unhighlightDomNode = this.unhighlightDomNode.bind(this);
+  this._internalItem = aOptions.internalItem;
 
   
   if ("getterValue" in aDescriptor) {
@@ -2196,8 +2210,10 @@ Variable.prototype = Heritage.extend(Scope.prototype, {
 
 
 
-  _createChild: function(aName, aDescriptor) {
-    return new Property(this, aName, aDescriptor);
+
+
+  _createChild: function(aName, aDescriptor, aOptions) {
+    return new Property(this, aName, aDescriptor, aOptions);
   },
 
   
@@ -2521,8 +2537,9 @@ Variable.prototype = Heritage.extend(Scope.prototype, {
 
     if (this._initialDescriptor.enumerable ||
         this._nameString == "this" ||
-        this._nameString == "<return>" ||
-        this._nameString == "<exception>") {
+        (this._internalItem &&
+         (this._nameString == "<return>" ||
+          this._nameString == "<exception>"))) {
       this.ownerView._enum.appendChild(this._target);
       this.ownerView._enumItems.push(this);
     } else {
@@ -2869,11 +2886,11 @@ Variable.prototype = Heritage.extend(Scope.prototype, {
     if (name == "this") {
       target.setAttribute("self", "");
     }
-    else if (name == "<exception>") {
+    else if (this._internalItem && name == "<exception>") {
       target.setAttribute("exception", "");
       target.setAttribute("pseudo-item", "");
     }
-    else if (name == "<return>") {
+    else if (this._internalItem && name == "<return>") {
       target.setAttribute("return", "");
       target.setAttribute("pseudo-item", "");
     }
@@ -3008,7 +3025,7 @@ Variable.prototype = Heritage.extend(Scope.prototype, {
       configurable: true,
       enumerable: true,
       writable: true
-    }, true);
+    }, {relaxed: true});
 
     
     item._separatorLabel.hidden = false;
@@ -3052,8 +3069,10 @@ Variable.prototype = Heritage.extend(Scope.prototype, {
 
 
 
-function Property(aVar, aName, aDescriptor) {
-  Variable.call(this, aVar, aName, aDescriptor);
+
+
+function Property(aVar, aName, aDescriptor, aOptions) {
+  Variable.call(this, aVar, aName, aDescriptor, aOptions);
 }
 
 Property.prototype = Heritage.extend(Variable.prototype, {
