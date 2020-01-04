@@ -430,6 +430,16 @@ public:
   bool TouchActionAllowsPanningY() const;
   bool TouchActionAllowsPanningXY() const;
 
+  
+
+
+
+
+
+
+
+  bool UpdateSlopState(const MultiTouchInput& aInput);
+
   bool HasEvents() const override;
   void DropEvents() override;
   void HandleEvents() override;
@@ -442,6 +452,8 @@ private:
   bool mAllowedTouchBehaviorSet;
   bool mDuringFastFling;
   bool mSingleTapOccurred;
+  bool mInSlop;
+  ScreenIntPoint mSlopOrigin;
   nsTArray<MultiTouchInput> mEvents;
   
   TouchCounter& mTouchCounter;
