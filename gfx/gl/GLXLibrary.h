@@ -21,6 +21,7 @@ typedef XID GLXContextID;
 typedef XID GLXWindow;
 typedef XID GLXPbuffer;
 
+#include "prenv.h"
 
 struct PRLibrary;
 class gfxASurface;
@@ -108,6 +109,12 @@ public:
     bool SupportsTextureFromPixmap(gfxASurface* aSurface);
     bool IsATI() { return mIsATI; }
     bool GLXVersionCheck(int aMajor, int aMinor);
+    bool UseSurfaceSharing() {
+      
+      
+      static bool useSharing = PR_GetEnv("MOZ_GLX_USE_SURFACE_SHARING");
+      return mUseTextureFromPixmap && useSharing;
+    }
 
 private:
     
