@@ -151,6 +151,7 @@ _ERROR_CATEGORIES = '''\
     whitespace/braces
     whitespace/comma
     whitespace/comments
+    whitespace/comments-doublespace
     whitespace/end_of_line
     whitespace/ending_newline
     whitespace/indent
@@ -843,7 +844,7 @@ def check_for_copyright(filename, lines, error):
     
     
     for line in xrange(1, min(len(lines), 11)):
-        if re.search(r'Copyright', lines[line], re.I):
+        if re.search(r'Copyright|License', lines[line], re.I):
             break
     else:                       
         error(filename, 0, 'legal/copyright', 5,
@@ -1509,7 +1510,7 @@ def check_spacing(filename, clean_lines, line_number, error):
                       and line[comment_position-1] not in string.whitespace)
                      or (comment_position >= 2
                          and line[comment_position-2] not in string.whitespace))):
-                error(filename, line_number, 'whitespace/comments', 2,
+                error(filename, line_number, 'whitespace/comments-doublespace', 2,
                       'At least two spaces is best between code and comments')
             
             commentend = comment_position + 2
@@ -1809,15 +1810,23 @@ def check_braces(filename, clean_lines, line_number, error):
 
     line = clean_lines.elided[line_number] 
 
+    """
+    These don't match our style guideline:
+    https://developer.mozilla.org/en-US/docs/Developer_Guide/Coding_Style#Control_Structures
+
+    TODO: Spin this off in a different rule and disable that rule for mozilla
+    rather then commenting this out
+
+
     if match(r'\s*{\s*$', line):
-        
-        
-        
-        
-        
-        
-        
-        
+        # We allow an open brace to start a line in the case where someone
+        # is using braces for function definition or in a block to
+        # explicitly create a new scope, which is commonly used to control
+        # the lifetime of stack-allocated variables.  We don't detect this
+        # perfectly: we just don't complain if the last non-whitespace
+        # character on the previous non-blank line is ';', ':', '{', '}',
+        # ')', or ') const' and doesn't begin with 'if|for|while|switch|else'.
+        # We also allow '#' for #endif and '=' for array initialization.
         previous_line = get_previous_non_blank_line(clean_lines, line_number)[0]
         if ((not search(r'[;:}{)=]\s*$|\)\s*const\s*$', previous_line)
              or search(r'\b(if|for|foreach|while|switch|else)\b', previous_line))
@@ -1831,13 +1840,14 @@ def check_braces(filename, clean_lines, line_number, error):
               'Place brace on its own line for function definitions.')
 
     if (match(r'\s*}\s*$', line) and line_number > 1):
-        
-        
+        # We check if a closed brace has started a line to see if a
+        # one line control statement was previous.
         previous_line = clean_lines.elided[line_number - 2]
         if (previous_line.find('{') > 0
             and search(r'\b(if|for|foreach|while|else)\b', previous_line)):
             error(filename, line_number, 'whitespace/braces', 4,
                   'One line control clauses should not use braces.')
+    """
 
     
     if match(r'\s*else\s*', line):
@@ -2121,11 +2131,11 @@ def check_style(filename, clean_lines, line_number, file_extension, error):
         error(filename, line_number, 'whitespace/end_of_line', 4,
               'Line ends in whitespace.  Consider deleting these extra spaces.')
     
-    elif ((initial_spaces >= 1 and initial_spaces <= 3)
+    elif ((initial_spaces == 1 or initial_spaces == 3)
           and not match(r'\s*\w+\s*:\s*$', cleansed_line)):
         error(filename, line_number, 'whitespace/indent', 3,
               'Weird number of spaces at line-start.  '
-              'Are you using a 4-space indent?')
+              'Are you using at least 2-space indent?')
     
     elif not initial_spaces and line[:2] != '//':
         label_match = match(r'(?P<label>[^:]+):\s*$', line)
@@ -2419,12 +2429,14 @@ def check_language(filename, clean_lines, line_number, file_extension, include_s
     
     
     
+    """
     if search(
         r'(&\([^)]+\)[\w(])|(&(static|dynamic|reinterpret)_cast\b)', line):
         error(filename, line_number, 'runtime/casting', 4,
               ('Are you taking an address of a cast?  '
                'This is dangerous: could be a temp var.  '
                'Take the address before doing the cast, rather than after'))
+    """
 
     
     
@@ -3062,23 +3074,16 @@ def parse_arguments(args, additional_flags=[]):
     return (filenames, additional_flag_values)
 
 
-def use_webkit_styles():
+def use_mozilla_styles():
     """Disables some features which are not suitable for WebKit."""
     
     
     
     global _DEFAULT_FILTERS
     _DEFAULT_FILTERS = [
-        '-whitespace/comments',
+        '-whitespace/comments-doublespace',
         '-whitespace/blank_line',
-        '-runtime/explicit',  
-        '-runtime/virtual',  
-        '-runtime/printf',
-        '-runtime/threadsafe_fn',
-        '-runtime/rtti',
         '-build/include_what_you_use',  
-        '-legal/copyright',
-        '-readability/multiline_comment',
         '-readability/braces',  
         '-readability/fn_size',
         '-build/storage_class',  
@@ -3086,10 +3091,7 @@ def use_webkit_styles():
         '-whitespace/labels',
         '-runtime/arrays',  
         '-build/header_guard',
-        '-readability/casting',
-        '-readability/function',
         '-runtime/casting',
-        '-runtime/sizeof',
     ]
 
 
