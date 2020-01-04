@@ -108,6 +108,10 @@ template <size_t Ops, size_t Temps> void
 LIRGeneratorShared::defineReuseInput(LInstructionHelper<1, Ops, Temps>* lir, MDefinition* mir, uint32_t operand)
 {
     
+    
+    
+
+    
     MOZ_ASSERT(lir->getOperand(operand)->toUse()->usedAtStart());
 
     LDefinition::Type type = LDefinition::TypeFrom(mir->type());
@@ -123,7 +127,14 @@ LIRGeneratorShared::defineInt64ReuseInput(LInstructionHelper<INT64_PIECES, Ops, 
                                           MDefinition* mir, uint32_t operand)
 {
     
+    
+    
+
+    
     MOZ_ASSERT(lir->getOperand(operand)->toUse()->usedAtStart());
+#if JS_BITS_PER_WORD == 32
+    MOZ_ASSERT(lir->getOperand(operand + 1)->toUse()->usedAtStart());
+#endif
     MOZ_ASSERT(!lir->isCall());
 
     uint32_t vreg = getVirtualRegister();

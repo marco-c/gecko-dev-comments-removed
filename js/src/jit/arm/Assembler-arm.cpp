@@ -57,6 +57,21 @@ ABIArgGenerator::softNext(MIRType type)
         current_ = ABIArg(Register::FromCode(intRegIndex_));
         intRegIndex_++;
         break;
+      case MIRType::Int64:
+        
+        
+        intRegIndex_ = (intRegIndex_ + 1) & ~1;
+        if (intRegIndex_ == NumIntArgRegs) {
+            
+            static const uint32_t align = sizeof(uint64_t) - 1;
+            stackOffset_ = (stackOffset_ + align) & ~align;
+            current_ = ABIArg(stackOffset_);
+            stackOffset_ += sizeof(uint64_t);
+            break;
+        }
+        current_ = ABIArg(Register::FromCode(intRegIndex_), Register::FromCode(intRegIndex_ + 1));
+        intRegIndex_ += 2;
+        break;
       case MIRType::Float32:
         if (intRegIndex_ == NumIntArgRegs) {
             current_ = ABIArg(stackOffset_);
@@ -72,7 +87,7 @@ ABIArgGenerator::softNext(MIRType type)
         intRegIndex_ = (intRegIndex_ + 1) & ~1;
         if (intRegIndex_ == NumIntArgRegs) {
             
-            static const int align = sizeof(double) - 1;
+            static const uint32_t align = sizeof(double) - 1;
             stackOffset_ = (stackOffset_ + align) & ~align;
             current_ = ABIArg(stackOffset_);
             stackOffset_ += sizeof(double);
@@ -102,9 +117,24 @@ ABIArgGenerator::hardNext(MIRType type)
         current_ = ABIArg(Register::FromCode(intRegIndex_));
         intRegIndex_++;
         break;
+      case MIRType::Int64:
+        
+        
+        intRegIndex_ = (intRegIndex_ + 1) & ~1;
+        if (intRegIndex_ == NumIntArgRegs) {
+            
+            static const uint32_t align = sizeof(uint64_t) - 1;
+            stackOffset_ = (stackOffset_ + align) & ~align;
+            current_ = ABIArg(stackOffset_);
+            stackOffset_ += sizeof(uint64_t);
+            break;
+        }
+        current_ = ABIArg(Register::FromCode(intRegIndex_), Register::FromCode(intRegIndex_ + 1));
+        intRegIndex_ += 2;
+        break;
       case MIRType::Float32:
         if (floatRegIndex_ == NumFloatArgRegs) {
-            static const int align = sizeof(double) - 1;
+            static const uint32_t align = sizeof(double) - 1;
             stackOffset_ = (stackOffset_ + align) & ~align;
             current_ = ABIArg(stackOffset_);
             stackOffset_ += sizeof(uint64_t);
@@ -119,7 +149,7 @@ ABIArgGenerator::hardNext(MIRType type)
         
         floatRegIndex_ = (floatRegIndex_ + 1) & ~1;
         if (floatRegIndex_ == NumFloatArgRegs) {
-            static const int align = sizeof(double) - 1;
+            static const uint32_t align = sizeof(double) - 1;
             stackOffset_ = (stackOffset_ + align) & ~align;
             current_ = ABIArg(stackOffset_);
             stackOffset_ += sizeof(uint64_t);
