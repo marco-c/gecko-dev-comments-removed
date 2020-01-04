@@ -124,13 +124,13 @@ public:
 
 
 
-  void* Peek();
+  void* Peek() const;
   
 
 
 
 
-  void* PeekFront();
+  void* PeekFront() const;
 
   
 
