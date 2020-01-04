@@ -7,6 +7,7 @@
 from __future__ import absolute_import, unicode_literals, print_function
 
 import argparse
+import errno
 import os
 import shutil
 import sys
@@ -121,6 +122,18 @@ class XPCShellRunner(MozbuildObject):
 
         if kwargs["failure_manifest"] is None:
             kwargs["failure_manifest"] = os.path.join(self.statedir, 'xpcshell.failures.ini')
+
+        
+        
+        
+        
+        temp_dir = os.path.join(self.topobjdir, 'temp')
+        try:
+            os.mkdir(temp_dir)
+        except OSError as e:
+            if e.errno != errno.EEXIST:
+                raise
+        kwargs['tempDir'] = temp_dir
 
         
         
