@@ -3,6 +3,7 @@
 
 
 
+
 #ifndef mozilla_GenericModule_h
 #define mozilla_GenericModule_h
 
@@ -14,15 +15,15 @@ static nsresult                                                               \
 _InstanceClass##Constructor(nsISupports *aOuter, REFNSIID aIID,               \
                             void **aResult)                                   \
 {                                                                             \
-    RefPtr<_InstanceClass> inst;                                            \
+  RefPtr<_InstanceClass> inst;                                                \
                                                                               \
-    *aResult = nullptr;                                                       \
-    if (nullptr != aOuter) {                                                  \
-        return NS_ERROR_NO_AGGREGATION;                                       \
-    }                                                                         \
+  *aResult = nullptr;                                                         \
+  if (nullptr != aOuter) {                                                    \
+    return NS_ERROR_NO_AGGREGATION;                                           \
+  }                                                                           \
                                                                               \
-    inst = new _InstanceClass();                                              \
-    return inst->QueryInterface(aIID, aResult);                               \
+  inst = new _InstanceClass();                                                \
+  return inst->QueryInterface(aIID, aResult);                                 \
 }
 
 #define NS_GENERIC_FACTORY_CONSTRUCTOR_INIT(_InstanceClass, _InitMethod)      \
@@ -30,22 +31,22 @@ static nsresult                                                               \
 _InstanceClass##Constructor(nsISupports *aOuter, REFNSIID aIID,               \
                             void **aResult)                                   \
 {                                                                             \
-    nsresult rv;                                                              \
+  nsresult rv;                                                                \
                                                                               \
-    RefPtr<_InstanceClass> inst;                                            \
+  RefPtr<_InstanceClass> inst;                                                \
                                                                               \
-    *aResult = nullptr;                                                       \
-    if (nullptr != aOuter) {                                                  \
-        return NS_ERROR_NO_AGGREGATION;                                       \
-    }                                                                         \
+  *aResult = nullptr;                                                         \
+  if (nullptr != aOuter) {                                                    \
+    return NS_ERROR_NO_AGGREGATION;                                           \
+  }                                                                           \
                                                                               \
-    inst = new _InstanceClass();                                              \
-    rv = inst->_InitMethod();                                                 \
-    if(NS_SUCCEEDED(rv)) {                                                    \
-        rv = inst->QueryInterface(aIID, aResult);                             \
-    }                                                                         \
+  inst = new _InstanceClass();                                                \
+  rv = inst->_InitMethod();                                                   \
+  if (NS_SUCCEEDED(rv)) {                                                     \
+    rv = inst->QueryInterface(aIID, aResult);                                 \
+  }                                                                           \
                                                                               \
-    return rv;                                                                \
+  return rv;                                                                  \
 }
 
 
@@ -55,18 +56,18 @@ static nsresult                                                               \
 _InstanceClass##Constructor(nsISupports *aOuter, REFNSIID aIID,               \
                             void **aResult)                                   \
 {                                                                             \
-    RefPtr<_InstanceClass> inst;                                            \
+  RefPtr<_InstanceClass> inst;                                                \
                                                                               \
-    *aResult = nullptr;                                                       \
-    if (nullptr != aOuter) {                                                  \
-        return NS_ERROR_NO_AGGREGATION;                                       \
-    }                                                                         \
+  *aResult = nullptr;                                                         \
+  if (nullptr != aOuter) {                                                    \
+    return NS_ERROR_NO_AGGREGATION;                                           \
+  }                                                                           \
                                                                               \
-    inst = already_AddRefed<_InstanceClass>(_GetterProc());                   \
-    if (nullptr == inst) {                                                    \
-        return NS_ERROR_OUT_OF_MEMORY;                                        \
-    }                                                                         \
-    return inst->QueryInterface(aIID, aResult);                               \
+  inst = already_AddRefed<_InstanceClass>(_GetterProc());                     \
+  if (nullptr == inst) {                                                      \
+    return NS_ERROR_OUT_OF_MEMORY;                                            \
+  }                                                                           \
+  return inst->QueryInterface(aIID, aResult);                                 \
 }
 
 #ifndef MOZILLA_INTERNAL_API
