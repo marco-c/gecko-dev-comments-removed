@@ -55,8 +55,7 @@ AnimationTimeBlock.prototype = {
     let iterations = createNode({
       parent: this.containerEl,
       attributes: {
-        "class": state.type + " iterations" +
-                 (state.iterationCount ? "" : " infinite"),
+        "class": "iterations" + (state.iterationCount ? "" : " infinite"),
         
         
         "style": `left:${x}%;
@@ -69,13 +68,17 @@ AnimationTimeBlock.prototype = {
     
     
     createNode({
-      parent: iterations,
-      attributes: {
-        "class": "name",
-        "title": this.getTooltipText(state),
-        
-        "style": `margin-left:${negativeDelayW}%`
-      },
+      parent: createNode({
+        parent: this.containerEl,
+        attributes: {
+          "class": "name",
+          "title": this.getTooltipText(state),
+          
+          
+          "style": `left:${x + negativeDelayW}%;
+                    width:${iterationW - negativeDelayW}%;`
+        },
+      }),
       textContent: state.name
     });
 
@@ -83,10 +86,10 @@ AnimationTimeBlock.prototype = {
     if (state.delay) {
       
       createNode({
-        parent: iterations,
+        parent: this.containerEl,
         attributes: {
           "class": "delay" + (state.delay < 0 ? " negative" : ""),
-          "style": `left:-${delayX}%;
+          "style": `left:${delayX}%;
                     width:${delayW}%;`
         }
       });
