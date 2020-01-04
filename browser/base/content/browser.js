@@ -6345,11 +6345,6 @@ function isTabEmpty(aTab) {
   if (aTab.hasAttribute("customizemode"))
     return false;
 
-  
-  
-  if (SessionStore.isTabRestoring(aTab))
-    return false;
-
   let browser = aTab.linkedBrowser;
   if (!isBlankPageURL(browser.currentURI.spec))
     return false;

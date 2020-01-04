@@ -330,16 +330,6 @@ this.SessionStore = {
   getSessionHistory(tab, updatedCallback) {
     return SessionStoreInternal.getSessionHistory(tab, updatedCallback);
   },
-  
-  
-
-
-
-
-
-  isTabRestoring(tab) {
-    return !!tab.linkedBrowser.__SS_restoreState;
-  },
 
   
 
