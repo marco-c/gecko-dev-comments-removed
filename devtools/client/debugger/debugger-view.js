@@ -453,6 +453,10 @@ var DebuggerView = {
       return void this.editor.setMode(Editor.modes.js);
     }
 
+    if (aContentType === "text/wasm") {
+      return void this.editor.setMode(Editor.modes.wasm);
+    }
+
     
     
     if (aTextContent.match(/^\s*</)) {
