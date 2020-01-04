@@ -2682,12 +2682,8 @@ public:
 
 
 
-
-
-
   static void MaybeCreateDisplayPort(nsDisplayListBuilder& aBuilder,
-                                     nsIFrame* aScrollFrame,
-                                     nsRect aDisplayPortBase);
+                                     nsIFrame* aScrollFrame);
 
   static nsIScrollableFrame* GetAsyncScrollableAncestorFrame(nsIFrame* aTarget);
 
