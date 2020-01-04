@@ -7,8 +7,6 @@
 
 
 
-var { XPCOMUtils } = Cu.import("resource://gre/modules/XPCOMUtils.jsm", {});
-
 function run_test() {
   do_get_profile();
 

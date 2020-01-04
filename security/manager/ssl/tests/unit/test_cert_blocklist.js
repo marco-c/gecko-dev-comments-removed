@@ -11,8 +11,6 @@
 
 
 
-var { XPCOMUtils } = Cu.import("resource://gre/modules/XPCOMUtils.jsm", {});
-
 
 var id = "xpcshell@tests.mozilla.org";
 var appName = "XPCShell";
