@@ -1,5 +1,5 @@
 Cu.import("resource://testing-common/httpd.js");
-Cu.import("resource://gre/modules/Services.jsm");
+Cu.import("resource://gre/modules/NetUtil.jsm");
 
 XPCOMUtils.defineLazyGetter(this, "URL", function() {
   return "http://localhost:" + httpserver.identity.primaryPort;
@@ -19,34 +19,26 @@ function run_test() {
 
   
   local_channel = setupChannel(testpath);
-  local_channel.asyncOpen(
-      new ChannelListener(checkRequest, local_channel), null);
+  local_channel.asyncOpen2(new ChannelListener(checkRequest, local_channel));
 
   
-  setupChannel(testpath).asyncOpen(
-      new ChannelListener(function() {}, null), null);
+  setupChannel(testpath).asyncOpen2(new ChannelListener(function() {}, null));
   
   
   live_channels.push(setupChannel(testpath));
 
   
   live_channels.push(setupChannel(testpath));
-  live_channels[1].asyncOpen(
-      new ChannelListener(checkRequestFinish, live_channels[1]), null);
+  live_channels[1].asyncOpen2(new ChannelListener(checkRequestFinish, live_channels[1]));
 
   do_test_pending();
 }
 
 function setupChannel(path) {
-  var ios = Cc["@mozilla.org/network/io-service;1"].getService(Ci.nsIIOService);
-  var chan = ios.newChannel2(URL + path,
-                             "",
-                             null,
-                             null,      
-                             Services.scriptSecurityManager.getSystemPrincipal(),
-                             null,      
-                             Ci.nsILoadInfo.SEC_NORMAL,
-                             Ci.nsIContentPolicy.TYPE_OTHER);
+  var chan = NetUtil.newChannel({
+    uri: URL + path,
+    loadUsingSystemPrincipal: true
+  });
   chan.QueryInterface(Ci.nsIHttpChannel);
   chan.requestMethod = "GET";
   return chan;

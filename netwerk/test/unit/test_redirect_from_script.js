@@ -24,7 +24,7 @@
 
 
 Cu.import("resource://testing-common/httpd.js");
-Cu.import("resource://gre/modules/Services.jsm");
+Cu.import("resource://gre/modules/NetUtil.jsm");
 
 
 
@@ -84,16 +84,7 @@ var testHeaderVal = "Success";
 var testHeaderVal2 = "Success on server 2";
 
 function make_channel(url, callback, ctx) {
-  var ios = Cc["@mozilla.org/network/io-service;1"].
-            getService(Ci.nsIIOService);
-  return ios.newChannel2(url,
-                         "",
-                         null,
-                         null,      
-                         Services.scriptSecurityManager.getSystemPrincipal(),
-                         null,      
-                         Ci.nsILoadInfo.SEC_NORMAL,
-                         Ci.nsIContentPolicy.TYPE_OTHER);
+  return NetUtil.newChannel({uri: url, loadUsingSystemPrincipal: true});
 }
 
 function baitHandler(metadata, response)
@@ -194,7 +185,7 @@ function makeAsyncTest(uri, headerValue, nextTask)
   var test = function()
   {
     var chan = make_channel(uri);
-    chan.asyncOpen(new ChannelListener(verifier), null);
+    chan.asyncOpen2(new ChannelListener(verifier));
   };
   return test;
 }
