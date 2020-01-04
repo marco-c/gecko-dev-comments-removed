@@ -21,8 +21,8 @@ class nsJARInputStream final : public nsIInputStream
 {
   public:
     nsJARInputStream() : 
-        mOutSize(0), mInCrc(0), mOutCrc(0), mNameLen(0),
-        mCurPos(0), mArrPos(0), mMode(MODE_NOTINITED)
+        mOutSize(0), mInCrc(0), mOutCrc(0), mCurPos(0),
+        mMode(MODE_NOTINITED)
     { 
       memset(&mZs, 0, sizeof(z_stream));
     }
@@ -47,7 +47,7 @@ class nsJARInputStream final : public nsIInputStream
     z_stream               mZs;         
 
     
-    RefPtr<nsJAR>          mJar;        
+    RefPtr<nsJAR>        mJar;        
     uint32_t               mNameLen;    
     nsCString              mBuffer;     
     uint32_t               mCurPos;     
