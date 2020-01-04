@@ -1145,12 +1145,6 @@ TabActor.prototype = {
     DevToolsUtils.executeSoon(() => {
       
       
-      if (docShell.isBeingDestroyed()) {
-        return;
-      }
-
-      
-      
       if (this._isRootDocShell(docShell)) {
         this._progressListener.watch(docShell);
       }
