@@ -105,9 +105,17 @@ private:
 bool
 AbstractThread::RequiresTailDispatch(AbstractThread* aThread) const
 {
+  MOZ_ASSERT(aThread);
   
   
   return SupportsTailDispatch() && aThread->SupportsTailDispatch();
+}
+
+bool
+AbstractThread::RequiresTailDispatchFromCurrentThread() const
+{
+  AbstractThread* current = GetCurrent();
+  return current && RequiresTailDispatch(current);
 }
 
 AbstractThread*

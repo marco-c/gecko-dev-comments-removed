@@ -72,6 +72,7 @@ public:
   
   
   bool RequiresTailDispatch(AbstractThread* aThread) const;
+  bool RequiresTailDispatchFromCurrentThread() const;
 
   virtual TaskQueue* AsTaskQueue() { MOZ_CRASH("Not a task queue!"); }
   virtual nsIThread* AsXPCOMThread() { MOZ_CRASH("Not an XPCOM thread!"); }
