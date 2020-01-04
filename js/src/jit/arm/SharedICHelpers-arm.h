@@ -199,7 +199,13 @@ inline void
 EmitIonEnterStubFrame(MacroAssembler& masm, Register scratch)
 {
     MOZ_ASSERT(ICTailCallReg == lr);
-    masm.Push(ICTailCallReg);
+
+    
+    
+    
+    
+    masm.push(ICTailCallReg);
+
     masm.Push(ICStubReg);
 }
 
@@ -234,7 +240,7 @@ inline void
 EmitIonLeaveStubFrame(MacroAssembler& masm)
 {
     masm.Pop(ICStubReg);
-    masm.Pop(ICTailCallReg);
+    masm.pop(ICTailCallReg); 
 }
 
 inline void
