@@ -533,6 +533,20 @@ var gErrorTests = [
   { name:"bogus.duh", type:"bogus/duh" }
 ];
 
+function IsWindowsVistaOrLater() {
+  var re = /Windows NT (\d+.\d)/;
+  var winver = manifestNavigator().userAgent.match(re);
+  return winver && winver.length == 2 && parseFloat(winver[1]) >= 6.0;
+}
+
+
+
+if (IsWindowsVistaOrLater() &&
+    manifestVideo().canPlayType('video/mp4; codecs="avc1.42E01E"')) {
+  gErrorTests = gErrorTests.concat({name: "red-46x48.mp4", type:"video/mp4"},
+                                   {name: "red-48x46.mp4", type:"video/mp4"});
+}
+
 
 var gSeekTests = [
   { name:"r11025_s16_c1.wav", type:"audio/x-wav", duration:1.0 },
@@ -561,12 +575,6 @@ var gFastSeekTests = [
   
   { name:"bug516323.indexed.ogv", type:"video/ogg", keyframes:[0, 0.46, 3.06] },
 ];
-
-function IsWindows8OrLater() {
-  var re = /Windows NT (\d.\d)/;
-  var winver = manifestNavigator().userAgent.match(re);
-  return winver && winver.length == 2 && parseFloat(winver[1]) >= 6.2;
-}
 
 
 
