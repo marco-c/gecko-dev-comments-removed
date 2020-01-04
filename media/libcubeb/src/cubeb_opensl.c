@@ -641,6 +641,9 @@ opensl_stream_init(cubeb * ctx, cubeb_stream ** stream, char const * stream_name
     return CUBEB_ERROR;
   }
 
+  
+  (*stm->play)->SetMarkerPosition(stm->play, (SLmillisecond)0);
+
   res = (*stm->play)->SetCallbackEventsMask(stm->play, (SLuint32)SL_PLAYEVENT_HEADATMARKER);
   if (res != SL_RESULT_SUCCESS) {
     opensl_stream_destroy(stm);
