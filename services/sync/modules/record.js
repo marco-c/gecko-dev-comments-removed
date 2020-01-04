@@ -312,7 +312,7 @@ CollectionKeyManager.prototype = {
     
     changed.sort();
     let last;
-    changed = [x for each (x in changed) if ((x != last) && (last = x))];
+    changed = changed.filter(x => (x != last) && (last = x));
     return {same: changed.length == 0,
             changed: changed};
   },

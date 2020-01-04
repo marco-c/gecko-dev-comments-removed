@@ -70,7 +70,8 @@ function HistoryStore(name, engine) {
 
   
   Svc.Obs.add("places-shutdown", function() {
-    for each ([query, stmt] in Iterator(this._stmts)) {
+    for (let query in this._stmts) {
+      let stmt = this._stmts;
       stmt.finalize();
     }
     this._stmts = {};

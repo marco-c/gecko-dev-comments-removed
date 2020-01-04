@@ -442,7 +442,7 @@ Sync11Service.prototype = {
 
     
     let oldPref = new Preferences(oldPrefBranch);
-    for each (let pref in oldPrefNames)
+    for (let pref of oldPrefNames)
       Svc.Prefs.set(pref, oldPref.get(pref));
 
     
@@ -901,7 +901,7 @@ Sync11Service.prototype = {
     
     if (this.clusterURL != "") {
       
-      for each (let engine in [this.clientsEngine].concat(this.engineManager.getAll())) {
+      for (let engine of [this.clientsEngine].concat(this.engineManager.getAll())) {
         try {
           engine.removeClientData();
         } catch(ex) {
@@ -1511,7 +1511,7 @@ Sync11Service.prototype = {
 
     
     let engines = [this.clientsEngine].concat(this.engineManager.getAll());
-    let collections = [engine.name for each (engine in engines)];
+    let collections = engines.map(engine => engine.name);
     
 
     
@@ -1593,7 +1593,7 @@ Sync11Service.prototype = {
     }
 
     
-    for each (let engine in engines) {
+    for (let engine of engines) {
       if (engine.canDecrypt()) {
         engine.wipeClient();
       }
@@ -1671,7 +1671,7 @@ Sync11Service.prototype = {
       }
 
       
-      for each (let engine in engines) {
+      for (let engine of engines) {
         engine.resetClient();
       }
     })();

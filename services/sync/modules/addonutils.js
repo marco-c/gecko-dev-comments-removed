@@ -248,7 +248,7 @@ AddonUtilsInternal.prototype = {
     }
 
     let ids = [];
-    for each (let addon in installs) {
+    for (let addon of installs) {
       ids.push(addon.id);
     }
 
@@ -298,7 +298,7 @@ AddonUtilsInternal.prototype = {
         
         
         
-        for each (let addon in addons) {
+        for (let addon of addons) {
           
           
           if (!addon.sourceURI) {
@@ -342,9 +342,9 @@ AddonUtilsInternal.prototype = {
 
         
         
-        for each (let addon in toInstall) {
+        for (let addon of toInstall) {
           let options = {};
-          for each (let install in installs) {
+          for (let install of installs) {
             if (install.id == addon.id) {
               options = install;
               break;
