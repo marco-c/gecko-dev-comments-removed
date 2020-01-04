@@ -100,6 +100,13 @@ public:
   already_AddRefed<gfx::SourceSurface>
   PrepareForDrawTarget(gfx::DrawTarget* aTarget);
 
+  
+
+
+
+  already_AddRefed<layers::Image>
+  TransferAsImage();
+
   ImageBitmapCloneData*
   ToCloneData();
 

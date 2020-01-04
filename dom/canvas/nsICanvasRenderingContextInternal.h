@@ -26,6 +26,7 @@ class nsDisplayListBuilder;
 namespace mozilla {
 namespace layers {
 class CanvasLayer;
+class Layer;
 class LayerManager;
 } 
 namespace gfx {
@@ -39,6 +40,7 @@ class nsICanvasRenderingContextInternal :
 {
 public:
   typedef mozilla::layers::CanvasLayer CanvasLayer;
+  typedef mozilla::layers::Layer Layer;
   typedef mozilla::layers::LayerManager LayerManager;
 
   NS_DECLARE_STATIC_IID_ACCESSOR(NS_ICANVASRENDERINGCONTEXTINTERNAL_IID)
@@ -129,9 +131,9 @@ public:
 
   
   
-  virtual already_AddRefed<CanvasLayer> GetCanvasLayer(nsDisplayListBuilder* builder,
-                                                       CanvasLayer *oldLayer,
-                                                       LayerManager *manager) = 0;
+  virtual already_AddRefed<Layer> GetCanvasLayer(nsDisplayListBuilder* builder,
+                                                 Layer *oldLayer,
+                                                 LayerManager *manager) = 0;
 
   
   
