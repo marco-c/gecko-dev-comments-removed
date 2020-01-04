@@ -1307,6 +1307,7 @@ private:
 class GlyphBufferAzure;
 struct TextRunDrawParams;
 struct FontDrawParams;
+struct EmphasisMarkDrawParams;
 
 class gfxFont {
 
@@ -1600,6 +1601,16 @@ public:
     void Draw(gfxTextRun *aTextRun, uint32_t aStart, uint32_t aEnd,
               gfxPoint *aPt, const TextRunDrawParams& aRunParams,
               uint16_t aOrientation);
+
+    
+
+
+
+
+
+    void DrawEmphasisMarks(gfxTextRun* aShapedText, gfxPoint* aPt,
+                           uint32_t aOffset, uint32_t aCount,
+                           const EmphasisMarkDrawParams& aParams);
 
     
 
@@ -2165,6 +2176,15 @@ struct FontDrawParams {
     bool                      isVerticalFont;
     bool                      haveSVGGlyphs;
     bool                      haveColorGlyphs;
+};
+
+struct EmphasisMarkDrawParams {
+    gfxContext* context;
+    gfxFont::Spacing* spacing;
+    gfxTextRun* mark;
+    gfxFloat advance;
+    gfxFloat direction;
+    bool isVertical;
 };
 
 #endif

@@ -256,6 +256,16 @@ public:
 
 
 
+    void DrawEmphasisMarks(gfxContext* aContext, gfxTextRun* aMark,
+                           gfxFloat aMarkAdvance, gfxPoint aPt,
+                           uint32_t aStart, uint32_t aLength,
+                           PropertyProvider* aProvider);
+
+    
+
+
+
+
     Metrics MeasureText(uint32_t aStart, uint32_t aLength,
                         gfxFont::BoundingBoxType aBoundingBoxType,
                         gfxContext *aRefContextForTightBoundingBox,
