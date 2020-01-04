@@ -3,9 +3,11 @@
 
 
 
-#include "mozilla/Preferences.h"
-#include "prprf.h"
+
 #include "gfxFeature.h"
+
+#include "mozilla/Preferences.h"
+#include "mozilla/Sprintf.h"
 #include "nsString.h"
 
 namespace mozilla {
@@ -264,7 +266,7 @@ FeatureState::Instance::Set(FeatureStatus aStatus, const char* aMessage )
 {
   mStatus = aStatus;
   if (aMessage) {
-    PR_snprintf(mMessage, sizeof(mMessage), "%s", aMessage);
+    SprintfLiteral(mMessage, "%s", aMessage);
   }
 }
 

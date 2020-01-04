@@ -10,6 +10,7 @@
 #include "mozilla/gfx/Logging.h"        
 #include "mozilla/layers/SharedBufferManagerChild.h"
 #include "mozilla/layers/SharedBufferManagerParent.h"
+#include "mozilla/Sprintf.h"            
 #include "mozilla/StaticPtr.h"          
 #include "mozilla/ReentrantMonitor.h"   
 #include "nsThreadUtils.h"              
@@ -145,7 +146,7 @@ SharedBufferManagerChild::StartUpOnThread(base::Thread* aThread)
   }
   sSharedBufferManagerChildSingleton = new SharedBufferManagerChild();
   char thrname[128];
-  base::snprintf(thrname, 128, "BufMgrParent#%d", base::Process::Current().pid());
+  SprintfLiteral(thrname, "BufMgrParent#%d", base::Process::Current().pid());
   sSharedBufferManagerParentSingleton = new SharedBufferManagerParent(
     base::Process::Current().pid(), new base::Thread(thrname));
   sSharedBufferManagerChildSingleton->ConnectAsync(sSharedBufferManagerParentSingleton);
