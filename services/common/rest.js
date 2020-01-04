@@ -2,8 +2,6 @@
 
 
 
-#ifndef MERGED_COMPARTMENT
-
 var {classes: Cc, interfaces: Ci, utils: Cu, results: Cr} = Components;
 
 this.EXPORTED_SYMBOLS = [
@@ -11,8 +9,6 @@ this.EXPORTED_SYMBOLS = [
   "RESTResponse",
   "TokenAuthenticatedRESTRequest",
 ];
-
-#endif
 
 Cu.import("resource://gre/modules/Preferences.jsm");
 Cu.import("resource://gre/modules/Services.jsm");

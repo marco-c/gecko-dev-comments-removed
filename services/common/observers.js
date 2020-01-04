@@ -2,16 +2,12 @@
 
 
 
-#ifndef MERGED_COMPARTMENT
-
 this.EXPORTED_SYMBOLS = ["Observers"];
 
 var Cc = Components.classes;
 var Ci = Components.interfaces;
 var Cr = Components.results;
 var Cu = Components.utils;
-
-#endif
 
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 

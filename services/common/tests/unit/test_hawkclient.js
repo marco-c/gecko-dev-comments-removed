@@ -44,7 +44,7 @@ add_task(function test_updateClockOffset() {
   do_check_true(Math.abs(client.localtimeOffsetMsec + HOUR_MS) <= SECOND_MS);
 });
 
-add_task(function test_authenticated_get_request() {
+add_task(function* test_authenticated_get_request() {
   let message = "{\"msg\": \"Great Success!\"}";
   let method = "GET";
 
@@ -66,7 +66,7 @@ add_task(function test_authenticated_get_request() {
   yield deferredStop(server);
 });
 
-function check_authenticated_request(method) {
+function* check_authenticated_request(method) {
   let server = httpd_setup({"/foo": (request, response) => {
       do_check_true(request.hasHeader("Authorization"));
 
@@ -98,7 +98,7 @@ add_task(function test_authenticated_patch_request() {
   check_authenticated_request("PATCH");
 });
 
-add_task(function test_credentials_optional() {
+add_task(function* test_credentials_optional() {
   let method = "GET";
   let server = httpd_setup({
     "/foo": (request, response) => {
@@ -118,7 +118,7 @@ add_task(function test_credentials_optional() {
   yield deferredStop(server);
 });
 
-add_task(function test_server_error() {
+add_task(function* test_server_error() {
   let message = "Ohai!";
   let method = "GET";
 
@@ -141,7 +141,7 @@ add_task(function test_server_error() {
   yield deferredStop(server);
 });
 
-add_task(function test_server_error_json() {
+add_task(function* test_server_error_json() {
   let message = JSON.stringify({error: "Cannot get ye flask."});
   let method = "GET";
 
@@ -163,7 +163,7 @@ add_task(function test_server_error_json() {
   yield deferredStop(server);
 });
 
-add_task(function test_offset_after_request() {
+add_task(function* test_offset_after_request() {
   let message = "Ohai!";
   let method = "GET";
 
@@ -186,7 +186,7 @@ add_task(function test_offset_after_request() {
   yield deferredStop(server);
 });
 
-add_task(function test_offset_in_hawk_header() {
+add_task(function* test_offset_in_hawk_header() {
   let message = "Ohai!";
   let method = "GET";
 
@@ -233,7 +233,7 @@ add_task(function test_offset_in_hawk_header() {
   yield deferredStop(server);
 });
 
-add_task(function test_2xx_success() {
+add_task(function* test_2xx_success() {
   
   let credentials = {
     id: "eyJleHBpcmVzIjogMTM2NTAxMDg5OC4x",
@@ -257,7 +257,7 @@ add_task(function test_2xx_success() {
   yield deferredStop(server);
 });
 
-add_task(function test_retry_request_on_fail() {
+add_task(function* test_retry_request_on_fail() {
   let attempts = 0;
   let credentials = {
     id: "eyJleHBpcmVzIjogMTM2NTAxMDg5OC4x",
@@ -312,7 +312,7 @@ add_task(function test_retry_request_on_fail() {
   yield deferredStop(server);
 });
 
-add_task(function test_multiple_401_retry_once() {
+add_task(function* test_multiple_401_retry_once() {
   
   
   let attempts = 0;
@@ -361,7 +361,7 @@ add_task(function test_multiple_401_retry_once() {
   yield deferredStop(server);
 });
 
-add_task(function test_500_no_retry() {
+add_task(function* test_500_no_retry() {
   
   
   let credentials = {
@@ -401,7 +401,7 @@ add_task(function test_500_no_retry() {
   yield deferredStop(server);
 });
 
-add_task(function test_401_then_500() {
+add_task(function* test_401_then_500() {
   
   
   
@@ -465,7 +465,7 @@ add_task(function test_401_then_500() {
   yield deferredStop(server);
 });
 
-add_task(function throw_if_not_json_body() {
+add_task(function* throw_if_not_json_body() {
   let client = new HawkClient("https://example.com");
   try {
     yield client.request("/bogus", "GET", {}, "I am not json");
