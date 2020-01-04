@@ -2,9 +2,13 @@
 
 
 
+
+
 "use strict";
 
 const l10n = require("gcli/l10n");
+loader.lazyRequireGetter(this, "gDevTools",
+                         "devtools/client/framework/devtools", true);
 
 
 
@@ -58,7 +62,6 @@ exports.items = [{
   to: "dom",
   exec: function(args, context) {
     let target = context.environment.target;
-    let {gDevTools} = require("devtools/client/framework/devtools");
     return gDevTools.showToolbox(target, "styleeditor").then(function(toolbox) {
       let styleEditor = toolbox.getCurrentPanel();
       styleEditor.selectStyleSheet(args.href, args.line);
