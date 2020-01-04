@@ -201,7 +201,7 @@ class Simulator {
     void execute();
 
     
-    int64_t call(uint8_t* entry, int argument_count, ...);
+    int32_t call(uint8_t* entry, int argument_count, ...);
 
     
     uintptr_t pushAddress(uintptr_t address);
