@@ -14,6 +14,14 @@
 namespace js {
 
 
+template <typename Key, typename Value>
+struct DefaultMapGCPolicy {
+    using KeyPolicy = DefaultGCPolicy<Key>;
+    using ValuePolicy = DefaultGCPolicy<Value>;
+};
+
+
+
 
 
 
@@ -30,8 +38,7 @@ template <typename Key,
           typename Value,
           typename HashPolicy = DefaultHasher<Key>,
           typename AllocPolicy = TempAllocPolicy,
-          typename KeyTraceFunc = DefaultTracer<Key>,
-          typename ValueTraceFunc = DefaultTracer<Value>>
+          typename GCPolicy = DefaultMapGCPolicy<Key, Value>>
 class TraceableHashMap : public HashMap<Key, Value, HashPolicy, AllocPolicy>,
                          public JS::Traceable
 {
@@ -45,9 +52,9 @@ class TraceableHashMap : public HashMap<Key, Value, HashPolicy, AllocPolicy>,
         if (!this->initialized())
             return;
         for (typename Base::Enum e(*this); !e.empty(); e.popFront()) {
-            ValueTraceFunc::trace(trc, &e.front().value(), "hashmap value");
+            GCPolicy::ValuePolicy::trace(trc, &e.front().value(), "hashmap value");
             Key key = e.front().key();
-            KeyTraceFunc::trace(trc, &key, "hashmap key");
+            GCPolicy::KeyPolicy::trace(trc, &key, "hashmap key");
             if (key != e.front().key())
                 e.rekeyFront(key);
         }
@@ -137,20 +144,20 @@ class MutableTraceableHashMapOperations
     }
 };
 
-template <typename A, typename B, typename C, typename D, typename E, typename F>
-class RootedBase<TraceableHashMap<A,B,C,D,E,F>>
-  : public MutableTraceableHashMapOperations<JS::Rooted<TraceableHashMap<A,B,C,D,E,F>>, A,B,C,D,E,F>
+template <typename A, typename B, typename C, typename D, typename E>
+class RootedBase<TraceableHashMap<A,B,C,D,E>>
+  : public MutableTraceableHashMapOperations<JS::Rooted<TraceableHashMap<A,B,C,D,E>>, A,B,C,D,E>
 {};
 
-template <typename A, typename B, typename C, typename D, typename E, typename F>
-class MutableHandleBase<TraceableHashMap<A,B,C,D,E,F>>
-  : public MutableTraceableHashMapOperations<JS::MutableHandle<TraceableHashMap<A,B,C,D,E,F>>,
-                                             A,B,C,D,E,F>
+template <typename A, typename B, typename C, typename D, typename E>
+class MutableHandleBase<TraceableHashMap<A,B,C,D,E>>
+  : public MutableTraceableHashMapOperations<JS::MutableHandle<TraceableHashMap<A,B,C,D,E>>,
+                                             A,B,C,D,E>
 {};
 
-template <typename A, typename B, typename C, typename D, typename E, typename F>
-class HandleBase<TraceableHashMap<A,B,C,D,E,F>>
-  : public TraceableHashMapOperations<JS::Handle<TraceableHashMap<A,B,C,D,E,F>>, A,B,C,D,E,F>
+template <typename A, typename B, typename C, typename D, typename E>
+class HandleBase<TraceableHashMap<A,B,C,D,E>>
+  : public TraceableHashMapOperations<JS::Handle<TraceableHashMap<A,B,C,D,E>>, A,B,C,D,E>
 {};
 
 
@@ -170,7 +177,7 @@ class HandleBase<TraceableHashMap<A,B,C,D,E,F>>
 template <typename T,
           typename HashPolicy = DefaultHasher<T>,
           typename AllocPolicy = TempAllocPolicy,
-          typename ElemTraceFunc = DefaultTracer<T>>
+          typename GCPolicy = DefaultGCPolicy<T>>
 class TraceableHashSet : public HashSet<T, HashPolicy, AllocPolicy>,
                          public JS::Traceable
 {
@@ -185,7 +192,7 @@ class TraceableHashSet : public HashSet<T, HashPolicy, AllocPolicy>,
             return;
         for (typename Base::Enum e(*this); !e.empty(); e.popFront()) {
             T elem = e.front();
-            ElemTraceFunc::trace(trc, &elem, "hashset element");
+            GCPolicy::trace(trc, &elem, "hashset element");
             if (elem != e.front())
                 e.rekeyFront(elem);
         }
@@ -273,41 +280,42 @@ class MutableTraceableHashSetOperations
     }
 };
 
-template <typename T, typename HP, typename AP, typename TF>
-class RootedBase<TraceableHashSet<T, HP, AP, TF>>
-  : public MutableTraceableHashSetOperations<JS::Rooted<TraceableHashSet<T, HP, AP, TF>>, T, HP, AP, TF>
+template <typename T, typename HP, typename AP, typename GP>
+class RootedBase<TraceableHashSet<T, HP, AP, GP>>
+  : public MutableTraceableHashSetOperations<JS::Rooted<TraceableHashSet<T, HP, AP, GP>>,
+                                             T, HP, AP, GP>
 {
-    using Set = TraceableHashSet<T, HP, AP, TF>;
+    using Set = TraceableHashSet<T, HP, AP, GP>;
 
-    friend class TraceableHashSetOperations<JS::Rooted<Set>, T, HP, AP, TF>;
+    friend class TraceableHashSetOperations<JS::Rooted<Set>, T, HP, AP, GP>;
     const Set& extract() const { return *static_cast<const JS::Rooted<Set>*>(this)->address(); }
 
-    friend class MutableTraceableHashSetOperations<JS::Rooted<Set>, T, HP, AP, TF>;
+    friend class MutableTraceableHashSetOperations<JS::Rooted<Set>, T, HP, AP, GP>;
     Set& extract() { return *static_cast<JS::Rooted<Set>*>(this)->address(); }
 };
 
-template <typename T, typename HP, typename AP, typename TF>
-class MutableHandleBase<TraceableHashSet<T, HP, AP, TF>>
-  : public MutableTraceableHashSetOperations<JS::MutableHandle<TraceableHashSet<T, HP, AP, TF>>,
-                                             T, HP, AP, TF>
+template <typename T, typename HP, typename AP, typename GP>
+class MutableHandleBase<TraceableHashSet<T, HP, AP, GP>>
+  : public MutableTraceableHashSetOperations<JS::MutableHandle<TraceableHashSet<T, HP, AP, GP>>,
+                                             T, HP, AP, GP>
 {
-    using Set = TraceableHashSet<T, HP, AP, TF>;
+    using Set = TraceableHashSet<T, HP, AP, GP>;
 
-    friend class TraceableHashSetOperations<JS::MutableHandle<Set>, T, HP, AP, TF>;
+    friend class TraceableHashSetOperations<JS::MutableHandle<Set>, T, HP, AP, GP>;
     const Set& extract() const {
         return *static_cast<const JS::MutableHandle<Set>*>(this)->address();
     }
 
-    friend class MutableTraceableHashSetOperations<JS::MutableHandle<Set>, T, HP, AP, TF>;
+    friend class MutableTraceableHashSetOperations<JS::MutableHandle<Set>, T, HP, AP, GP>;
     Set& extract() { return *static_cast<JS::MutableHandle<Set>*>(this)->address(); }
 };
 
-template <typename T, typename HP, typename AP, typename TF>
-class HandleBase<TraceableHashSet<T, HP, AP, TF>>
-  : public TraceableHashSetOperations<JS::Handle<TraceableHashSet<T, HP, AP, TF>>, T, HP, AP, TF>
+template <typename T, typename HP, typename AP, typename GP>
+class HandleBase<TraceableHashSet<T, HP, AP, GP>>
+  : public TraceableHashSetOperations<JS::Handle<TraceableHashSet<T, HP, AP, GP>>, T, HP, AP, GP>
 {
-    using Set = TraceableHashSet<T, HP, AP, TF>;
-    friend class TraceableHashSetOperations<JS::Handle<Set>, T, HP, AP, TF>;
+    using Set = TraceableHashSet<T, HP, AP, GP>;
+    friend class TraceableHashSetOperations<JS::Handle<Set>, T, HP, AP, GP>;
     const Set& extract() const { return *static_cast<const JS::Handle<Set>*>(this)->address(); }
 };
 

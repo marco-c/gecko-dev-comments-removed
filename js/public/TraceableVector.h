@@ -28,15 +28,16 @@ namespace js {
 
 
 
+
 template <typename T,
           size_t MinInlineCapacity = 0,
           typename AllocPolicy = TempAllocPolicy,
-          typename TraceFunc = DefaultTracer<T>>
+          typename GCPolicy = DefaultGCPolicy<T>>
 class TraceableVector
   : public mozilla::VectorBase<T,
                                MinInlineCapacity,
                                AllocPolicy,
-                               TraceableVector<T, MinInlineCapacity, AllocPolicy, TraceFunc>>,
+                               TraceableVector<T, MinInlineCapacity, AllocPolicy, GCPolicy>>,
     public JS::Traceable
 {
     using Base = mozilla::VectorBase<T, MinInlineCapacity, AllocPolicy, TraceableVector>;
@@ -51,14 +52,14 @@ class TraceableVector
     static void trace(TraceableVector* vec, JSTracer* trc) { vec->trace(trc); }
     void trace(JSTracer* trc) {
         for (size_t i = 0; i < this->length(); ++i)
-            TraceFunc::trace(trc, &Base::operator[](i), "vector element");
+            GCPolicy::trace(trc, &Base::operator[](i), "vector element");
     }
 };
 
-template <typename Outer, typename T, size_t Capacity, typename AllocPolicy, typename TraceFunc>
+template <typename Outer, typename T, size_t Capacity, typename AllocPolicy, typename GCPolicy>
 class TraceableVectorOperations
 {
-    using Vec = TraceableVector<T, Capacity, AllocPolicy, TraceFunc>;
+    using Vec = TraceableVector<T, Capacity, AllocPolicy, GCPolicy>;
     const Vec& vec() const { return static_cast<const Outer*>(this)->get(); }
 
   public:
@@ -76,11 +77,11 @@ class TraceableVectorOperations
     }
 };
 
-template <typename Outer, typename T, size_t Capacity, typename AllocPolicy, typename TraceFunc>
+template <typename Outer, typename T, size_t Capacity, typename AllocPolicy, typename GCPolicy>
 class MutableTraceableVectorOperations
-  : public TraceableVectorOperations<Outer, T, Capacity, AllocPolicy, TraceFunc>
+  : public TraceableVectorOperations<Outer, T, Capacity, AllocPolicy, GCPolicy>
 {
-    using Vec = TraceableVector<T, Capacity, AllocPolicy, TraceFunc>;
+    using Vec = TraceableVector<T, Capacity, AllocPolicy, GCPolicy>;
     const Vec& vec() const { return static_cast<const Outer*>(this)->get(); }
     Vec& vec() { return static_cast<Outer*>(this)->get(); }
 
@@ -141,26 +142,26 @@ class MutableTraceableVectorOperations
     void erase(T* aBegin, T* aEnd) { vec().erase(aBegin, aEnd); }
 };
 
-template <typename T, size_t N, typename AP, typename TP>
-class RootedBase<TraceableVector<T,N,AP,TP>>
-  : public MutableTraceableVectorOperations<JS::Rooted<TraceableVector<T,N,AP,TP>>, T,N,AP,TP>
+template <typename T, size_t N, typename AP, typename GP>
+class RootedBase<TraceableVector<T,N,AP,GP>>
+  : public MutableTraceableVectorOperations<JS::Rooted<TraceableVector<T,N,AP,GP>>, T,N,AP,GP>
 {};
 
-template <typename T, size_t N, typename AP, typename TP>
-class MutableHandleBase<TraceableVector<T,N,AP,TP>>
-  : public MutableTraceableVectorOperations<JS::MutableHandle<TraceableVector<T,N,AP,TP>>,
-                                            T,N,AP,TP>
+template <typename T, size_t N, typename AP, typename GP>
+class MutableHandleBase<TraceableVector<T,N,AP,GP>>
+  : public MutableTraceableVectorOperations<JS::MutableHandle<TraceableVector<T,N,AP,GP>>,
+                                            T,N,AP,GP>
 {};
 
-template <typename T, size_t N, typename AP, typename TP>
-class HandleBase<TraceableVector<T,N,AP,TP>>
-  : public TraceableVectorOperations<JS::Handle<TraceableVector<T,N,AP,TP>>, T,N,AP,TP>
+template <typename T, size_t N, typename AP, typename GP>
+class HandleBase<TraceableVector<T,N,AP,GP>>
+  : public TraceableVectorOperations<JS::Handle<TraceableVector<T,N,AP,GP>>, T,N,AP,GP>
 {};
 
-template <typename T, size_t N, typename AP, typename TP>
-class PersistentRootedBase<TraceableVector<T,N,AP,TP>>
-  : public MutableTraceableVectorOperations<JS::PersistentRooted<TraceableVector<T,N,AP,TP>>,
-                                            T,N,AP,TP>
+template <typename T, size_t N, typename AP, typename GP>
+class PersistentRootedBase<TraceableVector<T,N,AP,GP>>
+  : public MutableTraceableVectorOperations<JS::PersistentRooted<TraceableVector<T,N,AP,GP>>,
+                                            T,N,AP,GP>
 {};
 
 } 

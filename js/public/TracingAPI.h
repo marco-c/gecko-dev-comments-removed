@@ -370,12 +370,15 @@ JS_GetTraceThingInfo(char* buf, size_t bufsize, JSTracer* trc,
 namespace js {
 
 
-template <typename> struct DefaultTracer;
+template <typename>
+struct DefaultGCPolicy;
 
 
 template <typename T>
-struct DefaultTracer {
+struct StructGCPolicy {
     static void trace(JSTracer* trc, T* t, const char* name) {
+        
+        
         
         
         
@@ -383,17 +386,27 @@ struct DefaultTracer {
     }
 };
 
+
+template <typename T>
+struct IgnoreGCPolicy {
+    static void trace(JSTracer* trc, uint32_t* id, const char* name) {}
+};
+
+
+
+
+template <typename T>
+struct DefaultGCPolicy : public StructGCPolicy<T> {};
+
 template <>
-struct DefaultTracer<jsid>
+struct DefaultGCPolicy<jsid>
 {
     static void trace(JSTracer* trc, jsid* id, const char* name) {
         JS_CallUnbarrieredIdTracer(trc, id, name);
     }
 };
 
-template <> struct DefaultTracer<uint32_t> {
-    static void trace(JSTracer* trc, uint32_t* id, const char* name) {}
-};
+template <> struct DefaultGCPolicy<uint32_t> : public IgnoreGCPolicy<uint32_t> {};
 
 } 
 

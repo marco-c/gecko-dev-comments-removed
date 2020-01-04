@@ -9,10 +9,11 @@
 
 #include "ds/Fifo.h"
 #include "js/RootingAPI.h"
+#include "js/TracingAPI.h"
 
 namespace js {
 
-template <typename> struct DefaultTracer;
+
 
 
 
@@ -30,7 +31,7 @@ template <typename> struct DefaultTracer;
 template <typename T,
           size_t MinInlineCapacity = 0,
           typename AllocPolicy = TempAllocPolicy,
-          typename TraceFunc = DefaultTracer<T>>
+          typename GCPolicy = DefaultGCPolicy<T>>
 class TraceableFifo
   : public js::Fifo<T, MinInlineCapacity, AllocPolicy>,
     public JS::Traceable
@@ -48,16 +49,16 @@ class TraceableFifo
 
     static void trace(TraceableFifo* tf, JSTracer* trc) {
         for (size_t i = 0; i < tf->front_.length(); ++i)
-            TraceFunc::trace(trc, &tf->front_[i], "fifo element");
+            GCPolicy::trace(trc, &tf->front_[i], "fifo element");
         for (size_t i = 0; i < tf->rear_.length(); ++i)
-            TraceFunc::trace(trc, &tf->rear_[i], "fifo element");
+            GCPolicy::trace(trc, &tf->rear_[i], "fifo element");
     }
 };
 
-template <typename Outer, typename T, size_t Capacity, typename AllocPolicy, typename TraceFunc>
+template <typename Outer, typename T, size_t Capacity, typename AllocPolicy, typename GCPolicy>
 class TraceableFifoOperations
 {
-    using TF = TraceableFifo<T, Capacity, AllocPolicy, TraceFunc>;
+    using TF = TraceableFifo<T, Capacity, AllocPolicy, GCPolicy>;
     const TF& fifo() const { return static_cast<const Outer*>(this)->extract(); }
 
   public:
@@ -66,11 +67,11 @@ class TraceableFifoOperations
     const T& front() const { return fifo().front(); }
 };
 
-template <typename Outer, typename T, size_t Capacity, typename AllocPolicy, typename TraceFunc>
+template <typename Outer, typename T, size_t Capacity, typename AllocPolicy, typename GCPolicy>
 class MutableTraceableFifoOperations
-  : public TraceableFifoOperations<Outer, T, Capacity, AllocPolicy, TraceFunc>
+  : public TraceableFifoOperations<Outer, T, Capacity, AllocPolicy, GCPolicy>
 {
-    using TF = TraceableFifo<T, Capacity, AllocPolicy, TraceFunc>;
+    using TF = TraceableFifo<T, Capacity, AllocPolicy, GCPolicy>;
     TF& fifo() { return static_cast<Outer*>(this)->extract(); }
 
   public:
