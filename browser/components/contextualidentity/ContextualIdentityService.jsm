@@ -79,6 +79,12 @@ this.ContextualIdentityService = {
 
   telemetry(userContextId) {
     let identity = this.getIdentityFromId(userContextId);
+
+    
+    if (!identity) {
+      return;
+    }
+
     if (!identity.alreadyOpened) {
       identity.alreadyOpened = true;
       Services.telemetry.getHistogramById("UNIQUE_CONTAINERS_OPENED").add(1);
