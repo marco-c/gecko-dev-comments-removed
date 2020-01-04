@@ -350,8 +350,19 @@ public:
   
   
   
+  
   void Remove(const void* aKey);
 
+  
+  
+  
+  
+  
+  
+  void RemoveEntry(PLDHashEntryHdr* aEntry);
+
+  
+  
   
   
   

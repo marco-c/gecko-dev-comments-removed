@@ -662,16 +662,20 @@ PLDHashTable::Remove(const void* aKey)
                                                           ComputeKeyHash(aKey))
                          : nullptr;
   if (entry) {
-    
     RawRemove(entry);
-
-    
-    uint32_t capacity = Capacity();
-    if (capacity > kMinCapacity &&
-        mEntryCount <= MinLoad(capacity)) {
-      (void) ChangeTable(-1);
-    }
+    ShrinkIfAppropriate();
   }
+}
+
+void
+PLDHashTable::RemoveEntry(PLDHashEntryHdr* aEntry)
+{
+#ifdef DEBUG
+  AutoWriteOp op(mChecker);
+#endif
+
+  RawRemove(aEntry);
+  ShrinkIfAppropriate();
 }
 
 PLDHashEntryHdr* PL_DHASH_FASTCALL
@@ -709,7 +713,7 @@ PLDHashTable::RawRemove(PLDHashEntryHdr* aEntry)
 
   MOZ_ASSERT(mEntryStore.Get());
 
-  NS_ASSERTION(EntryIsLive(aEntry), "EntryIsLive(aEntry)");
+  MOZ_ASSERT(EntryIsLive(aEntry), "EntryIsLive(aEntry)");
 
   
   PLDHashNumber keyHash = aEntry->mKeyHash;
