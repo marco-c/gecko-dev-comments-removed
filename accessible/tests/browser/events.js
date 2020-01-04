@@ -48,7 +48,11 @@ function eventToString(event) {
 
 
 
-function waitForEvent(eventType, id) {
+
+
+
+
+function waitForEvent(eventType, expectedIdOrAcc) {
   return new Promise(resolve => {
     let eventObserver = {
       observe(subject, topic, data) {
@@ -59,11 +63,23 @@ function waitForEvent(eventType, id) {
         let event = subject.QueryInterface(nsIAccessibleEvent);
         Logger.log(eventToString(event));
 
-        let domID = getAccessibleDOMNodeID(event.accessible);
+        
+        if (event.eventType !== eventType) {
+          return;
+        }
+
+        let acc = event.accessible;
+        let id = getAccessibleDOMNodeID(acc);
+        let isID = typeof expectedIdOrAcc === 'string';
+        let actualIdOrAcc = isID ? id : acc;
         
         
-        if (domID === id && event.eventType === eventType) {
-          Logger.log(`Correct event DOMNode id: ${id}`);
+        if (actualIdOrAcc === expectedIdOrAcc) {
+          if (isID) {
+            Logger.log(`Correct event DOMNode id: ${id}`);
+          } else {
+            Logger.log(`Correct event accessible: ${prettyName(acc)}`);
+          }
           Logger.log(`Correct event type: ${eventTypeToString(eventType)}`);
           ok(event.accessibleDocument instanceof nsIAccessibleDocument,
             'Accessible document present.');
