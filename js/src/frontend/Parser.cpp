@@ -1832,7 +1832,6 @@ bool
 Parser<FullParseHandler>::leaveFunction(ParseNode* fn, ParseContext<FullParseHandler>* outerpc,
                                         FunctionSyntaxKind kind)
 {
-    bool bodyLevel = outerpc->atBodyLevel();
     FunctionBox* funbox = fn->pn_funbox;
     MOZ_ASSERT(funbox == pc->sc->asFunctionBox());
 
@@ -1928,7 +1927,7 @@ Parser<FullParseHandler>::leaveFunction(ParseNode* fn, ParseContext<FullParseHan
                     
                     RootedAtom name(context, atom);
                     bool markUsesAsLexical = outer_dn->isLexical() &&
-                                             (bodyLevel ||
+                                             (kind == Statement ||
                                               IsNonDominatingInScopedSwitch(outerpc, name, outer_dn));
                     AssociateUsesWithOuterDefinition(pnu, dn, outer_dn, markUsesAsLexical);
                 }
