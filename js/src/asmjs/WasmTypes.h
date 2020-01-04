@@ -39,6 +39,7 @@ class PropertyName;
 
 namespace wasm {
 
+using mozilla::DebugOnly;
 using mozilla::EnumeratedArray;
 using mozilla::Maybe;
 using mozilla::Move;
@@ -47,6 +48,24 @@ using mozilla::MallocSizeOf;
 typedef Vector<uint32_t, 0, SystemAllocPolicy> Uint32Vector;
 
 
+
+
+
+
+
+const ExprType AnyType = ExprType::Limit;
+
+inline ExprType
+Unify(ExprType a, ExprType b)
+{
+    if (a == AnyType)
+        return b;
+    if (b == AnyType)
+        return a;
+    if (a == b)
+        return a;
+    return ExprType::Void;
+}
 
 static inline bool
 IsVoid(ExprType et)
@@ -71,6 +90,50 @@ static inline bool
 IsSimdType(ValType vt)
 {
     return vt == ValType::I32x4 || vt == ValType::F32x4 || vt == ValType::B32x4;
+}
+
+static inline uint32_t
+NumSimdElements(ValType vt)
+{
+    MOZ_ASSERT(IsSimdType(vt));
+    switch (vt) {
+      case ValType::I32x4:
+      case ValType::F32x4:
+      case ValType::B32x4:
+        return 4;
+     default:
+        MOZ_CRASH("Unhandled SIMD type");
+    }
+}
+
+static inline ValType
+SimdElementType(ValType vt)
+{
+    MOZ_ASSERT(IsSimdType(vt));
+    switch (vt) {
+      case ValType::I32x4:
+        return ValType::I32;
+      case ValType::F32x4:
+        return ValType::F32;
+      case ValType::B32x4:
+        return ValType::I32;
+     default:
+        MOZ_CRASH("Unhandled SIMD type");
+    }
+}
+
+static inline ValType
+SimdBoolType(ValType vt)
+{
+    MOZ_ASSERT(IsSimdType(vt));
+    switch (vt) {
+      case ValType::I32x4:
+      case ValType::F32x4:
+      case ValType::B32x4:
+        return ValType::B32x4;
+     default:
+        MOZ_CRASH("Unhandled SIMD type");
+    }
 }
 
 static inline bool
@@ -232,6 +295,21 @@ struct SigHashPolicy
     static HashNumber hash(Lookup sig) { return sig.hash(); }
     static bool match(const Sig* lhs, Lookup rhs) { return *lhs == rhs; }
 };
+
+
+
+
+struct GlobalDesc
+{
+    ValType type;
+    unsigned globalDataOffset;
+    bool isConst;
+    GlobalDesc(ValType type, unsigned offset, bool isConst)
+      : type(type), globalDataOffset(offset), isConst(isConst)
+    {}
+};
+
+typedef Vector<GlobalDesc, 0, SystemAllocPolicy> GlobalDescVector;
 
 
 

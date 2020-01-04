@@ -7,7 +7,7 @@ const magic2 = 0x73;
 const magic3 = 0x6d;  
 
 
-const ver0 = 0x0a;
+const ver0 = 0x0b;
 const ver1 = 0x00;
 const ver2 = 0x00;
 const ver3 = 0x00;
@@ -32,8 +32,8 @@ const I64Code = 2;
 const F32Code = 3;
 const F64Code = 4;
 
-const NopCode = 0x00;
-const BlockCode = 0x01;
+const Block = 0x01;
+const End = 0x0f;
 
 function toU8(array) {
     for (let b of array)
@@ -210,13 +210,7 @@ wasmEval(moduleWithSections([sigSection([v2vSig]), declSection([0,0,0]), tableSe
 wasmEval(moduleWithSections([sigSection([v2vSig,i2vSig]), declSection([0,0,1]), tableSection([0,1,2]), bodySection([v2vBody, v2vBody, v2vBody])]));
 
 
-
-try {
-    var manyBlocks = [];
-    for (var i = 0; i < 20000; i++)
-        manyBlocks.push(BlockCode, 1);
-    manyBlocks.push(NopCode);
-    wasmEval(moduleWithSections([sigSection([v2vSig]), declSection([0]), bodySection([funcBody({locals:[], body:manyBlocks})])]));
-} catch (e) {
-    assertEq(String(e).indexOf("too much recursion") == -1, false);
-}
+var manyBlocks = [];
+for (var i = 0; i < 20000; i++)
+    manyBlocks.push(Block, End);
+wasmEval(moduleWithSections([sigSection([v2vSig]), declSection([0]), bodySection([funcBody({locals:[], body:manyBlocks})])]));

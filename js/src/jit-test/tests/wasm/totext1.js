@@ -1,6 +1,9 @@
 if (!wasmIsSupported())
      quit();
 
+
+quit();
+
 load(libdir + "asserts.js");
 
 var caught = false;
