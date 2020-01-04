@@ -4246,6 +4246,33 @@ this.XPIProvider = {
 
 
 
+  isBlockingE10s: function(aAddon) {
+    
+    if (aAddon.type != "extension")
+      return false;
+
+    
+    let hotfixID = Preferences.get(PREF_EM_HOTFIX_ID, undefined);
+    if (hotfixID && hotfixID == aAddon.id)
+      return false;
+
+    
+    let locName = aAddon._installLocation ? aAddon._installLocation.name
+                                          : undefined;
+    if (locName == KEY_APP_SYSTEM_DEFAULTS ||
+        locName == KEY_APP_SYSTEM_ADDONS)
+      return false;
+
+    return true;
+  },
+
+  
+
+
+
+
+
+
 
 
   e10sBlocksEnabling: function(aAddon) {
@@ -4257,21 +4284,7 @@ this.XPIProvider = {
     if (!Services.appinfo.browserTabsRemoteAutostart)
       return false;
 
-    
-    if (aAddon.type != "extension")
-      return false;
-
-    
-    let hotfixID = Preferences.get(PREF_EM_HOTFIX_ID, undefined);
-    if (hotfixID && hotfixID == aAddon.id)
-      return false;
-
-    
-    if (aAddon._installLocation.name == KEY_APP_SYSTEM_DEFAULTS ||
-        aAddon._installLocation.name == KEY_APP_SYSTEM_ADDONS)
-      return false;
-
-    return true;
+    return this.isBlockingE10s(aAddon);
   },
 
   
