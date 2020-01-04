@@ -36,10 +36,9 @@ enum class CSSPseudoClassType : CSSPseudoClassTypeBase
 
 class nsCSSPseudoClasses
 {
-public:
-  
   typedef mozilla::CSSPseudoClassType Type;
 
+public:
   static void AddRefAtoms();
 
   static Type GetPseudoType(nsIAtom* aAtom);
