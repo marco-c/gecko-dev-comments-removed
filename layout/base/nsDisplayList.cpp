@@ -5060,7 +5060,6 @@ void
 nsDisplayTransform::SetReferenceFrameToAncestor(nsDisplayListBuilder* aBuilder)
 {
   mAnimatedGeometryRootForChildren = mAnimatedGeometryRoot;
-  mAnimatedGeometryRootForScrollMetadata = mAnimatedGeometryRoot;
   if (mFrame == aBuilder->RootReferenceFrame()) {
     return;
   }
@@ -5082,15 +5081,7 @@ nsDisplayTransform::SetReferenceFrameToAncestor(nsDisplayListBuilder* aBuilder)
     
     mAnimatedGeometryRoot = mAnimatedGeometryRootForChildren;
   } else if (mAnimatedGeometryRoot->mParentAGR) {
-    mAnimatedGeometryRootForScrollMetadata = mAnimatedGeometryRoot->mParentAGR;
-    if (!MayBeAnimated(aBuilder)) {
-      
-      
-      
-      
-      
-      mAnimatedGeometryRoot = mAnimatedGeometryRoot->mParentAGR;
-    }
+    mAnimatedGeometryRoot = mAnimatedGeometryRoot->mParentAGR;
   }
   mVisibleRect = aBuilder->GetDirtyRect() + mToReferenceFrame;
 }
@@ -5781,34 +5772,14 @@ already_AddRefed<Layer> nsDisplayTransform::BuildLayer(nsDisplayListBuilder *aBu
                                                            this, mFrame,
                                                            eCSSProperty_transform);
   if (ShouldPrerender(aBuilder)) {
-    if (MayBeAnimated(aBuilder)) {
-      
-      
-      
-      container->SetUserData(nsIFrame::LayerIsPrerenderedDataKey(),
-                             nullptr);
-    }
+    container->SetUserData(nsIFrame::LayerIsPrerenderedDataKey(),
+                           nullptr);
     container->SetContentFlags(container->GetContentFlags() | Layer::CONTENT_MAY_CHANGE_TRANSFORM);
   } else {
     container->RemoveUserData(nsIFrame::LayerIsPrerenderedDataKey());
     container->SetContentFlags(container->GetContentFlags() & ~Layer::CONTENT_MAY_CHANGE_TRANSFORM);
   }
   return container.forget();
-}
-
-bool
-nsDisplayTransform::MayBeAnimated(nsDisplayListBuilder* aBuilder)
-{
-  
-  
-  if (ActiveLayerTracker::IsStyleAnimated(aBuilder, mFrame, eCSSProperty_transform) &&
-      !IsItemTooSmallForActiveLayer(this))
-    return true;
-  if (EffectCompositor::HasAnimationsForCompositor(mFrame,
-                                                   eCSSProperty_transform)) {
-    return true;
-  }
-  return false;
 }
 
 nsDisplayItem::LayerState
@@ -5822,7 +5793,13 @@ nsDisplayTransform::GetLayerState(nsDisplayListBuilder* aBuilder,
       mIsTransformSeparator) {
     return LAYER_ACTIVE_FORCE;
   }
-  if (MayBeAnimated(aBuilder)) {
+  
+  
+  if (ActiveLayerTracker::IsStyleAnimated(aBuilder, mFrame, eCSSProperty_transform) &&
+      !IsItemTooSmallForActiveLayer(this))
+    return LAYER_ACTIVE;
+  if (EffectCompositor::HasAnimationsForCompositor(mFrame,
+                                                   eCSSProperty_transform)) {
     return LAYER_ACTIVE;
   }
 
