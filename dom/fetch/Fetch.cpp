@@ -335,7 +335,7 @@ public:
     return true;
   }
 
-  NS_IMETHOD
+  nsresult
   Cancel() override
   {
     
@@ -403,9 +403,8 @@ WorkerFetchResolver::OnResponseEnd()
     
     
     
-    if (!cr->Dispatch()) {
-      NS_WARNING("Failed to dispatch WorkerFetchResponseEndControlRunnable");
-    }
+    NS_WARN_IF_FALSE(cr->Dispatch(),
+                     "Failed to dispatch WorkerFetchResponseEndControlRunnable");
   }
 }
 
