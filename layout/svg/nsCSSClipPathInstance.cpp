@@ -23,11 +23,11 @@ nsCSSClipPathInstance::ApplyBasicShapeClip(gfxContext& aContext,
                                            nsIFrame* aFrame)
 {
   auto& clipPathStyle = aFrame->StyleSVGReset()->mClipPath;
-  int32_t type = clipPathStyle.GetType();
-  MOZ_ASSERT(type != NS_STYLE_CLIP_PATH_NONE, "unexpected none value");
+  StyleClipPathType type = clipPathStyle.GetType();
+  MOZ_ASSERT(type != StyleClipPathType::None_, "unexpected none value");
   
   
-  if (type == NS_STYLE_CLIP_PATH_URL) {
+  if (type == StyleClipPathType::URL) {
     return;
   }
 
@@ -44,11 +44,11 @@ nsCSSClipPathInstance::HitTestBasicShapeClip(nsIFrame* aFrame,
                                              const gfxPoint& aPoint)
 {
   auto& clipPathStyle = aFrame->StyleSVGReset()->mClipPath;
-  int32_t type = clipPathStyle.GetType();
-  MOZ_ASSERT(type != NS_STYLE_CLIP_PATH_NONE, "unexpected none value");
+  StyleClipPathType type = clipPathStyle.GetType();
+  MOZ_ASSERT(type != StyleClipPathType::None_, "unexpected none value");
   
   
-  if (type == NS_STYLE_CLIP_PATH_URL) {
+  if (type == StyleClipPathType::URL) {
     return false;
   }
 
@@ -81,7 +81,7 @@ nsCSSClipPathInstance::CreateClipPath(DrawTarget* aDrawTarget)
       r = mTargetFrame->GetRectRelativeToSelf();
   }
 
-  if (mClipPathStyle.GetType() != NS_STYLE_CLIP_PATH_SHAPE) {
+  if (mClipPathStyle.GetType() != StyleClipPathType::Shape) {
     
     
     RefPtr<PathBuilder> builder = aDrawTarget->CreatePathBuilder();
