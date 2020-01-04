@@ -130,6 +130,8 @@ private:
   HTMLLabelIterator(const HTMLLabelIterator&);
   HTMLLabelIterator& operator = (const HTMLLabelIterator&);
 
+  bool IsLabel(Accessible* aLabel);
+
   RelatedAccIterator mRelIter;
   
   
