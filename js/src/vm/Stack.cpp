@@ -1396,6 +1396,9 @@ ActivationEntryMonitor::ActivationEntryMonitor(JSContext* cx, InterpreterFrame* 
   : ActivationEntryMonitor(cx)
 {
     if (entryMonitor_) {
+        
+        
+        gc::AutoSuppressGC suppressGC(cx);
         RootedValue stack(cx, asyncStack(cx));
         RootedString asyncCause(cx, cx->runtime()->asyncCauseForNewActivations);
         if (entryFrame->isFunctionFrame())
@@ -1409,6 +1412,9 @@ ActivationEntryMonitor::ActivationEntryMonitor(JSContext* cx, jit::CalleeToken e
   : ActivationEntryMonitor(cx)
 {
     if (entryMonitor_) {
+        
+        
+        gc::AutoSuppressGC suppressGC(cx);
         RootedValue stack(cx, asyncStack(cx));
         RootedString asyncCause(cx, cx->runtime()->asyncCauseForNewActivations);
         if (jit::CalleeTokenIsFunction(entryToken))

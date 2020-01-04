@@ -106,6 +106,15 @@ EnterBaseline(JSContext* cx, EnterJitData& data)
         JS_CHECK_RECURSION(cx, return JitExec_Aborted);
     }
 
+#ifdef DEBUG
+    
+    
+    
+    
+    mozilla::Maybe<JS::AutoAssertOnGC> nogc;
+    nogc.emplace(cx->runtime());
+#endif
+
     MOZ_ASSERT(jit::IsBaselineEnabled(cx));
     MOZ_ASSERT_IF(data.osrFrame, CheckFrame(data.osrFrame));
 
@@ -130,6 +139,9 @@ EnterBaseline(JSContext* cx, EnterJitData& data)
         if (data.osrFrame)
             data.osrFrame->setRunningInJit();
 
+#ifdef DEBUG
+        nogc.reset();
+#endif
         
         CALL_GENERATED_CODE(enter, data.jitcode, data.maxArgc, data.maxArgv, data.osrFrame, data.calleeToken,
                             data.scopeChain.get(), data.osrNumStackValues, data.result.address());
