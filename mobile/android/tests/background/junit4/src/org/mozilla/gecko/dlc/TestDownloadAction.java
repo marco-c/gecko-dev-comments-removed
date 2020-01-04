@@ -492,6 +492,56 @@ public class TestDownloadAction {
         verify(catalog, times(11)).rememberFailure(eq(content), anyInt());
     }
 
+    
+
+
+
+
+
+
+    @Test
+    public void testIsHyphenationDictionary() throws Exception {
+        DownloadContent hyphenationContent = createHyphenationDictionary();
+        Assert.assertTrue(hyphenationContent.isHyphenationDictionary());
+        DownloadContent fontContent = createFont();
+        Assert.assertFalse(fontContent.isHyphenationDictionary());
+        DownloadContent unknownContent = createUnknownContent(1024L);
+        Assert.assertFalse(unknownContent.isHyphenationDictionary());
+    }
+
+    
+
+
+
+
+
+
+    @Test
+    public void testIsKnownContent() throws Exception {
+        DownloadContent fontContent = createFontWithSize(1024L);
+        DownloadContent hyphenationContent = createHyphenationDictionaryWithSize(1024L);
+        DownloadContent unknownContent = createUnknownContent(1024L);
+        DownloadContent contentWithUnknownType = createContentWithoutType(1024L);
+
+        Assert.assertTrue(fontContent.isKnownContent());
+        Assert.assertTrue(hyphenationContent.isKnownContent());
+        Assert.assertFalse(unknownContent.isKnownContent());
+        Assert.assertFalse(contentWithUnknownType.isKnownContent());
+    }
+
+    private DownloadContent createUnknownContent(long size) {
+        return new DownloadContentBuilder()
+                .setSize(size)
+                .build();
+    }
+
+    private DownloadContent createContentWithoutType(long size) {
+        return new DownloadContentBuilder()
+                .setKind(DownloadContent.KIND_HYPHENATION_DICTIONARY)
+                .setSize(size)
+                .build();
+    }
+
     private DownloadContent createFont() {
         return createFontWithSize(102400L);
     }
@@ -499,6 +549,18 @@ public class TestDownloadAction {
     private DownloadContent createFontWithSize(long size) {
         return new DownloadContentBuilder()
                 .setKind(DownloadContent.KIND_FONT)
+                .setType(DownloadContent.TYPE_ASSET_ARCHIVE)
+                .setSize(size)
+                .build();
+    }
+
+    private DownloadContent createHyphenationDictionary() {
+        return createHyphenationDictionaryWithSize(102400L);
+    }
+
+    private DownloadContent createHyphenationDictionaryWithSize(long size) {
+        return new DownloadContentBuilder()
+                .setKind(DownloadContent.KIND_HYPHENATION_DICTIONARY)
                 .setType(DownloadContent.TYPE_ASSET_ARCHIVE)
                 .setSize(size)
                 .build();
