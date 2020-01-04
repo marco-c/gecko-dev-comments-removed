@@ -1134,9 +1134,7 @@ PeerConnectionWrapper.prototype = {
   },
 
   isTrackOnPC: function(track) {
-    return this._pc.getRemoteStreams().some(stream => {
-      return stream.getTracks().some(pcTrack => pcTrack.id == track.id);
-    });
+    return this._pc.getRemoteStreams().some(s => !!s.getTrackById(track.id));
   },
 
   allExpectedTracksAreObserved: function(expected, observed) {
@@ -1481,7 +1479,7 @@ PeerConnectionWrapper.prototype = {
     
     var inputSenderTracks = from._pc.getSenders().map(sn => sn.track);
     var inputAudioStream = from._pc.getLocalStreams()
-      .find(s => s.getAudioTracks().some(t => inputSenderTracks.some(t2 => t == t2)));
+      .find(s => inputSenderTracks.some(t => t.kind == "audio" && s.getTrackById(t.id)));
     var inputAnalyser = new AudioStreamAnalyser(audiocontext, inputAudioStream);
 
     
