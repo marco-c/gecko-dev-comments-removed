@@ -2910,9 +2910,6 @@ CreateJSHangAnnotations(JSContext* cx, const HangAnnotationsVector& annotations)
   if (!annotationsArray) {
     return nullptr;
   }
-  
-  
-  nsTHashtable<nsStringHashKey> reportedAnnotations;
   size_t annotationIndex = 0;
   for (const HangAnnotationsPtr *i = annotations.begin(), *e = annotations.end();
        i != e; ++i) {
@@ -2921,18 +2918,6 @@ CreateJSHangAnnotations(JSContext* cx, const HangAnnotationsVector& annotations)
       continue;
     }
     const HangAnnotationsPtr& curAnnotations = *i;
-    
-    nsAutoString annotationsKey;
-    nsresult rv = ComputeAnnotationsKey(curAnnotations, annotationsKey);
-    if (NS_FAILED(rv)) {
-      continue;
-    }
-    
-    if (reportedAnnotations.GetEntry(annotationsKey)) {
-      continue;
-    }
-    
-    reportedAnnotations.PutEntry(annotationsKey);
     UniquePtr<HangAnnotations::Enumerator> annotationsEnum =
       curAnnotations->GetEnumerator();
     if (!annotationsEnum) {
