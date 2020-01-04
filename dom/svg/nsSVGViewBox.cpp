@@ -67,6 +67,11 @@ void
 nsSVGViewBox::Init()
 {
   mHasBaseVal = false;
+  
+  
+  
+  mBaseVal.none = true;
+
   mAnimVal = nullptr;
 }
 
