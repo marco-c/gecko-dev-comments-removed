@@ -85,7 +85,8 @@ class CSSStyleSheet;
 namespace mozilla {
 namespace css {
 
-struct URLValue {
+struct URLValueData
+{
   
   
   
@@ -94,27 +95,23 @@ struct URLValue {
   
   
   
-  URLValue(nsStringBuffer* aString, nsIURI* aBaseURI, nsIURI* aReferrer,
-           nsIPrincipal* aOriginPrincipal);
+  URLValueData(nsStringBuffer* aString, nsIURI* aBaseURI, nsIURI* aReferrer,
+               nsIPrincipal* aOriginPrincipal);
   
-  URLValue(nsIURI* aURI, nsStringBuffer* aString, nsIURI* aReferrer,
-           nsIPrincipal* aOriginPrincipal);
+  URLValueData(nsIURI* aURI, nsStringBuffer* aString, nsIURI* aReferrer,
+               nsIPrincipal* aOriginPrincipal);
 
-protected:
-  ~URLValue() {};
-
-public:
-  bool operator==(const URLValue& aOther) const;
+  bool operator==(const URLValueData& aOther) const;
 
   
   
   
   
-  bool URIEquals(const URLValue& aOther) const;
+  bool URIEquals(const URLValueData& aOther) const;
 
   nsIURI* GetURI() const;
 
-  size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
+  size_t SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
 
 private:
   
@@ -125,23 +122,42 @@ public:
   RefPtr<nsStringBuffer> mString;
   nsCOMPtr<nsIURI> mReferrer;
   nsCOMPtr<nsIPrincipal> mOriginPrincipal;
-
-  NS_INLINE_DECL_REFCOUNTING(URLValue)
-
 private:
   mutable bool mURIResolved;
 
-  URLValue(const URLValue& aOther) = delete;
-  URLValue& operator=(const URLValue& aOther) = delete;
+  URLValueData(const URLValueData& aOther) = delete;
+  URLValueData& operator=(const URLValueData& aOther) = delete;
 };
 
-struct ImageValue : public URLValue {
+struct URLValue : public URLValueData
+{
+  URLValue(nsStringBuffer* aString, nsIURI* aBaseURI, nsIURI* aReferrer,
+           nsIPrincipal* aOriginPrincipal)
+    : URLValueData(aString, aBaseURI, aReferrer, aOriginPrincipal) {}
+  URLValue(nsIURI* aURI, nsStringBuffer* aString, nsIURI* aReferrer,
+           nsIPrincipal* aOriginPrincipal)
+    : URLValueData(aURI, aString, aReferrer, aOriginPrincipal) {}
+
+  size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
+
+protected:
+  ~URLValue() {}
+
+public:
+  NS_INLINE_DECL_REFCOUNTING(URLValue)
+};
+
+struct ImageValue : public URLValueData
+{
   
   
   
   
   ImageValue(nsIURI* aURI, nsStringBuffer* aString, nsIURI* aReferrer,
              nsIPrincipal* aOriginPrincipal, nsIDocument* aDocument);
+
+  
+
 private:
   ~ImageValue();
 
@@ -150,11 +166,7 @@ public:
 
   nsRefPtrHashtable<nsPtrHashKey<nsIDocument>, imgRequestProxy> mRequests;
 
-  
-  
-  
-  NS_METHOD_(MozExternalRefCountType) AddRef();
-  NS_METHOD_(MozExternalRefCountType) Release();
+  NS_INLINE_DECL_REFCOUNTING(ImageValue)
 };
 
 struct GridNamedArea {
@@ -404,7 +416,7 @@ public:
   struct Array;
   friend struct Array;
 
-  friend struct mozilla::css::URLValue;
+  friend struct mozilla::css::URLValueData;
 
   friend struct mozilla::css::ImageValue;
 
@@ -1676,5 +1688,5 @@ protected:
   static const corner_type corners[4];
 };
 
-#endif 
+#endif
 
