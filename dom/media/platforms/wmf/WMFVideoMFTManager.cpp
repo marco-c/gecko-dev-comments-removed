@@ -525,6 +525,8 @@ WMFVideoMFTManager::Input(MediaRawData* aSample)
   NS_ENSURE_TRUE(SUCCEEDED(hr) && mLastInput != nullptr, hr);
 
   mLastDuration = aSample->mDuration;
+  mLastTime = aSample->mTime;
+  mSamplesCount++;
 
   
   return mDecoder->Input(mLastInput);
@@ -832,6 +834,15 @@ WMFVideoMFTManager::Output(int64_t aStreamOffset,
   HRESULT hr;
   aOutData = nullptr;
   int typeChangeCount = 0;
+  bool wasDraining = mDraining;
+  int64_t sampleCount = mSamplesCount;
+  if (wasDraining) {
+    mSamplesCount = 0;
+    mDraining = false;
+  }
+
+  media::TimeUnit pts;
+  media::TimeUnit duration;
 
   
   
@@ -873,12 +884,21 @@ WMFVideoMFTManager::Output(int64_t aStreamOffset,
         }
         continue;
       }
+      pts = GetSampleTime(sample);
+      duration = GetSampleDuration(sample);
+      if (!pts.IsValid() || !duration.IsValid()) {
+        return E_FAIL;
+      }
+      if (wasDraining && sampleCount == 1 && pts == media::TimeUnit()) {
+        
+        
+        
+        
+        
+        pts = media::TimeUnit::FromMicroseconds(mLastTime);
+        duration = media::TimeUnit::FromMicroseconds(mLastDuration);
+      }
       if (mSeekTargetThreshold.isSome()) {
-        media::TimeUnit pts = GetSampleTime(sample);
-		media::TimeUnit duration = GetSampleDuration(sample);
-        if (!pts.IsValid() || !duration.IsValid()) {
-          return E_FAIL;
-        }
         if ((pts + duration) < mSeekTargetThreshold.ref()) {
           LOG("Dropping video frame which pts is smaller than seek target.");
           
@@ -907,6 +927,9 @@ WMFVideoMFTManager::Output(int64_t aStreamOffset,
   NS_ENSURE_TRUE(frame, E_FAIL);
 
   aOutData = frame;
+  
+  aOutData->mTime = pts.ToMicroseconds();
+  aOutData->mDuration = duration.ToMicroseconds();
 
   if (mNullOutputCount) {
     mGotValidOutputAfterNullOutput = true;
