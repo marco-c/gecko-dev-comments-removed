@@ -89,7 +89,16 @@ add_task(function* test_experiments_api() {
     },
 
     background() {
-      browser.meh.hello("Here I am");
+      
+      
+      
+      
+      
+      try {
+        browser.meh.hello("I should not see this", "since two arguments are bad");
+      } catch (err) {
+        browser.meh.hello("Here I am");
+      }
     },
   });
 
@@ -151,7 +160,6 @@ add_task(function* test_experiments_api() {
 
   let hello = yield promise;
   equal(hello, "Here I am", "Should get hello from add-on");
-
 
   
   apiAddon.uninstall();

@@ -88,7 +88,6 @@ var {
   EventEmitter,
   LocaleData,
   Messenger,
-  injectAPI,
   instanceOf,
   flushJarCache,
 } = ExtensionUtils;
@@ -181,10 +180,7 @@ var Management = {
   },
 
   
-  
-  generateAPIs(context, apis, namespaces = null) {
-    let obj = {};
-
+  generateAPIs(context, apis, obj, namespaces = null) {
     
     function copy(dest, source) {
       for (let prop in source) {
@@ -213,7 +209,6 @@ var Management = {
       api = api.getAPI(context);
       copy(obj, api);
     }
-    return obj;
   },
 
   
@@ -625,11 +620,11 @@ GlobalManager = {
   },
 
   injectInObject(context, defaultCallback, dest, namespaces = null) {
-    let schemaApi = Management.generateAPIs(context, Management.schemaApis, namespaces);
-
-    
-    
-    schemaApi.extensionTypes = {};
+    let apis = {
+      extensionTypes: {},
+    };
+    Management.generateAPIs(context, Management.schemaApis, apis, namespaces);
+    Management.generateAPIs(context, context.extension.apis, apis, namespaces);
 
     let schemaWrapper = {
       get principal() {
@@ -645,11 +640,11 @@ GlobalManager = {
       },
 
       callFunction(path, name, args) {
-        return findPathInObject(schemaApi, path)[name](...args);
+        return findPathInObject(apis, path)[name](...args);
       },
 
       callFunctionNoReturn(path, name, args) {
-        findPathInObject(schemaApi, path)[name](...args);
+        findPathInObject(apis, path)[name](...args);
       },
 
       callAsyncFunction(path, name, args, callback) {
@@ -662,7 +657,7 @@ GlobalManager = {
 
         let promise;
         try {
-          promise = findPathInObject(schemaApi, path)[name](...args);
+          promise = findPathInObject(apis, path)[name](...args);
         } catch (e) {
           promise = Promise.reject(e);
         }
@@ -674,31 +669,28 @@ GlobalManager = {
         if (namespaces && !namespaces.includes(namespace)) {
           return false;
         }
-        return findPathInObject(schemaApi, [namespace]) != null;
+        return findPathInObject(apis, [namespace]) != null;
       },
 
       getProperty(path, name) {
-        return findPathInObject(schemaApi, path)[name];
+        return findPathInObject(apis, path)[name];
       },
 
       setProperty(path, name, value) {
-        findPathInObject(schemaApi, path)[name] = value;
+        findPathInObject(apis, path)[name] = value;
       },
 
       addListener(path, name, listener, args) {
-        findPathInObject(schemaApi, path)[name].addListener.call(null, listener, ...args);
+        findPathInObject(apis, path)[name].addListener.call(null, listener, ...args);
       },
       removeListener(path, name, listener) {
-        findPathInObject(schemaApi, path)[name].removeListener.call(null, listener);
+        findPathInObject(apis, path)[name].removeListener.call(null, listener);
       },
       hasListener(path, name, listener) {
-        return findPathInObject(schemaApi, path)[name].hasListener.call(null, listener);
+        return findPathInObject(apis, path)[name].hasListener.call(null, listener);
       },
     };
     Schemas.inject(dest, schemaWrapper);
-
-    let experimentalApis = Management.generateAPIs(context, context.extension.apis, namespaces);
-    injectAPI(experimentalApis, dest);
   },
 
   observe(document, topic, data) {
