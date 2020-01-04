@@ -249,6 +249,17 @@ var AnimationPlayerActor = ActorClass({
     return this.player.effect.getComputedTiming().iterationStart;
   },
 
+  getPropertiesCompositorStatus: function() {
+    let properties = this.player.effect.getProperties();
+    return properties.map(prop => {
+      return {
+        property: prop.property,
+        runningOnCompositor: prop.runningOnCompositor,
+        warning: prop.warning
+      };
+    });
+  },
+
   
 
 
@@ -282,7 +293,10 @@ var AnimationPlayerActor = ActorClass({
       iterationStart: this.getIterationStart(),
       
       
-      isRunningOnCompositor: this.player.isRunningOnCompositor,
+      isRunningOnCompositor:
+        this.getPropertiesCompositorStatus()
+            .some(propState => propState.runningOnCompositor),
+      propertyState: this.getPropertiesCompositorStatus(),
       
       
       
@@ -512,6 +526,7 @@ var AnimationPlayerFront = FrontClass(AnimationPlayerActor, {
       iterationCount: this._form.iterationCount,
       iterationStart: this._form.iterationStart,
       isRunningOnCompositor: this._form.isRunningOnCompositor,
+      propertyState: this._form.propertyState,
       documentCurrentTime: this._form.documentCurrentTime
     };
   },

@@ -57,6 +57,29 @@ AnimationDetails.prototype = {
     }
   },
 
+  getPerfDataForProperty: function (animation, propertyName) {
+    let warning = "";
+    let className = "";
+    if (animation.state.propertyState) {
+      let isRunningOnCompositor;
+      for (let propState of animation.state.propertyState) {
+        if (propState.property == propertyName) {
+          isRunningOnCompositor = propState.runningOnCompositor;
+          if (typeof propState.warning != "undefined") {
+            warning = propState.warning;
+          }
+          break;
+        }
+      }
+      if (isRunningOnCompositor && warning == "") {
+        className = "oncompositor";
+      } else if (!isRunningOnCompositor && warning != "") {
+        className = "warning";
+      }
+    }
+    return {className, warning};
+  },
+
   
 
 
@@ -137,16 +160,19 @@ AnimationDetails.prototype = {
         parent: this.containerEl,
         attributes: {"class": "property"}
       });
-
+      let {warning, className} =
+        this.getPerfDataForProperty(animation, propertyName);
       createNode({
         
         
         
         parent: createNode({
           parent: line,
-          attributes: {"class": "name"},
+          attributes: {"class": "name"}
         }),
-        textContent: getCssPropertyName(propertyName)
+        textContent: getCssPropertyName(propertyName),
+        attributes: {"title": warning,
+                     "class": className}
       });
 
       
