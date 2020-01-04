@@ -459,7 +459,7 @@ var BrowserApp = {
     Messaging.addListener(this.getHistory.bind(this), "Session:GetHistory");
 
     function showFullScreenWarning() {
-      NativeWindow.toast.show(Strings.browser.GetStringFromName("alertFullScreenToast"), "short");
+      Snackbars.show(Strings.browser.GetStringFromName("alertFullScreenToast"), Snackbars.LENGTH_SHORT);
     }
 
     window.addEventListener("fullscreen", function() {
@@ -1267,7 +1267,7 @@ var BrowserApp = {
 
   
   
-  _handleTabClosed: function _handleTabClosed(aTab, aShowUndoToast) {
+  _handleTabClosed: function _handleTabClosed(aTab, aShowUndoSnackbar) {
     if (aTab == this.selectedTab)
       this.selectedTab = null;
 
@@ -1277,7 +1277,7 @@ var BrowserApp = {
     evt.initUIEvent("TabClose", true, false, window, tabIndex);
     aTab.browser.dispatchEvent(evt);
 
-    if (aShowUndoToast) {
+    if (aShowUndoSnackbar) {
       
       let ss = Cc["@mozilla.org/browser/sessionstore;1"].getService(Ci.nsISessionStore);
       let closedTabData = ss.getClosedTabs(window)[0];
@@ -3085,7 +3085,7 @@ var NativeWindow = {
     _copyStringToDefaultClipboard: function(aString) {
       let clipboard = Cc["@mozilla.org/widget/clipboardhelper;1"].getService(Ci.nsIClipboardHelper);
       clipboard.copyString(aString);
-      NativeWindow.toast.show(Strings.browser.GetStringFromName("selectionHelper.textCopied"), "short");
+      Snackbars.show(Strings.browser.GetStringFromName("selectionHelper.textCopied"), Snackbars.LENGTH_SHORT);
     },
 
     _stripScheme: function(aString) {
@@ -5877,7 +5877,7 @@ var XPInstallObserver = {
 
     switch (aTopic) {
       case "addon-install-started":
-        NativeWindow.toast.show(strings.GetStringFromName("alertAddonsDownloading"), "short");
+        Snackbars.show(strings.GetStringFromName("alertAddonsDownloading"), Snackbars.LENGTH_SHORT);
         break;
       case "addon-install-disabled": {
         if (!tab)
@@ -6920,7 +6920,7 @@ var SearchEngines = {
     Services.search.addEngine(engine.url, Ci.nsISearchEngine.DATA_XML, engine.iconURL, false, {
       onSuccess: function() {
         
-        NativeWindow.toast.show(Strings.browser.formatStringFromName("alertSearchEngineAddedToast", [engine.title], 1), "long");
+        Snackbars.show(Strings.browser.formatStringFromName("alertSearchEngineAddedToast", [engine.title], 1), Snackbars.LENGTH_SHORT);
       },
 
       onError: function(aCode) {
@@ -6934,7 +6934,7 @@ var SearchEngines = {
           errorMessage = "alertSearchEngineErrorToast";
         }
 
-        NativeWindow.toast.show(Strings.browser.formatStringFromName(errorMessage, [engine.title], 1), "long");
+        Snackbars.show(Strings.browser.formatStringFromName(errorMessage, [engine.title], 1), Snackbars.LENGTH_SHORT);
       }
     });
   },
@@ -7015,7 +7015,7 @@ var SearchEngines = {
             name = title.value + " " + i;
 
           Services.search.addEngineWithDetails(name, favicon, null, null, method, formURL);
-          NativeWindow.toast.show(Strings.browser.formatStringFromName("alertSearchEngineAddedToast", [name], 1), "long");
+          Snackbars.show(Strings.browser.formatStringFromName("alertSearchEngineAddedToast", [name], 1), Snackbars.LENGTH_SHORT);
           let engine = Services.search.getEngineByName(name);
           engine.wrappedJSObject._queryCharset = charset;
           for (let i = 0; i < formData.length; ++i) {
