@@ -676,7 +676,7 @@ FlacTrackDemuxer::Init()
     
     mSource.Seek(SEEK_SET, mParser->FirstFrame().Offset());
     mParser->EndFrameSession();
-  } else if (!mParser->Info().IsValid()) {
+  } else if (!mParser->Info().IsValid() || !mParser->FirstFrame().IsValid()) {
     
     
     return false;
