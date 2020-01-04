@@ -98,6 +98,10 @@ public:
     return NS_OK;
   }
 
+  bool AlwaysLoad() {
+    return mAlwaysLoad;
+  }
+
 private:
   ~ImageLoadTask() {}
   RefPtr<HTMLImageElement> mElement;
@@ -899,7 +903,13 @@ HTMLImageElement::QueueImageLoadTask(bool aAlwaysLoad)
     return;
   }
 
-  nsCOMPtr<nsIRunnable> task = new ImageLoadTask(this, aAlwaysLoad);
+  
+  
+  bool alwaysLoad = aAlwaysLoad;
+  if (mPendingImageLoadTask) {
+    alwaysLoad = alwaysLoad || mPendingImageLoadTask->AlwaysLoad();
+  }
+  RefPtr<ImageLoadTask> task = new ImageLoadTask(this, alwaysLoad);
   
   
   mPendingImageLoadTask = task;
