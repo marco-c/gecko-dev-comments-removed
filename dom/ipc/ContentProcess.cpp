@@ -30,7 +30,7 @@ SetUpSandboxEnvironment()
   
   
   if (!IsVistaOrLater() ||
-      Preferences::GetInt("security.sandbox.content.level") != 1) {
+      Preferences::GetInt("security.sandbox.content.level") < 1) {
     return;
   }
 
