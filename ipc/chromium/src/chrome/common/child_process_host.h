@@ -34,26 +34,6 @@ class ChildProcessHost :
   
   virtual bool Send(IPC::Message* msg);
 
-  
-  
-  
-  
-  
-  class Iterator {
-   public:
-    Iterator();
-    explicit Iterator(ProcessType type);
-    ChildProcessHost* operator->() { return *iterator_; }
-    ChildProcessHost* operator*() { return *iterator_; }
-    ChildProcessHost* operator++();
-    bool Done();
-
-   private:
-    bool all_;
-    ProcessType type_;
-    std::list<ChildProcessHost*>::iterator iterator_;
-  };
-
  protected:
   explicit ChildProcessHost(ProcessType type);
 
