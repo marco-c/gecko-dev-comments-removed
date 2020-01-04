@@ -718,6 +718,12 @@ APZCTreeManager::ReceiveInputEvent(InputData& aEvent,
           if (untransformedRefPoint) {
             mouseInput.mOrigin = *untransformedRefPoint;
           }
+        } else {
+          
+          
+          
+          
+          aOutTargetGuid->mScrollId = FrameMetrics::NULL_SCROLL_ID;
         }
       }
       break;
