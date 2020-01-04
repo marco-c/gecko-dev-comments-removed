@@ -50,11 +50,12 @@ TransformReferenceBox::EnsureDimensionsAreCached()
   mIsCached = true;
 
   if (mFrame->GetStateBits() & NS_FRAME_SVG_LAYOUT) {
-    if (!nsLayoutUtils::SVGTransformOriginEnabled()) {
+    if (!nsLayoutUtils::SVGTransformBoxEnabled()) {
       mX = -mFrame->GetPosition().x;
       mY = -mFrame->GetPosition().y;
-      mWidth = 0;
-      mHeight = 0;
+      Size contextSize = nsSVGUtils::GetContextSize(mFrame);
+      mWidth = nsPresContext::CSSPixelsToAppUnits(contextSize.width);
+      mHeight = nsPresContext::CSSPixelsToAppUnits(contextSize.height);
     } else
     if (mFrame->StyleDisplay()->mTransformBox ==
           NS_STYLE_TRANSFORM_BOX_FILL_BOX) {

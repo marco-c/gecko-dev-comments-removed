@@ -143,7 +143,7 @@ typedef nsStyleTransformMatrix::TransformReferenceBox TransformReferenceBox;
  bool nsLayoutUtils::sInvalidationDebuggingIsEnabled;
  bool nsLayoutUtils::sCSSVariablesEnabled;
  bool nsLayoutUtils::sInterruptibleReflowEnabled;
- bool nsLayoutUtils::sSVGTransformOriginEnabled;
+ bool nsLayoutUtils::sSVGTransformBoxEnabled;
 
 static ViewID sScrollIdCounter = FrameMetrics::START_SCROLL_ID;
 
@@ -7256,8 +7256,8 @@ nsLayoutUtils::Initialize()
                                "layout.css.variables.enabled");
   Preferences::AddBoolVarCache(&sInterruptibleReflowEnabled,
                                "layout.interruptible-reflow.enabled");
-  Preferences::AddBoolVarCache(&sSVGTransformOriginEnabled,
-                               "svg.transform-origin.enabled");
+  Preferences::AddBoolVarCache(&sSVGTransformBoxEnabled,
+                               "svg.transform-box.enabled");
 
   Preferences::RegisterCallback(GridEnabledPrefChangeCallback,
                                 GRID_ENABLED_PREF_NAME);
