@@ -7,13 +7,14 @@
 #ifndef mozilla_ObservedDocShell_h_
 #define mozilla_ObservedDocShell_h_
 
+#include "OTMTMarkerReceiver.h"
 #include "nsTArray.h"
 #include "mozilla/nsRefPtr.h"
 
 class nsDocShell;
 
 namespace mozilla {
-class TimelineMarker;
+class AbstractTimelineMarker;
 
 namespace dom {
 struct ProfileTimelineMarker;
@@ -23,17 +24,20 @@ struct ProfileTimelineMarker;
 
 
 
-class ObservedDocShell : public LinkedListElement<ObservedDocShell>
+class ObservedDocShell : public LinkedListElement<ObservedDocShell>,
+                         public OTMTMarkerReceiver
 {
 private:
   nsRefPtr<nsDocShell> mDocShell;
-  nsTArray<UniquePtr<TimelineMarker>> mTimelineMarkers;
+  nsTArray<UniquePtr<AbstractTimelineMarker>> mTimelineMarkers;
 
 public:
   explicit ObservedDocShell(nsDocShell* aDocShell);
   nsDocShell* operator*() const { return mDocShell.get(); }
 
-  void AddMarker(UniquePtr<TimelineMarker>&& aMarker);
+  void AddMarker(UniquePtr<AbstractTimelineMarker>&& aMarker);
+  void AddOTMTMarkerClone(UniquePtr<AbstractTimelineMarker>& aMarker) override;
+
   void ClearMarkers();
   void PopMarkers(JSContext* aCx, nsTArray<dom::ProfileTimelineMarker>& aStore);
 };
