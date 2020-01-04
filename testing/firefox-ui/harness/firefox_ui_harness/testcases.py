@@ -5,6 +5,8 @@
 import pprint
 from datetime import datetime
 
+import mozfile
+
 from marionette import MarionetteTestCase
 from marionette_driver import Wait
 
@@ -57,7 +59,8 @@ class UpdateTestCase(FirefoxTestCase):
         
         self.current_update_index = 0
 
-        self.staging_directory = self.software_update.staging_directory
+        
+        self.remove_downloaded_update()
 
         
         
@@ -117,6 +120,9 @@ class UpdateTestCase(FirefoxTestCase):
 
         finally:
             super(UpdateTestCase, self).tearDown()
+
+            
+            self.remove_downloaded_update()
 
             self.restore_config_files()
 
@@ -361,6 +367,12 @@ class UpdateTestCase(FirefoxTestCase):
 
         
         self.restart()
+
+    def remove_downloaded_update(self):
+        """Remove an already downloaded update from the update staging directory."""
+        self.logger.info('Clean-up update staging directory: {}'.format(
+            self.software_update.staging_directory))
+        mozfile.remove(self.software_update.staging_directory)
 
     def restore_config_files(self):
         
