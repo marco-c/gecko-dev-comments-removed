@@ -930,6 +930,57 @@ function pollForReadyState(msg, start, callback) {
 function get(msg) {
   let start = new Date().getTime();
   let requestedURL = new URL(msg.json.url).toString();
+  let docShell = curContainer.frame
+                             .document
+                             .defaultView
+                             .QueryInterface(Ci.nsIInterfaceRequestor)
+                             .getInterface(Ci.nsIWebNavigation)
+                             .QueryInterface(Ci.nsIDocShell);
+  let webProgress = docShell.QueryInterface(Ci.nsIInterfaceRequestor)
+                            .getInterface(Ci.nsIWebProgress);
+  let sawLoad = false;
+
+  
+  
+  
+  
+  
+  let loadListener = {
+    QueryInterface: XPCOMUtils.generateQI([Ci.nsIWebProgressListener,
+                                           Ci.nsISupportsWeakReference]),
+    onStateChange(webProgress, request, state, status) {
+      if (!(request instanceof Ci.nsIChannel)) {
+        return;
+      }
+
+      let isDocument = state & Ci.nsIWebProgressListener.STATE_IS_DOCUMENT;
+      let isStart = state & Ci.nsIWebProgressListener.STATE_START;
+      let loadedURL = request.URI.spec;
+      
+      
+      
+      let originalURL = request.originalURI.spec;
+      let isRequestedURL = loadedURL == requestedURL ||
+                           originalURL == requestedURL;
+
+      if (isDocument && isStart && isRequestedURL) {
+        
+        
+        
+        
+        
+        sawLoad = true;
+      }
+    },
+
+    onLocationChange() {},
+    onProgressChange() {},
+    onStatusChange() {},
+    onSecurityChange() {},
+  };
+
+  webProgress.addProgressListener(loadListener,
+                                  Ci.nsIWebProgress.NOTIFY_STATE_DOCUMENT);
 
   
   
@@ -939,9 +990,22 @@ function get(msg) {
       !event.originalTarget.defaultView.frameElement ||
       event.originalTarget.defaultView.frameElement == curContainer.frame.frameElement;
 
-    let correctURL = curContainer.frame.location == requestedURL;
+    
+    
+    
+    
+    
+    
+    if (curContainer.frame.location == requestedURL) {
+      sawLoad = true;
+    }
 
-    if (correctFrame && correctURL) {
+    
+    
+    let loadedNonAboutBlank = docShell.hasLoadedNonBlankURI;
+
+    if (correctFrame && sawLoad && loadedNonAboutBlank) {
+      webProgress.removeProgressListener(loadListener);
       pollForReadyState(msg, start, () => {
         removeEventListener("DOMContentLoaded", onDOMContentLoaded, false);
       });
@@ -950,6 +1014,7 @@ function get(msg) {
 
   function timerFunc() {
     removeEventListener("DOMContentLoaded", onDOMContentLoaded, false);
+    webProgress.removeProgressListener(loadListener);
     sendError(new TimeoutError("Error loading page, timed out (onDOMContentLoaded)"), msg.json.command_id);
   }
   if (msg.json.pageTimeout != null) {
