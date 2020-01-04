@@ -71,9 +71,11 @@ add_task(function* test_reader_button() {
 
   
   readerButton.click();
-  yield promiseTabLoadEvent(tab);
+  yield promiseTabLoadEvent(tab, "", "pageshow");
   is(gBrowser.selectedBrowser.currentURI.spec, url,
-    "Original page loaded after clicking active reader mode button");
+    "Back to the original page after clicking active reader mode button");
+  ok(gBrowser.selectedBrowser.canGoForward,
+    "Moved one step back in the session history.");
 
   
   let newTab = gBrowser.selectedTab = gBrowser.addTab();

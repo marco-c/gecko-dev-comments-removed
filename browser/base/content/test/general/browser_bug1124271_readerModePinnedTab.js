@@ -38,7 +38,7 @@ add_task(function* () {
   is(gBrowser.tabs.length, initialTabsCount, "No additional tabs were opened.");
 
   readerButton.click();
-  yield promiseTabLoadEvent(tab);
+  yield promiseTabLoadEvent(tab, "", "pageshow");
 
   
   is(gBrowser.tabs.length, initialTabsCount, "No additional tabs were opened.");
