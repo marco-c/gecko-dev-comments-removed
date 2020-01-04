@@ -18,6 +18,7 @@
 
 #include "nsAutoPtr.h"
 #include "mozilla/Attributes.h"
+#include "mozilla/EventForwards.h"
 #include "mozilla/dom/File.h"
 #include "mozilla/dom/Promise.h"
 
@@ -75,7 +76,7 @@ protected:
   
   
   DataTransfer(nsISupports* aParent,
-               uint32_t aEventType,
+               EventMessage aEventMessage,
                const uint32_t aEffectAllowed,
                bool aCursorState,
                bool aIsExternal,
@@ -102,10 +103,8 @@ public:
   
   
   
-  
-  
-  DataTransfer(nsISupports* aParent, uint32_t aEventType, bool aIsExternal,
-               int32_t aClipboardType);
+  DataTransfer(nsISupports* aParent, EventMessage aEventMessage,
+               bool aIsExternal, int32_t aClipboardType);
 
   virtual JSObject* WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) override;
   nsISupports* GetParentObject()
@@ -222,8 +221,9 @@ public:
     return mDragImage;
   }
 
-  nsresult Clone(nsISupports* aParent, uint32_t aEventType, bool aUserCancelled,
-                 bool aIsCrossDomainSubFrameDrop, DataTransfer** aResult);
+  nsresult Clone(nsISupports* aParent, EventMessage aEventMessage,
+                 bool aUserCancelled, bool aIsCrossDomainSubFrameDrop,
+                 DataTransfer** aResult);
 
 protected:
 
@@ -254,13 +254,14 @@ protected:
 
   nsCOMPtr<nsISupports> mParent;
 
-  
-  
-  uint32_t mEventType;
 
   
   uint32_t mDropEffect;
   uint32_t mEffectAllowed;
+
+  
+  
+  EventMessage mEventMessage;
 
   
   bool mCursorState;
