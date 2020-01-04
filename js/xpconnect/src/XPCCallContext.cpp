@@ -88,24 +88,6 @@ XPCCallContext::XPCCallContext(XPCContext::LangType callerLanguage,
     CHECK_STATE(HAVE_OBJECT);
 }
 
-
-JSContext*
-XPCCallContext::GetDefaultJSContext()
-{
-    
-    
-    
-    
-    
-    
-    
-
-    XPCJSContextStack* stack = XPCJSRuntime::Get()->GetJSContextStack();
-    JSContext* topJSContext = stack->Peek();
-
-    return topJSContext ? topJSContext : stack->GetSafeJSContext();
-}
-
 void
 XPCCallContext::SetName(jsid name)
 {
