@@ -764,6 +764,11 @@ protected:
   
 
 
+  void CloseRequest();
+
+  
+
+
 
 
 
