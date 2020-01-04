@@ -1170,6 +1170,14 @@ protected:
 
 
 
+  bool IsValidWeek(const nsAString& aValue) const;
+
+  
+
+
+
+
+
   bool IsValidMonth(const nsAString& aValue) const;
 
   
@@ -1208,6 +1216,16 @@ protected:
 
 
 
+  bool ParseWeek(const nsAString& aValue,
+                 uint32_t* aYear,
+                 uint32_t* aWeek) const;
+  
+
+
+
+
+
+
   bool ParseDate(const nsAString& aValue,
                  uint32_t* aYear,
                  uint32_t* aMonth,
@@ -1223,6 +1241,22 @@ protected:
 
 
   int32_t MonthsSinceJan1970(uint32_t aYear, uint32_t aMonth) const;
+
+  
+
+
+  uint32_t DayOfWeek(uint32_t aYear, uint32_t aMonth, uint32_t aDay) const;
+
+  
+
+
+
+  uint32_t MaximumWeekInYear(uint32_t aYear) const;
+
+  
+
+
+  bool IsLeapYear(uint32_t aYear) const;
 
   
 
@@ -1460,6 +1494,8 @@ protected:
   static const double kMaximumYear;
   
   static const double kMinimumYear;
+  
+  static const double kMaximumWeekInYear;
 
   
 
