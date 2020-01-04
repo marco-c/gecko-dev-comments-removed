@@ -39,8 +39,6 @@ public:
     return "H264Converter decoder (pending)";
   }
 
-  
-  static bool IsH264(const TrackInfo& aConfig);
   nsresult GetLastError() const { return mLastError; }
 
 private:

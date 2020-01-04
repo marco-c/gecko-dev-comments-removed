@@ -241,12 +241,4 @@ H264Converter::UpdateConfigFromExtraData(MediaByteBuffer* aExtraData)
   mCurrentConfig.mExtraData = aExtraData;
 }
 
-
-bool
-H264Converter::IsH264(const TrackInfo& aConfig)
-{
-  return aConfig.mMimeType.EqualsLiteral("video/avc") ||
-    aConfig.mMimeType.EqualsLiteral("video/mp4");
-}
-
 } 
