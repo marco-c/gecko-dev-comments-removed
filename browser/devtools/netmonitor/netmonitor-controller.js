@@ -338,9 +338,16 @@ let NetMonitorController = {
     let inspector = function() {
       let predicate = i => i.value === requestId;
       request = NetMonitorView.RequestsMenu.getItemForPredicate(predicate);
+      if (!request) {
+        
+        NetMonitorView.RequestsMenu.filterOn("all");
+        request = NetMonitorView.RequestsMenu.getItemForPredicate(predicate);
+      }
+
+      
+      
       if (request) {
         window.off(EVENTS.REQUEST_ADDED, inspector);
-        NetMonitorView.RequestsMenu.filterOn("all");
         NetMonitorView.RequestsMenu.selectedItem = request;
         deferred.resolve();
       }
