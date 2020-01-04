@@ -1290,6 +1290,8 @@ nsStandardURL::GetHost(nsACString &result)
 NS_IMETHODIMP
 nsStandardURL::GetPort(int32_t *result)
 {
+    
+    MOZ_ASSERT(mPort <= std::numeric_limits<uint16_t>::max());
     *result = mPort;
     return NS_OK;
 }
@@ -1968,7 +1970,8 @@ nsStandardURL::SetPort(int32_t port)
         return NS_OK;
 
     
-    if (port < -1) 
+    
+    if (port < -1 || port > std::numeric_limits<uint16_t>::max())
         return NS_ERROR_MALFORMED_URI;
 
     if (mURLType == URLTYPE_NO_AUTHORITY) {
@@ -3123,7 +3126,8 @@ nsStandardURL::Init(uint32_t urlType,
 {
     ENSURE_MUTABLE();
 
-    if (spec.Length() > (uint32_t) net_GetURLMaxLength()) {
+    if (spec.Length() > (uint32_t) net_GetURLMaxLength() ||
+        defaultPort > std::numeric_limits<uint16_t>::max()) {
         return NS_ERROR_MALFORMED_URI;
     }
 
@@ -3173,6 +3177,11 @@ nsStandardURL::SetDefaultPort(int32_t aNewDefaultPort)
     ENSURE_MUTABLE();
 
     InvalidateCache();
+
+    
+    if (aNewDefaultPort >= std::numeric_limits<uint16_t>::max()) {
+        return NS_ERROR_MALFORMED_URI;
+    }
 
     
     
