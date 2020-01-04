@@ -56,11 +56,6 @@ this.error = {};
 
 
 
-error.isSuccess = status => status === "success";
-
-
-
-
 
 
 
