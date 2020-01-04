@@ -40,19 +40,11 @@ TextTrackList::~TextTrackList()
 }
 
 void
-TextTrackList::UpdateAndGetShowingCues(nsTArray<RefPtr<TextTrackCue> >& aCues)
+TextTrackList::GetShowingCues(nsTArray<RefPtr<TextTrackCue> >& aCues)
 {
   nsTArray< RefPtr<TextTrackCue> > cues;
   for (uint32_t i = 0; i < Length(); i++) {
-    TextTrackMode mode = mTextTracks[i]->Mode();
-    
-    
-    if (mode == TextTrackMode::Hidden) {
-      mTextTracks[i]->UpdateActiveCueList();
-    } else if (mode == TextTrackMode::Showing) {
-      
-      
-      
+    if (mTextTracks[i]->Mode() == TextTrackMode::Showing) {
       mTextTracks[i]->GetActiveCueArray(cues);
       aCues.AppendElements(cues);
     }

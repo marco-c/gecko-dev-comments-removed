@@ -37,7 +37,7 @@ public:
   }
 
   
-  void UpdateAndGetShowingCues(nsTArray<RefPtr<TextTrackCue> >& aCues);
+  void GetShowingCues(nsTArray<RefPtr<TextTrackCue> >& aCues);
 
   TextTrack* IndexedGetter(uint32_t aIndex, bool& aFound);
   TextTrack* operator[](uint32_t aIndex);
