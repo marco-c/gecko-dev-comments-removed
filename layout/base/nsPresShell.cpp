@@ -26,7 +26,6 @@
 #include "mozilla/EventStateManager.h"
 #include "mozilla/EventStates.h"
 #include "mozilla/IMEStateManager.h"
-#include "mozilla/InitializerList.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/dom/TabChild.h"
 #include "mozilla/Likely.h"
@@ -216,8 +215,6 @@ using namespace mozilla::tasktracer;
   
   
 #define RELATIVE_SCALEFACTOR 0.0925f
-
-using std::initializer_list;
 
 using namespace mozilla;
 using namespace mozilla::css;
@@ -4789,13 +4786,13 @@ PresShell::RenderDocument(const nsRect& aRect, uint32_t aFlags,
     flags &= ~PaintFrameFlags::PAINT_WIDGET_LAYERS;
   }
 
-  
-  
-
   nsLayoutUtils::PaintFrame(&rc, rootFrame, nsRegion(aRect),
                             aBackgroundColor,
                             nsDisplayListBuilderMode::PAINTING,
                             flags);
+
+  
+  
 
   return NS_OK;
 }
@@ -5849,140 +5846,30 @@ ForAllTrackedFramesInVisibleSet(const VisibleFrames& aFrames, Func aFunc)
   }
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-struct MOZ_STACK_CLASS AutoUpdateVisibility
+void
+PresShell::InitVisibleRegionsIfVisualizationEnabled(VisibilityCounter aForCounter)
 {
-  enum class Notify
-  {
-    eSync,
-    eAsync
-  };
-
-  AutoUpdateVisibility(PresShell* aPresShell,
-                       std::initializer_list<VisibilityCounter> aCounters,
-                       Maybe<OnNonvisible> aNonvisibleAction = Nothing())
-    : AutoUpdateVisibility(aPresShell, Notify::eSync, aCounters, aNonvisibleAction)
-  { }
-
-  AutoUpdateVisibility(PresShell* aPresShell,
-                       Notify aNotifyStrategy,
-                       std::initializer_list<VisibilityCounter> aCounters,
-                       Maybe<OnNonvisible> aNonvisibleAction = Nothing())
-    : mNonvisibleAction(aNonvisibleAction)
-    , mPresShell(aPresShell)
-    , mNotifyStrategy(aNotifyStrategy)
-  {
-    
-    
-    
-    
-    for (VisibilityCounter counter : aCounters) {
-      switch (counter) {
-        case VisibilityCounter::MAY_BECOME_VISIBLE:
-          mOldApproximatelyVisibleFrames.emplace();
-          mPresShell->mApproximatelyVisibleFrames.SwapElements(*mOldApproximatelyVisibleFrames);
-          break;
-
-        case VisibilityCounter::IN_DISPLAYPORT:
-          mOldInDisplayPortFrames.emplace();
-          mPresShell->mInDisplayPortFrames.SwapElements(*mOldInDisplayPortFrames);
-          break;
-      }
-    }
-
-    
-    if (!gfxPrefs::APZMinimap() ||
-        !gfxPrefs::APZMinimapVisibilityEnabled()) {
-      mPresShell->mVisibleRegions = nullptr;
-      return;
-    }
-
-    
-    
-    
-    
-    
-
-    if (mPresShell->mVisibleRegions) {
-      
-      
-      
-      for (VisibilityCounter counter : aCounters) {
-        VisibleRegions& regions =
-          mPresShell->mVisibleRegions->ForCounter(counter);
-        regions.Clear();
-      }
-
-      return;
-    }
-
-    mPresShell->mVisibleRegions =
-      MakeUnique<PresShell::VisibleRegionsContainer>();
+  
+  
+  
+  
+  
+  if (!gfxPrefs::APZMinimap() ||
+      !gfxPrefs::APZMinimapVisibilityEnabled()) {
+    mVisibleRegions = nullptr;
+    return;
   }
 
-  ~AutoUpdateVisibility()
-  {
+  if (mVisibleRegions) {
     
     
-    
-    if (mOldApproximatelyVisibleFrames) {
-      ForAllTrackedFramesInVisibleSet(*mOldApproximatelyVisibleFrames, [&](nsIFrame* aFrame) {
-        aFrame->DecVisibilityCount(VisibilityCounter::MAY_BECOME_VISIBLE,
-                                   mNonvisibleAction);
-      });
-    }
-    if (mOldInDisplayPortFrames) {
-      ForAllTrackedFramesInVisibleSet(*mOldInDisplayPortFrames, [&](nsIFrame* aFrame) {
-        aFrame->DecVisibilityCount(VisibilityCounter::IN_DISPLAYPORT,
-                                   mNonvisibleAction);
-      });
-    }
-
-    
-    if (!mPresShell->mVisibleRegions) {
-      return;
-    }
-
-    if (mNotifyStrategy == Notify::eSync) {
-      mPresShell->NotifyCompositorOfVisibleRegionsChange();
-      return;
-    }
-
-    if (mPresShell->mNotifyCompositorOfVisibleRegionsChangeEvent.IsPending()) {
-      return;  
-    }
-
-    
-    RefPtr<nsRunnableMethod<PresShell>> event =
-      NewRunnableMethod(mPresShell, &PresShell::NotifyCompositorOfVisibleRegionsChange);
-    if (NS_SUCCEEDED(NS_DispatchToMainThread(event))) {
-      mPresShell->mNotifyCompositorOfVisibleRegionsChangeEvent = event;
-    }
+    VisibleRegions& regions = mVisibleRegions->ForCounter(aForCounter);
+    regions.Clear();
+    return;
   }
 
-private:
-  Maybe<VisibleFrames> mOldApproximatelyVisibleFrames;
-  Maybe<VisibleFrames> mOldInDisplayPortFrames;
-  Maybe<OnNonvisible> mNonvisibleAction;
-  PresShell* mPresShell;
-  Notify mNotifyStrategy;
-};
+  mVisibleRegions = MakeUnique<VisibleRegionsContainer>();
+}
 
 void
 PresShell::RebuildApproximateFrameVisibilityDisplayList(const nsDisplayList& aList)
@@ -5990,9 +5877,20 @@ PresShell::RebuildApproximateFrameVisibilityDisplayList(const nsDisplayList& aLi
   MOZ_ASSERT(!mApproximateFrameVisibilityVisited, "already visited?");
   mApproximateFrameVisibilityVisited = true;
 
-  AutoUpdateVisibility update(this, { VisibilityCounter::MAY_BECOME_VISIBLE });
+  
+  
+  VisibleFrames oldApproximatelyVisibleFrames;
+  mApproximatelyVisibleFrames.SwapElements(oldApproximatelyVisibleFrames);
+
+  InitVisibleRegionsIfVisualizationEnabled(VisibilityCounter::MAY_BECOME_VISIBLE);
 
   MarkFramesInListApproximatelyVisible(aList);
+
+  ForAllTrackedFramesInVisibleSet(oldApproximatelyVisibleFrames, [&](nsIFrame* aFrame) {
+    aFrame->DecVisibilityCount(VisibilityCounter::MAY_BECOME_VISIBLE);
+  });
+
+  NotifyCompositorOfVisibleRegionsChange();
 }
 
  void
@@ -6015,12 +5913,21 @@ void
 PresShell::ClearVisibleFramesSets(Maybe<OnNonvisible> aNonvisibleAction
                                     )
 {
-  
-  
-  AutoUpdateVisibility update(this, {
-    VisibilityCounter::MAY_BECOME_VISIBLE,
-    VisibilityCounter::IN_DISPLAYPORT
-  }, aNonvisibleAction);
+  ForAllTrackedFramesInVisibleSet(mApproximatelyVisibleFrames, [&](nsIFrame* aFrame) {
+    aFrame->DecVisibilityCount(VisibilityCounter::MAY_BECOME_VISIBLE, aNonvisibleAction);
+  });
+  ForAllTrackedFramesInVisibleSet(mInDisplayPortFrames, [&](nsIFrame* aFrame) {
+    aFrame->DecVisibilityCount(VisibilityCounter::IN_DISPLAYPORT, aNonvisibleAction);
+  });
+
+  mApproximatelyVisibleFrames.Clear();
+  mInDisplayPortFrames.Clear();
+
+  if (mVisibleRegions) {
+    mVisibleRegions->mApproximate.Clear();
+    mVisibleRegions->mInDisplayPort.Clear();
+    NotifyCompositorOfVisibleRegionsChange();
+  }
 }
 
 void
@@ -6127,7 +6034,12 @@ PresShell::RebuildApproximateFrameVisibility(nsRect* aRect,
     return;
   }
 
-  AutoUpdateVisibility update(this, { VisibilityCounter::MAY_BECOME_VISIBLE });
+  
+  
+  VisibleFrames oldApproximatelyVisibleFrames;
+  mApproximatelyVisibleFrames.SwapElements(oldApproximatelyVisibleFrames);
+
+  InitVisibleRegionsIfVisualizationEnabled(VisibilityCounter::MAY_BECOME_VISIBLE);
 
   nsRect vis(nsPoint(0, 0), rootFrame->GetSize());
   if (aRect) {
@@ -6135,6 +6047,12 @@ PresShell::RebuildApproximateFrameVisibility(nsRect* aRect,
   }
 
   MarkFramesInSubtreeApproximatelyVisible(rootFrame, vis, aRemoveOnly);
+
+  ForAllTrackedFramesInVisibleSet(oldApproximatelyVisibleFrames, [&](nsIFrame* aFrame) {
+    aFrame->DecVisibilityCount(VisibilityCounter::MAY_BECOME_VISIBLE);
+  });
+
+  NotifyCompositorOfVisibleRegionsChange();
 }
 
 void
@@ -6560,13 +6478,32 @@ PresShell::Paint(nsView*        aViewToPaint,
   }
 
   if (frame) {
-    AutoUpdateVisibility update(this, AutoUpdateVisibility::Notify::eAsync, {
-      VisibilityCounter::IN_DISPLAYPORT
-    });
+    
+    
+    VisibleFrames oldInDisplayPortFrames;
+    mInDisplayPortFrames.SwapElements(oldInDisplayPortFrames);
+
+    InitVisibleRegionsIfVisualizationEnabled(VisibilityCounter::IN_DISPLAYPORT);
 
     
     nsLayoutUtils::PaintFrame(nullptr, frame, aDirtyRegion, bgcolor,
                               nsDisplayListBuilderMode::PAINTING, flags);
+
+    ForAllTrackedFramesInVisibleSet(oldInDisplayPortFrames, [&](nsIFrame* aFrame) {
+      aFrame->DecVisibilityCount(VisibilityCounter::IN_DISPLAYPORT);
+    });
+
+    if (mVisibleRegions &&
+        !mNotifyCompositorOfVisibleRegionsChangeEvent.IsPending()) {
+      
+      
+      
+      RefPtr<nsRunnableMethod<PresShell>> event =
+        NewRunnableMethod(this, &PresShell::NotifyCompositorOfVisibleRegionsChange);
+      if (NS_SUCCEEDED(NS_DispatchToMainThread(event))) {
+        mNotifyCompositorOfVisibleRegionsChangeEvent = event;
+      }
+    }
 
     return;
   }

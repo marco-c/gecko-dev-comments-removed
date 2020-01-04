@@ -835,8 +835,6 @@ protected:
   
   UniquePtr<VisibleRegionsContainer> mVisibleRegions;
 
-  friend struct AutoUpdateVisibility;
-
 
   
   
