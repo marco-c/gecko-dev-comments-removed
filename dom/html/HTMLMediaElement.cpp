@@ -4757,17 +4757,17 @@ HTMLMediaElement::NotifyAudioChannelAgent(bool aPlaying)
   
   AutoNoJSAPI nojsapi;
 
-  
-  uint32_t notify = HasAudio() ? nsIAudioChannelAgent::AUDIO_AGENT_NOTIFY :
-                                 nsIAudioChannelAgent::AUDIO_AGENT_DONT_NOTIFY;
-
   if (aPlaying) {
+    
+    uint32_t notify = HasAudio() ? nsIAudioChannelAgent::AUDIO_AGENT_NOTIFY :
+                                   nsIAudioChannelAgent::AUDIO_AGENT_DONT_NOTIFY;
+
     float volume = 0.0;
     bool muted = true;
     mAudioChannelAgent->NotifyStartedPlaying(notify, &volume, &muted);
     WindowVolumeChanged(volume, muted);
   } else {
-    mAudioChannelAgent->NotifyStoppedPlaying(notify);
+    mAudioChannelAgent->NotifyStoppedPlaying();
     mAudioChannelAgent = nullptr;
   }
 }
