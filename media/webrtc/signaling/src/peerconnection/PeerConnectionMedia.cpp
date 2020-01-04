@@ -205,9 +205,15 @@ PeerConnectionMedia::ProtocolProxyQueryHandler::SetProxyOnPcm(
 
   if (pcm_->mIceCtx.get()) {
     assert(httpsProxyPort >= 0 && httpsProxyPort < (1 << 16));
+    
+    
+    
+    
+    
     pcm_->mProxyServer.reset(
       new NrIceProxyServer(httpsProxyHost.get(),
-                           static_cast<uint16_t>(httpsProxyPort)));
+                           static_cast<uint16_t>(httpsProxyPort),
+                           "webrtc,c-webrtc"));
   } else {
     CSFLogError(logTag, "%s: Failed to set proxy server (ICE ctx unavailable)",
         __FUNCTION__);
