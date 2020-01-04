@@ -3196,9 +3196,7 @@ function parseAttributeValues(attr, doc) {
     }
   }
 
-  
-  
-  return attributes.reverse();
+  return attributes;
 }
 
 

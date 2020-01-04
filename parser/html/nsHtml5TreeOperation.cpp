@@ -410,8 +410,7 @@ nsHtml5TreeOperation::CreateElement(int32_t aNs,
   }
 
   int32_t len = aAttributes->getLength();
-  for (int32_t i = len; i > 0;) {
-    --i;
+  for (int32_t i = 0; i < len; i++) {
     
     
     nsCOMPtr<nsIAtom> localName =

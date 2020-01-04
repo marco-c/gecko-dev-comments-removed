@@ -437,10 +437,7 @@ var NodeActor = exports.NodeActor = protocol.ActorClass({
       return undefined;
     }
 
-    
-    
-    
-    return [...this.rawNode.attributes].reverse().map(attr => {
+    return [...this.rawNode.attributes].map(attr => {
       return {namespace: attr.namespace, name: attr.name, value: attr.value };
     });
   },
