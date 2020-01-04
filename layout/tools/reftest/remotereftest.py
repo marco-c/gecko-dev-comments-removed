@@ -8,18 +8,20 @@ import time
 import tempfile
 import traceback
 
-
-SCRIPT_DIRECTORY = os.path.abspath(os.path.realpath(os.path.dirname(__file__)))
-
-from runreftest import RefTest, ReftestResolver
-from automation import Automation
 import devicemanager
 import droid
 import mozinfo
 import moznetwork
+from automation import Automation
 from remoteautomation import RemoteAutomation, fennecLogcatFilters
 
+from output import OutputHandler
+from runreftest import RefTest, ReftestResolver
 import reftestcommandline
+
+
+SCRIPT_DIRECTORY = os.path.abspath(os.path.realpath(os.path.dirname(__file__)))
+
 
 class RemoteReftestResolver(ReftestResolver):
     def absManifestPath(self, path):
@@ -145,6 +147,13 @@ class RemoteReftest(RefTest):
             self.SERVER_STARTUP_TIMEOUT = 90
         self.automation.deleteANRs()
         self.automation.deleteTombstones()
+
+        self._populate_logger(options)
+        outputHandler = OutputHandler(self.log, options.utilityPath, options.symbolsPath)
+        
+        
+        outputHandler.write = outputHandler.__call__
+        self.automation._processArgs['messageLogger'] = outputHandler
 
     def findPath(self, paths, filename = None):
         for path in paths:
@@ -445,4 +454,3 @@ def main():
 
 if __name__ == "__main__":
     sys.exit(main())
-
