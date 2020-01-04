@@ -623,12 +623,18 @@ loop.store.ActiveRoomStore = (function() {
           
           console.error("Firefox didn't handle room it said it could.");
         } else {
-          this.dispatcher.dispatch(new sharedActions.JoinedRoom({
-            apiKey: "",
-            sessionToken: "",
-            sessionId: "",
-            expires: 0
-          }));
+          if (e.detail.message.alreadyOpen) {
+            this.dispatcher.dispatch(new sharedActions.ConnectionFailure({
+              reason: FAILURE_DETAILS.ROOM_ALREADY_OPEN
+            }));
+          } else {
+            this.dispatcher.dispatch(new sharedActions.JoinedRoom({
+              apiKey: "",
+              sessionToken: "",
+              sessionId: "",
+              expires: 0
+            }));
+          }
         }
       }
 
@@ -1064,6 +1070,15 @@ loop.store.ActiveRoomStore = (function() {
 
 
     _leaveRoom: function(nextState, failedJoinRequest) {
+      if (this._storeState.standalone && this._storeState.userAgentHandlesRoom) {
+        
+        
+        this.setStoreState({
+          roomState: nextState
+        });
+        return;
+      }
+
       if (loop.standaloneMedia) {
         loop.standaloneMedia.multiplexGum.reset();
       }
