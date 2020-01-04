@@ -510,9 +510,6 @@ nsAnimationManager::CheckAnimationRule(nsStyleContext* aStyleContext,
         }
 
         
-        oldAnim->ClearIsRunningOnCompositor();
-
-        
         
         if (oldAnim->PlayState() != AnimationPlayState::Idle) {
           

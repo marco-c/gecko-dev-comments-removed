@@ -560,7 +560,7 @@ Animation::CanThrottle() const
     return true;
   }
 
-  return mIsRunningOnCompositor;
+  return IsRunningOnCompositor();
 }
 
 void
@@ -762,11 +762,6 @@ Animation::DoPause(ErrorResult& aRv)
     CancelPendingTasks();
     reuseReadyPromise = true;
   }
-
-  
-  
-  
-  mIsRunningOnCompositor = false;
 
   if (!reuseReadyPromise) {
     
@@ -1200,6 +1195,12 @@ Animation::DispatchPlaybackEvent(const nsAString& aName)
   nsRefPtr<AsyncEventDispatcher> asyncDispatcher =
     new AsyncEventDispatcher(this, event);
   asyncDispatcher->PostDOMEvent();
+}
+
+bool
+Animation::IsRunningOnCompositor() const
+{
+  return mEffect && mEffect->IsRunningOnCompositor();
 }
 
 } 

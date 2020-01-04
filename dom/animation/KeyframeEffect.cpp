@@ -9,6 +9,7 @@
 #include "mozilla/FloatingPoint.h"
 #include "AnimationCommon.h"
 #include "nsCSSPropertySet.h"
+#include "nsCSSProps.h" 
 
 namespace mozilla {
 
@@ -73,6 +74,20 @@ NS_INTERFACE_MAP_END_INHERITING(AnimationEffectReadOnly)
 
 NS_IMPL_ADDREF_INHERITED(KeyframeEffectReadOnly, AnimationEffectReadOnly)
 NS_IMPL_RELEASE_INHERITED(KeyframeEffectReadOnly, AnimationEffectReadOnly)
+
+KeyframeEffectReadOnly::KeyframeEffectReadOnly(
+  nsIDocument* aDocument,
+  Element* aTarget,
+  nsCSSPseudoElements::Type aPseudoType,
+  const AnimationTiming& aTiming)
+  : AnimationEffectReadOnly(aDocument)
+  , mTarget(aTarget)
+  , mTiming(aTiming)
+  , mPseudoType(aPseudoType)
+{
+  MOZ_ASSERT(aTarget, "null animation target is not yet supported");
+  ResetIsRunningOnCompositor();
+}
 
 JSObject*
 KeyframeEffectReadOnly::WrapObject(JSContext* aCx,
@@ -393,6 +408,51 @@ KeyframeEffectReadOnly::ComposeStyle(nsRefPtr<AnimValuesStyleRule>& aStyleRule,
                                        segment->mToValue,
                                        valuePosition, *val);
     MOZ_ASSERT(result, "interpolate must succeed now");
+  }
+}
+
+bool
+KeyframeEffectReadOnly::IsRunningOnCompositor() const
+{
+  
+  
+  
+  
+  for (bool isPropertyRunningOnCompositor : mIsPropertyRunningOnCompositor) {
+    if (isPropertyRunningOnCompositor) {
+      return true;
+    }
+  }
+  return false;
+}
+
+void
+KeyframeEffectReadOnly::SetIsRunningOnCompositor(nsCSSProperty aProperty,
+                                                 bool aIsRunning)
+{
+  static_assert(
+    MOZ_ARRAY_LENGTH(LayerAnimationInfo::sRecords) ==
+      MOZ_ARRAY_LENGTH(mIsPropertyRunningOnCompositor),
+    "The length of mIsPropertyRunningOnCompositor should equal to"
+    "the length of LayserAnimationInfo::sRecords");
+  MOZ_ASSERT(nsCSSProps::PropHasFlags(aProperty,
+                                      CSS_PROPERTY_CAN_ANIMATE_ON_COMPOSITOR),
+             "Property being animated on compositor is a recognized "
+             "compositor-animatable property");
+  const auto& info = LayerAnimationInfo::sRecords;
+  for (size_t i = 0; i < ArrayLength(mIsPropertyRunningOnCompositor); i++) {
+    if (info[i].mProperty == aProperty) {
+      mIsPropertyRunningOnCompositor[i] = aIsRunning;
+      return;
+    }
+  }
+}
+
+void
+KeyframeEffectReadOnly::ResetIsRunningOnCompositor()
+{
+  for (bool& isPropertyRunningOnCompositor : mIsPropertyRunningOnCompositor) {
+    isPropertyRunningOnCompositor = false;
   }
 }
 

@@ -162,6 +162,8 @@ public:
   AnimationCollection*
   GetAnimationCollection(const nsIFrame* aFrame);
 
+  void ClearIsRunningOnCompositor(const nsIFrame *aFrame,
+                                  nsCSSProperty aProperty);
 protected:
   LinkedList<AnimationCollection> mElementCollections;
   nsPresContext *mPresContext; 
@@ -282,6 +284,7 @@ struct AnimationCollection : public LinkedListElement<AnimationCollection>
     Layer
   };
   void RequestRestyle(RestyleType aRestyleType);
+  void ClearIsRunningOnCompositor(nsCSSProperty aProperty);
 
 private:
   static bool
