@@ -126,9 +126,6 @@ public:
   virtual void SetPlatformCanOffloadAudio(bool aCanOffloadAudio) {}
 
   
-  virtual bool CheckDecoderCanOffloadAudio() { return false; }
-
-  
   virtual void SetElementVisibility(bool aIsVisible) {}
 
   
