@@ -117,7 +117,7 @@ function* asyncCleanup() {
 }
 
 
-add_task(() => openPrefsFromMenuPanel("PanelUI-remotetabs-setupsync", "syncbutton"));
+add_task(() => openPrefsFromMenuPanel("PanelUI-remotetabs-setupsync", "synced-tabs"));
 add_task(asyncCleanup);
 
 add_task(() => openPrefsFromMenuPanel("PanelUI-remotetabs-setupsync", "uitour"));
@@ -129,7 +129,7 @@ add_task(function* () {
   document.getElementById("sync-reauth-state").hidden = false;
   document.getElementById("sync-setup-state").hidden = true;
   document.getElementById("sync-syncnow-state").hidden = true;
-  yield openPrefsFromMenuPanel("PanelUI-remotetabs-reauthsync", "syncbutton")
+  yield openPrefsFromMenuPanel("PanelUI-remotetabs-reauthsync", "synced-tabs")
 });
 
 
