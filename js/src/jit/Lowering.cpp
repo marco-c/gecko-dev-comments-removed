@@ -3303,6 +3303,9 @@ LIRGenerator::visitGetElementCache(MGetElementCache* ins)
 {
     MOZ_ASSERT(ins->object()->type() == MIRType_Object);
 
+    if (ins->monitoredResult())
+        gen->setPerformsCall(); 
+
     if (ins->type() == MIRType_Value) {
         MOZ_ASSERT(ins->index()->type() == MIRType_Value);
         LGetElementCacheV* lir = new(alloc()) LGetElementCacheV(useRegister(ins->object()));
@@ -3518,6 +3521,8 @@ LIRGenerator::visitSetElementCache(MSetElementCache* ins)
 {
     MOZ_ASSERT(ins->object()->type() == MIRType_Object);
     MOZ_ASSERT(ins->index()->type() == MIRType_Value);
+
+    gen->setPerformsCall(); 
 
     
     
