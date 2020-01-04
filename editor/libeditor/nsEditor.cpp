@@ -19,7 +19,7 @@
 #include "EditAggregateTxn.h"           
 #include "EditorUtils.h"                
 #include "EditTxn.h"                    
-#include "InsertNodeTxn.h"              
+#include "InsertNodeTransaction.h"      
 #include "InsertTextTxn.h"              
 #include "JoinNodeTxn.h"                
 #include "PlaceholderTxn.h"             
@@ -1394,20 +1394,19 @@ nsEditor::InsertNode(nsIContent& aNode, nsINode& aParent, int32_t aPosition)
                              aPosition);
   }
 
-  RefPtr<InsertNodeTxn> txn = CreateTxnForInsertNode(aNode, aParent,
-                                                       aPosition);
-  nsresult res = DoTransaction(txn);
+  RefPtr<InsertNodeTransaction> transaction =
+    CreateTxnForInsertNode(aNode, aParent, aPosition);
+  nsresult rv = DoTransaction(transaction);
 
   mRangeUpdater.SelAdjInsertNode(aParent.AsDOMNode(), aPosition);
 
   for (auto& listener : mActionListeners) {
     listener->DidInsertNode(aNode.AsDOMNode(), aParent.AsDOMNode(), aPosition,
-                            res);
+                            rv);
   }
 
-  return res;
+  return rv;
 }
-
 
 NS_IMETHODIMP
 nsEditor::SplitNode(nsIDOMNode* aNode,
@@ -4203,14 +4202,14 @@ nsEditor::CreateTxnForCreateElement(nsIAtom& aTag,
 }
 
 
-already_AddRefed<InsertNodeTxn>
+already_AddRefed<InsertNodeTransaction>
 nsEditor::CreateTxnForInsertNode(nsIContent& aNode,
                                  nsINode& aParent,
                                  int32_t aPosition)
 {
-  RefPtr<InsertNodeTxn> txn = new InsertNodeTxn(aNode, aParent, aPosition,
-                                                  *this);
-  return txn.forget();
+  RefPtr<InsertNodeTransaction> transaction =
+    new InsertNodeTransaction(aNode, aParent, aPosition, *this);
+  return transaction.forget();
 }
 
 nsresult

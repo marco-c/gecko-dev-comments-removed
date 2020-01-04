@@ -3,8 +3,8 @@
 
 
 
-#ifndef InsertNodeTxn_h__
-#define InsertNodeTxn_h__
+#ifndef InsertNodeTransaction_h
+#define InsertNodeTransaction_h
 
 #include "EditTxn.h"                    
 #include "nsCOMPtr.h"                   
@@ -15,12 +15,11 @@
 class nsEditor;
 
 namespace mozilla {
-namespace dom {
 
 
 
 
-class InsertNodeTxn : public EditTxn
+class InsertNodeTransaction final : public EditTxn
 {
 public:
   
@@ -28,16 +27,17 @@ public:
 
 
 
-  InsertNodeTxn(nsIContent& aNode, nsINode& aParent, int32_t aOffset,
-                nsEditor& aEditor);
+
+  InsertNodeTransaction(nsIContent& aNode, nsINode& aParent, int32_t aOffset,
+                        nsEditor& aEditor);
 
   NS_DECL_ISUPPORTS_INHERITED
-  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(InsertNodeTxn, EditTxn)
+  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(InsertNodeTransaction, EditTxn)
 
   NS_DECL_EDITTXN
 
 protected:
-  virtual ~InsertNodeTxn();
+  virtual ~InsertNodeTransaction();
 
   
   nsCOMPtr<nsIContent> mNode;
@@ -53,6 +53,5 @@ protected:
 };
 
 } 
-} 
 
-#endif
+#endif 
