@@ -174,6 +174,10 @@ private:
   void SerializeMessage(IPC::Message* aMsg) const;
   bool DeserializeMessage(const IPC::Message* aMsg, void** aIter);
 
+  
+  
+  nsTArray<nsString>& CreateErrorMessageHelper(const dom::ErrNum errorNumber, nsresult errorType);
+
   void ThrowErrorWithMessage(va_list ap, const dom::ErrNum errorNumber,
                              nsresult errorType);
 
