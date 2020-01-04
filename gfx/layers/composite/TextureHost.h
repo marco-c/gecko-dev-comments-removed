@@ -394,11 +394,20 @@ public:
 
 
   virtual bool Lock() { return true; }
+  
+
+
+
+  virtual void Unlock() {}
 
   
 
 
-  virtual void Unlock() {}
+  virtual bool LockWithoutCompositor() { return true; }
+  
+
+
+  virtual void UnlockWithoutCompositor() {}
 
   
 
@@ -801,6 +810,29 @@ public:
   {
     if (mTexture && mLocked) {
       mTexture->Unlock();
+    }
+  }
+
+  bool Failed() { return mTexture && !mLocked; }
+
+private:
+  RefPtr<TextureHost> mTexture;
+  bool mLocked;
+};
+
+class MOZ_STACK_CLASS AutoLockTextureHostWithoutCompositor
+{
+public:
+  explicit AutoLockTextureHostWithoutCompositor(TextureHost* aTexture)
+    : mTexture(aTexture)
+  {
+    mLocked = mTexture ? mTexture->LockWithoutCompositor() : false;
+  }
+
+  ~AutoLockTextureHostWithoutCompositor()
+  {
+    if (mTexture && mLocked) {
+      mTexture->UnlockWithoutCompositor();
     }
   }
 

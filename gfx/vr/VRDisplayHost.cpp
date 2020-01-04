@@ -83,7 +83,9 @@ VRDisplayHost::SubmitFrame(VRLayerParent* aLayer, const int32_t& aInputFrameID,
   
 
   TextureHost* th = TextureHost::AsTextureHost(aTexture);
-  AutoLockTextureHost autoLock(th);
+  
+  
+  AutoLockTextureHostWithoutCompositor autoLock(th);
   if (autoLock.Failed()) {
     NS_WARNING("Failed to lock the VR layer texture");
     return;
