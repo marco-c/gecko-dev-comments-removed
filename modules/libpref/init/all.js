@@ -5061,7 +5061,7 @@ pref("browser.safebrowsing.forbiddenURIs.enabled", false);
 pref("urlclassifier.forbiddenTable", "test-forbid-simple");
 
 
-pref("browser.safebrowsing.blockedURIs.enabled", true);
+pref("browser.safebrowsing.blockedURIs.enabled", false);
 pref("urlclassifier.blockedTable", "test-block-simple,mozplugin-block-digest256");
 
 
