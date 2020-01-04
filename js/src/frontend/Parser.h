@@ -374,6 +374,7 @@ enum PropListType { ObjectLiteral, ClassBody, DerivedClassBody };
 enum class PropertyType {
     Normal,
     Shorthand,
+    CoverInitializedName,
     Getter,
     GetterNoExpressionClosure,
     Setter,
@@ -413,6 +414,72 @@ class Parser : private JS::AutoGCRooter, public StrictModeGetter
         StmtInfoPC& operator*() { return stmt_; }
         StmtInfoPC* operator->() { return &stmt_; }
         operator StmtInfoPC*() { return &stmt_; }
+    };
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    class MOZ_STACK_CLASS PossibleError
+    {
+        enum ErrorState { None, Pending };
+        ErrorState state_;
+
+        
+        uint32_t offset_;
+        unsigned errorNumber_;
+        ParseReportKind reportKind_;
+        Parser<ParseHandler>& parser_;
+        bool strict_;
+
+        public:
+          explicit PossibleError(Parser<ParseHandler>& parser);
+
+          
+          void setPending(ParseReportKind kind, unsigned errorNumber, bool strict);
+
+          
+          void setResolved();
+
+          
+          bool hasError();
+
+          
+          
+          bool checkForExprErrors();
+
+          
+          
+          
+          
+          void transferErrorTo(PossibleError* other);
     };
 
   public:
@@ -765,7 +832,15 @@ class Parser : private JS::AutoGCRooter, public StrictModeGetter
 
     Node expr(InHandling inHandling, YieldHandling yieldHandling,
               TripledotHandling tripledotHandling,
+              PossibleError* possibleError,
               InvokedPrediction invoked = PredictUninvoked);
+    Node expr(InHandling inHandling, YieldHandling yieldHandling,
+              TripledotHandling tripledotHandling,
+              InvokedPrediction invoked = PredictUninvoked);
+    Node assignExpr(InHandling inHandling, YieldHandling yieldHandling,
+                    TripledotHandling tripledotHandling,
+                    PossibleError* possibleError,
+                    InvokedPrediction invoked = PredictUninvoked);
     Node assignExpr(InHandling inHandling, YieldHandling yieldHandling,
                     TripledotHandling tripledotHandling,
                     InvokedPrediction invoked = PredictUninvoked);
@@ -773,16 +848,26 @@ class Parser : private JS::AutoGCRooter, public StrictModeGetter
     Node yieldExpression(InHandling inHandling);
     Node condExpr1(InHandling inHandling, YieldHandling yieldHandling,
                    TripledotHandling tripledotHandling,
+                   PossibleError* possibleError,
                    InvokedPrediction invoked = PredictUninvoked);
     Node orExpr1(InHandling inHandling, YieldHandling yieldHandling,
                  TripledotHandling tripledotHandling,
-                   InvokedPrediction invoked = PredictUninvoked);
+                 PossibleError* possibleError,
+                 InvokedPrediction invoked = PredictUninvoked);
     Node unaryExpr(YieldHandling yieldHandling, TripledotHandling tripledotHandling,
+                   PossibleError* possibleError,
                    InvokedPrediction invoked = PredictUninvoked);
+    Node memberExpr(YieldHandling yieldHandling, TripledotHandling tripledotHandling,
+                    PossibleError* possibleError, TokenKind tt,
+                    bool allowCallSyntax, InvokedPrediction invoked = PredictUninvoked);
     Node memberExpr(YieldHandling yieldHandling, TripledotHandling tripledotHandling, TokenKind tt,
                     bool allowCallSyntax, InvokedPrediction invoked = PredictUninvoked);
-    Node primaryExpr(YieldHandling yieldHandling, TripledotHandling tripledotHandling, TokenKind tt,
+    Node primaryExpr(YieldHandling yieldHandling, TripledotHandling tripledotHandling,
+                     PossibleError* possibleError, TokenKind tt,
                      InvokedPrediction invoked = PredictUninvoked);
+    Node exprInParens(InHandling inHandling, YieldHandling yieldHandling,
+                      TripledotHandling tripledotHandling,
+                      PossibleError* possibleError);
     Node exprInParens(InHandling inHandling, YieldHandling yieldHandling,
                       TripledotHandling tripledotHandling);
 
@@ -854,7 +939,8 @@ class Parser : private JS::AutoGCRooter, public StrictModeGetter
         ForInOrOfTarget
     };
 
-    bool checkAndMarkAsAssignmentLhs(Node pn, AssignmentFlavor flavor);
+    bool checkAndMarkAsAssignmentLhs(Node pn, AssignmentFlavor flavor,
+                                     PossibleError* possibleError=nullptr);
     bool matchInOrOf(bool* isForInp, bool* isForOfp);
 
     bool checkFunctionArguments();
@@ -909,7 +995,7 @@ class Parser : private JS::AutoGCRooter, public StrictModeGetter
     Node arrayInitializer(YieldHandling yieldHandling);
     Node newRegExp();
 
-    Node objectLiteral(YieldHandling yieldHandling);
+    Node objectLiteral(YieldHandling yieldHandling, PossibleError* possibleError);
 
     enum PrepareLexicalKind {
         PrepareLet,
