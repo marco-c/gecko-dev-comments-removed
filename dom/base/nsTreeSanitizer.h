@@ -158,8 +158,8 @@ class MOZ_STACK_CLASS nsTreeSanitizer {
 
 
 
-    bool SanitizeStyleRule(mozilla::css::StyleRule* aRule,
-                             nsAutoString &aRuleText);
+    bool SanitizeStyleDeclaration(mozilla::css::Declaration* aDeclaration,
+                                  nsAutoString& aRuleText);
 
     
 

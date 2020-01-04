@@ -29,14 +29,10 @@ ClearAttrCache(const nsAString& aKey, MiscContainer*& aValue, void*)
 {
   
   
-  MOZ_ASSERT(aValue->mType == nsAttrValue::eCSSStyleRule);
+  MOZ_ASSERT(aValue->mType == nsAttrValue::eCSSDeclaration);
 
-  css::StyleRule* styleRule = aValue->mValue.mCSSStyleRule;
-  styleRule->SetHTMLCSSStyleSheet(nullptr);
-  css::Declaration* declaration = styleRule->GetDeclaration();
-  if (declaration) {
-    declaration->SetHTMLCSSStyleSheet(nullptr);
-  }
+  css::Declaration* declaration = aValue->mValue.mCSSDeclaration;
+  declaration->SetHTMLCSSStyleSheet(nullptr);
   aValue->mValue.mCached = 0;
 
   return PL_DHASH_REMOVE;
@@ -70,20 +66,18 @@ nsHTMLCSSStyleSheet::ElementRulesMatching(nsPresContext* aPresContext,
                                           nsRuleWalker* aRuleWalker)
 {
   
-  css::StyleRule* rule = aElement->GetInlineStyleRule();
-  if (rule) {
-    css::Declaration* declaration = rule->GetDeclaration();
+  css::Declaration* declaration = aElement->GetInlineStyleDeclaration();
+  if (declaration) {
     declaration->SetImmutable();
     aRuleWalker->Forward(declaration);
   }
 
-  rule = aElement->GetSMILOverrideStyleRule();
-  if (rule) {
+  declaration = aElement->GetSMILOverrideStyleDeclaration();
+  if (declaration) {
     RestyleManager* restyleManager = aPresContext->RestyleManager();
     if (!restyleManager->SkipAnimationRules()) {
       
       
-      css::Declaration* declaration = rule->GetDeclaration();
       declaration->SetImmutable();
       aRuleWalker->Forward(declaration);
     }
@@ -101,9 +95,8 @@ nsHTMLCSSStyleSheet::PseudoElementRulesMatching(Element* aPseudoElement,
   MOZ_ASSERT(aPseudoElement);
 
   
-  css::StyleRule* rule = aPseudoElement->GetInlineStyleRule();
-  if (rule) {
-    css::Declaration* declaration = rule->GetDeclaration();
+  css::Declaration* declaration = aPseudoElement->GetInlineStyleDeclaration();
+  if (declaration) {
     declaration->SetImmutable();
     aRuleWalker->Forward(declaration);
   }

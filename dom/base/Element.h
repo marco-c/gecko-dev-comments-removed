@@ -224,29 +224,29 @@ public:
   
 
 
-  virtual css::StyleRule* GetInlineStyleRule();
+  virtual css::Declaration* GetInlineStyleDeclaration();
 
   
 
 
 
-  virtual nsresult SetInlineStyleRule(css::StyleRule* aStyleRule,
-                                      const nsAString* aSerialized,
-                                      bool aNotify);
+  virtual nsresult SetInlineStyleDeclaration(css::Declaration* aDeclaration,
+                                             const nsAString* aSerialized,
+                                             bool aNotify);
 
   
 
 
 
-  virtual css::StyleRule* GetSMILOverrideStyleRule();
+  virtual css::Declaration* GetSMILOverrideStyleDeclaration();
 
   
 
 
 
 
-  virtual nsresult SetSMILOverrideStyleRule(css::StyleRule* aStyleRule,
-                                            bool aNotify);
+  virtual nsresult SetSMILOverrideStyleDeclaration(css::Declaration* aDeclaration,
+                                                   bool aNotify);
 
   
 

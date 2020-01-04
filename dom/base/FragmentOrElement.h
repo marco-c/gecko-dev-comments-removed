@@ -288,7 +288,7 @@ public:
     
 
 
-    RefPtr<mozilla::css::StyleRule> mSMILOverrideStyleRule;
+    RefPtr<mozilla::css::Declaration> mSMILOverrideStyleDeclaration;
 
     
 

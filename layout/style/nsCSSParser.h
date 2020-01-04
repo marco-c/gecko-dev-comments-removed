@@ -93,11 +93,11 @@ public:
   
   
   
-  nsresult ParseStyleAttribute(const nsAString&  aAttributeValue,
+  already_AddRefed<mozilla::css::Declaration>
+           ParseStyleAttribute(const nsAString&  aAttributeValue,
                                nsIURI*           aDocURL,
                                nsIURI*           aBaseURL,
-                               nsIPrincipal*     aNodePrincipal,
-                               mozilla::css::StyleRule** aResult);
+                               nsIPrincipal*     aNodePrincipal);
 
   
   

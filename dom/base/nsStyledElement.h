@@ -19,7 +19,7 @@
 
 namespace mozilla {
 namespace css {
-class StyleRule;
+class Declaration;
 } 
 } 
 
@@ -36,10 +36,10 @@ protected:
 
 public:
   
-  virtual mozilla::css::StyleRule* GetInlineStyleRule() override;
-  virtual nsresult SetInlineStyleRule(mozilla::css::StyleRule* aStyleRule,
-                                      const nsAString* aSerialized,
-                                      bool aNotify) override;
+  virtual mozilla::css::Declaration* GetInlineStyleDeclaration() override;
+  virtual nsresult SetInlineStyleDeclaration(mozilla::css::Declaration* aDeclaration,
+                                             const nsAString* aSerialized,
+                                             bool aNotify) override;
 
   nsICSSDeclaration* Style();
 

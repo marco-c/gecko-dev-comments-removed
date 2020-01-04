@@ -257,7 +257,7 @@ nsSVGElement::BindToTree(nsIDocument* aDocument, nsIContent* aParent,
   }
   const nsAttrValue* oldVal = mAttrsAndChildren.GetAttr(nsGkAtoms::style);
 
-  if (oldVal && oldVal->Type() == nsAttrValue::eCSSStyleRule) {
+  if (oldVal && oldVal->Type() == nsAttrValue::eCSSDeclaration) {
     
     
     
