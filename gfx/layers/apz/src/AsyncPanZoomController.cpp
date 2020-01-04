@@ -3254,6 +3254,16 @@ void AsyncPanZoomController::NotifyLayersUpdated(const FrameMetrics& aLayerMetri
   ReentrantMonitorAutoEnter lock(mMonitor);
   bool isDefault = mFrameMetrics.IsDefault();
 
+  if (!aThisLayerTreeUpdated && !isDefault) {
+    
+    
+    
+    
+    
+    MOZ_ASSERT(aLayerMetrics == mLastContentPaintMetrics);
+    APZC_LOG("%p NotifyLayersUpdated short-circuit\n", this);
+    return;
+  }
   mLastContentPaintMetrics = aLayerMetrics;
 
   mFrameMetrics.SetScrollParentId(aLayerMetrics.GetScrollParentId());
