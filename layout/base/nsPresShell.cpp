@@ -4232,8 +4232,8 @@ PresShell::DocumentStatesChanged(nsIDocument* aDocument,
     
     
     
-    NS_ERROR("stylo: ServoStyleSets cannot respond to document state "
-             "changes yet");
+    NS_WARNING("stylo: ServoStyleSets cannot respond to document state "
+               "changes yet (only matters for chrome documents). See bug 1290285.");
     return;
   }
 
