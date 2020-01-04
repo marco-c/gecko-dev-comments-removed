@@ -7915,7 +7915,7 @@ nsTextFrame::AddInlineMinISizeForFlow(nsRenderingContext *aRenderingContext,
 
   
   if (StyleContext()->IsTextCombined()) {
-    if (textRun->CanBreakLineBefore(start)) {
+    if (start < flowEndInTextRun && textRun->CanBreakLineBefore(start)) {
       aData->OptionallyBreak();
     }
     aData->mCurrentLine += provider.GetFontMetrics()->EmHeight();
