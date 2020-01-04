@@ -5,7 +5,8 @@
 "use strict";
 
 const { DOM: dom, createClass, PropTypes } = require("devtools/client/shared/vendor/react");
-const { getSourceNames, parseURL, isScratchpadScheme } = require("devtools/client/shared/source-utils");
+const { getSourceNames, parseURL,
+        isScratchpadScheme, getSourceMappedFile } = require("devtools/client/shared/source-utils");
 const { LocalizationHelper } = require("devtools/client/shared/l10n");
 
 const l10n = new LocalizationHelper("chrome://devtools/locale/components.properties");
@@ -181,15 +182,8 @@ module.exports = createClass({
     }
 
     let displaySource = showFullSourceUrl ? long : short;
-    
-    
-    
-    
-    
     if (isSourceMapped) {
-      displaySource = displaySource.lastIndexOf("/") < 0 ?
-        displaySource :
-        displaySource.slice(displaySource.lastIndexOf("/") + 1);
+      displaySource = getSourceMappedFile(displaySource);
     } else if (showEmptyPathAsHost && (displaySource === "" || displaySource === "/")) {
       displaySource = host;
     }

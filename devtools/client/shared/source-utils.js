@@ -299,9 +299,30 @@ function isChromeScheme(location, i = 0) {
   }
 }
 
+
+
+
+
+
+
+
+function getSourceMappedFile(source) {
+  
+  
+  
+  
+  if (source.lastIndexOf("/") >= 0) {
+    source = source.slice(source.lastIndexOf("/") + 1);
+  } else if (source.lastIndexOf("\\") >= 0) {
+    source = source.slice(source.lastIndexOf("\\") + 1);
+  }
+  return source;
+}
+
 exports.parseURL = parseURL;
 exports.getSourceNames = getSourceNames;
 exports.isScratchpadScheme = isScratchpadScheme;
 exports.isChromeScheme = isChromeScheme;
 exports.isContentScheme = isContentScheme;
 exports.isDataScheme = isDataScheme;
+exports.getSourceMappedFile = getSourceMappedFile;
