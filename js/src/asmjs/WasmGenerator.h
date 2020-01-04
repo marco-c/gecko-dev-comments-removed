@@ -166,7 +166,7 @@ class MOZ_STACK_CLASS ModuleGenerator
     explicit ModuleGenerator(ExclusiveContext* cx);
     ~ModuleGenerator();
 
-    bool init(UniqueModuleGeneratorData shared, ModuleKind = ModuleKind::Wasm);
+    bool init(UniqueModuleGeneratorData shared, UniqueChars filename, ModuleKind = ModuleKind::Wasm);
 
     bool isAsmJS() const { return module_->kind == ModuleKind::AsmJS; }
     CompileArgs args() const { return module_->compileArgs; }
@@ -175,6 +175,9 @@ class MOZ_STACK_CLASS ModuleGenerator
     
     bool allocateGlobalVar(ValType type, bool isConst, uint32_t* index);
     const AsmJSGlobalVariable& globalVar(unsigned index) const { return shared_->globals[index]; }
+
+    
+    void initHeapUsage(HeapUsage heapUsage);
 
     
     void initSig(uint32_t sigIndex, Sig&& sig);
@@ -220,9 +223,7 @@ class MOZ_STACK_CLASS ModuleGenerator
     
     
     
-    bool finish(HeapUsage heapUsage,
-                CacheableChars filename,
-                CacheableCharsVector&& prettyFuncNames,
+    bool finish(CacheableCharsVector&& prettyFuncNames,
                 UniqueModuleData* module,
                 UniqueStaticLinkData* staticLinkData,
                 SlowFunctionVector* slowFuncs);
