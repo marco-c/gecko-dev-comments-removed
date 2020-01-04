@@ -23,6 +23,10 @@ import org.mozilla.gecko.widget.FlowLayout;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.graphics.drawable.Drawable;
+import android.graphics.Typeface;
+import android.text.style.StyleSpan;
+import android.text.Spannable;
+import android.text.SpannableStringBuilder;
 import android.util.AttributeSet;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
@@ -73,6 +77,11 @@ class SearchEngineRow extends AnimatedHeightLayout {
     
     private int mMaxSavedSuggestions;
     private int mMaxSearchSuggestions;
+
+    
+    
+    StyleSpan mPriorToSearchTerm;
+    StyleSpan mAfterSearchTerm;
 
     public SearchEngineRow(Context context) {
         this(context, null);
@@ -139,6 +148,9 @@ class SearchEngineRow extends AnimatedHeightLayout {
         
         mMaxSavedSuggestions = getResources().getInteger(R.integer.max_saved_suggestions);
         mMaxSearchSuggestions = getResources().getInteger(R.integer.max_search_suggestions);
+
+        mPriorToSearchTerm = new StyleSpan(Typeface.BOLD);
+        mAfterSearchTerm = new StyleSpan(Typeface.BOLD);
     }
 
     private void setDescriptionOnSuggestion(View v, String suggestion) {
@@ -161,7 +173,20 @@ class SearchEngineRow extends AnimatedHeightLayout {
         }
 
         final TextView suggestionText = (TextView) v.findViewById(R.id.suggestion_text);
-        suggestionText.setText(suggestion);
+        final String searchTerm = getSuggestionTextFromView(mUserEnteredView);
+        
+        final int startOfSearchTerm = suggestion.indexOf(searchTerm);
+        
+        if (startOfSearchTerm >= 0) {
+            final int endOfSearchTerm = startOfSearchTerm + searchTerm.length();
+            final SpannableStringBuilder sb = new SpannableStringBuilder(suggestion);
+            sb.setSpan(mPriorToSearchTerm, 0, startOfSearchTerm, Spannable.SPAN_INCLUSIVE_INCLUSIVE);
+            sb.setSpan(mAfterSearchTerm, endOfSearchTerm, suggestion.length(), Spannable.SPAN_INCLUSIVE_INCLUSIVE);
+            suggestionText.setText(sb);
+        } else {
+            suggestionText.setText(suggestion);
+        }
+
         setDescriptionOnSuggestion(suggestionText, suggestion);
     }
 
