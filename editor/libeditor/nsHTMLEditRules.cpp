@@ -798,13 +798,8 @@ nsHTMLEditRules::GetListItemState(bool *aMixed, bool *aLI, bool *aDT, bool *aDD)
 }
 
 nsresult
-nsHTMLEditRules::GetAlignment(bool* aMixed, nsIHTMLEditor::EAlignment* aAlign)
+nsHTMLEditRules::GetAlignment(bool *aMixed, nsIHTMLEditor::EAlignment *aAlign)
 {
-  MOZ_ASSERT(aMixed && aAlign);
-
-  NS_ENSURE_STATE(mHTMLEditor);
-  nsCOMPtr<nsIEditor> kungFuDeathGrip(mHTMLEditor);
-
   
   
   
@@ -814,87 +809,113 @@ nsHTMLEditRules::GetAlignment(bool* aMixed, nsIHTMLEditor::EAlignment* aAlign)
   
 
   
+  NS_ENSURE_TRUE(aMixed && aAlign, NS_ERROR_NULL_POINTER);
   *aMixed = false;
   *aAlign = nsIHTMLEditor::eLeft;
 
   
-  NS_ENSURE_STATE(mHTMLEditor->GetSelection());
-  OwningNonNull<Selection> selection = *mHTMLEditor->GetSelection();
+  NS_ENSURE_STATE(mHTMLEditor);
+  RefPtr<Selection> selection = mHTMLEditor->GetSelection();
+  NS_ENSURE_STATE(selection);
 
   
-  NS_ENSURE_TRUE(mHTMLEditor->GetRoot(), NS_ERROR_FAILURE);
-  OwningNonNull<Element> root = *mHTMLEditor->GetRoot();
+  NS_ENSURE_STATE(mHTMLEditor);
+  nsCOMPtr<Element> rootElem = mHTMLEditor->GetRoot();
+  NS_ENSURE_TRUE(rootElem, NS_ERROR_FAILURE);
 
-  int32_t rootOffset = root->GetParentNode() ?
-                       root->GetParentNode()->IndexOf(root) : -1;
-
-  NS_ENSURE_STATE(selection->GetRangeAt(0) &&
-                  selection->GetRangeAt(0)->GetStartParent());
-  OwningNonNull<nsINode> parent = *selection->GetRangeAt(0)->GetStartParent();
-  int32_t offset = selection->GetRangeAt(0)->StartOffset();
+  int32_t offset, rootOffset;
+  nsCOMPtr<nsINode> parent = nsEditor::GetNodeLocation(rootElem, &rootOffset);
+  NS_ENSURE_STATE(mHTMLEditor);
+  nsresult res = mHTMLEditor->GetStartNodeAndOffset(selection,
+                                                    getter_AddRefs(parent),
+                                                    &offset);
+  NS_ENSURE_SUCCESS(res, res);
 
   
   nsCOMPtr<nsINode> nodeToExamine;
-  if (selection->Collapsed() || parent->GetAsText()) {
+  if (selection->Collapsed()) {
     
     
+    nodeToExamine = parent;
+  }
+  else if (!mHTMLEditor) {
+    return NS_ERROR_UNEXPECTED;
+  }
+  else if (mHTMLEditor->IsTextNode(parent))
+  {
     
     nodeToExamine = parent;
   } else if (parent->IsHTMLElement(nsGkAtoms::html) && offset == rootOffset) {
     
+    NS_ENSURE_STATE(mHTMLEditor);
     nodeToExamine = mHTMLEditor->GetNextNode(parent, offset, true);
-  } else {
+  }
+  else
+  {
     nsTArray<RefPtr<nsRange>> arrayOfRanges;
-    GetPromotedRanges(selection, arrayOfRanges, EditAction::align);
+    GetPromotedRanges(*selection, arrayOfRanges, EditAction::align);
 
     
     nsTArray<OwningNonNull<nsINode>> arrayOfNodes;
-    nsresult rv = GetNodesForOperation(arrayOfRanges, arrayOfNodes,
-                                       EditAction::align, TouchContent::no);
-    NS_ENSURE_SUCCESS(rv, rv);
+    res = GetNodesForOperation(arrayOfRanges, arrayOfNodes,
+                               EditAction::align, TouchContent::no);
+    NS_ENSURE_SUCCESS(res, res);
     nodeToExamine = arrayOfNodes.SafeElementAt(0);
   }
 
   NS_ENSURE_TRUE(nodeToExamine, NS_ERROR_NULL_POINTER);
 
   NS_NAMED_LITERAL_STRING(typeAttrName, "align");
+  nsIAtom  *dummyProperty = nullptr;
+  NS_ENSURE_STATE(mHTMLEditor);
   nsCOMPtr<Element> blockParent = mHTMLEditor->GetBlock(*nodeToExamine);
 
   NS_ENSURE_TRUE(blockParent, NS_ERROR_FAILURE);
 
-  if (mHTMLEditor->IsCSSEnabled() &&
-      mHTMLEditor->mHTMLCSSUtils->IsCSSEditableProperty(blockParent, nullptr,
-                                                        &typeAttrName)) {
-    
-    nsAutoString value;
-    
-    mHTMLEditor->mHTMLCSSUtils->GetCSSEquivalentToHTMLInlineStyleSet(
-        blockParent, nullptr, &typeAttrName, value, nsHTMLCSSUtils::eComputed);
-    if (value.EqualsLiteral("center") ||
-        value.EqualsLiteral("-moz-center") ||
-        value.EqualsLiteral("auto auto")) {
-      *aAlign = nsIHTMLEditor::eCenter;
+  NS_ENSURE_STATE(mHTMLEditor);
+  if (mHTMLEditor->IsCSSEnabled())
+  {
+    NS_ENSURE_STATE(mHTMLEditor);
+    if (mHTMLEditor->mHTMLCSSUtils->IsCSSEditableProperty(blockParent,
+                                                          dummyProperty,
+                                                          &typeAttrName)) {
+      
+      nsAutoString value;
+      
+      NS_ENSURE_STATE(mHTMLEditor);
+      mHTMLEditor->mHTMLCSSUtils->GetCSSEquivalentToHTMLInlineStyleSet(
+        blockParent, dummyProperty, &typeAttrName, value,
+        nsHTMLCSSUtils::eComputed);
+      if (value.EqualsLiteral("center") ||
+          value.EqualsLiteral("-moz-center") ||
+          value.EqualsLiteral("auto auto"))
+      {
+        *aAlign = nsIHTMLEditor::eCenter;
+        return NS_OK;
+      }
+      if (value.EqualsLiteral("right") ||
+          value.EqualsLiteral("-moz-right") ||
+          value.EqualsLiteral("auto 0px"))
+      {
+        *aAlign = nsIHTMLEditor::eRight;
+        return NS_OK;
+      }
+      if (value.EqualsLiteral("justify"))
+      {
+        *aAlign = nsIHTMLEditor::eJustify;
+        return NS_OK;
+      }
+      *aAlign = nsIHTMLEditor::eLeft;
       return NS_OK;
     }
-    if (value.EqualsLiteral("right") ||
-        value.EqualsLiteral("-moz-right") ||
-        value.EqualsLiteral("auto 0px")) {
-      *aAlign = nsIHTMLEditor::eRight;
-      return NS_OK;
-    }
-    if (value.EqualsLiteral("justify")) {
-      *aAlign = nsIHTMLEditor::eJustify;
-      return NS_OK;
-    }
-    *aAlign = nsIHTMLEditor::eLeft;
-    return NS_OK;
   }
 
   
   bool isFirstNodeToExamine = true;
-  for (; nodeToExamine; nodeToExamine = nodeToExamine->GetParentNode()) {
-    if (!isFirstNodeToExamine &&
-        nodeToExamine->IsHTMLElement(nsGkAtoms::table)) {
+  while (nodeToExamine)
+  {
+    if (!isFirstNodeToExamine && nsHTMLEditUtils::IsTable(nodeToExamine))
+    {
       
       
       
@@ -902,24 +923,28 @@ nsHTMLEditRules::GetAlignment(bool* aMixed, nsIHTMLEditor::EAlignment* aAlign)
     }
     if (nsHTMLEditUtils::SupportsAlignAttr(GetAsDOMNode(nodeToExamine))) {
       
-      nsAutoString typeAttrVal;
-      nodeToExamine->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::align,
-                                          typeAttrVal);
-      ToLowerCase(typeAttrVal);
-      if (!typeAttrVal.IsEmpty()) {
-        if (typeAttrVal.EqualsLiteral("center")) {
-          *aAlign = nsIHTMLEditor::eCenter;
-        } else if (typeAttrVal.EqualsLiteral("right")) {
-          *aAlign = nsIHTMLEditor::eRight;
-        } else if (typeAttrVal.EqualsLiteral("justify")) {
-          *aAlign = nsIHTMLEditor::eJustify;
-        } else {
-          *aAlign = nsIHTMLEditor::eLeft;
+      nsCOMPtr<nsIDOMElement> elem = do_QueryInterface(nodeToExamine);
+      if (elem)
+      {
+        nsAutoString typeAttrVal;
+        res = elem->GetAttribute(NS_LITERAL_STRING("align"), typeAttrVal);
+        ToLowerCase(typeAttrVal);
+        if (NS_SUCCEEDED(res) && typeAttrVal.Length())
+        {
+          if (typeAttrVal.EqualsLiteral("center"))
+            *aAlign = nsIHTMLEditor::eCenter;
+          else if (typeAttrVal.EqualsLiteral("right"))
+            *aAlign = nsIHTMLEditor::eRight;
+          else if (typeAttrVal.EqualsLiteral("justify"))
+            *aAlign = nsIHTMLEditor::eJustify;
+          else
+            *aAlign = nsIHTMLEditor::eLeft;
+          return res;
         }
-        return NS_OK;
       }
     }
     isFirstNodeToExamine = false;
+    nodeToExamine = nodeToExamine->GetParentNode();
   }
   return NS_OK;
 }
