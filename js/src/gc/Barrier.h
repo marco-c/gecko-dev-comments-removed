@@ -507,32 +507,20 @@ class RelocatablePtr : public BarrieredBase<T>
 
 
 
-
-
-
-
-
 template <class T>
 class ReadBarriered
 {
     T value;
 
-    void read() const { InternalGCMethods<T>::readBarrier(value); }
-    void post(T prev, T next) { InternalGCMethods<T>::postBarrier(&value, prev, next); }
-
   public:
-    ReadBarriered() : value(GCMethods<T>::initial()) {}
-    explicit ReadBarriered(T value) : value(value) {
-        post(GCMethods<T>::initial(), value);
-    }
-    ~ReadBarriered() {
-        post(value, GCMethods<T>::initial());
-    }
+    ReadBarriered() : value(nullptr) {}
+    explicit ReadBarriered(T value) : value(value) {}
+    explicit ReadBarriered(const Rooted<T>& rooted) : value(rooted) {}
 
     T get() const {
         if (!InternalGCMethods<T>::isMarkable(value))
             return GCMethods<T>::initial();
-        read();
+        InternalGCMethods<T>::readBarrier(value);
         return value;
     }
 
@@ -542,17 +530,13 @@ class ReadBarriered
 
     operator T() const { return get(); }
 
-    const T& operator*() const { return *get(); }
-    const T operator->() const { return get(); }
+    T& operator*() const { return *get(); }
+    T operator->() const { return get(); }
 
     T* unsafeGet() { return &value; }
-    T const* unsafeGet() const { return &value; }
+    T const * unsafeGet() const { return &value; }
 
-    void set(T v) {
-        T tmp = value;
-        value = v;
-        post(tmp, value);
-    }
+    void set(T v) { value = v; }
 };
 
 
