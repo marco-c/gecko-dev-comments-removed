@@ -197,11 +197,10 @@ def main(argv):
     
     
     
-    
     test_flags = get_jitflags(options.jitflags)
     options.can_test_also_noasmjs = True
     options.can_test_also_wasm_baseline = True
-    if options.debugger or all(['--no-asmjs' in flags for flags in test_flags]):
+    if all(['--no-asmjs' in flags for flags in test_flags]):
         options.can_test_also_noasmjs = False
         options.can_test_also_wasm_baseline = False
 
@@ -305,6 +304,7 @@ def main(argv):
             jobs = list(job_list)
 
             def display_job(job):
+                flags = ""
                 if len(job.jitflags) != 0:
                     flags = "({})".format(' '.join(job.jitflags))
                 return '{} {}'.format(job.path, flags)
