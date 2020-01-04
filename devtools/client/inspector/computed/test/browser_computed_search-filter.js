@@ -15,7 +15,7 @@ const TEST_URI = `
   <span id="matches" class="matches">Some styled text</span>
 `;
 
-add_task(function*() {
+add_task(function* () {
   yield addTab("data:text/html;charset=utf-8," + encodeURIComponent(TEST_URI));
   let {inspector, view} = yield openComputedView();
   yield selectNode("#matches", inspector);
@@ -41,7 +41,8 @@ function* testAddTextInFilter(inspector, computedView) {
   
   inspector.panelWin.focus();
   EventUtils.synthesizeKey("f", { accelKey: true });
-  isnot(inspector.panelDoc.activeElement, searchField, "Search field isn't focused");
+  isnot(inspector.panelDoc.activeElement, searchField,
+        "Search field isn't focused");
 
   computedView.element.focus();
   EventUtils.synthesizeKey("f", { accelKey: true });
@@ -53,7 +54,7 @@ function* testAddTextInFilter(inspector, computedView) {
   info("check that the correct properties are visible");
 
   let propertyViews = computedView.propertyViews;
-  propertyViews.forEach(function(propView) {
+  propertyViews.forEach(propView => {
     let name = propView.name;
     is(propView.visible, name.indexOf("color") > -1,
       "span " + name + " property visibility check");

@@ -1,6 +1,8 @@
 
 
 
+
+
 "use strict";
 
 
@@ -80,7 +82,7 @@ function getComputedViewPropertyView(view, name) {
 
 
 
-var getComputedViewMatchedRules = Task.async(function*(view, name) {
+var getComputedViewMatchedRules = Task.async(function* (view, name) {
   let expander;
   let propertyContent;
   for (let property of view.styleDocument.querySelectorAll(".property-view")) {
