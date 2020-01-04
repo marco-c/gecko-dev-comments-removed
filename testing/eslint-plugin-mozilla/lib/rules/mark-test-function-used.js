@@ -12,6 +12,8 @@
 
 
 
+var helpers = require("../helpers");
+
 module.exports = function(context) {
   
   
@@ -19,6 +21,10 @@ module.exports = function(context) {
 
   return {
     Program: function(node) {
+      if (!helpers.getIsBrowserMochitest(this)) {
+        return;
+      }
+
       context.markVariableAsUsed("test");
     }
   };
