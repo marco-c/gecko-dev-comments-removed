@@ -13,6 +13,17 @@
 
 
 
+:-moz-native-anonymous {
+  
+
+
+
+  text-transform: initial;
+  text-indent: initial;
+  letter-spacing: initial;
+  word-spacing: initial;
+}
+
 :-moz-native-anonymous .highlighter-container {
   --highlighter-guide-color: #08c;
   --highlighter-content-color: #87ceeb;
