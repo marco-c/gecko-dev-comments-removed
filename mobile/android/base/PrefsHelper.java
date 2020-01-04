@@ -5,8 +5,6 @@
 
 package org.mozilla.gecko;
 
-import org.mozilla.gecko.annotation.RobocopTarget;
-import org.mozilla.gecko.annotation.WrapForJNI;
 import org.mozilla.gecko.util.GeckoEventListener;
 
 import org.json.JSONArray;
@@ -27,11 +25,6 @@ public final class PrefsHelper {
     private static boolean sRegistered;
     private static int sUniqueRequestId = 1;
     static final SparseArray<PrefHandler> sCallbacks = new SparseArray<PrefHandler>();
-
-    @WrapForJNI @RobocopTarget
-     static native void getPrefsById(int requestId, String[] prefNames, boolean observe);
-    @WrapForJNI @RobocopTarget
-     static native void removePrefsObserver(int requestId);
 
     public static int getPref(String prefName, PrefHandler callback) {
         return getPrefsInternal(new String[] { prefName }, callback);
@@ -54,15 +47,14 @@ public final class PrefsHelper {
             sCallbacks.put(requestId, callback);
         }
 
-        
-        
-        if (GeckoThread.isStateAtLeast(GeckoThread.State.RUNNING)) {
-            getPrefsById(requestId, prefNames, callback.isObserver());
+        GeckoEvent event;
+        if (callback.isObserver()) {
+            event = GeckoEvent.createPreferencesObserveEvent(requestId, prefNames);
         } else {
-            GeckoThread.queueNativeCallUntil(
-                    GeckoThread.State.RUNNING, PrefsHelper.class, "getPrefsById",
-                    requestId, prefNames, callback.isObserver());
+            event = GeckoEvent.createPreferencesGetEvent(requestId, prefNames);
         }
+        GeckoAppShell.sendEventToGecko(event);
+
         return requestId;
     }
 
