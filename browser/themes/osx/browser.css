@@ -3284,13 +3284,6 @@ menulist.translate-infobar-element > .menulist-dropmarker {
 
 
 
-#developer-toolbar-closebutton {
-  margin-left: 8px;
-  margin-right: 8px;
-}
-
-
-
 #developer-toolbar-toolbox-button[error-count]:before {
   color: #FDF3DE;
   min-width: 16px;
