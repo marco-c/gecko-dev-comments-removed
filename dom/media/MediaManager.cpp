@@ -953,8 +953,8 @@ GetSources(MediaEngine *engine, dom::MediaSourceEnum aSrcType,
 
 template<class DeviceType>
 static void
-ApplyConstraints(const MediaTrackConstraints &aConstraints,
-                 nsTArray<nsRefPtr<DeviceType>>& aSources)
+SelectSettings(const MediaTrackConstraints &aConstraints,
+               nsTArray<nsRefPtr<DeviceType>>& aSources)
 {
   auto& c = aConstraints;
 
@@ -1009,8 +1009,8 @@ ApplyConstraints(const MediaTrackConstraints &aConstraints,
 }
 
 static bool
-ApplyConstraints(MediaStreamConstraints &aConstraints,
-                 nsTArray<nsRefPtr<MediaDevice>>& aSources)
+SelectSettings(MediaStreamConstraints &aConstraints,
+               nsTArray<nsRefPtr<MediaDevice>>& aSources)
 {
   
   
@@ -1033,7 +1033,7 @@ ApplyConstraints(MediaStreamConstraints &aConstraints,
   MOZ_ASSERT(!aSources.Length());
 
   if (IsOn(aConstraints.mVideo)) {
-    ApplyConstraints(GetInvariant(aConstraints.mVideo), videos);
+    SelectSettings(GetInvariant(aConstraints.mVideo), videos);
     if (!videos.Length()) {
       overconstrained = true;
     }
@@ -1042,7 +1042,7 @@ ApplyConstraints(MediaStreamConstraints &aConstraints,
     }
   }
   if (IsOn(aConstraints.mAudio)) {
-    ApplyConstraints(GetInvariant(aConstraints.mAudio), audios);
+    SelectSettings(GetInvariant(aConstraints.mAudio), audios);
     if (!audios.Length()) {
       overconstrained = true;
     }
@@ -1906,7 +1906,7 @@ MediaManager::GetUserMedia(nsPIDOMWindow* aWindow,
 
     
 
-    if (!ApplyConstraints(c, *devices)) {
+    if (!SelectSettings(c, *devices)) {
       nsRefPtr<MediaStreamError> error =
           new MediaStreamError(window, NS_LITERAL_STRING("NotFoundError"));
       onFailure->OnError(error);
