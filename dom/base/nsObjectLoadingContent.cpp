@@ -1480,7 +1480,8 @@ nsObjectLoadingContent::IsYoutubeEmbed()
   NS_ASSERTION(thisContent, "Must be an instance of content");
 
   
-  if (!thisContent->NodeInfo()->Equals(nsGkAtoms::embed)) {
+  if (!thisContent->NodeInfo()->Equals(nsGkAtoms::embed) &&
+      !thisContent->NodeInfo()->Equals(nsGkAtoms::object)) {
     return false;
   }
   nsCOMPtr<nsIEffectiveTLDService> tldService =
@@ -1496,11 +1497,18 @@ nsObjectLoadingContent::IsYoutubeEmbed()
     
     return false;
   }
+  
   nsAutoCString domain("youtube.com");
-  if (StringEndsWith(domain, currentBaseDomain)) {
-    return true;
+  if (!StringEndsWith(domain, currentBaseDomain)) {
+    return false;
   }
-  return false;
+  
+  nsAutoCString uri;
+  mURI->GetSpec(uri);
+  if (uri.Find("enablejsapi=1", true, 0, -1) == kNotFound) {
+    return false;
+  }
+  return true;
 }
 
 bool
