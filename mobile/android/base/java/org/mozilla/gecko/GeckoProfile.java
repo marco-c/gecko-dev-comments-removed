@@ -16,6 +16,7 @@ import java.nio.charset.Charset;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Hashtable;
+import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -48,6 +49,7 @@ public final class GeckoProfile {
 
     
     private static final String CLIENT_ID_FILE_PATH = "datareporting/state.json";
+    private static final String FHR_CLIENT_ID_FILE_PATH = "healthreport/state.json";
     
     private static final String CLIENT_ID_JSON_ATTR = "clientID";
 
@@ -614,15 +616,66 @@ public final class GeckoProfile {
 
 
 
+
+
+
     @WorkerThread
     public String getClientId() throws IOException {
-        final JSONObject obj = readJSONObjectFromFile(CLIENT_ID_FILE_PATH);
+        final JSONObject obj = getClientIdJSONObject();
         try {
             return obj.getString(CLIENT_ID_JSON_ATTR);
         } catch (final JSONException e) {
             
             throw new IOException("Client ID does not exist in JSONObject");
         }
+    }
+
+    
+    @WorkerThread
+    private JSONObject getClientIdJSONObject() throws IOException {
+        try {
+            return readJSONObjectFromFile(CLIENT_ID_FILE_PATH);
+        } catch (final IOException e) {  }
+
+        Log.d(LOGTAG, "Could not get client ID – attempting to migrate ID from FHR");
+        String clientIdToWrite;
+        try {
+            final JSONObject fhrClientIdObj = readJSONObjectFromFile(FHR_CLIENT_ID_FILE_PATH);
+            clientIdToWrite = fhrClientIdObj.getString(CLIENT_ID_JSON_ATTR);
+        } catch (final IOException|JSONException e) {
+            Log.d(LOGTAG, "Could not migrate client ID from FHR – creating a new one");
+            clientIdToWrite = UUID.randomUUID().toString();
+        }
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        persistClientId(clientIdToWrite);
+        return readJSONObjectFromFile(CLIENT_ID_FILE_PATH);
+    }
+
+    @WorkerThread
+    private void persistClientId(final String clientId) throws IOException {
+        if (!ensureParentDirs(CLIENT_ID_FILE_PATH)) {
+            throw new IOException("Could not create client ID parent directories");
+        }
+
+        final JSONObject obj = new JSONObject();
+        try {
+            obj.put(CLIENT_ID_JSON_ATTR, clientId);
+        } catch (final JSONException e) {
+            throw new IOException("Could not create client ID JSON object", e);
+        }
+
+        
+        Log.d(LOGTAG, "Attempting to write new client ID");
+        writeFile(CLIENT_ID_FILE_PATH, obj.toString()); 
     }
 
     
@@ -700,6 +753,20 @@ public final class GeckoProfile {
             Log.e(LOGTAG, "Unable to read session file", ioe);
         }
         return null;
+    }
+
+    
+
+
+
+
+
+
+    @WorkerThread
+    public boolean ensureParentDirs(final String filename) {
+        final File file = new File(getDir(), filename);
+        final File parentFile = file.getParentFile();
+        return parentFile.mkdirs() || parentFile.isDirectory();
     }
 
     public void writeFile(final String filename, final String data) {
