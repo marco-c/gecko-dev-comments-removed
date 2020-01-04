@@ -38,6 +38,8 @@ class nsPIWindowRoot;
 class nsXBLPrototypeHandler;
 struct nsTimeout;
 
+typedef uint32_t SuspendTypes;
+
 namespace mozilla {
 namespace dom {
 class AudioContext;
@@ -655,7 +657,19 @@ protected:
   
   bool                   mIsBackground;
 
-  bool                   mMediaSuspended;
+  
+
+
+
+
+
+
+
+
+
+
+  SuspendTypes       mMediaSuspend;
+
   bool                   mAudioMuted;
   float                  mAudioVolume;
 
@@ -811,7 +825,9 @@ NS_DEFINE_STATIC_IID_ACCESSOR(nsPIDOMWindowInner, NS_PIDOMWINDOWINNER_IID)
 class nsPIDOMWindowOuter : public nsPIDOMWindow<mozIDOMWindowProxy>
 {
 protected:
-  void RefreshMediaElements();
+  void RefreshMediaElementsVolume();
+  void RefreshMediaElementsSuspend(SuspendTypes aSuspend);
+  bool IsDisposableSuspend(SuspendTypes aSuspend) const;
 
 public:
   NS_DECLARE_STATIC_IID_ACCESSOR(NS_PIDOMWINDOWOUTER_IID)
@@ -862,8 +878,8 @@ public:
   }
 
   
-  bool GetMediaSuspended() const;
-  void SetMediaSuspended(bool aSuspended);
+  SuspendTypes GetMediaSuspend() const;
+  void SetMediaSuspend(SuspendTypes aSuspend);
 
   bool GetAudioMuted() const;
   void SetAudioMuted(bool aMuted);
