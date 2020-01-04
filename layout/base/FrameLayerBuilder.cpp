@@ -3268,7 +3268,9 @@ void ContainerState::FinishPaintedLayerData(PaintedLayerData& aData, FindOpaqueB
     
     
     if (data->mSingleItemFixedToViewport && data->mItemClip.HasClip()) {
-      data->mLayer->SetClipRect(Some(ViewAs<ParentLayerPixel>(ScaleToNearestPixels(data->mItemClip.GetClipRect()))));
+      nsIntRect layerClipRect = ScaleToNearestPixels(data->mItemClip.GetClipRect());
+      layerClipRect.MoveBy(mParameters.mOffset);
+      data->mLayer->SetClipRect(Some(ViewAs<ParentLayerPixel>(layerClipRect)));
       
       
       
