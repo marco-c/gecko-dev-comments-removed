@@ -643,7 +643,7 @@ imgFrame::Finish(Opacity aFrameOpacity ,
   MonitorAutoLock lock(mMonitor);
   MOZ_ASSERT(mLockCount > 0, "Image data should be locked");
 
-  if (aFrameOpacity == Opacity::OPAQUE) {
+  if (aFrameOpacity == Opacity::FULLY_OPAQUE) {
     mHasNoAlpha = true;
   }
 

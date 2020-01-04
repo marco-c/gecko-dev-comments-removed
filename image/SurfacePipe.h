@@ -59,7 +59,7 @@ enum class WriteState : uint8_t
   FINISHED,        
                    
 
-  ERROR            
+  FAILURE          
                    
                    
                    
@@ -182,12 +182,12 @@ public:
             mCol = 0;
             return WriteState::FINISHED;
 
-          case WriteState::ERROR:
+          case WriteState::FAILURE:
             
             
             
             
-            return WriteState::ERROR;
+            return WriteState::FAILURE;
         }
       }
 
@@ -243,7 +243,7 @@ public:
       PixelType* rowPtr = reinterpret_cast<PixelType*>(mRowPointer);
 
       Maybe<WriteState> result = aFunc(rowPtr, mInputSize.width);
-      if (result != Some(WriteState::ERROR)) {
+      if (result != Some(WriteState::FAILURE)) {
         mCol = 0;
         mRowPointer = AdvanceRow();  
       }

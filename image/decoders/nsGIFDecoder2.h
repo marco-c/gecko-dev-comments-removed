@@ -8,9 +8,8 @@
 #define mozilla_image_decoders_nsGIFDecoder2_h
 
 #include "Decoder.h"
-#include "Deinterlacer.h"
 #include "GIF2.h"
-#include "nsCOMPtr.h"
+#include "SurfacePipe.h"
 
 namespace mozilla {
 namespace image {
@@ -34,20 +33,26 @@ private:
   
   explicit nsGIFDecoder2(RasterImage* aImage);
 
-  uint8_t*  GetCurrentRowBuffer();
-  uint8_t*  GetRowBuffer(uint32_t aRow);
-
   
   
   void      BeginGIF();
   nsresult  BeginImageFrame(uint16_t aDepth);
   void      EndImageFrame();
   void      FlushImageData();
-  void      FlushImageData(uint32_t fromRow, uint32_t rows);
 
   nsresult  GifWrite(const uint8_t* buf, uint32_t numbytes);
-  uint32_t  OutputRow();
-  bool      DoLzw(const uint8_t* q);
+
+  
+  template <typename PixelSize> PixelSize
+  ColormapIndexToPixel(uint8_t aIndex);
+
+  
+  template <typename PixelSize> NextPixel<PixelSize>
+  YieldPixel(const uint8_t*& aCurrentByte);
+
+  
+  bool      DoLzw(const uint8_t* aData);
+
   bool      SetHold(const uint8_t* buf, uint32_t count,
                     const uint8_t* buf2 = nullptr, uint32_t count2 = 0);
   bool      CheckForTransparency(const gfx::IntRect& aFrameRect);
@@ -55,23 +60,19 @@ private:
 
   inline int ClearCode() const { return 1 << mGIFStruct.datasize; }
 
-  int32_t mCurrentRow;
-  int32_t mLastFlushedRow;
-
   uint32_t mOldColor;        
 
   
   
   int32_t mCurrentFrameIndex;
 
-  uint8_t mCurrentPass;
-  uint8_t mLastFlushedPass;
   uint8_t mColorMask;        
   bool mGIFOpen;
   bool mSawTransparency;
 
   gif_struct mGIFStruct;
-  Maybe<Deinterlacer> mDeinterlacer;
+
+  SurfacePipe mPipe;  
 };
 
 } 

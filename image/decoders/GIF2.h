@@ -67,10 +67,7 @@ typedef struct gif_struct {
     int32_t datum;              
 
     
-    int ipass;                  
-    unsigned rows_remaining;    
-    unsigned irow;              
-    uint8_t* rowp;              
+    int64_t pixels_remaining;  
 
     
     unsigned x_offset, y_offset; 
@@ -94,7 +91,6 @@ typedef struct gif_struct {
                                 
                                 
 
-    bool progressive_display;   
     bool interlaced;            
     bool is_transparent;        
 

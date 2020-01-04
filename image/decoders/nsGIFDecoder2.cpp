@@ -40,9 +40,12 @@
 
 #include <stddef.h>
 
+#include "imgFrame.h"
 #include "nsGIFDecoder2.h"
 #include "nsIInputStream.h"
 #include "RasterImage.h"
+#include "SurfaceFilters.h"
+#include "SurfacePipeFactory.h"
 
 #include "gfxColor.h"
 #include "gfxPlatform.h"
@@ -73,12 +76,8 @@ namespace image {
 
 nsGIFDecoder2::nsGIFDecoder2(RasterImage* aImage)
   : Decoder(aImage)
-  , mCurrentRow(-1)
-  , mLastFlushedRow(-1)
   , mOldColor(0)
   , mCurrentFrameIndex(-1)
-  , mCurrentPass(0)
-  , mLastFlushedPass(0)
   , mGIFOpen(false)
   , mSawTransparency(false)
 {
@@ -99,40 +98,6 @@ nsGIFDecoder2::~nsGIFDecoder2()
   free(mGIFStruct.hold);
 }
 
-uint8_t*
-nsGIFDecoder2::GetCurrentRowBuffer()
-{
-  if (!mDownscaler) {
-    MOZ_ASSERT(!mDeinterlacer, "Deinterlacer without downscaler?");
-    uint32_t bpp = mGIFStruct.images_decoded == 0 ? sizeof(uint32_t)
-                                                  : sizeof(uint8_t);
-    return mImageData + mGIFStruct.irow * mGIFStruct.width * bpp;
-  }
-
-  if (!mDeinterlacer) {
-    return mDownscaler->RowBuffer();
-  }
-
-  return mDeinterlacer->RowBuffer(mGIFStruct.irow);
-}
-
-uint8_t*
-nsGIFDecoder2::GetRowBuffer(uint32_t aRow)
-{
-  MOZ_ASSERT(mGIFStruct.images_decoded == 0,
-             "Calling GetRowBuffer on a frame other than the first suggests "
-             "we're deinterlacing animated frames");
-  MOZ_ASSERT(!mDownscaler || mDeinterlacer,
-             "Can't get buffer for a specific row if downscaling "
-             "but not deinterlacing");
-
-  if (mDownscaler) {
-    return mDeinterlacer->RowBuffer(aRow);
-  }
-
-  return mImageData + aRow * mGIFStruct.width * sizeof(uint32_t);
-}
-
 void
 nsGIFDecoder2::FinishInternal()
 {
@@ -148,45 +113,16 @@ nsGIFDecoder2::FinishInternal()
   }
 }
 
-
-
-
-void
-nsGIFDecoder2::FlushImageData(uint32_t fromRow, uint32_t rows)
-{
-  nsIntRect r(mGIFStruct.x_offset, mGIFStruct.y_offset + fromRow,
-              mGIFStruct.width, rows);
-  PostInvalidation(r);
-}
-
 void
 nsGIFDecoder2::FlushImageData()
 {
-  if (mDownscaler) {
-    if (mDownscaler->HasInvalidation()) {
-      DownscalerInvalidRect invalidRect = mDownscaler->TakeInvalidRect();
-      PostInvalidation(invalidRect.mOriginalSizeRect,
-                       Some(invalidRect.mTargetSizeRect));
-    }
+  Maybe<SurfaceInvalidRect> invalidRect = mPipe.TakeInvalidRect();
+  if (!invalidRect) {
     return;
   }
 
-  switch (mCurrentPass - mLastFlushedPass) {
-    case 0:  
-      if (mCurrentRow - mLastFlushedRow) {
-        FlushImageData(mLastFlushedRow + 1, mCurrentRow - mLastFlushedRow);
-      }
-      break;
-
-    case 1:  
-      FlushImageData(0, mCurrentRow + 1);
-      FlushImageData(mLastFlushedRow + 1,
-                     mGIFStruct.clamped_height - (mLastFlushedRow + 1));
-      break;
-
-    default: 
-      FlushImageData(0, mGIFStruct.clamped_height);
-  }
+  PostInvalidation(invalidRect->mInputSpaceRect,
+                   Some(invalidRect->mOutputSpaceRect));
 }
 
 
@@ -263,39 +199,46 @@ nsGIFDecoder2::BeginImageFrame(uint16_t aDepth)
   
   MOZ_ASSERT_IF(mDownscaler, !GetImageMetadata().HasAnimation());
 
-  
-  
-  
-  IntSize targetSize = mDownscaler ? mDownscaler->TargetSize()
-                                   : GetSize();
-  IntRect targetFrameRect = mDownscaler ? IntRect(IntPoint(), targetSize)
-                                        : frameRect;
+  SurfacePipeFlags pipeFlags = mGIFStruct.interlaced
+                             ? SurfacePipeFlags::DEINTERLACE
+                             : SurfacePipeFlags();
 
-  
-  
-  nsresult rv = NS_OK;
-  if (mGIFStruct.images_decoded) {
+  Maybe<SurfacePipe> pipe;
+  if (mGIFStruct.images_decoded == 0) {
     
-    rv = AllocateFrame(mGIFStruct.images_decoded, targetSize,
-                       targetFrameRect, format, aDepth);
+    
+    IntSize targetSize = mDownscaler ? mDownscaler->TargetSize()
+                                     : GetSize();
+    IntRect targetFrameRect = mDownscaler ? IntRect(IntPoint(), targetSize)
+                                          : frameRect;
+
+    
+    pipeFlags |= SurfacePipeFlags::PROGRESSIVE_DISPLAY;
+
+    
+    pipe =
+      SurfacePipeFactory::CreateSurfacePipe(this, mGIFStruct.images_decoded,
+                                            GetSize(), targetSize,
+                                            targetFrameRect, format, pipeFlags);
   } else {
     
-    rv = AllocateFrame(mGIFStruct.images_decoded, targetSize,
-                       targetFrameRect, format);
+    
+    MOZ_ASSERT(!mDownscaler);
+    pipe =
+      SurfacePipeFactory::CreatePalettedSurfacePipe(this, mGIFStruct.images_decoded,
+                                                    GetSize(), frameRect, format,
+                                                    aDepth, pipeFlags);
   }
 
   mCurrentFrameIndex = mGIFStruct.images_decoded;
 
-  if (NS_FAILED(rv)) {
-    return rv;
+  if (!pipe) {
+    mPipe = SurfacePipe();
+    return NS_ERROR_FAILURE;
   }
 
-  if (mDownscaler) {
-    rv = mDownscaler->BeginFrame(GetSize(), Some(ClampToImageRect(frameRect)),
-                                 mImageData, hasTransparency);
-  }
-
-  return rv;
+  mPipe = Move(*pipe);
+  return NS_OK;
 }
 
 
@@ -331,20 +274,7 @@ nsGIFDecoder2::EndImageFrame()
     
     
     if (!mGIFStruct.is_transparent && !mSawTransparency) {
-      opacity = Opacity::OPAQUE;
-    }
-  }
-  mCurrentRow = mLastFlushedRow = -1;
-  mCurrentPass = mLastFlushedPass = 0;
-
-  
-  if (mGIFStruct.rows_remaining != mGIFStruct.clamped_height) {
-    if (mGIFStruct.rows_remaining && mGIFStruct.images_decoded) {
-      
-      uint8_t* rowp =
-        mImageData + ((mGIFStruct.clamped_height - mGIFStruct.rows_remaining) *
-                      mGIFStruct.width);
-      memset(rowp, 0, mGIFStruct.rows_remaining * mGIFStruct.width);
+      opacity = Opacity::FULLY_OPAQUE;
     }
   }
 
@@ -368,285 +298,162 @@ nsGIFDecoder2::EndImageFrame()
   mCurrentFrameIndex = -1;
 }
 
-
-
-
-uint32_t
-nsGIFDecoder2::OutputRow()
+template <typename PixelSize>
+PixelSize
+nsGIFDecoder2::ColormapIndexToPixel(uint8_t aIndex)
 {
-  
-  
-  
-  int drow_start = mGIFStruct.irow;
-  int drow_end = mGIFStruct.irow;
+  MOZ_ASSERT(sizeof(PixelSize) == sizeof(uint32_t));
 
   
-  if ((unsigned)drow_start >= mGIFStruct.clamped_height) {
-    NS_WARNING("GIF2.cpp::OutputRow - too much image data");
-    return 0;
+  uint32_t color = mColormap[aIndex & mColorMask];
+
+  
+  if (mGIFStruct.is_transparent) {
+    mSawTransparency = mSawTransparency || color == 0;
   }
 
-  if (!mGIFStruct.images_decoded) {
-    
-    
-    
-    
-    if (mGIFStruct.progressive_display && mGIFStruct.interlaced &&
-        (mGIFStruct.ipass < 4)) {
-      
-      const uint32_t row_dup = 15 >> mGIFStruct.ipass;
-      const uint32_t row_shift = row_dup >> 1;
-
-      drow_start -= row_shift;
-      drow_end = drow_start + row_dup;
-
-      
-      if (((mGIFStruct.clamped_height - 1) - drow_end) <= row_shift) {
-        drow_end = mGIFStruct.clamped_height - 1;
-      }
-
-      
-      if (drow_start < 0) {
-        drow_start = 0;
-      }
-      if ((unsigned)drow_end >= mGIFStruct.clamped_height) {
-        drow_end = mGIFStruct.clamped_height - 1;
-      }
-    }
-
-    
-    uint8_t* rowp = GetCurrentRowBuffer();
-
-    
-    uint8_t* from = rowp + mGIFStruct.clamped_width;
-    uint32_t* to = ((uint32_t*)rowp) + mGIFStruct.clamped_width;
-    uint32_t* cmap = mColormap;
-    for (uint32_t c = mGIFStruct.clamped_width; c > 0; c--) {
-      *--to = cmap[*--from];
-    }
-
-    
-    if (mGIFStruct.is_transparent && !mSawTransparency) {
-      const uint32_t* rgb = (uint32_t*)rowp;
-      for (uint32_t i = mGIFStruct.clamped_width; i > 0; i--) {
-        if (*rgb++ == 0) {
-          mSawTransparency = true;
-          break;
-        }
-      }
-    }
-
-    
-    
-    
-    if (mDownscaler && !mDeinterlacer) {
-      mDownscaler->CommitRow();
-    }
-
-    if (drow_end > drow_start) {
-      
-      
-      
-      
-      MOZ_ASSERT_IF(mDownscaler, mDeinterlacer);
-      const uint32_t bpr = sizeof(uint32_t) * mGIFStruct.clamped_width;
-      for (int r = drow_start; r <= drow_end; r++) {
-        
-        if (r != int(mGIFStruct.irow)) {
-          memcpy(GetRowBuffer(r), rowp, bpr);
-        }
-      }
-    }
-  }
-
-  mCurrentRow = drow_end;
-  mCurrentPass = mGIFStruct.ipass;
-  if (mGIFStruct.ipass == 1) {
-    mLastFlushedPass = mGIFStruct.ipass;   
-  }
-
-  if (!mGIFStruct.interlaced) {
-    MOZ_ASSERT(!mDeinterlacer);
-    mGIFStruct.irow++;
-  } else {
-    static const uint8_t kjump[5] = { 1, 8, 8, 4, 2 };
-    int currentPass = mGIFStruct.ipass;
-
-    do {
-      
-      mGIFStruct.irow += kjump[mGIFStruct.ipass];
-      if (mGIFStruct.irow >= mGIFStruct.clamped_height) {
-        
-        mGIFStruct.irow = 8 >> mGIFStruct.ipass;
-        mGIFStruct.ipass++;
-      }
-    } while (mGIFStruct.irow >= mGIFStruct.clamped_height);
-
-    
-    
-    if (mGIFStruct.ipass > currentPass && mDownscaler) {
-      MOZ_ASSERT(mDeinterlacer);
-      mDeinterlacer->PropagatePassToDownscaler(*mDownscaler);
-      FlushImageData();
-      mDownscaler->ResetForNextProgressivePass();
-    }
-  }
-
-  return --mGIFStruct.rows_remaining;
+  return color;
 }
 
+template <>
+uint8_t
+nsGIFDecoder2::ColormapIndexToPixel<uint8_t>(uint8_t aIndex)
+{
+  return aIndex & mColorMask;
+}
 
+template <typename PixelSize>
+NextPixel<PixelSize>
+nsGIFDecoder2::YieldPixel(const uint8_t*& aCurrentByteInOut)
+{
+  MOZ_ASSERT(mGIFStruct.stackp >= mGIFStruct.stack);
+
+  
+  
+  if (mGIFStruct.stackp == mGIFStruct.stack) {
+    while (mGIFStruct.bits < mGIFStruct.codesize && mGIFStruct.count > 0) {
+      
+      mGIFStruct.datum += int32_t(*aCurrentByteInOut) << mGIFStruct.bits;
+      mGIFStruct.bits += 8;
+      ++aCurrentByteInOut;
+      --mGIFStruct.count;
+    }
+
+    if (mGIFStruct.bits < mGIFStruct.codesize) {
+      return AsVariant(WriteState::NEED_MORE_DATA);
+    }
+
+    
+    int code = mGIFStruct.datum & mGIFStruct.codemask;
+    mGIFStruct.datum >>= mGIFStruct.codesize;
+    mGIFStruct.bits -= mGIFStruct.codesize;
+
+    const int clearCode = ClearCode();
+
+    
+    if (code == clearCode) {
+      mGIFStruct.codesize = mGIFStruct.datasize + 1;
+      mGIFStruct.codemask = (1 << mGIFStruct.codesize) - 1;
+      mGIFStruct.avail = clearCode + 2;
+      mGIFStruct.oldcode = -1;
+      return AsVariant(WriteState::NEED_MORE_DATA);
+    }
+
+    
+    
+    
+    if (code == (clearCode + 1)) {
+      return AsVariant(WriteState::FAILURE);
+    }
+
+    if (mGIFStruct.oldcode == -1) {
+      if (code >= MAX_BITS) {
+        return AsVariant(WriteState::FAILURE);  
+      }
+
+      mGIFStruct.firstchar = mGIFStruct.oldcode = code;
+
+      
+      mGIFStruct.pixels_remaining--;
+      return AsVariant(ColormapIndexToPixel<PixelSize>(mGIFStruct.suffix[code]));
+    }
+
+    int incode = code;
+    if (code >= mGIFStruct.avail) {
+      *mGIFStruct.stackp++ = mGIFStruct.firstchar;
+      code = mGIFStruct.oldcode;
+
+      if (mGIFStruct.stackp >= mGIFStruct.stack + MAX_BITS) {
+        return AsVariant(WriteState::FAILURE);  
+      }
+    }
+
+    while (code >= clearCode) {
+      if ((code >= MAX_BITS) || (code == mGIFStruct.prefix[code])) {
+        return AsVariant(WriteState::FAILURE);
+      }
+
+      *mGIFStruct.stackp++ = mGIFStruct.suffix[code];
+      code = mGIFStruct.prefix[code];
+
+      if (mGIFStruct.stackp >= mGIFStruct.stack + MAX_BITS) {
+        return AsVariant(WriteState::FAILURE);  
+      }
+    }
+
+    *mGIFStruct.stackp++ = mGIFStruct.firstchar = mGIFStruct.suffix[code];
+
+    
+    if (mGIFStruct.avail < 4096) {
+      mGIFStruct.prefix[mGIFStruct.avail] = mGIFStruct.oldcode;
+      mGIFStruct.suffix[mGIFStruct.avail] = mGIFStruct.firstchar;
+      mGIFStruct.avail++;
+
+      
+      
+      
+      if (((mGIFStruct.avail & mGIFStruct.codemask) == 0) &&
+          (mGIFStruct.avail < 4096)) {
+        mGIFStruct.codesize++;
+        mGIFStruct.codemask += mGIFStruct.avail;
+      }
+    }
+
+    mGIFStruct.oldcode = incode;
+  }
+
+  if (MOZ_UNLIKELY(mGIFStruct.stackp <= mGIFStruct.stack)) {
+    MOZ_ASSERT_UNREACHABLE("No decoded data but we didn't return early?");
+    return AsVariant(WriteState::FAILURE);
+  }
+
+  
+  mGIFStruct.pixels_remaining--;
+  return AsVariant(ColormapIndexToPixel<PixelSize>(*--mGIFStruct.stackp));
+}
 
 bool
-nsGIFDecoder2::DoLzw(const uint8_t* q)
+nsGIFDecoder2::DoLzw(const uint8_t* aData)
 {
-  if (!mGIFStruct.rows_remaining) {
-    return true;
-  }
-  if (MOZ_UNLIKELY(mDownscaler && mDownscaler->IsFrameComplete())) {
-    return true;
-  }
+  const uint8_t* currentByte = aData;
+  while (mGIFStruct.count > 0 && mGIFStruct.pixels_remaining > 0) {
+    auto result = mGIFStruct.images_decoded > 0
+                ? mPipe.WritePixels<uint8_t>([&]() { return YieldPixel<uint8_t>(currentByte); })
+                : mPipe.WritePixels<uint32_t>([&]() { return YieldPixel<uint32_t>(currentByte); });
 
-  
-  
-  
-  int avail       = mGIFStruct.avail;
-  int bits        = mGIFStruct.bits;
-  int codesize    = mGIFStruct.codesize;
-  int codemask    = mGIFStruct.codemask;
-  int count       = mGIFStruct.count;
-  int oldcode     = mGIFStruct.oldcode;
-  const int clear_code = ClearCode();
-  uint8_t firstchar = mGIFStruct.firstchar;
-  int32_t datum     = mGIFStruct.datum;
-  uint16_t* prefix  = mGIFStruct.prefix;
-  uint8_t* stackp   = mGIFStruct.stackp;
-  uint8_t* suffix   = mGIFStruct.suffix;
-  uint8_t* stack    = mGIFStruct.stack;
-  uint8_t* rowp     = mGIFStruct.rowp;
-
-  uint8_t* rowend = GetCurrentRowBuffer() + mGIFStruct.clamped_width;
-
-#define OUTPUT_ROW()                                        \
-  PR_BEGIN_MACRO                                            \
-    if (!OutputRow())                                       \
-      goto END;                                             \
-    rowp = GetCurrentRowBuffer();                           \
-    rowend = rowp + mGIFStruct.clamped_width;               \
-  PR_END_MACRO
-
-  for (const uint8_t* ch = q; count-- > 0; ch++) {
-    
-    datum += ((int32_t)* ch) << bits;
-    bits += 8;
-
-    
-    while (bits >= codesize) {
-      
-      int code = datum & codemask;
-      datum >>= codesize;
-      bits -= codesize;
-
-      
-      if (code == clear_code) {
-        codesize = mGIFStruct.datasize + 1;
-        codemask = (1 << codesize) - 1;
-        avail = clear_code + 2;
-        oldcode = -1;
+    switch (result) {
+      case WriteState::NEED_MORE_DATA:
         continue;
-      }
 
-      
-      if (code == (clear_code + 1)) {
-        
-        return (mGIFStruct.rows_remaining == 0);
-      }
+      case WriteState::FINISHED:
+        NS_WARN_IF(mGIFStruct.pixels_remaining > 0);
+        mGIFStruct.pixels_remaining = 0;
+        return true;
 
-      if (MOZ_UNLIKELY(mDownscaler && mDownscaler->IsFrameComplete())) {
-        goto END;
-      }
-
-      if (oldcode == -1) {
-        if (code >= MAX_BITS) {
-          return false;
-        }
-        *rowp++ = suffix[code] & mColorMask; 
-        if (rowp == rowend) {
-          OUTPUT_ROW();
-        }
-
-        firstchar = oldcode = code;
-        continue;
-      }
-
-      int incode = code;
-      if (code >= avail) {
-        *stackp++ = firstchar;
-        code = oldcode;
-
-        if (stackp >= stack + MAX_BITS) {
-          return false;
-        }
-      }
-
-      while (code >= clear_code) {
-        if ((code >= MAX_BITS) || (code == prefix[code])) {
-          return false;
-        }
-
-        *stackp++ = suffix[code];
-        code = prefix[code];
-
-        if (stackp == stack + MAX_BITS) {
-          return false;
-        }
-      }
-
-      *stackp++ = firstchar = suffix[code];
-
-      
-      if (avail < 4096) {
-        prefix[avail] = oldcode;
-        suffix[avail] = firstchar;
-        avail++;
-
-        
-        
-        
-        if (((avail & codemask) == 0) && (avail < 4096)) {
-          codesize++;
-          codemask += avail;
-        }
-      }
-      oldcode = incode;
-
-      
-      do {
-        *rowp++ = *--stackp & mColorMask; 
-        if (rowp == rowend) {
-          OUTPUT_ROW();
-
-          
-          stackp -= mGIFStruct.width - mGIFStruct.clamped_width;
-          stackp = std::max(stackp, stack);
-        }
-      } while (stackp > stack);
+      case WriteState::FAILURE:
+        return false;
     }
   }
-
-  END:
-
-  
-  mGIFStruct.avail = avail;
-  mGIFStruct.bits = bits;
-  mGIFStruct.codesize = codesize;
-  mGIFStruct.codemask = codemask;
-  mGIFStruct.count = count;
-  mGIFStruct.oldcode = oldcode;
-  mGIFStruct.firstchar = firstchar;
-  mGIFStruct.datum = datum;
-  mGIFStruct.stackp = stackp;
-  mGIFStruct.rowp = rowp;
 
   return true;
 }
@@ -1172,30 +979,10 @@ nsGIFDecoder2::WriteInternal(const char* aBuffer, uint32_t aCount)
         }
       }
 
-      if (q[8] & 0x40) {
-        mGIFStruct.interlaced = true;
-        mGIFStruct.ipass = 1;
-        if (mDownscaler) {
-          mDeinterlacer.emplace(mDownscaler->FrameSize());
-
-          if (!mDeinterlacer->IsValid()) {
-            mDeinterlacer.reset();
-            mGIFStruct.state = gif_error;
-            break;
-          }
-        }
-      } else {
-        mGIFStruct.interlaced = false;
-        mGIFStruct.ipass = 0;
-      }
+      mGIFStruct.interlaced = bool(q[8] & 0x40);
 
       
-      mGIFStruct.progressive_display = (mGIFStruct.images_decoded == 0);
-
-      
-      mGIFStruct.irow = 0;
-      mGIFStruct.rows_remaining = mGIFStruct.clamped_height;
-      mGIFStruct.rowp = GetCurrentRowBuffer();
+      mGIFStruct.pixels_remaining = mGIFStruct.width * mGIFStruct.height;
 
       
       
@@ -1262,7 +1049,7 @@ nsGIFDecoder2::WriteInternal(const char* aBuffer, uint32_t aCount)
         
         
         
-        if (!mGIFStruct.rows_remaining) {
+        if (mGIFStruct.pixels_remaining <= 0) {
 #ifdef DONT_TOLERATE_BROKEN_GIFS
           mGIFStruct.state = gif_error;
           break;
@@ -1332,8 +1119,6 @@ nsGIFDecoder2::WriteInternal(const char* aBuffer, uint32_t aCount)
 done:
   if (!mGIFStruct.images_decoded) {
     FlushImageData();
-    mLastFlushedRow = mCurrentRow;
-    mLastFlushedPass = mCurrentPass;
   }
 }
 
