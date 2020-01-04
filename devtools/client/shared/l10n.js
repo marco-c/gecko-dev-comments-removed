@@ -13,12 +13,18 @@ const { sprintf } = require("devtools/client/shared/vendor/sprintf");
 
 
 function LocalizationHelper(stringBundleName) {
-  loader.lazyGetter(this, "properties", () => {
-    return parsePropertiesFile(require(`raw!${stringBundleName}`));
-  });
+  this.stringBundleName = stringBundleName;
 }
 
 LocalizationHelper.prototype = {
+  get properties() {
+    if (!this._properties) {
+      this._properties = parsePropertiesFile(require(`raw!${this.stringBundleName}`));
+    }
+
+    return this._properties;
+  },
+
   
 
 
