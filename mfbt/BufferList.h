@@ -52,6 +52,9 @@ class BufferList : private AllocPolicy
     char* End() const { return mData + mSize; }
   };
 
+  template<typename OtherAllocPolicy>
+  friend class BufferList;
+
  public:
   
   
@@ -264,6 +267,15 @@ class BufferList : private AllocPolicy
   
   
   
+  template<typename OtherAllocPolicy>
+  BufferList<OtherAllocPolicy> MoveFallible(bool* aSuccess, OtherAllocPolicy aAP = OtherAllocPolicy());
+
+  
+  
+  
+  
+  
+  
   
   
   BufferList Extract(IterImpl& aIter, size_t aSize, bool* aSuccess);
@@ -428,7 +440,7 @@ BufferList<AllocPolicy>::Borrow(IterImpl& aIter, size_t aSize, bool* aSuccess,
   while (size) {
     size_t toAdvance = std::min(size, aIter.RemainingInSegment());
 
-    if (!toAdvance || !result.mSegments.append(Segment(aIter.mData, toAdvance, toAdvance))) {
+    if (!toAdvance || !result.mSegments.append(typename BufferList<BorrowingAllocPolicy>::Segment(aIter.mData, toAdvance, toAdvance))) {
       *aSuccess = false;
       return result;
     }
@@ -437,6 +449,30 @@ BufferList<AllocPolicy>::Borrow(IterImpl& aIter, size_t aSize, bool* aSuccess,
   }
 
   result.mSize = aSize;
+  *aSuccess = true;
+  return result;
+}
+
+template<typename AllocPolicy> template<typename OtherAllocPolicy>
+BufferList<OtherAllocPolicy>
+BufferList<AllocPolicy>::MoveFallible(bool* aSuccess, OtherAllocPolicy aAP)
+{
+  BufferList<OtherAllocPolicy> result(0, 0, mStandardCapacity, aAP);
+
+  IterImpl iter = Iter();
+  while (!iter.Done()) {
+    size_t toAdvance = iter.RemainingInSegment();
+
+    if (!toAdvance || !result.mSegments.append(typename BufferList<OtherAllocPolicy>::Segment(iter.mData, toAdvance, toAdvance))) {
+      *aSuccess = false;
+      return result;
+    }
+    iter.Advance(*this, toAdvance);
+  }
+
+  result.mSize = mSize;
+  mSegments.clear();
+  mSize = 0;
   *aSuccess = true;
   return result;
 }
