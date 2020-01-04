@@ -43,6 +43,10 @@ class nsIPrincipal;
 
 namespace mozilla {
 
+namespace dom {
+class Promise;
+}
+
 class VideoFrameContainer;
 class MediaDecoderStateMachine;
 
@@ -166,7 +170,8 @@ public:
   
   
   
-  virtual nsresult Seek(double aTime, SeekTarget::Type aSeekType);
+  virtual nsresult Seek(double aTime, SeekTarget::Type aSeekType,
+                        dom::Promise* aPromise = nullptr);
 
   
   nsresult InitializeStateMachine();
@@ -391,12 +396,7 @@ private:
   
   void PlaybackEnded();
 
-  void OnSeekRejected()
-  {
-    MOZ_ASSERT(NS_IsMainThread());
-    mSeekRequest.Complete();
-    mLogicallySeeking = false;
-  }
+  void OnSeekRejected();
   void OnSeekResolved(SeekResolveValue aVal);
 
   void SeekingChanged()
@@ -620,12 +620,24 @@ private:
 #endif
 
 protected:
-  virtual void CallSeek(const SeekTarget& aTarget);
+  
+  
+  
+  
+  
+  
+  
+  
+  void AsyncResolveSeekDOMPromiseIfExists();
+  void AsyncRejectSeekDOMPromiseIfExists();
+  void DiscardOngoingSeekIfExists();
+  virtual void CallSeek(const SeekTarget& aTarget, dom::Promise* aPromise);
 
   
   bool IsHeuristicDormantSupported() const;
 
   MozPromiseRequestHolder<SeekPromise> mSeekRequest;
+  RefPtr<dom::Promise> mSeekDOMPromise;
 
   
   

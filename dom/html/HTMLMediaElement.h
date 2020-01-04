@@ -482,7 +482,7 @@ public:
 
   void FastSeek(double aTime, ErrorResult& aRv);
 
-  void SeekToNextFrame(ErrorResult& aRv);
+  already_AddRefed<Promise> SeekToNextFrame(ErrorResult& aRv);
 
   double Duration() const;
 
@@ -1125,7 +1125,7 @@ protected:
   
   
   
-  void Seek(double aTime, SeekTarget::Type aSeekType, ErrorResult& aRv);
+  already_AddRefed<Promise> Seek(double aTime, SeekTarget::Type aSeekType, ErrorResult& aRv);
 
   
   bool IsPlayingThroughTheAudioChannel() const;
