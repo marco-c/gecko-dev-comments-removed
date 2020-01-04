@@ -1996,15 +1996,6 @@ nsFrameLoader::MaybeCreateDocShell()
     NS_ENSURE_SUCCESS(rv,rv);
   }
 
-  
-  
-  uint32_t sandboxFlags = 0;
-  HTMLIFrameElement* iframe = HTMLIFrameElement::FromContent(mOwnerContent);
-  if (iframe) {
-    sandboxFlags = iframe->GetSandboxFlags();
-  }
-  ApplySandboxFlags(sandboxFlags);
-
   if (!mNetworkCreated) {
     if (mDocShell) {
       mDocShell->SetCreatedDynamically(true);
@@ -2139,6 +2130,17 @@ nsFrameLoader::MaybeCreateDocShell()
     attrs.mInIsolatedMozBrowser = OwnerIsIsolatedMozBrowserFrame();
     mDocShell->SetFrameType(nsIDocShell::FRAME_TYPE_BROWSER);
   }
+
+  
+  
+  
+  
+  uint32_t sandboxFlags = 0;
+  HTMLIFrameElement* iframe = HTMLIFrameElement::FromContent(mOwnerContent);
+  if (iframe) {
+    sandboxFlags = iframe->GetSandboxFlags();
+  }
+  ApplySandboxFlags(sandboxFlags);
 
   
   nsresult rv = PopulateUserContextIdFromAttribute(attrs);
@@ -3010,6 +3012,15 @@ nsFrameLoader::ApplySandboxFlags(uint32_t sandboxFlags)
 
     
     sandboxFlags |= parentSandboxFlags;
+
+    
+    
+    
+    nsAutoString presentationURL;
+    nsContentUtils::GetPresentationURL(mDocShell, presentationURL);
+    if (!presentationURL.IsEmpty()) {
+      sandboxFlags |= SANDBOXED_AUXILIARY_NAVIGATION;
+    }
     mDocShell->SetSandboxFlags(sandboxFlags);
   }
 }
