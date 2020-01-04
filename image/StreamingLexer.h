@@ -39,6 +39,9 @@ enum class TerminalState
 };
 
 
+typedef Variant<TerminalState> LexerResult;
+
+
 
 
 
@@ -259,9 +262,11 @@ class StreamingLexer
 {
 public:
   explicit StreamingLexer(LexerTransition<State> aStartState)
-    : mTransition(aStartState)
+    : mTransition(TerminalState::FAILURE)
     , mToReadUnbuffered(0)
-  { }
+  {
+    SetTransition(aStartState);
+  }
 
   template <typename Func>
   Maybe<TerminalState> Lex(SourceBufferIterator& aIterator,
@@ -274,8 +279,15 @@ public:
       return Some(mTransition.NextStateAsTerminal());
     }
 
+    Maybe<LexerResult> result;
     do {
-      switch (aIterator.AdvanceOrScheduleResume(SIZE_MAX, aOnResume)) {
+      
+      const size_t toRead = mTransition.Buffering() == BufferingStrategy::UNBUFFERED
+                          ? mToReadUnbuffered
+                          : mTransition.Size() - mBuffer.length();
+
+      
+      switch (aIterator.AdvanceOrScheduleResume(toRead, aOnResume)) {
         case SourceBufferIterator::WAITING:
           
           
@@ -289,173 +301,123 @@ public:
           
           
           
-          mTransition = NS_SUCCEEDED(aIterator.CompletionStatus())
-                      ? Transition::TerminateSuccess()
-                      : Transition::TerminateFailure();
+          result = SetTransition(NS_SUCCEEDED(aIterator.CompletionStatus())
+                 ? Transition::TerminateSuccess()
+                 : Transition::TerminateFailure());
           break;
 
         case SourceBufferIterator::READY:
           
-          
-          
           MOZ_ASSERT(aIterator.Data());
-          MOZ_ASSERT(aIterator.Length() > 0);
-          Lex(aIterator.Data(), aIterator.Length(), aFunc);
+
+          result = mTransition.Buffering() == BufferingStrategy::UNBUFFERED
+                 ? UnbufferedRead(aIterator, aFunc)
+                 : BufferedRead(aIterator, aFunc);
           break;
 
         default:
           MOZ_ASSERT_UNREACHABLE("Unknown SourceBufferIterator state");
-          mTransition = Transition::TerminateFailure();
+          result = SetTransition(Transition::TerminateFailure());
       }
-    } while (!mTransition.NextStateIsTerminal());
+    } while (!result);
 
     
-    return Some(mTransition.NextStateAsTerminal());
+    return result->is<TerminalState>() ? Some(result->as<TerminalState>())
+                                       : Nothing();
   }
 
+private:
   template <typename Func>
-  Maybe<TerminalState> Lex(const char* aInput, size_t aLength, Func aFunc)
+  Maybe<LexerResult> UnbufferedRead(SourceBufferIterator& aIterator, Func aFunc)
   {
-    MOZ_ASSERT(aInput);
-
-    if (mTransition.NextStateIsTerminal()) {
-      
-      
-      return Some(mTransition.NextStateAsTerminal());
-    }
+    MOZ_ASSERT(mTransition.Buffering() == BufferingStrategy::UNBUFFERED);
+    MOZ_ASSERT(mBuffer.empty(),
+               "Buffered read at the same time as unbuffered read?");
 
     if (mToReadUnbuffered > 0) {
       
-
-      MOZ_ASSERT(mBuffer.empty(),
-                 "Shouldn't be continuing an unbuffered read and a buffered "
-                 "read at the same time");
-
-      size_t toRead = std::min(mToReadUnbuffered, aLength);
-
-      
       
       
       
       LexerTransition<State> unbufferedTransition =
-        aFunc(mTransition.UnbufferedState(), aInput, toRead);
+        aFunc(mTransition.UnbufferedState(), aIterator.Data(), aIterator.Length());
       if (unbufferedTransition.NextStateIsTerminal()) {
-        mTransition = unbufferedTransition;
-        return Some(mTransition.NextStateAsTerminal());  
+        return SetTransition(unbufferedTransition);
       }
+
       MOZ_ASSERT(mTransition.UnbufferedState() ==
                    unbufferedTransition.NextState());
 
-      aInput += toRead;
-      aLength -= toRead;
-      mToReadUnbuffered -= toRead;
+      mToReadUnbuffered -= aIterator.Length();
       if (mToReadUnbuffered != 0) {
         return Nothing();  
       }
-
-      
-      mTransition = aFunc(mTransition.NextState(), nullptr, 0);
-      if (mTransition.NextStateIsTerminal()) {
-        return Some(mTransition.NextStateAsTerminal());  
-      }
-    } else if (0 < mBuffer.length()) {
-      
-
-      MOZ_ASSERT(mToReadUnbuffered == 0,
-                 "Shouldn't be continuing an unbuffered read and a buffered "
-                 "read at the same time");
-      MOZ_ASSERT(mBuffer.length() < mTransition.Size(),
-                 "Buffered more than we needed?");
-
-      size_t toRead = std::min(aLength, mTransition.Size() - mBuffer.length());
-
-      if (!mBuffer.append(aInput, toRead)) {
-        return Some(TerminalState::FAILURE);
-      }
-      aInput += toRead;
-      aLength -= toRead;
-      if (mBuffer.length() != mTransition.Size()) {
-        return Nothing();  
-      }
-
-      
-      mTransition =
-        aFunc(mTransition.NextState(), mBuffer.begin(), mBuffer.length());
-      mBuffer.clear();
-      if (mTransition.NextStateIsTerminal()) {
-        return Some(mTransition.NextStateAsTerminal());  
-      }
-    }
-
-    MOZ_ASSERT(mToReadUnbuffered == 0);
-    MOZ_ASSERT(mBuffer.empty());
-
-    
-    while (mTransition.Size() <= aLength) {
-      size_t toRead = mTransition.Size();
-
-      if (mTransition.Buffering() == BufferingStrategy::BUFFERED) {
-        mTransition = aFunc(mTransition.NextState(), aInput, toRead);
-      } else {
-        MOZ_ASSERT(mTransition.Buffering() == BufferingStrategy::UNBUFFERED);
-
-        
-        
-        
-        
-        LexerTransition<State> unbufferedTransition =
-          aFunc(mTransition.UnbufferedState(), aInput, toRead);
-        if (unbufferedTransition.NextStateIsTerminal()) {
-          mTransition = unbufferedTransition;
-          return Some(mTransition.NextStateAsTerminal());  
-        }
-        MOZ_ASSERT(mTransition.UnbufferedState() ==
-                     unbufferedTransition.NextState());
-
-        
-        mTransition = aFunc(mTransition.NextState(), nullptr, 0);
-      }
-
-      aInput += toRead;
-      aLength -= toRead;
-
-      if (mTransition.NextStateIsTerminal()) {
-        return Some(mTransition.NextStateAsTerminal());  
-      }
-    }
-
-    if (aLength == 0) {
-      
-      return Nothing();
     }
 
     
-    if (mTransition.Buffering() == BufferingStrategy::UNBUFFERED) {
-      LexerTransition<State> unbufferedTransition =
-        aFunc(mTransition.UnbufferedState(), aInput, aLength);
-      if (unbufferedTransition.NextStateIsTerminal()) {
-        mTransition = unbufferedTransition;
-        return Some(mTransition.NextStateAsTerminal());  
-      }
-      MOZ_ASSERT(mTransition.UnbufferedState() ==
-                   unbufferedTransition.NextState());
+    return SetTransition(aFunc(mTransition.NextState(), nullptr, 0));
+  }
 
-      mToReadUnbuffered = mTransition.Size() - aLength;
+  template <typename Func>
+  Maybe<LexerResult> BufferedRead(SourceBufferIterator& aIterator, Func aFunc)
+  {
+    MOZ_ASSERT(mTransition.Buffering() == BufferingStrategy::BUFFERED);
+    MOZ_ASSERT(mToReadUnbuffered == 0,
+               "Buffered read at the same time as unbuffered read?");
+    MOZ_ASSERT(mBuffer.length() < mTransition.Size() ||
+               (mBuffer.length() == 0 && mTransition.Size() == 0),
+               "Buffered more than we needed?");
+
+    
+    if (mBuffer.empty() && aIterator.Length() == mTransition.Size()) {
+      return SetTransition(aFunc(mTransition.NextState(),
+                                 aIterator.Data(),
+                                 aIterator.Length()));
+    }
+
+    
+    
+    
+    if (!mBuffer.reserve(mTransition.Size())) {
+      return SetTransition(Transition::TerminateFailure());
+    }
+
+    
+    if (!mBuffer.append(aIterator.Data(), aIterator.Length())) {
+      return SetTransition(Transition::TerminateFailure());
+    }
+
+    if (mBuffer.length() != mTransition.Size()) {
       return Nothing();  
     }
 
     
-    MOZ_ASSERT(mTransition.Buffering() == BufferingStrategy::BUFFERED);
-    if (!mBuffer.reserve(mTransition.Size())) {
-      return Some(TerminalState::FAILURE);  
+    return SetTransition(aFunc(mTransition.NextState(),
+                               mBuffer.begin(),
+                               mBuffer.length()));
+  }
+
+  Maybe<LexerResult> SetTransition(const LexerTransition<State>& aTransition)
+  {
+    mTransition = aTransition;
+
+    
+    mBuffer.clear();
+    mToReadUnbuffered = 0;
+
+    
+    if (mTransition.NextStateIsTerminal()) {
+      return Some(LexerResult(mTransition.NextStateAsTerminal()));
     }
-    if (!mBuffer.append(aInput, aLength)) {
-      return Some(TerminalState::FAILURE);
+
+    
+    if (mTransition.Buffering() == BufferingStrategy::UNBUFFERED) {
+      mToReadUnbuffered = mTransition.Size();
     }
+
     return Nothing();  
   }
 
-private:
   Vector<char, InlineBufferSize> mBuffer;
   LexerTransition<State> mTransition;
   size_t mToReadUnbuffered;
