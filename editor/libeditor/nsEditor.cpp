@@ -1329,11 +1329,10 @@ NS_IMETHODIMP nsEditor::Observe(nsISupports* aSubj, const char *aTopic,
   
   if (mInlineSpellChecker) {
     
+    
     nsCOMPtr<nsIEditorSpellCheck> editorSpellCheck;
     mInlineSpellChecker->GetSpellChecker(getter_AddRefs(editorSpellCheck));
     if (editorSpellCheck) {
-      
-      
       editorSpellCheck->CheckCurrentDictionary();
     }
 
