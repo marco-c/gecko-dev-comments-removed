@@ -301,11 +301,15 @@ public:
 
   
   
+  
+  
+  
+  
   bool
-  Freeze(JSContext* aCx, nsPIDOMWindowInner* aWindow);
+  Freeze(nsPIDOMWindowInner* aWindow);
 
   bool
-  Thaw(JSContext* aCx, nsPIDOMWindowInner* aWindow);
+  Thaw(nsPIDOMWindowInner* aWindow);
 
   void
   Suspend();

@@ -2567,11 +2567,9 @@ WorkerPrivateParent<Derived>::NotifyPrivate(Status aStatus)
 
 template <class Derived>
 bool
-WorkerPrivateParent<Derived>::Freeze(JSContext* aCx,
-                                     nsPIDOMWindowInner* aWindow)
+WorkerPrivateParent<Derived>::Freeze(nsPIDOMWindowInner* aWindow)
 {
   AssertIsOnParentThread();
-  MOZ_ASSERT(aCx);
 
   
   
@@ -2626,10 +2624,9 @@ WorkerPrivateParent<Derived>::Freeze(JSContext* aCx,
 
 template <class Derived>
 bool
-WorkerPrivateParent<Derived>::Thaw(JSContext* aCx, nsPIDOMWindowInner* aWindow)
+WorkerPrivateParent<Derived>::Thaw(nsPIDOMWindowInner* aWindow)
 {
   AssertIsOnParentThread();
-  MOZ_ASSERT(aCx);
 
   if (IsDedicatedWorker() && !mParentFrozen) {
     
@@ -3133,7 +3130,7 @@ WorkerPrivateParent<Derived>::RegisterSharedWorker(JSContext* aCx,
 
   
   
-  if (mSharedWorkers.Length() > 1 && !Thaw(aCx, nullptr)) {
+  if (mSharedWorkers.Length() > 1 && !Thaw(nullptr)) {
     return false;
   }
 
@@ -3309,12 +3306,8 @@ WorkerPrivateParent<Derived>::CloseSharedWorkersForWindow(
   
   
 
-  AutoSafeJSContext cx;
-
   if (!mSharedWorkers.IsEmpty()) {
-    if (!Freeze(cx, nullptr)) {
-      JS_ReportPendingException(cx);
-    }
+    Freeze(nullptr);
   } else {
     Cancel();
   }
