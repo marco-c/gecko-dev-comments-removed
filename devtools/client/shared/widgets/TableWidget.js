@@ -1070,6 +1070,11 @@ Cell.prototype = {
     this.label.classList.remove("flash-out");
     
     let a = this.label.parentNode.offsetWidth; 
+    let onAnimEnd = () => {
+      this.label.classList.remove("flash-out");
+      this.label.removeEventListener("animationend", onAnimEnd);
+    };
+    this.label.addEventListener("animationend", onAnimEnd);
     this.label.classList.add("flash-out");
   },
 
