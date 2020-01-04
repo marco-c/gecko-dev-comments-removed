@@ -303,8 +303,15 @@ nsRect::RemoveResolution(const float aResolution) const
 const mozilla::gfx::IntRect& GetMaxSizedIntRect();
 
 
+template<class units>
 nsRect
-ToAppUnits(const mozilla::gfx::IntRect& aRect, nscoord aAppUnitsPerPixel);
+ToAppUnits(const mozilla::gfx::IntRectTyped<units>& aRect, nscoord aAppUnitsPerPixel)
+{
+  return nsRect(NSIntPixelsToAppUnits(aRect.x, aAppUnitsPerPixel),
+                NSIntPixelsToAppUnits(aRect.y, aAppUnitsPerPixel),
+                NSIntPixelsToAppUnits(aRect.width, aAppUnitsPerPixel),
+                NSIntPixelsToAppUnits(aRect.height, aAppUnitsPerPixel));
+}
 
 #ifdef DEBUG
 

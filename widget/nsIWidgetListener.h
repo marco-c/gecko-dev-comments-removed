@@ -11,6 +11,7 @@
 #include "mozilla/TimeStamp.h"
 
 #include "nsRegionFwd.h"
+#include "Units.h"
 
 class nsView;
 class nsIPresShell;
@@ -128,7 +129,8 @@ public:
 
 
 
-  virtual bool PaintWindow(nsIWidget* aWidget, nsIntRegion aRegion);
+  virtual bool PaintWindow(nsIWidget* aWidget,
+                           mozilla::LayoutDeviceIntRegion aRegion);
 
   
 
