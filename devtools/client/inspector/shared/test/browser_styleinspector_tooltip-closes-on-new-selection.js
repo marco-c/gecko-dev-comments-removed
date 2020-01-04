@@ -27,7 +27,7 @@ function* testRuleView(ruleView, inspector) {
 
   let tooltip = ruleView.tooltips.previewTooltip;
   let tooltipContent = ruleView.styleDocument.createElementNS(XHTML_NS, "div");
-  yield tooltip.setContent(tooltipContent, 100, 30);
+  yield tooltip.setContent(tooltipContent, {width: 100, height: 30});
 
   
   
@@ -52,7 +52,8 @@ function* testComputedView(computedView, inspector) {
 
   let tooltip = computedView.tooltips.previewTooltip;
   let tooltipContent = computedView.styleDocument.createElementNS(XHTML_NS, "div");
-  yield tooltip.setContent(tooltipContent, 100, 30);
+  yield tooltip.setContent(tooltipContent, {width: 100, height: 30});
+
   
   
   
