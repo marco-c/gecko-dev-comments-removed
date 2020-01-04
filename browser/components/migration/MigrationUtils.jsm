@@ -704,7 +704,8 @@ this.MigrationUtils = Object.freeze({
     if (!isRefresh &&
         Services.prefs.getBoolPref("browser.migration.automigrate")) {
       try {
-        return AutoMigrate.migrate(aProfileStartup, aMigratorKey, aProfileToMigrate);
+        AutoMigrate.migrate(aProfileStartup, aMigratorKey, aProfileToMigrate);
+        return;
       } catch (ex) {
         
         Cu.reportError(ex);
