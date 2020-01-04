@@ -156,8 +156,6 @@ MediaOmxCommonDecoder::ResumeStateMachine()
   
   GetStateMachine()->InvokeSeek(target);
 
-  mNextState = mPlayState;
-  ChangeState(PLAY_STATE_LOADING);
   
   GetStateMachine()->DispatchSetDormant(false);
   UpdateLogicalPosition();
