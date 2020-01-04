@@ -45,7 +45,7 @@ struct SelectionDetails
 #endif
   int32_t mStart;
   int32_t mEnd;
-  SelectionType mType;
+  mozilla::RawSelectionType mRawSelectionType;
   mozilla::TextRangeStyle mTextRangeStyle;
   SelectionDetails *mNext;
 };
@@ -347,7 +347,9 @@ public:
 
 
 
-  mozilla::dom::Selection* GetSelection(SelectionType aType) const;
+
+  mozilla::dom::Selection*
+    GetSelection(mozilla::RawSelectionType aRawSelectionType) const;
 
   
 
@@ -364,7 +366,7 @@ public:
 
 
   
-  nsresult ScrollSelectionIntoView(SelectionType aType,
+  nsresult ScrollSelectionIntoView(mozilla::RawSelectionType aRawSelectionType,
                                    SelectionRegion aRegion,
                                    int16_t aFlags) const;
 
@@ -372,7 +374,8 @@ public:
 
 
 
-  nsresult RepaintSelection(SelectionType aType) const;
+
+  nsresult RepaintSelection(mozilla::RawSelectionType aRawSelectionType) const;
 
   
 
@@ -679,7 +682,8 @@ private:
 
   
   
-  nsresult     NotifySelectionListeners(SelectionType aType);     
+  nsresult     NotifySelectionListeners(
+                 mozilla::RawSelectionType aRawSelectionType);
 
   RefPtr<mozilla::dom::Selection> mDomSelections[nsISelectionController::NUM_SELECTIONTYPES];
 
