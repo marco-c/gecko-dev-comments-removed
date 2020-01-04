@@ -1602,7 +1602,8 @@ public:
   
   
   
-  void RemoveElementsBy(mozilla::function<bool(const elem_type&)> aPredicate);
+  template<typename Predicate>
+  void RemoveElementsBy(Predicate aPredicate);
 
   
   
@@ -1909,8 +1910,9 @@ nsTArray_Impl<E, Alloc>::RemoveElementsAt(index_type aStart, size_type aCount)
 }
 
 template<typename E, class Alloc>
+template<typename Predicate>
 void
-nsTArray_Impl<E, Alloc>::RemoveElementsBy(mozilla::function<bool(const elem_type&)> aPredicate)
+nsTArray_Impl<E, Alloc>::RemoveElementsBy(Predicate aPredicate)
 {
   if (base_type::mHdr == EmptyHdr()) {
     return;
