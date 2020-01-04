@@ -782,6 +782,9 @@ element.coordinates = function(
 
 
 
+
+
+
 element.inViewport = function(el, x = undefined, y = undefined) {
   let win = el.ownerDocument.defaultView;
   let c = element.coordinates(el, x, y);
