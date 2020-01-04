@@ -2098,6 +2098,29 @@ TSFTextStore::ContentForTSFRef()
 }
 
 bool
+TSFTextStore::CanAccessActualContentDirectly() const
+{
+  if (!mContentForTSF.IsInitialized() || mSelectionForTSF.IsDirty()) {
+    return true;
+  }
+
+  
+  
+  if (mPendingTextChangeData.IsValid() &&
+      !mPendingTextChangeData.mCausedOnlyByComposition) {
+    return false;
+  }
+
+  
+  
+  if (!mPendingSelectionChangeData.IsValid()) {
+    return true;
+  }
+
+  return mSelectionForTSF.EqualsExceptDirection(mPendingSelectionChangeData);
+}
+
+bool
 TSFTextStore::GetCurrentText(nsAString& aTextContent)
 {
   if (mContentForTSF.IsInitialized()) {
@@ -3707,6 +3730,13 @@ TSFTextStore::GetTextExt(TsViewCookie vcView,
     
     options.mRelativeToInsertionPoint = true;
     startOffset -= mComposition.mStart;
+  } else if (!CanAccessActualContentDirectly()) {
+    
+    
+    
+    
+    options.mRelativeToInsertionPoint = true;
+    startOffset -= mSelectionForTSF.StartOffset();
   }
   event.InitForQueryTextRect(startOffset, acpEnd - acpStart, options);
 
@@ -5170,6 +5200,13 @@ TSFTextStore::CreateNativeCaret()
     
     options.mRelativeToInsertionPoint = true;
     caretOffset -= mComposition.mStart;
+  } else if (!CanAccessActualContentDirectly()) {
+    
+    
+    
+    
+    options.mRelativeToInsertionPoint = true;
+    caretOffset -= mSelectionForTSF.StartOffset();
   }
   queryCaretRect.InitForQueryCaretRect(caretOffset, options);
 

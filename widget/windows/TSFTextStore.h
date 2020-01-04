@@ -564,6 +564,15 @@ protected:
              mACP.acpEnd == aACP.acpStart;
     }
 
+    bool EqualsExceptDirection(
+           const SelectionChangeDataBase& aChangedSelection) const
+    {
+      MOZ_ASSERT(!mDirty);
+      MOZ_ASSERT(aChangedSelection.IsValid());
+      return aChangedSelection.Length() == static_cast<uint32_t>(Length()) &&
+             aChangedSelection.mOffset == static_cast<uint32_t>(StartOffset());
+    }
+
   private:
     TS_SELECTION_ACP mACP;
     WritingMode mWritingMode;
@@ -836,6 +845,12 @@ protected:
   Content mContentForTSF;
 
   Content& ContentForTSFRef();
+
+  
+  
+  
+  
+  bool CanAccessActualContentDirectly() const;
 
   
   
