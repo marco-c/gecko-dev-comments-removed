@@ -1,83 +1,87 @@
 
 
 
+"use strict";
 
 
 
 
-function test() {
-  initNetMonitor(CUSTOM_GET_URL).then(([aTab, aDebuggee, aMonitor]) => {
-    info("Starting test... ");
 
-    
-    requestLongerTimeout(2);
+add_task(function* () {
+  let [tab, , monitor] = yield initNetMonitor(CUSTOM_GET_URL);
+  info("Starting test... ");
 
-    let { NetMonitorView } = aMonitor.panelWin;
-    let { RequestsMenu } = NetMonitorView;
+  
+  requestLongerTimeout(2);
 
-    RequestsMenu.lazyUpdate = false;
+  let { NetMonitorView } = monitor.panelWin;
+  let { RequestsMenu } = NetMonitorView;
 
-    waitForNetworkEvents(aMonitor, 2).then(() => {
-      check(-1, false);
+  RequestsMenu.lazyUpdate = false;
 
-      RequestsMenu.focusLastVisibleItem();
-      check(1, true);
-      RequestsMenu.focusFirstVisibleItem();
-      check(0, true);
+  let count = 0;
+  function check(selectedIndex, paneVisibility) {
+    info("Performing check " + (count++) + ".");
 
-      RequestsMenu.focusNextItem();
-      check(1, true);
-      RequestsMenu.focusPrevItem();
-      check(0, true);
+    is(RequestsMenu.selectedIndex, selectedIndex,
+      "The selected item in the requests menu was incorrect.");
+    is(NetMonitorView.detailsPaneHidden, !paneVisibility,
+      "The network requests details pane visibility state was incorrect.");
+  }
 
-      RequestsMenu.focusItemAtDelta(+1);
-      check(1, true);
-      RequestsMenu.focusItemAtDelta(-1);
-      check(0, true);
-
-      RequestsMenu.focusItemAtDelta(+10);
-      check(1, true);
-      RequestsMenu.focusItemAtDelta(-10);
-      check(0, true);
-
-      aDebuggee.performRequests(18);
-      return waitForNetworkEvents(aMonitor, 18);
-    })
-    .then(() => {
-      RequestsMenu.focusLastVisibleItem();
-      check(19, true);
-      RequestsMenu.focusFirstVisibleItem();
-      check(0, true);
-
-      RequestsMenu.focusNextItem();
-      check(1, true);
-      RequestsMenu.focusPrevItem();
-      check(0, true);
-
-      RequestsMenu.focusItemAtDelta(+10);
-      check(10, true);
-      RequestsMenu.focusItemAtDelta(-10);
-      check(0, true);
-
-      RequestsMenu.focusItemAtDelta(+100);
-      check(19, true);
-      RequestsMenu.focusItemAtDelta(-100);
-      check(0, true);
-
-      teardown(aMonitor).then(finish);
-    });
-
-    let count = 0;
-
-    function check(aSelectedIndex, aPaneVisibility) {
-      info("Performing check " + (count++) + ".");
-
-      is(RequestsMenu.selectedIndex, aSelectedIndex,
-        "The selected item in the requests menu was incorrect.");
-      is(NetMonitorView.detailsPaneHidden, !aPaneVisibility,
-        "The network requests details pane visibility state was incorrect.");
-    }
-
-    aDebuggee.performRequests(2);
+  let wait = waitForNetworkEvents(monitor, 2);
+  yield ContentTask.spawn(tab.linkedBrowser, {}, function* () {
+    content.wrappedJSObject.performRequests(2);
   });
-}
+  yield wait;
+
+  check(-1, false);
+
+  RequestsMenu.focusLastVisibleItem();
+  check(1, true);
+  RequestsMenu.focusFirstVisibleItem();
+  check(0, true);
+
+  RequestsMenu.focusNextItem();
+  check(1, true);
+  RequestsMenu.focusPrevItem();
+  check(0, true);
+
+  RequestsMenu.focusItemAtDelta(+1);
+  check(1, true);
+  RequestsMenu.focusItemAtDelta(-1);
+  check(0, true);
+
+  RequestsMenu.focusItemAtDelta(+10);
+  check(1, true);
+  RequestsMenu.focusItemAtDelta(-10);
+  check(0, true);
+
+  wait = waitForNetworkEvents(monitor, 18);
+  yield ContentTask.spawn(tab.linkedBrowser, {}, function* () {
+    content.wrappedJSObject.performRequests(18);
+  });
+  yield wait;
+
+  RequestsMenu.focusLastVisibleItem();
+  check(19, true);
+  RequestsMenu.focusFirstVisibleItem();
+  check(0, true);
+
+  RequestsMenu.focusNextItem();
+  check(1, true);
+  RequestsMenu.focusPrevItem();
+  check(0, true);
+
+  RequestsMenu.focusItemAtDelta(+10);
+  check(10, true);
+  RequestsMenu.focusItemAtDelta(-10);
+  check(0, true);
+
+  RequestsMenu.focusItemAtDelta(+100);
+  check(19, true);
+  RequestsMenu.focusItemAtDelta(-100);
+  check(0, true);
+
+  yield teardown(monitor);
+});
