@@ -8,6 +8,7 @@ package org.mozilla.gecko;
 import android.Manifest;
 import android.app.DownloadManager;
 import android.os.Environment;
+import android.support.annotation.CheckResult;
 import android.support.annotation.NonNull;
 import org.json.JSONArray;
 import org.mozilla.gecko.adjust.AdjustHelperInterface;
@@ -541,7 +542,7 @@ public class BrowserApp extends GeckoApp
         }
 
         final Intent intent = getIntent();
-        configureForTestsBasedOnEnvironment(intent);
+        final boolean isInAutomation = getIsInAutomationFromEnvironment(intent);
 
         
         
@@ -551,7 +552,8 @@ public class BrowserApp extends GeckoApp
 
         final Context appContext = getApplicationContext();
 
-        initSwitchboard(intent);
+        initSwitchboard(this, intent, isInAutomation);
+        initTelemetryUploader(isInAutomation);
 
         mBrowserChrome = (ViewGroup) findViewById(R.id.browser_chrome);
         mActionBarFlipper = (ViewFlipper) findViewById(R.id.browser_actionbar);
@@ -694,14 +696,7 @@ public class BrowserApp extends GeckoApp
         mReadingListHelper = new ReadingListHelper(appContext, profile);
         mAccountsHelper = new AccountsHelper(appContext, profile);
 
-        final AdjustHelperInterface adjustHelper = AdjustConstants.getAdjustHelper();
-        adjustHelper.onCreate(this, AdjustConstants.MOZ_INSTALL_TRACKING_ADJUST_SDK_APP_TOKEN);
-
-        
-        
-        
-        final SharedPreferences prefs = GeckoSharedPrefs.forApp(this);
-        adjustHelper.setEnabled(prefs.getBoolean(GeckoPreferences.PREFS_HEALTHREPORT_UPLOAD_ENABLED, true));
+        initAdjustSDK(this, isInAutomation);
 
         if (AppConstants.MOZ_ANDROID_BEAM) {
             NfcAdapter nfc = NfcAdapter.getDefaultAdapter(this);
@@ -767,19 +762,22 @@ public class BrowserApp extends GeckoApp
 
 
 
-    private void configureForTestsBasedOnEnvironment(final Intent intent) {
+    @CheckResult
+    private boolean getIsInAutomationFromEnvironment(final Intent intent) {
         final HashMap<String, String> envVars = IntentUtils.getEnvVarMap(intent);
-        final boolean isInAutomation = !TextUtils.isEmpty(envVars.get(IntentUtils.ENV_VAR_IN_AUTOMATION));
-        Experiments.setIsDisabled(isInAutomation);
-        TelemetryUploadService.setDisabled(isInAutomation);
+        return !TextUtils.isEmpty(envVars.get(IntentUtils.ENV_VAR_IN_AUTOMATION));
     }
 
     
 
 
 
-    private void initSwitchboard(final Intent intent) {
-        if (Experiments.isDisabled() || !AppConstants.MOZ_SWITCHBOARD) {
+    private static void initSwitchboard(final Context context, final Intent intent, final boolean isInAutomation) {
+        if (isInAutomation) {
+            Log.d(LOGTAG, "Switchboard disabled - in automation");
+            return;
+        } else if (!AppConstants.MOZ_SWITCHBOARD) {
+            Log.d(LOGTAG, "Switchboard compile-time disabled");
             return;
         }
 
@@ -798,7 +796,24 @@ public class BrowserApp extends GeckoApp
         
         
         
-        new AsyncConfigLoader(this, serverUrl).execute();
+        new AsyncConfigLoader(context, serverUrl).execute();
+    }
+
+    private static void initTelemetryUploader(final boolean isInAutomation) {
+        TelemetryUploadService.setDisabled(isInAutomation);
+    }
+
+    private static void initAdjustSDK(final Context context, final boolean isInAutomation) {
+        final AdjustHelperInterface adjustHelper = AdjustConstants.getAdjustHelper();
+        adjustHelper.onCreate(context, AdjustConstants.MOZ_INSTALL_TRACKING_ADJUST_SDK_APP_TOKEN);
+
+        
+        
+        
+        final SharedPreferences prefs = GeckoSharedPrefs.forApp(context);
+        final boolean enabled = !isInAutomation &&
+                prefs.getBoolean(GeckoPreferences.PREFS_HEALTHREPORT_UPLOAD_ENABLED, true);
+        adjustHelper.setEnabled(enabled);
     }
 
     private void showUpdaterPermissionSnackbar() {
