@@ -286,8 +286,10 @@ private:
   virtual bool
   WorkerRun(JSContext* aCx, WorkerPrivate* aWorkerPrivate) override;
 
+  
+  
   virtual bool
-  DispatchInternal() override;
+  DispatchInternal() override final;
 };
 
 
@@ -310,8 +312,10 @@ protected:
   { }
 
 private:
+  
+  
   virtual bool
-  PreDispatch(JSContext* aCx, WorkerPrivate* aWorkerPrivate) override
+  PreDispatch(JSContext* aCx, WorkerPrivate* aWorkerPrivate) override final
   {
     AssertIsOnMainThread();
     return true;
