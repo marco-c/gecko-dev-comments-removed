@@ -117,6 +117,8 @@ protected:
     , mNativeKeyCode(0)
     , mNativeModifierFlags(0)
 #endif
+    , mInputMethodAppState(eNotHandled)
+    , mIsSynthesizedByTIP(false)
   {
   }
 
@@ -142,6 +144,8 @@ public:
     , mNativeKeyCode(0)
     , mNativeModifierFlags(0)
 #endif
+    , mInputMethodAppState(eNotHandled)
+    , mIsSynthesizedByTIP(false)
   {
   }
 
@@ -210,6 +214,20 @@ public:
   
   nsString mPluginTextEventString;
 #endif
+
+  
+  typedef uint8_t InputMethodAppStateType;
+  enum InputMethodAppState : InputMethodAppStateType
+  {
+    eNotHandled, 
+    eHandling,   
+    eHandled     
+  };
+  InputMethodAppState mInputMethodAppState;
+
+  
+  
+  bool mIsSynthesizedByTIP;
 
   
   
@@ -338,6 +356,8 @@ public:
       Assign(aEvent.mNativeCharactersIgnoringModifiers);
     mPluginTextEventString.Assign(aEvent.mPluginTextEventString);
 #endif
+    mInputMethodAppState = aEvent.mInputMethodAppState;
+    mIsSynthesizedByTIP = aEvent.mIsSynthesizedByTIP;
   }
 
 private:
