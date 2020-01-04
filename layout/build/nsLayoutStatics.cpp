@@ -331,10 +331,6 @@ nsLayoutStatics::Shutdown()
   
   
 
-#ifdef MOZ_STYLO
-  Servo_Shutdown();
-#endif
-
   nsMessageManagerScriptExecutor::Shutdown();
   nsFocusManager::Shutdown();
 #ifdef MOZ_XUL
