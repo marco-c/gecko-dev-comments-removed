@@ -2218,7 +2218,7 @@ nsStyleImage::IsOpaque() const
   MOZ_ASSERT(imageContainer, "IsComplete() said image container is ready");
 
   
-  if (imageContainer->IsOpaque()) {
+  if (imageContainer->WillDrawOpaqueNow()) {
     if (!mCropRect) {
       return true;
     }
