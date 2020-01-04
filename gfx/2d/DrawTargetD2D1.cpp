@@ -32,6 +32,7 @@ ID2D1Factory1 *D2DFactory1()
 
 DrawTargetD2D1::DrawTargetD2D1()
   : mPushedLayers(1)
+  , mPushedLayersSincePurge(0)
 {
 }
 
@@ -87,10 +88,28 @@ DrawTargetD2D1::Snapshot()
   return snapshot.forget();
 }
 
+
+
+
+
+static const uint32_t kPushedLayersBeforePurge = 25;
+
 void
 DrawTargetD2D1::Flush()
 {
-  mDC->Flush();
+  if ((mPushedLayersSincePurge >= kPushedLayersBeforePurge) &&
+      mPushedLayers.size() == 1) {
+    
+    
+    
+    
+    PopAllClips();
+    mPushedLayersSincePurge = 0;
+    mDC->EndDraw();
+    mDC->BeginDraw();
+  } else {
+    mDC->Flush();
+  }
 
   
   for (TargetSet::iterator iter = mDependingOnTargets.begin();
@@ -783,6 +802,8 @@ DrawTargetD2D1::PushLayer(bool aOpaque, Float aOpacity, SourceSurface* aMask,
   mPushedLayers.push_back(pushedLayer);
 
   mDC->SetTarget(CurrentTarget());
+
+  mPushedLayersSincePurge++;
 }
 
 void
