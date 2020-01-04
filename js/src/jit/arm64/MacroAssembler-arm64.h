@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
+ * vim: set ts=8 sts=4 et sw=4 tw=99:
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef jit_arm64_MacroAssembler_arm64_h
 #define jit_arm64_MacroAssembler_arm64_h
@@ -18,7 +18,7 @@
 namespace js {
 namespace jit {
 
-
+// Import VIXL operands directly into the jit namespace for shared code.
 using vixl::Operand;
 using vixl::MemOperand;
 
@@ -46,12 +46,12 @@ class MacroAssemblerCompat : public vixl::MacroAssembler
     typedef vixl::Condition Condition;
 
   private:
-    
+    // Perform a downcast. Should be removed by Bug 996602.
     js::jit::MacroAssembler& asMasm();
     const js::jit::MacroAssembler& asMasm() const;
 
   public:
-    
+    // Restrict to only VIXL-internal functions.
     vixl::MacroAssembler& asVIXL();
     const MacroAssembler& asVIXL() const;
 
@@ -171,7 +171,7 @@ class MacroAssemblerCompat : public vixl::MacroAssembler
         vixl::MacroAssembler::Push(scratch64);
     }
 
-    
+    // Push registers.
     void push(Register reg) {
         vixl::MacroAssembler::Push(ARMRegister(reg, 64));
     }
@@ -189,7 +189,7 @@ class MacroAssemblerCompat : public vixl::MacroAssembler
         vixl::MacroAssembler::Push(r0, r1, r2, r3);
     }
 
-    
+    // Pop registers.
     void pop(Register reg) {
         vixl::MacroAssembler::Pop(ARMRegister(reg, 64));
     }
@@ -222,9 +222,9 @@ class MacroAssemblerCompat : public vixl::MacroAssembler
         vixl::MacroAssembler::Pop(r);
         adjustFrame(- r.size() / 8);
     }
-    
-    
-    
+    // FIXME: This is the same on every arch.
+    // FIXME: If we can share framePushed_, we can share this.
+    // FIXME: Or just make it at the highest level.
     CodeOffset PushWithPatch(ImmWord word) {
         framePushed_ += sizeof(word.value);
         return pushWithPatch(word);
@@ -248,7 +248,7 @@ class MacroAssemblerCompat : public vixl::MacroAssembler
         vixl::MacroAssembler::Drop(Operand(ARMRegister(amount, 64)));
     }
 
-    
+    // Update sp with the value of the current active stack pointer, if necessary.
     void syncStackPtr() {
         if (!GetStackPointer64().Is(vixl::sp))
             Mov(vixl::sp, GetStackPointer64());
@@ -287,8 +287,8 @@ class MacroAssemblerCompat : public vixl::MacroAssembler
             return;
         }
 
-        
-        
+        // For known integers and booleans, we can just store the unboxed value if
+        // the slot has the same type.
         if ((valueType == MIRType_Int32 || valueType == MIRType_Boolean) && slotType == valueType) {
             if (value.constant()) {
                 Value val = value.value();
@@ -318,7 +318,7 @@ class MacroAssemblerCompat : public vixl::MacroAssembler
         doBaseIndex(ARMRegister(val.valueReg(), 64), src, vixl::LDR_x);
     }
     void tagValue(JSValueType type, Register payload, ValueOperand dest) {
-        
+        // This could be cleverer, but the first attempt had bugs.
         Orr(ARMRegister(dest.valueReg(), 64), ARMRegister(payload, 64), Operand(ImmShiftedTag(type).value));
     }
     void pushValue(ValueOperand val) {
@@ -439,13 +439,13 @@ class MacroAssemblerCompat : public vixl::MacroAssembler
         return scratch;
     }
 
-    
-    
-    
+    // If source is a double, load into dest.
+    // If source is int32, convert to double and store in dest.
+    // Else, branch to failure.
     void ensureDouble(const ValueOperand& source, FloatRegister dest, Label* failure) {
         Label isDouble, done;
 
-        
+        // TODO: splitTagForTest really should not leak a scratch register.
         Register tag = splitTagForTest(source);
         {
             vixl::UseScratchRegisterScope temps(this);
@@ -498,7 +498,7 @@ class MacroAssemblerCompat : public vixl::MacroAssembler
     }
 
     void convertInt32ToDouble(Register src, FloatRegister dest) {
-        Scvtf(ARMFPRegister(dest, 64), ARMRegister(src, 32)); 
+        Scvtf(ARMFPRegister(dest, 64), ARMRegister(src, 32)); // Uses FPCR rounding mode.
     }
     void convertInt32ToDouble(const Address& src, FloatRegister dest) {
         vixl::UseScratchRegisterScope temps(this);
@@ -517,7 +517,7 @@ class MacroAssemblerCompat : public vixl::MacroAssembler
     }
 
     void convertInt32ToFloat32(Register src, FloatRegister dest) {
-        Scvtf(ARMFPRegister(dest, 32), ARMRegister(src, 32)); 
+        Scvtf(ARMFPRegister(dest, 32), ARMRegister(src, 32)); // Uses FPCR rounding mode.
     }
     void convertInt32ToFloat32(const Address& src, FloatRegister dest) {
         vixl::UseScratchRegisterScope temps(this);
@@ -528,7 +528,7 @@ class MacroAssemblerCompat : public vixl::MacroAssembler
     }
 
     void convertUInt32ToDouble(Register src, FloatRegister dest) {
-        Ucvtf(ARMFPRegister(dest, 64), ARMRegister(src, 32)); 
+        Ucvtf(ARMFPRegister(dest, 64), ARMRegister(src, 32)); // Uses FPCR rounding mode.
     }
     void convertUInt32ToDouble(const Address& src, FloatRegister dest) {
         vixl::UseScratchRegisterScope temps(this);
@@ -539,7 +539,7 @@ class MacroAssemblerCompat : public vixl::MacroAssembler
     }
 
     void convertUInt32ToFloat32(Register src, FloatRegister dest) {
-        Ucvtf(ARMFPRegister(dest, 32), ARMRegister(src, 32)); 
+        Ucvtf(ARMFPRegister(dest, 32), ARMRegister(src, 32)); // Uses FPCR rounding mode.
     }
     void convertUInt32ToFloat32(const Address& src, FloatRegister dest) {
         vixl::UseScratchRegisterScope temps(this);
@@ -560,13 +560,13 @@ class MacroAssemblerCompat : public vixl::MacroAssembler
         vixl::UseScratchRegisterScope temps(this);
         const ARMRegister scratch64 = temps.AcquireX();
 
-        
+        // An out of range integer will be saturated to the destination size.
         ARMFPRegister src64(src, 64);
         ARMRegister dest64(dest, 64);
 
         MOZ_ASSERT(!scratch64.Is(dest64));
 
-        
+        //breakpoint();
         Fcvtzs(dest64, src64);
         Add(scratch64, dest64, Operand(0x7fffffffffffffff));
         Cmn(scratch64, 3);
@@ -585,8 +585,8 @@ class MacroAssemblerCompat : public vixl::MacroAssembler
 
         MOZ_ASSERT(!scratch64.Is(fsrc));
 
-        Fcvtzs(dest32, fsrc); 
-        Scvtf(scratch64, dest32); 
+        Fcvtzs(dest32, fsrc); // Convert, rounding toward zero.
+        Scvtf(scratch64, dest32); // Convert back, using FPCR rounding mode.
         Fcmp(scratch64, fsrc);
         B(fail, Assembler::NotEqual);
 
@@ -610,8 +610,8 @@ class MacroAssemblerCompat : public vixl::MacroAssembler
 
         MOZ_ASSERT(!scratch32.Is(fsrc));
 
-        Fcvtzs(dest64, fsrc); 
-        Scvtf(scratch32, dest32); 
+        Fcvtzs(dest64, fsrc); // Convert, rounding toward zero.
+        Scvtf(scratch32, dest32); // Convert back, using FPCR rounding mode.
         Fcmp(scratch32, fsrc);
         B(fail, Assembler::NotEqual);
 
@@ -642,15 +642,15 @@ class MacroAssemblerCompat : public vixl::MacroAssembler
     }
     void floor(FloatRegister input, Register output, Label* bail) {
         Label handleZero;
-        
+        //Label handleNeg;
         Label fin;
         ARMFPRegister iDbl(input, 64);
         ARMRegister o64(output, 64);
         ARMRegister o32(output, 32);
         Fcmp(iDbl, 0.0);
         B(Assembler::Equal, &handleZero);
-        
-        
+        //B(Assembler::Signed, &handleNeg);
+        // NaN is always a bail condition, just bail directly.
         B(Assembler::Overflow, bail);
         Fcvtms(o64, iDbl);
         Cmp(o64, Operand(o64, vixl::SXTW));
@@ -659,8 +659,8 @@ class MacroAssemblerCompat : public vixl::MacroAssembler
         B(&fin);
 
         bind(&handleZero);
-        
-        
+        // Move the top word of the double into the output reg, if it is non-zero,
+        // then the original value was -0.0.
         Fmov(o64, iDbl);
         Cbnz(o64, bail);
         bind(&fin);
@@ -668,15 +668,15 @@ class MacroAssemblerCompat : public vixl::MacroAssembler
 
     void floorf(FloatRegister input, Register output, Label* bail) {
         Label handleZero;
-        
+        //Label handleNeg;
         Label fin;
         ARMFPRegister iFlt(input, 32);
         ARMRegister o64(output, 64);
         ARMRegister o32(output, 32);
         Fcmp(iFlt, 0.0);
         B(Assembler::Equal, &handleZero);
-        
-        
+        //B(Assembler::Signed, &handleNeg);
+        // NaN is always a bail condition, just bail directly.
         B(Assembler::Overflow, bail);
         Fcvtms(o64, iFlt);
         Cmp(o64, Operand(o64, vixl::SXTW));
@@ -685,8 +685,8 @@ class MacroAssemblerCompat : public vixl::MacroAssembler
         B(&fin);
 
         bind(&handleZero);
-        
-        
+        // Move the top word of the double into the output reg, if it is non-zero,
+        // then the original value was -0.0.
         Fmov(o32, iFlt);
         Cbnz(o32, bail);
         bind(&fin);
@@ -723,7 +723,7 @@ class MacroAssemblerCompat : public vixl::MacroAssembler
         ARMRegister o32(output, 32);
         Fcmp(iFlt, 0.0);
 
-        
+        // NaN is always a bail condition, just bail directly.
         B(Assembler::Overflow, bail);
         Fcvtps(o64, iFlt);
         Cmp(o64, Operand(o64, vixl::SXTW));
@@ -733,8 +733,8 @@ class MacroAssemblerCompat : public vixl::MacroAssembler
         B(&fin);
 
         bind(&handleZero);
-        
-        
+        // Move the top word of the double into the output reg, if it is non-zero,
+        // then the original value was -0.0.
         Fmov(o32, iFlt);
         Cbnz(o32, bail);
         bind(&fin);
@@ -762,8 +762,8 @@ class MacroAssemblerCompat : public vixl::MacroAssembler
     }
 
     void haltingAlign(int alignment) {
-        
-        
+        // TODO: Implement a proper halting align.
+        // ARM doesn't have one either.
         armbuffer_.align(alignment);
     }
 
@@ -808,9 +808,9 @@ class MacroAssemblerCompat : public vixl::MacroAssembler
         Mov(ARMRegister(dest, 32), ARMRegister(src, 32));
     }
 
-    
-    
-    
+    // Move a pointer using a literal pool, so that the pointer
+    // may be easily patched or traced.
+    // Returns the BufferOffset of the load instruction emitted.
     BufferOffset movePatchablePtr(ImmWord ptr, Register dest);
     BufferOffset movePatchablePtr(ImmPtr ptr, Register dest);
 
@@ -981,7 +981,7 @@ class MacroAssemblerCompat : public vixl::MacroAssembler
 
     void store32_NoSecondScratch(Imm32 imm, const Address& address) {
         vixl::UseScratchRegisterScope temps(this);
-        temps.Exclude(ARMRegister(ScratchReg2, 32)); 
+        temps.Exclude(ARMRegister(ScratchReg2, 32)); // Disallow ScratchReg2.
         const ARMRegister scratch32 = temps.AcquireW();
 
         MOZ_ASSERT(scratch32.asUnsized() != address.base);
@@ -993,7 +993,7 @@ class MacroAssemblerCompat : public vixl::MacroAssembler
         storePtr(src.reg, address);
     }
 
-    
+    // SIMD.
     void loadInt32x1(const Address& addr, FloatRegister dest) { MOZ_CRASH("NYI"); }
     void loadInt32x1(const BaseIndex& addr, FloatRegister dest) { MOZ_CRASH("NYI"); }
     void loadInt32x2(const Address& addr, FloatRegister dest) { MOZ_CRASH("NYI"); }
@@ -1028,7 +1028,7 @@ class MacroAssemblerCompat : public vixl::MacroAssembler
     void storeUnalignedFloat32x4(FloatRegister dest, const Address& addr) { MOZ_CRASH("NYI"); }
     void storeUnalignedFloat32x4(FloatRegister dest, const BaseIndex& addr) { MOZ_CRASH("NYI"); }
 
-    
+    // StackPointer manipulation.
     template <typename T> void addToStackPtr(T t);
     template <typename T> void addStackPtrTo(T t);
 
@@ -1050,7 +1050,7 @@ class MacroAssemblerCompat : public vixl::MacroAssembler
     template <typename T>
     void storeStackPtr(T t) { storePtr(getStackPointer(), t); }
 
-    
+    // StackPointer testing functions.
     template <typename T>
     void branchTestStackPtr(Condition cond, T t, Label* label) {
         branchTestPtr(cond, getStackPointer(), t, label);
@@ -1238,9 +1238,6 @@ class MacroAssemblerCompat : public vixl::MacroAssembler
     void negateFloat(FloatRegister reg) {
         fneg(ARMFPRegister(reg, 32), ARMFPRegister(reg, 32));
     }
-    void addDouble(FloatRegister src, FloatRegister dest) {
-        fadd(ARMFPRegister(dest, 64), ARMFPRegister(dest, 64), ARMFPRegister(src, 64));
-    }
     void subDouble(FloatRegister src, FloatRegister dest) {
         fsub(ARMFPRegister(dest, 64), ARMFPRegister(dest, 64), ARMFPRegister(src, 64));
     }
@@ -1270,13 +1267,13 @@ class MacroAssemblerCompat : public vixl::MacroAssembler
         splitTag(dest, dest);
     }
 
-    
+    // Extracts the tag of a value and places it in ScratchReg.
     Register splitTagForTest(const ValueOperand& value) {
         vixl::UseScratchRegisterScope temps(this);
         const ARMRegister scratch64 = temps.AcquireX();
         MOZ_ASSERT(scratch64.asUnsized() != value.valueReg());
         Lsr(scratch64, ARMRegister(value.valueReg(), 64), JSVAL_TAG_SHIFT);
-        return scratch64.asUnsized(); 
+        return scratch64.asUnsized(); // FIXME: Surely we can make a better interface.
     }
     void cmpTag(const ValueOperand& operand, ImmTag tag) {
         MOZ_CRASH("cmpTag");
@@ -1381,7 +1378,7 @@ class MacroAssemblerCompat : public vixl::MacroAssembler
         if (onZero)
             Cbz(ARMRegister(dest, 32), onZero);
 
-        
+        // Clear upper 32 bits.
         Mov(ARMRegister(dest, 32), ARMRegister(dest, 32));
     }
 
@@ -1391,9 +1388,9 @@ class MacroAssemblerCompat : public vixl::MacroAssembler
     }
 
     void retn(Imm32 n) {
-        
+        // ip0 <- [sp]; sp += n; ret ip0
         Ldr(vixl::ip0, MemOperand(GetStackPointer64(), ptrdiff_t(n.value), vixl::PostIndex));
-        syncStackPtr(); 
+        syncStackPtr(); // SP is always used to transmit the stack between calls.
         Ret(vixl::ip0);
     }
 
@@ -1407,11 +1404,11 @@ class MacroAssemblerCompat : public vixl::MacroAssembler
     void branch(JitCode* target) {
         syncStackPtr();
         addPendingJump(nextOffset(), ImmPtr(target->raw()), Relocation::JITCODE);
-        b(-1); 
+        b(-1); // The jump target will be patched by executableCopy().
     }
 
     void branch32(Condition cond, const Operand& lhs, Register rhs, Label* label) {
-        
+        // since rhs is an operand, do the compare backwards
         Cmp(ARMRegister(rhs, 32), lhs);
         B(label, Assembler::InvertCmpCondition(cond));
     }
@@ -1472,8 +1469,8 @@ class MacroAssemblerCompat : public vixl::MacroAssembler
 
     void branchTest32(Condition cond, Register lhs, Register rhs, Label* label) {
         MOZ_ASSERT(cond == Zero || cond == NonZero || cond == Signed || cond == NotSigned);
-        
-        
+        // x86 prefers |test foo, foo| to |cmp foo, #0|.
+        // Convert the former to the latter for ARM.
         if (lhs == rhs && (cond == Zero || cond == NonZero))
             cmp32(lhs, Imm32(0));
         else
@@ -1505,7 +1502,7 @@ class MacroAssemblerCompat : public vixl::MacroAssembler
         BufferOffset load_bo;
         BufferOffset branch_bo;
 
-        
+        // Does not overwrite condition codes from the caller.
         {
             vixl::UseScratchRegisterScope temps(this);
             const ARMRegister scratch64 = temps.AcquireX();
@@ -1535,7 +1532,7 @@ class MacroAssemblerCompat : public vixl::MacroAssembler
     }
     template <typename T>
     CodeOffsetJump branchPtrWithPatch(Condition cond, Address addr, T ptr, RepatchLabel* label) {
-        
+        // The scratch register is unused after the condition codes are set.
         {
             vixl::UseScratchRegisterScope temps(this);
             const Register scratch = temps.AcquireX().asUnsized();
@@ -1731,8 +1728,8 @@ class MacroAssemblerCompat : public vixl::MacroAssembler
         B(label, c);
     }
 
-    
-    
+    // Perform a type-test on a full Value loaded into a register.
+    // Clobbers the ScratchReg.
     void branchTestUndefined(Condition cond, const ValueOperand& src, Label* label) {
         Condition c = testUndefined(cond, src);
         B(label, c);
@@ -1770,8 +1767,8 @@ class MacroAssemblerCompat : public vixl::MacroAssembler
         B(label, c);
     }
 
-    
-    
+    // Perform a type-test on a Value addressed by BaseIndex.
+    // Clobbers the ScratchReg.
     void branchTestUndefined(Condition cond, const BaseIndex& address, Label* label) {
         Condition c = testUndefined(cond, address);
         B(label, c);
@@ -1854,7 +1851,7 @@ class MacroAssemblerCompat : public vixl::MacroAssembler
         switch (cond) {
           case DoubleNotEqual: {
             Label unordered;
-            
+            // not equal *and* ordered
             branch(Overflow, &unordered);
             branch(NotEqual, label);
             bind(&unordered);
@@ -1877,7 +1874,7 @@ class MacroAssemblerCompat : public vixl::MacroAssembler
         switch (cond) {
           case DoubleNotEqual: {
             Label unordered;
-            
+            // not equal *and* ordered
             branch(Overflow, &unordered);
             branch(NotEqual, label);
             bind(&unordered);
@@ -1906,7 +1903,7 @@ class MacroAssemblerCompat : public vixl::MacroAssembler
         boxValue(type, src, dest.valueReg());
     }
 
-    
+    // Note that the |dest| register here may be ScratchReg, so we shouldn't use it.
     void unboxInt32(const ValueOperand& src, Register dest) {
         move32(src.valueReg(), dest);
     }
@@ -1937,8 +1934,8 @@ class MacroAssemblerCompat : public vixl::MacroAssembler
     void unboxMagic(const ValueOperand& src, Register dest) {
         move32(src.valueReg(), dest);
     }
-    
-    
+    // Unbox any non-double value into dest. Prefer unboxInt32 or unboxBoolean
+    // instead if the source type is known.
     void unboxNonDouble(const ValueOperand& src, Register dest) {
         unboxNonDouble(src.valueReg(), dest);
     }
@@ -2000,7 +1997,7 @@ class MacroAssemblerCompat : public vixl::MacroAssembler
     void unboxSymbol(const Address& src, Register dest) {
         unboxNonDouble(src, dest);
     }
-    
+    // These two functions use the low 32-bits of the full value register.
     void boolValueToDouble(const ValueOperand& operand, FloatRegister dest) {
         convertInt32ToDouble(operand.valueReg(), dest);
     }
@@ -2022,7 +2019,7 @@ class MacroAssemblerCompat : public vixl::MacroAssembler
         Fmov(ARMFPRegister(dest, 32), f);
     }
 
-    
+    // Register-based tests.
     Condition testUndefined(Condition cond, Register tag) {
         MOZ_ASSERT(cond == Equal || cond == NotEqual);
         cmp32(tag, ImmTag(JSVAL_TAG_UNDEFINED));
@@ -2087,9 +2084,9 @@ class MacroAssemblerCompat : public vixl::MacroAssembler
         return testMagic(cond, tag);
     }
 
-    
+    // ValueOperand-based tests.
     Condition testInt32(Condition cond, const ValueOperand& value) {
-        
+        // The incoming ValueOperand may use scratch registers.
         vixl::UseScratchRegisterScope temps(this);
 
         if (value.valueReg() == ScratchReg2) {
@@ -2100,9 +2097,9 @@ class MacroAssemblerCompat : public vixl::MacroAssembler
             if (cond != Equal && cond != NotEqual)
                 MOZ_CRASH("NYI: non-equality comparisons");
 
-            
-            
-            
+            // In the event that the tag is not encodable in a single cmp / teq instruction,
+            // perform the xor that teq would use, this will leave the tag bits being
+            // zero, or non-zero, which can be tested with either and or shift.
             unsigned int n, imm_r, imm_s;
             uint64_t immediate = uint64_t(ImmTag(JSVAL_TAG_INT32).value) << JSVAL_TAG_SHIFT;
             if (IsImmLogical(immediate, 64, &n, &imm_s, &imm_r)) {
@@ -2195,7 +2192,7 @@ class MacroAssemblerCompat : public vixl::MacroAssembler
         return testMagic(cond, value);
     }
 
-    
+    // Address-based tests.
     Condition testGCThing(Condition cond, const Address& address) {
         vixl::UseScratchRegisterScope temps(this);
         const Register scratch = temps.AcquireX().asUnsized();
@@ -2274,7 +2271,7 @@ class MacroAssemblerCompat : public vixl::MacroAssembler
         return testNumber(cond, scratch);
     }
 
-    
+    // BaseIndex-based tests.
     Condition testUndefined(Condition cond, const BaseIndex& src) {
         vixl::UseScratchRegisterScope temps(this);
         const Register scratch = temps.AcquireX().asUnsized();
@@ -2369,12 +2366,12 @@ class MacroAssemblerCompat : public vixl::MacroAssembler
     void branchTestDoubleTruthy(bool truthy, FloatRegister reg, Label* label) {
         Fcmp(ARMFPRegister(reg, 64), 0.0);
         if (!truthy) {
-            
+            // falsy values are zero, and NaN.
             branch(Zero, label);
             branch(Overflow, label);
         } else {
-            
-            
+            // truthy values are non-zero and not nan.
+            // If it is overflow
             Label onFalse;
             branch(Zero, &onFalse);
             branch(Overflow, &onFalse);
@@ -2414,11 +2411,11 @@ class MacroAssemblerCompat : public vixl::MacroAssembler
         Label join;
         testInt32(Equal, ValueOperand(src));
         B(&isInt32, Equal);
-        
+        // is double, move teh bits as is
         Fmov(dest, ARMRegister(src, 64));
         B(&join);
         bind(&isInt32);
-        
+        // is int32, do a conversion while moving
         Scvtf(dest, ARMRegister(src, 32));
         bind(&join);
     }
@@ -2457,14 +2454,14 @@ class MacroAssemblerCompat : public vixl::MacroAssembler
         MOZ_CRASH("loadInstructionPointerAfterCall");
     }
 
-    
+    // Emit a B that can be toggled to a CMP. See ToggleToJmp(), ToggleToCmp().
     CodeOffset toggledJump(Label* label) {
         BufferOffset offset = b(label, Always);
         CodeOffset ret(offset.getOffset());
         return ret;
     }
 
-    
+    // load: offset to the load instruction obtained by movePatchablePtr().
     void writeDataRelocation(ImmGCPtr ptr, BufferOffset load) {
         if (ptr.value)
             dataRelocations_.writeUnsigned(load.getOffset());
@@ -2502,7 +2499,7 @@ class MacroAssemblerCompat : public vixl::MacroAssembler
 
     void handleFailureWithHandlerTail(void* handler);
 
-    
+    // FIXME: See CodeGeneratorX64 calls to noteAsmJSGlobalAccess.
     void patchAsmJSGlobalAccess(CodeOffset patchAt, uint8_t* code,
                                 uint8_t* globalData, unsigned globalDataOffset)
     {
@@ -2578,8 +2575,8 @@ class MacroAssemblerCompat : public vixl::MacroAssembler
     }
 
   public:
-    
-    
+    // T in {Address,BaseIndex}
+    // S in {Imm32,Register}
 
     template <typename T>
     void compareExchange8SignExtend(const T& mem, Register oldval, Register newval, Register output)
@@ -2806,11 +2803,11 @@ class MacroAssemblerCompat : public vixl::MacroAssembler
     void atomicExchangeToTypedIntArray(Scalar::Type arrayType, const T& mem, Register value,
                                        Register temp, AnyRegister output);
 
-    
-    
+    // Emit a BLR or NOP instruction. ToggleCall can be used to patch
+    // this instruction.
     CodeOffset toggledCall(JitCode* target, bool enabled) {
-        
-        
+        // The returned offset must be to the first instruction generated,
+        // for the debugger to match offset with Baseline's pcMappingEntries_.
         BufferOffset offset = nextOffset();
 
         syncStackPtr();
@@ -2819,9 +2816,9 @@ class MacroAssemblerCompat : public vixl::MacroAssembler
         {
             vixl::UseScratchRegisterScope temps(this);
 
-            
-            
-            
+            // The register used for the load is hardcoded, so that ToggleCall
+            // can patch in the branch instruction easily. This could be changed,
+            // but then ToggleCall must read the target register from the load.
             MOZ_ASSERT(temps.IsAvailable(ScratchReg2_64));
             temps.Exclude(ScratchReg2_64);
 
@@ -2839,9 +2836,9 @@ class MacroAssemblerCompat : public vixl::MacroAssembler
     }
 
     static size_t ToggledCallSize(uint8_t* code) {
-        static const uint32_t syncStackInstruction = 0x9100039f; 
+        static const uint32_t syncStackInstruction = 0x9100039f; // mov sp, r28
 
-        
+        // start it off as an 8 byte sequence
         int ret = 8;
         Instruction* cur = (Instruction*)code;
         uint32_t* curw = (uint32_t*)code;
@@ -2868,7 +2865,7 @@ class MacroAssemblerCompat : public vixl::MacroAssembler
         B(Zero, &aligned);
         breakpoint();
         bind(&aligned);
-        Mov(scratch64, vixl::xzr); 
+        Mov(scratch64, vixl::xzr); // Clear the scratch register for sanity.
 #endif
     }
 
@@ -2876,14 +2873,14 @@ class MacroAssemblerCompat : public vixl::MacroAssembler
 #ifdef DEBUG
         checkARMRegAlignment(GetStackPointer64());
 
-        
+        // If another register is being used to track pushes, check sp explicitly.
         if (!GetStackPointer64().Is(vixl::sp))
             checkARMRegAlignment(vixl::sp);
 #endif
     }
 
     void abiret() {
-        syncStackPtr(); 
+        syncStackPtr(); // SP is always used to transmit the stack between calls.
         vixl::MacroAssembler::Ret(vixl::lr);
     }
 
@@ -2965,7 +2962,7 @@ class MacroAssemblerCompat : public vixl::MacroAssembler
     }
 
     void BoundsCheck(Register ptrReg, Label* onFail, vixl::CPURegister zeroMe = vixl::NoReg) {
-        
+        // use tst rather than Tst to *ensure* that a single instrution is generated.
         Cmp(ARMRegister(ptrReg, 32), ARMRegister(HeapLenReg, 32));
         if (!zeroMe.IsNone()) {
             if (zeroMe.IsRegister()) {
@@ -2989,15 +2986,15 @@ class MacroAssemblerCompat : public vixl::MacroAssembler
     }
     void breakpoint();
 
-    
+    // Emits a simulator directive to save the current sp on an internal stack.
     void simulatorMarkSP() {
 #ifdef JS_SIMULATOR_ARM64
         svc(vixl::kMarkStackPointer);
 #endif
     }
 
-    
-    
+    // Emits a simulator directive to pop from its internal stack
+    // and assert that the value is equal to the current sp.
     void simulatorCheckSP() {
 #ifdef JS_SIMULATOR_ARM64
         svc(vixl::kCheckStackPointer);
@@ -3012,17 +3009,17 @@ class MacroAssemblerCompat : public vixl::MacroAssembler
         loadPtr(Address(GlobalReg, wasm::HeapGlobalDataOffset - AsmJSGlobalRegBias + 8), HeapLenReg);
     }
 
-    
+    // Overwrites the payload bits of a dest register containing a Value.
     void movePayload(Register src, Register dest) {
-        
+        // Bfxil cannot be used with the zero register as a source.
         if (src == rzr)
             And(ARMRegister(dest, 64), ARMRegister(dest, 64), Operand(~int64_t(JSVAL_PAYLOAD_MASK)));
         else
             Bfxil(ARMRegister(dest, 64), ARMRegister(src, 64), 0, JSVAL_TAG_SHIFT);
     }
 
-    
-    
+    // FIXME: Should be in Assembler?
+    // FIXME: Should be const?
     uint32_t currentOffset() const {
         return nextOffset().getOffset();
     }
@@ -3038,7 +3035,7 @@ class MacroAssemblerCompat : public vixl::MacroAssembler
 
 typedef MacroAssemblerCompat MacroAssemblerSpecific;
 
-} 
-} 
+} // namespace jit
+} // namespace js
 
-#endif 
+#endif // jit_arm64_MacroAssembler_arm64_h
