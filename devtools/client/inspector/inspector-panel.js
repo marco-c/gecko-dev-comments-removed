@@ -4,8 +4,6 @@
 
 
 
- 
-
 "use strict";
 
 
@@ -27,17 +25,17 @@ const Telemetry = require("devtools/client/shared/telemetry");
 const Menu = require("devtools/client/framework/menu");
 const MenuItem = require("devtools/client/framework/menu-item");
 
-loader.lazyRequireGetter(this, "CSS", "CSS");
+const CSS = require("CSS");
 
-loader.lazyRequireGetter(this, "CommandUtils", "devtools/client/shared/developer-toolbar", true);
-loader.lazyRequireGetter(this, "ComputedViewTool", "devtools/client/inspector/computed/computed", true);
-loader.lazyRequireGetter(this, "FontInspector", "devtools/client/inspector/fonts/fonts", true);
-loader.lazyRequireGetter(this, "HTMLBreadcrumbs", "devtools/client/inspector/breadcrumbs", true);
-loader.lazyRequireGetter(this, "InspectorSearch", "devtools/client/inspector/inspector-search", true);
-loader.lazyRequireGetter(this, "MarkupView", "devtools/client/inspector/markup/markup", true);
-loader.lazyRequireGetter(this, "RuleViewTool", "devtools/client/inspector/rules/rules", true);
-loader.lazyRequireGetter(this, "ToolSidebar", "devtools/client/inspector/toolsidebar", true);
-loader.lazyRequireGetter(this, "ViewHelpers", "devtools/client/shared/widgets/view-helpers", true);
+const {CommandUtils} = require("devtools/client/shared/developer-toolbar");
+const {ComputedViewTool} = require("devtools/client/inspector/computed/computed");
+const {FontInspector} = require("devtools/client/inspector/fonts/fonts");
+const {HTMLBreadcrumbs} = require("devtools/client/inspector/breadcrumbs");
+const {InspectorSearch} = require("devtools/client/inspector/inspector-search");
+const {MarkupView} = require("devtools/client/inspector/markup/markup");
+const {RuleViewTool} = require("devtools/client/inspector/rules/rules");
+const {ToolSidebar} = require("devtools/client/inspector/toolsidebar");
+const {ViewHelpers} = require("devtools/client/shared/widgets/view-helpers");
 
 loader.lazyGetter(this, "strings", () => {
   return Services.strings.createBundle("chrome://devtools/locale/inspector.properties");
@@ -216,7 +214,8 @@ InspectorPanel.prototype = {
       
       this.updateDebuggerPausedWarning = () => {
         let notificationBox = this._toolbox.getNotificationBox();
-        let notification = notificationBox.getNotificationWithValue("inspector-script-paused");
+        let notification =
+            notificationBox.getNotificationWithValue("inspector-script-paused");
         if (!notification && this._toolbox.currentToolId == "inspector" &&
             this._toolbox.threadClient.paused) {
           let message = strings.GetStringFromName("debuggerPausedWarning.message");
@@ -1521,6 +1520,9 @@ InspectorPanel.prototype = {
 
 
 
+
+
+
   _copyLongString: function (longStringActorPromise) {
     return this._getLongString(longStringActorPromise).then(string => {
       clipboardHelper.copyString(string);
@@ -1528,6 +1530,7 @@ InspectorPanel.prototype = {
   },
 
   
+
 
 
 
