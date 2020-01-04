@@ -211,6 +211,8 @@ public:
     return LayerRenderState();
   }
 
+  
+  virtual already_AddRefed<TexturedEffect> GenEffect(const gfx::Filter& aFilter) override;
 
   virtual bool UpdateThebes(const ThebesBufferData& aData,
                             const nsIntRegion& aUpdated,
