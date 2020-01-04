@@ -17,40 +17,32 @@
 #include <bitset>
 #include <vector>
 
-#if defined(XP_WIN)
+#ifdef XP_WIN
+    #ifndef WIN32_LEAN_AND_MEAN
+        #define WIN32_LEAN_AND_MEAN 1
+    #endif
 
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN 1
-#endif
+    #include <windows.h>
 
-#include <windows.h>
-
-typedef HDC EGLNativeDisplayType;
-typedef HBITMAP EGLNativePixmapType;
-typedef HWND EGLNativeWindowType;
-
-#define GET_NATIVE_WINDOW(aWidget) ((EGLNativeWindowType)aWidget->GetNativeData(NS_NATIVE_WINDOW))
-
+    typedef HDC EGLNativeDisplayType;
+    typedef HBITMAP EGLNativePixmapType;
+    typedef HWND EGLNativeWindowType;
 #else
-typedef void *EGLNativeDisplayType;
-typedef void *EGLNativePixmapType;
-typedef void *EGLNativeWindowType;
+    typedef void* EGLNativeDisplayType;
+    typedef void* EGLNativePixmapType;
+    typedef void* EGLNativeWindowType;
 
-#ifdef ANDROID
-
-
-
-
-
-
-
-
-#define APITRACE_LIB "/data/local/tmp/egltrace.so"
-
-#ifdef MOZ_WIDGET_ANDROID
-
-#endif 
-#endif 
+    #ifdef ANDROID
+        
+        
+        
+        
+        
+        
+        
+        
+        #define APITRACE_LIB "/data/local/tmp/egltrace.so"
+    #endif
 #endif
 
 #if defined(MOZ_X11)

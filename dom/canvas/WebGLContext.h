@@ -8,6 +8,7 @@
 
 #include <stdarg.h>
 
+#include "GLContextTypes.h"
 #include "GLDefs.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/CheckedInt.h"
@@ -24,6 +25,7 @@
 #include "nsLayoutUtils.h"
 #include "nsTArray.h"
 #include "nsWrapperCache.h"
+#include "SurfaceTypes.h"
 
 #ifdef XP_MACOSX
 #include "ForceDiscreteGPUHelperCGL.h"
@@ -812,6 +814,7 @@ private:
     realGLboolean mDitherEnabled;
     realGLboolean mRasterizerDiscardEnabled;
     realGLboolean mScissorTestEnabled;
+    realGLboolean mDepthTestEnabled;
     realGLboolean mStencilTestEnabled;
 
     bool ValidateCapabilityEnum(GLenum cap, const char* info);
@@ -1153,11 +1156,19 @@ public:
 protected:
     bool InitWebGL2();
 
-    
-    
-    bool CreateOffscreenGL(bool forceEnabled);
-    bool InitAndValidateGL();
+    bool CreateAndInitGL(bool forceEnabled);
     bool ResizeBackbuffer(uint32_t width, uint32_t height);
+
+    typedef already_AddRefed<gl::GLContext> FnCreateGL_T(const gl::SurfaceCaps& caps,
+                                                         gl::CreateContextFlags flags,
+                                                         WebGLContext* webgl);
+
+    bool CreateAndInitGLWith(FnCreateGL_T fnCreateGL, const gl::SurfaceCaps& baseCaps,
+                             gl::CreateContextFlags flags);
+
+    
+    
+    bool InitAndValidateGL();
     bool ValidateBlendEquationEnum(GLenum cap, const char* info);
     bool ValidateBlendFuncDstEnum(GLenum mode, const char* info);
     bool ValidateBlendFuncSrcEnum(GLenum mode, const char* info);
@@ -1443,11 +1454,13 @@ protected:
     uint64_t mLastUseIndex;
 
     bool mNeedsFakeNoAlpha;
+    bool mNeedsFakeNoDepth;
     bool mNeedsFakeNoStencil;
 
     struct ScopedMaskWorkaround {
         WebGLContext& mWebGL;
         const bool mFakeNoAlpha;
+        const bool mFakeNoDepth;
         const bool mFakeNoStencil;
 
         static bool ShouldFakeNoAlpha(WebGLContext& webgl) {
@@ -1456,6 +1469,13 @@ protected:
             return !webgl.mBoundDrawFramebuffer &&
                    webgl.mNeedsFakeNoAlpha &&
                    webgl.mColorWriteMask[3] != false;
+        }
+
+        static bool ShouldFakeNoDepth(WebGLContext& webgl) {
+            
+            return !webgl.mBoundDrawFramebuffer &&
+                   webgl.mNeedsFakeNoDepth &&
+                   webgl.mDepthTestEnabled;
         }
 
         static bool ShouldFakeNoStencil(WebGLContext& webgl) {

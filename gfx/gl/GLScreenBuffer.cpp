@@ -486,8 +486,15 @@ GLScreenBuffer::Swap(const gfx::IntSize& size)
         
         
         
+#ifdef DEBUG
+        GLContext::LocalErrorScope errorScope(*mGL);
+#endif
 
         SharedSurface::ProdCopy(src, dest, mFactory.get());
+
+#ifdef DEBUG
+        MOZ_ASSERT(!errorScope.GetError());
+#endif
 
         
         
