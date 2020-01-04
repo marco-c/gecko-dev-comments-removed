@@ -508,9 +508,7 @@ ServiceWorkerRegistrationInfo::GetWorkerByID(uint64_t aID, nsIServiceWorkerInfo 
   MOZ_ASSERT(aResult);
 
   RefPtr<ServiceWorkerInfo> info = GetServiceWorkerInfoById(aID);
-  if (NS_WARN_IF(!info)) {
-    return NS_ERROR_FAILURE;
-  }
+  
   info.forget(aResult);
   return NS_OK;
 }
