@@ -8,6 +8,7 @@
 #define _NSSDR_H_
 
 #include "nsISecretDecoderRing.h"
+#include "nsNSSShutDown.h"
 
 
 
