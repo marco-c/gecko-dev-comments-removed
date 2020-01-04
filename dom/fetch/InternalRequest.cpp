@@ -206,8 +206,9 @@ InternalRequest::MapContentPolicyTypeToRequestContext(nsContentPolicyType aConte
   return context;
 }
 
+
 bool
-InternalRequest::IsNavigationRequest() const
+InternalRequest::IsNavigationContentPolicy(nsContentPolicyType aContentPolicyType)
 {
   
   
@@ -217,32 +218,107 @@ InternalRequest::IsNavigationRequest() const
   
   
   
-  return mContentPolicyType == nsIContentPolicy::TYPE_DOCUMENT ||
-         mContentPolicyType == nsIContentPolicy::TYPE_SUBDOCUMENT ||
-         mContentPolicyType == nsIContentPolicy::TYPE_INTERNAL_FRAME ||
-         mContentPolicyType == nsIContentPolicy::TYPE_INTERNAL_IFRAME ||
-         mContentPolicyType == nsIContentPolicy::TYPE_REFRESH;
+  
+  
+  
+  
+  return aContentPolicyType == nsIContentPolicy::TYPE_DOCUMENT ||
+         aContentPolicyType == nsIContentPolicy::TYPE_SUBDOCUMENT ||
+         aContentPolicyType == nsIContentPolicy::TYPE_INTERNAL_FRAME ||
+         aContentPolicyType == nsIContentPolicy::TYPE_INTERNAL_IFRAME ||
+         aContentPolicyType == nsIContentPolicy::TYPE_REFRESH;
+}
+
+
+bool
+InternalRequest::IsWorkerContentPolicy(nsContentPolicyType aContentPolicyType)
+{
+  
+  
+  
+  
+  
+  
+  
+  
+  return aContentPolicyType == nsIContentPolicy::TYPE_INTERNAL_WORKER ||
+         aContentPolicyType == nsIContentPolicy::TYPE_INTERNAL_SHARED_WORKER;
+}
+
+bool
+InternalRequest::IsNavigationRequest() const
+{
+  return IsNavigationContentPolicy(mContentPolicyType);
 }
 
 bool
 InternalRequest::IsWorkerRequest() const
 {
-  
-  
-  
-  
-  
-  
-  
-  
-  return mContentPolicyType == nsIContentPolicy::TYPE_INTERNAL_WORKER ||
-         mContentPolicyType == nsIContentPolicy::TYPE_INTERNAL_SHARED_WORKER;
+  return IsWorkerContentPolicy(mContentPolicyType);
 }
 
 bool
 InternalRequest::IsClientRequest() const
 {
   return IsNavigationRequest() || IsWorkerRequest();
+}
+
+
+RequestMode
+InternalRequest::MapChannelToRequestMode(nsIChannel* aChannel)
+{
+  MOZ_ASSERT(aChannel);
+
+  nsCOMPtr<nsILoadInfo> loadInfo;
+  MOZ_ALWAYS_TRUE(NS_SUCCEEDED(aChannel->GetLoadInfo(getter_AddRefs(loadInfo))));
+
+  
+  
+  
+  
+  
+  nsContentPolicyType contentPolicy = loadInfo->InternalContentPolicyType();
+  if (IsNavigationContentPolicy(contentPolicy) ||
+      IsWorkerContentPolicy(contentPolicy)) {
+    return RequestMode::Same_origin;
+  }
+
+  uint32_t securityMode;
+  MOZ_ALWAYS_TRUE(NS_SUCCEEDED(loadInfo->GetSecurityMode(&securityMode)));
+
+  switch(securityMode) {
+    case nsILoadInfo::SEC_REQUIRE_SAME_ORIGIN_DATA_INHERITS:
+    case nsILoadInfo::SEC_REQUIRE_SAME_ORIGIN_DATA_IS_BLOCKED:
+      return RequestMode::Same_origin;
+    case nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_DATA_INHERITS:
+    case nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_DATA_IS_NULL:
+      return RequestMode::No_cors;
+    case nsILoadInfo::SEC_REQUIRE_CORS_DATA_INHERITS:
+      
+      return RequestMode::Cors;
+    default:
+      
+      MOZ_ASSERT(securityMode == nsILoadInfo::SEC_NORMAL);
+      break;
+  }
+
+  
+
+  
+#ifndef RELEASE_BUILD
+  nsCOMPtr<nsIJARChannel> jarChannel = do_QueryInterface(aChannel);
+  if (jarChannel) {
+    return RequestMode::No_cors;
+  }
+#endif
+
+  nsCOMPtr<nsIHttpChannelInternal> httpChannel = do_QueryInterface(aChannel);
+
+  uint32_t corsMode;
+  MOZ_ALWAYS_TRUE(NS_SUCCEEDED(httpChannel->GetCorsMode(&corsMode)));
+
+  
+  return static_cast<RequestMode>(corsMode);
 }
 
 } 

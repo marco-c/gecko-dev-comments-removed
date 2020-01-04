@@ -150,7 +150,7 @@ class RespondWithHandler final : public PromiseNativeHandler
   nsMainThreadPtrHandle<nsIInterceptedChannel> mInterceptedChannel;
   nsMainThreadPtrHandle<ServiceWorker> mServiceWorker;
   const RequestMode mRequestMode;
-  const bool mIsClientRequest;
+  const DebugOnly<bool> mIsClientRequest;
   const bool mIsNavigationRequest;
 public:
   NS_DECL_ISUPPORTS
@@ -274,24 +274,16 @@ RespondWithHandler::ResolvedCallback(JSContext* aCx, JS::Handle<JS::Value> aValu
   
   
   
-  
-  
 
   if (response->Type() == ResponseType::Error) {
     autoCancel.SetCancelStatus(NS_ERROR_INTERCEPTED_ERROR_RESPONSE);
     return;
   }
 
+  MOZ_ASSERT_IF(mIsClientRequest, mRequestMode == RequestMode::Same_origin);
+
   if (response->Type() == ResponseType::Opaque && mRequestMode != RequestMode::No_cors) {
     autoCancel.SetCancelStatus(NS_ERROR_BAD_OPAQUE_INTERCEPTION_REQUEST_MODE);
-    return;
-  }
-
-  
-  if (mIsClientRequest && response->Type() != ResponseType::Basic &&
-      response->Type() != ResponseType::Default &&
-      response->Type() != ResponseType::Opaqueredirect) {
-    autoCancel.SetCancelStatus(NS_ERROR_CLIENT_REQUEST_OPAQUE_INTERCEPTION);
     return;
   }
 
