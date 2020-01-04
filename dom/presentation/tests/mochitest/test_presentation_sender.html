@@ -4,12 +4,12 @@
 
 <head>
   <meta charset="utf-8">
-  <title>Test for disconnection of B2G Presentation API at sender side</title>
+  <title>Test for B2G Presentation API at sender side</title>
   <link rel="stylesheet" type="text/css" href="/tests/SimpleTest/test.css"/>
   <script type="application/javascript" src="/tests/SimpleTest/SimpleTest.js"></script>
 </head>
 <body>
-<a target="_blank" href="https://bugzilla.mozilla.org/show_bug.cgi?id=1069230">Test for disconnection of B2G Presentation API at sender side</a>
+<a target="_blank" href="https://bugzilla.mozilla.org/show_bug.cgi?id=1069230">Test for B2G Presentation API at sender side</a>
 <script type="application/javascript;version=1.8">
 
 'use strict';
@@ -68,18 +68,18 @@ function testStartConnection() {
     gScript.addMessageListener('offer-sent', function offerSentHandler(aIsValid) {
       gScript.removeMessageListener('offer-sent', offerSentHandler);
       ok(aIsValid, "A valid offer is sent out.");
-      gScript.sendAsyncMessage('trigger-incoming-answer');
+      gScript.sendAsyncMessage('trigger-incoming-transport');
     });
 
     gScript.addMessageListener('answer-received', function answerReceivedHandler() {
       gScript.removeMessageListener('answer-received', answerReceivedHandler);
       info("An answer is received.");
-      gScript.sendAsyncMessage('trigger-incoming-transport');
     });
 
     gScript.addMessageListener('data-transport-initialized', function dataTransportInitializedHandler() {
       gScript.removeMessageListener('data-transport-initialized', dataTransportInitializedHandler);
       info("Data transport channel is initialized.");
+      gScript.sendAsyncMessage('trigger-incoming-answer');
     });
 
     gScript.addMessageListener('data-transport-notification-enabled', function dataTransportNotificationEnabledHandler() {
@@ -87,13 +87,29 @@ function testStartConnection() {
       info("Data notification is enabled for data transport channel.");
     });
 
+    var connectionFromEvent;
+    request.onconnectionavailable = function(aEvent) {
+      request.onconnectionavailable = null;
+      connectionFromEvent = aEvent.connection;
+      ok(connectionFromEvent, "|connectionavailable| event is fired with a connection.");
+
+      if (connection) {
+        is(connection, connectionFromEvent, "The connection from promise and the one from |connectionavailable| event should be the same.");
+        aResolve();
+      }
+    };
+
     request.start().then(
       function(aConnection) {
         connection = aConnection;
         ok(connection, "Connection should be available.");
         ok(connection.id, "Connection ID should be set.");
         is(connection.state, "connected", "Connection state at sender side should be connected by default.");
-        aResolve();
+
+        if (connectionFromEvent) {
+          is(connection, connectionFromEvent, "The connection from promise and the one from |connectionavailable| event should be the same.");
+          aResolve();
+        }
       },
       function(aError) {
         ok(false, "Error occurred when establishing a connection: " + aError);
@@ -104,7 +120,35 @@ function testStartConnection() {
   });
 }
 
-function testDisconnection() {
+function testSend() {
+  return new Promise(function(aResolve, aReject) {
+    const outgoingMessage = "test outgoing message";
+
+    gScript.addMessageListener('message-sent', function messageSentHandler(aMessage) {
+      gScript.removeMessageListener('message-sent', messageSentHandler);
+      is(aMessage, outgoingMessage, "The message is sent out.");
+      aResolve();
+    });
+
+    connection.send(outgoingMessage);
+  });
+}
+
+function testIncomingMessage() {
+  return new Promise(function(aResolve, aReject) {
+    const incomingMessage = "test incoming message";
+
+    connection.addEventListener('message', function messageHandler(aEvent) {
+      connection.removeEventListener('message', messageHandler);
+      is(aEvent.data, incomingMessage, "An incoming message should be received.");
+      aResolve();
+    });
+
+    gScript.sendAsyncMessage('trigger-incoming-message', incomingMessage);
+  });
+}
+
+function testTerminateConnection() {
   return new Promise(function(aResolve, aReject) {
     gScript.addMessageListener('data-transport-closed', function dataTransportClosedHandler(aReason) {
       gScript.removeMessageListener('data-transport-closed', dataTransportClosedHandler);
@@ -113,11 +157,11 @@ function testDisconnection() {
 
     connection.onstatechange = function() {
       connection.onstatechange = null;
-      is(connection.state, "closed", "Connection should be closed.");
+      is(connection.state, "terminated", "Connection should be terminated.");
       aResolve();
     };
 
-    gScript.sendAsyncMessage('trigger-data-transport-close', SpecialPowers.Cr.NS_ERROR_FAILURE);
+    connection.terminate();
   });
 }
 
@@ -136,17 +180,21 @@ function runTests() {
 
   testSetup().
   then(testStartConnection).
-  then(testDisconnection).
+  then(testSend).
+  then(testIncomingMessage).
+  then(testTerminateConnection).
   then(teardown);
 }
 
+SimpleTest.expectAssertions(0, 5);
 SimpleTest.waitForExplicitFinish();
 SpecialPowers.pushPermissions([
   {type: 'presentation-device-manage', allow: false, context: document},
   {type: 'presentation', allow: true, context: document},
 ], function() {
   SpecialPowers.pushPrefEnv({ 'set': [["dom.presentation.enabled", true],
-                                      ["dom.presentation.session_transport.data_channel.enable", false]]},
+                                      ["dom.presentation.test.enabled", true],
+                                      ["dom.presentation.test.stage", 0]]},
                             runTests);
 });
 
