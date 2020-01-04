@@ -90,28 +90,23 @@ public:
 
   ~nsXBLPrototypeHandler();
 
+  bool EventTypeEquals(nsIAtom* aEventType) const
+  {
+    return mEventName == aEventType;
+  }
+
   
   bool KeyEventMatched(nsIDOMKeyEvent* aKeyEvent,
                        uint32_t aCharCode,
                        const IgnoreModifierState& aIgnoreModifierState);
-  inline bool KeyEventMatched(nsIAtom* aEventType,
-                              nsIDOMKeyEvent* aEvent,
-                              uint32_t aCharCode,
-                              const IgnoreModifierState& aIgnoreModifierState)
-  {
-    if (aEventType != mEventName)
-      return false;
-
-    return KeyEventMatched(aEvent, aCharCode, aIgnoreModifierState);
-  }
 
   bool MouseEventMatched(nsIDOMMouseEvent* aMouseEvent);
   inline bool MouseEventMatched(nsIAtom* aEventType,
                                   nsIDOMMouseEvent* aEvent)
   {
-    if (aEventType != mEventName)
+    if (!EventTypeEquals(aEventType)) {
       return false;
-
+    }
     return MouseEventMatched(aEvent);
   }
 

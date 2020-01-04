@@ -459,23 +459,6 @@ nsXBLWindowKeyHandler::HandleEventOnCaptureInSystemEventGroup(
   aEvent->AsEvent()->StopPropagation();
 }
 
-
-
-
-
-
-bool
-nsXBLWindowKeyHandler::EventMatched(
-                         nsXBLPrototypeHandler* aHandler,
-                         nsIAtom* aEventType,
-                         nsIDOMKeyEvent* aEvent,
-                         uint32_t aCharCode,
-                         const IgnoreModifierState& aIgnoreModifierState)
-{
-  return aHandler->KeyEventMatched(aEventType, aEvent, aCharCode,
-                                   aIgnoreModifierState);
-}
-
 bool
 nsXBLWindowKeyHandler::IsHTMLEditableFieldFocused()
 {
@@ -589,8 +572,32 @@ nsXBLWindowKeyHandler::WalkHandlersAndExecute(
       return false;
     }
 
-    if (!EventMatched(handler, aEventType, aKeyEvent,
-                      aCharCode, aIgnoreModifierState)) {
+    if (aExecute) {
+      
+      
+      if (!handler->EventTypeEquals(aEventType)) {
+        continue;
+      }
+    } else {
+      if (handler->EventTypeEquals(nsGkAtoms::keypress)) {
+        
+        
+        
+        
+        
+        
+        if (aEventType != nsGkAtoms::keydown &&
+            aEventType != nsGkAtoms::keypress) {
+          continue;
+        }
+      } else if (!handler->EventTypeEquals(aEventType)) {
+        
+        continue;
+      }
+    }
+
+    
+    if (!handler->KeyEventMatched(aKeyEvent, aCharCode, aIgnoreModifierState)) {
       continue;  
     }
 
@@ -602,20 +609,34 @@ nsXBLWindowKeyHandler::WalkHandlersAndExecute(
       continue;
     }
 
+    bool isReserved = false;
     if (commandElement) {
       if (!IsExecutableElement(commandElement)) {
         continue;
       }
+
+      isReserved =
+        commandElement->AttrValueIs(kNameSpaceID_None, nsGkAtoms::reserved,
+                                    nsGkAtoms::_true, eCaseMatters);
       if (aOutReservedForChrome) {
-        nsAutoString value;
-        
-        commandElement->GetAttribute(NS_LITERAL_STRING("reserved"), value);
-        *aOutReservedForChrome = value.EqualsLiteral("true");
+        *aOutReservedForChrome = isReserved;
       }
     }
 
     if (!aExecute) {
-      return true;
+      if (handler->EventTypeEquals(aEventType)) {
+        return true;
+      }
+      
+      
+      
+      if (isReserved &&
+          aEventType == nsGkAtoms::keydown &&
+          handler->EventTypeEquals(nsGkAtoms::keypress)) {
+        return true;
+      }
+      
+      continue;
     }
 
     nsCOMPtr<EventTarget> target;
@@ -627,6 +648,8 @@ nsXBLWindowKeyHandler::WalkHandlersAndExecute(
       target = mTarget;
     }
 
+    
+    
     nsresult rv = handler->ExecuteHandler(target, aKeyEvent->AsEvent());
     if (NS_SUCCEEDED(rv)) {
       return true;

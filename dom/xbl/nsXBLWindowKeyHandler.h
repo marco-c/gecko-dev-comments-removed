@@ -78,11 +78,6 @@ protected:
   nsresult EnsureHandlers();
 
   
-  bool EventMatched(nsXBLPrototypeHandler* aHandler, nsIAtom* aEventType,
-                    nsIDOMKeyEvent* aEvent, uint32_t aCharCode,
-                    const IgnoreModifierState& aIgnoreModifierState);
-
-  
   bool IsHTMLEditableFieldFocused();
 
   
