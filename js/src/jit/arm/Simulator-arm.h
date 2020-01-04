@@ -204,6 +204,20 @@ class Simulator
         end_sim_pc = -2
     };
 
+    
+    
+    
+    
+    
+    
+    
+    
+
+    enum UnalignedPolicy {
+        ForbidUnaligned,
+        AllowUnaligned
+    };
+
     bool init();
 
     
@@ -261,8 +275,8 @@ class Simulator
     inline uint16_t readExHU(int32_t addr, SimInstruction* instr);
     inline int32_t writeExH(int32_t addr, uint16_t value, SimInstruction* instr);
 
-    inline int readW(int32_t addr, SimInstruction* instr);
-    inline void writeW(int32_t addr, int value, SimInstruction* instr);
+    inline int readW(int32_t addr, SimInstruction* instr, UnalignedPolicy f = ForbidUnaligned);
+    inline void writeW(int32_t addr, int value, SimInstruction* instr, UnalignedPolicy f = ForbidUnaligned);
 
     inline int readExW(int32_t addr, SimInstruction* instr);
     inline int writeExW(int32_t addr, int value, SimInstruction* instr);
