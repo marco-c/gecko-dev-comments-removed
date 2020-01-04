@@ -15110,7 +15110,7 @@ CSSParserImpl::ParseFunction(nsCSSKeyword aFunction,
 
 
 
-  AutoInfallibleTArray<nsCSSValue, 16> foundValues;
+  AutoTArray<nsCSSValue, 16> foundValues;
   if (!ParseFunctionInternals(aAllowedTypes, aAllowedTypesAll, aMinElems,
                               aMaxElems, foundValues)) {
     return false;

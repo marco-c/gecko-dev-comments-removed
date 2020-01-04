@@ -603,7 +603,7 @@ ClientLayerManager::ForwardTransaction(bool aScheduleComposite)
 
   
   bool sent;
-  AutoInfallibleTArray<EditReply, 10> replies;
+  AutoTArray<EditReply, 10> replies;
   if (mForwarder->EndTransaction(&replies, mRegionToClear,
         mLatestTransactionId, aScheduleComposite, mPaintSequenceNumber,
         mIsRepeatTransaction, transactionStart, &sent)) {

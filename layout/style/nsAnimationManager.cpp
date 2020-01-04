@@ -629,7 +629,7 @@ nsAnimationManager::BuildAnimations(nsStyleContext* aStyleContext,
     
     
 
-    AutoInfallibleTArray<KeyframeData, 16> sortedKeyframes;
+    AutoTArray<KeyframeData, 16> sortedKeyframes;
 
     for (uint32_t ruleIdx = 0, ruleEnd = rule->StyleRuleCount();
          ruleIdx != ruleEnd; ++ruleIdx) {
@@ -690,7 +690,7 @@ nsAnimationManager::BuildAnimations(nsStyleContext* aStyleContext,
       
       
       
-      AutoInfallibleTArray<uint32_t, 16> keyframesWithProperty;
+      AutoTArray<uint32_t, 16> keyframesWithProperty;
       float lastKey = 100.0f; 
       for (uint32_t kfIdx = 0, kfEnd = sortedKeyframes.Length();
            kfIdx != kfEnd; ++kfIdx) {
