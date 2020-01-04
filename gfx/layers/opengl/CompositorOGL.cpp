@@ -703,10 +703,6 @@ CompositorOGL::BeginFrame(const nsIntRegion& aInvalidRegion,
                                  LOCAL_GL_ONE, LOCAL_GL_ONE_MINUS_SRC_ALPHA);
   mGLContext->fEnable(LOCAL_GL_BLEND);
 
-  
-  
-  mGLContext->fEnable(LOCAL_GL_SCISSOR_TEST);
-
   RefPtr<CompositingRenderTargetOGL> rt =
     CompositingRenderTargetOGL::RenderTargetForWindow(this,
                                                       IntSize(width, height));
@@ -1054,8 +1050,9 @@ CompositorOGL::DrawQuad(const Rect& aRect,
     clipRect.MoveBy(mRenderOffset.x, mRenderOffset.y);
   }
 
-  gl()->fScissor(clipRect.x, FlipY(clipRect.y + clipRect.height),
-                 clipRect.width, clipRect.height);
+  ScopedGLState scopedScissorTestState(mGLContext, LOCAL_GL_SCISSOR_TEST, true);
+  ScopedScissorRect autoScissorRect(mGLContext, clipRect.x, FlipY(clipRect.y + clipRect.height),
+                                    clipRect.width, clipRect.height);
 
   MaskType maskType;
   EffectMask* effectMask;
