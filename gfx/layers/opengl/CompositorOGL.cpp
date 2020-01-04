@@ -987,7 +987,7 @@ CompositorOGL::DrawQuad(const Rect& aRect,
 
   
   
-  Rect destRect = aTransform.TransformBounds(aRect);
+  Rect destRect = aTransform.TransformAndClipBounds(aRect, aClipRect);
   mPixelsFilled += destRect.width * destRect.height;
 
   IntPoint offset = mCurrentRenderTarget->GetOrigin();

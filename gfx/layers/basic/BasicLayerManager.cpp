@@ -762,13 +762,11 @@ Transform3D(RefPtr<SourceSurface> aSource,
             gfxRect& aDestRect)
 {
   
-  gfxRect offsetRect = aBounds;
-  offsetRect.TransformBounds(aTransform);
-
   
   
-  aDestRect = aDest->GetClipExtents();
-  aDestRect.IntersectRect(aDestRect, offsetRect);
+  aDestRect = ThebesRect(aTransform.TransformAndClipBounds(
+                ToRectDouble(aBounds),
+                ToRectDouble(aDest->GetClipExtents())));
   aDestRect.RoundOut();
 
   
