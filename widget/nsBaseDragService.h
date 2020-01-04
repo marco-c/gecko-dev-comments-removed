@@ -18,6 +18,7 @@
 #include "mozilla/dom/ContentParent.h"
 #include "mozilla/dom/HTMLCanvasElement.h"
 #include "nsTArray.h"
+#include "Units.h"
 
 
 #define DRAG_TRANSLUCENCY 0.65
@@ -145,8 +146,7 @@ protected:
   
   nsCOMPtr<nsIDOMNode> mImage;
   
-  int32_t mImageX;
-  int32_t mImageY;
+  mozilla::CSSIntPoint mImageOffset;
 
   
   nsCOMPtr<nsISelection> mSelection;
