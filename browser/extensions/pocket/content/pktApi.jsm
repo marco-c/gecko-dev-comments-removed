@@ -123,7 +123,7 @@ var pktApi = (function() {
      	
      	
 		if (!prefBranch.prefHasUserValue(key))
-			return;
+			return undefined;
 		
 		return prefBranch.getComplexValue(key, Components.interfaces.nsISupportsString).data;
      }
