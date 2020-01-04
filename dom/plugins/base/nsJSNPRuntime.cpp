@@ -288,9 +288,7 @@ TraceJSObjWrappers(JSTracer *trc, void *data)
     nsJSObjWrapperKey key = e.front().key();
     JS_CallUnbarrieredObjectTracer(trc, &key.mJSObj, "sJSObjWrappers key object");
     nsJSObjWrapper *wrapper = e.front().value();
-    if (wrapper->mJSObj) {
-      JS_CallObjectTracer(trc, &wrapper->mJSObj, "sJSObjWrappers wrapper object");
-    }
+    JS::TraceNullableEdge(trc, &wrapper->mJSObj, "sJSObjWrappers wrapper object");
     if (key != e.front().key()) {
       e.rekeyFront(key);
     }
@@ -2261,20 +2259,15 @@ NPObjectMember_Trace(JSTracer *trc, JSObject *obj)
     return;
 
   
-  JS_CallIdTracer(trc, &memberPrivate->methodName, "NPObjectMemberPrivate.methodName");
+  JS::TraceEdge(trc, &memberPrivate->methodName, "NPObjectMemberPrivate.methodName");
 
-  if (!memberPrivate->fieldValue.isPrimitive()) {
-    JS_CallValueTracer(trc, &memberPrivate->fieldValue,
-                       "NPObject Member => fieldValue");
-  }
+  JS::TraceEdge(trc, &memberPrivate->fieldValue, "NPObject Member => fieldValue");
 
   
   
   
-  if (memberPrivate->npobjWrapper) {
-    JS_CallObjectTracer(trc, &memberPrivate->npobjWrapper,
+  JS::TraceNullableEdge(trc, &memberPrivate->npobjWrapper,
                         "NPObject Member => npobjWrapper");
-  }
 }
 
 static bool
