@@ -1221,9 +1221,6 @@ VectorImage::OnSVGDocumentError()
 {
   CancelAllListeners();
 
-  
-  
-  
   mError = true;
 
   if (mProgressTracker) {
