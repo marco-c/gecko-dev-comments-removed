@@ -475,7 +475,7 @@ class TypeSet
     }
 
     
-    bool mightBeMIRType(jit::MIRType type);
+    bool mightBeMIRType(jit::MIRType type) const;
 
     
 
