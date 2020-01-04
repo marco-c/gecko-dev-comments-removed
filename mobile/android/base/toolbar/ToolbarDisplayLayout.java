@@ -484,16 +484,19 @@ public class ToolbarDisplayLayout extends ThemedLinearLayout
         final MixedMode activeMixedMode;
         final MixedMode displayMixedMode;
         final TrackingMode trackingMode;
+        final boolean loginInsecure;
         if (siteIdentity == null) {
             securityMode = SecurityMode.UNKNOWN;
             activeMixedMode = MixedMode.UNKNOWN;
             displayMixedMode = MixedMode.UNKNOWN;
             trackingMode = TrackingMode.UNKNOWN;
+            loginInsecure = false;
         } else {
             securityMode = siteIdentity.getSecurityMode();
             activeMixedMode = siteIdentity.getMixedModeActive();
             displayMixedMode = siteIdentity.getMixedModeDisplay();
             trackingMode = siteIdentity.getTrackingMode();
+            loginInsecure = siteIdentity.loginInsecure();
         }
 
         
@@ -501,7 +504,9 @@ public class ToolbarDisplayLayout extends ThemedLinearLayout
         int imageLevel = securityMode.ordinal();
 
         
-        if (trackingMode == TrackingMode.TRACKING_CONTENT_LOADED) {
+        if (loginInsecure) {
+            imageLevel = LEVEL_LOCK_DISABLED;
+        } else if (trackingMode == TrackingMode.TRACKING_CONTENT_LOADED) {
             imageLevel = LEVEL_SHIELD_DISABLED;
         } else if (trackingMode == TrackingMode.TRACKING_CONTENT_BLOCKED) {
             imageLevel = LEVEL_SHIELD_ENABLED;

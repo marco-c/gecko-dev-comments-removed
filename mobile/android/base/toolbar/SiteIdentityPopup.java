@@ -49,6 +49,8 @@ import org.mozilla.gecko.widget.SiteLogins;
 
 
 
+
+
 public class SiteIdentityPopup extends AnchoredPopup implements GeckoEventListener {
 
     public static enum ButtonType { DISABLE, ENABLE, KEEP_BLOCKING, CANCEL, COPY }
@@ -309,7 +311,14 @@ public class SiteIdentityPopup extends AnchoredPopup implements GeckoEventListen
 
     private void updateConnectionState(final SiteIdentity siteIdentity) {
         if (!siteIdentity.isSecure()) {
-            if (siteIdentity.getMixedModeActive() == MixedMode.MIXED_CONTENT_LOADED) {
+            if (siteIdentity.loginInsecure()) {
+                
+                mIcon.setImageResource(R.drawable.lock_disabled);
+                clearSecurityStateIcon();
+
+                mMixedContentActivity.setVisibility(View.VISIBLE);
+                mMixedContentActivity.setText(R.string.identity_login_insecure);
+            } else if (siteIdentity.getMixedModeActive() == MixedMode.MIXED_CONTENT_LOADED) {
                 
                 mIcon.setImageResource(R.drawable.lock_disabled);
                 clearSecurityStateIcon();
