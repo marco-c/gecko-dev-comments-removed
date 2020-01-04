@@ -162,6 +162,9 @@ user_pref("layout.css.ruby.enabled", true);
 user_pref("layout.css.unicode-range.enabled", true);
 
 
+user_pref("layout.css.prefixes.webkit", true);
+
+
 user_pref("layout.spammy_warnings.enabled", false);
 
 
