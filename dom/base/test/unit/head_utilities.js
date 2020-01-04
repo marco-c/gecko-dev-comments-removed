@@ -4,7 +4,7 @@
 
 
 Components.utils.import("resource://testing-common/httpd.js");
-Components.utils.import("resource://gre/modules/Services.jsm");
+Components.utils.import("resource://gre/modules/NetUtil.jsm");
 
 const nsIDocumentEncoder = Components.interfaces.nsIDocumentEncoder;
 const replacementChar = Components.interfaces.nsIConverterInputStream.DEFAULT_REPLACEMENT_CHARACTER;
@@ -17,12 +17,10 @@ function loadContentFile(aFile, aCharset) {
     var file = do_get_file(aFile);
     var ios = Components.classes['@mozilla.org/network/io-service;1']
             .getService(Components.interfaces.nsIIOService);
-    var chann = ios.newChannelFromURI2(ios.newFileURI(file),
-                                       null,      
-                                       Services.scriptSecurityManager.getSystemPrincipal(),
-                                       null,      
-                                       Components.interfaces.nsILoadInfo.SEC_NORMAL,
-                                       Components.interfaces.nsIContentPolicy.TYPE_OTHER);
+    var chann = NetUtil.newChannel({
+      uri: ios.newFileURI(file),
+      loadUsingSystemPrincipal: true
+    });
     chann.contentCharset = aCharset;
 
     
@@ -33,7 +31,7 @@ function loadContentFile(aFile, aCharset) {
 
     var inputStream = Components.classes["@mozilla.org/intl/converter-input-stream;1"]
                        .createInstance(Components.interfaces.nsIConverterInputStream);
-    inputStream.init(chann.open(), aCharset, 1024, replacementChar);
+    inputStream.init(chann.open2(), aCharset, 1024, replacementChar);
     var str = {}, content = '';
     while (inputStream.readString(4096, str) != 0) {
         content += str.value;

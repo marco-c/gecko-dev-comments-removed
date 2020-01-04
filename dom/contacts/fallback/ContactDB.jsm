@@ -128,7 +128,7 @@ ContactDB.prototype = {
         uri: NetUtil.newURI(contactsFile),
         loadUsingSystemPrincipal: true});
 
-      let stream = chan.open();
+      let stream = chan.open2();
       
       let converter = Cc["@mozilla.org/intl/scriptableunicodeconverter"]
                       .createInstance(Ci.nsIScriptableUnicodeConverter);

@@ -3,6 +3,8 @@
 
 
 
+Components.utils.import("resource://gre/modules/NetUtil.jsm");
+
 var parser = new DOMParser();
 var methodExpr = (new XPathEvaluator).createExpression("xsl:output/@method",
     {
@@ -307,21 +309,12 @@ runItem.prototype =
 
     loadTextFile : function(url)
     {
-        var serv = Components.classes[IOSERVICE_CTRID].
-            getService(nsIIOService);
-        if (!serv) {
-            throw Components.results.ERR_FAILURE;
-        }
-        var chan = serv.newChannel2(url,
-                                    null,
-                                    null,
-                                    null,      
-                                    Services.scriptSecurityManager.getSystemPrincipal(),
-                                    null,      
-                                    Ci.nsILoadInfo.SEC_NORMAL,
-                                    Ci.nsIContentPolicy.TYPE_OTHER);
+        var chan = NetUtil.newChannel({
+            uri: url,
+            loadUsingSystemPrincipal: true
+        });
         var instream = doCreate(SIS_CTRID, nsISIS);
-        instream.init(chan.open());
+        instream.init(chan.open2());
 
         return instream.read(instream.available());
     }
