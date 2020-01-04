@@ -19,7 +19,6 @@
 #include "nsStringAPI.h"
 #include "nsIPrefBranch.h"
 #include "nsIPrefService.h"
-#include "js/Value.h"
 
 static NS_DEFINE_CID(kCookieServiceCID, NS_COOKIESERVICE_CID);
 static NS_DEFINE_CID(kPrefServiceCID,   NS_PREFSERVICE_CID);
@@ -672,13 +671,15 @@ main(int32_t argc, char *argv[])
       
       bool found;
       rv[9] = NS_SUCCEEDED(cookieMgr2->CookieExists(newDomainCookie, &found)) && found;
+
+      mozilla::NeckoOriginAttributes attrs;
+
       
-      rv[10] = NS_SUCCEEDED(cookieMgr->Remove(NS_LITERAL_CSTRING("new.domain"), 
-                                              NS_LITERAL_CSTRING("test3"),      
-                                              NS_LITERAL_CSTRING("/rabbit"),    
-                                              JS::NullHandleValue,              
-                                              true,                             
-                                              nullptr));                        
+      rv[10] = NS_SUCCEEDED(cookieMgr->RemoveNative(NS_LITERAL_CSTRING("new.domain"), 
+                                                    NS_LITERAL_CSTRING("test3"),      
+                                                    NS_LITERAL_CSTRING("/rabbit"),    
+                                                    &attrs,                           
+                                                    true));                           
       rv[11] = NS_SUCCEEDED(cookieMgr2->CookieExists(newDomainCookie, &found)) && !found;
       rv[12] = NS_SUCCEEDED(cookieMgr2->Add(NS_LITERAL_CSTRING("new.domain"),     
                                             NS_LITERAL_CSTRING("/rabbit"),        
@@ -751,3 +752,7 @@ main(int32_t argc, char *argv[])
 
     return 0;
 }
+
+
+
+mozilla::dom::OriginAttributesDictionary::OriginAttributesDictionary() {}
