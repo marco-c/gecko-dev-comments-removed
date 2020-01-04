@@ -13,6 +13,7 @@
 #include "imgIContainer.h"
 #include "mozilla/gfx/PathHelpers.h"
 #include "mozilla/gfx/Rect.h"
+#include "mozilla/TypedEnumBits.h"
 #include "nsLayoutUtils.h"
 #include "nsStyleStruct.h"
 #include "nsIFrame.h"
@@ -98,6 +99,12 @@ struct CSSSizeOrRatio
   bool mHasWidth;
   bool mHasHeight;
 };
+
+enum class PaintBorderFlags : uint8_t
+{
+  SYNC_DECODE_IMAGES = 1 << 0
+};
+MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(PaintBorderFlags)
 
 } 
 
@@ -225,7 +232,7 @@ public:
 
 
 
-  void
+  DrawResult
   DrawBorderImageComponent(nsPresContext*       aPresContext,
                            nsRenderingContext&  aRenderingContext,
                            const nsRect&        aDirtyRect,
@@ -380,27 +387,29 @@ struct nsCSSRendering {
 
 
 
-  static void PaintBorder(nsPresContext* aPresContext,
-                          nsRenderingContext& aRenderingContext,
-                          nsIFrame* aForFrame,
-                          const nsRect& aDirtyRect,
-                          const nsRect& aBorderArea,
-                          nsStyleContext* aStyleContext,
-                          Sides aSkipSides = Sides());
+  static DrawResult PaintBorder(nsPresContext* aPresContext,
+                                nsRenderingContext& aRenderingContext,
+                                nsIFrame* aForFrame,
+                                const nsRect& aDirtyRect,
+                                const nsRect& aBorderArea,
+                                nsStyleContext* aStyleContext,
+                                mozilla::PaintBorderFlags aFlags,
+                                Sides aSkipSides = Sides());
 
   
 
 
 
 
-  static void PaintBorderWithStyleBorder(nsPresContext* aPresContext,
-                                         nsRenderingContext& aRenderingContext,
-                                         nsIFrame* aForFrame,
-                                         const nsRect& aDirtyRect,
-                                         const nsRect& aBorderArea,
-                                         const nsStyleBorder& aBorderStyle,
-                                         nsStyleContext* aStyleContext,
-                                         Sides aSkipSides = Sides());
+  static DrawResult PaintBorderWithStyleBorder(nsPresContext* aPresContext,
+                                               nsRenderingContext& aRenderingContext,
+                                               nsIFrame* aForFrame,
+                                               const nsRect& aDirtyRect,
+                                               const nsRect& aBorderArea,
+                                               const nsStyleBorder& aBorderStyle,
+                                               nsStyleContext* aStyleContext,
+                                               mozilla::PaintBorderFlags aFlags,
+                                               Sides aSkipSides = Sides());
 
 
   
