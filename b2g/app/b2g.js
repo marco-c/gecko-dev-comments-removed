@@ -298,6 +298,7 @@ pref("ui.dragThresholdY", 25);
 
 
 
+pref("layers.offmainthreadcomposition.enabled", true);
 #ifndef MOZ_WIDGET_GONK
 pref("dom.ipc.tabs.disabled", true);
 #else

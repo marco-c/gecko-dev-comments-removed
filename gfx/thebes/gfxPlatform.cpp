@@ -599,12 +599,13 @@ gfxPlatform::Init()
                                gfxPrefs::Direct2DForceEnabled(),
                                gfxPrefs::DirectWriteFontRenderingForceEnabled());
       
-      forcedPrefs.AppendPrintf("-L%d%d%d%d%d",
+      forcedPrefs.AppendPrintf("-L%d%d%d%d%d%d",
                                gfxPrefs::LayersAMDSwitchableGfxEnabled(),
                                gfxPrefs::LayersAccelerationDisabled(),
                                gfxPrefs::LayersAccelerationForceEnabled(),
                                gfxPrefs::LayersD3D11DisableWARP(),
-                               gfxPrefs::LayersD3D11ForceWARP());
+                               gfxPrefs::LayersD3D11ForceWARP(),
+                               gfxPrefs::LayersOffMainThreadCompositionForceEnabled());
       
       forcedPrefs.AppendPrintf("-W%d%d%d%d%d%d%d%d",
                                gfxPrefs::WebGLANGLEForceD3D11(),
@@ -2219,7 +2220,8 @@ gfxPlatform::UsesOffMainThreadCompositing()
   if (firstTime) {
     result =
       sPrefBrowserTabsRemoteAutostart ||
-      !gfxPrefs::LayersOffMainThreadCompositionForceDisabled();
+      gfxPrefs::LayersOffMainThreadCompositionEnabled() ||
+      gfxPrefs::LayersOffMainThreadCompositionForceEnabled();
 #if defined(MOZ_WIDGET_GTK)
     
     result |= gfxPrefs::LayersAccelerationForceEnabled();

@@ -161,7 +161,7 @@ GetAndInitDisplayForAccelANGLE(GLLibraryEGL& egl)
     
     
     
-    if (!gfxPrefs::LayersOffMainThreadCompositionForceDisabled() &&
+    if (gfxPrefs::LayersOffMainThreadCompositionEnabled() &&
         !gfxPrefs::LayersPreferD3D9())
     {
         if (gfxPrefs::WebGLANGLEForceD3D11())
