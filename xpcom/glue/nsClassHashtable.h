@@ -41,8 +41,8 @@ public:
 
 
 
-
-  UserDataType LookupOrAdd(KeyType aKey);
+  template<typename... Args>
+  UserDataType LookupOrAdd(KeyType aKey, Args&&... aConstructionArgs);
 
   
 
@@ -75,12 +75,14 @@ public:
 
 
 template<class KeyClass, class T>
+template<typename... Args>
 T*
-nsClassHashtable<KeyClass, T>::LookupOrAdd(KeyType aKey)
+nsClassHashtable<KeyClass, T>::LookupOrAdd(KeyType aKey,
+                                           Args&&... aConstructionArgs)
 {
   typename base_type::EntryType* ent = this->PutEntry(aKey);
   if (!ent->mData) {
-    ent->mData = new T();
+    ent->mData = new T(mozilla::Forward<Args>(aConstructionArgs)...);
   }
   return ent->mData;
 }
