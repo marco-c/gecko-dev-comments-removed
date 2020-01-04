@@ -220,6 +220,9 @@ static_assert(JitStackAlignment % SimdMemoryAlignment == 0,
 
 static const uint32_t AsmJSStackAlignment = SimdMemoryAlignment;
 
+
+static MOZ_CONSTEXPR_VAR bool SupportsUint32x4FloatConversions = false;
+
 static const Scale ScalePointer = TimesFour;
 
 class Instruction;

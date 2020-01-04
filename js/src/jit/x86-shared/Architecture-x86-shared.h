@@ -20,6 +20,9 @@
 namespace js {
 namespace jit {
 
+
+static const bool SupportsUint32x4FloatConversions = false;
+
 #if defined(JS_CODEGEN_X86)
 
 

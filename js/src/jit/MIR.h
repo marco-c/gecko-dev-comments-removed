@@ -1542,10 +1542,18 @@ class MSimdConvert
   : public MUnaryInstruction,
     public SimdPolicy<0>::Data
 {
-    MSimdConvert(MDefinition* obj, MIRType fromType, MIRType toType)
-      : MUnaryInstruction(obj)
+    
+    
+    
+    SimdSign sign_;
+
+    MSimdConvert(MDefinition* obj, MIRType fromType, MIRType toType, SimdSign sign)
+      : MUnaryInstruction(obj), sign_(sign)
     {
         MOZ_ASSERT(IsSimdType(toType));
+        
+        MOZ_ASSERT(sign != SimdSign::NotApplicable);
+
         setResultType(toType);
         specialization_ = fromType; 
 
@@ -1562,20 +1570,35 @@ class MSimdConvert
                                   MIRType toType)
     {
         MOZ_ASSERT(IsSimdType(obj->type()) && fromType == obj->type());
-        return new(alloc) MSimdConvert(obj, fromType, toType);
+        
+        return new(alloc) MSimdConvert(obj, fromType, toType, SimdSign::Signed);
     }
 
     static MSimdConvert* New(TempAllocator& alloc, MDefinition* obj, MIRType fromType,
-                             MIRType toType)
+                             MIRType toType, SimdSign sign)
     {
-        return new(alloc) MSimdConvert(obj, fromType, toType);
+        return new(alloc) MSimdConvert(obj, fromType, toType, sign);
+    }
+
+    
+    
+    
+    
+    static MInstruction* AddLegalized(TempAllocator& alloc, MBasicBlock* addTo, MDefinition* obj,
+                                      MIRType fromType, MIRType toType, SimdSign sign);
+
+    SimdSign signedness() const {
+        return sign_;
     }
 
     AliasSet getAliasSet() const override {
         return AliasSet::None();
     }
     bool congruentTo(const MDefinition* ins) const override {
-        return congruentIfOperandsEqual(ins);
+        if (!congruentIfOperandsEqual(ins))
+            return false;
+        const MSimdConvert* other = ins->toSimdConvert();
+        return sign_ == other->sign_;
     }
     ALLOW_CLONE(MSimdConvert)
 };

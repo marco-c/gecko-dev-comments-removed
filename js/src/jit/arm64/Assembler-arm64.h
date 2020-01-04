@@ -176,6 +176,9 @@ static_assert(CodeAlignment % SimdMemoryAlignment == 0,
 static const uint32_t AsmJSStackAlignment = SimdMemoryAlignment;
 static const int32_t AsmJSGlobalRegBias = 1024;
 
+
+static MOZ_CONSTEXPR_VAR bool SupportsUint32x4FloatConversions = false;
+
 class Assembler : public vixl::Assembler
 {
   public:

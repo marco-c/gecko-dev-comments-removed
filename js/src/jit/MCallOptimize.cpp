@@ -3377,7 +3377,10 @@ IonBuilder::boxSimd(CallInfo& callInfo, MInstruction* ins, InlineTypedObject* te
 {
     MSimdBox* obj = MSimdBox::New(alloc(), constraints(), ins, templateObj,
                                   templateObj->group()->initialHeap(constraints()));
-    current->add(ins);
+
+    
+    if (!ins->block())
+        current->add(ins);
     current->add(obj);
     current->push(obj);
 
@@ -3526,15 +3529,14 @@ IonBuilder::inlineSimdConvert(CallInfo& callInfo, JSNative native, bool isCast,
         return InliningStatus_NotInlined;
 
     
-    if (sign == SimdSign::Unsigned)
-        return InliningStatus_NotInlined;
-
-    
     MInstruction* ins;
     if (isCast)
+        
         ins = MSimdReinterpretCast::New(alloc(), callInfo.getArg(0), fromType, toType);
     else
-        ins = MSimdConvert::New(alloc(), callInfo.getArg(0), fromType, toType);
+        
+        ins = MSimdConvert::AddLegalized(alloc(), current, callInfo.getArg(0),
+                                         fromType, toType, sign);
 
     return boxSimd(callInfo, ins, templateObj);
 }

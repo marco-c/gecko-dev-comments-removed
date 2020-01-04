@@ -18,6 +18,9 @@ static const bool SupportsSimd = false;
 static const uint32_t SimdMemoryAlignment = 4; 
 static const uint32_t AsmJSStackAlignment = 8;
 
+
+static MOZ_CONSTEXPR_VAR bool SupportsUint32x4FloatConversions = false;
+
 class Registers
 {
   public:
