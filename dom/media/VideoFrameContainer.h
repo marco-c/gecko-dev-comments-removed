@@ -48,11 +48,14 @@ public:
                        const TimeStamp& aTargetTime);
   
   PrincipalHandle GetLastPrincipalHandle();
+  PrincipalHandle GetLastPrincipalHandleLocked();
   
   
   
   void UpdatePrincipalHandleForFrameID(const PrincipalHandle& aPrincipalHandle,
                                        const ImageContainer::FrameID& aFrameID);
+  void UpdatePrincipalHandleForFrameIDLocked(const PrincipalHandle& aPrincipalHandle,
+                                             const ImageContainer::FrameID& aFrameID);
   void SetCurrentFrames(const gfx::IntSize& aIntrinsicSize,
                         const nsTArray<ImageContainer::NonOwningImage>& aImages);
   void ClearCurrentFrame(const gfx::IntSize& aIntrinsicSize)
