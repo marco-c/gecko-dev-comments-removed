@@ -300,7 +300,6 @@ TimelineConsumers::PopMarkers(nsDocShell* aDocShell,
                               nsTArray<dom::ProfileTimelineMarker>& aStore)
 {
   MOZ_ASSERT(NS_IsMainThread());
-  StaticMutexAutoLock lock(sMutex); 
 
   if (!aDocShell || !aDocShell->mObserved) {
     return;
