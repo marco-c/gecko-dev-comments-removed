@@ -320,7 +320,6 @@ struct nsBackgroundLayerState {
   nsBackgroundLayerState(nsIFrame* aForFrame, const nsStyleImage* aImage,
                          uint32_t aFlags)
     : mImageRenderer(aForFrame, aImage, aFlags)
-    , mCompositionOp(CompositionOp::OP_OVER)
   {}
 
   
@@ -345,10 +344,6 @@ struct nsBackgroundLayerState {
 
 
   nsPoint mAnchor;
-  
-
-
-  CompositionOp mCompositionOp;
 };
 
 struct nsCSSRendering {
@@ -550,7 +545,7 @@ struct nsCSSRendering {
                     const nsRect& aBorderArea,
                     const nsRect& aBGClipRect,
                     const nsStyleImageLayers::Layer& aLayer,
-                    bool aMask = false);
+                    CompositionOp aCompositionOp = CompositionOp::OP_OVER);
 
   struct ImageLayerClipState {
     nsRect mBGClipArea;  
@@ -607,10 +602,14 @@ struct nsCSSRendering {
                                     const nsRect& aBorderArea,
                                     uint32_t aFlags,
                                     nsRect* aBGClipRect = nullptr,
-                                    int32_t aLayer = -1);
+                                    int32_t aLayer = -1,
+                                    CompositionOp aCompositionOp = CompositionOp::OP_OVER);
 
 
   
+
+
+
 
 
 
@@ -628,7 +627,8 @@ struct nsCSSRendering {
                                           const nsStyleBorder& aBorder,
                                           uint32_t aFlags,
                                           nsRect* aBGClipRect = nullptr,
-                                          int32_t aLayer = -1);
+                                          int32_t aLayer = -1,
+                                          CompositionOp aCompositionOp = CompositionOp::OP_OVER);
 
   
 
