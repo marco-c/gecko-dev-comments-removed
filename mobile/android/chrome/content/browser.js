@@ -4528,7 +4528,13 @@ Tab.prototype = {
     let ss = Cc["@mozilla.org/browser/sessionstore;1"].getService(Ci.nsISessionStore);
     let appOrigin = ss.getTabValue(this, "appOrigin");
     if (appOrigin) {
-      let originHost = Services.io.newURI(appOrigin, null, null).host;
+      let originHost = "";
+      try {
+        let originHost = Services.io.newURI(appOrigin, null, null).host;
+      } catch (e if (e.result == Cr.NS_ERROR_FAILURE)) {
+        
+        
+      }
       if (originHost != aLocationURI.host) {
         
         ss.deleteTabValue(this, "appOrigin");
