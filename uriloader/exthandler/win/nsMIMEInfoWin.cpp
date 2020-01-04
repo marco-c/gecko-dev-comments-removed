@@ -22,6 +22,7 @@
 #include "nsUnicharUtils.h"
 #include "nsITextToSubURI.h"
 #include "nsVariant.h"
+#include "mozilla/UniquePtrExtensions.h"
 
 #define RUNDLL32_EXE L"\\rundll32.exe"
 
@@ -424,15 +425,15 @@ bool nsMIMEInfoWin::GetDllLaunchInfo(nsIFile * aDll,
     if (bufLength == 0) 
       return false;
 
-    nsAutoArrayPtr<wchar_t> destination(new wchar_t[bufLength]);
+    auto destination = mozilla::MakeUniqueFallible<wchar_t[]>(bufLength);
     if (!destination)
       return false;
     if (!::ExpandEnvironmentStringsW(appFilesystemCommand.get(),
-                                     destination,
+                                     destination.get(),
                                      bufLength))
       return false;
 
-    appFilesystemCommand = static_cast<const wchar_t*>(destination);
+    appFilesystemCommand.Assign(destination.get());
 
     
     
