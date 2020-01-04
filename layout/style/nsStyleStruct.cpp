@@ -1912,30 +1912,6 @@ nsStyleGradient::HasCalc()
 
 
 
-void
-CachedBorderImageData::PurgeCachedImages()
-{
-  mSubImages.Clear();
-}
-
-void
-CachedBorderImageData::SetSubImage(uint8_t aIndex, imgIContainer* aSubImage)
-{
-  mSubImages.ReplaceObjectAt(aSubImage, aIndex);
-}
-
-imgIContainer*
-CachedBorderImageData::GetSubImage(uint8_t aIndex)
-{
-  imgIContainer* subImage = nullptr;
-  if (aIndex < mSubImages.Count())
-    subImage = mSubImages[aIndex];
-  return subImage;
-}
-
-
-
-
 
 nsStyleImage::nsStyleImage()
   : mType(eStyleImageType_Null)
@@ -2028,9 +2004,7 @@ nsStyleImage::SetImageData(imgRequestProxy* aImage)
     mImage = aImage;
     mType = eStyleImageType_Image;
   }
-  if (mCachedBIData) {
-    mCachedBIData->PurgeCachedImages();
-  }
+  mSubImages.Clear();
 }
 
 void
