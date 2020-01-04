@@ -1,6 +1,3 @@
-
-
-
 Cu.import("resource://services-common/kinto-updater.js")
 Cu.import("resource://testing-common/httpd.js");
 
