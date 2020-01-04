@@ -72,7 +72,6 @@ this.TelemetryEnvironment = {
   
   RECORD_PREF_STATE: 1, 
   RECORD_PREF_VALUE: 2, 
-  RECORD_PREF_NOTIFY_ONLY: 3, 
 
   
   _watchPreferences: function(prefMap) {
@@ -765,11 +764,10 @@ EnvironmentCache.prototype = {
     let prefData = {};
     for (let [pref, policy] of this._watchedPrefs.entries()) {
       
-      if (!Preferences.isSet(pref) ||
-          policy.what == TelemetryEnvironment.RECORD_PREF_NOTIFY_ONLY) {
+      if (!Preferences.isSet(pref)) {
         continue;
       }
-
+      
       
       
       let prefValue = undefined;
