@@ -1413,10 +1413,15 @@ nsMenuPopupFrame::SetPopupPosition(nsIFrame* aAnchorFrame, bool aIsMove, bool aS
     screenPoint.MoveBy(margin.left + offsetForContextMenu.x,
                        margin.top + offsetForContextMenu.y);
 
-    
 #ifdef XP_MACOSX
-    hFlip = FlipStyle_Outside;
+    
+    if (mPopupType == ePopupTypeTooltip) {
+        vFlip = FlipStyle_Outside;
+    } else {
+        hFlip = FlipStyle_Outside;
+    }
 #else
+    
     vFlip = FlipStyle_Outside;
 #endif 
   }
