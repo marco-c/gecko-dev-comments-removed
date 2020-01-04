@@ -399,6 +399,16 @@ private:
 };
 
 
+class IgnoredErrorResult : public ErrorResult
+{
+public:
+  ~IgnoredErrorResult()
+  {
+    SuppressException();
+  }
+};
+
+
 
 
 

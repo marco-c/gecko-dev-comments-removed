@@ -14526,6 +14526,13 @@ class CGCallback(CGClass):
         assert args[0].name == "cx" and args[0].argType == "JSContext*"
         assert args[1].name == "aThisVal" and args[1].argType == "JS::Handle<JS::Value>"
         args = args[2:]
+
+        
+        
+        assert args[-1].name == "aRv" and args[-1].argType == "ErrorResult&"
+        rvIndex = len(args) - 1
+        assert rvIndex >= 0
+
         
         
         argnames = [arg.name for arg in args]
@@ -14533,9 +14540,19 @@ class CGCallback(CGClass):
         argnamesWithoutThis = ["s.GetContext()", "JS::UndefinedHandleValue"] + argnames
         
         
-        
         args.append(Argument("const char*", "aExecutionReason",
                              "nullptr"))
+
+        
+        
+        
+        
+        argsWithoutRv = list(args)
+        argsWithoutRv.pop(rvIndex)
+        argsWithoutThisAndRv = list(argsWithoutRv)
+
+        
+        
         args.append(Argument("ExceptionHandling", "aExceptionHandling",
                              "eReportExceptions"))
         
@@ -14547,6 +14564,22 @@ class CGCallback(CGClass):
         
         argsWithoutThis = list(args)
         args.insert(0, Argument("const T&",  "thisVal"))
+        argsWithoutRv.insert(0, Argument("const T&",  "thisVal"))
+
+        argnamesWithoutThisAndRv = [arg.name for arg in argsWithoutThisAndRv]
+        argnamesWithoutThisAndRv.insert(rvIndex, "rv");
+        
+        
+        
+        
+        
+        argnamesWithoutThisAndRv.extend(["eReportExceptions", "nullptr"])
+
+        argnamesWithoutRv = [arg.name for arg in argsWithoutRv]
+        
+        
+        argnamesWithoutRv.insert(rvIndex + 1, "rv")
+
         errorReturn = method.getDefaultRetval()
 
         setupCall = fill(
@@ -14586,6 +14619,20 @@ class CGCallback(CGClass):
             errorReturn=errorReturn,
             methodName=method.name,
             callArgs=", ".join(argnamesWithoutThis))
+        bodyWithThisWithoutRv = fill(
+            """
+            IgnoredErrorResult rv;
+            return ${methodName}(${callArgs});
+            """,
+            methodName=method.name,
+            callArgs=", ".join(argnamesWithoutRv))
+        bodyWithoutThisAndRv = fill(
+            """
+            IgnoredErrorResult rv;
+            return ${methodName}(${callArgs});
+            """,
+            methodName=method.name,
+            callArgs=", ".join(argnamesWithoutThisAndRv))
 
         return [ClassMethod(method.name, method.returnType, args,
                             bodyInHeader=True,
@@ -14594,6 +14641,13 @@ class CGCallback(CGClass):
                 ClassMethod(method.name, method.returnType, argsWithoutThis,
                             bodyInHeader=True,
                             body=bodyWithoutThis),
+                ClassMethod(method.name, method.returnType, argsWithoutRv,
+                            bodyInHeader=True,
+                            templateArgs=["typename T"],
+                            body=bodyWithThisWithoutRv),
+                ClassMethod(method.name, method.returnType, argsWithoutThisAndRv,
+                            bodyInHeader=True,
+                            body=bodyWithoutThisAndRv),
                 method]
 
     def deps(self):
