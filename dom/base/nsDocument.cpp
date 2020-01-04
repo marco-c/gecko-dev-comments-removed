@@ -1455,6 +1455,7 @@ nsIDocument::nsIDocument()
     mFontFaceSetDirty(true),
     mGetUserFontSetCalled(false),
     mPostedFlushUserFontSet(false),
+    mFullscreenEnabled(false),
     mPartID(0),
     mDidFireDOMContentLoaded(true),
     mHasScrollLinkedEffect(false),
@@ -2593,8 +2594,7 @@ nsDocument::StartDocumentLoad(const char* aCommand, nsIChannel* aChannel,
   nsCOMPtr<nsIDocShell> docShell = do_QueryInterface(aContainer);
 
   if (docShell) {
-    nsresult rv = docShell->GetSandboxFlags(&mSandboxFlags);
-    NS_ENSURE_SUCCESS(rv, rv);
+    docShell->ApplySandboxAndFullscreenFlags(this);
     WarnIfSandboxIneffective(docShell, mSandboxFlags, GetChannel());
   }
 
@@ -6291,13 +6291,13 @@ nsDocument::RegisterElement(JSContext* aCx, const nsAString& aType,
     {
       JSAutoCompartment ac(aCx, global);
 
-      htmlProto = HTMLElementBinding::GetProtoObjectHandle(aCx);
+      htmlProto = HTMLElementBinding::GetProtoObjectHandle(aCx, global);
       if (!htmlProto) {
         rv.Throw(NS_ERROR_OUT_OF_MEMORY);
         return;
       }
 
-      svgProto = SVGElementBinding::GetProtoObjectHandle(aCx);
+      svgProto = SVGElementBinding::GetProtoObjectHandle(aCx, global);
       if (!svgProto) {
         rv.Throw(NS_ERROR_OUT_OF_MEMORY);
         return;
@@ -11802,11 +11802,7 @@ GetFullscreenError(nsIDocument* aDoc, bool aCallerIsChrome)
   if (!nsContentUtils::IsFullScreenApiEnabled()) {
     return "FullscreenDeniedDisabled";
   }
-
-  
-  
-  nsCOMPtr<nsIDocShell> docShell(aDoc->GetDocShell());
-  if (!docShell || !docShell->GetFullscreenAllowed()) {
+  if (!aDoc->FullscreenEnabledInternal()) {
     return "FullscreenDeniedContainerNotAllowed";
   }
   return nullptr;
@@ -12370,10 +12366,7 @@ public:
       return NS_OK;
     }
 
-    
-    
-    nsCOMPtr<nsPIDOMWindowInner> window = doc->GetInnerWindow();
-    nsContentPermissionUtils::AskPermission(this, window);
+    Allow(JS::UndefinedHandleValue);
     return NS_OK;
   }
 
@@ -12495,6 +12488,10 @@ nsPointerLockPermissionRequest::Allow(JS::HandleValue aChoices)
   NS_ASSERTION(EventStateManager::sPointerLockedElement &&
                EventStateManager::sPointerLockedDoc,
                "aElement and this should support weak references!");
+
+  nsContentUtils::DispatchEventOnlyToChrome(
+    doc, ToSupports(e), NS_LITERAL_STRING("MozDOMPointerLock:Entered"),
+     true,  false,  nullptr);
 
   DispatchPointerLockChange(d);
   return NS_OK;
@@ -12770,6 +12767,12 @@ nsDocument::UnlockPointer(nsIDocument* aDoc)
   EventStateManager::sPointerLockedDoc = nullptr;
   static_cast<nsDocument*>(pointerLockedDoc.get())->mAllowRelocking = !!aDoc;
   gPendingPointerLockRequest = nullptr;
+
+  nsContentUtils::DispatchEventOnlyToChrome(
+    doc, ToSupports(pointerLockedElement),
+    NS_LITERAL_STRING("MozDOMPointerLock:Exited"),
+     true,  false,  nullptr);
+
   DispatchPointerLockChange(pointerLockedDoc);
 }
 

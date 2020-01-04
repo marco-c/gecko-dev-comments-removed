@@ -1297,7 +1297,9 @@ var gBrowserInit = {
     if (Win7Features)
       Win7Features.onOpenWindow();
 
+    PointerlockFsWarning.init();
     FullScreen.init();
+    PointerLock.init();
 
     
     gSyncUI.init();
@@ -6820,7 +6822,7 @@ var gIdentityHandler = {
 
 
 
-  get fullscreenWarningClassName() {
+  get pointerlockFsWarningClassName() {
     
     if (this._uriHasHost && this._isEV) {
       return "verifiedIdentity";

@@ -3,6 +3,248 @@
 
 
 
+var PointerlockFsWarning = {
+
+  _element: null,
+  _origin: null,
+
+  init: function() {
+    this.Timeout.prototype = {
+      start: function() {
+        this.cancel();
+        this._id = setTimeout(() => this._handle(), this._delay);
+      },
+      cancel: function() {
+        if (this._id) {
+          clearTimeout(this._id);
+          this._id = 0;
+        }
+      },
+      _handle: function() {
+        this._id = 0;
+        this._func();
+      },
+      get delay() {
+        return this._delay;
+      }
+    };
+  },
+
+  
+
+
+
+
+  Timeout: function(func, delay) {
+    this._id = 0;
+    this._func = func;
+    this._delay = delay;
+  },
+
+  showPointerLock: function(aOrigin) {
+    if (!document.fullscreen) {
+      let timeout = gPrefService.getIntPref("pointer-lock-api.warning.timeout");
+      this.show(aOrigin, "pointerlock-warning", timeout, 0);
+    }
+  },
+
+  showFullScreen: function(aOrigin) {
+    let timeout = gPrefService.getIntPref("full-screen-api.warning.timeout");
+    let delay = gPrefService.getIntPref("full-screen-api.warning.delay");
+    this.show(aOrigin, "fullscreen-warning", timeout, delay);
+  },
+
+  
+  
+  show: function(aOrigin, elementId, timeout, delay) {
+
+    if (!this._element) {
+      this._element = document.getElementById(elementId);
+      
+      this._element.addEventListener("transitionend", this);
+      window.addEventListener("mousemove", this, true);
+      
+      this._timeoutHide = new this.Timeout(() => {
+        this._state = "hidden";
+      }, timeout);
+      
+      this._timeoutShow = new this.Timeout(() => {
+        this._state = "ontop";
+        this._timeoutHide.start();
+      }, delay);
+    }
+
+    
+    if (aOrigin) {
+      this._origin = aOrigin;
+    }
+    let uri = BrowserUtils.makeURI(this._origin);
+    let host = null;
+    try {
+      host = uri.host;
+    } catch (e) { }
+    let textElem = this._element.querySelector(".pointerlockfswarning-domain-text");
+    if (!host) {
+      textElem.setAttribute("hidden", true);
+    } else {
+      textElem.removeAttribute("hidden");
+      let hostElem = this._element.querySelector(".pointerlockfswarning-domain");
+      
+      let utils = {};
+      Cu.import("resource://gre/modules/DownloadUtils.jsm", utils);
+      hostElem.textContent = utils.DownloadUtils.getURIHost(uri.spec)[0];
+    }
+
+    this._element.dataset.identity =
+      gIdentityHandler.pointerlockFsWarningClassName;
+
+    
+    
+    if (this._timeoutHide.delay <= 0) {
+      return;
+    }
+
+    
+    
+    this._state = "onscreen";
+    this._lastState = "hidden";
+    this._timeoutHide.start();
+  },
+
+  close: function() {
+    if (!this._element) {
+      return;
+    }
+    
+    this._timeoutHide.cancel();
+    this._timeoutShow.cancel();
+    
+    this._state = "hidden";
+    this._element.setAttribute("hidden", true);
+    
+    this._element.removeEventListener("transitionend", this);
+    window.removeEventListener("mousemove", this, true);
+    
+    this._element = null;
+    this._timeoutHide = null;
+    this._timeoutShow = null;
+
+    
+    
+    
+    
+    gBrowser.selectedBrowser.focus();
+  },
+
+  
+  
+  
+  
+  _lastState: null,
+  _STATES: ["hidden", "ontop", "onscreen"],
+  get _state() {
+    for (let state of this._STATES) {
+      if (this._element.hasAttribute(state)) {
+        return state;
+      }
+    }
+    return "hiding";
+  },
+  set _state(newState) {
+    let currentState = this._state;
+    if (currentState == newState) {
+      return;
+    }
+    if (currentState != "hiding") {
+      this._lastState = currentState;
+      this._element.removeAttribute(currentState);
+    }
+    if (newState != "hidden") {
+      if (currentState != "hidden") {
+        this._element.setAttribute(newState, true);
+      } else {
+        
+        
+        
+        
+        
+        
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            if (this._element) {
+              this._element.setAttribute(newState, true);
+            }
+          });
+        });
+      }
+    }
+  },
+
+  handleEvent: function(event) {
+    switch (event.type) {
+    case "mousemove": {
+      let state = this._state;
+      if (state == "hidden") {
+        
+        
+        if (event.clientY != 0) {
+          this._timeoutShow.cancel();
+        } else if (this._timeoutShow.delay >= 0) {
+          this._timeoutShow.start();
+        }
+      } else {
+        let elemRect = this._element.getBoundingClientRect();
+        if (state == "hiding" && this._lastState != "hidden") {
+          
+          
+          if (event.clientY <= elemRect.bottom + 50) {
+            this._state = this._lastState;
+            this._timeoutHide.start();
+          }
+        } else if (state == "ontop" || this._lastState != "hidden") {
+          
+          
+          
+          
+          if (event.clientY > elemRect.bottom + 50) {
+            this._state = "hidden";
+            this._timeoutHide.cancel();
+          }
+        }
+      }
+      break;
+    }
+    case "transitionend": {
+      if (this._state == "hiding") {
+        this._element.setAttribute("hidden", true);
+      }
+      break;
+    }
+    }
+  }
+};
+
+var PointerLock = {
+
+  init: function() {
+    window.messageManager.addMessageListener("PointerLock:Entered", this);
+    window.messageManager.addMessageListener("PointerLock:Exited", this);
+  },
+
+  receiveMessage: function(aMessage) {
+    switch (aMessage.name) {
+      case "PointerLock:Entered": {
+        PointerlockFsWarning.showPointerLock(aMessage.data.originNoSuffix);
+        break;
+      }
+      case "PointerLock:Exited": {
+        PointerlockFsWarning.close();
+        break;
+      }
+    }
+  }
+};
+
 var FullScreen = {
   _MESSAGES: [
     "DOMFullscreen:Request",
@@ -23,8 +265,6 @@ var FullScreen = {
     for (let type of this._MESSAGES) {
       window.messageManager.addMessageListener(type, this);
     }
-
-    this._WarningBox.init();
 
     if (window.fullScreen)
       this.toggle();
@@ -108,11 +348,6 @@ var FullScreen = {
 
   handleEvent: function (event) {
     switch (event.type) {
-      case "activate":
-        if (document.fullscreenElement) {
-          this._WarningBox.show();
-        }
-        break;
       case "fullscreen":
         this.toggle();
         break;
@@ -150,7 +385,7 @@ var FullScreen = {
         break;
       }
       case "DOMFullscreen:NewOrigin": {
-        this._WarningBox.show(aMessage.data.originNoSuffix);
+        PointerlockFsWarning.showFullScreen(aMessage.data.originNoSuffix);
         break;
       }
       case "DOMFullscreen:Exit": {
@@ -166,9 +401,14 @@ var FullScreen = {
   },
 
   enterDomFullscreen : function(aBrowser) {
+
     if (!document.fullscreenElement) {
       return;
     }
+
+    
+    
+    PointerlockFsWarning.close();
 
     
     
@@ -222,7 +462,7 @@ var FullScreen = {
     window.messageManager
           .broadcastAsyncMessage("DOMFullscreen:CleanUp");
 
-    this._WarningBox.close();
+    PointerlockFsWarning.close();
     gBrowser.tabContainer.removeEventListener("TabOpen", this.exitDomFullScreen);
     gBrowser.tabContainer.removeEventListener("TabClose", this.exitDomFullScreen);
     gBrowser.tabContainer.removeEventListener("TabSelect", this.exitDomFullScreen);
@@ -318,213 +558,6 @@ var FullScreen = {
     gPrefService.setBoolPref("browser.fullscreen.autohide", !gPrefService.getBoolPref("browser.fullscreen.autohide"));
     
     FullScreen.hideNavToolbox(true);
-  },
-
-  _WarningBox: {
-    _element: null,
-    _origin: null,
-
-    
-
-
-
-
-    Timeout: function(func, delay) {
-      this._id = 0;
-      this._func = func;
-      this._delay = delay;
-    },
-
-    init: function() {
-      this.Timeout.prototype = {
-        start: function() {
-          this.cancel();
-          this._id = setTimeout(() => this._handle(), this._delay);
-        },
-        cancel: function() {
-          if (this._id) {
-            clearTimeout(this._id);
-            this._id = 0;
-          }
-        },
-        _handle: function() {
-          this._id = 0;
-          this._func();
-        },
-        get delay() {
-          return this._delay;
-        }
-      };
-    },
-
-    
-    show: function(aOrigin) {
-      if (!document.fullscreenElement) {
-        return;
-      }
-
-      if (!this._element) {
-        this._element = document.getElementById("fullscreen-warning");
-        
-        this._element.addEventListener("transitionend", this);
-        window.addEventListener("mousemove", this, true);
-        
-        this._timeoutHide = new this.Timeout(() => {
-          this._state = "hidden";
-        }, gPrefService.getIntPref("full-screen-api.warning.timeout"));
-        
-        this._timeoutShow = new this.Timeout(() => {
-          this._state = "ontop";
-          this._timeoutHide.start();
-        }, gPrefService.getIntPref("full-screen-api.warning.delay"));
-      }
-
-      
-      if (aOrigin) {
-        this._origin = aOrigin;
-      }
-      let uri = BrowserUtils.makeURI(this._origin);
-      let host = null;
-      try {
-        host = uri.host;
-      } catch (e) { }
-      let textElem = document.getElementById("fullscreen-domain-text");
-      if (!host) {
-        textElem.setAttribute("hidden", true);
-      } else {
-        textElem.removeAttribute("hidden");
-        let hostElem = document.getElementById("fullscreen-domain");
-        
-        let utils = {};
-        Cu.import("resource://gre/modules/DownloadUtils.jsm", utils);
-        hostElem.textContent = utils.DownloadUtils.getURIHost(uri.spec)[0];
-      }
-      this._element.className = gIdentityHandler.fullscreenWarningClassName;
-
-      
-      
-      if (this._timeoutHide.delay <= 0) {
-        return;
-      }
-
-      
-      
-      this._state = "onscreen";
-      this._lastState = "hidden";
-      this._timeoutHide.start();
-    },
-
-    close: function() {
-      if (!this._element) {
-        return;
-      }
-      
-      this._timeoutHide.cancel();
-      this._timeoutShow.cancel();
-      
-      this._state = "hidden";
-      this._element.setAttribute("hidden", true);
-      
-      this._element.removeEventListener("transitionend", this);
-      window.removeEventListener("mousemove", this, true);
-      
-      this._element = null;
-      this._timeoutHide = null;
-      this._timeoutShow = null;
-
-      
-      
-      
-      
-      gBrowser.selectedBrowser.focus();
-    },
-
-    
-    
-    
-    
-    _lastState: null,
-    _STATES: ["hidden", "ontop", "onscreen"],
-    get _state() {
-      for (let state of this._STATES) {
-        if (this._element.hasAttribute(state)) {
-          return state;
-        }
-      }
-      return "hiding";
-    },
-    set _state(newState) {
-      let currentState = this._state;
-      if (currentState == newState) {
-        return;
-      }
-      if (currentState != "hiding") {
-        this._lastState = currentState;
-        this._element.removeAttribute(currentState);
-      }
-      if (newState != "hidden") {
-        if (currentState != "hidden") {
-          this._element.setAttribute(newState, true);
-        } else {
-          
-          
-          
-          
-          
-          
-          requestAnimationFrame(() => {
-            requestAnimationFrame(() => {
-              if (this._element) {
-                this._element.setAttribute(newState, true);
-              }
-            });
-          });
-        }
-      }
-    },
-
-    handleEvent: function(event) {
-      switch (event.type) {
-        case "mousemove": {
-          let state = this._state;
-          if (state == "hidden") {
-            
-            
-            if (event.clientY != 0) {
-              this._timeoutShow.cancel();
-            } else if (this._timeoutShow.delay >= 0) {
-              this._timeoutShow.start();
-            }
-          } else {
-            let elemRect = this._element.getBoundingClientRect();
-            if (state == "hiding" && this._lastState != "hidden") {
-              
-              
-              if (event.clientY <= elemRect.bottom + 50) {
-                this._state = this._lastState;
-                this._timeoutHide.start();
-              }
-            } else if (state == "ontop" || this._lastState != "hidden") {
-              
-              
-              
-              
-              if (event.clientY > elemRect.bottom + 50) {
-                this._state = "hidden";
-                this._timeoutHide.cancel();
-              }
-            }
-          }
-          break;
-        }
-        case "transitionend": {
-          if (this._state == "hiding") {
-            this._element.setAttribute("hidden", true);
-          }
-          break;
-        }
-      }
-    }
   },
 
   showNavToolbox: function(trackMouse = true) {
