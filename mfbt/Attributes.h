@@ -482,11 +482,22 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
 #ifdef MOZ_CLANG_PLUGIN
 #  define MOZ_MUST_OVERRIDE __attribute__((annotate("moz_must_override")))
 #  define MOZ_STACK_CLASS __attribute__((annotate("moz_stack_class")))
 #  define MOZ_NONHEAP_CLASS __attribute__((annotate("moz_nonheap_class")))
 #  define MOZ_HEAP_CLASS __attribute__((annotate("moz_heap_class")))
+#  define MOZ_NON_TEMPORARY_CLASS __attribute__((annotate("moz_non_temporary_class")))
 #  define MOZ_TRIVIAL_CTOR_DTOR __attribute__((annotate("moz_trivial_ctor_dtor")))
 #  ifdef DEBUG
      
@@ -523,6 +534,7 @@
 #  define MOZ_STACK_CLASS
 #  define MOZ_NONHEAP_CLASS
 #  define MOZ_HEAP_CLASS
+#  define MOZ_NON_TEMPORARY_CLASS
 #  define MOZ_TRIVIAL_CTOR_DTOR
 #  define MOZ_ONLY_USED_TO_AVOID_STATIC_CONSTRUCTORS
 #  define MOZ_IMPLICIT
@@ -539,6 +551,8 @@
 #  define MOZ_INHERIT_TYPE_ANNOTATIONS_FROM_TEMPLATE_ARGS
 #  define MOZ_NON_AUTOABLE
 #endif 
+
+#define MOZ_RAII MOZ_NON_TEMPORARY_CLASS MOZ_STACK_CLASS
 
 
 
