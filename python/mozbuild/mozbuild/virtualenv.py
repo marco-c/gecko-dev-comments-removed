@@ -173,6 +173,11 @@ class VirtualenvManager(object):
         env.pop('PYTHONDONTWRITEBYTECODE', None)
 
         args = [python, self.virtualenv_script_path,
+            
+            
+            
+            
+            '--no-download',
             self.virtualenv_root]
 
         result = subprocess.call(args, stdout=self.log_handle,
