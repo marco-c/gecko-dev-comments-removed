@@ -538,7 +538,9 @@ class nsObjectLoadingContent : public nsImageLoadingContent
 
 
 
-    bool ShouldRewriteYoutubeEmbed(nsIURI* uri);
+    void MaybeRewriteYoutubeEmbed(nsIURI* aURI,
+                                  nsIURI* aBaseURI,
+                                  nsIURI** aRewrittenURI);
 
     
     class SetupProtoChainRunner final : public nsIRunnable

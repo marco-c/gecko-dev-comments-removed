@@ -40,6 +40,7 @@
 #include "nsIAsyncVerifyRedirectCallback.h"
 #include "nsIAppShell.h"
 #include "nsIXULRuntime.h"
+#include "nsIScriptError.h"
 
 #include "nsError.h"
 
@@ -1482,8 +1483,8 @@ nsObjectLoadingContent::CheckJavaCodebase()
   return true;
 }
 
-bool
-nsObjectLoadingContent::ShouldRewriteYoutubeEmbed(nsIURI* aURI)
+void
+nsObjectLoadingContent::MaybeRewriteYoutubeEmbed(nsIURI* aURI, nsIURI* aBaseURI, nsIURI** aOutURI)
 {
   nsCOMPtr<nsIContent> thisContent =
     do_QueryInterface(static_cast<nsIImageLoadingContent*>(this));
@@ -1492,14 +1493,15 @@ nsObjectLoadingContent::ShouldRewriteYoutubeEmbed(nsIURI* aURI)
   
   if (!thisContent->NodeInfo()->Equals(nsGkAtoms::embed) &&
       !thisContent->NodeInfo()->Equals(nsGkAtoms::object)) {
-    return false;
+    return;
   }
+
   nsCOMPtr<nsIEffectiveTLDService> tldService =
     do_GetService(NS_EFFECTIVETLDSERVICE_CONTRACTID);
   
   if(!tldService) {
     NS_WARNING("Could not get TLD service!");
-    return false;
+    return;
   }
 
   nsAutoCString currentBaseDomain;
@@ -1507,12 +1509,12 @@ nsObjectLoadingContent::ShouldRewriteYoutubeEmbed(nsIURI* aURI)
   if (!ok) {
     
     
-    return false;
+    return;
   }
 
   
   if (!currentBaseDomain.EqualsLiteral("youtube.com")) {
-    return false;
+    return;
   }
 
   
@@ -1520,7 +1522,7 @@ nsObjectLoadingContent::ShouldRewriteYoutubeEmbed(nsIURI* aURI)
   nsAutoCString path;
   aURI->GetPath(path);
   if (!StringBeginsWith(path, NS_LITERAL_CSTRING("/v/"))) {
-    return false;
+    return;
   }
 
   
@@ -1528,7 +1530,29 @@ nsObjectLoadingContent::ShouldRewriteYoutubeEmbed(nsIURI* aURI)
   aURI->GetSpec(uri);
   if (uri.Find("enablejsapi=1", true, 0, -1) != kNotFound) {
     Telemetry::Accumulate(Telemetry::YOUTUBE_NONREWRITABLE_EMBED_SEEN, 1);
-    return false;
+    return;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  int32_t ampIndex = uri.FindChar('&', 0);
+  bool trimQuery = false;
+  if (ampIndex != -1) {
+    int32_t qmIndex = uri.FindChar('?', 0);
+    if (qmIndex == -1 ||
+        qmIndex > ampIndex) {
+      if (!nsContentUtils::IsSWFPlayerEnabled()) {
+        trimQuery = true;
+      } else {
+        
+        return;
+      }
+    }
   }
 
   
@@ -1536,7 +1560,43 @@ nsObjectLoadingContent::ShouldRewriteYoutubeEmbed(nsIURI* aURI)
   Telemetry::Accumulate(Telemetry::YOUTUBE_REWRITABLE_EMBED_SEEN, 1);
 
   
-  return Preferences::GetBool(kPrefYoutubeRewrite);
+  if (!Preferences::GetBool(kPrefYoutubeRewrite)) {
+    return;
+  }
+
+  nsAutoString utf16OldURI = NS_ConvertUTF8toUTF16(uri);
+  
+  
+  if (trimQuery) {
+    uri.Truncate(ampIndex);
+  }
+  
+  
+  uri.ReplaceSubstring(NS_LITERAL_CSTRING("/v/"),
+                       NS_LITERAL_CSTRING("/embed/"));
+  nsAutoString utf16URI = NS_ConvertUTF8toUTF16(uri);
+  nsresult rv = nsContentUtils::NewURIWithDocumentCharset(aOutURI,
+                                                          utf16URI,
+                                                          thisContent->OwnerDoc(),
+                                                          aBaseURI);
+  if (NS_FAILED(rv)) {
+    return;
+  }
+  const char16_t* params[] = { utf16OldURI.get(), utf16URI.get() };
+  const char* msgName;
+  
+  
+  if (!trimQuery) {
+    msgName = "RewriteYoutubeEmbed";
+  } else {
+    msgName = "RewriteYoutubeEmbedInvalidQuery";
+  }
+  nsContentUtils::ReportToConsole(nsIScriptError::warningFlag,
+                                  NS_LITERAL_CSTRING("Plugins"),
+                                  thisContent->OwnerDoc(),
+                                  nsContentUtils::eDOM_PROPERTIES,
+                                  msgName,
+                                  params, ArrayLength(params));
 }
 
 bool
@@ -1794,15 +1854,12 @@ nsObjectLoadingContent::UpdateObjectParameters(bool aJavaURI)
                                                    uriStr,
                                                    thisContent->OwnerDoc(),
                                                    newBaseURI);
-    if (ShouldRewriteYoutubeEmbed(newURI)) {
-      
-      
-      uriStr.ReplaceSubstring(NS_LITERAL_STRING("/v/"),
-                              NS_LITERAL_STRING("/embed/"));
-      rv = nsContentUtils::NewURIWithDocumentCharset(getter_AddRefs(newURI),
-                                                     uriStr,
-                                                     thisContent->OwnerDoc(),
-                                                     newBaseURI);
+    nsCOMPtr<nsIURI> rewrittenURI;
+    MaybeRewriteYoutubeEmbed(newURI,
+                             newBaseURI,
+                             getter_AddRefs(rewrittenURI));
+    if (rewrittenURI) {
+      newURI = rewrittenURI;
       newMime = NS_LITERAL_CSTRING("text/html");
     }
 
