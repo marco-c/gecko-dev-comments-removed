@@ -50,6 +50,7 @@ import re
 import shutil
 import stat
 import subprocess
+import tarfile
 import tempfile
 import urlparse
 import zipfile
@@ -129,6 +130,41 @@ class AndroidArtifactJob(ArtifactJob):
                     'Adding {basename} to processed archive')
 
                 writer.add(basename.encode('utf-8'), f)
+
+
+class LinuxArtifactJob(ArtifactJob):
+    def process_artifact(self, filename, processed_filename):
+        with JarWriter(file=processed_filename, optimize=False, compress_level=5) as writer:
+            prefix = 'firefox/'
+            whitelist = {
+                'application.ini',
+                'crashreporter',
+                'dependentlibs.list',
+                'firefox',
+                'firefox-bin',
+                'platform.ini',
+                'plugin-container',
+                'updater',
+                'webapprt-stub',
+            }
+            with tarfile.open(filename) as reader:
+                for f in reader:
+                    if not f.isfile():
+                        continue
+
+                    if not f.name.startswith(prefix):
+                        raise ValueError('Archive format changed! Filename should start with "firefox/"; was "{filename}"'.format(filename=f.name))
+                    basename = f.name[len(prefix):]
+
+                    if not basename.endswith('.so') and \
+                       basename not in whitelist:
+                        continue
+
+                    self.log(logging.INFO, 'artifact',
+                        {'basename': basename},
+                        'Adding {basename} to processed archive')
+
+                    writer.add(basename.encode('utf-8'), reader.extractfile(f), mode=f.mode)
 
 
 class MacArtifactJob(ArtifactJob):
@@ -250,12 +286,14 @@ class WinArtifactJob(ArtifactJob):
 
 
 
+
+
 JOB_DETAILS = {
     
     'android-api-11': (AndroidArtifactJob, 'public/build/fennec-(.*)\.android-arm\.apk'),
     'android-x86': (AndroidArtifactJob, 'public/build/fennec-(.*)\.android-i386\.apk'),
-    
-    
+    'linux': (LinuxArtifactJob, 'public/build/firefox-(.*)\.linux-i686\.tar\.bz2'),
+    'linux64': (LinuxArtifactJob, 'public/build/firefox-(.*)\.linux-x86_64\.tar\.bz2'),
     'macosx64': (MacArtifactJob, 'public/build/firefox-(.*)\.mac\.dmg'),
     'win32': (WinArtifactJob, 'public/build/firefox-(.*)\.win32.zip'),
     'win64': (WinArtifactJob, 'public/build/firefox-(.*)\.win64.zip'),
