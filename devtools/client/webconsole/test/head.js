@@ -1635,13 +1635,27 @@ function checkOutputForInputs(hud, inputTests) {
 
 
 
-function waitForFinishedRequest() {
+
+
+
+
+function waitForFinishedRequest(predicate = () => true) {
   registerCleanupFunction(function() {
     HUDService.lastFinishedRequest.callback = null;
   });
 
   return new Promise(resolve => {
-    HUDService.lastFinishedRequest.callback = request => { resolve(request) };
+    HUDService.lastFinishedRequest.callback = request => {
+      
+      if (predicate(request)) {
+        
+        HUDService.lastFinishedRequest.callback = null;
+
+        resolve(request);
+      } else {
+        info(`Ignoring unexpected request ${JSON.stringify(request, null, 2)}`);
+      }
+    }
   });
 }
 
