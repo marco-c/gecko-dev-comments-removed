@@ -249,7 +249,7 @@ class ArrayBufferObject : public ArrayBufferObjectMaybeShared
         
         
         
-        return !isNeutered();
+        return !isDetached();
     }
 
     
@@ -313,7 +313,7 @@ class ArrayBufferObject : public ArrayBufferObjectMaybeShared
     bool isAsmJSMalloced() const { return bufferKind() == ASMJS_MALLOCED; }
     bool isAsmJS() const { return isAsmJSMapped() || isAsmJSMalloced(); }
     bool isMapped() const { return bufferKind() == MAPPED; }
-    bool isNeutered() const { return flags() & DETACHED; }
+    bool isDetached() const { return flags() & DETACHED; }
 
     static bool prepareForAsmJS(JSContext* cx, Handle<ArrayBufferObject*> buffer,
                                 bool usesSignalHandlers);
@@ -354,7 +354,7 @@ class ArrayBufferObject : public ArrayBufferObjectMaybeShared
     bool hasTypedObjectViews() const { return flags() & TYPED_OBJECT_VIEWS; }
 
     void setIsAsmJSMalloced() { setFlags((flags() & ~KIND_MASK) | ASMJS_MALLOCED); }
-    void setIsNeutered() { setFlags(flags() | DETACHED); }
+    void setIsDetached() { setFlags(flags() | DETACHED); }
 
     void initialize(size_t byteLength, BufferContents contents, OwnsState ownsState) {
         setByteLength(byteLength);
