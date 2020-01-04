@@ -16,8 +16,6 @@ XPCOMUtils.defineLazyModuleGetter(this, "Rect", "resource://gre/modules/Geometry
 XPCOMUtils.defineLazyModuleGetter(this, "Task", "resource://gre/modules/Task.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "UITelemetry", "resource://gre/modules/UITelemetry.jsm");
 
-const READINGLIST_COMMAND_ID = "readingListSidebar";
-
 var gStrings = Services.strings.createBundle("chrome://global/locale/aboutReader.properties");
 
 var AboutReader = function(mm, win, articlePromise) {
@@ -36,8 +34,6 @@ var AboutReader = function(mm, win, articlePromise) {
   this._mm = mm;
   this._mm.addMessageListener("Reader:Added", this);
   this._mm.addMessageListener("Reader:Removed", this);
-  this._mm.addMessageListener("Sidebar:VisibilityChange", this);
-  this._mm.addMessageListener("ReadingList:VisibilityStatus", this);
   this._mm.addMessageListener("Reader:CloseDropdown", this);
   this._mm.addMessageListener("Reader:AddButton", this);
   this._mm.addMessageListener("Reader:RemoveButton", this);
@@ -75,7 +71,6 @@ var AboutReader = function(mm, win, articlePromise) {
   try {
     if (Services.prefs.getBoolPref("browser.readinglist.enabled")) {
       this._setupButton("toggle-button", this._onReaderToggle.bind(this, "button"), "aboutReader.toolbar.addToReadingList");
-      this._setupButton("list-button", this._onList.bind(this), "aboutReader.toolbar.openReadingList");
     }
   } catch (e) {
     
@@ -120,9 +115,6 @@ var AboutReader = function(mm, win, articlePromise) {
   
   this._isReadingListItem = -1;
   this._updateToggleButton();
-
-  
-  this._updateListButton();
 
   this._loadArticle();
 }
@@ -239,20 +231,6 @@ AboutReader.prototype = {
         }
         break;
       }
-
-      
-      
-      case "Sidebar:VisibilityChange": {
-        let data = message.data;
-        this._updateListButtonStyle(data.isOpen && data.commandID === READINGLIST_COMMAND_ID);
-        break;
-      }
-
-      
-      case "ReadingList:VisibilityStatus": {
-        this._updateListButtonStyle(message.data.isOpen);
-        break;
-      }
     }
   },
 
@@ -291,8 +269,6 @@ AboutReader.prototype = {
 
         this._mm.removeMessageListener("Reader:Added", this);
         this._mm.removeMessageListener("Reader:Removed", this);
-        this._mm.removeMessageListener("Sidebar:VisibilityChange", this);
-        this._mm.removeMessageListener("ReadingList:VisibilityStatus", this);
         this._mm.removeMessageListener("Reader:CloseDropdown", this);
         this._mm.removeMessageListener("Reader:AddButton", this);
         this._mm.removeMessageListener("Reader:RemoveButton", this);
@@ -355,50 +331,6 @@ AboutReader.prototype = {
     } else {
       this._mm.sendAsyncMessage("Reader:RemoveFromList", { url: this._article.url });
       UITelemetry.addEvent("unsave.1", aMethod, null, "reading_list");
-    }
-  },
-
-  
-
-
-
-  _showListIntro: function() {
-    this._mm.sendAsyncMessage("ReadingList:ShowIntro");
-  },
-
-  
-
-
-
-  _onList: function() {
-    this._mm.sendAsyncMessage("ReadingList:ToggleVisibility");
-  },
-
-  
-
-
-
-  _updateListButton: function() {
-    this._mm.sendAsyncMessage("ReadingList:GetVisibility");
-  },
-
-  
-
-
-
-
-
-
-  _updateListButtonStyle: function(isVisible) {
-    let classes = this._doc.getElementById("list-button").classList;
-    if (isVisible) {
-      classes.add("on");
-      
-      this._setButtonTip("list-button", "aboutReader.toolbar.closeReadingList");
-    } else {
-      classes.remove("on");
-      
-      this._setButtonTip("list-button", "aboutReader.toolbar.openReadingList");
     }
   },
 
@@ -505,11 +437,6 @@ AboutReader.prototype = {
   },
 
   _handleVisibilityChange: function() {
-    
-    if (this._doc.visibilityState === "visible") {
-      this._updateListButton();
-    }
-
     let colorScheme = Services.prefs.getCharPref("reader.color_scheme");
     if (colorScheme != "auto") {
       return;
@@ -787,7 +714,6 @@ AboutReader.prototype = {
     this._updateImageMargins();
     this._requestReadingListStatus();
 
-    this._showListIntro();
     this._requestFavicon();
     this._doc.body.classList.add("loaded");
 
