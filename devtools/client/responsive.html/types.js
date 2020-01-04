@@ -73,6 +73,15 @@ exports.location = PropTypes.string;
 
 
 
+exports.screenshot = {
+
+  isCapturing: PropTypes.bool.isRequired,
+
+};
+
+
+
+
 exports.viewport = {
 
   

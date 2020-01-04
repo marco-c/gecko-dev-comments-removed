@@ -32,6 +32,12 @@ createEnum([
   
   "ROTATE_VIEWPORT",
 
+  
+  "TAKE_SCREENSHOT_START",
+
+  
+  "TAKE_SCREENSHOT_END",
+
 ], module.exports);
 
 
