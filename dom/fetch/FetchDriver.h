@@ -125,7 +125,6 @@ private:
   BeginAndGetFilteredResponse(InternalResponse* aResponse, nsIURI* aFinalURI);
   
   
-  void BeginResponse(InternalResponse* aResponse);
   nsresult FailWithNetworkError();
   nsresult SucceedWithResponse();
   nsresult DoesNotRequirePreflight(nsIChannel* aChannel);
