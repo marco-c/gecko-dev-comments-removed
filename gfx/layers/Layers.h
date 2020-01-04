@@ -1505,6 +1505,12 @@ public:
 
 
 
+  virtual bool IsOpaque() { return GetContentFlags() & CONTENT_OPAQUE; }
+
+  
+
+
+
   float GetEffectiveOpacity();
 
   
