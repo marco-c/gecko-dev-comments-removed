@@ -580,9 +580,18 @@ StyleChildrenIterator::IsNeeded(Element* aElement)
   }
 
   
-  
   nsIAnonymousContentCreator* ac = do_QueryFrame(aElement->GetPrimaryFrame());
-  return !!ac;
+  if (ac) {
+    return true;
+  }
+
+  
+  
+  if (aElement == aElement->OwnerDoc()->GetRootElement()) {
+    return true;
+  }
+
+  return false;
 }
 
 
