@@ -100,6 +100,10 @@ static RedirEntry kRedirMap[] = {
     nsIAboutModule::URI_MUST_LOAD_IN_CHILD |
     nsIAboutModule::ALLOW_SCRIPT
   },
+  {
+    "profiles", "chrome://global/content/aboutProfiles.xhtml",
+    nsIAboutModule::ALLOW_SCRIPT
+  },
   
   
   {
