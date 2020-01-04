@@ -5044,7 +5044,12 @@ CanvasRenderingContext2D::DrawWindow(nsGlobalWindow& aWindow, double aX,
     return;
   }
 
-  EnsureTarget();
+  CompositionOp op = UsedOperation();
+  bool discardContent = GlobalAlpha() == 1.0f
+    && (op == CompositionOp::OP_OVER || op == CompositionOp::OP_SOURCE);
+  const gfx::Rect drawRect(aX, aY, aW, aH);
+  EnsureTarget(discardContent ? &drawRect : nullptr);
+
   
   
   
@@ -5147,7 +5152,7 @@ CanvasRenderingContext2D::DrawWindow(nsGlobalWindow& aWindow, double aX,
   Unused << shell->RenderDocument(r, renderDocFlags, backgroundColor, thebes);
   
   
-  EnsureTarget();
+  EnsureTarget(discardContent ? &drawRect : nullptr);
 
   if (drawDT) {
     RefPtr<SourceSurface> snapshot = drawDT->Snapshot();
@@ -5557,7 +5562,6 @@ CanvasRenderingContext2D::PutImageData_explicit(int32_t aX, int32_t aY, uint32_t
                                                 bool aHasDirtyRect, int32_t aDirtyX, int32_t aDirtyY,
                                                 int32_t aDirtyWidth, int32_t aDirtyHeight)
 {
-  EnsureTarget();
   if (mDrawObserver) {
     mDrawObserver->DidDrawCall(CanvasDrawObserver::DrawCallType::PutImageData);
   }
@@ -5663,6 +5667,12 @@ CanvasRenderingContext2D::PutImageData_explicit(int32_t aX, int32_t aY, uint32_t
     }
     srcLine += aW * 4;
   }
+
+  
+  
+  
+  const gfx::Rect putRect(dirtyRect);
+  EnsureTarget(&putRect);
 
   if (!IsTargetValid()) {
     return NS_ERROR_FAILURE;
