@@ -2,11 +2,7 @@
 
 
 
-add_task(function* test() {
-  
-  
-  yield new Promise(resolve => TabView._initFrame(resolve));
-
+function test() {
   
   let [origTab] = gBrowser.visibleTabs;
   is(gBrowser.visibleTabs.length, 1, "there is one visible tab");
@@ -55,5 +51,4 @@ add_task(function* test() {
 
   gBrowser.removeTab(testTab);
   gBrowser.removeTab(pinned);
-});
-
+}

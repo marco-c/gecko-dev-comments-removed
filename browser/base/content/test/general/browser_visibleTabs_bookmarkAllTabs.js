@@ -6,12 +6,6 @@ function test() {
   waitForExplicitFinish();
 
   
-  
-  TabView._initFrame(runTest);
-}
-
-function runTest() {
-  
   let [origTab] = gBrowser.visibleTabs;
   is(gBrowser.visibleTabs.length, 1, "1 tab should be open");  
   is(Disabled(), true, "Bookmark All Tabs should be disabled");

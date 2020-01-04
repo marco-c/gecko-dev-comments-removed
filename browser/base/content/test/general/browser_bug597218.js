@@ -6,12 +6,6 @@ function test() {
   waitForExplicitFinish();
 
   
-  
-  TabView._initFrame(runTest);
-}
-
-function runTest() {
-  
   is(gBrowser.tabs.length, 1, "we start with one tab");
   
   

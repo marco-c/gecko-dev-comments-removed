@@ -5,12 +5,6 @@
 function test() {
   waitForExplicitFinish();
 
-  
-  
-  TabView._initFrame(runTest);
-}
-
-function runTest() {
   let tabOne = gBrowser.addTab("about:blank");
   let tabTwo = gBrowser.addTab("http://mochi.test:8888/");
   gBrowser.selectedTab = tabTwo;

@@ -14,13 +14,6 @@ function testAttrib(elem, attrib, attribValue, msg) {
 
 function test() {
   waitForExplicitFinish();
-
-  
-  
-  TabView._initFrame(runTest);
-}
-
-function runTest() {
   is(gBrowser.tabs.length, 1, "one tab is open initially");
 
   

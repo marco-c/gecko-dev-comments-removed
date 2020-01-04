@@ -2,11 +2,7 @@
 
 
 
-add_task(function* test() {
-  
-  
-  yield new Promise(resolve => TabView._initFrame(resolve));
-
+function test() {
   gPrefService.setBoolPref("browser.ctrlTab.previews", true);
 
   let [origTab] = gBrowser.visibleTabs;
@@ -34,7 +30,7 @@ add_task(function* test() {
 
   if (gPrefService.prefHasUserValue("browser.ctrlTab.previews"))
     gPrefService.clearUserPref("browser.ctrlTab.previews");
-});
+}
 
 function pressCtrlTab(aShiftKey) {
   EventUtils.synthesizeKey("VK_TAB", { ctrlKey: true, shiftKey: !!aShiftKey });
