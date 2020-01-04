@@ -57,7 +57,8 @@ class GetAPK(BaseScript, VirtualenvMixin):
 
     arch_values = ["arm", "x86"]
     multi_api_archs = ["arm"]
-    multi_apis = ["api-9", "api-15"] 
+    multi_apis = ["api-15"] 
+    
 
     download_dir = "apk-download"
 
