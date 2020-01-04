@@ -57,7 +57,8 @@ SerializeTree(Accessible* aRoot, nsTArray<AccessibleData>& aTree)
   
   
   
-  if (childCount == 1 && aRoot->GetChildAt(0)->IsDoc())
+  MOZ_ASSERT(!aRoot->IsDoc(), "documents shouldn't be serialized");
+  if (aRoot->IsOuterDoc())
     childCount = 0;
 
   aTree.AppendElement(AccessibleData(id, role, childCount, interfaces));
