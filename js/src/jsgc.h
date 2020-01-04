@@ -594,12 +594,12 @@ class ArenaLists
 
 
 
-    AllAllocKindArray<ArenaHeader*> freeLists;
+    AllAllocKindArray<FreeSpan*> freeLists;
 
     
     
     
-    static ArenaHeader placeholder;
+    static FreeSpan placeholder;
 
     AllAllocKindArray<ArenaList> arenaLists;
 
@@ -716,7 +716,7 @@ class ArenaLists
     
     bool arenaIsInUse(ArenaHeader* aheader, AllocKind kind) const {
         MOZ_ASSERT(aheader);
-        return aheader == freeLists[kind];
+        return aheader == freeLists[kind]->getArenaUnchecked();
     }
 
     MOZ_ALWAYS_INLINE TenuredCell* allocateFromFreeList(AllocKind thingKind, size_t thingSize) {
@@ -739,7 +739,7 @@ class ArenaLists
     }
 
     void checkEmptyFreeList(AllocKind kind) {
-        MOZ_ASSERT(!freeLists[kind]->hasFreeThings());
+        MOZ_ASSERT(freeLists[kind]->isEmpty());
     }
 
     bool relocateArenas(Zone* zone, ArenaHeader*& relocatedListOut, JS::gcreason::Reason reason,

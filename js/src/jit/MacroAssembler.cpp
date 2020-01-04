@@ -790,14 +790,14 @@ MacroAssembler::freeListAllocate(Register result, Register temp, gc::AllocKind a
     
     
     loadPtr(AbsoluteAddress(zone->addressOfFreeList(allocKind)), temp);
-    load16ZeroExtend(Address(temp, js::gc::ArenaHeader::offsetOfFreeSpanFirst()), result);
-    load16ZeroExtend(Address(temp, js::gc::ArenaHeader::offsetOfFreeSpanLast()), temp);
+    load16ZeroExtend(Address(temp, js::gc::FreeSpan::offsetOfFirst()), result);
+    load16ZeroExtend(Address(temp, js::gc::FreeSpan::offsetOfLast()), temp);
     branch32(Assembler::AboveOrEqual, result, temp, &fallback);
 
     
     add32(Imm32(thingSize), result);
     loadPtr(AbsoluteAddress(zone->addressOfFreeList(allocKind)), temp);
-    store16(result, Address(temp, js::gc::ArenaHeader::offsetOfFreeSpanFirst()));
+    store16(result, Address(temp, js::gc::FreeSpan::offsetOfFirst()));
     sub32(Imm32(thingSize), result);
     addPtr(temp, result); 
     jump(&success);
@@ -812,7 +812,7 @@ MacroAssembler::freeListAllocate(Register result, Register temp, gc::AllocKind a
     Push(result);
     
     load32(Address(result, 0), result);
-    store32(result, Address(temp, js::gc::ArenaHeader::offsetOfFreeSpanFirst()));
+    store32(result, Address(temp, js::gc::FreeSpan::offsetOfFirst()));
     Pop(result);
 
     bind(&success);
