@@ -50,9 +50,19 @@ NodeIsInTraversalRange(nsINode* aNode, bool aIsPreMode,
 
   
   
-  if (aNode->IsNodeOfType(nsINode::eDATA_NODE) &&
-      (aNode == aStartNode || aNode == aEndNode)) {
-    return true;
+  if (aNode == aStartNode || aNode == aEndNode) {
+    if (aNode->IsNodeOfType(nsINode::eDATA_NODE)) {
+      return true; 
+    }
+    if (!aNode->HasChildren()) {
+      MOZ_ASSERT(aNode != aStartNode || !aStartOffset,
+        "aStartNode doesn't have children and not a data node, "
+        "aStartOffset should be 0");
+      MOZ_ASSERT(aNode != aEndNode || !aEndOffset,
+        "aStartNode doesn't have children and not a data node, "
+        "aStartOffset should be 0");
+      return true;
+    }
   }
 
   nsINode* parent = aNode->GetParentNode();
@@ -341,12 +351,14 @@ nsContentIterator::Init(nsIDOMRange* aDOMRange)
       
       
 
-      if (!startIsData) {
+      
+      
+      
+      if (!startIsData && startIndx) {
         mFirst = GetNextSibling(startNode);
 
         
         
-
         if (mFirst && !NodeIsInTraversalRange(mFirst, mPre, startNode,
                                               startIndx, endNode, endIndx)) {
           mFirst = nullptr;
