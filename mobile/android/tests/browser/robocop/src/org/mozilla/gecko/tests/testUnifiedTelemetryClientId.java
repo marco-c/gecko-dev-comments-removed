@@ -35,46 +35,57 @@ public class testUnifiedTelemetryClientId extends JavascriptBridgeTest {
                 getFHRClientIdFile(),
                 getFHRClientIdParentDir(),
         };
-
-        
-        
-        resetTest(false);
     }
 
     public void tearDown() throws Exception {
         
-        resetTest(false);
+        deleteClientIDFiles();
         super.tearDown();
     }
 
-    private void resetTest(final boolean resetJSCache) {
-        Log.d(LOGTAG, "resetTest: begin");
+    private void deleteClientIDFiles() {
+        Log.d(LOGTAG, "deleteClientIDFiles: begin");
 
-        if (resetJSCache) {
-            resetJSCache();
-        }
         for (final File file : filesToDeleteOnReset) {
-            file.delete();
+            file.delete(); 
             fAssertFalse("Deleted file in reset does not exist", file.exists()); 
         }
 
-        Log.d(LOGTAG, "resetTest: end");
+        Log.d(LOGTAG, "deleteClientIDFiles: end");
     }
 
     public void testUnifiedTelemetryClientId() throws Exception {
         blockForReadyAndLoadJS(TEST_JS);
-        resetJSCache(); 
         fAssertTrue("Profile directory exists", profileDir.exists());
 
         
         
-        testJavaCreatesClientId();
-        resetTest(true);
-        testJsCreatesClientId();
-        resetTest(true);
-        testJavaMigratesFromHealthReport();
-        resetTest(true);
-        testJsMigratesFromHealthReport();
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        deleteClientIDFiles();
+        primeJsClientIdCache();
+        deleteClientIDFiles();
+
+        
+        
+        testJavaCreatesClientId(); 
+        deleteClientIDFiles();
+        testJsCreatesClientId(); 
+        deleteClientIDFiles();
+        testJavaMigratesFromHealthReport(); 
+        deleteClientIDFiles();
+        testJsMigratesFromHealthReport(); 
 
         getJS().syncCall("endTest");
     }
@@ -92,6 +103,7 @@ public class testUnifiedTelemetryClientId extends JavascriptBridgeTest {
         fAssertFalse("Client id file does not exist yet", getClientIdFile().exists());
 
         final String clientIdFromJava = getClientIdFromJava();
+        resetJSCache();
         final String clientIdFromJS = getClientIdFromJS();
         fAssertEquals("Client ID from Java equals ID from JS", clientIdFromJava, clientIdFromJS);
 
@@ -116,6 +128,7 @@ public class testUnifiedTelemetryClientId extends JavascriptBridgeTest {
 
         fAssertFalse("Client id file does not exist yet", getClientIdFile().exists());
 
+        resetJSCache();
         final String clientIdFromJS = getClientIdFromJS();
         final String clientIdFromJava = getClientIdFromJava();
         fAssertEquals("Client ID from JS equals ID from Java", clientIdFromJS, clientIdFromJava);
@@ -148,6 +161,7 @@ public class testUnifiedTelemetryClientId extends JavascriptBridgeTest {
 
         final String clientIdFromJava = getClientIdFromJava();
         fAssertEquals("Health report client ID merged by Java", expectedClientId, clientIdFromJava);
+        resetJSCache();
         final String clientIdFromJS = getClientIdFromJS();
         fAssertEquals("Merged client ID read by JS", expectedClientId, clientIdFromJS);
 
@@ -177,6 +191,7 @@ public class testUnifiedTelemetryClientId extends JavascriptBridgeTest {
         final String expectedClientId = UUID.randomUUID().toString();
         createFHRClientIdFile(expectedClientId);
 
+        resetJSCache();
         final String clientIdFromJS = getClientIdFromJS();
         fAssertEquals("Health report client ID merged by JS", expectedClientId, clientIdFromJS);
         final String clientIdFromJava = getClientIdFromJava();
@@ -205,6 +220,17 @@ public class testUnifiedTelemetryClientId extends JavascriptBridgeTest {
     }
 
     
+
+
+    private void primeJsClientIdCache() {
+        
+        getClientIdFromJS();
+    }
+
+    
+
+
+
 
 
 
