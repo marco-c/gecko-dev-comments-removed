@@ -20,6 +20,12 @@ const TEST_WAIT_RETRIES = 60;
 const TEST_PAGE_URL = getRootDirectory(gTestPath) + "uitour.html";
 const TEST_PAGE_URL_HTTPS = TEST_PAGE_URL.replace("chrome://mochitests/content/", "https://example.com/");
 
+function sendSessionRestoredNotification() {
+  let selfSupportBackendImpl =
+    Cu.import("resource:///modules/SelfSupportBackend.jsm", {}).SelfSupportBackendInternal;
+  selfSupportBackendImpl.observe(null, "sessionstore-windows-restored", null);
+}
+
 
 
 
@@ -128,7 +134,7 @@ add_task(function* test_selfSupport() {
 
   
   info("Sending sessionstore-windows-restored");
-  Services.obs.notifyObservers(null, "sessionstore-windows-restored", null);
+  sendSessionRestoredNotification();
 
   
   info("Waiting for the SelfSupport local page to load.");
@@ -196,7 +202,7 @@ add_task(function* test_selfSupport_noHTTPS() {
 
   
   info("Sending sessionstore-windows-restored");
-  Services.obs.notifyObservers(null, "sessionstore-windows-restored", null);
+  sendSessionRestoredNotification();
 
   
   let selfSupportBrowser = findSelfSupportBrowser(TEST_PAGE_URL);
