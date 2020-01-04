@@ -2,7 +2,6 @@
 
 
 
-
 let {classes: Cc, interfaces: Ci, utils: Cu, results: Cr} = Components;
 
 let uuidGen = Cc["@mozilla.org/uuid-generator;1"]
@@ -192,6 +191,7 @@ let getElementTextFn = dispatch(getElementText);
 let getElementTagNameFn = dispatch(getElementTagName);
 let getElementRectFn = dispatch(getElementRect);
 let isElementEnabledFn = dispatch(isElementEnabled);
+let getCurrentUrlFn = dispatch(getCurrentUrl);
 
 
 
@@ -208,7 +208,7 @@ function startListeners() {
   addMessageListenerId("Marionette:get", get);
   addMessageListenerId("Marionette:pollForReadyState", pollForReadyState);
   addMessageListenerId("Marionette:cancelRequest", cancelRequest);
-  addMessageListenerId("Marionette:getCurrentUrl", getCurrentUrl);
+  addMessageListenerId("Marionette:getCurrentUrl", getCurrentUrlFn);
   addMessageListenerId("Marionette:getTitle", getTitle);
   addMessageListenerId("Marionette:getPageSource", getPageSource);
   addMessageListenerId("Marionette:goBack", goBack);
@@ -315,7 +315,7 @@ function deleteSession(msg) {
   removeMessageListenerId("Marionette:cancelRequest", cancelRequest);
   removeMessageListenerId("Marionette:getTitle", getTitle);
   removeMessageListenerId("Marionette:getPageSource", getPageSource);
-  removeMessageListenerId("Marionette:getCurrentUrl", getCurrentUrl);
+  removeMessageListenerId("Marionette:getCurrentUrl", getCurrentUrlFn);
   removeMessageListenerId("Marionette:goBack", goBack);
   removeMessageListenerId("Marionette:goForward", goForward);
   removeMessageListenerId("Marionette:refresh", refresh);
@@ -1323,14 +1323,12 @@ function cancelRequest() {
 
 
 
-function getCurrentUrl(msg) {
-  let url;
-  if (msg.json.isB2G) {
-    url = curFrame.location.href;
+function getCurrentUrl(isB2G) {
+  if (isB2G) {
+    return curFrame.location.href;
   } else {
-    url = content.location.href;
+    return content.location.href;
   }
-  sendResponse({value: url}, msg.json.command_id);
 }
 
 
