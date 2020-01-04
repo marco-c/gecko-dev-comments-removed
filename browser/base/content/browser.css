@@ -249,16 +249,6 @@ toolbar[customizing] > .overflow-button {
 }
 
 
-
-#titlebar-buttonbox-container:-moz-locale-dir(ltr) {
-  -moz-box-align: start;
-}
-
-#titlebar-buttonbox-container:-moz-locale-dir(rtl) {
-  -moz-box-align: end;
-}
-
-
 #titlebar-secondary-buttonbox:-moz-locale-dir(ltr),
 #titlebar-buttonbox-container:-moz-locale-dir(rtl),
 .titlebar-placeholder[type="fullscreen-button"]:-moz-locale-dir(ltr),
