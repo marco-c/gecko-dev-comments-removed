@@ -1892,9 +1892,26 @@ JS_IdToValue(JSContext* cx, jsid id, JS::MutableHandle<JS::Value> vp);
 
 
 
+
+
+
 extern JS_PUBLIC_API(bool)
-JS_DefaultValue(JSContext* cx, JS::Handle<JSObject*> obj, JSType hint,
-                JS::MutableHandle<JS::Value> vp);
+JS_DefaultValue(JSContext* cx, JS::HandleObject obj, JSType hint,
+                JS::MutableHandleValue vp);
+
+namespace JS {
+
+
+
+
+
+
+
+
+extern JS_PUBLIC_API(bool)
+GetFirstArgumentAsTypeHint(JSContext* cx, CallArgs args, JSType *result);
+
+} 
 
 extern JS_PUBLIC_API(bool)
 JS_PropertyStub(JSContext* cx, JS::HandleObject obj, JS::HandleId id,
@@ -2101,7 +2118,7 @@ struct JSFunctionSpec {
     JS_FNSPEC(name, call, nullptr, nargs, (flags) | JSFUN_STUB_GSOPS, nullptr)
 #define JS_INLINABLE_FN(name,call,nargs,flags,native)                         \
     JS_FNSPEC(name, call, &js::jit::JitInfo_##native, nargs, (flags) | JSFUN_STUB_GSOPS, nullptr)
-#define JS_SYM_FN(name,call,nargs,flags)                                      \
+#define JS_SYM_FN(symbol,call,nargs,flags)                                    \
     JS_SYM_FNSPEC(symbol, call, nullptr, nargs, (flags) | JSFUN_STUB_GSOPS, nullptr)
 #define JS_FNINFO(name,call,info,nargs,flags)                                 \
     JS_FNSPEC(name, call, info, nargs, flags, nullptr)
@@ -4371,14 +4388,15 @@ GetSymbolDescription(HandleSymbol symbol);
 
 enum class SymbolCode : uint32_t {
     iterator,                       
-    match,                          
-    species,                        
+    match,
+    species,
+    toPrimitive,
     InSymbolRegistry = 0xfffffffe,  
     UniqueSymbol = 0xffffffff       
 };
 
 
-const size_t WellKnownSymbolLimit = 3;
+const size_t WellKnownSymbolLimit = 4;
 
 
 
