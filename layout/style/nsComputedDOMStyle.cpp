@@ -2359,7 +2359,7 @@ nsComputedDOMStyle::DoGetBackgroundOrigin()
 
 void
 nsComputedDOMStyle::SetValueToPositionCoord(
-    const Position::Coord& aCoord,
+    const nsStyleImageLayers::Position::PositionCoord& aCoord,
     nsROCSSPrimitiveValue* aValue)
 {
   if (!aCoord.mHasPercent) {
@@ -2375,7 +2375,7 @@ nsComputedDOMStyle::SetValueToPositionCoord(
 
 void
 nsComputedDOMStyle::SetValueToPosition(
-    const Position& aPosition,
+    const nsStyleImageLayers::Position& aPosition,
     nsDOMCSSValueList* aValueList)
 {
   RefPtr<nsROCSSPrimitiveValue> valX = new nsROCSSPrimitiveValue;
@@ -2531,6 +2531,21 @@ already_AddRefed<CSSValue>
 nsComputedDOMStyle::GetGridTrackSize(const nsStyleCoord& aMinValue,
                                      const nsStyleCoord& aMaxValue)
 {
+  if (aMinValue.GetUnit() == eStyleUnit_None) {
+    
+    RefPtr<nsROCSSPrimitiveValue> val = new nsROCSSPrimitiveValue;
+    nsAutoString argumentStr, fitContentStr;
+    fitContentStr.AppendLiteral("fit-content(");
+    MOZ_ASSERT(aMaxValue.IsCoordPercentCalcUnit(),
+               "unexpected unit for fit-content() argument value");
+    SetValueToCoord(val, aMaxValue, true);
+    val->GetCssText(argumentStr);
+    fitContentStr.Append(argumentStr);
+    fitContentStr.Append(char16_t(')'));
+    val->SetString(fitContentStr);
+    return val.forget();
+  }
+
   if (aMinValue == aMaxValue) {
     RefPtr<nsROCSSPrimitiveValue> val = new nsROCSSPrimitiveValue;
     SetValueToCoord(val, aMinValue, true,
@@ -6148,8 +6163,7 @@ nsComputedDOMStyle::DoGetMask()
       firstLayer.mOrigin != NS_STYLE_IMAGELAYER_ORIGIN_BORDER ||
       firstLayer.mComposite != NS_STYLE_MASK_COMPOSITE_ADD ||
       firstLayer.mMaskMode != NS_STYLE_MASK_MODE_MATCH_SOURCE ||
-      !nsStyleImageLayers::IsInitialPositionForLayerType(
-        firstLayer.mPosition, nsStyleImageLayers::LayerType::Mask) ||
+      !firstLayer.mPosition.IsInitialValue(nsStyleImageLayers::LayerType::Mask) ||
       !firstLayer.mRepeat.IsInitialValue(nsStyleImageLayers::LayerType::Mask) ||
       !firstLayer.mSize.IsInitialValue() ||
       !(firstLayer.mImage.GetType() == eStyleImageType_Null ||

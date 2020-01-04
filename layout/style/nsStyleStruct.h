@@ -110,8 +110,6 @@ static_assert(NS_STYLE_INHERIT_MASK == (1 << nsStyleStructID_Length) - 1,
 static_assert((NS_RULE_NODE_IS_ANIMATION_RULE & NS_STYLE_INHERIT_MASK) == 0,
   "NS_RULE_NODE_IS_ANIMATION_RULE must not overlap the style struct bits.");
 
-namespace mozilla {
-
 struct FragmentOrURL
 {
   FragmentOrURL() : mIsLocalRef(false) {}
@@ -144,39 +142,6 @@ private:
   nsCOMPtr<nsIURI> mURL;
   bool    mIsLocalRef;
 };
-
-struct Position {
-  using Coord = nsStyleCoord::CalcValue;
-
-  Coord mXPosition, mYPosition;
-
-  
-  Position() {}
-
-  
-  
-  void SetInitialPercentValues(float aPercentVal);
-
-  
-  
-  void SetInitialZeroValues();
-
-  
-  
-  bool DependsOnPositioningAreaSize() const {
-    return mXPosition.mPercent != 0.0f || mYPosition.mPercent != 0.0f;
-  }
-
-  bool operator==(const Position& aOther) const {
-    return mXPosition == aOther.mXPosition &&
-      mYPosition == aOther.mYPosition;
-  }
-  bool operator!=(const Position& aOther) const {
-    return !(*this == aOther);
-  }
-};
-
-} 
 
 
 struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleFont
@@ -592,11 +557,43 @@ struct nsStyleImageLayers {
     MOZ_COUNT_DTOR(nsStyleImageLayers);
   }
 
-  static bool IsInitialPositionForLayerType(mozilla::Position aPosition, LayerType aType);
+  struct Position;
+  friend struct Position;
+  struct Position {
+    typedef nsStyleCoord::CalcValue PositionCoord;
+    PositionCoord mXPosition, mYPosition;
 
-  static float GetInitialPositionForLayerType(LayerType aType) {
-    return (aType == LayerType::Background) ? 0.0f : 0.5f;
-  }
+    
+    Position() {}
+
+    bool IsInitialValue(LayerType aType) const;
+
+    static float GetInitialValue(LayerType aType) {
+      return (aType == LayerType::Background) ? 0.0f : 0.5f;
+    }
+
+    
+    
+    void SetInitialPercentValues(float aPercentVal);
+
+    
+    
+    void SetInitialZeroValues();
+
+    
+    
+    bool DependsOnPositioningAreaSize() const {
+      return mXPosition.mPercent != 0.0f || mYPosition.mPercent != 0.0f;
+    }
+
+    bool operator==(const Position& aOther) const {
+      return mXPosition == aOther.mXPosition &&
+             mYPosition == aOther.mYPosition;
+    }
+    bool operator!=(const Position& aOther) const {
+      return !(*this == aOther);
+    }
+  };
 
   struct Size;
   friend struct Size;
@@ -692,14 +689,14 @@ struct nsStyleImageLayers {
   friend struct Layer;
   struct Layer {
     nsStyleImage  mImage;         
-    mozilla::FragmentOrURL mSourceURI;  
+    FragmentOrURL mSourceURI;     
                                   
                                   
                                   
                                   
                                   
                                   
-    mozilla::Position mPosition;  
+    Position      mPosition;      
     Size          mSize;          
     uint8_t       mClip;          
     MOZ_INIT_OUTSIDE_CTOR
@@ -1335,7 +1332,7 @@ public:
   uint8_t        mBorderImageRepeatH; 
   uint8_t        mBorderImageRepeatV; 
   mozilla::StyleFloatEdge mFloatEdge; 
-  mozilla::StyleBoxDecorationBreak mBoxDecorationBreak; 
+  uint8_t        mBoxDecorationBreak; 
 
 protected:
   
@@ -1671,6 +1668,8 @@ struct nsStyleGridLine
 
 
 
+
+
 struct nsStyleGridTemplate
 {
   nsTArray<nsTArray<nsString>> mLineNameLists;
@@ -1745,6 +1744,10 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStylePosition
   }
 
   
+  
+  typedef nsStyleImageLayers::Position Position;
+
+  
 
 
   uint16_t ComputedAlignContent() const { return mAlignContent; }
@@ -1777,7 +1780,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStylePosition
 
   uint8_t ComputedJustifySelf(nsStyleContext* aParent) const;
 
-  mozilla::Position mObjectPosition;    
+  Position      mObjectPosition;        
   nsStyleSides  mOffset;                
   nsStyleCoord  mWidth;                 
   nsStyleCoord  mMinWidth;              
@@ -2546,6 +2549,7 @@ public:
     mFillRule = aFillRule;
   }
 
+  typedef nsStyleImageLayers::Position Position;
   Position& GetPosition() {
     MOZ_ASSERT(mType == StyleBasicShapeType::Circle ||
                mType == StyleBasicShapeType::Ellipse,
@@ -2822,6 +2826,11 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay
 
   
   
+  
+  typedef nsStyleImageLayers::Position Position;
+
+  
+  
   RefPtr<mozilla::css::URLValue> mBinding;    
   uint8_t mDisplay;             
   uint8_t mOriginalDisplay;     
@@ -2861,8 +2870,8 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay
   uint8_t mScrollSnapTypeY;     
   nsStyleCoord mScrollSnapPointsX; 
   nsStyleCoord mScrollSnapPointsY; 
-  mozilla::Position mScrollSnapDestination; 
-  nsTArray<mozilla::Position> mScrollSnapCoordinate; 
+  Position mScrollSnapDestination; 
+  nsTArray<Position> mScrollSnapCoordinate; 
 
   
   
@@ -3429,10 +3438,10 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleXUL
 
   float         mBoxFlex;               
   uint32_t      mBoxOrdinal;            
-  mozilla::StyleBoxAlign mBoxAlign;         
-  mozilla::StyleBoxDirection mBoxDirection; 
-  mozilla::StyleBoxOrient mBoxOrient;       
-  mozilla::StyleBoxPack mBoxPack;           
+  uint8_t       mBoxAlign;              
+  uint8_t       mBoxDirection;          
+  uint8_t       mBoxOrient;             
+  uint8_t       mBoxPack;               
   bool          mStretchStack;          
 };
 
@@ -3516,7 +3525,7 @@ struct nsStyleSVGPaint
 {
   union {
     nscolor mColor;
-    mozilla::FragmentOrURL* mPaintServer;
+    FragmentOrURL* mPaintServer;
   } mPaint;
   nsStyleSVGPaintType mType;
   nscolor mFallbackColor;
@@ -3567,9 +3576,9 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleSVG
 
   nsStyleSVGPaint  mFill;             
   nsStyleSVGPaint  mStroke;           
-  mozilla::FragmentOrURL mMarkerEnd;        
-  mozilla::FragmentOrURL mMarkerMid;        
-  mozilla::FragmentOrURL mMarkerStart;      
+  FragmentOrURL    mMarkerEnd;        
+  FragmentOrURL    mMarkerMid;        
+  FragmentOrURL    mMarkerStart;      
   nsTArray<nsStyleCoord> mStrokeDasharray;  
 
   nsStyleCoord     mStrokeDashoffset; 
@@ -3694,7 +3703,7 @@ struct nsStyleFilter
   void SetFilterParameter(const nsStyleCoord& aFilterParameter,
                           int32_t aType);
 
-  mozilla::FragmentOrURL* GetURL() const {
+  FragmentOrURL* GetURL() const {
     NS_ASSERTION(mType == NS_STYLE_FILTER_URL, "wrong filter type");
     return mURL;
   }
@@ -3714,7 +3723,7 @@ private:
   int32_t mType; 
   nsStyleCoord mFilterParameter; 
   union {
-    mozilla::FragmentOrURL* mURL;
+    FragmentOrURL* mURL;
     nsCSSShadowArray* mDropShadow;
   };
 };
