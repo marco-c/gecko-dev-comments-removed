@@ -8,9 +8,8 @@
 
 #include <stdint.h>                     
 #include "nsRect.h"                     
+#include "nsRegionFwd.h"                
 #include "nsTArray.h"                   
- 
-class nsIntRegion;
 
 namespace mozilla {
 namespace layers {

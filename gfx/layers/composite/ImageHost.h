@@ -20,9 +20,8 @@
 #include "mozilla/mozalloc.h"           
 #include "nsCOMPtr.h"                   
 #include "nsRect.h"                     
+#include "nsRegionFwd.h"                
 #include "nscore.h"                     
-
-class nsIntRegion;
 
 namespace mozilla {
 namespace gfx {

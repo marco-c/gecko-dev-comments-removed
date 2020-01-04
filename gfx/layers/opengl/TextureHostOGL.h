@@ -29,9 +29,8 @@
 #include "nsCOMPtr.h"                   
 #include "nsDebug.h"                    
 #include "nsISupportsImpl.h"            
+#include "nsRegionFwd.h"                
 #include "OGLShaderProgram.h"           
-
-class nsIntRegion;
 
 namespace mozilla {
 namespace gfx {

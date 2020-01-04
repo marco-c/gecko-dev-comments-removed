@@ -15,11 +15,11 @@
 #include "nsPoint.h"                    
 #include "nsRect.h"                     
 #include "nsMargin.h"                   
+#include "nsRegionFwd.h"                
 #include "nsStringGlue.h"               
 #include "xpcom-config.h"               
 #include "mozilla/Move.h"               
 
-class nsIntRegion;
 namespace mozilla {
 namespace gfx {
 class Matrix4x4;
@@ -821,30 +821,42 @@ private:
   }
 };
 
-} 
-} 
-
-class nsIntRegion : public mozilla::gfx::BaseIntRegion<nsIntRegion, mozilla::gfx::IntRect, nsIntPoint, nsIntMargin>
+template <class units>
+class IntRegionTyped :
+    public BaseIntRegion<IntRegionTyped<units>, IntRectTyped<units>, IntPointTyped<units>, IntMarginTyped<units>>
 {
+  typedef BaseIntRegion<IntRegionTyped<units>, IntRectTyped<units>, IntPointTyped<units>, IntMarginTyped<units>> Super;
 public:
   
-  nsIntRegion() {}
-  MOZ_IMPLICIT nsIntRegion(const mozilla::gfx::IntRect& aRect) : BaseIntRegion(aRect) {}
-  nsIntRegion(const nsIntRegion& aRegion) : BaseIntRegion(aRegion) {}
-  nsIntRegion(nsIntRegion&& aRegion) : BaseIntRegion(mozilla::Move(aRegion)) {}
+  IntRegionTyped() {}
+  MOZ_IMPLICIT IntRegionTyped(const IntRectTyped<units>& aRect) : Super(aRect) {}
+  IntRegionTyped(const IntRegionTyped& aRegion) : Super(aRegion) {}
+  IntRegionTyped(IntRegionTyped&& aRegion) : Super(mozilla::Move(aRegion)) {}
 
   
   
-  nsIntRegion& operator=(const nsIntRegion& aRegion)
+  IntRegionTyped& operator=(const IntRegionTyped& aRegion)
   {
-    return BaseIntRegion::operator=(aRegion);
+    return Super::operator=(aRegion);
   }
-  nsIntRegion& operator=(nsIntRegion&& aRegion)
+  IntRegionTyped& operator=(IntRegionTyped&& aRegion)
   {
-    return BaseIntRegion::operator=(mozilla::Move(aRegion));
+    return Super::operator=(mozilla::Move(aRegion));
   }
+
+  static IntRegionTyped FromUntyped(const IntRegionTyped<UnknownUnits>& aRegion)
+  {
+    return IntRegionTyped(aRegion.Impl());
+  }
+private:
+  
+  explicit IntRegionTyped(const nsRegion& aRegion) : Super(aRegion) {}
 };
 
+} 
+} 
+
+typedef mozilla::gfx::IntRegion nsIntRegion;
 typedef nsIntRegion::RectIterator nsIntRegionRectIterator;
 
 #endif

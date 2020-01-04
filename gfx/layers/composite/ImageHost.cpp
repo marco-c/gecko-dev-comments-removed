@@ -17,8 +17,6 @@
 #include "nsPrintfCString.h"            
 #include "nsString.h"                   
 
-class nsIntRegion;
-
 #define BIAS_TIME_MS 1.0
 
 namespace mozilla {
