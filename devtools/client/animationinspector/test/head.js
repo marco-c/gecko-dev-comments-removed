@@ -20,7 +20,6 @@ const TEST_URL_ROOT = "http://example.com/browser/devtools/client/animationinspe
 const ROOT_TEST_DIR = getRootDirectory(gTestPath);
 const FRAME_SCRIPT_URL = ROOT_TEST_DIR + "doc_frame_script.js";
 const COMMON_FRAME_SCRIPT_URL = "chrome://devtools/content/shared/frame-script-utils.js";
-const NEW_UI_PREF = "devtools.inspector.animationInspectorV3";
 const TAB_NAME = "animationinspector";
 
 
@@ -31,9 +30,6 @@ registerCleanupFunction(function*() {
     gBrowser.removeCurrentTab();
   }
 });
-
-
-Services.prefs.setBoolPref(NEW_UI_PREF, false);
 
 
 
@@ -50,7 +46,6 @@ registerCleanupFunction(() => DevToolsUtils.testing = false);
 registerCleanupFunction(() => {
   Services.prefs.clearUserPref("devtools.dump.emit");
   Services.prefs.clearUserPref("devtools.debugger.log");
-  Services.prefs.clearUserPref(NEW_UI_PREF);
 });
 
 
@@ -144,10 +139,11 @@ var selectNode = Task.async(function*(data, inspector, reason="test") {
 
 
 
-function assertAnimationsDisplayed(panel, nbAnimations, msg="") {
+function assertAnimationsDisplayed(panel, nbAnimations, msg = "") {
   msg = msg || `There are ${nbAnimations} animations in the panel`;
-  is(panel.animationsTimelineComponent.animationsEl.childNodes.length,
-     nbAnimations, msg);
+  is(panel.animationsTimelineComponent
+          .animationsEl
+          .querySelectorAll(".animation").length, nbAnimations, msg);
 }
 
 

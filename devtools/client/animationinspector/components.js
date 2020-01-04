@@ -257,7 +257,9 @@ AnimationTargetNode.prototype = {
     this.inspector.selection.setNodeFront(this.nodeFront, "animationinspector");
   },
 
-  onHighlightNodeClick: function() {
+  onHighlightNodeClick: function(e) {
+    e.stopPropagation();
+
     let classList = this.highlightNodeEl.classList;
 
     let isHighlighted = classList.contains("selected");
@@ -466,7 +468,8 @@ var TimeScale = {
     let length = (delay / playbackRate) +
                  ((duration / playbackRate) *
                   (!iterationCount ? 1 : iterationCount));
-    this.maxEndTime = Math.max(this.maxEndTime, previousStartTime + length);
+    let endTime = previousStartTime + length;
+    this.maxEndTime = Math.max(this.maxEndTime, endTime);
   },
 
   
@@ -493,7 +496,7 @@ var TimeScale = {
 
 
   durationToDistance: function(duration) {
-    return duration * 100 / (this.maxEndTime - this.minStartTime);
+    return duration * 100 / this.getDuration();
   },
 
   
@@ -502,8 +505,7 @@ var TimeScale = {
 
 
   distanceToTime: function(distance) {
-    return this.minStartTime +
-      ((this.maxEndTime - this.minStartTime) * distance / 100);
+    return this.minStartTime + (this.getDuration() * distance / 100);
   },
 
   
@@ -524,15 +526,44 @@ var TimeScale = {
 
 
   formatTime: function(time) {
-    let duration = this.maxEndTime - this.minStartTime;
-
     
-    if (duration <= MILLIS_TIME_FORMAT_MAX_DURATION) {
+    if (this.getDuration() <= MILLIS_TIME_FORMAT_MAX_DURATION) {
       return L10N.getFormatStr("timeline.timeGraduationLabel", time.toFixed(0));
     }
 
     
     return L10N.getFormatStr("player.timeLabel", (time / 1000).toFixed(1));
+  },
+
+  getDuration: function() {
+    return this.maxEndTime - this.minStartTime;
+  },
+
+  
+
+
+
+  getAnimationDimensions: function({state}) {
+    let start = state.previousStartTime || 0;
+    let duration = state.duration;
+    let rate = state.playbackRate;
+    let count = state.iterationCount;
+    let delay = state.delay || 0;
+
+    
+    let x = this.startTimeToDistance(start + (delay / rate));
+    
+    let w = this.durationToDistance(duration / rate);
+    
+    let iterationW = w * (count || 1);
+    
+    let delayX = this.durationToDistance((delay < 0 ? 0 : delay) / rate);
+    
+    let delayW = this.durationToDistance(Math.abs(delay) / rate);
+    
+    let negativeDelayW = delay < 0 ? delayW : 0;
+
+    return {x, w, iterationW, delayX, delayW, negativeDelayW};
   }
 };
 
@@ -556,6 +587,7 @@ function AnimationsTimeline(inspector) {
   this.animations = [];
   this.targetNodes = [];
   this.timeBlocks = [];
+  this.details = [];
   this.inspector = inspector;
 
   this.onAnimationStateChanged = this.onAnimationStateChanged.bind(this);
@@ -565,6 +597,7 @@ function AnimationsTimeline(inspector) {
   this.onScrubberMouseMove = this.onScrubberMouseMove.bind(this);
   this.onAnimationSelected = this.onAnimationSelected.bind(this);
   this.onWindowResize = this.onWindowResize.bind(this);
+  this.onFrameSelected = this.onFrameSelected.bind(this);
 
   EventEmitter.decorate(this);
 }
@@ -584,7 +617,7 @@ AnimationsTimeline.prototype = {
 
     let scrubberContainer = createNode({
       parent: this.rootWrapperEl,
-      attributes: {"class": "scrubber-wrapper"}
+      attributes: {"class": "scrubber-wrapper track-container"}
     });
 
     this.scrubberEl = createNode({
@@ -605,7 +638,7 @@ AnimationsTimeline.prototype = {
     this.timeHeaderEl = createNode({
       parent: this.rootWrapperEl,
       attributes: {
-        "class": "time-header"
+        "class": "time-header track-container"
       }
     });
     this.timeHeaderEl.addEventListener("mousedown", this.onScrubberMouseDown);
@@ -643,19 +676,20 @@ AnimationsTimeline.prototype = {
     this.inspector = null;
   },
 
-  destroyTargetNodes: function() {
-    for (let targetNode of this.targetNodes) {
-      targetNode.destroy();
-    }
-    this.targetNodes = [];
-  },
+  
 
-  destroyTimeBlocks: function() {
-    for (let timeBlock of this.timeBlocks) {
-      timeBlock.off("selected", this.onAnimationSelected);
-      timeBlock.destroy();
+
+
+
+
+  destroySubComponents: function(name, handlers = []) {
+    for (let component of this[name]) {
+      for (let {event, fn} of handlers) {
+        component.off(event, fn);
+      }
+      component.destroy();
     }
-    this.timeBlocks = [];
+    this[name] = [];
   },
 
   unrender: function() {
@@ -663,8 +697,12 @@ AnimationsTimeline.prototype = {
       animation.off("changed", this.onAnimationStateChanged);
     }
     TimeScale.reset();
-    this.destroyTargetNodes();
-    this.destroyTimeBlocks();
+    this.destroySubComponents("targetNodes");
+    this.destroySubComponents("timeBlocks");
+    this.destroySubComponents("details", [{
+      event: "frame-selected",
+      fn: this.onFrameSelected
+    }]);
     this.animationsEl.innerHTML = "";
   },
 
@@ -679,21 +717,33 @@ AnimationsTimeline.prototype = {
   },
 
   onAnimationSelected: function(e, animation) {
-    
-    [...this.rootWrapperEl.querySelectorAll(".animation.selected")].forEach(el => {
-      el.classList.remove("selected");
-    });
-
-    
     let index = this.animations.indexOf(animation);
     if (index === -1) {
       return;
     }
-    this.rootWrapperEl.querySelectorAll(".animation")[index]
-                      .classList.toggle("selected");
+
+    let el = this.rootWrapperEl;
+    let animationEl = el.querySelectorAll(".animation")[index];
+    let propsEl = el.querySelectorAll(".animated-properties")[index];
 
     
-    this.emit("selected", animation);
+    animationEl.classList.toggle("selected");
+    propsEl.classList.toggle("selected");
+
+    
+    if (animationEl.classList.contains("selected")) {
+      this.details[index].render(animation);
+      this.emit("animation-selected", animation);
+    } else {
+      this.emit("animation-unselected", animation);
+    }
+  },
+
+  
+
+
+  onFrameSelected: function(e, {x}) {
+    this.moveScrubberTo(x, true);
   },
 
   onScrubberMouseDown: function(e) {
@@ -728,14 +778,17 @@ AnimationsTimeline.prototype = {
     this.moveScrubberTo(e.pageX);
   },
 
-  moveScrubberTo: function(pageX) {
+  moveScrubberTo: function(pageX, noOffset) {
     this.stopAnimatingScrubber();
 
     
     
     
-    let offset = (pageX - this.timeHeaderEl.offsetLeft) * 100 /
-                 this.timeHeaderEl.offsetWidth;
+    let offset = pageX;
+    if (!noOffset) {
+      offset -= this.timeHeaderEl.offsetLeft;
+    }
+    offset = offset * 100 / this.timeHeaderEl.offsetWidth;
     if (offset < 0) {
       offset = 0;
     }
@@ -783,12 +836,28 @@ AnimationsTimeline.prototype = {
       });
 
       
+      
+      let detailsEl = createNode({
+        parent: this.animationsEl,
+        nodeType: "li",
+        attributes: {
+          "class": "animated-properties"
+        }
+      });
+
+      let details = new AnimationDetails();
+      details.init(detailsEl);
+      details.on("frame-selected", this.onFrameSelected);
+      this.details.push(details);
+
+      
       let animatedNodeEl = createNode({
         parent: animationEl,
         attributes: {
           "class": "target"
         }
       });
+
       
       let targetNode = new AnimationTargetNode(this.inspector, {compact: true});
       targetNode.init(animatedNodeEl);
@@ -799,9 +868,10 @@ AnimationsTimeline.prototype = {
       let timeBlockEl = createNode({
         parent: animationEl,
         attributes: {
-          "class": "time-block"
+          "class": "time-block track-container"
         }
       });
+
       
       let timeBlock = new AnimationTimeBlock();
       timeBlock.init(timeBlockEl);
@@ -810,6 +880,7 @@ AnimationsTimeline.prototype = {
 
       timeBlock.on("selected", this.onAnimationSelected);
     }
+
     
     
     
@@ -932,47 +1003,45 @@ AnimationTimeBlock.prototype = {
 
   destroy: function() {
     this.containerEl.removeEventListener("click", this.onClick);
-    while (this.containerEl.firstChild) {
-      this.containerEl.firstChild.remove();
-    }
+    this.unrender();
     this.containerEl = null;
     this.animation = null;
   },
 
+  unrender: function() {
+    while (this.containerEl.firstChild) {
+      this.containerEl.firstChild.remove();
+    }
+  },
+
   render: function(animation) {
+    this.unrender();
+
     this.animation = animation;
     let {state} = this.animation;
 
     
     
     
-    let start = state.previousStartTime || 0;
-    let duration = state.duration;
-    let rate = state.playbackRate;
-    let count = state.iterationCount;
-    let delay = state.delay || 0;
-
-    let x = TimeScale.startTimeToDistance(start + (delay / rate));
-    let w = TimeScale.durationToDistance(duration / rate);
-    let iterationW = w * (count || 1);
-    let delayW = TimeScale.durationToDistance(Math.abs(delay) / rate);
+    let {x, iterationW, delayX, delayW, negativeDelayW} =
+      TimeScale.getAnimationDimensions(animation);
 
     let iterations = createNode({
       parent: this.containerEl,
       attributes: {
-        "class": state.type + " iterations" + (count ? "" : " infinite"),
+        "class": state.type + " iterations" +
+                 (state.iterationCount ? "" : " infinite"),
         
         
         "style": `left:${x}%;
                   width:${iterationW}%;
-                  background-size:${100 / (count || 1)}% 100%;`
+                  background-size:${100 / (state.iterationCount || 1)}% 100%;`
       }
     });
 
     
     
     
-    let negativeDelayW = delay < 0 ? delayW : 0;
     createNode({
       parent: iterations,
       attributes: {
@@ -985,13 +1054,12 @@ AnimationTimeBlock.prototype = {
     });
 
     
-    if (delay) {
+    if (state.delay) {
       
-      let delayX = TimeScale.durationToDistance((delay < 0 ? 0 : delay) / rate);
       createNode({
         parent: iterations,
         attributes: {
-          "class": "delay" + (delay < 0 ? " negative" : ""),
+          "class": "delay" + (state.delay < 0 ? " negative" : ""),
           "style": `left:-${delayX}%;
                     width:${delayW}%;`
         }
@@ -1006,11 +1074,7 @@ AnimationTimeBlock.prototype = {
     let text = "";
 
     
-    
-    text +=
-      state.type
-      ? L10N.getFormatStr("timeline." + state.type + ".nameLabel", state.name)
-      : state.name;
+    text += getFormattedAnimationTitle({state});
     text += "\n";
 
     
@@ -1046,9 +1110,239 @@ AnimationTimeBlock.prototype = {
     return text;
   },
 
-  onClick: function() {
+  onClick: function(e) {
+    e.stopPropagation();
     this.emit("selected", this.animation);
   }
 };
 
+
+
+
+
+
+
+function AnimationDetails() {
+  EventEmitter.decorate(this);
+
+  this.onFrameSelected = this.onFrameSelected.bind(this);
+
+  this.keyframeComponents = [];
+}
+
+exports.AnimationDetails = AnimationDetails;
+
+AnimationDetails.prototype = {
+  
+  
+  NON_PROPERTIES: ["easing", "composite", "computedOffset", "offset"],
+
+  init: function(containerEl) {
+    this.containerEl = containerEl;
+  },
+
+  destroy: function() {
+    this.unrender();
+    this.containerEl = null;
+  },
+
+  unrender: function() {
+    for (let component of this.keyframeComponents) {
+      component.off("frame-selected", this.onFrameSelected);
+      component.destroy();
+    }
+    this.keyframeComponents = [];
+
+    while (this.containerEl.firstChild) {
+      this.containerEl.firstChild.remove();
+    }
+  },
+
+  
+
+
+
+  getTracksFromFrames: function(frames) {
+    let tracks = {};
+
+    for (let frame of frames) {
+      for (let name in frame) {
+        if (this.NON_PROPERTIES.indexOf(name) != -1) {
+          continue;
+        }
+
+        if (!tracks[name]) {
+          tracks[name] = [];
+        }
+
+        tracks[name].push({
+          value: frame[name],
+          offset: frame.computedOffset
+        });
+      }
+    }
+
+    return tracks;
+  },
+
+  render: Task.async(function*(animation) {
+    this.unrender();
+
+    if (!animation) {
+      return;
+    }
+    this.animation = animation;
+
+    let frames = yield animation.getFrames();
+
+    
+    
+    if (!this.containerEl || this.animation !== animation) {
+      return;
+    }
+    
+    this.emit("keyframes-retrieved");
+
+    
+    this.tracks = this.getTracksFromFrames(frames);
+    for (let propertyName in this.tracks) {
+      let line = createNode({
+        parent: this.containerEl,
+        attributes: {"class": "property"}
+      });
+
+      createNode({
+        
+        
+        
+        parent: createNode({
+          parent: line,
+          attributes: {"class": "name"},
+        }),
+        textContent: getCssPropertyName(propertyName)
+      });
+
+      
+      let framesWrapperEl = createNode({
+        parent: line,
+        attributes: {"class": "track-container"}
+      });
+
+      let framesEl = createNode({
+        parent: framesWrapperEl,
+        attributes: {"class": "frames"}
+      });
+
+      
+      let {x, w} = TimeScale.getAnimationDimensions(animation);
+      framesEl.style.left = `${x}%`;
+      framesEl.style.width = `${w}%`;
+
+      let keyframesComponent = new Keyframes();
+      keyframesComponent.init(framesEl);
+      keyframesComponent.render({
+        keyframes: this.tracks[propertyName],
+        propertyName: propertyName,
+        animation: animation
+      });
+      keyframesComponent.on("frame-selected", this.onFrameSelected);
+
+      this.keyframeComponents.push(keyframesComponent);
+    }
+  }),
+
+  onFrameSelected: function(e, args) {
+    
+    this.emit(e, args);
+  }
+};
+
+
+
+
+function Keyframes() {
+  EventEmitter.decorate(this);
+  this.onClick = this.onClick.bind(this);
+}
+
+exports.Keyframes = Keyframes;
+
+Keyframes.prototype = {
+  init: function(containerEl) {
+    this.containerEl = containerEl;
+
+    this.keyframesEl = createNode({
+      parent: this.containerEl,
+      attributes: {"class": "keyframes"}
+    });
+
+    this.containerEl.addEventListener("click", this.onClick);
+  },
+
+  destroy: function() {
+    this.containerEl.removeEventListener("click", this.onClick);
+    this.keyframesEl.remove();
+    this.containerEl = this.keyframesEl = this.animation = null;
+  },
+
+  render: function({keyframes, propertyName, animation}) {
+    this.keyframes = keyframes;
+    this.propertyName = propertyName;
+    this.animation = animation;
+
+    this.keyframesEl.classList.add(animation.state.type);
+    for (let frame of this.keyframes) {
+      createNode({
+        parent: this.keyframesEl,
+        attributes: {
+          "class": "frame",
+          "style": `left:${frame.offset * 100}%;`,
+          "data-offset": frame.offset,
+          "data-property": propertyName,
+          "title": frame.value
+        }
+      });
+    }
+  },
+
+  onClick: function(e) {
+    
+    if (!e.target.classList.contains("frame")) {
+      return;
+    }
+
+    e.stopPropagation();
+    this.emit("frame-selected", {
+      animation: this.animation,
+      propertyName: this.propertyName,
+      offset: parseFloat(e.target.dataset.offset),
+      value: e.target.getAttribute("title"),
+      x: e.target.offsetLeft + e.target.closest(".frames").offsetLeft
+    });
+  }
+};
+
 let sortedUnique = arr => [...new Set(arr)].sort((a, b) => a > b);
+
+
+
+
+
+
+
+function getFormattedAnimationTitle({state}) {
+  
+  return state.type
+    ? L10N.getFormatStr("timeline." + state.type + ".nameLabel", state.name)
+    : state.name;
+}
+
+
+
+
+
+
+
+function getCssPropertyName(jsPropertyName) {
+  return jsPropertyName.replace(/[A-Z]/g, "-$&").toLowerCase();
+}
