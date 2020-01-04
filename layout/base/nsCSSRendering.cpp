@@ -3390,6 +3390,22 @@ ComputeSpacedRepeatSize(nscoord aImageDimension,
   }
 }
 
+
+
+
+
+
+
+static nscoord
+ComputeBorderSpacedRepeatSize(nscoord aImageDimension,
+                              nscoord aAvailableSpace,
+                              nscoord& aSpace)
+{
+  int32_t count = aAvailableSpace / aImageDimension;
+  aSpace = (aAvailableSpace - aImageDimension * count) / (count + 1);
+  return aSpace + aImageDimension;
+}
+
 nsBackgroundLayerState
 nsCSSRendering::PrepareImageLayer(nsPresContext* aPresContext,
                                   nsIFrame* aForFrame,
@@ -3921,7 +3937,6 @@ DrawBorderImage(nsPresContext*       aPresContext,
       
       Maybe<nsSize> svgViewportSize = intrinsicSize.CanComputeConcreteSize() ?
         Nothing() : Some(imageSize);
-
       result &=
         renderer.DrawBorderImageComponent(aPresContext,
                                           aRenderingContext, aDirtyRect,
@@ -5455,24 +5470,39 @@ nsImageRenderer::DrawBackground(nsPresContext*       aPresContext,
 
 
 static nsRect
-ComputeTile(const nsRect&        aFill,
+ComputeTile(nsRect&              aFill,
             uint8_t              aHFill,
             uint8_t              aVFill,
-            const nsSize&        aUnitSize)
+            const nsSize&        aUnitSize,
+            nsSize&              aRepeatSize)
 {
   nsRect tile;
   switch (aHFill) {
   case NS_STYLE_BORDER_IMAGE_REPEAT_STRETCH:
     tile.x = aFill.x;
     tile.width = aFill.width;
+    aRepeatSize.width = tile.width;
     break;
   case NS_STYLE_BORDER_IMAGE_REPEAT_REPEAT:
     tile.x = aFill.x + aFill.width/2 - aUnitSize.width/2;
     tile.width = aUnitSize.width;
+    aRepeatSize.width = tile.width;
     break;
   case NS_STYLE_BORDER_IMAGE_REPEAT_ROUND:
     tile.x = aFill.x;
     tile.width = ComputeRoundedSize(aUnitSize.width, aFill.width);
+    aRepeatSize.width = tile.width;
+    break;
+  case NS_STYLE_BORDER_IMAGE_REPEAT_SPACE:
+    {
+      nscoord space;
+      aRepeatSize.width =
+        ComputeBorderSpacedRepeatSize(aUnitSize.width, aFill.width, space);
+      tile.x = aFill.x + space;
+      tile.width = aUnitSize.width;
+      aFill.x = tile.x;
+      aFill.width = aFill.width - space * 2;
+    }
     break;
   default:
     NS_NOTREACHED("unrecognized border-image fill style");
@@ -5482,14 +5512,28 @@ ComputeTile(const nsRect&        aFill,
   case NS_STYLE_BORDER_IMAGE_REPEAT_STRETCH:
     tile.y = aFill.y;
     tile.height = aFill.height;
+    aRepeatSize.height = tile.height;
     break;
   case NS_STYLE_BORDER_IMAGE_REPEAT_REPEAT:
     tile.y = aFill.y + aFill.height/2 - aUnitSize.height/2;
     tile.height = aUnitSize.height;
+    aRepeatSize.height = tile.height;
     break;
   case NS_STYLE_BORDER_IMAGE_REPEAT_ROUND:
     tile.y = aFill.y;
     tile.height = ComputeRoundedSize(aUnitSize.height, aFill.height);
+    aRepeatSize.height = tile.height;
+    break;
+  case NS_STYLE_BORDER_IMAGE_REPEAT_SPACE:
+    {
+      nscoord space;
+      aRepeatSize.height =
+        ComputeBorderSpacedRepeatSize(aUnitSize.height, aFill.height, space);
+      tile.y = aFill.y + space;
+      tile.height = aUnitSize.height;
+      aFill.y = tile.y;
+      aFill.height = aFill.height - space * 2;
+    }
     break;
   default:
     NS_NOTREACHED("unrecognized border-image fill style");
@@ -5596,21 +5640,27 @@ nsImageRenderer::DrawBorderImageComponent(nsPresContext*       aPresContext,
                                             drawFlags);
     }
 
-    nsRect tile = ComputeTile(aFill, aHFill, aVFill, aUnitSize);
-    return nsLayoutUtils::DrawImage(*aRenderingContext.ThebesContext(),
-                                    aPresContext,
-                                    subImage,
-                                    samplingFilter,
-                                    tile, aFill, tile.TopLeft(), aDirtyRect,
-                                    drawFlags);
+    nsSize repeatSize;
+    nsRect fillRect(aFill);
+    nsRect tile = ComputeTile(fillRect, aHFill, aVFill, aUnitSize, repeatSize);
+    CSSIntSize imageSize(nsPresContext::AppUnitsToIntCSSPixels(srcRect.width),
+                         nsPresContext::AppUnitsToIntCSSPixels(srcRect.height));
+    return nsLayoutUtils::DrawBackgroundImage(*aRenderingContext.ThebesContext(),
+                                              aPresContext,
+                                              subImage, imageSize, samplingFilter,
+                                              tile, fillRect, repeatSize,
+                                              tile.TopLeft(), aDirtyRect,
+                                              drawFlags,
+                                              ExtendMode::CLAMP);
   }
 
-  nsRect destTile = RequiresScaling(aFill, aHFill, aVFill, aUnitSize)
-                  ? ComputeTile(aFill, aHFill, aVFill, aUnitSize)
-                  : aFill;
-
+  nsSize repeatSize(aFill.Size());
+  nsRect fillRect(aFill);
+  nsRect destTile = RequiresScaling(fillRect, aHFill, aVFill, aUnitSize)
+                  ? ComputeTile(fillRect, aHFill, aVFill, aUnitSize, repeatSize)
+                  : fillRect;
   return Draw(aPresContext, aRenderingContext, aDirtyRect, destTile,
-              aFill, destTile.TopLeft(), destTile.Size(), aSrc);
+              fillRect, destTile.TopLeft(), repeatSize, aSrc);
 }
 
 bool
