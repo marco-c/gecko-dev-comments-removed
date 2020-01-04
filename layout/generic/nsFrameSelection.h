@@ -682,7 +682,8 @@ private:
   
   nsresult     NotifySelectionListeners(mozilla::SelectionType aSelectionType);
 
-  RefPtr<mozilla::dom::Selection> mDomSelections[nsISelectionController::NUM_SELECTIONTYPES];
+  RefPtr<mozilla::dom::Selection>
+    mDomSelections[mozilla::kPresentSelectionTypeCount];
 
   
   nsITableCellLayout* GetCellLayout(nsIContent *aCellContent) const;
