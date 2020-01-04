@@ -566,7 +566,7 @@ struct nsStyleImageLayers {
     
     Position() {}
 
-    bool IsInitialValue() const;
+    bool IsInitialValue(LayerType aType) const;
 
     
     
