@@ -14,16 +14,17 @@ addRDMTask(TEST_URL, function*({ ui }) {
   yield waitUntilState(store, state => state.viewports.length == 1);
 
   
-  let browser = ui.toolWindow.document.querySelector(".browser");
-  is(browser.width, "320", "Viewport has default width");
-  is(browser.height, "480", "Viewport has default height");
+  let viewport = ui.toolWindow.document.querySelector(".viewport-content");
+
+  is(ui.toolWindow.getComputedStyle(viewport).getPropertyValue("width"),
+     "320px", "Viewport has default width");
+  is(ui.toolWindow.getComputedStyle(viewport).getPropertyValue("height"),
+     "480px", "Viewport has default height");
 
   
-  
-  
-  
-  
-  yield waitForFrameLoad(browser, TEST_URL);
-  is(browser.contentWindow.location.href, TEST_URL,
-     "Viewport location matches");
+  yield waitForFrameLoad(ui, TEST_URL);
+  let location = yield spawnViewportTask(ui, {}, function*() {
+    return content.location.href;
+  });
+  is(location, TEST_URL, "Viewport location matches");
 });
