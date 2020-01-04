@@ -43,10 +43,10 @@ public class testGeckoProfile extends PixelTest {
 
     
     private void checkDefaultGetter() {
-        mAsserter.info("Test using the default profile", GeckoProfile.DEFAULT_PROFILE);
-        GeckoProfile profile = GeckoProfile.get(getActivity());
         
-        verifyProfile(profile, GeckoProfile.DEFAULT_PROFILE, ((GeckoApp) getActivity()).getProfile().getDir(), true);
+        mAsserter.info("Test using the test profile", GeckoProfile.CUSTOM_PROFILE);
+        GeckoProfile profile = GeckoProfile.get(getActivity());
+        verifyProfile(profile, GeckoProfile.CUSTOM_PROFILE, ((GeckoApp) getActivity()).getProfile().getDir(), true);
 
         try {
             profile = GeckoProfile.get(null);
@@ -60,19 +60,19 @@ public class testGeckoProfile extends PixelTest {
     private void checkNamedGetter(String name) {
         mAsserter.info("Test using a named profile", name);
         GeckoProfile profile = GeckoProfile.get(getActivity(), name);
-        if (!TextUtils.isEmpty(name)) {
+        if (name != null) {
             verifyProfile(profile, name, findDir(name), false);
             removeProfile(profile, true);
         } else {
             
             File defaultProfile = ((GeckoApp) getActivity()).getProfile().getDir();
-            verifyProfile(profile, GeckoProfile.DEFAULT_PROFILE, defaultProfile, true);
+            verifyProfile(profile, GeckoProfile.CUSTOM_PROFILE, defaultProfile, true);
         }
     }
 
     
     private void checkNameAndPathGetter(String name, boolean createBefore) {
-        if (TextUtils.isEmpty(name)) {
+        if (name == null) {
             checkNameAndPathGetter(name, null, createBefore);
         } else {
             checkNameAndPathGetter(name, name + "_FORCED_DIR", createBefore);
@@ -95,22 +95,22 @@ public class testGeckoProfile extends PixelTest {
 
         try {
             GeckoProfile profile = GeckoProfile.get(getActivity(), name, path);
-            if (!TextUtils.isEmpty(name)) {
+            if (name != null) {
                 verifyProfile(profile, name, f, createBefore);
                 removeProfile(profile, !createBefore);
             } else {
-                mAsserter.ok(TextUtils.isEmpty(path), "Passing a null name and non-null path should throw", name + ", " + path);
+                mAsserter.ok(TextUtils.isEmpty(path) || createBefore, "Passing a null name and nonexistent path should throw", name + ", " + path);
                 
-                File defaultProfile = ((GeckoApp) getActivity()).getProfile().getDir();
-                verifyProfile(profile, GeckoProfile.DEFAULT_PROFILE, defaultProfile, true);
+                File defaultProfile = createBefore ? f : ((GeckoApp) getActivity()).getProfile().getDir();
+                verifyProfile(profile, GeckoProfile.CUSTOM_PROFILE, defaultProfile, true);
             }
         } catch(Exception ex) {
-            mAsserter.ok(TextUtils.isEmpty(name) && !TextUtils.isEmpty(path), "Passing a null name and non null path should throw", name + ", " + path);
+            mAsserter.ok(name == null && !TextUtils.isEmpty(path) && !createBefore, "Only a null name and nonexistent path should throw", name + ", " + path);
         }
     }
 
     private void checkNameAndFileGetter(String name, boolean createBefore) {
-        if (TextUtils.isEmpty(name)) {
+        if (name == null) {
             checkNameAndFileGetter(name, null, createBefore);
         } else {
             checkNameAndFileGetter(name, new File(mozDir, name + "_FORCED_DIR"), createBefore);
@@ -125,17 +125,17 @@ public class testGeckoProfile extends PixelTest {
 
         try {
             GeckoProfile profile = GeckoProfile.get(getActivity(), name, f);
-            if (!TextUtils.isEmpty(name)) {
+            if (name != null) {
                 verifyProfile(profile, name, f, createBefore);
                 removeProfile(profile, !createBefore);
             } else {
-                mAsserter.ok(f == null, "Passing a null name and non-null file should throw", name + ", " + f);
+                mAsserter.ok(f == null || createBefore, "Passing a null name and nonexistent file should throw", name + ", " + f);
                 
-                File defaultProfile = ((GeckoApp) getActivity()).getProfile().getDir();
-                verifyProfile(profile, GeckoProfile.DEFAULT_PROFILE, defaultProfile, true);
+                File defaultProfile = createBefore ? f : ((GeckoApp) getActivity()).getProfile().getDir();
+                verifyProfile(profile, GeckoProfile.CUSTOM_PROFILE, defaultProfile, true);
             }
         } catch(Exception ex) {
-            mAsserter.ok(TextUtils.isEmpty(name) && f != null, "Passing a null name and non null file should throw", name + ", " + f);
+            mAsserter.ok(name == null && f != null && !createBefore, "Only a null name and nonexistent file should throw", name + ", " + f);
         }
     }
 
@@ -145,36 +145,29 @@ public class testGeckoProfile extends PixelTest {
 
         int index = 0;
         checkNamedGetter(TEST_PROFILE_NAME + (index++)); 
-        checkNamedGetter("");
         checkNamedGetter(null);
 
         
-        checkNameAndPathGetter(TEST_PROFILE_NAME + (index++), true); 
-        checkNameAndPathGetter(TEST_PROFILE_NAME + (index++), false); 
+        checkNameAndPathGetter(TEST_PROFILE_NAME + (index++), true);
+        checkNameAndPathGetter(null, false);
         
-        checkNameAndPathGetter(null, TEST_PROFILE_NAME + (index++) + "_FORCED_DIR", true); 
-        checkNameAndPathGetter(null, TEST_PROFILE_NAME + (index++) + "_FORCED_DIR", false); 
-        checkNameAndPathGetter("", TEST_PROFILE_NAME + (index++) + "_FORCED_DIR", true); 
-        checkNameAndPathGetter("", TEST_PROFILE_NAME + (index++) + "_FORCED_DIR", false); 
+        checkNameAndPathGetter(null, TEST_PROFILE_NAME + (index++) + "_FORCED_DIR", true);
+        checkNameAndPathGetter(null, TEST_PROFILE_NAME + (index++) + "_FORCED_DIR", false);
         
-        checkNameAndPathGetter(TEST_PROFILE_NAME + (index++), null, false); 
-        checkNameAndPathGetter(TEST_PROFILE_NAME + (index++), "", false); 
+        checkNameAndPathGetter(TEST_PROFILE_NAME + (index++), null, false);
+        checkNameAndPathGetter(TEST_PROFILE_NAME + (index++), "", false);
         
         checkNameAndPathGetter(null, null, false);
-        checkNameAndPathGetter("", null, false);
         checkNameAndPathGetter(null, "", false);
-        checkNameAndPathGetter("", "", false);
 
         
-        checkNameAndFileGetter(TEST_PROFILE_NAME + (index++), true); 
-        checkNameAndFileGetter(TEST_PROFILE_NAME + (index++), false); 
+        checkNameAndFileGetter(TEST_PROFILE_NAME + (index++), true);
+        checkNameAndFileGetter(null, false);
         
-        checkNameAndFileGetter(null, new File(mozDir, TEST_PROFILE_NAME + (index++) + "_FORCED_DIR"), true); 
-        checkNameAndFileGetter(null, new File(mozDir, TEST_PROFILE_NAME + (index++) + "_FORCED_DIR"), false); 
-        checkNameAndFileGetter("", new File(mozDir, TEST_PROFILE_NAME + (index++) + "_FORCED_DIR"), true); 
-        checkNameAndFileGetter("", new File(mozDir, TEST_PROFILE_NAME + (index++) + "_FORCED_DIR"), false); 
+        checkNameAndFileGetter(null, new File(mozDir, TEST_PROFILE_NAME + (index++) + "_FORCED_DIR"), true);
+        checkNameAndFileGetter(null, new File(mozDir, TEST_PROFILE_NAME + (index++) + "_FORCED_DIR"), false);
         
-        checkNameAndFileGetter(TEST_PROFILE_NAME + (index++), null, false); 
+        checkNameAndFileGetter(TEST_PROFILE_NAME + (index++), null, false);
         
         checkNameAndFileGetter(null, null, false);
     }
