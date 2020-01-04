@@ -4676,6 +4676,7 @@ enum {
   kE10sDisabledForAddons = 7,
   kE10sForceDisabled = 8,
   kE10sDisabledForXPAcceleration = 9,
+  kE10sDisabledForGTK320 = 10,
 };
 
 #if defined(XP_WIN) || defined(XP_MACOSX)
@@ -4761,6 +4762,15 @@ MultiprocessBlockPolicy() {
     return gMultiprocessBlockPolicy;
   }
 #endif 
+
+#if defined(MOZ_WIDGET_GTK) && defined(RELEASE_BUILD)
+  
+  
+  if (gtk_check_version(3, 20, 0) == nullptr) {
+    gMultiprocessBlockPolicy = kE10sDisabledForGTK320;
+    return gMultiprocessBlockPolicy;
+  }
+#endif
 
   if (disabledForA11y) {
     gMultiprocessBlockPolicy = kE10sDisabledForAccessibility;
