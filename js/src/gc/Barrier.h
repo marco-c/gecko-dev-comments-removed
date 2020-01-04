@@ -784,28 +784,6 @@ class ImmutableTenuredPtr
     const T* address() { return &value; }
 };
 
-
-
-
-
-
-
-
-
-
-
-
-template <typename T>
-struct MovableCellHasher
-{
-    using Key = T;
-    using Lookup = T;
-
-    static HashNumber hash(const Lookup& l);
-    static bool match(const Key& k, const Lookup& l);
-    static void rekey(Key& k, const Key& newKey) { k = newKey; }
-};
-
 template <typename T>
 struct MovableCellHasher<PreBarriered<T>>
 {
