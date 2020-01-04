@@ -1037,12 +1037,6 @@ private:
 
     request->SetContentPolicyType(mContentPolicyType);
 
-    request->GetInternalHeaders()->SetGuard(HeadersGuardEnum::Immutable, result);
-    if (NS_WARN_IF(result.Failed())) {
-      result.SuppressException();
-      return false;
-    }
-
     
     
     MOZ_ASSERT_IF(mIsHttpChannel && internalReq->IsNavigationRequest(),
