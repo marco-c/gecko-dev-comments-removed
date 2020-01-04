@@ -2877,22 +2877,20 @@ ScrollFrameHelper::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
   if (aBuilder->IsPaintingToWindow()) {
     bool wasUsingDisplayPort = nsLayoutUtils::GetDisplayPort(mOuter->GetContent(), nullptr);
 
-    if (mIsRoot) {
-      if (gfxPrefs::LayoutUseContainersForRootFrames()) {
-        
-        
-        usingDisplayport = nsLayoutUtils::GetDisplayPort(mOuter->GetContent(), &displayPort);
-      } else {
-        
-        
-        nsRect displayportBase = dirtyRect;
-        if (mIsRoot && mOuter->PresContext()->IsRootContentDocument()) {
-          displayportBase =
-            nsRect(nsPoint(0, 0), nsLayoutUtils::CalculateCompositionSizeForFrame(mOuter));
-        }
-        usingDisplayport = nsLayoutUtils::GetOrMaybeCreateDisplayPort(
-              *aBuilder, mOuter, displayportBase, &displayPort);
+    if (mIsRoot && gfxPrefs::LayoutUseContainersForRootFrames()) {
+      
+      
+      usingDisplayport = nsLayoutUtils::GetDisplayPort(mOuter->GetContent(), &displayPort);
+    } else if (mIsRoot) {
+      
+      
+      nsRect displayportBase = dirtyRect;
+      if (mIsRoot && mOuter->PresContext()->IsRootContentDocument()) {
+        displayportBase =
+          nsRect(nsPoint(0, 0), nsLayoutUtils::CalculateCompositionSizeForFrame(mOuter));
       }
+      usingDisplayport = nsLayoutUtils::GetOrMaybeCreateDisplayPort(
+            *aBuilder, mOuter, displayportBase, &displayPort);
     } else {
       
       
