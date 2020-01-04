@@ -66,6 +66,7 @@ function* testSendReportAutomatically(testURL, suffix, errorURISuffix) {
   
   let promiseStatus = createReportResponseStatusPromise(URL_REPORTS + suffix);
   browser.loadURI(testURL);
+  yield promiseErrorPageLoaded(browser);
 
   ok(!isErrorStatus(yield promiseStatus),
      "SSL error report submitted successfully");
