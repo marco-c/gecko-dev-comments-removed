@@ -57,15 +57,17 @@ typedef Vector<SlowFunction> SlowFunctionVector;
 
 struct ModuleImportGeneratorData
 {
-    DeclaredSig* sig;
+    const DeclaredSig* sig;
     uint32_t globalDataOffset;
+
+    ModuleImportGeneratorData() : sig(nullptr), globalDataOffset(0) {}
+    explicit ModuleImportGeneratorData(const DeclaredSig* sig) : sig(sig), globalDataOffset(0) {}
 };
 
 typedef Vector<ModuleImportGeneratorData, 0, SystemAllocPolicy> ModuleImportGeneratorDataVector;
 
-
-
-struct AsmJSGlobalVariable {
+struct AsmJSGlobalVariable
+{
     ExprType type;
     unsigned globalDataOffset;
     bool isConst;
@@ -159,6 +161,7 @@ class MOZ_STACK_CLASS ModuleGenerator
     bool finishTask(IonCompileTask* task);
     bool addImport(const Sig& sig, uint32_t globalDataOffset);
     bool startedFuncDefs() const { return !!threadView_; }
+    bool allocateGlobalBytes(uint32_t bytes, uint32_t align, uint32_t* globalDataOffset);
 
   public:
     explicit ModuleGenerator(ExclusiveContext* cx);
@@ -172,7 +175,6 @@ class MOZ_STACK_CLASS ModuleGenerator
     const Uint32Vector& funcEntryOffsets() const { return funcEntryOffsets_; }
 
     
-    bool allocateGlobalBytes(uint32_t bytes, uint32_t align, uint32_t* globalDataOffset);
     bool allocateGlobalVar(ValType type, bool isConst, uint32_t* index);
     const AsmJSGlobalVariable& globalVar(unsigned index) const { return shared_->globals[index]; }
 
@@ -187,7 +189,7 @@ class MOZ_STACK_CLASS ModuleGenerator
     const DeclaredSig& funcSig(uint32_t funcIndex) const;
 
     
-    bool initImport(uint32_t importIndex, uint32_t sigIndex, uint32_t globalDataOffset);
+    bool initImport(uint32_t importIndex, uint32_t sigIndex);
     uint32_t numImports() const;
     const ModuleImportGeneratorData& import(uint32_t index) const;
     bool defineImport(uint32_t index, ProfilingOffsets interpExit, ProfilingOffsets jitExit);
