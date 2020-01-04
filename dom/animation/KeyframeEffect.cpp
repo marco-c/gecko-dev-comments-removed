@@ -238,7 +238,9 @@ KeyframeEffectReadOnly::GetComputedTimingAt(
   
   ComputedTiming result;
 
-  if (aTiming.mDuration && aTiming.mDuration.ref() > zeroDuration) {
+  if (aTiming.mDuration) {
+    MOZ_ASSERT(aTiming.mDuration.ref() >= zeroDuration,
+               "Iteration duration should be positive");
     result.mDuration = aTiming.mDuration.ref();
   }
 
