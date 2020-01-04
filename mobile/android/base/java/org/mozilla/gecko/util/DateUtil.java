@@ -10,9 +10,11 @@ import android.support.annotation.NonNull;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
 import java.util.TimeZone;
+import java.util.concurrent.TimeUnit;
 
 
 
@@ -28,5 +30,26 @@ public class DateUtil {
         final DateFormat df = new SimpleDateFormat("E, dd MMM yyyy HH:mm:ss z", Locale.US);
         df.setTimeZone(TimeZone.getTimeZone("GMT"));
         return df.format(date);
+    }
+
+    
+
+
+
+    public static int getTimezoneOffsetInMinutes(@NonNull final TimeZone timezone) {
+        return getTimezoneOffsetInMinutesForGivenDate(Calendar.getInstance(timezone));
+    }
+
+    
+
+
+
+
+
+
+    public static int getTimezoneOffsetInMinutesForGivenDate(@NonNull final Calendar calendar) {
+        
+        
+        return (int) TimeUnit.MILLISECONDS.toMinutes(calendar.get(Calendar.ZONE_OFFSET) + calendar.get(Calendar.DST_OFFSET));
     }
 }
