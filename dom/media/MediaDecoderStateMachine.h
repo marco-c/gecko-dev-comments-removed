@@ -457,21 +457,7 @@ protected:
   
   void UpdateNextFrameStatus();
 
-  
-  
-  
-  void ResyncAudioClock();
-
-  
-  
-  int64_t GetAudioClock() const;
-
   int64_t GetStreamClock() const;
-
-  
-  
-  
-  int64_t GetVideoStreamPosition(TimeStamp aTimeStamp) const;
 
   
   
