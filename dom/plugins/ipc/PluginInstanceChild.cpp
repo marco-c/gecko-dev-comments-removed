@@ -104,18 +104,14 @@ struct RunnableMethodTraits<PluginInstanceChild>
 static RefPtr<DrawTarget>
 CreateDrawTargetForSurface(gfxASurface *aSurface)
 {
-  SurfaceFormat format;
-  if (aSurface->GetContentType() == gfxContentType::ALPHA) {
-    format = SurfaceFormat::A8;
-  } else if (aSurface->GetContentType() == gfxContentType::COLOR) {
-    format = SurfaceFormat::B8G8R8X8;
-  } else {
-    format = SurfaceFormat::B8G8R8A8;
-  }
+  SurfaceFormat format = aSurface->GetSurfaceFormat();
   RefPtr<DrawTarget> drawTarget =
     Factory::CreateDrawTargetForCairoSurface(aSurface->CairoSurface(),
                                              aSurface->GetSize(),
                                              &format);
+  if (!drawTarget) {
+    NS_RUNTIMEABORT("CreateDrawTargetForSurface failed in plugin");
+  }
   aSurface->SetData(&kDrawTarget, drawTarget, nullptr);
   return drawTarget;
 }
@@ -3257,11 +3253,28 @@ PluginInstanceChild::PaintRectToSurface(const nsIntRect& aRect,
     PaintRectToPlatformSurface(plPaintRect, renderSurface);
 
     if (renderSurface != aSurface) {
+      RefPtr<DrawTarget> dt;
+      if (aSurface == mCurrentSurface &&
+          aSurface->GetType() == gfxSurfaceType::Image &&
+          aSurface->GetSurfaceFormat() == SurfaceFormat::B8G8R8X8) {
+        gfxImageSurface* imageSurface = static_cast<gfxImageSurface*>(aSurface);
         
-        RefPtr<DrawTarget> dt = CreateDrawTargetForSurface(aSurface);
-        RefPtr<SourceSurface> surface =
-            gfxPlatform::GetSourceSurfaceForSurface(dt, renderSurface);
-        dt->CopySurface(surface, aRect, aRect.TopLeft());
+        
+        
+        
+        
+        dt = Factory::CreateDrawTargetForData(BackendType::CAIRO,
+                                              imageSurface->Data(),
+                                              imageSurface->GetSize(),
+                                              imageSurface->Stride(),
+                                              SurfaceFormat::B8G8R8A8);
+      } else {
+        
+        dt = CreateDrawTargetForSurface(aSurface);
+      }
+      RefPtr<SourceSurface> surface =
+        gfxPlatform::GetSourceSurfaceForSurface(dt, renderSurface);
+      dt->CopySurface(surface, aRect, aRect.TopLeft());
     }
 }
 
