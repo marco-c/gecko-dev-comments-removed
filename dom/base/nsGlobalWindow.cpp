@@ -13967,6 +13967,7 @@ nsGlobalWindow::FireOnNewGlobalObject()
   
   
   AutoEntryScript aes(this, "nsGlobalWindow report new global");
+  aes.TakeOwnershipOfErrorReporting();
   JS::Rooted<JSObject*> global(aes.cx(), GetWrapper());
   JS_FireOnNewGlobalObject(aes.cx(), global);
 }
