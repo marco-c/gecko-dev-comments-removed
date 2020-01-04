@@ -915,6 +915,27 @@ CopyFlatStringChars(char16_t* dest, JSFlatString* s, size_t len)
     CopyLinearStringChars(dest, FlatStringToLinearString(s), len);
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 JS_FRIEND_API(bool)
 GetPropertyKeys(JSContext* cx, JS::HandleObject obj, unsigned flags, JS::AutoIdVector* props);
 

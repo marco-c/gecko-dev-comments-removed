@@ -703,16 +703,6 @@ namespace js {
 
 
 
-
-
-
-
-
-
-
-
-
-
 inline bool
 GetPrototype(JSContext* cx, HandleObject obj, MutableHandleObject protop);
 
@@ -750,7 +740,6 @@ PreventExtensions(JSContext* cx, HandleObject obj, ObjectOpResult& result);
 
 extern bool
 PreventExtensions(JSContext* cx, HandleObject obj);
-
 
 
 
