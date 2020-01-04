@@ -91,7 +91,7 @@ BEGIN_TEST(testJitDCEinGVN_phi)
     thenBlock1->add(c3);
     y->addInputSlow(c3);
     thenBlock1->end(MGoto::New(func.alloc, joinBlock));
-    joinBlock->addPredecessor(func.alloc, thenBlock1);
+    MOZ_ALWAYS_TRUE(joinBlock->addPredecessor(func.alloc, thenBlock1));
 
     
     MParameter* q = func.createParameter();
@@ -107,7 +107,7 @@ BEGIN_TEST(testJitDCEinGVN_phi)
     thenBlock2->add(c4);
     y->addInputSlow(c4);
     thenBlock2->end(MGoto::New(func.alloc, joinBlock));
-    joinBlock->addPredecessor(func.alloc, thenBlock2);
+    MOZ_ALWAYS_TRUE(joinBlock->addPredecessor(func.alloc, thenBlock2));
 
     
     
@@ -118,7 +118,7 @@ BEGIN_TEST(testJitDCEinGVN_phi)
     elseBlock->add(c5);
     y->addInputSlow(c5);
     elseBlock->end(MGoto::New(func.alloc, joinBlock));
-    joinBlock->addPredecessor(func.alloc, elseBlock);
+    MOZ_ALWAYS_TRUE(joinBlock->addPredecessor(func.alloc, elseBlock));
 
     
     
