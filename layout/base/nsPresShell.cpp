@@ -10191,7 +10191,7 @@ void ReflowCountMgr::PaintCount(const char*     aName,
       
       
       nsFont font(eFamily_serif, NS_FONT_STYLE_NORMAL,
-                  NS_FONT_WEIGHT_NORMAL, NS_FONT_STRETCH_NORMAL,
+                  NS_FONT_WEIGHT_NORMAL, NS_FONT_STRETCH_NORMAL, 0,
                   nsPresContext::CSSPixelsToAppUnits(11));
       RefPtr<nsFontMetrics> fm;
       aPresContext->DeviceContext()->GetMetricsFor(font,
