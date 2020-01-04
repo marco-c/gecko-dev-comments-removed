@@ -202,8 +202,6 @@ private:
     
     
     
-    MOZ_ASSERT(mReferenceTimeStamp <= aTimeStamp,
-               "Got a negative timestamp delta");
     Time timeStampDelta =
       static_cast<int64_t>((aTimeStamp - mReferenceTimeStamp).ToMilliseconds());
 
