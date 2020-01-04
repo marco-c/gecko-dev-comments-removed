@@ -1705,13 +1705,13 @@ class MSimdConvert
         }
     }
 
-  public:
-    INSTRUCTION_HEADER(SimdConvert)
-
     static MSimdConvert* New(TempAllocator& alloc, MDefinition* obj, MIRType toType, SimdSign sign)
     {
-        return new(alloc) MSimdConvert(obj, toType, sign);
+        return new (alloc) MSimdConvert(obj, toType, sign);
     }
+
+  public:
+    INSTRUCTION_HEADER(SimdConvert)
 
     
     
@@ -2288,14 +2288,14 @@ class MSimdBinaryComp
             setCommutative();
     }
 
-  public:
-    INSTRUCTION_HEADER(SimdBinaryComp)
-
     static MSimdBinaryComp* New(TempAllocator& alloc, MDefinition* left, MDefinition* right,
                                 Operation op, SimdSign sign)
     {
-        return new(alloc) MSimdBinaryComp(left, right, op, sign);
+        return new (alloc) MSimdBinaryComp(left, right, op, sign);
     }
+
+  public:
+    INSTRUCTION_HEADER(SimdBinaryComp)
 
     
     
@@ -2379,13 +2379,14 @@ class MSimdBinaryArith
             setCommutative();
     }
 
-  public:
-    INSTRUCTION_HEADER(SimdBinaryArith)
     static MSimdBinaryArith* New(TempAllocator& alloc, MDefinition* left, MDefinition* right,
                                  Operation op)
     {
-        return new(alloc) MSimdBinaryArith(left, right, op);
+        return new (alloc) MSimdBinaryArith(left, right, op);
     }
+
+  public:
+    INSTRUCTION_HEADER(SimdBinaryArith)
 
     
     
@@ -2558,14 +2559,14 @@ class MSimdShift
         setMovable();
     }
 
-  public:
-    INSTRUCTION_HEADER(SimdShift)
-
     static MSimdShift* New(TempAllocator& alloc, MDefinition* left, MDefinition* right,
                            Operation op)
     {
-        return new(alloc) MSimdShift(left, right, op);
+        return new (alloc) MSimdShift(left, right, op);
     }
+
+  public:
+    INSTRUCTION_HEADER(SimdShift)
 
     
     
