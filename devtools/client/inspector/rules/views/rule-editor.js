@@ -5,9 +5,6 @@
 "use strict";
 
 
-const {Ci} = require("chrome");
-
-
 const {XPCOMUtils} = require("resource://gre/modules/XPCOMUtils.jsm");
 
 const {l10n} = require("devtools/shared/inspector/css-logic");
@@ -584,7 +581,7 @@ RuleEditor.prototype = {
 
 
   _moveSelectorFocus: function (direction) {
-    if (!direction || direction === Ci.nsIFocusManager.MOVEFOCUS_BACKWARD) {
+    if (!direction || direction === Services.focus.MOVEFOCUS_BACKWARD) {
       return;
     }
 

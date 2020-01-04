@@ -25,6 +25,7 @@
 
 const {Ci, Cc} = require("chrome");
 const Services = require("Services");
+const focusManager = Services.focus;
 
 const HTML_NS = "http://www.w3.org/1999/xhtml";
 const CONTENT_TYPES = {
@@ -38,8 +39,8 @@ const CONTENT_TYPES = {
 
 const MAX_POPUP_ENTRIES = 500;
 
-const FOCUS_FORWARD = Ci.nsIFocusManager.MOVEFOCUS_FORWARD;
-const FOCUS_BACKWARD = Ci.nsIFocusManager.MOVEFOCUS_BACKWARD;
+const FOCUS_FORWARD = focusManager.MOVEFOCUS_FORWARD;
+const FOCUS_BACKWARD = focusManager.MOVEFOCUS_BACKWARD;
 
 const { XPCOMUtils } = require("resource://gre/modules/XPCOMUtils.jsm");
 const EventEmitter = require("devtools/shared/event-emitter");
@@ -1553,10 +1554,6 @@ function copyBoxModelStyles(from, to) {
 function moveFocus(win, direction) {
   return focusManager.moveFocus(win, null, direction, 0);
 }
-
-XPCOMUtils.defineLazyGetter(this, "focusManager", function () {
-  return Services.focus;
-});
 
 XPCOMUtils.defineLazyGetter(this, "CSSPropertyList", function () {
   return domUtils.getCSSPropertyNames(domUtils.INCLUDE_ALIASES).sort();

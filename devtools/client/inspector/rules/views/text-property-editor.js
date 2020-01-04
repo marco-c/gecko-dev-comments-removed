@@ -4,9 +4,6 @@
 
 "use strict";
 
-
-const {Ci} = require("chrome");
-
 const {l10n} = require("devtools/shared/inspector/css-logic");
 const {getCssProperties} = require("devtools/shared/fronts/css-properties");
 const {InplaceEditor, editableField} =
@@ -22,6 +19,7 @@ const {
   parseDeclarations,
   parseSingleValue,
 } = require("devtools/shared/css-parsing-utils");
+const Services = require("Services");
 
 const HTML_NS = "http://www.w3.org/1999/xhtml";
 
@@ -642,7 +640,7 @@ TextPropertyEditor.prototype = {
     
     
     if (!this.prop.value &&
-        direction !== Ci.nsIFocusManager.MOVEFOCUS_FORWARD) {
+        direction !== Services.focus.MOVEFOCUS_FORWARD) {
       this.remove(direction);
       return;
     }
@@ -741,7 +739,7 @@ TextPropertyEditor.prototype = {
     
     
     
-    if (!value.trim() && direction !== Ci.nsIFocusManager.MOVEFOCUS_BACKWARD) {
+    if (!value.trim() && direction !== Services.focus.MOVEFOCUS_BACKWARD) {
       setTimeout(() => {
         if (!this.editing) {
           this.remove(direction);
