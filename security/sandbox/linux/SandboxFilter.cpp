@@ -644,6 +644,9 @@ public:
       return Allow();
 #endif
 
+    case __NR_mlock:
+      return Allow();
+
 #endif 
 
 #ifdef __NR_getrandom
