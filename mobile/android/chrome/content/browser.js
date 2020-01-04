@@ -3756,8 +3756,8 @@ Tab.prototype = {
 
 
 
-      let pageLargerThanScreen = (cssPageRect.width >= Math.floor(viewport.cssWidth))
-                              && (cssPageRect.height >= Math.floor(viewport.cssHeight));
+      let pageLargerThanScreen = (Math.ceil(cssPageRect.width) >= Math.floor(viewport.cssWidth))
+                              && (Math.ceil(cssPageRect.height) >= Math.floor(viewport.cssHeight));
       if (doc.readyState === 'complete' || pageLargerThanScreen) {
         viewport.cssPageLeft = cssPageRect.left;
         viewport.cssPageTop = cssPageRect.top;
