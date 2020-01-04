@@ -36,7 +36,6 @@ int ARGBScaleClip(const uint8* src_argb, int src_stride_argb,
                   enum FilterMode filtering);
 
 
-
 LIBYUV_API
 int YUVToARGBScaleClip(const uint8* src_y, int src_stride_y,
                        const uint8* src_u, int src_stride_u,

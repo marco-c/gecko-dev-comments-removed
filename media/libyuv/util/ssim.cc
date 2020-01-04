@@ -10,7 +10,6 @@
 
 #include "../util/ssim.h"  
 
-#include <math.h>
 #include <string.h>
 
 #ifdef __cplusplus
