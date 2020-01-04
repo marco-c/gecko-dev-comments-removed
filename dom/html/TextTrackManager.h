@@ -83,12 +83,6 @@ public:
 
 
 
-  
-
-
-
-  void UpdateCueDisplay();
-
   void PopulatePendingList();
 
   void AddListeners();
@@ -97,6 +91,7 @@ public:
   RefPtr<HTMLMediaElement> mMediaElement;
 
   void DispatchTimeMarchesOn();
+  void TimeMarchesOn();
 
   void NotifyShutdown()
   {
@@ -104,7 +99,12 @@ public:
   }
 
 private:
-  void TimeMarchesOn();
+  
+
+
+
+
+  void UpdateCueDisplay();
 
   
   RefPtr<TextTrackList> mTextTracks;
