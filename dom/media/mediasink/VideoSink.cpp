@@ -167,7 +167,9 @@ VideoSink::Start(int64_t aStartTime, const MediaInfo& aInfo)
   if (mHasVideo) {
     mEndPromise = mEndPromiseHolder.Ensure(__func__);
     ConnectListener();
-    TryUpdateRenderedVideoFrames();
+    
+    
+    UpdateRenderedVideoFrames();
   }
 }
 
