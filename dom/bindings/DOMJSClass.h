@@ -31,6 +31,39 @@ class nsCycleCollectionParticipant;
 namespace mozilla {
 namespace dom {
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+inline bool
+IsSecureContextOrObjectIsFromSecureContext(JSContext* aCx, JSObject* aObj)
+{
+  return JS::CompartmentCreationOptionsRef(js::GetContextCompartment(aCx)).secureContext() ||
+         JS::CompartmentCreationOptionsRef(js::GetObjectCompartment(aObj)).secureContext();
+}
+
 typedef bool
 (* ResolveOwnProperty)(JSContext* cx, JS::Handle<JSObject*> wrapper,
                        JS::Handle<JSObject*> obj, JS::Handle<jsid> id,
@@ -98,6 +131,9 @@ struct PrefableDisablers {
     if (!enabled) {
       return false;
     }
+    if (secureContext && !IsSecureContextOrObjectIsFromSecureContext(cx, obj)) {
+      return false;
+    }
     if (enabledFunc &&
         !enabledFunc(cx, js::GetGlobalForObjectCrossCompartment(obj))) {
       return false;
@@ -122,6 +158,9 @@ struct PrefableDisablers {
   
   
   bool enabled;
+
+  
+  const bool secureContext;
 
   
   const uint16_t nonExposedGlobals;

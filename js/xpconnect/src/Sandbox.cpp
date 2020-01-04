@@ -1042,6 +1042,10 @@ xpc::CreateSandboxObject(JSContext* cx, MutableHandleValue vp, nsISupports* prin
 
     auto& creationOptions = compartmentOptions.creationOptions();
 
+    
+    
+    
+
     if (xpc::SharedMemoryEnabled())
         creationOptions.setSharedMemoryAndAtomicsEnabled(true);
 
