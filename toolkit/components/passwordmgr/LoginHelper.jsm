@@ -44,7 +44,7 @@ this.LoginHelper = {
     };
 
     
-    let ConsoleAPI = Cu.import("resource://gre/modules/devtools/shared/Console.jsm", {}).ConsoleAPI;
+    let ConsoleAPI = Cu.import("resource://gre/modules/Console.jsm", {}).ConsoleAPI;
     let consoleOptions = {
       maxLogLevel: getMaxLogLevel(),
       prefix: aLogPrefix,

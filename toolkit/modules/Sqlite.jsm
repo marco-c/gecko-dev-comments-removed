@@ -36,7 +36,7 @@ XPCOMUtils.defineLazyServiceGetter(this, "FinalizationWitnessService",
 XPCOMUtils.defineLazyModuleGetter(this, "PromiseUtils",
                                   "resource://gre/modules/PromiseUtils.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "console",
-                                  "resource://gre/modules/devtools/shared/Console.jsm");
+                                  "resource://gre/modules/Console.jsm");
 
 
 var likeSqlRegex = /\bLIKE\b\s(?![@:?])/i;

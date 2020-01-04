@@ -1,7 +1,7 @@
 
 
 
-const { console, ConsoleAPI } = Cu.import("resource://gre/modules/devtools/shared/Console.jsm");
+const { console, ConsoleAPI } = Cu.import("resource://gre/modules/Console.jsm");
 
 const { ConsoleAPIListener } = require("devtools/shared/webconsole/utils");
 

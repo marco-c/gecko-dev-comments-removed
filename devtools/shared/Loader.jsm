@@ -393,7 +393,7 @@ DevToolsLoader.prototype = {
     };
     
     XPCOMUtils.defineLazyGetter(this._provider.globals, "console", () => {
-      return Cu.import("resource://gre/modules/devtools/shared/Console.jsm", {}).console;
+      return Cu.import("resource://gre/modules/Console.jsm", {}).console;
     });
 
     this._provider.load();

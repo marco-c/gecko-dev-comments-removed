@@ -798,7 +798,7 @@ function Loader(options) {
     globals: {
       get console() {
         
-        let { ConsoleAPI } = Cu.import("resource://gre/modules/devtools/shared/Console.jsm");
+        let { ConsoleAPI } = Cu.import("resource://gre/modules/Console.jsm");
         let console = new ConsoleAPI({
           consoleID: options.id ? "addon/" + options.id : ""
         });
