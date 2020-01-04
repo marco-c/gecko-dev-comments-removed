@@ -89,16 +89,15 @@ public:
       PromiseWorkerProxy::Create(aWorkerPrivate, aWorkerPromise);
   }
 
-  bool Dispatch(JSContext* aCx)
+  void Dispatch(ErrorResult& aRv)
   {
     if (mPromiseWorkerProxy) {
-      return DataStoreCursorRunnable::Dispatch(aCx);
+      DataStoreCursorRunnable::Dispatch(aRv);
     }
 
     
     
     
-    return true;
   }
 
 protected:
@@ -173,7 +172,10 @@ WorkerDataStoreCursor::Next(JSContext* aCx, ErrorResult& aRv)
                                     mBackingCursor,
                                     promise,
                                     aRv);
-  runnable->Dispatch(aCx);
+  runnable->Dispatch(aRv);
+  if (aRv.Failed()) {
+    return nullptr;
+  }
 
   return promise.forget();
 }
@@ -187,7 +189,7 @@ WorkerDataStoreCursor::Close(JSContext* aCx, ErrorResult& aRv)
 
   RefPtr<DataStoreCursorCloseRunnable> runnable =
     new DataStoreCursorCloseRunnable(workerPrivate, mBackingCursor, aRv);
-  runnable->Dispatch(aCx);
+  runnable->Dispatch(aRv);
 }
 
 void
