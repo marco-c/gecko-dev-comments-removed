@@ -1033,7 +1033,7 @@ struct nsStyleBorder {
 
 public:
   nsBorderColors** mBorderColors;        
-  RefPtr<nsCSSShadowArray> mBoxShadow; 
+  nsRefPtr<nsCSSShadowArray> mBoxShadow; 
 
 public:
   nsStyleCorners mBorderRadius;       
@@ -1237,8 +1237,8 @@ struct nsStyleList {
   uint8_t   mListStylePosition;         
 private:
   nsString  mListStyleType;             
-  RefPtr<mozilla::CounterStyle> mCounterStyle; 
-  RefPtr<imgRequestProxy> mListStyleImage; 
+  nsRefPtr<mozilla::CounterStyle> mCounterStyle; 
+  nsRefPtr<imgRequestProxy> mListStyleImage; 
   nsStyleList& operator=(const nsStyleList& aOther) = delete;
 public:
   nsRect        mImageRegion;           
@@ -1418,7 +1418,7 @@ struct nsStylePosition {
   nsStyleGridTemplate mGridTemplateRows;
 
   
-  RefPtr<mozilla::css::GridTemplateAreasValue> mGridTemplateAreas;
+  nsRefPtr<mozilla::css::GridTemplateAreasValue> mGridTemplateAreas;
 
   nsStyleGridLine mGridColumnStart;
   nsStyleGridLine mGridColumnEnd;
@@ -1685,7 +1685,7 @@ struct nsStyleText {
   nsStyleCoord  mLineHeight;            
   nsStyleCoord  mTextIndent;            
 
-  RefPtr<nsCSSShadowArray> mTextShadow; 
+  nsRefPtr<nsCSSShadowArray> mTextShadow; 
 
   bool WhiteSpaceIsSignificant() const {
     return mWhiteSpace == NS_STYLE_WHITESPACE_PRE ||
@@ -2141,7 +2141,7 @@ struct nsStyleDisplay {
 
   
   
-  RefPtr<mozilla::css::URLValue> mBinding;    
+  nsRefPtr<mozilla::css::URLValue> mBinding;    
   nsRect  mClip;                
   float   mOpacity;             
   uint8_t mDisplay;             
@@ -2166,6 +2166,7 @@ struct nsStyleDisplay {
   uint8_t mOrient;              
   uint8_t mMixBlendMode;        
   uint8_t mIsolation;           
+  uint8_t mTopLayer;            
   uint8_t mWillChangeBitField;  
                                 
                                 
@@ -2190,7 +2191,7 @@ struct nsStyleDisplay {
   uint8_t mBackfaceVisibility;
   uint8_t mTransformStyle;
   uint8_t mTransformBox;        
-  RefPtr<nsCSSValueSharedList> mSpecifiedTransform; 
+  nsRefPtr<nsCSSValueSharedList> mSpecifiedTransform; 
   nsStyleCoord mTransformOrigin[3]; 
   nsStyleCoord mChildPerspective; 
   nsStyleCoord mPerspectiveOrigin[2]; 
