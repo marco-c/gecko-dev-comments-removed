@@ -716,7 +716,7 @@ CSSFilterEditorWidget.prototype = {
       return;
     }
 
-    for (let {name, value} of tokenizeFilterValue(cssValue)) {
+    for (let {name, value, quote} of tokenizeFilterValue(cssValue)) {
       
       
       if (name !== "url") {
@@ -725,7 +725,7 @@ CSSFilterEditorWidget.prototype = {
         }
       }
 
-      this.add(name, value);
+      this.add(name, value, quote);
     }
 
     this.emit("updated", this.getCssValue());
@@ -743,7 +743,10 @@ CSSFilterEditorWidget.prototype = {
 
 
 
-  add: function(name, value) {
+
+
+
+  add: function(name, value, quote) {
     const def = this._definition(name);
     if (!def) {
       return false;
@@ -761,6 +764,11 @@ CSSFilterEditorWidget.prototype = {
         value = "";
       } else {
         value = def.range[0] + unitLabel;
+      }
+
+      if (name === "url") {
+        
+        quote = "\"";
       }
     }
 
@@ -785,7 +793,7 @@ CSSFilterEditorWidget.prototype = {
       }
     }
 
-    const index = this.filters.push({value, unit, name}) - 1;
+    const index = this.filters.push({value, unit, name, quote}) - 1;
     this.emit("updated", this.getCssValue());
 
     return index;
@@ -805,9 +813,22 @@ CSSFilterEditorWidget.prototype = {
       return null;
     }
 
-    const {value, unit} = filter;
+    
+    if (filter.name !== "url") {
+      return filter.value + filter.unit;
+    }
 
-    return value + unit;
+    
+    if (filter.quote === "'") {
+      return "'" + filter.value.replace(/\'/g, "\\'") + "'";
+    } else if (filter.quote === "\"") {
+      return "\"" + filter.value.replace(/\"/g, "\\\"") + "\"";
+    }
+
+    
+    
+    
+    return filter.value.replace(/[ \t(){};]/g, "\\$&");
   },
 
   removeAt: function(index) {
@@ -926,7 +947,11 @@ function tokenizeFilterValue(css) {
           state = "function";
           depth = 1;
         } else if (token.tokenType === "url" || token.tokenType === "bad_url") {
-          filters.push({name: "url", value: token.text.trim()});
+          
+          let originalText = css.substring(token.startOffset, token.endOffset);
+          let [, quote] = /^url\([ \t\r\n\f]*(["']?)/i.exec(originalText);
+
+          filters.push({name: "url", value: token.text.trim(), quote: quote});
           
           
         }
