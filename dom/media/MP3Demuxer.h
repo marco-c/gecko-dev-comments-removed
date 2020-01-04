@@ -222,16 +222,22 @@ public:
 
     
     
-    bool Parse(const uint8_t* aBeg, const uint8_t* aEnd);
+    
+    
+    bool Parse(mp4_demuxer::ByteReader* aReader);
 
   private:
     
     
-    bool ParseXing(const uint8_t* aBeg, const uint8_t* aEnd);
+    
+    bool ParseXing(mp4_demuxer::ByteReader* aReader);
 
     
     
-    bool ParseVBRI(const uint8_t* aBeg, const uint8_t* aEnd);
+    
+    
+    
+    bool ParseVBRI(mp4_demuxer::ByteReader* aReader);
 
     
     int64_t mNumFrames;
@@ -298,7 +304,9 @@ public:
 
   
   
-  bool ParseVBRHeader(const uint8_t* aBeg, const uint8_t* aEnd);
+  
+  
+  bool ParseVBRHeader(mp4_demuxer::ByteReader* aReader);
 
 private:
   
