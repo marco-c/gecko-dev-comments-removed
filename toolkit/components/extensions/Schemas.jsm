@@ -95,15 +95,7 @@ const CONTEXT_FOR_VALIDATION = [
 const CONTEXT_FOR_INJECTION = [
   ...CONTEXT_FOR_VALIDATION,
   "shouldInject",
-  "callFunction",
-  "callFunctionNoReturn",
-  "callAsyncFunction",
-  "getProperty",
-  "setProperty",
-
-  "addListener",
-  "hasListener",
-  "removeListener",
+  "getImplementation",
 ];
 
 
@@ -124,6 +116,7 @@ class Context {
         return value;
       },
     };
+    this.isChromeCompat = false;
 
     this.currentChoices = new Set();
     this.choicePathIndex = 0;
@@ -134,7 +127,7 @@ class Context {
       }
     }
 
-    let props = ["preprocessors"];
+    let props = ["preprocessors", "isChromeCompat"];
     for (let prop of props) {
       if (prop in params) {
         if (prop in this && typeof this[prop] == "object") {
@@ -352,21 +345,6 @@ class InjectionContext extends Context {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
   shouldInject(namespace, name, restrictions) {
     throw new Error("Not implemented");
   }
@@ -380,112 +358,10 @@ class InjectionContext extends Context {
 
 
 
-
-  callFunction(pathObj, path, name, args) {
-    throw new Error("Not implemented");
-  }
-
-  
-
-
-
-
-
-
-
-
-  callFunctionNoReturn(pathObj, path, name, args) {
-    throw new Error("Not implemented");
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-  callAsyncFunction(pathObj, path, name, args, callback) {
-    throw new Error("Not implemented");
-  }
-
-  
-
-
-
-
-
-
-
-
-  getProperty(pathObj, path, name) {
-    throw new Error("Not implemented");
-  }
-
-  
-
-
-
-
-
-
-
-
-  setProperty(pathObj, path, name, value) {
-    throw new Error("Not implemented");
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-  addListener(pathObj, path, name, listener, args) {
-    throw new Error("Not implemented");
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-  hasListener(pathObj, path, name, listener) {
-    throw new Error("Not implemented");
-  }
-
-  
-
-
-
-
-
-
-
-
-
-  removeListener(pathObj, path, name, listener) {
+  getImplementation(namespace, name) {
     throw new Error("Not implemented");
   }
 }
-
 
 
 
@@ -665,7 +541,7 @@ class Entry {
 
 
 
-  inject(pathObj, path, name, dest, context) {
+  inject(apiImpl, path, name, dest, context) {
   }
 }
 
@@ -856,7 +732,7 @@ class StringType extends Type {
     return baseType == "string";
   }
 
-  inject(pathObj, path, name, dest, context) {
+  inject(apiImpl, path, name, dest, context) {
     if (this.enumeration) {
       let obj = Cu.createObjectIn(dest, {defineAs: name});
       for (let e of this.enumeration) {
@@ -1173,7 +1049,7 @@ class ValueProperty extends Entry {
     this.value = value;
   }
 
-  inject(pathObj, path, name, dest, context) {
+  inject(apiImpl, path, name, dest, context) {
     dest[name] = this.value;
   }
 }
@@ -1193,14 +1069,14 @@ class TypeProperty extends Entry {
     throw context.makeError(`${msg} for ${this.namespaceName}.${this.name}.`);
   }
 
-  inject(pathObj, path, name, dest, context) {
+  inject(apiImpl, path, name, dest, context) {
     if (this.unsupported) {
       return;
     }
 
     let getStub = () => {
       this.checkDeprecated(context);
-      return context.getProperty(pathObj, path, name);
+      return apiImpl.getProperty();
     };
 
     let desc = {
@@ -1217,7 +1093,7 @@ class TypeProperty extends Entry {
           this.throwError(context, normalized.error);
         }
 
-        context.setProperty(pathObj, path, name, normalized.value);
+        apiImpl.setProperty(normalized.value);
       };
 
       desc.set = Cu.exportFunction(setStub, dest);
@@ -1246,7 +1122,7 @@ class SubModuleProperty extends Entry {
     this.properties = properties;
   }
 
-  inject(pathObj, path, name, dest, context) {
+  inject(apiImpl, path, name, dest, context) {
     let obj = Cu.createObjectIn(dest, {defineAs: name});
 
     let ns = Schemas.namespaces.get(this.namespaceName);
@@ -1263,10 +1139,10 @@ class SubModuleProperty extends Entry {
     let functions = type.functions;
     for (let fun of functions) {
       let subpath = path.concat(name);
-      let pathObj = context.shouldInject(subpath.join("."), fun.name, fun.restrictions || ns.defaultRestrictions);
-      if (pathObj) {
-        pathObj = pathObj === true ? null : pathObj;
-        fun.inject(pathObj, subpath, fun.name, obj, context);
+      let namespace = subpath.join(".");
+      if (context.shouldInject(namespace, fun.name, fun.restrictions || ns.defaultRestrictions)) {
+        let apiImpl = context.getImplementation(namespace, fun.name);
+        fun.inject(apiImpl, subpath, fun.name, obj, context);
       }
     }
 
@@ -1375,7 +1251,7 @@ class FunctionEntry extends CallEntry {
     this.hasAsyncCallback = type.hasAsyncCallback;
   }
 
-  inject(pathObj, path, name, dest, context) {
+  inject(apiImpl, path, name, dest, context) {
     if (this.unsupported) {
       return;
     }
@@ -1393,19 +1269,25 @@ class FunctionEntry extends CallEntry {
         if (this.hasAsyncCallback) {
           callback = actuals.pop();
         }
-        return context.callAsyncFunction(pathObj, path, name, actuals, callback);
+        if (callback === null && context.isChromeCompat) {
+          
+          
+          
+          callback = () => {};
+        }
+        return apiImpl.callAsyncFunction(actuals, callback);
       };
     } else if (!this.returns) {
       stub = (...args) => {
         this.checkDeprecated(context);
         let actuals = this.checkParameters(args, context);
-        return context.callFunctionNoReturn(pathObj, path, name, actuals);
+        return apiImpl.callFunctionNoReturn(actuals);
       };
     } else {
       stub = (...args) => {
         this.checkDeprecated(context);
         let actuals = this.checkParameters(args, context);
-        return context.callFunction(pathObj, path, name, actuals);
+        return apiImpl.callFunction(actuals);
       };
     }
     Cu.exportFunction(stub, dest, {defineAs: name});
@@ -1429,7 +1311,7 @@ class Event extends CallEntry {
     return r.value;
   }
 
-  inject(pathObj, path, name, dest, context) {
+  inject(apiImpl, path, name, dest, context) {
     if (this.unsupported) {
       return;
     }
@@ -1441,17 +1323,17 @@ class Event extends CallEntry {
     let addStub = (listener, ...args) => {
       listener = this.checkListener(listener, context);
       let actuals = this.checkParameters(args, context);
-      context.addListener(pathObj, this.path, name, listener, actuals);
+      apiImpl.addListener(listener, actuals);
     };
 
     let removeStub = (listener) => {
       listener = this.checkListener(listener, context);
-      context.removeListener(pathObj, this.path, name, listener);
+      apiImpl.removeListener(listener);
     };
 
     let hasStub = (listener) => {
       listener = this.checkListener(listener, context);
-      return context.hasListener(pathObj, this.path, name, listener);
+      return apiImpl.hasListener(listener);
     };
 
     let obj = Cu.createObjectIn(dest, {defineAs: name});
@@ -1886,10 +1768,9 @@ this.Schemas = {
 
       let obj = Cu.createObjectIn(dest, {defineAs: namespace});
       for (let [name, entry] of ns) {
-        let pathObj = context.shouldInject(namespace, name, entry.restrictions || ns.defaultRestrictions);
-        if (pathObj) {
-          pathObj = pathObj === true ? null : pathObj;
-          entry.inject(pathObj, [namespace], name, obj, context);
+        if (context.shouldInject(namespace, name, entry.restrictions || ns.defaultRestrictions)) {
+          let apiImpl = context.getImplementation(namespace, name);
+          entry.inject(apiImpl, [namespace], name, obj, context);
         }
       }
 

@@ -66,7 +66,7 @@ let schemaJson = [
     },
   },
 ];
-add_task(function* testPathObj() {
+add_task(function* testRestrictions() {
   let url = "data:," + JSON.stringify(schemaJson);
   yield Schemas.load(url);
   let results = {};
@@ -76,6 +76,12 @@ add_task(function* testPathObj() {
       name = name === null ? ns : ns + "." + name;
       results[name] = restrictions;
       return true;
+    },
+    getImplementation() {
+      
+      
+      
+      
     },
   };
 
@@ -121,5 +127,13 @@ add_task(function* testPathObj() {
   
   verify("with_submodule.prop1.restrictNo", "test_nine");
   verify("with_submodule.prop1.restrictYes", "test_ten");
+
+  
+  
+  do_check_eq(root.noRestrict.prop3, 1);
+
+  Assert.throws(() => root.noRestrict.prop1,
+                /undefined/,
+                "Should throw when the implementation is absent.");
 });
 
