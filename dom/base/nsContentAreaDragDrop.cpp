@@ -57,6 +57,7 @@
 #include "TabParent.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/HTMLAreaElement.h"
+#include "nsVariant.h"
 
 using namespace mozilla::dom;
 
@@ -726,11 +727,9 @@ DragDataProducer::AddString(DataTransfer* aDataTransfer,
                             const nsAString& aData,
                             nsIPrincipal* aPrincipal)
 {
-  nsCOMPtr<nsIWritableVariant> variant = do_CreateInstance(NS_VARIANT_CONTRACTID);
-  if (variant) {
-    variant->SetAsAString(aData);
-    aDataTransfer->SetDataWithPrincipal(aFlavor, variant, 0, aPrincipal);
-  }
+  nsRefPtr<nsVariant> variant = new nsVariant();
+  variant->SetAsAString(aData);
+  aDataTransfer->SetDataWithPrincipal(aFlavor, variant, 0, aPrincipal);
 }
 
 nsresult
@@ -784,12 +783,10 @@ DragDataProducer::AddStringsToDataTransfer(nsIContent* aDragNode,
   
   
   if (mImage) {
-    nsCOMPtr<nsIWritableVariant> variant = do_CreateInstance(NS_VARIANT_CONTRACTID);
-    if (variant) {
-      variant->SetAsISupports(mImage);
-      aDataTransfer->SetDataWithPrincipal(NS_LITERAL_STRING(kNativeImageMime),
-                                          variant, 0, principal);
-    }
+    nsRefPtr<nsVariant> variant = new nsVariant();
+    variant->SetAsISupports(mImage);
+    aDataTransfer->SetDataWithPrincipal(NS_LITERAL_STRING(kNativeImageMime),
+                                        variant, 0, principal);
 
     
     
@@ -798,12 +795,10 @@ DragDataProducer::AddStringsToDataTransfer(nsIContent* aDragNode,
     nsCOMPtr<nsIFlavorDataProvider> dataProvider =
       new nsContentAreaDragDropDataProvider();
     if (dataProvider) {
-      nsCOMPtr<nsIWritableVariant> variant = do_CreateInstance(NS_VARIANT_CONTRACTID);
-      if (variant) {
-        variant->SetAsISupports(dataProvider);
-        aDataTransfer->SetDataWithPrincipal(NS_LITERAL_STRING(kFilePromiseMime),
-                                            variant, 0, principal);
-      }
+      nsRefPtr<nsVariant> variant = new nsVariant();
+      variant->SetAsISupports(dataProvider);
+      aDataTransfer->SetDataWithPrincipal(NS_LITERAL_STRING(kFilePromiseMime),
+                                          variant, 0, principal);
     }
 
     AddString(aDataTransfer, NS_LITERAL_STRING(kFilePromiseURLMime),
