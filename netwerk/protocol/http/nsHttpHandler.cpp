@@ -742,6 +742,7 @@ nsHttpHandler::InitUserAgentComponents()
     nsresult rv;
     
 #if defined MOZ_WIDGET_ANDROID
+#ifndef MOZ_UA_OS_AGNOSTIC 
     nsAutoString androidVersion;
     rv = infoService->GetPropertyAsAString(
         NS_LITERAL_STRING("release_version"), androidVersion);
@@ -756,6 +757,7 @@ nsHttpHandler::InitUserAgentComponents()
         mPlatform += NS_LossyConvertUTF16toASCII(androidVersion);
       }
     }
+#endif
 #endif
     
     bool isTablet;
