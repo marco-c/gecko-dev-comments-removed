@@ -441,7 +441,11 @@ AsyncFetchAndSetIconForPage::FetchFromNetwork() {
     priorityChannel->AdjustPriority(nsISupportsPriority::PRIORITY_LOWEST);
   }
 
-  return channel->AsyncOpen2(this);
+  rv = channel->AsyncOpen2(this);
+  if (NS_SUCCEEDED(rv)) {
+    mRequest = channel;
+  }
+  return rv;
 }
 
 NS_IMETHODIMP
@@ -462,6 +466,9 @@ NS_IMETHODIMP
 AsyncFetchAndSetIconForPage::OnStartRequest(nsIRequest* aRequest,
                                             nsISupports* aContext)
 {
+  
+  
+  
   mRequest = aRequest;
   if (mCanceled) {
     mRequest->Cancel(NS_BINDING_ABORTED);
