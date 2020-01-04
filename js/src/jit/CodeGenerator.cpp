@@ -7896,7 +7896,6 @@ CodeGenerator::generateAsmJS(wasm::FuncOffsets* offsets)
                        target);
     }
 
-
     if (!generateBody())
         return false;
 
@@ -7912,7 +7911,6 @@ CodeGenerator::generateAsmJS(wasm::FuncOffsets* offsets)
         masm.jump(masm.asmStackOverflowLabel());
     }
 
-
 #if defined(JS_ION_PERF)
     
     gen->perfSpewer().noteEndInlineCode(masm);
@@ -7920,10 +7918,6 @@ CodeGenerator::generateAsmJS(wasm::FuncOffsets* offsets)
 
     if (!generateOutOfLineCode())
         return false;
-
-    
-    
-    masm.flushBuffer();
 
     offsets->end = masm.currentOffset();
 
