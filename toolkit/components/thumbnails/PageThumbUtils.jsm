@@ -187,6 +187,7 @@ this.PageThumbUtils = {
     
     let scale = Math.min(Math.max(intermediateWidth / contentWidth,
                                   intermediateHeight / contentHeight), 1);
+
     let snapshotCtx = snapshotCanvas.getContext("2d");
     snapshotCtx.save();
     snapshotCtx.scale(scale, scale);
