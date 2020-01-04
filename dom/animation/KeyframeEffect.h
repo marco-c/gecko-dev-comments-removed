@@ -145,6 +145,10 @@ struct AnimationProperty
   
   bool mIsRunningOnCompositor = false;
 
+  
+  
+  Maybe<nsString> mPerformanceWarning;
+
   InfallibleTArray<AnimationPropertySegment> mSegments;
 
   
@@ -321,6 +325,12 @@ public:
 
   nsIDocument* GetRenderedDocument() const;
   nsPresContext* GetPresContext() const;
+
+  
+  
+  
+  void SetPerformanceWarning(nsCSSProperty aProperty,
+                             const nsAString& aMessage);
 
 protected:
   KeyframeEffectReadOnly(nsIDocument* aDocument,
