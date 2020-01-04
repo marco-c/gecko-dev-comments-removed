@@ -48,28 +48,14 @@ addTab = function(url) {
 
 
 function openRuleView() {
-  return openInspectorSidebarTab("ruleview").then(({toolbox, inspector}) => {
+  return openInspectorSidebarTab("ruleview").then(data => {
     return {
-      toolbox,
-      inspector,
-      view: inspector.ruleview.view
+      toolbox: data.toolbox,
+      inspector: data.inspector,
+      testActor: data.testActor,
+      view: data.inspector.ruleview.view
     };
   });
-}
-
-
-
-
-
-
-
-
-
-function getNode(nodeOrSelector) {
-  info("Getting the node for '" + nodeOrSelector + "'");
-  return typeof nodeOrSelector === "string" ?
-    content.document.querySelector(nodeOrSelector) :
-    nodeOrSelector;
 }
 
 
@@ -205,6 +191,21 @@ function* getComputedStyleProperty(selector, pseudo, propName) {
                                 {selector,
                                 pseudo,
                                 name: propName});
+}
+
+
+
+
+
+
+
+
+
+function getStyle(testActor, selector, propName) {
+  return testActor.eval(`
+    content.document.querySelector("${selector}")
+                    .style.getPropertyValue("${propName}");
+  `);
 }
 
 
@@ -577,6 +578,105 @@ function getRuleViewRuleEditor(view, childrenIndex, nodeIndex) {
     view.element.children[childrenIndex].childNodes[nodeIndex]._ruleEditor :
     view.element.children[childrenIndex]._ruleEditor;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var addProperty = Task.async(function*(view, ruleIndex, name, value) {
+  info("Adding new property " + name + ":" + value + " to rule " + ruleIndex);
+
+  let ruleEditor = getRuleViewRuleEditor(view, ruleIndex);
+  let editor = yield focusNewRuleViewProperty(ruleEditor);
+
+  info("Adding name " + name);
+  editor.input.value = name;
+  let onNameAdded = view.once("ruleview-changed");
+  EventUtils.synthesizeKey("VK_RETURN", {}, view.styleWindow);
+  yield onNameAdded;
+
+  
+  editor = inplaceEditor(view.styleDocument.activeElement);
+  let textProps = ruleEditor.rule.textProps;
+  let textProp = textProps[textProps.length - 1];
+
+  info("Adding value " + value);
+  editor.input.value = value;
+  let onValueAdded = view.once("ruleview-changed");
+  EventUtils.synthesizeKey("VK_RETURN", {}, view.styleWindow);
+  yield onValueAdded;
+
+  
+  view.styleDocument.activeElement.blur();
+  return textProp;
+});
+
+
+
+
+
+
+
+
+
+
+
+var setProperty = Task.async(function*(view, textProp, value) {
+  let editor = yield focusEditableField(view, textProp.editor.valueSpan);
+
+  let onRuleViewRefreshed = view.once("ruleview-changed");
+  editor.input.value = value;
+  EventUtils.synthesizeKey("VK_RETURN", {}, view.styleWindow);
+  yield onRuleViewRefreshed;
+
+  view.styleDocument.activeElement.blur();
+});
+
+
+
+
+
+
+
+
+
+var removeProperty = Task.async(function*(view, textProp) {
+  yield focusEditableField(view, textProp.editor.nameSpan);
+
+  let onModifications = view.once("ruleview-changed");
+  info("Deleting the property name now");
+  EventUtils.synthesizeKey("VK_DELETE", {}, view.styleWindow);
+  EventUtils.synthesizeKey("VK_RETURN", {}, view.styleWindow);
+  yield onModifications;
+
+  
+  view.styleDocument.activeElement.blur();
+});
+
+
+
+
+
+
+
+
+
+var togglePropStatus = Task.async(function*(view, textProp) {
+  let onRuleViewRefreshed = view.once("ruleview-changed");
+  textProp.editor.enable.click();
+  yield onRuleViewRefreshed;
+});
 
 
 
