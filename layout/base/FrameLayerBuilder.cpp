@@ -6076,7 +6076,8 @@ ContainerState::CreateMaskLayer(Layer *aLayer,
     GetMaskLayerImageCache()->FindImageFor(&lookupKey);
 
   if (!container) {
-    IntSize surfaceSizeInt(NSToIntCeil(surfaceSize.width),
+    
+    IntSize surfaceSizeInt(GetAlignedStride<4>(NSToIntCeil(surfaceSize.width)),
                            NSToIntCeil(surfaceSize.height));
     
     RefPtr<DrawTarget> dt =
