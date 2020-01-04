@@ -363,6 +363,8 @@ public:
   
   already_AddRefed<DOMMediaStream> Clone();
 
+  IMPL_EVENT_HANDLER(addtrack)
+
   
 
   
@@ -525,6 +527,11 @@ public:
 
 
 
+
+
+
+
+
   MediaStreamTrack* CreateDOMTrack(TrackID aTrackID, MediaSegment::Type aType,
                                    MediaStreamTrackSource* aSource);
 
@@ -603,6 +610,10 @@ protected:
 
   
   void NotifyTrackRemoved(const RefPtr<MediaStreamTrack>& aTrack);
+
+  
+  nsresult DispatchTrackEvent(const nsAString& aName,
+                              const RefPtr<MediaStreamTrack>& aTrack);
 
   class OwnedStreamListener;
   friend class OwnedStreamListener;
