@@ -25,6 +25,7 @@ class BluetoothGattService final : public nsISupports
                                  , public nsWrapperCache
 {
   friend class BluetoothGatt;
+  friend class BluetoothGattServer;
 public:
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(BluetoothGattService)
@@ -62,6 +63,23 @@ public:
   
 
 
+  static already_AddRefed<BluetoothGattService> Constructor(
+    const GlobalObject& aGlobal,
+    const BluetoothGattServiceInit& aInit,
+    ErrorResult& aRv);
+  already_AddRefed<Promise> AddCharacteristic(
+    const nsAString& aCharacteristicUuid,
+    const GattPermissions& aPermissions,
+    const GattCharacteristicProperties& aProperties,
+    const ArrayBuffer& aValue,
+    ErrorResult& aRv);
+  already_AddRefed<Promise> AddIncludedService(
+    BluetoothGattService& aIncludedService,
+    ErrorResult& aRv);
+
+  
+
+
   const nsAString& GetAppUuid() const
   {
     return mAppUuid;
@@ -72,17 +90,28 @@ public:
     return mServiceId;
   }
 
+  const BluetoothAttributeHandle& GetServiceHandle() const
+  {
+    return mServiceHandle;
+  }
+
   nsPIDOMWindow* GetParentObject() const
   {
      return mOwner;
   }
 
+  uint16_t GetHandleCount() const;
+
   virtual JSObject* WrapObject(JSContext* aCx,
                                JS::Handle<JSObject*> aGivenProto) override;
 
+  
   BluetoothGattService(nsPIDOMWindow* aOwner,
                        const nsAString& aAppUuid,
                        const BluetoothGattServiceId& aServiceId);
+  
+  BluetoothGattService(nsPIDOMWindow* aOwner,
+                       const BluetoothGattServiceInit& aInit);
 
 private:
   ~BluetoothGattService();
@@ -125,6 +154,61 @@ private:
   
 
 
+
+
+  void AssignAppUuid(const nsAString& aAppUuid);
+
+  
+
+
+
+
+
+
+  void AssignServiceHandle(const BluetoothAttributeHandle& aServiceHandle);
+
+  
+
+
+
+
+
+
+
+
+  void AssignCharacteristicHandle(
+    const BluetoothUuid& aCharacteristicUuid,
+    const BluetoothAttributeHandle& aCharacteristicHandle);
+
+  
+
+
+
+
+
+
+
+
+
+  void AssignDescriptorHandle(
+    const BluetoothUuid& aDescriptorUuid,
+    const BluetoothAttributeHandle& aCharacteristicHandle,
+    const BluetoothAttributeHandle& aDescriptorHandle);
+
+  
+
+
+
+
+
+  bool IsActivated() const
+  {
+    return mActive;
+  }
+
+  
+
+
   nsCOMPtr<nsPIDOMWindow> mOwner;
 
   
@@ -154,6 +238,36 @@ private:
 
 
   nsTArray<nsRefPtr<BluetoothGattCharacteristic>> mCharacteristics;
+
+  
+
+
+  const BluetoothAttRole mAttRole;
+
+  
+
+
+
+
+
+
+
+
+
+
+  bool mActive;
+
+  
+
+
+
+
+  BluetoothAttributeHandle mServiceHandle;
+
+  
+
+
+  static const uint16_t sHandleCount;
 };
 
 END_BLUETOOTH_NAMESPACE
@@ -176,6 +290,28 @@ public:
     const mozilla::dom::bluetooth::BluetoothGattServiceId& aServiceId) const
   {
     return aService->GetServiceId() == aServiceId;
+  }
+};
+
+
+
+
+
+
+
+
+
+template <>
+class nsDefaultComparator <
+  nsRefPtr<mozilla::dom::bluetooth::BluetoothGattService>,
+  mozilla::dom::bluetooth::BluetoothAttributeHandle> {
+public:
+  bool Equals(
+    const nsRefPtr<mozilla::dom::bluetooth::BluetoothGattService>& aService,
+    const mozilla::dom::bluetooth::BluetoothAttributeHandle& aServiceHandle)
+    const
+  {
+    return aService->GetServiceHandle() == aServiceHandle;
   }
 };
 
