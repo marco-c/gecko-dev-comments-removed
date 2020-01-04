@@ -273,13 +273,7 @@ pref("browser.urlbar.doubleClickSelectsAll", false);
 pref("browser.urlbar.autoFill", true);
 pref("browser.urlbar.autoFill.typed", true);
 
-#ifdef NIGHTLY_BUILD
-
 pref("browser.urlbar.unifiedcomplete", true);
-#else
-
-pref("browser.urlbar.unifiedcomplete", false);
-#endif
 
 
 
