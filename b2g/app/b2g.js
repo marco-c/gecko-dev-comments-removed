@@ -1068,7 +1068,7 @@ pref("dom.wakelock.enabled", true);
 
 
 pref("dom.apps.customization.enabled", true);
-pref("dom.apps.reviewer_paths", "/reviewers/,/content/addon/review/");
+pref("dom.apps.reviewer_paths", "/reviewers/,/extension/reviewers/");
 
 
 pref("layout.accessiblecaret.enabled", true);
