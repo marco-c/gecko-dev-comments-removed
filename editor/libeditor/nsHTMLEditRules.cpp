@@ -4589,8 +4589,7 @@ nsHTMLEditRules::WillAlign(Selection& aSelection,
       
       
       
-      rv = AlignBlock(static_cast<nsIDOMElement*>(node->AsDOMNode()),
-                       &aAlignType, true);
+      rv = AlignBlock(*node->AsElement(), aAlignType, ContentsOnly::yes);
       NS_ENSURE_SUCCESS(rv, rv);
       return NS_OK;
     }
@@ -4647,8 +4646,7 @@ nsHTMLEditRules::WillAlign(Selection& aSelection,
     
     mNewBlock = div->AsDOMNode();
     
-    rv = AlignBlock(static_cast<nsIDOMElement*>(GetAsDOMNode(div)),
-                    &aAlignType, true);
+    rv = AlignBlock(*div, aAlignType, ContentsOnly::yes);
     NS_ENSURE_SUCCESS(rv, rv);
     *aHandled = true;
     
@@ -4686,8 +4684,7 @@ nsHTMLEditRules::WillAlign(Selection& aSelection,
     
     
     if (nsHTMLEditUtils::SupportsAlignAttr(GetAsDOMNode(curNode))) {
-      rv = AlignBlock(static_cast<nsIDOMElement*>(curNode->AsDOMNode()),
-                      &aAlignType, false);
+      rv = AlignBlock(*curNode->AsElement(), aAlignType, ContentsOnly::no);
       NS_ENSURE_SUCCESS(rv, rv);
       
       curDiv = nullptr;
@@ -4748,8 +4745,7 @@ nsHTMLEditRules::WillAlign(Selection& aSelection,
       
       mNewBlock = curDiv->AsDOMNode();
       
-      rv = AlignBlock(static_cast<nsIDOMElement*>(curDiv->AsDOMNode()),
-                       &aAlignType, true);
+      rv = AlignBlock(*curDiv, aAlignType, ContentsOnly::yes);
     }
 
     NS_ENSURE_STATE(curNode->IsContent());
@@ -8471,34 +8467,36 @@ nsHTMLEditRules::MakeSureElemStartsOrEndsOnCR(nsIDOMNode *aNode)
 }
 
 nsresult
-nsHTMLEditRules::AlignBlock(nsIDOMElement * aElement, const nsAString * aAlignType, bool aContentsOnly)
+nsHTMLEditRules::AlignBlock(Element& aElement, const nsAString& aAlignType,
+                            ContentsOnly aContentsOnly)
 {
-  NS_ENSURE_TRUE(aElement, NS_ERROR_NULL_POINTER);
-
-  nsCOMPtr<nsIDOMNode> node = do_QueryInterface(aElement);
-  bool isBlock = IsBlockNode(node);
-  if (!isBlock && !nsHTMLEditUtils::IsHR(node)) {
+  if (!IsBlockNode(aElement.AsDOMNode()) &&
+      !aElement.IsHTMLElement(nsGkAtoms::hr)) {
     
     return NS_OK;
   }
 
-  nsresult res = RemoveAlignment(node, *aAlignType, aContentsOnly);
+  NS_ENSURE_STATE(mHTMLEditor);
+  nsCOMPtr<nsIEditor> kungFuDeathGrip(mHTMLEditor);
+
+  nsresult res = RemoveAlignment(aElement.AsDOMNode(), aAlignType,
+                                 aContentsOnly == ContentsOnly::yes);
   NS_ENSURE_SUCCESS(res, res);
   NS_NAMED_LITERAL_STRING(attr, "align");
-  NS_ENSURE_STATE(mHTMLEditor);
   if (mHTMLEditor->IsCSSEnabled()) {
     
     
-    NS_ENSURE_STATE(mHTMLEditor);
-    res = mHTMLEditor->SetAttributeOrEquivalent(aElement, attr, *aAlignType, false);
+    res = mHTMLEditor->SetAttributeOrEquivalent(
+      static_cast<nsIDOMElement*>(aElement.AsDOMNode()), attr, aAlignType,
+      false);
     NS_ENSURE_SUCCESS(res, res);
-  }
-  else {
+  } else {
     
     
-    if (nsHTMLEditUtils::SupportsAlignAttr(node)) {
-      NS_ENSURE_STATE(mHTMLEditor);
-      res = mHTMLEditor->SetAttribute(aElement, attr, *aAlignType);
+    if (nsHTMLEditUtils::SupportsAlignAttr(aElement.AsDOMNode())) {
+      res =
+        mHTMLEditor->SetAttribute(static_cast<nsIDOMElement*>(aElement.AsDOMNode()),
+                                  attr, aAlignType);
       NS_ENSURE_SUCCESS(res, res);
     }
   }
