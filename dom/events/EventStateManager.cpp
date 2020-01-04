@@ -702,7 +702,7 @@ EventStateManager::PreHandleEvent(nsPresContext* aPresContext,
     FlushPendingEvents(aPresContext);
     break;
   }
-  case eDragStart:
+  case eLegacyDragGesture:
     if (Prefs::ClickHoldContextMenu()) {
       
       
@@ -1766,8 +1766,12 @@ EventStateManager::GenerateDragGesture(nsPresContext* aPresContext,
       WidgetDragEvent startEvent(aEvent->IsTrusted(), eDragStart, widget);
       FillInEventFromGestureDown(&startEvent);
 
-      startEvent.mDataTransfer = dataTransfer;
-      startEvent.inputSource = aEvent->inputSource;
+      WidgetDragEvent gestureEvent(aEvent->IsTrusted(),
+                                   eLegacyDragGesture, widget);
+      FillInEventFromGestureDown(&gestureEvent);
+
+      startEvent.mDataTransfer = gestureEvent.mDataTransfer = dataTransfer;
+      startEvent.inputSource = gestureEvent.inputSource = aEvent->inputSource;
 
       
       
@@ -1792,6 +1796,12 @@ EventStateManager::GenerateDragGesture(nsPresContext* aPresContext,
                                 nullptr, &status);
 
       WidgetDragEvent* event = &startEvent;
+      if (status != nsEventStatus_eConsumeNoDefault) {
+        status = nsEventStatus_eIgnore;
+        EventDispatcher::Dispatch(targetContent, aPresContext, &gestureEvent,
+                                  nullptr, &status);
+        event = &gestureEvent;
+      }
 
       nsCOMPtr<nsIObserverService> observerService =
         mozilla::services::GetObserverService();
