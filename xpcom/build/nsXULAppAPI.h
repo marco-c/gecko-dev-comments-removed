@@ -127,6 +127,12 @@
 
 
 
+#define XRE_ADDON_APP_DIR "XREAddonAppDir"
+
+
+
+
+
 
 
 
