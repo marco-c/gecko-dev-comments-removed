@@ -506,25 +506,28 @@ private:
 
     ErrorResult rv;
     scriptloader::LoadMainScript(aCx, mScriptURL, WorkerScript, rv);
-    
-    
-    
     rv.WouldReportJSException();
-    if (NS_WARN_IF(rv.Failed())) {
-      if (rv.IsJSException()) {
-        
-        
-        
-        
-        
-        
-        
-        JSAutoCompartment ac(aCx,
-          aWorkerPrivate->GlobalScope()->GetGlobalJSObject());
-        rv.MaybeSetPendingException(aCx);
-      } else {
-        rv.SuppressException();
-      }
+    
+    
+    
+    
+    if (rv.ErrorCodeIs(NS_BINDING_ABORTED)) {
+      rv.SuppressException();
+      return false;
+    }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    JSAutoCompartment ac(aCx,
+                         aWorkerPrivate->GlobalScope()->GetGlobalJSObject());
+    if (rv.MaybeSetPendingException(aCx)) {
       return false;
     }
 
@@ -562,16 +565,19 @@ private:
     ErrorResult rv;
     JSAutoCompartment ac(aCx, global);
     scriptloader::LoadMainScript(aCx, mScriptURL, DebuggerScript, rv);
-    
-    
-    
     rv.WouldReportJSException();
-    if (NS_WARN_IF(rv.Failed())) {
-      if (rv.IsJSException()) {
-        rv.MaybeSetPendingException(aCx);
-      } else {
-        rv.SuppressException();
-      }
+    
+    
+    
+    
+    if (rv.ErrorCodeIs(NS_BINDING_ABORTED)) {
+      rv.SuppressException();
+      return false;
+    }
+    
+    
+    
+    if (rv.MaybeSetPendingException(aCx)) {
       return false;
     }
 
@@ -4067,10 +4073,9 @@ WorkerPrivate::Constructor(JSContext* aCx,
     nsresult rv = GetLoadInfo(aCx, nullptr, parent, aScriptURL,
                               aIsChromeWorker, InheritLoadGroup,
                               aWorkerType, stackLoadInfo.ptr());
+    aRv.MightThrowJSException();
     if (NS_FAILED(rv)) {
-      
-      scriptloader::ReportLoadError(aCx, rv);
-      aRv.Throw(rv);
+      scriptloader::ReportLoadError(aCx, aRv, rv);
       return nullptr;
     }
 
