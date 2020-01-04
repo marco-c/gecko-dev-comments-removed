@@ -252,8 +252,7 @@ DataSourceSurfaceD2D::Map(MapType aMapType, MappedSurface *aMappedSurface)
 {
   
   MOZ_ASSERT(!mMapped);
-  
-  MOZ_ASSERT(mMapCount == 0);
+  MOZ_ASSERT(!mIsMapped);
 
   if (!mTexture) {
     return false;
@@ -278,24 +277,19 @@ DataSourceSurfaceD2D::Map(MapType aMapType, MappedSurface *aMappedSurface)
     return false;
   }
 
-  if (!map.pData) {
-    return false;
-  }
-
   aMappedSurface->mData = (uint8_t*)map.pData;
   aMappedSurface->mStride = map.RowPitch;
+  mIsMapped = !!aMappedSurface->mData;
 
-  mMapCount++;
-  mIsReadMap = aMapType == MapType::READ;
-  return true;
+  return mIsMapped;
 }
 
 void
 DataSourceSurfaceD2D::Unmap()
 {
-  MOZ_ASSERT(mMapCount > 0);
+  MOZ_ASSERT(mIsMapped);
 
-  mMapCount--;
+  mIsMapped = false;
   mTexture->Unmap(0);
 }
 
@@ -303,9 +297,10 @@ void
 DataSourceSurfaceD2D::EnsureMappedTexture()
 {
   
-  MOZ_ASSERT(mMapCount == 0);
+  MOZ_ASSERT(!mIsMapped);
 
-  if (mMapped || !mTexture) {
+  if (mMapped ||
+      !mTexture) {
     return;
   }
 

@@ -183,8 +183,7 @@ DataSourceSurfaceD2D1::Map(MapType aMapType, MappedSurface *aMappedSurface)
 {
   
   MOZ_ASSERT(!mMapped);
-  
-  MOZ_ASSERT(mMapCount == 0);
+  MOZ_ASSERT(!mIsMapped);
 
   D2D1_MAP_OPTIONS options;
   if (aMapType == MapType::READ) {
@@ -201,22 +200,16 @@ DataSourceSurfaceD2D1::Map(MapType aMapType, MappedSurface *aMappedSurface)
   aMappedSurface->mData = map.bits;
   aMappedSurface->mStride = map.pitch;
 
-  if (!aMappedSurface->mData) {
-    return false;
-  }
-
-  mMapCount++;
-  mIsReadMap = aMapType == MapType::READ;
-
-  return true;
+  mIsMapped = !!aMappedSurface->mData;
+  return mIsMapped;
 }
 
 void
 DataSourceSurfaceD2D1::Unmap()
 {
-  MOZ_ASSERT(mMapCount > 0);
+  MOZ_ASSERT(mIsMapped);
 
-  mMapCount--;
+  mIsMapped = false;
   mBitmap->Unmap();
 }
 
@@ -232,7 +225,7 @@ void
 DataSourceSurfaceD2D1::EnsureMapped()
 {
   
-  MOZ_ASSERT(mMapCount == 0);
+  MOZ_ASSERT(!mIsMapped);
   if (mMapped) {
     return;
   }
