@@ -6,31 +6,31 @@
 
 "use strict";
 
+
 define(function(require, exports, module) {
+  
+  const React = require("devtools/client/shared/vendor/react");
+  const DOM = React.DOM;
+
+  
 
 
-const React = require("devtools/client/shared/vendor/react");
-const DOM = React.DOM;
+  const ObjectLink = React.createClass({
+    displayName: "ObjectLink",
 
+    render: function() {
+      let className = this.props.className;
+      let objectClassName = className ? " objectLink-" + className : "";
+      let linkClassName = "objectLink" + objectClassName + " a11yFocus";
 
+      return (
+        DOM.a({className: linkClassName, _repObject: this.props.object},
+          this.props.children
+        )
+      );
+    }
+  });
 
-
-const ObjectLink = React.createClass({
-  displayName: "ObjectLink",
-
-  render: function() {
-    var className = this.props.className;
-    var objectClassName = className ? " objectLink-" + className : "";
-    var linkClassName = "objectLink" + objectClassName + " a11yFocus";
-
-    return (
-      DOM.a({className: linkClassName, _repObject: this.props.object},
-        this.props.children
-      )
-    )
-  }
-});
-
-
-exports.ObjectLink = ObjectLink;
+  
+  exports.ObjectLink = ObjectLink;
 });

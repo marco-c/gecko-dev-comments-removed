@@ -6,26 +6,26 @@
 
 "use strict";
 
+
 define(function(require, exports, module) {
+  
+  const React = require("devtools/client/shared/vendor/react");
+  const DOM = React.DOM;
+
+  
 
 
-const React = require("devtools/client/shared/vendor/react");
-const DOM = React.DOM;
 
+  const Caption = React.createClass({
+    displayName: "Caption",
 
+    render: function() {
+      return (
+        DOM.span({"className": "caption"}, this.props.object)
+      );
+    },
+  });
 
-
-
-const Caption = React.createClass({
-  displayName: "Caption",
-
-  render: function() {
-    return (
-      DOM.span({"className": "caption"}, this.props.object)
-    );
-  },
-});
-
-
-exports.Caption = Caption;
+  
+  exports.Caption = Caption;
 });

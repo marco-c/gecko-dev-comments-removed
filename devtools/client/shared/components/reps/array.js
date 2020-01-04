@@ -6,184 +6,203 @@
 
 "use strict";
 
+
 define(function(require, exports, module) {
+  
+  const React = require("devtools/client/shared/vendor/react");
+  const { createFactories } = require("./rep-utils");
+  const { Rep } = createFactories(require("./rep"));
+  const { ObjectBox } = createFactories(require("./object-box"));
+  const { Caption } = createFactories(require("./caption"));
+
+  
+  const DOM = React.DOM;
+
+  
 
 
-const React = require("devtools/client/shared/vendor/react");
-const { createFactories } = require("./rep-utils");
-const { Rep } = createFactories(require("./rep"));
-const { ObjectBox } = createFactories(require("./object-box"));
-const { Caption } = createFactories(require("./caption"));
 
+  let ArrayRep = React.createClass({
+    displayName: "ArrayRep",
 
-const DOM = React.DOM;
+    render: function() {
+      let mode = this.props.mode || "short";
+      let object = this.props.object;
+      let items;
 
+      if (mode == "tiny") {
+        items = DOM.span({className: "length"}, object.length);
+      } else {
+        let max = (mode == "short") ? 3 : 300;
+        items = this.arrayIterator(object, max);
+      }
 
+      return (
+        ObjectBox({
+          className: "array",
+          onClick: this.onToggleProperties},
+          DOM.a({
+            className: "objectLink",
+            onclick: this.onClickBracket},
+            DOM.span({
+              className: "arrayLeftBracket",
+              role: "presentation"},
+              "["
+            )
+          ),
+          items,
+          DOM.a({
+            className: "objectLink",
+            onclick: this.onClickBracket},
+            DOM.span({
+              className: "arrayRightBracket",
+              role: "presentation"},
+              "]"
+            )
+          ),
+          DOM.span({
+            className: "arrayProperties",
+            role: "group"}
+          )
+        )
+      );
+    },
 
+    getTitle: function(object, context) {
+      return "[" + object.length + "]";
+    },
 
+    arrayIterator: function(array, max) {
+      let items = [];
+      let delim;
 
-var ArrayRep = React.createClass({
-  displayName: "ArrayRep",
+      for (let i = 0; i < array.length && i <= max; i++) {
+        try {
+          let value = array[i];
 
-  render: function() {
-    var mode = this.props.mode || "short";
-    var object = this.props.object;
-    var hasTwisty = this.hasSpecialProperties(object);
+          delim = (i == array.length - 1 ? "" : ", ");
 
-    var items;
-
-    if (mode == "tiny") {
-      items = DOM.span({className: "length"}, object.length);
-    } else {
-      var max = (mode == "short") ? 3 : 300;
-      items = this.arrayIterator(object, max);
-    }
-
-    return (
-      ObjectBox({className: "array", onClick: this.onToggleProperties},
-        DOM.a({className: "objectLink", onclick: this.onClickBracket},
-          DOM.span({className: "arrayLeftBracket", role: "presentation"}, "[")
-        ),
-        items,
-        DOM.a({className: "objectLink", onclick: this.onClickBracket},
-          DOM.span({className: "arrayRightBracket", role: "presentation"}, "]")
-        ),
-        DOM.span({className: "arrayProperties", role: "group"})
-      )
-    )
-  },
-
-  getTitle: function(object, context) {
-    return "[" + object.length + "]";
-  },
-
-  arrayIterator: function(array, max) {
-    var items = [];
-
-    for (var i=0; i<array.length && i<=max; i++) {
-      try {
-        var delim = (i == array.length-1 ? "" : ", ");
-        var value = array[i];
-
-        if (value === array) {
-          items.push(Reference({
-            key: i,
-            object: value,
-            delim: delim
-          }));
-        } else {
+          if (value === array) {
+            items.push(Reference({
+              key: i,
+              object: value,
+              delim: delim
+            }));
+          } else {
+            items.push(ItemRep({
+              key: i,
+              object: value,
+              delim: delim
+            }));
+          }
+        } catch (exc) {
           items.push(ItemRep({
-            key: i,
-            object: value,
-            delim: delim
+            object: exc,
+            delim: delim,
+            key: i
           }));
         }
-      } catch (exc) {
-        items.push(ItemRep({object: exc, delim: delim, key: i}));
       }
-    }
 
-    if (array.length > max + 1) {
-      items.pop();
-      items.push(Caption({
-        key: "more",
-        object: Locale.$STR("jsonViewer.reps.more"),
-      }));
-    }
+      if (array.length > max + 1) {
+        items.pop();
+        items.push(Caption({
+          key: "more",
+          object: "more...",
+        }));
+      }
 
-    return items;
-  },
+      return items;
+    },
+
+    
+
+
+
+
+
+
+
+
+
+
+    hasSpecialProperties: function(array) {
+      function isInteger(x) {
+        let y = parseInt(x, 10);
+        if (isNaN(y)) {
+          return false;
+        }
+        return x === y.toString();
+      }
+
+      let props = Object.getOwnPropertyNames(array);
+      for (let i = 0; i < props.length; i++) {
+        let p = props[i];
+
+        
+        if (isInteger(p)) {
+          continue;
+        }
+
+        
+        if (p != "length") {
+          return true;
+        }
+      }
+
+      return false;
+    },
+
+    
+
+    onToggleProperties: function(event) {
+    },
+
+    onClickBracket: function(event) {
+    }
+  });
 
   
 
 
+  let ItemRep = React.createFactory(React.createClass({
+    displayName: "ItemRep",
 
-
-
-
-
-
-
-
-  hasSpecialProperties: function(array) {
-    function isInteger(x) {
-      var y = parseInt(x, 10);
-      if (isNaN(y)) {
-        return false;
-      }
-      return x === y.toString();
+    render: function() {
+      let object = this.props.object;
+      let delim = this.props.delim;
+      return (
+        DOM.span({},
+          Rep({object: object}),
+          delim
+        )
+      );
     }
-
-    var n = 0;
-    var props = Object.getOwnPropertyNames(array);
-    for (var i=0; i<props.length; i++) {
-      var p = props[i];
-
-      
-      if (isInteger(p)) {
-        continue;
-      }
-
-      
-      if (p != "length") {
-        return true;
-      }
-    }
-
-    return false;
-  },
+  }));
 
   
 
-  onToggleProperties: function(event) {
-  },
 
-  onClickBracket: function(event) {
+  let Reference = React.createFactory(React.createClass({
+    displayName: "Reference",
+
+    render: function() {
+      let tooltip = "Circular reference";
+      return (
+        DOM.span({title: tooltip},
+          "[...]")
+      );
+    }
+  }));
+
+  function supportsObject(object, type) {
+    return Array.isArray(object) ||
+      Object.prototype.toString.call(object) === "[object Arguments]";
   }
-});
 
-
-
-
-var ItemRep = React.createFactory(React.createClass({
-  displayName: "ItemRep",
-
-  render: function(){
-    var object = this.props.object;
-    var delim = this.props.delim;
-    return (
-      DOM.span({},
-        Rep({object: object}),
-        delim
-      )
-    )
-  }
-}));
-
-
-
-
-var Reference = React.createFactory(React.createClass({
-  displayName: "Reference",
-
-  render: function(){
-    var tooltip = Locale.$STR("jsonView.reps.reference");
-    return (
-      span({title: tooltip},
-        "[...]")
-    )
-  }
-}));
-
-function supportsObject(object, type) {
-  return Array.isArray(object) ||
-    Object.prototype.toString.call(object) === "[object Arguments]";
-}
-
-
-exports.ArrayRep = {
-  rep: ArrayRep,
-  supportsObject: supportsObject
-};
-
+  
+  exports.ArrayRep = {
+    rep: ArrayRep,
+    supportsObject: supportsObject
+  };
 });

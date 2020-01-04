@@ -6,24 +6,24 @@
 
 "use strict";
 
+
 define(function(require, exports, module) {
+  
+  const React = require("devtools/client/shared/vendor/react");
+
+  
 
 
-const React = require("devtools/client/shared/vendor/react");
 
 
-
-
-
-
-function createFactories(args) {
-  var result = {};
-  for (var p in args) {
-    result[p] = React.createFactory(args[p]);
+  function createFactories(args) {
+    let result = {};
+    for (let p in args) {
+      result[p] = React.createFactory(args[p]);
+    }
+    return result;
   }
-  return result;
-}
 
-
-exports.createFactories = createFactories;
+  
+  exports.createFactories = createFactories;
 });

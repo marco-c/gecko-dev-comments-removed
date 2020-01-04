@@ -6,82 +6,81 @@
 
 "use strict";
 
+
 define(function(require, exports, module) {
+  
+  const React = require("devtools/client/shared/vendor/react");
 
+  
+  const { Undefined } = require("./undefined");
+  const { Null } = require("./null");
+  const { StringRep } = require("./string");
+  const { Number } = require("./number");
+  const { ArrayRep } = require("./array");
+  const { Obj } = require("./object");
 
-const React = require("devtools/client/shared/vendor/react");
+  
+  
+  
+  let reps = [Undefined, Null, StringRep, Number, ArrayRep, Obj];
+  let defaultRep;
 
-
-const { Undefined } = require("./undefined");
-const { Null } = require("./null");
-const { StringRep } = require("./string");
-const { Number } = require("./number");
-const { ArrayRep } = require("./array");
-const { Obj } = require("./object");
-
-
-
-
-var reps = [Undefined, Null, StringRep, Number, ArrayRep, Obj];
-var defaultRep;
-
-
-
-
-
-
-
-const Rep = React.createClass({
-  displayName: "Rep",
-
-  render: function() {
-    var rep = getRep(this.props.object);
-    return rep(this.props);
-  },
-});
+  
 
 
 
 
 
+  const Rep = React.createClass({
+    displayName: "Rep",
+
+    render: function() {
+      let rep = getRep(this.props.object);
+      return rep(this.props);
+    },
+  });
+
+  
+
+  
 
 
 
 
 
 
-function getRep(object) {
-  var type = typeof(object);
-  if (type == "object" && object instanceof String) {
-    type = "string";
-  }
 
-  if (isGrip(object)) {
-    type = object.class;
-  }
+  function getRep(object) {
+    let type = typeof object;
+    if (type == "object" && object instanceof String) {
+      type = "string";
+    }
 
-  for (var i=0; i<reps.length; i++) {
-    var rep = reps[i];
-    try {
-      
-      
-      
-      if (rep.supportsObject(object, type)) {
-        return React.createFactory(rep.rep);
+    if (isGrip(object)) {
+      type = object.class;
+    }
+
+    for (let i = 0; i < reps.length; i++) {
+      let rep = reps[i];
+      try {
+        
+        
+        
+        if (rep.supportsObject(object, type)) {
+          return React.createFactory(rep.rep);
+        }
+      } catch (err) {
+        console.error("reps.getRep; EXCEPTION ", err, err);
       }
     }
-    catch (err) {
-      console.error("reps.getRep; EXCEPTION ", err, err);
-    }
+
+    return React.createFactory(defaultRep.rep);
   }
 
-  return React.createFactory(defaultRep.rep);
-}
+  function isGrip(object) {
+    return object && object.actor;
+  }
 
-function isGrip(object) {
-  return object && object.actor;
-}
-
-
-exports.Rep = Rep;
+  
+  exports.Rep = Rep;
 });
