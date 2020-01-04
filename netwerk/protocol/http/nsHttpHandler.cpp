@@ -431,18 +431,15 @@ nsHttpHandler::AddStandardRequestHeaders(nsHttpHeaderArray *request, bool isSecu
 
     
     
-    
-    
     rv = request->SetHeader(nsHttp::Accept, mAccept,
-                            false, nsHttpHeaderArray::eVarietyOverride);
+                            false, nsHttpHeaderArray::eVarietyDefault);
     if (NS_FAILED(rv)) return rv;
 
-    
     
     if (!mAcceptLanguages.IsEmpty()) {
         
         rv = request->SetHeader(nsHttp::Accept_Language, mAcceptLanguages,
-                                false, nsHttpHeaderArray::eVarietyOverride);
+                                false, nsHttpHeaderArray::eVarietyDefault);
         if (NS_FAILED(rv)) return rv;
     }
 
