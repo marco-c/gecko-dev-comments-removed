@@ -730,6 +730,33 @@ EmulateHeapAccess(EMULATOR_CONTEXT* context, uint8_t* pc, uint8_t* faultingAddre
     return end;
 }
 
+#elif defined(ASMJS_MAY_USE_SIGNAL_HANDLERS_FOR_UNALIGNED)
+
+MOZ_COLD static uint8_t*
+EmulateHeapAccess(EMULATOR_CONTEXT* context, uint8_t* pc, uint8_t* faultingAddress,
+                  const HeapAccess* heapAccess, const Module& module)
+{
+    
+    return module.outOfBounds();
+}
+
+#endif 
+
+#if defined(ASMJS_MAY_USE_SIGNAL_HANDLERS)
+
+MOZ_COLD static bool
+IsHeapAccessAddress(const Module &module, uint8_t* faultingAddress)
+{
+#if defined(ASMJS_MAY_USE_SIGNAL_HANDLERS_FOR_OOB)
+    size_t accessLimit = MappedSize;
+#elif defined(ASMJS_MAY_USE_SIGNAL_HANDLERS_FOR_UNALIGNED)
+    size_t accessLimit = module.heapLength();
+#endif
+    return module.usesHeap() &&
+           faultingAddress >= module.heap() &&
+           faultingAddress < module.heap() + accessLimit;
+}
+
 #if defined(XP_WIN)
 
 static bool
@@ -759,15 +786,12 @@ HandleFault(PEXCEPTION_POINTERS exception)
 
     const Module& module = activation->module();
 
-    
-    
     uint8_t* faultingAddress = reinterpret_cast<uint8_t*>(record->ExceptionInformation[1]);
-    if (!module.usesHeap() ||
-        faultingAddress < module.heap() ||
-        faultingAddress >= module.heap() + MappedSize)
-    {
+
+    
+    
+    if (!IsHeapAccessAddress(module, faultingAddress))
         return false;
-    }
 
     if (!module.containsFunctionPC(pc)) {
         
@@ -904,15 +928,12 @@ HandleMachException(JSRuntime* rt, const ExceptionRequest& request)
     if (!module.containsFunctionPC(pc))
         return false;
 
-    
-    
     uint8_t* faultingAddress = reinterpret_cast<uint8_t*>(request.body.code[1]);
-    if (!module.usesHeap() ||
-        faultingAddress < module.heap() ||
-        faultingAddress >= module.heap() + MappedSize)
-    {
+
+    
+    
+    if (!IsHeapAccessAddress(module, faultingAddress))
         return false;
-    }
 
     const HeapAccess* heapAccess = module.lookupHeapAccess(pc);
     if (!heapAccess)
@@ -1114,15 +1135,12 @@ HandleFault(int signum, siginfo_t* info, void* ctx)
     if (!module.containsFunctionPC(pc))
         return false;
 
-    
-    
     uint8_t* faultingAddress = reinterpret_cast<uint8_t*>(info->si_addr);
-    if (!module.usesHeap() ||
-        faultingAddress < module.heap() ||
-        faultingAddress >= module.heap() + MappedSize)
-    {
+
+    
+    
+    if (!IsHeapAccessAddress(module, faultingAddress))
         return false;
-    }
 
     const HeapAccess* heapAccess = module.lookupHeapAccess(pc);
     if (!heapAccess)
@@ -1223,7 +1241,7 @@ JitInterruptHandler(int signum, siginfo_t* info, void* context)
 bool
 wasm::EnsureSignalHandlersInstalled(JSRuntime* rt)
 {
-#if defined(XP_DARWIN) && defined(ASMJS_MAY_USE_SIGNAL_HANDLERS_FOR_OOB)
+#if defined(XP_DARWIN) && defined(ASMJS_MAY_USE_SIGNAL_HANDLERS)
     
     if (!rt->wasmMachExceptionHandler.installed() && !rt->wasmMachExceptionHandler.install(rt))
         return false;
@@ -1280,7 +1298,7 @@ wasm::EnsureSignalHandlersInstalled(JSRuntime* rt)
     }
 #endif 
 
-#if defined(ASMJS_MAY_USE_SIGNAL_HANDLERS_FOR_OOB)
+#if defined(ASMJS_MAY_USE_SIGNAL_HANDLERS)
     
     
 # if defined(XP_WIN)
@@ -1362,4 +1380,21 @@ js::InterruptRunningJitCode(JSRuntime* rt)
     pthread_t thread = (pthread_t)rt->ownerThreadNative();
     pthread_kill(thread, sInterruptSignal);
 #endif
+}
+
+MOZ_COLD bool
+js::wasm::IsPCInWasmCode(void *pc)
+{
+    JSRuntime* rt = RuntimeForCurrentThread();
+    if (!rt)
+        return false;
+
+    MOZ_RELEASE_ASSERT(!rt->handlingSegFault);
+
+    WasmActivation* activation = rt->wasmActivationStack();
+    if (!activation)
+        return false;
+
+    const Module& module = activation->module();
+    return module.containsFunctionPC(pc);
 }

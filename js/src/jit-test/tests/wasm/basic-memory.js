@@ -71,24 +71,21 @@ function testStoreError(type, ext, base, offset, align, errorMsg) {
 }
 
 testLoad('i32', '', 0, 0, 0, 0x03020100);
-
-testLoad('i32', '', 1, 0, 0, 0x03020100);   
-
-
+testLoad('i32', '', 1, 0, 0, 0x04030201);
 testLoad('i32', '', 0, 4, 0, 0x07060504);
-
+testLoad('i32', '', 1, 3, 4, 0x07060504);
 
 
 
 
 testLoad('f32', '', 0, 0, 0, 3.820471434542632e-37);
-
+testLoad('f32', '', 1, 0, 0, 1.539989614439558e-36);
 testLoad('f32', '', 0, 4, 0, 1.0082513512365273e-34);
-
+testLoad('f32', '', 1, 3, 4, 1.0082513512365273e-34);
 testLoad('f64', '', 0, 0, 0, 7.949928895127363e-275);
-
+testLoad('f64', '', 1, 0, 0, 5.447603722011605e-270);
 testLoad('f64', '', 0, 8, 0, 3.6919162048650923e-236);
-
+testLoad('f64', '', 1, 7, 4, 3.6919162048650923e-236);
 
 testLoad('i32', '8_s', 16, 0, 0, -0x10);
 testLoad('i32', '8_u', 16, 0, 0, 0xf0);
@@ -114,9 +111,9 @@ testLoadNYI('32_u');
 
 
 testStore('i32', '', 0, 0, 0, -0x3f3e2c2c);
-
-
-
+testStore('i32', '', 1, 0, 0, -0x3f3e2c2c);
+testStore('i32', '', 0, 1, 0, -0x3f3e2c2c);
+testStore('i32', '', 1, 1, 4, -0x3f3e2c2c);
 
 function testStoreNYI(ext) {
     assertErrorMessage(() => wasmEvalText(`(module (memory 1) (func (i64.store${ext} (i32.const 0) (i32.const 0))))`), TypeError, /NYI/);
@@ -134,11 +131,11 @@ testStoreNYI('32');
 
 
 testStore('f32', '', 0, 0, 0, 0.01234566979110241);
-
+testStore('f32', '', 1, 0, 0, 0.01234566979110241);
 testStore('f32', '', 0, 4, 0, 0.01234566979110241);
-
+testStore('f32', '', 1, 3, 4, 0.01234566979110241);
 testStore('f64', '', 0, 0, 0, 0.89012345);
-
+testStore('f64', '', 1, 0, 0, 0.89012345);
 testStore('f64', '', 0, 8, 0, 0.89012345);
 testStore('f64', '', 1, 7, 4, 0.89012345);
 

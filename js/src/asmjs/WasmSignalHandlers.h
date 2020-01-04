@@ -19,7 +19,7 @@
 #ifndef wasm_signal_handlers_h
 #define wasm_signal_handlers_h
 
-#if defined(XP_DARWIN) && defined(ASMJS_MAY_USE_SIGNAL_HANDLERS_FOR_OOB)
+#if defined(XP_DARWIN) && defined(ASMJS_MAY_USE_SIGNAL_HANDLERS)
 # include <mach/mach.h>
 # include "jslock.h"
 #endif
@@ -41,7 +41,7 @@ namespace wasm {
 bool
 EnsureSignalHandlersInstalled(JSRuntime* rt);
 
-#if defined(XP_DARWIN) && defined(ASMJS_MAY_USE_SIGNAL_HANDLERS_FOR_OOB)
+#if defined(XP_DARWIN) && defined(ASMJS_MAY_USE_SIGNAL_HANDLERS)
 
 
 
@@ -64,6 +64,10 @@ class MachExceptionHandler
     bool install(JSRuntime* rt);
 };
 #endif
+
+
+
+bool IsPCInWasmCode(void *pc);
 
 } 
 } 
