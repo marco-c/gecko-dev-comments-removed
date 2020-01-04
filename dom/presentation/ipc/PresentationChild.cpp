@@ -4,7 +4,9 @@
 
 
 
+#include "DCPresentationChannelDescription.h"
 #include "mozilla/StaticPtr.h"
+#include "PresentationBuilderChild.h"
 #include "PresentationChild.h"
 #include "PresentationIPCService.h"
 #include "nsThreadUtils.h"
@@ -56,6 +58,35 @@ PresentationChild::DeallocPPresentationRequestChild(PPresentationRequestChild* a
   delete aActor;
   return true;
 }
+
+bool PresentationChild::RecvPPresentationBuilderConstructor(
+  PPresentationBuilderChild* aActor,
+  const nsString& aSessionId,
+  const uint8_t& aRole)
+{
+  
+  PresentationBuilderChild* actor = static_cast<PresentationBuilderChild*>(aActor);
+  return NS_WARN_IF(NS_FAILED(actor->Init())) ? false : true;
+}
+
+PPresentationBuilderChild*
+PresentationChild::AllocPPresentationBuilderChild(const nsString& aSessionId,
+                                                  const uint8_t& aRole)
+{
+  RefPtr<PresentationBuilderChild> actor
+    = new PresentationBuilderChild(aSessionId, aRole);
+
+  return actor.forget().take();
+}
+
+bool
+PresentationChild::DeallocPPresentationBuilderChild(PPresentationBuilderChild* aActor)
+{
+  RefPtr<PresentationBuilderChild> actor =
+    dont_AddRef(static_cast<PresentationBuilderChild*>(aActor));
+  return true;
+}
+
 
 bool
 PresentationChild::RecvNotifyAvailableChange(const bool& aAvailable)
