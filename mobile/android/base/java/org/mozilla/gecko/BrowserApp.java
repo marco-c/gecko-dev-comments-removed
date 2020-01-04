@@ -759,7 +759,7 @@ public class BrowserApp extends GeckoApp
                 final String link = getString(R.string.eol_notification_url,
                                               AppConstants.MOZ_APP_VERSION,
                                               AppConstants.OS_TARGET,
-                                              Locale.getDefault());
+                                              Locales.getLanguageTag(Locale.getDefault()));
 
                 final Intent intent = new Intent(Intent.ACTION_VIEW);
                 intent.setClassName(AppConstants.ANDROID_PACKAGE_NAME, AppConstants.MOZ_ANDROID_BROWSER_INTENT_CLASS);
@@ -2630,7 +2630,6 @@ public class BrowserApp extends GeckoApp
         mBrowserSearchContainer.setVisibility(View.VISIBLE);
 
         
-        hideWebContent();
         mHomePagerContainer.setVisibility(View.INVISIBLE);
 
         final FragmentManager fm = getSupportFragmentManager();
