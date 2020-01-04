@@ -2573,12 +2573,24 @@ var NativeWindow = {
 
     imageLocationCopyableContext: {
       matches: function imageLinkCopyableContextMatches(aElement) {
+        if (aElement instanceof Ci.nsIDOMHTMLImageElement) {
+          
+          if (aElement.hasAttribute("data-ctv-src") && !aElement.hasAttribute("data-ctv-show")) {
+            return false;
+          }
+        }
         return (aElement instanceof Ci.nsIImageLoadingContent && aElement.currentURI);
       }
     },
 
     imageSaveableContext: {
       matches: function imageSaveableContextMatches(aElement) {
+        if (aElement instanceof Ci.nsIDOMHTMLImageElement) {
+          
+          if (aElement.hasAttribute("data-ctv-src") && !aElement.hasAttribute("data-ctv-show")) {
+            return false;
+          }
+        }
         if (aElement instanceof Ci.nsIImageLoadingContent && aElement.currentURI) {
           
           let request = aElement.getRequest(Ci.nsIImageLoadingContent.CURRENT_REQUEST);
@@ -5090,8 +5102,7 @@ var BrowserEventHandler = {
 
 
       if (checkElem) {
-        if ((elem.scrollTopMin != elem.scrollTopMin ||
-             elem.scrollLeftMin != elem.scrollLeftMax) &&
+        if ((elem.scrollTopMax > 0 || elem.scrollLeftMax > 0) &&
             (this._hasScrollableOverflow(elem) ||
              elem.matches("textarea")) ||
             (elem instanceof HTMLInputElement && elem.mozIsTextField(false)) ||
