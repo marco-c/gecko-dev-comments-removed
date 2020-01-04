@@ -1810,7 +1810,11 @@ ContentEventHandler::OnQueryTextRectArray(WidgetQueryContentEvent* aEvent)
   uint32_t offset = aEvent->mInput.mOffset;
   const uint32_t kEndOffset = offset + aEvent->mInput.mLength;
   bool wasLineBreaker = false;
+  
+  
   nsRect lastCharRect;
+  
+  nsIFrame* lastFrame;
   while (offset < kEndOffset) {
     nsCOMPtr<nsIContent> lastTextContent;
     rv = SetRangeFromFlatTextOffset(range, offset, 1, lineBreakType, true,
@@ -1853,18 +1857,14 @@ ContentEventHandler::OnQueryTextRectArray(WidgetQueryContentEvent* aEvent)
       return NS_ERROR_FAILURE;
     }
 
-    
-    nsRect frameRect(nsPoint(0, 0), firstFrame->GetRect().Size());
-    rv = ConvertToRootRelativeOffset(firstFrame, frameRect);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return rv;
-    }
-
     bool startsBetweenLineBreaker = false;
     nsAutoString chars;
     
     isVertical = firstFrame->GetWritingMode().IsVertical();
 
+    nsIFrame* baseFrame = firstFrame;
+    
+    
     AutoTArray<nsRect, 16> charRects;
 
     
@@ -1937,10 +1937,8 @@ ContentEventHandler::OnQueryTextRectArray(WidgetQueryContentEvent* aEvent)
       
       if (firstFrame->GetType() != nsGkAtoms::brFrame &&
           aEvent->mInput.mOffset != offset) {
-        
-        
-        
-        brRect = lastCharRect - frameRect.TopLeft();
+        baseFrame = lastFrame;
+        brRect = lastCharRect;
         if (!wasLineBreaker) {
           if (isVertical) {
             
@@ -1962,7 +1960,16 @@ ContentEventHandler::OnQueryTextRectArray(WidgetQueryContentEvent* aEvent)
         if (NS_WARN_IF(!brRectRelativeToLastTextFrame.IsValid())) {
           return NS_ERROR_FAILURE;
         }
-        brRect = brRectRelativeToLastTextFrame.RectRelativeTo(firstFrame);
+        
+        nsIFrame* primaryFrame = lastTextContent->GetPrimaryFrame();
+        if (NS_WARN_IF(!primaryFrame)) {
+          return NS_ERROR_FAILURE;
+        }
+        baseFrame = primaryFrame->LastContinuation();
+        if (NS_WARN_IF(!baseFrame)) {
+          return NS_ERROR_FAILURE;
+        }
+        brRect = brRectRelativeToLastTextFrame.RectRelativeTo(baseFrame);
       }
       
       
@@ -2001,9 +2008,17 @@ ContentEventHandler::OnQueryTextRectArray(WidgetQueryContentEvent* aEvent)
 
     for (size_t i = 0; i < charRects.Length() && offset < kEndOffset; i++) {
       nsRect charRect = charRects[i];
-      charRect.x += frameRect.x;
-      charRect.y += frameRect.y;
+      
+      
+      
+      
+      
       lastCharRect = charRect;
+      lastFrame = baseFrame;
+      rv = ConvertToRootRelativeOffset(baseFrame, charRect);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
 
       rect = LayoutDeviceIntRect::FromUnknownRect(
                charRect.ToOutsidePixels(mPresContext->AppUnitsPerDevPixel()));
