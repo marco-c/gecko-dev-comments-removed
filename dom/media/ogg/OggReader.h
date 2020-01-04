@@ -77,9 +77,9 @@ private:
   
   
   
-  VideoData* FindStartTime(int64_t& aOutStartTime);
-  AudioData* SyncDecodeToFirstAudioData();
-  VideoData* SyncDecodeToFirstVideoData();
+  void FindStartTime(int64_t& aOutStartTime);
+  RefPtr<AudioData> SyncDecodeToFirstAudioData();
+  RefPtr<VideoData> SyncDecodeToFirstVideoData();
 
   
   ReentrantMonitor mMonitor;

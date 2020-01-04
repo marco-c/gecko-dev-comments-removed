@@ -429,7 +429,7 @@ void MediaDecoderStateMachine::DiscardStreamData()
 
   const auto clockTime = GetClock();
   while (true) {
-    const MediaData* a = AudioQueue().PeekFront();
+    RefPtr<MediaData> a = AudioQueue().PeekFront();
 
     
     
@@ -1977,7 +1977,7 @@ MediaDecoderStateMachine::SeekCompleted()
   if (seekTime == Duration().ToMicroseconds()) {
     newCurrentTime = seekTime;
   } else if (HasAudio()) {
-    MediaData* audio = AudioQueue().PeekFront();
+    RefPtr<MediaData> audio = AudioQueue().PeekFront();
     
     
     
