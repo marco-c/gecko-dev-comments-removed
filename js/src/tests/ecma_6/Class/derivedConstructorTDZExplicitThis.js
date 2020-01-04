@@ -1,18 +1,19 @@
-function pleaseRunMyCode() { }
+var test = `
 
 class foo extends null {
     constructor() {
-        
-        
-        
-        
-        pleaseRunMyCode(this);
+        this;
         assertEq(false, true);
     }
 }
 
 for (let i = 0; i < 1100; i++)
     assertThrownErrorContains(() => new foo(), "|this|");
+
+`;
+
+if (classesEnabled())
+    eval(test);
 
 if (typeof reportCompare === 'function')
     reportCompare(0,0,"OK");
