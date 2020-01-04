@@ -495,7 +495,7 @@ public:
   void InitForQueryTextContent(uint32_t aOffset, uint32_t aLength,
                                bool aUseNativeLineBreak = true)
   {
-    NS_ASSERTION(mMessage == NS_QUERY_TEXT_CONTENT,
+    NS_ASSERTION(mMessage == eQueryTextContent,
                  "wrong initializer is called");
     mInput.mOffset = aOffset;
     mInput.mLength = aLength;
@@ -530,7 +530,7 @@ public:
 
   void RequestFontRanges()
   {
-    NS_ASSERTION(mMessage == NS_QUERY_TEXT_CONTENT,
+    NS_ASSERTION(mMessage == eQueryTextContent,
                  "not querying text content");
     mWithFontRanges = true;
   }
