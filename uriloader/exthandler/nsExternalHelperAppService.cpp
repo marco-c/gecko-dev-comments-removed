@@ -1569,6 +1569,13 @@ nsExternalAppHandler::MaybeApplyDecodingForExtension(nsIRequest *aRequest)
   
   bool applyConversion = true;
 
+  
+  
+  encChannel->GetApplyConversion(&applyConversion);
+  if (!applyConversion) {
+    return;
+  }
+
   nsCOMPtr<nsIURL> sourceURL(do_QueryInterface(mSourceUrl));
   if (sourceURL)
   {
