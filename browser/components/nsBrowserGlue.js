@@ -798,6 +798,9 @@ BrowserGlue.prototype = {
 
     SelfSupportBackend.init();
 
+    
+    Cu.import("resource:///modules/AutoMigrate.jsm");
+
     if (!AppConstants.RELEASE_BUILD) {
       let themeName = gBrowserBundle.GetStringFromName("deveditionTheme.name");
       let vendorShortName = gBrandBundle.GetStringFromName("vendorShortName");
