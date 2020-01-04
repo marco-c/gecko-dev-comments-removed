@@ -3100,6 +3100,45 @@ JS_SetElement(JSContext* cx, JS::HandleObject obj, uint32_t index, double v);
 
 
 
+
+
+
+
+
+
+
+
+extern JS_PUBLIC_API(bool)
+JS_DeletePropertyById(JSContext* cx, JS::HandleObject obj, JS::HandleId id,
+                      JS::ObjectOpResult& result);
+
+extern JS_PUBLIC_API(bool)
+JS_DeleteProperty(JSContext* cx, JS::HandleObject obj, const char* name,
+                  JS::ObjectOpResult& result);
+
+extern JS_PUBLIC_API(bool)
+JS_DeleteUCProperty(JSContext* cx, JS::HandleObject obj, const char16_t* name, size_t namelen,
+                    JS::ObjectOpResult& result);
+
+extern JS_PUBLIC_API(bool)
+JS_DeleteElement(JSContext* cx, JS::HandleObject obj, uint32_t index, JS::ObjectOpResult& result);
+
+
+
+
+
+extern JS_PUBLIC_API(bool)
+JS_DeletePropertyById(JSContext* cx, JS::HandleObject obj, jsid id);
+
+extern JS_PUBLIC_API(bool)
+JS_DeleteProperty(JSContext* cx, JS::HandleObject obj, const char* name);
+
+extern JS_PUBLIC_API(bool)
+JS_DeleteElement(JSContext* cx, JS::HandleObject obj, uint32_t index);
+
+
+
+
 extern JS_PUBLIC_API(JSObject*)
 JS_DefineObject(JSContext* cx, JS::HandleObject obj, const char* name,
                 const JSClass* clasp = nullptr, unsigned attrs = 0);
@@ -3131,24 +3170,6 @@ JS_AlreadyHasOwnUCProperty(JSContext* cx, JS::HandleObject obj, const char16_t* 
 extern JS_PUBLIC_API(bool)
 JS_AlreadyHasOwnElement(JSContext* cx, JS::HandleObject obj, uint32_t index, bool* foundp);
 
-extern JS_PUBLIC_API(bool)
-JS_DeleteProperty(JSContext* cx, JS::HandleObject obj, const char* name);
-
-extern JS_PUBLIC_API(bool)
-JS_DeleteProperty(JSContext* cx, JS::HandleObject obj, const char* name,
-                  JS::ObjectOpResult& result);
-
-extern JS_PUBLIC_API(bool)
-JS_DeletePropertyById(JSContext* cx, JS::HandleObject obj, jsid id);
-
-extern JS_PUBLIC_API(bool)
-JS_DeletePropertyById(JSContext* cx, JS::HandleObject obj, JS::HandleId id,
-                      JS::ObjectOpResult& result);
-
-extern JS_PUBLIC_API(bool)
-JS_DeleteUCProperty(JSContext* cx, JS::HandleObject obj, const char16_t* name, size_t namelen,
-                    JS::ObjectOpResult& result);
-
 extern JS_PUBLIC_API(JSObject*)
 JS_NewArrayObject(JSContext* cx, const JS::HandleValueArray& contents);
 
@@ -3176,12 +3197,6 @@ JS_GetArrayLength(JSContext* cx, JS::Handle<JSObject*> obj, uint32_t* lengthp);
 
 extern JS_PUBLIC_API(bool)
 JS_SetArrayLength(JSContext* cx, JS::Handle<JSObject*> obj, uint32_t length);
-
-extern JS_PUBLIC_API(bool)
-JS_DeleteElement(JSContext* cx, JS::HandleObject obj, uint32_t index);
-
-extern JS_PUBLIC_API(bool)
-JS_DeleteElement(JSContext* cx, JS::HandleObject obj, uint32_t index, JS::ObjectOpResult& result);
 
 
 
