@@ -68,7 +68,12 @@ public class HealthReportUploadService extends BackgroundService {
       Logger.warn(LOG_TAG, "Got intent without uploadEnabled. Ignoring.");
       return;
     }
-    boolean uploadEnabled = intent.getBooleanExtra("uploadEnabled", false);
+
+    
+    
+    
+    
+    boolean uploadEnabled = false;
 
     
     if (!backgroundDataIsEnabled()) {
