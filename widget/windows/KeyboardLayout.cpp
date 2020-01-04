@@ -669,8 +669,8 @@ NativeKey::NativeKey(nsWindowBase* aWidget,
   , mModKeyState(aModKeyState)
   , mVirtualKeyCode(0)
   , mOriginalVirtualKeyCode(0)
-  , shiftedLatinChar(0)
-  , unshiftedLatinChar(0)
+  , mShiftedLatinChar(0)
+  , mUnshiftedLatinChar(0)
   , mScanCode(0)
   , mIsExtended(false)
   , mIsDeadKey(false)
@@ -2082,13 +2082,13 @@ NativeKey::ComputeInputtingStringWithKeyboardLayout()
   KeyboardLayout* keyboardLayout = KeyboardLayout::GetInstance();
 
   if (KeyboardLayout::IsPrintableCharKey(mVirtualKeyCode)) {
-    inputtingChars = mCommittedCharsAndModifiers;
+    mInputtingStringAndModifiers = mCommittedCharsAndModifiers;
   } else {
-    inputtingChars.Clear();
+    mInputtingStringAndModifiers.Clear();
   }
-  shiftedChars.Clear();
-  unshiftedChars.Clear();
-  shiftedLatinChar = unshiftedLatinChar = 0;
+  mShiftedString.Clear();
+  mUnshiftedString.Clear();
+  mShiftedLatinChar = mUnshiftedLatinChar = 0;
 
   
   if (mModKeyState.IsControl() == mModKeyState.IsAlt()) {
@@ -2098,10 +2098,10 @@ NativeKey::ComputeInputtingStringWithKeyboardLayout()
   ModifierKeyState capsLockState(
                      mModKeyState.GetModifiers() & MODIFIER_CAPSLOCK);
 
-  unshiftedChars =
+  mUnshiftedString =
     keyboardLayout->GetUniCharsAndModifiers(mVirtualKeyCode, capsLockState);
   capsLockState.Set(MODIFIER_SHIFT);
-  shiftedChars =
+  mShiftedString =
     keyboardLayout->GetUniCharsAndModifiers(mVirtualKeyCode, capsLockState);
 
   
@@ -2110,19 +2110,19 @@ NativeKey::ComputeInputtingStringWithKeyboardLayout()
   capsLockState.Unset(MODIFIER_SHIFT);
   WidgetUtils::GetLatinCharCodeForKeyCode(mDOMKeyCode,
                                           capsLockState.GetModifiers(),
-                                          &unshiftedLatinChar,
-                                          &shiftedLatinChar);
+                                          &mUnshiftedLatinChar,
+                                          &mShiftedLatinChar);
 
   
-  if (shiftedLatinChar) {
+  if (mShiftedLatinChar) {
     
     
     
-    if (unshiftedLatinChar == unshiftedChars.mChars[0] &&
-        shiftedLatinChar == shiftedChars.mChars[0]) {
-      shiftedLatinChar = unshiftedLatinChar = 0;
+    if (mUnshiftedLatinChar == mUnshiftedString.mChars[0] &&
+        mShiftedLatinChar == mShiftedString.mChars[0]) {
+      mShiftedLatinChar = mUnshiftedLatinChar = 0;
     }
-  } else if (unshiftedLatinChar) {
+  } else if (mUnshiftedLatinChar) {
     
     
     
@@ -2130,9 +2130,9 @@ NativeKey::ComputeInputtingStringWithKeyboardLayout()
     
     
     
-    if (unshiftedLatinChar == unshiftedChars.mChars[0] ||
-        unshiftedLatinChar == shiftedChars.mChars[0]) {
-      unshiftedLatinChar = 0;
+    if (mUnshiftedLatinChar == mUnshiftedString.mChars[0] ||
+        mUnshiftedLatinChar == mShiftedString.mChars[0]) {
+      mUnshiftedLatinChar = 0;
     }
   }
 
@@ -2146,15 +2146,15 @@ NativeKey::ComputeInputtingStringWithKeyboardLayout()
   
   
   uint32_t ch =
-    mModKeyState.IsShift() ? shiftedLatinChar : unshiftedLatinChar;
+    mModKeyState.IsShift() ? mShiftedLatinChar : mUnshiftedLatinChar;
   if (!ch) {
     return;
   }
-  if (inputtingChars.IsEmpty() ||
-      inputtingChars.UniCharsCaseInsensitiveEqual(
-        mModKeyState.IsShift() ? shiftedChars : unshiftedChars)) {
-    inputtingChars.Clear();
-    inputtingChars.Append(ch, mModKeyState.GetModifiers());
+  if (mInputtingStringAndModifiers.IsEmpty() ||
+      mInputtingStringAndModifiers.UniCharsCaseInsensitiveEqual(
+        mModKeyState.IsShift() ? mShiftedString : mUnshiftedString)) {
+    mInputtingStringAndModifiers.Clear();
+    mInputtingStringAndModifiers.Append(ch, mModKeyState.GetModifiers());
   }
 }
 
@@ -2164,8 +2164,8 @@ NativeKey::DispatchKeyPressEventsWithKeyboardLayout() const
   MOZ_ASSERT(IsKeyDownMessage());
   MOZ_ASSERT(!mIsDeadKey);
 
-  if (inputtingChars.IsEmpty() &&
-      shiftedChars.IsEmpty() && unshiftedChars.IsEmpty()) {
+  if (mInputtingStringAndModifiers.IsEmpty() &&
+      mShiftedString.IsEmpty() && mUnshiftedString.IsEmpty()) {
     nsresult rv = mDispatcher->BeginNativeInputTransaction();
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return true;
@@ -2180,18 +2180,18 @@ NativeKey::DispatchKeyPressEventsWithKeyboardLayout() const
   }
 
   uint32_t longestLength =
-    std::max(inputtingChars.mLength,
-             std::max(shiftedChars.mLength, unshiftedChars.mLength));
-  uint32_t skipUniChars = longestLength - inputtingChars.mLength;
-  uint32_t skipShiftedChars = longestLength - shiftedChars.mLength;
-  uint32_t skipUnshiftedChars = longestLength - unshiftedChars.mLength;
+    std::max(mInputtingStringAndModifiers.mLength,
+             std::max(mShiftedString.mLength, mUnshiftedString.mLength));
+  uint32_t skipUniChars = longestLength - mInputtingStringAndModifiers.mLength;
+  uint32_t skipShiftedChars = longestLength - mShiftedString.mLength;
+  uint32_t skipUnshiftedChars = longestLength - mUnshiftedString.mLength;
   bool defaultPrevented = false;
   for (uint32_t cnt = 0; cnt < longestLength; cnt++) {
     uint16_t uniChar, shiftedChar, unshiftedChar;
     uniChar = shiftedChar = unshiftedChar = 0;
     ModifierKeyState modKeyState(mModKeyState);
     if (skipUniChars <= cnt) {
-      if (cnt - skipUniChars  < inputtingChars.mLength) {
+      if (cnt - skipUniChars  < mInputtingStringAndModifiers.mLength) {
         
         
         
@@ -2200,14 +2200,15 @@ NativeKey::DispatchKeyPressEventsWithKeyboardLayout() const
         
         modKeyState.Unset(MODIFIER_SHIFT | MODIFIER_CONTROL | MODIFIER_ALT |
                           MODIFIER_ALTGRAPH | MODIFIER_CAPSLOCK);
-        modKeyState.Set(inputtingChars.mModifiers[cnt - skipUniChars]);
+        modKeyState.Set(
+          mInputtingStringAndModifiers.mModifiers[cnt - skipUniChars]);
       }
-      uniChar = inputtingChars.mChars[cnt - skipUniChars];
+      uniChar = mInputtingStringAndModifiers.mChars[cnt - skipUniChars];
     }
     if (skipShiftedChars <= cnt)
-      shiftedChar = shiftedChars.mChars[cnt - skipShiftedChars];
+      shiftedChar = mShiftedString.mChars[cnt - skipShiftedChars];
     if (skipUnshiftedChars <= cnt)
-      unshiftedChar = unshiftedChars.mChars[cnt - skipUnshiftedChars];
+      unshiftedChar = mUnshiftedString.mChars[cnt - skipUnshiftedChars];
     AutoTArray<AlternativeCharCode, 5> altArray;
 
     if (shiftedChar || unshiftedChar) {
@@ -2215,8 +2216,8 @@ NativeKey::DispatchKeyPressEventsWithKeyboardLayout() const
       altArray.AppendElement(chars);
     }
     if (cnt == longestLength - 1) {
-      if (unshiftedLatinChar || shiftedLatinChar) {
-        AlternativeCharCode chars(unshiftedLatinChar, shiftedLatinChar);
+      if (mUnshiftedLatinChar || mShiftedLatinChar) {
+        AlternativeCharCode chars(mUnshiftedLatinChar, mShiftedLatinChar);
         altArray.AppendElement(chars);
       }
 
@@ -2234,10 +2235,10 @@ NativeKey::DispatchKeyPressEventsWithKeyboardLayout() const
         case VK_OEM_PERIOD: charForOEMKeyCode = '.'; break;
       }
       if (charForOEMKeyCode &&
-          charForOEMKeyCode != unshiftedChars.mChars[0] &&
-          charForOEMKeyCode != shiftedChars.mChars[0] &&
-          charForOEMKeyCode != unshiftedLatinChar &&
-          charForOEMKeyCode != shiftedLatinChar) {
+          charForOEMKeyCode != mUnshiftedString.mChars[0] &&
+          charForOEMKeyCode != mShiftedString.mChars[0] &&
+          charForOEMKeyCode != mUnshiftedLatinChar &&
+          charForOEMKeyCode != mShiftedLatinChar) {
         AlternativeCharCode OEMChars(charForOEMKeyCode, charForOEMKeyCode);
         altArray.AppendElement(OEMChars);
       }

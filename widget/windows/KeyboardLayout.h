@@ -299,22 +299,19 @@ private:
   
   
   
+  UniCharsAndModifiers mInputtingStringAndModifiers;
   
   
-  
-  UniCharsAndModifiers inputtingChars;
-  
-  
-  UniCharsAndModifiers shiftedChars;
+  UniCharsAndModifiers mShiftedString;
   
   
-  UniCharsAndModifiers unshiftedChars;
+  UniCharsAndModifiers mUnshiftedString;
   
   
   
   
-  uint32_t shiftedLatinChar;
-  uint32_t unshiftedLatinChar;
+  uint32_t mShiftedLatinChar;
+  uint32_t mUnshiftedLatinChar;
 
   WORD    mScanCode;
   bool    mIsExtended;
