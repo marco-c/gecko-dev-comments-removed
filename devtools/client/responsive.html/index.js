@@ -34,7 +34,7 @@ let bootstrap = {
 
   store: null,
 
-  init: Task.async(function*() {
+  init: Task.async(function* () {
     
     
     loadSheet(window,

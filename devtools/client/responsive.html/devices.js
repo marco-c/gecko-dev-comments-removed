@@ -17,7 +17,7 @@ const DISPLAYED_DEVICES_PREF = "devtools.responsive.html.displayedDeviceList";
 
 
 
-let initDevices = Task.async(function*(dispatch) {
+let initDevices = Task.async(function* (dispatch) {
   let deviceList = loadDeviceList();
   let devices = yield GetDevices();
 
