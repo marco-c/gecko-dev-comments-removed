@@ -1514,6 +1514,11 @@ this.Extension = class extends ExtensionData {
 
       GlobalManager.init(this);
 
+      
+      
+      
+      
+      this.emit("startup", this);
       Management.emit("startup", this);
 
       return this.runManifest(this.manifest);
