@@ -8930,6 +8930,10 @@ nsDocument::Destroy()
   mExternalResourceMap.Shutdown();
 
   mRegistry = nullptr;
+
+  
+  
+  ReleaseWrapper(static_cast<nsINode*>(this));
 }
 
 void

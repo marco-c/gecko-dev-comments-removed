@@ -796,6 +796,14 @@ nsGenericDOMDataNode::SaveSubtreeState()
 {
 }
 
+void
+nsGenericDOMDataNode::DestroyContent()
+{
+  
+  
+  ReleaseWrapper(this);
+}
+
 #ifdef DEBUG
 void
 nsGenericDOMDataNode::List(FILE* out, int32_t aIndent) const
