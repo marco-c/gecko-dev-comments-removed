@@ -14,6 +14,7 @@
 #include "mozilla/gfx/Point.h"          
 #include "mozilla/layers/APZThreadUtils.h"  
 #include "mozilla/layers/AsyncCompositionManager.h" 
+#include "mozilla/layers/AsyncDragMetrics.h" 
 #include "mozilla/layers/CompositorParent.h" 
 #include "mozilla/layers/LayerMetricsWrapper.h"
 #include "mozilla/MouseEvents.h"
@@ -1560,6 +1561,34 @@ APZCTreeManager::FindTargetNode(HitTestingTreeNode* aNode,
       return node;
     }
   }
+  return nullptr;
+}
+
+nsRefPtr<HitTestingTreeNode>
+APZCTreeManager::FindScrollNode(const AsyncDragMetrics& aDragMetrics)
+{
+  MonitorAutoLock lock(mTreeLock);
+
+  return FindScrollNode(mRootNode, aDragMetrics);
+}
+
+HitTestingTreeNode*
+APZCTreeManager::FindScrollNode(HitTestingTreeNode* aNode,
+                                const AsyncDragMetrics& aDragMetrics)
+{
+  mTreeLock.AssertCurrentThreadOwns();
+
+  for (HitTestingTreeNode* node = aNode; node; node = node->GetPrevSibling()) {
+    if (node->MatchesScrollDragMetrics(aDragMetrics)) {
+      return node;
+    }
+
+    HitTestingTreeNode* match = FindScrollNode(node->GetLastChild(), aDragMetrics);
+    if (match) {
+      return match;
+    }
+  }
+
   return nullptr;
 }
 

@@ -41,6 +41,7 @@ enum AllowedTouchBehavior {
 };
 
 class Layer;
+class AsyncDragMetrics;
 class AsyncPanZoomController;
 class CompositorParent;
 class OverscrollHandoffChain;
@@ -96,6 +97,7 @@ class APZCTreeManager {
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(APZCTreeManager)
 
   typedef mozilla::layers::AllowedTouchBehavior AllowedTouchBehavior;
+  typedef mozilla::layers::AsyncDragMetrics AsyncDragMetrics;
 
   
   
@@ -300,6 +302,12 @@ public:
 
 
 
+  nsRefPtr<HitTestingTreeNode> FindScrollNode(const AsyncDragMetrics& aDragMetrics);
+
+  
+
+
+
 
 
 
@@ -429,6 +437,8 @@ private:
   HitTestingTreeNode* FindTargetNode(HitTestingTreeNode* aNode,
                                      const ScrollableLayerGuid& aGuid,
                                      GuidComparator aComparator);
+  HitTestingTreeNode* FindScrollNode(HitTestingTreeNode* aNode,
+                                     const AsyncDragMetrics& aDragMetrics);
   AsyncPanZoomController* GetAPZCAtPoint(HitTestingTreeNode* aNode,
                                          const ParentLayerPoint& aHitTestPoint,
                                          HitTestResult* aOutHitResult);
