@@ -151,7 +151,9 @@ this.DownloadsViewUI.DownloadElementShell.prototype = {
 
 
 
-  get statusTextAndTip() this.rawStatusTextAndTip,
+  get statusTextAndTip() {
+    return this.rawStatusTextAndTip;
+  },
 
   
 

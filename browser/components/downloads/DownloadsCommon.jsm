@@ -660,7 +660,9 @@ DownloadsDataCtor.prototype = {
 
 
 
-  get downloads() this.oldDownloadStates.keys(),
+  get downloads() {
+    return this.oldDownloadStates.keys();
+  },
 
   
 

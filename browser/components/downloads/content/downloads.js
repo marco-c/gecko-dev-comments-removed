@@ -98,22 +98,33 @@ const DownloadsPanel = {
   _state: 0,
 
   
-  get kStateUninitialized() 0,
+  get kStateUninitialized() {
+    return 0;
+  },
   
-  get kStateHidden() 1,
+  get kStateHidden() {
+    return 1;
+  },
   
-  get kStateWaitingData() 2,
+  get kStateWaitingData() {
+    return 2;
+  },
   
 
-  get kStateWaitingAnchor() 3,
+  get kStateWaitingAnchor() {
+    return 3;
+  },
   
-  get kStateShown() 4,
+  get kStateShown() {
+    return 4;
+  },
 
   
 
 
-  get kDownloadsOverlay()
-      "chrome:
+  get kDownloadsOverlay() {
+    return "chrome://browser/content/downloads/downloadsOverlay.xul";
+  },
 
   
 
@@ -1329,7 +1340,9 @@ const DownloadsSummary = {
   
 
 
-  get active() this._active,
+  get active() {
+    return this._active;
+  },
 
   _active: false,
 
