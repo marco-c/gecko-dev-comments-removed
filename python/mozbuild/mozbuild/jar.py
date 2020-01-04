@@ -64,13 +64,11 @@ def getModTime(aPath):
 
 
 class JarManifestEntry(object):
-    def __init__(self, output, source, is_locale=False, preprocess=False,
-                 overwrite=False):
+    def __init__(self, output, source, is_locale=False, preprocess=False):
         self.output = output
         self.source = source
         self.is_locale = is_locale
         self.preprocess = preprocess
-        self.overwrite = overwrite
 
 
 class JarInfo(object):
@@ -90,6 +88,9 @@ class JarInfo(object):
         self.relativesrcdir = None
         self.chrome_manifests = []
         self.entries = []
+
+
+class DeprecatedJarManifest(Exception): pass
 
 
 class JarManifestParser(object):
@@ -170,16 +171,16 @@ class JarManifestParser(object):
         
         
         
-        
-        
         m = self.entryline.match(line)
         if m:
+            if m.group('optOverwrite'):
+                raise DeprecatedJarManifest(
+                    'The "+" prefix is not supported anymore')
             self._current_jar.entries.append(JarManifestEntry(
                 m.group('output'),
                 m.group('source') or mozpath.basename(m.group('output')),
                 is_locale=bool(m.group('locale')),
                 preprocess=bool(m.group('optPreprocess')),
-                overwrite=bool(m.group('optOverwrite')),
             ))
             return
 
@@ -431,7 +432,6 @@ class JarMaker(object):
                         path,
                         is_locale=e.is_locale,
                         preprocess=e.preprocess,
-                        overwrite=e.overwrite
                     )
                     self._processEntryLine(e, outHelper, jf)
             return
@@ -467,8 +467,7 @@ class JarMaker(object):
 
         
 
-        if e.overwrite or getModTime(realsrc) \
-            > outHelper.getDestModTime(e.output):
+        if getModTime(realsrc) > outHelper.getDestModTime(e.output):
             if self.outputFormat == 'symlink':
                 outHelper.symlink(realsrc, out)
                 return
