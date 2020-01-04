@@ -32,8 +32,8 @@ namespace mozilla {
 
 using namespace gfx;
 
-PRLogModuleInfo* gWebMDemuxerLog = nullptr;
-extern PRLogModuleInfo* gNesteggLog;
+LazyLogModule gWebMDemuxerLog("WebMDemuxer");
+extern LazyLogModule gNesteggLog;
 
 
 
@@ -145,12 +145,6 @@ WebMDemuxer::WebMDemuxer(MediaResource* aResource, bool aIsMediaSource)
   , mLastWebMBlockOffset(-1)
   , mIsMediaSource(aIsMediaSource)
 {
-  if (!gNesteggLog) {
-    gNesteggLog = PR_NewLogModule("Nestegg");
-  }
-  if (!gWebMDemuxerLog) {
-    gWebMDemuxerLog = PR_NewLogModule("WebMDemuxer");
-  }
 }
 
 WebMDemuxer::~WebMDemuxer()
