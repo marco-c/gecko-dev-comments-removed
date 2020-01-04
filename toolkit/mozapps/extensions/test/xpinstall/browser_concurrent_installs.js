@@ -1,12 +1,13 @@
 
 
 
+var {Promise} = Cu.import("resource://gre/modules/Promise.jsm");
+
 var gConcurrentTabs = [];
 var gQueuedForInstall = [];
 var gResults = [];
 
 function frame_script() {
-  
   addMessageListener("Test:StartInstall", () => {
     content.document.getElementById("installnow").click()
   });

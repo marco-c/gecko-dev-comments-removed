@@ -977,7 +977,7 @@ var AddonManagerInternal = {
 
       
       
-      let { RemotePages } = Cu.import("resource://gre/modules/RemotePageManager.jsm", {});
+      Cu.import("resource://gre/modules/RemotePageManager.jsm");
 
       gPluginPageListener = new RemotePages("about:plugins");
       gPluginPageListener.addMessageListener("RequestPlugins", this.requestPlugins);
@@ -1145,7 +1145,7 @@ var AddonManagerInternal = {
           provider[aMethod].apply(provider, aArgs);
       }
       catch (e) {
-        reportProviderError(provider, aMethod, e);
+        reportProviderError(aProvider, aMethod, e);
       }
     }
   },

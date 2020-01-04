@@ -11,11 +11,9 @@ this.EXPORTED_SYMBOLS = [ "ProductAddonChecker" ];
 Cu.import("resource://gre/modules/Task.jsm");
 Cu.import("resource://gre/modules/Log.jsm");
 Cu.import("resource://gre/modules/CertUtils.jsm");
-
 Cu.import("resource://gre/modules/FileUtils.jsm");
 Cu.import("resource://gre/modules/NetUtil.jsm");
 Cu.import("resource://gre/modules/osfile.jsm");
-
 
 var logger = Log.repository.getLogger("addons.productaddons");
 
