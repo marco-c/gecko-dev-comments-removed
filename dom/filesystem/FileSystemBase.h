@@ -25,7 +25,7 @@ public:
 
   
   static already_AddRefed<FileSystemBase>
-  FromString(const nsAString& aString);
+  DeserializeDOMPath(const nsAString& aString);
 
   FileSystemBase();
 
@@ -33,11 +33,8 @@ public:
   Shutdown();
 
   
-  const nsString&
-  ToString() const
-  {
-    return mString;
-  }
+  virtual void
+  SerializeDOMPath(nsAString& aOutput) const = 0;
 
   virtual nsPIDOMWindowInner*
   GetWindow() const;
@@ -109,9 +106,6 @@ protected:
 
   
   nsString mNormalizedLocalRootPath;
-
-  
-  nsString mString;
 
   bool mShutdown;
 
