@@ -1125,6 +1125,23 @@ protected:
     return isPaused;
   }
 
+  
+
+
+
+
+  static void VideoDecodeSuspendTimerCallback(nsITimer* aTimer, void* aClosure);
+  
+
+
+
+  void HiddenVideoStart();
+  
+
+
+
+  void HiddenVideoStop();
+
 #ifdef MOZ_EME
   void ReportEMETelemetry();
 #endif
@@ -1377,6 +1394,9 @@ protected:
 
   
   nsCOMPtr<nsITimer> mProgressTimer;
+
+  
+  nsCOMPtr<nsITimer> mVideoDecodeSuspendTimer;
 
 #ifdef MOZ_EME
   
@@ -1635,6 +1655,9 @@ private:
 
   
   TimeDurationAccumulator mHiddenPlayTime;
+
+  
+  TimeDurationAccumulator mVideoDecodeSuspendTime;
 
   
   
