@@ -85,6 +85,8 @@ loader.lazyGetter(this, "clipboardHelper", () => {
 
 
 
+
+
 function InspectorPanel(iframeWindow, toolbox) {
   this._toolbox = toolbox;
   this._target = toolbox._target;
