@@ -637,7 +637,8 @@ struct nsStyleImageLayers {
     Position      mPosition;      
     Size          mSize;          
     uint8_t       mClip;          
-    uint8_t       mOrigin;        
+    MOZ_INIT_OUTSIDE_CTOR
+      uint8_t     mOrigin;        
     uint8_t       mAttachment;    
                                   
                                   
@@ -1242,6 +1243,8 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleBorder
 
 public:
   nsBorderColors** mBorderColors;        
+
+public:
   nsStyleCorners mBorderRadius;       
   nsStyleImage   mBorderImageSource;  
   nsStyleSides   mBorderImageSlice;   
