@@ -1012,6 +1012,15 @@ class Value
 
     
 
+
+
+    template <typename T>
+    static bool isNumberRepresentable(const T t) {
+        return T(double(t)) == t;
+    }
+
+    
+
     void setNull() {
         data.asBits = BUILD_JSVAL(JSVAL_TAG_NULL, 0).asBits;
     }
@@ -1611,7 +1620,7 @@ template <typename T>
 static inline Value
 NumberValue(const T t)
 {
-    MOZ_ASSERT(T(double(t)) == t, "value creation would be lossy");
+    MOZ_ASSERT(Value::isNumberRepresentable(t), "value creation would be lossy");
     return detail::MakeNumberValue<std::numeric_limits<T>::is_signed>::create(t);
 }
 
