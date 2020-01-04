@@ -86,6 +86,10 @@ public:
 
   virtual already_AddRefed<TexturedEffect> GenEffect(const gfx::Filter& aFilter) override;
 
+  void SetCurrentTextureHost(TextureHost* aTexture);
+
+  virtual void CleanupResources() override;
+
   int32_t GetFrameID()
   {
     const TimedImage* img = ChooseImage();
@@ -113,14 +117,20 @@ public:
 
 protected:
   struct TimedImage {
-    CompositableTextureHostRef mFrontBuffer;
-    CompositableTextureSourceRef mTextureSource;
+    RefPtr<TextureHost> mTextureHost;
     TimeStamp mTimeStamp;
     gfx::IntRect mPictureRect;
     int32_t mFrameID;
     int32_t mProducerID;
     int32_t mInputFrameID;
   };
+
+  CompositableTextureHostRef mCurrentTextureHost;
+  CompositableTextureSourceRef mCurrentTextureSource;
+  
+  
+  
+  RefPtr<TextureSource> mExtraTextureSource;
 
   
 

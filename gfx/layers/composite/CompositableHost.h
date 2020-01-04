@@ -238,6 +238,11 @@ public:
 
   virtual int32_t GetLastInputFrameID() const { return -1; }
 
+  
+  
+  
+  virtual void CleanupResources() {}
+
 protected:
   TextureInfo mTextureInfo;
   uint64_t mAsyncID;
