@@ -491,6 +491,13 @@ GLContextCrashGuard::Initialize()
     return;
   }
 
+#if defined(MOZ_WIDGET_ANDROID)
+  
+  
+  
+  return;
+#endif
+
   DriverCrashGuard::Initialize();
 }
 
