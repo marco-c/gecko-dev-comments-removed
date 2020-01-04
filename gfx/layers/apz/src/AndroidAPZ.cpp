@@ -18,18 +18,6 @@
 namespace mozilla {
 namespace layers {
 
-
-
-static const float BOUNDS_EPSILON = 5.0f;
-
-
-
-
-
-
-
-static const int32_t MAX_OVERSCROLL_COUNT = 30;
-
 AndroidSpecificState::AndroidSpecificState() {
   widget::sdk::OverScroller::LocalRef scroller;
   if (widget::sdk::OverScroller::New(widget::GeckoAppShell::GetApplicationContext(), &scroller) != NS_OK) {
@@ -37,6 +25,30 @@ AndroidSpecificState::AndroidSpecificState() {
     return;
   }
   mOverScroller = scroller;
+}
+
+const float BOUNDS_EPSILON = 1.0f;
+
+
+
+
+
+
+
+
+
+
+
+
+static int32_t
+ClampStart(float aOrigin, float aMin, float aMax)
+{
+  if (aOrigin <= aMin) {
+    return (int32_t)floor(aMin);
+  } else if (aOrigin >= aMax) {
+    return (int32_t)ceil(aMax);
+  }
+  return (int32_t)aOrigin;
 }
 
 AndroidFlingAnimation::AndroidFlingAnimation(AsyncPanZoomController& aApzc,
@@ -49,7 +61,6 @@ AndroidFlingAnimation::AndroidFlingAnimation(AsyncPanZoomController& aApzc,
   , mScrolledApzc(aScrolledApzc)
   , mSentBounceX(false)
   , mSentBounceY(false)
-  , mOverScrollCount(0)
 {
   MOZ_ASSERT(mOverscrollHandoffChain);
   MOZ_ASSERT(aPlatformSpecificState->AsAndroidSpecificState());
@@ -70,18 +81,26 @@ AndroidFlingAnimation::AndroidFlingAnimation(AsyncPanZoomController& aApzc,
   }
 
   ParentLayerPoint velocity = mApzc.GetVelocityVector();
+  mPreviousVelocity = velocity;
+
+  float scrollRangeStartX = mApzc.mX.GetPageStart().value;
+  float scrollRangeEndX = mApzc.mX.GetScrollRangeEnd().value;
+  float scrollRangeStartY = mApzc.mY.GetPageStart().value;
+  float scrollRangeEndY = mApzc.mY.GetScrollRangeEnd().value;
+  mStartOffset.x = mPreviousOffset.x = mApzc.mX.GetOrigin().value;
+  mStartOffset.y = mPreviousOffset.y = mApzc.mY.GetOrigin().value;
   float length = velocity.Length();
   if (length > 0.0f) {
     mFlingDirection = velocity / length;
   }
 
-  mStartOffset.x = mPreviousOffset.x = mApzc.mX.GetOrigin().value;
-  mStartOffset.y = mPreviousOffset.y = mApzc.mY.GetOrigin().value;
-  mOverScroller->Fling((int32_t)mStartOffset.x, (int32_t)mStartOffset.y,
+  int32_t originX = ClampStart(mStartOffset.x, scrollRangeStartX, scrollRangeEndX);
+  int32_t originY = ClampStart(mStartOffset.y, scrollRangeStartY, scrollRangeEndY);
+  mOverScroller->Fling(originX, originY,
                        
                        (int32_t)(velocity.x * 1000.0f), (int32_t)(velocity.y * 1000.0f),
-                       (int32_t)mApzc.mX.GetPageStart().value, (int32_t)(mApzc.mX.GetPageEnd() - mApzc.mX.GetCompositionLength()).value,
-                       (int32_t)mApzc.mY.GetPageStart().value, (int32_t)(mApzc.mY.GetPageEnd() - mApzc.mY.GetCompositionLength()).value,
+                       (int32_t)floor(scrollRangeStartX), (int32_t)ceil(scrollRangeEndX),
+                       (int32_t)floor(scrollRangeStartY), (int32_t)ceil(scrollRangeEndY),
                        0, 0);
 }
 
@@ -96,11 +115,38 @@ AndroidFlingAnimation::DoSample(FrameMetrics& aFrameMetrics,
                                 const TimeDuration& aDelta)
 {
   bool shouldContinueFling = true;
-  mOverScroller->ComputeScrollOffset(&shouldContinueFling);
 
-  float speed = 0.0f;
-  mOverScroller->GetCurrVelocity(&speed);
-  speed = speed * 0.001f; 
+  mOverScroller->ComputeScrollOffset(&shouldContinueFling);
+  
+  
+  
+  int32_t currentX = 0;
+  int32_t currentY = 0;
+  mOverScroller->GetCurrX(&currentX);
+  mOverScroller->GetCurrY(&currentY);
+  ParentLayerPoint offset((float)currentX, (float)currentY);
+
+  bool hitBoundX = CheckBounds(mApzc.mX, offset.x, mFlingDirection.x, &(offset.x));
+  bool hitBoundY = CheckBounds(mApzc.mY, offset.y, mFlingDirection.y, &(offset.y));
+
+  ParentLayerPoint velocity = mPreviousVelocity;
+
+  
+  
+  
+  
+  if (offset != mPreviousOffset) {
+    if (aDelta.ToMilliseconds() > 0) {
+      velocity = (mPreviousOffset - offset) / (float)aDelta.ToMilliseconds();
+      mPreviousVelocity = velocity;
+    }
+  } else if (hitBoundX || hitBoundY) {
+    
+    
+    shouldContinueFling = false;
+  }
+
+  float speed = velocity.Length();
 
   
   if (!shouldContinueFling || (speed < gfxPrefs::APZFlingStoppedThreshold())) {
@@ -109,32 +155,13 @@ AndroidFlingAnimation::DoSample(FrameMetrics& aFrameMetrics,
       
       mOverScroller->AbortAnimation();
     }
-    mApzc.mX.SetVelocity(0);
-    mApzc.mY.SetVelocity(0);
+    
+    
+    
+    if (!mSentBounceX && !mSentBounceY && (speed > 0.0f)) {
+      DeferHandleFlingOverscroll(velocity);
+    }
     return false;
-  }
-
-  int32_t currentX = 0;
-  int32_t currentY = 0;
-  mOverScroller->GetCurrX(&currentX);
-  mOverScroller->GetCurrY(&currentY);
-  ParentLayerPoint offset((float)currentX, (float)currentY);
-  ParentLayerPoint velocity = mFlingDirection * speed;
-
-  bool hitBoundX = CheckBounds(mApzc.mX, offset.x, &(offset.x));
-  bool hitBoundY = CheckBounds(mApzc.mY, offset.y, &(offset.y));
-
-  if (IsZero(mPreviousOffset - offset)) {
-    mOverScrollCount++;
-  } else {
-    mOverScrollCount = 0;
-  }
-
-  
-  
-  if (mOverScrollCount > MAX_OVERSCROLL_COUNT) {
-    velocity.x = velocity.y = 0.0f;
-    mOverScroller->AbortAnimation();
   }
 
   mPreviousOffset = offset;
@@ -142,8 +169,10 @@ AndroidFlingAnimation::DoSample(FrameMetrics& aFrameMetrics,
   mApzc.SetVelocityVector(velocity);
   aFrameMetrics.SetScrollOffset(offset / aFrameMetrics.GetZoom());
 
+  
+  
   if (hitBoundX || hitBoundY) {
-    ParentLayerPoint bounceVelocity = mFlingDirection * speed;
+    ParentLayerPoint bounceVelocity = velocity;
 
     if (!mSentBounceX && hitBoundX && fabsf(offset.x - mStartOffset.x) > BOUNDS_EPSILON) {
       mSentBounceX = true;
@@ -157,36 +186,42 @@ AndroidFlingAnimation::DoSample(FrameMetrics& aFrameMetrics,
       bounceVelocity.y = 0.0f;
     }
     if (!IsZero(bounceVelocity)) {
-      mDeferredTasks.AppendElement(
-          NewRunnableMethod<ParentLayerPoint,
-                            RefPtr<const OverscrollHandoffChain>,
-                            RefPtr<const AsyncPanZoomController>>(&mApzc,
-                                                                  &AsyncPanZoomController::HandleFlingOverscroll,
-                                                                  bounceVelocity,
-                                                                  mOverscrollHandoffChain,
-                                                                  mScrolledApzc));
+      DeferHandleFlingOverscroll(bounceVelocity);
     }
   }
 
   return true;
 }
 
-bool
-AndroidFlingAnimation::CheckBounds(Axis& aAxis, float aValue, float* aClamped)
+void
+AndroidFlingAnimation::DeferHandleFlingOverscroll(ParentLayerPoint& aVelocity)
 {
-  bool result = false;
-  if ((aValue - BOUNDS_EPSILON) <= aAxis.GetPageStart().value) {
-    result = true;
+  mDeferredTasks.AppendElement(
+      NewRunnableMethod<ParentLayerPoint,
+                        RefPtr<const OverscrollHandoffChain>,
+                        RefPtr<const AsyncPanZoomController>>(&mApzc,
+                                                              &AsyncPanZoomController::HandleFlingOverscroll,
+                                                              aVelocity,
+                                                              mOverscrollHandoffChain,
+                                                              mScrolledApzc));
+
+}
+
+bool
+AndroidFlingAnimation::CheckBounds(Axis& aAxis, float aValue, float aDirection, float* aClamped)
+{
+  if ((aDirection < 0.0f) && (aValue <= aAxis.GetPageStart().value)) {
     if (aClamped) {
       *aClamped = aAxis.GetPageStart().value;
     }
-  } else if ((aValue + BOUNDS_EPSILON) >= (aAxis.GetPageEnd() - aAxis.GetCompositionLength()).value) {
-    result = true;
+    return true;
+  } else if ((aDirection > 0.0f) && (aValue >= aAxis.GetScrollRangeEnd().value)) {
     if (aClamped) {
-      *aClamped = (aAxis.GetPageEnd() - aAxis.GetCompositionLength()).value;
+      *aClamped = aAxis.GetScrollRangeEnd().value;
     }
+    return true;
   }
-  return result;
+  return false;
 }
 
 } 
