@@ -2860,7 +2860,7 @@ SVGTextDrawPathCallbacks::PaintDecorationLine(Rect aPath, nscolor aColor)
 {
   mColor = aColor;
   AntialiasMode aaMode =
-    nsSVGUtils::ToAntialiasMode(mFrame->StyleSVG()->mTextRendering);
+    nsSVGUtils::ToAntialiasMode(mFrame->StyleText()->mTextRendering);
 
   gfx->Save();
   gfx->NewPath();
@@ -2897,7 +2897,7 @@ SVGTextDrawPathCallbacks::SetupContext()
   
   
   
-  switch (mFrame->StyleSVG()->mTextRendering) {
+  switch (mFrame->StyleText()->mTextRendering) {
   case NS_STYLE_TEXT_RENDERING_OPTIMIZESPEED:
     gfx->SetAntialiasMode(AntialiasMode::NONE);
     break;
@@ -3023,7 +3023,7 @@ SVGTextDrawPathCallbacks::StrokeGeometry()
                                            nullptr);
         DrawOptions drawOptions;
         drawOptions.mAntialiasMode =
-          nsSVGUtils::ToAntialiasMode(mFrame->StyleSVG()->mTextRendering);
+          nsSVGUtils::ToAntialiasMode(mFrame->StyleText()->mTextRendering);
         gfx->GetDrawTarget()->Stroke(path, strokePattern, strokeOptions);
       }
     }
@@ -5426,7 +5426,7 @@ SVGTextFrame::UpdateFontSizeScaleFactor()
     if (!geometricPrecision) {
       
       
-      geometricPrecision = f->StyleSVG()->mTextRendering ==
+      geometricPrecision = f->StyleText()->mTextRendering ==
                              NS_STYLE_TEXT_RENDERING_GEOMETRICPRECISION;
     }
     nscoord size = f->StyleFont()->mFont.size;

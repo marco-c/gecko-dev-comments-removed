@@ -1982,6 +1982,7 @@ struct nsStyleText
   uint8_t mControlCharacterVisibility;  
   uint8_t mTextEmphasisPosition;        
   uint8_t mTextEmphasisStyle;           
+  uint8_t mTextRendering;               
   int32_t mTabSize;                     
   nscolor mTextEmphasisColor;           
   nscolor mWebkitTextFillColor;         
@@ -3247,7 +3248,6 @@ struct nsStyleSVG
   uint8_t          mStrokeLinecap;    
   uint8_t          mStrokeLinejoin;   
   uint8_t          mTextAnchor;       
-  uint8_t          mTextRendering;    
 
   
   

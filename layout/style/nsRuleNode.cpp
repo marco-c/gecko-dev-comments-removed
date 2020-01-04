@@ -4678,6 +4678,13 @@ nsRuleNode::ComputeTextData(void* aStartStruct,
   }
 
   
+  SetDiscrete(*aRuleData->ValueForTextRendering(),
+              text->mTextRendering, conditions,
+              SETDSC_ENUMERATED | SETDSC_UNSET_INHERIT,
+              parentText->mTextRendering,
+              NS_STYLE_TEXT_RENDERING_AUTO, 0, 0, 0, 0);
+
+  
   const nsCSSValue*
     webkitTextFillColorValue = aRuleData->ValueForWebkitTextFillColor();
   if (webkitTextFillColorValue->GetUnit() == eCSSUnit_Null) {
@@ -9442,13 +9449,6 @@ nsRuleNode::ComputeSVGData(void* aStartStruct,
               SETDSC_ENUMERATED | SETDSC_UNSET_INHERIT,
               parentSVG->mTextAnchor,
               NS_STYLE_TEXT_ANCHOR_START, 0, 0, 0, 0);
-
-  
-  SetDiscrete(*aRuleData->ValueForTextRendering(),
-              svg->mTextRendering, conditions,
-              SETDSC_ENUMERATED | SETDSC_UNSET_INHERIT,
-              parentSVG->mTextRendering,
-              NS_STYLE_TEXT_RENDERING_AUTO, 0, 0, 0, 0);
 
   COMPUTE_END_INHERITED(SVG, svg)
 }
