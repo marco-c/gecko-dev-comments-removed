@@ -76,12 +76,6 @@ public interface BrowserDB {
 
 
 
-    public abstract Cursor getTopSites(ContentResolver cr, int limit);
-
-    
-
-
-
 
 
     public abstract Cursor getTopSites(ContentResolver cr, int suggestedRangeLimit, int limit);
@@ -171,7 +165,6 @@ public interface BrowserDB {
             String faviconUrl, String faviconGuid, byte[] data);
 
 
-    public abstract Cursor getPinnedSites(ContentResolver cr, int limit);
     public abstract void pinSite(ContentResolver cr, String url, String title, int position);
     public abstract void unpinSite(ContentResolver cr, int position);
 
