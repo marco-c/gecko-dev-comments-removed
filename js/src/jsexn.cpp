@@ -516,8 +516,8 @@ js::GetErrorTypeName(JSRuntime* rt, int16_t exnType)
 
 
 
-    if (exnType <= JSEXN_NONE || exnType >= JSEXN_LIMIT ||
-        exnType == JSEXN_INTERNALERR)
+    if (exnType < 0 || exnType >= JSEXN_LIMIT ||
+        exnType == JSEXN_INTERNALERR || exnType == JSEXN_WARN)
     {
         return nullptr;
     }
@@ -546,13 +546,14 @@ js::ErrorToException(JSContext* cx, const char* message, JSErrorReport* reportp,
     if (!callback)
         callback = GetErrorMessage;
     const JSErrorFormatString* errorString = callback(userRef, errorNumber);
-    JSExnType exnType = errorString ? static_cast<JSExnType>(errorString->exnType) : JSEXN_NONE;
+    JSExnType exnType = errorString ? static_cast<JSExnType>(errorString->exnType) : JSEXN_ERR;
     MOZ_ASSERT(exnType < JSEXN_LIMIT);
 
-    
-    
-    if (exnType == JSEXN_NONE)
-        return false;
+    if (exnType == JSEXN_WARN) {
+        
+        MOZ_ASSERT(cx->runtime()->options().werror());
+        exnType = JSEXN_ERR;
+    }
 
     
     if (cx->generatingError)
@@ -632,9 +633,7 @@ ErrorReportToString(JSContext* cx, JSErrorReport* reportp)
 
 
     JSExnType type = static_cast<JSExnType>(reportp->exnType);
-    RootedString str(cx);
-    if (type != JSEXN_NONE)
-        str = ClassName(GetExceptionProtoKey(type), cx);
+    RootedString str(cx, ClassName(GetExceptionProtoKey(type), cx));
     
 
 
@@ -898,7 +897,7 @@ ErrorReport::init(JSContext* cx, HandleValue exn,
         new (reportp) JSErrorReport();
         ownedReport.filename = filename.ptr();
         ownedReport.lineno = lineno;
-        ownedReport.exnType = int16_t(JSEXN_NONE);
+        ownedReport.exnType = JSEXN_INTERNALERR;
         ownedReport.column = column;
         if (str) {
             

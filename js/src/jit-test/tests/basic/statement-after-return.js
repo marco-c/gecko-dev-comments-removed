@@ -5,7 +5,7 @@ function testWarn(code, lineNumber, columnNumber) {
   eval(code);
   var warning = getLastWarning();
   assertEq(warning !== null, true, "warning should be caught for " + code);
-  assertEq(warning.name, "None");
+  assertEq(warning.name, "Warning");
   assertEq(warning.lineNumber, lineNumber);
   assertEq(warning.columnNumber, columnNumber);
 
@@ -13,7 +13,7 @@ function testWarn(code, lineNumber, columnNumber) {
   Reflect.parse(code);
   warning = getLastWarning();
   assertEq(warning !== null, true, "warning should be caught for " + code);
-  assertEq(warning.name, "None");
+  assertEq(warning.name, "Warning");
   
   
   disableLastWarning();

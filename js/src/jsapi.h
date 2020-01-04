@@ -626,9 +626,12 @@ typedef void
 
 
 
+
+
+
 typedef enum JSExnType {
-    JSEXN_NONE = -1,
-      JSEXN_ERR,
+    JSEXN_ERR,
+    JSEXN_FIRST = JSEXN_ERR,
         JSEXN_INTERNALERR,
         JSEXN_EVALERR,
         JSEXN_RANGEERR,
@@ -637,7 +640,8 @@ typedef enum JSExnType {
         JSEXN_TYPEERR,
         JSEXN_URIERR,
         JSEXN_DEBUGGEEWOULDRUN,
-        JSEXN_LIMIT
+    JSEXN_WARN,
+    JSEXN_LIMIT
 } JSExnType;
 
 typedef struct JSErrorFormatString {
