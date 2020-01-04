@@ -704,21 +704,23 @@ class DesktopSingleLocale(LocalesMixin, ReleaseMixin, MockMixin, BuildbotMixin,
             ret = FAILURE
         return ret
 
-    def get_upload_files(self, locale):
+    def set_upload_files(self, locale):
         
         
         
         env = self.query_l10n_env()
-        target = ['echo-variable-UPLOAD_FILES', 'AB_CD=%s' % (locale)]
+        target = ['echo-variable-UPLOAD_FILES', 'echo-variable-CHECKSUM_FILES',
+                  'AB_CD=%s' % locale]
         dirs = self.query_abs_dirs()
         cwd = dirs['abs_locales_dir']
         
         
-        output = self._get_output_from_make(target=target, cwd=cwd, env=env, ignore_errors=True)
-        self.info('UPLOAD_FILES is "%s"' % (output))
+        output = self._get_output_from_make(target=target, cwd=cwd, env=env,
+                                            ignore_errors=True)
+        self.info('UPLOAD_FILES is "%s"' % output)
         files = shlex.split(output)
         if not files:
-            self.error('failed to get upload file list for locale %s' % (locale))
+            self.error('failed to get upload file list for locale %s' % locale)
             return FAILURE
 
         self.upload_files[locale] = [
@@ -750,13 +752,17 @@ class DesktopSingleLocale(LocalesMixin, ReleaseMixin, MockMixin, BuildbotMixin,
             self.error("make installers-%s failed" % (locale))
             return FAILURE
 
-        if self.get_upload_files(locale):
-            self.error("failed to get list of files to upload for locale %s" % (locale))
-            return FAILURE
         
         if self.make_upload(locale):
             self.error("make upload for locale %s failed!" % (locale))
             return FAILURE
+
+        
+        
+        if self.set_upload_files(locale):
+            self.error("failed to get list of files to upload for locale %s" % locale)
+            return FAILURE
+
         return SUCCESS
 
     def repack(self):
