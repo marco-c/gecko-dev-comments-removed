@@ -81,6 +81,8 @@ nsXBLPrototypeResources::FlushSkinSheets()
   
   
   
+  
+  
 
   nsTArray<StyleSheetHandle::RefPtr> oldSheets;
 
@@ -94,7 +96,7 @@ nsXBLPrototypeResources::FlushSkinSheets()
     nsIURI* uri = oldSheet->GetSheetURI();
 
     StyleSheetHandle::RefPtr newSheet;
-    if (IsChromeURI(uri)) {
+    if (!oldSheet->IsInline() && IsChromeURI(uri)) {
       if (NS_FAILED(cssLoader->LoadSheetSync(uri, &newSheet)))
         continue;
     }

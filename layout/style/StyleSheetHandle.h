@@ -104,6 +104,7 @@ public:
     
     
 
+    inline bool IsInline() const;
     inline nsIURI* GetSheetURI() const;
     inline nsIURI* GetOriginalURI() const;
     inline nsIURI* GetBaseURI() const;

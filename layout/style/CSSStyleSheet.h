@@ -226,6 +226,9 @@ public:
   nsIURI* GetOriginalURI() const { return mInner->mOriginalSheetURI; }
 
   
+  bool IsInline() const { return mInner->IsInline(); }
+
+  
   NS_IMETHOD StyleSheetLoaded(StyleSheetHandle aSheet, bool aWasAlternate,
                               nsresult aStatus) override;
 

@@ -40,6 +40,9 @@ public:
   nsIURI* GetBaseURI() const { return mBaseURI; }
   void SetURIs(nsIURI* aSheetURI, nsIURI* aOriginalSheetURI, nsIURI* aBaseURI);
 
+  
+  bool IsInline() const { return !mOriginalSheetURI; }
+
   nsIPrincipal* Principal() const { return mPrincipal; }
   void SetPrincipal(nsIPrincipal* aPrincipal);
 

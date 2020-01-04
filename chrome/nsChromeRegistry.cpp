@@ -446,9 +446,11 @@ nsresult nsChromeRegistry::RefreshWindow(nsPIDOMWindowOuter* aWindow)
   
   
   for (StyleSheetHandle sheet : oldSheets) {
-    nsIURI* uri = sheet ? sheet->GetOriginalURI() : nullptr;
+    MOZ_ASSERT(sheet, "GetStyleSheetAt shouldn't return nullptr for "
+                      "in-range sheet indexes");
+    nsIURI* uri = sheet->GetSheetURI();
 
-    if (uri && IsChromeURI(uri)) {
+    if (!sheet->IsInline() && IsChromeURI(uri)) {
       
       StyleSheetHandle::RefPtr newSheet;
       
