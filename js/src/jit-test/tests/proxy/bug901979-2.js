@@ -1,5 +1,6 @@
 
 
+load(libdir + "immutable-prototype.js");
 
 var global = this;
 var status = "pass";
@@ -16,12 +17,17 @@ var handler = new Proxy({}, metaHandler);
 
 
 var angryProxy = new Proxy(Object.create(null), handler);
-this.__proto__ = angryProxy;
-Object.prototype.__proto__ = angryProxy;
+if (globalPrototypeChainIsMutable()) {
+  this.__proto__ = angryProxy;
+  Object.prototype.__proto__ = angryProxy;
+}
 
 
 this.nonExistingProperty;
-assertEq(status, "SMASH");
+if (globalPrototypeChainIsMutable())
+  assertEq(status, "SMASH");
+else
+  assertEq(status, "pass");
 
 
 status = "pass";

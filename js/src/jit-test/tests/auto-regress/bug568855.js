@@ -1,10 +1,16 @@
 
 
 
-this.__proto__ = Proxy.create({
-    has:function(){return false},
-    set:function(){}
-});
+load(libdir + "immutable-prototype.js");
+
+if (globalPrototypeChainIsMutable())
+{
+  this.__proto__ = Proxy.create({
+      has:function(){return false},
+      set:function(){}
+  });
+}
+
 (function(){
   eval("(function(){ for(var j=0;j<6;++j) if(j%2==1) p=0; })")();
 })()

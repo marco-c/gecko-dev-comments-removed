@@ -1,5 +1,10 @@
+load(libdir + "immutable-prototype.js");
 
-__proto__ = null
-Object.prototype.__proto__ = this
 
-Debugger(newGlobal()).memory.takeCensus()
+if (globalPrototypeChainIsMutable()) {
+  __proto__ = null;
+  Object.prototype.__proto__ = this;
+}
+
+
+Debugger(newGlobal()).memory.takeCensus();

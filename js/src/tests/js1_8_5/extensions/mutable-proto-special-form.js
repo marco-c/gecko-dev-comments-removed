@@ -64,24 +64,26 @@ Object.defineProperty(Object.prototype, "__proto__", { set: undefined });
 performProtoTests("behavior after making Object.prototype.__proto__'s " +
                   "[[Set]] === undefined");
 
+try
+{
+  var superProto = Object.create(null);
+  poisonProto(superProto);
+  setProto.call(Object.prototype, superProto);
 
-var superProto = Object.create(null);
-poisonProto(superProto);
-setProto.call(Object.prototype, superProto);
+  performProtoTests("behavior after mutating Object.prototype.[[Prototype]]");
 
-performProtoTests("behavior after mutating Object.prototype.[[Prototype]]");
+  
+  
+  
+  var death = new Proxy(Object.create(null),
+                        new Proxy({}, { get: function() { passed = false; } }));
 
+  setProto.call(Object.prototype, death);
 
-
-
-var death = new Proxy(Object.create(null),
-                      new Proxy({}, { get: function() { passed = false; } }));
-
-setProto.call(Object.prototype, death);
-
-performProtoTests("behavior after making Object.prototype.[[Prototype]] a " +
-                  "proxy that throws for any access");
-
+  performProtoTests("behavior after making Object.prototype.[[Prototype]] a " +
+                    "proxy that throws for any access");
+}
+catch (e) {}
 
 if (typeof reportCompare === "function")
   reportCompare(true, true);

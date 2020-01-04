@@ -3,4 +3,9 @@
 
 
 
-print(__proto__ = Proxy.create(this, ""))
+load(libdir + "immutable-prototype.js");
+
+if (globalPrototypeChainIsMutable())
+  __proto__ = Proxy.create(this, "");
+
+throw new InternalError("fallback");

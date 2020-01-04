@@ -1,9 +1,12 @@
 
 
 
+load(libdir + "immutable-prototype.js");
 
 var save__proto__ = __proto__;
-__proto__ = save__proto__;
+if (globalPrototypeChainIsMutable())
+  __proto__ = save__proto__;
+
 function bar(x, y) {
   return x + y;
 }
