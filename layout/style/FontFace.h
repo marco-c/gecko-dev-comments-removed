@@ -84,17 +84,10 @@ public:
   
 
 
-  bool IsInFontFaceSet() { return mInFontFaceSet; }
+  bool IsInFontFaceSet(FontFaceSet* aFontFaceSet) const;
 
-  
-
-
-
-  void SetIsInFontFaceSet(bool aInFontFaceSet) {
-    MOZ_ASSERT(!(!aInFontFaceSet && HasRule()),
-               "use DisconnectFromRule instead");
-    mInFontFaceSet = aInFontFaceSet;
-  }
+  void AddFontFaceSet(FontFaceSet* aFontFaceSet);
+  void RemoveFontFaceSet(FontFaceSet* aFontFaceSet);
 
   FontFaceSet* GetFontFaceSet() const { return mFontFaceSet; }
 
@@ -246,6 +239,10 @@ private:
   
   
   nsRefPtr<FontFaceSet> mFontFaceSet;
+
+  
+  
+  nsTArray<nsRefPtr<FontFaceSet>> mOtherFontFaceSets;
 
   
   bool mInFontFaceSet;
