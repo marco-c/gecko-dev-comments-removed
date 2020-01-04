@@ -1275,8 +1275,7 @@ GStreamerReader::AutoplugSortCb(GstElement* aElement, GstPad* aPad,
 
 
 
-void GStreamerReader::NotifyDataArrivedInternal(uint32_t aLength,
-                                                int64_t aOffset)
+void GStreamerReader::NotifyDataArrivedInternal()
 {
   MOZ_ASSERT(OnTaskQueue());
   if (HasVideo()) {
