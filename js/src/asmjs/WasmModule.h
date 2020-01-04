@@ -29,6 +29,18 @@ namespace wasm {
 
 
 
+JSObject*
+CreateI64Object(JSContext* cx, int64_t i64);
+
+
+
+
+bool
+ReadI64Object(JSContext* cx, HandleValue v, int64_t* i64);
+
+
+
+
 
 
 
@@ -113,18 +125,19 @@ class Export
     CacheableChars fieldName_;
     struct CacheablePod {
         DefinitionKind kind_;
-        uint32_t funcIndex_;
+        uint32_t index_;
     } pod;
 
   public:
     Export() = default;
-    explicit Export(UniqueChars fieldName, uint32_t funcIndex);
+    explicit Export(UniqueChars fieldName, uint32_t index, DefinitionKind kind);
     explicit Export(UniqueChars fieldName, DefinitionKind kind);
 
     const char* fieldName() const { return fieldName_.get(); }
 
     DefinitionKind kind() const { return pod.kind_; }
     uint32_t funcIndex() const;
+    uint32_t globalIndex() const;
 
     WASM_DECLARE_SERIALIZABLE(Export)
 };
@@ -219,6 +232,7 @@ class Module : public RefCounted<Module>
                      Handle<FunctionVector> funcImports,
                      HandleWasmTableObject tableImport,
                      HandleWasmMemoryObject memoryImport,
+                     const ValVector& globalImports,
                      HandleObject instanceProto,
                      MutableHandleWasmInstanceObject instanceObj) const;
 
