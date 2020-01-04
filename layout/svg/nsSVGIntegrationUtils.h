@@ -156,6 +156,9 @@ public:
   static DrawResult
   PaintMaskAndClipPath(const PaintFramesParams& aParams);
 
+  
+
+
   static DrawResult
   PaintFilter(const PaintFramesParams& aParams);
 

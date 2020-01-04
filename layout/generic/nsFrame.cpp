@@ -2232,6 +2232,8 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
   
   
   
+  
+  
   bool useOpacity = HasVisualOpacity() && !nsSVGUtils::CanOptimizeOpacity(this) &&
                     (!usingSVGEffects || nsDisplayOpacity::NeedsActiveLayer(aBuilder, this));
   bool useBlendMode = effects->mMixBlendMode != NS_STYLE_BLEND_NORMAL;
