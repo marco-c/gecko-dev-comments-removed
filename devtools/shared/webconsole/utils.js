@@ -57,6 +57,17 @@ var WebConsoleUtils = {
 
 
 
+  getWorkerType: function(message) {
+    let id = message ? message.innerID : null;
+    return CONSOLE_WORKER_IDS[CONSOLE_WORKER_IDS.indexOf(id)] || null;
+  },
+
+  
+
+
+
+
+
 
 
 
@@ -113,6 +124,29 @@ var WebConsoleUtils = {
     aTo.style.fontSize = style.getPropertyCSSValue("font-size").cssText;
     aTo.style.fontWeight = style.getPropertyCSSValue("font-weight").cssText;
     aTo.style.fontStyle = style.getPropertyCSSValue("font-style").cssText;
+  },
+
+  
+
+
+
+
+
+
+
+  getLocationsForFrames: function(aWindow)
+  {
+    let location = aWindow.location.toString();
+    let locations = [location];
+
+    if (aWindow.frames) {
+      for (let i = 0; i < aWindow.frames.length; i++) {
+        let frame = aWindow.frames[i];
+        locations = locations.concat(this.getLocationsForFrames(frame));
+      }
+    }
+
+    return locations;
   },
 
   
@@ -935,18 +969,51 @@ ConsoleAPIListener.prototype =
     
     
     let apiMessage = aMessage.wrappedJSObject;
-    if (this.window && CONSOLE_WORKER_IDS.indexOf(apiMessage.innerID) == -1) {
-      let msgWindow = Services.wm.getCurrentInnerWindowWithId(apiMessage.innerID);
-      if (!msgWindow || !isWindowIncluded(this.window, msgWindow)) {
-        
-        return;
-      }
-    }
-    if (this.consoleID && apiMessage.consoleID != this.consoleID) {
+
+    if (!this.isMessageRelevant(apiMessage)) {
       return;
     }
 
     this.owner.onConsoleAPICall(apiMessage);
+  },
+
+  
+
+
+
+
+
+
+
+
+  isMessageRelevant: function(message) {
+    let workerType = WebConsoleUtils.getWorkerType(message);
+
+    if (this.window && workerType === "ServiceWorker") {
+      
+      
+      
+      let scope = message.ID;
+      let locations = WebConsoleUtils.getLocationsForFrames(this.window);
+
+      if (!locations.some(loc => loc.startsWith(scope))) {
+        return false;
+      }
+    }
+
+    if (this.window && !workerType) {
+      let msgWindow = Services.wm.getCurrentInnerWindowWithId(message.innerID);
+      if (!msgWindow || !isWindowIncluded(this.window, msgWindow)) {
+        
+        return false;
+      }
+    }
+
+    if (this.consoleID && message.consoleID !== this.consoleID) {
+      return false;
+    }
+
+    return true;
   },
 
   
@@ -979,9 +1046,9 @@ ConsoleAPIListener.prototype =
       messages = messages.concat(ConsoleAPIStorage.getEvents(id));
     });
 
-    if (this.consoleID) {
-      messages = messages.filter((m) => m.consoleID == this.consoleID);
-    }
+    messages = messages.filter(msg => {
+      return this.isMessageRelevant(msg);
+    });
 
     if (aIncludePrivate) {
       return messages;
