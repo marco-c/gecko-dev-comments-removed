@@ -400,7 +400,7 @@ InputQueue::CancelAnimationsForNewBlock(CancelableBlockState* aBlock)
   
   
   if (aBlock == CurrentBlock()) {
-    aBlock->GetOverscrollHandoffChain()->CancelAnimations(ExcludeOverscroll);
+    aBlock->GetOverscrollHandoffChain()->CancelAnimations(ExcludeOverscroll | ScrollSnap);
   }
 }
 
