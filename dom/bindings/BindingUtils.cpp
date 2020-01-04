@@ -135,6 +135,12 @@ ThrowMethodFailed(JSContext* cx, ErrorResult& rv)
     
     return false;
   }
+  if (rv.IsJSContextException()) {
+    
+    
+    
+    return false;
+  }
   if (rv.IsErrorWithMessage()) {
     rv.ReportErrorWithMessage(cx);
     return false;

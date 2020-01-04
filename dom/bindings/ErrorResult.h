@@ -169,6 +169,17 @@ public:
 
   
   
+  void NoteJSContextException() {
+    mResult = NS_ERROR_DOM_EXCEPTION_ON_JSCONTEXT;
+  }
+  
+  
+  bool IsJSContextException() {
+    return ErrorCode() == NS_ERROR_DOM_EXCEPTION_ON_JSCONTEXT;
+  }
+
+  
+  
   void ReportGenericError(JSContext* cx);
 
   
@@ -274,6 +285,8 @@ private:
     MOZ_ASSERT(aRv != NS_ERROR_DOM_DOMEXCEPTION, "Use ThrowDOMException()");
     MOZ_ASSERT(!IsDOMException(), "Don't overwrite DOM exceptions");
     MOZ_ASSERT(aRv != NS_ERROR_XPC_NOT_ENOUGH_ARGS, "May need to bring back ThrowNotEnoughArgsError");
+    MOZ_ASSERT(aRv != NS_ERROR_DOM_EXCEPTION_ON_JSCONTEXT,
+               "Use NoteJSContextException");
     mResult = aRv;
   }
 
