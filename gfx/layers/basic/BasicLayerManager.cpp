@@ -916,15 +916,17 @@ BasicLayerManager::PaintLayer(gfxContext* aTarget,
     }
 
     IntRect bounds = visibleRegion.GetBounds();
+    
     RefPtr<DrawTarget> untransformedDT =
       gfxPlatform::GetPlatform()->CreateOffscreenContentDrawTarget(IntSize(bounds.width, bounds.height),
                                                                    SurfaceFormat::B8G8R8A8);
     if (!untransformedDT || !untransformedDT->IsValid()) {
       return;
     }
+    untransformedDT->SetTransform(Matrix::Translation(-Point(bounds.x, bounds.y)));
 
-    RefPtr<gfxContext> groupTarget = gfxContext::CreateOrNull(untransformedDT,
-                                                              Point(bounds.x, bounds.y));
+    RefPtr<gfxContext> groupTarget =
+      gfxContext::CreatePreservingTransformOrNull(untransformedDT);
     MOZ_ASSERT(groupTarget); 
 
     PaintSelfOrChildren(paintLayerContext, groupTarget);
@@ -936,12 +938,7 @@ BasicLayerManager::PaintLayer(gfxContext* aTarget,
       Color color((aLayer->GetDebugColorIndex() & 1) ? 1.f : 0.f,
                   (aLayer->GetDebugColorIndex() & 2) ? 1.f : 0.f,
                   (aLayer->GetDebugColorIndex() & 4) ? 1.f : 0.f);
-
-      RefPtr<gfxContext> temp =
-        gfxContext::CreateOrNull(untransformedDT, Point(bounds.x, bounds.y));
-      MOZ_ASSERT(temp); 
-      temp->SetColor(color);
-      temp->Paint();
+      untransformedDT->FillRect(Rect(bounds), ColorPattern(color));
     }
 #endif
     Matrix4x4 effectiveTransform = aLayer->GetEffectiveTransform();
