@@ -716,12 +716,6 @@ protected:
   bool mIsDormant;
 
   
-  
-  
-  
-  bool mWasEndedWhenEnteredDormant;
-
-  
   const bool mIsHeuristicDormantSupported;
 
   
