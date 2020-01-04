@@ -515,18 +515,28 @@ nsSVGIntegrationUtils::PaintFramesWithEffects(gfxContext& aContext,
   
   nsSVGMaskFrame *svgMaskFrame = effectProperties.GetMaskFrame(&isOK);
 
-  bool complexEffects = false;
-  bool hasValidLayers = svgReset->mMask.HasLayerWithImage();
-
   
   RefPtr<gfxContext> target = &aContext;
   IntPoint targetOffset;
 
   
+  
+  bool hasMaskToDraw = (svgMaskFrame != nullptr);
+  if (!hasMaskToDraw) {
+    NS_FOR_VISIBLE_IMAGE_LAYERS_BACK_TO_FRONT(i, svgReset->mMask) {
+      if (!svgReset->mMask.mLayers[i].mImage.IsEmpty()) {
+        hasMaskToDraw = true;
+        break;
+      }
+    }
+  }
+
+  bool complexEffects = false;
+  
 
   if (opacity != 1.0f ||  (clipPathFrame && !isTrivialClip)
       || aFrame->StyleDisplay()->mMixBlendMode != NS_STYLE_BLEND_NORMAL
-      || svgMaskFrame || hasValidLayers) {
+      || hasMaskToDraw) {
     complexEffects = true;
 
     aContext.Save();
@@ -539,12 +549,14 @@ nsSVGIntegrationUtils::PaintFramesWithEffects(gfxContext& aContext,
     Matrix maskTransform;
     RefPtr<SourceSurface> maskSurface;
     if (svgMaskFrame) {
+      
       maskSurface = svgMaskFrame->GetMaskForMaskedFrame(&aContext,
                                                      aFrame,
                                                      cssPxToDevPxMatrix,
                                                      opacity,
                                                      &maskTransform);
-    } else if (hasValidLayers) {
+    } else if (hasMaskToDraw) {
+      
       gfxRect clipRect = aContext.GetClipExtents();
       {
         gfxContextMatrixAutoSaveRestore matRestore(&aContext);
@@ -584,7 +596,7 @@ nsSVGIntegrationUtils::PaintFramesWithEffects(gfxContext& aContext,
       maskTransform = Matrix::Translation(drawRect.x, drawRect.y) * mat;
     }
 
-    if ((svgMaskFrame || hasValidLayers) && !maskSurface) {
+    if (hasMaskToDraw && !maskSurface) {
       
       aContext.Restore();
       return;
@@ -624,8 +636,7 @@ nsSVGIntegrationUtils::PaintFramesWithEffects(gfxContext& aContext,
       }
     }
 
-    if (opacity != 1.0f || svgMaskFrame  || hasValidLayers ||
-        (clipPathFrame && !isTrivialClip)) {
+    if (opacity != 1.0f || hasMaskToDraw || (clipPathFrame && !isTrivialClip)) {
       target->PushGroupForBlendBack(gfxContentType::COLOR_ALPHA, opacity, maskSurface, maskTransform);
     }
   }
@@ -669,8 +680,7 @@ nsSVGIntegrationUtils::PaintFramesWithEffects(gfxContext& aContext,
     return;
   }
 
-  if (opacity != 1.0f || svgMaskFrame || hasValidLayers ||
-      (clipPathFrame && !isTrivialClip)) {
+  if (opacity != 1.0f || hasMaskToDraw || (clipPathFrame && !isTrivialClip)) {
     target->PopGroupAndBlend();
   }
 
