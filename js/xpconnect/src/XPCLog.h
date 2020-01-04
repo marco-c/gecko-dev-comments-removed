@@ -23,7 +23,6 @@
 
 
 
-
 #ifdef DEBUG
 #define XPC_LOG_INTERNAL(number,_args)  \
     do{if (XPC_Log_Check(number)){XPC_Log_print _args;}}while (0)
