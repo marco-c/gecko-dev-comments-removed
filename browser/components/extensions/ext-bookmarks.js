@@ -55,7 +55,7 @@ function getTree(rootGuid, onlyChildren) {
       
       return [convert(root, null)];
     }
-  });
+  }).catch(e => Promise.reject({message: e.message}));
 }
 
 function convert(result) {
