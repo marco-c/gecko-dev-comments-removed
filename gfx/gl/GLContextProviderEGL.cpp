@@ -382,22 +382,14 @@ GLContextEGL::IsCurrent() {
 }
 
 bool
-GLContextEGL::RenewSurface() {
+GLContextEGL::RenewSurface(nsIWidget* aWidget) {
     if (!mOwnsContext) {
         return false;
     }
-#ifndef MOZ_WIDGET_ANDROID
-    MOZ_CRASH("GFX: unimplemented");
-    
-    
-    
-    
-    
-#endif
     
     
     ReleaseSurface();
-    mSurface = mozilla::gl::CreateSurfaceForWindow(nullptr, mConfig); 
+    mSurface = mozilla::gl::CreateSurfaceForWindow(aWidget, mConfig);
     if (!mSurface) {
         return false;
     }

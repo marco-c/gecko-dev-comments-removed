@@ -60,7 +60,8 @@ public:
         return mBackbufferFB;
     }
 
-    virtual bool RenewSurface() override {
+    virtual bool RenewSurface(nsIWidget* aWidget) override {
+        
         return RecreateRB();
     }
 

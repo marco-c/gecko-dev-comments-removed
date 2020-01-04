@@ -1538,7 +1538,7 @@ CompositorOGL::Resume()
     return false;
 
   
-  return gl()->RenewSurface();
+  return gl()->RenewSurface(GetWidget());
 #endif
   return true;
 }
