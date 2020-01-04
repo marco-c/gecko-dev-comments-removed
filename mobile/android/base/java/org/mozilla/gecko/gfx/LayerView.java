@@ -269,14 +269,6 @@ public class LayerView extends ScrollView implements Tabs.OnTabsChangedListener 
     @Override
     protected void onAttachedToWindow() {
         
-        if (GeckoThread.isStateAtLeast(GeckoThread.State.PROFILE_READY)) {
-            mLayerClient.onGeckoReady();
-        } else {
-            GeckoThread.queueNativeCallUntil(GeckoThread.State.PROFILE_READY,
-                    mLayerClient, "onGeckoReady");
-        }
-
-        
         
         setDescendantFocusability(FOCUS_BLOCK_DESCENDANTS);
 

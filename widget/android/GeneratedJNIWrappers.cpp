@@ -121,9 +121,9 @@ auto GeckoAppShell::CreateMessageCursorWrapper(int64_t a0, int64_t a1, mozilla::
 constexpr char GeckoAppShell::CreateShortcut_t::name[];
 constexpr char GeckoAppShell::CreateShortcut_t::signature[];
 
-auto GeckoAppShell::CreateShortcut(mozilla::jni::String::Param a0, mozilla::jni::String::Param a1) -> void
+auto GeckoAppShell::CreateShortcut(mozilla::jni::String::Param a0, mozilla::jni::String::Param a1, mozilla::jni::String::Param a2) -> void
 {
-    return mozilla::jni::Method<CreateShortcut_t>::Call(nullptr, nullptr, a0, a1);
+    return mozilla::jni::Method<CreateShortcut_t>::Call(nullptr, nullptr, a0, a1, a2);
 }
 
 constexpr char GeckoAppShell::CreateThreadCursorWrapper_t::name[];
@@ -1324,6 +1324,14 @@ constexpr char GeckoLayerClient::IsContentDocumentDisplayed_t::signature[];
 auto GeckoLayerClient::IsContentDocumentDisplayed() const -> bool
 {
     return mozilla::jni::Method<IsContentDocumentDisplayed_t>::Call(this, nullptr);
+}
+
+constexpr char GeckoLayerClient::OnGeckoReady_t::name[];
+constexpr char GeckoLayerClient::OnGeckoReady_t::signature[];
+
+auto GeckoLayerClient::OnGeckoReady() const -> void
+{
+    return mozilla::jni::Method<OnGeckoReady_t>::Call(this, nullptr);
 }
 
 constexpr char GeckoLayerClient::ProgressiveUpdateCallback_t::name[];

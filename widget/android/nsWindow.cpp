@@ -546,6 +546,7 @@ public:
         
         const bool resetting = !!mLayerClient;
         mLayerClient = layerClient;
+        layerClient->OnGeckoReady();
 
         if (resetting) {
             
