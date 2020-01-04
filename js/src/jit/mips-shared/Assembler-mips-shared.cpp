@@ -1361,13 +1361,6 @@ AssemblerMIPSShared::as_sync(uint32_t stype)
     writeInst(InstReg(op_special, zero, zero, zero, stype, ff_sync).encode());
 }
 
-void
-AssemblerMIPSShared::PatchDataWithValueCheck(CodeLocationLabel label, ImmPtr newValue, ImmPtr expectedValue)
-{
-    Assembler::PatchDataWithValueCheck(label, PatchedImmPtr(newValue.value),
-                            PatchedImmPtr(expectedValue.value));
-}
-
 
 
 
