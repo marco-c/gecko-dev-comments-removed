@@ -149,6 +149,23 @@ int ViEChannelManager::DeleteChannel(int channel_id) {
   ChannelGroup* group = NULL;
   {
     
+    ViEChannelManagerScoped(*this);
+
+    
+    CriticalSectionScoped cs(channel_id_critsect_);
+
+    group = FindGroup(channel_id);
+    if (group == NULL)
+      return -1;
+    group->Stop(channel_id);
+  }
+  
+  
+  
+  
+  
+  {
+    
     ViEManagerWriteScoped wl(this);
 
     
