@@ -233,10 +233,6 @@ var AddonTestUtils = {
     appDirForAddons.create(Ci.nsIFile.DIRECTORY_TYPE, FileUtils.PERMS_DIRECTORY);
     this.registerDirectory("XREAddonAppDir", appDirForAddons);
 
-    
-    this.systemAddonDir = this.profileDir.clone();
-    this.systemAddonDir.append("features");
-    this.systemAddonDir.create(Ci.nsIFile.DIRECTORY_TYPE, FileUtils.PERMS_DIRECTORY);
 
     
     Services.prefs.setBoolPref("extensions.logging.enabled", true);
@@ -417,16 +413,6 @@ var AddonTestUtils = {
     }
   }),
 
-  
-
-
-
-
-
-  isSystemAddon(file) {
-    return this.systemAddonDir.contains(file);
-  },
-
   overrideCertDB() {
     
     
@@ -450,11 +436,6 @@ var AddonTestUtils = {
           let id = yield this.getIDFromManifest(manifestURI);
 
           let fakeCert = {commonName: id};
-          if (this.isSystemAddon(file)) {
-            fakeCert["organizationalUnit"] = "Mozilla Components";
-          } else {
-            fakeCert["organizationalUnit"] = "Preliminary";
-          }
 
           return [callback, Cr.NS_OK, fakeCert];
         } catch (e) {
