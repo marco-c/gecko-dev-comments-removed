@@ -8,7 +8,6 @@ this.EXPORTED_SYMBOLS = ["ContentRestore"];
 
 const Cu = Components.utils;
 const Ci = Components.interfaces;
-const Cr = Components.results;
 
 Cu.import("resource://gre/modules/XPCOMUtils.jsm", this);
 
@@ -184,18 +183,7 @@ ContentRestoreInternal.prototype = {
     let history = webNavigation.sessionHistory;
 
     
-    this.restoreTabContentStarted((status) => {
-      
-      
-      
-      
-      if (loadArguments && (status == Cr.NS_BINDING_ABORTED)) {
-        this._tabData = tabData;
-        this.restoreTabContent(null, finishCallback);
-      } else {
-        finishCallback();
-      }
-    });
+    this.restoreTabContentStarted(finishCallback);
 
     
     
@@ -260,26 +248,22 @@ ContentRestoreInternal.prototype = {
 
   restoreTabContentStarted(finishCallback) {
     
-    if (this._historyListener) {
-      this._historyListener.uninstall();
-      this._historyListener = null;
-    }
+    this._historyListener.uninstall();
+    this._historyListener = null;
 
     
-    if (this._progressListener) {
-      this._progressListener.uninstall();
-    }
+    this._progressListener.uninstall();
 
     
     
     this._progressListener = new ProgressListener(this.docShell, {
-      onStopRequest: (status) => {
+      onStopRequest: () => {
         
         
         
         this.resetRestore();
 
-        finishCallback(status);
+        finishCallback();
       }
     });
   },
@@ -431,7 +415,7 @@ ProgressListener.prototype = {
     }
 
     if (stateFlags & STATE_STOP && this.callbacks.onStopRequest) {
-      this.callbacks.onStopRequest(status);
+      this.callbacks.onStopRequest();
     }
   },
 
