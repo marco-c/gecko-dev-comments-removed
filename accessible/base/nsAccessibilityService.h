@@ -195,12 +195,10 @@ public:
   
 
 
-  static bool IsShutdown() { return gIsShutdown; }
-
-  
-
-
-  static bool IsPlatformCaller() { return gIsPlatformCaller; };
+  static bool IsShutdown()
+  {
+    return gConsumers == 0;
+  };
 
   
 
@@ -225,6 +223,25 @@ public:
 
   void MarkupAttributes(const nsIContent* aContent,
                         nsIPersistentProperties* aAttributes) const;
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  enum ServiceConsumer
+  {
+    eXPCOM       = 1 << 0,
+    eMainProcess = 1 << 1,
+    ePlatformAPI = 1 << 2,
+  };
 
 private:
   
@@ -279,18 +296,13 @@ private:
   
 
 
-  static bool gIsShutdown;
-
-  
-
-
-  static bool gIsPlatformCaller;
+  static uint32_t gConsumers;
 
   nsDataHashtable<nsPtrHashKey<const nsIAtom>, const mozilla::a11y::MarkupMapInfo*> mMarkupMaps;
 
   friend nsAccessibilityService* GetAccService();
-  friend nsAccessibilityService* GetOrCreateAccService(bool);
-  friend bool CanShutdownAccService();
+  friend nsAccessibilityService* GetOrCreateAccService(uint32_t);
+  friend void MaybeShutdownAccService(uint32_t);
   friend mozilla::a11y::FocusManager* mozilla::a11y::FocusMgr();
   friend mozilla::a11y::SelectionManager* mozilla::a11y::SelectionMgr();
   friend mozilla::a11y::ApplicationAccessible* mozilla::a11y::ApplicationAcc();
@@ -310,12 +322,13 @@ GetAccService()
 
 
 
-nsAccessibilityService* GetOrCreateAccService(bool aIsPlatformCaller = true);
+nsAccessibilityService* GetOrCreateAccService(
+  uint32_t aNewConsumer = nsAccessibilityService::ePlatformAPI);
 
 
 
 
-bool CanShutdownAccService();
+void MaybeShutdownAccService(uint32_t aFormerConsumer);
 
 
 
