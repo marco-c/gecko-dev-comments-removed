@@ -35,6 +35,8 @@ public:
                                  bool& aOutContainsH264,
                                  bool& aOutContainsMP3);
 
+  static bool CanHandleMediaType(const nsAString& aMIMEType);
+
   
   static bool IsEnabled();
 

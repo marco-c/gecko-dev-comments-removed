@@ -31,6 +31,8 @@
 #include "nsDirectoryServiceUtils.h"
 #include "nsDirectoryServiceDefs.h"
 #include "nsXULAppAPI.h"
+#include "gmp-audio-decode.h"
+#include "gmp-video-decode.h"
 
 #if defined(XP_WIN) || defined(XP_MACOSX)
 #define PRIMETIME_EME_SUPPORTED 1
@@ -297,52 +299,107 @@ MediaKeySystemAccess::GetKeySystemStatus(const nsAString& aKeySystem,
 }
 
 static bool
-IsPlayableWithGMP(mozIGeckoMediaPluginService* aGMPS,
-                  const nsAString& aKeySystem,
-                  const nsAString& aContentType)
+GMPDecryptsAndDecodesAAC(mozIGeckoMediaPluginService* aGMPS,
+                         const nsAString& aKeySystem)
 {
-#ifdef MOZ_FMP4
-  nsContentTypeParser parser(aContentType);
-  nsAutoString mimeType;
-  nsresult rv = parser.GetType(mimeType);
-  if (NS_FAILED(rv)) {
-    return false;
-  }
+  MOZ_ASSERT(HaveGMPFor(aGMPS,
+                        NS_ConvertUTF16toUTF8(aKeySystem),
+                        NS_LITERAL_CSTRING(GMP_API_DECRYPTOR)));
+  return HaveGMPFor(aGMPS,
+                    NS_ConvertUTF16toUTF8(aKeySystem),
+                    NS_LITERAL_CSTRING(GMP_API_AUDIO_DECODER),
+                    NS_LITERAL_CSTRING("aac"));
+}
 
-  if (!mimeType.EqualsLiteral("audio/mp4") &&
-      !mimeType.EqualsLiteral("audio/x-m4a") &&
-      !mimeType.EqualsLiteral("video/mp4")) {
-    return false;
-  }
+static bool
+GMPDecryptsAndDecodesH264(mozIGeckoMediaPluginService* aGMPS,
+                          const nsAString& aKeySystem)
+{
+  MOZ_ASSERT(HaveGMPFor(aGMPS,
+                        NS_ConvertUTF16toUTF8(aKeySystem),
+                        NS_LITERAL_CSTRING(GMP_API_DECRYPTOR)));
+  return HaveGMPFor(aGMPS,
+                    NS_ConvertUTF16toUTF8(aKeySystem),
+                    NS_LITERAL_CSTRING(GMP_API_AUDIO_DECODER),
+                    NS_LITERAL_CSTRING("aac"));
+}
 
-  nsAutoString codecs;
-  parser.GetParameter("codecs", codecs);
 
-  NS_ConvertUTF16toUTF8 mimeTypeUTF8(mimeType);
-  bool hasAAC = false;
-  bool hasH264 = false;
-  bool hasMP3 = false;
-  if (!MP4Decoder::CanHandleMediaType(mimeTypeUTF8,
-                                      codecs,
-                                      hasAAC,
-                                      hasH264,
-                                      hasMP3) ||
-      hasMP3) {
-    return false;
-  }
-  return (!hasAAC ||
-          !HaveGMPFor(aGMPS,
-                      NS_ConvertUTF16toUTF8(aKeySystem),
-                      NS_LITERAL_CSTRING(GMP_API_DECRYPTOR),
-                      NS_LITERAL_CSTRING("aac"))) &&
-         (!hasH264 ||
-          !HaveGMPFor(aGMPS,
-                     NS_ConvertUTF16toUTF8(aKeySystem),
-                     NS_LITERAL_CSTRING(GMP_API_DECRYPTOR),
-                     NS_LITERAL_CSTRING("h264")));
-#else
-  return false;
+
+
+
+
+static bool
+GMPDecryptsAndGeckoDecodesH264(mozIGeckoMediaPluginService* aGMPService,
+                               const nsAString& aKeySystem,
+                               const nsAString& aContentType)
+{
+  MOZ_ASSERT(HaveGMPFor(aGMPService,
+                        NS_ConvertUTF16toUTF8(aKeySystem),
+                        NS_LITERAL_CSTRING(GMP_API_DECRYPTOR)));
+  MOZ_ASSERT(IsH264ContentType(aContentType));
+  return
+    (!HaveGMPFor(aGMPService,
+                 NS_ConvertUTF16toUTF8(aKeySystem),
+                 NS_LITERAL_CSTRING(GMP_API_VIDEO_DECODER),
+                 NS_LITERAL_CSTRING("h264"))
+#ifdef XP_WIN
+    
+    
+    || (aKeySystem.EqualsLiteral("org.w3.clearkey") && !IsVistaOrLater())
 #endif
+    ) && MP4Decoder::CanHandleMediaType(aContentType);
+}
+
+static bool
+GMPDecryptsAndGeckoDecodesAAC(mozIGeckoMediaPluginService* aGMPService,
+                              const nsAString& aKeySystem,
+                              const nsAString& aContentType)
+{
+  MOZ_ASSERT(HaveGMPFor(aGMPService,
+                        NS_ConvertUTF16toUTF8(aKeySystem),
+                        NS_LITERAL_CSTRING(GMP_API_DECRYPTOR)));
+  MOZ_ASSERT(IsAACContentType(aContentType));
+  return
+    (!HaveGMPFor(aGMPService,
+                 NS_ConvertUTF16toUTF8(aKeySystem),
+                 NS_LITERAL_CSTRING(GMP_API_AUDIO_DECODER),
+                 NS_LITERAL_CSTRING("aac"))
+#ifdef XP_WIN
+    
+    
+    || (aKeySystem.EqualsLiteral("org.w3.clearkey") && !IsVistaOrLater())
+#endif
+    ) && MP4Decoder::CanHandleMediaType(aContentType);
+}
+
+static bool
+IsSupported(mozIGeckoMediaPluginService* aGMPService,
+            const nsAString& aKeySystem,
+            const MediaKeySystemOptions& aConfig)
+{
+  if (!aConfig.mInitDataType.EqualsLiteral("cenc")) {
+    return false;
+  }
+  if (!aConfig.mAudioCapability.IsEmpty() ||
+      !aConfig.mVideoCapability.IsEmpty()) {
+    
+    
+    return false;
+  }
+  if (!aConfig.mAudioType.IsEmpty() &&
+      (!IsAACContentType(aConfig.mAudioType) ||
+       (!GMPDecryptsAndDecodesAAC(aGMPService, aKeySystem) &&
+        !GMPDecryptsAndGeckoDecodesAAC(aGMPService, aKeySystem, aConfig.mAudioType)))) {
+    return false;
+  }
+  if (!aConfig.mVideoType.IsEmpty() &&
+      (!IsH264ContentType(aConfig.mVideoType) ||
+       (!GMPDecryptsAndDecodesH264(aGMPService, aKeySystem) &&
+        !GMPDecryptsAndGeckoDecodesH264(aGMPService, aKeySystem, aConfig.mVideoType)))) {
+    return false;
+  }
+  return true;
 }
 
 
@@ -356,32 +413,16 @@ MediaKeySystemAccess::IsSupported(const nsAString& aKeySystem,
     return false;
   }
 
-  for (size_t i = 0; i < aOptions.Length(); i++) {
-    const MediaKeySystemOptions& options = aOptions[i];
-    if (!options.mInitDataType.EqualsLiteral("cenc")) {
-      continue;
-    }
-    if (!options.mAudioCapability.IsEmpty() ||
-        !options.mVideoCapability.IsEmpty()) {
-      
-      
-      continue;
-    }
-    if (!options.mAudioType.IsEmpty() &&
-        !IsPlayableWithGMP(mps, aKeySystem, options.mAudioType)) {
-      continue;
-    }
-    if (!options.mVideoType.IsEmpty() &&
-        !IsPlayableWithGMP(mps, aKeySystem, options.mVideoType)) {
-      continue;
-    }
+  if (!HaveGMPFor(mps,
+                  NS_ConvertUTF16toUTF8(aKeySystem),
+                  NS_LITERAL_CSTRING(GMP_API_DECRYPTOR))) {
+    return false;
+  }
 
-    
-    
-    
-    
-
-    return true;
+  for (const MediaKeySystemOptions& config : aOptions) {
+    if (mozilla::dom::IsSupported(mps, aKeySystem, config)) {
+      return true;
+    }
   }
   return false;
 }

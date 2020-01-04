@@ -567,7 +567,7 @@ nsresult ChannelMediaResource::OpenChannel(nsIStreamListener** aStreamListener)
 
     rv = mChannel->AsyncOpen2(mListener);
     NS_ENSURE_SUCCESS(rv, rv);
-    
+
     
     MediaDecoderOwner* owner = mDecoder->GetMediaOwner();
     NS_ENSURE_TRUE(owner, NS_ERROR_FAILURE);
