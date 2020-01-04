@@ -4135,13 +4135,24 @@ LIRGenerator::visitAsmJSReturn(MAsmJSReturn* ins)
 #endif
     else
         MOZ_CRASH("Unexpected asm.js return type");
+
+    
+    MDefinition* tlsPtr = ins->getOperand(1);
+    lir->setOperand(1, useFixed(tlsPtr, WasmTlsReg));
+
     add(lir);
 }
 
 void
 LIRGenerator::visitAsmJSVoidReturn(MAsmJSVoidReturn* ins)
 {
-    add(new(alloc()) LAsmJSVoidReturn);
+    auto* lir = new(alloc()) LAsmJSVoidReturn;
+
+    
+    MDefinition* tlsPtr = ins->getOperand(0);
+    lir->setOperand(0, useFixed(tlsPtr, WasmTlsReg));
+
+    add(lir);
 }
 
 void
