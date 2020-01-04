@@ -258,12 +258,12 @@ class nsParser final : public nsIParser,
     
 
 
-    virtual void BeginEvaluatingParserInsertedScript() override;
+    virtual void PushDefinedInsertionPoint() override;
 
     
 
 
-    virtual void EndEvaluatingParserInsertedScript() override;
+    virtual void PopDefinedInsertionPoint() override;
 
     
 

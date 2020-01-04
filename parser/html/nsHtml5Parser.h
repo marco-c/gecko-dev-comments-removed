@@ -190,12 +190,15 @@ class nsHtml5Parser final : public nsIParser,
     
 
 
-    virtual void BeginEvaluatingParserInsertedScript() override;
+
+    virtual void PushDefinedInsertionPoint() override;
 
     
 
 
-    virtual void EndEvaluatingParserInsertedScript() override;
+
+
+    virtual void PopDefinedInsertionPoint() override;
 
     
 
@@ -288,7 +291,8 @@ class nsHtml5Parser final : public nsIParser,
     
 
 
-    int32_t                       mParserInsertedScriptsBeingEvaluated;
+
+    int32_t                       mInsertionPointPushLevel;
 
     
 

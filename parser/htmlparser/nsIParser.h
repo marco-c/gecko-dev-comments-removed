@@ -215,12 +215,15 @@ class nsIParser : public nsParserBase {
     
 
 
-    virtual void BeginEvaluatingParserInsertedScript() = 0;
+
+    virtual void PushDefinedInsertionPoint() = 0;
 
     
 
 
-    virtual void EndEvaluatingParserInsertedScript() = 0;
+
+
+    virtual void PopDefinedInsertionPoint() = 0;
 
     
 

@@ -2524,8 +2524,16 @@ nsScriptLoader::OnStreamComplete(nsIIncrementalStreamLoader* aLoader,
       MOZ_ASSERT(!request->isInList());
       mParserBlockingRequest = nullptr;
       UnblockParser(request);
+
+      
+      
+      MOZ_ASSERT(request->mElement->GetParserCreated());
+      nsCOMPtr<nsIScriptElement> oldParserInsertedScript =
+        mCurrentParserInsertedScript;
+      mCurrentParserInsertedScript = request->mElement;
       FireScriptAvailable(rv, request);
       ContinueParserAsync(request);
+      mCurrentParserInsertedScript = oldParserInsertedScript;
     } else {
       mPreloads.RemoveElement(request, PreloadRequestComparator());
     }
