@@ -61,7 +61,8 @@ private:
 
   
   
-  enum IndexedSeekResult {
+  enum IndexedSeekResult
+  {
     SEEK_OK,          
     SEEK_INDEX_FAIL,  
     SEEK_FATAL_ERROR  
@@ -75,23 +76,24 @@ private:
   
   
   
-  class SeekRange {
+  class SeekRange
+  {
   public:
     SeekRange()
-      : mOffsetStart(0),
-        mOffsetEnd(0),
-        mTimeStart(0),
-        mTimeEnd(0)
+      : mOffsetStart(0)
+      , mOffsetEnd(0)
+      , mTimeStart(0)
+      , mTimeEnd(0)
     {}
 
     SeekRange(int64_t aOffsetStart,
               int64_t aOffsetEnd,
               int64_t aTimeStart,
               int64_t aTimeEnd)
-      : mOffsetStart(aOffsetStart),
-        mOffsetEnd(aOffsetEnd),
-        mTimeStart(aTimeStart),
-        mTimeEnd(aTimeEnd)
+      : mOffsetStart(aOffsetStart)
+      , mOffsetEnd(aOffsetEnd)
+      , mTimeStart(aTimeStart)
+      , mTimeEnd(aTimeEnd)
     {}
 
     bool IsNull() const {
@@ -154,7 +156,8 @@ private:
   
   static const int PAGE_STEP = 8192;
 
-  enum PageSyncResult {
+  enum PageSyncResult
+  {
     PAGE_SYNC_ERROR = 1,
     PAGE_SYNC_END_OF_RANGE= 2,
     PAGE_SYNC_OK = 3
@@ -245,7 +248,6 @@ private:
   
   int64_t RangeStartTime(TrackInfo::TrackType aType, int64_t aOffset);
 
-
   MediaInfo mInfo;
   nsTArray<RefPtr<OggTrackDemuxer>> mDemuxers;
 
@@ -309,7 +311,8 @@ private:
   
   bool HasVideo() const;
   bool HasAudio() const;
-  bool HasSkeleton() const {
+  bool HasSkeleton() const
+  {
     return mSkeletonState != 0 && mSkeletonState->mActive;
   }
   bool HaveStartTime () const;
