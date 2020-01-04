@@ -69,6 +69,8 @@ nsICODecoder::nsICODecoder(RasterImage* aImage)
   , mBPP(0)
   , mMaskRowSize(0)
   , mCurrMaskLine(0)
+  , mIsCursor(false)
+  , mHasMaskAlpha(false)
 { }
 
 void
@@ -542,6 +544,24 @@ nsICODecoder::PrepareForMask()
     return Transition::Terminate(ICOState::FAILURE);
   }
 
+  
+  
+  
+  if (mDownscaler) {
+    MOZ_ASSERT(bmpDecoder->GetImageDataLength() ==
+                 mDownscaler->TargetSize().width *
+                 mDownscaler->TargetSize().height *
+                 sizeof(uint32_t));
+    mMaskBuffer = MakeUnique<uint8_t[]>(bmpDecoder->GetImageDataLength());
+    nsresult rv = mDownscaler->BeginFrame(GetRealSize(),
+                                          mMaskBuffer.get(),
+                                           true,
+                                           true);
+    if (NS_FAILED(rv)) {
+      return Transition::Terminate(ICOState::FAILURE);
+    }
+  }
+
   mCurrMaskLine = GetRealHeight();
   return Transition::To(ICOState::READ_MASK_ROW, mMaskRowSize);
 }
@@ -552,19 +572,33 @@ nsICODecoder::ReadMaskRow(const char* aData)
 {
   mCurrMaskLine--;
 
-  nsRefPtr<nsBMPDecoder> bmpDecoder =
-    static_cast<nsBMPDecoder*>(mContainedDecoder.get());
-
-  uint32_t* imageData = bmpDecoder->GetImageData();
-  if (!imageData) {
-    return Transition::Terminate(ICOState::FAILURE);
-  }
-
   uint8_t sawTransparency = 0;
-  uint32_t* decoded = imageData + mCurrMaskLine * GetRealWidth();
-  uint32_t* decodedRowEnd = decoded + GetRealWidth();
+
+  
   const uint8_t* mask = reinterpret_cast<const uint8_t*>(aData);
   const uint8_t* maskRowEnd = mask + mMaskRowSize;
+
+  
+  
+  uint32_t* decoded = nullptr;
+  if (mDownscaler) {
+    
+    memset(mDownscaler->RowBuffer(), 0xFF, GetRealWidth() * sizeof(uint32_t));
+
+    decoded = reinterpret_cast<uint32_t*>(mDownscaler->RowBuffer());
+  } else {
+    nsRefPtr<nsBMPDecoder> bmpDecoder =
+      static_cast<nsBMPDecoder*>(mContainedDecoder.get());
+    uint32_t* imageData = bmpDecoder->GetImageData();
+    if (!imageData) {
+      return Transition::Terminate(ICOState::FAILURE);
+    }
+
+    decoded = imageData + mCurrMaskLine * GetRealWidth();
+  }
+
+  MOZ_ASSERT(decoded);
+  uint32_t* decodedRowEnd = decoded + GetRealWidth();
 
   
   while (mask < maskRowEnd) {
@@ -579,18 +613,55 @@ nsICODecoder::ReadMaskRow(const char* aData)
     }
   }
 
+  if (mDownscaler) {
+    mDownscaler->CommitRow();
+  }
+
   
   
   if (sawTransparency) {
-    PostHasTransparency();
-    bmpDecoder->SetHasAlphaData();
+    mHasMaskAlpha = true;
   }
 
   if (mCurrMaskLine == 0) {
-    return Transition::To(ICOState::FINISHED_RESOURCE, 0);
+    return Transition::To(ICOState::FINISH_MASK, 0);
   }
 
   return Transition::To(ICOState::READ_MASK_ROW, mMaskRowSize);
+}
+
+LexerTransition<ICOState>
+nsICODecoder::FinishMask()
+{
+  
+  
+  if (mDownscaler) {
+    
+    nsRefPtr<nsBMPDecoder> bmpDecoder =
+      static_cast<nsBMPDecoder*>(mContainedDecoder.get());
+    uint8_t* imageData = reinterpret_cast<uint8_t*>(bmpDecoder->GetImageData());
+    if (!imageData) {
+      return Transition::Terminate(ICOState::FAILURE);
+    }
+
+    
+    MOZ_ASSERT(mMaskBuffer);
+    MOZ_ASSERT(bmpDecoder->GetImageDataLength() > 0);
+    for (size_t i = 3 ; i < bmpDecoder->GetImageDataLength() ; i += 4) {
+      imageData[i] = mMaskBuffer[i];
+    }
+  }
+
+  
+  if (mHasMaskAlpha) {
+    PostHasTransparency();
+
+    nsRefPtr<nsBMPDecoder> bmpDecoder =
+      static_cast<nsBMPDecoder*>(mContainedDecoder.get());
+    bmpDecoder->SetHasAlphaData();
+  }
+
+  return Transition::To(ICOState::FINISHED_RESOURCE, 0);
 }
 
 LexerTransition<ICOState>
@@ -637,6 +708,8 @@ nsICODecoder::WriteInternal(const char* aBuffer, uint32_t aCount)
           return PrepareForMask();
         case ICOState::READ_MASK_ROW:
           return ReadMaskRow(aData);
+        case ICOState::FINISH_MASK:
+          return FinishMask();
         case ICOState::SKIP_MASK:
           return Transition::ContinueUnbuffered(ICOState::SKIP_MASK);
         case ICOState::FINISHED_RESOURCE:

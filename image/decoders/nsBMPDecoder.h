@@ -40,6 +40,7 @@ public:
 
     
     uint32_t* GetImageData();
+    size_t GetImageDataLength() const { return mImageDataLength; }
 
     
     int32_t GetCompressedImageSize() const;

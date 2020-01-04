@@ -34,6 +34,7 @@ enum class ICOState
   READ_BMP,
   PREPARE_FOR_MASK,
   READ_MASK_ROW,
+  FINISH_MASK,
   SKIP_MASK,
   FINISHED_RESOURCE
 };
@@ -114,10 +115,12 @@ private:
   LexerTransition<ICOState> ReadBMP(const char* aData, uint32_t aLen);
   LexerTransition<ICOState> PrepareForMask();
   LexerTransition<ICOState> ReadMaskRow(const char* aData);
+  LexerTransition<ICOState> FinishMask();
   LexerTransition<ICOState> FinishResource();
 
   StreamingLexer<ICOState, 32> mLexer; 
   nsRefPtr<Decoder> mContainedDecoder; 
+  UniquePtr<uint8_t[]> mMaskBuffer;    
   char mBIHraw[40];                    
   IconDirEntry mDirEntry;              
   IntSize mBiggestResourceSize;        
@@ -131,6 +134,7 @@ private:
   uint32_t mMaskRowSize;  
   uint32_t mCurrMaskLine; 
   bool mIsCursor;         
+  bool mHasMaskAlpha;     
 };
 
 } 
