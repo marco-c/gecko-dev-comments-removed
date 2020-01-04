@@ -359,6 +359,9 @@ PresentationSessionInfo::NotifyData(const nsACString& aData)
 
 
 
+
+
+
 NS_IMPL_ISUPPORTS_INHERITED(PresentationRequesterInfo,
                             PresentationSessionInfo,
                             nsIServerSocketListener)
@@ -381,26 +384,6 @@ PresentationRequesterInfo::Init(nsIPresentationControlChannel* aControlChannel)
   }
 
   rv = mServerSocket->AsyncListen(this);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
-  }
-
-  
-  int32_t port;
-  rv = mServerSocket->GetPort(&port);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
-  }
-
-  nsCString address;
-  rv = GetAddress(address);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
-  }
-
-  nsRefPtr<PresentationChannelDescription> description =
-    new PresentationChannelDescription(address, static_cast<uint16_t>(port));
-  rv = mControlChannel->SendOffer(description);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
@@ -497,7 +480,21 @@ NS_IMETHODIMP
 PresentationRequesterInfo::NotifyOpened()
 {
   
-  return NS_OK;
+  int32_t port;
+  nsresult rv = mServerSocket->GetPort(&port);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
+  nsCString address;
+  rv = GetAddress(address);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
+  nsRefPtr<PresentationChannelDescription> description =
+    new PresentationChannelDescription(address, static_cast<uint16_t>(port));
+  return mControlChannel->SendOffer(description);
 }
 
 NS_IMETHODIMP
@@ -666,24 +663,19 @@ PresentationResponderInfo::InitTransportAndSendAnswer()
   
   nsCOMPtr<nsINetAddr> selfAddr;
   rv = mTransport->GetSelfAddress(getter_AddRefs(selfAddr));
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
-  }
+  NS_WARN_IF(NS_FAILED(rv));
 
   nsCString address;
-  selfAddr->GetAddress(address);
-  uint16_t port;
-  selfAddr->GetPort(&port);
+  uint16_t port = 0;
+  if (NS_SUCCEEDED(rv)) {
+    selfAddr->GetAddress(address);
+    selfAddr->GetPort(&port);
+  }
   nsCOMPtr<nsIPresentationChannelDescription> description =
     new PresentationChannelDescription(address, port);
 
-  rv = mControlChannel->SendAnswer(description);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
-  }
-
-  return NS_OK;
- }
+  return mControlChannel->SendAnswer(description);
+}
 
 nsresult
 PresentationResponderInfo::UntrackFromService()
