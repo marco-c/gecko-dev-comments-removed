@@ -450,6 +450,10 @@
                                 currentColor calc(100% - 5px),
                                 transparent calc(100% - 5px));
   border-image-slice: 1;
+  
+
+  width: 1px;
+  box-sizing: border-box;
   opacity: 0.2;
 }
 
