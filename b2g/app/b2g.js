@@ -227,10 +227,6 @@ pref("dom.max_chrome_script_run_time", 0);
 pref("dom.max_child_script_run_time", 0);
 
 
-
-pref("dom.mouseEvent.offsetXY.enabled", false);
-
-
 pref("plugin.disable", true);
 pref("dom.ipc.plugins.enabled", true);
 
