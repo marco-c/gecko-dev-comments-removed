@@ -214,6 +214,8 @@ nsPrintOptions::SerializeToPrintData(nsIPrintSettings* aSettings,
   
   
   
+  data->printableWidthInInches() = 0;
+  data->printableHeightInInches() = 0;
   data->isFramesetDocument() = false;
   data->isFramesetFrameSelected() = false;
   data->isIFrameSelected() = false;

@@ -67,15 +67,8 @@ nsDeviceContextSpecProxy::GetSurfaceForPrinter(gfxASurface** aSurface)
   MOZ_ASSERT(aSurface);
   MOZ_ASSERT(mRealDeviceContextSpec);
 
-  
-  
-  nsresult rv = mRealDeviceContextSpec->GetSurfaceForPrinter(aSurface);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
-  }
-
   double width, height;
-  rv = mPrintSettings->GetEffectivePageSize(&width, &height);
+  nsresult rv = mPrintSettings->GetEffectivePageSize(&width, &height);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }

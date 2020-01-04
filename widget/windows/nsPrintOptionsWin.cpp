@@ -69,8 +69,10 @@ nsPrintOptionsWin::SerializeToPrintData(nsIPrintSettings* aSettings,
 
   
   
-  
   if (XRE_IsParentProcess()) {
+    psWin->GetPrintableWidthInInches(&data->printableWidthInInches());
+    psWin->GetPrintableHeightInInches(&data->printableHeightInInches());
+
     
     
     LPDEVMODEW devModeRaw;
@@ -117,6 +119,9 @@ nsPrintOptionsWin::DeserializeToPrintSettings(const PrintData& data,
   if (XRE_IsContentProcess()) {
     psWin->SetDeviceName(data.deviceName().get());
     psWin->SetDriverName(data.driverName().get());
+
+    psWin->SetPrintableWidthInInches(data.printableWidthInInches());
+    psWin->SetPrintableHeightInInches(data.printableHeightInInches());
 
     nsXPIDLString printerName;
     settings->GetPrinterName(getter_Copies(printerName));
