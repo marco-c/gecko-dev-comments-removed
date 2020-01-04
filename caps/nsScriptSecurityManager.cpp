@@ -436,16 +436,37 @@ nsScriptSecurityManager::GetChannelURIPrincipal(nsIChannel* aChannel,
     nsresult rv = NS_GetFinalChannelURI(aChannel, getter_AddRefs(uri));
     NS_ENSURE_SUCCESS(rv, rv);
 
+    nsCOMPtr<nsILoadContext> loadContext;
+    NS_QueryNotificationCallbacks(aChannel, loadContext);
+
     nsCOMPtr<nsILoadInfo> loadInfo;
     aChannel->GetLoadInfo(getter_AddRefs(loadInfo));
+    nsContentPolicyType contentPolicyType = nsIContentPolicy::TYPE_INVALID;
+    if (loadInfo) {
+      contentPolicyType = loadInfo->GetExternalContentPolicyType();
+    }
 
-    
-    
-    
-    
-    
     PrincipalOriginAttributes attrs;
-    attrs.InheritFromNecko(loadInfo->GetOriginAttributes());
+    if (nsIContentPolicy::TYPE_DOCUMENT == contentPolicyType ||
+        nsIContentPolicy::TYPE_SUBDOCUMENT == contentPolicyType) {
+      
+      
+      if (loadContext) {
+        DocShellOriginAttributes docShellAttrs;
+        loadContext->GetOriginAttributes(docShellAttrs);
+        attrs.InheritFromDocShellToDoc(docShellAttrs, uri);
+      }
+    } else {
+      
+      nsCOMPtr<nsIPrincipal> loadingPrincipal;
+      if (loadInfo) {
+        loadInfo->GetLoadingPrincipal(getter_AddRefs(loadingPrincipal));
+      }
+      if (loadingPrincipal) {
+        attrs = BasePrincipal::Cast(loadingPrincipal)->OriginAttributesRef();
+      }
+    }
+
     rv = MaybeSetAddonIdFromURI(attrs, uri);
     NS_ENSURE_SUCCESS(rv, rv);
     nsCOMPtr<nsIPrincipal> prin = BasePrincipal::CreateCodebasePrincipal(uri, attrs);

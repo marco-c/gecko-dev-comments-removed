@@ -12,7 +12,6 @@
 #endif
 #include "nsIAddonPolicyService.h"
 #include "nsIContentSecurityPolicy.h"
-#include "nsIEffectiveTLDService.h"
 #include "nsIObjectInputStream.h"
 #include "nsIObjectOutputStream.h"
 
@@ -101,9 +100,7 @@ NeckoOriginAttributes::InheritFromDocToNecko(const PrincipalOriginAttributes& aA
 }
 
 void
-NeckoOriginAttributes::InheritFromDocShellToNecko(const DocShellOriginAttributes& aAttrs,
-                                                  const bool aIsTopLevelDocument,
-                                                  nsIURI* aURI)
+NeckoOriginAttributes::InheritFromDocShellToNecko(const DocShellOriginAttributes& aAttrs)
 {
   mAppId = aAttrs.mAppId;
   mInIsolatedMozBrowser = aAttrs.mInIsolatedMozBrowser;
@@ -116,24 +113,7 @@ NeckoOriginAttributes::InheritFromDocShellToNecko(const DocShellOriginAttributes
   
 
   mPrivateBrowsingId = aAttrs.mPrivateBrowsingId;
-
-  bool isFirstPartyEnabled = IsFirstPartyEnabled();
-
-  
-  
-  if (isFirstPartyEnabled && aIsTopLevelDocument) {
-    nsCOMPtr<nsIEffectiveTLDService> tldService = do_GetService(NS_EFFECTIVETLDSERVICE_CONTRACTID);
-    MOZ_ASSERT(tldService);
-    if (!tldService) {
-      return;
-    }
-
-    nsAutoCString baseDomain;
-    tldService->GetBaseDomain(aURI, 0, baseDomain);
-    mFirstPartyDomain = NS_ConvertUTF8toUTF16(baseDomain);
-  } else {
-    mFirstPartyDomain = aAttrs.mFirstPartyDomain;
-  }
+  mFirstPartyDomain = aAttrs.mFirstPartyDomain;
 }
 
 void
@@ -344,20 +324,6 @@ OriginAttributes::SetFromGenericAttributes(const GenericOriginAttributes& aAttrs
   mSignedPkg = aAttrs.mSignedPkg;
   mPrivateBrowsingId = aAttrs.mPrivateBrowsingId;
   mFirstPartyDomain = aAttrs.mFirstPartyDomain;
-}
-
-bool
-OriginAttributes::IsFirstPartyEnabled()
-{
-  
-  static bool sFirstPartyIsolation = false;
-  static bool sCachedFirstPartyPref = false;
-  if (!sCachedFirstPartyPref) {
-    sCachedFirstPartyPref = true;
-    Preferences::AddBoolVarCache(&sFirstPartyIsolation, "privacy.firstparty.isolate");
-  }
-
-  return sFirstPartyIsolation;
 }
 
 BasePrincipal::BasePrincipal()

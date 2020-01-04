@@ -66,9 +66,6 @@ protected:
   OriginAttributes() {}
   explicit OriginAttributes(const OriginAttributesDictionary& aOther)
     : OriginAttributesDictionary(aOther) {}
-
-  
-  bool IsFirstPartyEnabled();
 };
 
 class PrincipalOriginAttributes;
@@ -140,11 +137,7 @@ public:
   
   void InheritFromDocToNecko(const PrincipalOriginAttributes& aAttrs);
 
-  
-  
-  void InheritFromDocShellToNecko(const DocShellOriginAttributes& aAttrs,
-                                  const bool aIsTopLevelDocument = false,
-                                  nsIURI* aURI = nullptr);
+  void InheritFromDocShellToNecko(const DocShellOriginAttributes& aAttrs);
 };
 
 
