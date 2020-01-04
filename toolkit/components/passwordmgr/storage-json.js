@@ -6,9 +6,6 @@
 
 
 
-
-
-
 "use strict";
 
 const { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
@@ -30,16 +27,13 @@ XPCOMUtils.defineLazyServiceGetter(this, "gUUIDGenerator",
                                    "@mozilla.org/uuid-generator;1",
                                    "nsIUUIDGenerator");
 
-
-
-
 this.LoginManagerStorage_json = function () {};
 
 this.LoginManagerStorage_json.prototype = {
-  classID : Components.ID("{c00c432d-a0c9-46d7-bef6-9c45b4d07341}"),
-  QueryInterface : XPCOMUtils.generateQI([Ci.nsILoginManagerStorage]),
+  classID: Components.ID("{c00c432d-a0c9-46d7-bef6-9c45b4d07341}"),
+  QueryInterface: XPCOMUtils.generateQI([Ci.nsILoginManagerStorage]),
 
-  __crypto : null,  
+  __crypto: null,  
   get _crypto() {
     if (!this.__crypto)
       this.__crypto = Cc["@mozilla.org/login-manager/crypto/SDR;1"].
@@ -47,7 +41,7 @@ this.LoginManagerStorage_json.prototype = {
     return this.__crypto;
   },
 
-  initialize : function () {
+  initialize() {
     try {
       
       
@@ -97,24 +91,16 @@ this.LoginManagerStorage_json.prototype = {
     }
   },
 
-
   
 
 
 
-
-
-  terminate : function () {
+  terminate() {
     this._store._saver.disarm();
     return this._store.save();
   },
 
-
-  
-
-
-
-  addLogin : function (login) {
+  addLogin(login) {
     this._store.ensureDataReady();
 
     
@@ -167,12 +153,7 @@ this.LoginManagerStorage_json.prototype = {
     this._sendNotification("addLogin", loginClone);
   },
 
-
-  
-
-
-
-  removeLogin : function (login) {
+  removeLogin(login) {
     this._store.ensureDataReady();
 
     let [idToDelete, storedLogin] = this._getIdForLogin(login);
@@ -188,12 +169,7 @@ this.LoginManagerStorage_json.prototype = {
     this._sendNotification("removeLogin", storedLogin);
   },
 
-
-  
-
-
-
-  modifyLogin : function (oldLogin, newLoginData) {
+  modifyLogin(oldLogin, newLoginData) {
     this._store.ensureDataReady();
 
     let [idToModify, oldStoredLogin] = this._getIdForLogin(oldLogin);
@@ -245,13 +221,10 @@ this.LoginManagerStorage_json.prototype = {
     this._sendNotification("modifyLogin", [oldStoredLogin, newLogin]);
   },
 
-
   
 
 
-
-
-  getAllLogins : function (count) {
+  getAllLogins(count) {
     let [logins, ids] = this._searchLogins({});
 
     
@@ -263,16 +236,13 @@ this.LoginManagerStorage_json.prototype = {
     return logins;
   },
 
-
   
 
 
 
 
 
-
-
-  searchLogins : function(count, matchData) {
+  searchLogins(count, matchData) {
     let realMatchData = {};
     
     let propEnum = matchData.enumerator;
@@ -290,7 +260,6 @@ this.LoginManagerStorage_json.prototype = {
     return logins;
   },
 
-
   
 
 
@@ -299,9 +268,7 @@ this.LoginManagerStorage_json.prototype = {
 
 
 
-
-
-  _searchLogins : function (matchData) {
+  _searchLogins(matchData) {
     this._store.ensureDataReady();
 
     let conditions = [];
@@ -415,9 +382,7 @@ this.LoginManagerStorage_json.prototype = {
 
 
 
-
-
-  removeAllLogins : function () {
+  removeAllLogins() {
     this._store.ensureDataReady();
 
     this.log("Removing all logins");
@@ -427,12 +392,7 @@ this.LoginManagerStorage_json.prototype = {
     this._sendNotification("removeAllLogins", null);
   },
 
-
-  
-
-
-
-  getAllDisabledHosts : function (count) {
+  getAllDisabledHosts(count) {
     this._store.ensureDataReady();
 
     let disabledHosts = this._store.data.disabledHosts.slice(0);
@@ -443,24 +403,14 @@ this.LoginManagerStorage_json.prototype = {
     return disabledHosts;
   },
 
-
-  
-
-
-
-  getLoginSavingEnabled : function (hostname) {
+  getLoginSavingEnabled(hostname) {
     this._store.ensureDataReady();
 
     this.log("Getting login saving is enabled for", hostname);
     return this._store.data.disabledHosts.indexOf(hostname) == -1;
   },
 
-
-  
-
-
-
-  setLoginSavingEnabled : function (hostname, enabled) {
+  setLoginSavingEnabled(hostname, enabled) {
     this._store.ensureDataReady();
 
     
@@ -483,12 +433,7 @@ this.LoginManagerStorage_json.prototype = {
     this._sendNotification(enabled ? "hostSavingEnabled" : "hostSavingDisabled", hostname);
   },
 
-
-  
-
-
-
-  findLogins : function (count, hostname, formSubmitURL, httpRealm) {
+  findLogins(count, hostname, formSubmitURL, httpRealm) {
     let loginData = {
       hostname: hostname,
       formSubmitURL: formSubmitURL,
@@ -508,12 +453,7 @@ this.LoginManagerStorage_json.prototype = {
     return logins;
   },
 
-
-  
-
-
-
-  countLogins : function (hostname, formSubmitURL, httpRealm) {
+  countLogins(hostname, formSubmitURL, httpRealm) {
     let count = {};
     let loginData = {
       hostname: hostname,
@@ -530,29 +470,18 @@ this.LoginManagerStorage_json.prototype = {
     return logins.length;
   },
 
-
-  
-
-
   get uiBusy() {
     return this._crypto.uiBusy;
   },
-
-
-  
-
 
   get isLoggedIn() {
     return this._crypto.isLoggedIn;
   },
 
-
   
 
 
-
-
-  _sendNotification : function (changeType, data) {
+  _sendNotification(changeType, data) {
     let dataObject = data;
     
     if (data instanceof Array) {
@@ -568,15 +497,12 @@ this.LoginManagerStorage_json.prototype = {
     Services.obs.notifyObservers(dataObject, "passwordmgr-storage-changed", changeType);
   },
 
-
   
 
 
 
 
-
-
-  _getIdForLogin : function (login) {
+  _getIdForLogin(login) {
     let matchData = { };
     for each (let field in ["hostname", "formSubmitURL", "httpRealm"])
       if (login[field] != '')
@@ -605,26 +531,20 @@ this.LoginManagerStorage_json.prototype = {
     return [id, foundLogin];
   },
 
-
   
 
 
-
-
-  _isGuidUnique : function (guid) {
+  _isGuidUnique(guid) {
     this._store.ensureDataReady();
 
     return this._store.data.logins.every(l => l.guid != guid);
   },
 
-
   
 
 
 
-
-
-  _encryptLogin : function (login) {
+  _encryptLogin(login) {
     let encUsername = this._crypto.encrypt(login.username);
     let encPassword = this._crypto.encrypt(login.password);
     let encType     = this._crypto.defaultEncType;
@@ -632,7 +552,6 @@ this.LoginManagerStorage_json.prototype = {
     return [encUsername, encPassword, encType];
   },
 
-
   
 
 
@@ -644,9 +563,7 @@ this.LoginManagerStorage_json.prototype = {
 
 
 
-
-
-  _decryptLogins : function (logins) {
+  _decryptLogins(logins) {
     let result = [];
 
     for each (let login in logins) {
