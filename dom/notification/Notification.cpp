@@ -1161,6 +1161,15 @@ NotificationObserver::Observe(nsISupports* aSubject, const char* aTopic,
     }
     permissionManager->RemoveFromPrincipal(mPrincipal, "desktop-notification");
     return NS_OK;
+  } else if (!strcmp("alertsettingscallback", aTopic)) {
+    nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
+    if (!obs) {
+      return NS_ERROR_FAILURE;
+    }
+
+    
+    obs->NotifyObservers(mPrincipal, "notifications-open-settings", nullptr);
+    return NS_OK;
   }
 
   return mObserver->Observe(aSubject, aTopic, aData);
@@ -1630,9 +1639,9 @@ Notification::GetPermissionInternal(nsIPrincipal* aPrincipal,
   nsCOMPtr<nsIPermissionManager> permissionManager =
     services::GetPermissionManager();
 
-  permissionManager->TestPermissionFromPrincipal(aPrincipal,
-                                                 "desktop-notification",
-                                                 &permission);
+  permissionManager->TestExactPermissionFromPrincipal(aPrincipal,
+                                                      "desktop-notification",
+                                                      &permission);
 
   
   switch (permission) {
