@@ -4,11 +4,6 @@
 
 
 
-
-
-
-
-
 #include <dlfcn.h>
 #include <gtk/gtk.h>
 #include "WidgetStyleCache.h"
