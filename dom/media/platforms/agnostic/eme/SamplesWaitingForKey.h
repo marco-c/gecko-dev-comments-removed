@@ -25,6 +25,7 @@ public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(SamplesWaitingForKey)
 
   explicit SamplesWaitingForKey(MediaDataDecoder* aDecoder,
+                                MediaDataDecoderCallback* aCallback,
                                 TaskQueue* aTaskQueue,
                                 CDMProxy* aProxy);
 
@@ -46,6 +47,7 @@ protected:
 private:
   Mutex mMutex;
   RefPtr<MediaDataDecoder> mDecoder;
+  MediaDataDecoderCallback* mDecoderCallback;
   RefPtr<TaskQueue> mTaskQueue;
   RefPtr<CDMProxy> mProxy;
   nsTArray<RefPtr<MediaRawData>> mSamples;

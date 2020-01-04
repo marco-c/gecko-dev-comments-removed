@@ -641,6 +641,8 @@ public:
   bool ContainsRestrictedContent();
 #endif 
 
+  void CannotDecryptWaitingForKey();
+
   bool MozAutoplayEnabled() const
   {
     return mAutoplayEnabled;
@@ -1536,6 +1538,14 @@ protected:
 
   
   bool mIsEncrypted;
+
+  
+  
+  
+  bool mWaitingForKey;
+
+  
+  MediaEventListener mWaitingForKeyListener;
 
 #ifdef MOZ_EME
   

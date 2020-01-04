@@ -179,9 +179,15 @@ public:
 
   virtual void DrainComplete() = 0;
 
-  virtual void ReleaseMediaResources() {};
+  virtual void ReleaseMediaResources() {}
 
   virtual bool OnReaderTaskQueue() = 0;
+
+  
+  
+  
+  
+  virtual void WaitingForKey() {}
 };
 
 

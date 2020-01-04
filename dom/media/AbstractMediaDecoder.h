@@ -72,6 +72,18 @@ public:
     return nullptr;
   }
 
+  
+  
+  
+  virtual void NotifyWaitingForKey() {}
+
+  
+  
+  virtual MediaEventSource<void>* WaitingForKeyEvent()
+  {
+    return nullptr;
+  }
+
 protected:
   virtual void UpdateEstimatedMediaDuration(int64_t aDuration) {};
 public:
