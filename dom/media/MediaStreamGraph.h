@@ -352,9 +352,9 @@ public:
 
 
 
-
   enum class InstallationResult {
     TRACK_NOT_FOUND_AT_SOURCE,
+    TRACK_TYPE_NOT_SUPPORTED,
     STREAM_NOT_SUPPORTED,
     SUCCESS
   };
@@ -368,15 +368,6 @@ protected:
   {
     aTo.Clear();
     aTo.AppendNullData(aFrom.GetDuration());
-  }
-
-  void MirrorAndDisableSegment(VideoSegment& aFrom, VideoSegment& aTo)
-  {
-    aTo.Clear();
-    for (VideoSegment::ChunkIterator it(aFrom); !it.IsEnded(); it.Next()) {
-      aTo.AppendFrame(do_AddRef(it->mFrame.GetImage()), it->GetDuration(),
-                      it->mFrame.GetIntrinsicSize(), it->GetPrincipalHandle(), true);
-    }
   }
 
   void NotifyRealtimeTrackDataAndApplyTrackDisabling(MediaStreamGraph* aGraph,
@@ -394,9 +385,6 @@ protected:
     if (aMedia.GetType() == MediaSegment::AUDIO) {
       MirrorAndDisableSegment(static_cast<AudioSegment&>(aMedia),
                               static_cast<AudioSegment&>(*mMedia));
-    } else if (aMedia.GetType() == MediaSegment::VIDEO) {
-      MirrorAndDisableSegment(static_cast<VideoSegment&>(aMedia),
-                              static_cast<VideoSegment&>(*mMedia));
     } else {
       MOZ_CRASH("Unsupported media type");
     }
