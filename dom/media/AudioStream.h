@@ -151,6 +151,66 @@ private:
 
 
 
+class AudioBufferCursor {
+public:
+  AudioBufferCursor(AudioDataValue* aPtr, uint32_t aChannels, uint32_t aFrames)
+    : mPtr(aPtr), mChannels(aChannels), mFrames(aFrames) {}
+
+  
+  uint32_t Advance(uint32_t aFrames) {
+    MOZ_ASSERT(mFrames >= aFrames);
+    mFrames -= aFrames;
+    mPtr += mChannels * aFrames;
+    return aFrames;
+  }
+
+  
+  uint32_t Available() const { return mFrames; }
+
+  
+  AudioDataValue* Ptr() const { return mPtr; }
+
+protected:
+  AudioDataValue* mPtr;
+  const uint32_t mChannels;
+  uint32_t mFrames;
+};
+
+
+
+
+
+class AudioBufferWriter : private AudioBufferCursor {
+public:
+  AudioBufferWriter(AudioDataValue* aPtr, uint32_t aChannels, uint32_t aFrames)
+    : AudioBufferCursor(aPtr, aChannels, aFrames) {}
+
+  uint32_t WriteZeros(uint32_t aFrames) {
+    memset(mPtr, 0, sizeof(AudioDataValue) * mChannels * aFrames);
+    return Advance(aFrames);
+  }
+
+  uint32_t Write(const AudioDataValue* aPtr, uint32_t aFrames) {
+    memcpy(mPtr, aPtr, sizeof(AudioDataValue) * mChannels * aFrames);
+    return Advance(aFrames);
+  }
+
+  
+  
+  
+  
+  
+  template <typename Function>
+  uint32_t Write(const Function& aFunction, uint32_t aFrames) {
+    return Advance(aFunction(mPtr, aFrames));
+  }
+
+  using AudioBufferCursor::Available;
+};
+
+
+
+
 
 class AudioStream final
 {
@@ -263,8 +323,8 @@ private:
   
   bool Downmix(AudioDataValue* aBuffer, uint32_t aFrames);
 
-  long GetUnprocessed(void* aBuffer, long aFrames);
-  long GetTimeStretched(void* aBuffer, long aFrames);
+  void GetUnprocessed(AudioBufferWriter& aWriter);
+  void GetTimeStretched(AudioBufferWriter& aWriter);
 
   void StartUnlocked();
 
