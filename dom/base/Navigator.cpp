@@ -1342,9 +1342,10 @@ Navigator::SendBeacon(const nsAString& aUrl,
 
   RefPtr<BeaconStreamListener> beaconListener = new BeaconStreamListener();
   rv = channel->AsyncOpen2(beaconListener);
-  
-  NS_ENSURE_SUCCESS(rv, false);
-
+  if (NS_FAILED(rv)) {
+    aRv.Throw(rv);
+    return false;
+  }
   
   
   beaconListener->SetLoadGroup(loadGroup);
