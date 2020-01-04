@@ -1586,14 +1586,7 @@ nsStylePosition::CalcDifference(const nsStylePosition& aOther,
 
   
   
-  
-  
-  
-  
-  
-  
-  if (mFlexWrap != NS_STYLE_FLEX_WRAP_NOWRAP &&
-      mAlignContent != aOther.mAlignContent) {
+  if (mAlignContent != aOther.mAlignContent) {
     NS_UpdateHint(hint, nsChangeHint_NeedReflow);
   }
 
