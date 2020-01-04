@@ -1264,6 +1264,32 @@ nsStyleContext::CalcStyleDifferenceInternal(StyleContextLike* aNewContext,
     }
   }
 
+  if (hint & nsChangeHint_UpdateContainingBlock) {
+    
+    
+    
+    
+    
+
+    
+    
+
+    
+    
+    
+    
+    if (StyleDisplay()->IsAbsPosContainingBlockForAppropriateFrame(this) ==
+        aNewContext->StyleDisplay()->
+          IsAbsPosContainingBlockForAppropriateFrame(aNewContext) &&
+        StyleDisplay()->IsFixedPosContainingBlockForAppropriateFrame(this) ==
+        aNewContext->StyleDisplay()->
+          IsFixedPosContainingBlockForAppropriateFrame(aNewContext)) {
+      
+      
+      hint &= ~nsChangeHint_UpdateContainingBlock;
+    }
+  }
+
   MOZ_ASSERT(NS_IsHintSubset(hint, nsChangeHint_AllHints),
              "Added a new hint without bumping AllHints?");
   return hint & ~nsChangeHint_NeutralChange;

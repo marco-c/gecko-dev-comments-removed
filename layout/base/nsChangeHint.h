@@ -132,6 +132,11 @@ enum nsChangeHint {
 
 
 
+
+
+
+
+
   nsChangeHint_UpdateContainingBlock = 1 << 17,
 
   
