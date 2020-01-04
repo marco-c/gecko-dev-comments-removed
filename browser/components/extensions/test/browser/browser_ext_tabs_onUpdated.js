@@ -2,6 +2,8 @@
 
 "use strict";
 
+requestLongerTimeout(2);
+
 add_task(function* () {
   let win1 = yield BrowserTestUtils.openNewBrowserWindow();
 
