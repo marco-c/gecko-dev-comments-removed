@@ -443,7 +443,7 @@ nsCORSListenerProxy::Init(nsIChannel* aChannel, DataURIHandling aAllowDataURI)
   aChannel->GetNotificationCallbacks(getter_AddRefs(mOuterNotificationCallbacks));
   aChannel->SetNotificationCallbacks(this);
 
-  nsresult rv = UpdateChannel(aChannel, aAllowDataURI);
+  nsresult rv = UpdateChannel(aChannel, aAllowDataURI, UpdateType::Default);
   if (NS_FAILED(rv)) {
     mOuterListener = nullptr;
     mRequestingPrincipal = nullptr;
@@ -636,8 +636,22 @@ nsCORSListenerProxy::AsyncOnChannelRedirect(nsIChannel *aOldChannel,
                                             nsIAsyncVerifyRedirectCallback *aCb)
 {
   nsresult rv;
-  if (!NS_IsInternalSameURIRedirect(aOldChannel, aNewChannel, aFlags) &&
-      !NS_IsHSTSUpgradeRedirect(aOldChannel, aNewChannel, aFlags)) {
+  if (NS_IsInternalSameURIRedirect(aOldChannel, aNewChannel, aFlags) ||
+      NS_IsHSTSUpgradeRedirect(aOldChannel, aNewChannel, aFlags)) {
+    
+    
+    
+    
+    rv = UpdateChannel(aNewChannel, DataURIHandling::Allow,
+                       UpdateType::InternalOrHSTSRedirect);
+    if (NS_FAILED(rv)) {
+        NS_WARNING("nsCORSListenerProxy::AsyncOnChannelRedirect: "
+                   "internal redirect UpdateChannel() returned failure");
+      aOldChannel->Cancel(rv);
+      return rv;
+    }
+  } else {
+    
     rv = CheckRequestApproved(aOldChannel);
     if (NS_FAILED(rv)) {
       nsCOMPtr<nsIURI> oldURI;
@@ -698,7 +712,8 @@ nsCORSListenerProxy::AsyncOnChannelRedirect(nsIChannel *aOldChannel,
       }
     }
 
-    rv = UpdateChannel(aNewChannel, DataURIHandling::Disallow);
+    rv = UpdateChannel(aNewChannel, DataURIHandling::Disallow,
+                       UpdateType::Default);
     if (NS_FAILED(rv)) {
         NS_WARNING("nsCORSListenerProxy::AsyncOnChannelRedirect: "
                    "UpdateChannel() returned failure");
@@ -800,7 +815,8 @@ CheckUpgradeInsecureRequestsPreventsCORS(nsIPrincipal* aRequestingPrincipal,
 
 nsresult
 nsCORSListenerProxy::UpdateChannel(nsIChannel* aChannel,
-                                   DataURIHandling aAllowDataURI)
+                                   DataURIHandling aAllowDataURI,
+                                   UpdateType aUpdateType)
 {
   nsCOMPtr<nsIURI> uri, originalURI;
   nsresult rv = NS_GetFinalChannelURI(aChannel, getter_AddRefs(uri));
@@ -870,7 +886,7 @@ nsCORSListenerProxy::UpdateChannel(nsIChannel* aChannel,
 
   
   
-  rv = CheckPreflightNeeded(aChannel);
+  rv = CheckPreflightNeeded(aChannel, aUpdateType);
   NS_ENSURE_SUCCESS(rv, rv);
 
   
@@ -909,7 +925,7 @@ nsCORSListenerProxy::UpdateChannel(nsIChannel* aChannel,
 }
 
 nsresult
-nsCORSListenerProxy::CheckPreflightNeeded(nsIChannel* aChannel)
+nsCORSListenerProxy::CheckPreflightNeeded(nsIChannel* aChannel, UpdateType aUpdateType)
 {
   
   
@@ -962,7 +978,9 @@ nsCORSListenerProxy::CheckPreflightNeeded(nsIChannel* aChannel)
   
   
   
-  NS_ENSURE_FALSE(mHasBeenCrossSite, NS_ERROR_DOM_BAD_URI);
+  if (aUpdateType != UpdateType::InternalOrHSTSRedirect) {
+    NS_ENSURE_FALSE(mHasBeenCrossSite, NS_ERROR_DOM_BAD_URI);
+  }
 
   nsCOMPtr<nsIHttpChannelInternal> internal = do_QueryInterface(http);
   NS_ENSURE_TRUE(internal, NS_ERROR_DOM_BAD_URI);
