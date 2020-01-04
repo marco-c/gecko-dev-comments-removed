@@ -63,8 +63,6 @@ public:
   
   
   static already_AddRefed<PlatformDecoderModule> Create();
-  
-  static already_AddRefed<PlatformDecoderModule> CreatePDM();
 
   
   
@@ -87,17 +85,16 @@ public:
                 FlushableTaskQueue* aTaskQueue,
                 MediaDataDecoderCallback* aCallback,
                 layers::LayersBackend aLayersBackend = layers::LayersBackend::LAYERS_NONE,
-                layers::ImageContainer* aImageContainer = nullptr);
+                layers::ImageContainer* aImageContainer = nullptr)
+  {
+    MOZ_CRASH();
+  }
 
   
   
   
   
   virtual bool SupportsMimeType(const nsACString& aMimeType);
-
-  
-  static bool AgnosticMimeType(const nsACString& aMimeType);
-
 
   enum ConversionRequired {
     kNeedNone,
@@ -115,6 +112,8 @@ protected:
   virtual ~PlatformDecoderModule() {}
 
   friend class H264Converter;
+  friend class PDMFactory;
+
   
   
   
@@ -147,17 +146,6 @@ protected:
   CreateAudioDecoder(const AudioInfo& aConfig,
                      FlushableTaskQueue* aAudioTaskQueue,
                      MediaDataDecoderCallback* aCallback) = 0;
-
-  
-  static bool sUseBlankDecoder;
-  static bool sFFmpegDecoderEnabled;
-  static bool sGonkDecoderEnabled;
-  static bool sAndroidMCDecoderPreferred;
-  static bool sAndroidMCDecoderEnabled;
-  static bool sGMPDecoderEnabled;
-  static bool sEnableFuzzingWrapper;
-  static uint32_t sVideoOutputMinimumInterval_ms;
-  static bool sDontDelayInputExhausted;
 };
 
 
