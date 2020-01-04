@@ -1133,6 +1133,20 @@ class CGHeaders(CGWrapper):
         
         declareIncludes.discard(prefix + ".h")
 
+        def addHeaderForFunc(func, desc):
+            if func is None:
+                return
+            
+            
+            if desc is not None and not desc.headerIsDefault:
+                
+                
+                return
+
+            if "::" in func:
+                
+                bindingHeaders.add("/".join(func.split("::")[:-1]) + ".h")
+
         
         
         for desc in descriptors:
@@ -1142,29 +1156,15 @@ class CGHeaders(CGWrapper):
             if desc.interface.isExternal() or desc.interface.isIteratorInterface():
                 continue
 
-            def addHeaderForFunc(func):
-                if func is None:
-                    return
-                
-                
-                if not desc.headerIsDefault:
-                    
-                    
-                    return
-
-                if "::" in func:
-                    
-                    bindingHeaders.add("/".join(func.split("::")[:-1]) + ".h")
-
             for m in desc.interface.members:
-                addHeaderForFunc(PropertyDefiner.getStringAttr(m, "Func"))
+                addHeaderForFunc(PropertyDefiner.getStringAttr(m, "Func"), desc)
                 staticTypeOverride = PropertyDefiner.getStringAttr(m, "StaticClassOverride")
                 if staticTypeOverride:
                     bindingHeaders.add("/".join(staticTypeOverride.split("::")) + ".h")
             
             funcList = desc.interface.getExtendedAttribute("Func")
             if funcList is not None:
-                addHeaderForFunc(funcList[0])
+                addHeaderForFunc(funcList[0], desc)
 
             if desc.interface.maplikeOrSetlikeOrIterable:
                 
@@ -1183,6 +1183,12 @@ class CGHeaders(CGWrapper):
             if d.parent:
                 declareIncludes.add(self.getDeclarationFilename(d.parent))
             bindingHeaders.add(self.getDeclarationFilename(d))
+            for m in d.members:
+                addHeaderForFunc(PropertyDefiner.getStringAttr(m, "Func"),
+                                 None)
+            
+            
+            
 
         for c in callbacks:
             bindingHeaders.add(self.getDeclarationFilename(c))
