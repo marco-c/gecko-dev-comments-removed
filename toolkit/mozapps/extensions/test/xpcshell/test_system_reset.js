@@ -2,9 +2,6 @@
 
 const PREF_SYSTEM_ADDON_SET = "extensions.systemAddonSet";
 
-
-Services.prefs.setBoolPref(PREF_XPI_SIGNATURES_REQUIRED, true);
-
 BootstrapMonitor.init();
 
 const featureDir = FileUtils.getDir("ProfD", ["features"]);
@@ -60,7 +57,9 @@ function* check_installed(inProfile, ...versions) {
       do_check_true(uri instanceof AM_Ci.nsIFileURL);
       do_check_eq(uri.file.path, file.path);
 
-      do_check_eq(addon.signedState, AddonManager.SIGNEDSTATE_SYSTEM);
+      if (inProfile) {
+        do_check_eq(addon.signedState, AddonManager.SIGNEDSTATE_SYSTEM);
+      }
 
       
       BootstrapMonitor.checkAddonStarted(id, versions[i]);
@@ -274,7 +273,6 @@ add_task(function* test_bad_profile_cert() {
 });
 
 
-
 add_task(function* test_bad_app_cert() {
   gAppInfo.version = "3";
   distroDir.leafName = "app3";
@@ -285,7 +283,7 @@ add_task(function* test_bad_app_cert() {
   do_check_neq(addon, null);
   do_check_eq(addon.signedState, AddonManager.SIGNEDSTATE_BROKEN);
 
-  yield check_installed(false, null, null, "1.0");
+  yield check_installed(false, "1.0", null, "1.0");
 
   yield promiseShutdownManager();
 });
