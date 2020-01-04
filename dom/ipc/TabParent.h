@@ -80,6 +80,39 @@ namespace ipc {
 class StructuredCloneData;
 } 
 
+
+
+class LayerTreeUpdateObserver : public layers::CompositorUpdateObserver
+{
+public:
+  explicit LayerTreeUpdateObserver(TabParent* aTabParent)
+    : mTabParent(aTabParent)
+  {
+    MOZ_ASSERT(NS_IsMainThread());
+  }
+
+  virtual void ObserveUpdate(uint64_t aLayersId, bool aActive) override;
+
+  virtual void SwapTabParent(LayerTreeUpdateObserver* aOther) {
+    MOZ_ASSERT(NS_IsMainThread());
+    Swap(mTabParent, aOther->mTabParent);
+  }
+
+  void TabParentDestroyed() {
+    MOZ_ASSERT(NS_IsMainThread());
+    mTabParent = nullptr;
+  }
+
+  TabParent* GetTabParent() {
+    MOZ_ASSERT(NS_IsMainThread());
+    return mTabParent;
+  }
+
+private:
+  
+  TabParent* mTabParent;
+};
+
 class TabParent final : public PBrowserParent
                       , public nsIDOMEventListener
                       , public nsITabParent
@@ -554,8 +587,14 @@ public:
   bool SendLoadRemoteScript(const nsString& aURL,
                             const bool& aRunInGlobalScope);
 
-  static void ObserveLayerUpdate(uint64_t aLayersId, uint64_t aEpoch, bool aActive);
-  void LayerTreeUpdate(uint64_t aEpoch, bool aActive);
+  
+  bool RequestNotifyLayerTreeReady();
+
+  bool RequestNotifyLayerTreeCleared();
+
+  bool LayerTreeUpdate(bool aActive);
+
+  void SwapLayerTreeObservers(TabParent* aOther);
 
   virtual bool
   RecvInvokeDragSession(nsTArray<IPCDataTransfer>&& aTransfers,
@@ -604,8 +643,6 @@ protected:
   virtual bool DeallocPRenderFrameParent(PRenderFrameParent* aFrame) override;
 
   virtual bool RecvRemotePaintIsReady() override;
-
-  virtual bool RecvForcePaintNoOp(const uint64_t& aLayerObserverEpoch) override;
 
   virtual bool RecvSetDimensions(const uint32_t& aFlags,
                                  const int32_t& aX, const int32_t& aY,
@@ -726,6 +763,11 @@ private:
 
   
   
+  
+  bool mNeedLayerTreeReadyNotification;
+
+  
+  
   nsCursor mCursor;
   nsCOMPtr<imgIContainer> mCustomCursor;
   uint32_t mCustomCursorHotspotX, mCustomCursorHotspotY;
@@ -754,7 +796,7 @@ private:
 
   static void RemoveTabParentFromTable(uint64_t aLayersId);
 
-  uint64_t mLayerTreeEpoch;
+  RefPtr<LayerTreeUpdateObserver> mLayerUpdateObserver;
 
 public:
   static TabParent* GetTabParentFromLayersId(uint64_t aLayersId);

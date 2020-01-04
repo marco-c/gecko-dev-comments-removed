@@ -60,9 +60,6 @@ public:
   uint64_t GetId() const { return mId; }
   Layer* GetRoot() const { return mRoot; }
 
-  uint64_t GetChildEpoch() const { return mChildEpoch; }
-  bool ShouldParentObserveEpoch();
-
   virtual ShmemAllocator* AsShmemAllocator() override { return this; }
 
   virtual bool AllocShmem(size_t aSize,
@@ -142,8 +139,6 @@ protected:
                                 const mozilla::TimeStamp& aTransactionStart,
                                 const int32_t& aPaintSyncId) override;
 
-  virtual bool RecvSetLayerObserverEpoch(const uint64_t& aLayerObserverEpoch) override;
-
   virtual bool RecvClearCachedResources() override;
   virtual bool RecvForceComposite() override;
   virtual bool RecvSetTestSampleTime(const TimeStamp& aTime) override;
@@ -200,13 +195,6 @@ private:
   
   
   uint64_t mId;
-
-  
-  
-  
-  
-  uint64_t mChildEpoch;
-  uint64_t mParentEpoch;
 
   uint64_t mPendingTransaction;
 
