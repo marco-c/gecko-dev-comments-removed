@@ -426,7 +426,10 @@ class PluginModuleChromeParent
 
 
 
+
+
     void TerminateChildProcess(MessageLoop* aMsgLoop,
+                               base::ProcessId aContentPid,
                                const nsCString& aMonitorDescription,
                                const nsAString& aBrowserDumpId);
 
@@ -547,7 +550,7 @@ private:
         kHangUIDontShow = (1u << 3)
     };
     Atomic<uint32_t> mHangAnnotationFlags;
-    mozilla::Mutex mHangAnnotatorMutex;
+    mozilla::Mutex mProtocolCallStackMutex;
     InfallibleTArray<mozilla::ipc::IProtocol*> mProtocolCallStack;
 #ifdef XP_WIN
     InfallibleTArray<float> mPluginCpuUsageOnHang;
@@ -625,6 +628,10 @@ private:
     bool                mInitOnAsyncConnect;
     nsresult            mAsyncInitRv;
     NPError             mAsyncInitError;
+    
+    
+    
+    
     dom::ContentParent* mContentParent;
     nsCOMPtr<nsIObserver> mOfflineObserver;
 #ifdef MOZ_ENABLE_PROFILER_SPS
