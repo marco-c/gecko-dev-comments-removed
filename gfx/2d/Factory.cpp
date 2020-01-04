@@ -48,6 +48,7 @@
 
 #include "DrawEventRecorder.h"
 
+#include "Preferences.h"
 #include "Logging.h"
 
 #include "mozilla/CheckedInt.h"
@@ -152,31 +153,9 @@ HasCPUIDBit(unsigned int level, CPUIDRegister reg, unsigned int bit)
 namespace mozilla {
 namespace gfx {
 
-
-
-int32_t PreferenceAccess::sGfxLogLevel = LOG_DEFAULT;
-
-PreferenceAccess* PreferenceAccess::sAccess = nullptr;
-PreferenceAccess::~PreferenceAccess()
-{
-}
-
-
-
-void PreferenceAccess::LivePref(const char* aName, int32_t* aVar, int32_t aDef)
-{
-  *aVar = aDef;
-}
-
-
-
-void PreferenceAccess::SetAccess(PreferenceAccess* aAccess) {
-  sAccess = aAccess;
-  if (sAccess) {
-    RegisterAll();
-  }
-}
-
+int32_t LoggingPrefs::sGfxLogLevel =
+  PreferenceAccess::RegisterLivePref("gfx.logging.level", &sGfxLogLevel,
+                                     LOG_DEFAULT);
 
 #ifdef WIN32
 ID3D10Device1 *Factory::mD3D10Device;
