@@ -29,7 +29,7 @@ class VP8TrackEncoder : public VideoTrackEncoder
     SKIP_FRAME, 
   };
 public:
-  explicit VP8TrackEncoder(TrackRate aTrackRate);
+  VP8TrackEncoder();
   virtual ~VP8TrackEncoder();
 
   already_AddRefed<TrackMetadataBase> GetMetadata() final override;
@@ -38,7 +38,8 @@ public:
 
 protected:
   nsresult Init(int32_t aWidth, int32_t aHeight,
-                int32_t aDisplayWidth, int32_t aDisplayHeight) final override;
+                int32_t aDisplayWidth, int32_t aDisplayHeight,
+                TrackRate aTrackRate) final override;
 
 private:
   
