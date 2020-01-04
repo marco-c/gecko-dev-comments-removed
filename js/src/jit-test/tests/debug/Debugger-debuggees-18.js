@@ -7,7 +7,7 @@ var dbg = new Debugger;
 
 
 function assertDebuggees() {
-  print("assertDebuggees([" + [g.toSource() for each (g in arguments)] + "])");
+  print("assertDebuggees([" + Array.prototype.slice.call(arguments).map((g) => g.toSource()) + "])");
   var debuggees = dbg.getDebuggees();
   assertEq(arguments.length, debuggees.length);
   for each (g in arguments)

@@ -53,9 +53,6 @@ test(function () { g.eval("function r(n) { for (var i=0;i<n;i++) yield i; }"); }
 test(function () { g.eval("function* sg(n) { for (var i=0;i<n;i++) yield i; }"); });
 
 
-test(function () { g.eval("var it = (obj[p] for (p in obj));"); });
-
-
 test(function () { g.eval("for (var i = 0; i < 7; i++)\n" +
                           "    obj = function () { return obj; };\n"); });
 

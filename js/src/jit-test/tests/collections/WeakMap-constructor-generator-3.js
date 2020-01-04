@@ -1,7 +1,5 @@
 
 
-new WeakMap(x for (x of []));
-
 function none() {
     if (0) yield 0;
 }

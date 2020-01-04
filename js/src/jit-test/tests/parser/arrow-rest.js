@@ -176,14 +176,6 @@ delete ...a) =>
 
 
 testThrow(`
-[x for (...a) =>
-`, 8);
-
-testThrow(`
-[x for (x of ...a) =>
-`, 13);
-
-testThrow(`
 [for (...a) =>
 `, 6);
 

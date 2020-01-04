@@ -21,14 +21,6 @@ test("for (let x in h()) ;", 'declarative');
 test("for (let x in {a:1}) h();", 'declarative');
 test("try { throw new Error; } catch (x) { h(x) }", 'declarative');
 test("'use strict'; eval('var z = 1; h();');", 'declarative');
-test("for (var x in [h(m) for (m in [1])]) ;", 'declarative');
-test("for (var x in (h(m) for (m in [1]))) ;", 'declarative');
-
-
-
-
-
-test("for (var x in (0 for (m in h()))) ;", 'declarative');
 
 dbg.onDebuggerStatement = function (frame) {
     assertEq(frame.eval("h(), 2 + 2;").return, 4);

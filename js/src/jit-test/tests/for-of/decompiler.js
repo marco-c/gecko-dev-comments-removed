@@ -26,11 +26,3 @@ test("for ([a, b] of c) { a.m(b); }");
 
 test("for (let a of b) { f(a); }");
 test("for (let [a, b] of c) { a.m(b); }");
-
-
-test("return [a for (a of b)];");
-test("return [[b, a] for ([a, b] of c.items())];");
-
-
-test("return (a for (a of b));");
-
