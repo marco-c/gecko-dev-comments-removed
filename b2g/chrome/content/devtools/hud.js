@@ -446,6 +446,7 @@ var consoleWatcher = {
     'SSL',
     'CORS'
   ],
+  _reflowThreshold: 0,
 
   init(client) {
     this._client = client;
@@ -467,6 +468,10 @@ var consoleWatcher = {
         }
       });
     }
+
+    SettingsListener.observe('hud.reflows.duration', this._reflowThreshold, threshold => {
+      this._reflowThreshold = threshold;
+    });
 
     client.addListener('logMessage', this.consoleListener);
     client.addListener('pageError', this.consoleListener);
@@ -572,6 +577,12 @@ var consoleWatcher = {
         let {start, end, sourceURL, interruptible} = packet;
         metric.interruptible = interruptible;
         let duration = Math.round((end - start) * 100) / 100;
+
+        
+        if (duration < this._reflowThreshold) {
+          return;
+        }
+
         output += 'Reflow: ' + duration + 'ms';
         if (sourceURL) {
           output += ' ' + this.formatSourceURL(packet);
