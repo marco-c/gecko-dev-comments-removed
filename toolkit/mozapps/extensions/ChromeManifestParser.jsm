@@ -152,8 +152,6 @@ this.ChromeManifestParser = {
 
 
   hasType: function(aManifest, aType) {
-    return aManifest.some(function(aEntry) {
-      return aEntry.type == aType;
-    });
+    return aManifest.some(entry => entry.type == aType);
   }
 };
