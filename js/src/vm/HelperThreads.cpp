@@ -343,7 +343,7 @@ EnsureParserCreatedClasses(JSContext* cx)
     if (!EnsureConstructor(cx, global, JSProto_Iterator))
         return false; 
 
-    if (!GlobalObject::initGeneratorClasses(cx, global))
+    if (!GlobalObject::initStarGenerators(cx, global))
         return false; 
 
     return true;
@@ -974,6 +974,13 @@ GlobalHelperThreadState::finishParseTask(JSContext* maybecx, JSRuntime* rt, void
     return script;
 }
 
+JSObject*
+GlobalObject::getStarGeneratorFunctionPrototype()
+{
+    const Value& v = getReservedSlot(STAR_GENERATOR_FUNCTION_PROTO);
+    return v.isObject() ? &v.toObject() : nullptr;
+}
+
 void
 GlobalHelperThreadState::mergeParseTaskCompartment(JSRuntime* rt, ParseTask* parseTask,
                                                    Handle<GlobalObject*> global,
@@ -988,37 +995,45 @@ GlobalHelperThreadState::mergeParseTaskCompartment(JSRuntime* rt, ParseTask* par
 
     LeaveParseTaskZone(rt, parseTask);
 
-    
-    
-    
-    
-    for (gc::ZoneCellIter iter(parseTask->cx->zone(), gc::AllocKind::OBJECT_GROUP);
-         !iter.done();
-         iter.next())
     {
-        ObjectGroup* group = iter.get<ObjectGroup>();
-        TaggedProto proto(group->proto());
-        if (!proto.isObject())
-            continue;
+        gc::ZoneCellIter iter(parseTask->cx->zone(), gc::AllocKind::OBJECT_GROUP);
 
-        JSProtoKey key = JS::IdentifyStandardPrototype(proto.toObject());
-        if (key == JSProto_Null) {
-            
-            
-            
-            if (IsStandardPrototype(proto.toObject(), JSProto_GeneratorFunction))
-                key = JSProto_GeneratorFunction;
-            else
+        
+        
+        
+        JSObject* parseTaskStarGenFunctionProto =
+            parseTask->exclusiveContextGlobal->as<GlobalObject>().getStarGeneratorFunctionPrototype();
+
+        
+        
+        
+        
+        for (; !iter.done(); iter.next()) {
+            ObjectGroup* group = iter.get<ObjectGroup>();
+            TaggedProto proto(group->proto());
+            if (!proto.isObject())
                 continue;
+
+            JSObject* protoObj = proto.toObject();
+
+            JSObject* newProto;
+            if (protoObj == parseTaskStarGenFunctionProto) {
+                newProto = global->getStarGeneratorFunctionPrototype();
+            } else {
+                JSProtoKey key = JS::IdentifyStandardPrototype(protoObj);
+                if (key == JSProto_Null)
+                    continue;
+
+                MOZ_ASSERT(key == JSProto_Object || key == JSProto_Array ||
+                           key == JSProto_Function || key == JSProto_RegExp ||
+                           key == JSProto_Iterator);
+
+                newProto = GetBuiltinPrototypePure(global, key);
+            }
+
+            MOZ_ASSERT(newProto);
+            group->setProtoUnchecked(TaggedProto(newProto));
         }
-        MOZ_ASSERT(key == JSProto_Object || key == JSProto_Array ||
-                   key == JSProto_Function || key == JSProto_RegExp ||
-                   key == JSProto_Iterator || key == JSProto_GeneratorFunction);
-
-        JSObject* newProto = GetBuiltinPrototypePure(global, key);
-        MOZ_ASSERT(newProto);
-
-        group->setProtoUnchecked(TaggedProto(newProto));
     }
 
     
