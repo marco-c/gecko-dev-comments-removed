@@ -384,30 +384,6 @@ function DeleteSignon() {
   FinalizeSignonDeletions(syncNeeded);
 }
 
-function DeleteAllFromTree(tree, view, table, deletedTable, removeButton, removeAllButton) {
-
-  
-  for (let i=0; i<table.length; i++) {
-    deletedTable[deletedTable.length] = table[i];
-  }
-  table.length = 0;
-
-  
-  view.selection.select(-1);
-
-  
-  view.rowCount = 0;
-
-  let box = tree.treeBoxObject;
-  box.rowCountChanged(0, -deletedTable.length);
-  box.invalidate();
-
-
-  
-  document.getElementById(removeButton).setAttribute("disabled", "true")
-  document.getElementById(removeAllButton).setAttribute("disabled", "true");
-}
-
 function DeleteAllSignons() {
   let prompter = Cc["@mozilla.org/embedcomp/prompt-service;1"]
                            .getService(Ci.nsIPromptService);
@@ -421,10 +397,31 @@ function DeleteAllSignons() {
                          null, null, null, null, dummy) == 1) 
     return;
 
-  let syncNeeded = (signonsTreeView._filterSet.length != 0);
-  DeleteAllFromTree(signonsTree, signonsTreeView,
-                        signonsTreeView._filterSet.length ? signonsTreeView._filterSet : signons,
-                        deletedSignons, "removeSignon", "removeAllSignons");
+  let filterSet = signonsTreeView._filterSet;
+  let syncNeeded = (filterSet.length != 0);
+  let tree = signonsTree;
+  let view = signonsTreeView;
+  let table = filterSet.length ? filterSet : signons;
+
+  
+  for (let i = 0; i < table.length; i++) {
+    deletedSignons.push(table[i]);
+  }
+  table.length = 0;
+
+  
+  view.selection.select(-1);
+
+  
+  view.rowCount = 0;
+
+  let box = tree.treeBoxObject;
+  box.rowCountChanged(0, -deletedSignons.length);
+  box.invalidate();
+
+  
+  document.getElementById("removeSignon").setAttribute("disabled", "true")
+  document.getElementById("removeAllSignons").setAttribute("disabled", "true");
   FinalizeSignonDeletions(syncNeeded);
   Services.telemetry.getHistogramById("PWMGR_MANAGE_DELETED_ALL").add(1);
 }
