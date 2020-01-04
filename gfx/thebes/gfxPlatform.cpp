@@ -745,8 +745,7 @@ gfxPlatform::ShutdownLayersIPC()
     }
     sLayersIPCIsUp = false;
 
-    if (XRE_IsParentProcess())
-    {
+    if (XRE_IsParentProcess()) {
         
         
         layers::ImageBridgeChild::ShutDown();
@@ -755,6 +754,8 @@ gfxPlatform::ShutdownLayersIPC()
 #endif
 
         layers::CompositorParent::ShutDown();
+    } else {
+        CompositorChild::ShutdownLayersIPC();
     }
 }
 
