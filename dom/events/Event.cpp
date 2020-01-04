@@ -828,7 +828,7 @@ Event::GetEventPopupControlState(WidgetEvent* aEvent, nsIDOMEvent* aDOMEvent)
           abuse = openControlled;
         }
         break;
-      case NS_MOUSE_CLICK :
+      case eMouseClick:
         
 
 

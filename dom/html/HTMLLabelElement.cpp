@@ -135,7 +135,7 @@ HTMLLabelElement::PostHandleEvent(EventChainPostVisitor& aVisitor)
         }
         break;
 
-      case NS_MOUSE_CLICK:
+      case eMouseClick:
         if (mouseEvent->IsLeftClickEvent()) {
           LayoutDeviceIntPoint* mouseDownPoint =
             static_cast<LayoutDeviceIntPoint*>(
@@ -232,7 +232,7 @@ HTMLLabelElement::PerformAccesskey(bool aKeyCausesActivation,
       return;
 
     
-    WidgetMouseEvent event(aIsTrustedEvent, NS_MOUSE_CLICK,
+    WidgetMouseEvent event(aIsTrustedEvent, eMouseClick,
                            nullptr, WidgetMouseEvent::eReal);
     event.inputSource = nsIDOMMouseEvent::MOZ_SOURCE_KEYBOARD;
 

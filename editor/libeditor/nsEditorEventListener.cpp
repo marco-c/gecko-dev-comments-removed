@@ -441,7 +441,7 @@ nsEditorEventListener::HandleEvent(nsIDOMEvent* aEvent)
       return mMouseDownOrUpConsumedByIME ? NS_OK : MouseUp(mouseEvent);
     }
     
-    case NS_MOUSE_CLICK: {
+    case eMouseClick: {
       nsCOMPtr<nsIDOMMouseEvent> mouseEvent = do_QueryInterface(aEvent);
       NS_ENSURE_TRUE(mouseEvent, NS_OK);
       

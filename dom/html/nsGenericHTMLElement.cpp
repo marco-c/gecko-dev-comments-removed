@@ -2655,7 +2655,7 @@ nsGenericHTMLElement::Click()
   
   
   WidgetMouseEvent event(nsContentUtils::IsCallerChrome(),
-                         NS_MOUSE_CLICK, nullptr, WidgetMouseEvent::eReal);
+                         eMouseClick, nullptr, WidgetMouseEvent::eReal);
   event.inputSource = nsIDOMMouseEvent::MOZ_SOURCE_UNKNOWN;
 
   EventDispatcher::Dispatch(static_cast<nsIContent*>(this), context, &event);
@@ -2757,7 +2757,7 @@ nsGenericHTMLElement::PerformAccesskey(bool aKeyCausesActivation,
 
   if (aKeyCausesActivation) {
     
-    WidgetMouseEvent event(aIsTrustedEvent, NS_MOUSE_CLICK, nullptr,
+    WidgetMouseEvent event(aIsTrustedEvent, eMouseClick, nullptr,
                            WidgetMouseEvent::eReal);
     event.inputSource = nsIDOMMouseEvent::MOZ_SOURCE_KEYBOARD;
 
