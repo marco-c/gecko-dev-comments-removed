@@ -347,19 +347,19 @@ div:-moz-native-anonymous.moz-accessiblecaret > div.image {
 
 div:-moz-native-anonymous.moz-accessiblecaret.normal > div.image {
   background-image: url("chrome://browser/skin/images/accessiblecaret-normal-hdpi.png");
-  bottom: -11%; 
+  top: 11%; 
 }
 
 div:-moz-native-anonymous.moz-accessiblecaret.left > div.image {
   background-image: url("chrome://browser/skin/images/accessiblecaret-tilt-left-hdpi.png");
   margin-left: -50%;
-  bottom: -1%; 
+  top: 1%; 
 }
 
 div:-moz-native-anonymous.moz-accessiblecaret.right > div.image {
   background-image: url("chrome://browser/skin/images/accessiblecaret-tilt-right-hdpi.png");
   margin-left: 47%;
-  bottom: -1%; 
+  top: 1%; 
 }
 
 @media (min-resolution: 1.5dppx) {
