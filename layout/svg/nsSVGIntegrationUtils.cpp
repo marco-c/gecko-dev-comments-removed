@@ -718,19 +718,46 @@ nsSVGIntegrationUtils::PaintFramesWithEffects(const PaintFramesParams& aParams)
   bool shouldGenerateMaskLayer = maskFrames.Length() == 1 && maskFrames[0];
 #endif
 
+  bool shouldGenerateClipMaskLayer = clipPathFrame && !isTrivialClip;
+  bool shouldApplyClipPath = clipPathFrame && isTrivialClip;
+  bool shouldApplyBasicShape = !clipPathFrame && svgReset->HasClipPath();
+  MOZ_ASSERT_IF(shouldGenerateClipMaskLayer,
+                !shouldApplyClipPath && !shouldApplyBasicShape);
+
   
   RefPtr<gfxContext> target = &aParams.ctx;
   IntPoint targetOffset;
 
-  bool complexEffects = false;
+  if (frame->StyleEffects()->mMixBlendMode != NS_STYLE_BLEND_NORMAL) {
+    
+    
+    gfxRect clipRect;
+    {
+      gfxContextMatrixAutoSaveRestore matRestore(&context);
+
+      context.SetMatrix(gfxMatrix());
+      clipRect = context.GetClipExtents();
+    }
+
+    IntRect drawRect = RoundedOut(ToRect(clipRect));
+
+    RefPtr<DrawTarget> targetDT = context.GetDrawTarget()->CreateSimilarDrawTarget(drawRect.Size(), SurfaceFormat::B8G8R8A8);
+    if (!targetDT || !targetDT->IsValid()) {
+      return DrawResult::TEMPORARY_ERROR;
+    }
+    target = gfxContext::CreateOrNull(targetDT);
+    MOZ_ASSERT(target); 
+    target->SetMatrix(context.CurrentMatrix() * gfxMatrix::Translation(-drawRect.TopLeft()));
+    targetOffset = drawRect.TopLeft();
+  }
+
   DrawResult result = DrawResult::SUCCESS;
+  bool shouldGenerateMask = (opacity != 1.0f || shouldGenerateClipMaskLayer ||
+                             shouldGenerateMaskLayer);
+
   
 
-  if (opacity != 1.0f ||  (clipPathFrame && !isTrivialClip)
-      || frame->StyleEffects()->mMixBlendMode != NS_STYLE_BLEND_NORMAL
-      || shouldGenerateMaskLayer) {
-    complexEffects = true;
-
+  if (shouldGenerateMask) {
     context.Save();
     nsRect clipRect =
       frame->GetVisualOverflowRectRelativeToSelf() + toUserSpace;
@@ -752,31 +779,7 @@ nsSVGIntegrationUtils::PaintFramesWithEffects(const PaintFramesParams& aParams)
       return result;
     }
 
-    if (frame->StyleEffects()->mMixBlendMode != NS_STYLE_BLEND_NORMAL) {
-      
-      
-      gfxRect clipRect;
-      {
-        gfxContextMatrixAutoSaveRestore matRestore(&context);
-
-        context.SetMatrix(gfxMatrix());
-        clipRect = context.GetClipExtents();
-      }
-
-      IntRect drawRect = RoundedOut(ToRect(clipRect));
-
-      RefPtr<DrawTarget> targetDT = context.GetDrawTarget()->CreateSimilarDrawTarget(drawRect.Size(), SurfaceFormat::B8G8R8A8);
-      if (!targetDT || !targetDT->IsValid()) {
-        context.Restore();
-        return result;
-      }
-      target = gfxContext::CreateOrNull(targetDT);
-      MOZ_ASSERT(target); 
-      target->SetMatrix(context.CurrentMatrix() * gfxMatrix::Translation(-drawRect.TopLeft()));
-      targetOffset = drawRect.TopLeft();
-    }
-
-    if (clipPathFrame && !isTrivialClip) {
+    if (shouldGenerateClipMaskLayer) {
       Matrix clippedMaskTransform;
       RefPtr<SourceSurface> clipMaskSurface =
         clipPathFrame->GetClipMask(context, frame, cssPxToDevPxMatrix,
@@ -789,19 +792,16 @@ nsSVGIntegrationUtils::PaintFramesWithEffects(const PaintFramesParams& aParams)
       }
     }
 
-    if (opacity != 1.0f || shouldGenerateMaskLayer ||
-        (clipPathFrame && !isTrivialClip)) {
-      target->PushGroupForBlendBack(gfxContentType::COLOR_ALPHA, opacity, maskSurface, maskTransform);
-    }
+    target->PushGroupForBlendBack(gfxContentType::COLOR_ALPHA, opacity, maskSurface, maskTransform);
   }
 
   
 
 
-  if (clipPathFrame && isTrivialClip) {
+  if (shouldApplyClipPath) {
     context.Save();
     clipPathFrame->ApplyClipPath(context, frame, cssPxToDevPxMatrix);
-  } else if (!clipPathFrame && svgReset->HasClipPath()) {
+  } else if (shouldApplyBasicShape) {
     context.Save();
     nsCSSClipPathInstance::ApplyBasicShapeClip(context, frame);
   }
@@ -825,19 +825,13 @@ nsSVGIntegrationUtils::PaintFramesWithEffects(const PaintFramesParams& aParams)
     basic->SetTarget(oldCtx);
   }
 
-  if ((clipPathFrame && isTrivialClip) ||
-      (!clipPathFrame && svgReset->HasClipPath())) {
+  if (shouldApplyClipPath || shouldApplyBasicShape) {
     context.Restore();
   }
 
-  
-  if (!complexEffects) {
-    return result;
-  }
-
-  if (opacity != 1.0f || shouldGenerateMaskLayer ||
-      (clipPathFrame && !isTrivialClip)) {
+  if (shouldGenerateMask) {
     target->PopGroupAndBlend();
+    context.Restore();
   }
 
   if (frame->StyleEffects()->mMixBlendMode != NS_STYLE_BLEND_NORMAL) {
@@ -845,13 +839,13 @@ nsSVGIntegrationUtils::PaintFramesWithEffects(const PaintFramesParams& aParams)
     target = nullptr;
     RefPtr<SourceSurface> targetSurf = targetDT->Snapshot();
 
+    gfxContextAutoSaveRestore save(&context);
     context.SetMatrix(gfxMatrix()); 
     RefPtr<gfxPattern> pattern = new gfxPattern(targetSurf, Matrix::Translation(targetOffset.x, targetOffset.y));
     context.SetPattern(pattern);
     context.Paint();
   }
 
-  context.Restore();
   return result;
 }
 
