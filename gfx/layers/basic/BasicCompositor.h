@@ -126,14 +126,9 @@ public:
     return LayersBackend::LAYERS_BASIC;
   }
 
-  virtual nsIWidget* GetWidget() const override { return mWidget; }
-
   gfx::DrawTarget *GetDrawTarget() { return mDrawTarget; }
 
 private:
-
-  
-  nsIWidget *mWidget;
 
   
   RefPtr<gfx::DrawTarget> mDrawTarget;
