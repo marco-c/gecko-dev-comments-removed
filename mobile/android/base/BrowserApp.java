@@ -140,6 +140,7 @@ import android.widget.ListView;
 import android.widget.RelativeLayout;
 import android.widget.Toast;
 import android.widget.ViewFlipper;
+import com.keepsafe.switchboard.AsyncConfigLoader;
 import com.keepsafe.switchboard.SwitchBoard;
 import com.nineoldandroids.animation.Animator;
 import com.nineoldandroids.animation.ObjectAnimator;
@@ -747,21 +748,13 @@ public class BrowserApp extends GeckoApp
             SwitchBoard.initDefaultServerUrls("https://mozilla-switchboard.herokuapp.com/SwitchboardURLs.php", "https://mozilla-switchboard.herokuapp.com/SwitchboardDriver.php", true);
 
             
-
-
-
-
             Log.d(LOGTAG, "update server urls from remote");
-            SwitchBoard.updateConfigServerUrl(this);
+            new AsyncConfigLoader(this, AsyncConfigLoader.UPDATE_SERVER).execute();
 
             
-
-
-
-
-
+            
             Log.d(LOGTAG, "update app config");
-            SwitchBoard.loadConfig(this);
+            new AsyncConfigLoader(this, AsyncConfigLoader.CONFIG_SERVER).execute();
         }
 
         mBrowserChrome = (ViewGroup) findViewById(R.id.browser_chrome);
