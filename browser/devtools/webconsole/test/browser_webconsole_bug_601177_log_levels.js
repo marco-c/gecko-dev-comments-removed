@@ -22,7 +22,11 @@ let test = asyncTest(function* () {
 
   let hud = yield openConsole();
 
-  expectUncaughtException();
+  
+  
+  if (!Services.appinfo.browserTabsRemoteAutostart) {
+    expectUncaughtException();
+  }
 
   yield testLogLevels(hud);
 

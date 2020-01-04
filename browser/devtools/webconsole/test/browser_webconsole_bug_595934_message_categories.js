@@ -172,7 +172,11 @@ function testNext() {
           pageError = true;
           startNextTest();
         });
-        expectUncaughtException();
+        
+        
+        if (!Services.appinfo.browserTabsRemoteAutostart) {
+          expectUncaughtException();
+        }
       } else {
         pageError = true;
       }

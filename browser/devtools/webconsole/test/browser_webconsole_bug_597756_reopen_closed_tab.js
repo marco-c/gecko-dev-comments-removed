@@ -16,12 +16,18 @@ const TEST_URI = "http://example.com/browser/browser/devtools/webconsole/" +
 let HUD;
 
 let test = asyncTest(function* () {
-  expectUncaughtException();
+  
+  
+  if (!Services.appinfo.browserTabsRemoteAutostart) {
+    expectUncaughtException();
+  }
 
   let { browser } = yield loadTab(TEST_URI);
   HUD = yield openConsole();
 
-  expectUncaughtException();
+  if (!Services.appinfo.browserTabsRemoteAutostart) {
+    expectUncaughtException();
+  }
 
   yield reload(browser);
 
@@ -32,12 +38,16 @@ let test = asyncTest(function* () {
   
   gBrowser.removeCurrentTab();
 
-  expectUncaughtException();
+  if (!Services.appinfo.browserTabsRemoteAutostart) {
+    expectUncaughtException();
+  }
 
   let tab = yield loadTab(TEST_URI);
   HUD = yield openConsole();
 
-  expectUncaughtException();
+  if (!Services.appinfo.browserTabsRemoteAutostart) {
+    expectUncaughtException();
+  }
 
   yield reload(tab.browser);
 

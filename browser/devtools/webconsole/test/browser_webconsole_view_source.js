@@ -21,7 +21,11 @@ add_task(function*() {
   let button = content.document.querySelector("button");
   ok(button, "we have the button on the page");
 
-  expectUncaughtException();
+  
+  
+  if (!Services.appinfo.browserTabsRemoteAutostart) {
+    expectUncaughtException();
+  }
   EventUtils.sendMouseEvent({ type: "click" }, button, content);
 
   let { panelWin: { DebuggerView } } = yield openDebugger();

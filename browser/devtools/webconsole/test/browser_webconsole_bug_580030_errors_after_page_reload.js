@@ -30,7 +30,12 @@ function test() {
     let button = content.document.querySelector("button");
     ok(button, "button found");
 
-    expectUncaughtException();
+    
+    
+    if (!Services.appinfo.browserTabsRemoteAutostart) {
+      expectUncaughtException();
+    }
+
     EventUtils.sendMouseEvent({type: "click"}, button, content);
 
     yield waitForMessages({

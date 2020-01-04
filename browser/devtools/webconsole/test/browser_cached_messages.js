@@ -11,10 +11,14 @@
 const TEST_URI = "http://example.com/browser/browser/devtools/webconsole/" +
                  "test/test-webconsole-error-observer.html";
 
+
+
+if (!Services.appinfo.browserTabsRemoteAutostart) {
+  expectUncaughtException();
+}
+
 function test() {
   waitForExplicitFinish();
-
-  expectUncaughtException();
 
   loadTab(TEST_URI).then(testOpenUI);
 }

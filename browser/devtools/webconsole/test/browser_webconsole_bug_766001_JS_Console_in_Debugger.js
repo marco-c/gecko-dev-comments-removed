@@ -18,7 +18,11 @@ function test() {
   Task.spawn(runner).then(finishTest);
 
   function* runner() {
-    expectUncaughtException();
+    
+    
+    if (!Services.appinfo.browserTabsRemoteAutostart) {
+      expectUncaughtException();
+    }
 
     let {tab} = yield loadTab(TEST_URI);
     hud = yield openConsole(tab);

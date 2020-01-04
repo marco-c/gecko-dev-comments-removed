@@ -17,7 +17,11 @@ let test = asyncTest(function* () {
 
   let hud = yield openConsole();
 
-  expectUncaughtException();
+  
+  
+  if (!Services.appinfo.browserTabsRemoteAutostart) {
+    expectUncaughtException();
+  }
 
   content.location = TEST_URI;
 
