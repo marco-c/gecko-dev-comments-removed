@@ -87,13 +87,19 @@ let Logger = {
 
 
 function isDefunct(accessible) {
+  let defunct = false;
   try {
     let extState = {};
     accessible.getState({}, extState);
-    return extState.value & Ci.nsIAccessibleStates.EXT_STATE_DEFUNCT;
+    defunct = extState.value & Ci.nsIAccessibleStates.EXT_STATE_DEFUNCT;
   } catch (x) {
-    return true;
+    defunct = true;
+  } finally {
+    if (defunct) {
+      Logger.log(`Defunct accessible: ${prettyName(accessible)}`);
+    }
   }
+  return defunct;
 }
 
 
