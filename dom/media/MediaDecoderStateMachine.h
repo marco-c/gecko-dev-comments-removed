@@ -509,8 +509,7 @@ protected:
   void EnqueueFirstFrameLoadedEvent();
 
   
-  
-  void InitiateSeek(SeekJob aSeekJob);
+  RefPtr<MediaDecoder::SeekPromise> InitiateSeek(SeekJob aSeekJob);
 
   
   
