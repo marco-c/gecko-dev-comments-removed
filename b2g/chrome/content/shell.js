@@ -262,11 +262,6 @@ var shell = {
   },
 
   bootstrap: function() {
-    if (AppConstants.MOZ_B2GDROID) {
-      Cc["@mozilla.org/b2g/b2gdroid-setup;1"]
-        .getService(Ci.nsIObserver).observe(window, "shell-startup", null);
-    }
-
     window.performance.mark('gecko-shell-bootstrap');
 
     
@@ -739,7 +734,7 @@ var shell = {
 
   handleCmdLine: function() {
     
-    if (!isGonk && !AppConstants.MOZ_B2GDROID) {
+    if (!isGonk) {
       let b2gcmds = Cc["@mozilla.org/commandlinehandler/general-startup;1?type=b2gcmds"]
                       .getService(Ci.nsISupports);
       let args = b2gcmds.wrappedJSObject.cmdLine;

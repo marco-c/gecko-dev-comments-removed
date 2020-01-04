@@ -285,17 +285,10 @@ var Activities = {
             
             
             if (aResults.options.length === 0) {
-              if (AppConstants.MOZ_B2GDROID) {
-                
-                let glue = Cc["@mozilla.org/dom/activities/android-ui-glue;1"]
-                             .createInstance(Ci.nsIActivityUIGlue);
-                glue.chooseActivity(aMsg.options, aResults.options, getActivityChoice);
-              } else {
                 self.trySendAndCleanup(aMsg.id, "Activity:FireError", {
                   "id": aMsg.id,
                   "error": "NO_PROVIDER"
                 });
-              }
               return;
             }
 

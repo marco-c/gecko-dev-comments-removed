@@ -1164,17 +1164,11 @@ InitSystemMetrics()
     sSystemMetrics->AppendElement(nsGkAtoms::swipe_animation_enabled);
   }
 
-
-
-#ifdef MOZ_B2GDROID
-  sSystemMetrics->AppendElement(nsGkAtoms::physical_home_button);
-#else
   rv = LookAndFeel::GetInt(LookAndFeel::eIntID_PhysicalHomeButton,
                            &metricResult);
   if (NS_SUCCEEDED(rv) && metricResult) {
     sSystemMetrics->AppendElement(nsGkAtoms::physical_home_button);
   }
-#endif
 
 #ifdef XP_WIN
   if (NS_SUCCEEDED(

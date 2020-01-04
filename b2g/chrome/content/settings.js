@@ -123,15 +123,7 @@ SettingsListener.observe('language.current', 'en-US', function(value) {
   Services.prefs.setCharPref(prefName, value);
 
   if (shell.hasStarted() == false) {
-    
-    
-    if (AppConstants.MOZ_B2GDROID) {
-      Cc["@mozilla.org/b2g/b2gdroid-setup;1"]
-        .getService().wrappedJSObject.setWallpaper()
-        .then(() => { shell.bootstrap(); });
-    } else {
-      shell.bootstrap();
-    }
+    shell.bootstrap();
   }
 });
 
@@ -359,8 +351,7 @@ setUpdateTrackingId();
     });
   }
 
-  syncPrefDefault(AppConstants.MOZ_B2GDROID ? 'app.update.url.android'
-                                            : 'app.update.url');
+  syncPrefDefault('app.update.url');
   syncPrefDefault('app.update.channel');
 })();
 
