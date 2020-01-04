@@ -1067,18 +1067,9 @@ function* findElementsContent(strategy, selector, opts = {}) {
 }
 
 
-
-
-
-
-
 function getActiveElement() {
   let el = curContainer.frame.document.activeElement;
-  let elRef = seenEls.add(el);
-  
-  
-  
-  return elRef;
+  return element.toJson(el, seenEls);
 }
 
 
