@@ -7,7 +7,7 @@
 #ifndef mozilla_ServoBindings_h
 #define mozilla_ServoBindings_h
 
-#include <stdint.h>
+#include "stdint.h"
 
 
 
@@ -17,7 +17,6 @@
 
 
 
-#ifdef __cplusplus
 class nsINode;
 typedef nsINode RawGeckoNode;
 namespace mozilla { namespace dom { class Element; } }
@@ -28,24 +27,8 @@ typedef nsIDocument RawGeckoDocument;
 struct ServoNodeData;
 struct RawServoStyleSheet;
 struct RawServoStyleSet;
-#else
-struct RawGeckoNode;
-typedef struct RawGeckoNode RawGeckoNode;
-struct RawGeckoElement;
-typedef struct RawGeckoElement RawGeckoElement;
-struct RawGeckoDocument;
-typedef struct RawGeckoDocument RawGeckoDocument;
-struct ServoNodeData;
-typedef struct ServoNodeData ServoNodeData;
-struct RawServoStyleSheet;
-typedef struct RawServoStyleSheet RawServoStyleSheet;
-struct RawServoStyleSet;
-typedef struct RawServoStyleSet RawServoStyleSet;
-#endif
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
 
 uint32_t Gecko_ChildrenCount(RawGeckoNode* node);
@@ -92,8 +75,6 @@ void Servo_DropStyleSet(RawServoStyleSet* set);
 
 void Servo_RestyleDocument(RawGeckoDocument* doc, RawServoStyleSet* set);
 
-#ifdef __cplusplus
 } 
-#endif
 
 #endif 
