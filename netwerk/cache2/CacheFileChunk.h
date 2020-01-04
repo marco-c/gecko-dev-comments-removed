@@ -21,6 +21,77 @@ namespace net {
 class CacheFileChunk;
 class CacheFile;
 
+class CacheFileChunkBuffer
+{
+public:
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(CacheFileChunkBuffer)
+
+  explicit CacheFileChunkBuffer(CacheFileChunk *aChunk);
+
+  nsresult EnsureBufSize(uint32_t aSize);
+  void     CopyFrom(CacheFileChunkBuffer *aOther);
+  nsresult FillInvalidRanges(CacheFileChunkBuffer *aOther,
+                             CacheFileUtils::ValidityMap *aMap);
+  size_t   SizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
+
+  char *   Buf() const { return mBuf; }
+  void     SetDataSize(uint32_t aDataSize);
+  uint32_t DataSize() const { return mDataSize; }
+  uint32_t ReadHandlesCount() const { return mReadHandlesCount; }
+  bool     WriteHandleExists() const { return mWriteHandleExists; }
+
+private:
+  friend class CacheFileChunkHandle;
+  friend class CacheFileChunkReadHandle;
+  friend class CacheFileChunkWriteHandle;
+
+  ~CacheFileChunkBuffer();
+
+  void AssertOwnsLock() const;
+
+  void RemoveReadHandle();
+  void RemoveWriteHandle();
+
+  
+  
+  
+  
+  CacheFileChunk *mChunk;
+  char           *mBuf;
+  uint32_t        mBufSize;
+  uint32_t        mDataSize;
+  uint32_t        mReadHandlesCount;
+  bool            mWriteHandleExists;
+};
+
+class CacheFileChunkHandle
+{
+public:
+  uint32_t DataSize();
+  uint32_t Offset();
+
+protected:
+  RefPtr<CacheFileChunkBuffer> mBuf;
+};
+
+class CacheFileChunkReadHandle : public CacheFileChunkHandle
+{
+public:
+  explicit CacheFileChunkReadHandle(CacheFileChunkBuffer *aBuf);
+  ~CacheFileChunkReadHandle();
+
+  const char *Buf();
+};
+
+class CacheFileChunkWriteHandle : public CacheFileChunkHandle
+{
+public:
+  explicit CacheFileChunkWriteHandle(CacheFileChunkBuffer *aBuf);
+  ~CacheFileChunkWriteHandle();
+
+  char *Buf();
+  void UpdateDataSize(uint32_t aOffset, uint32_t aLen);
+};
 
 #define CACHEFILECHUNKLISTENER_IID \
 { /* baf16149-2ab5-499c-a9c2-5904eb95c288 */       \
@@ -81,11 +152,9 @@ public:
   nsresult CancelWait(CacheFileChunkListener *aCallback);
   nsresult NotifyUpdateListeners();
 
-  uint32_t            Index();
-  CacheHash::Hash16_t Hash();
-  uint32_t            DataSize();
-  void                UpdateDataSize(uint32_t aOffset, uint32_t aLen,
-                                     bool aEOF);
+  uint32_t            Index() const;
+  CacheHash::Hash16_t Hash() const;
+  uint32_t            DataSize() const;
 
   NS_IMETHOD OnFileOpened(CacheFileHandle *aHandle, nsresult aResult) override;
   NS_IMETHOD OnDataWritten(CacheFileHandle *aHandle, const char *aBuf,
@@ -102,25 +171,30 @@ public:
   nsresult GetStatus();
   void     SetError(nsresult aStatus);
 
-  char *       BufForWriting() const;
-  const char * BufForReading() const;
-  nsresult     EnsureBufSize(uint32_t aBufSize);
-  uint32_t     MemorySize() const { return sizeof(CacheFileChunk) + mRWBufSize + mBufSize; }
+  CacheFileChunkReadHandle  GetReadHandle();
+  CacheFileChunkWriteHandle GetWriteHandle(uint32_t aEnsuredBufSize);
 
   
   size_t SizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
   size_t SizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
 
 private:
+  friend class CacheFileChunkBuffer;
+  friend class CacheFileChunkWriteHandle;
   friend class CacheFileInputStream;
   friend class CacheFileOutputStream;
   friend class CacheFile;
 
   virtual ~CacheFileChunk();
 
-  bool CanAllocate(uint32_t aSize);
-  void ChunkAllocationChanged();
-  mozilla::Atomic<uint32_t>& ChunksMemoryUsage();
+  void AssertOwnsLock() const;
+
+  void UpdateDataSize(uint32_t aOffset, uint32_t aLen);
+
+  bool CanAllocate(uint32_t aSize) const;
+  void BuffersAllocationChanged(uint32_t aFreed, uint32_t aAllocated);
+
+  mozilla::Atomic<uint32_t, ReleaseAcquire>& ChunksMemoryUsage() const;
 
   enum EState {
     INITIAL = 0,
@@ -137,19 +211,29 @@ private:
                          
                          
                          
-  uint32_t mDataSize;
 
-  uint32_t   mReportedAllocation;
+  uint32_t   mBuffersSize;
   bool const mLimitAllocation : 1; 
                                    
   bool const mIsPriority : 1;
 
-  char    *mBuf;
-  uint32_t mBufSize;
+  
+  
+  
+  
+  RefPtr<CacheFileChunkBuffer> mBuf;
 
-  char               *mRWBuf;
-  uint32_t            mRWBufSize;
-  CacheHash::Hash16_t mReadHash;
+  
+  nsTArray<RefPtr<CacheFileChunkBuffer>> mOldBufs;
+
+  
+  nsAutoPtr<CacheFileChunkReadHandle> mWritingStateHandle;
+
+  
+  
+  
+  RefPtr<CacheFileChunkBuffer> mReadingStateBuf;
+  CacheHash::Hash16_t          mExpectedHash;
 
   RefPtr<CacheFile>                mFile; 
                                           
