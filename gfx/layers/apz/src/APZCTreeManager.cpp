@@ -28,6 +28,7 @@
 #include "UnitTransforms.h"             
 #include "gfxPrefs.h"                   
 #include "OverscrollHandoffState.h"     
+#include "TaskThrottler.h"              
 #include "TreeTraversal.h"              
 #include "LayersLogging.h"              
 #include "Units.h"                      
@@ -108,10 +109,11 @@ APZCTreeManager::~APZCTreeManager()
 
 AsyncPanZoomController*
 APZCTreeManager::MakeAPZCInstance(uint64_t aLayersId,
-                                  GeckoContentController* aController)
+                                  GeckoContentController* aController,
+                                  TaskThrottler* aPaintThrottler)
 {
   return new AsyncPanZoomController(aLayersId, this, mInputQueue,
-    aController, AsyncPanZoomController::USE_GESTURE_DETECTOR);
+    aController, aPaintThrottler, AsyncPanZoomController::USE_GESTURE_DETECTOR);
 }
 
 TimeStamp
@@ -419,7 +421,17 @@ APZCTreeManager::PrepareNodeForLayer(const LayerMetricsWrapper& aLayer,
     
     bool newApzc = (apzc == nullptr || apzc->IsDestroyed());
     if (newApzc) {
-      apzc = MakeAPZCInstance(aLayersId, state->mController);
+      
+      
+      auto throttlerInsertResult = mPaintThrottlerMap.insert(
+          std::make_pair(aLayersId, nsRefPtr<TaskThrottler>()));
+      if (throttlerInsertResult.second) {
+        throttlerInsertResult.first->second = new TaskThrottler(
+            GetFrameTime(), TimeDuration::FromMilliseconds(500));
+      }
+
+      apzc = MakeAPZCInstance(aLayersId, state->mController,
+                              throttlerInsertResult.first->second);
       apzc->SetCompositorParent(aState.mCompositor);
       if (state->mCrossProcessParent != nullptr) {
         apzc->ShareFrameMetricsAcrossProcesses();

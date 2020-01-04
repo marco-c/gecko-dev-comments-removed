@@ -13,6 +13,7 @@
 #include "mozilla/RollingMean.h"        
 #include "mozilla/mozalloc.h"           
 #include "mozilla/UniquePtr.h"          
+#include "nsISupportsImpl.h"            
 #include "nsTArray.h"                   
 
 namespace tracked_objects {
@@ -44,6 +45,8 @@ namespace layers {
 class TaskThrottler {
 public:
   TaskThrottler(const TimeStamp& aTimeStamp, const TimeDuration& aMaxWait);
+
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(TaskThrottler)
 
   
 
@@ -107,6 +110,8 @@ private:
   TimeStamp mStartTime;
   TimeDuration mMaxWait;
   RollingMean<TimeDuration, TimeDuration> mMean;
+
+  ~TaskThrottler();
 };
 
 } 
