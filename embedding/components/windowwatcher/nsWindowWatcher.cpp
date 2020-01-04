@@ -18,6 +18,7 @@
 #include "nsJSUtils.h"
 #include "plstr.h"
 
+#include "nsDocShell.h"
 #include "nsIBaseWindow.h"
 #include "nsIBrowserDOMWindow.h"
 #include "nsIDocShell.h"
@@ -447,6 +448,36 @@ nsWindowWatcher::OpenWindow2(mozIDOMWindowProxy* aParent,
                             aNavigate, aOpeningTab, argv, aResult);
 }
 
+
+
+
+static bool
+CheckUserContextCompatibility(nsIDocShell* aDocShell)
+{
+  MOZ_ASSERT(aDocShell);
+
+  uint32_t userContextId =
+    static_cast<nsDocShell*>(aDocShell)->GetOriginAttributes().mUserContextId;
+
+  if (userContextId == nsIScriptSecurityManager::DEFAULT_USER_CONTEXT_ID) {
+    return true;
+  }
+
+  nsCOMPtr<nsIPrincipal> subjectPrincipal =
+    nsContentUtils::GetCurrentJSContext()
+      ? nsContentUtils::SubjectPrincipal() : nullptr;
+
+  if (!subjectPrincipal) {
+    return false;
+  }
+
+  uint32_t principalUserContextId;
+  nsresult rv = subjectPrincipal->GetUserContextId(&principalUserContextId);
+  NS_ENSURE_SUCCESS(rv, false);
+
+  return principalUserContextId == userContextId;
+}
+
 nsresult
 nsWindowWatcher::OpenWindowInternal(mozIDOMWindowProxy* aParent,
                                     const char* aUrl,
@@ -681,6 +712,19 @@ nsWindowWatcher::OpenWindowInternal(mozIDOMWindowProxy* aParent,
               do_QueryInterface(newDocShellItem);
             webNav->Stop(nsIWebNavigation::STOP_NETWORK);
           }
+
+          
+          
+          
+          if (!windowIsNew && newDocShellItem) {
+            nsCOMPtr<nsIDocShell> docShell = do_QueryInterface(newDocShellItem);
+            if (!CheckUserContextCompatibility(docShell)) {
+              newWindow = nullptr;
+              newDocShellItem = nullptr;
+              windowIsNew = false;
+            }
+          }
+
         } else if (rv == NS_ERROR_ABORT) {
           
           
@@ -969,6 +1013,20 @@ nsWindowWatcher::OpenWindowInternal(mozIDOMWindowProxy* aParent,
     }
   }
 
+  
+  
+  if (windowIsNew && subjectPrincipal) {
+    uint32_t userContextId;
+    rv = subjectPrincipal->GetUserContextId(&userContextId);
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    auto* docShell = static_cast<nsDocShell*>(newDocShell.get());
+
+    DocShellOriginAttributes attr = docShell->GetOriginAttributes();
+    attr.mUserContextId = userContextId;
+    docShell->SetOriginAttributes(attr);
+  }
+
   if (isNewToplevelWindow) {
     
     
@@ -978,6 +1036,10 @@ nsWindowWatcher::OpenWindowInternal(mozIDOMWindowProxy* aParent,
       obsSvc->NotifyObservers(*aResult, "toplevel-window-ready", nullptr);
     }
   }
+
+  
+  
+  MOZ_ASSERT(CheckUserContextCompatibility(newDocShell));
 
   if (uriToLoad && aNavigate) {
     newDocShell->LoadURI(
