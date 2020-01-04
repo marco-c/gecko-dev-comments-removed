@@ -1328,6 +1328,95 @@ struct MOZ_RAII AutoAssertNoNurseryAlloc
 #endif
 };
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class MOZ_RAII AutoAssertHeapBusy {
+  protected:
+    JSRuntime* rt;
+
+    
+    
+    void checkCondition(JSRuntime *rt);
+
+    AutoAssertHeapBusy() : rt(nullptr) {
+    }
+
+  public:
+    explicit AutoAssertHeapBusy(JSRuntime* rt) {
+        checkCondition(rt);
+    }
+
+    ~AutoAssertHeapBusy() {
+        MOZ_ASSERT(rt); 
+        checkCondition(rt);
+    }
+};
+
+
+
+
+
+
+
+class MOZ_RAII AutoAssertEmptyNursery
+{
+  protected:
+    JSRuntime* rt;
+
+    
+    void checkCondition(JSRuntime *rt);
+
+    
+    AutoAssertEmptyNursery() : rt(nullptr) {
+    }
+
+  public:
+    explicit AutoAssertEmptyNursery(JSRuntime* rt) {
+        checkCondition(rt);
+    }
+
+    ~AutoAssertEmptyNursery() {
+        checkCondition(rt);
+    }
+};
+
+
+
+
+
+
+
+
+
+
+class MOZ_RAII AutoEmptyNursery : public AutoAssertEmptyNursery
+{
+  public:
+    explicit AutoEmptyNursery(JSRuntime *rt);
+};
+
 const char*
 StateName(State state);
 

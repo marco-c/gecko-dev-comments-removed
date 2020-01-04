@@ -984,8 +984,8 @@ AddLazyFunctionsForCompartment(JSContext* cx, AutoObjectVector& lazyFunctions, A
     
     
 
-    for (gc::ZoneCellIter i(cx->zone(), kind); !i.done(); i.next()) {
-        JSFunction* fun = &i.get<JSObject>()->as<JSFunction>();
+    for (auto i = cx->zone()->cellIter<JSObject>(kind); !i.done(); i.next()) {
+        JSFunction* fun = &i->as<JSFunction>();
 
         
         
@@ -1157,8 +1157,7 @@ JSCompartment::clearScriptCounts()
 void
 JSCompartment::clearBreakpointsIn(FreeOp* fop, js::Debugger* dbg, HandleObject handler)
 {
-    for (gc::ZoneCellIter i(zone(), gc::AllocKind::SCRIPT); !i.done(); i.next()) {
-        JSScript* script = i.get<JSScript>();
+    for (auto script = zone()->cellIter<JSScript>(); !script.done(); script.next()) {
         if (script->compartment() == this && script->hasAnyBreakpointsOrStepMode())
             script->clearBreakpointsIn(fop, dbg, handler);
     }

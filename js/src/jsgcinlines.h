@@ -195,16 +195,30 @@ class ArenaCellIterUnderFinalize : public ArenaCellIterImpl
     explicit ArenaCellIterUnderFinalize(Arena* arena) : ArenaCellIterImpl(arena) {}
 };
 
-class ZoneCellIterImpl
-{
+template <typename T>
+class ZoneCellIter;
+
+template <>
+class ZoneCellIter<TenuredCell> {
     ArenaIter arenaIter;
     ArenaCellIterImpl cellIter;
+    JS::AutoAssertNoAlloc noAlloc;
 
-  public:
-    ZoneCellIterImpl(JS::Zone* zone, AllocKind kind) {
+  protected:
+    
+    ZoneCellIter() {}
+
+    void init(JS::Zone* zone, AllocKind kind) {
         JSRuntime* rt = zone->runtimeFromAnyThread();
         MOZ_ASSERT(zone);
         MOZ_ASSERT_IF(IsNurseryAllocable(kind), rt->gc.nursery.isEmpty());
+
+        
+        
+        if (!rt->isHeapBusy()) {
+            
+            noAlloc.disallowAlloc(rt);
+        }
 
         
         
@@ -212,22 +226,40 @@ class ZoneCellIterImpl
         
         if (IsBackgroundFinalized(kind) && zone->arenas.needBackgroundFinalizeWait(kind))
             rt->gc.waitBackgroundSweepEnd();
-
         arenaIter.init(zone, kind);
         if (!arenaIter.done())
             cellIter.init(arenaIter.get());
+    }
+
+  public:
+    ZoneCellIter(JS::Zone* zone, AllocKind kind) {
+        
+        
+        if (IsNurseryAllocable(kind)) {
+            JSRuntime* rt = zone->runtimeFromMainThread();
+            rt->gc.evictNursery();
+        }
+
+        init(zone, kind);
+    }
+
+    ZoneCellIter(JS::Zone* zone, AllocKind kind, const js::gc::AutoAssertEmptyNursery&) {
+        
+        
+        init(zone, kind);
     }
 
     bool done() const {
         return arenaIter.done();
     }
 
-    template<typename T> T* get() const {
+    template<typename T>
+    T* get() const {
         MOZ_ASSERT(!done());
         return cellIter.get<T>();
     }
 
-    Cell* getCell() const {
+    TenuredCell* getCell() const {
         MOZ_ASSERT(!done());
         return cellIter.getCell();
     }
@@ -244,44 +276,74 @@ class ZoneCellIterImpl
     }
 };
 
-class ZoneCellIterUnderGC : public ZoneCellIterImpl
-{
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+template <typename GCType>
+class ZoneCellIter : public ZoneCellIter<TenuredCell> {
   public:
-    ZoneCellIterUnderGC(JS::Zone* zone, AllocKind kind)
-      : ZoneCellIterImpl(zone, kind)
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    explicit ZoneCellIter(JS::Zone* zone) : ZoneCellIter<TenuredCell>() {
+        init(zone, MapTypeToFinalizeKind<GCType>::kind);
+    }
+
+    
+    ZoneCellIter(JS::Zone* zone, const js::gc::AutoAssertEmptyNursery&) : ZoneCellIter(zone) {
+    }
+
+    
+    
+    ZoneCellIter(JS::Zone* zone, AllocKind kind) : ZoneCellIter<TenuredCell>(zone, kind) {
+    }
+
+    
+    
+    ZoneCellIter(JS::Zone* zone, AllocKind kind, const js::gc::AutoAssertEmptyNursery& empty)
+      : ZoneCellIter<TenuredCell>(zone, kind, empty)
     {
-        MOZ_ASSERT(zone->runtimeFromAnyThread()->isHeapBusy());
-    }
-};
-
-class ZoneCellIter
-{
-    mozilla::Maybe<ZoneCellIterImpl> impl;
-    JS::AutoAssertNoAlloc noAlloc;
-
-  public:
-    ZoneCellIter(JS::Zone* zone, AllocKind kind) {
-        
-        
-        JSRuntime* rt = zone->runtimeFromMainThread();
-        if (!rt->isHeapBusy()) {
-            
-            
-            if (IsNurseryAllocable(kind))
-                rt->gc.evictNursery();
-
-            
-            noAlloc.disallowAlloc(rt);
-        }
-
-        impl.emplace(zone, kind);
     }
 
-    bool done() const { return impl->done(); }
-    template<typename T>
-    T* get() const { return impl->get<T>(); }
-    Cell* getCell() const { return impl->getCell(); }
-    void next() { impl->next(); }
+    GCType* get() const { return ZoneCellIter<TenuredCell>::get<GCType>(); }
+    operator GCType*() const { return get(); }
+    GCType* operator ->() const { return get(); }
 };
 
 class GCZonesIter
