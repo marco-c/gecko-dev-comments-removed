@@ -126,23 +126,6 @@ function waiveXraysIfAppropriate(obj, propName) {
   return obj;
 }
 
-function callGetOwnPropertyDescriptor(obj, name) {
-  obj = waiveXraysIfAppropriate(obj, name);
-
-  
-  
-  
-  
-  
-  
-  
-  try {
-    obj.__lookupGetter__(name);
-    obj.__lookupSetter__(name);
-  } catch(e) { }
-  return Object.getOwnPropertyDescriptor(obj, name);
-}
-
 
 
 function doApply(fun, invocant, args) {
@@ -158,7 +141,7 @@ function doApply(fun, invocant, args) {
   
   
   args = args.map(x => isObjectOrArray(x) ? Cu.waiveXrays(x) : x);
-  return Function.prototype.apply.call(fun, invocant, args);
+  return Reflect.apply(fun, invocant, args);
 }
 
 function wrapPrivileged(obj) {
@@ -171,41 +154,13 @@ function wrapPrivileged(obj) {
   if (isWrapper(obj))
     throw "Trying to double-wrap object!";
 
-  
-  var handler = new SpecialPowersHandler(obj);
+  let dummy;
+  if (typeof obj === "function")
+    dummy = function() {};
+  else
+    dummy = Object.create(null);
 
-  
-  if (typeof obj === "function") {
-    var callTrap = function() {
-      
-      var invocant = unwrapIfWrapped(this);
-      var unwrappedArgs = Array.prototype.slice.call(arguments).map(unwrapIfWrapped);
-
-      try {
-        return wrapPrivileged(doApply(obj, invocant, unwrappedArgs));
-      } catch (e) {
-        
-        throw wrapIfUnwrapped(e);
-      }
-    };
-    var constructTrap = function() {
-      
-      var unwrappedArgs = Array.prototype.slice.call(arguments).map(unwrapIfWrapped);
-
-      
-      
-      try {
-        return wrapPrivileged(new obj(...unwrappedArgs));
-      } catch (e) {
-        throw wrapIfUnwrapped(e);
-      }
-    };
-
-    return Proxy.createFunction(handler, callTrap, constructTrap);
-  }
-
-  
-  return Proxy.create(handler);
+  return new Proxy(dummy, new SpecialPowersHandler(obj));
 };
 
 function unwrapPrivileged(x) {
@@ -226,178 +181,130 @@ function unwrapPrivileged(x) {
   return obj;
 };
 
-function crawlProtoChain(obj, fn) {
-  var rv = fn(obj);
-  if (rv !== undefined)
-    return rv;
-  
-  
-  
-  let proto = Cu.unwaiveXrays(Object.getPrototypeOf(Cu.waiveXrays(obj)));
-  if (proto)
-    return crawlProtoChain(proto, fn);
-  return undefined;
-};
-
-function SpecialPowersHandler(obj) {
-  this.wrappedObject = obj;
-};
-
-
-
-SpecialPowersHandler.prototype.doGetPropertyDescriptor = function(name, own) {
-
-  
-  if (name == "SpecialPowers_wrappedObject")
-    return { value: this.wrappedObject, writeable: false, configurable: false, enumerable: false };
-
-  
-  
-  
-  
-  
-  var desc;
-  var obj = this.wrappedObject;
-  function isWrappedNativeXray(o) {
-    if (!Cu.isXrayWrapper(o))
-      return false;
-    var proto = Object.getPrototypeOf(o);
-    return /XPC_WN/.test(Cu.getClassName(o,  true)) ||
-           (proto && /XPC_WN/.test(Cu.getClassName(proto,  true)));
-  }
-
-  
-  
-  
-  if (own)
-    desc = callGetOwnPropertyDescriptor(obj, name);
-
-  
-  
-  
-  
-  
-  
-  
-  else if (!isWrappedNativeXray(this.wrappedObject))
-    desc = crawlProtoChain(obj, function(o) {return callGetOwnPropertyDescriptor(o, name);});
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  else {
-    obj = waiveXraysIfAppropriate(obj, name);
-    desc = Object.getOwnPropertyDescriptor(obj, name);
-    if (!desc) {
-      var getter = Object.prototype.__lookupGetter__.call(obj, name);
-      var setter = Object.prototype.__lookupSetter__.call(obj, name);
-      if (getter || setter)
-        desc = {get: getter, set: setter, configurable: true, enumerable: true};
-      else if (name in obj)
-        desc = {value: obj[name], writable: false, configurable: true, enumerable: true};
-    }
-  }
-
-  
-  if (typeof desc === 'undefined')
-    return undefined;
-
-  
-  
-  
-  
-  if (desc && 'value' in desc && desc.value === undefined)
-    desc.value = obj[name];
-
-  
-  
-  
-  desc.configurable = true;
-
-  
-  function wrapIfExists(key) { if (key in desc) desc[key] = wrapPrivileged(desc[key]); };
-  wrapIfExists('value');
-  wrapIfExists('get');
-  wrapIfExists('set');
-
-  return desc;
-};
-
-SpecialPowersHandler.prototype.getOwnPropertyDescriptor = function(name) {
-  return this.doGetPropertyDescriptor(name, true);
-};
-
-SpecialPowersHandler.prototype.getPropertyDescriptor = function(name) {
-  return this.doGetPropertyDescriptor(name, false);
-};
-
-function doGetOwnPropertyNames(obj, props) {
-
-  
-  
-  var specialAPI = 'SpecialPowers_wrappedObject';
-  if (props.indexOf(specialAPI) == -1)
-    props.push(specialAPI);
-
-  
-  var flt = function(a) { return props.indexOf(a) == -1; };
-  props = props.concat(Object.getOwnPropertyNames(obj).filter(flt));
-
-  
-  if ('wrappedJSObject' in obj)
-    props = props.concat(Object.getOwnPropertyNames(obj.wrappedJSObject)
-                         .filter(flt));
-
-  return props;
+function SpecialPowersHandler(wrappedObject) {
+  this.wrappedObject = wrappedObject;
 }
 
-SpecialPowersHandler.prototype.getOwnPropertyNames = function() {
-  return doGetOwnPropertyNames(this.wrappedObject, []);
-};
+SpecialPowersHandler.prototype = {
+  construct(target, args) {
+    
+    var unwrappedArgs = Array.prototype.slice.call(args).map(unwrapIfWrapped);
 
-SpecialPowersHandler.prototype.getPropertyNames = function() {
+    
+    
+    try {
+      return wrapIfUnwrapped(Reflect.construct(this.wrappedObject, unwrappedArgs));
+    } catch (e) {
+      throw wrapIfUnwrapped(e);
+    }
+  },
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  var obj = this.wrappedObject;
-  var props = [];
-  while (obj) {
-    props = doGetOwnPropertyNames(obj, props);
-    obj = Object.getPrototypeOf(XPCNativeWrapper.unwrap(obj));
+  apply(target, thisValue, args) {
+    
+    
+    var invocant = unwrapIfWrapped(thisValue);
+    var unwrappedArgs = Array.prototype.slice.call(args).map(unwrapIfWrapped);
+
+    try {
+      return wrapIfUnwrapped(doApply(this.wrappedObject, invocant, unwrappedArgs));
+    } catch (e) {
+      
+      throw wrapIfUnwrapped(e);
+    }
+  },
+
+  has(target, prop) {
+    if (prop === "SpecialPowers_wrappedObject")
+      return true;
+
+    return Reflect.has(this.wrappedObject, prop);
+  },
+
+  get(target, prop, receiver) {
+    if (prop === "SpecialPowers_wrappedObject")
+      return this.wrappedObject;
+
+    let obj = waiveXraysIfAppropriate(this.wrappedObject, prop);
+    return wrapIfUnwrapped(Reflect.get(obj, prop));
+  },
+
+  set(target, prop, val, receiver) {
+    if (prop === "SpecialPowers_wrappedObject")
+      return false;
+
+    let obj = waiveXraysIfAppropriate(this.wrappedObject, prop);
+    return Reflect.set(obj, prop, unwrapIfWrapped(val));
+  },
+
+  delete(target, prop) {
+    if (prop === "SpecialPowers_wrappedObject")
+      return false;
+
+    return Reflect.deleteProperty(this.wrappedObject, prop);
+  },
+
+  defineProperty(target, prop, descriptor) {
+    throw "Can't call defineProperty on SpecialPowers wrapped object";
+  },
+
+  getOwnPropertyDescriptor(target, prop) {
+    
+    if (prop === "SpecialPowers_wrappedObject") {
+      return { value: this.wrappedObject, writeable: true,
+               configurable: true, enumerable: false };
+    }
+
+    let obj = waiveXraysIfAppropriate(this.wrappedObject, prop);
+    let desc = Reflect.getOwnPropertyDescriptor(obj, prop);
+
+    if (desc === undefined)
+      return undefined;
+
+    
+    function wrapIfExists(key) {
+      if (key in desc)
+        desc[key] = wrapIfUnwrapped(desc[key]);
+    };
+
+    wrapIfExists('value');
+    wrapIfExists('get');
+    wrapIfExists('set');
+
+    
+    
+    desc.configurable = true;
+
+    return desc;
+  },
+
+  ownKeys(target) {
+    
+    
+    let props = ['SpecialPowers_wrappedObject'];
+
+    
+    let flt = (a) => !props.includes(a);
+    props = props.concat(Reflect.ownKeys(this.wrappedObject).filter(flt));
+
+    
+    if ('wrappedJSObject' in this.wrappedObject) {
+      props = props.concat(Reflect.ownKeys(this.wrappedObject.wrappedJSObject)
+                           .filter(flt));
+    }
+
+    return props;
+  },
+
+  enumerate(target) {
+    return (function*() {
+      for (let property in this.wrappedObject)
+        yield property;
+    }).call(this);
+  },
+
+  preventExtensions(target) {
+    throw "Can't call preventExtensions on SpecialPowers wrapped object";
   }
-  return props;
-};
-
-SpecialPowersHandler.prototype.defineProperty = function(name, desc) {
-  return Object.defineProperty(this.wrappedObject, name, desc);
-};
-
-SpecialPowersHandler.prototype.delete = function(name) {
-  return delete this.wrappedObject[name];
-};
-
-SpecialPowersHandler.prototype.fix = function() { return undefined;  };
-
-
-
-SpecialPowersHandler.prototype.enumerate = function() {
-  var t = this;
-  var filt = function(name) { return t.getPropertyDescriptor(name).enumerable; };
-  return this.getPropertyNames().filter(filt);
 };
 
 
@@ -466,6 +373,14 @@ function wrapCallbackObject(obj) {
   return wrapper;
 }
 
+function setWrapped(obj, prop, val) {
+  if (!isWrapper(obj))
+    throw "You only need to use this for SpecialPowers wrapped objects";
+
+  obj = unwrapPrivileged(obj);
+  return Reflect.set(obj, prop, val);
+}
+
 SpecialPowersAPI.prototype = {
 
   
@@ -509,6 +424,12 @@ SpecialPowersAPI.prototype = {
 
   wrapCallback: wrapCallback,
   wrapCallbackObject: wrapCallbackObject,
+
+  
+
+
+
+  setWrapped: setWrapped,
 
   
 
@@ -865,7 +786,7 @@ SpecialPowersAPI.prototype = {
       }
       this._permissionsUndoStack.push(cleanupPermissions);
       this._pendingPermissions.push([pendingPermissions,
-				     this._delayCallbackTwice(callback)]);
+                                     this._delayCallbackTwice(callback)]);
       this._applyPermissions();
     } else {
       this._setTimeout(callback);
@@ -1129,7 +1050,7 @@ SpecialPowersAPI.prototype = {
       
       this._prefEnvUndoStack.push(cleanupActions);
       this._pendingPrefs.push([pendingActions,
-			       this._delayCallbackTwice(callback)]);
+                               this._delayCallbackTwice(callback)]);
       this._applyPrefs();
     } else {
       this._setTimeout(callback);
