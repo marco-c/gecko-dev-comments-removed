@@ -79,6 +79,8 @@ const MESSAGES = [
 
 
 
+
+
 const NOTAB_MESSAGES = new Set([
   
   "SessionStore:setupSyncHandler",
@@ -399,6 +401,11 @@ var SessionStoreInternal = {
   _closedTabs: new WeakMap(),
 
   
+  
+  
+  _closedWindowTabs: new WeakMap(),
+
+  
   _browserSetState: false,
 
   
@@ -654,14 +661,15 @@ var SessionStoreInternal = {
     
     
     var browser = aMessage.target;
-    var win = browser.ownerDocument.defaultView;
-    let tab = win.gBrowser.getTabForBrowser(browser);
+    let win = browser.ownerDocument.defaultView;
+    let tab = win ? win.gBrowser.getTabForBrowser(browser) : null;
 
+    
     
     
     if (!tab && !NOTAB_MESSAGES.has(aMessage.name)) {
       throw new Error(`received unexpected message '${aMessage.name}' ` +
-                      `from a browser that has no tab`);
+                      `from a browser that has no tab or window`);
     }
 
     let data = aMessage.data || {};
@@ -1208,10 +1216,13 @@ var SessionStoreInternal = {
     
     if (RunState.isRunning) {
       
-      TabState.flushWindow(aWindow);
-
       
-      this._collectWindowData(aWindow);
+      let tabMap = this._collectWindowData(aWindow);
+
+      for (let [tab, tabData] of tabMap) {
+        let permanentKey = tab.linkedBrowser.permanentKey;
+        this._closedWindowTabs.set(permanentKey, tabData);
+      }
 
       if (isFullyLoaded) {
         winData.title = tabbrowser.selectedBrowser.contentTitle || tabbrowser.selectedTab.label;
@@ -1232,44 +1243,86 @@ var SessionStoreInternal = {
       winData.closedAt = Date.now();
 
       
+      delete winData.busy;
+
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
       
       if (!winData.isPrivate) {
         
         PrivacyFilter.filterPrivateTabs(winData);
-
-        
-        let hasSaveableTabs = winData.tabs.some(this._shouldSaveTabState);
-
-        
-        
-        
-        
-        
-        
-        let isLastWindow =
-          Object.keys(this._windows).length == 1 &&
-          !this._closedWindows.some(win => win._shouldRestore || false);
-
-        if (hasSaveableTabs || isLastWindow) {
-          
-          delete winData.busy;
-
-          this._closedWindows.unshift(winData);
-          this._capClosedWindows();
-        }
+        this.maybeSaveClosedWindow(winData);
       }
 
       
-      delete this._windows[aWindow.__SSi];
-
       
-      this.saveStateDelayed();
+      let browsers = tabbrowser.browsers;
+
+      TabStateFlusher.flushWindow(aWindow).then(() => {
+        
+        
+        
+
+        
+        for (let browser of browsers) {
+          if (this._closedWindowTabs.has(browser.permanentKey)) {
+            let tabData = this._closedWindowTabs.get(browser.permanentKey);
+            TabState.copyFromCache(browser, tabData);
+            this._closedWindowTabs.delete(browser.permanentKey);
+          }
+        }
+
+        
+        
+        if (!winData.isPrivate) {
+          
+          
+          PrivacyFilter.filterPrivateTabs(winData);
+          this.maybeSaveClosedWindow(winData);
+        }
+
+        
+        delete this._windows[aWindow.__SSi];
+        
+        
+        this.cleanUpWindow(aWindow, winData);
+
+        
+        this.saveStateDelayed();
+      });
+
+    } else {
+      this.cleanUpWindow(aWindow, winData);
     }
 
     for (let i = 0; i < tabbrowser.tabs.length; i++) {
       this.onTabRemove(aWindow, tabbrowser.tabs[i], true);
     }
+  },
 
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  cleanUpWindow(aWindow, winData) {
     
     DyingWindowCache.set(aWindow, winData);
 
@@ -1277,6 +1330,57 @@ var SessionStoreInternal = {
     MESSAGES.forEach(msg => mm.removeMessageListener(msg, this));
 
     delete aWindow.__SSi;
+  },
+
+  
+
+
+
+
+
+
+
+
+
+  maybeSaveClosedWindow(winData) {
+    if (RunState.isRunning) {
+      
+      let hasSaveableTabs = winData.tabs.some(this._shouldSaveTabState);
+
+      
+      
+      
+      
+      
+      
+      let isLastWindow =
+        Object.keys(this._windows).length == 1 &&
+        !this._closedWindows.some(win => win._shouldRestore || false);
+
+      
+      
+      let winIndex = this._closedWindows.indexOf(winData);
+      let alreadyStored = (winIndex != -1);
+      let shouldStore = (hasSaveableTabs || isLastWindow);
+
+      if (shouldStore && !alreadyStored) {
+        let index = this._closedWindows.findIndex(win => {
+          return win.closedAt < winData.closedAt;
+        });
+
+        
+        
+        if (index == -1) {
+          index = this._closedWindows.length;
+        }
+
+        
+        this._closedWindows.splice(index, 0, winData);
+        this._capClosedWindows();
+      } else if (!shouldStore && alreadyStored) {
+        this._closedWindows.splice(winIndex, 1);
+      }
+    }
   },
 
   
@@ -1625,6 +1729,7 @@ var SessionStoreInternal = {
     
     if (closedTab.permanentKey) {
       this._closedTabs.delete(closedTab.permanentKey);
+      this._closedWindowTabs.delete(closedTab.permanentKey);
       delete closedTab.permanentKey;
     }
 
@@ -2583,9 +2688,20 @@ var SessionStoreInternal = {
     return { windows: windows };
   },
 
+  
+
+
+
+
+
+
+
+
   _collectWindowData: function ssi_collectWindowData(aWindow) {
+    let tabMap = new Map();
+
     if (!this._isWindowLoaded(aWindow))
-      return;
+      return tabMap;
 
     let tabbrowser = aWindow.gBrowser;
     let tabs = tabbrowser.tabs;
@@ -2594,7 +2710,9 @@ var SessionStoreInternal = {
 
     
     for (let tab of tabs) {
-      tabsData.push(TabState.collect(tab));
+      let tabData = TabState.collect(tab);
+      tabMap.set(tab, tabData);
+      tabsData.push(tabData);
     }
     winData.selected = tabbrowser.mTabBox.selectedIndex + 1;
 
@@ -2607,6 +2725,7 @@ var SessionStoreInternal = {
         aWindow.__SS_lastSessionWindowID;
 
     DirtyWindows.remove(aWindow);
+    return tabMap;
   },
 
   
