@@ -401,10 +401,15 @@ RestyleManager::RestyleForEmptyChange(Element* aContainer)
 }
 
 void
-RestyleManager::RestyleForAppend(Element* aContainer,
+RestyleManager::RestyleForAppend(nsIContent* aContainer,
                                  nsIContent* aFirstNewContent)
 {
-  NS_ASSERTION(aContainer, "must have container for append");
+  
+  if (!aContainer->IsElement()) {
+    return;
+  }
+  Element* container = aContainer->AsElement();
+
 #ifdef DEBUG
   {
     for (nsIContent* cur = aFirstNewContent; cur; cur = cur->GetNextSibling()) {
@@ -414,15 +419,15 @@ RestyleManager::RestyleForAppend(Element* aContainer,
   }
 #endif
   uint32_t selectorFlags =
-    aContainer->GetFlags() & (NODE_ALL_SELECTOR_FLAGS &
-                              ~NODE_HAS_SLOW_SELECTOR_LATER_SIBLINGS);
+    container->GetFlags() & (NODE_ALL_SELECTOR_FLAGS &
+                             ~NODE_HAS_SLOW_SELECTOR_LATER_SIBLINGS);
   if (selectorFlags == 0)
     return;
 
   if (selectorFlags & NODE_HAS_EMPTY_SELECTOR) {
     
     bool wasEmpty = true; 
-    for (nsIContent* cur = aContainer->GetFirstChild();
+    for (nsIContent* cur = container->GetFirstChild();
          cur != aFirstNewContent;
          cur = cur->GetNextSibling()) {
       
@@ -435,13 +440,13 @@ RestyleManager::RestyleForAppend(Element* aContainer,
       }
     }
     if (wasEmpty) {
-      RestyleForEmptyChange(aContainer);
+      RestyleForEmptyChange(container);
       return;
     }
   }
 
   if (selectorFlags & NODE_HAS_SLOW_SELECTOR) {
-    PostRestyleEvent(aContainer, eRestyle_Subtree, nsChangeHint(0));
+    PostRestyleEvent(container, eRestyle_Subtree, nsChangeHint(0));
     
     return;
   }
@@ -485,20 +490,26 @@ RestyleSiblingsStartingWith(RestyleManager* aRestyleManager,
 
 
 void
-RestyleManager::RestyleForInsertOrChange(Element* aContainer,
+RestyleManager::RestyleForInsertOrChange(nsINode* aContainer,
                                          nsIContent* aChild)
 {
+  
+  if (!aContainer->IsElement()) {
+    return;
+  }
+  Element* container = aContainer->AsElement();
+
   NS_ASSERTION(!aChild->IsRootOfAnonymousSubtree(),
                "anonymous nodes should not be in child lists");
   uint32_t selectorFlags =
-    aContainer ? (aContainer->GetFlags() & NODE_ALL_SELECTOR_FLAGS) : 0;
+    container ? (container->GetFlags() & NODE_ALL_SELECTOR_FLAGS) : 0;
   if (selectorFlags == 0)
     return;
 
   if (selectorFlags & NODE_HAS_EMPTY_SELECTOR) {
     
     bool wasEmpty = true; 
-    for (nsIContent* child = aContainer->GetFirstChild();
+    for (nsIContent* child = container->GetFirstChild();
          child;
          child = child->GetNextSibling()) {
       if (child == aChild)
@@ -513,13 +524,13 @@ RestyleManager::RestyleForInsertOrChange(Element* aContainer,
       }
     }
     if (wasEmpty) {
-      RestyleForEmptyChange(aContainer);
+      RestyleForEmptyChange(container);
       return;
     }
   }
 
   if (selectorFlags & NODE_HAS_SLOW_SELECTOR) {
-    PostRestyleEvent(aContainer, eRestyle_Subtree, nsChangeHint(0));
+    PostRestyleEvent(container, eRestyle_Subtree, nsChangeHint(0));
     
     return;
   }
@@ -532,7 +543,7 @@ RestyleManager::RestyleForInsertOrChange(Element* aContainer,
   if (selectorFlags & NODE_HAS_EDGE_CHILD_SELECTOR) {
     
     bool passedChild = false;
-    for (nsIContent* content = aContainer->GetFirstChild();
+    for (nsIContent* content = container->GetFirstChild();
          content;
          content = content->GetNextSibling()) {
       if (content == aChild) {
@@ -549,7 +560,7 @@ RestyleManager::RestyleForInsertOrChange(Element* aContainer,
     }
     
     passedChild = false;
-    for (nsIContent* content = aContainer->GetLastChild();
+    for (nsIContent* content = container->GetLastChild();
          content;
          content = content->GetPreviousSibling()) {
       if (content == aChild) {
@@ -568,9 +579,16 @@ RestyleManager::RestyleForInsertOrChange(Element* aContainer,
 }
 
 void
-RestyleManager::ContentRemoved(Element* aContainer, nsIContent* aOldChild,
+RestyleManager::ContentRemoved(nsINode* aContainer,
+                               nsIContent* aOldChild,
                                nsIContent* aFollowingSibling)
 {
+  
+  if (!aContainer->IsElement()) {
+    return;
+  }
+  Element* container = aContainer->AsElement();
+
   if (aOldChild->IsRootOfAnonymousSubtree()) {
     
     
@@ -579,14 +597,14 @@ RestyleManager::ContentRemoved(Element* aContainer, nsIContent* aOldChild,
                "anonymous nodes should not be in child lists (bug 439258)");
   }
   uint32_t selectorFlags =
-    aContainer ? (aContainer->GetFlags() & NODE_ALL_SELECTOR_FLAGS) : 0;
+    container ? (container->GetFlags() & NODE_ALL_SELECTOR_FLAGS) : 0;
   if (selectorFlags == 0)
     return;
 
   if (selectorFlags & NODE_HAS_EMPTY_SELECTOR) {
     
     bool isEmpty = true; 
-    for (nsIContent* child = aContainer->GetFirstChild();
+    for (nsIContent* child = container->GetFirstChild();
          child;
          child = child->GetNextSibling()) {
       
@@ -599,13 +617,13 @@ RestyleManager::ContentRemoved(Element* aContainer, nsIContent* aOldChild,
       }
     }
     if (isEmpty) {
-      RestyleForEmptyChange(aContainer);
+      RestyleForEmptyChange(container);
       return;
     }
   }
 
   if (selectorFlags & NODE_HAS_SLOW_SELECTOR) {
-    PostRestyleEvent(aContainer, eRestyle_Subtree, nsChangeHint(0));
+    PostRestyleEvent(container, eRestyle_Subtree, nsChangeHint(0));
     
     return;
   }
@@ -618,7 +636,7 @@ RestyleManager::ContentRemoved(Element* aContainer, nsIContent* aOldChild,
   if (selectorFlags & NODE_HAS_EDGE_CHILD_SELECTOR) {
     
     bool reachedFollowingSibling = false;
-    for (nsIContent* content = aContainer->GetFirstChild();
+    for (nsIContent* content = container->GetFirstChild();
          content;
          content = content->GetNextSibling()) {
       if (content == aFollowingSibling) {
@@ -635,7 +653,7 @@ RestyleManager::ContentRemoved(Element* aContainer, nsIContent* aOldChild,
     }
     
     reachedFollowingSibling = (aFollowingSibling == nullptr);
-    for (nsIContent* content = aContainer->GetLastChild();
+    for (nsIContent* content = container->GetLastChild();
          content;
          content = content->GetPreviousSibling()) {
       if (content->IsElement()) {
