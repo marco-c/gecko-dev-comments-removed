@@ -931,6 +931,11 @@ pref("layout.accessiblecaret.enabled", false);
 #endif
 
 
+pref("layout.accessiblecaret.width", "22.0");
+pref("layout.accessiblecaret.height", "22.0");
+pref("layout.accessiblecaret.margin-left", "-11.5");
+
+
 pref("layout.accessiblecaret.bar.enabled", false);
 
 
