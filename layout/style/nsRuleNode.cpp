@@ -1315,7 +1315,7 @@ struct SetEnumValueHelper
   }
 
   DEFINE_ENUM_CLASS_SETTER(StyleBoxSizing, Content, Border)
-  DEFINE_ENUM_CLASS_SETTER(StyleFillRule, Nonzero, Evenodd)
+  DEFINE_ENUM_CLASS_SETTER(StyleFillRule, NonZero, EvenOdd)
   DEFINE_ENUM_CLASS_SETTER(StyleFloat, None_, InlineEnd)
   DEFINE_ENUM_CLASS_SETTER(StyleFloatEdge, ContentBox, MarginBox)
   DEFINE_ENUM_CLASS_SETTER(StyleUserFocus, None_, SelectMenu)
@@ -1521,7 +1521,7 @@ SetFactor(const nsCSSValue& aValue, float& aField, RuleNodeCacheConditions& aCon
 }
 
 void*
-nsRuleNode::operator new(size_t sz, nsPresContext* aPresContext) CPP_THROW_NEW
+nsRuleNode::operator new(size_t sz, nsPresContext* aPresContext)
 {
   
   return aPresContext->PresShell()->AllocateByObjectID(eArenaObjectID_nsRuleNode, sz);
@@ -7252,9 +7252,7 @@ nsRuleNode::ComputeBackgroundData(void* aStartStruct,
 
   
   nsStyleImageLayers::Position::PositionCoord initialPositionCoord;
-  initialPositionCoord.mPercent =
-    nsStyleImageLayers::Position::GetInitialValue(
-      nsStyleImageLayers::LayerType::Background);
+  initialPositionCoord.mPercent = 0.0f;
   initialPositionCoord.mLength = 0;
   initialPositionCoord.mHasPercent = true;
 
@@ -9374,7 +9372,7 @@ nsRuleNode::ComputeSVGData(void* aStartStruct,
            svg->mClipRule, conditions,
            SETVAL_ENUMERATED | SETVAL_UNSET_INHERIT,
            parentSVG->mClipRule,
-           StyleFillRule::Nonzero);
+           StyleFillRule::NonZero);
 
   
   SetValue(*aRuleData->ValueForColorInterpolation(),
@@ -9408,7 +9406,7 @@ nsRuleNode::ComputeSVGData(void* aStartStruct,
            svg->mFillRule, conditions,
            SETVAL_ENUMERATED | SETVAL_UNSET_INHERIT,
            parentSVG->mFillRule,
-           StyleFillRule::Nonzero);
+           StyleFillRule::NonZero);
 
   
   const nsCSSValue* markerEndValue = aRuleData->ValueForMarkerEnd();
@@ -10030,9 +10028,7 @@ nsRuleNode::ComputeSVGResetData(void* aStartStruct,
 
   
   nsStyleImageLayers::Position::PositionCoord initialPositionCoord;
-  initialPositionCoord.mPercent =
-    nsStyleImageLayers::Position::GetInitialValue(
-      nsStyleImageLayers::LayerType::Mask);
+  initialPositionCoord.mPercent = 0.0f;
   initialPositionCoord.mLength = 0;
   initialPositionCoord.mHasPercent = true;
 

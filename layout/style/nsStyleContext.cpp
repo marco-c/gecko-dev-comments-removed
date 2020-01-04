@@ -1338,7 +1338,7 @@ void nsStyleContext::List(FILE* out, int32_t aIndent, bool aListDescendants)
 
 
 void*
-nsStyleContext::operator new(size_t sz, nsPresContext* aPresContext) CPP_THROW_NEW
+nsStyleContext::operator new(size_t sz, nsPresContext* aPresContext)
 {
   
   return aPresContext->PresShell()->
