@@ -71,6 +71,10 @@ public:
 
   HTMLCanvasElement* GetCanvas() const
   {
+    if (mCanvasElement->IsInNativeAnonymousSubtree()) {
+      return nullptr;
+    }
+
     
     return mCanvasElement->GetOriginalCanvas();
   }
