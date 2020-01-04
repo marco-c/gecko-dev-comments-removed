@@ -83,13 +83,12 @@ Result
 IsCertBuiltInRoot(CERTCertificate* cert, bool& result)
 {
   result = false;
+#ifdef DEBUG
   nsCOMPtr<nsINSSComponent> component(do_GetService(PSM_COMPONENT_CONTRACTID));
   if (!component) {
     return Result::FATAL_ERROR_LIBRARY_FAILURE;
   }
-  nsresult rv;
-#ifdef DEBUG
-  rv = component->IsCertTestBuiltInRoot(cert, result);
+  nsresult rv = component->IsCertTestBuiltInRoot(cert, result);
   if (NS_FAILED(rv)) {
     return Result::FATAL_ERROR_LIBRARY_FAILURE;
   }
@@ -97,31 +96,23 @@ IsCertBuiltInRoot(CERTCertificate* cert, bool& result)
     return Success;
   }
 #endif 
-  nsAutoString modName;
-  rv = component->GetPIPNSSBundleString("RootCertModuleName", modName);
-  if (NS_FAILED(rv)) {
-    return Result::FATAL_ERROR_LIBRARY_FAILURE;
+  AutoSECMODListReadLock lock;
+  for (SECMODModuleList* list = SECMOD_GetDefaultModuleList(); list;
+       list = list->next) {
+    for (int i = 0; i < list->module->slotCount; i++) {
+      PK11SlotInfo* slot = list->module->slots[i];
+      
+      
+      
+      
+      
+      if (PK11_IsPresent(slot) && PK11_HasRootCerts(slot) &&
+          PK11_FindCertInSlot(slot, cert, nullptr) != CK_INVALID_HANDLE) {
+        result = true;
+        return Success;
+      }
+    }
   }
-  NS_ConvertUTF16toUTF8 modNameUTF8(modName);
-  UniqueSECMODModule builtinRootsModule(SECMOD_FindModule(modNameUTF8.get()));
-  
-  if (!builtinRootsModule) {
-    return Success;
-  }
-  UniquePK11SlotInfo builtinSlot(SECMOD_FindSlot(builtinRootsModule.get(),
-                                                 "Builtin Object Token"));
-  
-  
-  
-  if (!builtinSlot) {
-    return Success;
-  }
-  
-  
-  
-  CK_OBJECT_HANDLE handle = PK11_FindCertInSlot(builtinSlot.get(), cert,
-                                                nullptr);
-  result = (handle != CK_INVALID_HANDLE);
   return Success;
 }
 
