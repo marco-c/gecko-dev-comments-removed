@@ -31,6 +31,7 @@
 
 #include "mozilla/dom/File.h"
 #include "mozilla/dom/workers/Workers.h"
+#include "mozilla/unused.h"
 
 #include "Fetch.h"
 #include "InternalRequest.h"
@@ -49,6 +50,7 @@ FetchDriver::FetchDriver(InternalRequest* aRequest, nsIPrincipal* aPrincipal,
   , mLoadGroup(aLoadGroup)
   , mRequest(aRequest)
   , mFetchRecursionCount(0)
+  , mCORSFlagEverSet(false)
   , mResponseAvailableCalled(false)
 {
 }
@@ -94,8 +96,8 @@ FetchDriver::Fetch(bool aCORSFlag)
   MOZ_CRASH("Synchronous fetch not supported");
 }
 
-nsresult
-FetchDriver::ContinueFetch(bool aCORSFlag)
+FetchDriver::MainFetchOp
+FetchDriver::SetTaintingAndGetNextOp(bool aCORSFlag)
 {
   workers::AssertIsOnMainThread();
 
@@ -105,7 +107,7 @@ FetchDriver::ContinueFetch(bool aCORSFlag)
   nsresult rv = NS_NewURI(getter_AddRefs(requestURI), url,
                           nullptr, nullptr);
   if (NS_WARN_IF(NS_FAILED(rv))) {
-    return FailWithNetworkError();
+    return MainFetchOp(NETWORK_ERROR);
   }
 
   
@@ -123,7 +125,7 @@ FetchDriver::ContinueFetch(bool aCORSFlag)
                                  nsContentUtils::GetSecurityManager());
   if (NS_WARN_IF(NS_FAILED(rv) || NS_CP_REJECTED(shouldLoad))) {
     
-    return FailWithNetworkError();
+    return MainFetchOp(NETWORK_ERROR);
   }
 
   
@@ -132,42 +134,82 @@ FetchDriver::ContinueFetch(bool aCORSFlag)
   nsAutoCString scheme;
   rv = requestURI->GetScheme(scheme);
   if (NS_WARN_IF(NS_FAILED(rv))) {
-    return FailWithNetworkError();
+    return MainFetchOp(NETWORK_ERROR);
   }
 
-  rv = mPrincipal->CheckMayLoad(requestURI, false , false );
+  
+  
+  
+  rv = mPrincipal->CheckMayLoad(requestURI, false ,
+                                false );
   if ((!aCORSFlag && NS_SUCCEEDED(rv)) ||
       (scheme.EqualsLiteral("data") && mRequest->SameOriginDataURL()) ||
       scheme.EqualsLiteral("about")) {
-    return BasicFetch();
+    return MainFetchOp(BASIC_FETCH);
   }
 
+  
   if (mRequest->Mode() == RequestMode::Same_origin) {
-    return FailWithNetworkError();
+    return MainFetchOp(NETWORK_ERROR);
   }
 
+  
   if (mRequest->Mode() == RequestMode::No_cors) {
     mRequest->SetResponseTainting(InternalRequest::RESPONSETAINT_OPAQUE);
-    return BasicFetch();
+    return MainFetchOp(BASIC_FETCH);
   }
 
+  
   if (!scheme.EqualsLiteral("http") && !scheme.EqualsLiteral("https")) {
+    return MainFetchOp(NETWORK_ERROR);
+  }
+
+  
+  
+  
+  if (mRequest->Mode() == RequestMode::Cors_with_forced_preflight ||
+      (mRequest->UnsafeRequest() && (!mRequest->HasSimpleMethod() ||
+                                     !mRequest->Headers()->HasOnlySimpleHeaders()))) {
+    mRequest->SetResponseTainting(InternalRequest::RESPONSETAINT_CORS);
+    mRequest->SetRedirectMode(RequestRedirect::Error);
+
+    
+    
+    
+    
+    
+    
+
+    return MainFetchOp(HTTP_FETCH, true , true );
+  }
+
+  
+  mRequest->SetResponseTainting(InternalRequest::RESPONSETAINT_CORS);
+  return MainFetchOp(HTTP_FETCH, true , false );
+}
+
+nsresult
+FetchDriver::ContinueFetch(bool aCORSFlag)
+{
+  workers::AssertIsOnMainThread();
+
+  MainFetchOp nextOp = SetTaintingAndGetNextOp(aCORSFlag);
+
+  if (nextOp.mType == NETWORK_ERROR) {
     return FailWithNetworkError();
   }
 
-  bool corsPreflight = false;
-  if (mRequest->Mode() == RequestMode::Cors_with_forced_preflight ||
-      (mRequest->UnsafeRequest() && (!mRequest->HasSimpleMethod() || !mRequest->Headers()->HasOnlySimpleHeaders()))) {
-    corsPreflight = true;
+  if (nextOp.mType == BASIC_FETCH) {
+    return BasicFetch();
   }
-  
-  
-  
-  MOZ_ASSERT_IF(mRequest->Mode() == RequestMode::No_cors, !corsPreflight);
 
-  mRequest->SetResponseTainting(InternalRequest::RESPONSETAINT_CORS);
-  return HttpFetch(true , corsPreflight);
-}
+  if (nextOp.mType == HTTP_FETCH) {
+    return HttpFetch(nextOp.mCORSFlag, nextOp.mCORSPreflightFlag);
+  }
+
+  MOZ_ASSERT_UNREACHABLE("Unexpected main fetch operation!");
+  return FailWithNetworkError();
+ }
 
 nsresult
 FetchDriver::BasicFetch()
@@ -331,6 +373,11 @@ FetchDriver::HttpFetch(bool aCORSFlag, bool aCORSPreflightFlag, bool aAuthentica
   mResponse = nullptr;
   nsresult rv;
 
+  
+  
+  
+  mCORSFlagEverSet = mCORSFlagEverSet || aCORSFlag;
+
   nsCOMPtr<nsIIOService> ios = do_GetIOService(&rv);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     FailWithNetworkError();
@@ -487,6 +534,13 @@ FetchDriver::HttpFetch(bool aCORSFlag, bool aCORSPreflightFlag, bool aAuthentica
     
     
     
+
+    nsCOMPtr<nsIHttpChannelInternal> internalChan = do_QueryInterface(httpChan);
+
+    
+    
+    internalChan->SetCorsMode(static_cast<uint32_t>(mRequest->Mode()));
+    internalChan->SetRedirectMode(static_cast<uint32_t>(mRequest->GetRedirectMode()));
   }
 
   
@@ -537,7 +591,7 @@ FetchDriver::HttpFetch(bool aCORSFlag, bool aCORSPreflightFlag, bool aAuthentica
   
   
   
-  if (mRequest->Mode() != RequestMode::No_cors) {
+  if (mRequest->Mode() == RequestMode::Cors) {
     
     
     
@@ -615,6 +669,9 @@ FetchDriver::BeginAndGetFilteredResponse(InternalResponse* aResponse, nsIURI* aF
       break;
     case InternalRequest::RESPONSETAINT_OPAQUE:
       filteredResponse = aResponse->OpaqueResponse();
+      break;
+    case InternalRequest::RESPONSETAINT_OPAQUEREDIRECT:
+      filteredResponse = aResponse->OpaqueRedirectResponse();
       break;
     default:
       MOZ_CRASH("Unexpected case");
@@ -696,14 +753,21 @@ FetchDriver::OnStartRequest(nsIRequest* aRequest,
                             nsISupports* aContext)
 {
   workers::AssertIsOnMainThread();
-  MOZ_ASSERT(!mPipeOutputStream);
-  MOZ_ASSERT(mObserver);
+
+  
+  
+  
+
   nsresult rv;
   aRequest->GetStatus(&rv);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     FailWithNetworkError();
     return rv;
   }
+
+  
+  MOZ_ASSERT(!mPipeOutputStream);
+  MOZ_ASSERT(mObserver);
 
   nsRefPtr<InternalResponse> response;
   nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(aRequest);
@@ -840,8 +904,19 @@ FetchDriver::AsyncOnChannelRedirect(nsIChannel* aOldChannel,
   nsresult rv;
 
   
+  if (NS_WARN_IF(mRequest->GetRedirectMode() == RequestRedirect::Error)) {
+    aOldChannel->Cancel(NS_BINDING_FAILED);
+    return NS_BINDING_FAILED;
+  }
+
   
   
+  
+
+  
+  
+  
+
   
   
   
@@ -850,21 +925,36 @@ FetchDriver::AsyncOnChannelRedirect(nsIChannel* aOldChannel,
   
   
   
-  
-  
-  
-  
-  
-  
-  
-  if (!NS_IsInternalSameURIRedirect(aOldChannel, aNewChannel, aFlags)) {
-    rv = DoesNotRequirePreflight(aNewChannel);
-    if (NS_FAILED(rv)) {
-      NS_WARNING("FetchDriver::OnChannelRedirect: "
-                 "DoesNotRequirePreflight returned failure");
-      return rv;
-    }
+  if (mRequest->GetRedirectMode() == RequestRedirect::Manual) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    mRequest->SetResponseTainting(InternalRequest::RESPONSETAINT_OPAQUEREDIRECT);
+    unused << OnStartRequest(aOldChannel, nullptr);
+    unused << OnStopRequest(aOldChannel, nullptr, NS_OK);
+
+    aOldChannel->Cancel(NS_BINDING_FAILED);
+
+    return NS_BINDING_FAILED;
   }
+
+  
+  
+  MOZ_ASSERT(mRequest->GetRedirectMode() == RequestRedirect::Follow);
+
+  
+  
+  
 
   mRedirectCallback = aCallback;
   mOldRedirectChannel = aOldChannel;
@@ -978,6 +1068,22 @@ FetchDriver::OnRedirectVerifyCallback(nsresult aResult)
 
   if (NS_FAILED(aResult)) {
     mOldRedirectChannel->Cancel(aResult);
+  }
+
+  
+  MainFetchOp nextOp = SetTaintingAndGetNextOp(mCORSFlagEverSet);
+
+  if (nextOp.mType == NETWORK_ERROR) {
+    
+    aResult = NS_ERROR_DOM_BAD_URI;
+    mOldRedirectChannel->Cancel(aResult);
+  } else {
+    
+    
+    
+    MOZ_ASSERT(nextOp.mType == BASIC_FETCH || nextOp.mType == HTTP_FETCH);
+    MOZ_ASSERT_IF(mCORSFlagEverSet, nextOp.mType == HTTP_FETCH);
+    MOZ_ASSERT_IF(mCORSFlagEverSet, nextOp.mCORSFlag);
   }
 
   mOldRedirectChannel = nullptr;
