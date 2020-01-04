@@ -102,10 +102,10 @@ global.IconDetails = {
 
   
   
-  getURL(icons, window, extension) {
+  getURL(icons, window, extension, size = 18) {
     const DEFAULT = "chrome://browser/content/extension.svg";
 
-    return AddonManager.getPreferredIconURL({icons: icons}, 18, window) || DEFAULT;
+    return AddonManager.getPreferredIconURL({icons: icons}, size, window) || DEFAULT;
   },
 
   convertImageDataToPNG(imageData, context) {
