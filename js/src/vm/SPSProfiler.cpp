@@ -391,7 +391,7 @@ void
 ProfileEntry::trace(JSTracer* trc)
 {
     if (isJs()) {
-        JSScript* s = script();
+        JSScript* s = rawScript();
         TraceNullableRoot(trc, &s, "ProfileEntry script");
         spOrScript = s;
     }
@@ -482,18 +482,43 @@ SPSBaselineOSRMarker::~SPSBaselineOSRMarker()
     entry.unsetOSR();
 }
 
+JSScript*
+ProfileEntry::script() const volatile
+{
+    MOZ_ASSERT(isJs());
+    auto script = reinterpret_cast<JSScript*>(spOrScript);
+    if (!script)
+        return nullptr;
+
+    
+    
+    
+    JSRuntime* rt = script->zoneFromAnyThread()->runtimeFromAnyThread();
+    if (!rt->isProfilerSamplingEnabled())
+        return nullptr;
+
+    MOZ_ASSERT(!IsForwarded(script));
+    return script;
+}
+
 JS_FRIEND_API(jsbytecode*)
 ProfileEntry::pc() const volatile
 {
     MOZ_ASSERT(isJs());
-    return lineOrPc == NullPCOffset ? nullptr : script()->offsetToPC(lineOrPc);
+    if (lineOrPcOffset == NullPCOffset)
+        return nullptr;
+
+    JSScript* script = this->script();
+    return script ? script->offsetToPC(lineOrPcOffset) : nullptr;
 }
 
 JS_FRIEND_API(void)
 ProfileEntry::setPC(jsbytecode* pc) volatile
 {
     MOZ_ASSERT(isJs());
-    lineOrPc = pc == nullptr ? NullPCOffset : script()->pcToOffset(pc);
+    JSScript* script = this->script();
+    MOZ_ASSERT(script); 
+    lineOrPcOffset = pc == nullptr ? NullPCOffset : script->pcToOffset(pc);
 }
 
 JS_FRIEND_API(void)

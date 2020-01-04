@@ -666,19 +666,22 @@ void addPseudoEntry(volatile StackEntry &entry, ThreadProfile &aProfile,
     addDynamicTag(aProfile, 'c', sampleLabel);
 #ifndef SPS_STANDALONE
     if (entry.isJs()) {
-      if (!entry.pc()) {
-        
-        MOZ_ASSERT(&entry == &stack->mStack[stack->stackSize() - 1]);
-        
-        if (lastpc) {
-          jsbytecode *jspc = js::ProfilingGetPC(stack->mContext, entry.script(),
-                                                lastpc);
-          if (jspc) {
-            lineno = JS_PCToLineNumber(entry.script(), jspc);
+      JSScript* script = entry.script();
+      if (script) {
+        if (!entry.pc()) {
+          
+          MOZ_ASSERT(&entry == &stack->mStack[stack->stackSize() - 1]);
+          
+          if (lastpc) {
+            jsbytecode *jspc = js::ProfilingGetPC(stack->mContext, script,
+                                                  lastpc);
+            if (jspc) {
+              lineno = JS_PCToLineNumber(script, jspc);
+            }
           }
+        } else {
+          lineno = JS_PCToLineNumber(script, entry.pc());
         }
-      } else {
-        lineno = JS_PCToLineNumber(entry.script(), entry.pc());
       }
     } else {
       lineno = entry.line();
