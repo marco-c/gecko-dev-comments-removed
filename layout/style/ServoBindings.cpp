@@ -231,24 +231,18 @@ Gecko_SetNodeData(RawGeckoNode* aNode, ServoNodeData* aData)
 nsIAtom*
 Gecko_Atomize(const char* aString, uint32_t aLength)
 {
-  
-  MOZ_ASSERT(NS_IsMainThread());
   return NS_Atomize(nsDependentCSubstring(aString, aLength)).take();
 }
 
 void
 Gecko_AddRefAtom(nsIAtom* aAtom)
 {
-  
-  MOZ_ASSERT(NS_IsMainThread());
   NS_ADDREF(aAtom);
 }
 
 void
 Gecko_ReleaseAtom(nsIAtom* aAtom)
 {
-  
-  MOZ_ASSERT(NS_IsMainThread());
   NS_RELEASE(aAtom);
 }
 
