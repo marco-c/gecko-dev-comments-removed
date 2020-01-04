@@ -24,11 +24,6 @@
 #include "mozilla/Services.h"
 #include "nsThreadUtils.h"
 
-#ifdef MOZ_CRASHREPORTER
-#include "nsICrashReporter.h"
-#include "nsExceptionHandler.h"
-#endif
-
 #include "mozilla/unused.h"
 #include "mozilla/MathAlgorithms.h"
 #include "mozilla/UniquePtr.h"
@@ -47,21 +42,6 @@ using namespace mozilla::widget;
 extern "C" {
 
 
-
-NS_EXPORT void JNICALL
-Java_org_mozilla_gecko_GeckoAppShell_reportJavaCrash(JNIEnv *jenv, jclass, jstring jStackTrace)
-{
-#ifdef MOZ_CRASHREPORTER
-    const nsJNICString stackTrace(jStackTrace, jenv);
-    if (NS_WARN_IF(NS_FAILED(CrashReporter::AnnotateCrashReport(
-            NS_LITERAL_CSTRING("JavaStackTrace"), stackTrace)))) {
-        
-        
-        return;
-    }
-#endif 
-    MOZ_CRASH("Uncaught Java exception");
-}
 
 NS_EXPORT void JNICALL
 Java_org_mozilla_gecko_GeckoAppShell_invalidateAndScheduleComposite(JNIEnv*, jclass)
