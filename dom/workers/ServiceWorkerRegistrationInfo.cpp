@@ -220,9 +220,11 @@ ServiceWorkerRegistrationInfo::TryToActivateAsync()
 void
 ServiceWorkerRegistrationInfo::TryToActivate()
 {
-  if (!IsControllingDocuments() ||
-      
-      (mWaitingWorker && mWaitingWorker->SkipWaitingFlag())) {
+  AssertIsOnMainThread();
+  bool controlling = IsControllingDocuments();
+  bool skipWaiting = mWaitingWorker && mWaitingWorker->SkipWaitingFlag();
+  bool idle = !mActiveWorker || mActiveWorker->WorkerPrivate()->IsIdle();
+  if (idle && (!controlling || skipWaiting)) {
     Activate();
   }
 }
