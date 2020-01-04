@@ -51,7 +51,7 @@ struct SurfaceDescriptorX11 {
 
   MOZ_INIT_OUTSIDE_CTOR Drawable mId;
   MOZ_INIT_OUTSIDE_CTOR XID mFormat; 
-  gfx::IntSize mSize;
+  MOZ_INIT_OUTSIDE_CTOR gfx::IntSize mSize;
   MOZ_INIT_OUTSIDE_CTOR Drawable mGLXPixmap; 
 };
 
