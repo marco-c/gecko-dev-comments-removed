@@ -30,7 +30,7 @@ class WasmInstanceObject;
 
 namespace wasm {
 
-struct ExportMap;
+class ExportMap;
 
 
 
