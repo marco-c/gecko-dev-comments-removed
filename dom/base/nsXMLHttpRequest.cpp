@@ -2761,18 +2761,23 @@ nsXMLHttpRequest::Send(nsIVariant* aVariant, const Nullable<RequestBody>& aBody)
   
   
   
-  
-  
-  
-  
+  if (method.EqualsLiteral("POST")) {
+    AddLoadFlags(mChannel,
+                 nsICachingChannel::LOAD_BYPASS_LOCAL_CACHE |
+                 nsIRequest::INHIBIT_CACHING);
+  } else {
+    
+    
+    
+    
+    
+    
+    
+    
 
-  AddLoadFlags(mChannel,
-               nsICachingChannel::LOAD_BYPASS_LOCAL_CACHE_IF_BUSY);
-
-  
-  
-  
-  
+    AddLoadFlags(mChannel,
+                 nsICachingChannel::LOAD_BYPASS_LOCAL_CACHE_IF_BUSY);
+  }
 
   
   
