@@ -38,7 +38,6 @@ public:
     }
     return "H264Converter decoder (pending)";
   }
-  void SetSeekThreshold(const media::TimeUnit& aTime) override;
 
   
   static bool IsH264(const TrackInfo& aConfig);
