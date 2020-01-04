@@ -695,6 +695,9 @@ public:
   static const KTableValue kAlignLegacy[];           
   static const KTableValue kAlignLegacyPosition[];   
   static const KTableValue kAlignAutoStretchBaseline[]; 
+  static const KTableValue kAlignAutoBaseline[]; 
+  static const KTableValue kAlignContentDistribution[]; 
+  static const KTableValue kAlignContentPosition[]; 
   static const KTableValue kAlignContentKTable[];
   static const KTableValue kAlignItemsKTable[];
   static const KTableValue kAlignSelfKTable[];

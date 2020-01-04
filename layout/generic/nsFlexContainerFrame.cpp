@@ -3775,7 +3775,9 @@ nsFlexContainerFrame::DoFlexLayout(nsPresContext*           aPresContext,
 
     
     
-    line->PositionItemsInMainAxis(aReflowState.mStylePosition->mJustifyContent,
+    auto justifyContent =
+      aReflowState.mStylePosition->ComputedJustifyContent(aReflowState.mStyleDisplay);
+    line->PositionItemsInMainAxis(justifyContent,
                                   aContentBoxMainSize,
                                   aAxisTracker);
 

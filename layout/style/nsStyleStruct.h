@@ -1400,6 +1400,12 @@ struct nsStylePosition {
 
 
 
+  uint16_t ComputedJustifyContent(const nsStyleDisplay* aDisplay) const;
+
+  
+
+
+
   uint8_t ComputedJustifyItems(const nsStyleDisplay* aDisplay,
                                nsStyleContext* aParent) const;
 
@@ -1434,12 +1440,12 @@ private:
   uint8_t MapLeftRightToStart(uint8_t aAlign, mozilla::LogicalAxis aAxis,
                               const nsStyleDisplay* aDisplay) const;
 
+  uint16_t      mJustifyContent;        
   uint8_t       mJustifyItems;          
   uint8_t       mJustifySelf;           
 public:
   uint8_t       mFlexDirection;         
   uint8_t       mFlexWrap;              
-  uint8_t       mJustifyContent;        
   uint8_t       mObjectFit;             
   int32_t       mOrder;                 
   float         mFlexGrow;              

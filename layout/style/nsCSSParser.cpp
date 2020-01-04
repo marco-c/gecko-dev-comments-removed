@@ -940,6 +940,8 @@ protected:
                                  const KTableValue aTable[]);
   bool ParseJustifyItems();
   bool ParseJustifySelf();
+  
+  bool ParseAlignJustifyContent(nsCSSProperty aPropID);
 
   
   bool ParseRect(nsCSSProperty aPropID);
@@ -9468,6 +9470,46 @@ CSSParserImpl::ParseJustifySelf()
 }
 
 
+
+
+bool
+CSSParserImpl::ParseAlignJustifyContent(nsCSSProperty aPropID)
+{
+  nsCSSValue value;
+  if (!ParseSingleTokenVariant(value, VARIANT_INHERIT, nullptr)) {
+    if (!ParseEnum(value, nsCSSProps::kAlignAutoBaseline)) {
+      nsCSSValue fallbackValue;
+      if (!ParseEnum(value, nsCSSProps::kAlignContentDistribution)) {
+        if (!ParseAlignJustifyPosition(fallbackValue,
+                                       nsCSSProps::kAlignContentPosition) ||
+            fallbackValue.GetUnit() == eCSSUnit_Null) {
+          return false;
+        }
+        
+        if (!ParseEnum(value, nsCSSProps::kAlignContentDistribution)) {
+          
+          value = fallbackValue;
+          fallbackValue.Reset();
+        }
+      } else {
+        
+        if (!ParseAlignJustifyPosition(fallbackValue,
+                                       nsCSSProps::kAlignContentPosition)) {
+          return false;
+        }
+      }
+      if (fallbackValue.GetUnit() != eCSSUnit_Null) {
+        auto fallback = fallbackValue.GetIntValue();
+        value.SetIntValue(value.GetIntValue() | (fallback << 8),
+                          eCSSUnit_Enumerated);
+      }
+    }
+  }
+  AppendValue(aPropID, value);
+  return true;
+}
+
+
 bool
 CSSParserImpl::ParseColorStop(nsCSSValueGradient* aGradient)
 {
@@ -10590,6 +10632,8 @@ CSSParserImpl::ParsePropertyByFunction(nsCSSProperty aPropID)
     return ParseGridArea();
   case eCSSProperty_image_region:
     return ParseRect(eCSSProperty_image_region);
+  case eCSSProperty_justify_content:
+    return ParseAlignJustifyContent(aPropID);
   case eCSSProperty_justify_items:
     return ParseJustifyItems();
   case eCSSProperty_justify_self:
