@@ -1757,7 +1757,7 @@ HttpChannelChild::AsyncOpen(nsIStreamListener *listener, nsISupports *aContext)
   
   
   
-  
+  gHttpHandler->OnOpeningRequest(this);
 
   mIsPending = true;
   mWasOpened = true;
