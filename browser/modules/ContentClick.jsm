@@ -81,7 +81,8 @@ var ContentClick = {
                    referrerURI: browser.documentURI,
                    referrerPolicy: json.referrerPolicy,
                    noReferrer: json.noReferrer,
-                   allowMixedContent: json.allowMixedContent };
+                   allowMixedContent: json.allowMixedContent,
+                   isContentWindowPrivate: json.isContentWindowPrivate};
 
     
     if (json.originAttributes.userContextId) {
