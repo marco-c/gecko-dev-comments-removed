@@ -3372,7 +3372,7 @@ APZCTreeManager* AsyncPanZoomController::GetApzcTreeManager() const {
   return mTreeManager;
 }
 
-void AsyncPanZoomController::ZoomToRect(CSSRect aRect) {
+void AsyncPanZoomController::ZoomToRect(CSSRect aRect, const uint32_t aFlags) {
   if (!aRect.IsFinite()) {
     NS_WARNING("ZoomToRect got called with a non-finite rect; ignoring...");
     return;
@@ -3413,16 +3413,22 @@ void AsyncPanZoomController::ZoomToRect(CSSRect aRect) {
       targetZoom = CSSToParentLayerScale(std::min(compositionBounds.width / aRect.width,
                                                   compositionBounds.height / aRect.height));
     }
+
     
     
     
     
     
-    bool zoomOut = false;
-    if (aRect.IsEmpty() ||
+    bool zoomOut;
+    if (aFlags & DISABLE_ZOOM_OUT) {
+      zoomOut = false;
+    } else {
+      zoomOut = aRect.IsEmpty() ||
         (currentZoom == localMaxZoom && targetZoom >= localMaxZoom) ||
-        (currentZoom == localMinZoom && targetZoom <= localMinZoom)) {
-      zoomOut = true;
+        (currentZoom == localMinZoom && targetZoom <= localMinZoom);
+    }
+
+    if (zoomOut) {
       CSSSize compositedSize = mFrameMetrics.CalculateCompositedSizeInCssPixels();
       float y = scrollOffset.y;
       float newHeight =
@@ -3440,6 +3446,9 @@ void AsyncPanZoomController::ZoomToRect(CSSRect aRect) {
 
     targetZoom.scale = clamped(targetZoom.scale, localMinZoom.scale, localMaxZoom.scale);
     FrameMetrics endZoomToMetrics = mFrameMetrics;
+    if (aFlags & PAN_INTO_VIEW_ONLY) {
+      targetZoom = currentZoom;
+    }
     endZoomToMetrics.SetZoom(CSSToParentLayerScale2D(targetZoom));
 
     

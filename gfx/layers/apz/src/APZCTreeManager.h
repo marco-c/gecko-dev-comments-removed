@@ -41,6 +41,12 @@ enum AllowedTouchBehavior {
   UNKNOWN =            1 << 4
 };
 
+enum ZoomToRectBehavior : uint32_t {
+  DEFAULT_BEHAVIOR =   0,
+  DISABLE_ZOOM_OUT =   1 << 0,
+  PAN_INTO_VIEW_ONLY = 1 << 1
+};
+
 class Layer;
 class AsyncDragMetrics;
 class AsyncPanZoomController;
@@ -206,8 +212,10 @@ public:
 
 
 
+
   void ZoomToRect(const ScrollableLayerGuid& aGuid,
-                  const CSSRect& aRect);
+                  const CSSRect& aRect,
+                  const uint32_t aFlags = DEFAULT_BEHAVIOR);
 
   
 
