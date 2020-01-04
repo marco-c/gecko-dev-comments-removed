@@ -22,6 +22,8 @@ var AboutReaderListener = {
 
   _articlePromise: null,
 
+  _isLeavingReaderMode: false,
+
   init: function() {
     addEventListener("AboutReaderContentLoaded", this, false, true);
     addEventListener("DOMContentLoaded", this, false);
@@ -39,6 +41,7 @@ var AboutReaderListener = {
           this._articlePromise = ReaderMode.parseDocument(content.document).catch(Cu.reportError);
           ReaderMode.enterReaderMode(docShell, content);
         } else {
+          this._isLeavingReaderMode = true;
           ReaderMode.leaveReaderMode(docShell, content);
         }
         break;
@@ -75,7 +78,13 @@ var AboutReaderListener = {
         break;
 
       case "pagehide":
-        sendAsyncMessage("Reader:UpdateReaderButton", { isArticle: false });
+        
+        
+        
+        sendAsyncMessage("Reader:UpdateReaderButton", { isArticle: this._isLeavingReaderMode });
+        if (this._isLeavingReaderMode) {
+          this._isLeavingReaderMode = false;
+        }
         break;
 
       case "pageshow":
