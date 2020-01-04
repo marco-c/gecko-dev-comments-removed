@@ -69,9 +69,11 @@ for (var constructor of constructors) {
     }, TypeError);
 
     
-    assertEq(constructor.of.call(function*(len) {
+    assertThrowsInstanceOf(() => {
+      constructor.of.call(function*(len) {
         return len;
-    }, "a", "b", "c").next().value, 3);
+      }, "a")
+    }, TypeError);
 
     
     assertThrowsInstanceOf(() => {

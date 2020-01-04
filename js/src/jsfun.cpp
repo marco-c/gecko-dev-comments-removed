@@ -441,7 +441,8 @@ fun_resolve(JSContext* cx, HandleObject obj, HandleId id, bool* resolvedp)
 
 
 
-        if (fun->isBuiltin() || !fun->isConstructor())
+
+        if (fun->isBuiltin() || (!fun->isConstructor() && !fun->isGenerator()))
             return true;
 
         if (!ResolveInterpretedFunctionPrototype(cx, fun, id))

@@ -77,11 +77,6 @@ assertEq(a.b(1).next().value, 1);
 
 
 a = {*g() { yield 1; }}
-it = new a.g;
-next = it.next();
-assertEq(next.done, false);
-assertEq(next.value, 1);
-next = it.next();
-assertEq(next.done, true);
+assertThrowsInstanceOf(() => { new a.g }, TypeError);
 
 reportCompare(0, 0, "ok");
