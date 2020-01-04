@@ -52,7 +52,6 @@ add_task(function* test_empty_password() {
 
 
 
-
 add_task(function* test_toggle_password() {
   yield BrowserTestUtils.withNewTab({
       gBrowser,
@@ -84,4 +83,40 @@ add_task(function* test_toggle_password() {
       Assert.ok(!toggleCheckbox.checked);
       Assert.equal(passwordTextbox.type, "password", "Password textbox changed to * text");
     });
+});
+
+
+
+
+
+add_task(function* test_checkbox_disabled_if_has_master_password() {
+  yield BrowserTestUtils.withNewTab({
+      gBrowser,
+      url: "https://example.com/browser/toolkit/components/" +
+           "passwordmgr/test/browser/form_basic.html",
+    }, function* (browser) {
+      
+      
+      let promiseShown = BrowserTestUtils.waitForEvent(PopupNotifications.panel,
+                                                       "popupshown");
+
+      LoginTestUtils.masterPassword.enable();
+
+      yield ContentTask.spawn(browser, null, function* () {
+        let doc = content.document;
+        doc.getElementById("form-basic-username").value = "username";
+        doc.getElementById("form-basic-password").value = "p";
+        doc.getElementById("form-basic").submit();
+      });
+      yield promiseShown;
+
+      let notificationElement = PopupNotifications.panel.childNodes[0];
+      let passwordTextbox = notificationElement.querySelector("#password-notification-password");
+      let toggleCheckbox = notificationElement.querySelector("#password-notification-visibilityToggle");
+
+      Assert.equal(passwordTextbox.type, "password", "Password textbox should show * text");
+      Assert.ok(toggleCheckbox.getAttribute("hidden"), "checkbox is hidden when master password is set");
+    });
+
+  LoginTestUtils.masterPassword.disable();
 });

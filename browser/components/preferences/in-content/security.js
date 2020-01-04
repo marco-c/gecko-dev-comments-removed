@@ -2,6 +2,9 @@
 
 
 
+XPCOMUtils.defineLazyModuleGetter(this, "LoginHelper",
+ "resource://gre/modules/LoginHelper.jsm");
+
 Components.utils.import("resource://gre/modules/PrivateBrowsingUtils.jsm");
 
 var gSecurityPane = {
@@ -136,7 +139,7 @@ var gSecurityPane = {
 
   _initMasterPasswordUI: function ()
   {
-    var noMP = !this._masterPasswordSet();
+    var noMP = !LoginHelper.isMasterPasswordSet();
 
     var button = document.getElementById("changeMasterPassword");
     button.disabled = noMP;
@@ -216,25 +219,6 @@ var gSecurityPane = {
     }
 
     blockUncommonUnwanted.checked = blockUnwantedPref.value && blockUncommonPref.value;
-  },
-
-  
-
-
-  _masterPasswordSet: function ()
-  {
-    var secmodDB = Cc["@mozilla.org/security/pkcs11moduledb;1"].
-                   getService(Ci.nsIPKCS11ModuleDB);
-    var slot = secmodDB.findSlotByName("");
-    if (slot) {
-      var status = slot.status;
-      var hasMP = status != Ci.nsIPKCS11Slot.SLOT_UNINITIALIZED &&
-                  status != Ci.nsIPKCS11Slot.SLOT_READY;
-      return hasMP;
-    } else {
-      
-      return false;
-    }
   },
 
   

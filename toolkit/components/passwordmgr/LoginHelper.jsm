@@ -10,8 +10,6 @@
 
 
 
-
-
 "use strict";
 
 this.EXPORTED_SYMBOLS = [
@@ -69,8 +67,7 @@ this.LoginHelper = {
 
 
 
-  checkHostnameValue: function (aHostname)
-  {
+  checkHostnameValue(aHostname) {
     
     
     
@@ -89,8 +86,7 @@ this.LoginHelper = {
 
 
 
-  checkLoginValues: function (aLogin)
-  {
+  checkLoginValues(aLogin) {
     function badCharacterPresent(l, c)
     {
       return ((l.formSubmitURL && l.formSubmitURL.indexOf(c) != -1) ||
@@ -221,10 +217,8 @@ this.LoginHelper = {
 
 
 
-  buildModifiedLogin: function (aOldStoredLogin, aNewLoginData)
-  {
-    function bagHasProperty(aPropName)
-    {
+  buildModifiedLogin(aOldStoredLogin, aNewLoginData) {
+    function bagHasProperty(aPropName) {
       try {
         aNewLoginData.getProperty(aPropName);
         return true;
@@ -645,6 +639,21 @@ this.LoginHelper = {
     for (let file of toDeletes) {
       File.remove(file);
     }
+  },
+
+  
+
+
+  isMasterPasswordSet() {
+    let secmodDB = Cc["@mozilla.org/security/pkcs11moduledb;1"].
+                   getService(Ci.nsIPKCS11ModuleDB);
+    let slot = secmodDB.findSlotByName("");
+    if (!slot) {
+      return false;
+    }
+    let hasMP = slot.status != Ci.nsIPKCS11Slot.SLOT_UNINITIALIZED &&
+                slot.status != Ci.nsIPKCS11Slot.SLOT_READY;
+    return hasMP;
   }
 };
 
