@@ -1,9 +1,6 @@
-
-
-
-
-
 package org.mozilla.gecko.feeds.knownsites;
+
+import android.support.annotation.NonNull;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -11,18 +8,18 @@ import java.util.regex.Pattern;
 
 
 
-public class KnownSiteMedium implements KnownSite {
+public class KnownSiteWordpress implements KnownSite {
     @Override
     public String getURLSearchString() {
-        return "://medium.com/";
+        return ".wordpress.com";
     }
 
     @Override
     public String getFeedFromURL(String url) {
-        Pattern pattern = Pattern.compile("https?://medium.com/([^/]+)(/.*)?");
+        Pattern pattern = Pattern.compile("https?://(.*?).wordpress.com(/.*)?");
         Matcher matcher = pattern.matcher(url);
         if (matcher.matches()) {
-            return String.format("https://medium.com/feed/%s", matcher.group(1));
+            return "https://" + matcher.group(1) + ".wordpress.com/feed/";
         }
         return null;
     }

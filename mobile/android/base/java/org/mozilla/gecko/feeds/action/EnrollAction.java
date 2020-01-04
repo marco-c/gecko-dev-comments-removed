@@ -18,6 +18,7 @@ import org.mozilla.gecko.feeds.FeedService;
 import org.mozilla.gecko.feeds.knownsites.KnownSiteBlogger;
 import org.mozilla.gecko.feeds.knownsites.KnownSite;
 import org.mozilla.gecko.feeds.knownsites.KnownSiteMedium;
+import org.mozilla.gecko.feeds.knownsites.KnownSiteWordpress;
 
 
 
@@ -28,6 +29,7 @@ public class EnrollAction implements BaseAction {
     private static final KnownSite[] knownSites = {
         new KnownSiteMedium(),
         new KnownSiteBlogger(),
+        new KnownSiteWordpress(),
     };
 
     private Context context;
