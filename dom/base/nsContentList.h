@@ -142,14 +142,21 @@ private:
 
 struct nsContentListKey
 {
+  
+  
+  
+  
+  
   nsContentListKey(nsINode* aRootNode,
                    int32_t aMatchNameSpaceId,
-                   const nsAString& aTagname)
+                   const nsAString& aTagname,
+                   bool aIsHTMLDocument)
     : mRootNode(aRootNode),
       mMatchNameSpaceId(aMatchNameSpaceId),
       mTagname(aTagname),
+      mIsHTMLDocument(aIsHTMLDocument),
       mHash(mozilla::AddToHash(mozilla::HashString(aTagname), mRootNode,
-                               mMatchNameSpaceId))
+                               mMatchNameSpaceId, mIsHTMLDocument))
   {
   }
 
@@ -157,6 +164,7 @@ struct nsContentListKey
     : mRootNode(aContentListKey.mRootNode),
       mMatchNameSpaceId(aContentListKey.mMatchNameSpaceId),
       mTagname(aContentListKey.mTagname),
+      mIsHTMLDocument(aContentListKey.mIsHTMLDocument),
       mHash(aContentListKey.mHash)
   {
   }
@@ -169,6 +177,7 @@ struct nsContentListKey
   nsINode* const mRootNode; 
   const int32_t mMatchNameSpaceId;
   const nsAString& mTagname;
+  bool mIsHTMLDocument;
   const uint32_t mHash;
 };
 
@@ -320,12 +329,14 @@ public:
     
     
     
+    
     NS_PRECONDITION(mXMLMatchAtom,
                     "How did we get here with a null match atom on our list?");
     return
       mXMLMatchAtom->Equals(aKey.mTagname) &&
       mRootNode == aKey.mRootNode &&
-      mMatchNameSpaceId == aKey.mMatchNameSpaceId;
+      mMatchNameSpaceId == aKey.mMatchNameSpaceId &&
+      mIsHTMLDocument == aKey.mIsHTMLDocument;
   }
 
   
@@ -446,6 +457,12 @@ protected:
 
 
   uint8_t mFlushesNeeded : 1;
+  
+
+
+
+
+  uint8_t mIsHTMLDocument : 1;
 
 #ifdef DEBUG_CONTENT_LIST
   void AssertInSync();
