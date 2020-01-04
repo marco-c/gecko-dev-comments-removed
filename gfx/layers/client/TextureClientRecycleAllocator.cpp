@@ -181,7 +181,6 @@ TextureClientRecycleAllocator::CreateOrRecycle(ITextureClientAllocationHelper& a
   
   
   client->SetRecycleAllocator(this);
-  client->SetInUse(true);
   return client.forget();
 }
 
@@ -205,35 +204,9 @@ TextureClientRecycleAllocator::ShrinkToMinimumSize()
   }
 }
 
-class TextureClientWaitTask : public Runnable
-{
-public:
-  explicit TextureClientWaitTask(TextureClient* aClient)
-    : mTextureClient(aClient)
-  {}
-
-  NS_IMETHOD Run() override
-  {
-    mTextureClient->WaitForCompositorRecycle();
-    return NS_OK;
-  }
-
-private:
-  RefPtr<TextureClient> mTextureClient;
-};
-
 void
 TextureClientRecycleAllocator::RecycleTextureClient(TextureClient* aClient)
 {
-  if (aClient->IsInUse()) {
-    aClient->SetInUse(false);
-    
-    
-    
-    RefPtr<Runnable> task = new TextureClientWaitTask(aClient);
-    mSurfaceAllocator->GetMessageLoop()->PostTask(task.forget());
-    return;
-  }
   
   
   RefPtr<TextureClientRecycleAllocator> kungFuDeathGrip(this);

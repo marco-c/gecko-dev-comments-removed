@@ -464,25 +464,6 @@ CanvasClientSharedSurface::Updated()
 
   auto forwarder = GetForwarder();
 
-#ifndef MOZ_WIDGET_GONK
-  if (mFront) {
-    if (mFront->GetFlags() & TextureFlags::RECYCLE) {
-      mFront->WaitForCompositorRecycle();
-    }
-  }
-#else
-  
-  
-  
-  
-  
-  
-  AutoRemoveTexture autoRemove(this);
-  if (mFront && mFront != mNewFront) {
-    autoRemove.mTexture = mFront;
-  }
-#endif
-
   mFront = mNewFront;
   mNewFront = nullptr;
 
@@ -505,7 +486,7 @@ CanvasClientSharedSurface::Updated()
 void
 CanvasClientSharedSurface::OnDetach() {
   if (mShSurfClient) {
-    mShSurfClient->CancelWaitForCompositorRecycle();
+    mShSurfClient->CancelWaitForRecycle();
   }
   ClearSurfaces();
 }

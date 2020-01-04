@@ -29,6 +29,7 @@
 #include "nsISupportsImpl.h"            
 #include "GfxTexturesReporter.h"
 #include "pratom.h"
+#include "nsThreadUtils.h"
 
 class gfxImageSurface;
 
@@ -414,13 +415,6 @@ public:
 
 
 
-  void SetInUse(bool aInUse) { mInUse = aInUse; }
-  bool IsInUse() { return mInUse; }
-
-  
-
-
-
 
 
 
@@ -518,21 +512,6 @@ public:
 
 
 
-
-
-  void WaitForCompositorRecycle();
-
-  
-
-
-
-  void CancelWaitForCompositorRecycle();
-
-  
-
-
-
-
   bool IsImmutable() const { return !!(mFlags & TextureFlags::IMMUTABLE); }
 
   void MarkImmutable() { AddFlags(TextureFlags::IMMUTABLE); }
@@ -608,11 +587,6 @@ public:
   
 
 
-  virtual void SetRemoveFromCompositableWaiter(AsyncTransactionWaiter* aWaiter);
-
-  
-
-
 
 
 
@@ -646,9 +620,43 @@ public:
   TextureData* GetInternalData() { return mData; }
   const TextureData* GetInternalData() const { return mData; }
 
-  virtual void RemoveFromCompositable(CompositableClient* aCompositable,
-                                      AsyncTransactionWaiter* aWaiter = nullptr);
+  uint64_t GetSerial() const { return mSerial; }
 
+  bool NeedsFenceHandle()
+  {
+#if defined(MOZ_WIDGET_GONK) && ANDROID_VERSION >= 17
+    if (!mData) {
+      return false;
+    }
+    return !!mData->AsGrallocTextureData();
+#else
+    return false;
+#endif
+  }
+
+  void WaitFenceHandleOnImageBridge(Mutex& aMutex);
+  void ClearWaitFenceHandleOnImageBridge(Mutex& aMutex);
+  void CancelWaitFenceHandleOnImageBridge();
+
+  void CancelWaitForRecycle();
+
+  
+
+
+
+
+
+
+
+
+
+  void SetLastFwdTransactionId(uint64_t aTransactionId)
+  {
+    MOZ_ASSERT(mFwdTransactionId < aTransactionId);
+    mFwdTransactionId = aTransactionId;
+  }
+
+  uint64_t GetLastFwdTransactionId() { return mFwdTransactionId; }
 
   void EnableReadLock();
 
@@ -691,7 +699,6 @@ protected:
   RefPtr<ClientIPCAllocator> mAllocator;
   RefPtr<TextureChild> mActor;
   RefPtr<ITextureClientRecycleAllocator> mRecycleAllocator;
-  RefPtr<AsyncTransactionWaiter> mRemoveFromCompositableWaiter;
   RefPtr<TextureReadLock> mReadLock;
 
   TextureData* mData;
@@ -700,6 +707,8 @@ protected:
   TextureFlags mFlags;
   FenceHandle mReleaseFenceHandle;
   FenceHandle mAcquireFenceHandle;
+  RefPtr<AsyncTransactionWaiter> mFenceHandleWaiter;
+
   gl::GfxTextureWasteTracker mWasteTracker;
 
   OpenMode mOpenMode;
@@ -711,13 +720,19 @@ protected:
   
   
   bool mUpdated;
-  bool mInUse;
 
   bool mAddedToCompositableClient;
   bool mWorkaroundAnnoyingSharedSurfaceLifetimeIssues;
   bool mWorkaroundAnnoyingSharedSurfaceOwnershipIssues;
 
   RefPtr<TextureReadbackSink> mReadbackSink;
+
+  uint64_t mFwdTransactionId;
+
+  
+  const uint64_t mSerial;
+  
+  static mozilla::Atomic<uint64_t> sSerialCounter;
 
   friend class TextureChild;
   friend class RemoveTextureFromCompositableTracker;

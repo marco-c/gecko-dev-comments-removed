@@ -3,7 +3,6 @@
 
 
 
-#include "mozilla/layers/AsyncTransactionTracker.h" 
 #include "mozilla/layers/CompositorBridgeChild.h"
 #include "mozilla/layers/CompositorThread.h"
 #include "mozilla/layers/ImageBridgeChild.h"
@@ -881,8 +880,6 @@ gfxPlatform::InitLayersIPC()
       return;
     }
     sLayersIPCIsUp = true;
-
-    AsyncTransactionTrackersHolder::Initialize();
 
     if (XRE_IsParentProcess())
     {

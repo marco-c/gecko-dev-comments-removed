@@ -43,6 +43,7 @@ class Compositor;
 class CompositableParentManager;
 class ReadLockDescriptor;
 class CompositorBridgeParent;
+class GrallocTextureHostOGL;
 class SurfaceDescriptor;
 class HostIPCAllocator;
 class ISurfaceAllocator;
@@ -387,16 +388,6 @@ public:
   
 
 
-
-
-
-
-
-  void CompositorRecycle();
-
-  
-
-
   virtual bool Lock() { return true; }
 
   
@@ -511,7 +502,8 @@ public:
   static PTextureParent* CreateIPDLActor(HostIPCAllocator* aAllocator,
                                          const SurfaceDescriptor& aSharedData,
                                          LayersBackend aLayersBackend,
-                                         TextureFlags aFlags);
+                                         TextureFlags aFlags,
+                                         uint64_t aSerial);
   static bool DestroyIPDLActor(PTextureParent* actor);
 
   
@@ -525,6 +517,8 @@ public:
 
 
   static TextureHost* AsTextureHost(PTextureParent* actor);
+
+  static uint64_t GetTextureSerial(PTextureParent* actor);
 
   
 
@@ -570,6 +564,8 @@ public:
     MOZ_ASSERT(mCompositableCount >= 0);
     if (mCompositableCount == 0) {
       UnbindTextureSource();
+      
+      NotifyNotUsed();
     }
   }
 
@@ -595,6 +591,8 @@ public:
 
   virtual void WaitAcquireFenceHandleSyncComplete() {};
 
+  void SetLastFwdTransactionId(uint64_t aTransactionId);
+
   virtual bool NeedsFenceHandle() { return false; }
 
   virtual FenceHandle GetCompositorReleaseFence() { return FenceHandle(); }
@@ -605,6 +603,10 @@ public:
   TextureReadLock* GetReadLock() { return mReadLock; }
 
   virtual Compositor* GetCompositor() = 0;
+
+  virtual GrallocTextureHostOGL* AsGrallocTextureHostOGL() { return nullptr; }
+
+  void CallNotifyNotUsed();
 
 protected:
   void ReadUnlock();
@@ -617,12 +619,19 @@ protected:
 
   virtual void UpdatedInternal(const nsIntRegion *Region) {}
 
+  
+
+
+  void NotifyNotUsed();
+
   PTextureParent* mActor;
   RefPtr<TextureReadLock> mReadLock;
   TextureFlags mFlags;
   int mCompositableCount;
+  uint64_t mFwdTransactionId;
 
   friend class TextureParent;
+  friend class TiledLayerBufferComposite;
 };
 
 

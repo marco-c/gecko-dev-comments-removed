@@ -123,6 +123,8 @@ public:
   virtual MessageLoop * GetMessageLoop() const = 0;
 
   virtual int32_t GetMaxTextureSize() const { return gfxPrefs::MaxTextureSize(); }
+
+  virtual void CancelWaitForRecycle(uint64_t aTextureId) = 0;
 };
 
 
@@ -135,8 +137,36 @@ public:
 
 
   virtual base::ProcessId GetChildProcessId() = 0;
+
+  virtual void NotifyNotUsed(PTextureParent* aTexture, uint64_t aTransactionId) = 0;
+
+  virtual void SendAsyncMessage(const InfallibleTArray<AsyncParentMessageData>& aMessage) = 0;
+
+  void SendFenceHandleIfPresent(PTextureParent* aTexture);
+
+  virtual void SendPendingAsyncMessages();
+
+  virtual void SetAboutToSendAsyncMessages()
+  {
+    mAboutToSendAsyncMessages = true;
+  }
+
+  bool IsAboutToSendAsyncMessages()
+  {
+    return mAboutToSendAsyncMessages;
+  }
+
+protected:
+  std::vector<AsyncParentMessageData> mPendingAsyncMessage;
+  bool mAboutToSendAsyncMessages = false;
 };
 
+
+class CompositorBridgeParentIPCAllocator : public HostIPCAllocator
+{
+public:
+  virtual void NotifyNotUsed(PTextureParent* aTexture, uint64_t aTransactionId) override;
+};
 
 
 

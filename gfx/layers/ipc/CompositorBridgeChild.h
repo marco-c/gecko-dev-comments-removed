@@ -31,10 +31,13 @@ using mozilla::dom::TabChild;
 
 class ClientLayerManager;
 class CompositorBridgeParent;
+class TextureClient;
 struct FrameMetrics;
 
 class CompositorBridgeChild final : public PCompositorBridgeChild
 {
+  typedef InfallibleTArray<AsyncParentMessageData> AsyncParentMessageArray;
+
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING_WITH_MAIN_THREAD_DESTRUCTION(CompositorBridgeChild)
 
 public:
@@ -98,9 +101,13 @@ public:
   virtual PTextureChild* AllocPTextureChild(const SurfaceDescriptor& aSharedData,
                                             const LayersBackend& aLayersBackend,
                                             const TextureFlags& aFlags,
-                                            const uint64_t& aId) override;
+                                            const uint64_t& aId,
+                                            const uint64_t& aSerial) override;
 
   virtual bool DeallocPTextureChild(PTextureChild* actor) override;
+
+  virtual bool
+  RecvParentAsyncMessages(InfallibleTArray<AsyncParentMessageData>&& aMessages) override;
 
   
 
@@ -139,6 +146,25 @@ public:
   bool IsSameProcess() const;
 
   static void ShutDown();
+
+  void UpdateFwdTransactionId() { ++mFwdTransactionId; }
+  uint64_t GetFwdTransactionId() { return mFwdTransactionId; }
+
+  
+
+
+
+  void HoldUntilCompositableRefReleasedIfNecessary(TextureClient* aClient);
+
+  
+
+
+
+  void NotifyNotUsed(uint64_t aTextureId, uint64_t aFwdTransactionId);
+
+  void DeliverFence(uint64_t aTextureId, FenceHandle& aReleaseFenceHandle);
+
+  void CancelWaitForRecycle(uint64_t aTextureId);
 
 private:
   
@@ -211,6 +237,18 @@ private:
 
   
   bool mCanSend;
+
+  
+
+
+
+  uint64_t mFwdTransactionId;
+
+  
+
+
+
+  nsDataHashtable<nsUint64HashKey, RefPtr<TextureClient> > mTexturesWaitingRecycled;
 };
 
 } 

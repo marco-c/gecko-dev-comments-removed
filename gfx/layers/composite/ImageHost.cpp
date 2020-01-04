@@ -331,11 +331,6 @@ ImageHost::Composite(LayerComposite* aLayer,
 
   TimedImage* img = &mImages[imageIndex];
   img->mTextureHost->SetCompositor(GetCompositor());
-  
-  
-  if (img->mTextureHost->GetFlags() & TextureFlags::RECYCLE) {
-    aLayer->GetLayerManager()->HoldTextureUntilNextComposite(img->mTextureHost);
-  }
   SetCurrentTextureHost(img->mTextureHost);
 
   {

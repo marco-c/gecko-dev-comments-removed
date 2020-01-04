@@ -133,6 +133,7 @@ class CompositorOGL;
 class CompositorD3D9;
 class CompositorD3D11;
 class BasicCompositor;
+class TextureHost;
 class TextureReadLock;
 
 enum SurfaceInitMode
@@ -200,7 +201,8 @@ public:
   CreateDataTextureSourceAround(gfx::DataSourceSurface* aSurface) { return nullptr; }
 
   virtual bool Initialize() = 0;
-  virtual void Destroy() = 0;
+  virtual void Destroy();
+  bool IsDestroyed() const { return mIsDestroyed; }
 
   virtual void DetachWidget() { mWidget = nullptr; }
 
@@ -544,6 +546,16 @@ public:
     mUnlockAfterComposition.AppendElement(aLock);
   }
 
+  
+  
+  
+  
+  
+  
+  void NotifyNotUsedAfterComposition(TextureHost* aTextureHost);
+
+  void FlushPendingNotifyNotUsed();
+
 protected:
   void DrawDiagnosticsInternal(DiagnosticFlags aFlags,
                                const gfx::Rect& aVisibleRect,
@@ -576,6 +588,11 @@ protected:
   
 
 
+  nsTArray<RefPtr<TextureHost>> mNotifyNotUsedAfterComposition;
+
+  
+
+
   TimeStamp mCompositionTime;
   
 
@@ -602,6 +619,8 @@ protected:
   gfx::IntRect mTargetBounds;
 
   widget::CompositorWidgetProxy* mWidget;
+
+  bool mIsDestroyed;
 
 #if defined(MOZ_WIDGET_GONK) && ANDROID_VERSION >= 17
   FenceHandle mReleaseFenceHandle;

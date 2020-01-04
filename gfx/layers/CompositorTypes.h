@@ -45,6 +45,8 @@ enum class TextureFlags : uint32_t {
   
   NON_PREMULTIPLIED  = 1 << 4,
   
+  
+  
   RECYCLE            = 1 << 5,
   
   

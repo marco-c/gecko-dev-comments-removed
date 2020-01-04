@@ -77,23 +77,14 @@ void
 ImageClient::RemoveTextureWithWaiter(TextureClient* aTexture,
                                      AsyncTransactionWaiter* aAsyncTransactionWaiter)
 {
-  if ((aAsyncTransactionWaiter || GetForwarder()->UsesImageBridge())
-#ifndef MOZ_WIDGET_GONK
-      
-      
-      
-      && aTexture->GetRecycleAllocator()
-#endif
-     ) {
+  if (aAsyncTransactionWaiter &&
+      GetForwarder()->UsesImageBridge()) {
     RefPtr<AsyncTransactionTracker> request =
       new RemoveTextureFromCompositableTracker(aAsyncTransactionWaiter);
-    
-    
-    request->SetTextureClient(aTexture);
     GetForwarder()->RemoveTextureFromCompositableAsync(request, this, aTexture);
     return;
   }
-
+  MOZ_ASSERT(!aAsyncTransactionWaiter);
   GetForwarder()->RemoveTextureFromCompositable(this, aTexture);
 }
 
@@ -112,6 +103,8 @@ TextureInfo ImageClientSingle::GetTextureInfo() const
 void
 ImageClientSingle::FlushAllImages(AsyncTransactionWaiter* aAsyncTransactionWaiter)
 {
+  MOZ_ASSERT(GetForwarder()->UsesImageBridge());
+
   for (auto& b : mBuffers) {
     RemoveTextureWithWaiter(b.mTextureClient, aAsyncTransactionWaiter);
   }
