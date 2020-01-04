@@ -3607,12 +3607,23 @@ static bool
 CheckAndPrepareArrayAccess(FunctionValidator& f, ParseNode* viewName, ParseNode* indexExpr,
                            Scalar::Type* viewType, int32_t* mask)
 {
+    
+    if (!f.encoder().writeVarU32(0))
+        return false;
+
+    size_t alignAt;
+    if (!f.encoder().writePatchableVarU8(&alignAt))
+        return false;
+
     size_t prepareAt;
     if (!f.encoder().writePatchableExpr(&prepareAt))
         return false;
 
     if (!CheckArrayAccess(f, viewName, indexExpr, viewType, mask))
         return false;
+
+    
+    f.encoder().patchVarU8(alignAt, TypedArrayElemSize(*viewType));
 
     
     
