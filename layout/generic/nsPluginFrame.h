@@ -9,6 +9,7 @@
 #define nsPluginFrame_h___
 
 #include "mozilla/Attributes.h"
+#include "mozilla/EventForwards.h"
 #include "nsIObjectFrame.h"
 #include "nsFrame.h"
 #include "nsRegion.h"
@@ -204,6 +205,19 @@ public:
 
 
   void SetScrollVisibility(bool aState);
+
+  
+
+
+
+
+  void HandleWheelEventAsDefaultAction(mozilla::WidgetWheelEvent* aEvent);
+
+  
+
+
+
+  bool WantsToHandleWheelEventAsDefaultAction() const;
 
 protected:
   explicit nsPluginFrame(nsStyleContext* aContext);

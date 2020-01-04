@@ -50,6 +50,7 @@
 #include "nsIContentViewer.h"
 #include "nsFrameManager.h"
 #include "nsITabChild.h"
+#include "nsPluginFrame.h"
 
 #include "nsIDOMXULElement.h"
 #include "nsIDOMKeyEvent.h"
@@ -2346,6 +2347,13 @@ EventStateManager::ComputeScrollTarget(nsIFrame* aTargetFrame,
     
     nsIFrame* lastScrollFrame = WheelTransaction::GetTargetFrame();
     if (lastScrollFrame) {
+      if (aOptions & INCLUDE_PLUGIN_AS_TARGET) {
+        nsPluginFrame* pluginFrame = do_QueryFrame(lastScrollFrame);
+        if (pluginFrame &&
+            pluginFrame->WantsToHandleWheelEventAsDefaultAction()) {
+          return lastScrollFrame;
+        }
+      }
       nsIScrollableFrame* scrollableFrame =
         lastScrollFrame->GetScrollTargetFrame();
       if (scrollableFrame) {
@@ -2375,6 +2383,18 @@ EventStateManager::ComputeScrollTarget(nsIFrame* aTargetFrame,
     
     nsIScrollableFrame* scrollableFrame = scrollFrame->GetScrollTargetFrame();
     if (!scrollableFrame) {
+      
+      
+      
+      
+      
+      if (aOptions & INCLUDE_PLUGIN_AS_TARGET) {
+        nsPluginFrame* pluginFrame = do_QueryFrame(scrollFrame);
+        if (pluginFrame &&
+            pluginFrame->WantsToHandleWheelEventAsDefaultAction()) {
+          return scrollFrame;
+        }
+      }
       continue;
     }
 
@@ -3121,10 +3141,23 @@ EventStateManager::PostHandleEvent(nsPresContext* aPresContext,
             break;
           }
 
-          nsIScrollableFrame* scrollTarget =
-            do_QueryFrame(ComputeScrollTarget(aTargetFrame, wheelEvent,
-                                              COMPUTE_DEFAULT_ACTION_TARGET));
+          nsIFrame* frameToScroll =
+            ComputeScrollTarget(aTargetFrame, wheelEvent,
+                                COMPUTE_DEFAULT_ACTION_TARGET);
 
+          
+          
+          
+          
+          nsPluginFrame* pluginFrame = do_QueryFrame(frameToScroll);
+          if (pluginFrame) {
+            
+            
+            pluginFrame->HandleWheelEventAsDefaultAction(wheelEvent);
+            break;
+          }
+
+          nsIScrollableFrame* scrollTarget = do_QueryFrame(frameToScroll);
           ScrollbarsForWheel::SetActiveScrollTarget(scrollTarget);
 
           nsIFrame* rootScrollFrame = !aTargetFrame ? nullptr :

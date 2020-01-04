@@ -12,6 +12,7 @@
 #include "gfxMatrix.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/BasicEvents.h"
+#include "mozilla/MouseEvents.h"
 #ifdef XP_WIN
 
 #include "mozilla/plugins/PluginMessageUtils.h"
@@ -1844,6 +1845,48 @@ nsPluginFrame::HandleEvent(nsPresContext* aPresContext,
 #endif
 
   return rv;
+}
+
+void
+nsPluginFrame::HandleWheelEventAsDefaultAction(WidgetWheelEvent* aWheelEvent)
+{
+  MOZ_ASSERT(WantsToHandleWheelEventAsDefaultAction());
+  MOZ_ASSERT(!aWheelEvent->mFlags.mDefaultPrevented);
+
+  if (NS_WARN_IF(!mInstanceOwner) ||
+      NS_WARN_IF(aWheelEvent->mMessage != eWheel)) {
+    return;
+  }
+
+  
+  
+  if (NS_WARN_IF(!!aWheelEvent->mPluginEvent)) {
+    return;
+  }
+
+  mInstanceOwner->ProcessEvent(*aWheelEvent);
+  
+  
+  aWheelEvent->mViewPortIsOverscrolled = false;
+  aWheelEvent->overflowDeltaX = 0;
+  aWheelEvent->overflowDeltaY = 0;
+}
+
+bool
+nsPluginFrame::WantsToHandleWheelEventAsDefaultAction() const
+{
+#ifdef XP_WIN
+  if (!mInstanceOwner) {
+    return false;
+  }
+  NPWindow* window = nullptr;
+  mInstanceOwner->GetWindow(window);
+  
+  
+  return window->type == NPWindowTypeDrawable;
+#else
+  return false;
+#endif
 }
 
 nsresult
