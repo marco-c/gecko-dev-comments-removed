@@ -79,7 +79,7 @@ void nsStyleUtil::AppendEscapedCSSString(const nsAString& aString,
   aReturn.Append(quoteChar);
 }
 
- void
+ bool
 nsStyleUtil::AppendEscapedCSSIdent(const nsAString& aIdent, nsAString& aReturn)
 {
   
@@ -98,7 +98,7 @@ nsStyleUtil::AppendEscapedCSSIdent(const nsAString& aIdent, nsAString& aReturn)
   const char16_t* const end = aIdent.EndReading();
 
   if (in == end)
-    return;
+    return true;
 
   
   
@@ -106,7 +106,7 @@ nsStyleUtil::AppendEscapedCSSIdent(const nsAString& aIdent, nsAString& aReturn)
     if (in + 1 == end) {
       aReturn.Append(char16_t('\\'));
       aReturn.Append(char16_t('-'));
-      return;
+      return true;
     }
 
     aReturn.Append(char16_t('-'));
@@ -124,8 +124,9 @@ nsStyleUtil::AppendEscapedCSSIdent(const nsAString& aIdent, nsAString& aReturn)
   for (; in != end; ++in) {
     char16_t ch = *in;
     if (ch == 0x00) {
-      aReturn.Append(char16_t(0xFFFD));
-    } else if (ch < 0x20 || (0x7F <= ch && ch < 0xA0)) {
+      return false;
+    }
+    if (ch < 0x20 || (0x7F <= ch && ch < 0xA0)) {
       
       aReturn.AppendPrintf("\\%hx ", *in);
     } else {
@@ -141,6 +142,7 @@ nsStyleUtil::AppendEscapedCSSIdent(const nsAString& aIdent, nsAString& aReturn)
       aReturn.Append(ch);
     }
   }
+  return true;
 }
 
 
