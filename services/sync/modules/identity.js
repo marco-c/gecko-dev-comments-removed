@@ -87,16 +87,12 @@ IdentityManager.prototype = {
   
 
 
-
-
   initialize: function() {
     
-    return Promise.resolve();
   },
 
   finalize: function() {
     
-    return Promise.resolve();
   },
 
   
@@ -113,14 +109,6 @@ IdentityManager.prototype = {
   ensureLoggedIn: function() {
     
     return Promise.resolve();
-  },
-
-  
-
-
-  get readyToAuthenticate() {
-    
-    return true;
   },
 
   get account() {

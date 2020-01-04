@@ -30,10 +30,7 @@ this.Status = {
                     .wrappedJSObject;
     let idClass = service.fxAccountsEnabled ? BrowserIDManager : IdentityManager;
     this.__authManager = new idClass();
-    
-    let cb = Async.makeSpinningCallback();
-    this.__authManager.initialize().then(cb, cb);
-    cb.wait();
+    this.__authManager.initialize();
     return this.__authManager;
   },
 

@@ -104,12 +104,6 @@ this.BrowserIDManager.prototype = {
   
   _shouldHaveSyncKeyBundle: false,
 
-  get readyToAuthenticate() {
-    
-    
-    return this._shouldHaveSyncKeyBundle;
-  },
-
   get needsCustomization() {
     try {
       return Services.prefs.getBoolPref(PREF_SYNC_SHOW_CUSTOMIZATION);
@@ -122,7 +116,19 @@ this.BrowserIDManager.prototype = {
     for (let topic of OBSERVER_TOPICS) {
       Services.obs.addObserver(this, topic, false);
     }
-    return this.initializeWithCurrentIdentity();
+    
+    
+    
+    
+    
+    
+    this._fxaService.getSignedInUser().then(accountData => {
+      if (accountData) {
+        this.account = accountData.email;
+      }
+    }).catch(err => {
+      
+    });
   },
 
   
@@ -130,7 +136,7 @@ this.BrowserIDManager.prototype = {
 
 
   ensureLoggedIn: function() {
-    if (!this._shouldHaveSyncKeyBundle) {
+    if (!this._shouldHaveSyncKeyBundle && this.whenReadyToAuthenticate) {
       
       return this.whenReadyToAuthenticate.promise;
     }
@@ -160,7 +166,6 @@ this.BrowserIDManager.prototype = {
     }
     this.resetCredentials();
     this._signedInUser = null;
-    return Promise.resolve();
   },
 
   offerSyncOptions: function () {
@@ -287,6 +292,7 @@ this.BrowserIDManager.prototype = {
     this._log.debug("observed " + topic);
     switch (topic) {
     case fxAccountsCommon.ONLOGIN_NOTIFICATION:
+      
       
       
       
@@ -636,7 +642,6 @@ this.BrowserIDManager.prototype = {
         
         this._shouldHaveSyncKeyBundle = true;
         Weave.Status.login = this._authFailureReason;
-        Services.obs.notifyObservers(null, "weave:ui:login:error", null);
         throw err;
       });
   },

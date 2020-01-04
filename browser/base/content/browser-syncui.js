@@ -106,6 +106,8 @@ let gSyncUI = {
     
     
     
+    
+    
     if (Weave.Status._authManager._signedInUser !== undefined) {
       
       
