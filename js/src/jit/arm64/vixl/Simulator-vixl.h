@@ -40,6 +40,7 @@
 #include "jit/arm64/vixl/Globals-vixl.h"
 #include "jit/arm64/vixl/Instructions-vixl.h"
 #include "jit/arm64/vixl/Instrument-vixl.h"
+#include "jit/arm64/vixl/Simulator-Constants-vixl.h"
 #include "jit/arm64/vixl/Utils-vixl.h"
 #include "jit/IonTypes.h"
 #include "threading/Mutex.h"
@@ -54,120 +55,6 @@
     JS_END_MACRO
 
 namespace vixl {
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-enum DebugHltOpcodes {
-  kUnreachableOpcode = 0xdeb0,
-  kPrintfOpcode,
-  kTraceOpcode,
-  kLogOpcode,
-  
-  kDebugHltFirstOpcode = kUnreachableOpcode,
-  kDebugHltLastOpcode = kLogOpcode
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-const unsigned kPrintfArgCountOffset = 1 * kInstructionSize;
-const unsigned kPrintfArgPatternListOffset = 2 * kInstructionSize;
-const unsigned kPrintfLength = 3 * kInstructionSize;
-
-const unsigned kPrintfMaxArgCount = 4;
-
-
-
-enum PrintfArgPattern {
-  kPrintfArgW = 1,
-  kPrintfArgX = 2,
-  
-  
-  kPrintfArgD = 3
-};
-static const unsigned kPrintfArgPatternBits = 2;
-
-
-
-
-
-
-
-
-const unsigned kTraceParamsOffset = 1 * kInstructionSize;
-const unsigned kTraceCommandOffset = 2 * kInstructionSize;
-const unsigned kTraceLength = 3 * kInstructionSize;
-
-
-enum TraceParameters {
-  LOG_DISASM     = 1 << 0,  
-  LOG_REGS       = 1 << 1,  
-  LOG_VREGS      = 1 << 2,  
-  LOG_SYSREGS    = 1 << 3,  
-  LOG_WRITE      = 1 << 4,  
-
-  LOG_NONE       = 0,
-  LOG_STATE      = LOG_REGS | LOG_VREGS | LOG_SYSREGS,
-  LOG_ALL        = LOG_DISASM | LOG_STATE | LOG_WRITE
-};
-
-
-enum TraceCommand {
-  TRACE_ENABLE   = 1,
-  TRACE_DISABLE  = 2
-};
-
-
-
-
-
-
-
-
-
-
-const unsigned kLogParamsOffset = 1 * kInstructionSize;
-const unsigned kLogLength = 2 * kInstructionSize;
-
 
 
 
@@ -877,8 +764,10 @@ class Simulator : public DecoderVisitor {
 
   
   #define DECLARE(A) virtual void Visit##A(const Instruction* instr);
-  VISITOR_LIST(DECLARE)
+  VISITOR_LIST_THAT_RETURN(DECLARE)
+  VISITOR_LIST_THAT_DONT_RETURN(DECLARE)
   #undef DECLARE
+
 
   
 
@@ -1434,11 +1323,11 @@ class Simulator : public DecoderVisitor {
   }
 
   void AddSubHelper(const Instruction* instr, int64_t op2);
-  int64_t AddWithCarry(unsigned reg_size,
-                       bool set_flags,
-                       int64_t src1,
-                       int64_t src2,
-                       int64_t carry_in = 0);
+  uint64_t AddWithCarry(unsigned reg_size,
+                        bool set_flags,
+                        uint64_t left,
+                        uint64_t right,
+                        int carry_in = 0);
   void LogicalHelper(const Instruction* instr, int64_t op2);
   void ConditionalCompareHelper(const Instruction* instr, int64_t op2);
   void LoadStoreHelper(const Instruction* instr,
@@ -2677,7 +2566,7 @@ class Simulator : public DecoderVisitor {
   }
 
   static int CalcZFlag(uint64_t result) {
-    return result == 0;
+    return (result == 0) ? 1 : 0;
   }
 
   static const uint32_t kConditionFlagsMask = 0xf0000000;

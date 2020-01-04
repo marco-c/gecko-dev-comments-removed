@@ -24,6 +24,8 @@
 
 
 
+#ifdef JS_SIMULATOR_ARM64
+
 #ifndef VIXL_A64_DEBUGGER_A64_H_
 #define VIXL_A64_DEBUGGER_A64_H_
 
@@ -109,5 +111,7 @@ class Debugger : public Simulator {
 };
 
 }  
+
+#endif  
 
 #endif  

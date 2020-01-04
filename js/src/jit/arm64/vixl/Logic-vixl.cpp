@@ -24,6 +24,8 @@
 
 
 
+#ifdef JS_SIMULATOR_ARM64
+
 #include <cmath>
 
 #include "jit/arm64/vixl/Simulator-vixl.h"
@@ -4872,3 +4874,5 @@ LogicVRegister Simulator::ucvtf(VectorFormat vform,
 
 
 }  
+
+#endif  
