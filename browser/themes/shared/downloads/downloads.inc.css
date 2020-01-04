@@ -2,6 +2,10 @@
 
 
 
+%filter substitution
+
+%define keyfocus #downloadsPanel[keyfocus]
+
 
 
 #downloadsPanel > .panel-arrowcontainer > .panel-arrowcontent {
@@ -25,4 +29,13 @@
 #emptyDownloads {
   padding: 10px 20px;
   max-width: 40ch;
+}
+
+#downloadsHistory {
+  background: transparent;
+  cursor: pointer;
+}
+
+#downloadsHistory > .button-box {
+  margin: 1em;
 }
