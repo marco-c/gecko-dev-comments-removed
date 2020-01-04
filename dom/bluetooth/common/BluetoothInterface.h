@@ -17,6 +17,23 @@ BEGIN_BLUETOOTH_NAMESPACE
 
 
 
+class BluetoothSetupResultHandler
+  : public mozilla::ipc::DaemonSocketResultHandler
+{
+public:
+  virtual void OnError(BluetoothStatus aStatus);
+  virtual void RegisterModule();
+  virtual void UnregisterModule();
+  virtual void Configuration();
+
+protected:
+  virtual ~BluetoothSetupResultHandler();
+};
+
+
+
+
+
 class BluetoothSocketResultHandler
   : public mozilla::ipc::DaemonSocketResultHandler
 {

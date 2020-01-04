@@ -5,7 +5,6 @@
 
 
 #include "BluetoothDaemonAvrcpInterface.h"
-#include "BluetoothDaemonSetupInterface.h"
 #include "mozilla/unused.h"
 
 BEGIN_BLUETOOTH_NAMESPACE
