@@ -25,6 +25,13 @@
 #include "VideoStreamTrack.h"
 #include "Layers.h"
 
+
+
+
+#ifdef GetCurrentTime
+#undef GetCurrentTime
+#endif
+
 #ifdef LOG
 #undef LOG
 #endif
