@@ -929,10 +929,6 @@ void StackWalkCallback(uint32_t aFrameNumber, void* aPC, void* aSP,
 
 void GeckoSampler::doNativeBacktrace(ThreadProfile &aProfile, TickSample* aSample)
 {
-#ifndef XP_MACOSX
-  uintptr_t thread = GetThreadHandle(aSample->threadProfile->GetPlatformData());
-  MOZ_ASSERT(thread);
-#endif
   void* pc_array[1000];
   void* sp_array[1000];
   NativeStack nativeStack = {
@@ -949,7 +945,7 @@ void GeckoSampler::doNativeBacktrace(ThreadProfile &aProfile, TickSample* aSampl
   StackWalkCallback( 0, aSample->pc, aSample->sp, &nativeStack);
 
   uint32_t maxFrames = uint32_t(nativeStack.size - nativeStack.count);
-#ifdef XP_MACOSX
+#if defined(XP_MACOSX) || defined(XP_WIN)
   void *stackEnd = aSample->threadProfile->GetStackTop();
   bool rv = true;
   if (aSample->fp >= aSample->sp && aSample->fp <= stackEnd)
@@ -958,15 +954,9 @@ void GeckoSampler::doNativeBacktrace(ThreadProfile &aProfile, TickSample* aSampl
                                reinterpret_cast<void**>(aSample->fp), stackEnd);
 #else
   void *platformData = nullptr;
-#ifdef XP_WIN
-  if (aSample->isSamplingCurrentThread) {
-    
-    
-    thread = 0;
-  }
-  platformData = aSample->context;
-#endif 
 
+  uintptr_t thread = GetThreadHandle(aSample->threadProfile->GetPlatformData());
+  MOZ_ASSERT(thread);
   bool rv = MozStackWalk(StackWalkCallback,  0, maxFrames,
                              &nativeStack, thread, platformData);
 #endif

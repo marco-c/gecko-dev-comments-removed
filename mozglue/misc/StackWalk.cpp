@@ -54,6 +54,16 @@ static CriticalAddress gCriticalAddress;
 #include <CoreServices/CoreServices.h>
 #endif
 
+#if __GLIBC__ > 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 1)
+#define HAVE___LIBC_STACK_END 1
+#else
+#define HAVE___LIBC_STACK_END 0
+#endif
+
+#if HAVE___LIBC_STACK_END
+extern MOZ_EXPORT void* __libc_stack_end; 
+#endif
+
 typedef void
 malloc_logger_t(uint32_t aType,
                 uintptr_t aArg1, uintptr_t aArg2, uintptr_t aArg3,
@@ -873,67 +883,6 @@ void DemangleSymbol(const char* aSymbol,
 #endif 
 }
 
-#if __GLIBC__ > 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 1)
-#define HAVE___LIBC_STACK_END 1
-#else
-#define HAVE___LIBC_STACK_END 0
-#endif
-
-#if HAVE___LIBC_STACK_END
-extern MOZ_EXPORT void* __libc_stack_end; 
-#endif
-namespace mozilla {
-bool
-FramePointerStackWalk(MozWalkStackCallback aCallback, uint32_t aSkipFrames,
-                      uint32_t aMaxFrames, void* aClosure, void** bp,
-                      void* aStackEnd)
-{
-  
-
-  int32_t skip = aSkipFrames;
-  uint32_t numFrames = 0;
-  while (bp) {
-    void** next = (void**)*bp;
-    
-    
-    
-    
-    
-    
-    if (next <= bp ||
-        next > aStackEnd ||
-        (long(next) & 3)) {
-      break;
-    }
-#if (defined(__ppc__) && defined(XP_MACOSX)) || defined(__powerpc64__)
-    
-    void* pc = *(bp + 2);
-    bp += 3;
-#else 
-    void* pc = *(bp + 1);
-    bp += 2;
-#endif
-    if (IsCriticalAddress(pc)) {
-      return false;
-    }
-    if (--skip < 0) {
-      
-      
-      
-      
-      numFrames++;
-      (*aCallback)(numFrames, pc, bp, aClosure);
-      if (aMaxFrames != 0 && numFrames == aMaxFrames) {
-        break;
-      }
-    }
-    bp = next;
-  }
-  return numFrames != 0;
-}
-
-} 
-
 #define X86_OR_PPC (defined(__i386) || defined(PPC) || defined(__ppc__))
 #if X86_OR_PPC && (MOZ_STACKWALK_SUPPORTS_MACOSX || MOZ_STACKWALK_SUPPORTS_LINUX) 
 
@@ -1089,15 +1038,6 @@ MozStackWalk(MozWalkStackCallback aCallback, uint32_t aSkipFrames,
   return false;
 }
 
-namespace mozilla {
-MFBT_API bool
-FramePointerStackWalk(MozWalkStackCallback aCallback, uint32_t aSkipFrames,
-                      void* aClosure, void** aBp)
-{
-  return false;
-}
-}
-
 MFBT_API bool
 MozDescribeCodeAddress(void* aPC, MozCodeAddressDetails* aDetails)
 {
@@ -1108,6 +1048,71 @@ MozDescribeCodeAddress(void* aPC, MozCodeAddressDetails* aDetails)
   aDetails->function[0] = '\0';
   aDetails->foffset = 0;
   return false;
+}
+
+#endif
+
+#if defined(XP_WIN) || defined (XP_MACOSX) || defined (XP_LINUX)
+namespace mozilla {
+bool
+FramePointerStackWalk(MozWalkStackCallback aCallback, uint32_t aSkipFrames,
+                      uint32_t aMaxFrames, void* aClosure, void** bp,
+                      void* aStackEnd)
+{
+  
+
+  int32_t skip = aSkipFrames;
+  uint32_t numFrames = 0;
+  while (bp) {
+    void** next = (void**)*bp;
+    
+    
+    
+    
+    
+    
+    if (next <= bp ||
+        next > aStackEnd ||
+        (long(next) & 3)) {
+      break;
+    }
+#if (defined(__ppc__) && defined(XP_MACOSX)) || defined(__powerpc64__)
+    
+    void* pc = *(bp + 2);
+    bp += 3;
+#else 
+    void* pc = *(bp + 1);
+    bp += 2;
+#endif
+    if (IsCriticalAddress(pc)) {
+      return false;
+    }
+    if (--skip < 0) {
+      
+      
+      
+      
+      numFrames++;
+      (*aCallback)(numFrames, pc, bp, aClosure);
+      if (aMaxFrames != 0 && numFrames == aMaxFrames) {
+        break;
+      }
+    }
+    bp = next;
+  }
+  return numFrames != 0;
+}
+} 
+
+#else
+
+namespace mozilla {
+MFBT_API bool
+FramePointerStackWalk(MozWalkStackCallback aCallback, uint32_t aSkipFrames,
+                      void* aClosure, void** aBp)
+{
+  return false;
+}
 }
 
 #endif
