@@ -48,21 +48,6 @@ option in the node installation) and try again.
 Valid installation paths:
 '''.strip()
 
-ESLINT_PROMPT = '''
-Would you like to use eslint
-'''.strip()
-
-ESLINT_PLUGIN_MOZILLA_PROMPT = '''
-eslint-plugin-mozilla is an eslint plugin containing rules that help enforce
-JavaScript coding standards in the Mozilla project. Would you like to use this
-plugin
-'''.strip()
-
-ESLINT_PLUGIN_REACT_PROMPT = '''
-eslint-plugin-react is an eslint plugin containing rules that help React
-developers follow strict guidelines. Would you like to install it
-'''.strip()
-
 
 @CommandProvider
 class MachCommands(MachCommandBase):
@@ -168,8 +153,8 @@ class MachCommands(MachCommandBase):
         description='Run eslint or help configure eslint for optimal development.')
     @CommandArgument('-s', '--setup', default=False, action='store_true',
         help='configure eslint for optimal development.')
-    @CommandArgument('-e', '--ext', default='[.js,.jsm,.jsx,.xml]',
-        help='Filename extensions to lint, default: "[.js,.jsm,.jsx]".')
+    @CommandArgument('-e', '--ext', default='[.js,.jsm,.jsx,.xml,.html]',
+        help='Filename extensions to lint, default: "[.js,.jsm,.jsx,.xml,.html]".')
     @CommandArgument('-b', '--binary', default=None,
         help='Path to eslint binary.')
     @CommandArgument('args', nargs=argparse.REMAINDER)  
@@ -197,8 +182,13 @@ class MachCommands(MachCommandBase):
         args = args or ['.']
 
         cmd_args = [binary,
-            '--ext', ext,  
-        ] + args
+                    
+                    
+                    
+                    
+                    '--plugin', 'html',
+                    '--ext', ext,  
+                    ] + args
 
         success = self.run_process(cmd_args,
             pass_thru=True,  
@@ -238,6 +228,12 @@ class MachCommands(MachCommandBase):
         success = self.callProcess("eslint-plugin-mozilla",
                                    [npmPath, "link"],
                                    "testing/eslint-plugin-mozilla")
+        if not success:
+            return 1
+
+        
+        success = self.callProcess("eslint-plugin-html",
+                                   [npmPath, "install", "eslint-plugin-html", "-g"])
         if not success:
             return 1
 
