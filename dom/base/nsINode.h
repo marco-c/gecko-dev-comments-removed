@@ -476,6 +476,14 @@ public:
 
 
 
+
+
+
+
+
+
+
+
   nsIDocument *OwnerDoc() const
   {
     return mNodeInfo->GetDocument();
