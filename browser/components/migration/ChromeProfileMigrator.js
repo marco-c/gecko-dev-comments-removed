@@ -19,6 +19,7 @@ const AUTH_TYPE = {
   SCHEME_DIGEST: 2
 };
 
+Cu.import("resource://gre/modules/AppConstants.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/NetUtil.jsm");
@@ -30,6 +31,29 @@ XPCOMUtils.defineLazyModuleGetter(this, "PlacesUtils",
                                   "resource://gre/modules/PlacesUtils.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "OSCrypto",
                                   "resource://gre/modules/OSCrypto.jsm");
+
+
+
+
+
+
+
+
+
+function getDataFolder(subfoldersWin, subfoldersOSX, subfoldersUnix) {
+  let dirServiceID, subfolders;
+  if (AppConstants.platform == "win") {
+    dirServiceID = "LocalAppData";
+    subfolders = subfoldersWin.concat(["User Data"]);
+  } else if (AppConstants.platform == "macosx") {
+    dirServiceID = "ULibDir";
+    subfolders = ["Application Support"].concat(subfoldersOSX);
+  } else {
+    dirServiceID = "Home";
+    subfolders = [".config"].concat(subfoldersUnix);
+  }
+  return FileUtils.getDir(dirServiceID, subfolders, false);
+}
 
 
 
@@ -83,15 +107,8 @@ function* insertBookmarkItems(parentGuid, items, errorAccumulator) {
 
 
 function ChromeProfileMigrator() {
-  let chromeUserDataFolder = FileUtils.getDir(
-#ifdef XP_WIN
-    "LocalAppData", ["Google", "Chrome", "User Data"]
-#elifdef XP_MACOSX
-    "ULibDir", ["Application Support", "Google", "Chrome"]
-#else
-    "Home", [".config", "google-chrome"]
-#endif
-    , false);
+  let chromeUserDataFolder =
+    getDataFolder(["Google", "Chrome"], ["Google", "Chrome"], ["google-chrome"]);
   this._chromeUserDataFolder = chromeUserDataFolder.exists() ?
     chromeUserDataFolder : null;
 }
@@ -104,13 +121,14 @@ ChromeProfileMigrator.prototype.getResources =
       let profileFolder = this._chromeUserDataFolder.clone();
       profileFolder.append(aProfile.id);
       if (profileFolder.exists()) {
-        let possibleResources = [GetBookmarksResource(profileFolder),
-                                 GetHistoryResource(profileFolder),
-                                 GetCookiesResource(profileFolder),
-#ifdef XP_WIN
-                                 GetWindowsPasswordsResource(profileFolder)
-#endif
-                                 ];
+        let possibleResources = [
+          GetBookmarksResource(profileFolder),
+          GetHistoryResource(profileFolder),
+          GetCookiesResource(profileFolder),
+        ];
+        if (AppConstants.platform == "win") {
+          possibleResources.push(GetWindowsPasswordsResource(profileFolder));
+        }
         return possibleResources.filter(r => r != null);
       }
     }
@@ -488,15 +506,7 @@ ChromeProfileMigrator.prototype.classID = Components.ID("{4cec1de4-1671-4fc3-a53
 
 
 function ChromiumProfileMigrator() {
-  let chromiumUserDataFolder = FileUtils.getDir(
-#ifdef XP_WIN
-    "LocalAppData", ["Chromium", "User Data"]
-#elifdef XP_MACOSX
-    "ULibDir", ["Application Support", "Chromium"]
-#else
-    "Home", [".config", "chromium"]
-#endif
-    , false);
+  let chromiumUserDataFolder = getDataFolder(["Chromium"], ["Chromium"], ["chromium"]);
   this._chromeUserDataFolder = chromiumUserDataFolder.exists() ? chromiumUserDataFolder : null;
 }
 
@@ -507,19 +517,12 @@ ChromiumProfileMigrator.prototype.classID = Components.ID("{8cece922-9720-42de-b
 
 var componentsArray = [ChromeProfileMigrator, ChromiumProfileMigrator];
 
-#if defined(XP_WIN) || defined(XP_MACOSX)
 
 
 
 
 function CanaryProfileMigrator() {
-  let chromeUserDataFolder = FileUtils.getDir(
-#ifdef XP_WIN
-    "LocalAppData", ["Google", "Chrome SxS", "User Data"]
-#elifdef XP_MACOSX
-    "ULibDir", ["Application Support", "Google", "Chrome Canary"]
-#endif
-    , false);
+  let chromeUserDataFolder = getDataFolder(["Google", "Chrome SxS"], ["Google", "Chrome Canary"]);
   this._chromeUserDataFolder = chromeUserDataFolder.exists() ? chromeUserDataFolder : null;
 }
 CanaryProfileMigrator.prototype = Object.create(ChromeProfileMigrator.prototype);
@@ -527,7 +530,8 @@ CanaryProfileMigrator.prototype.classDescription = "Chrome Canary Profile Migrat
 CanaryProfileMigrator.prototype.contractID = "@mozilla.org/profile/migrator;1?app=browser&type=canary";
 CanaryProfileMigrator.prototype.classID = Components.ID("{4bf85aa5-4e21-46ca-825f-f9c51a5e8c76}");
 
-componentsArray.push(CanaryProfileMigrator);
-#endif
+if (AppConstants.platform == "win" || AppConstants.platform == "macosx") {
+  componentsArray.push(CanaryProfileMigrator);
+}
 
 this.NSGetFactory = XPCOMUtils.generateNSGetFactory(componentsArray);

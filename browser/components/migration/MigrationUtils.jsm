@@ -24,6 +24,22 @@ var gMigrators = null;
 var gProfileStartup = null;
 var gMigrationBundle = null;
 
+XPCOMUtils.defineLazyGetter(this, "gAvailableMigratorKeys", function() {
+  if (AppConstants.platform == "win") {
+    return [
+      "firefox", "edge", "ie", "chrome", "chromium", "safari", "360se",
+      "canary"
+    ];
+  }
+  if (AppConstants.platform == "macosx") {
+    return ["firefox", "safari", "chrome", "chromium", "canary"];
+  }
+  if (AppConstants.XP_UNIX) {
+    return ["firefox", "chrome", "chromium"];
+  }
+  return [];
+});
+
 function getMigrationBundle() {
   if (!gMigrationBundle) {
     gMigrationBundle = Services.strings.createBundle(
@@ -232,8 +248,8 @@ this.MigratorPrototype = {
 
       notify("Migration:Started");
       for (let [key, value] of resourcesGroupedByItems) {
-      	
-      	let migrationType = key, itemResources = value;
+        
+        let migrationType = key, itemResources = value;
 
         notify("Migration:ItemBeforeMigrate", migrationType);
 
@@ -506,32 +522,6 @@ this.MigrationUtils = Object.freeze({
   },
 
   
-  
-  get migrators() {
-    let migratorKeysOrdered = [
-#ifdef XP_WIN
-      "firefox", "edge", "ie", "chrome", "chromium", "safari", "360se", "canary"
-#elifdef XP_MACOSX
-      "firefox", "safari", "chrome", "chromium", "canary"
-#elifdef XP_UNIX
-      "firefox", "chrome", "chromium"
-#endif
-    ];
-
-    
-    
-    let defaultBrowserKey = getMigratorKeyForDefaultBrowser();
-    if (defaultBrowserKey)
-      migratorKeysOrdered.sort((a, b) => b == defaultBrowserKey ? 1 : 0);
-
-    for (let migratorKey of migratorKeysOrdered) {
-      let migrator = this.getMigrator(migratorKey);
-      if (migrator)
-        yield migrator;
-    }
-  },
-
-  
   get isStartupMigration() {
     return gProfileStartup != null;
   },
@@ -569,8 +559,7 @@ this.MigrationUtils = Object.freeze({
   showMigrationWizard:
   function MU_showMigrationWizard(aOpener, aParams) {
     let features = "chrome,dialog,modal,centerscreen,titlebar,resizable=no";
-#ifdef XP_MACOSX
-    if (!this.isStartupMigration) {
+    if (AppConstants.platform == "macosx" && !this.isStartupMigration) {
       let win = Services.wm.getMostRecentWindow("Browser:MigrationWizard");
       if (win) {
         win.focus();
@@ -580,7 +569,6 @@ this.MigrationUtils = Object.freeze({
       
       features = "centerscreen,chrome,resizable=no";
     }
-#endif
 
     
     let params;
@@ -681,13 +669,11 @@ this.MigrationUtils = Object.freeze({
     if (!migrator) {
       
       
-      try {
-        this.migrators.next();
-      }
-      catch(ex) {
+      
+      
+      if (!gAvailableMigratorKeys.some(key => !!this.getMigrator(key))) {
+        
         this.finishMigration();
-        if (!(ex instanceof StopIteration))
-          throw ex;
         return;
       }
     }
