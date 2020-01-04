@@ -520,14 +520,12 @@ ValueNumberer::removePredecessorAndCleanUp(MBasicBlock* block, MBasicBlock* pred
     
     
     bool isUnreachableLoop = false;
-    MBasicBlock* origBackedgeForOSRFixup = nullptr;
     if (block->isLoopHeader()) {
         if (block->loopPredecessor() == pred) {
             if (MOZ_UNLIKELY(hasNonDominatingPredecessor(block, pred))) {
                 JitSpew(JitSpew_GVN, "      "
                         "Loop with header block%u is now only reachable through an "
                         "OSR entry into the middle of the loop!!", block->id());
-                origBackedgeForOSRFixup = block->backedge();
             } else {
                 
                 isUnreachableLoop = true;
@@ -606,11 +604,6 @@ ValueNumberer::removePredecessorAndCleanUp(MBasicBlock* block, MBasicBlock* pred
         
         
         block->mark();
-    } else if (MOZ_UNLIKELY(origBackedgeForOSRFixup != nullptr)) {
-        
-        
-        if (!fixupOSROnlyLoop(block, origBackedgeForOSRFixup))
-            return false;
     }
 
     return true;
@@ -1079,6 +1072,30 @@ ValueNumberer::visitGraph()
     return true;
 }
 
+bool
+ValueNumberer::insertOSRFixups()
+{
+    ReversePostorderIterator end(graph_.end());
+    for (ReversePostorderIterator iter(graph_.begin()); iter != end; ) {
+        MBasicBlock* block = *iter++;
+
+        
+        if (!block->isLoopHeader())
+            continue;
+
+        
+        
+        
+        if (block->immediateDominator() != block)
+            continue;
+
+        if (!fixupOSROnlyLoop(block, block->backedge()))
+            return false;
+    }
+
+    return true;
+}
+
 
 
 
@@ -1101,22 +1118,44 @@ bool ValueNumberer::cleanupOSRFixups()
                 succ->mark();
                 if (!worklist.append(succ))
                     return false;
+            } else if (succ->isLoopHeader() &&
+                       succ->loopPredecessor() == block &&
+                       succ->numPredecessors() == 3)
+            {
+                
+                
+                succ->getPredecessor(1)->unmarkUnchecked();
             }
         }
+
+        
+        
+        
         
         
         
         
         if (block->isLoopHeader()) {
-            MBasicBlock* pred = block->loopPredecessor();
-            if (!pred->isMarked() && pred->numPredecessors() == 0) {
-                MOZ_ASSERT(pred->numSuccessors() == 1,
+            MBasicBlock* maybeFixupBlock = nullptr;
+            if (block->numPredecessors() == 2) {
+                maybeFixupBlock = block->getPredecessor(0);
+            } else {
+                MOZ_ASSERT(block->numPredecessors() == 3);
+                if (!block->loopPredecessor()->isMarked())
+                    maybeFixupBlock = block->getPredecessor(1);
+            }
+
+            if (maybeFixupBlock &&
+                !maybeFixupBlock->isMarked() &&
+                maybeFixupBlock->numPredecessors() == 0)
+            {
+                MOZ_ASSERT(maybeFixupBlock->numSuccessors() == 1,
                            "OSR fixup block should have exactly one successor");
-                MOZ_ASSERT(pred != graph_.entryBlock(),
+                MOZ_ASSERT(maybeFixupBlock != graph_.entryBlock(),
                            "OSR fixup block shouldn't be the entry block");
-                MOZ_ASSERT(pred != graph_.osrBlock(),
+                MOZ_ASSERT(maybeFixupBlock != graph_.osrBlock(),
                            "OSR fixup block shouldn't be the OSR entry block");
-                pred->mark();
+                maybeFixupBlock->mark();
             }
         }
     }
@@ -1161,6 +1200,11 @@ ValueNumberer::run(UpdateAliasAnalysisFlag updateAliasAnalysis)
 
     
     
+    if (graph_.osrBlock())
+        insertOSRFixups();
+
+    
+    
     
     
     int runs = 0;
@@ -1182,7 +1226,7 @@ ValueNumberer::run(UpdateAliasAnalysisFlag updateAliasAnalysis)
         }
 
         if (blocksRemoved_) {
-            if (!AccountForCFGChanges(mir_, graph_, dependenciesBroken_))
+            if (!AccountForCFGChanges(mir_, graph_, dependenciesBroken_,  true))
                 return false;
 
             blocksRemoved_ = false;
