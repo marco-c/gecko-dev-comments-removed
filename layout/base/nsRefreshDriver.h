@@ -424,6 +424,10 @@ private:
   bool mResizeSuppressed;
 
   int64_t mMostRecentRefreshEpochTime;
+  
+  
+  
+  uint64_t mWarningThreshold;
   mozilla::TimeStamp mMostRecentRefresh;
   mozilla::TimeStamp mMostRecentTick;
   mozilla::TimeStamp mTickStart;
