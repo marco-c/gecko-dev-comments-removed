@@ -167,6 +167,7 @@ public:
     if (!mDeviceIndexes) {
       mDeviceIndexes = new nsTArray<int>;
       mDeviceNames = new nsTArray<nsCString>;
+      mDefaultDevice = -1;
     }
   }
 
@@ -192,10 +193,15 @@ public:
 
   static int32_t DeviceIndex(int aIndex)
   {
+    
     if (aIndex == -1) {
-      aIndex = 0; 
+      if (mDefaultDevice == -1) {
+        aIndex = 0;
+      } else {
+        aIndex = mDefaultDevice;
+      }
     }
-    if (aIndex >= (int) mDeviceIndexes->Length()) {
+    if (aIndex < 0 || aIndex >= (int) mDeviceIndexes->Length()) {
       return -1;
     }
     
@@ -291,6 +297,7 @@ private:
 
   
   static nsTArray<int>* mDeviceIndexes;
+  static int mDefaultDevice; 
   static nsTArray<nsCString>* mDeviceNames;
   static cubeb_device_collection *mDevices;
   static bool mAnyInUse;

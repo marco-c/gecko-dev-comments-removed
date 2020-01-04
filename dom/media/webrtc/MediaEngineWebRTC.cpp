@@ -46,6 +46,7 @@ namespace mozilla {
 
 
 nsTArray<int>* AudioInputCubeb::mDeviceIndexes;
+int AudioInputCubeb::mDefaultDevice = -1;
 nsTArray<nsCString>* AudioInputCubeb::mDeviceNames;
 cubeb_device_collection* AudioInputCubeb::mDevices = nullptr;
 bool AudioInputCubeb::mAnyInUse = false;
@@ -74,10 +75,10 @@ void AudioInputCubeb::UpdateDeviceList()
   
   
   
+  mDefaultDevice = -1;
   for (uint32_t i = 0; i < devices->count; i++) {
     if (devices->device[i]->type == CUBEB_DEVICE_TYPE_INPUT && 
         (devices->device[i]->state == CUBEB_DEVICE_STATE_ENABLED ||
-         devices->device[i]->state == CUBEB_DEVICE_STATE_UNPLUGGED ||
          (devices->device[i]->state == CUBEB_DEVICE_STATE_DISABLED &&
           devices->device[i]->friendly_name &&
           strcmp(devices->device[i]->friendly_name, "Sine source at 440 Hz") == 0)))
@@ -90,6 +91,11 @@ void AudioInputCubeb::UpdateDeviceList()
         
         mDeviceIndexes->AppendElement(i);
         mDeviceNames->AppendElement(devices->device[i]->device_id);
+      }
+      if (devices->device[i]->preferred & CUBEB_DEVICE_PREF_VOICE) {
+        
+        NS_ASSERTION(mDefaultDevice == -1, "multiple default cubeb input devices!");
+        mDefaultDevice = i;
       }
     }
   }
