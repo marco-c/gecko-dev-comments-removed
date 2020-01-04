@@ -33,6 +33,10 @@ def _get_platform():
             return 'w7_'
         elif '6.2' in platform.version():  
             return 'w8_'
+        elif '6.3' in platform.version():  
+            return 'w8_'
+        elif '10.0' in platform.version(): 
+            return 'w8_'
         else:
             raise TalosError('unsupported windows version')
     elif platform.system() == "Darwin":
