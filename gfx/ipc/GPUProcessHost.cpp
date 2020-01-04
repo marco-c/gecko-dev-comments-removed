@@ -19,7 +19,8 @@ GPUProcessHost::GPUProcessHost(Listener* aListener)
    mTaskFactory(this),
    mLaunchPhase(LaunchPhase::Unlaunched),
    mProcessToken(0),
-   mShutdownRequested(false)
+   mShutdownRequested(false),
+   mChannelClosed(false)
 {
   MOZ_COUNT_CTOR(GPUProcessHost);
 }
@@ -148,13 +149,21 @@ GPUProcessHost::Shutdown()
     mShutdownRequested = true;
 
 #ifdef NS_FREE_PERMANENT_DATA
-    mGPUChild->Close();
+    
+    if (!mChannelClosed) {
+      mGPUChild->Close();
+    }
 #else
     
     
     KillHard("NormalShutdown");
 #endif
 
+    
+    
+    
+    
+    
     
     return;
   }
@@ -167,6 +176,7 @@ GPUProcessHost::OnChannelClosed()
 {
   if (!mShutdownRequested) {
     
+    mChannelClosed = true;
     if (mListener) {
       mListener->OnProcessUnexpectedShutdown(this);
     }
