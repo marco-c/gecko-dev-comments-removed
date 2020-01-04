@@ -524,14 +524,6 @@ public:
   
 
 
-  nsIDocument *GetCurrentDoc() const
-  {
-    return GetUncomposedDoc();
-  }
-
-  
-
-
 
 
   nsIDocument* GetComposedDoc() const

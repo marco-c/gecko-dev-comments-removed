@@ -233,7 +233,7 @@ nsXBLResourceLoader::NotifyBoundElements()
     if (ready) {
       
       
-      nsIDocument* doc = content->GetCurrentDoc();
+      nsIDocument* doc = content->GetUncomposedDoc();
     
       if (doc) {
         

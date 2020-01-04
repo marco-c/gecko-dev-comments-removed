@@ -114,7 +114,7 @@ nsSVGOuterSVGFrame::Init(nsIContent*       aContent,
 
   nsSVGOuterSVGFrameBase::Init(aContent, aParent, aPrevInFlow);
 
-  nsIDocument* doc = mContent->GetCurrentDoc();
+  nsIDocument* doc = mContent->GetUncomposedDoc();
   if (doc) {
     
     if (doc->GetRootElement() == mContent) {
@@ -917,7 +917,7 @@ nsSVGOuterSVGFrame::IsRootOfImage()
 {
   if (!mContent->GetParent()) {
     
-    nsIDocument* doc = mContent->GetCurrentDoc();
+    nsIDocument* doc = mContent->GetUncomposedDoc();
     if (doc && doc->IsBeingUsedAsImage()) {
       
       return true;

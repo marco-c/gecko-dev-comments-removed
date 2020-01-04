@@ -173,7 +173,7 @@ nsPrintPreviewListener::HandleEvent(nsIDOMEvent* aEvent)
         if (eventString.EqualsLiteral("keydown")) {
           
           
-          nsIDocument* doc = content->GetCurrentDoc();
+          nsIDocument* doc = content->GetUncomposedDoc();
           NS_ASSERTION(doc, "no document");
 
           nsIDocument* parentDoc = doc->GetParentDocument();

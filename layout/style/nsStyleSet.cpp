@@ -1018,7 +1018,7 @@ nsStyleSet::GetContext(nsStyleContext* aParentContext,
       aElementForAnimation->IsHTMLElement(nsGkAtoms::body) &&
       aPseudoType == CSSPseudoElementType::NotPseudo &&
       PresContext()->CompatibilityMode() == eCompatibility_NavQuirks) {
-    nsIDocument* doc = aElementForAnimation->GetCurrentDoc();
+    nsIDocument* doc = aElementForAnimation->GetUncomposedDoc();
     if (doc && doc->GetBodyElement() == aElementForAnimation) {
       
       PresContext()->SetBodyTextColor(result->StyleColor()->mColor);

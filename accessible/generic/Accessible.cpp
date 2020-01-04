@@ -278,7 +278,7 @@ Accessible::AccessKey() const
   }
 
   
-  nsIDocument* document = mContent->GetCurrentDoc();
+  nsIDocument* document = mContent->GetUncomposedDoc();
   if (!document)
     return KeyBinding();
 

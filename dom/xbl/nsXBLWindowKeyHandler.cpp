@@ -745,7 +745,7 @@ nsXBLWindowKeyHandler::GetElementForHandler(nsXBLPrototypeHandler* aHandler,
   }
 
   
-  nsIDocument* doc = keyContent->GetCurrentDoc();
+  nsIDocument* doc = keyContent->GetUncomposedDoc();
   if (NS_WARN_IF(!doc)) {
     return false;
   }

@@ -4752,8 +4752,8 @@ PresShell::ClipListToRange(nsDisplayListBuilder *aBuilder,
       
       
       
-      else if (content->GetCurrentDoc() ==
-                 aRange->GetStartParent()->GetCurrentDoc()) {
+      else if (content->GetUncomposedDoc() ==
+                 aRange->GetStartParent()->GetUncomposedDoc()) {
         
         bool before, after;
         nsresult rv =

@@ -32,7 +32,7 @@ OuterDocAccessible::
 
   
   
-  nsIDocument* outerDoc = mContent->GetCurrentDoc();
+  nsIDocument* outerDoc = mContent->GetUncomposedDoc();
   if (outerDoc) {
     nsIDocument* innerDoc = outerDoc->GetSubDocumentFor(mContent);
     if (innerDoc)
