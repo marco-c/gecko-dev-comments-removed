@@ -472,7 +472,10 @@ pref("plugin.default.state", 1);
 
 
 pref("breakpad.reportURL", "https://crash-stats.mozilla.com/report/index/");
+
 pref("app.support.baseURL", "https://support.mozilla.org/1/mobile/%VERSION%/%OS%/%LOCALE%/");
+pref("app.supportURL", "https://support.mozilla.org/1/mobile/%VERSION%/%OS%/%LOCALE%/mobile-help");
+pref("app.faqURL", "https://support.mozilla.org/1/mobile/%VERSION%/%OS%/%LOCALE%/faq");
 
 
 
@@ -488,8 +491,6 @@ pref("app.releaseNotesURL", "https://www.mozilla.com/%LOCALE%/mobile/%VERSION%be
 #else
 pref("app.releaseNotesURL", "https://www.mozilla.com/%LOCALE%/mobile/%VERSION%/releasenotes/");
 #endif
-
-pref("app.faqURL", "https://support.mozilla.org/1/mobile/%VERSION%/%OS%/%LOCALE%/faq");
 
 
 pref("security.alternate_certificate_error_page", "certerror");
