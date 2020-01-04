@@ -9,6 +9,7 @@ const { getSourceNames, parseURL, isScratchpadScheme } = require("devtools/clien
 const { LocalizationHelper } = require("devtools/client/shared/l10n");
 
 const l10n = new LocalizationHelper("chrome://devtools/locale/components.properties");
+const webl10n = new LocalizationHelper("chrome://devtools/locale/webconsole.properties");
 
 module.exports = createClass({
   displayName: "Frame",
@@ -20,27 +21,42 @@ module.exports = createClass({
       source: PropTypes.string.isRequired,
       line: PropTypes.oneOfType([ PropTypes.string, PropTypes.number ]),
       column: PropTypes.oneOfType([ PropTypes.string, PropTypes.number ]),
-      showEmptyPathAsHost: PropTypes.bool,
     }).isRequired,
     
     onClick: PropTypes.func.isRequired,
     
     showFunctionName: PropTypes.bool,
     
+    showAnonymousFunctionName: PropTypes.bool,
+    
     showHost: PropTypes.bool,
+    
+    showEmptyPathAsHost: PropTypes.bool,
+    
+    showFullSourceUrl: PropTypes.bool,
   },
 
   getDefaultProps() {
     return {
       showFunctionName: false,
+      showAnonymousFunctionName: false,
       showHost: false,
       showEmptyPathAsHost: false,
+      showFullSourceUrl: false,
     };
   },
 
   render() {
-    let { onClick, frame, showFunctionName, showHost } = this.props;
-    let { showEmptyPathAsHost } = frame;
+    let {
+      onClick,
+      frame,
+      showFunctionName,
+      showAnonymousFunctionName,
+      showHost,
+      showEmptyPathAsHost,
+      showFullSourceUrl
+    } = this.props;
+
     let source = frame.source ? String(frame.source) : "";
     let line = frame.line != void 0 ? Number(frame.line) : null;
     let column = frame.column != void 0 ? Number(frame.column) : null;
@@ -73,37 +89,43 @@ module.exports = createClass({
       className: "frame-link",
     };
 
-    if (showFunctionName && frame.functionDisplayName) {
-      elements.push(
-        dom.span({ className: "frame-link-function-display-name" },
-                 frame.functionDisplayName)
-      );
+    if (showFunctionName) {
+      let functionDisplayName = frame.functionDisplayName;
+      if (!functionDisplayName && showAnonymousFunctionName) {
+        functionDisplayName = webl10n.getStr("stacktrace.anonymousFunction");
+      }
+
+      if (functionDisplayName) {
+        elements.push(
+          dom.span({ className: "frame-link-function-display-name" },
+            functionDisplayName)
+        );
+      }
     }
 
-    let displaySource = short;
-    if (showEmptyPathAsHost && (short === "" || short === "/")) {
+    let displaySource = showFullSourceUrl ? long : short;
+    if (showEmptyPathAsHost && (displaySource === "" || displaySource === "/")) {
       displaySource = host;
     }
+
     sourceElements.push(dom.span({
       className: "frame-link-filename",
     }, displaySource));
 
     
     if (isLinkable && line) {
-      sourceElements.push(dom.span({ className: "frame-link-colon" }, ":"));
-      sourceElements.push(dom.span({ className: "frame-link-line" }, line));
+      let lineInfo = `:${line}`;
+      
+      attributes["data-line"] = line;
+
       
       if (column) {
-        sourceElements.push(dom.span({ className: "frame-link-colon" }, ":"));
-        sourceElements.push(
-          dom.span({ className: "frame-link-column" }, column)
-        );
+        lineInfo += `:${column}`;
         
         attributes["data-column"] = column;
       }
 
-      
-      attributes["data-line"] = line;
+      sourceElements.push(dom.span({ className: "frame-link-line" }, lineInfo));
     }
 
     
@@ -112,10 +134,11 @@ module.exports = createClass({
       sourceEl = dom.a({
         onClick: e => {
           e.preventDefault();
-          onClick(e);
+          onClick(frame);
         },
         href: source,
         className: "frame-link-source",
+        draggable: false,
         title: l10n.getFormatStr("frame.viewsourceindebugger", tooltip)
       }, sourceElements);
     } else {
