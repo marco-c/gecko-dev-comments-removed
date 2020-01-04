@@ -796,7 +796,7 @@ FMRadioService::Observe(nsISupports* aSubject,
 
   
   
-  RootedDictionary<dom::SettingChangeNotification> setting(nsContentUtils::RootingCx());
+  RootedDictionary<dom::SettingChangeNotification> setting(RootingCx());
   if (!WrappedJSToDictionary(aSubject, setting)) {
     return NS_OK;
   }
