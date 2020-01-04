@@ -1217,11 +1217,9 @@ AsyncFaviconDataReady::OnComplete(nsIURI *aFaviconURI,
     return NS_ERROR_OUT_OF_MEMORY;
   }
   int32_t stride = 4 * size.width;
-  int32_t dataLength = stride * size.height;
 
   
   nsCOMPtr<nsIRunnable> event = new AsyncEncodeAndWriteIcon(path, Move(data),
-                                                            dataLength,
                                                             stride,
                                                             size.width,
                                                             size.height,
@@ -1235,7 +1233,6 @@ AsyncFaviconDataReady::OnComplete(nsIURI *aFaviconURI,
 
 AsyncEncodeAndWriteIcon::AsyncEncodeAndWriteIcon(const nsAString &aIconPath,
                                                  UniquePtr<uint8_t[]> aBuffer,
-                                                 uint32_t aBufferLength,
                                                  uint32_t aStride,
                                                  uint32_t aWidth,
                                                  uint32_t aHeight,
@@ -1243,7 +1240,6 @@ AsyncEncodeAndWriteIcon::AsyncEncodeAndWriteIcon(const nsAString &aIconPath,
   mURLShortcut(aURLShortcut),
   mIconPath(aIconPath),
   mBuffer(Move(aBuffer)),
-  mBufferLength(aBufferLength),
   mStride(aStride),
   mWidth(aWidth),
   mHeight(aHeight)
