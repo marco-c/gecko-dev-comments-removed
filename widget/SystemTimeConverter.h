@@ -23,14 +23,19 @@ namespace mozilla {
 
 
 
+
+
+
 template <typename Time>
 class SystemTimeConverter {
 public:
   SystemTimeConverter()
     : mReferenceTime(Time(0))
     , mReferenceTimeStamp() 
+    , mLastBackwardsSkewCheck(Time(0))
     , kTimeRange(std::numeric_limits<Time>::max())
     , kTimeHalfRange(kTimeRange / 2)
+    , kBackwardsSkewCheckInterval(Time(2000))
   {
     static_assert(!IsSigned<Time>::value, "Expected Time to be unsigned");
   }
@@ -59,71 +64,151 @@ public:
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     Time timeSinceReference = aTime - mReferenceTime;
-    if (timeSinceReference > kTimeHalfRange &&
-        roughlyNow - mReferenceTimeStamp <
-          TimeDuration::FromMilliseconds(kTimeHalfRange)) {
-      UpdateReferenceTime(aTime, aCurrentTimeGetter);
-      timeSinceReference = aTime - mReferenceTime;
+
+    
+    
+    
+    
+    
+    
+    Time timeToNowByTimeStamp =
+      static_cast<int64_t>((roughlyNow - mReferenceTimeStamp).ToMilliseconds());
+    Time deltaFromNow = timeToNowByTimeStamp - timeSinceReference;
+
+    
+    
+    static const Time kTolerance = 30;
+
+    
+    
+    if (deltaFromNow > kTimeHalfRange) {
+      
+      UpdateReferenceTime(aTime, roughlyNow);
+
+      
+      
+      mLastBackwardsSkewCheck = aTime;
+
+      return roughlyNow;
     }
 
-    TimeStamp timestamp =
-      mReferenceTimeStamp + TimeDuration::FromMilliseconds(timeSinceReference);
-
-    
-    
-    double timesWrapped =
-      (roughlyNow - mReferenceTimeStamp).ToMilliseconds() / kTimeRange;
-    int32_t cyclesToAdd =
-      static_cast<int32_t>(timesWrapped); 
-
-    
-    
-    
-    
-    
-    
-    
-    double intervalFraction = fmod(timesWrapped, 1.0);
-
-    
-    
-    
-    
-    if (intervalFraction < 0.1 && timeSinceReference > kTimeRange * 0.9) {
-      cyclesToAdd--;
-    
-    
-    } else if (intervalFraction > 0.9 &&
-               timeSinceReference < kTimeRange * 0.1) {
-      cyclesToAdd++;
+    if (deltaFromNow <= kTolerance) {
+      
+      
+      
+      mLastBackwardsSkewCheck = aTime;
+    } else if (aTime - mLastBackwardsSkewCheck > kBackwardsSkewCheckInterval) {
+      aCurrentTimeGetter.GetTimeAsyncForPossibleBackwardsSkew(roughlyNow);
+      mLastBackwardsSkewCheck = aTime;
     }
 
-    if (cyclesToAdd > 0) {
-      timestamp += TimeDuration::FromMilliseconds(kTimeRange * cyclesToAdd);
+    
+    return roughlyNow - TimeDuration::FromMilliseconds(deltaFromNow);
+  }
+
+  void
+  CompensateForBackwardsSkew(Time aReferenceTime,
+                             const TimeStamp &aLowerBound) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    MOZ_ASSERT(mReferenceTime - aReferenceTime < kTimeHalfRange,
+               "Expected aReferenceTime to be more recent than mReferenceTime");
+    if (aReferenceTime - mReferenceTime
+        > (aLowerBound - mReferenceTimeStamp).ToMilliseconds()) {
+      return;
     }
 
-    return timestamp;
+    
+    
+    
+    
+    
+    
+    
+    
+    UpdateReferenceTime(aReferenceTime, aLowerBound);
   }
 
 private:
   template <typename CurrentTimeGetter>
   void
-  UpdateReferenceTime(Time aTime,
+  UpdateReferenceTime(Time aReferenceTime,
                       const CurrentTimeGetter& aCurrentTimeGetter) {
-    mReferenceTime = aTime;
     Time currentTime = aCurrentTimeGetter.GetCurrentTime();
     TimeStamp currentTimeStamp = TimeStamp::Now();
-    Time timeSinceReference = currentTime - aTime;
-    mReferenceTimeStamp =
+    Time timeSinceReference = currentTime - aReferenceTime;
+    TimeStamp referenceTimeStamp =
       currentTimeStamp - TimeDuration::FromMilliseconds(timeSinceReference);
+    UpdateReferenceTime(aReferenceTime, referenceTimeStamp);
+  }
+
+  void
+  UpdateReferenceTime(Time aReferenceTime,
+                      const TimeStamp& aReferenceTimeStamp) {
+    mReferenceTime = aReferenceTime;
+    mReferenceTimeStamp = aReferenceTimeStamp;
   }
 
   Time mReferenceTime;
   TimeStamp mReferenceTimeStamp;
+  Time mLastBackwardsSkewCheck;
 
   const Time kTimeRange;
   const Time kTimeHalfRange;
+  const Time kBackwardsSkewCheckInterval;
 };
 
 } 
