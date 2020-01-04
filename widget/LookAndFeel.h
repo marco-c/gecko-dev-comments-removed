@@ -526,6 +526,15 @@ public:
 
   static nsresult GetColor(ColorID aID, nscolor* aResult);
 
+   
+
+
+
+
+
+  static nsresult GetColor(ColorID aID, bool aUseStandinsForNativeColors,
+                           nscolor* aResult);
+
   
 
 
