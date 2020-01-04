@@ -17,7 +17,11 @@ function test() {
   
   requestLongerTimeout(2);
 
-  initDebugger(TAB_URL).then(([aTab,, aPanel]) => {
+  let options = {
+    source: TAB_URL,
+    line: 1
+  };
+  initDebugger(TAB_URL, options).then(([aTab,, aPanel]) => {
     gTab = aTab;
     gPanel = aPanel;
     gDebugger = gPanel.panelWin;
@@ -28,8 +32,7 @@ function test() {
     
     
     promise.all([
-      waitForSourceAndCaret(gPanel, ".html", 22),
-      waitForDebuggerEvents(gPanel, gDebugger.EVENTS.FETCHED_SCOPES),
+      waitForCaretAndScopes(gPanel, 22),
       waitForDebuggerEvents(gPanel, gDebugger.EVENTS.FETCHED_VARIABLES)
     ]).then(prepareVariablesAndProperties)
       .then(testVariablesAndPropertiesFiltering)

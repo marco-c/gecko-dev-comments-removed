@@ -102,6 +102,7 @@ this.removeTab = function removeTab(aTab, aWindow) {
 
   tabContainer.addEventListener("TabClose", function onClose(aEvent) {
     tabContainer.removeEventListener("TabClose", onClose, false);
+
     info("Tab removed and finished closing.");
     deferred.resolve();
   }, false);
@@ -512,29 +513,77 @@ function getSources(aClient) {
   return deferred.promise;
 }
 
-function initDebugger(aTarget, aWindow) {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+let initDebugger = Task.async(function*(urlOrTab, options) {
+  let { window, source, line } = options || {};
   info("Initializing a debugger panel.");
 
-  return getTab(aTarget, aWindow).then(aTab => {
-    info("Debugee tab added successfully: " + aTarget);
+  let tab, url;
+  if (urlOrTab instanceof XULElement) {
+    
+    tab = urlOrTab;
+  } else {
+    
+    
+    
+    tab = yield addTab("about:blank", window);
+    url = urlOrTab;
+  }
+  info("Debugee tab added successfully: " + urlOrTab);
 
-    let deferred = promise.defer();
-    let debuggee = aTab.linkedBrowser.contentWindow.wrappedJSObject;
-    let target = TargetFactory.forTab(aTab);
+  let debuggee = tab.linkedBrowser.contentWindow.wrappedJSObject;
+  let target = TargetFactory.forTab(tab);
 
-    gDevTools.showToolbox(target, "jsdebugger").then(aToolbox => {
-      info("Debugger panel shown successfully.");
+  let toolbox = yield gDevTools.showToolbox(target, "jsdebugger");
+  info("Debugger panel shown successfully.");
 
-      let debuggerPanel = aToolbox.getCurrentPanel();
-      let panelWin = debuggerPanel.panelWin;
+  let debuggerPanel = toolbox.getCurrentPanel();
+  let panelWin = debuggerPanel.panelWin;
 
-      prepareDebugger(debuggerPanel);
-      deferred.resolve([aTab, debuggee, debuggerPanel, aWindow]);
-    });
+  prepareDebugger(debuggerPanel);
 
-    return deferred.promise;
-  });
-}
+  if (url && url != "about:blank") {
+    let onCaretUpdated;
+    if (line) {
+      onCaretUpdated = waitForCaretUpdated(debuggerPanel, line);
+    }
+    if (source === null) {
+      
+      
+      yield reload(debuggerPanel, url);
+    } else {
+      yield navigateActiveTabTo(debuggerPanel,
+                                url,
+                                panelWin.EVENTS.SOURCE_SHOWN);
+    }
+    if (source) {
+      ensureSourceIs(debuggerPanel, source);
+    }
+    yield onCaretUpdated;
+  }
+
+  return [tab, debuggee, debuggerPanel, window];
+});
 
 
 

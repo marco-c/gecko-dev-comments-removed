@@ -7,7 +7,7 @@
 
 
 
-const TAB_URL = "doc_bug-896139.html";
+const TAB_URL = EXAMPLE_URL + "doc_bug-896139.html";
 const SCRIPT_URL = "code_bug-896139.js";
 
 function test() {
@@ -18,14 +18,22 @@ function test() {
       return promise.then(() => doResume(panel));
     }
 
-    let [tab,, panel] = yield initDebugger(EXAMPLE_URL + TAB_URL);
+    let [tab,, panel] = yield initDebugger();
     let win = panel.panelWin;
 
     let Sources = win.DebuggerView.Sources;
-    yield waitForDebuggerEvents(panel, win.EVENTS.SOURCE_SHOWN);
-    if (Sources.selectedItem.attachment.source.url.indexOf(SCRIPT_URL) === -1) {
-      Sources.selectedValue = getSourceActor(win.DebuggerView.Sources, EXAMPLE_URL + SCRIPT_URL);
-    }
+
+    
+    
+    
+    
+    
+    let onSource = waitForSourceAndCaret(panel, SCRIPT_URL, 1);
+    yield navigateActiveTabTo(panel,
+                              TAB_URL,
+                              win.EVENTS.SOURCE_SHOWN);
+    yield onSource;
+
 
     yield panel.addBreakpoint({
       actor: getSourceActor(win.DebuggerView.Sources, EXAMPLE_URL + SCRIPT_URL),
