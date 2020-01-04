@@ -3411,6 +3411,7 @@ CSSParserImpl::ParseMediaQueryExpression(nsMediaQuery* aQuery)
   
   nsContentUtils::ASCIIToLower(mToken.mIdent);
   nsDependentString featureString(mToken.mIdent, 0);
+  uint8_t satisfiedReqFlags = 0;
 
   
   if (StringBeginsWith(featureString, NS_LITERAL_STRING("min-"))) {
@@ -3426,7 +3427,11 @@ CSSParserImpl::ParseMediaQueryExpression(nsMediaQuery* aQuery)
   nsCOMPtr<nsIAtom> mediaFeatureAtom = do_GetAtom(featureString);
   const nsMediaFeature *feature = nsMediaFeatures::features;
   for (; feature->mName; ++feature) {
-    if (*(feature->mName) == mediaFeatureAtom) {
+    
+    
+    
+    if (*(feature->mName) == mediaFeatureAtom &&
+        !(feature->mReqFlags & ~satisfiedReqFlags)) {
       break;
     }
   }

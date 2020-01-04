@@ -46,6 +46,13 @@ struct nsMediaFeature {
     };
     ValueType mValueType;
 
+    enum RequirementFlags : uint8_t {
+      
+      
+      eNoRequirements = 0
+    };
+    uint8_t mReqFlags;
+
     union {
       
       
