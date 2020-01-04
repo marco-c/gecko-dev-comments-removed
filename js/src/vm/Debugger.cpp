@@ -5410,6 +5410,19 @@ Debugger::observesScript(JSScript* script) const
 Debugger::replaceFrameGuts(JSContext* cx, AbstractFramePtr from, AbstractFramePtr to,
                            ScriptFrameIter& iter)
 {
+    auto removeFromDebuggerFramesOnExit = MakeScopeExit([&] {
+        
+        
+        for (Debugger::FrameRange r(from); !r.empty(); r.popFront()) {
+            r.frontFrame()->setPrivate(nullptr);
+            r.removeFrontFrame();
+        }
+
+        
+        
+        DebugScopes::forwardLiveFrame(cx, from, to);
+    });
+
     
     for (Debugger::FrameRange r(from); !r.empty(); r.popFront()) {
         RootedNativeObject frameobj(cx, r.frontFrame());
@@ -5432,11 +5445,6 @@ Debugger::replaceFrameGuts(JSContext* cx, AbstractFramePtr from, AbstractFramePt
             return false;
         }
     }
-
-    
-    
-    
-    DebugScopes::forwardLiveFrame(cx, from, to);
 
     return true;
 }
