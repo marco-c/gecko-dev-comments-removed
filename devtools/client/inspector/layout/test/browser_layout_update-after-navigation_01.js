@@ -6,7 +6,6 @@
 
 
 
-
 const IFRAME1 = URL_ROOT + "doc_layout_iframe1.html";
 const IFRAME2 = URL_ROOT + "doc_layout_iframe2.html";
 
@@ -21,12 +20,6 @@ add_task(function* () {
   yield inspector.once("markuploaded");
 
   yield testSecondPage(inspector, view, testActor);
-
-  info("Go back to the first page");
-  yield testActor.eval("content.history.back();");
-  yield inspector.once("markuploaded");
-
-  yield testBackToFirstPage(inspector, view, testActor);
 });
 
 function* testFirstPage(inspector, view, testActor) {
@@ -67,25 +60,4 @@ function* testSecondPage(inspector, view, testActor) {
 
   info("Checking that the layout-view shows the right value after update");
   is(sizeElt.textContent, "200" + "\u00D7" + "100");
-}
-
-function* testBackToFirstPage(inspector, view, testActor) {
-  info("Test that the layout-view works on the first page after going back");
-
-  info("Selecting the test node");
-  yield selectNode("p", inspector);
-
-  info("Checking that the layout-view shows the right value, which is the" +
-    "modified value from step one because of the bfcache");
-  let paddingElt = view.doc.querySelector(".layout-padding.layout-top > span");
-  is(paddingElt.textContent, "20");
-
-  info("Listening for layout-view changes and modifying the padding");
-  let onUpdated = waitForUpdate(inspector);
-  yield setStyle(testActor, "p", "padding", "100px");
-  yield onUpdated;
-  ok(true, "Layout-view got updated");
-
-  info("Checking that the layout-view shows the right value after update");
-  is(paddingElt.textContent, "100");
 }
