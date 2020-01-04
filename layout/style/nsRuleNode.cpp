@@ -5705,6 +5705,21 @@ nsRuleNode::ComputeDisplayData(void* aStartStruct,
       display->mOverflowY = NS_STYLE_OVERFLOW_AUTO;
   }
 
+  
+  if (display->IsContainPaint()) {
+    
+    if (display->mOverflowX == NS_STYLE_OVERFLOW_VISIBLE) {
+      
+      
+      display->mOverflowX = NS_STYLE_OVERFLOW_CLIP;
+      conditions.SetUncacheable();
+    }
+    if (display->mOverflowY == NS_STYLE_OVERFLOW_VISIBLE) {
+      display->mOverflowY = NS_STYLE_OVERFLOW_CLIP;
+      conditions.SetUncacheable();
+    }
+  }
+
   SetDiscrete(*aRuleData->ValueForOverflowClipBox(), display->mOverflowClipBox,
               conditions,
               SETDSC_ENUMERATED | SETDSC_UNSET_INITIAL,
@@ -5846,6 +5861,18 @@ nsRuleNode::ComputeDisplayData(void* aStartStruct,
       
     }
 
+    if (display->IsContainPaint()) {
+      
+      
+      
+      
+
+      
+      
+      if (display->mDisplay == NS_STYLE_DISPLAY_INLINE) {
+          display->mDisplay = NS_STYLE_DISPLAY_INLINE_BLOCK;
+      }
+    }
   }
 
   

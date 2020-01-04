@@ -2374,6 +2374,10 @@ struct nsStyleDisplay {
            mOverflowX != NS_STYLE_OVERFLOW_CLIP;
   }
 
+  bool IsContainPaint() const {
+    return NS_STYLE_CONTAIN_PAINT & mContain;
+  }
+
   
 
   bool HasTransformStyle() const {
