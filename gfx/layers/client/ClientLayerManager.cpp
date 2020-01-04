@@ -849,7 +849,12 @@ already_AddRefed<PersistentBufferProvider>
 ClientLayerManager::CreatePersistentBufferProvider(const gfx::IntSize& aSize,
                                                    gfx::SurfaceFormat aFormat)
 {
-  if (gfxPrefs::PersistentBufferProviderSharedEnabled()) {
+  
+  
+  
+  
+  if (IsCompositingCheap() &&
+      gfxPrefs::PersistentBufferProviderSharedEnabled()) {
     RefPtr<PersistentBufferProvider> provider
       = PersistentBufferProviderShared::Create(aSize, aFormat, AsShadowForwarder());
     if (provider) {
