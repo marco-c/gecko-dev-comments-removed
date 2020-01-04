@@ -165,7 +165,7 @@ EventEmitter.prototype = {
         catch (ex) {
           
           let msg = ex + ": " + ex.stack;
-          Cu.reportError(msg);
+          console.error(msg);
           dump(msg + "\n");
         }
       }
