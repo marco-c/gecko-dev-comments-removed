@@ -74,14 +74,6 @@ public:
   
   virtual void
   FlushConsoleReports(nsIDocument* aDocument) = 0;
-
-  
-  
-  
-  
-  
-  virtual void
-  FlushConsoleReports(nsIConsoleReportCollector* aCollector) = 0;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(nsIConsoleReportCollector, NS_NSICONSOLEREPORTCOLLECTOR_IID)
