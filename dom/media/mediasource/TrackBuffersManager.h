@@ -123,6 +123,7 @@ public:
   
   media::TimeIntervals Buffered();
   media::TimeUnit HighestStartTime();
+  media::TimeUnit HighestEndTime();
 
   
   int64_t GetSize() const;

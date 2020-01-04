@@ -538,14 +538,11 @@ MediaSource::DurationChange(double aNewDuration, ErrorResult& aRv)
 
   
   
-  
-  
-  
-  
+  double highestEndTime = mSourceBuffers->HighestEndTime();
   
   
   aNewDuration =
-    std::max(aNewDuration, mSourceBuffers->GetHighestBufferedEndTime());
+    std::max(aNewDuration, highestEndTime);
 
   
   

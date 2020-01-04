@@ -300,20 +300,17 @@ TimeIntervals
 TrackBuffersManager::Buffered()
 {
   MSE_DEBUG("");
-  MonitorAutoLock mon(mMonitor);
   
   
-  TimeUnit highestEndTime;
+  TimeUnit highestEndTime = HighestEndTime();
 
+  MonitorAutoLock mon(mMonitor);
   nsTArray<TimeIntervals*> tracks;
   if (HasVideo()) {
     tracks.AppendElement(&mVideoBufferedRanges);
   }
   if (HasAudio()) {
     tracks.AppendElement(&mAudioBufferedRanges);
-  }
-  for (auto trackRanges : tracks) {
-    highestEndTime = std::max(trackRanges->GetEnd(), highestEndTime);
   }
 
   
@@ -1915,6 +1912,25 @@ TrackBuffersManager::HighestStartTime()
       std::max(track->mHighestStartTimestamp, highestStartTime);
   }
   return highestStartTime;
+}
+
+TimeUnit
+TrackBuffersManager::HighestEndTime()
+{
+  MonitorAutoLock mon(mMonitor);
+  TimeUnit highestEndTime;
+
+  nsTArray<TimeIntervals*> tracks;
+  if (HasVideo()) {
+    tracks.AppendElement(&mVideoBufferedRanges);
+  }
+  if (HasAudio()) {
+    tracks.AppendElement(&mAudioBufferedRanges);
+  }
+  for (auto trackRanges : tracks) {
+    highestEndTime = std::max(trackRanges->GetEnd(), highestEndTime);
+  }
+  return highestEndTime;
 }
 
 const TrackBuffersManager::TrackBuffer&
