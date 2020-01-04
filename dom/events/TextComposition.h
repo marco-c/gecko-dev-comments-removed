@@ -405,6 +405,15 @@ private:
 
 
 
+
+
+
+  void OnStartOffsetUpdatedInChild(uint32_t aStartOffset);
+
+  
+
+
+
   class CompositionEventDispatcher : public Runnable
   {
   public:

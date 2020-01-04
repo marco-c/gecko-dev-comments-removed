@@ -97,6 +97,18 @@ public:
 
   static void StopIMEStateManagement();
 
+  
+
+
+
+
+
+
+
+
+  static void MaybeStartOffsetUpdatedInChild(nsIWidget* aWidget,
+                                             uint32_t aStartOffset);
+
   static nsresult OnDestroyPresContext(nsPresContext* aPresContext);
   static nsresult OnRemoveContent(nsPresContext* aPresContext,
                                   nsIContent* aContent);

@@ -280,6 +280,7 @@ public:
 
 
   void AssignContent(const ContentCache& aOther,
+                     nsIWidget* aWidget,
                      const IMENotification* aNotification = nullptr);
 
   
