@@ -269,7 +269,6 @@ public:
 
 
 
-    void SetColor(const gfxRGBA& aColor);
     void SetColor(const mozilla::gfx::Color& aColor);
 
     

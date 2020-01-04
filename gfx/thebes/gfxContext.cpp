@@ -707,15 +707,6 @@ gfxContext::ClipContainsRect(const gfxRect& aRect)
 
 
 void
-gfxContext::SetColor(const gfxRGBA& aColor)
-{
-  CurrentState().pattern = nullptr;
-  CurrentState().sourceSurfCairo = nullptr;
-  CurrentState().sourceSurface = nullptr;
-  CurrentState().color = ToDeviceColor(aColor);
-}
-
-void
 gfxContext::SetColor(const Color& aColor)
 {
   CurrentState().pattern = nullptr;
