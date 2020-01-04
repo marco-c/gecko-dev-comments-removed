@@ -212,6 +212,8 @@ public:
   DispatchToMicroTask(nsIRunnable* aRunnable);
 
 protected:
+  struct PromiseCapability;
+
   
   
   explicit Promise(nsIGlobalObject* aGlobal);
