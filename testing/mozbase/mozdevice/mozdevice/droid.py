@@ -103,7 +103,7 @@ class DroidMixin(object):
         if extraArgs:
             extras['args'] = " ".join(extraArgs)
 
-        self.launchApplication(appName, ".App", intent, url=url, extras=extras,
+        self.launchApplication(appName, "org.mozilla.gecko.BrowserApp", intent, url=url, extras=extras,
                                wait=wait, failIfRunning=failIfRunning)
 
     def getInstalledApps(self):
