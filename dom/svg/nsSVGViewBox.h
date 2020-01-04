@@ -52,19 +52,24 @@ public:
 
 
 
-
-
-
   bool HasRect() const
-    { return (mAnimVal && !mAnimVal->none) ||
-             (!mAnimVal && mHasBaseVal && !mBaseVal.none); }
+    {
+      const nsSVGViewBoxRect& rect = GetAnimValue();
+      return !rect.none && rect.width >= 0 && rect.height >= 0;
+    }
 
   
 
 
 
   bool IsExplicitlySet() const
-    { return mAnimVal || mHasBaseVal; }
+    {
+      if (mAnimVal || mHasBaseVal) {
+        const nsSVGViewBoxRect& rect = GetAnimValue();
+        return rect.none || (rect.width >= 0 && rect.height >= 0);
+      }
+      return false;
+    }
 
   const nsSVGViewBoxRect& GetBaseValue() const
     { return mBaseVal; }
