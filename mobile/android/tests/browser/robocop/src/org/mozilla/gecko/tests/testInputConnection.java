@@ -49,6 +49,12 @@ public class testInputConnection extends JavascriptBridgeTest {
             .waitForInputConnection()
             .testInputConnection(new ResettingInputConnectionTest());
 
+        
+        getJS().syncCall("focus_hiding_input", "");
+        mGeckoView.mTextInput
+            .waitForInputConnection()
+            .testInputConnection(new HidingInputConnectionTest());
+
         getJS().syncCall("finish_test");
     }
 
@@ -252,6 +258,36 @@ public class testInputConnection extends JavascriptBridgeTest {
 
             ic.deleteSurroundingText(3, 0);
             assertTextAndSelectionAt("Can clear text", ic, "", 0);
+        }
+    }
+
+    
+
+
+
+
+    private class HidingInputConnectionTest extends InputConnectionTest {
+        @Override
+        public void test(final InputConnection ic, EditorInfo info) {
+            waitFor("focus change", new Condition() {
+                @Override
+                public boolean isSatisfied() {
+                    return "".equals(getText(ic));
+                }
+            });
+
+            
+            ic.commitText("foo", 1);
+            assertTextAndSelectionAt("Can commit text (hiding)", ic, "foo", 3);
+
+            ic.commitText("!", 1);
+            
+            
+            assertTextAndSelectionAt("Can handle hiding input", ic, "foo", 3);
+
+            
+            processGeckoEvents(ic);
+            processInputConnectionEvents();
         }
     }
 }
