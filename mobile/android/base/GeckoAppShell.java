@@ -55,13 +55,13 @@ import org.mozilla.gecko.util.NativeJSContainer;
 import org.mozilla.gecko.util.NativeJSObject;
 import org.mozilla.gecko.util.ProxySelector;
 import org.mozilla.gecko.util.ThreadUtils;
-import org.mozilla.gecko.widget.ExternalIntentDuringPrivateBrowsingPromptFragment;
 
 import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.ActivityManager;
 import android.app.AlarmManager;
 import android.app.PendingIntent;
+import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -106,7 +106,6 @@ import android.os.SystemClock;
 import android.os.Vibrator;
 import android.provider.Browser;
 import android.provider.Settings;
-import android.support.v4.app.FragmentActivity;
 import android.telephony.TelephonyManager;
 import android.text.TextUtils;
 import android.util.Base64;
@@ -1050,17 +1049,6 @@ public class GeckoAppShell
         return true;
     }
 
-    @WrapForJNI
-    public static boolean openUriExternal(String targetURI,
-                                          String mimeType,
-                                          String packageName,
-                                          String className,
-                                          String action,
-                                          String title) {
-        
-        return openUriExternal(targetURI, mimeType, packageName, className, action, title, true);
-    }
-
     
 
 
@@ -1076,18 +1064,13 @@ public class GeckoAppShell
 
 
 
-
-
-
-
-
+    @WrapForJNI
     public static boolean openUriExternal(String targetURI,
                                           String mimeType,
                                           String packageName,
                                           String className,
                                           String action,
-                                          String title,
-                                          final boolean showPromptInPrivateBrowsing) {
+                                          String title) {
         final Context context = getContext();
         final Intent intent = getOpenURIIntent(context, targetURI,
                                                mimeType, action, title);
@@ -1106,16 +1089,15 @@ public class GeckoAppShell
         }
 
         intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-
-        if (!showPromptInPrivateBrowsing) {
-            return ActivityHandlerHelper.startIntentAndCatch(LOGTAG, context, intent);
-        } else {
-            
-            
-            
-            final FragmentActivity fragmentActivity = (FragmentActivity) getGeckoInterface().getActivity();
-            return ExternalIntentDuringPrivateBrowsingPromptFragment.showDialogOrAndroidChooser(
-                    context, fragmentActivity.getSupportFragmentManager(), intent);
+        try {
+            context.startActivity(intent);
+            return true;
+        } catch (ActivityNotFoundException e) {
+            Log.w(LOGTAG, "Activity not found.", e);
+            return false;
+        } catch (SecurityException e) {
+            Log.w(LOGTAG, "Forbidden to launch activity.", e);
+            return false;
         }
     }
 
@@ -2446,7 +2428,7 @@ public class GeckoAppShell
 
     private static boolean sImeWasEnabledOnLastResize = false;
     public static void viewSizeChanged() {
-        LayerView v = getLayerView();
+        GeckoView v = (GeckoView) getLayerView();
         if (v == null) {
             return;
         }
