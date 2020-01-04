@@ -171,11 +171,8 @@ SelectionCopyHelper(nsISelection *aSel, nsIDocument *aDoc,
   nsAutoString htmlInfoBuf;
   if (encodedTextHTML) {
     
-    
     mimeType.AssignLiteral(kHTMLMime);
-    rv = docEncoder->Init(domDoc, mimeType,
-                          aFlags |
-                          nsIDocumentEncoder::OutputDisallowLineBreaking);
+    rv = docEncoder->Init(domDoc, mimeType, aFlags);
     NS_ENSURE_SUCCESS(rv, rv);
 
     rv = docEncoder->SetSelection(aSel);
