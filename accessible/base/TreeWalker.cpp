@@ -80,11 +80,9 @@ TreeWalker::NextChild()
 
     nsIContent* parent = parentNode->AsElement();
     top = PushState(parent);
-    while (nsIContent* childNode = Next(top)) {
-      if (childNode == mAnchorNode) {
-        mAnchorNode = parent;
-        return NextChild();
-      }
+    if (top->mDOMIter.Seek(mAnchorNode)) {
+      mAnchorNode = parent;
+      return NextChild();
     }
 
     
