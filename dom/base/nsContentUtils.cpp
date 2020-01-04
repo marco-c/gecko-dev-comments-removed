@@ -8234,9 +8234,7 @@ nsContentUtils::InternalStorageAllowedForPrincipal(nsIPrincipal* aPrincipal,
   }
 
   
-  
-  if (sCookiesBehavior == nsICookieService::BEHAVIOR_REJECT ||
-      sCookiesLifetimePolicy == nsICookieService::ASK_BEFORE_ACCEPT) {
+  if (sCookiesBehavior == nsICookieService::BEHAVIOR_REJECT) {
     return StorageAccess::eDeny;
   }
 

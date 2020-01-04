@@ -51,7 +51,6 @@ static const char kCookiesPrefsMigrated[] = "network.cookie.prefsMigrated";
 
 static const char kCookiesLifetimeEnabled[] = "network.cookie.lifetime.enabled";
 static const char kCookiesLifetimeBehavior[] = "network.cookie.lifetime.behavior";
-static const char kCookiesAskPermission[] = "network.cookie.warnAboutCookies";
 
 static const char kPermissionType[] = "cookie";
 
@@ -84,19 +83,11 @@ nsCookiePermission::Init()
     bool migrated;
     rv = prefBranch->GetBoolPref(kCookiesPrefsMigrated, &migrated);
     if (NS_FAILED(rv) || !migrated) {
-      bool warnAboutCookies = false;
-      prefBranch->GetBoolPref(kCookiesAskPermission, &warnAboutCookies);
-
-      
-      if (warnAboutCookies)
-        prefBranch->SetIntPref(kCookiesLifetimePolicy, ASK_BEFORE_ACCEPT);
-        
       bool lifetimeEnabled = false;
       prefBranch->GetBoolPref(kCookiesLifetimeEnabled, &lifetimeEnabled);
+
       
-      
-      
-      if (lifetimeEnabled && !warnAboutCookies) {
+      if (lifetimeEnabled) {
         int32_t lifetimeBehavior;
         prefBranch->GetIntPref(kCookiesLifetimeBehavior, &lifetimeBehavior);
         if (lifetimeBehavior)
@@ -120,8 +111,12 @@ nsCookiePermission::PrefChanged(nsIPrefBranch *aPrefBranch,
 #define PREF_CHANGED(_P) (!aPref || !strcmp(aPref, _P))
 
   if (PREF_CHANGED(kCookiesLifetimePolicy) &&
-      NS_SUCCEEDED(aPrefBranch->GetIntPref(kCookiesLifetimePolicy, &val)))
+      NS_SUCCEEDED(aPrefBranch->GetIntPref(kCookiesLifetimePolicy, &val))) {
+    if (val != static_cast<int32_t>(ACCEPT_SESSION) && val != static_cast<int32_t>(ACCEPT_FOR_N_DAYS)) {
+      val = ACCEPT_NORMALLY;
+    }
     mCookiesLifetimePolicy = val;
+  }
 
   if (PREF_CHANGED(kCookiesLifetimeDays) &&
       NS_SUCCEEDED(aPrefBranch->GetIntPref(kCookiesLifetimeDays, &val)))
@@ -254,111 +249,14 @@ nsCookiePermission::CanSetCookie(nsIURI     *aURI,
     int64_t delta = *aExpiry - currentTime;
 
     
-    if (mCookiesLifetimePolicy == ASK_BEFORE_ACCEPT) {
-      
-      
-      
-      if ((*aIsSession && mCookiesAlwaysAcceptSession) ||
-          (aChannel && NS_UsePrivateBrowsing(aChannel))) {
-        *aResult = true;
-        return NS_OK;
-      }
-
-      
-      *aResult = false;
-
-      nsAutoCString hostPort;
-      aURI->GetHostPort(hostPort);
-
-      if (!aCookie) {
-         return NS_ERROR_UNEXPECTED;
-      }
-      
-      
-      
-      
-      if (hostPort.IsEmpty()) {
-        aURI->GetScheme(hostPort);
-        if (hostPort.IsEmpty()) {
-          
-          return NS_OK;
-        }
-        hostPort = hostPort + NS_LITERAL_CSTRING("://");
-      }
-
-      
-      
-      nsresult rv;
-      nsCOMPtr<nsICookiePromptService> cookiePromptService =
-          do_GetService(NS_COOKIEPROMPTSERVICE_CONTRACTID, &rv);
-      if (NS_FAILED(rv)) return rv;
-
-      
-      
-      
-      bool foundCookie = false;
-      uint32_t countFromHost;
-      nsCOMPtr<nsICookieManager2> cookieManager = do_GetService(NS_COOKIEMANAGER_CONTRACTID, &rv);
-      if (NS_SUCCEEDED(rv)) {
-        nsAutoCString rawHost;
-        aCookie->GetRawHost(rawHost);
-        rv = cookieManager->CountCookiesFromHost(rawHost, &countFromHost);
-
-        if (NS_SUCCEEDED(rv) && countFromHost > 0)
-          rv = cookieManager->CookieExists(aCookie, &foundCookie);
-      }
-      if (NS_FAILED(rv)) return rv;
-
-      
-      
-      
-      if (!foundCookie && !*aIsSession && delta <= 0) {
+    
+    if (!*aIsSession && delta > 0) {
+      if (mCookiesLifetimePolicy == ACCEPT_SESSION) {
         
-        
-        *aResult = true;
-        return rv;
-      }
-
-      bool rememberDecision = false;
-      int32_t dialogRes = nsICookiePromptService::DENY_COOKIE;
-      rv = cookiePromptService->CookieDialog(nullptr, aCookie, hostPort, 
-                                             countFromHost, foundCookie,
-                                             &rememberDecision, &dialogRes);
-      if (NS_FAILED(rv)) return rv;
-
-      *aResult = !!dialogRes;
-      if (dialogRes == nsICookiePromptService::ACCEPT_SESSION_COOKIE)
         *aIsSession = true;
-
-      if (rememberDecision) {
-        switch (dialogRes) {
-          case nsICookiePromptService::DENY_COOKIE:
-            mPermMgr->Add(aURI, kPermissionType, (uint32_t) nsIPermissionManager::DENY_ACTION,
-                          nsIPermissionManager::EXPIRE_NEVER, 0);
-            break;
-          case nsICookiePromptService::ACCEPT_COOKIE:
-            mPermMgr->Add(aURI, kPermissionType, (uint32_t) nsIPermissionManager::ALLOW_ACTION,
-                          nsIPermissionManager::EXPIRE_NEVER, 0);
-            break;
-          case nsICookiePromptService::ACCEPT_SESSION_COOKIE:
-            mPermMgr->Add(aURI, kPermissionType, nsICookiePermission::ACCESS_SESSION,
-                          nsIPermissionManager::EXPIRE_NEVER, 0);
-            break;
-          default:
-            break;
-        }
-      }
-    } else {
-      
-      
-      if (!*aIsSession && delta > 0) {
-        if (mCookiesLifetimePolicy == ACCEPT_SESSION) {
-          
-          *aIsSession = true;
-        } else if (delta > mCookiesLifetimeSec) {
-          
-          *aExpiry = currentTime + mCookiesLifetimeSec;
-        }
+      } else if (delta > mCookiesLifetimeSec) {
+        
+        *aExpiry = currentTime + mCookiesLifetimeSec;
       }
     }
   }

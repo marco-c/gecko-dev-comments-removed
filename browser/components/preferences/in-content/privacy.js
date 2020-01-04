@@ -274,8 +274,13 @@ var gPrivacyPane = {
 
       
       this.readAcceptCookies();
-      document.getElementById("keepCookiesUntil").value = disabled ? 2 :
-        document.getElementById("network.cookie.lifetimePolicy").value;
+      let lifetimePolicy = document.getElementById("network.cookie.lifetimePolicy").value;
+      if (lifetimePolicy != Ci.nsICookieService.ACCEPT_NORMALLY &&
+          lifetimePolicy != Ci.nsICookieService.ACCEPT_SESSION &&
+          lifetimePolicy != Ci.nsICookieService.ACCEPT_FOR_N_DAYS) {
+        lifetimePolicy = Ci.nsICookieService.ACCEPT_NORMALLY;
+      }
+      document.getElementById("keepCookiesUntil").value = disabled ? 2 : lifetimePolicy;
 
       
       document.getElementById("alwaysClear").checked = disabled ? false :
@@ -396,7 +401,6 @@ var gPrivacyPane = {
   
 
   
-
 
 
 
