@@ -6,6 +6,7 @@
 
 
 
+
 "use strict";
 
 
@@ -22,9 +23,6 @@ module.exports = function(context) {
   return {
     "VariableDeclaration": function(node) {
       if (node.kind === "var") {
-        var ancestors = context.getAncestors();
-        var parent = ancestors.pop();
-
         if (helpers.getIsGlobalScope(context)) {
           return;
         }

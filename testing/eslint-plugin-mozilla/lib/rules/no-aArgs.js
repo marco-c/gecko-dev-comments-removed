@@ -6,6 +6,7 @@
 
 
 
+
 "use strict";
 
 
@@ -27,13 +28,17 @@ module.exports = function(context) {
   }
 
   function checkFunction(node) {
-    for (var i = 0; i < node.params.length; i ++) {
+    for (var i = 0; i < node.params.length; i++) {
       var param = node.params[i];
       if (param.name && isPrefixed(param.name)) {
-        context.report(param, "Parameter '{{name}}' uses Hungarian Notation, consider using '{{suggestion}}' instead.", {
+        var errorObj = {
           name: param.name,
           suggestion: deHungarianize(param.name)
-        });
+        };
+        context.report(param,
+                       "Parameter '{{name}}' uses Hungarian Notation, " +
+                       "consider using '{{suggestion}}' instead.",
+                       errorObj);
       }
     }
   }

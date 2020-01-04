@@ -5,6 +5,7 @@
 
 
 
+
 "use strict";
 
 
@@ -26,10 +27,11 @@ module.exports = function(context) {
   
   
 
-  function showError(context, node, identifier) {
+  function showError(node, identifier) {
     context.report({
       node: node,
-      message: identifier + " is a possible Cross Process Object Wrapper (CPOW)."
+      message: identifier +
+               " is a possible Cross Process Object Wrapper (CPOW)."
     });
   }
 
@@ -47,14 +49,14 @@ module.exports = function(context) {
 
       cpows.some(function(cpow) {
         if (cpow.test(expression)) {
-          showError(context, node, expression);
+          showError(node, expression);
           return true;
         }
         return false;
       });
       if (helpers.getIsGlobalScope(context)) {
         if (/^content\./.test(expression)) {
-          showError(context, node, expression);
+          showError(node, expression);
           return;
         }
       }
@@ -67,7 +69,6 @@ module.exports = function(context) {
 
       var expression = context.getSource(node);
       if (expression == "content" || /^content\./.test(expression)) {
-
         if (node.parent.type === "MemberExpression" &&
             node.parent.object &&
             node.parent.object.type === "Identifier" &&
@@ -75,7 +76,7 @@ module.exports = function(context) {
           return;
         }
 
-        showError(context, node, expression);
+        showError(node, expression);
         return;
       }
     }

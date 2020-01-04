@@ -9,6 +9,7 @@
 
 
 
+
 "use strict";
 
 
@@ -54,9 +55,9 @@ module.exports = function(context) {
   function getUnbalancedListeners() {
     var unbalanced = [];
 
-    for (var i = 0; i < addedListeners.length; i ++) {
-      if (!hasRemovedListener(addedListeners[i])) {
-        unbalanced.push(addedListeners[i]);
+    for (var j = 0; j < addedListeners.length; j++) {
+      if (!hasRemovedListener(addedListeners[j])) {
+        unbalanced.push(addedListeners[j]);
       }
     }
     addedListeners = removedListeners = [];
@@ -65,8 +66,8 @@ module.exports = function(context) {
   }
 
   function hasRemovedListener(addedListener) {
-    for (var i = 0; i < removedListeners.length; i ++) {
-      var listener = removedListeners[i];
+    for (var k = 0; k < removedListeners.length; k++) {
+      var listener = removedListeners[k];
       if (DICTIONARY[addedListener.functionName] === listener.functionName &&
           addedListener.type === listener.type &&
           addedListener.useCapture === listener.useCapture) {
@@ -97,10 +98,11 @@ module.exports = function(context) {
     "Program:exit": function() {
       getUnbalancedListeners().forEach(function(listener) {
         context.report(listener.node,
-          "No corresponding '{{functionName}}({{type}})' was found.", {
-          functionName: DICTIONARY[listener.functionName],
-          type: listener.type
-        });
+          "No corresponding '{{functionName}}({{type}})' was found.",
+          {
+            functionName: DICTIONARY[listener.functionName],
+            type: listener.type
+          });
       });
     }
   };
