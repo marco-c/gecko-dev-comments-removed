@@ -126,6 +126,10 @@ EyeDropper.prototype = {
 
 
   show(node, options = {}) {
+    if (this.highlighterEnv.isXUL) {
+      return false;
+    }
+
     this.options = options;
 
     
@@ -167,6 +171,10 @@ EyeDropper.prototype = {
 
 
   hide() {
+    if (this.highlighterEnv.isXUL) {
+      return;
+    }
+
     this.pageImage = null;
 
     let {pageListenerTarget} = this.highlighterEnv;
