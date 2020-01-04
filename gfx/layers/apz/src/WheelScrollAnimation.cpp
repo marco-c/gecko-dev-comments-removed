@@ -53,6 +53,14 @@ WheelScrollAnimation::DoSample(FrameMetrics& aFrameMetrics, const TimeDuration& 
   ParentLayerPoint displacement =
     (CSSPoint::FromAppUnits(sampledDest) - aFrameMetrics.GetScrollOffset()) * zoom;
 
+  if (!IsZero(displacement)) {
+    
+    float xVelocity = displacement.x / aDelta.ToMilliseconds();
+    float yVelocity = displacement.y / aDelta.ToMilliseconds();
+    mApzc.mX.SetVelocity(xVelocity);
+    mApzc.mY.SetVelocity(yVelocity);
+  }
+
   
   ParentLayerPoint adjustedOffset, overscroll;
   mApzc.mX.AdjustDisplacement(displacement.x, adjustedOffset.x, overscroll.x);
