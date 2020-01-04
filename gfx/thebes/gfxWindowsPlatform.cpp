@@ -2249,6 +2249,15 @@ gfxWindowsPlatform::InitializeDevices()
   if (mD3D11Status == FeatureStatus::Available) {
     InitializeD2D();
   }
+
+  
+  
+  if (gfxPrefs::DirectWriteFontRenderingForceEnabled() &&
+      IsFeatureStatusFailure(mD2DStatus) &&
+      !mDWriteFactory) {
+    gfxCriticalNote << "Attempting DWrite without D2D support";
+    InitDWriteSupport();
+  }
 }
 
 FeatureStatus
