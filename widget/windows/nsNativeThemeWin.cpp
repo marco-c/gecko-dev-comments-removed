@@ -1556,9 +1556,8 @@ GetThemeDpiScaleFactor(nsIFrame* aFrame)
   if (WinUtils::IsPerMonitorDPIAware() && GetSystemMetrics(SM_CMONITORS) > 1) {
     nsIWidget* rootWidget = aFrame->PresContext()->GetRootWidget();
     if (rootWidget) {
-      double primaryScale =
-        WinUtils::LogToPhysFactor(WinUtils::GetPrimaryMonitor());
-      return rootWidget->GetDefaultScale().scale / primaryScale;
+      double systemScale = WinUtils::SystemScaleFactor();
+      return rootWidget->GetDefaultScale().scale / systemScale;
     }
   }
   return 1.0;

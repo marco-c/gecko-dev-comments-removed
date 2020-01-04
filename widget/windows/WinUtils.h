@@ -128,6 +128,15 @@ public:
 class WinUtils
 {
 public:
+  
+
+
+
+
+
+
+
+  static double SystemScaleFactor();
 
   static bool IsPerMonitorDPIAware();
   

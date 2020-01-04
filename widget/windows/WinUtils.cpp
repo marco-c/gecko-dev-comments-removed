@@ -524,6 +524,22 @@ WinUtils::Log(const char *fmt, ...)
   delete[] buffer;
 }
 
+
+double
+WinUtils::SystemScaleFactor()
+{
+  
+  
+  
+  static int logPixelsY = 0;
+  if (!logPixelsY) {
+    HDC screenDC = GetDC(nullptr);
+    logPixelsY = GetDeviceCaps(screenDC, LOGPIXELSY);
+    ReleaseDC(nullptr, screenDC);
+  }
+  return logPixelsY / 96.0;
+}
+
 #ifndef WM_DPICHANGED
 typedef enum {
   MDT_EFFECTIVE_DPI = 0,

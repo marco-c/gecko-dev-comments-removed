@@ -584,7 +584,7 @@ GetSysFontInfo(HDC aHDC, LookAndFeel::FontID anID,
   }
 
   
-  double pixelScale = 1.0 / WinUtils::LogToPhysFactor(aHDC);
+  double pixelScale = 1.0 / WinUtils::SystemScaleFactor();
 
   
   
