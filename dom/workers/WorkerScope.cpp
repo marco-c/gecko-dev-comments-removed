@@ -763,7 +763,6 @@ const js::Class workerdebuggersandbox_class = {
     workerdebuggersandbox_enumerate,
     workerdebuggersandbox_resolve,
     nullptr, 
-    nullptr, 
     workerdebuggersandbox_finalize,
     nullptr,
     nullptr,

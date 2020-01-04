@@ -823,7 +823,6 @@ const Class JSFunction::class_ = {
     fun_mayResolve,
     nullptr,                 
     nullptr,                 
-    nullptr,                 
     fun_hasInstance,
     nullptr,                 
     fun_trace,

@@ -224,7 +224,6 @@ const Class js::ScalarTypeDescr::class_ = {
     nullptr, 
     nullptr, 
     nullptr, 
-    nullptr, 
     TypeDescr::finalize,
     ScalarTypeDescr::call
 };
@@ -315,7 +314,6 @@ ScalarTypeDescr::call(JSContext* cx, unsigned argc, Value* vp)
 const Class js::ReferenceTypeDescr::class_ = {
     "Reference",
     JSCLASS_HAS_RESERVED_SLOTS(JS_DESCR_SLOTS) | JSCLASS_BACKGROUND_FINALIZE,
-    nullptr, 
     nullptr, 
     nullptr, 
     nullptr, 
@@ -495,7 +493,6 @@ CreatePrototypeObjectForComplexTypeInstance(JSContext* cx, HandleObject ctorProt
 const Class ArrayTypeDescr::class_ = {
     "ArrayType",
     JSCLASS_HAS_RESERVED_SLOTS(JS_DESCR_SLOTS) | JSCLASS_BACKGROUND_FINALIZE,
-    nullptr, 
     nullptr, 
     nullptr, 
     nullptr, 
@@ -724,7 +721,6 @@ js::IsTypedObjectArray(JSObject& obj)
 const Class StructTypeDescr::class_ = {
     "StructType",
     JSCLASS_HAS_RESERVED_SLOTS(JS_DESCR_SLOTS) | JSCLASS_BACKGROUND_FINALIZE,
-    nullptr, 
     nullptr, 
     nullptr, 
     nullptr, 
@@ -2257,7 +2253,6 @@ OutlineTransparentTypedObject::getOrCreateBuffer(JSContext* cx)
         nullptr,        /* enumerate   */                \
         nullptr,        /* resolve     */                \
         nullptr,        /* mayResolve  */                \
-        nullptr,        /* convert     */                \
         nullptr,        /* finalize    */                \
         nullptr,        /* call        */                \
         nullptr,        /* hasInstance */                \

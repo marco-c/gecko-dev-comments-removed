@@ -321,7 +321,6 @@ const Class SharedArrayBufferObject::class_ = {
     nullptr, 
     nullptr, 
     nullptr, 
-    nullptr, 
     SharedArrayBufferObject::Finalize,
     nullptr, 
     nullptr, 

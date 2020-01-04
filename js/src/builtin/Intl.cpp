@@ -569,7 +569,6 @@ static const Class CollatorClass = {
     nullptr, 
     nullptr, 
     nullptr, 
-    nullptr, 
     collator_finalize
 };
 
@@ -1064,7 +1063,6 @@ static const Class NumberFormatClass = {
     nullptr, 
     nullptr, 
     nullptr, 
-    nullptr, 
     numberFormat_finalize
 };
 
@@ -1527,7 +1525,6 @@ static const uint32_t DATE_TIME_FORMAT_SLOTS_COUNT = 1;
 static const Class DateTimeFormatClass = {
     js_Object_str,
     JSCLASS_HAS_RESERVED_SLOTS(DATE_TIME_FORMAT_SLOTS_COUNT),
-    nullptr, 
     nullptr, 
     nullptr, 
     nullptr, 
