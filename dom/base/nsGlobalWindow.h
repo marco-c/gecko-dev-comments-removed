@@ -122,7 +122,7 @@ class RequestOrUSVString;
 class Selection;
 class SpeechSynthesis;
 class U2F;
-class VRDevice;
+class VRDisplay;
 class WakeLock;
 #if defined(MOZ_WIDGET_ANDROID) || defined(MOZ_WIDGET_GONK)
 class WindowOrientationObserver;
@@ -802,7 +802,7 @@ public:
   void DisableGamepadUpdates();
 
   
-  bool UpdateVRDevices(nsTArray<RefPtr<mozilla::dom::VRDevice>>& aDevices);
+  bool UpdateVRDisplays(nsTArray<RefPtr<mozilla::dom::VRDisplay>>& aDisplays);
 
 #define EVENT(name_, id_, type_, struct_)                                     \
   mozilla::dom::EventHandlerNonNull* GetOn##name_()                           \
@@ -1909,7 +1909,7 @@ protected:
   uint32_t mCanSkipCCGeneration;
 
   
-  nsTArray<RefPtr<mozilla::dom::VRDevice>> mVRDevices;
+  nsTArray<RefPtr<mozilla::dom::VRDisplay>> mVRDisplays;
 
   friend class nsDOMScriptableHelper;
   friend class nsDOMWindowUtils;

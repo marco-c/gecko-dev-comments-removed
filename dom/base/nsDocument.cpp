@@ -259,7 +259,7 @@
 #include "IPeerConnection.h"
 #endif 
 
-#include "VRDeviceProxy.h"
+#include "VRDisplayProxy.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;
