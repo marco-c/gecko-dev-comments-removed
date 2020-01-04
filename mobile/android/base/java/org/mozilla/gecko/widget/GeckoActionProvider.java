@@ -52,8 +52,6 @@ public class GeckoActionProvider {
 
 
 
-
-
     public interface OnTargetSelectedListener {
         public void onTargetSelected();
     }
