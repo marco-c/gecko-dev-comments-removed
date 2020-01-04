@@ -314,12 +314,6 @@ pref("media.directshow.enabled", true);
 pref("media.fragmented-mp4.enabled", true);
 pref("media.fragmented-mp4.ffmpeg.enabled", false);
 pref("media.fragmented-mp4.gmp.enabled", false);
-#if defined(XP_WIN) && defined(MOZ_WMF) || defined(XP_MACOSX) || defined(MOZ_WIDGET_GONK)
-
-pref("media.fragmented-mp4.exposed", true);
-#else
-pref("media.fragmented-mp4.exposed", false);
-#endif
 
 
 
