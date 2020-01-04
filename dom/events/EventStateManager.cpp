@@ -3296,7 +3296,7 @@ EventStateManager::PostHandleEvent(nsPresContext* aPresContext,
 
         nsCOMPtr<nsIWidget> widget = mCurrentTarget->GetNearestWidget();
         WidgetDragEvent event(aEvent->mFlags.mIsTrusted,
-                              NS_DRAGDROP_DRAGDROP, widget);
+                              eLegacyDragDrop, widget);
 
         WidgetMouseEvent* mouseEvent = aEvent->AsMouseEvent();
         event.refPoint = mouseEvent->refPoint;
