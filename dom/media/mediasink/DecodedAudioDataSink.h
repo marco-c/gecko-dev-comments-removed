@@ -21,6 +21,8 @@
 
 namespace mozilla {
 
+class AudioConverter;
+
 namespace media {
 
 class DecodedAudioDataSink : public AudioSink,
@@ -104,6 +106,8 @@ private:
 
   
   Atomic<bool> mPlaybackComplete;
+
+  UniquePtr<AudioConverter> mConverter;
 };
 
 } 
