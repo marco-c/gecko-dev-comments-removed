@@ -684,14 +684,6 @@ class GeckoInputConnection
             Log.d(LOGTAG, "IME: CurrentInputMethod=" + mCurrentInputMethod);
         }
 
-        
-        if (!mCurrentInputMethod.equals(prevInputMethod) && GeckoAppShell.getGeckoInterface() != null) {
-            FormAssistPopup popup = GeckoAppShell.getGeckoInterface().getFormAssistPopup();
-            if (popup != null) {
-                popup.onInputMethodChanged(mCurrentInputMethod);
-            }
-        }
-
         if (mIMEState == IME_STATE_PLUGIN) {
             
             outAttrs.initialSelStart = 0;

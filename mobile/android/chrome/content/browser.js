@@ -4999,14 +4999,11 @@ var FormAssistant = {
   
   _doingAutocomplete: false,
 
-  _isBlocklisted: false,
-
   
   _invalidSubmit: false,
 
   init: function() {
     Services.obs.addObserver(this, "FormAssist:AutoComplete", false);
-    Services.obs.addObserver(this, "FormAssist:Blocklisted", false);
     Services.obs.addObserver(this, "FormAssist:Hidden", false);
     Services.obs.addObserver(this, "FormAssist:Remove", false);
     Services.obs.addObserver(this, "invalidformsubmit", false);
@@ -5070,10 +5067,6 @@ var FormAssistant = {
 
         this._doingAutocomplete = false;
 
-        break;
-
-      case "FormAssist:Blocklisted":
-        this._isBlocklisted = (aData == "true");
         break;
 
       case "FormAssist:Hidden":
@@ -5279,12 +5272,7 @@ var FormAssistant = {
       return;
     }
 
-    
-    
-    if (this._isBlocklisted && aElement.value.length > 0) {
-      aCallback(false);
-      return;
-    }
+    let isEmpty = (aElement.value.length === 0);
 
     let resultsAvailable = autoCompleteSuggestions => {
       
@@ -5301,7 +5289,8 @@ var FormAssistant = {
       Messaging.sendRequest({
         type:  "FormAssist:AutoComplete",
         suggestions: suggestions,
-        rect: ElementTouchHelper.getBoundingContentRect(aElement)
+        rect: ElementTouchHelper.getBoundingContentRect(aElement),
+        isEmpty: isEmpty,
       });
 
       
