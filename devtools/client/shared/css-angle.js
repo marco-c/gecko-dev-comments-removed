@@ -4,8 +4,6 @@
 
 "use strict";
 
-const {Cc, Ci} = require("chrome");
-
 const SPECIALVALUES = new Set([
   "initial",
   "inherit",
@@ -226,7 +224,7 @@ CssAngle.prototype = {
 
 
 
-  _getInvalidOrSpecialValue: function() {
+  _getInvalidOrSpecialValue: function () {
     if (this.specialValue) {
       return this.specialValue;
     }
@@ -242,7 +240,7 @@ CssAngle.prototype = {
 
 
 
-  newAngle: function(angle) {
+  newAngle: function (angle) {
     
     
     
@@ -259,7 +257,7 @@ CssAngle.prototype = {
     return this;
   },
 
-  nextAngleUnit: function() {
+  nextAngleUnit: function () {
     
     
     let formats = Object.keys(CssAngle.ANGLEUNIT);
@@ -279,7 +277,7 @@ CssAngle.prototype = {
   
 
 
-  toString: function() {
+  toString: function () {
     let angle;
 
     switch (this.angleUnit) {
@@ -309,7 +307,7 @@ CssAngle.prototype = {
   
 
 
-  valueOf: function() {
+  valueOf: function () {
     return this.deg;
   },
 };
