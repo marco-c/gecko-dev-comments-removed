@@ -1097,6 +1097,9 @@ MediaDecoderStateMachine::EnterState(State aState)
       Reset();
       mReader->ReleaseResources();
       break;
+    case DECODER_STATE_DECODING_FIRSTFRAME:
+      DecodeFirstFrame();
+      break;
     case DECODER_STATE_DECODING:
       StartDecoding();
       break;
@@ -1264,19 +1267,38 @@ MediaDecoderStateMachine::Shutdown()
 }
 
 void
+MediaDecoderStateMachine::DecodeFirstFrame()
+{
+  MOZ_ASSERT(OnTaskQueue());
+  MOZ_ASSERT(mState == DECODER_STATE_DECODING_FIRSTFRAME);
+
+  
+  if (mQueuedSeek.Exists() &&
+      (mSentFirstFrameLoadedEvent || mReader->ForceZeroStartTime())) {
+    InitiateSeek(Move(mQueuedSeek));
+    return;
+  }
+
+  
+  if (mSentFirstFrameLoadedEvent) {
+    SetState(DECODER_STATE_DECODING);
+    return;
+  }
+
+  
+  DispatchDecodeTasksIfNeeded();
+}
+
+void
 MediaDecoderStateMachine::StartDecoding()
 {
   MOZ_ASSERT(OnTaskQueue());
   
   MOZ_ASSERT(mSentFirstFrameLoadedEvent);
   MOZ_ASSERT(mState == DECODER_STATE_DECODING);
-
   
   
-  if (mSentFirstFrameLoadedEvent && mQueuedSeek.Exists()) {
-    InitiateSeek(Move(mQueuedSeek));
-    return;
-  }
+  MOZ_ASSERT(!mQueuedSeek.Exists());
 
   if (CheckIfDecodeComplete()) {
     SetState(DECODER_STATE_COMPLETED);

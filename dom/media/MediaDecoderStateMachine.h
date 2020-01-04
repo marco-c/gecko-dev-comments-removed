@@ -475,6 +475,8 @@ protected:
   void MaybeStartBuffering();
 
   
+  void DecodeFirstFrame();
+
   
   void StartDecoding();
 
