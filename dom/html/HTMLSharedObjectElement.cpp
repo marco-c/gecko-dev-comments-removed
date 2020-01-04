@@ -23,6 +23,7 @@
 #include "mozilla/dom/HTMLObjectElement.h"
 #endif
 
+
 NS_IMPL_NS_NEW_HTML_ELEMENT_CHECK_PARSER(SharedObject)
 
 namespace mozilla {
@@ -192,7 +193,8 @@ HTMLSharedObjectElement::SetAttr(int32_t aNameSpaceID, nsIAtom *aName,
   
   
   if (aNotify && IsInComposedDoc() && mIsDoneAddingChildren &&
-      aNameSpaceID == kNameSpaceID_None && aName == URIAttrName()) {
+      aNameSpaceID == kNameSpaceID_None && aName == URIAttrName()
+      && !BlockEmbedContentLoading()) {
     return LoadObject(aNotify, true);
   }
 
@@ -324,7 +326,8 @@ HTMLSharedObjectElement::StartObjectLoad(bool aNotify)
 {
   
   
-  if (!IsInComposedDoc() || !OwnerDoc()->IsActive()) {
+  if (!IsInComposedDoc() || !OwnerDoc()->IsActive() ||
+      BlockEmbedContentLoading()) {
     return;
   }
 
@@ -398,6 +401,23 @@ HTMLSharedObjectElement::GetContentPolicyType() const
     MOZ_ASSERT(mNodeInfo->Equals(nsGkAtoms::embed));
     return nsIContentPolicy::TYPE_INTERNAL_EMBED;
   }
+}
+
+bool
+HTMLSharedObjectElement::BlockEmbedContentLoading()
+{
+  
+  if (!IsHTMLElement(nsGkAtoms::embed)) {
+    return false;
+  }
+  
+  
+  for (nsIContent* parent = GetParent(); parent; parent = parent->GetParent()) {
+    if (parent->IsAnyOfHTMLElements(nsGkAtoms::video, nsGkAtoms::audio)) {
+      return true;
+    }
+  }
+  return false;
 }
 
 } 
