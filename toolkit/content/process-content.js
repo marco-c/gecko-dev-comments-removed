@@ -21,12 +21,44 @@ Services.cpmm.addMessageListener("gmp-plugin-crash", msg => {
   gmpservice.RunPluginCrashCallbacks(msg.data.pluginID, msg.data.pluginName);
 });
 
-
-
-
 if (gInContentProcess) {
-  Services.obs.addObserver((subject, topic, data) => {
-    let innerWindowID = subject.QueryInterface(Ci.nsISupportsPRUint64).data;
-    Services.cpmm.sendAsyncMessage("Toolkit:inner-window-destroyed", innerWindowID);
-  }, "inner-window-destroyed", false);
+  let ProcessObserver = {
+    TOPICS: [
+      "inner-window-destroyed",
+      "xpcom-shutdown",
+    ],
+
+    init() {
+      for (let topic of this.TOPICS) {
+        Services.obs.addObserver(this, topic, false);
+      }
+    },
+
+    uninit() {
+      for (let topic of this.TOPICS) {
+        Services.obs.removeObserver(this, topic);
+      }
+    },
+
+    observe(subject, topic, data) {
+      switch (topic) {
+        case "inner-window-destroyed": {
+          
+          
+          
+          let innerWindowID =
+            subject.QueryInterface(Ci.nsISupportsPRUint64).data;
+          Services.cpmm.sendAsyncMessage("Toolkit:inner-window-destroyed",
+                                         innerWindowID);
+          break;
+        }
+        case "xpcom-shutdown": {
+          this.uninit();
+          break;
+        }
+      }
+    },
+  };
+
+  ProcessObserver.init();
 }
