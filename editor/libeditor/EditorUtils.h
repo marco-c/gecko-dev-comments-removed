@@ -225,17 +225,17 @@ class MOZ_RAII nsDOMSubtreeIterator : public nsDOMIterator
     nsresult Init(nsRange& aRange);
 };
 
-class nsTrivialFunctor : public nsBoolDomIterFunctor
-{
-  public:
-    
-    virtual bool operator()(nsINode* aNode) const
-    {
-      return true;
-    }
-};
-
 namespace mozilla {
+
+class TrivialFunctor final : public nsBoolDomIterFunctor
+{
+public:
+  
+  virtual bool operator()(nsINode* aNode) const
+  {
+    return true;
+  }
+};
 
 
 
