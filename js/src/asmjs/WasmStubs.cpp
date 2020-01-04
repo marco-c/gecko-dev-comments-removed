@@ -460,28 +460,28 @@ wasm::GenerateInterpExit(MacroAssembler& masm, const Import& import, uint32_t im
     AssertStackAlignment(masm, ABIStackAlignment);
     switch (sig.ret()) {
       case ExprType::Void:
-        masm.call(SymbolicAddress::InvokeImport_Void);
+        masm.call(SymbolicAddress::CallImport_Void);
         masm.branchTest32(Assembler::Zero, ReturnReg, ReturnReg, JumpTarget::Throw);
         break;
       case ExprType::I32:
-        masm.call(SymbolicAddress::InvokeImport_I32);
+        masm.call(SymbolicAddress::CallImport_I32);
         masm.branchTest32(Assembler::Zero, ReturnReg, ReturnReg, JumpTarget::Throw);
         masm.load32(argv, ReturnReg);
         break;
       case ExprType::I64:
         MOZ_ASSERT(JitOptions.wasmTestMode);
-        masm.call(SymbolicAddress::InvokeImport_I64);
+        masm.call(SymbolicAddress::CallImport_I64);
         masm.branchTest32(Assembler::Zero, ReturnReg, ReturnReg, JumpTarget::Throw);
         masm.load64(argv, ReturnReg64);
         break;
       case ExprType::F32:
-        masm.call(SymbolicAddress::InvokeImport_F64);
+        masm.call(SymbolicAddress::CallImport_F64);
         masm.branchTest32(Assembler::Zero, ReturnReg, ReturnReg, JumpTarget::Throw);
         masm.loadDouble(argv, ReturnDoubleReg);
         masm.convertDoubleToFloat32(ReturnDoubleReg, ReturnFloat32Reg);
         break;
       case ExprType::F64:
-        masm.call(SymbolicAddress::InvokeImport_F64);
+        masm.call(SymbolicAddress::CallImport_F64);
         masm.branchTest32(Assembler::Zero, ReturnReg, ReturnReg, JumpTarget::Throw);
         masm.loadDouble(argv, ReturnDoubleReg);
         break;
