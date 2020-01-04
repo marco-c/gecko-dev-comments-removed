@@ -42,6 +42,8 @@ private:
 };
 
 class OutputStreamManager {
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(OutputStreamManager);
+
 public:
   
   void Add(ProcessedMediaStream* aStream, bool aFinishWhenEnded);
@@ -65,6 +67,7 @@ public:
   }
 
 private:
+  ~OutputStreamManager() {}
   
   
   RefPtr<MediaStream> mInputStream;

@@ -10,7 +10,6 @@
 #include "MediaEventSource.h"
 #include "MediaInfo.h"
 #include "MediaSink.h"
-#include "OutputStreamManager.h"
 
 #include "mozilla/AbstractThread.h"
 #include "mozilla/Maybe.h"
@@ -23,6 +22,7 @@ namespace mozilla {
 class DecodedStreamData;
 class MediaData;
 class MediaStream;
+class OutputStreamManager;
 class ProcessedMediaStream;
 class TimeStamp;
 
@@ -91,7 +91,7 @@ private:
 
 
   
-  OutputStreamManager mOutputStreamManager;
+  const RefPtr<OutputStreamManager> mOutputStreamManager;
 
   
 
