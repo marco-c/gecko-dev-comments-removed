@@ -839,9 +839,10 @@ BookmarkImporter.prototype = {
     
     if (aIconURI) {
       if (aIconURI.schemeIs("chrome")) {
-        PlacesUtils.favicons.setAndFetchFaviconForPage(aPageURI, aIconURI,
-                                                       false,
-                                                       PlacesUtils.favicons.FAVICON_LOAD_NON_PRIVATE);
+        PlacesUtils.favicons.setAndFetchFaviconForPage(aPageURI, aIconURI, false,
+                                                       PlacesUtils.favicons.FAVICON_LOAD_NON_PRIVATE, null,
+                                                       Services.scriptSecurityManager.getSystemPrincipal());
+
         return;
       }
     }
@@ -870,8 +871,11 @@ BookmarkImporter.prototype = {
     
     
     
-    PlacesUtils.favicons.replaceFaviconDataFromDataURL(faviconURI, aData);
-    PlacesUtils.favicons.setAndFetchFaviconForPage(aPageURI, faviconURI, false, PlacesUtils.favicons.FAVICON_LOAD_NON_PRIVATE);
+    PlacesUtils.favicons.replaceFaviconDataFromDataURL(faviconURI, aData, 0,
+                                                       Services.scriptSecurityManager.getSystemPrincipal());
+    PlacesUtils.favicons.setAndFetchFaviconForPage(aPageURI, faviconURI, false,
+                                                   PlacesUtils.favicons.FAVICON_LOAD_NON_PRIVATE, null,
+                                                   Services.scriptSecurityManager.getSystemPrincipal());
   },
 
   
