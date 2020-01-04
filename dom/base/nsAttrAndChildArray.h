@@ -14,9 +14,9 @@
 
 #include "mozilla/Attributes.h"
 #include "mozilla/MemoryReporting.h"
+#include "mozilla/dom/BorrowedAttrInfo.h"
 
 #include "nscore.h"
-#include "nsAttrInfo.h"
 #include "nsAttrName.h"
 #include "nsAttrValue.h"
 #include "nsCaseTreatment.h"
@@ -47,6 +47,7 @@ class nsMappedAttributeElement;
 
 class nsAttrAndChildArray
 {
+  typedef mozilla::dom::BorrowedAttrInfo BorrowedAttrInfo;
 public:
   nsAttrAndChildArray();
   ~nsAttrAndChildArray();
@@ -101,7 +102,7 @@ public:
   const nsAttrName* AttrNameAt(uint32_t aPos) const;
 
   
-  nsAttrInfo AttrInfoAt(uint32_t aPos) const;
+  BorrowedAttrInfo AttrInfoAt(uint32_t aPos) const;
 
   
   const nsAttrName* GetSafeAttrNameAt(uint32_t aPos) const;

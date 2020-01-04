@@ -7,7 +7,7 @@
 #define nsIContent_h___
 
 #include "mozilla/Attributes.h"
-#include "nsAttrInfo.h"
+#include "mozilla/dom/BorrowedAttrInfo.h"
 #include "nsCaseTreatment.h" 
 #include "nsINode.h"
 
@@ -468,7 +468,7 @@ public:
   
 
 
-  virtual nsAttrInfo GetAttrInfoAt(uint32_t aIndex) const = 0;
+  virtual mozilla::dom::BorrowedAttrInfo GetAttrInfoAt(uint32_t aIndex) const = 0;
 
   
 

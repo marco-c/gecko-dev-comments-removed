@@ -213,7 +213,7 @@ DoMatch(Implementor* aElement, nsIAtom* aNS, nsIAtom* aName, MatchFn aMatch)
     return value && aMatch(value);
   }
   
-  nsAttrInfo attrInfo;
+  BorrowedAttrInfo attrInfo;
   for (uint32_t i = 0; (attrInfo = aElement->GetAttrInfoAt(i)); ++i) {
     if (attrInfo.mName->LocalName() != aName) {
       continue;

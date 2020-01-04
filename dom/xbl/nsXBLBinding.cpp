@@ -406,7 +406,7 @@ nsXBLBinding::GenerateAnonymousContent()
   
   
   
-  nsAttrInfo attrInfo;
+  BorrowedAttrInfo attrInfo;
   for (uint32_t i = 0; (attrInfo = content->GetAttrInfoAt(i)); ++i) {
     int32_t namespaceID = attrInfo.mName->NamespaceID();
     

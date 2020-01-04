@@ -2205,7 +2205,7 @@ Element::MaybeCheckSameAttrVal(int32_t aNamespaceID,
   
   
   if (*aHasListeners || aNotify) {
-    nsAttrInfo info(GetAttrInfo(aNamespaceID, aName));
+    BorrowedAttrInfo info(GetAttrInfo(aNamespaceID, aName));
     if (info.mValue) {
       
       
@@ -2536,7 +2536,7 @@ Element::GetEventListenerManagerForAttr(nsIAtom* aAttrName,
   return GetOrCreateListenerManager();
 }
 
-nsAttrInfo
+BorrowedAttrInfo
 Element::GetAttrInfo(int32_t aNamespaceID, nsIAtom* aName) const
 {
   NS_ASSERTION(nullptr != aName, "must have attribute name");
@@ -2545,17 +2545,17 @@ Element::GetAttrInfo(int32_t aNamespaceID, nsIAtom* aName) const
 
   int32_t index = mAttrsAndChildren.IndexOfAttr(aName, aNamespaceID);
   if (index < 0) {
-    return nsAttrInfo(nullptr, nullptr);
+    return BorrowedAttrInfo(nullptr, nullptr);
   }
 
   return mAttrsAndChildren.AttrInfoAt(index);
 }
 
-nsAttrInfo
+BorrowedAttrInfo
 Element::GetAttrInfoAt(uint32_t aIndex) const
 {
   if (aIndex >= mAttrsAndChildren.AttrCount()) {
-    return nsAttrInfo(nullptr, nullptr);
+    return BorrowedAttrInfo(nullptr, nullptr);
   }
 
   return mAttrsAndChildren.AttrInfoAt(aIndex);

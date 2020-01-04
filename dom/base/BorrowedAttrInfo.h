@@ -1,0 +1,46 @@
+
+
+
+
+
+
+#ifndef BorrowedAttrInfo_h__
+#define BorrowedAttrInfo_h__
+
+#include "mozilla/Assertions.h"
+
+class nsAttrName;
+class nsAttrValue;
+
+namespace mozilla {
+namespace dom {
+
+
+
+
+
+
+
+
+
+struct BorrowedAttrInfo
+{
+  BorrowedAttrInfo()
+    : mName(nullptr)
+    , mValue(nullptr)
+  {
+  }
+
+  BorrowedAttrInfo(const nsAttrName* aName, const nsAttrValue* aValue);
+
+  BorrowedAttrInfo(const BorrowedAttrInfo& aOther);
+
+  const nsAttrName* mName;
+  const nsAttrValue* mValue;
+
+  explicit operator bool() const { return mName != nullptr; }
+};
+
+} 
+} 
+#endif
