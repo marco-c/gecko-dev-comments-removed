@@ -36,11 +36,10 @@ from mozbuild.base import (
     ObjdirMismatchException,
 )
 
-from mozpack.manifests import (
-    InstallManifest,
+from mozbuild.backend import (
+    backends,
+    get_backend_class,
 )
-
-from mozbuild.backend import backends
 from mozbuild.shellutil import quote as shell_quote
 
 
@@ -413,10 +412,39 @@ class Build(MachCommandBase):
                     if status != 0:
                         break
             else:
-                status = self._run_make(srcdir=True, filename='client.mk',
-                    line_handler=output.on_line, log=False, print_directory=False,
-                    allow_parallel=False, ensure_exit_code=False, num_jobs=jobs,
-                    silent=not verbose)
+                
+                
+                
+                config = None
+                try:
+                    config = self.config_environment
+                except Exception:
+                    config_rc = self.configure()
+                    if config_rc != 0:
+                        return config_rc
+
+                    
+                    
+                    
+                    
+                    try:
+                        config = self.config_environment
+                    except Exception:
+                        pass
+
+                if config:
+                    active_backend = config.substs.get('BUILD_BACKENDS', [None])[0]
+                    if active_backend:
+                        backend_cls = get_backend_class(active_backend)(config)
+                        status = backend_cls.build(self, output, jobs, verbose)
+
+                
+                
+                if status is None:
+                    status = self._run_make(srcdir=True, filename='client.mk',
+                        line_handler=output.on_line, log=False, print_directory=False,
+                        allow_parallel=False, ensure_exit_code=False, num_jobs=jobs,
+                        silent=not verbose)
 
                 self.log(logging.WARNING, 'warning_summary',
                     {'count': len(monitor.warnings_database)},
