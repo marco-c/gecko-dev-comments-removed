@@ -325,6 +325,11 @@
   display: inline-block;
 }
 
+.ruleview-expander.theme-twisty:-moz-locale-dir(rtl) {
+  
+  transform: none;
+}
+
 .ruleview-newproperty {
   
   margin-inline-start: 27px;
