@@ -1854,7 +1854,12 @@ internal_AccumulateChildKeyed(mozilla::Telemetry::ID aId,
   id.Append(th.id());
   id.AppendLiteral(CHILD_HISTOGRAM_SUFFIX);
   KeyedHistogram* keyed = internal_GetKeyedHistogramById(id);
-  MOZ_ASSERT(keyed);
+  if (!keyed) {
+    const nsDependentCString expiration(th.expiration());
+    keyed = new KeyedHistogram(id, expiration, th.histogramType, th.min, th.max,
+                               th.bucketCount, th.dataset);
+    gKeyedHistograms.Put(id, keyed);
+  }
   keyed->Add(aKey, aSample);
 }
 
@@ -1937,16 +1942,6 @@ void TelemetryHistogram::InitializeGlobalState(bool canRecordBase,
     const nsDependentCString expiration(h.expiration());
     gKeyedHistograms.Put(id, new KeyedHistogram(id, expiration, h.histogramType,
                                                 h.min, h.max, h.bucketCount, h.dataset));
-    if (XRE_IsParentProcess()) {
-      
-      
-      
-      nsCString childId(id);
-      childId.AppendLiteral(CHILD_HISTOGRAM_SUFFIX);
-      gKeyedHistograms.Put(childId,
-                           new KeyedHistogram(id, expiration, h.histogramType,
-                                              h.min, h.max, h.bucketCount, h.dataset));
-    }
   }
 
   
