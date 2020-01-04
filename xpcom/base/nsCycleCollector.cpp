@@ -1328,6 +1328,8 @@ public:
                bool aPreferShorterSlices = false);
   void Shutdown();
 
+  bool IsIdle() const { return mIncrementalPhase == IdlePhase; }
+
   void SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf,
                            size_t* aObjectSize,
                            size_t* aGraphSize,
@@ -2833,7 +2835,7 @@ nsCycleCollector::ForgetSkippable(bool aRemoveChildlessNodes,
 
   
   
-  MOZ_ASSERT(mIncrementalPhase == IdlePhase);
+  MOZ_ASSERT(IsIdle());
 
   if (mJSRuntime) {
     mJSRuntime->PrepareForForgetSkippable();
@@ -3583,7 +3585,7 @@ nsCycleCollector::Collect(ccType aCCType,
     marker.emplace("nsCycleCollector::Collect");
   }
 
-  bool startedIdle = (mIncrementalPhase == IdlePhase);
+  bool startedIdle = IsIdle();
   bool collectedAny = false;
 
   
@@ -3651,13 +3653,13 @@ nsCycleCollector::Collect(ccType aCCType,
     
     
     
-    MOZ_ASSERT(mIncrementalPhase == IdlePhase);
+    MOZ_ASSERT(IsIdle());
     if (Collect(aCCType, aBudget, aManualListener)) {
       collectedAny = true;
     }
   }
 
-  MOZ_ASSERT_IF(aCCType != SliceCC, mIncrementalPhase == IdlePhase);
+  MOZ_ASSERT_IF(aCCType != SliceCC, IsIdle());
 
   return collectedAny;
 }
@@ -3669,7 +3671,7 @@ nsCycleCollector::Collect(ccType aCCType,
 void
 nsCycleCollector::PrepareForGarbageCollection()
 {
-  if (mIncrementalPhase == IdlePhase) {
+  if (IsIdle()) {
     MOZ_ASSERT(mGraph.IsEmpty(), "Non-empty graph when idle");
     MOZ_ASSERT(!mBuilder, "Non-null builder when idle");
     if (mJSPurpleBuffer) {
@@ -3684,7 +3686,7 @@ nsCycleCollector::PrepareForGarbageCollection()
 void
 nsCycleCollector::FinishAnyCurrentCollection()
 {
-  if (mIncrementalPhase == IdlePhase) {
+  if (IsIdle()) {
     return;
   }
 
@@ -3697,7 +3699,7 @@ nsCycleCollector::FinishAnyCurrentCollection()
   
   
   
-  MOZ_ASSERT(mIncrementalPhase == IdlePhase ||
+  MOZ_ASSERT(IsIdle() ||
              (mActivelyCollecting && mIncrementalPhase != GraphBuildingPhase),
              "Reentered CC during graph building");
 }
@@ -3742,7 +3744,7 @@ nsCycleCollector::BeginCollection(ccType aCCType,
                                   nsICycleCollectorListener* aManualListener)
 {
   TimeLog timeLog;
-  MOZ_ASSERT(mIncrementalPhase == IdlePhase);
+  MOZ_ASSERT(IsIdle());
 
   mCollectionStart = TimeStamp::Now();
 
@@ -3845,7 +3847,7 @@ nsCycleCollector::Shutdown()
 void
 nsCycleCollector::RemoveObjectFromGraph(void* aObj)
 {
-  if (mIncrementalPhase == IdlePhase) {
+  if (IsIdle()) {
     return;
   }
 
