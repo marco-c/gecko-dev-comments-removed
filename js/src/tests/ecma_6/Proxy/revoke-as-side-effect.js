@@ -72,7 +72,12 @@ assertEq(createProxy(function() { return "ok" })(), "ok");
 
 
 
-assertEq(new (createProxy(function(){ return obj; })), obj);
+
+
+
+
+assertThrowsInstanceOf(() => new (createProxy(function q(){ return obj; })),
+                       TypeError);
 
 if (typeof reportCompare === "function")
   reportCompare(true, true);
