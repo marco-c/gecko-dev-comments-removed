@@ -6,13 +6,13 @@ var {
   runSafe,
 } = ExtensionUtils;
 
-
+// WeakMap[Extension -> Set[Alarm]]
 var alarmsMap = new WeakMap();
 
-
+// WeakMap[Extension -> Set[callback]]
 var alarmCallbacksMap = new WeakMap();
 
-
+// Manages an alarm created by the extension (alarms API).
 function Alarm(extension, name, alarmInfo)
 {
   this.extension = extension;
@@ -121,7 +121,7 @@ extensions.registerAPI((extension, context) => {
 
       getAll: function(callback) {
         let alarms = alarmsMap.get(extension);
-        result = [ for (alarm of alarms) alarm.data ];
+        result = alarms.map(alarm => alarm.data);
         runSafe(context, callback, result);
       },
 

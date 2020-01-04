@@ -1,5 +1,5 @@
-
-
+/* -*- Mode: indent-tabs-mode: nil; js-indent-level: 2 -*- */
+/* vim: set sts=2 sw=2 et tw=80: */
 "use strict";
 
 XPCOMUtils.defineLazyModuleGetter(this, "PrivateBrowsingUtils",
@@ -10,19 +10,19 @@ var {
   EventManager,
 } = ExtensionUtils;
 
+// This file provides some useful code for the |tabs| and |windows|
+// modules. All of the code is installed on |global|, which is a scope
+// shared among the different ext-*.js scripts.
 
 
-
-
-
-
-
+// Manages icon details for toolbar buttons in the |pageAction| and
+// |browserAction| APIs.
 global.IconDetails = {
-  
+  // Accepted icon sizes.
   SIZES: ["19", "38"],
 
-  
-  
+  // Normalizes the various acceptable input formats into an object
+  // with two properties, "19" and "38", containing icon URLs.
   normalize(details, extension, context=null, localize=false) {
     let result = {};
 
@@ -57,18 +57,21 @@ global.IconDetails = {
 
           url = baseURI.resolve(path[size]);
 
-          
-          
-          
-          
+          // The Chrome documentation specifies these parameters as
+          // relative paths. We currently accept absolute URLs as well,
+          // which means we need to check that the extension is allowed
+          // to load them.
           try {
             Services.scriptSecurityManager.checkLoadURIStrWithPrincipal(
               extension.principal, url,
               Services.scriptSecurityManager.DISALLOW_SCRIPT);
-          } catch (e if !context) {
-            
-            
-            
+          } catch (e) {
+            if (context) {
+              throw e;
+            }
+            // If there's no context, it's because we're handling this
+            // as a manifest directive. Log a warning rather than
+            // raising an error, but don't accept the URL in any case.
             extension.manifestError(`Access to URL '${url}' denied`);
             continue;
           }
@@ -81,13 +84,13 @@ global.IconDetails = {
     return result;
   },
 
-  
-  
+  // Returns the appropriate icon URL for the given icons object and the
+  // screen resolution of the given window.
   getURL(icons, window, extension) {
     const DEFAULT = "chrome://browser/content/extension.svg";
 
-    
-    
+    // Use the higher resolution image if we're doing any up-scaling
+    // for high resolution monitors.
     let res = window.devicePixelRatio;
     let size = res > 1 ? "38" : "19";
 
@@ -107,14 +110,14 @@ global.IconDetails = {
 
 global.makeWidgetId = id => {
   id = id.toLowerCase();
-  
+  // FIXME: This allows for collisions.
   return id.replace(/[^a-z0-9_-]/g, "_");
 }
 
-
-
-
-
+// Open a panel anchored to the given node, containing a browser opened
+// to the given URL, owned by the given extension. If |popupURL| is not
+// an absolute URL, it is resolved relative to the given extension's
+// base URL.
 global.openPanel = (node, popupURL, extension) => {
   let document = node.ownerDocument;
 
@@ -132,13 +135,13 @@ global.openPanel = (node, popupURL, extension) => {
 
   let anchor;
   if (node.localName == "toolbarbutton") {
-    
-    
+    // Toolbar buttons are a special case. The panel becomes a child of
+    // the button, and is anchored to the button's icon.
     node.appendChild(panel);
     anchor = document.getAnonymousElementByAttribute(node, "class", "toolbarbutton-icon");
   } else {
-    
-    
+    // In all other cases, the panel is anchored to the target node
+    // itself, and is a child of a popupset node.
     document.getElementById("mainPopupSet").appendChild(panel);
     anchor = node;
   }
@@ -181,7 +184,7 @@ global.openPanel = (node, popupURL, extension) => {
         contentViewer.getContentSize(width, height);
         [width, height] = [width.value, height.value];
       } catch (e) {
-        
+        // getContentSize can throw
         [width, height] = [400, 400];
       }
 
@@ -205,8 +208,8 @@ global.openPanel = (node, popupURL, extension) => {
   return panel;
 }
 
-
-
+// Manages tab-specific context data, and dispatching tab select events
+// across all windows.
 global.TabContext = function TabContext(getDefaults, extension) {
   this.extension = extension;
   this.getDefaults = getDefaults;
@@ -254,7 +257,7 @@ TabContext.prototype = {
   },
 };
 
-
+// Manages mapping between XUL tabs and extension tab IDs.
 global.TabManager = {
   _tabs: new WeakMap(),
   _nextId: 1,
@@ -270,8 +273,8 @@ global.TabManager = {
 
   getBrowserId(browser) {
     let gBrowser = browser.ownerDocument.defaultView.gBrowser;
-    
-    
+    // Some non-browser windows have gBrowser but not
+    // getTabForBrowser!
     if (gBrowser && gBrowser.getTabForBrowser) {
       let tab = gBrowser.getTabForBrowser(browser);
       if (tab) {
@@ -282,7 +285,7 @@ global.TabManager = {
   },
 
   getTab(tabId) {
-    
+    // FIXME: Speed this up without leaking memory somehow.
     for (let window of WindowListManager.browserWindows()) {
       if (!window.gBrowser) {
         continue;
@@ -343,11 +346,11 @@ global.TabManager = {
     if (!window.gBrowser) {
       return [];
     }
-    return [ for (tab of window.gBrowser.tabs) this.convert(extension, tab) ];
+    return Array.map(window.gBrowser.tabs, tab => this.convert(extension, tab));
   },
 };
 
-
+// Manages mapping between XUL windows and extension window IDs.
 global.WindowManager = {
   _windows: new WeakMap(),
   _nextId: 0,
@@ -360,7 +363,7 @@ global.WindowManager = {
   },
 
   windowType(window) {
-    
+    // TODO: Make this work.
     return "normal";
   },
 
@@ -392,7 +395,7 @@ global.WindowManager = {
       height: window.outerHeight,
       incognito: PrivateBrowsingUtils.isWindowPrivate(window),
 
-      
+      // We fudge on these next two.
       type: this.windowType(window),
       state: window.fullScreen ? "fullscreen" : "normal",
     };
@@ -405,15 +408,15 @@ global.WindowManager = {
   },
 };
 
-
-
-
+// Manages listeners for window opening and closing. A window is
+// considered open when the "load" event fires on it. A window is
+// closed when a "domwindowclosed" notification fires for it.
 global.WindowListManager = {
   _openListeners: new Set(),
   _closeListeners: new Set(),
 
-  
-  
+  // Returns an iterator for all browser windows. Unless |includeIncomplete| is
+  // true, only fully-loaded windows are returned.
   *browserWindows(includeIncomplete = false) {
     let e = Services.wm.getEnumerator("navigator:browser");
     while (e.hasMoreElements()) {
@@ -488,13 +491,13 @@ global.WindowListManager = {
   },
 };
 
-
+// Provides a facility to listen for DOM events across all XUL windows.
 global.AllWindowEvents = {
   _listeners: new Map(),
 
-  
-  
-  
+  // If |type| is a normal event type, invoke |listener| each time
+  // that event fires in any open window. If |type| is "progress", add
+  // a web progress listener that covers all open windows.
   addListener(type, listener) {
     if (type == "domwindowopened") {
       return WindowListManager.addOpenListener(listener);
@@ -512,7 +515,7 @@ global.AllWindowEvents = {
     let list = this._listeners.get(type);
     list.add(listener);
 
-    
+    // Register listener on all existing windows.
     for (let window of WindowListManager.browserWindows()) {
       this.addWindowListener(window, type, listener);
     }
@@ -534,7 +537,7 @@ global.AllWindowEvents = {
       }
     }
 
-    
+    // Unregister listener from all existing windows.
     for (let window of WindowListManager.browserWindows()) {
       if (type == "progress") {
         window.gBrowser.removeTabsProgressListener(listener);
@@ -552,7 +555,7 @@ global.AllWindowEvents = {
     }
   },
 
-  
+  // Runs whenever the "load" event fires for a new window.
   openListener(window) {
     for (let [eventType, listeners] of AllWindowEvents._listeners) {
       for (let listener of listeners) {
@@ -562,8 +565,8 @@ global.AllWindowEvents = {
   },
 };
 
-
-
+// Subclass of EventManager where we just need to call
+// add/removeEventListener on each XUL window.
 global.WindowEventManager = function(context, name, event, listener)
 {
   EventManager.call(this, context, name, fire => {
