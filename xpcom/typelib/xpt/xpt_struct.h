@@ -233,8 +233,6 @@ struct XPTTypeDescriptor {
 
 
 
-
-
 union XPTConstValue {
     int8_t    i8;
     uint8_t   ui8; 
@@ -244,14 +242,8 @@ union XPTConstValue {
     uint32_t  ui32;
     int64_t   i64; 
     uint64_t  ui64; 
-    float     flt;
-    double    dbl;
-    PRBool    bul;
     char      ch; 
     uint16_t  wch;
-    nsID      *iid;
-    char      *str;
-    uint16_t  *wstr;
 }; 
 
 struct XPTConstDescriptor {
