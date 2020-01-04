@@ -78,10 +78,11 @@ ExecutableAllocator::systemRelease(const ExecutablePool::Allocation& alloc)
 static const unsigned FLAGS_RW = PROT_READ | PROT_WRITE;
 static const unsigned FLAGS_RX = PROT_READ | PROT_EXEC;
 
+#if defined(NON_WRITABLE_JIT_CODE)
+
 bool
 ExecutableAllocator::reprotectRegion(void* start, size_t size, ProtectionSetting setting)
 {
-    MOZ_ASSERT(NON_WRITABLE_JIT_CODE);
     MOZ_ASSERT(pageSize);
 
     
@@ -97,6 +98,8 @@ ExecutableAllocator::reprotectRegion(void* start, size_t size, ProtectionSetting
 
     return !mprotect(pageStart, size, (setting == Writable) ? FLAGS_RW : FLAGS_RX);
 }
+
+#endif 
 
  unsigned
 ExecutableAllocator::initialProtectionFlags(ProtectionSetting protection)
