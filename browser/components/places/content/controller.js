@@ -591,6 +591,8 @@ PlacesController.prototype = {
 
 
 
+
+
   buildContextMenu: function PC_buildContextMenu(aPopup) {
     var metadata = this._buildSelectionMetadata();
     var ip = this._view.insertionPoint;
@@ -601,6 +603,9 @@ PlacesController.prototype = {
     var usableItemCount = 0;
     for (var i = 0; i < aPopup.childNodes.length; ++i) {
       var item = aPopup.childNodes[i];
+      if (item.getAttribute("ignoreitem") == "true") {
+        continue;
+      }
       if (item.localName != "menuseparator") {
         
         var hideIfNoIP = item.getAttribute("hideifnoinsertionpoint") == "true" &&

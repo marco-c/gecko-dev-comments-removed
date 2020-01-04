@@ -153,6 +153,9 @@ pref("app.update.enabled", true);
 pref("app.update.auto", true);
 
 
+pref("app.update.mode", 1);
+
+
 pref("app.update.silent", false);
 
 
@@ -187,6 +190,13 @@ pref("app.update.idletime", 60);
 
 
 pref("app.update.showInstalledUI", false);
+
+
+
+
+
+
+pref("app.update.incompatible.mode", 0);
 
 
 #ifdef MOZ_MAINTENANCE_SERVICE
@@ -485,6 +495,8 @@ pref("browser.bookmarks.autoExportHTML",          false);
 
 
 pref("browser.bookmarks.max_backups",             15);
+
+pref("browser.bookmarks.showRecentlyBookmarked",  true);
 
 
 pref("dom.disable_open_during_load",              true);
@@ -1047,6 +1059,7 @@ pref("services.sync.prefs.sync.addons.ignoreUserEnabledChanges", true);
 
 
 
+pref("services.sync.prefs.sync.app.update.mode", true);
 pref("services.sync.prefs.sync.browser.formfill.enable", true);
 pref("services.sync.prefs.sync.browser.link.open_newwindow", true);
 pref("services.sync.prefs.sync.browser.newtabpage.enabled", true);
