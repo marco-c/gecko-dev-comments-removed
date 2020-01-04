@@ -1128,12 +1128,18 @@ nsExpatDriver::ConsumeToken(nsScanner& aScanner, bool& aFlushTokens)
         
         nsScannerIterator startLastLine = currentExpatPosition;
         startLastLine.advance(-((ptrdiff_t)lastLineLength));
-        CopyUnicodeTo(startLastLine, currentExpatPosition, mLastLine);
+        if (!CopyUnicodeTo(startLastLine, currentExpatPosition, mLastLine)) {
+          return (mInternalState = NS_ERROR_OUT_OF_MEMORY);
+        }
       }
       else {
         
         
-        AppendUnicodeTo(oldExpatPosition, currentExpatPosition, mLastLine);
+        if (!AppendUnicodeTo(oldExpatPosition,
+                             currentExpatPosition,
+                             mLastLine)) {
+          return (mInternalState = NS_ERROR_OUT_OF_MEMORY);
+        }
       }
     }
 

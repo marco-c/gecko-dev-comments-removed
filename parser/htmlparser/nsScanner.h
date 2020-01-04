@@ -209,7 +209,7 @@ class nsScanner {
 
 
 
-      void CopyUnusedData(nsString& aCopyBuffer);
+      bool CopyUnusedData(nsString& aCopyBuffer);
 
       
 

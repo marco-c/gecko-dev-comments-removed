@@ -466,7 +466,7 @@ copy_multifragment_string( nsScannerIterator& first, const nsScannerIterator& la
     return result;
   }
 
-void
+bool
 CopyUnicodeTo( const nsScannerIterator& aSrcStart,
                const nsScannerIterator& aSrcEnd,
                nsAString& aDest )
@@ -474,15 +474,16 @@ CopyUnicodeTo( const nsScannerIterator& aSrcStart,
     nsAString::iterator writer;
     if (!aDest.SetLength(Distance(aSrcStart, aSrcEnd), mozilla::fallible)) {
       aDest.Truncate();
-      return; 
+      return false; 
     }
     aDest.BeginWriting(writer);
     nsScannerIterator fromBegin(aSrcStart);
     
     copy_multifragment_string(fromBegin, aSrcEnd, writer);
+    return true;
   }
 
-void
+bool
 AppendUnicodeTo( const nsScannerIterator& aSrcStart,
                  const nsScannerIterator& aSrcEnd,
                  nsScannerSharedSubstring& aDest )
@@ -492,13 +493,13 @@ AppendUnicodeTo( const nsScannerIterator& aSrcStart,
       
       
       aDest.Rebind(aSrcStart, aSrcEnd);
-    } else {
-      
-      AppendUnicodeTo(aSrcStart, aSrcEnd, aDest.writable());
+      return true;
     }
+    
+    return AppendUnicodeTo(aSrcStart, aSrcEnd, aDest.writable());
   }
 
-void
+bool
 AppendUnicodeTo( const nsScannerIterator& aSrcStart,
                  const nsScannerIterator& aSrcEnd,
                  nsAString& aDest )
@@ -506,11 +507,12 @@ AppendUnicodeTo( const nsScannerIterator& aSrcStart,
     nsAString::iterator writer;
     uint32_t oldLength = aDest.Length();
     if (!aDest.SetLength(oldLength + Distance(aSrcStart, aSrcEnd), mozilla::fallible))
-      return; 
+      return false; 
     aDest.BeginWriting(writer).advance(oldLength);
     nsScannerIterator fromBegin(aSrcStart);
     
     copy_multifragment_string(fromBegin, aSrcEnd, writer);
+    return true;
   }
 
 bool
