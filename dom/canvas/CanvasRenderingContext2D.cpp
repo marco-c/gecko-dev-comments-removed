@@ -1505,6 +1505,33 @@ CanvasRenderingContext2D::OnStableState()
   mHasPendingStableStateCallback = false;
 }
 
+void
+CanvasRenderingContext2D::RestoreClipsAndTransformToTarget()
+{
+  
+  mTarget->SetTransform(Matrix());
+
+  if (mTarget->GetBackendType() == gfx::BackendType::CAIRO) {
+    
+    
+    
+    
+    
+    
+    mTarget->PushClipRect(gfx::Rect(0, 0, mWidth, mHeight));
+  }
+
+  for (const auto& style : mStyleStack) {
+    for (const auto& clipOrTransform : style.clipsAndTransforms) {
+      if (clipOrTransform.IsClip()) {
+        mTarget->PushClip(clipOrTransform.clip);
+      } else {
+        mTarget->SetTransform(clipOrTransform.transform);
+      }
+    }
+  }
+}
+
 CanvasRenderingContext2D::RenderingMode
 CanvasRenderingContext2D::EnsureTarget(const gfx::Rect* aCoveredRect,
                                        RenderingMode aRenderingMode)
@@ -1556,7 +1583,13 @@ CanvasRenderingContext2D::EnsureTarget(const gfx::Rect* aCoveredRect,
                                            : IntRect(0, 0, mWidth, mHeight);
     mTarget = mBufferProvider->BorrowDrawTarget(persistedRect);
 
-    mode = mRenderingMode;
+    if (mTarget && !mBufferProvider->PreservesDrawingState()) {
+      RestoreClipsAndTransformToTarget();
+    }
+
+    if (mTarget) {
+      return mode;
+    }
   }
 
   mIsSkiaGL = false;
@@ -1649,28 +1682,7 @@ CanvasRenderingContext2D::EnsureTarget(const gfx::Rect* aCoveredRect,
 
     if (mBufferProvider != oldBufferProvider || !mBufferProvider ||
         !mBufferProvider->PreservesDrawingState()) {
-      
-      mTarget->SetTransform(Matrix());
-
-      if (mTarget->GetBackendType() == gfx::BackendType::CAIRO) {
-        
-        
-        
-        
-        
-        
-        mTarget->PushClipRect(canvasRect);
-      }
-
-      for (const auto& style : mStyleStack) {
-        for (const auto& clipOrTransform : style.clipsAndTransforms) {
-          if (clipOrTransform.IsClip()) {
-            mTarget->PushClip(clipOrTransform.clip);
-          } else {
-            mTarget->SetTransform(clipOrTransform.transform);
-          }
-        }
-      }
+      RestoreClipsAndTransformToTarget();
     }
   } else {
     EnsureErrorTarget();
