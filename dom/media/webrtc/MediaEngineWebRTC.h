@@ -271,10 +271,14 @@ private:
     
     
     
+    
+    
     for (uint32_t i = 0; i < devices->count; i++) {
       if (devices->device[i]->type == CUBEB_DEVICE_TYPE_INPUT && 
           (devices->device[i]->state == CUBEB_DEVICE_STATE_ENABLED ||
-           devices->device[i]->state == CUBEB_DEVICE_STATE_UNPLUGGED))
+           devices->device[i]->state == CUBEB_DEVICE_STATE_UNPLUGGED ||
+           (devices->device[i]->state == CUBEB_DEVICE_STATE_DISABLED &&
+            strcmp(devices->device[i]->friendly_name, "Sine source at 440 Hz") == 0)))
       {
         auto j = mDeviceNames->IndexOf(devices->device[i]->device_id);
         if (j != nsTArray<nsCString>::NoIndex) {
