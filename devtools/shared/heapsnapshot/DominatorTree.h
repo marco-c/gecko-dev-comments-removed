@@ -56,6 +56,9 @@ public:
   
   void GetImmediatelyDominated(uint64_t aNodeId, dom::Nullable<nsTArray<uint64_t>>& aOutDominated,
                                ErrorResult& aRv);
+
+  
+  dom::Nullable<uint64_t> GetImmediateDominator(uint64_t aNodeId) const;
 };
 
 } 
