@@ -46,16 +46,6 @@ const XHTML_NS = "http://www.w3.org/1999/xhtml";
 
 const MIXED_CONTENT_LEARN_MORE = "https://developer.mozilla.org/docs/Security/MixedContent";
 
-const TRACKING_PROTECTION_LEARN_MORE = "https://developer.mozilla.org/Firefox/Privacy/Tracking_Protection";
-
-const INSECURE_PASSWORDS_LEARN_MORE = "https://developer.mozilla.org/docs/Security/InsecurePasswords";
-
-const PUBLIC_KEY_PINS_LEARN_MORE = "https://developer.mozilla.org/docs/Web/Security/Public_Key_Pinning";
-
-const STRICT_TRANSPORT_SECURITY_LEARN_MORE = "https://developer.mozilla.org/docs/Security/HTTP_Strict_Transport_Security";
-
-const WEAK_SIGNATURE_ALGORITHM_LEARN_MORE = "https://developer.mozilla.org/docs/Security/Weak_Signature_Algorithm";
-
 const IGNORED_SOURCE_URLS = ["debugger eval code"];
 
 
@@ -1487,7 +1477,9 @@ WebConsoleFrame.prototype = {
     let msgBody = node.getElementsByClassName("message-body")[0];
 
     
-    this.addMoreInfoLink(msgBody, scriptError);
+    if (scriptError.exceptionDocURL) {
+      this.addLearnMoreWarningNode(msgBody, scriptError.exceptionDocURL);
+    }
 
     
     this._telemetry.logKeyed("DEVTOOLS_JAVASCRIPT_ERROR_DISPLAYED",
@@ -1665,48 +1657,6 @@ WebConsoleFrame.prototype = {
       event.stopPropagation();
       this.owner.openLink(MIXED_CONTENT_LEARN_MORE);
     });
-  },
-
-  
-
-
-
-
-
-
-
-
-  addMoreInfoLink: function (node, scriptError) {
-    let url;
-    switch (scriptError.category) {
-      case "Insecure Password Field":
-        url = INSECURE_PASSWORDS_LEARN_MORE;
-        break;
-      case "Mixed Content Message":
-      case "Mixed Content Blocker":
-        url = MIXED_CONTENT_LEARN_MORE;
-        break;
-      case "Invalid HPKP Headers":
-        url = PUBLIC_KEY_PINS_LEARN_MORE;
-        break;
-      case "Invalid HSTS Headers":
-        url = STRICT_TRANSPORT_SECURITY_LEARN_MORE;
-        break;
-      case "SHA-1 Signature":
-        url = WEAK_SIGNATURE_ALGORITHM_LEARN_MORE;
-        break;
-      case "Tracking Protection":
-        url = TRACKING_PROTECTION_LEARN_MORE;
-        break;
-      default:
-        
-        url = ErrorDocs.GetURL(scriptError.errorMessageName);
-        break;
-    }
-
-    if (url) {
-      this.addLearnMoreWarningNode(node, url);
-    }
   },
 
   

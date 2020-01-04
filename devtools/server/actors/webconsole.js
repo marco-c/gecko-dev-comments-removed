@@ -903,7 +903,7 @@ WebConsoleActor.prototype =
           
           
         try {
-          errorDocURL = ErrorDocs.GetURL(error && error.errorMessageName);
+          errorDocURL = ErrorDocs.GetURL(error);
         } catch (ex) {}
       }
     }
@@ -1449,6 +1449,7 @@ WebConsoleActor.prototype =
     return {
       errorMessage: this._createStringGrip(aPageError.errorMessage),
       errorMessageName: aPageError.errorMessageName,
+      exceptionDocURL: ErrorDocs.GetURL(aPageError),
       sourceName: aPageError.sourceName,
       lineText: lineText,
       lineNumber: aPageError.lineNumber,
