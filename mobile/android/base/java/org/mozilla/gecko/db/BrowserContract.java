@@ -549,7 +549,16 @@ public class BrowserContract {
 
 
 
-            READER_VIEW("reader_view");
+            READER_VIEW("reader_view"),
+
+            
+
+
+
+
+
+
+            HOME_SCREEN_SHORTCUT("home_screen_shortcut");
 
             private final String dbValue;
 

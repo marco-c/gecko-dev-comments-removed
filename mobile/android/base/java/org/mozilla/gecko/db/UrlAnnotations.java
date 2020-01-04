@@ -28,4 +28,22 @@ public interface UrlAnnotations {
 
     void insertReaderViewUrl(ContentResolver cr, String pageURL);
     void deleteReaderViewUrl(ContentResolver cr, String pageURL);
+
+    
+
+
+
+
+
+
+    boolean hasAcceptedOrDeclinedHomeScreenShortcut(ContentResolver cr, String url);
+
+    
+
+
+
+
+
+
+    void insertHomeScreenShortcut(ContentResolver cr, String url, boolean hasCreatedShortCut);
 }
