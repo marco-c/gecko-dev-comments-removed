@@ -126,11 +126,9 @@ private:
   int64_t mLastStreamOffset;
 
   
-  Monitor mMonitor;
   
   
-  
-  bool mIsFlushing;
+  Atomic<bool> mIsFlushing;
 
   bool mIsShutDown;
 

@@ -57,14 +57,6 @@ protected:
   RefPtr<MediaByteBuffer> mExtraData;
   AVCodecID mCodecID;
 
-  
-  
-  Monitor mMonitor;
-  
-  
-  
-  Atomic<bool> mIsFlushing;
-
 private:
   static StaticMutex sMonitor;
 };

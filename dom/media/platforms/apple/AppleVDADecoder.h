@@ -126,7 +126,6 @@ protected:
   Atomic<uint32_t> mQueuedSamples;
 
   
-  
   Monitor mMonitor;
   
   
