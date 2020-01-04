@@ -53,6 +53,10 @@ public:
     return mIsDying;
   }
 
+  
+  
+  
+  
   virtual JSObject* GetGlobalJSObject() = 0;
 
   
