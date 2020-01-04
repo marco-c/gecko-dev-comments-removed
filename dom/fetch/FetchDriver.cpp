@@ -117,8 +117,6 @@ FetchDriver::SetTaintingAndGetNextOp()
                                  requestURI,
                                  mPrincipal,
                                  mDocument,
-                                 
-                                 
                                  EmptyCString(), 
                                  nullptr, 
                                  &shouldLoad,
@@ -145,7 +143,7 @@ FetchDriver::SetTaintingAndGetNextOp()
       (NS_IsAboutBlank(requestURI) ||
        NS_SUCCEEDED(mPrincipal->CheckMayLoad(requestURI, false ,
                                              true )))) {
-    return MainFetchOp(BASIC_FETCH);
+    return MainFetchOp(HTTP_FETCH, false , false );
   }
 
   
@@ -156,7 +154,7 @@ FetchDriver::SetTaintingAndGetNextOp()
   
   if (mRequest->Mode() == RequestMode::No_cors) {
     mRequest->SetResponseTainting(InternalRequest::RESPONSETAINT_OPAQUE);
-    return MainFetchOp(BASIC_FETCH);
+    return MainFetchOp(HTTP_FETCH, false , false );
   }
 
   
@@ -194,10 +192,6 @@ FetchDriver::ContinueFetch()
     return FailWithNetworkError();
   }
 
-  if (nextOp.mType == BASIC_FETCH) {
-    return BasicFetch();
-  }
-
   if (nextOp.mType == HTTP_FETCH) {
     return HttpFetch(nextOp.mCORSFlag, nextOp.mCORSPreflightFlag);
   }
@@ -205,12 +199,6 @@ FetchDriver::ContinueFetch()
   MOZ_ASSERT_UNREACHABLE("Unexpected main fetch operation!");
   return FailWithNetworkError();
  }
-
-nsresult
-FetchDriver::BasicFetch()
-{
-  return HttpFetch();
-}
 
 
 
@@ -892,8 +880,7 @@ FetchDriver::AsyncOnChannelRedirect(nsIChannel* aOldChannel,
   
   
   
-  MOZ_ASSERT(nextOp.mType == BASIC_FETCH || nextOp.mType == HTTP_FETCH);
-  MOZ_ASSERT_IF(mCORSFlagEverSet, nextOp.mType == HTTP_FETCH);
+  MOZ_ASSERT(nextOp.mType == HTTP_FETCH);
   MOZ_ASSERT_IF(mCORSFlagEverSet, nextOp.mCORSFlag);
 
   
