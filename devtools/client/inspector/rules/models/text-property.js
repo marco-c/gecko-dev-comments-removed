@@ -9,7 +9,7 @@
 
 const {Cc, Ci} = require("chrome");
 
-const {escapeCSSComment} = require("devtools/shared/css-parsing-utils");
+const {escapeCSSComment} = require("devtools/shared/css/parsing-utils");
 const {getCssProperties} = require("devtools/shared/fronts/css-properties");
 
 const {XPCOMUtils} = require("resource://gre/modules/XPCOMUtils.jsm");
