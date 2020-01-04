@@ -31,6 +31,7 @@ function init(msg) {
 
   if (!DebuggerServer.initialized) {
     DebuggerServer.init();
+    DebuggerServer.isInChildProcess = true;
   }
 
   
@@ -45,6 +46,7 @@ function init(msg) {
 
   
   let conn = DebuggerServer.connectToParent(prefix, mm);
+  conn.parentMessageManager = mm;
 
   let { ChildProcessActor } = devtools.require("devtools/server/actors/child-process");
   let actor = new ChildProcessActor(conn);
