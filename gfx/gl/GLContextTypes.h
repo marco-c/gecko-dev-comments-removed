@@ -52,6 +52,8 @@ enum class CreateContextFlags : int8_t {
     FORCE_ENABLE_HARDWARE = 1 << 1,
     
     ALLOW_OFFLINE_RENDERER =  1 << 2,
+    
+    PREFER_ES3 = 1 << 3,
 };
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(CreateContextFlags)
 
