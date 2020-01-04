@@ -112,8 +112,7 @@ void
 InputBlockState::SetScrolledApzc(AsyncPanZoomController* aApzc)
 {
   
-  
-  MOZ_ASSERT(!mScrolledApzc || IsAncestorOf(aApzc, mScrolledApzc));
+  MOZ_ASSERT(!mScrolledApzc || mScrolledApzc == aApzc);
 
   mScrolledApzc = aApzc;
 }
