@@ -5134,9 +5134,13 @@ CanvasRenderingContext2D::DrawWindow(nsGlobalWindow& aWindow, double aX,
   RefPtr<DrawTarget> drawDT;
   
   
+  
+  
+  
   if (gfxPlatform::GetPlatform()->SupportsAzureContentForDrawTarget(mTarget) &&
       GlobalAlpha() == 1.0f &&
-      UsedOperation() == CompositionOp::OP_OVER)
+      UsedOperation() == CompositionOp::OP_OVER &&
+      (!mBufferProvider || mBufferProvider->GetType() != LayersBackend::LAYERS_CLIENT))
   {
     thebes = gfxContext::CreateOrNull(mTarget);
     MOZ_ASSERT(thebes); 
