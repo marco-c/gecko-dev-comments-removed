@@ -37,6 +37,8 @@ config = {
     
     "python_webserver": True,
     "virtualenv_path": '%s/build/venv' % os.getcwd(),
+    "preflight_run_cmd_suites": [],
+    "postflight_run_cmd_suites": [],
 
     
     "download_tooltool": True,
