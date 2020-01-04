@@ -266,7 +266,7 @@ public:
 
 
 
-  gfx::IntSize GetSize() const
+  gfx::IntSize Size() const
   {
     MOZ_ASSERT(HasSize());
     return mImageMetadata.GetSize();
@@ -282,7 +282,7 @@ public:
   gfx::IntSize OutputSize() const
   {
     return mDownscaler ? mDownscaler->TargetSize()
-                       : GetSize();
+                       : Size();
   }
 
   virtual Telemetry::ID SpeedHistogram();
@@ -411,8 +411,7 @@ protected:
 
   
   nsresult AllocateBasicFrame() {
-    nsIntSize size = GetSize();
-    return AllocateFrame(0, size, nsIntRect(nsIntPoint(), size),
+    return AllocateFrame(0, Size(), gfx::IntRect(gfx::IntPoint(), Size()),
                          gfx::SurfaceFormat::B8G8R8A8);
   }
 

@@ -199,7 +199,7 @@ nsGIFDecoder2::BeginImageFrame(const IntRect& aFrameRect,
     
     pipe =
       SurfacePipeFactory::CreateSurfacePipe(this, mGIFStruct.images_decoded,
-                                            GetSize(), OutputSize(),
+                                            Size(), OutputSize(),
                                             aFrameRect, format, pipeFlags);
   } else {
     
@@ -207,7 +207,7 @@ nsGIFDecoder2::BeginImageFrame(const IntRect& aFrameRect,
     MOZ_ASSERT(!mDownscaler);
     pipe =
       SurfacePipeFactory::CreatePalettedSurfacePipe(this, mGIFStruct.images_decoded,
-                                                    GetSize(), aFrameRect, format,
+                                                    Size(), aFrameRect, format,
                                                     aDepth, pipeFlags);
   }
 

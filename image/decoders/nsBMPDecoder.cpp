@@ -686,7 +686,7 @@ nsBMPDecoder::ReadBitfields(const char* aData, size_t aLength)
     
     
     
-    rv = mDownscaler->BeginFrame(GetSize(), Nothing(),
+    rv = mDownscaler->BeginFrame(Size(), Nothing(),
                                  mImageData, mMayHaveTransparency,
                                   mH.mHeight >= 0);
     if (NS_FAILED(rv)) {

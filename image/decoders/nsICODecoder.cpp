@@ -582,7 +582,7 @@ nsICODecoder::FinishResource()
   
   
   if (mContainedDecoder->HasSize() &&
-      mContainedDecoder->GetSize() != GetRealSize()) {
+      mContainedDecoder->Size() != GetRealSize()) {
     return Transition::TerminateFailure();
   }
 

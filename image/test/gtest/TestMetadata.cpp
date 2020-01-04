@@ -88,7 +88,7 @@ CheckMetadata(const ImageTestCase& aTestCase,
   
   EXPECT_TRUE(metadataProgress & FLAG_SIZE_AVAILABLE);
 
-  IntSize metadataSize = decoder->GetSize();
+  IntSize metadataSize = decoder->Size();
   EXPECT_EQ(aTestCase.mSize.width, metadataSize.width);
   EXPECT_EQ(aTestCase.mSize.height, metadataSize.height);
 
@@ -122,7 +122,7 @@ CheckMetadata(const ImageTestCase& aTestCase,
   EXPECT_EQ(fullProgress, metadataProgress | fullProgress);
 
   
-  IntSize fullSize = decoder->GetSize();
+  IntSize fullSize = decoder->Size();
   EXPECT_EQ(metadataSize.width, fullSize.width);
   EXPECT_EQ(metadataSize.height, fullSize.height);
 
