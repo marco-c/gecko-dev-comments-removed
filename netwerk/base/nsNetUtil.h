@@ -45,6 +45,8 @@ class nsIStreamLoaderObserver;
 class nsIUnicharStreamLoader;
 class nsIUnicharStreamLoaderObserver;
 
+namespace mozilla { class OriginAttributes; }
+
 template <class> class nsCOMPtr;
 template <typename> struct already_AddRefed;
 
@@ -688,6 +690,12 @@ NS_QueryNotificationCallbacks(nsIInterfaceRequestor  *callbacks,
 
 
 bool NS_UsePrivateBrowsing(nsIChannel *channel);
+
+
+
+
+bool NS_GetOriginAttributes(nsIChannel *aChannel,
+                            mozilla::OriginAttributes &aAttributes);
 
 
 
