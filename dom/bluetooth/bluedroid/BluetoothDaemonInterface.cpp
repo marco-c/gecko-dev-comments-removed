@@ -95,10 +95,11 @@ public:
 
   void SetConnection(DaemonSocket* aConnection);
 
-  nsresult RegisterModule(uint8_t aId, uint8_t aMode, uint32_t aMaxNumClients,
+  nsresult RegisterModule(BluetoothSetupServiceId aId,
+                          uint8_t aMode, uint32_t aMaxNumClients,
                           BluetoothSetupResultHandler* aRes) override;
 
-  nsresult UnregisterModule(uint8_t aId,
+  nsresult UnregisterModule(BluetoothSetupServiceId aId,
                             BluetoothSetupResultHandler* aRes) override;
 
   
@@ -154,8 +155,8 @@ BluetoothDaemonProtocol::SetConnection(DaemonSocket* aConnection)
 }
 
 nsresult
-BluetoothDaemonProtocol::RegisterModule(uint8_t aId, uint8_t aMode,
-                                        uint32_t aMaxNumClients,
+BluetoothDaemonProtocol::RegisterModule(BluetoothSetupServiceId aId,
+                                        uint8_t aMode, uint32_t aMaxNumClients,
                                         BluetoothSetupResultHandler* aRes)
 {
   return BluetoothDaemonSetupModule::RegisterModuleCmd(aId, aMode,
@@ -163,7 +164,7 @@ BluetoothDaemonProtocol::RegisterModule(uint8_t aId, uint8_t aMode,
 }
 
 nsresult
-BluetoothDaemonProtocol::UnregisterModule(uint8_t aId,
+BluetoothDaemonProtocol::UnregisterModule(BluetoothSetupServiceId aId,
                                           BluetoothSetupResultHandler* aRes)
 {
   return BluetoothDaemonSetupModule::UnregisterModuleCmd(aId, aRes);
@@ -422,7 +423,9 @@ public:
     if (!mRegisteredSocketModule) {
       mRegisteredSocketModule = true;
       
-      mInterface->mProtocol->RegisterModuleCmd(0x02, 0x00,
+      mInterface->mProtocol->RegisterModuleCmd(
+        SETUP_SERVICE_ID_SOCKET,
+        0x00,
         BluetoothDaemonSocketModule::MAX_NUM_CLIENTS, this);
     } else if (mRes) {
       
@@ -556,7 +559,7 @@ private:
     if (!mUnregisteredCoreModule) {
       mUnregisteredCoreModule = true;
       
-      mInterface->mProtocol->UnregisterModuleCmd(0x01, this);
+      mInterface->mProtocol->UnregisterModuleCmd(SETUP_SERVICE_ID_CORE, this);
     } else {
       
       mInterface->mCmdChannel->Close();
@@ -600,7 +603,7 @@ BluetoothDaemonInterface::Cleanup(BluetoothResultHandler* aRes)
 
   
   nsresult rv = mProtocol->UnregisterModuleCmd(
-    0x02, new CleanupResultHandler(this));
+    SETUP_SERVICE_ID_SOCKET, new CleanupResultHandler(this));
   if (NS_FAILED(rv)) {
     DispatchError(aRes, rv);
     return;
@@ -1014,7 +1017,9 @@ BluetoothDaemonInterface::OnConnectSuccess(int aIndex)
 
         
         nsresult rv = mProtocol->RegisterModuleCmd(
-          0x01, 0x00, BluetoothDaemonCoreModule::MAX_NUM_CLIENTS,
+          SETUP_SERVICE_ID_CORE,
+          0x00,
+          BluetoothDaemonCoreModule::MAX_NUM_CLIENTS,
           new InitResultHandler(this, res));
         if (NS_FAILED(rv) && res) {
           DispatchError(res, STATUS_FAIL);
