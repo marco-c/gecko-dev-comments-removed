@@ -8,6 +8,8 @@
 
 #include "nsIHttpChannel.h"
 #include "nsIHttpChannelInternal.h"
+#include "nsIUploadChannel.h"
+#include "nsIUploadChannel2.h"
 #include "nsISecCheckWrapChannel.h"
 #include "nsIWyciwygChannel.h"
 #include "mozilla/LoadInfo.h"
@@ -40,15 +42,21 @@
 
 
 
+
+
 class nsSecCheckWrapChannelBase : public nsIHttpChannel
                                 , public nsIHttpChannelInternal
                                 , public nsISecCheckWrapChannel
+                                , public nsIUploadChannel
+                                , public nsIUploadChannel2
 {
 public:
   NS_FORWARD_NSIHTTPCHANNEL(mHttpChannel->)
   NS_FORWARD_NSIHTTPCHANNELINTERNAL(mHttpChannelInternal->)
   NS_FORWARD_NSICHANNEL(mChannel->)
   NS_FORWARD_NSIREQUEST(mRequest->)
+  NS_FORWARD_NSIUPLOADCHANNEL(mUploadChannel->)
+  NS_FORWARD_NSIUPLOADCHANNEL2(mUploadChannel2->)
   NS_DECL_NSISECCHECKWRAPCHANNEL
   NS_DECL_ISUPPORTS
 
@@ -62,6 +70,8 @@ protected:
   nsCOMPtr<nsIHttpChannel>         mHttpChannel;
   nsCOMPtr<nsIHttpChannelInternal> mHttpChannelInternal;
   nsCOMPtr<nsIRequest>             mRequest;
+  nsCOMPtr<nsIUploadChannel>       mUploadChannel;
+  nsCOMPtr<nsIUploadChannel2>      mUploadChannel2;
 };
 
 
@@ -73,6 +83,9 @@ class nsSecCheckWrapChannel : public nsSecCheckWrapChannelBase
 public:
   NS_IMETHOD GetLoadInfo(nsILoadInfo **aLoadInfo);
   NS_IMETHOD SetLoadInfo(nsILoadInfo *aLoadInfo);
+
+  NS_IMETHOD AsyncOpen2(nsIStreamListener *aListener);
+  NS_IMETHOD Open2(nsIInputStream** aStream);
 
   nsSecCheckWrapChannel(nsIChannel* aChannel, nsILoadInfo* aLoadInfo);
 
