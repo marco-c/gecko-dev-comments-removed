@@ -1236,6 +1236,8 @@ public:
   
   already_AddRefed<nsSimpleContentList> BlockedTrackingNodes() const;
 
+  static bool IsUnprefixedFullscreenEnabled(JSContext* aCx, JSObject* aObject);
+
   
   
   bool FullscreenElementReadyCheck(Element* aElement, bool aWasCallerChrome);
