@@ -281,10 +281,6 @@ function gczeal(z)
   SpecialPowers.setGCZeal(z);
 }
 
-function jit(on)
-{
-}
-
 function jsTestDriverBrowserInit()
 {
 
@@ -386,18 +382,6 @@ function jsTestDriverBrowserInit()
   {
     gczeal(Number(properties.gczeal));
   }
-
-  
-
-
-
-
-
-
-
-
-  if (properties.jit  || !document.location.href.match(/jsreftest.html/))
-    jit(properties.jit);
 
   var testpathparts = properties.test.split(/\//);
 
