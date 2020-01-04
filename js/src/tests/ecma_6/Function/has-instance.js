@@ -41,6 +41,24 @@ for (let nonCallable of nonCallables) {
 }
 
 
+
+assertThrowsInstanceOf(() => {
+    function foo() {};
+    let obj = {};
+    foo instanceof obj;
+}, TypeError);
+
+
+let o = {[Symbol.hasInstance](v) { return true; }}
+assertEq(1 instanceof o, true);
+
+
+
+for (let nonCallable of nonCallables) {
+    assertEq(Function.prototype[Symbol.hasInstance].call(nonCallable, Object), false);
+}
+
+
 assertEq(Function.prototype[Symbol.hasInstance].call(Function, () => 1), true);
 assertEq(Function.prototype[Symbol.hasInstance].call(Function, Object), true);
 assertEq(Function.prototype[Symbol.hasInstance].call(Function, null), false);
@@ -50,24 +68,6 @@ assertEq(Function.prototype[Symbol.hasInstance].call(Array, Function), false);
 assertEq(Function.prototype[Symbol.hasInstance].call(({}), Function), false);
 assertEq(Function.prototype[Symbol.hasInstance].call(), false)
 assertEq(Function.prototype[Symbol.hasInstance].call(({})), false)
-
-
-assertThrowsInstanceOf(() => {
-    Function.prototype[Symbol.hasInstance].call(1, Function);
-}, TypeError);
-
-
-assertThrowsInstanceOf(() => {
-    function foo() {};
-    let obj = {};
-    foo instanceof obj;
-}, TypeError);
-
-
-for (let nonCallable of [1, undefined, null, {}]) {
-    let o = {[Symbol.hasInstance](v) { return true; }}
-    assertEq(nonCallable instanceof o, true);
-}
 
 
 let bindme = {x: function() {}};

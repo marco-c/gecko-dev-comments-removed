@@ -684,9 +684,12 @@ js::fun_symbolHasInstance(JSContext* cx, unsigned argc, Value* vp)
 
     
     HandleValue func = args.thisv();
+
+    
+    
     if (!func.isObject()) {
-        ReportIncompatible(cx, args);
-        return false;
+        args.rval().setBoolean(false);
+        return true;
     }
 
     RootedObject obj(cx, &func.toObject());
