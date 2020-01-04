@@ -73,6 +73,10 @@ public:
 
     
     
+    bool RemoveKeysForSession(const nsString& aSessionId);
+
+    
+    
     void SetCaps(uint64_t aCaps);
 
     bool CanRenderAudio();
