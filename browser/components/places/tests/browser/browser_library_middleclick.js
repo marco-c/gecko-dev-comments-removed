@@ -39,13 +39,13 @@ var gTabsListener = {
     
     
     
-    if (spec == "about:blank" || this._loadedURIs.indexOf(spec) != -1)
+    if (spec == "about:blank" || this._loadedURIs.includes(spec))
       return;
 
-    ok(gCurrentTest.URIs.indexOf(spec) != -1,
+    ok(gCurrentTest.URIs.includes(spec),
        "Opened URI found in list: " + spec);
 
-    if (gCurrentTest.URIs.indexOf(spec) != -1 )
+    if (gCurrentTest.URIs.includes(spec))
       this._loadedURIs.push(spec);
 
     if (this._loadedURIs.length == gCurrentTest.URIs.length) {
