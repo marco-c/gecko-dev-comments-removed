@@ -340,7 +340,10 @@ public:
   
   nsCOMPtr<nsIAtom> mSpecifiedEventType;
 
-  nsString typeString; 
+  
+  
+  
+  nsString mSpecifiedEventTypeString;
 
   
   nsCOMPtr<dom::EventTarget> target;
