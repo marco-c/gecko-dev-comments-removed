@@ -78,8 +78,10 @@ SessionStore.prototype = {
     
     this._sessionFile = Services.dirsvc.get("ProfD", Ci.nsILocalFile);
     this._sessionFileBackup = this._sessionFile.clone();
+    this._sessionFileTemp = this._sessionFile.clone();
     this._sessionFile.append("sessionstore.js");
     this._sessionFileBackup.append("sessionstore.bak");
+    this._sessionFileTemp.append(this._sessionFile.leafName + ".tmp");
 
     this._loadState = STATE_STOPPED;
     this._startupRestoreFinished = false;
@@ -102,6 +104,7 @@ SessionStore.prototype = {
   _clearDisk: function ss_clearDisk() {
     OS.File.remove(this._sessionFile.path);
     OS.File.remove(this._sessionFileBackup.path);
+    OS.File.remove(this._sessionFileTemp.path);
   },
 
   observe: function ss_observe(aSubject, aTopic, aData) {
@@ -860,7 +863,7 @@ SessionStore.prototype = {
     } else {
       log("_saveState() writing empty normal data");
     }
-    this._writeFile(this._sessionFile, normalData, aAsync);
+    this._writeFile(this._sessionFile, this._sessionFileTemp, normalData, aAsync);
 
     
     
@@ -947,7 +950,8 @@ SessionStore.prototype = {
 
 
 
-  _writeFile: function ss_writeFile(aFile, aData, aAsync) {
+
+  _writeFile: function ss_writeFile(aFile, aFileTemp, aData, aAsync) {
     TelemetryStopwatch.start("FX_SESSION_RESTORE_SERIALIZE_DATA_MS");
     let state = JSON.stringify(aData);
     TelemetryStopwatch.finish("FX_SESSION_RESTORE_SERIALIZE_DATA_MS");
@@ -961,7 +965,7 @@ SessionStore.prototype = {
 
     log("_writeFile(aAsync = " + aAsync + "), _pendingWrite = " + this._pendingWrite);
     let pendingWrite = this._pendingWrite;
-    this._write(aFile, buffer, aAsync).then(() => {
+    this._write(aFile, aFileTemp, buffer, aAsync).then(() => {
       let stopWriteMs = Cu.now();
 
       
@@ -987,19 +991,23 @@ SessionStore.prototype = {
 
 
 
-  _write: function ss_write(aFile, aBuffer, aAsync) {
+
+  _write: function ss_write(aFile, aFileTemp, aBuffer, aAsync) {
     
     if (aAsync) {
       log("_write() writing asynchronously");
-      return OS.File.writeAtomic(aFile.path, aBuffer, { tmpPath: aFile.path + ".tmp" });
+      return OS.File.writeAtomic(aFile.path, aBuffer, { tmpPath: aFileTemp.path });
     }
 
     
     let bytes = String.fromCharCode.apply(null, new Uint16Array(aBuffer));
     let stream = Cc["@mozilla.org/network/file-output-stream;1"].createInstance(Ci.nsIFileOutputStream);
-    stream.init(aFile, 0x02 | 0x08 | 0x20, 0o666, 0);
+    stream.init(aFileTemp, 0x02 | 0x08 | 0x20, 0o666, 0);
     stream.write(bytes, bytes.length);
     stream.close();
+    
+    
+    aFileTemp.renameTo(null, aFile.leafName);
     log("_write() writing synchronously");
 
     
