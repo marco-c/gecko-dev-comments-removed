@@ -390,6 +390,15 @@ protected:
   
   
   
+  
+  
+  
+  FrameRelativeRect GuessLineBreakerRectAfter(nsIContent* aTextContent);
+
+  
+  
+  
+  
   void EnsureNonEmptyRect(nsRect& aRect) const;
   void EnsureNonEmptyRect(LayoutDeviceIntRect& aRect) const;
 };

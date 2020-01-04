@@ -1688,6 +1688,40 @@ ContentEventHandler::GetLineBreakerRectBefore(nsIFrame* aFrame)
   return result;
 }
 
+ContentEventHandler::FrameRelativeRect
+ContentEventHandler::GuessLineBreakerRectAfter(nsIContent* aTextContent)
+{
+  
+  MOZ_ASSERT(aTextContent->IsNodeOfType(nsINode::eTEXT));
+
+  FrameRelativeRect result;
+  int32_t length = static_cast<int32_t>(aTextContent->Length());
+  if (NS_WARN_IF(length < 0)) {
+    return result;
+  }
+  
+  
+  
+  
+  nsIFrame* lastTextFrame = nullptr;
+  nsresult rv = GetFrameForTextRect(aTextContent, length, true, &lastTextFrame);
+  if (NS_WARN_IF(NS_FAILED(rv)) || NS_WARN_IF(!lastTextFrame)) {
+    return result;
+  }
+  const nsRect kLastTextFrameRect = lastTextFrame->GetRect();
+  if (lastTextFrame->GetWritingMode().IsVertical()) {
+    
+    result.mRect.SetRect(0, kLastTextFrameRect.height,
+                         kLastTextFrameRect.width, 0);
+  } else {
+    
+    result.mRect.SetRect(kLastTextFrameRect.width, 0,
+                         0, kLastTextFrameRect.height);
+  }
+  result.mBaseFrame = lastTextFrame;
+  return result;
+}
+
 nsresult
 ContentEventHandler::OnQueryTextRectArray(WidgetQueryContentEvent* aEvent)
 {
@@ -1708,8 +1742,9 @@ ContentEventHandler::OnQueryTextRectArray(WidgetQueryContentEvent* aEvent)
   bool wasLineBreaker = false;
   nsRect lastCharRect;
   while (offset < kEndOffset) {
+    nsCOMPtr<nsIContent> lastTextContent;
     rv = SetRangeFromFlatTextOffset(range, offset, 1, lineBreakType, true,
-                                    nullptr);
+                                    nullptr, getter_AddRefs(lastTextContent));
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
@@ -1749,52 +1784,9 @@ ContentEventHandler::OnQueryTextRectArray(WidgetQueryContentEvent* aEvent)
 
     AutoTArray<nsRect, 16> charRects;
 
-    if (ShouldBreakLineBefore(firstContent, mRootContent) ||
-        IsMozBR(firstContent)) {
-      nsRect brRect;
-      
-      
-      
-      
-      
-      if (firstFrame->GetType() == nsGkAtoms::brFrame ||
-          aEvent->mInput.mOffset == offset) {
-        FrameRelativeRect relativeBRRect = GetLineBreakerRectBefore(firstFrame);
-        brRect = relativeBRRect.RectRelativeTo(firstFrame);
-      } else {
-        
-        
-        
-        brRect = lastCharRect - frameRect.TopLeft();
-        if (!wasLineBreaker) {
-          if (isVertical) {
-            
-            brRect.y = brRect.YMost() + 1;
-            brRect.height = 1;
-          } else {
-            
-            brRect.x = brRect.XMost() + 1;
-            brRect.width = 1;
-          }
-        }
-      }
-      charRects.AppendElement(brRect);
-      chars.AssignLiteral("\n");
-      if (kBRLength > 1 && offset == aEvent->mInput.mOffset && offset) {
-        
-        
-        
-        
-        rv = SetRangeFromFlatTextOffset(range, aEvent->mInput.mOffset - 1, 1,
-                                        lineBreakType, true, nullptr);
-        if (NS_WARN_IF(NS_FAILED(rv))) {
-          return NS_ERROR_UNEXPECTED;
-        }
-        FrameAndNodeOffset frameForPrevious =
-          GetFirstFrameInRangeForTextRect(range);
-        startsBetweenLineBreaker = frameForPrevious.mFrame == firstFrame.mFrame;
-      }
-    } else {
+    
+    
+    if (firstFrame->GetType() == nsGkAtoms::textFrame) {
       rv = firstFrame->GetCharacterRectsInRange(firstFrame.mOffsetInNode,
                                                 kEndOffset - offset, charRects);
       if (NS_WARN_IF(NS_FAILED(rv)) || NS_WARN_IF(charRects.IsEmpty())) {
@@ -1824,6 +1816,104 @@ ContentEventHandler::OnQueryTextRectArray(WidgetQueryContentEvent* aEvent)
           range->GetStartParent() == rangeToPrevOffset->GetStartParent() &&
           range->StartOffset() == rangeToPrevOffset->StartOffset();
       }
+    }
+    
+    
+    
+    
+    else if (ShouldBreakLineBefore(firstContent, mRootContent) ||
+             IsMozBR(firstContent)) {
+      nsRect brRect;
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      if (firstFrame->GetType() != nsGkAtoms::brFrame &&
+          aEvent->mInput.mOffset != offset) {
+        
+        
+        
+        brRect = lastCharRect - frameRect.TopLeft();
+        if (!wasLineBreaker) {
+          if (isVertical) {
+            
+            brRect.y = brRect.YMost() + 1;
+            brRect.height = 1;
+          } else {
+            
+            brRect.x = brRect.XMost() + 1;
+            brRect.width = 1;
+          }
+        }
+      }
+      
+      
+      
+      else if (firstFrame->GetType() != nsGkAtoms::brFrame && lastTextContent) {
+        FrameRelativeRect brRectRelativeToLastTextFrame =
+          GuessLineBreakerRectAfter(lastTextContent);
+        if (NS_WARN_IF(!brRectRelativeToLastTextFrame.IsValid())) {
+          return NS_ERROR_FAILURE;
+        }
+        brRect = brRectRelativeToLastTextFrame.RectRelativeTo(firstFrame);
+      }
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      else {
+        FrameRelativeRect relativeBRRect = GetLineBreakerRectBefore(firstFrame);
+        brRect = relativeBRRect.RectRelativeTo(firstFrame);
+      }
+      charRects.AppendElement(brRect);
+      chars.AssignLiteral("\n");
+      if (kBRLength > 1 && offset == aEvent->mInput.mOffset && offset) {
+        
+        
+        
+        
+        rv = SetRangeFromFlatTextOffset(range, aEvent->mInput.mOffset - 1, 1,
+                                        lineBreakType, true, nullptr);
+        if (NS_WARN_IF(NS_FAILED(rv))) {
+          return NS_ERROR_UNEXPECTED;
+        }
+        FrameAndNodeOffset frameForPrevious =
+          GetFirstFrameInRangeForTextRect(range);
+        startsBetweenLineBreaker = frameForPrevious.mFrame == firstFrame.mFrame;
+      }
+    } else {
+      NS_WARNING("The frame is neither a text frame nor a frame whose content "
+                 "causes a line break");
+      return NS_ERROR_FAILURE;
     }
 
     for (size_t i = 0; i < charRects.Length() && offset < kEndOffset; i++) {
@@ -2012,26 +2102,13 @@ ContentEventHandler::OnQueryTextRect(WidgetQueryContentEvent* aEvent)
   
   
   else if (firstFrame->GetType() != nsGkAtoms::brFrame && lastTextContent) {
-    int32_t length = static_cast<int32_t>(lastTextContent->Length());
-    if (NS_WARN_IF(length < 0)) {
+    FrameRelativeRect brRectAfterLastChar =
+      GuessLineBreakerRectAfter(lastTextContent);
+    if (NS_WARN_IF(!brRectAfterLastChar.IsValid())) {
       return NS_ERROR_FAILURE;
     }
-    nsIFrame* lastTextFrame = nullptr;
-    rv = GetFrameForTextRect(lastTextContent, length, true, &lastTextFrame);
-    if (NS_WARN_IF(NS_FAILED(rv)) || NS_WARN_IF(!lastTextFrame)) {
-      return NS_ERROR_FAILURE;
-    }
-    const nsRect kLastTextFrameRect = lastTextFrame->GetRect();
-    if (lastTextFrame->GetWritingMode().IsVertical()) {
-      
-      rect.SetRect(0, kLastTextFrameRect.height,
-                   kLastTextFrameRect.width, 0);
-    } else {
-      
-      rect.SetRect(kLastTextFrameRect.width, 0,
-                   0, kLastTextFrameRect.height);
-    }
-    rv = ConvertToRootRelativeOffset(lastTextFrame, rect);
+    rect = brRectAfterLastChar.mRect;
+    rv = ConvertToRootRelativeOffset(brRectAfterLastChar.mBaseFrame, rect);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
