@@ -825,13 +825,6 @@ MediaStreamGraphImpl::PlayAudio(MediaStream* aStream,
   for (uint32_t i = 0; i < aStream->mAudioOutputStreams.Length(); ++i) {
     ticksWritten = 0;
 
-    
-    
-    
-    
-    
-    StreamTime ticksNeeded = aTo - aFrom;
-
     MediaStream::AudioOutputStream& audioOutput = aStream->mAudioOutputStreams[i];
     StreamBuffer::Track* track = aStream->mBuffer.FindTrack(audioOutput.mTrackID);
     AudioSegment* audio = track->Get<AudioSegment>();
@@ -849,20 +842,14 @@ MediaStreamGraphImpl::PlayAudio(MediaStream* aStream,
     
     
     GraphTime t = aFrom;
-    while (ticksNeeded) {
+    while (t < aTo) {
       GraphTime end;
       bool blocked = aStream->mBlocked.GetAt(t, &end);
       end = std::min(end, aTo);
 
       
       
-      StreamTime toWrite = 0;
-      if (end >= aTo) {
-        toWrite = ticksNeeded;
-      } else {
-        toWrite = end - t;
-      }
-      ticksNeeded -= toWrite;
+      StreamTime toWrite = end - t;
 
       if (blocked) {
         output.InsertNullDataAtStart(toWrite);
