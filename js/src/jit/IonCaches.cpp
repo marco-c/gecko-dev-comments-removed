@@ -2216,6 +2216,15 @@ GetPropertyIC::maybeDisable(bool emitted)
         return;
     }
 
+    if (!canAttachStub() && id().constant()) {
+        
+        
+        
+        
+        
+        return;
+    }
+
     if (!canAttachStub() || (stubCount_ == 0 && failedUpdates_ > MAX_FAILED_UPDATES)) {
         JitSpew(JitSpew_IonIC, "Disable inline cache");
         disable();
