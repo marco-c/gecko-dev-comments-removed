@@ -3432,7 +3432,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleXUL
   mozilla::StyleBoxAlign mBoxAlign;         
   uint8_t       mBoxDirection;          
   uint8_t       mBoxOrient;             
-  uint8_t       mBoxPack;               
+  mozilla::StyleBoxPack mBoxPack;           
   bool          mStretchStack;          
 };
 
