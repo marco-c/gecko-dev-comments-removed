@@ -212,24 +212,26 @@ ContainerRenderVR(ContainerT* aContainer,
       
       compositor->SetRenderTarget(surface);
       aContainer->ReplaceEffectiveTransform(origTransform);
+
       
       
       
       
-      
-      nsIntRect layerBounds;
+      Rect layerBounds;
       
       
       
       if (layer->GetType() == Layer::TYPE_CANVAS) {
-        layerBounds = static_cast<CanvasLayer*>(layer)->GetBounds();
+        layerBounds = ToRect(static_cast<CanvasLayer*>(layer)->GetBounds());
       } else {
-        layerBounds = layer->GetEffectiveVisibleRegion().GetBounds();
+        layerBounds = ToRect(layer->GetEffectiveVisibleRegion().GetBounds());
       }
-      DUMP("  layer %p [type %d] bounds [%d %d %d %d] surfaceRect [%d %d %d %d]\n", layer, (int) layer->GetType(),
-           XYWH(layerBounds), XYWH(surfaceRect));
-      
       const gfx::Matrix4x4 childTransform = layer->GetEffectiveTransform();
+      layerBounds = childTransform.TransformBounds(layerBounds);
+
+      DUMP("  layer %p [type %d] bounds [%f %f %f %f] surfaceRect [%d %d %d %d]\n", layer, (int) layer->GetType(),
+           XYWH(layerBounds), XYWH(surfaceRect));
+
       bool restoreTransform = false;
       if ((layerBounds.width != 0 && layerBounds.height != 0) &&
           (layerBounds.width != surfaceRect.width ||
@@ -239,8 +241,8 @@ ContainerRenderVR(ContainerT* aContainer,
              surfaceRect.width / float(layerBounds.width),
              surfaceRect.height / float(layerBounds.height));
         gfx::Matrix4x4 scaledChildTransform(childTransform);
-        scaledChildTransform.PreScale(surfaceRect.width / float(layerBounds.width),
-                                      surfaceRect.height / float(layerBounds.height),
+        scaledChildTransform.PreScale(surfaceRect.width / layerBounds.width,
+                                      surfaceRect.height / layerBounds.height,
                                       1.0f);
 
         layer->ReplaceEffectiveTransform(scaledChildTransform);
