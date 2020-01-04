@@ -725,6 +725,8 @@ private:
   Maybe<size_t> mMaskLayerIndex;
 };
 
+typedef Maybe<LayerClip> MaybeLayerClip;  
+
 
 
 
