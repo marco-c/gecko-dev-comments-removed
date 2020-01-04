@@ -276,8 +276,8 @@ class Observer(object):
                          for k in ('changed', 'unchanged', 'report', 'missing',
                                    'missingInFiles')
                          if k in summary])
-            rate = (('changed' in summary and summary['changed'] * 100)
-                    or 0) / total
+            rate = (('changed' in summary and summary['changed'] * 100) or
+                    0) / total
             item.update((k, summary.get(k, 0))
                         for k in ('changed', 'unchanged'))
             item.update((k, summary[k])
@@ -349,8 +349,8 @@ class Observer(object):
                          if k in summary])
             rate = 0
             if total:
-                rate = (('changed' in summary and summary['changed'] * 100)
-                        or 0) / total
+                rate = (('changed' in summary and summary['changed'] * 100) or
+                        0) / total
             out.append('%d%% of entries changed' % rate)
         return '\n'.join(map(tostr, self.details.getContent()) + out)
 
