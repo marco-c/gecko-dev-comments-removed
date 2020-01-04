@@ -244,14 +244,14 @@ function* test_storage_cleared() {
     let tabInfo = yield* openTabInUserContext(TEST_URL+ "file_set_storages.html?" + value, userContextId);
 
     
-    let win = tabInfo.browser.contentWindow;
-    Assert.equal(win.localStorage.getItem("userContext"), USER_CONTEXTS[userContextId], "Check the local storage value");
-
-    
-    Assert.equal(win.sessionStorage.getItem("userContext"), USER_CONTEXTS[userContextId], "Check the session storage value");
-
-    
     yield ContentTask.spawn(tabInfo.browser, { userContext: USER_CONTEXTS[userContextId] }, function* (arg) {
+      
+      Assert.equal(content.localStorage.getItem("userContext"), arg.userContext, "Check the local storage value");
+
+      
+      Assert.equal(content.sessionStorage.getItem("userContext"), arg.userContext, "Check the session storage value");
+
+      
       let request = content.indexedDB.open("idb", 1);
 
       let db = yield new Promise(done => {
@@ -285,16 +285,16 @@ function* test_storage_cleared() {
   for (let userContextId of Object.keys(USER_CONTEXTS)) {
     
     let tabInfo = yield* openTabInUserContext(TEST_URL+ "file_set_storages.html", userContextId);
-    let win = tabInfo.browser.contentWindow;
-
-    
-    Assert.ok(!win.localStorage.getItem("userContext"), "The local storage has been cleared");
-
-    
-    Assert.ok(!win.sessionStorage.getItem("userContext"), "The session storage has been cleared");
 
     
     yield ContentTask.spawn(tabInfo.browser, null, function* () {
+      
+      Assert.ok(!content.localStorage.getItem("userContext"), "The local storage has been cleared");
+
+      
+      Assert.ok(!content.sessionStorage.getItem("userContext"), "The session storage has been cleared");
+
+      
       let request = content.indexedDB.open("idb", 1);
 
       let db = yield new Promise(done => {
