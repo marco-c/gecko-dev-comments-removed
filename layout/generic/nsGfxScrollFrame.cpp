@@ -2916,6 +2916,39 @@ ScrollFrameHelper::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
   
   
   
+  bool ignoringThisScrollFrame =
+    aBuilder->GetIgnoreScrollFrame() == mOuter || IsIgnoringViewportClipping();
+
+  
+  
+  
+  
+  
+  
+  
+  
+  nsRect dirtyRect = aDirtyRect;
+  if (!ignoringThisScrollFrame) {
+    dirtyRect = dirtyRect.Intersect(mScrollPort);
+  }
+
+  Unused << DecideScrollableLayer(aBuilder, &dirtyRect,
+               !mIsRoot);
+
+  bool usingDisplayPort = aBuilder->IsPaintingToWindow() &&
+    nsLayoutUtils::HasDisplayPort(mOuter->GetContent());
+
+  if (aBuilder->IsForImageVisibility()) {
+    
+    
+    
+    
+    dirtyRect = ExpandRectToNearlyVisible(dirtyRect);
+  }
+
+  
+  
+  
   
   
   
@@ -2924,10 +2957,7 @@ ScrollFrameHelper::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
   bool createLayersForScrollbars = mIsRoot &&
     mOuter->PresContext()->IsRootContentDocument();
 
-  if (aBuilder->GetIgnoreScrollFrame() == mOuter || IsIgnoringViewportClipping()) {
-    bool usingDisplayPort = aBuilder->IsPaintingToWindow() &&
-      nsLayoutUtils::HasDisplayPort(mOuter->GetContent());
-
+  if (ignoringThisScrollFrame) {
     
     
     mAddClipRectToLayer = false;
@@ -2947,7 +2977,7 @@ ScrollFrameHelper::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
     
     
     mOuter->BuildDisplayListForChild(aBuilder, mScrolledFrame,
-                                     aDirtyRect, aLists);
+                                     dirtyRect, aLists);
 
     if (addScrollBars) {
       
@@ -2962,22 +2992,6 @@ ScrollFrameHelper::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
   
   mAddClipRectToLayer =
     !(mIsRoot && mOuter->PresContext()->PresShell()->GetIsViewportOverridden());
-
-  
-  
-  
-  
-  
-  
-  
-  
-  nsRect dirtyRect = aDirtyRect.Intersect(mScrollPort);
-
-  Unused << DecideScrollableLayer(aBuilder, &dirtyRect,
-               !mIsRoot);
-
-  bool usingDisplayPort = aBuilder->IsPaintingToWindow() &&
-    nsLayoutUtils::HasDisplayPort(mOuter->GetContent());
 
   
   
@@ -3008,14 +3022,6 @@ ScrollFrameHelper::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
   
   AppendScrollPartsTo(aBuilder, aDirtyRect, aLists, usingDisplayPort,
                       createLayersForScrollbars, false);
-
-  if (aBuilder->IsForImageVisibility()) {
-    
-    
-    
-    
-    dirtyRect = ExpandRectToNearlyVisible(dirtyRect);
-  }
 
   const nsStyleDisplay* disp = mOuter->StyleDisplay();
   if (disp && (disp->mWillChangeBitField & NS_STYLE_WILL_CHANGE_SCROLL)) {
@@ -3252,9 +3258,16 @@ ScrollFrameHelper::DecideScrollableLayer(nsDisplayListBuilder* aBuilder,
     usingDisplayPort =
       nsLayoutUtils::GetDisplayPort(content, &displayPort, RelativeTo::ScrollFrame);
 
-    
     if (usingDisplayPort) {
+      
       *aDirtyRect = displayPort;
+    } else if (mIsRoot) {
+      
+      
+      
+      nsIPresShell* presShell = mOuter->PresContext()->PresShell();
+      *aDirtyRect = aDirtyRect->RemoveResolution(
+        presShell->ScaleToResolution() ? presShell->GetResolution () : 1.0f);
     }
   }
 
