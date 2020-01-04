@@ -8,20 +8,30 @@
 
 #include "MediaDecoder.h"
 
+
+
+
+
+
+
+
+
+
+
+
 namespace mozilla {
 
-class WaveDecoder : public MediaDecoder {
+class WaveDecoder : public MediaDecoder
+{
 public:
-  
   explicit WaveDecoder(MediaDecoderOwner* aOwner) : MediaDecoder(aOwner) {}
-  MediaDecoder* Clone(MediaDecoderOwner* aOwner) override;
+  MediaDecoder* Clone(MediaDecoderOwner* aOwner) override {
+    if (!IsWaveEnabled()) {
+      return nullptr;
+    }
+    return new WaveDecoder(aOwner);
+  }
   MediaDecoderStateMachine* CreateStateMachine() override;
-
-  
-  
-  static bool IsEnabled();
-  static bool CanHandleMediaType(const nsACString& aType,
-                                 const nsAString& aCodecs);
 };
 
 } 
