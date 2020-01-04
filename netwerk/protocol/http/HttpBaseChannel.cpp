@@ -2828,6 +2828,9 @@ HttpBaseChannel::SetupReplacementChannel(nsIURI       *newURI,
     }
   }
 
+  
+  httpChannel->SetSchedulingContextID(mSchedulingContextID);
+
   if (httpInternal) {
     
     httpInternal->SetThirdPartyFlags(mThirdPartyFlags);
