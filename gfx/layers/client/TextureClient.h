@@ -49,7 +49,8 @@ struct PlanarYCbCrData;
 class Image;
 class PTextureChild;
 class TextureChild;
-class BufferTextureClient;
+struct RawTextureBuffer;
+class RawYCbCrTextureBuffer;
 class TextureClient;
 class TextureClientRecycleAllocator;
 #ifdef GFX_DEBUG_TRACK_CLIENTS_IN_POOL
@@ -98,31 +99,6 @@ protected:
 
 
 
-class TextureClientYCbCr
-{
-public:
-  
-
-
-
-
-  virtual bool UpdateYCbCr(const PlanarYCbCrData& aData) = 0;
-
-  
-
-
-
-
-
-
-  virtual bool AllocateForYCbCr(gfx::IntSize aYSize,
-                                gfx::IntSize aCbCrSize,
-                                StereoMode aStereoMode) = 0;
-};
-
-
-
-
 
 
 class TextureReadbackSink
@@ -145,6 +121,43 @@ enum class BackendSelector
 {
   Content,
   Canvas
+};
+
+
+
+
+struct MappedTextureData
+{
+  uint8_t* data;
+  gfx::IntSize size;
+  int32_t stride;
+  gfx::SurfaceFormat format;
+};
+
+struct MappedYCbCrChannelData
+{
+  uint8_t* data;
+  gfx::IntSize size;
+  int32_t stride;
+  int32_t skip;
+
+  bool CopyInto(MappedYCbCrChannelData& aDst);
+};
+
+struct MappedYCbCrTextureData {
+  MappedYCbCrChannelData y;
+  MappedYCbCrChannelData cb;
+  MappedYCbCrChannelData cr;
+  
+  uint8_t* metadata;
+  StereoMode stereoMode;
+
+  bool CopyInto(MappedYCbCrTextureData& aDst)
+  {
+    return y.CopyInto(aDst.y)
+        && cb.CopyInto(aDst.cb)
+        && cr.CopyInto(aDst.cr);
+  }
 };
 
 
@@ -188,7 +201,7 @@ public:
                    TextureAllocationFlags flags = ALLOC_DEFAULT);
 
   
-  static already_AddRefed<BufferTextureClient>
+  static already_AddRefed<TextureClient>
   CreateForYCbCr(ISurfaceAllocator* aAllocator,
                  gfx::IntSize aYSize,
                  gfx::IntSize aCbCrSize,
@@ -197,7 +210,7 @@ public:
 
   
   
-  static already_AddRefed<BufferTextureClient>
+  static already_AddRefed<TextureClient>
   CreateForRawBufferAccess(ISurfaceAllocator* aAllocator,
                            gfx::SurfaceFormat aFormat,
                            gfx::IntSize aSize,
@@ -208,7 +221,7 @@ public:
   
   
   
-  static already_AddRefed<BufferTextureClient>
+  static already_AddRefed<TextureClient>
   CreateWithBufferSize(ISurfaceAllocator* aAllocator,
                        gfx::SurfaceFormat aFormat,
                        size_t aSize,
@@ -234,7 +247,6 @@ public:
     return false;
   }
 
-  virtual TextureClientYCbCr* AsTextureClientYCbCr() { return nullptr; }
   virtual GrallocTextureClientOGL* AsGrallocTextureClientOGL() { return nullptr; }
 
   
@@ -250,6 +262,8 @@ public:
   virtual bool IsLocked() const = 0;
 
   virtual bool CanExposeDrawTarget() const { return false; }
+
+  virtual bool CanExposeMappedData() const { return false; }
 
   
 
@@ -278,6 +292,13 @@ public:
 
 
   virtual gfx::DrawTarget* BorrowDrawTarget() { return nullptr; }
+
+  
+
+
+
+  virtual bool BorrowMappedData(MappedTextureData&) { return false; }
+  virtual bool BorrowMappedYCbCrData(MappedYCbCrTextureData&) { return false; }
 
   
 
@@ -585,11 +606,17 @@ public:
 
   virtual bool SupportsMoz2D() const { return false; }
 
+  virtual bool CanExposeMappedData() const { return false; }
+
   virtual bool HasInternalBuffer() const = 0;
 
   virtual bool HasSynchronization() const { return false; }
 
   virtual already_AddRefed<gfx::DrawTarget> BorrowDrawTarget() { return nullptr; }
+
+  virtual bool BorrowMappedData(MappedTextureData&) { return false; }
+
+  virtual bool BorrowMappedYCbCrData(MappedYCbCrTextureData&) { return false; }
 
   virtual void Deallocate(ISurfaceAllocator* aAllocator) = 0;
 
@@ -607,16 +634,13 @@ public:
 
 class ClientTexture : public TextureClient {
 public:
-  ClientTexture(TextureData* aData, TextureFlags aFlags, ISurfaceAllocator* aAllocator)
-  : TextureClient(aAllocator, aFlags)
-  , mData(aData)
-  , mOpenMode(OpenMode::OPEN_NONE)
-  , mIsLocked(false)
-  {}
+  ClientTexture(TextureData* aData, TextureFlags aFlags, ISurfaceAllocator* aAllocator);
 
   ~ClientTexture();
 
   virtual bool CanExposeDrawTarget() const override { return mData->SupportsMoz2D(); }
+
+  virtual bool CanExposeMappedData() const override { return mData->CanExposeMappedData(); }
 
   virtual bool HasInternalBuffer() const override;
 
@@ -633,6 +657,10 @@ public:
   virtual bool IsLocked() const override { return mIsLocked; }
 
   virtual gfx::DrawTarget* BorrowDrawTarget() override;
+
+  virtual bool BorrowMappedData(MappedTextureData&) override;
+
+  virtual bool BorrowMappedYCbCrData(MappedYCbCrTextureData&) override;
 
   virtual bool ToSurfaceDescriptor(SurfaceDescriptor& aOutDescriptor) override;
 
@@ -651,6 +679,7 @@ protected:
   RefPtr<TextureReadbackSink> mReadbackSink;
 
   OpenMode mOpenMode;
+  DebugOnly<uint32_t> mExpectedDtRefs;
   bool mIsLocked;
 };
 
@@ -671,143 +700,6 @@ public:
 
 private:
     RefPtr<TextureClient> mTextureClient;
-};
-
-
-
-
-
-
-class BufferTextureClient : public TextureClient
-                          , public TextureClientYCbCr
-{
-public:
-  BufferTextureClient(ISurfaceAllocator* aAllocator, gfx::SurfaceFormat aFormat,
-                      gfx::BackendType aBackend, TextureFlags aFlags);
-
-  virtual ~BufferTextureClient();
-
-  virtual bool IsAllocated() const override = 0;
-
-  virtual uint8_t* GetBuffer() const = 0;
-
-  virtual gfx::IntSize GetSize() const override { return mSize; }
-
-  virtual bool Lock(OpenMode aMode) override;
-
-  virtual void Unlock() override;
-
-  virtual bool IsLocked() const override { return mLocked; }
-
-  uint8_t* GetLockedData() const;
-
-  virtual bool CanExposeDrawTarget() const override { return true; }
-
-  virtual gfx::DrawTarget* BorrowDrawTarget() override;
-
-  virtual void UpdateFromSurface(gfx::SourceSurface* aSurface) override;
-
-  virtual bool AllocateForSurface(gfx::IntSize aSize,
-                                  TextureAllocationFlags aFlags = ALLOC_DEFAULT) override;
-
-  
-
-  virtual TextureClientYCbCr* AsTextureClientYCbCr() override { return this; }
-
-  virtual bool UpdateYCbCr(const PlanarYCbCrData& aData) override;
-
-  virtual bool AllocateForYCbCr(gfx::IntSize aYSize,
-                                gfx::IntSize aCbCrSize,
-                                StereoMode aStereoMode) override;
-
-  virtual gfx::SurfaceFormat GetFormat() const override { return mFormat; }
-
-  
-  
-  
-  
-  virtual bool Allocate(uint32_t aSize) = 0;
-
-  virtual size_t GetBufferSize() const = 0;
-
-  virtual bool HasInternalBuffer() const override { return true; }
-
-  virtual already_AddRefed<TextureClient>
-  CreateSimilar(TextureFlags aFlags = TextureFlags::DEFAULT,
-                TextureAllocationFlags aAllocFlags = ALLOC_DEFAULT) const override;
-
-protected:
-  RefPtr<gfx::DrawTarget> mDrawTarget;
-  gfx::SurfaceFormat mFormat;
-  gfx::IntSize mSize;
-  gfx::BackendType mBackend;
-  OpenMode mOpenMode;
-  bool mLocked;
-};
-
-
-
-
-
-class ShmemTextureClient : public BufferTextureClient
-{
-public:
-  ShmemTextureClient(ISurfaceAllocator* aAllocator, gfx::SurfaceFormat aFormat,
-                     gfx::BackendType aBackend, TextureFlags aFlags);
-
-protected:
-  ~ShmemTextureClient();
-
-public:
-  virtual bool ToSurfaceDescriptor(SurfaceDescriptor& aDescriptor) override;
-
-  virtual bool Allocate(uint32_t aSize) override;
-
-  virtual uint8_t* GetBuffer() const override;
-
-  virtual size_t GetBufferSize() const override;
-
-  virtual bool IsAllocated() const override { return mAllocated; }
-
-  virtual bool HasInternalBuffer() const override { return true; }
-
-  mozilla::ipc::Shmem& GetShmem() { return mShmem; }
-
-protected:
-  mozilla::ipc::Shmem mShmem;
-  bool mAllocated;
-};
-
-
-
-
-
-
-class MemoryTextureClient : public BufferTextureClient
-{
-public:
-  MemoryTextureClient(ISurfaceAllocator* aAllocator, gfx::SurfaceFormat aFormat,
-                      gfx::BackendType aBackend, TextureFlags aFlags);
-
-protected:
-  ~MemoryTextureClient();
-
-public:
-  virtual bool ToSurfaceDescriptor(SurfaceDescriptor& aDescriptor) override;
-
-  virtual bool Allocate(uint32_t aSize) override;
-
-  virtual uint8_t* GetBuffer() const override { return mBuffer; }
-
-  virtual size_t GetBufferSize() const override { return mBufSize; }
-
-  virtual bool IsAllocated() const override { return mBuffer != nullptr; }
-
-  virtual bool HasInternalBuffer() const override { return true; }
-
-protected:
-  uint8_t* mBuffer;
-  size_t mBufSize;
 };
 
 
@@ -859,6 +751,9 @@ public:
 protected:
   RefPtr<T> mData;
 };
+
+
+bool UpdateYCbCrTextureClient(TextureClient* aTexture, const PlanarYCbCrData& aData);
 
 } 
 } 
