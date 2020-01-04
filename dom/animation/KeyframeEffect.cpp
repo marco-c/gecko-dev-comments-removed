@@ -1954,7 +1954,6 @@ KeyframeEffectReadOnly::GetFrames(JSContext*& aCx,
       keyframeDict.mEasing.Truncate();
       entry->mTimingFunction->value().AppendToString(keyframeDict.mEasing);
     }
-    keyframeDict.mComposite.SetValue(CompositeOperation::Replace);
 
     JS::Rooted<JS::Value> keyframeJSValue(aCx);
     if (!ToJSValue(aCx, keyframeDict, &keyframeJSValue)) {
