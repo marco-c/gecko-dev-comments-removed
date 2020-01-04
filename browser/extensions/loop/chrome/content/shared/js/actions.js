@@ -134,8 +134,8 @@ loop.shared.actions = (function() {
 
 
     SendCursorData: Action.define("sendCursorData", {
-      ratioX: Number,
-      ratioY: Number,
+      
+      
       type: String
     }),
 
@@ -143,8 +143,8 @@ loop.shared.actions = (function() {
 
 
     ReceivedCursorData: Action.define("receivedCursorData", {
-      ratioX: Number,
-      ratioY: Number,
+      
+      
       type: String
     }),
 
@@ -282,7 +282,9 @@ loop.shared.actions = (function() {
 
 
     CreatedRoom: Action.define("createdRoom", {
-      roomToken: String
+      decryptedContext: Object,
+      roomToken: String,
+      roomUrl: String
     }),
 
     
@@ -514,7 +516,19 @@ loop.shared.actions = (function() {
     
 
 
+
+
+
+    LeaveConversation: Action.define("leaveConversation", {
+    }),
+
+    
+
+
     LeaveRoom: Action.define("leaveRoom", {
+      
+      
+      
     }),
 
     

@@ -2,8 +2,10 @@ from marionette_driver.by import By
 from marionette_driver.errors import NoSuchElementException, StaleElementException
 
 from marionette_driver import Wait
+from marionette_driver.addons import Addons
 from marionette import MarionetteTestCase
 
+import re
 import os
 import sys
 import time
@@ -12,8 +14,8 @@ sys.path.insert(1, os.path.dirname(os.path.abspath(__file__)))
 
 import pyperclip
 
-from serversetup import LoopTestServers
-from config import FIREFOX_PREFERENCES
+from serversetup import LoopTestServers, ROOMS_WEB_APP_URL_BASE
+from config import FIREFOX_PREFERENCES, USE_LOCAL_STANDALONE
 
 
 class Test1BrowserCall(MarionetteTestCase):
@@ -28,7 +30,24 @@ class Test1BrowserCall(MarionetteTestCase):
         
         
         
-        self.marionette.enforce_gecko_prefs(FIREFOX_PREFERENCES)
+        self.marionette.set_prefs(FIREFOX_PREFERENCES)
+
+        xpi_file = os.environ.get("LOOP_XPI_FILE")
+
+        if xpi_file:
+            addons = Addons(self.marionette)
+            
+            
+            
+            
+            
+            addons.install(os.path.abspath(xpi_file))
+
+        self.e10s_enabled = os.environ.get("TEST_E10S") == "1"
+
+        
+        
+        self.marionette.restart(in_app=True)
 
         
         self.marionette.set_context("chrome")
@@ -65,6 +84,7 @@ class Test1BrowserCall(MarionetteTestCase):
                    message="Timeout out waiting for " + attribute + " to be false")
 
     def switch_to_panel(self):
+        self.marionette.set_context("chrome")
         button = self.marionette.find_element(By.ID, "loop-button")
 
         
@@ -78,18 +98,27 @@ class Test1BrowserCall(MarionetteTestCase):
         self.marionette.set_context("chrome")
         self.marionette.switch_to_frame()
 
+        contentBox = "content"
+        if self.e10s_enabled:
+            contentBox = "remote-content"
+
         
         time.sleep(2)
         
         
         chatbox = self.wait_for_element_exists(By.TAG_NAME, 'chatbox')
         script = ("return document.getAnonymousElementByAttribute("
-                  "arguments[0], 'anonid', 'content');")
+                  "arguments[0], 'anonid', '" + contentBox + "');")
         frame = self.marionette.execute_script(script, [chatbox])
         self.marionette.switch_to_frame(frame)
 
     def switch_to_standalone(self):
         self.marionette.set_context("content")
+
+    def load_homepage(self):
+        self.switch_to_standalone()
+
+        self.marionette.navigate("about:home")
 
     def local_start_a_conversation(self):
         button = self.wait_for_element_displayed(By.CSS_SELECTOR, ".new-room-view .btn-info")
@@ -97,6 +126,13 @@ class Test1BrowserCall(MarionetteTestCase):
         self.wait_for_element_enabled(button, 120)
 
         button.click()
+
+    def local_close_share_panel(self):
+        copyLink = self.wait_for_element_displayed(By.CLASS_NAME, "btn-copy")
+
+        self.wait_for_element_enabled(copyLink, 120)
+
+        copyLink.click()
 
     def local_check_room_self_video(self):
         self.switch_to_chatbox()
@@ -107,6 +143,14 @@ class Test1BrowserCall(MarionetteTestCase):
 
         self.check_video(".local-video")
 
+    def adjust_url(self, room_url):
+        if USE_LOCAL_STANDALONE != "1":
+            return room_url
+
+        
+        
+        return re.sub("https?://.*/", ROOMS_WEB_APP_URL_BASE + "/", room_url)
+
     def local_get_and_verify_room_url(self):
         self.switch_to_chatbox()
         button = self.wait_for_element_displayed(By.CLASS_NAME, "btn-copy")
@@ -115,6 +159,8 @@ class Test1BrowserCall(MarionetteTestCase):
 
         
         room_url = pyperclip.paste()
+
+        room_url = self.adjust_url(room_url)
 
         self.assertIn(urlparse.urlparse(room_url).scheme, ['http', 'https'],
                       "room URL returned by server: '" + room_url +
@@ -265,9 +311,17 @@ class Test1BrowserCall(MarionetteTestCase):
                            "> 0, noted_calls = " + str(noted_calls))
 
     def test_1_browser_call(self):
+        
+        
+        
+        self.load_homepage()
+
         self.switch_to_panel()
 
         self.local_start_a_conversation()
+
+        
+        self.local_close_share_panel()
 
         
         self.local_check_room_self_video()

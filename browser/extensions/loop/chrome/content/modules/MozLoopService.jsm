@@ -190,7 +190,6 @@ function getJSONPref(aName) {
 
 var gHawkClient = null;
 var gLocalizedStrings = new Map();
-var gFxAEnabled = true;
 var gFxAOAuthClientPromise = null;
 var gFxAOAuthClient = null;
 var gErrors = new Map();
@@ -1010,6 +1009,17 @@ var MozLoopServiceInternal = {
           });
 
           
+          if (!MozLoopService.getLoopPref("conversationPopOut.enabled")) {
+            let document = chatbox.ownerDocument;
+            let titlebarNode = document.getAnonymousElementByAttribute(chatbox, "class",
+              "chat-titlebar");
+            titlebarNode.addEventListener("dragend", event => {
+              event.stopPropagation();
+              return false;
+            });
+          }
+
+          
           mm.sendAsyncMessage("Social:HookWindowCloseForPanelClose");
           messageName = "Social:DOMWindowClose";
           mm.addMessageListener(messageName, listeners[messageName] = () => {
@@ -1118,7 +1128,11 @@ var MozLoopServiceInternal = {
         
         chatboxInstance.setAttribute("customSize", "loopDefault");
         chatboxInstance.parentNode.setAttribute("customSize", "loopDefault");
-        Chat.loadButtonSet(chatboxInstance, "minimize,swap," + kChatboxHangupButton.id);
+        let buttons = "minimize,";
+        if (MozLoopService.getLoopPref("conversationPopOut.enabled")) {
+          buttons += "swap,";
+        }
+        Chat.loadButtonSet(chatboxInstance, buttons + kChatboxHangupButton.id);
       
       
       } else {
@@ -1341,13 +1355,6 @@ this.MozLoopService = {
     
     if (!Services.prefs.getBoolPref("loop.enabled")) {
       return Promise.reject(new Error("loop is not enabled"));
-    }
-
-    if (Services.prefs.getPrefType("loop.fxa.enabled") == Services.prefs.PREF_BOOL) {
-      gFxAEnabled = Services.prefs.getBoolPref("loop.fxa.enabled");
-      if (!gFxAEnabled) {
-        yield this.logOutFromFxA();
-      }
     }
 
     
@@ -1588,10 +1595,6 @@ this.MozLoopService = {
 
   set doNotDisturb(aFlag) {
     MozLoopServiceInternal.doNotDisturb = aFlag;
-  },
-
-  get fxAEnabled() {
-    return gFxAEnabled;
   },
 
   

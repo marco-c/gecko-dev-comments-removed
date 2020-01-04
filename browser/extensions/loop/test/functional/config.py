@@ -3,9 +3,28 @@ from os import environ
 
 CONTENT_SERVER_PORT = 3001
 LOOP_SERVER_PORT = environ.get("LOOP_SERVER_PORT") or 5001
-LOOP_SERVER_URL = "http://localhost:" + str(LOOP_SERVER_PORT)
+TEST_SERVER = environ.get("TEST_SERVER") or "dev"
+USE_LOCAL_STANDALONE = environ.get("USE_LOCAL_STANDALONE") or "1"
+
+CONTENT_SERVER_URL = environ.get("CONTENT_SERVER_URL") or \
+    "http://localhost:" + str(CONTENT_SERVER_PORT)
+
+LOOP_SERVER_URLS = {
+    "local": "http://localhost:" + str(LOOP_SERVER_PORT),
+    "dev": "https://loop-dev.stage.mozaws.net",
+    "stage": "https://loop.stage.mozaws.net",
+    "prod": "https://loop.services.mozilla.com"
+}
+
+LOOP_SERVER_URL = LOOP_SERVER_URLS[TEST_SERVER]
+
 FIREFOX_PREFERENCES = {
     "loop.server": LOOP_SERVER_URL + "/v0",
+    
+    
+    
+    
+    "loop.linkClicker.url": "https://invalid/",
     "browser.dom.window.dump.enabled": True,
     
     "media.peerconnection.use_document_iceservers": False,
@@ -15,6 +34,7 @@ FIREFOX_PREFERENCES = {
     "devtools.debugger.remote-enabled": True,
     "media.volume_scale": "0",
     "loop.gettingStarted.latestFTUVersion": 2,
+    "loop.remote.autostart": True,
 
     
     "media.navigator.permission.disabled": True,

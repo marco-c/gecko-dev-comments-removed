@@ -23,6 +23,8 @@ XPCOMUtils.defineLazyGetter(this, "eventEmitter", function() {
   return new EventEmitter();
 });
 
+XPCOMUtils.defineLazyModuleGetter(this, "DomainWhitelist",
+  "chrome://loop/content/modules/DomainWhitelist.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "LoopRoomsCache",
   "chrome://loop/content/modules/LoopRoomsCache.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "loopUtils",
@@ -864,6 +866,80 @@ var LoopRoomsInternal = {
     }, callback);
   },
 
+  _domainLog: {
+    domainMap: new Map(),
+    roomToken: null
+  },
+
+  
+
+
+
+
+
+  _recordUrl(roomToken, url) {
+    
+    if (this._domainLog.roomToken !== roomToken) {
+      this._domainLog.roomToken = roomToken;
+      this._domainLog.domainMap.clear();
+    }
+
+    let domain;
+    try {
+      domain = Services.eTLD.getBaseDomain(Services.io.newURI(url, null, null));
+    }
+    catch (ex) {
+      
+      return;
+    }
+
+    
+    if (!DomainWhitelist.check(domain)) {
+      return;
+    }
+
+    
+    if (this._domainLog.domainMap.has(domain)) {
+      this._domainLog.domainMap.get(domain).count++;
+    }
+    
+    else {
+      this._domainLog.domainMap.set(domain, { count: 1, domain });
+    }
+  },
+
+  
+
+
+
+
+
+
+
+  logDomains(roomToken, callback) {
+    if (!callback) {
+      callback = error => {
+        if (error) {
+          MozLoopService.log.error(error);
+        }
+      };
+    }
+
+    
+    if (this._domainLog.roomToken === roomToken &&
+        this._domainLog.domainMap.size > 0) {
+      this._postToRoom(roomToken, {
+        action: "logDomain",
+        domains: [...this._domainLog.domainMap.values()]
+      }, callback);
+      this._domainLog.domainMap.clear();
+    }
+    
+    else {
+      callback(null);
+    }
+  },
+
   
 
 
@@ -893,7 +969,13 @@ var LoopRoomsInternal = {
     }
     if (roomData.urls && roomData.urls.length) {
       
-      room.decryptedContext.urls = [roomData.urls[0]];
+      let context = roomData.urls[0];
+      room.decryptedContext.urls = [context];
+
+      
+      if (Services.prefs.getBoolPref("loop.logDomains")) {
+        this._recordUrl(roomToken, context.location);
+      }
     }
 
     Task.spawn(function* () {
@@ -1073,6 +1155,10 @@ this.LoopRooms = {
 
   sendConnectionStatus: function(roomToken, sessionToken, status, callback) {
     return LoopRoomsInternal.sendConnectionStatus(roomToken, sessionToken, status, callback);
+  },
+
+  logDomains(roomToken, callback) {
+    return LoopRoomsInternal.logDomains(roomToken, callback);
   },
 
   update: function(roomToken, roomData, callback) {

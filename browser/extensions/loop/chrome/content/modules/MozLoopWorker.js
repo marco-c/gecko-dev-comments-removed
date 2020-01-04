@@ -131,8 +131,11 @@ function anonymizeIPv4(text) {
 
 
 
+
+
+
 function sanitizeUrls(text) {
-  let trimUrl = url => url.replace(/(#call|#incoming).*/g,
+  let trimUrl = url => url.replace(/(#call|#incoming|#).*/g,
                                    (match, type) => type + "/xxxx");
   return text.replace(/\(id=(\d+) url=([^\)]+)\)/g,
                       (match, id, url) =>

@@ -233,6 +233,25 @@ const kMessageHandlers = {
 
 
 
+  ClickRemoteCursor: function(message, reply) {
+    let win = Services.wm.getMostRecentWindow("navigator:browser");
+    if (win) {
+      win.LoopUI.clickRemoteCursor(message.data[0]);
+    }
+
+    reply();
+  },
+
+  
+
+
+
+
+
+
+
+
+
 
 
 
@@ -549,20 +568,6 @@ const kMessageHandlers = {
 
 
 
-  GetFxAEnabled: function(message, reply) {
-    reply(MozLoopService.fxAEnabled);
-  },
-
-  
-
-
-
-
-
-
-
-
-
 
   GetHasEncryptionKey: function(message, reply) {
     reply(MozLoopService.hasEncryptionKey);
@@ -728,6 +733,7 @@ const kMessageHandlers = {
       windowId = sessionToken;
     }
 
+    LoopRooms.logDomains(roomToken);
     LoopRooms.leave(roomToken);
     MozLoopService.setScreenShareState(windowId, false);
     LoopAPI.sendMessageToHandler({
@@ -1055,7 +1061,7 @@ const kMessageHandlers = {
   TelemetryAddValue: function(message, reply) {
     let [histogramId, value] = message.data;
 
-    if (histogramId === "LOOP_MAU") {
+    if (histogramId === "LOOP_ACTIVITY_COUNTER") {
       let pref = "mau." + kMauPrefMap.get(value);
       let prefDate = MozLoopService.getLoopPref(pref) * 1000;
       let delta = Date.now() - prefDate;

@@ -109,6 +109,7 @@ loop.store.ActiveRoomStore = (function(mozL10n) {
       "localVideoDimensions",
       "mediaConnected",
       "receivingScreenShare",
+      "remotePeerDisconnected",
       "remoteSrcMediaElement",
       "remoteVideoDimensions",
       "remoteVideoEnabled",
@@ -144,6 +145,7 @@ loop.store.ActiveRoomStore = (function(mozL10n) {
         screenSharingState: SCREEN_SHARE_STATES.INACTIVE,
         sharingPaused: false,
         receivingScreenShare: false,
+        remotePeerDisconnected: false,
         
         roomContextUrls: null,
         
@@ -968,6 +970,11 @@ loop.store.ActiveRoomStore = (function(mozL10n) {
 
 
     startBrowserShare: function() {
+      if (this._storeState.screenSharingState !== SCREEN_SHARE_STATES.INACTIVE) {
+        console.error("Attempting to start browser sharing when already running.");
+        return;
+      }
+
       
       
       
@@ -1025,6 +1032,7 @@ loop.store.ActiveRoomStore = (function(mozL10n) {
 
     remotePeerConnected: function() {
       this.setStoreState({
+        remotePeerDisconnected: false,
         roomState: ROOM_STATES.HAS_PARTICIPANTS,
         used: true
       });
@@ -1048,7 +1056,9 @@ loop.store.ActiveRoomStore = (function(mozL10n) {
         mediaConnected: false,
         participants: participants,
         roomState: ROOM_STATES.SESSION_CONNECTED,
-        remoteSrcMediaElement: null
+        remotePeerDisconnected: true,
+        remoteSrcMediaElement: null,
+        streamPaused: false
       });
     },
 
@@ -1086,8 +1096,10 @@ loop.store.ActiveRoomStore = (function(mozL10n) {
     
 
 
-    leaveRoom: function() {
-      this._leaveRoom(ROOM_STATES.ENDED);
+
+
+    leaveRoom: function(actionData) {
+      this._leaveRoom(ROOM_STATES.ENDED, false, actionData && actionData.windowStayingOpen);
     },
 
     
@@ -1132,7 +1144,10 @@ loop.store.ActiveRoomStore = (function(mozL10n) {
 
 
 
-    _leaveRoom: function(nextState, failedJoinRequest) {
+
+
+
+    _leaveRoom: function(nextState, failedJoinRequest, windowStayingOpen) {
       if (this._storeState.standalone && this._storeState.userAgentHandlesRoom) {
         
         
@@ -1173,7 +1188,8 @@ loop.store.ActiveRoomStore = (function(mozL10n) {
       
       
       
-      if ((nextState === ROOM_STATES.FAILED || !this._isDesktop) && !failedJoinRequest) {
+      if ((nextState === ROOM_STATES.FAILED || windowStayingOpen || !this._isDesktop) &&
+          !failedJoinRequest) {
         loop.request("HangupNow", this._storeState.roomToken,
           this._storeState.sessionToken, this._storeState.windowId);
       }

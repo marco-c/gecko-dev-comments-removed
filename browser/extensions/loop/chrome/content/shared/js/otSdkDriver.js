@@ -10,7 +10,6 @@ loop.OTSdkDriver = (function() {
   var FAILURE_DETAILS = loop.shared.utils.FAILURE_DETAILS;
   var STREAM_PROPERTIES = loop.shared.utils.STREAM_PROPERTIES;
   var SCREEN_SHARE_STATES = loop.shared.utils.SCREEN_SHARE_STATES;
-  var CURSOR_MESSAGE_TYPES = loop.shared.utils.CURSOR_MESSAGE_TYPES;
 
   
 
@@ -53,6 +52,17 @@ loop.OTSdkDriver = (function() {
     
     loop.shared.utils.getBoolPreference("debug.twoWayMediaTelemetry", function(enabled) {
       this._debugTwoWayMediaTelemetry = enabled;
+    }.bind(this));
+
+    
+    
+    loop.shared.utils.getBoolPreference("debug.sdk", function(enabled) {
+      
+      
+      
+      if (enabled) {
+        this.sdk.setLogLevel(this.sdk.DEBUG);
+      }
     }.bind(this));
 
     
@@ -548,6 +558,14 @@ loop.OTSdkDriver = (function() {
 
     _handleRemoteScreenShareCreated: function(stream) {
       
+      
+      if (!stream[STREAM_PROPERTIES.HAS_VIDEO]) {
+        this.dispatcher.dispatch(new sharedActions.VideoScreenStreamChanged({
+          hasVideo: false
+        }));
+      }
+
+      
       this.dispatcher.dispatch(new sharedActions.ReceivingScreenShare({
         receiving: true
       }));
@@ -699,11 +717,7 @@ loop.OTSdkDriver = (function() {
          }.bind(this)],
         ["cursor",
          function(message) {
-           switch (message.type) {
-             case CURSOR_MESSAGE_TYPES.POSITION:
-               this.dispatcher.dispatch(new sharedActions.ReceivedCursorData(message));
-               break;
-           }
+            this.dispatcher.dispatch(new sharedActions.ReceivedCursorData(message));
          }.bind(this),
          function(channel) {
            this._subscriberCursorChannel = channel;

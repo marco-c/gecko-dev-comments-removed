@@ -26,7 +26,8 @@ loop.store.TextChatStore = (function() {
       "receivedTextChatMessage",
       "sendTextChatMessage",
       "updateRoomInfo",
-      "updateRoomContext"
+      "updateRoomContext",
+      "remotePeerDisconnected"
     ],
 
     
@@ -118,7 +119,8 @@ loop.store.TextChatStore = (function() {
       
       
       if (message.contentType !== CHAT_CONTENT_TYPES.ROOM_NAME &&
-          message.contentType !== CHAT_CONTENT_TYPES.CONTEXT) {
+          message.contentType !== CHAT_CONTENT_TYPES.CONTEXT &&
+          message.contentType !== CHAT_CONTENT_TYPES.NOTIFICATION) {
         if (this._storeState.textChatEnabled) {
           window.dispatchEvent(new CustomEvent("LoopChatMessageAppended"));
         } else {
@@ -136,7 +138,8 @@ loop.store.TextChatStore = (function() {
       
       
       if (actionData.contentType !== CHAT_CONTENT_TYPES.TEXT &&
-        actionData.contentType !== CHAT_CONTENT_TYPES.CONTEXT_TILE) {
+        actionData.contentType !== CHAT_CONTENT_TYPES.CONTEXT_TILE &&
+        actionData.contentType !== CHAT_CONTENT_TYPES.NOTIFICATION) {
         return;
       }
 
@@ -220,6 +223,32 @@ loop.store.TextChatStore = (function() {
       }
 
       this._appendContextTileMessage(actionData);
+    },
+
+
+    
+
+
+
+
+
+
+    remotePeerDisconnected: function(actionData) {
+      var notificationTextKey;
+
+      if (actionData.peerHungup) {
+        notificationTextKey = "peer_left_session";
+      } else {
+        notificationTextKey = "peer_unexpected_quit";
+      }
+
+      var message = {
+        contentType: CHAT_CONTENT_TYPES.NOTIFICATION,
+        message: notificationTextKey,
+        receivedTimestamp: (new Date()).toISOString()
+      };
+
+      this._appendTextChatMessage(CHAT_MESSAGE_TYPES.RECEIVED, message);
     },
 
     

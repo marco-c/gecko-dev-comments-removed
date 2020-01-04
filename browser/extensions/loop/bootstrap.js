@@ -10,8 +10,9 @@ const { interfaces: Ci, utils: Cu, classes: Cc } = Components;
 const kNSXUL = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
 const kBrowserSharingNotificationId = "loop-sharing-notification";
 
-const MIN_CURSOR_DELTA = 3;
-const MIN_CURSOR_INTERVAL = 100;
+const CURSOR_MIN_DELTA = 3;
+const CURSOR_MIN_INTERVAL = 100;
+const CURSOR_CLICK_DELAY = 1000;
 
 Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
@@ -189,7 +190,7 @@ var WindowListener = {
             let buckets = this.constants.LOOP_MAU_TYPE;
             this.LoopAPI.sendMessageToHandler({
               name: "TelemetryAddValue",
-              data: ["LOOP_MAU", buckets.OPEN_PANEL]
+              data: ["LOOP_ACTIVITY_COUNTER", buckets.OPEN_PANEL]
             });
           };
 
@@ -297,6 +298,12 @@ var WindowListener = {
             console.error(ex);
           }
         });
+
+        
+        
+        if (PrivateBrowsingUtils.isWindowPrivate(window)) {
+          return;
+        }
 
         this.addMenuItem();
 
@@ -523,6 +530,7 @@ var WindowListener = {
           
           
           gBrowser.addEventListener("mousemove", this);
+          gBrowser.addEventListener("click", this);
         }
 
         this._maybeShowBrowserSharingInfoBar();
@@ -543,8 +551,12 @@ var WindowListener = {
         this._hideBrowserSharingInfoBar();
         gBrowser.tabContainer.removeEventListener("TabSelect", this);
         gBrowser.removeEventListener("DOMTitleChanged", this);
+
+        
         gBrowser.removeEventListener("mousemove", this);
+        gBrowser.removeEventListener("click", this);
         this.removeRemoteCursor();
+
         this._listeningToTabSelect = false;
         this._browserSharePaused = false;
         this._sendTelemetryEventsIfNeeded();
@@ -598,7 +610,6 @@ var WindowListener = {
         }
 
         let browser = gBrowser.selectedBrowser;
-
         let cursor = document.getElementById("loop-remote-cursor");
         if (!cursor) {
           
@@ -608,7 +619,6 @@ var WindowListener = {
 
           cursor = document.createElement("img");
           cursor.setAttribute("id", "loop-remote-cursor");
-
           cursorContainer.appendChild(cursor);
           
           
@@ -625,6 +635,33 @@ var WindowListener = {
       
 
 
+
+
+
+
+
+
+
+      clickRemoteCursor: function(clickData) {
+        if (!clickData || !this._listeningToTabSelect) {
+          return;
+        }
+
+        let class_name = "clicked";
+        let cursor = document.getElementById("loop-remote-cursor");
+        if (!cursor) {
+          return;
+        }
+
+        cursor.classList.add(class_name);
+
+        
+        window.setTimeout(() => {
+          cursor.classList.remove(class_name);
+        }, CURSOR_CLICK_DELAY);
+      },
+
+      
 
 
       removeRemoteCursor: function() {
@@ -782,6 +819,9 @@ var WindowListener = {
           case "mousemove":
             this.handleMousemove(event);
             break;
+          case "click":
+            this.handleMouseClick(event);
+            break;
           }
       },
 
@@ -798,7 +838,7 @@ var WindowListener = {
 
         
         let now = Date.now();
-        if (now - this.lastCursorTime < MIN_CURSOR_INTERVAL) {
+        if (now - this.lastCursorTime < CURSOR_MIN_INTERVAL) {
           return;
         }
         this.lastCursorTime = now;
@@ -809,8 +849,8 @@ var WindowListener = {
         let deltaY = event.screenY - browserBox.screenY;
         if (deltaX < 0 || deltaX > browserBox.width ||
             deltaY < 0 || deltaY > browserBox.height ||
-            (Math.abs(deltaX - this.lastCursorX) < MIN_CURSOR_DELTA &&
-             Math.abs(deltaY - this.lastCursorY) < MIN_CURSOR_DELTA)) {
+            (Math.abs(deltaX - this.lastCursorX) < CURSOR_MIN_DELTA &&
+             Math.abs(deltaY - this.lastCursorY) < CURSOR_MIN_DELTA)) {
           return;
         }
         this.lastCursorX = deltaX;
@@ -820,6 +860,20 @@ var WindowListener = {
           ratioX: deltaX / browserBox.width,
           ratioY: deltaY / browserBox.height
         });
+      },
+
+      
+
+
+
+
+      handleMouseClick: function() {
+        
+        if (this._browserSharePaused) {
+          return;
+        }
+
+        this.LoopAPI.broadcastPushMessage("CursorClick");
       },
 
       
@@ -985,6 +1039,17 @@ function loadDefaultPrefs() {
       }
     }
   });
+
+  if (Services.vc.compare(Services.appinfo.version, "47.0a1") < 0) {
+    branch.setBoolPref("loop.remote.autostart", false);
+  }
+
+  
+  
+  if (Services.vc.compare(Services.appinfo.version, "47.0a1") >= 0 &&
+      Services.vc.compare(Services.appinfo.version, "48.0a1") < 0) {
+    branch.setBoolPref("loop.conversationPopOut.enabled", false);
+  }
 }
 
 

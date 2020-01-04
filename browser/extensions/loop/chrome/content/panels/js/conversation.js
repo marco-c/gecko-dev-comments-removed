@@ -30,11 +30,27 @@ loop.conversation = function (mozL10n) {
     },
 
     componentWillMount: function () {
-      this.listenTo(this.props.cursorStore, "change:remoteCursorPosition", this._onRemoteCursorChange);
+      this.listenTo(this.props.cursorStore, "change:remoteCursorPosition", this._onRemoteCursorPositionChange);
+      this.listenTo(this.props.cursorStore, "change:remoteCursorClick", this._onRemoteCursorClick);
     },
 
-    _onRemoteCursorChange: function () {
-      return loop.request("AddRemoteCursorOverlay", this.props.cursorStore.getStoreState("remoteCursorPosition"));
+    _onRemoteCursorPositionChange: function () {
+      loop.request("AddRemoteCursorOverlay", this.props.cursorStore.getStoreState("remoteCursorPosition"));
+    },
+
+    _onRemoteCursorClick: function () {
+      let click = this.props.cursorStore.getStoreState("remoteCursorClick");
+      
+      
+      if (!click) {
+        return;
+      }
+
+      this.props.cursorStore.setStoreState({
+        remoteCursorClick: false
+      });
+
+      loop.request("ClickRemoteCursor", click);
     },
 
     getInitialState: function () {
@@ -53,16 +69,7 @@ loop.conversation = function (mozL10n) {
 
 
     handleCallTerminated: function () {
-      var delta = new Date() - new Date(this.state.feedbackTimestamp);
-
-      
-      
-      if (this.state.feedbackTimestamp === 0 || delta >= this.state.feedbackPeriod) {
-        this.props.dispatcher.dispatch(new sharedActions.ShowFeedbackForm());
-        return;
-      }
-
-      this.closeWindow();
+      this.props.dispatcher.dispatch(new sharedActions.LeaveConversation());
     },
 
     render: function () {
@@ -210,7 +217,7 @@ loop.conversation = function (mozL10n) {
         windowId: windowId
       }));
 
-      loop.request("TelemetryAddValue", "LOOP_MAU", constants.LOOP_MAU_TYPE.OPEN_CONVERSATION);
+      loop.request("TelemetryAddValue", "LOOP_ACTIVITY_COUNTER", constants.LOOP_MAU_TYPE.OPEN_CONVERSATION);
     });
   }
 
