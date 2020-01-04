@@ -38,9 +38,11 @@ if (typeof __PROD__ !== "undefined") {
   
   require("expose?React!react");
   require("expose?React!react/addons");
+  require("expose?classNames!classnames");
 } else {
   
   require("shared/libs/react-0.12.2.js");
+  require("shared/libs/classnames-2.2.0.js");
 }
 
 
