@@ -81,6 +81,7 @@ private:
 
   
   
+  
   void InitWrappingData(unsigned char *aData,
                         const IntSize &aSize,
                         int32_t aStride,
