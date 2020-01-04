@@ -30,7 +30,6 @@ const {getCSSLexer} = require("devtools/shared/css-lexer");
 
 
 
-
 function CssAngle(angleValue) {
   this.newAngle(angleValue);
 }
