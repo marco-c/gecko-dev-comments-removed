@@ -33,10 +33,6 @@
 
 (function (global) {
 
-  function error(m) {
-    dump("JSDOMParser error: " + m + "\n");
-  }
-
   
 
   var entityTable = {
@@ -676,9 +672,9 @@
               arr.push(" " + attr.name + '=' + quote + val + quote);
             }
 
-            if (child.localName in voidElems) {
+            if (child.localName in voidElems && !child.childNodes.length) {
               
-              arr.push(">");
+              arr.push("/>");
             } else {
               
               arr.push(">");
@@ -849,9 +845,16 @@
     
     
     this.retPair = [];
+
+    this.errorState = "";
   };
 
   JSDOMParser.prototype = {
+    error: function(m) {
+      dump("JSDOMParser error: " + m + "\n");
+      this.errorState += m + "\n";
+    },
+
     
 
 
@@ -906,7 +909,7 @@
       
       var c = this.nextChar();
       if (c !== '"' && c !== "'") {
-        error("Error reading attribute " + name + ", expecting '\"'");
+        this.error("Error reading attribute " + name + ", expecting '\"'");
         return;
       }
 
@@ -959,12 +962,12 @@
       }
 
       
-      var closed = tag in voidElems;
+      var closed = false;
       if (c === "/") {
         closed = true;
         c = this.nextChar();
         if (c !== ">") {
-          error("expected '>' to close " + tag);
+          this.error("expected '>' to close " + tag);
           return false;
         }
       }
@@ -1134,7 +1137,7 @@
         }
         var closingTag = "</" + localName + ">";
         if (!this.match(closingTag)) {
-          error("expected '" + closingTag + "'");
+          this.error("expected '" + closingTag + "' and got " + this.html.substr(this.currentChar, closingTag.length));
           return null;
         }
       }
