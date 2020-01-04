@@ -86,7 +86,7 @@ InvokeSetter(JSContext* cx, const Value& thisv, Value fval, HandleValue v);
 
 
 extern bool
-Construct(JSContext* cx, HandleValue fval, const ConstructArgs& args, HandleValue newTarget,
+Construct(JSContext* cx, HandleValue fval, const AnyConstructArgs& args, HandleValue newTarget,
           MutableHandleObject objp);
 
 
@@ -97,7 +97,7 @@ Construct(JSContext* cx, HandleValue fval, const ConstructArgs& args, HandleValu
 
 extern bool
 InternalConstructWithProvidedThis(JSContext* cx, HandleValue fval, HandleValue thisv,
-                                  const ConstructArgs& args, HandleValue newTarget,
+                                  const AnyConstructArgs& args, HandleValue newTarget,
                                   MutableHandleValue rval);
 
 
