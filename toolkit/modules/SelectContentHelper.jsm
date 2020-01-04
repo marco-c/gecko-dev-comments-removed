@@ -120,6 +120,25 @@ this.SelectContentHelper.prototype = {
         let selectedOption = this.element.item(this.element.selectedIndex);
         if (this.initialSelection != selectedOption) {
           let win = this.element.ownerDocument.defaultView;
+          
+          
+          
+          
+          
+          
+          if (!this.closedWithEnter) {
+            const MOUSE_EVENTS = ["mousedown", "mouseup"];
+            for (let eventName of MOUSE_EVENTS) {
+              let mouseEvent = new win.MouseEvent(eventName, {
+                view: win,
+                bubbles: true,
+                cancelable: true,
+              });
+              selectedOption.dispatchEvent(mouseEvent);
+            }
+            DOMUtils.removeContentState(this.element, kStateActive);
+          }
+
           let inputEvent = new win.UIEvent("input", {
             bubbles: true,
           });
@@ -131,23 +150,12 @@ this.SelectContentHelper.prototype = {
           this.element.dispatchEvent(changeEvent);
 
           if (!this.closedWithEnter) {
-            
-            
-            
-            
-            
-            const MOUSE_EVENTS = ["mousedown", "mouseup", "click"];
-            for (let eventName of MOUSE_EVENTS) {
-              let mouseEvent = new win.MouseEvent(eventName, {
-                view: win,
-                bubbles: true,
-                cancelable: true,
-              });
-              selectedOption.dispatchEvent(mouseEvent);
-              if (eventName == "mouseup") {
-                DOMUtils.removeContentState(this.element, kStateActive);
-              }
-            }
+            let mouseEvent = new win.MouseEvent("click", {
+              view: win,
+              bubbles: true,
+              cancelable: true,
+            });
+            selectedOption.dispatchEvent(mouseEvent);
           }
         }
 
