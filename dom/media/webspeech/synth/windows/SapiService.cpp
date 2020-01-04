@@ -331,10 +331,21 @@ SapiService::Speak(const nsAString& aText, const nsAString& aUri,
   if (FAILED(mSapiClient->SetVoice(voiceToken))) {
     return NS_ERROR_FAILURE;
   }
+
   if (FAILED(mSapiClient->SetVolume(static_cast<USHORT>(aVolume * 100)))) {
     return NS_ERROR_FAILURE;
   }
-  if (FAILED(mSapiClient->SetRate(static_cast<long>(10 * log10(aRate))))) {
+
+  
+  
+  
+  
+  
+  
+  
+  
+  long rate = aRate != 0 ? static_cast<long>(10 * log10(aRate) / log10(3)) : 0;
+  if (FAILED(mSapiClient->SetRate(rate))) {
     return NS_ERROR_FAILURE;
   }
 
