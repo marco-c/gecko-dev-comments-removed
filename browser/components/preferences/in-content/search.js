@@ -106,11 +106,16 @@ var gSearchPane = {
   handleEvent: function(aEvent) {
     switch (aEvent.type) {
       case "click":
-        if (aEvent.target.id != "engineChildren" && aEvent.target.id != "removeEngineButton") {
+        if (aEvent.target.id != "engineChildren" &&
+            !aEvent.target.classList.contains("searchEngineAction")) {
           let engineList = document.getElementById("engineList");
           
           
-          if (engineList.inputField.hidden) {
+          
+          
+          
+          
+          if (engineList.inputField.hidden && engineList.view) {
             let selection = engineList.view.selection;
             if (selection.count > 0) {
               selection.toggleSelect(selection.currentIndex);
