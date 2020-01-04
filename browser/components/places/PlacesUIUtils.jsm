@@ -97,14 +97,10 @@ let InternalFaviconLoader = {
   
 
 
-  _cancelRequest({uri, innerWindowID, timerID, callback}, reason) {
-    
-    let request = callback.request;
-    delete callback.request;
-    
-    clearTimeout(timerID);
+  _cancelRequest({request, uri, innerWindowID, timerID}, reason) {
     try {
       request.cancel();
+      clearTimeout(timerID);
     } catch (ex) {
       Cu.reportError("When cancelling a request for " + uri.spec + " because " + reason + ", it was already canceled!");
     }
@@ -159,7 +155,7 @@ let InternalFaviconLoader = {
           let itemIndex = loadDataForWindow.findIndex(loadData => {
             return loadData.innerWindowID == id &&
                    loadData.uri.equals(uri) &&
-                   loadData.callback.request == this.request;
+                   loadData.request == this.request;
           });
           if (itemIndex != -1) {
             let loadData = loadDataForWindow[itemIndex];
@@ -167,7 +163,6 @@ let InternalFaviconLoader = {
             loadDataForWindow.splice(itemIndex, 1);
           }
         }
-        delete this.request;
       },
     };
   },
@@ -217,7 +212,7 @@ let InternalFaviconLoader = {
       return;
     }
     callback.request = request;
-    let loadData = {innerWindowID, uri, callback};
+    let loadData = {innerWindowID, uri, request};
     loadData.timerID = setTimeout(() => {
       this._cancelRequest(loadData, "it timed out");
     }, FAVICON_REQUEST_TIMEOUT);

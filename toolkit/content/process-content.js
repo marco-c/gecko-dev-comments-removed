@@ -12,8 +12,6 @@ var { classes: Cc, interfaces: Ci, utils: Cu } = Components;
 Cu.import("resource://gre/modules/RemotePageManager.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
 
-const gInContentProcess = Services.appinfo.processType == Ci.nsIXULRuntime.PROCESS_TYPE_CONTENT;
-
 Services.cpmm.addMessageListener("gmp-plugin-crash", msg => {
   let gmpservice = Cc["@mozilla.org/gecko-media-plugin-service;1"]
                      .getService(Ci.mozIGeckoMediaPluginService);
@@ -24,9 +22,7 @@ Services.cpmm.addMessageListener("gmp-plugin-crash", msg => {
 
 
 
-if (gInContentProcess) {
-  Services.obs.addObserver((subject, topic, data) => {
-    let innerWindowID = subject.QueryInterface(Ci.nsISupportsPRUint64).data;
-    Services.cpmm.sendAsyncMessage("Toolkit:inner-window-destroyed", innerWindowID);
-  }, "inner-window-destroyed", false);
-}
+Services.obs.addObserver((subject, topic, data) => {
+  let innerWindowID = subject.QueryInterface(Ci.nsISupportsPRUint64).data;
+  Services.cpmm.sendAsyncMessage("Toolkit:inner-window-destroyed", innerWindowID);
+}, "inner-window-destroyed", false);
