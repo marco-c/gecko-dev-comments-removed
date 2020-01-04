@@ -60,6 +60,16 @@ static_assert(uintptr_t(JS::TraceKind::BaseShape) & OutOfLineTraceKindMask, "mas
 static_assert(uintptr_t(JS::TraceKind::JitCode) & OutOfLineTraceKindMask, "mask bits are set");
 static_assert(uintptr_t(JS::TraceKind::LazyScript) & OutOfLineTraceKindMask, "mask bits are set");
 
+
+
+
+template <typename T>
+struct MapTypeToTraceKind {
+    static const JS::TraceKind kind = T::TraceKind;
+};
+
+
+
 #define JS_FOR_EACH_TRACEKIND(D)
  \
     D(BaseShape,     js::BaseShape,     true) \
@@ -73,13 +83,67 @@ static_assert(uintptr_t(JS::TraceKind::LazyScript) & OutOfLineTraceKindMask, "ma
     D(Symbol,        JS::Symbol,        false)
 
 
-template <typename T> struct MapTypeToTraceKind {};
 #define JS_EXPAND_DEF(name, type, _) \
     template <> struct MapTypeToTraceKind<type> { \
         static const JS::TraceKind kind = JS::TraceKind::name; \
     };
 JS_FOR_EACH_TRACEKIND(JS_EXPAND_DEF);
 #undef JS_EXPAND_DEF
+
+
+
+
+enum class RootKind : int8_t
+{
+    
+    BaseShape = 0,
+    JitCode,
+    LazyScript,
+    Object,
+    ObjectGroup,
+    Script,
+    Shape,
+    String,
+    Symbol,
+
+    
+    Id,
+    Value,
+
+    
+    Traceable,
+
+    Limit
+};
+
+
+template <TraceKind traceKind> struct MapTraceKindToRootKind {};
+#define JS_EXPAND_DEF(name, _0, _1) \
+    template <> struct MapTraceKindToRootKind<JS::TraceKind::name> { \
+        static const JS::RootKind kind = JS::RootKind::name; \
+    };
+JS_FOR_EACH_TRACEKIND(JS_EXPAND_DEF)
+#undef JS_EXPAND_DEF
+
+
+
+
+template <typename T>
+struct MapTypeToRootKind {
+    static const JS::RootKind kind = JS::RootKind::Traceable;
+};
+template <typename T>
+struct MapTypeToRootKind<T*> {
+    static const JS::RootKind kind = \
+        JS::MapTraceKindToRootKind<JS::MapTypeToTraceKind<T>::kind>::kind;
+};
+template <> struct MapTypeToRootKind<JS::Value> {
+    static const JS::RootKind kind = JS::RootKind::Value;
+};
+template <> struct MapTypeToRootKind<jsid> {
+    static const JS::RootKind kind = JS::RootKind::Id;
+};
+template <> struct MapTypeToRootKind<JSFunction*> : public MapTypeToRootKind<JSObject*> {};
 
 
 
