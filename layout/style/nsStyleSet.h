@@ -397,6 +397,11 @@ class nsStyleSet final
   
   void ClearSelectors();
 
+  
+  
+  
+  static bool IsCSSSheetType(mozilla::SheetType aSheetType);
+
 private:
   nsStyleSet(const nsStyleSet& aCopy) = delete;
   nsStyleSet& operator=(const nsStyleSet& aCopy) = delete;
