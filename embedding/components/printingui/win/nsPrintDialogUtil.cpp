@@ -55,6 +55,8 @@
 
 #include <dlgs.h>
 
+#include "nsWindowsHelpers.h"
+
 
 static const char* kAsLaidOutOnScreenStr = "As &laid out on the screen";
 static const char* kTheSelectedFrameStr  = "The selected &frame";
@@ -462,79 +464,71 @@ static UINT CALLBACK PrintHookProc(HWND hdlg, UINT uiMsg, WPARAM wParam, LPARAM 
 
 
 
-HGLOBAL CreateGlobalDevModeAndInit(const nsXPIDLString& aPrintName, nsIPrintSettings* aPS)
+static nsReturnRef<nsHGLOBAL>
+CreateGlobalDevModeAndInit(const nsXPIDLString& aPrintName,
+                           nsIPrintSettings* aPS)
 {
-  HGLOBAL hGlobalDevMode = nullptr;
-
-  HANDLE hPrinter = nullptr;
+  nsHPRINTER hPrinter = nullptr;
   
   LPWSTR printName = const_cast<wchar_t*>(static_cast<const wchar_t*>(aPrintName.get()));
   BOOL status = ::OpenPrinterW(printName, &hPrinter, nullptr);
-  if (status) {
-
-    LPDEVMODEW  pNewDevMode;
-    DWORD       dwNeeded, dwRet;
-
-    
-    dwNeeded = ::DocumentPropertiesW(gParentWnd, hPrinter, printName, nullptr, nullptr, 0);
-    if (dwNeeded == 0) {
-      return nullptr;
-    }
-
-    
-    pNewDevMode = (LPDEVMODEW)::HeapAlloc (::GetProcessHeap(), HEAP_ZERO_MEMORY, dwNeeded);
-    if (!pNewDevMode) return nullptr;
-
-    hGlobalDevMode = (HGLOBAL)::GlobalAlloc(GHND, dwNeeded);
-    if (!hGlobalDevMode) {
-      ::HeapFree(::GetProcessHeap(), 0, pNewDevMode);
-      return nullptr;
-    }
-
-    dwRet = ::DocumentPropertiesW(gParentWnd, hPrinter, printName, pNewDevMode, nullptr, DM_OUT_BUFFER);
-
-    if (dwRet != IDOK) {
-      ::HeapFree(::GetProcessHeap(), 0, pNewDevMode);
-      ::GlobalFree(hGlobalDevMode);
-      ::ClosePrinter(hPrinter);
-      return nullptr;
-    }
-
-    
-    
-    LPDEVMODEW devMode = (DEVMODEW *)::GlobalLock(hGlobalDevMode);
-    if (devMode) {
-      memcpy(devMode, pNewDevMode, dwNeeded);
-      
-      nsCOMPtr<nsIPrintSettingsWin> psWin = do_QueryInterface(aPS);
-      MOZ_ASSERT(psWin);
-      psWin->CopyToNative(devMode);
-
-      
-      dwRet = ::DocumentPropertiesW(gParentWnd, hPrinter, printName, devMode, devMode, DM_IN_BUFFER | DM_OUT_BUFFER);
-      if (dwRet != IDOK) {
-        ::GlobalUnlock(hGlobalDevMode);
-        ::GlobalFree(hGlobalDevMode);
-        ::HeapFree(::GetProcessHeap(), 0, pNewDevMode);
-        ::ClosePrinter(hPrinter);
-        return nullptr;
-      }
-
-      ::GlobalUnlock(hGlobalDevMode);
-    } else {
-      ::GlobalFree(hGlobalDevMode);
-      hGlobalDevMode = nullptr;
-    }
-
-    ::HeapFree(::GetProcessHeap(), 0, pNewDevMode);
-
-    ::ClosePrinter(hPrinter);
-
-  } else {
-    return nullptr;
+  if (!status) {
+    return nsReturnRef<nsHGLOBAL>();
   }
 
-  return hGlobalDevMode;
+  
+  nsAutoPrinter autoPrinter(hPrinter);
+
+  
+  DWORD dwNeeded = ::DocumentPropertiesW(gParentWnd, hPrinter, printName, nullptr,
+                                         nullptr, 0);
+  if (dwNeeded == 0) {
+    return nsReturnRef<nsHGLOBAL>();
+  }
+
+  
+  nsAutoDevMode newDevMode((LPDEVMODEW)::HeapAlloc(::GetProcessHeap(), HEAP_ZERO_MEMORY,
+                                                   dwNeeded));
+  if (!newDevMode) {
+    return nsReturnRef<nsHGLOBAL>();
+  }
+
+  nsHGLOBAL hDevMode = ::GlobalAlloc(GHND, dwNeeded);
+  nsAutoGlobalMem globalDevMode(hDevMode);
+  if (!hDevMode) {
+    return nsReturnRef<nsHGLOBAL>();
+  }
+
+  DWORD dwRet = ::DocumentPropertiesW(gParentWnd, hPrinter, printName, newDevMode,
+                                      nullptr, DM_OUT_BUFFER);
+  if (dwRet != IDOK) {
+    return nsReturnRef<nsHGLOBAL>();
+  }
+
+  
+  
+  LPDEVMODEW devMode = (DEVMODEW *)::GlobalLock(hDevMode);
+  if (!devMode) {
+    return nsReturnRef<nsHGLOBAL>();
+  }
+
+  memcpy(devMode, newDevMode.get(), dwNeeded);
+  
+  nsCOMPtr<nsIPrintSettingsWin> psWin = do_QueryInterface(aPS);
+  MOZ_ASSERT(psWin);
+  psWin->CopyToNative(devMode);
+
+  
+  dwRet = ::DocumentPropertiesW(gParentWnd, hPrinter, printName, devMode, devMode,
+                                DM_IN_BUFFER | DM_OUT_BUFFER);
+  if (dwRet != IDOK) {
+    ::GlobalUnlock(hDevMode);
+    return nsReturnRef<nsHGLOBAL>();
+  }
+
+  ::GlobalUnlock(hDevMode);
+
+  return globalDevMode.out();
 }
 
 
@@ -576,9 +570,6 @@ ShowNativePrintDialog(HWND              aHWnd,
 
   gDialogWasExtended  = false;
 
-  HGLOBAL hGlobalDevMode = nullptr;
-  HGLOBAL hDevNames      = nullptr;
-
   
   nsXPIDLString printerName;
   aPrintSettings->GetPrinterName(getter_Copies(printerName));
@@ -588,7 +579,8 @@ ShowNativePrintDialog(HWND              aHWnd,
     GetDefaultPrinterNameFromGlobalPrinters(printerName);
   } else {
     HANDLE hPrinter = nullptr;
-    if(!::OpenPrinterW(const_cast<wchar_t*>(static_cast<const wchar_t*>(printerName.get())), &hPrinter, nullptr)) {
+    if(!::OpenPrinterW(const_cast<wchar_t*>(static_cast<const wchar_t*>(printerName.get())),
+                       &hPrinter, nullptr)) {
       
       GetDefaultPrinterNameFromGlobalPrinters(printerName);
     } else {
@@ -599,15 +591,15 @@ ShowNativePrintDialog(HWND              aHWnd,
   
 
   uint32_t len = printerName.Length();
-  hDevNames = (HGLOBAL)::GlobalAlloc(GHND, sizeof(wchar_t) * (len + 1) + 
-                                     sizeof(DEVNAMES));
+  nsHGLOBAL hDevNames = ::GlobalAlloc(GHND, sizeof(wchar_t) * (len + 1)
+                                      + sizeof(DEVNAMES));
+  nsAutoGlobalMem autoDevNames(hDevNames);
   if (!hDevNames) {
     return NS_ERROR_OUT_OF_MEMORY;
   }
 
   DEVNAMES* pDevNames = (DEVNAMES*)::GlobalLock(hDevNames);
   if (!pDevNames) {
-    ::GlobalFree(hDevNames);
     return NS_ERROR_FAILURE;
   }
   pDevNames->wDriverOffset = sizeof(DEVNAMES)/sizeof(wchar_t);
@@ -622,9 +614,7 @@ ShowNativePrintDialog(HWND              aHWnd,
   
   
   
-  
-  
-  hGlobalDevMode = CreateGlobalDevModeAndInit(printerName, aPrintSettings);
+  nsAutoGlobalMem autoDevMode(CreateGlobalDevModeAndInit(printerName, aPrintSettings));
 
   
   PRINTDLGW  prntdlg;
@@ -632,7 +622,7 @@ ShowNativePrintDialog(HWND              aHWnd,
 
   prntdlg.lStructSize = sizeof(prntdlg);
   prntdlg.hwndOwner   = aHWnd;
-  prntdlg.hDevMode    = hGlobalDevMode;
+  prntdlg.hDevMode    = autoDevMode.get();
   prntdlg.hDevNames   = hDevNames;
   prntdlg.hDC         = nullptr;
   prntdlg.Flags       = PD_ALLPAGES | PD_RETURNIC | 
@@ -682,13 +672,11 @@ ShowNativePrintDialog(HWND              aHWnd,
     NS_ENSURE_TRUE(aPrintSettings && prntdlg.hDevMode, NS_ERROR_FAILURE);
 
     if (prntdlg.hDevNames == nullptr) {
-      ::GlobalFree(hGlobalDevMode);
       return NS_ERROR_FAILURE;
     }
     
     DEVNAMES *devnames = (DEVNAMES *)::GlobalLock(prntdlg.hDevNames);
     if (devnames == nullptr) {
-      ::GlobalFree(hGlobalDevMode);
       return NS_ERROR_FAILURE;
     }
 
@@ -716,7 +704,6 @@ ShowNativePrintDialog(HWND              aHWnd,
 
     nsCOMPtr<nsIPrintSettingsWin> psWin(do_QueryInterface(aPrintSettings));
     if (!psWin) {
-      ::GlobalFree(hGlobalDevMode);
       return NS_ERROR_FAILURE;
     }
 
@@ -772,7 +759,6 @@ ShowNativePrintDialog(HWND              aHWnd,
     
     LPDEVMODEW devMode = (LPDEVMODEW)::GlobalLock(prntdlg.hDevMode);
     if (!devMode || !prntdlg.hDC) {
-      ::GlobalFree(hGlobalDevMode);
       return NS_ERROR_FAILURE;
     }
     psWin->SetDevMode(devMode); 
@@ -805,7 +791,6 @@ ShowNativePrintDialog(HWND              aHWnd,
   } else {
     ::SetFocus(aHWnd);
     aPrintSettings->SetIsCancelled(true);
-    if (hGlobalDevMode) ::GlobalFree(hGlobalDevMode);
     return NS_ERROR_ABORT;
   }
 
