@@ -443,7 +443,7 @@ class MacroAssembler : public MacroAssemblerSpecific
 
     void Pop(const Operand op) DEFINED_ON(x86_shared);
     void Pop(Register reg) PER_SHARED_ARCH;
-    void Pop(FloatRegister t) DEFINED_ON(x86_shared);
+    void Pop(FloatRegister t) DEFINED_ON(x86_shared, arm, arm64);
     void Pop(const ValueOperand& val) PER_SHARED_ARCH;
     void popRooted(VMFunction::RootType rootType, Register cellReg, const ValueOperand& valueReg);
 
@@ -691,6 +691,9 @@ class MacroAssembler : public MacroAssemblerSpecific
     inline void move64(Imm64 imm, Register64 dest) PER_ARCH;
     inline void move64(Register64 src, Register64 dest) PER_ARCH;
 
+    inline void moveFloat32ToGPR(FloatRegister src, Register dest) DEFINED_ON(arm, arm64, x86_shared);
+    inline void moveGPRToFloat32(Register src, FloatRegister dest) DEFINED_ON(arm, arm64, x86_shared);
+
     
     
 
@@ -719,7 +722,7 @@ class MacroAssembler : public MacroAssemblerSpecific
     inline void or64(Register64 src, Register64 dest) PER_ARCH;
     inline void xor64(Register64 src, Register64 dest) PER_ARCH;
 
-    inline void xor32(Register src, Register dest) DEFINED_ON(x86_shared);
+    inline void xor32(Register src, Register dest) DEFINED_ON(x86_shared, arm, arm64);
     inline void xor32(Imm32 imm, Register dest) PER_SHARED_ARCH;
 
     inline void xorPtr(Register src, Register dest) PER_ARCH;
@@ -746,7 +749,7 @@ class MacroAssembler : public MacroAssemblerSpecific
     inline void add64(Register64 src, Register64 dest) PER_ARCH;
     inline void add64(Imm32 imm, Register64 dest) PER_ARCH;
 
-    inline void addFloat32(FloatRegister src, FloatRegister dest) DEFINED_ON(x86_shared);
+    inline void addFloat32(FloatRegister src, FloatRegister dest) DEFINED_ON(x86_shared, arm, arm64);
 
     inline void addDouble(FloatRegister src, FloatRegister dest) PER_SHARED_ARCH;
     inline void addConstantDouble(double d, FloatRegister dest) DEFINED_ON(x86);
@@ -761,7 +764,12 @@ class MacroAssembler : public MacroAssemblerSpecific
     inline void subPtr(ImmWord imm, Register dest) DEFINED_ON(x64);
     inline void subPtr(const Address& addr, Register dest) DEFINED_ON(mips_shared, arm, arm64, x86, x64);
 
+    inline void subFloat32(FloatRegister src, FloatRegister dest) DEFINED_ON(x86_shared, arm, arm64);
+
     inline void subDouble(FloatRegister src, FloatRegister dest) PER_SHARED_ARCH;
+
+    
+    inline void mul32(Register rhs, Register srcDest) DEFINED_ON(arm, arm64, x86_shared);
 
     inline void mul32(Register src1, Register src2, Register dest, Label* onOver, Label* onZero) DEFINED_ON(arm64);
 
@@ -769,10 +777,26 @@ class MacroAssembler : public MacroAssemblerSpecific
 
     inline void mulBy3(Register src, Register dest) PER_ARCH;
 
+    inline void mulFloat32(FloatRegister src, FloatRegister dest) DEFINED_ON(x86_shared, arm, arm64);
     inline void mulDouble(FloatRegister src, FloatRegister dest) PER_SHARED_ARCH;
 
     inline void mulDoublePtr(ImmPtr imm, Register temp, FloatRegister dest) DEFINED_ON(mips_shared, arm, arm64, x86, x64);
 
+    
+    
+    
+    
+    
+    inline void quotient32(Register rhs, Register srcDest, bool isUnsigned) DEFINED_ON(x86_shared, arm, arm64);
+
+    
+    
+    
+    
+    
+    inline void remainder32(Register rhs, Register srcDest, bool isUnsigned) DEFINED_ON(x86_shared, arm, arm64);
+
+    inline void divFloat32(FloatRegister src, FloatRegister dest) DEFINED_ON(x86_shared, arm, arm64);
     inline void divDouble(FloatRegister src, FloatRegister dest) PER_SHARED_ARCH;
 
     inline void inc32(RegisterOrInt32Constant* key);
@@ -782,10 +806,24 @@ class MacroAssembler : public MacroAssemblerSpecific
 
     inline void neg32(Register reg) PER_SHARED_ARCH;
 
-    inline void negateFloat(FloatRegister reg) DEFINED_ON(arm64, x86_shared);
+    inline void negateFloat(FloatRegister reg) DEFINED_ON(arm, arm64, x86_shared);
 
     inline void negateDouble(FloatRegister reg) PER_SHARED_ARCH;
 
+    inline void absFloat32(FloatRegister src, FloatRegister dest) DEFINED_ON(arm, arm64, x86_shared);
+    inline void absDouble(FloatRegister src, FloatRegister dest) DEFINED_ON(arm, arm64, x86_shared);
+
+    inline void sqrtFloat32(FloatRegister src, FloatRegister dest) DEFINED_ON(arm, arm64, x86_shared);
+    inline void sqrtDouble(FloatRegister src, FloatRegister dest) DEFINED_ON(arm, arm64, x86_shared);
+
+    
+    
+
+    
+    
+    
+    
+    
     
     
 
@@ -801,9 +839,13 @@ class MacroAssembler : public MacroAssemblerSpecific
     inline void rshift64(Imm32 imm, Register64 dest) PER_ARCH;
 
     
-    inline void lshift32(Register shift, Register srcDest) DEFINED_ON(x86_shared);
-    inline void rshift32(Register shift, Register srcDest) DEFINED_ON(x86_shared);
-    inline void rshift32Arithmetic(Register shift, Register srcDest) DEFINED_ON(x86_shared);
+    inline void lshift32(Register shift, Register srcDest) DEFINED_ON(x86_shared, arm, arm64);
+    inline void rshift32(Register shift, Register srcDest) DEFINED_ON(x86_shared, arm, arm64);
+    inline void rshift32Arithmetic(Register shift, Register srcDest) DEFINED_ON(x86_shared, arm, arm64);
+
+    inline void lshift32(Imm32 shift, Register srcDest) DEFINED_ON(x86_shared, arm, arm64);
+    inline void rshift32(Imm32 shift, Register srcDest) DEFINED_ON(x86_shared, arm, arm64);
+    inline void rshift32Arithmetic(Imm32 shift, Register srcDest) DEFINED_ON(x86_shared, arm, arm64);
 
     
     
@@ -816,8 +858,8 @@ class MacroAssembler : public MacroAssemblerSpecific
     
 
     
-    inline void clz32(Register src, Register dest, bool knownNotZero) DEFINED_ON(x86_shared);
-    inline void ctz32(Register src, Register dest, bool knownNotZero) DEFINED_ON(x86_shared);
+    inline void clz32(Register src, Register dest, bool knownNotZero) DEFINED_ON(x86_shared, arm, arm64);
+    inline void ctz32(Register src, Register dest, bool knownNotZero) DEFINED_ON(x86_shared, arm, arm64);
 
     inline void clz64(Register64 src, Register64 dest) DEFINED_ON(x64);
     inline void ctz64(Register64 src, Register64 dest) DEFINED_ON(x64);
