@@ -10566,6 +10566,11 @@ nsDocShell::DoURILoad(nsIURI* aURI,
   }
 
   if (IsFrame()) {
+
+    MOZ_ASSERT(aContentPolicyType == nsIContentPolicy::TYPE_INTERNAL_IFRAME ||
+               aContentPolicyType == nsIContentPolicy::TYPE_INTERNAL_FRAME,
+               "DoURILoad thinks this is a frame and InternalLoad does not");
+
     
     
     
@@ -10584,7 +10589,11 @@ nsDocShell::DoURILoad(nsIURI* aURI,
       nestedURI->GetInnerURI(getter_AddRefs(tempURI));
       nestedURI = do_QueryInterface(tempURI);
     }
+  } else {
+    MOZ_ASSERT(aContentPolicyType == nsIContentPolicy::TYPE_DOCUMENT,
+    "DoURILoad thinks this is a document and InternalLoad does not");
   }
+
 
   
   
@@ -10625,32 +10634,26 @@ nsDocShell::DoURILoad(nsIURI* aURI,
   
   
   
-  
-  nsCOMPtr<nsINode> requestingNode;
-  nsCOMPtr<nsPIDOMWindowOuter> requestingWindow;
-
+  nsCOMPtr<nsINode> loadingNode;
+  nsCOMPtr<nsPIDOMWindowOuter> loadingWindow;
   nsCOMPtr<nsIPrincipal> loadingPrincipal;
-  requestingNode = mScriptGlobal->AsOuter()->GetFrameElementInternal();
-  if (requestingNode) {
-    
-    loadingPrincipal = requestingNode->NodePrincipal();
+
+  if (aContentPolicyType == nsIContentPolicy::TYPE_DOCUMENT) {
+    loadingNode = nullptr;
+    loadingPrincipal = nullptr;
+    loadingWindow = mScriptGlobal->AsOuter();
   } else {
-    if (aContentPolicyType != nsIContentPolicy::TYPE_DOCUMENT) {
+    loadingWindow = nullptr;
+    loadingNode = mScriptGlobal->AsOuter()->GetFrameElementInternal();
+    if (loadingNode) {
+      
+      loadingPrincipal = loadingNode->NodePrincipal();
+    } else {
       
       
       
       
       return NS_OK;
-    }
-
-    requestingWindow = mScriptGlobal->AsOuter();
-    if (mItemType != typeChrome) {
-      nsIScriptSecurityManager* ssm = nsContentUtils::GetSecurityManager();
-      ssm->GetDocShellCodebasePrincipal(aURI, this, getter_AddRefs(loadingPrincipal));
-    } else {
-      
-      
-      loadingPrincipal = nsContentUtils::GetSystemPrincipal();
     }
   }
 
@@ -10658,6 +10661,10 @@ nsDocShell::DoURILoad(nsIURI* aURI,
   
   bool inherit = false;
 
+  
+  
+  
+  
   nsCOMPtr<nsIPrincipal> triggeringPrincipal = do_QueryInterface(aOwner);
   if (triggeringPrincipal) {
     inherit = nsContentUtils::ChannelShouldInheritPrincipal(
@@ -10682,10 +10689,10 @@ nsDocShell::DoURILoad(nsIURI* aURI,
   }
 
   nsCOMPtr<nsILoadInfo> loadInfo =
-    requestingWindow ?
-      new LoadInfo(requestingWindow, loadingPrincipal, triggeringPrincipal,
+    (aContentPolicyType == nsIContentPolicy::TYPE_DOCUMENT) ?
+      new LoadInfo(loadingWindow, triggeringPrincipal,
                    securityFlags) :
-      new LoadInfo(loadingPrincipal, triggeringPrincipal, requestingNode,
+      new LoadInfo(loadingPrincipal, triggeringPrincipal, loadingNode,
                    securityFlags, aContentPolicyType);
   if (!isSrcdoc) {
     rv = NS_NewChannelInternal(getter_AddRefs(channel),
