@@ -11,6 +11,8 @@
 #ifndef nsCSSProps_h___
 #define nsCSSProps_h___
 
+#include <limits>
+#include <type_traits>
 #include "nsString.h"
 #include "nsCSSProperty.h"
 #include "nsStyleStructFwd.h"
@@ -329,11 +331,49 @@ enum nsStyleAnimType {
   eStyleAnimType_None
 };
 
+namespace mozilla {
+
+
+
+template<typename T, typename Storage>
+struct IsEnumFittingWithin
+  : IntegralConstant<
+      bool,
+      std::is_integral<Storage>::value &&
+      std::numeric_limits<typename std::underlying_type<T>::type>::min() >=
+        std::numeric_limits<Storage>::min() &&
+      std::numeric_limits<typename std::underlying_type<T>::type>::max() <=
+        std::numeric_limits<Storage>::max()
+    >
+{};
+
+} 
+
 class nsCSSProps {
 public:
   typedef mozilla::CSSEnabledState EnabledState;
 
-  struct KTableEntry {
+  struct KTableEntry
+  {
+    
+    
+
+    KTableEntry(nsCSSKeyword aKeyword, int16_t aValue)
+      : mKeyword(aKeyword)
+      , mValue(aValue)
+    {
+    }
+
+    template<typename T,
+             typename = typename std::enable_if<std::is_enum<T>::value>::type>
+    KTableEntry(nsCSSKeyword aKeyword, T aValue)
+      : mKeyword(aKeyword)
+      , mValue(static_cast<int16_t>(aValue))
+    {
+      static_assert(mozilla::IsEnumFittingWithin<T, int16_t>::value,
+                    "aValue must be an enum that fits within mValue");
+    }
+
     nsCSSKeyword mKeyword;
     int16_t mValue;
   };

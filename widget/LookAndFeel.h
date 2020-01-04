@@ -29,7 +29,7 @@ class LookAndFeel
 public:
   
   
-  enum ColorID {
+  enum ColorID : uint8_t {
 
     
     
