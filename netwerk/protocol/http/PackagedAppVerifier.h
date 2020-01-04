@@ -93,6 +93,7 @@ public:
   PackagedAppVerifier();
 
   PackagedAppVerifier(nsIPackagedAppVerifierListener* aListener,
+                      const nsACString& aPackageOrigin,
                       const nsACString& aSignature,
                       nsICacheEntry* aPackageCacheEntry);
 
@@ -169,6 +170,9 @@ private:
 
   
   bool mIsPackageSigned;
+
+  
+  bool mBypassVerification;
 
   
   

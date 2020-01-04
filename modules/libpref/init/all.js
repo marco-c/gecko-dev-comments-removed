@@ -1452,12 +1452,7 @@ pref("network.http.enable-packaged-apps", false);
 
 
 
-pref("network.http.packaged-signed-apps-enabled", false);
-
-
-
-
-pref("network.http.packaged-apps-developer-mode", false);
+pref("network.http.signed-packages.enabled", false);
 
 
 

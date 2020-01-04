@@ -40,16 +40,6 @@ const kStatusCodeIdx          = 1;
 const kVerificationSuccessIdx = 2;
 const kContentIdx             = 3;
 
-function enable_developer_mode()
-{
-  gPrefs.setBoolPref("network.http.packaged-apps-developer-mode", true);
-}
-
-function reset_developer_mode()
-{
-  gPrefs.clearUserPref("network.http.packaged-apps-developer-mode");
-}
-
 function createVerifierListener(aExpecetedCallbacks,
                                 aExpectedPackageId,
                                 aExpectedIsSigned,
@@ -90,7 +80,6 @@ function createVerifierListener(aExpecetedCallbacks,
       }
 
       if (isLastPart) {
-        reset_developer_mode();
         run_next_test();
       }
     },
@@ -137,10 +126,10 @@ function createPackageCache(aPackageUriAsAscii, aLoadContextInfo) {
   return cacheStorage.openTruncate(uri, '');
 }
 
-function test_no_signature(aDeveloperMode) {
+function test_no_signature(aBypassVerification) {
   const kOrigin = 'http://foo.com';
 
-  aDeveloperMode = !!aDeveloperMode;
+  aBypassVerification = !!aBypassVerification;
 
   
   
@@ -158,7 +147,7 @@ function test_no_signature(aDeveloperMode) {
   let isPackageSigned = false;
 
   
-  let packageUriString = kOrigin + '/pak' + (aDeveloperMode ? '-dev' : '');
+  let packageUriString = kOrigin + '/pak' + (aBypassVerification ? '-dev' : '');
 
   let packageCacheEntry =
     createPackageCache(packageUriString, gLoadContextInfoFactory.default);
@@ -168,21 +157,21 @@ function test_no_signature(aDeveloperMode) {
                                                 isPackageSigned,
                                                 packageCacheEntry);
 
-  gVerifier.init(verifierListener, '', packageCacheEntry);
+  gVerifier.init(verifierListener, kOrigin, '', packageCacheEntry);
 
   feedResources(expectedCallbacks, '');
 }
 
-function test_invalid_signature(aDeveloperMode) {
+function test_invalid_signature(aBypassVerification) {
   const kOrigin = 'http://bar.com';
 
-  aDeveloperMode = !!aDeveloperMode;
+  aBypassVerification = !!aBypassVerification;
 
   
   
 
-  let verificationResult = aDeveloperMode; 
-  let isPackageSigned = aDeveloperMode;   
+  let verificationResult = aBypassVerification; 
+  let isPackageSigned = aBypassVerification;   
 
   const kPackagedId = '611FC2FE-491D-4A47-B3B3-43FBDF6F404F';
   const kManifestContent = 'Content-Location: manifest.webapp\r\n' +
@@ -193,35 +182,45 @@ function test_invalid_signature(aDeveloperMode) {
   const expectedCallbacks = [
   
     [kOrigin + '/manifest',   Cr.NS_OK,    verificationResult,    kManifestContent],
-    [kOrigin + '/1.html',     Cr.NS_OK,    verificationResult],
-    [kOrigin + '/2.js',       Cr.NS_OK,    verificationResult],
-    [kOrigin + '/3.jpg',      Cr.NS_OK,    verificationResult],
-    [kOrigin + '/4.html',     Cr.NS_OK,    verificationResult],
-    [kOrigin + '/5.css',      Cr.NS_OK,    verificationResult],
+    [kOrigin + '/1.html',     Cr.NS_OK,    verificationResult, 'abc'],
+    [kOrigin + '/2.js',       Cr.NS_OK,    verificationResult, 'abc'],
+    [kOrigin + '/3.jpg',      Cr.NS_OK,    verificationResult, 'abc'],
+    [kOrigin + '/4.html',     Cr.NS_OK,    verificationResult, 'abc'],
+    [kOrigin + '/5.css',      Cr.NS_OK,    verificationResult, 'abc'],
   ];
 
-  let packageUriString = kOrigin + '/pak' + (aDeveloperMode ? '-dev' : '');
+  let packageUriString = kOrigin + '/pak' + (aBypassVerification ? '-dev' : '');
   let packageCacheEntry =
     createPackageCache(packageUriString, gLoadContextInfoFactory.private);
 
   let verifierListener = createVerifierListener(expectedCallbacks,
-                                                aDeveloperMode ? kPackagedId : '',
+                                                aBypassVerification ? kPackagedId : '',
                                                 isPackageSigned,
                                                 packageCacheEntry);
 
   let signature = 'manifest-signature: 11111111111111111111111';
-  gVerifier.init(verifierListener, signature, packageCacheEntry);
+  gVerifier.init(verifierListener, kOrigin, signature, packageCacheEntry);
 
   feedResources(expectedCallbacks, signature);
+}
+
+function test_invalid_signature_bypass_verification() {
+  let pref = "network.http.signed-packages.trusted-origin";
+  ok(!!Ci.nsISupportsString, "Ci.nsISupportsString");
+  let origin = Cc["@mozilla.org/supports-string;1"].createInstance(Ci.nsISupportsString);
+  origin.data = "http://bar.com";
+  gPrefs.setComplexValue(pref, Ci.nsISupportsString, origin);
+  test_invalid_signature(true);
+  gPrefs.clearUserPref(pref);
 }
 
 function run_test()
 {
   ok(!!gVerifier);
 
-  
   add_test(test_no_signature);
   add_test(test_invalid_signature);
+  add_test(test_invalid_signature_bypass_verification);
 
   
   run_next_test();
