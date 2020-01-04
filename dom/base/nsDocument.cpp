@@ -13043,6 +13043,24 @@ nsDocument::ReportUseCounters()
     
     
     
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    Telemetry::Accumulate(Telemetry::CONTENT_DOCUMENTS_DESTROYED, 1);
+    if (IsTopLevelContentDocument()) {
+      Telemetry::Accumulate(Telemetry::TOP_LEVEL_CONTENT_DOCUMENTS_DESTROYED, 1);
+    }
+
     for (int32_t c = 0;
          c < eUseCounter_Count; ++c) {
       UseCounter uc = static_cast<UseCounter>(c);
