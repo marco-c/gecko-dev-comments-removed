@@ -167,6 +167,15 @@ private:
   }
   void AddDependencyOnSource(SourceSurfaceD2D1* aSource);
 
+  ID2D1Image* CurrentTarget()
+  {
+    if (CurrentLayer().mCurrentList) {
+      return CurrentLayer().mCurrentList;
+    }
+    return mBitmap;
+  }
+
+  
   
   
   
@@ -175,6 +184,7 @@ private:
 
   already_AddRefed<ID2D1Geometry> GetInverseClippedGeometry();
 
+  
   bool GetDeviceSpaceClipRect(D2D1_RECT_F& aClipRect, bool& aIsPixelAligned);
 
   void PopAllClips();
@@ -220,7 +230,23 @@ private:
     };
     RefPtr<PathD2D> mPath;
   };
-  std::vector<PushedClip> mPushedClips;
+
+  
+  struct PushedLayer
+  {
+    PushedLayer() : mClipsArePushed(false), mIsOpaque(false) {}
+
+    std::vector<PushedClip> mPushedClips;
+    RefPtr<ID2D1CommandList> mCurrentList;
+    
+    bool mClipsArePushed;
+    bool mIsOpaque;
+  };
+  std::vector<PushedLayer> mPushedLayers;
+  PushedLayer& CurrentLayer()
+  {
+    return mPushedLayers.back();
+  }
 
   
   
@@ -230,8 +256,6 @@ private:
   
   TargetSet mDependingOnTargets;
 
-  
-  bool mClipsArePushed;
   static ID2D1Factory1 *mFactory;
   static IDWriteFactory *mDWriteFactory;
 };
