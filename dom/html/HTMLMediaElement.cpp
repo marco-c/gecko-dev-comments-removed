@@ -114,18 +114,31 @@ using mozilla::net::nsMediaFragmentURIParser;
 class MOZ_STACK_CLASS AutoNotifyAudioChannelAgent
 {
   RefPtr<mozilla::dom::HTMLMediaElement> mElement;
+  bool mShouldNotify;
   MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER;
 public:
-  explicit AutoNotifyAudioChannelAgent(mozilla::dom::HTMLMediaElement* aElement
-                                       MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
+  AutoNotifyAudioChannelAgent(mozilla::dom::HTMLMediaElement* aElement,
+                              bool aNotify
+                              MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
     : mElement(aElement)
+    , mShouldNotify(aNotify)
   {
     MOZ_GUARD_OBJECT_NOTIFIER_INIT;
+    if (mShouldNotify) {
+      
+      if (mElement->MaybeCreateAudioChannelAgent()) {
+        mElement->NotifyAudioChannelAgent(false);
+      }
+    }
   }
-
   ~AutoNotifyAudioChannelAgent()
   {
-    mElement->UpdateAudioChannelPlayingState();
+    if (mShouldNotify) {
+      
+      if (mElement->MaybeCreateAudioChannelAgent()) {
+        mElement->NotifyAudioChannelAgent(true);
+      }
+    }
   }
 };
 
@@ -3386,7 +3399,10 @@ void HTMLMediaElement::MetadataLoaded(const MediaInfo* aInfo,
   
   
   
-  AutoNotifyAudioChannelAgent autoNotify(this);
+  bool audioTrackChanging = mMediaInfo.HasAudio() != aInfo->HasAudio();
+  AutoNotifyAudioChannelAgent autoNotify(this,
+                                         audioTrackChanging &&
+                                         mPlayingThroughTheAudioChannel);
 
   mMediaInfo = *aInfo;
   mIsEncrypted = aInfo->IsEncrypted()
@@ -4746,11 +4762,6 @@ HTMLMediaElement::IsPlayingThroughTheAudioChannel() const
   }
 
   
-  if (!HasAudio()) {
-    return false;
-  }
-
-  
   if (std::fabs(Volume()) <= 1e-7) {
     return false;
   }
@@ -4807,13 +4818,21 @@ HTMLMediaElement::NotifyAudioChannelAgent(bool aPlaying)
 {
   
   
+  WindowAudioCaptureChanged();
+
+  
+  
   
   AutoNoJSAPI nojsapi;
 
   if (aPlaying) {
+    
+    uint32_t notify = HasAudio() ? nsIAudioChannelAgent::AUDIO_AGENT_NOTIFY :
+                                   nsIAudioChannelAgent::AUDIO_AGENT_DONT_NOTIFY;
+
     float volume = 0.0;
     bool muted = true;
-    mAudioChannelAgent->NotifyStartedPlaying(&volume, &muted);
+    mAudioChannelAgent->NotifyStartedPlaying(notify, &volume, &muted);
     WindowVolumeChanged(volume, muted);
   } else {
     mAudioChannelAgent->NotifyStoppedPlaying();
@@ -4975,17 +4994,17 @@ HTMLMediaElement::GetTopLevelPrincipal()
 }
 #endif 
 
-NS_IMETHODIMP HTMLMediaElement::WindowAudioCaptureChanged(bool aCapture)
+NS_IMETHODIMP HTMLMediaElement::WindowAudioCaptureChanged()
 {
   MOZ_ASSERT(mAudioChannelAgent);
-  MOZ_ASSERT(HasAudio());
 
   if (!OwnerDoc()->GetInnerWindow()) {
     return NS_OK;
   }
+  bool captured = OwnerDoc()->GetInnerWindow()->GetAudioCaptured();
 
-  if (aCapture != mAudioCapturedByWindow) {
-    if (aCapture) {
+  if (captured != mAudioCapturedByWindow) {
+    if (captured) {
       mAudioCapturedByWindow = true;
       nsCOMPtr<nsPIDOMWindow> window =
         do_QueryInterface(OwnerDoc()->GetParentObject());
@@ -5021,7 +5040,7 @@ NS_IMETHODIMP HTMLMediaElement::WindowAudioCaptureChanged(bool aCapture)
     }
   }
 
-  return NS_OK;
+   return NS_OK;
 }
 
 AudioTrackList*
