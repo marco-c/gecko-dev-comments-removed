@@ -1,16 +1,5 @@
-<!DOCTYPE HTML>
-<html>
-<head>
-  <title>WebExtension test</title>
-  <script type="text/javascript" src="/tests/SimpleTest/SimpleTest.js"></script>
-  <script type="text/javascript" src="/tests/SimpleTest/SpawnTask.js"></script>
-  <script type="text/javascript" src="/tests/SimpleTest/ExtensionTestUtils.js"></script>
-  <script type="text/javascript" src="head.js"></script>
-  <link rel="stylesheet" type="text/css" href="/tests/SimpleTest/test.css"/>
-</head>
-<body>
 
-<script type="text/javascript">
+
 "use strict";
 
 function backgroundScript() {
@@ -18,9 +7,9 @@ function backgroundScript() {
   let received_ports_number = 0;
 
   const invalid_connect_params = [
-    // too many params
+    
     ["fake-extensions-id", {name: "fake-conn-name"}, "unexpected third params"],
-    // invalid params format
+    
     [{}, {}],
     ["fake-extensions-id", "invalid-connect-info-format"],
   ];
@@ -60,7 +49,7 @@ function backgroundScript() {
 }
 
 let extensionData = {
-  background: "(" + backgroundScript.toString() + ")()",
+  background: backgroundScript,
   manifest: {},
   files: {},
 };
@@ -68,14 +57,8 @@ let extensionData = {
 add_task(function* test_backgroundRuntimeConnectParams() {
   let extension = ExtensionTestUtils.loadExtension(extensionData);
   yield extension.startup();
-  info("extension loaded");
 
   yield extension.awaitFinish("runtime.connect invalid params");
 
   yield extension.unload();
-  info("extension unloaded");
 });
-</script>
-
-</body>
-</html>
