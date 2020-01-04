@@ -76,7 +76,7 @@ struct RNGContextStr {
 #define  V(rng)       (((rng)->V_Data)+1)
 #define  VSize(rng)   ((sizeof (rng)->V_Data) -1)
     PRUint8  C[PRNG_SEEDLEN];        
-    PRUint8  lastOutput[SHA256_LENGTH];     
+    PRUint8  oldV[PRNG_SEEDLEN];     
     
 
 
@@ -286,8 +286,6 @@ prng_Hashgen(RNGContext *rng, PRUint8 *returned_bytes,
 	     unsigned int no_of_returned_bytes)
 {
     PRUint8 data[VSize(rng)];
-    PRUint8 thisHash[SHA256_LENGTH];
-    PRUint8 *lastHash = rng->lastOutput;
 
     PORT_Memcpy(data, V(rng), VSize(rng));
     while (no_of_returned_bytes) {
@@ -297,16 +295,7 @@ prng_Hashgen(RNGContext *rng, PRUint8 *returned_bytes,
 
  	SHA256_Begin(&ctx);
  	SHA256_Update(&ctx, data, sizeof data);
-	SHA256_End(&ctx, thisHash, &len, SHA256_LENGTH);
-	if (PORT_Memcmp(lastHash, thisHash, len) == 0) {
-	    rng->isValid = PR_FALSE;
-	    break;
-	}
-	if (no_of_returned_bytes < SHA256_LENGTH) {
-	    len = no_of_returned_bytes;
-	}
-	PORT_Memcpy(returned_bytes, thisHash, len);
-	lastHash = returned_bytes;
+	SHA256_End(&ctx, returned_bytes, &len, no_of_returned_bytes);
 	returned_bytes += len;
 	no_of_returned_bytes -= len;
 	
@@ -314,9 +303,7 @@ prng_Hashgen(RNGContext *rng, PRUint8 *returned_bytes,
         carry = no_of_returned_bytes;
 	PRNG_ADD_CARRY_ONLY(data, (sizeof data)- 1, carry);
     }
-    PORT_Memcpy(rng->lastOutput, thisHash, SHA256_LENGTH);
     PORT_Memset(data, 0, sizeof data); 
-    PORT_Memset(thisHash, 0, sizeof thisHash); 
 }
 
 
@@ -362,11 +349,6 @@ prng_generateNewBytes(RNGContext *rng,
     if (no_of_returned_bytes == SHA256_LENGTH) {
 	
 	SHA256_HashBuf(returned_bytes, V(rng), VSize(rng) );
-	
-	if (memcmp(rng->lastOutput, returned_bytes, SHA256_LENGTH) == 0) {
-	    rng->isValid = PR_FALSE;
-	}
-	PORT_Memcpy(rng->lastOutput, returned_bytes, sizeof rng->lastOutput);
     } else {
     	prng_Hashgen(rng, returned_bytes, no_of_returned_bytes);
     }
@@ -381,11 +363,12 @@ prng_generateNewBytes(RNGContext *rng,
     PRNG_ADD_CARRY_ONLY(rng->reseed_counter,(sizeof rng->reseed_counter)-1, carry);
 
     
-    if (!rng->isValid) {
-	PORT_Memset(returned_bytes, 0,  no_of_returned_bytes);
+    if (memcmp(V(rng), rng->oldV, sizeof rng->oldV) == 0) {
+	rng->isValid = PR_FALSE;
 	PORT_SetError(SEC_ERROR_LIBRARY_FAILURE);
 	return SECFailure;
     }
+    PORT_Memcpy(rng->oldV, V(rng), sizeof rng->oldV);
     return SECSuccess;
 }
 

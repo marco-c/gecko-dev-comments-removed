@@ -57,55 +57,25 @@
 #include "seccomon.h"
 #endif
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-typedef struct PORTCheapArenaPool_str {
-  PLArenaPool arena;
-  PRUint32    magic;    
-} PORTCheapArenaPool;
-
 SEC_BEGIN_PROTOS
 
 extern void *PORT_Alloc(size_t len);
 extern void *PORT_Realloc(void *old, size_t len);
+extern void *PORT_AllocBlock(size_t len);
+extern void *PORT_ReallocBlock(void *old, size_t len);
+extern void PORT_FreeBlock(void *ptr);
 extern void *PORT_ZAlloc(size_t len);
 extern void PORT_Free(void *ptr);
 extern void PORT_ZFree(void *ptr, size_t len);
 extern char *PORT_Strdup(const char *s);
+extern time_t PORT_Time(void);
 extern void PORT_SetError(int value);
 extern int PORT_GetError(void);
 
-
 extern PLArenaPool *PORT_NewArena(unsigned long chunksize);
-extern void PORT_FreeArena(PLArenaPool *arena, PRBool zero);
-
-
-extern void PORT_InitCheapArena(PORTCheapArenaPool* arena,
-                                unsigned long chunksize);
-extern void PORT_DestroyCheapArena(PORTCheapArenaPool* arena);
-
-
 extern void *PORT_ArenaAlloc(PLArenaPool *arena, size_t size);
 extern void *PORT_ArenaZAlloc(PLArenaPool *arena, size_t size);
+extern void PORT_FreeArena(PLArenaPool *arena, PRBool zero);
 extern void *PORT_ArenaGrow(PLArenaPool *arena, void *ptr,
 			    size_t oldsize, size_t newsize);
 extern void *PORT_ArenaMark(PLArenaPool *arena);

@@ -403,10 +403,16 @@ SECU_SECItemHexStringToBinary(SECItem* srcdest);
 
 
 
+
+
+
+
 SECStatus
 SECU_ParseSSLVersionRangeString(const char *input,
                                 const SSLVersionRange defaultVersionRange,
-                                SSLVersionRange *vrange);
+                                const PRBool defaultEnableSSL2,
+                                SSLVersionRange *vrange,
+                                PRBool *enableSSL2);
 
 
 

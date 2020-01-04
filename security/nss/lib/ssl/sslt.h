@@ -62,8 +62,7 @@ typedef enum {
     ssl_sign_null = 0, 
     ssl_sign_rsa = 1,
     ssl_sign_dsa = 2,
-    ssl_sign_ecdsa = 3,
-    ssl_sign_psk = 4
+    ssl_sign_ecdsa = 3
 } SSLSignType;
 
 
@@ -90,8 +89,7 @@ typedef enum {
     ssl_auth_rsa = 1,
     ssl_auth_dsa = 2,
     ssl_auth_kea = 3,
-    ssl_auth_ecdsa = 4,
-    ssl_auth_psk = 5         
+    ssl_auth_ecdsa = 4
 } SSLAuthType;
 
 typedef enum {
@@ -250,13 +248,12 @@ typedef enum {
     ssl_extended_master_secret_xtn = 23,
     ssl_session_ticket_xtn = 35,
     ssl_tls13_key_share_xtn = 40, 
-    ssl_tls13_pre_shared_key_xtn = 41, 
     ssl_next_proto_nego_xtn = 13172,
     ssl_renegotiation_info_xtn = 0xff01,
     ssl_tls13_draft_version_xtn = 0xff02 
 } SSLExtensionType;
 
-#define SSL_MAX_EXTENSIONS 15 /* doesn't include ssl_padding_xtn. */
+#define SSL_MAX_EXTENSIONS 14 /* doesn't include ssl_padding_xtn. */
 
 typedef enum {
     ssl_dhe_group_none = 0,
