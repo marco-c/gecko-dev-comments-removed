@@ -561,3 +561,25 @@ exports.formatPercent = function(percent, showSign = false) {
   return exports.L10N.getFormatStr("tree-item.percent",
                            exports.formatNumber(percent, showSign));
 };
+
+
+
+
+
+
+
+
+
+const createParentMap = exports.createParentMap = function (node,
+                                                            getId = node => node.id,
+                                                            aggregator = Object.create(null)) {
+  if (node.children) {
+    for (let i = 0, length = node.children.length; i < length; i++) {
+      const child = node.children[i];
+      aggregator[getId(child)] = node;
+      createParentMap(child, getId, aggregator);
+    }
+  }
+
+  return aggregator;
+};

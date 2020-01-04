@@ -21,7 +21,7 @@ var workerCounter = 0;
 const HeapAnalysesClient = module.exports = function () {
   this._worker = new DevToolsWorker(WORKER_URL, {
     name: `HeapAnalyses-${workerCounter++}`,
-    verbose: DevToolsUtils.dumpv.wantLogging
+    verbose: DevToolsUtils.dumpn.wantLogging
   });
 };
 
@@ -109,11 +109,6 @@ HeapAnalysesClient.prototype.getCreationTime = function (snapshotFilePath) {
 
 
 
-
-
-
-
-
 HeapAnalysesClient.prototype.takeCensus = function (snapshotFilePath,
                                                     censusOptions,
                                                     requestOptions={}) {
@@ -123,10 +118,6 @@ HeapAnalysesClient.prototype.takeCensus = function (snapshotFilePath,
     requestOptions,
   });
 };
-
-
-
-
 
 
 
