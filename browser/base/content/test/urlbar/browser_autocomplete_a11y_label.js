@@ -1,7 +1,6 @@
 
 
 
-const UNIFIEDCOMPLETE_PREF = "browser.urlbar.unifiedcomplete";
 const SUGGEST_ALL_PREF = "browser.search.suggest.enabled";
 const SUGGEST_URLBAR_PREF = "browser.urlbar.suggest.searches";
 const TEST_ENGINE_BASENAME = "searchSuggestionEngine.xml";
