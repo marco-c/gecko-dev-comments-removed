@@ -49,8 +49,6 @@ public class testUnifiedTelemetryClientId extends JavascriptBridgeTest {
         getFHRClientIdParentDir().delete();
     }
 
-    
-    
     public void testUnifiedTelemetryClientId() throws Exception {
         blockForReadyAndLoadJS(TEST_JS);
         resetJSCache(); 
