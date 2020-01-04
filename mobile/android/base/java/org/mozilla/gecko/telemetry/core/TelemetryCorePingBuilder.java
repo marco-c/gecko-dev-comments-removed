@@ -7,18 +7,28 @@
 package org.mozilla.gecko.telemetry.core;
 
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.os.Build;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.annotation.WorkerThread;
+import android.text.TextUtils;
 
 import org.mozilla.gecko.AppConstants;
+import org.mozilla.gecko.GeckoProfile;
+import org.mozilla.gecko.GeckoSharedPrefs;
 import org.mozilla.gecko.Locales;
+import org.mozilla.gecko.distribution.DistributionStoreCallback;
+import org.mozilla.gecko.search.SearchEngine;
+import org.mozilla.gecko.telemetry.TelemetryConstants;
 import org.mozilla.gecko.telemetry.TelemetryPing;
 import org.mozilla.gecko.telemetry.TelemetryPingBuilder;
 import org.mozilla.gecko.util.Experiments;
 import org.mozilla.gecko.util.StringUtils;
 
+import java.io.IOException;
 import java.util.Locale;
+import java.util.concurrent.TimeUnit;
 
 
 
@@ -127,7 +137,6 @@ public class TelemetryCorePingBuilder extends TelemetryPingBuilder {
     }
 
     
-    
 
 
     public TelemetryCorePingBuilder setSequenceNumber(final int seq) {
@@ -136,5 +145,40 @@ public class TelemetryCorePingBuilder extends TelemetryPingBuilder {
         }
         payload.put(SEQ, seq);
         return this;
+    }
+
+    public static String getServer(final SharedPreferences sharedPrefs) {
+        
+        return sharedPrefs.getString(TelemetryConstants.PREF_SERVER_URL, TelemetryConstants.DEFAULT_SERVER_URL);
+    }
+
+    @WorkerThread 
+    public static int getAndIncrementSequenceNumberSync(final SharedPreferences sharedPrefsForProfile) {
+        final int seq = sharedPrefsForProfile.getInt(TelemetryConstants.PREF_SEQ_COUNT, 1);
+
+        
+        sharedPrefsForProfile.edit().putInt(TelemetryConstants.PREF_SEQ_COUNT, seq + 1).commit();
+        return seq;
+    }
+
+    
+
+
+
+    @WorkerThread
+    public static Long getProfileCreationDate(final Context context, final GeckoProfile profile) {
+        final long profileMillis = profile.getAndPersistProfileCreationDate(context);
+        if (profileMillis < 0) {
+            return null;
+        }
+        return (long) Math.floor((double) profileMillis / TimeUnit.DAYS.toMillis(1));
+    }
+
+    
+
+
+    public static String getEngineIdentifier(final SearchEngine searchEngine) {
+        final String identifier = searchEngine.getIdentifier();
+        return TextUtils.isEmpty(identifier) ? null : identifier;
     }
 }
