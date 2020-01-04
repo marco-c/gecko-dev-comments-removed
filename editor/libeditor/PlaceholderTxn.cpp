@@ -4,23 +4,22 @@
 
 
 #include "PlaceholderTxn.h"
-#include "nsEditor.h"
-#include "IMETextTxn.h"
-#include "nsGkAtoms.h"
+
+#include "CompositionTransaction.h"
 #include "mozilla/dom/Selection.h"
+#include "nsEditor.h"
+#include "nsGkAtoms.h"
 #include "nsQueryObject.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;
 
-PlaceholderTxn::PlaceholderTxn() :  EditAggregateTxn(),
-                                    mAbsorb(true),
-                                    mForwarding(nullptr),
-                                    mIMETextTxn(nullptr),
-                                    mCommitted(false),
-                                    mStartSel(nullptr),
-                                    mEndSel(),
-                                    mEditor(nullptr)
+PlaceholderTxn::PlaceholderTxn()
+  : mAbsorb(true)
+  , mForwarding(nullptr)
+  , mCompositionTransaction(nullptr)
+  , mCommitted(false)
+  , mEditor(nullptr)
 {
 }
 
@@ -127,32 +126,29 @@ NS_IMETHODIMP PlaceholderTxn::Merge(nsITransaction *aTransaction, bool *aDidMerg
   
   if (mAbsorb)
   {
-    RefPtr<IMETextTxn> otherTxn = do_QueryObject(aTransaction);
-    if (otherTxn) {
+    RefPtr<CompositionTransaction> otherTransaction =
+      do_QueryObject(aTransaction);
+    if (otherTransaction) {
       
       
-      if (!mIMETextTxn)
-      {
+      if (!mCompositionTransaction) {
         
-        mIMETextTxn =otherTxn;
+        mCompositionTransaction = otherTransaction;
         AppendChild(editTxn);
-      }
-      else
-      {
+      } else {
         bool didMerge;
-        mIMETextTxn->Merge(otherTxn, &didMerge);
-        if (!didMerge)
-        {
+        mCompositionTransaction->Merge(otherTransaction, &didMerge);
+        if (!didMerge) {
           
           
           
-          mIMETextTxn =otherTxn;
+          mCompositionTransaction = otherTransaction;
           AppendChild(editTxn);
         }
       }
-    }
-    else if (!plcTxn)  
-    {                  
+    } else if (!plcTxn) {
+      
+      
       AppendChild(editTxn);
     }
     *aDidMerge = true;

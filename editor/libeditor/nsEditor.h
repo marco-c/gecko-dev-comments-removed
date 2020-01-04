@@ -57,6 +57,7 @@ class AutoRules;
 class AutoSelectionRestorer;
 class AutoTransactionsConserveSelection;
 class ChangeAttributeTransaction;
+class CompositionTransaction;
 class CreateElementTransaction;
 class DeleteNodeTransaction;
 class DeleteTextTransaction;
@@ -68,7 +69,6 @@ namespace dom {
 class DataTransfer;
 class Element;
 class EventTarget;
-class IMETextTxn;
 class InsertTextTxn;
 class InsertNodeTxn;
 class JoinNodeTxn;
@@ -309,8 +309,8 @@ protected:
                          int32_t aOffset);
 
   
-  already_AddRefed<mozilla::dom::IMETextTxn>
-  CreateTxnForIMEText(const nsAString & aStringToInsert);
+  already_AddRefed<mozilla::CompositionTransaction>
+  CreateTxnForComposition(const nsAString& aStringToInsert);
 
   
 

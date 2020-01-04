@@ -3,7 +3,7 @@
 
 
 
-#include "IMETextTxn.h"
+#include "CompositionTransaction.h"
 
 #include "mozilla/dom/Selection.h"      
 #include "mozilla/dom/Text.h"           
@@ -15,16 +15,18 @@
 #include "nsRange.h"                    
 #include "nsQueryObject.h"              
 
-using namespace mozilla;
-using namespace mozilla::dom;
+namespace mozilla {
 
-IMETextTxn::IMETextTxn(Text& aTextNode, uint32_t aOffset,
-                       uint32_t aReplaceLength,
-                       TextRangeArray* aTextRangeArray,
-                       const nsAString& aStringToInsert,
-                       nsEditor& aEditor)
-  : EditTxn()
-  , mTextNode(&aTextNode)
+using namespace dom;
+
+CompositionTransaction::CompositionTransaction(
+                          Text& aTextNode,
+                          uint32_t aOffset,
+                          uint32_t aReplaceLength,
+                          TextRangeArray* aTextRangeArray,
+                          const nsAString& aStringToInsert,
+                          nsEditor& aEditor)
+  : mTextNode(&aTextNode)
   , mOffset(aOffset)
   , mReplaceLength(aReplaceLength)
   , mRanges(aTextRangeArray)
@@ -34,25 +36,25 @@ IMETextTxn::IMETextTxn(Text& aTextNode, uint32_t aOffset,
 {
 }
 
-IMETextTxn::~IMETextTxn()
+CompositionTransaction::~CompositionTransaction()
 {
 }
 
-NS_IMPL_CYCLE_COLLECTION_INHERITED(IMETextTxn, EditTxn,
+NS_IMPL_CYCLE_COLLECTION_INHERITED(CompositionTransaction, EditTxn,
                                    mTextNode)
 
 
-NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(IMETextTxn)
-  if (aIID.Equals(NS_GET_IID(IMETextTxn))) {
+NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(CompositionTransaction)
+  if (aIID.Equals(NS_GET_IID(CompositionTransaction))) {
     foundInterface = static_cast<nsITransaction*>(this);
   } else
 NS_INTERFACE_MAP_END_INHERITING(EditTxn)
 
-NS_IMPL_ADDREF_INHERITED(IMETextTxn, EditTxn)
-NS_IMPL_RELEASE_INHERITED(IMETextTxn, EditTxn)
+NS_IMPL_ADDREF_INHERITED(CompositionTransaction, EditTxn)
+NS_IMPL_RELEASE_INHERITED(CompositionTransaction, EditTxn)
 
 NS_IMETHODIMP
-IMETextTxn::DoTransaction()
+CompositionTransaction::DoTransaction()
 {
   
   nsCOMPtr<nsISelectionController> selCon;
@@ -75,7 +77,7 @@ IMETextTxn::DoTransaction()
 }
 
 NS_IMETHODIMP
-IMETextTxn::UndoTransaction()
+CompositionTransaction::UndoTransaction()
 {
   
   
@@ -95,7 +97,8 @@ IMETextTxn::UndoTransaction()
 }
 
 NS_IMETHODIMP
-IMETextTxn::Merge(nsITransaction* aTransaction, bool* aDidMerge)
+CompositionTransaction::Merge(nsITransaction* aTransaction,
+                              bool* aDidMerge)
 {
   NS_ENSURE_ARG_POINTER(aTransaction && aDidMerge);
 
@@ -106,11 +109,12 @@ IMETextTxn::Merge(nsITransaction* aTransaction, bool* aDidMerge)
   }
 
   
-  RefPtr<IMETextTxn> otherTxn = do_QueryObject(aTransaction);
-  if (otherTxn) {
+  RefPtr<CompositionTransaction> otherTransaction =
+    do_QueryObject(aTransaction);
+  if (otherTransaction) {
     
-    mStringToInsert = otherTxn->mStringToInsert;
-    mRanges = otherTxn->mRanges;
+    mStringToInsert = otherTransaction->mStringToInsert;
+    mRanges = otherTransaction->mRanges;
     *aDidMerge = true;
     return NS_OK;
   }
@@ -120,15 +124,15 @@ IMETextTxn::Merge(nsITransaction* aTransaction, bool* aDidMerge)
 }
 
 void
-IMETextTxn::MarkFixed()
+CompositionTransaction::MarkFixed()
 {
   mFixed = true;
 }
 
 NS_IMETHODIMP
-IMETextTxn::GetTxnDescription(nsAString& aString)
+CompositionTransaction::GetTxnDescription(nsAString& aString)
 {
-  aString.AssignLiteral("IMETextTxn: ");
+  aString.AssignLiteral("CompositionTransaction: ");
   aString += mStringToInsert;
   return NS_OK;
 }
@@ -136,7 +140,7 @@ IMETextTxn::GetTxnDescription(nsAString& aString)
 
 
 nsresult
-IMETextTxn::SetSelectionForRanges()
+CompositionTransaction::SetSelectionForRanges()
 {
   return SetIMESelection(mEditor, mTextNode, mOffset,
                          mStringToInsert.Length(), mRanges);
@@ -144,11 +148,11 @@ IMETextTxn::SetSelectionForRanges()
 
 
 nsresult
-IMETextTxn::SetIMESelection(nsEditor& aEditor,
-                            Text* aTextNode,
-                            uint32_t aOffsetInNode,
-                            uint32_t aLengthOfCompositionString,
-                            const TextRangeArray* aRanges)
+CompositionTransaction::SetIMESelection(nsEditor& aEditor,
+                                        Text* aTextNode,
+                                        uint32_t aOffsetInNode,
+                                        uint32_t aLengthOfCompositionString,
+                                        const TextRangeArray* aRanges)
 {
   RefPtr<Selection> selection = aEditor.GetSelection();
   NS_ENSURE_TRUE(selection, NS_ERROR_NOT_INITIALIZED);
@@ -291,3 +295,5 @@ IMETextTxn::SetIMESelection(nsEditor& aEditor,
 
   return rv;
 }
+
+} 

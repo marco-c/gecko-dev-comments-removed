@@ -16,9 +16,7 @@
 #include "nsAutoPtr.h"
 
 namespace mozilla {
-namespace dom {
-class IMETextTxn;
-} 
+class CompositionTransaction;
 } 
 
 
@@ -68,7 +66,8 @@ protected:
   
   bool        mAbsorb;          
   nsWeakPtr   mForwarding;
-  mozilla::dom::IMETextTxn *mIMETextTxn;      
+  
+  mozilla::CompositionTransaction* mCompositionTransaction;
                                 
   bool        mCommitted;       
   

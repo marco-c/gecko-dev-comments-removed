@@ -11,6 +11,7 @@
 #include <string.h>                     
 
 #include "ChangeAttributeTransaction.h" 
+#include "CompositionTransaction.h"     
 #include "CreateElementTransaction.h"   
 #include "DeleteNodeTransaction.h"      
 #include "DeleteRangeTransaction.h"     
@@ -18,7 +19,6 @@
 #include "EditAggregateTxn.h"           
 #include "EditorUtils.h"                
 #include "EditTxn.h"                    
-#include "IMETextTxn.h"                 
 #include "InsertNodeTxn.h"              
 #include "InsertTextTxn.h"              
 #include "JoinNodeTxn.h"                
@@ -2433,7 +2433,7 @@ nsEditor::InsertTextIntoTextNodeImpl(const nsAString& aStringToInsert,
                          textRange.mStartOffset, textRange.Length());
     }
 
-    txn = CreateTxnForIMEText(aStringToInsert);
+    txn = CreateTxnForComposition(aStringToInsert);
     isIMETransaction = true;
     
     
@@ -2487,7 +2487,7 @@ nsEditor::InsertTextIntoTextNodeImpl(const nsAString& aStringToInsert,
     if (!len) {
       DeleteNode(mIMETextNode);
       mIMETextNode = nullptr;
-      static_cast<IMETextTxn*>(txn.get())->MarkFixed();
+      static_cast<CompositionTransaction*>(txn.get())->MarkFixed();
     }
   }
 
@@ -4228,19 +4228,19 @@ nsEditor::CreateTxnForDeleteNode(nsINode* aNode,
   return NS_OK;
 }
 
-already_AddRefed<IMETextTxn>
-nsEditor::CreateTxnForIMEText(const nsAString& aStringToInsert)
+already_AddRefed<CompositionTransaction>
+nsEditor::CreateTxnForComposition(const nsAString& aStringToInsert)
 {
   MOZ_ASSERT(mIMETextNode);
   
   
-  RefPtr<IMETextTxn> txn = new IMETextTxn(*mIMETextNode, mIMETextOffset,
-                                            mIMETextLength,
-                                            mComposition->GetRanges(),
-                                            aStringToInsert, *this);
-  return txn.forget();
+  
+  RefPtr<CompositionTransaction> transaction =
+    new CompositionTransaction(*mIMETextNode, mIMETextOffset, mIMETextLength,
+                               mComposition->GetRanges(), aStringToInsert,
+                               *this);
+  return transaction.forget();
 }
-
 
 NS_IMETHODIMP
 nsEditor::CreateTxnForAddStyleSheet(StyleSheetHandle aSheet, AddStyleSheetTxn* *aTxn)
@@ -4753,8 +4753,9 @@ nsEditor::InitializeSelection(nsIDOMEventTarget* aFocusEventTarget)
     if (textNode) {
       MOZ_ASSERT(textNode->Length() >= mIMETextOffset + mIMETextLength,
                  "The text node must be different from the old mIMETextNode");
-      IMETextTxn::SetIMESelection(*this, textNode, mIMETextOffset,
-                                  mIMETextLength, mComposition->GetRanges());
+      CompositionTransaction::SetIMESelection(*this, textNode, mIMETextOffset,
+                                              mIMETextLength,
+                                              mComposition->GetRanges());
     }
   }
 

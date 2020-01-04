@@ -3,8 +3,8 @@
 
 
 
-#ifndef IMETextTxn_h__
-#define IMETextTxn_h__
+#ifndef CompositionTransaction_h
+#define CompositionTransaction_h
 
 #include "EditTxn.h"                      
 #include "nsCycleCollectionParticipant.h" 
@@ -21,13 +21,16 @@ namespace mozilla {
 class TextRangeArray;
 
 namespace dom {
-
 class Text;
+} 
 
 
 
 
-class IMETextTxn : public EditTxn
+
+
+
+class CompositionTransaction final : public EditTxn
 {
 public:
   NS_DECLARE_STATIC_IID_ACCESSOR(NS_IMETEXTTXN_IID)
@@ -39,11 +42,16 @@ public:
 
 
 
-  IMETextTxn(Text& aTextNode, uint32_t aOffset, uint32_t aReplaceLength,
-             TextRangeArray* aTextRangeArray, const nsAString& aString,
-             nsEditor& aEditor);
 
-  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(IMETextTxn, EditTxn)
+
+
+  CompositionTransaction(dom::Text& aTextNode,
+                         uint32_t aOffset, uint32_t aReplaceLength,
+                         TextRangeArray* aTextRangeArray,
+                         const nsAString& aString,
+                         nsEditor& aEditor);
+
+  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(CompositionTransaction, EditTxn)
 
   NS_DECL_ISUPPORTS_INHERITED
 
@@ -54,18 +62,18 @@ public:
   void MarkFixed();
 
   static nsresult SetIMESelection(nsEditor& aEditor,
-                                  Text* aTextNode,
+                                  dom::Text* aTextNode,
                                   uint32_t aOffsetInNode,
                                   uint32_t aLengthOfCompositionString,
                                   const TextRangeArray* aRanges);
 
 private:
-  ~IMETextTxn();
+  ~CompositionTransaction();
 
   nsresult SetSelectionForRanges();
 
   
-  RefPtr<Text> mTextNode;
+  RefPtr<dom::Text> mTextNode;
 
   
   uint32_t mOffset;
@@ -84,9 +92,8 @@ private:
   bool mFixed;
 };
 
-NS_DEFINE_STATIC_IID_ACCESSOR(IMETextTxn, NS_IMETEXTTXN_IID)
+NS_DEFINE_STATIC_IID_ACCESSOR(CompositionTransaction, NS_IMETEXTTXN_IID)
 
 } 
-} 
 
-#endif
+#endif 
