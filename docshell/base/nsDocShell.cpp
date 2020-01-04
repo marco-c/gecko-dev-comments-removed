@@ -12541,13 +12541,9 @@ nsDocShell::ShouldDiscardLayoutState(nsIHttpChannel* aChannel)
   }
 
   
-  nsCOMPtr<nsISupports> securityInfo;
-  bool noStore = false, noCache = false;
-  aChannel->GetSecurityInfo(getter_AddRefs(securityInfo));
+  bool noStore = false;
   aChannel->IsNoStoreResponse(&noStore);
-  aChannel->IsNoCacheResponse(&noCache);
-
-  return (noStore || (noCache && securityInfo));
+  return noStore;
 }
 
 NS_IMETHODIMP
