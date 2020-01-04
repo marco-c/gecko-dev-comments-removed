@@ -380,29 +380,36 @@ AsyncCompositionManager::AlignFixedAndStickyLayers(Layer* aLayer,
   if (newCumulativeTransform.IsSingular()) {
     return;
   }
-  Matrix4x4 newCumulativeTransformInverse = newCumulativeTransform.Inverse();
-
-  
-  
-  Matrix4x4 layerTransform;
-  GetBaseTransform(aLayer, &layerTransform);
 
   
   
   
-  LayerPoint offsetInOldSubtreeLayerSpace = GetLayerFixedMarginsOffset(aLayer, aFixedLayerMargins);
+  Matrix4x4 localTransform;
+  GetBaseTransform(aLayer, &localTransform);
+  if (aLayer != aTransformedSubtreeRoot) {
+    oldCumulativeTransform = localTransform * oldCumulativeTransform;
+    newCumulativeTransform = localTransform * newCumulativeTransform;
+  }
 
   
   
-  const LayerPoint& anchorInOldSubtreeLayerSpace = aLayer->GetFixedPositionAnchor();
-  LayerPoint offsetAnchorInOldSubtreeLayerSpace = anchorInOldSubtreeLayerSpace + offsetInOldSubtreeLayerSpace;
 
   
   
-  Point anchor(anchorInOldSubtreeLayerSpace.x, anchorInOldSubtreeLayerSpace.y);
-  Point offsetAnchor(offsetAnchorInOldSubtreeLayerSpace.x, offsetAnchorInOldSubtreeLayerSpace.y);
-  Point locallyTransformedAnchor = layerTransform * anchor;
-  Point locallyTransformedOffsetAnchor = layerTransform * offsetAnchor;
+  LayerPoint anchor = aLayer->GetFixedPositionAnchor();
+
+  
+  
+  LayerPoint offsetAnchor = anchor + GetLayerFixedMarginsOffset(aLayer, aFixedLayerMargins);
+
+  
+  
+  
+  
+  
+  LayerPoint transformedAnchor = ViewAs<LayerPixel>(
+      newCumulativeTransform.Inverse() *
+      (oldCumulativeTransform * offsetAnchor.ToUnknownPoint()));
 
   
   
@@ -410,10 +417,8 @@ AsyncCompositionManager::AlignFixedAndStickyLayers(Layer* aLayer,
   
   
   
-  
-  Point oldAnchorPositionInNewSpace =
-    newCumulativeTransformInverse * (oldCumulativeTransform * locallyTransformedOffsetAnchor);
-  Point translation = oldAnchorPositionInNewSpace - locallyTransformedAnchor;
+  ParentLayerPoint translation = TransformTo<ParentLayerPixel>(localTransform, transformedAnchor)
+                               - TransformTo<ParentLayerPixel>(localTransform, anchor);
 
   if (aLayer->GetIsStickyPosition()) {
     
@@ -424,6 +429,8 @@ AsyncCompositionManager::AlignFixedAndStickyLayers(Layer* aLayer,
     const LayerRect& stickyOuter = aLayer->GetStickyScrollRangeOuter();
     const LayerRect& stickyInner = aLayer->GetStickyScrollRangeInner();
 
+    
+    
     translation.y = IntervalOverlap(translation.y, stickyOuter.y, stickyOuter.YMost()) -
                     IntervalOverlap(translation.y, stickyInner.y, stickyInner.YMost());
     translation.x = IntervalOverlap(translation.x, stickyOuter.x, stickyOuter.XMost()) -
@@ -442,7 +449,7 @@ AsyncCompositionManager::AlignFixedAndStickyLayers(Layer* aLayer,
   
   bool adjustClipRect = aLayer != aTransformedSubtreeRoot &&
                         aLayer->IsClipFixed();
-  TranslateShadowLayer(aLayer, ThebesPoint(translation), adjustClipRect);
+  TranslateShadowLayer(aLayer, ThebesPoint(translation.ToUnknownPoint()), adjustClipRect);
 }
 
 static void
