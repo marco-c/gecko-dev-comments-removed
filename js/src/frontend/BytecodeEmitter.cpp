@@ -5517,15 +5517,8 @@ BytecodeEmitter::emitForInOrOfVariables(ParseNode* pn)
 bool
 BytecodeEmitter::emitSpread(bool allowSelfHosted)
 {
-    StmtType type = StmtType::SPREAD;
-
-    ptrdiff_t top = offset();
-    ParseNode* forHead = nullptr;
-    ParseNode* forHeadExpr = nullptr;
-    ParseNode* forBody = nullptr;
-
     LoopStmtInfo stmtInfo(cx);
-    pushLoopStatement(&stmtInfo, type, top);
+    pushLoopStatement(&stmtInfo, StmtType::SPREAD, offset());
 
     
     
@@ -5533,13 +5526,17 @@ BytecodeEmitter::emitSpread(bool allowSelfHosted)
     unsigned noteIndex;
     if (!newSrcNote(SRC_FOR_OF, &noteIndex))
         return false;
-    ptrdiff_t jmp;
-    if (!emitJump(JSOP_GOTO, 0, &jmp))
+
+    
+    
+    
+    ptrdiff_t initialJump;
+    if (!emitJump(JSOP_GOTO, 0, &initialJump))            
         return false;
 
-    top = offset();
+    ptrdiff_t top = offset();
     stmtInfo.setTop(top);
-    if (!emitLoopHead(nullptr))
+    if (!emitLoopHead(nullptr))                           
         return false;
 
     
@@ -5548,89 +5545,56 @@ BytecodeEmitter::emitSpread(bool allowSelfHosted)
     
     this->stackDepth++;
 
+    ptrdiff_t beq;
+    {
 #ifdef DEBUG
-    auto loopDepth = this->stackDepth;
+        auto loopDepth = this->stackDepth;
 #endif
 
-    
-    if (type == StmtType::FOR_OF_LOOP) {
-        if (!emit1(JSOP_DUP))                             
-            return false;
-    }
-    if (!emitAtomOp(cx->names().value, JSOP_GETPROP))     
-        return false;
-    if (type == StmtType::FOR_OF_LOOP) {
-        if (!emitAssignment(forHead->pn_kid2, JSOP_NOP, nullptr)) 
-            return false;
-        if (!emit1(JSOP_POP))                             
-            return false;
-
         
-        MOZ_ASSERT(this->stackDepth == loopDepth);
-
-        
-        if (!emitTree(forBody))
+        if (!emitAtomOp(cx->names().value, JSOP_GETPROP)) 
             return false;
-
-        
-        StmtInfoBCE* stmt = &stmtInfo;
-        do {
-            stmt->update = offset();
-        } while ((stmt = stmt->enclosing) != nullptr && stmt->type == StmtType::LABEL);
-    } else {
         if (!emit1(JSOP_INITELEM_INC))                    
             return false;
 
         MOZ_ASSERT(this->stackDepth == loopDepth - 1);
 
         
-    }
+        
 
-    
-    setJumpOffsetAt(jmp);
-    if (!emitLoopEntry(forHeadExpr))
-        return false;
+        
+        setJumpOffsetAt(initialJump);
+        if (!emitLoopEntry(nullptr))                      
+            return false;
 
-    if (type == StmtType::FOR_OF_LOOP) {
-        if (!emit1(JSOP_POP))                             
+        if (!emitDupAt(2))                                
+            return false;
+        if (!emitIteratorNext(nullptr, allowSelfHosted))  
             return false;
         if (!emit1(JSOP_DUP))                             
             return false;
-    } else {
-        if (!emitDupAt(2))                                
+        if (!emitAtomOp(cx->names().done, JSOP_GETPROP))  
             return false;
+
+        if (!emitJump(JSOP_IFEQ, top - offset(), &beq))   
+            return false;
+
+        MOZ_ASSERT(this->stackDepth == loopDepth);
     }
-    if (!emitIteratorNext(forHead, allowSelfHosted))                       
-        return false;
-    if (!emit1(JSOP_DUP))                                 
-        return false;
-    if (!emitAtomOp(cx->names().done, JSOP_GETPROP))      
-        return false;
-
-    ptrdiff_t beq;
-    if (!emitJump(JSOP_IFEQ, top - offset(), &beq))       
-        return false;
-
-    MOZ_ASSERT(this->stackDepth == loopDepth);
 
     
-    if (!setSrcNoteOffset(noteIndex, 0, beq - jmp))
+    if (!setSrcNoteOffset(noteIndex, 0, beq - initialJump))
         return false;
 
-    
-    
     popStatement();
 
     if (!tryNoteList.append(JSTRY_FOR_OF, stackDepth, top, offset()))
         return false;
 
-    if (type == StmtType::SPREAD) {
-        if (!emit2(JSOP_PICK, 3))      
-            return false;
-    }
+    if (!emit2(JSOP_PICK, 3))                             
+        return false;
 
-    
-    return emitUint16Operand(JSOP_POPN, 2);
+    return emitUint16Operand(JSOP_POPN, 2);               
 }
 
 bool
