@@ -704,7 +704,7 @@ public:
 
 
   nsIContent* UpdateViewportScrollbarStylesOverride();
-  ScrollbarStyles GetViewportScrollbarStylesOverride()
+  const ScrollbarStyles& GetViewportScrollbarStylesOverride()
   {
     return mViewportStyleScrollbar;
   }
