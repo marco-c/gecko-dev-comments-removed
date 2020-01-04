@@ -52,23 +52,24 @@ function selectAndHighlightNode(nodeOrSelector, inspector) {
 
 
 function openLayoutView() {
-  return openInspectorSidebarTab("layoutview").then(({toolbox, inspector}) => {
+  return openInspectorSidebarTab("layoutview").then(data => {
     
     
     function mockHighlighter({highlighter}) {
-      highlighter.showBoxModel = function(nodeFront, options) {
+      highlighter.showBoxModel = function(nodeFront) {
         return promise.resolve();
       };
       highlighter.hideBoxModel = function() {
         return promise.resolve();
       };
     }
-    mockHighlighter(toolbox);
+    mockHighlighter(data.toolbox);
 
     return {
-      toolbox,
-      inspector,
-      view: inspector.layoutview
+      toolbox: data.toolbox,
+      inspector: data.inspector,
+      view: data.inspector.layoutview,
+      testActor: data.testActor
     };
   });
 }
