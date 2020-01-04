@@ -3,7 +3,7 @@
 
 
 #alertBox[animate] {
-  animation-duration: 12s;
+  animation-duration: 20s;
   animation-fill-mode: both;
   animation-name: alert-animation;
 }
