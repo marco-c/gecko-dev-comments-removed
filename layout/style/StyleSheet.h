@@ -9,6 +9,7 @@
 
 #include "mozilla/css/SheetParsingMode.h"
 #include "mozilla/StyleBackendType.h"
+#include "mozilla/StyleSheetHandle.h"
 #include "mozilla/StyleSheetInfo.h"
 
 class nsIDocument;
@@ -47,6 +48,12 @@ public:
   nsIDocument* GetDocument() const { return mDocument; }
 
   
+
+
+  bool IsComplete() const;
+  void SetComplete();
+
+  
   
   StyleSheetInfo& SheetInfo();
   const StyleSheetInfo& SheetInfo() const { return const_cast<StyleSheet*>(this)->SheetInfo(); };
@@ -65,6 +72,7 @@ public:
   
   inline CSSStyleSheet& AsGecko();
   inline ServoStyleSheet& AsServo();
+  inline StyleSheetHandle AsHandle();
 
 protected:
   nsIDocument*          mDocument; 

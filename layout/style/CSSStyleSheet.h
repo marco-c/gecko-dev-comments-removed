@@ -150,12 +150,6 @@ public:
   void SetEnabled(bool aEnabled);
 
   
-
-
-  bool IsComplete() const;
-  void SetComplete();
-
-  
   CSSStyleSheet* GetParentSheet() const;  
   nsIDocument* GetOwningDocument() const;  
   void SetOwningDocument(nsIDocument* aDocument);
