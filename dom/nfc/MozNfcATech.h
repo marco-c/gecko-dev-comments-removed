@@ -4,11 +4,11 @@
 
 
 
-#ifndef mozilla_dom_nfc_MozIsoDepTech_h__
-#define mozilla_dom_nfc_MozIsoDepTech_h__
+#ifndef mozilla_dom_nfc_MozNfcATech_h__
+#define mozilla_dom_nfc_MozNfcATech_h__
 
 #include "mozilla/dom/MozNFCTagBinding.h"
-#include "mozilla/dom/MozIsoDepTechBinding.h"
+#include "mozilla/dom/MozNfcATechBinding.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsWrapperCache.h"
 #include "nsISupportsImpl.h"
@@ -19,12 +19,12 @@ namespace dom {
 
 class Promise;
 
-class MozIsoDepTech : public nsISupports,
-                      public nsWrapperCache
+class MozNfcATech : public nsISupports,
+                    public nsWrapperCache
 {
 public:
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
-  NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(MozIsoDepTech)
+  NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(MozNfcATech)
 
   already_AddRefed<Promise> Transceive(const Uint8Array& aCommand,
                                        ErrorResult& aRv);
@@ -33,13 +33,13 @@ public:
 
   virtual JSObject* WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) override;
 
-  static already_AddRefed<MozIsoDepTech>
+  static already_AddRefed<MozNfcATech>
   Constructor(const GlobalObject& aGlobal, MozNFCTag& aNFCTag,
               ErrorResult& aRv);
 
 private:
-  MozIsoDepTech(nsPIDOMWindow* aWindow, MozNFCTag& aNFCTag);
-  virtual ~MozIsoDepTech();
+  MozNfcATech(nsPIDOMWindow* aWindow, MozNFCTag& aNFCTag);
+  virtual ~MozNfcATech();
 
   RefPtr<nsPIDOMWindow> mWindow;
   RefPtr<MozNFCTag> mTag;
