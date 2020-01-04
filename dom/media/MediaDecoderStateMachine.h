@@ -156,10 +156,95 @@ public:
   void RemoveOutputStream(MediaStream* aStream);
 
   
+  nsRefPtr<MediaDecoder::SeekPromise> InvokeSeek(SeekTarget aTarget);
+
+  
   void DispatchSetDormant(bool aDormant);
+
+  void DispatchShutdown();
+
+  void DispatchStartBuffering()
+  {
+    nsCOMPtr<nsIRunnable> runnable =
+      NS_NewRunnableMethod(this, &MediaDecoderStateMachine::StartBuffering);
+    OwnerThread()->Dispatch(runnable.forget());
+  }
+
+  void DispatchNotifyDataArrived(uint32_t aLength, int64_t aOffset, bool aThrottleUpdates)
+  {
+    mReader->DispatchNotifyDataArrived(aLength, aOffset, aThrottleUpdates);
+  }
+
+  
+  
+  void DispatchWaitingForResourcesStatusChanged();
+
+  
+  
+  
+  
+  
+  void DispatchMinimizePrerollUntilPlaybackStarts()
+  {
+    nsRefPtr<MediaDecoderStateMachine> self = this;
+    nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction([self] () -> void
+    {
+      MOZ_ASSERT(self->OnTaskQueue());
+      ReentrantMonitorAutoEnter mon(self->mDecoder->GetReentrantMonitor());
+      self->mMinimizePreroll = true;
+
+      
+      
+      MOZ_DIAGNOSTIC_ASSERT(self->mPlayState == MediaDecoder::PLAY_STATE_LOADING);
+    });
+    OwnerThread()->Dispatch(r.forget());
+  }
+
+  
+  void DispatchSetFragmentEndTime(int64_t aEndTime)
+  {
+    nsRefPtr<MediaDecoderStateMachine> self = this;
+    nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction([self, aEndTime] () {
+      self->mFragmentEndTime = aEndTime;
+    });
+    OwnerThread()->Dispatch(r.forget());
+  }
+
+  
+  void BreakCycles() {
+    MOZ_ASSERT(NS_IsMainThread());
+    if (mReader) {
+      mReader->BreakCycles();
+    }
+    mResource = nullptr;
+    mDecoder = nullptr;
+  }
 
   TimedMetadataEventSource& TimedMetadataEvent() {
     return mMetadataManager.TimedMetadataEvent();
+  }
+
+  
+  bool IsRealTime() const { return mRealTime; }
+
+  
+  
+  bool OnDecodeTaskQueue() const;
+
+  bool OnTaskQueue() const;
+
+  size_t SizeOfVideoQueue() {
+    if (mReader) {
+      return mReader->SizeOfVideoQueueInBytes();
+    }
+    return 0;
+  }
+
+  size_t SizeOfAudioQueue() {
+    if (mReader) {
+      return mReader->SizeOfAudioQueueInBytes();
+    }
+    return 0;
   }
 
 private:
@@ -178,21 +263,7 @@ private:
 
   void Shutdown();
 
-public:
-  void DispatchShutdown();
-
   void FinishShutdown();
-
-  
-  bool IsRealTime() const { return mRealTime; }
-
-  
-  
-  bool OnDecodeTaskQueue() const;
-  bool OnTaskQueue() const;
-
-  
-  nsRefPtr<MediaDecoder::SeekPromise> InvokeSeek(SeekTarget aTarget);
 
   
   
@@ -206,7 +277,6 @@ public:
   
   void UpdatePlaybackPosition(int64_t aTime);
 
-private:
   
   
   
@@ -215,14 +285,6 @@ private:
   bool CanPlayThrough();
 
   MediaStatistics GetStatistics();
-
-public:
-  void DispatchStartBuffering()
-  {
-    nsCOMPtr<nsIRunnable> runnable =
-      NS_NewRunnableMethod(this, &MediaDecoderStateMachine::StartBuffering);
-    OwnerThread()->Dispatch(runnable.forget());
-  }
 
   
   
@@ -255,25 +317,6 @@ public:
     MOZ_ASSERT(OnTaskQueue());
     AssertCurrentThreadInMonitor();
     return mState == DECODER_STATE_SEEKING;
-  }
-
-  size_t SizeOfVideoQueue() {
-    if (mReader) {
-      return mReader->SizeOfVideoQueueInBytes();
-    }
-    return 0;
-  }
-
-  size_t SizeOfAudioQueue() {
-    if (mReader) {
-      return mReader->SizeOfAudioQueueInBytes();
-    }
-    return 0;
-  }
-
-  void DispatchNotifyDataArrived(uint32_t aLength, int64_t aOffset, bool aThrottleUpdates)
-  {
-    mReader->DispatchNotifyDataArrived(aLength, aOffset, aThrottleUpdates);
   }
 
   
@@ -312,26 +355,6 @@ public:
   void NotReached() { MOZ_DIAGNOSTIC_ASSERT(false); }
 
   
-  void DispatchSetFragmentEndTime(int64_t aEndTime)
-  {
-    nsRefPtr<MediaDecoderStateMachine> self = this;
-    nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction([self, aEndTime] () {
-      self->mFragmentEndTime = aEndTime;
-    });
-    OwnerThread()->Dispatch(r.forget());
-  }
-
-  
-  void BreakCycles() {
-    MOZ_ASSERT(NS_IsMainThread());
-    if (mReader) {
-      mReader->BreakCycles();
-    }
-    mResource = nullptr;
-    mDecoder = nullptr;
-  }
-
-  
   void DiscardStreamData();
   bool HaveEnoughDecodedAudio(int64_t aAmpleAudioUSecs);
   bool HaveEnoughDecodedVideo();
@@ -343,31 +366,6 @@ public:
   
   
   bool IsPlaying() const;
-
-  
-  
-  void DispatchWaitingForResourcesStatusChanged();
-
-  
-  
-  
-  
-  
-  void DispatchMinimizePrerollUntilPlaybackStarts()
-  {
-    nsRefPtr<MediaDecoderStateMachine> self = this;
-    nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction([self] () -> void
-    {
-      MOZ_ASSERT(self->OnTaskQueue());
-      ReentrantMonitorAutoEnter mon(self->mDecoder->GetReentrantMonitor());
-      self->mMinimizePreroll = true;
-
-      
-      
-      MOZ_DIAGNOSTIC_ASSERT(self->mPlayState == MediaDecoder::PLAY_STATE_LOADING);
-    });
-    OwnerThread()->Dispatch(r.forget());
-  }
 
   void OnAudioDecoded(MediaData* aAudioSample);
   void OnVideoDecoded(MediaData* aVideoSample);
