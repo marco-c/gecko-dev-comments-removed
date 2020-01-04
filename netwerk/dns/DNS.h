@@ -13,7 +13,6 @@
 #include "plstr.h"
 #include "mozilla/LinkedList.h"
 #include "mozilla/MemoryReporting.h"
-#include "nsISupports.h"
 
 #if !defined(XP_WIN)
 #include <arpa/inet.h>
@@ -126,11 +125,8 @@ public:
   NetAddr mAddress;
 };
 
-class AddrInfo final
-  : public nsISupports {
+class AddrInfo {
 public:
-  NS_DECL_THREADSAFE_ISUPPORTS
-
   
   
   AddrInfo(const char *host, const PRAddrInfo *prAddrInfo, bool disableIPv4,
@@ -138,6 +134,7 @@ public:
 
   
   AddrInfo(const char *host, const char *cname);
+  ~AddrInfo();
 
   void AddAddress(NetAddrElement *address);
 
@@ -152,7 +149,6 @@ public:
 
 private:
   void Init(const char *host, const char *cname);
-  ~AddrInfo();
 };
 
 
