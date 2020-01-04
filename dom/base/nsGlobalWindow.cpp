@@ -12,6 +12,7 @@
 
 
 #include "Navigator.h"
+#include "nsContentSecurityManager.h"
 #include "nsScreen.h"
 #include "nsHistory.h"
 #include "nsPerformance.h"
@@ -1179,6 +1180,7 @@ nsGlobalWindow::nsGlobalWindow(nsGlobalWindow *aOuterWindow)
     mInClose(false),
     mHavePendingClose(false),
     mHadOriginalOpener(false),
+    mOriginalOpenerWasSecureContext(false),
     mIsPopupSpam(false),
     mBlockScriptedClosingFlag(false),
     mWasOffline(false),
@@ -2350,12 +2352,188 @@ InitializeLegacyNetscapeObject(JSContext* aCx, JS::Handle<JSObject*> aGlobal)
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+static bool HttpsStateIsModern(nsIDocument* aDocument)
+{
+  nsCOMPtr<nsIPrincipal> principal = aDocument->NodePrincipal();
+
+  if (principal->GetIsSystemPrincipal()) {
+    return true;
+  }
+
+  
+  
+  if (principal->GetIsNullPrincipal() &&
+      (aDocument->GetSandboxFlags() & SANDBOXED_ORIGIN)) {
+    nsIChannel* channel = aDocument->GetChannel();
+    if (channel) {
+      nsCOMPtr<nsIScriptSecurityManager> ssm =
+        nsContentUtils::GetSecurityManager();
+      nsresult rv =
+        ssm->GetChannelResultPrincipalIfNotSandboxed(channel,
+                                                     getter_AddRefs(principal));
+      if (NS_FAILED(rv)) {
+        return false;
+      }
+      if (principal->GetIsSystemPrincipal()) {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        return false;
+      }
+    }
+  }
+
+  if (principal->GetIsNullPrincipal()) {
+    return false;
+  }
+
+  MOZ_ASSERT(principal->GetIsCodebasePrincipal());
+
+  nsCOMPtr<nsIContentSecurityManager> csm =
+    do_GetService(NS_CONTENTSECURITYMANAGER_CONTRACTID);
+  NS_WARN_IF(!csm);
+  if (csm) {
+    bool isTrustworthyOrigin = false;
+    csm->IsOriginPotentiallyTrustworthy(principal, &isTrustworthyOrigin);
+    if (isTrustworthyOrigin) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+bool
+nsGlobalWindow::ComputeIsSecureContext(nsIDocument* aDocument)
+{
+  MOZ_ASSERT(IsOuterWindow());
+
+  nsCOMPtr<nsIPrincipal> principal = aDocument->NodePrincipal();
+  if (nsContentUtils::IsSystemPrincipal(principal)) {
+    return true;
+  }
+
+  
+
+  bool hadNonSecureContextCreator = false;
+
+  nsPIDOMWindowOuter* parentOuterWin = GetScriptableParent();
+  MOZ_ASSERT(parentOuterWin, "How can we get here? No docShell somehow?");
+  if (nsGlobalWindow::Cast(parentOuterWin) != this) {
+    
+    
+    
+    
+    
+    
+    
+    nsIDocument* creatorDoc = aDocument->GetParentDocument();
+    if (!creatorDoc) {
+      return false; 
+    }
+    nsGlobalWindow* parentWin =
+      nsGlobalWindow::Cast(creatorDoc->GetInnerWindow());
+    if (!parentWin) {
+      return false; 
+    }
+    MOZ_ASSERT(parentWin ==
+               nsGlobalWindow::Cast(parentOuterWin->GetCurrentInnerWindow()),
+               "Creator window mismatch while setting Secure Context state");
+    hadNonSecureContextCreator = !parentWin->IsSecureContext();
+  } else if (mHadOriginalOpener) {
+    hadNonSecureContextCreator = !mOriginalOpenerWasSecureContext;
+  }
+
+  if (hadNonSecureContextCreator) {
+    return false;
+  }
+
+  if (HttpsStateIsModern(aDocument)) {
+    return true;
+  }
+
+  if (principal->GetIsNullPrincipal()) {
+    nsCOMPtr<nsIURI> uri = aDocument->GetOriginalURI();
+    
+    
+    
+    const PrincipalOriginAttributes& attrs =
+      BasePrincipal::Cast(principal)->OriginAttributesRef();
+    
+    
+    principal = BasePrincipal::CreateCodebasePrincipal(uri, attrs);
+    if (NS_WARN_IF(!principal)) {
+      return false;
+    }
+  }
+
+  nsCOMPtr<nsIContentSecurityManager> csm =
+    do_GetService(NS_CONTENTSECURITYMANAGER_CONTRACTID);
+  NS_WARN_IF(!csm);
+  if (csm) {
+    bool isTrustworthyOrigin = false;
+    csm->IsOriginPotentiallyTrustworthy(principal, &isTrustworthyOrigin);
+    if (isTrustworthyOrigin) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+
+
+
+
+
 static nsresult
 CreateNativeGlobalForInner(JSContext* aCx,
                            nsGlobalWindow* aNewInner,
                            nsIURI* aURI,
                            nsIPrincipal* aPrincipal,
-                           JS::MutableHandle<JSObject*> aGlobal)
+                           JS::MutableHandle<JSObject*> aGlobal,
+                           bool aIsSecureContext)
 {
   MOZ_ASSERT(aCx);
   MOZ_ASSERT(aNewInner);
@@ -2384,6 +2562,8 @@ CreateNativeGlobalForInner(JSContext* aCx,
   if (top && top->GetGlobalJSObject()) {
     options.creationOptions().setSameZoneAs(top->GetGlobalJSObject());
   }
+
+  options.creationOptions().setSecureContext(aIsSecureContext);
 
   xpc::InitGlobalObjectOptions(options, aPrincipal);
 
@@ -2603,7 +2783,8 @@ nsGlobalWindow::SetNewDocument(nsIDocument* aDocument,
       rv = CreateNativeGlobalForInner(cx, newInnerWindow,
                                       aDocument->GetDocumentURI(),
                                       aDocument->NodePrincipal(),
-                                      &newInnerGlobal);
+                                      &newInnerGlobal,
+                                      ComputeIsSecureContext(aDocument));
       NS_ASSERTION(NS_SUCCEEDED(rv) && newInnerGlobal &&
                    newInnerWindow->GetWrapperPreserveColor() == newInnerGlobal,
                    "Failed to get script global");
@@ -3044,7 +3225,11 @@ nsGlobalWindow::SetOpenerWindow(nsPIDOMWindowOuter* aOpener,
   NS_ASSERTION(mOpener || !aOpener, "Opener must support weak references!");
 
   if (aOriginalOpener) {
+    MOZ_ASSERT(!mHadOriginalOpener,
+               "Probably too late to call ComputeIsSecureContext again");
     mHadOriginalOpener = true;
+    mOriginalOpenerWasSecureContext =
+      nsGlobalWindow::Cast(aOpener->GetCurrentInnerWindow())->IsSecureContext();
   }
 
 #ifdef DEBUG
@@ -13874,6 +14059,14 @@ nsGlobalWindow::GetConsole(ErrorResult& aRv)
   }
 
   return mConsole;
+}
+
+bool
+nsGlobalWindow::IsSecureContext() const
+{
+  MOZ_RELEASE_ASSERT(IsInnerWindow());
+
+  return JS_GetIsSecureContext(js::GetObjectCompartment(GetWrapperPreserveColor()));
 }
 
 already_AddRefed<External>

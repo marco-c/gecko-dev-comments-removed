@@ -924,6 +924,9 @@ public:
 
   mozilla::dom::Console* GetConsole(mozilla::ErrorResult& aRv);
 
+  
+  bool IsSecureContext() const;
+
   void GetSidebar(mozilla::dom::OwningExternalOrWindowProxy& aResult,
                   mozilla::ErrorResult& aRv);
   already_AddRefed<mozilla::dom::External> GetExternal(mozilla::ErrorResult& aRv);
@@ -1664,6 +1667,10 @@ private:
 
   void DisconnectEventTargetObjects();
 
+  
+  
+  bool ComputeIsSecureContext(nsIDocument* aDocument);
+
 protected:
   
   
@@ -1684,6 +1691,7 @@ protected:
   
   bool                          mHavePendingClose : 1;
   bool                          mHadOriginalOpener : 1;
+  bool                          mOriginalOpenerWasSecureContext : 1;
   bool                          mIsPopupSpam : 1;
 
   
