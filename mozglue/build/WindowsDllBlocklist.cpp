@@ -155,7 +155,6 @@ static DllBlockInfo sWindowsDllBlocklist[] = {
 
   
   { "rf-firefox-22.dll", ALL_VERSIONS },
-  { "rf-firefox-40.dll", ALL_VERSIONS },
 
   
   { "dtwxsvc.dll", 0x53153234, DllBlockInfo::USE_TIMESTAMP },
@@ -475,7 +474,7 @@ wchar_t* getFullPath (PWCHAR filePath, wchar_t* fname)
   
   
   
-  PWCHAR sanitizedFilePath = (intptr_t(filePath) < 1024) ? nullptr : filePath;
+  PWCHAR sanitizedFilePath = (intptr_t(filePath) < 4096) ? nullptr : filePath;
 
   
   DWORD pathlen = SearchPathW(sanitizedFilePath, fname, L".dll", 0, nullptr,
