@@ -1118,7 +1118,7 @@ add_task(function* test_defaultSearchEngine() {
   
   
   
-  Services.obs.notifyObservers(null, "browser-search-engine-modified", "engine-default");
+  Services.obs.notifyObservers(null, "browser-search-engine-modified", "engine-current");
 
   
   data = TelemetryEnvironment.currentEnvironment;

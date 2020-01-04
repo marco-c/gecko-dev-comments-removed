@@ -794,7 +794,7 @@ EnvironmentCache.prototype = {
       if (!Preferences.isSet(pref)) {
         continue;
       }
-      
+
       
       
       let prefValue = undefined;
@@ -863,7 +863,7 @@ EnvironmentCache.prototype = {
     this._log.trace("observe - aTopic: " + aTopic + ", aData: " + aData);
     switch (aTopic) {
       case SEARCH_ENGINE_MODIFIED_TOPIC:
-        if (aData != "engine-default" && aData != "engine-current") {
+        if (aData != "engine-current") {
           return;
         }
         
