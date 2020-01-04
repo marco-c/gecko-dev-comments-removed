@@ -85,6 +85,7 @@ struct PropertyValuePair
 
 
 
+
 struct Keyframe
 {
   Keyframe() = default;
@@ -211,7 +212,7 @@ public:
   static already_AddRefed<KeyframeEffectReadOnly>
   Constructor(const GlobalObject& aGlobal,
               const Nullable<ElementOrCSSPseudoElement>& aTarget,
-              JS::Handle<JSObject*> aFrames,
+              JS::Handle<JSObject*> aKeyframes,
               const UnrestrictedDoubleOrKeyframeEffectOptions& aOptions,
               ErrorResult& aRv);
 
@@ -224,9 +225,9 @@ public:
     }
     return result;
   }
-  void GetFrames(JSContext*& aCx,
-                 nsTArray<JSObject*>& aResult,
-                 ErrorResult& aRv);
+  void GetKeyframes(JSContext*& aCx,
+                    nsTArray<JSObject*>& aResult,
+                    ErrorResult& aRv);
   void GetProperties(nsTArray<AnimationPropertyDetails>& aProperties,
                      ErrorResult& aRv) const;
 
@@ -280,9 +281,10 @@ public:
   void SetAnimation(Animation* aAnimation);
   Animation* GetAnimation() const { return mAnimation; }
 
-  void SetFrames(JSContext* aContext, JS::Handle<JSObject*> aFrames,
-                 ErrorResult& aRv);
-  void SetFrames(nsTArray<Keyframe>&& aFrames, nsStyleContext* aStyleContext);
+  void SetKeyframes(JSContext* aContext, JS::Handle<JSObject*> aKeyframes,
+                    ErrorResult& aRv);
+  void SetKeyframes(nsTArray<Keyframe>&& aKeyframes,
+                    nsStyleContext* aStyleContext);
   const AnimationProperty*
   GetAnimationOfProperty(nsCSSProperty aProperty) const;
   bool HasAnimationOfProperty(nsCSSProperty aProperty) const {
@@ -346,7 +348,7 @@ protected:
   static already_AddRefed<KeyframeEffectType>
   ConstructKeyframeEffect(const GlobalObject& aGlobal,
                           const Nullable<ElementOrCSSPseudoElement>& aTarget,
-                          JS::Handle<JSObject*> aFrames,
+                          JS::Handle<JSObject*> aKeyframes,
                           const OptionsType& aOptions,
                           ErrorResult& aRv);
 
@@ -375,7 +377,7 @@ protected:
   RefPtr<AnimationEffectTimingReadOnly> mTiming;
 
   
-  nsTArray<Keyframe>          mFrames;
+  nsTArray<Keyframe>          mKeyframes;
 
   
   nsTArray<AnimationProperty> mProperties;
@@ -419,7 +421,7 @@ public:
   static already_AddRefed<KeyframeEffect>
   Constructor(const GlobalObject& aGlobal,
               const Nullable<ElementOrCSSPseudoElement>& aTarget,
-              JS::Handle<JSObject*> aFrames,
+              JS::Handle<JSObject*> aKeyframes,
               const UnrestrictedDoubleOrKeyframeEffectOptions& aOptions,
               ErrorResult& aRv);
 
@@ -429,7 +431,7 @@ public:
   static already_AddRefed<KeyframeEffect>
   Constructor(const GlobalObject& aGlobal,
               const Nullable<ElementOrCSSPseudoElement>& aTarget,
-              JS::Handle<JSObject*> aFrames,
+              JS::Handle<JSObject*> aKeyframes,
               const UnrestrictedDoubleOrKeyframeAnimationOptions& aOptions,
               ErrorResult& aRv);
 

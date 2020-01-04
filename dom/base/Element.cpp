@@ -3304,19 +3304,19 @@ Element::MozRequestPointerLock()
 
 already_AddRefed<Animation>
 Element::Animate(JSContext* aContext,
-                 JS::Handle<JSObject*> aFrames,
+                 JS::Handle<JSObject*> aKeyframes,
                  const UnrestrictedDoubleOrKeyframeAnimationOptions& aOptions,
                  ErrorResult& aError)
 {
   Nullable<ElementOrCSSPseudoElement> target;
   target.SetValue().SetAsElement() = this;
-  return Animate(target, aContext, aFrames, aOptions, aError);
+  return Animate(target, aContext, aKeyframes, aOptions, aError);
 }
 
  already_AddRefed<Animation>
 Element::Animate(const Nullable<ElementOrCSSPseudoElement>& aTarget,
                  JSContext* aContext,
-                 JS::Handle<JSObject*> aFrames,
+                 JS::Handle<JSObject*> aKeyframes,
                  const UnrestrictedDoubleOrKeyframeAnimationOptions& aOptions,
                  ErrorResult& aError)
 {
@@ -3341,19 +3341,19 @@ Element::Animate(const Nullable<ElementOrCSSPseudoElement>& aTarget,
   MOZ_ASSERT(!global.Failed());
 
   
-  JS::Rooted<JSObject*> frames(aContext);
-  frames = aFrames;
+  JS::Rooted<JSObject*> keyframes(aContext);
+  keyframes = aKeyframes;
   Maybe<JSAutoCompartment> ac;
   if (js::GetContextCompartment(aContext) !=
       js::GetObjectCompartment(ownerGlobal->GetGlobalJSObject())) {
     ac.emplace(aContext, ownerGlobal->GetGlobalJSObject());
-    if (!JS_WrapObject(aContext, &frames)) {
+    if (!JS_WrapObject(aContext, &keyframes)) {
       return nullptr;
     }
   }
 
   RefPtr<KeyframeEffect> effect =
-    KeyframeEffect::Constructor(global, aTarget, frames, aOptions, aError);
+    KeyframeEffect::Constructor(global, aTarget, keyframes, aOptions, aError);
   if (aError.Failed()) {
     return nullptr;
   }

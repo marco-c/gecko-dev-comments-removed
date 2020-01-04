@@ -448,7 +448,7 @@ var AnimationPlayerActor = ActorClass({
 
 
   getFrames: method(function() {
-    return this.player.effect.getFrames();
+    return this.player.effect.getKeyframes();
   }, {
     request: {},
     response: {
