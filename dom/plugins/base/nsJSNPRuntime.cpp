@@ -288,7 +288,7 @@ TraceJSObjWrappers(JSTracer *trc, void *data)
     nsJSObjWrapperKey key = e.front().key();
     JS::UnsafeTraceRoot(trc, &key.mJSObj, "sJSObjWrappers key object");
     nsJSObjWrapper *wrapper = e.front().value();
-    JS::TraceNullableEdge(trc, &wrapper->mJSObj, "sJSObjWrappers wrapper object");
+    JS::TraceEdge(trc, &wrapper->mJSObj, "sJSObjWrappers wrapper object");
     if (key != e.front().key()) {
       e.rekeyFront(key);
     }
@@ -2266,8 +2266,8 @@ NPObjectMember_Trace(JSTracer *trc, JSObject *obj)
   
   
   
-  JS::TraceNullableEdge(trc, &memberPrivate->npobjWrapper,
-                        "NPObject Member => npobjWrapper");
+  JS::TraceEdge(trc, &memberPrivate->npobjWrapper,
+                "NPObject Member => npobjWrapper");
 }
 
 static bool

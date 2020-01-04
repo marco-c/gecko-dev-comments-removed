@@ -2196,7 +2196,7 @@ public:
         
         
         
-        JS::TraceNullableEdge(trc, &mFlatJSObject, "XPCWrappedNative::mFlatJSObject");
+        JS::TraceEdge(trc, &mFlatJSObject, "XPCWrappedNative::mFlatJSObject");
     }
 
     static void Trace(JSTracer* trc, JSObject* obj);
