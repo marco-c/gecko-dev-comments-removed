@@ -36,14 +36,6 @@ LazyLogModule gAudioStreamLog("AudioStream");
 
 
 
-static int gDumpedAudioCount = 0;
-
-
-
-
-
-
-
 class FrameHistory {
   struct Chunk {
     uint32_t servicedFrames;
@@ -240,14 +232,21 @@ static void SetUint32LE(uint8_t* aDest, uint32_t aValue)
 static FILE*
 OpenDumpFile(uint32_t aChannels, uint32_t aRate)
 {
+  
+
+
+
+
+
+  static Atomic<int> gDumpedAudioCount(0);
+
   if (!getenv("MOZ_DUMP_AUDIO"))
     return nullptr;
   char buf[100];
-  snprintf_literal(buf, "dumped-audio-%d.wav", gDumpedAudioCount);
+  snprintf_literal(buf, "dumped-audio-%d.wav", ++gDumpedAudioCount);
   FILE* f = fopen(buf, "wb");
   if (!f)
     return nullptr;
-  ++gDumpedAudioCount;
 
   uint8_t header[] = {
     
