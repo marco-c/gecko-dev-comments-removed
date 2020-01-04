@@ -296,12 +296,12 @@ function String_static_fromCodePoint(codePoints) {
         
         
         if (nextCP <= 0xFFFF) {
-            callFunction(std_Array_push, elements, nextCP);
+            elements.push(nextCP);
             continue;
         }
 
-        callFunction(std_Array_push, elements, (((nextCP - 0x10000) / 0x400) | 0) + 0xD800);
-        callFunction(std_Array_push, elements, (nextCP - 0x10000) % 0x400 + 0xDC00);
+        elements.push((((nextCP - 0x10000) / 0x400) | 0) + 0xD800);
+        elements.push((nextCP - 0x10000) % 0x400 + 0xDC00);
     }
 
     

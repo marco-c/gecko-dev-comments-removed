@@ -216,7 +216,7 @@ function TypedArrayFilter(callbackfn, thisArg = undefined) {
         
         if (selected) {
             
-            callFunction(std_Array_push, kept, kValue);
+            kept.push(kValue);
             
             captured++;
         }
@@ -1058,14 +1058,14 @@ function TypedArrayFrom(constructor, target, items, mapfn, thisArg) {
         
         while (true) {
             
-            var next = callFunction(iterator.next, iterator);
+            var next = iterator.next();
             if (!IsObject(next))
                 ThrowTypeError(JSMSG_NEXT_RETURNED_PRIMITIVE);
 
             
             if (next.done)
                 break;
-            callFunction(std_Array_push, values, next.value);
+            values.push(next.value);
         }
 
         
