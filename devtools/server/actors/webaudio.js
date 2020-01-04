@@ -38,7 +38,7 @@ const AUDIO_GLOBALS = [
 
 
 
-var AudioNodeActor = exports.AudioNodeActor = protocol.ActorClassWithSpec(audionodeSpec, {
+var AudioNodeActor = exports.AudioNodeActor = protocol.ActorClass(audionodeSpec, {
   form: function (detail) {
     if (detail === "actorid") {
       return this.actorID;
@@ -404,7 +404,7 @@ var AudioNodeActor = exports.AudioNodeActor = protocol.ActorClassWithSpec(audion
 
 
 
-var WebAudioActor = exports.WebAudioActor = protocol.ActorClassWithSpec(webAudioSpec, {
+var WebAudioActor = exports.WebAudioActor = protocol.ActorClass(webAudioSpec, {
   initialize: function (conn, tabActor) {
     protocol.Actor.prototype.initialize.call(this, conn);
     this.tabActor = tabActor;
