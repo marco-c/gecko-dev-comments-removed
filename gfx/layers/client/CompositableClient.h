@@ -199,6 +199,12 @@ public:
 
 
 
+  virtual void HandleMemoryPressure();
+
+  
+
+
+
 
 
 

@@ -73,6 +73,13 @@ public:
 
   virtual void ClearCachedResources() override;
 
+  virtual void HandleMemoryPressure() override
+  {
+    if (mContentClient) {
+      mContentClient->HandleMemoryPressure();
+    }
+  }
+
   
 
 
