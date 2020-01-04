@@ -3948,7 +3948,13 @@ nsDocument::SetSubDocumentFor(Element* aElement, nsIDocument* aSubDoc)
     
 
     if (mSubDocuments) {
-      PL_DHashTableRemove(mSubDocuments, aElement);
+      SubDocMapEntry *entry =
+        static_cast<SubDocMapEntry*>
+                   (PL_DHashTableSearch(mSubDocuments, aElement));
+
+      if (entry) {
+        PL_DHashTableRawRemove(mSubDocuments, entry);
+      }
     }
   } else {
     if (!mSubDocuments) {
@@ -7892,9 +7898,9 @@ nsDocument::GetViewportInfo(const ScreenIntSize& aDisplaySize)
   
   float fullZoom = context ? context->DeviceContext()->GetFullZoom() : 1.0;
   fullZoom = (fullZoom == 0.0) ? 1.0 : fullZoom;
-  nsIWidget *widget = nsContentUtils::WidgetForDocument(this);
-  float widgetScale = widget ? widget->GetDefaultScale().scale : 1.0f;
-  CSSToLayoutDeviceScale layoutDeviceScale(widgetScale * fullZoom);
+  CSSToLayoutDeviceScale layoutDeviceScale(
+    (float)nsPresContext::AppUnitsPerCSSPixel() /
+    context->AppUnitsPerDevPixel());
 
   CSSToScreenScale defaultScale = layoutDeviceScale
                                 * LayoutDeviceToScreenScale(1.0);
