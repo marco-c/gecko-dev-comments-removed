@@ -19,6 +19,7 @@ class TestStarInAutocomplete(FirefoxTestCase):
     def setUp(self):
         FirefoxTestCase.setUp(self)
 
+        self.bookmark_panel = None
         self.test_urls = [self.marionette.absolute_url('layout/mozilla_grants.html')]
 
         
@@ -32,6 +33,11 @@ class TestStarInAutocomplete(FirefoxTestCase):
     def tearDown(self):
         
         try:
+            if self.bookmark_panel:
+                self.marionette.execute_script("""
+                  arguments[0].hidePopup();
+                """, script_args=[self.bookmark_panel])
+
             self.browser.navbar.locationbar.autocomplete_results.close()
             self.places.restore_default_bookmarks()
         finally:
@@ -55,8 +61,11 @@ class TestStarInAutocomplete(FirefoxTestCase):
                                           'menu_bookmarkThisPage')
 
         
+        self.bookmark_panel = self.marionette.find_element(By.ID, 'editBookmarkPanel')
         done_button = self.marionette.find_element(By.ID, 'editBookmarkPanelDoneButton')
-        Wait(self.marionette).until(lambda mn: done_button.is_displayed)
+
+        Wait(self.marionette).until(
+            lambda mn: self.bookmark_panel.get_attribute('panelopen') == 'true')
         done_button.click()
 
         
