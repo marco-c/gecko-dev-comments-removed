@@ -8,7 +8,9 @@
 
 #include "mozilla/dom/Element.h"
 
-NS_IMPL_ISUPPORTS(nsContentSecurityManager, nsIContentSecurityManager)
+NS_IMPL_ISUPPORTS(nsContentSecurityManager,
+                  nsIContentSecurityManager,
+                  nsIChannelEventSink)
 
 static nsresult
 ValidateSecurityFlags(nsILoadInfo* aLoadInfo)
@@ -344,18 +346,13 @@ nsContentSecurityManager::doContentSecurityCheck(nsIChannel* aChannel,
 
   
   
+  if (loadInfo->GetInitialSecurityCheckDone()) {
+    return NS_OK;
+  }
+
+  
+  
   nsresult rv = ValidateSecurityFlags(loadInfo);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  
-  
-  
-  
-  
-  bool initialSecurityCheckDone = loadInfo->GetInitialSecurityCheckDone();
-
-  
-  rv = loadInfo->SetInitialSecurityCheckDone(true);
   NS_ENSURE_SUCCESS(rv, rv);
 
   
@@ -366,23 +363,101 @@ nsContentSecurityManager::doContentSecurityCheck(nsIChannel* aChannel,
   rv = loadInfo->SetEnforceSecurity(true);
   NS_ENSURE_SUCCESS(rv, rv);
 
+  if (loadInfo->GetSecurityMode() == nsILoadInfo::SEC_REQUIRE_CORS_DATA_INHERITS) {
+    rv = DoCORSChecks(aChannel, loadInfo, aInAndOutListener);
+    NS_ENSURE_SUCCESS(rv, rv);
+  }
+  else {
+    rv = CheckChannel(aChannel);
+    NS_ENSURE_SUCCESS(rv, rv);
+  }
+
   nsCOMPtr<nsIURI> finalChannelURI;
   rv = NS_GetFinalChannelURI(aChannel, getter_AddRefs(finalChannelURI));
   NS_ENSURE_SUCCESS(rv, rv);
 
-  nsSecurityFlags securityMode = loadInfo->GetSecurityMode();
+  
+  rv = DoContentSecurityChecks(finalChannelURI, loadInfo);
+  NS_ENSURE_SUCCESS(rv, rv);
 
   
-  if ((securityMode == nsILoadInfo::SEC_REQUIRE_SAME_ORIGIN_DATA_INHERITS) ||
-      (securityMode == nsILoadInfo::SEC_REQUIRE_SAME_ORIGIN_DATA_IS_BLOCKED)) {
-    rv = DoSOPChecks(finalChannelURI, loadInfo);
-    NS_ENSURE_SUCCESS(rv, rv);
+  rv = loadInfo->SetInitialSecurityCheckDone(true);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsContentSecurityManager::AsyncOnChannelRedirect(nsIChannel* aOldChannel,
+                                                 nsIChannel* aNewChannel,
+                                                 uint32_t aRedirFlags,
+                                                 nsIAsyncVerifyRedirectCallback *aCb)
+{
+  nsCOMPtr<nsILoadInfo> loadInfo = aOldChannel->GetLoadInfo();
+  
+  if (loadInfo && loadInfo->GetEnforceSecurity()) {
+    nsresult rv = CheckChannel(aNewChannel);
+    if (NS_FAILED(rv)) {
+      aOldChannel->Cancel(rv);
+      return rv;
+    }
   }
 
   
   
-  if (initialSecurityCheckDone) {
+  nsCOMPtr<nsIPrincipal> oldPrincipal;
+  nsContentUtils::GetSecurityManager()->
+    GetChannelResultPrincipal(aOldChannel, getter_AddRefs(oldPrincipal));
+
+  nsCOMPtr<nsIURI> newURI;
+  aNewChannel->GetURI(getter_AddRefs(newURI));
+  nsCOMPtr<nsIURI> newOriginalURI;
+  aNewChannel->GetOriginalURI(getter_AddRefs(newOriginalURI));
+
+  NS_ENSURE_STATE(oldPrincipal && newURI && newOriginalURI);
+
+  const uint32_t flags =
+      nsIScriptSecurityManager::LOAD_IS_AUTOMATIC_DOCUMENT_REPLACEMENT |
+      nsIScriptSecurityManager::DISALLOW_SCRIPT;
+  nsresult rv = nsContentUtils::GetSecurityManager()->
+    CheckLoadURIWithPrincipal(oldPrincipal, newURI, flags);
+  if (NS_SUCCEEDED(rv) && newOriginalURI != newURI) {
+      rv = nsContentUtils::GetSecurityManager()->
+        CheckLoadURIWithPrincipal(oldPrincipal, newOriginalURI, flags);
+  }
+  NS_ENSURE_SUCCESS(rv, rv);  
+
+  aCb->OnRedirectVerifyCallback(NS_OK);
+  return NS_OK;
+}
+
+
+
+
+
+nsresult
+nsContentSecurityManager::CheckChannel(nsIChannel* aChannel)
+{
+  nsCOMPtr<nsILoadInfo> loadInfo = aChannel->GetLoadInfo();
+  MOZ_ASSERT(loadInfo);
+
+  
+  nsSecurityFlags securityMode = loadInfo->GetSecurityMode();
+  if (securityMode == nsILoadInfo::SEC_REQUIRE_CORS_DATA_INHERITS) {
     return NS_OK;
+  }
+
+  nsCOMPtr<nsIURI> uri;
+  nsresult rv = NS_GetFinalChannelURI(aChannel, getter_AddRefs(uri));
+  NS_ENSURE_SUCCESS(rv, rv);
+
+
+  
+  if ((securityMode == nsILoadInfo::SEC_REQUIRE_SAME_ORIGIN_DATA_INHERITS) ||
+      (securityMode == nsILoadInfo::SEC_REQUIRE_SAME_ORIGIN_DATA_IS_BLOCKED)) {
+    rv = DoSOPChecks(uri, loadInfo);
+    NS_ENSURE_SUCCESS(rv, rv);
   }
 
   if ((securityMode == nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_DATA_INHERITS) ||
@@ -391,23 +466,12 @@ nsContentSecurityManager::doContentSecurityCheck(nsIChannel* aChannel,
     
     
     
-    rv = DoCheckLoadURIChecks(finalChannelURI, loadInfo);
+    rv = DoCheckLoadURIChecks(uri, loadInfo);
     NS_ENSURE_SUCCESS(rv, rv);
   }
 
-  if (securityMode == nsILoadInfo::SEC_REQUIRE_CORS_DATA_INHERITS) {
-    rv = DoCORSChecks(aChannel, loadInfo, aInAndOutListener);
-    NS_ENSURE_SUCCESS(rv, rv);
-  }
-
-  
-  rv = DoContentSecurityChecks(finalChannelURI, loadInfo);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  
   return NS_OK;
 }
-
 
 
 
