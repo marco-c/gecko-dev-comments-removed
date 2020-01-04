@@ -650,13 +650,13 @@ public:
     MAX_DIMENSION = 16384
   };
 
-  virtual ~PlanarYCbCrImage();
+  virtual ~PlanarYCbCrImage() {}
 
   
 
 
 
-  virtual bool SetData(const Data& aData);
+  virtual bool SetData(const Data& aData) = 0;
 
   
 
@@ -670,7 +670,7 @@ public:
   
 
 
-  virtual uint8_t* AllocateAndGetNewBuffer(uint32_t aSize);
+  virtual uint8_t* AllocateAndGetNewBuffer(uint32_t aSize) = 0;
 
   
 
@@ -693,7 +693,7 @@ public:
 
   virtual gfx::IntSize GetSize() { return mSize; }
 
-  explicit PlanarYCbCrImage(BufferRecycleBin *aRecycleBin);
+  explicit PlanarYCbCrImage();
 
   virtual SharedPlanarYCbCrImage *AsSharedPlanarYCbCrImage() { return nullptr; }
 
@@ -701,8 +701,28 @@ public:
     return aMallocSizeOf(this) + SizeOfExcludingThis(aMallocSizeOf);
   }
 
-  virtual size_t SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const;
+  virtual size_t SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const = 0;
 
+protected:
+  already_AddRefed<gfx::SourceSurface> GetAsSourceSurface();
+
+  void SetOffscreenFormat(gfxImageFormat aFormat) { mOffscreenFormat = aFormat; }
+  gfxImageFormat GetOffscreenFormat();
+
+  Data mData;
+  gfx::IntSize mSize;
+  gfxImageFormat mOffscreenFormat;
+  nsCountedRef<nsMainThreadSourceSurfaceRef> mSourceSurface;
+  uint32_t mBufferSize;
+};
+
+class RecyclingPlanarYCbCrImage: public PlanarYCbCrImage {
+public:
+  explicit RecyclingPlanarYCbCrImage(BufferRecycleBin *aRecycleBin) : mRecycleBin(aRecycleBin) {}
+  virtual ~RecyclingPlanarYCbCrImage() override;
+  virtual bool SetData(const Data& aData) override;
+  virtual uint8_t* AllocateAndGetNewBuffer(uint32_t aSize) override;
+  virtual size_t SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const override;
 protected:
   
 
@@ -716,20 +736,10 @@ protected:
 
 
 
-  virtual uint8_t* AllocateBuffer(uint32_t aSize);
+  uint8_t* AllocateBuffer(uint32_t aSize);
 
-  already_AddRefed<gfx::SourceSurface> GetAsSourceSurface();
-
-  void SetOffscreenFormat(gfxImageFormat aFormat) { mOffscreenFormat = aFormat; }
-  gfxImageFormat GetOffscreenFormat();
-
-  nsAutoArrayPtr<uint8_t> mBuffer;
-  uint32_t mBufferSize;
-  Data mData;
-  gfx::IntSize mSize;
-  gfxImageFormat mOffscreenFormat;
-  nsCountedRef<nsMainThreadSourceSurfaceRef> mSourceSurface;
   RefPtr<BufferRecycleBin> mRecycleBin;
+  nsAutoArrayPtr<uint8_t> mBuffer;
 };
 
 
