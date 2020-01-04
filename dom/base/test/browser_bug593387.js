@@ -5,61 +5,66 @@
 
 
 
-var newBrowser;
 
-function test() {
-  waitForExplicitFinish();
+add_task(function* test() {
+  yield BrowserTestUtils.withNewTab({ gBrowser,
+                                      url: "chrome://global/content/mozilla.xhtml" },
+                                     function* (newBrowser) {
+    
+    yield testXFOFrameInChrome(newBrowser);
 
-  var newTab = gBrowser.addTab();
-  gBrowser.selectedTab = newTab;
-  newBrowser = gBrowser.getBrowserForTab(newTab);
+    
+    yield BrowserTestUtils.loadURI(newBrowser, "http://example.com/");
+    yield BrowserTestUtils.browserLoaded(newBrowser);
+
+    yield ContentTask.spawn(newBrowser, null, testXFOFrameInContent);
+  });
+});
+
+function testXFOFrameInChrome(newBrowser) {
   
-
-  newBrowser.addEventListener("load", testXFOFrameInChrome, true);
-  newBrowser.contentWindow.location = "chrome://global/content/mozilla.xhtml";
-}
-
-function testXFOFrameInChrome() {
-  newBrowser.removeEventListener("load", testXFOFrameInChrome, true);
-
   
-  
+  var deferred = {};
+  deferred.promise = new Promise((resolve) => {
+    deferred.resolve = resolve;
+  });
+
   var frame = newBrowser.contentDocument.createElement("iframe");
   frame.src = "http://mochi.test:8888/tests/dom/base/test/file_x-frame-options_page.sjs?testid=deny&xfo=deny";
-  frame.addEventListener("load", function() {
-    frame.removeEventListener("load", arguments.callee, true);
+  frame.addEventListener("load", function loaded() {
+    frame.removeEventListener("load", loaded, true);
 
     
     var test = this.contentDocument.getElementById("test");
     is(test.tagName, "H1", "wrong element type");
     is(test.textContent, "deny", "wrong textContent");
-    
-    
-    newBrowser.addEventListener("load", testXFOFrameInContent, true);
-    newBrowser.contentWindow.location = "http://example.com/";  
+    deferred.resolve();
   }, true);
 
   newBrowser.contentDocument.body.appendChild(frame);
+  return deferred.promise;
 }
 
-function testXFOFrameInContent() {
-  newBrowser.removeEventListener("load", testXFOFrameInContent, true);
+function testXFOFrameInContent(newBrowser) {
+  
+  
+  var deferred = {};
+  deferred.promise = new Promise((resolve) => {
+    deferred.resolve = resolve;
+  });
 
-  
-  
-  var frame = newBrowser.contentDocument.createElement("iframe");
+  var frame = content.document.createElement("iframe");
   frame.src = "http://mochi.test:8888/tests/dom/base/test/file_x-frame-options_page.sjs?testid=deny&xfo=deny";
-  frame.addEventListener("load", function() {
-    frame.removeEventListener("load", arguments.callee, true);
+  frame.addEventListener("load", function loaded() {
+    frame.removeEventListener("load", loaded, true);
 
     
     var test = this.contentDocument.getElementById("test");
-    is(test, undefined, "should be about:blank");
+    is(test, null, "should be about:blank");
 
-    
-    gBrowser.removeCurrentTab();
-    finish();
+    deferred.resolve();
   }, true);
 
-  newBrowser.contentDocument.body.appendChild(frame);
+  content.document.body.appendChild(frame);
+  return deferred.promise;
 }
