@@ -34,7 +34,7 @@ using mozilla::Unused;
 namespace mozilla {
 namespace layers {
 
- CompositorBridgeChild* CompositorBridgeChild::sCompositor;
+static StaticRefPtr<CompositorBridgeChild> sCompositorBridge;
 
 Atomic<int32_t> CompositableForwarder::sSerialCounter(0);
 
@@ -54,12 +54,20 @@ CompositorBridgeChild::~CompositorBridgeChild()
   }
 }
 
+bool
+CompositorBridgeChild::IsSameProcess() const
+{
+  return OtherPid() == base::GetCurrentProcId();
+}
+
 static void DeferredDestroyCompositor(RefPtr<CompositorBridgeParent> aCompositorBridgeParent,
                                       RefPtr<CompositorBridgeChild> aCompositorBridgeChild)
 {
-    
-    
-    
+  aCompositorBridgeChild->Close();
+
+  if (sCompositorBridge == aCompositorBridgeChild) {
+    sCompositorBridge = nullptr;
+  }
 }
 
 void
@@ -72,23 +80,10 @@ CompositorBridgeChild::Destroy()
     return;
   }
 
-  mCanSend = false;
-
   
   
   
   RefPtr<CompositorBridgeChild> selfRef = this;
-
-  SendWillStop();
-  
-  
-  
-  
-  
-  
-  
-
-  
 
   if (mLayerManager) {
     mLayerManager->Destroy();
@@ -103,12 +98,33 @@ CompositorBridgeChild::Destroy()
     layers->Destroy();
   }
 
-  SendStop();
+  SendWillClose();
+  mCanSend = false;
+
 
   
   
+  
+  
+  
+  
+  
+
+  
   MessageLoop::current()->PostTask(FROM_HERE,
              NewRunnableFunction(DeferredDestroyCompositor, mCompositorBridgeParent, selfRef));
+}
+
+
+void
+CompositorBridgeChild::ShutDown()
+{
+  if (sCompositorBridge) {
+    sCompositorBridge->Destroy();
+    do {
+      NS_ProcessNextEvent(nullptr, true);
+    } while (sCompositorBridge);
+  }
 }
 
 bool
@@ -127,7 +143,7 @@ CompositorBridgeChild::LookupCompositorFrameMetrics(const FrameMetrics::ViewID a
 CompositorBridgeChild::Create(Transport* aTransport, ProcessId aOtherPid)
 {
   
-  MOZ_ASSERT(!sCompositor);
+  MOZ_ASSERT(!sCompositorBridge);
 
   RefPtr<CompositorBridgeChild> child(new CompositorBridgeChild(nullptr));
   if (!child->Open(aTransport, aOtherPid, XRE_GetIOMessageLoop(), ipc::ChildSide)) {
@@ -138,15 +154,14 @@ CompositorBridgeChild::Create(Transport* aTransport, ProcessId aOtherPid)
   child->mCanSend = true;
 
   
-  sCompositor = child.forget().take();
+  sCompositorBridge = child;
 
   int32_t width;
   int32_t height;
-  sCompositor->SendGetTileSize(&width, &height);
+  sCompositorBridge->SendGetTileSize(&width, &height);
   gfxPlatform::GetPlatform()->SetTileSize(width, height);
 
-  
-  return sCompositor;
+  return sCompositorBridge;
 }
 
 bool
@@ -166,7 +181,14 @@ CompositorBridgeChild::Get()
 {
   
   MOZ_ASSERT(!XRE_IsParentProcess());
-  return sCompositor;
+  return sCompositorBridge;
+}
+
+
+bool
+CompositorBridgeChild::ChildProcessHasCompositorBridge()
+{
+  return sCompositorBridge != nullptr;
 }
 
 PLayerTransactionChild*
@@ -419,8 +441,6 @@ CompositorBridgeChild::RecvClearCachedResources(const uint64_t& aId)
 void
 CompositorBridgeChild::ActorDestroy(ActorDestroyReason aWhy)
 {
-  MOZ_ASSERT(sCompositor == this);
-
   if (aWhy == AbnormalShutdown) {
 #ifdef MOZ_B2G
   
@@ -433,12 +453,8 @@ CompositorBridgeChild::ActorDestroy(ActorDestroyReason aWhy)
     
     
     mCanSend = false;
-    gfxCriticalNote << "Receive IPC close with reason=" << aWhy;
+    gfxCriticalNote << "Receive IPC close with reason=AbnormalShutdown";
   }
-
-  MessageLoop::current()->PostTask(
-    FROM_HERE,
-    NewRunnableMethod(this, &CompositorBridgeChild::Release));
 }
 
 bool
@@ -573,9 +589,13 @@ CompositorBridgeChild::CancelNotifyAfterRemotePaint(TabChild* aTabChild)
 }
 
 bool
-CompositorBridgeChild::SendWillStop()
+CompositorBridgeChild::SendWillClose()
 {
-  return PCompositorBridgeChild::SendWillStop();
+  MOZ_ASSERT(mCanSend);
+  if (!mCanSend) {
+    return true;
+  }
+  return PCompositorBridgeChild::SendWillClose();
 }
 
 bool

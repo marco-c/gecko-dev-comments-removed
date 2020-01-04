@@ -270,12 +270,14 @@ void nsBaseWidget::DestroyCompositor()
     RefPtr<CompositorBridgeChild> compositorChild = mCompositorBridgeChild;
     RefPtr<CompositorBridgeParent> compositorParent = mCompositorBridgeParent;
     mCompositorBridgeChild->Destroy();
+    mCompositorBridgeChild = nullptr;
   }
 
   
   
   if (mCompositorVsyncDispatcher) {
     mCompositorVsyncDispatcher->Shutdown();
+    mCompositorVsyncDispatcher = nullptr;
   }
 }
 

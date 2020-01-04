@@ -1804,7 +1804,7 @@ nsFrameLoader::ShouldUseRemoteProcess()
   
   
   if (XRE_IsContentProcess() &&
-      !CompositorBridgeChild::ChildProcessHasCompositor()) {
+      !CompositorBridgeChild::ChildProcessHasCompositorBridge()) {
     return false;
   }
 

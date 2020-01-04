@@ -402,6 +402,10 @@ CompositorVsyncScheduler::CancelSetDisplayTask()
 void
 CompositorVsyncScheduler::Destroy()
 {
+  if (!mVsyncObserver) {
+    
+    return;
+  }
   MOZ_ASSERT(CompositorBridgeParent::IsInCompositorThread());
   UnobserveVsync();
   mVsyncObserver->Destroy();
@@ -643,6 +647,9 @@ void CompositorBridgeParent::ShutDown()
   while (!sFinishedCompositorShutDown) {
     NS_ProcessNextEvent(nullptr, true);
   }
+
+  
+  sIndirectLayerTrees.clear();
 }
 
 MessageLoop* CompositorBridgeParent::CompositorLoop()
@@ -726,6 +733,9 @@ CompositorBridgeParent::CompositorBridgeParent(nsIWidget* aWidget,
 
   mCompositorScheduler = new CompositorVsyncScheduler(this, aWidget);
   LayerScope::SetPixelScale(mWidget->GetDefaultScale().scale);
+
+  
+  mSelfRef = this;
 }
 
 bool
@@ -747,40 +757,13 @@ CompositorBridgeParent::~CompositorBridgeParent()
 }
 
 void
-CompositorBridgeParent::Destroy()
-{
-  MOZ_ASSERT(ManagedPLayerTransactionParent().Count() == 0,
-             "CompositorBridgeParent destroyed before managed PLayerTransactionParent");
-
-  MOZ_ASSERT(mPaused); 
-  
-  mLayerManager = nullptr;
-  if (mCompositor) {
-    mCompositor->Destroy();
-  }
-  mCompositor = nullptr;
-
-  mCompositionManager = nullptr;
-  if (mApzcTreeManager) {
-    mApzcTreeManager->ClearTree();
-    mApzcTreeManager = nullptr;
-  }
-  { 
-    MonitorAutoLock lock(*sIndirectLayerTreesLock);
-    sIndirectLayerTrees.erase(mRootLayerTreeID);
-  }
-
-  mCompositorScheduler->Destroy();
-}
-
-void
 CompositorBridgeParent::ForceIsFirstPaint()
 {
   mCompositionManager->ForceIsFirstPaint();
 }
 
 bool
-CompositorBridgeParent::RecvWillStop()
+CompositorBridgeParent::RecvWillClose()
 {
   mPaused = true;
   RemoveCompositor(mCompositorID);
@@ -798,6 +781,10 @@ CompositorBridgeParent::RecvWillStop()
     mCompositionManager = nullptr;
   }
 
+  if (mCompositor) {
+    mCompositor->DetachWidget();
+  }
+
   return true;
 }
 
@@ -806,22 +793,7 @@ void CompositorBridgeParent::DeferredDestroy()
   MOZ_ASSERT(!NS_IsMainThread());
   MOZ_ASSERT(mCompositorThreadHolder);
   mCompositorThreadHolder = nullptr;
-  Release();
-}
-
-bool
-CompositorBridgeParent::RecvStop()
-{
-  Destroy();
-  
-  
-  
-  
-  
-  this->AddRef(); 
-  MessageLoop::current()->PostTask(FROM_HERE,
-                                   NewRunnableMethod(this,&CompositorBridgeParent::DeferredDestroy));
-  return true;
+  mSelfRef = nullptr;
 }
 
 bool
@@ -987,11 +959,32 @@ CompositorBridgeParent::ActorDestroy(ActorDestroyReason why)
     mLayerManager = nullptr;
     { 
       MonitorAutoLock lock(*sIndirectLayerTreesLock);
-      sIndirectLayerTrees[mRootLayerTreeID].mLayerManager = nullptr;
+      sIndirectLayerTrees.erase(mRootLayerTreeID);
     }
-    mCompositionManager = nullptr;
+  }
+
+  if (mCompositor) {
+    mCompositor->Destroy();
     mCompositor = nullptr;
   }
+
+  mCompositionManager = nullptr;
+
+  if (mApzcTreeManager) {
+    mApzcTreeManager->ClearTree();
+    mApzcTreeManager = nullptr;
+  }
+
+  mCompositorScheduler->Destroy();
+
+  
+  
+  
+  
+  
+  mSelfRef = this;
+  MessageLoop::current()->PostTask(FROM_HERE,
+                                   NewRunnableMethod(this,&CompositorBridgeParent::DeferredDestroy));
 }
 
 
@@ -1919,6 +1912,7 @@ public:
   explicit CrossProcessCompositorBridgeParent(Transport* aTransport)
     : mTransport(aTransport)
     , mNotifyAfterRemotePaint(false)
+    , mDestroyCalled(false)
   {
     MOZ_ASSERT(NS_IsMainThread());
   }
@@ -1933,8 +1927,7 @@ public:
 
   
   virtual bool RecvRequestOverfill() override { return true; }
-  virtual bool RecvWillStop() override { return true; }
-  virtual bool RecvStop() override { return true; }
+  virtual bool RecvWillClose() override { return true; }
   virtual bool RecvPause() override { return true; }
   virtual bool RecvResume() override { return true; }
   virtual bool RecvNotifyHidden(const uint64_t& id) override;
@@ -2057,6 +2050,7 @@ private:
   
   
   bool mNotifyAfterRemotePaint;
+  bool mDestroyCalled;
 };
 
 PCompositorBridgeParent*
@@ -2273,10 +2267,10 @@ CrossProcessCompositorBridgeParent::ActorDestroy(ActorDestroyReason aWhy)
 {
   RefPtr<CompositorLRU> lru = CompositorLRU::GetSingleton();
   lru->Remove(this);
-
-  MessageLoop::current()->PostTask(
-    FROM_HERE,
-    NewRunnableMethod(this, &CrossProcessCompositorBridgeParent::DeferredDestroy));
+  
+  
+  MessageLoop::current()->PostTask(FROM_HERE,
+      NewRunnableMethod(this, &CrossProcessCompositorBridgeParent::DeferredDestroy));
 }
 
 PLayerTransactionParent*
@@ -2725,7 +2719,6 @@ CrossProcessCompositorBridgeParent::RecvAcknowledgeCompositorUpdate(const uint64
 void
 CrossProcessCompositorBridgeParent::DeferredDestroy()
 {
-  MOZ_ASSERT(mCompositorThreadHolder);
   mCompositorThreadHolder = nullptr;
   mSelfRef = nullptr;
 }

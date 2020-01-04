@@ -66,7 +66,7 @@ public:
 
   static CompositorBridgeChild* Get();
 
-  static bool ChildProcessHasCompositor() { return sCompositor != nullptr; }
+  static bool ChildProcessHasCompositorBridge();
 
   void AddOverfillObserver(ClientLayerManager* aLayerManager);
 
@@ -112,7 +112,7 @@ public:
   
   
   
-  bool SendWillStop();
+  bool SendWillClose();
   bool SendPause();
   bool SendResume();
   bool SendNotifyHidden(const uint64_t& id);
@@ -129,6 +129,9 @@ public:
   bool SendClearApproximatelyVisibleRegions(uint64_t aLayersId, uint32_t aPresShellId);
   bool SendNotifyApproximatelyVisibleRegion(const ScrollableLayerGuid& aGuid,
                                             const mozilla::CSSIntRegion& aRegion);
+  bool IsSameProcess() const;
+
+  static void ShutDown();
 
 private:
   
@@ -189,11 +192,6 @@ private:
   
   
   nsClassHashtable<nsUint64HashKey, SharedFrameMetricsData> mFrameMetricsTable;
-
-  
-  
-  
-  static CompositorBridgeChild* sCompositor;
 
   
   
