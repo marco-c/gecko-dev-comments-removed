@@ -3299,7 +3299,7 @@ CSSParserImpl::ParseAtRule(RuleAppendFunc aAppendFunc,
   if (unnestable) {
     REPORT_UNEXPECTED_TOKEN(PEGroupRuleNestedAtRule);
   }
-  
+
   if (unnestable || !(this->*parseFunc)(aAppendFunc, aData)) {
     
     OUTPUT_ERROR();
@@ -3310,7 +3310,7 @@ CSSParserImpl::ParseAtRule(RuleAppendFunc aAppendFunc,
   if (!aInAtRule) {
     mSection = newSection;
   }
-  
+
   return true;
 }
 
@@ -3834,7 +3834,7 @@ CSSParserImpl::ParseMozDocumentRule(RuleAppendFunc aAppendFunc, void* aData)
       delete urls;
       return false;
     }
-        
+
     if (!(eCSSToken_URL == mToken.mType ||
           (eCSSToken_Function == mToken.mType &&
            (mToken.mIdent.LowerCaseEqualsLiteral("url-prefix") ||
@@ -7800,9 +7800,9 @@ CSSParserImpl::ParseVariant(nsCSSValue& aValue,
       ((aVariantMask & (VARIANT_LENGTH | VARIANT_ZERO_ANGLE)) != 0 &&
        eCSSToken_Number == tk->mType &&
        tk->mNumber == 0.0f)) {
-    if (((aVariantMask & VARIANT_POSITIVE_DIMENSION) != 0 && 
+    if (((aVariantMask & VARIANT_POSITIVE_DIMENSION) != 0 &&
          tk->mNumber <= 0.0) ||
-        ((aVariantMask & VARIANT_NONNEGATIVE_DIMENSION) != 0 && 
+        ((aVariantMask & VARIANT_NONNEGATIVE_DIMENSION) != 0 &&
          tk->mNumber < 0.0)) {
         UngetToken();
         AssertNextTokenAt(lineBefore, colBefore);
@@ -8254,7 +8254,7 @@ CSSParserImpl::ParseImageOrientation(nsCSSValue& aValue)
     } else {
       aValue = angle;
     }
-    
+
     return true;
   }
 
@@ -8430,7 +8430,7 @@ CSSParserImpl::ParseFlex()
     if (ParseNonNegativeNumber(tmpVal)) {
       flexShrink = tmpVal;
     }
- 
+
     
     
     
