@@ -48,7 +48,7 @@ add_task(function* asyncCleanup() {
 
 function mockFunctions() {
   
-  gSyncUI._needsSetup = function() Promise.resolve(false);
+  gSyncUI._needsSetup = () => Promise.resolve(false);
 
   
   service.errorHandler.syncAndReportErrors = mocked_syncAndReportErrors;
