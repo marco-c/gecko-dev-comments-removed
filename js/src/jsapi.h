@@ -3139,6 +3139,24 @@ JS_DeleteElement(JSContext* cx, JS::HandleObject obj, uint32_t index);
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+extern JS_PUBLIC_API(bool)
+JS_Enumerate(JSContext* cx, JS::HandleObject obj, JS::MutableHandle<JS::IdVector> props);
+
+
+
+
 extern JS_PUBLIC_API(JSObject*)
 JS_DefineObject(JSContext* cx, JS::HandleObject obj, const char* name,
                 const JSClass* clasp = nullptr, unsigned attrs = 0);
@@ -3247,14 +3265,12 @@ JS_CreateMappedArrayBufferContents(int fd, size_t offset, size_t length);
 extern JS_PUBLIC_API(void)
 JS_ReleaseMappedArrayBufferContents(void* contents, size_t length);
 
-extern JS_PUBLIC_API(bool)
-JS_Enumerate(JSContext* cx, JS::HandleObject obj, JS::MutableHandle<JS::IdVector> props);
-
 extern JS_PUBLIC_API(JS::Value)
 JS_GetReservedSlot(JSObject* obj, uint32_t index);
 
 extern JS_PUBLIC_API(void)
 JS_SetReservedSlot(JSObject* obj, uint32_t index, JS::Value v);
+
 
 
 
