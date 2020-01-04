@@ -70,13 +70,13 @@ function Installer(aBrowser, aUrl, aInstalls) {
 
   notifyObservers("addon-install-started", aBrowser, aUrl, aInstalls);
 
-  aInstalls.forEach(function(aInstall) {
-    aInstall.addListener(this);
+  for (let install of aInstalls) {
+    install.addListener(this);
 
     
-    if (READY_STATES.indexOf(aInstall.state) != -1)
-      aInstall.install();
-  }, this);
+    if (READY_STATES.indexOf(install.state) != -1)
+      install.install();
+  }
 
   this.checkAllDownloaded();
 }
@@ -117,14 +117,14 @@ Installer.prototype = {
           installs.push(install);
 
         if (install.linkedInstalls) {
-          install.linkedInstalls.forEach(function(aInstall) {
-            aInstall.addListener(this);
+          for (let linkedInstall of install.linkedInstalls) {
+            linkedInstall.addListener(this);
             
-            if (aInstall.state == AddonManager.STATE_DOWNLOAD_FAILED || aInstall.addon.appDisabled)
-              failed.push(aInstall);
+            if (linkedInstall.state == AddonManager.STATE_DOWNLOAD_FAILED || linkedInstall.addon.appDisabled)
+              failed.push(linkedInstall);
             else
-              installs.push(aInstall);
-          }, this);
+              installs.push(linkedInstall);
+          }
         }
         break;
       case AddonManager.STATE_CANCELLED:
@@ -142,12 +142,12 @@ Installer.prototype = {
     if (failed.length > 0) {
       
       
-      failed.forEach(function(aInstall) {
-        if (aInstall.state == AddonManager.STATE_DOWNLOADED) {
-          aInstall.removeListener(this);
-          aInstall.cancel();
+      for (let install of failed) {
+        if (install.state == AddonManager.STATE_DOWNLOADED) {
+          install.removeListener(this);
+          install.cancel();
         }
-      }, this);
+      }
       notifyObservers("addon-install-failed", this.browser, this.url, failed);
     }
 
@@ -191,12 +191,12 @@ Installer.prototype = {
                              null, "chrome,modal,centerscreen", args);
     } catch (e) {
       logger.warn("Exception showing install confirmation dialog", e);
-      this.downloads.forEach(function(aInstall) {
-        aInstall.removeListener(this);
+      for (let install of this.downloads) {
+        install.removeListener(this);
         
         
-        aInstall.cancel();
-      }, this);
+        install.cancel();
+      }
       notifyObservers("addon-install-cancelled", this.browser, this.url,
                       this.downloads);
     }
