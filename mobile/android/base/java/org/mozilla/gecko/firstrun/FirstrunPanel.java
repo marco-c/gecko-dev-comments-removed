@@ -7,6 +7,12 @@ package org.mozilla.gecko.firstrun;
 
 import android.support.v4.app.Fragment;
 
+
+
+
+
+
+
 public class FirstrunPanel extends Fragment {
 
     public static final int TITLE_RES = -1;
