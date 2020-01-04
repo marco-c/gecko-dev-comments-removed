@@ -315,7 +315,9 @@ public:
             mVideoDevice->GetSource()->Deallocate();
           }
           
-          if (mBool) {
+          
+          if (mBool || ((!mAudioDevice || mAudioDevice->GetSource()->IsAvailable()) &&
+                        (!mVideoDevice || mVideoDevice->GetSource()->IsAvailable()))) {
             source->Finish();
           }
 
