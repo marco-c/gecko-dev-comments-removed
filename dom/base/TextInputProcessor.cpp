@@ -249,7 +249,7 @@ TextInputProcessor::IsValidEventTypeForComposition(
                       const WidgetKeyboardEvent& aKeyboardEvent) const
 {
   
-  if (aKeyboardEvent.mMessage == NS_KEY_DOWN) {
+  if (aKeyboardEvent.mMessage == eKeyDown) {
     return true;
   }
   if (aKeyboardEvent.mMessage == NS_USER_DEFINED_EVENT &&
@@ -312,7 +312,7 @@ TextInputProcessor::MaybeDispatchKeyupForComposition(
 
   
   
-  if (aKeyboardEvent->mMessage == NS_KEY_DOWN) {
+  if (aKeyboardEvent->mMessage == eKeyDown) {
     return result;
   }
 
@@ -838,7 +838,7 @@ TextInputProcessor::KeydownInternal(const WidgetKeyboardEvent& aKeyboardEvent,
 
   nsEventStatus status = aConsumedFlags ? nsEventStatus_eConsumeNoDefault :
                                           nsEventStatus_eIgnore;
-  if (!mDispatcher->DispatchKeyboardEvent(NS_KEY_DOWN, keyEvent, status,
+  if (!mDispatcher->DispatchKeyboardEvent(eKeyDown, keyEvent, status,
                                           GetDispatchTo())) {
     
     

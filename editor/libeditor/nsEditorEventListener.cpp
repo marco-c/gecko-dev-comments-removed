@@ -392,7 +392,7 @@ nsEditorEventListener::HandleEvent(nsIDOMEvent* aEvent)
     }
 #ifdef HANDLE_NATIVE_TEXT_DIRECTION_SWITCH
     
-    case NS_KEY_DOWN: {
+    case eKeyDown: {
       nsCOMPtr<nsIDOMKeyEvent> keyEvent = do_QueryInterface(aEvent);
       return KeyDown(keyEvent);
     }
