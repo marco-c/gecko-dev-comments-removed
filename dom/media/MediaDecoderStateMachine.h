@@ -903,7 +903,7 @@ private:
 
   
   
-  RefPtr<MediaDecoderReader> mReader;
+  const RefPtr<MediaDecoderReader> mReader;
 
   
   
