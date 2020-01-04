@@ -385,8 +385,7 @@ AsyncCompositionManager::AlignFixedAndStickyLayers(Layer* aLayer,
                                                    FrameMetrics::ViewID aTransformScrollId,
                                                    const Matrix4x4& aPreviousTransformForRoot,
                                                    const Matrix4x4& aCurrentTransformForRoot,
-                                                   const ScreenMargin& aFixedLayerMargins,
-                                                   bool aTransformAffectsLayerClip)
+                                                   const ScreenMargin& aFixedLayerMargins)
 {
   FrameMetrics::ViewID fixedTo;  
   bool isRootOfFixedSubtree = aLayer->GetIsFixedPosition() &&
@@ -412,8 +411,7 @@ AsyncCompositionManager::AlignFixedAndStickyLayers(Layer* aLayer,
     for (Layer* child = aLayer->GetFirstChild(); child; child = child->GetNextSibling()) {
       AlignFixedAndStickyLayers(child, aTransformedSubtreeRoot, aTransformScrollId,
                                 aPreviousTransformForRoot,
-                                aCurrentTransformForRoot, aFixedLayerMargins,
-                                true );
+                                aCurrentTransformForRoot, aFixedLayerMargins);
     }
     return;
   }
@@ -499,7 +497,10 @@ AsyncCompositionManager::AlignFixedAndStickyLayers(Layer* aLayer,
   
   
   
-  bool adjustClipRect = aTransformAffectsLayerClip && aLayer->IsClipFixed();
+  
+  
+  bool adjustClipRect = aLayer != aTransformedSubtreeRoot &&
+                        aLayer->IsClipFixed();
   TranslateShadowLayer(aLayer, ThebesPoint(translation.ToUnknownPoint()), adjustClipRect);
 }
 
@@ -916,8 +917,7 @@ AsyncCompositionManager::ApplyAsyncContentTransformToTree(Layer *aLayer,
     
     
     AlignFixedAndStickyLayers(aLayer, aLayer, metrics.GetScrollId(), oldTransform,
-                              transformWithoutOverscrollOrOmta, fixedLayerMargins,
-                              asyncClip.isSome());
+                              transformWithoutOverscrollOrOmta, fixedLayerMargins);
 
     
     
@@ -1336,8 +1336,7 @@ AsyncCompositionManager::TransformScrollableLayer(Layer* aLayer)
   
   
   AlignFixedAndStickyLayers(aLayer, aLayer, metrics.GetScrollId(), oldTransform,
-                            aLayer->GetLocalTransform(), fixedLayerMargins,
-                            false);
+                            aLayer->GetLocalTransform(), fixedLayerMargins);
 
   ExpandRootClipRect(aLayer, fixedLayerMargins);
 }
