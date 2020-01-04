@@ -621,7 +621,9 @@ nsPNGDecoder::info_callback(png_structp png_ptr, png_infop info_ptr)
 #endif
 
   if (decoder->IsMetadataDecode()) {
-    decoder->CheckForTransparency(decoder->format,
+    
+    
+    decoder->CheckForTransparency(SurfaceFormat::B8G8R8A8,
                                   IntRect(0, 0, width, height));
 
     
