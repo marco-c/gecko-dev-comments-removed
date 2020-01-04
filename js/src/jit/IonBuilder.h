@@ -815,8 +815,9 @@ class IonBuilder
     InliningStatus inlineStrReplace(CallInfo& callInfo);
 
     
-    InliningStatus inlineRegExpExec(CallInfo& callInfo);
-    InliningStatus inlineRegExpTest(CallInfo& callInfo);
+    InliningStatus inlineRegExpMatcher(CallInfo& callInfo);
+    InliningStatus inlineRegExpTester(CallInfo& callInfo);
+    InliningStatus inlineIsRegExpObject(CallInfo& callInfo);
 
     
     InliningStatus inlineObjectCreate(CallInfo& callInfo);

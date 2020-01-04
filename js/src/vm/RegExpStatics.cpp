@@ -101,7 +101,7 @@ RegExpStatics::executeLazy(JSContext* cx)
 
     
     RootedLinearString input(cx, matchesInput);
-    RegExpRunStatus status = g->execute(cx, input, lazyIndex, &this->matches);
+    RegExpRunStatus status = g->execute(cx, input, lazyIndex, lazySticky, &this->matches, nullptr);
     if (status == RegExpRunStatus_Error)
         return false;
 

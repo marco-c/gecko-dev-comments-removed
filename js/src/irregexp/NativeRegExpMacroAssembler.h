@@ -43,6 +43,7 @@ struct InputOutputData
 
     
     size_t startIndex;
+    size_t* endIndex;
 
     MatchPairs* matches;
 
@@ -52,10 +53,11 @@ struct InputOutputData
 
     template <typename CharT>
     InputOutputData(const CharT* inputStart, const CharT* inputEnd,
-                    size_t startIndex, MatchPairs* matches)
+                    size_t startIndex, MatchPairs* matches, size_t* endIndex)
       : inputStart(inputStart),
         inputEnd(inputEnd),
         startIndex(startIndex),
+        endIndex(endIndex),
         matches(matches),
         result(0)
     {}
@@ -66,6 +68,7 @@ struct FrameData
     
     char16_t* inputStart;
     size_t startIndex;
+    size_t* endIndex;
 
     
     char16_t* inputStartMinusOne;

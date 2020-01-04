@@ -104,6 +104,18 @@ static MOZ_CONSTEXPR_VAR Register AsmJSIonExitRegD1 = eax;
 static MOZ_CONSTEXPR_VAR Register AsmJSIonExitRegD2 = esi;
 
 
+static MOZ_CONSTEXPR_VAR Register RegExpMatcherRegExpReg = CallTempReg0;
+static MOZ_CONSTEXPR_VAR Register RegExpMatcherStringReg = CallTempReg1;
+static MOZ_CONSTEXPR_VAR Register RegExpMatcherLastIndexReg = CallTempReg2;
+static MOZ_CONSTEXPR_VAR Register RegExpMatcherStickyReg = CallTempReg4;
+
+
+static MOZ_CONSTEXPR_VAR Register RegExpTesterRegExpReg = CallTempReg0;
+static MOZ_CONSTEXPR_VAR Register RegExpTesterStringReg = CallTempReg2;
+static MOZ_CONSTEXPR_VAR Register RegExpTesterLastIndexReg = CallTempReg3;
+static MOZ_CONSTEXPR_VAR Register RegExpTesterStickyReg = CallTempReg4;
+
+
 
 #if defined(__GNUC__)
 static MOZ_CONSTEXPR_VAR uint32_t ABIStackAlignment = 16;

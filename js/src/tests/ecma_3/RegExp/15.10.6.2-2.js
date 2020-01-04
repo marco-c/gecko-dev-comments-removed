@@ -112,15 +112,6 @@ addThis();
 
 
 
-status = inSection(5);
-pattern.lastIndex = -1;
-actualmatch = pattern.exec(string);
-expectedmatch = null;
-addThis();
-
-
-
-
 
 
 
@@ -133,20 +124,8 @@ actualmatch = pattern.exec(string);
 expectedmatch = null;
 addThis();
  
-status = inSection(7);
-pattern.lastIndex = -Math.pow(2,32);
-actualmatch = pattern.exec(string);
-expectedmatch = null;
-addThis();
-
 status = inSection(8);
 pattern.lastIndex = Math.pow(2,32) + 1;
-actualmatch = pattern.exec(string);
-expectedmatch = null;
-addThis();
-
-status = inSection(9);
-pattern.lastIndex = -(Math.pow(2,32) + 1);
 actualmatch = pattern.exec(string);
 expectedmatch = null;
 addThis();
@@ -157,20 +136,8 @@ actualmatch = pattern.exec(string);
 expectedmatch = null;
 addThis();
 
-status = inSection(11);
-pattern.lastIndex = -Math.pow(2,32) * 2;
-actualmatch = pattern.exec(string);
-expectedmatch = null;
-addThis();
-
 status = inSection(12);
 pattern.lastIndex = Math.pow(2,40);
-actualmatch = pattern.exec(string);
-expectedmatch = null;
-addThis();
-
-status = inSection(13);
-pattern.lastIndex = -Math.pow(2,40);
 actualmatch = pattern.exec(string);
 expectedmatch = null;
 addThis();
@@ -181,12 +148,6 @@ actualmatch = pattern.exec(string);
 expectedmatch = null;
 addThis();
 
-status = inSection(15);
-pattern.lastIndex = -Number.MAX_VALUE;
-actualmatch = pattern.exec(string);
-expectedmatch = null;
-addThis();
- 
 
 
 
