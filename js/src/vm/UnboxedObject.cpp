@@ -354,7 +354,7 @@ UnboxedPlainObject::ensureExpando(JSContext* cx, Handle<UnboxedPlainObject*> obj
     
     
     if (IsInsideNursery(expando) && !IsInsideNursery(obj))
-        cx->runtime()->gc.storeBuffer.putWholeCellFromMainThread(obj);
+        cx->runtime()->gc.storeBuffer.putWholeCell(obj);
 
     obj->expando_ = expando;
     return expando;
@@ -575,7 +575,7 @@ UnboxedPlainObject::convertToNative(JSContext* cx, JSObject* obj)
     
     
     if (expando && !IsInsideNursery(expando))
-        cx->runtime()->gc.storeBuffer.putWholeCellFromMainThread(expando);
+        cx->runtime()->gc.storeBuffer.putWholeCell(expando);
 
     obj->setGroup(layout.nativeGroup());
     obj->as<PlainObject>().setLastPropertyMakeNative(cx, layout.nativeShape());

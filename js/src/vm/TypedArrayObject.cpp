@@ -362,7 +362,7 @@ class TypedArrayObjectTemplate : public TypedArrayObject
             
             
             if (!IsInsideNursery(obj) && cx->runtime()->gc.nursery.isInside(buffer->dataPointer()))
-                cx->runtime()->gc.storeBuffer.putWholeCellFromMainThread(obj);
+                cx->runtime()->gc.storeBuffer.putWholeCell(obj);
         } else {
             void* data = obj->fixedData(FIXED_DATA_START);
             obj->initPrivate(data);
@@ -1011,7 +1011,7 @@ DataViewObject::create(JSContext* cx, uint32_t byteOffset, uint32_t byteLength,
     
     
     if (!IsInsideNursery(obj) && cx->runtime()->gc.nursery.isInside(arrayBuffer->dataPointer()))
-        cx->runtime()->gc.storeBuffer.putWholeCellFromMainThread(obj);
+        cx->runtime()->gc.storeBuffer.putWholeCell(obj);
 
     
     MOZ_ASSERT(dvobj.numFixedSlots() == TypedArrayLayout::DATA_SLOT);

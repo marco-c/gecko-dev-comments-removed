@@ -495,7 +495,7 @@ NewCallObject(JSContext* cx, HandleShape shape, HandleObjectGroup group, uint32_
     
     
     if (!IsInsideNursery(obj))
-        cx->runtime()->gc.storeBuffer.putWholeCellFromMainThread(obj);
+        cx->runtime()->gc.storeBuffer.putWholeCell(obj);
 
     return obj;
 }
@@ -512,7 +512,7 @@ NewSingletonCallObject(JSContext* cx, HandleShape shape, uint32_t lexicalBegin)
     
     MOZ_ASSERT(!IsInsideNursery(obj),
                "singletons are created in the tenured heap");
-    cx->runtime()->gc.storeBuffer.putWholeCellFromMainThread(obj);
+    cx->runtime()->gc.storeBuffer.putWholeCell(obj);
 
     return obj;
 }
@@ -613,7 +613,7 @@ void
 PostWriteBarrier(JSRuntime* rt, JSObject* obj)
 {
     MOZ_ASSERT(!IsInsideNursery(obj));
-    rt->gc.storeBuffer.putWholeCellFromMainThread(obj);
+    rt->gc.storeBuffer.putWholeCell(obj);
 }
 
 void

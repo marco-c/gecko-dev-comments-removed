@@ -1468,7 +1468,7 @@ OutlineTypedObject::setOwnerAndData(JSObject* owner, uint8_t* data)
     
     
     if (owner && !IsInsideNursery(this) && IsInsideNursery(owner))
-        runtimeFromMainThread()->gc.storeBuffer.putWholeCellFromMainThread(this);
+        runtimeFromMainThread()->gc.storeBuffer.putWholeCell(this);
 }
 
  OutlineTypedObject*
@@ -2224,7 +2224,7 @@ InlineTransparentTypedObject::getOrCreateBuffer(JSContext* cx)
     if (IsInsideNursery(this)) {
         
         
-        cx->runtime()->gc.storeBuffer.putWholeCellFromMainThread(buffer);
+        cx->runtime()->gc.storeBuffer.putWholeCell(buffer);
     }
 
     return buffer;
