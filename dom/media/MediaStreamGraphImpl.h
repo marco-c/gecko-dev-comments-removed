@@ -243,18 +243,9 @@ public:
   
 
 
-
-  void UpdateConsumptionState(SourceMediaStream* aStream);
-  
-
-
   void ExtractPendingInput(SourceMediaStream* aStream,
                            GraphTime aDesiredUpToTime,
                            bool* aEnsureNextIteration);
-  
-
-
-  void UpdateBufferSufficiencyState(SourceMediaStream* aStream);
 
   
 
