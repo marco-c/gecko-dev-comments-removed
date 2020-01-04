@@ -845,6 +845,11 @@ CacheFileMetadata::InitEmptyMetadata()
   
   if (mHandle) {
     mHandle->SetPinned(Pinned());
+    
+    
+    
+    
+    mHandle->SetInvalid();
     if (mHandle->FileExists() && mHandle->FileSize()) {
       CacheFileIOManager::TruncateSeekSetEOF(mHandle, 0, 0, nullptr);
     }

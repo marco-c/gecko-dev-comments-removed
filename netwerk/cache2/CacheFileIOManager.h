@@ -68,6 +68,7 @@ public:
 
   
   bool SetPinned(bool aPinned);
+  void SetInvalid() { mInvalid = true; }
 
   
   size_t SizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
@@ -90,8 +91,9 @@ private:
   bool const           mPriority;
   bool const           mSpecialFile;
 
+  mozilla::Atomic<bool, Relaxed> mInvalid;
+
   
-  bool                 mInvalid : 1;
   bool                 mFileExists : 1; 
                                         
                                         
