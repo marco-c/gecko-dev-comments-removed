@@ -119,11 +119,11 @@ add_task(function* test_tabwise_case_sensitive() {
 
 
 
-add_task(function * test_reinitialization_at_remoteness_change() {
+add_task(function* test_reinitialization_at_remoteness_change() {
   
   if (!gMultiProcessBrowser) {
     info("Skipping this test because of non-e10s environment.");
-    return true;
+    return;
   }
 
   info("Ensure findbar re-initialization at remoteness change.");
@@ -166,7 +166,7 @@ add_task(function* () {
   
   if (!gMultiProcessBrowser) {
     info("Skipping this test because of non-e10s environment.");
-    return true;
+    return;
   }
 
   let tab = yield BrowserTestUtils.openNewForegroundTab(gBrowser, TEST_PAGE_URI);
