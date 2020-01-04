@@ -227,7 +227,8 @@ class Nursery
         return total;
     }
 
-    size_t usedSpace() const;
+    
+    size_t spaceToEnd() const;
 
     
     MOZ_ALWAYS_INLINE size_t freeSpace() const {
@@ -427,7 +428,7 @@ class Nursery
     void sweepDictionaryModeObjects();
 
     
-    void maybeResizeNursery(JS::gcreason::Reason reason, size_t usedSpace, double promotionRate);
+    void maybeResizeNursery(JS::gcreason::Reason reason, double promotionRate);
     void growAllocableSpace();
     void shrinkAllocableSpace();
 
