@@ -59,7 +59,11 @@ namespace std {
     #define false_type FalseType
     #define true_type TrueType
 
-    using mozilla::Function;
+    
+    
+    
+    template<typename Signature>
+    using Function = mozilla::function<Signature>;
     #define function Function
 #endif
 }

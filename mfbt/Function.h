@@ -129,45 +129,45 @@ public:
 
 
 template<typename Signature>
-class Function;
+class function;
 
 template<typename ReturnType, typename... Arguments>
-class Function<ReturnType(Arguments...)>
+class function<ReturnType(Arguments...)>
 {
 public:
-  Function() {}
+  function() {}
 
   
   template <typename Callable>
-  MOZ_IMPLICIT Function(const Callable& aCallable)
+  MOZ_IMPLICIT function(const Callable& aCallable)
     : mImpl(new detail::FunctionImpl<Callable, ReturnType, Arguments...>(aCallable))
   {}
-  MOZ_IMPLICIT Function(const Function& aFunction)
+  MOZ_IMPLICIT function(const function& aFunction)
     : mImpl(aFunction.mImpl)
   {}
-  MOZ_IMPLICIT Function(decltype(nullptr))
+  MOZ_IMPLICIT function(decltype(nullptr))
   {}
 
   
   
-  Function(Function&& aOther) : mImpl(Move(aOther.mImpl)) {}
-  Function& operator=(Function&& aOther) {
+  function(function&& aOther) : mImpl(Move(aOther.mImpl)) {}
+  function& operator=(function&& aOther) {
     mImpl = Move(aOther.mImpl);
     return *this;
   }
 
   template <typename Callable>
-  Function& operator=(const Callable& aCallable)
+  function& operator=(const Callable& aCallable)
   {
     mImpl = new detail::FunctionImpl<Callable, ReturnType, Arguments...>(aCallable);
     return *this;
   }
-  Function& operator=(const Function& aFunction)
+  function& operator=(const function& aFunction)
   {
     mImpl = aFunction.mImpl;
     return *this;
   }
-  Function& operator=(decltype(nullptr))
+  function& operator=(decltype(nullptr))
   {
     mImpl = nullptr;
     return *this;
