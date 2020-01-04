@@ -4889,6 +4889,9 @@ pref("layout.accessiblecaret.use_long_tap_injector", true);
 pref("layout.accessiblecaret.extendedvisibility", false);
 
 
+pref("layout.accessiblecaret.hapticfeedback", false);
+
+
 pref("dom.wakelock.enabled", false);
 
 
