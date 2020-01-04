@@ -126,38 +126,6 @@ ThrowInvalidThis(JSContext* aCx, const JS::CallArgs& aArgs,
 }
 
 bool
-ThrowMethodFailed(JSContext* cx, ErrorResult& rv)
-{
-  if (rv.IsUncatchableException()) {
-    
-    JS_ClearPendingException(cx);
-    
-    
-    return false;
-  }
-  if (rv.IsJSContextException()) {
-    
-    
-    
-    return false;
-  }
-  if (rv.IsErrorWithMessage()) {
-    rv.ReportErrorWithMessage(cx);
-    return false;
-  }
-  if (rv.IsJSException()) {
-    rv.ReportJSException(cx);
-    return false;
-  }
-  if (rv.IsDOMException()) {
-    rv.ReportDOMException(cx);
-    return false;
-  }
-  rv.ReportGenericError(cx);
-  return false;
-}
-
-bool
 ThrowNoSetterArg(JSContext* aCx, prototypes::ID aProtoId)
 {
   nsPrintfCString errorMessage("%s attribute setter",
@@ -506,6 +474,37 @@ ErrorResult::SuppressException()
   
   
   mResult = NS_OK;
+}
+
+void
+ErrorResult::SetPendingException(JSContext* cx)
+{
+  if (IsUncatchableException()) {
+    
+    JS_ClearPendingException(cx);
+    
+    
+    return;
+  }
+  if (IsJSContextException()) {
+    
+    
+    
+    return;
+  }
+  if (IsErrorWithMessage()) {
+    ReportErrorWithMessage(cx);
+    return;
+  }
+  if (IsJSException()) {
+    ReportJSException(cx);
+    return;
+  }
+  if (IsDOMException()) {
+    ReportDOMException(cx);
+    return;
+  }
+  ReportGenericError(cx);
 }
 
 namespace dom {
@@ -2777,10 +2776,10 @@ ConvertExceptionToPromise(JSContext* cx,
   JS_ClearPendingException(cx);
   ErrorResult rv;
   RefPtr<Promise> promise = Promise::Reject(global, exn, rv);
-  if (rv.Failed()) {
+  if (rv.MaybeSetPendingException(cx)) {
     
     
-    ThrowMethodFailed(cx, rv);
+    
     JS_SetPendingException(cx, exn);
     return false;
   }

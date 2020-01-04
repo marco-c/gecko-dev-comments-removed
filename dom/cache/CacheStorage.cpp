@@ -261,8 +261,8 @@ CacheStorage::DefineCaches(JSContext* aCx, JS::Handle<JSObject*> aGlobal)
                        false, 
                        true,  
                        rv);
-  if (NS_WARN_IF(rv.Failed())) {
-    return ThrowMethodFailed(aCx, rv);
+  if (NS_WARN_IF(rv.MaybeSetPendingException(aCx))) {
+    return false;
   }
 
   JS::Rooted<JS::Value> caches(aCx);

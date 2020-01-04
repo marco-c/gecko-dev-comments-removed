@@ -134,6 +134,40 @@ public:
     return rv;
   }
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  bool MaybeSetPendingException(JSContext* cx)
+  {
+    if (!Failed()) {
+      return false;
+    }
+
+    SetPendingException(cx);
+    return true;
+  }
+
   template<dom::ErrNum errorNumber, typename... Ts>
   void ThrowTypeError(Ts&&... messageArgs)
   {
@@ -308,6 +342,10 @@ private:
   
   
   void ClearUnionData();
+
+  
+  
+  void SetPendingException(JSContext* cx);
 
   
   
