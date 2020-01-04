@@ -11,3 +11,9 @@ description,
 caption > label {
   font-size: 1.2em;
 }
+
+
+
+textbox.tree-input {
+  font-size: unset;
+}
