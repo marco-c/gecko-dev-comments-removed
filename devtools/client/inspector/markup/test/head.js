@@ -584,3 +584,29 @@ function* simulateNodeDragAndDrop(inspector, selector, xOffset, yOffset) {
   yield simulateNodeDrag(inspector, selector, xOffset, yOffset);
   yield simulateNodeDrop(inspector, selector);
 }
+
+
+
+
+function* waitForScrollStop(doc) {
+  let el = doc.documentElement;
+  let win = doc.defaultView;
+  let lastScrollTop = el.scrollTop;
+  let stopFrameCount = 0;
+  while (stopFrameCount < 30) {
+    
+    yield new Promise(resolve => win.requestAnimationFrame(resolve));
+
+    
+    if (lastScrollTop == el.scrollTop) {
+      
+      stopFrameCount++;
+    } else {
+      
+      stopFrameCount = 0;
+      lastScrollTop = el.scrollTop;
+    }
+  }
+
+  return lastScrollTop;
+}

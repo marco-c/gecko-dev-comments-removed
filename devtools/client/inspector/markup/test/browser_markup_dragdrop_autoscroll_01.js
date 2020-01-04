@@ -7,9 +7,13 @@
 
 
 
-const TEST_URL = URL_ROOT + "doc_markup_dragdrop_autoscroll.html";
+const TEST_URL = URL_ROOT + "doc_markup_dragdrop_autoscroll_01.html";
 
 add_task(function* () {
+  
+  
+  yield pushPref("devtools.toolbox.footer.height", 10000);
+
   let {inspector} = yield openInspectorForURL(TEST_URL);
   let markup = inspector.markup;
   let viewHeight = markup.doc.documentElement.clientHeight;
@@ -18,7 +22,7 @@ add_task(function* () {
   markup.isDragging = true;
 
   info("Simulate a mousemove on the view, at the bottom, and expect scrolling");
-  let onScrolled = waitForScrollStop(markup);
+  let onScrolled = waitForScrollStop(markup.doc);
 
   markup._onMouseMove({
     preventDefault: () => {},
@@ -30,7 +34,7 @@ add_task(function* () {
   ok(bottomScrollPos > 0, "The view was scrolled down");
 
   info("Simulate a mousemove at the top and expect more scrolling");
-  onScrolled = waitForScrollStop(markup);
+  onScrolled = waitForScrollStop(markup.doc);
 
   markup._onMouseMove({
     preventDefault: () => {},
@@ -45,29 +49,3 @@ add_task(function* () {
   info("Simulate a mouseup to stop dragging");
   markup._onMouseUp();
 });
-
-
-
-
-function* waitForScrollStop(markup) {
-  let el = markup.doc.documentElement;
-  let win = markup.doc.defaultView;
-  let lastScrollTop = el.scrollTop;
-  let stopFrameCount = 0;
-  while (stopFrameCount < 30) {
-    
-    yield new Promise(resolve => win.requestAnimationFrame(resolve));
-
-    
-    if (lastScrollTop == el.scrollTop) {
-      
-      stopFrameCount++;
-    } else {
-      
-      stopFrameCount = 0;
-      lastScrollTop = el.scrollTop;
-    }
-  }
-
-  return lastScrollTop;
-}
