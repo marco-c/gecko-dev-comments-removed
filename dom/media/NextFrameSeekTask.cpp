@@ -244,7 +244,7 @@ NextFrameSeekTask::IsVideoSeekComplete() const
 }
 
 void
-NextFrameSeekTask::CheckIfSeekComplete()
+NextFrameSeekTask::MaybeFinishSeek()
 {
   AssertOwnerThread();
 
@@ -283,7 +283,7 @@ NextFrameSeekTask::OnAudioDecoded(MediaData* aAudioSample)
   
   mSeekedAudioData = aAudioSample;
 
-  CheckIfSeekComplete();
+  MaybeFinishSeek();
 }
 
 void
@@ -298,7 +298,7 @@ NextFrameSeekTask::OnAudioNotDecoded(MediaDecoderReader::NotDecodedReason aReaso
   
   
 
-  CheckIfSeekComplete();
+  MaybeFinishSeek();
 }
 
 void
@@ -320,7 +320,7 @@ NextFrameSeekTask::OnVideoDecoded(MediaData* aVideoSample)
     mSeekedVideoData = aVideoSample;
   }
 
-  CheckIfSeekComplete();
+  MaybeFinishSeek();
 }
 
 void
@@ -338,7 +338,7 @@ NextFrameSeekTask::OnVideoNotDecoded(MediaDecoderReader::NotDecodedReason aReaso
       
       
       
-      CheckIfSeekComplete();
+      MaybeFinishSeek();
       return;
     }
 
@@ -362,7 +362,7 @@ NextFrameSeekTask::OnVideoNotDecoded(MediaDecoderReader::NotDecodedReason aReaso
 
   if (aReason == MediaDecoderReader::END_OF_STREAM) {
     mIsVideoQueueFinished = true;
-    CheckIfSeekComplete();
+    MaybeFinishSeek();
   }
 }
 
@@ -396,7 +396,7 @@ NextFrameSeekTask::SetCallbacks()
     OwnerThread(), [this] (WaitCallbackData aData) {
     
     
-    CheckIfSeekComplete();
+    MaybeFinishSeek();
   });
 
   mVideoWaitCallback = mReader->VideoWaitCallback().Connect(
