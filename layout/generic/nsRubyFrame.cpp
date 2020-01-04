@@ -110,6 +110,9 @@ nsRubyFrame::Reflow(nsPresContext* aPresContext,
   MoveOverflowToChildList();
 
   
+  mBStartLeading = mBEndLeading = 0;
+
+  
   WritingMode frameWM = aReflowState.GetWritingMode();
   WritingMode lineWM = aReflowState.mLineLayout->GetWritingMode();
   LogicalMargin borderPadding = aReflowState.ComputedLogicalBorderPadding();
@@ -341,7 +344,8 @@ nsRubyFrame::ReflowSegment(nsPresContext* aPresContext,
   NS_WARN_IF_FALSE(startLeading >= 0 && endLeading >= 0,
                    "Leadings should be non-negative (because adding "
                    "ruby annotation can only increase the size)");
-  aBaseContainer->SetBlockLeadings(startLeading, endLeading);
+  mBStartLeading = std::max(mBStartLeading, startLeading);
+  mBEndLeading = std::max(mBEndLeading, endLeading);
 }
 
 nsRubyBaseContainerFrame*
