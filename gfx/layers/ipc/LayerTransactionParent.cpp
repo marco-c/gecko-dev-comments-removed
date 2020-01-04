@@ -744,14 +744,11 @@ LayerTransactionParent::RecvGetAnimationTransform(PLayerParent* aParent,
     }
   }
 
-  
-  
-  transform.PreTranslate(-scaledOrigin.x, -scaledOrigin.y, -scaledOrigin.z);
+  transform.PostTranslate(-scaledOrigin.x, -scaledOrigin.y, -scaledOrigin.z);
 
   
   
-  Point3D basis = -scaledOrigin - transformOrigin;
-  transform.ChangeBasis(basis.x, basis.y, basis.z);
+  transform.ChangeBasis(-transformOrigin);
 
   
   
