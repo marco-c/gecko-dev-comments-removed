@@ -6,6 +6,7 @@
 
 const Services = require("Services");
 const promise = require("promise");
+const defer = require("devtools/shared/defer");
 
 
 loader.lazyRequireGetter(this, "Toolbox", "devtools/client/framework/toolbox", true);
@@ -393,7 +394,7 @@ DevTools.prototype = {
 
 
   showToolbox: function (target, toolId, hostType, hostOptions) {
-    let deferred = promise.defer();
+    let deferred = defer();
 
     let toolbox = this._toolboxes.get(target);
     if (toolbox) {

@@ -15,6 +15,7 @@
 const {Cc, Ci, Cu} = require("chrome");
 const Services = require("Services");
 const promise = require("promise");
+const defer = require("devtools/shared/defer");
 const Telemetry = require("devtools/client/shared/telemetry");
 const { gDevTools } = require("./devtools");
 const { when: unload } = require("sdk/system/unload");
@@ -237,7 +238,7 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
     let transport = DebuggerServer.connectPipe();
     let client = new DebuggerClient(transport);
 
-    let deferred = promise.defer();
+    let deferred = defer();
     client.connect().then(() => {
       client.mainRoot.listProcesses(response => {
         
@@ -374,7 +375,7 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
   
 
 
-  isWebIDEInitialized: promise.defer(),
+  isWebIDEInitialized: defer(),
 
   
 

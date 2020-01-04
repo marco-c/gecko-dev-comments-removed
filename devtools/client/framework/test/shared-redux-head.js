@@ -38,7 +38,7 @@ function commonLog(message) {
 
 
 function waitUntilState(store, predicate) {
-  let deferred = promise.defer();
+  let deferred = defer();
   let unsubscribe = store.subscribe(check);
 
   commonLog(`Waiting for state predicate "${predicate}"`);
@@ -66,7 +66,7 @@ function waitUntilState(store, predicate) {
 
 
 function waitUntilAction(store, actionType) {
-  let deferred = promise.defer();
+  let deferred = defer();
   let unsubscribe = store.subscribe(check);
   let history = store.history;
   let index = history.length;
