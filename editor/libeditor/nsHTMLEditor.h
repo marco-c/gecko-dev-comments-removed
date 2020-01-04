@@ -620,7 +620,6 @@ protected:
 
   
   bool     IsVisBreak(nsINode* aNode);
-  bool     IsVisBreak(nsIDOMNode *aNode);
 
   
 
