@@ -376,6 +376,9 @@ private:
 
     void SetCurrentImage(layers::Image* aImage);
 
+    
+    void RecordDrawingModel();
+
 private:
     PluginModuleParent* mParent;
     RefPtr<PluginAsyncSurrogate> mSurrogate;
@@ -386,6 +389,11 @@ private:
     bool mIsWhitelistedForShumway;
     NPWindowType mWindowType;
     int16_t mDrawingModel;
+
+    
+    
+    
+    int mLastRecordedDrawingModel;
 
     nsDataHashtable<nsPtrHashKey<NPObject>, PluginScriptableObjectParent*> mScriptableObjects;
 
