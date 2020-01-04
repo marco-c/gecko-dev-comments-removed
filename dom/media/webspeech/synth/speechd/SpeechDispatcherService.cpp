@@ -17,7 +17,13 @@
 #include "nsThreadUtils.h"
 #include "prlink.h"
 
-#define URI_PREFIX "urn:moz-tts:sapi:"
+#include <math.h>
+#include <stdlib.h>
+
+#define URI_PREFIX "urn:moz-tts:speechd:"
+
+#define MAX_RATE static_cast<float>(2.5)
+#define MIN_RATE static_cast<float>(0.5)
 
 
 typedef enum {
@@ -475,15 +481,16 @@ SpeechDispatcherService::Speak(const nsAString& aText, const nsAString& aUri,
 
   
   
-  int rate = 0;
-
+  float rate = 0;
   if (aRate > 1) {
-    rate = static_cast<int>((aRate - 1) * 10);
-  } else if (aRate <= 1) {
-    rate = static_cast<int>((aRate - 1) * (100/0.9));
+    
+    rate = log10(std::min(aRate, MAX_RATE)) / log10(MAX_RATE) * 100;
+  } else if (aRate < 1) {
+    
+    rate = log10(std::max(aRate, MIN_RATE)) / log10(MIN_RATE) * -100;
   }
 
-  spd_set_voice_rate(mSpeechdClient, rate);
+  spd_set_voice_rate(mSpeechdClient, static_cast<int>(rate));
 
   
   
