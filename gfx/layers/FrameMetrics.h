@@ -63,7 +63,7 @@ public:
     , mPresShellId(-1)
     , mViewport(0, 0, 0, 0)
     , mExtraResolution()
-    , mBackgroundColor(0, 0, 0, 0)
+    , mBackgroundColor()
     , mLineScrollAmount(0, 0)
     , mPageScrollAmount(0, 0)
     , mAllowVerticalScrollWithWheel(false)
@@ -450,12 +450,12 @@ public:
     return mExtraResolution;
   }
 
-  const gfxRGBA& GetBackgroundColor() const
+  const gfx::Color& GetBackgroundColor() const
   {
     return mBackgroundColor;
   }
 
-  void SetBackgroundColor(const gfxRGBA& aBackgroundColor)
+  void SetBackgroundColor(const gfx::Color& aBackgroundColor)
   {
     mBackgroundColor = aBackgroundColor;
   }
@@ -701,7 +701,7 @@ private:
   ScreenToLayerScale2D mExtraResolution;
 
   
-  gfxRGBA mBackgroundColor;
+  gfx::Color mBackgroundColor;
 
   
   

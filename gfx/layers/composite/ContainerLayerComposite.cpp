@@ -51,7 +51,7 @@ namespace layers {
 using namespace gfx;
 
 static bool
-LayerHasCheckerboardingAPZC(Layer* aLayer, gfxRGBA* aOutColor)
+LayerHasCheckerboardingAPZC(Layer* aLayer, Color* aOutColor)
 {
   for (LayerMetricsWrapper i(aLayer, LayerMetricsWrapper::StartAt::BOTTOM); i; i = i.GetParent()) {
     if (!i.Metrics().IsScrollable()) {
@@ -527,11 +527,11 @@ RenderLayers(ContainerT* aContainer,
     const RenderTargetIntRect& clipRect = preparedData.mClipRect;
     Layer* layer = layerToRender->GetLayer();
 
-    gfxRGBA color;
+    Color color;
     if ((layer->GetContentFlags() & Layer::CONTENT_OPAQUE) &&
         LayerHasCheckerboardingAPZC(layer, &color)) {
       if (gfxPrefs::APZHighlightCheckerboardedAreas()) {
-        color = gfxRGBA(255 / 255.0, 188 / 255.0, 217 / 255.0, 1);  
+        color = Color(255 / 255.f, 188 / 255.f, 217 / 255.f, 1.f); 
       }
       
       
@@ -541,7 +541,7 @@ RenderLayers(ContainerT* aContainer,
       
       gfx::IntRect layerBounds = layer->GetLayerBounds();
       EffectChain effectChain(layer);
-      effectChain.mPrimaryEffect = new EffectSolidColor(ToColor(color));
+      effectChain.mPrimaryEffect = new EffectSolidColor(color);
       aManager->GetCompositor()->DrawQuad(gfx::Rect(layerBounds.x, layerBounds.y, layerBounds.width, layerBounds.height),
                                           gfx::Rect(clipRect.ToUnknownRect()),
                                           effectChain, layer->GetEffectiveOpacity(),
