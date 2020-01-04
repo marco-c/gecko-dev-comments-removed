@@ -15,6 +15,7 @@ import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import java.net.MalformedURLException;
 import java.net.Proxy;
+import java.net.URISyntaxException;
 import java.net.URLConnection;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -34,6 +35,7 @@ import org.mozilla.gecko.AppConstants.Versions;
 import org.mozilla.gecko.gfx.BitmapUtils;
 import org.mozilla.gecko.gfx.LayerView;
 import org.mozilla.gecko.gfx.PanZoomController;
+import org.mozilla.gecko.overlays.ui.ShareDialog;
 import org.mozilla.gecko.permissions.Permissions;
 import org.mozilla.gecko.util.EventCallback;
 import org.mozilla.gecko.util.GeckoRequest;
@@ -44,8 +46,10 @@ import org.mozilla.gecko.util.NativeJSContainer;
 import org.mozilla.gecko.util.NativeJSObject;
 import org.mozilla.gecko.util.ProxySelector;
 import org.mozilla.gecko.util.ThreadUtils;
+import org.mozilla.gecko.widget.ExternalIntentDuringPrivateBrowsingPromptFragment;
 
 import android.Manifest;
+import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.ActivityManager;
 import android.app.AlarmManager;
@@ -85,7 +89,9 @@ import android.os.Environment;
 import android.os.Looper;
 import android.os.SystemClock;
 import android.os.Vibrator;
+import android.provider.Browser;
 import android.provider.Settings;
+import android.support.v4.app.FragmentActivity;
 import android.telephony.TelephonyManager;
 import android.text.TextUtils;
 import android.util.DisplayMetrics;
@@ -835,10 +841,10 @@ public class GeckoAppShell
 
     @WrapForJNI(stubName = "GetHandlersForMimeTypeWrapper")
     static String[] getHandlersForMimeType(String aMimeType, String aAction) {
-        Intent intent = IntentHelper.getIntentForActionString(aAction);
+        Intent intent = getIntentForActionString(aAction);
         if (aMimeType != null && aMimeType.length() > 0)
             intent.setType(aMimeType);
-        return IntentHelper.getHandlersForIntent(intent);
+        return getHandlersForIntent(intent);
     }
 
     @WrapForJNI(stubName = "GetHandlersForURLWrapper")
@@ -846,10 +852,10 @@ public class GeckoAppShell
         
         Uri uri = aURL.indexOf(':') >= 0 ? Uri.parse(aURL) : new Uri.Builder().scheme(aURL).build();
 
-        Intent intent = IntentHelper.getOpenURIIntent(getApplicationContext(), uri.toString(), "",
+        Intent intent = getOpenURIIntent(getApplicationContext(), uri.toString(), "",
             TextUtils.isEmpty(aAction) ? Intent.ACTION_VIEW : aAction, "");
 
-        return IntentHelper.getHandlersForIntent(intent);
+        return getHandlersForIntent(intent);
     }
 
     @WrapForJNI(stubName = "GetHWEncoderCapability")
@@ -875,6 +881,47 @@ public class GeckoAppShell
         }
 
         return list;
+    }
+
+    static boolean hasHandlersForIntent(Intent intent) {
+        try {
+            return !queryIntentActivities(intent).isEmpty();
+        } catch (Exception ex) {
+            Log.e(LOGTAG, "Exception in GeckoAppShell.hasHandlersForIntent");
+            return false;
+        }
+    }
+
+    static String[] getHandlersForIntent(Intent intent) {
+        final PackageManager pm = getApplicationContext().getPackageManager();
+        try {
+            final List<ResolveInfo> list = queryIntentActivities(intent);
+
+            int numAttr = 4;
+            final String[] ret = new String[list.size() * numAttr];
+            for (int i = 0; i < list.size(); i++) {
+                ResolveInfo resolveInfo = list.get(i);
+                ret[i * numAttr] = resolveInfo.loadLabel(pm).toString();
+                if (resolveInfo.isDefault)
+                    ret[i * numAttr + 1] = "default";
+                else
+                    ret[i * numAttr + 1] = "";
+                ret[i * numAttr + 2] = resolveInfo.activityInfo.applicationInfo.packageName;
+                ret[i * numAttr + 3] = resolveInfo.activityInfo.name;
+            }
+            return ret;
+        } catch (Exception ex) {
+            Log.e(LOGTAG, "Exception in GeckoAppShell.getHandlersForIntent");
+            return new String[0];
+        }
+    }
+
+    static Intent getIntentForActionString(String aAction) {
+        
+        if (TextUtils.isEmpty(aAction)) {
+            return new Intent(Intent.ACTION_VIEW);
+        }
+        return new Intent(aAction);
     }
 
     @WrapForJNI(stubName = "GetExtensionFromMimeTypeWrapper")
@@ -928,9 +975,277 @@ public class GeckoAppShell
                                           String className,
                                           String action,
                                           String title) {
+        
+        return openUriExternal(targetURI, mimeType, packageName, className, action, title, true);
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    public static boolean openUriExternal(String targetURI,
+                                          String mimeType,
+                                          String packageName,
+                                          String className,
+                                          String action,
+                                          String title,
+                                          final boolean showPromptInPrivateBrowsing) {
+        final GeckoInterface gi = getGeckoInterface();
+        final Context activityContext = gi != null ? gi.getActivity() : null;
+        final Context context = activityContext != null ? activityContext : getApplicationContext();
+        final Intent intent = getOpenURIIntent(context, targetURI,
+                                               mimeType, action, title);
+
+        if (intent == null) {
+            return false;
+        }
+
+        if (!TextUtils.isEmpty(className)) {
+            if (!TextUtils.isEmpty(packageName)) {
+                intent.setClassName(packageName, className);
+            } else {
+                
+                intent.setClassName(context, className);
+            }
+        }
+
+        if (!showPromptInPrivateBrowsing || activityContext == null) {
+            if (activityContext == null) {
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            }
+            return ActivityHandlerHelper.startIntentAndCatch(LOGTAG, context, intent);
+        } else {
+            
+            
+            
+            final FragmentActivity fragmentActivity = (FragmentActivity) activityContext;
+            return ExternalIntentDuringPrivateBrowsingPromptFragment.showDialogOrAndroidChooser(
+                    context, fragmentActivity.getSupportFragmentManager(), intent);
+        }
+    }
+
+    
+
+
+
+
+
+
+
+    static Uri normalizeUriScheme(final Uri u) {
+        final String scheme = u.getScheme();
+        final String lower  = scheme.toLowerCase(Locale.US);
+        if (lower.equals(scheme)) {
+            return u;
+        }
 
         
-        return IntentHelper.openUriExternal(targetURI, mimeType, packageName, className, action, title, true);
+        return u.buildUpon().scheme(lower).build();
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+
+    public static Intent getShareIntent(final Context context,
+                                        final String targetURI,
+                                        final String mimeType,
+                                        final String title) {
+        Intent shareIntent = getIntentForActionString(Intent.ACTION_SEND);
+        shareIntent.putExtra(Intent.EXTRA_TEXT, targetURI);
+        shareIntent.putExtra(Intent.EXTRA_SUBJECT, title);
+        shareIntent.putExtra(ShareDialog.INTENT_EXTRA_DEVICES_ONLY, true);
+
+        
+        
+        
+        shareIntent.putExtra(Intent.EXTRA_TITLE, title);
+
+        if (mimeType != null && mimeType.length() > 0) {
+            shareIntent.setType(mimeType);
+        }
+
+        return shareIntent;
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+    static Intent getOpenURIIntent(final Context context,
+                                   final String targetURI,
+                                   final String mimeType,
+                                   final String action,
+                                   final String title) {
+
+        
+        
+        final Intent intent = getOpenURIIntentInner(context, targetURI, mimeType, action, title);
+
+        if (intent != null) {
+            
+            
+            
+            intent.putExtra(Browser.EXTRA_APPLICATION_ID, AppConstants.ANDROID_PACKAGE_NAME);
+        }
+
+        return intent;
+    }
+
+    private static Intent getOpenURIIntentInner(final Context context,  final String targetURI,
+            final String mimeType, final String action, final String title) {
+
+        if (action.equalsIgnoreCase(Intent.ACTION_SEND)) {
+            Intent shareIntent = getShareIntent(context, targetURI, mimeType, title);
+            return Intent.createChooser(shareIntent,
+                                        context.getResources().getString(R.string.share_title)); 
+        }
+
+        Uri uri = normalizeUriScheme(targetURI.indexOf(':') >= 0 ? Uri.parse(targetURI) : new Uri.Builder().scheme(targetURI).build());
+        if (!TextUtils.isEmpty(mimeType)) {
+            Intent intent = getIntentForActionString(action);
+            intent.setDataAndType(uri, mimeType);
+            return intent;
+        }
+
+        if (!isUriSafeForScheme(uri)) {
+            return null;
+        }
+
+        final String scheme = uri.getScheme();
+        if ("intent".equals(scheme) || "android-app".equals(scheme)) {
+            final Intent intent;
+            try {
+                intent = Intent.parseUri(targetURI, 0);
+            } catch (final URISyntaxException e) {
+                Log.e(LOGTAG, "Unable to parse URI - " + e);
+                return null;
+            }
+
+            
+            intent.addCategory(Intent.CATEGORY_BROWSABLE);
+
+            
+            intent.setComponent(null);
+            nullIntentSelector(intent);
+
+            return intent;
+        }
+
+        
+        
+        
+        
+        final String extension = MimeTypeMap.getFileExtensionFromUrl(targetURI);
+        final Intent intent = getIntentForActionString(action);
+        intent.setData(uri);
+
+        if ("file".equals(scheme)) {
+            
+            final String mimeType2 = getMimeTypeFromExtension(extension);
+            intent.setType(mimeType2);
+            return intent;
+        }
+
+        
+        
+        if (!"sms".equals(scheme) && !"smsto".equals(scheme) && !"mms".equals(scheme) && !"mmsto".equals(scheme)) {
+            return intent;
+        }
+
+        final String query = uri.getEncodedQuery();
+        if (TextUtils.isEmpty(query)) {
+            return intent;
+        }
+
+        
+        
+        String currentUri = uri.toString();
+        String correctlyFormattedDataURIScheme = scheme + "://";
+        if (!currentUri.contains(correctlyFormattedDataURIScheme)) {
+            uri = Uri.parse(currentUri.replaceFirst(scheme + ":", correctlyFormattedDataURIScheme));
+        }
+
+        final String[] fields = query.split("&");
+        boolean shouldUpdateIntent = false;
+        String resultQuery = "";
+        for (String field : fields) {
+            if (field.startsWith("body=")) {
+                final String body = Uri.decode(field.substring(5));
+                intent.putExtra("sms_body", body);
+                shouldUpdateIntent = true;
+            } else if (field.startsWith("subject=")) {
+                final String subject = Uri.decode(field.substring(8));
+                intent.putExtra("subject", subject);
+                shouldUpdateIntent = true;
+            } else if (field.startsWith("cc=")) {
+                final String ccNumber = Uri.decode(field.substring(3));
+                String phoneNumber = uri.getAuthority();
+                if (phoneNumber != null) {
+                    uri = uri.buildUpon().encodedAuthority(phoneNumber + ";" + ccNumber).build();
+                }
+                shouldUpdateIntent = true;
+            } else {
+                resultQuery = resultQuery.concat(resultQuery.length() > 0 ? "&" + field : field);
+            }
+        }
+
+        if (!shouldUpdateIntent) {
+            
+            return intent;
+        }
+
+        
+        
+        final String newQuery = resultQuery.length() > 0 ? "?" + resultQuery : "";
+        final Uri pruned = uri.buildUpon().encodedQuery(newQuery).build();
+        intent.setData(pruned);
+
+        return intent;
+    }
+
+    
+    @TargetApi(15)
+    private static void nullIntentSelector(final Intent intent) {
+        if (!Versions.feature15Plus) {
+            return;
+        }
+
+        intent.setSelector(null);
     }
 
     
