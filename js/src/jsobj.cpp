@@ -2395,7 +2395,7 @@ JSObject::reportNotExtensible(JSContext* cx, unsigned report)
 
 
 
-static const bool ImmutablePrototypesEnabled = false;
+static const bool ImmutablePrototypesEnabled = true;
 
 JS_FRIEND_API(bool)
 JS_ImmutablePrototypesEnabled()
