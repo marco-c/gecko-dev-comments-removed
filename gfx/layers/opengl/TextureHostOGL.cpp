@@ -166,8 +166,7 @@ TextureImageTextureSourceOGL::Update(gfx::DataSourceSurface* aSurface,
       mTexImage = CreateBasicTextureImage(gl, size,
                                           gfx::ContentForFormat(aSurface->GetFormat()),
                                           LOCAL_GL_CLAMP_TO_EDGE,
-                                          FlagsToGLFlags(mFlags),
-                                          SurfaceFormatToImageFormat(aSurface->GetFormat()));
+                                          FlagsToGLFlags(mFlags));
     } else {
       
       
