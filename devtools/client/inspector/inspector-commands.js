@@ -6,7 +6,9 @@
 
 const l10n = require("gcli/l10n");
 loader.lazyRequireGetter(this, "gDevTools", "devtools/client/framework/devtools", true);
+
 const {EyeDropper, HighlighterEnvironment} = require("devtools/server/actors/highlighters");
+
 const Telemetry = require("devtools/client/shared/telemetry");
 
 exports.items = [{

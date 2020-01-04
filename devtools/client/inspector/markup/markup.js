@@ -7,7 +7,9 @@
 
 "use strict";
 
+
 const {Cc, Ci} = require("chrome");
+
 
 
 const PAGE_SIZE = 10;
@@ -54,7 +56,9 @@ const {KeyShortcuts} = require("devtools/client/shared/key-shortcuts");
 const {template} = require("devtools/shared/gcli/templater");
 const nodeConstants = require("devtools/shared/dom-node-constants");
 const nodeFilterConstants = require("devtools/shared/dom-node-filter-constants");
+
 const {XPCOMUtils} = require("resource://gre/modules/XPCOMUtils.jsm");
+
 
 loader.lazyRequireGetter(this, "CSS", "CSS");
 loader.lazyGetter(this, "AutocompletePopup", () => {

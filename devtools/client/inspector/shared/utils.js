@@ -6,7 +6,9 @@
 
 "use strict";
 
+
 const {Ci} = require("chrome");
+
 const {parseDeclarations} = require("devtools/shared/css-parsing-utils");
 const promise = require("promise");
 const {getCSSLexer} = require("devtools/shared/css-lexer");

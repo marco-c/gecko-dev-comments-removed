@@ -6,7 +6,9 @@
 
 "use strict";
 
+
 const {Cc, Ci} = require("chrome");
+
 const {Task} = require("devtools/shared/task");
 const {InplaceEditor, editableItem} =
       require("devtools/client/shared/inplace-editor");

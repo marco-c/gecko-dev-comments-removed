@@ -7,11 +7,15 @@
 
 "use strict";
 
+
 const {Cc, Ci} = require("chrome");
+
 const promise = require("promise");
 const defer = require("devtools/shared/defer");
 const Services = require("Services");
+
 const {XPCOMUtils} = require("resource://gre/modules/XPCOMUtils.jsm");
+
 const {Task} = require("devtools/shared/task");
 const {Tools} = require("devtools/client/definitions");
 const {l10n} = require("devtools/shared/inspector/css-logic");

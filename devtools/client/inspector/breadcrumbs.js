@@ -6,7 +6,9 @@
 
 "use strict";
 
+
 const {Ci} = require("chrome");
+
 const Services = require("Services");
 const promise = require("promise");
 const FocusManager = Services.focus;

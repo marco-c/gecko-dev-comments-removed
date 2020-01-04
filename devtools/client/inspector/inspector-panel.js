@@ -8,7 +8,9 @@
 
 "use strict";
 
+
 const {Cc, Ci} = require("chrome");
+
 
 var Services = require("Services");
 var promise = require("promise");

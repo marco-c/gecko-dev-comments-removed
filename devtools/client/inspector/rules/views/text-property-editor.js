@@ -4,7 +4,9 @@
 
 "use strict";
 
+
 const {Ci} = require("chrome");
+
 const {l10n} = require("devtools/shared/inspector/css-logic");
 const {getCssProperties} = require("devtools/shared/fronts/css-properties");
 const {InplaceEditor, editableField} =

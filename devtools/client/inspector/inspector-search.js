@@ -4,7 +4,9 @@
 
 "use strict";
 
+
 const {Ci} = require("chrome");
+
 const promise = require("promise");
 const {Task} = require("devtools/shared/task");
 

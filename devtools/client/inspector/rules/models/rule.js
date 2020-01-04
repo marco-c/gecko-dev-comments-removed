@@ -6,7 +6,9 @@
 
 "use strict";
 
+
 const {Ci} = require("chrome");
+
 const promise = require("promise");
 const CssLogic = require("devtools/shared/inspector/css-logic");
 const {ELEMENT_STYLE} = require("devtools/shared/specs/styles");
