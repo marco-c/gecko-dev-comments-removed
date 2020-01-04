@@ -7,7 +7,9 @@
 #include "nsSVGForeignObjectFrame.h"
 
 
+#include "DrawResult.h"
 #include "gfxContext.h"
+#include "nsDisplayList.h"
 #include "nsGkAtoms.h"
 #include "nsNameSpaceManager.h"
 #include "nsLayoutUtils.h"
@@ -23,6 +25,7 @@
 
 using namespace mozilla;
 using namespace mozilla::dom;
+using namespace mozilla::image;
 
 
 

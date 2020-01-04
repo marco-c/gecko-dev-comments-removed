@@ -13,6 +13,7 @@
 #include "nsHashKeys.h"
 #include "gfxPattern.h"
 #include "mozilla/gfx/UserData.h"
+#include "mozilla/SVGContextPaint.h"
 #include "nsRefreshDriver.h"
 
 class nsIDocument;
@@ -169,78 +170,6 @@ private:
 
 
 
-class MOZ_RAII AutoSetRestoreSVGContextPaint
-{
-public:
-  AutoSetRestoreSVGContextPaint(gfxTextContextPaint* aContextPaint,
-                                nsIDocument* aSVGDocument);
-  ~AutoSetRestoreSVGContextPaint();
-private:
-  nsIDocument* mSVGDocument;
-  
-  
-  void* mOuterContextPaint;
-};
-
-
-
-
-class gfxTextContextPaint
-{
-protected:
-    typedef mozilla::gfx::DrawTarget DrawTarget;
-
-    gfxTextContextPaint() { }
-
-public:
-    
-
-
-
-
-    virtual already_AddRefed<gfxPattern> GetFillPattern(const DrawTarget* aDrawTarget,
-                                                        float aOpacity,
-                                                        const gfxMatrix& aCTM) = 0;
-    virtual already_AddRefed<gfxPattern> GetStrokePattern(const DrawTarget* aDrawTarget,
-                                                          float aOpacity,
-                                                          const gfxMatrix& aCTM) = 0;
-
-    virtual float GetFillOpacity() { return 1.0f; }
-    virtual float GetStrokeOpacity() { return 1.0f; }
-
-    void InitStrokeGeometry(gfxContext *aContext,
-                            float devUnitsPerSVGUnit);
-
-    FallibleTArray<gfxFloat>& GetStrokeDashArray() {
-        return mDashes;
-    }
-
-    gfxFloat GetStrokeDashOffset() {
-        return mDashOffset;
-    }
-
-    gfxFloat GetStrokeWidth() {
-        return mStrokeWidth;
-    }
-
-    already_AddRefed<gfxPattern> GetFillPattern(const DrawTarget* aDrawTarget,
-                                                const gfxMatrix& aCTM) {
-        return GetFillPattern(aDrawTarget, GetFillOpacity(), aCTM);
-    }
-
-    already_AddRefed<gfxPattern> GetStrokePattern(const DrawTarget* aDrawTarget,
-                                                  const gfxMatrix& aCTM) {
-        return GetStrokePattern(aDrawTarget, GetStrokeOpacity(), aCTM);
-    }
-
-    virtual ~gfxTextContextPaint() { }
-
-private:
-    FallibleTArray<gfxFloat> mDashes;
-    gfxFloat mDashOffset;
-    gfxFloat mStrokeWidth;
-};
-
 
 
 
@@ -250,7 +179,6 @@ class SimpleTextContextPaint : public gfxTextContextPaint
 private:
     static const mozilla::gfx::Color sZero;
 
-public:
     static gfxMatrix SetupDeviceToPatternMatrix(gfxPattern *aPattern,
                                                 const gfxMatrix& aCTM)
     {
@@ -264,6 +192,7 @@ public:
         return deviceToUser * aPattern->GetMatrix();
     }
 
+public:
     SimpleTextContextPaint(gfxPattern *aFillPattern, gfxPattern *aStrokePattern,
                           const gfxMatrix& aCTM) :
         mFillPattern(aFillPattern ? aFillPattern : new gfxPattern(sZero)),
@@ -293,11 +222,11 @@ public:
         return strokePattern.forget();
     }
 
-    float GetFillOpacity() {
+    float GetFillOpacity() const {
         return mFillPattern ? 1.0f : 0.0f;
     }
 
-    float GetStrokeOpacity() {
+    float GetStrokeOpacity() const {
         return mStrokePattern ? 1.0f : 0.0f;
     }
 
