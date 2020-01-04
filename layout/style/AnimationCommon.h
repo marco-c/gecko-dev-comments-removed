@@ -275,7 +275,7 @@ public:
   
   
   
-  bool CanPerformOnCompositorThread() const;
+  bool CanPerformOnCompositorThread(const nsIFrame* aFrame) const;
 
   bool HasCurrentAnimationOfProperty(nsCSSProperty aProperty) const;
 
