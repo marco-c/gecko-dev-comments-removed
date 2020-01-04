@@ -1225,9 +1225,51 @@ struct nsGridContainerFrame::Tracks
     return mSizes[aLine].mPosition;
   }
 
-  nscoord SumOfGridGaps() const {
+  nscoord SumOfGridGaps() const
+  {
     auto len = mSizes.Length();
     return MOZ_LIKELY(len > 1) ? (len - 1) * mGridGap : 0;
+  }
+
+  
+
+
+
+  void BreakBeforeRow(uint32_t aRow)
+  {
+    MOZ_ASSERT(mAxis == eLogicalAxisBlock,
+               "Should only be fragmenting in the block axis (between rows)");
+    nscoord prevRowEndPos = 0;
+    if (aRow != 0) {
+      auto& prevSz = mSizes[aRow - 1];
+      prevRowEndPos = prevSz.mPosition + prevSz.mBase;
+    }
+    auto& sz = mSizes[aRow];
+    const nscoord gap = sz.mPosition - prevRowEndPos;
+    sz.mState |= TrackSize::eBreakBefore;
+    if (gap != 0) {
+      for (uint32_t i = aRow, len = mSizes.Length(); i < len; ++i) {
+        mSizes[i].mPosition -= gap;
+      }
+    }
+  }
+
+  
+
+
+  void ResizeRow(uint32_t aRow, nscoord aNewSize)
+  {
+    MOZ_ASSERT(mAxis == eLogicalAxisBlock,
+               "Should only be fragmenting in the block axis (between rows)");
+    MOZ_ASSERT(aNewSize >= 0);
+    auto& sz = mSizes[aRow];
+    nscoord delta = aNewSize - sz.mBase;
+    NS_WARN_IF_FALSE(delta != nscoord(0), "Useless call to ResizeRow");
+    sz.mBase = aNewSize;
+    const uint32_t numRows = mSizes.Length();
+    for (uint32_t r = aRow + 1; r < numRows; ++r) {
+      mSizes[r].mPosition += delta;
+    }
   }
 
 #ifdef DEBUG
