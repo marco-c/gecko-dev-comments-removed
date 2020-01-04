@@ -500,7 +500,7 @@ InspectorPanel.prototype = {
 
     if (!this._updateProgress) {
       
-      var self = this;
+      let self = this;
       this._updateProgress = {
         node: this.selection.nodeFront,
         outstanding: new Set(),
@@ -508,7 +508,9 @@ InspectorPanel.prototype = {
           if (this !== self._updateProgress) {
             return;
           }
-          if (this.node !== self.selection.nodeFront) {
+          
+          
+          if (!self.selection || (this.node !== self.selection.nodeFront)) {
             self.cancelUpdate();
             return;
           }

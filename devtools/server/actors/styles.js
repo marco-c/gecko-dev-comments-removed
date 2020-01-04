@@ -11,6 +11,9 @@ const {Arg, Option, method, RetVal, types} = protocol;
 const events = require("sdk/event/core");
 const {Class} = require("sdk/core/heritage");
 const {LongStringActor} = require("devtools/server/actors/string");
+const {
+  getDefinedGeometryProperties
+} = require("devtools/server/actors/highlighters/geometry-editor");
 
 
 const {UPDATE_PRESERVING_RULES, UPDATE_GENERAL} =
@@ -565,7 +568,7 @@ var PageStyleActor = protocol.ActorClass({
 
 
 
-  getApplied: method(Task.async(function*(node, options) {
+  getApplied: method(Task.async(function* (node, options) {
     if (!node) {
       return {entries: [], rules: [], sheets: []};
     }
@@ -596,6 +599,24 @@ var PageStyleActor = protocol.ActorClass({
       return DOMUtils.isInheritedProperty(prop);
     });
   },
+
+  isPositionEditable: method(Task.async(function* (node) {
+    if (!node || node.rawNode.nodeType !== node.rawNode.ELEMENT_NODE) {
+      return false;
+    }
+
+    let props = getDefinedGeometryProperties(node.rawNode);
+
+    
+    
+    return props.has("top") ||
+           props.has("right") ||
+           props.has("left") ||
+           props.has("bottom");
+  }), {
+    request: { node: Arg(0, "domnode")},
+    response: { value: RetVal("boolean") }
+  }),
 
   
 
@@ -969,7 +990,7 @@ var PageStyleActor = protocol.ActorClass({
 
 
 
-  addNewRule: method(Task.async(function*(node, pseudoClasses,
+  addNewRule: method(Task.async(function* (node, pseudoClasses,
                                           editAuthored = false) {
     let style = this.styleElement;
     let sheet = style.sheet;
@@ -1049,7 +1070,7 @@ protocol.FrontClass(PageStyleActor, {
     impl: "_getMatchedSelectors"
   }),
 
-  getApplied: protocol.custom(Task.async(function*(node, options = {}) {
+  getApplied: protocol.custom(Task.async(function* (node, options = {}) {
     
     
     
@@ -1403,7 +1424,7 @@ var StyleRuleActor = protocol.ActorClass({
 
 
 
-  setRuleText: method(Task.async(function*(newText) {
+  setRuleText: method(Task.async(function* (newText) {
     if (!this.canSetRuleText ||
         (this.type !== Ci.nsIDOMCSSRule.STYLE_RULE &&
          this.type !== Ci.nsIDOMCSSRule.KEYFRAME_RULE)) {
@@ -1494,7 +1515,7 @@ var StyleRuleActor = protocol.ActorClass({
 
 
 
-  _addNewSelector: Task.async(function*(value, editAuthored) {
+  _addNewSelector: Task.async(function* (value, editAuthored) {
     let rule = this.rawRule;
     let parentStyleSheet = this._parentSheet;
 
@@ -1553,7 +1574,7 @@ var StyleRuleActor = protocol.ActorClass({
 
 
 
-  modifySelector: method(Task.async(function*(value) {
+  modifySelector: method(Task.async(function* (value) {
     if (this.type === ELEMENT_STYLE) {
       return false;
     }
@@ -1811,7 +1832,7 @@ protocol.FrontClass(StyleRuleActor, {
       });
   },
 
-  modifySelector: protocol.custom(Task.async(function*(node, value) {
+  modifySelector: protocol.custom(Task.async(function* (node, value) {
     let response;
     if (this.supportsModifySelectorUnmatched) {
       
