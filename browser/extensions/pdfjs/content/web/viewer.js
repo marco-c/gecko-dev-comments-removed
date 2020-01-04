@@ -4083,7 +4083,6 @@ exports.PDFFindBar = PDFFindBar;
     
 
 
-
     initialize: function pdfHistoryInitialize(fingerprint) {
       this.initialized = true;
       this.reInitialized = false;
