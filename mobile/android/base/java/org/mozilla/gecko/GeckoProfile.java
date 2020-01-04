@@ -38,11 +38,17 @@ import android.app.Activity;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.support.annotation.WorkerThread;
 import android.text.TextUtils;
 import android.util.Log;
 
 public final class GeckoProfile {
     private static final String LOGTAG = "GeckoProfile";
+
+    
+    private static final String CLIENT_ID_FILE_PATH = "datareporting/state.json";
+    
+    private static final String CLIENT_ID_JSON_ATTR = "clientID";
 
     
     
@@ -586,6 +592,39 @@ public final class GeckoProfile {
             return null;
 
         return new File(f, aFile);
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    @WorkerThread
+    public String getClientId() throws IOException {
+        final String clientIdFileContents;
+        try {
+            clientIdFileContents = readFile(CLIENT_ID_FILE_PATH);
+        } catch (final IOException e) {
+            throw new IOException("Could not read client ID file to retrieve client ID", e);
+        }
+
+        try {
+            final org.json.JSONObject json = new org.json.JSONObject(clientIdFileContents);
+            return json.getString(CLIENT_ID_JSON_ATTR);
+        } catch (final JSONException e) {
+            throw new IOException("Could not parse JSON to retrieve client ID", e);
+        }
     }
 
     
