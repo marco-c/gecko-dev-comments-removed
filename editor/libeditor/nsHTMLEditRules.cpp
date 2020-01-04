@@ -1284,11 +1284,10 @@ nsHTMLEditRules::WillInsertText(EditAction aAction,
   
   NS_ENSURE_STATE(mHTMLEditor);
   nsCOMPtr<nsIDocument> doc = mHTMLEditor->GetDocument();
-  nsCOMPtr<nsIDOMDocument> domDoc = mHTMLEditor->GetDOMDocument();
-  NS_ENSURE_TRUE(doc && domDoc, NS_ERROR_NOT_INITIALIZED);
+  NS_ENSURE_STATE(doc);
 
   
-  res = CreateStyleForInsertText(aSelection, domDoc);
+  res = CreateStyleForInsertText(*aSelection, *doc);
   NS_ENSURE_SUCCESS(res, res);
 
   
@@ -4420,16 +4419,16 @@ nsHTMLEditRules::ConvertListType(Element* aList,
 
 
 nsresult
-nsHTMLEditRules::CreateStyleForInsertText(Selection* aSelection,
-                                          nsIDOMDocument *aDoc)
+nsHTMLEditRules::CreateStyleForInsertText(Selection& aSelection,
+                                          nsIDocument& aDoc)
 {
-  MOZ_ASSERT(aSelection && aDoc && mHTMLEditor->mTypeInState);
+  MOZ_ASSERT(mHTMLEditor->mTypeInState);
 
   nsresult res;
   bool weDidSomething = false;
-  NS_ENSURE_STATE(aSelection->GetRangeAt(0));
-  nsCOMPtr<nsINode> node = aSelection->GetRangeAt(0)->GetStartParent();
-  int32_t offset = aSelection->GetRangeAt(0)->StartOffset();
+  NS_ENSURE_STATE(aSelection.GetRangeAt(0));
+  nsCOMPtr<nsINode> node = aSelection.GetRangeAt(0)->GetStartParent();
+  int32_t offset = aSelection.GetRangeAt(0)->StartOffset();
 
   
   
@@ -4462,13 +4461,12 @@ nsHTMLEditRules::CreateStyleForInsertText(Selection* aSelection,
     }
   }
 
-  nsCOMPtr<nsIDOMElement> rootElement;
-  res = aDoc->GetDocumentElement(getter_AddRefs(rootElement));
-  NS_ENSURE_SUCCESS(res, res);
+  nsCOMPtr<Element> rootElement = aDoc.GetRootElement();
+  NS_ENSURE_STATE(rootElement);
 
   
   nsAutoPtr<PropItem> item(mHTMLEditor->mTypeInState->TakeClearProperty());
-  while (item && GetAsDOMNode(node) != rootElement) {
+  while (item && node != rootElement) {
     NS_ENSURE_STATE(mHTMLEditor);
     res = mHTMLEditor->ClearStyle(address_of(node), &offset,
                                   item->tag, &item->attr);
@@ -4494,14 +4492,9 @@ nsHTMLEditRules::CreateStyleForInsertText(Selection* aSelection,
     if (!mHTMLEditor->IsContainer(node)) {
       return NS_OK;
     }
-    nsCOMPtr<nsIContent> newNode;
-    nsCOMPtr<nsIDOMText> nodeAsText;
-    res = aDoc->CreateTextNode(EmptyString(), getter_AddRefs(nodeAsText));
-    NS_ENSURE_SUCCESS(res, res);
-    NS_ENSURE_TRUE(nodeAsText, NS_ERROR_NULL_POINTER);
-    newNode = do_QueryInterface(nodeAsText);
+    OwningNonNull<Text> newNode = aDoc.CreateTextNode(EmptyString());
     NS_ENSURE_STATE(mHTMLEditor);
-    res = mHTMLEditor->InsertNode(*newNode, *node, offset);
+    res = mHTMLEditor->InsertNode(newNode, *node, offset);
     NS_ENSURE_SUCCESS(res, res);
     node = newNode;
     offset = 0;
@@ -4509,11 +4502,11 @@ nsHTMLEditRules::CreateStyleForInsertText(Selection* aSelection,
 
     if (relFontSize) {
       
-      int32_t dir = relFontSize > 0 ? 1 : -1;
+      nsHTMLEditor::FontSize dir = relFontSize > 0 ?
+        nsHTMLEditor::FontSize::incr : nsHTMLEditor::FontSize::decr;
       for (int32_t j = 0; j < DeprecatedAbs(relFontSize); j++) {
         NS_ENSURE_STATE(mHTMLEditor);
-        res = mHTMLEditor->RelativeFontChangeOnTextNode(dir, nodeAsText,
-                                                        0, -1);
+        res = mHTMLEditor->RelativeFontChangeOnTextNode(dir, newNode, 0, -1);
         NS_ENSURE_SUCCESS(res, res);
       }
     }
@@ -4528,7 +4521,7 @@ nsHTMLEditRules::CreateStyleForInsertText(Selection* aSelection,
     }
   }
   if (weDidSomething) {
-    return aSelection->Collapse(node, offset);
+    return aSelection.Collapse(node, offset);
   }
 
   return NS_OK;
