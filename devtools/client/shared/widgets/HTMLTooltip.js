@@ -60,7 +60,7 @@ const EXTRA_BORDER = {
 
 
 function HTMLTooltip(toolbox,
-  {type = "normal", autofocus = true, consumeOutsideClicks = true} = {}) {
+  {type = "normal", autofocus = false, consumeOutsideClicks = true} = {}) {
   EventEmitter.decorate(this);
 
   this.doc = toolbox.doc;
