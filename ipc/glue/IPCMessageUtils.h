@@ -421,6 +421,11 @@ struct ParamTraits<nsLiteralString> : ParamTraits<nsAString>
   typedef nsLiteralString paramType;
 };
 
+
+
+
+bool ByteLengthIsValid(uint32_t aNumElements, size_t aElementSize, int* aByteLength);
+
 template <typename E>
 struct ParamTraits<FallibleTArray<E> >
 {
@@ -434,29 +439,6 @@ struct ParamTraits<FallibleTArray<E> >
   static const bool sUseWriteBytes = (mozilla::IsIntegral<E>::value ||
                                       mozilla::IsFloatingPoint<E>::value);
 
-  
-  
-  
-  
-  
-  
-  static bool ByteLengthIsValid(size_t aNumElements, int* aTotalLength) {
-    static_assert(sizeof(int) == sizeof(int32_t), "int is an unexpected size!");
-
-    
-    if (aNumElements > size_t(INT32_MAX)) {
-      return false;
-    }
-
-    int64_t numBytes = static_cast<int64_t>(aNumElements) * sizeof(E);
-    if (numBytes > int64_t(INT32_MAX)) {
-      return false;
-    }
-
-    *aTotalLength = static_cast<int>(numBytes);
-    return true;
-  }
-
   static void Write(Message* aMsg, const paramType& aParam)
   {
     uint32_t length = aParam.Length();
@@ -464,7 +446,7 @@ struct ParamTraits<FallibleTArray<E> >
 
     if (sUseWriteBytes) {
       int pickledLength = 0;
-      mozilla::DebugOnly<bool> valid = ByteLengthIsValid(length, &pickledLength);
+      mozilla::DebugOnly<bool> valid = ByteLengthIsValid(length, sizeof(E), &pickledLength);
       MOZ_ASSERT(valid);
       aMsg->WriteBytes(aParam.Elements(), pickledLength);
     } else {
@@ -483,7 +465,7 @@ struct ParamTraits<FallibleTArray<E> >
 
     if (sUseWriteBytes) {
       int pickledLength = 0;
-      if (!ByteLengthIsValid(length, &pickledLength)) {
+      if (!ByteLengthIsValid(length, sizeof(E), &pickledLength)) {
         return false;
       }
 
