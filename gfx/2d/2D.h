@@ -1037,6 +1037,9 @@ public:
 
 
   virtual already_AddRefed<SourceSurface> OptimizeSourceSurface(SourceSurface *aSurface) const = 0;
+  virtual already_AddRefed<SourceSurface> OptimizeSourceSurfaceForUnknownAlpha(SourceSurface *aSurface) const {
+    return OptimizeSourceSurface(aSurface);
+  }
 
   
 

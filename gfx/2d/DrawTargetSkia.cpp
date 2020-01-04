@@ -103,6 +103,31 @@ ReleaseTemporarySurface(void* aPixels, void* aContext)
   }
 }
 
+static void
+WriteRGBXFormat(uint8_t* aData, const IntSize &aSize,
+                const int32_t aStride, SurfaceFormat aFormat)
+{
+  if (aFormat != SurfaceFormat::B8G8R8X8 || aSize.IsEmpty()) {
+    return;
+  }
+
+  int height = aSize.height;
+  int width = aSize.width * 4;
+
+  for (int row = 0; row < height; ++row) {
+    for (int column = 0; column < width; column += 4) {
+#ifdef IS_BIG_ENDIAN
+      aData[column] = 0xFF;
+#else
+      aData[column + 3] = 0xFF;
+#endif
+    }
+    aData += aStride;
+  }
+
+  return;
+}
+
 #ifdef DEBUG
 static bool
 VerifyRGBXFormat(uint8_t* aData, const IntSize &aSize, const int32_t aStride, SurfaceFormat aFormat)
@@ -1377,43 +1402,76 @@ DrawTargetSkia::UsingSkiaGPU() const
 #endif
 }
 
+#ifdef USE_SKIA_GPU
+already_AddRefed<SourceSurface>
+DrawTargetSkia::OptimizeGPUSourceSurface(SourceSurface *aSurface) const
+{
+  
+  if (aSurface->GetType() == SurfaceType::SKIA &&
+      static_cast<SourceSurfaceSkia*>(aSurface)->GetBitmap().getTexture()) {
+    RefPtr<SourceSurface> surface(aSurface);
+    return surface.forget();
+  }
+
+  SkBitmap bitmap = GetBitmapForSurface(aSurface);
+
+  
+  SkAutoTUnref<GrTexture> texture(
+      GrRefCachedBitmapTexture(mGrContext.get(), bitmap, GrTextureParams::ClampBilerp()));
+
+  if (texture) {
+    
+    RefPtr<SourceSurfaceSkia> surface = new SourceSurfaceSkia();
+    if (surface->InitFromGrTexture(texture, aSurface->GetSize(), aSurface->GetFormat())) {
+      return surface.forget();
+    }
+  }
+
+  
+  if (aSurface->GetType() == SurfaceType::SKIA) {
+    
+    RefPtr<SourceSurface> surface(aSurface);
+    return surface.forget();
+  }
+
+  
+  RefPtr<SourceSurfaceSkia> surface = new SourceSurfaceSkia();
+  surface->InitFromBitmap(bitmap);
+  return surface.forget();
+}
+#endif
+
+already_AddRefed<SourceSurface>
+DrawTargetSkia::OptimizeSourceSurfaceForUnknownAlpha(SourceSurface *aSurface) const
+{
+#ifdef USE_SKIA_GPU
+  if (UsingSkiaGPU()) {
+    return OptimizeGPUSourceSurface(aSurface);
+  }
+#endif
+
+  if (aSurface->GetType() == SurfaceType::SKIA) {
+    RefPtr<SourceSurface> surface(aSurface);
+    return surface.forget();
+  }
+
+  RefPtr<DataSourceSurface> dataSurface = aSurface->GetDataSurface();
+
+  
+  
+  
+  
+  WriteRGBXFormat(dataSurface->GetData(), dataSurface->GetSize(),
+                  dataSurface->Stride(), dataSurface->GetFormat());
+  return dataSurface.forget();
+}
+
 already_AddRefed<SourceSurface>
 DrawTargetSkia::OptimizeSourceSurface(SourceSurface *aSurface) const
 {
 #ifdef USE_SKIA_GPU
   if (UsingSkiaGPU()) {
-    
-    if (aSurface->GetType() == SurfaceType::SKIA &&
-        static_cast<SourceSurfaceSkia*>(aSurface)->GetBitmap().getTexture()) {
-      RefPtr<SourceSurface> surface(aSurface);
-      return surface.forget();
-    }
-
-    SkBitmap bitmap = GetBitmapForSurface(aSurface);
-
-    
-    SkAutoTUnref<GrTexture> texture(
-      GrRefCachedBitmapTexture(mGrContext.get(), bitmap, GrTextureParams::ClampBilerp()));
-
-    if (texture) {
-      
-      RefPtr<SourceSurfaceSkia> surface = new SourceSurfaceSkia();
-      if (surface->InitFromGrTexture(texture, aSurface->GetSize(), aSurface->GetFormat())) {
-        return surface.forget();
-      }
-    }
-
-    
-    if (aSurface->GetType() == SurfaceType::SKIA) {
-      
-      RefPtr<SourceSurface> surface(aSurface);
-      return surface.forget();
-    }
-
-    
-    RefPtr<SourceSurfaceSkia> surface = new SourceSurfaceSkia();
-    surface->InitFromBitmap(bitmap);
-    return surface.forget();
+    return OptimizeGPUSourceSurface(aSurface);
   }
 #endif
 

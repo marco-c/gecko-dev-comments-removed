@@ -1006,7 +1006,9 @@ gfxPlatform::ClearSourceSurfaceForSurface(gfxASurface *aSurface)
 }
 
  already_AddRefed<SourceSurface>
-gfxPlatform::GetSourceSurfaceForSurface(DrawTarget *aTarget, gfxASurface *aSurface)
+gfxPlatform::GetSourceSurfaceForSurface(DrawTarget *aTarget,
+                                        gfxASurface *aSurface,
+                                        bool aIsPlugin)
 {
   if (!aSurface->CairoSurface() || aSurface->CairoStatus()) {
     return nullptr;
@@ -1064,7 +1066,9 @@ gfxPlatform::GetSourceSurfaceForSurface(DrawTarget *aTarget, gfxASurface *aSurfa
     
     RefPtr<DataSourceSurface> surf = GetWrappedDataSourceSurface(aSurface);
     if (surf) {
-      srcBuffer = aTarget->OptimizeSourceSurface(surf);
+      srcBuffer = aIsPlugin ? aTarget->OptimizeSourceSurfaceForUnknownAlpha(surf)
+                            : aTarget->OptimizeSourceSurface(surf);
+
       if (srcBuffer == surf) {
         
         

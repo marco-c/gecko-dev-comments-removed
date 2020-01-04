@@ -211,8 +211,13 @@ public:
 
 
 
+
+
+
     static already_AddRefed<SourceSurface>
-      GetSourceSurfaceForSurface(mozilla::gfx::DrawTarget *aTarget, gfxASurface *aSurface);
+      GetSourceSurfaceForSurface(mozilla::gfx::DrawTarget *aTarget,
+                                 gfxASurface *aSurface,
+                                 bool aIsPlugin = false);
 
     static void ClearSourceSurfaceForSurface(gfxASurface *aSurface);
 
