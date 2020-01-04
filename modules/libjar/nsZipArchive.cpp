@@ -444,7 +444,6 @@ nsresult nsZipArchive::ExtractFile(nsZipItem *item, const char *outname,
     uint32_t count = 0;
     uint8_t* buf = cursor.Read(&count);
     if (!buf) {
-      nsZipArchive::sFileCorruptedReason = "nsZipArchive: Read() failed to return a buffer";
       rv = NS_ERROR_FILE_CORRUPTED;
       break;
     } else if (count == 0) {
@@ -645,28 +644,22 @@ MOZ_WIN_MEM_TRY_BEGIN
       }
   }
 
-  if (!centralOffset) {
-    nsZipArchive::sFileCorruptedReason = "nsZipArchive: no central offset";
+  if (!centralOffset)
     return NS_ERROR_FILE_CORRUPTED;
-  }
 
   buf = startp + centralOffset;
 
   
-  if (buf < startp) {
-    nsZipArchive::sFileCorruptedReason = "nsZipArchive: overflow looking for central directory";
+  if (buf < startp)
     return NS_ERROR_FILE_CORRUPTED;
-  }
 
   
   uint32_t sig = 0;
   while (buf + int32_t(sizeof(uint32_t)) <= endp &&
          (sig = xtolong(buf)) == CENTRALSIG) {
     
-    if (endp - buf < ZIPCENTRAL_SIZE) {
-      nsZipArchive::sFileCorruptedReason = "nsZipArchive: central directory too small";
+    if (endp - buf < ZIPCENTRAL_SIZE)
       return NS_ERROR_FILE_CORRUPTED;
-    }
 
     
     ZipCentral* central = (ZipCentral*)buf;
@@ -679,13 +672,9 @@ MOZ_WIN_MEM_TRY_BEGIN
     
     
     if (namelen < 1 ||
-        namelen > kMaxNameLength) {
-      nsZipArchive::sFileCorruptedReason = "nsZipArchive: namelen out of range";
-      return NS_ERROR_FILE_CORRUPTED;
-    }
-    if (buf >= buf + diff || 
+        namelen > kMaxNameLength ||
+        buf >= buf + diff || 
         buf >= endp - diff) {
-      nsZipArchive::sFileCorruptedReason = "nsZipArchive: overflow looking for next item";
       return NS_ERROR_FILE_CORRUPTED;
     }
 
@@ -708,10 +697,8 @@ MOZ_WIN_MEM_TRY_BEGIN
     sig = 0;
   } 
 
-  if (sig != ENDSIG) {
-    nsZipArchive::sFileCorruptedReason = "nsZipArchive: unexpected sig";
+  if (sig != ENDSIG)
     return NS_ERROR_FILE_CORRUPTED;
-  }
 
   
   if (endp - buf >= ZIPEND_SIZE) {
@@ -1226,6 +1213,3 @@ nsZipItemPtr_base::nsZipItemPtr_base(nsZipArchive *aZip,
     return;
   }
 }
-
- const char*
-nsZipArchive::sFileCorruptedReason = nullptr;
