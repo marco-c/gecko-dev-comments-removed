@@ -413,12 +413,16 @@ GfxInfo::GetFeatureStatusImpl(int32_t aFeature,
   
   if (aDriverInfo.IsEmpty()) {
     if (aFeature == nsIGfxInfo::FEATURE_CANVAS2D_ACCELERATION) {
-      
-      if (mSDKVersion >= 11) {
-        *aStatus = nsIGfxInfo::FEATURE_STATUS_OK;
-      } else {
+      if (mSDKVersion < 11) {
+        
         *aStatus = nsIGfxInfo::FEATURE_BLOCKED_OS_VERSION;
         aFailureId = "FEATURE_FAILURE_CANVAS_2D_SDK";
+      } else if (mGLStrings->Renderer().Find("Vivante GC1000") != -1) {
+        
+        *aStatus = nsIGfxInfo::FEATURE_BLOCKED_DEVICE;
+        aFailureId = "FEATURE_FAILED_CANVAS_2D_HW";
+      } else {
+        *aStatus = nsIGfxInfo::FEATURE_STATUS_OK;
       }
       return NS_OK;
     }
