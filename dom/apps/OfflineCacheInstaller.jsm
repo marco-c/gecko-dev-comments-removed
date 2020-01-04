@@ -255,7 +255,7 @@ function installCache(app) {
     
     
     
-    let groupID = appcacheURL + '#' + app.localId+ '+f';
+    let groupID = appcacheURL + '#^appId=' + app.localId;
     let applicationCache = applicationCacheService.createApplicationCache(groupID);
     applicationCache.activate();
 
