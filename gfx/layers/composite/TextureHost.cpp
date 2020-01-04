@@ -784,7 +784,8 @@ ShmemTextureHost::ShmemTextureHost(const ipc::Shmem& aShmem,
     
     
     
-    gfxCriticalError() << "Failed to create a valid ShmemTextureHost";
+
+    gfxCriticalNote << "Failed to create a valid ShmemTextureHost";
   }
 
   MOZ_COUNT_CTOR(ShmemTextureHost);
