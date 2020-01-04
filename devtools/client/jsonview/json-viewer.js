@@ -90,5 +90,11 @@ window.addEventListener("resize", onResize);
 onResize();
 
 
+
+var event = new CustomEvent("JSONViewInitialized", {});
+window.jsonViewInitialized = true;
+window.dispatchEvent(event);
+
+
 });
 
