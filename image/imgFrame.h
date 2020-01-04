@@ -336,7 +336,7 @@ public:
 
   void SetOptimizable();
 
-  already_AddRefed<SourceSurface> GetSurface();
+  already_AddRefed<SourceSurface> GetSourceSurface();
 
   void AddSizeOfExcludingThis(MallocSizeOf aMallocSizeOf, size_t& aHeapSizeOut,
                               size_t& aNonHeapSizeOut) const;
@@ -357,7 +357,7 @@ private:
   void GetImageDataInternal(uint8_t** aData, uint32_t* length) const;
   uint32_t GetImageBytesPerRow() const;
   uint32_t GetImageDataLength() const;
-  already_AddRefed<SourceSurface> GetSurfaceInternal();
+  already_AddRefed<SourceSurface> GetSourceSurfaceInternal();
 
   uint32_t PaletteDataLength() const
   {

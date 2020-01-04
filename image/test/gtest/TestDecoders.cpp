@@ -62,7 +62,7 @@ CheckDecoderState(const ImageTestCase& aTestCase, Decoder* aDecoder)
   
   
   RawAccessFrameRef currentFrame = aDecoder->GetCurrentFrameRef();
-  RefPtr<SourceSurface> surface = currentFrame->GetSurface();
+  RefPtr<SourceSurface> surface = currentFrame->GetSourceSurface();
 
   
   EXPECT_EQ(SurfaceType::DATA, surface->GetType());

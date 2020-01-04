@@ -172,7 +172,7 @@ TEST(ImageDownscalingFilter, WritePixelsOutput100_100to20_20)
     
     
     RawAccessFrameRef currentFrame = aDecoder->GetCurrentFrameRef();
-    RefPtr<SourceSurface> surface = currentFrame->GetSurface();
+    RefPtr<SourceSurface> surface = currentFrame->GetSourceSurface();
     EXPECT_TRUE(RowsAreSolidColor(surface, 0, 4, BGRAColor::Green(),  2));
     EXPECT_TRUE(RowsAreSolidColor(surface, 6, 3, BGRAColor::Red(),  3));
     EXPECT_TRUE(RowsAreSolidColor(surface, 11, 3, BGRAColor::Green(),  3));
@@ -206,7 +206,7 @@ TEST(ImageDownscalingFilter, WritePixelsOutput100_100to10_20)
     
     
     RawAccessFrameRef currentFrame = aDecoder->GetCurrentFrameRef();
-    RefPtr<SourceSurface> surface = currentFrame->GetSurface();
+    RefPtr<SourceSurface> surface = currentFrame->GetSourceSurface();
     EXPECT_TRUE(RowsAreSolidColor(surface, 0, 4, BGRAColor::Green(),  2));
     EXPECT_TRUE(RowsAreSolidColor(surface, 6, 3, BGRAColor::Red(),  3));
     EXPECT_TRUE(RowsAreSolidColor(surface, 11, 3, BGRAColor::Green(),  3));

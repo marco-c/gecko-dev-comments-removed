@@ -288,7 +288,7 @@ CheckGeneratedImage(Decoder* aDecoder,
                     uint8_t aFuzz )
 {
   RawAccessFrameRef currentFrame = aDecoder->GetCurrentFrameRef();
-  RefPtr<SourceSurface> surface = currentFrame->GetSurface();
+  RefPtr<SourceSurface> surface = currentFrame->GetSourceSurface();
   const IntSize surfaceSize = surface->GetSize();
 
   
