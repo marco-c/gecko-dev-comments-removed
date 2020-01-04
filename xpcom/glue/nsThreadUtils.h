@@ -106,6 +106,8 @@ extern NS_METHOD NS_GetCurrentThread(nsIThread** aResult);
 
 
 extern NS_METHOD NS_DispatchToCurrentThread(nsIRunnable* aEvent);
+extern NS_METHOD
+NS_DispatchToCurrentThread(already_AddRefed<nsIRunnable>&& aEvent);
 
 
 
