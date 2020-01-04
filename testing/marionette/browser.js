@@ -42,7 +42,7 @@ browser.Context = class {
     this.mainContentId = null;
     
     this.newSession = true;
-    this.elementManager = new element.Store();
+    this.seenEls = new element.Store();
     this.setBrowser(win);
 
     
