@@ -368,7 +368,7 @@ public:
   
 
 
-  nsIDocShell *GetDocShell()
+  nsIDocShell *GetDocShell() const
   {
     if (mOuterWindow) {
       return mOuterWindow->mDocShell;
