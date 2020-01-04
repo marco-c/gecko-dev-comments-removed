@@ -142,46 +142,51 @@ this.PageThumbUtils = {
 
 
 
-  createSnapshotThumbnail: function(aWindow, aDestCanvas = null) {
+
+
+
+  createSnapshotThumbnail: function(aWindow, aDestCanvas, aArgs) {
     if (Cu.isCrossProcessWrapper(aWindow)) {
       throw new Error('Do not pass cpows here.');
     }
-
+    let fullScale = aArgs ? aArgs.fullScale : false;
     let [contentWidth, contentHeight] = this.getContentSize(aWindow);
     let [thumbnailWidth, thumbnailHeight] = aDestCanvas ?
                                             [aDestCanvas.width, aDestCanvas.height] :
                                             this.getThumbnailSize(aWindow);
+
+    
+    
+    
+    if (fullScale) {
+      thumbnailWidth = contentWidth;
+      thumbnailHeight = contentHeight;
+      if (aDestCanvas) {
+        aDestCanvas.width = contentWidth;
+        aDestCanvas.height = contentHeight;
+      }
+    }
+
     let intermediateWidth = thumbnailWidth * 2;
     let intermediateHeight = thumbnailHeight * 2;
     let skipDownscale = false;
-    let snapshotCanvas = undefined;
 
     
     
     
-    if ((intermediateWidth >= contentWidth) ||
-        (intermediateHeight >= contentHeight)) {
+    if ((intermediateWidth >= contentWidth ||
+         intermediateHeight >= contentHeight) || fullScale) {
       intermediateWidth = thumbnailWidth;
       intermediateHeight = thumbnailHeight;
       skipDownscale = true;
-      snapshotCanvas = aDestCanvas;
     }
 
     
+    let snapshotCanvas = this.createCanvas(aWindow, intermediateWidth,
+                                           intermediateHeight);
+
     
-    if (aDestCanvas &&
-        ((aDestCanvas.width >= intermediateWidth) ||
-        (aDestCanvas.height >= intermediateHeight))) {
-      intermediateWidth = aDestCanvas.width;
-      intermediateHeight = aDestCanvas.height;
-      skipDownscale = true;
-      snapshotCanvas = aDestCanvas;
-    }
-
-    if (!snapshotCanvas) {
-      snapshotCanvas = this.createCanvas(aWindow, intermediateWidth, intermediateHeight);
-    }
-
+    
     
     
     
@@ -195,18 +200,21 @@ this.PageThumbUtils = {
                            PageThumbUtils.THUMBNAIL_BG_COLOR,
                            snapshotCtx.DRAWWINDOW_DO_NOT_FLUSH);
     snapshotCtx.restore();
-    if (skipDownscale) {
-      return snapshotCanvas;
-    }
 
     
-    let finalCanvas = aDestCanvas || this.createCanvas(aWindow, thumbnailWidth, thumbnailHeight);
+    
+    
+    let finalCanvas = aDestCanvas ||
+      this.createCanvas(aWindow, thumbnailWidth, thumbnailHeight);
 
     let finalCtx = finalCanvas.getContext("2d");
     finalCtx.save();
-    finalCtx.scale(0.5, 0.5);
+    if (!skipDownscale) {
+      finalCtx.scale(0.5, 0.5);
+    }
     finalCtx.drawImage(snapshotCanvas, 0, 0);
     finalCtx.restore();
+
     return finalCanvas;
   },
 

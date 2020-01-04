@@ -296,11 +296,14 @@ PreviewController.prototype = {
       ctx.drawWindow(this.win.win, 0, 0, winWidth, winHeight, "rgba(0,0,0,0)");
 
       
-      ctx.drawImage(aPreviewCanvas, this.browserDims.x, this.browserDims.y, aPreviewCanvas.width, aPreviewCanvas.height);
+      ctx.drawImage(aPreviewCanvas, this.browserDims.x, this.browserDims.y,
+                    aPreviewCanvas.width, aPreviewCanvas.height);
       ctx.restore();
 
       
-      this.win.tabbrowser.previewTab(this.tab, function () { aTaskbarCallback.done(composite, false); });
+      this.win.tabbrowser.previewTab(this.tab, function () {
+        aTaskbarCallback.done(composite, false);
+      });
     });
   },
 
@@ -379,7 +382,7 @@ function TabWindow(win) {
     this.win.addEventListener(this.winEvents[i], this, false);
 
   this.tabbrowser.addTabsProgressListener(this);
-   
+
   AeroPeek.windows.push(this);
   let tabs = this.tabbrowser.tabs;
   for (let i = 0; i < tabs.length; i++)
