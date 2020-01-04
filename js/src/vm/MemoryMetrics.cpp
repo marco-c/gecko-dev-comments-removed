@@ -515,9 +515,40 @@ StatsCellCallback(JSRuntime* rt, void* data, void* thing, JS::TraceKind traceKin
 
         cStats.classInfo.add(info);
 
-        const Class* clasp = base->clasp();
-        const char* className = clasp->name;
-        AddClassInfo(granularity, cStats, className, info);
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        if (0) {
+            const Class* clasp = base->clasp();
+            const char* className = clasp->name;
+            AddClassInfo(granularity, cStats, className, info);
+        }
         break;
       }
 
@@ -545,10 +576,14 @@ StatsCellCallback(JSRuntime* rt, void* data, void* thing, JS::TraceKind traceKin
         shape->addSizeOfExcludingThis(rtStats->mallocSizeOf_, &info);
         cStats.classInfo.add(info);
 
-        const BaseShape* base = shape->base();
-        const Class* clasp = base->clasp();
-        const char* className = clasp->name;
-        AddClassInfo(granularity, cStats, className, info);
+        
+        
+        if (0) {
+            const BaseShape* base = shape->base();
+            const Class* clasp = base->clasp();
+            const char* className = clasp->name;
+            AddClassInfo(granularity, cStats, className, info);
+        }
         break;
       }
 

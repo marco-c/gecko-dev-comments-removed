@@ -550,6 +550,15 @@ XPCNativeScriptableSharedMap::GetNewOrUsed(uint32_t flags,
 
     XPCNativeScriptableShared* shared = entry->key;
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
     if (!shared) {
         entry->key = shared =
             new XPCNativeScriptableShared(flags, key.TransferNameOwnership(),
