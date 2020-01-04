@@ -1331,7 +1331,7 @@ nsDocumentViewer::PageHide(bool aIsUnload)
 
     
     nsEventStatus status = nsEventStatus_eIgnore;
-    WidgetEvent event(true, NS_PAGE_UNLOAD);
+    WidgetEvent event(true, eUnload);
     event.mFlags.mBubbles = false;
     
     event.target = mDocument;
