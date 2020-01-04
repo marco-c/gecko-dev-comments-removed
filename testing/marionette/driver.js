@@ -397,19 +397,6 @@ GeckoDriver.prototype.getVisibleText = function(el, lines) {
 
 
 
-
-
-GeckoDriver.prototype.deleteFile = function(filename) {
-  let file = FileUtils.getFile("TmpD", [filename.toString()]);
-  if (file.exists()) {
-    file.remove(true);
-  }
-};
-
-
-
-
-
 GeckoDriver.prototype.registerBrowser = function(id, be) {
   let nullPrevious = this.curBrowser.curFrameId === null;
   let listenerWindow = Services.wm.getOuterWindowWithId(id);
@@ -2467,8 +2454,6 @@ GeckoDriver.prototype.sessionTearDown = function(cmd, resp) {
   }
 
   this.sessionId = null;
-  this.deleteFile("marionetteChromeScripts");
-  this.deleteFile("marionetteContentScripts");
 
   if (this.observing !== null) {
     for (let topic in this.observing) {
