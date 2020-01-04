@@ -53,6 +53,7 @@ class ProfileEntry
         
         
         
+        
         IS_CPP_ENTRY = 0x01,
 
         
@@ -106,12 +107,12 @@ class ProfileEntry
     void setLabel(const char* aString) volatile { string = aString; }
     const char* label() const volatile { return string; }
 
-    void setJsFrame(JSScript* aScript, jsbytecode* aPc) volatile {
+    void initJsFrame(JSScript* aScript, jsbytecode* aPc) volatile {
         flags_ = 0;
         spOrScript = aScript;
         setPC(aPc);
     }
-    void setCppFrame(void* aSp, uint32_t aLine) volatile {
+    void initCppFrame(void* aSp, uint32_t aLine) volatile {
         flags_ = IS_CPP_ENTRY;
         spOrScript = aSp;
         lineOrPc = static_cast<int32_t>(aLine);
@@ -137,6 +138,8 @@ class ProfileEntry
         return flags_ & CATEGORY_MASK;
     }
     void setCategory(Category c) volatile {
+        MOZ_ASSERT(c >= Category::FIRST);
+        MOZ_ASSERT(c <= Category::LAST);
         flags_ &= ~CATEGORY_MASK;
         setFlag(static_cast<uint32_t>(c));
     }
