@@ -68,6 +68,12 @@ public class LauncherActivity extends Activity {
     private void dispatchNormalIntent() {
         Intent intent = new Intent(getIntent());
         intent.setClassName(getApplicationContext(), AppConstants.MOZ_ANDROID_BROWSER_INTENT_CLASS);
+
+        
+        
+        intent.setFlags(intent.getFlags() & ~Intent.FLAG_ACTIVITY_NEW_TASK);
+        intent.setFlags(intent.getFlags() & ~Intent.FLAG_ACTIVITY_CLEAR_TASK);
+
         startActivity(intent);
     }
 
