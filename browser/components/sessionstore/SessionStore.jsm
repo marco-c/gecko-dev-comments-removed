@@ -185,6 +185,14 @@ XPCOMUtils.defineLazyModuleGetter(this, "ViewSourceBrowser",
 
 
 var gDebuggingEnabled = false;
+
+
+
+
+
+
+var gNoAutoUpdates = false;
+
 function debug(aMsg) {
   if (gDebuggingEnabled) {
     aMsg = ("SessionStore: " + aMsg).replace(/\S{80}/g, "$&\n");
@@ -581,9 +589,16 @@ var SessionStoreInternal = {
     this._prefBranch = Services.prefs.getBranch("browser.");
 
     gDebuggingEnabled = this._prefBranch.getBoolPref("sessionstore.debug");
+    gNoAutoUpdates =
+      this._prefBranch.getBoolPref("sessionstore.debug.no_auto_updates");
 
     Services.prefs.addObserver("browser.sessionstore.debug", () => {
-      gDebuggingEnabled = this._prefBranch.getBoolPref("sessionstore.debug");
+        gDebuggingEnabled = this._prefBranch.getBoolPref("sessionstore.debug");
+    }, false);
+
+    Services.prefs.addObserver("browser.sessionstore.debug.no_auto_updates", () => {
+        gNoAutoUpdates =
+          this._prefBranch.getBoolPref("sessionstore.debug.no_auto_updates");
     }, false);
 
     this._max_tabs_undo = this._prefBranch.getIntPref("sessionstore.max_tabs_undo");
@@ -698,6 +713,12 @@ var SessionStoreInternal = {
 
         
         if (frameLoader != aMessage.targetFrameLoader) {
+          return;
+        }
+
+        if (gNoAutoUpdates && !aMessage.data.isFinal && !aMessage.data.flushID) {
+          
+          
           return;
         }
 

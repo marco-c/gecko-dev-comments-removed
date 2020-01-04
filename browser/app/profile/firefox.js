@@ -487,6 +487,10 @@ pref("dom.disable_window_move_resize",            false);
 pref("dom.disable_window_flip",                   true);
 
 
+
+pref("dom.w3c_touch_events.enabled",        0);
+
+
 pref("privacy.popups.policy",               1);
 pref("privacy.popups.usecustom",            true);
 pref("privacy.popups.showBrowserMessage",   true);
@@ -1043,6 +1047,10 @@ pref("browser.sessionstore.upgradeBackup.latestBuildID", "");
 pref("browser.sessionstore.upgradeBackup.maxUpgradeBackups", 3);
 
 pref("browser.sessionstore.debug", false);
+
+
+
+pref("browser.sessionstore.debug.no_auto_updates", false);
 
 pref("browser.sessionstore.cleanup.forget_closed_after", 1209600000);
 
