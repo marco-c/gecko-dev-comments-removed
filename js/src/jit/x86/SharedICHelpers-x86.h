@@ -95,14 +95,19 @@ EmitBaselineTailCallVM(JitCode* target, MacroAssembler& masm, uint32_t argSize)
 inline void
 EmitIonTailCallVM(JitCode* target, MacroAssembler& masm, uint32_t stackSize)
 {
-    masm.movl(Operand(esp, stackSize), eax);
+    
+    
+    
+    
+
+    masm.loadPtr(Address(esp, stackSize), eax);
     masm.shrl(Imm32(FRAMESIZE_SHIFT), eax);
     masm.addl(Imm32(stackSize + JitStubFrameLayout::Size() - sizeof(intptr_t)), eax);
 
+    
     masm.makeFrameDescriptor(eax, JitFrame_IonJS);
     masm.push(eax);
     masm.push(ICTailCallReg);
-
     masm.jmp(target);
 }
 
