@@ -1972,6 +1972,30 @@ protected:
     SetScrollableFrameMetrics(layers[3], FrameMetrics::START_SCROLL_ID + 2);
     SetScrollableFrameMetrics(layers[6], FrameMetrics::START_SCROLL_ID + 3);
   }
+
+  void CreateBug1194876Tree() {
+    const char* layerTreeSyntax = "c(t)";
+    
+    nsIntRegion layerVisibleRegion[] = {
+      nsIntRegion(IntRect(0,0,100,100)),
+      nsIntRegion(IntRect(0,0,100,100)),
+    };
+    root = CreateLayerTree(layerTreeSyntax, layerVisibleRegion, nullptr, lm, layers);
+    SetScrollableFrameMetrics(layers[0], FrameMetrics::START_SCROLL_ID);
+    SetScrollableFrameMetrics(layers[1], FrameMetrics::START_SCROLL_ID + 1);
+
+    
+    FrameMetrics childMetrics = layers[1]->GetFrameMetrics(0);
+    childMetrics.SetIsRootContent(true);
+    layers[1]->SetFrameMetrics(childMetrics);
+
+    
+    EventRegions regions;
+    regions.mHitRegion = nsIntRegion(IntRect(0, 0, 100, 100));
+    regions.mDispatchToContentHitRegion = regions.mHitRegion;
+    layers[0]->SetEventRegions(regions);
+    layers[1]->SetEventRegions(regions);
+  }
 };
 
 class APZHitTestingTester : public APZCTreeManagerTester {
@@ -2287,6 +2311,42 @@ TEST_F(APZCTreeManagerTester, Bug1068268) {
   EXPECT_EQ(ApzcOf(layers[6]), node5->GetLastChild()->GetApzc());
   EXPECT_EQ(ApzcOf(layers[2]), ApzcOf(layers[3])->GetParent());
   EXPECT_EQ(ApzcOf(layers[5]), ApzcOf(layers[6])->GetParent());
+}
+
+TEST_F(APZCTreeManagerTester, Bug1194876) {
+  CreateBug1194876Tree();
+  ScopedLayerTreeRegistration registration(0, root, mcc);
+  manager->UpdateHitTestingTree(nullptr, root, false, 0, 0);
+
+  uint64_t blockId;
+  nsTArray<ScrollableLayerGuid> targets;
+
+  
+  
+  MultiTouchInput mti;
+  mti = CreateMultiTouchInput(MultiTouchInput::MULTITOUCH_START, mcc->Time());
+  mti.mTouches.AppendElement(SingleTouchData(0, ParentLayerPoint(25, 50), ScreenSize(0, 0), 0, 0));
+  manager->ReceiveInputEvent(mti, nullptr, &blockId);
+  manager->ContentReceivedInputBlock(blockId, false);
+  targets.AppendElement(ApzcOf(layers[0])->GetGuid());
+  manager->SetTargetAPZC(blockId, targets);
+
+  
+
+  
+  
+  
+  mti.mTouches.AppendElement(SingleTouchData(1, ParentLayerPoint(75, 50), ScreenSize(0, 0), 0, 0));
+  manager->ReceiveInputEvent(mti, nullptr, &blockId);
+  manager->ContentReceivedInputBlock(blockId, false);
+  targets.AppendElement(ApzcOf(layers[0])->GetGuid());
+  manager->SetTargetAPZC(blockId, targets);
+
+  
+  
+  
+
+  EXPECT_CALL(*mcc, HandleLongTap(_, _, _, _)).Times(0);
 }
 
 TEST_F(APZHitTestingTester, ComplexMultiLayerTree) {
