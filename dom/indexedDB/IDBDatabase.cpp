@@ -1036,9 +1036,9 @@ IDBDatabase::DelayedMaybeExpireFileActors()
   }
 
   nsCOMPtr<nsIRunnable> runnable =
-    NS_NewRunnableMethodWithArg<bool>(this,
-                                      &IDBDatabase::ExpireFileActors,
-                                       false);
+    NewRunnableMethod<bool>(this,
+                            &IDBDatabase::ExpireFileActors,
+                             false);
   MOZ_ASSERT(runnable);
 
   if (!NS_IsMainThread()) {

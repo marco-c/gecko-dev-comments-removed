@@ -2482,9 +2482,7 @@ nsWindow::OnSizeAllocate(GtkAllocation *aAllocation)
     
     
     mNeedsDispatchResized = true;
-    nsCOMPtr<nsIRunnable> r =
-        NS_NewRunnableMethod(this, &nsWindow::MaybeDispatchResized);
-    NS_DispatchToCurrentThread(r.forget());
+    NS_DispatchToCurrentThread(NewRunnableMethod(this, &nsWindow::MaybeDispatchResized));
 }
 
 void
@@ -4641,7 +4639,7 @@ nsWindow::GrabPointer(guint32 aTime)
         
         
         nsCOMPtr<nsIRunnable> event =
-            NS_NewRunnableMethod(this, &nsWindow::CheckForRollupDuringGrab);
+            NewRunnableMethod(this, &nsWindow::CheckForRollupDuringGrab);
         NS_DispatchToCurrentThread(event.forget());
     }
 }

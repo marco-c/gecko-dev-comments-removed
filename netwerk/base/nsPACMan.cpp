@@ -415,10 +415,8 @@ nsPACMan::LoadPACFromURI(const nsCString &spec)
   
 
   if (!mLoadPending) {
-    nsCOMPtr<nsIRunnable> event =
-      NS_NewRunnableMethod(this, &nsPACMan::StartLoading);
     nsresult rv;
-    if (NS_FAILED(rv = NS_DispatchToCurrentThread(event)))
+    if (NS_FAILED(rv = NS_DispatchToCurrentThread(NewRunnableMethod(this, &nsPACMan::StartLoading))))
       return rv;
     mLoadPending = true;
   }
@@ -784,9 +782,9 @@ nsPACMan::Init(nsISystemProxySettings *systemProxySettings)
   if (NS_FAILED(rv))
     return rv;
 
-  nsCOMPtr<nsIRunnable> event = NS_NewRunnableMethod(this, &nsPACMan::NamePACThread);
   
-  mPACThread->Dispatch(event, nsIEventTarget::DISPATCH_NORMAL);
+  mPACThread->Dispatch(NewRunnableMethod(this, &nsPACMan::NamePACThread),
+                       nsIEventTarget::DISPATCH_NORMAL);
 
   return NS_OK;
 }

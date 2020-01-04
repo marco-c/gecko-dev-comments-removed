@@ -43,7 +43,7 @@ WebBrowserPersistDocumentParent::ActorDestroy(ActorDestroyReason aWhy)
         
         
         
-        nsCOMPtr<nsIRunnable> errorLater = NS_NewRunnableMethodWithArg
+        nsCOMPtr<nsIRunnable> errorLater = NewRunnableMethod
             <nsresult>(mOnReady, &nsIWebBrowserPersistDocumentReceiver::OnError,
                        NS_ERROR_FAILURE);
         NS_DispatchToCurrentThread(errorLater);

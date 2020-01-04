@@ -1322,7 +1322,7 @@ NativeFileWatcherService::AddPath(const nsAString& aPathToWatch,
   
   nsresult rv =
     mIOThread->Dispatch(
-      NS_NewRunnableMethodWithArg<PathRunnablesParametersWrapper*>(
+      NewRunnableMethod<PathRunnablesParametersWrapper*>(
         static_cast<NativeFileWatcherIOTask*>(mWorkerIORunnable.get()),
         &NativeFileWatcherIOTask::AddPathRunnableMethod,
         wrappedCallbacks.get()),
@@ -1392,7 +1392,7 @@ NativeFileWatcherService::RemovePath(const nsAString& aPathToRemove,
   
   nsresult rv =
     mIOThread->Dispatch(
-      NS_NewRunnableMethodWithArg<PathRunnablesParametersWrapper*>(
+      NewRunnableMethod<PathRunnablesParametersWrapper*>(
         static_cast<NativeFileWatcherIOTask*>(mWorkerIORunnable.get()),
         &NativeFileWatcherIOTask::RemovePathRunnableMethod,
         wrappedCallbacks.get()),
@@ -1441,7 +1441,7 @@ NativeFileWatcherService::Uninit()
   
   nsresult rv =
     ioThread->Dispatch(
-      NS_NewRunnableMethod(
+      NewRunnableMethod(
         static_cast<NativeFileWatcherIOTask*>(mWorkerIORunnable.get()),
         &NativeFileWatcherIOTask::DeactivateRunnableMethod),
       nsIEventTarget::DISPATCH_NORMAL);

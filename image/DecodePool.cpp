@@ -173,9 +173,7 @@ public:
   {
     
     
-    nsCOMPtr<nsIRunnable> runnable =
-      NS_NewRunnableMethod(aThisThread, &nsIThread::Shutdown);
-    NS_DispatchToMainThread(runnable);
+    NS_DispatchToMainThread(NewRunnableMethod(aThisThread, &nsIThread::Shutdown));
   }
 
   

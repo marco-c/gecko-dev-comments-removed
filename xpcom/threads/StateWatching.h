@@ -255,8 +255,7 @@ private:
       mStrongRef = mOwner; 
 
       
-      nsCOMPtr<nsIRunnable> r = NS_NewRunnableMethod(this, &PerCallbackWatcher::DoNotify);
-      mOwnerThread->TailDispatcher().AddDirectTask(r.forget());
+      mOwnerThread->TailDispatcher().AddDirectTask(NewRunnableMethod(this, &PerCallbackWatcher::DoNotify));
     }
 
     bool CallbackMethodIs(CallbackMethod aMethod) const

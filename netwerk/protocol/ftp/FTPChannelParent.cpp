@@ -740,7 +740,7 @@ FTPChannelParent::DivertTo(nsIStreamListener *aListener)
   
   
   NS_DispatchToCurrentThread(
-    NS_NewRunnableMethod(this, &FTPChannelParent::StartDiversion));
+    NewRunnableMethod(this, &FTPChannelParent::StartDiversion));
   return;
 }
 

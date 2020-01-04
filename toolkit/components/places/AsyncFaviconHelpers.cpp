@@ -488,7 +488,7 @@ AsyncFetchAndSetIconForPage::Run()
   
   
   nsCOMPtr<nsIRunnable> event =
-    NS_NewRunnableMethod(this, &AsyncFetchAndSetIconForPage::FetchFromNetwork);
+    NewRunnableMethod(this, &AsyncFetchAndSetIconForPage::FetchFromNetwork);
   return NS_DispatchToMainThread(event);
 }
 

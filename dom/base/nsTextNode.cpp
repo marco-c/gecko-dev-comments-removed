@@ -273,8 +273,7 @@ nsAttributeTextNode::AttributeChanged(nsIDocument* aDocument,
     
     
     void (nsAttributeTextNode::*update)() = &nsAttributeTextNode::UpdateText;
-    nsCOMPtr<nsIRunnable> ev = NS_NewRunnableMethod(this, update);
-    nsContentUtils::AddScriptRunner(ev);
+    nsContentUtils::AddScriptRunner(NewRunnableMethod(this, update));
   }
 }
 

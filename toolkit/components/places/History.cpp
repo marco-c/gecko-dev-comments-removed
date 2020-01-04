@@ -504,9 +504,7 @@ public:
       RefPtr<VisitedQuery> cb = new VisitedQuery(aURI, callback, true);
       NS_ENSURE_TRUE(cb, NS_ERROR_OUT_OF_MEMORY);
       
-      nsCOMPtr<nsIRunnable> event =
-        NS_NewRunnableMethod(cb, &VisitedQuery::NotifyVisitedStatus);
-      NS_DispatchToMainThread(event);
+      NS_DispatchToMainThread(NewRunnableMethod(cb, &VisitedQuery::NotifyVisitedStatus));
 
       return NS_OK;
     }

@@ -409,7 +409,7 @@ AudioSession::OnSessionDisconnected(AudioSessionDisconnectReason aReason)
   
   
   nsCOMPtr<nsIRunnable> runnable =
-    NS_NewRunnableMethod(this, &AudioSession::OnSessionDisconnectedInternal);
+    NewRunnableMethod(this, &AudioSession::OnSessionDisconnectedInternal);
   NS_DispatchToMainThread(runnable);
   return S_OK;
 }

@@ -740,7 +740,7 @@ Context::ThreadsafeHandle::AllowToClose()
   
   
   nsCOMPtr<nsIRunnable> runnable =
-    NS_NewRunnableMethod(this, &ThreadsafeHandle::AllowToCloseOnOwningThread);
+    NewRunnableMethod(this, &ThreadsafeHandle::AllowToCloseOnOwningThread);
   MOZ_ALWAYS_SUCCEEDS(
     mOwningThread->Dispatch(runnable, nsIThread::DISPATCH_NORMAL));
 }
@@ -756,7 +756,7 @@ Context::ThreadsafeHandle::InvalidateAndAllowToClose()
   
   
   nsCOMPtr<nsIRunnable> runnable =
-    NS_NewRunnableMethod(this, &ThreadsafeHandle::InvalidateAndAllowToCloseOnOwningThread);
+    NewRunnableMethod(this, &ThreadsafeHandle::InvalidateAndAllowToCloseOnOwningThread);
   MOZ_ALWAYS_SUCCEEDS(
     mOwningThread->Dispatch(runnable, nsIThread::DISPATCH_NORMAL));
 }
@@ -780,10 +780,7 @@ Context::ThreadsafeHandle::~ThreadsafeHandle()
 
   
   
-  nsCOMPtr<nsIRunnable> runnable =
-    NS_NewNonOwningRunnableMethod(mStrongRef.forget().take(), &Context::Release);
-  MOZ_ALWAYS_SUCCEEDS(
-    mOwningThread->Dispatch(runnable, nsIThread::DISPATCH_NORMAL));
+  NS_ProxyRelease(mOwningThread, mStrongRef.forget());
 }
 
 void
