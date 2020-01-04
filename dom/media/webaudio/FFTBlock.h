@@ -138,14 +138,15 @@ public:
     uint32_t halfSize = mFFTSize / 2;
     
     MOZ_ASSERT(mOutputBuffer[0].i == 0);
-    MOZ_ASSERT(mOutputBuffer[halfSize].i == 0);
     MOZ_ASSERT(aFrame.mOutputBuffer[0].i == 0);
-    MOZ_ASSERT(aFrame.mOutputBuffer[halfSize].i == 0);
 
     BufferComplexMultiply(mOutputBuffer.Elements()->f,
                           aFrame.mOutputBuffer.Elements()->f,
                           mOutputBuffer.Elements()->f,
-                          halfSize + 1);
+                          halfSize);
+    mOutputBuffer[halfSize].r *= aFrame.mOutputBuffer[halfSize].r;
+    
+    mOutputBuffer[0].i = 0.0f;
   }
 
   
