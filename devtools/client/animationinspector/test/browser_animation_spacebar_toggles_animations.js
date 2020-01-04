@@ -11,12 +11,12 @@
 
 
 add_task(function*() {
-  yield addTab(TEST_URL_ROOT + "doc_simple_animation.html");
+  yield addTab(URL_ROOT + "doc_simple_animation.html");
   let {panel, inspector, window, controller} = yield openAnimationInspector();
   let {toggleAllButtonEl} = panel;
 
   
-  yield selectNode(".still", inspector);
+  yield selectNodeAndWaitForAnimations(".still", inspector);
 
   
   window.focus();

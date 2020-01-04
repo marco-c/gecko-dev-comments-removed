@@ -5,21 +5,14 @@
 
 "use strict";
 
-var Cu = Components.utils;
-const {require} = Cu.import("resource://devtools/shared/Loader.jsm", {});
-const {gDevTools} = require("devtools/client/framework/devtools");
-const promise = require("promise");
-const {TargetFactory} = require("devtools/client/framework/target");
-const {console} = Cu.import("resource://gre/modules/Console.jsm", {});
+
+
+Services.scriptloader.loadSubScript(
+  "chrome://mochitests/content/browser/devtools/client/inspector/test/head.js",
+  this);
+
 const {ViewHelpers} = Cu.import("resource://devtools/client/shared/widgets/ViewHelpers.jsm", {});
-const DevToolsUtils = require("devtools/shared/DevToolsUtils");
-
-
-waitForExplicitFinish();
-
-const TEST_URL_ROOT = "http://example.com/browser/devtools/client/animationinspector/test/";
-const ROOT_TEST_DIR = getRootDirectory(gTestPath);
-const FRAME_SCRIPT_URL = ROOT_TEST_DIR + "doc_frame_script.js";
+const FRAME_SCRIPT_URL = CHROME_URL_ROOT + "doc_frame_script.js";
 const COMMON_FRAME_SCRIPT_URL = "chrome://devtools/content/shared/frame-script-utils.js";
 const TAB_NAME = "animationinspector";
 
@@ -34,18 +27,7 @@ registerCleanupFunction(function*() {
 
 
 
-
-
-
-
-
-DevToolsUtils.testing = true;
-registerCleanupFunction(() => DevToolsUtils.testing = false);
-
-
-
 registerCleanupFunction(() => {
-  Services.prefs.clearUserPref("devtools.dump.emit");
   Services.prefs.clearUserPref("devtools.debugger.log");
 });
 
@@ -54,30 +36,17 @@ registerCleanupFunction(() => {
 
 
 
-function addTab(url) {
-  info("Adding a new tab with URL: '" + url + "'");
-  let def = promise.defer();
-
-  window.focus();
-
-  let tab = window.gBrowser.selectedTab = window.gBrowser.addTab(url);
-  let browser = tab.linkedBrowser;
-
-  info("Loading the helper frame script " + FRAME_SCRIPT_URL);
-  browser.messageManager.loadFrameScript(FRAME_SCRIPT_URL, false);
-
-  info("Loading the helper frame script " + COMMON_FRAME_SCRIPT_URL);
-  browser.messageManager.loadFrameScript(COMMON_FRAME_SCRIPT_URL, false);
-
-  browser.addEventListener("load", function onload() {
-    browser.removeEventListener("load", onload, true);
-    info("URL '" + url + "' loading complete");
-
-    def.resolve(tab);
-  }, true);
-
-  return def.promise;
-}
+var _addTab = addTab;
+addTab = function(url) {
+  return _addTab(url).then(tab => {
+    let browser = tab.linkedBrowser;
+    info("Loading the helper frame script " + FRAME_SCRIPT_URL);
+    browser.messageManager.loadFrameScript(FRAME_SCRIPT_URL, false);
+    info("Loading the helper frame script " + COMMON_FRAME_SCRIPT_URL);
+    browser.messageManager.loadFrameScript(COMMON_FRAME_SCRIPT_URL, false);
+    return tab;
+  });
+};
 
 
 
@@ -98,9 +67,6 @@ function* reloadTab(inspector) {
 
 
 
-function getNodeFront(selector, {walker}) {
-  return walker.querySelector(walker.rootNode, selector);
-}
 
 
 
@@ -108,30 +74,16 @@ function getNodeFront(selector, {walker}) {
 
 
 
+var selectNodeAndWaitForAnimations = Task.async(
+  function*(data, inspector, reason = "test") {
+    yield selectNode(data, inspector, reason);
 
-
-
-
-
-
-
-var selectNode = Task.async(function*(data, inspector, reason = "test") {
-  info("Selecting the node for '" + data + "'");
-  let nodeFront = data;
-  if (!data._form) {
-    nodeFront = yield getNodeFront(data, inspector);
+    
+    
+    let {AnimationsPanel} = inspector.sidebar.getWindowForTab(TAB_NAME);
+    yield waitForAllAnimationTargets(AnimationsPanel);
   }
-  let updated = inspector.once("inspector-updated");
-  inspector.selection.setNodeFront(nodeFront, reason);
-  yield updated;
-
-  
-  
-  
-  
-  let {AnimationsPanel} = inspector.sidebar.getWindowForTab(TAB_NAME);
-  yield waitForAllAnimationTargets(AnimationsPanel);
-});
+);
 
 
 
@@ -176,23 +128,10 @@ var waitForAnimationInspectorReady = Task.async(function*(inspector) {
 
 
 var openAnimationInspector = Task.async(function*() {
-  let target = TargetFactory.forTab(gBrowser.selectedTab);
-
-  info("Opening the toolbox with the inspector selected");
-  let toolbox = yield gDevTools.showToolbox(target, "inspector");
-
-  info("Switching to the animationinspector");
-  let inspector = toolbox.getPanel("inspector");
-
-  let panelReady = waitForAnimationInspectorReady(inspector);
-
-  info("Waiting for toolbox focus");
-  yield waitForToolboxFrameFocus(toolbox);
-
-  inspector.sidebar.select(TAB_NAME);
+  let {inspector, toolbox} = yield openInspectorSidebarTab(TAB_NAME);
 
   info("Waiting for the inspector and sidebar to be ready");
-  yield panelReady;
+  yield waitForAnimationInspectorReady(inspector);
 
   let win = inspector.sidebar.getWindowForTab(TAB_NAME);
   let {AnimationsController, AnimationsPanel} = win;
@@ -226,60 +165,6 @@ var closeAnimationInspector = Task.async(function*() {
   let target = TargetFactory.forTab(gBrowser.selectedTab);
   yield gDevTools.closeToolbox(target);
 });
-
-
-
-
-
-
-function waitForToolboxFrameFocus(toolbox) {
-  info("Making sure that the toolbox's frame is focused");
-  let def = promise.defer();
-  let win = toolbox.frame.contentWindow;
-  waitForFocus(def.resolve, win);
-  return def.promise;
-}
-
-
-
-
-
-
-
-
-function hasSideBarTab(inspector, id) {
-  return !!inspector.sidebar.getWindowForTab(id);
-}
-
-
-
-
-
-
-
-
-
-function once(target, eventName, useCapture = false) {
-  info("Waiting for event: '" + eventName + "' on " + target + ".");
-
-  let deferred = promise.defer();
-
-  for (let [add, remove] of [
-    ["addEventListener", "removeEventListener"],
-    ["addListener", "removeListener"],
-    ["on", "off"]
-  ]) {
-    if ((add in target) && (remove in target)) {
-      target[add](eventName, function onEvent(...aArgs) {
-        target[remove](eventName, onEvent, useCapture);
-        deferred.resolve.apply(deferred, aArgs);
-      }, useCapture);
-      break;
-    }
-  }
-
-  return deferred.promise;
-}
 
 
 
