@@ -1,0 +1,34 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#ifndef WOFF2_TRANSFORM_H_
+#define WOFF2_TRANSFORM_H_
+
+#include "./font.h"
+
+namespace woff2 {
+
+
+
+
+bool TransformGlyfAndLocaTables(Font* font);
+
+
+bool TransformHmtxTable(Font* font);
+
+} 
+
+#endif  
