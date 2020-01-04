@@ -12,6 +12,7 @@
 #include "mozilla/RefPtr.h"
 #include "SourceBufferAttributes.h"
 #include "TimeUnits.h"
+#include "MediaResult.h"
 
 namespace mozilla {
 
@@ -28,7 +29,7 @@ public:
   };
 
   typedef Pair<bool, SourceBufferAttributes> AppendBufferResult;
-  typedef MozPromise<AppendBufferResult, nsresult,  true> AppendPromise;
+  typedef MozPromise<AppendBufferResult, MediaResult,  true> AppendPromise;
   typedef MozPromise<bool, nsresult,  true> RangeRemovalPromise;
 
   virtual Type GetType() const = 0;

@@ -155,7 +155,7 @@ private:
   
   
   
-  void AppendError(bool aDecoderError);
+  void AppendError(const MediaResult& aDecodeError);
 
   
   
@@ -164,7 +164,7 @@ private:
                                                   ErrorResult& aRv);
 
   void AppendDataCompletedWithSuccess(SourceBufferTask::AppendBufferResult aResult);
-  void AppendDataErrored(nsresult aError);
+  void AppendDataErrored(const MediaResult& aError);
 
   RefPtr<MediaSource> mMediaSource;
 
