@@ -1188,6 +1188,8 @@ Messages.Extended.prototype = Heritage.extend(Messages.Simple.prototype,
 
 
 
+
+
   _renderValueGrip: function(grip, options = {})
   {
     let isPrimitive = VariablesView.isPrimitive({ value: grip });
@@ -1209,10 +1211,15 @@ Messages.Extended.prototype = Heritage.extend(Messages.Simple.prototype,
       }
     }
 
+    let unshortenedGrip = grip;
+    if (options.shorten) {
+      grip = this.shortenValueGrip(grip)
+    }
+
     let result = this.document.createElementNS(XHTML_NS, "span");
     if (isPrimitive) {
       if (Widgets.URLString.prototype.containsURL.call(Widgets.URLString.prototype, grip)) {
-        let widget = new Widgets.URLString(this, grip, options).render();
+        let widget = new Widgets.URLString(this, grip, unshortenedGrip).render();
         return widget.element;
       }
 
@@ -2200,10 +2207,13 @@ Widgets.MessageTimestamp.prototype = Heritage.extend(Widgets.BaseWidget.prototyp
 
 
 
-Widgets.URLString = function(message, str)
+
+
+Widgets.URLString = function(message, str, unshortenedStr)
 {
   Widgets.BaseWidget.call(this, message);
   this.str = str;
+  this.unshortenedStr = unshortenedStr;
 };
 
 Widgets.URLString.prototype = Heritage.extend(Widgets.BaseWidget.prototype,
@@ -2232,12 +2242,19 @@ Widgets.URLString.prototype = Heritage.extend(Widgets.BaseWidget.prototype,
     let tokens = this.str.split(/\s+/);
     let textStart = 0;
     let tokenStart;
-    for (let token of tokens) {
+    for (let i = 0; i < tokens.length; i++) {
+      let token = tokens[i];
+      let unshortenedToken;
       tokenStart = this.str.indexOf(token, textStart);
       if (this._isURL(token)) {
+        
+        
+        if (i === tokens.length - 1 && this.unshortenedStr) {
+          unshortenedToken = this.unshortenedStr.slice(tokenStart).split(/\s+/, 1)[0];
+        }
         this.element.appendChild(this._renderText(this.str.slice(textStart, tokenStart)));
         textStart = tokenStart + token.length;
-        this.element.appendChild(this._renderURL(token));
+        this.element.appendChild(this._renderURL(token, unshortenedToken));
       }
     }
 
@@ -2292,12 +2309,15 @@ Widgets.URLString.prototype = Heritage.extend(Widgets.BaseWidget.prototype,
 
 
 
-  _renderURL: function(url)
+
+
+  _renderURL: function(url, fullUrl)
   {
+    let unshortened = fullUrl || url;
     let result = this.el("a", {
       class: "url",
-      title: url,
-      href: url,
+      title: unshortened,
+      href: unshortened,
       draggable: false
     }, url);
     this.message._addLinkCallback(result);
@@ -2414,8 +2434,7 @@ Widgets.JSObject.prototype = Heritage.extend(Widgets.BaseWidget.prototype,
     if (valueIsText) {
       this._text(value);
     } else {
-      let shortVal = this.message.shortenValueGrip(value);
-      let valueElem = this.message._renderValueGrip(shortVal, { concise: true });
+      let valueElem = this.message._renderValueGrip(value, { concise: true, shorten: true });
       container.appendChild(valueElem);
     }
   },
@@ -2808,8 +2827,7 @@ Widgets.ObjectRenderers.add({
           emptySlots = 0;
         }
 
-        let shortVal = this.message.shortenValueGrip(item);
-        let elem = this.message._renderValueGrip(shortVal, { concise: true });
+        let elem = this.message._renderValueGrip(item, { concise: true, shorten: true });
         this.element.appendChild(elem);
       }
     }
