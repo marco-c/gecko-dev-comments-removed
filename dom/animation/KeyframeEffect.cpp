@@ -1725,6 +1725,17 @@ KeyframeEffectReadOnly::GetFrames(JSContext*& aCx,
   }
 }
 
+ const TimeDuration
+KeyframeEffectReadOnly::OverflowRegionRefreshInterval()
+{
+  
+  
+  static const TimeDuration kOverflowRegionRefreshInterval =
+    TimeDuration::FromMilliseconds(200);
+
+  return kOverflowRegionRefreshInterval;
+}
+
 bool
 KeyframeEffectReadOnly::CanThrottle() const
 {
@@ -1810,7 +1821,7 @@ KeyframeEffectReadOnly::CanThrottleTransformChanges(nsIFrame& aFrame) const
   TimeStamp styleRuleRefreshTime = collection->mStyleRuleRefreshTime;
   
   if (!styleRuleRefreshTime.IsNull() &&
-      (now - styleRuleRefreshTime) < TimeDuration::FromMilliseconds(200)) {
+      (now - styleRuleRefreshTime) < OverflowRegionRefreshInterval()) {
     return true;
   }
 
