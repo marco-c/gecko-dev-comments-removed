@@ -330,13 +330,8 @@ DecodedAudioDataSink::NotifyAudioNeeded()
   
   
   while (AudioQueue().GetSize() && mProcessedQueue.GetSize() < 2) {
-    RefPtr<MediaData> media = AudioQueue().PopFront();
-    if (!media || mShutdown) {
-      
-      return;
-    }
-    RefPtr<AudioData> data = dont_AddRef(media.forget().take()->As<AudioData>());
-
+    RefPtr<AudioData> data =
+      dont_AddRef(AudioQueue().PopFront().take()->As<AudioData>());
     
     if (!data->mFrames) {
       continue;
