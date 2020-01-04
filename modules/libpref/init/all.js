@@ -756,7 +756,7 @@ pref("gfx.canvas.azure.backends", "skia");
 pref("gfx.canvas.azure.accelerated", true);
 #else
 pref("gfx.canvas.azure.backends", "skia");
-pref("gfx.content.azure.backends", "cairo");
+pref("gfx.content.azure.backends", "skia");
 #endif
 #endif
 
@@ -2602,9 +2602,6 @@ pref("layout.css.scroll-behavior.damping-ratio", "1.0");
 
 
 pref("layout.css.scroll-snap.enabled", true);
-
-
-pref("layout.css.shape-outside.enabled", false);
 
 
 pref("layout.css.font-loading-api.enabled", true);
