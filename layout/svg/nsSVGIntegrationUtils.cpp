@@ -455,8 +455,12 @@ GenerateMaskSurface(const nsSVGIntegrationUtils::PaintFramesParams& aParams,
                                 SurfaceFormat::A8)
     : ctx.GetDrawTarget()->CreateSimilarDrawTarget(maskSurfaceRect.Size(),
                                                    SurfaceFormat::A8);
+  if (!maskDT || !maskDT->IsValid()) {
+    return;
+  }
 
   RefPtr<gfxContext> maskContext = gfxContext::CreateOrNull(maskDT);
+  MOZ_ASSERT(maskContext);
 
   
   

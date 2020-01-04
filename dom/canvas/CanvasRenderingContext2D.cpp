@@ -3604,6 +3604,8 @@ struct MOZ_STACK_CLASS CanvasBidiProcessor : public nsBidiPresUtils::BidiProcess
     
     if (mOp == CanvasRenderingContext2D::TextDrawOperation::FILL &&
         mState->StyleIsColor(CanvasRenderingContext2D::Style::FILL)) {
+      
+      
       RefPtr<gfxContext> thebes =
         gfxContext::CreatePreservingTransformOrNull(mCtx->mTarget);
       nscolor fill = mState->colorStyles[CanvasRenderingContext2D::Style::FILL];
@@ -4993,6 +4995,7 @@ CanvasRenderingContext2D::DrawWindow(nsGlobalWindow& aWindow, double aX,
   {
     thebes = gfxContext::CreateOrNull(mTarget);
     MOZ_ASSERT(thebes); 
+                        
     thebes->SetMatrix(gfxMatrix(matrix._11, matrix._12, matrix._21,
                                 matrix._22, matrix._31, matrix._32));
   } else {
