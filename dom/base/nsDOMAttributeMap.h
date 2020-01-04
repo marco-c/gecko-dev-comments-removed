@@ -128,13 +128,7 @@ public:
 
   typedef nsRefPtrHashtable<nsAttrHashKey, Attr> AttrCache;
 
-  
-
-
-
-
-
-  uint32_t Enumerate(AttrCache::EnumReadFunction aFunc, void *aUserArg) const;
+  static void BlastSubtreeToPieces(nsINode *aNode);
 
   Element* GetParentObject() const
   {
