@@ -57,14 +57,29 @@ TreeWalker::~TreeWalker()
   MOZ_COUNT_DTOR(TreeWalker);
 }
 
+Accessible*
+TreeWalker::Scope(nsIContent* aAnchorNode)
+{
+  Reset();
+
+  mAnchorNode = aAnchorNode;
+
+  bool skipSubtree = false;
+  Accessible* acc = AccessibleFor(aAnchorNode, 0, &skipSubtree);
+  if (acc) {
+    mPhase = eAtEnd;
+    return acc;
+  }
+
+  return skipSubtree ? nullptr : Next();
+}
+
 bool
 TreeWalker::Seek(nsIContent* aChildNode)
 {
   MOZ_ASSERT(aChildNode, "Child cannot be null");
 
-  mPhase = eAtStart;
-  mStateStack.Clear();
-  mARIAOwnsIdx = 0;
+  Reset();
 
   nsIContent* childNode = nullptr;
   nsINode* parentNode = aChildNode;
@@ -110,7 +125,7 @@ TreeWalker::Seek(nsIContent* aChildNode)
 }
 
 Accessible*
-TreeWalker::Next(nsIContent* aStopNode)
+TreeWalker::Next()
 {
   if (mStateStack.IsEmpty()) {
     if (mPhase == eAtEnd) {
@@ -139,10 +154,6 @@ TreeWalker::Next(nsIContent* aStopNode)
 
   dom::AllChildrenIterator* top = &mStateStack[mStateStack.Length() - 1];
   while (top) {
-    if (aStopNode && top->Get() == aStopNode) {
-      return nullptr;
-    }
-
     while (nsIContent* childNode = top->GetNextChild()) {
       bool skipSubtree = false;
       Accessible* child = AccessibleFor(childNode, mFlags, &skipSubtree);
@@ -151,12 +162,8 @@ TreeWalker::Next(nsIContent* aStopNode)
       }
 
       
-      
       if (!skipSubtree && childNode->IsElement()) {
         top = PushState(childNode, true);
-      }
-      else if (childNode == aStopNode) {
-        return nullptr;
       }
     }
     top = PopState();
@@ -171,7 +178,7 @@ TreeWalker::Next(nsIContent* aStopNode)
       mPhase = eAtEnd;
       return nullptr;
     }
-    return Next(aStopNode);
+    return Next();
   }
 
   nsINode* contextNode = mContext->GetNode();
@@ -184,7 +191,7 @@ TreeWalker::Next(nsIContent* aStopNode)
     top = PushState(parent, true);
     if (top->Seek(mAnchorNode)) {
       mAnchorNode = parent;
-      return Next(aStopNode);
+      return Next();
     }
 
     
@@ -194,7 +201,7 @@ TreeWalker::Next(nsIContent* aStopNode)
     mAnchorNode = parent;
   }
 
-  return Next(aStopNode);
+  return Next();
 }
 
 Accessible*
