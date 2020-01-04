@@ -73,7 +73,20 @@ var OutputGenerator = {
       [addOutput(node) for 
         (node of aContext.subtreeGenerator(false, ignoreSubtree))]; 
       addOutput(aContext.accessible);
+
+      
+      
+      let doc, docIndex = contextStart.findIndex(
+        ancestor => ancestor.role === Roles.DOCUMENT);
+
+      if (docIndex > -1) {
+        doc = contextStart.splice(docIndex, 1)[0];
+      }
+
       contextStart.reverse().forEach(addOutput);
+      if (doc) {
+        output.unshift.apply(output, self.genForObject(doc, aContext));
+      }
     }
 
     return output;
