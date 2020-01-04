@@ -161,9 +161,6 @@ this.UITour = {
       infoPanelPosition: "leftcenter topright",
       query: (aDocument) => {
         let loopUI = aDocument.defaultView.LoopUI;
-        if (loopUI.selectedTab != "rooms") {
-          return null;
-        }
         
         
         return loopUI.browser.contentDocument.querySelector(".new-room-button").parentElement;
@@ -173,9 +170,6 @@ this.UITour = {
       infoPanelPosition: "leftcenter topright",
       query: (aDocument) => {
         let loopUI = aDocument.defaultView.LoopUI;
-        if (loopUI.selectedTab != "rooms") {
-          return null;
-        }
         return loopUI.browser.contentDocument.querySelector(".room-list");
       },
     }],
