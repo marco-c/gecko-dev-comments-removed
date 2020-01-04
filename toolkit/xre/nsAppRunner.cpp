@@ -3910,6 +3910,39 @@ XREMain::XRE_mainStartup(bool* aExitFlag)
   return 0;
 }
 
+#if defined(MOZ_CRASHREPORTER)
+#if defined(MOZ_CONTENT_SANDBOX) && !defined(MOZ_WIDGET_GONK)
+void AddSandboxAnnotations()
+{
+  
+  int level = Preferences::GetInt("security.sandbox.content.level");
+
+  nsAutoCString levelString;
+  levelString.AppendInt(level);
+
+  CrashReporter::AnnotateCrashReport(
+    NS_LITERAL_CSTRING("ContentSandboxLevel"), levelString);
+
+  
+  bool sandboxCapable = false;
+
+#if defined(XP_WIN)
+  
+  sandboxCapable = true;
+#elif defined(XP_MACOSX)
+  
+  sandboxCapable = true;
+#elif defined(XP_LINUX)
+  sandboxCapable = SandboxInfo::Get().CanSandboxContent();
+#endif
+
+  CrashReporter::AnnotateCrashReport(
+    NS_LITERAL_CSTRING("ContentSandboxCapable"),
+    sandboxCapable ? NS_LITERAL_CSTRING("1") : NS_LITERAL_CSTRING("0"));
+}
+#endif 
+#endif 
+
 
 
 
@@ -4204,11 +4237,20 @@ XREMain::XRE_mainRun()
   }
 #endif 
 
-#if defined(MOZ_SANDBOX) && defined(XP_LINUX) && !defined(ANDROID)
+#if defined(MOZ_SANDBOX) && defined(XP_LINUX) && !defined(MOZ_WIDGET_GONK)
   
   
   SandboxInfo::SubmitTelemetry();
-#endif
+#if defined(MOZ_CRASHREPORTER)
+  SandboxInfo::Get().AnnotateCrashReport();
+#endif 
+#endif 
+
+#if defined(MOZ_CRASHREPORTER)
+#if defined(MOZ_CONTENT_SANDBOX) && !defined(MOZ_WIDGET_GONK)
+  AddSandboxAnnotations();
+#endif 
+#endif 
 
   {
     rv = appStartup->Run();

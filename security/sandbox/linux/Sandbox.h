@@ -32,7 +32,7 @@ MOZ_SANDBOX_EXPORT void SandboxEarlyInit(GeckoProcessType aType, bool aIsNuwa);
 
 
 
-MOZ_SANDBOX_EXPORT void SetContentProcessSandbox(int aBrokerFd);
+MOZ_SANDBOX_EXPORT bool SetContentProcessSandbox(int aBrokerFd);
 #endif
 
 #ifdef MOZ_GMP_SANDBOX

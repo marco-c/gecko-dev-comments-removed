@@ -57,6 +57,8 @@ public:
     return !Test(kEnabledForMedia) || Test(kHasSeccompBPF);
   }
 
+  MOZ_EXPORT void AnnotateCrashReport() const;
+
   static void SubmitTelemetry();
 
   

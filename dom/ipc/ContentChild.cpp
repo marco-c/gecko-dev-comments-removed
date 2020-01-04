@@ -1356,9 +1356,14 @@ GetAppPaths(nsCString &aAppPath, nsCString &aAppBinaryPath, nsCString &aAppDir)
   return true;
 }
 
-static void
+static bool
 StartMacOSContentSandbox()
 {
+  int sandboxLevel = Preferences::GetInt("security.sandbox.content.level");
+  if (sandboxLevel < 1) {
+    return false;
+  }
+
   nsAutoCString appPath, appBinaryPath, appDir;
   if (!GetAppPaths(appPath, appBinaryPath, appDir)) {
     MOZ_CRASH("Error resolving child process path");
@@ -1382,7 +1387,7 @@ StartMacOSContentSandbox()
 
   MacSandboxInfo info;
   info.type = MacSandboxType_Content;
-  info.level = Preferences::GetInt("security.sandbox.content.level");
+  info.level = info.level = sandboxLevel;
   info.appPath.assign(appPath.get());
   info.appBinaryPath.assign(appBinaryPath.get());
   info.appDir.assign(appDir.get());
@@ -1393,6 +1398,8 @@ StartMacOSContentSandbox()
     NS_WARNING(err.c_str());
     MOZ_CRASH("sandbox_init() failed");
   }
+
+  return true;
 }
 #endif
 
@@ -1402,6 +1409,7 @@ ContentChild::RecvSetProcessSandbox(const MaybeFileDesc& aBroker)
   
   
 #if defined(MOZ_CONTENT_SANDBOX)
+  bool sandboxEnabled = true;
 #if defined(XP_LINUX)
 #if defined(MOZ_WIDGET_GONK) && ANDROID_VERSION >= 19
   
@@ -1410,32 +1418,45 @@ ContentChild::RecvSetProcessSandbox(const MaybeFileDesc& aBroker)
 #else
   
   if (!SandboxInfo::Get().CanSandboxContent()) {
-      return true;
+       sandboxEnabled = false;
+   } else {
+       
+       
+       
+       
+       
+       Unused << CubebUtils::GetCubebContext();
   }
 
-  
-  
-  
-  
-  
-  Unused << CubebUtils::GetCubebContext();
-#endif
-  int brokerFd = -1;
-  if (aBroker.type() == MaybeFileDesc::TFileDescriptor) {
+#endif 
+  if (sandboxEnabled) {
+    int brokerFd = -1;
+    if (aBroker.type() == MaybeFileDesc::TFileDescriptor) {
       auto fd = aBroker.get_FileDescriptor().ClonePlatformHandle();
       brokerFd = fd.release();
       
       
       
       MOZ_RELEASE_ASSERT(brokerFd >= 0);
+    }
+    sandboxEnabled = SetContentProcessSandbox(brokerFd);
   }
-  SetContentProcessSandbox(brokerFd);
 #elif defined(XP_WIN)
   mozilla::SandboxTarget::Instance()->StartSandbox();
 #elif defined(XP_MACOSX)
-  StartMacOSContentSandbox();
+  sandboxEnabled = StartMacOSContentSandbox();
 #endif
-#endif
+
+#if defined(MOZ_CRASHREPORTER)
+  CrashReporter::AnnotateCrashReport(
+    NS_LITERAL_CSTRING("ContentSandboxEnabled"),
+    sandboxEnabled? NS_LITERAL_CSTRING("1") : NS_LITERAL_CSTRING("0"));
+#if defined(XP_LINUX) && !defined(OS_ANDROID)
+  SandboxInfo::Get().AnnotateCrashReport();
+#endif 
+#endif 
+#endif 
+
   return true;
 }
 
