@@ -94,25 +94,24 @@ class CodeGeneratorX86Shared : public CodeGeneratorShared
     };
 
   private:
-    MOZ_MUST_USE uint32_t
+    void
     emitAsmJSBoundsCheckBranch(const MAsmJSHeapAccess* mir, const MInstruction* ins,
                                Register ptr, Label* fail);
 
   public:
     
-    MOZ_MUST_USE uint32_t
+    bool
     maybeEmitThrowingAsmJSBoundsCheck(const MAsmJSHeapAccess* mir, const MInstruction* ins,
                                       const LAllocation* ptr);
 
     
-    MOZ_MUST_USE uint32_t
+    bool
     maybeEmitAsmJSLoadBoundsCheck(const MAsmJSLoadHeap* mir, LAsmJSLoadHeap* ins,
                                   OutOfLineLoadTypedArrayOutOfBounds** ool);
 
     
-    MOZ_MUST_USE uint32_t
-    maybeEmitAsmJSStoreBoundsCheck(const MAsmJSStoreHeap* mir, LAsmJSStoreHeap* ins,
-                                   Label** rejoin);
+    bool
+    maybeEmitAsmJSStoreBoundsCheck(const MAsmJSStoreHeap* mir, LAsmJSStoreHeap* ins, Label** rejoin);
 
     void cleanupAfterAsmJSBoundsCheckBranch(const MAsmJSHeapAccess* mir, Register ptr);
 

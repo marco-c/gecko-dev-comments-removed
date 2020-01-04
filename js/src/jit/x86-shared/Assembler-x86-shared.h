@@ -1079,6 +1079,21 @@ class AssemblerX86Shared : public AssemblerShared
         X86Encoding::BaseAssembler::patchJumpToTwoByteNop(jump);
     }
 
+    static void UpdateBoundsCheck(uint8_t* patchAt, uint32_t heapLength) {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        X86Encoding::AddInt32(patchAt, heapLength);
+    }
+
     void breakpoint() {
         masm.int3();
     }

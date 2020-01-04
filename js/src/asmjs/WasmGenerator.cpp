@@ -915,11 +915,13 @@ ModuleGenerator::finish(ImportNameVector&& importNames, const ShareableBytes& by
         return nullptr;
 
     
-    metadata_->heapAccesses = masm_.extractHeapAccesses();
+    metadata_->memoryAccesses = masm_.extractMemoryAccesses();
+    metadata_->boundsChecks = masm_.extractBoundsChecks();
 
     
     
-    metadata_->heapAccesses.podResizeToFit();
+    metadata_->memoryAccesses.podResizeToFit();
+    metadata_->boundsChecks.podResizeToFit();
     metadata_->codeRanges.podResizeToFit();
     metadata_->callSites.podResizeToFit();
     metadata_->callThunks.podResizeToFit();
