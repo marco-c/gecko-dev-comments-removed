@@ -3333,14 +3333,11 @@ struct nsCursorImage
   ~nsCursorImage();
 
   nsCursorImage& operator=(const nsCursorImage& aOther);
-  
-
-
-
 
   void SetImage(imgIRequest *aImage) {
     if (mImage) {
       mImage->UnlockImage();
+      mImage->RequestDiscard();
     }
     mImage = aImage;
     if (mImage) {
