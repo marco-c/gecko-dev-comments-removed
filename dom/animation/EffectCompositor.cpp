@@ -236,21 +236,43 @@ EffectCompositor::GetAnimationRule(dom::Element* aElement,
                                    nsCSSPseudoElements::Type aPseudoType,
                                    CascadeLevel aCascadeLevel)
 {
+  
+  
+  
+  
+  
+  
+  
+  
+
   if (!mPresContext || !mPresContext->IsDynamic()) {
     
     return nullptr;
   }
 
-  EffectSet* effectSet = EffectSet::GetEffectSet(aElement, aPseudoType);
-  if (!effectSet) {
-    return nullptr;
-  }
-
   if (mPresContext->RestyleManager()->SkipAnimationRules()) {
+    
+    
+    
     return nullptr;
   }
 
   MaybeUpdateAnimationRule(aElement, aPseudoType, aCascadeLevel);
+
+#ifdef DEBUG
+  {
+    auto& elementsToRestyle = mElementsToRestyle[aCascadeLevel];
+    PseudoElementHashKey key = { aElement, aPseudoType };
+    MOZ_ASSERT(!elementsToRestyle.Contains(key),
+               "Element should no longer require a restyle after its "
+               "animation rule has been updated");
+  }
+#endif
+
+  EffectSet* effectSet = EffectSet::GetEffectSet(aElement, aPseudoType);
+  if (!effectSet) {
+    return nullptr;
+  }
 
   return effectSet->AnimationRule(aCascadeLevel);
 }
