@@ -2900,7 +2900,7 @@ public:
 
   virtual nscoord GetXULFlex() = 0;
   virtual nscoord GetXULBoxAscent(nsBoxLayoutState& aBoxLayoutState) = 0;
-  virtual bool IsCollapsed() = 0;
+  virtual bool IsXULCollapsed() = 0;
   
   
   

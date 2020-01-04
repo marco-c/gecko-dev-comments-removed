@@ -805,7 +805,7 @@ nsHTMLScrollFrame::GetPadding(nsMargin& aMargin)
 }
 
 bool
-nsHTMLScrollFrame::IsCollapsed()
+nsHTMLScrollFrame::IsXULCollapsed()
 {
   
   return false;

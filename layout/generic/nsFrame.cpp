@@ -5881,7 +5881,7 @@ nsFrame::UpdateOverflow()
   nsOverflowAreas overflowAreas(rect, rect);
 
   if (!DoesClipChildren() &&
-      !(IsCollapsed() && (IsXULBoxFrame() || ::IsXULBoxWrapped(this)))) {
+      !(IsXULCollapsed() && (IsXULBoxFrame() || ::IsXULBoxWrapped(this)))) {
     nsLayoutUtils::UnionChildOverflow(this, overflowAreas);
   }
 
@@ -8704,7 +8704,7 @@ nsFrame::GetXULPrefSize(nsBoxLayoutState& aState)
     return metrics->mPrefSize;
   }
 
-  if (IsCollapsed())
+  if (IsXULCollapsed())
     return size;
 
   
@@ -8740,7 +8740,7 @@ nsFrame::GetXULMinSize(nsBoxLayoutState& aState)
     return size;
   }
 
-  if (IsCollapsed())
+  if (IsXULCollapsed())
     return size;
 
   
@@ -8775,7 +8775,7 @@ nsFrame::GetXULMaxSize(nsBoxLayoutState& aState)
     return size;
   }
 
-  if (IsCollapsed())
+  if (IsXULCollapsed())
     return size;
 
   size = nsBox::GetXULMaxSize(aState);
@@ -8803,7 +8803,7 @@ nsFrame::GetXULBoxAscent(nsBoxLayoutState& aState)
   if (!DoesNeedRecalc(metrics->mAscent))
     return metrics->mAscent;
 
-  if (IsCollapsed()) {
+  if (IsXULCollapsed()) {
     metrics->mAscent = 0;
   } else {
     
@@ -8832,7 +8832,7 @@ nsFrame::DoLayout(nsBoxLayoutState& aState)
     BoxReflow(aState, presContext, desiredSize, rendContext,
               ourRect.x, ourRect.y, ourRect.width, ourRect.height);
 
-    if (IsCollapsed()) {
+    if (IsXULCollapsed()) {
       SetSize(nsSize(0, 0));
     } else {
 
@@ -9099,7 +9099,7 @@ nsFrame::BoxReflow(nsBoxLayoutState&        aState,
                                         &reflowState, aX, aY, layoutFlags | NS_FRAME_NO_MOVE_FRAME);
 
     
-    if (IsCollapsed()) {
+    if (IsXULCollapsed()) {
       metrics->mAscent = 0;
     } else {
       if (aDesiredSize.BlockStartAscent() ==

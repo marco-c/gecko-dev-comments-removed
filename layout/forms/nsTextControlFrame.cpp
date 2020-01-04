@@ -593,7 +593,7 @@ nsTextControlFrame::GetXULMinSize(nsBoxLayoutState& aState)
 }
 
 bool
-nsTextControlFrame::IsCollapsed()
+nsTextControlFrame::IsXULCollapsed()
 {
   
   return false;
