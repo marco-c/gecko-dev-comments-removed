@@ -16,6 +16,8 @@ namespace mozilla {
 
 class DOMMediaStream;
 class MediaEnginePhotoCallback;
+class MediaStream;
+class ProcessedMediaStream;
 
 namespace dom {
 
@@ -193,6 +195,16 @@ public:
 
 protected:
   virtual ~MediaStreamTrack();
+
+  
+  MediaStream* GetInputStream();
+
+  
+  ProcessedMediaStream* GetOwnedStream();
+
+  
+  
+  DOMMediaStream* GetInputDOMStream();
 
   RefPtr<DOMMediaStream> mOwningStream;
   TrackID mTrackID;
