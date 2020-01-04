@@ -253,7 +253,9 @@ var NetMonitorController = {
     this._disconnection = promise.defer();
 
     
-    yield this._connection.promise;
+    if (!this.isConnected()) {
+      yield this._connection.promise;
+    }
 
     
     
