@@ -4362,6 +4362,7 @@ BytecodeEmitter::emitVariables(ParseNode* pn, VarEmitOption emitOption, bool isL
             }
         }
 
+        MOZ_ASSERT_IF(emitOption == InitializeVars, pn->pn_xflags & PNX_POPVAR);
         if (next && emitOption == InitializeVars) {
             if (!emit1(JSOP_POP))
                 return false;
@@ -5600,29 +5601,28 @@ BytecodeEmitter::emitNormalFor(ParseNode* pn, ptrdiff_t top)
 
     
     bool forLoopRequiresFreshening = false;
-    JSOp op;
-    ParseNode* init = forHead->pn_kid1;
-    if (!init) {
-        
-        
-        op = JSOP_NOP;
-    } else if (init->isKind(PNK_FRESHENBLOCK)) {
-        
-        op = JSOP_NOP;
-
-        
-        
-        
-        forLoopRequiresFreshening = true;
-    } else {
-        emittingForInit = true;
-        if (!updateSourceCoordNotes(init->pn_pos.begin))
-            return false;
-        if (!emitTree(init))
-            return false;
-        emittingForInit = false;
-
-        op = JSOP_POP;
+    if (ParseNode* init = forHead->pn_kid1) {
+        if (init->isKind(PNK_FRESHENBLOCK)) {
+            
+            
+            
+            forLoopRequiresFreshening = true;
+        } else {
+            emittingForInit = true;
+            if (!updateSourceCoordNotes(init->pn_pos.begin))
+                return false;
+            if (init->isKind(PNK_VAR) || init->isKind(PNK_LET) || init->isKind(PNK_CONST)) {
+                init->pn_xflags |= PNX_POPVAR;  
+                if (!emitTree(init))
+                    return false;
+            } else {
+                if (!emitTree(init))
+                    return false;
+                if (!emit1(JSOP_POP))
+                    return false;
+            }
+            emittingForInit = false;
+        }
     }
 
     
@@ -5634,7 +5634,7 @@ BytecodeEmitter::emitNormalFor(ParseNode* pn, ptrdiff_t top)
     unsigned noteIndex;
     if (!newSrcNote(SRC_FOR, &noteIndex))
         return false;
-    if (!emit1(op))
+    if (!emit1(JSOP_NOP))
         return false;
     ptrdiff_t tmp = offset();
 
@@ -5642,9 +5642,6 @@ BytecodeEmitter::emitNormalFor(ParseNode* pn, ptrdiff_t top)
     if (forHead->pn_kid2) {
         
         if (!emitJump(JSOP_GOTO, 0, &jmp))
-            return false;
-    } else {
-        if (op != JSOP_NOP && !emit1(JSOP_NOP))
             return false;
     }
 
@@ -5692,12 +5689,9 @@ BytecodeEmitter::emitNormalFor(ParseNode* pn, ptrdiff_t top)
     if (ParseNode* update = forHead->pn_kid3) {
         if (!updateSourceCoordNotes(update->pn_pos.begin))
             return false;
-        op = JSOP_POP;
         if (!emitTree(update))
             return false;
-
-        
-        if (!emit1(op))
+        if (!emit1(JSOP_POP))
             return false;
 
         
@@ -5728,13 +5722,13 @@ BytecodeEmitter::emitNormalFor(ParseNode* pn, ptrdiff_t top)
         return false;
     if (!setSrcNoteOffset(noteIndex, 1, tmp2 - tmp))
         return false;
+
     
     if (!setSrcNoteOffset(noteIndex, 2, offset() - tmp))
         return false;
 
     
-    op = forHead->pn_kid2 ? JSOP_IFNE : JSOP_GOTO;
-    if (!emitJump(op, top - offset()))
+    if (!emitJump(forHead->pn_kid2 ? JSOP_IFNE : JSOP_GOTO, top - offset()))
         return false;
 
     if (!tryNoteList.append(JSTRY_LOOP, stackDepth, top, offset()))
