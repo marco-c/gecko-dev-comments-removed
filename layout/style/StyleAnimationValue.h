@@ -10,9 +10,9 @@
 
 #include "nsStringFwd.h"
 #include "nsStringBuffer.h"
-#include "nsCSSProperty.h"
 #include "nsCoord.h"
 #include "nsColor.h"
+#include "nsCSSProps.h"
 #include "nsCSSValue.h"
 
 class nsIFrame;
@@ -21,6 +21,10 @@ class gfx3DMatrix;
 
 namespace mozilla {
 
+namespace css {
+class StyleRule;
+} 
+
 namespace dom {
 class Element;
 } 
@@ -28,6 +32,8 @@ class Element;
 namespace gfx {
 class Matrix4x4;
 } 
+
+struct PropertyStyleAnimationValuePair;
 
 
 
@@ -152,6 +158,23 @@ public:
                              bool aUseSVGMode,
                              StyleAnimationValue& aComputedValue,
                              bool* aIsContextSensitive = nullptr);
+
+  
+
+
+
+
+
+
+
+
+
+  static bool ComputeValues(nsCSSProperty aProperty,
+                            nsCSSProps::EnabledState aEnabledState,
+                            mozilla::dom::Element* aTargetElement,
+                            const nsAString& aSpecifiedValue,
+                            bool aUseSVGMode,
+                            nsTArray<PropertyStyleAnimationValuePair>& aResult);
 
   
 
@@ -373,6 +396,13 @@ public:
     { return !(*this == aOther); }
 
 private:
+  static bool ComputeValues(nsCSSProperty aProperty,
+                            nsCSSProps::EnabledState aEnabledState,
+                            mozilla::dom::Element* aTargetElement,
+                            mozilla::css::StyleRule* aStyleRule,
+                            nsTArray<PropertyStyleAnimationValuePair>& aValues,
+                            bool* aIsContextSensitive);
+
   void FreeValue();
 
   static const char16_t* GetBufferValue(nsStringBuffer* aBuffer) {
@@ -410,6 +440,12 @@ private:
   static bool IsStringUnit(Unit aUnit) {
     return aUnit == eUnit_UnparsedString;
   }
+};
+
+struct PropertyStyleAnimationValuePair
+{
+  nsCSSProperty mProperty;
+  StyleAnimationValue mValue;
 };
 
 } 
