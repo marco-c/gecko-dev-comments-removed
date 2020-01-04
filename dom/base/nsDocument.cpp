@@ -14,6 +14,7 @@
 #include "mozilla/AutoRestore.h"
 #include "mozilla/BinarySearch.h"
 #include "mozilla/DebugOnly.h"
+#include "mozilla/IntegerRange.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/Likely.h"
 #include <algorithm>
@@ -11224,15 +11225,29 @@ nsDocument::RestorePreviousFullScreenState()
     return;
   }
 
+  nsCOMPtr<nsIDocument> fullScreenDoc = GetFullscreenLeaf(this);
+  nsAutoTArray<nsDocument*, 8> exitDocs;
+
+  nsIDocument* doc = fullScreenDoc;
   
-  bool exitingFullscreen = true;
-  for (nsIDocument* doc = this; doc; doc = doc->GetParentDocument()) {
-    if (static_cast<nsDocument*>(doc)->mFullScreenStack.Length() > 1) {
-      exitingFullscreen = false;
+  for (; doc != this; doc = doc->GetParentDocument()) {
+    exitDocs.AppendElement(static_cast<nsDocument*>(doc));
+  }
+  MOZ_ASSERT(doc == this, "Must have reached this doc");
+  
+  for (; doc; doc = doc->GetParentDocument()) {
+    nsDocument* theDoc = static_cast<nsDocument*>(doc);
+    MOZ_ASSERT(!theDoc->mFullScreenStack.IsEmpty(),
+               "Ancestor of fullscreen document must also be in fullscreen");
+    exitDocs.AppendElement(theDoc);
+    if (theDoc->mFullScreenStack.Length() > 1) {
       break;
     }
   }
-  if (exitingFullscreen) {
+
+  nsDocument* lastDoc = exitDocs.LastElement();
+  if (!lastDoc->GetParentDocument() &&
+      lastDoc->mFullScreenStack.Length() == 1) {
     
     
     AskWindowToExitFullscreen(this);
@@ -11241,50 +11256,39 @@ nsDocument::RestorePreviousFullScreenState()
 
   
   UnlockPointer();
-
-  nsCOMPtr<nsIDocument> fullScreenDoc = GetFullscreenLeaf(this);
-
   
-  nsIDocument* doc = fullScreenDoc;
-  while (doc != this) {
-    NS_ASSERTION(doc->IsFullScreenDoc(), "Should be full-screen doc");
-    static_cast<nsDocument*>(doc)->CleanupFullscreenState();
-    DispatchFullScreenChange(doc);
-    doc = doc->GetParentDocument();
+  
+  for (auto i : MakeRange(exitDocs.Length() - 1)) {
+    exitDocs[i]->CleanupFullscreenState();
+  }
+  
+  
+  nsIDocument* newFullscreenDoc;
+  if (lastDoc->mFullScreenStack.Length() > 1) {
+    lastDoc->FullScreenStackPop();
+    newFullscreenDoc = lastDoc;
+  } else {
+    lastDoc->CleanupFullscreenState();
+    newFullscreenDoc = lastDoc->GetParentDocument();
+  }
+  
+  for (nsDocument* d : exitDocs) {
+    DispatchFullScreenChange(d);
   }
 
-  
-  NS_ASSERTION(doc == this, "Must have reached this doc.");
-  while (doc != nullptr) {
-    static_cast<nsDocument*>(doc)->FullScreenStackPop();
-    DispatchFullScreenChange(doc);
-    if (static_cast<nsDocument*>(doc)->mFullScreenStack.IsEmpty()) {
-      
-      
-      
-      static_cast<nsDocument*>(doc)->CleanupFullscreenState();
-      doc = doc->GetParentDocument();
-    } else {
-      
-      
-      if (fullScreenDoc != doc) {
-        
-        
-        
-        
-        if (!nsContentUtils::HaveEqualPrincipals(fullScreenDoc, doc)) {
-          DispatchCustomEventWithFlush(
-            doc, NS_LITERAL_STRING("MozDOMFullscreen:NewOrigin"),
-             true,  true);
-        }
-      }
-      break;
-    }
+  MOZ_ASSERT(newFullscreenDoc, "If we were going to exit from fullscreen on "
+             "all documents in this doctree, we should've asked the window to "
+             "exit first instead of reaching here.");
+  if (fullScreenDoc != newFullscreenDoc &&
+      !nsContentUtils::HaveEqualPrincipals(fullScreenDoc, newFullscreenDoc)) {
+    
+    
+    
+    
+    DispatchCustomEventWithFlush(
+      newFullscreenDoc, NS_LITERAL_STRING("MozDOMFullscreen:NewOrigin"),
+       true,  true);
   }
-
-  MOZ_ASSERT(doc, "If we were going to exit from fullscreen on all documents "
-             "in this doctree, we should've asked the window to exit first "
-             "instead of reaching here.");
 }
 
 bool
