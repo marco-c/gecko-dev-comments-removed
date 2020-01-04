@@ -64,6 +64,10 @@ public:
   
   
   
+  TextRangeArray* GetLastRanges() const { return mLastRanges; }
+  
+  
+  
   
   
   TextRangeArray* GetRanges() const { return mRanges; }
@@ -191,6 +195,9 @@ private:
   
   
   RefPtr<TextRangeArray> mRanges;
+  
+  
+  RefPtr<TextRangeArray> mLastRanges;
 
   
   

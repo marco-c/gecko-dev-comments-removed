@@ -132,6 +132,7 @@ TextComposition::CloneAndDispatchAs(
   nsEventStatus* status = aStatus ? aStatus : &dummyStatus;
   if (aMessage == eCompositionUpdate) {
     mLastData = compositionEvent.mData;
+    mLastRanges = aCompositionEvent->mRanges;
   }
 
   DispatchEvent(&compositionEvent, status, aCallBack, aCompositionEvent);
@@ -245,6 +246,7 @@ TextComposition::DispatchCompositionEvent(
     aCompositionEvent->mFlags.mPropagationStopped = true;
     if (aCompositionEvent->CausesDOMTextEvent()) {
       mLastData = aCompositionEvent->mData;
+      mLastRanges = aCompositionEvent->mRanges;
       
       
       EditorWillHandleCompositionChangeEvent(aCompositionEvent);
