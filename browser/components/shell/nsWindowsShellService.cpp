@@ -610,12 +610,6 @@ nsWindowsShellService::IsDefaultBrowser(bool aStartupCheck,
 {
   
   
-  
-  if (aStartupCheck)
-    mCheckedThisSession = true;
-
-  
-  
   *aIsDefaultBrowser = true;
 
   wchar_t exePath[MAX_BUF];
@@ -807,13 +801,6 @@ nsWindowsShellService::IsDefaultBrowser(bool aStartupCheck,
   return NS_OK;
 }
 
-NS_IMETHODIMP
-nsWindowsShellService::GetCanSetDesktopBackground(bool* aResult)
-{
-  *aResult = true;
-  return NS_OK;
-}
-
 static nsresult
 DynSHOpenWithDialog(HWND hwndParent, const OPENASINFO *poainfo)
 {
@@ -982,39 +969,6 @@ nsWindowsShellService::SetDefaultBrowser(bool aClaimAllTypes, bool aForAllUsers)
   }
 
   return rv;
-}
-
-NS_IMETHODIMP
-nsWindowsShellService::GetShouldCheckDefaultBrowser(bool* aResult)
-{
-  NS_ENSURE_ARG_POINTER(aResult);
-
-  
-  
-  if (mCheckedThisSession) {
-    *aResult = false;
-    return NS_OK;
-  }
-
-  nsresult rv;
-  nsCOMPtr<nsIPrefBranch> prefs(do_GetService(NS_PREFSERVICE_CONTRACTID, &rv));
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
-
-  return prefs->GetBoolPref(PREF_CHECKDEFAULTBROWSER, aResult);
-}
-
-NS_IMETHODIMP
-nsWindowsShellService::SetShouldCheckDefaultBrowser(bool aShouldCheck)
-{
-  nsresult rv;
-  nsCOMPtr<nsIPrefBranch> prefs(do_GetService(NS_PREFSERVICE_CONTRACTID, &rv));
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
-
-  return prefs->SetBoolPref(PREF_CHECKDEFAULTBROWSER, aShouldCheck);
 }
 
 static nsresult
@@ -1358,8 +1312,7 @@ nsWindowsShellService::SetDesktopBackgroundColor(uint32_t aColor)
   return regKey->Close();
 }
 
-nsWindowsShellService::nsWindowsShellService() : 
-  mCheckedThisSession(false) 
+nsWindowsShellService::nsWindowsShellService()
 {
 }
 
