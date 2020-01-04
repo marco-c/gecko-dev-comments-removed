@@ -159,35 +159,66 @@ class AudioInputCubeb final : public AudioInput
 {
 public:
   explicit AudioInputCubeb(webrtc::VoiceEngine* aVoiceEngine) :
-    AudioInput(aVoiceEngine), mDevices(nullptr) {}
+    AudioInput(aVoiceEngine), mSelectedDevice(0)
+  {
+    
+    
+    int devices;
+    GetNumOfRecordingDevices(devices);
+  }
+
+  static void CleanupGlobalData()
+  {
+    if (mDevices) {
+      
+      cubeb_device_collection_destroy(mDevices);
+      mDevices = nullptr;
+    }
+  }
 
   int GetNumOfRecordingDevices(int& aDevices)
   {
-    
-    if (CUBEB_OK != cubeb_enumerate_devices(CubebUtils::GetCubebContext(),
-                                            CUBEB_DEVICE_TYPE_INPUT,
-                                            &mDevices)) {
-      return 0;
-    }
-    aDevices = 0;
-    for (uint32_t i = 0; i < mDevices->count; i++) {
-      if (mDevices->device[i]->type == CUBEB_DEVICE_TYPE_INPUT && 
-          mDevices->device[i]->state == CUBEB_DEVICE_STATE_ENABLED)
-      {
-        aDevices++;
-        
+    if (!mDevices) {
+      if (CUBEB_OK != cubeb_enumerate_devices(CubebUtils::GetCubebContext(),
+                                              CUBEB_DEVICE_TYPE_INPUT,
+                                              &mDevices)) {
+        return 0;
       }
     }
+    
+    if (mDeviceIndexes.Length() == 0) {
+      for (uint32_t i = 0; i < mDevices->count; i++) {
+        if (mDevices->device[i]->type == CUBEB_DEVICE_TYPE_INPUT && 
+            (mDevices->device[i]->state == CUBEB_DEVICE_STATE_ENABLED ||
+             mDevices->device[i]->state == CUBEB_DEVICE_STATE_UNPLUGGED))
+        {
+          mDeviceIndexes.AppendElement(i);
+          
+        }
+      }
+    }
+    aDevices = mDeviceIndexes.Length();
     return 0;
+  }
+
+  int32_t DeviceIndex(int aIndex)
+  {
+    if (aIndex == -1) {
+      aIndex = 0; 
+    }
+    if (aIndex >= (int) mDeviceIndexes.Length()) {
+      return -1;
+    }
+    return mDeviceIndexes[aIndex]; 
   }
 
   int GetRecordingDeviceName(int aIndex, char aStrNameUTF8[128],
                              char aStrGuidUTF8[128])
   {
-    if (!mDevices) {
+    int32_t devindex = DeviceIndex(aIndex);
+    if (!mDevices || devindex < 0) {
       return 1;
     }
-    int devindex = aIndex == -1 ? 0 : aIndex;
     PR_snprintf(aStrNameUTF8, 128, "%s%s", aIndex == -1 ? "default: " : "",
                 mDevices->device[devindex]->friendly_name);
     aStrGuidUTF8[0] = '\0';
@@ -203,12 +234,14 @@ public:
 
   void StartRecording(MediaStreamGraph *aGraph, AudioDataListener *aListener)
   {
+    MOZ_ASSERT(mDevices);
+
     ScopedCustomReleasePtr<webrtc::VoEExternalMedia> ptrVoERender;
     ptrVoERender = webrtc::VoEExternalMedia::GetInterface(mVoiceEngine);
     if (ptrVoERender) {
       ptrVoERender->SetExternalRecordingStatus(true);
     }
-    aGraph->OpenAudioInput(nullptr, aListener);
+    aGraph->OpenAudioInput(mDevices->device[mSelectedDevice]->devid, aListener);
   }
 
   void StopRecording(MediaStreamGraph *aGraph, AudioDataListener *aListener)
@@ -218,21 +251,21 @@ public:
 
   int SetRecordingDevice(int aIndex)
   {
-    
-    return 1;
+    int32_t devindex = DeviceIndex(aIndex);
+    if (!mDevices || devindex < 0) {
+      return 1;
+    }
+    mSelectedDevice = devindex;
+    return 0;
   }
 
 protected:
-  ~AudioInputCubeb() {
-  {
-    if (mDevices) {
-      cubeb_device_collection_destroy(mDevices);
-      mDevices = nullptr;
-    }
-  }
+  ~AudioInputCubeb() {}
 
 private:
-  cubeb_device_collection* mDevices;
+  nsTArray<int> mDeviceIndexes;
+  int mSelectedDevice;
+  static cubeb_device_collection *mDevices;
 };
 
 class AudioInputWebRTC final : public AudioInput
