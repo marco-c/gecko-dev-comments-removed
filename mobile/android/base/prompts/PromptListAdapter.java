@@ -210,7 +210,7 @@ public class PromptListAdapter extends ArrayAdapter<PromptListItem> {
                         provider.chooseActivity(p);
 
                         
-                        Telemetry.sendUIEvent(TelemetryContract.Event.SHARE, TelemetryContract.Method.LIST);
+                        Telemetry.sendUIEvent(TelemetryContract.Event.SHARE, TelemetryContract.Method.LIST, "promptlist");
                     }
 
                     @Override
