@@ -7,10 +7,12 @@
 
 
 #include <new>
+#include <stdint.h>
 
 #include "mozilla/Alignment.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/Move.h"
+#include "mozilla/TypeTraits.h"
 
 #ifndef mozilla_Variant_h
 #define mozilla_Variant_h
@@ -111,23 +113,42 @@ struct SelectVariantType
 
 
 
+template<typename... Ts>
+struct VariantTag
+{
+private:
+  static const size_t TypeCount = sizeof...(Ts);
+
+public:
+  using Type =
+    typename Conditional<TypeCount < 3,
+                         bool,
+                         typename Conditional<TypeCount < (1 << 8),
+                                              uint_fast8_t,
+                                              size_t 
+                                              >::Type
+                         >::Type;
+};
 
 
-template<size_t N, typename T, typename U, typename Next, bool isMatch>
+
+
+
+template<typename Tag, size_t N, typename T, typename U, typename Next, bool isMatch>
 struct TagHelper;
 
 
-template<size_t N, typename T, typename U, typename Next>
-struct TagHelper<N, T, U, Next, false>
+template<typename Tag, size_t N, typename T, typename U, typename Next>
+struct TagHelper<Tag, N, T, U, Next, false>
 {
-  static size_t tag() { return Next::template tag<U>(); }
+  static Tag tag() { return Next::template tag<U>(); }
 };
 
 
-template<size_t N, typename T, typename U, typename Next>
-struct TagHelper<N, T, U, Next, true>
+template<typename Tag, size_t N, typename T, typename U, typename Next>
+struct TagHelper<Tag, N, T, U, Next, true>
 {
-  static size_t tag() { return N; }
+  static Tag tag() { return Tag(N); }
 };
 
 
@@ -135,17 +156,19 @@ struct TagHelper<N, T, U, Next, true>
 
 
 
-template<size_t N, typename... Ts>
+
+template<typename Tag, size_t N, typename... Ts>
 struct VariantImplementation;
 
 
-template<size_t N, typename T>
-struct VariantImplementation<N, T> {
+template<typename Tag, size_t N, typename T>
+struct VariantImplementation<Tag, N, T>
+{
   template<typename U>
-  static size_t tag() {
+  static Tag tag() {
     static_assert(mozilla::IsSame<T, U>::value,
                   "mozilla::Variant: tag: bad type!");
-    return N;
+    return Tag(N);
   }
 
   template<typename Variant>
@@ -179,15 +202,15 @@ struct VariantImplementation<N, T> {
 };
 
 
-template<size_t N, typename T, typename... Ts>
-struct VariantImplementation<N, T, Ts...>
+template<typename Tag, size_t N, typename T, typename... Ts>
+struct VariantImplementation<Tag, N, T, Ts...>
 {
   
-  using Next = VariantImplementation<N + 1, Ts...>;
+  using Next = VariantImplementation<Tag, N + 1, Ts...>;
 
   template<typename U>
-  static size_t tag() {
-    return TagHelper<N, T, U, Next, IsSame<T, U>::value>::tag();
+  static Tag tag() {
+    return TagHelper<Tag, N, T, U, Next, IsSame<T, U>::value>::tag();
   }
 
   template<typename Variant>
@@ -411,15 +434,16 @@ struct AsVariantTemporary
 template<typename... Ts>
 class MOZ_INHERIT_TYPE_ANNOTATIONS_FROM_TEMPLATE_ARGS Variant
 {
-  using Impl = detail::VariantImplementation<0, Ts...>;
+  using Tag = typename detail::VariantTag<Ts...>::Type;
+  using Impl = detail::VariantImplementation<Tag, 0, Ts...>;
   using RawData = AlignedStorage<detail::MaxSizeOf<Ts...>::size>;
 
   
-  
-  size_t tag;
+  RawData raw;
 
   
-  RawData raw;
+  
+  Tag tag;
 
   void* ptr() {
     return reinterpret_cast<void*>(&raw);
