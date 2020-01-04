@@ -7,6 +7,7 @@ const { Preferences } = require("resource://gre/modules/Preferences.jsm");
 const CUSTOM_BREAKDOWN_PREF = "devtools.memory.custom-breakdowns";
 const DevToolsUtils = require("devtools/shared/DevToolsUtils");
 const { snapshotState: states, breakdowns } = require("./constants");
+const FULL_ERROR_TEXT = "There was an error processing this snapshot.";
 const ERROR_SNAPSHOT_TEXT = "⚠ Error!";
 const SAVING_SNAPSHOT_TEXT = "Saving snapshot...";
 const READING_SNAPSHOT_TEXT = "Reading snapshot...";
@@ -90,6 +91,7 @@ exports.breakdownNameToSpec = function (name) {
 
 
 
+
 exports.getSnapshotStatusText = function (snapshot) {
   assert((snapshot || {}).state,
     `Snapshot must have expected state, found ${(snapshot || {}).state}.`);
@@ -114,6 +116,23 @@ exports.getSnapshotStatusText = function (snapshot) {
 
   assert(false, `Snapshot in unexpected state: ${snapshot.state}`);
   return "";
+}
+
+
+
+
+
+
+
+
+exports.getSnapshotStatusTextFull = function (snapshot) {
+  assert((snapshot || {}).state,
+    `Snapshot must have expected state, found ${(snapshot || {}).state}.`);
+  switch (snapshot.state) {
+    case states.ERROR:
+      return FULL_ERROR_TEXT;
+  }
+  return exports.getSnapshotStatusText(snapshot);
 }
 
 
