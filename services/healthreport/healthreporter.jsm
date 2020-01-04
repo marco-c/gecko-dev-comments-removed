@@ -30,8 +30,8 @@ Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
 XPCOMUtils.defineLazyModuleGetter(this, "TelemetryController",
                                   "resource://gre/modules/TelemetryController.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "UpdateUtils",
-                                  "resource://gre/modules/UpdateUtils.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "UpdateChannel",
+                                  "resource://gre/modules/UpdateChannel.jsm");
 
 
 
@@ -1103,7 +1103,7 @@ AbstractHealthReporter.prototype = Object.freeze({
     }
 
     try {
-      out["updateChannel"] = UpdateUtils.UpdateChannel;
+      out["updateChannel"] = UpdateChannel.get();
     } catch (ex) {
       this._log.warn("Could not obtain update channel: " +
                      CommonUtils.exceptionStr(ex));

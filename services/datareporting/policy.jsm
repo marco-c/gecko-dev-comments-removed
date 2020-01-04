@@ -25,7 +25,7 @@ Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/Promise.jsm");
 Cu.import("resource://gre/modules/Log.jsm");
 Cu.import("resource://services-common/utils.js");
-Cu.import("resource://gre/modules/UpdateUtils.jsm");
+Cu.import("resource://gre/modules/UpdateChannel.jsm");
 
 
 
@@ -388,7 +388,7 @@ this.DataReportingPolicy.prototype = Object.freeze({
 
   get minimumPolicyVersion() {
     
-    let channel = UpdateUtils.getUpdateChannel(false);
+    let channel = UpdateChannel.get(false);
     let channelPref = this._prefs.get("minimumPolicyVersion.channel-" + channel);
     return channelPref !== undefined ?
            channelPref : this._prefs.get("minimumPolicyVersion", 1);
