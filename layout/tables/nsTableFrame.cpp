@@ -58,7 +58,7 @@ using namespace mozilla::layout;
 
 namespace mozilla {
 
-struct nsTableReflowState {
+struct TableReflowInput {
 
   
   const ReflowInput& reflowState;
@@ -72,13 +72,13 @@ struct nsTableReflowState {
   
   nscoord bCoord;
 
-  nsTableReflowState(const ReflowInput& aReflowState,
+  TableReflowInput(const ReflowInput& aReflowState,
                      const LogicalSize& aAvailSize)
     : reflowState(aReflowState)
     , availSize(aAvailSize)
   {
     MOZ_ASSERT(reflowState.frame->GetType() == nsGkAtoms::tableFrame,
-               "nsTableReflowState should only be created for nsTableFrame");
+               "TableReflowInput should only be created for nsTableFrame");
     nsTableFrame* table =
       static_cast<nsTableFrame*>(reflowState.frame->FirstInFlow());
     WritingMode wm = aReflowState.GetWritingMode();
@@ -2086,7 +2086,7 @@ nsTableFrame::ReflowTable(nsHTMLReflowMetrics&     aDesiredSize,
   WritingMode wm = aReflowState.GetWritingMode();
   aDesiredSize.ISize(wm) = aReflowState.ComputedISize() +
                      aReflowState.ComputedLogicalBorderPadding().IStartEnd(wm);
-  nsTableReflowState reflowState(aReflowState,
+  TableReflowInput reflowState(aReflowState,
                                  LogicalSize(wm, aDesiredSize.ISize(wm),
                                              aAvailBSize));
   ReflowChildren(reflowState, aStatus, aLastChildReflowed,
@@ -2770,7 +2770,7 @@ nsTableFrame::InitChildReflowState(ReflowInput& aReflowState)
 
 
 void
-nsTableFrame::PlaceChild(nsTableReflowState&  aReflowState,
+nsTableFrame::PlaceChild(TableReflowInput&  aReflowState,
                          nsIFrame*            aKidFrame,
                          nsPoint              aKidPosition,
                          nsHTMLReflowMetrics& aKidDesiredSize,
@@ -2914,7 +2914,7 @@ IsRepeatable(nscoord aFrameHeight, nscoord aPageHeight)
 }
 
 nsresult
-nsTableFrame::SetupHeaderFooterChild(const nsTableReflowState& aReflowState,
+nsTableFrame::SetupHeaderFooterChild(const TableReflowInput& aReflowState,
                                      nsTableRowGroupFrame* aFrame,
                                      nscoord* aDesiredHeight)
 {
@@ -2948,7 +2948,7 @@ nsTableFrame::SetupHeaderFooterChild(const nsTableReflowState& aReflowState,
 }
 
 void
-nsTableFrame::PlaceRepeatedFooter(nsTableReflowState& aReflowState,
+nsTableFrame::PlaceRepeatedFooter(TableReflowInput& aReflowState,
                                   nsTableRowGroupFrame *aTfoot,
                                   nscoord aFooterHeight)
 {
@@ -2992,7 +2992,7 @@ nsTableFrame::PlaceRepeatedFooter(nsTableReflowState& aReflowState,
 
 
 void
-nsTableFrame::ReflowChildren(nsTableReflowState& aReflowState,
+nsTableFrame::ReflowChildren(TableReflowInput& aReflowState,
                              nsReflowStatus&     aStatus,
                              nsIFrame*&          aLastChildReflowed,
                              nsOverflowAreas&    aOverflowAreas)
