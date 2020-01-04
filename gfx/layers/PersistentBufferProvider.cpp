@@ -210,12 +210,10 @@ PersistentBufferProviderShared::ReturnDrawTarget(already_AddRefed<gfx::DrawTarge
 
   mBack->Unlock();
 
-  if (mFront != mBack && !mBuffers.Contains(mFront)) {
-    mBuffers.AppendElement(mFront);
+  if (!mBuffer && mFront && !mFront->IsLocked()) {
+    mBuffer.swap(mFront);
   }
 
-  
-  
   mFront = mBack;
 
   return true;
