@@ -13,6 +13,8 @@ class gfxContext;
 
 class nsSVGFilterPaintCallback {
 public:
+  typedef mozilla::image::DrawResult DrawResult;
+
   
 
 
@@ -25,9 +27,9 @@ public:
 
 
 
-  virtual void Paint(gfxContext& aContext, nsIFrame *aTarget,
-                     const gfxMatrix& aTransform,
-                     const nsIntRect *aDirtyRect) = 0;
+  virtual DrawResult Paint(gfxContext& aContext, nsIFrame *aTarget,
+                           const gfxMatrix& aTransform,
+                           const nsIntRect *aDirtyRect) = 0;
 };
 
 #endif

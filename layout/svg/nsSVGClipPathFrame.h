@@ -22,6 +22,7 @@ class nsSVGClipPathFrame : public nsSVGContainerFrame
 
   typedef mozilla::gfx::Matrix Matrix;
   typedef mozilla::gfx::SourceSurface SourceSurface;
+  typedef mozilla::image::DrawResult DrawResult;
 
 protected:
   explicit nsSVGClipPathFrame(nsStyleContext* aContext)
@@ -77,11 +78,13 @@ public:
 
 
 
+
   already_AddRefed<SourceSurface>
     GetClipMask(gfxContext& aReferenceContext, nsIFrame* aClippedFrame,
                 const gfxMatrix& aMatrix, Matrix* aMaskTransform,
                 SourceSurface* aExtraMask = nullptr,
-                const Matrix& aExtraMasksTransform = Matrix());
+                const Matrix& aExtraMasksTransform = Matrix(),
+                DrawResult* aResult = nullptr);
 
   
 

@@ -26,6 +26,7 @@
 using namespace mozilla;
 using namespace mozilla::dom;
 using namespace mozilla::gfx;
+using namespace mozilla::image;
 
 class nsSVGImageFrame;
 
@@ -65,9 +66,9 @@ public:
   NS_DECL_FRAMEARENA_HELPERS
 
   
-  virtual nsresult PaintSVG(gfxContext& aContext,
-                            const gfxMatrix& aTransform,
-                            const nsIntRect* aDirtyRect = nullptr) override;
+  virtual DrawResult PaintSVG(gfxContext& aContext,
+                              const gfxMatrix& aTransform,
+                              const nsIntRect* aDirtyRect = nullptr) override;
   virtual nsIFrame* GetFrameForPoint(const gfxPoint& aPoint) override;
   virtual void ReflowSVG() override;
 
@@ -324,15 +325,13 @@ nsSVGImageFrame::TransformContextForPainting(gfxContext* aGfxContext,
 
 
 
-nsresult
+DrawResult
 nsSVGImageFrame::PaintSVG(gfxContext& aContext,
                           const gfxMatrix& aTransform,
                           const nsIntRect *aDirtyRect)
 {
-  nsresult rv = NS_OK;
-
   if (!StyleVisibility()->IsVisible())
-    return NS_OK;
+    return DrawResult::SUCCESS;
 
   float x, y, width, height;
   SVGImageElement *imgElem = static_cast<SVGImageElement*>(mContent);
@@ -351,6 +350,7 @@ nsSVGImageFrame::PaintSVG(gfxContext& aContext,
       currentRequest->GetImage(getter_AddRefs(mImageContainer));
   }
 
+  DrawResult result = DrawResult::SUCCESS;
   if (mImageContainer) {
     gfxContextAutoSaveRestore autoRestorer(&aContext);
 
@@ -361,7 +361,7 @@ nsSVGImageFrame::PaintSVG(gfxContext& aContext,
     }
 
     if (!TransformContextForPainting(&aContext, aTransform)) {
-      return NS_ERROR_FAILURE;
+      return DrawResult::SUCCESS;
     }
 
     
@@ -417,8 +417,7 @@ nsSVGImageFrame::PaintSVG(gfxContext& aContext,
       
       
       
-      
-      Unused << nsLayoutUtils::DrawSingleImage(
+      result = nsLayoutUtils::DrawSingleImage(
         aContext,
         PresContext(),
         mImageContainer,
@@ -428,8 +427,7 @@ nsSVGImageFrame::PaintSVG(gfxContext& aContext,
         &context,
         drawFlags);
     } else { 
-      
-      Unused << nsLayoutUtils::DrawSingleUnscaledImage(
+      result = nsLayoutUtils::DrawSingleUnscaledImage(
         aContext,
         PresContext(),
         mImageContainer,
@@ -445,7 +443,7 @@ nsSVGImageFrame::PaintSVG(gfxContext& aContext,
     
   }
 
-  return rv;
+  return result;
 }
 
 nsIFrame*

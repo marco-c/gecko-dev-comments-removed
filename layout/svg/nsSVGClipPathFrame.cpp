@@ -87,10 +87,14 @@ nsSVGClipPathFrame::GetClipMask(gfxContext& aReferenceContext,
                                 const gfxMatrix& aMatrix,
                                 Matrix* aMaskTransform,
                                 SourceSurface* aExtraMask,
-                                const Matrix& aExtraMasksTransform)
+                                const Matrix& aExtraMasksTransform,
+                                DrawResult* aResult)
 {
   MOZ_ASSERT(!IsTrivial(), "Caller needs to use ApplyClipPath");
 
+  if (aResult) {
+    *aResult = DrawResult::SUCCESS;
+  }
   DrawTarget& aReferenceDT = *aReferenceContext.GetDrawTarget();
 
   
@@ -212,7 +216,10 @@ nsSVGClipPathFrame::GetClipMask(gfxContext& aReferenceContext,
         
         
         
-        SVGFrame->PaintSVG(*ctx, toChildsUserSpace);
+        DrawResult result = SVGFrame->PaintSVG(*ctx, toChildsUserSpace);
+        if (aResult) {
+          *aResult &= result;
+        }
 
         if (clipPathThatClipsChild) {
           if (childsClipPathRequiresMasking) {
