@@ -1397,12 +1397,12 @@ nsTableRowGroupFrame::Reflow(nsPresContext*           aPresContext,
 }
 
 bool
-nsTableRowGroupFrame::UpdateOverflow()
+nsTableRowGroupFrame::ComputeCustomOverflow(nsOverflowAreas& aOverflowAreas)
 {
   
   
   ClearRowCursor();
-  return nsContainerFrame::UpdateOverflow();
+  return nsContainerFrame::ComputeCustomOverflow(aOverflowAreas);
 }
 
  void

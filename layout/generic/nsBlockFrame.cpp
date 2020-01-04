@@ -1722,12 +1722,9 @@ nsBlockFrame::ComputeOverflowAreas(const nsRect&         aBounds,
   aOverflowAreas = areas;
 }
 
-bool
-nsBlockFrame::UpdateOverflow()
+void
+nsBlockFrame::UnionChildOverflow(nsOverflowAreas& aOverflowAreas)
 {
-  nsRect rect(nsPoint(0, 0), GetSize());
-  nsOverflowAreas overflowAreas(rect, rect);
-
   
   
   
@@ -1752,27 +1749,30 @@ nsBlockFrame::UpdateOverflow()
     }
 
     line->SetOverflowAreas(lineAreas);
-    overflowAreas.UnionWith(lineAreas);
+    aOverflowAreas.UnionWith(lineAreas);
   }
 
   
   
-  ClearLineCursor();
-
-  
-  
-  nsLayoutUtils::UnionChildOverflow(this, overflowAreas,
+  nsLayoutUtils::UnionChildOverflow(this, aOverflowAreas,
                                     kPrincipalList | kFloatList);
+}
 
+bool
+nsBlockFrame::ComputeCustomOverflow(nsOverflowAreas& aOverflowAreas)
+{
   bool found;
   nscoord blockEndEdgeOfChildren =
     Properties().Get(BlockEndEdgeOfChildrenProperty(), &found);
   if (found) {
     ConsiderBlockEndEdgeOfChildren(GetWritingMode(),
-                                   blockEndEdgeOfChildren, overflowAreas);
+                                   blockEndEdgeOfChildren, aOverflowAreas);
   }
 
-  return FinishAndStoreOverflow(overflowAreas, GetSize());
+  
+  
+  ClearLineCursor();
+  return nsContainerFrame::ComputeCustomOverflow(aOverflowAreas);
 }
 
 void

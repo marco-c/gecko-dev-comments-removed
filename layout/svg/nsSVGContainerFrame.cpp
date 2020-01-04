@@ -71,14 +71,14 @@ nsSVGContainerFrame::RemoveFrame(ChildListID aListID,
 }
 
 bool
-nsSVGContainerFrame::UpdateOverflow()
+nsSVGContainerFrame::ComputeCustomOverflow(nsOverflowAreas& aOverflowAreas)
 {
   if (mState & NS_FRAME_IS_NONDISPLAY) {
     
     
     return false;
   }
-  return nsContainerFrame::UpdateOverflow();
+  return nsContainerFrame::ComputeCustomOverflow(aOverflowAreas);
 }
 
 

@@ -2052,12 +2052,26 @@ public:
 
   
 
+
+
+
+  bool UpdateOverflow();
+
   
 
 
 
 
-  virtual bool UpdateOverflow() = 0;
+
+
+
+  virtual bool ComputeCustomOverflow(nsOverflowAreas& aOverflowAreas) = 0;
+
+  
+
+
+
+  virtual void UnionChildOverflow(nsOverflowAreas& aOverflowAreas) = 0;
 
   
 
@@ -2947,6 +2961,9 @@ public:
   virtual void SetXULLayoutManager(nsBoxLayout* aLayout) { }
   virtual nsBoxLayout* GetXULLayoutManager() { return nullptr; }
   nsresult GetXULClientRect(nsRect& aContentRect);
+
+  virtual uint32_t GetXULLayoutFlags()
+  { return 0; }
 
   
   virtual Valignment GetXULVAlign() const = 0;

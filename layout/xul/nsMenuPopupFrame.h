@@ -427,7 +427,7 @@ protected:
   nsPopupLevel PopupLevel(bool aIsNoAutoHide) const;
 
   
-  virtual void GetLayoutFlags(uint32_t& aFlags) override;
+  virtual uint32_t GetXULLayoutFlags() override;
 
   void InitPositionFromAnchorAlign(const nsAString& aAnchor,
                                    const nsAString& aAlign);

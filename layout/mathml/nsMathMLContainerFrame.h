@@ -129,7 +129,7 @@ public:
                                 const nsRect&           aDirtyRect,
                                 const nsDisplayListSet& aLists) override;
 
-  virtual bool UpdateOverflow() override;
+  virtual bool ComputeCustomOverflow(nsOverflowAreas& aOverflowAreas) override;
 
   virtual void MarkIntrinsicISizesDirty() override;
 
@@ -379,8 +379,6 @@ protected:
   
   
   void GatherAndStoreOverflow(nsHTMLReflowMetrics* aMetrics);
-
-  void ComputeOverflow(nsOverflowAreas& aOverflowAreas);
 
   
 

@@ -514,24 +514,19 @@ nsSVGOuterSVGFrame::DidReflow(nsPresContext*   aPresContext,
   PresContext()->PresShell()->SynthesizeMouseMove(false);
 }
 
- bool
-nsSVGOuterSVGFrame::UpdateOverflow()
+ void
+nsSVGOuterSVGFrame::UnionChildOverflow(nsOverflowAreas& aOverflowAreas)
 {
   
 
   
 
-  nsRect rect(nsPoint(0, 0), GetSize());
-  nsOverflowAreas overflowAreas(rect, rect);
-
   if (!mIsRootContent) {
     nsIFrame *anonKid = PrincipalChildList().FirstChild();
-    overflowAreas.VisualOverflow().UnionRect(
-      overflowAreas.VisualOverflow(),
+    aOverflowAreas.VisualOverflow().UnionRect(
+      aOverflowAreas.VisualOverflow(),
       anonKid->GetVisualOverflowRect() + anonKid->GetPosition());
   }
-
-  return FinishAndStoreOverflow(overflowAreas, GetSize());
 }
 
 

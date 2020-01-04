@@ -67,7 +67,7 @@ public:
   void OnVisibilityChange(Visibility aNewVisibility,
                           Maybe<OnNonvisible> aNonvisibleAction = Nothing()) override;
 
-  virtual bool UpdateOverflow() override {
+  virtual bool ComputeCustomOverflow(nsOverflowAreas& aOverflowAreas) override {
     
     return false;
   }

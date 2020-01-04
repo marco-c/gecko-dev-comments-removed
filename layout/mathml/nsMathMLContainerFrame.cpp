@@ -782,7 +782,27 @@ nsMathMLContainerFrame::AttributeChanged(int32_t         aNameSpaceID,
 }
 
 void
-nsMathMLContainerFrame::ComputeOverflow(nsOverflowAreas& aOverflowAreas)
+nsMathMLContainerFrame::GatherAndStoreOverflow(nsHTMLReflowMetrics* aMetrics)
+{
+  mBlockStartAscent = aMetrics->BlockStartAscent();
+
+  
+  
+  aMetrics->SetOverflowAreasToDesiredBounds();
+
+  ComputeCustomOverflow(aMetrics->mOverflowAreas);
+
+  
+  
+  
+  
+  UnionChildOverflow(aMetrics->mOverflowAreas);
+
+  FinishAndStoreOverflow(aMetrics);
+}
+
+bool
+nsMathMLContainerFrame::ComputeCustomOverflow(nsOverflowAreas& aOverflowAreas)
 {
   
   
@@ -794,41 +814,7 @@ nsMathMLContainerFrame::ComputeOverflow(nsOverflowAreas& aOverflowAreas)
   
   
   aOverflowAreas.UnionAllWith(boundingBox);
-
-  
-  
-  
-  
-  nsIFrame* childFrame = mFrames.FirstChild();
-  while (childFrame) {
-    ConsiderChildOverflow(aOverflowAreas, childFrame);
-    childFrame = childFrame->GetNextSibling();
-  }
-}
-
-void
-nsMathMLContainerFrame::GatherAndStoreOverflow(nsHTMLReflowMetrics* aMetrics)
-{
-  mBlockStartAscent = aMetrics->BlockStartAscent();
-
-  
-  
-  aMetrics->SetOverflowAreasToDesiredBounds();
-
-  ComputeOverflow(aMetrics->mOverflowAreas);
-
-  FinishAndStoreOverflow(aMetrics);
-}
-
-bool
-nsMathMLContainerFrame::UpdateOverflow()
-{
-  nsRect bounds(nsPoint(0, 0), GetSize());
-  nsOverflowAreas overflowAreas(bounds, bounds);
-
-  ComputeOverflow(overflowAreas);
-
-  return FinishAndStoreOverflow(overflowAreas, GetSize());
+  return nsContainerFrame::ComputeCustomOverflow(aOverflowAreas);
 }
 
 void
