@@ -344,126 +344,9 @@ nsTransitionManager::StyleContextChanged(dom::Element *aElement,
 
   nsAutoAnimationMutationBatch mb(aElement->OwnerDoc());
 
-  
-  
-  
-  
-  bool startedAny = false;
-  nsCSSPropertySet whichStarted;
-  for (uint32_t i = disp->mTransitionPropertyCount; i-- != 0; ) {
-    const StyleTransition& t = disp->mTransitions[i];
-    
-    
-    
-    if (t.GetCombinedDuration() > 0.0f) {
-      
-      
-      
-      
-      nsCSSProperty property = t.GetProperty();
-      if (property == eCSSPropertyExtra_no_properties ||
-          property == eCSSPropertyExtra_variable ||
-          property == eCSSProperty_UNKNOWN) {
-        
-      } else if (property == eCSSPropertyExtra_all_properties) {
-        for (nsCSSProperty p = nsCSSProperty(0);
-             p < eCSSProperty_COUNT_no_shorthands;
-             p = nsCSSProperty(p + 1)) {
-          ConsiderStartingTransition(p, t, aElement, collection,
-                                     aOldStyleContext, afterChangeStyle,
-                                     &startedAny, &whichStarted);
-        }
-      } else if (nsCSSProps::IsShorthand(property)) {
-        CSSPROPS_FOR_SHORTHAND_SUBPROPERTIES(
-            subprop, property, nsCSSProps::eEnabledForAllContent) {
-          ConsiderStartingTransition(*subprop, t, aElement, collection,
-                                     aOldStyleContext, afterChangeStyle,
-                                     &startedAny, &whichStarted);
-        }
-      } else {
-        ConsiderStartingTransition(property, t, aElement, collection,
-                                   aOldStyleContext, afterChangeStyle,
-                                   &startedAny, &whichStarted);
-      }
-    }
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  if (collection) {
-    bool checkProperties =
-      disp->mTransitions[0].GetProperty() != eCSSPropertyExtra_all_properties;
-    nsCSSPropertySet allTransitionProperties;
-    if (checkProperties) {
-      for (uint32_t i = disp->mTransitionPropertyCount; i-- != 0; ) {
-        const StyleTransition& t = disp->mTransitions[i];
-        
-        
-        nsCSSProperty property = t.GetProperty();
-        if (property == eCSSPropertyExtra_no_properties ||
-            property == eCSSPropertyExtra_variable ||
-            property == eCSSProperty_UNKNOWN) {
-          
-        } else if (property == eCSSPropertyExtra_all_properties) {
-          for (nsCSSProperty p = nsCSSProperty(0);
-               p < eCSSProperty_COUNT_no_shorthands;
-               p = nsCSSProperty(p + 1)) {
-            allTransitionProperties.AddProperty(p);
-          }
-        } else if (nsCSSProps::IsShorthand(property)) {
-          CSSPROPS_FOR_SHORTHAND_SUBPROPERTIES(
-              subprop, property, nsCSSProps::eEnabledForAllContent) {
-            allTransitionProperties.AddProperty(*subprop);
-          }
-        } else {
-          allTransitionProperties.AddProperty(property);
-        }
-      }
-    }
-
-    OwningCSSTransitionPtrArray& animations = collection->mAnimations;
-    size_t i = animations.Length();
-    MOZ_ASSERT(i != 0, "empty transitions list?");
-    StyleAnimationValue currentValue;
-    do {
-      --i;
-      CSSTransition* anim = animations[i];
-          
-      if ((checkProperties &&
-           !allTransitionProperties.HasProperty(anim->TransitionProperty())) ||
-          
-          
-          
-          
-          
-          !ExtractComputedValueForTransition(anim->TransitionProperty(),
-                                             afterChangeStyle,
-                                             currentValue) ||
-          currentValue != anim->ToValue()) {
-        
-        if (anim->HasCurrentEffect()) {
-          EffectSet* effectSet = EffectSet::GetEffectSet(aElement, pseudoType);
-          if (effectSet) {
-            effectSet->UpdateAnimationGeneration(mPresContext);
-          }
-        }
-        anim->CancelFromStyle();
-        animations.RemoveElementAt(i);
-      }
-    } while (i != 0);
-
-    if (animations.IsEmpty()) {
-      collection->Destroy();
-      collection = nullptr;
-    }
-  }
+  DebugOnly<bool> startedAny = UpdateTransitions(disp, aElement, collection,
+                                                 aOldStyleContext,
+                                                 afterChangeStyle);
 
   MOZ_ASSERT(!startedAny || collection,
              "must have element transitions if we started any transitions");
@@ -492,6 +375,145 @@ nsTransitionManager::StyleContextChanged(dom::Element *aElement,
                                                               pseudoType,
                                                               cascadeLevel);
   }
+}
+
+bool
+nsTransitionManager::UpdateTransitions(
+  const nsStyleDisplay* aDisp,
+  dom::Element* aElement,
+  CSSTransitionCollection*& aElementTransitions,
+  nsStyleContext* aOldStyleContext,
+  nsStyleContext* aNewStyleContext)
+{
+  MOZ_ASSERT(aDisp, "Null nsStyleDisplay");
+  MOZ_ASSERT(!aElementTransitions ||
+             aElementTransitions->mElement == aElement, "Element mismatch");
+
+  
+  
+  
+  
+  bool startedAny = false;
+  nsCSSPropertySet whichStarted;
+  for (uint32_t i = aDisp->mTransitionPropertyCount; i-- != 0; ) {
+    const StyleTransition& t = aDisp->mTransitions[i];
+    
+    
+    
+    if (t.GetCombinedDuration() > 0.0f) {
+      
+      
+      
+      
+      nsCSSProperty property = t.GetProperty();
+      if (property == eCSSPropertyExtra_no_properties ||
+          property == eCSSPropertyExtra_variable ||
+          property == eCSSProperty_UNKNOWN) {
+        
+      } else if (property == eCSSPropertyExtra_all_properties) {
+        for (nsCSSProperty p = nsCSSProperty(0);
+             p < eCSSProperty_COUNT_no_shorthands;
+             p = nsCSSProperty(p + 1)) {
+          ConsiderStartingTransition(p, t, aElement, aElementTransitions,
+                                     aOldStyleContext, aNewStyleContext,
+                                     &startedAny, &whichStarted);
+        }
+      } else if (nsCSSProps::IsShorthand(property)) {
+        CSSPROPS_FOR_SHORTHAND_SUBPROPERTIES(subprop, property,
+                                             nsCSSProps::eEnabledForAllContent)
+        {
+          ConsiderStartingTransition(*subprop, t, aElement, aElementTransitions,
+                                     aOldStyleContext, aNewStyleContext,
+                                     &startedAny, &whichStarted);
+        }
+      } else {
+        ConsiderStartingTransition(property, t, aElement, aElementTransitions,
+                                   aOldStyleContext, aNewStyleContext,
+                                   &startedAny, &whichStarted);
+      }
+    }
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (aElementTransitions) {
+    bool checkProperties =
+      aDisp->mTransitions[0].GetProperty() != eCSSPropertyExtra_all_properties;
+    nsCSSPropertySet allTransitionProperties;
+    if (checkProperties) {
+      for (uint32_t i = aDisp->mTransitionPropertyCount; i-- != 0; ) {
+        const StyleTransition& t = aDisp->mTransitions[i];
+        
+        
+        nsCSSProperty property = t.GetProperty();
+        if (property == eCSSPropertyExtra_no_properties ||
+            property == eCSSPropertyExtra_variable ||
+            property == eCSSProperty_UNKNOWN) {
+          
+        } else if (property == eCSSPropertyExtra_all_properties) {
+          for (nsCSSProperty p = nsCSSProperty(0);
+               p < eCSSProperty_COUNT_no_shorthands;
+               p = nsCSSProperty(p + 1)) {
+            allTransitionProperties.AddProperty(p);
+          }
+        } else if (nsCSSProps::IsShorthand(property)) {
+          CSSPROPS_FOR_SHORTHAND_SUBPROPERTIES(
+              subprop, property, nsCSSProps::eEnabledForAllContent) {
+            allTransitionProperties.AddProperty(*subprop);
+          }
+        } else {
+          allTransitionProperties.AddProperty(property);
+        }
+      }
+    }
+
+    OwningCSSTransitionPtrArray& animations = aElementTransitions->mAnimations;
+    size_t i = animations.Length();
+    MOZ_ASSERT(i != 0, "empty transitions list?");
+    StyleAnimationValue currentValue;
+    do {
+      --i;
+      CSSTransition* anim = animations[i];
+          
+      if ((checkProperties &&
+           !allTransitionProperties.HasProperty(anim->TransitionProperty())) ||
+          
+          
+          
+          
+          
+          !ExtractComputedValueForTransition(anim->TransitionProperty(),
+                                             aNewStyleContext,
+                                             currentValue) ||
+          currentValue != anim->ToValue()) {
+        
+        if (anim->HasCurrentEffect()) {
+          EffectSet* effectSet =
+            EffectSet::GetEffectSet(aElement,
+                                    aNewStyleContext->GetPseudoType());
+          if (effectSet) {
+            effectSet->UpdateAnimationGeneration(mPresContext);
+          }
+        }
+        anim->CancelFromStyle();
+        animations.RemoveElementAt(i);
+      }
+    } while (i != 0);
+
+    if (animations.IsEmpty()) {
+      aElementTransitions->Destroy();
+      aElementTransitions = nullptr;
+    }
+  }
+
+  return startedAny;
 }
 
 void

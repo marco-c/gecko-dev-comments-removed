@@ -353,6 +353,17 @@ protected:
   typedef nsTArray<RefPtr<mozilla::dom::CSSTransition>>
     OwningCSSTransitionPtrArray;
 
+  
+  
+  
+  
+  bool
+  UpdateTransitions(const nsStyleDisplay* aDisp,
+                    mozilla::dom::Element* aElement,
+                    CSSTransitionCollection*& aElementTransitions,
+                    nsStyleContext* aOldStyleContext,
+                    nsStyleContext* aNewStyleContext);
+
   void
   ConsiderStartingTransition(nsCSSProperty aProperty,
                              const mozilla::StyleTransition& aTransition,
