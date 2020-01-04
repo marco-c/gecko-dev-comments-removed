@@ -4847,7 +4847,8 @@ CanvasRenderingContext2D::DrawWindow(nsGlobalWindow& window, double x,
   
   
   if (gfxPlatform::GetPlatform()->SupportsAzureContentForDrawTarget(mTarget) &&
-      GlobalAlpha() == 1.0f)
+      GlobalAlpha() == 1.0f &&
+      UsedOperation() == CompositionOp::OP_OVER)
   {
     thebes = new gfxContext(mTarget);
     thebes->SetMatrix(gfxMatrix(matrix._11, matrix._12, matrix._21,
@@ -4892,7 +4893,7 @@ CanvasRenderingContext2D::DrawWindow(nsGlobalWindow& window, double x,
     gfx::Rect sourceRect(0, 0, sw, sh);
     mTarget->DrawSurface(source, destRect, sourceRect,
                          DrawSurfaceOptions(gfx::Filter::POINT),
-                         DrawOptions(GlobalAlpha(), CompositionOp::OP_OVER,
+                         DrawOptions(GlobalAlpha(), UsedOperation(),
                                      AntialiasMode::NONE));
     mTarget->Flush();
   } else {
