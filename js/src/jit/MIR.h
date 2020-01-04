@@ -4765,7 +4765,7 @@ class MCreateThis
   public:
     INSTRUCTION_HEADER(CreateThis)
     TRIVIAL_NEW_WRAPPERS
-    NAMED_OPERANDS((0, getCallee), (0, getNewTarget))
+    NAMED_OPERANDS((0, getCallee), (1, getNewTarget))
 
     
     AliasSet getAliasSet() const override {
