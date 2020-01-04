@@ -2869,6 +2869,12 @@ MediaDecoderStateMachine::SetAudioCaptured(bool aCaptured)
   }
 
   
+  
+  
+  mAudioCompleted = false;
+  mVideoCompleted = false;
+
+  
   MediaSink::PlaybackParams params = mMediaSink->GetPlaybackParams();
 
   
