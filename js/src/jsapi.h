@@ -4054,8 +4054,6 @@ JS_DecompileScript(JSContext* cx, JS::Handle<JSScript*> script, const char* name
 extern JS_PUBLIC_API(JSString*)
 JS_DecompileFunction(JSContext* cx, JS::Handle<JSFunction*> fun, unsigned indent);
 
-extern JS_PUBLIC_API(JSString*)
-JS_DecompileFunctionBody(JSContext* cx, JS::Handle<JSFunction*> fun, unsigned indent);
 
 
 
