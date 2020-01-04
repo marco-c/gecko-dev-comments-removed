@@ -1800,7 +1800,7 @@ PresShell::AsyncResizeEventCallback(nsITimer* aTimer, void* aPresShell)
 }
 
 nsresult
-PresShell::ResizeReflow(nscoord aWidth, nscoord aHeight)
+PresShell::ResizeReflow(nscoord aWidth, nscoord aHeight, bool aHeightChanging)
 {
   if (mZoomConstraintsClient) {
     
@@ -1816,11 +1816,11 @@ PresShell::ResizeReflow(nscoord aWidth, nscoord aHeight)
     return NS_OK;
   }
 
-  return ResizeReflowIgnoreOverride(aWidth, aHeight);
+  return ResizeReflowIgnoreOverride(aWidth, aHeight, aHeightChanging);
 }
 
 nsresult
-PresShell::ResizeReflowIgnoreOverride(nscoord aWidth, nscoord aHeight)
+PresShell::ResizeReflowIgnoreOverride(nscoord aWidth, nscoord aHeight, bool aHeightChanging)
 {
   NS_PRECONDITION(!mIsReflowing, "Shouldn't be in reflow here!");
   NS_PRECONDITION(aWidth != NS_UNCONSTRAINEDSIZE,
@@ -1835,9 +1835,6 @@ PresShell::ResizeReflowIgnoreOverride(nscoord aWidth, nscoord aHeight)
     
     return NS_ERROR_NOT_AVAILABLE;
   }
-
-  const bool isHeightChanging =
-    (mPresContext->GetVisibleArea().height != aHeight);
 
   mPresContext->SetVisibleArea(nsRect(0, 0, aWidth, aHeight));
 
@@ -1866,7 +1863,7 @@ PresShell::ResizeReflowIgnoreOverride(nscoord aWidth, nscoord aHeight)
       
       
 
-      if (isHeightChanging) {
+      if (aHeightChanging) {
         
         
         

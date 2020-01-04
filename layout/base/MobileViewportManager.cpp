@@ -352,6 +352,9 @@ MobileViewportManager::RefreshViewportSize(bool aForceAdjustResolution)
     UpdateDisplayPortMargins();
   }
 
+  const bool isHeightChanging =
+    (mMobileViewportSize.height != viewport.height);
+
   
   mIsFirstPaint = false;
   mMobileViewportSize = viewport;
@@ -359,5 +362,6 @@ MobileViewportManager::RefreshViewportSize(bool aForceAdjustResolution)
   
   mPresShell->ResizeReflowIgnoreOverride(
     nsPresContext::CSSPixelsToAppUnits(viewport.width),
-    nsPresContext::CSSPixelsToAppUnits(viewport.height));
+    nsPresContext::CSSPixelsToAppUnits(viewport.height),
+    isHeightChanging);
 }

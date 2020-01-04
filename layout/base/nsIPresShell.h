@@ -427,12 +427,12 @@ public:
 
 
 
-  virtual nsresult ResizeReflow(nscoord aWidth, nscoord aHeight) = 0;
+  virtual nsresult ResizeReflow(nscoord aWidth, nscoord aHeight, bool aHeightChanging = true) = 0;
   
 
 
 
-  virtual nsresult ResizeReflowIgnoreOverride(nscoord aWidth, nscoord aHeight) = 0;
+  virtual nsresult ResizeReflowIgnoreOverride(nscoord aWidth, nscoord aHeight, bool aHeightChanging) = 0;
 
   
 

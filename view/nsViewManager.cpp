@@ -187,9 +187,11 @@ void nsViewManager::DoSetWindowDimensions(nscoord aWidth, nscoord aHeight)
   
   if (!oldDim.IsEqualEdges(newDim)) {
     
+
+    const bool isHeightChanging = (oldDim.height != aHeight);
     mRootView->SetDimensions(newDim, true, false);
     if (mPresShell)
-      mPresShell->ResizeReflow(aWidth, aHeight);
+      mPresShell->ResizeReflow(aWidth, aHeight, isHeightChanging);
   }
 }
 
