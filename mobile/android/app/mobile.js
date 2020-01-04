@@ -352,7 +352,7 @@ pref("browser.link.open_newwindow.restriction", 0);
 
 
 
-pref("browser.image_blocking", 1);
+pref("browser.image_blocking", 0);
 
 
 pref("privacy.item.cache", true);
@@ -553,6 +553,7 @@ pref("layers.offmainthreadcomposition.enabled", true);
 pref("layers.async-video.enabled", true);
 #ifdef MOZ_ANDROID_APZ
 pref("layers.async-pan-zoom.enabled", true);
+pref("apz.axis_lock.mode", 1);
 #endif
 pref("apz.allow_zooming", true);
 pref("layers.progressive-paint", true);
