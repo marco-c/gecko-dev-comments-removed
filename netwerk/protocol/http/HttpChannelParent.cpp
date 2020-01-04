@@ -227,7 +227,7 @@ private:
   }
 
   nsCOMPtr<nsIInterceptedChannel> mChannel;
-  RefPtr<HttpChannelParent> mParentChannel;
+  nsRefPtr<HttpChannelParent> mParentChannel;
 };
 
 NS_IMPL_ISUPPORTS(ResponseSynthesizer, nsIFetchEventDispatcher)
@@ -244,7 +244,7 @@ NS_IMETHODIMP
 HttpChannelParent::ChannelIntercepted(nsIInterceptedChannel* aChannel,
                                       nsIFetchEventDispatcher** aDispatcher)
 {
-  RefPtr<ResponseSynthesizer> dispatcher =
+  nsRefPtr<ResponseSynthesizer> dispatcher =
     new ResponseSynthesizer(aChannel, this);
   dispatcher.forget(aDispatcher);
   return NS_OK;
@@ -503,7 +503,10 @@ HttpChannelParent::DoAsyncOpen(  const URIParams&           aURI,
     }
 
   } else {
-    mChannel->ForceNoIntercept();
+    nsLoadFlags loadFlags;
+    mChannel->GetLoadFlags(&loadFlags);
+    loadFlags |= nsIChannel::LOAD_BYPASS_SERVICE_WORKER;
+    mChannel->SetLoadFlags(loadFlags);
   }
 
   nsCOMPtr<nsISupportsPRUint32> cacheKey =
@@ -1505,7 +1508,7 @@ public:
     return NS_OK;
   }
 private:
-  RefPtr<HttpChannelParent> mChannelParent;
+  nsRefPtr<HttpChannelParent> mChannelParent;
   nsresult mErrorCode;
   bool mSkipResume;
 };

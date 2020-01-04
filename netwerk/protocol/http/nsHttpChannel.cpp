@@ -2009,10 +2009,12 @@ nsHttpChannel::StartRedirectChannelToURI(nsIURI *upgradedURI, uint32_t flags)
 
     
     
-    nsCOMPtr<nsIHttpChannelInternal> httpRedirect = do_QueryInterface(mRedirectChannel);
-    if (httpRedirect) {
-        httpRedirect->ForceNoIntercept();
-    }
+    nsLoadFlags loadFlags = nsIRequest::LOAD_NORMAL;
+    rv = mRedirectChannel->GetLoadFlags(&loadFlags);
+    NS_ENSURE_SUCCESS(rv, rv);
+    loadFlags |= nsIChannel::LOAD_BYPASS_SERVICE_WORKER;
+    rv = mRedirectChannel->SetLoadFlags(loadFlags);
+    NS_ENSURE_SUCCESS(rv, rv);
 
     PushRedirectAsyncFunc(
         &nsHttpChannel::ContinueAsyncRedirectChannelToURI);
