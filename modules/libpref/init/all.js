@@ -5221,9 +5221,6 @@ pref("memory.report_concurrency", 10);
 pref("media.useAudioChannelAPI", false);
 
 
-pref("dom.requestcache.enabled", false);
-
-
 pref("dom.requestcontext.enabled", false);
 
 pref("dom.mozKillSwitch.enabled", false);
