@@ -121,7 +121,7 @@ PeriodicWave::PeriodicWave(float sampleRate, size_t numberOfComponents)
     }
 
     m_numberOfRanges = (unsigned)(3.0f*logf(m_periodicWaveSize)/logf(2.0f));
-    m_bandLimitedTables.SetCapacity(m_numberOfRanges);
+    m_bandLimitedTables.SetLength(m_numberOfRanges);
     m_lowestFundamentalFrequency = nyquist / maxNumberOfPartials();
     m_rateScale = m_periodicWaveSize / m_sampleRate;
 }
@@ -148,7 +148,13 @@ void PeriodicWave::waveDataForFundamentalFrequency(float fundamentalFrequency, f
     fundamentalFrequency = fabsf(fundamentalFrequency);
 
     if (fundamentalFrequency < m_lowestRequestedFundamentalFrequency) {
-        createBandLimitedTables(fundamentalFrequency);
+        for (unsigned rangeIndex = 0; rangeIndex < m_numberOfRanges; ++rangeIndex) {
+            m_bandLimitedTables[rangeIndex] = 0;
+        }
+
+        
+        
+        createBandLimitedTables(fundamentalFrequency, 0);
         m_lowestRequestedFundamentalFrequency = fundamentalFrequency;
     }
 
@@ -169,6 +175,12 @@ void PeriodicWave::waveDataForFundamentalFrequency(float fundamentalFrequency, f
     
     unsigned rangeIndex1 = static_cast<unsigned>(pitchRange);
     unsigned rangeIndex2 = rangeIndex1 < m_numberOfRanges - 1 ? rangeIndex1 + 1 : rangeIndex1;
+
+    if (!m_bandLimitedTables[rangeIndex1].get())
+        createBandLimitedTables(fundamentalFrequency, rangeIndex1);
+
+    if (!m_bandLimitedTables[rangeIndex2].get())
+        createBandLimitedTables(fundamentalFrequency, rangeIndex2);
 
     lowerWaveData = m_bandLimitedTables[rangeIndex2]->Elements();
     higherWaveData = m_bandLimitedTables[rangeIndex1]->Elements();
@@ -200,69 +212,64 @@ unsigned PeriodicWave::numberOfPartialsForRange(unsigned rangeIndex) const
 
 
 
-void PeriodicWave::createBandLimitedTables(float fundamentalFrequency)
+void PeriodicWave::createBandLimitedTables(float fundamentalFrequency,
+                                           unsigned rangeIndex)
 {
-    float normalizationScale = 1;
-
     unsigned fftSize = m_periodicWaveSize;
     unsigned i;
 
     const float *realData = m_realComponents->Elements();
     const float *imagData = m_imagComponents->Elements();
 
-    m_bandLimitedTables.Clear();
+    
+    FFTBlock frame(fftSize);
 
-    for (unsigned rangeIndex = 0; rangeIndex < m_numberOfRanges; ++rangeIndex) {
-        
-        FFTBlock frame(fftSize);
+    
+    
+    
+    unsigned numberOfPartials = numberOfPartialsForRange(rangeIndex);
+    
+    numberOfPartials = std::min(numberOfPartials, m_numberOfComponents - 1);
 
-        
-        
-        
-        unsigned numberOfPartials = numberOfPartialsForRange(rangeIndex);
-        
-        numberOfPartials = std::min(numberOfPartials, m_numberOfComponents - 1);
+    
+    float nyquist = 0.5 * m_sampleRate;
+    numberOfPartials = std::min(numberOfPartials,
+                                (unsigned)(nyquist / fundamentalFrequency));
 
-        
-        float nyquist = 0.5 * m_sampleRate;
-        numberOfPartials = std::min(numberOfPartials,
-                                    (unsigned)(nyquist / fundamentalFrequency));
-
-        
-        
-        
-        
-        for (i = 0; i < numberOfPartials + 1; ++i) {
-            frame.RealData(i) = realData[i];
-            frame.ImagData(i) = -imagData[i];
-        }
-
-        
-        frame.RealData(0) = 0;
-        
-        frame.ImagData(0) = 0;
-
-        
-        AlignedAudioFloatArray* table = new AlignedAudioFloatArray(m_periodicWaveSize);
-        m_bandLimitedTables.AppendElement(table);
-
-        
-        float* data = m_bandLimitedTables[rangeIndex]->Elements();
-        frame.GetInverseWithoutScaling(data);
-
-        
-        
-        if (!rangeIndex) {
-            float maxValue;
-            maxValue = AudioBufferPeakValue(data, m_periodicWaveSize);
-
-            if (maxValue)
-                normalizationScale = 1.0f / maxValue;
-        }
-
-        
-        AudioBufferInPlaceScale(data, normalizationScale, m_periodicWaveSize);
+    
+    
+    
+    
+    for (i = 0; i < numberOfPartials + 1; ++i) {
+        frame.RealData(i) = realData[i];
+        frame.ImagData(i) = -imagData[i];
     }
+
+    
+    frame.RealData(0) = 0;
+    
+    frame.ImagData(0) = 0;
+
+    
+    AlignedAudioFloatArray* table = new AlignedAudioFloatArray(m_periodicWaveSize);
+    m_bandLimitedTables[rangeIndex] = table;
+
+    
+    float* data = m_bandLimitedTables[rangeIndex]->Elements();
+    frame.GetInverseWithoutScaling(data);
+
+    
+    
+    if (!rangeIndex) {
+        float maxValue;
+        maxValue = AudioBufferPeakValue(data, m_periodicWaveSize);
+
+        if (maxValue)
+            m_normalizationScale = 1.0f / maxValue;
+    }
+
+    
+    AudioBufferInPlaceScale(data, m_normalizationScale, m_periodicWaveSize);
 }
 
 void PeriodicWave::generateBasicWaveform(OscillatorType shape)
