@@ -990,7 +990,7 @@ public class BrowserApp extends GeckoApp
 
     @Override
     protected void processTabQueue() {
-        if (AppConstants.MOZ_ANDROID_TAB_QUEUE && mInitialized) {
+        if (TabQueueHelper.TAB_QUEUE_ENABLED && mInitialized) {
             ThreadUtils.postToBackgroundThread(new Runnable() {
                 @Override
                 public void run() {
@@ -3647,7 +3647,7 @@ public class BrowserApp extends GeckoApp
         }
 
         
-        if (AppConstants.MOZ_ANDROID_TAB_QUEUE && mInitialized && isTabQueueAction) {
+        if (TabQueueHelper.TAB_QUEUE_ENABLED && mInitialized && isTabQueueAction) {
             Telemetry.sendUIEvent(TelemetryContract.Event.ACTION, TelemetryContract.Method.NOTIFICATION, "tabqueue");
             ThreadUtils.postToBackgroundThread(new Runnable() {
                 @Override
@@ -3689,9 +3689,9 @@ public class BrowserApp extends GeckoApp
             @Override
             public void run() {
                 
-                if (AppConstants.MOZ_ANDROID_TAB_QUEUE && mInitialized
-                                                       && Intent.ACTION_VIEW.equals(intent.getAction())
-                                                       && TabQueueHelper.shouldShowTabQueuePrompt(BrowserApp.this)) {
+                if (TabQueueHelper.TAB_QUEUE_ENABLED && mInitialized
+                                                     && Intent.ACTION_VIEW.equals(intent.getAction())
+                                                     && TabQueueHelper.shouldShowTabQueuePrompt(BrowserApp.this)) {
                     Intent promptIntent = new Intent(BrowserApp.this, TabQueuePrompt.class);
                     startActivityForResult(promptIntent, ACTIVITY_REQUEST_TAB_QUEUE);
                 }
