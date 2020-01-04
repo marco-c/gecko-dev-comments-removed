@@ -456,7 +456,7 @@ GenerateMaskSurface(const nsSVGIntegrationUtils::PaintFramesParams& aParams,
     : ctx.GetDrawTarget()->CreateSimilarDrawTarget(maskSurfaceRect.Size(),
                                                    SurfaceFormat::A8);
 
-  RefPtr<gfxContext> maskContext = gfxContext::ForDrawTarget(maskDT);
+  RefPtr<gfxContext> maskContext = gfxContext::CreateOrNull(maskDT);
 
   
   
@@ -681,7 +681,7 @@ nsSVGIntegrationUtils::PaintFramesWithEffects(const PaintFramesParams& aParams)
         context.Restore();
         return;
       }
-      target = gfxContext::ForDrawTarget(targetDT);
+      target = gfxContext::CreateOrNull(targetDT);
       MOZ_ASSERT(target); 
       target->SetMatrix(context.CurrentMatrix() * gfxMatrix::Translation(-drawRect.TopLeft()));
       targetOffset = drawRect.TopLeft();

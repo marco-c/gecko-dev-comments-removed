@@ -735,7 +735,7 @@ VectorImage::GetFrameAtSize(const IntSize& aSize,
     return nullptr;
   }
 
-  RefPtr<gfxContext> context = gfxContext::ForDrawTarget(dt);
+  RefPtr<gfxContext> context = gfxContext::CreateOrNull(dt);
   MOZ_ASSERT(context); 
 
   auto result = Draw(context, aSize, ImageRegion::Create(aSize),
