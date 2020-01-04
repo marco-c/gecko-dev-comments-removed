@@ -449,6 +449,7 @@ public:
     , deltaZ(0.0)
     , deltaMode(nsIDOMWheelEvent::DOM_DELTA_PIXEL)
     , customizedByUserPrefs(false)
+    , mayHaveMomentum(false)
     , isMomentum(false)
     , mIsNoLineOrPageDelta(false)
     , lineOrPageDeltaX(0)
@@ -499,6 +500,8 @@ public:
   
   bool customizedByUserPrefs;
 
+  
+  bool mayHaveMomentum;
   
   bool isMomentum;
 
@@ -579,6 +582,7 @@ public:
     deltaZ = aEvent.deltaZ;
     deltaMode = aEvent.deltaMode;
     customizedByUserPrefs = aEvent.customizedByUserPrefs;
+    mayHaveMomentum = aEvent.mayHaveMomentum;
     isMomentum = aEvent.isMomentum;
     mIsNoLineOrPageDelta = aEvent.mIsNoLineOrPageDelta;
     lineOrPageDeltaX = aEvent.lineOrPageDeltaX;
