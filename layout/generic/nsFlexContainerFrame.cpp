@@ -371,6 +371,13 @@ private:
   FlexboxAxisTracker& operator=(const FlexboxAxisTracker&) = delete;
 
   
+  
+  
+  
+  void InitAxesFromModernProps(const nsFlexContainerFrame* aFlexContainer,
+                               const WritingMode& aWM);
+
+  
   AxisOrientationType mMainAxis;
   AxisOrientationType mCrossAxis;
   
@@ -3154,6 +3161,32 @@ FlexboxAxisTracker::FlexboxAxisTracker(
   : mWM(aWM),
     mAreAxesInternallyReversed(false)
 {
+  InitAxesFromModernProps(aFlexContainer, aWM);
+
+  
+  
+  
+  
+  static bool sPreventBottomToTopChildOrdering = true;
+
+  if (sPreventBottomToTopChildOrdering) {
+    
+    
+    if (eAxis_BT == mMainAxis || eAxis_BT == mCrossAxis) {
+      mMainAxis = GetReverseAxis(mMainAxis);
+      mCrossAxis = GetReverseAxis(mCrossAxis);
+      mAreAxesInternallyReversed = true;
+      mIsMainAxisReversed = !mIsMainAxisReversed;
+      mIsCrossAxisReversed = !mIsCrossAxisReversed;
+    }
+  }
+}
+
+void
+FlexboxAxisTracker::InitAxesFromModernProps(
+  const nsFlexContainerFrame* aFlexContainer,
+  const WritingMode& aWM)
+{
   const nsStylePosition* stylePos = aFlexContainer->StylePosition();
   uint32_t flexDirection = stylePos->mFlexDirection;
 
@@ -3208,24 +3241,6 @@ FlexboxAxisTracker::FlexboxAxisTracker(
     mIsCrossAxisReversed = true;
   } else {
     mIsCrossAxisReversed = false;
-  }
-
-  
-  
-  
-  
-  static bool sPreventBottomToTopChildOrdering = true;
-
-  if (sPreventBottomToTopChildOrdering) {
-    
-    
-    if (eAxis_BT == mMainAxis || eAxis_BT == mCrossAxis) {
-      mMainAxis = GetReverseAxis(mMainAxis);
-      mCrossAxis = GetReverseAxis(mCrossAxis);
-      mAreAxesInternallyReversed = true;
-      mIsMainAxisReversed = !mIsMainAxisReversed;
-      mIsCrossAxisReversed = !mIsCrossAxisReversed;
-    }
   }
 }
 
