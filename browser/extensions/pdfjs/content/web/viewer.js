@@ -6346,22 +6346,34 @@ var PDFViewer = (function pdfViewer() {
       return this._pages[index];
     },
 
+    
+
+
     get currentPageNumber() {
       return this._currentPageNumber;
     },
+
+    
+
 
     set currentPageNumber(val) {
       if (!this.pdfDocument) {
         this._currentPageNumber = val;
         return;
       }
-      this._setCurrentPageNumber(val);
       
-      this._resetCurrentPageView();
+      this._setCurrentPageNumber(val,  true);
     },
 
-    _setCurrentPageNumber: function pdfViewer_setCurrentPageNumber(val) {
+    
+
+
+    _setCurrentPageNumber:
+        function pdfViewer_setCurrentPageNumber(val, resetCurrentPageView) {
       if (this._currentPageNumber === val) {
+        if (resetCurrentPageView) {
+          this._resetCurrentPageView();
+        }
         return;
       }
       var arg;
@@ -6384,6 +6396,10 @@ var PDFViewer = (function pdfViewer() {
       this._currentPageNumber = val;
       this.eventBus.dispatch('pagechanging', arg);
       this.eventBus.dispatch('pagechange', arg);
+
+      if (resetCurrentPageView) {
+        this._resetCurrentPageView();
+      }
     },
 
     
@@ -6692,6 +6708,7 @@ var PDFViewer = (function pdfViewer() {
     
 
 
+
     _resetCurrentPageView: function () {
       if (this.isInPresentationMode) {
         
@@ -6715,8 +6732,7 @@ var PDFViewer = (function pdfViewer() {
       }
 
       if (this.isInPresentationMode || !dest) {
-        this._setCurrentPageNumber(pageNumber);
-        this._resetCurrentPageView();
+        this._setCurrentPageNumber(pageNumber,  true);
         return;
       }
 

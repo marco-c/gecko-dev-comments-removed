@@ -28,8 +28,8 @@ factory((root.pdfjsDistBuildPdf = {}));
   
   'use strict';
 
-var pdfjsVersion = '1.5.337';
-var pdfjsBuild = '11381cd';
+var pdfjsVersion = '1.5.345';
+var pdfjsBuild = '10f9f11';
 
   var pdfjsFilePath =
     typeof document !== 'undefined' && document.currentScript ?
