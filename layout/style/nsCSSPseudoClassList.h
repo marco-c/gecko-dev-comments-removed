@@ -132,7 +132,7 @@ CSS_PSEUDO_CLASS(scope, ":scope", 0, "layout.css.scope-pseudo.enabled")
 
 
 
-CSS_PSEUDO_CLASS(notPseudo, ":not", 0, "")
+CSS_PSEUDO_CLASS(negation, ":not", 0, "")
 
 
 
