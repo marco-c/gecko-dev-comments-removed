@@ -129,7 +129,10 @@ private:
   void TransformScrollableLayer(Layer* aLayer);
   
   
-  bool ApplyAsyncContentTransformToTree(Layer* aLayer);
+  
+  
+  
+  bool ApplyAsyncContentTransformToTree(Layer* aLayer, bool* aOutFoundRoot);
   
 
 

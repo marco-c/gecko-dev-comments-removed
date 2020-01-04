@@ -586,13 +586,14 @@ AdjustForClip(const Matrix4x4& asyncTransform, Layer* aLayer)
 }
 
 bool
-AsyncCompositionManager::ApplyAsyncContentTransformToTree(Layer *aLayer)
+AsyncCompositionManager::ApplyAsyncContentTransformToTree(Layer *aLayer,
+                                                          bool* aOutFoundRoot)
 {
   bool appliedTransform = false;
   for (Layer* child = aLayer->GetFirstChild();
       child; child = child->GetNextSibling()) {
     appliedTransform |=
-      ApplyAsyncContentTransformToTree(child);
+      ApplyAsyncContentTransformToTree(child, aOutFoundRoot);
   }
 
   Matrix4x4 oldTransform = aLayer->GetTransform();
@@ -647,29 +648,30 @@ AsyncCompositionManager::ApplyAsyncContentTransformToTree(Layer *aLayer)
     
 
 #if defined(MOZ_ANDROID_APZ)
-    bool rootContentLayer = metrics.IsRootContent();
-#ifdef MOZ_B2GDROID
     
     
     
     
     
     
-    rootContentLayer = (aLayer->GetParent() == nullptr);
-#endif 
-    if (rootContentLayer) {
-      if (mIsFirstPaint) {
-        CSSToLayerScale geckoZoom = metrics.LayersPixelsPerCSSPixel().ToScaleFactor();
-        LayerIntPoint scrollOffsetLayerPixels = RoundedToInt(metrics.GetScrollOffset() * geckoZoom);
-        mContentRect = metrics.GetScrollableRect();
-        SetFirstPaintViewport(scrollOffsetLayerPixels,
-                              geckoZoom,
-                              mContentRect);
+    if (!(*aOutFoundRoot)) {
+      *aOutFoundRoot = metrics.IsRootContent() ||       
+            (aLayer->GetParent() == nullptr &&          
+             i + 1 >= aLayer->GetFrameMetricsCount());
+      if (*aOutFoundRoot) {
+        if (mIsFirstPaint) {
+          CSSToLayerScale geckoZoom = metrics.LayersPixelsPerCSSPixel().ToScaleFactor();
+          LayerIntPoint scrollOffsetLayerPixels = RoundedToInt(metrics.GetScrollOffset() * geckoZoom);
+          mContentRect = metrics.GetScrollableRect();
+          SetFirstPaintViewport(scrollOffsetLayerPixels,
+                                geckoZoom,
+                                mContentRect);
+        }
+        mIsFirstPaint = false;
+        mLayersUpdated = false;
       }
-      mIsFirstPaint = false;
-      mLayersUpdated = false;
     }
-#endif 
+#endif
 
     
     
@@ -1160,7 +1162,12 @@ AsyncCompositionManager::TransformShadowTree(TimeStamp aCurrentFrame,
     
     
     wantNextFrame |= SampleAPZAnimations(LayerMetricsWrapper(root), aCurrentFrame);
-    if (!ApplyAsyncContentTransformToTree(root)) {
+    bool foundRoot = false;
+    if (ApplyAsyncContentTransformToTree(root, &foundRoot)) {
+#if defined(MOZ_ANDROID_APZ)
+      MOZ_ASSERT(foundRoot);
+#endif
+    } else {
       nsAutoTArray<Layer*,1> scrollableLayers;
 #ifdef MOZ_WIDGET_ANDROID
       mLayerManager->GetRootScrollableLayers(scrollableLayers);
