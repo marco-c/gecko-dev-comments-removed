@@ -46,6 +46,13 @@ void ConvolveHorizontally_LS3(const unsigned char* src_data,
 
 
 
+void ConvolveHorizontally1_LS3(const unsigned char* src_data,
+                               const ConvolutionFilter1D& filter,
+                               unsigned char* out_row);
+
+
+
+
 
 void ConvolveHorizontally4_LS3(const unsigned char* src_data[4],
                                 const ConvolutionFilter1D& filter,
