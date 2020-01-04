@@ -168,19 +168,25 @@ class MinidumpWriter {
     
     unsigned kNumWriters = 13;
 
-    TypedMDRVA<MDRawHeader> header(&minidump_writer_);
     TypedMDRVA<MDRawDirectory> dir(&minidump_writer_);
-    if (!header.Allocate())
-      return false;
-    if (!dir.AllocateArray(kNumWriters))
-      return false;
-    my_memset(header.get(), 0, sizeof(MDRawHeader));
+    {
+      
+      
+      TypedMDRVA<MDRawHeader> header(&minidump_writer_);
+      if (!header.Allocate())
+        return false;
 
-    header.get()->signature = MD_HEADER_SIGNATURE;
-    header.get()->version = MD_HEADER_VERSION;
-    header.get()->time_date_stamp = time(NULL);
-    header.get()->stream_count = kNumWriters;
-    header.get()->stream_directory_rva = dir.position();
+      if (!dir.AllocateArray(kNumWriters))
+        return false;
+
+      my_memset(header.get(), 0, sizeof(MDRawHeader));
+
+      header.get()->signature = MD_HEADER_SIGNATURE;
+      header.get()->version = MD_HEADER_VERSION;
+      header.get()->time_date_stamp = time(NULL);
+      header.get()->stream_count = kNumWriters;
+      header.get()->stream_directory_rva = dir.position();
+    }
 
     unsigned dir_index = 0;
     MDRawDirectory dirent;
