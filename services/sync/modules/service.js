@@ -50,20 +50,6 @@ const STORAGE_INFO_TYPES = [INFO_COLLECTIONS,
                             INFO_COLLECTION_COUNTS,
                             INFO_QUOTA];
 
-
-
-const TELEMETRY_CUSTOM_SERVER_PREFS = {
-  WEAVE_CUSTOM_LEGACY_SERVER_CONFIGURATION: "services.sync.serverURL",
-  WEAVE_CUSTOM_FXA_SERVER_CONFIGURATION: "identity.fxaccounts.auth.uri",
-  WEAVE_CUSTOM_TOKEN_SERVER_CONFIGURATION: [
-    
-    "identity.sync.tokenserver.uri",
-    
-    "services.sync.tokenServerURI",
-  ],
-};
-
-
 function Sync11Service() {
   this._notify = Utils.notify("weave:service:");
 }
@@ -386,13 +372,6 @@ Sync11Service.prototype = {
     }
 
     
-    for (let [probeName, prefName] of Iterator(TELEMETRY_CUSTOM_SERVER_PREFS)) {
-      let prefNames = Array.isArray(prefName) ? prefName : [prefName];
-      let isCustomized = prefNames.some(pref => Services.prefs.prefHasUserValue(pref));
-      Services.telemetry.getHistogramById(probeName).add(isCustomized);
-    }
-
-    
     
     
     Utils.nextTick(function onNextTick() {
@@ -648,8 +627,6 @@ Sync11Service.prototype = {
 
             
             if (Utils.isHMACMismatch(ex)) {
-              Services.telemetry.getHistogramById(
-                "WEAVE_HMAC_ERRORS").add();
               this.status.login = LOGIN_FAILED_INVALID_PASSPHRASE;
               this.status.sync = CREDENTIALS_CHANGED;
             }
@@ -756,8 +733,6 @@ Sync11Service.prototype = {
 
         case 401:
           this._log.warn("401: login failed.");
-          Services.telemetry.getKeyedHistogramById(
-            "WEAVE_STORAGE_AUTH_ERRORS").add("info/collections");
           
 
         case 404:
