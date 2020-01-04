@@ -919,7 +919,7 @@ struct JSRuntime : public JS::shadow::Runtime,
 
 
 
-    PRLock* exclusiveAccessLock;
+    js::Mutex exclusiveAccessLock;
 #ifdef DEBUG
     PRThread* exclusiveAccessOwner;
     bool mainThreadHasExclusiveAccess;
