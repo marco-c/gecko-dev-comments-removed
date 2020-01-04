@@ -1310,6 +1310,9 @@ var FormLikeFactory = {
 
 
 
+
+
+
   createFromField(aField) {
     if (!(aField instanceof Ci.nsIDOMHTMLInputElement) ||
         (aField.type != "password" && !LoginHelper.isUsernameFieldType(aField)) ||

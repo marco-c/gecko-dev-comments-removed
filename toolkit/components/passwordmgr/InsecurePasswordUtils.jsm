@@ -4,9 +4,8 @@
 
 this.EXPORTED_SYMBOLS = [ "InsecurePasswordUtils" ];
 
-const Ci = Components.interfaces;
-const Cu = Components.utils;
-const Cc = Components.classes;
+const { classes: Cc, interfaces: Ci, results: Cr, utils: Cu } = Components;
+const STRINGS_URI = "chrome://global/locale/security/security.properties";
 
 Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
@@ -15,36 +14,22 @@ XPCOMUtils.defineLazyModuleGetter(this, "devtools",
                                   "resource://devtools/shared/Loader.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "LoginManagerContent",
                                   "resource://gre/modules/LoginManagerContent.jsm");
-
-Object.defineProperty(this, "WebConsoleUtils", {
-  get: function() {
-    return devtools.require("devtools/shared/webconsole/utils").Utils;
-  },
-  configurable: true,
-  enumerable: true
+XPCOMUtils.defineLazyGetter(this, "WebConsoleUtils", () => {
+  return this.devtools.require("devtools/shared/webconsole/utils").Utils;
+});
+XPCOMUtils.defineLazyGetter(this, "l10n", () => {
+  return new this.WebConsoleUtils.L10n(STRINGS_URI);
 });
 
-const STRINGS_URI = "chrome://global/locale/security/security.properties";
-var l10n = new WebConsoleUtils.L10n(STRINGS_URI);
-
 this.InsecurePasswordUtils = {
-
-  _sendWebConsoleMessage : function (messageTag, domDoc) {
-    
-
-
-
-
-
-    let  windowId = WebConsoleUtils.getInnerWindowId(domDoc.defaultView);
+  _sendWebConsoleMessage(messageTag, domDoc) {
+    let windowId = WebConsoleUtils.getInnerWindowId(domDoc.defaultView);
     let category = "Insecure Password Field";
+    
     let flag = Ci.nsIScriptError.warningFlag;
     let message = l10n.getStr(messageTag);
-    let consoleMsg = Cc["@mozilla.org/scripterror;1"]
-      .createInstance(Ci.nsIScriptError);
-
-    consoleMsg.initWithWindowID(
-      message, "", 0, 0, 0, flag, category, windowId);
+    let consoleMsg = Cc["@mozilla.org/scripterror;1"].createInstance(Ci.nsIScriptError);
+    consoleMsg.initWithWindowID(message, "", 0, 0, 0, flag, category, windowId);
 
     Services.console.logMessage(consoleMsg);
   },
@@ -61,7 +46,7 @@ this.InsecurePasswordUtils = {
 
 
 
-  _checkForInsecureNestedDocuments : function(domDoc) {
+  _checkForInsecureNestedDocuments(domDoc) {
     if (domDoc.defaultView == domDoc.defaultView.parent) {
       
       return false;
@@ -81,8 +66,10 @@ this.InsecurePasswordUtils = {
 
 
 
-  checkForInsecurePasswords : function (aForm) {
-    var domDoc = aForm.ownerDocument;
+
+
+  checkForInsecurePasswords(aForm) {
+    let domDoc = aForm.ownerDocument;
     let topDocument = domDoc.defaultView.top.document;
     let isSafePage = LoginManagerContent.isDocumentSecure(topDocument);
 
