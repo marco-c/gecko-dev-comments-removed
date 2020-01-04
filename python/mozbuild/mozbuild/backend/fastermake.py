@@ -162,11 +162,8 @@ class FasterMakeBackend(CommonBackend):
 
         elif isinstance(obj, DistFiles) and \
                 obj.install_target.startswith('dist/bin'):
-            
-            
             for f in obj.files:
-                self._add_preprocess(obj, f, '', defines=defines,
-                                     silence_missing_directive_warnings=True)
+                self._add_preprocess(obj, f, '', defines=defines)
 
         elif isinstance(obj, ChromeManifestEntry) and \
                 obj.install_target.startswith('dist/bin'):
