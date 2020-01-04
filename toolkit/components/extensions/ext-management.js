@@ -1,0 +1,9 @@
+
+
+"use strict";
+
+extensions.registerSchemaAPI("management", (extension, context) => {
+  return {
+    management: {},
+  };
+});
