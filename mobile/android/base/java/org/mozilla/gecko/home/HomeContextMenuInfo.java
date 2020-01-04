@@ -29,7 +29,7 @@ public class HomeContextMenuInfo extends AdapterContextMenuInfo {
 
     
     public static enum RemoveItemType {
-        BOOKMARKS, HISTORY
+        BOOKMARKS, COMBINED, HISTORY
     }
 
     public HomeContextMenuInfo(View targetView, int position, long id) {
