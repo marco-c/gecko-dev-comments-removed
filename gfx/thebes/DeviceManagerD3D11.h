@@ -81,7 +81,9 @@ private:
 
   mozilla::gfx::FeatureStatus AttemptD3D11ContentDeviceCreation();
   bool AttemptD3D11ContentDeviceCreationHelper(
-      IDXGIAdapter1* aAdapter, HRESULT& aResOut);
+      IDXGIAdapter1* aAdapter,
+      RefPtr<ID3D11Device>& aOutDevice,
+      HRESULT& aResOut);
 
   
   bool CreateD3D11DecoderDeviceHelper(
