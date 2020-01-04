@@ -639,6 +639,9 @@ SwitchToUpdatedApp(nsIFile *greDir, nsIFile *updateDir,
   _exit(0);
 #elif defined(XP_MACOSX)
   CommandLineServiceMac::SetupMacCommandLine(argc, argv, true);
+  
+  
+  
   LaunchChildMac(argc, argv);
   exit(0);
 #else
@@ -961,13 +964,13 @@ ApplyUpdate(nsIFile *greDir, nsIFile *updateDir, nsIFile *statusFile,
   
   
   if (restart && !IsRecursivelyWritable(installDirPath.get())) {
-    if (!LaunchElevatedUpdate(argc, argv, outpid)) {
+    if (!LaunchElevatedUpdate(argc, argv, 0, outpid)) {
       LOG(("Failed to launch elevated update!"));
       exit(1);
     }
     exit(0);
   } else {
-    LaunchChildMac(argc, argv, outpid);
+    LaunchChildMac(argc, argv, 0, outpid);
     if (restart) {
       exit(0);
     }
