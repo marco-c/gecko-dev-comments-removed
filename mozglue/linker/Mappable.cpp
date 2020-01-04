@@ -219,17 +219,7 @@ MappableExtractFile::Create(const char *name, Zip *zip, Zip::Stream *stream)
   }
 
   validator.CacheChecksum();
-  return new MappableExtractFile(fd.forget(), Move(file));
-}
-
-MappableExtractFile::~MappableExtractFile()
-{
-  
-
-
-
-  if (pid != getpid())
-    delete [] path.release();
+  return new MappableExtractFile(fd.forget(), file.release());
 }
 
 
