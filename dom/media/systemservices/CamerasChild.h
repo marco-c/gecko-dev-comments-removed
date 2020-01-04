@@ -50,6 +50,8 @@ struct CapturerElement {
 
 class CamerasChild;
 
+template <class T> class LockAndDispatch;
+
 
 
 
@@ -140,6 +142,7 @@ int GetChildAndCall(MEM_FUN&& f, ARGS&&... args)
 class CamerasChild final : public PCamerasChild
 {
   friend class mozilla::ipc::BackgroundChildImpl;
+  template <class T> friend class mozilla::camera::LockAndDispatch;
 
 public:
   
