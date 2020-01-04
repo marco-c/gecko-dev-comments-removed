@@ -2226,6 +2226,16 @@ TabParent::SendSelectionEvent(WidgetSelectionEvent& event)
   return true;
 }
 
+bool
+TabParent::SendPasteTransferable(const IPCDataTransfer& aDataTransfer,
+                                 const bool& aIsPrivateData,
+                                 const IPC::Principal& aRequestingPrincipal)
+{
+  return PBrowserParent::SendPasteTransferable(aDataTransfer,
+                                               aIsPrivateData,
+                                               aRequestingPrincipal);
+}
+
  TabParent*
 TabParent::GetFrom(nsFrameLoader* aFrameLoader)
 {
@@ -2554,7 +2564,7 @@ TabParent::GetAuthPrompt(uint32_t aPromptReason, const nsIID& iid,
   nsCOMPtr<nsILoginManagerPrompter> prompter = do_QueryInterface(prompt);
   if (prompter) {
     nsCOMPtr<nsIDOMElement> browser = do_QueryInterface(mFrameElement);
-    prompter->SetBrowser(browser);
+    prompter->SetE10sData(browser, nullptr);
   }
 
   *aResult = prompt.forget().take();

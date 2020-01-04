@@ -186,6 +186,7 @@
 #include "nsSandboxFlags.h"
 #include "nsScriptSecurityManager.h"
 #include "nsStreamUtils.h"
+#include "nsSVGFeatures.h"
 #include "nsTextEditorState.h"
 #include "nsTextFragment.h"
 #include "nsTextNode.h"
@@ -6992,6 +6993,28 @@ nsContentUtils::GetHTMLEditor(nsPresContext* aPresContext)
 }
 
 bool
+nsContentUtils::InternalIsSupported(nsISupports* aObject,
+                                    const nsAString& aFeature,
+                                    const nsAString& aVersion)
+{
+  
+  if (StringBeginsWith(aFeature,
+                       NS_LITERAL_STRING("http://www.w3.org/TR/SVG"),
+                       nsASCIICaseInsensitiveStringComparator()) ||
+      StringBeginsWith(aFeature, NS_LITERAL_STRING("org.w3c.dom.svg"),
+                       nsASCIICaseInsensitiveStringComparator()) ||
+      StringBeginsWith(aFeature, NS_LITERAL_STRING("org.w3c.svg"),
+                       nsASCIICaseInsensitiveStringComparator())) {
+    return (aVersion.IsEmpty() || aVersion.EqualsLiteral("1.0") ||
+            aVersion.EqualsLiteral("1.1")) &&
+           nsSVGFeatures::HasFeature(aObject, aFeature);
+  }
+
+  
+  return true;
+}
+
+bool
 nsContentUtils::IsContentInsertionPoint(const nsIContent* aContent)
 {
   
@@ -7391,6 +7414,78 @@ nsContentUtils::SetKeyboardIndicatorsOnRemoteChildren(nsPIDOMWindowOuter* aWindo
   UIStateChangeInfo stateInfo(aShowAccelerators, aShowFocusRings);
   CallOnAllRemoteChildren(aWindow, SetKeyboardIndicatorsChild,
                           (void *)&stateInfo);
+}
+
+nsresult
+nsContentUtils::IPCTransferableToTransferable(const IPCDataTransfer& aDataTransfer,
+                                              const bool& aIsPrivateData,
+                                              nsIPrincipal* aRequestingPrincipal,
+                                              nsITransferable* aTransferable,
+                                              mozilla::dom::nsIContentParent* aContentParent,
+                                              mozilla::dom::TabChild* aTabChild)
+{
+  nsresult rv;
+
+  const nsTArray<IPCDataTransferItem>& items = aDataTransfer.items();
+  for (const auto& item : items) {
+    aTransferable->AddDataFlavor(item.flavor().get());
+
+    if (item.data().type() == IPCDataTransferData::TnsString) {
+      nsCOMPtr<nsISupportsString> dataWrapper =
+        do_CreateInstance(NS_SUPPORTS_STRING_CONTRACTID, &rv);
+      NS_ENSURE_SUCCESS(rv, rv);
+
+      const nsString& text = item.data().get_nsString();
+      rv = dataWrapper->SetData(text);
+      NS_ENSURE_SUCCESS(rv, rv);
+
+      rv = aTransferable->SetTransferData(item.flavor().get(), dataWrapper,
+                                  text.Length() * sizeof(char16_t));
+
+      NS_ENSURE_SUCCESS(rv, rv);
+    } else if (item.data().type() == IPCDataTransferData::TShmem) {
+      if (nsContentUtils::IsFlavorImage(item.flavor())) {
+        nsCOMPtr<imgIContainer> imageContainer;
+        rv = nsContentUtils::DataTransferItemToImage(item,
+                                                     getter_AddRefs(imageContainer));
+        NS_ENSURE_SUCCESS(rv, rv);
+
+        nsCOMPtr<nsISupportsInterfacePointer> imgPtr =
+          do_CreateInstance(NS_SUPPORTS_INTERFACE_POINTER_CONTRACTID);
+        NS_ENSURE_TRUE(imgPtr, NS_ERROR_FAILURE);
+
+        rv = imgPtr->SetData(imageContainer);
+        NS_ENSURE_SUCCESS(rv, rv);
+
+        aTransferable->SetTransferData(item.flavor().get(), imgPtr, sizeof(nsISupports*));
+      } else {
+        nsCOMPtr<nsISupportsCString> dataWrapper =
+          do_CreateInstance(NS_SUPPORTS_CSTRING_CONTRACTID, &rv);
+        NS_ENSURE_SUCCESS(rv, rv);
+
+        
+        Shmem itemData = item.data().get_Shmem();
+        const nsDependentCString text(itemData.get<char>(),
+                                      itemData.Size<char>());
+        rv = dataWrapper->SetData(text);
+        NS_ENSURE_SUCCESS(rv, rv);
+
+        rv = aTransferable->SetTransferData(item.flavor().get(), dataWrapper, text.Length());
+
+        NS_ENSURE_SUCCESS(rv, rv);
+      }
+
+      if (aContentParent) {
+        Unused << aContentParent->DeallocShmem(item.data().get_Shmem());
+      } else if (aTabChild) {
+        Unused << aTabChild->DeallocShmem(item.data().get_Shmem());
+      }
+    }
+  }
+
+  aTransferable->SetIsPrivateData(aIsPrivateData);
+  aTransferable->SetRequestingPrincipal(aRequestingPrincipal);
+  return NS_OK;
 }
 
 void
@@ -8077,7 +8172,6 @@ nsContentUtils::SendMouseEvent(nsCOMPtr<nsIPresShell> aPresShell,
                                float aX,
                                float aY,
                                int32_t aButton,
-                               int32_t aButtons,
                                int32_t aClickCount,
                                int32_t aModifiers,
                                bool aIgnoreRootScrollFrame,
@@ -8128,9 +8222,7 @@ nsContentUtils::SendMouseEvent(nsCOMPtr<nsIPresShell> aPresShell,
                                           WidgetMouseEvent::eNormal);
   event.mModifiers = GetWidgetModifiers(aModifiers);
   event.button = aButton;
-  event.buttons = aButtons != nsIDOMWindowUtils::MOUSE_BUTTONS_NOT_SPECIFIED ?
-                  aButtons :
-                  msg == eMouseUp ? 0 : GetButtonsFlagForButton(aButton);
+  event.buttons = GetButtonsFlagForButton(aButton);
   event.pressure = aPressure;
   event.inputSource = aInputSourceArg;
   event.mClickCount = aClickCount;

@@ -127,6 +127,7 @@ class IPCDataTransferItem;
 class NodeInfo;
 class nsIContentChild;
 class nsIContentParent;
+class TabChild;
 class Selection;
 class TabParent;
 } 
@@ -2366,6 +2367,18 @@ public:
   
 
 
+
+
+
+
+
+  static bool InternalIsSupported(nsISupports* aObject,
+                                  const nsAString& aFeature,
+                                  const nsAString& aVersion);
+
+  
+
+
   static bool DOMWindowDumpEnabled();
 
   
@@ -2481,6 +2494,13 @@ public:
 
   static bool IsFlavorImage(const nsACString& aFlavor);
 
+  static nsresult IPCTransferableToTransferable(const mozilla::dom::IPCDataTransfer& aDataTransfer,
+                                                const bool& aIsPrivateData,
+                                                nsIPrincipal* aRequestingPrincipal,
+                                                nsITransferable* aTransferable,
+                                                mozilla::dom::nsIContentParent* aContentParent,
+                                                mozilla::dom::TabChild* aTabChild);
+
   static void TransferablesToIPCTransferables(nsISupportsArray* aTransferables,
                                               nsTArray<mozilla::dom::IPCDataTransfer>& aIPC,
                                               bool aInSyncMessage,
@@ -2542,7 +2562,6 @@ public:
                                  float aX,
                                  float aY,
                                  int32_t aButton,
-                                 int32_t aButtons,
                                  int32_t aClickCount,
                                  int32_t aModifiers,
                                  bool aIgnoreRootScrollFrame,
