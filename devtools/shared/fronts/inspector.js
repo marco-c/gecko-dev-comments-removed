@@ -3,7 +3,6 @@
 
 "use strict";
 
-const Services = require("Services");
 require("devtools/shared/fronts/styles");
 require("devtools/shared/fronts/highlighters");
 const { ShortLongString } = require("devtools/server/actors/string");
@@ -14,7 +13,6 @@ const {
   preEvent,
   types
 } = require("devtools/shared/protocol.js");
-const { makeInfallible } = require("devtools/shared/DevToolsUtils");
 const {
   inspectorSpec,
   nodeSpec,
@@ -72,15 +70,6 @@ const AttributeModificationList = Class({
 });
 
 
-function delayedResolve(value) {
-  let deferred = promise.defer();
-  Services.tm.mainThread.dispatch(makeInfallible(() => {
-    deferred.resolve(value);
-  }), 0);
-  return deferred.promise;
-}
-
-
 
 
 
@@ -122,6 +111,14 @@ const NodeFront = FrontClassWithSpec(nodeSpec, {
       this.actorID = form;
       return;
     }
+
+    
+    if (form.shortValue) {
+      
+      
+      form.nodeValue = form.incompleteValue ? null : form.shortValue;
+    }
+
     
     
     this._form = object.merge(form);
@@ -135,11 +132,11 @@ const NodeFront = FrontClassWithSpec(nodeSpec, {
       this.reparent(parentNodeFront);
     }
 
-    if (form.singleTextChild) {
-      this.singleTextChild =
-        types.getType("domnode").read(form.singleTextChild, ctx);
+    if (form.inlineTextChild) {
+      this.inlineTextChild =
+        types.getType("domnode").read(form.inlineTextChild, ctx);
     } else {
-      this.singleTextChild = undefined;
+      this.inlineTextChild = undefined;
     }
   },
 
@@ -186,8 +183,7 @@ const NodeFront = FrontClassWithSpec(nodeSpec, {
         });
       }
     } else if (change.type === "characterData") {
-      this._form.shortValue = change.newValue;
-      this._form.incompleteValue = change.incompleteValue;
+      this._form.nodeValue = change.newValue;
     } else if (change.type === "pseudoClassLock") {
       this._form.pseudoClassLocks = change.pseudoClassLocks;
     } else if (change.type === "events") {
@@ -259,12 +255,6 @@ const NodeFront = FrontClassWithSpec(nodeSpec, {
   get tagName() {
     return this.nodeType === nodeConstants.ELEMENT_NODE ? this.nodeName : null;
   },
-  get shortValue() {
-    return this._form.shortValue;
-  },
-  get incompleteValue() {
-    return !!this._form.incompleteValue;
-  },
 
   get isDocumentElement() {
     return !!this._form.isDocumentElement;
@@ -324,11 +314,14 @@ const NodeFront = FrontClassWithSpec(nodeSpec, {
   },
 
   getNodeValue: custom(function () {
-    if (!this.incompleteValue) {
-      return delayedResolve(new ShortLongString(this.shortValue));
+    
+    
+    if (this._form.nodeValue === null && this._form.shortValue) {
+      return this._getNodeValue();
     }
 
-    return this._getNodeValue();
+    let str = this._form.nodeValue || "";
+    return promise.resolve(new ShortLongString(str));
   }, {
     impl: "_getNodeValue"
   }),
@@ -806,13 +799,6 @@ const WalkerFront = FrontClassWithSpec(walkerSpec, {
             addedFronts.push(addedFront);
           }
 
-          if (change.singleTextChild) {
-            targetFront.singleTextChild =
-              types.getType("domnode").read(change.singleTextChild, this);
-          } else {
-            targetFront.singleTextChild = undefined;
-          }
-
           
           
           emittedMutation.added = addedFronts;
@@ -856,6 +842,19 @@ const WalkerFront = FrontClassWithSpec(walkerSpec, {
           }
         } else {
           targetFront.updateMutation(change);
+        }
+
+        
+        
+        if (change.type === "inlineTextChild" ||
+            change.type === "childList" ||
+            change.type === "nativeAnonymousChildList") {
+          if (change.inlineTextChild) {
+            targetFront.inlineTextChild =
+              types.getType("domnode").read(change.inlineTextChild, this);
+          } else {
+            targetFront.inlineTextChild = undefined;
+          }
         }
 
         emitMutations.push(emittedMutation);

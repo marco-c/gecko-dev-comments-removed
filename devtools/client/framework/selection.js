@@ -165,7 +165,7 @@ Selection.prototype = {
 
     
     let parentNode = value && value.parentNode();
-    if (value && parentNode && parentNode.singleTextChild === value) {
+    if (value && parentNode && parentNode.inlineTextChild === value) {
       value = parentNode;
     }
 

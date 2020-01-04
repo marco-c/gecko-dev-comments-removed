@@ -96,6 +96,20 @@ var getContainerForSelector = Task.async(function* (selector, inspector) {
 
 
 
+function* getFirstChildNodeValue(selector, testActor) {
+  let nodeValue = yield testActor.eval(`
+    content.document.querySelector("${selector}").firstChild.nodeValue;
+  `);
+  return nodeValue;
+}
+
+
+
+
+
+
+
+
 
 function waitForChildrenUpdated({markup}) {
   info("Waiting for queued children updates to be handled");
