@@ -68,7 +68,7 @@ function String_substr(start, length) {
         intStart = std_Math_max(intStart + size, 0);
 
     
-    var resultLength = std_Math_min(std_Math_max(end, 0), size - intStart)
+    var resultLength = std_Math_min(std_Math_max(end, 0), size - intStart);
 
     
     if (resultLength <= 0)
