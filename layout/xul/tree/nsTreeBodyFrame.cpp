@@ -4548,7 +4548,7 @@ void
 nsTreeBodyFrame::FireScrollEvent()
 {
   mScrollEvent.Forget();
-  WidgetGUIEvent event(true, NS_SCROLL_EVENT, nullptr);
+  WidgetGUIEvent event(true, eScroll, nullptr);
   
   event.mFlags.mBubbles = false;
   EventDispatcher::Dispatch(GetContent(), PresContext(), &event);

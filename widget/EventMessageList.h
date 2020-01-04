@@ -29,7 +29,7 @@ NS_EVENT_MESSAGE(eBeforeKeyUp,          eWindowEventFirst + 36)
 NS_EVENT_MESSAGE(eAfterKeyUp,           eWindowEventFirst + 37)
 
 NS_EVENT_MESSAGE(eResize,               eWindowEventFirst + 60)
-NS_EVENT_MESSAGE(NS_SCROLL_EVENT,       eWindowEventFirst + 61)
+NS_EVENT_MESSAGE(eScroll,               eWindowEventFirst + 61)
 
 
 
