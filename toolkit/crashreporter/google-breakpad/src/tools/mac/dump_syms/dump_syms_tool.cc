@@ -1,36 +1,36 @@
-// -*- mode: c++ -*-
 
-// Copyright (c) 2011, Google Inc.
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-//     * Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//     * Redistributions in binary form must reproduce the above
-// copyright notice, this list of conditions and the following disclaimer
-// in the documentation and/or other materials provided with the
-// distribution.
-//     * Neither the name of Google Inc. nor the names of its
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// dump_syms_tool.mm: Command line tool that uses the DumpSymbols class.
-// TODO(waylonis): accept stdin
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #include <mach-o/arch.h>
 #include <unistd.h>
@@ -47,12 +47,12 @@ using std::vector;
 
 struct Options {
   Options() : srcPath(), arch(), cfi(true) { }
-  NSString *srcPath;
+  string srcPath;
   const NXArchInfo *arch;
   bool cfi;
 };
 
-//=============================================================================
+
 static bool Start(const Options &options) {
   DumpSymbols dump_symbols(options.cfi ? ALL_SYMBOL_DATA : NO_CFI);
 
@@ -63,7 +63,7 @@ static bool Start(const Options &options) {
     if (!dump_symbols.SetArchitecture(options.arch->cputype,
                                       options.arch->cpusubtype)) {
       fprintf(stderr, "%s: no architecture '%s' is present in file.\n",
-              [options.srcPath fileSystemRepresentation], options.arch->name);
+              options.srcPath.c_str(), options.arch->name);
       size_t available_size;
       const struct fat_arch *available =
         dump_symbols.AvailableArchitectures(&available_size);
@@ -89,7 +89,7 @@ static bool Start(const Options &options) {
   return dump_symbols.WriteSymbolFile(std::cout);
 }
 
-//=============================================================================
+
 static void Usage(int argc, const char *argv[]) {
   fprintf(stderr, "Output a Breakpad symbol file from a Mach-o file.\n");
   fprintf(stderr, "Usage: %s [-a ARCHITECTURE] [-c] <Mach-o file>\n",
@@ -101,7 +101,7 @@ static void Usage(int argc, const char *argv[]) {
   fprintf(stderr, "\t-?: Usage\n");
 }
 
-//=============================================================================
+
 static void SetupOptions(int argc, const char *argv[], Options *options) {
   extern int optind;
   signed char ch;
@@ -136,21 +136,16 @@ static void SetupOptions(int argc, const char *argv[], Options *options) {
     exit(1);
   }
 
-  options->srcPath = [[NSFileManager defaultManager]
-                       stringWithFileSystemRepresentation:argv[optind]
-                       length:strlen(argv[optind])];
+  options->srcPath = argv[optind];
 }
 
-//=============================================================================
+
 int main (int argc, const char * argv[]) {
-  NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
   Options options;
   bool result;
 
   SetupOptions(argc, argv, &options);
   result = Start(options);
-
-  [pool release];
 
   return !result;
 }
