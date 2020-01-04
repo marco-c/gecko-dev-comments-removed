@@ -65,7 +65,7 @@ public class Switch {
 
     public JSONObject getValues() {
         if(hasValues())
-            return SwitchBoard.getExperimentValueFromJson(context, experimentName);
+            return SwitchBoard.getExperimentValuesFromJson(context, experimentName);
         else
             return null;
     }

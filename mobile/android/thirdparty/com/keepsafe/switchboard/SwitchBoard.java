@@ -233,10 +233,7 @@ public class SwitchBoard {
 
 
     public static boolean hasExperimentValues(Context c, String experimentName) {
-        if(getExperimentValueFromJson(c, experimentName) == null)
-            return false;
-        else
-            return true;
+        return getExperimentValuesFromJson(c, experimentName) != null;
     }
 
     
@@ -244,23 +241,17 @@ public class SwitchBoard {
 
 
 
+    public static JSONObject getExperimentValuesFromJson(Context c, String experimentName) {
+        final String config = Preferences.getDynamicConfigJson(c);
 
-
-    public static JSONObject getExperimentValueFromJson(Context c, String experimentName) {
-        String config = Preferences.getDynamicConfigJson(c);
-
-        if(config == null)
+        if (config == null) {
             return null;
+        }
 
         try {
-            JSONObject experiment = (JSONObject) new JSONObject(config).get(experimentName);
-            JSONObject values = experiment.getJSONObject(EXPERIMENT_VALUES);
-
-            return values;
-
+            final JSONObject experiment = new JSONObject(config).getJSONObject(experimentName);
+            return experiment.getJSONObject(EXPERIMENT_VALUES);
         } catch (JSONException e) {
-            Log.e(TAG, "Config: " + config);
-            e.printStackTrace();
             Log.e(TAG, "Could not create JSON object from config string", e);
         }
 
