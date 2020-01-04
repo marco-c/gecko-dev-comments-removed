@@ -2135,7 +2135,26 @@ nsComputedDOMStyle::DoGetImageLayerImage(const nsStyleImageLayers& aLayers)
     RefPtr<nsROCSSPrimitiveValue> val = new nsROCSSPrimitiveValue;
 
     const nsStyleImage& image = aLayers.mLayers[i].mImage;
-    SetValueToStyleImage(image, val);
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    bool isLocalURI = image.GetType() == eStyleImageType_Null &&
+                      aLayers.mLayers[i].mSourceURI;
+    if (isLocalURI) {
+      
+      
+      val->SetURI(aLayers.mLayers[i].mSourceURI);
+    } else {
+      SetValueToStyleImage(image, val);
+    }
+
     valueList->AppendCSSValue(val.forget());
   }
 
