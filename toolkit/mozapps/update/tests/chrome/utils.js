@@ -67,11 +67,6 @@
 
 
 
-
-
-
-
-
 'use strict';
 
 const { classes: Cc, interfaces: Ci, manager: Cm, results: Cr,
@@ -90,7 +85,6 @@ const PAGEID_NO_UPDATES_FOUND = "noupdatesfound";
 const PAGEID_MANUAL_UPDATE    = "manualUpdate";          
 const PAGEID_UNSUPPORTED      = "unsupported";           
 const PAGEID_FOUND_BASIC      = "updatesfoundbasic";     
-const PAGEID_FOUND_BILLBOARD  = "updatesfoundbillboard"; 
 const PAGEID_DOWNLOADING      = "downloading";           
 const PAGEID_ERRORS           = "errors";                
 const PAGEID_ERROR_EXTRA      = "errorextra";            
@@ -149,7 +143,7 @@ var gUseTestUpdater = false;
 
 
 
-var DEBUG_AUS_TEST = false;
+var DEBUG_AUS_TEST = true;
 
 const DATA_URI_SPEC = "chrome://mochitests/content/chrome/toolkit/mozapps/update/tests/data/";
 Services.scriptloader.loadSubScript(DATA_URI_SPEC + "shared.js", this);
@@ -169,28 +163,6 @@ this.__defineGetter__("gTest", function() {
 this.__defineGetter__("gCallback", function() {
   return gTest.overrideCallback ? gTest.overrideCallback
                                 : defaultCallback;
-});
-
-
-
-
-
-this.__defineGetter__("gRemoteContent", function() {
-  if (gTest.pageid == PAGEID_FOUND_BILLBOARD) {
-      return gWin.document.getElementById("updateMoreInfoContent");
-  }
-  return null;
-});
-
-
-
-
-
-this.__defineGetter__("gRemoteContentState", function() {
-  if (gRemoteContent) {
-    return gRemoteContent.getAttribute("state");
-  }
-  return null;
 });
 
 
@@ -537,7 +509,6 @@ function getExpectedButtonStates() {
     case PAGEID_CHECKING:
       return { cancel: { disabled: false, hidden: false } };
     case PAGEID_FOUND_BASIC:
-    case PAGEID_FOUND_BILLBOARD:
       if (gTest.neverButton) {
         return { extra1: { disabled: false, hidden: false },
                  extra2: { disabled: false, hidden: false },
@@ -561,72 +532,6 @@ function getExpectedButtonStates() {
                finish: { disabled: false, hidden: false } };
   }
   return null;
-}
-
-
-
-
-function addRemoteContentLoadListener() {
-  debugDump("entering - TESTS[" + gTestCounter + "], pageid: " + gTest.pageid);
-
-  gRemoteContent.addEventListener("load", remoteContentLoadListener, false);
-}
-
-
-
-
-function remoteContentLoadListener(aEvent) {
-  
-  if (aEvent.originalTarget.nodeName != "remotecontent") {
-    debugDump("only handles events with an originalTarget nodeName of " +
-              "|remotecontent|. aEvent.originalTarget.nodeName = " +
-              aEvent.originalTarget.nodeName);
-    return;
-  }
-
-  gTestCounter++;
-  gCallback(aEvent);
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-function waitForRemoteContentLoaded(aEvent) {
-  
-  
-  if (gRemoteContentState != gTest.expectedRemoteContentState ||
-      aEvent.originalTarget != gRemoteContent) {
-    debugDump("returning early. " +
-              "gRemoteContentState: " +
-              gRemoteContentState + ", " +
-              "expectedRemoteContentState: " +
-              gTest.expectedRemoteContentState + ", " +
-              "aEvent.originalTarget.nodeName: " +
-              aEvent.originalTarget.nodeName);
-    return true;
-  }
-
-  gRemoteContent.removeEventListener("load", remoteContentLoadListener, false);
-  return false;
-}
-
-
-
-
-
-function checkRemoteContentState() {
-  is(gRemoteContentState, gTest.expectedRemoteContentState, "Checking remote " +
-     "content state equals " + gTest.expectedRemoteContentState + " - pageid " +
-     gTest.pageid);
 }
 
 
@@ -683,40 +588,9 @@ function checkErrorExtraPage(aShouldBeHidden) {
 
 
 
-
-
-
-function getVersionParams(aAppVersion, aPlatformVersion) {
+function getVersionParams(aAppVersion) {
   let appInfo = Services.appinfo;
-  return "&appVersion=" + (aAppVersion ? aAppVersion : appInfo.version) +
-         "&platformVersion=" + (aPlatformVersion ? aPlatformVersion
-                                                 : appInfo.platformVersion);
-}
-
-
-
-
-
-
-
-
-function getNewerAppVersion() {
-  let appVersion = Services.appinfo.version.split(".")[0];
-  appVersion++;
-  return appVersion;
-}
-
-
-
-
-
-
-
-
-function getNewerPlatformVersion() {
-  let platformVersion = Services.appinfo.platformVersion.split(".")[0];
-  platformVersion++;
-  return platformVersion;
+  return "&appVersion=" + (aAppVersion ? aAppVersion : appInfo.version);
 }
 
 

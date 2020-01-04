@@ -80,16 +80,13 @@ function getRemoteUpdatesXMLString(aUpdates) {
 
 
 function getRemoteUpdateString(aPatches, aType, aName, aDisplayVersion,
-                               aAppVersion, aPlatformVersion, aBuildID,
-                               aDetailsURL, aBillboardURL, aShowPrompt,
+                               aAppVersion, aBuildID, aDetailsURL, aShowPrompt,
                                aShowNeverForVersion, aPromptWaitTime,
-                               aShowSurvey, aVersion, aExtensionVersion,
                                aCustom1, aCustom2) {
   return getUpdateString(aType, aName, aDisplayVersion, aAppVersion,
-                         aPlatformVersion, aBuildID, aDetailsURL,
-                         aBillboardURL, aShowPrompt, aShowNeverForVersion,
-                         aPromptWaitTime, aShowSurvey, aVersion,
-                         aExtensionVersion, aCustom1, aCustom2) + ">\n" +
+                         aBuildID, aDetailsURL, aShowPrompt,
+                         aShowNeverForVersion, aPromptWaitTime,
+                         aCustom1, aCustom2) + ">\n" +
               aPatches +
          "  </update>\n";
 }
@@ -148,12 +145,10 @@ function getLocalUpdatesXMLString(aUpdates) {
 
 
 function getLocalUpdateString(aPatches, aType, aName, aDisplayVersion,
-                              aAppVersion, aPlatformVersion, aBuildID,
-                              aDetailsURL, aBillboardURL, aServiceURL,
+                              aAppVersion, aBuildID, aDetailsURL, aServiceURL,
                               aInstallDate, aStatusText, aIsCompleteUpdate,
                               aChannel, aForegroundDownload, aShowPrompt,
                               aShowNeverForVersion, aPromptWaitTime,
-                              aShowSurvey, aVersion, aExtensionVersion,
                               aPreviousAppVersion, aCustom1, aCustom2) {
   let serviceURL = aServiceURL ? aServiceURL : "http://test_service/";
   let installDate = aInstallDate ? aInstallDate : "1238441400314";
@@ -167,11 +162,9 @@ function getLocalUpdateString(aPatches, aType, aName, aDisplayVersion,
   let previousAppVersion = aPreviousAppVersion ? "previousAppVersion=\"" +
                                                  aPreviousAppVersion + "\" "
                                                : "";
-  return getUpdateString(aType, aName, aDisplayVersion, aAppVersion,
-                         aPlatformVersion, aBuildID, aDetailsURL, aBillboardURL,
-                         aShowPrompt, aShowNeverForVersion, aPromptWaitTime,
-                         aShowSurvey, aVersion, aExtensionVersion,
-                         aCustom1, aCustom2) +
+  return getUpdateString(aType, aName, aDisplayVersion, aAppVersion, aBuildID,
+                         aDetailsURL, aShowPrompt, aShowNeverForVersion,
+                         aPromptWaitTime, aCustom1, aCustom2) +
                    " " +
                    previousAppVersion +
                    "serviceURL=\"" + serviceURL + "\" " +
@@ -252,65 +245,23 @@ function getLocalPatchString(aType, aURL, aHashFunction, aHashValue, aSize,
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function getUpdateString(aType, aName, aDisplayVersion, aAppVersion,
-                         aPlatformVersion, aBuildID, aDetailsURL, aBillboardURL,
-                         aShowPrompt, aShowNeverForVersion, aPromptWaitTime,
-                         aShowSurvey, aVersion, aExtensionVersion,
-                         aCustom1, aCustom2) {
+function getUpdateString(aType, aName, aDisplayVersion, aAppVersion, aBuildID,
+                         aDetailsURL, aShowPrompt, aShowNeverForVersion,
+                         aPromptWaitTime, aCustom1, aCustom2) {
   let type = aType ? aType : "major";
   let name = aName ? aName : "App Update Test";
-  let displayVersion = "";
-  if (aDisplayVersion || !aVersion) {
-    displayVersion = "displayVersion=\"" +
-                     (aDisplayVersion ? aDisplayVersion
-                                      : "version " + DEFAULT_UPDATE_VERSION) +
-                     "\" ";
-  }
-  
-  
-  let version = aVersion ? "version=\"" + aVersion + "\" " : "";
-  let appVersion = "";
-  if (aAppVersion || !aExtensionVersion) {
-    appVersion = "appVersion=\"" +
-                 (aAppVersion ? aAppVersion : DEFAULT_UPDATE_VERSION) +
-                 "\" ";
-  }
-  
-  
-  let extensionVersion = aExtensionVersion ? "extensionVersion=\"" +
-                                             aExtensionVersion + "\" "
-                                           : "";
-  let platformVersion = "";
-  if (aPlatformVersion) {
-    platformVersion = "platformVersion=\"" +
-                      (aPlatformVersion ? aPlatformVersion
-                                        : DEFAULT_UPDATE_VERSION) + "\" ";
-  }
+  let displayVersion = aDisplayVersion ? "displayVersion=\"" +
+                                         aDisplayVersion + "\" "
+                                       : "";
+  let appVersion = "appVersion=\"" +
+                   (aAppVersion ? aAppVersion : DEFAULT_UPDATE_VERSION) +
+                   "\" ";
   let buildID = aBuildID ? aBuildID : "20080811053724";
   
 
   let detailsURL = "detailsURL=\"" +
                    (aDetailsURL ? aDetailsURL
                                 : "http://test_details/") + "\" ";
-  let billboardURL = aBillboardURL ? "billboardURL=\"" + aBillboardURL + "\" "
-                                   : "";
   let showPrompt = aShowPrompt ? "showPrompt=\"" + aShowPrompt + "\" " : "";
   let showNeverForVersion = aShowNeverForVersion ? "showNeverForVersion=\"" +
                                                    aShowNeverForVersion + "\" "
@@ -323,12 +274,8 @@ function getUpdateString(aType, aName, aDisplayVersion, aAppVersion,
   return "  <update type=\"" + type + "\" " +
                    "name=\"" + name + "\" " +
                     displayVersion +
-                    version +
                     appVersion +
-                    extensionVersion +
-                    platformVersion +
                     detailsURL +
-                    billboardURL +
                     showPrompt +
                     showNeverForVersion +
                     promptWaitTime +
