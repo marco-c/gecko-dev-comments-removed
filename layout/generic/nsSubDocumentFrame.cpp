@@ -135,6 +135,7 @@ nsSubDocumentFrame::Init(nsIContent*       aContent,
     nsCOMPtr<nsIDocument> oldContainerDoc;
     nsView* detachedViews =
       frameloader->GetDetachedSubdocView(getter_AddRefs(oldContainerDoc));
+    frameloader->SetDetachedSubdocView(nullptr, nullptr);
     if (detachedViews) {
       if (oldContainerDoc == aContent->OwnerDoc()) {
         
@@ -145,7 +146,6 @@ nsSubDocumentFrame::Init(nsIContent*       aContent,
         frameloader->Hide();
       }
     }
-    frameloader->SetDetachedSubdocView(nullptr, nullptr);
   }
 
   nsContentUtils::AddScriptRunner(new AsyncFrameInit(this));
@@ -945,13 +945,16 @@ public:
     if (!mPresShell->IsDestroying()) {
       mPresShell->FlushPendingNotifications(Flush_Frames);
     }
+
+    
+    
+    mFrameLoader->SetDetachedSubdocView(nullptr, nullptr);
+
     nsSubDocumentFrame* frame = do_QueryFrame(mFrameElement->GetPrimaryFrame());
     if ((!frame && mHideViewerIfFrameless) ||
         mPresShell->IsDestroying()) {
       
       
-      
-      mFrameLoader->SetDetachedSubdocView(nullptr, nullptr);
       mFrameLoader->Hide();
     }
     return NS_OK;
@@ -977,7 +980,7 @@ nsSubDocumentFrame::DestroyFrom(nsIFrame* aDestructRoot)
   
   
   
-  nsFrameLoader* frameloader = FrameLoader();
+  RefPtr<nsFrameLoader> frameloader = FrameLoader();
   if (frameloader) {
     nsView* detachedViews = ::BeginSwapDocShellsForViews(mInnerView->GetFirstChild());
     frameloader->SetDetachedSubdocView(detachedViews, mContent->OwnerDoc());
@@ -986,7 +989,7 @@ nsSubDocumentFrame::DestroyFrom(nsIFrame* aDestructRoot)
     
     nsContentUtils::AddScriptRunner(
       new nsHideViewer(mContent,
-                       mFrameLoader,
+                       frameloader,
                        PresContext()->PresShell(),
                        (mDidCreateDoc || mCallingShow)));
   }
