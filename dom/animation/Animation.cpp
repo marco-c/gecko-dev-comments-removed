@@ -94,14 +94,14 @@ Animation::Constructor(const GlobalObject& aGlobal,
   nsCOMPtr<nsIGlobalObject> global = do_QueryInterface(aGlobal.GetAsSupports());
   RefPtr<Animation> animation = new Animation(global);
 
-  if (!aTimeline) {
-    
-    aRv.Throw(NS_ERROR_FAILURE);
-    return nullptr;
-  }
   if (!aEffect) {
     
-    aRv.Throw(NS_ERROR_FAILURE);
+    aRv.Throw(NS_ERROR_DOM_ANIM_NO_EFFECT_ERR);
+    return nullptr;
+  }
+  if (!aTimeline) {
+    
+    aRv.Throw(NS_ERROR_DOM_ANIM_NO_TIMELINE_ERR);
     return nullptr;
   }
 
