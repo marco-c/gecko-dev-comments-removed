@@ -298,6 +298,10 @@ LayerManagerComposite::EndTransaction(const TimeStamp& aTimeStamp,
     return;
   }
 
+  
+  
+  InvalidateDebugOverlay(mRenderBounds);
+
  if (mRoot && !(aFlags & END_NO_IMMEDIATE_REDRAW)) {
     MOZ_ASSERT(!aTimeStamp.IsNull());
     
@@ -393,6 +397,26 @@ LayerManagerComposite::RootLayer() const
 #include "qrcode_table.h"
 #endif
 
+void
+LayerManagerComposite::InvalidateDebugOverlay(const IntRect& aBounds)
+{
+  bool drawFps = gfxPrefs::LayersDrawFPS();
+  bool drawFrameCounter = gfxPrefs::DrawFrameCounter();
+  bool drawFrameColorBars = gfxPrefs::CompositorDrawColorBars();
+
+  if (drawFps || drawFrameCounter) {
+    AddInvalidRegion(nsIntRect(0, 0, 256, 256));
+  }
+  if (drawFrameColorBars) {
+    AddInvalidRegion(nsIntRect(0, 0, 10, aBounds.height));
+  }
+
+  if (drawFrameColorBars) {
+    AddInvalidRegion(nsIntRect(0, 0, 10, aBounds.height));
+  }
+
+}
+
 static uint16_t sFrameCount = 0;
 void
 LayerManagerComposite::RenderDebugOverlay(const Rect& aBounds)
@@ -461,7 +485,6 @@ LayerManagerComposite::RenderDebugOverlay(const Rect& aBounds)
     }
 
     
-    AddInvalidRegion(nsIntRect(0, 0, 256, 256));
   } else {
     mFPS = nullptr;
   }
@@ -477,8 +500,6 @@ LayerManagerComposite::RenderDebugOverlay(const Rect& aBounds)
                           1.0,
                           gfx::Matrix4x4());
 
-    
-    AddInvalidRegion(nsIntRect(0, 0, sideRect.width, sideRect.height));
   }
 
 #ifdef MOZ_PROFILING
@@ -522,8 +543,6 @@ LayerManagerComposite::RenderDebugOverlay(const Rect& aBounds)
       }
     }
 
-    
-    AddInvalidRegion(nsIntRect(0, 0, 256, 256));
   }
 #endif
 

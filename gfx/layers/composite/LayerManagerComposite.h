@@ -308,6 +308,11 @@ private:
   
 
 
+  void InvalidateDebugOverlay(const gfx::IntRect& aBounds);
+
+  
+
+
   void RenderDebugOverlay(const gfx::Rect& aBounds);
 
 
