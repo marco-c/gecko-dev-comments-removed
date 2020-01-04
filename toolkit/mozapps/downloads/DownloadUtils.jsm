@@ -46,10 +46,20 @@ Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "PluralForm",
                                   "resource://gre/modules/PluralForm.jsm");
 
-this.__defineGetter__("gDecimalSymbol", function() {
-  delete this.gDecimalSymbol;
-  return this.gDecimalSymbol = Number(5.4).toLocaleString().match(/\D/);
-});
+let localeNumberFormatCache = new Map();
+function getLocaleNumberFormat(fractionDigits) {
+  
+  let locale = Intl.NumberFormat().resolvedOptions().locale +
+               "-u-nu-latn";
+  let key = locale + "_" + fractionDigits;
+  if (!localeNumberFormatCache.has(key)) {
+    localeNumberFormatCache.set(key,
+      Intl.NumberFormat(locale,
+                        { maximumFractionDigits: fractionDigits,
+                          minimumFractionDigits: fractionDigits }));
+  }
+  return localeNumberFormatCache.get(key);
+}
 
 const kDownloadProperties =
   "chrome://mozapps/locale/downloads/downloads.properties";
@@ -462,10 +472,16 @@ this.DownloadUtils = {
     
     
     
-    aBytes = aBytes.toFixed((aBytes > 0) && (aBytes < 100) && (unitIndex != 0) ? 1 : 0);
+    let fractionDigits = (aBytes > 0) && (aBytes < 100) && (unitIndex != 0) ? 1 : 0;
 
-    if (gDecimalSymbol != ".")
-      aBytes = aBytes.replace(".", gDecimalSymbol);
+    
+    if (aBytes === Infinity) {
+      aBytes = "Infinity";
+    } else {
+      aBytes = getLocaleNumberFormat(fractionDigits)
+                 .format(aBytes);
+    }
+
     return [aBytes, gBundle.GetStringFromName(gStr.units[unitIndex])];
   },
 
