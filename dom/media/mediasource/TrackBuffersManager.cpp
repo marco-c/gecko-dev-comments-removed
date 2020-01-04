@@ -786,6 +786,9 @@ TrackBuffersManager::ShutdownDemuxers()
     mAudioTracks.mDemuxer->BreakCycles();
     mAudioTracks.mDemuxer = nullptr;
   }
+  
+  
+  MOZ_DIAGNOSTIC_ASSERT(!mDemuxerInitRequest.Exists());
   mInputDemuxer = nullptr;
   mLastParsedEndTime.reset();
 }
@@ -843,6 +846,9 @@ TrackBuffersManager::OnDemuxerResetDone(nsresult)
     RejectAppend(NS_ERROR_ABORT, __func__);
     return;
   }
+  
+  
+  MOZ_DIAGNOSTIC_ASSERT(mInputDemuxer);
 
   
   uint32_t numVideos = mInputDemuxer->GetNumberTracks(TrackInfo::kVideoTrack);
@@ -918,6 +924,9 @@ TrackBuffersManager::OnDemuxerInitDone(nsresult)
     RejectAppend(NS_ERROR_ABORT, __func__);
     return;
   }
+  
+  
+  MOZ_DIAGNOSTIC_ASSERT(mInputDemuxer);
 
   MediaInfo info;
 
