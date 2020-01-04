@@ -425,23 +425,19 @@ add_task(function* test_strict_min_max() {
         },
       },
     }
+
     let testManifest = Object.assign(apps, MANIFEST);
 
     let addonDir = yield promiseWriteWebManifestForExtension(testManifest, gTmpD,
-                                            "strict_min_star");
+                                                             "strict_min_star");
 
-    let { messages } = yield promiseConsoleOutput(function* () {
-      yield AddonManager.installTemporaryAddon(addonDir);
-    });
-    ok(messages.some(msg => msg.message.includes("The use of '*' in strict_min_version is deprecated")),
-       "Deprecation warning for strict_min_version with '*' was generated");
+    yield Assert.rejects(
+      AddonManager.installTemporaryAddon(addonDir),
+      /The use of '\*' in strict_min_version is invalid/,
+      "loading an extension with a * in strict_min_version throws an exception");
 
     let addon = yield promiseAddonByID(newId);
-
-    notEqual(addon, null, "Add-on is installed");
-    equal(addon.id, newId, "Add-on has the expected id");
-
-    addon.uninstall();
+    equal(addon, null, "Add-on is not installed");
     flushAndRemove(addonDir);
   }
 

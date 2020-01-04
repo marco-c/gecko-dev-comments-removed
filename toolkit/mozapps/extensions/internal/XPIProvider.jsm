@@ -931,7 +931,7 @@ var loadManifestFromWebManifest = Task.async(function*(aUri) {
 
   
   if (bss.strict_min_version && bss.strict_min_version.split(".").some(part => part == "*")) {
-    logger.warn("The use of '*' in strict_min_version is deprecated");
+    throw new Error("The use of '*' in strict_min_version is invalid");
   }
 
   let addon = new AddonInternal();
