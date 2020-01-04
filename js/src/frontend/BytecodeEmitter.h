@@ -577,7 +577,7 @@ struct BytecodeEmitter
 
     
     
-    bool emitIteratorNext(ParseNode* pn);
+    bool emitIteratorNext(ParseNode* pn, bool allowSelfHosted = false);
 
     
     
@@ -614,6 +614,7 @@ struct BytecodeEmitter
     bool emitSelfHostedCallFunction(ParseNode* pn);
     bool emitSelfHostedResumeGenerator(ParseNode* pn);
     bool emitSelfHostedForceInterpreter(ParseNode* pn);
+    bool emitSelfHostedAllowContentSpread(ParseNode* pn);
 
     bool emitComprehensionFor(ParseNode* compFor);
     bool emitComprehensionForIn(ParseNode* pn);
@@ -643,7 +644,7 @@ struct BytecodeEmitter
     
     
     
-    bool emitSpread();
+    bool emitSpread(bool allowSelfHosted = false);
 
     
     
@@ -653,7 +654,7 @@ struct BytecodeEmitter
     
     
     
-    bool emitForOf(StmtType type, ParseNode* pn);
+    bool emitForOf(StmtType type, ParseNode* pn, bool allowSelfHosted = false);
 
     bool emitClass(ParseNode* pn);
     bool emitSuperPropLHS(ParseNode* superBase, bool isCall = false);
