@@ -37,15 +37,21 @@ import android.util.Log;
 
 
 
+
+
+
 @RobocopTarget
 public final class GeckoSharedPrefs {
     private static final String LOGTAG = "GeckoSharedPrefs";
 
     
-    public static final int PREFS_VERSION = 1;
+    public static final int PREFS_VERSION = 2;
 
     
     public static final String APP_PREFS_NAME = "GeckoApp";
+
+    
+    public static final String CRASH_PREFS_NAME = "CrashReporter";
 
     
     public static final String PROFILE_PREFS_NAME_PREFIX = "GeckoProfile-";
@@ -61,6 +67,15 @@ public final class GeckoSharedPrefs {
     private static final String[] PROFILE_MIGRATIONS_0_TO_1 = {
         "home_panels",
         "home_locale"
+    };
+
+    
+    
+    private static final String[] PROFILE_MIGRATIONS_1_TO_2 = {
+        "sendReport",
+        "includeUrl",
+        "allowContact",
+        "contactEmail"
     };
 
     
@@ -84,6 +99,22 @@ public final class GeckoSharedPrefs {
         }
 
         return context.getSharedPreferences(APP_PREFS_NAME, 0);
+    }
+
+    public static SharedPreferences forCrashReporter(Context context) {
+        return forCrashReporter(context, EnumSet.noneOf(Flags.class));
+    }
+
+    
+
+
+
+    public static SharedPreferences forCrashReporter(Context context, EnumSet<Flags> flags) {
+        if (flags != null && !flags.contains(Flags.DISABLE_MIGRATIONS)) {
+            migrateIfNecessary(context);
+        }
+
+        return context.getSharedPreferences(CRASH_PREFS_NAME, 0);
     }
 
     public static SharedPreferences forProfile(Context context) {
@@ -186,6 +217,7 @@ public final class GeckoSharedPrefs {
         }
 
         final Editor profileEditor = forProfileName(context, defaultProfileName, disableMigrations).edit();
+        final Editor crashEditor = forCrashReporter(context, disableMigrations).edit();
 
         List<String> profileKeys;
         Editor pmEditor = null;
@@ -198,6 +230,10 @@ public final class GeckoSharedPrefs {
                     profileKeys = Arrays.asList(PROFILE_MIGRATIONS_0_TO_1);
                     pmEditor = migrateFromPreferenceManager(context, appEditor, profileEditor, profileKeys);
                     break;
+                case 2:
+                    profileKeys = Arrays.asList(PROFILE_MIGRATIONS_1_TO_2);
+                    migrateCrashReporterSettings(appPrefs, appEditor, crashEditor, profileKeys);
+                    break;
             }
         }
 
@@ -206,6 +242,7 @@ public final class GeckoSharedPrefs {
 
         appEditor.apply();
         profileEditor.apply();
+        crashEditor.apply();
         if (pmEditor != null) {
             pmEditor.apply();
         }
@@ -241,6 +278,24 @@ public final class GeckoSharedPrefs {
         
         
         return pmPrefs.edit().clear();
+    }
+
+    
+
+
+
+    public static void migrateCrashReporterSettings(SharedPreferences appPrefs, Editor appEditor,
+                                                    Editor crashEditor, List<String> profileKeys) {
+        Log.d(LOGTAG, "Migrating crash reporter settings");
+
+        for (Map.Entry<String, ?> entry : appPrefs.getAll().entrySet()) {
+            final String key = entry.getKey();
+
+            if (profileKeys.contains(key)) {
+                putEntry(crashEditor, key, entry.getValue());
+                appEditor.remove(key);
+            }
+        }
     }
 
     private static void putEntry(Editor to, String key, Object value) {
