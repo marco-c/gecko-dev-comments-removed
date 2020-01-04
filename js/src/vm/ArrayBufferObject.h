@@ -213,9 +213,6 @@ class ArrayBufferObject : public ArrayBufferObjectMaybeShared
     static bool fun_slice(JSContext* cx, unsigned argc, Value* vp);
 
     static bool fun_isView(JSContext* cx, unsigned argc, Value* vp);
-#ifdef NIGHTLY_BUILD
-    static bool fun_transfer(JSContext* cx, unsigned argc, Value* vp);
-#endif
 
     static bool fun_species(JSContext* cx, unsigned argc, Value* vp);
 
@@ -252,15 +249,7 @@ class ArrayBufferObject : public ArrayBufferObjectMaybeShared
 
     bool hasStealableContents() const {
         
-        if (!ownsData())
-            return false;
-
-        
-        
-        
-        
-        
-        return !isDetached();
+        return ownsData();
     }
 
     
@@ -286,7 +275,7 @@ class ArrayBufferObject : public ArrayBufferObjectMaybeShared
 
     
     
-    static MOZ_MUST_USE bool
+    static void
     detach(JSContext* cx, Handle<ArrayBufferObject*> buffer, BufferContents newContents);
 
   private:
