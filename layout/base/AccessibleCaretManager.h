@@ -253,7 +253,6 @@ protected:
 
   
   
-  
   static bool sCaretsExtendedVisibility;
 
   
