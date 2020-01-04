@@ -48,36 +48,23 @@ struct nsIMEUpdatePreference final
     
     NOTIFY_MOUSE_BUTTON_EVENT_ON_CHAR    = 1 << 3,
     
-    NOTIFY_CHANGES_CAUSED_BY_COMPOSITION = 1 << 6,
     
-    
-    NOTIFY_DURING_DEACTIVE               = 1 << 7,
-    
-    
-    
-    
-    DEFAULT_CONDITIONS_OF_NOTIFYING_CHANGES =
-      NOTIFY_CHANGES_CAUSED_BY_COMPOSITION
+    NOTIFY_DURING_DEACTIVE               = 1 << 7
   };
 
   nsIMEUpdatePreference()
-    : mWantUpdates(DEFAULT_CONDITIONS_OF_NOTIFYING_CHANGES)
+    : mWantUpdates(NOTIFY_NOTHING)
   {
   }
 
   explicit nsIMEUpdatePreference(Notifications aWantUpdates)
-    : mWantUpdates(aWantUpdates | DEFAULT_CONDITIONS_OF_NOTIFYING_CHANGES)
+    : mWantUpdates(aWantUpdates)
   {
   }
 
   nsIMEUpdatePreference operator|(const nsIMEUpdatePreference& aOther) const
   {
     return nsIMEUpdatePreference(aOther.mWantUpdates | mWantUpdates);
-  }
-
-  void DontNotifyChangesCausedByComposition()
-  {
-    mWantUpdates &= ~DEFAULT_CONDITIONS_OF_NOTIFYING_CHANGES;
   }
 
   bool WantTextChange() const
@@ -98,12 +85,6 @@ struct nsIMEUpdatePreference final
   bool WantMouseButtonEventOnChar() const
   {
     return !!(mWantUpdates & NOTIFY_MOUSE_BUTTON_EVENT_ON_CHAR);
-  }
-
-  bool WantChangesCausedByComposition() const
-  {
-    return WantChanges() &&
-             !!(mWantUpdates & NOTIFY_CHANGES_CAUSED_BY_COMPOSITION);
   }
 
   bool WantDuringDeactive() const

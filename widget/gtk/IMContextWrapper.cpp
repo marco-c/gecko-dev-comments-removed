@@ -333,7 +333,7 @@ IMContextWrapper::GetIMEUpdatePreference() const
     }
 
     nsIMEUpdatePreference::Notifications notifications =
-        nsIMEUpdatePreference::DEFAULT_CONDITIONS_OF_NOTIFYING_CHANGES;
+        nsIMEUpdatePreference::NOTIFY_NOTHING;
     
     if (IsEnabled()) {
         notifications |= nsIMEUpdatePreference::NOTIFY_POSITION_CHANGE;

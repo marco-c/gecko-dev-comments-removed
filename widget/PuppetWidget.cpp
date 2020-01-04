@@ -857,9 +857,7 @@ PuppetWidget::NotifyIMEOfTextChange(const IMENotification& aIMENotification)
 
   
   
-  if (mIMEPreferenceOfParent.WantTextChange() &&
-      (mIMEPreferenceOfParent.WantChangesCausedByComposition() ||
-       !aIMENotification.mTextChangeData.mCausedOnlyByComposition)) {
+  if (mIMEPreferenceOfParent.WantTextChange()) {
     mTabChild->SendNotifyIMETextChange(mContentCache, aIMENotification);
   } else {
     mTabChild->SendUpdateContentCache(mContentCache);
@@ -896,12 +894,8 @@ PuppetWidget::NotifyIMEOfSelectionChange(
     aIMENotification.mSelectionChangeData.mReversed,
     aIMENotification.mSelectionChangeData.GetWritingMode());
 
-  if (mIMEPreferenceOfParent.WantChangesCausedByComposition() ||
-      !aIMENotification.mSelectionChangeData.mCausedByComposition) {
-    mTabChild->SendNotifyIMESelection(mContentCache, aIMENotification);
-  } else {
-    mTabChild->SendUpdateContentCache(mContentCache);
-  }
+  mTabChild->SendNotifyIMESelection(mContentCache, aIMENotification);
+
   return NS_OK;
 }
 
