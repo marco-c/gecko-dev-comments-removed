@@ -254,12 +254,18 @@ public:
 
 
 
+
+
+
   nsIURI* GetDocumentURI() const
   {
     return mDocumentURI;
   }
 
   
+
+
+
 
 
 
