@@ -29,8 +29,7 @@ const { LabelAndShallowSizeVisitor } = DominatorTreeNode;
 
 
 
-if (Services.appInfo &&
-    Services.appInfo.processType == Services.appInfo.PROCESS_TYPE_DEFAULT) {
+if (Services.appinfo.processType == Services.appinfo.PROCESS_TYPE_DEFAULT) {
   Services.prefs.setBoolPref("devtools.debugger.log", true);
 }
 DevToolsUtils.dumpn.wantLogging = true;
