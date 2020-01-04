@@ -2242,11 +2242,11 @@ BaselineCompiler::emit_JSOP_BINDGNAME()
                 frame.push(ObjectValue(*globalLexical));
                 return true;
             }
-        }
-
-        
-        
-        if (Shape* shape = script->global().lookup(cx, name)) {
+        } else if (Shape* shape = script->global().lookup(cx, name)) {
+            
+            
+            
+            
             if (!shape->configurable()) {
                 frame.push(ObjectValue(script->global()));
                 return true;
