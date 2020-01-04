@@ -726,7 +726,7 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<SliceSize, Inst
     }
 
     static const unsigned OOM_FAIL = unsigned(-1);
-    static const unsigned NO_DATA = unsigned(-2);
+    static const unsigned DUMMY_INDEX = unsigned(-2);
 
     
     
@@ -810,7 +810,7 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<SliceSize, Inst
         
         
         
-        return NO_DATA;
+        return DUMMY_INDEX;
     }
 
   public:

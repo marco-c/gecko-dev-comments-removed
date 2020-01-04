@@ -71,6 +71,8 @@ included_inclnames_to_ignore = set([
     'prcvar.h',                 
     'prerror.h',                
     'prinit.h',                 
+    'prio.h',                   
+    'private/pprio.h',          
     'prlink.h',                 
     'prlock.h',                 
     'prprf.h',                  
