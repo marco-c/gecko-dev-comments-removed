@@ -155,8 +155,6 @@ var gGREDirOrig;
 var gGREBinDirOrig;
 var gAppDirOrig;
 
-var gApplyToDirOverride;
-
 var gServiceLaunchedCallbackLog = null;
 var gServiceLaunchedCallbackArgs = null;
 
@@ -1147,18 +1145,6 @@ function getAppVersion() {
 
 
 
-function overrideApplyToDir(dir) {
-  gApplyToDirOverride = dir;
-}
-
-
-
-
-
-
-
-
-
 
 
 
@@ -1720,10 +1706,10 @@ function runUpdateUsingUpdater(aExpectedStatus, aSwitchApp, aExpectedExitValue) 
 
   let args = [updatesDirPath, applyToDirPath];
   if (aSwitchApp) {
-    args[2] = gApplyToDirOverride || stageDirPath;
+    args[2] = stageDirPath;
     args[3] = "0/replace";
   } else {
-    args[2] = gApplyToDirOverride || applyToDirPath;
+    args[2] = applyToDirPath;
     args[3] = "0";
   }
   args = args.concat([callbackApp.parent.path, callbackApp.path]);
