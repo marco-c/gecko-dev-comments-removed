@@ -10,6 +10,7 @@ import mozfile
 
 from marionette import MarionetteTestCase
 from marionette_driver import Wait
+from marionette_driver.errors import NoSuchWindowException
 
 from firefox_puppeteer.api.prefs import Preferences
 from firefox_puppeteer.api.software_update import SoftwareUpdate
@@ -319,7 +320,9 @@ class UpdateTestCase(FirefoxTestCase):
 
     def download_and_apply_forced_update(self):
         
-        dialog = self.windows.switch_to(lambda win: type(win) is UpdateWizardDialog)
+        dialog = Wait(self.marionette, ignored_exceptions=[NoSuchWindowException]).until(
+            lambda _: self.windows.switch_to(lambda win: type(win) is UpdateWizardDialog)
+        )
 
         
         if self.updates[self.current_update_index]['patch']['is_complete']:
