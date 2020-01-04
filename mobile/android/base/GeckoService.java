@@ -5,34 +5,55 @@
 
 package org.mozilla.gecko;
 
-import android.app.Service;
+import android.app.IntentService;
 import android.content.Intent;
-import android.os.IBinder;
+import android.util.Log;
 
-public class GeckoService extends Service {
+public class GeckoService extends IntentService {
+
     private static final String LOGTAG = "GeckoService";
+    private static final boolean DEBUG = false;
 
-    @Override
+
+    public GeckoService() {
+        super("GeckoService");
+    }
+
+    @Override 
     public void onCreate() {
         GeckoAppShell.ensureCrashHandling();
         GeckoAppShell.setApplicationContext(getApplicationContext());
 
         super.onCreate();
 
+        if (DEBUG) {
+            Log.d(LOGTAG, "Created");
+        }
         GeckoThread.ensureInit( null,  null);
         GeckoThread.launch();
     }
 
-    @Override
+    @Override 
     public void onDestroy() {
         
         
 
+        if (DEBUG) {
+            Log.d(LOGTAG, "Destroyed");
+        }
         super.onDestroy();
     }
 
-    @Override
-    public IBinder onBind(Intent intent) {
-        return null;
+    @Override 
+    protected void onHandleIntent(final Intent intent) {
+
+        if (intent == null) {
+            return;
+        }
+
+        
+        if (DEBUG) {
+            Log.d(LOGTAG, "Handling " + intent.getAction());
+        }
     }
 }
