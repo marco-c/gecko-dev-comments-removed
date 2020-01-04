@@ -923,14 +923,12 @@ nsHttpTransaction::Close(nsresult reason)
             PR_Now(), 0, EmptyCString());
     }
 
-    
-    
-    bool connReused = false;
-    if (mConnection)
-        connReused = mConnection->IsReused();
     mConnected = false;
     mTunnelProvider = nullptr;
 
+    
+    
+    
     
     
     
@@ -977,7 +975,8 @@ nsHttpTransaction::Close(nsresult reason)
             mSentData && (!mConnection || mConnection->BytesWritten());
 
         if (!mReceivedData &&
-            (!reallySentData || connReused || mPipelinePosition)) {
+            ((mRequestHead && mRequestHead->IsSafeMethod()) ||
+             !reallySentData)) {
             
             
 
