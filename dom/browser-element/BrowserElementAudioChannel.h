@@ -70,6 +70,13 @@ private:
                              AudioChannel aAudioChannel,
                              const nsAString& aManifestURL);
 
+  bool IsSystemAppWindow(nsPIDOMWindow* aWindow) const;
+
+  
+  
+  nsresult IsFromNestedFrame(nsISupports* aSubject,
+                             bool& aIsNested) const;
+
   ~BrowserElementAudioChannel();
 
   nsresult Initialize();
