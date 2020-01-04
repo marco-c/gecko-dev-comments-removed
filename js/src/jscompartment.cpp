@@ -158,14 +158,14 @@ JSRuntime::createJitRuntime(JSContext* cx)
 
     MOZ_ASSERT(!jitRuntime_);
 
-    jit::JitRuntime* jrt = cx->new_<jit::JitRuntime>();
+    jit::JitRuntime* jrt = cx->new_<jit::JitRuntime>(cx->runtime());
     if (!jrt)
         return nullptr;
 
     
     
     
-    JitRuntime::AutoPreventBackedgePatching apbp(jrt);
+    JitRuntime::AutoPreventBackedgePatching apbp(cx->runtime(), jrt);
     jitRuntime_ = jrt;
 
     if (!jitRuntime_->initialize(cx)) {
