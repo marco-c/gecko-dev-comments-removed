@@ -468,7 +468,6 @@ PLDHashTable::FindFreeEntry(PLDHashNumber aKeyHash)
   }
 
   
-  return nullptr;
 }
 
 bool
@@ -846,4 +845,3 @@ PLDHashTable::MarkImmutable()
   mChecker.SetNonWritable();
 }
 #endif
-
