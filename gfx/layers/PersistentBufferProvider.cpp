@@ -40,6 +40,11 @@ PersistentBufferProviderBasic::ReturnDrawTarget(already_AddRefed<gfx::DrawTarget
 {
   RefPtr<gfx::DrawTarget> dt(aDT);
   MOZ_ASSERT(mDrawTarget == dt);
+  if (dt) {
+    
+    
+    dt->Flush();
+  }
   return true;
 }
 
@@ -205,10 +210,12 @@ PersistentBufferProviderShared::ReturnDrawTarget(already_AddRefed<gfx::DrawTarge
 
   mBack->Unlock();
 
-  if (!mBuffer && mFront && !mFront->IsLocked()) {
-    mBuffer.swap(mFront);
+  if (mFront != mBack && !mBuffers.Contains(mFront)) {
+    mBuffers.AppendElement(mFront);
   }
 
+  
+  
   mFront = mBack;
 
   return true;
