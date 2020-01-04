@@ -197,15 +197,6 @@ public:
 
   virtual bool OnThread() = 0;
 
-  
-  virtual void SetInputListener(AudioDataListener *aListener) {
-    mAudioInput = aListener;
-  }
-  
-  virtual void RemoveInputListener(AudioDataListener *aListener) {
-    mAudioInput = nullptr;
-  }
-
 protected:
   GraphTime StateComputedTime() const;
 
@@ -235,9 +226,6 @@ protected:
   };
   
   WaitState mWaitState;
-
-  
-  AudioDataListener *mAudioInput;
 
   
   
@@ -421,6 +409,17 @@ public:
                      uint32_t aFrames,
                      uint32_t aSampleRate) override;
 
+  
+  virtual void SetInputListener(AudioDataListener *aListener) {
+    MOZ_ASSERT(OnThread());
+    mAudioInput = aListener;
+  }
+  
+  virtual void RemoveInputListener(AudioDataListener *aListener) {
+    MOZ_ASSERT(OnThread());
+    mAudioInput = nullptr;
+  }
+
   AudioCallbackDriver* AsAudioCallbackDriver() override {
     return this;
   }
@@ -486,6 +485,9 @@ private:
   
 
   uint32_t mSampleRate;
+  
+
+  uint32_t mInputChannels;
   
 
 

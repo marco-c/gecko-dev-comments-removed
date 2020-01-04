@@ -375,14 +375,16 @@ MediaEngineWebRTCMicrophoneSource::Start(SourceMediaStream *aStream,
   if (mVoEBase->StartReceive(mChannel)) {
     return NS_ERROR_FAILURE;
   }
+
+  
+  mAudioInput->StartRecording(aStream->Graph(), mListener);
+
   if (mVoEBase->StartSend(mChannel)) {
     return NS_ERROR_FAILURE;
   }
 
   
   mVoERender->RegisterExternalMediaProcessing(mChannel, webrtc::kRecordingPerChannel, *this);
-
-  mAudioInput->StartRecording(aStream->Graph(), mListener);
 
   return NS_OK;
 }
