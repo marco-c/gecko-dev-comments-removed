@@ -262,9 +262,6 @@
 
 
 
-#define _EVENT_HAVE_SYSCTL 1
-
-
 
 
 
@@ -299,9 +296,6 @@
 
 
 #define _EVENT_HAVE_SYS_STAT_H 1
-
-
-#define _EVENT_HAVE_SYS_SYSCTL_H 1
 
 
 #define _EVENT_HAVE_SYS_TIME_H 1
