@@ -2745,7 +2745,7 @@ nsXMLHttpRequest::Send(nsIVariant* aVariant, const Nullable<RequestBody>& aBody)
 
     
     nsCOMPtr<nsILoadInfo> loadInfo = mChannel->GetLoadInfo();
-    static_cast<LoadInfo*>(loadInfo.get())->SetIncludeCookiesSecFlag();
+    static_cast<net::LoadInfo*>(loadInfo.get())->SetIncludeCookiesSecFlag();
   }
 
   
@@ -2851,7 +2851,7 @@ nsXMLHttpRequest::Send(nsIVariant* aVariant, const Nullable<RequestBody>& aBody)
   
   
   
-  nsCOMPtr<nsIStreamListener> listener = new nsStreamListenerWrapper(this);
+  nsCOMPtr<nsIStreamListener> listener = new net::nsStreamListenerWrapper(this);
   rv = mChannel->AsyncOpen2(listener);
   listener = nullptr;
 
