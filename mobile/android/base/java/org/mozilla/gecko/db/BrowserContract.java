@@ -533,7 +533,15 @@ public class BrowserContract {
 
 
 
-            FEED_SUBSCRIPTION("feed_subscription");
+            FEED_SUBSCRIPTION("feed_subscription"),
+
+            
+
+
+
+
+
+            READER_VIEW("reader_view");
 
             private final String dbValue;
 
