@@ -505,7 +505,7 @@ public:
   
 
 
-  nsAutoPtr<LayerUserData> RemoveUserData(void* aKey);
+  UniquePtr<LayerUserData> RemoveUserData(void* aKey);
 
   
 
@@ -1462,7 +1462,7 @@ public:
   
 
 
-  nsAutoPtr<LayerUserData> RemoveUserData(void* aKey);
+  UniquePtr<LayerUserData> RemoveUserData(void* aKey);
   
 
 
