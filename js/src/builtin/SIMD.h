@@ -755,7 +755,7 @@ namespace js {
 
 
 
-enum class SimdType : uint8_t {
+enum class SimdType {
     Int8x16   = JS_SIMDTYPEREPR_INT8X16,
     Int16x8   = JS_SIMDTYPEREPR_INT16X8,
     Int32x4   = JS_SIMDTYPEREPR_INT32X4,
