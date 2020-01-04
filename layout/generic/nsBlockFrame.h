@@ -454,6 +454,15 @@ protected:
 
   bool IsVisualFormControl(nsPresContext* aPresContext);
 
+  
+
+
+
+
+
+  void CreateBulletFrameForListItem(bool aCreateBulletList,
+                                    bool aListStylePositionInside);
+
 public:
   
 

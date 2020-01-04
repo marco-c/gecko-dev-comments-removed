@@ -1299,6 +1299,14 @@ private:
 
   
   
+  nsIFrame* ConstructDetailsFrame(nsFrameConstructorState& aState,
+                                  FrameConstructionItem& aItem,
+                                  nsContainerFrame* aParentFrame,
+                                  const nsStyleDisplay* aStyleDisplay,
+                                  nsFrameItems& aFrameItems);
+
+  
+  
   static const FrameConstructionData* FindTextData(nsIFrame* aParentFrame);
 
   void ConstructTextFrame(const FrameConstructionData* aData,

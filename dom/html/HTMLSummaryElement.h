@@ -30,6 +30,14 @@ public:
 
   nsresult Clone(NodeInfo* aNodeInfo, nsINode** aResult) const override;
 
+  
+  
+  bool IsMainSummary() const;
+
+  
+  
+  HTMLDetailsElement* GetDetails() const;
+
 protected:
   virtual ~HTMLSummaryElement();
 
