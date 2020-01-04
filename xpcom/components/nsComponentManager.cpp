@@ -79,6 +79,7 @@
 #include "mozilla/Omnijar.h"
 
 #include "mozilla/Logging.h"
+#include "LogModulePrefWatcher.h"
 
 using namespace mozilla;
 
@@ -448,6 +449,20 @@ nsComponentManagerImpl::Init()
   nsCategoryManager::GetSingleton()->SuppressNotifications(false);
 
   RegisterWeakMemoryReporter(this);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  LogModulePrefWatcher::RegisterPrefWatcher();
 #endif
 
   

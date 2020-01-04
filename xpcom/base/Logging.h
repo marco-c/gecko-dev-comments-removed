@@ -45,6 +45,11 @@ enum class LogLevel {
   Verbose,
 };
 
+
+
+
+LogLevel ToLogLevel(int32_t aLevel);
+
 class LogModule
 {
 public:
@@ -73,6 +78,11 @@ public:
 
 
   LogLevel Level() const { return mLevel; }
+
+  
+
+
+  void SetLevel(LogLevel level) { mLevel = level; }
 
 private:
   friend class LogModuleManager;

@@ -19,10 +19,8 @@ const uint32_t kInitialModuleCount = 256;
 
 namespace mozilla {
 
-
-
 LogLevel
-Clamp(int32_t aLevel)
+ToLogLevel(int32_t aLevel)
 {
   aLevel = std::min(aLevel, static_cast<int32_t>(LogLevel::Verbose));
   aLevel = std::max(aLevel, static_cast<int32_t>(LogLevel::Disabled));
@@ -57,7 +55,7 @@ public:
       
       
       
-      LogLevel logLevel = Clamp(prModule->level);
+      LogLevel logLevel = ToLogLevel(prModule->level);
       module = new LogModule(logLevel);
       mModules.Put(aName, module);
     }
