@@ -48,7 +48,7 @@ function run_test()
 add_task(function* test_execute()
 {
   
-  for (let [, transition] in Iterator(transitions)) {
+  for (let transition of transitions) {
     yield PlacesTestUtils.addVisits({
       uri: uri("http://" + transition + ".mozilla.org/"),
       transition: transition
