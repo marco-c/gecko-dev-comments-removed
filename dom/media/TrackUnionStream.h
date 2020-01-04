@@ -54,10 +54,10 @@ protected:
 
   
   
-  uint32_t AddTrack(MediaInputPort* aPort, StreamBuffer::Track* aTrack,
+  uint32_t AddTrack(MediaInputPort* aPort, StreamTracks::Track* aTrack,
                     GraphTime aFrom);
   void EndTrack(uint32_t aIndex);
-  void CopyTrackData(StreamBuffer::Track* aInputTrack,
+  void CopyTrackData(StreamTracks::Track* aInputTrack,
                      uint32_t aMapIndex, GraphTime aFrom, GraphTime aTo,
                      bool* aOutputTrackFinished);
 

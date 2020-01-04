@@ -16,7 +16,7 @@
 #include "AudioStream.h"
 #include "nsTArray.h"
 #include "nsIRunnable.h"
-#include "StreamBuffer.h"
+#include "StreamTracks.h"
 #include "VideoFrameContainer.h"
 #include "VideoSegment.h"
 #include "MainThreadUtils.h"
@@ -541,7 +541,7 @@ public:
   
 
 
-  TrackRate GraphRate() { return mBuffer.GraphRate(); }
+  TrackRate GraphRate() { return mTracks.GraphRate(); }
 
   
   
@@ -674,9 +674,9 @@ public:
 
 
   virtual void DestroyImpl();
-  StreamTime GetBufferEnd() { return mBuffer.GetEnd(); }
+  StreamTime GetTracksEnd() { return mTracks.GetEnd(); }
 #ifdef DEBUG
-  void DumpTrackInfo() { return mBuffer.DumpTrackInfo(); }
+  void DumpTrackInfo() { return mTracks.DumpTrackInfo(); }
 #endif
   void SetAudioOutputVolumeImpl(void* aKey, float aVolume);
   void AddAudioOutputImpl(void* aKey);
@@ -713,36 +713,36 @@ public:
   {
     return mConsumers.Length();
   }
-  StreamBuffer& GetStreamBuffer() { return mBuffer; }
-  GraphTime GetStreamBufferStartTime() { return mBufferStartTime; }
+  StreamTracks& GetStreamTracks() { return mTracks; }
+  GraphTime GetStreamTracksStartTime() { return mTracksStartTime; }
 
   double StreamTimeToSeconds(StreamTime aTime)
   {
     NS_ASSERTION(0 <= aTime && aTime <= STREAM_TIME_MAX, "Bad time");
-    return static_cast<double>(aTime)/mBuffer.GraphRate();
+    return static_cast<double>(aTime)/mTracks.GraphRate();
   }
   int64_t StreamTimeToMicroseconds(StreamTime aTime)
   {
     NS_ASSERTION(0 <= aTime && aTime <= STREAM_TIME_MAX, "Bad time");
-    return (aTime*1000000)/mBuffer.GraphRate();
+    return (aTime*1000000)/mTracks.GraphRate();
   }
   StreamTime SecondsToNearestStreamTime(double aSeconds)
   {
     NS_ASSERTION(0 <= aSeconds && aSeconds <= TRACK_TICKS_MAX/TRACK_RATE_MAX,
                  "Bad seconds");
-    return mBuffer.GraphRate() * aSeconds + 0.5;
+    return mTracks.GraphRate() * aSeconds + 0.5;
   }
   StreamTime MicrosecondsToStreamTimeRoundDown(int64_t aMicroseconds) {
-    return (aMicroseconds*mBuffer.GraphRate())/1000000;
+    return (aMicroseconds*mTracks.GraphRate())/1000000;
   }
 
   TrackTicks TimeToTicksRoundUp(TrackRate aRate, StreamTime aTime)
   {
-    return RateConvertTicksRoundUp(aRate, mBuffer.GraphRate(), aTime);
+    return RateConvertTicksRoundUp(aRate, mTracks.GraphRate(), aTime);
   }
   StreamTime TicksToTimeRoundDown(TrackRate aRate, TrackTicks aTicks)
   {
-    return RateConvertTicksRoundDown(mBuffer.GraphRate(), aRate, aTicks);
+    return RateConvertTicksRoundDown(mTracks.GraphRate(), aRate, aTicks);
   }
   
 
@@ -773,9 +773,9 @@ public:
   
 
 
-  StreamBuffer::Track* FindTrack(TrackID aID);
+  StreamTracks::Track* FindTrack(TrackID aID);
 
-  StreamBuffer::Track* EnsureTrack(TrackID aTrack);
+  StreamTracks::Track* EnsureTrack(TrackID aTrack);
 
   virtual void ApplyTrackDisabling(TrackID aTrackID, MediaSegment* aSegment, MediaSegment* aRawSegment = nullptr);
 
@@ -808,8 +808,8 @@ public:
 protected:
   void AdvanceTimeVaryingValuesToCurrentTime(GraphTime aCurrentTime, GraphTime aBlockedTime)
   {
-    mBufferStartTime += aBlockedTime;
-    mBuffer.ForgetUpTo(aCurrentTime - mBufferStartTime);
+    mTracksStartTime += aBlockedTime;
+    mTracks.ForgetUpTo(aCurrentTime - mTracksStartTime);
   }
 
   void NotifyMainThreadListeners()
@@ -839,11 +839,11 @@ protected:
   
   
   
-  StreamBuffer mBuffer;
+  StreamTracks mTracks;
   
   
   
-  GraphTime mBufferStartTime;
+  GraphTime mTracksStartTime;
 
   
   struct AudioOutput {
