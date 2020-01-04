@@ -267,6 +267,7 @@ DevToolsLoader.prototype = {
 
     
     this._provider.invisibleToDebugger = this.invisibleToDebugger;
+    
     this._provider.globals = {
       isWorker: false,
       reportError: Cu.reportError,
