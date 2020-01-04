@@ -308,6 +308,22 @@ JSTerm.prototype = {
       return;
     }
     let errorMessage = response.exceptionMessage;
+    let errorDocURL = response.exceptionDocURL;
+
+    let errorDocLink;
+    if (errorDocURL) {
+      errorMessage += " ";
+      errorDocLink = this.hud.document.createElementNS(XHTML_NS, "a");
+      errorDocLink.className = "learn-more-link webconsole-learn-more-link";
+      errorDocLink.textContent = "[" + l10n.getStr("webConsoleMoreInfoLabel") + "]";
+      errorDocLink.title = errorDocURL;
+      errorDocLink.href = "#";
+      errorDocLink.draggable = false;
+      errorDocLink.addEventListener("click", () => {
+        this.hud.owner.openLink(errorDocURL);
+      });
+    }
+
     
     
     if (typeof(response.exception) === "string") {
@@ -356,7 +372,7 @@ JSTerm.prototype = {
       return;
     }
 
-    let msg = new Messages.JavaScriptEvalOutput(response, errorMessage);
+    let msg = new Messages.JavaScriptEvalOutput(response, errorMessage, errorDocLink);
     this.hud.output.addMessage(msg);
 
     if (callback) {
