@@ -152,6 +152,7 @@ user_pref("layout.css.report_errors", true);
 
 
 user_pref("layout.css.grid.enabled", true);
+user_pref("layout.css.grid-template-subgrid-value.enabled", true);
 
 
 user_pref("layout.css.contain.enabled", true);
