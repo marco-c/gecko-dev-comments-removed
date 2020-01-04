@@ -203,6 +203,12 @@ HeapSnapshot::saveNode(const protobuf::Node& node)
   NodeId id = node.id();
 
   
+  
+  
+  if (NS_WARN_IF(!JS::Value::isNumberRepresentable(id)))
+    return false;
+
+  
   if (NS_WARN_IF(nodes.has(id)))
     return false;
 

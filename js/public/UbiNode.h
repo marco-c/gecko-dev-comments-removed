@@ -243,7 +243,7 @@ class BaseStackFrame {
 
     
     
-    virtual uint64_t identifier() const { return reinterpret_cast<uint64_t>(ptr); }
+    virtual uint64_t identifier() const { return uint64_t(uintptr_t(ptr)); }
 
     
     virtual StackFrame parent() const = 0;
@@ -418,7 +418,11 @@ class StackFrame : public JS::Traceable {
     
 
     void trace(JSTracer* trc) { base()->trace(trc); }
-    uint64_t identifier() const { return base()->identifier(); }
+    uint64_t identifier() const {
+        auto id = base()->identifier();
+        MOZ_ASSERT(JS::Value::isNumberRepresentable(id));
+        return id;
+    }
     uint32_t line() const { return base()->line(); }
     uint32_t column() const { return base()->column(); }
     AtomOrTwoByteChars source() const { return base()->source(); }
@@ -564,7 +568,7 @@ class Base {
     
     
     using Id = uint64_t;
-    virtual Id identifier() const { return reinterpret_cast<Id>(ptr); }
+    virtual Id identifier() const { return Id(uintptr_t(ptr)); }
 
     
     
@@ -790,7 +794,11 @@ class Node {
     }
 
     using Id = Base::Id;
-    Id identifier() const { return base()->identifier(); }
+    Id identifier() const {
+        auto id = base()->identifier();
+        MOZ_ASSERT(JS::Value::isNumberRepresentable(id));
+        return id;
+    }
 
     
     
