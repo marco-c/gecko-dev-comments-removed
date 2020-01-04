@@ -71,6 +71,10 @@
 #include "SharedMemoryBasic.h"          
 #include "ScrollSnap.h"                 
 #include "WheelScrollAnimation.h"
+#if defined(MOZ_ANDROID_APZ)
+#include "GeneratedJNIWrappers.h"
+#include "FlingOverScrollerAnimation.h"
+#endif 
 
 #define ENABLE_APZC_LOGGING 0
 
@@ -96,6 +100,9 @@ typedef GeckoContentController::APZStateChange APZStateChange;
 typedef mozilla::gfx::Point Point;
 typedef mozilla::gfx::Matrix4x4 Matrix4x4;
 using mozilla::gfx::PointTyped;
+
+
+
 
 
 
@@ -436,6 +443,7 @@ private:
   AsyncPanZoomController::PanZoomState mInitialState;
 };
 
+#if !defined(MOZ_ANDROID_APZ)
 class FlingAnimation: public AsyncPanZoomAnimation {
 public:
   FlingAnimation(AsyncPanZoomController& aApzc,
@@ -604,6 +612,7 @@ private:
   RefPtr<const OverscrollHandoffChain> mOverscrollHandoffChain;
   RefPtr<const AsyncPanZoomController> mScrolledApzc;
 };
+#endif
 
 class ZoomAnimation: public AsyncPanZoomAnimation {
 public:
@@ -2610,10 +2619,25 @@ void AsyncPanZoomController::AcceptFling(FlingHandoffState& aHandoffState) {
   ScrollSnapToDestination();
   if (mState != SMOOTH_SCROLL) {
     SetState(FLING);
+#if defined(MOZ_ANDROID_APZ)
+    if (!mOverScroller) {
+      widget::sdk::OverScroller::LocalRef scroller;
+      if (widget::sdk::OverScroller::New(widget::GeckoAppShell::GetApplicationContext(), &scroller) != NS_OK) {
+        APZC_LOG("%p Failed to create Android OverScroller\n", this);
+        return;
+      }
+      mOverScroller = scroller;
+    }
+    FlingOverScrollerAnimation *fling = new FlingOverScrollerAnimation(*this,
+        mOverScroller,
+        aHandoffState.mChain,
+        aHandoffState.mScrolledApzc);
+#else
     FlingAnimation *fling = new FlingAnimation(*this,
         aHandoffState.mChain,
         !aHandoffState.mIsHandoff,  
         aHandoffState.mScrolledApzc);
+#endif
     StartAnimation(fling);
   }
 }
