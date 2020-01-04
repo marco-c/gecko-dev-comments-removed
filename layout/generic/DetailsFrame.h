@@ -35,7 +35,6 @@ public:
     return MakeFrameName(NS_LITERAL_STRING("Details"), aResult);
   }
 #endif
-
 };
 
 #endif 
