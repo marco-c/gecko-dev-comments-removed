@@ -544,14 +544,14 @@ var BrowserApp = {
       ExternalApps.init();
     }, NativeWindow, "contextmenus");
 
+    InitLater(() => {
+      let mm = window.getGroupMessageManager("browsers");
+      mm.loadFrameScript("chrome://browser/content/content.js", true);
+    });
+
     if (AppConstants.ACCESSIBILITY) {
       InitLater(() => AccessFu.attach(window), window, "AccessFu");
     }
-
-    
-    
-    let mm = window.getGroupMessageManager("browsers");
-    mm.loadFrameScript("chrome://browser/content/content.js", true);
 
     
     
@@ -1554,45 +1554,10 @@ var BrowserApp = {
             aAllowZoom && shouldZoom && !ViewportHandler.isViewportSpecified(aBrowser.contentWindow));
       }
     } else {
-      let dwu = aBrowser.contentWindow.QueryInterface(Ci.nsIInterfaceRequestor).getInterface(Ci.nsIDOMWindowUtils);
-      if (!dwu) {
-        return;
-      }
-
-      let apzFlushDone = function() {
-        Services.obs.removeObserver(apzFlushDone, "apz-repaints-flushed", false);
-        dwu.zoomToFocusedInput();
-      };
-
-      let paintDone = function() {
-        window.removeEventListener("MozAfterPaint", paintDone, false);
-        if (dwu.flushApzRepaints()) {
-          Services.obs.addObserver(apzFlushDone, "apz-repaints-flushed", false);
-        } else {
-          apzFlushDone();
-        }
-      };
-
-      let gotResizeWindow = false;
-      let resizeWindow = function(e) {
-        gotResizeWindow = true;
-        aBrowser.contentWindow.removeEventListener("resize", resizeWindow, false);
-        if (dwu.isMozAfterPaintPending) {
-          window.addEventListener("MozAfterPaint", paintDone, false);
-        } else {
-          paintDone();
-        }
-      }
-
-      aBrowser.contentWindow.addEventListener("resize", resizeWindow, false);
-
       
       
       setTimeout(function(e) {
-        if (!gotResizeWindow) {
-          aBrowser.contentWindow.removeEventListener("resize", resizeWindow, false);
-          dwu.zoomToFocusedInput();
-        }
+        aBrowser.contentWindow.QueryInterface(Ci.nsIInterfaceRequestor).getInterface(Ci.nsIDOMWindowUtils).zoomToFocusedInput();
       }, 500);
     }
   },
@@ -3414,8 +3379,7 @@ Tab.prototype = {
       let manifest = appsService.getAppByManifestURL(BrowserApp.manifestUrl);
       if (manifest) {
         let app = manifest.QueryInterface(Ci.mozIApplication);
-        this.browser.docShell.frameType = Ci.nsIDocShell.FRAME_TYPE_APP;
-        this.browser.docShell.setOriginAttributes({appId: app.localId});
+        this.browser.docShell.setIsApp(app.localId);
       }
     }
 
@@ -6412,14 +6376,18 @@ var IdentityHandler = {
 
       
       let supplemental = "";
-      if (iData.city)
+      if (iData.city) {
         supplemental += iData.city + "\n";
-      if (iData.state && iData.country)
+      }
+      if (iData.state && iData.country) {
         supplemental += Strings.browser.formatStringFromName("identity.identified.state_and_country", [iData.state, iData.country], 2);
-      else if (iData.state) 
+        result.country = iData.country;
+      } else if (iData.state) { 
         supplemental += iData.state;
-      else if (iData.country) 
+      } else if (iData.country) { 
         supplemental += iData.country;
+        result.country = iData.country;
+      }
       result.supplemental = supplemental;
 
       return result;
