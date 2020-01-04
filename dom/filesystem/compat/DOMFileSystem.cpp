@@ -5,12 +5,14 @@
 
 
 #include "DOMFileSystem.h"
+#include "RootDirectoryEntry.h"
 #include "mozilla/dom/DOMFileSystemBinding.h"
+#include "nsContentUtils.h"
 
 namespace mozilla {
 namespace dom {
 
-NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(DOMFileSystem, mParent)
+NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(DOMFileSystem, mParent, mRoot)
 
 NS_IMPL_CYCLE_COLLECTING_ADDREF(DOMFileSystem)
 NS_IMPL_CYCLE_COLLECTING_RELEASE(DOMFileSystem)
@@ -20,9 +22,39 @@ NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(DOMFileSystem)
   NS_INTERFACE_MAP_ENTRY(nsISupports)
 NS_INTERFACE_MAP_END
 
-DOMFileSystem::DOMFileSystem(nsIGlobalObject* aGlobal)
+ already_AddRefed<DOMFileSystem>
+DOMFileSystem::Create(nsIGlobalObject* aGlobalObject)
+
+{
+  MOZ_ASSERT(aGlobalObject);
+
+
+  nsID id;
+  nsresult rv = nsContentUtils::GenerateUUIDInPlace(id);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return nullptr;
+  }
+
+  char chars[NSID_LENGTH];
+  id.ToProvidedString(chars);
+
+  
+  
+  nsAutoCString name(Substring(chars + 1, chars + NSID_LENGTH - 2));
+
+  RefPtr<DOMFileSystem> fs =
+    new DOMFileSystem(aGlobalObject, NS_ConvertUTF8toUTF16(name));
+
+  return fs.forget();
+}
+
+DOMFileSystem::DOMFileSystem(nsIGlobalObject* aGlobal,
+                             const nsAString& aName)
   : mParent(aGlobal)
-{}
+  , mName(aName)
+{
+  MOZ_ASSERT(aGlobal);
+}
 
 DOMFileSystem::~DOMFileSystem()
 {}
@@ -31,6 +63,13 @@ JSObject*
 DOMFileSystem::WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto)
 {
   return DOMFileSystemBinding::Wrap(aCx, this, aGivenProto);
+}
+
+void
+DOMFileSystem::CreateRoot(const Sequence<RefPtr<Entry>>& aEntries)
+{
+  MOZ_ASSERT(!mRoot);
+  mRoot = new RootDirectoryEntry(mParent, aEntries, this);
 }
 
 } 
