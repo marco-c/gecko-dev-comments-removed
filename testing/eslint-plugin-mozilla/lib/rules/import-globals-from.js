@@ -23,25 +23,6 @@ module.exports = function(context) {
   
   
 
-  function importGlobalsFrom(filePath) {
-    
-    
-    var content = fs.readFileSync(filePath, "utf8");
-
-    
-    var ast = helpers.getAST(content);
-    var globalVars = helpers.getGlobals(ast);
-
-    for (var i = 0; i < globalVars.length; i++) {
-      var varName = globalVars[i];
-      helpers.addVarToScope(varName, context);
-    }
-  }
-
-  
-  
-  
-
   return {
     Program: function(node) {
       var comments = context.getSourceCode().getAllComments();
@@ -60,7 +41,8 @@ module.exports = function(context) {
           }
 
           try {
-            importGlobalsFrom(filePath);
+            let globals = helpers.getGlobalsForFile(filePath);
+            helpers.addGlobals(globals, context);
           } catch (e) {
             context.report(
               node,
