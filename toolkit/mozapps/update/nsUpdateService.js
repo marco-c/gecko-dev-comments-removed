@@ -1034,56 +1034,6 @@ function isServiceInstalled() {
 
 
 
-function cleanUpMozUpdaterDirs() {
-  try {
-    
-    var mozUpdaterDir = getUpdatesDir();
-    mozUpdaterDir.append("MozUpdater");
-    if (mozUpdaterDir.exists()) {
-      LOG("cleanUpMozUpdaterDirs - removing MozUpdater directory");
-      mozUpdaterDir.remove(true);
-    }
-  } catch (e) {
-    LOG("cleanUpMozUpdaterDirs - Exception: " + e);
-  }
-
-  try {
-    var tmpDir = Services.dirsvc.get("TmpD", Ci.nsIFile);
-
-    
-    
-    
-    var mozUpdaterDir1 = tmpDir.clone();
-    mozUpdaterDir1.append("MozUpdater-1");
-    
-    
-    if (mozUpdaterDir1.exists()) {
-      LOG("cleanUpMozUpdaterDirs - Removing top level tmp MozUpdater-i " +
-          "directories");
-      let i = 0;
-      let dirEntries = tmpDir.directoryEntries;
-      while (dirEntries.hasMoreElements() && i < 10) {
-        let file = dirEntries.getNext().QueryInterface(Ci.nsILocalFile);
-        if (file.leafName.startsWith("MozUpdater-") && file.leafName != "MozUpdater-1") {
-          file.remove(true);
-          i++;
-        }
-      }
-      
-      
-      if (i < 10) {
-        mozUpdaterDir1.remove(true);
-      }
-    }
-  } catch (e) {
-    LOG("cleanUpMozUpdaterDirs - Exception: " + e);
-  }
-}
-
-
-
-
-
 
 
 
@@ -1137,6 +1087,7 @@ function cleanUpUpdatesDir(aRemovePatchFiles = true) {
         }
       }
 
+      
       
       
       
@@ -2150,10 +2101,6 @@ UpdateService.prototype = {
                      createInstance(Ci.nsIUpdatePrompt);
       prompter.showUpdateError(update);
     }
-
-    
-    
-    cleanUpMozUpdaterDirs();
   },
 
   
