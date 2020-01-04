@@ -20,6 +20,7 @@
 #include "nsINetworkInterceptController.h"
 #include "nsIMutableArray.h"
 #include "nsIScriptError.h"
+#include "nsISimpleEnumerator.h"
 #include "nsIUploadChannel2.h"
 #include "nsPIDOMWindow.h"
 #include "nsScriptLoader.h"
@@ -3760,7 +3761,8 @@ ServiceWorkerManager::GetClient(nsIPrincipal* aPrincipal,
 void
 ServiceWorkerManager::GetAllClients(nsIPrincipal* aPrincipal,
                                     const nsCString& aScope,
-                                    nsTArray<ServiceWorkerClientInfo>& aControlledDocuments)
+                                    bool aIncludeUncontrolled,
+                                    nsTArray<ServiceWorkerClientInfo>& aDocuments)
 {
   MOZ_ASSERT(aPrincipal);
 
@@ -3772,21 +3774,65 @@ ServiceWorkerManager::GetAllClients(nsIPrincipal* aPrincipal,
     return;
   }
 
-  for (auto iter = mControlledDocuments.Iter(); !iter.Done(); iter.Next()) {
-    ServiceWorkerRegistrationInfo* thisRegistration = iter.UserData();
-    MOZ_ASSERT(thisRegistration);
-    if (!registration->mScope.Equals(thisRegistration->mScope)) {
-      continue;
+  nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
+  if (NS_WARN_IF(!obs)) {
+    return;
+  }
+
+  nsCOMPtr<nsISimpleEnumerator> enumerator;
+  nsresult rv = obs->EnumerateObservers("service-worker-get-client",
+                                        getter_AddRefs(enumerator));
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return;
+  }
+
+  auto ProcessDocument = [&aDocuments](nsIPrincipal* aPrincipal, nsIDocument* aDoc) {
+    if (!aDoc || !aDoc->GetWindow()) {
+      return;
     }
 
-    nsCOMPtr<nsIDocument> document = do_QueryInterface(iter.Key());
-
-    if (!document || !document->GetWindow()) {
-      continue;
+    bool equals = false;
+    aPrincipal->Equals(aDoc->NodePrincipal(), &equals);
+    if (!equals) {
+      return;
     }
 
-    ServiceWorkerClientInfo clientInfo(document);
-    aControlledDocuments.AppendElement(clientInfo);
+    if (!Preferences::GetBool("dom.serviceWorkers.testing.enabled") &&
+        !IsFromAuthenticatedOrigin(aDoc)) {
+      return;
+    }
+
+    ServiceWorkerClientInfo clientInfo(aDoc);
+    aDocuments.AppendElement(aDoc);
+  };
+
+  
+  
+  
+  
+  if (aIncludeUncontrolled) {
+    bool loop = true;
+    while (NS_SUCCEEDED(enumerator->HasMoreElements(&loop)) && loop) {
+      nsCOMPtr<nsISupports> ptr;
+      rv = enumerator->GetNext(getter_AddRefs(ptr));
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        continue;
+      }
+
+      nsCOMPtr<nsIDocument> doc = do_QueryInterface(ptr);
+      ProcessDocument(aPrincipal, doc);
+    }
+  } else {
+    for (auto iter = mControlledDocuments.Iter(); !iter.Done(); iter.Next()) {
+      ServiceWorkerRegistrationInfo* thisRegistration = iter.UserData();
+      MOZ_ASSERT(thisRegistration);
+      if (!registration->mScope.Equals(thisRegistration->mScope)) {
+        continue;
+      }
+
+      nsCOMPtr<nsIDocument> doc = do_QueryInterface(iter.Key());
+      ProcessDocument(aPrincipal, doc);
+    }
   }
 }
 
