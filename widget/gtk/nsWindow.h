@@ -457,7 +457,8 @@ private:
 
 #ifdef MOZ_HAVE_SHMIMAGE
     
-    RefPtr<nsShmImage>  mShmImage;
+    RefPtr<nsShmImage>  mFrontShmImage;
+    RefPtr<nsShmImage>  mBackShmImage;
 #endif
 
 #ifdef ACCESSIBILITY
