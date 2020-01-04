@@ -167,11 +167,16 @@ public:
     }
 #endif
   }
+
+  void MaybeProduceMemoryReport();
+
   
 
 
+  bool UpdateMainThreadState();
 
-  void DoIteration();
+  
+
 
   bool OneIteration(GraphTime aStateEnd);
 
