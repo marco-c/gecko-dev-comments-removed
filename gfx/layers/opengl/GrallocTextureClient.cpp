@@ -12,6 +12,7 @@
 #include "mozilla/layers/ISurfaceAllocator.h"
 #include "mozilla/layers/ShadowLayerUtilsGralloc.h"
 #include "gfx2DGlue.h"
+#include "gfxPrefs.h" 
 #include "SharedSurfaceGralloc.h"
 
 #if defined(MOZ_WIDGET_GONK) && ANDROID_VERSION >= 17
