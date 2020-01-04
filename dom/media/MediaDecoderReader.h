@@ -317,11 +317,6 @@ public:
     return &mIsSuspended;
   }
 
-  
-  
-  
-  virtual void SetVideoBlankDecode(bool aIsBlankDecode) {}
-
 protected:
   virtual ~MediaDecoderReader();
 
