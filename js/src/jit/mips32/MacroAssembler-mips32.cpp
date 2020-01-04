@@ -1088,7 +1088,7 @@ MacroAssembler::clampDoubleToUint8(FloatRegister input, Register output)
     Label outOfRange;
 
     branchTruncateDouble(input, output, &outOfRange);
-    asMasm().branch32(Assembler::Above, output, Imm32(255), &outOfRange);
+    branch32(Assembler::Above, output, Imm32(255), &outOfRange);
     {
         
         convertInt32ToDouble(output, ScratchDoubleReg);
@@ -2178,13 +2178,11 @@ MacroAssemblerMIPSCompat::handleFailureWithHandlerTail(void* handler)
 
     
     load32(Address(StackPointer, offsetof(ResumeFromException, kind)), a0);
-    asMasm().branch32(Assembler::Equal, a0, Imm32(ResumeFromException::RESUME_ENTRY_FRAME),
-                      &entryFrame);
-    asMasm().branch32(Assembler::Equal, a0, Imm32(ResumeFromException::RESUME_CATCH), &catch_);
-    asMasm().branch32(Assembler::Equal, a0, Imm32(ResumeFromException::RESUME_FINALLY), &finally);
-    asMasm().branch32(Assembler::Equal, a0, Imm32(ResumeFromException::RESUME_FORCED_RETURN),
-                      &return_);
-    asMasm().branch32(Assembler::Equal, a0, Imm32(ResumeFromException::RESUME_BAILOUT), &bailout);
+    branch32(Assembler::Equal, a0, Imm32(ResumeFromException::RESUME_ENTRY_FRAME), &entryFrame);
+    branch32(Assembler::Equal, a0, Imm32(ResumeFromException::RESUME_CATCH), &catch_);
+    branch32(Assembler::Equal, a0, Imm32(ResumeFromException::RESUME_FINALLY), &finally);
+    branch32(Assembler::Equal, a0, Imm32(ResumeFromException::RESUME_FORCED_RETURN), &return_);
+    branch32(Assembler::Equal, a0, Imm32(ResumeFromException::RESUME_BAILOUT), &bailout);
 
     breakpoint(); 
 
@@ -2238,8 +2236,7 @@ MacroAssemblerMIPSCompat::handleFailureWithHandlerTail(void* handler)
         Label skipProfilingInstrumentation;
         
         AbsoluteAddress addressOfEnabled(GetJitContext()->runtime->spsProfiler().addressOfEnabled());
-        asMasm().branch32(Assembler::Equal, addressOfEnabled, Imm32(0),
-                          &skipProfilingInstrumentation);
+        branch32(Assembler::Equal, addressOfEnabled, Imm32(0), &skipProfilingInstrumentation);
         profilerExitFrame();
         bind(&skipProfilingInstrumentation);
     }
