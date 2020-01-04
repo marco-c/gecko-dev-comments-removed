@@ -232,6 +232,10 @@ EffectCompositor::UpdateEffectProperties(nsStyleContext* aStyleContext,
     return;
   }
 
+  
+  
+  effectSet->MarkCascadeNeedsUpdate();
+
   for (KeyframeEffectReadOnly* effect : *effectSet) {
     effect->UpdateProperties(aStyleContext);
   }
