@@ -369,6 +369,17 @@ private:
     
 
 
+
+
+
+
+
+
+    nsresult ProcessContentSignatureHeader(nsHttpResponseHead *aResponseHead);
+
+    
+
+
     void ProcessSecurityReport(nsresult status);
 
     
