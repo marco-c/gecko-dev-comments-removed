@@ -2983,6 +2983,10 @@ ContentChild::RecvShutdown()
   
   
   
+#if defined(MOZ_CRASHREPORTER)
+  CrashReporter::AnnotateCrashReport(NS_LITERAL_CSTRING("IPCShutdownState"),
+                                     NS_LITERAL_CSTRING("RecvShutdown"));
+#endif
   nsCOMPtr<nsIThread> thread;
   nsresult rv = NS_GetMainThread(getter_AddRefs(thread));
   if (NS_SUCCEEDED(rv) && thread) {
@@ -3030,6 +3034,10 @@ ContentChild::RecvShutdown()
   
   StartForceKillTimer();
 
+#if defined(MOZ_CRASHREPORTER)
+  CrashReporter::AnnotateCrashReport(NS_LITERAL_CSTRING("IPCShutdownState"),
+                                     NS_LITERAL_CSTRING("SendFinishShutdown"));
+#endif
   
   
   Unused << SendFinishShutdown();
