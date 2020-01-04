@@ -8,6 +8,7 @@
 
 
 
+
 "use strict";
 
 var { utils: Cu, classes: Cc, interfaces: Ci } = Components;
@@ -153,6 +154,30 @@ function* uninstallAddon(document, addonId, addonName) {
   ok(!names.includes(addonName),
     "After uninstall, the addon name disappears from the list of addons: "
     + names);
+}
+
+
+
+
+
+
+
+function waitForInitialAddonList(document) {
+  const addonListContainer = document.querySelector("#addons .targets");
+  let addonCount = addonListContainer.querySelectorAll(".target");
+  addonCount = addonCount ? [...addonCount].length : -1;
+  info("Waiting for add-ons to load. Current add-on count: " + addonCount);
+
+  
+  
+  let result;
+  if (addonCount > 0) {
+    info("Actually, the add-ons have already loaded");
+    result = Promise.resolve();
+  } else {
+    result = waitForMutation(addonListContainer, { childList: true });
+  }
+  return result;
 }
 
 
