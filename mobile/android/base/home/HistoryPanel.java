@@ -5,8 +5,11 @@
 
 package org.mozilla.gecko.home;
 
-import java.util.Date;
+import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.EnumSet;
+import java.util.List;
+import java.util.Locale;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -20,7 +23,6 @@ import org.mozilla.gecko.RestrictedProfiles;
 import org.mozilla.gecko.Telemetry;
 import org.mozilla.gecko.TelemetryContract;
 import org.mozilla.gecko.db.BrowserContract.Combined;
-import org.mozilla.gecko.db.BrowserContract.History;
 import org.mozilla.gecko.db.BrowserDB;
 import org.mozilla.gecko.home.HomeContextMenuInfo.RemoveItemType;
 import org.mozilla.gecko.home.HomePager.OnUrlOpenListener;
@@ -34,6 +36,7 @@ import android.database.Cursor;
 import android.graphics.Typeface;
 import android.os.Bundle;
 import android.support.v4.content.Loader;
+import android.support.v4.widget.CursorAdapter;
 import android.text.SpannableStringBuilder;
 import android.text.TextPaint;
 import android.text.method.LinkMovementMethod;
@@ -41,7 +44,6 @@ import android.text.style.ClickableSpan;
 import android.text.style.StyleSpan;
 import android.text.style.UnderlineSpan;
 import android.util.Log;
-import android.util.SparseArray;
 import android.view.ContextMenu;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -59,6 +61,11 @@ public class HistoryPanel extends HomeFragment {
     private static final String LOGTAG = "GeckoHistoryPanel";
 
     
+    private static final long MS_PER_DAY = 86400000;
+    private static final long MS_PER_WEEK = MS_PER_DAY * 7;
+    private static final List<MostRecentSectionRange> recentSectionTimeOffsetList = new ArrayList<>(MostRecentSection.values().length);
+
+    
     private static final int LOADER_ID_HISTORY = 0;
 
     
@@ -66,7 +73,11 @@ public class HistoryPanel extends HomeFragment {
     private final static String FORMAT_S2 = "%2$s";
 
     
-    private HistoryAdapter mAdapter;
+    
+    private static MostRecentSection selected;
+
+    
+    private CursorAdapter mAdapter;
 
     
     private HomeListView mList;
@@ -79,6 +90,24 @@ public class HistoryPanel extends HomeFragment {
 
     
     private CursorLoaderCallbacks mCursorLoaderCallbacks;
+
+    
+    public enum MostRecentSection {
+        TODAY,
+        YESTERDAY,
+        WEEK,
+        THIS_MONTH,
+        MONTH_AGO,
+        TWO_MONTHS_AGO,
+        THREE_MONTHS_AGO,
+        FOUR_MONTHS_AGO,
+        FIVE_MONTHS_AGO,
+        MostRecentSection, OLDER_THAN_SIX_MONTHS
+    };
+
+    protected interface HistoryUrlProvider {
+        public String getURL(int position);
+    }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -93,9 +122,7 @@ public class HistoryPanel extends HomeFragment {
         mList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                position -= mAdapter.getMostRecentSectionsCountBefore(position);
-                final Cursor c = mAdapter.getCursor(position);
-                final String url = c.getString(c.getColumnIndexOrThrow(History.URL));
+                final String url = ((HistoryUrlProvider) mAdapter).getURL(position);
 
                 Telemetry.sendUIEvent(TelemetryContract.Event.LOAD_URL, TelemetryContract.Method.LIST_ITEM);
 
@@ -187,7 +214,10 @@ public class HistoryPanel extends HomeFragment {
         super.onActivityCreated(savedInstanceState);
 
         
-        mAdapter = new HistoryAdapter(getActivity());
+        selected = MostRecentSection.THIS_MONTH;
+
+        
+        mAdapter = new HistoryHeaderListCursorAdapter(getActivity());
         mList.setAdapter(mAdapter);
 
         
@@ -198,23 +228,6 @@ public class HistoryPanel extends HomeFragment {
     @Override
     protected void load() {
         getLoaderManager().initLoader(LOADER_ID_HISTORY, null, mCursorLoaderCallbacks);
-    }
-
-    private static class HistoryCursorLoader extends SimpleCursorLoader {
-        
-        private static final int HISTORY_LIMIT = 100;
-        private final BrowserDB mDB;
-
-        public HistoryCursorLoader(Context context) {
-            super(context);
-            mDB = GeckoProfile.get(context).getDB();
-        }
-
-        @Override
-        public Cursor loadCursor() {
-            final ContentResolver cr = getContext().getContentResolver();
-            return mDB.getRecentHistory(cr, HISTORY_LIMIT);
-        }
     }
 
     private void updateUiFromCursor(Cursor c) {
@@ -314,176 +327,80 @@ public class HistoryPanel extends HomeFragment {
         return ssb;
     }
 
-    private static class HistoryAdapter extends MultiTypeCursorAdapter {
-        private static final int ROW_HEADER = 0;
-        private static final int ROW_STANDARD = 1;
-
-        private static final int[] VIEW_TYPES = new int[] { ROW_STANDARD, ROW_HEADER };
-        private static final int[] LAYOUT_TYPES = new int[] { R.layout.home_item_row, R.layout.home_header_row };
-
-        
-        private static final long MS_PER_DAY = 86400000;
-        private static final long MS_PER_WEEK = MS_PER_DAY * 7;
+    private static void updateRecentSectionOffset(final Context context) {
+        final long now = System.currentTimeMillis();
+        final Calendar cal  = Calendar.getInstance();
+        cal.set(Calendar.HOUR_OF_DAY, 0);
+        cal.set(Calendar.MINUTE, 0);
+        cal.set(Calendar.SECOND, 0);
+        cal.set(Calendar.MILLISECOND, 1);
 
         
-        private static enum MostRecentSection {
-            TODAY,
-            YESTERDAY,
-            WEEK,
-            OLDER
-        };
-
-        private final Context mContext;
+        recentSectionTimeOffsetList.add(MostRecentSection.TODAY.ordinal(),
+                new MostRecentSectionRange(cal.getTimeInMillis(), now, context.getString(R.string.history_today_section)));
+        recentSectionTimeOffsetList.add(MostRecentSection.YESTERDAY.ordinal(),
+                new MostRecentSectionRange(cal.getTimeInMillis() - MS_PER_DAY, cal.getTimeInMillis(), context.getString(R.string.history_yesterday_section)));
+        recentSectionTimeOffsetList.add(MostRecentSection.WEEK.ordinal(),
+                new MostRecentSectionRange(cal.getTimeInMillis() - MS_PER_WEEK, now, context.getString(R.string.history_week_section)));
 
         
-        private final SparseArray<MostRecentSection> mMostRecentSections;
+        cal.add(Calendar.MONTH, 1);
+        cal.set(Calendar.DAY_OF_MONTH, cal.getMinimum(Calendar.DAY_OF_MONTH));
 
-        public HistoryAdapter(Context context) {
-            super(context, null, VIEW_TYPES, LAYOUT_TYPES);
+        
+        for (int i = MostRecentSection.THIS_MONTH.ordinal(); i <= MostRecentSection.OLDER_THAN_SIX_MONTHS.ordinal(); i++) {
+            final long end = cal.getTimeInMillis();
+            cal.add(Calendar.MONTH, -1);
+            final long start = cal.getTimeInMillis();
+            final String displayName = (i != MostRecentSection.OLDER_THAN_SIX_MONTHS.ordinal())
+                    ? cal.getDisplayName(Calendar.MONTH, Calendar.LONG, Locale.getDefault())
+                    : context.getString(R.string.history_older_section);
+            recentSectionTimeOffsetList.add(i, new MostRecentSectionRange(start, end, displayName));
+        }
+    }
 
-            mContext = context;
+    private static class HistoryCursorLoader extends SimpleCursorLoader {
+        
+        private static final int HISTORY_LIMIT = 100;
+        private final BrowserDB mDB;
 
-            
-            mMostRecentSections = new SparseArray<MostRecentSection>();
+        public HistoryCursorLoader(Context context) {
+            super(context);
+            mDB = GeckoProfile.get(context).getDB();
         }
 
         @Override
-        public Object getItem(int position) {
-            final int type = getItemViewType(position);
-
-            
-            if (type == ROW_HEADER) {
-                return null;
-            }
-
-            return super.getItem(position - getMostRecentSectionsCountBefore(position));
+        public Cursor loadCursor() {
+            final ContentResolver cr = getContext().getContentResolver();
+            updateRecentSectionOffset(getContext());
+            MostRecentSectionRange mostRecentSectionRange = recentSectionTimeOffsetList.get(selected.ordinal());
+            return mDB.getRecentHistoryBetweenTime(cr, HISTORY_LIMIT, mostRecentSectionRange.start, mostRecentSectionRange.end);
         }
+    }
 
-        @Override
-        public int getItemViewType(int position) {
-            if (mMostRecentSections.get(position) != null) {
-                return ROW_HEADER;
-            }
+    protected static String getMostRecentSectionTitle(MostRecentSection section) {
+        return recentSectionTimeOffsetList.get(section.ordinal()).displayName;
+    }
 
-            return ROW_STANDARD;
-        }
-
-        @Override
-        public boolean isEnabled(int position) {
-            return (getItemViewType(position) == ROW_STANDARD);
-        }
-
-        @Override
-        public int getCount() {
-            
-            return super.getCount() + mMostRecentSections.size();
-        }
-
-        @Override
-        public Cursor swapCursor(Cursor cursor) {
-            loadMostRecentSections(cursor);
-            Cursor oldCursor = super.swapCursor(cursor);
-            return oldCursor;
-        }
-
-        @Override
-        public void bindView(View view, Context context, int position) {
-            final int type = getItemViewType(position);
-
-            if (type == ROW_HEADER) {
-                final MostRecentSection section = mMostRecentSections.get(position);
-                final TextView row = (TextView) view;
-                row.setText(getMostRecentSectionTitle(section));
-            } else {
-                
-                position -= getMostRecentSectionsCountBefore(position);
-                final Cursor c = getCursor(position);
-                final TwoLinePageRow row = (TwoLinePageRow) view;
-                row.updateFromCursor(c);
+    protected static MostRecentSection getMostRecentSectionForTime(long time) {
+        for (int i = 0; i < MostRecentSection.OLDER_THAN_SIX_MONTHS.ordinal(); i++) {
+            if (time > recentSectionTimeOffsetList.get(i).start) {
+                return MostRecentSection.values()[i];
             }
         }
 
-        private String getMostRecentSectionTitle(MostRecentSection section) {
-            switch (section) {
-            case TODAY:
-                return mContext.getString(R.string.history_today_section);
-            case YESTERDAY:
-                return mContext.getString(R.string.history_yesterday_section);
-            case WEEK:
-                return mContext.getString(R.string.history_week_section);
-            case OLDER:
-                return mContext.getString(R.string.history_older_section);
-            }
+        return MostRecentSection.OLDER_THAN_SIX_MONTHS;
+    }
 
-            throw new IllegalStateException("Unrecognized history section");
-        }
+    private static class MostRecentSectionRange {
+        private final long start;
+        private final long end;
+        private final String displayName;
 
-        private int getMostRecentSectionsCountBefore(int position) {
-            
-            int sectionsBefore = 0;
-
-            final int historySectionsCount = mMostRecentSections.size();
-            for (int i = 0; i < historySectionsCount; i++) {
-                final int sectionPosition = mMostRecentSections.keyAt(i);
-                if (sectionPosition > position) {
-                    break;
-                }
-
-                sectionsBefore++;
-            }
-
-            return sectionsBefore;
-        }
-
-        private static MostRecentSection getMostRecentSectionForTime(long from, long time) {
-            long delta = from - time;
-
-            if (delta < 0) {
-                return MostRecentSection.TODAY;
-            }
-
-            if (delta < MS_PER_DAY) {
-                return MostRecentSection.YESTERDAY;
-            }
-
-            if (delta < MS_PER_WEEK) {
-                return MostRecentSection.WEEK;
-            }
-
-            return MostRecentSection.OLDER;
-        }
-
-        private void loadMostRecentSections(Cursor c) {
-            
-            mMostRecentSections.clear();
-
-            if (c == null || !c.moveToFirst()) {
-                return;
-            }
-
-            final Date now = new Date();
-            now.setHours(0);
-            now.setMinutes(0);
-            now.setSeconds(0);
-
-            final long today = now.getTime();
-            MostRecentSection section = null;
-
-            do {
-                final int position = c.getPosition();
-                final long time = c.getLong(c.getColumnIndexOrThrow(History.DATE_LAST_VISITED));
-                final MostRecentSection itemSection = HistoryAdapter.getMostRecentSectionForTime(today, time);
-
-                if (section != itemSection) {
-                    section = itemSection;
-                    mMostRecentSections.append(position + mMostRecentSections.size(), section);
-                }
-
-                
-                if (section == MostRecentSection.OLDER) {
-                    break;
-                }
-            } while (c.moveToNext());
+        private MostRecentSectionRange(long start, long end, String displayName) {
+            this.start = start;
+            this.end = end;
+            this.displayName = displayName;
         }
     }
 
