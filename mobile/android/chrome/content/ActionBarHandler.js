@@ -4,14 +4,6 @@
 
 "use strict";
 
-
-const NOTIFICATIONS = [
-    "ActionBar:UpdateState",
-    "TextSelection:Action",
-    "TextSelection:End",
-];
-
-const DEFER_INIT_DELAY_MS = 50; 
 const PHONE_REGEX = /^\+?[0-9\s,-.\(\)*#pw]{1,30}$/; 
 
 
@@ -26,39 +18,52 @@ var ActionBarHandler = {
     NONE: "",
   },
 
+  _nextSelectionID: 1, 
   _selectionID: null, 
   _actionBarActions: null, 
 
   
 
 
-  observe: function(subject, topic, data) {
-    switch (topic) {
 
-      
-      case "ActionBar:OpenNew": {
+  caretStateChangedHandler: function(e) {
+    
+    if (this._selectionID && !e.caretVisible) {
+      this._uninit(false);
+      return;
+    }
+
+    
+    if (!this._selectionID && e.caretVisuallyVisible) {
+      this._init();
+      return;
+    }
+
+    
+    if (this._selectionID) {
+      if ([this._targetElement, this._contentWindow] ===
+          [Services.focus.focusedElement, Services.focus.focusedWindow]) {
+        
+        
+        this._sendActionBarActions();
+      } else {
         
         this._uninit(false);
-        this._init(data);
-        break;
+        this._init();
       }
+    }
+  },
 
-      
-      case "ActionBar:Close": {
-        if (this._selectionID === data) {
-          this._uninit(false);
-        }
-        break;
-      }
+  
 
-      
-      case "ActionBar:UpdateState": {
-        this._sendActionBarActions();
-        break;
-      }
 
+  observe: function(subject, topic, data) {
+    switch (topic) {
       
       case "TextSelection:Action": {
+        if (!this._selectionID) {
+          break;
+        }
         for (let type in this.actions) {
           let action = this.actions[type];
           if (action.id == data) {
@@ -76,13 +81,15 @@ var ActionBarHandler = {
           requestId: data,
           text: this._getSelectedText(),
         });
+
+        this._uninit();
         break;
       }
 
       
       case "TextSelection:End": {
         
-        if (this._selectionID === JSON.parse(data).selectionID) {
+        if (this._selectionID == JSON.parse(data).selectionID) {
           this._uninit();
         }
         break;
@@ -93,20 +100,15 @@ var ActionBarHandler = {
   
 
 
-  _init: function(actionBarID) {
+  _init: function() {
     let [element, win] = this._getSelectionTargets();
     if (!win) {
       return this.START_TOUCH_ERROR.NO_CONTENT_WINDOW;
     }
 
     
-    this._selectionID = actionBarID;
+    this._selectionID = this._nextSelectionID++;
     [this._targetElement, this._contentWindow] = [element, win];
-
-    
-    NOTIFICATIONS.forEach(notification => {
-      Services.obs.addObserver(this, notification, false);
-    });
 
     
     Messaging.sendRequest({
@@ -150,11 +152,6 @@ var ActionBarHandler = {
     if (!this._selectionID) {
       return;
     }
-
-    
-    NOTIFICATIONS.forEach(notification => {
-      Services.obs.removeObserver(this, notification);
-    });
 
     
     Messaging.sendRequest({
@@ -291,9 +288,6 @@ var ActionBarHandler = {
 
         
         ActionBarHandler._getSelectAllController(element, win).selectAll();
-        ActionBarHandler._getSelectionController(element, win).
-          selectionCaretsVisibility = true;
-
         UITelemetry.addEvent("action.1", "actionbar", null, "select_all");
       },
     },

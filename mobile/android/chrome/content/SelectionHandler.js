@@ -9,8 +9,7 @@ const PHONE_NUMBER_CONTAINERS = "td,div";
 const DEFER_CLOSE_TRIGGER_MS = 125; 
 
 
-const PREF_GECKO_TOUCHCARET_ENABLED = "touchcaret.enabled";
-const PREF_GECKO_SELECTIONCARETS_ENABLED = "selectioncaret.enabled";
+const PREF_GECKO_ACCESSIBLECARET_ENABLED = "layout.accessiblecaret.enabled";
 
 var SelectionHandler = {
 
@@ -43,7 +42,7 @@ var SelectionHandler = {
   SELECT_AT_POINT: 1,
 
   
-  _touchCaretEnabledValue: null,
+  _accessibleCaretEnabledValue: null,
   _selectionCaretEnabledValue: null,
 
   
@@ -102,27 +101,17 @@ var SelectionHandler = {
   },
 
   
-  get _touchCaretEnabled() {
-    if (this._touchCaretEnabledValue == null) {
-      this._touchCaretEnabledValue = Services.prefs.getBoolPref(PREF_GECKO_TOUCHCARET_ENABLED);
-      Services.prefs.addObserver(PREF_GECKO_TOUCHCARET_ENABLED, function() {
-        SelectionHandler._touchCaretEnabledValue =
-          Services.prefs.getBoolPref(PREF_GECKO_TOUCHCARET_ENABLED);
+  get _accessibleCaretEnabled() {
+    if (this._accessibleCaretEnabledValue == null) {
+      try {
+        this._accessibleCaretEnabledValue = Services.prefs.getBoolPref(PREF_GECKO_ACCESSIBLECARET_ENABLED);
+      } catch (unused) { }
+      Services.prefs.addObserver(PREF_GECKO_ACCESSIBLECARET_ENABLED, function() {
+        SelectionHandler._accessibleCaretEnabledValue =
+          Services.prefs.getBoolPref(PREF_GECKO_ACCESSIBLECARET_ENABLED);
       }, false);
     }
-    return this._touchCaretEnabledValue;
-  },
-
-  
-  get _selectionCaretEnabled() {
-    if (this._selectionCaretEnabledValue == null) {
-      this._selectionCaretEnabledValue = Services.prefs.getBoolPref(PREF_GECKO_SELECTIONCARETS_ENABLED);
-      Services.prefs.addObserver(PREF_GECKO_SELECTIONCARETS_ENABLED, function() {
-        SelectionHandler._selectionCaretEnabledValue =
-          Services.prefs.getBoolPref(PREF_GECKO_SELECTIONCARETS_ENABLED);
-      }, false);
-    }
-    return this._selectionCaretEnabledValue;
+    return this._accessibleCaretEnabledValue;
   },
 
   _addObservers: function sh_addObservers() {
@@ -413,7 +402,7 @@ var SelectionHandler = {
 
   startSelection: function sh_startSelection(aElement, aOptions = { mode: SelectionHandler.SELECT_ALL }) {
     
-    if (this._selectionCaretEnabled) {
+    if (this._accessibleCaretEnabled) {
       return this.START_ERROR_SELECTIONCARETS_ENABLED;
     }
 
@@ -877,7 +866,7 @@ var SelectionHandler = {
 
   attachCaret: function sh_attachCaret(aElement) {
     
-    if (this._touchCaretEnabled) {
+    if (this._accessibleCaretEnabled) {
       return this.ATTACH_ERROR_TOUCHCARET_ENABLED;
     }
 
