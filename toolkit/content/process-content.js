@@ -10,6 +10,3 @@ var { classes: Cc, interfaces: Ci, utils: Cu } = Components;
 
 
 Cu.import("resource://gre/modules/RemotePageManager.jsm");
-
-
-Cu.import("resource://gre/modules/PushServiceChildPreload.jsm");
