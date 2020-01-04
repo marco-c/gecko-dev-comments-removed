@@ -26,7 +26,7 @@ DoMethodDescriptor(XPTArena *arena, XPTCursor *cursor, XPTMethodDescriptor *md,
                    XPTInterfaceDescriptor *id);
 
 static PRBool
-DoAnnotations(XPTCursor *cursor);
+SkipAnnotation(XPTCursor *cursor, bool *isLast);
 
 static PRBool
 DoInterfaceDescriptor(XPTArena *arena, XPTCursor *outer, XPTInterfaceDescriptor **idp);
@@ -123,8 +123,16 @@ XPT_DoHeader(XPTArena *arena, XPTCursor *cursor, XPTHeader **headerp)
             return PR_FALSE;
     }
 
-    if (!DoAnnotations(cursor))
-        return PR_FALSE;
+    
+
+
+
+
+    bool isLast;
+    do {
+        if (!SkipAnnotation(cursor, &isLast))
+            return PR_FALSE;
+    } while (!isLast);
 
     
     XPT_SeekTo(cursor, ide_offset); 
@@ -390,16 +398,18 @@ DoTypeDescriptor(XPTArena *arena, XPTCursor *cursor, XPTTypeDescriptor *td,
 }
 
 PRBool
-DoAnnotations(XPTCursor *cursor)
+SkipAnnotation(XPTCursor *cursor, bool *isLast)
 {
     uint8_t flags;
     if (!XPT_Do8(cursor, &flags))
         return PR_FALSE;
 
-    
-    if (XPT_ANN_IS_PRIVATE(flags) || !XPT_ANN_IS_LAST(flags)) {
-        fprintf(stderr, "private annotations are no longer handled\n");
-        return PR_FALSE;
+    *isLast = XPT_ANN_IS_LAST(flags);
+
+    if (XPT_ANN_IS_PRIVATE(flags)) {
+        if (!XPT_SkipStringInline(cursor) ||
+            !XPT_SkipStringInline(cursor))
+            return PR_FALSE;
     }
 
     return PR_TRUE;
