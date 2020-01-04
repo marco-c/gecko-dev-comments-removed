@@ -2100,10 +2100,8 @@ MediaDecoderStateMachine::SeekCompleted()
     int64_t audioStart = audio ? audio->mTime : seekTime;
     
     
-    
-    if (!video || (video->mTime <= seekTime && video->GetEndTime() > seekTime)) {
-      int64_t videoStart = video ? video->mTime : seekTime;
-      newCurrentTime = std::min(audioStart, videoStart);
+    if (video && video->mTime <= seekTime && video->GetEndTime() > seekTime) {
+      newCurrentTime = std::min(audioStart, video->mTime);
     } else {
       newCurrentTime = audioStart;
     }
