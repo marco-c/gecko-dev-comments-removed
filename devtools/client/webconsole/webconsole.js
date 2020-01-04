@@ -235,6 +235,7 @@ function WebConsoleFrame(webConsoleOwner) {
   this.React = require("devtools/client/shared/vendor/react");
   this.ReactDOM = require("devtools/client/shared/vendor/react-dom");
   this.FrameView = this.React.createFactory(require("devtools/client/shared/components/frame"));
+  this.StackTraceView = this.React.createFactory(require("devtools/client/shared/components/stack-trace"));
 
   this._telemetry = new Telemetry();
 
@@ -2291,9 +2292,15 @@ WebConsoleFrame.prototype = {
 
   unmountMessage(node) {
     
-    
-    for (let locationNode of node.querySelectorAll(".message-location")) {
+    let locationNode = node.querySelector(".message-location");
+    if (locationNode) {
       this.ReactDOM.unmountComponentAtNode(locationNode);
+    }
+
+    
+    let stacktraceNode = node.querySelector(".stacktrace");
+    if (stacktraceNode) {
+      this.ReactDOM.unmountComponentAtNode(stacktraceNode);
     }
   },
 
@@ -2514,26 +2521,25 @@ WebConsoleFrame.prototype = {
 
 
   createLocationNode: function ({url, line, column}) {
+    let locationNode = this.document.createElementNS(XHTML_NS, "div");
+    locationNode.className = "message-location devtools-monospace";
+
     if (!url) {
       url = "";
     }
 
     let fullURL = url.split(" -> ").pop();
-    let locationNode = this.document.createElementNS(XHTML_NS, "a");
-    locationNode.draggable = false;
-    locationNode.className = "message-location devtools-monospace";
-
     
     let onClick = () => {
-      let category = locationNode.parentNode.category;
+      let category = locationNode.closest(".message").category;
       let target = null;
 
-      if (category === CATEGORY_CSS) {
+      if (/^Scratchpad\/\d+$/.test(url)) {
+        target = "scratchpad";
+      } else if (category === CATEGORY_CSS) {
         target = "styleeditor";
       } else if (category === CATEGORY_JS || category === CATEGORY_WEBDEV) {
         target = "jsdebugger";
-      } else if (/^Scratchpad\/\d+$/.test(url)) {
-        target = "scratchpad";
       } else if (/\.js$/.test(fullURL)) {
         
         
@@ -2559,9 +2565,9 @@ WebConsoleFrame.prototype = {
       frame: {
         source: fullURL,
         line,
-        column,
-        showEmptyPathAsHost: true,
+        column
       },
+      showEmptyPathAsHost: true,
       onClick,
     }), locationNode);
 
