@@ -22,6 +22,7 @@ class BookmarkValidator {
     function traverse(treeNode) {
       let guid = BookmarkSpecialIds.specialGUIDForId(treeNode.id) || treeNode.guid;
       let itemType = 'item';
+      treeNode.ignored = PlacesUtils.annotations.itemHasAnnotation(treeNode.id, BookmarkAnnos.EXCLUDEBACKUP_ANNO);
       treeNode.id = guid;
       switch (treeNode.type) {
         case PlacesUtils.TYPE_X_MOZ_PLACE:
@@ -37,13 +38,30 @@ class BookmarkValidator {
           }
           break;
         case PlacesUtils.TYPE_X_MOZ_PLACE_CONTAINER:
-          itemType = 'folder';
+          let isLivemark = false;
+          if (treeNode.annos) {
+            for (let anno of treeNode.annos) {
+              if (anno.name === PlacesUtils.LMANNO_FEEDURI) {
+                isLivemark = true;
+                treeNode.feedUri = anno.value;
+              } else if (anno.name === PlacesUtils.LMANNO_SITEURI) {
+                isLivemark = true;
+                treeNode.siteUri = anno.value;
+              }
+            }
+          }
+          itemType = isLivemark ? "livemark" : "folder";
           break;
         case PlacesUtils.TYPE_X_MOZ_PLACE_SEPARATOR:
           itemType = 'separator';
           break;
       }
 
+      if (treeNode.tags) {
+        treeNode.tags = treeNode.tags.split(",");
+      } else {
+        treeNode.tags = [];
+      }
       treeNode.type = itemType;
       treeNode.pos = treeNode.index;
       treeNode.bmkUri = treeNode.uri;
@@ -153,7 +171,7 @@ class BookmarkValidator {
         }
         idToRecord.set(record.id, record);
       }
-      if (record.children) {
+      if (record.children && record.type !== "livemark") {
         if (record.type !== 'folder') {
           problemData.childrenOnNonFolder.push(record.id);
         }
@@ -352,10 +370,17 @@ class BookmarkValidator {
 
 
 
+
+
+
+
+
+
   compareServerWithClient(serverRecords, clientTree) {
 
     let clientRecords = this.createClientRecordsFromTree(clientTree);
     let inspectionInfo = this.inspectServerRecords(serverRecords);
+    inspectionInfo.clientRecords = clientRecords;
 
     
     serverRecords = inspectionInfo.records;
@@ -363,12 +388,15 @@ class BookmarkValidator {
 
     problemData.clientMissing = [];
     problemData.serverMissing = [];
+    problemData.serverDeleted = [];
+    problemData.serverUnexpected = [];
     problemData.differences = [];
     problemData.good = [];
 
     let matches = [];
 
     let allRecords = new Map();
+    let serverDeletedLookup = new Set(inspectionInfo.deletedRecords.map(r => r.id));
 
     for (let sr of serverRecords) {
       allRecords.set(sr.id, {client: null, server: sr});
@@ -390,11 +418,19 @@ class BookmarkValidator {
         continue;
       }
       if (!server && client) {
-        problemData.serverMissing.push(id);
+        if (serverDeletedLookup.has(id)) {
+          problemData.serverDeleted.push(id);
+        } else if (!client.ignored && client.id != "places") {
+          problemData.serverMissing.push(id);
+        }
         continue;
       }
+      if (server && client && client.ignored) {
+        problemData.serverUnexpected.push(id);
+      }
       let differences = [];
-      if (client.title !== server.title) {
+      
+      if ((client.title || "") !== (server.title || "")) {
         differences.push('title');
       }
 
@@ -418,7 +454,15 @@ class BookmarkValidator {
         }
       }
 
-      if (client.type !== server.type) {
+      let sameType = client.type === server.type;
+      if (!sameType) {
+        if (server.type === "query" && client.type === "bookmark" && client.bmkUri.startsWith("place:")) {
+          sameType = true;
+        }
+      }
+
+
+      if (!sameType) {
         differences.push('type');
       } else {
         switch (server.type) {
@@ -431,6 +475,14 @@ class BookmarkValidator {
           case 'separator':
             if (server.pos !== client.pos) {
               differences.push('pos');
+            }
+            break;
+          case "livemark":
+            if (server.feedUri != client.feedUri) {
+              differences.push("feedUri");
+            }
+            if (server.siteUri != client.siteUri) {
+              differences.push("siteUri");
             }
             break;
           case 'folder':
@@ -454,7 +506,7 @@ class BookmarkValidator {
         problemData.differences.push({id, differences});
       }
     }
-    return problemData;
+    return inspectionInfo;
   }
 };
 
