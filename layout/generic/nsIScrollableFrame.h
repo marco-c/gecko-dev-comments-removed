@@ -276,16 +276,6 @@ public:
 
 
 
-
-
-
-  virtual void FlingSnap(const mozilla::CSSPoint& aDestination) = 0;
-  
-
-
-
-
-
   virtual void ScrollSnap() = 0;
 
   

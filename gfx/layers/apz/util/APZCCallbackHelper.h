@@ -68,14 +68,6 @@ public:
 
     
 
-
-
-
-    static void RequestFlingSnap(const FrameMetrics::ViewID& aScrollId,
-                                 const mozilla::CSSPoint& aDestination);
-
-    
-
     static void AcknowledgeScrollUpdate(const FrameMetrics::ViewID& aScrollId,
                                         const uint32_t& aScrollGeneration);
 
