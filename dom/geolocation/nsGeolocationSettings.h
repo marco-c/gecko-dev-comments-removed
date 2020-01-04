@@ -102,7 +102,14 @@ public:
   inline const nsString& GetOrigin() const { return mOrigin; }
 
 private:
-  GeolocationSetting() {} 
+  GeolocationSetting() :
+#ifdef MOZ_APPROX_LOCATION
+    mDistance(0),
+#endif
+    mLatitude(0),
+    mLongitude(0)
+  {} 
+
   GeolocationFuzzMethod mFuzzMethod;
 #ifdef MOZ_APPROX_LOCATION
   int32_t         mDistance;
