@@ -41,7 +41,7 @@ public class ReaderViewBookmarkPromotion extends BrowserAppDelegateWithReference
             case LOCATION_CHANGE:
                 
                 
-                final boolean enteringReaderMode = ReaderModeUtils.isEnteringReaderMode(tab.getURL(), data);
+                final boolean enteringReaderMode = ReaderModeUtils.isEnteringReaderMode(data, tab.getURL());
 
                 if (!hasEnteredReaderMode && enteringReaderMode) {
                     hasEnteredReaderMode = true;
