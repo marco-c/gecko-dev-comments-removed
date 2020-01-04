@@ -9,10 +9,12 @@
 
 DEF_TEST(DoesCrossZoneBoundaries, {
     
+    JS::CompartmentOptions options;
     JS::RootedObject newGlobal(cx, JS_NewGlobalObject(cx,
                                                       getGlobalClass(),
                                                       nullptr,
-                                                      JS::FireOnNewGlobalHook));
+                                                      JS::FireOnNewGlobalHook,
+                                                      options));
     ASSERT_TRUE(newGlobal);
     JS::Zone* newZone = nullptr;
     {
