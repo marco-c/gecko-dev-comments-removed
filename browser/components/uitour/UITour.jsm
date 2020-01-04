@@ -841,14 +841,14 @@ this.UITour = {
     }
     if (campaignParams) {
       
+      
       let reSimpleString = /^[-_a-zA-Z0-9]*$/;
       for (let name in campaignParams) {
         let value = campaignParams[name];
         if (typeof name != "string" || typeof value != "string" ||
             !name.startsWith("utm_") ||
             value.length == 0 ||
-            !reSimpleString.test(name) ||
-            !reSimpleString.test(value)) {
+            !reSimpleString.test(name)) {
           log.warn("_populateCampaignParams: invalid campaign param specified");
           return false;
         }

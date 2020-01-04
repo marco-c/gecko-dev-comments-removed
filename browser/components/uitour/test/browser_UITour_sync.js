@@ -34,6 +34,18 @@ add_UITour_task(function* test_firefoxAccountsValidParams() {
                                        "about:accounts?action=signup&entrypoint=uitour&utm_foo=foo&utm_bar=bar");
 });
 
+add_UITour_task(function* test_firefoxAccountsNonAlphaValue() {
+  
+  
+  
+  let value = "foo& /=?:\\\xa9";
+  
+  let expected = encodeURIComponent(value).replace(/%20/g, "+");
+  yield gContentAPI.showFirefoxAccounts({ utm_foo: value });
+  yield BrowserTestUtils.browserLoaded(gTestTab.linkedBrowser, false,
+                                       "about:accounts?action=signup&entrypoint=uitour&utm_foo=" + expected);
+});
+
 
 function* checkAboutAccountsNotLoaded() {
   try {
@@ -61,11 +73,5 @@ add_UITour_task(function* test_firefoxAccountsNonUtmPrefix() {
 add_UITour_task(function* test_firefoxAccountsNonAlphaName() {
   
   yield gContentAPI.showFirefoxAccounts({ utm_foo: "foo", "utm_bar=": "bar" });
-  yield checkAboutAccountsNotLoaded();
-});
-
-add_UITour_task(function* test_firefoxAccountsNonAlphaValue() {
-  
-  yield gContentAPI.showFirefoxAccounts({ utm_foo: "foo&" });
   yield checkAboutAccountsNotLoaded();
 });
