@@ -222,13 +222,9 @@ NextFrameSeekTask::RequestVideoData()
 }
 
 bool
-NextFrameSeekTask::IsAudioSeekComplete()
+NextFrameSeekTask::IsAudioSeekComplete() const
 {
   AssertOwnerThread();
-  SAMPLE_LOG("IsAudioSeekComplete() curTarVal=%d aqFin=%d aqSz=%d req=%d wait=%d",
-    mSeekJob.Exists(), mIsAudioQueueFinished, !!mSeekedAudioData,
-    mReader->IsRequestingAudioData(), mReader->IsWaitingAudioData());
-
   
   
   return !mReader->IsRequestingAudioData() && !mReader->IsWaitingAudioData();
