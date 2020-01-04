@@ -4809,6 +4809,9 @@ nsDocShell::DisplayLoadError(nsresult aError, nsIURI* aURI,
       if (securityState & nsIWebProgressListener::STATE_USES_SSL_3) {
         error.AssignLiteral("sslv3Used");
         addHostPort = true;
+      } else if (securityState & nsIWebProgressListener::STATE_USES_WEAK_CRYPTO) {
+        error.AssignLiteral("weakCryptoUsed");
+        addHostPort = true;
       } else {
         
         tsi->GetErrorMessage(getter_Copies(messageStr));
@@ -11122,10 +11125,7 @@ nsDocShell::OnNewURI(nsIURI* aURI, nsIChannel* aChannel, nsISupports* aOwner,
                           aLoadType & LOAD_CMD_HISTORY);
 
   
-  
-  bool updateSHistory = updateGHistory &&
-                        (!(aLoadType & LOAD_CMD_RELOAD) ||
-                         (IsForceReloadType(aLoadType) && IsFrame()));
+  bool updateSHistory = updateGHistory && (!(aLoadType & LOAD_CMD_RELOAD));
 
   
   
@@ -11198,9 +11198,9 @@ nsDocShell::OnNewURI(nsIURI* aURI, nsIChannel* aChannel, nsISupports* aOwner,
 
 
   if (aChannel && IsForceReloadType(aLoadType)) {
-    MOZ_ASSERT(!updateSHistory || IsFrame(),
-               "We shouldn't be updating session history for forced"
-               " reloads unless we're in a newly created iframe!");
+    NS_ASSERTION(!updateSHistory,
+                 "We shouldn't be updating session history for forced"
+                 " reloads!");
 
     nsCOMPtr<nsICacheInfoChannel> cacheChannel(do_QueryInterface(aChannel));
     nsCOMPtr<nsISupports> cacheKey;
