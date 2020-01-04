@@ -26,6 +26,7 @@ namespace image {
 
 class Decoder;
 class DecodePoolImpl;
+class IDecodingTask;
 
 
 
@@ -54,21 +55,23 @@ public:
   static uint32_t NumberOfCores();
 
   
-  void AsyncDecode(Decoder* aDecoder);
+  void AsyncRun(IDecodingTask* aTask);
 
   
 
 
 
 
-  void SyncDecodeIfSmall(Decoder* aDecoder);
+
+  void SyncRunIfPreferred(IDecodingTask* aTask);
 
   
 
 
 
 
-  void SyncDecodeIfPossible(Decoder* aDecoder);
+
+  void SyncRunIfPossible(IDecodingTask* aTask);
 
   
 
@@ -79,24 +82,16 @@ public:
 
   already_AddRefed<nsIEventTarget> GetIOEventTarget();
 
-  
-
-
-  void NotifyProgress(Decoder* aDecoder);
-
 private:
   friend class DecodePoolWorker;
 
   DecodePool();
   virtual ~DecodePool();
 
-  void Decode(Decoder* aDecoder);
-  void NotifyDecodeComplete(Decoder* aDecoder);
-
   static StaticRefPtr<DecodePool> sSingleton;
   static uint32_t sNumCores;
 
-  RefPtr<DecodePoolImpl>    mImpl;
+  RefPtr<DecodePoolImpl> mImpl;
 
   
   Mutex                         mMutex;

@@ -8,6 +8,7 @@
 
 #include "FrameAnimator.h"
 #include "RasterImage.h"
+#include "mozilla/NotNull.h"
 #include "mozilla/RefPtr.h"
 #include "DecodePool.h"
 #include "DecoderFlags.h"
@@ -25,9 +26,10 @@ namespace Telemetry {
 
 namespace image {
 
-class Decoder : public IResumable
+class Decoder
 {
 public:
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(Decoder)
 
   explicit Decoder(RasterImage* aImage);
 
@@ -44,9 +46,7 @@ public:
 
 
 
-
-
-  nsresult Decode(IResumable* aOnResume = nullptr);
+  nsresult Decode(NotNull<IResumable*> aOnResume);
 
   
 
@@ -86,12 +86,6 @@ public:
   {
     return mProgress != NoProgress || !mInvalidRect.IsEmpty();
   }
-
-  
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(Decoder, override)
-
-  
-  virtual void Resume() override;
 
   
 

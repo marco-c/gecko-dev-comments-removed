@@ -8,6 +8,7 @@
 #include "Decoder.h"
 #include "DecoderFactory.h"
 #include "decoders/nsBMPDecoder.h"
+#include "IDecodingTask.h"
 #include "imgIContainer.h"
 #include "imgITools.h"
 #include "ImageFactory.h"
@@ -59,13 +60,14 @@ CheckMetadata(const ImageTestCase& aTestCase,
   RefPtr<Decoder> decoder =
     DecoderFactory::CreateAnonymousMetadataDecoder(decoderType, sourceBuffer);
   ASSERT_TRUE(decoder != nullptr);
+  RefPtr<IDecodingTask> task = new AnonymousDecodingTask(WrapNotNull(decoder));
 
   if (aBMPWithinICO == BMPWithinICO::YES) {
     static_cast<nsBMPDecoder*>(decoder.get())->SetIsWithinICO();
   }
 
   
-  decoder->Decode();
+  task->Run();
 
   
   
@@ -103,13 +105,14 @@ CheckMetadata(const ImageTestCase& aTestCase,
     DecoderFactory::CreateAnonymousDecoder(decoderType, sourceBuffer, Nothing(),
                                            DefaultSurfaceFlags());
   ASSERT_TRUE(decoder != nullptr);
+  task = new AnonymousDecodingTask(WrapNotNull(decoder));
 
   if (aBMPWithinICO == BMPWithinICO::YES) {
     static_cast<nsBMPDecoder*>(decoder.get())->SetIsWithinICO();
   }
 
   
-  decoder->Decode();
+  task->Run();
 
   EXPECT_TRUE(decoder->GetDecodeDone() && !decoder->HasError());
   Progress fullProgress = decoder->TakeProgress();
