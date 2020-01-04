@@ -2,16 +2,51 @@
 
 
 
-
-
 "use strict";
 
+let {SyncedTabs} = Cu.import("resource://services-sync/SyncedTabs.jsm", {});
+
 XPCOMUtils.defineLazyModuleGetter(this, "UITour", "resource:///modules/UITour.jsm");
+
+
+
+const DECKINDEX_TABS = 0;
+const DECKINDEX_TABSDISABLED = 1;
+const DECKINDEX_FETCHING = 2;
+const DECKINDEX_NOCLIENTS = 3;
 
 var initialLocation = gBrowser.currentURI.spec;
 var newTab = null;
 
-function openAboutAccountsFromMenuPanel(entryPoint) {
+
+
+function updateTabsPanel() {
+  let promiseTabsUpdated = promiseObserverNotified("synced-tabs-menu:test:tabs-updated");
+  Services.obs.notifyObservers(null, SyncedTabs.TOPIC_TABS_CHANGED, null);
+  return promiseTabsUpdated;
+}
+
+
+
+let mockedInternal = {
+  get isConfiguredToSyncTabs() { return true; },
+  getTabClients() { return []; },
+  syncTabs() {},
+  hasSyncedThisSession: false,
+};
+
+
+add_task(function* setup() {
+  let oldInternal = SyncedTabs._internal;
+  SyncedTabs._internal = mockedInternal;
+
+  registerCleanupFunction(() => {
+    SyncedTabs._internal = oldInternal;
+  });
+});
+
+
+function openPrefsFromMenuPanel(expectedPanelId, entryPoint) {
   info("Check Sync button functionality");
   Services.prefs.setCharPref("identity.fxaccounts.remote.signup.uri", "http://example.com/");
 
@@ -29,6 +64,18 @@ function openAboutAccountsFromMenuPanel(entryPoint) {
   let syncButton = document.getElementById("sync-button");
   ok(syncButton, "The Sync button was added to the Panel Menu");
 
+  syncButton.click();
+  let syncPanel = document.getElementById("PanelUI-remotetabs");
+  ok(syncPanel.getAttribute("current"), "Sync Panel is in view");
+
+  
+  let subpanel = document.getElementById(expectedPanelId)
+  ok(!subpanel.hidden, "sync setup element is visible");
+
+  
+  let setupButton = subpanel.querySelector(".PanelUI-remotetabs-prefs-button");
+  setupButton.click();
+
   let deferred = Promise.defer();
   let handler = (e) => {
     if (e.originalTarget != gBrowser.selectedBrowser.contentDocument ||
@@ -41,7 +88,6 @@ function openAboutAccountsFromMenuPanel(entryPoint) {
   }
   gBrowser.selectedBrowser.addEventListener("load", handler, true);
 
-  syncButton.click();
   yield deferred.promise;
   newTab = gBrowser.selectedTab;
 
@@ -68,8 +114,162 @@ function asyncCleanup() {
   UITour.tourBrowsersByWindow.delete(window);
 }
 
-add_task(() => openAboutAccountsFromMenuPanel("syncbutton"));
+
+add_task(() => openPrefsFromMenuPanel("PanelUI-remotetabs-setupsync", "syncbutton"));
 add_task(asyncCleanup);
 
-add_task(() => openAboutAccountsFromMenuPanel("uitour"));
+add_task(() => openPrefsFromMenuPanel("PanelUI-remotetabs-setupsync", "uitour"));
 add_task(asyncCleanup);
+
+
+add_task(function* () {
+  
+  document.getElementById("sync-reauth-state").hidden = false;
+  document.getElementById("sync-setup-state").hidden = true;
+  document.getElementById("sync-syncnow-state").hidden = true;
+  yield openPrefsFromMenuPanel("PanelUI-remotetabs-reauthsync", "syncbutton")
+});
+
+
+add_task(function* () {
+  let nSyncs = 0;
+  mockedInternal.getTabClients = () => [];
+  mockedInternal.syncTabs = () => {
+    nSyncs++;
+    return Promise.resolve();
+  }
+
+  
+  document.getElementById("sync-reauth-state").hidden = true;
+  document.getElementById("sync-setup-state").hidden = true;
+  document.getElementById("sync-syncnow-state").hidden = false;
+
+  
+  CustomizableUI.addWidgetToArea("sync-button", CustomizableUI.AREA_PANEL);
+  yield PanelUI.show();
+  document.getElementById("sync-button").click();
+  let syncPanel = document.getElementById("PanelUI-remotetabs");
+  ok(syncPanel.getAttribute("current"), "Sync Panel is in view");
+
+  let subpanel = document.getElementById("PanelUI-remotetabs-main")
+  ok(!subpanel.hidden, "main pane is visible");
+  let deck = document.getElementById("PanelUI-remotetabs-deck");
+
+  
+  
+  is(deck.selectedIndex, DECKINDEX_FETCHING, "first deck entry is visible");
+
+  let syncNowButton = document.getElementById("PanelUI-remotetabs-syncnow");
+
+  let didSync = false;
+  let oldDoSync = gSyncUI.doSync;
+  gSyncUI.doSync = function() {
+    didSync = true;
+    mockedInternal.hasSyncedThisSession = true;
+    gSyncUI.doSync = oldDoSync;
+  }
+  syncNowButton.click();
+  ok(didSync, "clicking the button called the correct function");
+
+  
+  mockedInternal.getTabClients = () => {
+    return Promise.resolve([]);
+  }
+  yield updateTabsPanel();
+  
+  is(deck.selectedIndex, DECKINDEX_NOCLIENTS, "no-clients deck entry is visible");
+
+  
+  
+  mockedInternal.getTabClients = () => {
+    return Promise.resolve([
+      {
+        id: "guid_mobile",
+        type: "client",
+        name: "My Phone",
+        tabs: [],
+      },
+      {
+        id: "guid_desktop",
+        type: "client",
+        name: "My Desktop",
+        tabs: [
+          {
+            title: "http://example.com/10",
+            lastUsed: 10, 
+          },
+          {
+            title: "http://example.com/1",
+            lastUsed: 1, 
+          },
+          {
+            title: "http://example.com/5",
+            lastUsed: 5,
+          },
+        ],
+      },
+      {
+        id: "guid_second_desktop",
+        name: "My Other Desktop",
+        tabs: [
+          {
+            title: "http://example.com/6",
+            lastUsed: 6,
+          }
+        ],
+      },
+    ]);
+  };
+  yield updateTabsPanel();
+
+  
+  is(deck.selectedIndex, DECKINDEX_TABS, "no-clients deck entry is visible");
+  let tabList = document.getElementById("PanelUI-remotetabs-tabslist");
+  let node = tabList.firstChild;
+  
+  is(node.getAttribute("itemtype"), "client", "node is a client entry");
+  is(node.textContent, "My Desktop", "correct client");
+  
+  node = node.nextSibling;
+  is(node.getAttribute("itemtype"), "tab", "node is a tab");
+  is(node.getAttribute("label"), "http://example.com/10");
+
+  
+  node = node.nextSibling;
+  is(node.getAttribute("itemtype"), "tab", "node is a tab");
+  is(node.getAttribute("label"), "http://example.com/5");
+
+  
+  node = node.nextSibling;
+  is(node.getAttribute("itemtype"), "tab", "node is a tab");
+  is(node.getAttribute("label"), "http://example.com/1");
+
+  
+  node = node.nextSibling;
+  is(node.nodeName, "menuseparator");
+
+  
+  node = node.nextSibling;
+  is(node.getAttribute("itemtype"), "client", "node is a client entry");
+  is(node.textContent, "My Other Desktop", "correct client");
+  
+  node = node.nextSibling;
+  is(node.getAttribute("itemtype"), "tab", "node is a tab");
+  is(node.getAttribute("label"), "http://example.com/6");
+
+  
+  node = node.nextSibling;
+  is(node.nodeName, "menuseparator");
+
+  
+  node = node.nextSibling;
+  is(node.getAttribute("itemtype"), "client", "node is a client entry");
+  is(node.textContent, "My Phone", "correct client");
+  
+  node = node.nextSibling;
+  is(node.nodeName, "label", "node is a label");
+  is(node.getAttribute("itemtype"), "", "node is neither a tab nor a client");
+
+  node = node.nextSibling;
+  is(node, null, "no more entries");
+});

@@ -22,7 +22,9 @@ add_task(function() {
                              "find-button",
                              "preferences-button",
                              "add-ons-button",
-                             "developer-button"];
+                             "developer-button",
+                             "sync-button",
+                            ];
   removeDeveloperButtonIfDevEdition(placementsAfterMove);
   simulateItemDrag(zoomControls, printButton);
   assertAreaPlacements(CustomizableUI.AREA_PANEL, placementsAfterMove);
@@ -48,7 +50,9 @@ add_task(function() {
                              "find-button",
                              "preferences-button",
                              "add-ons-button",
-                             "developer-button"];
+                             "developer-button",
+                             "sync-button",
+                            ];
   removeDeveloperButtonIfDevEdition(placementsAfterMove);
   simulateItemDrag(zoomControls, savePageButton);
   assertAreaPlacements(CustomizableUI.AREA_PANEL, placementsAfterMove);
@@ -72,7 +76,9 @@ add_task(function() {
                              "find-button",
                              "preferences-button",
                              "add-ons-button",
-                             "developer-button"];
+                             "developer-button",
+                             "sync-button",
+                            ];
   removeDeveloperButtonIfDevEdition(placementsAfterMove);
   simulateItemDrag(zoomControls, newWindowButton);
   assertAreaPlacements(CustomizableUI.AREA_PANEL, placementsAfterMove);
@@ -95,7 +101,9 @@ add_task(function() {
                              "find-button",
                              "preferences-button",
                              "add-ons-button",
-                             "developer-button"];
+                             "developer-button",
+                             "sync-button",
+                            ];
   removeDeveloperButtonIfDevEdition(placementsAfterMove);
   simulateItemDrag(zoomControls, historyPanelMenu);
   assertAreaPlacements(CustomizableUI.AREA_PANEL, placementsAfterMove);
@@ -122,7 +130,9 @@ add_task(function() {
                              "find-button",
                              "preferences-button",
                              "add-ons-button",
-                             "developer-button"];
+                             "developer-button",
+                             "sync-button",
+                            ];
   removeDeveloperButtonIfDevEdition(placementsAfterMove);
   simulateItemDrag(zoomControls, preferencesButton);
   assertAreaPlacements(CustomizableUI.AREA_PANEL, placementsAfterMove);
@@ -149,7 +159,9 @@ add_task(function() {
                                "find-button",
                                "preferences-button",
                                "add-ons-button",
-                               "developer-button"];
+                               "developer-button",
+                               "sync-button",
+                              ];
   removeDeveloperButtonIfDevEdition(placementsAfterInsert);
   simulateItemDrag(openFileButton, zoomControls);
   assertAreaPlacements(CustomizableUI.AREA_PANEL, placementsAfterInsert);
@@ -188,7 +200,9 @@ add_task(function() {
                                "find-button",
                                "preferences-button",
                                "add-ons-button",
-                               "developer-button"];
+                               "developer-button",
+                               "sync-button",
+                              ];
   removeDeveloperButtonIfDevEdition(placementsAfterInsert);
   simulateItemDrag(openFileButton, editControls);
   assertAreaPlacements(CustomizableUI.AREA_PANEL, placementsAfterInsert);
@@ -224,7 +238,9 @@ add_task(function() {
                              "find-button",
                              "preferences-button",
                              "add-ons-button",
-                             "developer-button"];
+                             "developer-button",
+                             "sync-button",
+                            ];
   removeDeveloperButtonIfDevEdition(placementsAfterMove);
   simulateItemDrag(editControls, zoomControls);
   assertAreaPlacements(CustomizableUI.AREA_PANEL, placementsAfterMove);
@@ -248,7 +264,9 @@ add_task(function() {
                              "find-button",
                              "preferences-button",
                              "add-ons-button",
-                             "developer-button"];
+                             "developer-button",
+                             "sync-button",
+                            ];
   removeDeveloperButtonIfDevEdition(placementsAfterMove);
   simulateItemDrag(editControls, newWindowButton);
   assertAreaPlacements(CustomizableUI.AREA_PANEL, placementsAfterMove);
@@ -275,7 +293,9 @@ add_task(function() {
                              "find-button",
                              "preferences-button",
                              "add-ons-button",
-                             "developer-button"];
+                             "developer-button",
+                             "sync-button",
+                            ];
   removeDeveloperButtonIfDevEdition(placementsAfterMove);
   simulateItemDrag(editControls, privateBrowsingButton);
   assertAreaPlacements(CustomizableUI.AREA_PANEL, placementsAfterMove);
@@ -302,7 +322,9 @@ add_task(function() {
                              "find-button",
                              "preferences-button",
                              "add-ons-button",
-                             "developer-button"];
+                             "developer-button",
+                             "sync-button",
+                            ];
   removeDeveloperButtonIfDevEdition(placementsAfterMove);
   simulateItemDrag(editControls, savePageButton);
   assertAreaPlacements(CustomizableUI.AREA_PANEL, placementsAfterMove);
@@ -328,7 +350,9 @@ add_task(function() {
                              "preferences-button",
                              "add-ons-button",
                              "edit-controls",
-                             "developer-button"];
+                             "developer-button",
+                             "sync-button",
+                            ];
   removeDeveloperButtonIfDevEdition(placementsAfterMove);
   simulateItemDrag(editControls, panel);
   assertAreaPlacements(CustomizableUI.AREA_PANEL, placementsAfterMove);
@@ -353,7 +377,9 @@ add_task(function() {
                              "find-button",
                              "preferences-button",
                              "add-ons-button",
-                             "developer-button"];
+                             "developer-button",
+                             "sync-button",
+                            ];
   removeDeveloperButtonIfDevEdition(placementsAfterMove);
   let paletteChildElementCount = palette.childElementCount;
   simulateItemDrag(editControls, palette);
@@ -381,6 +407,12 @@ add_task(function() {
   for (let i = 0; i < numPlaceholders; i++) {
     
     
+    
+    
+    
+    CustomizableUI.removeWidgetFromArea("sync-button");
+    
+    
     let placeholder = panel.getElementsByClassName("panel-customization-placeholder")[i];
     let placementsAfterMove = ["zoom-controls",
                                "new-window-button",
@@ -399,6 +431,7 @@ add_task(function() {
     assertAreaPlacements(CustomizableUI.AREA_PANEL, placementsAfterMove);
     let zoomControls = document.getElementById("zoom-controls");
     simulateItemDrag(editControls, zoomControls);
+    CustomizableUI.addWidgetToArea("sync-button", CustomizableUI.AREA_PANEL);
     ok(CustomizableUI.inDefaultState, "Should still be in default state.");
   }
 });
@@ -420,6 +453,10 @@ add_task(function() {
 
 
 add_task(function() {
+  
+  
+  
+  CustomizableUI.removeWidgetFromArea("sync-button");
   yield startCustomizing();
   let editControls = document.getElementById("edit-controls");
   let panel = document.getElementById(CustomizableUI.AREA_PANEL);
@@ -439,7 +476,7 @@ add_task(function() {
   removeDeveloperButtonIfDevEdition(placementsAfterMove);
   simulateItemDrag(editControls, target);
   assertAreaPlacements(CustomizableUI.AREA_PANEL, placementsAfterMove);
-  let itemToDrag = "sync-button";
+  let itemToDrag = "email-link-button"; 
   let button = document.getElementById(itemToDrag);
   placementsAfterMove.splice(11, 0, itemToDrag);
   simulateItemDrag(button, editControls);
@@ -450,6 +487,7 @@ add_task(function() {
   let zoomControls = document.getElementById("zoom-controls");
   simulateItemDrag(button, palette);
   simulateItemDrag(editControls, zoomControls);
+  CustomizableUI.addWidgetToArea("sync-button", CustomizableUI.AREA_PANEL);
   ok(CustomizableUI.inDefaultState, "Should be in default state again.");
 });
 
