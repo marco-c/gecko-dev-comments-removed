@@ -56,13 +56,16 @@ const AutoMigrate = {
         }
         Services.obs.removeObserver(migrationObserver, "Migration:Ended");
         Services.obs.removeObserver(migrationObserver, "Migration:ItemError");
+        Services.prefs.setCharPref(kAutoMigrateStartedPref, startTime.toString());
         Services.prefs.setCharPref(kAutoMigrateFinishedPref, Date.now().toString());
       }
     };
 
     Services.obs.addObserver(migrationObserver, "Migration:Ended", false);
     Services.obs.addObserver(migrationObserver, "Migration:ItemError", false);
-    Services.prefs.setCharPref(kAutoMigrateStartedPref, Date.now().toString());
+    
+    
+    let startTime = Date.now();
     migrator.migrate(this.resourceTypesToUse, profileStartup, profileToMigrate);
     histogram.add(20);
   },
