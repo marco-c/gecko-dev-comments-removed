@@ -79,12 +79,6 @@ protected:
     mIsForBrowser = aIsForBrowser;
   }
 
-  void Close()
-  {
-    
-    PContentBridgeParent::Close();
-  }
-
 protected:
   virtual bool
   RecvSyncMessage(const nsString& aMsg,

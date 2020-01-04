@@ -61,8 +61,7 @@ GMPDecryptorChild::CallOnGMPThread(MethodType aMethod, ParamType&&... aParams)
     
     auto m = &GMPDecryptorChild::CallMethod<
         decltype(aMethod), typename AddConstReference<ParamType>::Type...>;
-    RefPtr<mozilla::Runnable> t =
-      dont_add_new_uses_of_this::NewRunnableMethod(this, m, aMethod, Forward<ParamType>(aParams)...);
+    RefPtr<mozilla::Runnable> t = NewRunnableMethod(this, m, aMethod, Forward<ParamType>(aParams)...);
     mPlugin->GMPMessageLoop()->PostTask(t.forget());
   }
 }
@@ -171,11 +170,7 @@ GMPDecryptorChild::Decrypted(GMPBuffer* aBuffer, GMPErr aResult)
   if (!ON_GMP_THREAD()) {
     
     
-    RefPtr<Runnable> t =
-      NS_NewRunnableMethodWithArgs<GMPBuffer*,
-                                   GMPErr>(this,
-                                           &GMPDecryptorChild::Decrypted,
-                                           aBuffer, aResult);
+    RefPtr<Runnable> t = NewRunnableMethod(this, &GMPDecryptorChild::Decrypted, aBuffer, aResult);
     mPlugin->GMPMessageLoop()->PostTask(t.forget());
     return;
   }

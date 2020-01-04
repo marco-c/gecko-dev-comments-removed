@@ -141,9 +141,9 @@ public:
     
 
     static void SendSetAllowedTouchBehaviorNotification(nsIWidget* aWidget,
-                                                        const WidgetTouchEvent& aEvent,
-                                                        uint64_t aInputBlockId,
-                                                        const SetAllowedTouchBehaviorCallback& aCallback);
+                                                         const WidgetTouchEvent& aEvent,
+                                                         uint64_t aInputBlockId,
+                                                         const SetAllowedTouchBehaviorCallback& aCallback);
 
     
     static void NotifyMozMouseScrollEvent(const FrameMetrics::ViewID& aScrollId, const nsString& aEvent);

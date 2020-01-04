@@ -1335,8 +1335,8 @@ APZCTreeManager::ClearTree()
   
   
   
-  RefPtr<Runnable> runnable = NS_NewRunnableMethod(mInputQueue.get(), &InputQueue::Clear);
-  APZThreadUtils::RunOnControllerThread(runnable.forget());
+  APZThreadUtils::RunOnControllerThread(NewRunnableMethod(
+    mInputQueue.get(), &InputQueue::Clear));
 
   MutexAutoLock lock(mTreeLock);
 
