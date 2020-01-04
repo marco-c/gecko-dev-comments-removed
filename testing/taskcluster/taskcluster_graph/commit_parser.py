@@ -332,9 +332,23 @@ def parse_commit(message, jobs):
             })
 
     
-    for name, task in sorted(jobs.get('tasks', {}).items()):
+
+    def filtertask(name, task):
         
-        if args.jobs is not None and name not in args.jobs:
+        if args.jobs is None:
+            return True
+
+        if name in args.jobs:
+            return True
+
+        for tag in task.get('tags', []):
+            if tag in args.jobs:
+                return True
+
+        return False
+
+    for name, task in sorted(jobs.get('tasks', {}).items()):
+        if not filtertask(name, task):
             continue
 
         
