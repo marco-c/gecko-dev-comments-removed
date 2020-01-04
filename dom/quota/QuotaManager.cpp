@@ -57,7 +57,6 @@
 #include "OriginScope.h"
 #include "QuotaObject.h"
 #include "UsageInfo.h"
-#include "Utilities.h"
 
 
 
@@ -839,6 +838,14 @@ AssertNoUnderflow(T aDest, U aArg)
   IntChecker<T>::Assert(aDest);
   IntChecker<T>::Assert(aArg);
   MOZ_ASSERT(uint64_t(aDest) >= uint64_t(aArg));
+}
+
+bool
+PatternMatchesOrigin(const nsACString& aPatternString,
+                     const nsACString& aOrigin)
+{
+  
+  return StringBeginsWith(aOrigin, aPatternString);
 }
 
 } 
