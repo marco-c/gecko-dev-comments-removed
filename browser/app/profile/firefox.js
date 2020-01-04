@@ -1395,7 +1395,8 @@ pref("dom.identity.enabled", false);
 pref("security.mixed_content.block_active_content", true);
 
 
-#ifdef NIGHTLY_BUILD
+
+#ifndef RELEASE_BUILD
 pref("security.insecure_password.ui.enabled", true);
 #else
 pref("security.insecure_password.ui.enabled", false);
