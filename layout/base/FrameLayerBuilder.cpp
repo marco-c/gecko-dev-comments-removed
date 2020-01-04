@@ -4116,9 +4116,12 @@ ContainerState::ProcessDisplayItems(nsDisplayList* aList)
       ownLayer->SetClipRect(Nothing());
       ownLayer->SetScrolledClip(Nothing());
       if (layerClip.HasClip()) {
-        if (shouldFixToViewport) {
-          
-          
+        
+        
+        
+        
+        
+        if (shouldFixToViewport && mManager->IsWidgetLayerManager()) {
           LayerClip scrolledClip;
           scrolledClip.SetClipRect(layerClipRect);
           if (layerClip.IsRectClippedByRoundedCorner(itemContent)) {
