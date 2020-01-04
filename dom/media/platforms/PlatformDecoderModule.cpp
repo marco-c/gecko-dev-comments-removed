@@ -5,7 +5,6 @@
 
 
 #include "PlatformDecoderModule.h"
-#include "PDMFactory.h"
 
 PRLogModuleInfo* GetPDMLog() {
   static PRLogModuleInfo* log = nullptr;
@@ -14,24 +13,3 @@ PRLogModuleInfo* GetPDMLog() {
   }
   return log;
 }
-
-namespace mozilla {
-
-
-void
-PlatformDecoderModule::Init()
-{
-  MOZ_ASSERT(NS_IsMainThread());
-  PDMFactory::Init();
-}
-
-
-already_AddRefed<PlatformDecoderModule>
-PlatformDecoderModule::Create()
-{
-  
-  nsRefPtr<PlatformDecoderModule> m = new PDMFactory;
-  return m.forget();
-}
-
-} 

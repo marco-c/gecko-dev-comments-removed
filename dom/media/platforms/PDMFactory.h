@@ -13,23 +13,29 @@ class CDMProxy;
 
 namespace mozilla {
 
-class PDMFactory : public PlatformDecoderModule {
+class PDMFactory final {
 public:
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(PDMFactory)
+
   PDMFactory();
-  virtual ~PDMFactory();
 
   
   
   static void Init();
 
+  
+  
+  
+  
+  
   already_AddRefed<MediaDataDecoder>
   CreateDecoder(const TrackInfo& aConfig,
                 FlushableTaskQueue* aTaskQueue,
                 MediaDataDecoderCallback* aCallback,
                 layers::LayersBackend aLayersBackend = layers::LayersBackend::LAYERS_NONE,
-                layers::ImageContainer* aImageContainer = nullptr) override;
+                layers::ImageContainer* aImageContainer = nullptr);
 
-  bool SupportsMimeType(const nsACString& aMimeType) override;
+  bool SupportsMimeType(const nsACString& aMimeType);
 
 #ifdef MOZ_EME
   
@@ -40,37 +46,8 @@ public:
   void SetCDMProxy(CDMProxy* aProxy);
 #endif
 
-  ConversionRequired
-  DecoderNeedsConversion(const TrackInfo& aConfig) const override
-  {
-    MOZ_CRASH("Should never reach this function");
-    return ConversionRequired::kNeedNone;
-  }
-
-protected:
-  
-  already_AddRefed<MediaDataDecoder>
-  CreateVideoDecoder(const VideoInfo& aConfig,
-                     layers::LayersBackend aLayersBackend,
-                     layers::ImageContainer* aImageContainer,
-                     FlushableTaskQueue* aVideoTaskQueue,
-                     MediaDataDecoderCallback* aCallback) override
-  {
-    MOZ_CRASH("Should never reach this function");
-    return nullptr;
-  }
-
-  
-  already_AddRefed<MediaDataDecoder>
-  CreateAudioDecoder(const AudioInfo& aConfig,
-                     FlushableTaskQueue* aAudioTaskQueue,
-                     MediaDataDecoderCallback* aCallback) override
-  {
-    MOZ_CRASH("Should never reach this function");
-    return nullptr;
-  }
-
 private:
+  virtual ~PDMFactory();
   void CreatePDMs();
   
   bool StartupPDM(PlatformDecoderModule* aPDM);

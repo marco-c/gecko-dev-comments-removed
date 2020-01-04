@@ -50,30 +50,7 @@ public:
 
   
   
-  static void Init();
-
-  
-  
-  
-  
-  
-  static already_AddRefed<PlatformDecoderModule> Create();
-
-  
-  
   virtual nsresult Startup() { return NS_OK; };
-
-  
-  
-  virtual already_AddRefed<MediaDataDecoder>
-  CreateDecoder(const TrackInfo& aConfig,
-                FlushableTaskQueue* aTaskQueue,
-                MediaDataDecoderCallback* aCallback,
-                layers::LayersBackend aLayersBackend = layers::LayersBackend::LAYERS_NONE,
-                layers::ImageContainer* aImageContainer = nullptr)
-  {
-    MOZ_CRASH();
-  }
 
   
   virtual bool SupportsMimeType(const nsACString& aMimeType) = 0;
