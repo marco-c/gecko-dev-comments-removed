@@ -67,4 +67,9 @@ function* runEditOuterHTMLTest(test, inspector) {
   
   
   yield onUpdated;
+
+  let closeTagLine = inspector.markup.getContainer(pageNodeFront).closeTagLine;
+  if (closeTagLine) {
+    is(closeTagLine.querySelectorAll(".theme-fg-contrast").length, 0, "No contrast class");
+  }
 }
