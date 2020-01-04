@@ -404,18 +404,17 @@ var gUpdates = {
           let state = p.state;
           let patchFailed = this.update.getProperty("patchingFailed");
           if (patchFailed) {
-            if (patchFailed == "partial" && this.update.patchCount == 2) {
-              
-              
-              
-              state = STATE_FAILED;
-            }
-            else {
+            if (patchFailed != "partial" || this.update.patchCount != 2) {
               
               
               
               
               state = STATE_DOWNLOAD_FAILED;
+            } else {
+              
+              
+              
+              state = STATE_FAILED;
             }
           }
 
