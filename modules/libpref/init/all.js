@@ -5452,6 +5452,9 @@ pref("toolkit.pageThumbs.minHeight", 0);
 pref("webextensions.tests", false);
 
 
+pref("webextensions.webRequest.requestBodyMaxRawBytes", 16777216);
+
+
 pref("dom.input.fallbackUploadDir", "");
 
 
