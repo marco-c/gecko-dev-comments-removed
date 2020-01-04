@@ -19,6 +19,7 @@
 #define BROTLI_DEC_STREAMS_H_
 
 #include <stdio.h>
+#include "./port.h"
 #include "./types.h"
 
 #if defined(__cplusplus) || defined(c_plusplus)
@@ -83,14 +84,6 @@ int BrotliMemOutputFunction(void* data, const uint8_t* buf, size_t count);
 
 BrotliOutput BrotliInitMemOutput(uint8_t* buffer, size_t length,
                                  BrotliMemOutput* mem_output);
-
-
-int BrotliStdinInputFunction(void* data, uint8_t* buf, size_t count);
-BrotliInput BrotliStdinInput();
-
-
-int BrotliStdoutOutputFunction(void* data, const uint8_t* buf, size_t count);
-BrotliOutput BrotliStdoutOutput();
 
 
 int BrotliFileInputFunction(void* data, uint8_t* buf, size_t count);

@@ -19,6 +19,7 @@
 #define BROTLI_DEC_BIT_READER_H_
 
 #include <string.h>
+#include "./port.h"
 #include "./streams.h"
 #include "./types.h"
 
@@ -26,175 +27,226 @@
 extern "C" {
 #endif
 
-#if (defined(__x86_64__) || defined(_M_X64))
-
-#define BROTLI_USE_64_BITS 1
-#else
-#define BROTLI_USE_64_BITS 0
-#endif
 #define BROTLI_MAX_NUM_BIT_READ   25
-#define BROTLI_READ_SIZE          4096
-#define BROTLI_IBUF_SIZE          (2 * BROTLI_READ_SIZE + 32)
-#define BROTLI_IBUF_MASK          (2 * BROTLI_READ_SIZE - 1)
+#define BROTLI_READ_SIZE          1024
+#define BROTLI_IMPLICIT_ZEROES    128
+#define BROTLI_IBUF_SIZE          (BROTLI_READ_SIZE + BROTLI_IMPLICIT_ZEROES)
+#define BROTLI_IBUF_MASK          (BROTLI_READ_SIZE - 1)
 
-#define UNALIGNED_COPY64(dst, src) memcpy(dst, src, 8)
-#define UNALIGNED_MOVE64(dst, src) memmove(dst, src, 8)
 
-static const uint32_t kBitMask[BROTLI_MAX_NUM_BIT_READ] = {
-  0, 1, 3, 7, 15, 31, 63, 127, 255, 511, 1023, 2047, 4095, 8191, 16383, 32767,
-  65535, 131071, 262143, 524287, 1048575, 2097151, 4194303, 8388607, 16777215
-};
+
+static BROTLI_INLINE uint32_t BitMask(int n) { return ~((0xffffffff) << n); }
 
 typedef struct {
-  
-  
-  uint8_t buf_[BROTLI_IBUF_SIZE];
-  uint8_t*    buf_ptr_;      
-  BrotliInput input_;        
-#if (BROTLI_USE_64_BITS)
+#if (BROTLI_64_BITS_LITTLE_ENDIAN)
   uint64_t    val_;          
 #else
   uint32_t    val_;          
 #endif
-  uint32_t    pos_;          
   uint32_t    bit_pos_;      
-  uint32_t    bit_end_pos_;  
+  uint8_t*    next_in;       
+  uint32_t    avail_in;
   int         eos_;          
+  BrotliInput input_;        
+
+  
+  
+  uint8_t buf_[BROTLI_IBUF_SIZE];
 } BrotliBitReader;
 
-int BrotliInitBitReader(BrotliBitReader* const br, BrotliInput input);
 
 
-static BROTLI_INLINE uint32_t BrotliPrefetchBits(BrotliBitReader* const br) {
+void BrotliInitBitReader(BrotliBitReader* const br, BrotliInput input);
+
+
+
+void BrotliWarmupBitReader(BrotliBitReader* const br);
+
+
+
+
+
+
+
+
+
+
+
+
+
+static BROTLI_INLINE int BrotliReadInput(
+    BrotliBitReader* const br, int finish) {
+  if (PREDICT_FALSE(br->eos_)) {
+    return 0;
+  } else {
+    size_t i;
+    int bytes_read;
+    if (br->next_in != br->buf_) {
+      for (i = 0; i < br->avail_in; i++) {
+        br->buf_[i] = br->next_in[i];
+      }
+      br->next_in = br->buf_;
+    }
+    bytes_read = BrotliRead(br->input_, br->next_in + br->avail_in,
+        (size_t)(BROTLI_READ_SIZE - br->avail_in));
+    if (bytes_read < 0) {
+      return 0;
+    }
+    br->avail_in += (uint32_t)bytes_read;
+    if (br->avail_in < BROTLI_READ_SIZE) {
+      if (!finish) {
+        return 0;
+      }
+      br->eos_ = 1;
+      
+      memset(br->next_in + br->avail_in, 0, BROTLI_IMPLICIT_ZEROES);
+      br->avail_in += BROTLI_IMPLICIT_ZEROES;
+    }
+    return 1;
+  }
+}
+
+
+
+static BROTLI_INLINE size_t BrotliGetRemainingBytes(BrotliBitReader* br) {
+  return br->avail_in + sizeof(br->val_) - (br->bit_pos_ >> 3);
+}
+
+
+
+
+static BROTLI_INLINE int BrotliCheckInputAmount(
+    BrotliBitReader* const br, size_t num) {
+  return br->avail_in >= num;
+}
+
+
+
+static BROTLI_INLINE void BrotliFillBitWindow(
+    BrotliBitReader* const br, int n_bits) {
+#if (BROTLI_64_BITS_LITTLE_ENDIAN)
+  if (IS_CONSTANT(n_bits) && n_bits <= 8) {
+    if (br->bit_pos_ >= 56) {
+      br->val_ >>= 56;
+      br->bit_pos_ ^= 56;  
+      br->val_ |= (*(const uint64_t*)(br->next_in)) << 8;
+      br->avail_in -= 7;
+      br->next_in += 7;
+    }
+  } else if (IS_CONSTANT(n_bits) && n_bits <= 16) {
+    if (br->bit_pos_ >= 48) {
+      br->val_ >>= 48;
+      br->bit_pos_ ^= 48;  
+      br->val_ |= (*(const uint64_t*)(br->next_in)) << 16;
+      br->avail_in -= 6;
+      br->next_in += 6;
+    }
+  } else {
+    if (br->bit_pos_ >= 32) {
+      br->val_ >>= 32;
+      br->bit_pos_ ^= 32;  
+      br->val_ |= ((uint64_t)(*(const uint32_t*)(br->next_in))) << 32;
+      br->avail_in -= 4;
+      br->next_in += 4;
+    }
+  }
+#elif (BROTLI_LITTLE_ENDIAN)
+  if (IS_CONSTANT(n_bits) && n_bits <= 8) {
+    if (br->bit_pos_ >= 24) {
+      br->val_ >>= 24;
+      br->bit_pos_ ^= 24;  
+      br->val_ |= (*(const uint32_t*)(br->next_in)) << 8;
+      br->avail_in -= 3;
+      br->next_in += 3;
+    }
+  } else {
+    if (br->bit_pos_ >= 16) {
+      br->val_ >>= 16;
+      br->bit_pos_ ^= 16;  
+      br->val_ |= ((uint32_t)(*(const uint16_t*)(br->next_in))) << 16;
+      br->avail_in -= 2;
+      br->next_in += 2;
+    }
+    if (!IS_CONSTANT(n_bits) || (n_bits > 16)) {
+      if (br->bit_pos_ >= 8) {
+        br->val_ >>= 8;
+        br->bit_pos_ ^= 8;  
+        br->val_ |= ((uint32_t)*br->next_in) << 24;
+        --br->avail_in;
+        ++br->next_in;
+      }
+    }
+  }
+#else
+  while (br->bit_pos_ >= 8) {
+    br->val_ >>= 8;
+    br->val_ |= ((uint32_t)*br->next_in) << 24;
+    br->bit_pos_ -= 8;
+    --br->avail_in;
+    ++br->next_in;
+  }
+#endif
+}
+
+
+
+static BROTLI_INLINE uint32_t BrotliGetBitsUnmasked(
+    BrotliBitReader* const br, int n_bits) {
+  BrotliFillBitWindow(br, n_bits);
   return (uint32_t)(br->val_ >> br->bit_pos_);
 }
 
 
-
-static BROTLI_INLINE void BrotliSetBitPos(BrotliBitReader* const br,
-                                          uint32_t val) {
-#ifdef BROTLI_DECODE_DEBUG
-  uint32_t n_bits = val - br->bit_pos_;
-  const uint32_t bval = (uint32_t)(br->val_ >> br->bit_pos_) & kBitMask[n_bits];
-  printf("[BrotliReadBits]  %010d %2d  val: %6x\n",
-         (br->pos_ << 3) + br->bit_pos_ - 64, n_bits, bval);
-#endif
-  br->bit_pos_ = val;
+static BROTLI_INLINE uint32_t BrotliGetBits(
+    BrotliBitReader* const br, int n_bits) {
+  BrotliFillBitWindow(br, n_bits);
+  return (uint32_t)(br->val_ >> br->bit_pos_) & BitMask(n_bits);
 }
 
 
-
-
-
-static BROTLI_INLINE void ShiftBytes32(BrotliBitReader* const br) {
-  while (br->bit_pos_ >= 8) {
-    br->val_ >>= 8;
-    br->val_ |= ((uint32_t)br->buf_[br->pos_ & BROTLI_IBUF_MASK]) << 24;
-    ++br->pos_;
-    br->bit_pos_ -= 8;
-    br->bit_end_pos_ -= 8;
-  }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-static BROTLI_INLINE int BrotliReadMoreInput(BrotliBitReader* const br) {
-  if (br->bit_end_pos_ > 256) {
-    return 1;
-  } else if (br->eos_) {
-    return br->bit_pos_ <= br->bit_end_pos_;
-  } else {
-    uint8_t* dst = br->buf_ptr_;
-    int bytes_read = BrotliRead(br->input_, dst, BROTLI_READ_SIZE);
-    if (bytes_read < 0) {
-      return 0;
-    }
-    if (bytes_read < BROTLI_READ_SIZE) {
-      br->eos_ = 1;
-      
-#if (BROTLI_USE_64_BITS)
-      *(uint64_t*)(dst + bytes_read) = 0;
-      *(uint64_t*)(dst + bytes_read + 8) = 0;
-      *(uint64_t*)(dst + bytes_read + 16) = 0;
-      *(uint64_t*)(dst + bytes_read + 24) = 0;
-#else
-      memset(dst + bytes_read, 0, 32);
-#endif
-    }
-    if (dst == br->buf_) {
-      
-#if (BROTLI_USE_64_BITS)
-      UNALIGNED_COPY64(br->buf_ + BROTLI_IBUF_SIZE - 32, br->buf_);
-      UNALIGNED_COPY64(br->buf_ + BROTLI_IBUF_SIZE - 24, br->buf_ + 8);
-      UNALIGNED_COPY64(br->buf_ + BROTLI_IBUF_SIZE - 16, br->buf_ + 16);
-      UNALIGNED_COPY64(br->buf_ + BROTLI_IBUF_SIZE - 8, br->buf_ + 24);
-#else
-      memcpy(br->buf_ + (BROTLI_READ_SIZE << 1), br->buf_, 32);
-#endif
-      br->buf_ptr_ = br->buf_ + BROTLI_READ_SIZE;
-    } else {
-      br->buf_ptr_ = br->buf_;
-    }
-    br->bit_end_pos_ += ((uint32_t)bytes_read << 3);
-    return 1;
-  }
-}
-
-
-static BROTLI_INLINE void BrotliFillBitWindow(BrotliBitReader* const br) {
-#if (BROTLI_USE_64_BITS)
-  if (br->bit_pos_ >= 40) {
-    
-
-
-
-
-
-    br->val_ >>= 40;
-    br->val_ |= *(const uint64_t*)(
-        br->buf_ + (br->pos_ & BROTLI_IBUF_MASK)) << 24;
-    br->pos_ += 5;
-    br->bit_pos_ -= 40;
-    br->bit_end_pos_ -= 40;
-  }
-#else
-  ShiftBytes32(br);
-#endif
+static BROTLI_INLINE void BrotliDropBits(
+    BrotliBitReader* const br, int n_bits) {
+  br->bit_pos_ += (uint32_t)n_bits;
 }
 
 
 static BROTLI_INLINE uint32_t BrotliReadBits(
     BrotliBitReader* const br, int n_bits) {
   uint32_t val;
-#if (BROTLI_USE_64_BITS)
-  BrotliFillBitWindow(br);
-  val = (uint32_t)(br->val_ >> br->bit_pos_) & kBitMask[n_bits];
-#else
-  
-
-
-
-  if ((32 - br->bit_pos_) < ((uint32_t) n_bits)) {
-    BrotliFillBitWindow(br);
-  }
-  val = (br->val_ >> br->bit_pos_) & kBitMask[n_bits];
-#endif
+  BrotliFillBitWindow(br, n_bits);
+  val = (uint32_t)(br->val_ >> br->bit_pos_) & BitMask(n_bits);
 #ifdef BROTLI_DECODE_DEBUG
-  printf("[BrotliReadBits]  %010d %2d  val: %6x\n",
-         (br->pos_ << 3) + br->bit_pos_ - 64, n_bits, val);
+  printf("[BrotliReadBits]  %d %d %d val: %6x\n",
+         (int)br->avail_in, (int)br->bit_pos_, n_bits, val);
 #endif
   br->bit_pos_ += (uint32_t)n_bits;
   return val;
+}
+
+
+
+static BROTLI_INLINE int BrotliJumpToByteBoundary(BrotliBitReader* br) {
+  uint32_t new_bit_pos = (br->bit_pos_ + 7) & (uint32_t)(~7UL);
+  uint32_t pad_bits = BrotliReadBits(br, (int)(new_bit_pos - br->bit_pos_));
+  return pad_bits == 0;
+}
+
+
+
+
+static BROTLI_INLINE void BrotliCopyBytes(uint8_t* dest,
+                                          BrotliBitReader* br, size_t num) {
+  while (br->bit_pos_ + 8 <= (BROTLI_64_BITS_LITTLE_ENDIAN ? 64 : 32)
+      && num > 0) {
+    *dest = (uint8_t)(br->val_ >> br->bit_pos_);
+    br->bit_pos_ += 8;
+    ++dest;
+    --num;
+  }
+  memcpy(dest, br->next_in, num);
+  br->avail_in -= (uint32_t)num;
+  br->next_in += num;
+  br->bit_pos_ = 0;
 }
 
 #if defined(__cplusplus) || defined(c_plusplus)

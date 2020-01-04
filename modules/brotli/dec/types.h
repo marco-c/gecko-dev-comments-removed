@@ -20,15 +20,7 @@
 
 #include <stddef.h>  
 
-#ifndef _MSC_VER
-#include <inttypes.h>
-#if defined(__cplusplus) || !defined(__STRICT_ANSI__) \
-    || __STDC_VERSION__ >= 199901L
-#define BROTLI_INLINE inline
-#else
-#define BROTLI_INLINE
-#endif
-#else
+#if defined(_MSC_VER) && (_MSC_VER < 1600)
 typedef signed   char int8_t;
 typedef unsigned char uint8_t;
 typedef signed   short int16_t;
@@ -37,7 +29,8 @@ typedef signed   int int32_t;
 typedef unsigned int uint32_t;
 typedef unsigned long long int uint64_t;
 typedef long long int int64_t;
-#define BROTLI_INLINE __forceinline
+#else
+#include <stdint.h>
 #endif  
 
 #endif  

@@ -18,12 +18,22 @@
 #ifndef BROTLI_DEC_HUFFMAN_H_
 #define BROTLI_DEC_HUFFMAN_H_
 
-#include <assert.h>
 #include "./types.h"
 
 #if defined(__cplusplus) || defined(c_plusplus)
 extern "C" {
 #endif
+
+#define BROTLI_HUFFMAN_MAX_CODE_LENGTH 15
+
+
+#define BROTLI_HUFFMAN_MAX_CODE_LENGTHS_SIZE 704
+
+
+
+#define BROTLI_HUFFMAN_MAX_TABLE_SIZE 1080
+
+#define BROTLI_HUFFMAN_MAX_CODE_LENGTH_CODE_LENGTH 5
 
 typedef struct {
   uint8_t bits;     
@@ -32,10 +42,33 @@ typedef struct {
 
 
 
+void BrotliBuildCodeLengthsHuffmanTable(HuffmanCode* root_table,
+                                        const uint8_t* const code_lengths,
+                                        uint16_t *count);
+
+
+
 int BrotliBuildHuffmanTable(HuffmanCode* root_table,
                             int root_bits,
-                            const uint8_t* const code_lengths,
-                            int code_lengths_size);
+                            const uint16_t* const symbol_lists,
+                            uint16_t *count_arg);
+
+int BrotliBuildSimpleHuffmanTable(HuffmanCode* table,
+                                  int root_bits,
+                                  uint16_t *symbols,
+                                  uint32_t num_symbols);
+
+
+typedef struct {
+  HuffmanCode** htrees;
+  HuffmanCode* codes;
+  int16_t alphabet_size;
+  int16_t num_htrees;
+} HuffmanTreeGroup;
+
+void BrotliHuffmanTreeGroupInit(HuffmanTreeGroup* group,
+                                int alphabet_size, int ntrees);
+void BrotliHuffmanTreeGroupRelease(HuffmanTreeGroup* group);
 
 #if defined(__cplusplus) || defined(c_plusplus)
 }    
