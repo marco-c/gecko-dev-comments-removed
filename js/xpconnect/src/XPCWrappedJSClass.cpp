@@ -820,26 +820,10 @@ nsXPCWrappedJSClass::CheckForException(XPCCallContext & ccx,
             if (reportable) {
                 
                 
-                reportable = aForceReport ||
-                    NS_ERROR_GET_MODULE(e_result) == NS_ERROR_MODULE_XPCONNECT;
-
                 
                 
                 
-                if (!reportable)
-                    reportable = nsXPConnect::ReportAllJSExceptions();
-
-                
-                
-                if (!reportable)
-                    reportable = !JS::DescribeScriptedCaller(cx);
-
-                
-                
-                
-                
-                
-                if (reportable && e_result == NS_ERROR_NO_INTERFACE &&
+                if (e_result == NS_ERROR_NO_INTERFACE &&
                     !strcmp(anInterfaceName, "nsIInterfaceRequestor") &&
                     !strcmp(aPropertyName, "getInterface")) {
                     reportable = false;
