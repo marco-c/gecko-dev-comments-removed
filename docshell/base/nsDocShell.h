@@ -294,6 +294,7 @@ public:
   
   static void CopyFavicon(nsIURI* aOldURI,
                           nsIURI* aNewURI,
+                          nsIPrincipal* aLoadingPrincipal,
                           bool aInPrivateBrowsing);
 
   static nsDocShell* Cast(nsIDocShell* aDocShell)
