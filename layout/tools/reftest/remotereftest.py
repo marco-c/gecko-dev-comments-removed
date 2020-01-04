@@ -231,9 +231,6 @@ class RemoteReftest(RefTest):
         prefs["font.size.inflation.emPerLine"] = 0
         prefs["font.size.inflation.minTwips"] = 0
         prefs["reftest.remote"] = True
-        
-        prefs["toolkit.telemetry.prompted"] = 999
-        prefs["toolkit.telemetry.notifiedOptOut"] = 999
         prefs["datareporting.policy.dataSubmissionPolicyBypassAcceptance"] = True
 
         
