@@ -223,18 +223,17 @@ class GeckoAppShellSupport final
     : public java::GeckoAppShell::Natives<GeckoAppShellSupport>
 {
 public:
-    static void ReportJavaCrash(jni::String::Param aStackTrace)
+    static void ReportJavaCrash(const jni::Class::LocalRef& aCls,
+                                jni::Throwable::Param aException,
+                                jni::String::Param aStack)
     {
-#ifdef MOZ_CRASHREPORTER
-        if (NS_WARN_IF(NS_FAILED(CrashReporter::AnnotateCrashReport(
-                NS_LITERAL_CSTRING("JavaStackTrace"),
-                aStackTrace->ToCString())))) {
+        if (!jni::ReportException(aCls.Env(), aException.Get(), aStack.Get())) {
             
             
             
             return;
         }
-#endif 
+
         MOZ_CRASH("Uncaught Java exception");
     }
 
