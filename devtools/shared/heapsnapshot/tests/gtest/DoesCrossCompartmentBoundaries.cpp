@@ -60,6 +60,7 @@ DEF_TEST(DoesCrossCompartmentBoundaries, {
 
     
     
+    ExpectWriteNode(writer, nodeD);
 
     JS::AutoCheckCannotGC noGC(cx);
 

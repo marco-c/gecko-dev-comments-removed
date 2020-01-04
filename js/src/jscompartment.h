@@ -478,23 +478,10 @@ struct JSCompartment
                                 size_t* privateData);
 
     
-
-
-    js::PropertyTree             propertyTree;
-
-    
-    JS::WeakCache<js::BaseShapeSet> baseShapes;
-
-    
-    JS::WeakCache<js::InitialShapeSet> initialShapes;
-
-    
     js::ObjectGroupCompartment   objectGroups;
 
 #ifdef JSGC_HASH_TABLE_CHECKS
-    void checkInitialShapesTableAfterMovingGC();
     void checkWrapperMapAfterMovingGC();
-    void checkBaseShapeTableAfterMovingGC();
     void checkScriptMapsAfterMovingGC();
 #endif
 
@@ -636,7 +623,6 @@ struct JSCompartment
     void clearTables();
 
     static void fixupCrossCompartmentWrappersAfterMovingGC(JSTracer* trc);
-    void fixupInitialShapeTable();
     void fixupAfterMovingGC();
     void fixupGlobal();
     void fixupScriptMapsAfterMovingGC();

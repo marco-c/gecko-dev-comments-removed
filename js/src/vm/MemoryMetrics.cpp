@@ -322,7 +322,8 @@ StatsZoneCallback(JSRuntime* rt, void* data, Zone* zone)
     zone->addSizeOfIncludingThis(rtStats->mallocSizeOf_,
                                  &zStats.typePool,
                                  &zStats.baselineStubsOptimized,
-                                 &zStats.uniqueIdMap);
+                                 &zStats.uniqueIdMap,
+                                 &zStats.shapeTables);
 }
 
 static void
@@ -546,49 +547,11 @@ StatsCellCallback(JSRuntime* rt, void* data, void* thing, JS::TraceKind traceKin
         break;
 
       case JS::TraceKind::BaseShape: {
-        BaseShape* base = static_cast<BaseShape*>(thing);
-        CompartmentStats& cStats = base->compartment()->compartmentStats();
-
-        JS::ClassInfo info;        
+        JS::ShapeInfo info;        
         info.shapesGCHeapBase += thingSize;
         
 
-        cStats.classInfo.add(info);
-
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        if (0) {
-            const Class* clasp = base->clasp();
-            const char* className = clasp->name;
-            AddClassInfo(granularity, cStats, className, info);
-        }
+        zStats->shapeInfo.add(info);
         break;
       }
 
@@ -607,23 +570,14 @@ StatsCellCallback(JSRuntime* rt, void* data, void* thing, JS::TraceKind traceKin
 
       case JS::TraceKind::Shape: {
         Shape* shape = static_cast<Shape*>(thing);
-        CompartmentStats& cStats = shape->compartment()->compartmentStats();
-        JS::ClassInfo info;        
+
+        JS::ShapeInfo info;        
         if (shape->inDictionary())
             info.shapesGCHeapDict += thingSize;
         else
             info.shapesGCHeapTree += thingSize;
         shape->addSizeOfExcludingThis(rtStats->mallocSizeOf_, &info);
-        cStats.classInfo.add(info);
-
-        
-        
-        if (0) {
-            const BaseShape* base = shape->base();
-            const Class* clasp = base->clasp();
-            const char* className = clasp->name;
-            AddClassInfo(granularity, cStats, className, info);
-        }
+        zStats->shapeInfo.add(info);
         break;
       }
 

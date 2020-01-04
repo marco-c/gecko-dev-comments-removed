@@ -148,7 +148,8 @@ struct Zone : public JS::shadow::Zone,
     void addSizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf,
                                 size_t* typePool,
                                 size_t* baselineStubsOptimized,
-                                size_t* uniqueIdMap);
+                                size_t* uniqueIdMap,
+                                size_t* shapeTables);
 
     void resetGCMallocBytes();
     void setGCMaxMallocBytes(size_t value);
@@ -297,6 +298,8 @@ struct Zone : public JS::shadow::Zone,
     DebuggerVector* getDebuggers() const { return debuggers; }
     DebuggerVector* getOrCreateDebuggers(JSContext* cx);
 
+    void clearTables();
+
     
 
 
@@ -379,6 +382,22 @@ struct Zone : public JS::shadow::Zone,
     
     
     size_t gcDelayBytes;
+
+    
+    js::PropertyTree propertyTree;
+
+    
+    JS::WeakCache<js::BaseShapeSet> baseShapes;
+
+    
+    JS::WeakCache<js::InitialShapeSet> initialShapes;
+
+#ifdef JSGC_HASH_TABLE_CHECKS
+    void checkInitialShapesTableAfterMovingGC();
+    void checkBaseShapeTableAfterMovingGC();
+#endif
+    void fixupInitialShapeTable();
+    void fixupAfterMovingGC();
 
     
     void* data;

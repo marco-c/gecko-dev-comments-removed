@@ -4,6 +4,7 @@
 
 
 
+
 #ifndef vm_Shape_inl_h
 #define vm_Shape_inl_h
 
@@ -26,8 +27,7 @@ namespace js {
 inline
 StackBaseShape::StackBaseShape(ExclusiveContext* cx, const Class* clasp, uint32_t objectFlags)
   : flags(objectFlags),
-    clasp(clasp),
-    compartment(cx->compartment_)
+    clasp(clasp)
 {}
 
 inline Shape*

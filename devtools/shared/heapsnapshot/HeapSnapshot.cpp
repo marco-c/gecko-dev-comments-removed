@@ -1037,6 +1037,52 @@ struct TwoByteString::HashPolicy {
 
 
 
+
+
+static bool
+ShouldIncludeEdge(JS::CompartmentSet* compartments,
+                  const ubi::Node& origin, const ubi::Edge& edge,
+                  CoreDumpWriter::EdgePolicy* policy = nullptr)
+{
+  if (policy) {
+    *policy = CoreDumpWriter::INCLUDE_EDGES;
+  }
+
+  if (!compartments) {
+    
+    
+    return true;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  JSCompartment* compartment = edge.referent.compartment();
+
+  if (!compartment || compartments->has(compartment)) {
+    return true;
+  }
+
+  if (policy) {
+    *policy = CoreDumpWriter::EXCLUDE_EDGES;
+  }
+
+  return !!origin.compartment();
+}
+
+
+
 class MOZ_STACK_CLASS StreamWriter : public CoreDumpWriter
 {
   using FrameSet         = js::HashSet<uint64_t>;
@@ -1056,6 +1102,8 @@ class MOZ_STACK_CLASS StreamWriter : public CoreDumpWriter
   OneByteStringMap oneByteStringsAlreadySerialized;
 
   ::google::protobuf::io::ZeroCopyOutputStream& stream;
+
+  JS::CompartmentSet* compartments;
 
   bool writeMessage(const ::google::protobuf::MessageLite& message) {
     
@@ -1187,13 +1235,15 @@ class MOZ_STACK_CLASS StreamWriter : public CoreDumpWriter
 public:
   StreamWriter(JSContext* cx,
                ::google::protobuf::io::ZeroCopyOutputStream& stream,
-               bool wantNames)
+               bool wantNames,
+               JS::CompartmentSet* compartments)
     : cx(cx)
     , wantNames(wantNames)
     , framesAlreadySerialized(cx)
     , twoByteStringsAlreadySerialized(cx)
     , oneByteStringsAlreadySerialized(cx)
     , stream(stream)
+    , compartments(compartments)
   { }
 
   bool init() {
@@ -1240,6 +1290,9 @@ public:
 
       for ( ; !edges->empty(); edges->popFront()) {
         ubi::Edge& ubiEdge = edges->front();
+        if (!ShouldIncludeEdge(compartments, ubiNode, ubiEdge)) {
+          continue;
+        }
 
         protobuf::Edge* protobufEdge = protobufNode.add_edges();
         if (NS_WARN_IF(!protobufEdge)) {
@@ -1329,29 +1382,16 @@ public:
     if (!first)
       return true;
 
+    CoreDumpWriter::EdgePolicy policy;
+    if (!ShouldIncludeEdge(compartments, origin, edge, &policy))
+      return true;
+
     nodeCount++;
 
-    const JS::ubi::Node& referent = edge.referent;
+    if (policy == CoreDumpWriter::EXCLUDE_EDGES)
+      traversal.abandonReferent();
 
-    if (!compartments)
-      
-      
-      return writer.writeNode(referent, CoreDumpWriter::INCLUDE_EDGES);
-
-    
-    
-    
-    
-    
-    
-
-    JSCompartment* compartment = referent.compartment();
-
-    if (compartments->has(compartment))
-      return writer.writeNode(referent, CoreDumpWriter::INCLUDE_EDGES);
-
-    traversal.abandonReferent();
-    return writer.writeNode(referent, CoreDumpWriter::EXCLUDE_EDGES);
+    return writer.writeNode(edge.referent, policy);
   }
 };
 
@@ -1533,17 +1573,19 @@ ThreadSafeChromeUtils::SaveHeapSnapshot(GlobalObject& global,
   ::google::protobuf::io::GzipOutputStream gzipStream(&zeroCopyStream);
 
   JSContext* cx = global.Context();
-  StreamWriter writer(cx, gzipStream, wantNames);
-  if (NS_WARN_IF(!writer.init())) {
-    rv.Throw(NS_ERROR_OUT_OF_MEMORY);
-    return;
-  }
 
   {
     Maybe<AutoCheckCannotGC> maybeNoGC;
     ubi::RootList rootList(cx, maybeNoGC, wantNames);
     if (!EstablishBoundaries(cx, rv, boundaries, rootList, compartments))
       return;
+
+    StreamWriter writer(cx, gzipStream, wantNames,
+                        compartments.initialized() ? &compartments : nullptr);
+    if (NS_WARN_IF(!writer.init())) {
+      rv.Throw(NS_ERROR_OUT_OF_MEMORY);
+      return;
+    }
 
     MOZ_ASSERT(maybeNoGC.isSome());
     ubi::Node roots(&rootList);
