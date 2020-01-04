@@ -1485,6 +1485,22 @@ FragmentOrElement::RemoveBlackMarkedNode(nsINode* aNode)
   gCCBlackMarkedNodes->RemoveEntry(aNode);
 }
 
+static bool
+IsCertainlyAliveNode(nsINode* aNode, nsIDocument* aDoc)
+{
+  MOZ_ASSERT(aNode->GetUncomposedDoc() == aDoc);
+
+  
+  
+  
+  
+  
+  return nsCCUncollectableMarker::InGeneration(aDoc->GetMarkedCCGeneration()) ||
+         (nsCCUncollectableMarker::sGeneration &&
+          aDoc->IsBeingUsedAsImage() &&
+          aDoc->IsVisible());
+}
+
 
 bool
 FragmentOrElement::CanSkipInCC(nsINode* aNode)
@@ -1497,8 +1513,7 @@ FragmentOrElement::CanSkipInCC(nsINode* aNode)
   
   
   nsIDocument* currentDoc = aNode->GetUncomposedDoc();
-  if (currentDoc &&
-      nsCCUncollectableMarker::InGeneration(currentDoc->GetMarkedCCGeneration())) {
+  if (currentDoc && IsCertainlyAliveNode(aNode, currentDoc)) {
     return !NeedsScriptTraverse(aNode);
   }
 
@@ -1674,8 +1689,7 @@ FragmentOrElement::CanSkip(nsINode* aNode, bool aRemovingAllowed)
 
   bool unoptimizable = aNode->UnoptimizableCCNode();
   nsIDocument* currentDoc = aNode->GetUncomposedDoc();
-  if (currentDoc &&
-      nsCCUncollectableMarker::InGeneration(currentDoc->GetMarkedCCGeneration()) &&
+  if (currentDoc && IsCertainlyAliveNode(aNode, currentDoc) &&
       (!unoptimizable || NodeHasActiveFrame(currentDoc, aNode) ||
        OwnedByBindingManager(currentDoc, aNode))) {
     MarkNodeChildren(aNode);
@@ -1804,8 +1818,8 @@ FragmentOrElement::CanSkipThis(nsINode* aNode)
   }
   nsIDocument* c = aNode->GetUncomposedDoc();
   return
-    ((c && nsCCUncollectableMarker::InGeneration(c->GetMarkedCCGeneration())) ||
-     aNode->InCCBlackTree()) && !NeedsScriptTraverse(aNode);
+    ((c && IsCertainlyAliveNode(aNode, c)) || aNode->InCCBlackTree()) &&
+    !NeedsScriptTraverse(aNode);
 }
 
 void
