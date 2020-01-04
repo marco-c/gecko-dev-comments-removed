@@ -13,6 +13,7 @@
 #include "nsStringGlue.h"
 
 #include "mozilla/TelemetryHistogramEnums.h"
+#include "mozilla/TelemetryScalarEnums.h"
 
 
 
@@ -314,6 +315,40 @@ void RecordThreadHangStats(ThreadHangStats& aStats);
 
 
 void WriteFailedProfileLock(nsIFile* aProfileDir);
+
+
+
+
+
+
+
+void ScalarAdd(mozilla::Telemetry::ScalarID aId, uint32_t aValue);
+
+
+
+
+
+
+
+void ScalarSet(mozilla::Telemetry::ScalarID aId, uint32_t aValue);
+
+
+
+
+
+
+
+
+void ScalarSet(mozilla::Telemetry::ScalarID aId, const nsAString& aValue);
+
+
+
+
+
+
+
+
+void ScalarSetMaximum(mozilla::Telemetry::ScalarID aId, uint32_t aValue);
 
 } 
 } 
