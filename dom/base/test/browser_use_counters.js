@@ -11,7 +11,12 @@ const gHttpTestRoot = "http://example.com/browser/dom/base/test/";
 
 
 var gOldContentCanRecord = false;
+var gOldParentCanRecord = false;
 add_task(function* test_initialize() {
+  let Telemetry = Cc["@mozilla.org/base/telemetry;1"].getService(Ci.nsITelemetry);
+  gOldParentCanRecord = Telemetry.canRecordExtended
+  Telemetry.canRecordExtended = true;
+
   
   
   
@@ -75,6 +80,9 @@ add_task(function* () {
 });
 
 add_task(function* () {
+  let Telemetry = Cc["@mozilla.org/base/telemetry;1"].getService(Ci.nsITelemetry);
+  Telemetry.canRecordExtended = gOldParentCanRecord;
+
   yield ContentTask.spawn(gBrowser.selectedBrowser, { oldCanRecord: gOldContentCanRecord }, function (arg) {
     Cu.import("resource://gre/modules/PromiseUtils.jsm");
     yield new Promise(resolve => {
