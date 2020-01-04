@@ -102,6 +102,7 @@ class nsWrapperCache;
 class nsAttrValue;
 class nsITransferable;
 class nsPIWindowRoot;
+class nsIWindowProvider;
 
 struct JSPropertyDescriptor;
 struct JSRuntime;
@@ -1639,6 +1640,11 @@ public:
   static bool IsSafeToRunScript() {
     return sScriptBlockerCount == 0;
   }
+
+  
+  
+  static nsIWindowProvider*
+  GetWindowProviderForContentProcess();
 
   
 

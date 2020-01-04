@@ -546,7 +546,7 @@ nsWindowWatcher::OpenWindowInternal(nsIDOMWindow* aParent,
   
 
   
-  bool hasChromeParent = true;
+  bool hasChromeParent = XRE_IsContentProcess() ? false : true;
   if (aParent) {
     
     nsIDocument* doc = parentWindow->GetDoc();
@@ -613,7 +613,9 @@ nsWindowWatcher::OpenWindowInternal(nsIDOMWindow* aParent,
     
 
     nsCOMPtr<nsIGlobalObject> parentGlobalObject = do_QueryInterface(aParent);
-    if (NS_WARN_IF(!jsapiChromeGuard.Init(parentGlobalObject))) {
+    if (!aParent) {
+      jsapiChromeGuard.Init();
+    } else if (NS_WARN_IF(!jsapiChromeGuard.Init(parentGlobalObject))) {
       return NS_ERROR_UNEXPECTED;
     }
   }
@@ -645,10 +647,16 @@ nsWindowWatcher::OpenWindowInternal(nsIDOMWindow* aParent,
         !(chromeFlags & (nsIWebBrowserChrome::CHROME_MODAL |
                          nsIWebBrowserChrome::CHROME_OPENAS_DIALOG |
                          nsIWebBrowserChrome::CHROME_OPENAS_CHROME))) {
-      nsCOMPtr<nsIWindowProvider> provider = do_GetInterface(parentTreeOwner);
-      if (provider) {
-        NS_ASSERTION(aParent, "We've _got_ to have a parent here!");
+      nsCOMPtr<nsIWindowProvider> provider;
+      if (parentTreeOwner) {
+        provider = do_GetInterface(parentTreeOwner);
+      } else if (XRE_IsContentProcess()) {
+        
+        
+        provider = nsContentUtils::GetWindowProviderForContentProcess();
+      }
 
+      if (provider) {
         nsCOMPtr<nsIDOMWindow> newWindow;
         rv = provider->ProvideWindow(aParent, chromeFlags, aCalledFromJS,
                                      sizeSpec.PositionSpecified(),

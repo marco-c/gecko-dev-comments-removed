@@ -71,35 +71,36 @@ nsIContentParent::DeallocPJavaScriptParent(PJavaScriptParent* aParent)
 bool
 nsIContentParent::CanOpenBrowser(const IPCTabContext& aContext)
 {
-  const IPCTabContextUnion& contextUnion = aContext.contextUnion();
-
   
   
   
   
-  if (contextUnion.type() != IPCTabContextUnion::TPopupIPCTabContext) {
+  if (aContext.type() != IPCTabContext::TPopupIPCTabContext &&
+      aContext.type() != IPCTabContext::TUnsafeIPCTabContext) {
     ASSERT_UNLESS_FUZZING("Unexpected IPCTabContext type.  Aborting AllocPBrowserParent.");
     return false;
   }
 
-  const PopupIPCTabContext& popupContext = contextUnion.get_PopupIPCTabContext();
-  if (popupContext.opener().type() != PBrowserOrId::TPBrowserParent) {
-    ASSERT_UNLESS_FUZZING("Unexpected PopupIPCTabContext type.  Aborting AllocPBrowserParent.");
-    return false;
-  }
+  if (aContext.type() == IPCTabContext::TPopupIPCTabContext) {
+    const PopupIPCTabContext& popupContext = aContext.get_PopupIPCTabContext();
+    if (popupContext.opener().type() != PBrowserOrId::TPBrowserParent) {
+      ASSERT_UNLESS_FUZZING("Unexpected PopupIPCTabContext type.  Aborting AllocPBrowserParent.");
+      return false;
+    }
 
-  auto opener = TabParent::GetFrom(popupContext.opener().get_PBrowserParent());
-  if (!opener) {
-    ASSERT_UNLESS_FUZZING("Got null opener from child; aborting AllocPBrowserParent.");
-    return false;
-  }
+    auto opener = TabParent::GetFrom(popupContext.opener().get_PBrowserParent());
+    if (!opener) {
+      ASSERT_UNLESS_FUZZING("Got null opener from child; aborting AllocPBrowserParent.");
+      return false;
+    }
 
-  
-  
-  
-  if (!popupContext.isBrowserElement() && opener->IsBrowserElement()) {
-    ASSERT_UNLESS_FUZZING("Child trying to escalate privileges!  Aborting AllocPBrowserParent.");
-    return false;
+    
+    
+    
+    if (!popupContext.isBrowserElement() && opener->IsBrowserElement()) {
+      ASSERT_UNLESS_FUZZING("Child trying to escalate privileges!  Aborting AllocPBrowserParent.");
+      return false;
+    }
   }
 
   MaybeInvalidTabContext tc(aContext);
@@ -129,26 +130,25 @@ nsIContentParent::AllocPBrowserParent(const TabId& aTabId,
     return nullptr;
   }
 
-  const IPCTabContextUnion& contextUnion = aContext.contextUnion();
-  const PopupIPCTabContext& popupContext = contextUnion.get_PopupIPCTabContext();
-
   uint32_t chromeFlags = aChromeFlags;
+  if (aContext.type() == IPCTabContext::TPopupIPCTabContext) {
+    
+    
+    
+    const PopupIPCTabContext& popupContext = aContext.get_PopupIPCTabContext();
+    auto opener = TabParent::GetFrom(popupContext.opener().get_PBrowserParent());
+    
+    
+    nsCOMPtr<nsILoadContext> loadContext = opener->GetLoadContext();
+    if (!loadContext) {
+      return nullptr;
+    }
 
-  
-  
-  
-  auto opener = TabParent::GetFrom(popupContext.opener().get_PBrowserParent());
-  
-  
-  nsCOMPtr<nsILoadContext> loadContext = opener->GetLoadContext();
-  if (!loadContext) {
-    return nullptr;
-  }
-
-  bool isPrivate;
-  loadContext->GetUsePrivateBrowsing(&isPrivate);
-  if (isPrivate) {
-    chromeFlags |= nsIWebBrowserChrome::CHROME_PRIVATE_WINDOW;
+    bool isPrivate;
+    loadContext->GetUsePrivateBrowsing(&isPrivate);
+    if (isPrivate) {
+      chromeFlags |= nsIWebBrowserChrome::CHROME_PRIVATE_WINDOW;
+    }
   }
 
   
