@@ -102,7 +102,6 @@ public:
 
 
 
-
   void Translate(nscoord aLineLeft, nscoord aBlockStart)
   {
     mLineLeft += aLineLeft;
