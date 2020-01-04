@@ -53,6 +53,11 @@ public abstract class BrowserAppDelegate {
     
 
 
+    public void onNewIntent(BrowserApp browserApp, Intent intent) {}
+
+    
+
+
     public void onTabsTrayShown(BrowserApp browserApp, TabsPanel tabsPanel) {}
 
     
