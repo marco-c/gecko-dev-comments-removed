@@ -78,7 +78,7 @@ private:
         return flags;
     }
 
-    UniquePtr<gfxTextRun> mTextRun;
+    RefPtr<gfxTextRun> mTextRun;
 };
 
 class StubPropertyProvider : public gfxTextRun::PropertyProvider {
@@ -170,12 +170,6 @@ nscoord
 nsFontMetrics::XHeight()
 {
     return ROUND_TO_TWIPS(GetMetrics().xHeight);
-}
-
-nscoord
-nsFontMetrics::CapHeight()
-{
-    return ROUND_TO_TWIPS(GetMetrics().capHeight);
 }
 
 nscoord

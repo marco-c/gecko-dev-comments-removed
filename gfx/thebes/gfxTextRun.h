@@ -82,10 +82,11 @@ struct gfxTextRunDrawCallbacks {
 
 
 
+class gfxTextRun : public gfxShapedText
+{
+    NS_INLINE_DECL_REFCOUNTING(gfxTextRun);
 
-
-class gfxTextRun : public gfxShapedText {
-public:
+protected:
     
     
     void operator delete(void* p) {
@@ -94,6 +95,7 @@ public:
 
     virtual ~gfxTextRun();
 
+public:
     typedef gfxFont::RunMetrics Metrics;
     typedef mozilla::gfx::DrawTarget DrawTarget;
 
@@ -443,7 +445,7 @@ public:
 
     
     
-    static mozilla::UniquePtr<gfxTextRun>
+    static already_AddRefed<gfxTextRun>
     Create(const gfxTextRunFactory::Parameters *aParams,
            uint32_t aLength, gfxFontGroup *aFontGroup,
            uint32_t aFlags);
@@ -813,7 +815,7 @@ public:
 
 
 
-    virtual mozilla::UniquePtr<gfxTextRun>
+    virtual already_AddRefed<gfxTextRun>
     MakeTextRun(const char16_t *aString, uint32_t aLength,
                 const Parameters *aParams, uint32_t aFlags,
                 gfxMissingFontRecorder *aMFR);
@@ -823,7 +825,7 @@ public:
 
 
 
-    virtual mozilla::UniquePtr<gfxTextRun>
+    virtual already_AddRefed<gfxTextRun>
     MakeTextRun(const uint8_t *aString, uint32_t aLength,
                 const Parameters *aParams, uint32_t aFlags,
                 gfxMissingFontRecorder *aMFR);
@@ -833,7 +835,7 @@ public:
 
 
     template<typename T>
-    mozilla::UniquePtr<gfxTextRun>
+    already_AddRefed<gfxTextRun>
     MakeTextRun(const T* aString, uint32_t aLength,
                 DrawTarget* aRefDrawTarget,
                 int32_t aAppUnitsPerDevUnit,
@@ -861,7 +863,7 @@ public:
 
 
 
-    mozilla::UniquePtr<gfxTextRun>
+    already_AddRefed<gfxTextRun>
     MakeHyphenTextRun(DrawTarget* aDrawTarget, uint32_t aAppUnitsPerDevUnit);
 
     
@@ -1095,7 +1097,7 @@ protected:
 
     
     
-    mozilla::UniquePtr<gfxTextRun>   mCachedEllipsisTextRun;
+    RefPtr<gfxTextRun>   mCachedEllipsisTextRun;
 
     
     RefPtr<gfxFontFamily> mLastPrefFamily;
@@ -1115,13 +1117,13 @@ protected:
 
 
 
-    mozilla::UniquePtr<gfxTextRun>
+    already_AddRefed<gfxTextRun>
     MakeEmptyTextRun(const Parameters *aParams, uint32_t aFlags);
 
-    mozilla::UniquePtr<gfxTextRun>
+    already_AddRefed<gfxTextRun>
     MakeSpaceTextRun(const Parameters *aParams, uint32_t aFlags);
 
-    mozilla::UniquePtr<gfxTextRun>
+    already_AddRefed<gfxTextRun>
     MakeBlankTextRun(uint32_t aLength, const Parameters *aParams,
                      uint32_t aFlags);
 

@@ -597,7 +597,7 @@ public:
 protected:
   virtual ~nsTextFrame();
 
-  gfxTextRun* mTextRun;
+  RefPtr<gfxTextRun> mTextRun;
   nsIFrame*   mNextContinuation;
   
   

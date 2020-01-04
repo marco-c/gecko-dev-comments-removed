@@ -206,7 +206,7 @@ private:
   nsStyleContext*    mStyleContext;
   
   
-  mozilla::UniquePtr<gfxTextRun> mGlyphs[4];
+  RefPtr<gfxTextRun> mGlyphs[4];
   nsBoundingMetrics     mBmData[4];
   
   nscoord            mUnscaledAscent;
