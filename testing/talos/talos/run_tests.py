@@ -111,8 +111,6 @@ def run_tests(config, browser_config):
     
     if browser_config['develop'] or browser_config['branch_name'] == 'Try':
         browser_config['preferences']['xpinstall.signatures.required'] = False
-        browser_config['extensions'] = [os.path.dirname(i)
-                                        for i in browser_config['extensions']]
 
     
     title = config.get('title', '')
