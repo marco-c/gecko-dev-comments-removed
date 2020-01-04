@@ -32,13 +32,8 @@ DOMHighResTimeStamp
 Performance::Now() const
 {
   TimeDuration duration =
-    TimeStamp::Now() - mWorkerPrivate->NowBaseTimeStamp();
-  double nowTime = duration.ToMilliseconds();
-  
-  
-  
-  const double maxResolutionMs = 0.005;
-  return floor(nowTime / maxResolutionMs) * maxResolutionMs;
+    TimeStamp::Now() - mWorkerPrivate->CreationTimeStamp();
+  return RoundTime(duration.ToMilliseconds());
 }
 
 
@@ -57,7 +52,7 @@ Performance::GetPerformanceTimingFromString(const nsAString& aProperty)
   }
 
   if (aProperty.EqualsLiteral("navigationStart")) {
-    return mWorkerPrivate->NowBaseTimeHighRes();
+    return mWorkerPrivate->CreationTime();
   }
 
   MOZ_CRASH("IsPerformanceTimingAttribute and GetPerformanceTimingFromString are out of sync");
@@ -82,13 +77,13 @@ Performance::InsertUserEntry(PerformanceEntry* aEntry)
 TimeStamp
 Performance::CreationTimeStamp() const
 {
-  return mWorkerPrivate->NowBaseTimeStamp();
+  return mWorkerPrivate->CreationTimeStamp();
 }
 
 DOMHighResTimeStamp
 Performance::CreationTime() const
 {
-  return mWorkerPrivate->NowBaseTimeHighRes();
+  return mWorkerPrivate->CreationTime();
 }
 
 void
