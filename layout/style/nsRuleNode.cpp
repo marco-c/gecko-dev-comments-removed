@@ -3767,6 +3767,36 @@ nsRuleNode::SetFont(nsPresContext* aPresContext, nsStyleContext* aContext,
   }
 
   
+  const nsCSSValue* minFontSizeRatio = aRuleData->ValueForMinFontSizeRatio();
+  switch (minFontSizeRatio->GetUnit()) {
+    case eCSSUnit_Null:
+      break;
+    case eCSSUnit_Unset:
+    case eCSSUnit_Inherit:
+      aFont->mMinFontSizeRatio = aParentFont->mMinFontSizeRatio;
+      aConditions.SetUncacheable();
+      break;
+    case eCSSUnit_Initial:
+      aFont->mMinFontSizeRatio = 100; 
+      break;
+    case eCSSUnit_Percent: {
+      
+      
+      
+      float percent = minFontSizeRatio->GetPercentValue() * 100;
+      if (percent < 0) {
+        percent = 0;
+      } else if (percent > 255) {
+        percent = 255;
+      }
+      aFont->mMinFontSizeRatio = uint8_t(percent);
+      break;
+    }
+    default:
+      MOZ_ASSERT_UNREACHABLE("Unknown unit for -moz-min-font-size-ratio");
+  }
+
+  
   nscoord scriptLevelAdjustedParentSize = aParentFont->mSize;
   nscoord scriptLevelAdjustedUnconstrainedParentSize;
   scriptLevelAdjustedParentSize =
@@ -3804,6 +3834,8 @@ nsRuleNode::SetFont(nsPresContext* aPresContext, nsStyleContext* aContext,
     nscoord minFontSize = aPresContext->MinFontSize(aFont->mLanguage);
     if (minFontSize < 0) {
       minFontSize = 0;
+    } else {
+      minFontSize = (minFontSize * aFont->mMinFontSizeRatio) / 100;
     }
     if (fontSize < minFontSize && !aPresContext->IsChrome()) {
       
