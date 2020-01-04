@@ -153,6 +153,10 @@ private:
 
   bmp::BitFields mBitFields;
 
+  
+  
+  bool mMayHaveTransparency;
+
   uint32_t mNumColors;      
                             
   bmp::ColorTableEntry* mColors; 

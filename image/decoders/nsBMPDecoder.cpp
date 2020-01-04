@@ -168,6 +168,7 @@ GetBMPLog()
 nsBMPDecoder::nsBMPDecoder(RasterImage* aImage)
   : Decoder(aImage)
   , mLexer(Transition::To(State::FILE_HEADER, FileHeader::LENGTH))
+  , mMayHaveTransparency(false)
   , mNumColors(0)
   , mColors(nullptr)
   , mBytesPerColor(0)
@@ -530,6 +531,7 @@ nsBMPDecoder::ReadInfoHeaderRest(const char* aData, size_t aLength)
   
   uint32_t realHeight = GetHeight();
   PostSize(mBIH.width, realHeight);
+  mCurrentRow = realHeight;
 
   
   
@@ -543,56 +545,11 @@ nsBMPDecoder::ReadInfoHeaderRest(const char* aData, size_t aLength)
   
   
   
-  bool hasTransparency = (mBIH.compression == Compression::RLE8) ||
+  mMayHaveTransparency = (mBIH.compression == Compression::RLE8) ||
                          (mBIH.compression == Compression::RLE4) ||
                          (mBIH.bpp == 32 && mUseAlphaData);
-  if (hasTransparency) {
+  if (mMayHaveTransparency) {
     PostHasTransparency();
-  }
-
-  
-  if (IsMetadataDecode()) {
-    return Transition::Terminate(State::SUCCESS);
-  }
-
-  
-  mCurrentRow = realHeight;
-
-  
-  if (mBIH.bpp <= 8) {
-    mNumColors = 1 << mBIH.bpp;
-    if (0 < mBIH.colors && mBIH.colors < mNumColors) {
-      mNumColors = mBIH.colors;
-    }
-
-    
-    
-    mColors = new ColorTableEntry[256];
-    memset(mColors, 0, 256 * sizeof(ColorTableEntry));
-
-    
-    mBytesPerColor = (mBIH.bihsize == InfoHeaderLength::WIN_V2) ? 3 : 4;
-  }
-
-  MOZ_ASSERT(!mImageData, "Already have a buffer allocated?");
-  IntSize targetSize = mDownscaler ? mDownscaler->TargetSize() : GetSize();
-  nsresult rv = AllocateFrame( 0, targetSize,
-                              IntRect(IntPoint(), targetSize),
-                              SurfaceFormat::B8G8R8A8);
-  if (NS_FAILED(rv)) {
-    return Transition::Terminate(State::FAILURE);
-  }
-  MOZ_ASSERT(mImageData, "Should have a buffer now");
-
-  if (mDownscaler) {
-    
-    
-    rv = mDownscaler->BeginFrame(GetSize(), Nothing(),
-                                 mImageData, hasTransparency,
-                                  true);
-    if (NS_FAILED(rv)) {
-      return Transition::Terminate(State::FAILURE);
-    }
   }
 
   size_t bitFieldsLengthStillToRead = 0;
@@ -632,6 +589,49 @@ nsBMPDecoder::ReadBitfields(const char* aData, size_t aLength)
   
   if (aLength != 0) {
     mBitFields.ReadFromHeader(aData);
+  }
+
+  
+  
+  if (IsMetadataDecode()) {
+    return Transition::Terminate(State::SUCCESS);
+  }
+
+  
+  if (mBIH.bpp <= 8) {
+    mNumColors = 1 << mBIH.bpp;
+    if (0 < mBIH.colors && mBIH.colors < mNumColors) {
+      mNumColors = mBIH.colors;
+    }
+
+    
+    
+    mColors = new ColorTableEntry[256];
+    memset(mColors, 0, 256 * sizeof(ColorTableEntry));
+
+    
+    mBytesPerColor = (mBIH.bihsize == InfoHeaderLength::WIN_V2) ? 3 : 4;
+  }
+
+  MOZ_ASSERT(!mImageData, "Already have a buffer allocated?");
+  IntSize targetSize = mDownscaler ? mDownscaler->TargetSize() : GetSize();
+  nsresult rv = AllocateFrame( 0, targetSize,
+                              IntRect(IntPoint(), targetSize),
+                              SurfaceFormat::B8G8R8A8);
+  if (NS_FAILED(rv)) {
+    return Transition::Terminate(State::FAILURE);
+  }
+  MOZ_ASSERT(mImageData, "Should have a buffer now");
+
+  if (mDownscaler) {
+    
+    
+    rv = mDownscaler->BeginFrame(GetSize(), Nothing(),
+                                 mImageData, mMayHaveTransparency,
+                                  true);
+    if (NS_FAILED(rv)) {
+      return Transition::Terminate(State::FAILURE);
+    }
   }
 
   return Transition::To(State::COLOR_TABLE, mNumColors * mBytesPerColor);
