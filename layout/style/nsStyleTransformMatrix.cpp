@@ -134,17 +134,6 @@ TransformReferenceBox::Init(const nsSize& aDimensions)
   mIsCached = true;
 }
 
-
-
-
-static double FlushToZero(double aVal)
-{
-  if (-FLT_EPSILON < aVal && aVal < FLT_EPSILON)
-    return 0.0f;
-  else
-    return aVal;
-}
-
 float
 ProcessTranslatePart(const nsCSSValue& aValue,
                      nsStyleContext* aContext,
@@ -543,50 +532,13 @@ ProcessRotate3D(Matrix4x4& aMatrix, const nsCSSValue::Array* aData)
 {
   NS_PRECONDITION(aData->Count() == 5, "Invalid array!");
 
-  
-
-
-
-
-
-
-
-  
-
-
-
-  double theta = -aData->Item(4).GetAngleValueInRadians();
-  float cosTheta = FlushToZero(cos(theta));
-  float sinTheta = FlushToZero(sin(theta));
-
-  Point3D vector(aData->Item(1).GetFloatValue(),
-                 aData->Item(2).GetFloatValue(),
-                 aData->Item(3).GetFloatValue());
-
-  if (!vector.Length()) {
-    return;
-  }
-  vector.Normalize();
+  double theta = aData->Item(4).GetAngleValueInRadians();
+  float x = aData->Item(1).GetFloatValue();
+  float y = aData->Item(2).GetFloatValue();
+  float z = aData->Item(3).GetFloatValue();
 
   Matrix4x4 temp;
-
-  
-  temp._11 = 1 + (1 - cosTheta) * (vector.x * vector.x - 1);
-  temp._12 = -vector.z * sinTheta + (1 - cosTheta) * vector.x * vector.y;
-  temp._13 = vector.y * sinTheta + (1 - cosTheta) * vector.x * vector.z;
-  temp._14 = 0.0f;
-  temp._21 = vector.z * sinTheta + (1 - cosTheta) * vector.x * vector.y;
-  temp._22 = 1 + (1 - cosTheta) * (vector.y * vector.y - 1);
-  temp._23 = -vector.x * sinTheta + (1 - cosTheta) * vector.y * vector.z;
-  temp._24 = 0.0f;
-  temp._31 = -vector.y * sinTheta + (1 - cosTheta) * vector.x * vector.z;
-  temp._32 = vector.x * sinTheta + (1 - cosTheta) * vector.y * vector.z;
-  temp._33 = 1 + (1 - cosTheta) * (vector.z * vector.z - 1);
-  temp._34 = 0.0f;
-  temp._41 = 0.0f;
-  temp._42 = 0.0f;
-  temp._43 = 0.0f;
-  temp._44 = 1.0f;
+  temp.SetRotateAxisAngle(x, y, z, theta);
 
   aMatrix = temp * aMatrix;
 }
