@@ -172,7 +172,7 @@ body {
 .cm-s-mozilla .CodeMirror-dialog { 
   color: var(--theme-body-color-alt);
   background-color: var(--theme-toolbar-background);
-  border-color: hsla(210,8%,5%,.6);
+  border-color: var(--theme-splitter-color);
 }
 
 .theme-fg-contrast { 
