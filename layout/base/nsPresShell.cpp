@@ -860,7 +860,7 @@ PresShell::Init(nsIDocument* aDocument,
   mViewManager = aViewManager;
 
   
-  mFrameConstructor = new nsCSSFrameConstructor(mDocument, this, aStyleSet);
+  mFrameConstructor = new nsCSSFrameConstructor(mDocument, this);
 
   mFrameManager = mFrameConstructor;
 
