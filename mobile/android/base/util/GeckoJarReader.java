@@ -52,6 +52,9 @@ public final class GeckoJarReader {
             inputStream = getStream(zip, jarUrls, url);
             if (inputStream != null) {
                 bitmap = new BitmapDrawable(resources, inputStream);
+                
+                
+                bitmap.setTargetDensity(resources.getDisplayMetrics());
             }
         } catch (IOException | URISyntaxException ex) {
             Log.e(LOGTAG, "Exception ", ex);
