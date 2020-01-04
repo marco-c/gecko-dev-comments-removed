@@ -231,7 +231,6 @@ class UpdateTestCase(FirefoxTestCase):
             try:
                 
                 if dialog.wizard.selected_panel in [dialog.wizard.updates_found_basic,
-                                                    dialog.wizard.updates_found_billboard,
                                                     dialog.wizard.error_patching,
                                                     ]:
                     dialog.select_next_page()
