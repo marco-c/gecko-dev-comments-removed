@@ -218,7 +218,7 @@ this.EXPORTED_SYMBOLS = ["WebVTT"];
           settings.percent(k, v);
           break;
         case "align":
-          settings.alt(k, v, ["start", "center", "end", "left", "right"]);
+          settings.alt(k, v, ["start", "middle", "end", "left", "right"]);
           break;
         }
       }, /:/, /\s/);
@@ -230,7 +230,7 @@ this.EXPORTED_SYMBOLS = ["WebVTT"];
       cue.lineAlign = settings.get("lineAlign", "start");
       cue.snapToLines = settings.get("snapToLines", true);
       cue.size = settings.get("size", 100);
-      cue.align = settings.get("align", "center");
+      cue.align = settings.get("align", "middle");
       cue.position = settings.get("position", {
         start: 0,
         left: 0,
@@ -737,9 +737,10 @@ this.EXPORTED_SYMBOLS = ["WebVTT"];
 
     
     
+    
     this.div = window.document.createElement("div");
     styles = {
-      textAlign: cue.align,
+      textAlign: cue.align === "middle" ? "center" : cue.align,
       font: styleOptions.font,
       whiteSpace: "pre-line",
       position: "absolute"
