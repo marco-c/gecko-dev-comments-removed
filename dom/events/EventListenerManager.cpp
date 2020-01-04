@@ -1190,7 +1190,7 @@ EventListenerManager::HandleEventInternal(nsPresContext* aPresContext,
                                           nsEventStatus* aEventStatus)
 {
   
-  if (!aEvent->mFlags.mDefaultPrevented &&
+  if (!aEvent->DefaultPrevented() &&
       *aEventStatus == nsEventStatus_eConsumeNoDefault) {
     
     
@@ -1309,7 +1309,7 @@ EventListenerManager::HandleEventInternal(nsPresContext* aPresContext,
     mNoListenerForEventAtom = aEvent->userType;
   }
 
-  if (aEvent->mFlags.mDefaultPrevented) {
+  if (aEvent->DefaultPrevented()) {
     *aEventStatus = nsEventStatus_eConsumeNoDefault;
   }
 }

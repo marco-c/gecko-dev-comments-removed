@@ -2251,7 +2251,7 @@ nsListControlFrame::KeyPress(nsIDOMEvent* aKeyEvent)
   
 
   
-  if (keyEvent->mFlags.mDefaultPrevented) {
+  if (keyEvent->DefaultPrevented()) {
     return NS_OK;
   }
 

@@ -1050,14 +1050,14 @@ Event::DefaultPrevented(JSContext* aCx) const
   NS_ENSURE_TRUE(mEvent, false);
 
   
-  if (!mEvent->mFlags.mDefaultPrevented) {
+  if (!mEvent->DefaultPrevented()) {
     return false;
   }
 
   
   
   
-  return mEvent->mFlags.mDefaultPreventedByContent || IsChrome(aCx);
+  return mEvent->DefaultPreventedByContent() || IsChrome(aCx);
 }
 
 double

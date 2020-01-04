@@ -1143,8 +1143,7 @@ nsDocumentViewer::PermitUnloadInternal(bool *aShouldPrompt,
   
   if (!sIsBeforeUnloadDisabled && *aShouldPrompt && dialogsAreEnabled && mDocument &&
       (!sBeforeUnloadRequiresInteraction || mDocument->UserHasInteracted()) &&
-      (event->WidgetEventPtr()->mFlags.mDefaultPrevented ||
-       !text.IsEmpty())) {
+      (event->WidgetEventPtr()->DefaultPrevented() || !text.IsEmpty())) {
     
 
     nsCOMPtr<nsIPrompt> prompt = do_GetInterface(docShell);

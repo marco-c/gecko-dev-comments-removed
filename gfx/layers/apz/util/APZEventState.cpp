@@ -339,8 +339,7 @@ APZEventState::ProcessWheelEvent(const WidgetWheelEvent& aEvent,
 {
   
   
-  bool defaultPrevented =
-    aEvent.mFlags.mDefaultPrevented || aEvent.TriggersSwipe();
+  bool defaultPrevented = aEvent.DefaultPrevented() || aEvent.TriggersSwipe();
   mContentReceivedInputBlockCallback(aGuid, aInputBlockId, defaultPrevented);
 }
 

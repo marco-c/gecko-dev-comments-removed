@@ -3699,7 +3699,7 @@ HTMLInputElement::MaybeInitPickers(EventChainPostVisitor& aVisitor)
   
   
   
-  if (aVisitor.mEvent->mFlags.mDefaultPrevented) {
+  if (aVisitor.mEvent->DefaultPrevented()) {
     return NS_OK;
   }
   WidgetMouseEvent* mouseEvent = aVisitor.mEvent->AsMouseEvent();
@@ -3890,7 +3890,7 @@ HTMLInputElement::PostHandleEvent(EventChainPostVisitor& aVisitor)
       
       
       
-      if (!aVisitor.mEvent->mFlags.mDefaultPreventedByContent && IsMutable()) {
+      if (!aVisitor.mEvent->DefaultPreventedByContent() && IsMutable()) {
         StepNumberControlForUserEvent(keyEvent->keyCode == NS_VK_UP ? 1 : -1);
         aVisitor.mEventStatus = nsEventStatus_eConsumeNoDefault;
       }
