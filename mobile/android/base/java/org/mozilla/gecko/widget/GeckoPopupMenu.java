@@ -82,7 +82,7 @@ public class GeckoPopupMenu implements GeckoMenu.Callback,
 
 
 
-    public Menu getMenu() {
+    public GeckoMenu getMenu() {
         return mMenu;
     }
 

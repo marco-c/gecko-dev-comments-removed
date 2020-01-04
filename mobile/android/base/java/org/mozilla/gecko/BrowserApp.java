@@ -4002,12 +4002,9 @@ public class BrowserApp extends GeckoApp
             
             if (mDynamicToolbar.isEnabled() && toolbar.getToolbarTranslation() != 0) {
                 mDynamicToolbar.setTemporarilyVisible(true, VisibilityTransition.ANIMATE);
-            } else {
-                
-                mActionBar.animateIn();
             }
-
             mDynamicToolbar.setPinned(true, PinReason.ACTION_MODE);
+
         } else {
             
             mActionMode.finish();
