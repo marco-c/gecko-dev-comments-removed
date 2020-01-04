@@ -7426,10 +7426,8 @@ var gIdentityHandler = {
       
       
 
-      if (permissionType) {
-        histogram.add("(all)", permissionType);
-        histogram.add(aPermission.id, permissionType);
-      }
+      histogram.add("(all)", permissionType);
+      histogram.add(aPermission.id, permissionType);
     });
 
     container.appendChild(img);
