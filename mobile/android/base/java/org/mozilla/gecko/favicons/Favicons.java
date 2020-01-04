@@ -43,6 +43,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class Favicons {
     private static final String LOGTAG = "GeckoFavicons";
 
+    public enum LoadType {
+        PRIVILEGED,
+        UNPRIVILEGED
+    }
+
     
     private static final String BUILT_IN_FAVICON_URL = "about:favicon";
 
@@ -214,7 +219,8 @@ public class Favicons {
 
 
 
-    public static int getSizedFavicon(Context context, String pageURL, String faviconURL, int targetSize, int flags, OnFaviconLoadedListener listener) {
+    public static int getSizedFavicon(Context context, String pageURL, String faviconURL,
+                                      LoadType loadType, int targetSize, int flags, OnFaviconLoadedListener listener) {
         
         String cacheURL = faviconURL;
         if (cacheURL == null) {
@@ -226,9 +232,16 @@ public class Favicons {
             cacheURL = guessDefaultFaviconURL(pageURL);
         }
 
-        
         if (cacheURL == null) {
+            
             return dispatchResult(pageURL, null, defaultFavicon, listener);
+        } else if (loadType != LoadType.PRIVILEGED &&
+                !(cacheURL.startsWith("http://") || cacheURL.startsWith("https://"))) {
+            
+            
+            
+            
+            return NOT_LOADING;
         }
 
         Bitmap cachedIcon = getSizedFaviconFromCache(cacheURL, targetSize);
@@ -626,6 +639,13 @@ public class Favicons {
 
         if (row != null) {
             touchIconURL = (String) row.get(URLMetadataTable.TOUCH_ICON_COLUMN);
+        }
+
+        if (touchIconURL != null &&
+            !(touchIconURL.startsWith("http://") || touchIconURL.startsWith("https://"))) {
+            
+            
+            touchIconURL = null;
         }
 
         

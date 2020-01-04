@@ -172,7 +172,9 @@ public class SearchEnginePreference extends CustomListPreference {
                 }
             }
 
-            Favicons.getSizedFavicon(getContext(), mIdentifier, iconURI, desiredWidth, 0,
+            Favicons.getSizedFavicon(getContext(), mIdentifier, iconURI,
+                Favicons.LoadType.PRIVILEGED, 
+                desiredWidth, 0,
                 new OnFaviconLoadedListener() {
                     @Override
                     public void onFaviconLoaded(String url, String faviconURL, Bitmap favicon) {
