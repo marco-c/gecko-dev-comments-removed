@@ -832,7 +832,9 @@ public class LocalBrowserDB implements BrowserDB {
             
             addDesktopFolder = desktopBookmarksExist(cr);
             addScreenshotsFolder = AppConstants.SCREENSHOTS_IN_BOOKMARKS_ENABLED;
-            addReadingListFolder = true;
+
+            final int readingListItemCount = getBookmarkCountForFolder(cr, Bookmarks.FAKE_READINGLIST_SMARTFOLDER_ID);
+            addReadingListFolder = (readingListItemCount > 0);
         } else {
             addDesktopFolder = false;
             addScreenshotsFolder = false;
