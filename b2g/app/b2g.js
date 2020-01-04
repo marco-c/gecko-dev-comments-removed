@@ -1125,6 +1125,9 @@ pref("dom.audiochannel.mutedByDefault", true);
 pref("dom.bluetooth.app-origin", "app://bluetooth.gaiamobile.org");
 
 
+pref("dom.bluetooth.webbluetooth.enabled", false);
+
+
 pref("dom.presentation.device.name", "Firefox OS");
 
 

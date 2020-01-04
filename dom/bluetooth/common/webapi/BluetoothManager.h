@@ -77,6 +77,12 @@ public:
 
   void AppendAdapter(const BluetoothValue& aValue);
 
+  
+
+
+
+  static bool B2GGattClientEnabled(JSContext* cx, JSObject* aGlobal);
+
 private:
   BluetoothManager(nsPIDOMWindow* aWindow);
   ~BluetoothManager();
