@@ -15,7 +15,7 @@ if here not in sys.path:
 
 from automation import Automation
 from b2gautomation import B2GRemoteAutomation
-from runreftestmulet import run_test_harness as run_mulet
+from runreftestmulet import run_test_harness as run_mulet_reftests
 from remotereftest import RemoteReftestResolver, ReftestServer
 from runreftest import RefTest
 import reftestcommandline
@@ -418,7 +418,8 @@ def run_remote_reftests(parser, options):
     reftest.stopWebServer(options)
     return retVal
 
-def run_remote(**kwargs):
+
+def run(**kwargs):
     
     
     parser = reftestcommandline.B2GArgumentParser()
@@ -426,15 +427,15 @@ def run_remote(**kwargs):
     options = parser.parse_args(kwargs["tests"])
     return run_remote_reftests(parser, options)
 
-def main():
+
+def main(args=sys.argv[1:]):
     parser = reftestcommandline.B2GArgumentParser()
-    options = parser.parse_args()
+    options = parser.parse_args(args)
 
     if options.mulet:
-        return run_mulet(parser, options)
+        return run_mulet_reftests(parser, options)
     return run_remote_reftests(parser, options)
 
 
 if __name__ == "__main__":
     sys.exit(main())
-
