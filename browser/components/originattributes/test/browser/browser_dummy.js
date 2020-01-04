@@ -1,0 +1,10 @@
+
+
+
+
+
+"use strict";
+
+add_task(function* () {
+  ok(true, "Make this test pass anyway.");
+});
