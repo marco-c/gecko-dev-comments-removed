@@ -90,34 +90,12 @@ SVGTransformableElement::IsEventAttributeName(nsIAtom* aName)
 
 
 gfxMatrix
-SVGTransformableElement::PrependLocalTransformsTo(const gfxMatrix &aMatrix,
-                                                  TransformTypes aWhich) const
+SVGTransformableElement::PrependLocalTransformsTo(
+  const gfxMatrix &aMatrix,
+  SVGTransformTypes aWhich) const
 {
-  gfxMatrix result(aMatrix);
-
-  if (aWhich == eChildToUserSpace) {
-    
-    
-    
-    
-    return result;
-  }
-
-  MOZ_ASSERT(aWhich == eAllTransforms || aWhich == eUserSpaceToParent,
-             "Unknown TransformTypes");
-
-  
-  
-  
-  if (mAnimateMotionTransform) {
-    result.PreMultiply(ThebesMatrix(*mAnimateMotionTransform));
-  }
-
-  if (mTransforms) {
-    result.PreMultiply(mTransforms->GetAnimValue().GetConsolidationMatrix());
-  }
-
-  return result;
+  return SVGContentUtils::PrependLocalTransformsTo(
+    aMatrix, aWhich, mAnimateMotionTransform, mTransforms);
 }
 
 const gfx::Matrix*

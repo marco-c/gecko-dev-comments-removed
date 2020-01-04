@@ -431,8 +431,8 @@ SVGUseElement::UnlinkSource()
 
 
  gfxMatrix
-SVGUseElement::PrependLocalTransformsTo(const gfxMatrix &aMatrix,
-                                        TransformTypes aWhich) const
+SVGUseElement::PrependLocalTransformsTo(
+  const gfxMatrix &aMatrix, SVGTransformTypes aWhich) const
 {
   
   gfxMatrix fromUserSpace =

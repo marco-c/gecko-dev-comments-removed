@@ -73,8 +73,8 @@ SVGForeignObjectElement::Height()
 
 
  gfxMatrix
-SVGForeignObjectElement::PrependLocalTransformsTo(const gfxMatrix &aMatrix,
-                                                  TransformTypes aWhich) const
+SVGForeignObjectElement::PrependLocalTransformsTo(
+  const gfxMatrix &aMatrix, SVGTransformTypes aWhich) const
 {
   
   gfxMatrix fromUserSpace =

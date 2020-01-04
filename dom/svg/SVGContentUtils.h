@@ -27,6 +27,7 @@ class nsStyleCoord;
 class nsSVGElement;
 
 namespace mozilla {
+class nsSVGAnimatedTransformList;
 class SVGAnimatedPreserveAspectRatio;
 class SVGPreserveAspectRatio;
 namespace dom {
@@ -40,6 +41,35 @@ class Matrix;
 } 
 
 #define SVG_ZERO_LENGTH_PATH_FIX_FACTOR 512
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+enum SVGTransformTypes {
+   eAllTransforms,
+   eUserSpaceToParent,
+   eChildToUserSpace
+};
 
 inline bool
 IsSVGWhitespace(char aChar)
@@ -349,6 +379,17 @@ public:
 
 
   static bool ShapeTypeHasNoCorners(const nsIContent* aContent);
+
+  
+
+
+
+
+  static gfxMatrix PrependLocalTransformsTo(
+    const gfxMatrix &aMatrix,
+    SVGTransformTypes aWhich,
+    const Matrix* aAnimateMotionTransform,
+    const mozilla::nsSVGAnimatedTransformList* aTransforms);
 };
 
 #endif

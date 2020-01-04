@@ -982,8 +982,7 @@ nsSVGOuterSVGAnonChildFrame::HasChildrenOnlyTransform(gfx::Matrix *aTransform) c
     
     gfxMatrix identity;
     *aTransform = gfx::ToMatrix(
-      content->PrependLocalTransformsTo(identity,
-                                        nsSVGElement::eChildToUserSpace));
+      content->PrependLocalTransformsTo(identity, eChildToUserSpace));
   }
 
   return hasTransform;

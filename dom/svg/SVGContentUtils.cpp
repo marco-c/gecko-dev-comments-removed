@@ -395,7 +395,7 @@ static gfx::Matrix
 GetCTMInternal(nsSVGElement *aElement, bool aScreenCTM, bool aHaveRecursed)
 {
   gfxMatrix matrix = aElement->PrependLocalTransformsTo(gfxMatrix(),
-    aHaveRecursed ? nsSVGElement::eAllTransforms : nsSVGElement::eUserSpaceToParent);
+    aHaveRecursed ? eAllTransforms : eUserSpaceToParent);
   nsSVGElement *element = aElement;
   nsIContent *ancestor = aElement->GetFlattenedTreeParent();
 
@@ -857,4 +857,39 @@ bool
 SVGContentUtils::ShapeTypeHasNoCorners(const nsIContent* aContent) {
   return aContent && aContent->IsAnyOfSVGElements(nsGkAtoms::circle,
                                                   nsGkAtoms::ellipse);
+}
+
+gfxMatrix
+SVGContentUtils::PrependLocalTransformsTo(
+  const gfxMatrix &aMatrix,
+  SVGTransformTypes aWhich,
+  const gfx::Matrix* aAnimateMotionTransform,
+  const nsSVGAnimatedTransformList* aTransforms)
+{
+  gfxMatrix result(aMatrix);
+
+  if (aWhich == eChildToUserSpace) {
+    
+    
+    
+    
+    return result;
+  }
+
+  MOZ_ASSERT(aWhich == eAllTransforms || aWhich == eUserSpaceToParent,
+             "Unknown TransformTypes");
+
+  
+  
+  
+  if (aAnimateMotionTransform) {
+    result.PreMultiply(ThebesMatrix(*aAnimateMotionTransform));
+  }
+
+  if (aTransforms) {
+    result.PreMultiply(
+      aTransforms->GetAnimValue().GetConsolidationMatrix());
+  }
+
+  return result;
 }

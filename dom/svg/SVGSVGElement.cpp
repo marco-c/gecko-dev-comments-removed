@@ -943,8 +943,8 @@ SVGSVGElement::GetLength(uint8_t aCtxType)
 
 
  gfxMatrix
-SVGSVGElement::PrependLocalTransformsTo(const gfxMatrix &aMatrix,
-                                        TransformTypes aWhich) const
+SVGSVGElement::PrependLocalTransformsTo(
+  const gfxMatrix &aMatrix, SVGTransformTypes aWhich) const
 {
   
   gfxMatrix fromUserSpace =

@@ -25,6 +25,7 @@
 #include "nsStyledElement.h"
 #include "nsSVGClass.h"
 #include "nsIDOMSVGElement.h"
+#include "SVGContentUtils.h"
 
 class nsSVGAngle;
 class nsSVGBoolean;
@@ -139,11 +140,6 @@ public:
   
   mozilla::dom::SVGSVGElement* GetCtx() const;
 
-  enum TransformTypes {
-     eAllTransforms
-    ,eUserSpaceToParent
-    ,eChildToUserSpace
-  };
   
 
 
@@ -167,8 +163,8 @@ public:
 
 
 
-  virtual gfxMatrix PrependLocalTransformsTo(const gfxMatrix &aMatrix,
-                      TransformTypes aWhich = eAllTransforms) const;
+  virtual gfxMatrix PrependLocalTransformsTo(
+    const gfxMatrix &aMatrix, SVGTransformTypes aWhich = eAllTransforms) const;
 
   
   
