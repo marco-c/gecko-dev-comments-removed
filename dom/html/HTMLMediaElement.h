@@ -1071,6 +1071,9 @@ protected:
   bool IsPlayingThroughTheAudioChannel() const;
 
   
+  bool IsCurrentlyPlaying() const;
+
+  
   void UpdateAudioChannelPlayingState();
 
   

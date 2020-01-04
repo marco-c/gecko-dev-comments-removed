@@ -4764,8 +4764,7 @@ HTMLMediaElement::IsPlayingThroughTheAudioChannel() const
   }
 
   
-  if (mReadyState >= nsIDOMHTMLMediaElement::HAVE_CURRENT_DATA &&
-      !IsPlaybackEnded()) {
+  if (IsCurrentlyPlaying()) {
     return true;
   }
 
@@ -5117,6 +5116,27 @@ bool
 HTMLMediaElement::ComputedMuted() const
 {
   return (mMuted & MUTED_BY_AUDIO_CHANNEL);
+}
+
+bool
+HTMLMediaElement::IsCurrentlyPlaying() const
+{
+  
+  
+  if (mReadyState >= nsIDOMHTMLMediaElement::HAVE_CURRENT_DATA &&
+      !IsPlaybackEnded()) {
+
+    
+    
+    
+    
+    
+    if (mDecoder && mDecoder->IsSeeking() && !mPlayingBeforeSeek) {
+      return false;
+    }
+    return true;
+  }
+  return false;
 }
 
 } 
