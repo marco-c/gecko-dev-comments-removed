@@ -997,6 +997,9 @@ class MacroAssembler : public MacroAssemblerSpecific
     inline void branchTestMagicValue(Condition cond, const ValueOperand& val, JSWhyMagic why,
                                      Label* label);
 
+    void branchTestValue(Condition cond, const ValueOperand& lhs,
+                         const Value& rhs, Label* label) PER_ARCH;
+
     
     
     inline void branchTestInt32Truthy(bool truthy, const ValueOperand& value, Label* label)
