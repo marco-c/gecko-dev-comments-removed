@@ -37,6 +37,7 @@ consumers will need to arrange this themselves.
 from __future__ import absolute_import, print_function, unicode_literals
 
 import functools
+import hashlib
 import logging
 import operator
 import os
@@ -55,6 +56,7 @@ from mozbuild.util import (
     FileAvoidWrite,
 )
 import mozpack.path as mozpath
+from mozversion import mozversion
 from mozregression.download_manager import (
     DownloadManager,
 )
@@ -76,7 +78,7 @@ MAX_CACHED_ARTIFACTS = 6
 
 JOB_DETAILS = {
     
-    'android-api-11': {'re': re.compile('public/build/geckolibs-(.*)\.aar')},
+    'android-api-11': {'re': re.compile('public/build/fennec-(.*)\.android-arm\.apk')},
     
     
     
@@ -235,6 +237,9 @@ class TaskCache(CacheManager):
         
         for name in names():
             
+            
+            
+            
             url = self._queue.buildUrl('getLatestArtifact', taskId, name)
             return url
         raise ValueError('Task for {key} existed, but no artifacts found!'.format(key=key))
@@ -269,12 +274,31 @@ class ArtifactCache(CacheManager):
 
     @cachedmethod(operator.attrgetter('_cache'))
     def fetch(self, url, force=False):
-        fname = os.path.basename(url)
+        
+        
+        
+        
+        hash = hashlib.sha256(url).hexdigest()[:16]
+        fname = hash + '-' + os.path.basename(url)
+        self.log(logging.INFO, 'artifact',
+            {'path': os.path.abspath(mozpath.join(self._cache_dir, fname))},
+            'Downloading to temporary location {path}')
         try:
             dl = self._download_manager.download(url, fname)
             if dl:
                 dl.wait()
-            return os.path.abspath(mozpath.join(self._cache_dir, fname))
+            
+            
+            info = mozversion.get_version(mozpath.join(self._cache_dir, fname))
+            buildid = info['platform_buildid'] or info['application_buildid']
+            if not buildid:
+                raise ValueError('Artifact for {url} existed, but no build ID could be extracted!'.format(url=url))
+            newname = buildid + '-' + os.path.basename(url)
+            os.rename(mozpath.join(self._cache_dir, fname), mozpath.join(self._cache_dir, newname))
+            self.log(logging.INFO, 'artifact',
+                {'path': os.path.abspath(mozpath.join(self._cache_dir, newname))},
+                'Downloaded artifact to {path}')
+            return os.path.abspath(mozpath.join(self._cache_dir, newname))
         finally:
             
             self._download_manager.cancel()
