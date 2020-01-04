@@ -1,0 +1,16 @@
+
+
+
+if (typeof oomTest !== 'function' ||
+    typeof offThreadCompileScript !== 'function' ||
+    typeof runOffThreadScript !== 'function')
+    quit();
+
+oomTest(() => {
+    offThreadCompileScript(`
+      "use asm";
+      return assertEq;
+    `);
+    runOffThreadScript();
+});
+

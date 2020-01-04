@@ -488,6 +488,7 @@ struct ParseTask
     
     Vector<frontend::CompileError*> errors;
     bool overRecursed;
+    bool outOfMemory;
 
     ParseTask(ExclusiveContext* cx, JSObject* exclusiveContextGlobal,
               JSContext* initCx, const char16_t* chars, size_t length,
