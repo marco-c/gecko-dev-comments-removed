@@ -365,14 +365,24 @@ AsyncFaviconHelperBase::~AsyncFaviconHelperBase()
 
 
 
+NS_IMPL_ISUPPORTS_INHERITED(
+  AsyncFetchAndSetIconForPage
+, Runnable
+, nsIStreamListener
+, nsIInterfaceRequestor
+, nsIChannelEventSink
+, mozIPlacesPendingOperation
+)
+
 
 nsresult
 AsyncFetchAndSetIconForPage::start(nsIURI* aFaviconURI,
                                    nsIURI* aPageURI,
                                    enum AsyncFaviconFetchMode aFetchMode,
-                                   uint32_t aFaviconLoadType,
+                                   bool aFaviconLoadPrivate,
                                    nsIFaviconDataCallback* aCallback,
-                                   nsIPrincipal* aLoadingPrincipal)
+                                   nsIPrincipal* aLoadingPrincipal,
+                                   mozIPlacesPendingOperation** _canceler)
 {
   NS_ENSURE_ARG(aLoadingPrincipal);
   NS_PRECONDITION(NS_IsMainThread(),
@@ -388,7 +398,7 @@ AsyncFetchAndSetIconForPage::start(nsIURI* aFaviconURI,
   NS_ENSURE_TRUE(navHistory, NS_ERROR_OUT_OF_MEMORY);
   rv = navHistory->CanAddURI(aPageURI, &canAddToHistory);
   NS_ENSURE_SUCCESS(rv, rv);
-  page.canAddToHistory = !!canAddToHistory && aFaviconLoadType != nsIFaviconService::FAVICON_LOAD_PRIVATE;
+  page.canAddToHistory = !!canAddToHistory && !aFaviconLoadPrivate;
 
   IconData icon;
 
@@ -419,7 +429,7 @@ AsyncFetchAndSetIconForPage::start(nsIURI* aFaviconURI,
   
   nsCOMPtr<nsIFaviconDataCallback> callback(aCallback);
   RefPtr<AsyncFetchAndSetIconForPage> event =
-    new AsyncFetchAndSetIconForPage(icon, page, aFaviconLoadType,
+    new AsyncFetchAndSetIconForPage(icon, page, aFaviconLoadPrivate,
                                     callback, aLoadingPrincipal);
 
   
@@ -427,24 +437,24 @@ AsyncFetchAndSetIconForPage::start(nsIURI* aFaviconURI,
   NS_ENSURE_STATE(DB);
   DB->DispatchToAsyncThread(event);
 
+  
+  event.forget(_canceler);
+
   return NS_OK;
 }
 
 AsyncFetchAndSetIconForPage::AsyncFetchAndSetIconForPage(
   IconData& aIcon
 , PageData& aPage
-, uint32_t aFaviconLoadType
+, bool aFaviconLoadPrivate
 , nsCOMPtr<nsIFaviconDataCallback>& aCallback
 , nsIPrincipal* aLoadingPrincipal
 ) : AsyncFaviconHelperBase(aCallback)
   , mIcon(aIcon)
   , mPage(aPage)
-  , mFaviconLoadPrivate(aFaviconLoadType == nsIFaviconService::FAVICON_LOAD_PRIVATE)
+  , mFaviconLoadPrivate(aFaviconLoadPrivate)
   , mLoadingPrincipal(new nsMainThreadPtrHolder<nsIPrincipal>(aLoadingPrincipal))
-{
-}
-
-AsyncFetchAndSetIconForPage::~AsyncFetchAndSetIconForPage()
+  , mCanceled(false)
 {
 }
 
@@ -474,56 +484,21 @@ AsyncFetchAndSetIconForPage::Run()
 
     return NS_OK;
   }
-  else {
-    
-    
-    RefPtr<AsyncFetchAndSetIconFromNetwork> event =
-      new AsyncFetchAndSetIconFromNetwork(mIcon, mPage, mFaviconLoadPrivate,
-                                          mCallback, mLoadingPrincipal);
 
-    
-    rv = NS_DispatchToMainThread(event);
-    NS_ENSURE_SUCCESS(rv, rv);
+  
+  
+  nsCOMPtr<nsIRunnable> event =
+    NS_NewRunnableMethod(this, &AsyncFetchAndSetIconForPage::FetchFromNetwork);
+  return NS_DispatchToMainThread(event);
+}
+
+nsresult
+AsyncFetchAndSetIconForPage::FetchFromNetwork() {
+  MOZ_ASSERT(NS_IsMainThread());
+
+  if (mCanceled) {
+    return NS_OK;
   }
-
-  return NS_OK;
-}
-
-
-
-
-NS_IMPL_ISUPPORTS_INHERITED(
-  AsyncFetchAndSetIconFromNetwork
-, Runnable
-, nsIStreamListener
-, nsIInterfaceRequestor
-, nsIChannelEventSink
-)
-
-AsyncFetchAndSetIconFromNetwork::AsyncFetchAndSetIconFromNetwork(
-  IconData& aIcon
-, PageData& aPage
-, bool aFaviconLoadPrivate
-, nsCOMPtr<nsIFaviconDataCallback>& aCallback
-, const nsMainThreadPtrHandle<nsIPrincipal>& aLoadingPrincipal
-)
-: AsyncFaviconHelperBase(aCallback)
-, mIcon(aIcon)
-, mPage(aPage)
-, mFaviconLoadPrivate(aFaviconLoadPrivate)
-, mLoadingPrincipal(aLoadingPrincipal)
-{
-}
-
-AsyncFetchAndSetIconFromNetwork::~AsyncFetchAndSetIconFromNetwork()
-{
-}
-
-NS_IMETHODIMP
-AsyncFetchAndSetIconFromNetwork::Run()
-{
-  NS_PRECONDITION(NS_IsMainThread(),
-                  "This should be called on the main thread");
 
   
   if (mIcon.data.Length() > 0) {
@@ -562,18 +537,36 @@ AsyncFetchAndSetIconFromNetwork::Run()
 }
 
 NS_IMETHODIMP
-AsyncFetchAndSetIconFromNetwork::OnStartRequest(nsIRequest* aRequest,
-                                                nsISupports* aContext)
+AsyncFetchAndSetIconForPage::Cancel()
 {
+  MOZ_ASSERT(NS_IsMainThread());
+  if (mCanceled) {
+    return NS_ERROR_UNEXPECTED;
+  }
+  mCanceled = true;
+  if (mRequest) {
+    mRequest->Cancel(NS_BINDING_ABORTED);
+  }
   return NS_OK;
 }
 
 NS_IMETHODIMP
-AsyncFetchAndSetIconFromNetwork::OnDataAvailable(nsIRequest* aRequest,
-                                                 nsISupports* aContext,
-                                                 nsIInputStream* aInputStream,
-                                                 uint64_t aOffset,
-                                                 uint32_t aCount)
+AsyncFetchAndSetIconForPage::OnStartRequest(nsIRequest* aRequest,
+                                            nsISupports* aContext)
+{
+  mRequest = aRequest;
+  if (mCanceled) {
+    mRequest->Cancel(NS_BINDING_ABORTED);
+  }
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+AsyncFetchAndSetIconForPage::OnDataAvailable(nsIRequest* aRequest,
+                                             nsISupports* aContext,
+                                             nsIInputStream* aInputStream,
+                                             uint64_t aOffset,
+                                             uint32_t aCount)
 {
   const size_t kMaxFaviconDownloadSize = 1 * 1024 * 1024;
   if (mIcon.data.Length() + aCount > kMaxFaviconDownloadSize) {
@@ -597,7 +590,7 @@ AsyncFetchAndSetIconFromNetwork::OnDataAvailable(nsIRequest* aRequest,
 
 
 NS_IMETHODIMP
-AsyncFetchAndSetIconFromNetwork::GetInterface(const nsIID& uuid,
+AsyncFetchAndSetIconForPage::GetInterface(const nsIID& uuid,
                                               void** aResult)
 {
   return QueryInterface(uuid, aResult);
@@ -605,7 +598,7 @@ AsyncFetchAndSetIconFromNetwork::GetInterface(const nsIID& uuid,
 
 
 NS_IMETHODIMP
-AsyncFetchAndSetIconFromNetwork::AsyncOnChannelRedirect(
+AsyncFetchAndSetIconForPage::AsyncOnChannelRedirect(
   nsIChannel* oldChannel
 , nsIChannel* newChannel
 , uint32_t flags
@@ -617,11 +610,17 @@ AsyncFetchAndSetIconFromNetwork::AsyncOnChannelRedirect(
 }
 
 NS_IMETHODIMP
-AsyncFetchAndSetIconFromNetwork::OnStopRequest(nsIRequest* aRequest,
-                                               nsISupports* aContext,
-                                               nsresult aStatusCode)
+AsyncFetchAndSetIconForPage::OnStopRequest(nsIRequest* aRequest,
+                                           nsISupports* aContext,
+                                           nsresult aStatusCode)
 {
   MOZ_ASSERT(NS_IsMainThread());
+
+  
+  mRequest = nullptr;
+  if (mCanceled) {
+    return NS_OK;
+  }
 
   nsFaviconService* favicons = nsFaviconService::GetFaviconService();
   NS_ENSURE_STATE(favicons);
@@ -639,7 +638,6 @@ AsyncFetchAndSetIconFromNetwork::OnStopRequest(nsIRequest* aRequest,
   }
 
   nsCOMPtr<nsIChannel> channel = do_QueryInterface(aRequest);
-  
   
   MOZ_ASSERT(channel);
 

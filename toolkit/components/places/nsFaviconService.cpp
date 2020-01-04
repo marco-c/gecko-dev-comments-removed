@@ -212,10 +212,12 @@ nsFaviconService::SetAndFetchFaviconForPage(nsIURI* aPageURI,
                                             bool aForceReload,
                                             uint32_t aFaviconLoadType,
                                             nsIFaviconDataCallback* aCallback,
-                                            nsIPrincipal* aLoadingPrincipal)
+                                            nsIPrincipal* aLoadingPrincipal,
+                                            mozIPlacesPendingOperation **_canceler)
 {
   NS_ENSURE_ARG(aPageURI);
   NS_ENSURE_ARG(aFaviconURI);
+  NS_ENSURE_ARG_POINTER(_canceler);
 
   
   bool previouslyFailed;
@@ -239,9 +241,10 @@ nsFaviconService::SetAndFetchFaviconForPage(nsIURI* aPageURI,
 
   
   
+  bool loadPrivate = aFaviconLoadType == nsIFaviconService::FAVICON_LOAD_PRIVATE;
   rv = AsyncFetchAndSetIconForPage::start(
     aFaviconURI, aPageURI, aForceReload ? FETCH_ALWAYS : FETCH_IF_MISSING,
-    aFaviconLoadType, aCallback, loadingPrincipal
+    loadPrivate, aCallback, loadingPrincipal, _canceler
   );
   NS_ENSURE_SUCCESS(rv, rv);
 

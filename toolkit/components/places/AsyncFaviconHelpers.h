@@ -11,6 +11,7 @@
 #include "nsIChannelEventSink.h"
 #include "nsIInterfaceRequestor.h"
 #include "nsIStreamListener.h"
+#include "mozIPlacesPendingOperation.h"
 #include "nsThreadUtils.h"
 #include "nsProxyRelease.h"
 
@@ -113,12 +114,24 @@ protected:
 
 
 
-class AsyncFetchAndSetIconForPage : public AsyncFaviconHelperBase
-{
-public:
+class AsyncFetchAndSetIconForPage final : public AsyncFaviconHelperBase
+                                        , public nsIStreamListener
+                                        , public nsIInterfaceRequestor
+                                        , public nsIChannelEventSink
+                                        , public mozIPlacesPendingOperation
+ {
+ public:
+  NS_DECL_NSISTREAMLISTENER
+  NS_DECL_NSIINTERFACEREQUESTOR
+  NS_DECL_NSICHANNELEVENTSINK
+  NS_DECL_NSIREQUESTOBSERVER
   NS_DECL_NSIRUNNABLE
+  NS_DECL_MOZIPLACESPENDINGOPERATION
+  NS_DECL_ISUPPORTS_INHERITED
 
   
+
+
 
 
 
@@ -136,11 +149,14 @@ public:
   static nsresult start(nsIURI* aFaviconURI,
                         nsIURI* aPageURI,
                         enum AsyncFaviconFetchMode aFetchMode,
-                        uint32_t aFaviconLoadType,
+                        bool aFaviconLoadPrivate,
                         nsIFaviconDataCallback* aCallback,
-                        nsIPrincipal* aLoadingPrincipal);
+                        nsIPrincipal* aLoadingPrincipal,
+                        mozIPlacesPendingOperation ** _canceler);
 
   
+
+
 
 
 
@@ -154,62 +170,20 @@ public:
 
   AsyncFetchAndSetIconForPage(IconData& aIcon,
                               PageData& aPage,
-                              uint32_t aFaviconLoadType,
+                              bool aFaviconLoadPrivate,
                               nsCOMPtr<nsIFaviconDataCallback>& aCallback,
                               nsIPrincipal* aLoadingPrincipal);
 
-  virtual ~AsyncFetchAndSetIconForPage();
-
-protected:
-  IconData mIcon;
-  PageData mPage;
-  const bool mFaviconLoadPrivate;
-  nsMainThreadPtrHandle<nsIPrincipal> mLoadingPrincipal;
-};
-
-
-
-
-
-
-class AsyncFetchAndSetIconFromNetwork : public AsyncFaviconHelperBase
-                                      , public nsIStreamListener
-                                      , public nsIInterfaceRequestor
-                                      , public nsIChannelEventSink
-{
-public:
-  NS_DECL_NSISTREAMLISTENER
-  NS_DECL_NSIINTERFACEREQUESTOR
-  NS_DECL_NSICHANNELEVENTSINK
-  NS_DECL_NSIREQUESTOBSERVER
-  NS_DECL_NSIRUNNABLE
-  NS_DECL_ISUPPORTS_INHERITED
-
-  
-
-
-
-
-
-
-
-
-
-
-
-  AsyncFetchAndSetIconFromNetwork(IconData& aIcon,
-                                  PageData& aPage,
-                                  bool aFaviconLoadPrivate,
-                                  nsCOMPtr<nsIFaviconDataCallback>& aCallback,
-                                  const nsMainThreadPtrHandle<nsIPrincipal>& aLoadingPrincipal);
-
-protected:
-  virtual ~AsyncFetchAndSetIconFromNetwork();
+private:
+  nsresult FetchFromNetwork();
+  virtual ~AsyncFetchAndSetIconForPage() {}
 
   IconData mIcon;
   PageData mPage;
   const bool mFaviconLoadPrivate;
   nsMainThreadPtrHandle<nsIPrincipal> mLoadingPrincipal;
+  bool mCanceled;
+  nsCOMPtr<nsIRequest> mRequest;
 };
 
 
