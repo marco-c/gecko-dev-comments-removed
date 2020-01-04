@@ -41,8 +41,8 @@ public:
     return static_cast<nsMemoryReporterManager*>(imgr.get());
   }
 
-  typedef nsDataHashtable<nsRefPtrHashKey<nsIMemoryReporter>, bool> StrongReportersTable;
-  typedef nsDataHashtable<nsPtrHashKey<nsIMemoryReporter>, bool> WeakReportersTable;
+  typedef nsTHashtable<nsRefPtrHashKey<nsIMemoryReporter>> StrongReportersTable;
+  typedef nsTHashtable<nsPtrHashKey<nsIMemoryReporter>> WeakReportersTable;
 
   
   
@@ -184,14 +184,9 @@ public:
 
 private:
   nsresult RegisterReporterHelper(nsIMemoryReporter* aReporter,
-                                  bool aForce, bool aStrongRef, bool aIsAsync);
+                                  bool aForce, bool aStrongRef);
   nsresult StartGettingReports();
   nsresult FinishReporting();
-
-  void DispatchReporter(nsIMemoryReporter* aReporter, bool aIsAsync,
-                        nsIHandleReportCallback* aHandleReport,
-                        nsISupports* aHandleReportData,
-                        bool aAnonymize);
 
   static void TimeoutCallback(nsITimer* aTimer, void* aData);
   
@@ -210,16 +205,16 @@ private:
 
   uint32_t mNextGeneration;
 
-  
-  
-  
-  struct PendingProcessesState
+  struct GetReportsState
   {
     uint32_t                             mGeneration;
     bool                                 mAnonymize;
     bool                                 mMinimize;
     nsCOMPtr<nsITimer>                   mTimer;
-    nsTArray<nsRefPtr<mozilla::dom::ContentParent>> mChildrenPending;
+    
+    
+    
+    nsTArray<nsRefPtr<mozilla::dom::ContentParent>>* mChildrenPending;
     uint32_t                             mNumProcessesRunning;
     uint32_t                             mNumProcessesCompleted;
     uint32_t                             mConcurrencyLimit;
@@ -229,52 +224,39 @@ private:
     nsCOMPtr<nsISupports>                mFinishReportingData;
     nsString                             mDMDDumpIdent;
 
-    PendingProcessesState(uint32_t aGeneration, bool aAnonymize, bool aMinimize,
-                          uint32_t aConcurrencyLimit,
-                          nsIHandleReportCallback* aHandleReport,
-                          nsISupports* aHandleReportData,
-                          nsIFinishReportingCallback* aFinishReporting,
-                          nsISupports* aFinishReportingData,
-                          const nsAString& aDMDDumpIdent);
-  };
-
-  
-  
-  
-  struct PendingReportersState
-  {
-    
-    uint32_t mReportsPending;
-
-    
-    nsCOMPtr<nsIFinishReportingCallback> mFinishReporting;
-    nsCOMPtr<nsISupports> mFinishReportingData;
-
-    
-    FILE* mDMDFile;
-
-    PendingReportersState(nsIFinishReportingCallback* aFinishReporting,
-                        nsISupports* aFinishReportingData,
-                        FILE* aDMDFile)
-      : mReportsPending(0)
+    GetReportsState(uint32_t aGeneration, bool aAnonymize, bool aMinimize,
+                    uint32_t aConcurrencyLimit,
+                    nsIHandleReportCallback* aHandleReport,
+                    nsISupports* aHandleReportData,
+                    nsIFinishReportingCallback* aFinishReporting,
+                    nsISupports* aFinishReportingData,
+                    const nsAString& aDMDDumpIdent)
+      : mGeneration(aGeneration)
+      , mAnonymize(aAnonymize)
+      , mMinimize(aMinimize)
+      , mChildrenPending(nullptr)
+      , mNumProcessesRunning(1) 
+      , mNumProcessesCompleted(0)
+      , mConcurrencyLimit(aConcurrencyLimit)
+      , mHandleReport(aHandleReport)
+      , mHandleReportData(aHandleReportData)
       , mFinishReporting(aFinishReporting)
       , mFinishReportingData(aFinishReportingData)
-      , mDMDFile(aDMDFile)
+      , mDMDDumpIdent(aDMDDumpIdent)
     {
     }
+
+    ~GetReportsState();
   };
 
   
   
   
-  PendingProcessesState* mPendingProcessesState;
+  GetReportsState* mGetReportsState;
 
-  
-  PendingReportersState* mPendingReportersState;
-
-  PendingProcessesState* GetStateForGeneration(uint32_t aGeneration);
+  GetReportsState* GetStateForGeneration(uint32_t aGeneration);
   static bool StartChildReport(mozilla::dom::ContentParent* aChild,
-                               const PendingProcessesState* aState);
+                               const GetReportsState* aState);
 };
 
 #define NS_MEMORY_REPORTER_MANAGER_CID \

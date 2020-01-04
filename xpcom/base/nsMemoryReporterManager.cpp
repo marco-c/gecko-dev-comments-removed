@@ -1356,8 +1356,7 @@ nsMemoryReporterManager::nsMemoryReporterManager()
   , mSavedStrongReporters(nullptr)
   , mSavedWeakReporters(nullptr)
   , mNextGeneration(1)
-  , mPendingProcessesState(nullptr)
-  , mPendingReportersState(nullptr)
+  , mGetReportsState(nullptr)
 {
 }
 
@@ -1415,11 +1414,11 @@ nsMemoryReporterManager::GetReportsExtended(
 
   uint32_t generation = mNextGeneration++;
 
-  if (mPendingProcessesState) {
+  if (mGetReportsState) {
     
     
     MEMORY_REPORTING_LOG("GetReports (gen=%u, s->gen=%u): abort\n",
-                         generation, mPendingProcessesState->mGeneration);
+                         generation, mGetReportsState->mGeneration);
     return NS_OK;
   }
 
@@ -1430,15 +1429,16 @@ nsMemoryReporterManager::GetReportsExtended(
   if (concurrency < 1) {
     concurrency = 1;
   }
-  mPendingProcessesState = new PendingProcessesState(generation,
-                                                     aAnonymize,
-                                                     aMinimize,
-                                                     concurrency,
-                                                     aHandleReport,
-                                                     aHandleReportData,
-                                                     aFinishReporting,
-                                                     aFinishReportingData,
-                                                     aDMDDumpIdent);
+  mGetReportsState = new GetReportsState(generation,
+                                         aAnonymize,
+                                         aMinimize,
+                                         concurrency,
+                                         aHandleReport,
+                                         aHandleReportData,
+                                         aFinishReporting,
+                                         aFinishReportingData,
+                                         aDMDDumpIdent);
+  mGetReportsState->mChildrenPending = new nsTArray<nsRefPtr<mozilla::dom::ContentParent>>();
 
   if (aMinimize) {
     rv = MinimizeMemoryUsage(NS_NewRunnableMethod(
@@ -1452,7 +1452,7 @@ nsMemoryReporterManager::GetReportsExtended(
 nsresult
 nsMemoryReporterManager::StartGettingReports()
 {
-  PendingProcessesState* s = mPendingProcessesState;
+  GetReportsState* s = mGetReportsState;
   nsresult rv;
 
   
@@ -1467,11 +1467,8 @@ nsMemoryReporterManager::StartGettingReports()
     }
   }
 #endif
-
-  
   GetReportsForThisProcessExtended(s->mHandleReport, s->mHandleReportData,
-                                   s->mAnonymize, parentDMDFile,
-                                   s->mFinishReporting, s->mFinishReportingData);
+                                   s->mAnonymize, parentDMDFile);
 
   nsTArray<ContentParent*> childWeakRefs;
   ContentParent::GetAll(childWeakRefs);
@@ -1482,7 +1479,7 @@ nsMemoryReporterManager::StartGettingReports()
     
 
     for (size_t i = 0; i < childWeakRefs.Length(); ++i) {
-      s->mChildrenPending.AppendElement(childWeakRefs[i]);
+      s->mChildrenPending->AppendElement(childWeakRefs[i]);
     }
 
     nsCOMPtr<nsITimer> timer = do_CreateInstance(NS_TIMER_CONTRACTID);
@@ -1503,54 +1500,30 @@ nsMemoryReporterManager::StartGettingReports()
     s->mTimer.swap(timer);
   }
 
+  
+  
+  EndProcessReport(s->mGeneration, true);
   return NS_OK;
 }
 
-void
-nsMemoryReporterManager::DispatchReporter(
-  nsIMemoryReporter* aReporter, bool aIsAsync,
+NS_IMETHODIMP
+nsMemoryReporterManager::GetReportsForThisProcess(
   nsIHandleReportCallback* aHandleReport,
-  nsISupports* aHandleReportData,
-  bool aAnonymize)
+  nsISupports* aHandleReportData, bool aAnonymize)
 {
-  MOZ_ASSERT(mPendingReportersState);
-
-  
-  nsRefPtr<nsMemoryReporterManager> self = this;
-  nsCOMPtr<nsIMemoryReporter> reporter = aReporter;
-  nsCOMPtr<nsIHandleReportCallback> handleReport = aHandleReport;
-  nsCOMPtr<nsISupports> handleReportData = aHandleReportData;
-
-  nsCOMPtr<nsIRunnable> event = NS_NewRunnableFunction(
-    [self, reporter, aIsAsync, handleReport, handleReportData, aAnonymize] () {
-      reporter->CollectReports(handleReport,
-                               handleReportData,
-                               aAnonymize);
-      if (!aIsAsync) {
-        self->EndReport();
-      }
-    });
-
-  NS_DispatchToMainThread(event);
-  mPendingReportersState->mReportsPending++;
+  return GetReportsForThisProcessExtended(aHandleReport, aHandleReportData,
+                                          aAnonymize, nullptr);
 }
 
 NS_IMETHODIMP
 nsMemoryReporterManager::GetReportsForThisProcessExtended(
   nsIHandleReportCallback* aHandleReport, nsISupports* aHandleReportData,
-  bool aAnonymize, FILE* aDMDFile,
-  nsIFinishReportingCallback* aFinishReporting,
-  nsISupports* aFinishReportingData)
+  bool aAnonymize, FILE* aDMDFile)
 {
   
   
   if (!NS_IsMainThread()) {
     MOZ_CRASH();
-  }
-
-  if (NS_WARN_IF(mPendingReportersState)) {
-    
-    return NS_ERROR_IN_PROGRESS;
   }
 
 #ifdef MOZ_DMD
@@ -1563,58 +1536,39 @@ nsMemoryReporterManager::GetReportsForThisProcessExtended(
   MOZ_ASSERT(!aDMDFile);
 #endif
 
-  mPendingReportersState = new PendingReportersState(
-      aFinishReporting, aFinishReportingData, aDMDFile);
-
+  nsCOMArray<nsIMemoryReporter> allReporters;
   {
     mozilla::MutexAutoLock autoLock(mMutex);
-
     for (auto iter = mStrongReporters->Iter(); !iter.Done(); iter.Next()) {
-      DispatchReporter(iter.Key(), iter.Data(),
-                       aHandleReport, aHandleReportData, aAnonymize);
+      nsRefPtrHashKey<nsIMemoryReporter>* entry = iter.Get();
+      allReporters.AppendElement(entry->GetKey());
     }
-
     for (auto iter = mWeakReporters->Iter(); !iter.Done(); iter.Next()) {
-      nsCOMPtr<nsIMemoryReporter> reporter = iter.Key();
-      DispatchReporter(reporter, iter.Data(),
-                       aHandleReport, aHandleReportData, aAnonymize);
+      nsPtrHashKey<nsIMemoryReporter>* entry = iter.Get();
+      allReporters.AppendElement(entry->GetKey());
     }
   }
+  for (uint32_t i = 0; i < allReporters.Length(); i++) {
+    allReporters[i]->CollectReports(aHandleReport, aHandleReportData,
+                                    aAnonymize);
+  }
 
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-nsMemoryReporterManager::EndReport()
-{
-  if (--mPendingReportersState->mReportsPending == 0) {
 #ifdef MOZ_DMD
-    if (mPendingReportersState->mDMDFile) {
-      nsMemoryInfoDumper::DumpDMDToFile(mPendingReportersState->mDMDFile);
-    }
-#endif
-    if (mPendingProcessesState) {
-      
-      EndProcessReport(mPendingProcessesState->mGeneration, true);
-    } else {
-      mPendingReportersState->mFinishReporting->Callback(
-          mPendingReportersState->mFinishReportingData);
-    }
-
-    delete mPendingReportersState;
-    mPendingReportersState = nullptr;
+  if (aDMDFile) {
+    return nsMemoryInfoDumper::DumpDMDToFile(aDMDFile);
   }
+#endif
 
   return NS_OK;
 }
 
-nsMemoryReporterManager::PendingProcessesState*
+nsMemoryReporterManager::GetReportsState*
 nsMemoryReporterManager::GetStateForGeneration(uint32_t aGeneration)
 {
   
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
 
-  PendingProcessesState* s = mPendingProcessesState;
+  GetReportsState* s = mGetReportsState;
 
   if (!s) {
     
@@ -1651,7 +1605,7 @@ nsMemoryReporterManager::HandleChildReport(
   uint32_t aGeneration,
   const dom::MemoryReport& aChildReport)
 {
-  PendingProcessesState* s = GetStateForGeneration(aGeneration);
+  GetReportsState* s = GetStateForGeneration(aGeneration);
   if (!s) {
     return;
   }
@@ -1671,7 +1625,7 @@ nsMemoryReporterManager::HandleChildReport(
 
  bool
 nsMemoryReporterManager::StartChildReport(mozilla::dom::ContentParent* aChild,
-                                          const PendingProcessesState* aState)
+                                          const GetReportsState* aState)
 {
 #ifdef MOZ_NUWA_PROCESS
   if (aChild->IsNuwaProcess()) {
@@ -1709,7 +1663,7 @@ nsMemoryReporterManager::StartChildReport(mozilla::dom::ContentParent* aChild,
 void
 nsMemoryReporterManager::EndProcessReport(uint32_t aGeneration, bool aSuccess)
 {
-  PendingProcessesState* s = GetStateForGeneration(aGeneration);
+  GetReportsState* s = GetStateForGeneration(aGeneration);
   if (!s) {
     return;
   }
@@ -1722,29 +1676,29 @@ nsMemoryReporterManager::EndProcessReport(uint32_t aGeneration, bool aSuccess)
                        aGeneration, s->mNumProcessesCompleted,
                        aSuccess ? "completed" : "exited during report",
                        s->mNumProcessesRunning,
-                       static_cast<unsigned>(s->mChildrenPending.Length()));
+                       static_cast<unsigned>(s->mChildrenPending->Length()));
 
   
   while (s->mNumProcessesRunning < s->mConcurrencyLimit &&
-         !s->mChildrenPending.IsEmpty()) {
+         !s->mChildrenPending->IsEmpty()) {
     
     nsRefPtr<ContentParent> nextChild;
-    nextChild.swap(s->mChildrenPending.LastElement());
-    s->mChildrenPending.TruncateLength(s->mChildrenPending.Length() - 1);
+    nextChild.swap(s->mChildrenPending->LastElement());
+    s->mChildrenPending->TruncateLength(s->mChildrenPending->Length() - 1);
     
     if (StartChildReport(nextChild, s)) {
       ++s->mNumProcessesRunning;
       MEMORY_REPORTING_LOG("HandleChildReports (aGen=%u): started child report"
                            " (%u running, %u pending)\n",
                            aGeneration, s->mNumProcessesRunning,
-                           static_cast<unsigned>(s->mChildrenPending.Length()));
+                           static_cast<unsigned>(s->mChildrenPending->Length()));
     }
   }
 
   
   
   if (s->mNumProcessesRunning == 0) {
-    MOZ_ASSERT(s->mChildrenPending.IsEmpty());
+    MOZ_ASSERT(s->mChildrenPending->IsEmpty());
     if (s->mTimer) {
       s->mTimer->Cancel();
     }
@@ -1756,15 +1710,15 @@ nsMemoryReporterManager::EndProcessReport(uint32_t aGeneration, bool aSuccess)
 nsMemoryReporterManager::TimeoutCallback(nsITimer* aTimer, void* aData)
 {
   nsMemoryReporterManager* mgr = static_cast<nsMemoryReporterManager*>(aData);
-  PendingProcessesState* s = mgr->mPendingProcessesState;
+  GetReportsState* s = mgr->mGetReportsState;
 
   
   
   
-  MOZ_RELEASE_ASSERT(s, "mgr->mPendingProcessesState");
+  MOZ_RELEASE_ASSERT(s, "mgr->mGetReportsState");
   MEMORY_REPORTING_LOG("TimeoutCallback (s->gen=%u; %u running, %u pending)\n",
                        s->mGeneration, s->mNumProcessesRunning,
-                       static_cast<unsigned>(s->mChildrenPending.Length()));
+                       static_cast<unsigned>(s->mChildrenPending->Length()));
 
   
   
@@ -1779,43 +1733,25 @@ nsMemoryReporterManager::FinishReporting()
     MOZ_CRASH();
   }
 
-  MOZ_ASSERT(mPendingProcessesState);
+  MOZ_ASSERT(mGetReportsState);
   MEMORY_REPORTING_LOG("FinishReporting (s->gen=%u; %u processes reported)\n",
-                       mPendingProcessesState->mGeneration,
-                       mPendingProcessesState->mNumProcessesCompleted);
+                       mGetReportsState->mGeneration,
+                       mGetReportsState->mNumProcessesCompleted);
 
   
   
   
-  nsresult rv = mPendingProcessesState->mFinishReporting->Callback(
-    mPendingProcessesState->mFinishReportingData);
+  nsresult rv = mGetReportsState->mFinishReporting->Callback(
+    mGetReportsState->mFinishReportingData);
 
-  delete mPendingProcessesState;
-  mPendingProcessesState = nullptr;
+  delete mGetReportsState;
+  mGetReportsState = nullptr;
   return rv;
 }
 
-nsMemoryReporterManager::PendingProcessesState::PendingProcessesState(
-    uint32_t aGeneration, bool aAnonymize, bool aMinimize,
-    uint32_t aConcurrencyLimit,
-    nsIHandleReportCallback* aHandleReport,
-    nsISupports* aHandleReportData,
-    nsIFinishReportingCallback* aFinishReporting,
-    nsISupports* aFinishReportingData,
-    const nsAString& aDMDDumpIdent)
-  : mGeneration(aGeneration)
-  , mAnonymize(aAnonymize)
-  , mMinimize(aMinimize)
-  , mChildrenPending()
-  , mNumProcessesRunning(1) 
-  , mNumProcessesCompleted(0)
-  , mConcurrencyLimit(aConcurrencyLimit)
-  , mHandleReport(aHandleReport)
-  , mHandleReportData(aHandleReportData)
-  , mFinishReporting(aFinishReporting)
-  , mFinishReportingData(aFinishReportingData)
-  , mDMDDumpIdent(aDMDDumpIdent)
+nsMemoryReporterManager::GetReportsState::~GetReportsState()
 {
+  delete mChildrenPending;
 }
 
 static void
@@ -1831,7 +1767,7 @@ CrashIfRefcountIsZero(nsISupports* aObj)
 
 nsresult
 nsMemoryReporterManager::RegisterReporterHelper(
-  nsIMemoryReporter* aReporter, bool aForce, bool aStrong, bool aIsAsync)
+  nsIMemoryReporter* aReporter, bool aForce, bool aStrong)
 {
   
   mozilla::MutexAutoLock autoLock(mMutex);
@@ -1858,7 +1794,7 @@ nsMemoryReporterManager::RegisterReporterHelper(
   
   if (aStrong) {
     nsCOMPtr<nsIMemoryReporter> kungFuDeathGrip = aReporter;
-    mStrongReporters->Put(aReporter, aIsAsync);
+    mStrongReporters->PutEntry(aReporter);
     CrashIfRefcountIsZero(aReporter);
   } else {
     CrashIfRefcountIsZero(aReporter);
@@ -1871,7 +1807,7 @@ nsMemoryReporterManager::RegisterReporterHelper(
       
       return NS_ERROR_XPC_BAD_CONVERT_JS;
     }
-    mWeakReporters->Put(aReporter, aIsAsync);
+    mWeakReporters->PutEntry(aReporter);
   }
 
   return NS_OK;
@@ -1881,15 +1817,6 @@ NS_IMETHODIMP
 nsMemoryReporterManager::RegisterStrongReporter(nsIMemoryReporter* aReporter)
 {
   return RegisterReporterHelper(aReporter,  false,
-                                 true,
-                                 false);
-}
-
-NS_IMETHODIMP
-nsMemoryReporterManager::RegisterStrongAsyncReporter(nsIMemoryReporter* aReporter)
-{
-  return RegisterReporterHelper(aReporter,  false,
-                                 true,
                                  true);
 }
 
@@ -1897,16 +1824,7 @@ NS_IMETHODIMP
 nsMemoryReporterManager::RegisterWeakReporter(nsIMemoryReporter* aReporter)
 {
   return RegisterReporterHelper(aReporter,  false,
-                                 false,
                                  false);
-}
-
-NS_IMETHODIMP
-nsMemoryReporterManager::RegisterWeakAsyncReporter(nsIMemoryReporter* aReporter)
-{
-  return RegisterReporterHelper(aReporter,  false,
-                                 false,
-                                 true);
 }
 
 NS_IMETHODIMP
@@ -1914,8 +1832,7 @@ nsMemoryReporterManager::RegisterStrongReporterEvenIfBlocked(
   nsIMemoryReporter* aReporter)
 {
   return RegisterReporterHelper(aReporter,  true,
-                                 true,
-                                 false);
+                                 true);
 }
 
 NS_IMETHODIMP
@@ -1927,7 +1844,7 @@ nsMemoryReporterManager::UnregisterStrongReporter(nsIMemoryReporter* aReporter)
   MOZ_ASSERT(!mWeakReporters->Contains(aReporter));
 
   if (mStrongReporters->Contains(aReporter)) {
-    mStrongReporters->Remove(aReporter);
+    mStrongReporters->RemoveEntry(aReporter);
     return NS_OK;
   }
 
@@ -1936,7 +1853,7 @@ nsMemoryReporterManager::UnregisterStrongReporter(nsIMemoryReporter* aReporter)
   
   
   if (mSavedStrongReporters && mSavedStrongReporters->Contains(aReporter)) {
-    mSavedStrongReporters->Remove(aReporter);
+    mSavedStrongReporters->RemoveEntry(aReporter);
     return NS_OK;
   }
 
@@ -1952,7 +1869,7 @@ nsMemoryReporterManager::UnregisterWeakReporter(nsIMemoryReporter* aReporter)
   MOZ_ASSERT(!mStrongReporters->Contains(aReporter));
 
   if (mWeakReporters->Contains(aReporter)) {
-    mWeakReporters->Remove(aReporter);
+    mWeakReporters->RemoveEntry(aReporter);
     return NS_OK;
   }
 
@@ -1961,7 +1878,7 @@ nsMemoryReporterManager::UnregisterWeakReporter(nsIMemoryReporter* aReporter)
   
   
   if (mSavedWeakReporters && mSavedWeakReporters->Contains(aReporter)) {
-    mSavedWeakReporters->Remove(aReporter);
+    mSavedWeakReporters->RemoveEntry(aReporter);
     return NS_OK;
   }
 
@@ -2008,6 +1925,84 @@ nsMemoryReporterManager::UnblockRegistrationAndRestoreOriginalReporters()
 
   mIsRegistrationBlocked = false;
   return NS_OK;
+}
+
+
+
+class Int64Wrapper final : public nsISupports
+{
+  ~Int64Wrapper() {}
+
+public:
+  NS_DECL_ISUPPORTS
+  Int64Wrapper() : mValue(0)
+  {
+  }
+  int64_t mValue;
+};
+
+NS_IMPL_ISUPPORTS0(Int64Wrapper)
+
+class ExplicitCallback final : public nsIHandleReportCallback
+{
+  ~ExplicitCallback() {}
+
+public:
+  NS_DECL_ISUPPORTS
+
+  NS_IMETHOD Callback(const nsACString& aProcess, const nsACString& aPath,
+                      int32_t aKind, int32_t aUnits, int64_t aAmount,
+                      const nsACString& aDescription,
+                      nsISupports* aWrappedExplicit) override
+  {
+    
+    
+    
+    
+    
+    
+    if (aPath.EqualsLiteral("heap-allocated") ||
+        (aKind == nsIMemoryReporter::KIND_NONHEAP &&
+         PromiseFlatCString(aPath).Find("explicit") == 0)) {
+      Int64Wrapper* wrappedInt64 = static_cast<Int64Wrapper*>(aWrappedExplicit);
+      wrappedInt64->mValue += aAmount;
+    }
+    return NS_OK;
+  }
+};
+
+NS_IMPL_ISUPPORTS(ExplicitCallback, nsIHandleReportCallback)
+
+NS_IMETHODIMP
+nsMemoryReporterManager::GetExplicit(int64_t* aAmount)
+{
+  if (NS_WARN_IF(!aAmount)) {
+    return NS_ERROR_INVALID_ARG;
+  }
+  *aAmount = 0;
+#ifndef HAVE_JEMALLOC_STATS
+  return NS_ERROR_NOT_AVAILABLE;
+#else
+
+  
+  
+  
+  
+  
+
+  nsRefPtr<ExplicitCallback> handleReport = new ExplicitCallback();
+  nsRefPtr<Int64Wrapper> wrappedExplicitSize = new Int64Wrapper();
+
+  
+  
+  
+  GetReportsForThisProcess(handleReport, wrappedExplicitSize,
+                            true);
+
+  *aAmount = wrappedExplicitSize->mValue;
+
+  return NS_OK;
+#endif 
 }
 
 NS_IMETHODIMP
@@ -2378,60 +2373,60 @@ nsMemoryReporterManager::SizeOfTab(nsIDOMWindow* aTopWindow,
 
 namespace mozilla {
 
-#define GET_MEMORY_REPORTER_MANAGER(mgr)                                      \
-  nsRefPtr<nsMemoryReporterManager> mgr =                                     \
-    nsMemoryReporterManager::GetOrCreate();                                   \
-  if (!mgr) {                                                                 \
-    return NS_ERROR_FAILURE;                                                  \
-  }
-
 nsresult
 RegisterStrongMemoryReporter(nsIMemoryReporter* aReporter)
 {
   
   
   nsCOMPtr<nsIMemoryReporter> reporter = aReporter;
-  GET_MEMORY_REPORTER_MANAGER(mgr)
-  return mgr->RegisterStrongReporter(reporter);
-}
 
-nsresult
-RegisterStrongAsyncMemoryReporter(nsIMemoryReporter* aReporter)
-{
-  
-  
-  nsCOMPtr<nsIMemoryReporter> reporter = aReporter;
-  GET_MEMORY_REPORTER_MANAGER(mgr)
-  return mgr->RegisterStrongAsyncReporter(reporter);
+  nsCOMPtr<nsIMemoryReporterManager> mgr =
+    do_GetService("@mozilla.org/memory-reporter-manager;1");
+  if (!mgr) {
+    return NS_ERROR_FAILURE;
+  }
+  return mgr->RegisterStrongReporter(reporter);
 }
 
 nsresult
 RegisterWeakMemoryReporter(nsIMemoryReporter* aReporter)
 {
-  GET_MEMORY_REPORTER_MANAGER(mgr)
+  nsCOMPtr<nsIMemoryReporterManager> mgr =
+    do_GetService("@mozilla.org/memory-reporter-manager;1");
+  if (!mgr) {
+    return NS_ERROR_FAILURE;
+  }
   return mgr->RegisterWeakReporter(aReporter);
-}
-
-nsresult
-RegisterWeakAsyncMemoryReporter(nsIMemoryReporter* aReporter)
-{
-  GET_MEMORY_REPORTER_MANAGER(mgr)
-  return mgr->RegisterWeakAsyncReporter(aReporter);
 }
 
 nsresult
 UnregisterStrongMemoryReporter(nsIMemoryReporter* aReporter)
 {
-  GET_MEMORY_REPORTER_MANAGER(mgr)
+  nsCOMPtr<nsIMemoryReporterManager> mgr =
+    do_GetService("@mozilla.org/memory-reporter-manager;1");
+  if (!mgr) {
+    return NS_ERROR_FAILURE;
+  }
   return mgr->UnregisterStrongReporter(aReporter);
 }
 
 nsresult
 UnregisterWeakMemoryReporter(nsIMemoryReporter* aReporter)
 {
-  GET_MEMORY_REPORTER_MANAGER(mgr)
+  nsCOMPtr<nsIMemoryReporterManager> mgr =
+    do_GetService("@mozilla.org/memory-reporter-manager;1");
+  if (!mgr) {
+    return NS_ERROR_FAILURE;
+  }
   return mgr->UnregisterWeakReporter(aReporter);
 }
+
+#define GET_MEMORY_REPORTER_MANAGER(mgr)                                      \
+  nsRefPtr<nsMemoryReporterManager> mgr =                                     \
+    nsMemoryReporterManager::GetOrCreate();                                   \
+  if (!mgr) {                                                                 \
+    return NS_ERROR_FAILURE;                                                  \
+  }
 
 
 
@@ -2488,3 +2483,45 @@ DEFINE_REGISTER_SIZE_OF_TAB(NonJS);
 #undef GET_MEMORY_REPORTER_MANAGER
 
 } 
+
+#if defined(MOZ_DMD)
+
+namespace mozilla {
+namespace dmd {
+
+class DoNothingCallback final : public nsIHandleReportCallback
+{
+public:
+  NS_DECL_ISUPPORTS
+
+  NS_IMETHOD Callback(const nsACString& aProcess, const nsACString& aPath,
+                      int32_t aKind, int32_t aUnits, int64_t aAmount,
+                      const nsACString& aDescription,
+                      nsISupports* aData) override
+  {
+    
+    return NS_OK;
+  }
+
+private:
+  ~DoNothingCallback() {}
+};
+
+NS_IMPL_ISUPPORTS(DoNothingCallback, nsIHandleReportCallback)
+
+void
+RunReportersForThisProcess()
+{
+  nsCOMPtr<nsIMemoryReporterManager> mgr =
+    do_GetService("@mozilla.org/memory-reporter-manager;1");
+
+  nsRefPtr<DoNothingCallback> doNothing = new DoNothingCallback();
+
+  mgr->GetReportsForThisProcess(doNothing, nullptr,  false);
+}
+
+} 
+} 
+
+#endif  
+
