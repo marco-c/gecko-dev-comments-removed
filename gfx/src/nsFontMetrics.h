@@ -58,16 +58,10 @@ public:
       gfxTextPerfMetrics* textPerf = nullptr;
     };
 
-    nsFontMetrics();
+    nsFontMetrics(const nsFont& aFont, const Params& aParams,
+                  nsDeviceContext *aContext);
 
     NS_INLINE_DECL_REFCOUNTING(nsFontMetrics)
-
-    
-
-
-
-    nsresult Init(const nsFont& aFont, const Params& aParams,
-                  nsDeviceContext *aContext);
 
     
 
@@ -250,7 +244,7 @@ private:
     nsFont mFont;
     RefPtr<gfxFontGroup> mFontGroup;
     nsCOMPtr<nsIAtom> mLanguage;
-    nsDeviceContext *mDeviceContext;
+    nsDeviceContext* mDeviceContext;
     int32_t mP2A;
 
     

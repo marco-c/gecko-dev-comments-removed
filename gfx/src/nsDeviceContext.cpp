@@ -156,49 +156,14 @@ nsFontCache::GetMetricsFor(const nsFont& aFont,
 
     nsFontMetrics::Params params = aParams;
     params.language = language;
-    fm = new nsFontMetrics();
+    fm = new nsFontMetrics(aFont, params, mContext);
     NS_ADDREF(fm);
-    nsresult rv = fm->Init(aFont, params, mContext);
-    if (NS_SUCCEEDED(rv)) {
-        
-        
-        mFontMetrics.AppendElement(fm);
-        aMetrics = fm;
-        NS_ADDREF(aMetrics);
-        return NS_OK;
-    }
-    fm->Destroy();
-    NS_RELEASE(fm);
-
     
     
-    
-
-    Compact();
-    fm = new nsFontMetrics();
-    NS_ADDREF(fm);
-    rv = fm->Init(aFont, params, mContext);
-    if (NS_SUCCEEDED(rv)) {
-        mFontMetrics.AppendElement(fm);
-        aMetrics = fm;
-        return NS_OK;
-    }
-    fm->Destroy();
-    NS_RELEASE(fm);
-
-    
-    
-
-    n = mFontMetrics.Length() - 1; 
-    if (n >= 0) {
-        aMetrics = mFontMetrics[n];
-        NS_ADDREF(aMetrics);
-        return NS_OK;
-    }
-
-    NS_POSTCONDITION(NS_SUCCEEDED(rv),
-                     "font metrics should not be null - bug 136248");
-    return rv;
+    mFontMetrics.AppendElement(fm);
+    aMetrics = fm;
+    NS_ADDREF(aMetrics);
+    return NS_OK;
 }
 
 void
