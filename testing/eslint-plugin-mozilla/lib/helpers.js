@@ -329,6 +329,22 @@ module.exports = {
 
 
 
+  getIsXpcshellTest: function(scope) {
+    var pathAndFilename = scope.getFilename();
+
+    return /.*[\\/]test_.+\.js$/.test(pathAndFilename);
+  },
+
+  
+
+
+
+
+
+
+
+
+
   getIsBrowserMochitest: function(scope) {
     var pathAndFilename = scope.getFilename();
 
@@ -348,7 +364,7 @@ module.exports = {
   getIsTest: function(scope) {
     var pathAndFilename = scope.getFilename();
 
-    if (/.*[\\/]test_.+\.js$/.test(pathAndFilename)) {
+    if (this.getIsXpcshellTest(scope)) {
       return true;
     }
 
