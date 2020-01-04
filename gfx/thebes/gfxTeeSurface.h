@@ -10,8 +10,6 @@
 #include "nsTArrayForwardDeclare.h"
 #include "nsSize.h"
 
-template<class T> class nsRefPtr;
-
 
 
 
