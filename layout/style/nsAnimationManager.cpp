@@ -301,6 +301,31 @@ NS_IMPL_CYCLE_COLLECTION(nsAnimationManager, mEventDispatcher)
 NS_IMPL_CYCLE_COLLECTION_ROOT_NATIVE(nsAnimationManager, AddRef)
 NS_IMPL_CYCLE_COLLECTION_UNROOT_NATIVE(nsAnimationManager, Release)
 
+
+
+static already_AddRefed<CSSAnimation>
+PullOutOldAnimationInCollection(const nsAString& aName,
+                                AnimationCollection* aCollection)
+{
+  
+  
+  
+  
+  
+  
+  size_t oldIdx = aCollection->mAnimations.Length();
+  while (oldIdx-- != 0) {
+    RefPtr<CSSAnimation> a = aCollection->mAnimations[oldIdx]->AsCSSAnimation();
+    MOZ_ASSERT(a, "All animations in the CSS Animation collection should"
+        " be CSSAnimation objects");
+    if (a->AnimationName() == aName) {
+      aCollection->mAnimations.RemoveElementAt(oldIdx);
+      return a.forget();
+    }
+  }
+  return nullptr;
+}
+
 void
 nsAnimationManager::UpdateAnimations(nsStyleContext* aStyleContext,
                                      mozilla::dom::Element* aElement)
@@ -370,18 +395,10 @@ nsAnimationManager::UpdateAnimations(nsStyleContext* aStyleContext,
         
         
         
-        RefPtr<CSSAnimation> oldAnim;
-        size_t oldIdx = collection->mAnimations.Length();
-        while (oldIdx-- != 0) {
-          CSSAnimation* a = collection->mAnimations[oldIdx]->AsCSSAnimation();
-          MOZ_ASSERT(a, "All animations in the CSS Animation collection should"
-                        " be CSSAnimation objects");
-          if (a->AnimationName() ==
-              newAnim->AsCSSAnimation()->AnimationName()) {
-            oldAnim = a;
-            break;
-          }
-        }
+        
+        RefPtr<CSSAnimation> oldAnim =
+          PullOutOldAnimationInCollection(
+            newAnim->AsCSSAnimation()->AnimationName(), collection);
         if (!oldAnim) {
           
           
@@ -440,12 +457,9 @@ nsAnimationManager::UpdateAnimations(nsStyleContext* aStyleContext,
         
         
         
-        
-        
         newAnim->CancelFromStyle();
         newAnim = nullptr;
         newAnimations.ReplaceElementAt(newIdx, oldAnim);
-        collection->mAnimations.RemoveElementAt(oldIdx);
       }
     }
   } else {
