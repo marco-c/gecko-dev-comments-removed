@@ -47,6 +47,10 @@ def config_status(config):
     with codecs.open('config.status', 'w', encoding) as fh:
         fh.write('#!%s\n' % config['PYTHON'])
         fh.write('# coding=%s\n' % encoding)
+        
+        
+        
+        fh.write('true, false, null = True, False, None\n')
         for k, v in sanitized_config.iteritems():
             fh.write('%s = ' % k)
             json.dump(v, fh, sort_keys=True, indent=4, ensure_ascii=False)
