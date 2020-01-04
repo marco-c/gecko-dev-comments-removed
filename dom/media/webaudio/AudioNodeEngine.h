@@ -324,7 +324,8 @@ public:
 
 
 
-  virtual void ProduceBlockBeforeInput(GraphTime aFrom,
+  virtual void ProduceBlockBeforeInput(AudioNodeStream* aStream,
+                                       GraphTime aFrom,
                                        AudioBlock* aOutput)
   {
     NS_NOTREACHED("ProduceBlockBeforeInput called on wrong engine\n");

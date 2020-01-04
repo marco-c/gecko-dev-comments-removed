@@ -32,7 +32,6 @@ public:
   DelayNodeEngine(AudioNode* aNode, AudioDestinationNode* aDestination,
                   double aMaxDelayTicks)
     : AudioNodeEngine(aNode)
-    , mSource(nullptr)
     , mDestination(aDestination->Stream())
     
     , mDelay(0.f)
@@ -50,11 +49,6 @@ public:
   virtual DelayNodeEngine* AsDelayNodeEngine() override
   {
     return this;
-  }
-
-  void SetSourceStream(AudioNodeStream* aSource)
-  {
-    mSource = aSource;
   }
 
   enum Parameters {
@@ -82,7 +76,6 @@ public:
                             AudioBlock* aOutput,
                             bool* aFinished) override
   {
-    MOZ_ASSERT(mSource == aStream, "Invalid source stream");
     MOZ_ASSERT(aStream->SampleRate() == mDestination->SampleRate());
 
     if (!aInput.IsSilentOrSubnormal()) {
@@ -117,18 +110,19 @@ public:
     
     
     if (!mHaveProducedBeforeInput) {
-      UpdateOutputBlock(aFrom, aOutput, 0.0);
+      UpdateOutputBlock(aStream, aFrom, aOutput, 0.0);
     }
     mHaveProducedBeforeInput = false;
     mBuffer.NextBlock();
   }
 
-  void UpdateOutputBlock(GraphTime aFrom, AudioBlock* aOutput, double minDelay)
+  void UpdateOutputBlock(AudioNodeStream* aStream, GraphTime aFrom,
+                         AudioBlock* aOutput, double minDelay)
   {
     double maxDelay = mMaxDelay;
-    double sampleRate = mSource->SampleRate();
+    double sampleRate = aStream->SampleRate();
     ChannelInterpretation channelInterpretation =
-      mSource->GetChannelInterpretation();
+      aStream->GetChannelInterpretation();
     if (mDelay.HasSimpleValue()) {
       
       
@@ -155,13 +149,14 @@ public:
     }
   }
 
-  virtual void ProduceBlockBeforeInput(GraphTime aFrom,
+  virtual void ProduceBlockBeforeInput(AudioNodeStream* aStream,
+                                       GraphTime aFrom,
                                        AudioBlock* aOutput) override
   {
     if (mLeftOverData <= 0) {
       aOutput->SetNull(WEBAUDIO_BLOCK_SIZE);
     } else {
-      UpdateOutputBlock(aFrom, aOutput, WEBAUDIO_BLOCK_SIZE);
+      UpdateOutputBlock(aStream, aFrom, aOutput, WEBAUDIO_BLOCK_SIZE);
     }
     mHaveProducedBeforeInput = true;
   }
@@ -177,7 +172,6 @@ public:
     
     
     
-    
     amount += mBuffer.SizeOfExcludingThis(aMallocSizeOf);
     return amount;
   }
@@ -187,7 +181,6 @@ public:
     return aMallocSizeOf(this) + SizeOfExcludingThis(aMallocSizeOf);
   }
 
-  AudioNodeStream* mSource;
   AudioNodeStream* mDestination;
   AudioParamTimeline mDelay;
   DelayBuffer mBuffer;
@@ -210,7 +203,6 @@ DelayNode::DelayNode(AudioContext* aContext, double aMaxDelay)
                         aContext->SampleRate() * aMaxDelay);
   mStream = AudioNodeStream::Create(aContext, engine,
                                     AudioNodeStream::NO_STREAM_FLAGS);
-  engine->SetSourceStream(mStream);
 }
 
 DelayNode::~DelayNode()
