@@ -9,6 +9,7 @@
 #include "mozilla/Logging.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/StaticPtr.h"
+#include "mozilla/gfx/Point.h" 
 
 #include"GeckoProfiler.h"
 #include "OggWriter.h"
@@ -39,7 +40,6 @@ namespace mozilla {
 void
 MediaEncoder::SetDirectConnect(bool aConnected)
 {
-  fprintf(stderr, "****** direct connect: %s\n", aConnected ? "true" : "false");
   mDirectConnected = aConnected;
 }
 
@@ -50,17 +50,19 @@ MediaEncoder::NotifyRealtimeData(MediaStreamGraph* aGraph,
                                  uint32_t aTrackEvents,
                                  const MediaSegment& aRealtimeMedia)
 {
-  
-  
-  if (mAudioEncoder && aRealtimeMedia.GetType() == MediaSegment::AUDIO) {
-    mAudioEncoder->NotifyQueuedTrackChanges(aGraph, aID,
-                                            aTrackOffset, aTrackEvents,
-                                            aRealtimeMedia);
+  if (mSuspended == RECORD_NOT_SUSPENDED) {
+    
+    
+    if (mAudioEncoder && aRealtimeMedia.GetType() == MediaSegment::AUDIO) {
+      mAudioEncoder->NotifyQueuedTrackChanges(aGraph, aID,
+                                              aTrackOffset, aTrackEvents,
+                                              aRealtimeMedia);
 
-  } else if (mVideoEncoder && aRealtimeMedia.GetType() == MediaSegment::VIDEO) {
-    mVideoEncoder->NotifyQueuedTrackChanges(aGraph, aID,
-                                            aTrackOffset, aTrackEvents,
-                                            aRealtimeMedia);
+    } else if (mVideoEncoder && aRealtimeMedia.GetType() == MediaSegment::VIDEO) {
+      mVideoEncoder->NotifyQueuedTrackChanges(aGraph, aID,
+                                              aTrackOffset, aTrackEvents,
+                                              aRealtimeMedia);
+    }
   }
 }
 
@@ -75,6 +77,24 @@ MediaEncoder::NotifyQueuedTrackChanges(MediaStreamGraph* aGraph,
 {
   if (!mDirectConnected) {
     NotifyRealtimeData(aGraph, aID, aTrackOffset, aTrackEvents, aQueuedMedia);
+  } else {
+    if (mSuspended == RECORD_RESUMED) {
+      if (mVideoEncoder) {
+        if (aQueuedMedia.GetType() == MediaSegment::VIDEO) {
+          
+          
+          VideoSegment segment;
+          gfx::IntSize size(0,0);
+          segment.AppendFrame(nullptr, aQueuedMedia.GetDuration(), size);
+          mVideoEncoder->NotifyQueuedTrackChanges(aGraph, aID,
+                                                  aTrackOffset, aTrackEvents,
+                                                  segment);
+          mSuspended = RECORD_NOT_SUSPENDED;
+        }
+      } else {
+        mSuspended = RECORD_NOT_SUSPENDED; 
+      }
+    }
   }
 }
 

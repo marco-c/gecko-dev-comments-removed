@@ -12,6 +12,7 @@
 #include "MediaStreamGraph.h"
 #include "nsIMemoryReporter.h"
 #include "mozilla/MemoryReporting.h"
+#include "mozilla/Atomics.h"
 
 namespace mozilla {
 
@@ -75,9 +76,33 @@ public :
     , mState(MediaEncoder::ENCODE_METADDATA)
     , mShutdown(false)
     , mDirectConnected(false)
-  {}
+    , mSuspended(false)
+{}
 
   ~MediaEncoder() {};
+
+  enum SuspendState {
+    RECORD_NOT_SUSPENDED,
+    RECORD_SUSPENDED,
+    RECORD_RESUMED
+  };
+
+  
+  void Suspend()
+  {
+    mSuspended = RECORD_SUSPENDED;
+  }
+
+  
+
+
+
+  void Resume()
+  {
+    if (mSuspended == RECORD_SUSPENDED) {
+      mSuspended = RECORD_RESUMED;
+    }
+  }
 
   
 
@@ -185,6 +210,7 @@ private:
   int mState;
   bool mShutdown;
   bool mDirectConnected;
+  Atomic<int> mSuspended;
   
   double GetEncodeTimeStamp()
   {
