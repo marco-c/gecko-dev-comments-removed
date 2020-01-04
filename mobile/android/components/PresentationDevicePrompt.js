@@ -97,9 +97,11 @@ PresentationDevicePrompt.prototype = {
       return;
     }
 
-    if (aIndex < 0 ||             
-        !this._devices.length) {  
-      this._request.cancel();
+    if (aIndex < 0) {                    
+      this._request.cancel(Cr.NS_ERROR_NOT_ALLOWED_ERR);
+      return;
+    } else if (!this._devices.length) {  
+      this._request.cancel(Cr.NS_ERROR_NOT_FOUND_ERR);
       return;
     }
 
@@ -114,7 +116,7 @@ PresentationDevicePrompt.prototype = {
     this._loadDevices();
 
     if (!this._devices.length) { 
-      aRequest.cancel();
+      aRequest.cancel(Cr.NS_ERROR_DOM_NOT_FOUND_ERR);
       return;
     }
 
