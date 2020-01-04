@@ -31,8 +31,6 @@ public:
   
   void BeginDecoding(TaskQueue* aTaskQueueIdentity);
 
-  virtual bool OnStateMachineTaskQueue() const final override;
-
   virtual MediaResource* GetResource() const final override;
 
   virtual void NotifyBytesConsumed(int64_t aBytes, int64_t aOffset) final override;

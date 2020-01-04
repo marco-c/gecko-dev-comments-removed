@@ -52,8 +52,6 @@ public:
   
   virtual bool IsOggDecoderShutdown() { return false; }
 
-  virtual bool OnStateMachineTaskQueue() const = 0;
-
   
   
   virtual MediaResource* GetResource() const = 0;

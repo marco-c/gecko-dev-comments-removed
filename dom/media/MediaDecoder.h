@@ -512,8 +512,6 @@ public:
   
   MediaDecoderOwner* GetMediaOwner() const override;
 
-  bool OnStateMachineTaskQueue() const override;
-
   MediaDecoderStateMachine* GetStateMachine() const;
   void SetStateMachine(MediaDecoderStateMachine* aStateMachine);
 
