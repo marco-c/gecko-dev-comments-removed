@@ -270,11 +270,25 @@ var openNewTabAndToolbox = Task.async(function*(url, toolId, hostType) {
 
 
 
-function closeToolboxAndTab(toolbox) {
-  return toolbox.destroy().then(function() {
-    gBrowser.removeCurrentTab();
-  });
-}
+var closeTabAndToolbox = Task.async(function*(tab = gBrowser.selectedTab) {
+  let target = TargetFactory.forTab(gBrowser.selectedTab);
+  if (target) {
+    yield gDevTools.closeToolbox(target);
+  }
+
+  yield removeTab(gBrowser.selectedTab);
+});
+
+
+
+
+
+
+
+var closeToolboxAndTab = Task.async(function*(toolbox) {
+  yield toolbox.destroy();
+  yield removeTab(gBrowser.selectedTab);
+});
 
 
 
