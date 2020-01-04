@@ -85,9 +85,10 @@ DoCheckLoadURIChecks(nsIURI* aURI, nsILoadInfo* aLoadInfo)
     return NS_OK;
   }
 
-  nsresult rv = NS_OK;
+  if (IsImageLoadInEditorAppType(aLoadInfo)) {
+    return NS_OK;
+  }
 
-  nsCOMPtr<nsIPrincipal> loadingPrincipal = aLoadInfo->LoadingPrincipal();
   uint32_t flags = nsIScriptSecurityManager::STANDARD;
   if (aLoadInfo->GetAllowChrome()) {
     flags |= nsIScriptSecurityManager::ALLOW_CHROME;
@@ -96,29 +97,13 @@ DoCheckLoadURIChecks(nsIURI* aURI, nsILoadInfo* aLoadInfo)
     flags |= nsIScriptSecurityManager::DISALLOW_SCRIPT;
   }
 
-  bool isImageInEditorType = IsImageLoadInEditorAppType(aLoadInfo);
-
-  
-  if (aLoadInfo->GetExternalContentPolicyType() != nsIContentPolicy::TYPE_DOCUMENT &&
-      !isImageInEditorType) {
-    rv = nsContentUtils::GetSecurityManager()->
-      CheckLoadURIWithPrincipal(loadingPrincipal,
-                                aURI,
-                                flags);
-    NS_ENSURE_SUCCESS(rv, rv);
-  }
-
   
   
-  nsCOMPtr<nsIPrincipal> triggeringPrincipal = aLoadInfo->TriggeringPrincipal();
-  if (loadingPrincipal != triggeringPrincipal && !isImageInEditorType) {
-    rv = nsContentUtils::GetSecurityManager()->
-           CheckLoadURIWithPrincipal(triggeringPrincipal,
+  
+  return nsContentUtils::GetSecurityManager()->
+           CheckLoadURIWithPrincipal(aLoadInfo->TriggeringPrincipal(),
                                      aURI,
                                      flags);
-    NS_ENSURE_SUCCESS(rv, rv);
-  }
-  return NS_OK;
 }
 
 static bool
