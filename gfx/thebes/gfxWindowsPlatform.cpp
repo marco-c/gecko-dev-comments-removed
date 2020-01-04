@@ -1592,26 +1592,6 @@ gfxWindowsPlatform::IsOptimus()
     return knowIsOptimus;
 }
 
-int
-gfxWindowsPlatform::GetScreenDepth() const
-{
-    
-    
-    if (!GetSystemMetrics(SM_SAMEDISPLAYFORMAT))
-        return 24;
-
-    HDC hdc = GetDC(nullptr);
-    if (!hdc)
-        return 24;
-
-    int depth = GetDeviceCaps(hdc, BITSPIXEL) *
-                GetDeviceCaps(hdc, PLANES);
-
-    ReleaseDC(nullptr, hdc);
-
-    return depth;
-}
-
 IDXGIAdapter1*
 gfxWindowsPlatform::GetDXGIAdapter()
 {
