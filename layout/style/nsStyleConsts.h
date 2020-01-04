@@ -406,6 +406,19 @@ static inline mozilla::css::Side operator++(mozilla::css::Side& side, int) {
 #define NS_STYLE_WRITING_MODE_VERTICAL_LR       3
 
 
+
+
+
+#define NS_STYLE_WRITING_MODE_SIDEWAYS_MASK     4
+
+#define NS_STYLE_WRITING_MODE_SIDEWAYS_RL         \
+          (NS_STYLE_WRITING_MODE_VERTICAL_RL |    \
+           NS_STYLE_WRITING_MODE_SIDEWAYS_MASK)
+#define NS_STYLE_WRITING_MODE_SIDEWAYS_LR         \
+          (NS_STYLE_WRITING_MODE_VERTICAL_LR |    \
+           NS_STYLE_WRITING_MODE_SIDEWAYS_MASK)
+
+
 #define NS_STYLE_DISPLAY_NONE                   0
 #define NS_STYLE_DISPLAY_BLOCK                  1
 #define NS_STYLE_DISPLAY_INLINE                 2
@@ -879,9 +892,7 @@ static inline mozilla::css::Side operator++(mozilla::css::Side& side, int) {
 
 #define NS_STYLE_TEXT_ORIENTATION_MIXED          0
 #define NS_STYLE_TEXT_ORIENTATION_UPRIGHT        1
-#define NS_STYLE_TEXT_ORIENTATION_SIDEWAYS_RIGHT 2
-#define NS_STYLE_TEXT_ORIENTATION_SIDEWAYS_LEFT  3 /* placeholder, not yet parsed */
-#define NS_STYLE_TEXT_ORIENTATION_SIDEWAYS       4 /* placeholder, not yet parsed */
+#define NS_STYLE_TEXT_ORIENTATION_SIDEWAYS       2
 
 
 #define NS_STYLE_TEXT_COMBINE_UPRIGHT_NONE        0

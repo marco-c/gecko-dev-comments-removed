@@ -298,7 +298,13 @@ public:
       { NS_SIDE_LEFT,   NS_SIDE_RIGHT  },  
     };
 
+    
+    
+    aWritingModeValue &= ~NS_STYLE_WRITING_MODE_SIDEWAYS_MASK;
+
+    
     NS_ASSERTION(aWritingModeValue < 4, "invalid aWritingModeValue value");
+
     return kLogicalBlockSides[aWritingModeValue][aEdge];
   }
 
@@ -454,12 +460,7 @@ public:
                        eLineOrientMask |
                        eOrientationMask;
         uint8_t textOrientation = aStyleContext->StyleVisibility()->mTextOrientation;
-#if 0 
-        if (textOrientation == NS_STYLE_TEXT_ORIENTATION_SIDEWAYS_LEFT) {
-          mWritingMode &= ~eLineOrientMask;
-        }
-#endif
-        if (textOrientation >= NS_STYLE_TEXT_ORIENTATION_SIDEWAYS_RIGHT) {
+        if (textOrientation == NS_STYLE_TEXT_ORIENTATION_SIDEWAYS) {
           mWritingMode |= eSidewaysMask;
         }
         break;
@@ -469,16 +470,23 @@ public:
       {
         mWritingMode = eOrientationMask;
         uint8_t textOrientation = aStyleContext->StyleVisibility()->mTextOrientation;
-#if 0 
-        if (textOrientation == NS_STYLE_TEXT_ORIENTATION_SIDEWAYS_LEFT) {
-          mWritingMode |= eLineOrientMask;
-        }
-#endif
-        if (textOrientation >= NS_STYLE_TEXT_ORIENTATION_SIDEWAYS_RIGHT) {
+        if (textOrientation == NS_STYLE_TEXT_ORIENTATION_SIDEWAYS) {
           mWritingMode |= eSidewaysMask;
         }
         break;
       }
+
+      case NS_STYLE_WRITING_MODE_SIDEWAYS_LR:
+        mWritingMode = eBlockFlowMask |
+                       eInlineFlowMask |
+                       eOrientationMask |
+                       eSidewaysMask;
+        break;
+
+      case NS_STYLE_WRITING_MODE_SIDEWAYS_RL:
+        mWritingMode = eOrientationMask |
+                       eSidewaysMask;
+        break;
 
       default:
         NS_NOTREACHED("unknown writing mode!");
@@ -487,8 +495,7 @@ public:
     }
 
     if (NS_STYLE_DIRECTION_RTL == styleVisibility->mDirection) {
-      mWritingMode |= eInlineFlowMask | 
-                      eBidiMask;
+      mWritingMode ^= eInlineFlowMask | eBidiMask;
     }
   }
 
@@ -581,6 +588,9 @@ private:
     
 
     eSidewaysMask    = 0x20, 
+                             
+                             
+                             
                              
                              
 
