@@ -447,13 +447,15 @@ MenuItem.prototype = {
 
     let targetPattern = this.targetUrlMatchPattern;
     if (targetPattern) {
-      let isMedia = contextData.onImage || contextData.onAudio || contextData.onVideo;
-      if (!isMedia) {
-        return false;
-      }
-      let srcURI = Services.io.newURI(contextData.srcUrl, null, null);
-      if (!targetPattern.matches(srcURI)) {
+      let targetUrls = [];
+      if (contextData.onImage || contextData.onAudio || contextData.onVideo) {
         
+        targetUrls.push(contextData.srcUrl);
+      }
+      if (contextData.onLink) {
+        targetUrls.push(contextData.linkUrl);
+      }
+      if (!targetUrls.some(targetUrl => targetPattern.matches(NetUtil.newURI(targetUrl)))) {
         return false;
       }
     }
