@@ -973,6 +973,16 @@ public:
 
 
 
+  static nsContentPolicyType InternalContentPolicyTypeToExternalOrPreload(nsContentPolicyType aType);
+
+  
+
+
+
+
+
+
+
 
 
 
