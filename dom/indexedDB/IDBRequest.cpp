@@ -367,6 +367,7 @@ IDBRequest::SetResultCallback(ResultCallback* aCallback)
     
     
     autoJS.Init();
+    JS::ExposeObjectToActiveJS(GetScriptOwner());
     ac.emplace(autoJS.cx(), GetScriptOwner());
   } else {
     
