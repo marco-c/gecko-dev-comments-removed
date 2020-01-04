@@ -44,6 +44,12 @@ VRManagerChild::Get()
 }
 
  bool
+VRManagerChild::IsCreated()
+{
+  return !!sVRManagerChildSingleton;
+}
+
+ bool
 VRManagerChild::InitForContent(Endpoint<PVRManagerChild>&& aEndpoint)
 {
   MOZ_ASSERT(NS_IsMainThread());
@@ -61,16 +67,27 @@ VRManagerChild::InitForContent(Endpoint<PVRManagerChild>&& aEndpoint)
  void
 VRManagerChild::InitSameProcess()
 {
-  NS_ASSERTION(NS_IsMainThread(), "Should be on the main Thread!");
-  if (sVRManagerChildSingleton) {
-    return;
-  }
+  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_ASSERT(!sVRManagerChildSingleton);
 
   sVRManagerChildSingleton = new VRManagerChild();
   sVRManagerParentSingleton = VRManagerParent::CreateSameProcess();
   sVRManagerChildSingleton->Open(sVRManagerParentSingleton->GetIPCChannel(),
                                  mozilla::layers::CompositorThreadHolder::Loop(),
                                  mozilla::ipc::ChildSide);
+}
+
+ void
+VRManagerChild::InitWithGPUProcess(Endpoint<PVRManagerChild>&& aEndpoint)
+{
+  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_ASSERT(!sVRManagerChildSingleton);
+
+  sVRManagerChildSingleton = new VRManagerChild();
+  if (!aEndpoint.Bind(sVRManagerChildSingleton, nullptr)) {
+    NS_RUNTIMEABORT("Couldn't Open() Compositor channel.");
+    return;
+  }
 }
 
  void
