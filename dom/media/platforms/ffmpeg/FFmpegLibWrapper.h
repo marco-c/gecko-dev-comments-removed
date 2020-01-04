@@ -54,14 +54,13 @@ struct FFmpegLibWrapper
   
   AVFrame* (*avcodec_alloc_frame)();
   void (*avcodec_get_frame_defaults)(AVFrame* pic);
+  
+  void (*avcodec_free_frame)(AVFrame** frame);
 
   
   void (*av_log_set_level)(int level);
   void*	(*av_malloc)(size_t size);
   void (*av_freep)(void *ptr);
-
-  
-  void (*avcodec_free_frame)(AVFrame** frame);
 
   
   AVFrame* (*av_frame_alloc)();
