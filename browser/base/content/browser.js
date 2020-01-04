@@ -1291,6 +1291,9 @@ var gBrowserInit = {
 
     gBrowserThumbnails.init();
 
+    
+    gDevToolsBrowser.registerBrowserWindow(window);
+
     gMenuButtonBadgeManager.init();
 
     gMenuButtonUpdateBadge.init();
@@ -1403,6 +1406,8 @@ var gBrowserInit = {
     
     if (!this._loadHandled)
       return;
+
+    gDevToolsBrowser.forgetBrowserWindow(window);
 
     let desc = Object.getOwnPropertyDescriptor(window, "DeveloperToolbar");
     if (desc && !desc.get) {

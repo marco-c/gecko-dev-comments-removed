@@ -4,14 +4,6 @@
 
 "use strict";
 
-
-
-
-
-
-
-
-
 const {Cc, Ci, Cu} = require("chrome");
 const Services = require("Services");
 const promise = require("promise");
@@ -124,17 +116,10 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
   },
 
   observe: function(subject, topic, prefName) {
-    switch (topic) {
-      case "browser-delayed-startup-finished":
-        this._registerBrowserWindow(subject);
-        break;
-      case "nsPref:changed":
-        if (prefName.endsWith("enabled")) {
-          for (let win of this._trackedBrowserWindows) {
-            this.updateCommandAvailability(win);
-          }
-        }
-        break;
+    if (prefName.endsWith("enabled")) {
+      for (let win of this._trackedBrowserWindows) {
+        this.updateCommandAvailability(win);
+      }
     }
   },
 
@@ -334,11 +319,11 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
 
 
 
-  _registerBrowserWindow: function(win) {
+  
+  registerBrowserWindow: function DT_registerBrowserWindow(win) {
     this.updateCommandAvailability(win);
     this.ensurePrefObserver();
     gDevToolsBrowser._trackedBrowserWindows.add(win);
-    win.addEventListener("unload", this);
     gDevToolsBrowser._addAllToolsToMenu(win.document);
 
     if (this._isFirebugInstalled()) {
@@ -764,9 +749,8 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
 
 
 
-  _forgetBrowserWindow: function(win) {
+  forgetBrowserWindow: function DT_forgetBrowserWindow(win) {
     gDevToolsBrowser._trackedBrowserWindows.delete(win);
-    win.removeEventListener("unload", this);
 
     
     for (let [target, toolbox] of gDevTools._toolboxes) {
@@ -808,11 +792,6 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
       break;
       case "TabSelect":
         gDevToolsBrowser._updateMenuCheckbox();
-      break;
-      case "unload":
-        
-        gDevToolsBrowser._forgetBrowserWindow(event.target.defaultView);
-      break;
     }
   },
 
@@ -821,12 +800,7 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
 
   destroy: function() {
     Services.prefs.removeObserver("devtools.", gDevToolsBrowser);
-    Services.obs.removeObserver(gDevToolsBrowser, "browser-delayed-startup-finished");
     Services.obs.removeObserver(gDevToolsBrowser.destroy, "quit-application");
-
-    for (let win of gDevToolsBrowser._trackedBrowserWindows) {
-      gDevToolsBrowser._forgetBrowserWindow(win);
-    }
   },
 }
 
@@ -846,16 +820,6 @@ gDevTools.on("toolbox-ready", gDevToolsBrowser._updateMenuCheckbox);
 gDevTools.on("toolbox-destroyed", gDevToolsBrowser._updateMenuCheckbox);
 
 Services.obs.addObserver(gDevToolsBrowser.destroy, "quit-application", false);
-Services.obs.addObserver(gDevToolsBrowser, "browser-delayed-startup-finished", false);
-
-
-let enumerator = Services.wm.getEnumerator("navigator:browser");
-while (enumerator.hasMoreElements()) {
-  let win = enumerator.getNext();
-  if (win.gBrowserInit && win.gBrowserInit.delayedStartupFinished) {
-    gDevToolsBrowser._registerBrowserWindow(win);
-  }
-}
 
 
 
