@@ -3309,6 +3309,11 @@ def matchIntegerValueToType(value):
 
     return None
 
+class NoCoercionFoundError(WebIDLError):
+    """
+    A class we use to indicate generic coercion failures because none of the
+    types worked out in IDLValue.coerceToType.
+    """
 
 class IDLValue(IDLObject):
     def __init__(self, location, type, value):
@@ -3336,8 +3341,18 @@ class IDLValue(IDLObject):
                     
                     
                     return IDLValue(self.location, subtype, coercedValue.value)
-                except:
-                    pass
+                except Exception as e:
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    if (isinstance(e, WebIDLError) and
+                        not isinstance(e, NoCoercionFoundError)):
+                        raise e
+
         
         
         
@@ -3399,8 +3414,8 @@ class IDLValue(IDLObject):
 
             return IDLValue(self.location, type, self.value)
 
-        raise WebIDLError("Cannot coerce type %s to type %s." %
-                          (self.type, type), [location])
+        raise NoCoercionFoundError("Cannot coerce type %s to type %s." %
+                                   (self.type, type), [location])
 
     def _getDependentObjects(self):
         return set()
