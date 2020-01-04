@@ -192,7 +192,12 @@ MediaSourceDecoder::Ended(bool aEnded)
 {
   MOZ_ASSERT(NS_IsMainThread());
   static_cast<MediaSourceResource*>(GetResource())->SetEnded(aEnded);
-  mEnded = true;
+  if (aEnded) {
+    
+    
+    NotifyDataArrived();
+  }
+  mEnded = aEnded;
 }
 
 void
@@ -310,6 +315,8 @@ MediaSourceDecoder::CanPlayThrough()
 TimeInterval
 MediaSourceDecoder::ClampIntervalToEnd(const TimeInterval& aInterval)
 {
+  MOZ_ASSERT(NS_IsMainThread());
+
   if (!mEnded) {
     return aInterval;
   }
