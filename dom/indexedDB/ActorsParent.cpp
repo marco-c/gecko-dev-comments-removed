@@ -20130,9 +20130,13 @@ FactoryOp::ActorDestroy(ActorDestroyReason aWhy)
 
   NoteActorDestroyed();
 
-  if (mState == State::WaitingForTransactionsToComplete ||
-      (mState == State::SendingResults && aWhy != Deletion)) {
-    
+  
+  
+  
+  
+  
+  
+  if (aWhy != Deletion) {
     mState = State::SendingResults;
     IDB_REPORT_INTERNAL_ERR();
     mResultCode = NS_ERROR_DOM_INDEXEDDB_UNKNOWN_ERR;
