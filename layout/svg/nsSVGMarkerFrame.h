@@ -133,19 +133,14 @@ private:
 
 
 
-typedef nsSVGDisplayContainerFrame nsSVGMarkerAnonChildFrameBase;
-
-
-
-class nsSVGMarkerAnonChildFrame
-  : public nsSVGMarkerAnonChildFrameBase
+class nsSVGMarkerAnonChildFrame : public nsSVGDisplayContainerFrame
 {
   friend nsContainerFrame*
   NS_NewSVGMarkerAnonChildFrame(nsIPresShell* aPresShell,
                                 nsStyleContext* aContext);
 
   explicit nsSVGMarkerAnonChildFrame(nsStyleContext* aContext)
-    : nsSVGMarkerAnonChildFrameBase(aContext)
+    : nsSVGDisplayContainerFrame(aContext)
   {}
 
 public:
