@@ -7,7 +7,7 @@
 
 
 #include "ApplicationReputation.h"
-#include "csd.pb.h"
+#include "chrome/common/safe_browsing/csd.pb.h"
 
 #include "nsIArray.h"
 #include "nsIApplicationReputation.h"
