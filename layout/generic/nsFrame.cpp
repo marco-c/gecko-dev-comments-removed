@@ -2442,7 +2442,8 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
 
   if (usingSVGEffects) {
     MOZ_ASSERT(StyleEffects()->HasFilters() ||
-               nsSVGIntegrationUtils::UsingMaskOrClipPathForFrame(this));
+               nsSVGIntegrationUtils::UsingMaskOrClipPathForFrame(this),
+               "Beside filter & mask/clip-path, what else effect do we have?");
 
     if (clipCapturedBy == ContainerItemType::eSVGEffects) {
       clipState.ExitStackingContextContents(&containerItemScrollClip);
@@ -2451,16 +2452,27 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
     buildingDisplayList.SetDirtyRect(dirtyRectOutsideSVGEffects);
 
     
-    if (StyleEffects()->HasFilters() && !aBuilder->IsForGenerateGlyphMask()) {
+    bool createFilter =
+      StyleEffects()->HasFilters() && !aBuilder->IsForGenerateGlyphMask();
+    bool createMask = nsSVGIntegrationUtils::UsingMaskOrClipPathForFrame(this);
+
+    if (createFilter) {
+      
+      
+      
+      bool handleOpacity = !createMask && !useOpacity;
+
       
       resultList.AppendNewToTop(
-          new (aBuilder) nsDisplayFilter(aBuilder, this, &resultList, useOpacity));
+        new (aBuilder) nsDisplayFilter(aBuilder, this, &resultList,
+                                       handleOpacity));
     }
 
-    if (nsSVGIntegrationUtils::UsingMaskOrClipPathForFrame(this)) {
+    if (createMask) {
       
       resultList.AppendNewToTop(
-          new (aBuilder) nsDisplayMask(aBuilder, this, &resultList, useOpacity));
+          new (aBuilder) nsDisplayMask(aBuilder, this, &resultList,
+                                       !useOpacity));
     }
 
     
