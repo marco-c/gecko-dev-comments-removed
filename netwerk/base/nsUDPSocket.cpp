@@ -462,7 +462,7 @@ nsUDPSocket::OnSocketReady(PRFileDesc *fd, int16_t outFlags)
   uint32_t count;
   
   
-  char buff[8 * 1024];
+  char buff[9216];
   count = PR_RecvFrom(mFD, buff, sizeof(buff), 0, &prClientAddr, PR_INTERVAL_NO_WAIT);
 
   if (count < 1) {
