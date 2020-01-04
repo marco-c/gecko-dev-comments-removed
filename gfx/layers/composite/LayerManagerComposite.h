@@ -202,15 +202,6 @@ public:
 
 
 
-
-
-
-  float ComputeRenderIntegrity();
-
-  
-
-
-
   static bool SupportsDirectTexturing();
 
   static void PlatformSyncBeforeReplyUpdate();
@@ -347,17 +338,6 @@ private:
 
   
   LayerComposite* RootLayer() const;
-
-  
-
-
-
-
-
-  static void ComputeRenderIntegrityInternal(Layer* aLayer,
-                                             nsIntRegion& aScreenRegion,
-                                             nsIntRegion& aLowPrecisionScreenRegion,
-                                             const gfx::Matrix4x4& aTransform);
 
   
 
