@@ -11,17 +11,17 @@ const DEBUGGER_ROOT = "http://example.com/browser/devtools/client/debugger/test/
 
 const PAGE_URL = `${DEBUGGER_ROOT}doc_empty-tab-01.html`;
 const JS_URL = `${URL_ROOT}code_ugly.js`;
-const { SourceMapService } = require("devtools/client/framework/source-map-service");
+const { SourceLocationController } = require("devtools/client/framework/source-location");
 
 add_task(function* () {
   let toolbox = yield openNewTabAndToolbox(PAGE_URL, "jsdebugger");
 
-  let service = new SourceMapService(toolbox.target);
+  let controller = new SourceLocationController(toolbox.target);
 
   let checkedPretty = false;
   let checkedUnpretty = false;
 
-  function onUpdate(e, oldLoc, newLoc) {
+  function onUpdate(oldLoc, newLoc) {
     if (oldLoc.line === 3) {
       checkPrettified(oldLoc, newLoc);
       checkedPretty = true;
@@ -32,8 +32,8 @@ add_task(function* () {
       throw new Error(`Unexpected location update: ${JSON.stringify(oldLoc)}`);
     }
   }
-  const loc1 = { url: JS_URL, line: 3 };
-  service.subscribe(loc1, onUpdate);
+
+  controller.bindLocation({ url: JS_URL, line: 3 }, onUpdate);
 
   
   let sourceShown = waitForSourceShown(toolbox.getCurrentPanel(), "code_ugly.js");
@@ -48,10 +48,10 @@ add_task(function* () {
 
   
   
-  
-  
-  
-  
+
+
+
+
 
 
   yield toolbox.destroy();
