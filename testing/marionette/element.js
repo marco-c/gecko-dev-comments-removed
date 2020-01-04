@@ -819,9 +819,7 @@ element.isVisible = function(el, x = undefined, y = undefined) {
   let win = el.ownerDocument.defaultView;
 
   
-  let ns = atom.getElementAttribute(el, "namespaceURI", win);
-  if (ns.indexOf("there.is.only.xul") < 0 &&
-      !atom.isElementDisplayed(el, win)) {
+  if (!element.isXULElement(el) && !atom.isElementDisplayed(el, win)) {
     return false;
   }
 
