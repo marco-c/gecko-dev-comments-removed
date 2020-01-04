@@ -8,20 +8,34 @@ const testURL = new URL(defaultURL);
 testURL.searchParams.append("file", testPath);
 
 
+function enableOnInstallPref() {
+  const ops = {
+    "set": [
+      ["dom.manifest.oninstall", true],
+    ],
+  };
+  return SpecialPowers.pushPrefEnv(ops);
+}
+
+
 
 function* theTest(aBrowser) {
+  aBrowser.allowEvents = true;
+  
+  const responsePromise = new Promise((resolve) => {
+    aBrowser.contentDocument.addEventListener("dom.manifest.oninstall", resolve);
+  });
   const mm = aBrowser.messageManager;
   const msgKey = "DOM:Manifest:FireInstallEvent";
-  const initialText = aBrowser.contentWindowAsCPOW.document.body.innerHTML.trim()
-  is(initialText, '<h1 id="output">waiting for event</h1>', "should be waiting for event");
   const { data: { success } } = yield PromiseMessage.send(mm, msgKey);
   ok(success, "message sent and received successfully.");
-  const eventText = aBrowser.contentWindowAsCPOW.document.body.innerHTML.trim();
-  is(eventText, '<h1 id="output">event received!</h1>', "text of the page should have changed.");
-};
+  const { detail: { result } } = yield responsePromise;
+  ok(result, "the page sent us an acknowledgment as a custom event");
+}
 
 
 add_task(function*() {
+  yield enableOnInstallPref();
   let tabOptions = {
     gBrowser: gBrowser,
     url: testURL.href,
