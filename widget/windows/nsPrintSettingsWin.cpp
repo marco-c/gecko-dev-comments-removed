@@ -209,18 +209,19 @@ nsPrintSettingsWin::CopyFromNative(HDC aHdc, DEVMODEW* aDevMode)
   
   
   
+  
+  
   int32_t printableWidthInDots = GetDeviceCaps(aHdc, HORZRES);
   int32_t printableHeightInDots = GetDeviceCaps(aHdc, VERTRES);
-  int32_t widthDPI = GetDeviceCaps(aHdc, LOGPIXELSX);
   int32_t heightDPI = GetDeviceCaps(aHdc, LOGPIXELSY);
 
   
   
   if (mOrientation == kPortraitOrientation) {
-    mPrintableWidthInInches = double(printableWidthInDots) / widthDPI;
+    mPrintableWidthInInches = double(printableWidthInDots) / heightDPI;
     mPrintableHeightInInches = double(printableHeightInDots) / heightDPI;
   } else {
-    mPrintableHeightInInches = double(printableWidthInDots) / widthDPI;
+    mPrintableHeightInInches = double(printableWidthInDots) / heightDPI;
     mPrintableWidthInInches = double(printableHeightInDots) / heightDPI;
   }
 

@@ -312,10 +312,13 @@ gfxWindowsSurface::GetSize() const
 {
     if (mForPrinting) {
         
+        
+        
+        int32_t heightDPI = ::GetDeviceCaps(mDC, LOGPIXELSY);
         float width = (::GetDeviceCaps(mDC, HORZRES) * POINTS_PER_INCH_FLOAT)
-                      / ::GetDeviceCaps(mDC, LOGPIXELSX);
+                      / heightDPI;
         float height = (::GetDeviceCaps(mDC, VERTRES) * POINTS_PER_INCH_FLOAT)
-                       / ::GetDeviceCaps(mDC, LOGPIXELSY);
+                       / heightDPI;
         return mozilla::gfx::IntSize(width, height);
     }
 
