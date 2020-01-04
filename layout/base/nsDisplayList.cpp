@@ -47,8 +47,6 @@
 #include "nsSVGElement.h"
 #include "nsSVGClipPathFrame.h"
 #include "GeckoProfiler.h"
-#include "nsAnimationManager.h"
-#include "nsTransitionManager.h"
 #include "nsViewManager.h"
 #include "ImageLayers.h"
 #include "ImageContainer.h"
@@ -526,11 +524,7 @@ nsDisplayListBuilder::AddAnimationsAndTransitionsToLayer(Layer* aLayer,
     RestyleManager::GetAnimationGenerationForFrame(aFrame);
   aLayer->SetAnimationGeneration(animationGeneration);
 
-  nsPresContext* presContext = aFrame->PresContext();
-  presContext->TransitionManager()->ClearIsRunningOnCompositor(aFrame,
-                                                               aProperty);
-  presContext->AnimationManager()->ClearIsRunningOnCompositor(aFrame,
-                                                              aProperty);
+  EffectCompositor::ClearIsRunningOnCompositor(aFrame, aProperty);
   nsTArray<RefPtr<dom::Animation>> compositorAnimations =
     EffectCompositor::GetAnimationsForCompositor(aFrame, aProperty);
   if (compositorAnimations.IsEmpty()) {

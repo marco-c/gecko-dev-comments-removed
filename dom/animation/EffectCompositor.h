@@ -130,6 +130,8 @@ public:
   GetAnimationsForCompositor(const nsIFrame* aFrame,
                              nsCSSProperty aProperty);
 
+  static void ClearIsRunningOnCompositor(const nsIFrame* aFrame,
+                                         nsCSSProperty aProperty);
 
   
   
