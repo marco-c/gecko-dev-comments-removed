@@ -32,6 +32,7 @@ import org.mozilla.gecko.db.BrowserContract.Favicons;
 import org.mozilla.gecko.db.BrowserContract.History;
 import org.mozilla.gecko.db.BrowserContract.SyncColumns;
 import org.mozilla.gecko.db.BrowserContract.Thumbnails;
+import org.mozilla.gecko.db.BrowserContract.TopSites;
 import org.mozilla.gecko.distribution.Distribution;
 import org.mozilla.gecko.favicons.decoders.FaviconDecoder;
 import org.mozilla.gecko.favicons.decoders.LoadFaviconResult;
@@ -48,6 +49,8 @@ import android.content.Context;
 import android.database.ContentObserver;
 import android.database.Cursor;
 import android.database.CursorWrapper;
+import android.database.MatrixCursor;
+import android.database.MergeCursor;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.drawable.BitmapDrawable;
@@ -95,6 +98,7 @@ public class LocalBrowserDB implements BrowserDB {
     private final Uri mUpdateHistoryUriWithProfile;
     private final Uri mFaviconsUriWithProfile;
     private final Uri mThumbnailsUriWithProfile;
+    private final Uri mTopSitesUriWithProfile;
     private final Uri mSearchHistoryUri;
 
     private LocalSearches searches;
@@ -121,6 +125,7 @@ public class LocalBrowserDB implements BrowserDB {
         mHistoryExpireUriWithProfile = DBUtils.appendProfile(profile, History.CONTENT_OLD_URI);
         mCombinedUriWithProfile = DBUtils.appendProfile(profile, Combined.CONTENT_URI);
         mFaviconsUriWithProfile = DBUtils.appendProfile(profile, Favicons.CONTENT_URI);
+        mTopSitesUriWithProfile = DBUtils.appendProfile(profile, TopSites.CONTENT_URI);
         mThumbnailsUriWithProfile = DBUtils.appendProfile(profile, Thumbnails.CONTENT_URI);
 
         mSearchHistoryUri = BrowserContract.SearchHistory.CONTENT_URI;
@@ -1687,27 +1692,49 @@ public class LocalBrowserDB implements BrowserDB {
     }
 
     @Override
-    public Cursor getTopSites(ContentResolver cr, int minLimit, int maxLimit) {
+    public Cursor getTopSites(ContentResolver cr, int suggestedRangeLimit, int limit) {
+        final Uri uri = mTopSitesUriWithProfile.buildUpon()
+                .appendQueryParameter(BrowserContract.PARAM_LIMIT,
+                        String.valueOf(limit))
+                .appendQueryParameter(BrowserContract.PARAM_SUGGESTEDSITES_LIMIT,
+                        String.valueOf(suggestedRangeLimit))
+                .build();
+
+        Cursor topSitesCursor = cr.query(uri,
+                                         new String[] { Combined._ID,
+                                                 Combined.URL,
+                                                 Combined.TITLE,
+                                                 Combined.BOOKMARK_ID,
+                                                 Combined.HISTORY_ID },
+                                         null,
+                                         null,
+                                         null);
+
         
         
-        Cursor pinnedSites = getPinnedSites(cr, minLimit);
+        
+        
+        final int blanksRequired = suggestedRangeLimit - topSitesCursor.getCount();
 
-        int pinnedCount = pinnedSites.getCount();
-        Cursor topSites = getTopSites(cr, maxLimit - pinnedCount);
-        int topCount = topSites.getCount();
-
-        Cursor suggestedSites = null;
-        if (mSuggestedSites != null) {
-            final int count = minLimit - pinnedCount - topCount;
-            if (count > 0) {
-                final List<String> excludeUrls = new ArrayList<String>(pinnedCount + topCount);
-                appendUrlsFromCursor(excludeUrls, pinnedSites);
-                appendUrlsFromCursor(excludeUrls, topSites);
-
-                suggestedSites = mSuggestedSites.get(count, excludeUrls);
-            }
+        if (blanksRequired < 0) {
+            return topSitesCursor;
         }
 
-        return new TopSitesCursorWrapper(pinnedSites, topSites, suggestedSites, minLimit);
+        MatrixCursor blanksCursor = new MatrixCursor(new String[] {
+                Bookmarks._ID,
+                Bookmarks.URL,
+                Bookmarks.TITLE,
+                Bookmarks.TYPE});
+
+        for (int i = 0; i < blanksRequired; i++) {
+            final MatrixCursor.RowBuilder rb = blanksCursor.newRow();
+            rb.add(-1);
+            rb.add("");
+            rb.add("");
+            rb.add(TopSites.TYPE_BLANK);
+        }
+
+        return new MergeCursor(new Cursor[] {topSitesCursor, blanksCursor});
+
     }
 }

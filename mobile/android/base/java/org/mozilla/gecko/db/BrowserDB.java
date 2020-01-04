@@ -83,7 +83,8 @@ public interface BrowserDB {
 
 
 
-    public abstract Cursor getTopSites(ContentResolver cr, int minLimit, int maxLimit);
+
+    public abstract Cursor getTopSites(ContentResolver cr, int suggestedRangeLimit, int limit);
 
     public abstract void updateVisitedHistory(ContentResolver cr, String uri);
 
