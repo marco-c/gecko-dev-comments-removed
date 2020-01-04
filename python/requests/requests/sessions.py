@@ -63,11 +63,10 @@ def merge_setting(request_setting, session_setting, dict_class=OrderedDict):
     merged_setting.update(to_key_val_list(request_setting))
 
     
-    for (k, v) in request_setting.items():
-        if v is None:
-            del merged_setting[k]
-
-    merged_setting = dict((k, v) for (k, v) in merged_setting.items() if v is not None)
+    
+    none_keys = [k for (k, v) in merged_setting.items() if v is None]
+    for key in none_keys:
+        del merged_setting[key]
 
     return merged_setting
 
@@ -90,7 +89,7 @@ def merge_hooks(request_hooks, session_hooks, dict_class=OrderedDict):
 
 class SessionRedirectMixin(object):
     def resolve_redirects(self, resp, req, stream=False, timeout=None,
-                          verify=True, cert=None, proxies=None):
+                          verify=True, cert=None, proxies=None, **adapter_kwargs):
         """Receives a Response. Returns a generator of Responses."""
 
         i = 0
@@ -171,7 +170,10 @@ class SessionRedirectMixin(object):
             except KeyError:
                 pass
 
-            extract_cookies_to_jar(prepared_request._cookies, prepared_request, resp.raw)
+            
+            
+            
+            extract_cookies_to_jar(prepared_request._cookies, req, resp.raw)
             prepared_request._cookies.update(self.cookies)
             prepared_request.prepare_cookies(prepared_request._cookies)
 
@@ -190,6 +192,7 @@ class SessionRedirectMixin(object):
                 cert=cert,
                 proxies=proxies,
                 allow_redirects=False,
+                **adapter_kwargs
             )
 
             extract_cookies_to_jar(self.cookies, prepared_request, resp.raw)
@@ -270,7 +273,13 @@ class Session(SessionRedirectMixin):
       >>> import requests
       >>> s = requests.Session()
       >>> s.get('http://httpbin.org/get')
-      200
+      <Response [200]>
+
+    Or as a context manager::
+
+      >>> with requests.Session() as s:
+      >>>     s.get('http://httpbin.org/get')
+      <Response [200]>
     """
 
     __attrs__ = [
@@ -316,6 +325,7 @@ class Session(SessionRedirectMixin):
         
         self.max_redirects = DEFAULT_REDIRECT_LIMIT
 
+        
         
         self.trust_env = True
 
@@ -401,8 +411,8 @@ class Session(SessionRedirectMixin):
         :param url: URL for the new :class:`Request` object.
         :param params: (optional) Dictionary or bytes to be sent in the query
             string for the :class:`Request`.
-        :param data: (optional) Dictionary or bytes to send in the body of the
-            :class:`Request`.
+        :param data: (optional) Dictionary, bytes, or file-like object to send
+            in the body of the :class:`Request`.
         :param json: (optional) json to send in the body of the
             :class:`Request`.
         :param headers: (optional) Dictionary of HTTP Headers to send with the
@@ -414,23 +424,20 @@ class Session(SessionRedirectMixin):
         :param auth: (optional) Auth tuple or callable to enable
             Basic/Digest/Custom HTTP Auth.
         :param timeout: (optional) How long to wait for the server to send
-            data before giving up, as a float, or a (`connect timeout, read
-            timeout <user/advanced.html#timeouts>`_) tuple.
+            data before giving up, as a float, or a :ref:`(connect timeout,
+            read timeout) <timeouts>` tuple.
         :type timeout: float or tuple
         :param allow_redirects: (optional) Set to True by default.
         :type allow_redirects: bool
-        :param proxies: (optional) Dictionary mapping protocol to the URL of
-            the proxy.
+        :param proxies: (optional) Dictionary mapping protocol or protocol and
+            hostname to the URL of the proxy.
         :param stream: (optional) whether to immediately download the response
             content. Defaults to ``False``.
-        :param verify: (optional) if ``True``, the SSL cert will be verified.
-            A CA_BUNDLE path can also be provided.
+        :param verify: (optional) whether the SSL cert will be verified.
+            A CA_BUNDLE path can also be provided. Defaults to ``True``.
         :param cert: (optional) if String, path to ssl client cert file (.pem).
             If Tuple, ('cert', 'key') pair.
         """
-
-        method = to_native_string(method)
-
         
         req = Request(
             method = method.upper(),
@@ -557,10 +564,6 @@ class Session(SessionRedirectMixin):
         
         allow_redirects = kwargs.pop('allow_redirects', True)
         stream = kwargs.get('stream')
-        timeout = kwargs.get('timeout')
-        verify = kwargs.get('verify')
-        cert = kwargs.get('cert')
-        proxies = kwargs.get('proxies')
         hooks = request.hooks
 
         
@@ -588,12 +591,7 @@ class Session(SessionRedirectMixin):
         extract_cookies_to_jar(self.cookies, request, r.raw)
 
         
-        gen = self.resolve_redirects(r, request,
-            stream=stream,
-            timeout=timeout,
-            verify=verify,
-            cert=cert,
-            proxies=proxies)
+        gen = self.resolve_redirects(r, request, **kwargs)
 
         
         history = [resp for resp in gen] if allow_redirects else []
@@ -636,7 +634,7 @@ class Session(SessionRedirectMixin):
                 'cert': cert}
 
     def get_adapter(self, url):
-        """Returns the appropriate connnection adapter for the given URL."""
+        """Returns the appropriate connection adapter for the given URL."""
         for (prefix, adapter) in self.adapters.items():
 
             if url.lower().startswith(prefix):

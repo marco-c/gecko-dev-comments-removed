@@ -1,13 +1,18 @@
+from __future__ import absolute_import
+from contextlib import contextmanager
 import zlib
 import io
 from socket import timeout as SocketTimeout
+from socket import error as SocketError
 
 from ._collections import HTTPHeaderDict
-from .exceptions import ProtocolError, DecodeError, ReadTimeoutError
-from .packages.six import string_types as basestring, binary_type
+from .exceptions import (
+    ProtocolError, DecodeError, ReadTimeoutError, ResponseNotChunked
+)
+from .packages.six import string_types as basestring, binary_type, PY3
+from .packages.six.moves import http_client as httplib
 from .connection import HTTPException, BaseSSLError
-from .util.response import is_fp_closed
-
+from .util.response import is_fp_closed, is_response_to_head
 
 
 class DeflateDecoder(object):
@@ -21,6 +26,9 @@ class DeflateDecoder(object):
         return getattr(self._obj, name)
 
     def decompress(self, data):
+        if not data:
+            return data
+
         if not self._first_try:
             return self._obj.decompress(data)
 
@@ -36,9 +44,23 @@ class DeflateDecoder(object):
                 self._data = None
 
 
+class GzipDecoder(object):
+
+    def __init__(self):
+        self._obj = zlib.decompressobj(16 + zlib.MAX_WBITS)
+
+    def __getattr__(self, name):
+        return getattr(self._obj, name)
+
+    def decompress(self, data):
+        if not data:
+            return data
+        return self._obj.decompress(data)
+
+
 def _get_decoder(mode):
     if mode == 'gzip':
-        return zlib.decompressobj(16 + zlib.MAX_WBITS)
+        return GzipDecoder()
 
     return DeflateDecoder()
 
@@ -76,9 +98,10 @@ class HTTPResponse(io.IOBase):
                  strict=0, preload_content=True, decode_content=True,
                  original_response=None, pool=None, connection=None):
 
-        self.headers = HTTPHeaderDict()
-        if headers:
-            self.headers.update(headers)
+        if isinstance(headers, HTTPHeaderDict):
+            self.headers = headers
+        else:
+            self.headers = HTTPHeaderDict(headers)
         self.status = status
         self.version = version
         self.reason = reason
@@ -100,6 +123,16 @@ class HTTPResponse(io.IOBase):
         if hasattr(body, 'read'):
             self._fp = body
 
+        
+        self.chunked = False
+        self.chunk_left = None
+        tr_enc = self.headers.get('transfer-encoding', '').lower()
+        
+        encodings = (enc.strip() for enc in tr_enc.split(","))
+        if "chunked" in encodings:
+            self.chunked = True
+
+        
         if preload_content and not self._body:
             self._body = self.read(decode_content=decode_content)
 
@@ -140,6 +173,93 @@ class HTTPResponse(io.IOBase):
         """
         return self._fp_bytes_read
 
+    def _init_decoder(self):
+        """
+        Set-up the _decoder attribute if necessar.
+        """
+        
+        
+        content_encoding = self.headers.get('content-encoding', '').lower()
+        if self._decoder is None and content_encoding in self.CONTENT_DECODERS:
+            self._decoder = _get_decoder(content_encoding)
+
+    def _decode(self, data, decode_content, flush_decoder):
+        """
+        Decode the data passed in and potentially flush the decoder.
+        """
+        try:
+            if decode_content and self._decoder:
+                data = self._decoder.decompress(data)
+        except (IOError, zlib.error) as e:
+            content_encoding = self.headers.get('content-encoding', '').lower()
+            raise DecodeError(
+                "Received response with content-encoding: %s, but "
+                "failed to decode it." % content_encoding, e)
+
+        if flush_decoder and decode_content:
+            data += self._flush_decoder()
+
+        return data
+
+    def _flush_decoder(self):
+        """
+        Flushes the decoder. Should only be called if the decoder is actually
+        being used.
+        """
+        if self._decoder:
+            buf = self._decoder.decompress(b'')
+            return buf + self._decoder.flush()
+
+        return b''
+
+    @contextmanager
+    def _error_catcher(self):
+        """
+        Catch low-level python exceptions, instead re-raising urllib3
+        variants, so that low-level exceptions are not leaked in the
+        high-level api.
+
+        On exit, release the connection back to the pool.
+        """
+        try:
+            try:
+                yield
+
+            except SocketTimeout:
+                
+                
+                raise ReadTimeoutError(self._pool, None, 'Read timed out.')
+
+            except BaseSSLError as e:
+                
+                if 'read operation timed out' not in str(e):  
+                    
+                    
+                    raise
+
+                raise ReadTimeoutError(self._pool, None, 'Read timed out.')
+
+            except (HTTPException, SocketError) as e:
+                
+                raise ProtocolError('Connection broken: %r' % e, e)
+
+        except Exception:
+            
+            
+            if self._original_response and not self._original_response.isclosed():
+                self._original_response.close()
+
+            
+            
+            
+            if self._connection is not None:
+                self._connection.close()
+
+            raise
+        finally:
+            if self._original_response and self._original_response.isclosed():
+                self.release_conn()
+
     def read(self, amt=None, decode_content=None, cache_content=False):
         """
         Similar to :meth:`httplib.HTTPResponse.read`, but with two additional
@@ -161,12 +281,7 @@ class HTTPResponse(io.IOBase):
             after having ``.read()`` the file object. (Overridden if ``amt`` is
             set.)
         """
-        
-        
-        content_encoding = self.headers.get('content-encoding', '').lower()
-        if self._decoder is None:
-            if content_encoding in self.CONTENT_DECODERS:
-                self._decoder = _get_decoder(content_encoding)
+        self._init_decoder()
         if decode_content is None:
             decode_content = self.decode_content
 
@@ -174,67 +289,36 @@ class HTTPResponse(io.IOBase):
             return
 
         flush_decoder = False
+        data = None
 
-        try:
-            try:
-                if amt is None:
+        with self._error_catcher():
+            if amt is None:
+                
+                data = self._fp.read()
+                flush_decoder = True
+            else:
+                cache_content = False
+                data = self._fp.read(amt)
+                if amt != 0 and not data:  
                     
-                    data = self._fp.read()
+                    
+                    
+                    
+                    
+                    
+                    
+                    self._fp.close()
                     flush_decoder = True
-                else:
-                    cache_content = False
-                    data = self._fp.read(amt)
-                    if amt != 0 and not data:  
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        self._fp.close()
-                        flush_decoder = True
 
-            except SocketTimeout:
-                
-                
-                raise ReadTimeoutError(self._pool, None, 'Read timed out.')
-
-            except BaseSSLError as e:
-                
-                if not 'read operation timed out' in str(e):  
-                    
-                    
-                    raise
-
-                raise ReadTimeoutError(self._pool, None, 'Read timed out.')
-
-            except HTTPException as e:
-                
-                raise ProtocolError('Connection broken: %r' % e, e)
-
+        if data:
             self._fp_bytes_read += len(data)
 
-            try:
-                if decode_content and self._decoder:
-                    data = self._decoder.decompress(data)
-            except (IOError, zlib.error) as e:
-                raise DecodeError(
-                    "Received response with content-encoding: %s, but "
-                    "failed to decode it." % content_encoding, e)
-
-            if flush_decoder and decode_content and self._decoder:
-                buf = self._decoder.decompress(binary_type())
-                data += buf + self._decoder.flush()
+            data = self._decode(data, decode_content, flush_decoder)
 
             if cache_content:
                 self._body = data
 
-            return data
-
-        finally:
-            if self._original_response and self._original_response.isclosed():
-                self.release_conn()
+        return data
 
     def stream(self, amt=2**16, decode_content=None):
         """
@@ -252,11 +336,15 @@ class HTTPResponse(io.IOBase):
             If True, will attempt to decode the body based on the
             'content-encoding' header.
         """
-        while not is_fp_closed(self._fp):
-            data = self.read(amt=amt, decode_content=decode_content)
+        if self.chunked:
+            for line in self.read_chunked(amt, decode_content=decode_content):
+                yield line
+        else:
+            while not is_fp_closed(self._fp):
+                data = self.read(amt=amt, decode_content=decode_content)
 
-            if data:
-                yield data
+                if data:
+                    yield data
 
     @classmethod
     def from_httplib(ResponseCls, r, **response_kw):
@@ -267,14 +355,17 @@ class HTTPResponse(io.IOBase):
         Remaining parameters are passed to the HTTPResponse constructor, along
         with ``original_response=r``.
         """
+        headers = r.msg
 
-        headers = HTTPHeaderDict()
-        for k, v in r.getheaders():
-            headers.add(k, v)
+        if not isinstance(headers, HTTPHeaderDict):
+            if PY3:  
+                headers = HTTPHeaderDict(headers.items())
+            else:  
+                headers = HTTPHeaderDict.from_httplib(headers)
 
         
         strict = getattr(r, 'strict', 0)
-        return ResponseCls(body=r,
+        resp = ResponseCls(body=r,
                            headers=headers,
                            status=r.status,
                            version=r.version,
@@ -282,6 +373,7 @@ class HTTPResponse(io.IOBase):
                            strict=strict,
                            original_response=r,
                            **response_kw)
+        return resp
 
     
     def getheaders(self):
@@ -331,3 +423,92 @@ class HTTPResponse(io.IOBase):
         else:
             b[:len(temp)] = temp
             return len(temp)
+
+    def _update_chunk_length(self):
+        
+        
+        if self.chunk_left is not None:
+            return
+        line = self._fp.fp.readline()
+        line = line.split(b';', 1)[0]
+        try:
+            self.chunk_left = int(line, 16)
+        except ValueError:
+            
+            self.close()
+            raise httplib.IncompleteRead(line)
+
+    def _handle_chunk(self, amt):
+        returned_chunk = None
+        if amt is None:
+            chunk = self._fp._safe_read(self.chunk_left)
+            returned_chunk = chunk
+            self._fp._safe_read(2)  
+            self.chunk_left = None
+        elif amt < self.chunk_left:
+            value = self._fp._safe_read(amt)
+            self.chunk_left = self.chunk_left - amt
+            returned_chunk = value
+        elif amt == self.chunk_left:
+            value = self._fp._safe_read(amt)
+            self._fp._safe_read(2)  
+            self.chunk_left = None
+            returned_chunk = value
+        else:  
+            returned_chunk = self._fp._safe_read(self.chunk_left)
+            self._fp._safe_read(2)  
+            self.chunk_left = None
+        return returned_chunk
+
+    def read_chunked(self, amt=None, decode_content=None):
+        """
+        Similar to :meth:`HTTPResponse.read`, but with an additional
+        parameter: ``decode_content``.
+
+        :param decode_content:
+            If True, will attempt to decode the body based on the
+            'content-encoding' header.
+        """
+        self._init_decoder()
+        
+        if not self.chunked:
+            raise ResponseNotChunked(
+                "Response is not chunked. "
+                "Header 'transfer-encoding: chunked' is missing.")
+
+        
+        if self._original_response and is_response_to_head(self._original_response):
+            self._original_response.close()
+            return
+
+        with self._error_catcher():
+            while True:
+                self._update_chunk_length()
+                if self.chunk_left == 0:
+                    break
+                chunk = self._handle_chunk(amt)
+                decoded = self._decode(chunk, decode_content=decode_content,
+                                       flush_decoder=False)
+                if decoded:
+                    yield decoded
+
+            if decode_content:
+                
+                
+                
+                decoded = self._flush_decoder()
+                if decoded:  
+                    yield decoded
+
+            
+            while True:
+                line = self._fp.fp.readline()
+                if not line:
+                    
+                    break
+                if line == b'\r\n':
+                    break
+
+            
+            if self._original_response:
+                self._original_response.close()
