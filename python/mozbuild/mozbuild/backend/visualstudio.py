@@ -74,8 +74,10 @@ class VisualStudioBackend(CommonBackend):
         
         self._out_dir = os.path.join(self.environment.topobjdir, 'msvc')
         self._projsubdir = 'projects'
-        
-        self._version = '2013'
+
+        self._version = self.environment.substs.get('MSVS_VERSION', None)
+        if not self._version:
+            raise Exception('MSVS_VERSION not defined; this should never happen')
 
         self._paths_to_sources = {}
         self._paths_to_includes = {}
