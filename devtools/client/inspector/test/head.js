@@ -465,10 +465,6 @@ const getHighlighterHelperFor = (type) => Task.async(
         yield testActor.synthesizeMouse(options);
       },
 
-      synthesizeKey: function* (options) {
-        yield testActor.synthesizeKey(options);
-      },
-
       
       
       

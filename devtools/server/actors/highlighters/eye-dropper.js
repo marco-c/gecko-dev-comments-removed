@@ -158,7 +158,7 @@ EyeDropper.prototype = {
     this.moveTo(DEFAULT_START_POS_X, DEFAULT_START_POS_Y);
 
     
-    this.win.document.documentElement.focus();
+    this.win.focus();
 
     return true;
   },
@@ -360,14 +360,22 @@ EyeDropper.prototype = {
 
 
   handleKeyDown(e) {
+    
+    
+    if (e.metaKey || e.ctrlKey || e.altKey) {
+      return;
+    }
+
     if (e.keyCode === e.DOM_VK_RETURN) {
       this.selectColor();
+      e.preventDefault();
       return;
     }
 
     if (e.keyCode === e.DOM_VK_ESCAPE) {
       this.emit("canceled");
       this.hide();
+      e.preventDefault();
       return;
     }
 
@@ -377,16 +385,14 @@ EyeDropper.prototype = {
 
     if (e.keyCode === e.DOM_VK_LEFT) {
       offsetX = -1;
-    }
-    if (e.keyCode === e.DOM_VK_RIGHT) {
+    } else if (e.keyCode === e.DOM_VK_RIGHT) {
       offsetX = 1;
-    }
-    if (e.keyCode === e.DOM_VK_UP) {
+    } else if (e.keyCode === e.DOM_VK_UP) {
       offsetY = -1;
-    }
-    if (e.keyCode === e.DOM_VK_DOWN) {
+    } else if (e.keyCode === e.DOM_VK_DOWN) {
       offsetY = 1;
     }
+
     if (e.shiftKey) {
       modifier = 10;
     }
@@ -402,12 +408,7 @@ EyeDropper.prototype = {
 
       this.moveTo(this.magnifiedArea.x / this.pageZoom,
                   this.magnifiedArea.y / this.pageZoom);
-    }
 
-    
-    
-    let hasModifier = e.metaKey || e.ctrlKey || e.altKey || e.shiftKey;
-    if (!hasModifier) {
       e.preventDefault();
     }
   },
