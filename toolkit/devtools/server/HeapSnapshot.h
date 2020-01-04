@@ -67,6 +67,7 @@ class HeapSnapshot final : public nsISupports
     : timestamp(Nothing())
     , rootId(0)
     , nodes(cx)
+    , frames(cx)
     , strings(cx)
     , mParent(aParent)
   {
@@ -83,6 +84,12 @@ class HeapSnapshot final : public nsISupports
   bool saveNode(const protobuf::Node& node);
 
   
+  
+  
+  bool saveStackFrame(const protobuf::StackFrame& frame,
+                      StackFrameId& outFrameId);
+
+  
   Maybe<uint64_t> timestamp;
 
   
@@ -91,6 +98,11 @@ class HeapSnapshot final : public nsISupports
   
   using NodeSet = js::HashSet<DeserializedNode, DeserializedNode::HashPolicy>;
   NodeSet nodes;
+
+  
+  using FrameSet = js::HashSet<DeserializedStackFrame,
+                               DeserializedStackFrame::HashPolicy>;
+  FrameSet frames;
 
   
   

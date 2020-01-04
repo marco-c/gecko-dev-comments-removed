@@ -8,7 +8,7 @@
 
 #include "js/UbiNode.h"
 #include "mozilla/devtools/CoreDump.pb.h"
-#include "mozilla/MaybeOneOf.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/Move.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/Vector.h"
@@ -30,6 +30,7 @@ namespace devtools {
 class HeapSnapshot;
 
 using NodeId = uint64_t;
+using StackFrameId = uint64_t;
 
 
 
@@ -57,24 +58,27 @@ struct DeserializedNode {
   using EdgeVector = Vector<DeserializedEdge>;
   using UniqueStringPtr = UniquePtr<char16_t[]>;
 
-  NodeId          id;
+  NodeId              id;
   
-  const char16_t* typeName;
-  uint64_t        size;
-  EdgeVector      edges;
+  const char16_t*     typeName;
+  uint64_t            size;
+  EdgeVector          edges;
+  Maybe<StackFrameId> allocationStack;
   
   
-  HeapSnapshot*   owner;
+  HeapSnapshot*       owner;
 
   DeserializedNode(NodeId id,
                    const char16_t* typeName,
                    uint64_t size,
                    EdgeVector&& edges,
+                   Maybe<StackFrameId> allocationStack,
                    HeapSnapshot& owner)
     : id(id)
     , typeName(typeName)
     , size(size)
     , edges(Move(edges))
+    , allocationStack(allocationStack)
     , owner(&owner)
   { }
   virtual ~DeserializedNode() { }
@@ -97,21 +101,81 @@ private:
   DeserializedNode& operator=(const DeserializedNode&) = delete;
 };
 
+static inline js::HashNumber
+hashIdDerivedFromPtr(uint64_t id)
+{
+    
+    
+    
+    
+    
+    id >>= 3;
+    return js::HashNumber((id >> 32) ^ id);
+}
+
 struct DeserializedNode::HashPolicy
 {
   using Lookup = NodeId;
 
   static js::HashNumber hash(const Lookup& lookup) {
-    
-    
-    
-    
-    
-    uint64_t id = lookup >> 3;
-    return js::HashNumber((id >> 32) ^ id);
+    return hashIdDerivedFromPtr(lookup);
   }
 
   static bool match(const DeserializedNode& existing, const Lookup& lookup) {
+    return existing.id == lookup;
+  }
+};
+
+
+
+struct DeserializedStackFrame {
+  StackFrameId        id;
+  Maybe<StackFrameId> parent;
+  uint32_t            line;
+  uint32_t            column;
+  
+  
+  const char16_t*     source;
+  const char16_t*     functionDisplayName;
+  bool                isSystem;
+  bool                isSelfHosted;
+  
+  
+  HeapSnapshot*       owner;
+
+  explicit DeserializedStackFrame(StackFrameId id,
+                                  const Maybe<StackFrameId>& parent,
+                                  uint32_t line,
+                                  uint32_t column,
+                                  const char16_t* source,
+                                  const char16_t* functionDisplayName,
+                                  bool isSystem,
+                                  bool isSelfHosted,
+                                  HeapSnapshot& owner)
+    : id(id)
+    , parent(parent)
+    , line(line)
+    , column(column)
+    , source(source)
+    , functionDisplayName(functionDisplayName)
+    , isSystem(isSystem)
+    , isSelfHosted(isSelfHosted)
+    , owner(&owner)
+  {
+    MOZ_ASSERT(source);
+  }
+
+  struct HashPolicy;
+};
+
+struct DeserializedStackFrame::HashPolicy {
+  using Lookup = StackFrameId;
+
+  static js::HashNumber hash(const Lookup& lookup) {
+    return hashIdDerivedFromPtr(lookup);
+  }
+
+  static bool match(const DeserializedStackFrame& existing, const Lookup& lookup) {
     return existing.id == lookup;
   }
 };
