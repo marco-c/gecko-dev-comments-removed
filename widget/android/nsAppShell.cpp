@@ -76,7 +76,7 @@ nsIGeolocationUpdate *gLocationCallback = nullptr;
 nsAutoPtr<mozilla::AndroidGeckoEvent> gLastSizeChange;
 
 nsAppShell* nsAppShell::sAppShell;
-StaticMutex nsAppShell::sAppShellLock;
+StaticAutoPtr<Mutex> nsAppShell::sAppShellLock;
 
 NS_IMPL_ISUPPORTS_INHERITED(nsAppShell, nsBaseAppShell, nsIObserver)
 
@@ -185,11 +185,12 @@ public:
 };
 
 nsAppShell::nsAppShell()
-    : mSyncRunMonitor("nsAppShell.SyncRun")
+    : mSyncRunFinished(*(sAppShellLock = new Mutex("nsAppShell")),
+                       "nsAppShell.SyncRun")
     , mSyncRunQuit(false)
 {
     {
-        StaticMutexAutoLock lock(sAppShellLock);
+        MutexAutoLock lock(*sAppShellLock);
         sAppShell = this;
     }
 
@@ -220,7 +221,7 @@ nsAppShell::nsAppShell()
 nsAppShell::~nsAppShell()
 {
     {
-        StaticMutexAutoLock lock(sAppShellLock);
+        MutexAutoLock lock(*sAppShellLock);
         sAppShell = nullptr;
     }
 
@@ -286,9 +287,9 @@ nsAppShell::Observe(nsISupports* aSubject,
     if (!strcmp(aTopic, "xpcom-shutdown")) {
         {
             
-            MonitorAutoLock runLock(mSyncRunMonitor);
+            mozilla::MutexAutoLock shellLock(*sAppShellLock);
             mSyncRunQuit = true;
-            runLock.NotifyAll();
+            mSyncRunFinished.NotifyAll();
         }
         
         
@@ -402,7 +403,8 @@ nsAppShell::SyncRunEvent(Event&& event,
     MOZ_ASSERT(!NS_IsMainThread());
 
     
-    mozilla::StaticMutexAutoLock shellLock(sAppShellLock);
+    
+    mozilla::MutexAutoLock shellLock(*sAppShellLock);
     nsAppShell* const appShell = sAppShell;
 
     if (MOZ_UNLIKELY(!appShell)) {
@@ -410,19 +412,16 @@ nsAppShell::SyncRunEvent(Event&& event,
         return;
     }
 
-    
-    mozilla::MonitorAutoLock runLock(appShell->mSyncRunMonitor);
-
     bool finished = false;
     auto runAndNotify = [&event, &finished] {
+        mozilla::MutexAutoLock shellLock(*sAppShellLock);
         nsAppShell* const appShell = sAppShell;
         if (MOZ_UNLIKELY(!appShell || appShell->mSyncRunQuit)) {
             return;
         }
         event.Run();
-        mozilla::MonitorAutoLock runLock(appShell->mSyncRunMonitor);
         finished = true;
-        runLock.NotifyAll();
+        appShell->mSyncRunFinished.NotifyAll();
     };
 
     UniquePtr<Event> runAndNotifyEvent = mozilla::MakeUnique<
@@ -434,8 +433,8 @@ nsAppShell::SyncRunEvent(Event&& event,
 
     appShell->mEventQueue.Post(mozilla::Move(runAndNotifyEvent));
 
-    while (!finished && MOZ_LIKELY(!appShell->mSyncRunQuit)) {
-        runLock.Wait();
+    while (!finished && MOZ_LIKELY(sAppShell && !sAppShell->mSyncRunQuit)) {
+        appShell->mSyncRunFinished.Wait();
     }
 }
 
@@ -459,7 +458,7 @@ public:
 void
 nsAppShell::PostEvent(AndroidGeckoEvent* event)
 {
-    mozilla::StaticMutexAutoLock lock(sAppShellLock);
+    mozilla::MutexAutoLock lock(*sAppShellLock);
     if (!sAppShell) {
         return;
     }
