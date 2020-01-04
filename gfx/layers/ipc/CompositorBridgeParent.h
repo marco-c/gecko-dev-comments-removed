@@ -384,7 +384,7 @@ public:
   
 
 
-  static CompositorBridgeParent* GetCompositor(uint64_t id);
+  static CompositorBridgeParent* GetCompositorBridgeParent(uint64_t id);
 
   
 
