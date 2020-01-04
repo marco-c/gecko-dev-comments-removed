@@ -75,9 +75,7 @@ exports.PSEUDO_ELEMENT_SET = PSEUDO_ELEMENT_SET;
 
 
 
-if (Cu) {
-  Cu.importGlobalProperties(["CSS"]);
-}
+loader.lazyRequireGetter(this, "CSS", "CSS");
 
 function CssLogic()
 {

@@ -2,7 +2,6 @@
 
 
 
-
 "use strict";
 
 const {Cc, Ci, Cu} = require("chrome");
@@ -17,6 +16,8 @@ const {PSEUDO_ELEMENT_SET} = require("devtools/shared/styleinspector/css-logic")
 
 const {UPDATE_PRESERVING_RULES, UPDATE_GENERAL} =
       require("devtools/server/actors/stylesheets");
+
+loader.lazyRequireGetter(this, "CSS", "CSS");
 
 loader.lazyGetter(this, "CssLogic", () => {
   return require("devtools/shared/styleinspector/css-logic").CssLogic;
