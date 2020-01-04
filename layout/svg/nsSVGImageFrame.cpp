@@ -404,7 +404,8 @@ nsSVGImageFrame::PaintSVG(gfxContext& aContext,
       
       
       SVGImageContext context(CSSIntSize(width, height),
-                              Some(imgElem->mPreserveAspectRatio.GetAnimValue()));
+                              Some(imgElem->mPreserveAspectRatio.GetAnimValue()),
+                              1.0, true);
 
       
       
