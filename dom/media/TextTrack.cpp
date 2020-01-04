@@ -95,6 +95,24 @@ TextTrack::SetMode(TextTrackMode aValue)
     if (aValue == TextTrackMode::Disabled) {
       SetCuesInactive();
       
+      if (mTextTrackList) {
+        HTMLMediaElement* mediaElement = mTextTrackList->GetMediaElement();
+        if (mediaElement) {
+          for (size_t i = 0; i < mCueList->Length(); ++i) {
+            mediaElement->NotifyCueRemoved(*(*mCueList)[i]);
+          }
+        }
+      }
+    } else {
+      
+      if (mTextTrackList) {
+        HTMLMediaElement* mediaElement = mTextTrackList->GetMediaElement();
+        if (mediaElement) {
+          for (size_t i = 0; i < mCueList->Length(); ++i) {
+            mediaElement->NotifyCueAdded(*(*mCueList)[i]);
+          }
+        }
+      }
     }
     if (mTextTrackList) {
       mTextTrackList->CreateAndDispatchChangeEvent();
@@ -119,8 +137,8 @@ TextTrack::AddCue(TextTrackCue& aCue)
   aCue.SetTrack(this);
   if (mTextTrackList) {
     HTMLMediaElement* mediaElement = mTextTrackList->GetMediaElement();
-    if (mediaElement) {
-      mediaElement->AddCue(aCue);
+    if (mediaElement && (mMode != TextTrackMode::Disabled)) {
+      mediaElement->NotifyCueAdded(aCue);
     }
   }
   SetDirty();
