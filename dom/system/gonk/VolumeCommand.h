@@ -48,13 +48,13 @@ public:
     
     
 
-    return (mResponseCode >= ResponseCode::CommandOkay)
-        && (mResponseCode < ResponseCode::UnsolicitedInformational);
+    return (mResponseCode >= ::ResponseCode::CommandOkay)
+        && (mResponseCode < ::ResponseCode::UnsolicitedInformational);
   }
 
   bool WasSuccessful() const
   {
-    return mResponseCode == ResponseCode::CommandOkay;
+    return mResponseCode == ::ResponseCode::CommandOkay;
   }
 
   bool              IsPending() const     { return mPending; }
@@ -79,7 +79,7 @@ private:
 #else
     mResponseStr = aResponseStr;
 #endif
-    if (mResponseCode >= ResponseCode::CommandOkay) {
+    if (mResponseCode >= ::ResponseCode::CommandOkay) {
       
       mPending = false;
     }
