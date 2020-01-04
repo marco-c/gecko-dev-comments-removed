@@ -68,6 +68,12 @@ const CSS_TYPE_SHORTHAND_AND_LONGHAND = 2;
 
 
 
+
+
+
+
+
+
 function initial_font_family_is_sans_serif()
 {
   
@@ -6619,5 +6625,33 @@ if (IsCSSPropertyPrefEnabled("layout.css.unset-value.enabled")) {
     gCSSProperties["text-align"].other_values.push("true left");
   } else {
     gCSSProperties["text-align"].invalid_values.push("true left");
+  }
+}
+
+
+for (var prop in gCSSProperties) {
+  var entry = gCSSProperties[prop];
+  if (entry.alias_for) {
+    var aliasTargetEntry = gCSSProperties[entry.alias_for];
+    if (!aliasTargetEntry) {
+      ok(false,
+         "Alias '" + prop + "' alias_for field, '" + entry.alias_for + "', " +
+         "must be set to a recognized CSS property in gCSSProperties");
+    } else {
+      
+      var fieldsToCopy =
+          ["initial_values", "other_values", "invalid_values",
+           "quirks_values", "unbalanced_values",
+           "prerequisites"];
+
+      fieldsToCopy.forEach(function(fieldName) {
+        
+        
+        if (!(fieldName in entry) &&
+            fieldName in aliasTargetEntry) {
+          entry[fieldName] = aliasTargetEntry[fieldName]
+        }
+      });
+    }
   }
 }
