@@ -127,7 +127,7 @@ SimpleCount::report(JSContext* cx, CountBase& countBase, MutableHandleValue repo
 class BucketCount : public CountType {
 
     struct Count : CountBase {
-        mozilla::Vector<JS::ubi::Node::Id> ids_;
+        JS::ubi::Vector<JS::ubi::Node::Id> ids_;
 
         explicit Count(BucketCount& count)
           : CountBase(count),
@@ -349,7 +349,7 @@ countMapToObject(JSContext* cx, Map& map, GetName getName) {
     
     
 
-    mozilla::Vector<typename Map::Entry*> entries;
+    JS::ubi::Vector<typename Map::Entry*> entries;
     if (!entries.reserve(map.count())) {
         ReportOutOfMemory(cx);
         return nullptr;
@@ -570,7 +570,7 @@ ByUbinodeType::report(JSContext* cx, CountBase& countBase, MutableHandleValue re
     
     
     
-    mozilla::Vector<Entry*> entries;
+    JS::ubi::Vector<Entry*> entries;
     if (!entries.reserve(count.table.count()))
         return false;
     for (Table::Range r = count.table.all(); !r.empty(); r.popFront())
@@ -736,7 +736,7 @@ ByAllocationStack::report(JSContext* cx, CountBase& countBase, MutableHandleValu
     
     
     
-    mozilla::Vector<Entry*> entries;
+    JS::ubi::Vector<Entry*> entries;
     if (!entries.reserve(count.table.count()))
         return false;
     for (Table::Range r = count.table.all(); !r.empty(); r.popFront())
