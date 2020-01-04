@@ -81,7 +81,7 @@
     if (marks.length) {
       
       
-      if (ie_lt8 && cm.state.focused) cm.display.input.focus();
+      if (ie_lt8 && cm.state.focused) cm.focus();
 
       var clear = function() {
         cm.operation(function() {
