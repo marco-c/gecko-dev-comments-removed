@@ -69,8 +69,6 @@ public:
     return mTheoraState != 0 && mTheoraState->mActive;
   }
 
-  virtual nsresult ReadMetadata(MediaInfo* aInfo,
-                                MetadataTags** aTags) override;
   virtual RefPtr<SeekPromise>
   Seek(int64_t aTime, int64_t aEndTime) override;
   virtual media::TimeIntervals GetBuffered() override;
@@ -78,6 +76,8 @@ public:
   virtual bool IsMediaSeekable() override;
 
 private:
+  virtual nsresult ReadMetadata(MediaInfo* aInfo, MetadataTags** aTags) override;
+
   
   
   

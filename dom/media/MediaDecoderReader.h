@@ -184,13 +184,6 @@ public:
 
   
   
-  
-  
-  virtual nsresult ReadMetadata(MediaInfo* aInfo,
-                                MetadataTags** aTags) { MOZ_CRASH(); }
-
-  
-  
   virtual void ReadUpdatedMetadata(MediaInfo* aInfo) { };
 
   
@@ -267,6 +260,12 @@ public:
 private:
   virtual void ReleaseMediaResourcesInternal() {}
   virtual void DisableHardwareAccelerationInternal() {}
+
+  
+  
+  
+  
+  virtual nsresult ReadMetadata(MediaInfo*, MetadataTags**) { MOZ_CRASH(); }
 
 protected:
   friend class TrackBuffer;
