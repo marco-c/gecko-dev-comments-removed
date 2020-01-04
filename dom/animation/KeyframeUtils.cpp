@@ -1543,6 +1543,13 @@ GetCumulativeDistances(const nsTArray<ComputedKeyframeValues>& aValues,
       continue;
     }
 
+    
+    
+    if (isShorthand) {
+      pacedValues.Sort(
+        TPropertyPriorityComparator<PropertyStyleAnimationValuePair>());
+    }
+
     if (prevPacedValues.IsEmpty()) {
       
       cumulativeDistances[i] = 0.0;
