@@ -564,6 +564,8 @@ MediaDecoder::MediaDecoder(MediaDecoderOwner* aOwner)
                      "MediaDecoder::mDecoderPosition (Canonical)")
   , mMediaSeekable(AbstractThread::MainThread(), true,
                    "MediaDecoder::mMediaSeekable (Canonical)")
+  , mMediaSeekableOnlyInBufferedRanges(AbstractThread::MainThread(), false,
+                   "MediaDecoder::mMediaSeekableOnlyInBufferedRanges (Canonical)")
   , mTelemetryReported(false)
 {
   MOZ_COUNT_CTOR(MediaDecoder);
@@ -875,6 +877,7 @@ MediaDecoder::MetadataLoaded(nsAutoPtr<MediaInfo> aInfo,
               aInfo->HasAudio(), aInfo->HasVideo());
 
   SetMediaSeekable(aInfo->mMediaSeekable);
+  SetMediaSeekableOnlyInBufferedRanges(aInfo->mMediaSeekableOnlyInBufferedRanges);
   mInfo = aInfo.forget();
   ConstructMediaTracks();
 
@@ -1377,6 +1380,12 @@ MediaDecoder::SetMediaSeekable(bool aMediaSeekable) {
   mMediaSeekable = aMediaSeekable;
 }
 
+void
+MediaDecoder::SetMediaSeekableOnlyInBufferedRanges(bool aMediaSeekableOnlyInBufferedRanges){
+  MOZ_ASSERT(NS_IsMainThread());
+  mMediaSeekableOnlyInBufferedRanges = aMediaSeekableOnlyInBufferedRanges;
+}
+
 bool
 MediaDecoder::IsTransportSeekable()
 {
@@ -1392,6 +1401,13 @@ MediaDecoder::IsMediaSeekable()
   return mMediaSeekable;
 }
 
+bool
+MediaDecoder::IsMediaSeekableOnlyInBufferedRanges()
+{
+  MOZ_ASSERT(NS_IsMainThread());
+  return mMediaSeekableOnlyInBufferedRanges;
+}
+
 media::TimeIntervals
 MediaDecoder::GetSeekable()
 {
@@ -1399,7 +1415,9 @@ MediaDecoder::GetSeekable()
   
   
   
-  if (!IsMediaSeekable()) {
+  if (IsMediaSeekableOnlyInBufferedRanges()) {
+    return GetBuffered();
+  } else if (!IsMediaSeekable()) {
     return media::TimeIntervals();
   } else if (!IsTransportSeekable()) {
     return GetBuffered();

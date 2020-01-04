@@ -72,6 +72,10 @@ public:
 
   
   
+  virtual bool IsSeekableOnlyInBufferedRanges() const { return false; }
+
+  
+  
   virtual UniquePtr<EncryptionInfo> GetCrypto()
   {
     return nullptr;

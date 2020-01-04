@@ -1240,6 +1240,9 @@ private:
   Mirror<bool> mMediaSeekable;
 
   
+  Mirror<bool> mMediaSeekableOnlyInBufferedRanges;
+
+  
   
   Canonical<media::NullableTimeUnit> mDuration;
 

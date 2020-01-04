@@ -255,10 +255,15 @@ public:
 
   
   void SetMediaSeekable(bool aMediaSeekable);
+  
+  void SetMediaSeekableOnlyInBufferedRanges(bool aMediaSeekableOnlyInBufferedRanges);
 
   
   
   bool IsMediaSeekable();
+  
+  
+  bool IsMediaSeekableOnlyInBufferedRanges();
   
   
   bool IsTransportSeekable();
@@ -792,6 +797,9 @@ protected:
   
   Canonical<bool> mMediaSeekable;
 
+  
+  Canonical<bool> mMediaSeekableOnlyInBufferedRanges;
+
 public:
   AbstractCanonical<media::NullableTimeUnit>* CanonicalDurationOrNull() override;
   AbstractCanonical<double>* CanonicalVolume() {
@@ -832,6 +840,9 @@ public:
   }
   AbstractCanonical<bool>* CanonicalMediaSeekable() {
     return &mMediaSeekable;
+  }
+  AbstractCanonical<bool>* CanonicalMediaSeekableOnlyInBufferedRanges() {
+    return &mMediaSeekableOnlyInBufferedRanges;
   }
 
 private:
