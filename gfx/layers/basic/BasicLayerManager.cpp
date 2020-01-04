@@ -128,16 +128,6 @@ BasicLayerManager::PushGroupForLayer(gfxContext* aContext, Layer* aLayer, const 
   Matrix maskTransform;
   RefPtr<SourceSurface> maskSurf = GetMaskForLayer(aLayer, &maskTransform);
 
-  if (maskSurf) {
-    
-    
-    
-    
-    Matrix currentTransform = ToMatrix(group.mFinalTarget->CurrentMatrix());
-    currentTransform.Invert();
-    maskTransform = maskTransform * currentTransform;
-  }
-
   if (aLayer->CanUseOpaqueSurface() &&
       ((didCompleteClip && aRegion.GetNumRects() == 1) ||
        !aContext->CurrentMatrix().HasNonIntegerTranslation())) {
@@ -182,12 +172,8 @@ BasicLayerManager::PopGroupForLayer(PushedGroup &group)
   RefPtr<SourceSurface> src = sourceDT->Snapshot();
 
   if (group.mMaskSurface) {
-    Point finalOffset = group.mFinalTarget->GetDeviceOffset();
-    dt->SetTransform(group.mMaskTransform * Matrix::Translation(-finalOffset));
-    Matrix surfTransform = group.mMaskTransform;
-    surfTransform.Invert();
-    dt->MaskSurface(SurfacePattern(src, ExtendMode::CLAMP, surfTransform *
-                                                           Matrix::Translation(group.mGroupOffset.x, group.mGroupOffset.y)),
+    dt->SetTransform(group.mMaskTransform * Matrix::Translation(-group.mFinalTarget->GetDeviceOffset()));
+    dt->MaskSurface(SurfacePattern(src, ExtendMode::CLAMP, Matrix::Translation(group.mGroupOffset.x, group.mGroupOffset.y)),
                     group.mMaskSurface, Point(0, 0), DrawOptions(group.mOpacity, group.mOperator));
   } else {
     
