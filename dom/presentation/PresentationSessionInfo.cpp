@@ -174,10 +174,7 @@ PresentationSessionInfo::SetListener(nsIPresentationSessionListener* aListener)
 
     
     
-    uint16_t state = IsSessionReady() ?
-                     nsIPresentationSessionListener::STATE_CONNECTED :
-                     nsIPresentationSessionListener::STATE_DISCONNECTED;
-    return mListener->NotifyStateChange(mSessionId, state);
+    return mListener->NotifyStateChange(mSessionId, mState);
   }
 
   return NS_OK;
@@ -198,22 +195,14 @@ PresentationSessionInfo::Send(nsIInputStream* aData)
 }
 
 nsresult
-PresentationSessionInfo::Close(nsresult aReason)
+PresentationSessionInfo::Close(nsresult aReason,
+                               uint32_t aState)
 {
-  
-  
-  if (!IsSessionReady() && NS_SUCCEEDED(aReason)) {
-    if (mListener) {
-      
-      
-      nsresult rv = mListener->NotifyStateChange(mSessionId,
-                                                 nsIPresentationSessionListener::STATE_TERMINATED);
-      NS_WARN_IF(NS_FAILED(rv));
-    } else {
-      
-      NS_WARN_IF(NS_FAILED(UntrackFromService()));
-    }
+  if (NS_WARN_IF(!IsSessionReady())) {
+    return NS_ERROR_DOM_INVALID_STATE_ERR;
   }
+
+  SetState(aState);
 
   Shutdown(aReason);
   return NS_OK;
@@ -222,12 +211,7 @@ PresentationSessionInfo::Close(nsresult aReason)
 nsresult
 PresentationSessionInfo::ReplySuccess()
 {
-  if (mListener) {
-    
-    nsresult rv = mListener->NotifyStateChange(mSessionId,
-                                               nsIPresentationSessionListener::STATE_CONNECTED);
-    NS_WARN_IF(NS_FAILED(rv));
-  }
+  SetState(nsIPresentationSessionListener::STATE_CONNECTED);
 
   if (mCallback) {
     NS_WARN_IF(NS_FAILED(mCallback->NotifySuccess()));
@@ -308,17 +292,14 @@ PresentationSessionInfo::NotifyTransportClosed(nsresult aReason)
   
   mIsTransportReady = false;
 
+  if (mState == nsIPresentationSessionListener::STATE_CONNECTED) {
+    
+    SetState(nsIPresentationSessionListener::STATE_CLOSED);
+  }
+
   Shutdown(aReason);
 
-  uint16_t state = (NS_WARN_IF(NS_FAILED(aReason))) ?
-                   nsIPresentationSessionListener::STATE_DISCONNECTED :
-                   nsIPresentationSessionListener::STATE_TERMINATED;
-  if (mListener) {
-    
-    
-    
-    return mListener->NotifyStateChange(mSessionId, state);
-  } else if (state == nsIPresentationSessionListener::STATE_TERMINATED) {
+  if (mState == nsIPresentationSessionListener::STATE_TERMINATED) {
     
     return UntrackFromService();
   }
@@ -509,12 +490,9 @@ PresentationControllingInfo::NotifyClosed(nsresult aReason)
   SetControlChannel(nullptr);
 
   if (NS_WARN_IF(NS_FAILED(aReason))) {
-    if (mListener) {
-      
-      
-      return mListener->NotifyStateChange(mSessionId,
-                                          nsIPresentationSessionListener::STATE_TERMINATED);
-    }
+    
+    
+    SetState(nsIPresentationSessionListener::STATE_TERMINATED);
 
     
     return ReplyError(NS_ERROR_DOM_OPERATION_ERR);
@@ -567,10 +545,7 @@ PresentationControllingInfo::OnStopListening(nsIServerSocket* aServerSocket,
   }
 
   
-  if (mListener) {
-    return mListener->NotifyStateChange(mSessionId,
-                                        nsIPresentationSessionListener::STATE_DISCONNECTED);
-  }
+  SetState(nsIPresentationSessionListener::STATE_CLOSED);
 
   return NS_OK;
 }
@@ -775,12 +750,9 @@ PresentationPresentingInfo::NotifyClosed(nsresult aReason)
   SetControlChannel(nullptr);
 
   if (NS_WARN_IF(NS_FAILED(aReason))) {
-    if (mListener) {
-      
-      
-      return mListener->NotifyStateChange(mSessionId,
-                                          nsIPresentationSessionListener::STATE_TERMINATED);
-    }
+    
+    
+    SetState(nsIPresentationSessionListener::STATE_TERMINATED);
 
     
     return ReplyError(NS_ERROR_DOM_OPERATION_ERR);
