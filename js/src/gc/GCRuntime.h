@@ -672,7 +672,7 @@ class GCRuntime
     bool onBackgroundThread() { return helperState.onBackgroundThread(); }
 
     bool currentThreadOwnsGCLock() {
-        return lockOwner.value == PR_GetCurrentThread();
+        return lockOwner == PR_GetCurrentThread();
     }
 
 #endif 
@@ -684,15 +684,15 @@ class GCRuntime
     void lockGC() {
         PR_Lock(lock);
 #ifdef DEBUG
-        MOZ_ASSERT(!lockOwner.value);
-        lockOwner.value = PR_GetCurrentThread();
+        MOZ_ASSERT(!lockOwner);
+        lockOwner = PR_GetCurrentThread();
 #endif
     }
 
     void unlockGC() {
 #ifdef DEBUG
-        MOZ_ASSERT(lockOwner.value == PR_GetCurrentThread());
-        lockOwner.value = nullptr;
+        MOZ_ASSERT(lockOwner == PR_GetCurrentThread());
+        lockOwner = nullptr;
 #endif
         PR_Unlock(lock);
     }
@@ -725,7 +725,7 @@ class GCRuntime
         MOZ_ASSERT(disableStrictProxyCheckingCount > 0);
         --disableStrictProxyCheckingCount;
     }
-#endif
+#endif 
 
     void setAlwaysPreserveCode() { alwaysPreserveCode = true; }
 
@@ -1116,13 +1116,15 @@ class GCRuntime
     
     JS::gcreason::Reason initialReason;
 
+#ifdef DEBUG
     
 
 
 
 
 
-    mozilla::DebugOnly<uintptr_t> disableStrictProxyCheckingCount;
+    uintptr_t disableStrictProxyCheckingCount;
+#endif
 
     
 
@@ -1321,7 +1323,9 @@ class GCRuntime
 
     
     PRLock* lock;
-    mozilla::DebugOnly<mozilla::Atomic<PRThread*>> lockOwner;
+#ifdef DEBUG
+    mozilla::Atomic<PRThread*> lockOwner;
+#endif
 
     BackgroundAllocTask allocTask;
     GCHelperState helperState;

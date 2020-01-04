@@ -45,11 +45,13 @@ class StringBuffer
 
     mozilla::MaybeOneOf<Latin1CharBuffer, TwoByteCharBuffer> cb;
 
+#ifdef DEBUG
     
 
 
 
-    mozilla::DebugOnly<bool> hasEnsuredTwoByteChars_;
+    bool hasEnsuredTwoByteChars_;
+#endif
 
     
     size_t reserved_;
@@ -74,7 +76,11 @@ class StringBuffer
 
   public:
     explicit StringBuffer(ExclusiveContext* cx)
-      : cx(cx), hasEnsuredTwoByteChars_(false), reserved_(0)
+      : cx(cx)
+#ifdef DEBUG
+      , hasEnsuredTwoByteChars_(false)
+#endif
+      , reserved_(0)
     {
         cb.construct<Latin1CharBuffer>(cx);
     }
@@ -101,7 +107,9 @@ class StringBuffer
         if (isLatin1() && !inflateChars())
             return false;
 
+#ifdef DEBUG
         hasEnsuredTwoByteChars_ = true;
+#endif
         return true;
     }
 

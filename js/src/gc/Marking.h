@@ -7,7 +7,6 @@
 #ifndef gc_Marking_h
 #define gc_Marking_h
 
-#include "mozilla/DebugOnly.h"
 #include "mozilla/HashFunctions.h"
 #include "mozilla/Move.h"
 
@@ -339,17 +338,19 @@ class GCMarker : public JSTracer
 
     bool linearWeakMarkingDisabled_;
 
+#ifdef DEBUG
     
-    mozilla::DebugOnly<size_t> markLaterArenas;
-
-    
-    mozilla::DebugOnly<bool> started;
+    size_t markLaterArenas;
 
     
+    bool started;
+
+    
 
 
 
-    mozilla::DebugOnly<bool> strictCompartmentChecking;
+    bool strictCompartmentChecking;
+#endif 
 };
 
 #ifdef DEBUG

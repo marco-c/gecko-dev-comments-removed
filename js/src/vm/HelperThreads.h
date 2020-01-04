@@ -256,7 +256,9 @@ class GlobalHelperThreadState
 
 
     PRLock* helperLock;
-    mozilla::DebugOnly<mozilla::Atomic<PRThread*>> lockOwner;
+#ifdef DEBUG
+    mozilla::Atomic<PRThread*> lockOwner;
+#endif
 
     
     PRCondVar* consumerWakeup;
