@@ -24,6 +24,7 @@ namespace dom {
 class Element;
 } 
 class CSSStyleSheet;
+class ServoRestyleManager;
 class ServoStyleSheet;
 } 
 class nsIDocument;
@@ -39,6 +40,7 @@ namespace mozilla {
 
 class ServoStyleSet
 {
+  friend class ServoRestyleManager;
 public:
   ServoStyleSet();
 
@@ -116,7 +118,13 @@ public:
                                        dom::Element* aPseudoElement,
                                        EventStates aStateMask);
 
-  void RestyleSubtree(nsINode* aNode);
+  
+
+
+
+
+
+  void RestyleSubtree(nsINode* aNode, bool aForce);
 
 private:
   already_AddRefed<nsStyleContext> GetContext(already_AddRefed<ServoComputedValues>,

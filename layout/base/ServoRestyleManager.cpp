@@ -16,10 +16,26 @@ ServoRestyleManager::ServoRestyleManager(nsPresContext* aPresContext)
 {
 }
 
-void
-ServoRestyleManager::Disconnect()
+ void
+ServoRestyleManager::DirtyTree(nsIContent* aContent)
 {
-  NS_ERROR("stylo: ServoRestyleManager::Disconnect not implemented");
+  if (aContent->IsDirtyForServo()) {
+    return;
+  }
+
+  aContent->SetIsDirtyForServo();
+
+  FlattenedChildIterator it(aContent);
+
+  nsIContent* n = it.GetNextChild();
+  bool hadChildren = bool(n);
+  for ( ; n; n = it.GetNextChild()) {
+    DirtyTree(n);
+  }
+
+  if (hadChildren) {
+    aContent->SetHasDirtyDescendantsForServo();
+  }
 }
 
 void
@@ -32,13 +48,21 @@ ServoRestyleManager::PostRestyleEvent(Element* aElement,
     return;
   }
 
+  if (aRestyleHint == 0 && !aMinChangeHint) {
+    
+    return;
+  }
+
   nsIPresShell* presShell = PresContext()->PresShell();
   if (!ObservingRefreshDriver()) {
     SetObservingRefreshDriver(PresContext()->RefreshDriver()->
         AddStyleFlushObserver(presShell));
   }
 
-  aElement->SetIsDirtyForServo();
+  
+  DirtyTree(aElement);
+
+  
   nsINode* cur = aElement;
   while ((cur = cur->GetParentNode())) {
     if (cur->HasDirtyDescendantsForServo())
@@ -69,10 +93,59 @@ ServoRestyleManager::PostRebuildAllStyleDataEvent(nsChangeHint aExtraHint,
   MOZ_CRASH("stylo: ServoRestyleManager::PostRebuildAllStyleDataEvent not implemented");
 }
 
+ void
+ServoRestyleManager::RecreateStyleContexts(nsIContent* aContent,
+                                           nsStyleContext* aParentContext,
+                                           ServoStyleSet* aStyleSet)
+{
+  if (!(aContent->IsDirtyForServo() || aContent->HasDirtyDescendantsForServo())) {
+    return;
+  }
+
+  nsIFrame* primaryFrame = aContent->GetPrimaryFrame();
+
+  
+  
+  
+  
+  if (!primaryFrame) {
+    return;
+  }
+
+  RefPtr<ServoComputedValues> computedValues =
+    dont_AddRef(Servo_GetComputedValues(aContent));
+
+  
+  
+  RefPtr<nsStyleContext> context =
+    aStyleSet->GetContext(computedValues.forget(),
+                          aParentContext,
+                          nullptr,
+                          CSSPseudoElementType::NotPseudo);
+
+  
+  
+  primaryFrame->SetStyleContext(context.get());
+
+  FlattenedChildIterator it(aContent);
+  for (nsIContent* n = it.GetNextChild(); n; n = it.GetNextChild()) {
+    RecreateStyleContexts(n, context.get(), aStyleSet);
+  }
+}
+
 void
 ServoRestyleManager::ProcessPendingRestyles()
 {
-  
+  ServoStyleSet* styleSet = StyleSet();
+
+  nsIDocument* doc = PresContext()->Document();
+  Element* root = doc->GetRootElement();
+
+  if (root) {
+    styleSet->RestyleSubtree(root,  false);
+    RecreateStyleContexts(root, nullptr, styleSet);
+  }
+
   IncrementRestyleGeneration();
 }
 

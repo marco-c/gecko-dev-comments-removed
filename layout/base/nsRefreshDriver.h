@@ -155,7 +155,7 @@ public:
 
   bool AddStyleFlushObserver(nsIPresShell* aShell) {
     NS_ASSERTION(!mStyleFlushObservers.Contains(aShell),
-		 "Double-adding style flush observer");
+                 "Double-adding style flush observer");
     
     
     
@@ -173,7 +173,7 @@ public:
   }
   bool AddLayoutFlushObserver(nsIPresShell* aShell) {
     NS_ASSERTION(!IsLayoutFlushObserver(aShell),
-		 "Double-adding layout flush observer");
+                 "Double-adding layout flush observer");
     
     
     
@@ -193,7 +193,7 @@ public:
   }
   bool AddPresShellToInvalidateIfHidden(nsIPresShell* aShell) {
     NS_ASSERTION(!mPresShellsToInvalidateIfHidden.Contains(aShell),
-		 "Double-adding style flush observer");
+                 "Double-adding style flush observer");
     bool appended = mPresShellsToInvalidateIfHidden.AppendElement(aShell) != nullptr;
     EnsureTimerStarted();
     return appended;
@@ -288,7 +288,7 @@ public:
 
 
   bool IsRefreshObserver(nsARefreshObserver *aObserver,
-			   mozFlushType aFlushType);
+                         mozFlushType aFlushType);
 #endif
 
   

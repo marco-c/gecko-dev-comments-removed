@@ -31,12 +31,12 @@ namespace mozilla {
 
 class ServoRestyleManager : public RestyleManagerBase
 {
+  friend class ServoStyleSet;
 public:
   NS_INLINE_DECL_REFCOUNTING(ServoRestyleManager)
 
   explicit ServoRestyleManager(nsPresContext* aPresContext);
 
-  void Disconnect();
   void PostRestyleEvent(dom::Element* aElement,
                         nsRestyleHint aRestyleHint,
                         nsChangeHint aMinChangeHint);
@@ -72,6 +72,24 @@ protected:
   ~ServoRestyleManager() {}
 
 private:
+  
+
+
+
+
+
+
+
+  static void RecreateStyleContexts(nsIContent* aContent,
+                                    nsStyleContext* aParentContext,
+                                    ServoStyleSet* aStyleSet);
+
+  
+
+
+
+  static void DirtyTree(nsIContent* aContent);
+
   inline ServoStyleSet* StyleSet() const {
     MOZ_ASSERT(PresContext()->StyleSet()->IsServo(),
                "ServoRestyleManager should only be used with a Servo-flavored "
