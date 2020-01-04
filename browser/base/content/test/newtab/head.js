@@ -107,16 +107,16 @@ function pushPrefs(...aPrefs) {
 
 
 function watchLinksChangeOnce() {
-  let deferred = Promise.defer();
-  let observer = {
-    onManyLinksChanged: () => {
-      DirectoryLinksProvider.removeObserver(observer);
-      deferred.resolve();
-    }
-  };
-  observer.onDownloadFail = observer.onManyLinksChanged;
-  DirectoryLinksProvider.addObserver(observer);
-  return deferred.promise;
+  return new Promise(resolve => {
+    let observer = {
+      onManyLinksChanged: () => {
+        DirectoryLinksProvider.removeObserver(observer);
+        resolve();
+      }
+    };
+    observer.onDownloadFail = observer.onManyLinksChanged;
+    DirectoryLinksProvider.addObserver(observer);
+  });
 };
 
 add_task(function* setup() {
