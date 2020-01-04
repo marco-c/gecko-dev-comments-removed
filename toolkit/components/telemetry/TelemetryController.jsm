@@ -303,6 +303,15 @@ this.TelemetryController = Object.freeze({
 
 
 
+
+  get clientID() {
+    return Impl.clientID;
+  },
+
+  
+
+
+
   getSessionRecorder: function() {
     return Impl._sessionRecorder;
   },
@@ -450,46 +459,6 @@ var Impl = {
 
 
 
-
-
-  _submitPingLogic: Task.async(function* (aType, aPayload, aOptions) {
-    
-    
-    
-    if (!this._clientID && aOptions.addClientId) {
-      Telemetry.getHistogramById("TELEMETRY_PING_SUBMISSION_WAITING_CLIENTID").add();
-      
-      
-      this._clientID = yield ClientID.getClientID();
-    }
-
-    const pingData = this.assemblePing(aType, aPayload, aOptions);
-    this._log.trace("submitExternalPing - ping assembled, id: " + pingData.id);
-
-    
-    
-    let archivePromise = TelemetryArchive.promiseArchivePing(pingData)
-      .catch(e => this._log.error("submitExternalPing - Failed to archive ping " + pingData.id, e));
-    let p = [ archivePromise ];
-
-    p.push(TelemetrySend.submitPing(pingData));
-
-    return Promise.all(p).then(() => pingData.id);
-  }),
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
   submitExternalPing: function send(aType, aPayload, aOptions) {
     this._log.trace("submitExternalPing - type: " + aType + ", aOptions: " + JSON.stringify(aOptions));
 
@@ -502,9 +471,19 @@ var Impl = {
       return Promise.reject(new Error("Invalid type string submitted."));
     }
 
-    let promise = this._submitPingLogic(aType, aPayload, aOptions);
+    const pingData = this.assemblePing(aType, aPayload, aOptions);
+    this._log.trace("submitExternalPing - ping assembled, id: " + pingData.id);
+
+    
+    let archivePromise = TelemetryArchive.promiseArchivePing(pingData)
+      .catch(e => this._log.error("submitExternalPing - Failed to archive ping " + pingData.id, e));
+    let p = [ archivePromise ];
+
+    p.push(TelemetrySend.submitPing(pingData));
+
+    let promise = Promise.all(p);
     this._trackPendingPingTask(promise);
-    return promise;
+    return promise.then(() => pingData.id);
   },
 
   
@@ -833,6 +812,10 @@ var Impl = {
       break;
     }
     return undefined;
+  },
+
+  get clientID() {
+    return this._clientID;
   },
 
   
