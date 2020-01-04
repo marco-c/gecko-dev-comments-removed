@@ -168,8 +168,8 @@ struct txEXSLTFunctionDescriptor
     int8_t mMinParams;
     int8_t mMaxParams;
     Expr::ResultType mReturnType;
-    nsIAtom** mName;
     int32_t mNamespaceID;
+    nsIAtom** mName;
     const char* mNamespaceURI;
 };
 
@@ -183,22 +183,22 @@ static const char kEXSLTDatesAndTimesNS[] = "http://exslt.org/dates-and-times";
 
 static txEXSLTFunctionDescriptor descriptTable[] =
 {
-    { 1, 1, Expr::NODESET_RESULT, &nsGkAtoms::nodeSet, 0, kEXSLTCommonNS }, 
-    { 1, 1, Expr::STRING_RESULT,  &nsGkAtoms::objectType, 0, kEXSLTCommonNS }, 
-    { 2, 2, Expr::NODESET_RESULT, &nsGkAtoms::difference, 0, kEXSLTSetsNS }, 
-    { 1, 1, Expr::NODESET_RESULT, &nsGkAtoms::distinct, 0, kEXSLTSetsNS }, 
-    { 2, 2, Expr::BOOLEAN_RESULT, &nsGkAtoms::hasSameNode, 0, kEXSLTSetsNS }, 
-    { 2, 2, Expr::NODESET_RESULT, &nsGkAtoms::intersection, 0, kEXSLTSetsNS }, 
-    { 2, 2, Expr::NODESET_RESULT, &nsGkAtoms::leading, 0, kEXSLTSetsNS }, 
-    { 2, 2, Expr::NODESET_RESULT, &nsGkAtoms::trailing, 0, kEXSLTSetsNS }, 
-    { 1, 1, Expr::STRING_RESULT,  &nsGkAtoms::concat, 0, kEXSLTStringsNS }, 
-    { 1, 2, Expr::STRING_RESULT,  &nsGkAtoms::split, 0, kEXSLTStringsNS }, 
-    { 1, 2, Expr::STRING_RESULT,  &nsGkAtoms::tokenize, 0, kEXSLTStringsNS }, 
-    { 1, 1, Expr::NUMBER_RESULT,  &nsGkAtoms::max, 0, kEXSLTMathNS }, 
-    { 1, 1, Expr::NUMBER_RESULT,  &nsGkAtoms::min, 0, kEXSLTMathNS }, 
-    { 1, 1, Expr::NODESET_RESULT, &nsGkAtoms::highest, 0, kEXSLTMathNS }, 
-    { 1, 1, Expr::NODESET_RESULT, &nsGkAtoms::lowest, 0, kEXSLTMathNS }, 
-    { 0, 0, Expr::STRING_RESULT,  &nsGkAtoms::dateTime, 0, kEXSLTDatesAndTimesNS }, 
+    { 1, 1, Expr::NODESET_RESULT, 0, &nsGkAtoms::nodeSet, kEXSLTCommonNS }, 
+    { 1, 1, Expr::STRING_RESULT, 0, &nsGkAtoms::objectType, kEXSLTCommonNS }, 
+    { 2, 2, Expr::NODESET_RESULT, 0, &nsGkAtoms::difference, kEXSLTSetsNS }, 
+    { 1, 1, Expr::NODESET_RESULT, 0, &nsGkAtoms::distinct, kEXSLTSetsNS }, 
+    { 2, 2, Expr::BOOLEAN_RESULT, 0, &nsGkAtoms::hasSameNode, kEXSLTSetsNS }, 
+    { 2, 2, Expr::NODESET_RESULT, 0, &nsGkAtoms::intersection, kEXSLTSetsNS }, 
+    { 2, 2, Expr::NODESET_RESULT, 0, &nsGkAtoms::leading, kEXSLTSetsNS }, 
+    { 2, 2, Expr::NODESET_RESULT, 0, &nsGkAtoms::trailing, kEXSLTSetsNS }, 
+    { 1, 1, Expr::STRING_RESULT, 0, &nsGkAtoms::concat, kEXSLTStringsNS }, 
+    { 1, 2, Expr::STRING_RESULT, 0, &nsGkAtoms::split, kEXSLTStringsNS }, 
+    { 1, 2, Expr::STRING_RESULT, 0, &nsGkAtoms::tokenize, kEXSLTStringsNS }, 
+    { 1, 1, Expr::NUMBER_RESULT, 0, &nsGkAtoms::max, kEXSLTMathNS }, 
+    { 1, 1, Expr::NUMBER_RESULT, 0, &nsGkAtoms::min, kEXSLTMathNS }, 
+    { 1, 1, Expr::NODESET_RESULT, 0, &nsGkAtoms::highest, kEXSLTMathNS }, 
+    { 1, 1, Expr::NODESET_RESULT, 0, &nsGkAtoms::lowest, kEXSLTMathNS }, 
+    { 0, 0, Expr::STRING_RESULT, 0, &nsGkAtoms::dateTime, kEXSLTDatesAndTimesNS }, 
 
 };
 
