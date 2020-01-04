@@ -23,6 +23,12 @@ GetWidget(WidgetNodeType aNodeType);
 
 
 GtkStyleContext*
+CreateCSSNode(const char*      aName,
+              GtkStyleContext* aParentStyle,
+              GType            aType = G_TYPE_NONE);
+
+
+GtkStyleContext*
 ClaimStyleContext(WidgetNodeType aNodeType,
                   GtkTextDirection aDirection = GTK_TEXT_DIR_LTR,
                   GtkStateFlags aStateFlags = GTK_STATE_FLAG_NORMAL,
