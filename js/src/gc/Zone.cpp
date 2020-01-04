@@ -219,6 +219,12 @@ Zone::discardJitCode(FreeOp* fop)
         
         jit::InvalidateAll(fop, this);
 
+        
+        JSRuntime* rt = runtimeFromMainThread();
+        if (!rt->isHeapCollecting())
+            rt->gc.evictNursery();
+        MOZ_ASSERT(rt->gc.nursery.isEmpty());
+
         for (ZoneCellIter i(this, AllocKind::SCRIPT); !i.done(); i.next()) {
             JSScript* script = i.get<JSScript>();
             jit::FinishInvalidation(fop, script);
