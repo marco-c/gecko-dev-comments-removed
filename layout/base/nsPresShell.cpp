@@ -3219,7 +3219,7 @@ AccumulateFrameBounds(nsIFrame* aContainerFrame,
     nsIFrame *f = aFrame;
 
     while (f && f->IsFrameOfType(nsIFrame::eLineParticipant) &&
-           !f->IsTransformed() && !f->IsAbsPosContainingBlock()) {
+           !f->IsTransformed() && !f->IsAbsPosContaininingBlock()) {
       prevFrame = f;
       f = prevFrame->GetParent();
     }
@@ -6692,22 +6692,6 @@ nsIPresShell::SetCapturingContent(nsIContent* aContent, uint8_t aFlags)
   }
 }
 
-class AsyncCheckPointerCaptureStateCaller : public Runnable
-{
-public:
-  explicit AsyncCheckPointerCaptureStateCaller(int32_t aPointerId)
-    : mPointerId(aPointerId) {}
-
-  NS_IMETHOD Run() override
-  {
-    nsIPresShell::CheckPointerCaptureState(mPointerId);
-    return NS_OK;
-  }
-
-private:
-  int32_t mPointerId;
-};
-
  void
 nsIPresShell::SetPointerCapturingContent(uint32_t aPointerId, nsIContent* aContent)
 {
@@ -6739,9 +6723,6 @@ nsIPresShell::ReleasePointerCapturingContent(uint32_t aPointerId)
   if (gPointerCaptureList->Get(aPointerId, &pointerCaptureInfo) && pointerCaptureInfo) {
     
     pointerCaptureInfo->mReleaseContent = true;
-    RefPtr<AsyncCheckPointerCaptureStateCaller> asyncCaller =
-      new AsyncCheckPointerCaptureStateCaller(aPointerId);
-    NS_DispatchToCurrentThread(asyncCaller);
   }
 }
 
@@ -7244,6 +7225,7 @@ public:
   {
     if (mIsSet) {
       nsIPresShell::ReleasePointerCapturingContent(mPointerId);
+      nsIPresShell::CheckPointerCaptureState(mPointerId);
     }
   }
   void SetTarget(uint32_t aPointerId)
@@ -7977,9 +7959,7 @@ PresShell::HandleEvent(nsIFrame* aFrame,
         nsWeakFrame frameKeeper(frame);
         
         
-        
-        
-        while(CheckPointerCaptureState(pointerEvent->pointerId));
+        CheckPointerCaptureState(pointerEvent->pointerId);
         
         if (!frameKeeper.IsAlive()) {
           frame = nullptr;
