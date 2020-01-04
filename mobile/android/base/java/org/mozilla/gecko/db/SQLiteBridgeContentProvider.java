@@ -157,7 +157,7 @@ public abstract class SQLiteBridgeContentProvider extends ContentProvider {
         }
         return bridge;
     }
-
+    
     
 
 
@@ -187,7 +187,7 @@ public abstract class SQLiteBridgeContentProvider extends ContentProvider {
 
 
     private SQLiteBridge getDatabaseForProfile(String profile) {
-        if (TextUtils.isEmpty(profile)) {
+        if (profile == null) {
             profile = GeckoProfile.get(mContext).getName();
             Log.d(mLogTag, "No profile provided, using '" + profile + "'");
         }
@@ -202,7 +202,7 @@ public abstract class SQLiteBridgeContentProvider extends ContentProvider {
                 return db;
             }
             final String dbPath = getDatabasePathForProfile(profile, dbName);
-            if (dbPath == null) {
+            if (dbPath == null) {   
                 Log.e(mLogTag, "Failed to get a valid db path for profile '" + profile + "'' dbName '" + dbName + "'");
                 return null;
             }
