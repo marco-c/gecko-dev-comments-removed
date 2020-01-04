@@ -4789,7 +4789,10 @@ TSFTextStore::OnLayoutChangeInternal()
 bool
 TSFTextStore::NotifyTSFOfLayoutChange()
 {
-  bool returnedNoLayoutError = mHasReturnedNoLayoutError;
+  
+  
+  bool returnedNoLayoutError =
+    mHasReturnedNoLayoutError || mWaitingQueryLayout;
 
   
   mWaitingQueryLayout = returnedNoLayoutError;
@@ -4861,6 +4864,12 @@ TSFTextStore::NotifyTSFOfLayoutChange()
     return ret;
   }
 
+  
+  
+  if (mHasReturnedNoLayoutError) {
+    mWaitingQueryLayout = true;
+  }
+
   if (!mWaitingQueryLayout) {
     MOZ_LOG(sTextStoreLog, LogLevel::Info,
            ("TSF: 0x%p   TSFTextStore::NotifyTSFOfLayoutChange(), "
@@ -4871,8 +4880,10 @@ TSFTextStore::NotifyTSFOfLayoutChange()
 
   
   
-  
-  mHasReturnedNoLayoutError = returnedNoLayoutError;
+  MOZ_LOG(sTextStoreLog, LogLevel::Debug,
+          ("TSF: 0x%p   TSFTextStore::NotifyTSFOfLayoutChange(), "
+           "posing  MOZ_WM_NOTIY_TSF_OF_LAYOUT_CHANGE for calling "
+           "OnLayoutChange() again...", this));
   ::PostMessage(mWidget->GetWindowHandle(),
                 MOZ_WM_NOTIY_TSF_OF_LAYOUT_CHANGE,
                 reinterpret_cast<WPARAM>(this), 0);
@@ -4893,9 +4904,23 @@ TSFTextStore::NotifyTSFOfLayoutChangeAgain()
          ("TSF: 0x%p   TSFTextStore::NotifyTSFOfLayoutChangeAgain(), "
           "calling NotifyTSFOfLayoutChange()...", this));
   NotifyTSFOfLayoutChange();
-  MOZ_LOG(sTextStoreLog, LogLevel::Info,
-         ("TSF: 0x%p   TSFTextStore::NotifyTSFOfLayoutChangeAgain(), "
-          "called NotifyTSFOfLayoutChange()", this));
+
+  
+  
+  
+  
+  
+  if (!mHasReturnedNoLayoutError && mWaitingQueryLayout) {
+    mWaitingQueryLayout = false;
+    MOZ_LOG(sTextStoreLog, LogLevel::Warning,
+            ("TSF: 0x%p   TSFTextStore::NotifyTSFOfLayoutChangeAgain(), "
+             "called NotifyTSFOfLayoutChange() but TIP didn't retry to "
+             "retrieve the layout information", this));
+  } else {
+    MOZ_LOG(sTextStoreLog, LogLevel::Info,
+            ("TSF: 0x%p   TSFTextStore::NotifyTSFOfLayoutChangeAgain(), "
+             "called NotifyTSFOfLayoutChange()", this));
+  }
 }
 
 nsresult
