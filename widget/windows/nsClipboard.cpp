@@ -102,7 +102,8 @@ UINT nsClipboard::GetFormat(const char* aMimeStr)
   else if (strcmp(aMimeStr, kFileMime) == 0 ||
            strcmp(aMimeStr, kFilePromiseMime) == 0)
     format = CF_HDROP;
-  else if (strcmp(aMimeStr, kNativeHTMLMime) == 0)
+  else if (strcmp(aMimeStr, kNativeHTMLMime) == 0 ||
+           strcmp(aMimeStr, kHTMLMime) == 0)
     format = CF_HTML;
   else
     format = ::RegisterClipboardFormatW(NS_ConvertASCIItoUTF16(aMimeStr).get());
@@ -624,12 +625,30 @@ nsresult nsClipboard::GetDataFromDataObject(IDataObject     * aDataObject,
               genericDataWrapper = do_QueryInterface(file);
             free(data);
           }
-        else if ( strcmp(flavorStr, kNativeHTMLMime) == 0) {
+        else if ( strcmp(flavorStr, kNativeHTMLMime) == 0 ) {
+          uint32_t dummy;
           
           
           
-          if ( FindPlatformHTML(aDataObject, anIndex, &data, &dataLen) )
+          if ( FindPlatformHTML(aDataObject, anIndex, &data, &dummy, &dataLen) )
             nsPrimitiveHelpers::CreatePrimitiveForData ( flavorStr, data, dataLen, getter_AddRefs(genericDataWrapper) );
+          else
+          {
+            free(data);
+            continue;     
+          }
+          free(data);
+        }
+        else if ( strcmp(flavorStr, kHTMLMime) == 0 ) {
+          uint32_t startOfData = 0;
+          
+          
+          
+          if ( FindPlatformHTML(aDataObject, anIndex, &data, &startOfData, &dataLen) ) {
+            dataLen -= startOfData;
+            nsPrimitiveHelpers::CreatePrimitiveForCFHTML ( static_cast<char*>(data) + startOfData,
+                                                           &dataLen, getter_AddRefs(genericDataWrapper) );
+          }
           else
           {
             free(data);
@@ -678,7 +697,9 @@ nsresult nsClipboard::GetDataFromDataObject(IDataObject     * aDataObject,
 
 
 bool
-nsClipboard :: FindPlatformHTML ( IDataObject* inDataObject, UINT inIndex, void** outData, uint32_t* outDataLen )
+nsClipboard :: FindPlatformHTML ( IDataObject* inDataObject, UINT inIndex,
+                                  void** outData, uint32_t* outStartOfData,
+                                  uint32_t* outDataLen )
 {
   
   
@@ -721,6 +742,10 @@ nsClipboard :: FindPlatformHTML ( IDataObject* inDataObject, UINT inIndex, void*
   
   
   
+
+  
+  
+  *outStartOfData = startOfData;
   *outDataLen = endOfData;
   return true;
 }

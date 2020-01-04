@@ -24,6 +24,10 @@ public:
                                          uint32_t aDataLen, nsISupports** aPrimitive ) ;
 
     
+  static void CreatePrimitiveForCFHTML ( const void* aDataBuff,
+                                         uint32_t* aDataLen, nsISupports** aPrimitive ) ;
+
+    
     
     
   static void CreateDataFromPrimitive ( const char* aFlavor, nsISupports* aPrimitive, 
