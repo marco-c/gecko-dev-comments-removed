@@ -2771,6 +2771,12 @@ nsIFrame::BuildDisplayListForChild(nsDisplayListBuilder*   aBuilder,
       &savedOutOfFlowData->mContainingBlockClip);
     clipState.SetScrollClipForContainingBlockDescendants(
       savedOutOfFlowData->mContainingBlockScrollClip);
+  } else if (GetStateBits() & NS_FRAME_FORCE_DISPLAY_LIST_DESCEND_INTO) {
+    
+    
+    
+    
+    clipState.Clear();
   }
 
   
