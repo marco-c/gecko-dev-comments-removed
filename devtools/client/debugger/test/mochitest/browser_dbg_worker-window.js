@@ -1,6 +1,10 @@
 
 
 
+
+
+thisTestLeaksUncaughtRejectionsAndShouldBeFixed("[object Object]");
+
 var TAB_URL = EXAMPLE_URL + "doc_WorkerActor.attachThread-tab.html";
 var WORKER_URL = "code_WorkerActor.attachThread-worker.js";
 
