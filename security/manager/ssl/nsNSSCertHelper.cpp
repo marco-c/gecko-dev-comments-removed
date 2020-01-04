@@ -6,21 +6,20 @@
 
 #include <algorithm>
 
+#include "ScopedNSSTypes.h"
 #include "mozilla/Snprintf.h"
 #include "mozilla/UniquePtr.h"
-#include "nsComponentManagerUtils.h"
 #include "nsCOMPtr.h"
+#include "nsComponentManagerUtils.h"
 #include "nsDateTimeFormatCID.h"
 #include "nsIDateTimeFormat.h"
 #include "nsNSSASN1Object.h"
-#include "nsNSSCertificate.h"
 #include "nsNSSCertTrust.h"
 #include "nsNSSCertValidity.h"
+#include "nsNSSCertificate.h"
 #include "nsNSSComponent.h"
-#include "nsIDateTimeFormat.h"
 #include "nsServiceManagerUtils.h"
 #include "prerror.h"
-#include "ScopedNSSTypes.h"
 #include "secder.h"
 
 using namespace mozilla;
@@ -84,53 +83,47 @@ GetIntValue(SECItem *versionItem,
 }
 
 static nsresult
-ProcessVersion(SECItem         *versionItem,
-               nsINSSComponent *nssComponent,
-               nsIASN1PrintableItem **retItem)
+ProcessVersion(SECItem* versionItem, nsINSSComponent* nssComponent,
+               nsIASN1PrintableItem** retItem)
 {
-  nsresult rv;
   nsAutoString text;
-  nsCOMPtr<nsIASN1PrintableItem> printableItem = new nsNSSASN1PrintableItem();
- 
   nssComponent->GetPIPNSSBundleString("CertDumpVersion", text);
-  rv = printableItem->SetDisplayName(text);
-  if (NS_FAILED(rv))
+  nsCOMPtr<nsIASN1PrintableItem> printableItem = new nsNSSASN1PrintableItem();
+  nsresult rv = printableItem->SetDisplayName(text);
+  if (NS_FAILED(rv)) {
     return rv;
+  }
 
   
-  unsigned long version;
-
+  unsigned int version;
   if (versionItem->data) {
-    rv = GetIntValue(versionItem, &version);
-    if (NS_FAILED(rv))
-      return rv;
+    
+    if (versionItem->len != 1) {
+      return NS_ERROR_FAILURE;
+    }
+    version = *reinterpret_cast<const uint8_t*>(versionItem->data);
   } else {
     
     
     version = 0;
   }
 
-  switch (version){
-  case 0:
-    rv = nssComponent->GetPIPNSSBundleString("CertDumpVersion1", text);
-    break;
-  case 1:
-    rv = nssComponent->GetPIPNSSBundleString("CertDumpVersion2", text);
-    break;
-  case 2:
-    rv = nssComponent->GetPIPNSSBundleString("CertDumpVersion3", text);
-    break;
-  default:
-    NS_ERROR("Bad value for cert version");
-    rv = NS_ERROR_FAILURE;
-  }
-    
-  if (NS_FAILED(rv))
+  
+  nsAutoString versionString;
+  versionString.AppendInt(version + 1);
+  const char16_t* params[1] = { versionString.get() };
+  rv = nssComponent->PIPBundleFormatStringFromName("CertDumpVersionValue",
+                                                   params,
+                                                   MOZ_ARRAY_LENGTH(params),
+                                                   text);
+  if (NS_FAILED(rv)) {
     return rv;
+  }
 
   rv = printableItem->SetDisplayValue(text);
-  if (NS_FAILED(rv))
+  if (NS_FAILED(rv)) {
     return rv;
+  }
 
   printableItem.forget(retItem);
   return NS_OK;
