@@ -107,12 +107,6 @@ static PRLogModuleInfo* gMediaElementEventsLog;
 
 #include "mozilla/EventStateManager.h"
 
-#if defined(MOZ_B2G) && !defined(MOZ_GRAPHENE)
-
-
-#define PAUSE_MEDIA_ELEMENT_FROM_AUDIOCHANNEL
-#endif
-
 using namespace mozilla::layers;
 using mozilla::net::nsMediaFragmentURIParser;
 
@@ -4238,15 +4232,12 @@ bool HTMLMediaElement::IsBeingDestroyed()
 void HTMLMediaElement::NotifyOwnerDocumentActivityChanged()
 {
   bool pauseElement = NotifyOwnerDocumentActivityChangedInternal();
-  if (pauseElement && mAudioChannelAgent
-#ifdef PAUSE_MEDIA_ELEMENT_FROM_AUDIOCHANNEL
+  if (pauseElement && mAudioChannelAgent &&
       
       
       
       
-      && !ComputedMuted()
-#endif
-      ) {
+      (!UseAudioChannelAPI() || !ComputedMuted())) {
     
     
     
@@ -4270,15 +4261,13 @@ HTMLMediaElement::NotifyOwnerDocumentActivityChangedInternal()
   }
 
   bool pauseElement = !IsActive();
-#ifdef PAUSE_MEDIA_ELEMENT_FROM_AUDIOCHANNEL
   
   
   
   
-  if (mAudioChannelAgent) {
+  if (UseAudioChannelAPI() && mAudioChannelAgent) {
     pauseElement |= ComputedMuted();
   }
-#endif
 
   SuspendOrResumeElement(pauseElement, !IsActive());
 
@@ -4712,9 +4701,10 @@ nsresult HTMLMediaElement::UpdateChannelMuteState(float aVolume, bool aMuted)
     }
   }
 
-#ifdef PAUSE_MEDIA_ELEMENT_FROM_AUDIOCHANNEL
-  SuspendOrResumeElement(ComputedMuted(), false);
-#endif
+  if (UseAudioChannelAPI()) {
+    SuspendOrResumeElement(ComputedMuted(), false);
+  }
+
   return NS_OK;
 }
 
@@ -4745,6 +4735,12 @@ HTMLMediaElement::IsPlayingThroughTheAudioChannel() const
 
   
   if (std::fabs(Volume()) <= 1e-7) {
+    return false;
+  }
+
+  
+  
+  if (mPausedForInactiveDocumentOrChannel) {
     return false;
   }
 
@@ -4819,9 +4815,9 @@ NS_IMETHODIMP HTMLMediaElement::WindowVolumeChanged(float aVolume, bool aMuted)
 
   UpdateChannelMuteState(aVolume, aMuted);
 
-#ifdef PAUSE_MEDIA_ELEMENT_FROM_AUDIOCHANNEL
-  mPaused.SetCanPlay(!aMuted);
-#endif
+  if (UseAudioChannelAPI()) {
+    mPaused.SetCanPlay(!aMuted);
+  }
 
   return NS_OK;
 }
