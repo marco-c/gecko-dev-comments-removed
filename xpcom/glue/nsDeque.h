@@ -63,7 +63,6 @@ class nsDequeIterator;
 
 class nsDeque
 {
-  friend class nsDequeIterator;
   typedef mozilla::fallible_t fallible_t;
 public:
   explicit nsDeque(nsDequeFunctor* aDeallocator = nullptr);
@@ -161,22 +160,6 @@ public:
 
   void Erase();
 
-  
-
-
-
-
-
-  nsDequeIterator Begin() const;
-
-  
-
-
-
-
-
-  nsDequeIterator End() const;
-
   void* Last() const;
 
   
@@ -230,168 +213,5 @@ private:
   nsDeque& operator=(const nsDeque& aOther);
 
   bool GrowCapacity();
-};
-
-
-
-
-
-class nsDequeIterator
-{
-public:
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  explicit nsDequeIterator(const nsDeque& aQueue, int aIndex = 0);
-
-  
-
-
-
-
-  nsDequeIterator(const nsDequeIterator& aCopy);
-
-  
-
-
-
-  nsDequeIterator& First();
-
-  
-
-
-
-
-  nsDequeIterator& operator=(const nsDequeIterator& aCopy);
-
-  
-
-
-
-
-
-
-  bool operator!=(nsDequeIterator& aIter);
-
-  
-
-
-
-
-
-
-
-
-  bool operator<(nsDequeIterator& aIter);
-
-  
-
-
-
-
-
-  bool operator==(nsDequeIterator& aIter);
-
-  
-
-
-
-
-
-
-
-
-  bool operator>=(nsDequeIterator& aIter);
-
-  
-
-
-
-
-
-  void* operator++();
-
-  
-
-
-
-
-
-
-  void* operator++(int);
-
-  
-
-
-
-
-
-  void* operator--();
-
-  
-
-
-
-
-
-
-  void* operator--(int);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  void* GetCurrent();
-
-  
-
-
-
-
-
-
-
-  void ForEach(nsDequeFunctor& aFunctor) const;
-
-  
-
-
-
-
-
-
-
-
-  const void* FirstThat(nsDequeFunctor& aFunctor) const;
-
-protected:
-
-  int32_t         mIndex;
-  const nsDeque&  mDeque;
 };
 #endif
