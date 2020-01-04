@@ -2344,10 +2344,6 @@ XMLHttpRequestMainThread::GetRequestBody(nsIVariant* aVariant,
                                          nsACString& aContentType,
                                          nsACString& aCharset)
 {
-  
-  aContentType.SetIsVoid(true);
-  aCharset.SetIsVoid(true);
-
   if (aVariant) {
     return GetRequestBodyInternal(aVariant, aResult, aContentLength,
                                   aContentType, aCharset);
@@ -2516,10 +2512,11 @@ XMLHttpRequestMainThread::Send(nsIVariant* aVariant, const Nullable<RequestBody>
       nsAutoCString contentType;
       if (NS_FAILED(httpChannel->
                       GetRequestHeader(NS_LITERAL_CSTRING("Content-Type"),
-                                       contentType))) {
+                                       contentType)) ||
+          contentType.IsEmpty()) {
         contentType = defaultContentType;
 
-        if (!charset.IsEmpty() && !contentType.IsVoid()) {
+        if (!charset.IsEmpty()) {
           
           
           contentType.Append(NS_LITERAL_CSTRING(";charset="));
