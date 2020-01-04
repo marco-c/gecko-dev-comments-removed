@@ -7,6 +7,7 @@
 #define mozilla_layers_APZThreadUtils_h
 
 #include "base/message_loop.h"
+#include "nsITimer.h"
 
 class Task;
 
@@ -50,6 +51,46 @@ public:
 
   static void RunOnControllerThread(Task* aTask);
 };
+
+
+
+
+class GenericTimerCallbackBase : public nsITimerCallback
+{
+public:
+  NS_DECL_THREADSAFE_ISUPPORTS
+
+protected:
+  virtual ~GenericTimerCallbackBase() {}
+};
+
+
+
+template <typename Function>
+class GenericTimerCallback final : public GenericTimerCallbackBase
+{
+public:
+  explicit GenericTimerCallback(const Function& aFunction) : mFunction(aFunction) {}
+
+  NS_IMETHODIMP Notify(nsITimer*) override
+  {
+    mFunction();
+    return NS_OK;
+  }
+private:
+  Function mFunction;
+};
+
+
+
+
+
+
+template <typename Function>
+GenericTimerCallback<Function>* NewTimerCallback(const Function& aFunction)
+{
+  return new GenericTimerCallback<Function>(aFunction);
+}
 
 } 
 } 
