@@ -9,6 +9,7 @@
 #define SkTypeface_win_DEFINED
 
 #include "SkTypeface.h"
+#include <dwrite.h>
 
 
 
@@ -38,6 +39,16 @@ SK_API void SkTypeface_SetEnsureLOGFONTAccessibleProc(void (*)(const LOGFONT&));
 class SkFontMgr;
 class SkRemotableFontMgr;
 struct IDWriteFactory;
+
+
+
+
+
+
+SK_API SkTypeface* SkCreateTypefaceFromDWriteFont(IDWriteFactory* aFactory,
+                                                  IDWriteFontFace* aFontFace,
+                                                  IDWriteFont* aFont,
+                                                  IDWriteFontFamily* aFontFamily);
 
 SK_API SkFontMgr* SkFontMgr_New_GDI();
 SK_API SkFontMgr* SkFontMgr_New_DirectWrite(IDWriteFactory* factory = NULL);
