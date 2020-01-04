@@ -77,6 +77,7 @@
 #include "nsISocketTransport.h"
 #include "nsIStreamConverterService.h"
 #include "nsISiteSecurityService.h"
+#include "nsString.h"
 #include "nsCRT.h"
 #include "nsPerformance.h"
 #include "CacheObserver.h"
@@ -93,6 +94,7 @@
 #include "nsICompressConvStats.h"
 #include "nsCORSListenerProxy.h"
 #include "nsISocketProvider.h"
+#include "mozilla/net/Predictor.h"
 
 namespace mozilla { namespace net {
 
@@ -1588,6 +1590,9 @@ nsHttpChannel::ProcessResponse()
     nsresult rv;
     uint32_t httpStatus = mResponseHead->Status();
 
+    LOG(("nsHttpChannel::ProcessResponse [this=%p httpStatus=%u]\n",
+        this, httpStatus));
+
     
     if (gHttpHandler->IsTelemetryEnabled()) {
         
@@ -1605,8 +1610,24 @@ nsHttpChannel::ProcessResponse()
         Telemetry::Accumulate(Telemetry::HTTP_SAW_QUIC_ALT_PROTOCOL, saw_quic);
     }
 
-    LOG(("nsHttpChannel::ProcessResponse [this=%p httpStatus=%u]\n",
-        this, httpStatus));
+    
+    
+    
+    
+    
+    
+    
+    
+    nsCOMPtr<nsIURI> referrer = GetReferringPage();
+    if (!referrer) {
+        referrer = mReferrer;
+    }
+    if (referrer) {
+        nsCOMPtr<nsILoadContextInfo> lci = GetLoadContextInfo(this);
+        mozilla::net::Predictor::UpdateCacheability(mReferrer, mURI, httpStatus,
+                                                    mRequestHead, mResponseHead,
+                                                    lci);
+    }
 
     if (mTransaction->ProxyConnectFailed()) {
         
@@ -3386,8 +3407,14 @@ nsHttpChannel::OnCacheEntryCheck(nsICacheEntry* entry, nsIApplicationCache* appC
     }
     
     
-    else if (isForcedValid) {
+    
+    
+    else if (isForcedValid &&
+             (!mCachedResponseHead->ExpiresInPast() ||
+              !mCachedResponseHead->MustValidateIfExpired())) {
         LOG(("NOT validating based on isForcedValid being true.\n"));
+        Telemetry::AutoCounter<Telemetry::PREDICTOR_TOTAL_PREFETCHES_USED> used;
+        ++used;
         doValidation = false;
     }
     
@@ -6664,6 +6691,26 @@ nsHttpChannel::SetPin(bool aPin)
     ENSURE_CALLED_BEFORE_CONNECT();
 
     mPinCacheContent = aPin;
+    return NS_OK;
+}
+
+NS_IMETHODIMP
+nsHttpChannel::ForceCacheEntryValidFor(uint32_t aSecondsToTheFuture)
+{
+    if (!mCacheEntry) {
+        LOG(("nsHttpChannel::ForceCacheEntryValidFor found no cache entry "
+             "for this channel [this=%p].", this));
+    } else {
+        mCacheEntry->ForceValidFor(aSecondsToTheFuture);
+
+        nsAutoCString key;
+        mCacheEntry->GetKey(key);
+
+        LOG(("nsHttpChannel::ForceCacheEntryValidFor successfully forced valid "
+             "entry with key %s for %d seconds. [this=%p]", ToNewCString(key),
+             aSecondsToTheFuture, this));
+    }
+
     return NS_OK;
 }
 

@@ -1774,6 +1774,7 @@ pref("network.prefetch-next", true);
 
 pref("network.predictor.enabled", true);
 pref("network.predictor.enable-hover-on-ssl", false);
+pref("network.predictor.enable-prefetch", true);
 pref("network.predictor.page-degradation.day", 0);
 pref("network.predictor.page-degradation.week", 5);
 pref("network.predictor.page-degradation.month", 10);
@@ -1784,9 +1785,12 @@ pref("network.predictor.subresource-degradation.week", 10);
 pref("network.predictor.subresource-degradation.month", 25);
 pref("network.predictor.subresource-degradation.year", 50);
 pref("network.predictor.subresource-degradation.max", 100);
+pref("network.predictor.prefetch-rolling-load-count", 10);
+pref("network.predictor.prefetch-min-confidence", 100);
 pref("network.predictor.preconnect-min-confidence", 90);
 pref("network.predictor.preresolve-min-confidence", 60);
 pref("network.predictor.redirect-likely-confidence", 75);
+pref("network.predictor.prefetch-force-valid-for", 10);
 pref("network.predictor.max-resources-per-entry", 100);
 pref("network.predictor.max-uri-length", 500);
 pref("network.predictor.cleaned-up", false);
@@ -4957,6 +4961,7 @@ pref("dom.inter-app-communication-api.enabled", false);
 
 pref("dom.mapped_arraybuffer.enabled", false);
 
+#ifdef MOZ_SAFE_BROWSING
 
 pref("urlclassifier.malwareTable", "goog-malware-shavar,goog-unwanted-shavar,test-malware-simple,test-unwanted-simple");
 pref("urlclassifier.phishTable", "goog-phish-shavar,test-phish-simple");
@@ -4968,6 +4973,41 @@ pref("urlclassifier.disallow_completions", "test-malware-simple,test-phish-simpl
 
 pref("urlclassifier.trackingTable", "test-track-simple,mozstd-track-digest256");
 pref("urlclassifier.trackingWhitelistTable", "test-trackwhite-simple,mozstd-trackwhite-digest256");
+
+
+pref("urlclassifier.downloadBlockTable", "goog-badbinurl-shavar");
+
+
+pref("urlclassifier.gethashnoise", 4);
+
+
+pref("urlclassifier.gethash.timeout_ms", 5000);
+
+
+
+
+pref("urlclassifier.max-complete-age", 2700);
+
+pref("browser.safebrowsing.enabled", true);
+pref("browser.safebrowsing.malware.enabled", true);
+
+pref("browser.safebrowsing.downloads.remote.timeout_ms", 10000);
+pref("browser.safebrowsing.downloads.remote.url", "https://sb-ssl.google.com/safebrowsing/clientreport/download?key=%GOOGLE_API_KEY%");
+pref("browser.safebrowsing.downloads.remote.block_dangerous",            true);
+pref("browser.safebrowsing.downloads.remote.block_dangerous_host",       true);
+pref("browser.safebrowsing.downloads.remote.block_potentially_unwanted", false);
+pref("browser.safebrowsing.downloads.remote.block_uncommon",             false);
+pref("browser.safebrowsing.debug", false);
+
+pref("browser.safebrowsing.provider.google.lists", "goog-badbinurl-shavar,goog-downloadwhite-digest256,goog-phish-shavar,goog-malware-shavar,goog-unwanted-shavar");
+pref("browser.safebrowsing.provider.google.updateURL", "https://safebrowsing.google.com/safebrowsing/downloads?client=SAFEBROWSING_ID&appver=%VERSION%&pver=2.2&key=%GOOGLE_API_KEY%");
+pref("browser.safebrowsing.provider.google.gethashURL", "https://safebrowsing.google.com/safebrowsing/gethash?client=SAFEBROWSING_ID&appver=%VERSION%&pver=2.2");
+pref("browser.safebrowsing.provider.google.reportURL", "https://safebrowsing.google.com/safebrowsing/diagnostic?client=%NAME%&hl=%LOCALE%&site=");
+
+pref("browser.safebrowsing.reportPhishMistakeURL", "https://%LOCALE%.phish-error.mozilla.com/?hl=%LOCALE%&url=");
+pref("browser.safebrowsing.reportPhishURL", "https://%LOCALE%.phish-report.mozilla.com/?hl=%LOCALE%&url=");
+pref("browser.safebrowsing.reportMalwareMistakeURL", "https://%LOCALE%.malware-error.mozilla.com/?hl=%LOCALE%&url=");
+
 
 
 pref("browser.safebrowsing.forbiddenURIs.enabled", false);
@@ -4991,6 +5031,7 @@ pref("browser.safebrowsing.provider.mozilla.lists.mozfull.description", "mozfull
 
 
 pref("browser.safebrowsing.allowOverride", true);
+#endif
 
 
 pref("snav.enabled", false);
