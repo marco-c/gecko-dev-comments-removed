@@ -851,31 +851,6 @@ nsHttpConnectionMgr::ProcessAllTransactionsCB(const nsACString &key,
 
 
 PLDHashOperator
-nsHttpConnectionMgr::PurgeExcessIdleConnectionsCB(const nsACString &key,
-                                                  nsAutoPtr<nsConnectionEntry> &ent,
-                                                  void *closure)
-{
-    nsHttpConnectionMgr *self = (nsHttpConnectionMgr *) closure;
-
-    while (self->mNumIdleConns + self->mNumActiveConns + 1 >= self->mMaxConns) {
-        if (!ent->mIdleConns.Length()) {
-            
-            return PL_DHASH_NEXT;
-        }
-        nsHttpConnection *conn = ent->mIdleConns[0];
-        ent->mIdleConns.RemoveElementAt(0);
-        conn->Close(NS_ERROR_ABORT);
-        NS_RELEASE(conn);
-        self->mNumIdleConns--;
-        self->ConditionallyStopPruneDeadConnectionsTimer();
-    }
-    return PL_DHASH_STOP;
-}
-
-
-
-
-PLDHashOperator
 nsHttpConnectionMgr::PurgeExcessSpdyConnectionsCB(const nsACString &key,
                                                   nsAutoPtr<nsConnectionEntry> &ent,
                                                   void *closure)
@@ -1469,8 +1444,26 @@ nsHttpConnectionMgr::MakeNewConnection(nsConnectionEntry *ent,
     
     
 
-    if ((mNumIdleConns + mNumActiveConns + 1 >= mMaxConns) && mNumIdleConns)
-        mCT.Enumerate(PurgeExcessIdleConnectionsCB, this);
+    if ((mNumIdleConns + mNumActiveConns + 1 >= mMaxConns) && mNumIdleConns) {
+        
+        
+        
+        auto iter = mCT.Iter();
+        while (mNumIdleConns + mNumActiveConns + 1 >= mMaxConns &&
+               !iter.Done()) {
+            nsAutoPtr<nsConnectionEntry> &ent = iter.Data();
+            if (!ent->mIdleConns.Length()) {
+              iter.Next();
+              continue;
+            }
+            nsHttpConnection *conn = ent->mIdleConns[0];
+            ent->mIdleConns.RemoveElementAt(0);
+            conn->Close(NS_ERROR_ABORT);
+            NS_RELEASE(conn);
+            mNumIdleConns--;
+            ConditionallyStopPruneDeadConnectionsTimer();
+        }
+    }
 
     if ((mNumIdleConns + mNumActiveConns + 1 >= mMaxConns) &&
         mNumActiveConns && gHttpHandler->IsSpdyEnabled())
