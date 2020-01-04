@@ -868,7 +868,7 @@ protected:
   
   
   
-  MediaDecoderOwner* mOwner;
+  MediaDecoderOwner* const mOwner;
 
   
   FrameStatistics mFrameStats;
