@@ -112,6 +112,12 @@ bool IsSolidColor(gfx::SourceSurface* aSurface,
 
 
 
+bool IsSolidPalettedColor(Decoder* aDecoder, uint8_t aColor);
+
+
+
+
+
 
 
 
@@ -126,6 +132,15 @@ bool RowsAreSolidColor(gfx::SourceSurface* aSurface,
 
 
 
+bool PalettedRowsAreSolidColor(Decoder* aDecoder,
+                               int32_t aStartRow,
+                               int32_t aRowCount,
+                               uint8_t aColor);
+
+
+
+
+
 
 
 
@@ -133,6 +148,14 @@ bool RectIsSolidColor(gfx::SourceSurface* aSurface,
                       const gfx::IntRect& aRect,
                       BGRAColor aColor,
                       uint8_t aFuzz = 0);
+
+
+
+
+
+bool PalettedRectIsSolidColor(Decoder* aDecoder,
+                              const gfx::IntRect& aRect,
+                              uint8_t aColor);
 
 
 
@@ -225,6 +248,19 @@ void AssertCorrectPipelineFinalState(SurfaceFilter* aFilter,
 void CheckGeneratedImage(Decoder* aDecoder,
                          const gfx::IntRect& aRect,
                          uint8_t aFuzz = 0);
+
+
+
+
+
+
+
+
+
+
+
+
+void CheckGeneratedPalettedImage(Decoder* aDecoder, const gfx::IntRect& aRect);
 
 
 

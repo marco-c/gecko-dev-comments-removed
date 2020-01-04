@@ -95,6 +95,13 @@ IsSolidColor(SourceSurface* aSurface,
 }
 
 bool
+IsSolidPalettedColor(Decoder* aDecoder, uint8_t aColor)
+{
+  RawAccessFrameRef currentFrame = aDecoder->GetCurrentFrameRef();
+  return PalettedRectIsSolidColor(aDecoder, currentFrame->GetRect(), aColor);
+}
+
+bool
 RowsAreSolidColor(SourceSurface* aSurface,
                   int32_t aStartRow,
                   int32_t aRowCount,
@@ -104,6 +111,18 @@ RowsAreSolidColor(SourceSurface* aSurface,
   IntSize size = aSurface->GetSize();
   return RectIsSolidColor(aSurface, IntRect(0, aStartRow, size.width, aRowCount),
                           aColor, aFuzz);
+}
+
+bool
+PalettedRowsAreSolidColor(Decoder* aDecoder,
+                          int32_t aStartRow,
+                          int32_t aRowCount,
+                          uint8_t aColor)
+{
+  RawAccessFrameRef currentFrame = aDecoder->GetCurrentFrameRef();
+  IntRect frameRect = currentFrame->GetRect();
+  IntRect solidColorRect(frameRect.x, aStartRow, frameRect.width, aRowCount);
+  return PalettedRectIsSolidColor(aDecoder, solidColorRect, aColor);
 }
 
 bool
@@ -149,6 +168,43 @@ RectIsSolidColor(SourceSurface* aSurface,
   return true;
 }
 
+bool
+PalettedRectIsSolidColor(Decoder* aDecoder, const IntRect& aRect, uint8_t aColor)
+{
+  RawAccessFrameRef currentFrame = aDecoder->GetCurrentFrameRef();
+  uint8_t* imageData;
+  uint32_t imageLength;
+  currentFrame->GetImageData(&imageData, &imageLength);
+  ASSERT_TRUE_OR_RETURN(imageData, false);
+
+  
+  
+  
+  
+  IntRect frameRect = currentFrame->GetRect();
+  ASSERT_EQ_OR_RETURN(imageLength, uint32_t(frameRect.Area()), false);
+  IntRect rect = aRect.Intersect(frameRect);
+  ASSERT_EQ_OR_RETURN(rect.Area(), aRect.Area(), false);
+
+  
+  
+  
+  
+  rect -= frameRect.TopLeft();
+
+  
+  
+  int32_t rowLength = frameRect.width;
+  for (int32_t row = rect.y; row < rect.YMost(); ++row) {
+    for (int32_t col = rect.x; col < rect.XMost(); ++col) {
+      int32_t i = row * rowLength + col;
+      ASSERT_EQ_OR_RETURN(aColor, imageData[i], false);
+    }
+  }
+
+  return true;
+}
+
 
 
 
@@ -166,9 +222,10 @@ CreateTrivialDecoder()
   return decoder.forget();
 }
 
-void AssertCorrectPipelineFinalState(SurfaceFilter* aFilter,
-                                     const gfx::IntRect& aInputSpaceRect,
-                                     const gfx::IntRect& aOutputSpaceRect)
+void
+AssertCorrectPipelineFinalState(SurfaceFilter* aFilter,
+                                const gfx::IntRect& aInputSpaceRect,
+                                const gfx::IntRect& aOutputSpaceRect)
 {
   EXPECT_TRUE(aFilter->IsSurfaceFinished());
   Maybe<SurfaceInvalidRect> invalidRect = aFilter->TakeInvalidRect();
@@ -222,6 +279,50 @@ CheckGeneratedImage(Decoder* aDecoder,
   EXPECT_TRUE(RectIsSolidColor(surface,
                                IntRect(0, aRect.YMost(), surfaceSize.width, heightBelow),
                                BGRAColor::Transparent(), aFuzz));
+}
+
+void
+CheckGeneratedPalettedImage(Decoder* aDecoder, const IntRect& aRect)
+{
+  RawAccessFrameRef currentFrame = aDecoder->GetCurrentFrameRef();
+  IntSize imageSize = currentFrame->GetImageSize();
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  
+  EXPECT_TRUE(PalettedRectIsSolidColor(aDecoder, aRect, 255));
+
+  
+  EXPECT_TRUE(PalettedRectIsSolidColor(aDecoder,
+                                       IntRect(0, 0, imageSize.width, aRect.y),
+                                       0));
+
+  
+  EXPECT_TRUE(PalettedRectIsSolidColor(aDecoder,
+                                       IntRect(0, aRect.y, aRect.x, aRect.YMost()),
+                                       0));
+
+  
+  const int32_t widthOnRight = imageSize.width - aRect.XMost();
+  EXPECT_TRUE(PalettedRectIsSolidColor(aDecoder,
+                                       IntRect(aRect.XMost(), aRect.y, widthOnRight, aRect.YMost()),
+                                       0));
+
+  
+  const int32_t heightBelow = imageSize.height - aRect.YMost();
+  EXPECT_TRUE(PalettedRectIsSolidColor(aDecoder,
+                                       IntRect(0, aRect.YMost(), imageSize.width, heightBelow),
+                                       0));
 }
 
 void
