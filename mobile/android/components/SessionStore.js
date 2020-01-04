@@ -656,8 +656,12 @@ SessionStore.prototype = {
     }
 
     
-    log("_saveState() writing normal data, " +
-         normalData.windows[0].tabs.length + " tabs in window[0]");
+    if (normalData.windows[0] && normalData.windows[0].tabs) {
+      log("_saveState() writing normal data, " +
+           normalData.windows[0].tabs.length + " tabs in window[0]");
+    } else {
+      log("_saveState() writing empty normal data");
+    }
     this._writeFile(this._sessionFile, normalData, aAsync);
 
     
