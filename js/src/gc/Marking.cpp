@@ -1764,8 +1764,11 @@ GCMarker::stop()
 
     
     stack.reset();
-    for (GCZonesIter zone(runtime()); !zone.done(); zone.next())
-        zone->gcWeakKeys.clear();
+    AutoEnterOOMUnsafeRegion oomUnsafe;
+    for (GCZonesIter zone(runtime()); !zone.done(); zone.next()) {
+        if (!zone->gcWeakKeys.clear())
+            oomUnsafe.crash("clearing weak keys in GCMarker::stop()");
+    }
 }
 
 void
@@ -1820,8 +1823,11 @@ GCMarker::leaveWeakMarkingMode()
 
     
     
-    for (GCZonesIter zone(runtime()); !zone.done(); zone.next())
-        zone->gcWeakKeys.clear();
+    AutoEnterOOMUnsafeRegion oomUnsafe;
+    for (GCZonesIter zone(runtime()); !zone.done(); zone.next()) {
+        if (!zone->gcWeakKeys.clear())
+            oomUnsafe.crash("clearing weak keys in GCMarker::leaveWeakMarkingMode()");
+    }
 }
 
 void
