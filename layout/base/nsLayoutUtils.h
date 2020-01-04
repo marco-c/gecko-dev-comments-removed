@@ -834,10 +834,22 @@ public:
 
 
 
+
+
+
+
+
+
+
+
+
+
+
   static nsRect TransformFrameRectToAncestor(nsIFrame* aFrame,
                                              const nsRect& aRect,
                                              const nsIFrame* aAncestor,
-                                             bool* aPreservesAxisAlignedRectangles = nullptr);
+                                             bool* aPreservesAxisAlignedRectangles = nullptr,
+                                             mozilla::Maybe<Matrix4x4>* aMatrixCache = nullptr);
 
 
   
@@ -2562,7 +2574,8 @@ public:
     nsIFrame* aFrame,
     const nsIFrame* aAncestorFrame,
     nsRegion* aPreciseTargetDest,
-    nsRegion* aImpreciseTargetDest);
+    nsRegion* aImpreciseTargetDest,
+    mozilla::Maybe<Matrix4x4>* aMatrixCache);
 
   
 
