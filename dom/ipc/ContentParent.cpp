@@ -5188,7 +5188,8 @@ ContentParent::AllocPOfflineCacheUpdateParent(const URIParams& aManifestURI,
     }
     RefPtr<mozilla::docshell::OfflineCacheUpdateParent> update =
         new mozilla::docshell::OfflineCacheUpdateParent(
-            tabContext.OriginAttributesRef());
+            tabContext.OwnOrContainingAppId(),
+            tabContext.IsBrowserElement());
     
     return update.forget().take();
 }
