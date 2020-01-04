@@ -14,8 +14,12 @@
 #include "nsTArray.h"
 
 class nsCSSPropertySet;
+class nsPresContext;
+class nsStyleContext;
 
 namespace mozilla {
+
+class EffectSet;
 
 namespace dom {
 class Animation;
@@ -31,6 +35,30 @@ public:
   static nsTArray<RefPtr<dom::Animation>>
   GetAnimationsForCompositor(const nsIFrame* aFrame,
                              nsCSSProperty aProperty);
+
+
+  
+  
+  
+  
+  
+  
+  
+  static void
+  MaybeUpdateCascadeResults(dom::Element* aElement,
+                            nsCSSPseudoElements::Type aPseudoType,
+                            nsStyleContext* aStyleContext);
+
+  
+  
+  
+  
+  
+  
+  static void
+  UpdateCascadeResults(dom::Element* aElement,
+                       nsCSSPseudoElements::Type aPseudoType,
+                       nsStyleContext* aStyleContext);
 
   
   
@@ -50,6 +78,15 @@ public:
   static void
   GetOverriddenProperties(nsStyleContext* aStyleContext,
                           nsCSSPropertySet& aPropertiesOverridden);
+
+private:
+  static void
+  UpdateCascadeResults(EffectSet& aEffectSet,
+                       dom::Element* aElement,
+                       nsCSSPseudoElements::Type aPseudoType,
+                       nsStyleContext* aStyleContext);
+
+  static nsPresContext* GetPresContext(dom::Element* aElement);
 };
 
 } 
