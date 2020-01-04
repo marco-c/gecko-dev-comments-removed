@@ -29,8 +29,9 @@ namespace ipc {
 
 
 DaemonSocketPDU::DaemonSocketPDU(uint8_t aService, uint8_t aOpcode,
-                                 uint16_t aPayloadSize)
+                                       uint16_t aPayloadSize)
   : mConsumer(nullptr)
+  , mUserData(nullptr)
 {
   MOZ_COUNT_CTOR_INHERITED(DaemonSocketPDU, UnixSocketIOBuffer);
 
@@ -50,6 +51,7 @@ DaemonSocketPDU::DaemonSocketPDU(uint8_t aService, uint8_t aOpcode,
 
 DaemonSocketPDU::DaemonSocketPDU(size_t aPayloadSize)
   : mConsumer(nullptr)
+  , mUserData(nullptr)
 {
   MOZ_COUNT_CTOR_INHERITED(DaemonSocketPDU, UnixSocketIOBuffer);
 
@@ -101,7 +103,7 @@ DaemonSocketPDU::Send(int aFd)
   if (mConsumer) {
     
     
-    mConsumer->StoreResultHandler(*this);
+    mConsumer->StoreUserData(*this);
   }
 
   return res;
