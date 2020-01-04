@@ -2045,74 +2045,54 @@ CounterStyleManager::GetBuiltinStyle(int32_t aStyle)
   return &gBuiltinStyleTable[aStyle];
 }
 
-struct InvalidateOldStyleData
-{
-  explicit InvalidateOldStyleData(nsPresContext* aPresContext)
-    : mPresContext(aPresContext),
-      mChanged(false)
-  {
-  }
-
-  nsPresContext* mPresContext;
-  nsTArray<RefPtr<CounterStyle>> mToBeRemoved;
-  bool mChanged;
-};
-
-static PLDHashOperator
-InvalidateOldStyle(const nsSubstring& aKey,
-                   RefPtr<CounterStyle>& aStyle,
-                   void* aArg)
-{
-  InvalidateOldStyleData* data = static_cast<InvalidateOldStyleData*>(aArg);
-  bool toBeUpdated = false;
-  bool toBeRemoved = false;
-  nsCSSCounterStyleRule* newRule = data->mPresContext->
-    StyleSet()->CounterStyleRuleForName(aKey);
-  if (!newRule) {
-    if (aStyle->IsCustomStyle()) {
-      toBeRemoved = true;
-    }
-  } else {
-    if (!aStyle->IsCustomStyle()) {
-      toBeRemoved = true;
-    } else {
-      CustomCounterStyle* style =
-        static_cast<CustomCounterStyle*>(aStyle.get());
-      if (style->GetRule() != newRule) {
-        toBeRemoved = true;
-      } else if (style->GetRuleGeneration() != newRule->GetGeneration()) {
-        toBeUpdated = true;
-        style->ResetCachedData();
-      }
-    }
-  }
-  data->mChanged = data->mChanged || toBeUpdated || toBeRemoved;
-  if (toBeRemoved) {
-    if (aStyle->IsDependentStyle()) {
-      if (aStyle->IsCustomStyle()) {
-        
-        
-        
-        
-        static_cast<CustomCounterStyle*>(aStyle.get())->ResetDependentData();
-      }
-      
-      
-      
-      
-      data->mToBeRemoved.AppendElement(aStyle);
-    }
-    return PL_DHASH_REMOVE;
-  }
-  return PL_DHASH_NEXT;
-}
-
 bool
 CounterStyleManager::NotifyRuleChanged()
 {
-  InvalidateOldStyleData data(mPresContext);
-  mCacheTable.Enumerate(InvalidateOldStyle, &data);
-  if (data.mChanged) {
+  bool changed = false;
+  nsTArray<RefPtr<CounterStyle>> kungFuDeathGrip;
+  for (auto iter = mCacheTable.Iter(); !iter.Done(); iter.Next()) {
+    RefPtr<CounterStyle>& style = iter.Data();
+    bool toBeUpdated = false;
+    bool toBeRemoved = false;
+    nsCSSCounterStyleRule* newRule =
+      mPresContext->StyleSet()->CounterStyleRuleForName(iter.Key());
+    if (!newRule) {
+      if (style->IsCustomStyle()) {
+        toBeRemoved = true;
+      }
+    } else {
+      if (!style->IsCustomStyle()) {
+        toBeRemoved = true;
+      } else {
+        auto custom = static_cast<CustomCounterStyle*>(style.get());
+        if (custom->GetRule() != newRule) {
+          toBeRemoved = true;
+        } else if (custom->GetRuleGeneration() != newRule->GetGeneration()) {
+          toBeUpdated = true;
+          custom->ResetCachedData();
+        }
+      }
+    }
+    changed = changed || toBeUpdated || toBeRemoved;
+    if (toBeRemoved) {
+      if (style->IsDependentStyle()) {
+        if (style->IsCustomStyle()) {
+          
+          
+          
+          
+          static_cast<CustomCounterStyle*>(style.get())->ResetDependentData();
+        }
+        
+        
+        
+        kungFuDeathGrip.AppendElement(style);
+      }
+      iter.Remove();
+    }
+  }
+
+  if (changed) {
     for (auto iter = mCacheTable.Iter(); !iter.Done(); iter.Next()) {
       CounterStyle* style = iter.UserData();
       if (style->IsCustomStyle()) {
@@ -2123,7 +2103,7 @@ CounterStyleManager::NotifyRuleChanged()
       
     }
   }
-  return data.mChanged;
+  return changed;
 }
 
 } 
