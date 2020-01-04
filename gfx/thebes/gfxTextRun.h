@@ -901,6 +901,14 @@ public:
     
     void SetUserFontSet(gfxUserFontSet *aUserFontSet);
 
+    void ClearCachedData()
+    {
+        mUnderlineOffset = UNDERLINE_OFFSET_NOT_SET;
+        mSkipDrawing = false;
+        mHyphenWidth = -1;
+        mCachedEllipsisTextRun = nullptr;
+    }
+
     
     
     virtual void UpdateUserFonts();
