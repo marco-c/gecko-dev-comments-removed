@@ -1689,7 +1689,8 @@ CanvasRenderingContext2D::RegisterAllocation()
   
   
   static bool registered = false;
-  if (!registered) {
+  
+  if (!registered && false) {
     registered = true;
     RegisterStrongMemoryReporter(new Canvas2dPixelsReporter());
   }
