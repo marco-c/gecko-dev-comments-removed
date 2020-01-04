@@ -11,6 +11,7 @@ import android.text.Layout;
 import android.util.AttributeSet;
 
 import org.mozilla.gecko.R;
+import org.mozilla.gecko.widget.themed.ThemedTextView;
 
 
 

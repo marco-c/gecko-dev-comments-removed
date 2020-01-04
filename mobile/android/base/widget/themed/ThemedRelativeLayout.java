@@ -4,7 +4,7 @@
 
 
 
-package org.mozilla.gecko.widget;
+package org.mozilla.gecko.widget.themed;
 
 import org.mozilla.gecko.GeckoApplication;
 import org.mozilla.gecko.lwt.LightweightTheme;
@@ -19,7 +19,7 @@ import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.util.AttributeSet;
 
-public class ThemedImageButton extends android.widget.ImageButton
+public class ThemedRelativeLayout extends android.widget.RelativeLayout
                                      implements LightweightTheme.OnChangeListener {
     private LightweightTheme mTheme;
 
@@ -38,12 +38,12 @@ public class ThemedImageButton extends android.widget.ImageButton
 
     private ColorStateList mDrawableColors;
 
-    public ThemedImageButton(Context context, AttributeSet attrs) {
+    public ThemedRelativeLayout(Context context, AttributeSet attrs) {
         super(context, attrs);
         initialize(context, attrs, 0);
     }
 
-    public ThemedImageButton(Context context, AttributeSet attrs, int defStyle) {
+    public ThemedRelativeLayout(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
         initialize(context, attrs, defStyle);
     }
@@ -59,14 +59,6 @@ public class ThemedImageButton extends android.widget.ImageButton
         final TypedArray a = context.obtainStyledAttributes(attrs, R.styleable.LightweightTheme);
         mAutoUpdateTheme = mTheme != null && a.getBoolean(R.styleable.LightweightTheme_autoUpdateTheme, true);
         a.recycle();
-
-        final TypedArray themedA = context.obtainStyledAttributes(attrs, R.styleable.ThemedView, defStyle, 0);
-        mDrawableColors = themedA.getColorStateList(R.styleable.ThemedView_drawableTintList);
-        themedA.recycle();
-
-        
-        
-        setTintedImageDrawable(getDrawable());
     }
 
     @Override
@@ -168,25 +160,6 @@ public class ThemedImageButton extends android.widget.ImageButton
             else
                 mTheme.removeListener(this);
         }
-    }
-
-    @Override
-    public void setImageDrawable(final Drawable drawable) {
-        setTintedImageDrawable(drawable);
-    }
-
-    private void setTintedImageDrawable(final Drawable drawable) {
-        final Drawable tintedDrawable;
-        if (mDrawableColors == null) {
-            
-            
-            tintedDrawable = drawable;
-        } else if (drawable == null) {
-            tintedDrawable = null;
-        } else {
-            tintedDrawable = DrawableUtil.tintDrawableWithStateList(drawable, mDrawableColors);
-        }
-        super.setImageDrawable(tintedDrawable);
     }
 
     public ColorDrawable getColorDrawable(int id) {

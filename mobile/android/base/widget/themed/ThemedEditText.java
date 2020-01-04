@@ -4,7 +4,7 @@
 
 
 
-package org.mozilla.gecko.widget;
+package org.mozilla.gecko.widget.themed;
 
 import org.mozilla.gecko.GeckoApplication;
 import org.mozilla.gecko.lwt.LightweightTheme;

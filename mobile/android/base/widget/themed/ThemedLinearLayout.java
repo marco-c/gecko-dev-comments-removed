@@ -4,7 +4,7 @@
 
 
 
-package org.mozilla.gecko.widget;
+package org.mozilla.gecko.widget.themed;
 
 import org.mozilla.gecko.GeckoApplication;
 import org.mozilla.gecko.lwt.LightweightTheme;
@@ -19,7 +19,7 @@ import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.util.AttributeSet;
 
-public class ThemedTextSwitcher extends android.widget.TextSwitcher
+public class ThemedLinearLayout extends android.widget.LinearLayout
                                      implements LightweightTheme.OnChangeListener {
     private LightweightTheme mTheme;
 
@@ -38,7 +38,7 @@ public class ThemedTextSwitcher extends android.widget.TextSwitcher
 
     private ColorStateList mDrawableColors;
 
-    public ThemedTextSwitcher(Context context, AttributeSet attrs) {
+    public ThemedLinearLayout(Context context, AttributeSet attrs) {
         super(context, attrs);
         initialize(context, attrs, 0);
     }

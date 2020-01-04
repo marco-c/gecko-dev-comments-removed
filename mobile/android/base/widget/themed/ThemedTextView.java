@@ -4,7 +4,7 @@
 
 
 
-package org.mozilla.gecko.widget;
+package org.mozilla.gecko.widget.themed;
 
 import org.mozilla.gecko.GeckoApplication;
 import org.mozilla.gecko.lwt.LightweightTheme;
@@ -19,7 +19,7 @@ import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.util.AttributeSet;
 
-public class ThemedFrameLayout extends android.widget.FrameLayout
+public class ThemedTextView extends android.widget.TextView
                                      implements LightweightTheme.OnChangeListener {
     private LightweightTheme mTheme;
 
@@ -38,12 +38,12 @@ public class ThemedFrameLayout extends android.widget.FrameLayout
 
     private ColorStateList mDrawableColors;
 
-    public ThemedFrameLayout(Context context, AttributeSet attrs) {
+    public ThemedTextView(Context context, AttributeSet attrs) {
         super(context, attrs);
         initialize(context, attrs, 0);
     }
 
-    public ThemedFrameLayout(Context context, AttributeSet attrs, int defStyle) {
+    public ThemedTextView(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
         initialize(context, attrs, defStyle);
     }

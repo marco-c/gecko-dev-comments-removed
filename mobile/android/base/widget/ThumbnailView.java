@@ -13,7 +13,7 @@ import android.graphics.Matrix;
 import android.graphics.drawable.Drawable;
 import android.util.AttributeSet;
 import android.support.v4.content.ContextCompat;
-import android.widget.ImageView;
+import org.mozilla.gecko.widget.themed.ThemedImageView;
 
 
 
