@@ -237,7 +237,7 @@ WorkerGlobalScope::SetTimeout(JSContext* aCx,
 }
 
 int32_t
-WorkerGlobalScope::SetTimeout(JSContext* ,
+WorkerGlobalScope::SetTimeout(JSContext* aCx,
                               const nsAString& aHandler,
                               const int32_t aTimeout,
                               const Sequence<JS::Value>& ,
@@ -245,8 +245,8 @@ WorkerGlobalScope::SetTimeout(JSContext* ,
 {
   mWorkerPrivate->AssertIsOnWorkerThread();
   Sequence<JS::Value> dummy;
-  return mWorkerPrivate->SetTimeout(GetCurrentThreadJSContext(), nullptr,
-                                    aHandler, aTimeout, dummy, false, aRv);
+  return mWorkerPrivate->SetTimeout(aCx, nullptr, aHandler, aTimeout, dummy,
+                                    false, aRv);
 }
 
 void
