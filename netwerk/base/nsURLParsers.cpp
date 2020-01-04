@@ -497,12 +497,6 @@ nsAuthURLParser::ParseAuthority(const char *auth, int32_t authLen,
                              port);
         if (NS_FAILED(rv)) return rv;
         OFFSET_RESULT(hostname, p + 1 - auth);
-
-        
-        
-        if ((usernamePos || passwordPos) && (!hostnamePos || !*hostnameLen)) {
-            return NS_ERROR_MALFORMED_URI;
-        }
     }
     else {
         
@@ -606,7 +600,7 @@ nsAuthURLParser::ParseServerInfo(const char *serverinfo, int32_t serverinfoLen,
 
                 nsresult err;
                 *port = buf.ToInteger(&err);
-                if (NS_FAILED(err) || *port < 0)
+                if (NS_FAILED(err) || *port < 0 || *port > std::numeric_limits<uint16_t>::max())
                     return NS_ERROR_MALFORMED_URI;
             }
         }

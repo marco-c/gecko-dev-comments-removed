@@ -5,7 +5,7 @@ function run_test() {
   installTestEngine();
 
   
-  let url = "http://localhost:111111111";
+  let url = "http://localhost:999";
 
   Services.prefs.setCharPref("browser.search.geoip.url", url);
   Services.search.init(() => {
