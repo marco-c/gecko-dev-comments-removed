@@ -267,12 +267,6 @@ NS_FillArray(FallibleTArray<char>& aDest, nsIInputStream* aInput,
 
 
 
-extern bool
-NS_InputStreamIsCloneable(nsIInputStream* aSource);
-
-
-
-
 
 
 

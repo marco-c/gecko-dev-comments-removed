@@ -460,15 +460,7 @@ nsStorageInputStream::ReadSegments(nsWriteSegmentFun aWriter, void* aClosure,
         goto out;
       }
 
-      
-      
-      
-      
-      
-      
-      if (mSegmentEnd > 0) {
-        mSegmentNum++;
-      }
+      mSegmentNum++;
       mReadCursor = 0;
       mSegmentEnd = XPCOM_MIN(mSegmentSize, available);
       availableInSegment = mSegmentEnd;
