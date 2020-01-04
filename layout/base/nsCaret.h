@@ -168,6 +168,16 @@ class nsCaret final : public nsISelectionListener
                                       int32_t   aFrameOffset,
                                       nscoord*  aBidiIndicatorSize);
 
+    
+    
+    
+    
+    
+    static nsIFrame* GetFrameAndOffset(mozilla::dom::Selection* aSelection,
+                                       nsINode* aOverrideNode,
+                                       int32_t aOverrideOffset,
+                                       int32_t* aFrameOffset);
+
     size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
 
 protected:
