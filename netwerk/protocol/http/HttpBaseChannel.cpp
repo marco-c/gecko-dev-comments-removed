@@ -101,7 +101,6 @@ HttpBaseChannel::HttpBaseChannel()
   , mCorsIncludeCredentials(false)
   , mCorsMode(nsIHttpChannelInternal::CORS_MODE_NO_CORS)
   , mRedirectMode(nsIHttpChannelInternal::REDIRECT_MODE_FOLLOW)
-  , mFetchCacheMode(nsIHttpChannelInternal::FETCH_CACHE_MODE_DEFAULT)
   , mOnStartRequestCalled(false)
   , mTransferSize(0)
   , mDecodedBodySize(0)
@@ -2331,47 +2330,6 @@ HttpBaseChannel::SetRedirectMode(uint32_t aMode)
   return NS_OK;
 }
 
-NS_IMETHODIMP
-HttpBaseChannel::GetFetchCacheMode(uint32_t* aFetchCacheMode)
-{
-  *aFetchCacheMode = mFetchCacheMode;
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-HttpBaseChannel::SetFetchCacheMode(uint32_t aFetchCacheMode)
-{
-  ENSURE_CALLED_BEFORE_CONNECT();
-  MOZ_ASSERT(mFetchCacheMode == nsIHttpChannelInternal::FETCH_CACHE_MODE_DEFAULT,
-             "SetFetchCacheMode() should only be called once per channel");
-
-  mFetchCacheMode = aFetchCacheMode;
-
-  
-  switch (mFetchCacheMode) {
-  case nsIHttpChannelInternal::FETCH_CACHE_MODE_NO_STORE:
-    
-    
-    mLoadFlags |= INHIBIT_CACHING | LOAD_BYPASS_CACHE;
-    break;
-  case nsIHttpChannelInternal::FETCH_CACHE_MODE_RELOAD:
-    
-    
-    mLoadFlags |= LOAD_BYPASS_CACHE;
-    break;
-  case nsIHttpChannelInternal::FETCH_CACHE_MODE_NO_CACHE:
-    
-    mLoadFlags |= VALIDATE_ALWAYS;
-    break;
-  case nsIHttpChannelInternal::FETCH_CACHE_MODE_FORCE_CACHE:
-    
-    mLoadFlags |= LOAD_FROM_CACHE;
-    break;
-  }
-
-  return NS_OK;
-}
-
 
 
 
@@ -2855,9 +2813,6 @@ HttpBaseChannel::SetupReplacementChannel(nsIURI       *newURI,
 
     
     httpInternal->SetRedirectMode(mRedirectMode);
-
-    
-    httpInternal->SetFetchCacheMode(mFetchCacheMode);
   }
 
   

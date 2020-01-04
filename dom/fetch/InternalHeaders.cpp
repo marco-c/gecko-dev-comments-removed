@@ -176,17 +176,6 @@ InternalHeaders::IsSimpleHeader(const nsACString& aName, const nsACString& aValu
 
 
 bool
-InternalHeaders::IsRevalidationHeader(const nsACString& aName)
-{
-  return aName.EqualsLiteral("if-modified-since") ||
-         aName.EqualsLiteral("if-none-match") ||
-         aName.EqualsLiteral("if-unmodified-since") ||
-         aName.EqualsLiteral("if-match") ||
-         aName.EqualsLiteral("if-range");
-}
-
-
-bool
 InternalHeaders::IsInvalidName(const nsACString& aName, ErrorResult& aRv)
 {
   if (!NS_IsValidHTTPToken(aName)) {
@@ -292,18 +281,6 @@ InternalHeaders::HasOnlySimpleHeaders() const
   }
 
   return true;
-}
-
-bool
-InternalHeaders::HasRevalidationHeaders() const
-{
-  for (uint32_t i = 0; i < mList.Length(); ++i) {
-    if (IsRevalidationHeader(mList[i].mName)) {
-      return true;
-    }
-  }
-
-  return false;
 }
 
 
