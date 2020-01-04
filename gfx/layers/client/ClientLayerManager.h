@@ -202,11 +202,6 @@ public:
                     const mozilla::TimeStamp& aCompositeStart,
                     const mozilla::TimeStamp& aCompositeEnd);
 
-  virtual bool SupportsMixBlendModes(EnumSet<gfx::CompositionOp>& aMixBlendModes) override
-  {
-   return (GetTextureFactoryIdentifier().mSupportedBlendModes & aMixBlendModes) == aMixBlendModes;
-  }
-
   virtual bool AreComponentAlphaLayersEnabled() override;
 
   
