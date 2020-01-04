@@ -173,7 +173,7 @@ nssCryptokiObjectArray_Destroy(
 
 
 typedef struct
-{
+    {
     NSSArena *arena;
     nssCryptokiObject *object;
     CK_ATTRIBUTE_PTR attributes;
@@ -315,7 +315,8 @@ create_object_array(
         *doObjects = PR_FALSE;
         *status = PR_FAILURE;
         *numObjects = 0;
-    } else {
+    }
+    else {
         rvOandA = nss_ZNEWARRAY(NULL,
                                 nssCryptokiObjectAndAttributes *,
                                 *numObjects + 1);
@@ -436,14 +437,16 @@ search_for_objects(
             
             cache->loggedIn = PR_TRUE;
             doSearch = PR_TRUE;
-        } else {
+        }
+        else {
             if (cache->loggedIn) {
                 
                 clear_cache(cache);
                 cache->loggedIn = PR_FALSE;
             } 
         }
-    } else {
+    }
+    else {
         
         doSearch = PR_TRUE;
     }
@@ -575,7 +578,8 @@ get_token_objects_for_cache(
     }
     if (status == PR_SUCCESS) {
         nss_ZFreeIf(objects);
-    } else {
+    }
+    else {
         PRUint32 j;
         for (j = 0; j < i; j++) {
             
@@ -820,7 +824,8 @@ nssTokenObjectCache_GetObjectAttributes(
                         atemplate[i].ulValueLen < attr->ulValueLen) {
                         goto loser;
                     }
-                } else {
+                }
+                else {
                     atemplate[i].pValue = nss_ZAlloc(arena, attr->ulValueLen);
                     if (!atemplate[i].pValue) {
                         goto loser;
@@ -901,13 +906,15 @@ nssTokenObjectCache_ImportObject(
         (*oa)->object->token = NULL;
         nssCryptokiObject_Destroy((*oa)->object);
         nssArena_Destroy((*oa)->arena);
-    } else {
+    }
+    else {
         
         if (count > 0) {
             *otype = nss_ZREALLOCARRAY(*otype,
                                        nssCryptokiObjectAndAttributes *,
                                        count + 2);
-        } else {
+        }
+        else {
             *otype = nss_ZNEWARRAY(NULL, nssCryptokiObjectAndAttributes *, 2);
         }
     }
@@ -915,7 +922,8 @@ nssTokenObjectCache_ImportObject(
         nssCryptokiObject *copyObject = nssCryptokiObject_Clone(object);
         (*otype)[count] = create_object_of_type(copyObject, objectType,
                                                 &status);
-    } else {
+    }
+    else {
         status = PR_FAILURE;
     }
     PZ_Unlock(cache->lock);

@@ -148,7 +148,7 @@ nss_MD_os2_map_send_error(PRInt32 err)
 {
     PRErrorCode prError;
     switch (err) {
-        
+      
         default:
             nss_MD_os2_map_default_error(err);
             return;

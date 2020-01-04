@@ -142,7 +142,8 @@ ssl2_GatherData(sslSocket *ss, sslGather *gs, int flags)
 
 
                         return SECWouldBlock;
-                    } else if (gs->hdr[0] == content_alert) {
+                    }
+                    else if (gs->hdr[0] == content_alert) {
                         if (ss->nextHandshake == ssl2_HandleServerHelloMessage) {
                             
 
@@ -159,7 +160,8 @@ ssl2_GatherData(sslSocket *ss, sslGather *gs, int flags)
                     
                     gs->count = ((gs->hdr[0] & 0x7f) << 8) | gs->hdr[1];
                     gs->recordPadding = 0;
-                } else {
+                }
+                else {
                     
                     gs->count = ((gs->hdr[0] & 0x3f) << 8) | gs->hdr[1];
                     
@@ -185,7 +187,8 @@ ssl2_GatherData(sslSocket *ss, sslGather *gs, int flags)
                     pBuf[0] = gs->hdr[2];
                     gs->offset = 1;
                     gs->remainder = gs->count - 1;
-                } else {
+                }
+                else {
                     gs->offset = 0;
                     gs->remainder = gs->count;
                 }
@@ -194,7 +197,8 @@ ssl2_GatherData(sslSocket *ss, sslGather *gs, int flags)
                     gs->state = GS_MAC;
                     gs->recordLen = gs->count - gs->recordPadding -
                                     ss->sec.hash->length;
-                } else {
+                }
+                else {
                     gs->state = GS_DATA;
                     gs->recordLen = gs->count;
                 }
@@ -282,7 +286,8 @@ ssl2_GatherData(sslSocket *ss, sslGather *gs, int flags)
                             rv = SECFailure;
                             goto cleanup;
                         }
-                    } else {
+                    }
+                    else {
                         ssl_ReleaseSpecReadLock(ss); 
                     }
 
@@ -291,7 +296,8 @@ ssl2_GatherData(sslSocket *ss, sslGather *gs, int flags)
                         gs->readOffset = macLen;
                         gs->writeOffset = gs->offset - gs->recordPadding;
                         rv = 1;
-                    } else {
+                    }
+                    else {
                         PORT_SetError(SSL_ERROR_BAD_BLOCK_PADDING);
                     cleanup:
                         

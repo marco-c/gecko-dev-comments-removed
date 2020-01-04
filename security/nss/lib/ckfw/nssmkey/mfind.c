@@ -110,7 +110,8 @@ ckmk_attrmatch(
 
     if (PR_TRUE == prb) {
         return CK_TRUE;
-    } else {
+    }
+    else {
         return CK_FALSE;
     }
 }
@@ -135,23 +136,25 @@ ckmk_match(
 
 #define CKMK_ITEM_CHUNK 20
 
-#define PUT_OBJECT(obj, err, size, count, list)                             \
-    {                                                                       \
-        if (count >= size) {                                                \
-            (list) = (list) ? nss_ZREALLOCARRAY(list, ckmkInternalObject *, \
-                                                ((size) +                   \
-                                                 CKMK_ITEM_CHUNK))          \
-                            : nss_ZNEWARRAY(NULL, ckmkInternalObject *,     \
-                                            ((size) +                       \
-                                             CKMK_ITEM_CHUNK));             \
-            if ((ckmkInternalObject **)NULL == list) {                      \
-                err = CKR_HOST_MEMORY;                                      \
-                goto loser;                                                 \
-            }                                                               \
-            (size) += CKMK_ITEM_CHUNK;                                      \
-        }                                                                   \
-        (list)[count] = (obj);                                              \
-        count++;                                                            \
+#define PUT_OBJECT(obj, err, size, count, list)                           \
+    {                                                                     \
+        if (count >= size) {                                              \
+            (list) = (list) ?                                             \
+                            nss_ZREALLOCARRAY(list, ckmkInternalObject *, \
+                                              ((size) +                   \
+                                               CKMK_ITEM_CHUNK))          \
+                            :                                             \
+                            nss_ZNEWARRAY(NULL, ckmkInternalObject *,     \
+                                          ((size) +                       \
+                                           CKMK_ITEM_CHUNK));             \
+            if ((ckmkInternalObject **)NULL == list) {                    \
+                err = CKR_HOST_MEMORY;                                    \
+                goto loser;                                               \
+            }                                                             \
+            (size) += CKMK_ITEM_CHUNK;                                    \
+        }                                                                 \
+        (list)[count] = (obj);                                            \
+        count++;                                                          \
     }
 
 
@@ -198,7 +201,8 @@ collect_class(
             
             PUT_OBJECT(next, *pError, *sizep, count, *listp);
             next = NULL; 
-        } else {
+        }
+        else {
             
             CFRelease(itemRef);
             
