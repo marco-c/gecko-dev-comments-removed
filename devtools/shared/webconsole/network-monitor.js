@@ -6,7 +6,7 @@
 
 "use strict";
 
-const {Cc, Ci, Cu, Cr} = require("chrome");
+const {Cc, Ci, Cm, Cu, Cr, components} = require("chrome");
 const Services = require("Services");
 
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
@@ -47,6 +47,236 @@ const RESPONSE_BODY_LIMIT = 1048576;
 
 
 
+function matchRequest(channel, filters) {
+  
+  if (!filters.topFrame && !filters.window && !filters.appId) {
+    return true;
+  }
+
+  
+  
+  
+  
+  
+  if (!DevToolsUtils.testing && channel.loadInfo &&
+      channel.loadInfo.loadingDocument === null &&
+      channel.loadInfo.loadingPrincipal ===
+      Services.scriptSecurityManager.getSystemPrincipal()) {
+    return false;
+  }
+
+  if (filters.window) {
+    
+    
+    let win = NetworkHelper.getWindowForRequest(channel);
+    while (win) {
+      if (win == filters.window) {
+        return true;
+      }
+      if (win.parent == win) {
+        break;
+      }
+      win = win.parent;
+    }
+  }
+
+  if (filters.topFrame) {
+    let topFrame = NetworkHelper.getTopFrameForRequest(channel);
+    if (topFrame && topFrame === filters.topFrame) {
+      return true;
+    }
+  }
+
+  if (filters.appId) {
+    let appId = NetworkHelper.getAppIdForRequest(channel);
+    if (appId && appId == filters.appId) {
+      return true;
+    }
+  }
+
+  
+  
+  
+  if (channel.loadInfo &&
+      channel.loadInfo.externalContentPolicyType ==
+      Ci.nsIContentPolicy.TYPE_BEACON) {
+    let nonE10sMatch = filters.window &&
+        channel.loadInfo.loadingDocument === filters.window.document;
+    const loadingPrincipal = channel.loadInfo.loadingPrincipal;
+    let e10sMatch = filters.topFrame &&
+        filters.topFrame.contentPrincipal &&
+        filters.topFrame.contentPrincipal.equals(loadingPrincipal) &&
+        filters.topFrame.contentPrincipal.URI.spec == channel.referrer.spec;
+    let b2gMatch = filters.appId && loadingPrincipal.appId === filters.appId;
+    if (nonE10sMatch || e10sMatch || b2gMatch) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+
+
+
+
+const SINK_CLASS_DESCRIPTION = "NetworkMonitor Channel Event Sink";
+const SINK_CLASS_ID = components.ID("{e89fa076-c845-48a8-8c45-2604729eba1d}");
+const SINK_CONTRACT_ID = "@mozilla.org/network/monitor/channeleventsink;1";
+const SINK_CATEGORY_NAME = "net-channel-event-sinks";
+
+function ChannelEventSink() {
+  this.wrappedJSObject = this;
+  this.collectors = new Set();
+}
+
+ChannelEventSink.prototype = {
+  QueryInterface: XPCOMUtils.generateQI([Ci.nsIChannelEventSink]),
+
+  registerCollector(collector) {
+    this.collectors.add(collector);
+  },
+
+  unregisterCollector(collector) {
+    this.collectors.delete(collector);
+
+    if (this.collectors.size == 0) {
+      ChannelEventSinkFactory.unregister();
+    }
+  },
+
+  asyncOnChannelRedirect(oldChannel, newChannel, flags, callback) {
+    for (let collector of this.collectors) {
+      try {
+        collector.onChannelRedirect(oldChannel, newChannel, flags);
+      } catch (ex) {
+        console.error("StackTraceCollector.onChannelRedirect threw an exception", ex);
+      }
+    }
+    callback.onRedirectVerifyCallback(Cr.NS_OK);
+  }
+};
+
+const ChannelEventSinkFactory = XPCOMUtils.generateSingletonFactory(ChannelEventSink);
+
+ChannelEventSinkFactory.register = function () {
+  const registrar = Cm.QueryInterface(Ci.nsIComponentRegistrar);
+  if (registrar.isCIDRegistered(SINK_CLASS_ID)) {
+    return;
+  }
+
+  registrar.registerFactory(SINK_CLASS_ID,
+                            SINK_CLASS_DESCRIPTION,
+                            SINK_CONTRACT_ID,
+                            ChannelEventSinkFactory);
+
+  XPCOMUtils.categoryManager.addCategoryEntry(SINK_CATEGORY_NAME, SINK_CONTRACT_ID,
+    SINK_CONTRACT_ID, false, true);
+};
+
+ChannelEventSinkFactory.unregister = function () {
+  const registrar = Cm.QueryInterface(Ci.nsIComponentRegistrar);
+  registrar.unregisterFactory(SINK_CLASS_ID, ChannelEventSinkFactory);
+
+  XPCOMUtils.categoryManager.deleteCategoryEntry(SINK_CATEGORY_NAME, SINK_CONTRACT_ID,
+    false);
+};
+
+ChannelEventSinkFactory.getService = function () {
+  
+  ChannelEventSinkFactory.register();
+
+  return Cc[SINK_CONTRACT_ID].getService(Ci.nsIChannelEventSink).wrappedJSObject;
+};
+
+function StackTraceCollector(filters) {
+  this.filters = filters;
+  this.stacktracesById = new Map();
+}
+
+StackTraceCollector.prototype = {
+  init() {
+    Services.obs.addObserver(this, "http-on-opening-request", false);
+    ChannelEventSinkFactory.getService().registerCollector(this);
+  },
+
+  destroy() {
+    Services.obs.removeObserver(this, "http-on-opening-request");
+    ChannelEventSinkFactory.getService().unregisterCollector(this);
+  },
+
+  _saveStackTrace(channel, stacktrace) {
+    this.stacktracesById.set(channel.channelId, stacktrace);
+  },
+
+  observe(subject) {
+    let channel = subject.QueryInterface(Ci.nsIHttpChannel);
+
+    if (!matchRequest(channel, this.filters)) {
+      return;
+    }
+
+    
+    
+    let frame = components.stack;
+    let stacktrace = [];
+    if (frame && frame.caller) {
+      frame = frame.caller;
+      while (frame) {
+        stacktrace.push({
+          filename: frame.filename,
+          lineNumber: frame.lineNumber,
+          columnNumber: frame.columnNumber,
+          functionName: frame.name
+        });
+        if (frame.asyncCaller) {
+          frame = frame.asyncCaller;
+        } else {
+          frame = frame.caller;
+        }
+      }
+    }
+
+    this._saveStackTrace(channel, stacktrace);
+  },
+
+  onChannelRedirect(oldChannel, newChannel, flags) {
+    
+    try {
+      oldChannel.QueryInterface(Ci.nsIHttpChannel);
+      newChannel.QueryInterface(Ci.nsIHttpChannel);
+    } catch (ex) {
+      return;
+    }
+
+    let oldId = oldChannel.channelId;
+    let stacktrace = this.stacktracesById.get(oldId);
+    if (stacktrace) {
+      this.stacktracesById.delete(oldId);
+      this._saveStackTrace(newChannel, stacktrace);
+    }
+  },
+
+  getStackTrace(channelId) {
+    let trace = this.stacktracesById.get(channelId);
+    this.stacktracesById.delete(channelId);
+    return trace;
+  }
+};
+
+exports.StackTraceCollector = StackTraceCollector;
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -63,7 +293,6 @@ function NetworkResponseListener(owner, httpActivity) {
   this._wrappedNotificationCallbacks = channel.notificationCallbacks;
   channel.notificationCallbacks = this;
 }
-exports.NetworkResponseListener = NetworkResponseListener;
 
 NetworkResponseListener.prototype = {
   QueryInterface:
@@ -479,15 +708,9 @@ NetworkResponseListener.prototype = {
 
 
 
+
 function NetworkMonitor(filters, owner) {
-  if (filters) {
-    this.window = filters.window;
-    this.appId = filters.appId;
-    this.topFrame = filters.topFrame;
-  }
-  if (!this.window && !this.appId && !this.topFrame) {
-    this._logEverything = true;
-  }
+  this.filters = filters;
   this.owner = owner;
   this.openRequests = {};
   this.openResponses = {};
@@ -495,13 +718,11 @@ function NetworkMonitor(filters, owner) {
     DevToolsUtils.makeInfallible(this._httpResponseExaminer).bind(this);
   this._serviceWorkerRequest = this._serviceWorkerRequest.bind(this);
 }
+
 exports.NetworkMonitor = NetworkMonitor;
 
 NetworkMonitor.prototype = {
-  _logEverything: false,
-  window: null,
-  appId: null,
-  topFrame: null,
+  filters: null,
 
   httpTransactionCodes: {
     0x5001: "REQUEST_HEADER",
@@ -566,7 +787,7 @@ NetworkMonitor.prototype = {
   _serviceWorkerRequest: function (subject, topic, data) {
     let channel = subject.QueryInterface(Ci.nsIHttpChannel);
 
-    if (!this._matchRequest(channel)) {
+    if (!matchRequest(channel, this.filters)) {
       return;
     }
 
@@ -602,7 +823,7 @@ NetworkMonitor.prototype = {
 
     let channel = subject.QueryInterface(Ci.nsIHttpChannel);
 
-    if (!this._matchRequest(channel)) {
+    if (!matchRequest(channel, this.filters)) {
       return;
     }
 
@@ -759,84 +980,6 @@ NetworkMonitor.prototype = {
   
 
 
-
-
-
-
-
-
-
-  _matchRequest: function (channel) {
-    if (this._logEverything) {
-      return true;
-    }
-
-    
-    
-    
-    
-    
-    if (!DevToolsUtils.testing && channel.loadInfo &&
-        channel.loadInfo.loadingDocument === null &&
-        channel.loadInfo.loadingPrincipal ===
-        Services.scriptSecurityManager.getSystemPrincipal()) {
-      return false;
-    }
-
-    if (this.window) {
-      
-      
-      let win = NetworkHelper.getWindowForRequest(channel);
-      while (win) {
-        if (win == this.window) {
-          return true;
-        }
-        if (win.parent == win) {
-          break;
-        }
-        win = win.parent;
-      }
-    }
-
-    if (this.topFrame) {
-      let topFrame = NetworkHelper.getTopFrameForRequest(channel);
-      if (topFrame && topFrame === this.topFrame) {
-        return true;
-      }
-    }
-
-    if (this.appId) {
-      let appId = NetworkHelper.getAppIdForRequest(channel);
-      if (appId && appId == this.appId) {
-        return true;
-      }
-    }
-
-    
-    
-    
-    if (channel.loadInfo &&
-        channel.loadInfo.externalContentPolicyType ==
-        Ci.nsIContentPolicy.TYPE_BEACON) {
-      let nonE10sMatch = this.window &&
-          channel.loadInfo.loadingDocument === this.window.document;
-      const loadingPrincipal = channel.loadInfo.loadingPrincipal;
-      let e10sMatch = this.topFrame &&
-          this.topFrame.contentPrincipal &&
-          this.topFrame.contentPrincipal.equals(loadingPrincipal) &&
-          this.topFrame.contentPrincipal.URI.spec == channel.referrer.spec;
-      let b2gMatch = this.appId && loadingPrincipal.appId === this.appId;
-      if (nonE10sMatch || e10sMatch || b2gMatch) {
-        return true;
-      }
-    }
-
-    return false;
-  },
-
-  
-
-
   _createNetworkEvent: function (channel, { timestamp, extraStringData,
                                            fromCache, fromServiceWorker }) {
     let win = NetworkHelper.getWindowForRequest(channel);
@@ -857,6 +1000,7 @@ NetworkMonitor.prototype = {
 
     let event = {};
     event.method = channel.requestMethod;
+    event.channelId = channel.channelId;
     event.url = channel.URI.spec;
     event.private = httpActivity.private;
     event.headersSize = 0;
@@ -872,11 +1016,25 @@ NetworkMonitor.prototype = {
     }
 
     
+    let causeType = channel.loadInfo.externalContentPolicyType;
+    let loadingPrincipal = channel.loadInfo.loadingPrincipal;
+    let causeUri = loadingPrincipal ? loadingPrincipal.URI : null;
+    let stacktrace;
+    
+    
+    if (this.owner.stackTraceCollector) {
+      stacktrace = this.owner.stackTraceCollector.getStackTrace(event.channelId);
+    }
+
+    event.cause = {
+      type: causeType,
+      loadingDocumentUri: causeUri ? causeUri.spec : null,
+      stacktrace
+    };
+
     httpActivity.isXHR = event.isXHR =
-      (channel.loadInfo.externalContentPolicyType ===
-       Ci.nsIContentPolicy.TYPE_XMLHTTPREQUEST ||
-       channel.loadInfo.externalContentPolicyType ===
-       Ci.nsIContentPolicy.TYPE_FETCH);
+        (causeType === Ci.nsIContentPolicy.TYPE_XMLHTTPREQUEST ||
+         causeType === Ci.nsIContentPolicy.TYPE_FETCH);
 
     
     let httpVersionMaj = {};
@@ -932,12 +1090,11 @@ NetworkMonitor.prototype = {
 
 
   _onRequestHeader: function (channel, timestamp, extraStringData) {
-    if (!this._matchRequest(channel)) {
+    if (!matchRequest(channel, this.filters)) {
       return;
     }
 
-    this._createNetworkEvent(channel, { timestamp: timestamp,
-                                         extraStringData: extraStringData });
+    this._createNetworkEvent(channel, { timestamp, extraStringData });
   },
 
   
@@ -1227,8 +1384,7 @@ NetworkMonitor.prototype = {
     this.openRequests = {};
     this.openResponses = {};
     this.owner = null;
-    this.window = null;
-    this.topFrame = null;
+    this.filters = null;
   },
 };
 
@@ -1264,6 +1420,7 @@ function NetworkMonitorChild(appId, messageManager, connID, owner) {
   this._onUpdateEvent = this._onUpdateEvent.bind(this);
   this._netEvents = new Map();
 }
+
 exports.NetworkMonitorChild = NetworkMonitorChild;
 
 NetworkMonitorChild.prototype = {
@@ -1280,7 +1437,6 @@ NetworkMonitorChild.prototype = {
     this._saveRequestAndResponseBodies = val;
 
     this._messageManager.sendAsyncMessage("debug:netmonitor:" + this.connID, {
-      appId: this.appId,
       action: "setPreferences",
       preferences: {
         saveRequestAndResponseBodies: this._saveRequestAndResponseBodies,
@@ -1302,6 +1458,13 @@ NetworkMonitorChild.prototype = {
 
   _onNewEvent: DevToolsUtils.makeInfallible(function _onNewEvent(msg) {
     let {id, event} = msg.data;
+
+    
+    if (this.owner.stackTraceCollector) {
+      event.cause.stacktrace =
+        this.owner.stackTraceCollector.getStackTrace(event.channelId);
+    }
+
     let actor = this.owner.onNetworkEvent(event);
     this._netEvents.set(id, Cu.getWeakReference(actor));
   }),
@@ -1448,11 +1611,12 @@ NetworkMonitorManager.prototype = {
 
 
   onNetMonitorMessage: DevToolsUtils.makeInfallible(function (msg) {
-    let { action, appId } = msg.json;
+    let {action} = msg.json;
     
     switch (action) {
       case "start":
         if (!this.netMonitor) {
+          let {appId} = msg.json;
           this.netMonitor = new NetworkMonitor({
             topFrame: this.frame,
             appId: appId,
@@ -1460,7 +1624,6 @@ NetworkMonitorManager.prototype = {
           this.netMonitor.init();
         }
         break;
-
       case "setPreferences": {
         let {preferences} = msg.json;
         for (let key of Object.keys(preferences)) {
