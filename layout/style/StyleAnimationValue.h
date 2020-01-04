@@ -271,6 +271,7 @@ public:
     eUnit_Percent,
     eUnit_Float,
     eUnit_Color,
+    eUnit_CurrentColor,
     eUnit_Calc, 
                 
     eUnit_ObjectPosition, 
@@ -433,6 +434,7 @@ public:
   void SetPercentValue(float aPercent);
   void SetFloatValue(float aFloat);
   void SetColorValue(nscolor aColor);
+  void SetCurrentColorValue();
   void SetUnparsedStringValue(const nsString& aString);
 
   
