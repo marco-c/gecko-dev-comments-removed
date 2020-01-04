@@ -2472,8 +2472,6 @@ ObjectClient.prototype = {
 
 
 
-
-
   enumProperties: DebuggerClient.requester({
     type: "enumProperties",
     options: args(0)

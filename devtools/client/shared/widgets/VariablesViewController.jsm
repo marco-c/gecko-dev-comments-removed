@@ -259,7 +259,6 @@ VariablesViewController.prototype = {
       
       let options = {
         ignoreNonIndexedProperties: true,
-        ignoreSafeGetters: true,
         query: aQuery
       };
       objectClient.enumProperties(options, ({ iterator }) => {
