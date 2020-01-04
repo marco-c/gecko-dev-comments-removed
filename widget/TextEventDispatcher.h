@@ -158,9 +158,9 @@ public:
 
 
   nsresult AppendClauseToPendingComposition(uint32_t aLength,
-                                            uint32_t aAttribute)
+                                            TextRangeType aTextRangeType)
   {
-    return mPendingComposition.AppendClause(aLength, aAttribute);
+    return mPendingComposition.AppendClause(aLength, aTextRangeType);
   }
 
   
@@ -304,7 +304,7 @@ private:
   public:
     PendingComposition();
     nsresult SetString(const nsAString& aString);
-    nsresult AppendClause(uint32_t aLength, uint32_t aAttribute);
+    nsresult AppendClause(uint32_t aLength, TextRangeType aTextRangeType);
     nsresult SetCaret(uint32_t aOffset, uint32_t aLength);
     nsresult Set(const nsAString& aString, const TextRangeArray* aRanges);
     nsresult Flush(TextEventDispatcher* aDispatcher,

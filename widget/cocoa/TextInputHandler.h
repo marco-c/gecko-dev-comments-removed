@@ -966,8 +966,8 @@ private:
 
 
 
-  uint32_t ConvertToTextRangeType(uint32_t aUnderlineStyle,
-                                  NSRange& aSelectedRange);
+  TextRangeType ConvertToTextRangeType(uint32_t aUnderlineStyle,
+                                       NSRange& aSelectedRange);
 
   
 
