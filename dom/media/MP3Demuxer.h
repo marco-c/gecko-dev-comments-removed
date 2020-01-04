@@ -26,6 +26,11 @@ public:
   bool IsSeekable() const override;
   void NotifyDataArrived(uint32_t aLength, int64_t aOffset) override;
   void NotifyDataRemoved() override;
+  
+  
+  
+  
+  bool ShouldComputeStartTime() const override { return false; }
 
 private:
   
