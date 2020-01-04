@@ -63,17 +63,15 @@ NS_IMPL_ISUPPORTS(nsXULAlerts, nsIAlertsService, nsIAlertsDoNotDisturb, nsIAlert
  already_AddRefed<nsXULAlerts>
 nsXULAlerts::GetInstance()
 {
-#ifdef MOZ_WIDGET_ANDROID
   
-  return nullptr;
-#else
+#ifndef MOZ_WIDGET_ANDROID
   if (!gXULAlerts) {
     gXULAlerts = new nsXULAlerts();
     ClearOnShutdown(&gXULAlerts);
   }
+#endif 
   RefPtr<nsXULAlerts> instance = gXULAlerts.get();
   return instance.forget();
-#endif 
 }
 
 NS_IMETHODIMP
