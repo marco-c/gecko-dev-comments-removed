@@ -207,3 +207,7 @@ notification[type="critical"] {
 .popup-notification-menubutton > .button-menubutton-button[disabled] {
   opacity: 0.5;
 }
+
+@media (-moz-windows-default-theme) {
+  color: #aa1b08;
+}

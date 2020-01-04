@@ -55,6 +55,18 @@ function getAnchorFromBrowser(aBrowser, aAnchorID) {
   return null;
 }
 
+function getNotificationFromElement(aElement) {
+  
+  
+  
+  
+  let notificationEl;
+  let parent = aElement;
+  while (parent && (parent = aElement.ownerDocument.getBindingParent(parent)))
+    notificationEl = parent;
+  return notificationEl;
+}
+
 
 
 
@@ -72,6 +84,8 @@ function Notification(id, message, anchorID, mainAction, secondaryActions,
   this.options = options || {};
 
   this._dismissed = false;
+  
+  this._checkboxChecked = null;
   this.wasDismissed = false;
   this.recordedTelemetryStats = new Set();
   this.isPrivate = PrivateBrowsingUtils.isWindowPrivate(
@@ -253,6 +267,27 @@ PopupNotifications.prototype = {
   },
 
   
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -705,12 +740,57 @@ PopupNotifications.prototype = {
         }
       }
 
+      let checkbox = n.options.checkbox;
+      if (checkbox && checkbox.label) {
+        let checked = n._checkboxChecked != null ? n._checkboxChecked : !!checkbox.checked;
+
+        popupnotification.setAttribute("checkboxhidden", "false");
+        popupnotification.setAttribute("checkboxchecked", checked);
+        popupnotification.setAttribute("checkboxlabel", checkbox.label);
+
+        popupnotification.setAttribute("checkboxcommand", "PopupNotifications._onCheckboxCommand(event);");
+
+        if (checked) {
+          this._setNotificationUIState(popupnotification, checkbox.checkedState);
+        } else {
+          this._setNotificationUIState(popupnotification, checkbox.uncheckedState);
+        }
+      } else {
+        popupnotification.setAttribute("checkboxhidden", "true");
+      }
+
       this.panel.appendChild(popupnotification);
 
       
       
       popupnotification.hidden = false;
     }, this);
+  },
+
+  _setNotificationUIState(notification, state={}) {
+    notification.setAttribute("mainactiondisabled", state.disableMainAction || "false");
+
+    if (state.warningLabel) {
+      notification.setAttribute("warninglabel", state.warningLabel);
+      notification.setAttribute("warninghidden", "false");
+    } else {
+      notification.setAttribute("warninghidden", "true");
+    }
+  },
+
+  _onCheckboxCommand(event) {
+    let notificationEl = getNotificationFromElement(event.originalTarget);
+    let checked = notificationEl.checkbox.checked;
+    let notification = notificationEl.notification;
+
+    
+    notification._checkboxChecked = checked;
+
+    if (checked) {
+      this._setNotificationUIState(notificationEl, notification.options.checkbox.checkedState);
+    } else {
+      this._setNotificationUIState(notificationEl, notification.options.checkbox.uncheckedState);
+    }
   },
 
   _showPanel: function PopupNotifications_showPanel(notificationsToShow, anchorElement) {
@@ -1102,15 +1182,7 @@ PopupNotifications.prototype = {
   },
 
   _onButtonEvent(event, type) {
-    
-    
-    
-    
-    let target = event.originalTarget;
-    let notificationEl;
-    let parent = target;
-    while (parent && (parent = target.ownerDocument.getBindingParent(parent)))
-      notificationEl = parent;
+    let notificationEl = getNotificationFromElement(event.originalTarget);
 
     if (!notificationEl)
       throw "PopupNotifications._onButtonEvent: couldn't find notification element";
@@ -1150,7 +1222,9 @@ PopupNotifications.prototype = {
     notification._recordTelemetryStat(TELEMETRY_STAT_ACTION_1);
 
     try {
-      notification.mainAction.callback.call();
+      notification.mainAction.callback.call(undefined, {
+        checkboxChecked: notificationEl.checkbox.checked
+      });
     } catch (error) {
       Cu.reportError(error);
     }
@@ -1169,12 +1243,15 @@ PopupNotifications.prototype = {
     if (!target.action || !target.notification)
       throw "menucommand target has no associated action/notification";
 
+    let notificationEl = target.parentElement;
     event.stopPropagation();
 
     target.notification._recordTelemetryStat(target.action.telemetryStatId);
 
     try {
-      target.action.callback.call();
+      target.action.callback.call(undefined, {
+        checkboxChecked: notificationEl.checkbox.checked
+      });
     } catch (error) {
       Cu.reportError(error);
     }
