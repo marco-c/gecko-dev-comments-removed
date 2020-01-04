@@ -384,14 +384,15 @@ js::AtomizeString(ExclusiveContext* cx, JSString* str,
         AtomHasher::Lookup lookup(&atom);
 
         
-        MOZ_ASSERT(cx->isPermanentAtomsInitialized());
-        AtomSet::Ptr p = cx->permanentAtoms().readonlyThreadsafeLookup(lookup);
-        if (p)
-            return &atom;
+        if (cx->isPermanentAtomsInitialized()) {
+            AtomSet::Ptr p = cx->permanentAtoms().readonlyThreadsafeLookup(lookup);
+            if (p)
+                return &atom;
+        }
 
         AutoLockForExclusiveAccess lock(cx);
 
-        p = cx->atoms().lookup(lookup);
+        AtomSet::Ptr p = cx->atoms().lookup(lookup);
         MOZ_ASSERT(p); 
         MOZ_ASSERT(p->asPtr() == &atom);
         MOZ_ASSERT(pin == PinAtom);
