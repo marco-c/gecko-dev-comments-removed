@@ -8,6 +8,7 @@
 #include "mozilla/IMEStateManager.h"
 #include "mozilla/TextEvents.h"
 #include "mozilla/dom/Element.h"
+#include "mozilla/dom/HTMLUnknownElement.h"
 #include "mozilla/dom/Selection.h"
 #include "nsCaret.h"
 #include "nsCOMPtr.h"
@@ -24,6 +25,7 @@
 #include "nsIObjectFrame.h"
 #include "nsLayoutUtils.h"
 #include "nsPresContext.h"
+#include "nsQueryObject.h"
 #include "nsRange.h"
 #include "nsTextFragment.h"
 #include "nsTextFrame.h"
@@ -496,37 +498,43 @@ ContentEventHandler::ShouldBreakLineBefore(nsIContent* aContent,
   
   
   
+  if (aContent->IsAnyOfHTMLElements(nsGkAtoms::a,
+                                    nsGkAtoms::abbr,
+                                    nsGkAtoms::acronym,
+                                    nsGkAtoms::b,
+                                    nsGkAtoms::bdi,
+                                    nsGkAtoms::bdo,
+                                    nsGkAtoms::big,
+                                    nsGkAtoms::cite,
+                                    nsGkAtoms::code,
+                                    nsGkAtoms::data,
+                                    nsGkAtoms::del,
+                                    nsGkAtoms::dfn,
+                                    nsGkAtoms::em,
+                                    nsGkAtoms::font,
+                                    nsGkAtoms::i,
+                                    nsGkAtoms::ins,
+                                    nsGkAtoms::kbd,
+                                    nsGkAtoms::mark,
+                                    nsGkAtoms::s,
+                                    nsGkAtoms::samp,
+                                    nsGkAtoms::small,
+                                    nsGkAtoms::span,
+                                    nsGkAtoms::strike,
+                                    nsGkAtoms::strong,
+                                    nsGkAtoms::sub,
+                                    nsGkAtoms::sup,
+                                    nsGkAtoms::time,
+                                    nsGkAtoms::tt,
+                                    nsGkAtoms::u,
+                                    nsGkAtoms::var)) {
+    return false;
+  }
+
   
-  return !aContent->IsAnyOfHTMLElements(nsGkAtoms::a,
-                                        nsGkAtoms::abbr,
-                                        nsGkAtoms::acronym,
-                                        nsGkAtoms::b,
-                                        nsGkAtoms::bdi,
-                                        nsGkAtoms::bdo,
-                                        nsGkAtoms::big,
-                                        nsGkAtoms::cite,
-                                        nsGkAtoms::code,
-                                        nsGkAtoms::data,
-                                        nsGkAtoms::del,
-                                        nsGkAtoms::dfn,
-                                        nsGkAtoms::em,
-                                        nsGkAtoms::font,
-                                        nsGkAtoms::i,
-                                        nsGkAtoms::ins,
-                                        nsGkAtoms::kbd,
-                                        nsGkAtoms::mark,
-                                        nsGkAtoms::s,
-                                        nsGkAtoms::samp,
-                                        nsGkAtoms::small,
-                                        nsGkAtoms::span,
-                                        nsGkAtoms::strike,
-                                        nsGkAtoms::strong,
-                                        nsGkAtoms::sub,
-                                        nsGkAtoms::sup,
-                                        nsGkAtoms::time,
-                                        nsGkAtoms::tt,
-                                        nsGkAtoms::u,
-                                        nsGkAtoms::var);
+  
+  RefPtr<HTMLUnknownElement> unknownHTMLElement = do_QueryObject(aContent);
+  return !unknownHTMLElement;
 }
 
 nsresult
