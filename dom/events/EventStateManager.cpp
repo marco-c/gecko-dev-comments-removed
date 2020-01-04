@@ -625,7 +625,7 @@ EventStateManager::PreHandleEvent(nsPresContext* aPresContext,
       }
       GenerateMouseEnterExit(mouseEvent);
       
-      aEvent->mMessage = NS_EVENT_NULL;
+      aEvent->mMessage = eVoidEvent;
       break;
     }
   case NS_MOUSE_MOVE:

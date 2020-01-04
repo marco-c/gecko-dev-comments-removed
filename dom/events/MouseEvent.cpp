@@ -18,7 +18,7 @@ MouseEvent::MouseEvent(EventTarget* aOwner,
                        WidgetMouseEventBase* aEvent)
   : UIEvent(aOwner, aPresContext,
             aEvent ? aEvent :
-                     new WidgetMouseEvent(false, NS_EVENT_NULL, nullptr,
+                     new WidgetMouseEvent(false, eVoidEvent, nullptr,
                                           WidgetMouseEvent::eReal))
 {
   
