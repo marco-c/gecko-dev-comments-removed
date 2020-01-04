@@ -391,8 +391,7 @@ Test4Internal(nsIAppShell* aAppShell)
 #ifndef XP_WIN
   
   return false;
-#endif
-
+#else
   nsCOMPtr<nsIAppShellService> appService =
     do_GetService(NS_APPSHELLSERVICE_CONTRACTID);
   if (!appService) {
@@ -437,6 +436,7 @@ Test4Internal(nsIAppShell* aAppShell)
   }
 
   return true;
+#endif
 }
 
 void
