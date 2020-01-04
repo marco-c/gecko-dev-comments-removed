@@ -506,6 +506,8 @@ protected:
   
   void OnRenderingDeviceReset();
 
+  bool UseAPZ();
+
 protected:
   
 
