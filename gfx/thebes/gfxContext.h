@@ -58,21 +58,26 @@ class gfxContext final {
     NS_INLINE_DECL_REFCOUNTING(gfxContext)
 
 public:
-
     
 
 
 
 
-    explicit gfxContext(mozilla::gfx::DrawTarget *aTarget,
-                        const mozilla::gfx::Point& aDeviceOffset = mozilla::gfx::Point());
 
+
+    static already_AddRefed<gfxContext>
+        ForDrawTarget(mozilla::gfx::DrawTarget* aTarget,
+                      const mozilla::gfx::Point& aDeviceOffset = mozilla::gfx::Point());
+    
     
 
 
 
 
-    static already_AddRefed<gfxContext> ContextForDrawTarget(mozilla::gfx::DrawTarget* aTarget);
+
+
+    static already_AddRefed<gfxContext>
+        ForDrawTargetWithTransform(mozilla::gfx::DrawTarget* aTarget);
 
     
 
@@ -458,6 +463,16 @@ public:
     static mozilla::gfx::UserDataKey sDontUseAsSourceKey;
 
 private:
+
+    
+
+
+
+
+
+
+    explicit gfxContext(mozilla::gfx::DrawTarget *aTarget,
+                        const mozilla::gfx::Point& aDeviceOffset = mozilla::gfx::Point());
     ~gfxContext();
 
   friend class PatternFromState;

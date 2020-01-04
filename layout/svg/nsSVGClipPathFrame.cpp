@@ -132,7 +132,11 @@ nsSVGClipPathFrame::GetClipMask(gfxContext& aReferenceContext,
 
   
   {
-    RefPtr<gfxContext> ctx = new gfxContext(maskDT);
+    RefPtr<gfxContext> ctx = gfxContext::ForDrawTarget(maskDT);
+    if (!ctx) {
+      gfxCriticalError() << "SVGClipPath context problem " << gfx::hexa(maskDT);
+      return nullptr;
+    }
     ctx->SetMatrix(mat);
 
     
