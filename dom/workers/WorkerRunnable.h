@@ -116,9 +116,11 @@ protected:
   
   
   
+  
   virtual bool
   PreDispatch(JSContext* aCx, WorkerPrivate* aWorkerPrivate);
 
+  
   
   
   
@@ -128,9 +130,26 @@ protected:
                bool aDispatchResult);
 
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   virtual bool
   WorkerRun(JSContext* aCx, WorkerPrivate* aWorkerPrivate) = 0;
 
+  
+  
+  
+  
   
   
   

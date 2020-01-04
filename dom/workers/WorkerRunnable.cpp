@@ -352,8 +352,42 @@ WorkerRunnable::Run()
 
   
   
+  
+
+  
+  
+  
+  
+  
+  
+  MOZ_ASSERT_IF(!targetIsWorkerThread && !isMainThread,
+                mWorkerPrivate->IsDedicatedWorker() && globalObject);
+
+  
+  
+  
+  
   Maybe<JSAutoCompartment> ac;
   if (!targetIsWorkerThread && mWorkerPrivate->GetWrapper()) {
+    
+    
+    
+    MOZ_ASSERT_IF(globalObject,
+                  js::GetObjectCompartment(mWorkerPrivate->GetWrapper()) ==
+                    js::GetContextCompartment(cx));
+    MOZ_ASSERT_IF(globalObject,
+                  js::GetObjectCompartment(mWorkerPrivate->GetWrapper()) ==
+                    js::GetObjectCompartment(globalObject->GetGlobalJSObject()));
+
+    
+    
+    
+    MOZ_ASSERT(!js::GetContextCompartment(cx) ||
+               js::GetObjectCompartment(mWorkerPrivate->GetWrapper()) ==
+                 js::GetContextCompartment(cx),
+               "Must either be in the null compartment or in our reflector "
+               "compartment");
+
     ac.emplace(cx, mWorkerPrivate->GetWrapper());
   }
 

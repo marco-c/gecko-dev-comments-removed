@@ -294,6 +294,8 @@ SuspendWorkersForWindow(nsPIDOMWindowInner* aWindow);
 void
 ResumeWorkersForWindow(nsPIDOMWindowInner* aWindow);
 
+
+
 class WorkerTask
 {
 protected:
@@ -306,6 +308,8 @@ protected:
 public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(WorkerTask)
 
+  
+  
   virtual bool
   RunTask(JSContext* aCx) = 0;
 };
