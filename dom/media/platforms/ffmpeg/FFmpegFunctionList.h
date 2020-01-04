@@ -3,16 +3,8 @@
 
 
 
-
-
-
-
-#define AV_FUNC_AVCODEC_ALL 0
-#define AV_FUNC_AVUTIL_ALL  (-1)
-
-
 AV_FUNC(avcodec_align_dimensions2, AV_FUNC_AVCODEC_ALL)
-AV_FUNC(avcodec_get_frame_defaults, AV_FUNC_AVCODEC_ALL)
+AV_FUNC(avcodec_get_frame_defaults, (AV_FUNC_53 | AV_FUNC_54))
 AV_FUNC(avcodec_close, AV_FUNC_AVCODEC_ALL)
 AV_FUNC(avcodec_decode_audio4, AV_FUNC_AVCODEC_ALL)
 AV_FUNC(avcodec_decode_video2, AV_FUNC_AVCODEC_ALL)
@@ -39,13 +31,13 @@ AV_FUNC(av_freep, AV_FUNC_AVUTIL_ALL)
 #if defined(LIBAVCODEC_VERSION_MAJOR) || defined(LIBAVCODEC_ALLVERSION)
 #if LIBAVCODEC_VERSION_MAJOR == 54 || defined(LIBAVCODEC_ALLVERSION)
 
-AV_FUNC(avcodec_alloc_frame, 54)
-AV_FUNC(avcodec_free_frame, 54)
+AV_FUNC(avcodec_alloc_frame, AV_FUNC_AVUTIL_54)
+AV_FUNC(avcodec_free_frame, AV_FUNC_AVUTIL_54)
 #endif
 #if LIBAVCODEC_VERSION_MAJOR >= 55 || defined(LIBAVCODEC_ALLVERSION)
 
-AV_FUNC(av_frame_alloc, 55)
-AV_FUNC(av_frame_free, 55)
-AV_FUNC(av_frame_unref, 55)
+AV_FUNC(av_frame_alloc, AV_FUNC_AVUTIL_55)
+AV_FUNC(av_frame_free, AV_FUNC_AVUTIL_55)
+AV_FUNC(av_frame_unref, AV_FUNC_AVUTIL_55)
 #endif
 #endif
