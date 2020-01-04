@@ -157,6 +157,7 @@ void Servo_Initialize();
 
 
 void Servo_RestyleDocument(RawGeckoDocument* doc, RawServoStyleSet* set);
+void Servo_RestyleSubtree(RawGeckoNode* node, RawServoStyleSet* set);
 
 
 #define STYLE_STRUCT(name, checkdata_cb) \
