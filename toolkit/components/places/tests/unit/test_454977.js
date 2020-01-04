@@ -35,7 +35,8 @@ function* task_add_visit(aURI, aVisitType)
   if (aVisitType != 0 &&
       aVisitType != TRANSITION_EMBED &&
       aVisitType != TRANSITION_FRAMED_LINK &&
-      aVisitType != TRANSITION_DOWNLOAD) {
+      aVisitType != TRANSITION_DOWNLOAD &&
+      aVisitType != TRANSITION_RELOAD) {
     visit_count ++;
   }
 
@@ -105,6 +106,14 @@ add_task(function* test_execute()
   
   
   do_check_eq((yield task_add_visit(TEST_URI, TRANSITION_TYPED)), placeId);
+  check_results(1, 1);
+
+  
+  do_check_eq((yield task_add_visit(TEST_URI, TRANSITION_RELOAD)), placeId);
+  check_results(1, 1);
+
+  
+  do_check_eq((yield task_add_visit(TEST_URI, TRANSITION_DOWNLOAD)), placeId);
   check_results(1, 1);
 
   

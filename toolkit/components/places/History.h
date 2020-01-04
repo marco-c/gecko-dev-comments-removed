@@ -34,7 +34,13 @@ class ConcurrentStatementsHolder;
   {0x0937a705, 0x91a6, 0x417a, {0x82, 0x92, 0xb2, 0x2e, 0xb1, 0x0d, 0xa8, 0x6c}}
 
 
-#define RECENTLY_VISITED_URI_SIZE 8
+#define RECENTLY_VISITED_URIS_SIZE 64
+
+
+
+
+
+#define RECENTLY_VISITED_URIS_MAX_AGE 6 * 60 * PR_USEC_PER_SEC
 
 class History final : public IHistory
                     , public nsIDownloadHistory
@@ -192,10 +198,22 @@ private:
 
 
 
-  typedef AutoTArray<nsCOMPtr<nsIURI>, RECENTLY_VISITED_URI_SIZE>
-          RecentlyVisitedArray;
-  RecentlyVisitedArray mRecentlyVisitedURIs;
-  RecentlyVisitedArray::index_type mRecentlyVisitedURIsNextIndex;
+  class RecentURIKey : public nsURIHashKey
+  {
+  public:
+    explicit RecentURIKey(const nsIURI* aURI) : nsURIHashKey(aURI)
+    {
+    }
+    RecentURIKey(const RecentURIKey& aOther) : nsURIHashKey(aOther)
+    {
+      NS_NOTREACHED("Do not call me!");
+    }
+    PRTime time;
+  };
+  nsTHashtable<RecentURIKey> mRecentlyVisitedURIs;
+  
+
+
 
   bool IsRecentlyVisitedURI(nsIURI* aURI);
 };

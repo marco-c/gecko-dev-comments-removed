@@ -476,16 +476,22 @@ namespace places {
     uint32_t numEntries;
     nsresult rv = aArguments->GetNumEntries(&numEntries);
     NS_ENSURE_SUCCESS(rv, rv);
-    NS_ASSERTION(numEntries > 0, "unexpected number of arguments");
+    MOZ_ASSERT(numEntries == 1, "unexpected number of arguments");
 
     int64_t pageId = aArguments->AsInt64(0);
-    int32_t typed = numEntries > 1 ? aArguments->AsInt32(1) : 0;
-    int32_t fullVisitCount = numEntries > 2 ? aArguments->AsInt32(2) : 0;
-    int64_t bookmarkId = numEntries > 3 ? aArguments->AsInt64(3) : 0;
+    MOZ_ASSERT(pageId > 0, "Should always pass a valid page id");
+    if (pageId <= 0) {
+      NS_ADDREF(*_result = new IntegerVariant(0));
+      return NS_OK;
+    }
+
+    int32_t typed = 0;
     int32_t visitCount = 0;
-    int32_t hidden = 0;
+    bool hasBookmark = false;
     int32_t isQuery = 0;
     float pointsForSampledVisits = 0.0;
+    int32_t numSampledVisits = 0;
+    int32_t bonus = 0;
 
     
     const nsNavHistory* history = nsNavHistory::GetConstHistoryService();
@@ -493,14 +499,12 @@ namespace places {
     RefPtr<Database> DB = Database::GetDatabase();
     NS_ENSURE_STATE(DB);
 
-    if (pageId > 0) {
-      
-      
+
+    
+    {
       RefPtr<mozIStorageStatement> getPageInfo = DB->GetStatement(
-        "SELECT typed, hidden, visit_count, "
-          "(SELECT count(*) FROM moz_historyvisits WHERE place_id = :page_id), "
-          "EXISTS (SELECT 1 FROM moz_bookmarks WHERE fk = :page_id), "
-          "(url > 'place:' AND url < 'place;') "
+        "SELECT typed, visit_count, foreign_count, "
+               "(substr(url, 0, 7) = 'place:') "
         "FROM moz_places "
         "WHERE id = :page_id "
       );
@@ -510,26 +514,23 @@ namespace places {
       rv = getPageInfo->BindInt64ByName(NS_LITERAL_CSTRING("page_id"), pageId);
       NS_ENSURE_SUCCESS(rv, rv);
 
-      bool hasResult;
+      bool hasResult = false;
       rv = getPageInfo->ExecuteStep(&hasResult);
-      NS_ENSURE_SUCCESS(rv, rv);
-      NS_ENSURE_TRUE(hasResult, NS_ERROR_UNEXPECTED);
+      NS_ENSURE_TRUE(NS_SUCCEEDED(rv) && hasResult, NS_ERROR_UNEXPECTED);
+
       rv = getPageInfo->GetInt32(0, &typed);
       NS_ENSURE_SUCCESS(rv, rv);
-      rv = getPageInfo->GetInt32(1, &hidden);
+      rv = getPageInfo->GetInt32(1, &visitCount);
       NS_ENSURE_SUCCESS(rv, rv);
-      rv = getPageInfo->GetInt32(2, &visitCount);
+      int32_t foreignCount = 0;
+      rv = getPageInfo->GetInt32(2, &foreignCount);
       NS_ENSURE_SUCCESS(rv, rv);
-      rv = getPageInfo->GetInt32(3, &fullVisitCount);
+      hasBookmark = foreignCount > 0;
+      rv = getPageInfo->GetInt32(3, &isQuery);
       NS_ENSURE_SUCCESS(rv, rv);
-      rv = getPageInfo->GetInt64(4, &bookmarkId);
-      NS_ENSURE_SUCCESS(rv, rv);
-      rv = getPageInfo->GetInt32(5, &isQuery);
-      NS_ENSURE_SUCCESS(rv, rv);
+    }
 
-      
-      
-      
+    if (visitCount > 0) {
       
       
       
@@ -551,12 +552,11 @@ namespace places {
       );
       NS_ENSURE_STATE(getVisits);
       mozStorageStatementScoper visitsScoper(getVisits);
-
       rv = getVisits->BindInt64ByName(NS_LITERAL_CSTRING("page_id"), pageId);
       NS_ENSURE_SUCCESS(rv, rv);
 
       
-      int32_t numSampledVisits = 0;
+      bool hasResult = false;
       for (int32_t maxVisits = history->GetNumVisitsForFrecency();
            numSampledVisits < maxVisits &&
            NS_SUCCEEDED(getVisits->ExecuteStep(&hasResult)) && hasResult;
@@ -564,10 +564,10 @@ namespace places {
         int32_t visitType;
         rv = getVisits->GetInt32(1, &visitType);
         NS_ENSURE_SUCCESS(rv, rv);
-        int32_t bonus = history->GetFrecencyTransitionBonus(visitType, true);
+        bonus = history->GetFrecencyTransitionBonus(visitType, true);
 
         
-        if (bookmarkId) {
+        if (hasBookmark) {
           bonus += history->GetFrecencyTransitionBonus(nsINavHistoryService::TRANSITION_BOOKMARK, true);
         }
 
@@ -578,56 +578,49 @@ namespace places {
           pointsForSampledVisits += (float)(weight * (bonus / 100.0));
         }
       }
+    }
 
+    
+    if (numSampledVisits) {
       
-      if (numSampledVisits) {
-        
-        if (!pointsForSampledVisits) {
-          
-          
-          
-          NS_ADDREF(*_result = new IntegerVariant(-visitCount));
-        }
-        else {
-          
-          
-          
-          NS_ADDREF(*_result = new IntegerVariant((int32_t) ceilf(fullVisitCount * ceilf(pointsForSampledVisits) / numSampledVisits)));
-        }
-
-        return NS_OK;
+      
+      
+      
+      if (!pointsForSampledVisits) {
+        NS_ADDREF(*_result = new IntegerVariant(-1));
       }
+      else {
+        
+        
+        
+        NS_ADDREF(*_result = new IntegerVariant((int32_t) ceilf(visitCount * ceilf(pointsForSampledVisits) / numSampledVisits)));
+      }
+      return NS_OK;
+    }
+
+    
+    if (!hasBookmark || isQuery) {
+      NS_ADDREF(*_result = new IntegerVariant(0));
+      return NS_OK;
     }
 
     
     
+    visitCount = 1;
 
     
     
-    
-    
-    
-    int32_t bonus = 0;
-
-    
-    
-    if (bookmarkId && !isQuery) {
-      bonus += history->GetFrecencyTransitionBonus(nsINavHistoryService::TRANSITION_BOOKMARK, false);;
-      
-      
-      fullVisitCount = 1;
-    }
-
+    bonus += history->GetFrecencyTransitionBonus(nsINavHistoryService::TRANSITION_BOOKMARK, false);
     if (typed) {
       bonus += history->GetFrecencyTransitionBonus(nsINavHistoryService::TRANSITION_TYPED, false);
     }
 
     
-    pointsForSampledVisits = history->GetFrecencyBucketWeight(1) * (bonus / (float)100.0); 
+    pointsForSampledVisits = history->GetFrecencyBucketWeight(1) * (bonus / (float)100.0);
 
     
     
-    NS_ADDREF(*_result = new IntegerVariant((int32_t) ceilf(fullVisitCount * ceilf(pointsForSampledVisits))));
+    NS_ADDREF(*_result = new IntegerVariant((int32_t) ceilf(visitCount * ceilf(pointsForSampledVisits))));
 
     return NS_OK;
   }

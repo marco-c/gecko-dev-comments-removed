@@ -408,51 +408,58 @@ this.History = Object.freeze({
 
 
 
-  
+  TRANSITIONS: {
+    
 
 
-  TRANSITION_LINK: Ci.nsINavHistoryService.TRANSITION_LINK,
+    LINK: Ci.nsINavHistoryService.TRANSITION_LINK,
 
-  
-
-
-
-
-
-  TRANSITION_TYPED: Ci.nsINavHistoryService.TRANSITION_TYPED,
-
-  
-
-
-  TRANSITION_BOOKMARK: Ci.nsINavHistoryService.TRANSITION_BOOKMARK,
-
-  
+    
 
 
 
 
 
-  TRANSITION_EMBED: Ci.nsINavHistoryService.TRANSITION_EMBED,
+    TYPED: Ci.nsINavHistoryService.TRANSITION_TYPED,
 
-  
-
-
-  TRANSITION_REDIRECT_PERMANENT: Ci.nsINavHistoryService.TRANSITION_REDIRECT_PERMANENT,
-
-  
+    
 
 
-  TRANSITION_REDIRECT_TEMPORARY: Ci.nsINavHistoryService.TRANSITION_REDIRECT_TEMPORARY,
+    BOOKMARK: Ci.nsINavHistoryService.TRANSITION_BOOKMARK,
 
-  
-
-
-  TRANSITION_DOWNLOAD: Ci.nsINavHistoryService.TRANSITION_REDIRECT_DOWNLOAD,
-
-  
+    
 
 
-  TRANSITION_FRAMED_LINK: Ci.nsINavHistoryService.TRANSITION_FRAMED_LINK,
+
+
+
+    EMBED: Ci.nsINavHistoryService.TRANSITION_EMBED,
+
+    
+
+
+    REDIRECT_PERMANENT: Ci.nsINavHistoryService.TRANSITION_REDIRECT_PERMANENT,
+
+    
+
+
+    REDIRECT_TEMPORARY: Ci.nsINavHistoryService.TRANSITION_REDIRECT_TEMPORARY,
+
+    
+
+
+    DOWNLOAD: Ci.nsINavHistoryService.TRANSITION_DOWNLOAD,
+
+    
+
+
+    FRAMED_LINK: Ci.nsINavHistoryService.TRANSITION_FRAMED_LINK,
+
+    
+
+
+    RELOAD: Ci.nsINavHistoryService.TRANSITION_RELOAD,
+  },
 });
 
 
@@ -484,7 +491,7 @@ function validatePageInfo(pageInfo) {
   for (let inVisit of pageInfo.visits) {
     let visit = {
       date: new Date(),
-      transition: inVisit.transition || History.TRANSITION_LINK,
+      transition: inVisit.transition || History.TRANSITIONS.LINK,
     };
 
     if (!isValidTransitionType(visit.transition)) {
@@ -541,16 +548,7 @@ function convertForUpdatePlaces(pageInfo) {
 
 
 function isValidTransitionType(transitionType) {
-  return [
-    History.TRANSITION_LINK,
-    History.TRANSITION_TYPED,
-    History.TRANSITION_BOOKMARK,
-    History.TRANSITION_EMBED,
-    History.TRANSITION_REDIRECT_PERMANENT,
-    History.TRANSITION_REDIRECT_TEMPORARY,
-    History.TRANSITION_DOWNLOAD,
-    History.TRANSITION_FRAMED_LINK
-  ].includes(transitionType);
+  return Object.values(History.TRANSITIONS).includes(transitionType);
 }
 
 

@@ -106,7 +106,6 @@ add_task(function* test_history_clear()
 
   
   
-  
   stmt = mDBConn.createStatement(
     "SELECT h.id FROM moz_places h WHERE h.frecency > 0 ");
   do_check_false(stmt.executeStep());
