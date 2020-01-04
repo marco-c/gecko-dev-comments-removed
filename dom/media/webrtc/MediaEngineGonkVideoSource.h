@@ -63,14 +63,18 @@ public:
   nsresult Allocate(const dom::MediaTrackConstraints &aConstraints,
                     const MediaEnginePrefs &aPrefs,
                     const nsString& aDeviceId,
-                    const nsACString& aOrigin) override;
-  nsresult Deallocate() override;
+                    const nsACString& aOrigin,
+                    BaseAllocationHandle** aOutHandle,
+                    const char** aOutBadConstraint) override;
+  nsresult Deallocate(BaseAllocationHandle* aHandle) override;
   nsresult Start(SourceMediaStream* aStream, TrackID aID,
                  const PrincipalHandle& aPrincipalHandle) override;
   nsresult Stop(SourceMediaStream* aSource, TrackID aID) override;
-  nsresult Restart(const dom::MediaTrackConstraints& aConstraints,
+  nsresult Restart(BaseAllocationHandle* aHandle,
+                   const dom::MediaTrackConstraints& aConstraints,
                    const MediaEnginePrefs &aPrefs,
-                   const nsString& aDeviceId) override;
+                   const nsString& aDeviceId,
+                   const char** aOutBadConstraint) override;
   void NotifyPull(MediaStreamGraph* aGraph,
                   SourceMediaStream* aSource,
                   TrackID aId,
@@ -114,7 +118,7 @@ protected:
   
   void Init();
   void Shutdown();
-  size_t NumCapabilities() override;
+  size_t NumCapabilities() const override;
   
   
   nsresult InitDirectMediaBuffer();
