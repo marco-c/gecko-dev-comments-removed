@@ -3038,25 +3038,6 @@ nsLayoutUtils::CalculateAndSetDisplayPortMargins(nsIScrollableFrame* aScrollFram
 }
 
 bool
-nsLayoutUtils::WantDisplayPort(const nsDisplayListBuilder* aBuilder,
-                               nsIFrame* aScrollFrame)
-{
-  nsIScrollableFrame* scrollableFrame = do_QueryFrame(aScrollFrame);
-  if (!scrollableFrame) {
-    return false;
-  }
-
-  
-  
-  
-  
-  return aBuilder->IsPaintingToWindow() &&
-         nsLayoutUtils::AsyncPanZoomEnabled(aScrollFrame) &&
-         !aBuilder->HaveScrollableDisplayPort() &&
-         scrollableFrame->WantAsyncScroll();
-}
-
-bool
 nsLayoutUtils::GetOrMaybeCreateDisplayPort(nsDisplayListBuilder& aBuilder,
                                            nsIFrame* aScrollFrame,
                                            nsRect aDisplayPortBase,
@@ -3074,7 +3055,17 @@ nsLayoutUtils::GetOrMaybeCreateDisplayPort(nsDisplayListBuilder& aBuilder,
 
   bool haveDisplayPort = GetDisplayPort(content, aOutDisplayport);
 
-  if (WantDisplayPort(&aBuilder, aScrollFrame)) {
+  
+  
+  
+  
+  
+  
+  if (aBuilder.IsPaintingToWindow() &&
+      nsLayoutUtils::AsyncPanZoomEnabled(aScrollFrame) &&
+      !aBuilder.HaveScrollableDisplayPort() &&
+      scrollableFrame->WantAsyncScroll()) {
+
     
     if (!haveDisplayPort) {
       CalculateAndSetDisplayPortMargins(scrollableFrame, nsLayoutUtils::RepaintMode::DoNotRepaint);
