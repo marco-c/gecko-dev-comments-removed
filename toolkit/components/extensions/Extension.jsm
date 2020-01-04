@@ -88,6 +88,7 @@ var {
 } = ExtensionUtils;
 
 const LOGGER_ID_BASE = "addons.webextension.";
+const UUID_MAP_PREF = "extensions.webextensions.uuids";
 
 const COMMENT_REGEXP = new RegExp(String.raw`
     ^
@@ -477,6 +478,60 @@ ParentAPIManager.init();
 
 
 
+
+
+
+
+var UUIDMap = {
+  _read() {
+    let pref = Preferences.get(UUID_MAP_PREF, "{}");
+    try {
+      return JSON.parse(pref);
+    } catch (e) {
+      Cu.reportError(`Error parsing ${UUID_MAP_PREF}.`);
+      return {};
+    }
+  },
+
+  _write(map) {
+    Preferences.set(UUID_MAP_PREF, JSON.stringify(map));
+  },
+
+  get(id, create = true) {
+    let map = this._read();
+
+    if (id in map) {
+      return map[id];
+    }
+
+    let uuid = null;
+    if (create) {
+      let uuidGenerator = Cc["@mozilla.org/uuid-generator;1"].getService(Ci.nsIUUIDGenerator);
+      uuid = uuidGenerator.generateUUID().number;
+      uuid = uuid.slice(1, -1); 
+
+      map[id] = uuid;
+      this._write(map);
+    }
+    return uuid;
+  },
+
+  remove(id) {
+    let map = this._read();
+    delete map[id];
+    this._write(map);
+  },
+};
+
+
+
+
+function getExtensionUUID(id) {
+  return UUIDMap.get(id, true);
+}
+
+
+
 var UninstallObserver = {
   initialized: false,
 
@@ -714,36 +769,6 @@ GlobalManager = {
 
 
 
-function getExtensionUUID(id) {
-  const PREF_NAME = "extensions.webextensions.uuids";
-
-  let pref = Preferences.get(PREF_NAME, "{}");
-  let map = {};
-  try {
-    map = JSON.parse(pref);
-  } catch (e) {
-    Cu.reportError(`Error parsing ${PREF_NAME}.`);
-  }
-
-  if (id in map) {
-    return map[id];
-  }
-
-  let uuidGenerator = Cc["@mozilla.org/uuid-generator;1"].getService(Ci.nsIUUIDGenerator);
-  let uuid = uuidGenerator.generateUUID().number;
-  uuid = uuid.slice(1, -1); 
-
-  map[id] = uuid;
-  Preferences.set(PREF_NAME, JSON.stringify(map));
-  return uuid;
-}
-
-
-
-
-
-
-
 
 
 this.ExtensionData = class {
@@ -798,7 +823,7 @@ this.ExtensionData = class {
       throw new Error("getURL may not be called before an `id` or `uuid` has been set");
     }
     if (!this.uuid) {
-      this.uuid = getExtensionUUID(this.id);
+      this.uuid = UUIDMap.get(this.id);
     }
     return `moz-extension://${this.uuid}/${path}`;
   }
@@ -1189,7 +1214,7 @@ this.Extension = class extends ExtensionData {
   constructor(addonData) {
     super(addonData.resourceURI);
 
-    this.uuid = getExtensionUUID(addonData.id);
+    this.uuid = UUIDMap.get(addonData.id);
 
     if (addonData.cleanupFile) {
       Services.obs.addObserver(this, "xpcom-shutdown", false);
