@@ -33,6 +33,8 @@ MockTabsEngine.prototype = {
 
 
 let MockClientsEngine = {
+  clientSettings: null, 
+
   isMobile(guid) {
     if (!guid.endsWith("desktop") && !guid.endsWith("mobile")) {
       throw new Error("this module expected guids to end with 'desktop' or 'mobile'");
@@ -40,7 +42,14 @@ let MockClientsEngine = {
     return guid.endsWith("mobile");
   },
   remoteClientExists(id) {
-    return !id.startsWith("guid_stale");
+    return this.clientSettings[id] !== false;
+  },
+  getClientName(id) {
+    if (this.clientSettings[id]) {
+      return this.clientSettings[id];
+    }
+    let engine = Weave.Service.engineManager.get("tabs");
+    return engine.clients[id].clientName;
   },
 }
 
@@ -57,7 +66,7 @@ let weaveXPCService = Cc["@mozilla.org/weave/service;1"]
                         .wrappedJSObject;
 weaveXPCService.ready = true;
 
-function configureClients(clients) {
+function configureClients(clients, clientSettings = {}) {
   
   let engine = Weave.Service.engineManager.get("tabs");
   
@@ -65,6 +74,8 @@ function configureClients(clients) {
     client.id = guid;
   }
   engine.clients = clients;
+  
+  MockClientsEngine.clientSettings = clientSettings;
   
   Services.obs.notifyObservers(null, "weave:engine:sync:finish", "tabs");
 }
@@ -130,13 +141,32 @@ add_task(function* test_staleClientWithTabs() {
         icon: "https://bar.com/favicon",
       }],
     },
+    guid_stale_name_desktop: {
+      clientName: "My Generic Device",
+      tabs: [
+      {
+        urlHistory: ["https://example.edu/"],
+        icon: "https://example.edu/favicon",
+      }],
+    },
+  }, {
+    guid_stale_mobile: false,
+    guid_stale_desktop: false,
+    
+    
+    guid_stale_name_desktop: "My Laptop",
   });
   let clients = yield SyncedTabs.getTabClients();
   clients.sort((a, b) => { return a.name.localeCompare(b.name);});
-  equal(clients.length, 2);
+  equal(clients.length, 3);
+  equal(clients[0].name, "My Desktop");
   equal(clients[0].tabs.length, 1);
   equal(clients[0].tabs[0].url, "http://foo.com/");
-  equal(clients[1].tabs.length, 0);
+  equal(clients[1].name, "My Laptop");
+  equal(clients[1].tabs.length, 1);
+  equal(clients[1].tabs[0].url, "https://example.edu/");
+  equal(clients[2].name, "My Phone");
+  equal(clients[2].tabs.length, 0);
 });
 
 add_task(function* test_clientWithTabsIconsDisabled() {
