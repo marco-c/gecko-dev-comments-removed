@@ -14,11 +14,11 @@
 #include "mozilla/dom/Text.h"
 
 class nsHTMLEditor;
-class nsHTMLEditRules;
 class nsIDOMNode;
 
 namespace mozilla {
 
+class HTMLEditRules;
 struct EditorDOMPoint;
 
 
@@ -401,7 +401,7 @@ protected:
   nsHTMLEditor* mHTMLEditor;
 
   
-  friend class nsHTMLEditRules;
+  friend class HTMLEditRules;
   
   friend class nsHTMLEditor;
 };
