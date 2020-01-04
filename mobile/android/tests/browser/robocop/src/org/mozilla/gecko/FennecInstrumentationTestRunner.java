@@ -40,21 +40,25 @@ public class FennecInstrumentationTestRunner extends InstrumentationTestRunner {
 
     @Override
     public void onStart() {
-        final Context app = getTargetContext();
-        if (app != null) {
-            final String name = FennecInstrumentationTestRunner.class.getSimpleName();
-            
-            final KeyguardManager keyguard = (KeyguardManager) app.getSystemService(Context.KEYGUARD_SERVICE);
-            
-            keyguardLock = keyguard.newKeyguardLock(name);
-            keyguardLock.disableKeyguard();
+        final Context context = getContext(); 
+        if (context != null) {
+            try {
+                String name = FennecInstrumentationTestRunner.class.getSimpleName();
+                
+                final KeyguardManager keyguard = (KeyguardManager) context.getSystemService(Context.KEYGUARD_SERVICE);
+                
+                keyguardLock = keyguard.newKeyguardLock(name);
+                keyguardLock.disableKeyguard();
 
-            
-            final PowerManager power = (PowerManager) app.getSystemService(Context.POWER_SERVICE);
-            wakeLock = power.newWakeLock(FULL_WAKE_LOCK | ACQUIRE_CAUSES_WAKEUP | ON_AFTER_RELEASE, name);
-            wakeLock.acquire();
+                
+                final PowerManager power = (PowerManager) context.getSystemService(Context.POWER_SERVICE);
+                wakeLock = power.newWakeLock(FULL_WAKE_LOCK | ACQUIRE_CAUSES_WAKEUP | ON_AFTER_RELEASE, name);
+                wakeLock.acquire();
+            } catch (SecurityException e) {
+                Log.w("GeckoInstTestRunner", "Got SecurityException: not disabling keyguard and not taking wakelock.");
+            }
         } else {
-            Log.e("GeckoInstTestRunner", "Application target context is null: not disabling keyguard and not taking wakelock.");
+            Log.w("GeckoInstTestRunner", "Application target context is null: not disabling keyguard and not taking wakelock.");
         }
 
         super.onStart();
