@@ -155,7 +155,7 @@ var lazilyLoadedObserverScripts = [
   ["Feedback", ["Feedback:Show"], "chrome://browser/content/Feedback.js"],
   ["SelectionHandler", ["TextSelection:Get"], "chrome://browser/content/SelectionHandler.js"],
   ["EmbedRT", ["GeckoView:ImportScript"], "chrome://browser/content/EmbedRT.js"],
-  ["Reader", ["Reader:FetchContent", "Reader:Removed"], "chrome://browser/content/Reader.js"],
+  ["Reader", ["Reader:FetchContent", "Reader:Added", "Reader:Removed"], "chrome://browser/content/Reader.js"],
   ["PrintHelper", ["Print:PDF"], "chrome://browser/content/PrintHelper.js"],
 ];
 if (AppConstants.NIGHTLY_BUILD) {
@@ -191,10 +191,14 @@ lazilyLoadedObserverScripts.forEach(function (aScript) {
 
 [
   ["Reader", [
+    ["Reader:AddToList", false],
     ["Reader:ArticleGet", false],
     ["Reader:DropdownClosed", true], 
     ["Reader:DropdownOpened", false],
     ["Reader:FaviconRequest", false],
+    ["Reader:ListStatusRequest", false],
+    ["Reader:RemoveFromList", false],
+    ["Reader:Share", false],
     ["Reader:ToolbarHidden", false],
     ["Reader:SystemUIVisibility", false],
     ["Reader:UpdateReaderButton", false],
@@ -5160,7 +5164,7 @@ var ErrorPageEventHandler = {
           if (errorDoc.documentURI.contains("e=malwareBlocked")) {
             sendTelemetry = true;
             bucketName = "WARNING_MALWARE_PAGE_";
-          } else if (errorDoc.documentURI.contains("e=phishingBlocked")) {
+          } else if (errorDoc.documentURI.contains("e=deceptiveBlocked")) {
             sendTelemetry = true;
             bucketName = "WARNING_PHISHING_PAGE_";
           } else if (errorDoc.documentURI.contains("e=unwantedBlocked")) {

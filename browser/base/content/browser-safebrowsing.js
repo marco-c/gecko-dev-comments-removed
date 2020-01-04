@@ -15,7 +15,7 @@ var gSafeBrowsing = {
     
     var docURI = gBrowser.selectedBrowser.documentURI;
     var isPhishingPage =
-      docURI && docURI.spec.startsWith("about:blocked?e=phishingBlocked");
+      docURI && docURI.spec.startsWith("about:blocked?e=deceptiveBlocked");
 
     
     document.getElementById("menu_HelpPopup_reportPhishingtoolmenu")

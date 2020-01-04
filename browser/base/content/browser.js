@@ -160,7 +160,7 @@ XPCOMUtils.defineLazyGetter(this, "PopupNotifications", function () {
 XPCOMUtils.defineLazyGetter(this, "DeveloperToolbar", function() {
   let { require } = Cu.import("resource://devtools/shared/Loader.jsm", {});
   let { DeveloperToolbar } = require("devtools/client/shared/developer-toolbar");
-  return new DeveloperToolbar(window);
+  return new DeveloperToolbar(window, document.getElementById("developer-toolbar"));
 });
 
 XPCOMUtils.defineLazyGetter(this, "BrowserToolboxProcess", function() {
@@ -2915,10 +2915,10 @@ var BrowserOnClick = {
         }
       };
     } else if (reason === 'phishing') {
-      title = gNavigatorBundle.getString("safebrowsing.reportedWebForgery");
+      title = gNavigatorBundle.getString("safebrowsing.deceptiveSite");
       buttons[1] = {
-        label: gNavigatorBundle.getString("safebrowsing.notAForgeryButton.label"),
-        accessKey: gNavigatorBundle.getString("safebrowsing.notAForgeryButton.accessKey"),
+        label: gNavigatorBundle.getString("safebrowsing.notADeceptiveSiteButton.label"),
+        accessKey: gNavigatorBundle.getString("safebrowsing.notADeceptiveSiteButton.accessKey"),
         callback: function() {
           openUILinkIn(gSafeBrowsing.getReportURL('PhishMistake'), 'tab');
         }
@@ -5492,9 +5492,9 @@ function BrowserCharsetReload()
 }
 
 function UpdateCurrentCharset(target) {
-  let selectedCharset = CharsetMenu.foldCharset(gBrowser.selectedBrowser.characterSet);
   for (let menuItem of target.getElementsByTagName("menuitem")) {
-    let isSelected = menuItem.getAttribute("charset") === selectedCharset;
+    let isSelected = menuItem.getAttribute("charset") ===
+                     CharsetMenu.foldCharset(gBrowser.selectedBrowser.characterSet);
     menuItem.setAttribute("checked", isSelected);
   }
 }
