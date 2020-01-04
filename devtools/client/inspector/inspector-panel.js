@@ -1229,8 +1229,6 @@ InspectorPanel.prototype = {
   onPaneToggleButtonActivated: function (e) {
     let sidePaneContainer = this.panelDoc.querySelector("#inspector-sidebar-container");
     let isVisible = !this._sidebarToggle.state.collapsed;
-    let sidePane = this.panelDoc.querySelector(
-      "#inspector-sidebar .devtools-sidebar-tabs");
 
     
     
@@ -1238,12 +1236,10 @@ InspectorPanel.prototype = {
       let rect = sidePaneContainer.getBoundingClientRect();
       if (!sidePaneContainer.hasAttribute("width")) {
         sidePaneContainer.setAttribute("width", rect.width);
-        sidePane.style.width = rect.width + "px";
       }
       
       
       sidePaneContainer.setAttribute("height", rect.height);
-      sidePane.style.height = rect.height + "px";
     }
 
     let onAnimationDone = () => {
