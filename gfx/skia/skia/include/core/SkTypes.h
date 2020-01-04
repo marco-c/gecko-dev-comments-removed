@@ -9,6 +9,19 @@
 #define SkTypes_DEFINED
 
 
+
+
+
+
+
+
+
+
+#if defined(MOZ_B2G) && defined(__GNUC__) && __GNUC__ == 4
+    typedef float float32_t;
+    #include <memory>
+#endif
+
 #include "SkPreConfig.h"
 #include "SkUserConfig.h"
 #include "SkPostConfig.h"
