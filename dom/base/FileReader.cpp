@@ -365,6 +365,14 @@ FileReader::ReadFileContent(Blob& aBlob,
   Abort(error);
   error.SuppressException();
 
+  if (mReadyState == LOADING) {
+    
+    
+    
+    aRv.Throw(NS_ERROR_ABORT);
+    return;
+  }
+
   mError = nullptr;
   SetDOMStringToNull(mResult);
   mTransferred = 0;
