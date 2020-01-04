@@ -3830,10 +3830,12 @@ ElementRestyler::RestyleChildrenOfDisplayContentsElement(
   const bool mightReframePseudos = aRestyleHint & eRestyle_Subtree;
   DoRestyleUndisplayedDescendants(nsRestyleHint(0), mContent, aNewContext);
   if (!(mHintsHandled & nsChangeHint_ReconstructFrame) && mightReframePseudos) {
-    MaybeReframeForBeforePseudo(aParentFrame, nullptr, mContent, aNewContext);
+    MaybeReframeForPseudo(nsCSSPseudoElements::ePseudo_before,
+                          aParentFrame, nullptr, mContent, aNewContext);
   }
   if (!(mHintsHandled & nsChangeHint_ReconstructFrame) && mightReframePseudos) {
-    MaybeReframeForAfterPseudo(aParentFrame, nullptr, mContent, aNewContext);
+    MaybeReframeForPseudo(nsCSSPseudoElements::ePseudo_after,
+                          aParentFrame, nullptr, mContent, aNewContext);
   }
   if (!(mHintsHandled & nsChangeHint_ReconstructFrame)) {
     InitializeAccessibilityNotifications(aNewContext);
@@ -4065,43 +4067,9 @@ ElementRestyler::RestyleUndisplayedNodes(nsRestyleHint    aChildRestyleHint,
 void
 ElementRestyler::MaybeReframeForBeforePseudo()
 {
-  MaybeReframeForBeforePseudo(mFrame, mFrame, mFrame->GetContent(),
-                              mFrame->StyleContext());
-}
-
-void
-ElementRestyler::MaybeReframeForBeforePseudo(nsIFrame* aGenConParentFrame,
-                                             nsIFrame* aFrame,
-                                             nsIContent* aContent,
-                                             nsStyleContext* aStyleContext)
-{
-  
-  
-  nsContainerFrame* cif;
-  if (!aStyleContext->GetPseudo() &&
-      ((aGenConParentFrame->GetStateBits() & NS_FRAME_MAY_HAVE_GENERATED_CONTENT) ||
-       
-       ((cif = aGenConParentFrame->GetContentInsertionFrame()) &&
-        (cif->GetStateBits() & NS_FRAME_MAY_HAVE_GENERATED_CONTENT)))) {
-    
-    
-    if (!aFrame ||
-        nsLayoutUtils::IsFirstContinuationOrIBSplitSibling(aFrame)) {
-      
-      
-      if (!nsLayoutUtils::GetBeforeFrameForContent(aGenConParentFrame, aContent) &&
-          nsLayoutUtils::HasPseudoStyle(aContent, aStyleContext,
-                                        nsCSSPseudoElements::ePseudo_before,
-                                        mPresContext)) {
-        
-        LOG_RESTYLE("MaybeReframeForBeforePseudo, appending "
-                    "nsChangeHint_ReconstructFrame");
-        NS_UpdateHint(mHintsHandled, nsChangeHint_ReconstructFrame);
-        mChangeList->AppendChange(aFrame, aContent,
-                                  nsChangeHint_ReconstructFrame);
-      }
-    }
-  }
+  MaybeReframeForPseudo(nsCSSPseudoElements::ePseudo_before,
+                        mFrame, mFrame, mFrame->GetContent(),
+                        mFrame->StyleContext());
 }
 
 
@@ -4112,43 +4080,91 @@ void
 ElementRestyler::MaybeReframeForAfterPseudo(nsIFrame* aFrame)
 {
   MOZ_ASSERT(aFrame);
-  MaybeReframeForAfterPseudo(aFrame, aFrame, aFrame->GetContent(),
-                             aFrame->StyleContext());
+  MaybeReframeForPseudo(nsCSSPseudoElements::ePseudo_after,
+                        aFrame, aFrame, aFrame->GetContent(),
+                        aFrame->StyleContext());
 }
 
-void
-ElementRestyler::MaybeReframeForAfterPseudo(nsIFrame* aGenConParentFrame,
-                                            nsIFrame* aFrame,
-                                            nsIContent* aContent,
-                                            nsStyleContext* aStyleContext)
+#ifdef DEBUG
+bool
+ElementRestyler::MustReframeForBeforePseudo()
 {
-  
-  
-  nsContainerFrame* cif;
-  if (!aStyleContext->GetPseudo() &&
-      ((aGenConParentFrame->GetStateBits() & NS_FRAME_MAY_HAVE_GENERATED_CONTENT) ||
-       
-       ((cif = aGenConParentFrame->GetContentInsertionFrame()) &&
-        (cif->GetStateBits() & NS_FRAME_MAY_HAVE_GENERATED_CONTENT)))) {
+  return MustReframeForPseudo(nsCSSPseudoElements::ePseudo_before,
+                              mFrame, mFrame, mFrame->GetContent(),
+                              mFrame->StyleContext());
+}
+
+bool
+ElementRestyler::MustReframeForAfterPseudo(nsIFrame* aFrame)
+{
+  MOZ_ASSERT(aFrame);
+  return MustReframeForPseudo(nsCSSPseudoElements::ePseudo_after,
+                              aFrame, aFrame, aFrame->GetContent(),
+                              aFrame->StyleContext());
+}
+#endif
+
+void
+ElementRestyler::MaybeReframeForPseudo(nsCSSPseudoElements::Type aPseudoType,
+                                       nsIFrame* aGenConParentFrame,
+                                       nsIFrame* aFrame,
+                                       nsIContent* aContent,
+                                       nsStyleContext* aStyleContext)
+{
+  if (MustReframeForPseudo(aPseudoType, aGenConParentFrame, aFrame, aContent,
+                           aStyleContext)) {
     
+    LOG_RESTYLE("MaybeReframeForPseudo, appending "
+                "nsChangeHint_ReconstructFrame");
+    NS_UpdateHint(mHintsHandled, nsChangeHint_ReconstructFrame);
+    mChangeList->AppendChange(aFrame, aContent, nsChangeHint_ReconstructFrame);
+  }
+}
+
+bool
+ElementRestyler::MustReframeForPseudo(nsCSSPseudoElements::Type aPseudoType,
+                                      nsIFrame* aGenConParentFrame,
+                                      nsIFrame* aFrame,
+                                      nsIContent* aContent,
+                                      nsStyleContext* aStyleContext)
+{
+  MOZ_ASSERT(aPseudoType == nsCSSPseudoElements::ePseudo_before ||
+             aPseudoType == nsCSSPseudoElements::ePseudo_after);
+
+  
+  if (aStyleContext->GetPseudo()) {
+    return false;
+  }
+
+  
+  if (!(aGenConParentFrame->GetStateBits() & NS_FRAME_MAY_HAVE_GENERATED_CONTENT)) {
     
-    if (!aFrame ||
-        !nsLayoutUtils::GetNextContinuationOrIBSplitSibling(aFrame)) {
-      
-      
-      if (!nsLayoutUtils::GetAfterFrameForContent(aGenConParentFrame, aContent) &&
-          nsLayoutUtils::HasPseudoStyle(aContent, aStyleContext,
-                                        nsCSSPseudoElements::ePseudo_after,
-                                        mPresContext)) {
-        
-        LOG_RESTYLE("MaybeReframeForAfterPseudo, appending "
-                    "nsChangeHint_ReconstructFrame");
-        NS_UpdateHint(mHintsHandled, nsChangeHint_ReconstructFrame);
-        mChangeList->AppendChange(aFrame, mContent,
-                                  nsChangeHint_ReconstructFrame);
-      }
+    nsContainerFrame* cif = aGenConParentFrame->GetContentInsertionFrame();
+    if (!cif || !(cif->GetStateBits() & NS_FRAME_MAY_HAVE_GENERATED_CONTENT)) {
+      return false;
     }
   }
+
+  if (aPseudoType == nsCSSPseudoElements::ePseudo_before) {
+    
+    
+    if ((aFrame && !nsLayoutUtils::IsFirstContinuationOrIBSplitSibling(aFrame)) ||
+        nsLayoutUtils::GetBeforeFrameForContent(aGenConParentFrame, aContent)) {
+      return false;
+    }
+  } else {
+    
+    
+    if ((aFrame && nsLayoutUtils::GetNextContinuationOrIBSplitSibling(aFrame)) ||
+        nsLayoutUtils::GetAfterFrameForContent(aGenConParentFrame, aContent)) {
+      return false;
+    }
+  }
+
+  
+  
+  return nsLayoutUtils::HasPseudoStyle(aContent, aStyleContext, aPseudoType,
+                                       mPresContext);
 }
 
 void
