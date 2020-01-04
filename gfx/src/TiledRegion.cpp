@@ -14,6 +14,7 @@ namespace mozilla {
 namespace gfx {
 
 static const int32_t kTileSize = 256;
+static const size_t kMaxTiles = 100;
 
 
 
@@ -282,7 +283,8 @@ TiledRegionImpl::AddRect(const pixman_box32_t& aRect)
   
   return ProcessIntersectedTiles(aRect, mRects,
     [&aRect](nsTArray<pixman_box32_t>& rects, size_t& rectIndex, TileRange emptyTiles) {
-      if (!rects.InsertElementsAt(rectIndex, emptyTiles.Length(), fallible)) {
+      if (rects.Length() + emptyTiles.Length() >= kMaxTiles ||
+          !rects.InsertElementsAt(rectIndex, emptyTiles.Length(), fallible)) {
         return IterationAction::STOP;
       }
       for (TileIterator tileIt = emptyTiles.Begin();
