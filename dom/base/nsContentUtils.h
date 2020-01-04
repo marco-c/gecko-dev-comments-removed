@@ -2476,6 +2476,38 @@ public:
 
   static bool PushEnabled(JSContext* aCx, JSObject* aObj);
 
+  
+  
+  
+  enum class StorageAccess {
+    
+    eDeny = 0,
+    
+    
+    ePrivateBrowsing = 1,
+    
+    eSessionScoped = 2,
+    
+    eAllow = 3,
+  };
+
+  
+
+
+
+
+
+
+
+  static StorageAccess StorageAllowedForWindow(nsPIDOMWindow* aWindow);
+
+  
+
+
+
+
+  static StorageAccess StorageAllowedForPrincipal(nsIPrincipal* aPrincipal);
+
 private:
   static bool InitializeEventTable();
 
@@ -2515,6 +2547,18 @@ private:
   static void CallOnAllRemoteChildren(nsIMessageBroadcaster* aManager,
                                       CallOnRemoteChildFunction aCallback,
                                       void* aArg);
+
+  
+
+
+
+
+
+
+
+
+  static StorageAccess InternalStorageAllowedForPrincipal(nsIPrincipal* aPrincipal,
+                                                          nsPIDOMWindow* aWindow);
 
   static nsIXPConnect *sXPConnect;
 
@@ -2581,6 +2625,8 @@ private:
   static bool sGettersDecodeURLHash;
   static bool sPrivacyResistFingerprinting;
   static bool sSendPerformanceTimingNotifications;
+  static uint32_t sCookiesLifetimePolicy;
+  static uint32_t sCookiesBehavior;
 
   static nsHtml5StringParser* sHTMLFragmentParser;
   static nsIParser* sXMLFragmentParser;
