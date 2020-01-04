@@ -65,7 +65,9 @@ static int32_t GetSystemParam(long flag, int32_t def)
     return ::SystemParametersInfo(flag, 0, &value, 0) ? value : def;
 }
 
-nsLookAndFeel::nsLookAndFeel() : nsXPLookAndFeel()
+nsLookAndFeel::nsLookAndFeel()
+  : nsXPLookAndFeel()
+  , mUseAccessibilityTheme(0)
 {
   mozilla::Telemetry::Accumulate(mozilla::Telemetry::TOUCH_ENABLED_DEVICE,
                                  WinUtils::IsTouchDeviceSupportPresent());
@@ -359,7 +361,16 @@ nsLookAndFeel::GetIntImpl(IntID aID, int32_t &aResult)
         
         
         
-        aResult = nsUXThemeData::IsHighContrastOn();
+        if (XRE_IsContentProcess()) {
+          
+          
+          
+          aResult = mUseAccessibilityTheme;
+        } else {
+          
+          
+          aResult = nsUXThemeData::IsHighContrastOn();
+        }
         break;
     case eIntID_ScrollArrowStyle:
         aResult = eScrollArrowStyle_Single;
@@ -663,3 +674,29 @@ nsLookAndFeel::GetPasswordCharacterImpl()
 #define UNICODE_BLACK_CIRCLE_CHAR 0x25cf
   return UNICODE_BLACK_CIRCLE_CHAR;
 }
+
+nsTArray<LookAndFeelInt>
+nsLookAndFeel::GetIntCacheImpl()
+{
+  nsTArray<LookAndFeelInt> lookAndFeelIntCache =
+    nsXPLookAndFeel::GetIntCacheImpl();
+
+  LookAndFeelInt useAccessibilityTheme;
+  useAccessibilityTheme.id = eIntID_UseAccessibilityTheme;
+  useAccessibilityTheme.value = GetInt(eIntID_UseAccessibilityTheme);
+  lookAndFeelIntCache.AppendElement(useAccessibilityTheme);
+
+  return lookAndFeelIntCache;
+}
+
+void
+nsLookAndFeel::SetIntCacheImpl(const nsTArray<LookAndFeelInt>& aLookAndFeelIntCache)
+{
+  for (auto entry : aLookAndFeelIntCache) {
+    if (entry.id == eIntID_UseAccessibilityTheme) {
+      mUseAccessibilityTheme = entry.value;
+      break;
+    }
+  }
+}
+
