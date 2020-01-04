@@ -662,7 +662,6 @@ nsIOService::NewChannelFromURIWithLoadInfo(nsIURI* aURI,
                                            nsILoadInfo* aLoadInfo,
                                            nsIChannel** result)
 {
-  NS_ENSURE_ARG_POINTER(aLoadInfo);
   return NewChannelFromURIWithProxyFlagsInternal(aURI,
                                                  nullptr, 
                                                  0,       
