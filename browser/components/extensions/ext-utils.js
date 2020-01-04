@@ -637,7 +637,11 @@ global.WindowManager = {
     return id;
   },
 
-  getWindow(id) {
+  getWindow(id, context) {
+    if (id == this.WINDOW_ID_CURRENT) {
+      return currentWindow(context);
+    }
+
     for (let window of WindowListManager.browserWindows(true)) {
       if (this.getId(window) == id) {
         return window;
@@ -646,7 +650,56 @@ global.WindowManager = {
     return null;
   },
 
+  setState(window, state) {
+    if (state != "fullscreen" && window.fullScreen) {
+      window.fullScreen = false;
+    }
+
+    switch (state) {
+      case "maximized":
+        window.maximize();
+        break;
+
+      case "minimized":
+      case "docked":
+        window.minimize();
+        break;
+
+      case "normal":
+        
+        
+        
+        window.restore();
+        if (window.windowState != window.STATE_NORMAL) {
+          window.restore();
+        }
+        if (window.windowState != window.STATE_NORMAL) {
+          
+          
+          window.sizeToContent();
+        }
+        break;
+
+      case "fullscreen":
+        window.fullScreen = true;
+        break;
+
+      default:
+        throw new Error(`Unexpected window state: ${state}`);
+    }
+  },
+
   convert(extension, window, getInfo) {
+    const STATES = {
+      [window.STATE_MAXIMIZED]: "maximized",
+      [window.STATE_MINIMIZED]: "minimized",
+      [window.STATE_NORMAL]: "normal",
+    };
+    let state = STATES[window.windowState];
+    if (window.fullScreen) {
+      state = "fullscreen";
+    }
+
     let result = {
       id: this.getId(window),
       focused: window.document.hasFocus(),
@@ -658,7 +711,7 @@ global.WindowManager = {
 
       
       type: this.windowType(window),
-      state: window.fullScreen ? "fullscreen" : "normal",
+      state,
     };
 
     if (getInfo && getInfo.populate) {

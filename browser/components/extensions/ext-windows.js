@@ -5,6 +5,8 @@
 XPCOMUtils.defineLazyServiceGetter(this, "aboutNewTabService",
                                    "@mozilla.org/browser/aboutnewtab-service;1",
                                    "nsIAboutNewTabService");
+XPCOMUtils.defineLazyModuleGetter(this, "AppConstants",
+                                  "resource://gre/modules/AppConstants.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "PrivateBrowsingUtils",
                                   "resource://gre/modules/PrivateBrowsingUtils.jsm");
 
@@ -42,7 +44,7 @@ extensions.registerSchemaAPI("windows", null, (extension, context) => {
       }).api(),
 
       get: function(windowId, getInfo) {
-        let window = WindowManager.getWindow(windowId);
+        let window = WindowManager.getWindow(windowId, context);
         return Promise.resolve(WindowManager.convert(extension, window, getInfo));
       },
 
@@ -63,6 +65,13 @@ extensions.registerSchemaAPI("windows", null, (extension, context) => {
       },
 
       create: function(createData) {
+        if (createData.state !== null && createData.state != "normal") {
+          if (createData.left !== null || createData.top !== null ||
+              createData.width !== null || createData.height !== null) {
+            return Promise.reject({message: `"state": "${createData.state}" may not be combined with "left", "top", "width", or "height"`});
+          }
+        }
+
         function mkstr(s) {
           let result = Cc["@mozilla.org/supports-string;1"].createInstance(Ci.nsISupportsString);
           result.data = s;
@@ -132,23 +141,57 @@ extensions.registerSchemaAPI("windows", null, (extension, context) => {
         return new Promise(resolve => {
           window.addEventListener("load", function listener() {
             window.removeEventListener("load", listener);
-            resolve(WindowManager.convert(extension, window));
+
+            if (createData.state == "maximized" || createData.state == "normal" ||
+                (createData.state == "fullscreen" && AppConstants.platform != "macosx")) {
+              window.document.documentElement.setAttribute("sizemode", createData.state);
+            } else if (createData.state !== null) {
+              
+              
+
+              let obs = doc => {
+                if (doc === window.document) {
+                  Services.obs.removeObserver(obs, "document-shown");
+                  WindowManager.setState(window, createData.state);
+                  resolve();
+                }
+              };
+              Services.obs.addObserver(obs, "document-shown", false);
+              return;
+            }
+
+            resolve();
           });
+        }).then(() => {
+          return WindowManager.convert(extension, window);
         });
       },
 
       update: function(windowId, updateInfo) {
-        let window = WindowManager.getWindow(windowId);
+        
+        
+        
+        
+        
+        
+        
+
+        let window = WindowManager.getWindow(windowId, context);
         if (updateInfo.focused) {
           Services.focus.activeWindow = window;
         }
+
+        if (updateInfo.state !== null) {
+          WindowManager.setState(window, updateInfo.state);
+        }
+
         
 
         return Promise.resolve(WindowManager.convert(extension, window));
       },
 
       remove: function(windowId) {
-        let window = WindowManager.getWindow(windowId);
+        let window = WindowManager.getWindow(windowId, context);
         window.close();
 
         return new Promise(resolve => {
