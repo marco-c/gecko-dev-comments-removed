@@ -333,8 +333,10 @@ nsPresContext::Destroy()
 
   
   
-  if (mRefreshDriver && mRefreshDriver->PresContext() == this) {
-    mRefreshDriver->Disconnect();
+  if (mRefreshDriver) {
+    if (mRefreshDriver->PresContext() == this) {
+      mRefreshDriver->Disconnect();
+    }
     mRefreshDriver = nullptr;
   }
 }
