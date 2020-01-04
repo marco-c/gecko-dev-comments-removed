@@ -34,31 +34,45 @@ public class IntentUtils {
 
     public static HashMap<String, String> getEnvVarMap(@NonNull final Intent unsafeIntent) {
         
+        
+        final Pattern envVarPattern = Pattern.compile(ENV_VAR_REGEX);
+        final Matcher matcher = envVarPattern.matcher(""); 
+
+        
         final SafeIntent safeIntent = new SafeIntent(unsafeIntent);
         final HashMap<String, String> out = new HashMap<>();
-        final Pattern envVarPattern = Pattern.compile(ENV_VAR_REGEX);
-        Matcher matcher = null;
-
-        String envValue = safeIntent.getStringExtra("env0");
-        int i = 1;
-        while (envValue != null) {
-            
-            
-            if (matcher == null) {
-                matcher = envVarPattern.matcher(envValue);
-            } else {
-                matcher.reset(envValue);
-            }
-
-            if (matcher.matches()) {
-                final String envVarName = matcher.group(1);
-                final String envVarValue = matcher.group(2);
-                out.put(envVarName, envVarValue);
-            }
-            envValue = safeIntent.getStringExtra("env" + i);
+        int i = 0;
+        while (true) {
+            final String envKey = "env" + i;
             i += 1;
+            if (!unsafeIntent.hasExtra(envKey)) {
+                break;
+            }
+
+            maybeAddEnvVarToEnvVarMap(out, safeIntent, envKey, matcher);
         }
         return out;
+    }
+
+    
+
+
+
+
+
+    private static void maybeAddEnvVarToEnvVarMap(@NonNull final HashMap<String, String> envVarMap,
+            @NonNull final SafeIntent intent, @NonNull final String envKey, @NonNull final Matcher envVarMatcher) {
+        final String envValue = intent.getStringExtra(envKey);
+        if (envValue == null) {
+            return; 
+        }
+
+        envVarMatcher.reset(envValue);
+        if (envVarMatcher.matches()) {
+            final String envVarName = envVarMatcher.group(1);
+            final String envVarValue = envVarMatcher.group(2);
+            envVarMap.put(envVarName, envVarValue);
+        }
     }
 
     public static Bundle getBundleExtraSafe(final Intent intent, final String name) {
