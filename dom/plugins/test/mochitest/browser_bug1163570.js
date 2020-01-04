@@ -1,28 +1,6 @@
 var gTestRoot = getRootDirectory(gTestPath).replace("chrome://mochitests/content/", "http://127.0.0.1:8888/");
 
 
-function getTestPlugin(aName) {
-  let pluginName = aName || "Test Plug-in";
-  let ph = Cc["@mozilla.org/plugin/host;1"].getService(Ci.nsIPluginHost);
-  let tags = ph.getPluginTags();
-
-  
-  for (let i = 0; i < tags.length; i++) {
-    if (tags[i].name == pluginName)
-      return tags[i];
-  }
-  ok(false, "Unable to find plugin");
-  return null;
-}
-
-
-function setTestPluginEnabledState(newEnabledState, pluginName) {
-  let name = pluginName || "Test Plug-in";
-  let plugin = getTestPlugin(name);
-  plugin.enabledState = newEnabledState;
-}
-
-
 function promiseTabLoad(tab, url, eventType="load") {
   return new Promise((resolve, reject) => {
     function handle(event) {
