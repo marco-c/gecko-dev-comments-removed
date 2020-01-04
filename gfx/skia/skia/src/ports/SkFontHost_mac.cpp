@@ -864,10 +864,6 @@ CGRGBPixel* Offscreen::getCG(const SkScalerContext_Mac& context, const SkGlyph& 
         CGContextSetTextDrawingMode(fCG, kCGTextFill);
 
         
-        
-        CGContextSetGrayFillColor(fCG, 1.0f, 1.0f);
-
-        
         fDoAA = !doAA;
         fDoLCD = !doLCD;
 
@@ -889,12 +885,21 @@ CGRGBPixel* Offscreen::getCG(const SkScalerContext_Mac& context, const SkGlyph& 
         fDoLCD = doLCD;
     }
 
-    CGRGBPixel* image = (CGRGBPixel*)fImageStorage.get();
     
-    image += (fSize.fHeight - glyph.fHeight) * fSize.fWidth;
+    
+    
+    
+    
+    uint32_t backgroundColor = fDoLCD ? 0xFFFFFFFF : 0;
+    uint32_t foregroundColor = fDoLCD ? 0.0f : 1.0f;
+
+    CGContextSetGrayFillColor(fCG, foregroundColor, 1.0f);
+
+    CGRGBPixel* image = (CGRGBPixel*)fImageStorage.get();
+    sk_memset_rect32(image, backgroundColor, fSize.fWidth, fSize.fHeight, rowBytes);
 
     
-    sk_memset_rect32(image, 0, glyph.fWidth, glyph.fHeight, rowBytes);
+    image += (fSize.fHeight - glyph.fHeight) * fSize.fWidth;
 
     float subX = 0;
     float subY = 0;
@@ -1283,7 +1288,11 @@ void SkScalerContext_Mac::generateImage(const SkGlyph& glyph) {
                 int r = (addr[x] >> 16) & 0xFF;
                 int g = (addr[x] >>  8) & 0xFF;
                 int b = (addr[x] >>  0) & 0xFF;
-                addr[x] = (table[r] << 16) | (table[g] << 8) | table[b];
+
+                
+                
+                addr[x] = ((255 - table[r]) << 16) | ((255 - table[g]) << 8) | (255 - table[b]);
+
             }
             addr = SkTAddByteOffset(addr, cgRowBytes);
         }
