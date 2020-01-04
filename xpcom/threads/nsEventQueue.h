@@ -8,25 +8,43 @@
 #define nsEventQueue_h__
 
 #include <stdlib.h>
+#include "mozilla/Monitor.h"
 #include "mozilla/ReentrantMonitor.h"
 #include "nsIRunnable.h"
 #include "nsCOMPtr.h"
 #include "mozilla/AlreadyAddRefed.h"
 
+template<typename MonitorType>
+struct MonitorAutoEnterChooser;
 
-class nsEventQueue
+template<>
+struct MonitorAutoEnterChooser<mozilla::Monitor>
 {
-  typedef mozilla::ReentrantMonitor ReentrantMonitor;
+  typedef mozilla::MonitorAutoLock Type;
+};
 
+template<>
+struct MonitorAutoEnterChooser<mozilla::ReentrantMonitor>
+{
+  typedef mozilla::ReentrantMonitorAutoEnter Type;
+};
+
+
+template<typename MonitorType>
+class nsEventQueueBase
+{
 public:
-  nsEventQueue();
-  ~nsEventQueue();
+  typedef MonitorType Monitor;
+  typedef typename MonitorAutoEnterChooser<Monitor>::Type MonitorAutoEnterType;
+
+  nsEventQueueBase();
+  ~nsEventQueueBase();
 
   
   
   
-  void PutEvent(nsIRunnable* aEvent);
-  void PutEvent(already_AddRefed<nsIRunnable>&& aEvent);
+  void PutEvent(already_AddRefed<nsIRunnable>&& aEvent,
+                MonitorAutoEnterType& aProofOfLock);
 
   
   
@@ -34,30 +52,19 @@ public:
   
   
   
-  bool GetEvent(bool aMayWait, nsIRunnable** aEvent);
+  bool GetEvent(bool aMayWait, nsIRunnable** aEvent,
+                MonitorAutoEnterType& aProofOfLock);
 
   
-  bool HasPendingEvent()
+  bool GetPendingEvent(nsIRunnable** aRunnable,
+                       MonitorAutoEnterType& aProofOfLock)
   {
-    return GetEvent(false, nullptr);
+    return GetEvent(false, aRunnable, aProofOfLock);
   }
 
-  
-  bool GetPendingEvent(nsIRunnable** runnable)
-  {
-    return GetEvent(false, runnable);
-  }
-
-  
-  ReentrantMonitor& GetReentrantMonitor()
-  {
-    return mReentrantMonitor;
-  }
-
-  size_t Count();
+  size_t Count(MonitorAutoEnterType& aProofOfLock);
 
 private:
-
   bool IsEmpty()
   {
     return !mHead || (mHead == mTail && mOffsetHead == mOffsetTail);
@@ -89,13 +96,59 @@ private:
     free(aPage);
   }
 
-  ReentrantMonitor mReentrantMonitor;
-
   Page* mHead;
   Page* mTail;
 
   uint16_t mOffsetHead;  
   uint16_t mOffsetTail;  
+};
+
+class nsEventQueue : protected nsEventQueueBase<mozilla::ReentrantMonitor>
+{
+private:
+  typedef nsEventQueueBase<mozilla::ReentrantMonitor> Base;
+  
+  friend class nsEventQueueBase<mozilla::ReentrantMonitor>;
+
+  typedef Base::Monitor MonitorType;
+  typedef Base::MonitorAutoEnterType MonitorAutoEnterType;
+  MonitorType mMonitor;
+
+public:
+  nsEventQueue();
+
+  
+  
+  
+  void PutEvent(nsIRunnable* aEvent);
+  void PutEvent(already_AddRefed<nsIRunnable>&& aEvent);
+
+  
+  
+  
+  
+  
+  
+  bool GetEvent(bool aMayWait, nsIRunnable** aEvent);
+
+  
+  bool HasPendingEvent()
+  {
+    return GetEvent(false, nullptr);
+  }
+
+  
+  bool GetPendingEvent(nsIRunnable** aRunnable)
+  {
+    return GetEvent(false, aRunnable);
+  }
+
+  size_t Count();
+
+  MonitorType& GetReentrantMonitor()
+  {
+    return mMonitor;
+  }
 };
 
 #endif  
