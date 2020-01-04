@@ -8156,25 +8156,14 @@ nsContentUtils::InternalStorageAllowedForPrincipal(nsIPrincipal* aPrincipal,
   
   
   
-  if (IsSystemPrincipal(SubjectPrincipal())) {
-    return access;
-  }
-
-  if (!SubjectPrincipal()->Subsumes(aPrincipal)) {
-    NS_WARNING("A principal is attempting to access storage for a principal "
-               "which it doesn't subsume!");
-    return StorageAccess::eDeny;
-  }
-
-  
-  
-  
   nsCOMPtr<nsIURI> uri;
-  MOZ_ALWAYS_TRUE(NS_SUCCEEDED(aPrincipal->GetURI(getter_AddRefs(uri))));
-  bool isAbout = false;
-  MOZ_ALWAYS_TRUE(NS_SUCCEEDED(uri->SchemeIs("about", &isAbout)));
-  if (isAbout) {
-    return access;
+  nsresult rv = aPrincipal->GetURI(getter_AddRefs(uri));
+  if (NS_SUCCEEDED(rv) && uri) {
+    bool isAbout = false;
+    MOZ_ALWAYS_TRUE(NS_SUCCEEDED(uri->SchemeIs("about", &isAbout)));
+    if (isAbout) {
+      return access;
+    }
   }
 
   nsCOMPtr<nsIPermissionManager> permissionManager =
