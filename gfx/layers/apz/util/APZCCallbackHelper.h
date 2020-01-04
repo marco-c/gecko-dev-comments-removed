@@ -164,7 +164,13 @@ public:
     static void NotifyFlushComplete(nsIPresShell* aShell);
 
     
-    static void SuppressDisplayport(const bool& aEnabled);
+
+
+
+
+
+    static void SuppressDisplayport(const bool& aEnabled,
+                                    const nsCOMPtr<nsIPresShell>& aShell);
     static bool IsDisplayportSuppressed();
 
 private:
