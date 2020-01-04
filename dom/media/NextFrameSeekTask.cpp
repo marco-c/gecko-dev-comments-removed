@@ -171,22 +171,23 @@ NextFrameSeekTask::Seek(const media::TimeUnit&)
   
   
   
-  if ((mVideoQueue.GetSize() > 0
-       && !mReader->IsRequestingAudioData() && !mReader->IsWaitingAudioData()
-       && !mReader->IsRequestingVideoData() && !mReader->IsWaitingVideoData())
-      || mVideoQueue.AtEndOfStream()) {
-    UpdateSeekTargetTime();
-    SeekTaskResolveValue val = {};  
-    return SeekTask::SeekTaskPromise::CreateAndResolve(val, __func__);
-  } else {
-    
-    
-    
-    if (mVideoQueue.GetSize() == 0) {
-      EnsureVideoDecodeTaskQueued();
-    }
+  bool hasPendingRequests = mReader->IsRequestingAudioData() ||
+                            mReader->IsWaitingAudioData() ||
+                            mReader->IsRequestingVideoData() ||
+                            mReader->IsWaitingVideoData();
+
+  bool needMoreVideo = mVideoQueue.GetSize() == 0 && !mVideoQueue.IsFinished();
+
+  if (needMoreVideo) {
+    EnsureVideoDecodeTaskQueued();
+  }
+  if (hasPendingRequests || needMoreVideo) {
     return mSeekTaskPromise.Ensure(__func__);
   }
+
+  UpdateSeekTargetTime();
+  SeekTaskResolveValue val = {};  
+  return SeekTask::SeekTaskPromise::CreateAndResolve(val, __func__);
 }
 
 bool
@@ -440,6 +441,7 @@ NextFrameSeekTask::SetCallbacks()
     OwnerThread(), [this] (WaitCallbackData aData) {
     
     
+    CheckIfSeekComplete();
   });
 
   mVideoWaitCallback = mReader->VideoWaitCallback().Connect(
