@@ -1934,6 +1934,21 @@ nsTextEditorState::SetValue(const nsAString& aValue, uint32_t aFlags)
         
         return true;
       }
+      if (NS_WARN_IF(!mBoundFrame)) {
+        
+      } else {
+        
+        
+        nsAutoString currentValue;
+        mBoundFrame->GetText(currentValue);
+        if (newValue == currentValue) {
+          
+          
+          
+          
+          return true;
+        }
+      }
       
       
       
