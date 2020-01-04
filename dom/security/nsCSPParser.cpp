@@ -1092,12 +1092,13 @@ nsCSPParser::directive()
   
   
   
-  if (cspDir->equals(nsIContentSecurityPolicy::SCRIPT_SRC_DIRECTIVE) &&
+  if ((cspDir->equals(nsIContentSecurityPolicy::SCRIPT_SRC_DIRECTIVE) ||
+       cspDir->equals(nsIContentSecurityPolicy::STYLE_SRC_DIRECTIVE)) &&
       mHasHashOrNonce && mUnsafeInlineKeywordSrc) {
     mUnsafeInlineKeywordSrc->invalidate();
     
     const char16_t* params[] = { MOZ_UTF16("'unsafe-inline'") };
-    logWarningErrorToConsole(nsIScriptError::warningFlag, "ignoringSrcWithinScriptSrc",
+    logWarningErrorToConsole(nsIScriptError::warningFlag, "ignoringSrcWithinScriptStyleSrc",
                              params, ArrayLength(params));
   }
 
