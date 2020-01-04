@@ -56,6 +56,9 @@ function FunctionBind(thisArg, ...boundArgs) {
         targetName = "";
 
     
+    targetName = "bound " + targetName;
+
+    
     _FinishBoundFunctionInit(F, target, L, targetName);
 
     
