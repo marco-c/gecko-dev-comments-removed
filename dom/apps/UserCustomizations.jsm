@@ -80,6 +80,12 @@ this.UserCustomizations = {
   },
 
   isFromExtension: function(aURI) {
+    if (!aURI && Services.prefs.getBoolPref("webextensions.tests")) {
+      
+      
+      
+      return true;
+    }
     return this.appId.has(aURI.host);
   },
 

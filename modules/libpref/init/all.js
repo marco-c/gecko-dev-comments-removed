@@ -1005,13 +1005,6 @@ pref("print.print_edge_right", 0);
 pref("print.print_edge_bottom", 0);
 
 
-#if defined(XP_WIN)
-pref("print.print_via_parent", true);
-#else
-pref("print.print_via_parent", false);
-#endif
-
-
 
 
 pref("extensions.spellcheck.inline.max-misspellings", 500);
@@ -5102,6 +5095,8 @@ pref("dom.mozKillSwitch.enabled", false);
 pref("toolkit.pageThumbs.screenSizeDivisor", 7);
 pref("toolkit.pageThumbs.minWidth", 0);
 pref("toolkit.pageThumbs.minHeight", 0);
+
+pref("webextensions.tests", false);
 
 
 pref("dom.input.fallbackUploadDir", "");
