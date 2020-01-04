@@ -19,9 +19,11 @@
 using namespace mozilla;
 using namespace mozilla::dom;
 
-nsDOMTokenList::nsDOMTokenList(Element* aElement, nsIAtom* aAttrAtom)
+nsDOMTokenList::nsDOMTokenList(Element* aElement, nsIAtom* aAttrAtom,
+                               const DOMTokenListSupportedTokenArray aSupportedTokens)
   : mElement(aElement),
-    mAttrAtom(aAttrAtom)
+    mAttrAtom(aAttrAtom),
+    mSupportedTokens(aSupportedTokens)
 {
   
   
