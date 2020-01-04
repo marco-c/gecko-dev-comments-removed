@@ -430,7 +430,8 @@ const sdp_namearray_t sdp_fmtp_codec_param[SDP_MAX_FMTP_PARAM] =
     {"useinbandfec",                    sizeof("useinbandfec")}, 
     {"maxcodedaudiobandwidth",          sizeof("maxcodedaudiobandwidth")}, 
     {"cbr",                             sizeof("cbr")}, 
-    {"max-fr",                          sizeof("max-fr")} 
+    {"max-fr",                          sizeof("max-fr")}, 
+    {"maxplaybackrate",                 sizeof("maxplaybackrate")} 
 } ;
 
 

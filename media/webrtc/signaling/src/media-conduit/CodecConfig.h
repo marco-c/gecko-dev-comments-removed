@@ -30,6 +30,9 @@ struct AudioCodecConfig
   int mRate;
 
   
+  int mMaxPlaybackRate;
+
+  
 
 
   explicit AudioCodecConfig(int type, std::string name,
@@ -40,8 +43,8 @@ struct AudioCodecConfig
                                                      mFreq(freq),
                                                      mPacSize(pacSize),
                                                      mChannels(channels),
-                                                     mRate(rate)
-
+                                                     mRate(rate),
+                                                     mMaxPlaybackRate(0)
   {
   }
 };
