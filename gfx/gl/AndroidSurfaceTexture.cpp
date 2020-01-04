@@ -129,13 +129,15 @@ AndroidSurfaceTexture::Attach(GLContext* aContext, PRIntervalTime aTimeout)
 
   MOZ_ASSERT(aContext->IsOwningThreadCurrent(), "Trying to attach GLContext from different thread");
 
-  mAttachedContext = aContext;
-  mAttachedContext->MakeCurrent();
   aContext->fGenTextures(1, &mTexture);
 
-  UpdateCanDetach();
+  if (NS_FAILED(mSurfaceTexture->AttachToGLContext(mTexture))) {
+    return NS_ERROR_NOT_AVAILABLE;
+  }
+  mAttachedContext = aContext;
+  mAttachedContext->MakeCurrent();
 
-  return mSurfaceTexture->AttachToGLContext(mTexture);
+  return NS_OK;
 }
 
 nsresult
@@ -160,24 +162,21 @@ AndroidSurfaceTexture::Detach()
   return NS_OK;
 }
 
-void
-AndroidSurfaceTexture::UpdateCanDetach()
+bool
+AndroidSurfaceTexture::CanDetach() const
 {
   
   
   
-  bool canDetach = gfxPrefs::SurfaceTextureDetachEnabled();
-
-  mCanDetach = AndroidBridge::Bridge()->GetAPIVersion() >= 16 &&
+  return AndroidBridge::Bridge()->GetAPIVersion() >= 16 &&
     (!mAttachedContext || mAttachedContext->Vendor() != GLVendor::Imagination) &&
     (!mAttachedContext || mAttachedContext->Vendor() != GLVendor::ARM ) &&
-    canDetach;
+    gfxPrefs::SurfaceTextureDetachEnabled();
 }
 
 bool
 AndroidSurfaceTexture::Init(GLContext* aContext, GLuint aTexture)
 {
-  UpdateCanDetach();
 
   if (!aTexture && !CanDetach()) {
     
@@ -214,7 +213,6 @@ AndroidSurfaceTexture::AndroidSurfaceTexture()
   , mSurfaceTexture()
   , mSurface()
   , mAttachedContext(nullptr)
-  , mCanDetach(false)
   , mMonitor("AndroidSurfaceTexture::mContextMonitor")
 {
 }
