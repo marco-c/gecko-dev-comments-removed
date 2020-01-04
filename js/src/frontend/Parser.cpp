@@ -4592,9 +4592,21 @@ Parser<FullParseHandler>::namedImportsOrNamespaceImport(TokenKind tt, Node impor
         if (!importName)
             return null();
 
-        Node bindingName = newBoundImportForCurrentName();
+        Node bindingName = newName(tokenStream.currentName());
         if (!bindingName)
-            return false;
+            return null();
+
+        
+        
+        
+        
+        
+        bindingName->pn_dflags |= PND_CONST;
+        BindData<FullParseHandler> data(context);
+        data.initLexical(HoistVars, JSOP_DEFLET, nullptr, JSMSG_TOO_MANY_LOCALS);
+        handler.setPosition(bindingName, pos());
+        if (!bindUninitialized(&data, bindingName))
+            return null();
 
         Node importSpec = handler.newBinary(PNK_IMPORT_SPEC, importName, bindingName);
         if (!importSpec)
