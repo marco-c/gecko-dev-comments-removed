@@ -12,7 +12,6 @@
 #include "mozilla/ModuleUtils.h"
 #include "mp3sniff.h"
 #include "nestegg/nestegg.h"
-#include "FlacDemuxer.h"
 
 #include "nsIClassInfoImpl.h"
 #include <algorithm>
@@ -34,9 +33,7 @@ nsMediaSnifferEntry nsMediaSniffer::sSnifferEntries[] = {
   
   PATTERN_ENTRY("\xFF\xFF\xFF\xFF\x00\x00\x00\x00\xFF\xFF\xFF\xFF", "RIFF\x00\x00\x00\x00WAVE", AUDIO_WAV),
   
-  PATTERN_ENTRY("\xFF\xFF\xFF", "ID3", AUDIO_MP3),
-  
-  PATTERN_ENTRY("\xFF\xFF\xFF\xFF", "fLaC", AUDIO_FLAC)
+  PATTERN_ENTRY("\xFF\xFF\xFF", "ID3", AUDIO_MP3)
 };
 
 
@@ -121,11 +118,6 @@ static bool MatchesMP3(const uint8_t* aData, const uint32_t aLength)
   return mp3_sniff(aData, (long)aLength);
 }
 
-static bool MatchesFLAC(const uint8_t* aData, const uint32_t aLength)
-{
-  return mozilla::FlacDemuxer::FlacSniffer(aData, aLength);
-}
-
 NS_IMETHODIMP
 nsMediaSniffer::GetMIMETypeFromContent(nsIRequest* aRequest,
                                        const uint8_t* aData,
@@ -182,14 +174,6 @@ nsMediaSniffer::GetMIMETypeFromContent(nsIRequest* aRequest,
   
   if (MatchesMP3(aData, std::min(aLength, MAX_BYTES_SNIFFED_MP3))) {
     aSniffedType.AssignLiteral(AUDIO_MP3);
-    return NS_OK;
-  }
-
-  
-  
-  
-  if (MatchesFLAC(aData, clampedLength)) {
-    aSniffedType.AssignLiteral(AUDIO_FLAC);
     return NS_OK;
   }
 

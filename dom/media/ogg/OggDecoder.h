@@ -37,14 +37,6 @@ public:
     return mShutdownBit;
   }
 
-  
-  
-  
-  static bool CanHandleMediaType(const nsACString& aMIMETypeExcludingCodecs,
-                                 const nsAString& aCodecs);
-
-  static bool IsEnabled();
-
 protected:
   void ShutdownBitChanged() override
   {

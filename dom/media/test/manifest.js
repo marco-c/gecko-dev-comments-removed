@@ -36,7 +36,6 @@ var gSmallTests = [
   { name:"vp9.webm", type:"video/webm", width:320, height:240, duration:4 },
   { name:"detodos.opus", type:"audio/ogg; codecs=opus", duration:2.9135 },
   { name:"gizmo.mp4", type:"video/mp4", width:560, height:320, duration:5.56 },
-  { name:"flac-s24.flac", type:"audio/flac", duration:4.04 },
   { name:"bogus.duh", type:"bogus/duh" }
 ];
 
@@ -87,7 +86,7 @@ var gPlayedTests = [
   
   
   
-  { name:"bug495794.ogg", type:"audio/ogg", duration:0.3 },
+  { name:"bug495794.ogg", type:"audio/ogg", duration:0.3 }
 ];
 
 
@@ -120,7 +119,6 @@ var gTrackTests = [
   { name:"320x240.ogv", type:"video/ogg", width:320, height:240, duration:0.266, size:28942, hasAudio:false, hasVideo:true },
   { name:"short-video.ogv", type:"video/ogg", duration:1.081, hasAudio:true, hasVideo:true },
   { name:"seek.webm", type:"video/webm", duration:3.966, size:215529, hasAudio:false, hasVideo:true },
-  { name:"flac-s24.flac", type:"audio/flac", duration:4.04, hasAudio:true, hasVideo:false },
   { name:"bogus.duh", type:"bogus/duh" }
 ];
 
@@ -273,13 +271,6 @@ var gPlayTests = [
   
   
   { name:"vbr-head.mp3", type:"audio/mpeg", duration:10.00 },
-
-  
-  
-  { name:"flac-noheader-s16.flac", type:"audio/flac", duration:4.0 },
-  { name:"flac-s24.flac", type:"audio/flac", duration:4.04 },
-  
-  { name:"A4.ogv", type:"video/ogg", width:320, height:240, duration:3.13 },
 
   
   { name:"bogus.duh", type:"bogus/duh", duration:Number.NaN },
@@ -768,15 +759,6 @@ var gMetadataTests = [
     }
   },
   { name:"wavedata_u8.wav", tags: { }
-  },
-  { name:"flac-s24.flac", tags: {
-      ALBUM:"Seascapes",
-      TITLE:"(La Mer) - II. Jeux de vagues. Allegro",
-      COMPOSER:"Debussy, Claude",
-      TRACKNUMBER:"2/9",
-      DISCNUMBER:"1/1",
-      encoder:"Lavf57.41.100",
-    }
   },
 ];
 
