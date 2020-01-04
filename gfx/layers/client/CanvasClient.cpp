@@ -131,8 +131,9 @@ CanvasClient2D::CreateTextureClientForCanvas(gfx::SurfaceFormat aFormat,
 #else
   
   
+  gfx::BackendType backend = gfxPlatform::GetPlatform()->GetPreferredCanvasBackend();
   return TextureClient::CreateForRawBufferAccess(GetForwarder(),
-                                                 aFormat, aSize, gfx::BackendType::NONE,
+                                                 aFormat, aSize, backend,
                                                  mTextureFlags | aFlags);
 #endif
 }
