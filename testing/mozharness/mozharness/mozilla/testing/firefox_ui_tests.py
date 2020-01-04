@@ -23,15 +23,6 @@ from mozharness.mozilla.testing.testbase import (
 )
 from mozharness.mozilla.vcstools import VCSToolsScript
 
-deprecated_options = [
-    
-    [["--e10s"], {
-        'dest': 'e10s',
-        'action': 'store_true',
-        'default': False,
-        'help': 'Enable multi-process (e10s) mode when running tests.',
-    }],
-]
 
 
 firefox_ui_tests_config_options = [
@@ -39,6 +30,12 @@ firefox_ui_tests_config_options = [
         'dest': 'dry_run',
         'default': False,
         'help': 'Only show what was going to be tested.',
+    }],
+    [["--e10s"], {
+        'dest': 'e10s',
+        'action': 'store_true',
+        'default': False,
+        'help': 'Enable multi-process (e10s) mode when running tests.',
     }],
     [['--firefox-ui-branch'], {
         'dest': 'firefox_ui_branch',
@@ -54,8 +51,7 @@ firefox_ui_tests_config_options = [
         'help': 'absolute path to directory containing breakpad '
                 'symbols, or the url of a zip file containing symbols.',
     }],
-] + deprecated_options \
-    + copy.deepcopy(testing_config_options)
+] + copy.deepcopy(testing_config_options)
 
 
 firefox_ui_update_harness_config_options = [
