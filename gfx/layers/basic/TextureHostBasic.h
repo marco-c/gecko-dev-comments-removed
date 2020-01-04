@@ -24,6 +24,7 @@ public:
   TextureSourceBasic() : mFromYCBCR(false) {}
   virtual ~TextureSourceBasic() {}
   virtual gfx::SourceSurface* GetSurface(gfx::DrawTarget* aTarget) = 0;
+  virtual void SetBufferTextureHost(BufferTextureHost* aTexture) {}
   bool mFromYCBCR; 
 };
 
