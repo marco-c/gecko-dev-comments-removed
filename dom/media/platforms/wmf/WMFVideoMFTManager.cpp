@@ -21,6 +21,7 @@
 #include "IMFYCbCrImage.h"
 #include "mozilla/WindowsVersion.h"
 #include "mozilla/Preferences.h"
+#include "mozilla/Telemetry.h"
 #include "nsPrintfCString.h"
 
 extern mozilla::LogModule* GetPDMLog();
@@ -78,6 +79,9 @@ WMFVideoMFTManager::WMFVideoMFTManager(
   , mImageContainer(aImageContainer)
   , mDXVAEnabled(aDXVAEnabled)
   , mLayersBackend(aLayersBackend)
+  , mNullOutputCount(0)
+  , mGotValidOutputAfterNullOutput(false)
+  , mGotExcessiveNullOutput(false)
   
   
 {
@@ -103,6 +107,20 @@ WMFVideoMFTManager::~WMFVideoMFTManager()
   if (mDXVA2Manager) {
     DeleteOnMainThread(mDXVA2Manager);
   }
+
+  
+  
+  uint32_t telemetry = (mNullOutputCount == 0) ? 0 :
+                       (mGotValidOutputAfterNullOutput && mGotExcessiveNullOutput) ? 1 :
+                       mGotExcessiveNullOutput ? 2 :
+                       mGotValidOutputAfterNullOutput ? 3 :
+                       4;
+
+  nsCOMPtr<nsIRunnable> task = NS_NewRunnableFunction([=]() -> void {
+    LOG(nsPrintfCString("Reporting telemetry VIDEO_MFT_OUTPUT_NULL_SAMPLES=%d", telemetry).get());
+    Telemetry::Accumulate(Telemetry::ID::VIDEO_MFT_OUTPUT_NULL_SAMPLES, telemetry);
+  });
+  AbstractThread::MainThread()->Dispatch(task.forget());
 }
 
 const GUID&
@@ -575,6 +593,23 @@ WMFVideoMFTManager::Output(int64_t aStreamOffset,
       continue;
     }
     if (SUCCEEDED(hr)) {
+      if (!sample) {
+        LOG("Video MFTDecoder returned success but no output!");
+        
+        
+        
+        
+        
+        
+        
+        ++mNullOutputCount;
+        if (mNullOutputCount > 250) {
+          LOG("Excessive Video MFTDecoder returning success but no output; giving up");
+          mGotExcessiveNullOutput = true;
+          return E_FAIL;
+        }
+        continue;
+      }
       break;
     }
     
@@ -594,6 +629,10 @@ WMFVideoMFTManager::Output(int64_t aStreamOffset,
   NS_ENSURE_TRUE(frame, E_FAIL);
 
   aOutData = frame;
+
+  if (mNullOutputCount) {
+    mGotValidOutputAfterNullOutput = true;
+  }
 
   return S_OK;
 }
