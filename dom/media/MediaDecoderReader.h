@@ -59,6 +59,9 @@ enum class ReadMetadataFailureReason : int8_t
 
 
 class MediaDecoderReader {
+  friend class ReRequestVideoWithSkipTask;
+  friend class ReRequestAudioTask;
+
 public:
   enum NotDecodedReason {
     END_OF_STREAM,
@@ -83,12 +86,6 @@ public:
   
   
   explicit MediaDecoderReader(AbstractMediaDecoder* aDecoder);
-
-  
-  
-  
-  
-  void InitializationTask();
 
   
   
@@ -144,9 +141,6 @@ public:
   virtual RefPtr<VideoDataPromise>
   RequestVideoData(bool aSkipToNextKeyframe, int64_t aTimeThreshold);
 
-  friend class ReRequestVideoWithSkipTask;
-  friend class ReRequestAudioTask;
-
   
   
   
@@ -168,13 +162,6 @@ public:
   
   
   virtual RefPtr<MetadataPromise> AsyncReadMetadata();
-
-  
-  
-  
-  
-  virtual nsresult ReadMetadata(MediaInfo* aInfo,
-                                MetadataTags** aTags) { MOZ_CRASH(); }
 
   
   
@@ -211,27 +198,6 @@ public:
   }
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  virtual media::TimeIntervals GetBuffered();
-
-  
-  virtual void UpdateBuffered();
-
-  
   virtual bool ForceZeroStartTime() const { return false; }
 
   
@@ -251,23 +217,6 @@ public:
   virtual size_t SizeOfVideoQueueInFrames();
   virtual size_t SizeOfAudioQueueInFrames();
 
-protected:
-  friend class TrackBuffer;
-  virtual void NotifyDataArrivedInternal(uint32_t aLength, int64_t aOffset) { }
-
-  void NotifyDataArrived(const media::Interval<int64_t>& aInfo)
-  {
-    MOZ_ASSERT(OnTaskQueue());
-    NS_ENSURE_TRUE_VOID(!mShutdown);
-    NotifyDataArrivedInternal(aInfo.Length(), aInfo.mStart);
-    UpdateBuffered();
-  }
-
-  
-  void ThrottledNotifyDataArrived(const media::Interval<int64_t>& aInterval);
-  void DoThrottledNotify();
-
-public:
   
   
   
@@ -283,6 +232,14 @@ public:
     OwnerThread()->Dispatch(r.forget(), AbstractThread::DontAssertDispatchSuccess);
   }
 
+  void NotifyDataArrived(const media::Interval<int64_t>& aInfo)
+  {
+    MOZ_ASSERT(OnTaskQueue());
+    NS_ENSURE_TRUE_VOID(!mShutdown);
+    NotifyDataArrivedInternal(aInfo.Length(), aInfo.mStart);
+    UpdateBuffered();
+  }
+
   
   virtual void NotifyDataRemoved() {}
 
@@ -294,9 +251,9 @@ public:
     return mDecoder;
   }
 
-  RefPtr<VideoDataPromise> DecodeToFirstVideoData();
-
   MediaInfo GetMediaInfo() { return mInfo; }
+
+  AbstractCanonical<media::TimeIntervals>* CanonicalBuffered() { return &mBuffered; }
 
   
   
@@ -344,18 +301,23 @@ protected:
   
   
   
-  virtual bool DecodeAudioData() {
-    return false;
-  }
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  virtual media::TimeIntervals GetBuffered();
 
-  
-  
-  
-  
-  
-  virtual bool DecodeVideoFrame(bool &aKeyframeSkip, int64_t aTimeThreshold) {
-    return false;
-  }
+  RefPtr<VideoDataPromise> DecodeToFirstVideoData();
+
+  bool HaveStartTime() { MOZ_ASSERT(OnTaskQueue()); return mStartTime.isSome(); }
+  int64_t StartTime() { MOZ_ASSERT(HaveStartTime()); return mStartTime.ref(); }
 
   
   
@@ -385,9 +347,6 @@ protected:
 
   
   Canonical<media::TimeIntervals> mBuffered;
-public:
-  AbstractCanonical<media::TimeIntervals>* CanonicalBuffered() { return &mBuffered; }
-protected:
 
   
   MediaInfo mInfo;
@@ -417,8 +376,6 @@ protected:
   
   
   Maybe<int64_t> mStartTime;
-  bool HaveStartTime() { MOZ_ASSERT(OnTaskQueue()); return mStartTime.isSome(); }
-  int64_t StartTime() { MOZ_ASSERT(HaveStartTime()); return mStartTime.ref(); }
 
   
   
@@ -431,6 +388,46 @@ protected:
   TimedMetadataEventProducer mTimedMetadataEvent;
 
 private:
+  
+  
+  
+  
+  void InitializationTask();
+
+  
+  
+  
+  
+  virtual nsresult ReadMetadata(MediaInfo* aInfo,
+                                MetadataTags** aTags) { MOZ_CRASH(); }
+
+  
+  virtual void UpdateBuffered();
+
+  virtual void NotifyDataArrivedInternal(uint32_t aLength, int64_t aOffset) { }
+
+  
+  void ThrottledNotifyDataArrived(const media::Interval<int64_t>& aInterval);
+  void DoThrottledNotify();
+
+  
+  
+  
+  
+  
+  virtual bool DecodeAudioData() {
+    return false;
+  }
+
+  
+  
+  
+  
+  
+  virtual bool DecodeVideoFrame(bool &aKeyframeSkip, int64_t aTimeThreshold) {
+    return false;
+  }
+
   
   
   MozPromiseHolder<AudioDataPromise> mBaseAudioPromise;
