@@ -13,10 +13,6 @@
 
 
 
-
-
-'use strict';
-
 var EXPORTED_SYMBOLS = ['PdfjsChromeUtils'];
 
 const Cc = Components.classes;
