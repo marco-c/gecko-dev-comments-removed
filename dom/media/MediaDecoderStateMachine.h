@@ -676,9 +676,6 @@ private:
   double mPlaybackRate;
 
   
-  TimeStamp mDecodeStartTime;
-
-  
   
   uint32_t mBufferingWait;
   int64_t  mLowDataThresholdUsecs;
