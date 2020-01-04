@@ -1092,22 +1092,56 @@ Promise::Resolve(nsIGlobalObject* aGlobal, JSContext* aCx,
   return promise.forget();
 }
 
- already_AddRefed<Promise>
+ void
 Promise::Reject(const GlobalObject& aGlobal, JS::Handle<JS::Value> aThisv,
-                JS::Handle<JS::Value> aValue, ErrorResult& aRv)
+                JS::Handle<JS::Value> aValue,
+                JS::MutableHandle<JS::Value> aRetval, ErrorResult& aRv)
 {
+  
+  
+
+  JSContext* cx = aGlobal.Context();
+
   nsCOMPtr<nsIGlobalObject> global =
     do_QueryInterface(aGlobal.GetAsSupports());
   if (!global) {
     aRv.Throw(NS_ERROR_UNEXPECTED);
-    return nullptr;
+    return;
   }
 
-  RefPtr<Promise> p = Reject(global, aGlobal.Context(), aValue, aRv);
-  if (p) {
-    p->mRejectionStack = p->mAllocationStack;
+  
+  if (!aThisv.isObject()) {
+    aRv.ThrowTypeError<MSG_ILLEGAL_PROMISE_CONSTRUCTOR>();
+    return;
   }
-  return p.forget();
+
+  
+  PromiseCapability capability(cx);
+  NewPromiseCapability(cx, global, aThisv, false, capability, aRv);
+  
+  if (aRv.Failed()) {
+    return;
+  }
+
+  
+  Promise* p = capability.mNativePromise;
+  if (p) {
+    p->MaybeRejectInternal(cx, aValue);
+    p->mRejectionStack = p->mAllocationStack;
+  } else {
+    JS::Rooted<JS::Value> value(cx, aValue);
+    JS::Rooted<JS::Value> ignored(cx);
+    if (!JS::Call(cx, JS::UndefinedHandleValue ,
+                  capability.mReject, JS::HandleValueArray(value),
+                  &ignored)) {
+      
+      aRv.NoteJSContextException();
+      return;
+    }
+  }
+
+  
+  aRetval.set(capability.PromiseValue());
 }
 
  already_AddRefed<Promise>
