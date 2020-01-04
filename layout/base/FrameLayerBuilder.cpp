@@ -952,6 +952,7 @@ public:
                                         const nsIntRect& aVisibleRect,
                                         bool aForceOwnLayer,
                                         bool aBackfaceidden,
+                                        bool aAvoidCreatingNewLayer,
                                         NewPaintedLayerCallbackType aNewPaintedLayerCallback);
 
   
@@ -1003,6 +1004,12 @@ protected:
 
 
   PaintedLayerDataNode* EnsureNodeFor(AnimatedGeometryRoot* aAnimatedGeometryRoot);
+
+  
+
+
+
+  PaintedLayerDataNode* FindNodeForNearestAncestor(AnimatedGeometryRoot* aAnimatedGeometryRoot);
 
   
 
@@ -2837,11 +2844,19 @@ PaintedLayerDataTree::FindPaintedLayerFor(AnimatedGeometryRoot* aAnimatedGeometr
                                           const nsIntRect& aVisibleRect,
                                           bool aForceOwnLayer,
                                           bool aBackfaceHidden,
+                                          bool aAvoidCreatingNewLayer,
                                           NewPaintedLayerCallbackType aNewPaintedLayerCallback)
 {
   const nsIntRect* bounds = aForceOwnLayer ? nullptr : &aVisibleRect;
   FinishPotentiallyIntersectingNodes(aAnimatedGeometryRoot, bounds);
-  PaintedLayerDataNode* node = EnsureNodeFor(aAnimatedGeometryRoot);
+  PaintedLayerDataNode* node = nullptr;
+  if (aAvoidCreatingNewLayer) {
+    node = FindNodeForNearestAncestor(aAnimatedGeometryRoot);
+  }
+  if (!node) {
+    node = EnsureNodeFor(aAnimatedGeometryRoot);
+  }
+
   if (aForceOwnLayer) {
     node->SetAllDrawingAbove();
   }
@@ -2923,6 +2938,21 @@ PaintedLayerDataTree::EnsureNodeFor(AnimatedGeometryRoot* aAnimatedGeometryRoot)
   MOZ_ASSERT(node);
   mNodes.Put(aAnimatedGeometryRoot, node);
   return node;
+}
+
+PaintedLayerDataNode*
+PaintedLayerDataTree::FindNodeForNearestAncestor(AnimatedGeometryRoot* aAnimatedGeometryRoot)
+{
+  if (aAnimatedGeometryRoot) {
+    PaintedLayerDataNode* node = mNodes.Get(aAnimatedGeometryRoot);
+    if (node) {
+      return node;
+    }
+
+    return FindNodeForNearestAncestor(aAnimatedGeometryRoot->mParentAGR);
+  }
+
+  return nullptr;
 }
 
 bool
@@ -4218,11 +4248,14 @@ ContainerState::ProcessDisplayItems(nsDisplayList* aList)
       mLayerBuilder->AddLayerDisplayItem(ownLayer, item, layerState, nullptr);
     } else {
       bool forceOwnLayer = shouldFixToViewport;
+      bool avoidCreatingLayer = (maxLayers != -1 && layerCount >= maxLayers);
       PaintedLayerData* paintedLayerData =
         mPaintedLayerDataTree.FindPaintedLayerFor(animatedGeometryRoot, agrScrollClip,
                                                   itemVisibleRect, forceOwnLayer,
                                                   item->Frame()->BackfaceIsHidden(),
+                                                  avoidCreatingLayer,
                                                   [&]() {
+          layerCount++;
           return NewPaintedLayerData(item, animatedGeometryRoot, agrScrollClip,
                                      topLeft, shouldFixToViewport);
         });
