@@ -2998,20 +2998,6 @@ public:
   }
 };
 
-
-
-
-
-bool
-IsInPrivilegedApp(JSContext* aCx, JSObject* aObj);
-
-
-
-
-
-bool
-IsInCertifiedApp(JSContext* aCx, JSObject* aObj);
-
 void
 FinalizeGlobal(JSFreeOp* aFop, JSObject* aObj);
 
