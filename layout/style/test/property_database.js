@@ -6130,8 +6130,8 @@ if (IsCSSPropertyPrefEnabled("layout.css.grid.enabled")) {
     type: CSS_TYPE_TRUE_SHORTHAND,
     subproperties: [
       "grid-template-areas",
-      "grid-template-columns",
       "grid-template-rows",
+      "grid-template-columns",
     ],
     initial_values: [
       "none",
@@ -6146,18 +6146,18 @@ if (IsCSSPropertyPrefEnabled("layout.css.grid.enabled")) {
       
       "'fizz'",
       "[bar] 'fizz'",
-      "[foo] 40px / 'fizz'",
-      "[foo] 40px / [bar] 'fizz'",
-      "[foo] 40px / 'fizz' 100px",
-      "[foo] 40px / [bar] 'fizz' 100px",
-      "[foo] 40px / [bar] 'fizz' 100px [buzz]",
-      "[foo] 40px / [bar] 'fizz' 100px [buzz] \n [a] '.' 200px [b]",
+      "'fizz' / [foo] 40px",
+      "[bar] 'fizz' / [foo] 40px",
+      "'fizz' 100px / [foo] 40px",
+      "[bar] 'fizz' 100px / [foo] 40px",
+      "[bar] 'fizz' 100px [buzz] / [foo] 40px",
+      "[bar] 'fizz' 100px [buzz] \n [a] '.' 200px [b] / [foo] 40px",
     ],
     invalid_values: [
       "[foo] [bar] 40px / 100px",
-      "40px / [fizz] [buzz] 100px",
-      "40px / [fizz] [buzz] 'foo'",
-      "none / 'foo'"
+      "[fizz] [buzz] 100px / 40px",
+      "[fizz] [buzz] 'foo' / 40px",
+      "'foo' / none"
     ]
   };
   if (isGridTemplateSubgridValueEnabled) {
@@ -6183,11 +6183,11 @@ if (IsCSSPropertyPrefEnabled("layout.css.grid.enabled")) {
     type: CSS_TYPE_TRUE_SHORTHAND,
     subproperties: [
       "grid-template-areas",
-      "grid-template-columns",
       "grid-template-rows",
+      "grid-template-columns",
       "grid-auto-flow",
-      "grid-auto-columns",
       "grid-auto-rows",
+      "grid-auto-columns",
       "grid-column-gap",
       "grid-row-gap",
     ],
