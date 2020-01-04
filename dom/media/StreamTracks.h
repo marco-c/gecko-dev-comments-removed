@@ -305,6 +305,11 @@ public:
   
 
 
+
+  void Clear();
+  
+
+
   StreamTime GetForgottenDuration()
   {
     return mForgottenTime;

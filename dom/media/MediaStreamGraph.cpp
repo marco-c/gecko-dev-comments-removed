@@ -1694,6 +1694,15 @@ public:
       
       NS_ASSERTION(mGraph->mForceShutDown || !mGraph->mRealtime,
                    "Not in forced shutdown?");
+      for (MediaStream* stream : mGraph->AllStreams()) {
+        
+        
+        if (SourceMediaStream* source = stream->AsSourceStream()) {
+          
+          source->Finish();
+        }
+        stream->GetStreamTracks().Clear();
+      }
 
       mGraph->mLifecycleState =
         MediaStreamGraphImpl::LIFECYCLE_WAITING_FOR_STREAM_DESTRUCTION;
