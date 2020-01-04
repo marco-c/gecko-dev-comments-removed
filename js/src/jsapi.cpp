@@ -1840,7 +1840,11 @@ JS_GlobalObjectTraceHook(JSTracer* trc, JSObject* global)
     
     
     
-    if (!global->isOwnGlobal())
+    
+    
+    
+    
+    if (!global->isOwnGlobal(trc))
         return;
 
     
