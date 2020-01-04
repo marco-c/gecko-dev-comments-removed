@@ -250,6 +250,49 @@ extensions.registerSchemaAPI("tabs", null, (extension, context) => {
 
       onReplaced: ignoreEvent(context, "tabs.onReplaced"),
 
+      onMoved: new EventManager(context, "tabs.onMoved", fire => {
+        
+        
+        
+        
+        
+        
+        
+        
+        let ignoreNextMove = new WeakSet();
+
+        let openListener = event => {
+          ignoreNextMove.add(event.target);
+          
+          
+          Promise.resolve().then(() => {
+            ignoreNextMove.delete(event.target);
+          });
+        };
+
+        let moveListener = event => {
+          let tab = event.originalTarget;
+
+          if (ignoreNextMove.has(tab)) {
+            ignoreNextMove.delete(tab);
+            return;
+          }
+
+          fire(TabManager.getId(tab), {
+            windowId: WindowManager.getId(tab.ownerDocument.defaultView),
+            fromIndex: event.detail,
+            toIndex: tab._tPos,
+          });
+        };
+
+        AllWindowEvents.addListener("TabMove", moveListener);
+        AllWindowEvents.addListener("TabOpen", openListener);
+        return () => {
+          AllWindowEvents.removeListener("TabMove", moveListener);
+          AllWindowEvents.removeListener("TabOpen", openListener);
+        };
+      }).api(),
+
       onUpdated: new EventManager(context, "tabs.onUpdated", fire => {
         function sanitize(extension, changeInfo) {
           let result = {};
