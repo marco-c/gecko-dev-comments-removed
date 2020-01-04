@@ -72,10 +72,13 @@ add_task(function* () {
   Assert.equal(Services.prefs.getComplexValue("distribution.test.locale.en-US", Ci.nsIPrefLocalizedString).data, "en-US");
   Assert.throws(() => Services.prefs.getComplexValue("distribution.test.locale.de", Ci.nsIPrefLocalizedString));
   
+  Assert.throws(() => Services.prefs.getComplexValue("distribution.test.language.reset", Ci.nsIPrefLocalizedString));
   
+  Assert.throws(() => Services.prefs.getComplexValue("distribution.test.locale.reset", Ci.nsIPrefLocalizedString));
   
+  Assert.equal(Services.prefs.getComplexValue("distribution.test.locale.set", Ci.nsIPrefLocalizedString).data, "Locale Set");
   
-  Assert.equal(Services.prefs.getComplexValue("distribution.test.locale.set", Ci.nsIPrefLocalizedString).data, "Second Set");
+  Assert.equal(Services.prefs.getComplexValue("distribution.test.language.set", Ci.nsIPrefLocalizedString).data, "Language Set");
   
-  Assert.equal(Services.prefs.getComplexValue("distribution.test.language.set", Ci.nsIPrefLocalizedString).data, "Second Set");
+  Assert.notEqual(Services.prefs.getComplexValue("distribution.test.locale.set", Ci.nsIPrefLocalizedString).data, "Language Set");
 });
