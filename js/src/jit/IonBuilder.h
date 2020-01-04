@@ -623,6 +623,8 @@ class IonBuilder
 
     enum BoundsChecking { DoBoundsCheck, SkipBoundsCheck };
 
+    MInstruction* addArrayBufferByteLength(MDefinition* obj);
+
     
     
     
@@ -842,6 +844,9 @@ class IonBuilder
 
     
     InliningStatus inlineGetNextMapEntryForIterator(CallInfo& callInfo);
+
+    
+    InliningStatus inlinePossiblyWrappedArrayBufferByteLength(CallInfo& callInfo);
 
     
     enum WrappingBehavior { AllowWrappedTypedArrays, RejectWrappedTypedArrays };
