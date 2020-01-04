@@ -2123,22 +2123,17 @@ MediaDecoderStateMachine::SeekCompleted()
     newCurrentTime = video ? video->mTime : seekTime;
   }
 
-  if (mDecodingFirstFrame) {
-    
-    
-    FinishDecodeFirstFrame();
-  }
-
   
   
   
 
   bool isLiveStream = mResource->IsLiveStream();
+  State nextState;
   if (mPendingSeek.Exists()) {
     
     
     DECODER_LOG("A new seek came along while we were finishing the old one - staying in SEEKING");
-    SetState(DECODER_STATE_SEEKING);
+    nextState = DECODER_STATE_SEEKING;
   } else if (GetMediaTime() == Duration().ToMicroseconds() && !isLiveStream) {
     
     
@@ -2146,11 +2141,26 @@ MediaDecoderStateMachine::SeekCompleted()
     DECODER_LOG("Changed state from SEEKING (to %lld) to COMPLETED", seekTime);
     
     
-    SetState(DECODER_STATE_COMPLETED);
-    DispatchDecodeTasksIfNeeded();
+    nextState = DECODER_STATE_COMPLETED;
   } else {
     DECODER_LOG("Changed state from SEEKING (to %lld) to DECODING", seekTime);
+    nextState = DECODER_STATE_DECODING;
+  }
+
+  
+  
+  mCurrentSeek.Resolve(nextState == DECODER_STATE_COMPLETED, __func__);
+
+  if (mDecodingFirstFrame) {
+    
+    
+    FinishDecodeFirstFrame();
+  }
+
+  if (nextState == DECODER_STATE_DECODING) {
     StartDecoding();
+  } else {
+    SetState(nextState);
   }
 
   
@@ -2164,7 +2174,6 @@ MediaDecoderStateMachine::SeekCompleted()
   
   mQuickBuffering = false;
 
-  mCurrentSeek.Resolve(mState == DECODER_STATE_COMPLETED, __func__);
   ScheduleStateMachine();
 
   if (video) {
