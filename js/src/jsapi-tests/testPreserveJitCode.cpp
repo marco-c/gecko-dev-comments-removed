@@ -2,6 +2,9 @@
 
 
 
+
+#include "jit/Ion.h"
+
 #include "jsapi-tests/tests.h"
 
 using namespace JS;
@@ -39,6 +42,15 @@ testPreserveJitCode(bool preserveJitCode, unsigned remainingIonScripts)
     RootedObject global(cx, createTestGlobal(preserveJitCode));
     CHECK(global);
     JSAutoCompartment ac(cx, global);
+
+#ifdef JS_CODEGEN_ARM64
+    
+    
+    
+    
+    if (!js::jit::IsIonEnabled(cx))
+        knownFail = true;
+#endif
 
     CHECK_EQUAL(countIonScripts(global), 0u);
 
