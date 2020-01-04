@@ -2391,6 +2391,11 @@ enum SelectorMatchesTreeFlags {
   
   
   eLookForRelevantLink = 0x1,
+
+  
+  
+  
+  eMatchOnConditionalRestyleAncestor = 0x2,
 };
 
 static bool
@@ -2467,6 +2472,20 @@ SelectorMatchesTree(Element* aPrevElement,
     }
     if (!element) {
       return false;
+    }
+    if ((aFlags & eMatchOnConditionalRestyleAncestor) &&
+        element->HasFlag(ELEMENT_IS_CONDITIONAL_RESTYLE_ANCESTOR)) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      return true;
     }
     const bool isRelevantLink = (aFlags & eLookForRelevantLink) &&
                                 nsCSSRuleProcessor::IsLink(element);
@@ -2757,7 +2776,7 @@ nsCSSRuleProcessor::HasStateDependentStyle(ElementDependentRuleProcessorData* aD
                           aData->mTreeMatchContext, selectorFlags) &&
           SelectorMatchesTree(aData->mElement, selector->mNext,
                               aData->mTreeMatchContext,
-                              SelectorMatchesTreeFlags(0)))
+                              eMatchOnConditionalRestyleAncestor))
       {
         hint = nsRestyleHint(hint | possibleChange);
       }
@@ -2894,7 +2913,7 @@ AttributeEnumFunc(nsCSSSelector* aSelector,
                       data->mTreeMatchContext, SelectorMatchesFlags::UNKNOWN) &&
       SelectorMatchesTree(data->mElement, aSelector->mNext,
                           data->mTreeMatchContext,
-                          SelectorMatchesTreeFlags(0))) {
+                          eMatchOnConditionalRestyleAncestor)) {
     aData->change = nsRestyleHint(aData->change | possibleChange);
     if (possibleChange & eRestyle_SomeDescendants) {
       aData->hintData.mSelectorsForDescendants.AppendElement(aRightmostSelector);
