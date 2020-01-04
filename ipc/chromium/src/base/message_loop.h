@@ -27,8 +27,6 @@
 
 #include "nsAutoPtr.h"
 
-class nsIThread;
-
 namespace mozilla {
 namespace ipc {
 
@@ -225,7 +223,7 @@ public:
 
   
   
-  explicit MessageLoop(Type type = TYPE_DEFAULT, nsIThread* aThread = nullptr);
+  explicit MessageLoop(Type type = TYPE_DEFAULT);
   ~MessageLoop();
 
   

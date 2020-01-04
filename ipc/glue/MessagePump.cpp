@@ -66,8 +66,8 @@ private:
 } 
 } 
 
-MessagePump::MessagePump(nsIThread* aThread)
-: mThread(aThread)
+MessagePump::MessagePump()
+: mThread(nullptr)
 {
   mDoWorkEvent = new DoWorkRunnable(this);
 }
@@ -80,12 +80,11 @@ void
 MessagePump::Run(MessagePump::Delegate* aDelegate)
 {
   MOZ_ASSERT(keep_running_);
-  MOZ_RELEASE_ASSERT(NS_IsMainThread(),
-		     "Use mozilla::ipc::MessagePumpForNonMainThreads instead!");
-  MOZ_RELEASE_ASSERT(!mThread);
+  MOZ_ASSERT(NS_IsMainThread(),
+             "Use mozilla::ipc::MessagePumpForNonMainThreads instead!");
 
-  nsIThread* thisThread = NS_GetCurrentThread();
-  MOZ_ASSERT(thisThread);
+  mThread = NS_GetCurrentThread();
+  MOZ_ASSERT(mThread);
 
   mDelayedWorkTimer = do_CreateInstance(kNS_TIMER_CID);
   MOZ_ASSERT(mDelayedWorkTimer);
@@ -95,7 +94,7 @@ MessagePump::Run(MessagePump::Delegate* aDelegate)
   for (;;) {
     autoReleasePool.Recycle();
 
-    bool did_work = NS_ProcessNextEvent(thisThread, false) ? true : false;
+    bool did_work = NS_ProcessNextEvent(mThread, false) ? true : false;
     if (!keep_running_)
       break;
 
@@ -127,7 +126,7 @@ if (did_work && delayed_work_time_.is_null()
       continue;
 
     
-    NS_ProcessNextEvent(thisThread, true);
+    NS_ProcessNextEvent(mThread, true);
   }
 
 #ifdef MOZ_NUWA_PROCESS
@@ -144,7 +143,8 @@ MessagePump::ScheduleWork()
   
   if (mThread) {
     mThread->Dispatch(mDoWorkEvent, NS_DISPATCH_NORMAL);
-  } else {
+  }
+  else {
     
     
     NS_DispatchToMainThread(mDoWorkEvent);
@@ -168,11 +168,6 @@ MessagePump::ScheduleDelayedWork(const base::TimeTicks& aDelayedTime)
   if (IsNuwaReady() && IsNuwaProcess())
     return;
 #endif
-
-  
-  
-  MOZ_RELEASE_ASSERT(NS_GetCurrentThread() == mThread ||
-		     (!mThread && NS_IsMainThread()));
 
   if (!mDelayedWorkTimer) {
     mDelayedWorkTimer = do_CreateInstance(kNS_TIMER_CID);
@@ -304,15 +299,15 @@ void
 MessagePumpForNonMainThreads::Run(base::MessagePump::Delegate* aDelegate)
 {
   MOZ_ASSERT(keep_running_);
-  MOZ_RELEASE_ASSERT(!NS_IsMainThread(), "Use mozilla::ipc::MessagePump instead!");
+  MOZ_ASSERT(!NS_IsMainThread(), "Use mozilla::ipc::MessagePump instead!");
 
-  nsIThread* thread = NS_GetCurrentThread();
-  MOZ_RELEASE_ASSERT(mThread == thread);
+  mThread = NS_GetCurrentThread();
+  MOZ_ASSERT(mThread);
 
   mDelayedWorkTimer = do_CreateInstance(kNS_TIMER_CID);
   MOZ_ASSERT(mDelayedWorkTimer);
 
-  if (NS_FAILED(mDelayedWorkTimer->SetTarget(thread))) {
+  if (NS_FAILED(mDelayedWorkTimer->SetTarget(mThread))) {
     MOZ_CRASH("Failed to set timer target!");
   }
 
@@ -334,7 +329,7 @@ MessagePumpForNonMainThreads::Run(base::MessagePump::Delegate* aDelegate)
   for (;;) {
     autoReleasePool.Recycle();
 
-    bool didWork = NS_ProcessNextEvent(thread, false) ? true : false;
+    bool didWork = NS_ProcessNextEvent(mThread, false) ? true : false;
     if (!keep_running_) {
       break;
     }
@@ -363,7 +358,7 @@ MessagePumpForNonMainThreads::Run(base::MessagePump::Delegate* aDelegate)
     }
 
     
-    NS_ProcessNextEvent(thread, true);
+    NS_ProcessNextEvent(mThread, true);
   }
 
   mDelayedWorkTimer->Cancel();
@@ -377,19 +372,16 @@ NS_IMPL_QUERY_INTERFACE(MessagePumpForNonMainUIThreads, nsIThreadObserver)
 
 #define CHECK_QUIT_STATE { if (state_->should_quit) { break; } }
 
-void
-MessagePumpForNonMainUIThreads::DoRunLoop()
+void MessagePumpForNonMainUIThreads::DoRunLoop()
 {
-  MOZ_RELEASE_ASSERT(!NS_IsMainThread(), "Use mozilla::ipc::MessagePump instead!");
+  
+  
+  mThread = NS_GetCurrentThread();
+  MOZ_ASSERT(mThread);
 
   
   
-  nsIThread* thread = NS_GetCurrentThread();
-  MOZ_ASSERT(thread);
-
-  
-  
-  nsCOMPtr<nsIThreadInternal> ti(do_QueryInterface(thread));
+  nsCOMPtr<nsIThreadInternal> ti(do_QueryInterface(mThread));
   MOZ_ASSERT(ti);
   ti->SetObserver(this);
 
@@ -397,7 +389,7 @@ MessagePumpForNonMainUIThreads::DoRunLoop()
   for (;;) {
     autoReleasePool.Recycle();
 
-    bool didWork = NS_ProcessNextEvent(thread, false);
+    bool didWork = NS_ProcessNextEvent(mThread, false);
 
     didWork |= ProcessNextWindowsMessage();
     CHECK_QUIT_STATE
@@ -419,7 +411,7 @@ MessagePumpForNonMainUIThreads::DoRunLoop()
     CHECK_QUIT_STATE
 
     SetInWait();
-    bool hasWork = NS_HasPendingEvents(thread);
+    bool hasWork = NS_HasPendingEvents(mThread);
     if (didWork || hasWork) {
       ClearInWait();
       continue;
