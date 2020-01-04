@@ -20,7 +20,17 @@ actions.TAKE_CENSUS_START = "take-census-start";
 actions.TAKE_CENSUS_END = "take-census-end";
 
 
+actions.TOGGLE_RECORD_ALLOCATION_STACKS_START = "toggle-record-allocation-stacks-start";
+actions.TOGGLE_RECORD_ALLOCATION_STACKS_END = "toggle-record-allocation-stacks-end";
+
+
 actions.SELECT_SNAPSHOT = "select-snapshot";
+
+
+exports.ALLOCATION_RECORDING_OPTIONS = {
+  probability: 1,
+  maxLogLength: 1
+};
 
 const COUNT = { by: "count", count: true, bytes: true };
 const INTERNAL_TYPE = { by: "internalType", then: COUNT };

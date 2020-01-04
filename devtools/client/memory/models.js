@@ -51,9 +51,19 @@ let snapshotModel = exports.snapshot = PropTypes.shape({
   },
 });
 
+let allocationsModel = exports.allocations = PropTypes.shape({
+  
+  recording: PropTypes.bool.isRequired,
+  
+  
+  togglingInProgress: PropTypes.bool.isRequired,
+});
+
 let appModel = exports.app = {
   
   front: PropTypes.instanceOf(MemoryFront),
+  
+  allocations: allocationsModel,
   
   heapWorker: PropTypes.instanceOf(HeapAnalysesClient),
   
