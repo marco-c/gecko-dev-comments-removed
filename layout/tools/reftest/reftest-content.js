@@ -119,6 +119,24 @@ function OnInitialLoad()
     LogWarning("Using browser remote="+ gBrowserIsRemote +"\n");
 }
 
+function SetFailureTimeout(cb, timeout)
+{
+  var targetTime = Date.now() + timeout;
+
+  var wrapper = function() {
+    
+    
+    let remainingMs = targetTime - Date.now();
+    if (remainingMs > 0) {
+      SetFailureTimeout(cb, remainingMs);
+    } else {
+      cb();
+    }
+  }
+
+  gFailureTimeout = setTimeout(wrapper, timeout);
+}
+
 function StartTestURI(type, uri, timeout)
 {
     
@@ -136,7 +154,7 @@ function StartTestURI(type, uri, timeout)
     if (gFailureTimeout != null) {
         SendException("program error managing timeouts\n");
     }
-    gFailureTimeout = setTimeout(LoadFailed, timeout);
+    SetFailureTimeout(LoadFailed, timeout);
 
     LoadURI(gCurrentURL);
 }
