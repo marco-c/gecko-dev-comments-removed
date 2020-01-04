@@ -34,6 +34,7 @@
 
 #include <assert.h>
 #include <getopt.h>
+#include <math.h>
 #include <signal.h>
 #include <stdarg.h>
 #include <stdint.h>
@@ -42,6 +43,9 @@
 #include <string.h>
 #include <sys/time.h>
 #include <unistd.h>
+
+#include <algorithm>
+#include <vector>
 
 
 
@@ -589,6 +593,17 @@ static double gSampleInterval_sec;
 static RAPL* gRapl;
 
 
+static std::vector<double> gTotals_W;
+
+
+
+static double
+JoulesToWatts(double aJoules)
+{
+  return aJoules / gSampleInterval_sec;
+}
+
+
 
 
 static void
@@ -598,12 +613,12 @@ NormalizeAndPrintAsWatts(char* aBuf, double& aValue_J)
     aValue_J = 0;
     sprintf(aBuf, "%s", " n/a ");
   } else {
-    sprintf(aBuf, "%5.2f", aValue_J / gSampleInterval_sec);
+    sprintf(aBuf, "%5.2f", JoulesToWatts(aValue_J));
   }
 }
 
 static void
-SigprofHandler(int aSigNum, siginfo_t* aInfo, void* aContext)
+SigAlrmHandler(int aSigNum, siginfo_t* aInfo, void* aContext)
 {
   static int sampleNumber = 1;
 
@@ -633,18 +648,85 @@ SigprofHandler(int aSigNum, siginfo_t* aInfo, void* aContext)
   
 
   char otherStr[kNumStrLen];
-  double other = pkg_J - cores_J - gpu_J;
-  NormalizeAndPrintAsWatts(otherStr, other);
+  double other_J = pkg_J - cores_J - gpu_J;
+  NormalizeAndPrintAsWatts(otherStr, other_J);
 
   char totalStr[kNumStrLen];
-  double total = pkg_J + ram_J;
-  NormalizeAndPrintAsWatts(totalStr, total);
+  double total_J = pkg_J + ram_J;
+  NormalizeAndPrintAsWatts(totalStr, total_J);
+
+  gTotals_W.push_back(JoulesToWatts(total_J));
 
   
   
   PrintAndFlush("#%02d %s W = %s (%s + %s + %s) + %s W\n",
                 sampleNumber++, totalStr, pkgStr, coresStr, gpuStr, otherStr,
                 ramStr);
+}
+
+static void
+Finish()
+{
+  size_t n = gTotals_W.size();
+
+  
+  
+  double time = n * gSampleInterval_sec;
+
+  printf("\n");
+  printf("%d sample%s taken over a period of %.3f second%s\n",
+    int(n), n == 1 ? "" : "s",
+    n * gSampleInterval_sec, time == 1.0 ? "" : "s");
+
+  if (n == 0) {
+    exit(0);
+  }
+
+  
+  double sum = std::accumulate(gTotals_W.begin(), gTotals_W.end(), 0);
+  double mean = sum / n;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  double sumOfSquaredDeviations = 0;
+  for (auto iter = gTotals_W.begin(); iter != gTotals_W.end(); ++iter) {
+    double deviation = (*iter - mean);
+    sumOfSquaredDeviations += deviation * deviation;
+  }
+  double popStdDev = sqrt(sumOfSquaredDeviations / n);
+
+  
+  
+  
+  std::sort(gTotals_W.begin(), gTotals_W.end());
+
+  printf("\n");
+  printf("Distribution of 'total' values:\n");
+  printf("            mean = %5.2f W\n", mean);
+  printf("         std dev = %5.2f W\n", popStdDev);
+  printf("  0th percentile = %5.2f W (min)\n", gTotals_W[0]);
+  printf("  5th percentile = %5.2f W\n", gTotals_W[ceil(0.05 * n) - 1]);
+  printf(" 25th percentile = %5.2f W\n", gTotals_W[ceil(0.25 * n) - 1]);
+  printf(" 50th percentile = %5.2f W\n", gTotals_W[ceil(0.50 * n) - 1]);
+  printf(" 75th percentile = %5.2f W\n", gTotals_W[ceil(0.75 * n) - 1]);
+  printf(" 95th percentile = %5.2f W\n", gTotals_W[ceil(0.95 * n) - 1]);
+  printf("100th percentile = %5.2f W (max)\n", gTotals_W[n - 1]);
+
+  exit(0);
+}
+
+static void
+SigIntHandler(int aSigNum, siginfo_t* aInfo, void *aContext)
+{
+  Finish();
 }
 
 static void
@@ -749,15 +831,20 @@ main(int argc, char** argv)
   }
 
   
+
   struct sigaction sa;
   memset(&sa, 0, sizeof(sa));
-  sa.sa_sigaction = SigprofHandler;
   sa.sa_flags = SA_RESTART | SA_SIGINFO;
   if (sigemptyset(&sa.sa_mask) < 0) {
     Abort("sigemptyset() failed");
   }
+  sa.sa_sigaction = SigAlrmHandler;
   if (sigaction(SIGALRM, &sa, NULL) < 0) {
-    Abort("sigaction() failed");
+    Abort("sigaction(SIGALRM) failed");
+  }
+  sa.sa_sigaction = SigIntHandler;
+  if (sigaction(SIGINT, &sa, NULL) < 0) {
+    Abort("sigaction(SIGINT) failed");
   }
 
   
@@ -782,6 +869,8 @@ main(int argc, char** argv)
       pause();
     }
   }
+
+  Finish();
 
   return 0;
 }
