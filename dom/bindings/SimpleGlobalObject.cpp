@@ -12,6 +12,7 @@
 #include "nsJSPrincipals.h"
 #include "nsNullPrincipal.h"
 #include "nsThreadUtils.h"
+#include "nsContentUtils.h"
 
 #include "xpcprivate.h"
 
@@ -91,61 +92,67 @@ const js::Class SimpleGlobalClass = {
 JSObject*
 SimpleGlobalObject::Create(GlobalType globalType, JS::Handle<JS::Value> proto)
 {
-  AutoJSAPI jsapi;
-  jsapi.Init();
-  JSContext* cx = jsapi.cx();
-
-  JS::CompartmentOptions options;
-  options.creationOptions().setInvisibleToDebugger(true);
-
-  JS::Rooted<JSObject*> global(cx);
-
-  if (NS_IsMainThread()) {
-    nsCOMPtr<nsIPrincipal> principal = nsNullPrincipal::Create();
-    options.creationOptions().setTrace(xpc::TraceXPCGlobal);
-    global = xpc::CreateGlobalObject(cx, js::Jsvalify(&SimpleGlobalClass),
-                                     nsJSPrincipals::get(principal),
-                                     options);
-  } else {
-    global = JS_NewGlobalObject(cx, js::Jsvalify(&SimpleGlobalClass),
-                                nullptr,
-                                JS::DontFireOnNewGlobalHook, options);
-  }
-
-  if (!global) {
-    jsapi.ClearException();
-    return nullptr;
-  }
-
-  JSAutoCompartment ac(cx, global);
-
   
   
   
-  
-  RefPtr<SimpleGlobalObject> globalObject =
-    new SimpleGlobalObject(global, globalType);
+  JS::Rooted<JSObject*> global(nsContentUtils::RootingCx());
 
-  
-  JS_SetPrivate(global, globalObject.forget().take());
+  { 
+    AutoJSAPI jsapi;
+    jsapi.Init();
+    JSContext* cx = jsapi.cx();
 
-  if (proto.isObjectOrNull()) {
-    JS::Rooted<JSObject*> protoObj(cx, proto.toObjectOrNull());
-    if (!JS_WrapObject(cx, &protoObj)) {
+    JS::CompartmentOptions options;
+    options.creationOptions().setInvisibleToDebugger(true);
+
+    if (NS_IsMainThread()) {
+      nsCOMPtr<nsIPrincipal> principal = nsNullPrincipal::Create();
+      options.creationOptions().setTrace(xpc::TraceXPCGlobal);
+      global = xpc::CreateGlobalObject(cx, js::Jsvalify(&SimpleGlobalClass),
+                                       nsJSPrincipals::get(principal),
+                                       options);
+    } else {
+      global = JS_NewGlobalObject(cx, js::Jsvalify(&SimpleGlobalClass),
+                                  nullptr,
+                                  JS::DontFireOnNewGlobalHook, options);
+    }
+
+    if (!global) {
       jsapi.ClearException();
       return nullptr;
     }
 
-    if (!JS_SplicePrototype(cx, global, protoObj)) {
-      jsapi.ClearException();
-      return nullptr;
-    }
-  } else if (!proto.isUndefined()) {
+    JSAutoCompartment ac(cx, global);
+
     
-    return nullptr;
+    
+    
+    
+    RefPtr<SimpleGlobalObject> globalObject =
+      new SimpleGlobalObject(global, globalType);
+
+    
+    JS_SetPrivate(global, globalObject.forget().take());
+
+    if (proto.isObjectOrNull()) {
+      JS::Rooted<JSObject*> protoObj(cx, proto.toObjectOrNull());
+      if (!JS_WrapObject(cx, &protoObj)) {
+        jsapi.ClearException();
+        return nullptr;
+      }
+
+      if (!JS_SplicePrototype(cx, global, protoObj)) {
+        jsapi.ClearException();
+        return nullptr;
+      }
+    } else if (!proto.isUndefined()) {
+      
+      return nullptr;
+    }
+
+    JS_FireOnNewGlobalObject(cx, global);
   }
 
-  JS_FireOnNewGlobalObject(cx, global);
   return global;
 }
 
