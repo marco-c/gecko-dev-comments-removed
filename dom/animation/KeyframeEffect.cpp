@@ -105,6 +105,18 @@ KeyframeEffectReadOnly::WrapObject(JSContext* aCx,
   return KeyframeEffectReadOnlyBinding::Wrap(aCx, this, aGivenProto);
 }
 
+IterationCompositeOperation
+KeyframeEffectReadOnly::IterationComposite() const
+{
+  return IterationCompositeOperation::Replace;
+}
+
+CompositeOperation
+KeyframeEffectReadOnly::Composite() const
+{
+  return CompositeOperation::Replace;
+}
+
 void
 KeyframeEffectReadOnly::SetTiming(const AnimationTiming& aTiming)
 {
@@ -535,25 +547,52 @@ DumpAnimationProperties(nsTArray<AnimationProperty>& aAnimationProperties)
 }
 #endif
 
+
+template <typename T>
+static TimeDuration
+GetIterationDuration(const T& aDuration) {
+  
+  TimeDuration result;
+  if (aDuration.IsUnrestrictedDouble()) {
+    double durationMs = aDuration.GetAsUnrestrictedDouble();
+    if (!IsNaN(durationMs) && durationMs >= 0.0f) {
+      result = TimeDuration::FromMilliseconds(durationMs);
+    }
+  }
+  
+  return result;
+}
+
  AnimationTiming
 KeyframeEffectReadOnly::ConvertKeyframeEffectOptions(
-    const Optional<double>& aOptions)
+    const UnrestrictedDoubleOrKeyframeEffectOptions& aOptions)
 {
   AnimationTiming animationTiming;
 
-  
-  
-  
-  if (aOptions.WasPassed()) {
-    animationTiming.mIterationDuration =
-      TimeDuration::FromMilliseconds(aOptions.Value());
-  } else {
-    animationTiming.mIterationDuration = TimeDuration(0);
-  }
-  animationTiming.mIterationCount = 1.0f;
-  animationTiming.mDirection = PlaybackDirection::Normal;
-  animationTiming.mFillMode = FillMode::None;
+  if (aOptions.IsKeyframeEffectOptions()) {
+    const KeyframeEffectOptions& opt = aOptions.GetAsKeyframeEffectOptions();
 
+    animationTiming.mIterationDuration = GetIterationDuration(opt.mDuration);
+    animationTiming.mDelay = TimeDuration::FromMilliseconds(opt.mDelay);
+    
+    
+    
+    animationTiming.mIterationCount = (IsNaN(opt.mIterations) ||
+                                      opt.mIterations < 0.0f) ?
+                                        1.0f :
+                                        opt.mIterations;
+    animationTiming.mDirection = opt.mDirection;
+    
+    animationTiming.mFillMode = (opt.mFill == FillMode::Auto) ?
+                                  FillMode::None :
+                                  opt.mFill;
+  } else {
+    animationTiming.mIterationDuration = GetIterationDuration(aOptions);
+    animationTiming.mDelay = TimeDuration(0);
+    animationTiming.mIterationCount = 1.0f;
+    animationTiming.mDirection = PlaybackDirection::Normal;
+    animationTiming.mFillMode = FillMode::None;
+  }
   return animationTiming;
 }
 
@@ -1581,7 +1620,7 @@ KeyframeEffectReadOnly::Constructor(
     const GlobalObject& aGlobal,
     Element* aTarget,
     const Optional<JS::Handle<JSObject*>>& aFrames,
-    const Optional<double>& aOptions,
+    const UnrestrictedDoubleOrKeyframeEffectOptions& aOptions,
     ErrorResult& aRv)
 {
   if (!aTarget) {
