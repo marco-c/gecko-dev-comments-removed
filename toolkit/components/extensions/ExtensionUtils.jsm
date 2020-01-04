@@ -862,25 +862,34 @@ Messenger.prototype = {
     recipient.messageId = id;
     this.broker.sendMessage(messageManager, "message", msg, this.sender, recipient);
 
-    let onClose;
-    let listener = ({data: response}) => {
-      messageManager.removeMessageListener(replyName, listener);
-      this.context.forgetOnClose(onClose);
-
-      if (response.gotData) {
-        
-        runSafe(this.context, responseCallback, response.data);
-      }
-    };
-    onClose = {
-      close() {
+    let promise = new Promise((resolve, reject) => {
+      let onClose;
+      let listener = ({data: response}) => {
         messageManager.removeMessageListener(replyName, listener);
-      },
-    };
-    if (responseCallback) {
+        this.context.forgetOnClose(onClose);
+
+        if (response.gotData) {
+          resolve(response.data);
+        } else if (response.error) {
+          reject(response.error);
+        } else if (!responseCallback) {
+          
+          
+          
+          resolve();
+        }
+      };
+      onClose = {
+        close() {
+          messageManager.removeMessageListener(replyName, listener);
+        },
+      };
+
       messageManager.addMessageListener(replyName, listener);
       this.context.callOnClose(onClose);
-    }
+    });
+
+    return this.context.wrapPromise(promise, responseCallback);
   },
 
   onMessage(name) {
@@ -895,23 +904,33 @@ Messenger.prototype = {
         let mm = getMessageManager(target);
         let replyName = `Extension:Reply-${recipient.messageId}`;
 
-        let valid = true, sent = false;
-        let sendResponse = data => {
-          if (!valid) {
-            return;
-          }
-          sent = true;
-          mm.sendAsyncMessage(replyName, {data, gotData: true});
-        };
-        sendResponse = Cu.exportFunction(sendResponse, this.context.cloneScope);
+        new Promise((resolve, reject) => {
+          let sendResponse = Cu.exportFunction(resolve, this.context.cloneScope);
 
-        let result = runSafeSyncWithoutClone(callback, message, sender, sendResponse);
-        if (result !== true) {
-          valid = false;
-          if (!sent) {
-            mm.sendAsyncMessage(replyName, {gotData: false});
+          
+          
+          let result = callback(message, sender, sendResponse);
+          if (result instanceof Promise) {
+            resolve(result);
+          } else if (result !== true) {
+            reject();
           }
-        }
+        }).then(
+          data => {
+            mm.sendAsyncMessage(replyName, {data, gotData: true});
+          },
+          error => {
+            if (error) {
+              
+              
+              try {
+                error = {message: String(error.message), stack: String(error.stack)};
+              } catch (e) {
+                error = {message: String(error)};
+              }
+            }
+            mm.sendAsyncMessage(replyName, {error, gotData: false});
+          });
       };
 
       this.broker.addListener("message", listener, this.filter);
