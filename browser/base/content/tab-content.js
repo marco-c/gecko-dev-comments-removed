@@ -371,7 +371,16 @@ var AboutReaderListener = {
     addEventListener("MozAfterPaint", this._pendingReadabilityCheck);
   },
 
-  onPaintWhenWaitedFor: function(forceNonArticle) {
+  onPaintWhenWaitedFor: function(forceNonArticle, event) {
+    
+    
+    
+    
+    
+    if (!event.clientRects.length) {
+      return;
+    }
+
     this.cancelPotentialPendingReadabilityCheck();
     
     
