@@ -47,6 +47,10 @@ const DOM_STORAGE_MAX_CHARS = 10000000;
 
 
 
+const TIMEOUT_DISABLED_PREF = "browser.sessionstore.debug.no_auto_updates";
+
+
+
 
 
 function createLazy(fn) {
@@ -669,6 +673,54 @@ var MessageQueue = {
 
 
 
+  _timeoutDisabled: false,
+
+  
+
+
+
+  get timeoutDisabled() {
+    return this._timeoutDisabled;
+  },
+
+  
+
+
+
+  set timeoutDisabled(val) {
+    this._timeoutDisabled = val;
+
+    if (!val && this._timeout) {
+      clearTimeout(this._timeout);
+      this._timeout = null;
+    }
+
+    return val;
+  },
+
+  init() {
+    this.timeoutDisabled =
+      Services.prefs.getBoolPref(TIMEOUT_DISABLED_PREF);
+
+    Services.prefs.addObserver(TIMEOUT_DISABLED_PREF, this, false);
+  },
+
+  uninit() {
+    Services.prefs.removeObserver(TIMEOUT_DISABLED_PREF, this);
+  },
+
+  observe(subject, topic, data) {
+    if (topic == TIMEOUT_DISABLED_PREF) {
+      this.timeoutDisabled =
+        Services.prefs.getBoolPref(TIMEOUT_DISABLED_PREF);
+    }
+  },
+
+  
+
+
+
+
 
 
 
@@ -679,7 +731,7 @@ var MessageQueue = {
     this._data.set(key, createLazy(fn));
     this._lastUpdated.set(key, this._id);
 
-    if (!this._timeout) {
+    if (!this._timeout && !this._timeoutDisabled) {
       
       this._timeout = setTimeout(() => this.send(), this.BATCH_DELAY_MS);
     }
@@ -799,6 +851,7 @@ SessionStorageListener.init();
 ScrollPositionListener.init();
 DocShellCapabilitiesListener.init();
 PrivacyListener.init();
+MessageQueue.init();
 
 function handleRevivedTab() {
   if (!content) {
@@ -840,6 +893,7 @@ addEventListener("unload", () => {
   PageStyleListener.uninit();
   SessionStorageListener.uninit();
   SessionHistoryListener.uninit();
+  MessageQueue.uninit();
 
   
   gContentRestore.resetRestore();
