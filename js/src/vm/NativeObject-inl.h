@@ -161,7 +161,7 @@ NativeObject::extendDenseElements(ExclusiveContext* cx,
 
 
     if (!nonProxyIsExtensible() || watched()) {
-        MOZ_ASSERT(getDenseCapacity() == 0);
+        MOZ_ASSERT(getDenseCapacity() == 0 || (!watched() && getElementsHeader()->isFrozen()));
         return DenseElementResult::Incomplete;
     }
 
