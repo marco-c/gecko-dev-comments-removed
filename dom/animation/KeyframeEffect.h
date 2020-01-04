@@ -346,6 +346,11 @@ protected:
 
   
   
+  
+  Nullable<double> mProgressOnLastCompose;
+
+  
+  
   bool mInEffectOnLastAnimationTimingUpdate;
 
 private:

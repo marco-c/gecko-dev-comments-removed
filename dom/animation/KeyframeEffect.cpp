@@ -20,7 +20,7 @@
 #include "nsCSSProps.h" 
 #include "nsCSSValue.h"
 #include "nsStyleUtil.h"
-#include <algorithm>    
+#include <algorithm> 
 
 namespace mozilla {
 
@@ -163,6 +163,7 @@ KeyframeEffectReadOnly::NotifyAnimationTimingUpdated()
   }
 
   
+  ComputedTiming computedTiming = GetComputedTiming();
   AnimationCollection* collection = GetCollection();
   
   
@@ -173,9 +174,9 @@ KeyframeEffectReadOnly::NotifyAnimationTimingUpdated()
   
   
   if (collection &&
-      inEffect) {
-    
-    
+      
+      
+      computedTiming.mProgress != mProgressOnLastCompose) {
     collection->RequestRestyle(CanThrottle() ?
                                AnimationCollection::RestyleType::Throttled :
                                AnimationCollection::RestyleType::Standard);
@@ -426,6 +427,7 @@ KeyframeEffectReadOnly::ComposeStyle(RefPtr<AnimValuesStyleRule>& aStyleRule,
                                      nsCSSPropertySet& aSetProperties)
 {
   ComputedTiming computedTiming = GetComputedTiming();
+  mProgressOnLastCompose = computedTiming.mProgress;
 
   
   
@@ -1824,13 +1826,12 @@ KeyframeEffectReadOnly::CanThrottle() const
 {
   
   
-  MOZ_ASSERT(IsInEffect(), "Effect should be in effect");
-
   
   
   
   
-  if (!IsCurrent()) {
+  
+  if (!IsInEffect() || !IsCurrent()) {
     return false;
   }
 
