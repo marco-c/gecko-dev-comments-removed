@@ -184,8 +184,6 @@ ThirdPartyUtil::IsThirdPartyChannel(nsIChannel* aChannel,
 
   nsresult rv;
   bool doForce = false;
-  bool checkWindowChain = true;
-  bool parentIsThird = false;
   nsCOMPtr<nsIHttpChannelInternal> httpChannelInternal =
     do_QueryInterface(aChannel);
   if (httpChannelInternal) {
@@ -203,109 +201,50 @@ ThirdPartyUtil::IsThirdPartyChannel(nsIChannel* aChannel,
       *aResult = false;
       return NS_OK;
     }
-
-    if (flags & nsIHttpChannelInternal::THIRD_PARTY_PARENT_IS_THIRD_PARTY) {
-      
-      MOZ_ASSERT(!(flags & nsIHttpChannelInternal::THIRD_PARTY_PARENT_IS_SAME_PARTY));
-
-      
-      
-      if (!doForce) {
-        *aResult = true;
-        return NS_OK;
-      }
-
-      checkWindowChain = false;
-      parentIsThird = true;
-    } else {
-      
-      
-      
-      
-      checkWindowChain = !(flags & nsIHttpChannelInternal::THIRD_PARTY_PARENT_IS_SAME_PARTY);
-      parentIsThird = false;
-    }
   }
+
+  bool parentIsThird = false;
 
   
   nsCOMPtr<nsIURI> channelURI;
-  aChannel->GetURI(getter_AddRefs(channelURI));
-  NS_ENSURE_TRUE(channelURI, NS_ERROR_INVALID_ARG);
+  rv = NS_GetFinalChannelURI(aChannel, getter_AddRefs(channelURI));
+  if (NS_FAILED(rv))
+    return rv;
 
   nsCString channelDomain;
   rv = GetBaseDomain(channelURI, channelDomain);
   if (NS_FAILED(rv))
     return rv;
 
-  if (aURI) {
-    
-    bool result;
-    rv = IsThirdPartyInternal(channelDomain, aURI, &result);
-    if (NS_FAILED(rv))
-     return rv;
-
-    
-    if (result || doForce) {
-      *aResult = result;
-      return NS_OK;
+  if (!doForce) {
+    if (nsCOMPtr<nsILoadInfo> loadInfo = aChannel->GetLoadInfo()) {
+      parentIsThird = loadInfo->GetIsInThirdPartyContext();
+      if (!parentIsThird &&
+          loadInfo->GetExternalContentPolicyType() != nsIContentPolicy::TYPE_DOCUMENT) {
+        
+        
+        nsCOMPtr<nsIURI> parentURI;
+        loadInfo->LoadingPrincipal()->GetURI(getter_AddRefs(parentURI));
+        rv = IsThirdPartyInternal(channelDomain, parentURI, &parentIsThird);
+        if (NS_FAILED(rv))
+          return rv;
+      }
+    } else {
+      NS_WARNING("Found channel with no loadinfo, assuming third-party request");
+      parentIsThird = true;
     }
   }
 
   
-  if (!checkWindowChain) {
+  
+  
+  if (!aURI || parentIsThird) {
     *aResult = parentIsThird;
     return NS_OK;
   }
 
   
-  nsCOMPtr<nsILoadContext> ctx;
-  NS_QueryNotificationCallbacks(aChannel, ctx);
-  if (!ctx) return NS_ERROR_INVALID_ARG;
-
-  
-  
-  
-  
-  nsCOMPtr<nsIDOMWindow> ourWin, parentWin;
-  ctx->GetAssociatedWindow(getter_AddRefs(ourWin));
-  if (!ourWin) return NS_ERROR_INVALID_ARG;
-
-  nsCOMPtr<nsPIDOMWindow> piOurWin = do_QueryInterface(ourWin);
-  MOZ_ASSERT(piOurWin);
-
-  
-  
-  parentWin = piOurWin->GetScriptableParent();
-  NS_ENSURE_TRUE(parentWin, NS_ERROR_INVALID_ARG);
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  nsLoadFlags flags;
-  rv = aChannel->GetLoadFlags(&flags);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  if (flags & nsIChannel::LOAD_DOCUMENT_URI) {
-    if (SameCOMIdentity(ourWin, parentWin)) {
-      
-      
-      *aResult = false;
-      return NS_OK;
-    }
-
-    
-    ourWin = parentWin;
-  }
-
-  
-  
-  return IsThirdPartyWindow(ourWin, channelURI, aResult);
+  return IsThirdPartyInternal(channelDomain, aURI, aResult);
 }
 
 NS_IMETHODIMP

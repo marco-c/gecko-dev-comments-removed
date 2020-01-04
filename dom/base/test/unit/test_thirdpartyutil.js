@@ -71,13 +71,13 @@ function run_test() {
 
   
   
+  
   do_check_throws(function() { util.isThirdPartyChannel(null); },
     NS_ERROR_INVALID_ARG);
-  do_check_throws(function() { util.isThirdPartyChannel(channel1); },
-    NS_ERROR_INVALID_ARG);
-  do_check_throws(function() { util.isThirdPartyChannel(channel1, uri1); },
-    NS_ERROR_INVALID_ARG);
+  do_check_true(util.isThirdPartyChannel(channel1));
+  do_check_true(util.isThirdPartyChannel(channel1, uri1));
   do_check_true(util.isThirdPartyChannel(channel1, uri2));
+
   let httpchannel1 = channel1.QueryInterface(Ci.nsIHttpChannelInternal);
   httpchannel1.forceAllowThirdPartyCookie = true;
   do_check_false(util.isThirdPartyChannel(channel1));
