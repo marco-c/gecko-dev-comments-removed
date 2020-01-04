@@ -345,10 +345,10 @@ add_task(function*() {
   
   let addon = yield promiseAddonByID(ID);
   do_check_neq(addon, null);
-  do_check_true(addon.appDisabled);
-  do_check_false(addon.isActive);
+  do_check_false(addon.appDisabled);
+  do_check_true(addon.isActive);
   do_check_eq(addon.signedState, AddonManager.SIGNEDSTATE_PRELIMINARY);
-  do_check_eq(getActiveVersion(), -1);
+  do_check_eq(getActiveVersion(), 2);
 
   addon.uninstall();
   yield promiseShutdownManager();
