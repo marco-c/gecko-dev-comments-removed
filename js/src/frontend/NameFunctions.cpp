@@ -375,7 +375,6 @@ class NameResolver
           case PNK_DEBUGGER:
           case PNK_EXPORT_BATCH_SPEC:
           case PNK_FRESHENBLOCK:
-          case PNK_SUPERPROP:
           case PNK_OBJECT_PROPERTY_NAME:
             MOZ_ASSERT(cur->isArity(PN_NULLARY));
             break;
@@ -400,7 +399,6 @@ class NameResolver
           case PNK_THROW:
           case PNK_DELETENAME:
           case PNK_DELETEPROP:
-          case PNK_DELETESUPERPROP:
           case PNK_DELETEELEM:
           case PNK_DELETESUPERELEM:
           case PNK_DELETEEXPR:
@@ -757,8 +755,17 @@ class NameResolver
             break;
           }
 
-          case PNK_LABEL:
           case PNK_DOT:
+            MOZ_ASSERT(cur->isArity(PN_NAME));
+
+            
+            if (cur->as<PropertyAccess>().isSuper())
+                break;
+            if (!resolve(cur->expr(), prefix))
+                return false;
+            break;
+
+          case PNK_LABEL:
             MOZ_ASSERT(cur->isArity(PN_NAME));
             if (!resolve(cur->expr(), prefix))
                 return false;
