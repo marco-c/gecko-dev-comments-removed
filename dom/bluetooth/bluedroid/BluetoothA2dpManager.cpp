@@ -928,7 +928,7 @@ BluetoothA2dpManager::UpdateRegisterNotification(BluetoothAvrcpEvent aEvent,
       for (int index = 0; index < AVRCP_UID_SIZE; ++index) {
         
         
-        if (mSinkState == BluetoothA2dpManager::SinkState::SINK_PLAYING) {
+        if (mPlayStatus == ControlPlayStatus::PLAYSTATUS_PLAYING) {
           param.mTrack[index] = 0x0;
         } else {
           param.mTrack[index] = 0xFF;
@@ -938,7 +938,7 @@ BluetoothA2dpManager::UpdateRegisterNotification(BluetoothAvrcpEvent aEvent,
     case AVRCP_EVENT_PLAY_POS_CHANGED:
       
       mPlayPosChangedNotifyType = AVRCP_NTF_INTERIM;
-      if (mSinkState == BluetoothA2dpManager::SinkState::SINK_PLAYING) {
+      if (mPlayStatus == ControlPlayStatus::PLAYSTATUS_PLAYING) {
         param.mSongPos = mPosition;
       } else {
         param.mSongPos = 0xFFFFFFFF;
