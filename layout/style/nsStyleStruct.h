@@ -685,7 +685,7 @@ struct nsStyleImageLayers {
   friend struct Layer;
   struct Layer {
     nsStyleImage  mImage;         
-    nsCOMPtr<nsIURI> mSourceURI;  
+    FragmentOrURL mSourceURI;     
                                   
                                   
                                   
