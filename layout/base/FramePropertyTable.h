@@ -191,7 +191,7 @@ public:
 
 
   template<typename T>
-  bool IsSet(const nsIFrame* aFrame, Descriptor<T> aProperty)
+  bool Has(const nsIFrame* aFrame, Descriptor<T> aProperty)
   {
     bool foundResult = false;
     mozilla::Unused << GetInternal(aFrame, aProperty, &foundResult);
@@ -389,9 +389,9 @@ public:
   }
 
   template<typename T>
-  bool IsSet(Descriptor<T> aProperty) const
+  bool Has(Descriptor<T> aProperty) const
   {
-    return mTable->IsSet(mFrame, aProperty);
+    return mTable->Has(mFrame, aProperty);
   }
 
   template<typename T>
