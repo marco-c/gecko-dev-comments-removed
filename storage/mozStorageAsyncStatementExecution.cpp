@@ -70,7 +70,10 @@ public:
       
       
       
-      nsCOMPtr<mozIStorageStatementCallback> callback = mCallback;
+      
+      
+      
+      RefPtr<mozIStorageStatementCallback> callback = mCallback;
 
       (void)callback->HandleResult(mResults);
     }
@@ -105,7 +108,10 @@ public:
       
       
       
-      nsCOMPtr<mozIStorageStatementCallback> callback = mCallback;
+      
+      
+      
+      RefPtr<mozIStorageStatementCallback> callback = mCallback;
 
       (void)callback->HandleError(mErrorObj);
     }
