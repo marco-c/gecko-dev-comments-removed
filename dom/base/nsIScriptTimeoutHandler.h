@@ -39,7 +39,8 @@ public:
   
   
   
-  virtual void GetLocation(const char **aFileName, uint32_t *aLineNo) = 0;
+  virtual void GetLocation(const char **aFileName, uint32_t *aLineNo,
+                           uint32_t *aColumn) = 0;
 
   
   virtual const nsTArray<JS::Value>& GetArgs() = 0;
