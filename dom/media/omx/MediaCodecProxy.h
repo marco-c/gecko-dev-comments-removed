@@ -14,6 +14,7 @@
 
 #include "mozilla/media/MediaSystemResourceClient.h"
 #include "mozilla/Monitor.h"
+#include "mozilla/MozPromise.h"
 #include "mozilla/RefPtr.h"
 
 namespace android {
@@ -27,20 +28,7 @@ class MediaCodecProxy : public RefBase
                       , public mozilla::MediaSystemResourceReservationListener
 {
 public:
-  
-
-
-  struct CodecResourceListener : public virtual RefBase {
-    
-
-
-    virtual void codecReserved() = 0;
-    
-
-
-
-    virtual void codecCanceled() = 0;
-  };
+  typedef mozilla::MozPromise<bool , bool ,  true> CodecPromise;
 
   enum Capability {
     kEmptyCapability        = 0x00000000,
@@ -58,8 +46,7 @@ public:
   
   static sp<MediaCodecProxy> CreateByType(sp<ALooper> aLooper,
                                           const char *aMime,
-                                          bool aEncoder,
-                                          wp<CodecResourceListener> aListener=nullptr);
+                                          bool aEncoder);
 
   
   status_t configure(const sp<AMessage> &aFormat,
@@ -142,7 +129,7 @@ public:
   bool AllocateAudioMediaCodec();
 
   
-  bool AsyncAllocateVideoMediaCodec();
+  RefPtr<CodecPromise> AsyncAllocateVideoMediaCodec();
 
   
   void ReleaseMediaCodec();
@@ -163,8 +150,7 @@ private:
   
   MediaCodecProxy(sp<ALooper> aLooper,
                   const char *aMime,
-                  bool aEncoder,
-                  wp<CodecResourceListener> aListener);
+                  bool aEncoder);
 
   
   bool allocateCodec();
@@ -176,8 +162,7 @@ private:
   nsCString mCodecMime;
   bool mCodecEncoder;
 
-  
-  wp<CodecResourceListener> mListener;
+  mozilla::MozPromiseHolder<CodecPromise> mCodecPromise;
 
   
   RefPtr<mozilla::MediaSystemResourceClient> mResourceClient;

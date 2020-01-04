@@ -14,6 +14,7 @@
 #include <utils/threads.h>
 
 #include "mozilla/media/MediaSystemResourceClient.h"
+#include "mozilla/MozPromise.h"
 #include "mozilla/RefPtr.h"
 
 namespace android {
@@ -24,20 +25,7 @@ class OMXCodecProxy : public MediaSource
                     , public mozilla::MediaSystemResourceReservationListener
 {
 public:
-  
-
-
-  struct CodecResourceListener : public virtual RefBase {
-    
-
-
-    virtual void codecReserved() = 0;
-    
-
-
-
-    virtual void codecCanceled() = 0;
-  };
+  typedef mozilla::MozPromise<bool , bool ,  true> CodecPromise;
 
   
   enum class ResourceState : int8_t {
@@ -56,9 +44,7 @@ public:
           uint32_t flags = 0,
           const sp<ANativeWindow> &nativeWindow = nullptr);
 
-    void setListener(const wp<CodecResourceListener>& listener);
-
-    void requestResource();
+    RefPtr<CodecPromise> requestResource();
 
     
     void ResourceReserved() override;
@@ -87,11 +73,6 @@ protected:
 
     virtual ~OMXCodecProxy();
 
-    void notifyResourceReserved();
-    void notifyResourceCanceled();
-
-    void notifyStatusChangedLocked();
-
 private:
     OMXCodecProxy(const OMXCodecProxy &);
     OMXCodecProxy &operator=(const OMXCodecProxy &);
@@ -112,9 +93,7 @@ private:
 
     RefPtr<mozilla::MediaSystemResourceClient> mResourceClient;
     ResourceState mState;
-
-    
-    wp<CodecResourceListener> mListener;
+    mozilla::MozPromiseHolder<CodecPromise> mCodecPromise;
 };
 
 } 
