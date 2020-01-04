@@ -3695,13 +3695,13 @@ TSFTextStore::GetScreenExtInternal(RECT& aScreenExt)
          ("TSF: 0x%p   TSFTextStore::GetScreenExtInternal()", this));
 
   
-  WidgetQueryContentEvent event(true, NS_QUERY_EDITOR_RECT, mWidget);
+  WidgetQueryContentEvent event(true, eQueryEditorRect, mWidget);
   mWidget->InitEvent(event);
   DispatchEvent(event);
   if (!event.mSucceeded) {
     MOZ_LOG(sTextStoreLog, LogLevel::Error,
            ("TSF: 0x%p   TSFTextStore::GetScreenExtInternal() FAILED due to "
-            "NS_QUERY_EDITOR_RECT failure", this));
+            "eQueryEditorRect failure", this));
     return false;
   }
 
