@@ -49,7 +49,7 @@ enum State {
     SWEEP,
     FINALIZE,
     COMPACT,
-
+    DECOMMIT,
     NUM_STATES
 };
 
@@ -955,6 +955,7 @@ class GCParallelTask
     }
 
     
+    bool isRunningWithLockHeld() const;
     bool isRunning() const;
 
     
