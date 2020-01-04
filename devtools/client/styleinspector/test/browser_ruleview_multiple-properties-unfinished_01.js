@@ -16,24 +16,12 @@ add_task(function*() {
   yield testCreateNewMultiUnfinished(inspector, view);
 });
 
-function waitRuleViewChanged(view, n) {
-  let deferred = promise.defer();
-  let count = 0;
-  let listener = function() {
-    if (++count == n) {
-      view.off("ruleview-changed", listener);
-      deferred.resolve();
-    }
-  };
-  view.on("ruleview-changed", listener);
-  return deferred.promise;
-}
 function* testCreateNewMultiUnfinished(inspector, view) {
   let ruleEditor = getRuleViewRuleEditor(view, 0);
   let onMutation = inspector.once("markupmutation");
   
   
-  let onRuleViewChanged = waitRuleViewChanged(view, 5);
+  let onRuleViewChanged = waitForNEvents(view, "ruleview-changed", 2);
   yield createNewRuleViewProperty(ruleEditor,
     "color:blue;background : orange   ; text-align:center; border-color: ");
   yield onMutation;

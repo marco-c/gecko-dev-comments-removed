@@ -15,13 +15,18 @@ const {LongStringActor} = require("devtools/server/actors/string");
 const {PSEUDO_ELEMENT_SET} = require("devtools/shared/styleinspector/css-logic");
 
 
-require("devtools/server/actors/stylesheets");
+const {UPDATE_PRESERVING_RULES, UPDATE_GENERAL} =
+      require("devtools/server/actors/stylesheets");
 
 loader.lazyGetter(this, "CssLogic", () => {
   return require("devtools/shared/styleinspector/css-logic").CssLogic;
 });
 loader.lazyGetter(this, "DOMUtils", () => {
   return Cc["@mozilla.org/inspector/dom-utils;1"].getService(Ci.inIDOMUtils);
+});
+
+loader.lazyGetter(this, "RuleRewriter", () => {
+  return require("devtools/client/styleinspector/css-parsing-utils").RuleRewriter;
 });
 
 
@@ -128,6 +133,13 @@ types.addDictType("fontface", {
 var PageStyleActor = protocol.ActorClass({
   typeName: "pagestyle",
 
+  events: {
+    "stylesheet-updated": {
+      type: "styleSheetUpdated",
+      styleSheet: Arg(0, "stylesheet")
+    }
+  },
+
   
 
 
@@ -151,9 +163,12 @@ var PageStyleActor = protocol.ActorClass({
 
     this.onFrameUnload = this.onFrameUnload.bind(this);
     events.on(this.inspector.tabActor, "will-navigate", this.onFrameUnload);
+
+    this._styleApplied = this._styleApplied.bind(this);
+    this._watchedSheets = new Set();
   },
 
-  destroy: function () {
+  destroy: function() {
     if (!this.walker) {
       return;
     }
@@ -164,6 +179,11 @@ var PageStyleActor = protocol.ActorClass({
     this.refMap = null;
     this.cssLogic = null;
     this._styleElement = null;
+
+    for (let sheet of this._watchedSheets) {
+      sheet.off("style-applied", this._styleApplied);
+    }
+    this._watchedSheets.clear();
   },
 
   get conn() {
@@ -182,9 +202,20 @@ var PageStyleActor = protocol.ActorClass({
         
         
         
-        getAppliedCreatesStyleCache: true
+        getAppliedCreatesStyleCache: true,
+        
+        authoredStyles: true
       }
     };
+  },
+
+  
+
+
+  _styleApplied: function(kind, styleSheet) {
+    if (kind === UPDATE_GENERAL) {
+      events.emit(this, "stylesheet-updated", styleSheet);
+    }
   },
 
   
@@ -209,9 +240,28 @@ var PageStyleActor = protocol.ActorClass({
 
 
 
+
+
+
+  updateStyleRef: function(oldItem, item, actor) {
+    this.refMap.delete(oldItem);
+    this.refMap.set(item, actor);
+  },
+
+  
+
+
+
+
+
+
   _sheetRef: function(sheet) {
     let tabActor = this.inspector.tabActor;
     let actor = tabActor.createStyleSheetActor(sheet);
+    if (!this._watchedSheets.has(actor)) {
+      this._watchedSheets.add(actor);
+      actor.on("style-applied", this._styleApplied);
+    }
     return actor;
   },
 
@@ -524,7 +574,7 @@ var PageStyleActor = protocol.ActorClass({
 
 
 
-  getApplied: method(function(node, options) {
+  getApplied: method(Task.async(function*(node, options) {
     if (!node) {
       return {entries: [], rules: [], sheets: []};
     }
@@ -532,8 +582,14 @@ var PageStyleActor = protocol.ActorClass({
     this.cssLogic.highlight(node.rawNode);
     let entries = [];
     entries = entries.concat(this._getAllElementRules(node, undefined, options));
-    return this.getAppliedProps(node, entries, options);
-  }, {
+
+    let result = this.getAppliedProps(node, entries, options);
+    for (let rule of result.rules) {
+      
+      yield rule.getAuthoredCssText();
+    }
+    return result;
+  }), {
     request: {
       node: Arg(0, "domnode"),
       inherited: Option(1, "boolean"),
@@ -910,7 +966,12 @@ var PageStyleActor = protocol.ActorClass({
 
 
 
-  addNewRule: method(function(node, pseudoClasses) {
+
+
+
+
+  addNewRule: method(Task.async(function*(node, pseudoClasses,
+                                          editAuthored = false) {
     let style = this.styleElement;
     let sheet = style.sheet;
     let cssRules = sheet.cssRules;
@@ -930,11 +991,22 @@ var PageStyleActor = protocol.ActorClass({
     }
 
     let index = sheet.insertRule(selector + " {}", cssRules.length);
-    return this.getNewAppliedProps(node, cssRules.item(index));
-  }, {
+
+    
+    
+    if (editAuthored) {
+      let sheetActor = this._sheetRef(sheet);
+      let {str: authoredText} = yield sheetActor.getText();
+      authoredText += "\n" + selector + " {\n" + "}";
+      yield sheetActor.update(authoredText, false);
+    }
+
+    return this.getNewAppliedProps(node, sheet.cssRules.item(index));
+  }), {
     request: {
       node: Arg(0, "domnode"),
-      pseudoClasses: Arg(1, "nullable:array:string")
+      pseudoClasses: Arg(1, "nullable:array:string"),
+      editAuthored: Arg(2, "boolean")
     },
     response: RetVal("appliedStylesReturn")
   }),
@@ -966,6 +1038,10 @@ var PageStyleFront = protocol.FrontClass(PageStyleActor, {
     return this.inspector.walker;
   },
 
+  get supportsAuthoredStyles() {
+    return this._form.traits && this._form.traits.authoredStyles;
+  },
+
   getMatchedSelectors: protocol.custom(function(node, property, options) {
     return this._getMatchedSelectors(node, property, options).then(ret => {
       return ret.matched;
@@ -989,7 +1065,13 @@ var PageStyleFront = protocol.FrontClass(PageStyleActor, {
   }),
 
   addNewRule: protocol.custom(function(node, pseudoClasses) {
-    return this._addNewRule(node, pseudoClasses).then(ret => {
+    let addPromise;
+    if (this.supportsAuthoredStyles) {
+      addPromise = this._addNewRule(node, pseudoClasses, true);
+    } else {
+      addPromise = this._addNewRule(node, pseudoClasses);
+    }
+    return addPromise.then(ret => {
       return ret.entries[0];
     });
   }, {
@@ -1007,19 +1089,34 @@ var PageStyleFront = protocol.FrontClass(PageStyleActor, {
 
 var StyleRuleActor = protocol.ActorClass({
   typeName: "domstylerule",
+
+  events: {
+    "location-changed": {
+      type: "locationChanged",
+      line: Arg(0, "number"),
+      column: Arg(1, "number")
+    },
+  },
+
   initialize: function(pageStyle, item) {
     protocol.Actor.prototype.initialize.call(this, null);
     this.pageStyle = pageStyle;
     this.rawStyle = item.style;
+    this._parentSheet = null;
+    this._onStyleApplied = this._onStyleApplied.bind(this);
 
     if (item instanceof (Ci.nsIDOMCSSRule)) {
       this.type = item.type;
       this.rawRule = item;
       if ((this.rawRule instanceof Ci.nsIDOMCSSStyleRule ||
            this.rawRule instanceof Ci.nsIDOMMozCSSKeyframeRule) &&
-           this.rawRule.parentStyleSheet) {
-        this.line = DOMUtils.getRuleLine(this.rawRule);
+          this.rawRule.parentStyleSheet) {
+        this.line = DOMUtils.getRelativeRuleLine(this.rawRule);
         this.column = DOMUtils.getRuleColumn(this.rawRule);
+        this._parentSheet = this.rawRule.parentStyleSheet;
+        this._computeRuleIndex();
+        this.sheetActor = this.pageStyle._sheetRef(this._parentSheet);
+        this.sheetActor.on("style-applied", this._onStyleApplied);
       }
     } else {
       
@@ -1047,12 +1144,26 @@ var StyleRuleActor = protocol.ActorClass({
     this.pageStyle = null;
     this.rawNode = null;
     this.rawRule = null;
+    if (this.sheetActor) {
+      this.sheetActor.off("style-applied", this._onStyleApplied);
+    }
   },
 
   
   
   get marshallPool() {
     return this.pageStyle;
+  },
+
+  
+  
+  get canSetRuleText() {
+    
+    
+    
+    
+    return !!(this._parentSheet &&
+              this._parentSheet.href !== "about:PreferenceStyleSheet");
   },
 
   getDocument: function(sheet) {
@@ -1085,6 +1196,9 @@ var StyleRuleActor = protocol.ActorClass({
         
         
         modifySelectorUnmatched: true,
+        
+        
+        canSetRuleText: this.canSetRuleText,
       }
     };
 
@@ -1102,9 +1216,16 @@ var StyleRuleActor = protocol.ActorClass({
         }
       }
     }
-    if (this.rawRule.parentStyleSheet) {
-      form.parentStyleSheet = this.pageStyle._sheetRef(this.rawRule.parentStyleSheet).actorID;
+    if (this._parentSheet) {
+      form.parentStyleSheet = this.pageStyle._sheetRef(this._parentSheet).actorID;
     }
+
+    
+    
+    
+    
+    
+    form.authoredText = this.authoredText;
 
     switch (this.type) {
       case Ci.nsIDOMCSSRule.STYLE_RULE:
@@ -1145,6 +1266,124 @@ var StyleRuleActor = protocol.ActorClass({
 
 
 
+  _notifyLocationChanged: function(line, column) {
+    events.emit(this, "location-changed", line, column);
+  },
+
+  
+
+
+
+  _computeRuleIndex: function() {
+    let rule = this.rawRule;
+    let cssRules = this._parentSheet.cssRules;
+    this._ruleIndex = -1;
+    for (let i = 0; i < cssRules.length; i++) {
+      if (rule === cssRules.item(i)) {
+        this._ruleIndex = i;
+        break;
+      }
+    }
+  },
+
+  
+
+
+
+  _onStyleApplied: function(kind) {
+    if (kind === UPDATE_GENERAL) {
+      
+      
+      if (this.sheetActor) {
+        this.sheetActor.off("style-applied", this._onStyleApplied);
+      }
+    } else if (this._ruleIndex >= 0) {
+      
+      
+      
+      let oldRule = this.rawRule;
+      this.rawRule = this._parentSheet.cssRules[this._ruleIndex];
+      
+      
+      this.pageStyle.updateStyleRef(oldRule, this.rawRule, this);
+      let line = DOMUtils.getRelativeRuleLine(this.rawRule);
+      let column = DOMUtils.getRuleColumn(this.rawRule);
+      if (line !== this.line || column !== this.column) {
+        this._notifyLocationChanged(line, column);
+      }
+      this.line = line;
+      this.column = column;
+    }
+  },
+
+  
+
+
+
+
+
+
+
+  getAuthoredCssText: function() {
+    if (!this.canSetRuleText ||
+        (this.type !== Ci.nsIDOMCSSRule.STYLE_RULE &&
+         this.type !== Ci.nsIDOMCSSRule.KEYFRAME_RULE)) {
+      return promise.resolve("");
+    }
+
+    if (typeof this.authoredText === "string") {
+      return promise.resolve(this.authoredText);
+    }
+
+    let parentStyleSheet =
+        this.pageStyle._sheetRef(this._parentSheet);
+    return parentStyleSheet.getText().then((longStr) => {
+      let cssText = longStr.str;
+      let {text} = getRuleText(cssText, this.line, this.column);
+
+      
+      this.authoredText = text;
+      return this.authoredText;
+    });
+  },
+
+  
+
+
+
+
+
+
+  setRuleText: method(Task.async(function*(newText) {
+    if (!this.canSetRuleText ||
+        (this.type !== Ci.nsIDOMCSSRule.STYLE_RULE &&
+         this.type !== Ci.nsIDOMCSSRule.KEYFRAME_RULE)) {
+      throw new Error("invalid call to setRuleText");
+    }
+
+    let parentStyleSheet = this.pageStyle._sheetRef(this._parentSheet);
+    let {str: cssText} = yield parentStyleSheet.getText();
+
+    let {offset, text} = getRuleText(cssText, this.line, this.column);
+    cssText = cssText.substring(0, offset) + newText +
+      cssText.substring(offset + text.length);
+
+    this.authoredText = newText;
+    yield parentStyleSheet.update(cssText, false, UPDATE_PRESERVING_RULES);
+
+    return this;
+  }), {
+    request: { modification: Arg(0, "string") },
+    response: { rule: RetVal("domstylerule") }
+  }),
+
+  
+
+
+
+
+
+
 
 
 
@@ -1163,7 +1402,7 @@ var StyleRuleActor = protocol.ActorClass({
     if (this.rawNode) {
       document = this.rawNode.ownerDocument;
     } else {
-      let parentStyleSheet = this.rawRule.parentStyleSheet;
+      let parentStyleSheet = this._parentSheet;
       while (parentStyleSheet.ownerRule &&
           parentStyleSheet.ownerRule instanceof Ci.nsIDOMCSSImportRule) {
         parentStyleSheet = parentStyleSheet.ownerRule.parentStyleSheet;
@@ -1202,33 +1441,55 @@ var StyleRuleActor = protocol.ActorClass({
 
 
 
-  _addNewSelector: function(value) {
+
+
+
+
+  _addNewSelector: Task.async(function*(value, editAuthored) {
     let rule = this.rawRule;
-    let parentStyleSheet = rule.parentStyleSheet;
-    let cssRules = parentStyleSheet.cssRules;
-    let cssText = rule.cssText;
-    let selectorText = rule.selectorText;
+    let parentStyleSheet = this._parentSheet;
 
-    for (let i = 0; i < cssRules.length; i++) {
-      if (rule === cssRules.item(i)) {
-        try {
-          
-          
-          let ruleText = cssText.slice(selectorText.length).trim();
-          parentStyleSheet.insertRule(value + " " + ruleText, i);
-          parentStyleSheet.deleteRule(i + 1);
-          return cssRules.item(i);
-        } catch(e) {
-          
-          
+    
+    
+    if (editAuthored) {
+      let document = this.getDocument(this._parentSheet);
+      try {
+        document.querySelector(value);
+      } catch (e) {
+        return null;
+      }
+
+      let sheetActor = this.pageStyle._sheetRef(parentStyleSheet);
+      let {str: authoredText} = yield sheetActor.getText();
+      let [startOffset, endOffset] = getSelectorOffsets(authoredText, this.line,
+                                                        this.column);
+      authoredText = authoredText.substring(0, startOffset) + value +
+        authoredText.substring(endOffset);
+      yield sheetActor.update(authoredText, false, UPDATE_PRESERVING_RULES);
+    } else {
+      let cssRules = parentStyleSheet.cssRules;
+      let cssText = rule.cssText;
+      let selectorText = rule.selectorText;
+
+      for (let i = 0; i < cssRules.length; i++) {
+        if (rule === cssRules.item(i)) {
+          try {
+            
+            
+            let ruleText = cssText.slice(selectorText.length).trim();
+            parentStyleSheet.insertRule(value + " " + ruleText, i);
+            parentStyleSheet.deleteRule(i + 1);
+            break;
+          } catch(e) {
+            
+            return null;
+          }
         }
-
-        break;
       }
     }
 
-    return null;
-  },
+    return parentStyleSheet.cssRules[this._ruleIndex];
+  }),
 
   
 
@@ -1243,12 +1504,12 @@ var StyleRuleActor = protocol.ActorClass({
 
 
 
-  modifySelector: method(function(value) {
+  modifySelector: method(Task.async(function*(value) {
     if (this.type === ELEMENT_STYLE) {
       return false;
     }
 
-    let document = this.getDocument(this.rawRule.parentStyleSheet);
+    let document = this.getDocument(this._parentSheet);
     
     let [selector, pseudoProp] = value.split(/(:{1,2}.+$)/);
     let selectorElement;
@@ -1262,11 +1523,11 @@ var StyleRuleActor = protocol.ActorClass({
     
     
     if (selectorElement && this.rawRule.selectorText !== value) {
-      this._addNewSelector(value);
+      yield this._addNewSelector(value, false);
       return true;
     }
     return false;
-  }, {
+  }), {
     request: { selector: Arg(0, "string") },
     response: { isModified: RetVal("boolean") },
   }),
@@ -1290,8 +1551,11 @@ var StyleRuleActor = protocol.ActorClass({
 
 
 
-  modifySelector2: method(function(node, value) {
-    let isMatching = false;
+
+
+
+
+  modifySelector2: method(function(node, value, editAuthored = false) {
     let ruleProps = null;
 
     if (this.type === ELEMENT_STYLE ||
@@ -1299,23 +1563,40 @@ var StyleRuleActor = protocol.ActorClass({
       return { ruleProps, isMatching: true };
     }
 
-    let newCssRule = this._addNewSelector(value);
-    if (newCssRule) {
-      ruleProps = this.pageStyle.getNewAppliedProps(node, newCssRule);
+    let selectorPromise = this._addNewSelector(value, editAuthored);
+
+    if (editAuthored) {
+      selectorPromise = selectorPromise.then((newCssRule) => {
+        if (newCssRule) {
+          let style = this.pageStyle._styleRef(newCssRule);
+          
+          return style.getAuthoredCssText().then(() => newCssRule);
+        }
+        return newCssRule;
+      });
     }
 
-    
-    try {
-      isMatching = node.rawNode.matches(value);
-    } catch(e) {
+    return selectorPromise.then((newCssRule) => {
+      if (newCssRule) {
+        ruleProps = this.pageStyle.getNewAppliedProps(node, newCssRule);
+      }
+
       
-    }
+      
+      let isMatching = false;
+      try {
+        isMatching = node.rawNode.matches(value);
+      } catch(e) {
+        
+      }
 
-    return { ruleProps, isMatching };
+      return { ruleProps, isMatching };
+    });
   }, {
     request: {
       node: Arg(0, "domnode"),
-      value: Arg(1, "string")
+      value: Arg(1, "string"),
+      editAuthored: Arg(2, "boolean")
     },
     response: RetVal("modifiedStylesReturn")
   })
@@ -1348,7 +1629,23 @@ var StyleRuleFront = protocol.FrontClass(StyleRuleActor, {
   
 
 
+  _locationChangedPre: protocol.preEvent("location-changed", function(line,
+                                                                      column) {
+    this._clearOriginalLocation();
+    this._form.line = line;
+    this._form.column = column;
+  }),
+
+  
+
+
+
+
+
   startModifyingProperties: function() {
+    if (this.canSetRuleText) {
+      return new RuleRewriter(this, this.authoredText);
+    }
     return new RuleModificationList(this);
   },
 
@@ -1363,6 +1660,9 @@ var StyleRuleFront = protocol.FrontClass(StyleRuleActor, {
   },
   get cssText() {
     return this._form.cssText;
+  },
+  get authoredText() {
+    return this._form.authoredText || this._form.cssText;
   },
   get keyText() {
     return this._form.keyText;
@@ -1416,6 +1716,10 @@ var StyleRuleFront = protocol.FrontClass(StyleRuleActor, {
     return this._form.traits && this._form.traits.modifySelectorUnmatched;
   },
 
+  get canSetRuleText() {
+    return this._form.traits && this._form.traits.canSetRuleText;
+  },
+
   get location() {
     return {
       source: this.parentStyleSheet,
@@ -1423,6 +1727,10 @@ var StyleRuleFront = protocol.FrontClass(StyleRuleActor, {
       line: this.line,
       column: this.column
     };
+  },
+
+  _clearOriginalLocation: function() {
+    this._originalLocation = null;
   },
 
   getOriginalLocation: function() {
@@ -1458,7 +1766,11 @@ var StyleRuleFront = protocol.FrontClass(StyleRuleActor, {
     let response;
     if (this.supportsModifySelectorUnmatched) {
       
-      response = yield this.modifySelector2(node, value);
+      if (this.canSetRuleText) {
+        response = yield this.modifySelector2(node, value, true);
+      } else {
+        response = yield this.modifySelector2(node, value);
+      }
     } else {
       response = yield this._modifySelector(value);
     }
@@ -1469,8 +1781,19 @@ var StyleRuleFront = protocol.FrontClass(StyleRuleActor, {
     return response;
   }), {
     impl: "_modifySelector"
+  }),
+
+  setRuleText: protocol.custom(function(newText) {
+    this._form.authoredText = newText;
+    return this._setRuleText(newText);
+  }, {
+    impl: "_setRuleText"
   })
 });
+
+
+
+
 
 
 
@@ -1507,7 +1830,12 @@ var RuleModificationList = Class({
 
 
 
-  setProperty: function(name, value, priority) {
+
+
+
+
+
+  setProperty: function(index, name, value, priority) {
     this.modifications.push({
       type: "set",
       name: name,
@@ -1521,12 +1849,71 @@ var RuleModificationList = Class({
 
 
 
-  removeProperty: function(name) {
+
+
+
+
+
+  removeProperty: function(index, name) {
     this.modifications.push({
       type: "remove",
       name: name
     });
-  }
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  renameProperty: function(index, name, newName) {
+    this.removeProperty(index, name);
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  setPropertyEnabled: function(index, name, isEnabled) {
+    if (!isEnabled) {
+      this.removeProperty(index, name);
+    }
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  createProperty: function(index, name, value, priority) {
+    
+  },
 });
 
 
@@ -1658,6 +2045,47 @@ function getRuleText(initialText, line, column) {
 }
 
 exports.getRuleText = getRuleText;
+
+
+
+
+
+
+
+
+
+
+
+function getSelectorOffsets(initialText, line, column) {
+  if (typeof line === "undefined" || typeof column === "undefined") {
+    throw new Error("Location information is missing");
+  }
+
+  let {offset: textOffset, text} =
+      getTextAtLineColumn(initialText, line, column);
+  let lexer = DOMUtils.getCSSLexer(text);
+
+  
+  let endOffset;
+  while (true) {
+    let token = lexer.nextToken();
+    if (!token) {
+      break;
+    }
+    if (token.tokenType === "symbol" && token.text === "{") {
+      if (endOffset === undefined) {
+        break;
+      }
+      return [textOffset, textOffset + endOffset];
+    }
+    
+    if (token.tokenType !== "comment" && token.tokenType !== "whitespace") {
+      endOffset = token.endOffset;
+    }
+  }
+
+  throw new Error("could not find bounds of rule");
+}
 
 
 

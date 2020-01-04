@@ -183,6 +183,12 @@ ElementStyle.prototype = {
     }
     this.destroyed = true;
 
+    for (let rule of this.rules) {
+      if (rule.editor) {
+        rule.editor.destroy();
+      }
+    }
+
     this.dummyElement = null;
     this.dummyElementPromise.then(dummyElement => {
       dummyElement.remove();
@@ -226,12 +232,12 @@ ElementStyle.prototype = {
 
         
         
-        this._refreshRules = this.rules;
+        let existingRules = this.rules;
 
         this.rules = [];
 
         for (let entry of entries) {
-          this._maybeAddRule(entry);
+          this._maybeAddRule(entry, existingRules);
         }
 
         
@@ -240,7 +246,11 @@ ElementStyle.prototype = {
         this._sortRulesForPseudoElement();
 
         
-        delete this._refreshRules;
+        for (let r of existingRules) {
+          if (r && r.editor) {
+            r.editor.destroy();
+          }
+        }
       });
     }).then(null, e => {
       
@@ -271,7 +281,10 @@ ElementStyle.prototype = {
 
 
 
-  _maybeAddRule: function(options) {
+
+
+
+  _maybeAddRule: function(options, existingRules) {
     
     
     if (options.rule &&
@@ -287,13 +300,12 @@ ElementStyle.prototype = {
 
     
     
-    if (this._refreshRules) {
-      for (let r of this._refreshRules) {
-        if (r.matches(options)) {
-          rule = r;
-          rule.refresh(options);
-          break;
-        }
+    if (existingRules) {
+      let ruleIndex = existingRules.findIndex((r) => r.matches(options));
+      if (ruleIndex >= 0) {
+        rule = existingRules[ruleIndex];
+        rule.refresh(options);
+        existingRules.splice(ruleIndex, 1);
       }
     }
 
@@ -303,7 +315,7 @@ ElementStyle.prototype = {
     }
 
     
-    if (options.inherited && rule.textProps.length === 0) {
+    if (options.inherited && !rule.hasAnyVisibleProperties()) {
       return false;
     }
 
@@ -372,6 +384,16 @@ ElementStyle.prototype = {
     let taken = {};
     for (let computedProp of computedProps) {
       let earlier = taken[computedProp.name];
+
+      
+      
+      
+      
+      
+      if (!computedProp.textProp.isValid()) {
+        computedProp.overridden = true;
+        continue;
+      }
       let overridden;
       if (earlier &&
           computedProp.priority === "important" &&
@@ -473,17 +495,12 @@ Rule.prototype = {
   mediaText: "",
 
   get title() {
-    if (this._title) {
-      return this._title;
-    }
-    this._title = CssLogic.shortSource(this.sheet);
+    let title = CssLogic.shortSource(this.sheet);
     if (this.domRule.type !== ELEMENT_STYLE && this.ruleLine > 0) {
-      this._title += ":" + this.ruleLine;
+      title += ":" + this.ruleLine;
     }
 
-    this._title = this._title +
-      (this.mediaText ? " @media " + this.mediaText : "");
-    return this._title;
+    return title + (this.mediaText ? " @media " + this.mediaText : "");
   },
 
   get inheritedSource() {
@@ -551,10 +568,6 @@ Rule.prototype = {
 
 
   getOriginalSourceStrings: function() {
-    if (this._originalSourceStrings) {
-      return promise.resolve(this._originalSourceStrings);
-    }
-
     return this.domRule.getOriginalLocation().then(({href, line, mediaText}) => {
       let mediaString = mediaText ? " @" + mediaText : "";
 
@@ -564,7 +577,6 @@ Rule.prototype = {
         short: CssLogic.shortSource({href: href}) + ":" + line + mediaString
       };
 
-      this._originalSourceStrings = sourceStrings;
       return sourceStrings;
     });
   },
@@ -595,14 +607,18 @@ Rule.prototype = {
   createProperty: function(name, value, priority, siblingProp) {
     let prop = new TextProperty(this, name, value, priority);
 
+    let ind;
     if (siblingProp) {
-      let ind = this.textProps.indexOf(siblingProp);
-      this.textProps.splice(ind + 1, 0, prop);
+      ind = this.textProps.indexOf(siblingProp) + 1;
+      this.textProps.splice(ind, 0, prop);
     } else {
+      ind = this.textProps.length;
       this.textProps.push(prop);
     }
 
-    this.applyProperties();
+    this.applyProperties((modifications) => {
+      modifications.createProperty(ind, name, value, priority);
+    });
     return prop;
   },
 
@@ -611,15 +627,15 @@ Rule.prototype = {
 
 
 
-  applyProperties: function(modifications) {
+  _applyPropertiesNoAuthored: function(modifications) {
     this.elementStyle.markOverriddenAll();
 
-    if (!modifications) {
-      modifications = this.style.startModifyingProperties();
-    }
     let disabledProps = [];
 
     for (let prop of this.textProps) {
+      if (prop.invisible) {
+        continue;
+      }
       if (!prop.enabled) {
         disabledProps.push({
           name: prop.name,
@@ -632,7 +648,7 @@ Rule.prototype = {
         continue;
       }
 
-      modifications.setProperty(prop.name, prop.value, prop.priority);
+      modifications.setProperty(-1, prop.name, prop.value, prop.priority);
 
       prop.updateComputed();
     }
@@ -645,9 +661,9 @@ Rule.prototype = {
       disabled.delete(this.style);
     }
 
-    let modificationsPromise = modifications.apply().then(() => {
+    return modifications.apply().then(() => {
       let cssProps = {};
-      for (let cssProp of parseDeclarations(this.style.cssText)) {
+      for (let cssProp of parseDeclarations(this.style.authoredText)) {
         cssProps[cssProp.name] = cssProp;
       }
 
@@ -667,18 +683,67 @@ Rule.prototype = {
 
         textProp.priority = cssProp.priority;
       }
+    });
+  },
 
-      this.elementStyle.markOverriddenAll();
+  
 
-      if (modificationsPromise === this._applyingModifications) {
-        this._applyingModifications = null;
+
+
+
+  _applyPropertiesAuthored: function(modifications) {
+    return modifications.apply().then(() => {
+      
+      
+      
+      for (let index in modifications.changedDeclarations) {
+        let newValue = modifications.changedDeclarations[index];
+        this.textProps[index].noticeNewValue(newValue);
       }
+      
+      for (let prop of this.textProps) {
+        if (!prop.invisible && prop.enabled) {
+          prop.updateComputed();
+          prop.updateEditor();
+        }
+      }
+    });
+  },
 
-      this.elementStyle._changed();
-    }).then(null, promiseWarn);
+  
 
-    this._applyingModifications = modificationsPromise;
-    return modificationsPromise;
+
+
+
+
+
+
+
+
+
+
+  applyProperties: function(modifier) {
+    
+    
+    let resultPromise =
+        promise.resolve(this._applyingModifications).then(() => {
+          let modifications = this.style.startModifyingProperties();
+          modifier(modifications);
+          if (this.style.canSetRuleText) {
+            return this._applyPropertiesAuthored(modifications);
+          }
+          return this._applyPropertiesNoAuthored(modifications);
+        }).then(() => {
+          this.elementStyle.markOverriddenAll();
+
+          if (resultPromise === this._applyingModifications) {
+            this._applyingModifications = null;
+            this.elementStyle._changed();
+          }
+        }).catch(promiseWarn);
+
+    this._applyingModifications = resultPromise;
+    return resultPromise;
   },
 
   
@@ -693,10 +758,12 @@ Rule.prototype = {
     if (name === property.name) {
       return;
     }
-    let modifications = this.style.startModifyingProperties();
-    modifications.removeProperty(property.name);
+
     property.name = name;
-    this.applyProperties(modifications, name);
+    let index = this.textProps.indexOf(property);
+    this.applyProperties((modifications) => {
+      modifications.renameProperty(index, property.name, name);
+    });
   },
 
   
@@ -716,7 +783,11 @@ Rule.prototype = {
 
     property.value = value;
     property.priority = priority;
-    this.applyProperties(null, property.name);
+
+    let index = this.textProps.indexOf(property);
+    this.applyProperties((modifications) => {
+      modifications.setProperty(index, property.name, value, priority);
+    });
   },
 
   
@@ -732,7 +803,8 @@ Rule.prototype = {
 
   previewPropertyValue: function(property, value, priority) {
     let modifications = this.style.startModifyingProperties();
-    modifications.setProperty(property.name, value, priority);
+    modifications.setProperty(this.textProps.indexOf(property),
+                              property.name, value, priority);
     modifications.apply().then(() => {
       
       
@@ -748,12 +820,14 @@ Rule.prototype = {
 
 
   setPropertyEnabled: function(property, value) {
-    property.enabled = !!value;
-    let modifications = this.style.startModifyingProperties();
-    if (!property.enabled) {
-      modifications.removeProperty(property.name);
+    if (property.enabled === !!value) {
+      return;
     }
-    this.applyProperties(modifications);
+    property.enabled = !!value;
+    let index = this.textProps.indexOf(property);
+    this.applyProperties((modifications) => {
+      modifications.setPropertyEnabled(index, property.name, property.enabled);
+    });
   },
 
   
@@ -764,12 +838,13 @@ Rule.prototype = {
 
 
   removeProperty: function(property) {
-    this.textProps = this.textProps.filter(prop => prop !== property);
-    let modifications = this.style.startModifyingProperties();
-    modifications.removeProperty(property.name);
+    let index = this.textProps.indexOf(property);
+    this.textProps.splice(index, 1);
     
     
-    this.applyProperties(modifications);
+    this.applyProperties((modifications) => {
+      modifications.removeProperty(index, property.name);
+    });
   },
 
   
@@ -779,15 +854,19 @@ Rule.prototype = {
   _getTextProperties: function() {
     let textProps = [];
     let store = this.elementStyle.store;
-    let props = parseDeclarations(this.style.cssText);
+    let props = parseDeclarations(this.style.authoredText, true);
     for (let prop of props) {
       let name = prop.name;
-      if (this.inherited && !domUtils.isInheritedProperty(name)) {
-        continue;
-      }
+      
+      
+      
+      
+      let invisible = this.inherited && !domUtils.isInheritedProperty(name);
       let value = store.userProperties.getProperty(this.style, name,
                                                    prop.value);
-      let textProp = new TextProperty(this, name, value, prop.priority);
+      let textProp = new TextProperty(this, name, value, prop.priority,
+                                      !("commentOffsets" in prop),
+                                      invisible);
       textProps.push(textProp);
     }
 
@@ -953,18 +1032,26 @@ Rule.prototype = {
     let index = this.textProps.indexOf(textProperty);
 
     if (direction === Ci.nsIFocusManager.MOVEFOCUS_FORWARD) {
-      if (index === this.textProps.length - 1) {
+      for (++index; index < this.textProps.length; ++index) {
+        if (!this.textProps[index].invisible) {
+          break;
+        }
+      }
+      if (index === this.textProps.length) {
         textProperty.rule.editor.closeBrace.click();
       } else {
-        let nextProp = this.textProps[index + 1];
-        nextProp.editor.nameSpan.click();
+        this.textProps[index].editor.nameSpan.click();
       }
     } else if (direction === Ci.nsIFocusManager.MOVEFOCUS_BACKWARD) {
-      if (index === 0) {
+      for (--index; index >= 0; --index) {
+        if (!this.textProps[index].invisible) {
+          break;
+        }
+      }
+      if (index < 0) {
         textProperty.editor.ruleEditor.selectorText.click();
       } else {
-        let prevProp = this.textProps[index - 1];
-        prevProp.editor.valueSpan.click();
+        this.textProps[index].editor.valueSpan.click();
       }
     }
   },
@@ -978,10 +1065,26 @@ Rule.prototype = {
     let terminator = osString === "WINNT" ? "\r\n" : "\n";
 
     for (let textProp of this.textProps) {
-      cssText += "\t" + textProp.stringifyProperty() + terminator;
+      if (!textProp.invisible) {
+        cssText += "\t" + textProp.stringifyProperty() + terminator;
+      }
     }
 
     return selectorText + " {" + terminator + cssText + "}";
+  },
+
+  
+
+
+
+
+  hasAnyVisibleProperties: function() {
+    for (let prop of this.textProps) {
+      if (!prop.invisible) {
+        return true;
+      }
+    }
+    return false;
   }
 };
 
@@ -997,12 +1100,21 @@ Rule.prototype = {
 
 
 
-function TextProperty(rule, name, value, priority) {
+
+
+
+
+
+
+
+function TextProperty(rule, name, value, priority, enabled = true,
+                      invisible = false) {
   this.rule = rule;
   this.name = name;
   this.value = value;
   this.priority = priority;
-  this.enabled = true;
+  this.enabled = !!enabled;
+  this.invisible = invisible;
   this.updateComputed();
 }
 
@@ -1087,6 +1199,17 @@ TextProperty.prototype = {
     this.updateEditor();
   },
 
+  
+
+
+
+  noticeNewValue: function(value) {
+    if (value !== this.value) {
+      this.value = value;
+      this.updateEditor();
+    }
+  },
+
   setName: function(name) {
     let store = this.rule.elementStyle.store;
 
@@ -1122,6 +1245,33 @@ TextProperty.prototype = {
     }
 
     return declaration;
+  },
+
+  
+
+
+
+
+  isKnownProperty: function() {
+    try {
+      
+      
+      
+      domUtils.cssPropertyIsShorthand(this.name);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  },
+
+  
+
+
+
+
+
+  isValid: function() {
+    return domUtils.cssPropertyIsValid(this.name, this.value);
   }
 };
 
@@ -1487,16 +1637,12 @@ CssRuleView.prototype = {
   
 
 
-  _onAddRule: function() {
+
+  _onAddNewRuleNonAuthored: function() {
     let elementStyle = this._elementStyle;
     let element = elementStyle.element;
     let rules = elementStyle.rules;
-    let client = this.inspector.toolbox._target.client;
     let pseudoClasses = element.pseudoClassLocks;
-
-    if (!client.traits.addNewRule) {
-      return;
-    }
 
     this.pageStyle.addNewRule(element, pseudoClasses).then(options => {
       let newRule = new Rule(elementStyle, options);
@@ -1520,6 +1666,44 @@ CssRuleView.prototype = {
       
       editor.selectorText.click();
       elementStyle._changed();
+    });
+  },
+
+  
+
+
+  _onAddRule: function() {
+    let elementStyle = this._elementStyle;
+    let element = elementStyle.element;
+    let client = this.inspector.toolbox._target.client;
+    let pseudoClasses = element.pseudoClassLocks;
+
+    if (!client.traits.addNewRule) {
+      return;
+    }
+
+    if (!this.pageStyle.supportsAuthoredStyles) {
+      
+      this._onAddNewRuleNonAuthored();
+      return;
+    }
+
+    
+    
+    
+    
+    let eventPromise = this.once("ruleview-refreshed");
+    let newRulePromise = this.pageStyle.addNewRule(element, pseudoClasses);
+    promise.all([eventPromise, newRulePromise]).then((values) => {
+      let options = values[1];
+      
+      for (let rule of this._elementStyle.rules) {
+        if (options.rule === rule.domRule) {
+          rule.editor.selectorText.click();
+          elementStyle._changed();
+          break;
+        }
+      }
     });
   },
 
@@ -2146,7 +2330,7 @@ CssRuleView.prototype = {
 
     
     for (let textProp of rule.textProps) {
-      if (this._highlightProperty(textProp.editor)) {
+      if (!textProp.invisible && this._highlightProperty(textProp.editor)) {
         isHighlighted = true;
       }
     }
@@ -2435,11 +2619,18 @@ function RuleEditor(aRuleView, aRule) {
   this._onNewProperty = this._onNewProperty.bind(this);
   this._newPropertyDestroy = this._newPropertyDestroy.bind(this);
   this._onSelectorDone = this._onSelectorDone.bind(this);
+  this._locationChanged = this._locationChanged.bind(this);
+
+  this.rule.domRule.on("location-changed", this._locationChanged);
 
   this._create();
 }
 
 RuleEditor.prototype = {
+  destroy: function() {
+    this.rule.domRule.off("location-changed");
+  },
+
   get isSelectorEditable() {
     let toolbox = this.ruleView.inspector.toolbox;
     let trait = this.isEditable &&
@@ -2554,17 +2745,26 @@ RuleEditor.prototype = {
     }
   },
 
+  
+
+
+
+  _locationChanged: function(line, column) {
+    this.updateSourceLink();
+  },
+
   updateSourceLink: function() {
     let sourceLabel = this.element.querySelector(".ruleview-rule-source-label");
+    let title = this.rule.title;
     let sourceHref = (this.rule.sheet && this.rule.sheet.href) ?
-      this.rule.sheet.href : this.rule.title;
+      this.rule.sheet.href : title;
     let sourceLine = this.rule.ruleLine > 0 ? ":" + this.rule.ruleLine : "";
 
     sourceLabel.setAttribute("tooltiptext", sourceHref + sourceLine);
 
     if (this.rule.isSystem) {
       let uaLabel = _strings.GetStringFromName("rule.userAgentStyles");
-      sourceLabel.setAttribute("value", uaLabel + " " + this.rule.title);
+      sourceLabel.setAttribute("value", uaLabel + " " + title);
 
       
       
@@ -2575,7 +2775,7 @@ RuleEditor.prototype = {
         sourceLabel.removeAttribute("tooltiptext");
       }
     } else {
-      sourceLabel.setAttribute("value", this.rule.title);
+      sourceLabel.setAttribute("value", title);
       if (this.rule.ruleLine === -1 && this.rule.domRule.parentStyleSheet) {
         sourceLabel.parentNode.setAttribute("unselectable", "true");
       }
@@ -2654,7 +2854,7 @@ RuleEditor.prototype = {
     }
 
     for (let prop of this.rule.textProps) {
-      if (!prop.editor) {
+      if (!prop.editor && !prop.invisible) {
         let editor = new TextPropertyEditor(this, prop);
         this.propertyList.appendChild(editor.element);
       }
@@ -2862,13 +3062,13 @@ RuleEditor.prototype = {
       rules.splice(rules.indexOf(this.rule), 1);
       rules.push(newRule);
       elementStyle._changed();
+      elementStyle.markOverriddenAll();
 
       editor.element.setAttribute("unmatched", !isMatching);
       this.element.parentNode.replaceChild(editor.element, this.element);
 
       
-      if (ruleView.highlightedSelector &&
-          ruleView.highlightedSelector === this.rule.selectorText) {
+      if (ruleView.highlightedSelector) {
         ruleView.toggleSelectorHighlighter(ruleView.lastSelectorIcon,
           ruleView.highlightedSelector);
       }
@@ -3172,7 +3372,8 @@ TextPropertyEditor.prototype = {
                                  !this.isValid() ||
                                  !this.prop.overridden;
 
-    if (this.prop.overridden || !this.prop.enabled) {
+    if (this.prop.overridden || !this.prop.enabled ||
+        !this.prop.isKnownProperty()) {
       this.element.classList.add("ruleview-overridden");
     } else {
       this.element.classList.remove("ruleview-overridden");
@@ -3504,6 +3705,8 @@ TextPropertyEditor.prototype = {
     
     
     if (value.trim() && isValueUnchanged) {
+      this.ruleEditor.rule.previewPropertyValue(this.prop, val.value,
+                                                val.priority);
       this.rule.setPropertyEnabled(this.prop, this.prop.enabled);
       return;
     }
@@ -3555,7 +3758,7 @@ TextPropertyEditor.prototype = {
 
 
   _onSwatchRevert: function() {
-    this.rule.setPropertyEnabled(this.prop, this.prop.enabled);
+    this._previewValue(this.prop.value);
     this.update();
   },
 
@@ -3631,7 +3834,7 @@ TextPropertyEditor.prototype = {
 
 
   isValid: function() {
-    return domUtils.cssPropertyIsValid(this.prop.name, this.prop.value);
+    return this.prop.isValid();
   }
 };
 

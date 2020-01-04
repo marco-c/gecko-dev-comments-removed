@@ -38,10 +38,6 @@ var COLOR_TEST_CLASS = "test-class";
 
 
 
-
-
-
-
 function makeColorTest(name, value, segments) {
   let result = {
     name,
@@ -53,10 +49,10 @@ function makeColorTest(name, value, segments) {
     if (typeof (segment) === "string") {
       result.expected += segment;
     } else {
-      result.expected += "<span data-color=\"" + segment.value + "\">" +
+      result.expected += "<span data-color=\"" + segment.name + "\">" +
         "<span style=\"background-color:" + segment.name +
         "\" class=\"" + COLOR_TEST_CLASS + "\"></span><span>" +
-        segment.value + "</span></span>";
+        segment.name + "</span></span>";
     }
   }
 
@@ -68,25 +64,25 @@ function makeColorTest(name, value, segments) {
 function testParseCssProperty(doc, parser) {
   let tests = [
     makeColorTest("border", "1px solid red",
-                  ["1px solid ", {name: "red", value: "#F00"}]),
+                  ["1px solid ", {name: "red"}]),
 
     makeColorTest("background-image",
                   "linear-gradient(to right, #F60 10%, rgba(0,0,0,1))",
-                  ["linear-gradient(to right, ", {name: "#F60", value: "#F60"},
-                   " 10%, ", {name: "rgba(0,0,0,1)", value: "#000"},
+                  ["linear-gradient(to right, ", {name: "#F60"},
+                   " 10%, ", {name: "rgba(0,0,0,1)"},
                    ")"]),
 
     
     makeColorTest("font-family", "arial black", ["arial black"]),
 
     makeColorTest("box-shadow", "0 0 1em red",
-                  ["0 0 1em ", {name: "red", value: "#F00"}]),
+                  ["0 0 1em ", {name: "red"}]),
 
     makeColorTest("box-shadow",
                   "0 0 1em red, 2px 2px 0 0 rgba(0,0,0,.5)",
-                  ["0 0 1em ", {name: "red", value: "#F00"},
+                  ["0 0 1em ", {name: "red"},
                    ", 2px 2px 0 0 ",
-                   {name: "rgba(0,0,0,.5)", value: "rgba(0,0,0,.5)"}]),
+                   {name: "rgba(0,0,0,.5)"}]),
 
     makeColorTest("content", "\"red\"", ["\"red\""]),
 
@@ -98,7 +94,7 @@ function testParseCssProperty(doc, parser) {
                   ["<span data-filters=\"blur(1px) drop-shadow(0 0 0 blue) ",
                    "url(red.svg#blue)\"><span>",
                    "blur(1px) drop-shadow(0 0 0 ",
-                   {name: "blue", value: "#00F"},
+                   {name: "blue"},
                    ") url(red.svg#blue)</span></span>"]),
 
     makeColorTest("color", "currentColor", ["currentColor"]),

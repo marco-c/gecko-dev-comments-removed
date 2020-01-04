@@ -35,6 +35,12 @@ function checkColorCycling(container, inspector) {
   let win = inspector.sidebar.getWindowForTab("computedview");
 
   
+  is(valueNode.textContent, "rgb(255, 0, 0)",
+                            "Color displayed as an RGB value.");
+
+  
+  EventUtils.synthesizeMouseAtCenter(swatch,
+                                     {type: "mousedown", shiftKey: true}, win);
   is(valueNode.textContent, "#F00", "Color displayed as a hex value.");
 
   
@@ -60,10 +66,4 @@ function checkColorCycling(container, inspector) {
                                      {type: "mousedown", shiftKey: true}, win);
   is(valueNode.textContent, "rgb(255, 0, 0)",
                             "Color displayed as an RGB value.");
-
-  
-  EventUtils.synthesizeMouseAtCenter(swatch,
-                                     {type: "mousedown", shiftKey: true}, win);
-  is(valueNode.textContent, "#F00",
-                            "Color displayed as hex again.");
 }

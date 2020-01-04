@@ -51,12 +51,13 @@ function checkColorCycling(container, inspector) {
   
   EventUtils.synthesizeMouseAtCenter(swatch,
                                      {type: "mousedown", shiftKey: true}, win);
-  is(valueNode.textContent, "rgb(255, 0, 0)",
-                            "Color displayed as an RGB value.");
+  is(valueNode.textContent, "#F00",
+                            "Color displayed as an authored value.");
 
+  
   
   EventUtils.synthesizeMouseAtCenter(swatch,
                                      {type: "mousedown", shiftKey: true}, win);
-  is(valueNode.textContent, "#F00",
-                            "Color displayed as hex again.");
+  is(valueNode.textContent, "hsl(0, 100%, 50%)",
+                            "Color displayed as an HSL value again.");
 }

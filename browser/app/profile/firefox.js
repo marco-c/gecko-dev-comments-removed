@@ -1379,7 +1379,7 @@ pref("devtools.inspector.showAllAnonymousContent", false);
 pref("devtools.inspector.mdnDocsTooltip.enabled", true);
 
 
-pref("devtools.defaultColorUnit", "hex");
+pref("devtools.defaultColorUnit", "authored");
 
 
 pref("devtools.responsiveUI.no-reload-notification", false);

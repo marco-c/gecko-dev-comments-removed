@@ -7,12 +7,14 @@
 
 
 
-const SEARCH = "background-color: #F3F3F3";
+
+
+const SEARCH = "background-color: rgb(243, 243, 243)";
 
 const TEST_URI = `
   <style type="text/css">
     .testclass {
-      background: #F3F3F3 none repeat scroll 0% 0%;
+      background: rgb(243, 243, 243) none repeat scroll 0% 0%;
     }
   </style>
   <div class="testclass">Styled Node</h1>

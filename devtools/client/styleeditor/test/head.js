@@ -73,15 +73,27 @@ function* cleanup()
 
 
 
-
-var openStyleEditorForURL = Task.async(function* (url, win) {
-  let tab = yield addTab(url, win);
+var openStyleEditor = Task.async(function*(tab) {
+  if (!tab) {
+    tab = gBrowser.selectedTab;
+  }
   let target = TargetFactory.forTab(tab);
   let toolbox = yield gDevTools.showToolbox(target, "styleeditor");
   let panel = toolbox.getPanel("styleeditor");
   let ui = panel.UI;
 
-  return { tab, toolbox, panel, ui };
+  return { toolbox, panel, ui };
+});
+
+
+
+
+
+var openStyleEditorForURL = Task.async(function* (url, win) {
+  let tab = yield addTab(url, win);
+  let result = yield openStyleEditor(tab);
+  result.tab = tab;
+  return result;
 });
 
 

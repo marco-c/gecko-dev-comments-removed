@@ -670,7 +670,6 @@ pref("gfx.font_rendering.wordcache.maxentries", 10000);
 pref("gfx.font_rendering.graphite.enabled", true);
 
 #ifdef XP_WIN
-pref("gfx.font_rendering.directwrite.force-enabled", false);
 pref("gfx.font_rendering.directwrite.use_gdi_table_loading", true);
 #endif
 
@@ -854,7 +853,7 @@ pref("devtools.debugger.forbid-certified-apps", true);
 pref("devtools.apps.forbidden-permissions", "embed-apps,engineering-mode,embed-widgets");
 
 
-pref("devtools.defaultColorUnit", "hex");
+pref("devtools.defaultColorUnit", "authored");
 
 
 pref("devtools.dump.emit", false);
@@ -4854,10 +4853,6 @@ pref("layout.accessiblecaret.bar.width", "2.0");
 
 
 pref("layout.accessiblecaret.timeout_ms", 3000);
-
-
-
-pref("layout.accessiblecaret.use_long_tap_injector", true);
 
 
 pref("dom.wakelock.enabled", false);

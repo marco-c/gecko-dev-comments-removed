@@ -23,6 +23,11 @@ const {SourceMapConsumer} = require("source-map");
 
 loader.lazyGetter(this, "CssLogic", () => require("devtools/shared/styleinspector/css-logic").CssLogic);
 
+const {
+  getIndentationFromPrefs,
+  getIndentationFromString
+} = require("devtools/shared/shared/indentation");
+
 var TRANSITION_CLASS = "moz-styleeditor-transitioning";
 var TRANSITION_DURATION_MS = 500;
 var TRANSITION_BUFFER_MS = 1000;
@@ -39,6 +44,22 @@ var LOAD_ERROR = "error-load";
 
 types.addActorType("stylesheet");
 types.addActorType("originalsource");
+
+
+
+
+
+const UPDATE_PRESERVING_RULES = 0;
+exports.UPDATE_PRESERVING_RULES = UPDATE_PRESERVING_RULES;
+const UPDATE_GENERAL = 1;
+exports.UPDATE_GENERAL = UPDATE_GENERAL;
+
+
+
+
+
+
+let modifiedStyleSheets = new WeakMap();
 
 
 
@@ -385,7 +406,9 @@ var StyleSheetActor = protocol.ActorClass({
       value: Arg(1, "json")
     },
     "style-applied" : {
-      type: "styleApplied"
+      type: "styleApplied",
+      kind: Arg(0, "number"),
+      styleSheet: Arg(1, "stylesheet")
     },
     "media-rules-changed" : {
       type: "mediaRulesChanged",
@@ -595,6 +618,12 @@ var StyleSheetActor = protocol.ActorClass({
   _getText: function() {
     if (typeof this.text === "string") {
       return promise.resolve(this.text);
+    }
+
+    let cssText = modifiedStyleSheets.get(this.rawSheet);
+    if (cssText !== undefined) {
+      this.text = cssText;
+      return promise.resolve(cssText);
     }
 
     if (!this.href) {
@@ -873,18 +902,21 @@ var StyleSheetActor = protocol.ActorClass({
 
 
 
-  update: method(function(text, transition) {
+
+  update: method(function(text, transition, kind = UPDATE_GENERAL) {
     DOMUtils.parseStyleSheet(this.rawSheet, text);
+
+    modifiedStyleSheets.set(this.rawSheet, text);
 
     this.text = text;
 
     this._notifyPropertyChanged("ruleCount");
 
     if (transition) {
-      this._insertTransistionRule();
+      this._insertTransistionRule(kind);
     }
     else {
-      events.emit(this, "style-applied");
+      events.emit(this, "style-applied", kind, this);
     }
 
     this._getMediaRules().then((rules) => {
@@ -901,7 +933,7 @@ var StyleSheetActor = protocol.ActorClass({
 
 
 
-  _insertTransistionRule: function() {
+  _insertTransistionRule: function(kind) {
     this.document.documentElement.classList.add(TRANSITION_CLASS);
 
     
@@ -910,7 +942,7 @@ var StyleSheetActor = protocol.ActorClass({
     
     
     this.window.clearTimeout(this._transitionTimeout);
-    this._transitionTimeout = this.window.setTimeout(this._onTransitionEnd.bind(this),
+    this._transitionTimeout = this.window.setTimeout(this._onTransitionEnd.bind(this, kind),
                               TRANSITION_DURATION_MS + TRANSITION_BUFFER_MS);
   },
 
@@ -918,7 +950,7 @@ var StyleSheetActor = protocol.ActorClass({
 
 
 
-  _onTransitionEnd: function()
+  _onTransitionEnd: function(kind)
   {
     this.document.documentElement.classList.remove(TRANSITION_CLASS);
 
@@ -928,7 +960,7 @@ var StyleSheetActor = protocol.ActorClass({
       this.rawSheet.deleteRule(index);
     }
 
-    events.emit(this, "style-applied");
+    events.emit(this, "style-applied", kind, this);
   }
 })
 
@@ -981,6 +1013,29 @@ var StyleSheetFront = protocol.FrontClass(StyleSheetActor, {
   },
   get ruleCount() {
     return this._form.ruleCount;
+  },
+
+  
+
+
+
+
+
+  guessIndentation: function() {
+    let prefIndent = getIndentationFromPrefs();
+    if (prefIndent) {
+      let {indentUnit, indentWithTabs} = prefIndent;
+      return promise.resolve(indentWithTabs ? "\t" : " ".repeat(indentUnit));
+    }
+
+    return Task.spawn(function*() {
+      let longStr = yield this.getText();
+      let source = yield longStr.string();
+
+      let {indentUnit, indentWithTabs} = getIndentationFromString(source);
+
+      return indentWithTabs ? "\t" : " ".repeat(indentUnit);
+    }.bind(this));
   }
 });
 
