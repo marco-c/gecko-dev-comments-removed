@@ -12170,12 +12170,6 @@ CSSParserImpl::ParseCursor()
 bool
 CSSParserImpl::ParseFont()
 {
-  static const nsCSSProperty fontIDs[] = {
-    eCSSProperty_font_style,
-    eCSSProperty_font_variant_caps,
-    eCSSProperty_font_weight
-  };
-
   nsCSSValue  family;
   if (ParseVariant(family, VARIANT_HK, nsCSSProps::kFontKTable)) {
     if (eCSSUnit_Inherit == family.GetUnit() ||
@@ -12225,34 +12219,59 @@ CSSParserImpl::ParseFont()
   }
 
   
-  const int32_t numProps = 3;
+  
+
+  
+  const int kFontStyleIndex = 0;
+  const int kFontVariantIndex = 1;
+  const int kFontWeightIndex = 2;
+  const int kFontStretchIndex = 3;
+
+  
+  
+  static const nsCSSProperty fontIDs[] = {
+    eCSSProperty_font_style,
+    eCSSProperty_font_variant_caps,
+    eCSSProperty_font_weight,
+    eCSSProperty_font_stretch
+  };
+
+  const int32_t numProps = MOZ_ARRAY_LENGTH(fontIDs);
   nsCSSValue  values[numProps];
   int32_t found = ParseChoice(values, fontIDs, numProps);
   if (found < 0 ||
-      eCSSUnit_Inherit == values[0].GetUnit() ||
-      eCSSUnit_Initial == values[0].GetUnit() ||
-      eCSSUnit_Unset == values[0].GetUnit()) { 
+      eCSSUnit_Inherit == values[kFontStyleIndex].GetUnit() ||
+      eCSSUnit_Initial == values[kFontStyleIndex].GetUnit() ||
+      eCSSUnit_Unset == values[kFontStyleIndex].GetUnit()) { 
     return false;
   }
-  if ((found & 1) == 0) {
+  if ((found & (1 << kFontStyleIndex)) == 0) {
     
-    values[0].SetIntValue(NS_FONT_STYLE_NORMAL, eCSSUnit_Enumerated);
+    values[kFontStyleIndex].SetIntValue(NS_FONT_STYLE_NORMAL,
+                                        eCSSUnit_Enumerated);
   }
-  if ((found & 2) == 0) {
+  if ((found & (1 << kFontVariantIndex)) == 0) {
     
-    values[1].SetNormalValue();
+    values[kFontVariantIndex].SetNormalValue();
   } else {
-    if (values[1].GetUnit() == eCSSUnit_Enumerated &&
-        values[1].GetIntValue() != NS_FONT_VARIANT_CAPS_SMALLCAPS) {
+    if (values[kFontVariantIndex].GetUnit() == eCSSUnit_Enumerated &&
+        values[kFontVariantIndex].GetIntValue() !=
+        NS_FONT_VARIANT_CAPS_SMALLCAPS) {
       
       
       
       return false;
     }
   }
-  if ((found & 4) == 0) {
+  if ((found & (1 << kFontWeightIndex)) == 0) {
     
-    values[2].SetIntValue(NS_FONT_WEIGHT_NORMAL, eCSSUnit_Enumerated);
+    values[kFontWeightIndex].SetIntValue(NS_FONT_WEIGHT_NORMAL,
+                                         eCSSUnit_Enumerated);
+  }
+  if ((found & (1 << kFontStretchIndex)) == 0) {
+    
+    values[kFontStretchIndex].SetIntValue(NS_FONT_STRETCH_NORMAL,
+                                          eCSSUnit_Enumerated);
   }
 
   
@@ -12283,13 +12302,12 @@ CSSParserImpl::ParseFont()
         eCSSUnit_Unset != family.GetUnit()) {
       AppendValue(eCSSProperty__x_system_font, nsCSSValue(eCSSUnit_None));
       AppendValue(eCSSProperty_font_family, family);
-      AppendValue(eCSSProperty_font_style, values[0]);
-      AppendValue(eCSSProperty_font_variant_caps, values[1]);
-      AppendValue(eCSSProperty_font_weight, values[2]);
+      AppendValue(eCSSProperty_font_style, values[kFontStyleIndex]);
+      AppendValue(eCSSProperty_font_variant_caps, values[kFontVariantIndex]);
+      AppendValue(eCSSProperty_font_weight, values[kFontWeightIndex]);
       AppendValue(eCSSProperty_font_size, size);
       AppendValue(eCSSProperty_line_height, lineHeight);
-      AppendValue(eCSSProperty_font_stretch,
-                  nsCSSValue(NS_FONT_STRETCH_NORMAL, eCSSUnit_Enumerated));
+      AppendValue(eCSSProperty_font_stretch, values[kFontStretchIndex]);
       AppendValue(eCSSProperty_font_size_adjust, nsCSSValue(eCSSUnit_None));
       AppendValue(eCSSProperty_font_feature_settings, nsCSSValue(eCSSUnit_Normal));
       AppendValue(eCSSProperty_font_language_override, nsCSSValue(eCSSUnit_Normal));
