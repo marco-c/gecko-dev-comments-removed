@@ -246,6 +246,7 @@ DecoderFactory::CreateDecoderForICOResource(DecoderType aType,
   MOZ_ASSERT(decoder);
 
   
+  MOZ_ASSERT(!aICODecoder->IsMetadataDecode());
   decoder->SetMetadataDecode(aICODecoder->IsMetadataDecode());
   decoder->SetIterator(aSourceBuffer->Iterator());
   decoder->SetOutputSize(aICODecoder->OutputSize());
