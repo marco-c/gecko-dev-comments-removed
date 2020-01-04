@@ -1296,7 +1296,7 @@ DownloadsPlacesView.prototype = {
         
         
         
-        let selectedElements = this._richlistbox.selectedItems.slice();
+        let selectedElements = [... this._richlistbox.selectedItems];
         for (let element of selectedElements) {
           element._shell.doCommand(aCommand);
         }
