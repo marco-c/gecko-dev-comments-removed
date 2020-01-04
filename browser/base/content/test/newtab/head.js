@@ -7,22 +7,14 @@ const PREF_NEWTAB_DIRECTORYSOURCE = "browser.newtabpage.directory.source";
 Services.prefs.setBoolPref(PREF_NEWTAB_ENABLED, true);
 
 var tmp = {};
-Cu.import("resource://gre/modules/Promise.jsm", tmp);
 Cu.import("resource://gre/modules/NewTabUtils.jsm", tmp);
 Cu.import("resource:///modules/DirectoryLinksProvider.jsm", tmp);
 Cu.import("resource://testing-common/PlacesTestUtils.jsm", tmp);
 Cc["@mozilla.org/moz/jssubscript-loader;1"]
   .getService(Ci.mozIJSSubScriptLoader)
   .loadSubScript("chrome://browser/content/sanitize.js", tmp);
-Cu.import("resource://gre/modules/Timer.jsm", tmp);
-var {Promise, NewTabUtils, Sanitizer, clearTimeout, setTimeout, DirectoryLinksProvider, PlacesTestUtils} = tmp;
+var {NewTabUtils, Sanitizer, DirectoryLinksProvider, PlacesTestUtils} = tmp;
 
-var uri = Services.io.newURI("about:newtab", null, null);
-var principal = Services.scriptSecurityManager.createCodebasePrincipal(uri, {});
-
-var isMac = ("nsILocalFileMac" in Ci);
-var isLinux = ("@mozilla.org/gnome-gconf-service;1" in Cc);
-var isWindows = ("@mozilla.org/windows-registry-key;1" in Cc);
 var gWindow = window;
 
 
@@ -153,79 +145,7 @@ add_task(function* setup() {
 
 
 
-var TestRunner = {
-  
 
-
-  run: function () {
-    this._iter = runTests();
-    this.next();
-  },
-
-  
-
-
-  next: function () {
-    try {
-      TestRunner._iter.next();
-    } catch (e if e instanceof StopIteration) {
-      TestRunner.finish();
-    }
-  },
-
-  
-
-
-  finish: function () {
-    function cleanupAndFinish() {
-      PlacesTestUtils.clearHistory().then(() => {
-        whenPagesUpdated().then(finish);
-        NewTabUtils.restore();
-      });
-    }
-
-    let callbacks = NewTabUtils.links._populateCallbacks;
-    let numCallbacks = callbacks.length;
-
-    if (numCallbacks)
-      callbacks.splice(0, numCallbacks, cleanupAndFinish);
-    else
-      cleanupAndFinish();
-  }
-};
-
-
-
-
-
-function getContentWindow() {
-  return gWindow.gBrowser.selectedBrowser.contentWindow;
-}
-
-
-
-
-
-function getContentDocument() {
-  return gWindow.gBrowser.selectedBrowser.contentDocument;
-}
-
-
-
-
-
-function getGrid() {
-  return getContentWindow().gGrid;
-}
-
-
-
-
-
-
-function getCell(aIndex) {
-  return getGrid().cells[aIndex];
-}
 
 function performOnCell(aIndex, aFn) {
   return ContentTask.spawn(gWindow.gBrowser.selectedBrowser,
@@ -481,20 +401,6 @@ function unpinCell(aIndex) {
 
 
 
-function simulateDrop(aSourceIndex, aDestIndex) {
-  let src = getCell(aSourceIndex).site.node;
-  let dest = getCell(aDestIndex).node;
-
-  
-  
-  startAndCompleteDragOperation(src, dest, whenPagesUpdated);
-}
-
-
-
-
-
-
 
 function* simulateExternalDrop(aDestIndex) {
   let pagesUpdatedPromise = whenPagesUpdated();
@@ -544,184 +450,6 @@ function* simulateExternalDrop(aDestIndex) {
 
   yield pagesUpdatedPromise;
 }
-
-
-
-
-
-
-
-function startAndCompleteDragOperation(aSource, aDest, aCallback) {
-  
-  
-
-  if (isMac) {
-    
-    
-    
-    
-    
-    
-    
-    synthesizeNativeMouseLDown(aSource);
-    synthesizeNativeMouseDrag(aDest);
-    
-    
-    
-    synthesizeNativeMouseDrag(aDest, 10);
-    synthesizeNativeMouseDrag(aDest);
-    
-    synthesizeNativeMouseLUp(aDest).then(aCallback, Cu.reportError);
-  } else if (isWindows) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    synthesizeNativeMouseLDown(aSource);
-    synthesizeNativeMouseLUp(aDest).then(aCallback, Cu.reportError);
-  } else if (isLinux) {
-    
-    synthesizeNativeMouseLDown(aSource);
-
-    
-    
-    
-    
-    
-    
-    let offset = 0;
-    let interval = setInterval(() => {
-      synthesizeNativeMouseDrag(aSource, offset += 5);
-    }, 10);
-
-    
-    
-    aSource.addEventListener("dragstart", function onDragStart() {
-      aSource.removeEventListener("dragstart", onDragStart);
-      clearInterval(interval);
-
-      
-      synthesizeNativeMouseMove(aDest);
-    });
-
-    
-    
-    
-    
-    
-    
-    aDest.addEventListener("dragenter", function onDragEnter() {
-      aDest.removeEventListener("dragenter", onDragEnter);
-
-      
-      synthesizeNativeMouseLUp(aDest).then(aCallback, Cu.reportError);
-    });
-  } else {
-    throw "Unsupported platform";
-  }
-}
-
-
-
-
-
-function synthesizeNativeMouseLDown(aElement) {
-  if (isLinux) {
-    let win = aElement.ownerDocument.defaultView;
-    EventUtils.synthesizeMouseAtCenter(aElement, {type: "mousedown"}, win);
-  } else {
-    let msg = isWindows ? 2 : 1;
-    synthesizeNativeMouseEvent(aElement, msg);
-  }
-}
-
-
-
-
-
-function synthesizeNativeMouseLUp(aElement) {
-  let msg = isWindows ? 4 : (isMac ? 2 : 7);
-  return synthesizeNativeMouseEvent(aElement, msg);
-}
-
-
-
-
-
-
-function synthesizeNativeMouseDrag(aElement, aOffsetX) {
-  let msg = isMac ? 6 : 1;
-  synthesizeNativeMouseEvent(aElement, msg, aOffsetX);
-}
-
-
-
-
-
-function synthesizeNativeMouseMove(aElement) {
-  let msg = isMac ? 5 : 1;
-  synthesizeNativeMouseEvent(aElement, msg);
-}
-
-
-
-
-
-
-
-function synthesizeNativeMouseEvent(aElement, aMsg, aOffsetX = 0, aOffsetY = 0) {
-  return new Promise((resolve, reject) => {
-    let rect = aElement.getBoundingClientRect();
-    let win = aElement.ownerDocument.defaultView;
-    let x = aOffsetX + win.mozInnerScreenX + rect.left + rect.width / 2;
-    let y = aOffsetY + win.mozInnerScreenY + rect.top + rect.height / 2;
-
-    let utils = win.QueryInterface(Ci.nsIInterfaceRequestor)
-                   .getInterface(Ci.nsIDOMWindowUtils);
-
-    let scale = utils.screenPixelsPerCSSPixel;
-    let observer = {
-      observe: function(aSubject, aTopic, aData) {
-        if (aTopic == "mouseevent") {
-          resolve();
-        }
-      }
-    };
-    utils.sendNativeMouseEvent(x * scale, y * scale, aMsg, 0, null, observer);
-  });
-}
-
-
-
-
-
-
-
-function sendDragEvent(aEventType, aTarget, aData) {
-  aTarget.dispatchEvent(createDragEvent(aEventType, aData));
-}
-
-
-
-
-
-
-
-function createDragEvent(aEventType, aData) {
-  let dataTransfer = new (getContentWindow()).DataTransfer("dragstart", false);
-  dataTransfer.mozSetDataAt("text/x-moz-url", aData, 0);
-  let event = getContentDocument().createEvent("DragEvents");
-  event.initDragEvent(aEventType, true, true, getContentWindow(), 0, 0, 0, 0, 0,
-                      false, false, false, false, 0, null, dataTransfer);
-
-  return event;
-}
-
 
 
 
