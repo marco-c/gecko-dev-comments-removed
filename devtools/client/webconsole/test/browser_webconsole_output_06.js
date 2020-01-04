@@ -131,10 +131,10 @@ var inputTests = [
   
   {
     input: '({0: "a", 42: "b"})',
-    output: 'Object { 0: "a", 42: "b" }',
+    output: '[ "a", <9 empty slots>, 33 more\u2026 ]',
     printOutput: "[object Object]",
     inspectable: true,
-    variablesViewLabel: "Object",
+    variablesViewLabel: "Object[43]",
   },
 
   
@@ -189,10 +189,10 @@ var inputTests = [
   
   {
     input: '({length: 1})',
-    output: 'Object { length: 1 }',
+    output: '[ <1 empty slot> ]',
     printOutput: "[object Object]",
     inspectable: true,
-    variablesViewLabel: "Object",
+    variablesViewLabel: "Object[1]",
   },
 
   
@@ -216,10 +216,10 @@ var inputTests = [
   
   {
     input: '({0: "a", 1: "b", length: 3})',
-    output: 'Object { length: 3, 2 more\u2026 }',
+    output: '[ "a", "b", <1 empty slot> ]',
     printOutput: "[object Object]",
     inspectable: true,
-    variablesViewLabel: "Object",
+    variablesViewLabel: "Object[3]",
   },
 
   
@@ -234,10 +234,10 @@ var inputTests = [
   
   {
     input: '({0: "a", 2: "b", length: 3})',
-    output: 'Object { length: 3, 2 more\u2026 }',
+    output: '[ "a", <1 empty slot>, "b" ]',
     printOutput: "[object Object]",
     inspectable: true,
-    variablesViewLabel: "Object",
+    variablesViewLabel: "Object[3]",
   },
 
   
@@ -253,6 +253,15 @@ var inputTests = [
   {
     input: '({0: "a", b: "b", length: 2})',
     output: 'Object { b: "b", length: 2, 1 more\u2026 }',
+    printOutput: "[object Object]",
+    inspectable: true,
+    variablesViewLabel: "Object",
+  },
+
+  
+  {
+    input: '({42: "a"})',
+    output: 'Object { 42: "a" }',
     printOutput: "[object Object]",
     inspectable: true,
     variablesViewLabel: "Object",
