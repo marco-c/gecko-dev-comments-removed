@@ -753,16 +753,16 @@ TextInputProcessor::PrepareKeyboardEventToDispatch(
     
     
     
-    if (NS_WARN_IF(aKeyboardEvent.keyCode)) {
+    if (NS_WARN_IF(aKeyboardEvent.mKeyCode)) {
       return NS_ERROR_INVALID_ARG;
     }
-  } else if (!aKeyboardEvent.keyCode &&
+  } else if (!aKeyboardEvent.mKeyCode &&
              aKeyboardEvent.mKeyNameIndex > KEY_NAME_INDEX_Unidentified &&
              aKeyboardEvent.mKeyNameIndex < KEY_NAME_INDEX_USE_STRING) {
     
     
     
-    aKeyboardEvent.keyCode =
+    aKeyboardEvent.mKeyCode =
       WidgetKeyboardEvent::ComputeKeyCodeFromKeyNameIndex(
         aKeyboardEvent.mKeyNameIndex);
   }

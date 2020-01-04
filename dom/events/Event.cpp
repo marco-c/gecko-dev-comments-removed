@@ -760,11 +760,11 @@ Event::GetEventPopupControlState(WidgetEvent* aEvent, nsIDOMEvent* aDOMEvent)
     break;
   case eKeyboardEventClass:
     if (aEvent->IsTrusted()) {
-      uint32_t key = aEvent->AsKeyboardEvent()->keyCode;
+      uint32_t key = aEvent->AsKeyboardEvent()->mKeyCode;
       switch(aEvent->mMessage) {
       case eKeyPress:
         
-        if (key == nsIDOMKeyEvent::DOM_VK_RETURN) {
+        if (key == NS_VK_RETURN) {
           abuse = openAllowed;
         } else if (PopupAllowedForEvent("keypress")) {
           abuse = openControlled;
@@ -772,7 +772,7 @@ Event::GetEventPopupControlState(WidgetEvent* aEvent, nsIDOMEvent* aDOMEvent)
         break;
       case eKeyUp:
         
-        if (key == nsIDOMKeyEvent::DOM_VK_SPACE) {
+        if (key == NS_VK_SPACE) {
           abuse = openAllowed;
         } else if (PopupAllowedForEvent("keyup")) {
           abuse = openControlled;

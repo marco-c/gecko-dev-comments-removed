@@ -2844,7 +2844,7 @@ EventStateManager::PostHandleKeyboardEvent(WidgetKeyboardEvent* aKeyboardEvent,
 
   
   
-  switch(aKeyboardEvent->keyCode) {
+  switch(aKeyboardEvent->mKeyCode) {
     case NS_VK_TAB:
     case NS_VK_F6:
       
@@ -2863,7 +2863,7 @@ EventStateManager::PostHandleKeyboardEvent(WidgetKeyboardEvent* aKeyboardEvent,
         if (fm && mDocument) {
           
           bool isDocMove =
-            aKeyboardEvent->IsControl() || aKeyboardEvent->keyCode == NS_VK_F6;
+            aKeyboardEvent->IsControl() || aKeyboardEvent->mKeyCode == NS_VK_F6;
           uint32_t dir = aKeyboardEvent->IsShift() ?
             (isDocMove ? static_cast<uint32_t>(nsIFocusManager::MOVEFOCUS_BACKWARDDOC) :
                          static_cast<uint32_t>(nsIFocusManager::MOVEFOCUS_BACKWARD)) :

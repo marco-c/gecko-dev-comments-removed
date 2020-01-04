@@ -1237,14 +1237,14 @@ NativeKey::InitKeyEvent(WidgetKeyboardEvent& aKeyEvent,
   switch (aKeyEvent.mMessage) {
     case eKeyDown:
     case eKeyDownOnPlugin:
-      aKeyEvent.keyCode = mDOMKeyCode;
+      aKeyEvent.mKeyCode = mDOMKeyCode;
       
       sUniqueKeyEventId++;
       aKeyEvent.mUniqueId = sUniqueKeyEventId;
       break;
     case eKeyUp:
     case eKeyUpOnPlugin:
-      aKeyEvent.keyCode = mDOMKeyCode;
+      aKeyEvent.mKeyCode = mDOMKeyCode;
       
       
       
@@ -1691,7 +1691,7 @@ NativeKey::HandleCharMessage(const MSG& aCharMsg,
     if (!IsControlChar(static_cast<char16_t>(aCharMsg.wParam))) {
       keypressEvent.charCode = static_cast<uint32_t>(aCharMsg.wParam);
     } else {
-      keypressEvent.keyCode = mDOMKeyCode;
+      keypressEvent.mKeyCode = mDOMKeyCode;
     }
     nsresult rv = mDispatcher->BeginNativeInputTransaction();
     if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -1768,7 +1768,7 @@ NativeKey::HandleCharMessage(const MSG& aCharMsg,
   WidgetKeyboardEvent keypressEvent(true, eKeyPress, mWidget);
   keypressEvent.charCode = uniChar;
   if (!keypressEvent.charCode) {
-    keypressEvent.keyCode = mDOMKeyCode;
+    keypressEvent.mKeyCode = mDOMKeyCode;
   }
   nsEventStatus status = InitKeyEvent(keypressEvent, mModKeyState, &aCharMsg);
   bool dispatched =
@@ -2292,7 +2292,7 @@ NativeKey::DispatchKeyPressEventsWithoutCharMessage() const
   WidgetKeyboardEvent keypressEvent(true, eKeyPress, mWidget);
   if (mInputtingStringAndModifiers.IsEmpty() &&
       mShiftedString.IsEmpty() && mUnshiftedString.IsEmpty()) {
-    keypressEvent.keyCode = mDOMKeyCode;
+    keypressEvent.mKeyCode = mDOMKeyCode;
   }
   nsEventStatus status = InitKeyEvent(keypressEvent, mModKeyState);
   mDispatcher->MaybeDispatchKeypressEvents(keypressEvent, status,

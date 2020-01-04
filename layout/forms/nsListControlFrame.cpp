@@ -2104,7 +2104,7 @@ nsListControlFrame::KeyDown(nsIDOMEvent* aKeyEvent)
     "DOM event must have WidgetKeyboardEvent for its internal event");
 
   if (keyEvent->IsAlt()) {
-    if (keyEvent->keyCode == NS_VK_UP || keyEvent->keyCode == NS_VK_DOWN) {
+    if (keyEvent->mKeyCode == NS_VK_UP || keyEvent->mKeyCode == NS_VK_DOWN) {
       DropDownToggleKey(aKeyEvent);
     }
     return NS_OK;
@@ -2122,23 +2122,23 @@ nsListControlFrame::KeyDown(nsIDOMEvent* aKeyEvent)
   bool isControlOrMeta = (keyEvent->IsControl() || keyEvent->IsMeta());
   
   if (isControlOrMeta && !GetMultiple() &&
-      (keyEvent->keyCode == NS_VK_PAGE_UP ||
-       keyEvent->keyCode == NS_VK_PAGE_DOWN)) {
+      (keyEvent->mKeyCode == NS_VK_PAGE_UP ||
+       keyEvent->mKeyCode == NS_VK_PAGE_DOWN)) {
     return NS_OK;
   }
-  if (isControlOrMeta && (keyEvent->keyCode == NS_VK_UP ||
-                          keyEvent->keyCode == NS_VK_LEFT ||
-                          keyEvent->keyCode == NS_VK_DOWN ||
-                          keyEvent->keyCode == NS_VK_RIGHT ||
-                          keyEvent->keyCode == NS_VK_HOME ||
-                          keyEvent->keyCode == NS_VK_END)) {
+  if (isControlOrMeta && (keyEvent->mKeyCode == NS_VK_UP ||
+                          keyEvent->mKeyCode == NS_VK_LEFT ||
+                          keyEvent->mKeyCode == NS_VK_DOWN ||
+                          keyEvent->mKeyCode == NS_VK_RIGHT ||
+                          keyEvent->mKeyCode == NS_VK_HOME ||
+                          keyEvent->mKeyCode == NS_VK_END)) {
     
     isControlOrMeta = mControlSelectMode = GetMultiple();
-  } else if (keyEvent->keyCode != NS_VK_SPACE) {
+  } else if (keyEvent->mKeyCode != NS_VK_SPACE) {
     mControlSelectMode = false;
   }
 
-  switch (keyEvent->keyCode) {
+  switch (keyEvent->mKeyCode) {
     case NS_VK_UP:
     case NS_VK_LEFT:
       AdjustIndexForDisabledOpt(mEndSelectionIndex, newIndex,
@@ -2285,7 +2285,7 @@ nsListControlFrame::KeyPress(nsIDOMEvent* aKeyEvent)
   if (!keyEvent->charCode) {
     
     
-    if (keyEvent->keyCode == NS_VK_BACK) {
+    if (keyEvent->mKeyCode == NS_VK_BACK) {
       incrementalSearchResetter.Cancel();
       if (!GetIncrementalString().IsEmpty()) {
         GetIncrementalString().Truncate(GetIncrementalString().Length() - 1);

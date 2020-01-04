@@ -2463,7 +2463,7 @@ InitKeyEvent(WidgetKeyboardEvent& event,
         
         event.isChar = (charCode >= ' ');
         event.charCode = event.isChar ? charCode : 0;
-        event.keyCode = event.isChar ? 0 : domKeyCode;
+        event.mKeyCode = event.isChar ? 0 : domKeyCode;
         event.mPluginEvent.Clear();
 
         
@@ -2480,7 +2480,7 @@ InitKeyEvent(WidgetKeyboardEvent& event,
     } else {
         event.isChar = false;
         event.charCode = 0;
-        event.keyCode = domKeyCode;
+        event.mKeyCode = domKeyCode;
 
         ANPEvent pluginEvent;
         pluginEvent.inSize = sizeof(pluginEvent);
@@ -2648,12 +2648,12 @@ nsWindow::GeckoViewSupport::SendIMEDummyKeyEvents()
 {
     WidgetKeyboardEvent downEvent(true, eKeyDown, &window);
     window.InitEvent(downEvent, nullptr);
-    MOZ_ASSERT(downEvent.keyCode == 0);
+    MOZ_ASSERT(downEvent.mKeyCode == 0);
     window.DispatchEvent(&downEvent);
 
     WidgetKeyboardEvent upEvent(true, eKeyUp, &window);
     window.InitEvent(upEvent, nullptr);
-    MOZ_ASSERT(upEvent.keyCode == 0);
+    MOZ_ASSERT(upEvent.mKeyCode == 0);
     window.DispatchEvent(&upEvent);
 }
 
