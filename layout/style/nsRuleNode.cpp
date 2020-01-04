@@ -4416,8 +4416,8 @@ nsRuleNode::ComputeTextData(void* aStartStruct,
   } else {
     SetCoord(*aRuleData->ValueForWordSpacing(),
              text->mWordSpacing, parentText->mWordSpacing,
-             SETCOORD_LH | SETCOORD_INITIAL_ZERO |
-               SETCOORD_CALC_LENGTH_ONLY | SETCOORD_UNSET_INHERIT,
+             SETCOORD_LPH | SETCOORD_INITIAL_ZERO |
+               SETCOORD_STORE_CALC | SETCOORD_UNSET_INHERIT,
              aContext, mPresContext, conditions);
   }
 
