@@ -127,6 +127,22 @@ private:
   
   bool DecodeDemuxedSamples(TrackType aTrack,
                             MediaRawData* aSample);
+
+  struct SeekTarget {
+    SeekTarget(const media::TimeUnit& aTime, bool aDropTarget)
+      : mTime(aTime)
+      , mDropTarget(aDropTarget)
+      , mWaiting(false)
+    {}
+
+    media::TimeUnit mTime;
+    bool mDropTarget;
+    bool mWaiting;
+  };
+  
+  
+  void InternalSeek(TrackType aTrack, const SeekTarget& aTarget);
+
   
   void DrainDecoder(TrackType aTrack);
   void NotifyNewOutput(TrackType aTrack, MediaData* aSample);
@@ -262,7 +278,10 @@ private:
     bool mDrainComplete;
     
     
-    Maybe<media::TimeUnit> mTimeThreshold;
+    
+    Maybe<SeekTarget> mTimeThreshold;
+    
+    Maybe<media::TimeUnit> mLastSampleTime;
 
     
     
@@ -300,6 +319,7 @@ private:
       mDraining = false;
       mDrainComplete = false;
       mTimeThreshold.reset();
+      mLastSampleTime.reset();
       mOutput.Clear();
       mNumSamplesInput = 0;
       mNumSamplesOutput = 0;
@@ -316,6 +336,7 @@ private:
     uint32_t mLastStreamSourceID;
     Maybe<uint32_t> mNextStreamSourceID;
     media::TimeIntervals mTimeRanges;
+    Maybe<media::TimeUnit> mLastTimeRangesEnd;
     RefPtr<SharedTrackInfo> mInfo;
   };
 
