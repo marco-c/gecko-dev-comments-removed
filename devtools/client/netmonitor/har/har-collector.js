@@ -210,10 +210,10 @@ HarCollector.prototype = {
 
     
     
+    
+    
     let file = this.getFile(packet.from);
     if (!file) {
-      Cu.reportError("HarCollector.onNetworkEventUpdate; ERROR " +
-        "Unknown event actor: " + type, packet);
       return;
     }
 
