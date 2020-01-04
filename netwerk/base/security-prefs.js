@@ -97,15 +97,3 @@ pref("security.ssl.errorReporting.automatic", false);
 
 
 pref("security.cert_pinning.max_max_age_seconds", 5184000);
-
-
-
-pref("security.mixed_content.send_hsts_priming", true);
-#ifdef RELEASE_BUILD
-
-pref("security.mixed_content.use_hsts", false);
-#else
-
-
-pref("security.mixed_content.use_hsts", true);
-#endif
