@@ -165,7 +165,6 @@
 #ifdef XP_MACOSX
 #include "nsILocalFileMac.h"
 #include "nsCommandLineServiceMac.h"
-#include "nsCocoaFeatures.h"
 #endif
 
 
@@ -4672,20 +4671,7 @@ MultiprocessBlockPolicy() {
     gMultiprocessBlockPolicy = kE10sDisabledForOperatingSystem;
     return gMultiprocessBlockPolicy;
   }
-#endif
 
-  
-
-
-
-#if defined(XP_MACOSX)
-  if (!nsCocoaFeatures::OnMavericksOrLater()) {
-    gMultiprocessBlockPolicy = kE10sDisabledForOperatingSystem;
-    return gMultiprocessBlockPolicy;
-  }
-#endif
-
-#if defined(XP_WIN)
   
 
 
