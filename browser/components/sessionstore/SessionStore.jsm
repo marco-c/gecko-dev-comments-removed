@@ -820,6 +820,9 @@ var SessionStoreInternal = {
           let tabData = TabState.collect(tab);
           if (tabData.userTypedValue && !tabData.userTypedClear) {
             browser.userTypedValue = tabData.userTypedValue;
+            if (data.didStartLoad) {
+              browser.userTypedClear++;
+            }
             win.URLBarSetURI();
           }
 
@@ -2527,7 +2530,6 @@ var SessionStoreInternal = {
         tabState.index = historyIndex + 1;
         tabState.index = Math.max(1, Math.min(tabState.index, tabState.entries.length));
       } else {
-        tabState.userTypedValue = null;
         options.loadArguments = recentLoadArguments;
       }
 

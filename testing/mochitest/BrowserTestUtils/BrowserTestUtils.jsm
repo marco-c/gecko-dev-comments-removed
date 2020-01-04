@@ -535,12 +535,17 @@ this.BrowserTestUtils = {
 
 
 
-  waitForContentEvent(browser, eventName, capture, checkFn) {
-    let parameters = { eventName,
-                       capture,
-                       checkFnSource: checkFn ? checkFn.toSource() : null };
+
+
+  waitForContentEvent(browser, eventName, capture = false, checkFn, wantsUntrusted = false) {
+    let parameters = {
+      eventName,
+      capture,
+      checkFnSource: checkFn ? checkFn.toSource() : null,
+      wantsUntrusted,
+    };
     return ContentTask.spawn(browser, parameters,
-        function({ eventName, capture, checkFnSource }) {
+        function({ eventName, capture, checkFnSource, wantsUntrusted }) {
           let checkFn;
           if (checkFnSource) {
             checkFn = eval(`(() => (${checkFnSource}))()`);
@@ -557,9 +562,42 @@ this.BrowserTestUtils = {
               }
               removeEventListener(eventName, listener, capture);
               completion();
-            }, capture);
+            }, capture, wantsUntrusted);
           });
         });
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  waitForErrorPage(browser) {
+    let waitForLoad = () =>
+      this.waitForContentEvent(browser, "AboutNetErrorLoad", false, null, true);
+
+    let win = browser.ownerDocument.defaultView;
+    let tab = win.gBrowser.getTabForBrowser(browser);
+    if (!tab || browser.isRemoteBrowser || !win.gMultiProcessBrowser) {
+      return waitForLoad();
+    }
+
+    
+    
+    
+    return new Promise((resolve, reject) => {
+      tab.addEventListener("TabRemotenessChange", function onTRC() {
+        tab.removeEventListener("TabRemotenessChange", onTRC);
+        waitForLoad().then(resolve, reject);
+      });
+    });
   },
 
   
