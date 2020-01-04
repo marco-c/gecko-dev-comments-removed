@@ -14,19 +14,18 @@ import java.lang.annotation.Target;
 
 
 
-
-
-
-
-
-
-
-
 @Target({ElementType.TYPE, ElementType.FIELD, ElementType.METHOD, ElementType.CONSTRUCTOR})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface WrapForJNI {
     
+
+
+    boolean skip() default false;
+
     
+
+
+
     String stubName() default "";
 
     
@@ -34,22 +33,19 @@ public @interface WrapForJNI {
 
 
 
-    boolean allowMultithread() default false;
+    String exceptionMode() default "abort";
 
     
 
 
 
-    boolean noThrow() default false;
-
-    
-
-
-    boolean narrowChars() default false;
+    String calledFrom() default "any";
 
     
 
 
 
-    boolean catchException() default false;
+
+
+    String dispatchTo() default "current";
 }
