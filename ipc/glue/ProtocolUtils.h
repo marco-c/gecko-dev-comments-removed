@@ -337,6 +337,16 @@ DuplicateHandle(HANDLE aSourceHandle,
 
 
 
+#ifdef MOZ_CRASHREPORTER
+void AnnotateSystemError();
+#else
+#define AnnotateSystemError() do { } while (0)
+#endif
+
+
+
+
+
 
 
 
