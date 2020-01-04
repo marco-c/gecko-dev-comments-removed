@@ -19,17 +19,34 @@
 
   var ReflectApply = global.Reflect.apply;
 
+  
+  
+  
+  
+  
+  var ObjectGetOwnPropertyDescriptor = global.Object.getOwnPropertyDescriptor;
+
   var document = global.document;
   var documentBody = global.document.body;
   var documentDocumentElement = global.document.documentElement;
   var DocumentCreateElement = global.document.createElement;
   var HTMLDocumentPrototypeWrite = global.HTMLDocument.prototype.write;
   var ElementInnerHTMLSetter =
-    Object.getOwnPropertyDescriptor(global.Element.prototype, "innerHTML").set;
+    ObjectGetOwnPropertyDescriptor(global.Element.prototype, "innerHTML").set;
   var HTMLIFramePrototypeContentWindowGetter =
-    Object.getOwnPropertyDescriptor(global.HTMLIFrameElement.prototype, "contentWindow").get;
+    ObjectGetOwnPropertyDescriptor(global.HTMLIFrameElement.prototype, "contentWindow").get;
   var HTMLIFramePrototypeRemove = global.HTMLIFrameElement.prototype.remove;
   var NodePrototypeAppendChild = global.Node.prototype.appendChild;
+  var NodePrototypeTextContentSetter =
+    ObjectGetOwnPropertyDescriptor(global.Node.prototype, "textContent").set;
+
+  
+  
+  
+  
+  
+  var printOutputContainer =
+    global.document.getElementById("jsreftest-print-output-container");
 
   
 
@@ -45,6 +62,10 @@
 
   function SetInnerHTML(element, html) {
     ReflectApply(ElementInnerHTMLSetter, element, [html]);
+  }
+
+  function SetTextContent(element, text) {
+    ReflectApply(NodePrototypeTextContentSetter, element, [text]);
   }
 
   
@@ -81,6 +102,17 @@
     }
   }
   global.DocumentWrite = DocumentWrite;
+
+  
+  
+  
+  
+  function AddPrintOutput(s) {
+    var msgDiv = CreateElement("div");
+    SetTextContent(msgDiv, s);
+    AppendChild(printOutputContainer, msgDiv);
+  }
+  global.AddPrintOutput = AddPrintOutput;
 })(this);
 
 
@@ -143,9 +175,8 @@ function print() {
     dump( s + '\n');
   }
 
-  s = s.replace(/[<>&]/g, htmlesc);
-
-  DocumentWrite(s);
+  
+  AddPrintOutput(s);
 }
 
 function writeHeaderToLog( string ) {
