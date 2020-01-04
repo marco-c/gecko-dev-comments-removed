@@ -17,11 +17,9 @@ public interface GlobalSyncStage {
   public static enum Stage {
     idle,                       
     checkPreconditions,         
-    ensureClusterURL,           
     fetchInfoCollections,       
     fetchMetaGlobal,
     ensureKeysStage,
-    attemptMigrationStage,
     
 
 

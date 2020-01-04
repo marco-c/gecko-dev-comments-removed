@@ -69,7 +69,7 @@ public class TestClientsEngineStage extends MockSyncClientsEngineStage {
   
   private static MockGlobalSessionCallback callback;
   private static GlobalSession initializeSession() throws SyncConfigurationException, IllegalArgumentException, NonObjectJSONException, IOException, ParseException, CryptoException, URISyntaxException {
-    callback = new MockGlobalSessionCallback(TEST_SERVER);
+    callback = new MockGlobalSessionCallback();
     SyncConfiguration config = new SyncConfiguration(USERNAME, new BasicAuthHeaderProvider(USERNAME, PASSWORD), new MockSharedPreferences());
     config.syncKeyBundle = new KeyBundle(USERNAME, SYNC_KEY);
     GlobalSession session = new MockClientsGlobalSession(config, callback);
