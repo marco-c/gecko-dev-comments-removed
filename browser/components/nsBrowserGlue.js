@@ -315,8 +315,8 @@ BrowserGlue.prototype = {
       case "fxaccounts:device_disconnected":
         this._onDeviceDisconnected();
         break;
-      case "weave:engine:clients:display-uri":
-        this._onDisplaySyncURI(subject);
+      case "weave:engine:clients:display-uris":
+        this._onDisplaySyncURIs(subject);
         break;
       case "session-save":
         this._setPrefToSaveSession(true);
@@ -534,7 +534,7 @@ BrowserGlue.prototype = {
     os.addObserver(this, "weave:service:ready", false);
     os.addObserver(this, "fxaccounts:onverified", false);
     os.addObserver(this, "fxaccounts:device_disconnected", false);
-    os.addObserver(this, "weave:engine:clients:display-uri", false);
+    os.addObserver(this, "weave:engine:clients:display-uris", false);
     os.addObserver(this, "session-save", false);
     os.addObserver(this, "places-init-complete", false);
     this._isPlacesInitObserver = true;
@@ -601,7 +601,7 @@ BrowserGlue.prototype = {
     os.removeObserver(this, "weave:service:ready");
     os.removeObserver(this, "fxaccounts:onverified");
     os.removeObserver(this, "fxaccounts:device_disconnected");
-    os.removeObserver(this, "weave:engine:clients:display-uri");
+    os.removeObserver(this, "weave:engine:clients:display-uris");
     os.removeObserver(this, "session-save");
     if (this._bookmarksBackupIdleTime) {
       this._idleService.removeIdleObserver(this, this._bookmarksBackupIdleTime);
@@ -2438,20 +2438,55 @@ BrowserGlue.prototype = {
 
 
 
-
-
-
-
-
-
-  _onDisplaySyncURI: function _onDisplaySyncURI(data) {
+  _onDisplaySyncURIs: function _onDisplaySyncURIs(data) {
     try {
-      let tabbrowser = RecentWindow.getMostRecentBrowserWindow({private: false}).gBrowser;
+      
+      const URIs = data.wrappedJSObject.object;
+
+      const findWindow = () => RecentWindow.getMostRecentBrowserWindow({private: false});
 
       
-      tabbrowser.addTab(data.wrappedJSObject.object.uri);
+      let win = findWindow();
+
+      const openTab = URI => {
+        let tab;
+        if (!win) {
+          Services.appShell.hiddenDOMWindow.open(URI.uri);
+          win = findWindow();
+          tab = win.gBrowser.tabs[0];
+        } else {
+          tab = win.gBrowser.addTab(URI.uri);
+        }
+        tab.setAttribute("attention", true);
+        return tab;
+      };
+
+      const firstTab = openTab(URIs[0]);
+      URIs.slice(1).forEach(URI => openTab(URI));
+
+      let title, body;
+      const deviceName = Weave.Service.clientsEngine.getClientName(URIs[0].clientId);
+      const bundle = Services.strings.createBundle("chrome://browser/locale/accounts.properties");
+      if (URIs.length == 1) {
+        title = bundle.GetStringFromName("tabArrivingNotification.title");
+        const pageTitle = URIs[0].title || firstTab.linkedBrowser.contentTitle
+                          || URIs[0].uri;
+        body = bundle.formatStringFromName("tabArrivingNotification.body", [pageTitle, deviceName], 2);
+      } else {
+        title = bundle.GetStringFromName("tabsArrivingNotification.title");
+        const tabArrivingBody = URIs.every(URI => URI.clientId == URIs[0].clientId) ?
+                                "tabsArrivingNotification.body" : "tabsArrivingNotificationMultiple.body";
+        body = bundle.formatStringFromName(tabArrivingBody, [URIs.length, deviceName], 2);
+      }
+
+      const clickCallback = (subject, topic, data) => {
+        if (topic == "alertclickcallback") {
+          win.gBrowser.selectedTab = firstTab;
+        }
+      }
+      AlertsService.showAlertNotification(null, title, body, true, null, clickCallback);
     } catch (ex) {
-      Cu.reportError("Error displaying tab received by Sync: " + ex);
+      Cu.reportError("Error displaying tab(s) received by Sync: " + ex);
     }
   },
 
