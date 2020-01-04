@@ -14,7 +14,7 @@ function rectangleContains(rect, x, y, width, height) {
 function sanitizeMarkers(list) {
   
   
-  return list.filter(e => e.name != "Worker")
+  return list.filter(e => e.name != "Worker" && e.name != "MinorGC");
 }
 
 var TESTS = [{
