@@ -949,6 +949,8 @@ ValueNumberer::visitBlock(MBasicBlock* block, const MBasicBlock* dominatorRoot)
     
     MOZ_ASSERT(nextDef_ == nullptr);
     for (MDefinitionIterator iter(block); iter; ) {
+        if (!graph_.alloc().ensureBallast())
+            return nullptr;
         MDefinition* def = *iter++;
 
         
