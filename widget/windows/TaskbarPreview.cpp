@@ -23,12 +23,9 @@
 #include "WinUtils.h"
 #include "gfxWindowsPlatform.h"
 
-#include <nsIBaseWindow.h>
-#include <nsICanvasRenderingContextInternal.h>
-#include "mozilla/dom/CanvasRenderingContext2D.h"
-#include <imgIContainer.h>
-#include <nsIDocShell.h>
-
+#include "mozilla/dom/HTMLCanvasElement.h"
+#include "mozilla/gfx/2D.h"
+#include "mozilla/gfx/DataSurfaceHelpers.h"
 #include "mozilla/Telemetry.h"
 
 
@@ -37,53 +34,8 @@
 namespace mozilla {
 namespace widget {
 
-namespace {
 
 
-
-
-dom::CanvasRenderingContext2D* gCtx = nullptr;
-
-
-uint32_t gInstCount = 0;
-
-
-
-
-
-
-
-
-
-
-nsresult
-GetRenderingContext(nsIDocShell *shell, gfxASurface *surface,
-                    uint32_t width, uint32_t height) {
-  if (!gCtx) {
-    
-    Telemetry::Accumulate(Telemetry::CANVAS_2D_USED, 1);
-    gCtx = new mozilla::dom::CanvasRenderingContext2D();
-    NS_ADDREF(gCtx);
-  }
-
-  
-  return gCtx->InitializeWithSurface(shell, surface, width, height);
-}
-
-
-
-void
-ResetRenderingContext() {
-  if (!gCtx)
-    return;
-
-  if (NS_FAILED(gCtx->Reset())) {
-    NS_RELEASE(gCtx);
-    gCtx = nullptr;
-  }
-}
-
-}
 
 TaskbarPreview::TaskbarPreview(ITaskbarList4 *aTaskbar, nsITaskbarPreviewController *aController, HWND aHWND, nsIDocShell *aShell)
   : mTaskbar(aTaskbar),
@@ -94,8 +46,6 @@ TaskbarPreview::TaskbarPreview(ITaskbarList4 *aTaskbar, nsITaskbarPreviewControl
 {
   
   ::CoInitialize(nullptr);
-
-  gInstCount++;
 
   WindowHook &hook = GetWindowHook();
   hook.AddMonitor(WM_DESTROY, MainWindowHook, this);
@@ -111,9 +61,6 @@ TaskbarPreview::~TaskbarPreview() {
 
   
   mTaskbar = nullptr;
-
-  if (--gInstCount == 0)
-    NS_IF_RELEASE(gCtx);
 
   ::CoUninitialize();
 }
@@ -357,37 +304,90 @@ TaskbarPreview::UpdateTooltip() {
 void
 TaskbarPreview::DrawBitmap(uint32_t width, uint32_t height, bool isPreview) {
   nsresult rv;
-  RefPtr<gfxWindowsSurface> surface = new gfxWindowsSurface(gfx::IntSize(width, height), gfx::SurfaceFormat::A8R8G8B8_UINT32);
-
-  nsCOMPtr<nsIDocShell> shell = do_QueryReferent(mDocShell);
-
-  if (!shell)
+  nsCOMPtr<nsITaskbarPreviewCallback> callback =
+    do_CreateInstance("@mozilla.org/widget/taskbar-preview-callback;1", &rv);
+  MOZ_ASSERT(SUCCEEDED(hr));
+  if (NS_FAILED(rv)) {
     return;
+  }
 
-  rv = GetRenderingContext(shell, surface, width, height);
-  if (NS_FAILED(rv))
-    return;
+  ((TaskbarPreviewCallback*)callback.get())->SetPreview(this);
 
-  bool drawFrame = false;
-  if (isPreview)
-    rv = mController->DrawPreview(gCtx, &drawFrame);
-  else
-    rv = mController->DrawThumbnail(gCtx, width, height, &drawFrame);
+  if (isPreview) {
+    ((TaskbarPreviewCallback*)callback.get())->SetIsPreview();
+    mController->RequestPreview(callback);
+  } else {
+    mController->RequestThumbnail(callback, width, height);
+  }
+}
 
-  if (NS_FAILED(rv))
-    return;
 
-  HDC hDC = surface->GetDC();
+
+
+NS_IMPL_ISUPPORTS(TaskbarPreviewCallback, nsITaskbarPreviewCallback)
+
+
+NS_IMETHODIMP
+TaskbarPreviewCallback::Done(nsISupports *aCanvas, bool aDrawBorder) {
+  
+  
+  
+  
+  
+  
+  
+  
+  if (!aCanvas || !mPreview || !mPreview->PreviewWindow() ||
+      !mPreview->IsWindowAvailable()) {
+    return NS_ERROR_FAILURE;
+  }
+
+  nsCOMPtr<nsIDOMHTMLCanvasElement> domcanvas(do_QueryInterface(aCanvas));
+  dom::HTMLCanvasElement * canvas = ((dom::HTMLCanvasElement*)domcanvas.get());
+  if (!canvas) {
+    return NS_ERROR_FAILURE;
+  }
+
+  RefPtr<gfx::SourceSurface> source = canvas->GetSurfaceSnapshot();
+  if (!source) {
+    return NS_ERROR_FAILURE;
+  }
+  RefPtr<gfxWindowsSurface> target = new gfxWindowsSurface(source->GetSize(),
+                                                           gfx::SurfaceFormat::A8R8G8B8_UINT32);
+  if (!target) {
+    return NS_ERROR_FAILURE;
+  }
+
+  RefPtr<gfx::DataSourceSurface> srcSurface = source->GetDataSurface();
+  RefPtr<gfxImageSurface> imageSurface = target->GetAsImageSurface();
+  if (!srcSurface || !imageSurface) {
+    return NS_ERROR_FAILURE;
+  }
+
+  gfx::DataSourceSurface::MappedSurface sourceMap;
+  srcSurface->Map(gfx::DataSourceSurface::READ, &sourceMap);
+  mozilla::gfx::CopySurfaceDataToPackedArray(sourceMap.mData,
+                                             imageSurface->Data(),
+                                             srcSurface->GetSize(),
+                                             sourceMap.mStride,
+                                             BytesPerPixel(srcSurface->GetFormat()));
+  srcSurface->Unmap();
+
+  HDC hDC = target->GetDC();
   HBITMAP hBitmap = (HBITMAP)GetCurrentObject(hDC, OBJ_BITMAP);
 
-  DWORD flags = drawFrame ? DWM_SIT_DISPLAYFRAME : 0;
+  DWORD flags = aDrawBorder ? DWM_SIT_DISPLAYFRAME : 0;
   POINT pptClient = { 0, 0 };
-  if (isPreview)
-    WinUtils::dwmSetIconicLivePreviewBitmapPtr(PreviewWindow(), hBitmap, &pptClient, flags);
-  else
-    WinUtils::dwmSetIconicThumbnailPtr(PreviewWindow(), hBitmap, flags);
-
-  ResetRenderingContext();
+  HRESULT hr;
+  if (!mIsThumbnail) {
+    hr = WinUtils::dwmSetIconicLivePreviewBitmapPtr(mPreview->PreviewWindow(),
+                                                    hBitmap, &pptClient, flags);
+  } else {
+    hr = WinUtils::dwmSetIconicThumbnailPtr(mPreview->PreviewWindow(),
+                                            hBitmap, flags);
+  }
+  MOZ_ASSERT(SUCCEEDED(hr));
+  return NS_OK;
 }
 
 
