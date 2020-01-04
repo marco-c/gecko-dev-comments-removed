@@ -976,12 +976,14 @@ gfxWindowsPlatform::SchedulePaintIfDeviceReset()
     return;
   }
 
+  gfxCriticalNote << "(gfxWindowsPlatform) Detected device reset: " << (int)resetReason;
+
   
   ::EnumThreadWindows(GetCurrentThreadId(),
                       InvalidateWindowForDeviceReset,
                       0);
 
-  gfxCriticalNote << "Detected rendering device reset on refresh: " << (int)resetReason;
+  gfxCriticalNote << "(gfxWindowsPlatform) Finished device reset.";
 }
 
 void
