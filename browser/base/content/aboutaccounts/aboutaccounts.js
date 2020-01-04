@@ -129,8 +129,9 @@ var wrapper = {
     this.url = url;
     
     
+    
     let webNav = iframe.frameLoader.docShell.QueryInterface(Ci.nsIWebNavigation);
-    webNav.loadURI(url, Ci.nsIWebNavigation.LOAD_FLAGS_BYPASS_HISTORY, null, null, null);
+    webNav.loadURI(url, Ci.nsIWebNavigation.LOAD_FLAGS_REPLACE_HISTORY, null, null, null);
   },
 
   retry: function () {
