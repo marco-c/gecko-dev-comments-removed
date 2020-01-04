@@ -206,6 +206,19 @@ imgFrame::InitForDecoder(const nsIntSize& aImageSize,
   mImageSize = aImageSize;
   mFrameRect = aRect;
 
+  
+  
+  
+  
+  
+  
+  if (aPaletteDepth == 0 &&
+      !mFrameRect.IsEqualEdges(IntRect(IntPoint(), mImageSize))) {
+    MOZ_ASSERT_UNREACHABLE("Creating a non-paletted imgFrame with a "
+                           "non-trivial frame rect");
+    return NS_ERROR_FAILURE;
+  }
+
   mFormat = aFormat;
   mPaletteDepth = aPaletteDepth;
   mNonPremult = aNonPremult;
