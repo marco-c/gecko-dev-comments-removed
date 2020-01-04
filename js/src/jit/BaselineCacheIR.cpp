@@ -743,6 +743,37 @@ BaselineCacheIRCompiler::emitGuardProto()
 }
 
 bool
+BaselineCacheIRCompiler::emitGuardClass()
+{
+    Register obj = allocator.useRegister(masm, reader.objOperandId());
+    AutoScratchRegister scratch(allocator, masm);
+
+    FailurePath* failure;
+    if (!addFailurePath(&failure))
+        return false;
+
+    const Class* clasp = nullptr;
+    switch (reader.guardClassKind()) {
+      case GuardClassKind::Array:
+        clasp = &ArrayObject::class_;
+        break;
+      case GuardClassKind::UnboxedArray:
+        clasp = &UnboxedArrayObject::class_;
+        break;
+      case GuardClassKind::MappedArguments:
+        clasp = &MappedArgumentsObject::class_;
+        break;
+      case GuardClassKind::UnmappedArguments:
+        clasp = &UnmappedArgumentsObject::class_;
+        break;
+    }
+
+    MOZ_ASSERT(clasp);
+    masm.branchTestObjClass(Assembler::NotEqual, obj, scratch, clasp, failure->label());
+    return true;
+}
+
+bool
 BaselineCacheIRCompiler::emitGuardNoUnboxedExpando()
 {
     Register obj = allocator.useRegister(masm, reader.objOperandId());
@@ -806,6 +837,69 @@ BaselineCacheIRCompiler::emitLoadUndefinedResult()
     
     
     
+    emitReturnFromIC();
+    return true;
+}
+
+bool
+BaselineCacheIRCompiler::emitLoadInt32ArrayLengthResult()
+{
+    Register obj = allocator.useRegister(masm, reader.objOperandId());
+    AutoScratchRegister scratch(allocator, masm);
+
+    FailurePath* failure;
+    if (!addFailurePath(&failure))
+        return false;
+
+    masm.loadPtr(Address(obj, NativeObject::offsetOfElements()), scratch);
+    masm.load32(Address(scratch, ObjectElements::offsetOfLength()), scratch);
+
+    
+    masm.branchTest32(Assembler::Signed, scratch, scratch, failure->label());
+    masm.tagValue(JSVAL_TYPE_INT32, scratch, R0);
+
+    
+    
+    emitReturnFromIC();
+    return true;
+}
+
+bool
+BaselineCacheIRCompiler::emitLoadUnboxedArrayLengthResult()
+{
+    Register obj = allocator.useRegister(masm, reader.objOperandId());
+    masm.load32(Address(obj, UnboxedArrayObject::offsetOfLength()), R0.scratchReg());
+    masm.tagValue(JSVAL_TYPE_INT32, R0.scratchReg(), R0);
+
+    
+    
+    emitReturnFromIC();
+    return true;
+}
+
+bool
+BaselineCacheIRCompiler::emitLoadArgumentsObjectLengthResult()
+{
+    Register obj = allocator.useRegister(masm, reader.objOperandId());
+    AutoScratchRegister scratch(allocator, masm);
+
+    FailurePath* failure;
+    if (!addFailurePath(&failure))
+        return false;
+
+    
+    masm.unboxInt32(Address(obj, ArgumentsObject::getInitialLengthSlotOffset()), scratch);
+
+    
+    masm.branchTest32(Assembler::NonZero,
+                      scratch,
+                      Imm32(ArgumentsObject::LENGTH_OVERRIDDEN_BIT),
+                      failure->label());
+
+    
+    
+    masm.rshiftPtr(Imm32(ArgumentsObject::PACKED_BITS_COUNT), scratch);
+    masm.tagValue(JSVAL_TYPE_INT32, scratch, R0);
     emitReturnFromIC();
     return true;
 }
@@ -1008,7 +1102,8 @@ jit::AttachBaselineCacheIRStub(JSContext* cx, const CacheIRWriter& writer, Cache
             return nullptr;
 
         CacheIRStubKey key(stubInfo);
-        jitCompartment->putCacheIRStubCode(lookup, key, code);
+        if (!jitCompartment->putCacheIRStubCode(lookup, key, code))
+            return nullptr;
     }
 
     

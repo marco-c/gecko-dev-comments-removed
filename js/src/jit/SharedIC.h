@@ -2374,54 +2374,6 @@ class ICGetProp_Generic : public ICMonitoredStub
 };
 
 
-class ICGetProp_ArrayLength : public ICStub
-{
-    friend class ICStubSpace;
-
-    explicit ICGetProp_ArrayLength(JitCode* stubCode)
-      : ICStub(GetProp_ArrayLength, stubCode)
-    {}
-
-  public:
-    class Compiler : public ICStubCompiler {
-        bool generateStubCode(MacroAssembler& masm);
-
-      public:
-        explicit Compiler(JSContext* cx, Engine engine)
-          : ICStubCompiler(cx, ICStub::GetProp_ArrayLength, engine)
-        {}
-
-        ICStub* getStub(ICStubSpace* space) {
-            return newStub<ICGetProp_ArrayLength>(space, getStubCode());
-        }
-    };
-};
-
-
-class ICGetProp_UnboxedArrayLength : public ICStub
-{
-    friend class ICStubSpace;
-
-    explicit ICGetProp_UnboxedArrayLength(JitCode* stubCode)
-      : ICStub(GetProp_UnboxedArrayLength, stubCode)
-    {}
-
-  public:
-    class Compiler : public ICStubCompiler {
-        bool generateStubCode(MacroAssembler& masm);
-
-      public:
-        explicit Compiler(JSContext* cx, Engine engine)
-          : ICStubCompiler(cx, ICStub::GetProp_UnboxedArrayLength, engine)
-        {}
-
-        ICStub* getStub(ICStubSpace* space) {
-            return newStub<ICGetProp_UnboxedArrayLength>(space, getStubCode());
-        }
-    };
-};
-
-
 class ICGetProp_Primitive : public ICMonitoredStub
 {
     friend class ICStubSpace;
@@ -3228,7 +3180,7 @@ class ICGetProp_ArgumentsLength : public ICStub
 {
   friend class ICStubSpace;
   public:
-    enum Which { Mapped, Unmapped, Magic };
+    enum Which { Magic };
 
   protected:
     explicit ICGetProp_ArgumentsLength(JitCode* stubCode)
