@@ -120,7 +120,7 @@ NS_IMETHODIMP nsAlertsService::ShowAlertNotification(const nsAString & aImageUrl
   
   rv = mXULAlerts.ShowAlertNotification(aImageUrl, aAlertTitle, aAlertText, aAlertTextClickable,
                                         aAlertCookie, aAlertListener, aAlertName,
-                                        aBidi, aLang, aInPrivateBrowsing);
+                                        aBidi, aLang, aPrincipal, aInPrivateBrowsing);
   return rv;
 #endif 
 }

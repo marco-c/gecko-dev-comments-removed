@@ -32,9 +32,19 @@ function prefillAlertInfo() {
   
   
   
+  
 
   switch (window.arguments.length) {
     default:
+    case 11: {
+      let label = document.getElementById('alertSourceLabel');
+      if (window.arguments[10]) {
+        label.hidden = false;
+        label.setAttribute('value', window.arguments[10]);
+      } else {
+        label.hidden = true;
+      }
+    }
     case 10:
       gAlertListener = window.arguments[9];
     case 9:
