@@ -249,11 +249,25 @@ VideoTrackEncoder::AppendVideoSegment(const VideoSegment& aSegment)
   VideoSegment::ChunkIterator iter(const_cast<VideoSegment&>(aSegment));
   while (!iter.IsEnded()) {
     VideoChunk chunk = *iter;
-    RefPtr<layers::Image> image = chunk.mFrame.GetImage();
-    mRawSegment.AppendFrame(image.forget(),
-                            chunk.GetDuration(),
-                            chunk.mFrame.GetIntrinsicSize(),
-                            chunk.mFrame.GetForceBlack());
+    mTotalFrameDuration += chunk.GetDuration();
+    
+    if (mLastFrame != chunk.mFrame) {
+      RefPtr<layers::Image> image = chunk.mFrame.GetImage();
+      
+      
+      
+      
+      
+      
+      if (image) {
+        mRawSegment.AppendFrame(image.forget(),
+                                mTotalFrameDuration,
+                                chunk.mFrame.GetIntrinsicSize(),
+                                chunk.mFrame.GetForceBlack());
+        mTotalFrameDuration = 0;
+      }
+    }
+    mLastFrame.TakeFrom(&chunk.mFrame);
     iter.Next();
   }
 
