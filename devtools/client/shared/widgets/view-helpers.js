@@ -224,6 +224,17 @@ const ViewHelpers = exports.ViewHelpers = {
 
 
 
+  isSpaceOrReturn: function (event) {
+    return event.keyCode === event.DOM_VK_SPACE ||
+          event.keyCode === event.DOM_VK_RETURN;
+  },
+
+  
+
+
+
+
+
 
 
 

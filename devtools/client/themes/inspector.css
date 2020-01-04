@@ -79,9 +79,10 @@
 }
 
 
-
 #inspector-element-add-button::before {
   background-image: url("chrome://devtools/skin/images/add.svg");
+  list-style-image: url("chrome://devtools/skin/images/add.svg");
+  -moz-user-focus: normal;
 }
 
 

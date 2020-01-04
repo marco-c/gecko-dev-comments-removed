@@ -493,7 +493,10 @@ RequestsMenuView.prototype = Heritage.extend(WidgetMethods, {
     window.addEventListener("resize", this._onResize, false);
 
     this.requestsMenuSortEvent = getKeyWithEvent(this.sortBy.bind(this));
+    this.requestsMenuSortKeyboardEvent = getKeyWithEvent(this.sortBy.bind(this), true);
     this.requestsMenuFilterEvent = getKeyWithEvent(this.filterOn.bind(this));
+    this.requestsMenuFilterKeyboardEvent = getKeyWithEvent(
+      this.filterOn.bind(this), true);
     this.reqeustsMenuClearEvent = this.clear.bind(this);
     this._onContextShowing = this._onContextShowing.bind(this);
     this._onContextNewTabCommand = this.openRequestInTab.bind(this);
@@ -525,8 +528,12 @@ RequestsMenuView.prototype = Heritage.extend(WidgetMethods, {
 
     $("#toolbar-labels").addEventListener("click",
       this.requestsMenuSortEvent, false);
+    $("#toolbar-labels").addEventListener("keydown",
+      this.requestsMenuSortKeyboardEvent, false);
     $("#requests-menu-filter-buttons").addEventListener("click",
       this.requestsMenuFilterEvent, false);
+    $("#requests-menu-filter-buttons").addEventListener("keydown",
+      this.requestsMenuFilterKeyboardEvent, false);
     $("#requests-menu-clear-button").addEventListener("click",
       this.reqeustsMenuClearEvent, false);
     $("#network-request-popup").addEventListener("popupshowing",
@@ -605,8 +612,12 @@ RequestsMenuView.prototype = Heritage.extend(WidgetMethods, {
 
     $("#toolbar-labels").removeEventListener("click",
       this.requestsMenuSortEvent, false);
+    $("#toolbar-labels").removeEventListener("keydown",
+      this.requestsMenuSortKeyboardEvent, false);
     $("#requests-menu-filter-buttons").removeEventListener("click",
       this.requestsMenuFilterEvent, false);
+    $("#requests-menu-filter-buttons").removeEventListener("keydown",
+      this.requestsMenuFilterKeyboardEvent, false);
     $("#requests-menu-clear-button").removeEventListener("click",
       this.reqeustsMenuClearEvent, false);
     this.freetextFilterBox.removeEventListener("input",
@@ -4020,10 +4031,16 @@ function responseIsFresh({ responseHeaders, status }) {
 
 
 
-function getKeyWithEvent(callback) {
+
+
+
+
+function getKeyWithEvent(callback, onlySpaceOrReturn) {
   return function (event) {
     let key = event.target.getAttribute("data-key");
-    if (key) {
+    let filterKeyboardEvent = onlySpaceOrReturn
+       ? ViewHelpers.isSpaceOrReturn(event) : true;
+    if (key && filterKeyboardEvent) {
       callback.call(null, key);
     }
   };
