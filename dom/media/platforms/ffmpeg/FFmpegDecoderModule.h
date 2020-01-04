@@ -26,7 +26,7 @@ public:
     if (major < 54 && !sFFmpegDecoderEnabled) {
       return nullptr;
     }
-    RefPtr<PlatformDecoderModule> pdm = new FFmpegDecoderModule();
+    nsRefPtr<PlatformDecoderModule> pdm = new FFmpegDecoderModule();
 
     return pdm.forget();
   }
@@ -50,7 +50,7 @@ public:
                      FlushableTaskQueue* aVideoTaskQueue,
                      MediaDataDecoderCallback* aCallback) override
   {
-    RefPtr<MediaDataDecoder> decoder =
+    nsRefPtr<MediaDataDecoder> decoder =
       new FFmpegH264Decoder<V>(aVideoTaskQueue, aCallback, aConfig,
                                aImageContainer);
     return decoder.forget();
@@ -61,15 +61,20 @@ public:
                      FlushableTaskQueue* aAudioTaskQueue,
                      MediaDataDecoderCallback* aCallback) override
   {
-    RefPtr<MediaDataDecoder> decoder =
+    nsRefPtr<MediaDataDecoder> decoder =
       new FFmpegAudioDecoder<V>(aAudioTaskQueue, aCallback, aConfig);
     return decoder.forget();
   }
 
   bool SupportsMimeType(const nsACString& aMimeType) override
   {
-    return FFmpegAudioDecoder<V>::GetCodecId(aMimeType) != AV_CODEC_ID_NONE ||
-      FFmpegH264Decoder<V>::GetCodecId(aMimeType) != AV_CODEC_ID_NONE;
+    AVCodecID audioCodec = FFmpegAudioDecoder<V>::GetCodecId(aMimeType);
+    AVCodecID videoCodec = FFmpegH264Decoder<V>::GetCodecId(aMimeType);
+    if (audioCodec == AV_CODEC_ID_NONE && videoCodec == AV_CODEC_ID_NONE) {
+      return false;
+    }
+    AVCodecID codec = audioCodec != AV_CODEC_ID_NONE ? audioCodec : videoCodec;
+    return !!FFmpegDataDecoder<V>::FindAVCodec(codec);
   }
 
   ConversionRequired
