@@ -1374,6 +1374,7 @@ nsXULTemplateBuilder::InitHTMLTemplateRoot()
     
     
     AutoEntryScript entryScript(innerWin, "nsXULTemplateBuilder creation", true);
+    entryScript.TakeOwnershipOfErrorReporting();
     JSContext* jscontext = entryScript.cx();
 
     JS::Rooted<JS::Value> v(jscontext);
