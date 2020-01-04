@@ -101,7 +101,9 @@ nsresult runTest(uint32_t aExpectedPolicyCount,
   NS_ENSURE_SUCCESS(rv, rv);
 
   nsCOMPtr<nsIPrincipal> selfURIPrincipal;
-  rv = secman->GetSimpleCodebasePrincipal(selfURI, getter_AddRefs(selfURIPrincipal));
+  
+  
+  rv = secman->GetCodebasePrincipal(selfURI, getter_AddRefs(selfURIPrincipal));
   NS_ENSURE_SUCCESS(rv, rv);
 
   
