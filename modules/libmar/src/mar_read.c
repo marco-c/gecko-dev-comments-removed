@@ -406,10 +406,12 @@ mar_read_product_info_block(MarFile *mar,
   
 
   char buf[97] = { '\0' };
-  int ret = get_mar_file_info_fp(mar->fp, NULL, NULL,
-                                 &hasAdditionalBlocks, 
-                                 &offsetAdditionalBlocks, 
-                                 &numAdditionalBlocks);
+  if (get_mar_file_info_fp(mar->fp, NULL, NULL,
+                           &hasAdditionalBlocks,
+                           &offsetAdditionalBlocks,
+                           &numAdditionalBlocks) != 0) {
+    return -1;
+  }
   for (i = 0; i < numAdditionalBlocks; ++i) {
     
     if (fread(&additionalBlockSize, 
