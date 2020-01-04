@@ -31,7 +31,11 @@ from mozharness.mozilla.tooltool import TooltoolMixin
 
 from mozharness.lib.python.authentication import get_credentials
 
-INSTALLER_SUFFIXES = ('.tar.bz2', '.zip', '.dmg', '.exe', '.apk', '.tar.gz')
+INSTALLER_SUFFIXES = ('.apk',  
+                      '.tar.bz2', '.tar.gz',  
+                      '.dmg',  
+                      '.installer-stub.exe', '.installer.exe', '.exe', '.zip',  
+                      )
 
 testing_config_options = [
     [["--installer-url"],
