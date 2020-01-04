@@ -1396,6 +1396,13 @@ struct nsStylePosition {
   
   typedef nsStyleBackground::Position Position;
 
+  
+
+
+
+  uint8_t ComputedJustifyItems(const nsStyleDisplay* aDisplay,
+                               nsStyleContext* aParent) const;
+
   Position      mObjectPosition;        
   nsStyleSides  mOffset;                
   nsStyleCoord  mWidth;                 
@@ -1414,6 +1421,10 @@ struct nsStylePosition {
   uint8_t       mAlignContent;          
   uint8_t       mAlignItems;            
   uint8_t       mAlignSelf;             
+private:
+  friend class nsRuleNode;
+  uint8_t       mJustifyItems;          
+public:
   uint8_t       mFlexDirection;         
   uint8_t       mFlexWrap;              
   uint8_t       mJustifyContent;        

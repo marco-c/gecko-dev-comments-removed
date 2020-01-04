@@ -936,6 +936,11 @@ protected:
   bool ParseGridArea();
 
   
+  bool ParseAlignJustifyPosition(nsCSSValue& aResult,
+                                 const KTableValue aTable[]);
+  bool ParseJustifyItems();
+
+  
   bool ParseRect(nsCSSProperty aPropID);
   bool ParseColumns();
   bool ParseContain(nsCSSValue& aValue);
@@ -9379,6 +9384,71 @@ CSSParserImpl::ParseGridArea()
 }
 
 
+
+bool
+CSSParserImpl::ParseAlignJustifyPosition(nsCSSValue& aResult,
+                                         const KTableValue aTable[])
+{
+  nsCSSValue pos, overflowPos;
+  int32_t value = 0;
+  if (ParseEnum(pos, aTable)) {
+    value = pos.GetIntValue();
+    if (ParseEnum(overflowPos, nsCSSProps::kAlignOverflowPosition)) {
+      value |= overflowPos.GetIntValue();
+    }
+    aResult.SetIntValue(value, eCSSUnit_Enumerated);
+    return true;
+  }
+  if (ParseEnum(overflowPos, nsCSSProps::kAlignOverflowPosition)) {
+    if (ParseEnum(pos, aTable)) {
+      aResult.SetIntValue(pos.GetIntValue() | overflowPos.GetIntValue(),
+                          eCSSUnit_Enumerated);
+      return true;
+    }
+    return false; 
+  }
+  return true;
+}
+
+
+
+
+bool
+CSSParserImpl::ParseJustifyItems()
+{
+  nsCSSValue value;
+  if (!ParseSingleTokenVariant(value, VARIANT_INHERIT, nullptr)) {
+    if (MOZ_UNLIKELY(ParseEnum(value, nsCSSProps::kAlignLegacy))) {
+      nsCSSValue legacy;
+      if (!ParseEnum(legacy, nsCSSProps::kAlignLegacyPosition)) {
+        return false; 
+      }
+      value.SetIntValue(value.GetIntValue() | legacy.GetIntValue(),
+                        eCSSUnit_Enumerated);
+    } else {
+      if (!ParseEnum(value, nsCSSProps::kAlignAutoStretchBaseline)) {
+        if (!ParseAlignJustifyPosition(value, nsCSSProps::kAlignSelfPosition) ||
+            value.GetUnit() == eCSSUnit_Null) {
+          return false;
+        }
+        
+        auto val = value.GetIntValue();
+        if (val == NS_STYLE_JUSTIFY_CENTER ||
+            val == NS_STYLE_JUSTIFY_LEFT   ||
+            val == NS_STYLE_JUSTIFY_RIGHT) {
+          nsCSSValue legacy;
+          if (ParseEnum(legacy, nsCSSProps::kAlignLegacy)) {
+            value.SetIntValue(val | legacy.GetIntValue(), eCSSUnit_Enumerated);
+          }
+        }
+      }
+    }
+  }
+  AppendValue(eCSSProperty_justify_items, value);
+  return true;
+}
+
+
 bool
 CSSParserImpl::ParseColorStop(nsCSSValueGradient* aGradient)
 {
@@ -10501,6 +10571,8 @@ CSSParserImpl::ParsePropertyByFunction(nsCSSProperty aPropID)
     return ParseGridArea();
   case eCSSProperty_image_region:
     return ParseRect(eCSSProperty_image_region);
+  case eCSSProperty_justify_items:
+    return ParseJustifyItems();
   case eCSSProperty_list_style:
     return ParseListStyle();
   case eCSSProperty_margin:

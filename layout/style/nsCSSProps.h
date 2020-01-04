@@ -688,12 +688,20 @@ public:
   static KTableValue kDisplayKTable[];
   static const KTableValue kElevationKTable[];
   static const KTableValue kEmptyCellsKTable[];
+  
+  static const KTableValue kAlignAllKeywords[];
+  static const KTableValue kAlignOverflowPosition[]; 
+  static const KTableValue kAlignSelfPosition[];     
+  static const KTableValue kAlignLegacy[];           
+  static const KTableValue kAlignLegacyPosition[];   
+  static const KTableValue kAlignAutoStretchBaseline[]; 
   static const KTableValue kAlignContentKTable[];
   static const KTableValue kAlignItemsKTable[];
   static const KTableValue kAlignSelfKTable[];
+  static const KTableValue kJustifyContentKTable[];
+  
   static const KTableValue kFlexDirectionKTable[];
   static const KTableValue kFlexWrapKTable[];
-  static const KTableValue kJustifyContentKTable[];
   static const KTableValue kFloatKTable[];
   static const KTableValue kFloatEdgeKTable[];
   static const KTableValue kFontKTable[];
