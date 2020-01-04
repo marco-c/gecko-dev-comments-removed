@@ -848,35 +848,13 @@ PopupNotifications.prototype = {
       
       this.nextDismissReason = TELEMETRY_STAT_DISMISSAL_CLICK_ELSEWHERE;
 
-      let target = this.panel;
-      if (target.parentNode) {
-        
-        
-        
-        
-        
-        
-        
-        target = target.parentNode;
-      }
-      if (this._popupshownListener) {
-        target.removeEventListener("popupshown", this._popupshownListener, true);
-      }
-      this._popupshownListener = function (e) {
-        target.removeEventListener("popupshown", this._popupshownListener, true);
-        this._popupshownListener = null;
-
-        notificationsToShow.forEach(function (n) {
-          this._fireCallback(n, NOTIFICATION_EVENT_SHOWN);
-        }, this);
-        
-        
-        this.panel.dispatchEvent(new this.window.CustomEvent("Shown"));
-      };
-      this._popupshownListener = this._popupshownListener.bind(this);
-      target.addEventListener("popupshown", this._popupshownListener, true);
-
       this.panel.openPopup(anchorElement, "bottomcenter topleft");
+      notificationsToShow.forEach(function (n) {
+        this._fireCallback(n, NOTIFICATION_EVENT_SHOWN);
+      }, this);
+      
+      
+      this.panel.dispatchEvent(new this.window.CustomEvent("Shown"));
     });
   },
 

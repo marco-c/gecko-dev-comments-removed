@@ -444,7 +444,7 @@ nsXULPopupManager::AdjustPopupsOnWindowChange(nsPIDOMWindowOuter* aWindow)
   }
 
   for (int32_t l = list.Length() - 1; l >= 0; l--) {
-    list[l]->SetPopupPosition(nullptr, true, false, true);
+    list[l]->SetPopupPosition(nullptr, true, false);
   }
 }
 
@@ -500,7 +500,7 @@ nsXULPopupManager::PopupMoved(nsIFrame* aFrame, nsIntPoint aPnt)
   
   if (menuPopupFrame->IsAnchored() &&
       menuPopupFrame->PopupLevel() == ePopupLevelParent) {
-    menuPopupFrame->SetPopupPosition(nullptr, true, false, true);
+    menuPopupFrame->SetPopupPosition(nullptr, true, false);
   }
   else {
     CSSPoint cssPos = LayoutDeviceIntPoint::FromUnknownPoint(aPnt)
@@ -1038,24 +1038,6 @@ nsXULPopupManager::HidePopup(nsIContent* aPopup,
   }
   else if (foundPanel) {
     popupToHide = aPopup;
-  } else {
-    
-    
-    
-    popupFrame = do_QueryFrame(aPopup->GetPrimaryFrame());
-    if (popupFrame) {
-      if (popupFrame->PopupState() == ePopupPositioning) {
-        
-        
-        deselectMenu = aDeselectMenu;
-        popupToHide = aPopup;
-        type = popupFrame->PopupType();
-      } else {
-        
-        
-        popupFrame = nullptr;
-      }
-    }
   }
 
   if (popupFrame) {
@@ -1512,19 +1494,7 @@ nsXULPopupManager::FirePopupShowingEvent(nsIContent* aPopup,
       popupFrame->ClearTriggerContent();
     }
     else {
-      
-      
-
-      
-      if (popup->AttrValueIs(kNameSpaceID_None, nsGkAtoms::type,
-                          nsGkAtoms::arrow, eCaseMatters)) {
-        popupFrame->ShowWithPositionedEvent();
-        presShell->FrameNeedsReflow(popupFrame, nsIPresShell::eTreeChange,
-                                    NS_FRAME_HAS_DIRTY_CHILDREN);
-      }
-      else {
-        ShowPopupCallback(popup, popupFrame, aIsContextMenu, aSelectFirstItem);
-      }
+      ShowPopupCallback(aPopup, popupFrame, aIsContextMenu, aSelectFirstItem);
     }
   }
 }
@@ -1754,8 +1724,7 @@ nsXULPopupManager::MayShowPopup(nsMenuPopupFrame* aPopup)
   
   
   NS_ASSERTION(IsPopupOpen(aPopup->GetContent()) || state == ePopupClosed ||
-               state == ePopupShowing || state == ePopupPositioning ||
-               state == ePopupInvisible,
+               state == ePopupShowing || state == ePopupInvisible,
                "popup not in XULPopupManager open list is open");
 
   
@@ -2729,61 +2698,6 @@ nsXULPopupHidingEvent::Run()
       if (context) {
         pm->FirePopupHidingEvent(mPopup, mNextPopup, mLastPopup,
                                  context, mPopupType, mDeselectMenu, mIsRollup);
-      }
-    }
-  }
-
-  return NS_OK;
-}
-
-bool
-nsXULPopupPositionedEvent::DispatchIfNeeded(nsIContent *aPopup,
-                                            bool aIsContextMenu,
-                                            bool aSelectFirstItem)
-{
-  
-  if (aPopup->AttrValueIs(kNameSpaceID_None, nsGkAtoms::type,
-                          nsGkAtoms::arrow, eCaseMatters)) {
-    nsCOMPtr<nsIRunnable> event =
-      new nsXULPopupPositionedEvent(aPopup, aIsContextMenu, aSelectFirstItem);
-    NS_DispatchToCurrentThread(event);
-
-    return true;
-  }
-
-  return false;
-}
-
-NS_IMETHODIMP
-nsXULPopupPositionedEvent::Run()
-{
-  nsXULPopupManager* pm = nsXULPopupManager::GetInstance();
-  if (pm) {
-    nsMenuPopupFrame* popupFrame = do_QueryFrame(mPopup->GetPrimaryFrame());
-    if (popupFrame) {
-      
-      
-      
-      
-      
-      nsPopupState state = popupFrame->PopupState();
-      if (state != ePopupPositioning && state != ePopupShown) {
-        return NS_OK;
-      }
-      nsEventStatus status = nsEventStatus_eIgnore;
-      WidgetMouseEvent event(true, eXULPopupPositioned, nullptr,
-                             WidgetMouseEvent::eReal);
-      EventDispatcher::Dispatch(mPopup, popupFrame->PresContext(),
-                                &event, nullptr, &status);
-
-      
-      
-      
-      
-      
-      nsMenuPopupFrame* popupFrame = do_QueryFrame(mPopup->GetPrimaryFrame());
-      if (popupFrame && popupFrame->PopupState() == ePopupPositioning) {
-        pm->ShowPopupCallback(mPopup, popupFrame, mIsContextMenu, mSelectFirstItem);
       }
     }
   }

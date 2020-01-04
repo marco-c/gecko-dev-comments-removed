@@ -49,8 +49,6 @@ enum nsPopupState {
   
   ePopupShowing,
   
-  ePopupPositioning,
-  
   ePopupOpening,
   
   ePopupVisible,
@@ -254,9 +252,7 @@ public:
   
   
   
-  
-  nsresult SetPopupPosition(nsIFrame* aAnchorFrame, bool aIsMove,
-                            bool aSizedToPopup, bool aNotify);
+  nsresult SetPopupPosition(nsIFrame* aAnchorFrame, bool aIsMove, bool aSizedToPopup);
 
   bool HasGeneratedChildren() { return mGeneratedChildren; }
   void SetGeneratedChildren() { mGeneratedChildren = true; }
@@ -429,11 +425,6 @@ public:
     return false;
   }
 
-  void ShowWithPositionedEvent() {
-    mPopupState = ePopupPositioning;
-    mShouldAutoPosition = true;
-  }
-
   
   virtual bool ReflowFinished() override;
   virtual void ReflowCallbackCanceled() override;
@@ -532,9 +523,6 @@ protected:
   nsMenuFrame* mCurrentMenu; 
 
   RefPtr<nsXULPopupShownEvent> mPopupShownDispatcher;
-
-  
-  nsIntRect mUsedScreenRect;
 
   
   

@@ -260,26 +260,12 @@ var StarUI = {
         parent.setAttribute("open", "true");
       }
     }
-    let panel = this.panel;
-    let target = panel;
-    if (target.parentNode) {
-      
-      
-      
-      target = target.parentNode;
-    }
-    target.addEventListener("popupshown", function shownListener(event) {
-      if (event.target == panel) {
-        target.removeEventListener("popupshown", shownListener, true);
-
-        gEditItemOverlay.initPanel({ node: aNode
-                                   , hiddenRows: ["description", "location",
-                                                  "loadInSidebar", "keyword"]
-                                   , focusedElement: "preferred"});
-      }
-    }, true);
-
     this.panel.openPopup(aAnchorElement, aPosition);
+
+    gEditItemOverlay.initPanel({ node: aNode
+                               , hiddenRows: ["description", "location",
+                                              "loadInSidebar", "keyword"]
+                               , focusedElement: "preferred" });
   }),
 
   panelShown:
