@@ -316,9 +316,8 @@ nsComboboxControlFrame::ShowPopup(bool aShowPopup)
 
   
   nsEventStatus status = nsEventStatus_eIgnore;
-  WidgetMouseEvent event(true, aShowPopup ?
-                         eXULPopupShowing : NS_XUL_POPUP_HIDING, nullptr,
-                         WidgetMouseEvent::eReal);
+  WidgetMouseEvent event(true, aShowPopup ? eXULPopupShowing : eXULPopupHiding,
+                         nullptr, WidgetMouseEvent::eReal);
 
   nsCOMPtr<nsIPresShell> shell = PresContext()->GetPresShell();
   if (shell)
