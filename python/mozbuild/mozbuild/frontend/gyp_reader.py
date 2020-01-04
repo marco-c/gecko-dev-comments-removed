@@ -17,6 +17,7 @@ from .context import (
     VARIABLES,
 )
 from mozbuild.util import (
+    expand_variables,
     List,
     memoize,
 )
@@ -216,12 +217,13 @@ def read_from_gyp(config, path, output, vars, non_unified_sources = set()):
                         
                         
                         
-                        if f.startswith('$(') and f.endswith(')'):
-                            f = config.substs.get(f[2:-1])
+                        f = expand_variables(f, config.substs)
+                        if not f:
+                            continue
                         
                         if isinstance(f, types.StringTypes):
                             context[var].append(f)
-                        elif f:
+                        else:
                             context[var].extend(f)
         else:
             
