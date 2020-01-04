@@ -646,7 +646,9 @@ iQClass.prototype = {
   
   
   bind: function iQClass_bind(type, func) {
-    let handler = function(event) func.apply(this, [event]);
+    let handler = function(event) {
+      return func.apply(this, [event]);
+    };
 
     for (let i = 0; this[i] != null; i++) {
       let elem = this[i];

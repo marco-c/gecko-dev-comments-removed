@@ -87,7 +87,9 @@ Trench.prototype = {
   
   
   
-  get radius() this.customRadius || Trenches.defaultRadius,
+  get radius() {
+    return this.customRadius || Trenches.defaultRadius;
+  },
 
   setParentItem: function Trench_setParentItem(item) {
     if (!item.isAnItem) {
