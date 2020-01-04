@@ -503,6 +503,12 @@ public:
 
         
         auto eglSurface = mGLController->CreateEGLSurface();
+        if (!eglSurface) {
+            
+            
+            
+            return nullptr;
+        }
         return reinterpret_cast<EGLSurface>(
                 AndroidBridge::Bridge()->GetAPIVersion() >= 20 ?
                 env->GetLongField(eglSurface.Get(), eglSurfacePointerField) :
