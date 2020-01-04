@@ -3,6 +3,7 @@
 
 
 
+
 #include "Accessible-inl.h"
 #include "AccIterator.h"
 #include "DocAccessible-inl.h"
@@ -113,7 +114,20 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INHERITED(DocAccessible, Accessible)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mNotificationController)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mVirtualCursor)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mChildDocuments)
-  tmp->mDependentIDsHash.EnumerateRead(CycleCollectorTraverseDepIDsEntry, &cb);
+  for (auto iter = tmp->mDependentIDsHash.Iter(); !iter.Done(); iter.Next()) {
+    AttrRelProviderArray* providers = iter.UserData();
+
+    for (int32_t jdx = providers->Length() - 1; jdx >= 0; jdx--) {
+      NS_CYCLE_COLLECTION_NOTE_EDGE_NAME(
+        cb, "content of dependent ids hash entry of document accessible");
+
+      AttrRelProvider* provider = (*providers)[jdx];
+      cb.NoteXPCOMChild(provider->mContent);
+
+      NS_ASSERTION(provider->mContent->IsInDoc(),
+                   "Referred content is not in document!");
+    }
+  }
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mAccessibleCache)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mAnchorJumpElm)
   for (uint32_t i = 0; i < tmp->mARIAOwnsInvalidationList.Length(); ++i) {
@@ -2215,27 +2229,5 @@ DocAccessible::IsLoadEventTarget() const
 
   
   return (treeItem->ItemType() == nsIDocShellTreeItem::typeContent);
-}
-
-PLDHashOperator
-DocAccessible::CycleCollectorTraverseDepIDsEntry(const nsAString& aKey,
-                                                 AttrRelProviderArray* aProviders,
-                                                 void* aUserArg)
-{
-  nsCycleCollectionTraversalCallback* cb =
-    static_cast<nsCycleCollectionTraversalCallback*>(aUserArg);
-
-  for (int32_t jdx = aProviders->Length() - 1; jdx >= 0; jdx--) {
-    NS_CYCLE_COLLECTION_NOTE_EDGE_NAME(*cb,
-                                       "content of dependent ids hash entry of document accessible");
-
-    AttrRelProvider* provider = (*aProviders)[jdx];
-    cb->NoteXPCOMChild(provider->mContent);
-
-    NS_ASSERTION(provider->mContent->IsInDoc(),
-                 "Referred content is not in document!");
-  }
-
-  return PL_DHASH_NEXT;
 }
 

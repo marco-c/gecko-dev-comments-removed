@@ -138,32 +138,7 @@ private:
   
 
 
-  static PLDHashOperator
-    GetFirstEntryInDocCache(const nsIDocument* aKey,
-                            DocAccessible* aDocAccessible,
-                            void* aUserArg);
-
-  
-
-
   void ClearDocCache();
-
-  struct nsSearchAccessibleInCacheArg
-  {
-    Accessible* mAccessible;
-    nsINode* mNode;
-  };
-
-  static PLDHashOperator
-    SearchAccessibleInDocCache(const nsIDocument* aKey,
-                               DocAccessible* aDocAccessible,
-                               void* aUserArg);
-
-#ifdef DEBUG
-  static PLDHashOperator
-    SearchIfDocIsRefreshing(const nsIDocument* aKey,
-                            DocAccessible* aDocAccessible, void* aUserArg);
-#endif
 
   typedef nsRefPtrHashtable<nsPtrHashKey<const nsIDocument>, DocAccessible>
     DocAccessibleHashtable;

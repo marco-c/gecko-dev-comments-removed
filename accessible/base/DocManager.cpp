@@ -3,6 +3,7 @@
 
 
 
+
 #include "DocManager.h"
 
 #include "ApplicationAccessible.h"
@@ -71,13 +72,19 @@ DocManager::GetDocAccessible(nsIDocument* aDocument)
 Accessible*
 DocManager::FindAccessibleInCache(nsINode* aNode) const
 {
-  nsSearchAccessibleInCacheArg arg;
-  arg.mNode = aNode;
+  for (auto iter = mDocAccessibleCache.ConstIter(); !iter.Done(); iter.Next()) {
+    DocAccessible* docAccessible = iter.UserData();
+    NS_ASSERTION(docAccessible,
+                 "No doc accessible for the object in doc accessible cache!");
 
-  mDocAccessibleCache.EnumerateRead(SearchAccessibleInDocCache,
-                                    static_cast<void*>(&arg));
-
-  return arg.mAccessible;
+    if (docAccessible) {
+      Accessible* accessible = docAccessible->GetAccessible(aNode);
+      if (accessible) {
+        return accessible;
+      }
+    }
+  }
+  return nullptr;
 }
 
 void
@@ -112,11 +119,17 @@ DocManager::GetXPCDocument(DocAccessible* aDocument)
 bool
 DocManager::IsProcessingRefreshDriverNotification() const
 {
-  bool isDocRefreshing = false;
-  mDocAccessibleCache.EnumerateRead(SearchIfDocIsRefreshing,
-                                    static_cast<void*>(&isDocRefreshing));
+  for (auto iter = mDocAccessibleCache.ConstIter(); !iter.Done(); iter.Next()) {
+    DocAccessible* docAccessible = iter.UserData();
+    NS_ASSERTION(docAccessible,
+                 "No doc accessible for the object in doc accessible cache!");
 
-  return isDocRefreshing;
+    if (docAccessible && docAccessible->mNotificationController &&
+        docAccessible->mNotificationController->IsUpdating()) {
+      return true;
+    }
+  }
+  return false;
 }
 #endif
 
@@ -488,65 +501,23 @@ DocManager::CreateDocOrRootAccessible(nsIDocument* aDocument)
 
 
 
-PLDHashOperator
-DocManager::GetFirstEntryInDocCache(const nsIDocument* aKey,
-                                    DocAccessible* aDocAccessible,
-                                    void* aUserArg)
-{
-  NS_ASSERTION(aDocAccessible,
-               "No doc accessible for the object in doc accessible cache!");
-  *reinterpret_cast<DocAccessible**>(aUserArg) = aDocAccessible;
-
-  return PL_DHASH_STOP;
-}
-
 void
 DocManager::ClearDocCache()
 {
-  DocAccessible* docAcc = nullptr;
-  while (mDocAccessibleCache.EnumerateRead(GetFirstEntryInDocCache, static_cast<void*>(&docAcc))) {
-    if (docAcc)
+  
+  
+  
+  while (mDocAccessibleCache.Count() > 0) {
+    auto iter = mDocAccessibleCache.Iter();
+    MOZ_ASSERT(!iter.Done());
+    DocAccessible* docAcc = iter.UserData();
+    NS_ASSERTION(docAcc,
+                 "No doc accessible for the object in doc accessible cache!");
+    if (docAcc) {
       docAcc->Shutdown();
+    }
   }
 }
-
-PLDHashOperator
-DocManager::SearchAccessibleInDocCache(const nsIDocument* aKey,
-                                       DocAccessible* aDocAccessible,
-                                       void* aUserArg)
-{
-  NS_ASSERTION(aDocAccessible,
-               "No doc accessible for the object in doc accessible cache!");
-
-  if (aDocAccessible) {
-    nsSearchAccessibleInCacheArg* arg =
-      static_cast<nsSearchAccessibleInCacheArg*>(aUserArg);
-    arg->mAccessible = aDocAccessible->GetAccessible(arg->mNode);
-    if (arg->mAccessible)
-      return PL_DHASH_STOP;
-  }
-
-  return PL_DHASH_NEXT;
-}
-
-#ifdef DEBUG
-PLDHashOperator
-DocManager::SearchIfDocIsRefreshing(const nsIDocument* aKey,
-                                    DocAccessible* aDocAccessible,
-                                    void* aUserArg)
-{
-  NS_ASSERTION(aDocAccessible,
-               "No doc accessible for the object in doc accessible cache!");
-
-  if (aDocAccessible && aDocAccessible->mNotificationController &&
-      aDocAccessible->mNotificationController->IsUpdating()) {
-    *(static_cast<bool*>(aUserArg)) = true;
-    return PL_DHASH_STOP;
-  }
-
-  return PL_DHASH_NEXT;
-}
-#endif
 
 void
 DocManager::RemoteDocAdded(DocAccessibleParent* aDoc)
