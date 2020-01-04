@@ -685,7 +685,14 @@ nsGridContainerFrame::ResolveAbsPosLineRange(
 
   LineRange r = ResolveLineRange(aStart, aEnd, aLineNameList, aAreaStart,
                                  aAreaEnd, aExplicitGridEnd, aStyle);
-  MOZ_ASSERT(!r.IsAuto(), "resolving definite lines shouldn't result in auto");
+  if (r.IsAuto()) {
+    MOZ_ASSERT(aStart.mHasSpan && aEnd.mHasSpan, "span / span is the only case "
+               "leading to IsAuto here -- we dealt with the other cases above");
+    
+    
+    return LineRange(kAutoLine, kAutoLine);
+  }
+
   
   
   r.mUntranslatedStart = clamped(r.mUntranslatedStart, aGridStart, aGridEnd);
