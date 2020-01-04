@@ -649,7 +649,10 @@ nsXREDirProvider::LoadExtensionBundleDirectories()
                                NS_EXTENSION_LOCATION);
       LoadExtensionDirectories(parser, "ThemeDirs", mThemeDirectories,
                                NS_SKIN_LOCATION);
-#ifdef MOZ_BUILD_APP_IS_BROWSER
+
+
+
+#if defined(MOZ_BUILD_APP_IS_BROWSER) || defined(MOZ_SEPARATE_MANIFEST_FOR_THEME_OVERRIDES)
     } else {
       
       nsCOMPtr<nsIFile> themeManifest;
