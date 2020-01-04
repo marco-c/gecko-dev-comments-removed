@@ -162,6 +162,8 @@ TEST_F(APZHitTestingTester, HitTesting1) {
 
 
 TEST_F(APZHitTestingTester, HitTesting2) {
+  SCOPED_GFX_PREF(APZVelocityBias, float, 0.0); 
+
   CreateHitTesting2LayerTree();
   ScopedLayerTreeRegistration registration(manager, 0, root, mcc);
 
