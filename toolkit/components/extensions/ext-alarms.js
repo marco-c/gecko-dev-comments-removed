@@ -91,7 +91,7 @@ extensions.on("shutdown", (type, extension) => {
 });
 
 
-extensions.registerSchemaAPI("alarms", "alarms", (extension, context) => {
+extensions.registerSchemaAPI("alarms", (extension, context) => {
   return {
     alarms: {
       create: function(name, alarmInfo) {
