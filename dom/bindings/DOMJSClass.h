@@ -386,9 +386,14 @@ struct DOMIfaceAndProtoJSClass
 
   
   
-  DOMObjectType mType;
+  DOMObjectType mType; 
 
-  const prototypes::ID mPrototypeID;
+  
+  
+  
+  bool wantsInterfaceHasInstance;
+
+  const prototypes::ID mPrototypeID; 
   const uint32_t mDepth;
 
   const NativePropertyHooks* mNativeHooks;
