@@ -58,6 +58,7 @@ ImageBridgeParent::ImageBridgeParent(MessageLoop* aLoop,
   : mMessageLoop(aLoop)
   , mTransport(aTransport)
   , mSetChildThreadPriority(false)
+  , mStopped(false)
 {
   MOZ_ASSERT(NS_IsMainThread());
   sMainLoop = MessageLoop::current();
@@ -208,6 +209,9 @@ bool ImageBridgeParent::RecvStop()
 {
   
   
+
+  
+  mStopped = true;
 
   
   
@@ -381,6 +385,38 @@ void
 ImageBridgeParent::OnChannelConnected(int32_t aPid)
 {
   mCompositorThreadHolder = GetCompositorThreadHolder();
+}
+
+
+bool
+ImageBridgeParent::AllocShmem(size_t aSize,
+                ipc::SharedMemory::SharedMemoryType aType,
+                ipc::Shmem* aShmem)
+{
+  if (mStopped) {
+    return false;
+  }
+  return PImageBridgeParent::AllocShmem(aSize, aType, aShmem);
+}
+
+bool
+ImageBridgeParent::AllocUnsafeShmem(size_t aSize,
+                      ipc::SharedMemory::SharedMemoryType aType,
+                      ipc::Shmem* aShmem)
+{
+  if (mStopped) {
+    return false;
+  }
+  return PImageBridgeParent::AllocUnsafeShmem(aSize, aType, aShmem);
+}
+
+void
+ImageBridgeParent::DeallocShmem(ipc::Shmem& aShmem)
+{
+  if (mStopped) {
+    return;
+  }
+  PImageBridgeParent::DeallocShmem(aShmem);
 }
 
 bool ImageBridgeParent::IsSameProcess() const
