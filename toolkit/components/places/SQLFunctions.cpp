@@ -18,6 +18,10 @@
 #include "mozilla/Likely.h"
 #include "nsVariant.h"
 
+
+
+#define MAX_CHARS_TO_SEARCH_THROUGH 255
+
 using namespace mozilla::storage;
 
 
@@ -388,11 +392,17 @@ namespace places {
     searchFunctionPtr searchFunction = getSearchFunction(matchBehavior);
 
     
-    nsCString fixedURI;
-    fixupURISpec(url, matchBehavior, fixedURI);
+    nsCString fixedUrl;
+    fixupURISpec(url, matchBehavior, fixedUrl);
+    
+    const nsDependentCSubstring& trimmedUrl =
+      Substring(fixedUrl, 0, MAX_CHARS_TO_SEARCH_THROUGH);
 
     nsAutoCString title;
     (void)aArguments->GetUTF8String(kArgIndexTitle, title);
+    
+    const nsDependentCSubstring& trimmedTitle =
+      Substring(title, 0, MAX_CHARS_TO_SEARCH_THROUGH);
 
     
     
@@ -401,19 +411,21 @@ namespace places {
       const nsDependentCSubstring &token = tokenizer.nextToken();
 
       if (HAS_BEHAVIOR(TITLE) && HAS_BEHAVIOR(URL)) {
-        matches = (searchFunction(token, title) || searchFunction(token, tags)) &&
-                  searchFunction(token, fixedURI);
+        matches = (searchFunction(token, trimmedTitle) ||
+                   searchFunction(token, tags)) &&
+                  searchFunction(token, trimmedUrl);
       }
       else if (HAS_BEHAVIOR(TITLE)) {
-        matches = searchFunction(token, title) || searchFunction(token, tags);
+        matches = searchFunction(token, trimmedTitle) ||
+                  searchFunction(token, tags);
       }
       else if (HAS_BEHAVIOR(URL)) {
-        matches = searchFunction(token, fixedURI);
+        matches = searchFunction(token, trimmedUrl);
       }
       else {
-        matches = searchFunction(token, title) ||
+        matches = searchFunction(token, trimmedTitle) ||
                   searchFunction(token, tags) ||
-                  searchFunction(token, fixedURI);
+                  searchFunction(token, trimmedUrl);
       }
     }
 
