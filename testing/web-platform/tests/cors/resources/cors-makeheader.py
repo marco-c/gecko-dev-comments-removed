@@ -36,7 +36,7 @@ def main(request, response):
 
         
         if 'token' in request.GET:
-            request.server.stash.put(request.GET['token'])
+            request.server.stash.put(request.GET['token'], True)
 
     if 'location' in request.GET:
         if code is None:
