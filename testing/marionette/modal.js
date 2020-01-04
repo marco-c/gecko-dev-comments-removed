@@ -81,20 +81,20 @@ modal.removeHandler = function(toRemove) {
 
 
 
-modal.Dialog = function(curBrowserFn, winRef=null) {
-  Object.defineProperty(this, "curBrowser", {
-    get() { return curBrowserFn(); }
-  });
-  this.win_ = winRef;
-};
+modal.Dialog = class {
+  constructor(curBrowserFn, winRef = undefined) {
+    this.curBrowserFn_ = curBrowserFn;
+    this.win_ = winRef;
+  }
+
+  get curBrowser_() { return this.curBrowserFn_(); }
+
+  
 
 
 
-
-
-Object.defineProperty(modal.Dialog.prototype, "window", {
-  get() {
-    if (this.win_ !== null) {
+  get window() {
+    if (this.win_) {
       let win = this.win_.get();
       if (win && win.parent) {
         return win;
@@ -102,14 +102,12 @@ Object.defineProperty(modal.Dialog.prototype, "window", {
     }
     return null;
   }
-});
 
-Object.defineProperty(modal.Dialog.prototype, "ui", {
-  get() {
+  get ui() {
     let win = this.window;
     if (win) {
       return win.Dialog.ui;
     }
-    return this.curBrowser.getTabModalUI();
+    return this.curBrowser_.getTabModalUI();
   }
-});
+};
