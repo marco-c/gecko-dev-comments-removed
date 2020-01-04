@@ -537,10 +537,6 @@ BasicCompositor::BeginFrame(const nsIntRegion& aInvalidRegion,
     *aRenderBoundsOut = Rect();
   }
 
-  if (mInvalidRect.width <= 0 || mInvalidRect.height <= 0) {
-    return;
-  }
-
   if (mTarget) {
     
     
@@ -549,8 +545,13 @@ BasicCompositor::BeginFrame(const nsIntRegion& aInvalidRegion,
     
     mDrawTarget = mWidget->StartRemoteDrawingInRegion(mInvalidRegion);
     mInvalidRect = mInvalidRegion.GetBounds();
+    if (mInvalidRect.IsEmpty()) {
+      mWidget->EndRemoteDrawingInRegion(mDrawTarget, mInvalidRegion);
+      return;
+    }
   }
-  if (!mDrawTarget) {
+
+  if (!mDrawTarget || mInvalidRect.IsEmpty()) {
     return;
   }
 
