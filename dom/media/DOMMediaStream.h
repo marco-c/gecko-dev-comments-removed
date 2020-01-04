@@ -394,8 +394,15 @@ public:
 
 
 
+
+
+
+
+
+
   MediaStreamTrack* FindOwnedDOMTrack(MediaStream* aInputStream,
-                                      TrackID aInputTrackID) const;
+                                      TrackID aInputTrackID,
+                                      TrackID aTrackID = TRACK_ANY) const;
 
   
 
