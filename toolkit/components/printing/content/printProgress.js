@@ -244,7 +244,7 @@ function onLoad() {
 
     
     var object = this;
-    doSetOKCancel("", function () { return object.onCancel();});
+    doSetOKCancel("", function () { return object.onCancel(); });
 
     
     loadDialog();
@@ -278,7 +278,7 @@ function onCancel ()
    {
      printProgress.processCanceledByUser = true;
    }
-   catch ( exception ) {return true;}
+   catch ( exception ) { return true; }
 
   
   return false;

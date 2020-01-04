@@ -142,7 +142,7 @@ function onCancel ()
   try {
     printProgress.processCanceledByUser = true;
   }
-  catch (e) {return true;}
+  catch (e) { return true; }
 
   
   return false;
