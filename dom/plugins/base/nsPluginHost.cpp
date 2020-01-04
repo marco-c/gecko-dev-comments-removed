@@ -2143,8 +2143,6 @@ nsresult nsPluginHost::ScanPluginsDirectory(nsIFile *pluginsDir,
   nsCOMArray<nsIFile> extensionDirs;
   GetExtensionDirectories(extensionDirs);
 
-  bool warnOutdated = false;
-
   for (int32_t i = (pluginFiles.Length() - 1); i >= 0; i--) {
     nsCOMPtr<nsIFile>& localfile = pluginFiles[i];
 
@@ -2244,13 +2242,8 @@ nsresult nsPluginHost::ScanPluginsDirectory(nsIFile *pluginsDir,
 
       
       
-      
-      
       if (state == nsIBlocklistService::STATE_SOFTBLOCKED && !seenBefore) {
         pluginTag->SetEnabledState(nsIPluginTag::STATE_DISABLED);
-      }
-      if (state == nsIBlocklistService::STATE_OUTDATED && !seenBefore) {
-        warnOutdated = true;
       }
 
       
@@ -2289,10 +2282,6 @@ nsresult nsPluginHost::ScanPluginsDirectory(nsIFile *pluginsDir,
     }
 
     AddPluginTag(pluginTag);
-  }
-
-  if (warnOutdated) {
-    Preferences::SetBool("plugins.update.notifyUser", true);
   }
 
   return NS_OK;

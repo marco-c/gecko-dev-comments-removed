@@ -171,9 +171,6 @@ XPCOMUtils.defineLazyServiceGetter(this, "WindowsUIUtils",
 XPCOMUtils.defineLazyServiceGetter(this, "AlertsService",
                                    "@mozilla.org/alerts-service;1", "nsIAlertsService");
 
-const PREF_PLUGINS_NOTIFYUSER = "plugins.update.notifyUser";
-const PREF_PLUGINS_UPDATEURL  = "plugins.update.url";
-
 
 const BOOKMARKS_BACKUP_IDLE_TIME_SEC = 8 * 60;
 
@@ -1232,11 +1229,6 @@ BrowserGlue.prototype = {
 
     
     
-    if (Services.prefs.getBoolPref(PREF_PLUGINS_NOTIFYUSER))
-      this._showPluginUpdatePage();
-
-    
-    
     let win = RecentWindow.getMostRecentBrowserWindow();
     AddonManager.getAllAddons(addons => {
       for (let addon of addons) {
@@ -1636,17 +1628,6 @@ BrowserGlue.prototype = {
     catch (e) {
       Cu.reportError(e);
     }
-  },
-
-  _showPluginUpdatePage: function BG__showPluginUpdatePage() {
-    Services.prefs.setBoolPref(PREF_PLUGINS_NOTIFYUSER, false);
-
-    var formatter = Cc["@mozilla.org/toolkit/URLFormatterService;1"].
-                    getService(Ci.nsIURLFormatter);
-    var updateUrl = formatter.formatURLPref(PREF_PLUGINS_UPDATEURL);
-
-    var win = RecentWindow.getMostRecentBrowserWindow();
-    win.openUILinkIn(updateUrl, "tab");
   },
 
   

@@ -35,8 +35,5 @@ function run_test() {
   do_execute_soon(function() {
     
     do_check_true(blocklist.getPluginBlocklistState(plugin, "1", "1.9") == nsIBLS.STATE_OUTDATED);
-
-    
-    do_check_true(prefs.getBoolPref("plugins.update.notifyUser"));
   });
 }

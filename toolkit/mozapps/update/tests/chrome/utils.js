@@ -86,7 +86,6 @@ const IS_WIN = ("@mozilla.org/windows-registry-key;1" in Cc);
 
 const PAGEID_DUMMY            = "dummy";                 
 const PAGEID_CHECKING         = "checking";              
-const PAGEID_PLUGIN_UPDATES   = "pluginupdatesfound";
 const PAGEID_NO_UPDATES_FOUND = "noupdatesfound";        
 const PAGEID_MANUAL_UPDATE    = "manualUpdate";          
 const PAGEID_UNSUPPORTED      = "unsupported";           

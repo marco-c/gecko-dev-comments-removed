@@ -122,11 +122,6 @@ function run_test() {
 function test_part_1() {
   
   do_check_true(gBlocklist.getPluginBlocklistState(PLUGINS[0], "1", "1.9") == nsIBLS.STATE_OUTDATED);
-  
-  do_check_true(gPrefs.getBoolPref("plugins.update.notifyUser"));
-
-  
-  gPrefs.setBoolPref("plugins.update.notifyUser", false);
 
   
   do_update_blocklist("test_bug514327_3_outdated_2.xml", test_part_2);
@@ -135,8 +130,6 @@ function test_part_1() {
 function test_part_2() {
   
   do_check_true(gBlocklist.getPluginBlocklistState(PLUGINS[0], "1", "1.9") == nsIBLS.STATE_OUTDATED);
-  
-  do_check_false(gPrefs.getBoolPref("plugins.update.notifyUser"));
 
   finish();
 }

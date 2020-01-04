@@ -115,8 +115,6 @@ user_pref("extensions.getAddons.search.url", "http://%(server)s/extensions-dummy
 
 user_pref("services.settings.server", "http://%(server)s/dummy-kinto/v1");
 
-user_pref("plugins.update.url", "http://%(server)s/plugins-dummy/updateCheckURL");
-
 user_pref("network.sntp.pools", "%(server)s");
 
 
