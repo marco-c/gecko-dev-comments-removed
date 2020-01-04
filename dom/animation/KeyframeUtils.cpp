@@ -46,79 +46,115 @@ enum class ListAllowance { eDisallow, eAllow };
 
 
 
+
+
+
+
+
+
+
+
+
+class PropertyPriorityComparator
+{
+public:
+  PropertyPriorityComparator()
+    : mSubpropertyCountInitialized(false) {}
+
+  bool Equals(nsCSSProperty aLhs, nsCSSProperty aRhs) const
+  {
+    return aLhs == aRhs;
+  }
+
+  bool LessThan(nsCSSProperty aLhs,
+                nsCSSProperty aRhs) const
+  {
+    bool isShorthandLhs = nsCSSProps::IsShorthand(aLhs);
+    bool isShorthandRhs = nsCSSProps::IsShorthand(aRhs);
+
+    if (isShorthandLhs) {
+      if (isShorthandRhs) {
+        
+        uint32_t subpropCountLhs = SubpropertyCount(aLhs);
+        uint32_t subpropCountRhs = SubpropertyCount(aRhs);
+        if (subpropCountLhs != subpropCountRhs) {
+          return subpropCountLhs < subpropCountRhs;
+        }
+        
+      } else {
+        
+        return false;
+      }
+    } else {
+      if (isShorthandRhs) {
+        
+        return true;
+      }
+    }
+    
+    
+    return nsCSSProps::PropertyIDLNameSortPosition(aLhs) <
+           nsCSSProps::PropertyIDLNameSortPosition(aRhs);
+  }
+
+  uint32_t SubpropertyCount(nsCSSProperty aProperty) const
+  {
+    if (!mSubpropertyCountInitialized) {
+      PodZero(&mSubpropertyCount);
+      mSubpropertyCountInitialized = true;
+    }
+    if (mSubpropertyCount[aProperty] == 0) {
+      uint32_t count = 0;
+      CSSPROPS_FOR_SHORTHAND_SUBPROPERTIES(
+          p, aProperty, nsCSSProps::eEnabledForAllContent) {
+        ++count;
+      }
+      mSubpropertyCount[aProperty] = count;
+    }
+    return mSubpropertyCount[aProperty];
+  }
+
+private:
+  
+  mutable RangedArray<
+    uint32_t,
+    eCSSProperty_COUNT_no_shorthands,
+    eCSSProperty_COUNT - eCSSProperty_COUNT_no_shorthands> mSubpropertyCount;
+  mutable bool mSubpropertyCountInitialized;
+};
+
+
+
+
+
+template <typename T>
+class TPropertyPriorityComparator : PropertyPriorityComparator
+{
+public:
+  bool Equals(const T& aLhs, const T& aRhs) const
+  {
+    return PropertyPriorityComparator::Equals(aLhs.mProperty, aRhs.mProperty);
+  }
+  bool LessThan(const T& aLhs, const T& aRhs) const
+  {
+    return PropertyPriorityComparator::LessThan(aLhs.mProperty, aRhs.mProperty);
+  }
+};
+
+
+
+
+
+
+
+
+
 struct PropertyValuesPair
 {
   nsCSSProperty mProperty;
   nsTArray<nsString> mValues;
 
-  class PropertyPriorityComparator
-  {
-  public:
-    PropertyPriorityComparator()
-      : mSubpropertyCountInitialized(false) {}
-
-    bool Equals(const PropertyValuesPair& aLhs,
-                const PropertyValuesPair& aRhs) const
-    {
-      return aLhs.mProperty == aRhs.mProperty;
-    }
-
-    bool LessThan(const PropertyValuesPair& aLhs,
-                  const PropertyValuesPair& aRhs) const
-    {
-      bool isShorthandLhs = nsCSSProps::IsShorthand(aLhs.mProperty);
-      bool isShorthandRhs = nsCSSProps::IsShorthand(aRhs.mProperty);
-
-      if (isShorthandLhs) {
-        if (isShorthandRhs) {
-          
-          uint32_t subpropCountLhs = SubpropertyCount(aLhs.mProperty);
-          uint32_t subpropCountRhs = SubpropertyCount(aRhs.mProperty);
-          if (subpropCountLhs != subpropCountRhs) {
-            return subpropCountLhs < subpropCountRhs;
-          }
-          
-        } else {
-          
-          return false;
-        }
-      } else {
-        if (isShorthandRhs) {
-          
-          return true;
-        }
-      }
-      
-      
-      return nsCSSProps::PropertyIDLNameSortPosition(aLhs.mProperty) <
-             nsCSSProps::PropertyIDLNameSortPosition(aRhs.mProperty);
-    }
-
-    uint32_t SubpropertyCount(nsCSSProperty aProperty) const
-    {
-      if (!mSubpropertyCountInitialized) {
-        PodZero(&mSubpropertyCount);
-        mSubpropertyCountInitialized = true;
-      }
-      if (mSubpropertyCount[aProperty] == 0) {
-        uint32_t count = 0;
-        CSSPROPS_FOR_SHORTHAND_SUBPROPERTIES(
-            p, aProperty, nsCSSProps::eEnabledForAllContent) {
-          ++count;
-        }
-        mSubpropertyCount[aProperty] = count;
-      }
-      return mSubpropertyCount[aProperty];
-    }
-
-  private:
-    
-    mutable RangedArray<
-      uint32_t,
-      eCSSProperty_COUNT_no_shorthands,
-      eCSSProperty_COUNT - eCSSProperty_COUNT_no_shorthands> mSubpropertyCount;
-    mutable bool mSubpropertyCountInitialized;
-  };
+  typedef TPropertyPriorityComparator<PropertyValuesPair> Comparator;
 };
 
 
@@ -968,18 +1004,7 @@ GenerateValueEntries(Element* aTarget,
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    keyframe.mPropertyValuePairs.Sort(
-        PropertyValuesPair::PropertyPriorityComparator());
+    keyframe.mPropertyValuePairs.Sort(PropertyValuesPair::Comparator());
 
     nsCSSPropertySet propertiesOnThisKeyframe;
     for (const PropertyValuesPair& pair : keyframe.mPropertyValuePairs) {
