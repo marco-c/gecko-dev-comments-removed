@@ -28,8 +28,8 @@ factory((root.pdfjsDistBuildPdfWorker = {}));
   
   'use strict';
 
-var pdfjsVersion = '1.5.322';
-var pdfjsBuild = 'b6826a4';
+var pdfjsVersion = '1.5.337';
+var pdfjsBuild = '11381cd';
 
   var pdfjsFilePath =
     typeof document !== 'undefined' && document.currentScript ?
@@ -3243,10 +3243,7 @@ var createBlob = function createBlob(data, contentType) {
   if (typeof Blob !== 'undefined') {
     return new Blob([data], { type: contentType });
   }
-  
-  var bb = new MozBlobBuilder();
-  bb.append(data);
-  return bb.getBlob(contentType);
+  warn('The "Blob" constructor is not supported.');
 };
 
 var createObjectURL = (function createObjectURLClosure() {
@@ -27036,7 +27033,7 @@ function recoverGlyphName(name, glyphsUnicodeMap) {
       }
     }
   }
-  warn('Unable to recover a standard glyph name for: ' + name);
+  info('Unable to recover a standard glyph name for: ' + name);
   return name;
 }
 
