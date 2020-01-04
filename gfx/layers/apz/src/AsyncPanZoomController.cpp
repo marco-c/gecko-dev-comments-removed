@@ -2741,8 +2741,11 @@ void AsyncPanZoomController::RequestContentRepaint(FrameMetrics& aFrameMetrics, 
       fabsf(mLastPaintRequestMetrics.GetScrollOffset().y -
             aFrameMetrics.GetScrollOffset().y) < EPSILON &&
       aFrameMetrics.GetZoom() == mLastPaintRequestMetrics.GetZoom() &&
-      fabsf(aFrameMetrics.GetViewport().width - mLastPaintRequestMetrics.GetViewport().width) < EPSILON &&
-      fabsf(aFrameMetrics.GetViewport().height - mLastPaintRequestMetrics.GetViewport().height) < EPSILON) {
+      fabsf(aFrameMetrics.GetViewport().width -
+            mLastPaintRequestMetrics.GetViewport().width) < EPSILON &&
+      fabsf(aFrameMetrics.GetViewport().height -
+            mLastPaintRequestMetrics.GetViewport().height) < EPSILON &&
+      aFrameMetrics.GetScrollGeneration() == mLastPaintRequestMetrics.GetScrollGeneration()) {
     return;
   }
 
@@ -3190,8 +3193,14 @@ void AsyncPanZoomController::NotifyLayersUpdated(const FrameMetrics& aLayerMetri
       Stringify(mFrameMetrics.GetScrollOffset()).c_str(),
       Stringify(aLayerMetrics.GetSmoothScrollOffset()).c_str());
 
-    mFrameMetrics.CopySmoothScrollInfoFrom(aLayerMetrics);
     CancelAnimation();
+
+    
+    
+    
+    
+    
+    mFrameMetrics.CopySmoothScrollInfoFrom(aLayerMetrics);
     mLastDispatchedPaintMetrics = aLayerMetrics;
     StartSmoothScroll(ScrollSource::DOM);
 
