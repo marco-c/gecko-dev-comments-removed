@@ -268,30 +268,6 @@ TabStore.prototype = {
     this._remoteClients[record.id] = Object.assign({}, record.cleartext, {
       lastModified: record.modified
     });
-
-    
-    
-    
-
-    
-    let roundModify = Math.floor(record.modified / 1000);
-    let notifyState = Svc.Prefs.get("notifyTabState");
-
-    
-    if (notifyState == null) {
-      Svc.Prefs.set("notifyTabState", roundModify);
-      return;
-    }
-
-    
-    if (notifyState == 0) {
-      return;
-    }
-
-    
-    if (notifyState != roundModify) {
-      Svc.Prefs.set("notifyTabState", 0);
-    }
   },
 
   update: function (record) {
