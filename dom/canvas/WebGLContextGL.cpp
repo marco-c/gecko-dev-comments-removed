@@ -1229,28 +1229,28 @@ WebGLContext::DoReadPixelsAndConvert(GLint x, GLint y, GLsizei width, GLsizei he
         auxReadFormat == destFormat &&
         auxReadType == LOCAL_GL_HALF_FLOAT)
     {
-        MOZ_RELEASE_ASSERT(!IsWebGL2());
+        MOZ_RELEASE_ASSERT(!IsWebGL2()); 
 
         readType = auxReadType;
 
+        const char funcName[] = "readPixels";
         const auto readBytesPerPixel = webgl::BytesPerPixel({readFormat, readType});
         const auto destBytesPerPixel = webgl::BytesPerPixel({destFormat, destType});
 
-        CheckedUint32 readOffset;
-        CheckedUint32 readStride;
-        const CheckedUint32 readSize = GetPackSize(width, height, readBytesPerPixel,
-                                                   &readOffset, &readStride);
-
-        CheckedUint32 destOffset;
-        CheckedUint32 destStride;
-        const CheckedUint32 destSize = GetPackSize(width, height, destBytesPerPixel,
-                                                   &destOffset, &destStride);
-        if (!readSize.isValid() || !destSize.isValid()) {
+        uint32_t readStride;
+        uint32_t readByteCount;
+        uint32_t destStride;
+        uint32_t destByteCount;
+        if (!ValidatePackSize(funcName, width, height, readBytesPerPixel, &readStride,
+                              &readByteCount) ||
+            !ValidatePackSize(funcName, width, height, destBytesPerPixel, &destStride,
+                              &destByteCount))
+        {
             ErrorOutOfMemory("readPixels: Overflow calculating sizes for conversion.");
             return false;
         }
 
-        UniqueBuffer readBuffer = malloc(readSize.value());
+        UniqueBuffer readBuffer = malloc(readByteCount);
         if (!readBuffer) {
             ErrorOutOfMemory("readPixels: Failed to alloc temp buffer for conversion.");
             return false;
@@ -1271,11 +1271,11 @@ WebGLContext::DoReadPixelsAndConvert(GLint x, GLint y, GLsizei width, GLsizei he
             return false;
         }
 
-        size_t channelsPerRow = std::min(readStride.value() / sizeof(uint16_t),
-                                         destStride.value() / sizeof(float));
+        size_t channelsPerRow = std::min(readStride / sizeof(uint16_t),
+                                         destStride / sizeof(float));
 
-        const uint8_t* srcRow = (uint8_t*)(readBuffer.get()) + readOffset.value();
-        uint8_t* dstRow = (uint8_t*)(destBytes) + destOffset.value();
+        const uint8_t* srcRow = (uint8_t*)readBuffer.get();
+        uint8_t* dstRow = (uint8_t*)destBytes;
 
         for (size_t j = 0; j < (size_t)height; j++) {
             auto src = (const uint16_t*)srcRow;
@@ -1288,8 +1288,8 @@ WebGLContext::DoReadPixelsAndConvert(GLint x, GLint y, GLsizei width, GLsizei he
                 ++dst;
             }
 
-            srcRow += readStride.value();
-            dstRow += destStride.value();
+            srcRow += readStride;
+            dstRow += destStride;
         }
 
         return true;
@@ -1394,35 +1394,47 @@ IsIntegerFormatAndTypeUnpackable(GLenum format, GLenum type)
 }
 
 
-CheckedUint32
-WebGLContext::GetPackSize(uint32_t width, uint32_t height, uint8_t bytesPerPixel,
-                          CheckedUint32* const out_startOffset,
-                          CheckedUint32* const out_rowStride)
+bool
+WebGLContext::ValidatePackSize(const char* funcName, uint32_t width, uint32_t height,
+                               uint8_t bytesPerPixel, uint32_t* const out_rowStride,
+                               uint32_t* const out_endOffset)
 {
     if (!width || !height) {
-        *out_startOffset = 0;
         *out_rowStride = 0;
-        return 0;
+        *out_endOffset = 0;
+        return true;
     }
 
-    const CheckedUint32 pixelsPerRow = (mPixelStore_PackRowLength ? mPixelStore_PackRowLength
-                                                                  : width);
-    const CheckedUint32 skipPixels = mPixelStore_PackSkipPixels;
-    const CheckedUint32 skipRows = mPixelStore_PackSkipRows;
-    const CheckedUint32 alignment = mPixelStore_PackAlignment;
-
     
-    const auto totalBytesPerRow = bytesPerPixel * pixelsPerRow;
-    const auto rowStride = RoundUpToMultipleOf(totalBytesPerRow, alignment);
 
-    const auto startOffset = rowStride * skipRows + bytesPerPixel * skipPixels;
-    const auto usedBytesPerRow = bytesPerPixel * width;
+    const auto rowLength = (mPixelStore_PackRowLength ? mPixelStore_PackRowLength
+                                                      : width);
+    const auto skipPixels = mPixelStore_PackSkipPixels;
+    const auto skipRows = mPixelStore_PackSkipRows;
+    const auto alignment = mPixelStore_PackAlignment;
 
-    const auto bytesNeeded = startOffset + rowStride * (height - 1) + usedBytesPerRow;
+    const auto usedPixelsPerRow = CheckedUint32(skipPixels) + width;
+    const auto usedRowsPerImage = CheckedUint32(skipRows) + height;
 
-    *out_startOffset = startOffset;
-    *out_rowStride = rowStride;
-    return bytesNeeded;
+    if (!usedPixelsPerRow.isValid() || usedPixelsPerRow.value() > rowLength) {
+        ErrorInvalidOperation("%s: SKIP_PIXELS + width > ROW_LENGTH.", funcName);
+        return false;
+    }
+
+    const auto rowLengthBytes = CheckedUint32(rowLength) * bytesPerPixel;
+    const auto rowStride = RoundUpToMultipleOf(rowLengthBytes, alignment);
+
+    const auto usedBytesPerRow = usedPixelsPerRow * bytesPerPixel;
+    const auto usedBytesPerImage = (usedRowsPerImage - 1) * rowStride + usedBytesPerRow;
+
+    if (!rowStride.isValid() || !usedBytesPerImage.isValid()) {
+        ErrorInvalidOperation("%s: Invalid UNPACK_ params.", funcName);
+        return false;
+    }
+
+    *out_rowStride = rowStride.value();
+    *out_endOffset = usedBytesPerImage.value();
+    return true;
 }
 
 void
@@ -1431,6 +1443,7 @@ WebGLContext::ReadPixels(GLint x, GLint y, GLsizei width, GLsizei height, GLenum
                          const dom::Nullable<dom::ArrayBufferView>& pixels,
                          ErrorResult& out_error)
 {
+    const char funcName[] = "readPixels";
     if (IsContextLost())
         return;
 
@@ -1542,6 +1555,8 @@ WebGLContext::ReadPixels(GLint x, GLint y, GLsizei width, GLsizei height, GLenum
         MOZ_CRASH("GFX: bad `type`");
     }
 
+    
+
     const auto& view = pixels.Value();
 
     
@@ -1555,26 +1570,28 @@ WebGLContext::ReadPixels(GLint x, GLint y, GLsizei width, GLsizei height, GLenum
     if (dataType != requiredDataType)
         return ErrorInvalidOperation("readPixels: Mismatched type/pixels types");
 
-    CheckedUint32 startOffset;
-    CheckedUint32 rowStride;
-    const auto bytesNeeded = GetPackSize(width, height, bytesPerPixel, &startOffset,
-                                         &rowStride);
-    if (!bytesNeeded.isValid()) {
-        ErrorInvalidOperation("readPixels: Integer overflow computing the needed buffer"
-                              " size.");
-        return;
-    }
-
-    if (bytesNeeded.value() > bytesAvailable) {
-        ErrorInvalidOperation("readPixels: buffer too small");
-        return;
-    }
-
     if (!data) {
         ErrorOutOfMemory("readPixels: buffer storage is null. Did we run out of memory?");
         out_error.Throw(NS_ERROR_OUT_OF_MEMORY);
         return;
     }
+
+    
+
+    uint32_t rowStride;
+    uint32_t bytesNeeded;
+    if (!ValidatePackSize(funcName, width, height, bytesPerPixel, &rowStride,
+                          &bytesNeeded))
+    {
+        return;
+    }
+
+    if (bytesNeeded > bytesAvailable) {
+        ErrorInvalidOperation("readPixels: buffer too small");
+        return;
+    }
+
+    
 
     MakeContextCurrent();
 
@@ -1646,7 +1663,6 @@ WebGLContext::ReadPixels(GLint x, GLint y, GLsizei width, GLsizei height, GLenum
     Intersect(srcHeight, y, height, &readY, &writeY, &rwHeight);
 
     if (rwWidth == uint32_t(width) && rwHeight == uint32_t(height)) {
-        
         DoReadPixelsAndConvert(x, y, width, height, format, type, data, auxReadFormat,
                                auxReadType);
         return;
@@ -1663,34 +1679,6 @@ WebGLContext::ReadPixels(GLint x, GLint y, GLsizei width, GLsizei height, GLenum
                     " may be slow.");
 
     
-
-    
-    
-    
-
-    
-    
-    
-
-    
-    
-
-    if (mPixelStore_PackRowLength ||
-        mPixelStore_PackSkipPixels ||
-        mPixelStore_PackSkipRows)
-    {
-        
-        uint8_t* row = (uint8_t*)data + startOffset.value();
-        const auto bytesPerRow = bytesPerPixel * width;
-        for (uint32_t j = 0; j < uint32_t(height); j++) {
-            std::memset(row, 0, bytesPerRow);
-            row += rowStride.value();
-        }
-    } else {
-        std::memset(data, 0, bytesNeeded.value());
-    }
-
-    
     
 
     if (!rwWidth || !rwHeight) {
@@ -1701,7 +1689,7 @@ WebGLContext::ReadPixels(GLint x, GLint y, GLsizei width, GLsizei height, GLenum
 
     if (IsWebGL2()) {
         if (!mPixelStore_PackRowLength) {
-            gl->fPixelStorei(LOCAL_GL_PACK_ROW_LENGTH, width);
+            gl->fPixelStorei(LOCAL_GL_PACK_ROW_LENGTH, mPixelStore_PackSkipPixels + width);
         }
         gl->fPixelStorei(LOCAL_GL_PACK_SKIP_PIXELS, mPixelStore_PackSkipPixels + writeX);
         gl->fPixelStorei(LOCAL_GL_PACK_SKIP_ROWS, mPixelStore_PackSkipRows + writeY);
@@ -1715,12 +1703,12 @@ WebGLContext::ReadPixels(GLint x, GLint y, GLsizei width, GLsizei height, GLenum
     } else {
         
 
-        uint8_t* row = (uint8_t*)data + startOffset.value() + writeX * bytesPerPixel;
-        row += writeY * rowStride.value();
+        uint8_t* row = (uint8_t*)data + writeX * bytesPerPixel;
+        row += writeY * rowStride;
         for (uint32_t j = 0; j < rwHeight; j++) {
             DoReadPixelsAndConvert(readX, readY+j, rwWidth, 1, format, type, row,
                                    auxReadFormat, auxReadType);
-            row += rowStride.value();
+            row += rowStride;
         }
     }
 }
