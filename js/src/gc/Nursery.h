@@ -310,6 +310,9 @@ class Nursery
     bool enableProfiling_;
 
     
+    int64_t reportTenurings_;
+
+    
 
     enum class ProfileKey
     {
