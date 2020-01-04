@@ -226,6 +226,7 @@
     { name: 'sort', shortName: 'sor' },
     { name: 'substitute', shortName: 's', possiblyAsync: true },
     { name: 'nohlsearch', shortName: 'noh' },
+    { name: 'yank', shortName: 'y' },
     { name: 'delmarks', shortName: 'delm' },
     { name: 'registers', shortName: 'reg', excludeFromCommandHistory: true },
     { name: 'global', shortName: 'g' }
@@ -641,7 +642,7 @@
         jumpList: createCircularJumpList(),
         macroModeState: new MacroModeState,
         
-        lastChararacterSearch: {increment:0, forward:true, selectedCharacter:''},
+        lastCharacterSearch: {increment:0, forward:true, selectedCharacter:''},
         registerController: new RegisterController({}),
         
         searchHistoryController: new HistoryController({}),
@@ -1047,7 +1048,7 @@
     };
     function HistoryController() {
         this.historyBuffer = [];
-        this.iterator;
+        this.iterator = 0;
         this.initialPrefix = null;
     }
     HistoryController.prototype = {
@@ -1909,7 +1910,7 @@
       },
 
       repeatLastCharacterSearch: function(cm, head, motionArgs) {
-        var lastSearch = vimGlobalState.lastChararacterSearch;
+        var lastSearch = vimGlobalState.lastCharacterSearch;
         var repeat = motionArgs.repeat;
         var forward = motionArgs.forward === lastSearch.forward;
         var increment = (lastSearch.increment ? 1 : 0) * (forward ? -1 : 1);
@@ -3088,9 +3089,9 @@
     }
 
     function recordLastCharacterSearch(increment, args) {
-        vimGlobalState.lastChararacterSearch.increment = increment;
-        vimGlobalState.lastChararacterSearch.forward = args.forward;
-        vimGlobalState.lastChararacterSearch.selectedCharacter = args.selectedCharacter;
+        vimGlobalState.lastCharacterSearch.increment = increment;
+        vimGlobalState.lastCharacterSearch.forward = args.forward;
+        vimGlobalState.lastCharacterSearch.selectedCharacter = args.selectedCharacter;
     }
 
     var symbolToMode = {
@@ -3289,8 +3290,6 @@
         line = cm.getLine(lineNum);
         pos = (dir > 0) ? 0 : line.length;
       }
-      
-      throw new Error('The impossible happened.');
     }
 
     
@@ -4514,13 +4513,20 @@
         if (CodeMirror.commands.save) {
           
           CodeMirror.commands.save(cm);
-        } else {
+        } else if (cm.save) {
           
           cm.save();
         }
       },
       nohlsearch: function(cm) {
         clearSearchHighlight(cm);
+      },
+      yank: function (cm) {
+        var cur = copyCursor(cm.getCursor());
+        var line = cur.line;
+        var lineText = cm.getLine(line);
+        vimGlobalState.registerController.pushText(
+          '0', 'yank', lineText, true, true);
       },
       delmarks: function(cm, params) {
         if (!params.argString || !trim(params.argString)) {
