@@ -7,6 +7,7 @@
 #define nsCoreUtils_h_
 
 #include "mozilla/EventForwards.h"
+#include "nsIAccessibleEvent.h"
 #include "nsIContent.h"
 #include "nsIDocument.h" 
 #include "nsIPresShell.h"
@@ -319,6 +320,16 @@ public:
     return aChar == ' ' || aChar == '\n' ||
       aChar == '\r' || aChar == '\t' || aChar == 0xa0;
   }
+
+  
+
+
+  static bool AccEventObserversExist();
+
+  
+
+
+  static void DispatchAccEvent(RefPtr<nsIAccessibleEvent> aEvent);
 };
 
 #endif
