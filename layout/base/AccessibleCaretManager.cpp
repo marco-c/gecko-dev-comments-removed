@@ -72,9 +72,9 @@ AccessibleCaretManager::sSelectionBarEnabled = false;
  bool
 AccessibleCaretManager::sCaretShownWhenLongTappingOnEmptyContent = false;
  bool
-AccessibleCaretManager::sCaretsExtendedVisibility = false;
- bool
 AccessibleCaretManager::sCaretsAlwaysTilt = false;
+ bool
+AccessibleCaretManager::sCaretsAlwaysShowWhenScrolling = true;
  bool
 AccessibleCaretManager::sCaretsScriptUpdates = false;
  bool
@@ -102,10 +102,10 @@ AccessibleCaretManager::AccessibleCaretManager(nsIPresShell* aPresShell)
                                  "layout.accessiblecaret.bar.enabled");
     Preferences::AddBoolVarCache(&sCaretShownWhenLongTappingOnEmptyContent,
       "layout.accessiblecaret.caret_shown_when_long_tapping_on_empty_content");
-    Preferences::AddBoolVarCache(&sCaretsExtendedVisibility,
-                                 "layout.accessiblecaret.extendedvisibility");
     Preferences::AddBoolVarCache(&sCaretsAlwaysTilt,
                                  "layout.accessiblecaret.always_tilt");
+    Preferences::AddBoolVarCache(&sCaretsAlwaysShowWhenScrolling,
+      "layout.accessiblecaret.always_show_when_scrolling", true);
     Preferences::AddBoolVarCache(&sCaretsScriptUpdates,
       "layout.accessiblecaret.allow_script_change_updates");
     Preferences::AddBoolVarCache(&sCaretsAllowDraggingAcrossOtherCaret,
@@ -196,18 +196,6 @@ AccessibleCaretManager::HideCarets()
     AC_LOG("%s", __FUNCTION__);
     mFirstCaret->SetAppearance(Appearance::None);
     mSecondCaret->SetAppearance(Appearance::None);
-    DispatchCaretStateChangedEvent(CaretChangedReason::Visibilitychange);
-    CancelCaretTimeoutTimer();
-  }
-}
-
-void
-AccessibleCaretManager::DoNotShowCarets()
-{
-  if (mFirstCaret->IsLogicallyVisible() || mSecondCaret->IsLogicallyVisible()) {
-    AC_LOG("%s", __FUNCTION__);
-    mFirstCaret->SetAppearance(Appearance::NormalNotShown);
-    mSecondCaret->SetAppearance(Appearance::NormalNotShown);
     DispatchCaretStateChangedEvent(CaretChangedReason::Visibilitychange);
     CancelCaretTimeoutTimer();
   }
@@ -626,14 +614,19 @@ AccessibleCaretManager::OnScrollStart()
 {
   AC_LOG("%s", __FUNCTION__);
 
-  mFirstCaretAppearanceOnScrollStart = mFirstCaret->GetAppearance();
-  mSecondCaretAppearanceOnScrollStart = mSecondCaret->GetAppearance();
-
-  
-  if (sCaretsExtendedVisibility) {
-    DoNotShowCarets();
-  } else {
+  if (!sCaretsAlwaysShowWhenScrolling) {
+    
+    
+    mFirstCaretAppearanceOnScrollStart = mFirstCaret->GetAppearance();
+    mSecondCaretAppearanceOnScrollStart = mSecondCaret->GetAppearance();
     HideCarets();
+    return;
+  }
+
+  if (mFirstCaret->IsLogicallyVisible() || mSecondCaret->IsLogicallyVisible()) {
+    
+    
+    DispatchCaretStateChangedEvent(CaretChangedReason::Scroll);
   }
 }
 
@@ -644,8 +637,11 @@ AccessibleCaretManager::OnScrollEnd()
     return;
   }
 
-  mFirstCaret->SetAppearance(mFirstCaretAppearanceOnScrollStart);
-  mSecondCaret->SetAppearance(mSecondCaretAppearanceOnScrollStart);
+  if (!sCaretsAlwaysShowWhenScrolling) {
+    
+    mFirstCaret->SetAppearance(mFirstCaretAppearanceOnScrollStart);
+    mSecondCaret->SetAppearance(mSecondCaretAppearanceOnScrollStart);
+  }
 
   if (GetCaretMode() == CaretMode::Cursor) {
     if (!mFirstCaret->IsLogicallyVisible()) {

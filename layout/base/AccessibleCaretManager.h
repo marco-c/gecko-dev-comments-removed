@@ -135,10 +135,6 @@ protected:
   
   void HideCarets();
 
-  
-  
-  void DoNotShowCarets();
-
   void UpdateCaretsForCursorMode(UpdateCaretsHint aHint);
   void UpdateCaretsForSelectionMode(UpdateCaretsHint aHint);
 
@@ -300,11 +296,12 @@ protected:
 
   
   
-  static bool sCaretsExtendedVisibility;
+  static bool sCaretsAlwaysTilt;
 
   
   
-  static bool sCaretsAlwaysTilt;
+  
+  static bool sCaretsAlwaysShowWhenScrolling;
 
   
   
