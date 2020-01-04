@@ -145,7 +145,7 @@ public class GLController extends JNIObject {
         
         
         
-        if (mCompositorCreated) {
+        if (isServerSurfaceValid() && mCompositorCreated) {
             syncResumeResizeCompositor(width, height);
             mView.requestRender();
         }
