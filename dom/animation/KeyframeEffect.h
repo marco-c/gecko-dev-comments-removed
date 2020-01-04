@@ -120,8 +120,6 @@ struct AnimationPropertySegment
   StyleAnimationValue mFromValue, mToValue;
   Maybe<ComputedTimingFunction> mTimingFunction;
 
-  nsChangeHint mChangeHint;
-
   bool operator==(const AnimationPropertySegment& aOther) const {
     return mFromKey == aOther.mFromKey &&
            mToKey == aOther.mToKey &&
@@ -347,7 +345,7 @@ public:
 
   
   
-  void CalculateCumulativeChangeHint();
+  void CalculateCumulativeChangeHint(nsStyleContext* aStyleContext);
 
   
   
