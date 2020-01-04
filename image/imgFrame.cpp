@@ -76,6 +76,20 @@ AllocateBufferForImage(const IntSize& size, SurfaceFormat format)
   RefPtr<VolatileBuffer> buf = new VolatileBuffer();
   if (buf->Init(stride * size.height,
                 size_t(1) << gfxAlphaRecovery::GoodAlignmentLog2())) {
+    VolatileBufferPtr<uint8_t> vbufptr(buf);
+
+    if ((format == SurfaceFormat::B8G8R8X8) &&
+        (gfxPlatform::GetPlatform()->GetDefaultContentBackend() == BackendType::SKIA)) {
+      
+      
+      memset(vbufptr, 0xFF, stride * size.height);
+    } else if (buf->OnHeap()) {
+      
+      
+      
+      memset(vbufptr, 0, stride * size.height);
+    }
+
     return buf.forget();
   }
 
@@ -209,11 +223,7 @@ imgFrame::InitForDecoder(const nsIntSize& aImageSize,
       mAborted = true;
       return NS_ERROR_OUT_OF_MEMORY;
     }
-    if (mVBuf->OnHeap()) {
-      int32_t stride = VolatileSurfaceStride(mFrameRect.Size(), mFormat);
-      VolatileBufferPtr<uint8_t> ptr(mVBuf);
-      memset(ptr, 0, stride * mFrameRect.height);
-    }
+
     mImageSurface = CreateLockedSurface(mVBuf, mFrameRect.Size(), mFormat);
 
     if (!mImageSurface) {
@@ -269,9 +279,7 @@ imgFrame::InitWithDrawable(gfxDrawable* aDrawable,
       mAborted = true;
       return NS_ERROR_OUT_OF_MEMORY;
     }
-    if (mVBuf->OnHeap()) {
-      memset(ptr, 0, stride * mFrameRect.height);
-    }
+
     mImageSurface = CreateLockedSurface(mVBuf, mFrameRect.Size(), mFormat);
 
     target = gfxPlatform::GetPlatform()->
@@ -323,6 +331,23 @@ imgFrame::InitWithDrawable(gfxDrawable* aDrawable,
   return NS_OK;
 }
 
+bool
+imgFrame::CanOptimizeOpaqueImage()
+{
+  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_ASSERT(!ShutdownTracker::ShutdownHasStarted());
+  mMonitor.AssertCurrentThreadOwns();
+
+  
+  
+  
+  
+  
+  
+  return mHasNoAlpha && mFormat == SurfaceFormat::B8G8R8A8 && mImageSurface &&
+         (gfxPlatform::GetPlatform()->GetDefaultContentBackend() != BackendType::SKIA);
+}
+
 nsresult
 imgFrame::Optimize()
 {
@@ -344,6 +369,12 @@ imgFrame::Optimize()
   
   if (ShutdownTracker::ShutdownHasStarted()) {
     return NS_OK;
+  }
+
+  
+  if (CanOptimizeOpaqueImage()) {
+    mFormat = SurfaceFormat::B8G8R8X8;
+    mImageSurface = CreateLockedSurface(mVBuf, mFrameRect.Size(), mFormat);
   }
 
   if (!mOptimizable || gDisableOptimize) {
@@ -835,14 +866,6 @@ imgFrame::UnlockImageData()
       nsCOMPtr<nsIRunnable> runnable = new UnlockImageDataRunnable(this);
       NS_DispatchToMainThread(runnable);
       return NS_OK;
-    }
-
-    
-    
-    
-    if (mHasNoAlpha && mFormat == SurfaceFormat::B8G8R8A8 && mImageSurface) {
-      mFormat = SurfaceFormat::B8G8R8X8;
-      mImageSurface = CreateLockedSurface(mVBuf, mFrameRect.Size(), mFormat);
     }
 
     
