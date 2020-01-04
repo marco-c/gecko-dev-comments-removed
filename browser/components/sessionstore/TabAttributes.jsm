@@ -9,6 +9,14 @@ this.EXPORTED_SYMBOLS = ["TabAttributes"];
 
 
 
+
+
+
+const ATTRIBUTES_TO_SKIP = new Set(["image", "muted", "pending"]);
+
+
+
+
 this.TabAttributes = Object.freeze({
   persist: function (name) {
     return TabAttributesInternal.persist(name);
@@ -26,16 +34,8 @@ this.TabAttributes = Object.freeze({
 var TabAttributesInternal = {
   _attrs: new Set(),
 
-  
-  
-  
-  
-  
-  
-  _skipAttrs: new Set(["image", "muted", "pending"]),
-
   persist: function (name) {
-    if (this._attrs.has(name) || this._skipAttrs.has(name)) {
+    if (this._attrs.has(name) || ATTRIBUTES_TO_SKIP.has(name)) {
       return false;
     }
 
@@ -63,7 +63,7 @@ var TabAttributesInternal = {
 
     
     for (let name in data) {
-      if (!this._skipAttrs.has(name)) {
+      if (!ATTRIBUTES_TO_SKIP.has(name)) {
         tab.setAttribute(name, data[name]);
       }
     }

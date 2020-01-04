@@ -784,10 +784,7 @@ var SessionStoreInternal = {
         
         
         
-        
-        
-        if (!browser.userTypedValue && uri && !data.isRemotenessUpdate &&
-            !win.gInitialPages.includes(uri)) {
+        if (!browser.userTypedValue && uri && !win.gInitialPages.includes(uri)) {
           browser.userTypedValue = uri;
         }
 
@@ -3338,8 +3335,7 @@ var SessionStoreInternal = {
       browser.messageManager.sendAsyncMessage("SessionStore:restoreHistory", {
         tabData: tabData,
         epoch: epoch,
-        loadArguments: aLoadArguments,
-        isRemotenessUpdate,
+        loadArguments: aLoadArguments
       });
 
     }
