@@ -212,75 +212,6 @@ public:
   }
 };
 
-
-template<>
-class nsAutoRefTraits<HGLOBAL>
-{
-public:
-  typedef HGLOBAL RawRef;
-  static RawRef Void()
-  {
-    return nullptr;
-  }
-
-  static void Release(RawRef hGlobal)
-  {
-    if (hGlobal != Void()) {
-      ::GlobalFree(hGlobal);
-    }
-  }
-};
-
-
-
-
-
-class HPRINTER {
-public:
-  HPRINTER(HANDLE hPrinter) : m_hPrinter(hPrinter)
-  {
-  }
-
-  operator HANDLE() const
-  {
-    return m_hPrinter;
-  }
-
-  HANDLE* operator&()
-  {
-    return &m_hPrinter;
-  }
-
-private:
-    HANDLE m_hPrinter;
-};
-
-
-
-
-
-extern "C" BOOL WINAPI ClosePrinter(HANDLE hPrinter);
-
-
-template<>
-class nsAutoRefTraits<HPRINTER>
-{
-public:
-  typedef HPRINTER RawRef;
-  static RawRef Void()
-  {
-    return nullptr;
-  }
-
-  static void Release(RawRef hPrinter)
-  {
-    if (hPrinter != Void()) {
-      ::ClosePrinter(hPrinter);
-    }
-  }
-};
-
-
 typedef nsAutoRef<HKEY> nsAutoRegKey;
 typedef nsAutoRef<HDC> nsAutoHDC;
 typedef nsAutoRef<HBRUSH> nsAutoBrush;
@@ -290,8 +221,6 @@ typedef nsAutoRef<SC_HANDLE> nsAutoServiceHandle;
 typedef nsAutoRef<HANDLE> nsAutoHandle;
 typedef nsAutoRef<HMODULE> nsModuleHandle;
 typedef nsAutoRef<DEVMODEW*> nsAutoDevMode;
-typedef nsAutoRef<HGLOBAL> nsAutoGlobalMem;
-typedef nsAutoRef<HPRINTER> nsAutoPrinter;
 
 namespace {
 
