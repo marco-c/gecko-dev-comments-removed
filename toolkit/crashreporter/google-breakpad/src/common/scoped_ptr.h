@@ -46,185 +46,239 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
 #ifndef COMMON_SCOPED_PTR_H_
 #define COMMON_SCOPED_PTR_H_
 
-#include <cstddef>            
-#include <assert.h>           
-#include <stdlib.h>           
+
+
+
+
+#include <assert.h>
+#include <stddef.h>
+#include <stdlib.h>
 
 namespace google_breakpad {
 
-template <typename T>
+
+
+
+
+
+
+
+
+
+template <class C>
 class scoped_ptr {
- private:
-
-  T* ptr;
-
-  scoped_ptr(scoped_ptr const &);
-  scoped_ptr & operator=(scoped_ptr const &);
-
  public:
 
-  typedef T element_type;
+  
+  typedef C element_type;
 
-  explicit scoped_ptr(T* p = 0): ptr(p) {}
+  
+  
+  
+  explicit scoped_ptr(C* p = NULL) : ptr_(p) { }
 
+  
+  
   ~scoped_ptr() {
-    typedef char type_must_be_complete[sizeof(T)];
-    delete ptr;
+    enum { type_must_be_complete = sizeof(C) };
+    delete ptr_;
   }
 
-  void reset(T* p = 0) {
-    typedef char type_must_be_complete[sizeof(T)];
-
-    if (ptr != p) {
-      delete ptr;
-      ptr = p;
+  
+  
+  
+  void reset(C* p = NULL) {
+    if (p != ptr_) {
+      enum { type_must_be_complete = sizeof(C) };
+      delete ptr_;
+      ptr_ = p;
     }
   }
 
-  T& operator*() const {
-    assert(ptr != 0);
-    return *ptr;
+  
+  
+  C& operator*() const {
+    assert(ptr_ != NULL);
+    return *ptr_;
   }
-
-  T* operator->() const  {
-    assert(ptr != 0);
-    return ptr;
+  C* operator->() const  {
+    assert(ptr_ != NULL);
+    return ptr_;
   }
-
-  bool operator==(T* p) const {
-    return ptr == p;
-  }
-
-  bool operator!=(T* p) const {
-    return ptr != p;
-  }
-
-  T* get() const  {
-    return ptr;
-  }
-
-  void swap(scoped_ptr & b) {
-    T* tmp = b.ptr;
-    b.ptr = ptr;
-    ptr = tmp;
-  }
-
-  T* release() {
-    T* tmp = ptr;
-    ptr = 0;
-    return tmp;
-  }
-
- private:
+  C* get() const { return ptr_; }
 
   
-  template <typename U> bool operator==(scoped_ptr<U> const& p) const;
-  template <typename U> bool operator!=(scoped_ptr<U> const& p) const;
+  
+  
+  bool operator==(C* p) const { return ptr_ == p; }
+  bool operator!=(C* p) const { return ptr_ != p; }
+
+  
+  void swap(scoped_ptr& p2) {
+    C* tmp = ptr_;
+    ptr_ = p2.ptr_;
+    p2.ptr_ = tmp;
+  }
+
+  
+  
+  
+  
+  
+  C* release() {
+    C* retVal = ptr_;
+    ptr_ = NULL;
+    return retVal;
+  }
+
+ private:
+  C* ptr_;
+
+  
+  
+  
+  template <class C2> bool operator==(scoped_ptr<C2> const& p2) const;
+  template <class C2> bool operator!=(scoped_ptr<C2> const& p2) const;
+
+  
+  scoped_ptr(const scoped_ptr&);
+  void operator=(const scoped_ptr&);
 };
 
-template<typename T> inline
-void swap(scoped_ptr<T>& a, scoped_ptr<T>& b) {
-  a.swap(b);
+
+template <class C>
+void swap(scoped_ptr<C>& p1, scoped_ptr<C>& p2) {
+  p1.swap(p2);
 }
 
-template<typename T> inline
-bool operator==(T* p, const scoped_ptr<T>& b) {
-  return p == b.get();
+template <class C>
+bool operator==(C* p1, const scoped_ptr<C>& p2) {
+  return p1 == p2.get();
 }
 
-template<typename T> inline
-bool operator!=(T* p, const scoped_ptr<T>& b) {
-  return p != b.get();
+template <class C>
+bool operator!=(C* p1, const scoped_ptr<C>& p2) {
+  return p1 != p2.get();
 }
 
 
 
 
 
-template<typename T>
+
+
+
+
+
+template <class C>
 class scoped_array {
- private:
-
-  T* ptr;
-
-  scoped_array(scoped_array const &);
-  scoped_array & operator=(scoped_array const &);
-
  public:
 
-  typedef T element_type;
+  
+  typedef C element_type;
 
-  explicit scoped_array(T* p = 0) : ptr(p) {}
+  
+  
+  
+  explicit scoped_array(C* p = NULL) : array_(p) { }
 
+  
+  
   ~scoped_array() {
-    typedef char type_must_be_complete[sizeof(T)];
-    delete[] ptr;
+    enum { type_must_be_complete = sizeof(C) };
+    delete[] array_;
   }
 
-  void reset(T* p = 0) {
-    typedef char type_must_be_complete[sizeof(T)];
-
-    if (ptr != p) {
-      delete [] ptr;
-      ptr = p;
+  
+  
+  
+  void reset(C* p = NULL) {
+    if (p != array_) {
+      enum { type_must_be_complete = sizeof(C) };
+      delete[] array_;
+      array_ = p;
     }
   }
 
-  T& operator[](std::ptrdiff_t i) const {
-    assert(ptr != 0);
+  
+  
+  C& operator[](ptrdiff_t i) const {
     assert(i >= 0);
-    return ptr[i];
+    assert(array_ != NULL);
+    return array_[i];
   }
 
-  bool operator==(T* p) const {
-    return ptr == p;
+  
+  
+  C* get() const {
+    return array_;
   }
 
-  bool operator!=(T* p) const {
-    return ptr != p;
+  
+  
+  
+  bool operator==(C* p) const { return array_ == p; }
+  bool operator!=(C* p) const { return array_ != p; }
+
+  
+  void swap(scoped_array& p2) {
+    C* tmp = array_;
+    array_ = p2.array_;
+    p2.array_ = tmp;
   }
 
-  T* get() const {
-    return ptr;
-  }
-
-  void swap(scoped_array & b) {
-    T* tmp = b.ptr;
-    b.ptr = ptr;
-    ptr = tmp;
-  }
-
-  T* release() {
-    T* tmp = ptr;
-    ptr = 0;
-    return tmp;
+  
+  
+  
+  
+  
+  C* release() {
+    C* retVal = array_;
+    array_ = NULL;
+    return retVal;
   }
 
  private:
+  C* array_;
 
   
-  template <typename U> bool operator==(scoped_array<U> const& p) const;
-  template <typename U> bool operator!=(scoped_array<U> const& p) const;
+  template <class C2> bool operator==(scoped_array<C2> const& p2) const;
+  template <class C2> bool operator!=(scoped_array<C2> const& p2) const;
+
+  
+  scoped_array(const scoped_array&);
+  void operator=(const scoped_array&);
 };
 
-template<class T> inline
-void swap(scoped_array<T>& a, scoped_array<T>& b) {
-  a.swap(b);
+
+template <class C>
+void swap(scoped_array<C>& p1, scoped_array<C>& p2) {
+  p1.swap(p2);
 }
 
-template<typename T> inline
-bool operator==(T* p, const scoped_array<T>& b) {
-  return p == b.get();
+template <class C>
+bool operator==(C* p1, const scoped_array<C>& p2) {
+  return p1 == p2.get();
 }
 
-template<typename T> inline
-bool operator!=(T* p, const scoped_array<T>& b) {
-  return p != b.get();
+template <class C>
+bool operator!=(C* p1, const scoped_array<C>& p2) {
+  return p1 != p2.get();
 }
-
 
 
 
@@ -238,95 +292,110 @@ class ScopedPtrMallocFree {
 
 
 
-template<typename T, typename FreeProc = ScopedPtrMallocFree>
+template<class C, class FreeProc = ScopedPtrMallocFree>
 class scoped_ptr_malloc {
- private:
-
-  T* ptr;
-
-  scoped_ptr_malloc(scoped_ptr_malloc const &);
-  scoped_ptr_malloc & operator=(scoped_ptr_malloc const &);
-
  public:
 
-  typedef T element_type;
+  
+  typedef C element_type;
 
-  explicit scoped_ptr_malloc(T* p = 0): ptr(p) {}
+  
+  
+  
+  
+  
+  explicit scoped_ptr_malloc(C* p = NULL): ptr_(p) {}
 
+  
   ~scoped_ptr_malloc() {
-    typedef char type_must_be_complete[sizeof(T)];
-    free_((void*) ptr);
+    reset();
   }
 
-  void reset(T* p = 0) {
-    typedef char type_must_be_complete[sizeof(T)];
-
-    if (ptr != p) {
-      free_((void*) ptr);
-      ptr = p;
+  
+  
+  
+  void reset(C* p = NULL) {
+    if (ptr_ != p) {
+      FreeProc free_proc;
+      free_proc(ptr_);
+      ptr_ = p;
     }
   }
 
-  T& operator*() const {
-    assert(ptr != 0);
-    return *ptr;
+  
+  
+  
+  C& operator*() const {
+    assert(ptr_ != NULL);
+    return *ptr_;
   }
 
-  T* operator->() const {
-    assert(ptr != 0);
-    return ptr;
+  C* operator->() const {
+    assert(ptr_ != NULL);
+    return ptr_;
   }
 
-  bool operator==(T* p) const {
-    return ptr == p;
+  C* get() const {
+    return ptr_;
   }
 
-  bool operator!=(T* p) const {
-    return ptr != p;
+  
+  
+  
+  
+  
+  bool operator==(C* p) const {
+    return ptr_ == p;
   }
 
-  T* get() const {
-    return ptr;
+  bool operator!=(C* p) const {
+    return ptr_ != p;
   }
 
+  
   void swap(scoped_ptr_malloc & b) {
-    T* tmp = b.ptr;
-    b.ptr = ptr;
-    ptr = tmp;
+    C* tmp = b.ptr_;
+    b.ptr_ = ptr_;
+    ptr_ = tmp;
   }
 
-  T* release() {
-    T* tmp = ptr;
-    ptr = 0;
+  
+  
+  
+  
+  
+  C* release() {
+    C* tmp = ptr_;
+    ptr_ = NULL;
     return tmp;
   }
 
  private:
+  C* ptr_;
 
   
-  template <typename U, typename GP>
-  bool operator==(scoped_ptr_malloc<U, GP> const& p) const;
-  template <typename U, typename GP>
-  bool operator!=(scoped_ptr_malloc<U, GP> const& p) const;
+  template <class C2, class GP>
+  bool operator==(scoped_ptr_malloc<C2, GP> const& p) const;
+  template <class C2, class GP>
+  bool operator!=(scoped_ptr_malloc<C2, GP> const& p) const;
 
-  static FreeProc const free_;
+  
+  scoped_ptr_malloc(const scoped_ptr_malloc&);
+  void operator=(const scoped_ptr_malloc&);
 };
 
-template<typename T, typename FP>
-FP const scoped_ptr_malloc<T,FP>::free_ = FP();
-
-template<typename T, typename FP> inline
-void swap(scoped_ptr_malloc<T,FP>& a, scoped_ptr_malloc<T,FP>& b) {
+template<class C, class FP> inline
+void swap(scoped_ptr_malloc<C, FP>& a, scoped_ptr_malloc<C, FP>& b) {
   a.swap(b);
 }
 
-template<typename T, typename FP> inline
-bool operator==(T* p, const scoped_ptr_malloc<T,FP>& b) {
+template<class C, class FP> inline
+bool operator==(C* p, const scoped_ptr_malloc<C, FP>& b) {
   return p == b.get();
 }
 
-template<typename T, typename FP> inline
-bool operator!=(T* p, const scoped_ptr_malloc<T,FP>& b) {
+template<class C, class FP> inline
+bool operator!=(C* p, const scoped_ptr_malloc<C, FP>& b) {
   return p != b.get();
 }
 

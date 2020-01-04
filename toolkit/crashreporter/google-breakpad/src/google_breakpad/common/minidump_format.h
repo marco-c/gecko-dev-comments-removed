@@ -97,7 +97,6 @@ typedef struct {
 #define MD_CONTEXT_IA64  0x00080000  /* CONTEXT_IA64 */
 
 #define MD_CONTEXT_SHX   0x000000c0  /* CONTEXT_SH4 (Super-H, includes SH3) */
-#define MD_CONTEXT_MIPS  0x00010000  /* CONTEXT_R4000 (same value as x86?) */
 #define MD_CONTEXT_ALPHA 0x00020000  /* CONTEXT_ALPHA */
 
 
@@ -115,6 +114,8 @@ typedef struct {
 
 #include "minidump_cpu_amd64.h"
 #include "minidump_cpu_arm.h"
+#include "minidump_cpu_arm64.h"
+#include "minidump_cpu_mips.h"
 #include "minidump_cpu_ppc.h"
 #include "minidump_cpu_ppc64.h"
 #include "minidump_cpu_sparc.h"
@@ -529,10 +530,11 @@ typedef struct {
   uint64_t  exception_information[MD_EXCEPTION_MAXIMUM_PARAMETERS];
 } MDException;  
 
-#include "minidump_exception_win32.h"
-#include "minidump_exception_mac.h"
 #include "minidump_exception_linux.h"
+#include "minidump_exception_mac.h"
+#include "minidump_exception_ps3.h"
 #include "minidump_exception_solaris.h"
+#include "minidump_exception_win32.h"
 
 typedef struct {
   uint32_t             thread_id;         
@@ -552,18 +554,47 @@ typedef union {
     uint32_t amd_extended_cpu_features;  
   } x86_cpu_info;
   struct {
+    uint32_t cpuid;
+    uint32_t elf_hwcaps;    
+  } arm_cpu_info;
+  struct {
     uint64_t processor_features[2];
   } other_cpu_info;
 } MDCPUInformation;  
 
+
+
+typedef enum {
+  MD_CPU_ARM_ELF_HWCAP_SWP       = (1 << 0),
+  MD_CPU_ARM_ELF_HWCAP_HALF      = (1 << 1),
+  MD_CPU_ARM_ELF_HWCAP_THUMB     = (1 << 2),
+  MD_CPU_ARM_ELF_HWCAP_26BIT     = (1 << 3),
+  MD_CPU_ARM_ELF_HWCAP_FAST_MULT = (1 << 4),
+  MD_CPU_ARM_ELF_HWCAP_FPA       = (1 << 5),
+  MD_CPU_ARM_ELF_HWCAP_VFP       = (1 << 6),
+  MD_CPU_ARM_ELF_HWCAP_EDSP      = (1 << 7),
+  MD_CPU_ARM_ELF_HWCAP_JAVA      = (1 << 8),
+  MD_CPU_ARM_ELF_HWCAP_IWMMXT    = (1 << 9),
+  MD_CPU_ARM_ELF_HWCAP_CRUNCH    = (1 << 10),
+  MD_CPU_ARM_ELF_HWCAP_THUMBEE   = (1 << 11),
+  MD_CPU_ARM_ELF_HWCAP_NEON      = (1 << 12),
+  MD_CPU_ARM_ELF_HWCAP_VFPv3     = (1 << 13),
+  MD_CPU_ARM_ELF_HWCAP_VFPv3D16  = (1 << 14),
+  MD_CPU_ARM_ELF_HWCAP_TLS       = (1 << 15),
+  MD_CPU_ARM_ELF_HWCAP_VFPv4     = (1 << 16),
+  MD_CPU_ARM_ELF_HWCAP_IDIVA     = (1 << 17),
+  MD_CPU_ARM_ELF_HWCAP_IDIVT     = (1 << 18),
+} MDCPUInformationARMElfHwCaps;
 
 typedef struct {
   
 
   uint16_t         processor_architecture;
   uint16_t         processor_level;         
+                                            
   uint16_t         processor_revision;      
 
+                                            
 
   uint8_t          number_of_processors;
   uint8_t          product_type;            
@@ -605,6 +636,8 @@ typedef enum {
   MD_CPU_ARCHITECTURE_X86_WIN64 = 10,
       
   MD_CPU_ARCHITECTURE_SPARC     = 0x8001, 
+  MD_CPU_ARCHITECTURE_PPC64     = 0x8002, 
+  MD_CPU_ARCHITECTURE_ARM64     = 0x8003, 
   MD_CPU_ARCHITECTURE_UNKNOWN   = 0xffff  
 } MDCPUArchitecture;
 
@@ -622,8 +655,58 @@ typedef enum {
   MD_OS_IOS           = 0x8102,  
   MD_OS_LINUX         = 0x8201,  
   MD_OS_SOLARIS       = 0x8202,  
-  MD_OS_ANDROID       = 0x8203   
+  MD_OS_ANDROID       = 0x8203,  
+  MD_OS_PS3           = 0x8204,  
+  MD_OS_NACL          = 0x8205   
 } MDOSPlatform;
+
+typedef struct {
+  uint16_t year;
+  uint16_t month;
+  uint16_t day_of_week;
+  uint16_t day;
+  uint16_t hour;
+  uint16_t minute;
+  uint16_t second;
+  uint16_t milliseconds;
+} MDSystemTime;  
+
+typedef struct {
+  
+
+
+  int32_t bias;
+  
+
+
+  uint16_t standard_name[32];  
+  
+
+
+
+  MDSystemTime standard_date;
+  
+
+  int32_t standard_bias;
+  
+
+
+  uint16_t daylight_name[32];  
+  
+
+
+
+  MDSystemTime daylight_date;
+  
+
+  int32_t daylight_bias;
+} MDTimeZoneInformation;  
+
+
+#define MD_MAX_PATH 260
+
+
+
 
 
 typedef struct {
@@ -650,19 +733,68 @@ typedef struct {
   uint32_t processor_mhz_limit;
   uint32_t processor_max_idle_state;
   uint32_t processor_current_idle_state;
+
+  
+
+
+
+   
+  
+
+  uint32_t process_integrity_level;
+
+  
+
+  uint32_t process_execute_flags;
+
+  
+
+  uint32_t protected_process;
+
+  
+
+  uint32_t time_zone_id;
+  MDTimeZoneInformation time_zone;
+
+  
+
+
+
+
+  
+
+  uint16_t build_string[MD_MAX_PATH];  
+  uint16_t dbg_bld_str[40];            
 } MDRawMiscInfo;  
 
-#define MD_MISCINFO_SIZE 24
-#define MD_MISCINFO2_SIZE 44
+
+
+static const size_t MD_MISCINFO_SIZE =
+    offsetof(MDRawMiscInfo, processor_max_mhz);
+static const size_t MD_MISCINFO2_SIZE =
+    offsetof(MDRawMiscInfo, process_integrity_level);
+static const size_t MD_MISCINFO3_SIZE =
+    offsetof(MDRawMiscInfo, build_string[0]);
+static const size_t MD_MISCINFO4_SIZE = sizeof(MDRawMiscInfo);
 
 
 
 typedef enum {
-  MD_MISCINFO_FLAGS1_PROCESS_ID           = 0x00000001,
+  MD_MISCINFO_FLAGS1_PROCESS_ID            = 0x00000001,
       
-  MD_MISCINFO_FLAGS1_PROCESS_TIMES        = 0x00000002,
+  MD_MISCINFO_FLAGS1_PROCESS_TIMES         = 0x00000002,
       
-  MD_MISCINFO_FLAGS1_PROCESSOR_POWER_INFO = 0x00000004
+  MD_MISCINFO_FLAGS1_PROCESSOR_POWER_INFO  = 0x00000004,
+      
+  MD_MISCINFO_FLAGS1_PROCESS_INTEGRITY     = 0x00000010,
+      
+  MD_MISCINFO_FLAGS1_PROCESS_EXECUTE_FLAGS = 0x00000020,
+      
+  MD_MISCINFO_FLAGS1_TIMEZONE              = 0x00000040,
+      
+  MD_MISCINFO_FLAGS1_PROTECTED_PROCESS     = 0x00000080,
+      
+  MD_MISCINFO_FLAGS1_BUILDSTRING           = 0x00000100,
       
 } MDMiscInfoFlags1;
 
@@ -799,20 +931,38 @@ typedef enum {
 
 
 
+
+
+
 typedef struct {
-  void*     addr;
+  uint32_t  addr;
   MDRVA     name;
-  void*     ld;
-} MDRawLinkMap;
+  uint32_t  ld;
+} MDRawLinkMap32;
 
 typedef struct {
   uint32_t  version;
-  MDRVA     map;
+  MDRVA     map;  
   uint32_t  dso_count;
-  void*     brk;
-  void*     ldbase;
-  void*     dynamic;
-} MDRawDebug;
+  uint32_t  brk;
+  uint32_t  ldbase;
+  uint32_t  dynamic;
+} MDRawDebug32;
+
+typedef struct {
+  uint64_t  addr;
+  MDRVA     name;
+  uint64_t  ld;
+} MDRawLinkMap64;
+
+typedef struct {
+  uint32_t  version;
+  MDRVA     map;  
+  uint32_t  dso_count;
+  uint64_t  brk;
+  uint64_t  ldbase;
+  uint64_t  dynamic;
+} MDRawDebug64;
 
 #if defined(_MSC_VER)
 #pragma warning(pop)

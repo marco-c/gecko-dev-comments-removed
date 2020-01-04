@@ -139,6 +139,11 @@ typedef struct {
 } MDRawContextSPARC;  
 
 
+enum MDSPARCRegisterNumbers {
+  MD_CONTEXT_SPARC_REG_SP = 14
+};
+
+
 
 
 

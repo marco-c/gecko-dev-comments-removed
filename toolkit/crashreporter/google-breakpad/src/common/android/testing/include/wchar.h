@@ -38,6 +38,9 @@
 
 #include_next <wchar.h>
 
+#if !defined(__aarch64__) && !defined(__x86_64__) && \
+    !(defined(__mips__) && _MIPS_SIM == _ABI64)
+
 
 
 #ifdef __cplusplus
@@ -68,5 +71,6 @@ static int inline wcscasecmp(const wchar_t* s1, const wchar_t* s2) {
 #ifdef __cplusplus
 }  
 #endif  
+#endif
 
 #endif  

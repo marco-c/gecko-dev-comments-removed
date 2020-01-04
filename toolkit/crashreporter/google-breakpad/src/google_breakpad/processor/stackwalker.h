@@ -54,7 +54,7 @@
 namespace google_breakpad {
 
 class CallStack;
-class MinidumpContext;
+class DumpContext;
 class StackFrameSymbolizer;
 
 using std::set;
@@ -75,15 +75,18 @@ class Stackwalker {
   
   
   
+  
+  
   bool Walk(CallStack* stack,
-            vector<const CodeModule*>* modules_without_symbols);
+            vector<const CodeModule*>* modules_without_symbols,
+            vector<const CodeModule*>* modules_with_corrupt_symbols);
 
   
   
   
   static Stackwalker* StackwalkerForCPU(
      const SystemInfo* system_info,
-     MinidumpContext* context,
+     DumpContext* context,
      MemoryRegion* memory,
      const CodeModules* modules,
      StackFrameSymbolizer* resolver_helper);
@@ -130,9 +133,16 @@ class Stackwalker {
   template<typename InstructionType>
   bool ScanForReturnAddress(InstructionType location_start,
                             InstructionType* location_found,
-                            InstructionType* ip_found) {
+                            InstructionType* ip_found,
+                            bool is_context_frame) {
+    
+    
+    const int search_words = is_context_frame ?
+      kRASearchWords * 4 :
+      kRASearchWords;
+
     return ScanForReturnAddress(location_start, location_found, ip_found,
-                                kRASearchWords);
+                                search_words);
   }
 
   

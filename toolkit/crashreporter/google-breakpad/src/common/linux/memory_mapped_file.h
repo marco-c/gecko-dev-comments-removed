@@ -33,6 +33,7 @@
 #ifndef COMMON_LINUX_MEMORY_MAPPED_FILE_H_
 #define COMMON_LINUX_MEMORY_MAPPED_FILE_H_
 
+#include <stddef.h>
 #include "common/basictypes.h"
 #include "common/memory_range.h"
 
@@ -47,7 +48,7 @@ class MemoryMappedFile {
 
   
   
-  explicit MemoryMappedFile(const char* path);
+  MemoryMappedFile(const char* path, size_t offset);
 
   ~MemoryMappedFile();
 
@@ -56,7 +57,7 @@ class MemoryMappedFile {
   
   
   
-  bool Map(const char* path);
+  bool Map(const char* path, size_t offset);
 
   
   

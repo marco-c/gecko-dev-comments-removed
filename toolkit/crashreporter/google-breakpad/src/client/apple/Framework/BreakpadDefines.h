@@ -62,6 +62,7 @@
 #define BREAKPAD_EMAIL                 "BreakpadEmail"
 #define BREAKPAD_SERVER_TYPE           "BreakpadServerType"
 #define BREAKPAD_SERVER_PARAMETER_DICT "BreakpadServerParameters"
+#define BREAKPAD_IN_PROCESS            "BreakpadInProcess"
 
 
 #define BREAKPAD_PROCESS_START_TIME       "BreakpadProcStartTime"

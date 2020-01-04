@@ -44,13 +44,8 @@
 #include <string>
 #include <vector>
 
-#include <assert.h>
-#include <stdlib.h>
-#include <stdio.h>
-
 #include "common/symbol_data.h"
 #include "common/using_std_string.h"
-#include "common/unique_string.h"
 #include "google_breakpad/common/breakpad_types.h"
 
 namespace google_breakpad {
@@ -79,8 +74,10 @@ class Module {
 
   
   struct File {
+    explicit File(const string &name_input) : name(name_input), source_id(0) {}
+
     
-    string name;
+    const string name;
 
     
     
@@ -90,6 +87,9 @@ class Module {
 
   
   struct Function {
+    Function(const string &name_input, const Address &address_input) :
+        name(name_input), address(address_input), size(0), parameter_size(0) {}
+
     
     
     static bool CompareByAddress(const Function *x, const Function *y) {
@@ -97,10 +97,11 @@ class Module {
     }
 
     
-    string name;
+    const string name;
 
     
-    Address address, size;
+    const Address address;
+    Address size;
 
     
     Address parameter_size;
@@ -125,7 +126,8 @@ class Module {
 
   
   struct Extern {
-    Address address;
+    explicit Extern(const Address &address_input) : address(address_input) {}
+    const Address address;
     string name;
   };
 
@@ -133,142 +135,7 @@ class Module {
   
   
   
-  enum ExprHow {
-    kExprInvalid = 1,
-    kExprPostfix,
-    kExprSimple,
-    kExprSimpleMem
-  };
-  struct Expr {
-    
-    Expr(const UniqueString* ident, long offset, bool deref) {
-      if (ident == ustr__empty()) {
-        Expr();
-      } else {
-        postfix_ = "";
-        ident_ = ident;
-        offset_ = offset;
-        how_ = deref ? kExprSimpleMem : kExprSimple;
-      }
-    }
-    
-    Expr(string postfix) {
-      if (postfix.empty()) {
-        Expr();
-      } else {
-        postfix_ = postfix;
-        ident_ = NULL;
-        offset_ = 0;
-        how_ = kExprPostfix;
-      }
-    }
-    
-    Expr() {
-      postfix_ = "";
-      ident_ = NULL;
-      offset_ = 0;
-      how_ = kExprInvalid;
-    }
-    bool isExprInvalid() const { return how_ == kExprInvalid; }
-
-    
-    
-    
-    string getExprPostfix() const {
-      switch (how_) {
-        case kExprPostfix:
-          return postfix_;
-        case kExprSimple:
-        case kExprSimpleMem: {
-          char buf[40];
-          sprintf(buf, " %ld %c%s", labs(offset_), offset_ < 0 ? '-' : '+',
-                                    how_ == kExprSimple ? "" : " ^");
-          return string(FromUniqueString(ident_)) + string(buf);
-        }
-        case kExprInvalid:
-        default:
-          assert(0 && "getExprPostfix: invalid Module::Expr type");
-          return "Expr::genExprPostfix: kExprInvalid";
-      }
-    }
-
-    bool operator==(const Expr& other) const {
-      return how_ == other.how_ &&
-          ident_ == other.ident_ &&
-          offset_ == other.offset_ &&
-          postfix_ == other.postfix_;
-    }
-
-    
-    Expr add_delta(long delta) {
-      if (delta == 0) {
-        return *this;
-      }
-      
-      
-      
-      
-      
-      
-      
-      
-      switch (how_) {
-        case kExprSimpleMem:
-        case kExprPostfix: {
-          char buf[40];
-          sprintf(buf, " %ld %c", labs(delta), delta < 0 ? '-' : '+');
-          return Expr(getExprPostfix() + string(buf));
-        }
-        case kExprSimple:
-          return Expr(ident_, offset_ + delta, false);
-        case kExprInvalid:
-        default:
-          assert(0 && "add_delta: invalid Module::Expr type");
-          
-          return Expr();
-      }
-    }
-
-    
-    Expr deref() {
-      
-      
-      
-      switch (how_) {
-        case kExprSimple: {
-          Expr t = *this;
-          t.how_ = kExprSimpleMem;
-          return t;
-        }
-        case kExprSimpleMem:
-        case kExprPostfix: {
-          return Expr(getExprPostfix() + " ^");
-        }
-        case kExprInvalid:
-        default:
-          assert(0 && "deref: invalid Module::Expr type");
-          
-          return Expr();
-      }
-    }
-
-    
-    const UniqueString* ident_;
-    
-    long    offset_;
-    
-    string  postfix_;
-    
-    ExprHow how_;
-
-    friend std::ostream& operator<<(std::ostream& stream, const Expr& expr);
-  };
-
-  
-  
-  
-  
-  typedef map<const UniqueString*, Expr> RuleMap;
+  typedef map<string, string> RuleMap;
 
   
   
@@ -377,18 +244,10 @@ class Module {
 
   
   
-  Function* FindFunctionByAddress(Address address);
-
-  
-  
   
   
   
   void GetExterns(vector<Extern *> *vec, vector<Extern *>::iterator i);
-
-  
-  
-  Extern* FindExternByAddress(Address address);
 
   
   
@@ -402,7 +261,7 @@ class Module {
   
   
   
-  void GetStackFrameEntries(vector<StackFrameEntry *> *vec);
+  void GetStackFrameEntries(vector<StackFrameEntry *> *vec) const;
 
   
   
@@ -428,6 +287,11 @@ class Module {
   
   
   bool Write(std::ostream &stream, SymbolData symbol_data);
+
+  string name() const { return name_; }
+  string os() const { return os_; }
+  string architecture() const { return architecture_; }
+  string identifier() const { return id_; }
 
  private:
   

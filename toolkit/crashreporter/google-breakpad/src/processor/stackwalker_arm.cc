@@ -41,7 +41,7 @@
 #include "google_breakpad/processor/source_line_resolver_interface.h"
 #include "google_breakpad/processor/stack_frame_cpu.h"
 #include "processor/cfi_frame_info.h"
-#include "common/logging.h"
+#include "processor/logging.h"
 #include "processor/stackwalker_arm.h"
 
 namespace google_breakpad {
@@ -81,20 +81,11 @@ StackFrameARM* StackwalkerARM::GetCallerByCFIFrameInfo(
     CFIFrameInfo* cfi_frame_info) {
   StackFrameARM* last_frame = static_cast<StackFrameARM*>(frames.back());
 
-  static const UniqueString *register_names[] = {
-    ToUniqueString("r0"),  ToUniqueString("r1"),
-    ToUniqueString("r2"),  ToUniqueString("r3"),
-    ToUniqueString("r4"),  ToUniqueString("r5"),
-    ToUniqueString("r6"),  ToUniqueString("r7"),
-    ToUniqueString("r8"),  ToUniqueString("r9"),
-    ToUniqueString("r10"), ToUniqueString("r11"),
-    ToUniqueString("r12"), ToUniqueString("sp"),
-    ToUniqueString("lr"),  ToUniqueString("pc"),
-    ToUniqueString("f0"),  ToUniqueString("f1"),
-    ToUniqueString("f2"),  ToUniqueString("f3"),
-    ToUniqueString("f4"),  ToUniqueString("f5"),
-    ToUniqueString("f6"),  ToUniqueString("f7"),
-    ToUniqueString("fps"), ToUniqueString("cpsr"),
+  static const char* register_names[] = {
+    "r0",  "r1",  "r2",  "r3",  "r4",  "r5",  "r6",  "r7",
+    "r8",  "r9",  "r10", "r11", "r12", "sp",  "lr",  "pc",
+    "f0",  "f1",  "f2",  "f3",  "f4",  "f5",  "f6",  "f7",
+    "fps", "cpsr",
     NULL
   };
 
@@ -102,7 +93,7 @@ StackFrameARM* StackwalkerARM::GetCallerByCFIFrameInfo(
   CFIFrameInfo::RegisterValueMap<uint32_t> callee_registers;
   for (int i = 0; register_names[i]; i++)
     if (last_frame->context_validity & StackFrameARM::RegisterValidFlag(i))
-      callee_registers.set(register_names[i], last_frame->context.iregs[i]);
+      callee_registers[register_names[i]] = last_frame->context.iregs[i];
 
   
   CFIFrameInfo::RegisterValueMap<uint32_t> caller_registers;
@@ -113,13 +104,13 @@ StackFrameARM* StackwalkerARM::GetCallerByCFIFrameInfo(
   
   scoped_ptr<StackFrameARM> frame(new StackFrameARM());
   for (int i = 0; register_names[i]; i++) {
-    bool found = false;
-    uint32_t v = caller_registers.get(&found, register_names[i]);
-    if (found) {
+    CFIFrameInfo::RegisterValueMap<uint32_t>::iterator entry =
+      caller_registers.find(register_names[i]);
+    if (entry != caller_registers.end()) {
       
       
       frame->context_validity |= StackFrameARM::RegisterValidFlag(i);
-      frame->context.iregs[i] = v;
+      frame->context.iregs[i] = entry->second;
     } else if (4 <= i && i <= 11 && (last_frame->context_validity &
                                      StackFrameARM::RegisterValidFlag(i))) {
       
@@ -132,18 +123,18 @@ StackFrameARM* StackwalkerARM::GetCallerByCFIFrameInfo(
   }
   
   if (!(frame->context_validity & StackFrameARM::CONTEXT_VALID_PC)) {
-    bool found = false;
-    uint32_t v = caller_registers.get(&found, ustr__ZDra());
-    if (found) {
+    CFIFrameInfo::RegisterValueMap<uint32_t>::iterator entry =
+      caller_registers.find(".ra");
+    if (entry != caller_registers.end()) {
       if (fp_register_ == -1) {
         frame->context_validity |= StackFrameARM::CONTEXT_VALID_PC;
-        frame->context.iregs[MD_CONTEXT_ARM_REG_PC] = v;
+        frame->context.iregs[MD_CONTEXT_ARM_REG_PC] = entry->second;
       } else {
         
         
         frame->context_validity |= StackFrameARM::CONTEXT_VALID_PC;
         frame->context_validity |= StackFrameARM::CONTEXT_VALID_LR;
-        frame->context.iregs[MD_CONTEXT_ARM_REG_LR] = v;
+        frame->context.iregs[MD_CONTEXT_ARM_REG_LR] = entry->second;
         frame->context.iregs[MD_CONTEXT_ARM_REG_PC] =
             last_frame->context.iregs[MD_CONTEXT_ARM_REG_LR];
       }
@@ -151,11 +142,11 @@ StackFrameARM* StackwalkerARM::GetCallerByCFIFrameInfo(
   }
   
   if (!(frame->context_validity & StackFrameARM::CONTEXT_VALID_SP)) {
-    bool found = false;
-    uint32_t v = caller_registers.get(&found, ustr__ZDcfa());
-    if (found) {
+    CFIFrameInfo::RegisterValueMap<uint32_t>::iterator entry =
+      caller_registers.find(".cfa");
+    if (entry != caller_registers.end()) {
       frame->context_validity |= StackFrameARM::CONTEXT_VALID_SP;
-      frame->context.iregs[MD_CONTEXT_ARM_REG_SP] = v;
+      frame->context.iregs[MD_CONTEXT_ARM_REG_SP] = entry->second;
     }
   }
 
@@ -175,14 +166,8 @@ StackFrameARM* StackwalkerARM::GetCallerByStackScan(
   uint32_t last_sp = last_frame->context.iregs[MD_CONTEXT_ARM_REG_SP];
   uint32_t caller_sp, caller_pc;
 
-  
-  
-  const int kRASearchWords = frames.size() == 1 ?
-    Stackwalker::kRASearchWords * 4 :
-    Stackwalker::kRASearchWords;
-
   if (!ScanForReturnAddress(last_sp, &caller_sp, &caller_pc,
-                            kRASearchWords)) {
+                            frames.size() == 1 )) {
     
     return NULL;
   }

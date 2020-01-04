@@ -62,6 +62,10 @@
   
   
   int uploadIntervalInSeconds_;
+
+  
+  
+  NSDictionary* uploadTimeParameters_;
 }
 
 
@@ -73,12 +77,19 @@
 
 
 
+- (void)resetConfiguration;
+
+
+
 - (void)setUploadingURL:(NSString*)url;
 
 
 
 
 - (void)setUploadInterval:(int)intervalInSeconds;
+
+
+- (void)setParametersToAddAtUploadTime:(NSDictionary*)uploadTimeParameters;
 
 
 
@@ -107,6 +118,23 @@
 
 
 - (void)hasReportToUpload:(void(^)(BOOL))callback;
+
+
+- (void)getCrashReportCount:(void(^)(int))callback;
+
+
+
+
+
+
+
+- (void)getNextReportConfigurationOrSendDelay:
+    (void(^)(NSDictionary*, int))callback;
+
+
+
+- (void)threadUnsafeSendReportWithConfiguration:(NSDictionary*)configuration
+                                withBreakpadRef:(BreakpadRef)ref;
 
 @end
 

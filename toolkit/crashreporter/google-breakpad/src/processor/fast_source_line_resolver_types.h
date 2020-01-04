@@ -112,7 +112,7 @@ public SourceLineResolverBase::PublicSymbol {
 
 class FastSourceLineResolver::Module: public SourceLineResolverBase::Module {
  public:
-  explicit Module(const string &name) : name_(name) { }
+  explicit Module(const string &name) : name_(name), is_corrupt_(false) { }
   virtual ~Module() { }
 
   
@@ -120,7 +120,12 @@ class FastSourceLineResolver::Module: public SourceLineResolverBase::Module {
   virtual void LookupAddress(StackFrame *frame) const;
 
   
-  virtual bool LoadMapFromMemory(char *memory_buffer);
+  virtual bool LoadMapFromMemory(char *memory_buffer,
+                                 size_t memory_buffer_size);
+
+  
+  
+  virtual bool IsCorrupt() const { return is_corrupt_; }
 
   
   
@@ -147,6 +152,7 @@ class FastSourceLineResolver::Module: public SourceLineResolverBase::Module {
   StaticMap<int, char> files_;
   StaticRangeMap<MemAddr, Function> functions_;
   StaticAddressMap<MemAddr, PublicSymbol> public_symbols_;
+  bool is_corrupt_;
 
   
   
