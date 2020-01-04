@@ -19,6 +19,7 @@
 #include "nsISupportsPrimitives.h"
 #include "nsIWindowWatcher.h"
 #include "nsPIDOMWindow.h"
+#include "nsGlobalWindow.h"
 #include "nsIDocShell.h"
 #include "nsIDocShellTreeItem.h"
 #include "nsIBaseWindow.h"
@@ -92,8 +93,8 @@ activateWindow( nsIDOMWindow *win ) {
 #endif
 
 
-struct Mutex {
-    Mutex( const char16_t *name )
+struct Win32Mutex {
+    Win32Mutex( const char16_t *name )
         : mName( name ),
           mHandle( 0 ),
           mState( -1 ) {
@@ -102,7 +103,7 @@ struct Mutex {
         printf( "CreateMutex error = 0x%08X\n", (int)GetLastError() );
 #endif
     }
-    ~Mutex() {
+    ~Win32Mutex() {
         if ( mHandle ) {
             
             Unlock();
@@ -669,7 +670,7 @@ nsNativeAppSupportWin::Start( bool *aResult ) {
                  MOZ_MUTEX_NAMESPACE,
                  NS_ConvertUTF8toUTF16(gAppData->name).get(),
                  MOZ_STARTUP_MUTEX_NAME );
-    Mutex startupLock = Mutex( mMutexName );
+    Win32Mutex startupLock = Win32Mutex( mMutexName );
 
     NS_ENSURE_TRUE( startupLock.Lock( MOZ_DDE_START_TIMEOUT ), NS_ERROR_FAILURE );
 
@@ -759,7 +760,7 @@ nsNativeAppSupportWin::Stop( bool *aResult ) {
     nsresult rv = NS_OK;
     *aResult = true;
 
-    Mutex ddeLock( mMutexName );
+    Win32Mutex ddeLock( mMutexName );
 
     if ( ddeLock.Lock( MOZ_DDE_STOP_TIMEOUT ) ) {
         if ( mConversations == 0 ) {
@@ -799,7 +800,7 @@ nsNativeAppSupportWin::Quit() {
     
     
     
-    Mutex mutexLock(mMutexName);
+    Win32Mutex mutexLock(mMutexName);
     NS_ENSURE_TRUE(mutexLock.Lock(MOZ_DDE_START_TIMEOUT), NS_ERROR_FAILURE);
 
     
@@ -1007,18 +1008,15 @@ nsNativeAppSupportWin::HandleDDENotification( UINT uType,
                         nsCOMPtr<nsIDOMWindow> navWin;
                         GetMostRecentWindow( NS_LITERAL_STRING( "navigator:browser" ).get(),
                                              getter_AddRefs( navWin ) );
-                        if ( !navWin ) {
+                        nsCOMPtr<nsPIDOMWindow> piNavWin = do_QueryInterface(navWin);
+                        if ( !piNavWin ) {
                             
                             break;
                         }
+
                         
-                        nsCOMPtr<nsIDOMWindow> content;
-                        navWin->GetContent( getter_AddRefs( content ) );
-                        if ( !content ) {
-                            break;
-                        }
-                        
-                        nsCOMPtr<nsPIDOMWindow> internalContent( do_QueryInterface( content ) );
+                        nsCOMPtr<nsIDOMWindow> internalContent_ = nsGlobalWindow::Cast(piNavWin)->GetContent();
+                        nsCOMPtr<nsPIDOMWindow> internalContent = do_QueryInterface(internalContent_);
                         if ( !internalContent ) {
                             break;
                         }
