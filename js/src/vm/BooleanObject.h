@@ -27,8 +27,7 @@ class BooleanObject : public NativeObject
 
 
 
-    static inline BooleanObject* create(JSContext* cx, bool b,
-                                        HandleObject proto = nullptr);
+    static inline BooleanObject* create(JSContext* cx, bool b);
 
     bool unbox() const {
         return getFixedSlot(PRIMITIVE_VALUE_SLOT).toBoolean();

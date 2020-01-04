@@ -41,15 +41,23 @@ JS_STATIC_ASSERT(MultilineFlag == JSREG_MULTILINE);
 JS_STATIC_ASSERT(StickyFlag == JSREG_STICKY);
 
 RegExpObject*
-js::RegExpAlloc(ExclusiveContext* cx, HandleObject proto )
+js::RegExpAlloc(ExclusiveContext* cx)
 {
     
     
-    RegExpObject* regexp = NewObjectWithClassProto<RegExpObject>(cx, proto, TenuredObject);
+    RegExpObject* regexp = NewBuiltinClassInstance<RegExpObject>(cx, TenuredObject);
     if (!regexp)
         return nullptr;
+
     regexp->initPrivate(nullptr);
     return regexp;
+}
+
+RegExpObject*
+js::InitializeRegExp(ExclusiveContext* cx, Handle<RegExpObject*> regexp, HandleAtom source,
+                     RegExpFlag flags)
+{
+    return regexp->init(cx, source, flags) ? regexp : nullptr;
 }
 
 
@@ -147,13 +155,6 @@ RegExpObject::trace(JSTracer* trc, JSObject* obj)
     }
 }
 
- bool
-RegExpObject::initFromAtom(ExclusiveContext* cx, Handle<RegExpObject*> regexp, HandleAtom source,
-                           RegExpFlag flags)
-{
-    return regexp->init(cx, source, flags);
-}
-
 const Class RegExpObject::class_ = {
     js_RegExp_str,
     JSCLASS_HAS_PRIVATE |
@@ -223,10 +224,7 @@ RegExpObject::createNoStatics(ExclusiveContext* cx, HandleAtom source, RegExpFla
     if (!regexp)
         return nullptr;
 
-    if (!RegExpObject::initFromAtom(cx, regexp, source, flags))
-        return nullptr;
-
-    return regexp;
+    return InitializeRegExp(cx, regexp, source, flags);
 }
 
 bool
@@ -896,10 +894,7 @@ js::CloneRegExpObject(JSContext* cx, JSObject* obj_)
         if (!clone)
             return nullptr;
 
-        if (!RegExpObject::initFromAtom(cx, clone, source, RegExpFlag(origFlags | staticsFlags)))
-            return nullptr;
-
-        return clone;
+        return InitializeRegExp(cx, clone, source, RegExpFlag(origFlags | staticsFlags));
     }
 
     
@@ -916,7 +911,7 @@ js::CloneRegExpObject(JSContext* cx, JSObject* obj_)
     if (!regex->getShared(cx, &g))
         return nullptr;
 
-    if (!RegExpObject::initFromAtom(cx, clone, source, g->getFlags()))
+    if (!InitializeRegExp(cx, clone, source, g->getFlags()))
         return nullptr;
 
     clone->setShared(*g.re());

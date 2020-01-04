@@ -339,11 +339,6 @@ Error(JSContext* cx, unsigned argc, Value* vp)
     CallArgs args = CallArgsFromVp(argc, vp);
 
     
-    RootedObject proto(cx);
-    if (!GetPrototypeFromCallableConstructor(cx, args, &proto))
-        return false;
-
-    
     RootedString message(cx, nullptr);
     if (args.hasDefined(0)) {
         message = ToString<CanGC>(cx, args[0]);
@@ -394,7 +389,7 @@ Error(JSContext* cx, unsigned argc, Value* vp)
     JSExnType exnType = JSExnType(args.callee().as<JSFunction>().getExtendedSlot(0).toInt32());
 
     RootedObject obj(cx, ErrorObject::create(cx, exnType, stack, fileName,
-                                             lineNumber, columnNumber, nullptr, message, proto));
+                                             lineNumber, columnNumber, nullptr, message));
     if (!obj)
         return false;
 
