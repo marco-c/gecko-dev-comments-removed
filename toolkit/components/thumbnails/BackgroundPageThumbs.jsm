@@ -101,10 +101,31 @@ const BackgroundPageThumbs = {
       }
       return url;
     }
+    let thumbPromise = new Promise((resolve, reject) => {
+      function observe(subject, topic, data) { 
+        if (data === url) {
+          switch(topic) {
+            case "page-thumbnail:create":
+              resolve();
+              break;
+            case "page-thumbnail:error":
+              reject(new Error("page-thumbnail:error"));
+              break;
+          }
+          Services.obs.removeObserver(observe, "page-thumbnail:create");
+          Services.obs.removeObserver(observe, "page-thumbnail:error");
+        }
+      }
+      Services.obs.addObserver(observe, "page-thumbnail:create", false);
+      Services.obs.addObserver(observe, "page-thumbnail:error", false);
+    });
     try{
       this.capture(url, options);
+      yield thumbPromise;
     } catch (err) {
-      options.onDone(url);
+      if (options.onDone) {
+        options.onDone(url);
+      }
       throw err;
     }
     return url;
@@ -250,6 +271,9 @@ const BackgroundPageThumbs = {
       throw new Error("The capture should be at the head of the queue.");
     this._captureQueue.shift();
     this._capturesByURL.delete(capture.url);
+    if (capture.doneReason != TEL_CAPTURE_DONE_OK) {
+      Services.obs.notifyObservers(null, "page-thumbnail:error", capture.url);
+    }
 
     
     let timer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
@@ -285,6 +309,7 @@ function Capture(url, captureCallback, options) {
   this.id = Capture.nextID++;
   this.creationDate = new Date();
   this.doneCallbacks = [];
+  this.doneReason;
   if (options.onDone)
     this.doneCallbacks.push(options.onDone);
 }
@@ -371,6 +396,7 @@ Capture.prototype = {
     
     let { captureCallback, doneCallbacks, options } = this;
     this.destroy();
+    this.doneReason = reason;
 
     if (typeof(reason) != "number") {
       throw new Error("A done reason must be given.");
