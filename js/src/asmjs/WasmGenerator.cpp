@@ -932,6 +932,13 @@ ModuleGenerator::finish(CacheableCharsVector&& prettyFuncNames,
     if (!finishStaticLinkData(module_->code.get(), module_->codeBytes, link.get()))
         return false;
 
+    
+    
+    module_->heapAccesses.podResizeToFit();
+    module_->codeRanges.podResizeToFit();
+    module_->callSites.podResizeToFit();
+    module_->callThunks.podResizeToFit();
+
     *module = Move(module_);
     *linkData = Move(link);
     *exportMap = Move(exportMap_);

@@ -293,6 +293,14 @@ class CodeRange
     };
 };
 
+} 
+} 
+namespace mozilla {
+template <> struct IsPod<js::wasm::CodeRange> : TrueType {};
+}
+namespace js {
+namespace wasm {
+
 typedef Vector<CodeRange, 0, SystemAllocPolicy> CodeRangeVector;
 
 
@@ -313,6 +321,14 @@ struct CallThunk
 };
 
 typedef Vector<CallThunk, 0, SystemAllocPolicy> CallThunkVector;
+
+} 
+} 
+namespace mozilla {
+template <> struct IsPod<js::wasm::CallThunk> : TrueType {};
+}
+namespace js {
+namespace wasm {
 
 
 
@@ -682,4 +698,4 @@ using WasmModuleObjectVector = GCVector<WasmModuleObject*>;
 
 } 
 
-#endif 
+#endif
