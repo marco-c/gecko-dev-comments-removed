@@ -244,9 +244,16 @@ const WeakValueGetterSetter = {
   },
   set: function(v) {
     if (v && typeof v === "object") {
-      this._weakValue = Cu.getWeakReference(v)
-      this._simpleValue = undefined;
-      return;
+      try {
+        
+        
+        
+        this._weakValue = Cu.getWeakReference(v)
+        this._simpleValue = undefined;
+        return;
+      } catch (e) {
+        
+      }
     }
     this._simpleValue = v;
     this._weakValue = undefined;
