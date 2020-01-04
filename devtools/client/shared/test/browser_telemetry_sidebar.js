@@ -28,7 +28,7 @@ function* testSidebar(toolbox) {
 
   let inspector = toolbox.getCurrentPanel();
   let sidebarTools = ["ruleview", "computedview", "fontinspector",
-                      "animationinspector"];
+                      "layoutview", "animationinspector"];
 
   
   sidebarTools.push.apply(sidebarTools, sidebarTools);
