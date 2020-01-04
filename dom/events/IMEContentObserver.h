@@ -157,6 +157,10 @@ private:
   bool UpdateSelectionCache();
 
   nsCOMPtr<nsIWidget> mWidget;
+  
+  
+  
+  nsCOMPtr<nsIWidget> mFocusedWidget;
   nsCOMPtr<nsISelection> mSelection;
   nsCOMPtr<nsIContent> mRootContent;
   nsCOMPtr<nsINode> mEditableNode;
