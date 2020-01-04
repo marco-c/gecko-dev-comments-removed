@@ -2138,6 +2138,13 @@ InitializeCipherSuite()
   PORT_SetUCS2_ASCIIConversionFunction(pip_ucs2_ascii_conversion_fn);
 
   
+  
+  
+  
+  
+  NSS_OptionSet(NSS_RSA_MIN_KEY_SIZE, 512);
+
+  
   return CipherSuiteChangeObserver::StartObserve();
 }
 
