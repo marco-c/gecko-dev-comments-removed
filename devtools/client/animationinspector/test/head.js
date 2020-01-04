@@ -33,12 +33,22 @@ registerCleanupFunction(() => {
 
 
 
+function enableWebAnimationsAPI() {
+  return new Promise(resolve => {
+    SpecialPowers.pushPrefEnv({"set": [
+      ["dom.animations-api.core.enabled", true]
+    ]}, resolve);
+  });
+}
+
+
+
 
 
 
 var _addTab = addTab;
 addTab = function(url) {
-  return _addTab(url).then(tab => {
+  return enableWebAnimationsAPI().then(() => _addTab(url)).then(tab => {
     let browser = tab.linkedBrowser;
     info("Loading the helper frame script " + FRAME_SCRIPT_URL);
     browser.messageManager.loadFrameScript(FRAME_SCRIPT_URL, false);
