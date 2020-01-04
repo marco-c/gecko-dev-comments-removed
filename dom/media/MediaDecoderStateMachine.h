@@ -576,10 +576,7 @@ protected:
   void SeekCompleted();
 
   
-  
-  
-  
-  void CheckIfDecodeComplete();
+  bool CheckIfDecodeComplete();
 
   
   
