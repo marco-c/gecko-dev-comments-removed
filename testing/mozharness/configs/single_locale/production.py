@@ -1,4 +1,5 @@
 config = {
+    "upload_environment": "prod",
     "upload_env": {
         "UPLOAD_USER": "ffxbld",
         
