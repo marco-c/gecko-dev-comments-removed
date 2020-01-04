@@ -12,6 +12,7 @@
 #include "nsCSSProperty.h"
 #include "nsDisplayList.h" 
 #include "mozilla/AnimationComparator.h"
+#include "mozilla/EffectCompositor.h"
 #include "mozilla/EventDispatcher.h"
 #include "mozilla/LinkedList.h"
 #include "mozilla/MemoryReporting.h"
@@ -172,23 +173,7 @@ struct AnimationCollection : public LinkedListElement<AnimationCollection>
 
   void EnsureStyleRuleFor(TimeStamp aRefreshTime);
 
-  enum class RestyleType {
-    
-    
-    
-    Throttled,
-    
-    Standard,
-    
-    
-    
-    
-    
-    
-    
-    Layer
-  };
-  void RequestRestyle(RestyleType aRestyleType);
+  void RequestRestyle(EffectCompositor::RestyleType aRestyleType);
 
 public:
   

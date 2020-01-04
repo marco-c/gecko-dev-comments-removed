@@ -62,6 +62,23 @@ public:
   
   nsPresContext* PresContext() const { return mPresContext; }
 
+  enum class RestyleType {
+    
+    
+    
+    Throttled,
+    
+    Standard,
+    
+    
+    
+    
+    
+    
+    
+    Layer
+  };
+
   static bool HasAnimationsForCompositor(const nsIFrame* aFrame,
                                          nsCSSProperty aProperty);
 
