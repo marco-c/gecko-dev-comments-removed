@@ -5,7 +5,7 @@
 function test() {
   
   Services.prefs.setIntPref("browser.startup.page", 0);
-  registerCleanupFunction(function() Services.prefs.clearUserPref("browser.startup.page"));
+  registerCleanupFunction(() => Services.prefs.clearUserPref("browser.startup.page"));
 
   waitForExplicitFinish();
 
