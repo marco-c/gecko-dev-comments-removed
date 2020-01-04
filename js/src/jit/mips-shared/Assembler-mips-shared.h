@@ -1259,11 +1259,6 @@ class AssemblerMIPSShared : public AssemblerShared
     void flushBuffer() {
     }
 
-    void comment(const char* msg) {
-        
-        
-    }
-
     static uint32_t NopSize() { return 4; }
 
     static void PatchWrite_Imm32(CodeLocationLabel label, Imm32 imm);

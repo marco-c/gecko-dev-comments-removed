@@ -176,17 +176,14 @@ MacroAssembler::guardObjectType(Register obj, const TypeSet* types,
             continue;
         }
 
-        if (lastBranch.isInitialized()) {
-            comment("emit GC pointer checks");
+        if (lastBranch.isInitialized())
             lastBranch.emit(*this);
-        }
 
         JSObject* object = types->getSingletonNoBarrier(i);
         lastBranch = BranchGCPtr(Equal, obj, ImmGCPtr(object), &matched);
     }
 
     if (hasObjectGroups) {
-        comment("has object groups");
         
         
         
