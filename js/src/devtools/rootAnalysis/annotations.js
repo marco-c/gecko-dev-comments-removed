@@ -351,57 +351,9 @@ function isOverridableField(initialCSU, csu, field)
     return true;
 }
 
-function listGCTypes() {
-    return [
-        'js::gc::Cell',
-        'JSObject',
-        'JSString',
-        'JSFatInlineString',
-        'JSExternalString',
-        'js::Shape',
-        'js::AccessorShape',
-        'js::BaseShape',
-        'JSScript',
-        'js::ObjectGroup',
-        'js::LazyScript',
-        'js::jit::JitCode',
-        'JS::Symbol',
-    ];
-}
-
-function listGCPointers() {
-    return [
-        'JS::Value',
-        'jsid',
-
-        'js::TypeSet',
-        'js::TypeSet::ObjectKey',
-        'js::TypeSet::Type',
-
-        
-        'JS::AutoCheckCannotGC',
-    ];
-}
-
-function listNonGCTypes() {
-    return [
-    ];
-}
-
 function listNonGCPointers() {
     return [
         
-        
-        
         'NPIdentifier',
-        'XPCNativeMember',
     ];
-}
-
-
-
-
-function isGCPointer(typeName)
-{
-    return false;
 }

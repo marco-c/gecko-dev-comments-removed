@@ -74,6 +74,8 @@ function loadCallgraph(file)
     var suppressedFieldCalls = {};
     var resolvedFunctions = {};
 
+    var numGCCalls = 0;
+
     for (var line of readFileLines_gen(file)) {
         line = line.replace(/\n/, "");
 
@@ -119,6 +121,13 @@ function loadCallgraph(file)
             var callee = idToMangled[match[2]];
             addCallEdge(callerField, callee, false);
             resolvedFunctions[callerField] = true;
+        } else if (match = tag == 'T' && /^T (\d+) (.*)/.exec(line)) {
+            var mangled = idToMangled[match[1]];
+            var tag = match[2];
+            if (tag == 'GC Call') {
+                addGCFunction(mangled, "GC");
+                numGCCalls++;
+            }
         }
     }
 
@@ -161,13 +170,11 @@ function loadCallgraph(file)
         suppressedFunctions[name] = true;
     }
 
-    for (var gcName of [ 'void js::gc::GCRuntime::collect(uint8, js::SliceBudget, uint32)',
-                         'void js::gc::GCRuntime::minorGC(uint32)',
-                         'void js::gc::GCRuntime::minorGC(uint32)' ])
-    {
-        assert(gcName in mangledName, "GC function not found: " + gcName);
-        addGCFunction(mangledName[gcName], "GC");
-    }
+    
+    
+    
+    
+    assert(numGCCalls > 0, "No GC functions found!");
 
     
     var worklist = [];
