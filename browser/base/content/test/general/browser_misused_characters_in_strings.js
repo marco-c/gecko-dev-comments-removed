@@ -127,19 +127,32 @@ add_task(function* checkAllTheProperties() {
   }
 });
 
+var checkDTD = Task.async(function* (aURISpec) {
+  let rawContents = yield fetchFile(aURISpec);
+  
+  
+  let entities = rawContents.match(/<!ENTITY\s+([\w\.]*)\s+("[^"]*"|'[^']*')\s*>/g);
+  for (let entity of entities) {
+    let [, key, str] = entity.match(/<!ENTITY\s+([\w\.]*)\s+("[^"]*"|'[^']*')\s*>/);
+    
+    
+    str = str.slice(1, -1);
+    testForErrors(aURISpec, key, str);
+  }
+});
+
 add_task(function* checkAllTheDTDs() {
   let appDir = Services.dirsvc.get("XCurProcD", Ci.nsIFile);
   let uris = yield generateURIsFromDirTree(appDir, [".dtd"]);
   ok(uris.length, `Found ${uris.length} .dtd files to scan for misused characters`);
-
   for (let uri of uris) {
-    let rawContents = yield fetchFile(uri.spec);
-    let entities = rawContents.match(/ENTITY\s+([\w\.]*)\s+["'](.*)["']/g);
-    for (let entity of entities) {
-      let [, key, str] = entity.match(/ENTITY\s+([\w\.]*)\s+["'](.*)["']/);
-      testForErrors(uri.spec, key, str);
-    }
+    yield checkDTD(uri.spec);
   }
+
+  
+  
+  let dtdLocation = gTestPath.replace(/\/[^\/]*$/i, "/bug1262648_string_with_newlines.dtd");
+  yield checkDTD(dtdLocation);
 });
 
 add_task(function* ensureWhiteListIsEmpty() {
