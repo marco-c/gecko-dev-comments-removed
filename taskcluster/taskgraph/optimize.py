@@ -89,9 +89,6 @@ def annotate_task_graph(target_task_graph, do_not_optimize,
         if label in do_not_optimize:
             optimized = False
         
-        elif any(not t.optimized for t in dependencies):
-            optimized = False
-        
         elif existing_tasks is not None and label in existing_tasks:
             optimized = True
             replacement_task_id = existing_tasks[label]
