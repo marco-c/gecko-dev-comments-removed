@@ -265,12 +265,14 @@ private:
   bool PredictForPageload(nsICacheEntry *entry,
                           nsIURI *targetURI,
                           uint8_t stackCount,
+                          bool fullUri,
                           nsINetworkPredictorVerifier *verifier);
 
   
   
   
   bool PredictForStartup(nsICacheEntry *entry,
+                         bool fullUri,
                          nsINetworkPredictorVerifier *verifier);
 
   
@@ -316,9 +318,10 @@ private:
   
   
   
+  
   void CalculatePredictions(nsICacheEntry *entry, nsIURI *referrer,
                             uint32_t lastLoad, uint32_t loadCount,
-                            int32_t globalDegradation);
+                            int32_t globalDegradation, bool fullUri);
 
   
   
@@ -465,6 +468,8 @@ private:
   nsTArray<nsCOMPtr<nsIURI>> mPrefetches;
   nsTArray<nsCOMPtr<nsIURI>> mPreconnects;
   nsTArray<nsCOMPtr<nsIURI>> mPreresolves;
+
+  bool mDoingTests;
 
   static Predictor *sSelf;
 };
