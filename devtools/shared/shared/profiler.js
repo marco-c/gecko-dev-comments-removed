@@ -57,12 +57,21 @@ const ProfilerManager = (function () {
 
 
 
+
+
+
     addInstance: function (instance) {
       consumers.add(instance);
 
       
       this.registerEventListeners();
     },
+
+    
+
+
+
+
 
     removeInstance: function (instance) {
       consumers.delete(instance);
@@ -101,19 +110,30 @@ const ProfilerManager = (function () {
       
       let currentTime = nsIProfilerModule.getElapsedTime();
 
-      nsIProfilerModule.StartProfiler(
-        config.entries,
-        config.interval,
-        config.features,
-        config.features.length,
-        config.threadFilters,
-        config.threadFilters.length
-      );
-      let { position, totalSize, generation } = this.getBufferInfo();
+      try {
+        nsIProfilerModule.StartProfiler(
+          config.entries,
+          config.interval,
+          config.features,
+          config.features.length,
+          config.threadFilters,
+          config.threadFilters.length
+        );
+      } catch (e) {
+        
+        
+        Cu.reportError(`Could not start the profiler module: ${e.message}`);
+        return { started: false, reason: e, currentTime };
+      }
 
       this._updateProfilerStatusPolling();
+
+      let { position, totalSize, generation } = this.getBufferInfo();
       return { started: true, position, totalSize, generation, currentTime };
     },
+
+    
+
 
     stop: function () {
       
@@ -306,7 +326,8 @@ const ProfilerManager = (function () {
 
     unregisterEventListeners: function () {
       if (this._eventsRegistered) {
-        PROFILER_SYSTEM_EVENTS.forEach(eventName => Services.obs.removeObserver(this, eventName));
+        PROFILER_SYSTEM_EVENTS.forEach(eventName =>
+          Services.obs.removeObserver(this, eventName));
         this._eventsRegistered = false;
       }
     },
@@ -481,6 +502,14 @@ var Profiler = exports.Profiler = Class({
     return { registered: response };
   },
 });
+
+
+
+
+
+Profiler.canProfile = function() {
+  return nsIProfilerModule.CanProfile();
+};
 
 
 

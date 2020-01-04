@@ -89,6 +89,7 @@ var gToolbox, gTarget, gFront;
 var startupPerformance = Task.async(function*() {
   yield PerformanceController.initialize();
   yield PerformanceView.initialize();
+  PerformanceController.enableFrontEventListeners();
 });
 
 
@@ -97,6 +98,7 @@ var startupPerformance = Task.async(function*() {
 var shutdownPerformance = Task.async(function*() {
   yield PerformanceController.destroy();
   yield PerformanceView.destroy();
+  PerformanceController.disableFrontEventListeners();
 });
 
 
@@ -131,7 +133,6 @@ var PerformanceController = {
     this._prefs = require("devtools/client/performance/modules/global").PREFS;
     this._prefs.on("pref-changed", this._onPrefChanged);
 
-    gFront.on("*", this._onFrontEvent);
     ToolbarView.on(EVENTS.PREF_CHANGED, this._onPrefChanged);
     PerformanceView.on(EVENTS.UI_START_RECORDING, this.startRecording);
     PerformanceView.on(EVENTS.UI_STOP_RECORDING, this.stopRecording);
@@ -151,7 +152,6 @@ var PerformanceController = {
     this._telemetry.destroy();
     this._prefs.off("pref-changed", this._onPrefChanged);
 
-    gFront.off("*", this._onFrontEvent);
     ToolbarView.off(EVENTS.PREF_CHANGED, this._onPrefChanged);
     PerformanceView.off(EVENTS.UI_START_RECORDING, this.startRecording);
     PerformanceView.off(EVENTS.UI_STOP_RECORDING, this.stopRecording);
@@ -162,6 +162,27 @@ var PerformanceController = {
     DetailsView.off(EVENTS.DETAILS_VIEW_SELECTED, this._pipe);
 
     gDevTools.off("pref-changed", this._onThemeChanged);
+  },
+
+  
+
+
+
+
+
+
+
+
+
+  enableFrontEventListeners: function() {
+    gFront.on("*", this._onFrontEvent);
+  },
+
+  
+
+
+  disableFrontEventListeners: function() {
+    gFront.off("*", this._onFrontEvent);
   },
 
   
@@ -208,6 +229,27 @@ var PerformanceController = {
   
 
 
+
+  canCurrentlyRecord: Task.async(function*() {
+    
+    
+    if (gFront.LEGACY_FRONT) {
+      return true;
+    }
+    let hasActor = yield gTarget.hasActor("performance");
+    if (!hasActor) {
+      return true;
+    }
+    let actorCanCheck = yield gTarget.actorHasMethod("performance", "canCurrentlyRecord");
+    if (!actorCanCheck) {
+      return true;
+    }
+    return (yield gFront.canCurrentlyRecord()).success;
+  }),
+
+  
+
+
   startRecording: Task.async(function *() {
     let options = {
       withMarkers: true,
@@ -221,7 +263,13 @@ var PerformanceController = {
       sampleFrequency: this.getPref("profiler-sample-frequency")
     };
 
-    yield gFront.startRecording(options);
+    
+    
+    
+    if (!(yield gFront.startRecording(options))) {
+      this.emit(EVENTS.NEW_RECORDING_FAILED);
+      PerformanceView.setState("unavailable");
+    }
   }),
 
   

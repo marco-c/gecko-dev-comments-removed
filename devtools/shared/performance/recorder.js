@@ -286,6 +286,25 @@ const PerformanceRecorder = exports.PerformanceRecorder = Class({
 
 
 
+  canCurrentlyRecord: function() {
+    let success = true;
+    let reasons = [];
+
+    if (!Profiler.canProfile()) {
+      success = false,
+      reasons.push("profiler-unavailable");
+    }
+
+    
+    
+
+    return { success, reasons };
+  },
+
+  
+
+
+
 
 
 

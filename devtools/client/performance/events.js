@@ -31,6 +31,9 @@ module.exports = {
   NEW_RECORDING: "Performance:NewRecording",
 
   
+  NEW_RECORDING_FAILED: "Performance:NewRecordingFailed",
+
+  
   RECORDING_STATE_CHANGE: "Performance:RecordingStateChange",
 
   
