@@ -13,6 +13,7 @@
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/Selection.h"
 #include "mozilla/dom/TreeWalker.h"
+#include "mozilla/IMEStateManager.h"
 #include "nsCaret.h"
 #include "nsContentUtils.h"
 #include "nsFocusManager.h"
@@ -431,6 +432,11 @@ AccessibleCaretManager::SelectWordOrShortcut(const nsPoint& aPoint)
   if (!selectable) {
     return NS_ERROR_FAILURE;
   }
+
+  
+  
+  IMEStateManager::NotifyIME(widget::REQUEST_TO_COMMIT_COMPOSITION,
+                             mPresShell->GetPresContext());
 
   
   ChangeFocusToOrClearOldFocus(focusableFrame);
