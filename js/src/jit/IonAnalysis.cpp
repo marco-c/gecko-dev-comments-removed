@@ -1166,6 +1166,9 @@ TypeAnalyzer::insertConversions()
                 adjustPhiInputs(phi);
             }
         }
+
+        
+        
         for (MInstructionIterator iter(block->begin()); iter != block->end(); iter++) {
             if (!adjustInputs(*iter))
                 return false;

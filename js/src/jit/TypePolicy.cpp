@@ -1081,6 +1081,30 @@ FilterTypeSetPolicy::adjustInputs(TempAllocator& alloc, MInstruction* ins)
     MIRType outputType = ins->type();
 
     
+    if (outputType == MIRType_Float32 && inputType != MIRType_Float32) {
+        
+        
+        MInstruction* replace = MToFloat32::New(alloc, ins);
+        ins->justReplaceAllUsesWithExcept(replace);
+        ins->block()->insertAfter(ins, replace);
+
+        
+        
+        
+        
+        
+        ins->setResultType(ins->resultTypeSet()->getKnownMIRType());
+        outputType = ins->type();
+
+        
+        if (!replace->typePolicy()->adjustInputs(alloc, replace))
+            return false;
+
+        
+        
+    }
+
+    
     if (inputType == outputType)
         return true;
 
