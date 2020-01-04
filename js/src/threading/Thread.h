@@ -185,6 +185,12 @@ Thread::Id GetId();
 
 void SetName(const char* name);
 
+
+
+
+
+void GetName(char* nameBuffer, size_t len);
+
 } 
 
 namespace detail {
