@@ -174,26 +174,24 @@ public:
 
 
 
-
-
-
-
-class nsVariant final : public nsIWritableVariant
+class nsVariantBase final : public nsIWritableVariant
 {
 public:
   NS_DECL_ISUPPORTS
   NS_DECL_NSIVARIANT
   NS_DECL_NSIWRITABLEVARIANT
 
-  nsVariant();
+  nsVariantBase();
 
 private:
-  ~nsVariant() {};
+  ~nsVariantBase() {};
 
 protected:
   nsDiscriminatedUnion mData;
-  bool                 mWritable;
+  bool mWritable;
 };
+
+typedef nsVariantBase nsVariant;
 
 
 
