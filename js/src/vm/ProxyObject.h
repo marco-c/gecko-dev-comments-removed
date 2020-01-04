@@ -104,22 +104,30 @@ class ProxyObject : public JSObject
 
     void nuke(const BaseProxyHandler* handler);
 
-    static const Class class_;
+    
+    
+    
+    static const Class proxyClass;
 };
 
+bool IsDerivedProxyObject(const JSObject* obj, const js::BaseProxyHandler* handler);
+
 } 
-
-
-
-
-
-
 
 template<>
 inline bool
 JSObject::is<js::ProxyObject>() const
 {
+    
+    
+    
+    
     return js::IsProxy(const_cast<JSObject*>(this));
+}
+
+inline bool
+js::IsDerivedProxyObject(const JSObject* obj, const js::BaseProxyHandler* handler) {
+    return obj->is<js::ProxyObject>() && obj->as<js::ProxyObject>().handler() == handler;
 }
 
 #endif 
