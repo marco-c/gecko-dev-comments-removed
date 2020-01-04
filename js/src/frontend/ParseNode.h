@@ -488,8 +488,6 @@ IsDeleteKind(ParseNodeKind kind)
 
 
 
-
-
 enum ParseNodeArity
 {
     PN_NULLARY,                         
@@ -757,15 +755,12 @@ class ParseNode
 #define PND_USE2DEF_FLAGS (PND_ASSIGNED | PND_CLOSED)
 
 
-#define PNX_POPVAR      0x01            /* PNK_VAR or PNK_CONST last result
-                                           needs popping */
-#define PNX_FUNCDEFS    0x02            /* contains top-level function statements */
-#define PNX_SETCALL     0x04            /* call expression in lvalue context */
-
-#define PNX_ARRAYHOLESPREAD 0x10        /* one or more of
+#define PNX_FUNCDEFS    0x01            /* contains top-level function statements */
+#define PNX_SETCALL     0x02            /* call expression in lvalue context */
+#define PNX_ARRAYHOLESPREAD 0x04        /* one or more of
                                            1. array initialiser has holes
                                            2. array initializer has spread node */
-#define PNX_NONCONST    0x20            /* initialiser has non-constants */
+#define PNX_NONCONST    0x08            /* initialiser has non-constants */
 
     static_assert(PNX_NONCONST < (1 << NumListFlagBits), "Not enough bits");
 
