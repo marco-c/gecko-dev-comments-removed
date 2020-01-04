@@ -880,6 +880,15 @@ ConnectionData.prototype = Object.freeze({
 
 
 
+
+
+
+
+
+
+
+
+
 function openConnection(options) {
   let log = Log.repository.getLogger("Sqlite.ConnectionOpener");
 
@@ -915,12 +924,21 @@ function openConnection(options) {
   log.info("Opening database: " + path + " (" + identifier + ")");
 
   return new Promise((resolve, reject) => {
-    let dbOptions = null;
+    let dbOptions = Cc["@mozilla.org/hash-property-bag;1"].
+                    createInstance(Ci.nsIWritablePropertyBag);
     if (!sharedMemoryCache) {
-      dbOptions = Cc["@mozilla.org/hash-property-bag;1"].
-        createInstance(Ci.nsIWritablePropertyBag);
       dbOptions.setProperty("shared", false);
     }
+    if (options.readOnly) {
+      dbOptions.setProperty("readOnly", true);
+    }
+    if (options.ignoreLockingMode) {
+      dbOptions.setProperty("ignoreLockingMode", true);
+      dbOptions.setProperty("readOnly", true);
+    }
+
+    dbOptions = dbOptions.enumerator.hasMoreElements() ? dbOptions : null;
+
     Services.storage.openAsyncDatabase(file, dbOptions, (status, connection) => {
       if (!connection) {
         log.warn(`Could not open connection to ${path}: ${status}`);
