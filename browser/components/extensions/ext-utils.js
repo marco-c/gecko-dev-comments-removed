@@ -681,7 +681,12 @@ global.TabManager = {
     return -1;
   },
 
-  getTab(tabId) {
+  
+
+
+
+
+  getTab(tabId, context, default_ = undefined) {
     
     for (let window of WindowListManager.browserWindows()) {
       if (!window.gBrowser) {
@@ -693,7 +698,10 @@ global.TabManager = {
         }
       }
     }
-    return null;
+    if (default_ !== undefined) {
+      return default_;
+    }
+    throw new context.cloneScope.Error(`Invalid tab ID: ${tabId}`);
   },
 
   get activeTab() {

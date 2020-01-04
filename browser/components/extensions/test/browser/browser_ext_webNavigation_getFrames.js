@@ -11,7 +11,7 @@ add_task(function* testWebNavigationGetNonExistentTab() {
         browser.webNavigation.getAllFrames({tabId: 0}).then(() => {
           browser.test.fail("getAllFrames Promise should be rejected on error");
         }, (error) => {
-          browser.test.assertEq("No tab found with tabId: 0", error.message,
+          browser.test.assertEq("Invalid tab ID: 0", error.message,
                                 "getAllFrames rejected Promise should pass the expected error");
         }),
         
@@ -19,7 +19,7 @@ add_task(function* testWebNavigationGetNonExistentTab() {
         browser.webNavigation.getFrame({tabId: 0, frameId: 15, processId: 20}).then(() => {
           browser.test.fail("getFrame Promise should be rejected on error");
         }, (error) => {
-          browser.test.assertEq("No tab found with tabId: 0", error.message,
+          browser.test.assertEq("Invalid tab ID: 0", error.message,
                                 "getFrame rejected Promise should pass the expected error");
         }),
       ];
