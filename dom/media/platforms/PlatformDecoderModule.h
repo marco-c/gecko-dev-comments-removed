@@ -175,6 +175,9 @@ public:
 
   
   
+  
+  
+  
   virtual void InputExhausted() = 0;
 
   virtual void DrainComplete() = 0;
