@@ -387,6 +387,12 @@ class MacroAssembler : public MacroAssemblerSpecific
     
     
 
+    
+    void flush() PER_SHARED_ARCH;
+
+    
+    
+
     inline uint32_t framePushed() const;
     inline void setFramePushed(uint32_t framePushed);
     inline void adjustFrame(int32_t value);
