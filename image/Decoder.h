@@ -28,6 +28,40 @@ namespace Telemetry {
 
 namespace image {
 
+struct DecoderTelemetry final
+{
+  DecoderTelemetry(Telemetry::ID aSpeedHistogram,
+                   size_t aBytesDecoded,
+                   uint32_t aChunkCount,
+                   TimeDuration aDecodeTime)
+    : mSpeedHistogram(aSpeedHistogram)
+    , mBytesDecoded(aBytesDecoded)
+    , mChunkCount(aChunkCount)
+    , mDecodeTime(aDecodeTime)
+  { }
+
+  
+  int32_t Speed() const
+  {
+    return mBytesDecoded / (1024 * mDecodeTime.ToSeconds());
+  }
+
+  
+  int32_t DecodeTimeMicros() { return mDecodeTime.ToMicroseconds(); }
+
+  
+  const Telemetry::ID mSpeedHistogram;
+
+  
+  const size_t mBytesDecoded;
+
+  
+  const uint32_t mChunkCount;
+
+  
+  const TimeDuration mDecodeTime;
+};
+
 class Decoder
 {
 public:
@@ -191,22 +225,6 @@ public:
     return bool(mDecoderFlags & DecoderFlags::FIRST_FRAME_ONLY);
   }
 
-  size_t BytesDecoded() const
-  {
-    MOZ_ASSERT(mIterator);
-    return mIterator->ByteCount();
-  }
-
-  
-  TimeDuration DecodeTime() const { return mDecodeTime; }
-
-  
-  uint32_t ChunkCount() const
-  {
-    MOZ_ASSERT(mIterator);
-    return mIterator->ChunkCount();
-  }
-
   
 
 
@@ -322,6 +340,9 @@ public:
 
   
   const ImageMetadata& GetImageMetadata() { return mImageMetadata; }
+
+  
+  DecoderTelemetry Telemetry();
 
   
 
