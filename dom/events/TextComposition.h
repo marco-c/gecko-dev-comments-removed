@@ -113,7 +113,10 @@ public:
   
 
 
-  uint32_t OffsetOfTargetClause() const { return mCompositionTargetOffset; }
+  uint32_t NativeOffsetOfTargetClause() const
+  {
+    return mCompositionStartOffset + mTargetClauseOffsetInComposition;
+  }
 
   
 
@@ -218,7 +221,7 @@ private:
   uint32_t mCompositionStartOffset;
   
   
-  uint32_t mCompositionTargetOffset;
+  uint32_t mTargetClauseOffsetInComposition;
 
   
   bool mIsSynthesizedForTests;
@@ -260,7 +263,7 @@ private:
     : mPresContext(nullptr)
     , mNativeContext(nullptr)
     , mCompositionStartOffset(0)
-    , mCompositionTargetOffset(0)
+    , mTargetClauseOffsetInComposition(0)
     , mIsSynthesizedForTests(false)
     , mIsComposing(false)
     , mIsEditorHandlingEvent(false)
