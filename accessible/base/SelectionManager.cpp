@@ -64,8 +64,7 @@ SelectionManager::ClearControlSelectionListener()
 
   
   
-  Selection* spellSel =
-    frameSel->GetSelection(SelectionType::SELECTION_SPELLCHECK);
+  Selection* spellSel = frameSel->GetSelection(SelectionType::eSpellCheck);
   spellSel->RemoveSelectionListener(this);
 }
 
@@ -91,8 +90,7 @@ SelectionManager::SetControlSelectionListener(dom::Element* aFocusedElm)
   normalSel->AddSelectionListener(this);
 
   
-  Selection* spellSel =
-    frameSel->GetSelection(SelectionType::SELECTION_SPELLCHECK);
+  Selection* spellSel = frameSel->GetSelection(SelectionType::eSpellCheck);
   spellSel->AddSelectionListener(this);
 }
 
@@ -106,8 +104,7 @@ SelectionManager::AddDocSelectionListener(nsIPresShell* aPresShell)
   normalSel->AddSelectionListener(this);
 
   
-  Selection* spellSel =
-    frameSel->GetSelection(SelectionType::SELECTION_SPELLCHECK);
+  Selection* spellSel = frameSel->GetSelection(SelectionType::eSpellCheck);
   spellSel->AddSelectionListener(this);
 }
 
@@ -122,8 +119,7 @@ SelectionManager::RemoveDocSelectionListener(nsIPresShell* aPresShell)
 
   
   
-  Selection* spellSel =
-    frameSel->GetSelection(SelectionType::SELECTION_SPELLCHECK);
+  Selection* spellSel = frameSel->GetSelection(SelectionType::eSpellCheck);
   spellSel->RemoveSelectionListener(this);
 }
 
@@ -226,7 +222,7 @@ SelectionManager::ProcessSelectionChanged(SelData* aSelData)
       new AccTextSelChangeEvent(text, selection, aSelData->mReason);
     text->Document()->FireDelayedEvent(event);
 
-  } else if (selection->GetType() == SelectionType::SELECTION_SPELLCHECK) {
+  } else if (selection->GetType() == SelectionType::eSpellCheck) {
     
     
     text->Document()->FireDelayedEvent(nsIAccessibleEvent::EVENT_TEXT_ATTRIBUTE_CHANGED,

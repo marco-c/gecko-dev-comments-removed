@@ -3378,7 +3378,7 @@ nsFrame::HandlePress(nsPresContext* aPresContext,
       
       
       
-      if (curDetail->mSelectionType != SelectionType::SELECTION_SPELLCHECK &&
+      if (curDetail->mSelectionType != SelectionType::eSpellCheck &&
           curDetail->mSelectionType != SelectionType::SELECTION_FIND &&
           curDetail->mSelectionType != SelectionType::SELECTION_URLSECONDARY &&
           curDetail->mSelectionType != SelectionType::SELECTION_URLSTRIKEOUT &&
