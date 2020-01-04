@@ -145,12 +145,6 @@ this.ForgetAboutSite = {
     }
 
     
-    let disabledHosts = lm.getAllDisabledHosts();
-    for (let i = 0; i < disabledHosts.length; i++)
-      if (hasRootDomain(disabledHosts[i], aDomain))
-        lm.setLoginSavingEnabled(disabledHosts, true);
-
-    
     let pm = Cc["@mozilla.org/permissionmanager;1"].
              getService(Ci.nsIPermissionManager);
     
