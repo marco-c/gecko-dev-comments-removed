@@ -40,21 +40,29 @@ PotentialCheckerboardDurationTracker::CheckerboardDone()
 }
 
 void
-PotentialCheckerboardDurationTracker::TransformStarted()
+PotentialCheckerboardDurationTracker::InTransform(bool aInTransform)
 {
-  MOZ_ASSERT(!mInTransform);
-  if (!Tracking()) {
-    mCurrentPeriodStart = TimeStamp::Now();
+  if (aInTransform == mInTransform) {
+    
+    return;
   }
-  mInTransform = true;
-}
 
-void
-PotentialCheckerboardDurationTracker::TransformStopped()
-{
-  MOZ_ASSERT(mInTransform);
-  mInTransform = false;
   if (!Tracking()) {
+    
+    
+    
+    mInTransform = aInTransform;
+    mCurrentPeriodStart = TimeStamp::Now();
+    return;
+  }
+
+  mInTransform = aInTransform;
+
+  if (!Tracking()) {
+    
+    
+    
+    
     mozilla::Telemetry::AccumulateTimeDelta(
         mozilla::Telemetry::CHECKERBOARD_POTENTIAL_DURATION,
         mCurrentPeriodStart);

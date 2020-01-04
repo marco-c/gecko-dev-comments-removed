@@ -42,12 +42,7 @@ public:
 
 
 
-  void TransformStarted();
-  
-
-
-
-  void TransformStopped();
+  void InTransform(bool aInTransform);
 
 private:
   bool Tracking() const;
