@@ -1742,7 +1742,7 @@ EventStateManager::GenerateDragGesture(nsPresContext* aPresContext,
                                    eLegacyDragGesture, widget);
       FillInEventFromGestureDown(&gestureEvent);
 
-      startEvent.dataTransfer = gestureEvent.dataTransfer = dataTransfer;
+      startEvent.mDataTransfer = gestureEvent.mDataTransfer = dataTransfer;
       startEvent.inputSource = gestureEvent.inputSource = aEvent->inputSource;
 
       
@@ -3349,9 +3349,9 @@ EventStateManager::PostHandleEvent(nsPresContext* aPresContext,
       uint32_t action = nsIDragService::DRAGDROP_ACTION_NONE;
       if (nsEventStatus_eConsumeNoDefault == *aStatus) {
         
-        if (dragEvent->dataTransfer) {
+        if (dragEvent->mDataTransfer) {
           
-          dataTransfer = do_QueryInterface(dragEvent->dataTransfer);
+          dataTransfer = do_QueryInterface(dragEvent->mDataTransfer);
           dataTransfer->GetDropEffectInt(&dropEffect);
         }
         else {
@@ -4523,8 +4523,9 @@ void
 EventStateManager::UpdateDragDataTransfer(WidgetDragEvent* dragEvent)
 {
   NS_ASSERTION(dragEvent, "drag event is null in UpdateDragDataTransfer!");
-  if (!dragEvent->dataTransfer)
+  if (!dragEvent->mDataTransfer) {
     return;
+  }
 
   nsCOMPtr<nsIDragSession> dragSession = nsContentUtils::GetDragSession();
 
@@ -4536,7 +4537,7 @@ EventStateManager::UpdateDragDataTransfer(WidgetDragEvent* dragEvent)
     if (initialDataTransfer) {
       
       nsAutoString mozCursor;
-      dragEvent->dataTransfer->GetMozCursor(mozCursor);
+      dragEvent->mDataTransfer->GetMozCursor(mozCursor);
       initialDataTransfer->SetMozCursor(mozCursor);
     }
   }

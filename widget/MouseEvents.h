@@ -352,7 +352,7 @@ public:
   }
 
   
-  nsCOMPtr<dom::DataTransfer> dataTransfer;
+  nsCOMPtr<dom::DataTransfer> mDataTransfer;
 
   
   bool userCancelled;
@@ -364,7 +364,7 @@ public:
   {
     AssignMouseEventData(aEvent, aCopyTargets);
 
-    dataTransfer = aEvent.dataTransfer;
+    mDataTransfer = aEvent.mDataTransfer;
     
     userCancelled = false;
     mDefaultPreventedOnContent = aEvent.mDefaultPreventedOnContent;
