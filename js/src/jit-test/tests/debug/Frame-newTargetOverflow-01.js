@@ -7,6 +7,10 @@ load(libdir + "jitopts.js");
 if (!jitTogglesMatch(Opts_Ion2NoOffthreadCompilation))
   quit();
 
+
+if ('gczeal' in this)
+    gczeal(0);
+
 withJitOptions(Opts_Ion2NoOffthreadCompilation, function () {
   var g = newGlobal();
   var dbg = new Debugger;
