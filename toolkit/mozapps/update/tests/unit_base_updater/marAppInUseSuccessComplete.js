@@ -5,37 +5,50 @@
 
 
 function run_test() {
-  setupTestCommon();
+  if (!setupTestCommon()) {
+    return;
+  }
   gTestFiles = gTestFilesCompleteSuccess;
   gTestDirs = gTestDirsCompleteSuccess;
-  setupUpdaterTest(FILE_COMPLETE_MAR);
-
-  
-  let callbackApp = getApplyDirFile(DIR_RESOURCES + gCallbackBinFile);
-  callbackApp.permissions = PERMS_DIRECTORY;
-  let args = [getApplyDirPath() + DIR_RESOURCES, "input", "output", "-s",
-              HELPER_SLEEP_TIMEOUT];
-  let callbackAppProcess = Cc["@mozilla.org/process/util;1"].
-                           createInstance(Ci.nsIProcess);
-  callbackAppProcess.init(callbackApp);
-  callbackAppProcess.run(false, args, args.length);
-
-  do_timeout(TEST_HELPER_TIMEOUT, waitForHelperSleep);
+  setupUpdaterTest(FILE_COMPLETE_MAR, false);
 }
 
-function doUpdate() {
-  setAppBundleModTime();
-  runUpdate(0, STATE_SUCCEEDED, checkUpdateFinished);
+
+
+
+function setupUpdaterTestFinished() {
+  runHelperFileInUse(DIR_RESOURCES + gCallbackBinFile, false);
 }
 
-function checkUpdateFinished() {
-  setupHelperFinish();
+
+
+
+function waitForHelperSleepFinished() {
+  runUpdate(STATE_SUCCEEDED, false, 0, true);
 }
 
-function checkUpdate() {
+
+
+
+function runUpdateFinished() {
+  waitForHelperExit();
+}
+
+
+
+
+function waitForHelperExitFinished() {
+  checkPostUpdateAppLog();
+}
+
+
+
+
+function checkPostUpdateAppLogFinished() {
   checkAppBundleModTime();
-  checkFilesAfterUpdateSuccess(getApplyDirFile, false, false);
-  checkUpdateLogContents(LOG_COMPLETE_SUCCESS);
   standardInit();
-  checkCallbackAppLog();
+  checkPostUpdateRunningFile(true);
+  checkFilesAfterUpdateSuccess(getApplyDirFile);
+  checkUpdateLogContents(LOG_COMPLETE_SUCCESS);
+  checkCallbackLog();
 }

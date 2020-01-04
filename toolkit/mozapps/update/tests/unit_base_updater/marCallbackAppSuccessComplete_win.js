@@ -5,18 +5,36 @@
 
 
 function run_test() {
-  setupTestCommon();
+  if (!setupTestCommon()) {
+    return;
+  }
   gTestFiles = gTestFilesCompleteSuccess;
   gTestDirs = gTestDirsCompleteSuccess;
-  setupUpdaterTest(FILE_COMPLETE_MAR);
-
   gCallbackBinFile = "exe0.exe";
-
-  runUpdate(0, STATE_SUCCEEDED, checkUpdateFinished);
+  setupUpdaterTest(FILE_COMPLETE_MAR, false);
 }
 
-function checkUpdateFinished() {
-  checkFilesAfterUpdateSuccess(getApplyDirFile, false, false);
+
+
+
+function setupUpdaterTestFinished() {
+  runUpdate(STATE_SUCCEEDED, false, 0, true);
+}
+
+
+
+
+function runUpdateFinished() {
+  checkPostUpdateAppLog();
+}
+
+
+
+
+function checkPostUpdateAppLogFinished() {
   standardInit();
-  checkCallbackAppLog();
+  checkPostUpdateRunningFile(true);
+  checkFilesAfterUpdateSuccess(getApplyDirFile);
+  checkUpdateLogContents(LOG_COMPLETE_SUCCESS);
+  checkCallbackLog();
 }

@@ -10,30 +10,32 @@ function run_test() {
     return;
   }
 
-  setupTestCommon();
-  
-  
-  gTestFiles = gTestFilesCommon;
-  gTestDirs = [];
-  setupUpdaterTest(FILE_OLD_VERSION_MAR);
-
-  createUpdaterINI(true);
-
-  
-  
-  
-  
-  runUpdate((USE_EXECV ? 0 : 1), STATE_FAILED_VERSION_DOWNGRADE_ERROR,
-            checkUpdateApplied);
+  if (!setupTestCommon()) {
+    return;
+  }
+  gTestFiles = gTestFilesCompleteSuccess;
+  gTestDirs = gTestDirsCompleteSuccess;
+  setTestFilesAndDirsForFailure();
+  setupUpdaterTest(FILE_OLD_VERSION_MAR, false);
 }
 
 
 
 
+function setupUpdaterTestFinished() {
+  
+  
+  runUpdateUsingUpdater(STATE_FAILED_VERSION_DOWNGRADE_ERROR, false,
+                        (USE_EXECV ? 0 : 1));
+}
 
-function checkUpdateApplied() {
-  checkPostUpdateRunningFile(false);
-  checkFilesAfterUpdateSuccess(getApplyDirFile, false, false);
+
+
+
+function runUpdateFinished() {
   standardInit();
-  doTestFinish();
+  checkPostUpdateRunningFile(false);
+  checkFilesAfterUpdateFailure(getApplyDirFile);
+  checkUpdateLogContains(STATE_FAILED_VERSION_DOWNGRADE_ERROR);
+  waitForFilesInUse();
 }

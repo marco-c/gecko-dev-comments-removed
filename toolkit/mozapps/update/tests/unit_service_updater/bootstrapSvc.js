@@ -5,29 +5,31 @@
 
 
 function run_test() {
-  if (!shouldRunServiceTest(true)) {
+  if (!setupTestCommon()) {
     return;
   }
-
-  setupTestCommon();
   
   
   gTestFiles = gTestFilesCommon;
   gTestDirs = [];
-  setupUpdaterTest(FILE_COMPLETE_MAR);
-
-  setupAppFilesAsync();
+  setupUpdaterTest(FILE_COMPLETE_MAR, null);
 }
 
-function setupAppFilesFinished() {
-  runUpdateUsingService(STATE_PENDING_SVC, STATE_SUCCEEDED, false);
+
+
+
+function setupUpdaterTestFinished() {
+  runUpdateUsingService(STATE_SUCCEEDED, false, true);
 }
 
-function checkUpdateFinished() {
+
+
+
+function runUpdateFinished() {
   checkFilesAfterUpdateSuccess(getApplyDirFile, false, false);
 
   
   
   
-  checkCallbackServiceLog();
+  checkCallbackLog();
 }

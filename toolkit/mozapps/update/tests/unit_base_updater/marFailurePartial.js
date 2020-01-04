@@ -6,30 +6,34 @@
 
 
 function run_test() {
-  setupTestCommon();
+  if (!setupTestCommon()) {
+    return;
+  }
   gTestFiles = gTestFilesPartialSuccess;
   gTestFiles[11].originalFile = "partial.png";
   gTestDirs = gTestDirsPartialSuccess;
   setTestFilesAndDirsForFailure();
-  setupUpdaterTest(FILE_PARTIAL_MAR);
-
-  createUpdaterINI();
-  setAppBundleModTime();
-
-  
-  runUpdate((USE_EXECV ? 0 : 1), STATE_FAILED_LOADSOURCE_ERROR_WRONG_SIZE,
-            checkUpdateFinished);
+  setupUpdaterTest(FILE_PARTIAL_MAR, false);
 }
 
 
 
 
+function setupUpdaterTestFinished() {
+  
+  
+  runUpdate(STATE_FAILED_LOADSOURCE_ERROR_WRONG_SIZE, false,
+            (USE_EXECV ? 0 : 1), true);
+}
 
-function checkUpdateFinished() {
-  checkPostUpdateRunningFile(false);
+
+
+
+function runUpdateFinished() {
   checkAppBundleModTime();
-  checkFilesAfterUpdateFailure(getApplyDirFile, false, false);
-  checkUpdateLogContents(LOG_PARTIAL_FAILURE);
   standardInit();
-  checkCallbackAppLog();
+  checkPostUpdateRunningFile(false);
+  checkFilesAfterUpdateFailure(getApplyDirFile);
+  checkUpdateLogContents(LOG_PARTIAL_FAILURE);
+  checkCallbackLog();
 }

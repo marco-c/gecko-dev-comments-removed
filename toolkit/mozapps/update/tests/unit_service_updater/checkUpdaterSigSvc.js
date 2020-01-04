@@ -24,9 +24,7 @@ function run_test() {
             updaterBin.path + " signature.");
 
   
-  let env = Cc["@mozilla.org/process/environment;1"].
-            getService(Ci.nsIEnvironment);
-  env.set("__COMPAT_LAYER", "RunAsInvoker");
+  gEnv.set("__COMPAT_LAYER", "RunAsInvoker");
 
   let dummyInstallPath = "---";
   let maintenanceServiceBinArgs = ["check-cert", dummyInstallPath,

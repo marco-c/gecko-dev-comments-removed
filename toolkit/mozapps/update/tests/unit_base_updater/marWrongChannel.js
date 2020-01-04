@@ -10,30 +10,32 @@ function run_test() {
     return;
   }
 
-  setupTestCommon();
-  
-  
-  gTestFiles = gTestFilesCommon;
-  gTestDirs = [];
-  setupUpdaterTest(FILE_WRONG_CHANNEL_MAR);
-
-  createUpdaterINI();
-
-  
-  
-  
-  
-  runUpdate((USE_EXECV ? 0 : 1), STATE_FAILED_CHANNEL_MISMATCH_ERROR,
-            checkUpdateApplied);
+  if (!setupTestCommon()) {
+    return;
+  }
+  gTestFiles = gTestFilesCompleteSuccess;
+  gTestDirs = gTestDirsCompleteSuccess;
+  setTestFilesAndDirsForFailure();
+  setupUpdaterTest(FILE_WRONG_CHANNEL_MAR, false);
 }
 
 
 
 
+function setupUpdaterTestFinished() {
+  
+  
+  runUpdateUsingUpdater(STATE_FAILED_CHANNEL_MISMATCH_ERROR, false,
+                        (USE_EXECV ? 0 : 1));
+}
 
-function checkUpdateApplied() {
-  checkPostUpdateRunningFile(false);
-  checkFilesAfterUpdateSuccess(getApplyDirFile, false, false);
+
+
+
+function runUpdateFinished() {
   standardInit();
-  doTestFinish();
+  checkPostUpdateRunningFile(false);
+  checkFilesAfterUpdateFailure(getApplyDirFile);
+  checkUpdateLogContains(STATE_FAILED_CHANNEL_MISMATCH_ERROR);
+  waitForFilesInUse();
 }

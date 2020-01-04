@@ -5,43 +5,50 @@
 
 
 function run_test() {
-  if (!shouldRunServiceTest()) {
+  if (!setupTestCommon()) {
     return;
   }
-
-  setupTestCommon();
   gTestFiles = gTestFilesCompleteSuccess;
   gTestDirs = gTestDirsCompleteSuccess;
-  setupUpdaterTest(FILE_COMPLETE_MAR);
-
-  
-  let fileInUseBin = getApplyDirFile(gTestFiles[13].relPathDir +
-                                     gTestFiles[13].fileName);
-  let args = [getApplyDirPath() + DIR_RESOURCES, "input", "output", "-s",
-              HELPER_SLEEP_TIMEOUT];
-  let fileInUseProcess = Cc["@mozilla.org/process/util;1"].
-                         createInstance(Ci.nsIProcess);
-  fileInUseProcess.init(fileInUseBin);
-  fileInUseProcess.run(false, args, args.length);
-
-  setupAppFilesAsync();
+  setupUpdaterTest(FILE_COMPLETE_MAR, false);
 }
 
-function setupAppFilesFinished() {
-  do_timeout(TEST_HELPER_TIMEOUT, waitForHelperSleep);
+
+
+
+function setupUpdaterTestFinished() {
+  runHelperFileInUse(gTestFiles[13].relPathDir + gTestFiles[13].fileName,
+                     false);
 }
 
-function doUpdate() {
-  runUpdateUsingService(STATE_PENDING_SVC, STATE_SUCCEEDED);
+
+
+
+function waitForHelperSleepFinished() {
+  runUpdate(STATE_SUCCEEDED, false, 0, true);
 }
 
-function checkUpdateFinished() {
-  setupHelperFinish();
+
+
+
+function runUpdateFinished() {
+  waitForHelperExit();
 }
 
-function checkUpdate() {
+
+
+
+function waitForHelperExitFinished() {
+  checkPostUpdateAppLog();
+}
+
+
+
+
+function checkPostUpdateAppLogFinished() {
+  standardInit();
+  checkPostUpdateRunningFile(true);
   checkFilesAfterUpdateSuccess(getApplyDirFile, false, true);
   checkUpdateLogContains(ERR_BACKUP_DISCARD);
-  standardInit();
-  checkCallbackServiceLog();
+  checkCallbackLog();
 }

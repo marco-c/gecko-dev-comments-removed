@@ -5,35 +5,50 @@
 
 
 function run_test() {
-  setupTestCommon();
+  if (!setupTestCommon()) {
+    return;
+  }
   gTestFiles = gTestFilesPartialSuccess;
   gTestDirs = gTestDirsPartialSuccess;
-  setupUpdaterTest(FILE_PARTIAL_MAR);
-
-  
-  let fileInUseBin = getApplyDirFile(gTestFiles[11].relPathDir +
-                                     gTestFiles[11].fileName);
-  let args = [getApplyDirPath() + DIR_RESOURCES, "input", "output", "-s",
-              HELPER_SLEEP_TIMEOUT];
-  let fileInUseProcess = Cc["@mozilla.org/process/util;1"].
-                         createInstance(Ci.nsIProcess);
-  fileInUseProcess.init(fileInUseBin);
-  fileInUseProcess.run(false, args, args.length);
-
-  do_timeout(TEST_HELPER_TIMEOUT, waitForHelperSleep);
+  setupUpdaterTest(FILE_PARTIAL_MAR, false);
 }
 
-function doUpdate() {
-  runUpdate(0, STATE_SUCCEEDED, checkUpdateFinished);
+
+
+
+function setupUpdaterTestFinished() {
+  runHelperFileInUse(gTestFiles[11].relPathDir + gTestFiles[11].fileName,
+                     false);
 }
 
-function checkUpdateFinished() {
-  setupHelperFinish();
+
+
+
+function waitForHelperSleepFinished() {
+  runUpdate(STATE_SUCCEEDED, false, 0, true);
 }
 
-function checkUpdate() {
+
+
+
+function runUpdateFinished() {
+  waitForHelperExit();
+}
+
+
+
+
+function waitForHelperExitFinished() {
+  checkPostUpdateAppLog();
+}
+
+
+
+
+function checkPostUpdateAppLogFinished() {
+  standardInit();
+  checkPostUpdateRunningFile(true);
   checkFilesAfterUpdateSuccess(getApplyDirFile, false, true);
   checkUpdateLogContains(ERR_BACKUP_DISCARD);
-  standardInit();
-  checkCallbackAppLog();
+  checkCallbackLog();
 }

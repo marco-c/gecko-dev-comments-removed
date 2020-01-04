@@ -4,25 +4,50 @@
 
 
 
+const STATE_AFTER_STAGE = IS_SERVICE_TEST ? STATE_APPLIED_SVC : STATE_APPLIED;
+
 function run_test() {
-  gStageUpdate = true;
-  setupTestCommon();
+  if (!setupTestCommon()) {
+    return;
+  }
   gTestFiles = gTestFilesPartialSuccess;
   gTestDirs = gTestDirsPartialSuccess;
-  setupUpdaterTest(FILE_PARTIAL_MAR);
-
   gCallbackBinFile = "exe0.exe";
-
-  runUpdate(0, STATE_APPLIED, null);
-
-  
-  gStageUpdate = false;
-  gSwitchApp = true;
-  runUpdate(0, STATE_SUCCEEDED, checkUpdateApplied);
+  setupUpdaterTest(FILE_PARTIAL_MAR, false);
 }
 
-function checkUpdateApplied() {
-  checkFilesAfterUpdateSuccess(getApplyDirFile, false, false);
+
+
+
+function setupUpdaterTestFinished() {
+  stageUpdate();
+}
+
+
+
+
+function stageUpdateFinished() {
+  checkPostUpdateRunningFile(false);
+  checkFilesAfterUpdateSuccess(getStageDirFile, true);
+  checkUpdateLogContents(LOG_PARTIAL_SUCCESS_STAGE, true);
+  
+  runUpdate(STATE_SUCCEEDED, true, 0, false);
+}
+
+
+
+
+function runUpdateFinished() {
+  checkPostUpdateAppLog();
+}
+
+
+
+
+function checkPostUpdateAppLogFinished() {
   standardInit();
-  checkCallbackAppLog();
+  checkPostUpdateRunningFile(true);
+  checkFilesAfterUpdateSuccess(getApplyDirFile, false, true);
+  checkUpdateLogContents(LOG_REPLACE_SUCCESS, false, true);
+  checkCallbackLog();
 }

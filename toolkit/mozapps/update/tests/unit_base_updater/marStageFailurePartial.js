@@ -5,28 +5,33 @@
 
 
 
+const STATE_AFTER_STAGE = IS_SERVICE_TEST ? STATE_PENDING : STATE_APPLYING;
+
 function run_test() {
-  gStageUpdate = true;
-  setupTestCommon();
+  if (!setupTestCommon()) {
+    return;
+  }
   gTestFiles = gTestFilesPartialSuccess;
   gTestFiles[11].originalFile = "partial.png";
   gTestDirs = gTestDirsPartialSuccess;
   setTestFilesAndDirsForFailure();
-  setupUpdaterTest(FILE_PARTIAL_MAR);
-
-  createUpdaterINI(true);
-
-  runUpdate(1, STATE_FAILED_LOADSOURCE_ERROR_WRONG_SIZE, checkUpdateFinished);
+  setupUpdaterTest(FILE_PARTIAL_MAR, false);
 }
 
 
 
 
+function setupUpdaterTestFinished() {
+  stageUpdate();
+}
 
-function checkUpdateFinished() {
-  checkPostUpdateRunningFile(false);
-  checkFilesAfterUpdateFailure(getApplyDirFile, true, false);
-  checkUpdateLogContents(LOG_PARTIAL_FAILURE);
+
+
+
+function stageUpdateFinished() {
   standardInit();
+  checkPostUpdateRunningFile(false);
+  checkFilesAfterUpdateFailure(getApplyDirFile);
+  checkUpdateLogContains(ERR_LOADSOURCEFILE_FAILED);
   waitForFilesInUse();
 }

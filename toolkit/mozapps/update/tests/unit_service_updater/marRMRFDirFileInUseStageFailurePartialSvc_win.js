@@ -5,62 +5,58 @@
 
 
 
+const STATE_AFTER_STAGE = IS_SERVICE_TEST ? STATE_APPLIED_SVC : STATE_APPLIED;
+
 function run_test() {
-  if (!shouldRunServiceTest()) {
+  if (!setupTestCommon()) {
     return;
   }
-
-  gStageUpdate = true;
-  setupTestCommon();
   gTestFiles = gTestFilesPartialSuccess;
   gTestDirs = gTestDirsPartialSuccess;
+  setupUpdaterTest(FILE_PARTIAL_MAR, false);
+}
+
+
+
+
+function setupUpdaterTestFinished() {
+  runHelperFileInUse(gTestDirs[2].relPathDir + gTestDirs[2].files[0], true);
+}
+
+
+
+
+function waitForHelperSleepFinished() {
+  stageUpdate();
+}
+
+
+
+
+function stageUpdateFinished() {
+  checkPostUpdateRunningFile(false);
+  checkFilesAfterUpdateSuccess(getStageDirFile, true);
+  checkUpdateLogContents(LOG_PARTIAL_SUCCESS_STAGE, true);
+  
+  runUpdate(STATE_PENDING, true, 1, false);
+}
+
+
+
+
+function runUpdateFinished() {
+  waitForHelperExit();
+}
+
+
+
+
+function waitForHelperExitFinished() {
+  standardInit();
+  checkPostUpdateRunningFile(false);
   setTestFilesAndDirsForFailure();
-  setupUpdaterTest(FILE_PARTIAL_MAR);
-
-  let fileInUseBin = getApplyDirFile(gTestDirs[2].relPathDir +
-                                     gTestDirs[2].files[0]);
-  
-  
-  fileInUseBin.remove(false);
-
-  let helperBin = getTestDirFile(FILE_HELPER_BIN);
-  let fileInUseDir = getApplyDirFile(gTestDirs[2].relPathDir);
-  helperBin.copyTo(fileInUseDir, gTestDirs[2].files[0]);
-
-  
-  let args = [getApplyDirPath() + DIR_RESOURCES, "input", "output", "-s",
-              HELPER_SLEEP_TIMEOUT];
-  let fileInUseProcess = Cc["@mozilla.org/process/util;1"].
-                         createInstance(Ci.nsIProcess);
-  fileInUseProcess.init(fileInUseBin);
-  fileInUseProcess.run(false, args, args.length);
-
-  setupAppFilesAsync();
-}
-
-function setupAppFilesFinished() {
-  do_timeout(TEST_HELPER_TIMEOUT, waitForHelperSleep);
-}
-
-function doUpdate() {
-  runUpdateUsingService(STATE_PENDING_SVC, STATE_APPLIED);
-}
-
-function checkUpdateFinished() {
-  
-  gStageUpdate = false;
-  gSwitchApp = true;
-  runUpdate(1, STATE_PENDING, checkUpdateApplied);
-}
-
-function checkUpdateApplied() {
-  setupHelperFinish();
-}
-
-function checkUpdate() {
-  checkFilesAfterUpdateFailure(getApplyDirFile, false, false);
+  checkFilesAfterUpdateFailure(getApplyDirFile);
   checkUpdateLogContains(ERR_RENAME_FILE);
   checkUpdateLogContains(ERR_MOVE_DESTDIR_7);
-  standardInit();
-  checkCallbackAppLog();
+  checkCallbackLog();
 }

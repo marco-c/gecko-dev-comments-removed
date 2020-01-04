@@ -4,63 +4,60 @@
 
 
 
+const STATE_AFTER_STAGE = IS_SERVICE_TEST ? STATE_PENDING : STATE_APPLYING;
+
 function run_test() {
-  if (!shouldRunServiceTest()) {
+  if (!setupTestCommon()) {
     return;
   }
-
-  gStageUpdate = true;
-  setupTestCommon();
   gTestFiles = gTestFilesCompleteSuccess;
   gTestDirs = gTestDirsCompleteSuccess;
   setTestFilesAndDirsForFailure();
-  setupUpdaterTest(FILE_COMPLETE_MAR);
+  setupUpdaterTest(FILE_COMPLETE_MAR, false);
+}
 
+
+
+
+function setupUpdaterTestFinished() {
+  runHelperLockFile(gTestFiles[3]);
+}
+
+
+
+
+function waitForHelperSleepFinished() {
+  stageUpdate();
+}
+
+
+
+
+function stageUpdateFinished() {
+  checkPostUpdateRunningFile(false);
   
-  let helperBin = getTestDirFile(FILE_HELPER_BIN);
-  let helperDestDir = getApplyDirFile(DIR_RESOURCES);
-  helperBin.copyTo(helperDestDir, FILE_HELPER_BIN);
-  helperBin = getApplyDirFile(DIR_RESOURCES + FILE_HELPER_BIN);
   
+  checkUpdateLogContains(ERR_ENSURE_COPY);
   
-  let lockFileRelPath = gTestFiles[3].relPathDir.split("/");
-  if (IS_MACOSX) {
-    lockFileRelPath = lockFileRelPath.slice(2);
-  }
-  lockFileRelPath = lockFileRelPath.join("/") + "/" + gTestFiles[3].fileName;
-  let args = [getApplyDirPath() + DIR_RESOURCES, "input", "output", "-s",
-              HELPER_SLEEP_TIMEOUT, lockFileRelPath];
-  let lockFileProcess = Cc["@mozilla.org/process/util;1"].
-                        createInstance(Ci.nsIProcess);
-  lockFileProcess.init(helperBin);
-  lockFileProcess.run(false, args, args.length);
-
-  setupAppFilesAsync();
+  runUpdate(STATE_FAILED_WRITE_ERROR, false, 1, false);
 }
 
-function setupAppFilesFinished() {
-  do_timeout(TEST_HELPER_TIMEOUT, waitForHelperSleep);
+
+
+
+function runUpdateFinished() {
+  waitForHelperExit();
 }
 
-function doUpdate() {
-  runUpdateUsingService(STATE_PENDING_SVC, STATE_FAILED_WRITE_ERROR_FILE_COPY);
-}
 
-function checkUpdateFinished() {
-  
-  gStageUpdate = false;
-  gSwitchApp = true;
-  runUpdate(1, STATE_PENDING, checkUpdateApplied);
-}
 
-function checkUpdateApplied() {
-  setupHelperFinish();
-}
 
-function checkUpdate() {
-  checkFilesAfterUpdateFailure(getApplyDirFile, false, false);
-  checkUpdateLogContains(ERR_RENAME_FILE);
-  checkUpdateLogContains(ERR_MOVE_DESTDIR_7);
+function waitForHelperExitFinished() {
   standardInit();
-  checkCallbackAppLog();
+  checkPostUpdateRunningFile(false);
+  checkFilesAfterUpdateFailure(getApplyDirFile);
+  checkUpdateLogContains(ERR_RENAME_FILE);
+  checkUpdateLogContains(ERR_BACKUP_CREATE_7);
+  checkUpdateLogContains(STATE_FAILED_WRITE_ERROR + "\n" + CALL_QUIT);
+  checkCallbackLog();
 }

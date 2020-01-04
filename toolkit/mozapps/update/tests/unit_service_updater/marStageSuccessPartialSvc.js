@@ -5,20 +5,64 @@
 
 
 
+const STATE_AFTER_STAGE = IS_SERVICE_TEST ? STATE_APPLIED_SVC : STATE_APPLIED;
+
 function run_test() {
-  if (!shouldRunServiceTest()) {
+  if (!setupTestCommon()) {
     return;
   }
-
-  gStageUpdate = true;
-  setupTestCommon();
   gTestFiles = gTestFilesPartialSuccess;
   gTestFiles[gTestFiles.length - 2].originalContents = null;
   gTestFiles[gTestFiles.length - 2].compareContents = "FromPartial\n";
   gTestFiles[gTestFiles.length - 2].comparePerms = 0o644;
   gTestDirs = gTestDirsPartialSuccess;
   preventDistributionFiles();
-  setupUpdaterTest(FILE_PARTIAL_MAR);
+  setupDistributionDir();
+  setupUpdaterTest(FILE_PARTIAL_MAR, true);
+}
+
+
+
+
+function setupUpdaterTestFinished() {
+  stageUpdate();
+}
+
+
+
+
+function stageUpdateFinished() {
+  checkPostUpdateRunningFile(false);
+  checkFilesAfterUpdateSuccess(getStageDirFile, true);
+  checkUpdateLogContents(LOG_PARTIAL_SUCCESS_STAGE, true, false, true);
+  
+  runUpdate(STATE_SUCCEEDED, true, 0, false);
+}
+
+
+
+
+function runUpdateFinished() {
+  checkPostUpdateAppLog();
+}
+
+
+
+
+function checkPostUpdateAppLogFinished() {
+  checkAppBundleModTime();
+  standardInit();
+  checkPostUpdateRunningFile(true);
+  checkFilesAfterUpdateSuccess(getApplyDirFile, false, true);
+  checkUpdateLogContents(LOG_REPLACE_SUCCESS, false, true, true);
+  checkDistributionDir();
+  checkCallbackLog();
+}
+
+
+
+
+function setupDistributionDir() {
   if (IS_MACOSX) {
     
     
@@ -27,73 +71,34 @@ function run_test() {
     testFile = getApplyDirFile(DIR_MACOS + "distribution/test/testFile", true);
     writeFile(testFile, "test\n");
   }
-
-  createUpdaterINI(false);
-  setAppBundleModTime();
-
-  setupAppFilesAsync();
-}
-
-function setupAppFilesFinished() {
-  runUpdateUsingService(STATE_PENDING_SVC, STATE_APPLIED);
-}
-
-function checkUpdateFinished() {
-  checkFilesAfterUpdateSuccess(getStageDirFile, true, false);
-  checkUpdateLogContents(LOG_PARTIAL_SUCCESS, true);
-  checkPostUpdateRunningFile(false);
-
-  
-  gStageUpdate = false;
-  gSwitchApp = true;
-  do_timeout(TEST_CHECK_TIMEOUT, function() {
-    runUpdate(0, STATE_SUCCEEDED, checkUpdateApplied);
-  });
 }
 
 
 
 
-
-function checkUpdateApplied() {
-  if (IS_WIN || IS_MACOSX) {
-    gCheckFunc = finishCheckUpdateApplied;
-    checkPostUpdateAppLog();
-  } else {
-    finishCheckUpdateApplied();
-  }
-}
-
-
-
-
-
-function finishCheckUpdateApplied() {
-  checkPostUpdateRunningFile(true);
-
+function checkDistributionDir() {
   let distributionDir = getApplyDirFile(DIR_RESOURCES + "distribution", true);
   if (IS_MACOSX) {
-    Assert.ok(distributionDir.exists(), MSG_SHOULD_EXIST);
+    Assert.ok(distributionDir.exists(),
+              MSG_SHOULD_EXIST + getMsgPath(distributionDir.path));
 
     let testFile = getApplyDirFile(DIR_RESOURCES + "distribution/testFile", true);
-    Assert.ok(testFile.exists(), MSG_SHOULD_EXIST);
+    Assert.ok(testFile.exists(),
+              MSG_SHOULD_EXIST + getMsgPath(testFile.path));
 
     testFile = getApplyDirFile(DIR_RESOURCES + "distribution/test/testFile", true);
-    Assert.ok(testFile.exists(), MSG_SHOULD_EXIST);
+    Assert.ok(testFile.exists(),
+              MSG_SHOULD_EXIST + getMsgPath(testFile.path));
 
     distributionDir = getApplyDirFile(DIR_MACOS + "distribution", true);
-    Assert.ok(!distributionDir.exists(), MSG_SHOULD_NOT_EXIST);
+    Assert.ok(!distributionDir.exists(),
+              MSG_SHOULD_NOT_EXIST + getMsgPath(distributionDir.path));
 
-    checkUpdateLogContains("Moving old distribution directory to new location");
+    checkUpdateLogContains(MOVE_OLD_DIST_DIR);
   } else {
     debugDump("testing that files aren't added with an add-if instruction " +
               "when the file's destination directory doesn't exist");
-    Assert.ok(!distributionDir.exists(), MSG_SHOULD_NOT_EXIST);
+    Assert.ok(!distributionDir.exists(),
+              MSG_SHOULD_NOT_EXIST + getMsgPath(distributionDir.path));
   }
-
-  checkAppBundleModTime();
-  checkFilesAfterUpdateSuccess(getApplyDirFile, false, false);
-  checkUpdateLogContents(LOG_PARTIAL_SUCCESS, true);
-  standardInit();
-  checkCallbackAppLog();
 }

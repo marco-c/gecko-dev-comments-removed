@@ -5,53 +5,43 @@
 
 
 function run_test() {
-  if (!shouldRunServiceTest()) {
+  if (!setupTestCommon()) {
     return;
   }
-
-  setupTestCommon();
   gTestFiles = gTestFilesCompleteSuccess;
   gTestDirs = gTestDirsCompleteSuccess;
   setTestFilesAndDirsForFailure();
-  setupUpdaterTest(FILE_COMPLETE_MAR);
-
-  
-  let helperBin = getTestDirFile(FILE_HELPER_BIN);
-  let helperDestDir = getApplyDirFile(DIR_RESOURCES);
-  helperBin.copyTo(helperDestDir, FILE_HELPER_BIN);
-  helperBin = getApplyDirFile(DIR_RESOURCES + FILE_HELPER_BIN);
-  
-  
-  let lockFileRelPath = gTestFiles[3].relPathDir.split("/");
-  if (IS_MACOSX) {
-    lockFileRelPath = lockFileRelPath.slice(2);
-  }
-  lockFileRelPath = lockFileRelPath.join("/") + "/" + gTestFiles[3].fileName;
-  let args = [getApplyDirPath() + DIR_RESOURCES, "input", "output", "-s",
-              HELPER_SLEEP_TIMEOUT, lockFileRelPath];
-  let lockFileProcess = Cc["@mozilla.org/process/util;1"].
-                        createInstance(Ci.nsIProcess);
-  lockFileProcess.init(helperBin);
-  lockFileProcess.run(false, args, args.length);
-
-  setupAppFilesAsync();
+  setupUpdaterTest(FILE_COMPLETE_MAR, false);
 }
 
-function setupAppFilesFinished() {
-  do_timeout(TEST_HELPER_TIMEOUT, waitForHelperSleep);
+
+
+
+function setupUpdaterTestFinished() {
+  runHelperLockFile(gTestFiles[3]);
 }
 
-function doUpdate() {
-  runUpdateUsingService(STATE_PENDING_SVC, STATE_FAILED_WRITE_ERROR);
+
+
+
+function waitForHelperSleepFinished() {
+  runUpdate(STATE_FAILED_WRITE_ERROR, false, 1, true);
 }
 
-function checkUpdateFinished() {
-  setupHelperFinish();
+
+
+
+function runUpdateFinished() {
+  waitForHelperExit();
 }
 
-function checkUpdate() {
-  checkFilesAfterUpdateFailure(getApplyDirFile, false, false);
-  checkUpdateLogContains(ERR_RENAME_FILE);
+
+
+
+function waitForHelperExitFinished() {
   standardInit();
-  checkCallbackServiceLog();
+  checkPostUpdateRunningFile(false);
+  checkFilesAfterUpdateFailure(getApplyDirFile);
+  checkUpdateLogContains(ERR_RENAME_FILE);
+  checkCallbackLog();
 }

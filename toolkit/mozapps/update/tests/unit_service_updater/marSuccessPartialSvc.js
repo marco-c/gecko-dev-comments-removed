@@ -6,11 +6,9 @@
 
 
 function run_test() {
-  if (!shouldRunServiceTest()) {
+  if (!setupTestCommon()) {
     return;
   }
-
-  setupTestCommon();
   gTestFiles = gTestFilesPartialSuccess;
   gTestFiles[gTestFiles.length - 1].originalContents = null;
   gTestFiles[gTestFiles.length - 1].compareContents = "FromPartial\n";
@@ -19,7 +17,41 @@ function run_test() {
   gTestFiles[gTestFiles.length - 2].compareContents = "FromPartial\n";
   gTestFiles[gTestFiles.length - 2].comparePerms = 0o644;
   gTestDirs = gTestDirsPartialSuccess;
-  setupUpdaterTest(FILE_PARTIAL_MAR);
+  setupDistributionDir();
+  setupUpdaterTest(FILE_PARTIAL_MAR, false);
+}
+
+
+
+
+function setupUpdaterTestFinished() {
+  runUpdate(STATE_SUCCEEDED, false, 0, true);
+}
+
+
+
+
+function runUpdateFinished() {
+  checkPostUpdateAppLog();
+}
+
+
+
+
+function checkPostUpdateAppLogFinished() {
+  checkAppBundleModTime();
+  standardInit();
+  checkPostUpdateRunningFile(true);
+  checkFilesAfterUpdateSuccess(getApplyDirFile);
+  checkUpdateLogContents(LOG_PARTIAL_SUCCESS);
+  checkDistributionDir();
+  checkCallbackLog();
+}
+
+
+
+
+function setupDistributionDir() {
   if (IS_MACOSX) {
     
     
@@ -29,44 +61,16 @@ function run_test() {
     testFile = getApplyDirFile(DIR_MACOS + "distribution/test/testFile", true);
     writeFile(testFile, "test\n");
   }
-
-  createUpdaterINI(true);
-  setAppBundleModTime();
-
-  setupAppFilesAsync();
-}
-
-function setupAppFilesFinished() {
-  runUpdateUsingService(STATE_PENDING_SVC, STATE_SUCCEEDED);
 }
 
 
 
 
-
-function checkUpdateFinished() {
-  if (IS_WIN || IS_MACOSX) {
-    gCheckFunc = finishCheckUpdateFinished;
-    checkPostUpdateAppLog();
-  } else {
-    finishCheckUpdateFinished();
-  }
-}
-
-
-
-
-
-function finishCheckUpdateFinished() {
+function checkDistributionDir() {
   if (IS_MACOSX) {
     let distributionDir = getApplyDirFile(DIR_MACOS + "distribution", true);
-    Assert.ok(!distributionDir.exists(), MSG_SHOULD_NOT_EXIST);
-    checkUpdateLogContains("removing old distribution directory");
+    Assert.ok(!distributionDir.exists(),
+              MSG_SHOULD_NOT_EXIST + getMsgPath(distributionDir.path));
+    checkUpdateLogContains(REMOVE_OLD_DIST_DIR);
   }
-
-  checkAppBundleModTime();
-  checkFilesAfterUpdateSuccess(getApplyDirFile, false, false);
-  checkUpdateLogContents(LOG_PARTIAL_SUCCESS);
-  standardInit();
-  checkCallbackServiceLog();
 }
