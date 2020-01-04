@@ -178,15 +178,16 @@ BluetoothProfileController::SetupProfiles(bool aAssignServiceClass)
   bool isRemoteControl = IS_REMOTE_CONTROL(mTarget.cod);
   bool isKeyboard = IS_KEYBOARD(mTarget.cod);
   bool isPointingDevice = IS_POINTING_DEVICE(mTarget.cod);
-  bool isInvalid = IS_INVALID_COD(mTarget.cod);
+  bool isInvalid = IS_INVALID(mTarget.cod);
 
+  
+  
   
   
   if (isInvalid) {
     AddProfile(BluetoothHfpManager::Get());
     AddProfile(BluetoothA2dpManager::Get());
     AddProfile(BluetoothAvrcpManager::Get()); 
-    AddProfile(BluetoothHidManager::Get());
     return;
   }
 

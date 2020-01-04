@@ -62,7 +62,9 @@ BEGIN_BLUETOOTH_NAMESPACE
 
 
 
-#define IS_INVALID_COD(cod)          (cod >> 24)
+
+
+#define IS_INVALID(cod)              ((cod) >> 24 || (cod) == 0x1f00)
 
 class BluetoothProfileManagerBase;
 class BluetoothReplyRunnable;
