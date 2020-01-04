@@ -573,10 +573,13 @@ nsDocShellTreeOwner::GetDevicePixelsPerDesktopPixel(double* aScale)
 NS_IMETHODIMP
 nsDocShellTreeOwner::SetPositionDesktopPix(int32_t aX, int32_t aY)
 {
-  
-  
-  NS_ASSERTION(false, "implement me!");
-  return NS_ERROR_NOT_IMPLEMENTED;
+  if (mWebBrowser) {
+    return mWebBrowser->SetPositionDesktopPix(aX, aY);
+  }
+
+  double scale = 1.0;
+  GetDevicePixelsPerDesktopPixel(&scale);
+  return SetPosition(NSToIntRound(aX * scale), NSToIntRound(aY * scale));
 }
 
 NS_IMETHODIMP

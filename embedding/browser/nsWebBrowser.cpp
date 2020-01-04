@@ -1307,8 +1307,14 @@ nsWebBrowser::SetPositionDesktopPix(int32_t aX, int32_t aY)
 {
   
   
-  NS_ASSERTION(false, "implement me!");
-  return NS_ERROR_NOT_IMPLEMENTED;
+  
+  
+  
+  
+  
+  double scale = 1.0;
+  GetDevicePixelsPerDesktopPixel(&scale);
+  return SetPosition(NSToIntRound(aX * scale), NSToIntRound(aY * scale));
 }
 
 NS_IMETHODIMP
