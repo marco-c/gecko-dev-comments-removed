@@ -241,6 +241,15 @@ public class BrowserSearch extends HomeFragment
     @Override
     public void onHiddenChanged(boolean hidden) {
         if (!hidden) {
+            Tab tab = Tabs.getInstance().getSelectedTab();
+            final boolean isPrivate = (tab != null && tab.isPrivate());
+
+            
+            
+            if (isPrivate) {
+                getLoaderManager().destroyLoader(LOADER_ID_SUGGESTION);
+            }
+
             GeckoAppShell.sendEventToGecko(GeckoEvent.createBroadcastEvent("SearchEngines:GetVisible", null));
         }
         super.onHiddenChanged(hidden);
