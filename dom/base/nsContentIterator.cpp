@@ -30,6 +30,7 @@ NodeToParentOffset(nsINode* aNode, int32_t* aOffset)
 
   if (parent) {
     *aOffset = parent->IndexOf(aNode);
+    NS_WARN_IF(*aOffset < 0);
   }
 
   return parent;
@@ -44,7 +45,7 @@ NodeIsInTraversalRange(nsINode* aNode, bool aIsPreMode,
                        nsINode* aStartNode, int32_t aStartOffset,
                        nsINode* aEndNode, int32_t aEndOffset)
 {
-  if (!aStartNode || !aEndNode || !aNode) {
+  if (NS_WARN_IF(!aStartNode) || NS_WARN_IF(!aEndNode) || NS_WARN_IF(!aNode)) {
     return false;
   }
 
@@ -71,6 +72,7 @@ NodeIsInTraversalRange(nsINode* aNode, bool aIsPreMode,
   }
 
   int32_t indx = parent->IndexOf(aNode);
+  NS_WARN_IF(indx == -1);
 
   if (!aIsPreMode) {
     ++indx;
@@ -262,7 +264,7 @@ nsContentIterator::~nsContentIterator()
 nsresult
 nsContentIterator::Init(nsINode* aRoot)
 {
-  if (!aRoot) {
+  if (NS_WARN_IF(!aRoot)) {
     return NS_ERROR_NULL_POINTER;
   }
 
@@ -272,8 +274,10 @@ nsContentIterator::Init(nsINode* aRoot)
   if (mPre) {
     mFirst = aRoot;
     mLast  = GetDeepLastChild(aRoot);
+    NS_WARN_IF(!mLast);
   } else {
     mFirst = GetDeepFirstChild(aRoot);
+    NS_WARN_IF(!mFirst);
     mLast  = aRoot;
   }
 
@@ -286,24 +290,34 @@ nsContentIterator::Init(nsINode* aRoot)
 nsresult
 nsContentIterator::Init(nsIDOMRange* aDOMRange)
 {
-  NS_ENSURE_ARG_POINTER(aDOMRange);
+  if (NS_WARN_IF(!aDOMRange)) {
+    return NS_ERROR_INVALID_ARG;
+  }
   nsRange* range = static_cast<nsRange*>(aDOMRange);
 
   mIsDone = false;
 
   
   mCommonParent = range->GetCommonAncestor();
-  NS_ENSURE_TRUE(mCommonParent, NS_ERROR_FAILURE);
+  if (NS_WARN_IF(!mCommonParent)) {
+    return NS_ERROR_FAILURE;
+  }
 
   
   int32_t startIndx = range->StartOffset();
+  NS_WARN_IF(startIndx < 0);
   nsINode* startNode = range->GetStartParent();
-  NS_ENSURE_TRUE(startNode, NS_ERROR_FAILURE);
+  if (NS_WARN_IF(!startNode)) {
+    return NS_ERROR_FAILURE;
+  }
 
   
   int32_t endIndx = range->EndOffset();
+  NS_WARN_IF(endIndx < 0);
   nsINode* endNode = range->GetEndParent();
-  NS_ENSURE_TRUE(endNode, NS_ERROR_FAILURE);
+  if (NS_WARN_IF(!endNode)) {
+    return NS_ERROR_FAILURE;
+  }
 
   bool startIsData = startNode->IsNodeOfType(nsINode::eDATA_NODE);
 
@@ -327,7 +341,8 @@ nsContentIterator::Init(nsIDOMRange* aDOMRange)
       mLast    = mFirst;
       mCurNode = mFirst;
 
-      RebuildIndexStack();
+      nsresult rv = RebuildIndexStack();
+      NS_WARN_IF(NS_FAILED(rv));
       return NS_OK;
     }
   }
@@ -338,6 +353,7 @@ nsContentIterator::Init(nsIDOMRange* aDOMRange)
 
   if (!startIsData && startNode->HasChildren()) {
     cChild = startNode->GetChildAt(startIndx);
+    NS_WARN_IF(!cChild);
   }
 
   if (!cChild) {
@@ -356,11 +372,13 @@ nsContentIterator::Init(nsIDOMRange* aDOMRange)
       
       if (!startIsData && startIndx) {
         mFirst = GetNextSibling(startNode);
+        NS_WARN_IF(!mFirst);
 
         
         
-        if (mFirst && !NodeIsInTraversalRange(mFirst, mPre, startNode,
-                                              startIndx, endNode, endIndx)) {
+        if (mFirst &&
+            NS_WARN_IF(!NodeIsInTraversalRange(mFirst, mPre, startNode,
+                                               startIndx, endNode, endIndx))) {
           mFirst = nullptr;
         }
       } else {
@@ -368,11 +386,11 @@ nsContentIterator::Init(nsIDOMRange* aDOMRange)
       }
     } else {
       
-      if (startNode->IsContent()) {
-        mFirst = startNode->AsContent();
-      } else {
+      if (NS_WARN_IF(!startNode->IsContent())) {
         
         mFirst = nullptr;
+      } else {
+        mFirst = startNode->AsContent();
       }
     }
   } else {
@@ -381,12 +399,14 @@ nsContentIterator::Init(nsIDOMRange* aDOMRange)
     } else {
       
       mFirst = GetDeepFirstChild(cChild);
+      NS_WARN_IF(!mFirst);
 
       
       
 
-      if (mFirst && !NodeIsInTraversalRange(mFirst, mPre, startNode, startIndx,
-                                            endNode, endIndx)) {
+      if (mFirst &&
+          NS_WARN_IF(!NodeIsInTraversalRange(mFirst, mPre, startNode, startIndx,
+                                             endNode, endIndx))) {
         mFirst = nullptr;
       }
     }
@@ -399,22 +419,24 @@ nsContentIterator::Init(nsIDOMRange* aDOMRange)
 
   if (endIsData || !endNode->HasChildren() || endIndx == 0) {
     if (mPre) {
-      if (endNode->IsContent()) {
+      if (NS_WARN_IF(!endNode->IsContent())) {
+        
+        mLast = nullptr;
+      } else {
         
         
         
         if (!endIsData && !endNode->HasChildren() && !endIndx) {
           mLast = GetPrevSibling(endNode);
-          if (!NodeIsInTraversalRange(mLast, mPre, startNode, startIndx,
-                                      endNode, endIndx)) {
+          NS_WARN_IF(!mLast);
+          if (NS_WARN_IF(!NodeIsInTraversalRange(mLast, mPre,
+                                                 startNode, startIndx,
+                                                 endNode, endIndx))) {
             mLast = nullptr;
           }
         } else {
           mLast = endNode->AsContent();
         }
-      } else {
-        
-        mLast = nullptr;
       }
     } else {
       
@@ -424,9 +446,11 @@ nsContentIterator::Init(nsIDOMRange* aDOMRange)
 
       if (!endIsData) {
         mLast = GetPrevSibling(endNode);
+        NS_WARN_IF(!mLast);
 
-        if (!NodeIsInTraversalRange(mLast, mPre, startNode, startIndx,
-                                    endNode, endIndx)) {
+        if (NS_WARN_IF(!NodeIsInTraversalRange(mLast, mPre,
+                                               startNode, startIndx,
+                                               endNode, endIndx))) {
           mLast = nullptr;
         }
       } else {
@@ -438,7 +462,7 @@ nsContentIterator::Init(nsIDOMRange* aDOMRange)
 
     cChild = endNode->GetChildAt(--indx);
 
-    if (!cChild) {
+    if (NS_WARN_IF(!cChild)) {
       
       NS_NOTREACHED("nsContentIterator::nsContentIterator");
       return NS_ERROR_FAILURE;
@@ -446,9 +470,11 @@ nsContentIterator::Init(nsIDOMRange* aDOMRange)
 
     if (mPre) {
       mLast  = GetDeepLastChild(cChild);
+      NS_WARN_IF(!mLast);
 
-      if (!NodeIsInTraversalRange(mLast, mPre, startNode, startIndx,
-                                  endNode, endIndx)) {
+      if (NS_WARN_IF(!NodeIsInTraversalRange(mLast, mPre,
+                                             startNode, startIndx,
+                                             endNode, endIndx))) {
         mLast = nullptr;
       }
     } else {
@@ -459,7 +485,7 @@ nsContentIterator::Init(nsIDOMRange* aDOMRange)
 
   
 
-  if (!mFirst || !mLast) {
+  if (NS_WARN_IF(!mFirst) || NS_WARN_IF(!mLast)) {
     mFirst = nullptr;
     mLast  = nullptr;
   }
@@ -470,7 +496,8 @@ nsContentIterator::Init(nsIDOMRange* aDOMRange)
   if (!mCurNode) {
     mIndexes.Clear();
   } else {
-    RebuildIndexStack();
+    nsresult rv = RebuildIndexStack();
+    NS_WARN_IF(NS_FAILED(rv));
   }
 
   return NS_OK;
@@ -499,7 +526,7 @@ nsContentIterator::RebuildIndexStack()
   while (current != mCommonParent) {
     parent = current->GetParentNode();
 
-    if (!parent) {
+    if (NS_WARN_IF(!parent)) {
       return NS_ERROR_FAILURE;
     }
 
@@ -526,7 +553,7 @@ nsINode*
 nsContentIterator::GetDeepFirstChild(nsINode* aRoot,
                                      nsTArray<int32_t>* aIndexes)
 {
-  if (!aRoot || !aRoot->HasChildren()) {
+  if (NS_WARN_IF(!aRoot) || !aRoot->HasChildren()) {
     return aRoot;
   }
   
@@ -542,7 +569,7 @@ nsIContent*
 nsContentIterator::GetDeepFirstChild(nsIContent* aRoot,
                                      nsTArray<int32_t>* aIndexes)
 {
-  if (!aRoot) {
+  if (NS_WARN_IF(!aRoot)) {
     return nullptr;
   }
 
@@ -565,7 +592,7 @@ nsINode*
 nsContentIterator::GetDeepLastChild(nsINode* aRoot,
                                     nsTArray<int32_t>* aIndexes)
 {
-  if (!aRoot || !aRoot->HasChildren()) {
+  if (NS_WARN_IF(!aRoot) || !aRoot->HasChildren()) {
     return aRoot;
   }
   
@@ -581,7 +608,7 @@ nsIContent*
 nsContentIterator::GetDeepLastChild(nsIContent* aRoot,
                                     nsTArray<int32_t>* aIndexes)
 {
-  if (!aRoot) {
+  if (NS_WARN_IF(!aRoot)) {
     return nullptr;
   }
 
@@ -607,12 +634,12 @@ nsIContent*
 nsContentIterator::GetNextSibling(nsINode* aNode,
                                   nsTArray<int32_t>* aIndexes)
 {
-  if (!aNode) {
+  if (NS_WARN_IF(!aNode)) {
     return nullptr;
   }
 
   nsINode* parent = aNode->GetParentNode();
-  if (!parent) {
+  if (NS_WARN_IF(!parent)) {
     return nullptr;
   }
 
@@ -626,6 +653,7 @@ nsContentIterator::GetNextSibling(nsINode* aNode,
   } else {
     indx = mCachedIndex;
   }
+  NS_WARN_IF(indx < 0);
 
   
   
@@ -634,6 +662,7 @@ nsContentIterator::GetNextSibling(nsINode* aNode,
   if (sib != aNode) {
     
     indx = parent->IndexOf(aNode);
+    NS_WARN_IF(indx < 0);
   }
 
   
@@ -668,12 +697,12 @@ nsIContent*
 nsContentIterator::GetPrevSibling(nsINode* aNode,
                                   nsTArray<int32_t>* aIndexes)
 {
-  if (!aNode) {
+  if (NS_WARN_IF(!aNode)) {
     return nullptr;
   }
 
   nsINode* parent = aNode->GetParentNode();
-  if (!parent) {
+  if (NS_WARN_IF(!parent)) {
     return nullptr;
   }
 
@@ -694,6 +723,7 @@ nsContentIterator::GetPrevSibling(nsINode* aNode,
   if (sib != aNode) {
     
     indx = parent->IndexOf(aNode);
+    NS_WARN_IF(indx < 0);
   }
 
   
@@ -725,6 +755,7 @@ nsContentIterator::NextNode(nsINode* aNode, nsTArray<int32_t>* aIndexes)
     
     if (node->HasChildren()) {
       nsIContent* firstChild = node->GetFirstChild();
+      MOZ_ASSERT(firstChild);
 
       
       if (aIndexes) {
@@ -743,6 +774,7 @@ nsContentIterator::NextNode(nsINode* aNode, nsTArray<int32_t>* aIndexes)
 
   
   nsINode* parent = node->GetParentNode();
+  NS_WARN_IF(!parent);
   nsIContent* sibling = nullptr;
   int32_t indx = 0;
 
@@ -765,6 +797,7 @@ nsContentIterator::NextNode(nsINode* aNode, nsTArray<int32_t>* aIndexes)
   if (sibling != node) {
     
     indx = parent->IndexOf(node);
+    NS_WARN_IF(indx < 0);
   }
 
   
@@ -806,6 +839,7 @@ nsContentIterator::PrevNode(nsINode* aNode, nsTArray<int32_t>* aIndexes)
   
   if (mPre) {
     nsINode* parent = node->GetParentNode();
+    NS_WARN_IF(!parent);
     nsIContent* sibling = nullptr;
     int32_t indx = 0;
 
@@ -824,11 +858,13 @@ nsContentIterator::PrevNode(nsINode* aNode, nsTArray<int32_t>* aIndexes)
     
     if (indx >= 0) {
       sibling = parent->GetChildAt(indx);
+      NS_WARN_IF(!sibling);
     }
 
     if (sibling != node) {
       
       indx = parent->IndexOf(node);
+      NS_WARN_IF(indx < 0);
     }
 
     
@@ -858,10 +894,12 @@ nsContentIterator::PrevNode(nsINode* aNode, nsTArray<int32_t>* aIndexes)
 
   
   int32_t numChildren = node->GetChildCount();
+  NS_WARN_IF(numChildren < 0);
 
   
   if (numChildren) {
     nsIContent* lastChild = node->GetLastChild();
+    NS_WARN_IF(!lastChild);
     numChildren--;
 
     
@@ -887,11 +925,7 @@ void
 nsContentIterator::First()
 {
   if (mFirst) {
-#ifdef DEBUG
-    nsresult rv =
-#endif
-    PositionAt(mFirst);
-
+    DebugOnly<nsresult> rv = PositionAt(mFirst);
     NS_ASSERTION(NS_SUCCEEDED(rv), "Failed to position iterator!");
   }
 
@@ -905,11 +939,7 @@ nsContentIterator::Last()
   NS_ASSERTION(mLast, "No last node!");
 
   if (mLast) {
-#ifdef DEBUG
-    nsresult rv =
-#endif
-    PositionAt(mLast);
-
+    DebugOnly<nsresult> rv = PositionAt(mLast);
     NS_ASSERTION(NS_SUCCEEDED(rv), "Failed to position iterator!");
   }
 
@@ -920,7 +950,7 @@ nsContentIterator::Last()
 void
 nsContentIterator::Next()
 {
-  if (mIsDone || !mCurNode) {
+  if (mIsDone || NS_WARN_IF(!mCurNode)) {
     return;
   }
 
@@ -936,7 +966,7 @@ nsContentIterator::Next()
 void
 nsContentIterator::Prev()
 {
-  if (mIsDone || !mCurNode) {
+  if (NS_WARN_IF(mIsDone) || NS_WARN_IF(!mCurNode)) {
     return;
   }
 
@@ -961,7 +991,7 @@ nsContentIterator::IsDone()
 nsresult
 nsContentIterator::PositionAt(nsINode* aCurNode)
 {
-  if (!aCurNode) {
+  if (NS_WARN_IF(!aCurNode)) {
     return NS_ERROR_NULL_POINTER;
   }
 
@@ -984,11 +1014,15 @@ nsContentIterator::PositionAt(nsINode* aCurNode)
   if (firstNode && lastNode) {
     if (mPre) {
       firstNode = NodeToParentOffset(mFirst, &firstOffset);
+      NS_WARN_IF(!firstNode);
+      NS_WARN_IF(firstOffset < 0);
 
       if (lastNode->GetChildCount()) {
         lastOffset = 0;
       } else {
         lastNode = NodeToParentOffset(mLast, &lastOffset);
+        NS_WARN_IF(!lastNode);
+        NS_WARN_IF(lastOffset < 0);
         ++lastOffset;
       }
     } else {
@@ -996,11 +1030,16 @@ nsContentIterator::PositionAt(nsINode* aCurNode)
 
       if (numChildren) {
         firstOffset = numChildren;
+        NS_WARN_IF(firstOffset < 0);
       } else {
         firstNode = NodeToParentOffset(mFirst, &firstOffset);
+        NS_WARN_IF(!firstNode);
+        NS_WARN_IF(firstOffset < 0);
       }
 
       lastNode = NodeToParentOffset(mLast, &lastOffset);
+      NS_WARN_IF(!lastNode);
+      NS_WARN_IF(lastOffset < 0);
       ++lastOffset;
     }
   }
@@ -1009,9 +1048,10 @@ nsContentIterator::PositionAt(nsINode* aCurNode)
   
   
   if (mFirst != mCurNode && mLast != mCurNode &&
-      (!firstNode || !lastNode ||
-       !NodeIsInTraversalRange(mCurNode, mPre, firstNode, firstOffset,
-                               lastNode, lastOffset))) {
+      (NS_WARN_IF(!firstNode) || NS_WARN_IF(!lastNode) ||
+       NS_WARN_IF(!NodeIsInTraversalRange(mCurNode, mPre,
+                                          firstNode, firstOffset,
+                                          lastNode, lastOffset)))) {
     mIsDone = true;
     return NS_ERROR_FAILURE;
   }
@@ -1040,7 +1080,7 @@ nsContentIterator::PositionAt(nsINode* aCurNode)
 
     nsINode* parent = tempNode->GetParentNode();
 
-    if (!parent) {
+    if (NS_WARN_IF(!parent)) {
       
       break;
     }
@@ -1060,12 +1100,13 @@ nsContentIterator::PositionAt(nsINode* aCurNode)
   while (newCurNode) {
     nsINode* parent = newCurNode->GetParentNode();
 
-    if (!parent) {
+    if (NS_WARN_IF(!parent)) {
       
       break;
     }
 
     int32_t indx = parent->IndexOf(newCurNode);
+    NS_WARN_IF(indx < 0);
 
     
     newIndexes.InsertElementAt(0, indx);
