@@ -4,6 +4,7 @@
 
 
 #include "base/basictypes.h"
+#include "mozilla/ArrayUtils.h"
 
 #include "nsAboutProtocolHandler.h"
 #include "nsIURI.h"
@@ -18,6 +19,7 @@
 #include "nsAutoPtr.h"
 #include "nsIWritablePropertyBag2.h"
 #include "nsIChannel.h"
+#include "nsIScriptError.h"
 
 static NS_DEFINE_CID(kSimpleURICID,     NS_SIMPLEURI_CID);
 static NS_DEFINE_CID(kNestedAboutURICID, NS_NESTEDABOUTURI_CID);
@@ -183,9 +185,23 @@ nsAboutProtocolHandler::NewChannel2(nsIURI* uri,
             
             
             
-            nsCOMPtr<nsILoadInfo> loadInfo;
-            (*result)->GetLoadInfo(getter_AddRefs(loadInfo));
-            if (!loadInfo) {
+            nsCOMPtr<nsILoadInfo> loadInfo = (*result)->GetLoadInfo();
+            if (aLoadInfo != loadInfo) {
+                if (loadInfo) {
+                    NS_ASSERTION(false,
+                        "nsIAboutModule->newChannel(aURI, aLoadInfo) needs to set LoadInfo");
+                    const char16_t* params[] = {
+                        MOZ_UTF16("nsIAboutModule->newChannel(aURI)"),
+                        MOZ_UTF16("nsIAboutModule->newChannel(aURI, aLoadInfo)")
+                    };
+                    nsContentUtils::ReportToConsole(
+                        nsIScriptError::warningFlag,
+                        NS_LITERAL_CSTRING("Security by Default"),
+                        nullptr, 
+                        nsContentUtils::eNECKO_PROPERTIES,
+                        "APIDeprecationWarning",
+                        params, mozilla::ArrayLength(params));
+                }
                 (*result)->SetLoadInfo(aLoadInfo);
             }
 
