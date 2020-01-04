@@ -316,11 +316,6 @@ NS_IMETHODIMP DummyChannel::GetContentDispositionHeader(nsACString&)
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 
-NS_IMETHODIMP DummyChannel::ForceNoIntercept()
-{
-  return NS_OK;
-}
-
 
 
 
@@ -404,7 +399,7 @@ AppProtocolHandler::NewChannel2(nsIURI* aUri,
                                 nsIChannel** aResult)
 {
   NS_ENSURE_ARG_POINTER(aUri);
-  RefPtr<nsJARChannel> channel = new nsJARChannel();
+  nsRefPtr<nsJARChannel> channel = new nsJARChannel();
 
   nsAutoCString host;
   nsresult rv = aUri->GetHost(host);
@@ -446,7 +441,7 @@ AppProtocolHandler::NewChannel2(nsIURI* aUri,
     if (NS_FAILED(rv) || !jsInfo.isObject()) {
       
       printf_stderr("!! Creating a dummy channel for %s (no appInfo)\n", host.get());
-      RefPtr<nsIChannel> dummyChannel = new DummyChannel();
+      nsRefPtr<nsIChannel> dummyChannel = new DummyChannel();
       dummyChannel->SetLoadInfo(aLoadInfo);
       dummyChannel.forget(aResult);
       return NS_OK;
@@ -457,7 +452,7 @@ AppProtocolHandler::NewChannel2(nsIURI* aUri,
     if (!appInfo->Init(cx, jsInfo) || appInfo->mPath.IsEmpty()) {
       
       printf_stderr("!! Creating a dummy channel for %s (invalid appInfo)\n", host.get());
-      RefPtr<nsIChannel> dummyChannel = new DummyChannel();
+      nsRefPtr<nsIChannel> dummyChannel = new DummyChannel();
       dummyChannel->SetLoadInfo(aLoadInfo);
       dummyChannel.forget(aResult);
       return NS_OK;
