@@ -57,16 +57,6 @@ DeviceManagerD3D11::DeviceManagerD3D11()
   mFeatureLevels.AppendElement(D3D_FEATURE_LEVEL_10_0);
 }
 
-static inline bool
-IsWARPStable()
-{
-  
-  if (!IsWin8OrLater() || GetModuleHandleA("nvdxgiwrap.dll")) {
-    return false;
-  }
-  return true;
-}
-
 void
 DeviceManagerD3D11::CreateDevices()
 {
@@ -92,29 +82,13 @@ DeviceManagerD3D11::CreateDevices()
   }
 
   if (XRE_IsParentProcess()) {
-    if (!gfxConfig::UseFallback(Fallback::USE_D3D11_WARP_COMPOSITOR)) {
+    if (!gfxPrefs::LayersD3D11ForceWARP()) {
       AttemptD3D11DeviceCreation(d3d11);
-      if (d3d11.GetValue() == FeatureStatus::CrashedInHandler) {
-        return;
-      }
-
-      
-      
-      if (!mCompositorDevice && IsWARPStable() && !gfxPrefs::LayersD3D11DisableWARP()) {
-        gfxConfig::Reenable(Feature::D3D11_COMPOSITING, Fallback::USE_D3D11_WARP_COMPOSITOR);
-      }
-    }
-
-    
-    if (gfxConfig::UseFallback(Fallback::USE_D3D11_WARP_COMPOSITOR)) {
-      MOZ_ASSERT(d3d11.IsEnabled());
-      MOZ_ASSERT(!mCompositorDevice);
-      MOZ_ASSERT(IsWARPStable() || gfxPrefs::LayersD3D11ForceWARP());
-
+    } else {
       AttemptWARPDeviceCreation();
-      if (d3d11.GetValue() == FeatureStatus::CrashedInHandler) {
-        return;
-      }
+    }
+    if (d3d11.GetValue() == FeatureStatus::CrashedInHandler) {
+      return;
     }
 
     
@@ -129,7 +103,7 @@ DeviceManagerD3D11::CreateDevices()
     
     
     
-    mIsWARP = gfxConfig::UseFallback(Fallback::USE_D3D11_WARP_COMPOSITOR);
+    mIsWARP = gfxPrefs::LayersD3D11ForceWARP();
     mTextureSharingWorks =
       gfxPlatform::GetPlatform()->GetParentDevicePrefs().d3d11TextureSharingWorks();
   }
