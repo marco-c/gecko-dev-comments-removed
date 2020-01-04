@@ -1956,8 +1956,11 @@ KeyframeEffectReadOnly::CanAnimateTransformOnCompositor(
   const nsIFrame* aFrame,
   const nsIContent* aContent)
 {
+  
+  
+  
   if (aFrame->Combines3DTransformWithAncestors() ||
-      aFrame->Extend3DContext()) {
+      aFrame->StyleDisplay()->mTransformStyle == NS_STYLE_TRANSFORM_STYLE_PRESERVE_3D) {
     if (aContent) {
       nsCString message;
       message.AppendLiteral("Gecko bug: Async animation of 'preserve-3d' "
