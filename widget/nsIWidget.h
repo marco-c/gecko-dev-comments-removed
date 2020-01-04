@@ -1721,23 +1721,6 @@ class nsIWidget : public nsISupports {
 
     virtual nsresult ClearNativeTouchSequence(nsIObserver* aObserver);
 
-    
-
-
-
-
-
-
-
-    already_AddRefed<mozilla::gfx::SourceSurface> SnapshotWidgetOnScreen();
-
-    
-
-
-
-
-    virtual bool CaptureWidgetOnScreen(RefPtr<mozilla::gfx::DrawTarget> aDT) = 0;
-
     virtual void StartAsyncScrollbarDrag(const AsyncDragMetrics& aDragMetrics) = 0;
 
 private:
