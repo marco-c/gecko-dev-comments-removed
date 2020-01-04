@@ -49,7 +49,19 @@ nsReferencedElement::Reset(nsIContent* aFromContent, nsIURI* aURI,
   nsIContent* bindingParent = aFromContent->GetBindingParent();
   if (bindingParent) {
     nsXBLBinding* binding = bindingParent->GetXBLBinding();
-    if (binding) {
+    if (!binding) {
+      
+      
+      
+      Element* anonRoot =
+        doc->GetAnonRootIfInAnonymousContentContainer(aFromContent);
+      if (anonRoot) {
+        mElement = nsContentUtils::MatchElementId(anonRoot, ref);
+      }
+
+      
+      return;
+    } else {
       bool isEqualExceptRef;
       rv = aURI->EqualsExceptRef(binding->PrototypeBinding()->DocURI(),
                                  &isEqualExceptRef);
