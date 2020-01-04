@@ -1990,7 +1990,12 @@ nsXMLHttpRequest::OnStartRequest(nsIRequest *request, nsISupports *ctxt)
       } else {
         mIsHtml = true;
       }
-    } else if (type.Find("xml") == kNotFound) {
+    } else if (!(type.EqualsLiteral("text/xml") ||
+                 type.EqualsLiteral("application/xml") ||
+                 type.RFind("+xml", true, -1, 4) != kNotFound)) {
+      
+      
+      
       mState &= ~XML_HTTP_REQUEST_PARSEBODY;
     }
   } else {
