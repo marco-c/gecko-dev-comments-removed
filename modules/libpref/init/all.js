@@ -490,11 +490,6 @@ pref("media.mediasource.webm.enabled", true);
 #endif
 
 
-pref("media.mediasource.format-reader", true);
-
-
-pref("media.mediasource.format-reader.webm", false);
-
 pref("media.format-reader.webm", true);
 
 #ifdef MOZ_WEBSPEECH
