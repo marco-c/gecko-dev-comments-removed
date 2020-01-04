@@ -1652,6 +1652,10 @@ protected:
   
   bool ConfirmDialogIfNeeded();
 
+  
+  
+  void CheckForDPIChange();
+
 private:
   
   void FireOnNewGlobalObject();
