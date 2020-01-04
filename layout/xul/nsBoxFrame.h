@@ -56,7 +56,7 @@ public:
   
   
 
-  virtual void SetLayoutManager(nsBoxLayout* aLayout) override { mLayoutManager = aLayout; }
+  virtual void SetXULLayoutManager(nsBoxLayout* aLayout) override { mLayoutManager = aLayout; }
   virtual nsBoxLayout* GetLayoutManager() override { return mLayoutManager; }
 
   virtual nsresult RelayoutChildAtOrdinal(nsIFrame* aChild) override;

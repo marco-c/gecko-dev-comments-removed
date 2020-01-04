@@ -136,7 +136,7 @@ nsBoxFrame::nsBoxFrame(nsStyleContext* aContext,
     NS_NewSprocketLayout(layout);
   }
 
-  SetLayoutManager(layout);
+  SetXULLayoutManager(layout);
 }
 
 nsBoxFrame::~nsBoxFrame()
@@ -958,7 +958,7 @@ nsBoxFrame::DestroyFrom(nsIFrame* aDestructRoot)
   RegUnregAccessKey(false);
 
   
-  SetLayoutManager(nullptr);
+  SetXULLayoutManager(nullptr);
 
   nsContainerFrame::DestroyFrom(aDestructRoot);
 } 
