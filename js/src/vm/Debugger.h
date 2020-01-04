@@ -503,6 +503,12 @@ class Debugger : private mozilla::LinkedListElement<Debugger>
 
 
 
+    JSTrapStatus reportUncaughtException(mozilla::Maybe<AutoCompartment>& ac);
+
+    
+
+
+
 
 
 
