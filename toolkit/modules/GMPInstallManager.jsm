@@ -404,21 +404,29 @@ GMPExtractor.prototype = {
       let entries = this._getZipEntries(zipReader);
       let extractedPaths = [];
 
+      let destDir = Cc["@mozilla.org/file/local;1"].
+                    createInstance(Ci.nsILocalFile);
+      destDir.initWithPath(this.installToDirPath);
+      
+      if(!destDir.exists()) {
+        destDir.create(Ci.nsIFile.DIRECTORY_TYPE, parseInt("0755", 8));
+      }
+
       
       entries.forEach(entry => {
         
-        if (entry.includes("__MACOSX")) {
+        if (entry.includes("__MACOSX") ||
+            entry == "_metadata/verified_contents.json" ||
+            entry == "imgs/icon-128x128.png") {
           return;
         }
-        let outFile = Cc["@mozilla.org/file/local;1"].
-                      createInstance(Ci.nsILocalFile);
-        outFile.initWithPath(this.installToDirPath);
-        outFile.appendRelativePath(entry);
-
+        let outFile = destDir.clone();
         
-        if(!outFile.parent.exists()) {
-          outFile.parent.create(Ci.nsIFile.DIRECTORY_TYPE, parseInt("0755", 8));
-        }
+        
+        
+        let outBaseName = entry.slice(entry.lastIndexOf("/") + 1);
+        outFile.appendRelativePath(outBaseName);
+
         zipReader.extract(entry, outFile);
         extractedPaths.push(outFile.path);
         
