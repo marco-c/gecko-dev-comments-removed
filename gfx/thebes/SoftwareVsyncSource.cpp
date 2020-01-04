@@ -128,14 +128,15 @@ SoftwareDisplay::ScheduleNextVsync(mozilla::TimeStamp aVsyncTimestamp)
     nextVsync = mozilla::TimeStamp::Now();
   }
 
-  mCurrentVsyncTask = NewCancelableRunnableMethod(this,
-      &SoftwareDisplay::NotifyVsync,
-      nextVsync);
+  mCurrentVsyncTask =
+    NS_NewCancelableRunnableMethodWithArgs<mozilla::TimeStamp>(this,
+                                                               &SoftwareDisplay::NotifyVsync,
+                                                               nextVsync);
 
   RefPtr<mozilla::Runnable> addrefedTask = mCurrentVsyncTask;
   mVsyncThread->message_loop()->PostDelayedTask(
-      addrefedTask.forget(),
-      delay.ToMilliseconds());
+    addrefedTask.forget(),
+    delay.ToMilliseconds());
 }
 
 void
