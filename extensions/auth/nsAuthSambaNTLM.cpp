@@ -256,7 +256,8 @@ nsAuthSambaNTLM::GetNextToken(const void *inToken,
     nsCString line;
     if (!ReadLine(mFromChildFD, line))
         return NS_ERROR_FAILURE;
-    if (!StringBeginsWith(line, NS_LITERAL_CSTRING("KK "))) {
+    if (!StringBeginsWith(line, NS_LITERAL_CSTRING("KK ")) &&
+        !StringBeginsWith(line, NS_LITERAL_CSTRING("AF "))) {
         
         return NS_ERROR_FAILURE;
     }
