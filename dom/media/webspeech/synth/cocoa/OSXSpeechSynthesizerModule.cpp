@@ -34,7 +34,7 @@ static const mozilla::Module::ContractIDEntry kContracts[] = {
 };
 
 static const mozilla::Module::CategoryEntry kCategories[] = {
-  { "profile-after-change", "Sapi Speech Synth", OSXSPEECHSYNTHESIZERSERVICE_CONTRACTID },
+  { "speech-synth-started", "OSX Speech Synth", OSXSPEECHSYNTHESIZERSERVICE_CONTRACTID },
   { nullptr }
 };
 
