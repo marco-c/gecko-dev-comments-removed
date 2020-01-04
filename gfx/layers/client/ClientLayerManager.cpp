@@ -526,8 +526,13 @@ ClientLayerManager::MakeSnapshotIfRequired()
           mForwarder->AllocSurfaceDescriptor(bounds.Size(),
                                              gfxContentType::COLOR_ALPHA,
                                              &inSnapshot)) {
+
+        
+        
+        SurfaceDescriptor outSnapshot = inSnapshot;
+
         if (remoteRenderer->SendMakeSnapshot(inSnapshot, bounds)) {
-          RefPtr<DataSourceSurface> surf = GetSurfaceForDescriptor(inSnapshot);
+          RefPtr<DataSourceSurface> surf = GetSurfaceForDescriptor(outSnapshot);
           DrawTarget* dt = mShadowTarget->GetDrawTarget();
 
           Rect dstRect(bounds.x, bounds.y, bounds.width, bounds.height);
@@ -544,7 +549,7 @@ ClientLayerManager::MakeSnapshotIfRequired()
                           DrawOptions(1.0f, CompositionOp::OP_OVER));
           dt->SetTransform(oldMatrix);
         }
-        mForwarder->DestroySurfaceDescriptor(&inSnapshot);
+        mForwarder->DestroySurfaceDescriptor(&outSnapshot);
       }
     }
   }
