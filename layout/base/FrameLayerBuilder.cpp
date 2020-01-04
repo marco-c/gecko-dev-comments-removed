@@ -1062,8 +1062,9 @@ public:
     mContainerAnimatedGeometryRoot = isAtRoot
       ? mContainerReferenceFrame
       : nsLayoutUtils::GetAnimatedGeometryRootFor(aContainerItem, aBuilder);
-    MOZ_ASSERT(nsLayoutUtils::IsAncestorFrameCrossDoc(mBuilder->RootReferenceFrame(),
-                                                      mContainerAnimatedGeometryRoot));
+    MOZ_ASSERT(!mBuilder->IsPaintingToWindow() ||
+      nsLayoutUtils::IsAncestorFrameCrossDoc(mBuilder->RootReferenceFrame(),
+                                             mContainerAnimatedGeometryRoot));
     NS_ASSERTION(!aContainerItem || !aContainerItem->ShouldFixToViewport(mBuilder),
                  "Container items never return true for ShouldFixToViewport");
     mContainerFixedPosFrame =
@@ -4736,6 +4737,12 @@ void
 ContainerState::SetupScrollingMetadata(NewLayerEntry* aEntry)
 {
   if (mFlattenToSingleLayer) {
+    
+    
+    return;
+  }
+
+  if (!mBuilder->IsPaintingToWindow()) {
     
     
     return;
