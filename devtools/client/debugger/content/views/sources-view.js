@@ -83,7 +83,7 @@ SourcesView.prototype = Heritage.extend(WidgetMethods, {
   
 
 
-  initialize: function () {
+  initialize: function (isWorker) {
     dumpn("Initializing the SourcesView");
 
     this.widget = new SideMenuWidget(document.getElementById("sources"), {
@@ -111,7 +111,9 @@ SourcesView.prototype = Heritage.extend(WidgetMethods, {
     this._noResultsFoundToolTip = new Tooltip(document);
     this._noResultsFoundToolTip.defaultPosition = FUNCTION_SEARCH_POPUP_POSITION;
 
-    if (Prefs.prettyPrintEnabled) {
+    
+    
+    if (Prefs.prettyPrintEnabled && !isWorker) {
       this._prettyPrintButton.removeAttribute("hidden");
     }
 
