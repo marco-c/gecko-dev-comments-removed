@@ -28,7 +28,11 @@ public:
   virtual SurfaceFormat GetFormat() const { return mA->GetFormat(); }
 
   
-  virtual already_AddRefed<DataSourceSurface> GetDataSurface() { return nullptr; }
+  
+  
+  virtual already_AddRefed<DataSourceSurface> GetDataSurface() {
+    return mA->GetDataSurface();
+  }
 private:
   friend class DualSurface;
   friend class DualPattern;
