@@ -13,6 +13,9 @@ const { startup } = require("sdk/window/helpers");
 const message = require("./utils/message");
 const { swapToInnerBrowser } = require("./browser/swap");
 const { EmulationFront } = require("devtools/shared/fronts/emulation");
+const { getStr } = require("./utils/l10n");
+const { TargetFactory } = require("devtools/client/framework/target");
+const { gDevTools } = require("devtools/client/framework/devtools");
 
 const TOOL_URL = "chrome://devtools/content/responsive.html/index.xhtml";
 
@@ -44,9 +47,12 @@ const ResponsiveUIManager = exports.ResponsiveUIManager = {
 
 
 
-  toggle(window, tab) {
+
+
+
+  toggle(window, tab, options) {
     let action = this.isActiveForTab(tab) ? "close" : "open";
-    let completed = this[action + "IfNeeded"](window, tab);
+    let completed = this[action + "IfNeeded"](window, tab, options);
     completed.catch(console.error);
     return completed;
   },
@@ -62,8 +68,12 @@ const ResponsiveUIManager = exports.ResponsiveUIManager = {
 
 
 
-  openIfNeeded: Task.async(function* (window, tab) {
+
+
+
+  openIfNeeded: Task.async(function* (window, tab, options) {
     if (!tab.linkedBrowser.isRemoteBrowser) {
+      this.showRemoteOnlyNotification(window, tab, options);
       return promise.reject(new Error("RDM only available for remote tabs."));
     }
     if (!this.isActiveForTab(tab)) {
@@ -80,6 +90,8 @@ const ResponsiveUIManager = exports.ResponsiveUIManager = {
   }),
 
   
+
+
 
 
 
@@ -159,17 +171,17 @@ const ResponsiveUIManager = exports.ResponsiveUIManager = {
     let completed;
     switch (command) {
       case "resize to":
-        completed = this.openIfNeeded(window, tab);
+        completed = this.openIfNeeded(window, tab, { command: true });
         this.activeTabs.get(tab).setViewportSize(args.width, args.height);
         break;
       case "resize on":
-        completed = this.openIfNeeded(window, tab);
+        completed = this.openIfNeeded(window, tab, { command: true });
         break;
       case "resize off":
-        completed = this.closeIfNeeded(window, tab);
+        completed = this.closeIfNeeded(window, tab, { command: true });
         break;
       case "resize toggle":
-        completed = this.toggle(window, tab);
+        completed = this.toggle(window, tab, { command: true });
         break;
       default:
     }
@@ -199,7 +211,36 @@ const ResponsiveUIManager = exports.ResponsiveUIManager = {
     if (menu) {
       menu.setAttribute("checked", this.isActiveForTab(tab));
     }
-  })
+  }),
+
+  showRemoteOnlyNotification(window, tab, { command } = {}) {
+    
+    let nbox = window.gBrowser.getNotificationBox(tab.linkedBrowser);
+
+    
+    
+    
+    if (command) {
+      let target = TargetFactory.forTab(tab);
+      let toolbox = gDevTools.getToolbox(target);
+      if (toolbox) {
+        nbox = toolbox.notificationBox;
+      }
+    }
+
+    let value = "devtools-responsive-remote-only";
+    if (nbox.getNotificationWithValue(value)) {
+      
+      return;
+    }
+
+    nbox.appendNotification(
+       getStr("responsive.remoteOnly"),
+       value,
+       null,
+       nbox.PRIORITY_CRITICAL_MEDIUM,
+       []);
+  },
 };
 
 
