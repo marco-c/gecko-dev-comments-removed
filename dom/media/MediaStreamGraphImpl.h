@@ -193,6 +193,15 @@ public:
 
 
   void Init();
+
+  
+
+
+  static void
+  FinishCollectReports(nsIHandleReportCallback* aHandleReport,
+                       nsISupports* aData,
+                       const nsTArray<AudioNodeSizes>& aAudioStreamSizes);
+
   
   
   void AssertOnGraphThreadOrNotRunning() const
@@ -211,7 +220,9 @@ public:
 #endif
   }
 
-  void MaybeProduceMemoryReport();
+  void CollectSizesForMemoryReport(
+         already_AddRefed<nsIHandleReportCallback> aHandleReport,
+         already_AddRefed<nsISupports> aHandlerData);
 
   
 
@@ -823,19 +834,11 @@ private:
   
 
 
-  Monitor mMemoryReportMonitor;
-  
-
-
 
 
 
 
   RefPtr<MediaStreamGraphImpl> mSelfRef;
-  
-
-
-  nsTArray<AudioNodeSizes> mAudioStreamSizes;
 
   struct WindowAndStream
   {
@@ -846,10 +849,6 @@ private:
 
 
   nsTArray<WindowAndStream> mWindowCaptureStreams;
-  
-
-
-  bool mNeedsMemoryReport;
 
 #ifdef DEBUG
   
