@@ -9,18 +9,22 @@ this.EXPORTED_SYMBOLS = [
 ];
 
 var currentBrowser = null;
+var currentMenulist = null;
+var currentZoom = 1;
 
 this.SelectParentHelper = {
   populate: function(menulist, items, selectedIndex, zoom) {
     
     menulist.menupopup.textContent = "";
+    currentZoom = zoom;
+    currentMenulist = menulist;
     populateChildren(menulist, items, selectedIndex, zoom);
   },
 
   open: function(browser, menulist, rect) {
     menulist.hidden = false;
     currentBrowser = browser;
-    this._registerListeners(menulist.menupopup);
+    this._registerListeners(browser, menulist.menupopup);
 
     menulist.menupopup.openPopupAtScreenRect("after_start", rect.left, rect.top, rect.width, rect.height, false, false);
     menulist.selectedItem.scrollIntoView();
@@ -52,26 +56,44 @@ this.SelectParentHelper = {
 
       case "popuphidden":
         currentBrowser.messageManager.sendAsyncMessage("Forms:DismissedDropDown", {});
-        currentBrowser = null;
         let popup = event.target;
-        this._unregisterListeners(popup);
+        this._unregisterListeners(currentBrowser, popup);
         popup.parentNode.hidden = true;
+        currentBrowser = null;
+        currentMenulist = null;
+        currentZoom = 1;
         break;
     }
   },
 
-  _registerListeners: function(popup) {
+  receiveMessage(msg) {
+    if (msg.name == "Forms:UpdateDropDown") {
+      
+      
+      if (!currentMenulist || !currentBrowser) {
+        return;
+      }
+
+      let options = msg.data.options;
+      let selectedIndex = msg.data.selectedIndex;
+      this.populate(currentMenulist, options, selectedIndex, currentZoom);
+    }
+  },
+
+  _registerListeners: function(browser, popup) {
     popup.addEventListener("command", this);
     popup.addEventListener("popuphidden", this);
     popup.addEventListener("mouseover", this);
     popup.addEventListener("mouseout", this);
+    browser.messageManager.addMessageListener("Forms:UpdateDropDown", this);
   },
 
-  _unregisterListeners: function(popup) {
+  _unregisterListeners: function(browser, popup) {
     popup.removeEventListener("command", this);
     popup.removeEventListener("popuphidden", this);
     popup.removeEventListener("mouseover", this);
     popup.removeEventListener("mouseout", this);
+    browser.messageManager.removeMessageListener("Forms:UpdateDropDown", this);
   },
 
 };
@@ -121,6 +143,13 @@ function populateChildren(menulist, options, selectedIndex, zoom,
         
         
         menulist.selectedItem = item;
+
+        
+        
+        
+        
+        
+        menulist.menuBoxObject.activeChild = item;
       }
 
       item.setAttribute("value", option.index);
