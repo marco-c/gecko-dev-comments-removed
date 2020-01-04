@@ -45,13 +45,13 @@ var kTitles = [
 
 addPageBook(0, 0, 1, [], keyKey);
 
-gPages[1] = [1,2];
-gPages[2] = [2,2];
-gPages[3] = [3,2];
-gPages[4] = [4,2];
+gPages[1] = [1, 2];
+gPages[2] = [2, 2];
+gPages[3] = [3, 2];
+gPages[4] = [4, 2];
 
 addPageBook(5, 2);
-gPages[6] = [6,2];
+gPages[6] = [6, 2];
 
 
 

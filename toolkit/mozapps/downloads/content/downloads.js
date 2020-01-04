@@ -1280,7 +1280,7 @@ function downloadMatchesSearch(aItem)
 
 function getLocalFileFromNativePathOrUrl(aPathOrUrl)
 {
-  if (aPathOrUrl.substring(0,7) == "file://") {
+  if (aPathOrUrl.substring(0, 7) == "file://") {
     
     let ioSvc = Cc["@mozilla.org/network/io-service;1"].
                 getService(Ci.nsIIOService);

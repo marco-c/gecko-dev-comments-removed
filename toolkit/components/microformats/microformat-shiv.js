@@ -331,7 +331,7 @@ var Microformats;
 
 
             
-            baseTag = modules.domUtils.querySelector(this.document,'base');
+            baseTag = modules.domUtils.querySelector(this.document, 'base');
             if (baseTag) {
                 href = modules.domUtils.getAttribute(baseTag, 'href');
                 if (href) {
@@ -821,7 +821,7 @@ var Microformats;
             }
 
             if (!out) {
-                out = modules.domUtils.getAttrValFromTagList(node, ['data','input'], 'value');
+                out = modules.domUtils.getAttrValFromTagList(node, ['data', 'input'], 'value');
             }
 
             if (node.name === 'br' || node.name === 'hr') {
@@ -882,7 +882,7 @@ var Microformats;
             }
 
             if (!out) {
-                out = modules.domUtils.getAttrValFromTagList(node, ['img','audio','video','source'], 'src');
+                out = modules.domUtils.getAttrValFromTagList(node, ['img', 'audio', 'video', 'source'], 'src');
             }
 
             if (!out) {
@@ -899,7 +899,7 @@ var Microformats;
             }
 
             if (!out) {
-                out = modules.domUtils.getAttrValFromTagList(node, ['data','input'], 'value');
+                out = modules.domUtils.getAttrValFromTagList(node, ['data', 'input'], 'value');
             }
 
             if (!out) {
@@ -977,8 +977,8 @@ var Microformats;
         appendRootID: function(node, id, propertyName) {
             if (this.hasRootID(node, id, propertyName) === false) {
                 var rootids = [];
-                if (modules.domUtils.hasAttribute(node,'rootids')) {
-                    rootids = modules.domUtils.getAttributeList(node,'rootids');
+                if (modules.domUtils.hasAttribute(node, 'rootids')) {
+                    rootids = modules.domUtils.getAttributeList(node, 'rootids');
                 }
                 rootids.push('id' + id + '-' + propertyName);
                 modules.domUtils.setAttribute(node, 'rootids', rootids.join(' '));
@@ -996,7 +996,7 @@ var Microformats;
 
         hasRootID: function(node, id, propertyName) {
             var rootids = [];
-            if (!modules.domUtils.hasAttribute(node,'rootids')) {
+            if (!modules.domUtils.hasAttribute(node, 'rootids')) {
                 return false;
             }
             rootids = modules.domUtils.getAttributeList(node, 'rootids');
@@ -1053,7 +1053,7 @@ var Microformats;
                     return out.join('');
                 }
                 if (propertyType === 'dt') {
-                    return modules.dates.concatFragments(out,this.options.dateFormat).toString(this.options.dateFormat);
+                    return modules.dates.concatFragments(out, this.options.dateFormat).toString(this.options.dateFormat);
                 }
                 return undefined;
             }
@@ -1155,7 +1155,7 @@ var Microformats;
                         z = context.propertyPrefixes.length;
                         while (z--) {
                             if (modules.utils.startWith(item, context.propertyPrefixes[z])) {
-                                out.properties.push([item,'v2']);
+                                out.properties.push([item, 'v2']);
                             }
                         }
 
@@ -1209,10 +1209,10 @@ var Microformats;
                                                     }
                                                     
                                                     if (out.properties.indexOf(propName) === -1) {
-                                                        out.properties.push([propName,'v1']);
+                                                        out.properties.push([propName, 'v1']);
                                                     }
                                                 } else if (out.properties.indexOf(propName) === -1) {
-                                                    out.properties.push([propName,'v1']);
+                                                    out.properties.push([propName, 'v1']);
                                                 }
                                             }
                                         }
@@ -1425,7 +1425,7 @@ var Microformats;
             arr = modules.domUtils.getNodesByAttribute(rootNode, 'rootids');
             i = arr.length;
             while (i--) {
-                modules.domUtils.removeAttribute(arr[i],'rootids');
+                modules.domUtils.removeAttribute(arr[i], 'rootids');
             }
         },
 
@@ -1661,7 +1661,7 @@ var Microformats;
 
 
         modules.Parser.prototype.getNameAttr = function(node) {
-            var value = modules.domUtils.getAttrValFromTagList(node, ['img','area'], 'alt');
+            var value = modules.domUtils.getAttrValFromTagList(node, ['img', 'area'], 'alt');
             if (!value) {
                 value = modules.domUtils.getAttrValFromTagList(node, ['abbr'], 'title');
             }
@@ -1750,15 +1750,15 @@ var Microformats;
         modules.Parser.prototype.getAltValue = function(uf, parentPropertyName, propertyName, value) {
             if (uf.value && !uf.altValue) {
                 
-                if (modules.utils.startWith(parentPropertyName,'p-') && propertyName === 'p-name') {
+                if (modules.utils.startWith(parentPropertyName, 'p-') && propertyName === 'p-name') {
                     uf.altValue = {name: propertyName, value: value};
                 }
                 
-                if (modules.utils.startWith(parentPropertyName,'e-') && modules.utils.startWith(propertyName,'e-')) {
+                if (modules.utils.startWith(parentPropertyName, 'e-') && modules.utils.startWith(propertyName, 'e-')) {
                     uf.altValue = {name: propertyName, value: value};
                 }
                 
-                if (modules.utils.startWith(parentPropertyName,'u-') && propertyName === 'u-url') {
+                if (modules.utils.startWith(parentPropertyName, 'u-') && propertyName === 'u-url') {
                     uf.altValue = {name: propertyName, value: value};
                 }
             }
@@ -1811,7 +1811,7 @@ var Microformats;
 
                     if (geoPair) {
                         
-                        geoPair = geoPair.replace(';',',');
+                        geoPair = geoPair.replace(';', ',');
 
                         
                         if (geoPair.indexOf(',') > -1 ) {
@@ -1857,7 +1857,7 @@ var Microformats;
             
             
             if (parentClasses.root.length === 1 && parentClasses.properties.length === 1) {
-                if (parentClasses.root[0].replace('h-','') === this.removePropPrefix(parentClasses.properties[0][0])) {
+                if (parentClasses.root[0].replace('h-', '') === this.removePropPrefix(parentClasses.properties[0][0])) {
 
                     
                     
@@ -2003,7 +2003,7 @@ var Microformats;
             arr = modules.domUtils.getNodesByAttribute(rootNode, 'data-include');
             i = arr.length;
             while (i--) {
-                modules.domUtils.removeChild(rootNode,arr[i]);
+                modules.domUtils.removeChild(rootNode, arr[i]);
             }
         };
 
@@ -2986,8 +2986,8 @@ var Microformats;
             
             this._html = '<base id="base" href=""></base><a id="link" href=""></a>';
             this._nodes = this._domParser.parseFromString( this._html, 'text/html' );
-            this._baseNode =  modules.domUtils.getElementById(this._nodes,'base');
-            this._linkNode =  modules.domUtils.getElementById(this._nodes,'link');
+            this._baseNode =  modules.domUtils.getElementById(this._nodes, 'base');
+            this._linkNode =  modules.domUtils.getElementById(this._nodes, 'link');
         },
 
 
@@ -3160,7 +3160,7 @@ var Microformats;
             }
 
 
-            dateString = dateString.toUpperCase().replace(' ','T');
+            dateString = dateString.toUpperCase().replace(' ', 'T');
 
             
             if (dateString.indexOf('T') > -1) {
@@ -3723,7 +3723,7 @@ var Microformats;
 
         splitTimeAndZone: function ( text ) {
            var out = [text],
-               chars = ['-','+','z','Z'],
+               chars = ['-', '+', 'z', 'Z'],
                i = chars.length;
 
             while (i--) {
@@ -4209,7 +4209,7 @@ var Microformats;
                 'location': {},
                 'price': {},
                 'item': {
-                    'uf': ['h-card','a-adr','h-geo']
+                    'uf': ['h-card', 'a-adr', 'h-geo']
                 },
                 'summary': {
                     'map': 'p-name'
@@ -4423,38 +4423,38 @@ var Microformats;
 
     modules.rels = {
         
-        'friend': [ 'yes','external'],
-        'acquaintance': [ 'yes','external'],
-        'contact': [ 'yes','external'],
-        'met': [ 'yes','external'],
-        'co-worker': [ 'yes','external'],
-        'colleague': [ 'yes','external'],
-        'co-resident': [ 'yes','external'],
-        'neighbor': [ 'yes','external'],
-        'child': [ 'yes','external'],
-        'parent': [ 'yes','external'],
-        'sibling': [ 'yes','external'],
-        'spouse': [ 'yes','external'],
-        'kin': [ 'yes','external'],
-        'muse': [ 'yes','external'],
-        'crush': [ 'yes','external'],
-        'date': [ 'yes','external'],
-        'sweetheart': [ 'yes','external'],
-        'me': [ 'yes','external'],
+        'friend': [ 'yes', 'external'],
+        'acquaintance': [ 'yes', 'external'],
+        'contact': [ 'yes', 'external'],
+        'met': [ 'yes', 'external'],
+        'co-worker': [ 'yes', 'external'],
+        'colleague': [ 'yes', 'external'],
+        'co-resident': [ 'yes', 'external'],
+        'neighbor': [ 'yes', 'external'],
+        'child': [ 'yes', 'external'],
+        'parent': [ 'yes', 'external'],
+        'sibling': [ 'yes', 'external'],
+        'spouse': [ 'yes', 'external'],
+        'kin': [ 'yes', 'external'],
+        'muse': [ 'yes', 'external'],
+        'crush': [ 'yes', 'external'],
+        'date': [ 'yes', 'external'],
+        'sweetheart': [ 'yes', 'external'],
+        'me': [ 'yes', 'external'],
 
         
-        'license': [ 'yes','yes'],
-        'nofollow': [ 'no','external'],
-        'tag': [ 'no','yes'],
-        'self': [ 'no','external'],
-        'bookmark': [ 'no','external'],
-        'author': [ 'no','external'],
-        'home': [ 'no','external'],
-        'directory': [ 'no','external'],
-        'enclosure': [ 'no','external'],
-        'pronunciation': [ 'no','external'],
-        'payment': [ 'no','external'],
-        'principles': [ 'no','external']
+        'license': [ 'yes', 'yes'],
+        'nofollow': [ 'no', 'external'],
+        'tag': [ 'no', 'yes'],
+        'self': [ 'no', 'external'],
+        'bookmark': [ 'no', 'external'],
+        'author': [ 'no', 'external'],
+        'home': [ 'no', 'external'],
+        'directory': [ 'no', 'external'],
+        'enclosure': [ 'no', 'external'],
+        'pronunciation': [ 'no', 'external'],
+        'payment': [ 'no', 'external'],
+        'principles': [ 'no', 'external']
 
     };
 

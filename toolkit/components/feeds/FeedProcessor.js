@@ -93,7 +93,7 @@ function isIFeedContainer(a) {
 }
 
 function stripTags(someHTML) {
-  return someHTML.replace(/<[^>]+>/g,"");
+  return someHTML.replace(/<[^>]+>/g, "");
 }
 
 
@@ -228,16 +228,16 @@ function Feed() {
 Feed.prototype = {
   searchLists: {
     title: ["title", "rss1:title", "atom03:title", "atom:title"],
-    subtitle: ["description","dc:description","rss1:description",
-               "atom03:tagline","atom:subtitle"],
-    items: ["items","atom03_entries","entries"],
-    id: ["atom:id","rdf:about"],
+    subtitle: ["description", "dc:description", "rss1:description",
+               "atom03:tagline", "atom:subtitle"],
+    items: ["items", "atom03_entries", "entries"],
+    id: ["atom:id", "rdf:about"],
     generator: ["generator"],
     authors : ["authors"],
     contributors: ["contributors"],
-    link:  [["link",strToURI],["rss1:link",strToURI]],
+    link:  [["link", strToURI], ["rss1:link", strToURI]],
     categories: ["categories", "dc:subject"],
-    rights: ["atom03:rights","atom:rights"],
+    rights: ["atom03:rights", "atom:rights"],
     cloud: ["cloud"],
     image: ["image", "rss1:image", "atom:logo"],
     textInput: ["textInput", "rss1:textinput"],
@@ -406,15 +406,15 @@ Entry.prototype = {
 
   searchLists: {
     title: ["title", "rss1:title", "atom03:title", "atom:title"],
-    link: [["link",strToURI],["rss1:link",strToURI]],
+    link: [["link", strToURI], ["rss1:link", strToURI]],
     id: [["guid", makePropGetter("guid")], "rdf:about",
          "atom03:id", "atom:id"],
     authors : ["authors"],
     contributors: ["contributors"],
     summary: ["description", "rss1:description", "dc:description",
               "atom03:summary", "atom:summary"],
-    content: ["content:encoded","atom03:content","atom:content"],
-    rights: ["atom03:rights","atom:rights"],
+    content: ["content:encoded", "atom03:content", "atom:content"],
+    rights: ["atom03:rights", "atom:rights"],
     published: ["pubDate", "atom03:issued", "dcterms:issued", "atom:published"],
     updated: ["pubDate", "atom03:modified", "dc:date", "dcterms:modified",
               "atom:updated"]
@@ -659,13 +659,13 @@ Generator.prototype = {
 
   set attributes(value) {
     this._attributes = value;
-    this.version = this._attributes.getValueFromName("","version");
-    var uriAttribute = this._attributes.getValueFromName("","uri") ||
-                       this._attributes.getValueFromName("","url");
+    this.version = this._attributes.getValueFromName("", "version");
+    var uriAttribute = this._attributes.getValueFromName("", "uri") ||
+                       this._attributes.getValueFromName("", "url");
     this.uri = strToURI(uriAttribute, this.baseURI);
 
     
-    uriAttribute = this._attributes.getValueFromName(RDF_NS,"resource");
+    uriAttribute = this._attributes.getValueFromName(RDF_NS, "resource");
     if (uriAttribute) {
       this.agent = uriAttribute;
       this.uri = strToURI(uriAttribute, this.baseURI);
@@ -706,7 +706,7 @@ Person.prototype = {
 
 
 function fieldsToObj(container, fields) {
-  var props,prop,field,searchList;
+  var props, prop, field, searchList;
   for (var key in fields) {
     searchList = fields[key];
     for (var i=0; i < searchList.length; ++i) {
@@ -775,7 +775,7 @@ function rssGuid(s, guid) {
 
 
 
-function rssAuthor(s,author) {
+function rssAuthor(s, author) {
   author.QueryInterface(Ci.nsIFeedPerson);
   
   var chars = s.trim();
@@ -1400,7 +1400,7 @@ FeedProcessor.prototype = {
     
     if ((this._result.version == "atom" || this._result.version == "atom03") &&
         this._textConstructs[key] != null) {
-      var type = attributes.getValueFromName("","type");
+      var type = attributes.getValueFromName("", "type");
       if (type != null && type.indexOf("xhtml") >= 0) {
         this._xhtmlHandler =
           new XHTMLHandler(this, (this._result.version == "atom"));
@@ -1545,7 +1545,7 @@ FeedProcessor.prototype = {
       
       
       newProp.QueryInterface(Ci.nsIMutableArray);
-      newProp.appendElement(obj,false);
+      newProp.appendElement(obj, false);
 
       
       
@@ -1556,7 +1556,7 @@ FeedProcessor.prototype = {
     else {
       
       if (!prop) {
-        container.setPropertyAsInterface(elementInfo.fieldName,obj);
+        container.setPropertyAsInterface(elementInfo.fieldName, obj);
       }
       newProp = container.getProperty(elementInfo.fieldName);
     }
@@ -1629,7 +1629,7 @@ FeedProcessor.prototype = {
                      "0.94":"rss094" }
     if (versions[versionAttr])
       return versions[versionAttr];
-    if (versionAttr.substr(0,2) != "2.")
+    if (versionAttr.substr(0, 2) != "2.")
       return "rssUnknown";
     return "rss2";
   },
@@ -1712,7 +1712,7 @@ FeedProcessor.prototype = {
       newProp.text = chars;
       
       var type = this._textConstructs[propName];
-      var typeAttribute = attributes.getValueFromName("","type");
+      var typeAttribute = attributes.getValueFromName("", "type");
       if (this._result.version == "atom" && typeAttribute != null) {
         type = typeAttribute;
       }

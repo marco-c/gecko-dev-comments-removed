@@ -295,7 +295,7 @@ var pktApi = (function() {
 
         
         request.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded; charset=UTF-8');
-        request.setRequestHeader('X-Accept',' application/json');
+        request.setRequestHeader('X-Accept', ' application/json');
 
         
         var str = [];

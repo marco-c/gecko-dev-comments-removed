@@ -163,7 +163,7 @@ function test_register_certificate() {
 
       
       let identity = get_idstore().fetchIdentity(TEST_USER);
-      do_check_neq(identity,null);
+      do_check_neq(identity, null);
       do_check_eq(identity.cert, "fake-cert-42");
 
       do_execute_soon(function check_done() {
@@ -202,7 +202,7 @@ function test_get_assertion_after_provision() {
 
       
       let identity = get_idstore().fetchIdentity(TEST_USER);
-      do_check_neq(identity,null);
+      do_check_neq(identity, null);
       do_check_eq(identity.cert, "fake-cert-42");
 
       do_execute_soon(function check_done() {

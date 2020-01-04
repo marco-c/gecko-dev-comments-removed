@@ -36,7 +36,7 @@ var gTests = [
 
   
   ["4: Sanity check that matching anywhere finds more",
-   "a", [0,1],
+   "a", [0, 1],
    () => setBehavior(1)],
 ];
 

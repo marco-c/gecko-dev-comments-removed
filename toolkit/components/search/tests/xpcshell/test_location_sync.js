@@ -84,11 +84,11 @@ add_task(function* test_simple() {
         case Ci.nsITelemetry.HISTOGRAM_FLAG:
           
           
-          deepEqual(snapshot.counts, [1,0,0], hid);
+          deepEqual(snapshot.counts, [1, 0, 0], hid);
           break;
         case Ci.nsITelemetry.HISTOGRAM_BOOLEAN:
           
-          deepEqual(snapshot.counts, [0,0,0], hid);
+          deepEqual(snapshot.counts, [0, 0, 0], hid);
           break;
         case Ci.nsITelemetry.HISTOGRAM_EXPONENTIAL:
         case Ci.nsITelemetry.HISTOGRAM_LINEAR:

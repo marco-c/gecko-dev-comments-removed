@@ -17,7 +17,7 @@ function run_test() {
                      "SEARCH_SERVICE_COUNTRY_FETCH_CAUSED_SYNC_INIT"]) {
       let histogram = Services.telemetry.getHistogramById(hid);
       let snapshot = histogram.snapshot();
-      deepEqual(snapshot.counts, [1,0,0]); 
+      deepEqual(snapshot.counts, [1, 0, 0]); 
 
     }
 
@@ -47,12 +47,12 @@ function run_test() {
       
       if (countryCode == "US") {
         hid = probeUSMismatched;
-        expectedResult = [0,1,0]; 
+        expectedResult = [0, 1, 0]; 
       } else {
         
         
         hid = probeNonUSMismatched;
-        expectedResult = countryCode == "AU" ? [1,0,0] : [0,1,0];
+        expectedResult = countryCode == "AU" ? [1, 0, 0] : [0, 1, 0];
       }
 
       let histogram = Services.telemetry.getHistogramById(hid);

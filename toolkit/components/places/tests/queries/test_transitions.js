@@ -108,7 +108,7 @@ add_task(function* test_transitions()
   
   
 
-  var numSortFunc = function (a,b) { return (a - b); };
+  var numSortFunc = function (a, b) { return (a - b); };
   var arrs = testDataTyped.concat(testDataDownload).concat(testDataBookmark)
               .sort(numSortFunc);
 

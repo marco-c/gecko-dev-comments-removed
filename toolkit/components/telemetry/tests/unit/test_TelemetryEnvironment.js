@@ -1425,7 +1425,7 @@ add_task(function* test_defaultSearchEngine() {
   data = TelemetryEnvironment.currentEnvironment;
   checkEnvironmentData(data);
   Assert.deepEqual(data.settings.defaultSearchEngineData,
-                   {"name":"engine-telemetry","loadPath":"[other]/engine.xml","origin":"verified"});
+                   {"name":"engine-telemetry", "loadPath":"[other]/engine.xml", "origin":"verified"});
 
   
   gNow = fakeNow(futureDate(gNow, 10 * MILLISECONDS_PER_MINUTE));

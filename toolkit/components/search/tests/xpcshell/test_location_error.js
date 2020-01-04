@@ -20,7 +20,7 @@ function run_test() {
                      "SEARCH_SERVICE_COUNTRY_FETCH_CAUSED_SYNC_INIT"]) {
       let histogram = Services.telemetry.getHistogramById(hid);
       let snapshot = histogram.snapshot();
-      deepEqual(snapshot.counts, [1,0,0]); 
+      deepEqual(snapshot.counts, [1, 0, 0]); 
     }
 
     do_test_finished();

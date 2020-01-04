@@ -68,10 +68,10 @@ var testData = [
 var domainsInRange = [2, 3];
 var leveledTestData = [
                        [[0],    
-                        [1,2]], 
+                        [1, 2]], 
                        
                        [[3],    
-                        [4,5],  
+                        [4, 5],  
                         [6]     
                         ]];
 
@@ -84,7 +84,7 @@ var testDataAddedLater = [
     lastVisit: olderthansixmonths,
     title: "test visit",
     isInQuery: true,
-    levels: [1,1]
+    levels: [1, 1]
   },
   {
     isVisit: true,
@@ -92,7 +92,7 @@ var testDataAddedLater = [
     lastVisit: olderthansixmonths,
     title: "test visit",
     isInQuery: true,
-    levels: [1,1]
+    levels: [1, 1]
   },
   {
     isVisit: true,
@@ -100,7 +100,7 @@ var testDataAddedLater = [
     lastVisit: today,
     title: "test visit",
     isInQuery: true,
-    levels: [0,1]
+    levels: [0, 1]
   },
   {
     isVisit: true,
@@ -108,7 +108,7 @@ var testDataAddedLater = [
     lastVisit: today,
     title: "test visit",
     isInQuery: true,
-    levels: [0,0]
+    levels: [0, 0]
   }
 ];
 

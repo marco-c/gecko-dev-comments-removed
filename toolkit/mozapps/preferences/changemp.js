@@ -222,16 +222,16 @@ function checkPasswords()
       
       
       
-      ok.setAttribute("disabled","true");
+      ok.setAttribute("disabled", "true");
       return;
     }
   }
 
   if (pw1 == pw2) {
-    ok.setAttribute("disabled","false");
+    ok.setAttribute("disabled", "false");
   } else
   {
-    ok.setAttribute("disabled","true");
+    ok.setAttribute("disabled", "true");
   }
 
 }

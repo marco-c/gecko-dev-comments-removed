@@ -1206,7 +1206,7 @@ var DirectoryLinksProvider = {
 
   _removeTileClick: function DirectoryLinksProvider_removeTileClick(url = "") {
     
-    let noTrailingSlashUrl = url.replace(/\/$/,"");
+    let noTrailingSlashUrl = url.replace(/\/$/, "");
     let capObject = this._frequencyCaps[url] || this._frequencyCaps[noTrailingSlashUrl];
     
     if (!capObject) {

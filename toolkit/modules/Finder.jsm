@@ -3,7 +3,7 @@
 
 
 
-this.EXPORTED_SYMBOLS = ["Finder","GetClipboardSearchString"];
+this.EXPORTED_SYMBOLS = ["Finder", "GetClipboardSearchString"];
 
 const { interfaces: Ci, classes: Cc, utils: Cu } = Components;
 

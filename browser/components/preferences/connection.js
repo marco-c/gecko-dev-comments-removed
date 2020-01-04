@@ -20,7 +20,7 @@ var gConnectionsDialog = {
     var shareProxiesPref = document.getElementById("network.proxy.share_proxy_settings");
 
     
-    for (let prefName of ["http","ssl","ftp","socks"]) {
+    for (let prefName of ["http", "ssl", "ftp", "socks"]) {
       let proxyPortPref = document.getElementById("network.proxy." + prefName + "_port");
       let proxyPref = document.getElementById("network.proxy." + prefName);
       

@@ -209,7 +209,7 @@ add_task(function* test_frecency()
   }
 
   
-  results.sort((a,b) => b[1] - a[1]);
+  results.sort((a, b) => b[1] - a[1]);
   
   prefs.setIntPref("browser.urlbar.maxRichResults", results.length);
 

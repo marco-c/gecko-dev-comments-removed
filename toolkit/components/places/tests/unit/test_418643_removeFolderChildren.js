@@ -100,7 +100,7 @@ function check_bookmarks(aFolderId) {
   var bookmarks = bmSvc.getBookmarkIdsForURI(bookmarkedURI);
   for (var i = 0; i < bookmarks.length; i++) {
     do_check_eq(bmSvc.getItemTitle(bookmarks[i]), validItemName);
-    do_check_true(annoSvc.itemHasAnnotation(bookmarks[i],validAnnoName));
+    do_check_true(annoSvc.itemHasAnnotation(bookmarks[i], validAnnoName));
   }
 
   

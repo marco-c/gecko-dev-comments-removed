@@ -18,13 +18,13 @@ function initTest() {
     cm.removeAll();
 
     
-    var vals = [[searchTerm+".com", dummyTerm, dummyTerm],          
-                [searchTerm+".org", dummyTerm, dummyTerm],          
-                [dummyTerm+".com", searchTerm, dummyTerm],          
-                [dummyTerm+".edu", searchTerm+dummyTerm, dummyTerm],
-                [dummyTerm+".net", dummyTerm, searchTerm],          
-                [dummyTerm+".org", dummyTerm, searchTerm+dummyTerm],
-                [dummyTerm+".int", dummyTerm, dummyTerm]];          
+    var vals = [[searchTerm+".com", dummyTerm, dummyTerm],           
+                [searchTerm+".org", dummyTerm, dummyTerm],           
+                [dummyTerm+".com", searchTerm, dummyTerm],           
+                [dummyTerm+".edu", searchTerm+dummyTerm, dummyTerm], 
+                [dummyTerm+".net", dummyTerm, searchTerm],           
+                [dummyTerm+".org", dummyTerm, searchTerm+dummyTerm], 
+                [dummyTerm+".int", dummyTerm, dummyTerm]];           
 
     
     const matches = 6;
