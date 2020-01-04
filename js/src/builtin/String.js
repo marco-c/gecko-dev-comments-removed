@@ -47,7 +47,7 @@ function String_match(regexp) {
     }
 
     
-    var rx = RegExpCreate(regexp, undefined);
+    var rx = RegExpCreate(regexp);
 
     
     if (IsStringMatchOptimizable())
@@ -240,7 +240,7 @@ function String_search(regexp) {
     }
 
     
-    var rx = RegExpCreate(regexp, undefined);
+    var rx = RegExpCreate(regexp);
 
     
     return callContentFunction(GetMethod(rx, std_search), rx, string);

@@ -81,7 +81,7 @@ internalIntlRegExps.currencyDigitsRE = null;
 function getUnicodeLocaleExtensionSequenceRE() {
     return internalIntlRegExps.unicodeLocaleExtensionSequenceRE ||
            (internalIntlRegExps.unicodeLocaleExtensionSequenceRE =
-            regexp_construct("-u(?:-[a-z0-9]{2,8})+"));
+            RegExpCreate("-u(?:-[a-z0-9]{2,8})+"));
 }
 
 
@@ -215,7 +215,7 @@ function getLanguageTagRE() {
     var languageTag = "^(?:" + langtag + "|" + privateuse + "|" + grandfathered + ")$";
 
     
-    return (internalIntlRegExps.languageTagRE = regexp_construct(languageTag, "i"));
+    return (internalIntlRegExps.languageTagRE = RegExpCreate(languageTag, "i"));
 }
 
 
@@ -261,7 +261,7 @@ function getDuplicateVariantRE() {
     
     
     
-    return (internalIntlRegExps.duplicateVariantRE = regexp_construct(duplicateVariant, "i"));
+    return (internalIntlRegExps.duplicateVariantRE = RegExpCreate(duplicateVariant, "i"));
 }
 
 
@@ -306,7 +306,7 @@ function getDuplicateSingletonRE() {
     
     
     
-    return (internalIntlRegExps.duplicateSingletonRE = regexp_construct(duplicateSingleton, "i"));
+    return (internalIntlRegExps.duplicateSingletonRE = RegExpCreate(duplicateSingleton, "i"));
 }
 
 
@@ -611,7 +611,7 @@ function DefaultLocale() {
 
 function getIsWellFormedCurrencyCodeRE() {
     return internalIntlRegExps.isWellFormedCurrencyCodeRE ||
-           (internalIntlRegExps.isWellFormedCurrencyCodeRE = regexp_construct("[^A-Z]"));
+           (internalIntlRegExps.isWellFormedCurrencyCodeRE = RegExpCreate("[^A-Z]"));
 }
 function IsWellFormedCurrencyCode(currency) {
     var c = ToString(currency);
@@ -1936,7 +1936,7 @@ var currencyDigits = {
 
 function getCurrencyDigitsRE() {
     return internalIntlRegExps.currencyDigitsRE ||
-           (internalIntlRegExps.currencyDigitsRE = regexp_construct("^[A-Z]{3}$"));
+           (internalIntlRegExps.currencyDigitsRE = RegExpCreate("^[A-Z]{3}$"));
 }
 function CurrencyDigits(currency) {
     assert(typeof currency === "string", "CurrencyDigits");

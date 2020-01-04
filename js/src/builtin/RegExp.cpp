@@ -243,7 +243,7 @@ js::RegExpCreate(JSContext* cx, HandleValue patternValue, HandleValue flagsValue
                  MutableHandleValue rval)
 {
     
-    Rooted<RegExpObject*> regexp(cx, RegExpAlloc(cx, nullptr));
+    Rooted<RegExpObject*> regexp(cx, RegExpAlloc(cx));
     if (!regexp)
          return false;
 
@@ -485,31 +485,6 @@ js::regexp_construct(JSContext* cx, unsigned argc, Value* vp)
 
     
     if (!RegExpInitializeIgnoringLastIndex(cx, regexp, P, F))
-        return false;
-    regexp->zeroLastIndex(cx);
-
-    args.rval().setObject(*regexp);
-    return true;
-}
-
-bool
-js::regexp_construct_self_hosting(JSContext* cx, unsigned argc, Value* vp)
-{
-    CallArgs args = CallArgsFromVp(argc, vp);
-
-    MOZ_ASSERT(args.length() == 1 || args.length() == 2);
-    MOZ_ASSERT(args[0].isString());
-    MOZ_ASSERT_IF(args.length() == 2, args[1].isString());
-    MOZ_ASSERT(!args.isConstructing());
-
-    
-
-    
-    Rooted<RegExpObject*> regexp(cx, RegExpAlloc(cx));
-    if (!regexp)
-        return false;
-
-    if (!RegExpInitializeIgnoringLastIndex(cx, regexp, args[0], args.get(1)))
         return false;
     regexp->zeroLastIndex(cx);
 
