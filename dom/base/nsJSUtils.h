@@ -113,6 +113,9 @@ public:
   static bool GetScopeChainForElement(JSContext* aCx,
                                       mozilla::dom::Element* aElement,
                                       JS::AutoObjectVector& aScopeChain);
+
+  static void ResetTimeZone();
+
 private:
   
   static nsresult EvaluateString(JSContext* aCx,
