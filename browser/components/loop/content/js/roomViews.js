@@ -117,7 +117,7 @@ loop.roomViews = (function(mozL10n) {
 
 
   var RoomFailureView = React.createClass({displayName: "RoomFailureView",
-    mixins: [ sharedMixins.AudioMixin ],
+    mixins: [sharedMixins.AudioMixin],
 
     propTypes: {
       dispatcher: React.PropTypes.instanceOf(loop.Dispatcher).isRequired,
