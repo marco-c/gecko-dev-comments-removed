@@ -40,16 +40,12 @@ public:
   virtual nsISupports*
   GetParentObject() const;
 
-  
-
-
-
   virtual void
-  GetRootName(nsAString& aRetval) const = 0;
+  GetDirectoryName(nsIFile* aFile, nsAString& aRetval,
+                   ErrorResult& aRv) const;
 
   void
-  GetDOMPath(nsIFile* aFile, Directory::DirectoryType aType,
-             nsAString& aRetval, ErrorResult& aRv) const;
+  GetDOMPath(nsIFile* aFile, nsAString& aRetval, ErrorResult& aRv) const;
 
   
 

@@ -59,20 +59,9 @@ public:
   static already_AddRefed<Promise>
   GetRoot(FileSystemBase* aFileSystem, ErrorResult& aRv);
 
-  enum DirectoryType {
-    
-    
-    
-    
-    eDOMRootDirectory,
-
-    
-    eNotDOMRootDirectory
-  };
-
   static already_AddRefed<Directory>
   Create(nsISupports* aParent, nsIFile* aDirectory,
-         DirectoryType aType, FileSystemBase* aFileSystem = 0);
+         FileSystemBase* aFileSystem = 0);
 
   
 
@@ -145,17 +134,12 @@ public:
   FileSystemBase*
   GetFileSystem(ErrorResult& aRv);
 
-  DirectoryType Type() const
-  {
-    return mType;
-  }
-
   bool
   ClonableToDifferentThreadOrProcess() const;
 
 private:
   Directory(nsISupports* aParent,
-            nsIFile* aFile, DirectoryType aType,
+            nsIFile* aFile,
             FileSystemBase* aFileSystem = nullptr);
   ~Directory();
 
@@ -172,7 +156,6 @@ private:
   nsCOMPtr<nsISupports> mParent;
   RefPtr<FileSystemBase> mFileSystem;
   nsCOMPtr<nsIFile> mFile;
-  DirectoryType mType;
 
   nsString mFilters;
   nsString mPath;
