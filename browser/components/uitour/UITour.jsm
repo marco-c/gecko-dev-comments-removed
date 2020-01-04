@@ -15,6 +15,7 @@ Cu.import("resource://gre/modules/Promise.jsm");
 Cu.import("resource:///modules/RecentWindow.jsm");
 Cu.import("resource://gre/modules/Task.jsm");
 Cu.import("resource://gre/modules/TelemetryController.jsm");
+Cu.import("resource://gre/modules/Timer.jsm");
 
 Cu.importGlobalProperties(["URL"]);
 
@@ -41,6 +42,7 @@ XPCOMUtils.defineLazyModuleGetter(this, "ReaderParent",
 const PREF_LOG_LEVEL      = "browser.uitour.loglevel";
 const PREF_SEENPAGEIDS    = "browser.uitour.seenPageIDs";
 const PREF_READERVIEW_TRIGGER = "browser.uitour.readerViewTrigger";
+const PREF_SURVEY_DURATION = "browser.uitour.surveyDuration";
 
 const BACKGROUND_PAGE_ACTIONS_ALLOWED = new Set([
   "forceShowReaderIcon",
@@ -1090,12 +1092,112 @@ this.UITour = {
 
 
 
+
+
+
+
+
+
+
   showHeartbeat(aChromeWindow, aOptions) {
-    let maybeNotifyHeartbeat = (...aParams) => {
+    
+    let pingSent = false;
+    let surveyResults = {};
+    let surveyEndTimer = null;
+
+    
+
+
+
+
+
+
+
+    let maybeNotifyHeartbeat = (aEventName, aParams = {}) => {
+      
+      if (pingSent) {
+        log.warn("maybeNotifyHeartbeat: event occurred after ping sent:", aEventName, aParams);
+        return;
+      }
+
+      
       if (aOptions.privateWindowsOnly) {
         return;
       }
-      this.notify(...aParams);
+
+      let ts = Date.now();
+      let sendPing = false;
+      switch (aEventName) {
+        case "Heartbeat:NotificationOffered":
+          surveyResults.flowId = aOptions.flowId;
+          surveyResults.offeredTS = ts;
+          break;
+        case "Heartbeat:LearnMore":
+          
+          if (!surveyResults.learnMoreTS) {
+            surveyResults.learnMoreTS = ts;
+          }
+          break;
+        case "Heartbeat:Engaged":
+          surveyResults.engagedTS = ts;
+          break;
+        case "Heartbeat:Voted":
+          surveyResults.votedTS = ts;
+          surveyResults.score = aParams.score;
+          break;
+        case "Heartbeat:SurveyExpired":
+          surveyResults.expiredTS = ts;
+          break;
+        case "Heartbeat:NotificationClosed":
+          
+          surveyResults.closedTS = ts;
+          sendPing = true;
+          break;
+        case "Heartbeat:WindowClosed":
+          surveyResults.windowClosedTS = ts;
+          sendPing = true;
+          break;
+        default:
+          log.error("maybeNotifyHeartbeat: unrecognized event:", aEventName);
+          break;
+      }
+
+      aParams.timestamp = ts;
+      aParams.flowId = aOptions.flowId;
+      this.notify(aEventName, aParams);
+
+      if (!sendPing) {
+        return;
+      }
+
+      
+      let payload = Object.assign({}, surveyResults);
+      payload.version = 1;
+      for (let meta of ["surveyId", "surveyVersion", "testing"]) {
+        if (aOptions.hasOwnProperty(meta)) {
+          payload[meta] = aOptions[meta];
+        }
+      }
+
+      log.debug("Sending payload to Telemetry: aEventName:", aEventName,
+                "payload:", payload);
+
+      TelemetryController.submitExternalPing("heartbeat", payload, {
+        addClientId: true,
+        addEnvironment: true,
+      });
+
+      
+      this.notify("Heartbeat:TelemetrySent", payload);
+
+      
+      if (surveyEndTimer) {
+        clearTimeout(surveyEndTimer);
+        surveyEndTimer = null;
+      }
+
+      pingSent = true;
+      surveyResults = {};
     };
 
     let nb = aChromeWindow.document.getElementById("high-priority-global-notificationbox");
@@ -1106,7 +1208,7 @@ this.UITour = {
         label: aOptions.engagementButtonLabel,
         callback: () => {
           
-          maybeNotifyHeartbeat("Heartbeat:Engaged", { flowId: aOptions.flowId, timestamp: Date.now() });
+          maybeNotifyHeartbeat("Heartbeat:Engaged");
 
           userEngaged(new Map([
             ["type", "button"],
@@ -1121,11 +1223,16 @@ this.UITour = {
     }
     
     let notice = nb.appendNotification(aOptions.message, "heartbeat-" + aOptions.flowId,
-      "chrome://browser/skin/heartbeat-icon.svg", nb.PRIORITY_INFO_HIGH, buttons, function() {
-        
-        
-        maybeNotifyHeartbeat("Heartbeat:NotificationClosed", { flowId: aOptions.flowId, timestamp: Date.now() });
-    }.bind(this));
+                                       "chrome://browser/skin/heartbeat-icon.svg",
+                                       nb.PRIORITY_INFO_HIGH, buttons,
+                                       (aEventType) => {
+                                         if (aEventType != "removed") {
+                                           return;
+                                         }
+                                         
+                                         
+                                         maybeNotifyHeartbeat("Heartbeat:NotificationClosed");
+                                       });
 
     
     let messageImage =
@@ -1196,11 +1303,7 @@ this.UITour = {
         let rating = Number(evt.target.getAttribute("data-score"), 10);
 
         
-        maybeNotifyHeartbeat("Heartbeat:Voted", {
-          flowId: aOptions.flowId,
-          score: rating,
-          timestamp: Date.now(),
-        });
+        maybeNotifyHeartbeat("Heartbeat:Voted", { score: rating });
 
         
         userEngaged(new Map([
@@ -1239,8 +1342,7 @@ this.UITour = {
       learnMore.className = "text-link";
       learnMore.href = learnMoreURL.toString();
       learnMore.setAttribute("value", aOptions.learnMoreLabel);
-      learnMore.addEventListener("click", () => maybeNotifyHeartbeat("Heartbeat:LearnMore",
-        { flowId: aOptions.flowId, timestamp: Date.now() }));
+      learnMore.addEventListener("click", () => maybeNotifyHeartbeat("Heartbeat:LearnMore"));
       frag.appendChild(learnMore);
     }
 
@@ -1251,10 +1353,23 @@ this.UITour = {
     messageText.classList.add("heartbeat");
 
     
-    maybeNotifyHeartbeat("Heartbeat:NotificationOffered", {
-      flowId: aOptions.flowId,
-      timestamp: Date.now(),
-    });
+    maybeNotifyHeartbeat("Heartbeat:NotificationOffered");
+
+    
+    
+    if (!aOptions.privateWindowsOnly) {
+      function handleWindowClosed(aTopic) {
+        maybeNotifyHeartbeat("Heartbeat:WindowClosed");
+        aChromeWindow.removeEventListener("SSWindowClosing", handleWindowClosed);
+      }
+      aChromeWindow.addEventListener("SSWindowClosing", handleWindowClosed);
+
+      let surveyDuration = Services.prefs.getIntPref(PREF_SURVEY_DURATION) * 1000;
+      surveyEndTimer = setTimeout(() => {
+        maybeNotifyHeartbeat("Heartbeat:SurveyExpired");
+        nb.removeNotification(notice);
+      }, surveyDuration);
+    }
   },
 
   
