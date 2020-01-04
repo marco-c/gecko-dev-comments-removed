@@ -80,7 +80,7 @@ public:
 
   nsresult CopyInnerTo(Element* aDest);
 
-  void StartObjectLoad() { StartObjectLoad(true, false); }
+  void StartObjectLoad() { StartObjectLoad(true); }
 
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED_NO_UNLINK(HTMLSharedObjectElement,
                                                      nsGenericHTMLElement)
@@ -192,12 +192,13 @@ public:
     return GetContentDocument();
   }
 
+private:
+  virtual ~HTMLSharedObjectElement();
+
   
 
 
-  void StartObjectLoad(bool aNotify, bool aForceLoad);
-private:
-  virtual ~HTMLSharedObjectElement();
+  void StartObjectLoad(bool aNotify);
 
   nsIAtom *URIAttrName() const
   {
@@ -221,8 +222,6 @@ private:
                                     nsRuleData* aData);
 
   
-
-
 
 
 
