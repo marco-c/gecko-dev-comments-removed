@@ -612,8 +612,10 @@ this.PlacesUIUtils = {
 
   canUserRemove: function (aNode) {
     let parentNode = aNode.parent;
-    if (!parentNode)
-      throw new Error("canUserRemove doesn't accept root nodes");
+    if (!parentNode) {
+      
+      return false;
+    }
 
     
     
