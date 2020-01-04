@@ -1214,6 +1214,8 @@ Declaration::GetValue(nsCSSPropertyID aProperty, nsAString& aValue,
 
     
     
+    
+    
     case eCSSProperty_grid: {
       const nsCSSValue& columnGapValue =
         *data->ValueFor(eCSSProperty_grid_column_gap);
@@ -1241,22 +1243,56 @@ Declaration::GetValue(nsCSSPropertyID aProperty, nsAString& aValue,
       const nsCSSValue& autoRowsValue =
         *data->ValueFor(eCSSProperty_grid_auto_rows);
 
-      if (areasValue.GetUnit() == eCSSUnit_None &&
-          columnsValue.GetUnit() == eCSSUnit_None &&
-          rowsValue.GetUnit() == eCSSUnit_None) {
-        AppendValueToString(eCSSProperty_grid_auto_flow,
-                            aValue, aSerialization);
-        aValue.Append(char16_t(' '));
-        AppendValueToString(eCSSProperty_grid_auto_rows,
-                            aValue, aSerialization);
+      
+      
+      
+      
+      
+      if (rowsValue.GetUnit() == eCSSUnit_None &&
+          areasValue.GetUnit() == eCSSUnit_None &&
+          autoColumnsValue.GetUnit() == eCSSUnit_Auto &&
+          autoFlowValue.GetUnit() == eCSSUnit_Enumerated &&
+          (autoFlowValue.GetIntValue() & NS_STYLE_GRID_AUTO_FLOW_ROW) &&
+          (autoFlowValue.GetIntValue() != NS_STYLE_GRID_AUTO_FLOW_ROW ||
+           autoRowsValue.GetUnit() != eCSSUnit_Auto)) {
+        aValue.AppendLiteral("auto-flow");
+        if (autoFlowValue.GetIntValue() & NS_STYLE_GRID_AUTO_FLOW_DENSE) {
+          aValue.AppendLiteral(" dense");
+        }
+        if (autoRowsValue.GetUnit() != eCSSUnit_Auto) {
+          aValue.Append(' ');
+          AppendValueToString(eCSSProperty_grid_auto_rows,
+                              aValue, aSerialization);
+        }
         aValue.AppendLiteral(" / ");
+        AppendValueToString(eCSSProperty_grid_template_columns,
+                            aValue, aSerialization);
+        break;
+      }
+
+      
+      
+      
+      if (columnsValue.GetUnit() == eCSSUnit_None &&
+          areasValue.GetUnit() == eCSSUnit_None &&
+          autoRowsValue.GetUnit() == eCSSUnit_Auto &&
+          autoFlowValue.GetUnit() == eCSSUnit_Enumerated &&
+          (autoFlowValue.GetIntValue() & NS_STYLE_GRID_AUTO_FLOW_COLUMN)) {
+        AppendValueToString(eCSSProperty_grid_template_rows,
+                            aValue, aSerialization);
+        aValue.AppendLiteral(" / auto-flow ");
+        if (autoFlowValue.GetIntValue() & NS_STYLE_GRID_AUTO_FLOW_DENSE) {
+          aValue.AppendLiteral("dense ");
+        }
         AppendValueToString(eCSSProperty_grid_auto_columns,
                             aValue, aSerialization);
         break;
-      } else if (!(autoFlowValue.GetUnit() == eCSSUnit_Enumerated &&
-                   autoFlowValue.GetIntValue() == NS_STYLE_GRID_AUTO_FLOW_ROW &&
-                   autoColumnsValue.GetUnit() == eCSSUnit_Auto &&
-                   autoRowsValue.GetUnit() == eCSSUnit_Auto)) {
+      }
+
+      if (!(autoFlowValue.GetUnit() == eCSSUnit_Enumerated &&
+            autoFlowValue.GetIntValue() == NS_STYLE_GRID_AUTO_FLOW_ROW &&
+            autoColumnsValue.GetUnit() == eCSSUnit_Auto &&
+            autoRowsValue.GetUnit() == eCSSUnit_Auto)) {
         
         return;
       }

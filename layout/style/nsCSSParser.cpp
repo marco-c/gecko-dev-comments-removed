@@ -992,10 +992,11 @@ protected:
                                   css::GridTemplateAreasValue* aResult,
                                   nsDataHashtable<nsStringHashKey, uint32_t>& aAreaIndices);
   bool ParseGridTemplateAreas();
-  bool ParseGridTemplate();
+  bool ParseGridTemplateColumnsOrAutoFlow(bool aForGridShorthand);
+  bool ParseGridTemplate(bool aForGridShorthand = false);
   bool ParseGridTemplateAfterString(const nsCSSValue& aFirstLineNames);
   bool ParseGrid();
-  bool ParseGridShorthandAutoProps();
+  CSSParseResult ParseGridShorthandAutoProps(int32_t aAutoFlowAxis);
   bool ParseGridLine(nsCSSValue& aValue);
   bool ParseGridColumnRowStartEnd(nsCSSPropertyID aPropID);
   bool ParseGridColumnRow(nsCSSPropertyID aStartPropID,
@@ -9314,9 +9315,30 @@ CSSParserImpl::ParseGridTemplateAreas()
   return true;
 }
 
+
+
 bool
-CSSParserImpl::ParseGridTemplate()
+CSSParserImpl::ParseGridTemplateColumnsOrAutoFlow(bool aForGridShorthand)
 {
+  if (aForGridShorthand) {
+    auto res = ParseGridShorthandAutoProps(NS_STYLE_GRID_AUTO_FLOW_COLUMN);
+    if (res == CSSParseResult::Error) {
+      return false;
+    }
+    if (res == CSSParseResult::Ok) {
+      nsCSSValue value(eCSSUnit_None);
+      AppendValue(eCSSProperty_grid_template_columns, value);
+      return true;
+    }
+  }
+  return ParseGridTemplateColumnsRows(eCSSProperty_grid_template_columns);
+}
+
+bool
+CSSParserImpl::ParseGridTemplate(bool aForGridShorthand)
+{
+  
+  
   
   
   
@@ -9335,7 +9357,7 @@ CSSParserImpl::ParseGridTemplate()
     AppendValue(eCSSProperty_grid_template_rows, value);
     AppendValue(eCSSProperty_grid_template_areas, value);
     if (ExpectSymbol('/', true)) {
-      return ParseGridTemplateColumnsRows(eCSSProperty_grid_template_columns);
+      return ParseGridTemplateColumnsOrAutoFlow(aForGridShorthand);
     }
     AppendValue(eCSSProperty_grid_template_columns, value);
     return true;
@@ -9356,7 +9378,7 @@ CSSParserImpl::ParseGridTemplate()
       AppendValue(eCSSProperty_grid_template_rows, value);
       AppendValue(eCSSProperty_grid_template_areas, nsCSSValue(eCSSUnit_None));
       if (ExpectSymbol('/', true)) {
-        return ParseGridTemplateColumnsRows(eCSSProperty_grid_template_columns);
+        return ParseGridTemplateColumnsOrAutoFlow(aForGridShorthand);
       }
       if (value.GetListValue()->mNext) {
         
@@ -9403,7 +9425,7 @@ CSSParserImpl::ParseGridTemplate()
   AppendValue(eCSSProperty_grid_template_rows, value);
   value.SetNoneValue();
   AppendValue(eCSSProperty_grid_template_areas, value);
-  return ParseGridTemplateColumnsRows(eCSSProperty_grid_template_columns);
+  return ParseGridTemplateColumnsOrAutoFlow(aForGridShorthand);
 }
 
 
@@ -9482,6 +9504,7 @@ CSSParserImpl::ParseGridTemplateAfterString(const nsCSSValue& aFirstLineNames)
 
 
 
+
 bool
 CSSParserImpl::ParseGrid()
 {
@@ -9496,11 +9519,6 @@ CSSParserImpl::ParseGrid()
   }
 
   
-  if (!GetToken(true)) {
-    return false;
-  }
-
-  
   
   
   value.SetFloatValue(0.0f, eCSSUnit_Pixel);
@@ -9508,18 +9526,23 @@ CSSParserImpl::ParseGrid()
   AppendValue(eCSSProperty_grid_column_gap, value);
 
   
-  
-  if (mToken.mType == eCSSToken_Ident) {
-    nsCSSKeyword keyword = nsCSSKeywords::LookupKeyword(mToken.mIdent);
-    if (keyword == eCSSKeyword_dense ||
-        keyword == eCSSKeyword_column ||
-        keyword == eCSSKeyword_row) {
-      UngetToken();
-      return ParseGridAutoFlow() && ParseGridShorthandAutoProps();
-    }
+  auto res = ParseGridShorthandAutoProps(NS_STYLE_GRID_AUTO_FLOW_ROW);
+  if (res == CSSParseResult::Error) {
+    return false;
   }
-  UngetToken();
+  if (res == CSSParseResult::Ok) {
+    value.SetAutoValue();
+    AppendValue(eCSSProperty_grid_auto_columns, value);
+    nsCSSValue none(eCSSUnit_None);
+    AppendValue(eCSSProperty_grid_template_areas, none);
+    AppendValue(eCSSProperty_grid_template_rows, none);
+    if (!ExpectSymbol('/', true)) {
+      return false;
+    }
+    return ParseGridTemplateColumnsRows(eCSSProperty_grid_template_columns);
+  }
 
+  
   
   
   value.SetIntValue(NS_STYLE_GRID_AUTO_FLOW_ROW, eCSSUnit_Enumerated);
@@ -9527,38 +9550,68 @@ CSSParserImpl::ParseGrid()
   value.SetAutoValue();
   AppendValue(eCSSProperty_grid_auto_rows, value);
   AppendValue(eCSSProperty_grid_auto_columns, value);
-  return ParseGridTemplate();
+  return ParseGridTemplate(true);
 }
 
 
 
 
-bool
-CSSParserImpl::ParseGridShorthandAutoProps()
+CSSParseResult
+CSSParserImpl::ParseGridShorthandAutoProps(int32_t aAutoFlowAxis)
 {
-  nsCSSValue autoColumnsValue;
-  nsCSSValue autoRowsValue;
-  CSSParseResult result = ParseGridTrackSize(autoRowsValue);
-  if (result == CSSParseResult::Error) {
-    return false;
+  MOZ_ASSERT(aAutoFlowAxis == NS_STYLE_GRID_AUTO_FLOW_ROW ||
+             aAutoFlowAxis == NS_STYLE_GRID_AUTO_FLOW_COLUMN);
+  if (!GetToken(true)) {
+    return CSSParseResult::NotFound;
   }
-  if (result == CSSParseResult::NotFound) {
-    autoRowsValue.SetAutoValue();
-    autoColumnsValue.SetAutoValue();
-  } else {
-    if (!ExpectSymbol('/', true)) {
-      autoColumnsValue.SetAutoValue();
-    } else if (ParseGridTrackSize(autoColumnsValue) != CSSParseResult::Ok) {
-      return false;
+  
+  int32_t autoFlowValue = 0;
+  if (mToken.mType == eCSSToken_Ident) {
+    nsCSSKeyword keyword = nsCSSKeywords::LookupKeyword(mToken.mIdent);
+    if (keyword == eCSSKeyword_auto_flow) {
+      autoFlowValue = aAutoFlowAxis;
+      if (GetToken(true)) {
+        if (mToken.mType == eCSSToken_Ident &&
+            nsCSSKeywords::LookupKeyword(mToken.mIdent) == eCSSKeyword_dense) {
+          autoFlowValue |= NS_STYLE_GRID_AUTO_FLOW_DENSE;
+        } else {
+          UngetToken();
+        }
+      }
+    } else if (keyword == eCSSKeyword_dense) {
+      if (!GetToken(true)) {
+        return CSSParseResult::Error;
+      }
+      if (mToken.mType != eCSSToken_Ident ||
+          nsCSSKeywords::LookupKeyword(mToken.mIdent) != eCSSKeyword_auto_flow) {
+        UngetToken();
+        return CSSParseResult::Error;
+      }
+      autoFlowValue = aAutoFlowAxis | NS_STYLE_GRID_AUTO_FLOW_DENSE;
     }
   }
-  AppendValue(eCSSProperty_grid_auto_rows, autoRowsValue);
-  AppendValue(eCSSProperty_grid_auto_columns, autoColumnsValue);
-  nsCSSValue templateValue(eCSSUnit_None);  
-  AppendValue(eCSSProperty_grid_template_areas, templateValue);
-  AppendValue(eCSSProperty_grid_template_rows, templateValue);
-  AppendValue(eCSSProperty_grid_template_columns, templateValue);
-  return true;
+  if (autoFlowValue) {
+    nsCSSValue value;
+    value.SetIntValue(autoFlowValue, eCSSUnit_Enumerated);
+    AppendValue(eCSSProperty_grid_auto_flow, value);
+  } else {
+    UngetToken();
+    return CSSParseResult::NotFound;
+  }
+
+  
+  nsCSSValue autoTrackValue;
+  CSSParseResult result = ParseGridTrackSize(autoTrackValue);
+  if (result == CSSParseResult::Error) {
+    return result;
+  }
+  if (result == CSSParseResult::NotFound) {
+    autoTrackValue.SetAutoValue();
+  }
+  AppendValue(aAutoFlowAxis == NS_STYLE_GRID_AUTO_FLOW_ROW ?
+                eCSSProperty_grid_auto_rows : eCSSProperty_grid_auto_columns,
+              autoTrackValue);
+  return CSSParseResult::Ok;
 }
 
 
