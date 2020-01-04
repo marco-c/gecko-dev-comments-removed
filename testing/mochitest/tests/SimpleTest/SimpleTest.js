@@ -1582,7 +1582,7 @@ window.onerror = function simpletestOnerror(errorMsg, url, lineNumber,
         }
     }
 
-    if (!SimpleTest._stopOnLoad && !isExpected) {
+    if (!SimpleTest._stopOnLoad && !isExpected && !SimpleTest._alreadyFinished) {
         
         SimpleTest.executeSoon(SimpleTest.finish);
     }
