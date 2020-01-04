@@ -96,6 +96,7 @@ public:
   
   
   static already_AddRefed<DataStorage> Get(const nsString& aFilename);
+  static already_AddRefed<DataStorage> GetIfExists(const nsString& aFilename);
 
   
   
