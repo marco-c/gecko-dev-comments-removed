@@ -34,6 +34,11 @@ const NOTIFY_TAB_RESTORED = "sessionstore-debug-tab-restored";
 const MAX_CONCURRENT_TAB_RESTORES = 3;
 
 
+
+
+const SCREEN_EDGE_SLOP = 8;
+
+
 const OBSERVING = [
   "browser-window-before-show", "domwindowclosed",
   "quit-application-granted", "browser-lastwindow-close-granted",
@@ -3485,26 +3490,40 @@ var SessionStoreInternal = {
       
       screen.GetAvailRect(screenLeft, screenTop, screenWidth, screenHeight);
       let cssToDevScale = screen.defaultCSSScaleFactor;
-      let screenWidthCss = screenWidth.value / cssToDevScale;
-      let screenHeightCss = screenHeight.value / cssToDevScale;
+      let screenRightCss = screenLeftCss + screenWidth.value / cssToDevScale;
+      let screenBottomCss = screenTopCss + screenHeight.value / cssToDevScale;
+
       
-      if (aWidth > screenWidthCss) {
-        aWidth = screenWidthCss;
-      }
-      if (aHeight > screenHeightCss) {
-        aHeight = screenHeightCss;
-      }
       
-      if (aLeft < screenLeftCss) {
+      
+      
+      if (aLeft < screenLeftCss - SCREEN_EDGE_SLOP) {
         aLeft = screenLeftCss;
-      } else if (aLeft + aWidth > screenLeftCss + screenWidthCss) {
-        aLeft = screenLeftCss + screenWidthCss - aWidth;
       }
-      if (aTop < screenTopCss) {
+      
+      let right = aLeft + aWidth;
+      if (right > screenRightCss + SCREEN_EDGE_SLOP) {
+        right = screenRightCss;
+        
+        if (aLeft > screenLeftCss) {
+          aLeft = Math.max(right - aWidth, screenLeftCss);
+        }
+      }
+      
+      aWidth = right - aLeft;
+
+      
+      if (aTop < screenTopCss - SCREEN_EDGE_SLOP) {
         aTop = screenTopCss;
-      } else if (aTop + aHeight > screenTopCss + screenHeightCss) {
-        aTop = screenTopCss + screenHeightCss - aHeight;
       }
+      let bottom = aTop + aHeight;
+      if (bottom > screenBottomCss + SCREEN_EDGE_SLOP) {
+        bottom = screenBottomCss;
+        if (aTop > screenTopCss) {
+          aTop = Math.max(bottom - aHeight, screenTopCss);
+        }
+      }
+      aHeight = bottom - aTop;
     }
 
     
