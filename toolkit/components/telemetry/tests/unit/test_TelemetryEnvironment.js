@@ -816,7 +816,7 @@ add_task(function* test_prefWatchPolicies() {
   Preferences.set(PREF_TEST_5, expectedValue);
 
   
-  TelemetryEnvironment._watchPreferences(PREFS_TO_WATCH);
+  TelemetryEnvironment.testWatchPreferences(PREFS_TO_WATCH);
   let deferred = PromiseUtils.defer();
 
   
@@ -864,7 +864,7 @@ add_task(function* test_prefWatch_prefReset() {
   fakeNow(gNow);
 
   
-  TelemetryEnvironment._watchPreferences(PREFS_TO_WATCH);
+  TelemetryEnvironment.testWatchPreferences(PREFS_TO_WATCH);
   let deferred = PromiseUtils.defer();
   TelemetryEnvironment.registerChangeListener("testWatchPrefs_reset", deferred.resolve);
 
@@ -1292,7 +1292,7 @@ add_task(function* test_changeThrottling() {
   fakeNow(gNow);
 
   
-  TelemetryEnvironment._watchPreferences(PREFS_TO_WATCH);
+  TelemetryEnvironment.testWatchPreferences(PREFS_TO_WATCH);
   let deferred = PromiseUtils.defer();
   let changeCount = 0;
   TelemetryEnvironment.registerChangeListener("testWatchPrefs_throttling", () => {
@@ -1450,7 +1450,7 @@ add_task(function* test_defaultSearchEngine() {
   
   gNow = fakeNow(futureDate(gNow, 10 * MILLISECONDS_PER_MINUTE));
   
-  TelemetryEnvironment._watchPreferences(PREFS_TO_WATCH);
+  TelemetryEnvironment.testWatchPreferences(PREFS_TO_WATCH);
   deferred = PromiseUtils.defer();
   TelemetryEnvironment.registerChangeListener("testSearchEngine_pref", deferred.resolve);
   
@@ -1484,7 +1484,7 @@ add_task(function* test_environmentShutdown() {
   fakeNow(gNow);
 
   
-  TelemetryEnvironment._watchPreferences(PREFS_TO_WATCH);
+  TelemetryEnvironment.testWatchPreferences(PREFS_TO_WATCH);
   TelemetryEnvironment.registerChangeListener("test_environmentShutdownChange", () => {
   
     Assert.ok(false, "No change should be propagated after shutdown.");

@@ -39,8 +39,8 @@ function run_test()
              crashReporter.appendAppNotesToCrashReport("MoreJunk");
              
              let scope = {};
-             Components.utils.import("resource://gre/modules/TelemetrySession.jsm", scope);
-             scope.TelemetrySession.setup();
+             Components.utils.import("resource://gre/modules/TelemetryController.jsm", scope);
+             scope.TelemetryController.testSetup();
            },
            function(mdump, extra) {
              do_check_eq(extra.TestKey, "TestValue");

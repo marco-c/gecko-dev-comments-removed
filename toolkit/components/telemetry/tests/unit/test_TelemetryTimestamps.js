@@ -32,7 +32,7 @@ function getSimpleMeasurementsFromTelemetryController() {
 }
 
 function initialiseTelemetry() {
-  return TelemetryController.setup().then(TelemetrySession.setup);
+  return TelemetryController.testSetup();
 }
 
 function run_test() {
@@ -85,7 +85,7 @@ add_task(function* actualTest() {
   do_check_true(simpleMeasurements.bar > 1); 
   do_check_eq(undefined, simpleMeasurements.baz); 
 
-  yield TelemetrySession.shutdown(false);
+  yield TelemetryController.testShutdown();
 
   do_test_finished();
 });

@@ -7,9 +7,7 @@
 "use strict";
 
 Cu.import("resource://gre/modules/TelemetryController.jsm", this);
-Cu.import("resource://gre/modules/TelemetrySession.jsm", this);
 Cu.import("resource://gre/modules/TelemetryArchive.jsm", this);
-Cu.import("resource://gre/modules/TelemetrySend.jsm", this);
 Cu.import("resource://gre/modules/XPCOMUtils.jsm", this);
 Cu.import("resource://gre/modules/osfile.jsm", this);
 Cu.import("resource://gre/modules/Task.jsm", this);
@@ -120,7 +118,7 @@ add_task(function* test_archivedPings() {
   yield checkLoadingPings();
 
   
-  yield TelemetryController.reset();
+  yield TelemetryController.testReset();
 
   let pingList = yield TelemetryArchive.promiseArchivedPingList();
   Assert.deepEqual(expectedPingList, pingList,
@@ -174,7 +172,7 @@ add_task(function* test_archivedPings() {
   expectedPingList.sort((a, b) => a.timestampCreated - b.timestampCreated);
 
   
-  yield TelemetryController.reset();
+  yield TelemetryController.testReset();
 
   
   
@@ -202,7 +200,7 @@ add_task(function* test_archiveCleanup() {
   Telemetry.getHistogramById("TELEMETRY_DISCARDED_ARCHIVED_PINGS_SIZE_MB").clear();
 
   
-  yield TelemetryController.reset();
+  yield TelemetryController.testReset();
   yield TelemetryStorage.testCleanupTaskPromise();
   yield TelemetryArchive.promiseArchivedPingList();
 
@@ -264,7 +262,7 @@ add_task(function* test_archiveCleanup() {
   
   let now = fakeNow(2010, 7, 1, 1, 0, 0);
   
-  yield TelemetryController.reset();
+  yield TelemetryController.testReset();
   
   yield TelemetryStorage.testCleanupTaskPromise();
   
@@ -297,7 +295,7 @@ add_task(function* test_archiveCleanup() {
   
   fakeNow(2010, 8, 1, 1, 0, 0);
   
-  yield TelemetryController.reset();
+  yield TelemetryController.testReset();
   
   yield TelemetryStorage.testCleanupTaskPromise();
   
@@ -346,7 +344,7 @@ add_task(function* test_archiveCleanup() {
   expectedPrunedInfo = expectedPrunedInfo.concat(pingsOutsideQuota);
 
   
-  yield TelemetryController.reset();
+  yield TelemetryController.testReset();
   yield TelemetryStorage.testCleanupTaskPromise();
   yield TelemetryArchive.promiseArchivedPingList();
   
@@ -359,7 +357,7 @@ add_task(function* test_archiveCleanup() {
   Assert.equal(h.sum, 300, "Archive quota was hit, a special size must be reported.");
 
   
-  yield TelemetryController.reset();
+  yield TelemetryController.testReset();
   yield TelemetryStorage.testCleanupTaskPromise();
   yield TelemetryArchive.promiseArchivedPingList();
   yield checkArchive();
@@ -384,7 +382,7 @@ add_task(function* test_archiveCleanup() {
   expectedPrunedInfo.push({ id: OVERSIZED_PING_ID, creationDate: new Date(OVERSIZED_PING.creationDate) });
 
   
-  yield TelemetryController.reset();
+  yield TelemetryController.testReset();
   yield TelemetryStorage.testCleanupTaskPromise();
   yield TelemetryArchive.promiseArchivedPingList();
   
@@ -401,7 +399,7 @@ add_task(function* test_archiveCleanup() {
 add_task(function* test_clientId() {
   
   
-  yield TelemetryController.reset();
+  yield TelemetryController.testReset();
   const clientId = TelemetryController.clientID;
 
   let id = yield TelemetryController.submitExternalPing("test-type", {}, {addClientId: true});
@@ -415,7 +413,7 @@ add_task(function* test_clientId() {
   
   
   
-  let promiseSetup = TelemetryController.reset();
+  let promiseSetup = TelemetryController.testReset();
   id = yield TelemetryController.submitExternalPing("test-type", {}, {addClientId: true});
   ping = yield TelemetryArchive.promiseArchivedPingById(id);
   Assert.equal(ping.clientId, clientId);
@@ -448,7 +446,7 @@ add_task(function* test_InvalidPingType() {
 });
 
 add_task(function* test_currentPingData() {
-  yield TelemetrySession.setup();
+  yield TelemetryController.testSetup();
 
   
   let h = Telemetry.getHistogramById("TELEMETRY_TEST_RELEASE_OPTOUT");
@@ -477,5 +475,5 @@ add_task(function* test_currentPingData() {
 });
 
 add_task(function* test_shutdown() {
-  yield TelemetrySend.shutdown();
+  yield TelemetryController.testShutdown();
 });

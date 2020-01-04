@@ -217,7 +217,7 @@ add_task(function* test_canSend() {
   PingServer.start();
   Preferences.set(PREF_SERVER, "http://localhost:" + PingServer.port);
 
-  yield TelemetryController.reset();
+  yield TelemetryController.testReset();
   TelemetryReportingPolicy.reset();
 
   
@@ -248,7 +248,7 @@ add_task(function* test_canSend() {
 
   
   yield TelemetryController.addPendingPing(TEST_PING_TYPE, {});
-  yield TelemetryController.reset();
+  yield TelemetryController.testReset();
 
   
   ping = yield PingServer.promiseNextPings(1);

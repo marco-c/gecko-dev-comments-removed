@@ -98,13 +98,6 @@ function sendPing() {
   }
 }
 
-var clearPendingPings = Task.async(function*() {
-  const pending = yield TelemetryStorage.loadPendingPingList();
-  for (let p of pending) {
-    yield TelemetryStorage.removePendingPing(p.id);
-  }
-});
-
 function fakeGenerateUUID(sessionFunc, subsessionFunc) {
   let session = Cu.import("resource://gre/modules/TelemetrySession.jsm");
   session.Policy.generateSessionUUID = sessionFunc;
@@ -455,8 +448,7 @@ function run_test() {
 }
 
 add_task(function* asyncSetup() {
-  yield TelemetrySession.setup();
-  yield TelemetryController.setup();
+  yield TelemetryController.testSetup();
   
   gClientID = yield ClientID.getClientID();
 });
@@ -479,12 +471,14 @@ add_task(function* test_noServerPing() {
   
   
   yield sendPing();
+  
+  
+  yield TelemetryController.testShutdown();
 });
 
 
 add_task(function* test_simplePing() {
-  yield clearPendingPings();
-  yield TelemetrySend.reset();
+  yield TelemetryStorage.testClearPendingPings();
   PingServer.start();
   Preferences.set(PREF_SERVER, "http://localhost:" + PingServer.port);
 
@@ -496,7 +490,7 @@ add_task(function* test_simplePing() {
   const expectedSessionUUID = "bd314d15-95bf-4356-b682-b6c4a8942202";
   const expectedSubsessionUUID = "3e2e5f6c-74ba-4e4d-a93f-a48af238a8c7";
   fakeGenerateUUID(() => expectedSessionUUID, () => expectedSubsessionUUID);
-  yield TelemetrySession.reset();
+  yield TelemetryController.testReset();
 
   
   
@@ -528,8 +522,8 @@ add_task(function* test_simplePing() {
 
 add_task(function* test_saveLoadPing() {
   
-  yield clearPendingPings();
-  yield TelemetryController.reset();
+  yield TelemetryStorage.testClearPendingPings();
+  yield TelemetryController.testReset();
   PingServer.clearRequests();
 
   
@@ -569,7 +563,7 @@ add_task(function* test_checkSubsessionHistograms() {
   let now = new Date(2020, 1, 1, 12, 0, 0);
   let expectedDate = new Date(2020, 1, 1, 0, 0, 0);
   fakeNow(now);
-  yield TelemetrySession.setup();
+  yield TelemetryController.testReset();
 
   const COUNT_ID = "TELEMETRY_TEST_COUNT";
   const KEYED_ID = "TELEMETRY_TEST_KEYED_COUNT";
@@ -760,7 +754,7 @@ add_task(function* test_checkSubsessionData() {
     ++expectedActiveTicks;
   }
 
-  yield TelemetrySession.reset();
+  yield TelemetryController.testReset();
 
   
   incrementActiveTicks();
@@ -810,8 +804,8 @@ add_task(function* test_dailyCollection() {
   fakeSchedulerTimer(callback => schedulerTickCallback = callback, () => {});
 
   
-  yield clearPendingPings();
-  yield TelemetrySession.setup();
+  yield TelemetryStorage.testClearPendingPings();
+  yield TelemetryController.testSetup();
   TelemetrySend.setServer("http://localhost:" + PingServer.port);
 
   
@@ -892,7 +886,7 @@ add_task(function* test_dailyCollection() {
   Assert.equal(ping.payload.keyedHistograms[KEYED_ID]["b"].sum, 1);
 
   
-  yield TelemetrySession.shutdown();
+  yield TelemetryController.testShutdown();
 });
 
 add_task(function* test_dailyDuplication() {
@@ -902,7 +896,7 @@ add_task(function* test_dailyDuplication() {
   }
 
   yield TelemetrySend.reset();
-  yield clearPendingPings();
+  yield TelemetryStorage.testClearPendingPings();
   PingServer.clearRequests();
 
   let schedulerTickCallback = null;
@@ -910,7 +904,7 @@ add_task(function* test_dailyDuplication() {
   fakeNow(now);
   
   fakeSchedulerTimer(callback => schedulerTickCallback = callback, () => {});
-  yield TelemetrySession.setup();
+  yield TelemetryController.testReset();
 
   
   
@@ -946,7 +940,7 @@ add_task(function* test_dailyDuplication() {
 
   
   PingServer.resetPingHandler();
-  yield TelemetrySession.shutdown();
+  yield TelemetryController.testShutdown();
 });
 
 add_task(function* test_dailyOverdue() {
@@ -960,7 +954,8 @@ add_task(function* test_dailyOverdue() {
   fakeNow(now);
   
   fakeSchedulerTimer(callback => schedulerTickCallback = callback, () => {});
-  yield TelemetrySession.setup();
+  yield TelemetryStorage.testClearPendingPings();
+  yield TelemetryController.testReset();
 
   
   now.setHours(now.getHours() + 1);
@@ -996,7 +991,7 @@ add_task(function* test_dailyOverdue() {
   Assert.equal(ping.payload.info.reason, REASON_DAILY);
 
   
-  yield TelemetrySession.shutdown();
+  yield TelemetryController.testShutdown();
 });
 
 add_task(function* test_environmentChange() {
@@ -1009,8 +1004,7 @@ add_task(function* test_environmentChange() {
   let timerCallback = null;
   let timerDelay = null;
 
-  yield clearPendingPings();
-  yield TelemetrySend.reset();
+  yield TelemetryStorage.testClearPendingPings();
   PingServer.clearRequests();
 
   fakeNow(now);
@@ -1023,9 +1017,9 @@ add_task(function* test_environmentChange() {
   ]);
 
   
-  yield TelemetrySession.setup();
+  yield TelemetryController.testReset();
   TelemetrySend.setServer("http://localhost:" + PingServer.port);
-  TelemetryEnvironment._watchPreferences(PREFS_TO_WATCH);
+  TelemetryEnvironment.testWatchPreferences(PREFS_TO_WATCH);
 
   
   const COUNT_ID = "TELEMETRY_TEST_COUNT";
@@ -1085,12 +1079,10 @@ add_task(function* test_savedPingsOnShutdown() {
   const dir = TelemetryStorage.pingDirectoryPath;
   yield OS.File.removeDir(dir, {ignoreAbsent: true});
   yield OS.File.makeDir(dir);
-  
-  yield TelemetrySend.shutdown();
-  yield TelemetrySession.shutdown();
+  yield TelemetryController.testShutdown();
 
   PingServer.clearRequests();
-  yield TelemetryController.reset();
+  yield TelemetryController.testReset();
 
   const pings = yield PingServer.promiseNextPings(expectedPingCount);
 
@@ -1142,7 +1134,7 @@ add_task(function* test_savedSessionData() {
   }
 
   
-  yield TelemetrySession.reset();
+  yield TelemetryController.testReset();
   Assert.equal(0, getSnapshot("TELEMETRY_SESSIONDATA_FAILED_LOAD").sum);
   Assert.equal(0, getSnapshot("TELEMETRY_SESSIONDATA_FAILED_PARSE").sum);
   Assert.equal(0, getSnapshot("TELEMETRY_SESSIONDATA_FAILED_VALIDATION").sum);
@@ -1150,7 +1142,7 @@ add_task(function* test_savedSessionData() {
   
   
   fakeNow(new Date(2050, 1, 1, 12, 0, 0));
-  TelemetryEnvironment._watchPreferences(PREFS_TO_WATCH);
+  TelemetryEnvironment.testWatchPreferences(PREFS_TO_WATCH);
   let changePromise = new Promise(resolve =>
     TelemetryEnvironment.registerChangeListener("test_fake_change", resolve));
   Preferences.set(PREF_TEST, 1);
@@ -1159,7 +1151,7 @@ add_task(function* test_savedSessionData() {
 
   let payload = TelemetrySession.getPayload();
   Assert.equal(payload.info.profileSubsessionCounter, expectedSubsessions);
-  yield TelemetrySession.shutdown();
+  yield TelemetryController.testShutdown();
 
   
   fakeGenerateUUID(generateUUID, generateUUID);
@@ -1180,7 +1172,7 @@ add_task(function* test_sessionData_ShortSession() {
   const SESSION_STATE_PATH = OS.Path.join(DATAREPORTING_PATH, "session-state.json");
 
   
-  yield TelemetrySession.shutdown();
+  yield TelemetryController.testReset();
   yield OS.File.remove(SESSION_STATE_PATH, { ignoreAbsent: true });
   getHistogram("TELEMETRY_SESSIONDATA_FAILED_LOAD").clear();
   getHistogram("TELEMETRY_SESSIONDATA_FAILED_PARSE").clear();
@@ -1192,8 +1184,8 @@ add_task(function* test_sessionData_ShortSession() {
 
   
   
-  TelemetrySession.reset();
-  yield TelemetrySession.shutdown();
+  TelemetryController.testReset();
+  yield TelemetryController.testShutdown();
 
   Assert.equal(1, getSnapshot("TELEMETRY_SESSIONDATA_FAILED_LOAD").sum);
   Assert.equal(0, getSnapshot("TELEMETRY_SESSIONDATA_FAILED_PARSE").sum);
@@ -1204,7 +1196,7 @@ add_task(function* test_sessionData_ShortSession() {
 
   
   
-  yield TelemetrySession.reset();
+  yield TelemetryController.testReset();
 
   
   let payload = TelemetrySession.getPayload();
@@ -1231,7 +1223,7 @@ add_task(function* test_invalidSessionData() {
                       {encoding: "utf-8", tmpPath: dataFilePath + ".tmp"});
 
   
-  yield TelemetrySession.reset();
+  yield TelemetryController.testReset();
 
   
   Assert.equal(0, getSnapshot("TELEMETRY_SESSIONDATA_FAILED_LOAD").sum);
@@ -1252,7 +1244,7 @@ add_task(function* test_invalidSessionData() {
   fakeGenerateUUID(() => expectedSessionUUID, () => expectedSubsessionUUID);
 
   
-  yield TelemetrySession.reset();
+  yield TelemetryController.testReset();
 
   let payload = TelemetrySession.getPayload();
   Assert.equal(payload.info.profileSubsessionCounter, expectedSubsessions);
@@ -1260,7 +1252,7 @@ add_task(function* test_invalidSessionData() {
   Assert.equal(1, getSnapshot("TELEMETRY_SESSIONDATA_FAILED_PARSE").sum);
   Assert.equal(1, getSnapshot("TELEMETRY_SESSIONDATA_FAILED_VALIDATION").sum);
 
-  yield TelemetrySession.shutdown();
+  yield TelemetryController.testShutdown();
 
   
   fakeGenerateUUID(generateUUID, generateUUID);
@@ -1288,7 +1280,7 @@ add_task(function* test_abortedSession() {
   fakeNow(now);
   
   fakeSchedulerTimer(callback => schedulerTickCallback = callback, () => {});
-  yield TelemetrySession.reset();
+  yield TelemetryController.testReset();
 
   Assert.ok((yield OS.File.exists(DATAREPORTING_PATH)),
             "Telemetry must create the aborted session directory when starting.");
@@ -1325,34 +1317,32 @@ add_task(function* test_abortedSession() {
   Assert.notEqual(abortedSessionPing.id, updatedAbortedSessionPing.id);
   Assert.notEqual(abortedSessionPing.creationDate, updatedAbortedSessionPing.creationDate);
 
-  
-  yield TelemetrySend.shutdown();
-  yield TelemetrySession.shutdown();
+  yield TelemetryController.testShutdown();
   Assert.ok(!(yield OS.File.exists(ABORTED_FILE)),
             "No aborted session ping must be available after a shutdown.");
 
   
   
   yield TelemetryStorage.savePingToFile(abortedSessionPing, ABORTED_FILE, false);
+  Assert.ok((yield OS.File.exists(ABORTED_FILE)),
+            "The aborted session ping must exist in the aborted session ping directory.");
 
-  yield clearPendingPings();
+  yield TelemetryStorage.testClearPendingPings();
   PingServer.clearRequests();
-  
-  yield TelemetrySend.setup(true);
-  yield TelemetrySession.reset();
-  yield TelemetryController.reset();
+  yield TelemetryController.testReset();
 
   Assert.ok(!(yield OS.File.exists(ABORTED_FILE)),
             "The aborted session ping must be removed from the aborted session ping directory.");
+
+  
+  yield TelemetryController.testReset();
 
   
   const receivedPing = yield PingServer.promiseNextPing();
   Assert.equal(receivedPing.type, PING_TYPE_MAIN, "Should have the correct type");
   Assert.equal(receivedPing.payload.info.reason, REASON_ABORTED_SESSION, "Ping should have the correct reason");
 
-  
-  yield TelemetrySend.shutdown();
-  yield TelemetrySession.shutdown();
+  yield TelemetryController.testShutdown();
 });
 
 add_task(function* test_abortedSession_Shutdown() {
@@ -1367,10 +1357,7 @@ add_task(function* test_abortedSession_Shutdown() {
   let now = fakeNow(2040, 1, 1, 0, 0, 0);
   
   fakeSchedulerTimer(callback => schedulerTickCallback = callback, () => {});
-  
-  yield TelemetrySend.setup(true);
-  yield TelemetrySend.reset();
-  yield TelemetrySession.reset();
+  yield TelemetryController.testReset();
 
   Assert.ok((yield OS.File.exists(DATAREPORTING_PATH)),
             "Telemetry must create the aborted session directory when starting.");
@@ -1388,9 +1375,7 @@ add_task(function* test_abortedSession_Shutdown() {
   
   yield OS.File.remove(ABORTED_FILE);
 
-  
-  yield TelemetrySend.shutdown();
-  yield TelemetrySession.shutdown();
+  yield TelemetryController.testShutdown();
 });
 
 add_task(function* test_abortedDailyCoalescing() {
@@ -1412,10 +1397,9 @@ add_task(function* test_abortedDailyCoalescing() {
 
   
   fakeSchedulerTimer(callback => schedulerTickCallback = callback, () => {});
-  
-  yield TelemetrySend.setup(true);
-  yield TelemetrySend.reset();
-  yield TelemetrySession.reset();
+  yield TelemetryStorage.testClearPendingPings();
+  PingServer.clearRequests();
+  yield TelemetryController.testReset();
 
   Assert.ok((yield OS.File.exists(DATAREPORTING_PATH)),
             "Telemetry must create the aborted session directory when starting.");
@@ -1444,9 +1428,7 @@ add_task(function* test_abortedDailyCoalescing() {
   Assert.equal(abortedSessionPing.payload.info.sessionId, dailyPing.payload.info.sessionId);
   Assert.equal(abortedSessionPing.payload.info.subsessionId, dailyPing.payload.info.subsessionId);
 
-  
-  yield TelemetrySend.shutdown();
-  yield TelemetrySession.shutdown();
+  yield TelemetryController.testShutdown();
 });
 
 add_task(function* test_schedulerComputerSleep() {
@@ -1457,10 +1439,8 @@ add_task(function* test_schedulerComputerSleep() {
 
   const ABORTED_FILE = OS.Path.join(DATAREPORTING_PATH, ABORTED_PING_FILE_NAME);
 
-  clearPendingPings();
-  
-  yield TelemetrySend.setup(true);
-  yield TelemetrySend.reset();
+  yield TelemetryStorage.testClearPendingPings();
+  yield TelemetryController.testReset();
   PingServer.clearRequests();
 
   
@@ -1470,7 +1450,7 @@ add_task(function* test_schedulerComputerSleep() {
   let nowDate = fakeNow(2009, 10, 18, 0, 0, 0);
   let schedulerTickCallback = null;
   fakeSchedulerTimer(callback => schedulerTickCallback = callback, () => {});
-  yield TelemetrySession.reset();
+  yield TelemetryController.testReset();
 
   
   nowDate = fakeNow(futureDate(nowDate, 3 * MS_IN_ONE_DAY));
@@ -1505,9 +1485,7 @@ add_task(function* test_schedulerComputerSleep() {
   Assert.equal(dailyPing.creationDate, nowDate.toISOString(),
                "The daily ping date should be correct.");
 
-  
-  yield TelemetrySend.shutdown();
-  yield TelemetrySession.shutdown();
+  yield TelemetryController.testShutdown();
 });
 
 add_task(function* test_schedulerEnvironmentReschedules() {
@@ -1523,19 +1501,17 @@ add_task(function* test_schedulerEnvironmentReschedules() {
     [PREF_TEST, {what: TelemetryEnvironment.RECORD_PREF_VALUE}],
   ]);
 
-  yield clearPendingPings();
+  yield TelemetryStorage.testClearPendingPings();
   PingServer.clearRequests();
-  
-  yield TelemetrySend.setup(true);
-  yield TelemetrySend.reset();
+  yield TelemetryController.testReset();
 
   
   let nowDate = new Date(2060, 10, 18, 0, 0, 0);
   fakeNow(nowDate);
   let schedulerTickCallback = null;
   fakeSchedulerTimer(callback => schedulerTickCallback = callback, () => {});
-  yield TelemetrySession.reset();
-  TelemetryEnvironment._watchPreferences(PREFS_TO_WATCH);
+  yield TelemetryController.testReset();
+  TelemetryEnvironment.testWatchPreferences(PREFS_TO_WATCH);
 
   
   let future = futureDate(nowDate, MS_IN_ONE_DAY);
@@ -1555,10 +1531,7 @@ add_task(function* test_schedulerEnvironmentReschedules() {
   
   Assert.ok(!!schedulerTickCallback);
   yield schedulerTickCallback();
-
-  
-  yield TelemetrySend.shutdown();
-  yield TelemetrySession.shutdown();
+  yield TelemetryController.testShutdown();
 });
 
 add_task(function* test_schedulerNothingDue() {
@@ -1571,10 +1544,8 @@ add_task(function* test_schedulerNothingDue() {
 
   
   yield OS.File.removeDir(DATAREPORTING_PATH, { ignoreAbsent: true });
-  yield clearPendingPings();
-  
-  yield TelemetrySend.setup(true);
-  yield TelemetrySend.reset();
+  yield TelemetryStorage.testClearPendingPings();
+  yield TelemetryController.testReset();
 
   
   PingServer.registerPingHandler((req, res) => {
@@ -1587,7 +1558,7 @@ add_task(function* test_schedulerNothingDue() {
   fakeNow(nowDate);
   let schedulerTickCallback = null;
   fakeSchedulerTimer(callback => schedulerTickCallback = callback, () => {});
-  yield TelemetrySession.reset();
+  yield TelemetryController.testReset();
 
   
   let nothingDueDate = futureDate(nowDate, ABORTED_SESSION_UPDATE_INTERVAL_MS / 2);
@@ -1599,9 +1570,7 @@ add_task(function* test_schedulerNothingDue() {
   
   Assert.ok(!(yield OS.File.exists(ABORTED_FILE)));
 
-  
-  yield TelemetrySend.shutdown();
-  yield TelemetrySession.shutdown();
+  yield TelemetryController.testShutdown();
   PingServer.resetPingHandler();
 });
 
@@ -1612,14 +1581,11 @@ add_task(function* test_pingExtendedStats() {
   ];
 
   
+  yield TelemetryStorage.testClearPendingPings();
+  PingServer.clearRequests();
+  yield TelemetryController.testReset();
   Telemetry.canRecordExtended = false;
 
-  yield clearPendingPings();
-  PingServer.clearRequests();
-  
-  yield TelemetrySend.setup(true);
-  yield TelemetrySend.reset();
-  yield TelemetrySession.reset();
   yield sendPing();
 
   let ping = yield PingServer.promiseNextPing();
@@ -1645,7 +1611,6 @@ add_task(function* test_pingExtendedStats() {
   Telemetry.canRecordExtended = true;
 
   
-  yield TelemetrySession.reset();
   yield sendPing();
   ping = yield PingServer.promiseNextPing();
   checkPingFormat(ping, PING_TYPE_MAIN, true, true);
@@ -1678,8 +1643,8 @@ add_task(function* test_schedulerUserIdle() {
   fakeSchedulerTimer((callback, timeout) => {
     schedulerTimeout = timeout;
   }, () => {});
-  yield TelemetrySession.reset();
-  yield clearPendingPings();
+  yield TelemetryController.testReset();
+  yield TelemetryStorage.testClearPendingPings();
   PingServer.clearRequests();
 
   
@@ -1704,9 +1669,7 @@ add_task(function* test_schedulerUserIdle() {
   fakeIdleNotification("idle");
   Assert.equal(schedulerTimeout, 10 * 60 * 1000);
 
-  
-  yield TelemetrySend.shutdown();
-  yield TelemetrySession.shutdown();
+  yield TelemetryController.testShutdown();
 });
 
 add_task(function* test_DailyDueAndIdle() {
@@ -1715,12 +1678,8 @@ add_task(function* test_DailyDueAndIdle() {
     return;
   }
 
-  yield TelemetrySession.reset();
-  yield clearPendingPings();
+  yield TelemetryStorage.testClearPendingPings();
   PingServer.clearRequests();
-  
-  yield TelemetrySend.setup(true);
-  yield TelemetrySend.reset();
 
   let receivedPingRequest = null;
   
@@ -1729,12 +1688,14 @@ add_task(function* test_DailyDueAndIdle() {
     receivedPingRequest = req;
   });
 
+  
+  
   let schedulerTickCallback = null;
   let now = new Date(2030, 1, 1, 0, 0, 0);
   fakeNow(now);
   
   fakeSchedulerTimer(callback => schedulerTickCallback = callback, () => {});
-  yield TelemetrySession.setup();
+  yield TelemetryController.testReset();
 
   
   let firstDailyDue = new Date(2030, 1, 2, 0, 0, 0);
@@ -1759,9 +1720,7 @@ add_task(function* test_DailyDueAndIdle() {
   checkPingFormat(receivedPing, PING_TYPE_MAIN, true, true);
   Assert.equal(receivedPing.payload.info.reason, REASON_DAILY);
 
-  
-  yield TelemetrySend.shutdown();
-  yield TelemetrySession.shutdown();
+  yield TelemetryController.testShutdown();
 });
 
 add_task(function* test_userIdleAndSchedlerTick() {
@@ -1769,13 +1728,6 @@ add_task(function* test_userIdleAndSchedlerTick() {
     
     return;
   }
-
-  yield TelemetrySession.reset();
-  yield clearPendingPings();
-  PingServer.clearRequests();
-  
-  yield TelemetrySend.setup(true);
-  yield TelemetrySend.reset();
 
   let receivedPingRequest = null;
   
@@ -1789,7 +1741,9 @@ add_task(function* test_userIdleAndSchedlerTick() {
   fakeNow(now);
   
   fakeSchedulerTimer(callback => schedulerTickCallback = callback, () => {});
-  yield TelemetrySession.setup();
+  yield TelemetryStorage.testClearPendingPings();
+  yield TelemetryController.testReset();
+  PingServer.clearRequests();
 
   
   let firstDailyDue = new Date(2030, 1, 2, 0, 0, 0);
@@ -1814,9 +1768,7 @@ add_task(function* test_userIdleAndSchedlerTick() {
   checkPingFormat(receivedPing, PING_TYPE_MAIN, true, true);
   Assert.equal(receivedPing.payload.info.reason, REASON_DAILY);
 
-  
-  yield TelemetrySend.shutdown();
-  yield TelemetrySession.shutdown();
+  yield TelemetryController.testShutdown();
 });
 
 add_task(function* stopServer(){
