@@ -11,7 +11,6 @@
 #include "SharedSurfaceGL.h"            
 #include "ClientLayerManager.h"         
 #include "mozilla/gfx/Point.h"          
-#include "mozilla/layers/AsyncCanvasRenderer.h"
 #include "mozilla/layers/CompositorTypes.h"
 #include "mozilla/layers/LayersTypes.h"
 #include "nsCOMPtr.h"                   
@@ -19,6 +18,24 @@
 #include "nsRect.h"                     
 #include "nsXULAppAPI.h"                
 #include "gfxPrefs.h"                   
+
+#ifdef XP_WIN
+#include "SharedSurfaceANGLE.h"         
+#include "gfxWindowsPlatform.h"
+#endif
+
+#ifdef MOZ_WIDGET_GONK
+#include "SharedSurfaceGralloc.h"
+#endif
+
+#ifdef XP_MACOSX
+#include "SharedSurfaceIO.h"
+#endif
+
+#ifdef GL_PROVIDER_GLX
+#include "GLXLibrary.h"
+#include "SharedSurfaceGLX.h"
+#endif
 
 using namespace mozilla::gfx;
 using namespace mozilla::gl;
@@ -65,7 +82,46 @@ ClientCanvasLayer::Initialize(const Data& aData)
     mFlags |= TextureFlags::NON_PREMULTIPLIED;
   }
 
-  UniquePtr<SurfaceFactory> factory = GLScreenBuffer::CreateFactory(mGLContext, caps, forwarder, mFlags);
+  UniquePtr<SurfaceFactory> factory;
+
+  if (!gfxPrefs::WebGLForceLayersReadback()) {
+    switch (forwarder->GetCompositorBackendType()) {
+      case mozilla::layers::LayersBackend::LAYERS_OPENGL: {
+#if defined(XP_MACOSX)
+        factory = SurfaceFactory_IOSurface::Create(mGLContext, caps, forwarder, mFlags);
+#elif defined(MOZ_WIDGET_GONK)
+        factory = MakeUnique<SurfaceFactory_Gralloc>(mGLContext, caps, forwarder, mFlags);
+#elif defined(GL_PROVIDER_GLX)
+        if (sGLXLibrary.UseSurfaceSharing())
+          factory = SurfaceFactory_GLXDrawable::Create(mGLContext, caps, forwarder, mFlags);
+#else
+        if (mGLContext->GetContextType() == GLContextType::EGL) {
+          if (XRE_IsParentProcess()) {
+            factory = SurfaceFactory_EGLImage::Create(mGLContext, caps, forwarder,
+                                                      mFlags);
+          }
+        }
+#endif
+        break;
+      }
+      case mozilla::layers::LayersBackend::LAYERS_D3D11: {
+#ifdef XP_WIN
+        
+        
+        if (mGLContext->IsANGLE() &&
+            (mGLContext->IsWARP() == gfxWindowsPlatform::GetPlatform()->IsWARP()) &&
+            gfxWindowsPlatform::GetPlatform()->CompositorD3D11TextureSharingWorks())
+        {
+          factory = SurfaceFactory_ANGLEShareHandle::Create(mGLContext, caps, forwarder,
+                                                            mFlags);
+        }
+#endif
+        break;
+      }
+      default:
+        break;
+    }
+  }
 
   if (mGLFrontbuffer) {
     
@@ -89,6 +145,11 @@ ClientCanvasLayer::RenderLayer()
 
   RenderMaskLayers(this);
 
+  if (!IsDirty()) {
+    return;
+  }
+  Painted();
+
   if (!mCanvasClient) {
     TextureFlags flags = TextureFlags::IMMEDIATE_UPLOAD;
     if (mOriginPos == gl::OriginPos::BottomLeft) {
@@ -111,23 +172,10 @@ ClientCanvasLayer::RenderLayer()
       return;
     }
     if (HasShadow()) {
-      if (mAsyncRenderer) {
-        static_cast<CanvasClientBridge*>(mCanvasClient.get())->SetLayer(this);
-      } else {
-        mCanvasClient->Connect();
-        ClientManager()->AsShadowForwarder()->Attach(mCanvasClient, this);
-      }
+      mCanvasClient->Connect();
+      ClientManager()->AsShadowForwarder()->Attach(mCanvasClient, this);
     }
   }
-
-  if (mCanvasClient && mAsyncRenderer) {
-    mCanvasClient->UpdateAsync(mAsyncRenderer);
-  }
-
-  if (!IsDirty()) {
-    return;
-  }
-  Painted();
 
   FirePreTransactionCallback();
   mCanvasClient->Update(gfx::IntSize(mBounds.width, mBounds.height), this);
@@ -141,10 +189,6 @@ ClientCanvasLayer::RenderLayer()
 CanvasClient::CanvasClientType
 ClientCanvasLayer::GetCanvasClientType()
 {
-  if (mAsyncRenderer) {
-    return CanvasClient::CanvasClientAsync;
-  }
-
   if (mGLContext) {
     return CanvasClient::CanvasClientTypeShSurf;
   }

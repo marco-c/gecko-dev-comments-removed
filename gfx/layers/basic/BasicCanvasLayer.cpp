@@ -4,7 +4,6 @@
 
 
 #include "BasicCanvasLayer.h"
-#include "AsyncCanvasRenderer.h"
 #include "basic/BasicLayers.h"          
 #include "basic/BasicLayersImpl.h"      
 #include "mozilla/mozalloc.h"           

@@ -22,7 +22,6 @@
 #include "ImageEncoder.h"
 #include "Layers.h"
 #include "mozilla/dom/BindingUtils.h"
-#include "mozilla/dom/Event.h"
 #include "mozilla/dom/HTMLVideoElement.h"
 #include "mozilla/dom/ImageData.h"
 #include "mozilla/EnumeratedArrayCycleCollection.h"
@@ -80,6 +79,125 @@ using namespace mozilla::gfx;
 using namespace mozilla::gl;
 using namespace mozilla::layers;
 
+WebGLObserver::WebGLObserver(WebGLContext* webgl)
+    : mWebGL(webgl)
+{
+}
+
+WebGLObserver::~WebGLObserver()
+{
+}
+
+void
+WebGLObserver::Destroy()
+{
+    UnregisterMemoryPressureEvent();
+    UnregisterVisibilityChangeEvent();
+    mWebGL = nullptr;
+}
+
+void
+WebGLObserver::RegisterVisibilityChangeEvent()
+{
+    if (!mWebGL)
+        return;
+
+    HTMLCanvasElement* canvas = mWebGL->GetCanvas();
+    MOZ_ASSERT(canvas);
+
+    if (canvas) {
+        nsIDocument* document = canvas->OwnerDoc();
+
+        document->AddSystemEventListener(NS_LITERAL_STRING("visibilitychange"),
+                                         this, true, false);
+    }
+}
+
+void
+WebGLObserver::UnregisterVisibilityChangeEvent()
+{
+    if (!mWebGL)
+        return;
+
+    HTMLCanvasElement* canvas = mWebGL->GetCanvas();
+
+    if (canvas) {
+        nsIDocument* document = canvas->OwnerDoc();
+
+        document->RemoveSystemEventListener(NS_LITERAL_STRING("visibilitychange"),
+                                            this, true);
+    }
+}
+
+void
+WebGLObserver::RegisterMemoryPressureEvent()
+{
+    if (!mWebGL)
+        return;
+
+    nsCOMPtr<nsIObserverService> observerService =
+        mozilla::services::GetObserverService();
+
+    MOZ_ASSERT(observerService);
+
+    if (observerService)
+        observerService->AddObserver(this, "memory-pressure", false);
+}
+
+void
+WebGLObserver::UnregisterMemoryPressureEvent()
+{
+    if (!mWebGL)
+        return;
+
+    nsCOMPtr<nsIObserverService> observerService =
+        mozilla::services::GetObserverService();
+
+    
+    
+    
+    if (observerService)
+        observerService->RemoveObserver(this, "memory-pressure");
+}
+
+NS_IMETHODIMP
+WebGLObserver::Observe(nsISupports*, const char* topic, const char16_t*)
+{
+    if (!mWebGL || strcmp(topic, "memory-pressure")) {
+        return NS_OK;
+    }
+
+    bool wantToLoseContext = mWebGL->mLoseContextOnMemoryPressure;
+
+    if (!mWebGL->mCanLoseContextInForeground &&
+        ProcessPriorityManager::CurrentProcessIsForeground())
+    {
+        wantToLoseContext = false;
+    }
+
+    if (wantToLoseContext)
+        mWebGL->ForceLoseContext();
+
+    return NS_OK;
+}
+
+NS_IMETHODIMP
+WebGLObserver::HandleEvent(nsIDOMEvent* event)
+{
+    nsAutoString type;
+    event->GetType(type);
+    if (!mWebGL || !type.EqualsLiteral("visibilitychange"))
+        return NS_OK;
+
+    HTMLCanvasElement* canvas = mWebGL->GetCanvas();
+    MOZ_ASSERT(canvas);
+
+    if (canvas && !canvas->OwnerDoc()->Hidden())
+        mWebGL->ForceRestoreContext();
+
+    return NS_OK;
+}
+
 WebGLContextOptions::WebGLContextOptions()
     : alpha(true)
     , depth(true)
@@ -90,7 +208,7 @@ WebGLContextOptions::WebGLContextOptions()
     , failIfMajorPerformanceCaveat(false)
 {
     
-    if (gfxPrefs::WebGLDefaultNoAlpha())
+    if (Preferences::GetBool("webgl.default-no-alpha", false))
         alpha = false;
 }
 
@@ -164,10 +282,7 @@ WebGLContext::WebGLContext()
     mPixelStorePackAlignment = 4;
     mPixelStoreUnpackAlignment = 4;
 
-    if (NS_IsMainThread()) {
-        
-        WebGLMemoryTracker::AddWebGLContext(this);
-    }
+    WebGLMemoryTracker::AddWebGLContext(this);
 
     mAllowContextRestore = true;
     mLastLossWasSimulated = false;
@@ -181,11 +296,14 @@ WebGLContext::WebGLContext()
     mAlreadyWarnedAboutFakeVertexAttrib0 = false;
     mAlreadyWarnedAboutViewportLargerThanDest = false;
 
-    mMaxWarnings = gfxPrefs::WebGLMaxWarningsPerContext();
+    mMaxWarnings = Preferences::GetInt("webgl.max-warnings-per-context", 32);
     if (mMaxWarnings < -1) {
         GenerateWarning("webgl.max-warnings-per-context size is too large (seems like a negative value wrapped)");
         mMaxWarnings = 0;
     }
+
+    mContextObserver = new WebGLObserver(this);
+    MOZ_RELEASE_ASSERT(mContextObserver, "Can't alloc WebGLContextObserver");
 
     mLastUseIndex = 0;
 
@@ -201,12 +319,10 @@ WebGLContext::WebGLContext()
 WebGLContext::~WebGLContext()
 {
     RemovePostRefreshObserver();
+    mContextObserver->Destroy();
 
     DestroyResourcesAndContext();
-    if (NS_IsMainThread()) {
-        
-        WebGLMemoryTracker::RemoveWebGLContext(this);
-    }
+    WebGLMemoryTracker::RemoveWebGLContext(this);
 
     mContextLossHandler->DisableTimer();
     mContextLossHandler = nullptr;
@@ -215,6 +331,8 @@ WebGLContext::~WebGLContext()
 void
 WebGLContext::DestroyResourcesAndContext()
 {
+    mContextObserver->UnregisterMemoryPressureEvent();
+
     if (!gl)
         return;
 
@@ -313,35 +431,6 @@ WebGLContext::Invalidate()
     mCanvasElement->InvalidateCanvasContent(nullptr);
 }
 
-void
-WebGLContext::OnVisibilityChange()
-{
-    if (!IsContextLost()) {
-        return;
-    }
-
-    if (!mRestoreWhenVisible || mLastLossWasSimulated) {
-        return;
-    }
-
-    ForceRestoreContext();
-}
-
-void
-WebGLContext::OnMemoryPressure()
-{
-    bool shouldLoseContext = mLoseContextOnMemoryPressure;
-
-    if (!mCanLoseContextInForeground &&
-        ProcessPriorityManager::CurrentProcessIsForeground())
-    {
-        shouldLoseContext = false;
-    }
-
-    if (shouldLoseContext)
-        ForceLoseContext();
-}
-
 
 
 
@@ -426,7 +515,7 @@ static bool
 IsFeatureInBlacklist(const nsCOMPtr<nsIGfxInfo>& gfxInfo, int32_t feature)
 {
     int32_t status;
-    if (!NS_SUCCEEDED(gfxUtils::ThreadSafeGetFeatureStatus(gfxInfo, feature, &status)))
+    if (!NS_SUCCEEDED(gfxInfo->GetFeatureStatus(feature, &status)))
         return false;
 
     return status != nsIGfxInfo::FEATURE_STATUS_OK;
@@ -437,29 +526,19 @@ HasAcceleratedLayers(const nsCOMPtr<nsIGfxInfo>& gfxInfo)
 {
     int32_t status;
 
-    gfxUtils::ThreadSafeGetFeatureStatus(gfxInfo,
-                                         nsIGfxInfo::FEATURE_DIRECT3D_9_LAYERS,
-                                         &status);
+    gfxInfo->GetFeatureStatus(nsIGfxInfo::FEATURE_DIRECT3D_9_LAYERS, &status);
     if (status)
         return true;
-    gfxUtils::ThreadSafeGetFeatureStatus(gfxInfo,
-                                         nsIGfxInfo::FEATURE_DIRECT3D_10_LAYERS,
-                                         &status);
+    gfxInfo->GetFeatureStatus(nsIGfxInfo::FEATURE_DIRECT3D_10_LAYERS, &status);
     if (status)
         return true;
-    gfxUtils::ThreadSafeGetFeatureStatus(gfxInfo,
-                                         nsIGfxInfo::FEATURE_DIRECT3D_10_1_LAYERS,
-                                         &status);
+    gfxInfo->GetFeatureStatus(nsIGfxInfo::FEATURE_DIRECT3D_10_1_LAYERS, &status);
     if (status)
         return true;
-    gfxUtils::ThreadSafeGetFeatureStatus(gfxInfo,
-                                         nsIGfxInfo::FEATURE_DIRECT3D_11_LAYERS,
-                                         &status);
+    gfxInfo->GetFeatureStatus(nsIGfxInfo::FEATURE_DIRECT3D_11_LAYERS, &status);
     if (status)
         return true;
-    gfxUtils::ThreadSafeGetFeatureStatus(gfxInfo,
-                                         nsIGfxInfo::FEATURE_OPENGL_LAYERS,
-                                         &status);
+    gfxInfo->GetFeatureStatus(nsIGfxInfo::FEATURE_OPENGL_LAYERS, &status);
     if (status)
         return true;
 
@@ -516,14 +595,11 @@ BaseCaps(const WebGLContextOptions& options, WebGLContext* webgl)
     
     
     
-    baseCaps.bpp16 = gfxPrefs::WebGLPrefer16bpp();
+    baseCaps.bpp16 = Preferences::GetBool("webgl.prefer-16bpp", false);
 
 #ifdef MOZ_WIDGET_GONK
     do {
         auto canvasElement = webgl->GetCanvas();
-        if (!canvasElement)
-            break;
-
         auto ownerDoc = canvasElement->OwnerDoc();
         nsIWidget* docWidget = nsContentUtils::WidgetForDocument(ownerDoc);
         if (!docWidget)
@@ -544,7 +620,7 @@ BaseCaps(const WebGLContextOptions& options, WebGLContext* webgl)
 
     
 
-    bool forceAllowAA = gfxPrefs::WebGLForceMSAA();
+    bool forceAllowAA = Preferences::GetBool("webgl.msaa-force", false);
     nsCOMPtr<nsIGfxInfo> gfxInfo = services::GetGfxInfo();
     if (!forceAllowAA &&
         IsFeatureInBlacklist(gfxInfo, nsIGfxInfo::FEATURE_WEBGL_MSAA))
@@ -664,7 +740,7 @@ bool
 WebGLContext::CreateAndInitGL(bool forceEnabled)
 {
     bool preferEGL = PR_GetEnv("MOZ_WEBGL_PREFER_EGL");
-    bool disableANGLE = gfxPrefs::WebGLDisableANGLE();
+    bool disableANGLE = Preferences::GetBool("webgl.disable-angle", false);
 
     if (PR_GetEnv("MOZ_WEBGL_FORCE_OPENGL"))
         disableANGLE = true;
@@ -745,6 +821,10 @@ WebGLContext::ResizeBackbuffer(uint32_t requestedWidth,
 NS_IMETHODIMP
 WebGLContext::SetDimensions(int32_t signedWidth, int32_t signedHeight)
 {
+    
+    if (!GetCanvas())
+        return NS_ERROR_FAILURE;
+
     if (signedWidth < 0 || signedHeight < 0) {
         GenerateWarning("Canvas size is too large (seems like a negative value wrapped)");
         return NS_ERROR_OUT_OF_MEMORY;
@@ -754,10 +834,7 @@ WebGLContext::SetDimensions(int32_t signedWidth, int32_t signedHeight)
     uint32_t height = signedHeight;
 
     
-
-    
-    if (GetCanvas())
-        GetCanvas()->InvalidateCanvas();
+    GetCanvas()->InvalidateCanvas();
 
     
     if (width == 0)
@@ -830,7 +907,10 @@ WebGLContext::SetDimensions(int32_t signedWidth, int32_t signedHeight)
     
     ++mGeneration;
 
-    bool disabled = gfxPrefs::WebGLDisabled();
+    
+    NS_ENSURE_TRUE(Preferences::GetRootBranch(), NS_ERROR_FAILURE);
+
+    bool disabled = Preferences::GetBool("webgl.disabled", false);
 
     
     disabled |= gfxPlatform::InSafeMode();
@@ -853,7 +933,7 @@ WebGLContext::SetDimensions(int32_t signedWidth, int32_t signedHeight)
     }
 
     
-    bool forceEnabled = gfxPrefs::WebGLForceEnabled();
+    bool forceEnabled = Preferences::GetBool("webgl.force-enabled", false);
     ScopedGfxFeatureReporter reporter("WebGL", forceEnabled);
 
     MOZ_ASSERT(!gl);
@@ -974,11 +1054,6 @@ WebGLContext::LoseOldestWebGLContextIfLimitExceeded()
 #endif
     MOZ_ASSERT(kMaxWebGLContextsPerPrincipal < kMaxWebGLContexts);
 
-    if (!NS_IsMainThread()) {
-        
-        return;
-    }
-
     
     
     
@@ -1066,8 +1141,32 @@ WebGLContext::GetImageBuffer(uint8_t** out_imageBuffer, int32_t* out_format)
 
     RefPtr<DataSourceSurface> dataSurface = snapshot->GetDataSurface();
 
-    return gfxUtils::GetImageBuffer(dataSurface, mOptions.premultipliedAlpha,
-                                    out_imageBuffer, out_format);
+    DataSourceSurface::MappedSurface map;
+    if (!dataSurface->Map(DataSourceSurface::MapType::READ, &map))
+        return;
+
+    uint8_t* imageBuffer = new (fallible) uint8_t[mWidth * mHeight * 4];
+    if (!imageBuffer) {
+        dataSurface->Unmap();
+        return;
+    }
+    memcpy(imageBuffer, map.mData, mWidth * mHeight * 4);
+
+    dataSurface->Unmap();
+
+    int32_t format = imgIEncoder::INPUT_FORMAT_HOSTARGB;
+    if (!mOptions.premultipliedAlpha) {
+        
+        
+        
+        
+        
+        gfxUtils::ConvertBGRAtoRGBA(imageBuffer, mWidth * mHeight * 4);
+        format = imgIEncoder::INPUT_FORMAT_RGBA;
+    }
+
+    *out_imageBuffer = imageBuffer;
+    *out_format = format;
 }
 
 NS_IMETHODIMP
@@ -1079,18 +1178,20 @@ WebGLContext::GetInputStream(const char* mimeType,
     if (!gl)
         return NS_ERROR_FAILURE;
 
-    
-    bool premult;
-    RefPtr<SourceSurface> snapshot =
-      GetSurfaceSnapshot(mOptions.premultipliedAlpha ? nullptr : &premult);
-    if (!snapshot)
+    nsCString enccid("@mozilla.org/image/encoder;2?type=");
+    enccid += mimeType;
+    nsCOMPtr<imgIEncoder> encoder = do_CreateInstance(enccid.get());
+    if (!encoder)
         return NS_ERROR_FAILURE;
 
-    MOZ_ASSERT(mOptions.premultipliedAlpha || !premult, "We must get unpremult when we ask for it!");
+    nsAutoArrayPtr<uint8_t> imageBuffer;
+    int32_t format = 0;
+    GetImageBuffer(getter_Transfers(imageBuffer), &format);
+    if (!imageBuffer)
+        return NS_ERROR_FAILURE;
 
-    RefPtr<DataSourceSurface> dataSurface = snapshot->GetDataSurface();
-    return gfxUtils::GetInputStream(dataSurface, mOptions.premultipliedAlpha, mimeType,
-                                    encoderOptions, out_stream);
+    return ImageEncoder::GetInputStream(mWidth, mHeight, imageBuffer, format,
+                                        encoder, encoderOptions, out_stream);
 }
 
 void
@@ -1169,26 +1270,25 @@ WebGLContext::GetCanvasLayer(nsDisplayListBuilder* builder,
     }
 
     WebGLContextUserData* userData = nullptr;
-    if (builder->IsPaintingToWindow() && mCanvasElement) {
-        
-        
-        
-        
-        
-        
+    if (builder->IsPaintingToWindow()) {
+      
+      
+      
+      
+      
+      
 
-        
-        
-        
-        
-        
-        userData = new WebGLContextUserData(mCanvasElement);
-        canvasLayer->SetDidTransactionCallback(
-            WebGLContextUserData::DidTransactionCallback, userData);
-        canvasLayer->SetPreTransactionCallback(
-            WebGLContextUserData::PreTransactionCallback, userData);
+      
+      
+      
+      
+      
+      userData = new WebGLContextUserData(mCanvasElement);
+      canvasLayer->SetDidTransactionCallback(
+              WebGLContextUserData::DidTransactionCallback, userData);
+      canvasLayer->SetPreTransactionCallback(
+              WebGLContextUserData::PreTransactionCallback, userData);
     }
-
     canvasLayer->SetUserData(&gWebGLLayerUserData, userData);
 
     CanvasLayer::Data data;
@@ -1210,34 +1310,12 @@ WebGLContext::GetCanvasLayer(nsDisplayListBuilder* builder,
 layers::LayersBackend
 WebGLContext::GetCompositorBackendType() const
 {
-    if (mCanvasElement) {
-        return mCanvasElement->GetCompositorBackendType();
-    } else if (mOffscreenCanvas) {
-        return mOffscreenCanvas->GetCompositorBackendType();
+    nsIWidget* docWidget = nsContentUtils::WidgetForDocument(mCanvasElement->OwnerDoc());
+    if (docWidget) {
+        layers::LayerManager* layerManager = docWidget->GetLayerManager();
+        return layerManager->GetCompositorBackendType();
     }
-
     return LayersBackend::LAYERS_NONE;
-}
-
-void
-WebGLContext::Commit()
-{
-    if (mOffscreenCanvas) {
-        mOffscreenCanvas->CommitFrameToCompositor();
-    }
-}
-
-void
-WebGLContext::GetCanvas(Nullable<dom::OwningHTMLCanvasElementOrOffscreenCanvas>& retval)
-{
-    if (mCanvasElement) {
-        MOZ_RELEASE_ASSERT(!mOffscreenCanvas);
-        retval.SetValue().SetAsHTMLCanvasElement() = mCanvasElement;
-    } else if (mOffscreenCanvas) {
-        retval.SetValue().SetAsOffscreenCanvas() = mOffscreenCanvas;
-    } else {
-        retval.SetNull();
-    }
 }
 
 void
@@ -1548,7 +1626,7 @@ WebGLContext::RunContextLossTimer()
     mContextLossHandler->RunTimer();
 }
 
-class UpdateContextLossStatusTask : public nsCancelableRunnable
+class UpdateContextLossStatusTask : public nsRunnable
 {
     nsRefPtr<WebGLContext> mWebGL;
 
@@ -1559,14 +1637,8 @@ public:
     }
 
     NS_IMETHOD Run() {
-        if (mWebGL)
-            mWebGL->UpdateContextLossStatus();
+        mWebGL->UpdateContextLossStatus();
 
-        return NS_OK;
-    }
-
-    NS_IMETHOD Cancel() {
-        mWebGL = nullptr;
         return NS_OK;
     }
 };
@@ -1595,7 +1667,7 @@ WebGLContext::EnqueueUpdateContextLossStatus()
 void
 WebGLContext::UpdateContextLossStatus()
 {
-    if (!mCanvasElement && !mOffscreenCanvas) {
+    if (!mCanvasElement) {
         
         
         return;
@@ -1623,23 +1695,12 @@ WebGLContext::UpdateContextLossStatus()
         
 
         bool useDefaultHandler;
-
-        if (mCanvasElement) {
-            nsContentUtils::DispatchTrustedEvent(
-                mCanvasElement->OwnerDoc(),
-                static_cast<nsIDOMHTMLCanvasElement*>(mCanvasElement),
-                NS_LITERAL_STRING("webglcontextlost"),
-                true,
-                true,
-                &useDefaultHandler);
-        } else {
-            
-            nsRefPtr<Event> event = new Event(mOffscreenCanvas, nullptr, nullptr);
-            event->InitEvent(NS_LITERAL_STRING("webglcontextlost"), true, true);
-            event->SetTrusted(true);
-            mOffscreenCanvas->DispatchEvent(event, &useDefaultHandler);
-        }
-
+        nsContentUtils::DispatchTrustedEvent(mCanvasElement->OwnerDoc(),
+                                             static_cast<nsIDOMHTMLCanvasElement*>(mCanvasElement),
+                                             NS_LITERAL_STRING("webglcontextlost"),
+                                             true,
+                                             true,
+                                             &useDefaultHandler);
         
         mContextStatus = ContextLost;
         
@@ -1691,22 +1752,11 @@ WebGLContext::UpdateContextLossStatus()
 
         
         mContextStatus = ContextNotLost;
-
-        if (mCanvasElement) {
-            nsContentUtils::DispatchTrustedEvent(
-                mCanvasElement->OwnerDoc(),
-                static_cast<nsIDOMHTMLCanvasElement*>(mCanvasElement),
-                NS_LITERAL_STRING("webglcontextrestored"),
-                true,
-                true);
-        } else {
-            nsRefPtr<Event> event = new Event(mOffscreenCanvas, nullptr, nullptr);
-            event->InitEvent(NS_LITERAL_STRING("webglcontextrestored"), true, true);
-            event->SetTrusted(true);
-            bool unused;
-            mOffscreenCanvas->DispatchEvent(event, &unused);
-        }
-
+        nsContentUtils::DispatchTrustedEvent(mCanvasElement->OwnerDoc(),
+                                             static_cast<nsIDOMHTMLCanvasElement*>(mCanvasElement),
+                                             NS_LITERAL_STRING("webglcontextrestored"),
+                                             true,
+                                             true);
         mEmitContextLostErrorOnce = true;
         return;
     }
@@ -1725,6 +1775,12 @@ WebGLContext::ForceLoseContext(bool simulateLosing)
     mLastLossWasSimulated = simulateLosing;
 
     
+    
+    if (mRestoreWhenVisible && !mLastLossWasSimulated) {
+        mContextObserver->RegisterVisibilityChangeEvent();
+    }
+
+    
     EnqueueUpdateContextLossStatus();
 }
 
@@ -1734,6 +1790,8 @@ WebGLContext::ForceRestoreContext()
     printf_stderr("WebGL(%p)::ForceRestoreContext\n", this);
     mContextStatus = ContextLostAwaitingRestore;
     mAllowContextRestore = true; 
+
+    mContextObserver->UnregisterVisibilityChangeEvent();
 
     
     EnqueueUpdateContextLossStatus();
@@ -1869,7 +1927,6 @@ NS_IMPL_CYCLE_COLLECTING_RELEASE(WebGLContext)
 
 NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(WebGLContext,
   mCanvasElement,
-  mOffscreenCanvas,
   mExtensions,
   mBound2DTextures,
   mBoundCubeMapTextures,
