@@ -30,6 +30,13 @@
 namespace mozilla {
 namespace layers {
 
+
+
+
+
+
+const uint32_t MIN_VELOCITY_SAMPLE_TIME_MS = 5;
+
 bool FuzzyEqualsCoordinate(float aValue1, float aValue2)
 {
   return FuzzyEqualsAdditive(aValue1, aValue2, COORDINATE_EPSILON)
@@ -40,7 +47,8 @@ extern StaticAutoPtr<ComputedTimingFunction> gVelocityCurveFunction;
 
 Axis::Axis(AsyncPanZoomController* aAsyncPanZoomController)
   : mPos(0),
-    mPosTimeMs(0),
+    mVelocitySampleTimeMs(0),
+    mVelocitySamplePos(0),
     mVelocity(0.0f),
     mAxisLocked(false),
     mAsyncPanZoomController(aAsyncPanZoomController),
@@ -67,16 +75,20 @@ void Axis::UpdateWithTouchAtDevicePoint(ParentLayerCoord aPos, ParentLayerCoord 
   
   APZThreadUtils::AssertOnControllerThread();
 
-  if (aTimestampMs == mPosTimeMs) {
+  if (aTimestampMs <= mVelocitySampleTimeMs + MIN_VELOCITY_SAMPLE_TIME_MS) {
     
     
     
     
+    
+    
+    AXIS_LOG("%p|%s skipping velocity computation for small time delta %dms\n",
+        mAsyncPanZoomController, Name(), (aTimestampMs - mVelocitySampleTimeMs));
     mPos = aPos;
     return;
   }
 
-  float newVelocity = mAxisLocked ? 0.0f : (float)(mPos - aPos + aAdditionalDelta) / (float)(aTimestampMs - mPosTimeMs);
+  float newVelocity = mAxisLocked ? 0.0f : (float)(mVelocitySamplePos - aPos + aAdditionalDelta) / (float)(aTimestampMs - mVelocitySampleTimeMs);
   if (gfxPrefs::APZMaxVelocity() > 0.0f) {
     bool velocityIsNegative = (newVelocity < 0);
     newVelocity = fabs(newVelocity);
@@ -107,7 +119,8 @@ void Axis::UpdateWithTouchAtDevicePoint(ParentLayerCoord aPos, ParentLayerCoord 
     mAsyncPanZoomController, Name(), newVelocity);
   mVelocity = newVelocity;
   mPos = aPos;
-  mPosTimeMs = aTimestampMs;
+  mVelocitySampleTimeMs = aTimestampMs;
+  mVelocitySamplePos = aPos;
 
   
   mVelocityQueue.AppendElement(std::make_pair(aTimestampMs, mVelocity));
@@ -119,7 +132,8 @@ void Axis::UpdateWithTouchAtDevicePoint(ParentLayerCoord aPos, ParentLayerCoord 
 void Axis::StartTouch(ParentLayerCoord aPos, uint32_t aTimestampMs) {
   mStartPos = aPos;
   mPos = aPos;
-  mPosTimeMs = aTimestampMs;
+  mVelocitySampleTimeMs = aTimestampMs;
+  mVelocitySamplePos = aPos;
   mAxisLocked = false;
 }
 

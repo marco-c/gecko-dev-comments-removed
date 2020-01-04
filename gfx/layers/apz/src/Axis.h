@@ -251,7 +251,14 @@ public:
 
 protected:
   ParentLayerCoord mPos;
-  uint32_t mPosTimeMs;
+
+  
+  
+  
+  
+  uint32_t mVelocitySampleTimeMs;
+  ParentLayerCoord mVelocitySamplePos;
+
   ParentLayerCoord mStartPos;
   float mVelocity;      
   bool mAxisLocked;     
