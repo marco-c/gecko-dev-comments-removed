@@ -3232,6 +3232,11 @@ ScrollFrameHelper::DecideScrollableLayer(nsDisplayListBuilder* aBuilder,
       if (mIsRoot && (pc->IsRootContentDocument() || !pc->GetParentPresContext())) {
         displayportBase =
           nsRect(nsPoint(0, 0), nsLayoutUtils::CalculateCompositionSizeForFrame(mOuter));
+      } else {
+        
+        
+        displayportBase = aDirtyRect->Intersect(mScrollPort);
+        displayportBase -= mScrollPort.TopLeft();
       }
 
       
