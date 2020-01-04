@@ -212,7 +212,7 @@ public:
   
 
 
-  bool IsImageComplete() const;
+  bool IsFinished() const;
 
   
 
@@ -222,7 +222,7 @@ public:
 
 
 
-  void WaitUntilComplete() const;
+  void WaitUntilFinished() const;
 
   
 
@@ -278,7 +278,7 @@ private:
 
   void AssertImageDataLocked() const;
 
-  bool IsImageCompleteInternal() const;
+  bool AreAllPixelsWritten() const;
   nsresult ImageUpdatedInternal(const nsIntRect& aUpdateRect);
   void GetImageDataInternal(uint8_t** aData, uint32_t* length) const;
   uint32_t GetImageBytesPerRow() const;
@@ -342,6 +342,7 @@ private:
 
   bool mHasNoAlpha;
   bool mAborted;
+  bool mFinished;
   bool mOptimizable;
 
 

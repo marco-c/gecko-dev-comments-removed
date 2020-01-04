@@ -181,7 +181,7 @@ public:
 
   bool IsDecoded() const
   {
-    return !IsPlaceholder() && mSurface->IsImageComplete();
+    return !IsPlaceholder() && mSurface->IsFinished();
   }
 
   

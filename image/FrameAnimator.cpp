@@ -143,7 +143,7 @@ FrameAnimator::AdvanceFrame(TimeStamp aTime)
   
   
   bool canDisplay = mDoneDecoding ||
-                    (nextFrame && nextFrame->IsImageComplete());
+                    (nextFrame && nextFrame->IsFinished());
 
   if (!canDisplay) {
     
