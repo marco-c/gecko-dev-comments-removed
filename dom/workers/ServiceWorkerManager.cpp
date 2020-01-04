@@ -636,45 +636,9 @@ public:
   }
 
   void
-  UpdateFailed(nsresult aStatus) override
+  UpdateFailed(ErrorResult& aStatus) override
   {
     mPromise->MaybeReject(aStatus);
-  }
-
-  void
-  UpdateFailed(JSExnType aExnType, const ErrorEventInit& aErrorDesc) override
-  {
-    AutoJSAPI jsapi;
-    jsapi.Init(mWindow);
-
-    JSContext* cx = jsapi.cx();
-
-    JS::Rooted<JS::Value> fnval(cx);
-    if (!ToJSValue(cx, aErrorDesc.mFilename, &fnval)) {
-      JS_ClearPendingException(cx);
-      mPromise->MaybeReject(NS_ERROR_DOM_ABORT_ERR);
-      return;
-    }
-    JS::Rooted<JSString*> fn(cx, fnval.toString());
-
-    JS::Rooted<JS::Value> msgval(cx);
-    if (!ToJSValue(cx, aErrorDesc.mMessage, &msgval)) {
-      JS_ClearPendingException(cx);
-      mPromise->MaybeReject(NS_ERROR_DOM_ABORT_ERR);
-      return;
-    }
-    JS::Rooted<JSString*> msg(cx, msgval.toString());
-
-    JS::Rooted<JS::Value> error(cx);
-    if ((aExnType < JSEXN_ERR) ||
-        !JS::CreateError(cx, aExnType, nullptr, fn, aErrorDesc.mLineno,
-                         aErrorDesc.mColno, nullptr, msg, &error)) {
-      JS_ClearPendingException(cx);
-      mPromise->MaybeReject(NS_ERROR_DOM_ABORT_ERR);
-      return;
-    }
-
-    mPromise->MaybeReject(cx, error);
   }
 };
 
@@ -1016,16 +980,12 @@ public:
   {
     RefPtr<ServiceWorkerRegisterJob> kungFuDeathGrip = this;
     if (NS_WARN_IF(mCanceled)) {
-      Fail(NS_ERROR_DOM_TYPE_ERR);
+      Fail(NS_ERROR_DOM_ABORT_ERR);
       return;
     }
 
     if (NS_WARN_IF(NS_FAILED(aStatus))) {
-      if (aStatus == NS_ERROR_DOM_SECURITY_ERR) {
-        Fail(aStatus);
-      } else {
-        Fail(NS_ERROR_DOM_TYPE_ERR);
-      }
+      Fail(aStatus);
       return;
     }
 
@@ -1133,19 +1093,71 @@ public:
 
   
   
+  
+  
   void
-  Fail(JSExnType aExnType, const ErrorEventInit& aError)
+  Fail(ErrorResult& aRv)
   {
     MOZ_ASSERT(mCallback);
     RefPtr<ServiceWorkerUpdateFinishCallback> callback = mCallback.forget();
     
     
-    
-    
-    
     RefPtr<ServiceWorkerRegisterJob> kungFuDeathGrip = this;
-    callback->UpdateFailed(aExnType, aError);
-    FailCommon(NS_ERROR_DOM_JS_EXCEPTION);
+
+    
+    
+    nsresult origStatus = static_cast<nsresult>(aRv.ErrorCodeAsInt());
+
+    
+    if (aRv.Failed() && !aRv.ErrorCodeIs(NS_ERROR_DOM_SECURITY_ERR) &&
+                        !aRv.ErrorCodeIs(NS_ERROR_DOM_TYPE_ERR)) {
+
+      
+      aRv.SuppressException();
+
+      
+      
+      
+      nsString scriptSpec;
+      nsString scope;
+      if (mRegistration) {
+        CopyUTF8toUTF16(mRegistration->mScriptSpec, scriptSpec);
+        CopyUTF8toUTF16(mRegistration->mScope, scope);
+      } else {
+        CopyUTF8toUTF16(mScriptSpec, scriptSpec);
+        CopyUTF8toUTF16(mScope, scope);
+      }
+
+      
+      aRv.ThrowTypeError<MSG_SW_INSTALL_ERROR>(&scriptSpec, &scope);
+    }
+
+    callback->UpdateFailed(aRv);
+
+    
+    aRv.SuppressException();
+
+    mUpdateAndInstallInfo = nullptr;
+    if (mRegistration->mInstallingWorker) {
+      nsresult rv = serviceWorkerScriptCache::PurgeCache(mRegistration->mPrincipal,
+                                                         mRegistration->mInstallingWorker->CacheName());
+      if (NS_FAILED(rv)) {
+        NS_WARNING("Failed to purge the installing worker cache.");
+      }
+    }
+
+    RefPtr<ServiceWorkerManager> swm = ServiceWorkerManager::GetInstance();
+    swm->MaybeRemoveRegistration(mRegistration);
+    
+    mRegistration = nullptr;
+    Done(origStatus);
+  }
+
+  void
+  Fail(nsresult aRv)
+  {
+    ErrorResult rv(aRv);
+    Fail(rv);
   }
 
   
@@ -1282,45 +1294,6 @@ private:
     MOZ_ASSERT(mCallback);
     mCallback->UpdateSucceeded(mRegistration);
     mCallback = nullptr;
-  }
-
-  void
-  FailCommon(nsresult aRv)
-  {
-    mUpdateAndInstallInfo = nullptr;
-    if (mRegistration->mInstallingWorker) {
-      nsresult rv = serviceWorkerScriptCache::PurgeCache(mRegistration->mPrincipal,
-                                                         mRegistration->mInstallingWorker->CacheName());
-      if (NS_FAILED(rv)) {
-        NS_WARNING("Failed to purge the installing worker cache.");
-      }
-    }
-
-    RefPtr<ServiceWorkerManager> swm = ServiceWorkerManager::GetInstance();
-    swm->MaybeRemoveRegistration(mRegistration);
-    
-    mRegistration = nullptr;
-    Unused << NS_WARN_IF(NS_FAILED(aRv));
-    Done(aRv);
-  }
-
-  
-  
-  
-  
-  void
-  Fail(nsresult aRv)
-  {
-    MOZ_ASSERT(mCallback);
-    RefPtr<ServiceWorkerUpdateFinishCallback> callback = mCallback.forget();
-    
-    
-    
-    
-    
-    RefPtr<ServiceWorkerRegisterJob> kungFuDeathGrip = this;
-    callback->UpdateFailed(aRv);
-    FailCommon(aRv);
   }
 
   void
@@ -2515,32 +2488,29 @@ ServiceWorkerManager::HandleError(JSContext* aCx,
   }
 
   
-  if (!JSREPORT_IS_WARNING(aFlags)) {
-    ServiceWorkerJob* job = nullptr;
+  if (!JSREPORT_IS_WARNING(aFlags) &&
+      data->mSetOfScopesBeingUpdated.Contains(aScope)) {
 
-    if (data->mSetOfScopesBeingUpdated.Contains(aScope)) {
-      data->mSetOfScopesBeingUpdated.Remove(aScope);
+    data->mSetOfScopesBeingUpdated.Remove(aScope);
 
-      ServiceWorkerJobQueue* queue = data->mJobQueues.Get(aScope);
-      MOZ_ASSERT(queue);
-      job = queue->Peek();
-    }
+    ServiceWorkerJobQueue* queue = data->mJobQueues.Get(aScope);
+    MOZ_ASSERT(queue);
 
+    ServiceWorkerJob* job = queue->Peek();
     if (job) {
       MOZ_ASSERT(job->IsRegisterJob());
       RefPtr<ServiceWorkerRegisterJob> regJob =
         static_cast<ServiceWorkerRegisterJob*>(job);
 
-      RootedDictionary<ErrorEventInit> init(aCx);
-      init.mMessage = aMessage;
-      init.mFilename = aFilename;
-      init.mLineno = aLineNumber;
-      init.mColno = aColumnNumber;
-
-      regJob->Fail(aExnType, init);
+      ErrorResult rv;
+      NS_ConvertUTF8toUTF16 scope(aScope);
+      rv.ThrowTypeError<MSG_SW_SCRIPT_THREW>(&aWorkerURL, &scope);
+      regJob->Fail(rv);
     }
   }
 
+  
+  
   ReportToAllClients(aScope, aMessage, aFilename, aLine, aLineNumber,
                      aColumnNumber, aFlags);
 }
@@ -3463,6 +3433,23 @@ ServiceWorkerManager::SoftUpdate(const OriginAttributes& aOriginAttributes,
   SoftUpdate(scopeKey, aScope, aCallback);
 }
 
+namespace {
+
+
+class EmptyUpdateFinishCallback final : public ServiceWorkerUpdateFinishCallback
+{
+public:
+  void
+  UpdateSucceeded(ServiceWorkerRegistrationInfo* aInfo) override
+  { }
+
+  void
+  UpdateFailed(ErrorResult& aStatus) override
+  { }
+};
+
+} 
+
 void
 ServiceWorkerManager::SoftUpdate(const nsACString& aScopeKey,
                                  const nsACString& aScope,
@@ -3501,7 +3488,7 @@ ServiceWorkerManager::SoftUpdate(const nsACString& aScopeKey,
 
   RefPtr<ServiceWorkerUpdateFinishCallback> cb(aCallback);
   if (!cb) {
-    cb = new ServiceWorkerUpdateFinishCallback();
+    cb = new EmptyUpdateFinishCallback();
   }
 
   
