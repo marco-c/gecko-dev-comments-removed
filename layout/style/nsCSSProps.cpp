@@ -1287,6 +1287,8 @@ KTableEntry nsCSSProps::kDisplayKTable[] = {
   
   { eCSSKeyword__webkit_box,         NS_STYLE_DISPLAY_WEBKIT_BOX },
   { eCSSKeyword__webkit_inline_box,  NS_STYLE_DISPLAY_WEBKIT_INLINE_BOX },
+  { eCSSKeyword__webkit_flex,        NS_STYLE_DISPLAY_FLEX },
+  { eCSSKeyword__webkit_inline_flex, NS_STYLE_DISPLAY_INLINE_FLEX },
   
   
   { eCSSKeyword_contents,            NS_STYLE_DISPLAY_CONTENTS },

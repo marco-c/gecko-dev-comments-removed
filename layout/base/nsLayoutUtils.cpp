@@ -239,12 +239,14 @@ WebkitPrefixEnabledPrefChangeCallback(const char* aPrefName, void* aClosure)
 
   static int32_t sIndexOfWebkitBoxInDisplayTable;
   static int32_t sIndexOfWebkitInlineBoxInDisplayTable;
-  static bool sAreWebkitBoxKeywordIndicesInitialized; 
+  static int32_t sIndexOfWebkitFlexInDisplayTable;
+  static int32_t sIndexOfWebkitInlineFlexInDisplayTable;
+
+  static bool sAreKeywordIndicesInitialized; 
 
   bool isWebkitPrefixSupportEnabled =
     Preferences::GetBool(WEBKIT_PREFIXES_ENABLED_PREF_NAME, false);
-  if (!sAreWebkitBoxKeywordIndicesInitialized) {
-    
+  if (!sAreKeywordIndicesInitialized) {
     
     sIndexOfWebkitBoxInDisplayTable =
       nsCSSProps::FindIndexOfKeyword(eCSSKeyword__webkit_box,
@@ -256,9 +258,21 @@ WebkitPrefixEnabledPrefChangeCallback(const char* aPrefName, void* aClosure)
                                      nsCSSProps::kDisplayKTable);
     MOZ_ASSERT(sIndexOfWebkitInlineBoxInDisplayTable >= 0,
                "Couldn't find -webkit-inline-box in kDisplayKTable");
-    sAreWebkitBoxKeywordIndicesInitialized = true;
+
+    sIndexOfWebkitFlexInDisplayTable =
+      nsCSSProps::FindIndexOfKeyword(eCSSKeyword__webkit_flex,
+                                     nsCSSProps::kDisplayKTable);
+    MOZ_ASSERT(sIndexOfWebkitFlexInDisplayTable >= 0,
+               "Couldn't find -webkit-flex in kDisplayKTable");
+    sIndexOfWebkitInlineFlexInDisplayTable =
+      nsCSSProps::FindIndexOfKeyword(eCSSKeyword__webkit_inline_flex,
+                                     nsCSSProps::kDisplayKTable);
+    MOZ_ASSERT(sIndexOfWebkitInlineFlexInDisplayTable >= 0,
+               "Couldn't find -webkit-inline-flex in kDisplayKTable");
+    sAreKeywordIndicesInitialized = true;
   }
 
+  
   
   
   if (sIndexOfWebkitBoxInDisplayTable >= 0) {
@@ -270,6 +284,16 @@ WebkitPrefixEnabledPrefChangeCallback(const char* aPrefName, void* aClosure)
     nsCSSProps::kDisplayKTable[sIndexOfWebkitInlineBoxInDisplayTable].mKeyword =
       isWebkitPrefixSupportEnabled ?
       eCSSKeyword__webkit_inline_box : eCSSKeyword_UNKNOWN;
+  }
+  if (sIndexOfWebkitFlexInDisplayTable >= 0) {
+    nsCSSProps::kDisplayKTable[sIndexOfWebkitFlexInDisplayTable].mKeyword =
+      isWebkitPrefixSupportEnabled ?
+      eCSSKeyword__webkit_flex : eCSSKeyword_UNKNOWN;
+  }
+  if (sIndexOfWebkitInlineFlexInDisplayTable >= 0) {
+    nsCSSProps::kDisplayKTable[sIndexOfWebkitInlineFlexInDisplayTable].mKeyword =
+      isWebkitPrefixSupportEnabled ?
+      eCSSKeyword__webkit_inline_flex : eCSSKeyword_UNKNOWN;
   }
 }
 
