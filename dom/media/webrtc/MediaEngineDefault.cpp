@@ -104,11 +104,22 @@ MediaEngineDefaultVideoSource::Allocate(const dom::MediaTrackConstraints &aConst
   }
 
 
+  
   mOpts = aPrefs;
   mOpts.mWidth = c.mWidth.Get(aPrefs.mWidth ? aPrefs.mWidth :
-                              MediaEngine::DEFAULT_43_VIDEO_WIDTH);
+#ifdef DEBUG
+                              MediaEngine::DEFAULT_43_VIDEO_WIDTH/2
+#else
+                              MediaEngine::DEFAULT_43_VIDEO_WIDTH
+#endif
+                              );
   mOpts.mHeight = c.mHeight.Get(aPrefs.mHeight ? aPrefs.mHeight :
-                                MediaEngine::DEFAULT_43_VIDEO_HEIGHT);
+#ifdef DEBUG
+                                MediaEngine::DEFAULT_43_VIDEO_HEIGHT/2
+#else
+                                MediaEngine::DEFAULT_43_VIDEO_HEIGHT
+#endif
+                                );
   mState = kAllocated;
   *aOutHandle = nullptr;
   return NS_OK;
@@ -178,7 +189,7 @@ MediaEngineDefaultVideoSource::Start(SourceMediaStream* aStream, TrackID aID,
   mTrackID = aID;
 
   
-#if defined(MOZ_WIDGET_GONK) && defined(DEBUG)
+#if (defined(MOZ_WIDGET_GONK) || defined(MOZ_WIDGET_ANDROID)) && defined(DEBUG)
 
   mTimer->InitWithCallback(this, (1000 / mOpts.mFPS)*10, nsITimer::TYPE_REPEATING_SLACK);
 #else
@@ -466,6 +477,8 @@ MediaEngineDefaultAudioSource::Start(SourceMediaStream* aStream, TrackID aID,
 
   mLastNotify = TimeStamp::Now();
 
+  
+  
   
 #if defined(MOZ_WIDGET_GONK) && defined(DEBUG)
 
