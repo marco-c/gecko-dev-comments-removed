@@ -2,7 +2,6 @@
 
 
 
-from abc import ABCMeta, abstractmethod
 import os
 import posixpath
 import re
@@ -10,6 +9,8 @@ import subprocess
 import tempfile
 import time
 import traceback
+
+from abc import ABCMeta, abstractmethod
 
 
 class ADBProcess(object):
@@ -535,49 +536,58 @@ class ADBDevice(ADBCommand):
         self._have_su = False
         self._have_android_su = False
 
+        
+        
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+
+        self._check_adb_root(timeout=timeout)
+
         uid = 'uid=0'
         
-        
-        
         try:
-            if self.shell_output("id").find(uid) != -1:
-                self._have_root_shell = True
-        except ADBError:
-            self._logger.debug("Check for root shell failed")
-
-        
-        try:
-            if self.shell_output("su -c id").find(uid) != -1:
+            if self.shell_output("su -c id", timeout=timeout).find(uid) != -1:
                 self._have_su = True
+                self._logger.info("su -c supported")
         except ADBError:
-            self._logger.debug("Check for su failed")
+            self._logger.debug("Check for su -c failed")
 
         
         try:
-            if self.shell_output("su 0 id").find(uid) != -1:
+            if self.shell_output("su 0 id", timeout=timeout).find(uid) != -1:
                 self._have_android_su = True
+                self._logger.info("su 0 supported")
         except ADBError:
-            self._logger.debug("Check for Android su failed")
+            self._logger.debug("Check for su 0 failed")
 
         self._mkdir_p = None
         
         
         
         
-        if self.shell_bool("/system/bin/ls /"):
+        if self.shell_bool("/system/bin/ls /", timeout=timeout):
             self._ls = "/system/bin/ls"
-        elif self.shell_bool("/system/xbin/ls /"):
+        elif self.shell_bool("/system/xbin/ls /", timeout=timeout):
             self._ls = "/system/xbin/ls"
         else:
             raise ADBError("ADBDevice.__init__: ls not found")
         try:
-            self.shell_output("%s -1A /" % self._ls)
+            self.shell_output("%s -1A /" % self._ls, timeout=timeout)
             self._ls += " -1A"
         except ADBError:
             self._ls += " -a"
 
         
-        self._have_cp = self.shell_bool("type cp")
+        self._have_cp = self.shell_bool("type cp", timeout=timeout)
 
         self._logger.debug("ADBDevice: %s" % self.__dict__)
 
@@ -613,6 +623,28 @@ class ADBDevice(ADBCommand):
             return "usb:%s" % usb
 
         raise ValueError("Unable to get device serial")
+
+    def _check_adb_root(self, timeout=None):
+        self._have_root_shell = False
+        uid = 'uid=0'
+        
+        try:
+            if self.shell_output("id", timeout=timeout).find(uid) != -1:
+                self._have_root_shell = True
+                self._logger.info("adbd running as root")
+        except ADBError:
+            self._logger.debug("Check for root shell failed")
+
+        
+        try:
+            if (not self._have_root_shell and
+                self.command_output(
+                    ["root"],
+                    timeout=timeout).find("cannot run as root") == -1):
+                self._have_root_shell = True
+                self._logger.info("adbd restarted as root")
+        except ADBError:
+            self._logger.debug("Check for root adbd failed")
 
 
     @staticmethod
@@ -1859,6 +1891,7 @@ class ADBDevice(ADBCommand):
         
         
         self.command_output([], timeout=timeout)
+        self._check_adb_root(timeout=timeout)
         return self.is_device_ready(timeout=timeout)
 
     @abstractmethod
