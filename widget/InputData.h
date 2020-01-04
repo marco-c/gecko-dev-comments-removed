@@ -455,6 +455,9 @@ public:
   
   
   
+  
+  
+  
   ScreenPoint mFocusPoint;
 
   
