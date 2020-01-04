@@ -2662,7 +2662,23 @@ var WalkerActor = protocol.ActorClass({
       return null;
     }
 
-    parent.rawNode.insertBefore(node.rawNode, sibling ? sibling.rawNode : null);
+    let rawNode = node.rawNode;
+    let rawParent = parent.rawNode;
+    let rawSibling = sibling ? sibling.rawNode : null;
+
+    
+    
+    if (rawNode.parentNode === rawParent) {
+      let currentNextSibling = this.nextSibling(node);
+      currentNextSibling = currentNextSibling ? currentNextSibling.rawNode :
+                                                null;
+
+      if (rawNode === rawSibling || currentNextSibling === rawSibling) {
+        return;
+      }
+    }
+
+    rawParent.insertBefore(rawNode, rawSibling);
   }, {
     request: {
       node: Arg(0, "domnode"),
