@@ -266,6 +266,14 @@ public:
   
 
 
+
+
+
+  void HandleTouchVelocity(uint32_t aTimesampMs, float aSpeedY);
+
+  
+
+
   void GetGuid(ScrollableLayerGuid* aGuidOut) const;
 
   

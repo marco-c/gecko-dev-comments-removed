@@ -49,6 +49,13 @@ public:
 
   void UpdateWithTouchAtDevicePoint(ParentLayerCoord aPos, ParentLayerCoord aAdditionalDelta, uint32_t aTimestampMs);
 
+protected:
+  float ApplyFlingCurveToVelocity(float aVelocity) const;
+  void AddVelocityToQueue(uint32_t aTimestampMs, float aVelocity);
+
+public:
+  void HandleTouchVelocity(uint32_t aTimestampMs, float aSpeed);
+
   
 
 

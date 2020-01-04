@@ -323,6 +323,9 @@ class JavaPanZoomController
     }
 
     
+    public void onMotionEventVelocity(final long aEventTime, final float aSpeedY) {}
+
+    
     @Override
     public boolean onMotionEvent(MotionEvent event) {
         if (Versions.preHCMR1) {
