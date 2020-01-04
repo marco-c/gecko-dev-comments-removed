@@ -836,7 +836,8 @@ this.EXPORTED_SYMBOLS = ["WebVTT"];
   
   
   function BoxPosition(obj) {
-    var isIE8 = (/MSIE\s8\.0/).test(navigator.userAgent);
+    var isIE8 = (typeof navigator !== "undefined") &&
+      (/MSIE\s8\.0/).test(navigator.userAgent);
 
     
     
