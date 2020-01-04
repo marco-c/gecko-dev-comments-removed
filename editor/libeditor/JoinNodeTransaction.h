@@ -3,8 +3,8 @@
 
 
 
-#ifndef JoinNodeTxn_h__
-#define JoinNodeTxn_h__
+#ifndef JoinNodeTransaction_h
+#define JoinNodeTransaction_h
 
 #include "EditTxn.h"                    
 #include "nsCOMPtr.h"                   
@@ -16,7 +16,6 @@ class nsEditor;
 class nsINode;
 
 namespace mozilla {
-namespace dom {
 
 
 
@@ -24,19 +23,23 @@ namespace dom {
 
 
 
-class JoinNodeTxn : public EditTxn
+class JoinNodeTransaction final : public EditTxn
 {
 public:
   
 
 
 
-  JoinNodeTxn(nsEditor& aEditor, nsINode& aLeftNode, nsINode& aRightNode);
+
+  JoinNodeTransaction(nsEditor& aEditor,
+                      nsINode& aLeftNode, nsINode& aRightNode);
 
   
+
+
   nsresult CheckValidity();
 
-  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(JoinNodeTxn, EditTxn)
+  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(JoinNodeTransaction, EditTxn)
   NS_IMETHOD QueryInterface(REFNSIID aIID, void** aInstancePtr) override;
 
   NS_DECL_EDITTXN
@@ -45,15 +48,13 @@ protected:
   nsEditor&  mEditor;
 
   
-
-
+  
   nsCOMPtr<nsINode> mLeftNode;
   nsCOMPtr<nsINode> mRightNode;
 
   
-
-
-
+  
+  
   uint32_t  mOffset;
 
   
@@ -61,6 +62,5 @@ protected:
 };
 
 } 
-} 
 
-#endif
+#endif 

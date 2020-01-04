@@ -3,7 +3,7 @@
 
 
 
-#include "JoinNodeTxn.h"
+#include "JoinNodeTransaction.h"
 #include "nsAString.h"
 #include "nsDebug.h"                    
 #include "nsEditor.h"                   
@@ -13,30 +13,30 @@
 #include "nsIEditor.h"                  
 #include "nsISupportsImpl.h"            
 
-using namespace mozilla;
-using namespace mozilla::dom;
+namespace mozilla {
 
-JoinNodeTxn::JoinNodeTxn(nsEditor& aEditor, nsINode& aLeftNode,
-                         nsINode& aRightNode)
-  : EditTxn()
-  , mEditor(aEditor)
+using namespace dom;
+
+JoinNodeTransaction::JoinNodeTransaction(nsEditor& aEditor,
+                                         nsINode& aLeftNode,
+                                         nsINode& aRightNode)
+  : mEditor(aEditor)
   , mLeftNode(&aLeftNode)
   , mRightNode(&aRightNode)
   , mOffset(0)
-  , mParent(nullptr)
 {
 }
 
-NS_IMPL_CYCLE_COLLECTION_INHERITED(JoinNodeTxn, EditTxn,
+NS_IMPL_CYCLE_COLLECTION_INHERITED(JoinNodeTransaction, EditTxn,
                                    mLeftNode,
                                    mRightNode,
                                    mParent)
 
-NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(JoinNodeTxn)
+NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(JoinNodeTransaction)
 NS_INTERFACE_MAP_END_INHERITING(EditTxn)
 
 nsresult
-JoinNodeTxn::CheckValidity()
+JoinNodeTransaction::CheckValidity()
 {
   if (!mEditor.IsModifiableNode(mLeftNode->GetParentNode())) {
     return NS_ERROR_FAILURE;
@@ -47,7 +47,7 @@ JoinNodeTxn::CheckValidity()
 
 
 NS_IMETHODIMP
-JoinNodeTxn::DoTransaction()
+JoinNodeTransaction::DoTransaction()
 {
   
   nsCOMPtr<nsINode> leftParent = mLeftNode->GetParentNode();
@@ -70,7 +70,7 @@ JoinNodeTxn::DoTransaction()
 
 
 NS_IMETHODIMP
-JoinNodeTxn::UndoTransaction()
+JoinNodeTransaction::UndoTransaction()
 {
   MOZ_ASSERT(mParent);
 
@@ -98,8 +98,10 @@ JoinNodeTxn::UndoTransaction()
 }
 
 NS_IMETHODIMP
-JoinNodeTxn::GetTxnDescription(nsAString& aString)
+JoinNodeTransaction::GetTxnDescription(nsAString& aString)
 {
-  aString.AssignLiteral("JoinNodeTxn");
+  aString.AssignLiteral("JoinNodeTransaction");
   return NS_OK;
 }
+
+} 
