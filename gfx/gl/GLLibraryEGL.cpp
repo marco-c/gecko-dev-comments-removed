@@ -396,35 +396,31 @@ GLLibraryEGL::EnsureInitialized(bool forceAccel, nsACString* const out_failureId
 
     if (IsExtensionSupported(ANGLE_platform_angle_d3d)) {
         bool accelAngleSupport = IsAccelAngleSupported(gfxInfo, out_failureId);
-
         bool shouldTryAccel = forceAccel || accelAngleSupport;
-        bool shouldTryWARP = !shouldTryAccel;
+        bool shouldTryWARP = !forceAccel; 
+
+        
         if (gfxPrefs::WebGLANGLEForceWARP()) {
             shouldTryWARP = true;
             shouldTryAccel = false;
         }
 
         
-        if (shouldTryWARP) {
-            chosenDisplay = GetAndInitWARPDisplay(*this, EGL_DEFAULT_DISPLAY);
-            if (chosenDisplay) {
-                mIsWARP = true;
-            }
+        if (shouldTryAccel) {
+            chosenDisplay = GetAndInitDisplayForAccelANGLE(*this);
         }
 
-        if (!chosenDisplay) {
-            
-            
-            if (!shouldTryAccel) {
+        
+        if (!chosenDisplay && shouldTryWARP) {
+            chosenDisplay = GetAndInitWARPDisplay(*this, EGL_DEFAULT_DISPLAY);
+            if (!chosenDisplay) {
                 if (out_failureId->IsEmpty()) {
                     *out_failureId = NS_LITERAL_CSTRING("FEATURE_FAILURE_WARP_FALLBACK");
                 }
-                NS_ERROR("Fallback WARP ANGLE context failed to initialize.");
+                NS_ERROR("Fallback WARP context failed to initialize.");
                 return false;
             }
-
-            
-            chosenDisplay = GetAndInitDisplayForAccelANGLE(*this);
+            mIsWARP = true;
         }
     } else {
         chosenDisplay = GetAndInitDisplay(*this, EGL_DEFAULT_DISPLAY);
