@@ -618,7 +618,7 @@ Chunk::init(JSRuntime* rt)
 
     
     info.init();
-    new (&info.trailer) ChunkTrailer(rt);
+    new (&trailer) ChunkTrailer(rt);
 
     
 }
