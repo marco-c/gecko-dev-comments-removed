@@ -589,8 +589,15 @@ class FunctionCompiler
         if (inDeadCode())
             return;
 
+        
+        
+        
+        ABIArgGenerator abi;
+        if (abi.stackBytesConsumedSoFar() > mirGen_.maxAsmJSStackArgBytes())
+            mirGen_.setAsmJSMaxStackArgBytes(abi.stackBytesConsumedSoFar());
+
         CallSiteDesc callDesc(0, CallSiteDesc::Relative);
-        curBlock_->add(MAsmJSInterruptCheck::New(alloc(), masm().asmSyncInterruptLabel(), callDesc));
+        curBlock_->add(MAsmJSInterruptCheck::New(alloc()));
     }
 
     MDefinition* extractSimdElement(SimdLane lane, MDefinition* base, MIRType type)
