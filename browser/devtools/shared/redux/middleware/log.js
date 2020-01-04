@@ -1,0 +1,17 @@
+
+
+
+"use strict";
+
+
+
+
+
+function log({ dispatch, getState }) {
+  return next => action => {
+    console.log("[DISPATCH]", JSON.stringify(action));
+    next(action);
+  }
+}
+
+exports.log = log;

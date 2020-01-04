@@ -1192,10 +1192,10 @@ function source(sourceClient) {
   return rdpInvoke(sourceClient, sourceClient.source);
 }
 
-function afterDispatch(dispatcher, type) {
+function afterDispatch(store, type) {
   info("Waiting on dispatch: " + type);
   return new Promise(resolve => {
-    dispatcher.dispatch({
+    store.dispatch({
       
       
       

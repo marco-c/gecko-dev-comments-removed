@@ -3,39 +3,11 @@
 
 "use strict";
 
-const constants = require('../constants');
-const promise = require('promise');
-const { rdpInvoke, asPaused } = require('../utils');
+const constants = require("../constants");
+const { rdpInvoke, asPaused } = require("../utils");
 const { reportException } = require("devtools/toolkit/DevToolsUtils");
 
 const FETCH_EVENT_LISTENERS_DELAY = 200; 
-
-const initialState = {
-  activeEventNames: [],
-  listeners: [],
-  fetchingListeners: false,
-};
-
-function update(state = initialState, action, emitChange) {
-  switch(action.type) {
-  case constants.UPDATE_EVENT_BREAKPOINTS:
-    state.activeEventNames = action.eventNames;
-    emitChange('activeEventNames', state.activeEventNames);
-    break;
-  case constants.FETCH_EVENT_LISTENERS:
-    if (action.status === "begin") {
-      state.fetchingListeners = true;
-    }
-    else if (action.status === "done") {
-      state.fetchingListeners = false;
-      state.listeners = action.listeners;
-      emitChange('listeners', state.listeners);
-    }
-    break;
-  }
-
-  return state;
-};
 
 function fetchEventListeners() {
   return (dispatch, getState) => {
@@ -141,7 +113,4 @@ function updateEventBreakpoints(eventNames) {
   }
 }
 
-module.exports = {
-  update: update,
-  actions: { updateEventBreakpoints, fetchEventListeners }
-}
+module.exports = { updateEventBreakpoints, fetchEventListeners };

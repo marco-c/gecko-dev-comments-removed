@@ -1280,7 +1280,7 @@ SourceScripts.prototype = {
 
     
     if (DebuggerView.instrumentsPaneTab == "events-tab") {
-      dispatcher.dispatch(actions.fetchEventListeners());
+      store.dispatch(actions.fetchEventListeners());
     }
 
     
@@ -2055,6 +2055,7 @@ var Prefs = new ViewHelpers.Prefs("devtools", {
 
 
 EventEmitter.decorate(this);
+EventEmitter.decorate(DebuggerController);
 
 
 

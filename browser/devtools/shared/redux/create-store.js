@@ -1,0 +1,35 @@
+
+
+
+"use strict";
+
+const { createStore, applyMiddleware } = require("devtools/shared/vendor/redux");
+const { thunk } = require("./middleware/thunk");
+const { waitUntilService } = require("./middleware/wait-service");
+const { log } = require("./middleware/log");
+
+
+
+
+
+
+
+
+
+
+module.exports = (opts={}) => {
+  const middleware = [
+    thunk,
+    waitUntilService
+  ];
+
+  if (opts.log) {
+    middleware.push(log);
+  }
+
+  if (opts.middleware) {
+    opts.middleware.forEach(fn => middleware.push(fn));
+  }
+
+  return applyMiddleware(...middleware)(createStore);
+}

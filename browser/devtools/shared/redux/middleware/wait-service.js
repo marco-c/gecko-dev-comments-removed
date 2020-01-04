@@ -3,7 +3,6 @@
 
 "use strict";
 
-const NAME = "@@service/waitUntil";
 
 
 
@@ -24,6 +23,7 @@ const NAME = "@@service/waitUntil";
 
 
 
+const NAME = exports.NAME = "@@service/waitUntil";
 
 function waitUntilService({ dispatch, getState }) {
   let pending = [];
@@ -62,8 +62,4 @@ function waitUntilService({ dispatch, getState }) {
     }
   }
 }
-
-module.exports = {
-  service: waitUntilService,
-  name: NAME
-};
+exports.waitUntilService = waitUntilService;
