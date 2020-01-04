@@ -549,6 +549,13 @@ class JS_PUBLIC_API(DominatorTree)
     
 
 
+    const Node& root() const {
+        return postOrder[postOrder.length() - 1];
+    }
+
+    
+
+
 
 
     Node getImmediateDominator(const Node& node) const {
