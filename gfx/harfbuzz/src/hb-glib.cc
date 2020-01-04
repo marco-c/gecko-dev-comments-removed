@@ -385,6 +385,8 @@ hb_glib_get_unicode_funcs (void)
 
 
 
+
+
 hb_blob_t *
 hb_glib_blob_create (GBytes *gbytes)
 {

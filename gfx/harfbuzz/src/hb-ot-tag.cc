@@ -355,7 +355,6 @@ static const LangTag ot_languages[] = {
   {"hay",	HB_TAG('H','A','Y',' ')},	
   {"haz",	HB_TAG('H','A','Z',' ')},	
   {"he",	HB_TAG('I','W','R',' ')},	
-  {"hz",	HB_TAG('H','E','R',' ')},	
   {"hi",	HB_TAG('H','I','N',' ')},	
   {"hil",	HB_TAG('H','I','L',' ')},	
   {"hnd",	HB_TAG('H','N','D',' ')},	
@@ -601,8 +600,8 @@ static const LangTag ot_languages[] = {
   {"sah",	HB_TAG('Y','A','K',' ')},	
   {"sas",	HB_TAG('S','A','S',' ')},	
   {"sat",	HB_TAG('S','A','T',' ')},	
-  {"sck",	HB_TAG('S','A','D',' ')},	
   {"sc",	HB_TAG('S','R','D',' ')},	
+  {"sck",	HB_TAG('S','A','D',' ')},	
   {"scn",	HB_TAG('S','C','N',' ')},	
   {"sco",	HB_TAG('S','C','O',' ')},	
   {"scs",	HB_TAG('S','L','A',' ')},	
@@ -690,8 +689,8 @@ static const LangTag ot_languages[] = {
   {"uzs",	HB_TAG('U','Z','B',' ')},	
   {"ve",	HB_TAG('V','E','N',' ')},	
   {"vec",	HB_TAG('V','E','C',' ')},	
-  {"vls",	HB_TAG('F','L','E',' ')},	
   {"vi",	HB_TAG('V','I','T',' ')},	
+  {"vls",	HB_TAG('F','L','E',' ')},	
   {"vmw",	HB_TAG('M','A','K',' ')},	
   {"vo",	HB_TAG('V','O','L',' ')},	
   {"vro",	HB_TAG('V','R','O',' ')},	
@@ -700,9 +699,9 @@ static const LangTag ot_languages[] = {
   {"wbm",	HB_TAG('W','A',' ',' ')},	
   {"wbr",	HB_TAG('W','A','G',' ')},	
   {"wle",	HB_TAG('S','I','G',' ')},	
+  {"wo",	HB_TAG('W','L','F',' ')},	
   {"wry",	HB_TAG('M','A','W',' ')},	
   {"wtm",	HB_TAG('W','T','M',' ')},	
-  {"wo",	HB_TAG('W','L','F',' ')},	
   {"xal",	HB_TAG('K','L','M',' ')},	
   {"xh",	HB_TAG('X','H','S',' ')},	
   {"xog",	HB_TAG('X','O','G',' ')},	
@@ -928,4 +927,27 @@ hb_ot_tag_to_language (hb_tag_t tag)
   }
 }
 
+static inline void
+test_langs_sorted (void)
+{
+  for (unsigned int i = 1; i < ARRAY_LENGTH (ot_languages); i++)
+  {
+    int c = lang_compare_first_component (ot_languages[i-1].language, ot_languages[i].language);
+    if (c >= 0)
+    {
+      fprintf (stderr, "ot_languages not sorted at index %d: %s %d %s\n",
+	       i, ot_languages[i-1].language, c, ot_languages[i].language);
+      abort();
+    }
+  }
+}
 
+#ifdef MAIN
+int
+main (void)
+{
+  test_langs_sorted ();
+  return 0;
+}
+
+#endif

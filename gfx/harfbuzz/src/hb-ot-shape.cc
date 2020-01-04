@@ -662,6 +662,7 @@ hb_ot_position_default (hb_ot_shape_context_t *c)
   {
     for (unsigned int i = 0; i < count; i++)
       pos[i].x_advance = c->font->get_glyph_h_advance (info[i].codepoint);
+    
     if (c->font->has_glyph_h_origin_func ())
       for (unsigned int i = 0; i < count; i++)
 	c->font->subtract_glyph_h_origin (info[i].codepoint,
@@ -671,12 +672,12 @@ hb_ot_position_default (hb_ot_shape_context_t *c)
   else
   {
     for (unsigned int i = 0; i < count; i++)
+    {
       pos[i].y_advance = c->font->get_glyph_v_advance (info[i].codepoint);
-    if (c->font->has_glyph_v_origin_func ())
-      for (unsigned int i = 0; i < count; i++)
-	c->font->subtract_glyph_v_origin (info[i].codepoint,
-					  &pos[i].x_offset,
-					  &pos[i].y_offset);
+      c->font->subtract_glyph_v_origin (info[i].codepoint,
+					&pos[i].x_offset,
+					&pos[i].y_offset);
+    }
   }
   if (c->buffer->scratch_flags & HB_BUFFER_SCRATCH_FLAG_HAS_SPACE_FALLBACK)
     _hb_ot_shape_fallback_spaces (c->plan, c->font, c->buffer);
@@ -687,7 +688,7 @@ hb_ot_position_complex (hb_ot_shape_context_t *c)
 {
   bool ret = false;
   unsigned int count = c->buffer->len;
-  bool has_positioning = hb_ot_layout_has_positioning (c->face);
+  bool has_positioning = (bool) hb_ot_layout_has_positioning (c->face);
   
 
 
@@ -726,6 +727,7 @@ hb_ot_position_complex (hb_ot_shape_context_t *c)
 
     
 
+    
     if (c->font->has_glyph_h_origin_func ())
       for (unsigned int i = 0; i < count; i++)
 	c->font->add_glyph_h_origin (info[i].codepoint,
@@ -734,6 +736,7 @@ hb_ot_position_complex (hb_ot_shape_context_t *c)
 
     c->plan->position (c->font, c->buffer);
 
+    
     if (c->font->has_glyph_h_origin_func ())
       for (unsigned int i = 0; i < count; i++)
 	c->font->subtract_glyph_h_origin (info[i].codepoint,
@@ -854,6 +857,8 @@ _hb_ot_shape (hb_shape_plan_t    *shape_plan,
 
 
 
+
+
 void
 hb_ot_shape_plan_collect_lookups (hb_shape_plan_t *shape_plan,
 				  hb_tag_t         table_tag,
@@ -882,6 +887,8 @@ add_char (hb_font_t          *font,
       glyphs->add (glyph);
   }
 }
+
+
 
 
 

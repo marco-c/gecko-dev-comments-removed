@@ -42,11 +42,15 @@ static const char *serialize_formats[] = {
 
 
 
+
 const char **
 hb_buffer_serialize_list_formats (void)
 {
   return serialize_formats;
 }
+
+
+
 
 
 
@@ -65,6 +69,8 @@ hb_buffer_serialize_format_from_string (const char *str, int len)
   
   return (hb_buffer_serialize_format_t) (hb_tag_from_string (str, len) & ~0x20202020u);
 }
+
+
 
 
 
@@ -261,14 +267,41 @@ _hb_buffer_serialize_glyphs_text (hb_buffer_t *buffer,
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 unsigned int
 hb_buffer_serialize_glyphs (hb_buffer_t *buffer,
 			    unsigned int start,
 			    unsigned int end,
 			    char *buf,
 			    unsigned int buf_size,
-			    unsigned int *buf_consumed, 
-			    hb_font_t *font, 
+			    unsigned int *buf_consumed,
+			    hb_font_t *font,
 			    hb_buffer_serialize_format_t format,
 			    hb_buffer_serialize_flags_t flags)
 {
@@ -281,6 +314,9 @@ hb_buffer_serialize_glyphs (hb_buffer_t *buffer,
 
   assert ((!buffer->len && buffer->content_type == HB_BUFFER_CONTENT_TYPE_INVALID) ||
 	  buffer->content_type == HB_BUFFER_CONTENT_TYPE_GLYPHS);
+
+  if (!buffer->have_positions)
+    flags |= HB_BUFFER_SERIALIZE_FLAG_NO_POSITIONS;
 
   if (unlikely (start == end))
     return 0;

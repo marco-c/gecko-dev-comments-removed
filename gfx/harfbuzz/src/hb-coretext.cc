@@ -176,6 +176,43 @@ _hb_coretext_shaper_font_data_create (hb_font_t *font)
     return NULL;
   }
 
+  
+
+  {
+    
+    CTFontDescriptorRef last_resort = CTFontDescriptorCreateWithNameAndSize(CFSTR("LastResort"), 0);
+    CFArrayRef cascade_list = CFArrayCreate (kCFAllocatorDefault,
+					     (const void **) &last_resort,
+					     1,
+					     &kCFTypeArrayCallBacks);
+    CFRelease (last_resort);
+    CFDictionaryRef attributes = CFDictionaryCreate (kCFAllocatorDefault,
+						     (const void **) &kCTFontCascadeListAttribute,
+						     (const void **) &cascade_list,
+						     1,
+						     &kCFTypeDictionaryKeyCallBacks,
+						     &kCFTypeDictionaryValueCallBacks);
+    CFRelease (cascade_list);
+
+    CTFontDescriptorRef new_font_desc = CTFontDescriptorCreateWithAttributes (attributes);
+    CFRelease (attributes);
+
+    CTFontRef new_ct_font = CTFontCreateCopyWithAttributes (data->ct_font, 0.0, NULL, new_font_desc);
+    if (new_ct_font)
+    {
+      CFRelease (data->ct_font);
+      data->ct_font = new_ct_font;
+    }
+    else
+      DEBUG_MSG (CORETEXT, font, "Font copy with empty cascade list failed");
+  }
+
+  if (unlikely (!data->ct_font)) {
+    DEBUG_MSG (CORETEXT, font, "Font CTFontCreateWithGraphicsFont() failed");
+    free (data);
+    return NULL;
+  }
+
   return data;
 }
 
@@ -693,7 +730,6 @@ resize_and_retry:
     scratch += old_scratch_used;
     scratch_size -= old_scratch_used;
   }
-retry:
   {
     string_ref = CFStringCreateWithCharactersNoCopy (NULL,
 						     pchars, chars_len,
@@ -829,8 +865,6 @@ retry:
       if (!CFEqual (run_ct_font, font_data->ct_font))
       {
 	
-
-
 
 
 
@@ -1127,10 +1161,6 @@ fail:
 
 
 
-
-
-HB_SHAPER_DATA_ENSURE_DECLARE(coretext_aat, face)
-HB_SHAPER_DATA_ENSURE_DECLARE(coretext_aat, font)
 
 
 

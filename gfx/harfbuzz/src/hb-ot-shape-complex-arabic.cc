@@ -223,7 +223,6 @@ collect_features_arabic (hb_ot_shape_planner_t *plan)
     map->add_gsub_pause (arabic_fallback_shape);
 
   map->add_global_bool_feature (HB_TAG('c','a','l','t'));
-  map->add_gsub_pause (NULL);
 
   
 
@@ -233,6 +232,7 @@ collect_features_arabic (hb_ot_shape_planner_t *plan)
 
 
 
+  
   
   map->add_global_bool_feature (HB_TAG('m','s','e','t'));
 }
@@ -463,10 +463,6 @@ apply_stch (const hb_ot_shape_plan_t *plan,
 
 
 
-  
-
-  hb_position_t overlap = font->x_scale / 30;
-  DEBUG_MSG (ARABIC, NULL, "overlap for stretching is %d", overlap);
   int sign = font->x_scale < 0 ? -1 : +1;
   unsigned int extra_glyphs_needed = 0; 
   typedef enum { MEASURE, CUT } step_t;
@@ -504,18 +500,15 @@ apply_stch (const hb_ot_shape_plan_t *plan,
 	     hb_in_range<unsigned> (info[i - 1].arabic_shaping_action(), STCH_FIXED, STCH_REPEATING))
       {
 	i--;
-	hb_glyph_extents_t extents;
-	if (!font->get_glyph_extents (info[i].codepoint, &extents))
-	  extents.width = 0;
-	extents.width -= overlap;
+	hb_position_t width = font->get_glyph_h_advance (info[i].codepoint);
 	if (info[i].arabic_shaping_action() == STCH_FIXED)
 	{
-	  w_fixed += extents.width;
+	  w_fixed += width;
 	  n_fixed++;
 	}
 	else
 	{
-	  w_repeating += extents.width;
+	  w_repeating += width;
 	  n_repeating++;
 	}
       }
@@ -540,9 +533,20 @@ apply_stch (const hb_ot_shape_plan_t *plan,
       
       int n_copies = 0;
 
-      hb_position_t w_remaining = w_total - w_fixed - overlap;
+      hb_position_t w_remaining = w_total - w_fixed;
       if (sign * w_remaining > sign * w_repeating && sign * w_repeating > 0)
-	n_copies = (sign * w_remaining + sign * w_repeating / 4) / (sign * w_repeating) - 1;
+	n_copies = (sign * w_remaining) / (sign * w_repeating) - 1;
+
+      
+      hb_position_t extra_repeat_overlap = 0;
+      hb_position_t shortfall = sign * w_remaining - sign * w_repeating * (n_copies + 1);
+      if (shortfall > 0)
+      {
+        ++n_copies;
+        hb_position_t excess = (n_copies + 1) * sign * w_repeating - sign * w_remaining;
+        if (excess > 0)
+          extra_repeat_overlap = excess / (n_copies * n_repeating);
+      }
 
       if (step == MEASURE)
       {
@@ -551,13 +555,10 @@ apply_stch (const hb_ot_shape_plan_t *plan,
       }
       else
       {
-        hb_position_t x_offset = -overlap;
+	hb_position_t x_offset = 0;
 	for (unsigned int k = end; k > start; k--)
 	{
-	  hb_glyph_extents_t extents;
-	  if (!font->get_glyph_extents (info[k - 1].codepoint, &extents))
-	    extents.width = 0;
-	  extents.width -= overlap;
+	  hb_position_t width = font->get_glyph_h_advance (info[k - 1].codepoint);
 
 	  unsigned int repeat = 1;
 	  if (info[k - 1].arabic_shaping_action() == STCH_REPEATING)
@@ -567,7 +568,9 @@ apply_stch (const hb_ot_shape_plan_t *plan,
 		     repeat, info[k - 1].codepoint, j);
 	  for (unsigned int n = 0; n < repeat; n++)
 	  {
-	    x_offset -= extents.width;
+	    x_offset -= width;
+	    if (n > 0)
+	      x_offset += extra_repeat_overlap;
 	    pos[k - 1].x_offset = x_offset;
 	    
 	    --j;

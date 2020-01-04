@@ -290,6 +290,9 @@ retry:
 
 
 
+
+
+
 hb_language_t
 hb_language_from_string (const char *str, int len)
 {
@@ -311,6 +314,8 @@ hb_language_from_string (const char *str, int len)
 
   return likely (item) ? item->lang : HB_LANGUAGE_INVALID;
 }
+
+
 
 
 
@@ -351,6 +356,7 @@ hb_language_get_default (void)
 
   return default_language;
 }
+
 
 
 
@@ -410,11 +416,16 @@ hb_script_from_iso15924_tag (hb_tag_t tag)
 
 
 
+
+
+
+
 hb_script_t
-hb_script_from_string (const char *s, int len)
+hb_script_from_string (const char *str, int len)
 {
-  return hb_script_from_iso15924_tag (hb_tag_from_string (s, len));
+  return hb_script_from_iso15924_tag (hb_tag_from_string (str, len));
 }
+
 
 
 
@@ -521,7 +532,7 @@ hb_user_data_array_t::set (hb_user_data_key_t *key,
     }
   }
   hb_user_data_item_t item = {key, data, destroy};
-  bool ret = !!items.replace_or_insert (item, lock, replace);
+  bool ret = !!items.replace_or_insert (item, lock, (bool) replace);
 
   return ret;
 }

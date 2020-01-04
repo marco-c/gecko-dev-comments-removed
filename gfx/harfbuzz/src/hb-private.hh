@@ -53,9 +53,6 @@
 #include <errno.h>
 #include <stdarg.h>
 
-#ifdef _MSC_VER
-#include <windows.h> 
-#endif
 
 
 
@@ -182,6 +179,9 @@ static int errno = 0;
 #  endif
 #  if defined(_MSC_VER) && _MSC_VER < 1900
 #    define snprintf _snprintf
+#  elif defined(_MSC_VER) && _MSC_VER >= 1900
+#    
+#    define strdup _strdup
 #  endif
 #endif
 
@@ -901,25 +901,20 @@ hb_in_ranges (T u, T lo1, T hi1, T lo2, T hi2, T lo3, T hi3)
 
 
 
-
 #ifdef _MSC_VER
 # pragma warning(disable:4200)
 # pragma warning(disable:4800)
-# define HB_MARK_AS_FLAG_T(flags_t)	DEFINE_ENUM_FLAG_OPERATORS (##flags_t##);
-#else
-# define HB_MARK_AS_FLAG_T(flags_t)	template <> class hb_mark_as_flags_t<flags_t> {};
-template <class T> class hb_mark_as_flags_t;
-template <class T> static inline T operator | (T l, T r)
-{ hb_mark_as_flags_t<T> unused HB_UNUSED; return T ((unsigned int) l | (unsigned int) r); }
-template <class T> static inline T operator & (T l, T r)
-{ hb_mark_as_flags_t<T> unused HB_UNUSED; return T ((unsigned int) l & (unsigned int) r); }
-template <class T> static inline T operator ~ (T r)
-{ hb_mark_as_flags_t<T> unused HB_UNUSED; return T (~(unsigned int) r); }
-template <class T> static inline T& operator |= (T &l, T r)
-{ hb_mark_as_flags_t<T> unused HB_UNUSED; l = l | r; return l; }
-template <class T> static inline T& operator &= (T& l, T r)
-{ hb_mark_as_flags_t<T> unused HB_UNUSED; l = l & r; return l; }
 #endif
+#define HB_MARK_AS_FLAG_T(T) \
+	extern "C++" { \
+	  static inline T operator | (T l, T r) { return T ((unsigned) l | (unsigned) r); } \
+	  static inline T operator & (T l, T r) { return T ((unsigned) l & (unsigned) r); } \
+	  static inline T operator ^ (T l, T r) { return T ((unsigned) l ^ (unsigned) r); } \
+	  static inline T operator ~ (T r) { return T (~(unsigned int) r); } \
+	  static inline T& operator |= (T &l, T r) { l = l | r; return l; } \
+	  static inline T& operator &= (T& l, T r) { l = l & r; return l; } \
+	  static inline T& operator ^= (T& l, T r) { l = l ^ r; return l; } \
+	}
 
 
 
@@ -1010,5 +1005,7 @@ hb_options (void)
   return _hb_options.opts;
 }
 
+
+#define VAR 1
 
 #endif 
