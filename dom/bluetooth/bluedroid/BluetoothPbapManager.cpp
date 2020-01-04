@@ -477,6 +477,11 @@ BluetoothPbapManager::NotifyPbapRequest(const ObexHeaderSet& aHeader)
     reqId.AssignLiteral(PULL_VCARD_ENTRY_REQ_ID);
     tagCount = MOZ_ARRAY_LENGTH(sVCardEntryTags);
     tags = sVCardEntryTags;
+
+    
+    if (name.Find(NS_LITERAL_STRING("X-BT-UID")) == kNotFound) {
+      name = mCurrentPath + NS_LITERAL_STRING("/") + name;
+    }
   } else {
     BT_LOGR("Unknown PBAP request type: %s",
             NS_ConvertUTF16toUTF8(type).get());
