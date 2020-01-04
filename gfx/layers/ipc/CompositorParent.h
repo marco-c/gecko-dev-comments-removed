@@ -506,6 +506,11 @@ protected:
 
   void DidComposite(TimeStamp& aCompositeStart, TimeStamp& aCompositeEnd);
 
+  
+  
+  template <typename Lambda>
+  inline void ForEachIndirectLayerTree(const Lambda& aCallback);
+
   RefPtr<LayerManagerComposite> mLayerManager;
   RefPtr<Compositor> mCompositor;
   RefPtr<AsyncCompositionManager> mCompositionManager;
