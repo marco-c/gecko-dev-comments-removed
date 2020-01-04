@@ -156,8 +156,11 @@ add_task(function* test_disableExperiments() {
 
   try {
     yield experiments.updateManifest();
-  } catch (e if e.message == "experiments are disabled") {
+  } catch (e) {
     
+    if (e.message != "experiments are disabled") {
+      throw e;
+    }
   }
 
   experiments.notify();
