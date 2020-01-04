@@ -310,9 +310,9 @@ public:
 
 
 
-  void RecomputeBlockingAt(MediaStream* aStream,
-                           GraphTime aTime, GraphTime aEndBlockingDecisions,
-                           GraphTime* aEnd);
+  GraphTime ComputeStreamBlockTime(MediaStream* aStream,
+                                   GraphTime aTime,
+                                   GraphTime aEndBlockingDecisions);
   
 
 
@@ -333,9 +333,7 @@ public:
 
 
 
-
-  bool WillUnderrun(MediaStream* aStream, GraphTime aTime,
-                    GraphTime aEndBlockingDecisions, GraphTime* aEnd);
+  GraphTime WillUnderrun(MediaStream* aStream, GraphTime aEndBlockingDecisions);
 
   
 

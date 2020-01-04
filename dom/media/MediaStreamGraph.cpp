@@ -399,15 +399,15 @@ MediaStreamGraphImpl::UpdateCurrentTimeForStreams(GraphTime aPrevCurrentTime,
   }
 }
 
-bool
-MediaStreamGraphImpl::WillUnderrun(MediaStream* aStream, GraphTime aTime,
-                                   GraphTime aEndBlockingDecisions, GraphTime* aEnd)
+GraphTime
+MediaStreamGraphImpl::WillUnderrun(MediaStream* aStream,
+                                   GraphTime aEndBlockingDecisions)
 {
   
   
   
   if (aStream->mFinished || aStream->AsProcessedStream()) {
-    return false;
+    return aEndBlockingDecisions;
   }
   GraphTime bufferEnd =
     StreamTimeToGraphTime(aStream, aStream->GetBufferEnd(),
@@ -422,27 +422,7 @@ MediaStreamGraphImpl::WillUnderrun(MediaStream* aStream, GraphTime aTime,
     NS_ASSERTION(bufferEnd >= mProcessedTime, "Buffer underran");
   }
 #endif
-  
-  if (bufferEnd <= aTime) {
-    STREAM_LOG(LogLevel::Verbose, ("MediaStream %p will block due to data underrun at %ld, "
-                                "bufferEnd %ld",
-                                aStream, aTime, bufferEnd));
-    return true;
-  }
-  
-  
-  
-  
-  
-  if (bufferEnd < aEndBlockingDecisions && aStream->mBlocked.GetBefore(aTime)) {
-    STREAM_LOG(LogLevel::Verbose, ("MediaStream %p will block due to speculative data underrun, "
-                                "bufferEnd %f (end at %ld)",
-                                aStream, MediaTimeToSeconds(bufferEnd), bufferEnd));
-    return true;
-  }
-  
-  *aEnd = std::min(*aEnd, bufferEnd);
-  return false;
+  return std::min(bufferEnd, aEndBlockingDecisions);
 }
 
 void
@@ -715,12 +695,10 @@ MediaStreamGraphImpl::RecomputeBlocking(GraphTime aEndBlockingDecisions)
   STREAM_LOG(LogLevel::Verbose, ("Media graph %p computing blocking for time %f",
                               this, MediaTimeToSeconds(mStateComputedTime)));
   for (MediaStream* stream : AllStreams()) {
-    GraphTime end;
-    for (GraphTime t = mStateComputedTime;
-         t < aEndBlockingDecisions; t = end) {
-      end = GRAPH_TIME_MAX;
-      RecomputeBlockingAt(stream, t, aEndBlockingDecisions, &end);
-    }
+    GraphTime blockTime =
+      ComputeStreamBlockTime(stream, mStateComputedTime, aEndBlockingDecisions);
+    stream->mBlocked.SetAtAndAfter(mStateComputedTime, false);
+    stream->mBlocked.SetAtAndAfter(blockTime, true);
   }
   STREAM_LOG(LogLevel::Verbose, ("Media graph %p computed blocking for interval %f to %f",
                               this, MediaTimeToSeconds(mStateComputedTime),
@@ -734,50 +712,32 @@ MediaStreamGraphImpl::RecomputeBlocking(GraphTime aEndBlockingDecisions)
   mStateComputedTime = aEndBlockingDecisions;
 }
 
-void
-MediaStreamGraphImpl::RecomputeBlockingAt(MediaStream* aStream,
-                                          GraphTime aTime,
-                                          GraphTime aEndBlockingDecisions,
-                                          GraphTime* aEnd)
+GraphTime
+MediaStreamGraphImpl::ComputeStreamBlockTime(MediaStream* aStream,
+                                             GraphTime aTime,
+                                             GraphTime aEndBlockingDecisions)
 {
-  bool block = false;
-
-  do {
-    if (aStream->mFinished) {
-      GraphTime endTime = StreamTimeToGraphTime(aStream,
-          aStream->GetStreamBuffer().GetAllTracksEnd());
-      if (endTime <= aTime) {
-        STREAM_LOG(LogLevel::Verbose, ("MediaStream %p is blocked due to being finished", aStream));
-        
-        block = true;
-        *aEnd = std::min(*aEnd, aEndBlockingDecisions);
-        continue;
-      } else {
-        STREAM_LOG(LogLevel::Verbose, ("MediaStream %p is finished, but not blocked yet (end at %f, with blocking at %f)",
-            aStream, MediaTimeToSeconds(aStream->GetBufferEnd()),
-            MediaTimeToSeconds(endTime)));
-        *aEnd = std::min(*aEnd, endTime);
-      }
-    }
-
-    if (aStream->IsSuspended()) {
-      STREAM_LOG(LogLevel::Verbose, ("MediaStream %p is blocked due to being suspended", aStream));
-      block = true;
-      continue;
-    }
-
-    bool underrun = WillUnderrun(aStream, aTime, aEndBlockingDecisions, aEnd);
-    if (underrun) {
+  if (aStream->mFinished) {
+    GraphTime endTime = StreamTimeToGraphTime(aStream,
+        aStream->GetStreamBuffer().GetAllTracksEnd());
+    if (endTime <= aTime) {
+      STREAM_LOG(LogLevel::Verbose, ("MediaStream %p is blocked due to being finished", aStream));
+      return aTime;
+    } else {
+      STREAM_LOG(LogLevel::Verbose, ("MediaStream %p is finished, but not blocked yet (end at %f, with blocking at %f)",
+          aStream, MediaTimeToSeconds(aStream->GetBufferEnd()),
+          MediaTimeToSeconds(endTime)));
       
-      block = true;
-      *aEnd = std::min(*aEnd, aEndBlockingDecisions);
-      continue;
+      return std::min(endTime, aEndBlockingDecisions);
     }
-  } while (false);
+  }
 
-  NS_ASSERTION(*aEnd > aTime, "Failed to advance!");
+  if (aStream->IsSuspended()) {
+    STREAM_LOG(LogLevel::Verbose, ("MediaStream %p is blocked due to being suspended", aStream));
+    return aTime;
+  }
 
-  aStream->mBlocked.SetAtAndAfter(aTime, block);
+  return WillUnderrun(aStream, aEndBlockingDecisions);
 }
 
 void
