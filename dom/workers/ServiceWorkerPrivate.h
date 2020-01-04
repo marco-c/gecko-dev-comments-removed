@@ -73,10 +73,8 @@ public:
 
   
   
-  
-  
   nsresult
-  ContinueOnSuccessfulScriptEvaluation(nsRunnable* aCallback);
+  CheckScriptEvaluation(LifeCycleEventCallback* aCallback);
 
   nsresult
   SendLifeCycleEvent(const nsAString& aEventType,
