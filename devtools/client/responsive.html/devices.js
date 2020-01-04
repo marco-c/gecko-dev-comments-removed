@@ -29,13 +29,13 @@ let initDevices = Task.async(function* (dispatch) {
       }
 
       let newDevice = Object.assign({}, device, {
-        displayed: deviceList.includes(device.name) ?
+        displayed: deviceList.has(device.name) ?
                    true :
                    !!device.featured,
       });
 
       if (newDevice.displayed) {
-        deviceList.push(newDevice.name);
+        deviceList.add(newDevice.name);
       }
 
       dispatch(addDevice(newDevice, type));
@@ -52,12 +52,12 @@ let initDevices = Task.async(function* (dispatch) {
 
 
 function loadDeviceList() {
-  let deviceList = [];
+  let deviceList = new Set();
 
   if (Services.prefs.prefHasUserValue(DISPLAYED_DEVICES_PREF)) {
     try {
-      deviceList = JSON.parse(Services.prefs.getCharPref(
-        DISPLAYED_DEVICES_PREF));
+      let savedList = Services.prefs.getCharPref(DISPLAYED_DEVICES_PREF);
+      deviceList = new Set(JSON.parse(savedList));
     } catch (e) {
       console.error(e);
     }
@@ -73,7 +73,8 @@ function loadDeviceList() {
 
 
 function updateDeviceList(devices) {
-  Services.prefs.setCharPref(DISPLAYED_DEVICES_PREF, JSON.stringify(devices));
+  let listToSave = JSON.stringify(Array.from(devices));
+  Services.prefs.setCharPref(DISPLAYED_DEVICES_PREF, listToSave);
 }
 
 exports.initDevices = initDevices;
