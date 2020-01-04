@@ -239,6 +239,9 @@ private:
   
   nsTArray<nsCOMPtr<nsIInputStream>> mPendingDataAfterStartTLS;
 
+  
+  nsTArray<nsCOMPtr<nsIInputStream>> mPendingDataWhileCopierActive;
+
   bool mObserversActive;
 
 #ifdef MOZ_WIDGET_GONK
