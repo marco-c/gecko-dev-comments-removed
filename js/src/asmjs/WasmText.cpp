@@ -848,6 +848,8 @@ class WasmToken
     }
 };
 
+} 
+
 static bool
 IsWasmNewLine(char16_t c)
 {
@@ -1023,6 +1025,8 @@ ConsumeTextByte(const char16_t** curp, const char16_t* end, uint8_t *byte = null
     return true;
 }
 
+namespace {
+
 class WasmTokenStream
 {
     static const uint32_t LookaheadSize = 2;
@@ -1138,6 +1142,8 @@ class WasmTokenStream
         return match(expect, &token, error);
     }
 };
+
+} 
 
 WasmToken WasmTokenStream::next()
 {
@@ -1802,8 +1808,6 @@ WasmToken WasmTokenStream::next()
     return fail(begin);
 }
 
-} 
-
 
 
 
@@ -1831,6 +1835,8 @@ struct WasmParseContext
         DestroyDtoaState(dtoaState);
     }
 };
+
+} 
 
 static WasmAstExpr*
 ParseExprInsideParens(WasmParseContext& c);
@@ -2793,8 +2799,6 @@ ParseModule(const char16_t* text, LifoAlloc& lifo, UniqueChars* error)
 
     return module;
 }
-
-} 
 
 
 

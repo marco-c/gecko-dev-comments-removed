@@ -29,10 +29,6 @@ namespace wasm {
 
 
 bool
-DefineTestingFunctions(JSContext* cx, JS::HandleObject globalObj);
-
-
-bool
 HasCompilerSupport(ExclusiveContext* cx);
 
 
