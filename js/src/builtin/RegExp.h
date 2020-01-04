@@ -26,9 +26,6 @@ enum RegExpStaticsUpdate { UpdateRegExpStatics, DontUpdateRegExpStatics };
 
 enum RegExpStaticsUse { UseRegExpStatics, DontUseRegExpStatics };
 
-
-enum RegExpCreationMode { CreateForCompile, CreateForConstruct };
-
 RegExpRunStatus
 ExecuteRegExp(JSContext* cx, HandleObject regexp, HandleString string,
               MatchPairs* matches, RegExpStaticsUpdate staticsUpdate);
