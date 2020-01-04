@@ -1,0 +1,24 @@
+
+
+
+
+
+
+#ifndef jit_mips_shared_BaselineCompiler_mips_shared_h
+#define jit_mips_shared_BaselineCompiler_mips_shared_h
+
+#include "jit/shared/BaselineCompiler-shared.h"
+
+namespace js {
+namespace jit {
+
+class BaselineCompilerMIPSShared : public BaselineCompilerShared
+{
+  protected:
+    BaselineCompilerMIPSShared(JSContext* cx, TempAllocator& alloc, JSScript* script);
+};
+
+} 
+} 
+
+#endif 

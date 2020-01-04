@@ -1,0 +1,16 @@
+
+
+
+
+
+
+#include "jit/mips-shared/BaselineCompiler-mips-shared.h"
+
+using namespace js;
+using namespace js::jit;
+
+BaselineCompilerMIPSShared::BaselineCompilerMIPSShared(JSContext* cx, TempAllocator& alloc,
+                                                       JSScript* script)
+  : BaselineCompilerShared(cx, alloc, script)
+{
+}
