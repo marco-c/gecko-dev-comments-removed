@@ -293,21 +293,21 @@ retry:
 hb_language_t
 hb_language_from_string (const char *str, int len)
 {
+  char strbuf[64];
+
   if (!str || !len || !*str)
     return HB_LANGUAGE_INVALID;
 
-  hb_language_item_t *item = NULL;
   if (len >= 0)
   {
     
-    char strbuf[64];
     len = MIN (len, (int) sizeof (strbuf) - 1);
     memcpy (strbuf, str, len);
     strbuf[len] = '\0';
-    item = lang_find_or_insert (strbuf);
+    str = strbuf;
   }
-  else
-    item = lang_find_or_insert (str);
+
+  hb_language_item_t *item = lang_find_or_insert (str);
 
   return likely (item) ? item->lang : HB_LANGUAGE_INVALID;
 }

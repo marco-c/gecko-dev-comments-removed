@@ -62,7 +62,7 @@ struct _mtx
     TRACE_SANITIZE (this);
     
 
-    return_trace (true);
+    return TRACE_RETURN (true);
   }
 
   public:

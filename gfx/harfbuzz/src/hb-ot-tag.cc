@@ -766,6 +766,7 @@ static const LangTag ot_languages[] = {
 	
 	
 	
+	
 };
 
 typedef struct {
@@ -829,14 +830,6 @@ hb_ot_tag_from_language (hb_language_t language)
 	tag[i] = ' ';
       return HB_TAG_CHAR4 (tag);
     }
-  }
-
-  
-
-
-
-  if (strstr (lang_str, "-fonipa")) {
-    return HB_TAG('I','P','P','H');  
   }
 
   
@@ -906,12 +899,6 @@ hb_ot_tag_to_language (hb_tag_t tag)
       case HB_TAG('Z','H','T',' '): return hb_language_from_string ("zh-Hant", -1); 
       default: break; 
     }
-  }
-
-  
-  switch (tag) {
-  case HB_TAG('I','P','P','H'):  
-    return hb_language_from_string ("und-fonipa", -1);
   }
 
   
