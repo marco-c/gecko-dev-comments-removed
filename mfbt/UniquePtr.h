@@ -183,6 +183,7 @@ struct PointerType
 
 
 
+
 template<typename T, class D>
 class UniquePtr
 {
