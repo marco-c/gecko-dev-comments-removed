@@ -7,7 +7,6 @@
 #define mozilla_dom_StructuredCloneHelper_h
 
 #include "js/StructuredClone.h"
-#include "mozilla/Move.h"
 #include "nsAutoPtr.h"
 #include "nsISupports.h"
 #include "nsTArray.h"
@@ -112,7 +111,7 @@ protected:
 };
 
 class BlobImpl;
-class MessagePort;
+class MessagePortBase;
 class MessagePortIdentifier;
 
 class StructuredCloneHelper : public StructuredCloneHelperInternal
@@ -192,10 +191,11 @@ public:
   
   
   
-  nsTArray<nsRefPtr<MessagePort>>&& TakeTransferredPorts()
+  void TakeTransferredPorts(nsTArray<nsRefPtr<MessagePortBase>>& aPorts)
   {
     MOZ_ASSERT(mSupportsTransferring);
-    return Move(mTransferredPorts);
+    MOZ_ASSERT(aPorts.IsEmpty());
+    aPorts.SwapElements(mTransferredPorts);
   }
 
   nsTArray<MessagePortIdentifier>& PortIdentifiers()
@@ -291,7 +291,7 @@ protected:
 
   
   
-  nsTArray<nsRefPtr<MessagePort>> mTransferredPorts;
+  nsTArray<nsRefPtr<MessagePortBase>> mTransferredPorts;
 
   
   

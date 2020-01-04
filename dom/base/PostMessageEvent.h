@@ -20,6 +20,9 @@ class nsPIDOMWindow;
 namespace mozilla {
 namespace dom {
 
+class MessagePortBase;
+class MessagePortIdentifier;
+
 
 
 
