@@ -262,7 +262,7 @@ public:
 
   JSContext* cx() const {
     MOZ_ASSERT(mCx, "Must call Init before using an AutoJSAPI");
-    MOZ_ASSERT_IF(NS_IsMainThread(), CxPusherIsStackTop());
+    MOZ_ASSERT_IF(mIsMainThread, CxPusherIsStackTop());
     return mCx;
   }
 
@@ -279,7 +279,7 @@ public:
   void ReportException();
 
   bool HasException() const {
-    MOZ_ASSERT(CxPusherIsStackTop());
+    MOZ_ASSERT_IF(NS_IsMainThread(), CxPusherIsStackTop());
     return JS_IsExceptionPending(cx());
   };
 
@@ -292,7 +292,7 @@ public:
   bool StealException(JS::MutableHandle<JS::Value> aVal);
 
   void ClearException() {
-    MOZ_ASSERT(CxPusherIsStackTop());
+    MOZ_ASSERT_IF(NS_IsMainThread(), CxPusherIsStackTop());
     JS_ClearPendingException(cx());
   }
 
@@ -312,6 +312,8 @@ private:
   
   bool mOwnErrorReporting;
   bool mOldAutoJSAPIOwnsErrorReporting;
+  
+  bool mIsMainThread;
   Maybe<JSErrorReporter> mOldErrorReporter;
 
   void InitInternal(JSObject* aGlobal, JSContext* aCx, bool aIsMainThread);
