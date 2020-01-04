@@ -83,6 +83,7 @@
 #include "gfxContext.h"
 #include "nsRenderingContext.h"
 #include "nsAbsoluteContainingBlock.h"
+#include "DisplayItemScrollClip.h"
 #include "StickyScrollContainer.h"
 #include "nsFontInflationData.h"
 #include "gfxASurface.h"
@@ -1907,24 +1908,31 @@ WrapSeparatorTransform(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
 
 static void
 CreateOpacityItem(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
-                  nsDisplayList& aList, bool aItemForEventsOnly)
+                  nsDisplayList& aList, bool aItemForEventsOnly,
+                  const DisplayItemScrollClip* aScrollClip)
 {
   
   
   
-  
-  
-  
-  
-  
-  const DisplayItemScrollClip* scrollClipForSameAGRChildren =
-    aBuilder->ClipState().GetCurrentInnermostScrollClip();
   DisplayListClipState::AutoSaveRestore opacityClipState(aBuilder);
-  opacityClipState.ClearIncludingScrollClip();
+  opacityClipState.Clear();
   aList.AppendNewToTop(
       new (aBuilder) nsDisplayOpacity(aBuilder, aFrame, &aList,
-                                      scrollClipForSameAGRChildren,
-                                      aItemForEventsOnly));
+                                      aScrollClip, aItemForEventsOnly));
+}
+
+static const DisplayItemScrollClip*
+FindCommonAncestorScrollClip(nsDisplayList& aList, const DisplayItemScrollClip* aInitial)
+{
+  const DisplayItemScrollClip* ancestorScrollClip = aInitial;
+  for (nsDisplayItem* i = aList.GetBottom(); i; i = i->GetAbove()) {
+    const DisplayItemScrollClip* itemScrollClip = i->ScrollClip();
+    if (!DisplayItemScrollClip::IsAncestor(ancestorScrollClip, itemScrollClip)) {
+      MOZ_ASSERT(DisplayItemScrollClip::IsAncestor(itemScrollClip, ancestorScrollClip));
+      ancestorScrollClip = itemScrollClip;
+    }
+  }
+  return ancestorScrollClip;
 }
 
 void
@@ -2044,7 +2052,16 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
 
   DisplayListClipState::AutoSaveRestore clipState(aBuilder);
 
-  if (isTransformed || useBlendMode || usingSVGEffects || useFixedPosition || useStickyPosition) {
+  
+  
+  
+  
+  
+  const DisplayItemScrollClip* containerItemScrollClip =
+    aBuilder->ClipState().GetCurrentInnermostScrollClip();
+  bool didResetClip = false;
+
+  if (isTransformed || usingSVGEffects || useFixedPosition || useStickyPosition) {
     
     
     
@@ -2055,6 +2072,8 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
     
     
     clipState.ClearForStackingContextContents();
+    didResetClip = true;
+    containerItemScrollClip = nullptr;
   }
 
   nsDisplayListCollection set;
@@ -2148,10 +2167,42 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
   
   resultList.AppendToTop(set.PositionedDescendants());
 
+  if (!didResetClip) {
+    
+    
+    
+    
+    
+    
+    
+    
+    containerItemScrollClip = FindCommonAncestorScrollClip(resultList,
+      containerItemScrollClip);
+  }
+
+  
+
+
+
+
+
+
+
+  if (aBuilder->ContainsBlendMode()) {
+    DisplayListClipState::AutoSaveRestore blendContainerClipState(aBuilder);
+    blendContainerClipState.Clear();
+    resultList.AppendNewToTop(
+      new (aBuilder) nsDisplayBlendContainer(aBuilder, this, &resultList,
+                                             containerItemScrollClip));
+  }
+
   if (!isTransformed) {
     
     
     clipState.Restore();
+    if (didResetClip) {
+      containerItemScrollClip = aBuilder->ClipState().GetCurrentInnermostScrollClip();
+    }
   }
 
   bool is3DContextRoot = Extend3DContext() && !Combines3DTransformWithAncestors();
@@ -2180,7 +2231,8 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
 
 
 
-    CreateOpacityItem(aBuilder, this, resultList, opacityItemForEventsOnly);
+    CreateOpacityItem(aBuilder, this, resultList, opacityItemForEventsOnly,
+                      containerItemScrollClip);
     useOpacity = false;
   }
 
@@ -2228,6 +2280,9 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
     
     if (!HasPerspective()) {
       clipState.Restore();
+      if (didResetClip) {
+        containerItemScrollClip = aBuilder->ClipState().GetCurrentInnermostScrollClip();
+      }
     }
     
     
@@ -2249,6 +2304,9 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
 
     if (HasPerspective()) {
       clipState.Restore();
+      if (didResetClip) {
+        containerItemScrollClip = aBuilder->ClipState().GetCurrentInnermostScrollClip();
+      }
       resultList.AppendNewToTop(
         new (aBuilder) nsDisplayPerspective(
           aBuilder, this,
@@ -2259,7 +2317,8 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
 
 
     if (useOpacity && !usingSVGEffects) {
-      CreateOpacityItem(aBuilder, this, resultList, opacityItemForEventsOnly);
+      CreateOpacityItem(aBuilder, this, resultList, opacityItemForEventsOnly,
+                        containerItemScrollClip);
     }
   }
 
@@ -2285,22 +2344,12 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
 
 
 
-
-
-
-  if (aBuilder->ContainsBlendMode()) {
-      resultList.AppendNewToTop(
-        new (aBuilder) nsDisplayBlendContainer(aBuilder, this, &resultList, aBuilder->ContainedBlendModes()));
-  }
-
-  
-
-
-
-
   if (useBlendMode && !resultList.IsEmpty()) {
+    DisplayListClipState::AutoSaveRestore mixBlendClipState(aBuilder);
+    mixBlendClipState.Clear();
     resultList.AppendNewToTop(
-        new (aBuilder) nsDisplayMixBlendMode(aBuilder, this, &resultList));
+        new (aBuilder) nsDisplayMixBlendMode(aBuilder, this, &resultList,
+                                             containerItemScrollClip));
   }
 
   CreateOwnLayerIfNeeded(aBuilder, &resultList);

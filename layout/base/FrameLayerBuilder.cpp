@@ -3815,19 +3815,6 @@ ContainerState::ProcessDisplayItems(nsDisplayList* aList)
     }
 
     const DisplayItemScrollClip* itemScrollClip = item->ScrollClip();
-    if (itemType == nsDisplayItem::TYPE_OPACITY && layerState == LAYER_INACTIVE) {
-      
-      
-      
-      
-      
-      
-      itemScrollClip = InnermostScrollClipApplicableToAGR(
-        static_cast<nsDisplayOpacity*>(item)->ScrollClipForSameAGRChildren(),
-        animatedGeometryRootForClip);
-      item->SetScrollClip(itemScrollClip);
-      item->UpdateBounds(mBuilder);
-    }
     
     
     
@@ -4006,7 +3993,7 @@ ContainerState::ProcessDisplayItems(nsDisplayList* aList)
       }
 
       mParameters.mBackgroundColor = uniformColor;
-      mParameters.mScrollClip = DisplayItemScrollClip::PickInnermost(agrScrollClip, mContainerScrollClip);
+      mParameters.mScrollClip = agrScrollClip;
 
       
       
