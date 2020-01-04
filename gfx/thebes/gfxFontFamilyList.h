@@ -21,7 +21,7 @@ namespace mozilla {
 
  
 
-enum FontFamilyType {
+enum FontFamilyType : uint32_t {
   eFamily_none = 0,  
 
   
