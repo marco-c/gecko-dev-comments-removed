@@ -143,7 +143,7 @@ nsWindow::Create(nsIWidget* aParent,
     nsIWidget *baseParent = aParent;
 
     
-    BaseCreate(baseParent, aRect, aInitData);
+    BaseCreate(baseParent, aInitData);
 
     mVisible = true;
 
