@@ -32,6 +32,9 @@ PointerEvent::PointerEvent(EventTarget* aOwner,
     mEvent->mRefPoint = LayoutDeviceIntPoint(0, 0);
     mouseEvent->inputSource = nsIDOMMouseEvent::MOZ_SOURCE_UNKNOWN;
   }
+  
+  
+  mDetail = 0;
 }
 
 static uint16_t
