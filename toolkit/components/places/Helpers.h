@@ -196,7 +196,7 @@ public:
   {
     mStatementCache.FinalizeStatements();
     
-    NS_ProxyRelease(mCallingThread, mOwner.forget());
+    (void)NS_ProxyRelease(mCallingThread, mOwner);
     return NS_OK;
   }
 

@@ -196,7 +196,7 @@ DataChannelConnection::~DataChannelConnection()
     ASSERT_WEBRTC(NS_IsMainThread());
     if (mTransportFlow) {
       ASSERT_WEBRTC(mSTS);
-      NS_ProxyRelease(mSTS, mTransportFlow.forget());
+      NS_ProxyRelease(mSTS, mTransportFlow);
     }
 
     if (mInternalIOThread) {
@@ -2417,7 +2417,7 @@ DataChannelConnection::ReadBlob(already_AddRefed<DataChannelConnection> aThis,
     
     
     
-    NS_ProxyRelease(mainThread, runnable.forget());
+    NS_ProxyRelease(mainThread, runnable);
     return;
   }
   aBlob->Close();

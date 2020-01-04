@@ -332,7 +332,8 @@ Service::unregisterConnection(Connection *aConnection)
         
         
         
-        NS_ProxyRelease(thread, mConnections[i].forget());
+        NS_ProxyRelease(thread,
+          static_cast<mozIStorageConnection*>(mConnections[i].forget().take()));
 
         mConnections.RemoveElementAt(i);
         return;
@@ -732,13 +733,23 @@ private:
 
   ~AsyncInitDatabase()
   {
-    NS_ReleaseOnMainThread(mStorageFile.forget());
-    NS_ReleaseOnMainThread(mConnection.forget());
+    nsCOMPtr<nsIThread> thread;
+    DebugOnly<nsresult> rv = NS_GetMainThread(getter_AddRefs(thread));
+    MOZ_ASSERT(NS_SUCCEEDED(rv));
+    (void)NS_ProxyRelease(thread, mStorageFile);
+
+    
+    Connection *rawConnection = nullptr;
+    mConnection.swap(rawConnection);
+    (void)NS_ProxyRelease(thread, NS_ISUPPORTS_CAST(mozIStorageConnection *,
+                                                    rawConnection));
 
     
     
     
-    NS_ReleaseOnMainThread(mCallback.forget());
+    mozIStorageCompletionCallback *rawCallback = nullptr;
+    mCallback.swap(rawCallback);
+    (void)NS_ProxyRelease(thread, rawCallback);
   }
 
   RefPtr<Connection> mConnection;

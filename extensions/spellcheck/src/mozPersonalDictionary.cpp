@@ -65,7 +65,16 @@ public:
     mDict->SyncLoad();
 
     
-    NS_ReleaseOnMainThread(mDict.forget());
+    mozPersonalDictionary *dict;
+    mDict.forget(&dict);
+
+    nsCOMPtr<nsIThread> mainThread = do_GetMainThread();
+    if (mainThread) {
+      NS_ProxyRelease(mainThread, static_cast<mozIPersonalDictionary *>(dict));
+    } else {
+      
+      NS_WARNING("Cannot get main thread, leaking mozPersonalDictionary.");
+    }
 
     return NS_OK;
   }
@@ -136,8 +145,16 @@ public:
     }
 
     
-    NS_ReleaseOnMainThread(mDict.forget());
+    mozPersonalDictionary *dict;
+    mDict.forget(&dict);
 
+    nsCOMPtr<nsIThread> mainThread = do_GetMainThread();
+    if (mainThread) {
+      NS_ProxyRelease(mainThread, static_cast<mozIPersonalDictionary *>(dict));
+    } else {
+      
+      NS_WARNING("Cannot get main thread, leaking mozPersonalDictionary.");
+    }
     return NS_OK;
   }
 

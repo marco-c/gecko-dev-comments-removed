@@ -233,17 +233,15 @@ nsServerSocket::OnSocketDetached(PRFileDesc *fd)
     mListener->OnStopListening(this, mCondition);
 
     
-    RefPtr<nsIServerSocketListener> listener = nullptr;
+    nsIServerSocketListener *listener = nullptr;
     {
       MutexAutoLock lock(mLock);
-      listener = mListener.forget();
+      mListener.swap(listener);
     }
-
     
     
-    if (listener) {
-      NS_ProxyRelease(mListenerTarget, listener.forget());
-    }
+    if (listener)
+      NS_ProxyRelease(mListenerTarget, listener);
   }
 }
 

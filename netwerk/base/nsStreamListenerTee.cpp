@@ -39,7 +39,12 @@ nsStreamListenerTee::OnStopRequest(nsIRequest *request,
 
     
     if (mEventTarget) {
-      NS_ProxyRelease(mEventTarget, mSink.forget());
+        nsIOutputStream *sink = nullptr;
+        mSink.swap(sink);
+        if (NS_FAILED(NS_ProxyRelease(mEventTarget, sink))) {
+            NS_WARNING("Releasing sink on the current thread!");
+            NS_RELEASE(sink);
+        }
     }
     else {
         mSink = 0;

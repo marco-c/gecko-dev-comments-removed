@@ -529,7 +529,8 @@ public:
       
       
       
-      NS_ReleaseOnMainThread(event.forget());
+      nsCOMPtr<nsIThread> main = do_GetMainThread();
+      NS_ProxyRelease(main, event);
     }
   }
 
@@ -546,7 +547,8 @@ public:
       
       
       
-      NS_ReleaseOnMainThread(event.forget());
+      nsCOMPtr<nsIThread> main = do_GetMainThread();
+      NS_ProxyRelease(main, event);
     }
 
   }
@@ -747,7 +749,8 @@ public:
     if (!mResult) {
       return;
     }
-    NS_ReleaseOnMainThread(mResult.forget());
+    nsCOMPtr<nsIThread> main = do_GetMainThread();
+    (void)NS_ProxyRelease(main, mResult);
   }
 
 protected:
@@ -784,7 +787,8 @@ public:
     if (!mResult) {
       return;
     }
-    NS_ReleaseOnMainThread(mResult.forget());
+    nsCOMPtr<nsIThread> main = do_GetMainThread();
+    (void)NS_ProxyRelease(main, mResult);
   }
 
 protected:

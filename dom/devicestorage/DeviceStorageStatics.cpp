@@ -860,7 +860,7 @@ DeviceStorageStatics::ListenerWrapper::ListenerWrapper(nsDOMDeviceStorage* aList
 DeviceStorageStatics::ListenerWrapper::~ListenerWrapper()
 {
   
-  NS_ProxyRelease(mOwningThread, mListener.forget());
+  NS_ProxyRelease(mOwningThread, mListener);
 }
 
 bool

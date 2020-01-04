@@ -52,7 +52,8 @@ public:
     
     
     
-    NS_ReleaseOnMainThread(mParamsArray.forget());
+    nsCOMPtr<nsIThread> mainThread = do_GetMainThread();
+    (void)NS_ProxyRelease(mainThread, mParamsArray);
   }
 
   

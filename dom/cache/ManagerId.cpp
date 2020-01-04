@@ -62,7 +62,10 @@ ManagerId::~ManagerId()
 
   
   
-  NS_ReleaseOnMainThread(mPrincipal.forget());
+  nsCOMPtr<nsIThread> mainThread = do_GetMainThread();
+  MOZ_ASSERT(mainThread);
+
+  NS_ProxyRelease(mainThread, mPrincipal.forget().take());
 }
 
 } 

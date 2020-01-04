@@ -128,20 +128,31 @@ private:
             
             
 
+            nsCOMPtr<nsIThread> mainThread;
+            NS_GetMainThread(getter_AddRefs(mainThread));
+
             if (mChannel) {
-                NS_ReleaseOnMainThread(mChannel.forget());
+                nsIChannel *forgettable;
+                mChannel.forget(&forgettable);
+                NS_ProxyRelease(mainThread, forgettable, false);
             }
 
             if (mCallback) {
-                NS_ReleaseOnMainThread(mCallback.forget());
+                nsIProtocolProxyCallback *forgettable;
+                mCallback.forget(&forgettable);
+                NS_ProxyRelease(mainThread, forgettable, false);
             }
 
             if (mProxyInfo) {
-                NS_ReleaseOnMainThread(mProxyInfo.forget());
+                nsIProxyInfo *forgettable;
+                mProxyInfo.forget(&forgettable);
+                NS_ProxyRelease(mainThread, forgettable, false);
             }
 
             if (mXPComPPS) {
-                NS_ReleaseOnMainThread(mXPComPPS.forget());
+                nsIProtocolProxyService *forgettable;
+                mXPComPPS.forget(&forgettable);
+                NS_ProxyRelease(mainThread, forgettable, false);
             }
         }
     }
