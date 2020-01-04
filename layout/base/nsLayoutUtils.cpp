@@ -3443,7 +3443,7 @@ nsLayoutUtils::PaintFrame(nsRenderingContext* aRenderingContext, nsIFrame* aFram
 
     aFrame->BuildDisplayListForStackingContext(&builder, dirtyRect, &list);
 #ifdef DEBUG
-    if (builder.IsForGenerateGlyphPath()) {
+    if (builder.IsForGenerateGlyphMask()) {
       
       
       

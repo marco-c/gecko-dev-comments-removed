@@ -292,7 +292,7 @@ public:
 
 
 
-  bool IsForGenerateGlyphPath()
+  bool IsForGenerateGlyphMask()
   {
     return mMode == nsDisplayListBuilderMode::GENERATE_GLYPH;
   }
