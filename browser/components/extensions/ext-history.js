@@ -2,8 +2,21 @@
 
 "use strict";
 
+const {classes: Cc, interfaces: Ci, utils: Cu} = Components;
+
+XPCOMUtils.defineLazyGetter(this, "History", () => {
+  Cu.import("resource://gre/modules/PlacesUtils.jsm");
+  return PlacesUtils.history;
+});
+
 extensions.registerSchemaAPI("history", "history", (extension, context) => {
   return {
-    history: {},
+    history: {
+      deleteUrl: function(details) {
+        let url = details.url;
+        
+        return History.remove(url).then(() => undefined);
+      },
+    },
   };
 });
