@@ -43,6 +43,7 @@
 
 #include "mozilla/Atomics.h"
 #include "mozilla/MemoryReporting.h"
+#include "mozilla/Mutex.h"
 
 #include <map>
 #include <string>
@@ -54,6 +55,10 @@
 class Pickle;
 
 namespace base {
+
+using mozilla::OffTheBooksMutex;
+using mozilla::OffTheBooksMutexAutoLock;
+
 
 
 
@@ -330,30 +335,77 @@ class Histogram {
     ~SampleSet();
 
     
+    
+    
+    
+    
+    
+    
+    
+    
+
+    
+    
+    
+    
+
+    
     void Resize(const Histogram& histogram);
-    void CheckSize(const Histogram& histogram) const;
 
     
     void AccumulateWithLinearStats(Sample value, Count count, size_t index);
 
     
-    Count counts(size_t i) const { return counts_[i]; }
-    Count TotalCount() const;
-    int64_t sum() const { return sum_; }
-    uint64_t sum_squares() const { return sum_squares_; }
-    double log_sum() const { return log_sum_; }
-    double log_sum_squares() const { return log_sum_squares_; }
-    int64_t redundant_count() const { return redundant_count_; }
-    size_t size() const { return counts_.size(); }
-
-    
     void Add(const SampleSet& other);
-    void Subtract(const SampleSet& other);
 
     bool Serialize(Pickle* pickle) const;
     bool Deserialize(void** iter, const Pickle& pickle);
 
     size_t SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf);
+
+    
+    
+    
+    
+
+    Count counts(const OffTheBooksMutexAutoLock& ev, size_t i) const {
+       return counts_[i];
+    }
+    Count TotalCount(const OffTheBooksMutexAutoLock& ev) const;
+    int64_t sum(const OffTheBooksMutexAutoLock& ev) const {
+       return sum_;
+    }
+    uint64_t sum_squares(const OffTheBooksMutexAutoLock& ev) const {
+       return sum_squares_;
+    }
+    double log_sum(const OffTheBooksMutexAutoLock& ev) const {
+       return log_sum_;
+    }
+    double log_sum_squares(const OffTheBooksMutexAutoLock& ev) const {
+       return log_sum_squares_;
+    }
+    int64_t redundant_count(const OffTheBooksMutexAutoLock& ev) const {
+       return redundant_count_;
+    }
+    size_t size(const OffTheBooksMutexAutoLock& ev) const {
+       return counts_.size();
+    }
+
+    
+    
+    const SampleSet& operator=(const SampleSet& other) {
+       counts_          = other.counts_;
+       sum_             = other.sum_;
+       sum_squares_     = other.sum_squares_;
+       log_sum_         = other.log_sum_;
+       log_sum_squares_ = other.log_sum_squares_;
+       redundant_count_ = other.redundant_count_;
+       return *this;
+    }
+
+   private:
+    void Accumulate(const OffTheBooksMutexAutoLock& ev,
+                    Sample value, Count count, size_t index);
 
    protected:
     
@@ -371,9 +423,6 @@ class Histogram {
     double log_sum_;      
     double log_sum_squares_; 
 
-   private:
-    void Accumulate(Sample value, Count count, size_t index);
-
     
     
     
@@ -382,6 +431,13 @@ class Histogram {
     
     
     int64_t redundant_count_;
+
+   private:
+    
+    mutable OffTheBooksMutex mutex_;
+
+   public:
+    OffTheBooksMutex& mutex() const { return mutex_; }
   };
 
   
@@ -454,7 +510,9 @@ class Histogram {
   
   
   
-  virtual Inconsistencies FindCorruption(const SampleSet& snapshot) const;
+  virtual Inconsistencies FindCorruption(const SampleSet& snapshot,
+                                         const OffTheBooksMutexAutoLock&
+                                               snapshotLockEvidence) const;
 
   
   
@@ -466,6 +524,8 @@ class Histogram {
   virtual Sample ranges(size_t i) const;
   uint32_t range_checksum() const { return range_checksum_; }
   virtual size_t bucket_count() const;
+
+  
   
   
   virtual void SnapshotSample(SampleSet* sample) const;
@@ -543,10 +603,13 @@ class Histogram {
   
 
   
-  double GetPeakBucketSize(const SampleSet& snapshot) const;
+  double GetPeakBucketSize(const SampleSet& snapshot,
+                           const OffTheBooksMutexAutoLock&
+                                 snapshotLockEvidence) const;
 
   
   void WriteAsciiHeader(const SampleSet& snapshot,
+                        const OffTheBooksMutexAutoLock& snapshotLockEvidence,
                         Count sample_count, std::string* output) const;
 
   
