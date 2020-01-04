@@ -1381,10 +1381,32 @@ IsFormatAndTypeUnpackable(GLenum format, GLenum type)
     }
 }
 
+
+
+void
+ComputeLengthAndData(const dom::ArrayBufferViewOrSharedArrayBufferView& view,
+                     void** const out_data, size_t* const out_length,
+                     js::Scalar::Type* const out_type)
+{
+    if (view.IsArrayBufferView()) {
+        const dom::ArrayBufferView& pixbuf = view.GetAsArrayBufferView();
+        pixbuf.ComputeLengthAndData();
+        *out_length = pixbuf.Length();
+        *out_data = pixbuf.Data();
+        *out_type = JS_GetArrayBufferViewType(pixbuf.Obj());
+    } else {
+        const dom::SharedArrayBufferView& pixbuf = view.GetAsSharedArrayBufferView();
+        pixbuf.ComputeLengthAndData();
+        *out_length = pixbuf.Length();
+        *out_data = pixbuf.Data();
+        *out_type = JS_GetSharedArrayBufferViewType(pixbuf.Obj());
+    }
+}
+
 void
 WebGLContext::ReadPixels(GLint x, GLint y, GLsizei width,
                          GLsizei height, GLenum format,
-                         GLenum type, const dom::Nullable<dom::ArrayBufferView>& pixels,
+                         GLenum type, const dom::Nullable<dom::ArrayBufferViewOrSharedArrayBufferView>& pixels,
                          ErrorResult& rv)
 {
     if (IsContextLost())
@@ -1460,8 +1482,13 @@ WebGLContext::ReadPixels(GLint x, GLint y, GLsizei width,
         MOZ_CRASH("bad `type`");
     }
 
-    const dom::ArrayBufferView& pixbuf = pixels.Value();
-    int dataType = pixbuf.Type();
+    const dom::ArrayBufferViewOrSharedArrayBufferView &view = pixels.Value();
+    
+    
+    size_t dataByteLen;
+    void* data;
+    js::Scalar::Type dataType;
+    ComputeLengthAndData(view, &data, &dataByteLen, &dataType);
 
     
     if (dataType != requiredDataType)
@@ -1479,15 +1506,9 @@ WebGLContext::ReadPixels(GLint x, GLint y, GLsizei width,
     if (!checked_neededByteLength.isValid())
         return ErrorInvalidOperation("readPixels: integer overflow computing the needed buffer size");
 
-    
-    
-    pixbuf.ComputeLengthAndData();
-
-    uint32_t dataByteLen = pixbuf.Length();
     if (checked_neededByteLength.value() > dataByteLen)
         return ErrorInvalidOperation("readPixels: buffer too small");
 
-    void* data = pixbuf.Data();
     if (!data) {
         ErrorOutOfMemory("readPixels: buffer storage is null. Did we run out of memory?");
         return rv.Throw(NS_ERROR_OUT_OF_MEMORY);

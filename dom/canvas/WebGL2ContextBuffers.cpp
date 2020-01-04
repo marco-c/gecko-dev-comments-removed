@@ -138,9 +138,12 @@ WebGL2Context::CopyBufferSubData(GLenum readTarget, GLenum writeTarget,
     }
 }
 
+
+
+
+template<typename BufferT>
 void
-WebGL2Context::GetBufferSubData(GLenum target, GLintptr offset,
-                                const dom::Nullable<dom::ArrayBuffer>& maybeData)
+WebGL2Context::GetBufferSubDataT(GLenum target, GLintptr offset, const BufferT& data)
 {
     if (IsContextLost())
         return;
@@ -159,11 +162,6 @@ WebGL2Context::GetBufferSubData(GLenum target, GLintptr offset,
     if (offset < 0)
         return ErrorInvalidValue("getBufferSubData: negative offset");
 
-    
-    
-    if (maybeData.IsNull())
-        return ErrorInvalidValue("getBufferSubData: returnedData is null");
-
     WebGLRefPtr<WebGLBuffer>& bufferSlot = GetBufferSlotByTarget(target);
     WebGLBuffer* boundBuffer = bufferSlot.get();
     if (!boundBuffer)
@@ -171,7 +169,6 @@ WebGL2Context::GetBufferSubData(GLenum target, GLintptr offset,
 
     
     
-    const dom::ArrayBuffer& data = maybeData.Value();
     data.ComputeLengthAndData();
 
     CheckedInt<WebGLsizeiptr> neededByteLength = CheckedInt<WebGLsizeiptr>(offset) + data.Length();
@@ -223,6 +220,24 @@ WebGL2Context::GetBufferSubData(GLenum target, GLintptr offset,
     if (target == LOCAL_GL_TRANSFORM_FEEDBACK_BUFFER && currentTF) {
         BindTransformFeedback(LOCAL_GL_TRANSFORM_FEEDBACK, currentTF);
     }
+}
+
+void WebGL2Context::GetBufferSubData(GLenum target, GLintptr offset,
+                                     const dom::Nullable<dom::ArrayBuffer>& maybeData)
+{
+    
+    
+    if (maybeData.IsNull())
+        return ErrorInvalidValue("getBufferSubData: returnedData is null");
+
+    const dom::ArrayBuffer& data = maybeData.Value();
+    GetBufferSubDataT(target, offset, data);
+}
+
+void WebGL2Context::GetBufferSubData(GLenum target, GLintptr offset,
+                                     const dom::SharedArrayBuffer& data)
+{
+    GetBufferSubDataT(target, offset, data);
 }
 
 } 
