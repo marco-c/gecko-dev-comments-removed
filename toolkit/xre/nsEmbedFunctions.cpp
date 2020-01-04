@@ -619,6 +619,8 @@ XRE_InitChildProcess(int aArgc,
       mozilla::sandboxing::InitLoggingIfRequired();
 #endif
 
+      OverrideDefaultLocaleIfNeeded();
+
       
       uiMessageLoop.MessageLoop::Run();
 
