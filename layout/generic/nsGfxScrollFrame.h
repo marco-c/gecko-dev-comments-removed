@@ -360,6 +360,8 @@ public:
       
       mOuter->SchedulePaint();
     }
+    
+    NotifyPluginFrames(aTransforming ? BEGIN_APZ : END_APZ);
   }
   bool IsTransformingByAPZ() const {
     return mTransformingByAPZ;
@@ -562,7 +564,7 @@ protected:
 
 
 
-  enum AsyncScrollEventType { BEGIN, END };
+  enum AsyncScrollEventType { BEGIN_DOM, BEGIN_APZ, END_DOM, END_APZ };
   void NotifyPluginFrames(AsyncScrollEventType aEvent);
   AsyncScrollEventType mAsyncScrollEvent;
 
