@@ -226,7 +226,7 @@ NS_EVENT_MESSAGE(eQueryCaretRect,               eQueryContentEventFirst + 3)
 
 
 
-NS_EVENT_MESSAGE(NS_QUERY_TEXT_RECT,            eQueryContentEventFirst + 4)
+NS_EVENT_MESSAGE(eQueryTextRect,                eQueryContentEventFirst + 4)
 
 
 NS_EVENT_MESSAGE(eQueryEditorRect,              eQueryContentEventFirst + 5)

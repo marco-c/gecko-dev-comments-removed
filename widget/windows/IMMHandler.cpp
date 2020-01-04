@@ -2165,7 +2165,7 @@ IMMHandler::GetCharacterRectOfSelectedTextAt(nsWindow* aWindow,
   
   
   if (offset != caretOffset) {
-    WidgetQueryContentEvent charRect(true, NS_QUERY_TEXT_RECT, aWindow);
+    WidgetQueryContentEvent charRect(true, eQueryTextRect, aWindow);
     charRect.InitForQueryTextRect(offset, 1);
     aWindow->InitEvent(charRect, &point);
     aWindow->DispatchWindowEvent(&charRect);
