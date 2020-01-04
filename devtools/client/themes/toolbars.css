@@ -183,11 +183,6 @@
   display: flex;
 }
 
-
-.theme-firebug #toolbox-buttons toolbarbutton image {
-  filter: invert(1);
-}
-
 .devtools-toolbarbutton:not([label]) > .toolbarbutton-text {
   display: none;
 }
@@ -615,16 +610,6 @@
 #toggle-breakpoints[checked] > image,
 .event-tooltip-debugger-icon {
   filter: var(--icon-filter);
-}
-
-
-.devtools-tab[icon-invertable][selected] > image {
-  filter: invert(1);
-}
-
-
-.devtools-tab[icon-invertable][highlighted] > image {
-  filter: none;
 }
 
 .hidden-labels-box:not(.visible) > label,
