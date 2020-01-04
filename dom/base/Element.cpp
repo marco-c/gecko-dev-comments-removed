@@ -3305,10 +3305,8 @@ GetFullScreenError(nsIDocument* aDoc)
 }
 
 void
-Element::RequestFullscreen(JSContext* aCx, JS::Handle<JS::Value> aOptions,
-                           ErrorResult& aError)
+Element::RequestFullscreen(ErrorResult& aError)
 {
-  MOZ_ASSERT_IF(!aCx, aOptions.isNullOrUndefined());
   
   
   
@@ -3323,29 +3321,6 @@ Element::RequestFullscreen(JSContext* aCx, JS::Handle<JS::Value> aOptions,
 
   auto request = MakeUnique<FullscreenRequest>(this);
   request->mIsCallerChrome = nsContentUtils::IsCallerChrome();
-
-  RequestFullscreenOptions fsOptions;
-  
-  
-  
-  if (aCx) {
-    bool convertible;
-    if (!IsConvertibleToDictionary(aCx, aOptions, &convertible)) {
-      aError.Throw(NS_ERROR_FAILURE);
-      return;
-    }
-
-    if (convertible) {
-      if (!fsOptions.Init(aCx, aOptions)) {
-        aError.Throw(NS_ERROR_FAILURE);
-        return;
-      }
-
-      if (fsOptions.mVrDisplay) {
-        request->mVRHMDDevice = fsOptions.mVrDisplay->GetHMD();
-      }
-    }
-  }
 
   OwnerDoc()->AsyncRequestFullScreen(Move(request));
 }
