@@ -7,7 +7,7 @@
 define(function(require, exports, module) {
 
 
-const React = require("react");
+const ReactDOM = require("react-dom");
 
 
 const { createFactories } = require("./components/reps/rep-utils");
@@ -79,7 +79,7 @@ input.actions = {
 
 
 var content = document.getElementById("content");
-var theApp = React.render(MainTabbedArea(input), content);
+var theApp = ReactDOM.render(MainTabbedArea(input), content);
 
 var onResize = event => {
   window.document.body.style.height = window.innerHeight + "px";
