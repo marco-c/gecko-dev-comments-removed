@@ -90,11 +90,6 @@ public class Launcher extends FragmentActivity
         IntentHelper.init(this);
         mScreenStateObserver = new ScreenStateObserver(this);
 
-        
-        KeyguardManager keyguardManager = (KeyguardManager)getSystemService(KEYGUARD_SERVICE);
-        KeyguardLock lock = keyguardManager.newKeyguardLock(KEYGUARD_SERVICE);
-        lock.disableKeyguard();
-
         initGecko();
 
         GeckoAppShell.setGeckoInterface(new BaseGeckoInterface(this));
