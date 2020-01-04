@@ -1301,7 +1301,7 @@ TSFTextStore::TSFTextStore()
   , mPendingOnSelectionChange(false)
   , mPendingOnLayoutChange(false)
   , mPendingDestroy(false)
-  , mPendingClearLockedContent(false)
+  , mDeferClearingLockedContent(false)
   , mNativeCaretIsCreated(false)
   , mDeferNotifyingTSF(false)
 {
@@ -1674,11 +1674,6 @@ TSFTextStore::FlushPendingActions()
     return;
   }
 
-  
-  
-  
-  mPendingClearLockedContent = !mPendingActions.Length();
-
   nsRefPtr<nsWindowBase> kungFuDeathGrip(mWidget);
   for (uint32_t i = 0; i < mPendingActions.Length(); i++) {
     PendingAction& action = mPendingActions[i];
@@ -1712,7 +1707,9 @@ TSFTextStore::FlushPendingActions()
                                                 mWidget);
         mWidget->InitEvent(compositionStart);
         
-        mPendingClearLockedContent = true;
+        
+        
+        mDeferClearingLockedContent = true;
         DispatchEvent(compositionStart);
         if (!mWidget || mWidget->Destroyed()) {
           break;
@@ -1778,8 +1775,10 @@ TSFTextStore::FlushPendingActions()
         compositionChange.mRanges = action.mRanges;
         
         
+        
+        
         if (compositionChange.CausesDOMTextEvent()) {
-          mPendingClearLockedContent = true;
+          mDeferClearingLockedContent = true;
         }
         DispatchEvent(compositionChange);
         
@@ -1803,8 +1802,10 @@ TSFTextStore::FlushPendingActions()
         compositionCommit.mData = action.mData;
         
         
+        
+        
         if (compositionCommit.CausesDOMTextEvent()) {
-          mPendingClearLockedContent = true;
+          mDeferClearingLockedContent = true;
         }
         DispatchEvent(compositionCommit);
         if (!mWidget || mWidget->Destroyed()) {
@@ -1868,9 +1869,11 @@ TSFTextStore::MaybeFlushPendingNotifications()
     return;
   }
 
-  if (mPendingClearLockedContent) {
-    mPendingClearLockedContent = false;
+  if (!mDeferClearingLockedContent && mLockedContent.IsInitialized()) {
     mLockedContent.Clear();
+    MOZ_LOG(sTextStoreLog, LogLevel::Debug,
+           ("TSF: 0x%p   TSFTextStore::MaybeFlushPendingNotifications(), "
+            "mLockedContent is cleared", this));
   }
 
   if (mPendingOnLayoutChange) {
@@ -1997,12 +2000,21 @@ TSFTextStore::LockedContent()
   
   
   if (NS_WARN_IF(!IsReadLocked() && !mLockedContent.IsInitialized())) {
+    MOZ_LOG(sTextStoreLog, LogLevel::Error,
+           ("TSF: 0x%p   TSFTextStore::LockedContent(), FAILED, due to "
+            "called wrong timing, IsReadLocked()=%s, "
+            "mLockedContent.IsInitialized()=%s",
+            this, GetBoolName(IsReadLocked()),
+            GetBoolName(mLockedContent.IsInitialized())));
     mLockedContent.Clear();
     return mLockedContent;
   }
 
   Selection& currentSel = CurrentSelection();
   if (currentSel.IsDirty()) {
+    MOZ_LOG(sTextStoreLog, LogLevel::Error,
+           ("TSF: 0x%p   TSFTextStore::LockedContent(), FAILED, due to "
+            "CurrentSelection() failure", this));
     mLockedContent.Clear();
     return mLockedContent;
   }
@@ -2010,19 +2022,31 @@ TSFTextStore::LockedContent()
   if (!mLockedContent.IsInitialized()) {
     nsAutoString text;
     if (NS_WARN_IF(!GetCurrentText(text))) {
+      MOZ_LOG(sTextStoreLog, LogLevel::Error,
+             ("TSF: 0x%p   TSFTextStore::LockedContent(), FAILED, due to "
+              "GetCurrentText() failure", this));
       mLockedContent.Clear();
       return mLockedContent;
     }
 
     mLockedContent.Init(text);
+    
+    
+    
+    
+    mDeferClearingLockedContent = false;
   }
 
   MOZ_LOG(sTextStoreLog, LogLevel::Debug,
          ("TSF: 0x%p   TSFTextStore::LockedContent(): "
-          "mLockedContent={ mText.Length()=%d, mLastCompositionString=\"%s\", "
+          "mLockedContent={ mText=\"%s\" (Length()=%u), "
+          "mLastCompositionString=\"%s\" (Length()=%u), "
           "mMinTextModifiedOffset=%u }",
-          this, mLockedContent.Text().Length(),
+          this, mLockedContent.Text().Length() <= 20 ?
+            NS_ConvertUTF16toUTF8(mLockedContent.Text()).get() : "<omitted>",
+          mLockedContent.Text().Length(),
           NS_ConvertUTF16toUTF8(mLockedContent.LastCompositionString()).get(),
+          mLockedContent.LastCompositionString().Length(),
           mLockedContent.MinTextModifiedOffset()));
 
   return mLockedContent;
@@ -2038,11 +2062,18 @@ TSFTextStore::GetCurrentText(nsAString& aTextContent)
 
   MOZ_ASSERT(mWidget && !mWidget->Destroyed());
 
+  MOZ_LOG(sTextStoreLog, LogLevel::Debug,
+         ("TSF: 0x%p   TSFTextStore::GetCurrentText(): "
+          "retrieving text from the content...", this));
+
   WidgetQueryContentEvent queryText(true, NS_QUERY_TEXT_CONTENT, mWidget);
   queryText.InitForQueryTextContent(0, UINT32_MAX);
   mWidget->InitEvent(queryText);
   DispatchEvent(queryText);
   if (NS_WARN_IF(!queryText.mSucceeded)) {
+    MOZ_LOG(sTextStoreLog, LogLevel::Error,
+           ("TSF: 0x%p   TSFTextStore::GetCurrentText(), FAILED, due to "
+            "NS_QUERY_TEXT_CONTENT failure", this));
     aTextContent.Truncate();
     return false;
   }
@@ -4676,7 +4707,9 @@ TSFTextStore::OnUpdateCompositionInternal()
      "mDeferNotifyingTSF=%s",
      this, GetBoolName(mDeferNotifyingTSF)));
 
-  mPendingClearLockedContent = true;
+  
+  
+  mDeferClearingLockedContent = false;
   mDeferNotifyingTSF = false;
   MaybeFlushPendingNotifications();
   return NS_OK;
