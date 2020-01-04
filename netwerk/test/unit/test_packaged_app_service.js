@@ -34,6 +34,7 @@
 Cu.import('resource://gre/modules/LoadContextInfo.jsm');
 Cu.import("resource://testing-common/httpd.js");
 Cu.import("resource://gre/modules/Services.jsm");
+Cu.import("resource://gre/modules/NetUtil.jsm");
 
 
 
@@ -64,6 +65,11 @@ function getPrincipal(url) {
               .getService(Ci.nsIScriptSecurityManager);
   let uri = createURI(url);
   return ssm.createCodebasePrincipal(uri, {});
+}
+
+function getLoadInfo(url) {
+  let tmpChannel = NetUtil.newChannel({uri: url, loadUsingSystemPrincipal: true});
+  return tmpChannel.loadInfo;
 }
 
 
@@ -179,10 +185,13 @@ var cacheListener = new packagedResourceListener(testData.content[0].data);
 
 
 function test_bad_args() {
-  Assert.throws(() => { paservice.getResource(getPrincipal("http://test.com"), 0, LoadContextInfo.default, cacheListener); }, "url's with no !// aren't allowed");
-  Assert.throws(() => { paservice.getResource(getPrincipal("http://test.com/package!//test"), 0, LoadContextInfo.default, null); }, "should have a callback");
-  Assert.throws(() => { paservice.getResource(null, 0, LoadContextInfo.default, cacheListener); }, "should have a URI");
-  Assert.throws(() => { paservice.getResource(getPrincipal("http://test.com/package!//test"), null, cacheListener); }, "should have a LoadContextInfo");
+  let principal = getPrincipal("http://test.com/package!//test");
+  let loadInfo = getLoadInfo("http://test.com/package!//test");
+  Assert.throws(() => { paservice.getResource(getPrincipal("http://test.com"), loadInfo, 0, LoadContextInfo.default, cacheListener); }, "url's with no !// aren't allowed");
+  Assert.throws(() => { paservice.getResource(principal, loadInfo, 0, LoadContextInfo.default, null); }, "should have a callback");
+  Assert.throws(() => { paservice.getResource(null, loadInfo, 0, LoadContextInfo.default, cacheListener); }, "should have a principal");
+  Assert.throws(() => { paservice.getResource(principal, loadInfo, 0, null, cacheListener); }, "should have a LoadContextInfo");
+  Assert.throws(() => { paservice.getResource(principal, null, 0, LoadContextInfo.default, cacheListener); }, "should have a LoadInfo");
   run_next_test();
 }
 
@@ -191,13 +200,15 @@ function test_bad_args() {
 
 function test_callback_gets_called() {
   packagePath = "/package";
-  paservice.getResource(getPrincipal(uri + packagePath + "!//index.html"), 0, LoadContextInfo.default, cacheListener);
+  let url = uri + packagePath + "!//index.html";
+  paservice.getResource(getPrincipal(url), getLoadInfo(url), 0, LoadContextInfo.default, cacheListener);
 }
 
 
 function test_same_content() {
   packagePath = "/package";
-  paservice.getResource(getPrincipal(uri + packagePath + "!//index.html"), 0, LoadContextInfo.default, cacheListener);
+  let url = uri + packagePath + "!//index.html";
+  paservice.getResource(getPrincipal(url), getLoadInfo(url), 0, LoadContextInfo.default, cacheListener);
 }
 
 
@@ -209,7 +220,8 @@ function test_request_number() {
 
 function test_updated_package() {
   packagePath = "/package";
-  paservice.getResource(getPrincipal(uri + packagePath + "!//index.html"), 0, LoadContextInfo.default,
+  let url = uri + packagePath + "!//index.html";
+  paservice.getResource(getPrincipal(url), getLoadInfo(url), 0, LoadContextInfo.default,
       new packagedResourceListener(testData.content[0].data.replace(/\.\.\./g, 'xxx')));
 }
 
@@ -233,13 +245,15 @@ var listener404 = {
 
 function test_package_does_not_exist() {
   packagePath = "/package_non_existent";
-  paservice.getResource(getPrincipal(uri + packagePath + "!//index.html"), 0, LoadContextInfo.default, listener404);
+  let url = uri + packagePath + "!//index.html";
+  paservice.getResource(getPrincipal(url), getLoadInfo(url), 0, LoadContextInfo.default, listener404);
 }
 
 
 function test_file_does_not_exist() {
   packagePath = "/package"; 
-  paservice.getResource(getPrincipal(uri + packagePath + "!//file_non_existent.html"), 0, LoadContextInfo.default, listener404);
+  let url = uri + packagePath + "!//file_non_existent.html";
+  paservice.getResource(getPrincipal(url), getLoadInfo(url), 0, LoadContextInfo.default, listener404);
 }
 
 
@@ -280,13 +294,15 @@ function packagedAppBadContentHandler(metadata, response)
 
 function test_bad_package() {
   packagePath = "/badPackage";
-  paservice.getResource(getPrincipal(uri + packagePath + "!//index.html"), 0, LoadContextInfo.default, cacheListener);
+  let url = uri + packagePath + "!//index.html";
+  paservice.getResource(getPrincipal(url), getLoadInfo(url), 0, LoadContextInfo.default, cacheListener);
 }
 
 
 function test_bad_package_404() {
   packagePath = "/badPackage";
-  paservice.getResource(getPrincipal(uri + packagePath + "!//file_non_existent.html"), 0, LoadContextInfo.default, listener404);
+  let url = uri + packagePath + "!//file_non_existent.html";
+  paservice.getResource(getPrincipal(url), getLoadInfo(url), 0, LoadContextInfo.default, listener404);
 }
 
 
