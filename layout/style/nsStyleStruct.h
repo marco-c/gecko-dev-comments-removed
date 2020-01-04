@@ -472,12 +472,6 @@ private:
 };
 
 struct nsStyleImageLayers {
-  nsStyleImageLayers();
-  nsStyleImageLayers(const nsStyleImageLayers &aSource);
-  ~nsStyleImageLayers() {
-    MOZ_COUNT_DTOR(nsStyleImageLayers);
-  }
-
   
   enum {
     shorthand = 0,
@@ -493,6 +487,17 @@ struct nsStyleImageLayers {
     maskMode,
     composite
   };
+
+  enum class LayerType : uint8_t {
+    Background = 0,
+    Mask
+  };
+
+  explicit nsStyleImageLayers(LayerType aType);
+  nsStyleImageLayers(const nsStyleImageLayers &aSource);
+  ~nsStyleImageLayers() {
+    MOZ_COUNT_DTOR(nsStyleImageLayers);
+  }
 
   struct Position;
   friend struct Position;
@@ -598,13 +603,10 @@ struct nsStyleImageLayers {
     
     Repeat() {}
 
-    bool IsInitialValue() const {
-      return mXRepeat == NS_STYLE_IMAGELAYER_REPEAT_REPEAT &&
-             mYRepeat == NS_STYLE_IMAGELAYER_REPEAT_REPEAT;
-    }
+    bool IsInitialValue(LayerType aType) const;
 
     
-    void SetInitialValues();
+    void SetInitialValues(LayerType aType);
 
     bool operator==(const Repeat& aOther) const {
       return mXRepeat == aOther.mXRepeat &&
@@ -657,8 +659,12 @@ struct nsStyleImageLayers {
     Repeat        mRepeat;        
 
     
+    
     Layer();
     ~Layer();
+
+    
+    void Initialize(LayerType aType);
 
     
     
@@ -3541,7 +3547,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleSVGReset
   }
 
   nsStyleImageLayers    mMask;
-  nsStyleClipPath mClipPath;          
+  nsStyleClipPath  mClipPath;         
   nscolor          mStopColor;        
   nscolor          mFloodColor;       
   nscolor          mLightingColor;    
