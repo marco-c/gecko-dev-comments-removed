@@ -766,6 +766,18 @@ CamerasParent::RecvStopCapture(const int& aCapEngine,
   return SendReplySuccess();
 }
 
+void
+CamerasParent::StopIPC()
+{
+  MOZ_ASSERT(!mDestroyed);
+  
+  mShmemPool.Cleanup(this);
+  
+  
+  mChildIsAlive = false;
+  mDestroyed = true;
+}
+
 bool
 CamerasParent::RecvAllDone()
 {
@@ -791,8 +803,6 @@ void CamerasParent::DoShutdown()
     }
   }
 
-  mShmemPool.Cleanup(this);
-
   mPBackgroundThread = nullptr;
 
   if (mVideoCaptureThread) {
@@ -809,10 +819,7 @@ CamerasParent::ActorDestroy(ActorDestroyReason aWhy)
 {
   
   LOG((__PRETTY_FUNCTION__));
-  
-  
-  mChildIsAlive = false;
-  mDestroyed = true;
+  StopIPC();
   CloseEngines();
 }
 
