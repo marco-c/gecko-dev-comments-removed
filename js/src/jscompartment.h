@@ -273,6 +273,14 @@ struct JSCompartment
         performanceMonitoring.unlink();
         isSystem_ = isSystem;
     }
+
+    
+    inline bool isProbablySystemOrAddonCode() const {
+        if (creationOptions_.addonIdOrNull())
+            return true;
+
+        return isSystem_;
+    }
   private:
     JSPrincipals*                principals_;
     bool                         isSystem_;
