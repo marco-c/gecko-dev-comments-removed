@@ -163,9 +163,10 @@ private:
   Method(JSContext* aCx, MethodName aName, const nsAString& aString,
          const Sequence<JS::Value>& aData);
 
+  
   void
-  ProcessCallData(ConsoleCallData* aData,
-                  JS::Handle<JSObject*> aGlobal,
+  ProcessCallData(JSContext* aCx,
+                  ConsoleCallData* aData,
                   const Sequence<JS::Value>& aArguments);
 
   void
@@ -178,18 +179,29 @@ private:
   void
   ReleaseCallData(ConsoleCallData* aCallData);
 
+  
   void
   NotifyHandler(JSContext* aCx,
-                JS::Handle<JSObject*> aGlobal,
                 const Sequence<JS::Value>& aArguments,
                 ConsoleCallData* aData) const;
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   bool
-  PopulateEvent(JSContext* aCx,
-                JS::Handle<JSObject*> aGlobal,
-                const Sequence<JS::Value>& aArguments,
-                JS::MutableHandle<JS::Value> aValue,
-                ConsoleCallData* aData) const;
+  PopulateConsoleObjectInTheTargetScope(JSContext* aCx,
+                                        const Sequence<JS::Value>& aArguments,
+                                        JSObject* aTargetScope,
+                                        JS::MutableHandle<JS::Value> aValue,
+                                        ConsoleCallData* aData) const;
 
   
   

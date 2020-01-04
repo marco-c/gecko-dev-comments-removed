@@ -117,6 +117,8 @@ public:
     mMethodName = aName;
     mMethodString = aString;
 
+    mGlobal = JS::CurrentGlobalOrNull(aCx);
+
     for (uint32_t i = 0; i < aArguments.Length(); ++i) {
       if (NS_WARN_IF(!mCopiedArguments.AppendElement(aArguments[i]))) {
         aConsole->UnstoreCallData(this);
@@ -171,6 +173,8 @@ public:
     for (uint32_t i = 0; i < mCopiedArguments.Length(); ++i) {
       NS_IMPL_CYCLE_COLLECTION_TRACE_JS_MEMBER_CALLBACK(mCopiedArguments[i])
     }
+
+    NS_IMPL_CYCLE_COLLECTION_TRACE_JS_MEMBER_CALLBACK(mGlobal);
   }
 
   void
@@ -179,6 +183,8 @@ public:
     MOZ_ASSERT(mOwningThread);
     MOZ_ASSERT(PR_GetCurrentThread() == mOwningThread);
   }
+
+  JS::Heap<JSObject*> mGlobal;
 
   
   
@@ -317,9 +323,9 @@ public:
   }
 
   bool
-  Dispatch(JS::Handle<JSObject*> aGlobal)
+  Dispatch(JSContext* aCx)
   {
-    if (!DispatchInternal(aGlobal)) {
+    if (!DispatchInternal(aCx)) {
       ReleaseData();
       return false;
     }
@@ -358,13 +364,11 @@ private:
   }
 
   bool
-  DispatchInternal(JS::Handle<JSObject*> aGlobal)
+  DispatchInternal(JSContext* aCx)
   {
     mWorkerPrivate->AssertIsOnWorkerThread();
 
-    JSContext* cx = mWorkerPrivate->GetJSContext();
-
-    if (NS_WARN_IF(!PreDispatch(cx, aGlobal))) {
+    if (NS_WARN_IF(!PreDispatch(aCx))) {
       return false;
     }
 
@@ -471,7 +475,7 @@ private:
 protected:
   
   virtual bool
-  PreDispatch(JSContext* aCx, JS::Handle<JSObject*> aGlobal) = 0;
+  PreDispatch(JSContext* aCx) = 0;
 
   
   virtual void
@@ -567,13 +571,12 @@ private:
   }
 
   bool
-  PreDispatch(JSContext* aCx, JS::Handle<JSObject*> aGlobal) override
+  PreDispatch(JSContext* aCx) override
   {
     mWorkerPrivate->AssertIsOnWorkerThread();
     mCallData->AssertIsOnOwningThread();
 
     ClearException ce(aCx);
-    JSAutoCompartment ac(aCx, aGlobal);
 
     JS::Rooted<JSObject*> arguments(aCx,
       JS_NewArrayObject(aCx, mCallData->mCopiedArguments.Length()));
@@ -694,9 +697,7 @@ private:
 
     MOZ_ASSERT(values.Length() == length);
 
-    JS::Rooted<JSObject*> global(aCx, JS::CurrentGlobalOrNull(aCx));
-
-    mConsole->ProcessCallData(mCallData, global, values);
+    mConsole->ProcessCallData(aCx, mCallData, values);
   }
 
   RefPtr<ConsoleCallData> mCallData;
@@ -717,16 +718,9 @@ public:
 
 private:
   bool
-  PreDispatch(JSContext* aCx, JS::Handle<JSObject*> aGlobal) override
+  PreDispatch(JSContext* aCx) override
   {
     ClearException ce(aCx);
-
-    JS::Rooted<JSObject*> global(aCx, aGlobal);
-    if (NS_WARN_IF(!global)) {
-      return false;
-    }
-
-    JSAutoCompartment ac(aCx, global);
 
     JS::Rooted<JSObject*> arguments(aCx,
       JS_NewArrayObject(aCx, mArguments.Length()));
@@ -1101,7 +1095,7 @@ Console::ProfileMethod(JSContext* aCx, const nsAString& aAction,
       new ConsoleProfileRunnable(this, aAction, aData);
 
     JS::Rooted<JSObject*> global(aCx, JS::CurrentGlobalOrNull(aCx));
-    runnable->Dispatch(global);
+    runnable->Dispatch(aCx);
     return;
   }
 
@@ -1373,11 +1367,9 @@ Console::Method(JSContext* aCx, MethodName aMethodName,
                                             callData->mCountLabel);
   }
 
-  JS::Rooted<JSObject*> global(aCx, JS::CurrentGlobalOrNull(aCx));
-
   if (NS_IsMainThread()) {
     callData->SetIDs(mOuterID, mInnerID);
-    ProcessCallData(callData, global, aData);
+    ProcessCallData(aCx, callData, aData);
 
     
     
@@ -1387,11 +1379,11 @@ Console::Method(JSContext* aCx, MethodName aMethodName,
   }
 
   
-  NotifyHandler(aCx, global, aData, callData);
+  NotifyHandler(aCx, aData, callData);
 
   RefPtr<ConsoleCallDataRunnable> runnable =
     new ConsoleCallDataRunnable(this, callData);
-  NS_WARN_IF(!runnable->Dispatch(global));
+  NS_WARN_IF(!runnable->Dispatch(aCx));
 }
 
 
@@ -1440,20 +1432,29 @@ LazyStackGetter(JSContext* aCx, unsigned aArgc, JS::Value* aVp)
 }
 
 void
-Console::ProcessCallData(ConsoleCallData* aData, JS::Handle<JSObject*> aGlobal,
+Console::ProcessCallData(JSContext* aCx, ConsoleCallData* aData,
                          const Sequence<JS::Value>& aArguments)
 {
   AssertIsOnMainThread();
   MOZ_ASSERT(aData);
 
-  AutoJSAPI jsapi;
-  if (!jsapi.Init(aGlobal)) {
-    return;
-  }
-  JSContext* cx = jsapi.cx();
+  JS::Rooted<JS::Value> eventValue(aCx);
 
-  JS::Rooted<JS::Value> eventValue(cx);
-  if (NS_WARN_IF(!PopulateEvent(cx, aGlobal, aArguments, &eventValue, aData))) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  
+  if (NS_WARN_IF(!PopulateConsoleObjectInTheTargetScope(aCx, aArguments,
+                                                        xpc::PrivilegedJunkScope(),
+                                                        &eventValue, aData))) {
     return;
   }
 
@@ -1484,14 +1485,15 @@ Console::ProcessCallData(ConsoleCallData* aData, JS::Handle<JSObject*> aGlobal,
 }
 
 bool
-Console::PopulateEvent(JSContext* aCx,
-                       JS::Handle<JSObject*> aGlobal,
-                       const Sequence<JS::Value>& aArguments,
-                       JS::MutableHandle<JS::Value> aEventValue,
-                       ConsoleCallData* aData) const
+Console::PopulateConsoleObjectInTheTargetScope(JSContext* aCx,
+                                               const Sequence<JS::Value>& aArguments,
+                                               JSObject* aTargetScope,
+                                               JS::MutableHandle<JS::Value> aEventValue,
+                                               ConsoleCallData* aData) const
 {
   MOZ_ASSERT(aCx);
   MOZ_ASSERT(aData);
+  MOZ_ASSERT(aTargetScope);
 
   ConsoleStackEntry frame;
   if (aData->mTopStackFrame) {
@@ -1500,8 +1502,6 @@ Console::PopulateEvent(JSContext* aCx,
 
   ClearException ce(aCx);
   RootedDictionary<ConsoleEvent> event(aCx);
-
-  JSAutoCompartment ac(aCx, aGlobal);
 
   event.mID.Construct();
   event.mInnerID.Construct();
@@ -1590,17 +1590,7 @@ Console::PopulateEvent(JSContext* aCx,
                                         aData->mCountValue);
   }
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  JSAutoCompartment ac2(aCx, xpc::PrivilegedJunkScope());
+  JSAutoCompartment ac2(aCx, aTargetScope);
 
   if (NS_WARN_IF(!ToJSValue(aCx, event, aEventValue))) {
     return false;
@@ -2262,8 +2252,7 @@ Console::ReleaseCallData(ConsoleCallData* aCallData)
 }
 
 void
-Console::NotifyHandler(JSContext* aCx, JS::Handle<JSObject*> aGlobal,
-                       const Sequence<JS::Value>& aArguments,
+Console::NotifyHandler(JSContext* aCx, const Sequence<JS::Value>& aArguments,
                        ConsoleCallData* aCallData) const
 {
   AssertIsOnOwningThread();
@@ -2274,11 +2263,14 @@ Console::NotifyHandler(JSContext* aCx, JS::Handle<JSObject*> aGlobal,
     return;
   }
 
-  JSAutoCompartment ac(aCx, mConsoleEventNotifier->Callable());
-
   JS::Rooted<JS::Value> value(aCx);
-  if (NS_WARN_IF(!PopulateEvent(aCx, mConsoleEventNotifier->Callable(),
-                                aArguments, &value, aCallData))) {
+
+  
+  
+  
+  if (NS_WARN_IF(!PopulateConsoleObjectInTheTargetScope(aCx, aArguments,
+                                                        mConsoleEventNotifier->Callable(),
+                                                        &value, aCallData))) {
     return;
   }
 
@@ -2295,10 +2287,13 @@ Console::RetrieveConsoleEvents(JSContext* aCx, nsTArray<JS::Value>& aEvents,
   
   MOZ_ASSERT(!NS_IsMainThread());
 
-  JS::Rooted<JSObject*> global(aCx, JS::CurrentGlobalOrNull(aCx));
+  JS::Rooted<JSObject*> targetScope(aCx, JS::CurrentGlobalOrNull(aCx));
 
   for (uint32_t i = 0; i < mCallDataStorage.Length(); ++i) {
     JS::Rooted<JS::Value> value(aCx);
+
+    JS::Rooted<JSObject*> sequenceScope(aCx, mCallDataStorage[i]->mGlobal);
+    JSAutoCompartment ac(aCx, sequenceScope);
 
     Sequence<JS::Value> sequence;
     SequenceRooter<JS::Value> arguments(aCx, &sequence);
@@ -2308,8 +2303,12 @@ Console::RetrieveConsoleEvents(JSContext* aCx, nsTArray<JS::Value>& aEvents,
       return;
     }
 
-    if (NS_WARN_IF(!PopulateEvent(aCx, global, sequence, &value,
-                                  mCallDataStorage[i]))) {
+    
+    
+    
+    if (NS_WARN_IF(!PopulateConsoleObjectInTheTargetScope(aCx, sequence,
+                                                          targetScope, &value,
+                                                          mCallDataStorage[i]))) {
       aRv.Throw(NS_ERROR_FAILURE);
       return;
     }
