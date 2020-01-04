@@ -854,6 +854,12 @@ protected:
   bool                         mDeferNotifyingTSF;
   
   
+  
+  
+  bool                         mDeferCommittingComposition;
+  bool                         mDeferCancellingComposition;
+  
+  
   bool                         mDestroyed;
 
 
