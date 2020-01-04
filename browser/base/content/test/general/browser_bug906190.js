@@ -193,22 +193,19 @@ add_task(function* test_same_origin_metarefresh_different_origin() {
 
 
 
-
-
 add_task(function* test_same_origin_302redirect_same_origin() {
   
   yield doTest(gHttpTestRoot1 + "file_bug906190_1.html",
                gHttpTestRoot1 + "file_bug906190.sjs", function* () {
     
     
-    todo(!gIdentityHandler._identityBox.classList.contains("mixedActiveBlocked"),
-         "OK: Mixed Content is NOT being blocked");
+    ok(!gIdentityHandler._identityBox.classList.contains("mixedActiveBlocked"),
+       "OK: Mixed Content is NOT being blocked");
 
-    todo_is(content.document.getElementById('mctestdiv').innerHTML,
-            "Mixed Content Blocker disabled", "OK: Executed mixed script");
+    is(content.document.getElementById('mctestdiv').innerHTML,
+       "Mixed Content Blocker disabled", "OK: Executed mixed script");
   });
 });
-
 
 
 
@@ -227,5 +224,17 @@ add_task(function* test_same_origin_302redirect_different_origin() {
 
     is(content.document.getElementById('mctestdiv').innerHTML,
        "Mixed Content Blocker enabled", "OK: Blocked mixed script");
+  });
+});
+
+
+
+
+add_task(function* test_bad_redirection() {
+  
+  yield doTest(gHttpTestRoot2 + "file_bug906190_1.html",
+               gHttpTestRoot2 + "file_bug906190.sjs?bad-redirection=1", function* () {
+    
+    ok(true, "Nothing to do");
   });
 });

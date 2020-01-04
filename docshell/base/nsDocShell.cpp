@@ -7353,6 +7353,19 @@ nsDocShell::OnRedirectStateChange(nsIChannel* aOldChannel,
 {
   NS_ASSERTION(aStateFlags & STATE_REDIRECTING,
                "Calling OnRedirectStateChange when there is no redirect");
+
+  
+  
+  
+  if (mMixedContentChannel && mMixedContentChannel == aOldChannel) {
+    nsresult rv = nsContentUtils::CheckSameOrigin(mMixedContentChannel, aNewChannel);
+    if (NS_SUCCEEDED(rv)) {
+      SetMixedContentChannel(aNewChannel); 
+    } else {
+      SetMixedContentChannel(nullptr); 
+    }
+  }
+
   if (!(aStateFlags & STATE_IS_DOCUMENT)) {
     return;  
   }
