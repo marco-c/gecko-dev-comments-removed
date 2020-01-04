@@ -1669,12 +1669,6 @@ gfxFontGroup::AddPlatformFont(const nsAString& aName,
 
     if (family) {
         aFamilyList.AppendElement(family);
-        
-        
-        if (family->LinkedSystemFamily()) {
-            fontList->AppendLinkedSystemFamilies(mStyle.language,
-                                                 aFamilyList);
-        }
     }
 }
 

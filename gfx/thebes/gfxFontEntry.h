@@ -667,8 +667,7 @@ public:
         mIsBadUnderlineFamily(false),
         mFamilyCharacterMapInitialized(false),
         mSkipDefaultFeatureSpaceCheck(false),
-        mCheckForFallbackFaces(false),
-        mLinkedSystemFamily(false)
+        mCheckForFallbackFaces(false)
         { }
 
     const nsString& Name() { return mName; }
@@ -797,9 +796,6 @@ public:
         mSkipDefaultFeatureSpaceCheck = aSkipCheck;
     }
 
-    bool LinkedSystemFamily() const { return mLinkedSystemFamily; }
-    void SetLinkedSystemFamily() { mLinkedSystemFamily = true; }
-
 protected:
     
     virtual ~gfxFontFamily()
@@ -832,7 +828,6 @@ protected:
     bool mFamilyCharacterMapInitialized : 1;
     bool mSkipDefaultFeatureSpaceCheck : 1;
     bool mCheckForFallbackFaces : 1;  
-    bool mLinkedSystemFamily : 1;  
 
     enum {
         
