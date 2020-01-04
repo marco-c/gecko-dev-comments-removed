@@ -112,12 +112,12 @@ function SameValueZero(x, y) {
 }
 
 
-function GetMethod(O, P) {
+function GetMethod(V, P) {
     
     assert(IsPropertyKey(P), "Invalid property key");
 
     
-    var func = ToObject(O)[P];
+    var func = V[P];
 
     
     if (func === undefined || func === null)
