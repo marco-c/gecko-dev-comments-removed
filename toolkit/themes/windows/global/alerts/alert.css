@@ -23,6 +23,13 @@
   border: none !important;
 }
 
+#alertSettings {
+  
+
+
+  margin-inline-end: 3px;
+}
+
 @media (-moz-windows-default-theme) {
   #alertBox[hasBodyText] > #alertTextBox,
   #alertBox[hasOrigin] > #alertTitleBox {
