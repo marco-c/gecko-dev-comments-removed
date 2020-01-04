@@ -1338,6 +1338,24 @@ nsWindow::OnLongTapEvent(AndroidGeckoEvent *ae)
     DispatchEvent(&event);
 }
 
+void
+nsWindow::DispatchHitTest(const WidgetTouchEvent& aEvent)
+{
+    if (aEvent.mMessage == eTouchStart && aEvent.touches.Length() == 1) {
+        
+        
+        
+        
+        WidgetMouseEvent hittest(true, eMouseHitTest, this,
+                                 WidgetMouseEvent::eReal);
+        hittest.refPoint = aEvent.touches[0]->mRefPoint;
+        hittest.ignoreRootScrollFrame = true;
+        hittest.inputSource = nsIDOMMouseEvent::MOZ_SOURCE_TOUCH;
+        nsEventStatus status;
+        DispatchEvent(&hittest, status);
+    }
+}
+
 bool nsWindow::OnMultitouchEvent(AndroidGeckoEvent *ae)
 {
     RefPtr<nsWindow> kungFuDeathGrip(this);
@@ -1368,19 +1386,7 @@ bool nsWindow::OnMultitouchEvent(AndroidGeckoEvent *ae)
         isDownEvent = (event.mMessage == eTouchStart);
     }
 
-    if (isDownEvent && event.touches.Length() == 1) {
-        
-        
-        
-        
-        WidgetMouseEvent hittest(true, eMouseHitTest, this,
-                                 WidgetMouseEvent::eReal);
-        hittest.refPoint = event.touches[0]->mRefPoint;
-        hittest.ignoreRootScrollFrame = true;
-        hittest.inputSource = nsIDOMMouseEvent::MOZ_SOURCE_TOUCH;
-        nsEventStatus status;
-        DispatchEvent(&hittest, status);
-    }
+    DispatchHitTest(event);
 
     
     
