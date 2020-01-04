@@ -104,6 +104,7 @@ protected:
   WidgetKeyboardEvent()
     : keyCode(0)
     , charCode(0)
+    , mPseudoCharCode(0)
     , location(nsIDOMKeyEvent::DOM_KEY_LOCATION_STANDARD)
     , isChar(false)
     , mIsRepeat(false)
@@ -128,6 +129,7 @@ public:
     : WidgetInputEvent(aIsTrusted, aMessage, aWidget, aEventClassID)
     , keyCode(0)
     , charCode(0)
+    , mPseudoCharCode(0)
     , location(nsIDOMKeyEvent::DOM_KEY_LOCATION_STANDARD)
     , isChar(false)
     , mIsRepeat(false)
@@ -163,6 +165,10 @@ public:
   
   
   uint32_t charCode;
+  
+  
+  
+  uint32_t mPseudoCharCode;
   
   uint32_t location;
   
@@ -208,6 +214,24 @@ public:
   
   
   bool ShouldCauseKeypressEvents() const;
+
+  
+  
+  
+  
+  
+  uint32_t PseudoCharCode() const
+  {
+    return mMessage == eKeyPress ? charCode : mPseudoCharCode;
+  }
+  void SetCharCode(uint32_t aCharCode)
+  {
+    if (mMessage == eKeyPress) {
+      charCode = aCharCode;
+    } else {
+      mPseudoCharCode = aCharCode;
+    }
+  }
 
   void GetDOMKeyName(nsAString& aKeyName)
   {
@@ -292,6 +316,7 @@ public:
 
     keyCode = aEvent.keyCode;
     charCode = aEvent.charCode;
+    mPseudoCharCode = aEvent.mPseudoCharCode;
     location = aEvent.location;
     alternativeCharCodes = aEvent.alternativeCharCodes;
     isChar = aEvent.isChar;

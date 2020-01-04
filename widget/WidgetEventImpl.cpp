@@ -483,10 +483,6 @@ WidgetKeyboardEvent::GetShortcutKeyCandidates(
 {
   MOZ_ASSERT(aCandidates.IsEmpty(), "aCandidates must be empty");
 
-  if (mMessage != eKeyPress) {
-    return;
-  }
-
   
   
   
@@ -498,8 +494,9 @@ WidgetKeyboardEvent::GetShortcutKeyCandidates(
   
   
   
-  if (charCode) {
-    ShortcutKeyCandidate key(charCode, false);
+  uint32_t pseudoCharCode = PseudoCharCode();
+  if (pseudoCharCode) {
+    ShortcutKeyCandidate key(pseudoCharCode, false);
     aCandidates.AppendElement(key);
   }
 
@@ -507,7 +504,7 @@ WidgetKeyboardEvent::GetShortcutKeyCandidates(
   if (!IsShift()) {
     for (uint32_t i = 0; i < len; ++i) {
       uint32_t ch = alternativeCharCodes[i].mUnshiftedCharCode;
-      if (!ch || ch == charCode) {
+      if (!ch || ch == pseudoCharCode) {
         continue;
       }
       ShortcutKeyCandidate key(ch, false);
@@ -534,7 +531,7 @@ WidgetKeyboardEvent::GetShortcutKeyCandidates(
         continue;
       }
 
-      if (ch != charCode) {
+      if (ch != pseudoCharCode) {
         ShortcutKeyCandidate key(ch, false);
         aCandidates.AppendElement(key);
       }
@@ -568,7 +565,7 @@ WidgetKeyboardEvent::GetShortcutKeyCandidates(
   
   
   if (mCodeNameIndex == CODE_NAME_INDEX_Space &&
-      charCode != static_cast<uint32_t>(' ')) {
+      pseudoCharCode != static_cast<uint32_t>(' ')) {
     ShortcutKeyCandidate spaceKey(static_cast<uint32_t>(' '), false);
     aCandidates.AppendElement(spaceKey);
   }

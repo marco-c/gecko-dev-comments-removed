@@ -1341,28 +1341,11 @@ KeymapWrapper::WillDispatchKeyboardEventInternal(WidgetKeyboardEvent& aKeyEvent,
         return;
     }
 
-    AlternativeCharCode* firstAltCharCodes = nullptr;
-    if (aKeyEvent.mMessage == eKeyPress) {
-        
-        
-        
-        
-        aKeyEvent.charCode = charCode;
-        MOZ_ASSERT(!aKeyEvent.keyCode);
-    } else {
-        MOZ_ASSERT(charCode);
-        
-        
-        AlternativeCharCode altCharCodes(0, 0);
-        if (!aKeyEvent.IsShift()) {
-            altCharCodes.mUnshiftedCharCode = charCode;
-        } else {
-            altCharCodes.mShiftedCharCode = charCode;
-        }
-        MOZ_ASSERT(aKeyEvent.alternativeCharCodes.IsEmpty());
-        firstAltCharCodes =
-            aKeyEvent.alternativeCharCodes.AppendElement(altCharCodes);
-    }
+    
+    
+    
+    
+    aKeyEvent.SetCharCode(charCode);
 
     gint level = GetKeyLevel(aGdkKeyEvent);
     if (level != 0 && level != 1) {
@@ -1456,16 +1439,7 @@ KeymapWrapper::WillDispatchKeyboardEventInternal(WidgetKeyboardEvent& aKeyEvent,
                                altLatinCharCodes.mUnshiftedCharCode;
     if (ch && !(aKeyEvent.IsAlt() || aKeyEvent.IsMeta()) &&
         charCode == unmodifiedCh) {
-        if (aKeyEvent.mMessage == eKeyPress) {
-            aKeyEvent.charCode = ch;
-        } else {
-            MOZ_RELEASE_ASSERT(firstAltCharCodes);
-            if (!aKeyEvent.IsShift()) {
-                firstAltCharCodes->mUnshiftedCharCode = ch;
-            } else {
-                firstAltCharCodes->mShiftedCharCode = ch;
-            }
-        }
+        aKeyEvent.SetCharCode(ch);
     }
 
     MOZ_LOG(gKeymapWrapperLog, LogLevel::Info,

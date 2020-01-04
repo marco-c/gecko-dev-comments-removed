@@ -2227,24 +2227,12 @@ NativeKey::WillDispatchKeyboardEvent(WidgetKeyboardEvent& aKeyboardEvent,
     }
     uint16_t uniChar =
       mInputtingStringAndModifiers.mChars[aIndex - skipUniChars];
-    if (aKeyboardEvent.mMessage == eKeyPress) {
-      
-      
-      
-      aKeyboardEvent.charCode = uniChar;
-      MOZ_ASSERT(!aKeyboardEvent.keyCode);
-    } else if (uniChar) {
-      
-      
-      
-      AlternativeCharCode chars(0, 0);
-      if (!aKeyboardEvent.IsShift()) {
-        chars.mUnshiftedCharCode = uniChar;
-      } else {
-        chars.mShiftedCharCode = uniChar;
-      }
-      altArray.AppendElement(chars);
-    }
+
+    
+    
+    
+    
+    aKeyboardEvent.SetCharCode(uniChar);
   }
 
   if (skipShiftedChars <= aIndex) {
