@@ -189,11 +189,11 @@ nsScriptNameSpaceManager* GetNameSpaceManager();
 nsScriptNameSpaceManager* PeekNameSpaceManager();
 
 
-class AsyncErrorReporter : public nsRunnable
+class AsyncErrorReporter final : public nsRunnable
 {
 public:
   
-  AsyncErrorReporter(JSRuntime* aRuntime, xpc::ErrorReport* aReport)
+  explicit AsyncErrorReporter(xpc::ErrorReport* aReport)
     : mReport(aReport)
   {}
 
