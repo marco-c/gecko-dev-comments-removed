@@ -1,15 +1,9 @@
-#define _ISOC99_SOURCE
-
 #include <math.h>
 #include <assert.h>
 #include <string.h> 
 #include "qcmsint.h"
 #include "transform_util.h"
 #include "matrix.h"
-
-#if !defined(INFINITY)
-#define INFINITY HUGE_VAL
-#endif
 
 #define PARAMETRIC_CURVE_TYPE 0x70617261 //'para'
 
@@ -131,7 +125,7 @@ void compute_curve_gamma_table_type_parametric(float gamma_table[256], float par
                 c = 0;
                 e = 0;
                 f = 0;
-                interval = -INFINITY;
+                interval = -1;
         } else if(count == 1) {
                 a = parameter[1];
                 b = parameter[2];
@@ -167,8 +161,8 @@ void compute_curve_gamma_table_type_parametric(float gamma_table[256], float par
                 c = 0;
                 e = 0;
                 f = 0;
-                interval = -INFINITY;
-        }       
+                interval = -1;
+        }
         for (X = 0; X < 256; X++) {
                 if (X >= interval) {
                         
