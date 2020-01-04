@@ -596,6 +596,38 @@ CompartmentSizeOfIncludingThisCallback(MallocSizeOf mallocSizeOf, JSCompartment*
     return priv ? priv->SizeOfIncludingThis(mallocSizeOf) : 0;
 }
 
+
+
+
+
+
+bool XPCJSRuntime::UsefulToMergeZones() const
+{
+    MOZ_ASSERT(NS_IsMainThread());
+
+    nsGlobalWindow::WindowByIdTable* windowsById =
+        nsGlobalWindow::GetWindowsTable();
+    if (!windowsById) {
+        return false;
+    }
+
+    for (auto iter = windowsById->Iter(); !iter.Done(); iter.Next()) {
+        nsGlobalWindow* window = iter.Data();
+        if (!window->IsInnerWindow() ||
+            !window->AsInner()->IsCurrentInnerWindow()) {
+            continue;
+        }
+
+        JSObject* reflector = window->FastGetGlobalJSObject();
+        if (JS::ObjectIsMarkedGray(reflector) &&
+            !js::IsSystemCompartment(js::GetObjectCompartment(reflector))) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 void XPCJSRuntime::TraceNativeBlackRoots(JSTracer* trc)
 {
     
