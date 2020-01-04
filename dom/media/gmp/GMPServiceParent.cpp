@@ -1222,7 +1222,11 @@ GeckoMediaPluginServiceParent::IsPersistentStorageAllowed(const nsACString& aNod
 {
   MOZ_ASSERT(NS_GetCurrentThread() == mGMPThread);
   NS_ENSURE_ARG(aOutAllowed);
-  *aOutAllowed = mPersistentStorageAllowed.Get(aNodeId);
+  
+  
+  
+  *aOutAllowed = !aNodeId.Equals(SHARED_GMP_DECODING_NODE_ID) &&
+                 mPersistentStorageAllowed.Get(aNodeId);
   return NS_OK;
 }
 

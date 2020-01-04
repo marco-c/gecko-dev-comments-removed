@@ -10,6 +10,19 @@
 #include "PlatformDecoderModule.h"
 #include "mozilla/Maybe.h"
 
+
+
+
+
+
+
+
+
+
+
+
+#define SHARED_GMP_DECODING_NODE_ID NS_LITERAL_CSTRING("gmp-shared-decoding")
+
 namespace mozilla {
 
 class GMPDecoderModule : public PlatformDecoderModule {
