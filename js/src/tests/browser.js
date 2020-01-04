@@ -371,7 +371,7 @@ function jsTestDriverBrowserInit()
 
   var testpathparts = properties.test.split(/\//);
 
-  if (testpathparts.length < 3)
+  if (testpathparts.length < 2)
   {
     
     return;
