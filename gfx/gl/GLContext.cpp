@@ -180,97 +180,6 @@ static const char *sExtensionNames[] = {
 };
 
 static bool
-ParseGLSLVersion(GLContext* gl, uint32_t* out_version)
-{
-    if (gl->fGetError() != LOCAL_GL_NO_ERROR) {
-        MOZ_ASSERT(false, "An OpenGL error has been triggered before.");
-        return false;
-    }
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    const char* versionString = (const char*) gl->fGetString(LOCAL_GL_SHADING_LANGUAGE_VERSION);
-
-    if (gl->fGetError() != LOCAL_GL_NO_ERROR) {
-        MOZ_ASSERT(false, "glGetString(GL_SHADING_LANGUAGE_VERSION) has generated an error");
-        return false;
-    }
-
-    if (!versionString) {
-        
-        *out_version = 100;
-        return true;
-    }
-
-    const char kGLESVersionPrefix[] = "OpenGL ES GLSL ES";
-    if (strncmp(versionString, kGLESVersionPrefix, strlen(kGLESVersionPrefix)) == 0)
-        versionString += strlen(kGLESVersionPrefix);
-
-    const char* itr = versionString;
-    char* end = nullptr;
-    auto majorVersion = strtol(itr, &end, 10);
-
-    if (!end) {
-        MOZ_ASSERT(false, "Failed to parse the GL major version number.");
-        return false;
-    }
-
-    if (*end != '.') {
-        MOZ_ASSERT(false, "Failed to parse GL's major-minor version number separator.");
-        return false;
-    }
-
-    
-    itr = end + 1;
-    end = nullptr;
-
-    auto minorVersion = strtol(itr, &end, 10);
-    if (!end) {
-        MOZ_ASSERT(false, "Failed to parse GL's minor version number.");
-        return false;
-    }
-
-    if (majorVersion <= 0 || majorVersion >= 100) {
-        MOZ_ASSERT(false, "Invalid major version.");
-        return false;
-    }
-
-    if (minorVersion < 0 || minorVersion >= 100) {
-        MOZ_ASSERT(false, "Invalid minor version.");
-        return false;
-    }
-
-    *out_version = (uint32_t) majorVersion * 100 + (uint32_t) minorVersion;
-    return true;
-}
-
-static bool
 ParseGLVersion(GLContext* gl, uint32_t* out_version)
 {
     if (gl->fGetError() != LOCAL_GL_NO_ERROR) {
@@ -394,7 +303,6 @@ GLContext::GLContext(const SurfaceCaps& caps,
     mContextLost(false),
     mVersion(0),
     mProfile(ContextProfile::Unknown),
-    mShadingLanguageVersion(0),
     mVendor(GLVendor::Other),
     mRenderer(GLRenderer::Other),
     mHasRobustness(false),
@@ -607,12 +515,8 @@ GLContext::InitWithPrefix(const char *prefix, bool trygl)
         uint32_t version = 0;
         ParseGLVersion(this, &version);
 
-        uint32_t shadingLangVersion = 100;
-        ParseGLSLVersion(this, &shadingLangVersion);
-
         if (ShouldSpew()) {
             printf_stderr("OpenGL version detected: %u\n", version);
-            printf_stderr("OpenGL shading language version detected: %u\n", shadingLangVersion);
             printf_stderr("OpenGL vendor: %s\n", fGetString(LOCAL_GL_VENDOR));
             printf_stderr("OpenGL renderer: %s\n", fGetString(LOCAL_GL_RENDERER));
         }
@@ -620,7 +524,6 @@ GLContext::InitWithPrefix(const char *prefix, bool trygl)
         if (version >= mVersion) {
             mVersion = version;
         }
-
         
         
         
