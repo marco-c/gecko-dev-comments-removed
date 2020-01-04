@@ -616,7 +616,7 @@ nsWindow::GeckoViewSupport::~GeckoViewSupport()
     
     
     MOZ_ASSERT(mEditable);
-    mEditable->OnDestroy();
+    mEditable->OnViewChange(nullptr);
 }
 
  void

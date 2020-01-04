@@ -65,7 +65,8 @@ final class GeckoEditable extends JNIObject
     private Handler mIcRunHandler;
     private Handler mIcPostHandler;
 
-    private GeckoEditableListener mListener;
+     GeckoEditableListener mListener;
+     GeckoView mView;
      boolean mInBatchMode; 
      boolean mNeedCompositionUpdate; 
     private boolean mFocused; 
@@ -235,6 +236,11 @@ final class GeckoEditable extends JNIObject
                               getConstantName(Action.class, "TYPE_", action.mType) + ")");
             }
 
+            if (mListener == null) {
+                
+                return;
+            }
+
             if (mActions.isEmpty()) {
                 mActionsActive.acquireUninterruptibly();
                 mActions.offer(action);
@@ -395,24 +401,6 @@ final class GeckoEditable extends JNIObject
     protected native void disposeNative();
 
     @WrapForJNI
-    private void onDestroy() {
-        if (DEBUG) {
-            
-            ThreadUtils.assertOnGeckoThread();
-            Log.d(LOGTAG, "onDestroy()");
-        }
-
-        
-        
-        geckoPostToIc(new Runnable() {
-            @Override
-            public void run() {
-                GeckoEditable.this.disposeNative();
-            }
-        });
-    }
-
-    @WrapForJNI
      void onViewChange(final GeckoView v) {
         if (DEBUG) {
             
@@ -420,26 +408,51 @@ final class GeckoEditable extends JNIObject
             Log.d(LOGTAG, "onViewChange(" + v + ")");
         }
 
-        final GeckoEditableListener newListener = GeckoInputConnection.create(v, this);
-        geckoPostToIc(new Runnable() {
+        final GeckoEditableListener newListener =
+            v != null ? GeckoInputConnection.create(v, this) : null;
+
+        final Runnable setListenerRunnable = new Runnable() {
             @Override
             public void run() {
                 if (DEBUG) {
                     Log.d(LOGTAG, "onViewChange (set listener)");
                 }
-                
-                mActionQueue.syncWithGecko();
-                mListener = newListener;
-            }
-        });
 
+                if (newListener != null) {
+                    
+                    mActionQueue.syncWithGecko();
+                    mListener = newListener;
+                } else {
+                    
+                    
+                    
+                    mListener = null;
+                    GeckoEditable.this.disposeNative();
+                }
+            }
+        };
+
+        
+        
+        
         ThreadUtils.postToUiThread(new Runnable() {
             @Override
             public void run() {
                 if (DEBUG) {
                     Log.d(LOGTAG, "onViewChange (set IC)");
                 }
-                v.setInputConnectionListener((InputConnectionListener) newListener);
+
+                if (mView != null) {
+                    
+                    mView.setInputConnectionListener(null);
+                }
+                if (v != null) {
+                    
+                    v.setInputConnectionListener((InputConnectionListener) newListener);
+                }
+
+                mView = v;
+                mIcPostHandler.post(setListenerRunnable);
             }
         });
     }
@@ -658,6 +671,10 @@ final class GeckoEditable extends JNIObject
             if (DEBUG) {
                 Log.i(LOGTAG, "getEditable() called on non-IC thread");
             }
+            return null;
+        }
+        if (mListener == null) {
+            
             return null;
         }
         return mProxy;
