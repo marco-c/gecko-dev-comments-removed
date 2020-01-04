@@ -59,7 +59,7 @@ def generate(output, idlFilename, preprocessorHeader):
         
         
         
-        if prop != name and name[0] != "-":
+        if prop != name:
             extendedAttrs.append('BinaryName="%s"' % prop)
             
             
