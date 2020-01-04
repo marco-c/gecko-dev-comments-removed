@@ -22,6 +22,7 @@ function DomPanel(iframeWindow, toolbox) {
 
   this.onTabNavigated = this.onTabNavigated.bind(this);
   this.onContentMessage = this.onContentMessage.bind(this);
+  this.onPanelVisibilityChange = this.onPanelVisibilityChange.bind(this);
 
   this.pendingRequests = new Map();
 
@@ -35,7 +36,7 @@ DomPanel.prototype = {
 
 
 
-  open: Task.async(function*() {
+  open: Task.async(function* () {
     if (this._opening) {
       return this._opening;
     }
@@ -50,11 +51,9 @@ DomPanel.prototype = {
 
     this.initialize();
 
-    this.once("no-pending-requests", () => {
-      this.isReady = true;
-      this.emit("ready");
-      deferred.resolve(this);
-    });
+    this.isReady = true;
+    this.emit("ready");
+    deferred.resolve(this);
 
     return this._opening;
   }),
@@ -66,6 +65,7 @@ DomPanel.prototype = {
       this.onContentMessage, true);
 
     this.target.on("navigate", this.onTabNavigated);
+    this._toolbox.on("select", this.onPanelVisibilityChange);
 
     let provider = {
       getPrototypeAndProperties: this.getPrototypeAndProperties.bind(this)
@@ -73,10 +73,10 @@ DomPanel.prototype = {
 
     exportIntoContentScope(this.panelWin, provider, "DomProvider");
 
-    this.doRefresh();
+    this.shouldRefresh = true;
   },
 
-  destroy: Task.async(function*() {
+  destroy: Task.async(function* () {
     if (this._destroying) {
       return this._destroying;
     }
@@ -85,6 +85,7 @@ DomPanel.prototype = {
     this._destroying = deferred.promise;
 
     this.target.off("navigate", this.onTabNavigated);
+    this._toolbox.off("select", this.onPanelVisibilityChange);
 
     this.emit("destroyed");
 
@@ -94,14 +95,49 @@ DomPanel.prototype = {
 
   
 
-  doRefresh: function() {
-    this.refresh().then(rootGrip => {
+  refresh: function() {
+    
+    if (!this.isPanelVisible()) {
+      return;
+    }
+
+    
+    if (!this.shouldRefresh) {
+      return;
+    }
+
+    
+    this.shouldRefresh = false;
+
+    this.getRootGrip().then(rootGrip => {
       this.postContentMessage("initialize", rootGrip);
     });
   },
 
+  
+
+
+
+
   onTabNavigated: function() {
-    this.doRefresh();
+    this.shouldRefresh = true;
+    this.refresh();
+  },
+
+  
+
+
+  onPanelVisibilityChange: function() {
+    this.refresh();
+  },
+
+  
+
+  
+
+
+  isPanelVisible: function() {
+    return this._toolbox.currentToolId === "dom";
   },
 
   getPrototypeAndProperties: function(grip) {
@@ -141,9 +177,7 @@ DomPanel.prototype = {
     return deferred.promise;
   },
 
-  
-
-  refresh: function() {
+  getRootGrip: function() {
     let deferred = defer();
 
     
@@ -154,8 +188,6 @@ DomPanel.prototype = {
 
     return deferred.promise;
   },
-
-  
 
   postContentMessage: function(type, args) {
     let data = {
