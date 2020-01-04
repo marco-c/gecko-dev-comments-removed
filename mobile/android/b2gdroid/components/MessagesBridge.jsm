@@ -34,14 +34,19 @@ this.MessagesBridge = {
     let data = JSON.parse(aData);
     debug(`Got Android:Launcher message ${data.action}`);
 
+    let window = SystemAppProxy.getFrame().contentWindow;
     switch (data.action) {
       case "screen_on":
       case "screen_off":
         
         
-        let window = SystemAppProxy.getFrame().contentWindow;
         window.dispatchEvent(new window.KeyboardEvent("keydown", { key: "Power" }));
         window.dispatchEvent(new window.KeyboardEvent("keyup", { key: "Power" }));
+        break;
+      case "view":
+        let a = new window.MozActivity({ name: "view",
+                                         data: { type: "url",
+                                                 url: data.url } });
         break;
     }
   }
