@@ -1476,7 +1476,7 @@ gfxTextRun::FetchGlyphExtents(DrawTarget* aRefDrawTarget)
 }
 
 
-gfxTextRun::ClusterIterator::ClusterIterator(gfxTextRun *aTextRun)
+gfxTextRun::ClusterIterator::ClusterIterator(const gfxTextRun* aTextRun)
     : mTextRun(aTextRun), mCurrentChar(uint32_t(-1))
 {
 }
@@ -3077,12 +3077,16 @@ gfxFontGroup::UpdateUserFonts()
     if (mCurrGeneration < GetRebuildGeneration()) {
         
         mFonts.Clear();
-        ClearCachedData();
+        mUnderlineOffset = UNDERLINE_OFFSET_NOT_SET;
+        mSkipDrawing = false;
         BuildFontList();
         mCurrGeneration = GetGeneration();
+        mCachedEllipsisTextRun = nullptr;
     } else if (mCurrGeneration != GetGeneration()) {
         
-        ClearCachedData();
+        mSkipDrawing = false;
+        mUnderlineOffset = UNDERLINE_OFFSET_NOT_SET;
+        mCachedEllipsisTextRun = nullptr;
 
         uint32_t len = mFonts.Length();
         for (uint32_t i = 0; i < len; i++) {

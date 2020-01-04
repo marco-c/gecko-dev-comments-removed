@@ -217,7 +217,7 @@ public:
 
     class ClusterIterator {
     public:
-        explicit ClusterIterator(gfxTextRun *aTextRun);
+        explicit ClusterIterator(const gfxTextRun* aTextRun);
 
         void Reset();
 
@@ -232,7 +232,7 @@ public:
         gfxFloat ClusterAdvance(PropertyProvider *aProvider) const;
 
     private:
-        gfxTextRun *mTextRun;
+        const gfxTextRun* mTextRun;
         uint32_t    mCurrentChar;
     };
 
@@ -574,7 +574,7 @@ public:
     void FetchGlyphExtents(DrawTarget* aRefDrawTarget);
 
     uint32_t CountMissingGlyphs() const;
-    const GlyphRun *GetGlyphRuns(uint32_t *aNumGlyphRuns) {
+    const GlyphRun* GetGlyphRuns(uint32_t* aNumGlyphRuns) const {
         *aNumGlyphRuns = mGlyphRuns.Length();
         return mGlyphRuns.Elements();
     }
@@ -900,14 +900,6 @@ public:
 
     
     void SetUserFontSet(gfxUserFontSet *aUserFontSet);
-
-    void ClearCachedData()
-    {
-        mUnderlineOffset = UNDERLINE_OFFSET_NOT_SET;
-        mSkipDrawing = false;
-        mHyphenWidth = -1;
-        mCachedEllipsisTextRun = nullptr;
-    }
 
     
     
