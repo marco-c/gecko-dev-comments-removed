@@ -1313,7 +1313,7 @@ class GCRuntime
 };
 
 
-class AutoEnterIteration {
+class MOZ_RAII AutoEnterIteration {
     GCRuntime* gc;
 
   public:

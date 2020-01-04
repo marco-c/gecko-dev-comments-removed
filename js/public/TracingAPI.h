@@ -200,7 +200,7 @@ class JS_PUBLIC_API(CallbackTracer) : public JSTracer
 };
 
 
-class AutoTracingName
+class MOZ_RAII AutoTracingName
 {
     CallbackTracer* trc_;
     const char* prior_;
@@ -217,7 +217,7 @@ class AutoTracingName
 };
 
 
-class AutoTracingIndex
+class MOZ_RAII AutoTracingIndex
 {
     CallbackTracer* trc_;
 
@@ -246,7 +246,7 @@ class AutoTracingIndex
 
 
 
-class AutoTracingDetails
+class MOZ_RAII AutoTracingDetails
 {
     CallbackTracer* trc_;
 
