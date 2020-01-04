@@ -324,20 +324,33 @@ BluetoothMapSmsManager::MasDataHandler(UnixSocketBuffer* aMessage)
         return;
       }
 
-      if (pktHeaders.Has(ObexHeaderId::Type)) {
-        pktHeaders.GetContentType(type);
-        BT_LOGR("Type: %s", NS_ConvertUTF16toUTF8(type).get());
-        ReplyToPut();
+      
+      if (!pktHeaders.Has(ObexHeaderId::Type)) {
+        BT_LOGR("Missing OBEX PUT request Type header");
+        SendReply(ObexResponseCode::BadRequest);
+        return;
+      }
 
-        if (type.EqualsLiteral("x-bt/MAP-NotificationRegistration")) {
-          HandleNotificationRegistration(pktHeaders);
-        } else if (type.EqualsLiteral("x-bt/MAP-event-report")) {
-          HandleEventReport(pktHeaders);
-        } else if (type.EqualsLiteral("x-bt/messageStatus")) {
-          HandleSetMessageStatus(pktHeaders);
-        } else if (type.EqualsLiteral("x-bt/message")) {
-          HandleSmsMmsPushMessage(pktHeaders);
-        }
+      pktHeaders.GetContentType(type);
+      BT_LOGR("Type: %s", NS_ConvertUTF16toUTF8(type).get());
+
+      if (type.EqualsLiteral("x-bt/MAP-NotificationRegistration")) {
+        HandleNotificationRegistration(pktHeaders);
+        ReplyToPut();
+      } else if (type.EqualsLiteral("x-bt/messageStatus")) {
+        HandleSetMessageStatus(pktHeaders);
+      } else if (type.EqualsLiteral("x-bt/message")) {
+        HandleSmsMmsPushMessage(pktHeaders);
+      } else if (type.EqualsLiteral("x-bt/MAP-messageUpdate")) {
+        
+
+
+
+        SendReply(ObexResponseCode::NotImplemented);
+      } else {
+        BT_LOGR("Unknown MAP PUT request type: %s",
+          NS_ConvertUTF16toUTF8(type).get());
+        SendReply(ObexResponseCode::NotImplemented);
       }
       break;
     case ObexRequestCode::Get:
@@ -363,6 +376,12 @@ BluetoothMapSmsManager::MasDataHandler(UnixSocketBuffer* aMessage)
         return;
       }
 
+      if (!pktHeaders.Has(ObexHeaderId::Type)) {
+        BT_LOGR("Missing OBEX GET request Type header");
+        SendReply(ObexResponseCode::BadRequest);
+        return;
+      }
+
       pktHeaders.GetContentType(type);
       if (type.EqualsLiteral("x-obex/folder-listing")) {
         HandleSmsMmsFolderListing(pktHeaders);
@@ -371,8 +390,9 @@ BluetoothMapSmsManager::MasDataHandler(UnixSocketBuffer* aMessage)
       } else if (type.EqualsLiteral("x-bt/message")) {
         HandleSmsMmsGetMessage(pktHeaders);
       } else {
-        BT_LOGR("Unknown MAP request type: %s",
+        BT_LOGR("Unknown MAP GET request type: %s",
           NS_ConvertUTF16toUTF8(type).get());
+        SendReply(ObexResponseCode::NotImplemented);
       }
       break;
     }
@@ -648,10 +668,9 @@ BluetoothMapSmsManager::ReplyToPut()
 
   
   
-  uint8_t req[255];
-  int index = 3;
+  uint8_t req[kObexRespHeaderSize];
 
-  SendMasObexData(req, ObexResponseCode::Success, index);
+  SendMasObexData(req, ObexResponseCode::Success, kObexRespHeaderSize);
 }
 
 bool
@@ -1314,12 +1333,6 @@ BluetoothMapSmsManager::HandleNotificationRegistration(
 }
 
 void
-BluetoothMapSmsManager::HandleEventReport(const ObexHeaderSet& aHeader)
-{
-  
-}
-
-void
 BluetoothMapSmsManager::HandleSetMessageStatus(const ObexHeaderSet& aHeader)
 {
   MOZ_ASSERT(NS_IsMainThread());
@@ -1396,7 +1409,7 @@ BluetoothMapSmsManager::HandleSmsMmsPushMessage(const ObexHeaderSet& aHeader)
   nsCString subject;
   bmsg->GetBody(subject);
   
-  AppendNamedValue(data, "subject", subject);
+  AppendNamedValue(data, "messageBody", subject);
 
   nsTArray<RefPtr<VCard>> recipients;
   bmsg->GetRecipients(recipients);
@@ -1408,7 +1421,7 @@ BluetoothMapSmsManager::HandleSmsMmsPushMessage(const ObexHeaderSet& aHeader)
     AppendNamedValue(data, "recipient", recipient);
   }
 
-  bs->DistributeSignal(NS_LITERAL_STRING(MAP_PUSH_MESSAGE_REQ_ID),
+  bs->DistributeSignal(NS_LITERAL_STRING(MAP_SEND_MESSAGE_REQ_ID),
                        NS_LITERAL_STRING(KEY_ADAPTER), data);
 }
 
@@ -1438,9 +1451,9 @@ BluetoothMapSmsManager::SendReply(uint8_t aResponseCode)
 
   
   
-  uint8_t req[3];
+  uint8_t req[kObexRespHeaderSize];
 
-  SendMasObexData(req, aResponseCode, 3);
+  SendMasObexData(req, aResponseCode, kObexRespHeaderSize);
 }
 
 void
