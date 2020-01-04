@@ -256,6 +256,12 @@ public:
   
 
 
+
+  static bool GetHighResolutionDisplayPort(nsIContent* aContent, nsRect* aResult);
+
+  
+
+
   static void RemoveDisplayPort(nsIContent* aContent);
 
   
