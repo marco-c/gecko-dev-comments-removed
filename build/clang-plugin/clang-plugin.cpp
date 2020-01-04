@@ -19,7 +19,6 @@
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/Path.h"
 #include <memory>
-#include <iterator>
 
 #define CLANG_VERSION_FULL (CLANG_VERSION_MAJOR * 100 + CLANG_VERSION_MINOR)
 
@@ -224,8 +223,7 @@ bool isInIgnoredNamespaceForImplicitCtor(const Decl *Declaration) {
          Name == "MacFileUtilities" ||  
          Name == "dwarf2reader" ||      
          Name == "arm_ex_to_module" ||  
-         Name == "testing" ||           
-         Name == "Json";                
+         Name == "testing";             
 }
 
 bool isInIgnoredNamespaceForImplicitConversion(const Decl *Declaration) {
@@ -770,23 +768,11 @@ AST_MATCHER(BinaryOperator, isInSystemHeader) {
 
 
 
-AST_MATCHER(BinaryOperator, isInWhitelistForNaNExpr) {
-  const char* whitelist[] = {
-    "SkScalar.h",
-    "json_writer.cpp"
-  };
-
+AST_MATCHER(BinaryOperator, isInSkScalarDotH) {
   SourceLocation Loc = Node.getOperatorLoc();
   auto &SourceManager = Finder->getASTContext().getSourceManager();
   SmallString<1024> FileName = SourceManager.getFilename(Loc);
-
-  for (auto itr = std::begin(whitelist); itr != std::end(whitelist); itr++) {
-    if (llvm::sys::path::rbegin(FileName)->equals(*itr)) {
-      return true;
-    }
-  }
-
-  return false;
+  return llvm::sys::path::rbegin(FileName)->equals("SkScalar.h");
 }
 
 
@@ -1109,7 +1095,7 @@ DiagnosticsMatcher::DiagnosticsMatcher() {
                     declRefExpr(hasType(qualType((isFloat())))).bind("lhs"))),
                 hasRHS(has(
                     declRefExpr(hasType(qualType((isFloat())))).bind("rhs"))),
-                unless(anyOf(isInSystemHeader(), isInWhitelistForNaNExpr()))))
+                unless(anyOf(isInSystemHeader(), isInSkScalarDotH()))))
           .bind("node"),
       &NaNExpr);
 
