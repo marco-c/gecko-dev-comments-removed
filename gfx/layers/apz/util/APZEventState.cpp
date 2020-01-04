@@ -231,9 +231,12 @@ APZEventState::ProcessLongTap(const nsCOMPtr<nsIPresShell>& aPresShell,
                          nsIDOMMouseEvent::MOZ_SOURCE_TOUCH);
 
   APZES_LOG("Contextmenu event handled: %d\n", eventHandled);
-
-  
-  if (!eventHandled) {
+  if (eventHandled) {
+    
+    
+    mActiveElementManager->ClearActivation();
+  } else {
+    
     LayoutDevicePoint currentPoint =
         APZCCallbackHelper::ApplyCallbackTransform(aPoint, aGuid)
       * widget->GetDefaultScale();
