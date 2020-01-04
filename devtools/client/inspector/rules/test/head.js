@@ -118,20 +118,6 @@ function waitForNEvents(target, eventName, numTimes, useCapture = false) {
 
 
 
-function wait(ms) {
-  let def = promise.defer();
-  content.setTimeout(def.resolve, ms);
-  return def.promise;
-}
-
-
-
-
-
-
-
-
-
 
 function waitForContentMessage(name) {
   info("Expecting message " + name + " from content");
@@ -753,12 +739,11 @@ var setSearchFilter = Task.async(function*(view, searchValue) {
 
 
 
-function reloadPage(inspector) {
+function* reloadPage(inspector, testActor) {
   let onNewRoot = inspector.once("new-root");
-  content.location.reload();
-  return onNewRoot.then(() => {
-    inspector.markup._waitForChildren();
-  });
+  yield testActor.eval("content.location.reload();");
+  yield onNewRoot;
+  yield inspector.markup._waitForChildren();
 }
 
 
