@@ -187,6 +187,60 @@ private:
 
 
 
+  class AChangeEvent: public nsRunnable
+  {
+  protected:
+    enum ChangeEventType
+    {
+      eChangeEventType_Focus,
+      eChangeEventType_Selection,
+      eChangeEventType_Text,
+      eChangeEventType_Position,
+      eChangeEventType_FlushPendingEvents
+    };
+
+    explicit AChangeEvent(IMEContentObserver* aIMEContentObserver)
+      : mIMEContentObserver(aIMEContentObserver)
+    {
+      MOZ_ASSERT(mIMEContentObserver);
+    }
+
+    RefPtr<IMEContentObserver> mIMEContentObserver;
+
+    
+
+
+    bool CanNotifyIME(ChangeEventType aChangeEventType) const;
+
+    
+
+
+    bool IsSafeToNotifyIME(ChangeEventType aChangeEventType) const;
+  };
+
+  class IMENotificationSender: public AChangeEvent
+  {
+  public:
+    explicit IMENotificationSender(IMEContentObserver* aIMEContentObserver)
+      : AChangeEvent(aIMEContentObserver)
+    {
+    }
+    NS_IMETHOD Run() override;
+
+  private:
+    void SendFocusSet();
+    void SendSelectionChange();
+    void SendTextChange();
+    void SendPositionChange();
+  };
+
+  
+  RefPtr<IMENotificationSender> mQueuedSender;
+
+  
+
+
+
   struct FlatTextCache
   {
     
@@ -264,76 +318,7 @@ private:
   bool mNeedsToNotifyIMEOfPositionChange;
   
   
-  
-  
-  
-  bool mIsFlushingPendingNotifications;
-  
-  
   bool mIsHandlingQueryContentEvent;
-
-
-  
-
-
-
-  class AChangeEvent: public nsRunnable
-  {
-  protected:
-    enum ChangeEventType
-    {
-      eChangeEventType_Focus,
-      eChangeEventType_Selection,
-      eChangeEventType_Text,
-      eChangeEventType_Position,
-      eChangeEventType_FlushPendingEvents
-    };
-
-    explicit AChangeEvent(IMEContentObserver* aIMEContentObserver)
-      : mIMEContentObserver(aIMEContentObserver)
-    {
-      MOZ_ASSERT(mIMEContentObserver);
-    }
-
-    RefPtr<IMEContentObserver> mIMEContentObserver;
-
-    
-
-
-    bool CanNotifyIME(ChangeEventType aChangeEventType) const;
-
-    
-
-
-    bool IsSafeToNotifyIME(ChangeEventType aChangeEventType) const;
-  };
-
-  class IMENotificationSender: public AChangeEvent
-  {
-  public:
-    explicit IMENotificationSender(IMEContentObserver* aIMEContentObserver)
-      : AChangeEvent(aIMEContentObserver)
-    {
-    }
-    NS_IMETHOD Run() override;
-
-  private:
-    void SendFocusSet();
-    void SendSelectionChange();
-    void SendTextChange();
-    void SendPositionChange();
-  };
-
-  class AsyncMergeableNotificationsFlusher : public AChangeEvent
-  {
-  public:
-    explicit AsyncMergeableNotificationsFlusher(
-      IMEContentObserver* aIMEContentObserver)
-      : AChangeEvent(aIMEContentObserver)
-    {
-    }
-    NS_IMETHOD Run() override;
-  };
 };
 
 } 
