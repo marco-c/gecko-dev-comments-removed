@@ -22,17 +22,34 @@
 #include "nsTHashtable.h"
 #include "nsHashKeys.h"
 #include "GeckoProfiler.h"
+#include "nsComponentManagerUtils.h"
+#include "nsITimer.h"
 
 using namespace mozilla;
 using namespace mozilla::widget;
 
+#define WAKE_LOCK_LOG(...) MOZ_LOG(GetWinWakeLockLog(), mozilla::LogLevel::Debug, (__VA_ARGS__))
+PRLogModuleInfo* GetWinWakeLockLog() {
+  static PRLogModuleInfo* log = nullptr;
+  if (!log) {
+    log = PR_NewLogModule("WinWakeLock");
+  }
+  return log;
+}
 
 
 
-class WinWakeLockListener final : public nsIDOMMozWakeLockListener {
+
+class WinWakeLockListener final : public nsIDOMMozWakeLockListener
+                                , public nsITimerCallback {
 public:
   NS_DECL_ISUPPORTS;
 
+  NS_IMETHODIMP Notify(nsITimer *timer) override {
+    WAKE_LOCK_LOG("WinWakeLock: periodic timer fired");
+    ResetScreenSaverTimeout();
+    return NS_OK;
+  }
 private:
   ~WinWakeLockListener() {}
 
@@ -43,17 +60,79 @@ private:
     
     
     if (aState.EqualsASCII("locked-foreground")) {
+      WAKE_LOCK_LOG("WinWakeLock: Blocking screen saver");
+      
+      
+      StartTimer();
+      
+      
       
       SetThreadExecutionState(ES_DISPLAY_REQUIRED|ES_CONTINUOUS);
     } else {
+      WAKE_LOCK_LOG("WinWakeLock: Unblocking screen saver");
+      
+      StopTimer();
       
       SetThreadExecutionState(ES_CONTINUOUS);
     }
     return NS_OK;
   }
+
+  void StartTimer() {
+    ResetScreenSaverTimeout();
+    MOZ_ASSERT(!mTimer);
+    if (mTimer) {
+      return;
+    }
+
+    nsresult rv;
+    nsCOMPtr<nsITimer> timer = do_CreateInstance(NS_TIMER_CONTRACTID, &rv);
+    if (NS_FAILED(rv)) {
+      NS_WARNING("Failed to create screen saver timeout reset timer");
+      return;
+    }
+    
+    
+    
+    
+    
+    int32_t timeout = std::max(std::min(50, (int32_t)mScreenSaverTimeout - 10), 1);
+    uint32_t timeoutMs = (uint32_t)timeout * 1000;
+    WAKE_LOCK_LOG("WinWakeLock: Setting periodic timer for %d ms", timeoutMs);
+    rv = timer->InitWithCallback(this,
+                                 timeoutMs,
+                                 nsITimer::TYPE_REPEATING_SLACK);
+    if (NS_FAILED(rv)) {
+      NS_WARNING("Failed to initialize screen saver timeout reset timer");
+      return;
+    }
+
+    mTimer = timer.forget();
+  }
+
+  void StopTimer() {
+    WAKE_LOCK_LOG("WinWakeLock: StopTimer()");
+    if (!mTimer) {
+      return;
+    }
+    mTimer->Cancel();
+    mTimer = nullptr;
+  }
+
+  
+  
+  void ResetScreenSaverTimeout() {
+    if (SystemParametersInfo(SPI_GETSCREENSAVETIMEOUT, 0, &mScreenSaverTimeout, 0)) {
+      SystemParametersInfo(SPI_SETSCREENSAVETIMEOUT, mScreenSaverTimeout, NULL, 0);
+    }
+    WAKE_LOCK_LOG("WinWakeLock: ResetScreenSaverTimeout() mScreenSaverTimeout=%d", mScreenSaverTimeout);
+  }
+
+  UINT mScreenSaverTimeout = 60;
+  nsCOMPtr<nsITimer> mTimer;
 };
 
-NS_IMPL_ISUPPORTS(WinWakeLockListener, nsIDOMMozWakeLockListener)
+NS_IMPL_ISUPPORTS(WinWakeLockListener, nsIDOMMozWakeLockListener, nsITimerCallback)
 StaticRefPtr<WinWakeLockListener> sWakeLockListener;
 
 static void
