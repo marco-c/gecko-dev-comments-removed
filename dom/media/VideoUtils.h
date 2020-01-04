@@ -165,13 +165,6 @@ void ScaleDisplayByAspectRatio(nsIntSize& aDisplay, float aAspectRatio);
 
 
 
-
-int DownmixAudioToStereo(mozilla::AudioDataValue* buffer,
-                         int channels,
-                         uint32_t frames);
-
-
-
 void DownmixStereoToMono(mozilla::AudioDataValue* aBuffer,
                          uint32_t aFrames);
 
