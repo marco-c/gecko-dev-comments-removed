@@ -995,7 +995,14 @@ GeckoChildProcessHost::PerformAsyncLaunchInternal(std::vector<std::string>& aExt
       break;
     case GeckoProcessType_GMPlugin:
       if (!PR_GetEnv("MOZ_DISABLE_GMP_SANDBOX")) {
-        mSandboxBroker.SetSecurityLevelForGMPlugin();
+        
+        
+        
+        
+        bool isWidevine = std::any_of(aExtraOpts.begin(), aExtraOpts.end(),
+          [](const std::string arg) { return arg.find("gmp-widevinecdm") != std::string::npos; });
+        auto level = isWidevine ? SandboxBroker::Restricted : SandboxBroker::LockDown;
+        mSandboxBroker.SetSecurityLevelForGMPlugin(level);
         cmdLine.AppendLooseValue(UTF8ToWide("-sandbox"));
         shouldSandboxCurrentProcess = true;
       }
