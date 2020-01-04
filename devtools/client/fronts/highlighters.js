@@ -1,0 +1,18 @@
+
+
+
+"use strict";
+
+const { FrontClassWithSpec } = require("devtools/shared/protocol");
+const { highlighterSpec } = require("devtools/shared/specs/highlighters");
+
+const HighlighterFront = FrontClassWithSpec(highlighterSpec, {
+  
+  form: function (json) {
+    this.actorID = json.actor;
+    
+    this.traits = json.traits || {};
+  }
+});
+
+exports.HighlighterFront = HighlighterFront;

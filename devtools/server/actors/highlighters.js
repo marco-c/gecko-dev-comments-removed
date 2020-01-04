@@ -8,9 +8,11 @@ const { Ci } = require("chrome");
 
 const EventEmitter = require("devtools/shared/event-emitter");
 const events = require("sdk/event/core");
+const { HighlighterFront } = require("devtools/client/fronts/highlighters");
 const protocol = require("devtools/shared/protocol");
 const { Arg, Option, method, RetVal } = protocol;
 const { isWindowIncluded } = require("devtools/shared/layout/utils");
+const { highlighterSpec } = require("devtools/shared/specs/highlighters");
 const { isXUL, isNodeValid } = require("./highlighters/utils/markup");
 const { SimpleOutlineHighlighter } = require("./highlighters/simple-outline");
 
@@ -79,9 +81,7 @@ exports.register = register;
 
 
 
-var HighlighterActor = exports.HighlighterActor = protocol.ActorClass({
-  typeName: "highlighter",
-
+var HighlighterActor = exports.HighlighterActor = protocol.ActorClassWithSpec(highlighterSpec, {
   initialize: function(inspector, autohide) {
     protocol.Actor.prototype.initialize.call(this, null);
 
@@ -180,31 +180,20 @@ var HighlighterActor = exports.HighlighterActor = protocol.ActorClass({
 
 
 
-  showBoxModel: method(function(node, options = {}) {
+  showBoxModel: function(node, options = {}) {
     if (node && isNodeValid(node.rawNode)) {
       this._highlighter.show(node.rawNode, options);
     } else {
       this._highlighter.hide();
     }
-  }, {
-    request: {
-      node: Arg(0, "domnode"),
-      region: Option(1),
-      hideInfoBar: Option(1),
-      hideGuides: Option(1),
-      showOnly: Option(1),
-      onlyRegionArea: Option(1)
-    }
-  }),
+  },
 
   
 
 
-  hideBoxModel: method(function() {
+  hideBoxModel: function() {
     this._highlighter.hide();
-  }, {
-    request: {}
-  }),
+  },
 
   
 
@@ -239,7 +228,7 @@ var HighlighterActor = exports.HighlighterActor = protocol.ActorClass({
   _hoveredNode: null,
   _currentNode: null,
 
-  pick: method(function() {
+  pick: function() {
     if (this._isPicking) {
       return null;
     }
@@ -357,7 +346,7 @@ var HighlighterActor = exports.HighlighterActor = protocol.ActorClass({
     this._startPickerListeners();
 
     return null;
-  }),
+  },
 
   _findAndAttachElement: function(event) {
     
@@ -397,22 +386,13 @@ var HighlighterActor = exports.HighlighterActor = protocol.ActorClass({
     events.emit(this._inspector.walker, "highlighter-hide");
   },
 
-  cancelPick: method(function() {
+  cancelPick: function() {
     if (this._isPicking) {
       this._highlighter.hide();
       this._stopPickerListeners();
       this._isPicking = false;
       this._hoveredNode = null;
     }
-  })
-});
-
-var HighlighterFront = protocol.FrontClass(HighlighterActor, {
-  
-  form: function(json) {
-    this.actorID = json.actor;
-    
-    this.traits = json.traits || {};
   }
 });
 
