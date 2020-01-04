@@ -759,8 +759,11 @@ nsIOService::NewChannelFromURIWithProxyFlagsInternal(nsIURI* aURI,
             rv = pph->NewProxiedChannel(aURI, nullptr, aProxyFlags, aProxyURI,
                                         getter_AddRefs(channel));
             NS_ENSURE_SUCCESS(rv, rv);
+
             
-            channel = new nsSecCheckWrapChannel(channel, aLoadInfo);
+            
+            
+            channel = nsSecCheckWrapChannel::MaybeWrap(channel, aLoadInfo);
         }
     }
     else {
@@ -771,7 +774,9 @@ nsIOService::NewChannelFromURIWithProxyFlagsInternal(nsIURI* aURI,
             rv = handler->NewChannel(aURI, getter_AddRefs(channel));
             NS_ENSURE_SUCCESS(rv, rv);
             
-            channel = new nsSecCheckWrapChannel(channel, aLoadInfo);
+            
+            
+            channel = nsSecCheckWrapChannel::MaybeWrap(channel, aLoadInfo);
         }
     }
 
