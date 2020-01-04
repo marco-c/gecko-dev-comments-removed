@@ -96,6 +96,19 @@ gfx::ScaleFactor<SourceUnits, NewTargetUnits> ViewTargetAs(
 
 
 
+
+
+
+template <class TargetMatrix, class SourceMatrixSourceUnits, class SourceMatrixTargetUnits>
+TargetMatrix ViewAs(
+    const gfx::Matrix4x4Typed<SourceMatrixSourceUnits, SourceMatrixTargetUnits>& aMatrix,
+    PixelCastJustification) {
+  return TargetMatrix::FromUnknownMatrix(aMatrix.ToUnknownMatrix());
+}
+
+
+
+
 template <class TargetUnits>
 gfx::PointTyped<TargetUnits> ViewAs(const gfxPoint& aPoint) {
   return gfx::PointTyped<TargetUnits>(aPoint.x, aPoint.y);
