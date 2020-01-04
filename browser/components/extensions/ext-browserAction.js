@@ -23,8 +23,6 @@ const XUL_NS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
 
 var browserActionMap = new WeakMap();
 
-global.browserActionOf = browserActionOf;
-
 
 
 function BrowserAction(options, extension) {
