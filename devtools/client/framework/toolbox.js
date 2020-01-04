@@ -1615,6 +1615,7 @@ Toolbox.prototype = {
 
   showFramesMenu: function (event) {
     let menu = new Menu();
+    let target = event.target;
 
     
     this.frameMap.forEach(frame => {
@@ -1632,14 +1633,22 @@ Toolbox.prototype = {
       }));
     });
 
+    menu.once("open").then(() => {
+      target.setAttribute("open", "true");
+    });
+
+    menu.once("close").then(() => {
+      target.removeAttribute("open");
+    });
+
     
     
     
     
     
-    let rect = event.target.getBoundingClientRect();
-    let screenX = event.target.ownerDocument.defaultView.mozInnerScreenX;
-    let screenY = event.target.ownerDocument.defaultView.mozInnerScreenY;
+    let rect = target.getBoundingClientRect();
+    let screenX = target.ownerDocument.defaultView.mozInnerScreenX;
+    let screenY = target.ownerDocument.defaultView.mozInnerScreenY;
     menu.popup(rect.left + screenX, rect.bottom + screenY, this);
 
     return menu;

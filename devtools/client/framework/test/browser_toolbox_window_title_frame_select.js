@@ -12,6 +12,7 @@
 
 
 
+
 var {Toolbox} = require("devtools/client/framework/toolbox");
 const URL = URL_ROOT + "browser_toolbox_window_title_frame_select_page.html";
 const IFRAME_URL = URL_ROOT + "browser_toolbox_window_title_changes_page.html";
@@ -35,9 +36,13 @@ add_task(function* () {
   yield waitForTick();
 
   
+  
   let btn = toolbox.doc.getElementById("command-button-frames");
+  ok(!btn.getAttribute("open"), "The open attribute must not be present");
   let menu = toolbox.showFramesMenu({target: btn});
   yield once(menu, "open");
+
+  is(btn.getAttribute("open"), "true", "The open attribute must be set");
 
   
   let frames = menu.items;
