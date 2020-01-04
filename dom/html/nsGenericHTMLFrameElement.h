@@ -113,6 +113,11 @@ protected:
   bool mBrowserFrameListenersRegistered;
   bool mFrameLoaderCreationDisallowed;
 
+  
+  
+  
+  bool mFullscreenFlag = false;
+
 private:
   void GetManifestURLByType(nsIAtom *aAppType, nsAString& aOut);
 };

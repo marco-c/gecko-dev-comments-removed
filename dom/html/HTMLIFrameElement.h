@@ -184,6 +184,13 @@ public:
   
   
 
+  
+  
+  
+  
+  bool FullscreenFlag() const { return mFullscreenFlag; }
+  void SetFullscreenFlag(bool aValue) { mFullscreenFlag = aValue; }
+
 protected:
   virtual ~HTMLIFrameElement();
 

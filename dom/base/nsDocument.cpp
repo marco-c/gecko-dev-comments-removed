@@ -155,6 +155,7 @@
 #include "nsHtml5TreeOpExecutor.h"
 #include "mozilla/dom/HTMLLinkElement.h"
 #include "mozilla/dom/HTMLMediaElement.h"
+#include "mozilla/dom/HTMLIFrameElement.h"
 #include "mozilla/dom/HTMLImageElement.h"
 #include "mozilla/dom/MediaSource.h"
 
@@ -11239,6 +11240,16 @@ nsDocument::RestorePreviousFullScreenState()
     nsDocument* theDoc = static_cast<nsDocument*>(doc);
     MOZ_ASSERT(!theDoc->mFullScreenStack.IsEmpty(),
                "Ancestor of fullscreen document must also be in fullscreen");
+    if (doc != this) {
+      Element* top = theDoc->FullScreenStackTop();
+      if (top->IsHTMLElement(nsGkAtoms::iframe)) {
+        if (static_cast<HTMLIFrameElement*>(top)->FullscreenFlag()) {
+          
+          
+          break;
+        }
+      }
+    }
     exitDocs.AppendElement(theDoc);
     if (theDoc->mFullScreenStack.Length() > 1) {
       break;
@@ -11361,6 +11372,10 @@ ClearFullscreenStateOnElement(Element* aElement)
   aElement->DeleteProperty(nsGkAtoms::vr_state);
   
   EventStateManager::SetFullScreenState(aElement, false);
+  
+  if (aElement->IsHTMLElement(nsGkAtoms::iframe)) {
+    static_cast<HTMLIFrameElement*>(aElement)->SetFullscreenFlag(false);
+  }
 }
 
 void
@@ -11853,6 +11868,10 @@ nsDocument::ApplyFullscreen(const FullscreenRequest& aRequest)
   
   DebugOnly<bool> x = FullScreenStackPush(elem);
   NS_ASSERTION(x, "Full-screen state of requesting doc should always change!");
+  
+  if (elem->IsHTMLElement(nsGkAtoms::iframe)) {
+    static_cast<HTMLIFrameElement*>(elem)->SetFullscreenFlag(true);
+  }
   changed.AppendElement(this);
 
   
