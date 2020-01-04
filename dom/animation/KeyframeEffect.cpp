@@ -2022,30 +2022,42 @@ KeyframeEffectReadOnly::CanAnimateTransformOnCompositor(
   return true;
 }
 
- bool
-KeyframeEffectReadOnly::CanAnimatePropertyOnCompositor(
-  const nsIFrame* aFrame,
-  nsCSSProperty aProperty)
+bool
+KeyframeEffectReadOnly::ShouldBlockCompositorAnimations(const nsIFrame*
+                                                          aFrame) const
 {
+  
+  
+  
+  
+  
+  MOZ_ASSERT(mAnimation && mAnimation->IsPlaying());
+
   bool shouldLog = nsLayoutUtils::IsAnimationLoggingEnabled();
 
-  if (IsGeometricProperty(aProperty)) {
-    if (shouldLog) {
-      nsCString message;
-      message.AppendLiteral("Performance warning: Async animation of "
-        "'transform' or 'opacity' not possible due to animation of geometric"
-        "properties on the same element");
-      AnimationUtils::LogAsyncAnimationFailure(message, aFrame->GetContent());
+  for (const AnimationProperty& property : mProperties) {
+    
+    if (IsGeometricProperty(property.mProperty)) {
+      if (shouldLog) {
+        nsCString message;
+        message.AppendLiteral("Performance warning: Async animation of "
+          "'transform' or 'opacity' not possible due to animation of geometric"
+          "properties on the same element");
+        AnimationUtils::LogAsyncAnimationFailure(message, aFrame->GetContent());
+      }
+      return true;
     }
-    return false;
-  }
-  if (aProperty == eCSSProperty_transform) {
-    if (!CanAnimateTransformOnCompositor(aFrame,
-          shouldLog ? aFrame->GetContent() : nullptr)) {
-      return false;
+
+    
+    if (property.mProperty == eCSSProperty_transform) {
+      if (!CanAnimateTransformOnCompositor(aFrame,
+            shouldLog ? aFrame->GetContent() : nullptr)) {
+        return true;
+      }
     }
   }
-  return true;
+
+  return false;
 }
 
 } 

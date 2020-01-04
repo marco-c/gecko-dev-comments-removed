@@ -288,8 +288,21 @@ public:
   bool CanThrottle() const;
 
   
-  static bool CanAnimatePropertyOnCompositor(const nsIFrame* aFrame,
-                                             nsCSSProperty aProperty);
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  bool ShouldBlockCompositorAnimations(const nsIFrame* aFrame) const;
+
   nsIDocument* GetRenderedDocument() const;
   nsPresContext* GetPresContext() const;
 
