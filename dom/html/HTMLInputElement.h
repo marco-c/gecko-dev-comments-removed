@@ -270,6 +270,9 @@ public:
   static void InitUploadLastDir();
   static void DestroyUploadLastDir();
 
+  
+  static bool ValueAsDateEnabled(JSContext* cx, JSObject* obj);
+
   void MaybeLoadImage();
 
   void SetSelectionProperties(const nsTextEditorState::SelectionProperties& aProps)
@@ -1246,10 +1249,7 @@ protected:
   
 
 
-  static bool IsExperimentalMobileType(uint8_t aType)
-  {
-    return aType == NS_FORM_INPUT_DATE || aType == NS_FORM_INPUT_TIME;
-  }
+  static bool IsExperimentalMobileType(uint8_t aType);
 
   
 
@@ -1276,6 +1276,7 @@ protected:
   };
   nsresult InitFilePicker(FilePickerType aType);
   nsresult InitColorPicker();
+  nsresult InitDatePicker();
 
   
 
