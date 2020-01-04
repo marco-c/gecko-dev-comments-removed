@@ -177,9 +177,7 @@ WebGLExtensionDisjointTimerQuery::GetQueryEXT(JSContext* cx, GLenum target,
       return;
     }
     GLint bits = 0;
-    if (mContext->HasTimestampBits()) {
-      mContext->GL()->fGetQueryiv(target, pname, &bits);
-    }
+    mContext->GL()->fGetQueryiv(target, pname, &bits);
     retval.set(JS::Int32Value(int32_t(bits)));
     break;
   }
@@ -244,7 +242,11 @@ WebGLExtensionDisjointTimerQuery::IsSupported(const WebGLContext* webgl)
   gl::GLContext* gl = webgl->GL();
   return gl->IsSupported(gl::GLFeature::query_objects) &&
          gl->IsSupported(gl::GLFeature::get_query_object_i64v) &&
-         gl->IsSupported(gl::GLFeature::query_counter); 
+         gl->IsSupported(gl::GLFeature::query_counter) && 
+         gl->IsSupported(gl::GLFeature::sync); 
+  
+  
+  
 }
 
 void
