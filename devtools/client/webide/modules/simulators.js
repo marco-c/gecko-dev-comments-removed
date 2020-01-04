@@ -139,8 +139,16 @@ var Simulators = {
     if (matching.length > 0) {
       return promise.resolve();
     }
-    let name = addon.name.replace(" Simulator", "");
-    return this.add(new Simulator({name}, addon), silently);
+    let options = {};
+    options.name = addon.name.replace(" Simulator", "");
+    
+    
+    let type = this.simulatorAddonVersion(addon).split("_")[2];
+    if (type) {
+      
+      options.type = (type === "tv" ? "television" : type);
+    }
+    return this.add(new Simulator(options, addon), silently);
   },
 
   
@@ -202,8 +210,25 @@ var Simulators = {
   
 
 
+
+
+
+
+
+  simulatorAddonVersion(addon) {
+    let match = SimulatorRegExp.exec(addon.id);
+    if (!match) {
+      return null;
+    }
+    let version = match[1];
+    return version || "Unknown";
+  },
+
+  
+
+
   isSimulatorAddon(addon) {
-    return SimulatorRegExp.exec(addon.id);
+    return !!this.simulatorAddonVersion(addon);
   },
 
   emitUpdated() {
@@ -250,7 +275,7 @@ function Simulator(options = {}, addon = null) {
   this.options = options;
 
   
-  let defaults = this._defaults;
+  let defaults = this.defaults;
   for (let option in defaults) {
     if (this.options[option] == null) {
       this.options[option] = defaults[option];
@@ -261,14 +286,24 @@ Simulator.prototype = {
 
   
   _defaults: {
-    width: 320,
-    height: 570,
-    pixelRatio: 1.5
+    
+    phone: {
+      width: 320,
+      height: 570,
+      pixelRatio: 1.5
+    },
+    
+    television: {
+      width: 1280,
+      height: 720,
+      pixelRatio: 1,
+    }
   },
+  _defaultType: "phone",
 
   restoreDefaults() {
+    let defaults = this.defaults;
     let options = this.options;
-    let defaults = this._defaults;
     for (let option in defaults) {
       options[option] = defaults[option];
     }
@@ -307,12 +342,21 @@ Simulator.prototype = {
     return process.kill();
   },
 
+  get defaults() {
+    let defaults = this._defaults;
+    return defaults[this.type] || defaults[this._defaultType];
+  },
+
   get id() {
     return this.name;
   },
 
   get name() {
     return this.options.name;
+  },
+
+  get type() {
+    return this.options.type || this._defaultType;
   },
 
   get version() {
