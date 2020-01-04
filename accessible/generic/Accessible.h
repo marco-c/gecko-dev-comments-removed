@@ -497,11 +497,6 @@ public:
   
 
 
-  virtual bool CanHaveAnonChildren();
-
-  
-
-
   virtual bool IsAcceptableChild(Accessible* aPossibleChild) const { return true; }
 
   
@@ -934,6 +929,12 @@ public:
 
 
 
+  bool NoXBLKids() { return mStateFlags & eNoXBLKids; }
+
+  
+
+
+
   bool HasNameDependentParent() const
     { return mContextFlags & eHasNameDependentParent; }
 
@@ -1021,8 +1022,9 @@ protected:
     eIgnoreDOMUIEvent = 1 << 7, 
     eSurvivingInUpdate = 1 << 8, 
     eRelocated = 1 << 9, 
+    eNoXBLKids = 1 << 10, 
 
-    eLastStateFlag = eRelocated
+    eLastStateFlag = eNoXBLKids
   };
 
   
@@ -1137,7 +1139,7 @@ protected:
   int32_t mIndexInParent;
 
   static const uint8_t kChildrenFlagsBits = 2;
-  static const uint8_t kStateFlagsBits = 10;
+  static const uint8_t kStateFlagsBits = 11;
   static const uint8_t kContextFlagsBits = 2;
   static const uint8_t kTypeBits = 6;
   static const uint8_t kGenericTypesBits = 14;

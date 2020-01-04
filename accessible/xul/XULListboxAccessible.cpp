@@ -544,6 +544,10 @@ XULListitemAccessible::
                                       nsGkAtoms::checkbox,
                                       eCaseMatters);
   mType = eXULListItemType;
+
+  
+  
+  mStateFlags &= ~eNoXBLKids;
 }
 
 XULListitemAccessible::~XULListitemAccessible()
@@ -666,13 +670,6 @@ XULListitemAccessible::ActionNameAt(uint8_t aIndex, nsAString& aName)
     else
       aName.AssignLiteral("check");
   }
-}
-
-bool
-XULListitemAccessible::CanHaveAnonChildren()
-{
-  
-  return true;
 }
 
 

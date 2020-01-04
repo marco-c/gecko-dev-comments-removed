@@ -31,6 +31,15 @@ XULComboboxAccessible::
     mGenericTypes |= eAutoComplete;
   else
     mGenericTypes |= eCombobox;
+
+  
+  
+  
+  if (!mContent->NodeInfo()->Equals(nsGkAtoms::textbox, kNameSpaceID_XUL) &&
+      !mContent->AttrValueIs(kNameSpaceID_None, nsGkAtoms::editable,
+                             nsGkAtoms::_true, eIgnoreCase)) {
+    mStateFlags |= eNoXBLKids;
+  }
 }
 
 role
@@ -94,23 +103,6 @@ XULComboboxAccessible::Value(nsString& aValue)
   nsCOMPtr<nsIDOMXULMenuListElement> menuList(do_QueryInterface(mContent));
   if (menuList)
     menuList->GetLabel(aValue);
-}
-
-bool
-XULComboboxAccessible::CanHaveAnonChildren()
-{
-  if (mContent->NodeInfo()->Equals(nsGkAtoms::textbox, kNameSpaceID_XUL) ||
-      mContent->AttrValueIs(kNameSpaceID_None, nsGkAtoms::editable,
-                            nsGkAtoms::_true, eIgnoreCase)) {
-    
-    
-    
-    return true;
-  }
-
-  
-  
-  return false;
 }
 
 uint8_t

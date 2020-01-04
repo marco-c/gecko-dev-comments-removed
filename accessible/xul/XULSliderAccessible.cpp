@@ -23,7 +23,7 @@ XULSliderAccessible::
   XULSliderAccessible(nsIContent* aContent, DocAccessible* aDoc) :
   AccessibleWrap(aContent, aDoc)
 {
-  mStateFlags |= eHasNumericValue;
+  mStateFlags |= eHasNumericValue | eNoXBLKids;
 }
 
 
@@ -125,13 +125,6 @@ XULSliderAccessible::SetCurValue(double aValue)
     return true;
 
   return SetSliderAttr(nsGkAtoms::curpos, aValue);
-}
-
-bool
-XULSliderAccessible::CanHaveAnonChildren()
-{
-  
-  return false;
 }
 
 
