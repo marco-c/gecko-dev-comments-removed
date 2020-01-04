@@ -521,10 +521,7 @@ KeyframeUtils::ApplySpacing(nsTArray<Keyframe>& aKeyframes,
 
     
     if (aSpacingMode == SpacingMode::distribute) {
-      
-      
-      DistributeRange(Range<Keyframe>(keyframeA.get(),
-                                      keyframeB - keyframeA + 1));
+      DistributeRange(Range<Keyframe>(keyframeA, keyframeB + 1));
     } else {
       
       
@@ -546,18 +543,14 @@ KeyframeUtils::ApplySpacing(nsTArray<Keyframe>& aKeyframes,
       }
       
       
-      DistributeRange(Range<Keyframe>(keyframeA.get(),
-                                      keyframeB - keyframeA + 1),
-                      Range<Keyframe>((keyframeA + 1).get(),
-                                      pacedA - keyframeA));
-      DistributeRange(Range<Keyframe>(keyframeA.get(),
-                                      keyframeB - keyframeA + 1),
-                      Range<Keyframe>(pacedB.get(),
-                                      keyframeB - pacedB));
+      DistributeRange(Range<Keyframe>(keyframeA, keyframeB + 1),
+                      Range<Keyframe>(keyframeA + 1, pacedA + 1));
+      DistributeRange(Range<Keyframe>(keyframeA, keyframeB + 1),
+                      Range<Keyframe>(pacedB, keyframeB));
       
       
       
-      PaceRange(Range<Keyframe>(pacedA.get(), pacedB - pacedA + 1),
+      PaceRange(Range<Keyframe>(pacedA, pacedB + 1),
                 Range<double>(&cumulativeDistances[pacedA - begin],
                               pacedB - pacedA + 1));
       
@@ -574,7 +567,7 @@ KeyframeUtils::ApplySpacing(nsTArray<Keyframe>& aKeyframes,
                end->mComputedOffset == Keyframe::kComputedOffsetNotSet) {
           ++end;
         }
-        DistributeRange(Range<Keyframe>(start.get(), end - start + 1));
+        DistributeRange(Range<Keyframe>(start, end + 1));
         frame = end;
       }
     }
@@ -1487,9 +1480,8 @@ DistributeRange(const Range<Keyframe>& aSpacingRange)
 {
   
   DistributeRange(aSpacingRange,
-                  Range<Keyframe>((aSpacingRange.start() + 1).get(),
-                                  aSpacingRange.end() - aSpacingRange.start()
-                                    - 2));
+                  Range<Keyframe>(aSpacingRange.start() + 1,
+                                  aSpacingRange.end() - 1));
 }
 
 
