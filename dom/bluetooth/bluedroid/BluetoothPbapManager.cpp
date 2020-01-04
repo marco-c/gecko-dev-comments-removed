@@ -925,7 +925,7 @@ BluetoothPbapManager::ReplyToGet(uint16_t aPhonebookSize)
       
       index += AppendHeaderBody(&res[index],
                                 remainingPacketSize,
-                                (uint8_t*) buf.forget(),
+                                reinterpret_cast<uint8_t*>(buf.get()),
                                 numRead);
 
       opcode = ObexResponseCode::Continue;
