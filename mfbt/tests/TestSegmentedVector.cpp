@@ -120,28 +120,43 @@ struct NonPOD
 
 void TestConstructorsAndDestructors()
 {
+  size_t defaultCtorCalls = 0;
+  size_t explicitCtorCalls = 0;
+  size_t copyCtorCalls = 0;
+  size_t moveCtorCalls = 0;
+  size_t dtorCalls = 0;
+
   {
     
     NonPOD x(1);                          
+    explicitCtorCalls++;
     SegmentedVector<NonPOD, 64, InfallibleAllocPolicy> v;
                                           
     MOZ_RELEASE_ASSERT(v.IsEmpty());
     gDummy = v.Append(x);                 
+    copyCtorCalls++;
     NonPOD y(1);                          
+    explicitCtorCalls++;
     gDummy = v.Append(mozilla::Move(y));  
+    moveCtorCalls++;
     NonPOD z(1);                          
+    explicitCtorCalls++;
     v.InfallibleAppend(mozilla::Move(z)); 
+    moveCtorCalls++;
     v.PopLast();                          
-    MOZ_RELEASE_ASSERT(gNumDtors == 1);
+    dtorCalls++;
+    MOZ_RELEASE_ASSERT(gNumDtors == dtorCalls);
     v.Clear();                            
+    dtorCalls += 2;
 
-    MOZ_RELEASE_ASSERT(gNumDefaultCtors  == 0);
-    MOZ_RELEASE_ASSERT(gNumExplicitCtors == 3);
-    MOZ_RELEASE_ASSERT(gNumCopyCtors     == 1);
-    MOZ_RELEASE_ASSERT(gNumMoveCtors     == 2);
-    MOZ_RELEASE_ASSERT(gNumDtors         == 3);
+    MOZ_RELEASE_ASSERT(gNumDefaultCtors  == defaultCtorCalls);
+    MOZ_RELEASE_ASSERT(gNumExplicitCtors == explicitCtorCalls);
+    MOZ_RELEASE_ASSERT(gNumCopyCtors     == copyCtorCalls);
+    MOZ_RELEASE_ASSERT(gNumMoveCtors     == moveCtorCalls);
+    MOZ_RELEASE_ASSERT(gNumDtors         == dtorCalls);
   }                                       
-  MOZ_RELEASE_ASSERT(gNumDtors == 6);
+  dtorCalls += 3;
+  MOZ_RELEASE_ASSERT(gNumDtors == dtorCalls);
 }
 
 struct A { int mX; int mY; };
