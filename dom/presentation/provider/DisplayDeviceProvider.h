@@ -15,7 +15,7 @@
 #include "nsIObserver.h"
 #include "nsIPresentationDeviceProvider.h"
 #include "nsIPresentationLocalDevice.h"
-#include "nsITCPPresentationServer.h"
+#include "nsIPresentationControlService.h"
 #include "nsIWindowWatcher.h"
 #include "nsString.h"
 #include "nsTArray.h"
@@ -38,7 +38,7 @@ class DisplayDeviceProviderWrappedListener;
 
 class DisplayDeviceProvider final : public nsIObserver
                                   , public nsIPresentationDeviceProvider
-                                  , public nsITCPPresentationServerListener
+                                  , public nsIPresentationControlServerListener
                                   , public SupportsWeakPtr<DisplayDeviceProvider>
 {
 private:
@@ -89,7 +89,7 @@ public:
   NS_DECL_ISUPPORTS
   NS_DECL_NSIOBSERVER
   NS_DECL_NSIPRESENTATIONDEVICEPROVIDER
-  NS_DECL_NSITCPPRESENTATIONSERVERLISTENER
+  NS_DECL_NSIPRESENTATIONCONTROLSERVERLISTENER
   
   MOZ_DECLARE_WEAKREFERENCE_TYPENAME(DisplayDeviceProvider)
 
@@ -114,7 +114,7 @@ private:
   
   
   nsWeakPtr mDeviceListener = nullptr;
-  nsCOMPtr<nsITCPPresentationServer> mPresentationServer;
+  nsCOMPtr<nsIPresentationControlService> mPresentationService;
   
   
   RefPtr<DisplayDeviceProviderWrappedListener> mWrappedListener;
