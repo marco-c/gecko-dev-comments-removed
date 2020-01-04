@@ -35,7 +35,7 @@ function openChatViaWorkerMessage(port, data, callback) {
   let chatbar = getChatBar();
   let numExpected = chatbar.childElementCount + 1;
   port.postMessage({topic: "test-worker-chat", data: data});
-  waitForCondition(function() chatbar.childElementCount == numExpected,
+  waitForCondition(() => chatbar.childElementCount == numExpected,
                    function() {
                       
                       
@@ -107,7 +107,7 @@ function test() {
       
       
       tab.linkedBrowser.contentDocument.getElementById("theinput").focus();
-      waitForCondition(function() isTabFocused(), cb, "tab should have focus");
+      waitForCondition(() => isTabFocused(), cb, "tab should have focus");
     }
     let postSubTest = function(cb) {
       Task.spawn(closeAllChats).then(cb);
@@ -144,7 +144,7 @@ var tests = {
           ok(isTabFocused(), "tab should still be focused");
           
           openChatViaUser();
-          waitForCondition(function() isChatFocused(chatbar.selectedChat),
+          waitForCondition(() => isChatFocused(chatbar.selectedChat),
                            function() {
             is(chatbar.childElementCount, 1, "still exactly 1 chat open");
             is(chatbar.selectedChat, chatbar.firstElementChild, "chat should be selected");
@@ -162,7 +162,7 @@ var tests = {
       let chatbar = getChatBar();
       openChatViaUser();
       ok(chatbar.firstElementChild, "chat opened");
-      waitForCondition(function() isChatFocused(chatbar.selectedChat),
+      waitForCondition(() => isChatFocused(chatbar.selectedChat),
                        function() {
         is(chatbar.selectedChat, chatbar.firstElementChild, "chat is selected");
         next();
