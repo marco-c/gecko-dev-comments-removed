@@ -89,13 +89,8 @@ JSObject2WrappedJSMap::UpdateWeakPointersAfterGC(XPCJSRuntime* runtime)
 {
     
     
-    
-    
-    
-    
 
-    nsTArray<nsXPCWrappedJS*>& dying = runtime->WrappedJSToReleaseArray();
-
+    nsTArray<RefPtr<nsXPCWrappedJS>> dying;
     for (Map::Enum e(mTable); !e.empty(); e.popFront()) {
         nsXPCWrappedJS* wrapper = e.front().value();
         MOZ_ASSERT(wrapper, "found a null JS wrapper!");
@@ -117,7 +112,7 @@ JSObject2WrappedJSMap::UpdateWeakPointersAfterGC(XPCJSRuntime* runtime)
             if (wrapper->IsSubjectToFinalization()) {
                 wrapper->UpdateObjectPointerAfterGC();
                 if (!wrapper->GetJSObjectPreserveColor())
-                    dying.AppendElement(wrapper);
+                    dying.AppendElement(dont_AddRef(wrapper));
             }
             wrapper = wrapper->GetNextWrapper();
         }
