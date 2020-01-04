@@ -124,11 +124,6 @@ public:
   TextureClientPool* GetTexturePool(gfx::SurfaceFormat aFormat, TextureFlags aFlags);
 
   
-  void ReturnTextureClientDeferred(TextureClient& aClient);
-  void ReturnTextureClient(TextureClient& aClient);
-  void ReportClientLost(TextureClient& aClient);
-
-  
 
 
 
