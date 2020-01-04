@@ -13491,6 +13491,11 @@ public:
   {
     nsAutoPopupStatePusher popupStatePusher(mPopupState);
 
+    
+    
+    
+    
+    
     AutoJSAPI jsapi;
     if (mIsTrusted || jsapi.Init(mContent->OwnerDoc()->GetScopeObject())) {
       mHandler->OnLinkClickSync(mContent, mURI,

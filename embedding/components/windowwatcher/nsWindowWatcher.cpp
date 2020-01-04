@@ -630,6 +630,9 @@ nsWindowWatcher::OpenWindowInternal(mozIDOMWindowProxy* aParent,
   bool isCallerChrome =
     nsContentUtils::LegacyIsCallerChromeOrNativeCode() && !openedFromRemoteTab;
 
+  
+  
+  
   dom::AutoJSAPI jsapiChromeGuard;
 
   bool windowTypeIsChrome =
