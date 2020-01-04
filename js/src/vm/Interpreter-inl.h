@@ -205,6 +205,10 @@ FetchName(JSContext* cx, HandleObject obj, HandleObject obj2, HandlePropertyName
     }
 
     
+    if (name == cx->names().dotThis)
+        return true;
+
+    
     
     return CheckUninitializedLexical(cx, name, vp);
 }

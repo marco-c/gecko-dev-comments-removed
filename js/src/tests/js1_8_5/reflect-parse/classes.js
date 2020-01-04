@@ -133,9 +133,6 @@ function testClasses() {
     assertClass("class NAME extends null { }", [], lit(null));
 
     
-    assertClassError("class NAME extends null { constructor() { (() => 0); }", InternalError);
-
-    
     assertClassError("class NAME extends null {  constructor() 1 }", SyntaxError);
 
     
