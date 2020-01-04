@@ -349,6 +349,19 @@ description#identity-popup-content-verifier,
   background-image: url(chrome://browser/skin/controlcenter/permissions.svg);
 }
 
+#identity-popup-permissions-headline {
+  
+
+  min-height: 24px;
+}
+
+#identity-popup-permission-list {
+  
+
+
+  margin-inline-start: calc(-1em - 16px);
+}
+
 #identity-popup-permission-list menulist {
   min-width: 60px;
 }
@@ -361,8 +374,12 @@ description#identity-popup-content-verifier,
   display: none;
 }
 
-.identity-popup-permission-label {
-  margin-inline-start: 0;
-  word-wrap: break-word;
+.identity-popup-permission-icon {
+  width: 16px;
+  height: 16px;
 }
 
+.identity-popup-permission-label {
+  margin-inline-start: 1em;
+  word-wrap: break-word;
+}
