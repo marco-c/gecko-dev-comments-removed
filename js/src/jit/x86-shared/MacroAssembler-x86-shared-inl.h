@@ -157,6 +157,17 @@ MacroAssembler::neg32(Register reg)
     negl(reg);
 }
 
+void
+MacroAssembler::negateFloat(FloatRegister reg)
+{
+    ScratchFloat32Scope scratch(*this);
+    vpcmpeqw(scratch, scratch, scratch);
+    vpsllq(Imm32(31), scratch, scratch);
+
+    
+    vxorps(scratch, reg, reg); 
+}
+
 
 
 
