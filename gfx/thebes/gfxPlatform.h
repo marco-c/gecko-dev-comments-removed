@@ -37,6 +37,7 @@ class nsIURI;
 class nsIAtom;
 class nsIObserver;
 class SRGBOverrideObserver;
+class gfxTextPerfMetrics;
 
 namespace mozilla {
 namespace gl {
@@ -332,11 +333,11 @@ public:
     
 
 
-    virtual gfxFontGroup
-    *CreateFontGroup(const mozilla::FontFamilyList& aFontFamilyList,
-                     const gfxFontStyle *aStyle,
-                     gfxUserFontSet *aUserFontSet) = 0;
-                                          
+    virtual gfxFontGroup*
+    CreateFontGroup(const mozilla::FontFamilyList& aFontFamilyList,
+                    const gfxFontStyle *aStyle,
+                    gfxTextPerfMetrics* aTextPerf,
+                    gfxUserFontSet *aUserFontSet) = 0;
                                           
     
 

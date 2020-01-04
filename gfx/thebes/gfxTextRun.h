@@ -732,8 +732,9 @@ public:
     static void Shutdown(); 
 
     gfxFontGroup(const mozilla::FontFamilyList& aFontFamilyList,
-                 const gfxFontStyle *aStyle,
-                 gfxUserFontSet *aUserFontSet = nullptr);
+                 const gfxFontStyle* aStyle,
+                 gfxTextPerfMetrics* aTextPerf,
+                 gfxUserFontSet* aUserFontSet = nullptr);
 
     virtual ~gfxFontGroup();
 
@@ -844,7 +845,6 @@ public:
 
     
     gfxTextPerfMetrics *GetTextPerfMetrics() { return mTextPerf; }
-    void SetTextPerfMetrics(gfxTextPerfMetrics *aTextPerf) { mTextPerf = aTextPerf; }
 
     
     void SetUserFontSet(gfxUserFontSet *aUserFontSet);
