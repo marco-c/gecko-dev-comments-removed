@@ -5339,11 +5339,14 @@ nsLayoutUtils::ComputeSizeWithIntrinsicDimensions(WritingMode aWM,
   bool isFlexItem = aFrame->IsFlexItem();
   bool isInlineFlexItem = false;
 
+  Maybe<nsStyleCoord> imposedMainSizeStyleCoord;
+
+  
+  
+  
+  
+  
   if (isFlexItem) {
-    
-    
-    
-    
     uint32_t flexDirection =
       aFrame->GetParent()->StylePosition()->mFlexDirection;
     isInlineFlexItem =
@@ -5352,20 +5355,42 @@ nsLayoutUtils::ComputeSizeWithIntrinsicDimensions(WritingMode aWM,
 
     
     
-    const nsStyleCoord* flexBasis = &(stylePos->mFlexBasis);
-    if (flexBasis->GetUnit() != eStyleUnit_Auto) {
+    
+    FrameProperties props = aFrame->Properties();
+    bool didImposeMainSize;
+    nscoord imposedMainSize =
+      props.Get(nsIFrame::FlexItemMainSizeOverride(), &didImposeMainSize);
+    if (didImposeMainSize) {
+      imposedMainSizeStyleCoord.emplace(imposedMainSize,
+                                        nsStyleCoord::CoordConstructor);
       if (isInlineFlexItem) {
-        inlineStyleCoord = flexBasis;
+        inlineStyleCoord = imposedMainSizeStyleCoord.ptr();
       } else {
-        
-        
-        
-        
-        
-        
-        
-        if (flexBasis->GetUnit() != eStyleUnit_Enumerated) {
-          blockStyleCoord = flexBasis;
+        blockStyleCoord = imposedMainSizeStyleCoord.ptr();
+      }
+
+    } else {
+      
+      
+      
+      
+      
+      
+      const nsStyleCoord* flexBasis = &(stylePos->mFlexBasis);
+      if (flexBasis->GetUnit() != eStyleUnit_Auto) {
+        if (isInlineFlexItem) {
+          inlineStyleCoord = flexBasis;
+        } else {
+          
+          
+          
+          
+          
+          
+          
+          if (flexBasis->GetUnit() != eStyleUnit_Enumerated) {
+            blockStyleCoord = flexBasis;
+          }
         }
       }
     }

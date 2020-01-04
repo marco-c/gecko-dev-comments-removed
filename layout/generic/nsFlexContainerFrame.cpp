@@ -3911,6 +3911,40 @@ private:
   MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
 };
 
+
+
+
+
+
+
+
+class MOZ_RAII AutoFlexItemMainSizeOverride final
+{
+public:
+  explicit AutoFlexItemMainSizeOverride(FlexItem& aItem
+                                        MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
+    : mItemProps(aItem.Frame()->Properties())
+  {
+    MOZ_GUARD_OBJECT_NOTIFIER_INIT;
+
+    MOZ_ASSERT(!mItemProps.Has(nsIFrame::FlexItemMainSizeOverride()),
+               "FlexItemMainSizeOverride prop shouldn't be set already; "
+               "it should only be set temporarily (& not recursively)");
+    NS_ASSERTION(aItem.HasIntrinsicRatio(),
+                 "This should only be needed for items with an aspect ratio");
+
+    mItemProps.Set(nsIFrame::FlexItemMainSizeOverride(), aItem.GetMainSize());
+  }
+
+  ~AutoFlexItemMainSizeOverride() {
+    mItemProps.Remove(nsIFrame::FlexItemMainSizeOverride());
+  }
+
+private:
+  const FrameProperties mItemProps;
+  MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
+};
+
 void
 nsFlexContainerFrame::DoFlexLayout(nsPresContext*           aPresContext,
                                    nsHTMLReflowMetrics&     aDesiredSize,
@@ -3949,18 +3983,32 @@ nsFlexContainerFrame::DoFlexLayout(nsPresContext*           aPresContext,
       
       
       if (item->CanMainSizeInfluenceCrossSize(aAxisTracker)) {
+        Maybe<AutoFlexItemMainSizeOverride> sizeOverride;
+        if (item->HasIntrinsicRatio()) {
+          
+          
+          
+          
+          
+          
+          
+          sizeOverride.emplace(*item);
+        }
+
         WritingMode wm = item->Frame()->GetWritingMode();
         LogicalSize availSize = aReflowState.ComputedSize(wm);
         availSize.BSize(wm) = NS_UNCONSTRAINEDSIZE;
         nsHTMLReflowState childReflowState(aPresContext, aReflowState,
                                            item->Frame(), availSize);
-        
-        if (aAxisTracker.IsMainAxisHorizontal()) {
-          childReflowState.SetComputedWidth(item->GetMainSize());
-        } else {
-          childReflowState.SetComputedHeight(item->GetMainSize());
+        if (!sizeOverride) {
+          
+          if (aAxisTracker.IsMainAxisHorizontal()) {
+            childReflowState.SetComputedWidth(item->GetMainSize());
+          } else {
+            childReflowState.SetComputedHeight(item->GetMainSize());
+          }
         }
-        
+
         SizeItemInCrossAxis(aPresContext, aAxisTracker,
                             childReflowState, *item);
       }
