@@ -115,8 +115,28 @@ let tabFinder = {
   }
 };
 
+
+
+
+
+
+
+
+
+
+
+
+
 function wait(ms = 0) {
-  return new Promise(resolve => setTimeout(resolve, ms));
+  try {
+    let resolve;
+    let p = new Promise(resolve_ => {resolve = resolve_});
+    setTimeout(resolve, ms);
+    return p;
+  } catch (e) {
+    dump("WARNING: wait aborted because of an invalid Window state in aboutPerformance.js.\n");
+    return;
+  }
 }
 
 
@@ -398,7 +418,7 @@ var State = {
       }
       this._latest = this._oldest = yield this._monitor.promiseSnapshot();
       this._buffer.push(this._oldest);
-      yield new Promise(resolve => setTimeout(resolve, BUFFER_SAMPLING_RATE_MS * 1.1));
+      yield wait(BUFFER_SAMPLING_RATE_MS * 1.1);
     }
 
 
@@ -935,6 +955,6 @@ var go = Task.async(function*() {
   window.addEventListener("unload", () => Services.obs.removeObserver(testUpdate, TEST_DRIVER_TOPIC));
 
   yield Control.update();
-  yield new Promise(resolve => setTimeout(resolve, BUFFER_SAMPLING_RATE_MS * 1.1));
+  yield wait(BUFFER_SAMPLING_RATE_MS * 1.1);
   yield Control.update();
 });
