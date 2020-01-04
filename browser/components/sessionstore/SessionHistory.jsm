@@ -65,7 +65,6 @@ var SessionHistoryInternal = {
 
   collect: function (docShell) {
     let data = {entries: []};
-    let isPinned = docShell.isAppTab;
     let webNavigation = docShell.QueryInterface(Ci.nsIWebNavigation);
     let history = webNavigation.sessionHistory.QueryInterface(Ci.nsISHistoryInternal);
 
@@ -73,7 +72,7 @@ var SessionHistoryInternal = {
       
       
       for (let txn = history.rootTransaction; txn; txn = txn.next) {
-        let entry = this.serializeEntry(txn.sHEntry, isPinned);
+        let entry = this.serializeEntry(txn.sHEntry);
         entry.persist = txn.persist;
         data.entries.push(entry);
       }
@@ -109,9 +108,7 @@ var SessionHistoryInternal = {
 
 
 
-
-
-  serializeEntry: function (shEntry, isPinned) {
+  serializeEntry: function (shEntry) {
     let entry = { url: shEntry.URI.spec };
 
     
@@ -199,7 +196,7 @@ var SessionHistoryInternal = {
             break;
           }
 
-          children.push(this.serializeEntry(child, isPinned));
+          children.push(this.serializeEntry(child));
         }
       }
 
