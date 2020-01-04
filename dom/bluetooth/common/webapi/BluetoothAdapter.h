@@ -123,7 +123,7 @@ public:
 
 
 
-  void GetPairedDevices(nsTArray<nsRefPtr<BluetoothDevice> >& aDevices);
+  void GetPairedDevices(nsTArray<RefPtr<BluetoothDevice> >& aDevices);
 
   
   already_AddRefed<DOMRequest>
@@ -432,29 +432,12 @@ private:
 
 
 
-  nsRefPtr<BluetoothGattServer> mGattServer;
+  RefPtr<BluetoothGattServer> mGattServer;
 
   
 
 
-  nsRefPtr<BluetoothPairingListener> mPairingReqs;
-
-  
-
-
-
-
-
-
-  nsRefPtr<BluetoothDiscoveryHandle> mDiscoveryHandleInUse;
-
-  
-
-
-
-
-
-  nsTArray<nsRefPtr<BluetoothDiscoveryHandle> > mLeScanHandleArray;
+  RefPtr<BluetoothPairingListener> mPairingReqs;
 
   
 
@@ -463,6 +446,17 @@ private:
 
 
 
+  RefPtr<BluetoothDiscoveryHandle> mDiscoveryHandleInUse;
+
+  
+
+
+
+
+
+  nsTArray<RefPtr<BluetoothDiscoveryHandle> > mLeScanHandleArray;
+
+  
 
 
 
@@ -472,7 +466,13 @@ private:
 
 
 
-  nsTArray<nsRefPtr<BluetoothDevice> > mDevices;
+
+
+
+
+
+
+  nsTArray<RefPtr<BluetoothDevice> > mDevices;
 };
 
 END_BLUETOOTH_NAMESPACE

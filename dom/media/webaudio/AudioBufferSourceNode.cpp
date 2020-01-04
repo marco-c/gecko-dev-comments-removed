@@ -552,7 +552,7 @@ public:
   
   StreamTime mBeginProcessing;
   StreamTime mStop;
-  nsRefPtr<ThreadSharedFloatArrayBufferList> mBuffer;
+  RefPtr<ThreadSharedFloatArrayBufferList> mBuffer;
   SpeexResamplerState* mResampler;
   
   
@@ -681,7 +681,7 @@ AudioBufferSourceNode::SendBufferParameterToStream(JSContext* aCx)
   }
 
   if (mBuffer) {
-    nsRefPtr<ThreadSharedFloatArrayBufferList> data =
+    RefPtr<ThreadSharedFloatArrayBufferList> data =
       mBuffer->GetThreadSharedChannelsForRate(aCx);
     ns->SetBuffer(data.forget());
 
@@ -774,7 +774,7 @@ AudioBufferSourceNode::NotifyMainThreadStreamFinished()
       return NS_OK;
     }
   private:
-    nsRefPtr<AudioBufferSourceNode> mNode;
+    RefPtr<AudioBufferSourceNode> mNode;
   };
 
   NS_DispatchToMainThread(new EndedEventDispatcher(this));

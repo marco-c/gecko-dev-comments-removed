@@ -261,7 +261,7 @@ private:
   
   
   
-  nsRefPtr<nsAHttpConnection> mConnection;
+  RefPtr<nsAHttpConnection> mConnection;
 
   
   nsISocketTransport         *mSocketTransport;

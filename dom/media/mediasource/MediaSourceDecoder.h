@@ -82,7 +82,7 @@ private:
   
   
   dom::MediaSource* mMediaSource;
-  nsRefPtr<MediaSourceDemuxer> mDemuxer;
+  RefPtr<MediaSourceDemuxer> mDemuxer;
 
   Atomic<bool> mEnded;
 };

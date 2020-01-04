@@ -11,7 +11,7 @@
 #include "gfxTypes.h"
 #include "mozilla/Assertions.h"         
 #include "mozilla/Attributes.h"         
-#include "mozilla/nsRefPtr.h"             
+#include "mozilla/RefPtr.h"             
 #include "mozilla/gfx/2D.h"             
 #include "mozilla/gfx/Point.h"          
 #include "mozilla/gfx/Types.h"          
@@ -153,7 +153,7 @@ public:
 
 protected:
 
-  nsRefPtr<TextureSource> mNextSibling;
+  RefPtr<TextureSource> mNextSibling;
   int mCompositableCount;
 };
 
@@ -213,7 +213,7 @@ public:
   T& operator*() const { return *mRef; }
 
 private:
-  nsRefPtr<T> mRef;
+  RefPtr<T> mRef;
 };
 
 typedef CompositableTextureRef<TextureSource> CompositableTextureSourceRef;
@@ -609,8 +609,8 @@ protected:
 
   virtual void UpdatedInternal(const nsIntRegion* aRegion = nullptr) override;
 
-  nsRefPtr<Compositor> mCompositor;
-  nsRefPtr<DataTextureSource> mFirstSource;
+  RefPtr<Compositor> mCompositor;
+  RefPtr<DataTextureSource> mFirstSource;
   nsIntRegion mMaybeUpdatedRegion;
   gfx::IntSize mSize;
   
@@ -651,7 +651,7 @@ public:
 
 protected:
   UniquePtr<mozilla::ipc::Shmem> mShmem;
-  nsRefPtr<ISurfaceAllocator> mDeallocator;
+  RefPtr<ISurfaceAllocator> mDeallocator;
 };
 
 
@@ -704,7 +704,7 @@ public:
   bool Failed() { return mTexture && !mLocked; }
 
 private:
-  nsRefPtr<TextureHost> mTexture;
+  RefPtr<TextureHost> mTexture;
   bool mLocked;
 };
 

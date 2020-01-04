@@ -290,12 +290,12 @@ template<class T>
 class CoatCheck
 {
 public:
-  typedef std::pair<uint32_t, nsRefPtr<T>> Element;
+  typedef std::pair<uint32_t, RefPtr<T>> Element;
 
   uint32_t Append(T& t)
   {
     uint32_t id = GetNextId();
-    mElements.AppendElement(Element(id, nsRefPtr<T>(&t)));
+    mElements.AppendElement(Element(id, RefPtr<T>(&t)));
     return id;
   }
 
@@ -303,7 +303,7 @@ public:
   {
     for (auto& element : mElements) {
       if (element.first == aId) {
-        nsRefPtr<T> ref;
+        RefPtr<T> ref;
         ref.swap(element.second);
         mElements.RemoveElement(element);
         return ref.forget();

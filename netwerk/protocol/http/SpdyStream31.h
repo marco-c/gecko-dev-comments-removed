@@ -165,7 +165,7 @@ private:
   
   
   
-  nsRefPtr<nsAHttpTransaction> mTransaction;
+  RefPtr<nsAHttpTransaction> mTransaction;
 
   
   nsISocketTransport         *mSocketTransport;

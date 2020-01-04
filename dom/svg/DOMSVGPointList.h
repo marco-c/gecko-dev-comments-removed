@@ -211,7 +211,7 @@ private:
 
   
   
-  nsRefPtr<nsSVGElement> mElement;
+  RefPtr<nsSVGElement> mElement;
 
   bool mIsAnimValList;
 };

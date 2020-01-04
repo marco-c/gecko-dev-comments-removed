@@ -39,7 +39,7 @@ protected:
   ~SVGAnimatedLength();
 
   nsSVGLength2* mVal; 
-  nsRefPtr<nsSVGElement> mSVGElement;
+  RefPtr<nsSVGElement> mSVGElement;
 };
 
 } 

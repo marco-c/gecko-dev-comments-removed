@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 #ifndef URL_h___
 #define URL_h___
 
@@ -30,7 +30,7 @@ struct objectURLOptions;
 
 namespace workers {
 class URLProxy;
-} 
+} // namespace workers
 
 class URL final : public URLSearchParamsObserver
                 , public nsWrapperCache
@@ -43,7 +43,7 @@ public:
 
   URL(nsISupports* aParent, already_AddRefed<nsIURI> aURI);
 
-  
+  // WebIDL methods
   nsISupports* GetParentObject() const
   {
     return mParent;
@@ -58,7 +58,7 @@ public:
   static already_AddRefed<URL>
   Constructor(const GlobalObject& aGlobal, const nsAString& aUrl,
               const Optional<nsAString>& aBase, ErrorResult& aRv);
-  
+  // Versions of Constructor that we can share with workers and other code.
   static already_AddRefed<URL>
   Constructor(const GlobalObject& aGlobal, const nsAString& aUrl,
               const nsAString& aBase, ErrorResult& aRv);
@@ -137,7 +137,7 @@ public:
     GetHref(aRetval, aRv);
   }
 
-  
+  // URLSearchParamsObserver
   void URLSearchParamsUpdated(URLSearchParams* aSearchParams) override;
 
 private:
@@ -161,14 +161,14 @@ private:
 
   nsCOMPtr<nsISupports> mParent;
   nsCOMPtr<nsIURI> mURI;
-  nsRefPtr<URLSearchParams> mSearchParams;
+  RefPtr<URLSearchParams> mSearchParams;
 
   friend class mozilla::dom::workers::URLProxy;
 };
 
 bool IsChromeURI(nsIURI* aURI);
 
-} 
-} 
+} // namespace dom
+} // namespace mozilla
 
-#endif 
+#endif /* URL_h___ */

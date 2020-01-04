@@ -204,7 +204,7 @@ private:
   nsAutoArrayPtr<uint8_t> mReceivedDataBuffer;
 
   int mCurrentBlobIndex;
-  nsRefPtr<Blob> mBlob;
+  RefPtr<Blob> mBlob;
   nsTArray<SendFileBatch> mBatches;
 
   
@@ -215,18 +215,18 @@ private:
   nsCOMPtr<nsIOutputStream> mOutputStream;
   nsCOMPtr<nsIInputStream> mInputStream;
   nsCOMPtr<nsIVolumeMountLock> mMountLock;
-  nsRefPtr<DeviceStorageFile> mDsFile;
-  nsRefPtr<DeviceStorageFile> mDummyDsFile;
+  RefPtr<DeviceStorageFile> mDsFile;
+  RefPtr<DeviceStorageFile> mDummyDsFile;
 
   
   
   
-  nsRefPtr<BluetoothSocket> mSocket;
+  RefPtr<BluetoothSocket> mSocket;
 
   
   
   
-  nsRefPtr<BluetoothSocket> mServerSocket;
+  RefPtr<BluetoothSocket> mServerSocket;
 };
 
 END_BLUETOOTH_NAMESPACE

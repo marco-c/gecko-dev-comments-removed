@@ -120,7 +120,7 @@ main(int aArgc,
     }
 #endif
 
-  nsRefPtr<WaitForConnectionClosed> spinClose = new WaitForConnectionClosed();
+  RefPtr<WaitForConnectionClosed> spinClose = new WaitForConnectionClosed();
 
   
   

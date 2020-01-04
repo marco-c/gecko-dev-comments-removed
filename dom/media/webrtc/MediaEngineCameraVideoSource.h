@@ -106,9 +106,9 @@ static void LogCapability(const char* aHeader,
 
   
   Monitor mMonitor; 
-  nsTArray<nsRefPtr<SourceMediaStream>> mSources; 
-  nsRefPtr<layers::Image> mImage;
-  nsRefPtr<layers::ImageContainer> mImageContainer;
+  nsTArray<RefPtr<SourceMediaStream>> mSources; 
+  RefPtr<layers::Image> mImage;
+  RefPtr<layers::ImageContainer> mImageContainer;
   int mWidth, mHeight; 
   
 

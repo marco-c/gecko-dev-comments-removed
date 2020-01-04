@@ -63,7 +63,7 @@ private:
     
     int calculateDesiredAzimuthIndexAndBlend(double azimuth, double& azimuthBlend);
 
-    nsRefPtr<HRTFDatabaseLoader> m_databaseLoader;
+    RefPtr<HRTFDatabaseLoader> m_databaseLoader;
 
     float m_sampleRate;
 

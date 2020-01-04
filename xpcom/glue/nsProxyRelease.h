@@ -40,7 +40,7 @@ NS_ProxyRelease(nsIEventTarget* aTarget, nsCOMPtr<T>& aDoomed,
 
 template<class T>
 inline NS_HIDDEN_(nsresult)
-NS_ProxyRelease(nsIEventTarget* aTarget, nsRefPtr<T>& aDoomed,
+NS_ProxyRelease(nsIEventTarget* aTarget, RefPtr<T>& aDoomed,
                 bool aAlwaysProxy = false)
 {
   T* raw = nullptr;
@@ -87,7 +87,7 @@ NS_ReleaseOnMainThread(nsCOMPtr<T>& aDoomed,
 
 template<class T>
 inline NS_HIDDEN_(nsresult)
-NS_ReleaseOnMainThread(nsRefPtr<T>& aDoomed,
+NS_ReleaseOnMainThread(RefPtr<T>& aDoomed,
                        bool aAlwaysProxy = false)
 {
   T* raw = nullptr;
@@ -233,7 +233,7 @@ private:
 template<class T>
 class nsMainThreadPtrHandle
 {
-  nsRefPtr<nsMainThreadPtrHolder<T>> mPtr;
+  RefPtr<nsMainThreadPtrHolder<T>> mPtr;
 
 public:
   nsMainThreadPtrHandle() : mPtr(nullptr) {}

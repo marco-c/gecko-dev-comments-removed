@@ -76,7 +76,7 @@ nsChromeProtocolHandler::NewURI(const nsACString &aSpec,
     
     
 
-    nsRefPtr<nsStandardURL> surl = new nsStandardURL();
+    RefPtr<nsStandardURL> surl = new nsStandardURL();
 
     nsresult rv = surl->Init(nsIStandardURL::URLTYPE_STANDARD, -1, aSpec,
                              aCharset, aBaseURI);

@@ -1092,7 +1092,7 @@ nsTreeSanitizer::SanitizeStyleSheet(const nsAString& aOriginal,
   
   bool didSanitize = false;
   
-  nsRefPtr<CSSStyleSheet> sheet = new CSSStyleSheet(CORS_NONE, aDocument->GetReferrerPolicy());
+  RefPtr<CSSStyleSheet> sheet = new CSSStyleSheet(CORS_NONE, aDocument->GetReferrerPolicy());
   sheet->SetURIs(aDocument->GetDocumentURI(), nullptr, aBaseURI);
   sheet->SetPrincipal(aDocument->NodePrincipal());
   
@@ -1131,7 +1131,7 @@ nsTreeSanitizer::SanitizeStyleSheet(const nsAString& aOriginal,
       case mozilla::css::Rule::STYLE_RULE: {
         
         
-        nsRefPtr<mozilla::css::StyleRule> styleRule = do_QueryObject(rule);
+        RefPtr<mozilla::css::StyleRule> styleRule = do_QueryObject(rule);
         NS_ASSERTION(styleRule, "Must be a style rule");
         nsAutoString decl;
         bool sanitized = SanitizeStyleRule(styleRule, decl);
@@ -1171,7 +1171,7 @@ nsTreeSanitizer::SanitizeAttributes(mozilla::dom::Element* aElement,
         
         
         nsCSSParser parser(document->CSSLoader());
-        nsRefPtr<mozilla::css::StyleRule> rule;
+        RefPtr<mozilla::css::StyleRule> rule;
         nsAutoString value;
         aElement->GetAttr(attrNs, attrLocal, value);
         rv = parser.ParseStyleAttribute(value,
@@ -1354,7 +1354,7 @@ nsTreeSanitizer::Sanitize(nsIDocument* aDocument)
   
 #ifdef DEBUG
   NS_PRECONDITION(!aDocument->GetContainer(), "The document is in a shell.");
-  nsRefPtr<mozilla::dom::Element> root = aDocument->GetRootElement();
+  RefPtr<mozilla::dom::Element> root = aDocument->GetRootElement();
   NS_PRECONDITION(root->IsHTMLElement(nsGkAtoms::html), "Not HTML root.");
 #endif
 

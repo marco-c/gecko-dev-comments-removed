@@ -348,7 +348,7 @@ nsStyleContext::FindChildWithRules(const nsIAtom* aPseudoTag,
   uint32_t threshold = 10; 
                            
 
-  nsRefPtr<nsStyleContext> result;
+  RefPtr<nsStyleContext> result;
   nsStyleContext *list = aRuleNode->IsRoot() ? mEmptyChild : mChild;
 
   if (list) {
@@ -617,7 +617,7 @@ nsStyleContext::ApplyStyleFixups(bool aSkipParentDisplayBasedStyleFixup)
     nsPresContext* presContext = PresContext();
     mozilla::dom::Element* docElement = presContext->Document()->GetRootElement();
     if (docElement) {
-      nsRefPtr<nsStyleContext> rootStyle =
+      RefPtr<nsStyleContext> rootStyle =
         presContext->StyleSet()->ResolveStyleFor(docElement, nullptr);
       auto dir = rootStyle->StyleVisibility()->mDirection;
       if (dir != StyleVisibility()->mDirection) {
@@ -1189,7 +1189,7 @@ void
 nsStyleContext::Destroy()
 {
   
-  nsRefPtr<nsPresContext> presContext = mRuleNode->PresContext();
+  RefPtr<nsPresContext> presContext = mRuleNode->PresContext();
 
   
   this->~nsStyleContext();
@@ -1207,7 +1207,7 @@ NS_NewStyleContext(nsStyleContext* aParentContext,
                    nsRuleNode* aRuleNode,
                    bool aSkipParentDisplayBasedStyleFixup)
 {
-  nsRefPtr<nsStyleContext> context =
+  RefPtr<nsStyleContext> context =
     new (aRuleNode->PresContext())
     nsStyleContext(aParentContext, aPseudoTag, aPseudoType, aRuleNode,
                    aSkipParentDisplayBasedStyleFixup);

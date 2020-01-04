@@ -32,7 +32,7 @@ class AudioOutputObserver;
 
 struct StreamUpdate
 {
-  nsRefPtr<MediaStream> mStream;
+  RefPtr<MediaStream> mStream;
   StreamTime mNextMainThreadCurrentTime;
   bool mNextMainThreadFinished;
 };
@@ -525,7 +525,7 @@ public:
 
 
 
-  nsRefPtr<GraphDriver> mDriver;
+  RefPtr<GraphDriver> mDriver;
 
   
   
@@ -711,10 +711,10 @@ public:
   
 
 
-  nsRefPtr<AsyncLatencyLogger> mLatencyLog;
+  RefPtr<AsyncLatencyLogger> mLatencyLog;
   AudioMixer mMixer;
 #ifdef MOZ_WEBRTC
-  nsRefPtr<AudioOutputObserver> mFarendObserverRef;
+  RefPtr<AudioOutputObserver> mFarendObserverRef;
 #endif
 
   uint32_t AudioChannel() const { return mAudioChannel; }
@@ -735,7 +735,7 @@ private:
 
 
 
-  nsRefPtr<MediaStreamGraphImpl> mSelfRef;
+  RefPtr<MediaStreamGraphImpl> mSelfRef;
   
 
 
@@ -744,7 +744,7 @@ private:
   struct WindowAndStream
   {
     uint64_t mWindowId;
-    nsRefPtr<ProcessedMediaStream> mCaptureStreamSink;
+    RefPtr<ProcessedMediaStream> mCaptureStreamSink;
   };
   
 

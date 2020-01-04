@@ -142,7 +142,7 @@ private:
 
   nsCOMPtr<nsIURI> mURL;
   nsCString mURLSpec; 
-  nsRefPtr<nsNPAPIPluginStreamListener> mPStreamListener;
+  RefPtr<nsNPAPIPluginStreamListener> mPStreamListener;
 
   
   bool                    mRequestFailed;
@@ -161,7 +161,7 @@ private:
 
   
   
-  nsRefPtr<CachedFileHolder> mLocalCachedFileHolder;
+  RefPtr<CachedFileHolder> mLocalCachedFileHolder;
   nsCOMPtr<nsIOutputStream> mFileCacheOutputStream;
   nsDataHashtable<nsUint32HashKey, uint32_t>* mDataForwardToRequest;
 
@@ -170,7 +170,7 @@ private:
   nsCOMPtr<nsIRequest> mRequest;
   bool mSeekable;
   uint32_t mModified;
-  nsRefPtr<nsNPAPIPluginInstance> mPluginInstance;
+  RefPtr<nsNPAPIPluginInstance> mPluginInstance;
   int32_t mStreamOffset;
   bool mStreamComplete;
 

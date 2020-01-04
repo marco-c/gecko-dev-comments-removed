@@ -154,7 +154,7 @@ private:
     uint32_t                          mTriedHostAuth            : 1;
     uint32_t                          mSuppressDefensiveAuth    : 1;
 
-    nsRefPtr<nsHttpHandler>           mHttpHandler;  
+    RefPtr<nsHttpHandler>           mHttpHandler;  
 
     
     

@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "mozilla/dom/Console.h"
 #include "mozilla/dom/ConsoleBinding.h"
@@ -45,18 +45,18 @@
 #include "nsIProfiler.h"
 #endif
 
-
+// The maximum allowed number of concurrent timers per page.
 #define MAX_PAGE_TIMERS 10000
 
-
+// The maximum allowed number of concurrent counters per page.
 #define MAX_PAGE_COUNTERS 10000
 
-
-
+// The maximum stacktrace depth when populating the stacktrace array used for
+// console.trace().
 #define DEFAULT_MAX_STACKTRACE_DEPTH 200
 
-
-
+// This tags are used in the Structured Clone Algorithm to move js values from
+// worker thread to main thread
 #define CONSOLE_TAG_BLOB   JS_SCTAG_USER_MIN
 
 using namespace mozilla::dom::exceptions;
@@ -69,15 +69,15 @@ struct
 ConsoleStructuredCloneData
 {
   nsCOMPtr<nsISupports> mParent;
-  nsTArray<nsRefPtr<BlobImpl>> mBlobs;
+  nsTArray<RefPtr<BlobImpl>> mBlobs;
 };
 
-
-
-
-
-
-
+/**
+ * Console API in workers uses the Structured Clone Algorithm to move any value
+ * from the worker thread to the main-thread. Some object cannot be moved and,
+ * in these cases, we convert them to strings.
+ * It's not the best, but at least we are able to show something.
+ */
 
 class ConsoleCallData final
 {
@@ -142,12 +142,12 @@ public:
   int64_t mTimeStamp;
   DOMHighResTimeStamp mMonotonicTimer;
 
-  
-  
-  
-  
-  
-  
+  // The concept of outerID and innerID is misleading because when a
+  // ConsoleCallData is created from a window, these are the window IDs, but
+  // when the object is created from a SharedWorker, a ServiceWorker or a
+  // subworker of a ChromeWorker these IDs are the type of worker and the
+  // filename of the callee.
+  // In Console.jsm the ID is 'jsm'.
   enum {
     eString,
     eNumber,
@@ -163,12 +163,12 @@ public:
   nsString mMethodString;
   nsTArray<JS::Heap<JS::Value>> mArguments;
 
-  
-  
-  
-  
-  
-  
+  // Stack management is complicated, because we want to do it as
+  // lazily as possible.  Therefore, we have the following behavior:
+  // 1)  mTopStackFrame is initialized whenever we have any JS on the stack
+  // 2)  mReifiedStack is initialized if we're created in a worker.
+  // 3)  mStack is set (possibly to null if there is no JS on the stack) if
+  //     we're created on main thread.
   Maybe<ConsoleStackEntry> mTopStackFrame;
   Maybe<nsTArray<ConsoleStackEntry>> mReifiedStack;
   nsCOMPtr<nsIStackFrame> mStack;
@@ -178,7 +178,7 @@ private:
   { }
 };
 
-
+// This class is used to clear any exception at the end of this method.
 class ClearException
 {
 public:
@@ -211,7 +211,7 @@ public:
   virtual
   ~ConsoleRunnable()
   {
-    
+    // Clear the StructuredCloneHolderBase class.
     Clear();
   }
 
@@ -236,8 +236,8 @@ public:
 
   virtual bool Notify(JSContext* aCx, workers::Status aStatus) override
   {
-    
-    
+    // We don't care about the notification. We just want to keep the
+    // mWorkerPrivate alive.
     return true;
   }
 
@@ -246,7 +246,7 @@ private:
   {
     AssertIsOnMainThread();
 
-    
+    // Walk up to our containing page
     WorkerPrivate* wp = mWorkerPrivate;
     while (wp->GetParent()) {
       wp = wp->GetParent();
@@ -268,7 +268,7 @@ private:
   {
     class ConsoleReleaseRunnable final : public MainThreadWorkerControlRunnable
     {
-      nsRefPtr<ConsoleRunnable> mRunnable;
+      RefPtr<ConsoleRunnable> mRunnable;
 
     public:
       ConsoleReleaseRunnable(WorkerPrivate* aWorkerPrivate,
@@ -295,7 +295,7 @@ private:
       {}
     };
 
-    nsRefPtr<WorkerControlRunnable> runnable =
+    RefPtr<WorkerControlRunnable> runnable =
       new ConsoleReleaseRunnable(mWorkerPrivate, this);
     runnable->Dispatch(nullptr);
   }
@@ -306,7 +306,7 @@ private:
     AutoJSAPI jsapi;
     MOZ_ASSERT(aWindow);
 
-    nsRefPtr<nsGlobalWindow> win = static_cast<nsGlobalWindow*>(aWindow);
+    RefPtr<nsGlobalWindow> win = static_cast<nsGlobalWindow*>(aWindow);
     if (NS_WARN_IF(!jsapi.Init(win))) {
       return;
     }
@@ -335,8 +335,8 @@ private:
       return;
     }
 
-    
-    
+    // The CreateSandbox call returns a proxy to the actual sandbox object. We
+    // don't need a proxy here.
     global = js::UncheckedUnwrap(global);
 
     JSAutoCompartment ac(cx, global);
@@ -364,7 +364,7 @@ protected:
 
       JS::Rooted<JS::Value> val(aCx);
       {
-        nsRefPtr<Blob> blob =
+        RefPtr<Blob> blob =
           Blob::Create(mClonedData.mParent, mClonedData.mBlobs.ElementAt(aIndex));
         if (!ToJSValue(aCx, blob, &val)) {
           return nullptr;
@@ -382,7 +382,7 @@ protected:
                                   JSStructuredCloneWriter* aWriter,
                                   JS::Handle<JSObject*> aObj) override
   {
-    nsRefPtr<Blob> blob;
+    RefPtr<Blob> blob;
     if (NS_SUCCEEDED(UNWRAP_OBJECT(Blob, aObj, blob)) &&
         blob->Impl()->MayBeClonedToOtherThreads()) {
       if (!JS_WriteUint32Pair(aWriter, CONSOLE_TAG_BLOB,
@@ -409,14 +409,14 @@ protected:
 
   WorkerPrivate* mWorkerPrivate;
 
-  
-  nsRefPtr<Console> mConsole;
+  // This must be released on the worker thread.
+  RefPtr<Console> mConsole;
 
   ConsoleStructuredCloneData mClonedData;
 };
 
-
-
+// This runnable appends a CallData object into the Console queue running on
+// the main-thread.
 class ConsoleCallDataRunnable final : public ConsoleRunnable
 {
 public:
@@ -432,7 +432,7 @@ private:
     class ReleaseCallData final : public nsRunnable
     {
     public:
-      explicit ReleaseCallData(nsRefPtr<ConsoleCallData>& aCallData)
+      explicit ReleaseCallData(RefPtr<ConsoleCallData>& aCallData)
       {
         mCallData.swap(aCallData);
       }
@@ -444,10 +444,10 @@ private:
       }
 
     private:
-      nsRefPtr<ConsoleCallData> mCallData;
+      RefPtr<ConsoleCallData> mCallData;
     };
 
-    nsRefPtr<ReleaseCallData> runnable = new ReleaseCallData(mCallData);
+    RefPtr<ReleaseCallData> runnable = new ReleaseCallData(mCallData);
     if(NS_FAILED(NS_DispatchToMainThread(runnable))) {
       NS_WARNING("Failed to dispatch a ReleaseCallData runnable. Leaking.");
     }
@@ -491,7 +491,7 @@ private:
   {
     MOZ_ASSERT(NS_IsMainThread());
 
-    
+    // The windows have to run in parallel.
     MOZ_ASSERT(!!aOuterWindow == !!aInnerWindow);
 
     if (aOuterWindow) {
@@ -514,7 +514,7 @@ private:
       mCallData->SetIDs(frame.mFilename, id);
     }
 
-    
+    // Now we could have the correct window (if we are not window-less).
     mClonedData.mParent = aInnerWindow;
 
     ProcessCallData(aCx);
@@ -558,10 +558,10 @@ private:
     mConsole->ProcessCallData(mCallData);
   }
 
-  nsRefPtr<ConsoleCallData> mCallData;
+  RefPtr<ConsoleCallData> mCallData;
 };
 
-
+// This runnable calls ProfileMethod() on the console on the main-thread.
 class ConsoleProfileRunnable final : public ConsoleRunnable
 {
 public:
@@ -617,7 +617,7 @@ private:
   {
     ClearException ce(aCx);
 
-    
+    // Now we could have the correct window (if we are not window-less).
     mClonedData.mParent = aInnerWindow;
 
     JS::Rooted<JS::Value> argumentsValue(aCx);
@@ -659,9 +659,9 @@ private:
 
 NS_IMPL_CYCLE_COLLECTION_CLASS(Console)
 
-
-
-
+// We don't need to traverse/unlink mStorage and mSandbox because they are not
+// CCed objects and they are only used on the main thread, even when this
+// Console object is used on workers.
 
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(Console)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mWindow)
@@ -783,7 +783,7 @@ Console::Trace(JSContext* aCx)
   Method(aCx, MethodTrace, NS_LITERAL_STRING("trace"), data);
 }
 
-
+// Displays an interactive listing of all the properties of an object.
 METHOD(Dir, "dir");
 METHOD(Dirxml, "dirxml");
 
@@ -864,8 +864,8 @@ Console::ProfileMethod(JSContext* aCx, const nsAString& aAction,
                        const Sequence<JS::Value>& aData)
 {
   if (!NS_IsMainThread()) {
-    
-    nsRefPtr<ConsoleProfileRunnable> runnable =
+    // Here we are in a worker thread.
+    RefPtr<ConsoleProfileRunnable> runnable =
       new ConsoleProfileRunnable(this, aAction, aData);
     runnable->Dispatch();
     return;
@@ -927,7 +927,7 @@ METHOD(Count, "count")
 void
 Console::NoopMethod()
 {
-  
+  // Nothing to do.
 }
 
 static
@@ -987,13 +987,13 @@ ReifyStack(nsIStackFrame* aStack, nsTArray<ConsoleStackEntry>& aRefiedStack)
   return NS_OK;
 }
 
-
+// Queue a call to a console method. See the CALL_DELAY constant.
 void
 Console::Method(JSContext* aCx, MethodName aMethodName,
                 const nsAString& aMethodString,
                 const Sequence<JS::Value>& aData)
 {
-  nsRefPtr<ConsoleCallData> callData(new ConsoleCallData());
+  RefPtr<ConsoleCallData> callData(new ConsoleCallData());
 
   ClearException ce(aCx);
 
@@ -1019,7 +1019,7 @@ Console::Method(JSContext* aCx, MethodName aMethodName,
     return;
   }
 
-  
+  // Walk up to the first JS stack frame and save it if we find it.
   do {
     uint32_t language;
     nsresult rv = stack->GetLanguage(&language);
@@ -1051,8 +1051,8 @@ Console::Method(JSContext* aCx, MethodName aMethodName,
   if (NS_IsMainThread()) {
     callData->mStack = stack;
   } else {
-    
-    
+    // nsIStackFrame is not threadsafe, so we need to snapshot it now,
+    // before we post our runnable to the main thread.
     callData->mReifiedStack.emplace();
     nsresult rv = ReifyStack(stack, *callData->mReifiedStack);
     if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -1060,7 +1060,7 @@ Console::Method(JSContext* aCx, MethodName aMethodName,
     }
   }
 
-  
+  // Monotonic timer for 'time' and 'timeEnd'
   if (aMethodName == MethodTime ||
       aMethodName == MethodTimeEnd ||
       aMethodName == MethodTimeStamp) {
@@ -1068,22 +1068,22 @@ Console::Method(JSContext* aCx, MethodName aMethodName,
       nsGlobalWindow *win = static_cast<nsGlobalWindow*>(mWindow.get());
       MOZ_ASSERT(win);
 
-      nsRefPtr<nsPerformance> performance = win->GetPerformance();
+      RefPtr<nsPerformance> performance = win->GetPerformance();
       if (!performance) {
         return;
       }
 
       callData->mMonotonicTimer = performance->Now();
 
-      
+      // 'time' and 'timeEnd' are displayed in the devtools timeline if active.
       bool isTimelineRecording = false;
       nsDocShell* docShell = static_cast<nsDocShell*>(mWindow->GetDocShell());
       if (docShell) {
         docShell->GetRecordProfileTimelineMarkers(&isTimelineRecording);
       }
 
-      
-      
+      // 'timeStamp' recordings do not need an argument; use empty string
+      // if no arguments passed in
       if (isTimelineRecording && aMethodName == MethodTimeStamp) {
         JS::Rooted<JS::Value> value(aCx, aData.Length() == 0 ?
                                     JS_GetEmptyStringValue(aCx) : aData[0]);
@@ -1096,7 +1096,7 @@ Console::Method(JSContext* aCx, MethodName aMethodName,
         UniquePtr<TimelineMarker> marker = MakeUnique<TimestampTimelineMarker>(key);
         TimelineConsumers::AddMarkerForDocShell(docShell, Move(marker));
       }
-      
+      // For `console.time(foo)` and `console.timeEnd(foo)`
       else if (isTimelineRecording && aData.Length() == 1) {
         JS::Rooted<JS::Value> value(aCx, aData[0]);
         JS::Rooted<JSString*> jsString(aCx, JS::ToString(aCx, value));
@@ -1128,16 +1128,16 @@ Console::Method(JSContext* aCx, MethodName aMethodName,
     return;
   }
 
-  nsRefPtr<ConsoleCallDataRunnable> runnable =
+  RefPtr<ConsoleCallDataRunnable> runnable =
     new ConsoleCallDataRunnable(this, callData);
   runnable->Dispatch();
 }
 
-
-
-
-
-
+// We store information to lazily compute the stack in the reserved slots of
+// LazyStackGetter.  The first slot always stores a JS object: it's either the
+// JS wrapper of the nsIStackFrame or the actual reified stack representation.
+// The second slot is a PrivateValue() holding an nsIStackFrame* when we haven't
+// reified the stack yet, or an UndefinedValue() otherwise.
 enum {
   SLOT_STACKOBJ,
   SLOT_RAW_STACK
@@ -1151,7 +1151,7 @@ LazyStackGetter(JSContext* aCx, unsigned aArgc, JS::Value* aVp)
 
   JS::Value v = js::GetFunctionNativeReserved(&args.callee(), SLOT_RAW_STACK);
   if (v.isUndefined()) {
-    
+    // Already reified.
     args.rval().set(js::GetFunctionNativeReserved(callee, SLOT_STACKOBJ));
     return true;
   }
@@ -1271,16 +1271,16 @@ Console::ProcessCallData(ConsoleCallData* aData)
     event.mCounter = IncreaseCounter(cx, frame, aData->mArguments);
   }
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+  // We want to create a console event object and pass it to our
+  // nsIConsoleAPIStorage implementation.  We want to define some accessor
+  // properties on this object, and those will need to keep an nsIStackFrame
+  // alive.  But nsIStackFrame cannot be wrapped in an untrusted scope.  And
+  // further, passing untrusted objects to system code is likely to run afoul of
+  // Object Xrays.  So we want to wrap in a system-principal scope here.  But
+  // which one?  We could cheat and try to get the underlying JSObject* of
+  // mStorage, but that's a bit fragile.  Instead, we just use the junk scope,
+  // with explicit permission from the XPConnect module owner.  If you're
+  // tempted to do that anywhere else, talk to said module owner first.
   JSAutoCompartment ac2(cx, xpc::PrivilegedJunkScope());
 
   JS::Rooted<JS::Value> eventValue(cx);
@@ -1296,9 +1296,9 @@ Console::ProcessCallData(ConsoleCallData* aData)
   }
 
   if (ShouldIncludeStackTrace(aData->mMethodName)) {
-    
-    
-    
+    // Now define the "stacktrace" property on eventObj.  There are two cases
+    // here.  Either we came from a worker and have a reified stack, or we want
+    // to define a getter that will lazily reify the stack.
     if (aData->mReifiedStack) {
       JS::Rooted<JS::Value> stacktrace(cx);
       if (!ToJSValue(cx, *aData->mReifiedStack, &stacktrace) ||
@@ -1315,9 +1315,9 @@ Console::ProcessCallData(ConsoleCallData* aData)
 
       JS::Rooted<JSObject*> funObj(cx, JS_GetFunctionObject(fun));
 
-      
-      
-      
+      // We want to store our stack in the function and have it stay alive.  But
+      // we also need sane access to the C++ nsIStackFrame.  So store both a JS
+      // wrapper and the raw pointer: the former will keep the latter alive.
       JS::Rooted<JS::Value> stackVal(cx);
       nsresult rv = nsContentUtils::WrapNative(cx, aData->mStack,
                                                &stackVal);
@@ -1368,7 +1368,7 @@ Console::ProcessCallData(ConsoleCallData* aData)
 
 namespace {
 
-
+// Helper method for ProcessArguments. Flushes output, if non-empty, to aSequence.
 bool
 FlushOutput(JSContext* aCx, Sequence<JS::Value>& aSequence, nsString &aOutput)
 {
@@ -1390,7 +1390,7 @@ FlushOutput(JSContext* aCx, Sequence<JS::Value>& aSequence, nsString &aOutput)
   return true;
 }
 
-} 
+} // namespace
 
 bool
 Console::ProcessArguments(JSContext* aCx,
@@ -1449,7 +1449,7 @@ Console::ProcessArguments(JSContext* aCx,
     int32_t integer = -1;
     int32_t mantissa = -1;
 
-    
+    // Let's parse %<number>.<number> for %d and %f
     if (*start >= '0' && *start <= '9') {
       integer = 0;
 
@@ -1474,7 +1474,7 @@ Console::ProcessArguments(JSContext* aCx,
         break;
       }
 
-      
+      // '.' must be followed by a number.
       if (*start < '0' || *start > '9') {
         output.Append(tmp);
         continue;
@@ -1520,8 +1520,8 @@ Console::ProcessArguments(JSContext* aCx,
 
       case 'c':
       {
-        
-        
+        // If there isn't any output but there's already a style, then
+        // discard the previous style and use the next one instead.
         if (output.IsEmpty() && !aStyles.IsEmpty()) {
           aStyles.TruncateLength(aStyles.Length() - 1);
         }
@@ -1611,12 +1611,12 @@ Console::ProcessArguments(JSContext* aCx,
     return false;
   }
 
-  
+  // Discard trailing style element if there is no output to apply it to.
   if (aStyles.Length() > aSequence.Length()) {
     aStyles.TruncateLength(aSequence.Length());
   }
 
-  
+  // The rest of the array, if unused by the format string.
   for (; index < aData.Length(); ++index) {
     if (!aSequence.AppendElement(aData[index], fallible)) {
       return false;
@@ -1852,5 +1852,5 @@ Console::GetOrCreateSandbox(JSContext* aCx, nsIPrincipal* aPrincipal)
   return mSandbox->GetJSObject();
 }
 
-} 
-} 
+} // namespace dom
+} // namespace mozilla

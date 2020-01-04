@@ -435,7 +435,7 @@ nsNativeDragTarget::Drop(LPDATAOBJECT pData,
 
   
   
-  nsRefPtr<nsNativeDragTarget> kungFuDeathGrip = this;
+  RefPtr<nsNativeDragTarget> kungFuDeathGrip = this;
   nsCOMPtr<nsIDragService> serv = mDragService;
 
   

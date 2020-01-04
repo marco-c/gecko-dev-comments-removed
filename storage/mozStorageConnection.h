@@ -357,7 +357,7 @@ private:
   
   
   
-  nsRefPtr<Service> mStorageService;
+  RefPtr<Service> mStorageService;
 
   
 
@@ -405,7 +405,7 @@ private:
   
   
   
-  nsRefPtr<mozIStorageCompletionCallback> mCallback;
+  RefPtr<mozIStorageCompletionCallback> mCallback;
 };
 
 } 

@@ -41,7 +41,7 @@ ContentBridgeChild::ActorDestroy(ActorDestroyReason aWhy)
  ContentBridgeChild*
 ContentBridgeChild::Create(Transport* aTransport, ProcessId aOtherPid)
 {
-  nsRefPtr<ContentBridgeChild> bridge =
+  RefPtr<ContentBridgeChild> bridge =
     new ContentBridgeChild(aTransport);
   bridge->mSelfRef = bridge;
 

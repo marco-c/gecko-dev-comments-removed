@@ -119,7 +119,7 @@ private:
     return mTransform ? mTransform->IsAnimVal() : false;
   }
 
-  nsRefPtr<SVGTransform> mTransform;
+  RefPtr<SVGTransform> mTransform;
 
   
   

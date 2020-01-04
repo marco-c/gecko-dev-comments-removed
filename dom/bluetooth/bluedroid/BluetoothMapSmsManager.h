@@ -125,7 +125,7 @@ private:
 
 
   BluetoothMapFolder* mCurrentFolder;
-  nsRefPtr<BluetoothMapFolder> mRootFolder;
+  RefPtr<BluetoothMapFolder> mRootFolder;
 
   
 
@@ -142,15 +142,15 @@ private:
   
   
   
-  nsRefPtr<BluetoothSocket> mMasSocket;
+  RefPtr<BluetoothSocket> mMasSocket;
 
   
   
   
-  nsRefPtr<BluetoothSocket> mMasServerSocket;
+  RefPtr<BluetoothSocket> mMasServerSocket;
 
   
-  nsRefPtr<BluetoothSocket> mMnsSocket;
+  RefPtr<BluetoothSocket> mMnsSocket;
 
   int mBodySegmentLength;
   nsAutoArrayPtr<uint8_t> mBodySegment;

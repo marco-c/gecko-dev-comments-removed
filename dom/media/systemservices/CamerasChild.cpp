@@ -164,8 +164,8 @@ Cameras() {
     
     
     
-    nsRefPtr<InitializeIPCThread> runnable = new InitializeIPCThread();
-    nsRefPtr<SyncRunnable> sr = new SyncRunnable(runnable);
+    RefPtr<InitializeIPCThread> runnable = new InitializeIPCThread();
+    RefPtr<SyncRunnable> sr = new SyncRunnable(runnable);
     sr->DispatchToThread(CamerasSingleton::Thread());
     CamerasSingleton::Child() = runnable->GetCamerasChild();
   }
@@ -594,7 +594,7 @@ Shutdown(void)
 
 class ShutdownRunnable : public nsRunnable {
 public:
-  ShutdownRunnable(nsRefPtr<nsRunnable> aReplyEvent,
+  ShutdownRunnable(RefPtr<nsRunnable> aReplyEvent,
                    nsIThread* aReplyThread)
     : mReplyEvent(aReplyEvent), mReplyThread(aReplyThread) {};
 
@@ -609,7 +609,7 @@ public:
   }
 
 private:
-  nsRefPtr<nsRunnable> mReplyEvent;
+  RefPtr<nsRunnable> mReplyEvent;
   nsIThread* mReplyThread;
 };
 
@@ -626,7 +626,7 @@ CamerasChild::Shutdown()
   if (CamerasSingleton::Thread()) {
     LOG(("Dispatching actor deletion"));
     
-    nsRefPtr<nsRunnable> deleteRunnable =
+    RefPtr<nsRunnable> deleteRunnable =
       
       
       media::NewRunnableFrom([this]() -> nsresult {
@@ -637,9 +637,9 @@ CamerasChild::Shutdown()
     LOG(("PBackground thread exists, dispatching close"));
     
     
-    nsRefPtr<nsRunnable> event =
+    RefPtr<nsRunnable> event =
       new ThreadDestructor(CamerasSingleton::Thread());
-    nsRefPtr<ShutdownRunnable> runnable =
+    RefPtr<ShutdownRunnable> runnable =
       new ShutdownRunnable(event, NS_GetCurrentThread());
     CamerasSingleton::Thread()->Dispatch(runnable, NS_DISPATCH_NORMAL);
   } else {

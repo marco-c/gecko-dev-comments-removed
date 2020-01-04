@@ -15,7 +15,7 @@
 #include "mozilla/EventForwards.h"
 #include "mozilla/Monitor.h"
 #include "mozilla/ReentrantMonitor.h"
-#include "mozilla/nsRefPtr.h"
+#include "mozilla/RefPtr.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/Atomics.h"
 #include "InputData.h"
@@ -101,7 +101,7 @@ public:
 
   AsyncPanZoomController(uint64_t aLayersId,
                          APZCTreeManager* aTreeManager,
-                         const nsRefPtr<InputQueue>& aInputQueue,
+                         const RefPtr<InputQueue>& aInputQueue,
                          GeckoContentController* aController,
                          TaskThrottler* aPaintThrottler,
                          GestureBehavior aGestures = DEFAULT_GESTURES);
@@ -611,7 +611,7 @@ protected:
   
 
 
-  const nsRefPtr<InputQueue>& GetInputQueue() const;
+  const RefPtr<InputQueue>& GetInputQueue() const;
 
   
 
@@ -648,14 +648,14 @@ protected:
   void OverscrollAnimationEnding();
 
   uint64_t mLayersId;
-  nsRefPtr<CompositorParent> mCompositorParent;
-  nsRefPtr<TaskThrottler> mPaintThrottler;
+  RefPtr<CompositorParent> mCompositorParent;
+  RefPtr<TaskThrottler> mPaintThrottler;
 
   
 
 
-  nsRefPtr<GeckoContentController> mGeckoContentController;
-  nsRefPtr<GestureEventListener> mGestureEventListener;
+  RefPtr<GeckoContentController> mGeckoContentController;
+  RefPtr<GestureEventListener> mGestureEventListener;
   mutable Monitor mRefPtrMonitor;
 
   
@@ -740,7 +740,7 @@ private:
   
   CancelableTask* mAsyncScrollTimeoutTask;
 
-  nsRefPtr<AsyncPanZoomAnimation> mAnimation;
+  RefPtr<AsyncPanZoomAnimation> mAnimation;
 
   friend class Axis;
 
@@ -836,7 +836,7 @@ public:
 private:
   void CancelAnimationAndGestureState();
 
-  nsRefPtr<InputQueue> mInputQueue;
+  RefPtr<InputQueue> mInputQueue;
   TouchBlockState* CurrentTouchBlock();
   bool HasReadyTouchBlock();
 
@@ -865,7 +865,7 @@ public:
 
 
   bool AttemptFling(ParentLayerPoint& aVelocity,
-                    const nsRefPtr<const OverscrollHandoffChain>& aOverscrollHandoffChain,
+                    const RefPtr<const OverscrollHandoffChain>& aOverscrollHandoffChain,
                     bool aHandoff);
 
 private:
@@ -885,13 +885,13 @@ private:
   
   
   void HandleFlingOverscroll(const ParentLayerPoint& aVelocity,
-                             const nsRefPtr<const OverscrollHandoffChain>& aOverscrollHandoffChain);
+                             const RefPtr<const OverscrollHandoffChain>& aOverscrollHandoffChain);
 
   void HandleSmoothScrollOverscroll(const ParentLayerPoint& aVelocity);
 
   
   void AcceptFling(ParentLayerPoint& aVelocity,
-                   const nsRefPtr<const OverscrollHandoffChain>& aOverscrollHandoffChain,
+                   const RefPtr<const OverscrollHandoffChain>& aOverscrollHandoffChain,
                    bool aHandoff);
 
   
@@ -937,7 +937,7 @@ private:
   
   
 
-  nsRefPtr<AsyncPanZoomController> mParent;
+  RefPtr<AsyncPanZoomController> mParent;
 
 
   
@@ -1002,7 +1002,7 @@ public:
 
 
 
-  nsRefPtr<const OverscrollHandoffChain> BuildOverscrollHandoffChain();
+  RefPtr<const OverscrollHandoffChain> BuildOverscrollHandoffChain();
 
 private:
   
@@ -1071,7 +1071,7 @@ private:
 
   const uint32_t mAPZCId;
 
-  nsRefPtr<ipc::SharedMemoryBasic> mSharedFrameMetricsBuffer;
+  RefPtr<ipc::SharedMemoryBasic> mSharedFrameMetricsBuffer;
   CrossProcessMutex* mSharedLock;
   
 

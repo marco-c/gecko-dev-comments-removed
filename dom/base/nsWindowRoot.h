@@ -84,7 +84,7 @@ protected:
   
   nsCOMPtr<nsPIDOMWindow> mWindow;
   
-  nsRefPtr<mozilla::EventListenerManager> mListenerManager; 
+  RefPtr<mozilla::EventListenerManager> mListenerManager; 
   nsCOMPtr<nsIDOMNode> mPopupNode; 
 
   nsCOMPtr<mozilla::dom::EventTarget> mParent;

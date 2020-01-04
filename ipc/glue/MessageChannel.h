@@ -479,13 +479,13 @@ class MessageChannel : HasResultCodes
         void Run() override { mTask->Run(); }
 
       private:
-        nsRefPtr<RefCountedTask> mTask;
+        RefPtr<RefCountedTask> mTask;
     };
 
   private:
     mozilla::WeakPtr<MessageListener> mListener;
     ChannelState mChannelState;
-    nsRefPtr<RefCountedMonitor> mMonitor;
+    RefPtr<RefCountedMonitor> mMonitor;
     Side mSide;
     MessageLink* mLink;
     MessageLoop* mWorkerLoop;           
@@ -496,7 +496,7 @@ class MessageChannel : HasResultCodes
     int mWorkerLoopID;
 
     
-    nsRefPtr<RefCountedTask> mDequeueOneTask;
+    RefPtr<RefCountedTask> mDequeueOneTask;
 
     
     
@@ -735,7 +735,7 @@ class MessageChannel : HasResultCodes
     
     
     
-    nsRefPtr<RefCountedTask> mOnChannelConnectedTask;
+    RefPtr<RefCountedTask> mOnChannelConnectedTask;
     DebugOnly<bool> mPeerPidSet;
     int32_t mPeerPid;
 };

@@ -8,7 +8,7 @@
 #include <fcntl.h>
 #include "mozilla/dom/workers/Workers.h"
 #include "mozilla/ipc/UnixSocketConnector.h"
-#include "mozilla/nsRefPtr.h"
+#include "mozilla/RefPtr.h"
 #include "nsISupportsImpl.h" 
 #include "nsXULAppAPI.h"
 #include "RilSocketConsumer.h"
@@ -70,14 +70,14 @@ private:
   
 
 
-  nsRefPtr<WorkerCrossThreadDispatcher> mDispatcher;
+  RefPtr<WorkerCrossThreadDispatcher> mDispatcher;
 
   
 
 
 
 
-  nsRefPtr<RilSocket> mRilSocket;
+  RefPtr<RilSocket> mRilSocket;
 
   
 
@@ -218,7 +218,7 @@ private:
 void
 RilSocketIO::ConsumeBuffer()
 {
-  nsRefPtr<ReceiveTask> task = new ReceiveTask(this, mBuffer.forget());
+  RefPtr<ReceiveTask> task = new ReceiveTask(this, mBuffer.forget());
   NS_WARN_IF(!mDispatcher->PostTask(task));
 }
 

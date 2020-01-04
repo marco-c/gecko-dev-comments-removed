@@ -61,7 +61,7 @@ class IDBDatabase final
   
   
   
-  nsRefPtr<IDBFactory> mFactory;
+  RefPtr<IDBFactory> mFactory;
 
   nsAutoPtr<DatabaseSpec> mSpec;
 
@@ -77,7 +77,7 @@ class IDBDatabase final
 
   nsTHashtable<nsISupportsHashKey> mReceivedBlobs;
 
-  nsRefPtr<Observer> mObserver;
+  RefPtr<Observer> mObserver;
 
   
   nsTArray<IDBMutableFile*> mLiveMutableFiles;

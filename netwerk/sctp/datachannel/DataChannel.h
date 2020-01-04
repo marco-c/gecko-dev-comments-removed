@@ -257,13 +257,13 @@ private:
 #endif
 
   
-  static void ReleaseTransportFlow(nsRefPtr<TransportFlow> aFlow) {}
+  static void ReleaseTransportFlow(RefPtr<TransportFlow> aFlow) {}
 
   
   
   
   bool mAllocateEven;
-  nsAutoTArray<nsRefPtr<DataChannel>,16> mStreams;
+  nsAutoTArray<RefPtr<DataChannel>,16> mStreams;
   nsDeque mPending; 
   
   nsTArray<nsAutoPtr<QueuedDataMessage> > mQueuedData;
@@ -276,7 +276,7 @@ private:
   uint16_t mState; 
 
 #ifdef SCTP_DTLS_SUPPORTED
-  nsRefPtr<TransportFlow> mTransportFlow;
+  RefPtr<TransportFlow> mTransportFlow;
   nsCOMPtr<nsIEventTarget> mSTS;
 #endif
   uint16_t mLocalPort; 
@@ -423,7 +423,7 @@ private:
 
   nsresult AddDataToBinaryMsg(const char *data, uint32_t size);
 
-  nsRefPtr<DataChannelConnection> mConnection;
+  RefPtr<DataChannelConnection> mConnection;
   nsCString mLabel;
   nsCString mProtocol;
   uint16_t mState;
@@ -556,8 +556,8 @@ private:
 
   int32_t                           mType;
   
-  nsRefPtr<DataChannel>             mChannel;
-  nsRefPtr<DataChannelConnection>   mConnection;
+  RefPtr<DataChannel>             mChannel;
+  RefPtr<DataChannelConnection>   mConnection;
   nsCString                         mData;
   int32_t                           mLen;
 };

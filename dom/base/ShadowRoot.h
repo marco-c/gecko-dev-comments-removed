@@ -157,20 +157,20 @@ protected:
   
   
   
-  nsRefPtr<nsXBLBinding> mAssociatedBinding;
+  RefPtr<nsXBLBinding> mAssociatedBinding;
 
-  nsRefPtr<ShadowRootStyleSheetList> mStyleSheetList;
+  RefPtr<ShadowRootStyleSheetList> mStyleSheetList;
 
   
   HTMLShadowElement* mShadowElement;
 
   
   
-  nsRefPtr<ShadowRoot> mOlderShadow;
+  RefPtr<ShadowRoot> mOlderShadow;
 
   
   
-  nsRefPtr<ShadowRoot> mYoungerShadow;
+  RefPtr<ShadowRoot> mYoungerShadow;
 
   
   
@@ -206,7 +206,7 @@ public:
 protected:
   virtual ~ShadowRootStyleSheetList();
 
-  nsRefPtr<ShadowRoot> mShadowRoot;
+  RefPtr<ShadowRoot> mShadowRoot;
 };
 
 } 

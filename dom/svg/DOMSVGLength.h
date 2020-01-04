@@ -224,7 +224,7 @@ private:
   bool IndexIsValid();
 #endif
 
-  nsRefPtr<DOMSVGLengthList> mList;
+  RefPtr<DOMSVGLengthList> mList;
 
   
   
@@ -239,7 +239,7 @@ private:
 
   
   nsSVGLength2* mVal; 
-  nsRefPtr<nsSVGElement> mSVGElement;
+  RefPtr<nsSVGElement> mSVGElement;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(DOMSVGLength, MOZILLA_DOMSVGLENGTH_IID)

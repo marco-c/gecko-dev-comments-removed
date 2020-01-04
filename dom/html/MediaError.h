@@ -44,7 +44,7 @@ public:
   }
 
 private:
-  nsRefPtr<HTMLMediaElement> mParent;
+  RefPtr<HTMLMediaElement> mParent;
 
   
   const uint16_t mCode;

@@ -425,16 +425,16 @@ class MOZ_RAII AutoStopwatch final
     
     
     
-    nsRefPtr<js::PerformanceGroup> sharedGroup_;
+    RefPtr<js::PerformanceGroup> sharedGroup_;
 
     
     
-    nsRefPtr<js::PerformanceGroup> topGroup_;
+    RefPtr<js::PerformanceGroup> topGroup_;
 
     
     
     
-    nsRefPtr<js::PerformanceGroup> ownGroup_;
+    RefPtr<js::PerformanceGroup> ownGroup_;
 
  public:
     

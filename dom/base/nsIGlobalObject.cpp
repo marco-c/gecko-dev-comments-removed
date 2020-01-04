@@ -84,7 +84,7 @@ nsIGlobalObject::UnlinkHostObjectURIs()
 
   
 
-  nsRefPtr<UnlinkHostObjectURIsRunnable> runnable =
+  RefPtr<UnlinkHostObjectURIsRunnable> runnable =
     new UnlinkHostObjectURIsRunnable(mHostObjectURIs);
   MOZ_ASSERT(mHostObjectURIs.IsEmpty());
 

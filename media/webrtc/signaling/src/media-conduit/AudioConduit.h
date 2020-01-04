@@ -99,9 +99,9 @@ public:
 
 
 
-  virtual MediaConduitErrorCode SetTransmitterTransport(nsRefPtr<TransportInterface> aTransport) override;
+  virtual MediaConduitErrorCode SetTransmitterTransport(RefPtr<TransportInterface> aTransport) override;
 
-  virtual MediaConduitErrorCode SetReceiverTransport(nsRefPtr<TransportInterface> aTransport) override;
+  virtual MediaConduitErrorCode SetReceiverTransport(RefPtr<TransportInterface> aTransport) override;
 
   
 
@@ -252,8 +252,8 @@ private:
 
   webrtc::VoiceEngine* mVoiceEngine;
   mozilla::ReentrantMonitor mTransportMonitor;
-  nsRefPtr<TransportInterface> mTransmitterTransport;
-  nsRefPtr<TransportInterface> mReceiverTransport;
+  RefPtr<TransportInterface> mTransmitterTransport;
+  RefPtr<TransportInterface> mReceiverTransport;
   ScopedCustomReleasePtr<webrtc::VoENetwork>   mPtrVoENetwork;
   ScopedCustomReleasePtr<webrtc::VoEBase>      mPtrVoEBase;
   ScopedCustomReleasePtr<webrtc::VoECodec>     mPtrVoECodec;

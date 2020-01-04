@@ -182,7 +182,7 @@ AsyncStatement::getParams()
 
   
   if (mParamsArray->length() == 0) {
-    nsRefPtr<AsyncBindingParams> params(new AsyncBindingParams(mParamsArray));
+    RefPtr<AsyncBindingParams> params(new AsyncBindingParams(mParamsArray));
     NS_ENSURE_TRUE(params, nullptr);
 
     rv = mParamsArray->AddParams(params);

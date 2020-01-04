@@ -81,7 +81,7 @@ public:
     }
 
 private:
-    nsRefPtr<FTUserFontData> mUserFontData;
+    RefPtr<FTUserFontData> mUserFontData;
 };
 
 
@@ -148,7 +148,7 @@ protected:
     nsCountedRef<FcPattern> mFontPattern;
 
     
-    nsRefPtr<FTUserFontData> mUserFontData;
+    RefPtr<FTUserFontData> mUserFontData;
 
     
     FT_Face   mFTFace;

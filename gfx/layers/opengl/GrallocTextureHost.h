@@ -64,8 +64,8 @@ private:
   void DestroyEGLImage();
 
   NewSurfaceDescriptorGralloc mGrallocHandle;
-  nsRefPtr<GLTextureSource> mGLTextureSource;
-  nsRefPtr<CompositorOGL> mCompositor;
+  RefPtr<GLTextureSource> mGLTextureSource;
+  RefPtr<CompositorOGL> mCompositor;
   
   gfx::IntSize mSize;
   

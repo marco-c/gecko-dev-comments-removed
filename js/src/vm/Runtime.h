@@ -1782,7 +1782,7 @@ struct JSRuntime : public JS::shadow::Runtime,
 
 
 
-        mozilla::Vector<nsRefPtr<js::PerformanceGroup>> touchedGroups;
+        mozilla::Vector<RefPtr<js::PerformanceGroup>> touchedGroups;
     };
     Stopwatch stopwatch;
 };

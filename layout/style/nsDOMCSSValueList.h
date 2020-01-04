@@ -67,7 +67,7 @@ private:
 
   bool                        mReadonly;    
 
-  InfallibleTArray<nsRefPtr<CSSValue> > mCSSValues;
+  InfallibleTArray<RefPtr<CSSValue> > mCSSValues;
 };
 
 #endif 

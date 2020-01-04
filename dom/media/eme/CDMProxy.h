@@ -32,7 +32,7 @@ struct DecryptResult {
     , mSample(aSample)
   {}
   GMPErr mStatus;
-  nsRefPtr<MediaRawData> mSample;
+  RefPtr<MediaRawData> mSample;
 };
 
 
@@ -147,7 +147,7 @@ public:
                        nsresult aDOMException,
                        const nsCString& aMsg);
 
-  nsRefPtr<DecryptPromise> Decrypt(MediaRawData* aSample);
+  RefPtr<DecryptPromise> Decrypt(MediaRawData* aSample);
 
   
   
@@ -253,18 +253,18 @@ private:
     void PostResult(GMPErr aResult, const nsTArray<uint8_t>& aDecryptedData);
     void PostResult(GMPErr aResult);
 
-    nsRefPtr<DecryptPromise> Ensure() {
+    RefPtr<DecryptPromise> Ensure() {
       return mPromise.Ensure(__func__);
     }
 
     uint32_t mId;
-    nsRefPtr<MediaRawData> mSample;
+    RefPtr<MediaRawData> mSample;
   private:
     ~DecryptJob() {}
     MozPromiseHolder<DecryptPromise> mPromise;
   };
   
-  void gmp_Decrypt(nsRefPtr<DecryptJob> aJob);
+  void gmp_Decrypt(RefPtr<DecryptJob> aJob);
 
   class RejectPromiseTask : public nsRunnable {
   public:
@@ -283,7 +283,7 @@ private:
       return NS_OK;
     }
   private:
-    nsRefPtr<CDMProxy> mProxy;
+    RefPtr<CDMProxy> mProxy;
     PromiseId mId;
     nsresult mCode;
     nsCString mReason;
@@ -328,7 +328,7 @@ private:
 
   
   
-  nsRefPtr<nsIThread> mGMPThread;
+  RefPtr<nsIThread> mGMPThread;
 
   nsCString mNodeId;
 
@@ -338,7 +338,7 @@ private:
 
   
   
-  nsTArray<nsRefPtr<DecryptJob>> mDecryptionJobs;
+  nsTArray<RefPtr<DecryptJob>> mDecryptionJobs;
 
   
   

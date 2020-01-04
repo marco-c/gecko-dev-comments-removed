@@ -186,12 +186,12 @@ private:
   
   
   
-  nsRefPtr<BluetoothSocket> mSocket;
+  RefPtr<BluetoothSocket> mSocket;
 
   
   
   
-  nsRefPtr<BluetoothSocket> mServerSocket;
+  RefPtr<BluetoothSocket> mServerSocket;
 
   
 

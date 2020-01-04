@@ -34,7 +34,7 @@ StyleContextContainsFont(nsStyleContext* aStyleContext,
 
   
   
-  nsRefPtr<nsFontMetrics> fm;
+  RefPtr<nsFontMetrics> fm;
   nsLayoutUtils::GetFontMetricsForStyleContext(aStyleContext,
                                                getter_AddRefs(fm),
                                                1.0f);

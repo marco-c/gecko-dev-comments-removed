@@ -86,7 +86,7 @@ DOMSVGPathSegList::GetDOMWrapper(void *aList,
                                  nsSVGElement *aElement,
                                  bool aIsAnimValList)
 {
-  nsRefPtr<DOMSVGPathSegList> wrapper =
+  RefPtr<DOMSVGPathSegList> wrapper =
     SVGPathSegListTearoffTable().GetTearoff(aList);
   if (!wrapper) {
     wrapper = new DOMSVGPathSegList(aElement, aIsAnimValList);
@@ -161,7 +161,7 @@ DOMSVGPathSegList::InternalListWillChangeTo(const SVGPathData& aNewValue)
 
   uint32_t newSegType;
 
-  nsRefPtr<DOMSVGPathSegList> kungFuDeathGrip;
+  RefPtr<DOMSVGPathSegList> kungFuDeathGrip;
   if (length) {
     
     
@@ -304,7 +304,7 @@ DOMSVGPathSegList::Initialize(DOMSVGPathSeg& aNewItem, ErrorResult& aError)
   
   
 
-  nsRefPtr<DOMSVGPathSeg> domItem = &aNewItem;
+  RefPtr<DOMSVGPathSeg> domItem = &aNewItem;
   if (aNewItem.HasOwner()) {
     domItem = aNewItem.Clone();
   }
@@ -318,7 +318,7 @@ already_AddRefed<DOMSVGPathSeg>
 DOMSVGPathSegList::GetItem(uint32_t index, ErrorResult& error)
 {
   bool found;
-  nsRefPtr<DOMSVGPathSeg> item = IndexedGetter(index, found, error);
+  RefPtr<DOMSVGPathSeg> item = IndexedGetter(index, found, error);
   if (!found) {
     error.Throw(NS_ERROR_DOM_INDEX_SIZE_ERR);
   }
@@ -361,7 +361,7 @@ DOMSVGPathSegList::InsertItemBefore(DOMSVGPathSeg& aNewItem,
     return nullptr;
   }
 
-  nsRefPtr<DOMSVGPathSeg> domItem = &aNewItem;
+  RefPtr<DOMSVGPathSeg> domItem = &aNewItem;
   if (domItem->HasOwner()) {
     domItem = domItem->Clone(); 
   }
@@ -417,7 +417,7 @@ DOMSVGPathSegList::ReplaceItem(DOMSVGPathSeg& aNewItem,
     return nullptr;
   }
 
-  nsRefPtr<DOMSVGPathSeg> domItem = &aNewItem;
+  RefPtr<DOMSVGPathSeg> domItem = &aNewItem;
   if (domItem->HasOwner()) {
     domItem = domItem->Clone(); 
   }
@@ -479,7 +479,7 @@ DOMSVGPathSegList::RemoveItem(uint32_t aIndex,
     return nullptr;
   }
   
-  nsRefPtr<DOMSVGPathSeg> result = GetItemAt(aIndex);
+  RefPtr<DOMSVGPathSeg> result = GetItemAt(aIndex);
 
   AutoChangePathSegListNotifier notifier(this);
   
@@ -514,7 +514,7 @@ DOMSVGPathSegList::GetItemAt(uint32_t aIndex)
   if (!ItemAt(aIndex)) {
     ItemAt(aIndex) = DOMSVGPathSeg::CreateFor(this, aIndex, IsAnimValList());
   }
-  nsRefPtr<DOMSVGPathSeg> result = ItemAt(aIndex);
+  RefPtr<DOMSVGPathSeg> result = ItemAt(aIndex);
   return result.forget();
 }
 
@@ -564,7 +564,7 @@ DOMSVGPathSegList::
 
   
   
-  nsRefPtr<DOMSVGPathSegList> animVal =
+  RefPtr<DOMSVGPathSegList> animVal =
     GetDOMWrapperIfExists(InternalAList().GetAnimValKey());
   if (!animVal) {
     

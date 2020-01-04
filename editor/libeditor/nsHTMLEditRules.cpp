@@ -314,7 +314,7 @@ nsHTMLEditRules::BeforeEdit(EditAction action,
 
     
     NS_ENSURE_STATE(mHTMLEditor);
-    nsRefPtr<Selection> selection = mHTMLEditor->GetSelection();
+    RefPtr<Selection> selection = mHTMLEditor->GetSelection();
 
     
     if (!selection->RangeCount()) {
@@ -423,7 +423,7 @@ nsHTMLEditRules::AfterEditInner(EditAction action,
   if (action == EditAction::ignore) return NS_OK;
 
   NS_ENSURE_STATE(mHTMLEditor);
-  nsRefPtr<Selection> selection = mHTMLEditor->GetSelection();
+  RefPtr<Selection> selection = mHTMLEditor->GetSelection();
   NS_ENSURE_STATE(selection);
 
   nsCOMPtr<nsIDOMNode> rangeStartParent, rangeEndParent;
@@ -588,7 +588,7 @@ nsHTMLEditRules::WillDoAction(Selection* aSelection,
   }
   NS_ENSURE_TRUE(aSelection->RangeCount(), NS_OK);
 
-  nsRefPtr<nsRange> range = aSelection->GetRangeAt(0);
+  RefPtr<nsRange> range = aSelection->GetRangeAt(0);
   nsCOMPtr<nsINode> selStartNode = range->GetStartParent();
 
   NS_ENSURE_STATE(mHTMLEditor);
@@ -797,7 +797,7 @@ nsHTMLEditRules::GetAlignment(bool *aMixed, nsIHTMLEditor::EAlignment *aAlign)
 
   
   NS_ENSURE_STATE(mHTMLEditor);
-  nsRefPtr<Selection> selection = mHTMLEditor->GetSelection();
+  RefPtr<Selection> selection = mHTMLEditor->GetSelection();
   NS_ENSURE_STATE(selection);
 
   
@@ -834,7 +834,7 @@ nsHTMLEditRules::GetAlignment(bool *aMixed, nsIHTMLEditor::EAlignment *aAlign)
   }
   else
   {
-    nsTArray<nsRefPtr<nsRange>> arrayOfRanges;
+    nsTArray<RefPtr<nsRange>> arrayOfRanges;
     GetPromotedRanges(*selection, arrayOfRanges, EditAction::align);
 
     
@@ -1010,7 +1010,7 @@ nsHTMLEditRules::GetIndentState(bool *aCanIndent, bool *aCanOutdent)
     NS_ENSURE_TRUE(root, NS_ERROR_NULL_POINTER);
     int32_t selOffset;
     NS_ENSURE_STATE(mHTMLEditor);
-    nsRefPtr<Selection> selection = mHTMLEditor->GetSelection();
+    RefPtr<Selection> selection = mHTMLEditor->GetSelection();
     NS_ENSURE_TRUE(selection, NS_ERROR_NULL_POINTER);
 
     
@@ -1085,7 +1085,7 @@ nsHTMLEditRules::GetParagraphState(bool *aMixed, nsAString &outFormat)
     nsCOMPtr<nsINode> selNode;
     int32_t selOffset;
     NS_ENSURE_STATE(mHTMLEditor);
-    nsRefPtr<Selection> selection = mHTMLEditor->GetSelection();
+    RefPtr<Selection> selection = mHTMLEditor->GetSelection();
     NS_ENSURE_STATE(selection);
     NS_ENSURE_STATE(mHTMLEditor);
     res = mHTMLEditor->GetStartNodeAndOffset(selection, getter_AddRefs(selNode), &selOffset);
@@ -2004,7 +2004,7 @@ nsHTMLEditRules::WillDeleteSelection(Selection* aSelection,
           }
         }
       } else {
-        nsRefPtr<nsRange> range = aSelection->GetRangeAt(0);
+        RefPtr<nsRange> range = aSelection->GetRangeAt(0);
         NS_ENSURE_STATE(range);
 
         NS_ASSERTION(range->GetStartParent() == visNode,
@@ -3342,7 +3342,7 @@ nsHTMLEditRules::WillRemoveList(Selection* aSelection,
   NS_ENSURE_STATE(mHTMLEditor);
   nsAutoSelectionReset selectionResetter(aSelection, mHTMLEditor);
 
-  nsTArray<nsRefPtr<nsRange>> arrayOfRanges;
+  nsTArray<RefPtr<nsRange>> arrayOfRanges;
   GetPromotedRanges(*aSelection, arrayOfRanges, EditAction::makeList);
 
   
@@ -3824,7 +3824,7 @@ nsHTMLEditRules::WillHTMLIndent(Selection* aSelection,
   
   
 
-  nsTArray<nsRefPtr<nsRange>> arrayOfRanges;
+  nsTArray<RefPtr<nsRange>> arrayOfRanges;
   GetPromotedRanges(*aSelection, arrayOfRanges, EditAction::indent);
 
   
@@ -5151,7 +5151,7 @@ nsHTMLEditRules::ExpandSelectionForDeletion(Selection* aSelection)
   if (rangeCount != 1) return NS_OK;
 
   
-  nsRefPtr<nsRange> range = aSelection->GetRangeAt(0);
+  RefPtr<nsRange> range = aSelection->GetRangeAt(0);
   NS_ENSURE_TRUE(range, NS_ERROR_NULL_POINTER);
   nsCOMPtr<nsIDOMNode> selStartNode, selEndNode, selCommon;
   int32_t selStartOffset, selEndOffset;
@@ -5275,7 +5275,7 @@ nsHTMLEditRules::ExpandSelectionForDeletion(Selection* aSelection)
     
     nsCOMPtr<nsINode> node = do_QueryInterface(selStartNode);
     NS_ENSURE_STATE(node);
-    nsRefPtr<nsRange> range = new nsRange(node);
+    RefPtr<nsRange> range = new nsRange(node);
     res = range->SetStart(selStartNode, selStartOffset);
     NS_ENSURE_SUCCESS(res, res);
     res = range->SetEnd(selEndNode, selEndOffset);
@@ -5330,7 +5330,7 @@ nsHTMLEditRules::NormalizeSelection(Selection* inSelection)
   
   if (rangeCount != 1) return NS_OK;
 
-  nsRefPtr<nsRange> range = inSelection->GetRangeAt(0);
+  RefPtr<nsRange> range = inSelection->GetRangeAt(0);
   NS_ENSURE_TRUE(range, NS_ERROR_NULL_POINTER);
   nsCOMPtr<nsIDOMNode> startNode, endNode;
   int32_t startOffset, endOffset;
@@ -5676,17 +5676,17 @@ nsHTMLEditRules::GetPromotedPoint(RulesEndpoint aWhere, nsIDOMNode* aNode,
 
 void
 nsHTMLEditRules::GetPromotedRanges(Selection& aSelection,
-                                   nsTArray<nsRefPtr<nsRange>>& outArrayOfRanges,
+                                   nsTArray<RefPtr<nsRange>>& outArrayOfRanges,
                                    EditAction inOperationType)
 {
   uint32_t rangeCount = aSelection.RangeCount();
 
   for (uint32_t i = 0; i < rangeCount; i++) {
-    nsRefPtr<nsRange> selectionRange = aSelection.GetRangeAt(i);
+    RefPtr<nsRange> selectionRange = aSelection.GetRangeAt(i);
     MOZ_ASSERT(selectionRange);
 
     
-    nsRefPtr<nsRange> opRange = selectionRange->CloneRange();
+    RefPtr<nsRange> opRange = selectionRange->CloneRange();
 
     
     
@@ -5749,7 +5749,7 @@ nsHTMLEditRules::PromoteRange(nsRange& aRange, EditAction aOperationType)
   nsCOMPtr<nsIDOMNode> opStartNode;
   nsCOMPtr<nsIDOMNode> opEndNode;
   int32_t opStartOffset, opEndOffset;
-  nsRefPtr<nsRange> opRange;
+  RefPtr<nsRange> opRange;
 
   GetPromotedPoint(kStart, GetAsDOMNode(startNode), startOffset,
                    aOperationType, address_of(opStartNode), &opStartOffset);
@@ -5791,7 +5791,7 @@ private:
 
 
 nsresult
-nsHTMLEditRules::GetNodesForOperation(nsTArray<nsRefPtr<nsRange>>& aArrayOfRanges,
+nsHTMLEditRules::GetNodesForOperation(nsTArray<RefPtr<nsRange>>& aArrayOfRanges,
                                       nsTArray<OwningNonNull<nsINode>>& aOutArrayOfNodes,
                                       EditAction aOperationType,
                                       TouchContent aTouchContent)
@@ -5807,7 +5807,7 @@ nsHTMLEditRules::GetNodesForOperation(nsTArray<nsRefPtr<nsRange>>& aArrayOfRange
     
     
     for (int32_t i = 0; i < rangeCount; i++) {
-      nsRefPtr<nsRange> r = aArrayOfRanges[i];
+      RefPtr<nsRange> r = aArrayOfRanges[i];
       nsCOMPtr<nsIContent> endParent = do_QueryInterface(r->GetEndParent());
       if (!mHTMLEditor->IsTextNode(endParent)) {
         continue;
@@ -5964,7 +5964,7 @@ nsHTMLEditRules::GetListActionNodes(nsTArray<OwningNonNull<nsINode>>& aOutArrayO
   NS_ENSURE_STATE(mHTMLEditor);
   nsCOMPtr<nsIEditor> kungFuDeathGrip(mHTMLEditor);
 
-  nsRefPtr<Selection> selection = mHTMLEditor->GetSelection();
+  RefPtr<Selection> selection = mHTMLEditor->GetSelection();
   NS_ENSURE_TRUE(selection, NS_ERROR_FAILURE);
 
   
@@ -5972,7 +5972,7 @@ nsHTMLEditRules::GetListActionNodes(nsTArray<OwningNonNull<nsINode>>& aOutArrayO
   if (aEntireList == EntireList::yes) {
     uint32_t rangeCount = selection->RangeCount();
     for (uint32_t rangeIdx = 0; rangeIdx < rangeCount; ++rangeIdx) {
-      nsRefPtr<nsRange> range = selection->GetRangeAt(rangeIdx);
+      RefPtr<nsRange> range = selection->GetRangeAt(rangeIdx);
       for (nsCOMPtr<nsINode> parent = range->GetCommonAncestor();
            parent; parent = parent->GetParentNode()) {
         if (nsHTMLEditUtils::IsList(parent)) {
@@ -6105,7 +6105,7 @@ nsHTMLEditRules::GetParagraphFormatNodes(nsTArray<OwningNonNull<nsINode>>& outAr
   NS_ENSURE_STATE(mHTMLEditor);
   nsCOMPtr<nsIEditor> kungFuDeathGrip(mHTMLEditor);
 
-  nsRefPtr<Selection> selection = mHTMLEditor->GetSelection();
+  RefPtr<Selection> selection = mHTMLEditor->GetSelection();
   NS_ENSURE_STATE(selection);
 
   
@@ -6276,7 +6276,7 @@ nsHTMLEditRules::GetNodesFromPoint(::DOMPoint aPoint,
                                    TouchContent aTouchContent)
 {
   NS_ENSURE_STATE(aPoint.node);
-  nsRefPtr<nsRange> range = new nsRange(aPoint.node);
+  RefPtr<nsRange> range = new nsRange(aPoint.node);
   nsresult res = range->SetStart(aPoint.node, aPoint.offset);
   MOZ_ASSERT(NS_SUCCEEDED(res));
 
@@ -6284,7 +6284,7 @@ nsHTMLEditRules::GetNodesFromPoint(::DOMPoint aPoint,
   PromoteRange(*range, aOperation);
 
   
-  nsTArray<nsRefPtr<nsRange>> arrayOfRanges;
+  nsTArray<RefPtr<nsRange>> arrayOfRanges;
 
   
   arrayOfRanges.AppendElement(range);
@@ -6309,7 +6309,7 @@ nsHTMLEditRules::GetNodesFromSelection(Selection& aSelection,
                                        TouchContent aTouchContent)
 {
   
-  nsTArray<nsRefPtr<nsRange>> arrayOfRanges;
+  nsTArray<RefPtr<nsRange>> arrayOfRanges;
   GetPromotedRanges(aSelection, arrayOfRanges, aOperation);
 
   
@@ -7299,7 +7299,7 @@ nsHTMLEditRules::ReapplyCachedStyles()
 
   
   NS_ENSURE_STATE(mHTMLEditor);
-  nsRefPtr<Selection> selection = mHTMLEditor->GetSelection();
+  RefPtr<Selection> selection = mHTMLEditor->GetSelection();
   MOZ_ASSERT(selection);
   if (!selection->RangeCount()) {
     
@@ -7419,7 +7419,7 @@ nsHTMLEditRules::PinSelectionToNewBlock(Selection* aSelection)
   
   nsCOMPtr<nsINode> node = do_QueryInterface(selNode);
   NS_ENSURE_STATE(node);
-  nsRefPtr<nsRange> range = new nsRange(node);
+  RefPtr<nsRange> range = new nsRange(node);
   res = range->SetStart(selNode, selOffset);
   NS_ENSURE_SUCCESS(res, res);
   res = range->SetEnd(selNode, selOffset);
@@ -7929,12 +7929,12 @@ nsHTMLEditRules::SelectionEndpointInNode(nsINode* aNode, bool* aResult)
   *aResult = false;
 
   NS_ENSURE_STATE(mHTMLEditor);
-  nsRefPtr<Selection> selection = mHTMLEditor->GetSelection();
+  RefPtr<Selection> selection = mHTMLEditor->GetSelection();
   NS_ENSURE_STATE(selection);
 
   uint32_t rangeCount = selection->RangeCount();
   for (uint32_t rangeIdx = 0; rangeIdx < rangeCount; ++rangeIdx) {
-    nsRefPtr<nsRange> range = selection->GetRangeAt(rangeIdx);
+    RefPtr<nsRange> range = selection->GetRangeAt(rangeIdx);
     nsCOMPtr<nsIDOMNode> startParent, endParent;
     range->GetStartContainer(getter_AddRefs(startParent));
     if (startParent)
@@ -8131,7 +8131,7 @@ nsHTMLEditRules::ConfirmSelectionInBody()
 
   
   NS_ENSURE_STATE(mHTMLEditor);
-  nsRefPtr<Selection> selection = mHTMLEditor->GetSelection();
+  RefPtr<Selection> selection = mHTMLEditor->GetSelection();
   NS_ENSURE_STATE(selection);
 
   
@@ -8447,7 +8447,7 @@ nsHTMLEditRules::WillDeleteSelection(nsISelection* aSelection)
   if (!mListenerEnabled) {
     return NS_OK;
   }
-  nsRefPtr<Selection> selection = static_cast<Selection*>(aSelection);
+  RefPtr<Selection> selection = static_cast<Selection*>(aSelection);
   
   nsCOMPtr<nsIDOMNode> selNode;
   int32_t selOffset;
@@ -8812,7 +8812,7 @@ nsHTMLEditRules::WillAbsolutePosition(Selection* aSelection,
   
   
 
-  nsTArray<nsRefPtr<nsRange>> arrayOfRanges;
+  nsTArray<RefPtr<nsRange>> arrayOfRanges;
   GetPromotedRanges(*aSelection, arrayOfRanges,
                     EditAction::setAbsolutePosition);
 
@@ -9080,7 +9080,7 @@ nsHTMLEditRules::DocumentModifiedWorker()
   nsAutoScriptBlockerSuppressNodeRemoved scriptBlocker;
 
   nsCOMPtr<nsIHTMLEditor> kungFuDeathGrip(mHTMLEditor);
-  nsRefPtr<Selection> selection = mHTMLEditor->GetSelection();
+  RefPtr<Selection> selection = mHTMLEditor->GetSelection();
   if (!selection) {
     return;
   }

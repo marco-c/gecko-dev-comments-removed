@@ -242,7 +242,7 @@ private:
 struct nsThreadShutdownContext
 {
   
-  nsRefPtr<nsThread> terminatingThread;
+  RefPtr<nsThread> terminatingThread;
   nsThread* joiningThread;
   bool      awaitingShutdownAck;
 };
@@ -296,7 +296,7 @@ public:
     return NS_OK;
   }
 private:
-  nsRefPtr<nsThread>       mThread;
+  RefPtr<nsThread>       mThread;
   nsThreadShutdownContext* mShutdownContext;
 };
 
@@ -494,7 +494,7 @@ nsresult
 nsThread::Init()
 {
   
-  nsRefPtr<nsThreadStartupEvent> startup = new nsThreadStartupEvent();
+  RefPtr<nsThreadStartupEvent> startup = new nsThreadStartupEvent();
 
   NS_ADDREF_THIS();
 
@@ -610,7 +610,7 @@ nsThread::DispatchInternal(already_AddRefed<nsIRunnable>&& aEvent, uint32_t aFla
     
     
 
-    nsRefPtr<nsThreadSyncDispatch> wrapper =
+    RefPtr<nsThreadSyncDispatch> wrapper =
       new nsThreadSyncDispatch(thread, event.take());
     nsresult rv = PutEvent(wrapper, aTarget); 
     
@@ -1140,7 +1140,7 @@ nsThread::PopEventQueue(nsIEventTarget* aInnermostTarget)
 
   
   nsAutoPtr<nsChainedEventQueue> queue;
-  nsRefPtr<nsNestedEventTarget> target;
+  RefPtr<nsNestedEventTarget> target;
 
   {
     MutexAutoLock lock(mLock);

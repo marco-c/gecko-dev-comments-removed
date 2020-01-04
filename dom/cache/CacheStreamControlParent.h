@@ -61,7 +61,7 @@ private:
   
   
   
-  nsRefPtr<StreamList> mStreamList;
+  RefPtr<StreamList> mStreamList;
 
   NS_DECL_OWNINGTHREAD
 };

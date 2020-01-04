@@ -100,7 +100,7 @@ ExtractFinalizationEvent(JSObject *objSelf)
 
 void Finalize(JSFreeOp *fop, JSObject *objSelf)
 {
-  nsRefPtr<FinalizationEvent> event = ExtractFinalizationEvent(objSelf);
+  RefPtr<FinalizationEvent> event = ExtractFinalizationEvent(objSelf);
   if (event == nullptr || gShuttingDown) {
     
     return;
@@ -152,7 +152,7 @@ bool ForgetImpl(JSContext* cx, const JS::CallArgs& args)
   JS::Rooted<JS::Value> valSelf(cx, args.thisv());
   JS::Rooted<JSObject*> objSelf(cx, &valSelf.toObject());
 
-  nsRefPtr<FinalizationEvent> event = ExtractFinalizationEvent(objSelf);
+  RefPtr<FinalizationEvent> event = ExtractFinalizationEvent(objSelf);
   if (event == nullptr) {
     JS_ReportError(cx, "forget() called twice");
     return false;
@@ -203,7 +203,7 @@ FinalizationWitnessService::Make(const char* aTopic,
     return NS_ERROR_FAILURE;
   }
 
-  nsRefPtr<FinalizationEvent> event = new FinalizationEvent(aTopic, aValue);
+  RefPtr<FinalizationEvent> event = new FinalizationEvent(aTopic, aValue);
 
   
   JS_SetReservedSlot(objResult, WITNESS_SLOT_EVENT,

@@ -126,7 +126,7 @@ DBAction::OpenConnection(const QuotaInfo& aQuotaInfo, nsIFile* aDBDir,
   
   
   
-  nsRefPtr<nsFileProtocolHandler> handler = new nsFileProtocolHandler();
+  RefPtr<nsFileProtocolHandler> handler = new nsFileProtocolHandler();
   rv = handler->Init();
   if (NS_WARN_IF(NS_FAILED(rv))) { return rv; }
 

@@ -159,7 +159,7 @@ private:
   
   FallibleTArray<dom::SVGTransform*> mItems;
 
-  nsRefPtr<dom::SVGAnimatedTransformList> mAList;
+  RefPtr<dom::SVGAnimatedTransformList> mAList;
 };
 
 } 

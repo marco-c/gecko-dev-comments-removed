@@ -506,11 +506,11 @@ private:
   nsScriptLoadRequestList mLoadedAsyncRequests;
   nsScriptLoadRequestList mDeferRequests;
   nsScriptLoadRequestList mXSLTRequests;
-  nsRefPtr<nsScriptLoadRequest> mParserBlockingRequest;
+  RefPtr<nsScriptLoadRequest> mParserBlockingRequest;
 
   
   struct PreloadInfo {
-    nsRefPtr<nsScriptLoadRequest> mRequest;
+    RefPtr<nsScriptLoadRequest> mRequest;
     nsString mCharset;
   };
 
@@ -529,7 +529,7 @@ private:
   nsCOMPtr<nsIScriptElement> mCurrentScript;
   nsCOMPtr<nsIScriptElement> mCurrentParserInsertedScript;
   
-  nsTArray< nsRefPtr<nsScriptLoader> > mPendingChildLoaders;
+  nsTArray< RefPtr<nsScriptLoader> > mPendingChildLoaders;
   uint32_t mBlockerCount;
   uint32_t mNumberOfProcessors;
   bool mEnabled;
@@ -558,7 +558,7 @@ public:
   }
 
   bool mWasEnabled;
-  nsRefPtr<nsScriptLoader> mLoader;
+  RefPtr<nsScriptLoader> mLoader;
 };
 
 #endif 

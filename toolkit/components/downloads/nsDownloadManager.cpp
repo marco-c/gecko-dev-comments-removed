@@ -140,7 +140,7 @@ nsresult
 nsDownloadManager::ResumeRetry(nsDownload *aDl)
 {
   
-  nsRefPtr<nsDownload> dl = aDl;
+  RefPtr<nsDownload> dl = aDl;
 
   
   nsresult rv = dl->Resume();
@@ -173,7 +173,7 @@ nsDownloadManager::PauseAllDownloads(nsCOMArray<nsDownload>& aDownloads, bool aS
 {
   nsresult retVal = NS_OK;
   for (int32_t i = aDownloads.Count() - 1; i >= 0; --i) {
-    nsRefPtr<nsDownload> dl = aDownloads[i];
+    RefPtr<nsDownload> dl = aDownloads[i];
 
     
     if (!dl->IsPaused()) {
@@ -206,7 +206,7 @@ nsDownloadManager::ResumeAllDownloads(nsCOMArray<nsDownload>& aDownloads, bool a
 {
   nsresult retVal = NS_OK;
   for (int32_t i = aDownloads.Count() - 1; i >= 0; --i) {
-    nsRefPtr<nsDownload> dl = aDownloads[i];
+    RefPtr<nsDownload> dl = aDownloads[i];
 
     
     
@@ -242,7 +242,7 @@ nsDownloadManager::RemoveAllDownloads(nsCOMArray<nsDownload>& aDownloads)
 {
   nsresult rv = NS_OK;
   for (int32_t i = aDownloads.Count() - 1; i >= 0; --i) {
-    nsRefPtr<nsDownload> dl = aDownloads[0];
+    RefPtr<nsDownload> dl = aDownloads[0];
 
     nsresult result = NS_OK;
     if (!dl->mPrivate && dl->IsPaused() && GetQuitBehavior() != QUIT_AND_CANCEL)
@@ -807,7 +807,7 @@ nsDownloadManager::RestoreActiveDownloads()
   nsresult retVal = NS_OK;
   bool hasResults;
   while (NS_SUCCEEDED(stmt->ExecuteStep(&hasResults)) && hasResults) {
-    nsRefPtr<nsDownload> dl;
+    RefPtr<nsDownload> dl;
     
     
     
@@ -1160,7 +1160,7 @@ nsDownloadManager::GetDownloadFromDB(mozIStorageConnection* aDBConn,
     return NS_ERROR_NOT_AVAILABLE;
 
   
-  nsRefPtr<nsDownload> dl = new nsDownload();
+  RefPtr<nsDownload> dl = new nsDownload();
   if (!dl)
     return NS_ERROR_OUT_OF_MEMORY;
   dl->mPrivate = aDBConn == mPrivateDBConn;
@@ -1565,7 +1565,7 @@ nsDownloadManager::AddDownload(DownloadType aDownloadType,
   rv = targetFileURL->GetFile(getter_AddRefs(targetFile));
   NS_ENSURE_SUCCESS(rv, rv);
 
-  nsRefPtr<nsDownload> dl = new nsDownload();
+  RefPtr<nsDownload> dl = new nsDownload();
   if (!dl)
     return NS_ERROR_OUT_OF_MEMORY;
 
@@ -1689,7 +1689,7 @@ nsDownloadManager::GetDownload(uint32_t aID, nsIDownload **aDownloadItem)
 
   nsDownload *itm = FindDownload(aID);
 
-  nsRefPtr<nsDownload> dl;
+  RefPtr<nsDownload> dl;
   if (!itm) {
     nsresult rv = GetDownloadFromDB(aID, getter_AddRefs(dl));
     NS_ENSURE_SUCCESS(rv, rv);
@@ -1734,13 +1734,13 @@ nsDownloadManager::GetDownloadByGUID(const nsACString& aGUID,
   nsDownload *itm = FindDownload(aGUID);
 
   nsresult rv = NS_OK;
-  nsRefPtr<nsDownload> dl;
+  RefPtr<nsDownload> dl;
   if (!itm) {
     rv = GetDownloadFromDB(aGUID, getter_AddRefs(dl));
     itm = dl.get();
   }
 
-  nsRefPtr<AsyncResult> runnable = new AsyncResult(rv, itm, aCallback);
+  RefPtr<AsyncResult> runnable = new AsyncResult(rv, itm, aCallback);
   NS_DispatchToMainThread(runnable);
   return NS_OK;
 }
@@ -1785,7 +1785,7 @@ nsDownloadManager::CancelDownload(uint32_t aID)
   NS_WARNING("Using integer IDs without compat mode enabled");
 
   
-  nsRefPtr<nsDownload> dl = FindDownload(aID);
+  RefPtr<nsDownload> dl = FindDownload(aID);
 
   
   if (!dl)
@@ -1797,7 +1797,7 @@ nsDownloadManager::CancelDownload(uint32_t aID)
 nsresult
 nsDownloadManager::RetryDownload(const nsACString& aGUID)
 {
-  nsRefPtr<nsDownload> dl;
+  RefPtr<nsDownload> dl;
   nsresult rv = GetDownloadFromDB(aGUID, getter_AddRefs(dl));
   NS_ENSURE_SUCCESS(rv, rv);
 
@@ -1812,7 +1812,7 @@ nsDownloadManager::RetryDownload(uint32_t aID)
 
   NS_WARNING("Using integer IDs without compat mode enabled");
 
-  nsRefPtr<nsDownload> dl;
+  RefPtr<nsDownload> dl;
   nsresult rv = GetDownloadFromDB(aID, getter_AddRefs(dl));
   NS_ENSURE_SUCCESS(rv, rv);
 
@@ -1895,7 +1895,7 @@ RemoveDownloadByGUID(const nsACString& aGUID, mozIStorageConnection* aDBConn)
 nsresult
 nsDownloadManager::RemoveDownload(const nsACString& aGUID)
 {
-  nsRefPtr<nsDownload> dl = FindDownload(aGUID);
+  RefPtr<nsDownload> dl = FindDownload(aGUID);
   MOZ_ASSERT(!dl, "Can't call RemoveDownload on a download in progress!");
   if (dl)
     return NS_ERROR_FAILURE;
@@ -1919,7 +1919,7 @@ nsDownloadManager::RemoveDownload(uint32_t aID)
 
   NS_WARNING("Using integer IDs without compat mode enabled");
 
-  nsRefPtr<nsDownload> dl = FindDownload(aID);
+  RefPtr<nsDownload> dl = FindDownload(aID);
   MOZ_ASSERT(!dl, "Can't call RemoveDownload on a download in progress!");
   if (dl)
     return NS_ERROR_FAILURE;
@@ -2662,7 +2662,7 @@ nsDownload::SetState(DownloadState aState)
   mDownloadState = aState;
 
   
-  nsRefPtr<nsDownload> kungFuDeathGrip = this;
+  RefPtr<nsDownload> kungFuDeathGrip = this;
 
   
   
@@ -3048,7 +3048,7 @@ nsDownload::OnStateChange(nsIWebProgress *aWebProgress,
   MOZ_ASSERT(NS_IsMainThread(), "Must call OnStateChange in main thread");
 
   
-  nsRefPtr<nsDownload> kungFuDeathGrip = this;
+  RefPtr<nsDownload> kungFuDeathGrip = this;
 
   
   

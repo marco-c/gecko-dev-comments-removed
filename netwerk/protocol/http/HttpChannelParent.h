@@ -159,7 +159,7 @@ protected:
   void FailDiversion(nsresult aErrorCode, bool aSkipResume = true);
 
   friend class HttpChannelParentListener;
-  nsRefPtr<mozilla::dom::TabParent> mTabParent;
+  RefPtr<mozilla::dom::TabParent> mTabParent;
 
   void OfflineDisconnect() override;
   uint32_t GetAppId() override;
@@ -183,7 +183,7 @@ private:
   friend class DivertCompleteEvent;
   friend class ResponseSynthesizer;
 
-  nsRefPtr<nsHttpChannel>       mChannel;
+  RefPtr<nsHttpChannel>       mChannel;
   nsCOMPtr<nsICacheEntry>       mCacheEntry;
   nsCOMPtr<nsIAssociatedContentSecurity>  mAssociatedContentSecurity;
   bool mIPCClosed;                
@@ -203,16 +203,16 @@ private:
   bool mSentRedirect1BeginFailed    : 1;
   bool mReceivedRedirect2Verify     : 1;
 
-  nsRefPtr<OfflineObserver> mObserver;
+  RefPtr<OfflineObserver> mObserver;
 
   PBOverrideStatus mPBOverride;
 
   nsCOMPtr<nsILoadContext> mLoadContext;
-  nsRefPtr<nsHttpHandler>  mHttpHandler;
+  RefPtr<nsHttpHandler>  mHttpHandler;
 
   nsAutoPtr<nsHttpResponseHead> mSynthesizedResponseHead;
 
-  nsRefPtr<HttpChannelParentListener> mParentListener;
+  RefPtr<HttpChannelParentListener> mParentListener;
   
   nsCOMPtr<nsIStreamListener> mDivertListener;
   
@@ -237,7 +237,7 @@ private:
   
   nsCOMPtr<nsIInterceptedChannel> mInterceptedChannel;
 
-  nsRefPtr<ChannelEventQueue> mEventQ;
+  RefPtr<ChannelEventQueue> mEventQ;
 };
 
 } 

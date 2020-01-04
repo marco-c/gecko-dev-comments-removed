@@ -216,7 +216,7 @@ class BackgroundDatabaseChild;
 class BackgroundRequestChildBase
 {
 protected:
-  nsRefPtr<IDBRequest> mRequest;
+  RefPtr<IDBRequest> mRequest;
 
 private:
   bool mActorDestroyed;
@@ -266,7 +266,7 @@ class BackgroundFactoryRequestChild final
   friend class PermissionRequestChild;
   friend class PermissionRequestParent;
 
-  nsRefPtr<IDBFactory> mFactory;
+  RefPtr<IDBFactory> mFactory;
   const uint64_t mRequestedVersion;
   const bool mIsDeleteOp;
 
@@ -315,7 +315,7 @@ class BackgroundDatabaseChild final
   friend class IDBDatabase;
 
   nsAutoPtr<DatabaseSpec> mSpec;
-  nsRefPtr<IDBDatabase> mTemporaryStrongDatabase;
+  RefPtr<IDBDatabase> mTemporaryStrongDatabase;
   BackgroundFactoryRequestChild* mOpenRequestActor;
   IDBDatabase* mDatabase;
 
@@ -446,7 +446,7 @@ class BackgroundDatabaseRequestChild final
   friend class BackgroundDatabaseChild;
   friend class IDBDatabase;
 
-  nsRefPtr<IDBDatabase> mDatabase;
+  RefPtr<IDBDatabase> mDatabase;
 
 private:
   
@@ -476,7 +476,7 @@ class BackgroundTransactionBase
   
   
   
-  nsRefPtr<IDBTransaction> mTemporaryStrongTransaction;
+  RefPtr<IDBTransaction> mTemporaryStrongTransaction;
 
 protected:
   
@@ -653,7 +653,7 @@ class BackgroundRequestChild final
   friend class BackgroundVersionChangeTransactionChild;
   friend class IDBTransaction;
 
-  nsRefPtr<IDBTransaction> mTransaction;
+  RefPtr<IDBTransaction> mTransaction;
 
 private:
   
@@ -719,8 +719,8 @@ class BackgroundCursorChild final
   IDBCursor* mCursor;
 
   
-  nsRefPtr<IDBRequest> mStrongRequest;
-  nsRefPtr<IDBCursor> mStrongCursor;
+  RefPtr<IDBRequest> mStrongRequest;
+  RefPtr<IDBCursor> mStrongCursor;
 
   Direction mDirection;
 

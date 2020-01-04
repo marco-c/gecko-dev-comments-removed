@@ -29,7 +29,7 @@
 #include "gfxRect.h"                    
 #include "gfxUtils.h"                   
 #include "mozilla/Assertions.h"         
-#include "mozilla/nsRefPtr.h"             
+#include "mozilla/RefPtr.h"             
 #include "mozilla/gfx/2D.h"             
 #include "mozilla/gfx/Matrix.h"         
 #include "mozilla/gfx/Point.h"          
@@ -44,7 +44,7 @@
 #include "ipc/ShadowLayerUtils.h"
 #include "mozilla/mozalloc.h"           
 #include "nsAppRunner.h"
-#include "mozilla/nsRefPtr.h"                   
+#include "mozilla/RefPtr.h"                   
 #include "nsCOMPtr.h"                   
 #include "nsDebug.h"                    
 #include "nsISupportsImpl.h"            
@@ -338,7 +338,7 @@ LayerManagerComposite::CreatePaintedLayer()
 {
   MOZ_ASSERT(gIsGtest, "Unless you're testing the compositor using GTest,"
                        "this should only be called on the drawing side");
-  nsRefPtr<PaintedLayer> layer = new PaintedLayerComposite(this);
+  RefPtr<PaintedLayer> layer = new PaintedLayerComposite(this);
   return layer.forget();
 }
 
@@ -347,7 +347,7 @@ LayerManagerComposite::CreateContainerLayer()
 {
   MOZ_ASSERT(gIsGtest, "Unless you're testing the compositor using GTest,"
                        "this should only be called on the drawing side");
-  nsRefPtr<ContainerLayer> layer = new ContainerLayerComposite(this);
+  RefPtr<ContainerLayer> layer = new ContainerLayerComposite(this);
   return layer.forget();
 }
 
@@ -363,7 +363,7 @@ LayerManagerComposite::CreateColorLayer()
 {
   MOZ_ASSERT(gIsGtest, "Unless you're testing the compositor using GTest,"
                        "this should only be called on the drawing side");
-  nsRefPtr<ColorLayer> layer = new ColorLayerComposite(this);
+  RefPtr<ColorLayer> layer = new ColorLayerComposite(this);
   return layer.forget();
 }
 
@@ -533,7 +533,7 @@ LayerManagerComposite::RenderDebugOverlay(const Rect& aBounds)
   }
 }
 
-nsRefPtr<CompositingRenderTarget>
+RefPtr<CompositingRenderTarget>
 LayerManagerComposite::PushGroupForLayerEffects()
 {
   
@@ -542,7 +542,7 @@ LayerManagerComposite::PushGroupForLayerEffects()
              gfxPrefs::LayersEffectGrayscale() ||
              gfxPrefs::LayersEffectContrast() != 0.0);
 
-  nsRefPtr<CompositingRenderTarget> previousTarget = mCompositor->GetCurrentRenderTarget();
+  RefPtr<CompositingRenderTarget> previousTarget = mCompositor->GetCurrentRenderTarget();
   
   
   IntRect rect(previousTarget->GetOrigin(), previousTarget->GetSize());
@@ -557,7 +557,7 @@ LayerManagerComposite::PushGroupForLayerEffects()
   return previousTarget;
 }
 void
-LayerManagerComposite::PopGroupForLayerEffects(nsRefPtr<CompositingRenderTarget> aPreviousTarget,
+LayerManagerComposite::PopGroupForLayerEffects(RefPtr<CompositingRenderTarget> aPreviousTarget,
                                                IntRect aClipRect,
                                                bool aGrayscaleEffect,
                                                bool aInvertEffect,
@@ -665,7 +665,7 @@ LayerManagerComposite::Render()
   }
 
   
-  nsRefPtr<Composer2D> composer2D;
+  RefPtr<Composer2D> composer2D;
   composer2D = mCompositor->GetWidget()->GetComposer2D();
 
   
@@ -735,7 +735,7 @@ LayerManagerComposite::Render()
                                                                actualBounds.width,
                                                                actualBounds.height));
 
-  nsRefPtr<CompositingRenderTarget> previousTarget;
+  RefPtr<CompositingRenderTarget> previousTarget;
   if (haveLayerEffects) {
     previousTarget = PushGroupForLayerEffects();
   } else {
@@ -916,7 +916,7 @@ LayerManagerComposite::RenderToPresentationSurface()
   EGLSurface surface = mirrorScreen->GetEGLSurface();
   if (surface == LOCAL_EGL_NO_SURFACE) {
     
-    nsRefPtr<GLContext> gl = gl::GLContextProvider::CreateForWindow(mirrorScreenWidget);
+    RefPtr<GLContext> gl = gl::GLContextProvider::CreateForWindow(mirrorScreenWidget);
     mirrorScreenWidget->SetNativeData(NS_NATIVE_OPENGL_CONTEXT,
                                       reinterpret_cast<uintptr_t>(gl.get()));
     surface = mirrorScreen->GetEGLSurface();
@@ -997,7 +997,7 @@ LayerManagerComposite::RenderToPresentationSurface()
   mCompositor->SetDispAcquireFence(mRoot,
                                    mirrorScreenWidget); 
 
-  nsRefPtr<Composer2D> composer2D;
+  RefPtr<Composer2D> composer2D;
   composer2D = mCompositor->GetWidget()->GetComposer2D();
   if (composer2D) {
     composer2D->Render(mirrorScreenWidget);
@@ -1227,7 +1227,7 @@ LayerManagerComposite::CreatePaintedLayerComposite()
     NS_WARNING("Call on destroyed layer manager");
     return nullptr;
   }
-  return nsRefPtr<PaintedLayerComposite>(new PaintedLayerComposite(this)).forget();
+  return RefPtr<PaintedLayerComposite>(new PaintedLayerComposite(this)).forget();
 }
 
 already_AddRefed<ContainerLayerComposite>
@@ -1237,7 +1237,7 @@ LayerManagerComposite::CreateContainerLayerComposite()
     NS_WARNING("Call on destroyed layer manager");
     return nullptr;
   }
-  return nsRefPtr<ContainerLayerComposite>(new ContainerLayerComposite(this)).forget();
+  return RefPtr<ContainerLayerComposite>(new ContainerLayerComposite(this)).forget();
 }
 
 already_AddRefed<ImageLayerComposite>
@@ -1247,7 +1247,7 @@ LayerManagerComposite::CreateImageLayerComposite()
     NS_WARNING("Call on destroyed layer manager");
     return nullptr;
   }
-  return nsRefPtr<ImageLayerComposite>(new ImageLayerComposite(this)).forget();
+  return RefPtr<ImageLayerComposite>(new ImageLayerComposite(this)).forget();
 }
 
 already_AddRefed<ColorLayerComposite>
@@ -1257,7 +1257,7 @@ LayerManagerComposite::CreateColorLayerComposite()
     NS_WARNING("Call on destroyed layer manager");
     return nullptr;
   }
-  return nsRefPtr<ColorLayerComposite>(new ColorLayerComposite(this)).forget();
+  return RefPtr<ColorLayerComposite>(new ColorLayerComposite(this)).forget();
 }
 
 already_AddRefed<CanvasLayerComposite>
@@ -1267,7 +1267,7 @@ LayerManagerComposite::CreateCanvasLayerComposite()
     NS_WARNING("Call on destroyed layer manager");
     return nullptr;
   }
-  return nsRefPtr<CanvasLayerComposite>(new CanvasLayerComposite(this)).forget();
+  return RefPtr<CanvasLayerComposite>(new CanvasLayerComposite(this)).forget();
 }
 
 already_AddRefed<RefLayerComposite>
@@ -1277,7 +1277,7 @@ LayerManagerComposite::CreateRefLayerComposite()
     NS_WARNING("Call on destroyed layer manager");
     return nullptr;
   }
-  return nsRefPtr<RefLayerComposite>(new RefLayerComposite(this)).forget();
+  return RefPtr<RefLayerComposite>(new RefLayerComposite(this)).forget();
 }
 
 LayerManagerComposite::AutoAddMaskEffect::AutoAddMaskEffect(Layer* aMaskLayer,

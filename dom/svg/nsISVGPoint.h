@@ -154,7 +154,7 @@ protected:
   bool IndexIsValid();
 #endif
 
-  nsRefPtr<DOMSVGPointList> mList;
+  RefPtr<DOMSVGPointList> mList;
 
   
   

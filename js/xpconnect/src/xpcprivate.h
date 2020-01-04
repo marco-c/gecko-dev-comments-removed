@@ -642,12 +642,12 @@ private:
     XPCRootSetElem* mWrappedJSRoots;
     XPCRootSetElem* mObjectHolderRoots;
     nsTArray<xpcGCCallback> extraGCCallbacks;
-    nsRefPtr<WatchdogManager> mWatchdogManager;
+    RefPtr<WatchdogManager> mWatchdogManager;
     JS::GCSliceCallback mPrevGCSliceCallback;
     JS::PersistentRootedObject mUnprivilegedJunkScope;
     JS::PersistentRootedObject mPrivilegedJunkScope;
     JS::PersistentRootedObject mCompilationScope;
-    nsRefPtr<AsyncFreeSnowWhite> mAsyncSnowWhiteFreer;
+    RefPtr<AsyncFreeSnowWhite> mAsyncSnowWhiteFreer;
 
     
     
@@ -884,7 +884,7 @@ private:
     JSAutoRequest                   mAr;
     State                           mState;
 
-    nsRefPtr<nsXPConnect>           mXPC;
+    RefPtr<nsXPConnect>           mXPC;
 
     XPCContext*                     mXPCContext;
     JSContext*                      mJSContext;
@@ -1204,7 +1204,7 @@ private:
     XPCJSRuntime*                    mRuntime;
     Native2WrappedNativeMap*         mWrappedNativeMap;
     ClassInfo2WrappedNativeProtoMap* mWrappedNativeProtoMap;
-    nsRefPtr<nsXPCComponentsBase>    mComponents;
+    RefPtr<nsXPCComponentsBase>    mComponents;
     XPCWrappedNativeScope*           mNext;
     
     
@@ -1982,7 +1982,7 @@ private:
     XPCNativeInterface* mInterface;
     
     
-    nsRefPtr<nsISupports> mNative;
+    RefPtr<nsISupports> mNative;
     JS::TenuredHeap<JSObject*> mJSObject;
 };
 
@@ -2504,7 +2504,7 @@ protected:
 
 private:
     JS::Heap<JSObject*> mJSObj;
-    nsRefPtr<nsXPCWrappedJSClass> mClass;
+    RefPtr<nsXPCWrappedJSClass> mClass;
     nsXPCWrappedJS* mRoot;    
     nsXPCWrappedJS* mNext;
     nsCOMPtr<nsISupports> mOuter;    
@@ -2814,7 +2814,7 @@ private:
     void ResolveName();
 
 private:
-    nsRefPtr<nsJSID> mDetails;
+    RefPtr<nsJSID> mDetails;
 };
 
 
@@ -2912,9 +2912,9 @@ protected:
     XPCWrappedNativeScope*                   mScope;
 
     
-    nsRefPtr<nsXPCComponents_Interfaces>     mInterfaces;
-    nsRefPtr<nsXPCComponents_InterfacesByID> mInterfacesByID;
-    nsRefPtr<nsXPCComponents_Results>        mResults;
+    RefPtr<nsXPCComponents_Interfaces>     mInterfaces;
+    RefPtr<nsXPCComponents_InterfacesByID> mInterfacesByID;
+    RefPtr<nsXPCComponents_Results>        mResults;
 
     friend class XPCWrappedNativeScope;
 };
@@ -2933,12 +2933,12 @@ protected:
     virtual void ClearMembers() override;
 
     
-    nsRefPtr<nsXPCComponents_Classes>     mClasses;
-    nsRefPtr<nsXPCComponents_ClassesByID> mClassesByID;
-    nsRefPtr<nsXPCComponents_ID>          mID;
-    nsRefPtr<nsXPCComponents_Exception>   mException;
-    nsRefPtr<nsXPCComponents_Constructor> mConstructor;
-    nsRefPtr<nsXPCComponents_Utils>       mUtils;
+    RefPtr<nsXPCComponents_Classes>     mClasses;
+    RefPtr<nsXPCComponents_ClassesByID> mClassesByID;
+    RefPtr<nsXPCComponents_ID>          mID;
+    RefPtr<nsXPCComponents_Exception>   mException;
+    RefPtr<nsXPCComponents_Constructor> mConstructor;
+    RefPtr<nsXPCComponents_Utils>       mUtils;
 
     friend class XPCWrappedNativeScope;
 };

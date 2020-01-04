@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef mozilla_dom_File_h
 #define mozilla_dom_File_h
@@ -44,12 +44,12 @@ class BlobImpl;
 class File;
 class OwningArrayBufferOrArrayBufferViewOrBlobOrString;
 
-
-
-
-
-
-
+/**
+ * Used to indicate when a Blob/BlobImpl that was created from an nsIFile
+ * (when IsFile() will return true) was from an nsIFile for which
+ * nsIFile::IsDirectory() returned true. This is a tri-state to enable us to
+ * assert that the state is always set when callers request it.
+ */
 enum BlobDirState : uint32_t {
   eIsDir,
   eIsNotDir,
@@ -81,9 +81,9 @@ public:
   Create(nsISupports* aParent, const nsAString& aContentType, uint64_t aStart,
          uint64_t aLength);
 
-  
-  
-  
+  // The returned Blob takes ownership of aMemoryBuffer. aMemoryBuffer will be
+  // freed by free so it must be allocated by malloc or something
+  // compatible with it.
   static already_AddRefed<Blob>
   CreateMemoryBlob(nsISupports* aParent, void* aMemoryBuffer, uint64_t aLength,
                    const nsAString& aContentType);
@@ -100,24 +100,24 @@ public:
 
   bool IsFile() const;
 
-  
-
-
-
+  /**
+   * This may return true if the Blob was created from an nsIFile that is a
+   * directory.
+   */
   bool IsDirectory() const;
 
-  const nsTArray<nsRefPtr<BlobImpl>>* GetSubBlobImpls() const;
+  const nsTArray<RefPtr<BlobImpl>>* GetSubBlobImpls() const;
 
-  
-  
-  
+  // This method returns null if this Blob is not a File; it returns
+  // the same object in case this Blob already implements the File interface;
+  // otherwise it returns a new File object with the same BlobImpl.
   already_AddRefed<File> ToFile();
 
-  
-  
+  // XXXjwatt Consider having a ToDirectory() method. The need for a FileSystem
+  // object complicates that though.
 
-  
-  
+  // This method creates a new File object with the given name and the same
+  // BlobImpl.
   already_AddRefed<File> ToFile(const nsAString& aName) const;
 
   already_AddRefed<Blob>
@@ -130,7 +130,7 @@ public:
   int64_t
   GetFileId();
 
-  
+  // WebIDL methods
   nsISupports* GetParentObject() const
   {
     return mParent;
@@ -139,11 +139,11 @@ public:
   bool
   IsMemoryFile() const;
 
-  
+  // Blob constructor
   static already_AddRefed<Blob>
   Constructor(const GlobalObject& aGlobal, ErrorResult& aRv);
 
-  
+  // Blob constructor
   static already_AddRefed<Blob>
   Constructor(const GlobalObject& aGlobal,
               const Sequence<OwningArrayBufferOrArrayBufferViewOrBlobOrString>& aData,
@@ -163,17 +163,17 @@ public:
                                ErrorResult& aRv);
 
 protected:
-  
+  // File constructor should never be used directly. Use Blob::Create instead.
   Blob(nsISupports* aParent, BlobImpl* aImpl);
   virtual ~Blob() {};
 
   virtual bool HasFileInterface() const { return false; }
 
-  
-  
-  
-  
-  nsRefPtr<BlobImpl> mImpl;
+  // The member is the real backend implementation of this File/Blob.
+  // It's thread-safe and not CC-able and it's the only element that is moved
+  // between threads.
+  // Note: we should not store any other state in this class!
+  RefPtr<BlobImpl> mImpl;
 
 private:
   nsCOMPtr<nsISupports> mParent;
@@ -184,8 +184,8 @@ class File final : public Blob
   friend class Blob;
 
 public:
-  
-  
+  // Note: BlobImpl must be a File in order to use this method.
+  // Check impl->IsFile().
   static File*
   Create(nsISupports* aParent, BlobImpl* aImpl);
 
@@ -198,9 +198,9 @@ public:
   Create(nsISupports* aParent, const nsAString& aName,
          const nsAString& aContentType, uint64_t aLength);
 
-  
-  
-  
+  // The returned File takes ownership of aMemoryBuffer. aMemoryBuffer will be
+  // freed by free so it must be allocated by malloc or something
+  // compatible with it.
   static already_AddRefed<File>
   CreateMemoryFile(nsISupports* aParent, void* aMemoryBuffer, uint64_t aLength,
                    const nsAString& aName, const nsAString& aContentType,
@@ -213,12 +213,12 @@ public:
   CreateFromFile(nsISupports* aParent, nsIFile* aFile, const nsAString& aName,
                  const nsAString& aContentType);
 
-  
+  // WebIDL methods
 
   virtual JSObject* WrapObject(JSContext *cx,
                                JS::Handle<JSObject*> aGivenProto) override;
 
-  
+  // File constructor
   static already_AddRefed<File>
   Constructor(const GlobalObject& aGlobal,
               const Sequence<OwningArrayBufferOrArrayBufferViewOrBlobOrString>& aData,
@@ -226,21 +226,21 @@ public:
               const FilePropertyBag& aBag,
               ErrorResult& aRv);
 
-  
+  // File constructor - ChromeOnly
   static already_AddRefed<File>
   Constructor(const GlobalObject& aGlobal,
               Blob& aData,
               const ChromeFilePropertyBag& aBag,
               ErrorResult& aRv);
 
-  
+  // File constructor - ChromeOnly
   static already_AddRefed<File>
   Constructor(const GlobalObject& aGlobal,
               const nsAString& aData,
               const ChromeFilePropertyBag& aBag,
               ErrorResult& aRv);
 
-  
+  // File constructor - ChromeOnly
   static already_AddRefed<File>
   Constructor(const GlobalObject& aGlobal,
               nsIFile* aData,
@@ -263,14 +263,14 @@ protected:
   virtual bool HasFileInterface() const override { return true; }
 
 private:
-  
-  
+  // File constructor should never be used directly. Use Blob::Create or
+  // File::Create.
   File(nsISupports* aParent, BlobImpl* aImpl);
   ~File() {};
 };
 
-
-
+// This is the abstract class for any File backend. It must be nsISupports
+// because this class must be ref-counted and it has to work with IPC.
 class BlobImpl : public nsISupports
 {
 public:
@@ -295,12 +295,12 @@ public:
 
   virtual void GetType(nsAString& aType) = 0;
 
-  
-
-
-
-
-
+  /**
+   * An effectively-unique serial number identifying this instance of FileImpl.
+   *
+   * Implementations should obtain a serial number from
+   * FileImplBase::NextSerialNumber().
+   */
   virtual uint64_t GetSerialNumber() const = 0;
 
   already_AddRefed<BlobImpl>
@@ -311,7 +311,7 @@ public:
   CreateSlice(uint64_t aStart, uint64_t aLength,
               const nsAString& aContentType, ErrorResult& aRv) = 0;
 
-  virtual const nsTArray<nsRefPtr<BlobImpl>>*
+  virtual const nsTArray<RefPtr<BlobImpl>>*
   GetSubBlobImpls() const = 0;
 
   virtual void GetInternalStream(nsIInputStream** aStream,
@@ -342,29 +342,29 @@ public:
 
   virtual bool IsFile() const = 0;
 
-  
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Called when this BlobImpl was created from an nsIFile in order to call
+   * nsIFile::IsDirectory() and cache the result so that when the BlobImpl is
+   * copied to another process that informaton is available.
+   * nsIFile::IsDirectory() does synchronous I/O, and BlobImpl objects may be
+   * created on the main thread or in a non-chrome process (where I/O is not
+   * allowed). Do not call this on a non-chrome process, and preferably do not
+   * call it on the main thread.
+   *
+   * Not all creators of BlobImplFile will call this method, in which case
+   * calling IsDirectory will MOZ_ASSERT.
+   */
   virtual void LookupAndCacheIsDirectory() = 0;
   virtual void SetIsDirectory(bool aIsDir) = 0;
   virtual bool IsDirectory() const = 0;
 
-  
-
-
-
+  /**
+   * Prefer IsDirectory(). This exists to help consumer code pass on state from
+   * one BlobImpl when creating another.
+   */
   virtual BlobDirState GetDirState() const = 0;
 
-  
+  // True if this implementation can be sent to other threads.
   virtual bool MayBeClonedToOtherThreads() const
   {
     return true;
@@ -392,7 +392,7 @@ public:
     , mLastModificationDate(aLastModifiedDate)
     , mSerialNumber(NextSerialNumber())
   {
-    
+    // Ensure non-null mContentType by default
     mContentType.SetIsVoid(false);
   }
 
@@ -408,7 +408,7 @@ public:
     , mLastModificationDate(INT64_MAX)
     , mSerialNumber(NextSerialNumber())
   {
-    
+    // Ensure non-null mContentType by default
     mContentType.SetIsVoid(false);
   }
 
@@ -422,7 +422,7 @@ public:
     , mLastModificationDate(INT64_MAX)
     , mSerialNumber(NextSerialNumber())
   {
-    
+    // Ensure non-null mContentType by default
     mContentType.SetIsVoid(false);
   }
 
@@ -439,7 +439,7 @@ public:
   {
     NS_ASSERTION(aLength != UINT64_MAX,
                  "Must know length when creating slice");
-    
+    // Ensure non-null mContentType by default
     mContentType.SetIsVoid(false);
   }
 
@@ -472,7 +472,7 @@ public:
     return nullptr;
   }
 
-  virtual const nsTArray<nsRefPtr<BlobImpl>>*
+  virtual const nsTArray<RefPtr<BlobImpl>>*
   GetSubBlobImpls() const override
   {
     return nullptr;
@@ -535,9 +535,9 @@ public:
     mDirState = aIsDir ? BlobDirState::eIsDir : BlobDirState::eIsNotDir;
   }
 
-  
-
-
+  /**
+   * Returns true if the nsIFile that this object wraps is a directory.
+   */
   virtual bool IsDirectory() const override
   {
     MOZ_ASSERT(mDirState != BlobDirState::eUnknownIfDir,
@@ -560,11 +560,11 @@ public:
 protected:
   virtual ~BlobImplBase() {}
 
-  
-
-
-
-
+  /**
+   * Returns a new, effectively-unique serial number. This should be used
+   * by implementations to obtain a serial number for GetSerialNumber().
+   * The implementation is thread safe.
+   */
   static uint64_t NextSerialNumber();
 
   bool mIsFile;
@@ -573,7 +573,7 @@ protected:
 
   nsString mContentType;
   nsString mName;
-  nsString mPath; 
+  nsString mPath; // The path relative to a directory chosen by the user
 
   uint64_t mStart;
   uint64_t mLength;
@@ -583,10 +583,10 @@ protected:
   const uint64_t mSerialNumber;
 };
 
-
-
-
-
+/**
+ * This class may be used off the main thread, and in particular, its
+ * constructor and destructor may not run on the same thread.  Be careful!
+ */
 class BlobImplMemory final : public BlobImplBase
 {
 public:
@@ -639,13 +639,13 @@ public:
     }
 
   private:
-    
+    // Private destructor, to discourage deletion outside of Release():
     ~DataOwner() {
       mozilla::StaticMutexAutoLock lock(sDataOwnerMutex);
 
       remove();
       if (sDataOwners->isEmpty()) {
-        
+        // Free the linked list if it's empty.
         sDataOwners = nullptr;
       }
 
@@ -655,9 +655,9 @@ public:
   public:
     static void EnsureMemoryReporterRegistered();
 
-    
-    
-    
+    // sDataOwners and sMemoryReporterRegistered may only be accessed while
+    // holding sDataOwnerMutex!  You also must hold the mutex while touching
+    // elements of the linked list that DataOwner inherits from.
     static mozilla::StaticMutex sDataOwnerMutex;
     static mozilla::StaticAutoPtr<mozilla::LinkedList<DataOwner> > sDataOwners;
     static bool sMemoryReporterRegistered;
@@ -667,7 +667,7 @@ public:
   };
 
 private:
-  
+  // Create slice
   BlobImplMemory(const BlobImplMemory* aOther, uint64_t aStart,
                  uint64_t aLength, const nsAString& aContentType)
     : BlobImplBase(aContentType, aOther->mStart + aStart, aLength)
@@ -679,8 +679,8 @@ private:
 
   ~BlobImplMemory() {}
 
-  
-  nsRefPtr<DataOwner> mDataOwner;
+  // Used when backed by a memory store
+  RefPtr<DataOwner> mDataOwner;
 };
 
 class BlobImplTemporaryBlob final : public BlobImplBase
@@ -715,7 +715,7 @@ private:
   ~BlobImplTemporaryBlob() {}
 
   uint64_t mStartPos;
-  nsRefPtr<nsTemporaryFileInputStream::FileDescOwner> mFileDescOwner;
+  RefPtr<nsTemporaryFileInputStream::FileDescOwner> mFileDescOwner;
 };
 
 class BlobImplFile : public BlobImplBase
@@ -723,7 +723,7 @@ class BlobImplFile : public BlobImplBase
 public:
   NS_DECL_ISUPPORTS_INHERITED
 
-  
+  // Create as a file
   explicit BlobImplFile(nsIFile* aFile, bool aTemporary = false)
     : BlobImplBase(EmptyString(), EmptyString(), UINT64_MAX, INT64_MAX)
     , mFile(aFile)
@@ -731,12 +731,12 @@ public:
     , mIsTemporary(aTemporary)
   {
     NS_ASSERTION(mFile, "must have file");
-    
+    // Lazily get the content type and size
     mContentType.SetIsVoid(true);
     mFile->GetLeafName(mName);
   }
 
-  
+  // Create as a file
   BlobImplFile(const nsAString& aName, const nsAString& aContentType,
                uint64_t aLength, nsIFile* aFile)
     : BlobImplBase(aName, aContentType, aLength, UINT64_MAX)
@@ -758,7 +758,7 @@ public:
     NS_ASSERTION(mFile, "must have file");
   }
 
-  
+  // Create as a file with custom name
   BlobImplFile(nsIFile* aFile, const nsAString& aName,
                const nsAString& aContentType)
     : BlobImplBase(aName, aContentType, UINT64_MAX, INT64_MAX)
@@ -768,23 +768,23 @@ public:
   {
     NS_ASSERTION(mFile, "must have file");
     if (aContentType.IsEmpty()) {
-      
+      // Lazily get the content type and size
       mContentType.SetIsVoid(true);
     }
   }
 
-  
+  // Create as a file to be later initialized
   BlobImplFile()
     : BlobImplBase(EmptyString(), EmptyString(), UINT64_MAX, INT64_MAX)
     , mWholeFile(true)
     , mIsTemporary(false)
   {
-    
+    // Lazily get the content type and size
     mContentType.SetIsVoid(true);
     mName.SetIsVoid(true);
   }
 
-  
+  // Overrides
   virtual uint64_t GetSize(ErrorResult& aRv) override;
   virtual void GetType(nsAString& aType) override;
   virtual int64_t GetLastModified(ErrorResult& aRv) override;
@@ -802,8 +802,8 @@ protected:
   virtual ~BlobImplFile() {
     if (mFile && mIsTemporary) {
       NS_WARNING("In temporary ~BlobImplFile");
-      
-      
+      // Ignore errors if any, not much we can do. Clean-up will be done by
+      // https://mxr.mozilla.org/mozilla-central/source/xpcom/io/nsAnonymousTemporaryFile.cpp?rev=6c1c7e45c902#127
 #ifdef DEBUG
       nsresult rv =
 #endif
@@ -813,7 +813,7 @@ protected:
   }
 
 private:
-  
+  // Create slice
   BlobImplFile(const BlobImplFile* aOther, uint64_t aStart,
                uint64_t aLength, const nsAString& aContentType)
     : BlobImplBase(aContentType, aOther->mStart + aStart, aLength)
@@ -834,7 +834,7 @@ private:
   bool mIsTemporary;
 };
 
-} 
-} 
+} // namespace dom
+} // namespace mozilla
 
-#endif 
+#endif // mozilla_dom_File_h

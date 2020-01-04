@@ -88,7 +88,7 @@ protected:
   nsMenuObjectX*            mParent; 
   nsMenuGroupOwnerX*        mMenuGroupOwner; 
   
-  nsRefPtr<nsMenuItemIconX> mIcon;
+  RefPtr<nsMenuItemIconX> mIcon;
   GeckoNSMenu*              mNativeMenu; 
   MenuDelegate*             mMenuDelegate; 
   

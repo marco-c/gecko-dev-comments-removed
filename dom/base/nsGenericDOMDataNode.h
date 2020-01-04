@@ -262,7 +262,7 @@ protected:
     
 
 
-    nsRefPtr<mozilla::dom::ShadowRoot> mContainingShadow;
+    RefPtr<mozilla::dom::ShadowRoot> mContainingShadow;
 
     
 

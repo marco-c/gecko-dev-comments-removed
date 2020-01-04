@@ -1228,7 +1228,7 @@ nsPrintOptions::SavePrintSettingsToPrefs(nsIPrintSettings *aPS,
     
     
     
-    nsRefPtr<nsPrintingProxy> proxy = nsPrintingProxy::GetInstance();
+    RefPtr<nsPrintingProxy> proxy = nsPrintingProxy::GetInstance();
     return proxy->SavePrintSettings(aPS, aUsePrinterNamePrefix, aFlags);
   }
 

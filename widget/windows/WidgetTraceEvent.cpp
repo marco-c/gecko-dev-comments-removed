@@ -80,7 +80,7 @@ HWND GetHiddenWindowHWND()
 {
   
   
-  nsRefPtr<HWNDGetter> getter = new HWNDGetter();
+  RefPtr<HWNDGetter> getter = new HWNDGetter();
   NS_DispatchToMainThread(getter, NS_DISPATCH_SYNC);
   return getter->hidden_window_hwnd;
 }

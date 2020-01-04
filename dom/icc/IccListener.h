@@ -42,8 +42,8 @@ private:
   
   
   
-  nsRefPtr<Icc> mIcc;
-  nsRefPtr<IccManager> mIccManager;
+  RefPtr<Icc> mIcc;
+  RefPtr<IccManager> mIccManager;
   
   
   nsCOMPtr<nsIIcc> mHandler;

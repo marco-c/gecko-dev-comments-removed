@@ -694,7 +694,7 @@ nsComboboxControlFrame::NotifyGeometryChange()
       !mDelayedShowDropDown) {
     
     
-    nsRefPtr<nsResizeDropdownAtFinalPosition> resize =
+    RefPtr<nsResizeDropdownAtFinalPosition> resize =
       new nsResizeDropdownAtFinalPosition(this);
     NS_DispatchToCurrentThread(resize);
   }
@@ -837,7 +837,7 @@ nsComboboxControlFrame::Reflow(nsPresContext*          aPresContext,
 
   
   ReflowDropdown(aPresContext, aReflowState);
-  nsRefPtr<nsResizeDropdownAtFinalPosition> resize =
+  RefPtr<nsResizeDropdownAtFinalPosition> resize =
     new nsResizeDropdownAtFinalPosition(this);
   if (NS_SUCCEEDED(aPresContext->PresShell()->PostReflowCallback(resize))) {
     
@@ -992,7 +992,7 @@ nsComboboxControlFrame::RedisplayText(int32_t aIndex)
                  "If we happen to run our redisplay event now, we might kill "
                  "ourselves!");
 
-    nsRefPtr<RedisplayTextEvent> event = new RedisplayTextEvent(this);
+    RefPtr<RedisplayTextEvent> event = new RedisplayTextEvent(this);
     mRedisplayTextEvent = event;
     if (!nsContentUtils::AddScriptRunner(event))
       mRedisplayTextEvent.Forget();
@@ -1347,13 +1347,13 @@ nsComboboxControlFrame::CreateFrameFor(nsIContent*      aContent)
   nsStyleSet *styleSet = shell->StyleSet();
 
   
-  nsRefPtr<nsStyleContext> styleContext;
+  RefPtr<nsStyleContext> styleContext;
   styleContext = styleSet->
     ResolveAnonymousBoxStyle(nsCSSAnonBoxes::mozDisplayComboboxControlFrame,
                              mStyleContext,
                              nsStyleSet::eSkipParentDisplayBasedStyleFixup);
 
-  nsRefPtr<nsStyleContext> textStyleContext;
+  RefPtr<nsStyleContext> textStyleContext;
   textStyleContext = styleSet->ResolveStyleForNonElement(mStyleContext);
 
   

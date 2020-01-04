@@ -9,14 +9,14 @@
 #include "Units.h"                      
 #include "mozilla/layers/LayerManagerComposite.h"  
 #include "mozilla/Attributes.h"         
-#include "mozilla/nsRefPtr.h"             
+#include "mozilla/RefPtr.h"             
 #include "mozilla/TimeStamp.h"          
 #include "mozilla/dom/ScreenOrientation.h"  
 #include "mozilla/gfx/BasePoint.h"      
 #include "mozilla/gfx/Matrix.h"         
 #include "mozilla/layers/FrameUniformityData.h" 
 #include "mozilla/layers/LayersMessages.h"  
-#include "mozilla/nsRefPtr.h"                   
+#include "mozilla/RefPtr.h"                   
 #include "nsISupportsImpl.h"            
 
 namespace mozilla {
@@ -200,7 +200,7 @@ private:
   TargetConfig mTargetConfig;
   CSSRect mContentRect;
 
-  nsRefPtr<LayerManagerComposite> mLayerManager;
+  RefPtr<LayerManagerComposite> mLayerManager;
   
   
   

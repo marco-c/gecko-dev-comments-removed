@@ -83,7 +83,7 @@ nsCookie::Create(const nsACString &aName,
 {
   
   
-  nsRefPtr<nsUTF8ConverterService> converter = new nsUTF8ConverterService();
+  RefPtr<nsUTF8ConverterService> converter = new nsUTF8ConverterService();
   nsAutoCString aUTF8Value;
   converter->ConvertStringToUTF8(aValue, "UTF-8", false, true, 1, aUTF8Value);
 

@@ -328,7 +328,7 @@ nsNumberControlFrame::MakeAnonymousElement(Element** aResult,
 {
   
   nsCOMPtr<nsIDocument> doc = mContent->GetComposedDoc();
-  nsRefPtr<Element> resultElement = doc->CreateHTMLElement(aTagName);
+  RefPtr<Element> resultElement = doc->CreateHTMLElement(aTagName);
 
   
   
@@ -337,7 +337,7 @@ nsNumberControlFrame::MakeAnonymousElement(Element** aResult,
   NS_ASSERTION(aPseudoType != nsCSSPseudoElements::ePseudo_NotPseudoElement,
                "Expecting anonymous children to all be pseudo-elements");
   
-  nsRefPtr<nsStyleContext> newStyleContext =
+  RefPtr<nsStyleContext> newStyleContext =
     PresContext()->StyleSet()->ResolvePseudoElementStyle(mContent->AsElement(),
                                                          aPseudoType,
                                                          aParentContext,
@@ -424,7 +424,7 @@ nsNumberControlFrame::CreateAnonymousContent(nsTArray<ContentInfo>& aElements)
 
   if (mContent->AsElement()->State().HasState(NS_EVENT_STATE_FOCUS)) {
     
-    nsRefPtr<FocusTextField> focusJob = new FocusTextField(mContent, mTextField);
+    RefPtr<FocusTextField> focusJob = new FocusTextField(mContent, mTextField);
     nsContentUtils::AddScriptRunner(focusJob);
   }
 

@@ -20,7 +20,7 @@ namespace dom {
 
  NuwaParent*
 NuwaParent::Alloc() {
-  nsRefPtr<NuwaParent> actor = new NuwaParent();
+  RefPtr<NuwaParent> actor = new NuwaParent();
   return actor.forget().take();
 }
 
@@ -36,7 +36,7 @@ NuwaParent::ActorConstructed(mozilla::dom::PNuwaParent *aActor)
  bool
 NuwaParent::Dealloc(mozilla::dom::PNuwaParent *aActor)
 {
-  nsRefPtr<NuwaParent> actor = dont_AddRef(static_cast<NuwaParent*>(aActor));
+  RefPtr<NuwaParent> actor = dont_AddRef(static_cast<NuwaParent*>(aActor));
   return true;
 }
 
@@ -87,7 +87,7 @@ NuwaParent::CloneProtocol(Channel* aChannel,
                           ProtocolCloneContext* aCtx)
 {
   MOZ_ASSERT(NS_IsMainThread());
-  nsRefPtr<NuwaParent> self = this;
+  RefPtr<NuwaParent> self = this;
 
   MonitorAutoLock lock(mMonitor);
 
@@ -107,7 +107,7 @@ NuwaParent::CloneProtocol(Channel* aChannel,
   while (!mClonedActor) {
     lock.Wait();
   }
-  nsRefPtr<NuwaParent> actor = mClonedActor;
+  RefPtr<NuwaParent> actor = mClonedActor;
   mClonedActor = nullptr;
 
   
@@ -143,12 +143,12 @@ NuwaParent::ActorDestroy(ActorDestroyReason aWhy)
 {
   AssertIsOnWorkerThread();
 
-  nsRefPtr<NuwaParent> self = this;
+  RefPtr<NuwaParent> self = this;
   nsCOMPtr<nsIRunnable> runnable = NS_NewRunnableFunction([self] () -> void
   {
     
     
-    nsRefPtr<ContentParent> contentParent = self->mContentParent;
+    RefPtr<ContentParent> contentParent = self->mContentParent;
 
     contentParent->SetNuwaParent(nullptr);
     
@@ -229,7 +229,7 @@ NuwaParent::ForkNewProcess(uint32_t& aPid,
 
   mNewProcessFds = Move(aFds);
 
-  nsRefPtr<NuwaParent> self = this;
+  RefPtr<NuwaParent> self = this;
   nsCOMPtr<nsIRunnable> runnable = NS_NewRunnableFunction([self] () -> void
   {
     mozilla::unused << self->SendFork();

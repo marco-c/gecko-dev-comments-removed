@@ -36,7 +36,7 @@ public:
 protected:
 
   nsIEditor* mEditor;                      
-  nsRefPtr<mozilla::CSSStyleSheet> mSheet; 
+  RefPtr<mozilla::CSSStyleSheet> mSheet; 
 
 };
 
@@ -61,7 +61,7 @@ public:
 protected:
 
   nsIEditor* mEditor;                      
-  nsRefPtr<mozilla::CSSStyleSheet> mSheet; 
+  RefPtr<mozilla::CSSStyleSheet> mSheet; 
 
 };
 

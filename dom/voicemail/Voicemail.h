@@ -82,12 +82,12 @@ private:
 
 private:
   nsCOMPtr<nsIVoicemailService> mService;
-  nsRefPtr<Listener> mListener;
+  RefPtr<Listener> mListener;
 
   
   
   
-  nsAutoTArray<nsRefPtr<VoicemailStatus>, 1> mStatuses;
+  nsAutoTArray<RefPtr<VoicemailStatus>, 1> mStatuses;
 
   
   

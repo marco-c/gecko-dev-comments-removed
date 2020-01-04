@@ -494,7 +494,7 @@ class nsStyleSet final
   
   nsTArray<nsCOMPtr<nsIStyleRuleProcessor> > mScopedDocSheetRuleProcessors;
 
-  nsRefPtr<nsBindingManager> mBindingManager;
+  RefPtr<nsBindingManager> mBindingManager;
 
   nsRuleNode* mRuleTree; 
                          
@@ -514,15 +514,15 @@ class nsStyleSet final
 
   
   
-  nsRefPtr<nsEmptyStyleRule> mFirstLineRule, mFirstLetterRule, mPlaceholderRule;
+  RefPtr<nsEmptyStyleRule> mFirstLineRule, mFirstLetterRule, mPlaceholderRule;
 
   
   
-  nsRefPtr<nsInitialStyleRule> mInitialStyleRule;
+  RefPtr<nsInitialStyleRule> mInitialStyleRule;
 
   
   
-  nsRefPtr<nsDisableTextZoomStyleRule> mDisableTextZoomStyleRule;
+  RefPtr<nsDisableTextZoomStyleRule> mDisableTextZoomStyleRule;
 
   
   
@@ -530,7 +530,7 @@ class nsStyleSet final
   nsTArray<nsRuleNode*> mOldRuleTrees;
 
   
-  nsRefPtr<gfxFontFeatureValueSet> mFontFeatureValuesLookup;
+  RefPtr<gfxFontFeatureValueSet> mFontFeatureValuesLookup;
 };
 
 #ifdef MOZILLA_INTERNAL_API

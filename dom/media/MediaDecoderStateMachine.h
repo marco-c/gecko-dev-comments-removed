@@ -155,7 +155,7 @@ public:
   void RemoveOutputStream(MediaStream* aStream);
 
   
-  nsRefPtr<MediaDecoder::SeekPromise> InvokeSeek(SeekTarget aTarget);
+  RefPtr<MediaDecoder::SeekPromise> InvokeSeek(SeekTarget aTarget);
 
   
   void DispatchSetDormant(bool aDormant);
@@ -181,7 +181,7 @@ public:
   
   void DispatchMinimizePrerollUntilPlaybackStarts()
   {
-    nsRefPtr<MediaDecoderStateMachine> self = this;
+    RefPtr<MediaDecoderStateMachine> self = this;
     nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction([self] () -> void
     {
       MOZ_ASSERT(self->OnTaskQueue());
@@ -197,7 +197,7 @@ public:
   
   void DispatchSetFragmentEndTime(int64_t aEndTime)
   {
-    nsRefPtr<MediaDecoderStateMachine> self = this;
+    RefPtr<MediaDecoderStateMachine> self = this;
     nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction([self, aEndTime] () {
       self->mFragmentEndTime = aEndTime;
     });
@@ -206,7 +206,7 @@ public:
 
   void DispatchAudioOffloading(bool aAudioOffloading)
   {
-    nsRefPtr<MediaDecoderStateMachine> self = this;
+    RefPtr<MediaDecoderStateMachine> self = this;
     nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction([=] () {
       if (self->mAudioOffloading != aAudioOffloading) {
         self->mAudioOffloading = aAudioOffloading;
@@ -263,7 +263,7 @@ private:
 
   void SetAudioCaptured(bool aCaptured);
 
-  nsRefPtr<MediaDecoder::SeekPromise> Seek(SeekTarget aTarget);
+  RefPtr<MediaDecoder::SeekPromise> Seek(SeekTarget aTarget);
 
   void Shutdown();
 
@@ -388,8 +388,8 @@ protected:
   void Push(MediaData* aSample, MediaData::Type aSampleType);
   void PushFront(MediaData* aSample, MediaData::Type aSampleType);
 
-  void OnAudioPopped(const nsRefPtr<MediaData>& aSample);
-  void OnVideoPopped(const nsRefPtr<MediaData>& aSample);
+  void OnAudioPopped(const RefPtr<MediaData>& aSample);
+  void OnVideoPopped(const RefPtr<MediaData>& aSample);
 
   void VolumeChanged();
   void LogicalPlaybackRateChanged();
@@ -661,10 +661,10 @@ private:
   
   
   
-  nsRefPtr<MediaDecoder> mDecoder;
+  RefPtr<MediaDecoder> mDecoder;
 
   
-  nsRefPtr<TaskQueue> mTaskQueue;
+  RefPtr<TaskQueue> mTaskQueue;
 
   
   WatchManager<MediaDecoderStateMachine> mWatchManager;
@@ -720,7 +720,7 @@ private:
 
   private:
     MediaDecoderStateMachine* mSelf;
-    nsRefPtr<MediaTimer> mMediaTimer;
+    RefPtr<MediaTimer> mMediaTimer;
     MozPromiseRequestHolder<mozilla::MediaTimerPromise> mRequest;
     TimeStamp mTarget;
 
@@ -762,7 +762,7 @@ private:
       mHaveStartTimePromise.RejectIfExists(false, __func__);
     }
 
-    nsRefPtr<HaveStartTimePromise> AwaitStartTime()
+    RefPtr<HaveStartTimePromise> AwaitStartTime()
     {
       if (HaveStartTime()) {
         return HaveStartTimePromise::CreateAndResolve(true, __func__);
@@ -776,7 +776,7 @@ private:
     };
 
     template<typename PromiseType, MediaData::Type SampleType>
-    nsRefPtr<PromiseType> ProcessFirstSample(typename PromiseSampleType<PromiseType>::Type* aData)
+    RefPtr<PromiseType> ProcessFirstSample(typename PromiseSampleType<PromiseType>::Type* aData)
     {
       typedef typename PromiseSampleType<PromiseType>::Type DataType;
       typedef typename PromiseType::Private PromisePrivate;
@@ -784,9 +784,9 @@ private:
 
       MaybeSetChannelStartTime<SampleType>(aData->mTime);
 
-      nsRefPtr<PromisePrivate> p = new PromisePrivate(__func__);
-      nsRefPtr<DataType> data = aData;
-      nsRefPtr<StartTimeRendezvous> self = this;
+      RefPtr<PromisePrivate> p = new PromisePrivate(__func__);
+      RefPtr<DataType> data = aData;
+      RefPtr<StartTimeRendezvous> self = this;
       AwaitStartTime()->Then(mOwnerThread, __func__,
                              [p, data, self] () -> void {
                                MOZ_ASSERT(self->mOwnerThread->IsCurrentThreadIn());
@@ -844,11 +844,11 @@ private:
     }
 
     MozPromiseHolder<HaveStartTimePromise> mHaveStartTimePromise;
-    nsRefPtr<AbstractThread> mOwnerThread;
+    RefPtr<AbstractThread> mOwnerThread;
     Maybe<int64_t> mAudioStartTime;
     Maybe<int64_t> mVideoStartTime;
   };
-  nsRefPtr<StartTimeRendezvous> mStartTimeRendezvous;
+  RefPtr<StartTimeRendezvous> mStartTimeRendezvous;
 
   bool HaveStartTime() { return mStartTimeRendezvous && mStartTimeRendezvous->HaveStartTime(); }
   int64_t StartTime() { return mStartTimeRendezvous->StartTime(); }
@@ -955,11 +955,11 @@ private:
   int64_t mFragmentEndTime;
 
   
-  nsRefPtr<media::MediaSink> mMediaSink;
+  RefPtr<media::MediaSink> mMediaSink;
 
   
   
-  nsRefPtr<MediaDecoderReader> mReader;
+  RefPtr<MediaDecoderReader> mReader;
 
   
   
@@ -1077,7 +1077,7 @@ private:
   
   
   
-  nsRefPtr<MediaData> mFirstVideoFrameAfterSeek;
+  RefPtr<MediaData> mFirstVideoFrameAfterSeek;
 
   
   
@@ -1231,10 +1231,10 @@ private:
   
   
   
-  nsRefPtr<DecodedStream> mStreamSink;
+  RefPtr<DecodedStream> mStreamSink;
 
   
-  nsRefPtr<MediaResource> mResource;
+  RefPtr<MediaResource> mResource;
 
   MozPromiseRequestHolder<GenericPromise> mMediaSinkPromise;
 
@@ -1246,9 +1246,9 @@ private:
   bool mAudioOffloading;
 
 #ifdef MOZ_EME
-  void OnCDMProxyReady(nsRefPtr<CDMProxy> aProxy);
+  void OnCDMProxyReady(RefPtr<CDMProxy> aProxy);
   void OnCDMProxyNotReady();
-  nsRefPtr<CDMProxy> mCDMProxy;
+  RefPtr<CDMProxy> mCDMProxy;
   MozPromiseRequestHolder<MediaDecoder::CDMProxyPromise> mCDMProxyPromise;
 #endif
 

@@ -194,12 +194,12 @@ protected:
   nsresult NotifyRecordingStatusChange(const nsString& aMsg);
 
   already_AddRefed<dom::Promise> CreatePromise(ErrorResult& aRv);
-  void AbortPromise(nsRefPtr<dom::Promise>& aPromise);
+  void AbortPromise(RefPtr<dom::Promise>& aPromise);
   virtual void EventListenerAdded(nsIAtom* aType) override;
   void DispatchPreviewStateEvent(DOMCameraControlListener::PreviewState aState);
   void DispatchStateEvent(const nsString& aType, const nsString& aState);
 
-  nsRefPtr<ICameraControl> mCameraControl; 
+  RefPtr<ICameraControl> mCameraControl; 
 
   
   nsCOMPtr<nsIAudioChannelAgent> mAudioChannelAgent;
@@ -207,16 +207,16 @@ protected:
   nsresult Set(uint32_t aKey, const dom::Optional<dom::Sequence<dom::CameraRegion> >& aValue, uint32_t aLimit);
   nsresult Get(uint32_t aKey, nsTArray<dom::CameraRegion>& aValue);
 
-  nsRefPtr<DOMCameraConfiguration>              mCurrentConfiguration;
-  nsRefPtr<dom::CameraCapabilities>             mCapabilities;
+  RefPtr<DOMCameraConfiguration>              mCurrentConfiguration;
+  RefPtr<dom::CameraCapabilities>             mCapabilities;
 
   
-  nsRefPtr<dom::Promise>                        mGetCameraPromise;
-  nsRefPtr<dom::Promise>                        mAutoFocusPromise;
-  nsRefPtr<dom::Promise>                        mTakePicturePromise;
-  nsRefPtr<dom::Promise>                        mStartRecordingPromise;
-  nsRefPtr<dom::Promise>                        mReleasePromise;
-  nsRefPtr<dom::Promise>                        mSetConfigurationPromise;
+  RefPtr<dom::Promise>                        mGetCameraPromise;
+  RefPtr<dom::Promise>                        mAutoFocusPromise;
+  RefPtr<dom::Promise>                        mTakePicturePromise;
+  RefPtr<dom::Promise>                        mStartRecordingPromise;
+  RefPtr<dom::Promise>                        mReleasePromise;
+  RefPtr<dom::Promise>                        mSetConfigurationPromise;
 
   
   
@@ -224,13 +224,13 @@ protected:
   DOMCameraControlListener* mListener;
 
   
-  nsRefPtr<CameraPreviewMediaStream> mInput;
+  RefPtr<CameraPreviewMediaStream> mInput;
 
   
   nsCOMPtr<nsPIDOMWindow>   mWindow;
 
   dom::CameraStartRecordingOptions mOptions;
-  nsRefPtr<DeviceStorageFileDescriptor> mDSFileDescriptor;
+  RefPtr<DeviceStorageFileDescriptor> mDSFileDescriptor;
   DOMCameraControlListener::PreviewState mPreviewState;
   bool mRecording;
   bool mRecordingStoppedDeferred;

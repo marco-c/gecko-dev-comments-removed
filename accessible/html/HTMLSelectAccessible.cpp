@@ -134,7 +134,7 @@ HTMLSelectListAccessible::CacheChildren()
                                           nsGkAtoms::optgroup)) {
 
       
-      nsRefPtr<Accessible> accessible =
+      RefPtr<Accessible> accessible =
         GetAccService()->GetOrCreateAccessible(childContent, this);
       if (accessible)
         AppendChild(accessible);

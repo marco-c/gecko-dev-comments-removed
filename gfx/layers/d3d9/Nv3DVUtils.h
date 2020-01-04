@@ -75,7 +75,7 @@ public:
 private:
 
   
-  nsRefPtr<INv3DVStreaming> m3DVStreaming;
+  RefPtr<INv3DVStreaming> m3DVStreaming;
 
 };
 

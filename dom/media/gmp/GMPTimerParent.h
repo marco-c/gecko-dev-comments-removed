@@ -43,7 +43,7 @@ private:
       MOZ_COUNT_DTOR(Context);
     }
     nsCOMPtr<nsITimer> mTimer;
-    nsRefPtr<GMPTimerParent> mParent; 
+    RefPtr<GMPTimerParent> mParent; 
     uint32_t mId;
   };
 

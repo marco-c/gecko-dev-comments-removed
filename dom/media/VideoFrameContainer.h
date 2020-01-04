@@ -85,7 +85,7 @@ protected:
   
   
   dom::HTMLMediaElement* mElement;
-  nsRefPtr<ImageContainer> mImageContainer;
+  RefPtr<ImageContainer> mImageContainer;
 
   
   Mutex mMutex;

@@ -6,7 +6,7 @@
 #ifndef MOZILLA_GFX_TASKSCHEDULER_H_
 #define MOZILLA_GFX_TASKSCHEDULER_H_
 
-#include "mozilla/nsRefPtr.h"
+#include "mozilla/RefPtr.h"
 #include "mozilla/gfx/Types.h"
 #include "mozilla/RefCounted.h"
 
@@ -115,8 +115,8 @@ protected:
   
   Job* mNextWaitingJob;
 
-  nsRefPtr<SyncObject> mStartSync;
-  nsRefPtr<SyncObject> mCompletionSync;
+  RefPtr<SyncObject> mStartSync;
+  RefPtr<SyncObject> mCompletionSync;
   WorkerThread* mPinToThread;
 
   friend class SyncObject;
@@ -142,7 +142,7 @@ public:
   EventObject* GetEvent() { return mEvent; }
 
 protected:
-  nsRefPtr<EventObject> mEvent;
+  RefPtr<EventObject> mEvent;
 };
 
 

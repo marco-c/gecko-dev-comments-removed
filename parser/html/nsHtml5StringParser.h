@@ -66,7 +66,7 @@ class nsHtml5StringParser : public nsParserBase
     
 
 
-    nsRefPtr<nsHtml5OplessBuilder>      mBuilder;
+    RefPtr<nsHtml5OplessBuilder>      mBuilder;
 
     
 

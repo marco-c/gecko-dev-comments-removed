@@ -48,7 +48,7 @@ protected:
   virtual JSObject* WrapNode(JSContext *aCx, JS::Handle<JSObject*> aGivenProto) override;
 
   
-  nsRefPtr<nsContentList> mOptions;
+  RefPtr<nsContentList> mOptions;
 };
 
 } 

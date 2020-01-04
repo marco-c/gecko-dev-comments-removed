@@ -61,7 +61,7 @@ EventQueue::PushEvent(AccEvent* aEvent)
         ENameValueFlag nameFlag = parent->Name(name);
         
         if (nameFlag == eNameFromSubtree) {
-          nsRefPtr<AccEvent> nameChangeEvent =
+          RefPtr<AccEvent> nameChangeEvent =
             new AccEvent(nsIAccessibleEvent::EVENT_NAME_CHANGE, parent);
           PushEvent(nameChangeEvent);
         }
@@ -482,7 +482,7 @@ void
 EventQueue::ProcessEventQueue()
 {
   
-  nsTArray<nsRefPtr<AccEvent> > events;
+  nsTArray<RefPtr<AccEvent> > events;
   events.SwapElements(mEvents);
 
   uint32_t eventCount = events.Length();

@@ -50,7 +50,7 @@ public:
 
 
   uint32_t Length() const { return mChain.size(); }
-  const nsRefPtr<AsyncPanZoomController>& GetApzcAtIndex(uint32_t aIndex) const;
+  const RefPtr<AsyncPanZoomController>& GetApzcAtIndex(uint32_t aIndex) const;
   
   uint32_t IndexOf(const AsyncPanZoomController* aApzc) const;
 
@@ -86,10 +86,10 @@ public:
   
   bool HasFastFlungApzc() const;
 
-  nsRefPtr<AsyncPanZoomController> FindFirstScrollable(const InputData& aInput) const;
+  RefPtr<AsyncPanZoomController> FindFirstScrollable(const InputData& aInput) const;
 
 private:
-  std::vector<nsRefPtr<AsyncPanZoomController>> mChain;
+  std::vector<RefPtr<AsyncPanZoomController>> mChain;
 
   typedef void (AsyncPanZoomController::*APZCMethod)();
   typedef bool (AsyncPanZoomController::*APZCPredicate)() const;

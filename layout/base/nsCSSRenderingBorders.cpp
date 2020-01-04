@@ -506,7 +506,7 @@ nsCSSBorderRenderer::GetSideClipSubPath(mozilla::css::Side aSide)
       end[0] = Point(mOuterRect.CWCorner(aSide).x, mInnerRect.CWCorner(aSide).y);
   }
 
-  nsRefPtr<PathBuilder> builder = mDrawTarget->CreatePathBuilder();
+  RefPtr<PathBuilder> builder = mDrawTarget->CreatePathBuilder();
   builder->MoveTo(start[0]);
   builder->LineTo(end[0]);
   builder->LineTo(end[1]);
@@ -529,7 +529,7 @@ nsCSSBorderRenderer::FillSolidBorder(const Rect& aOuterRect,
   
   
   if (!AllCornersZeroSize(aBorderRadii)) {
-    nsRefPtr<PathBuilder> builder = mDrawTarget->CreatePathBuilder();
+    RefPtr<PathBuilder> builder = mDrawTarget->CreatePathBuilder();
 
     RectCornerRadii innerRadii;
     ComputeInnerRadii(aBorderRadii, aBorderSizes, &innerRadii);
@@ -540,7 +540,7 @@ nsCSSBorderRenderer::FillSolidBorder(const Rect& aOuterRect,
     
     AppendRoundedRectToPath(builder, aInnerRect, innerRadii, false);
 
-    nsRefPtr<Path> path = builder->Finish();
+    RefPtr<Path> path = builder->Finish();
 
     mDrawTarget->Fill(path, aColor);
     return;
@@ -1213,8 +1213,8 @@ DrawBorderRadius(DrawTarget* aDrawTarget,
   
   Point innerCenter = aInnerCorner + (aCornerMultPrev + aCornerMultNext) * aInnerRadius;
 
-  nsRefPtr<PathBuilder> builder;
-  nsRefPtr<Path> path;
+  RefPtr<PathBuilder> builder;
+  RefPtr<Path> path;
 
   if (aFirstColor.a > 0) {
     builder = aDrawTarget->CreatePathBuilder();
@@ -1312,8 +1312,8 @@ DrawCorner(DrawTarget* aDrawTarget,
   
   Point cornerEnd = aOuterCorner + aCornerMultNext * aCornerDims;
 
-  nsRefPtr<PathBuilder> builder;
-  nsRefPtr<Path> path;
+  RefPtr<PathBuilder> builder;
+  RefPtr<Path> path;
 
   if (aFirstColor.a > 0) {
     builder = aDrawTarget->CreatePathBuilder();
@@ -1648,10 +1648,10 @@ nsCSSBorderRenderer::DrawBorders()
     
     
     
-    nsRefPtr<PathBuilder> builder = mDrawTarget->CreatePathBuilder();
+    RefPtr<PathBuilder> builder = mDrawTarget->CreatePathBuilder();
     AppendRoundedRectToPath(builder, mOuterRect, mBorderRadii, true);
     AppendRoundedRectToPath(builder, ToRect(borderInnerRect.rect), borderInnerRect.corners, false);
-    nsRefPtr<Path> path = builder->Finish();
+    RefPtr<Path> path = builder->Finish();
     mDrawTarget->Fill(path, color);
     return;
   }
@@ -1815,7 +1815,7 @@ nsCSSBorderRenderer::DrawBorders()
 
           PrintAsFormatString("corner: %d cornerSide: %d side: %d style: %d\n", corner, cornerSide, side, style);
 
-          nsRefPtr<Path> path = GetSideClipSubPath(side);
+          RefPtr<Path> path = GetSideClipSubPath(side);
           mDrawTarget->PushClip(path);
 
           DrawBorderSides(1 << side);

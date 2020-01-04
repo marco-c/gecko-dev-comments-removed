@@ -624,12 +624,12 @@ protected:
     bool mStateBitWasOn;
   };
 
-  nsTArray<nsRefPtr<DocAccessible> > mChildDocuments;
+  nsTArray<RefPtr<DocAccessible> > mChildDocuments;
 
   
 
 
-  nsRefPtr<nsAccessiblePivot> mVirtualCursor;
+  RefPtr<nsAccessiblePivot> mVirtualCursor;
 
   
 
@@ -687,7 +687,7 @@ protected:
     ARIAOwnsPair& operator =(const ARIAOwnsPair& aPair)
       { mOwner = aPair.mOwner; mChild = aPair.mChild; return *this; }
 
-    nsRefPtr<Accessible> mOwner;
+    RefPtr<Accessible> mOwner;
     nsCOMPtr<nsIContent> mChild;
   };
   nsTArray<ARIAOwnsPair> mARIAOwnsInvalidationList;
@@ -695,7 +695,7 @@ protected:
   
 
 
-  nsRefPtr<NotificationController> mNotificationController;
+  RefPtr<NotificationController> mNotificationController;
   friend class EventQueue;
   friend class NotificationController;
 

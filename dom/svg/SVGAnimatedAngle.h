@@ -39,7 +39,7 @@ protected:
   ~SVGAnimatedAngle();
 
   nsSVGAngle* mVal; 
-  nsRefPtr<nsSVGElement> mSVGElement;
+  RefPtr<nsSVGElement> mSVGElement;
 };
 
 } 

@@ -34,7 +34,7 @@ public:
     
 
 
-    nsRefPtr<nsHtml5OwningUTF16Buffer> next;
+    RefPtr<nsHtml5OwningUTF16Buffer> next;
 
     
 

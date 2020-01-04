@@ -211,13 +211,13 @@ private:
 
   nsCycleCollectingAutoRefCnt mRefCnt;
   NS_DECL_OWNINGTHREAD
-  nsRefPtr<AudioNode> mNode;
+  RefPtr<AudioNode> mNode;
   
   
   nsTArray<AudioNode::InputNode> mInputNodes;
   const char* mName;
   
-  nsRefPtr<MediaInputPort> mNodeStreamPort;
+  RefPtr<MediaInputPort> mNodeStreamPort;
   const uint32_t mIndex;
   const float mDefaultValue;
 };

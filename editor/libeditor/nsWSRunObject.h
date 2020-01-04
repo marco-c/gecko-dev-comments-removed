@@ -282,7 +282,7 @@ class MOZ_STACK_CLASS nsWSRunObject
     
     struct MOZ_STACK_CLASS WSPoint
     {
-      nsRefPtr<mozilla::dom::Text> mTextNode;
+      RefPtr<mozilla::dom::Text> mTextNode;
       uint32_t mOffset;
       char16_t mChar;
 
@@ -361,14 +361,14 @@ class MOZ_STACK_CLASS nsWSRunObject
     WSType mEndReason;                 
     nsCOMPtr<nsINode> mEndReasonNode;  
 
-    nsRefPtr<mozilla::dom::Text> mFirstNBSPNode; 
+    RefPtr<mozilla::dom::Text> mFirstNBSPNode; 
     int32_t mFirstNBSPOffset;          
 
-    nsRefPtr<mozilla::dom::Text> mLastNBSPNode; 
+    RefPtr<mozilla::dom::Text> mLastNBSPNode; 
     int32_t mLastNBSPOffset;           
 
     
-    nsTArray<nsRefPtr<mozilla::dom::Text>> mNodeArray;
+    nsTArray<RefPtr<mozilla::dom::Text>> mNodeArray;
 
     WSFragment *mStartRun;             
     WSFragment *mEndRun;               

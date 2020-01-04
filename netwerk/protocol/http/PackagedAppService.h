@@ -195,7 +195,7 @@ private:
     static nsresult GetSubresourceURI(nsIRequest * aRequest, nsIURI **aResult);
     
     
-    nsRefPtr<CacheEntryWriter> mWriter;
+    RefPtr<CacheEntryWriter> mWriter;
     
     nsCOMPtr<nsICacheStorage> mCacheStorage;
     
@@ -211,7 +211,7 @@ private:
     bool mIsFromCache;
 
     
-    nsRefPtr<PackagedAppVerifier> mVerifier;
+    RefPtr<PackagedAppVerifier> mVerifier;
 
     
     nsCOMArray<nsIPackagedAppChannelListener> mRequesters;
@@ -256,7 +256,7 @@ private:
   private:
     ~PackagedAppChannelListener() { }
 
-    nsRefPtr<PackagedAppDownloader> mDownloader;
+    RefPtr<PackagedAppDownloader> mDownloader;
     nsCOMPtr<nsIStreamListener> mListener; 
   };
 

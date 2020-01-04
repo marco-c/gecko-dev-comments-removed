@@ -68,8 +68,8 @@ public:
   int64_t     mLastModifiedTime;
   bool        mSeen;
 
-  nsRefPtr<nsInvalidPluginTag> mPrev;
-  nsRefPtr<nsInvalidPluginTag> mNext;
+  RefPtr<nsInvalidPluginTag> mPrev;
+  RefPtr<nsInvalidPluginTag> mNext;
 };
 
 class nsPluginHost final : public nsIPluginHost,
@@ -216,7 +216,7 @@ public:
   nsNPAPIPluginInstance *FindOldestStoppedInstance();
   uint32_t StoppedInstanceCount();
 
-  nsTArray< nsRefPtr<nsNPAPIPluginInstance> > *InstanceArray();
+  nsTArray< RefPtr<nsNPAPIPluginInstance> > *InstanceArray();
 
   
   nsPluginTag* FindTagForLibrary(PRLibrary* aLibrary);
@@ -365,11 +365,11 @@ private:
   
   bool ShouldAddPlugin(nsPluginTag* aPluginTag);
 
-  nsRefPtr<nsPluginTag> mPlugins;
-  nsRefPtr<nsPluginTag> mCachedPlugins;
-  nsRefPtr<nsInvalidPluginTag> mInvalidPlugins;
+  RefPtr<nsPluginTag> mPlugins;
+  RefPtr<nsPluginTag> mCachedPlugins;
+  RefPtr<nsInvalidPluginTag> mInvalidPlugins;
 
-  nsTArray< nsRefPtr<nsFakePluginTag> > mFakePlugins;
+  nsTArray< RefPtr<nsFakePluginTag> > mFakePlugins;
 
   bool mPluginsLoaded;
 
@@ -383,11 +383,11 @@ private:
 
   
   
-  nsTArray< nsRefPtr<nsNPAPIPluginInstance> > mInstances;
+  nsTArray< RefPtr<nsNPAPIPluginInstance> > mInstances;
 
   nsCOMPtr<nsIFile> mPluginRegFile;
 #ifdef XP_WIN
-  nsRefPtr<nsPluginDirServiceProvider> mPrivateDirServiceProvider;
+  RefPtr<nsPluginDirServiceProvider> mPrivateDirServiceProvider;
 
   
   
@@ -450,7 +450,7 @@ protected:
     PR_INSERT_AFTER(this, &sListHead);
   }
 
-  nsRefPtr<nsNPAPIPluginInstance> mInstance;
+  RefPtr<nsNPAPIPluginInstance> mInstance;
   bool mDelayedDestroy;
 
   static PRCList sListHead;

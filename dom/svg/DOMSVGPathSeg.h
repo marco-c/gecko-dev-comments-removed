@@ -216,7 +216,7 @@ protected:
   bool IndexIsValid();
 #endif
 
-  nsRefPtr<DOMSVGPathSegList> mList;
+  RefPtr<DOMSVGPathSegList> mList;
 
   
   

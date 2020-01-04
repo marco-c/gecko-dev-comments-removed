@@ -50,11 +50,11 @@ public:
   
   
   
-  nsRefPtr<nsIAtom> mDependentElemID;
+  RefPtr<nsIAtom> mDependentElemID;
 
   
   
-  nsRefPtr<nsIAtom> mEventSymbol;
+  RefPtr<nsIAtom> mEventSymbol;
 
   
   

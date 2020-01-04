@@ -24,7 +24,7 @@ public:
 
   virtual ~GonkDecoderManager() {}
 
-  virtual nsRefPtr<InitPromise> Init(MediaDataDecoderCallback* aCallback) = 0;
+  virtual RefPtr<InitPromise> Init(MediaDataDecoderCallback* aCallback) = 0;
 
   
   virtual nsresult Input(MediaRawData* aSample) = 0;
@@ -36,7 +36,7 @@ public:
   
   
   virtual nsresult Output(int64_t aStreamOffset,
-                          nsRefPtr<MediaData>& aOutput) = 0;
+                          RefPtr<MediaData>& aOutput) = 0;
 
   
   virtual nsresult Flush() = 0;
@@ -48,7 +48,7 @@ public:
   virtual bool HasQueuedSample() = 0;
 
 protected:
-  nsRefPtr<MediaByteBuffer> mCodecSpecificData;
+  RefPtr<MediaByteBuffer> mCodecSpecificData;
 
   nsAutoCString mMimeType;
 
@@ -72,7 +72,7 @@ public:
 
   ~GonkMediaDataDecoder();
 
-  nsRefPtr<InitPromise> Init() override;
+  RefPtr<InitPromise> Init() override;
 
   nsresult Input(MediaRawData* aSample) override;
 
@@ -98,7 +98,7 @@ private:
   
   void ProcessDrain();
 
-  nsRefPtr<FlushableTaskQueue> mTaskQueue;
+  RefPtr<FlushableTaskQueue> mTaskQueue;
   MediaDataDecoderCallback* mCallback;
 
   nsAutoPtr<GonkDecoderManager> mManager;

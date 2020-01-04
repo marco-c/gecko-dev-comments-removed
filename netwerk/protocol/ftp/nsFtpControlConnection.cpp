@@ -46,7 +46,7 @@ nsFtpControlConnection::OnInputStreamReady(nsIAsyncInputStream *stream)
     
     
 
-    nsRefPtr<nsFtpControlConnectionListener> listener;
+    RefPtr<nsFtpControlConnectionListener> listener;
     listener.swap(mListener);
 
     if (!listener)

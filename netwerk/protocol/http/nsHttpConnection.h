@@ -267,15 +267,15 @@ private:
 
     
     
-    nsRefPtr<nsAHttpTransaction>    mTransaction;
-    nsRefPtr<TLSFilterTransaction>  mTLSFilter;
+    RefPtr<nsAHttpTransaction>    mTransaction;
+    RefPtr<TLSFilterTransaction>  mTLSFilter;
 
-    nsRefPtr<nsHttpHandler>         mHttpHandler; 
+    RefPtr<nsHttpHandler>         mHttpHandler; 
 
     Mutex                           mCallbacksLock;
     nsMainThreadPtrHandle<nsIInterfaceRequestor> mCallbacks;
 
-    nsRefPtr<nsHttpConnectionInfo> mConnInfo;
+    RefPtr<nsHttpConnectionInfo> mConnInfo;
 
     PRIntervalTime                  mLastReadTime;
     PRIntervalTime                  mLastWriteTime;
@@ -289,7 +289,7 @@ private:
     int64_t                         mTotalBytesWritten;  
     int64_t                         mContentBytesWritten;  
 
-    nsRefPtr<nsIAsyncInputStream>   mInputOverflow;
+    RefPtr<nsIAsyncInputStream>   mInputOverflow;
 
     PRIntervalTime                  mRtt;
 
@@ -329,7 +329,7 @@ private:
     
     uint8_t                         mUsingSpdyVersion;
 
-    nsRefPtr<ASpdySession>          mSpdySession;
+    RefPtr<ASpdySession>          mSpdySession;
     int32_t                         mPriority;
     bool                            mReportedSpdy;
 

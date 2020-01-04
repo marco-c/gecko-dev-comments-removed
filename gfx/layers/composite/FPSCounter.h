@@ -10,7 +10,7 @@
 #include <stddef.h>                     
 #include <map>                          
 #include "GLDefs.h"                     
-#include "mozilla/nsRefPtr.h"             
+#include "mozilla/RefPtr.h"             
 #include "mozilla/TimeStamp.h"          
 #include "nsTArray.h"                   
 #include "prio.h"                       
@@ -105,7 +105,7 @@ struct FPSState {
   FPSCounter mTransactionFps;
 
 private:
-  nsRefPtr<DataTextureSource> mFPSTextureSource;
+  RefPtr<DataTextureSource> mFPSTextureSource;
 };
 
 } 

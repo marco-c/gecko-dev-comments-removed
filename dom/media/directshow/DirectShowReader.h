@@ -9,7 +9,7 @@
 
 #include "windows.h" 
 #include "MediaDecoderReader.h"
-#include "mozilla/nsRefPtr.h"
+#include "mozilla/RefPtr.h"
 #include "MP3FrameParser.h"
 
 struct IGraphBuilder;
@@ -55,7 +55,7 @@ public:
   nsresult ReadMetadata(MediaInfo* aInfo,
                         MetadataTags** aTags) override;
 
-  nsRefPtr<SeekPromise>
+  RefPtr<SeekPromise>
   Seek(int64_t aTime, int64_t aEndTime) override;
 
 protected:
@@ -76,16 +76,16 @@ private:
 
   
   
-  nsRefPtr<IGraphBuilder> mGraph;
-  nsRefPtr<IMediaControl> mControl;
-  nsRefPtr<IMediaSeeking> mMediaSeeking;
+  RefPtr<IGraphBuilder> mGraph;
+  RefPtr<IMediaControl> mControl;
+  RefPtr<IMediaSeeking> mMediaSeeking;
 
   
-  nsRefPtr<SourceFilter> mSourceFilter;
+  RefPtr<SourceFilter> mSourceFilter;
 
   
   
-  nsRefPtr<AudioSinkFilter> mAudioSinkFilter;
+  RefPtr<AudioSinkFilter> mAudioSinkFilter;
 
   
   

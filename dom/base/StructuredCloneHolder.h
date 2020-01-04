@@ -184,7 +184,7 @@ public:
            !mClonedImages.IsEmpty();
   }
 
-  nsTArray<nsRefPtr<BlobImpl>>& BlobImpls()
+  nsTArray<RefPtr<BlobImpl>>& BlobImpls()
   {
     MOZ_ASSERT(mSupportsCloning, "Blobs cannot be taken/set if cloning is not supported.");
     return mBlobImplArray;
@@ -200,7 +200,7 @@ public:
   
   
   
-  nsTArray<nsRefPtr<MessagePort>>&& TakeTransferredPorts()
+  nsTArray<RefPtr<MessagePort>>&& TakeTransferredPorts()
   {
     MOZ_ASSERT(mSupportsTransferring);
     return Move(mTransferredPorts);
@@ -212,7 +212,7 @@ public:
     return mPortIdentifiers;
   }
 
-  nsTArray<nsRefPtr<layers::Image>>& GetImages()
+  nsTArray<RefPtr<layers::Image>>& GetImages()
   {
     return mClonedImages;
   }
@@ -289,20 +289,20 @@ protected:
   ContextSupport mSupportedContext;
 
   
-  nsTArray<nsRefPtr<BlobImpl>> mBlobImplArray;
+  nsTArray<RefPtr<BlobImpl>> mBlobImplArray;
 
   
   
   
   
-  nsTArray<nsRefPtr<layers::Image>> mClonedImages;
+  nsTArray<RefPtr<layers::Image>> mClonedImages;
 
   
   nsISupports* MOZ_NON_OWNING_REF mParent;
 
   
   
-  nsTArray<nsRefPtr<MessagePort>> mTransferredPorts;
+  nsTArray<RefPtr<MessagePort>> mTransferredPorts;
 
   
   

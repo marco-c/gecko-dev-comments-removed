@@ -9,7 +9,7 @@
 #include "Layers.h"                     
 #include "mozilla/gfx/Rect.h"
 #include "mozilla/Attributes.h"         
-#include "mozilla/nsRefPtr.h"             
+#include "mozilla/RefPtr.h"             
 #include "mozilla/layers/LayerManagerComposite.h"  
 #include "mozilla/layers/LayersTypes.h"  
 #include "nsDebug.h"                    
@@ -83,7 +83,7 @@ private:
   gfx::Filter GetEffectFilter() { return gfx::Filter::LINEAR; }
 
 private:
-  nsRefPtr<ContentHost> mBuffer;
+  RefPtr<ContentHost> mBuffer;
 };
 
 } 

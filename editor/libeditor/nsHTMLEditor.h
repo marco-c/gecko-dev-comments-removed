@@ -766,7 +766,7 @@ protected:
 
   nsTArray<mozilla::OwningNonNull<nsIContentFilter>> mContentFilters;
 
-  nsRefPtr<TypeInState>        mTypeInState;
+  RefPtr<TypeInState>        mTypeInState;
 
   bool mCRInParagraphCreatesParagraph;
 
@@ -781,7 +781,7 @@ protected:
 
   
   nsTArray<nsString> mStyleSheetURLs;
-  nsTArray<nsRefPtr<mozilla::CSSStyleSheet>> mStyleSheets;
+  nsTArray<RefPtr<mozilla::CSSStyleSheet>> mStyleSheets;
 
   
   nsTArray<PropItem*> mDefaultStyles;

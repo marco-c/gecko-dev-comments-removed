@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef MOZILLA_DOMQUAD_H_
 #define MOZILLA_DOMQUAD_H_
@@ -61,11 +61,11 @@ protected:
   class QuadBounds;
 
   nsCOMPtr<nsISupports> mParent;
-  nsRefPtr<DOMPoint> mPoints[4];
-  mutable nsRefPtr<QuadBounds> mBounds; 
+  RefPtr<DOMPoint> mPoints[4];
+  mutable RefPtr<QuadBounds> mBounds; // allocated lazily
 };
 
-} 
-} 
+} // namespace dom
+} // namespace mozilla
 
-#endif 
+#endif /*MOZILLA_DOMRECT_H_*/

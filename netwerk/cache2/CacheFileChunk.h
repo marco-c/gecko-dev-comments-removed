@@ -150,7 +150,7 @@ private:
   uint32_t            mRWBufSize;
   CacheHash::Hash16_t mReadHash;
 
-  nsRefPtr<CacheFile>              mFile; 
+  RefPtr<CacheFile>              mFile; 
                                           
   nsCOMPtr<CacheFileChunkListener> mListener;
   nsTArray<ChunkListenerItem *>    mUpdateListeners;

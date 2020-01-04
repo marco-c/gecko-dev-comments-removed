@@ -151,7 +151,7 @@ public:
 private:
   ~DictionaryFetcher() {}
 
-  nsRefPtr<nsEditorSpellCheck> mSpellCheck;
+  RefPtr<nsEditorSpellCheck> mSpellCheck;
 };
 NS_IMPL_ISUPPORTS(DictionaryFetcher, nsIContentPrefCallback2)
 
@@ -348,7 +348,7 @@ nsEditorSpellCheck::InitSpellChecker(nsIEditor* aEditor, bool aEnableSelectionCh
 
     nsCOMPtr<nsISelection> domSelection;
     aEditor->GetSelection(getter_AddRefs(domSelection));
-    nsRefPtr<Selection> selection = static_cast<Selection*>(domSelection.get());
+    RefPtr<Selection> selection = static_cast<Selection*>(domSelection.get());
     NS_ENSURE_TRUE(selection, NS_ERROR_FAILURE);
 
     int32_t count = 0;
@@ -357,7 +357,7 @@ nsEditorSpellCheck::InitSpellChecker(nsIEditor* aEditor, bool aEnableSelectionCh
     NS_ENSURE_SUCCESS(rv, rv);
 
     if (count > 0) {
-      nsRefPtr<nsRange> range = selection->GetRangeAt(0);
+      RefPtr<nsRange> range = selection->GetRangeAt(0);
       NS_ENSURE_STATE(range);
 
       bool collapsed = false;
@@ -368,7 +368,7 @@ nsEditorSpellCheck::InitSpellChecker(nsIEditor* aEditor, bool aEnableSelectionCh
         
         
 
-        nsRefPtr<nsRange> rangeBounds = range->CloneRange();
+        RefPtr<nsRange> rangeBounds = range->CloneRange();
 
         
 
@@ -399,7 +399,7 @@ nsEditorSpellCheck::InitSpellChecker(nsIEditor* aEditor, bool aEnableSelectionCh
     
     
     
-    nsRefPtr<CallbackCaller> caller = new CallbackCaller(aCallback);
+    RefPtr<CallbackCaller> caller = new CallbackCaller(aCallback);
     NS_ENSURE_STATE(caller);
     rv = NS_DispatchToMainThread(caller);
     NS_ENSURE_SUCCESS(rv, rv);
@@ -586,7 +586,7 @@ nsEditorSpellCheck::SetCurrentDictionary(const nsAString& aDictionary)
 {
   NS_ENSURE_TRUE(mSpellChecker, NS_ERROR_NOT_INITIALIZED);
 
-  nsRefPtr<nsEditorSpellCheck> kungFuDeathGrip = this;
+  RefPtr<nsEditorSpellCheck> kungFuDeathGrip = this;
 
   
   
@@ -670,7 +670,7 @@ nsEditorSpellCheck::UpdateCurrentDictionary(nsIEditorSpellCheckCallback* aCallba
 {
   nsresult rv;
 
-  nsRefPtr<nsEditorSpellCheck> kungFuDeathGrip = this;
+  RefPtr<nsEditorSpellCheck> kungFuDeathGrip = this;
 
   
   nsCOMPtr<nsIContent> rootContent;
@@ -700,7 +700,7 @@ nsEditorSpellCheck::UpdateCurrentDictionary(nsIEditorSpellCheckCallback* aCallba
     return NS_ERROR_FAILURE;
   }
 
-  nsRefPtr<DictionaryFetcher> fetcher =
+  RefPtr<DictionaryFetcher> fetcher =
     new DictionaryFetcher(this, aCallback, mDictionaryFetcherGroup);
   rootContent->GetLang(fetcher->mRootContentLang);
   nsCOMPtr<nsIDocument> doc = rootContent->GetCurrentDoc();
@@ -755,7 +755,7 @@ nsresult
 nsEditorSpellCheck::DictionaryFetched(DictionaryFetcher* aFetcher)
 {
   MOZ_ASSERT(aFetcher);
-  nsRefPtr<nsEditorSpellCheck> kungFuDeathGrip = this;
+  RefPtr<nsEditorSpellCheck> kungFuDeathGrip = this;
 
   
   

@@ -647,7 +647,7 @@ protected:
     }
     virtual void WillRefresh(mozilla::TimeStamp aTime) override {
       if (mPresShell) {
-        nsRefPtr<PresShell> shell = mPresShell;
+        RefPtr<PresShell> shell = mPresShell;
         shell->ProcessSynthMouseMoveEvent(mFromScroll);
       }
     }
@@ -790,7 +790,7 @@ protected:
   nsPoint                   mMouseLocation;
 
   
-  nsRefPtr<mozilla::CSSStyleSheet> mPrefStyleSheet;
+  RefPtr<mozilla::CSSStyleSheet> mPrefStyleSheet;
 
   
   
@@ -810,21 +810,21 @@ private:
 protected:
   nsRevocableEventPtr<nsSynthMouseMoveEvent> mSynthMouseMoveEvent;
   nsCOMPtr<nsIContent>      mLastAnchorScrolledTo;
-  nsRefPtr<nsCaret>         mCaret;
-  nsRefPtr<nsCaret>         mOriginalCaret;
+  RefPtr<nsCaret>         mCaret;
+  RefPtr<nsCaret>         mOriginalCaret;
   nsCallbackEventRequest*   mFirstCallbackEventRequest;
   nsCallbackEventRequest*   mLastCallbackEventRequest;
 
   
   TouchManager              mTouchManager;
 
-  nsRefPtr<ZoomConstraintsClient> mZoomConstraintsClient;
-  nsRefPtr<MobileViewportManager> mMobileViewportManager;
+  RefPtr<ZoomConstraintsClient> mZoomConstraintsClient;
+  RefPtr<MobileViewportManager> mMobileViewportManager;
 
   
-  nsRefPtr<mozilla::TouchCaret> mTouchCaret;
-  nsRefPtr<mozilla::SelectionCarets> mSelectionCarets;
-  nsRefPtr<mozilla::AccessibleCaretEventHub> mAccessibleCaretEventHub;
+  RefPtr<mozilla::TouchCaret> mTouchCaret;
+  RefPtr<mozilla::SelectionCarets> mSelectionCarets;
+  RefPtr<mozilla::AccessibleCaretEventHub> mAccessibleCaretEventHub;
 
   
   

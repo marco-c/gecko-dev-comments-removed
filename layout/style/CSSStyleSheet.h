@@ -93,7 +93,7 @@ private:
   
   
   
-  nsRefPtr<CSSStyleSheet> mFirstChild;
+  RefPtr<CSSStyleSheet> mFirstChild;
   CORSMode               mCORSMode;
   
   
@@ -357,18 +357,18 @@ protected:
 
 protected:
   nsString              mTitle;
-  nsRefPtr<nsMediaList> mMedia;
-  nsRefPtr<CSSStyleSheet> mNext;
+  RefPtr<nsMediaList> mMedia;
+  RefPtr<CSSStyleSheet> mNext;
   CSSStyleSheet*        mParent;    
   css::ImportRule*      mOwnerRule; 
 
-  nsRefPtr<CSSRuleListImpl> mRuleCollection;
+  RefPtr<CSSRuleListImpl> mRuleCollection;
   nsIDocument*          mDocument; 
   nsINode*              mOwningNode; 
   bool                  mDisabled;
   bool                  mDirty; 
   bool                  mInRuleProcessorCache;
-  nsRefPtr<dom::Element> mScopeElement;
+  RefPtr<dom::Element> mScopeElement;
 
   CSSStyleSheetInner*   mInner;
 

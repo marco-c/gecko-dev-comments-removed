@@ -301,7 +301,7 @@ private:
   
   
   
-  nsRefPtr<nsRootPresContext> mRootPresContextRegisteredWith;
+  RefPtr<nsRootPresContext> mRootPresContextRegisteredWith;
 };
 
 class nsDisplayPlugin : public nsDisplayItem {

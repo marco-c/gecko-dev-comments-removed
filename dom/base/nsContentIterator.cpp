@@ -1146,7 +1146,7 @@ protected:
 
   virtual void LastRelease() override;
 
-  nsRefPtr<nsRange> mRange;
+  RefPtr<nsRange> mRange;
 
   
   nsAutoTArray<nsIContent*, 8> mEndNodes;

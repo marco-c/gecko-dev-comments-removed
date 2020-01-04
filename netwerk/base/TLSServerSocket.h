@@ -59,7 +59,7 @@ private:
   static void HandshakeCallback(PRFileDesc* aFD, void* aArg);
   nsresult HandshakeCallback(PRFileDesc* aFD);
 
-  nsRefPtr<TLSServerSocket>              mServerSocket;
+  RefPtr<TLSServerSocket>              mServerSocket;
   
   
   

@@ -49,13 +49,13 @@ public:
   }
 
   void GetIncludedServices(
-    nsTArray<nsRefPtr<BluetoothGattService>>& aIncludedServices) const
+    nsTArray<RefPtr<BluetoothGattService>>& aIncludedServices) const
   {
     aIncludedServices = mIncludedServices;
   }
 
   void GetCharacteristics(
-    nsTArray<nsRefPtr<BluetoothGattCharacteristic>>& aCharacteristics) const
+    nsTArray<RefPtr<BluetoothGattCharacteristic>>& aCharacteristics) const
   {
     aCharacteristics = mCharacteristics;
   }
@@ -232,12 +232,12 @@ private:
   
 
 
-  nsTArray<nsRefPtr<BluetoothGattService>> mIncludedServices;
+  nsTArray<RefPtr<BluetoothGattService>> mIncludedServices;
 
   
 
 
-  nsTArray<nsRefPtr<BluetoothGattCharacteristic>> mCharacteristics;
+  nsTArray<RefPtr<BluetoothGattCharacteristic>> mCharacteristics;
 
   
 
@@ -282,11 +282,11 @@ END_BLUETOOTH_NAMESPACE
 
 template <>
 class nsDefaultComparator <
-  nsRefPtr<mozilla::dom::bluetooth::BluetoothGattService>,
+  RefPtr<mozilla::dom::bluetooth::BluetoothGattService>,
   mozilla::dom::bluetooth::BluetoothGattServiceId> {
 public:
   bool Equals(
-    const nsRefPtr<mozilla::dom::bluetooth::BluetoothGattService>& aService,
+    const RefPtr<mozilla::dom::bluetooth::BluetoothGattService>& aService,
     const mozilla::dom::bluetooth::BluetoothGattServiceId& aServiceId) const
   {
     return aService->GetServiceId() == aServiceId;
@@ -303,11 +303,11 @@ public:
 
 template <>
 class nsDefaultComparator <
-  nsRefPtr<mozilla::dom::bluetooth::BluetoothGattService>,
+  RefPtr<mozilla::dom::bluetooth::BluetoothGattService>,
   mozilla::dom::bluetooth::BluetoothAttributeHandle> {
 public:
   bool Equals(
-    const nsRefPtr<mozilla::dom::bluetooth::BluetoothGattService>& aService,
+    const RefPtr<mozilla::dom::bluetooth::BluetoothGattService>& aService,
     const mozilla::dom::bluetooth::BluetoothAttributeHandle& aServiceHandle)
     const
   {

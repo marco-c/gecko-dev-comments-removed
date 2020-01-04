@@ -114,7 +114,7 @@ protected:
 #endif
   }
 
-  nsRefPtr<T> mPtr;
+  RefPtr<T> mPtr;
 #ifdef DEBUG
   bool mInited = false;
 #endif
@@ -147,13 +147,13 @@ nsCOMPtr<T>::operator=(const mozilla::OwningNonNull<U>& aOther)
 
 
 template<class T> template<class U>
-nsRefPtr<T>::nsRefPtr(const mozilla::OwningNonNull<U>& aOther)
-  : nsRefPtr(aOther.get())
+RefPtr<T>::RefPtr(const mozilla::OwningNonNull<U>& aOther)
+  : RefPtr(aOther.get())
 {}
 
 template<class T> template<class U>
-nsRefPtr<T>&
-nsRefPtr<T>::operator=(const mozilla::OwningNonNull<U>& aOther)
+RefPtr<T>&
+RefPtr<T>::operator=(const mozilla::OwningNonNull<U>& aOther)
 {
   return operator=(aOther.get());
 }

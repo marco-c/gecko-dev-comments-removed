@@ -39,7 +39,7 @@ class WebMReader;
 class WebMVideoDecoder
 {
 public:
-  virtual nsRefPtr<InitPromise> Init(unsigned int aWidth = 0, unsigned int aHeight = 0) = 0;
+  virtual RefPtr<InitPromise> Init(unsigned int aWidth = 0, unsigned int aHeight = 0) = 0;
   virtual nsresult Flush() { return NS_OK; }
   virtual void Shutdown() = 0;
   virtual bool DecodeVideoFrame(bool &aKeyframeSkip,
@@ -52,7 +52,7 @@ public:
 class WebMAudioDecoder
 {
 public:
-  virtual nsRefPtr<InitPromise> Init() = 0;
+  virtual RefPtr<InitPromise> Init() = 0;
   virtual void Shutdown() = 0;
   virtual nsresult ResetDecode() = 0;
   virtual nsresult DecodeHeader(const unsigned char* aData, size_t aLength) = 0;
@@ -72,7 +72,7 @@ protected:
   ~WebMReader();
 
 public:
-  virtual nsRefPtr<ShutdownPromise> Shutdown() override;
+  virtual RefPtr<ShutdownPromise> Shutdown() override;
   virtual nsresult Init(MediaDecoderReader* aCloneDonor) override;
   virtual nsresult ResetDecode() override;
   virtual bool DecodeAudioData() override;
@@ -92,9 +92,9 @@ public:
     return mHasVideo;
   }
 
-  virtual nsRefPtr<MetadataPromise> AsyncReadMetadata() override;
+  virtual RefPtr<MetadataPromise> AsyncReadMetadata() override;
 
-  virtual nsRefPtr<SeekPromise>
+  virtual RefPtr<SeekPromise>
   Seek(int64_t aTime, int64_t aEndTime) override;
 
   virtual media::TimeIntervals GetBuffered() override;
@@ -111,7 +111,7 @@ public:
   
   
   
-  nsRefPtr<NesteggPacketHolder> NextPacket(TrackType aTrackType);
+  RefPtr<NesteggPacketHolder> NextPacket(TrackType aTrackType);
 
   
   virtual void PushVideoPacket(NesteggPacketHolder* aItem);
@@ -158,7 +158,7 @@ private:
 
   
   
-  nsRefPtr<NesteggPacketHolder> DemuxPacket();
+  RefPtr<NesteggPacketHolder> DemuxPacket();
 
   
   
@@ -167,7 +167,7 @@ private:
   nsAutoPtr<WebMAudioDecoder> mAudioDecoder;
   nsAutoPtr<WebMVideoDecoder> mVideoDecoder;
 
-  nsTArray<nsRefPtr<InitPromise>> mInitPromises;
+  nsTArray<RefPtr<InitPromise>> mInitPromises;
 
   
   
@@ -196,7 +196,7 @@ private:
 
   
   
-  nsRefPtr<WebMBufferedState> mBufferedState;
+  RefPtr<WebMBufferedState> mBufferedState;
 
   
   
@@ -213,7 +213,7 @@ private:
   layers::LayersBackend mLayersBackendType;
 
   
-  nsRefPtr<FlushableTaskQueue> mVideoTaskQueue;
+  RefPtr<FlushableTaskQueue> mVideoTaskQueue;
 
   
   bool mHasVideo;

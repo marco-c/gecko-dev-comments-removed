@@ -217,7 +217,7 @@ SharedSurface_EGLImage::ToSurfaceDescriptor(layers::SurfaceDescriptor* const out
 
  UniquePtr<SurfaceFactory_EGLImage>
 SurfaceFactory_EGLImage::Create(GLContext* prodGL, const SurfaceCaps& caps,
-                                const nsRefPtr<layers::ISurfaceAllocator>& allocator,
+                                const RefPtr<layers::ISurfaceAllocator>& allocator,
                                 const layers::TextureFlags& flags)
 {
     EGLContext context = GLContextEGL::Cast(prodGL)->mContext;

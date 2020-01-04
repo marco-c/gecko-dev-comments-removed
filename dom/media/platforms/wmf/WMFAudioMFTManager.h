@@ -9,7 +9,7 @@
 
 #include "WMF.h"
 #include "MFTDecoder.h"
-#include "mozilla/nsRefPtr.h"
+#include "mozilla/RefPtr.h"
 #include "WMFMediaDataDecoder.h"
 
 extern const GUID CLSID_WebmMfVp8Dec;
@@ -30,7 +30,7 @@ public:
   
   
   HRESULT Output(int64_t aStreamOffset,
-                         nsRefPtr<MediaData>& aOutput) override;
+                         RefPtr<MediaData>& aOutput) override;
 
   void Shutdown() override;
 

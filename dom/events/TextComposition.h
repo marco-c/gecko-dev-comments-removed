@@ -160,7 +160,7 @@ public:
     }
 
   private:
-    nsRefPtr<TextComposition> mComposition;
+    RefPtr<TextComposition> mComposition;
     CompositionChangeEventHandlingMarker();
     CompositionChangeEventHandlingMarker(
       const CompositionChangeEventHandlingMarker& aOther);
@@ -183,11 +183,11 @@ private:
   
   nsPresContext* mPresContext;
   nsCOMPtr<nsINode> mNode;
-  nsRefPtr<TabParent> mTabParent;
+  RefPtr<TabParent> mTabParent;
 
   
   
-  nsRefPtr<TextRangeArray> mRanges;
+  RefPtr<TextRangeArray> mRanges;
 
   
   
@@ -359,7 +359,7 @@ private:
     NS_IMETHOD Run() override;
 
   private:
-    nsRefPtr<TextComposition> mTextComposition;
+    RefPtr<TextComposition> mTextComposition;
     nsCOMPtr<nsINode> mEventTarget;
     nsString mData;
     EventMessage mEventMessage;
@@ -397,7 +397,7 @@ private:
 
 
 class TextCompositionArray final :
-  public nsAutoTArray<nsRefPtr<TextComposition>, 2>
+  public nsAutoTArray<RefPtr<TextComposition>, 2>
 {
 public:
   index_type IndexOf(nsIWidget* aWidget);

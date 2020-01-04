@@ -127,14 +127,14 @@ protected:
     android::sp<android::DisplaySurface> mDisplaySurface;
 #endif
     bool mIsMirroring; 
-    nsRefPtr<nsScreenGonk> mMirroringScreen; 
+    RefPtr<nsScreenGonk> mMirroringScreen; 
 
     
     GonkDisplay::DisplayType mDisplayType;
     hwc_display_t mEGLDisplay;
     hwc_surface_t mEGLSurface;
-    nsRefPtr<mozilla::gl::GLContext> mGLContext;
-    nsRefPtr<nsWindow> mMirroringWidget; 
+    RefPtr<mozilla::gl::GLContext> mGLContext;
+    RefPtr<nsWindow> mMirroringWidget; 
 };
 
 class nsScreenManagerGonk final : public nsIScreenManager
@@ -166,9 +166,9 @@ protected:
     bool IsScreenConnected(uint32_t aId);
 
     bool mInitialized;
-    nsTArray<nsRefPtr<nsScreenGonk>> mScreens;
-    nsRefPtr<nsRunnable> mScreenOnEvent;
-    nsRefPtr<nsRunnable> mScreenOffEvent;
+    nsTArray<RefPtr<nsScreenGonk>> mScreens;
+    RefPtr<nsRunnable> mScreenOnEvent;
+    RefPtr<nsRunnable> mScreenOffEvent;
 };
 
 #endif 

@@ -126,12 +126,12 @@ public:
   
   
   nsresult SwapWithOtherLoader(nsFrameLoader* aOther,
-                               nsRefPtr<nsFrameLoader>& aFirstToSwap,
-                               nsRefPtr<nsFrameLoader>& aSecondToSwap);
+                               RefPtr<nsFrameLoader>& aFirstToSwap,
+                               RefPtr<nsFrameLoader>& aSecondToSwap);
 
   nsresult SwapWithOtherRemoteLoader(nsFrameLoader* aOther,
-                                     nsRefPtr<nsFrameLoader>& aFirstToSwap,
-                                     nsRefPtr<nsFrameLoader>& aSecondToSwap);
+                                     RefPtr<nsFrameLoader>& aFirstToSwap,
+                                     RefPtr<nsFrameLoader>& aSecondToSwap);
 
   
 
@@ -221,7 +221,7 @@ public:
   nsresult GetWindowDimensions(nsIntRect& aRect);
 
   
-  nsRefPtr<nsFrameMessageManager> mMessageManager;
+  RefPtr<nsFrameMessageManager> mMessageManager;
   nsCOMPtr<nsIInProcessContentFrameMessageManager> mChildMessageManager;
 
 private:
@@ -330,7 +330,7 @@ private:
   
   
   
-  nsRefPtr<mozilla::dom::Element> mOwnerContentStrong;
+  RefPtr<mozilla::dom::Element> mOwnerContentStrong;
 
   
   uint32_t mAppIdSentToPermissionManager;

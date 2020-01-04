@@ -1438,7 +1438,7 @@ nsMemoryReporterManager::GetReportsExtended(
                                          aFinishReporting,
                                          aFinishReportingData,
                                          aDMDDumpIdent);
-  mGetReportsState->mChildrenPending = new nsTArray<nsRefPtr<mozilla::dom::ContentParent>>();
+  mGetReportsState->mChildrenPending = new nsTArray<RefPtr<mozilla::dom::ContentParent>>();
 
   if (aMinimize) {
     rv = MinimizeMemoryUsage(NS_NewRunnableMethod(
@@ -1682,7 +1682,7 @@ nsMemoryReporterManager::EndProcessReport(uint32_t aGeneration, bool aSuccess)
   while (s->mNumProcessesRunning < s->mConcurrencyLimit &&
          !s->mChildrenPending->IsEmpty()) {
     
-    nsRefPtr<ContentParent> nextChild;
+    RefPtr<ContentParent> nextChild;
     nextChild.swap(s->mChildrenPending->LastElement());
     s->mChildrenPending->TruncateLength(s->mChildrenPending->Length() - 1);
     
@@ -1990,8 +1990,8 @@ nsMemoryReporterManager::GetExplicit(int64_t* aAmount)
   
   
 
-  nsRefPtr<ExplicitCallback> handleReport = new ExplicitCallback();
-  nsRefPtr<Int64Wrapper> wrappedExplicitSize = new Int64Wrapper();
+  RefPtr<ExplicitCallback> handleReport = new ExplicitCallback();
+  RefPtr<Int64Wrapper> wrappedExplicitSize = new Int64Wrapper();
 
   
   
@@ -2311,7 +2311,7 @@ private:
 NS_IMETHODIMP
 nsMemoryReporterManager::MinimizeMemoryUsage(nsIRunnable* aCallback)
 {
-  nsRefPtr<MinimizeMemoryUsageRunnable> runnable =
+  RefPtr<MinimizeMemoryUsageRunnable> runnable =
     new MinimizeMemoryUsageRunnable(aCallback);
 
   return NS_DispatchToMainThread(runnable);
@@ -2422,7 +2422,7 @@ UnregisterWeakMemoryReporter(nsIMemoryReporter* aReporter)
 }
 
 #define GET_MEMORY_REPORTER_MANAGER(mgr)                                      \
-  nsRefPtr<nsMemoryReporterManager> mgr =                                     \
+  RefPtr<nsMemoryReporterManager> mgr =                                     \
     nsMemoryReporterManager::GetOrCreate();                                   \
   if (!mgr) {                                                                 \
     return NS_ERROR_FAILURE;                                                  \
@@ -2515,7 +2515,7 @@ RunReportersForThisProcess()
   nsCOMPtr<nsIMemoryReporterManager> mgr =
     do_GetService("@mozilla.org/memory-reporter-manager;1");
 
-  nsRefPtr<DoNothingCallback> doNothing = new DoNothingCallback();
+  RefPtr<DoNothingCallback> doNothing = new DoNothingCallback();
 
   mgr->GetReportsForThisProcess(doNothing, nullptr,  false);
 }

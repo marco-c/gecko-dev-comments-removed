@@ -156,7 +156,7 @@ gfxQuartzSurface::CreateSimilarSurface(gfxContentType aType,
         return nullptr;
     }
 
-    nsRefPtr<gfxASurface> result = Wrap(surface, aSize);
+    RefPtr<gfxASurface> result = Wrap(surface, aSize);
     cairo_surface_destroy(surface);
     return result.forget();
 }
@@ -173,7 +173,7 @@ already_AddRefed<gfxImageSurface> gfxQuartzSurface::GetAsImageSurface()
     if (!surface || cairo_surface_status(surface))
         return nullptr;
 
-    nsRefPtr<gfxASurface> img = Wrap(surface);
+    RefPtr<gfxASurface> img = Wrap(surface);
 
     
     

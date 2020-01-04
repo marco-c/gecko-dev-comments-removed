@@ -51,7 +51,7 @@ private:
   nsTObserverArray<nsCOMPtr<nsIPresentationAvailabilityListener> > mAvailabilityListeners;
   nsRefPtrHashtable<nsStringHashKey, nsIPresentationSessionListener> mSessionListeners;
   nsRefPtrHashtable<nsUint64HashKey, nsIPresentationRespondingListener> mRespondingListeners;
-  nsRefPtr<PresentationResponderLoadingCallback> mCallback;
+  RefPtr<PresentationResponderLoadingCallback> mCallback;
 
   
   

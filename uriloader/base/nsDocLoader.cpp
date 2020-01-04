@@ -213,7 +213,7 @@ NS_IMETHODIMP nsDocLoader::GetInterface(const nsIID& aIID, void** aSink)
 already_AddRefed<nsDocLoader>
 nsDocLoader::GetAsDocLoader(nsISupports* aSupports)
 {
-  nsRefPtr<nsDocLoader> ret = do_QueryObject(aSupports);
+  RefPtr<nsDocLoader> ret = do_QueryObject(aSupports);
   return ret.forget();
 }
 
@@ -226,7 +226,7 @@ nsDocLoader::AddDocLoaderAsChildOfRoot(nsDocLoader* aDocLoader)
     do_GetService(NS_DOCUMENTLOADER_SERVICE_CONTRACTID, &rv);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  nsRefPtr<nsDocLoader> rootDocLoader = GetAsDocLoader(docLoaderService);
+  RefPtr<nsDocLoader> rootDocLoader = GetAsDocLoader(docLoaderService);
   NS_ENSURE_TRUE(rootDocLoader, NS_ERROR_UNEXPECTED);
 
   return rootDocLoader->AddChildLoader(aDocLoader);
@@ -708,7 +708,7 @@ void nsDocLoader::DocLoaderIsEmpty(bool aFlushLayout)
 
       
       
-      nsRefPtr<nsDocLoader> parent = mParent;
+      RefPtr<nsDocLoader> parent = mParent;
 
       
       

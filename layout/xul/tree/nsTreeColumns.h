@@ -144,7 +144,7 @@ private:
   int8_t mCropStyle;
   int8_t mTextAlignment;
 
-  nsRefPtr<nsTreeColumn> mNext;
+  RefPtr<nsTreeColumn> mNext;
   nsTreeColumn* mPrevious;
 };
 
@@ -211,7 +211,7 @@ private:
 
 
 
-  nsRefPtr<nsTreeColumn> mFirstColumn;
+  RefPtr<nsTreeColumn> mFirstColumn;
 };
 
 #endif 

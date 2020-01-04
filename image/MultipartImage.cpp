@@ -31,14 +31,14 @@ public:
     MOZ_ASSERT(aImage);
     mImage = aImage;
 
-    nsRefPtr<ProgressTracker> tracker = mImage->GetProgressTracker();
+    RefPtr<ProgressTracker> tracker = mImage->GetProgressTracker();
     tracker->AddObserver(this);
   }
 
   void BlockUntilDecodedAndFinishObserving()
   {
     
-    nsRefPtr<SourceSurface> surface =
+    RefPtr<SourceSurface> surface =
       mImage->GetFrame(imgIContainer::FRAME_CURRENT,
                        imgIContainer::FLAG_SYNC_DECODE);
 
@@ -72,7 +72,7 @@ public:
 
     
     
-    nsRefPtr<ProgressTracker> tracker = mImage->GetProgressTracker();
+    RefPtr<ProgressTracker> tracker = mImage->GetProgressTracker();
     if (tracker->GetProgress() & FLAG_HAS_ERROR) {
       FinishObserving();
     }
@@ -92,7 +92,7 @@ private:
   {
     MOZ_ASSERT(mImage);
 
-    nsRefPtr<ProgressTracker> tracker = mImage->GetProgressTracker();
+    RefPtr<ProgressTracker> tracker = mImage->GetProgressTracker();
     tracker->RemoveObserver(this);
     mImage = nullptr;
 
@@ -100,7 +100,7 @@ private:
   }
 
   MultipartImage* mOwner;
-  nsRefPtr<Image> mImage;
+  RefPtr<Image> mImage;
 };
 
 
@@ -122,7 +122,7 @@ MultipartImage::Init()
   MOZ_ASSERT(mTracker, "Should've called SetProgressTracker() by now");
 
   
-  nsRefPtr<ProgressTracker> firstPartTracker =
+  RefPtr<ProgressTracker> firstPartTracker =
     InnerImage()->GetProgressTracker();
   firstPartTracker->AddObserver(this);
   InnerImage()->RequestDecode();
@@ -172,7 +172,7 @@ MultipartImage::FinishTransition()
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(mNextPart, "Should have a next part here");
 
-  nsRefPtr<ProgressTracker> newCurrentPartTracker =
+  RefPtr<ProgressTracker> newCurrentPartTracker =
     mNextPart->GetProgressTracker();
   if (newCurrentPartTracker->GetProgress() & FLAG_HAS_ERROR) {
     
@@ -180,7 +180,7 @@ MultipartImage::FinishTransition()
 
     
     mTracker->ResetForNewRequest();
-    nsRefPtr<ProgressTracker> currentPartTracker =
+    RefPtr<ProgressTracker> currentPartTracker =
       InnerImage()->GetProgressTracker();
     mTracker
       ->SyncNotifyProgress(FilterProgress(currentPartTracker->GetProgress()));
@@ -190,7 +190,7 @@ MultipartImage::FinishTransition()
 
   
   {
-    nsRefPtr<ProgressTracker> currentPartTracker =
+    RefPtr<ProgressTracker> currentPartTracker =
       InnerImage()->GetProgressTracker();
     currentPartTracker->RemoveObserver(this);
   }
@@ -221,7 +221,7 @@ already_AddRefed<ProgressTracker>
 MultipartImage::GetProgressTracker()
 {
   MOZ_ASSERT(mTracker);
-  nsRefPtr<ProgressTracker> tracker = mTracker;
+  RefPtr<ProgressTracker> tracker = mTracker;
   return tracker.forget();
 }
 
@@ -244,7 +244,7 @@ MultipartImage::OnImageDataAvailable(nsIRequest* aRequest,
   
 
   
-  nsRefPtr<Image> nextPart = mNextPart;
+  RefPtr<Image> nextPart = mNextPart;
   if (nextPart) {
     nextPart->OnImageDataAvailable(aRequest, aContext, aInStr,
                                    aSourceOffset, aCount);
@@ -266,7 +266,7 @@ MultipartImage::OnImageDataComplete(nsIRequest* aRequest,
   
 
   
-  nsRefPtr<Image> nextPart = mNextPart;
+  RefPtr<Image> nextPart = mNextPart;
   if (nextPart) {
     nextPart->OnImageDataComplete(aRequest, aContext, aStatus, aLastPart);
   } else {

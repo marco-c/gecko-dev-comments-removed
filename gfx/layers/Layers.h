@@ -21,7 +21,7 @@
 #include "mozilla/DebugOnly.h"          
 #include "mozilla/EventForwards.h"      
 #include "mozilla/Maybe.h"              
-#include "mozilla/nsRefPtr.h"             
+#include "mozilla/RefPtr.h"             
 #include "mozilla/StyleAnimationValue.h" 
 #include "mozilla/TimeStamp.h"          
 #include "mozilla/UniquePtr.h"          
@@ -677,7 +677,7 @@ public:
   }
 
 protected:
-  nsRefPtr<Layer> mRoot;
+  RefPtr<Layer> mRoot;
   gfx::UserData mUserData;
   bool mDestroyed;
   bool mSnapEffectiveTransforms;
@@ -1063,7 +1063,7 @@ public:
 
 
 
-  void SetAncestorMaskLayers(const nsTArray<nsRefPtr<Layer>>& aLayers) {
+  void SetAncestorMaskLayers(const nsTArray<RefPtr<Layer>>& aLayers) {
     if (aLayers != mAncestorMaskLayers) {
       MOZ_LAYERS_LOG_IF_SHADOWABLE(this, ("Layer::Mutated(%p) AncestorMaskLayers", this));
       mAncestorMaskLayers = aLayers;
@@ -1772,8 +1772,8 @@ protected:
   Layer* mNextSibling;
   Layer* mPrevSibling;
   void* mImplData;
-  nsRefPtr<Layer> mMaskLayer;
-  nsTArray<nsRefPtr<Layer>> mAncestorMaskLayers;
+  RefPtr<Layer> mMaskLayer;
+  nsTArray<RefPtr<Layer>> mAncestorMaskLayers;
   gfx::UserData mUserData;
   gfx::IntRect mLayerBounds;
   nsIntRegion mVisibleRegion;
@@ -1797,7 +1797,7 @@ protected:
   Maybe<ParentLayerIntRect> mClipRect;
   gfx::IntRect mTileSourceRect;
   nsIntRegion mInvalidRegion;
-  nsTArray<nsRefPtr<AsyncPanZoomController> > mApzcs;
+  nsTArray<RefPtr<AsyncPanZoomController> > mApzcs;
   uint32_t mContentFlags;
   bool mUseTileSourceRect;
   bool mIsFixedPosition;
@@ -2193,7 +2193,7 @@ protected:
   
   bool mChildrenChanged;
   EventRegionsOverride mEventRegionsOverride;
-  nsRefPtr<gfx::VRHMDInfo> mHMDInfo;
+  RefPtr<gfx::VRHMDInfo> mHMDInfo;
 };
 
 

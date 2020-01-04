@@ -166,7 +166,7 @@ protected:
 
   nsXBLPrototypeBinding* mPrototypeBinding; 
   nsCOMPtr<nsIContent> mContent; 
-  nsRefPtr<nsXBLBinding> mNextBinding; 
+  RefPtr<nsXBLBinding> mNextBinding; 
 
   nsIContent* mBoundElement; 
 
@@ -176,9 +176,9 @@ protected:
   
   
   
-  nsRefPtr<mozilla::dom::XBLChildrenElement> mDefaultInsertionPoint;
-  nsTArray<nsRefPtr<mozilla::dom::XBLChildrenElement> > mInsertionPoints;
-  nsRefPtr<nsAnonymousContentList> mAnonymousContentList;
+  RefPtr<mozilla::dom::XBLChildrenElement> mDefaultInsertionPoint;
+  nsTArray<RefPtr<mozilla::dom::XBLChildrenElement> > mInsertionPoints;
+  RefPtr<nsAnonymousContentList> mAnonymousContentList;
 
   mozilla::dom::XBLChildrenElement* FindInsertionPointForInternal(nsIContent* aChild);
 };

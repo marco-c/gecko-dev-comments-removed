@@ -1033,7 +1033,7 @@ struct nsStyleBorder {
 
 public:
   nsBorderColors** mBorderColors;        
-  nsRefPtr<nsCSSShadowArray> mBoxShadow; 
+  RefPtr<nsCSSShadowArray> mBoxShadow; 
 
 public:
   nsStyleCorners mBorderRadius;       
@@ -1237,8 +1237,8 @@ struct nsStyleList {
   uint8_t   mListStylePosition;         
 private:
   nsString  mListStyleType;             
-  nsRefPtr<mozilla::CounterStyle> mCounterStyle; 
-  nsRefPtr<imgRequestProxy> mListStyleImage; 
+  RefPtr<mozilla::CounterStyle> mCounterStyle; 
+  RefPtr<imgRequestProxy> mListStyleImage; 
   nsStyleList& operator=(const nsStyleList& aOther) = delete;
 public:
   nsRect        mImageRegion;           
@@ -1418,7 +1418,7 @@ struct nsStylePosition {
   nsStyleGridTemplate mGridTemplateRows;
 
   
-  nsRefPtr<mozilla::css::GridTemplateAreasValue> mGridTemplateAreas;
+  RefPtr<mozilla::css::GridTemplateAreasValue> mGridTemplateAreas;
 
   nsStyleGridLine mGridColumnStart;
   nsStyleGridLine mGridColumnEnd;
@@ -1685,7 +1685,7 @@ struct nsStyleText {
   nsStyleCoord  mLineHeight;            
   nsStyleCoord  mTextIndent;            
 
-  nsRefPtr<nsCSSShadowArray> mTextShadow; 
+  RefPtr<nsCSSShadowArray> mTextShadow; 
 
   bool WhiteSpaceIsSignificant() const {
     return mWhiteSpace == NS_STYLE_WHITESPACE_PRE ||
@@ -2141,7 +2141,7 @@ struct nsStyleDisplay {
 
   
   
-  nsRefPtr<mozilla::css::URLValue> mBinding;    
+  RefPtr<mozilla::css::URLValue> mBinding;    
   nsRect  mClip;                
   float   mOpacity;             
   uint8_t mDisplay;             
@@ -2190,7 +2190,7 @@ struct nsStyleDisplay {
   uint8_t mBackfaceVisibility;
   uint8_t mTransformStyle;
   uint8_t mTransformBox;        
-  nsRefPtr<nsCSSValueSharedList> mSpecifiedTransform; 
+  RefPtr<nsCSSValueSharedList> mSpecifiedTransform; 
   nsStyleCoord mTransformOrigin[3]; 
   nsStyleCoord mChildPerspective; 
   nsStyleCoord mPerspectiveOrigin[2]; 

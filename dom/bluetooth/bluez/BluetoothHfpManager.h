@@ -205,21 +205,21 @@ private:
   nsTArray<Call> mCurrentCallArray;
   nsAutoPtr<BluetoothRilListener> mListener;
 #endif
-  nsRefPtr<BluetoothProfileController> mController;
-  nsRefPtr<BluetoothReplyRunnable> mScoRunnable;
+  RefPtr<BluetoothProfileController> mController;
+  RefPtr<BluetoothReplyRunnable> mScoRunnable;
 
   
   
   
   
-  nsRefPtr<BluetoothSocket> mSocket;
+  RefPtr<BluetoothSocket> mSocket;
 
   
   
   
-  nsRefPtr<BluetoothSocket> mHandsfreeSocket;
-  nsRefPtr<BluetoothSocket> mHeadsetSocket;
-  nsRefPtr<BluetoothSocket> mScoSocket;
+  RefPtr<BluetoothSocket> mHandsfreeSocket;
+  RefPtr<BluetoothSocket> mHeadsetSocket;
+  RefPtr<BluetoothSocket> mScoSocket;
   mozilla::ipc::SocketConnectionStatus mScoSocketStatus;
 
 #ifdef MOZ_B2G_RIL

@@ -73,7 +73,7 @@ private:
     
     DOMStorageCache* mCache;
     
-    nsRefPtr<DOMStorageCache> mCacheRef;
+    RefPtr<DOMStorageCache> mCacheRef;
   };
 
   
@@ -103,7 +103,7 @@ private:
 
 protected:
   
-  nsDataHashtable<nsCStringHashKey, nsRefPtr<DOMStorageUsage> > mUsages;
+  nsDataHashtable<nsCStringHashKey, RefPtr<DOMStorageUsage> > mUsages;
 
   friend class DOMStorageCache;
   

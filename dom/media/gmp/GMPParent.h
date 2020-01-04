@@ -152,7 +152,7 @@ public:
 
 private:
   ~GMPParent();
-  nsRefPtr<GeckoMediaPluginServiceParent> mService;
+  RefPtr<GeckoMediaPluginServiceParent> mService;
   bool EnsureProcessLoaded();
   nsresult ReadGMPMetaData();
 #ifdef MOZ_CRASHREPORTER
@@ -203,8 +203,8 @@ private:
 
   bool mCanDecrypt;
 
-  nsTArray<nsRefPtr<GMPTimerParent>> mTimers;
-  nsTArray<nsRefPtr<GMPStorageParent>> mStorage;
+  nsTArray<RefPtr<GMPTimerParent>> mTimers;
+  nsTArray<RefPtr<GMPStorageParent>> mStorage;
   nsCOMPtr<nsIThread> mGMPThread;
   nsCOMPtr<nsITimer> mAsyncShutdownTimeout; 
   
@@ -212,7 +212,7 @@ private:
   nsAutoCString mNodeId;
   
   
-  nsRefPtr<GMPContentParent> mGMPContentParent;
+  RefPtr<GMPContentParent> mGMPContentParent;
   nsTArray<UniquePtr<GetGMPContentParentCallback>> mCallbacks;
   uint32_t mGMPContentChildCount;
 

@@ -39,7 +39,7 @@ public:
               ErrorResult& aRv)
   {
     nsCOMPtr<nsPIDOMWindow> window = do_QueryInterface(aGlobal.GetAsSupports());
-    nsRefPtr<TextTrackCue> ttcue = new TextTrackCue(window, aStartTime,
+    RefPtr<TextTrackCue> ttcue = new TextTrackCue(window, aStartTime,
                                                     aEndTime, aText, aRv);
     return ttcue.forget();
   }
@@ -338,20 +338,20 @@ private:
   void SetDefaultCueSettings();
   nsresult StashDocument();
 
-  nsRefPtr<nsIDocument> mDocument;
+  RefPtr<nsIDocument> mDocument;
   nsString mText;
   double mStartTime;
   double mEndTime;
 
-  nsRefPtr<TextTrack> mTrack;
-  nsRefPtr<HTMLTrackElement> mTrackElement;
+  RefPtr<TextTrack> mTrack;
+  RefPtr<HTMLTrackElement> mTrackElement;
   nsString mId;
   int32_t mPosition;
   AlignSetting mPositionAlign;
   int32_t mSize;
   bool mPauseOnExit;
   bool mSnapToLines;
-  nsRefPtr<TextTrackRegion> mRegion;
+  RefPtr<TextTrackRegion> mRegion;
   DirectionSetting mVertical;
   bool mLineIsAutoKeyword;
   long mLineLong;
@@ -360,7 +360,7 @@ private:
 
   
   
-  nsRefPtr<nsGenericHTMLElement> mDisplayState;
+  RefPtr<nsGenericHTMLElement> mDisplayState;
   
   
   

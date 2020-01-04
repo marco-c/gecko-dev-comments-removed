@@ -220,7 +220,7 @@ public:
       return nullptr;
     }
 
-    nsRefPtr<nsXMLHttpRequest> req = new nsXMLHttpRequest();
+    RefPtr<nsXMLHttpRequest> req = new nsXMLHttpRequest();
     req->Construct(principal->GetPrincipal(), global);
     req->InitParameters(aParams.mMozAnon, aParams.mMozSystem);
     return req.forget();
@@ -707,10 +707,10 @@ protected:
 
   
   
-  nsRefPtr<mozilla::dom::Blob> mResponseBlob;
+  RefPtr<mozilla::dom::Blob> mResponseBlob;
   
   
-  nsRefPtr<mozilla::dom::Blob> mDOMBlob;
+  RefPtr<mozilla::dom::Blob> mDOMBlob;
   
   
   nsAutoPtr<mozilla::dom::BlobSet> mBlobSet;
@@ -737,7 +737,7 @@ protected:
 
   uint32_t mState;
 
-  nsRefPtr<nsXMLHttpRequestUpload> mUpload;
+  RefPtr<nsXMLHttpRequestUpload> mUpload;
   int64_t mUploadTransferred;
   int64_t mUploadTotal;
   bool mUploadLengthComputable;
@@ -870,7 +870,7 @@ public:
   NS_DECL_NSIINTERFACEREQUESTOR
 
 private:
-  nsRefPtr<nsXMLHttpRequest> mXHR;
+  RefPtr<nsXMLHttpRequest> mXHR;
 };
 
 class nsXHRParseEndListener : public nsIDOMEventListener

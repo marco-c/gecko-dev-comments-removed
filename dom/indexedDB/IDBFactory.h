@@ -65,7 +65,7 @@ class IDBFactory final
 
   
   
-  nsRefPtr<TabChild> mTabChild;
+  RefPtr<TabChild> mTabChild;
 
   nsTArray<nsAutoPtr<PendingRequestInfo>> mPendingRequests;
 

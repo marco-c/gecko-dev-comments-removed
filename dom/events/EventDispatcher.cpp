@@ -240,7 +240,7 @@ public:
   
   nsCOMPtr<EventTarget>             mNewTarget;
   
-  nsRefPtr<EventListenerManager>    mManager;
+  RefPtr<EventListenerManager>    mManager;
 };
 
 EventTargetChainItem::EventTargetChainItem(EventTarget* aTarget)
@@ -520,7 +520,7 @@ EventDispatcher::Dispatch(nsISupports* aTarget,
 
   
   
-  nsRefPtr<nsPresContext> kungFuDeathGrip(aPresContext);
+  RefPtr<nsPresContext> kungFuDeathGrip(aPresContext);
 
   ELMCreationDetector cd;
   nsTArray<EventTargetChainItem> chain;

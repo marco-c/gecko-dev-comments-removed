@@ -415,7 +415,7 @@ public:
   
   TaskQueue deferred_non_nestable_work_queue_;
 
-  nsRefPtr<base::MessagePump> pump_;
+  RefPtr<base::MessagePump> pump_;
 
   base::ObserverList<DestructionObserver> destruction_observers_;
 

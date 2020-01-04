@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "URL.h"
 
@@ -45,14 +45,14 @@ URL::WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto)
   return URLBinding::Wrap(aCx, this, aGivenProto);
 }
 
- already_AddRefed<URL>
+/* static */ already_AddRefed<URL>
 URL::Constructor(const GlobalObject& aGlobal, const nsAString& aUrl,
                  URL& aBase, ErrorResult& aRv)
 {
   return Constructor(aGlobal.GetAsSupports(), aUrl, aBase.GetURI(), aRv);
 }
 
- already_AddRefed<URL>
+/* static */ already_AddRefed<URL>
 URL::Constructor(const GlobalObject& aGlobal, const nsAString& aUrl,
                  const Optional<nsAString>& aBase, ErrorResult& aRv)
 {
@@ -63,14 +63,14 @@ URL::Constructor(const GlobalObject& aGlobal, const nsAString& aUrl,
   return Constructor(aGlobal.GetAsSupports(), aUrl, nullptr, aRv);
 }
 
- already_AddRefed<URL>
+/* static */ already_AddRefed<URL>
 URL::Constructor(const GlobalObject& aGlobal, const nsAString& aUrl,
                  const nsAString& aBase, ErrorResult& aRv)
 {
   return Constructor(aGlobal.GetAsSupports(), aUrl, aBase, aRv);
 }
 
- already_AddRefed<URL>
+/* static */ already_AddRefed<URL>
 URL::Constructor(nsISupports* aParent, const nsAString& aUrl,
                  const nsAString& aBase, ErrorResult& aRv)
 {
@@ -85,7 +85,7 @@ URL::Constructor(nsISupports* aParent, const nsAString& aUrl,
   return Constructor(aParent, aUrl, baseUri, aRv);
 }
 
-
+/* static */
 already_AddRefed<URL>
 URL::Constructor(nsISupports* aParent, const nsAString& aUrl, nsIURI* aBase,
                  ErrorResult& aRv)
@@ -98,7 +98,7 @@ URL::Constructor(nsISupports* aParent, const nsAString& aUrl, nsIURI* aBase,
     return nullptr;
   }
 
-  nsRefPtr<URL> url = new URL(aParent, uri.forget());
+  RefPtr<URL> url = new URL(aParent, uri.forget());
   return url.forget();
 }
 
@@ -266,9 +266,9 @@ URL::SetProtocol(const nsAString& aProtocol, ErrorResult& aRv)
 
   FindCharInReadable(':', iter, end);
 
-  
-  
-  
+  // Changing the protocol of a URL, changes the "nature" of the URI
+  // implementation. In order to do this properly, we have to serialize the
+  // existing URL and reparse it in a new object.
   nsCOMPtr<nsIURI> clone;
   nsresult rv = mURI->Clone(getter_AddRefs(clone));
   if (NS_WARN_IF(NS_FAILED(rv)) || !clone) {
@@ -379,8 +379,8 @@ URL::GetHostname(nsAString& aHostname, ErrorResult& aRv) const
 void
 URL::SetHostname(const nsAString& aHostname, ErrorResult& aRv)
 {
-  
-  
+  // nsStandardURL returns NS_ERROR_UNEXPECTED for an empty hostname
+  // The return code is silently ignored
   mURI->SetHost(NS_ConvertUTF16toUTF8(aHostname));
 }
 
@@ -405,7 +405,7 @@ URL::SetPort(const nsAString& aPort, ErrorResult& aRv)
   nsAutoString portStr(aPort);
   int32_t port = -1;
 
-  
+  // nsIURI uses -1 as default value.
   if (!portStr.IsEmpty()) {
     port = portStr.ToInteger(&rv);
     if (NS_FAILED(rv)) {
@@ -426,8 +426,8 @@ URL::GetPathname(nsAString& aPathname, ErrorResult& aRv) const
     nsAutoCString path;
     nsresult rv = mURI->GetPath(path);
     if (NS_FAILED(rv)){
-      
-      
+      // Do not throw!  Not having a valid URI or URL should result in an empty
+      // string.
       return;
     }
 
@@ -447,7 +447,7 @@ URL::SetPathname(const nsAString& aPathname, ErrorResult& aRv)
 {
   nsCOMPtr<nsIURL> url(do_QueryInterface(mURI));
   if (!url) {
-    
+    // Ignore failures to be compatible with NS4.
     return;
   }
 
@@ -461,8 +461,8 @@ URL::GetSearch(nsAString& aSearch, ErrorResult& aRv) const
 
   nsCOMPtr<nsIURL> url(do_QueryInterface(mURI));
   if (!url) {
-    
-    
+    // Do not throw!  Not having a valid URI or URL should result in an empty
+    // string.
     return;
   }
 
@@ -485,7 +485,7 @@ URL::SetSearchInternal(const nsAString& aSearch)
 {
   nsCOMPtr<nsIURL> url(do_QueryInterface(mURI));
   if (!url) {
-    
+    // Ignore failures to be compatible with NS4.
     return;
   }
 
@@ -509,7 +509,7 @@ URL::GetHash(nsAString& aHash, ErrorResult& aRv) const
   if (NS_SUCCEEDED(rv) && !ref.IsEmpty()) {
     aHash.Assign(char16_t('#'));
     if (nsContentUtils::GettersDecodeURLHash()) {
-      NS_UnescapeURL(ref); 
+      NS_UnescapeURL(ref); // XXX may result in random non-ASCII bytes!
     }
     AppendUTF8toUTF16(ref, aHash);
   }
@@ -538,5 +538,5 @@ URL::CreateSearchParamsIfNeeded()
   }
 }
 
-} 
-} 
+} // namespace dom
+} // namespace mozilla

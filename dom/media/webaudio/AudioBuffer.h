@@ -123,7 +123,7 @@ protected:
 
   
   
-  nsRefPtr<ThreadSharedFloatArrayBufferList> mSharedChannels;
+  RefPtr<ThreadSharedFloatArrayBufferList> mSharedChannels;
 
   uint32_t mLength;
   float mSampleRate;

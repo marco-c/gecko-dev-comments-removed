@@ -30,7 +30,7 @@ struct nsGenConNode : public PRCList {
 
   
   
-  nsRefPtr<nsTextNode> mText;
+  RefPtr<nsTextNode> mText;
 
   explicit nsGenConNode(int32_t aContentIndex)
     : mPseudoFrame(nullptr)

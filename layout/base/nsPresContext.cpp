@@ -119,7 +119,7 @@ public:
   }
 
 private:
-  nsRefPtr<nsPresContext> mPresContext;
+  RefPtr<nsPresContext> mPresContext;
   nsCString mCharSet;
 };
 
@@ -162,7 +162,7 @@ nsPresContext::IsDOMPaintEventPending()
 void
 nsPresContext::PrefChangedCallback(const char* aPrefName, void* instance_data)
 {
-  nsRefPtr<nsPresContext>  presContext =
+  RefPtr<nsPresContext>  presContext =
     static_cast<nsPresContext*>(instance_data);
 
   NS_ASSERTION(nullptr != presContext, "bad instance data");
@@ -873,7 +873,7 @@ nsPresContext::PreferenceChanged(const char* aPrefName)
       
       
       nscoord oldWidthAppUnits, oldHeightAppUnits;
-      nsRefPtr<nsViewManager> vm = shell->GetViewManager();
+      RefPtr<nsViewManager> vm = shell->GetViewManager();
       if (!vm) {
         return;
       }
@@ -1242,7 +1242,7 @@ nsPresContext::Observe(nsISupports* aSubject,
                         const char16_t* aData)
 {
   if (!nsCRT::strcmp(aTopic, "charset")) {
-    nsRefPtr<CharSetChangingRunnable> runnable =
+    RefPtr<CharSetChangingRunnable> runnable =
       new CharSetChangingRunnable(this, NS_LossyConvertUTF16toASCII(aData));
     return NS_DispatchToCurrentThread(runnable);
   }
@@ -1617,7 +1617,7 @@ GetPropagatedScrollbarStylesForViewport(nsPresContext* aPresContext,
 
   
   nsStyleSet *styleSet = aPresContext->StyleSet();
-  nsRefPtr<nsStyleContext> rootStyle;
+  RefPtr<nsStyleContext> rootStyle;
   rootStyle = styleSet->ResolveStyleFor(docElement, nullptr);
   if (CheckOverflow(rootStyle->StyleDisplay(), aStyles)) {
     
@@ -1645,7 +1645,7 @@ GetPropagatedScrollbarStylesForViewport(nsPresContext* aPresContext,
     return nullptr;
   }
 
-  nsRefPtr<nsStyleContext> bodyStyle;
+  RefPtr<nsStyleContext> bodyStyle;
   bodyStyle = styleSet->ResolveStyleFor(bodyElement->AsElement(), rootStyle);
 
   if (CheckOverflow(bodyStyle->StyleDisplay(), aStyles)) {
@@ -1985,7 +1985,7 @@ NotifyChildrenUIResolutionChanged(nsIDOMWindow* aWindow)
     return;
   }
   nsCOMPtr<nsIDocument> doc = piWin->GetExtantDoc();
-  nsRefPtr<nsPIWindowRoot> topLevelWin = nsContentUtils::GetWindowRoot(doc);
+  RefPtr<nsPIWindowRoot> topLevelWin = nsContentUtils::GetWindowRoot(doc);
   if (!topLevelWin) {
     return;
   }
@@ -2188,7 +2188,7 @@ nsPresContext::EnsureVisible()
     docShell->GetContentViewer(getter_AddRefs(cv));
     
     if (cv) {
-      nsRefPtr<nsPresContext> currentPresContext;
+      RefPtr<nsPresContext> currentPresContext;
       cv->GetPresContext(getter_AddRefs(currentPresContext));
       if (currentPresContext == this) {
         
@@ -2365,7 +2365,7 @@ nsPresContext::FireDOMPaintEvent(nsInvalidateRequestList* aList)
   
   
   
-  nsRefPtr<NotifyPaintEvent> event =
+  RefPtr<NotifyPaintEvent> event =
     NS_NewDOMNotifyPaintEvent(eventTarget, this, nullptr, eAfterPaint, aList);
 
   
@@ -2593,7 +2593,7 @@ public:
     return NS_OK;
   }
 
-  nsRefPtr<nsPresContext> mPresContext;
+  RefPtr<nsPresContext> mPresContext;
   nsInvalidateRequestList mList;
 };
 

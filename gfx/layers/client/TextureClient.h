@@ -12,7 +12,7 @@
 #include "ImageTypes.h"                 
 #include "mozilla/Assertions.h"         
 #include "mozilla/Attributes.h"         
-#include "mozilla/nsRefPtr.h"             
+#include "mozilla/RefPtr.h"             
 #include "mozilla/gfx/2D.h"             
 #include "mozilla/gfx/Point.h"          
 #include "mozilla/gfx/Types.h"          
@@ -294,8 +294,8 @@ public:
 
   virtual already_AddRefed<gfx::DataSourceSurface> GetAsSurface() {
     Lock(OpenMode::OPEN_READ);
-    nsRefPtr<gfx::SourceSurface> surf = BorrowDrawTarget()->Snapshot();
-    nsRefPtr<gfx::DataSourceSurface> data = surf->GetDataSurface();
+    RefPtr<gfx::SourceSurface> surf = BorrowDrawTarget()->Snapshot();
+    RefPtr<gfx::DataSourceSurface> data = surf->GetDataSurface();
     Unlock();
     return data.forget();
   }
@@ -539,9 +539,9 @@ protected:
 
   virtual bool ToSurfaceDescriptor(SurfaceDescriptor& aDescriptor) = 0;
 
-  nsRefPtr<TextureChild> mActor;
-  nsRefPtr<ISurfaceAllocator> mAllocator;
-  nsRefPtr<TextureClientRecycleAllocator> mRecycleAllocator;
+  RefPtr<TextureChild> mActor;
+  RefPtr<ISurfaceAllocator> mAllocator;
+  RefPtr<TextureClientRecycleAllocator> mRecycleAllocator;
   TextureFlags mFlags;
   FenceHandle mReleaseFenceHandle;
   FenceHandle mAcquireFenceHandle;
@@ -550,7 +550,7 @@ protected:
   bool mValid;
   bool mAddedToCompositableClient;
 
-  nsRefPtr<TextureReadbackSink> mReadbackSink;
+  RefPtr<TextureReadbackSink> mReadbackSink;
 
   friend class TextureChild;
   friend class RemoveTextureFromCompositableTracker;
@@ -580,7 +580,7 @@ public:
     }
 
 private:
-    nsRefPtr<TextureClient> mTextureClient;
+    RefPtr<TextureClient> mTextureClient;
 };
 
 
@@ -647,7 +647,7 @@ public:
                 TextureAllocationFlags aAllocFlags = ALLOC_DEFAULT) const override;
 
 protected:
-  nsRefPtr<gfx::DrawTarget> mDrawTarget;
+  RefPtr<gfx::DrawTarget> mDrawTarget;
   gfx::SurfaceFormat mFormat;
   gfx::IntSize mSize;
   gfx::BackendType mBackend;
@@ -745,7 +745,7 @@ class TKeepAlive : public KeepAlive
 public:
   explicit TKeepAlive(T* aData) : mData(aData) {}
 protected:
-  nsRefPtr<T> mData;
+  RefPtr<T> mData;
 };
 
 } 

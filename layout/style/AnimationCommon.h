@@ -202,7 +202,7 @@ private:
   InfallibleTArray<PropertyValuePair> mPropertyValuePairs;
 };
 
-typedef InfallibleTArray<nsRefPtr<dom::Animation>> AnimationPtrArray;
+typedef InfallibleTArray<RefPtr<dom::Animation>> AnimationPtrArray;
 
 struct AnimationCollection : public LinkedListElement<AnimationCollection>
 {
@@ -375,7 +375,7 @@ public:
   
   
   
-  nsRefPtr<AnimValuesStyleRule> mStyleRule;
+  RefPtr<AnimValuesStyleRule> mStyleRule;
 
   
   
@@ -575,7 +575,7 @@ protected:
         }
       }
 
-      AnimationPtrComparator<nsRefPtr<dom::Animation>> comparator;
+      AnimationPtrComparator<RefPtr<dom::Animation>> comparator;
       return comparator.LessThan(a.mAnimation, b.mAnimation);
     }
   };

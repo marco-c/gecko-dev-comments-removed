@@ -289,7 +289,7 @@ public:
 
 
 
-  void ComposeStyle(nsRefPtr<AnimValuesStyleRule>& aStyleRule,
+  void ComposeStyle(RefPtr<AnimValuesStyleRule>& aStyleRule,
                     nsCSSPropertySet& aSetProperties,
                     bool& aNeedsRefreshes);
 
@@ -370,8 +370,8 @@ protected:
   virtual CommonAnimationManager* GetAnimationManager() const = 0;
   AnimationCollection* GetCollection() const;
 
-  nsRefPtr<AnimationTimeline> mTimeline;
-  nsRefPtr<KeyframeEffectReadOnly> mEffect;
+  RefPtr<AnimationTimeline> mTimeline;
+  RefPtr<KeyframeEffectReadOnly> mEffect;
   
   Nullable<TimeDuration> mStartTime; 
   Nullable<TimeDuration> mHoldTime;  
@@ -383,14 +383,14 @@ protected:
   
   
   
-  nsRefPtr<Promise> mReady;
+  RefPtr<Promise> mReady;
 
   
   
   
   
   
-  nsRefPtr<Promise> mFinished;
+  RefPtr<Promise> mFinished;
 
   
   

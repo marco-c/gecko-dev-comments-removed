@@ -12,7 +12,7 @@
 #include "gfxPlatform.h"                
 #include "mozilla/Assertions.h"         
 #include "mozilla/Attributes.h"         
-#include "mozilla/nsRefPtr.h"             
+#include "mozilla/RefPtr.h"             
 #include "mozilla/gfx/Point.h"          
 #include "mozilla/layers/CompositableClient.h"  
 #include "mozilla/layers/CompositableForwarder.h"
@@ -159,7 +159,7 @@ public:
   }
 
   virtual void CreateBuffer(ContentType aType, const gfx::IntRect& aRect, uint32_t aFlags,
-                            nsRefPtr<gfx::DrawTarget>* aBlackDT, nsRefPtr<gfx::DrawTarget>* aWhiteDT) override;
+                            RefPtr<gfx::DrawTarget>* aBlackDT, RefPtr<gfx::DrawTarget>* aWhiteDT) override;
 
   virtual TextureInfo GetTextureInfo() const override
   {
@@ -255,7 +255,7 @@ public:
   }
 
   virtual void CreateBuffer(ContentType aType, const gfx::IntRect& aRect, uint32_t aFlags,
-                            nsRefPtr<gfx::DrawTarget>* aBlackDT, nsRefPtr<gfx::DrawTarget>* aWhiteDT) override;
+                            RefPtr<gfx::DrawTarget>* aBlackDT, RefPtr<gfx::DrawTarget>* aWhiteDT) override;
 
   virtual TextureFlags ExtraTextureFlags() const
   {
@@ -290,12 +290,12 @@ protected:
     mIsNewBuffer = false;
   }
 
-  nsRefPtr<TextureClient> mTextureClient;
-  nsRefPtr<TextureClient> mTextureClientOnWhite;
+  RefPtr<TextureClient> mTextureClient;
+  RefPtr<TextureClient> mTextureClientOnWhite;
   
   
   
-  nsTArray<nsRefPtr<TextureClient> > mOldTextures;
+  nsTArray<RefPtr<TextureClient> > mOldTextures;
 
   bool mIsNewBuffer;
   bool mFrontAndBackBufferDiffer;
@@ -366,8 +366,8 @@ private:
     mFrontClientOnWhite = nullptr;
   }
 
-  nsRefPtr<TextureClient> mFrontClient;
-  nsRefPtr<TextureClient> mFrontClientOnWhite;
+  RefPtr<TextureClient> mFrontClient;
+  RefPtr<TextureClient> mFrontClientOnWhite;
   nsIntRegion mFrontUpdatedRegion;
   gfx::IntRect mFrontBufferRect;
   nsIntPoint mFrontBufferRotation;

@@ -60,7 +60,7 @@ nsFirstLetterFrame::Init(nsIContent*       aContent,
                          nsContainerFrame* aParent,
                          nsIFrame*         aPrevInFlow)
 {
-  nsRefPtr<nsStyleContext> newSC;
+  RefPtr<nsStyleContext> newSC;
   if (aPrevInFlow) {
     
     
@@ -326,7 +326,7 @@ nsFirstLetterFrame::CreateContinuationForFloatingParent(nsPresContext* aPresCont
   
   nsStyleContext* parentSC = this->StyleContext()->GetParent();
   if (parentSC) {
-    nsRefPtr<nsStyleContext> newSC;
+    RefPtr<nsStyleContext> newSC;
     newSC = presShell->StyleSet()->ResolveStyleForNonElement(parentSC);
     continuation->SetStyleContext(newSC);
     nsLayoutUtils::MarkDescendantsDirty(continuation);
@@ -374,7 +374,7 @@ nsFirstLetterFrame::DrainOverflowFrames(nsPresContext* aPresContext)
   
   nsIFrame* kid = mFrames.FirstChild();
   if (kid) {
-    nsRefPtr<nsStyleContext> sc;
+    RefPtr<nsStyleContext> sc;
     nsIContent* kidContent = kid->GetContent();
     if (kidContent) {
       NS_ASSERTION(kidContent->IsNodeOfType(nsINode::eTEXT),

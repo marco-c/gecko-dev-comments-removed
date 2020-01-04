@@ -494,7 +494,7 @@ PresentationControllingInfo::NotifyOpened()
     return rv;
   }
 
-  nsRefPtr<PresentationChannelDescription> description =
+  RefPtr<PresentationChannelDescription> description =
     new PresentationChannelDescription(address, static_cast<uint16_t>(port));
   return mControlChannel->SendOffer(description);
 }
@@ -839,7 +839,7 @@ PresentationPresentingInfo::ResolvedCallback(JSContext* aCx,
     return;
   }
 
-  nsRefPtr<TabParent> tabParent = TabParent::GetFrom(frameLoader);
+  RefPtr<TabParent> tabParent = TabParent::GetFrom(frameLoader);
   if (tabParent) {
     
     

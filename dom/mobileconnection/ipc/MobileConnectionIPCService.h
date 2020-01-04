@@ -27,7 +27,7 @@ private:
   
   ~MobileConnectionIPCService();
 
-  nsTArray<nsRefPtr<MobileConnectionChild>> mItems;
+  nsTArray<RefPtr<MobileConnectionChild>> mItems;
 };
 
 } 

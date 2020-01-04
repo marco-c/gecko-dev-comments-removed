@@ -83,7 +83,7 @@ TextRenderer::RenderText(const string& aText, const IntPoint& aOrigin,
   }
 
   
-  nsRefPtr<DataSourceSurface> textSurf =
+  RefPtr<DataSourceSurface> textSurf =
     Factory::CreateDataSourceSurface(IntSize(maxWidth, numLines * sCellHeight), sTextureFormat);
   if (NS_WARN_IF(!textSurf)) {
     return;
@@ -124,14 +124,14 @@ TextRenderer::RenderText(const string& aText, const IntPoint& aOrigin,
 
   textSurf->Unmap();
 
-  nsRefPtr<DataTextureSource> src = mCompositor->CreateDataTextureSource();
+  RefPtr<DataTextureSource> src = mCompositor->CreateDataTextureSource();
 
   if (!src->Update(textSurf)) {
     
     return;
   }
 
-  nsRefPtr<EffectRGB> effect = new EffectRGB(src, true, Filter::LINEAR);
+  RefPtr<EffectRGB> effect = new EffectRGB(src, true, Filter::LINEAR);
   EffectChain chain;
   chain.mPrimaryEffect = effect;
 

@@ -7,7 +7,7 @@
 #if !defined(GonkAudioDecoderManager_h_)
 #define GonkAudioDecoderManager_h_
 
-#include "mozilla/nsRefPtr.h"
+#include "mozilla/RefPtr.h"
 #include "GonkMediaDataDecoder.h"
 
 using namespace android;
@@ -26,12 +26,12 @@ public:
 
   virtual ~GonkAudioDecoderManager() override;
 
-  nsRefPtr<InitPromise> Init(MediaDataDecoderCallback* aCallback) override;
+  RefPtr<InitPromise> Init(MediaDataDecoderCallback* aCallback) override;
 
   nsresult Input(MediaRawData* aSample) override;
 
   nsresult Output(int64_t aStreamOffset,
-                          nsRefPtr<MediaData>& aOutput) override;
+                          RefPtr<MediaData>& aOutput) override;
 
   nsresult Flush() override;
 
@@ -61,7 +61,7 @@ private:
   
   
   
-  nsTArray<nsRefPtr<MediaRawData>> mQueueSample;
+  nsTArray<RefPtr<MediaRawData>> mQueueSample;
 };
 
 } 

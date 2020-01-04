@@ -54,7 +54,7 @@ public:
 
 
   ePrintDataType               mType;            
-  nsRefPtr<nsDeviceContext>   mPrintDC;
+  RefPtr<nsDeviceContext>   mPrintDC;
   FILE                        *mDebugFilePtr;    
 
   nsPrintObject *                mPrintObject;

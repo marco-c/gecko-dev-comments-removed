@@ -1,13 +1,13 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include <map>
 #ifdef MOZ_WIDGET_GONK
 #include "GonkPermission.h"
-#endif 
+#endif // MOZ_WIDGET_GONK
 #include "nsCOMPtr.h"
 #include "nsIDOMElement.h"
 #include "nsIPrincipal.h"
@@ -33,7 +33,7 @@
 #include "nsIDOMEvent.h"
 #include "nsWeakPtr.h"
 
-using mozilla::unused;          
+using mozilla::unused;          // <snicker>
 using namespace mozilla::dom;
 using namespace mozilla;
 
@@ -49,9 +49,9 @@ VisibilityChangeListener::VisibilityChangeListener(nsPIDOMWindow* aWindow)
   nsCOMPtr<nsIDocument> doc = aWindow->GetExtantDoc();
   if (doc) {
     doc->AddSystemEventListener(NS_LITERAL_STRING(kVisibilityChange),
-                                 this,
-                                 true,
-                                 false);
+                                /* listener */ this,
+                                /* use capture */ true,
+                                /* wants untrusted */ false);
   }
 
 }
@@ -87,8 +87,8 @@ VisibilityChangeListener::RemoveListener()
   nsCOMPtr<EventTarget> target = do_QueryInterface(window->GetExtantDoc());
   if (target) {
     target->RemoveSystemEventListener(NS_LITERAL_STRING(kVisibilityChange),
-                                       this,
-                                       true);
+                                      /* listener */ this,
+                                      /* use capture */ true);
   }
 }
 
@@ -120,7 +120,7 @@ class ContentPermissionRequestParent : public PContentPermissionRequestParent
 
   nsCOMPtr<nsIPrincipal> mPrincipal;
   nsCOMPtr<Element> mElement;
-  nsRefPtr<nsContentPermissionRequestProxy> mProxy;
+  RefPtr<nsContentPermissionRequestProxy> mProxy;
   nsTArray<PermissionRequest> mRequests;
 
  private:
@@ -177,8 +177,8 @@ ContentPermissionRequestParent::ActorDestroy(ActorDestroyReason why)
 bool
 ContentPermissionRequestParent::IsBeingDestroyed()
 {
-  
-  
+  // When ContentParent::MarkAsDead() is called, we are being destroyed.
+  // It's unsafe to send out any message now.
   ContentParent* contentParent = static_cast<ContentParent*>(Manager());
   return !contentParent->IsAlive();
 }
@@ -224,7 +224,7 @@ ContentPermissionType::GetOptions(nsIArray** aOptions)
     do_CreateInstance(NS_ARRAY_CONTRACTID, &rv);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  
+  // copy options into JS array
   for (uint32_t i = 0; i < mOptions.Length(); ++i) {
     nsCOMPtr<nsISupportsString> isupportsString =
       do_CreateInstance(NS_SUPPORTS_STRING_CONTRACTID, &rv);
@@ -241,15 +241,15 @@ ContentPermissionType::GetOptions(nsIArray** aOptions)
   return NS_OK;
 }
 
+// nsContentPermissionUtils
 
-
- uint32_t
+/* static */ uint32_t
 nsContentPermissionUtils::ConvertPermissionRequestToArray(nsTArray<PermissionRequest>& aSrcArray,
                                                           nsIMutableArray* aDesArray)
 {
   uint32_t len = aSrcArray.Length();
   for (uint32_t i = 0; i < len; i++) {
-    nsRefPtr<ContentPermissionType> cpt =
+    RefPtr<ContentPermissionType> cpt =
       new ContentPermissionType(aSrcArray[i].type(),
                                 aSrcArray[i].access(),
                                 aSrcArray[i].options());
@@ -258,7 +258,7 @@ nsContentPermissionUtils::ConvertPermissionRequestToArray(nsTArray<PermissionReq
   return len;
 }
 
- uint32_t
+/* static */ uint32_t
 nsContentPermissionUtils::ConvertArrayToPermissionRequest(nsIArray* aSrcArray,
                                                           nsTArray<PermissionRequest>& aDesArray)
 {
@@ -300,14 +300,14 @@ ContentPermissionRequestParentMap()
   return sPermissionRequestParentMap;
 }
 
- nsresult
+/* static */ nsresult
 nsContentPermissionUtils::CreatePermissionArray(const nsACString& aType,
                                                 const nsACString& aAccess,
                                                 const nsTArray<nsString>& aOptions,
                                                 nsIArray** aTypesArray)
 {
   nsCOMPtr<nsIMutableArray> types = do_CreateInstance(NS_ARRAY_CONTRACTID);
-  nsRefPtr<ContentPermissionType> permType = new ContentPermissionType(aType,
+  RefPtr<ContentPermissionType> permType = new ContentPermissionType(aType,
                                                                        aAccess,
                                                                        aOptions);
   types->AppendElement(permType, false);
@@ -316,7 +316,7 @@ nsContentPermissionUtils::CreatePermissionArray(const nsACString& aType,
   return NS_OK;
 }
 
- PContentPermissionRequestParent*
+/* static */ PContentPermissionRequestParent*
 nsContentPermissionUtils::CreateContentPermissionRequestParent(const nsTArray<PermissionRequest>& aRequests,
                                                                Element* element,
                                                                const IPC::Principal& principal,
@@ -329,19 +329,19 @@ nsContentPermissionUtils::CreateContentPermissionRequestParent(const nsTArray<Pe
   return parent;
 }
 
- nsresult
+/* static */ nsresult
 nsContentPermissionUtils::AskPermission(nsIContentPermissionRequest* aRequest, nsPIDOMWindow* aWindow)
 {
   MOZ_ASSERT(!aWindow || aWindow->IsInnerWindow());
   NS_ENSURE_STATE(aWindow && aWindow->IsCurrentInnerWindow());
 
-  
+  // for content process
   if (XRE_IsContentProcess()) {
 
-    nsRefPtr<RemotePermissionRequest> req =
+    RefPtr<RemotePermissionRequest> req =
       new RemotePermissionRequest(aRequest, aWindow);
 
-    MOZ_ASSERT(NS_IsMainThread()); 
+    MOZ_ASSERT(NS_IsMainThread()); // IPC can only be execute on main thread.
 
     TabChild* child = TabChild::GetFrom(aWindow->GetDocShell());
     NS_ENSURE_TRUE(child, NS_ERROR_FAILURE);
@@ -368,7 +368,7 @@ nsContentPermissionUtils::AskPermission(nsIContentPermissionRequest* aRequest, n
     return NS_OK;
   }
 
-  
+  // for chrome process
   nsCOMPtr<nsIContentPermissionPrompt> prompt =
     do_GetService(NS_CONTENT_PERMISSION_PROMPT_CONTRACTID);
   if (prompt) {
@@ -379,7 +379,7 @@ nsContentPermissionUtils::AskPermission(nsIContentPermissionRequest* aRequest, n
   return NS_OK;
 }
 
- nsTArray<PContentPermissionRequestParent*>
+/* static */ nsTArray<PContentPermissionRequestParent*>
 nsContentPermissionUtils::GetContentPermissionRequestParentById(const TabId& aTabId)
 {
   nsTArray<PContentPermissionRequestParent*> parentArray;
@@ -392,7 +392,7 @@ nsContentPermissionUtils::GetContentPermissionRequestParentById(const TabId& aTa
   return Move(parentArray);
 }
 
- void
+/* static */ void
 nsContentPermissionUtils::NotifyRemoveContentPermissionRequestParent(
   PContentPermissionRequestParent* aParent)
 {
@@ -459,8 +459,8 @@ nsContentPermissionRequester::GetOnVisibilityChange(nsIContentPermissionRequestC
   return NS_OK;
 }
 
-} 
-} 
+} // namespace dom
+} // namespace mozilla
 
 NS_IMPL_ISUPPORTS(nsContentPermissionRequestProxy::nsContentPermissionRequesterProxy,
                   nsIContentPermissionRequester)
@@ -564,7 +564,7 @@ NS_IMETHODIMP
 nsContentPermissionRequestProxy::GetWindow(nsIDOMWindow * *aRequestingWindow)
 {
   NS_ENSURE_ARG_POINTER(aRequestingWindow);
-  *aRequestingWindow = nullptr; 
+  *aRequestingWindow = nullptr; // ipc doesn't have a window
   return NS_OK;
 }
 
@@ -600,8 +600,8 @@ nsContentPermissionRequestProxy::Cancel()
     return NS_ERROR_FAILURE;
   }
 
-  
-  
+  // Don't send out the delete message when the managing protocol (PBrowser) is
+  // being destroyed and PContentPermissionRequest will soon be.
   if (mParent->IsBeingDestroyed()) {
     return NS_ERROR_FAILURE;
   }
@@ -620,8 +620,8 @@ nsContentPermissionRequestProxy::Allow(JS::HandleValue aChoices)
     return NS_ERROR_FAILURE;
   }
 
-  
-  
+  // Don't send out the delete message when the managing protocol (PBrowser) is
+  // being destroyed and PContentPermissionRequest will soon be.
   if (mParent->IsBeingDestroyed()) {
     return NS_ERROR_FAILURE;
   }
@@ -644,9 +644,9 @@ nsContentPermissionRequestProxy::Allow(JS::HandleValue aChoices)
 
   nsTArray<PermissionChoice> choices;
   if (aChoices.isNullOrUndefined()) {
-    
+    // No choice is specified.
   } else if (aChoices.isObject()) {
-    
+    // Iterate through all permission types.
     for (uint32_t i = 0; i < mPermissionRequests.Length(); ++i) {
       nsCString type = mPermissionRequests[i].type();
 
@@ -658,7 +658,7 @@ nsContentPermissionRequestProxy::Allow(JS::HandleValue aChoices)
 
       if (!JS_GetProperty(cx, obj, type.BeginReading(), &val) ||
           !val.isString()) {
-        
+        // no setting for the permission type, skip it
       } else {
         nsAutoJSString choice;
         if (!choice.init(cx, val)) {
@@ -690,12 +690,12 @@ nsContentPermissionRequestProxy::GetRequester(nsIContentPermissionRequester** aR
 {
   NS_ENSURE_ARG_POINTER(aRequester);
 
-  nsRefPtr<nsContentPermissionRequesterProxy> requester = mRequester;
+  RefPtr<nsContentPermissionRequesterProxy> requester = mRequester;
   requester.forget(aRequester);
   return NS_OK;
 }
 
-
+// RemotePermissionRequest
 
 NS_IMPL_ISUPPORTS(RemotePermissionRequest, nsIContentPermissionRequestCallback);
 
@@ -724,7 +724,7 @@ RemotePermissionRequest::DoAllow(JS::HandleValue aChoices)
   mRequest->Allow(aChoices);
 }
 
-
+// PContentPermissionRequestChild
 bool
 RemotePermissionRequest::Recv__delete__(const bool& aAllow,
                                         InfallibleTArray<PermissionChoice>&& aChoices)
@@ -733,17 +733,17 @@ RemotePermissionRequest::Recv__delete__(const bool& aAllow,
   mListener = nullptr;
 
   if (aAllow && mWindow->IsCurrentInnerWindow()) {
-    
+    // Use 'undefined' if no choice is provided.
     if (aChoices.IsEmpty()) {
       DoAllow(JS::UndefinedHandleValue);
       return true;
     }
 
-    
-    
+    // Convert choices to a JS val if any.
+    // {"type1": "choice1", "type2": "choiceA"}
     AutoJSAPI jsapi;
     if (NS_WARN_IF(!jsapi.Init(mWindow))) {
-      return true; 
+      return true; // This is not an IPC error.
     }
 
     JSContext* cx = jsapi.cx();

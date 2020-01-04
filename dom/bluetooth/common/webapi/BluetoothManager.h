@@ -50,7 +50,7 @@ public:
 
 
 
-  void GetAdapters(nsTArray<nsRefPtr<BluetoothAdapter> >& aAdapters);
+  void GetAdapters(nsTArray<RefPtr<BluetoothAdapter> >& aAdapters);
 
   
 
@@ -135,7 +135,7 @@ private:
   
 
 
-  nsTArray<nsRefPtr<BluetoothAdapter> > mAdapters;
+  nsTArray<RefPtr<BluetoothAdapter> > mAdapters;
 };
 
 END_BLUETOOTH_NAMESPACE

@@ -43,11 +43,11 @@ public:
   DecoderNeedsConversion(const TrackInfo& aConfig) const override;
 
 private:
-  nsRefPtr<CDMProxy> mProxy;
+  RefPtr<CDMProxy> mProxy;
   
-  nsRefPtr<PlatformDecoderModule> mPDM;
+  RefPtr<PlatformDecoderModule> mPDM;
   
-  nsRefPtr<TaskQueue> mTaskQueue;
+  RefPtr<TaskQueue> mTaskQueue;
   bool mCDMDecodesAudio;
   bool mCDMDecodesVideo;
 

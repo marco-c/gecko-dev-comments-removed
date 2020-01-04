@@ -194,7 +194,7 @@ private:
 
   
   
-  nsRefPtr<nsSVGElement> mElement;
+  RefPtr<nsSVGElement> mElement;
 
   uint8_t mAttrEnum;
   uint8_t mAxis;
