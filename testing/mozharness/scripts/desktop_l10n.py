@@ -63,9 +63,7 @@ configuration_tokens = ('branch',
                         'en_us_binary_url',
                         'update_platform',
                         'update_channel',
-                        'ssh_key_dir',
-                        'stage_product',
-                        )
+                        'ssh_key_dir')
 
 
 
@@ -161,7 +159,6 @@ class DesktopSingleLocale(LocalesMixin, ReleaseMixin, MockMixin, BuildbotMixin,
                 "list-locales",
                 "setup",
                 "repack",
-                "create-virtualenv",
                 "taskcluster-upload",
                 "funsize-props",
                 "submit-to-balrog",
@@ -1012,6 +1009,14 @@ class DesktopSingleLocale(LocalesMixin, ReleaseMixin, MockMixin, BuildbotMixin,
             self.warning('Skipping S3 file upload: No taskcluster credentials.')
             return
 
+        
+        
+        
+        
+        
+        self.disable_mock()
+        self.create_virtualenv()
+        self.enable_mock()
         self.activate_virtualenv()
 
         
