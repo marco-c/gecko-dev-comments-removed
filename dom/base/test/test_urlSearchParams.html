@@ -289,6 +289,17 @@
     runTest();
   }
 
+  function testZeroHandling() {
+    var u = new URLSearchParams;
+    u.set("a", "b\0c");
+    u.set("d\0e", "f");
+    u.set("g\0h", "i\0j");
+    is(u.toString(), "a=b%00c&d%00e=f&g%00h=i%00j",
+       "Should encode U+0000 as %00");
+
+    runTest();
+  }
+
   var tests = [
     testSimpleURLSearchParams,
     testCopyURLSearchParams,
@@ -301,7 +312,8 @@
     testDelete,
     testGetNULL,
     testSet,
-    testIterable
+    testIterable,
+    testZeroHandling,
   ];
 
   function runTest() {
