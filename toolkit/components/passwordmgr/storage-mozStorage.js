@@ -163,10 +163,6 @@ LoginManagerStorage_mozStorage.prototype = {
   },
 
 
-  
-
-
-
   initialize : function () {
     this._dbStmts = {};
 
@@ -204,15 +200,9 @@ LoginManagerStorage_mozStorage.prototype = {
 
 
 
-
-
   terminate : function () {
     return Promise.resolve();
   },
-
-
-  
-
 
 
   addLogin : function (login) {
@@ -289,10 +279,6 @@ LoginManagerStorage_mozStorage.prototype = {
   },
 
 
-  
-
-
-
   removeLogin : function (login) {
     let [idToDelete, storedLogin] = this._getIdForLogin(login);
     if (!idToDelete)
@@ -319,11 +305,6 @@ LoginManagerStorage_mozStorage.prototype = {
     }
     LoginHelper.notifyStorageChanged("removeLogin", storedLogin);
   },
-
-
-  
-
-
 
   modifyLogin : function (oldLogin, newLoginData) {
     let [idToModify, oldStoredLogin] = this._getIdForLogin(oldLogin);
@@ -403,8 +384,6 @@ LoginManagerStorage_mozStorage.prototype = {
 
 
   
-
-
 
 
   getAllLogins : function (count) {
@@ -571,8 +550,6 @@ LoginManagerStorage_mozStorage.prototype = {
   
 
 
-
-
   storeDeletedLogin : function(aLogin) {
     let stmt = null;
     try {
@@ -592,8 +569,6 @@ LoginManagerStorage_mozStorage.prototype = {
 
 
   
-
-
 
 
   removeAllLogins : function () {
@@ -624,10 +599,6 @@ LoginManagerStorage_mozStorage.prototype = {
   },
 
 
-  
-
-
-
   findLogins : function (count, hostname, formSubmitURL, httpRealm) {
     let loginData = {
       hostname: hostname,
@@ -647,10 +618,6 @@ LoginManagerStorage_mozStorage.prototype = {
     count.value = logins.length; 
     return logins;
   },
-
-
-  
-
 
 
   countLogins : function (hostname, formSubmitURL, httpRealm) {
@@ -687,15 +654,9 @@ LoginManagerStorage_mozStorage.prototype = {
   },
 
 
-  
-
-
   get uiBusy() {
     return this._crypto.uiBusy;
   },
-
-
-  
 
 
   get isLoggedIn() {
@@ -704,8 +665,6 @@ LoginManagerStorage_mozStorage.prototype = {
 
 
   
-
-
 
 
 
@@ -745,8 +704,6 @@ LoginManagerStorage_mozStorage.prototype = {
 
 
 
-
-
   _buildConditionsAndParams : function (hostname, formSubmitURL, httpRealm) {
     let conditions = [], params = {};
 
@@ -778,8 +735,6 @@ LoginManagerStorage_mozStorage.prototype = {
   
 
 
-
-
   _isGuidUnique : function (guid) {
     let query = "SELECT COUNT(1) AS numLogins FROM moz_logins WHERE guid = :guid";
     let params = { guid: guid };
@@ -805,8 +760,6 @@ LoginManagerStorage_mozStorage.prototype = {
 
 
 
-
-
   _encryptLogin : function (login) {
     let encUsername = this._crypto.encrypt(login.username);
     let encPassword = this._crypto.encrypt(login.password);
@@ -817,8 +770,6 @@ LoginManagerStorage_mozStorage.prototype = {
 
 
   
-
-
 
 
 
@@ -858,8 +809,6 @@ LoginManagerStorage_mozStorage.prototype = {
 
 
 
-
-
   _dbCreateStatement : function (query, params) {
     let wrappedStmt = this._dbStmts[query];
     
@@ -877,8 +826,6 @@ LoginManagerStorage_mozStorage.prototype = {
 
 
   
-
-
 
 
 
@@ -996,8 +943,6 @@ LoginManagerStorage_mozStorage.prototype = {
   
 
 
-
-
   _dbMigrateToVersion2 : function () {
     
     let query;
@@ -1050,8 +995,6 @@ LoginManagerStorage_mozStorage.prototype = {
 
 
   
-
-
 
 
   _dbMigrateToVersion3 : function () {
@@ -1114,8 +1057,6 @@ LoginManagerStorage_mozStorage.prototype = {
 
 
 
-
-
   _dbMigrateToVersion4 : function () {
     let query;
     
@@ -1171,8 +1112,6 @@ LoginManagerStorage_mozStorage.prototype = {
   
 
 
-
-
   _dbMigrateToVersion5 : function () {
     if (!this._dbConnection.tableExists("moz_deleted_logins")) {
       this._dbConnection.createTable("moz_deleted_logins", this._dbSchema.tables.moz_deleted_logins);
@@ -1180,8 +1119,6 @@ LoginManagerStorage_mozStorage.prototype = {
   },
 
   
-
-
 
 
 
@@ -1218,8 +1155,6 @@ LoginManagerStorage_mozStorage.prototype = {
   },
 
   
-
-
 
 
 
@@ -1268,8 +1203,6 @@ LoginManagerStorage_mozStorage.prototype = {
   
 
 
-
-
   _dbColumnExists : function (columnName) {
     let query = "SELECT " + columnName + " FROM moz_logins";
     try {
@@ -1305,10 +1238,8 @@ LoginManagerStorage_mozStorage.prototype = {
 
 
 
-
-
   _dbCleanup : function (backup) {
-    this.log("Cleaning up DB file - close & remove & backup=" + backup)
+    this.log("Cleaning up DB file - close & remove & backup=" + backup);
 
     
     if (backup) {
