@@ -244,40 +244,6 @@ loop.store = loop.store || {};
 
 
 
-
-
-    findNextAvailableRoomNumber: function(nameTemplate) {
-      var searchTemplate = nameTemplate.replace("{{conversationLabel}}", "");
-      var searchRegExp = new RegExp("^" + searchTemplate + "(\\d+)$");
-
-      var roomNumbers = this._storeState.rooms.map(function(room) {
-        var match = searchRegExp.exec(room.decryptedContext.roomName);
-        return match && match[1] ? parseInt(match[1], 10) : 0;
-      });
-
-      if (!roomNumbers.length) {
-        return 1;
-      }
-
-      return Math.max.apply(null, roomNumbers) + 1;
-    },
-
-    
-
-
-
-
-
-    _generateNewRoomName: function(nameTemplate) {
-      var roomLabel = this.findNextAvailableRoomNumber(nameTemplate);
-      return nameTemplate.replace("{{conversationLabel}}", roomLabel);
-    },
-
-    
-
-
-
-
     createRoom: function(actionData) {
       this.setStoreState({
         pendingCreation: true,
@@ -285,9 +251,7 @@ loop.store = loop.store || {};
       });
 
       var roomCreationData = {
-        decryptedContext: {
-          roomName: this._generateNewRoomName(actionData.nameTemplate)
-        },
+        decryptedContext: {},
         maxSize: this.maxRoomCreationSize
       };
 
@@ -296,7 +260,6 @@ loop.store = loop.store || {};
       }
 
       this._notifications.remove("create-room-error");
-
       this._mozLoop.rooms.create(roomCreationData, function(err, createdRoom) {
         var buckets = this._mozLoop.ROOM_CREATE;
         if (err) {

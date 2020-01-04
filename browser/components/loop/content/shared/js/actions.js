@@ -243,9 +243,6 @@ loop.shared.actions = (function() {
     CreateRoom: Action.define("createRoom", {
       
       
-      nameTemplate: String
-      
-      
     }),
 
     
