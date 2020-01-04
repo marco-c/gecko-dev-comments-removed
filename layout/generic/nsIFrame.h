@@ -2095,7 +2095,6 @@ public:
 
   bool HasView() const { return !!(mState & NS_FRAME_HAS_VIEW); }
   nsView* GetView() const;
-  virtual nsView* GetViewExternal() const;
   nsresult SetView(nsView* aView);
 
   
@@ -2109,7 +2108,6 @@ public:
 
 
   nsIFrame* GetAncestorWithView() const;
-  virtual nsIFrame* GetAncestorWithViewExternal() const;
 
   
 
@@ -2128,7 +2126,6 @@ public:
 
 
   nsPoint GetOffsetTo(const nsIFrame* aOther) const;
-  virtual nsPoint GetOffsetToExternal(const nsIFrame* aOther) const;
 
   
 
@@ -2163,14 +2160,12 @@ public:
 
 
   nsIntRect GetScreenRect() const;
-  virtual nsIntRect GetScreenRectExternal() const;
 
   
 
 
 
   nsRect GetScreenRectInAppUnits() const;
-  virtual nsRect GetScreenRectInAppUnitsExternal() const;
 
   
 
@@ -2934,8 +2929,6 @@ public:
 
   nsresult Redraw(nsBoxLayoutState& aState);
   virtual nsresult RelayoutChildAtOrdinal(nsIFrame* aChild)=0;
-  
-  virtual bool GetMouseThrough() const { return false; }
 
 #ifdef DEBUG_LAYOUT
   virtual nsresult SetDebug(nsBoxLayoutState& aState, bool aDebug)=0;
