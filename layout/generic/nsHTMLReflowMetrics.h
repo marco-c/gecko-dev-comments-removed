@@ -14,7 +14,9 @@
 
 
 
+namespace mozilla {
 struct nsHTMLReflowState;
+} 
 
 
 #define NS_REFLOW_CALC_BOUNDING_METRICS  0x0001
@@ -197,6 +199,8 @@ struct nsCollapsingMargin {
 
 
 class nsHTMLReflowMetrics {
+  using nsHTMLReflowState = mozilla::nsHTMLReflowState;
+
 public:
   
   

@@ -8,7 +8,9 @@
 
 #include "nsQueryFrame.h"
 
+namespace mozilla {
 struct nsHTMLReflowState;
+} 
 
 
 
@@ -22,10 +24,10 @@ public:
 
   
   
-  virtual void NotifyPercentBSize(const nsHTMLReflowState& aReflowState) = 0;
+  virtual void NotifyPercentBSize(const mozilla::nsHTMLReflowState& aReflowState) = 0;
 
   
-  virtual bool NeedsToObserve(const nsHTMLReflowState& aReflowState) = 0;
+  virtual bool NeedsToObserve(const mozilla::nsHTMLReflowState& aReflowState) = 0;
 };
 
 #endif 

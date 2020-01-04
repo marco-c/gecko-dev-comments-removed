@@ -75,6 +75,8 @@ class nsOverflowContinuationTracker;
 
 
 class nsBlockReflowState {
+  using nsHTMLReflowState = mozilla::nsHTMLReflowState;
+
 public:
   nsBlockReflowState(const nsHTMLReflowState& aReflowState,
                      nsPresContext* aPresContext,

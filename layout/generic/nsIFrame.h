@@ -61,7 +61,6 @@
 
 
 
-struct nsHTMLReflowState;
 class nsIAtom;
 class nsPresContext;
 class nsIPresShell;
@@ -94,6 +93,7 @@ namespace mozilla {
 
 enum class CSSPseudoElementType : uint8_t;
 class EventStates;
+struct nsHTMLReflowState;
 
 namespace layers {
 class Layer;
@@ -423,6 +423,7 @@ public:
   using OnNonvisible = mozilla::OnNonvisible;
   template<typename T=void>
   using PropertyDescriptor = const mozilla::FramePropertyDescriptor<T>*;
+  using nsHTMLReflowState = mozilla::nsHTMLReflowState;
   using Visibility = mozilla::Visibility;
   using VisibilityCounter = mozilla::VisibilityCounter;
 

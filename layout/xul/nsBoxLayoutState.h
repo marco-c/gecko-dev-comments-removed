@@ -18,10 +18,15 @@
 #include "nsIPresShell.h"
 
 class nsRenderingContext;
+namespace mozilla {
 struct nsHTMLReflowState;
+} 
+
 
 class MOZ_STACK_CLASS nsBoxLayoutState
 {
+  using nsHTMLReflowState = mozilla::nsHTMLReflowState;
+
 public:
   explicit nsBoxLayoutState(nsPresContext* aPresContext,
                             nsRenderingContext* aRenderingContext = nullptr,

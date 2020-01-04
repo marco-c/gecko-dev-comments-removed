@@ -18,8 +18,10 @@
 
 class nsIPresShell;
 class nsIFrame;
-struct nsHTMLReflowState;
 class nsPresContext;
+namespace mozilla {
+struct nsHTMLReflowState;
+} 
 
 
 
@@ -371,6 +373,8 @@ private:
 
 
 class nsAutoFloatManager {
+  using nsHTMLReflowState = mozilla::nsHTMLReflowState;
+
 public:
   explicit nsAutoFloatManager(nsHTMLReflowState& aReflowState)
     : mReflowState(aReflowState),
