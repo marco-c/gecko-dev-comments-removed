@@ -86,11 +86,6 @@ const BookmarkSyncUtils = PlacesSyncUtils.bookmarks = Object.freeze({
         if (!children.length) {
           return;
         }
-        for (let child of children) {
-          
-          
-          child.oldIndex = child.index;
-        }
 
         
         let delta = 0;
@@ -279,24 +274,6 @@ function updateChildIndex(children, child, newIndex) {
     sibling.index += sign;
   }
   child.index = newIndex;
-}
-
-
-
-
-
-
-
-
-
-
-
-function notify(observers, notification, args) {
-  for (let observer of observers) {
-    try {
-      observer[notification](...args);
-    } catch (ex) {}
-  }
 }
 
 
