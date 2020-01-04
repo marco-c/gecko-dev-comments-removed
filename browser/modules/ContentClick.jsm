@@ -80,7 +80,7 @@ var ContentClick = {
     
     try {
       if (!PrivateBrowsingUtils.isWindowPrivate(window))
-        PlacesUIUtils.markPageAsFollowedLink(href);
+        PlacesUIUtils.markPageAsFollowedLink(json.href);
     } catch (ex) {  }
   }
 };
