@@ -11,13 +11,6 @@
 
 
 
-
-
-
-
-
-
-
 const WIN_VK_LBUTTON                    = 0x00000001;
 const WIN_VK_RBUTTON                    = 0x00000002;
 const WIN_VK_CANCEL                     = 0xE0460003;
@@ -184,7 +177,7 @@ const WIN_VK_OEM_MINUS                  = 0x000000BD;
 const WIN_VK_OEM_PERIOD                 = 0x000000BE;
 const WIN_VK_OEM_2                      = 0x000000BF;
 const WIN_VK_OEM_3                      = 0x000000C0;
-const WIN_VK_ABNT_C1                    = 0x005600C1;
+const WIN_VK_ABNT_C1                    = 0x000000C1;
 const WIN_VK_ABNT_C2                    = 0x000000C2;
 const WIN_VK_OEM_4                      = 0x000000DB;
 const WIN_VK_OEM_5                      = 0x000000DC;
