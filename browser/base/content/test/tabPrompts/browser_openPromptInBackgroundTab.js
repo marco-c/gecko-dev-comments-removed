@@ -15,7 +15,7 @@ registerCleanupFunction(function() {
 
 
 add_task(function*() {
-  yield pushPrefs(["browser.tabs.dontfocusfordialogs", true]);
+  yield SpecialPowers.pushPrefEnv({"set": [["browser.tabs.dontfocusfordialogs", true]]});
   let firstTab = gBrowser.selectedTab;
   
   let openedTab = yield BrowserTestUtils.openNewForegroundTab(gBrowser, pageWithAlert, true);
@@ -60,4 +60,3 @@ add_task(function*() {
 
   yield BrowserTestUtils.removeTab(openedTab);
 });
-
