@@ -252,7 +252,8 @@ public:
   
   already_AddRefed<imgIContainer> GetImage();
 
-  bool IsReady() { return mIsReady; }
+  bool IsReady() const { return mPrepareResult == DrawResult::SUCCESS; }
+  DrawResult PrepareResult() const { return mPrepareResult; }
 
 private:
   
@@ -286,7 +287,7 @@ private:
   nsRefPtr<nsStyleGradient> mGradientData;
   nsIFrame*                 mPaintServerFrame;
   nsLayoutUtils::SurfaceFromElementResult mImageElementSurface;
-  bool                      mIsReady;
+  DrawResult                mPrepareResult;
   nsSize                    mSize; 
   uint32_t                  mFlags;
 };
