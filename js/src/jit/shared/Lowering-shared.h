@@ -165,6 +165,11 @@ class LIRGeneratorShared : public MDefinitionVisitor
 
     
     
+    inline void useBoxOrTypedOrConstant(LInstruction* lir, size_t n, MDefinition* mir,
+                                        bool useConstant);
+
+    
+    
     inline void redefine(MDefinition* ins, MDefinition* as);
 
     

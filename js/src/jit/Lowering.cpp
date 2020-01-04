@@ -3252,6 +3252,12 @@ LIRGenerator::visitGetPropertyCache(MGetPropertyCache* ins)
 {
     MOZ_ASSERT(ins->object()->type() == MIRType_Object);
 
+    MDefinition* id = ins->idval();
+    MOZ_ASSERT(id->type() == MIRType_String ||
+               id->type() == MIRType_Symbol ||
+               id->type() == MIRType_Int32 ||
+               id->type() == MIRType_Value);
+
     if (ins->monitoredResult()) {
         
         
@@ -3259,12 +3265,18 @@ LIRGenerator::visitGetPropertyCache(MGetPropertyCache* ins)
         gen->setPerformsCall();
     }
 
+    
+    
+    bool useConstId = id->type() == MIRType_String || id->type() == MIRType_Symbol;
+
     if (ins->type() == MIRType_Value) {
         LGetPropertyCacheV* lir = new(alloc()) LGetPropertyCacheV(useRegister(ins->object()));
+        useBoxOrTypedOrConstant(lir, LGetPropertyCacheV::Id, id, useConstId);
         defineBox(lir, ins);
         assignSafepoint(lir, ins);
     } else {
         LGetPropertyCacheT* lir = new(alloc()) LGetPropertyCacheT(useRegister(ins->object()));
+        useBoxOrTypedOrConstant(lir, LGetPropertyCacheT::Id, id, useConstId);
         define(lir, ins);
         assignSafepoint(lir, ins);
     }
