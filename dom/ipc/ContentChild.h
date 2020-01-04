@@ -615,12 +615,6 @@ private:
 
   virtual void ProcessingError(Result aCode, const char* aReason) override;
 
-  
-
-
-
-  MOZ_NORETURN void QuickExit();
-
   InfallibleTArray<nsAutoPtr<AlertObserver> > mAlertObservers;
   RefPtr<ConsoleListener> mConsoleListener;
 

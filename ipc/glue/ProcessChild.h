@@ -36,6 +36,12 @@ public:
     return gProcessChild->mUILoop;
   }
 
+    
+
+
+
+  static void QuickExit();
+
 protected:
   static ProcessChild* current() {
     return gProcessChild;
