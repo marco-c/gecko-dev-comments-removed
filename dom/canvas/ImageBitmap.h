@@ -91,6 +91,8 @@ public:
     return mPictureRect.Height();
   }
 
+  void Close();
+
   
 
 
