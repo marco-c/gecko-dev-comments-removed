@@ -11,7 +11,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 
-import com.robotium.solo.Condition;
+import com.jayway.android.robotium.solo.Condition;
 
 
 
