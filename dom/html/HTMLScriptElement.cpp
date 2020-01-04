@@ -139,6 +139,10 @@ HTMLScriptElement::SetText(const nsAString& aValue, ErrorResult& rv)
 
 NS_IMPL_STRING_ATTR(HTMLScriptElement, Charset, charset)
 NS_IMPL_BOOL_ATTR(HTMLScriptElement, Defer, defer)
+
+
+
+
 NS_IMPL_URI_ATTR(HTMLScriptElement, Src, src)
 NS_IMPL_STRING_ATTR(HTMLScriptElement, Type, type)
 NS_IMPL_STRING_ATTR(HTMLScriptElement, HtmlFor, _for)
@@ -271,10 +275,16 @@ HTMLScriptElement::FreezeUriAsyncDefer()
 
   
   
-  if (HasAttr(kNameSpaceID_None, nsGkAtoms::src)) {
-    nsAutoString src;
-    GetSrc(src);
-    NS_NewURI(getter_AddRefs(mUri), src);
+  
+  nsAutoString src;
+  if (GetAttr(kNameSpaceID_None, nsGkAtoms::src, src)) {
+    
+    if (!src.IsEmpty()) {
+      nsCOMPtr<nsIURI> baseURI = GetBaseURI();
+      nsContentUtils::NewURIWithDocumentCharset(getter_AddRefs(mUri),
+                                                src, OwnerDoc(), baseURI);
+    }
+
     
     mExternal = true;
 

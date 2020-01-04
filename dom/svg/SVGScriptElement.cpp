@@ -154,8 +154,12 @@ SVGScriptElement::FreezeUriAsyncDefer()
       mStringAttributes[XLINK_HREF].GetAnimValue(src, this);
     }
 
-    nsCOMPtr<nsIURI> baseURI = GetBaseURI();
-    NS_NewURI(getter_AddRefs(mUri), src, nullptr, baseURI);
+    
+    if (!src.IsEmpty()) {
+      nsCOMPtr<nsIURI> baseURI = GetBaseURI();
+      NS_NewURI(getter_AddRefs(mUri), src, nullptr, baseURI);
+    }
+
     
     mExternal = true;
   }
