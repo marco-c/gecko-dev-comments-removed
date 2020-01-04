@@ -353,14 +353,11 @@ SocialFlyout = {
     iframe.setAttribute("context", "contentAreaContextMenu");
     iframe.setAttribute("origin", SocialSidebar.provider.origin);
     panel.appendChild(iframe);
-    this.messageManager.sendAsyncMessage("Social:SetErrorURL",
+    
+    
+    let mm = iframe.QueryInterface(Components.interfaces.nsIFrameLoaderOwner).frameLoader.messageManager;
+    mm.sendAsyncMessage("Social:SetErrorURL",
                         { template: "about:socialerror?mode=compactInfo&origin=%{origin}" });
-  },
-
-  get messageManager() {
-    
-    
-    return this.iframe.QueryInterface(Components.interfaces.nsIFrameLoaderOwner).frameLoader.messageManager;
   },
 
   unload: function() {
@@ -381,15 +378,14 @@ SocialFlyout = {
       this._dynamicResizer.start(panel, iframe);
     } else {
       
-      let mm = this.messageManager;
-      mm.addMessageListener("DOMContentLoaded", function panelBrowserOnload(e) {
-        mm.removeMessageListener("DOMContentLoaded", panelBrowserOnload);
+      iframe.addEventListener("load", function panelBrowserOnload(e) {
+        iframe.removeEventListener("load", panelBrowserOnload, true);
         setTimeout(function() {
           if (SocialFlyout._dynamicResizer) { 
             SocialFlyout._dynamicResizer.start(panel, iframe);
           }
         }, 0);
-      });
+      }, true);
     }
   },
 
@@ -409,11 +405,10 @@ SocialFlyout = {
     
     let src = iframe.contentDocument && iframe.contentDocument.documentURIObject;
     if (!src || !src.equalsExceptRef(Services.io.newURI(aURL, null, null))) {
-      let mm = this.messageManager;
-      mm.addMessageListener("DOMContentLoaded", function documentLoaded(e) {
-        mm.removeMessageListener("DOMContentLoaded", documentLoaded);
+      iframe.addEventListener("load", function documentLoaded() {
+        iframe.removeEventListener("load", documentLoaded, true);
         cb();
-      });
+      }, true);
       iframe.setAttribute("src", aURL);
     } else {
       
@@ -479,10 +474,6 @@ SocialShare = {
 
   uninit: function () {
     if (this.iframe) {
-      let mm = this.messageManager;
-      mm.removeMessageListener("DOMContentLoaded", this);
-      mm.removeMessageListener("PageVisibility:Show", this);
-      mm.removeMessageListener("PageVisibility:Hide", this);
       this.iframe.remove();
     }
   },
@@ -503,41 +494,11 @@ SocialShare = {
     iframe.setAttribute("message", "true");
     iframe.setAttribute("messagemanagergroup", "social");
     panel.lastChild.appendChild(iframe);
-    let mm = this.messageManager;
-    mm.addMessageListener("DOMContentLoaded", this);
-    mm.addMessageListener("PageVisibility:Show", this);
-    mm.addMessageListener("PageVisibility:Hide", this);
+    let mm = iframe.QueryInterface(Components.interfaces.nsIFrameLoaderOwner).frameLoader.messageManager;
     mm.sendAsyncMessage("Social:SetErrorURL",
                         { template: "about:socialerror?mode=compactInfo&origin=%{origin}&url=%{url}" });
 
     this.populateProviderMenu();
-  },
-
-  get messageManager() {
-    
-    
-    return this.iframe.QueryInterface(Components.interfaces.nsIFrameLoaderOwner).frameLoader.messageManager;
-  },
-
-  receiveMessage: function(aMessage) {
-    let iframe = this.iframe;
-    switch(aMessage.name) {
-      case "DOMContentLoaded":
-        iframe.parentNode.removeAttribute("loading");
-        
-        
-        
-        iframe.contentWindow.opener = iframe.contentWindow;
-        this.messageManager.sendAsyncMessage("Social:HookWindowCloseForPanelClose");
-        SocialShare.messageManager.sendAsyncMessage("Social:OpenGraphData", this.currentShare);
-        break;
-      case "PageVisibility:Show":
-        SocialShare._dynamicResizer.start(iframe.parentNode, iframe);
-        break;
-      case "PageVisibility:Hide":
-        SocialShare._dynamicResizer.stop();
-        break;
-    }
   },
 
   getSelectedProvider: function() {
@@ -617,7 +578,7 @@ SocialShare = {
     this.iframe.removeEventListener("click", this._onclick, true);
     this.iframe.setAttribute("src", "data:text/plain;charset=utf8,");
     
-    this.messageManager.sendAsyncMessage("Social:ClearFrame");
+    this.iframe.docShell.createAboutBlankContentViewer(null);
     this.currentShare = null;
     
     this.iframe.purgeSessionHistory();
@@ -701,6 +662,37 @@ SocialShare = {
 
     
     
+    let endpointMatch = shareEndpoint == iframe.getAttribute("src");
+    if (endpointMatch) {
+      this._dynamicResizer.start(iframe.parentNode, iframe, size);
+      iframe.docShellIsActive = true;
+      let evt = iframe.contentDocument.createEvent("CustomEvent");
+      evt.initCustomEvent("OpenGraphData", true, true, JSON.stringify(pageData));
+      iframe.contentDocument.documentElement.dispatchEvent(evt);
+    } else {
+      iframe.parentNode.setAttribute("loading", "true");
+      
+      iframe.addEventListener("load", function panelBrowserOnload(e) {
+        iframe.removeEventListener("load", panelBrowserOnload, true);
+        iframe.docShellIsActive = true;
+        iframe.parentNode.removeAttribute("loading");
+        
+        
+        
+        iframe.contentWindow.opener = iframe.contentWindow;
+        
+        let mm = iframe.QueryInterface(Components.interfaces.nsIFrameLoaderOwner).frameLoader.messageManager;
+        mm.sendAsyncMessage("Social:DisableDialogs", {});
+
+        SocialShare._dynamicResizer.start(iframe.parentNode, iframe, size);
+
+        let evt = iframe.contentDocument.createEvent("CustomEvent");
+        evt.initCustomEvent("OpenGraphData", true, true, JSON.stringify(pageData));
+        iframe.contentDocument.documentElement.dispatchEvent(evt);
+      }, true);
+    }
+    
+    
     iframe.purgeSessionHistory();
 
     
@@ -717,7 +709,22 @@ SocialShare = {
       return;
     iframe.removeAttribute("origin");
     iframe.parentNode.setAttribute("loading", "true");
+    iframe.addEventListener("DOMContentLoaded", function _dcl(e) {
+      iframe.removeEventListener("DOMContentLoaded", _dcl, true);
+      iframe.parentNode.removeAttribute("loading");
+    }, true);
 
+    iframe.addEventListener("load", function panelBrowserOnload(e) {
+      iframe.removeEventListener("load", panelBrowserOnload, true);
+
+      hookWindowCloseForPanelClose(iframe.contentWindow);
+      SocialShare._dynamicResizer.start(iframe.parentNode, iframe);
+
+      iframe.addEventListener("unload", function panelBrowserOnload(e) {
+        iframe.removeEventListener("unload", panelBrowserOnload, true);
+        SocialShare._dynamicResizer.stop();
+      }, true);
+    }, true);
     iframe.setAttribute("src", "about:providerdirectory");
     this._openPanel(anchor);
   },
@@ -732,10 +739,6 @@ SocialShare = {
 
 SocialSidebar = {
   _openStartTime: 0,
-
-  get browser() {
-    return document.getElementById("social-sidebar-browser");
-  },
 
   
   get canShow() {
@@ -793,7 +796,7 @@ SocialSidebar = {
     }
     if (data) {
       data = JSON.parse(data);
-      this.browser.setAttribute("origin", data.origin);
+      document.getElementById("social-sidebar-browser").setAttribute("origin", data.origin);
       if (!data.hidden)
         this.show(data.origin);
     } else if (Services.prefs.prefHasUserValue("social.sidebar.provider")) {
@@ -804,7 +807,7 @@ SocialSidebar = {
 
   saveWindowState: function() {
     let broadcaster = document.getElementById("socialSidebarBroadcaster");
-    let sidebarOrigin = this.browser.getAttribute("origin");
+    let sidebarOrigin = document.getElementById("social-sidebar-browser").getAttribute("origin");
     let data = {
       "hidden": broadcaster.hidden,
       "origin": sidebarOrigin
@@ -862,10 +865,10 @@ SocialSidebar = {
     broadcaster.hidden = hideSidebar;
     command.setAttribute("checked", !hideSidebar);
 
-    let sbrowser = this.browser;
+    let sbrowser = document.getElementById("social-sidebar-browser");
 
     if (hideSidebar) {
-      sbrowser.messageManager.removeMessageListener("DOMContentLoaded", SocialSidebar._loadListener);
+      sbrowser.removeEventListener("load", SocialSidebar._loadListener, true);
       this.setSidebarVisibilityState(false);
       
       
@@ -883,18 +886,19 @@ SocialSidebar = {
 
       
       if (sbrowser.getAttribute("src") != this.provider.sidebarURL) {
+        
+        
+        sbrowser.docShell.createAboutBlankContentViewer(null);
         sbrowser.setAttribute("src", this.provider.sidebarURL);
         PopupNotifications.locationChange(sbrowser);
+      }
+
+      
+      if (sbrowser.contentDocument.readyState != "complete") {
         document.getElementById("social-sidebar-button").setAttribute("loading", "true");
-        sbrowser.messageManager.addMessageListener("DOMContentLoaded", SocialSidebar._loadListener);
+        sbrowser.addEventListener("load", SocialSidebar._loadListener, true);
       } else {
-        
-        if (sbrowser.contentDocument.readyState != "complete") {
-          document.getElementById("social-sidebar-button").setAttribute("loading", "true");
-          sbrowser.messageManager.addMessageListener("DOMContentLoaded", SocialSidebar._loadListener);
-        } else {
-          this.setSidebarVisibilityState(true);
-        }
+        this.setSidebarVisibilityState(true);
       }
     }
     this._updateCheckedMenuItems(this.opened && this.provider ? this.provider.origin : null);
@@ -905,15 +909,15 @@ SocialSidebar = {
   },
 
   _loadListener: function SocialSidebar_loadListener() {
-    let sbrowser = SocialSidebar.browser;
-    sbrowser.messageManager.removeMessageListener("DOMContentLoaded", SocialSidebar._loadListener);
+    let sbrowser = document.getElementById("social-sidebar-browser");
+    sbrowser.removeEventListener("load", SocialSidebar._loadListener, true);
     document.getElementById("social-sidebar-button").removeAttribute("loading");
     SocialSidebar.setSidebarVisibilityState(true);
     sbrowser.addEventListener("click", SocialSidebar._onclick, true);
   },
 
   unloadSidebar: function SocialSidebar_unloadSidebar() {
-    let sbrowser = SocialSidebar.browser;
+    let sbrowser = document.getElementById("social-sidebar-browser");
     if (!sbrowser.hasAttribute("origin"))
       return;
 
@@ -924,7 +928,7 @@ SocialSidebar = {
     
     
     
-    sbrowser.messageManager.sendAsyncMessage("Social:ClearFrame");
+    sbrowser.docShell.createAboutBlankContentViewer(null);
     SocialFlyout.unload();
   },
 
@@ -936,7 +940,8 @@ SocialSidebar = {
       return;
     
     
-    let origin = this.browser.getAttribute("origin");
+    let sbrowser = document.getElementById("social-sidebar-browser");
+    let origin = sbrowser.getAttribute("origin");
     let providers = Social.providers.filter(p => p.sidebarURL);
     let provider;
     if (origin)
