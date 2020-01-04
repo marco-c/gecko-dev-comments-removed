@@ -34,7 +34,7 @@ public class AlarmReceiver extends BroadcastReceiver {
         };
         Timer timer = new Timer();
         
-        timer.schedule(releaseLockTask, 5*1000);
+        timer.schedule(releaseLockTask, 5 * 1000);
     }
 
     @WrapForJNI

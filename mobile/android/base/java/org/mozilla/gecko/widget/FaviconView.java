@@ -173,7 +173,7 @@ public class FaviconView extends ImageView {
     private void scaleBitmap() {
         
         
-        int doubledSize = mIconBitmap.getWidth()*2;
+        int doubledSize = mIconBitmap.getWidth() * 2;
         if (mActualWidth > doubledSize) {
             
             

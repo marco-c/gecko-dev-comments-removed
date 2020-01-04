@@ -211,7 +211,7 @@ class JavaPanZoomController
         
         
         t = t-1;
-        return -t*t+1;
+        return -t * t + 1;
     }
 
     private void setState(PanZoomState state) {
