@@ -538,7 +538,7 @@ class CodeGenerator : public CodeGeneratorSpecific
     
     uint32_t simdRefreshTemplatesDuringLink_;
 
-    void registerSimdTemplate(InlineTypedObject* templateObject);
+    void registerSimdTemplate(SimdType simdType);
     void captureSimdTemplate(JSContext* cx);
 };
 
