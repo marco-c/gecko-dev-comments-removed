@@ -3501,6 +3501,13 @@ JS_NewArrayBufferWithContents(JSContext* cx, size_t nbytes, void* contents);
 
 
 
+extern JS_PUBLIC_API(JSObject*)
+JS_NewArrayBufferWithExternalContents(JSContext* cx, size_t nbytes, void* contents);
+
+
+
+
+
 
 
 extern JS_PUBLIC_API(void*)
