@@ -120,7 +120,15 @@
 #define MODULE  NS_ERROR_MODULE_WIDGET
   
 
+
+
+
   ERROR(NS_SUCCESS_EVENT_CONSUMED,                        SUCCESS(1)),
+  
+
+
+
+  ERROR(NS_SUCCESS_EVENT_HANDLED_ASYNCHRONOUSLY,          SUCCESS(2)),
 #undef MODULE
 
 

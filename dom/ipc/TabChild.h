@@ -575,6 +575,10 @@ public:
 
   virtual bool RecvSetUseGlobalHistory(const bool& aUse) override;
 
+  virtual bool RecvHandledWindowedPluginKeyEvent(
+                 const mozilla::NativeEventData& aKeyEventData,
+                 const bool& aIsConsumed) override;
+
   
 
 

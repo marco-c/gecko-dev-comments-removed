@@ -39,6 +39,7 @@ class   nsIContent;
 class   ViewWrapper;
 class   nsIScreen;
 class   nsIRunnable;
+class   nsIKeyEventInPluginCallback;
 
 namespace mozilla {
 class CompositorVsyncDispatcher;
@@ -2053,6 +2054,28 @@ public:
                             const FrameMetrics::ViewID& aViewId,
                             const CSSRect& aRect,
                             const uint32_t& aFlags) = 0;
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    virtual nsresult OnWindowedPluginKeyEvent(
+                       const mozilla::NativeEventData& aKeyEventData,
+                       nsIKeyEventInPluginCallback* aCallback);
 
 protected:
     
