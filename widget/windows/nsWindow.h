@@ -515,7 +515,7 @@ protected:
 
   
   
-  nsIntMargin           mNonClientOffset;
+  mozilla::LayoutDeviceIntMargin mNonClientOffset;
   
   nsIntMargin           mNonClientMargins;
   
