@@ -76,6 +76,7 @@ private:
     return aPAR.Hash();
   }
 
+  
   CSSIntSize                    mViewportSize;
   Maybe<SVGPreserveAspectRatio> mPreserveAspectRatio;
   gfxFloat                      mGlobalOpacity;
