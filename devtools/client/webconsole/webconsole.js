@@ -16,6 +16,7 @@ Cu.import("resource://devtools/client/shared/browser-loader.js", BrowserLoaderMo
 
 const promise = require("promise");
 const Services = require("Services");
+const ErrorDocs = require("devtools/server/actors/errordocs");
 
 loader.lazyServiceGetter(this, "clipboardHelper",
                          "@mozilla.org/widget/clipboardhelper;1",
@@ -1489,6 +1490,7 @@ WebConsoleFrame.prototype = {
 
     
     let msgBody = node.getElementsByClassName("message-body")[0];
+
     
     this.addMoreInfoLink(msgBody, scriptError);
 
@@ -1698,10 +1700,13 @@ WebConsoleFrame.prototype = {
         break;
       default:
         
-        return;
+        url = ErrorDocs.GetURL(scriptError.errorMessageName);
+        break;
     }
 
-    this.addLearnMoreWarningNode(node, url);
+    if (url) {
+      this.addLearnMoreWarningNode(node, url);
+    }
   },
 
   
