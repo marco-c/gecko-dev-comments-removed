@@ -21,7 +21,7 @@
 #include "mozilla/storage.h"
 #include "mozilla/Attributes.h"
 
-#include "AsyncFaviconHelpers.h"
+#include "FaviconHelpers.h"
 
 
 
@@ -150,8 +150,7 @@ private:
   nsDataHashtable<nsCStringHashKey, uint32_t> mFailedFavicons;
 
   
-  friend class mozilla::places::AsyncFetchAndSetIconForPage;
-  friend class mozilla::places::RemoveIconDataCacheEntry;
+  friend class mozilla::places::AsyncReplaceFaviconData;
   nsTHashtable<UnassociatedIconHashKey> mUnassociatedIcons;
 };
 

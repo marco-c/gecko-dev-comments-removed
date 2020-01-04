@@ -4,8 +4,7 @@
 
 
 
-#ifndef AsyncFaviconHelpers_h_
-#define AsyncFaviconHelpers_h_
+#pragma once
 
 #include "nsIFaviconService.h"
 #include "nsIChannelEventSink.h"
@@ -99,60 +98,20 @@ struct PageData
 
 
 
-class AsyncFaviconHelperBase : public Runnable
-{
-protected:
-  explicit AsyncFaviconHelperBase(nsCOMPtr<nsIFaviconDataCallback>& aCallback);
-
-  virtual ~AsyncFaviconHelperBase();
-
-  
-  nsCOMPtr<nsIFaviconDataCallback> mCallback;
-};
-
-
-
-
-
-class AsyncFetchAndSetIconForPage final : public AsyncFaviconHelperBase
+class AsyncFetchAndSetIconForPage final : public Runnable
                                         , public nsIStreamListener
                                         , public nsIInterfaceRequestor
                                         , public nsIChannelEventSink
                                         , public mozIPlacesPendingOperation
  {
  public:
+  NS_DECL_NSIRUNNABLE
   NS_DECL_NSISTREAMLISTENER
   NS_DECL_NSIINTERFACEREQUESTOR
   NS_DECL_NSICHANNELEVENTSINK
   NS_DECL_NSIREQUESTOBSERVER
-  NS_DECL_NSIRUNNABLE
   NS_DECL_MOZIPLACESPENDINGOPERATION
   NS_DECL_ISUPPORTS_INHERITED
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  static nsresult start(nsIURI* aFaviconURI,
-                        nsIURI* aPageURI,
-                        enum AsyncFaviconFetchMode aFetchMode,
-                        bool aFaviconLoadPrivate,
-                        nsIFaviconDataCallback* aCallback,
-                        nsIPrincipal* aLoadingPrincipal,
-                        mozIPlacesPendingOperation ** _canceler);
 
   
 
@@ -171,13 +130,14 @@ class AsyncFetchAndSetIconForPage final : public AsyncFaviconHelperBase
   AsyncFetchAndSetIconForPage(IconData& aIcon,
                               PageData& aPage,
                               bool aFaviconLoadPrivate,
-                              nsCOMPtr<nsIFaviconDataCallback>& aCallback,
+                              nsIFaviconDataCallback* aCallback,
                               nsIPrincipal* aLoadingPrincipal);
 
 private:
   nsresult FetchFromNetwork();
   virtual ~AsyncFetchAndSetIconForPage() {}
 
+  nsMainThreadPtrHandle<nsIFaviconDataCallback> mCallback;
   IconData mIcon;
   PageData mPage;
   const bool mFaviconLoadPrivate;
@@ -190,7 +150,7 @@ private:
 
 
 
-class AsyncAssociateIconToPage : public AsyncFaviconHelperBase
+class AsyncAssociateIconToPage final : public Runnable
 {
 public:
   NS_DECL_NSIRUNNABLE
@@ -205,13 +165,12 @@ public:
 
 
 
-  AsyncAssociateIconToPage(IconData& aIcon,
-                           PageData& aPage,
-                           nsCOMPtr<nsIFaviconDataCallback>& aCallback);
+  AsyncAssociateIconToPage(const IconData& aIcon,
+                           const PageData& aPage,
+                           const nsMainThreadPtrHandle<nsIFaviconDataCallback>& aCallback);
 
-  virtual ~AsyncAssociateIconToPage();
-
-protected:
+private:
+  nsMainThreadPtrHandle<nsIFaviconDataCallback> mCallback;
   IconData mIcon;
   PageData mPage;
 };
@@ -220,21 +179,10 @@ protected:
 
 
 
-class AsyncGetFaviconURLForPage : public AsyncFaviconHelperBase
+class AsyncGetFaviconURLForPage final : public Runnable
 {
 public:
   NS_DECL_NSIRUNNABLE
-
-  
-
-
-
-
-
-
-
-  static nsresult start(nsIURI* aPageURI,
-                        nsIFaviconDataCallback* aCallback);
 
   
 
@@ -245,11 +193,10 @@ public:
 
 
   AsyncGetFaviconURLForPage(const nsACString& aPageSpec,
-                            nsCOMPtr<nsIFaviconDataCallback>& aCallback);
-
-  virtual ~AsyncGetFaviconURLForPage();
+                            nsIFaviconDataCallback* aCallback);
 
 private:
+  nsMainThreadPtrHandle<nsIFaviconDataCallback> mCallback;
   nsCString mPageSpec;
 };
 
@@ -258,21 +205,10 @@ private:
 
 
 
-class AsyncGetFaviconDataForPage : public AsyncFaviconHelperBase
+class AsyncGetFaviconDataForPage final : public Runnable
 {
 public:
   NS_DECL_NSIRUNNABLE
-
-  
-
-
-
-
-
-
-
-  static nsresult start(nsIURI* aPageURI,
-                        nsIFaviconDataCallback* aCallback);
 
   
 
@@ -283,47 +219,30 @@ public:
 
 
   AsyncGetFaviconDataForPage(const nsACString& aPageSpec,
-                             nsCOMPtr<nsIFaviconDataCallback>& aCallback);
-
-  virtual ~AsyncGetFaviconDataForPage();
+                             nsIFaviconDataCallback* aCallback);
 
 private:
+  nsMainThreadPtrHandle<nsIFaviconDataCallback> mCallback;
   nsCString mPageSpec;
 };
 
-class AsyncReplaceFaviconData : public AsyncFaviconHelperBase
+class AsyncReplaceFaviconData final : public Runnable
 {
 public:
   NS_DECL_NSIRUNNABLE
 
-  static nsresult start(IconData *aIcon);
+  explicit AsyncReplaceFaviconData(const IconData& aIcon);
 
-  AsyncReplaceFaviconData(IconData &aIcon,
-                          nsCOMPtr<nsIFaviconDataCallback>& aCallback);
+private:
+  nsresult RemoveIconDataCacheEntry();
 
-  virtual ~AsyncReplaceFaviconData();
-
-protected:
-  IconData mIcon;
-};
-
-class RemoveIconDataCacheEntry : public AsyncFaviconHelperBase
-{
-public:
-  NS_DECL_NSIRUNNABLE
-
-  RemoveIconDataCacheEntry(IconData &aIcon,
-                           nsCOMPtr<nsIFaviconDataCallback>& aCallback);
-  virtual ~RemoveIconDataCacheEntry();
-
-protected:
   IconData mIcon;
 };
 
 
 
 
-class NotifyIconObservers : public AsyncFaviconHelperBase
+class NotifyIconObservers final : public Runnable
 {
 public:
   NS_DECL_NSIRUNNABLE
@@ -338,12 +257,12 @@ public:
 
 
 
-  NotifyIconObservers(IconData& aIcon,
-                      PageData& aPage,
-                      nsCOMPtr<nsIFaviconDataCallback>& aCallback);
-  virtual ~NotifyIconObservers();
+  NotifyIconObservers(const IconData& aIcon,
+                      const PageData& aPage,
+                      const nsMainThreadPtrHandle<nsIFaviconDataCallback>& aCallback);
 
-protected:
+private:
+  nsMainThreadPtrHandle<nsIFaviconDataCallback> mCallback;
   IconData mIcon;
   PageData mPage;
 
@@ -352,5 +271,3 @@ protected:
 
 } 
 } 
-
-#endif 
