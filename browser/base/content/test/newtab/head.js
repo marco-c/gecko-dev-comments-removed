@@ -833,6 +833,8 @@ function customizeNewTabPage(aTheme) {
 
 
 function hasScrollbar() {
-  let docElement = getContentDocument().documentElement;
-  return docElement.scrollHeight > docElement.clientHeight;
+  return ContentTask.spawn(gWindow.gBrowser.selectedBrowser, {}, function* () {
+    let docElement = content.document.documentElement;
+    return docElement.scrollHeight > docElement.clientHeight;
+  });
 }

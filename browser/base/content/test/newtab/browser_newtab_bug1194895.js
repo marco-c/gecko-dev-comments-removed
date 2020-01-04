@@ -25,59 +25,60 @@ gDirectorySource = "data:application/json," + JSON.stringify({
 });
 
 
-function runTests() {
+add_task(function* () {
   requestLongerTimeout(4);
   let origEnhanced = NewTabUtils.allPages.enhanced;
   let origCompareLinks = NewTabUtils.links.compareLinks;
   registerCleanupFunction(() => {
-    Services.prefs.clearUserPref(PRELOAD_PREF);
-    Services.prefs.clearUserPref(PREF_NEWTAB_ROWS);
-    Services.prefs.clearUserPref(PREF_NEWTAB_COLUMNS);
     NewTabUtils.allPages.enhanced = origEnhanced;
     NewTabUtils.links.compareLinks = origCompareLinks;
   });
 
   
-  Services.prefs.setBoolPref(PRELOAD_PREF, false);
+  yield pushPrefs([PRELOAD_PREF, false]);
   
-  Services.prefs.setIntPref(PREF_NEWTAB_COLUMNS, 3);
-  Services.prefs.setIntPref(PREF_NEWTAB_ROWS, 5);
+  yield pushPrefs([PREF_NEWTAB_COLUMNS, 3]);
+  yield pushPrefs([PREF_NEWTAB_ROWS, 5]);
 
-  yield addNewTabPageTab();
+  yield* addNewTabPageTab();
   yield customizeNewTabPage("enhanced"); 
 
   
 
   
   yield setLinks("0,1,2,3,4,5");
-  yield addNewTabPageTab();
+  yield* addNewTabPageTab();
 
   
-  checkGrid("0,1,2,3,4,5");
-  ok(!hasScrollbar(), "no scrollbar");
+  yield* checkGrid("0,1,2,3,4,5");
+  let scrolling = yield hasScrollbar();
+  ok(!scrolling, "no scrollbar");
 
   
   yield setLinks("0,1,2,3,4,5,6,7,8,9");
-  yield addNewTabPageTab();
-  checkGrid("0,1,2,3,4,5,6,7,8,9");
-  ok(hasScrollbar(), "document has scrollbar");
+  yield* addNewTabPageTab();
+  yield* checkGrid("0,1,2,3,4,5,6,7,8,9");
+  scrolling = yield hasScrollbar();
+  ok(scrolling, "document has scrollbar");
 
   
-  pinCell(9);
+  yield pinCell(9);
   
   
   for (let i = 0; i < 6; i++) {
     yield blockCell(0);
   }
-  yield addNewTabPageTab();
-  checkGrid("6,7,8,,,,,,,9p");
-  ok(hasScrollbar(), "document has scrollbar when tile is pinned to the last row");
+  yield* addNewTabPageTab();
+  yield* checkGrid("6,7,8,,,,,,,9p");
+  scrolling = yield hasScrollbar();
+  ok(scrolling, "document has scrollbar when tile is pinned to the last row");
 
   
   yield unpinCell(9);
-  yield addNewTabPageTab();
-  checkGrid("6,7,8,9");
-  ok(!hasScrollbar(), "no scrollbar when bottom row tile is unpinned");
+  yield* addNewTabPageTab();
+  yield* checkGrid("6,7,8,9");
+  scrolling = yield hasScrollbar();
+  ok(!scrolling, "no scrollbar when bottom row tile is unpinned");
 
   
   NewTabUtils.restore();
@@ -87,30 +88,35 @@ function runTests() {
 
   
   yield setLinks([]);
-  yield addNewTabPageTab();
-  ok(!hasScrollbar(), "no scrollbar for directory tiles");
+  yield* addNewTabPageTab();
+  ok(!scrolling, "no scrollbar for directory tiles");
 
   
   
   yield setLinks("41");
-  yield addNewTabPageTab();
-  ok(hasScrollbar(), "adding low frecency history site causes scrollbar");
+  yield* addNewTabPageTab();
+  scrolling = yield hasScrollbar();
+  ok(scrolling, "adding low frecency history site causes scrollbar");
 
   
   
-  Services.prefs.setIntPref(PREF_NEWTAB_ROWS, 4);
-  yield addNewTabPageTab();
-  ok(!hasScrollbar(), "no scrollbar if history tiles falls past max rows");
+  yield pushPrefs([PREF_NEWTAB_ROWS, 4]);
+  yield* addNewTabPageTab();
+
+  scrolling = yield hasScrollbar();
+  ok(!scrolling, "no scrollbar if history tiles falls past max rows");
 
   
-  Services.prefs.setIntPref(PREF_NEWTAB_ROWS, 5);
-  yield addNewTabPageTab();
-  ok(hasScrollbar(), "scrollbar is back when max rows allow for bottom history tile");
+  yield pushPrefs([PREF_NEWTAB_ROWS, 5]);
+  yield* addNewTabPageTab();
+  scrolling = yield hasScrollbar();
+  ok(scrolling, "scrollbar is back when max rows allow for bottom history tile");
 
   
   yield blockCell(14);
-  yield addNewTabPageTab();
-  ok(!hasScrollbar(), "no scrollbar after bottom history tiles is blocked");
+  yield* addNewTabPageTab();
+  scrolling = yield hasScrollbar();
+  ok(!scrolling, "no scrollbar after bottom history tiles is blocked");
 
   
   
@@ -131,12 +137,14 @@ function runTests() {
 
   
   yield setLinks("31,32,33");
-  yield addNewTabPageTab();
-  ok(!hasScrollbar(), "no scrollbar when directory tiles follow history tiles");
+  yield* addNewTabPageTab();
+  scrolling = yield hasScrollbar();
+  ok(!scrolling, "no scrollbar when directory tiles follow history tiles");
 
   
   yield setLinks("30,31,32,33,34,35,36,37,38,39");
-  yield addNewTabPageTab();
-  ok(hasScrollbar(), "scrollbar appears when history tiles need extra row");
+  yield* addNewTabPageTab();
+  scrolling = yield hasScrollbar();
+  ok(scrolling, "scrollbar appears when history tiles need extra row");
+});
 
-}
