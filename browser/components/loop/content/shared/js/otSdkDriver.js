@@ -40,11 +40,7 @@ loop.OTSdkDriver = (function() {
 
     
     
-    this._metrics = {
-      connections: 0,
-      sendStreams: 0,
-      recvStreams: 0
-    };
+    this._resetMetrics();
 
     this.dispatcher.register(this, [
       "setupStreamElements",
@@ -105,6 +101,17 @@ loop.OTSdkDriver = (function() {
           
           text: {}
         }
+      };
+    },
+
+    
+
+
+    _resetMetrics: function() {
+      this._metrics = {
+        connections: 0,
+        sendStreams: 0,
+        recvStreams: 0
       };
     },
 
@@ -292,6 +299,9 @@ loop.OTSdkDriver = (function() {
         this.publisher.destroy();
         delete this.publisher;
       }
+
+      
+      this._resetMetrics();
 
       this._noteConnectionLengthIfNeeded(this._getTwoWayMediaStartTime(), performance.now());
 
