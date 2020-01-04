@@ -50,8 +50,9 @@ public class NotificationHandler {
 
 
 
+
     public void add(final int notificationID, String aImageUrl, String aHost, String aAlertTitle,
-                    String aAlertText, PendingIntent contentIntent) {
+                    String aAlertText, PendingIntent contentIntent, PendingIntent deleteIntent) {
         
         remove(notificationID);
 
@@ -60,6 +61,7 @@ public class NotificationHandler {
                 .setContentText(aAlertText)
                 .setSmallIcon(R.drawable.ic_status_logo)
                 .setContentIntent(contentIntent)
+                .setDeleteIntent(deleteIntent)
                 .setAutoCancel(true)
                 .setStyle(new NotificationCompat.InboxStyle()
                           .addLine(aAlertText)
