@@ -27,7 +27,11 @@ const ANNOS_TO_TRACK = [BookmarkAnnos.DESCRIPTION_ANNO, BookmarkAnnos.SIDEBAR_AN
 
 const SERVICE_NOT_SUPPORTED = "Service not supported on this platform";
 const FOLDER_SORTINDEX = 1000000;
-const { SOURCE_SYNC } = Ci.nsINavBookmarksService;
+const {
+  SOURCE_SYNC,
+  SOURCE_IMPORT,
+  SOURCE_IMPORT_REPLACE,
+} = Ci.nsINavBookmarksService;
 
 
 const RECORD_PROPS_TO_BOOKMARK_PROPS = {
@@ -41,6 +45,12 @@ const RECORD_PROPS_TO_BOOKMARK_PROPS = {
   siteUri: "site",
   feedUri: "feed",
 };
+
+
+
+
+
+const IGNORED_SOURCES = [SOURCE_SYNC, SOURCE_IMPORT, SOURCE_IMPORT_REPLACE];
 
 this.PlacesItem = function PlacesItem(collection, id, type) {
   CryptoWrapper.call(this, collection, id);
@@ -377,9 +387,7 @@ BookmarksEngine.prototype = {
       SyncEngine.prototype._processIncoming.call(this, newitems);
     } finally {
       
-      this._tracker.ignoreAll = true;
       this._store._orderChildren();
-      this._tracker.ignoreAll = false;
       delete this._store._childrenToOrder;
     }
   },
@@ -905,6 +913,16 @@ function BookmarksTracker(name, engine) {
 BookmarksTracker.prototype = {
   __proto__: Tracker.prototype,
 
+  
+  
+  get ignoreAll() {
+    return false;
+  },
+
+  
+  
+  set ignoreAll(value) {},
+
   startTracking: function() {
     PlacesUtils.bookmarks.addObserver(this, true);
     Svc.Obs.add("bookmarks-restore-begin", this);
@@ -925,11 +943,9 @@ BookmarksTracker.prototype = {
     switch (topic) {
       case "bookmarks-restore-begin":
         this._log.debug("Ignoring changes from importing bookmarks.");
-        this.ignoreAll = true;
         break;
       case "bookmarks-restore-success":
         this._log.debug("Tracking all items on successful import.");
-        this.ignoreAll = false;
 
         this._log.debug("Restore succeeded: wiping server and other clients.");
         this.engine.service.resetClient([this.name]);
@@ -938,7 +954,6 @@ BookmarksTracker.prototype = {
         break;
       case "bookmarks-restore-failed":
         this._log.debug("Tracking all items on failed import.");
-        this.ignoreAll = false;
         break;
     }
   },
@@ -979,10 +994,14 @@ BookmarksTracker.prototype = {
 
 
 
-  _ignore: function BMT__ignore(itemId, folder, guid) {
-    
-    if (this.ignoreAll)
+
+
+
+
+  _ignore: function BMT__ignore(itemId, folder, guid, source) {
+    if (IGNORED_SOURCES.includes(source)) {
       return true;
+    }
 
     
     if (folder == null) {
@@ -1018,9 +1037,10 @@ BookmarksTracker.prototype = {
 
   onItemAdded: function BMT_onItemAdded(itemId, folder, index,
                                         itemType, uri, title, dateAdded,
-                                        guid, parentGuid) {
-    if (this._ignore(itemId, folder, guid))
+                                        guid, parentGuid, source) {
+    if (this._ignore(itemId, folder, guid, source)) {
       return;
+    }
 
     this._log.trace("onItemAdded: " + itemId);
     this._add(itemId, guid);
@@ -1028,8 +1048,8 @@ BookmarksTracker.prototype = {
   },
 
   onItemRemoved: function (itemId, parentId, index, type, uri,
-                           guid, parentGuid) {
-    if (this._ignore(itemId, parentId, guid)) {
+                           guid, parentGuid, source) {
+    if (this._ignore(itemId, parentId, guid, source)) {
       return;
     }
 
@@ -1048,9 +1068,6 @@ BookmarksTracker.prototype = {
     let all = find(BookmarkAnnos.ALLBOOKMARKS_ANNO);
     if (all.length == 0)
       return;
-
-    
-    this.ignoreAll = true;
 
     let mobile = find(BookmarkAnnos.MOBILE_ANNO);
     let queryURI = Utils.makeURI("place:folder=" + BookmarkSpecialIds.mobile);
@@ -1073,8 +1090,6 @@ BookmarksTracker.prototype = {
     else if (PlacesUtils.bookmarks.getItemTitle(mobile[0]) != title) {
       PlacesUtils.bookmarks.setItemTitle(mobile[0], title, SOURCE_SYNC);
     }
-
-    this.ignoreAll = false;
   },
 
   
@@ -1082,11 +1097,7 @@ BookmarksTracker.prototype = {
   
   onItemChanged: function BMT_onItemChanged(itemId, property, isAnno, value,
                                             lastModified, itemType, parentId,
-                                            guid, parentGuid) {
-    
-    if (this.ignoreAll)
-      return;
-
+                                            guid, parentGuid, source) {
     if (isAnno && (ANNOS_TO_TRACK.indexOf(property) == -1))
       
       return;
@@ -1095,8 +1106,9 @@ BookmarksTracker.prototype = {
     if (property == "favicon")
       return;
 
-    if (this._ignore(itemId, parentId, guid))
+    if (this._ignore(itemId, parentId, guid, source)) {
       return;
+    }
 
     this._log.trace("onItemChanged: " + itemId +
                     (", " + property + (isAnno? " (anno)" : "")) +
@@ -1106,9 +1118,11 @@ BookmarksTracker.prototype = {
 
   onItemMoved: function BMT_onItemMoved(itemId, oldParent, oldIndex,
                                         newParent, newIndex, itemType,
-                                        guid, oldParentGuid, newParentGuid) {
-    if (this._ignore(itemId, newParent, guid))
+                                        guid, oldParentGuid, newParentGuid,
+                                        source) {
+    if (this._ignore(itemId, newParent, guid, source)) {
       return;
+    }
 
     this._log.trace("onItemMoved: " + itemId);
     this._add(oldParent, oldParentGuid);
