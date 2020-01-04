@@ -1799,15 +1799,10 @@ nsHTMLReflowState::InitAbsoluteConstraints(nsPresContext* aPresContext,
 
     if (marginBStartIsAuto) {
       if (marginBEndIsAuto) {
-        if (availMarginSpace < 0) {
-          
-          margin.BEnd(cbwm) = availMarginSpace;
-        } else {
-          
-          
-          margin.BStart(cbwm) = availMarginSpace / 2;
-          margin.BEnd(cbwm) = availMarginSpace - margin.BStart(cbwm);
-        }
+        
+        
+        margin.BStart(cbwm) = availMarginSpace / 2;
+        margin.BEnd(cbwm) = availMarginSpace - margin.BStart(cbwm);
       } else {
         
         margin.BStart(cbwm) = availMarginSpace;
