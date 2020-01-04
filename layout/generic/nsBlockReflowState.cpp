@@ -316,13 +316,16 @@ nsBlockReflowState::ReplacedBlockFitsInAvailSpace(nsIFrame* aReplacedBlock,
   nsBlockFrame::ReplacedElementISizeToClear replacedISize =
     nsBlockFrame::ISizeToClearPastFloats(*this, aFloatAvailableSpace.mRect,
                                          aReplacedBlock);
+  
+  
+  
+  
   return std::max(aFloatAvailableSpace.mRect.IStart(wm) -
                     mContentArea.IStart(wm),
                   replacedISize.marginIStart) +
            replacedISize.borderBoxISize +
-           std::max(mContentArea.IEnd(wm) -
-                      aFloatAvailableSpace.mRect.IEnd(wm),
-                    replacedISize.marginIEnd) <=
+           (mContentArea.IEnd(wm) -
+            aFloatAvailableSpace.mRect.IEnd(wm)) <=
          mContentArea.ISize(wm);
 }
 
