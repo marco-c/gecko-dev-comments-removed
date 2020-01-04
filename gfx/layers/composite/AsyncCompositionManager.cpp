@@ -504,7 +504,7 @@ AsyncCompositionManager::AlignFixedAndStickyLayers(Layer* aLayer,
 
 static void
 SampleValue(float aPortion, Animation& aAnimation, StyleAnimationValue& aStart,
-            StyleAnimationValue& aEnd, Animatable* aValue)
+            StyleAnimationValue& aEnd, Animatable* aValue, Layer* aLayer)
 {
   StyleAnimationValue interpolatedValue;
   NS_ASSERTION(aStart.GetUnit() == aEnd.GetUnit() ||
@@ -525,16 +525,21 @@ SampleValue(float aPortion, Animation& aAnimation, StyleAnimationValue& aStart,
   nsPoint origin = data.origin();
   
   Point3D transformOrigin = data.transformOrigin();
-  Point3D perspectiveOrigin = data.perspectiveOrigin();
   nsDisplayTransform::FrameTransformProperties props(interpolatedList,
-                                                     transformOrigin,
-                                                     perspectiveOrigin,
-                                                     data.perspective());
+                                                     transformOrigin);
+
+  
+  
+  
+  uint32_t flags = 0;
+  if (!aLayer->GetParent() || !aLayer->GetParent()->GetTransformIsPerspective()) {
+    flags = nsDisplayTransform::OFFSET_BY_ORIGIN;
+  }
+
   Matrix4x4 transform =
     nsDisplayTransform::GetResultingTransformMatrix(props, origin,
                                                     data.appUnitsPerDevPixel(),
-                                                    nsDisplayTransform::OFFSET_BY_ORIGIN,
-                                                    &data.bounds());
+                                                    flags, &data.bounds());
 
   InfallibleTArray<TransformFunction> functions;
   functions.AppendElement(TransformMatrix(transform));
@@ -612,7 +617,7 @@ SampleAnimations(Layer* aLayer, TimeStamp aPoint)
     
     Animatable interpolatedValue;
     SampleValue(portion, animation, animData.mStartValues[segmentIndex],
-                animData.mEndValues[segmentIndex], &interpolatedValue);
+                animData.mEndValues[segmentIndex], &interpolatedValue, aLayer);
     LayerComposite* layerComposite = aLayer->AsLayerComposite();
     switch (animation.property()) {
     case eCSSProperty_opacity:

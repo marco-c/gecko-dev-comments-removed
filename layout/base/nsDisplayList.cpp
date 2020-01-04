@@ -567,16 +567,6 @@ nsDisplayListBuilder::AddAnimationsAndTransitionsToLayer(Layer* aLayer,
     float scale = devPixelsToAppUnits;
     Point3D offsetToTransformOrigin =
       nsDisplayTransform::GetDeltaToTransformOrigin(aFrame, scale, &bounds);
-    Point3D offsetToPerspectiveOrigin =
-      nsDisplayTransform::GetDeltaToPerspectiveOrigin(aFrame, scale);
-    nscoord perspective = 0.0;
-    nsStyleContext* parentStyleContext = aFrame->StyleContext()->GetParent();
-    if (parentStyleContext) {
-      const nsStyleDisplay* disp = parentStyleContext->StyleDisplay();
-      if (disp && disp->mChildPerspective.GetUnit() == eStyleUnit_Coord) {
-        perspective = disp->mChildPerspective.GetCoordValue();
-      }
-    }
     nsPoint origin;
     if (aItem) {
       
@@ -594,8 +584,7 @@ nsDisplayListBuilder::AddAnimationsAndTransitionsToLayer(Layer* aLayer,
     }
 
     data = TransformData(origin, offsetToTransformOrigin,
-                         offsetToPerspectiveOrigin, bounds, perspective,
-                         devPixelsToAppUnits);
+                         bounds, devPixelsToAppUnits);
   } else if (aProperty == eCSSProperty_opacity) {
     data = null_t();
   }
@@ -631,6 +620,7 @@ nsDisplayListBuilder::nsDisplayListBuilder(nsIFrame* aReferenceFrame,
       mCurrentScrollParentId(FrameMetrics::NULL_SCROLL_ID),
       mCurrentScrollbarTarget(FrameMetrics::NULL_SCROLL_ID),
       mCurrentScrollbarFlags(0),
+      mPerspectiveItemIndex(0),
       mIsBuildingScrollbar(false),
       mCurrentScrollbarWillHaveLayer(false),
       mBuildCaret(aBuildCaret),
@@ -5072,27 +5062,23 @@ nsDisplayTransform::GetDeltaToTransformOrigin(const nsIFrame* aFrame,
                                          aAppUnitsPerPixel));
 }
 
-
-
-
-
-
- Point3D
-nsDisplayTransform::GetDeltaToPerspectiveOrigin(const nsIFrame* aFrame,
-                                                float aAppUnitsPerPixel)
+ bool
+nsDisplayTransform::ComputePerspectiveMatrix(const nsIFrame* aFrame,
+                                             float aAppUnitsPerPixel,
+                                             Matrix4x4& aOutMatrix)
 {
   NS_PRECONDITION(aFrame, "Can't get delta for a null frame!");
   NS_PRECONDITION(aFrame->IsTransformed() ||
                   aFrame->StyleDisplay()->BackfaceIsHidden() ||
                   aFrame->Combines3DTransformWithAncestors(),
                   "Shouldn't get a delta for an untransformed frame!");
+  NS_PRECONDITION(aOutMatrix.IsIdentity(), "Must have a blank output matrix");
 
   if (!aFrame->IsTransformed()) {
-    return Point3D();
+    return false;
   }
 
   
-
 
 
 
@@ -5100,23 +5086,37 @@ nsDisplayTransform::GetDeltaToPerspectiveOrigin(const nsIFrame* aFrame,
   
   nsIFrame* cbFrame = aFrame->GetContainingBlock(nsIFrame::SKIP_SCROLLED_FRAME);
   if (!cbFrame) {
-    return Point3D();
+    return false;
   }
-  const nsStyleDisplay* display = cbFrame->StyleDisplay();
+
+  
+
+  const nsStyleDisplay* cbDisplay = cbFrame->StyleDisplay();
+  if (cbDisplay->mChildPerspective.GetUnit() != eStyleUnit_Coord) {
+    return false;
+  }
+  nscoord perspective = cbDisplay->mChildPerspective.GetCoordValue();
+  if (perspective <= 0) {
+    return false;
+  }
+
   TransformReferenceBox refBox(cbFrame);
 
   
-  Point3D result;
-  result.z = 0.0f;
-  gfx::Float* coords[2] = {&result.x, &result.y};
+  Point3D perspectiveOrigin;
+  gfx::Float* coords[2] = {&perspectiveOrigin.x, &perspectiveOrigin.y};
   TransformReferenceBox::DimensionGetter dimensionGetter[] =
     { &TransformReferenceBox::Width, &TransformReferenceBox::Height };
+
+  
+
+
 
   for (uint8_t index = 0; index < 2; ++index) {
     
 
 
-    const nsStyleCoord &coord = display->mPerspectiveOrigin[index];
+    const nsStyleCoord &coord = cbDisplay->mPerspectiveOrigin[index];
     if (coord.GetUnit() == eStyleUnit_Calc) {
       const nsStyleCoord::Calc *calc = coord.GetCalcValue();
       *coords[index] =
@@ -5144,7 +5144,15 @@ nsDisplayTransform::GetDeltaToPerspectiveOrigin(const nsIFrame* aFrame,
             NSAppUnitsToFloatPixels(frameToCbOffset.y, aAppUnitsPerPixel),
             0.0f);
 
-  return result + frameToCbGfxOffset;
+  
+
+
+  perspectiveOrigin += frameToCbGfxOffset;
+
+  aOutMatrix._34 =
+    -1.0 / NSAppUnitsToFloatPixels(perspective, aAppUnitsPerPixel);
+  aOutMatrix.ChangeBasis(perspectiveOrigin);
+  return true;
 }
 
 nsDisplayTransform::FrameTransformProperties::FrameTransformProperties(const nsIFrame* aFrame,
@@ -5153,20 +5161,7 @@ nsDisplayTransform::FrameTransformProperties::FrameTransformProperties(const nsI
   : mFrame(aFrame)
   , mTransformList(aFrame->StyleDisplay()->mSpecifiedTransform)
   , mToTransformOrigin(GetDeltaToTransformOrigin(aFrame, aAppUnitsPerPixel, aBoundsOverride))
-  , mChildPerspective(0)
 {
-  nsIFrame* cbFrame = aFrame->GetContainingBlock(nsIFrame::SKIP_SCROLLED_FRAME);
-  if (cbFrame) {
-    const nsStyleDisplay* display = cbFrame->StyleDisplay();
-    if (display->mChildPerspective.GetUnit() == eStyleUnit_Coord) {
-      mChildPerspective = display->mChildPerspective.GetCoordValue();
-      
-      
-      if (mChildPerspective > 0.0) {
-        mToPerspectiveOrigin = GetDeltaToPerspectiveOrigin(aFrame, aAppUnitsPerPixel);
-      }
-    }
-  }
 }
 
 
@@ -5210,6 +5205,7 @@ nsDisplayTransform::GetResultingTransformMatrixInternal(const FrameTransformProp
                                                         nsIFrame** aOutAncestor)
 {
   const nsIFrame *frame = aProperties.mFrame;
+  NS_ASSERTION(frame || !(aFlags & INCLUDE_PERSPECTIVE), "Must have a frame to compute perspective!");
 
   if (aOutAncestor) {
     *aOutAncestor = nsLayoutUtils::GetCrossDocParentFrame(frame);
@@ -5264,7 +5260,12 @@ nsDisplayTransform::GetResultingTransformMatrixInternal(const FrameTransformProp
                         hasSVGTransforms ? newOrigin.y : NS_round(newOrigin.y),
                         0);
 
-  bool hasPerspective = aProperties.mChildPerspective > 0.0;
+  Matrix4x4 perspectiveMatrix;
+  bool hasPerspective = aFlags & INCLUDE_PERSPECTIVE;
+  if (hasPerspective) {
+    hasPerspective = ComputePerspectiveMatrix(frame, aAppUnitsPerPixel,
+                                              perspectiveMatrix);
+  }
 
   if (!hasSVGTransforms || !hasTransformFromSVGParent) {
     
@@ -5314,12 +5315,7 @@ nsDisplayTransform::GetResultingTransformMatrixInternal(const FrameTransformProp
   }
 
   if (hasPerspective) {
-    Matrix4x4 perspective;
-    perspective._34 =
-      -1.0 / NSAppUnitsToFloatPixels(aProperties.mChildPerspective, aAppUnitsPerPixel);
-
-    perspective.ChangeBasis(aProperties.GetToPerspectiveOrigin());
-    result = result * perspective;
+    result = result * perspectiveMatrix;
 
     if (aFlags & OFFSET_BY_ORIGIN) {
       result.PostTranslate(roundedOrigin);
@@ -5341,7 +5337,7 @@ nsDisplayTransform::GetResultingTransformMatrixInternal(const FrameTransformProp
     
     
     
-    uint32_t flags = aFlags & (INCLUDE_PRESERVE3D_ANCESTORS);
+    uint32_t flags = aFlags & (INCLUDE_PRESERVE3D_ANCESTORS|INCLUDE_PERSPECTIVE);
     if (!frame->IsTransformed()) {
       flags |= OFFSET_BY_ORIGIN;
     }
@@ -5493,7 +5489,7 @@ nsDisplayTransform::GetTransform()
       bool isReference =
         mFrame->IsTransformed() ||
         mFrame->Combines3DTransformWithAncestors() || mFrame->Extend3DContext();
-      uint32_t flags = 0;
+      uint32_t flags = INCLUDE_PERSPECTIVE;
       if (isReference) {
         flags |= OFFSET_BY_ORIGIN;
       }
@@ -5502,6 +5498,20 @@ nsDisplayTransform::GetTransform()
     }
   }
   return mTransform;
+}
+
+Matrix4x4
+nsDisplayTransform::GetTransformForRendering()
+{
+  if (!mFrame->HasPerspective() || mTransformGetter || mIsTransformSeparator) {
+    return GetTransform();
+  }
+  MOZ_ASSERT(!mTransformGetter);
+
+  float scale = mFrame->PresContext()->AppUnitsPerDevPixel();
+  
+  
+  return GetResultingTransformMatrix(mFrame, ToReferenceFrame(), scale, 0);
 }
 
 const Matrix4x4&
@@ -5527,7 +5537,7 @@ nsDisplayTransform::GetAccumulatedPreserved3DTransform(nsDisplayListBuilder* aBu
 
     nsPoint offset = mFrame->GetOffsetToCrossDoc(establisherReference);
     float scale = mFrame->PresContext()->AppUnitsPerDevPixel();
-    uint32_t flags = INCLUDE_PRESERVE3D_ANCESTORS|OFFSET_BY_ORIGIN;
+    uint32_t flags = INCLUDE_PRESERVE3D_ANCESTORS|INCLUDE_PERSPECTIVE|OFFSET_BY_ORIGIN;
     mTransformPreserves3D =
       GetResultingTransformMatrix(mFrame, offset, scale, flags);
   }
@@ -5551,7 +5561,7 @@ already_AddRefed<Layer> nsDisplayTransform::BuildLayer(nsDisplayListBuilder *aBu
 
 
 
-  const Matrix4x4& newTransformMatrix = GetTransform();
+  const Matrix4x4& newTransformMatrix = GetTransformForRendering();
 
   uint32_t flags = ShouldPrerender(aBuilder) ?
     FrameLayerBuilder::CONTAINER_NOT_CLIPPED_BY_ANCESTORS : 0;
@@ -5956,7 +5966,7 @@ nsRect nsDisplayTransform::TransformRect(const nsRect &aUntransformedBounds,
 
   float factor = aFrame->PresContext()->AppUnitsPerDevPixel();
 
-  uint32_t flags = 0;
+  uint32_t flags = INCLUDE_PERSPECTIVE;
   if (aPreserves3D) {
     flags |= INCLUDE_PRESERVE3D_ANCESTORS;
   }
@@ -5977,7 +5987,7 @@ bool nsDisplayTransform::UntransformRect(const nsRect &aTransformedBounds,
 
   float factor = aFrame->PresContext()->AppUnitsPerDevPixel();
 
-  uint32_t flags = 0;
+  uint32_t flags = INCLUDE_PERSPECTIVE;
   if (aPreserves3D) {
     flags |= INCLUDE_PRESERVE3D_ANCESTORS;
   }
@@ -6035,6 +6045,71 @@ void
 nsDisplayTransform::WriteDebugInfo(std::stringstream& aStream)
 {
   AppendToString(aStream, GetTransform());
+}
+
+nsDisplayPerspective::nsDisplayPerspective(nsDisplayListBuilder* aBuilder,
+                                           nsIFrame* aTransformFrame,
+                                           nsIFrame* aPerspectiveFrame,
+                                           nsDisplayList* aList)
+  : nsDisplayItem(aBuilder, aPerspectiveFrame)
+  , mList(aBuilder, aPerspectiveFrame, aList)
+  , mTransformFrame(aTransformFrame)
+  , mIndex(aBuilder->AllocatePerspectiveItemIndex())
+{}
+
+already_AddRefed<Layer>
+nsDisplayPerspective::BuildLayer(nsDisplayListBuilder *aBuilder,
+                                 LayerManager *aManager,
+                                 const ContainerLayerParameters& aContainerParameters)
+{
+  float appUnitsPerPixel = mFrame->PresContext()->AppUnitsPerDevPixel();
+
+  Matrix4x4 perspectiveMatrix;
+  DebugOnly<bool> hasPerspective =
+    nsDisplayTransform::ComputePerspectiveMatrix(mTransformFrame, appUnitsPerPixel,
+                                                 perspectiveMatrix);
+  MOZ_ASSERT(hasPerspective, "Why did we create nsDisplayPerspective?");
+
+  
+
+
+
+  nsDisplayTransform* transform =
+    static_cast<nsDisplayTransform*>(mList.GetChildren()->GetTop());
+
+  Point3D newOrigin =
+    Point3D(NSAppUnitsToFloatPixels(transform->ToReferenceFrame().x, appUnitsPerPixel),
+            NSAppUnitsToFloatPixels(transform->ToReferenceFrame().y, appUnitsPerPixel),
+            0.0f);
+  Point3D roundedOrigin(NS_round(newOrigin.x),
+                        NS_round(newOrigin.y),
+                        0);
+
+  perspectiveMatrix.PostTranslate(roundedOrigin);
+
+  RefPtr<ContainerLayer> container = aManager->GetLayerBuilder()->
+    BuildContainerLayerFor(aBuilder, aManager, mFrame, this, mList.GetChildren(),
+                           aContainerParameters, &perspectiveMatrix, 0);
+
+  if (!container) {
+    return nullptr;
+  }
+
+  
+  
+  
+  container->SetContentFlags(container->GetContentFlags() | Layer::CONTENT_EXTEND_3D_CONTEXT);
+  container->SetTransformIsPerspective(true);
+
+  return container.forget();
+}
+
+LayerState
+nsDisplayPerspective::GetLayerState(nsDisplayListBuilder* aBuilder,
+                                    LayerManager* aManager,
+                                    const ContainerLayerParameters& aParameters)
+{
+  return LAYER_ACTIVE;
 }
 
 nsDisplayItemGeometry*

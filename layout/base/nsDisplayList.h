@@ -743,6 +743,32 @@ public:
     bool                  mOldValue;
   };
 
+  class AutoSaveRestorePerspectiveIndex;
+  friend class AutoSaveRestorePerspectiveIndex;
+  class AutoSaveRestorePerspectiveIndex {
+  public:
+    AutoSaveRestorePerspectiveIndex(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame)
+      : mBuilder(nullptr)
+    {
+      if (aFrame->ChildrenHavePerspective()) {
+        mBuilder = aBuilder;
+        mCachedItemIndex = aBuilder->mPerspectiveItemIndex;
+        aBuilder->mPerspectiveItemIndex = 0;
+      }
+    }
+
+    ~AutoSaveRestorePerspectiveIndex()
+    {
+      if (mBuilder) {
+        mBuilder->mPerspectiveItemIndex = mCachedItemIndex;
+      }
+    }
+
+  private:
+    nsDisplayListBuilder* mBuilder;
+    uint32_t mCachedItemIndex;
+  };
+
   
 
 
@@ -995,6 +1021,8 @@ public:
     return mContainedBlendModes;
   }
 
+  uint32_t AllocatePerspectiveItemIndex() { return mPerspectiveItemIndex++; }
+
   DisplayListClipState& ClipState() { return mClipState; }
 
   
@@ -1199,6 +1227,7 @@ private:
   uint32_t                       mCurrentScrollbarFlags;
   BlendModeSet                   mContainedBlendModes;
   Preserves3DContext             mPreserves3DCtx;
+  uint32_t                       mPerspectiveItemIndex;
   bool                           mIsBuildingScrollbar;
   bool                           mCurrentScrollbarWillHaveLayer;
   bool                           mBuildCaret;
@@ -3815,7 +3844,15 @@ public:
     INDEX_MAX = UINT32_MAX >> nsDisplayItem::TYPE_BITS
   };
 
+  
+
+
+
+
+
   const Matrix4x4& GetTransform();
+  Matrix4x4 GetTransformForRendering();
+
   
 
 
@@ -3865,8 +3902,18 @@ public:
                                            float aAppUnitsPerPixel,
                                            const nsRect* aBoundsOverride);
 
-  static Point3D GetDeltaToPerspectiveOrigin(const nsIFrame* aFrame,
-                                             float aAppUnitsPerPixel);
+  
+
+
+
+
+
+
+
+
+  static bool ComputePerspectiveMatrix(const nsIFrame* aFrame,
+                                       float aAppUnitsPerPixel,
+                                       Matrix4x4& aOutMatrix);
 
   struct FrameTransformProperties
   {
@@ -3874,30 +3921,15 @@ public:
                              float aAppUnitsPerPixel,
                              const nsRect* aBoundsOverride);
     FrameTransformProperties(nsCSSValueSharedList* aTransformList,
-                             const Point3D& aToTransformOrigin,
-                             const Point3D& aToPerspectiveOrigin,
-                             nscoord aChildPerspective)
+                             const Point3D& aToTransformOrigin)
       : mFrame(nullptr)
       , mTransformList(aTransformList)
       , mToTransformOrigin(aToTransformOrigin)
-      , mChildPerspective(aChildPerspective)
-      , mToPerspectiveOrigin(aToPerspectiveOrigin)
     {}
-
-    const Point3D& GetToPerspectiveOrigin() const
-    {
-      MOZ_ASSERT(mChildPerspective > 0, "Only valid with mChildPerspective > 0");
-      return mToPerspectiveOrigin;
-    }
 
     const nsIFrame* mFrame;
     RefPtr<nsCSSValueSharedList> mTransformList;
     const Point3D mToTransformOrigin;
-    nscoord mChildPerspective;
-
-  private:
-    
-    Point3D mToPerspectiveOrigin;
   };
 
   
@@ -3918,9 +3950,12 @@ public:
 
 
 
+
+
   enum {
     OFFSET_BY_ORIGIN = 1 << 0,
     INCLUDE_PRESERVE3D_ANCESTORS = 1 << 1,
+    INCLUDE_PERSPECTIVE = 1 << 2,
   };
   static Matrix4x4 GetResultingTransformMatrix(const nsIFrame* aFrame,
                                                const nsPoint& aOrigin,
@@ -4044,6 +4079,85 @@ private:
   bool mIsTransformSeparator;
   
   bool mTransformPreserves3DInited;
+};
+
+
+
+
+
+
+class nsDisplayPerspective : public nsDisplayItem
+{
+  typedef mozilla::gfx::Point3D Point3D;
+
+public:
+  NS_DISPLAY_DECL_NAME("nsDisplayPerspective", TYPE_PERSPECTIVE)
+
+  nsDisplayPerspective(nsDisplayListBuilder* aBuilder, nsIFrame* aTransformFrame,
+                       nsIFrame* aPerspectiveFrame,
+                       nsDisplayList* aList);
+
+  virtual uint32_t GetPerFrameKey() override { return (mIndex << nsDisplayItem::TYPE_BITS) | nsDisplayItem::GetPerFrameKey(); }
+
+  virtual void HitTest(nsDisplayListBuilder* aBuilder, const nsRect& aRect,
+                       HitTestState* aState, nsTArray<nsIFrame*> *aOutFrames) override
+  {
+    return mList.HitTest(aBuilder, aRect, aState, aOutFrames);
+  }
+
+  virtual nsRect GetBounds(nsDisplayListBuilder* aBuilder, bool* aSnap) override
+  {
+    return mList.GetBounds(aBuilder, aSnap);
+  }
+
+  virtual void ComputeInvalidationRegion(nsDisplayListBuilder* aBuilder,
+                                         const nsDisplayItemGeometry* aGeometry,
+                                         nsRegion* aInvalidRegion) override
+  {}
+
+  virtual nsRegion GetOpaqueRegion(nsDisplayListBuilder* aBuilder,
+                                   bool* aSnap) override
+  {
+    return mList.GetOpaqueRegion(aBuilder, aSnap);
+  }
+
+  virtual bool IsUniform(nsDisplayListBuilder* aBuilder, nscolor* aColor) override
+  {
+    return mList.IsUniform(aBuilder, aColor);
+  }
+
+  virtual LayerState GetLayerState(nsDisplayListBuilder* aBuilder,
+                                   LayerManager* aManager,
+                                   const ContainerLayerParameters& aParameters) override;
+
+  virtual bool ShouldBuildLayerEvenIfInvisible(nsDisplayListBuilder* aBuilder) override
+  {
+    return mList.ShouldBuildLayerEvenIfInvisible(aBuilder);
+  }
+
+  virtual already_AddRefed<Layer> BuildLayer(nsDisplayListBuilder* aBuilder,
+                                             LayerManager* aManager,
+                                             const ContainerLayerParameters& aContainerParameters) override;
+
+  virtual bool ComputeVisibility(nsDisplayListBuilder* aBuilder,
+                                 nsRegion* aVisibleRegion) override
+  {
+    mList.RecomputeVisibility(aBuilder, aVisibleRegion);
+    return true;
+  }
+  virtual nsDisplayList* GetSameCoordinateSystemChildren() override { return mList.GetChildren(); }
+  virtual nsDisplayList* GetChildren() override { return mList.GetChildren(); }
+  virtual nsRect GetComponentAlphaBounds(nsDisplayListBuilder* aBuilder) override
+  {
+    return mList.GetComponentAlphaBounds(aBuilder);
+  }
+
+  nsIFrame* TransformFrame() { return mTransformFrame; }
+
+private:
+  nsDisplayWrapList mList;
+  nsIFrame* mTransformFrame;
+  uint32_t mIndex;
 };
 
 

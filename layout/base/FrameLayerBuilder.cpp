@@ -675,6 +675,7 @@ struct NewLayerEntry {
     , mPropagateComponentAlphaFlattening(true)
     , mUntransformedVisibleRegion(false)
     , mIsCaret(false)
+    , mIsPerspectiveItem(false)
   {}
   
   
@@ -716,6 +717,7 @@ struct NewLayerEntry {
   
   bool mUntransformedVisibleRegion;
   bool mIsCaret;
+  bool mIsPerspectiveItem;
 };
 
 class PaintedLayerDataTree;
@@ -4116,6 +4118,9 @@ ContainerState::ProcessDisplayItems(nsDisplayList* aList)
       newLayerEntry->mAnimatedGeometryRoot = animatedGeometryRoot;
       newLayerEntry->mAnimatedGeometryRootForScrollMetadata = animatedGeometryRootForScrollMetadata;
       newLayerEntry->mFixedPosFrameForLayerData = fixedPosFrame;
+      if (itemType == nsDisplayItem::TYPE_PERSPECTIVE) {
+        newLayerEntry->mIsPerspectiveItem = true;
+      }
 
       
       
@@ -4132,9 +4137,11 @@ ContainerState::ProcessDisplayItems(nsDisplayList* aList)
                    "Transform items must set layerContentsVisibleRect!");
       if (mLayerBuilder->IsBuildingRetainedLayers()) {
         newLayerEntry->mLayerContentsVisibleRect = layerContentsVisibleRect;
-        if (itemType == nsDisplayItem::TYPE_TRANSFORM &&
-            (item->Frame()->Extend3DContext() ||
-             item->Frame()->Combines3DTransformWithAncestors())) {
+        if (itemType == nsDisplayItem::TYPE_PERSPECTIVE ||
+            (itemType == nsDisplayItem::TYPE_TRANSFORM &&
+             (item->Frame()->Extend3DContext() ||
+              item->Frame()->Combines3DTransformWithAncestors() ||
+              item->Frame()->HasPerspective()))) {
           
           
           newLayerEntry->mUntransformedVisibleRegion = true;
@@ -5093,7 +5100,9 @@ ChooseScaleAndSetTransform(FrameLayerBuilder* aLayerBuilder,
   bool canDraw2D = transform.CanDraw2D(&transform2d);
   gfxSize scale;
   
-  if (canDraw2D && !aContainerFrame->Combines3DTransformWithAncestors()) {
+  if (canDraw2D &&
+      !aContainerFrame->Combines3DTransformWithAncestors() &&
+      !aContainerFrame->HasPerspective()) {
     
     
     if (aContainerItem &&
