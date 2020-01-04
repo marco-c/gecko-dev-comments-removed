@@ -858,7 +858,8 @@ public class BrowserProvider extends SharedBrowserDatabaseProvider {
         }
 
         
-        final SuggestedSites suggestedSites = GeckoProfile.get(getContext(), uri.getQueryParameter(BrowserContract.PARAM_PROFILE)).getDB().getSuggestedSites();
+        final SuggestedSites suggestedSites = BrowserDB.from(GeckoProfile.get(
+                getContext(), uri.getQueryParameter(BrowserContract.PARAM_PROFILE))).getSuggestedSites();
 
         final Cursor suggestedSitesCursor = suggestedSites.get(limit - c.getCount());
 
@@ -947,7 +948,8 @@ public class BrowserProvider extends SharedBrowserDatabaseProvider {
 
         
         
-        final SuggestedSites suggestedSites = GeckoProfile.get(getContext(), uri.getQueryParameter(BrowserContract.PARAM_PROFILE)).getDB().getSuggestedSites();
+        final SuggestedSites suggestedSites = BrowserDB.from(GeckoProfile.get(
+                getContext(), uri.getQueryParameter(BrowserContract.PARAM_PROFILE))).getSuggestedSites();
 
         StringBuilder suggestedSitesBuilder = new StringBuilder();
         

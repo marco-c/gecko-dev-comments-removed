@@ -54,7 +54,7 @@ public class LegacyLoader implements IconLoader {
      Bitmap loadBitmapFromDatabase(IconRequest request) {
         final Context context = request.getContext();
         final ContentResolver contentResolver = context.getContentResolver();
-        final BrowserDB db = GeckoProfile.get(context).getDB();
+        final BrowserDB db = BrowserDB.from(context);
 
         
         
