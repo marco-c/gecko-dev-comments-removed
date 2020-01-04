@@ -10984,9 +10984,15 @@ nsDocShell::DoChannelLoad(nsIChannel* aChannel,
       break;
     }
 
-    case LOAD_RELOAD_CHARSET_CHANGE:
-      loadFlags |= nsIRequest::LOAD_FROM_CACHE;
+    case LOAD_RELOAD_CHARSET_CHANGE: {
+      
+      
+      nsCOMPtr<nsICacheInfoChannel> cachingChannel = do_QueryInterface(aChannel);
+      if (cachingChannel) {
+        cachingChannel->SetAllowStaleCacheContent(true);
+      }
       break;
+    }
 
     case LOAD_RELOAD_NORMAL:
     case LOAD_REFRESH:
