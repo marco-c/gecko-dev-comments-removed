@@ -22,6 +22,7 @@ const CONTRACT_ID = "@mozilla.org/devtools/jsonview-sniffer;1";
 const CLASS_ID = "{4148c488-dca1-49fc-a621-2a0097a62422}";
 const JSON_VIEW_MIME_TYPE = "application/vnd.mozilla.json.view";
 const JSON_VIEW_TYPE = "JSON View";
+const JSON_EXTENSION = "json";
 const CONTENT_SNIFFER_CATEGORY = "net-content-sniffers";
 
 
@@ -61,6 +62,10 @@ var Sniffer = Class({
       
       
       if (aRequest.contentType == JSON_TYPE) {
+        return JSON_VIEW_MIME_TYPE;
+      }
+
+      if (NetworkHelper.getFileExtension(aRequest.name) == JSON_EXTENSION) {
         return JSON_VIEW_MIME_TYPE;
       }
     }

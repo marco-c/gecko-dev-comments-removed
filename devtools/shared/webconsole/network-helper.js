@@ -803,6 +803,36 @@ var NetworkHelper = {
     let uri = Services.io.newURI(aUrl, null, null).QueryInterface(Ci.nsIURL);
     aStore.set(aUrl, uri);
     return uri;
+  },
+
+  
+
+
+
+
+
+
+  getFileExtension: function(aUrl) {
+    if (!aUrl) {
+      return;
+    }
+
+    
+    let queryString = aUrl.indexOf("?");
+    if (queryString != -1) {
+      aUrl = aUrl.substr(0, queryString);
+    }
+
+    
+    var lastSlash = aUrl.lastIndexOf("/");
+    var fileName = aUrl.substr(lastSlash + 1);
+    if (!fileName) {
+      return;
+    }
+
+    
+    var lastDot = fileName.lastIndexOf(".");
+    return fileName.substr(lastDot + 1);
   }
 };
 
