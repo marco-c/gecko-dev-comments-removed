@@ -143,6 +143,7 @@ AndroidFlingAnimation::DoSample(FrameMetrics& aFrameMetrics,
   mOverScroller->GetCurrX(&currentX);
   mOverScroller->GetCurrY(&currentY);
   ParentLayerPoint offset((float)currentX, (float)currentY);
+  ParentLayerPoint preCheckedOffset(offset);
 
   bool hitBoundX = CheckBounds(mApzc.mX, offset.x, mFlingDirection.x, &(offset.x));
   bool hitBoundY = CheckBounds(mApzc.mY, offset.y, mFlingDirection.y, &(offset.y));
@@ -163,8 +164,11 @@ AndroidFlingAnimation::DoSample(FrameMetrics& aFrameMetrics,
 
       mPreviousVelocity = velocity;
     }
-  } else if (hitBoundX || hitBoundY) {
+  } else if ((fabsf(offset.x - preCheckedOffset.x) > BOUNDS_EPSILON) || (fabsf(offset.y - preCheckedOffset.y) > BOUNDS_EPSILON)) {
     
+    
+    shouldContinueFling = false;
+  } else if (hitBoundX && hitBoundY) {
     
     shouldContinueFling = false;
   }
