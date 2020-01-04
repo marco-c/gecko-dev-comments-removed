@@ -164,8 +164,15 @@ KeyframeEffectReadOnly::NotifyAnimationTimingUpdated()
 
   
   AnimationCollection* collection = GetCollection();
+  
+  
+  
+  
+  
+  
+  
+  
   if (collection &&
-      !mProperties.IsEmpty() &&
       inEffect) {
     
     
