@@ -17,6 +17,7 @@
 #include "gc/Barrier.h"
 #include "gc/Marking.h"
 
+#include "js/GCHashTable.h"
 #include "js/RootingAPI.h"
 #include "js/TypeDecls.h"
 
@@ -100,7 +101,6 @@ struct HashSymbolsByDescription
 
 
 
-typedef HashSet<ReadBarrieredSymbol, HashSymbolsByDescription, SystemAllocPolicy> SymbolHashSet;
 
 
 
@@ -110,18 +110,12 @@ typedef HashSet<ReadBarrieredSymbol, HashSymbolsByDescription, SystemAllocPolicy
 
 
 
-
-
-
-
-
-
-
-class SymbolRegistry : public SymbolHashSet
+class SymbolRegistry : public GCHashSet<ReadBarrieredSymbol,
+                                        HashSymbolsByDescription,
+                                        SystemAllocPolicy>
 {
   public:
-    SymbolRegistry() : SymbolHashSet() {}
-    void sweep();
+    SymbolRegistry() {}
 };
 
 } 
