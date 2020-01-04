@@ -1339,7 +1339,13 @@ this.Schemas = {
                             pattern,
                             format);
     } else if (type.type == "object" && "functions" in type) {
-      checkTypeProperties("functions");
+      
+      
+      
+      
+      
+
+      checkTypeProperties("functions", "events", "properties");
 
       
       let functions = type.functions.map(fun => this.parseFunction(path.concat(type.id), fun));
