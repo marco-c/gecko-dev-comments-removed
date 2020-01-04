@@ -41,14 +41,14 @@ CompileModule(ExclusiveContext* cx, const ReadOnlyCompileOptions& options,
               SourceBufferHolder& srcBuf, LifoAlloc* alloc,
               ScriptSourceObject** sourceObjectOut = nullptr);
 
-bool
+MOZ_MUST_USE bool
 CompileLazyFunction(JSContext* cx, Handle<LazyScript*> lazy, const char16_t* chars, size_t length);
 
 
 
 
 
-bool
+MOZ_MUST_USE bool
 CompileFunctionBody(JSContext* cx, MutableHandleFunction fun,
                     const ReadOnlyCompileOptions& options,
                     Handle<PropertyNameVector> formals, JS::SourceBufferHolder& srcBuf,
@@ -56,12 +56,12 @@ CompileFunctionBody(JSContext* cx, MutableHandleFunction fun,
 
 
 
-bool
+MOZ_MUST_USE bool
 CompileFunctionBody(JSContext* cx, MutableHandleFunction fun,
                     const ReadOnlyCompileOptions& options,
                     Handle<PropertyNameVector> formals, JS::SourceBufferHolder& srcBuf);
 
-bool
+MOZ_MUST_USE bool
 CompileStarGeneratorBody(JSContext* cx, MutableHandleFunction fun,
                          const ReadOnlyCompileOptions& options,
                          Handle<PropertyNameVector> formals, JS::SourceBufferHolder& srcBuf);

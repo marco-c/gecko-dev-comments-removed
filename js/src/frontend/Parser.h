@@ -197,7 +197,7 @@ struct MOZ_STACK_CLASS ParseContext : public GenericParseContext
     void prepareToAddDuplicateArg(HandlePropertyName name, DefinitionNode prevDecl);
 
     
-    void updateDecl(TokenStream& ts, JSAtom* atom, Node newDecl);
+    MOZ_MUST_USE bool updateDecl(TokenStream& ts, JSAtom* atom, Node newDecl);
 
     
     
@@ -284,7 +284,7 @@ struct MOZ_STACK_CLASS ParseContext : public GenericParseContext
 
     ~ParseContext();
 
-    bool init(Parser<ParseHandler>& parser);
+    MOZ_MUST_USE bool init(Parser<ParseHandler>& parser);
 
     unsigned blockid() { return stmtStack.innermost() ? stmtStack.innermost()->blockid : bodyid; }
 
