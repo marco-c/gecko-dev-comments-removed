@@ -1,18 +1,119 @@
+
+
+
+
+from __future__ import absolute_import, print_function, unicode_literals
+
 import os
 
 import unittest
 import mozunit
-from taskcluster_graph.templates import (
+import textwrap
+from taskgraph.util.templates import (
     Templates,
     TemplatesException
 )
 
+files = {}
+files['/fixtures/circular.yml'] = textwrap.dedent("""\
+    $inherits:
+      from: 'circular_ref.yml'
+      variables:
+        woot: 'inherit'
+    """)
+
+files['/fixtures/inherit.yml'] = textwrap.dedent("""\
+    $inherits:
+      from: 'templates.yml'
+      variables:
+        woot: 'inherit'
+    """)
+
+files['/fixtures/extend_child.yml'] = textwrap.dedent("""\
+    list: ['1', '2', '3']
+    was_list: ['1']
+    obj:
+      level: 1
+      deeper:
+        woot: 'bar'
+        list: ['baz']
+    """)
+
+files['/fixtures/circular_ref.yml'] = textwrap.dedent("""\
+    $inherits:
+      from: 'circular.yml'
+    """)
+
+files['/fixtures/child_pass.yml'] = textwrap.dedent("""\
+    values:
+      - {{a}}
+      - {{b}}
+      - {{c}}
+    """)
+
+files['/fixtures/inherit_pass.yml'] = textwrap.dedent("""\
+    $inherits:
+      from: 'child_pass.yml'
+      variables:
+        a: 'a'
+        b: 'b'
+        c: 'c'
+    """)
+
+files['/fixtures/deep/2.yml'] = textwrap.dedent("""\
+    $inherits:
+      from: deep/1.yml
+
+    """)
+
+files['/fixtures/deep/3.yml'] = textwrap.dedent("""\
+    $inherits:
+      from: deep/2.yml
+
+    """)
+
+files['/fixtures/deep/4.yml'] = textwrap.dedent("""\
+    $inherits:
+      from: deep/3.yml
+    """)
+
+files['/fixtures/deep/1.yml'] = textwrap.dedent("""\
+    variable: {{value}}
+    """)
+
+files['/fixtures/simple.yml'] = textwrap.dedent("""\
+    is_simple: true
+    """)
+
+files['/fixtures/templates.yml'] = textwrap.dedent("""\
+    content: 'content'
+    variable: '{{woot}}'
+    """)
+
+files['/fixtures/extend_parent.yml'] = textwrap.dedent("""\
+    $inherits:
+      from: 'extend_child.yml'
+
+    list: ['4']
+    was_list:
+      replaced: true
+    obj:
+      level: 2
+      from_parent: true
+      deeper:
+        list: ['bar']
+    """)
+
+
 class TemplatesTest(unittest.TestCase):
 
     def setUp(self):
-        abs_path = os.path.abspath(os.path.dirname(__file__))
-        self.subject = Templates(os.path.join(abs_path, 'fixtures'))
+        self.mocked_open = mozunit.MockedOpen(files)
+        self.mocked_open.__enter__()
+        self.subject = Templates('/fixtures')
 
+    def tearDown(self):
+        self.mocked_open.__exit__(None, None, None)
 
     def test_invalid_path(self):
         with self.assertRaisesRegexp(TemplatesException, 'must be a directory'):
