@@ -48,14 +48,14 @@ public:
 class CategoryNode
 {
 public:
-  NS_METHOD GetLeaf(const char* aEntryName,
-                    char** aResult);
+  nsresult GetLeaf(const char* aEntryName,
+                   char** aResult);
 
-  NS_METHOD AddLeaf(const char* aEntryName,
-                    const char* aValue,
-                    bool aReplace,
-                    char** aResult,
-                    PLArenaPool* aArena);
+  nsresult AddLeaf(const char* aEntryName,
+                   const char* aValue,
+                   bool aReplace,
+                   char** aResult,
+                   PLArenaPool* aArena);
 
   void DeleteLeaf(const char* aEntryName);
 
@@ -72,7 +72,7 @@ public:
     return tCount;
   }
 
-  NS_METHOD Enumerate(nsISimpleEnumerator** aResult);
+  nsresult Enumerate(nsISimpleEnumerator** aResult);
 
   
   static CategoryNode* Create(PLArenaPool* aArena);
@@ -110,7 +110,7 @@ public:
 
 
 
-  NS_METHOD SuppressNotifications(bool aSuppress);
+  nsresult SuppressNotifications(bool aSuppress);
 
   void AddCategoryEntry(const char* aCategory,
                         const char* aKey,
