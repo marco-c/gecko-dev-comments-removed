@@ -73,6 +73,7 @@ const { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
 
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/Task.jsm");
+Cu.import("resource://gre/modules/Services.jsm");
 
 XPCOMUtils.defineLazyModuleGetter(this, "AsyncShutdown",
                                   "resource://gre/modules/AsyncShutdown.jsm");
@@ -111,7 +112,10 @@ const kSaveDelayMs = 1500;
 
 
 
-const kDataVersion = 1;
+const kDataVersion = 2;
+
+
+const PERMISSION_SAVE_LOGINS = "login-saving";
 
 
 
@@ -268,14 +272,36 @@ LoginStore.prototype = {
     if (!this.data.logins) {
       this.data.logins = [];
     }
+
+    
     if (!this.data.disabledHosts) {
       this.data.disabledHosts = [];
+    }
+
+    if (this.data.version === 1) {
+      this._migrateDisabledHosts();
     }
 
     
     this.data.version = kDataVersion;
 
     this.dataReady = true;
+  },
+
+  
+
+
+  _migrateDisabledHosts: function () {
+    for (let host of this.data.disabledHosts) {
+      try {
+        let uri = Services.io.newURI(host, null, null);
+        Services.perms.add(uri, PERMISSION_SAVE_LOGINS, Services.perms.DENY_ACTION);
+      } catch (e) {
+        Cu.reportError(e);
+      }
+    }
+
+    delete this.data.disabledHosts;
   },
 
   
