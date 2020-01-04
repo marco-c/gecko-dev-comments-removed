@@ -398,6 +398,17 @@ public:
                                    uint32_t* aEqualStructs,
                                    uint32_t* aSamePointerStructs);
 
+#ifdef MOZ_STYLO
+  
+
+
+
+  nsChangeHint CalcStyleDifference(ServoComputedValues* aNewComputedValues,
+                                   nsChangeHint aParentHintsNotHandledForDescendants,
+                                   uint32_t* aEqualStructs,
+                                   uint32_t* aSamePointerStructs);
+#endif
+
 private:
   template<class StyleContextLike>
   nsChangeHint CalcStyleDifferenceInternal(StyleContextLike* aNewContext,

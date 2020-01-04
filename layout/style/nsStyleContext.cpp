@@ -934,7 +934,7 @@ nsStyleContext::CalcStyleDifferenceInternal(StyleContextLike* aNewContext,
   
   
   
-  bool compare = mSource != aNewContext->mSource;
+  bool compare = StyleSource() != aNewContext->StyleSource();
 
   DebugOnly<uint32_t> structsFound = 0;
 
@@ -1223,6 +1223,47 @@ nsStyleContext::CalcStyleDifference(nsStyleContext* aNewContext,
   return CalcStyleDifferenceInternal(aNewContext, aParentHintsNotHandledForDescendants,
                                      aEqualStructs, aSamePointerStructs);
 }
+
+#ifdef MOZ_STYLO
+
+class MOZ_STACK_CLASS FakeStyleContext
+{
+public:
+  explicit FakeStyleContext(ServoComputedValues* aComputedValues)
+    : mComputedValues(aComputedValues) {}
+
+  mozilla::NonOwningStyleContextSource StyleSource() const {
+    return mozilla::NonOwningStyleContextSource(mComputedValues);
+  }
+
+  nsStyleContext* GetStyleIfVisited() {
+    
+    
+    return nullptr;
+  }
+
+  #define STYLE_STRUCT(name_, checkdata_cb_)                                  \
+  const nsStyle##name_ * Style##name_() {                                     \
+    return Servo_GetStyle##name_(mComputedValues);                            \
+  }
+  #include "nsStyleStructList.h"
+  #undef STYLE_STRUCT
+
+private:
+  ServoComputedValues* MOZ_NON_OWNING_REF mComputedValues;
+};
+
+nsChangeHint
+nsStyleContext::CalcStyleDifference(ServoComputedValues* aNewComputedValues,
+                                    nsChangeHint aParentHintsNotHandledForDescendants,
+                                    uint32_t* aEqualStructs,
+                                    uint32_t* aSamePointerStructs)
+{
+  FakeStyleContext newContext(aNewComputedValues);
+  return CalcStyleDifferenceInternal(&newContext, aParentHintsNotHandledForDescendants,
+                                     aEqualStructs, aSamePointerStructs);
+}
+#endif
 
 #ifdef DEBUG
 void nsStyleContext::List(FILE* out, int32_t aIndent, bool aListDescendants)
