@@ -70,16 +70,22 @@ this.GMPUtils = {
 
 
   _isPluginSupported: function(aPlugin) {
-    if (aPlugin.id != EME_ADOBE_ID) {
+    if (aPlugin.id == EME_ADOBE_ID) {
+      if (Services.appinfo.OS != "WINNT") {
+        
+        this.maybeReportTelemetry(aPlugin.id,
+                                  "VIDEO_EME_ADOBE_UNSUPPORTED_REASON",
+                                  GMPPluginUnsupportedReason.NOT_WINDOWS);
+        return false;
+      }
+    } else if (aPlugin.id == WIDEVINE_ID) {
       
-      return true;
-    }
-
-    if (Services.appinfo.OS != "WINNT") {
       
-      this.maybeReportTelemetry(aPlugin.id,
-                                "VIDEO_EME_ADOBE_UNSUPPORTED_REASON",
-                                GMPPluginUnsupportedReason.NOT_WINDOWS);
+      if ((Services.appinfo.OS == "WINNT" &&
+          Services.sysinfo.getPropertyAsInt32("version") >= 6) ||
+          Services.appinfo.OS == "Darwin") {
+        return true;
+      }
       return false;
     }
 
