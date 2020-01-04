@@ -5,6 +5,9 @@
 
 package org.mozilla.gecko;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 
 import org.json.JSONException;
@@ -358,6 +361,65 @@ public class GeckoView extends LayerView
                 mInputConnectionListener.isIMEEnabled();
     }
 
+    
+
+
+
+    public Browser addBrowser(String url) {
+        Tab tab = Tabs.getInstance().loadUrl(url, Tabs.LOADURL_NEW_TAB);
+        if (tab != null) {
+            return new Browser(tab.getId());
+        }
+        return null;
+    }
+
+    
+
+
+
+    public void removeBrowser(Browser browser) {
+        Tab tab = Tabs.getInstance().getTab(browser.getId());
+        if (tab != null) {
+            Tabs.getInstance().closeTab(tab);
+        }
+    }
+
+    
+
+
+
+    public void setCurrentBrowser(Browser browser) {
+        Tab tab = Tabs.getInstance().getTab(browser.getId());
+        if (tab != null) {
+            Tabs.getInstance().selectTab(tab.getId());
+        }
+    }
+
+    
+
+
+
+    public Browser getCurrentBrowser() {
+        Tab tab = Tabs.getInstance().getSelectedTab();
+        if (tab != null) {
+            return new Browser(tab.getId());
+        }
+        return null;
+    }
+
+    
+
+
+
+    public List<Browser> getBrowsers() {
+        ArrayList<Browser> browsers = new ArrayList<Browser>();
+        Iterable<Tab> tabs = Tabs.getInstance().getTabsInOrder();
+        for (Tab tab : tabs) {
+            browsers.add(new Browser(tab.getId()));
+        }
+        return Collections.unmodifiableList(browsers);
+    }
+
     public void importScript(final String url) {
         if (url.startsWith("resource://android/assets/")) {
             GeckoAppShell.notifyObservers("GeckoView:ImportScript", url);
@@ -368,6 +430,11 @@ public class GeckoView extends LayerView
     }
 
     private void connectToGecko() {
+        Tab selectedTab = Tabs.getInstance().getSelectedTab();
+        if (selectedTab != null) {
+            Tabs.getInstance().notifyListeners(selectedTab, Tabs.TabEvents.SELECTED);
+        }
+
         GeckoAppShell.notifyObservers("Viewport:Flush", null);
     }
 
@@ -522,6 +589,75 @@ public class GeckoView extends LayerView
                 Log.w(LOGTAG, "Error building JSON arguments for loadUrl.", e);
             }
             GeckoAppShell.notifyObservers("Tab:Load", args.toString());
+        }
+
+        
+
+
+
+        public void reload() {
+            Tab tab = Tabs.getInstance().getTab(mId);
+            if (tab != null) {
+                tab.doReload(true);
+            }
+        }
+
+        
+
+
+        public void stop() {
+            Tab tab = Tabs.getInstance().getTab(mId);
+            if (tab != null) {
+                tab.doStop();
+            }
+        }
+
+        
+
+
+
+
+
+        public boolean canGoBack() {
+            Tab tab = Tabs.getInstance().getTab(mId);
+            if (tab != null) {
+                return tab.canDoBack();
+            }
+            return false;
+        }
+
+        
+
+
+        public void goBack() {
+            Tab tab = Tabs.getInstance().getTab(mId);
+            if (tab != null) {
+                tab.doBack();
+            }
+        }
+
+        
+
+
+
+
+
+        public boolean canGoForward() {
+            Tab tab = Tabs.getInstance().getTab(mId);
+            if (tab != null) {
+                return tab.canDoForward();
+            }
+            return false;
+        }
+
+        
+
+
+        public void goForward() {
+            Tab tab = Tabs.getInstance().getTab(mId);
+            if (tab != null) {
+                tab.doForward();
+            }
         }
     }
 
