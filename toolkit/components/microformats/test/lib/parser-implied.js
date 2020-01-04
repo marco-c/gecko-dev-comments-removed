@@ -8,10 +8,10 @@
 
 
 var Modules = (function (modules) {
-	
+
 	
 	if(modules.Parser){
-	
+
 		
 
 
@@ -23,40 +23,40 @@ var Modules = (function (modules) {
 
 		 modules.Parser.prototype.impliedRules = function(node, uf, parentClasses) {
 			var typeVersion = (uf.typeVersion)? uf.typeVersion: 'v2';
-			
+
 			
 			if(this.options.impliedPropertiesByVersion === false){
 				typeVersion = 'v2';
 			}
-			
+
 			if(node && uf && uf.properties) {
-				uf = this.impliedBackwardComp( node, uf, parentClasses );  
+				uf = this.impliedBackwardComp( node, uf, parentClasses );
 				if(typeVersion === 'v2'){
 					uf = this.impliedhFeedTitle( uf );
-					uf = this.impliedName( node, uf ); 
-					uf = this.impliedPhoto( node, uf ); 	
+					uf = this.impliedName( node, uf );
+					uf = this.impliedPhoto( node, uf );
 					uf = this.impliedUrl( node, uf );
 				}
 				uf = this.impliedValue( node, uf, parentClasses );
 				uf = this.impliedDate( uf );
-				
+
 				
 				if(this.options.parseLatLonGeo === true){
 					uf = this.impliedGeo( uf );
-				}  
+				}
 			}
 
 			return uf;
 		};
-		
-		
-		
-
-
-
 
 
 		
+
+
+
+
+
+
 		modules.Parser.prototype.impliedName = function(node, uf) {
 			
 			
@@ -74,7 +74,7 @@ var Modules = (function (modules) {
 
 			var name,
 				value;
-					
+
 			if(!uf.properties.name) {
 				value = this.getImpliedProperty(node, ['img', 'area', 'abbr'], this.getNameAttr);
 				var textFormat = this.options.textFormat;
@@ -88,18 +88,18 @@ var Modules = (function (modules) {
 					uf.properties.name = name;
 				}
 			}
-			
+
 			return uf;
 		};
-		
-		
-		
-
-
-
 
 
 		
+
+
+
+
+
+
 		modules.Parser.prototype.impliedPhoto = function(node, uf) {
 			
 			
@@ -120,18 +120,18 @@ var Modules = (function (modules) {
 					}
 					uf.properties.photo = [modules.utils.trim(value)];
 				}
-			}		
+			}
 			return uf;
 		};
-		
-		
-		
-
-
-
 
 
 		
+
+
+
+
+
+
 		modules.Parser.prototype.impliedUrl = function(node, uf) {
 			
 			
@@ -150,18 +150,18 @@ var Modules = (function (modules) {
 					}
 					uf.properties.url = [modules.utils.trim(value)];
 				}
-			}	
+			}
 			return uf;
 		};
-		
-		
-		
-
-
-
 
 
 		
+
+
+
+
+
+
 		modules.Parser.prototype.impliedDate = function(uf) {
 			
 			
@@ -176,8 +176,8 @@ var Modules = (function (modules) {
 			delete uf.dates;
 			return uf;
 		};
-			
-			
+
+
 		
 
 
@@ -188,10 +188,10 @@ var Modules = (function (modules) {
 
 		modules.Parser.prototype.getImpliedProperty = function(node, tagList, getAttrFunction) {
 			
-			var value = getAttrFunction(node), 
+			var value = getAttrFunction(node),
 				descendant,
 				child;
-					
+
 			if(!value) {
 				
 				descendant = modules.domUtils.getSingleDescendantOfType( node, tagList);
@@ -209,17 +209,17 @@ var Modules = (function (modules) {
 					}
 				}
 			}
-					
+
 			return value;
 		};
-			
-			
-		
-
-
 
 
 		
+
+
+
+
+
 		modules.Parser.prototype.getNameAttr = function(node) {
 			var value = modules.domUtils.getAttrValFromTagList(node, ['img','area'], 'alt');
 			if(!value) {
@@ -227,14 +227,14 @@ var Modules = (function (modules) {
 			}
 			return value;
 		};
-	
-	
+
+
 		
 
 
 
 
-	
+
 		modules.Parser.prototype.getPhotoAttr = function(node) {
 			var value = modules.domUtils.getAttrValFromTagList(node, ['img'], 'src');
 			if(!value && modules.domUtils.hasAttributeValue(node, 'class', 'include') === false) {
@@ -242,63 +242,63 @@ var Modules = (function (modules) {
 			}
 			return value;
 		};
-			
-			
-		
-
-
 
 
 		
+
+
+
+
+
 		modules.Parser.prototype.getURLAttr = function(node) {
 			var value = null;
 			if(modules.domUtils.hasAttributeValue(node, 'class', 'include') === false){
-				
+
 				value = modules.domUtils.getAttrValFromTagList(node, ['a'], 'href');
 				if(!value) {
 					value = modules.domUtils.getAttrValFromTagList(node, ['area'], 'href');
 				}
-				
+
 			}
 			return value;
 		};
+
+
 		
-		
-		
 
 
 
 
 
-	
+
 		modules.Parser.prototype.impliedValue = function(node, uf, parentClasses){
+
 			
-			
-			if(uf.properties.name) {	
+			if(uf.properties.name) {
 				if(uf.value && parentClasses.root.length > 0 && parentClasses.properties.length === 1){
 					uf = this.getAltValue(uf, parentClasses.properties[0][0], 'p-name', uf.properties.name[0]);
 				}
 			}
-			
+
 			
 			if(uf.properties.url) {
 				if(parentClasses && parentClasses.root.length === 1 && parentClasses.properties.length === 1){
 					uf = this.getAltValue(uf, parentClasses.properties[0][0], 'u-url', uf.properties.url[0]);
 				}
-			}	
-			
+			}
+
 			
 			if(uf.altValue !== null){
 				uf.value = uf.altValue.value;
 			}
 			delete uf.altValue;
-	
-	
+
+
 			return uf;
 		};
-			
+
+
 		
-		
 
 
 
@@ -306,7 +306,7 @@ var Modules = (function (modules) {
 
 
 
-	
+
 		modules.Parser.prototype.getAltValue = function(uf, parentPropertyName, propertyName, value){
 			if(uf.value && !uf.altValue){
 				
@@ -324,14 +324,14 @@ var Modules = (function (modules) {
 			}
 			return uf;
 		};
+
+
 		
-		
-		
 
 
 
 
-	
+
 		modules.Parser.prototype.impliedhFeedTitle = function( uf ){
 			if(uf.type && uf.type.indexOf('h-feed') > -1){
 				
@@ -345,38 +345,38 @@ var Modules = (function (modules) {
 			}
 			return uf;
 		};
-		
-		
-		
+
+
+
 	    
 
 
 
 
-	
+
 		modules.Parser.prototype.impliedGeo = function( uf ){
 			var geoPair,
 				parts,
 				longitude,
 				latitude,
 				valid = true;
-			
+
 			if(uf.type && uf.type.indexOf('h-geo') > -1){
-				
+
 				
 				if(uf.properties.latitude === undefined || uf.properties.longitude === undefined ){
 
 					geoPair = (uf.properties.name)? uf.properties.name[0] : null;
 					geoPair = (!geoPair && uf.properties.value)? uf.properties.value : geoPair;
-					
+
 					if(geoPair){
 						
 						geoPair = geoPair.replace(';',',');
-						
+
 						
 						if(geoPair.indexOf(',') > -1 ){
 							parts = geoPair.split(',');
-							
+
 							
 							if(parts.length > 1){
 
@@ -385,40 +385,40 @@ var Modules = (function (modules) {
 								if(modules.utils.isNumber(latitude) && latitude > 90 || latitude < -90){
 									valid = false;
 								}
-								
+
 								
 								longitude = parseFloat( parts[1] );
 								if(modules.utils.isNumber(longitude) && longitude > 180 || longitude < -180){
 									valid = false;
 								}
-								
+
 								if(valid){
 									uf.properties.latitude = [latitude];
 									uf.properties.longitude  = [longitude];
 								}
 							}
-							
+
 						}
 					}
 				}
 			}
 			return uf;
 		};
+
+
 		
-		
-		
 
 
 
 
-	
+
 		modules.Parser.prototype.impliedBackwardComp = function(node, uf, parentClasses){
-			
+
 			
 			
 			if(parentClasses.root.length === 1 && parentClasses.properties.length === 1) {
 				if(parentClasses.root[0].replace('h-','') === this.removePropPrefix(parentClasses.properties[0][0])) {
-					
+
 					
 					
 					if( modules.utils.hasProperties(uf.properties) === false ){
@@ -426,12 +426,12 @@ var Modules = (function (modules) {
 					}
 				}
 			}
-			
+
 			return uf;
 		};
-		
-		
-	
+
+
+
 	}
 
 	return modules;

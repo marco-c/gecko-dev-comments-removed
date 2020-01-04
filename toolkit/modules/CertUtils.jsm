@@ -202,7 +202,7 @@ BadCertHandler.prototype = {
     
     if (!(flags & Ci.nsIChannelEventSink.REDIRECT_INTERNAL))
       checkCert(oldChannel);
-    
+
     callback.onRedirectVerifyCallback(Components.results.NS_OK);
   },
 

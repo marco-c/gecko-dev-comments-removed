@@ -23,7 +23,7 @@ var gProfileDisplay;
 
 
 function initWizard()
-{ 
+{
   try {
     gProfileService = C[ToolkitProfileService].getService(I.nsIToolkitProfileService);
     gProfileManagerBundle = document.getElementById("bundle_profileManager");
@@ -44,7 +44,7 @@ function initWizard()
 }
 
 
-function initSecondWizardPage() 
+function initSecondWizardPage()
 {
   var profileName = document.getElementById("profileName");
   profileName.select();
@@ -87,7 +87,7 @@ function updateProfileDisplay()
 function chooseProfileFolder()
 {
   var newProfileRoot;
-  
+
   var dirChooser = C["@mozilla.org/filepicker;1"].createInstance(I.nsIFilePicker);
   dirChooser.init(window, gProfileManagerBundle.getString("chooseFolder"),
                   I.nsIFilePicker.modeGetFolder);
@@ -191,7 +191,7 @@ function enableNextButton()
   document.documentElement.canAdvance = true;
 }
 
-function onFinish() 
+function onFinish()
 {
   var profileName = document.getElementById("profileName").value;
   var profile;

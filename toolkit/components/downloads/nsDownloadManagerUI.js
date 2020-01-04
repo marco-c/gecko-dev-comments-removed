@@ -33,7 +33,7 @@ nsDownloadManagerUI.prototype = {
     let window = this.recentWindow;
     if (window) {
       window.focus();
-      
+
       
       
       if (aReason == Ci.nsIDownloadManagerUI.REASON_USER_INTERACTED)

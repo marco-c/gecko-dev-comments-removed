@@ -8,18 +8,18 @@
 window.onload = function() {
 
     var form;
-    form= document.getElementById('mf-form'); 
-    
+    form= document.getElementById('mf-form');
+
     form.onsubmit = function(e){
         e = (e)? e : window.event;
-        
+
         if (e.preventDefault) {
-             e.preventDefault(); 
+             e.preventDefault();
         } else {
-             event.returnValue = false; 
+             event.returnValue = false;
         }
 
-        
+
         var html,
             baseUrl,
             filter,
@@ -33,34 +33,34 @@ window.onload = function() {
             options,
             mfJSON,
             parserJSONElt;
-    
+
         
         html = document.getElementById('html').value;
         baseUrl = document.getElementById('baseurl').value;
         filters = document.getElementById('filters').value;
-        collapsewhitespace = document.getElementById('collapsewhitespace').checked;  
+        collapsewhitespace = document.getElementById('collapsewhitespace').checked;
         
         
-        parseLatLonGeo = document.getElementById('parseLatLonGeo').checked; 
+        parseLatLonGeo = document.getElementById('parseLatLonGeo').checked;
         dateformatElt = document.getElementById("dateformat");
         dateformat = dateformatElt.options[dateformatElt.selectedIndex].value;
         parserJSONElt = document.querySelector('#parser-json pre code')
-       
-  
+
+
         var dom = new DOMParser();
         doc = dom.parseFromString( html, 'text/html' );
-        
+
         options ={
             'document': doc,
             'node': doc,
             'dateFormat': dateformat,
             'parseLatLonGeo': false
         };
-        
+
         if(baseUrl.trim() !== ''){
             options.baseUrl = baseUrl;
         }
-        
+
         if(filters.trim() !== ''){
             if(filters.indexOf(',') > -1){
                options.filters = trimArrayItems(filters.split(','));
@@ -68,31 +68,31 @@ window.onload = function() {
                 options.filters = [filters.trim()];
             }
         }
-        
+
         if(collapsewhitespace === true){
             options.textFormat = 'normalised';
         }
-        
-        
-
-
-
-
-
-
-
 
         
+
+
+
+
+
+
+
+
+
         if(parseLatLonGeo === true){
             options.parseLatLonGeo = true
         }
-        
+
         if(options.baseUrl){
             html = '<base href="' + baseUrl+ '">' + html;
         }
-        
 
-        
+
+
         
         if(window.Modules){
             var parser = new Modules.Parser();
@@ -101,15 +101,15 @@ window.onload = function() {
             mfJSON = Microformats.get(options);
         }
 
-        
+
         
         parserJSONElt.innerHTML = htmlEscape( js_beautify( JSON.stringify(mfJSON) ) );
         
-        
+
     }
-    
-  
-};  
+
+
+};
 
 
 

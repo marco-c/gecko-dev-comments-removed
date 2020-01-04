@@ -3,7 +3,7 @@
 
 
 var cps = new ContentPrefInstance(null);
-          
+
 function run_test() {
   var uri1 = ContentPrefTest.getURI("http://www.domain1.com/");
   var uri2 = ContentPrefTest.getURI("http://foo.domain1.com/");
@@ -15,7 +15,7 @@ function run_test() {
   cps.setPref(uri2, "one", 4);
   cps.setPref(uri3, "three", 8);
   cps.setPref(uri4, "two", 16);
-  
+
   cps.removePref(uri3, "three"); 
   checkForUnusedGroups();
   checkForUnusedSettings();
@@ -23,7 +23,7 @@ function run_test() {
   cps.removePrefsByName("two"); 
   checkForUnusedGroups();
   checkForUnusedSettings();
-  
+
   cps.removeGroupedPrefs();
   checkForUnusedGroups();
   checkForUnusedSettings();

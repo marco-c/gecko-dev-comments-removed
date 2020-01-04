@@ -9,7 +9,7 @@ try {
   var histsvc = Cc["@mozilla.org/browser/nav-history-service;1"].getService(Ci.nsINavHistoryService);
 } catch(ex) {
   do_throw("Could not get history service\n");
-} 
+}
 
 var bmsvc = Cc["@mozilla.org/browser/nav-bookmarks-service;1"].
             getService(Ci.nsINavBookmarksService);

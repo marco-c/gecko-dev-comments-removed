@@ -14,11 +14,11 @@ var options = {
 window.onload = function() {
 	var test  = testData.data[0],
         versionElt = document.querySelector('#version');
-    
+
     versionElt.innerHTML = 'v' + testData.version;
-    
+
     buildTest( test );
-    buildList( testData );		
+    buildList( testData );
 }
 
 
@@ -41,26 +41,26 @@ function buildTest( test ){
     	jsonElt = document.querySelector('#test-json pre code'),
     	parserElt = document.querySelector('#parser-json pre code'),
     	diffElt = document.querySelector('#test-diff pre code');
-	
-	nameElt.innerHTML = test.name;	
-	htmlElt.innerHTML = htmlEscape( test.html );	
-	jsonElt.innerHTML = htmlEscape( test.json );	
-    
+
+	nameElt.innerHTML = test.name;
+	htmlElt.innerHTML = htmlEscape( test.html );
+	jsonElt.innerHTML = htmlEscape( test.json );
+
     var dom = new DOMParser();
-        doc = dom.parseFromString( test.html, 'text/html' ); 
-    
+        doc = dom.parseFromString( test.html, 'text/html' );
+
     options.node = doc;
     var mfJSON = Microformats.get( options );
 	parserElt.innerHTML = htmlEscape( js_beautify( JSON.stringify(mfJSON) ) );
-    
+
     
     var diff = DeepDiff(JSON.parse(test.json),  mfJSON);
     if(diff !== undefined){
-       diffElt.innerHTML = htmlEscape( js_beautify( JSON.stringify(diff) ) ); 
+       diffElt.innerHTML = htmlEscape( js_beautify( JSON.stringify(diff) ) );
     }else{
-       diffElt.innerHTML = ''; 
+       diffElt.innerHTML = '';
     }
-    
+
     console.log(diff)
     if(diff !== undefined){
         addClass(nameElt, 'failed');
@@ -71,9 +71,9 @@ function buildTest( test ){
         removeClass(testDetailElt, 'test-failed');
         addClass(testDetailElt, 'test-passed');
     }
-    
+
     testDetailElt.style.display = 'block';
-    
+
     
 }
 
@@ -82,13 +82,13 @@ function buildTest( test ){
 function passTest( test ){
     var dom = new DOMParser(),
         doc = dom.parseFromString( test.html, 'text/html' );
-    
+
     options.node = doc;
     var mfJSON = Microformats.get( options );
-    
+
     
     var diff = DeepDiff(JSON.parse(test.json),  mfJSON);
-    return (diff === undefined);    
+    return (diff === undefined);
 }
 
 
@@ -98,24 +98,24 @@ function buildList( tests ){
     var total = tests.data.length,
         passed = 0,
         testResultListElt = document.querySelector('.test-result-list');
-    
+
     tests.data.forEach(function(item){
         var li = document.createElement('li');
         li.innerHTML = item.name;
         testResultListElt.appendChild(li);
-        
+
         if( passTest( item ) === false ){
             
             addClass(li, 'failed');
         }else{
             passed ++;
         }
-        
+
         li.addEventListener('click', function(e){
             e.preventDefault();
             displayTest(e);
         });
-        
+
     });
     updateCounts( {
         'total': total,

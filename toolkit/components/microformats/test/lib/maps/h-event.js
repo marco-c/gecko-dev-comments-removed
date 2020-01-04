@@ -4,10 +4,10 @@
 
 
 var Modules = (function (modules) {
-	
+
 	modules.maps = (modules.maps)? modules.maps : {};
 
-	modules.maps['h-event'] = {  
+	modules.maps['h-event'] = {
 		root: 'vevent',
 		name: 'h-event',
 		properties: {
@@ -53,7 +53,7 @@ var Modules = (function (modules) {
 				'map': 'u-attach'
 			},
 			'status': {},
-			'rdate': {}, 
+			'rdate': {},
 			'rrule': {}
 		}
 	};

@@ -18,7 +18,7 @@ add_task(function* test_execute()
   yield PlacesTestUtils.addVisits({uri: uri1, referrer: referrer});
   do_check_guid_for_uri(uri1);
   do_check_true(yield promiseIsURIVisited(uri1));
- 
+
   
   var uri2 = uri("https://etrade.com");
   yield PlacesTestUtils.addVisits({uri: uri2, referrer: referrer});

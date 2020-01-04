@@ -6,9 +6,9 @@
 
 
 var Modules = (function (modules) {
-	
+
 	modules.utils = {
-		
+
 		
 
 
@@ -18,7 +18,7 @@ var Modules = (function (modules) {
 		isString: function( obj ) {
 			return typeof( obj ) === 'string';
 		},
-		
+
 		
 
 
@@ -28,8 +28,8 @@ var Modules = (function (modules) {
 		isNumber: function( obj ) {
 			return !isNaN(parseFloat( obj )) && isFinite( obj );
 		},
-		
-		
+
+
 		
 
 
@@ -39,8 +39,8 @@ var Modules = (function (modules) {
 		isArray: function( obj ) {
 			return obj && !( obj.propertyIsEnumerable( 'length' ) ) && typeof obj === 'object' && typeof obj.length === 'number';
 		},
-		
-		
+
+
 		
 
 
@@ -50,8 +50,8 @@ var Modules = (function (modules) {
 		isFunction: function(obj) {
 			return !!(obj && obj.constructor && obj.call && obj.apply);
 		},
-	
-	
+
+
 		
 
 
@@ -62,8 +62,8 @@ var Modules = (function (modules) {
 		startWith: function( text, test ) {
 			return(text.indexOf(test) === 0);
 		},
-	
-		
+
+
 		
 
 
@@ -77,8 +77,8 @@ var Modules = (function (modules) {
 				return '';
 			}
 		},
-		
-		
+
+
 		
 
 
@@ -89,13 +89,13 @@ var Modules = (function (modules) {
 
 		replaceCharAt: function( text, index, character ) {
 			if(text && text.length > index){
-			   return text.substr(0, index) + character + text.substr(index+character.length); 
+			   return text.substr(0, index) + character + text.substr(index+character.length);
 			}else{
 				return text;
 			}
 		},
-		
-		
+
+
 		
 
 
@@ -106,7 +106,7 @@ var Modules = (function (modules) {
 			if(text && text.length){
 				var i = text.length,
 					x = 0;
-				
+
 				
 				while (i--) {
 					if(this.isOnlyWhiteSpace(text[i])){
@@ -115,7 +115,7 @@ var Modules = (function (modules) {
 						break;
 					}
 				}
-				
+
 				
 				i = text.length;
 				while (x < i) {
@@ -129,8 +129,8 @@ var Modules = (function (modules) {
 			}
 			return this.trim(text);
 		},
-	
-	
+
+
 		
 
 
@@ -140,8 +140,8 @@ var Modules = (function (modules) {
 		isOnlyWhiteSpace: function( text ){
 			return !(/[^\t\n\r ]/.test( text ));
 		},
-		
-		
+
+
 		
 
 
@@ -151,14 +151,14 @@ var Modules = (function (modules) {
 		collapseWhiteSpace: function( text ){
 			return text.replace(/[\t\n\r ]+/g, ' ');
 		},
-	
-	
+
+
 		
 
 
 
 
- 
+
 		hasProperties: function( obj ) {
 			var key;
 			for(key in obj) {
@@ -168,15 +168,15 @@ var Modules = (function (modules) {
 			}
 			return false;
 		},
+
+
 		
-		
-		
 
 
 
 
 
- 
+
 		sortObjects: function(property, reverse) {
 			reverse = (reverse) ? -1 : 1;
 			return function (a, b) {
@@ -191,9 +191,9 @@ var Modules = (function (modules) {
 				return 0;
 			};
 		}
-		
+
 	};
-	
+
 	return modules;
 
 } (Modules || {}));

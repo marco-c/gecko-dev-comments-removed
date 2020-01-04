@@ -67,7 +67,7 @@ window['PR_SHOULD_USE_CONTINUATION'] = true;
   
   
   var FLOW_CONTROL_KEYWORDS = ["break,continue,do,else,for,if,return,while"];
-  var C_KEYWORDS = [FLOW_CONTROL_KEYWORDS,"auto,case,char,const,default," + 
+  var C_KEYWORDS = [FLOW_CONTROL_KEYWORDS,"auto,case,char,const,default," +
       "double,enum,extern,float,goto,int,long,register,short,signed,sizeof," +
       "static,struct,switch,typedef,union,unsigned,void,volatile"];
   var COMMON_KEYWORDS = [C_KEYWORDS,"catch,class,delete,false,import," +
@@ -220,7 +220,7 @@ var REGEXP_PRECEDER_PATTERN = '(?:^^\\.?|[+-]|\\!|\\!=|\\!==|\\#|\\%|\\%=|&|&&|&
 
   function combinePrefixPatterns(regexs) {
     var capturedGroupIndex = 0;
-  
+
     var needToFoldCase = false;
     var ignoreCase = false;
     for (var i = 0, n = regexs.length; i < n; ++i) {
@@ -234,7 +234,7 @@ var REGEXP_PRECEDER_PATTERN = '(?:^^\\.?|[+-]|\\!|\\!=|\\!==|\\#|\\%|\\%=|&|&&|&
         break;
       }
     }
-  
+
     var escapeCharToCodeUnit = {
       'b': 8,
       't': 9,
@@ -243,7 +243,7 @@ var REGEXP_PRECEDER_PATTERN = '(?:^^\\.?|[+-]|\\!|\\!=|\\!==|\\#|\\%|\\%=|&|&&|&
       'f': 0xc,
       'r': 0xd
     };
-  
+
     function decodeEscape(charsetPart) {
       var cc0 = charsetPart.charCodeAt(0);
       if (cc0 !== 92 ) {
@@ -261,7 +261,7 @@ var REGEXP_PRECEDER_PATTERN = '(?:^^\\.?|[+-]|\\!|\\!=|\\!==|\\#|\\%|\\%=|&|&&|&
         return charsetPart.charCodeAt(1);
       }
     }
-  
+
     function encodeEscape(charCode) {
       if (charCode < 0x20) {
         return (charCode < 0x10 ? '\\x0' : '\\x') + charCode.toString(16);
@@ -272,7 +272,7 @@ var REGEXP_PRECEDER_PATTERN = '(?:^^\\.?|[+-]|\\!|\\!=|\\!==|\\#|\\%|\\%=|&|&&|&
       }
       return ch;
     }
-  
+
     function caseFoldCharset(charSet) {
       var charsetParts = charSet.substring(1, charSet.length - 1).match(
           new RegExp(
@@ -315,7 +315,7 @@ var REGEXP_PRECEDER_PATTERN = '(?:^^\\.?|[+-]|\\!|\\!=|\\!==|\\#|\\%|\\%=|&|&&|&
           }
         }
       }
-  
+
       
       
       ranges.sort(function (a, b) { return (a[0] - b[0]) || (b[1]  - a[1]); });
@@ -329,7 +329,7 @@ var REGEXP_PRECEDER_PATTERN = '(?:^^\\.?|[+-]|\\!|\\!=|\\!==|\\#|\\%|\\%=|&|&&|&
           consolidatedRanges.push(lastRange = range);
         }
       }
-  
+
       var out = ['['];
       if (inverse) { out.push('^'); }
       out.push.apply(out, groups);
@@ -344,7 +344,7 @@ var REGEXP_PRECEDER_PATTERN = '(?:^^\\.?|[+-]|\\!|\\!=|\\!==|\\#|\\%|\\%=|&|&&|&
       out.push(']');
       return out.join('');
     }
-  
+
     function allowAnywhereFoldCaseAndRenumberGroups(regex) {
       
       
@@ -363,12 +363,12 @@ var REGEXP_PRECEDER_PATTERN = '(?:^^\\.?|[+-]|\\!|\\!=|\\!==|\\#|\\%|\\%=|&|&&|&
               + ')',
               'g'));
       var n = parts.length;
-  
+
       
       
       
       var capturedGroups = [];
-  
+
       
       
       for (var i = 0, groupIndex = 0; i < n; ++i) {
@@ -383,7 +383,7 @@ var REGEXP_PRECEDER_PATTERN = '(?:^^\\.?|[+-]|\\!|\\!=|\\!==|\\#|\\%|\\%=|&|&&|&
           }
         }
       }
-  
+
       
       
       for (i = 1; i < capturedGroups.length; ++i) {
@@ -405,13 +405,13 @@ var REGEXP_PRECEDER_PATTERN = '(?:^^\\.?|[+-]|\\!|\\!=|\\!==|\\#|\\%|\\%=|&|&&|&
           }
         }
       }
-  
+
       
       
       for (i = 0, groupIndex = 0; i < n; ++i) {
         if ('^' === parts[i] && '^' !== parts[i + 1]) { parts[i] = ''; }
       }
-  
+
       
       
       if (regex.ignoreCase && needToFoldCase) {
@@ -431,10 +431,10 @@ var REGEXP_PRECEDER_PATTERN = '(?:^^\\.?|[+-]|\\!|\\!=|\\!==|\\#|\\%|\\%=|&|&&|&
           }
         }
       }
-  
+
       return parts.join('');
     }
-  
+
     var rewritten = [];
     for (i = 0, n = regexs.length; i < n; ++i) {
       regex = regexs[i];
@@ -442,7 +442,7 @@ var REGEXP_PRECEDER_PATTERN = '(?:^^\\.?|[+-]|\\!|\\!=|\\!==|\\#|\\%|\\%=|&|&&|&
       rewritten.push(
           '(?:' + allowAnywhereFoldCaseAndRenumberGroups(regex) + ')');
     }
-  
+
     return new RegExp(rewritten.join('|'), ignoreCase ? 'gi' : 'g');
   }
 
@@ -492,12 +492,12 @@ var REGEXP_PRECEDER_PATTERN = '(?:^^\\.?|[+-]|\\!|\\!=|\\!==|\\#|\\%|\\%=|&|&&|&
 
   function extractSourceSpans(node) {
     var nocode = /(?:^|\s)nocode(?:\s|$)/;
-  
+
     var chunks = [];
     var length = 0;
     var spans = [];
     var k = 0;
-  
+
     var whitespace;
     if (node.currentStyle) {
       whitespace = node.currentStyle.whiteSpace;
@@ -506,7 +506,7 @@ var REGEXP_PRECEDER_PATTERN = '(?:^^\\.?|[+-]|\\!|\\!=|\\!==|\\#|\\%|\\%=|&|&&|&
           .getPropertyValue('white-space');
     }
     var isPreformatted = whitespace && 'pre' === whitespace.substring(0, 3);
-  
+
     function walk(node) {
       switch (node.nodeType) {
         case 1:  
@@ -538,9 +538,9 @@ var REGEXP_PRECEDER_PATTERN = '(?:^^\\.?|[+-]|\\!|\\!=|\\!==|\\#|\\%|\\%=|&|&&|&
           break;
       }
     }
-  
+
     walk(node);
-  
+
     return {
       sourceCode: chunks.join('').replace(/\n$/, ''),
       spans: spans
@@ -910,9 +910,9 @@ var REGEXP_PRECEDER_PATTERN = '(?:^^\\.?|[+-]|\\!|\\!=|\\!==|\\#|\\%|\\%=|&|&&|&
   function numberLines(node, opt_startLineNum) {
     var nocode = /(?:^|\s)nocode(?:\s|$)/;
     var lineBreak = /\r\n?|\n/;
-  
+
     var document = node.ownerDocument;
-  
+
     var whitespace;
     if (node.currentStyle) {
       whitespace = node.currentStyle.whiteSpace;
@@ -923,7 +923,7 @@ var REGEXP_PRECEDER_PATTERN = '(?:^^\\.?|[+-]|\\!|\\!=|\\!==|\\#|\\%|\\%=|&|&&|&
     
     
     var isPreformatted = whitespace && 'pre' === whitespace.substring(0, 3);
-  
+
     var li = document.createElement('LI');
     while (node.firstChild) {
       li.appendChild(node.firstChild);
@@ -931,7 +931,7 @@ var REGEXP_PRECEDER_PATTERN = '(?:^^\\.?|[+-]|\\!|\\!=|\\!==|\\#|\\%|\\%=|&|&&|&
     
     
     var listItems = [li];
-  
+
     function walk(node) {
       switch (node.nodeType) {
         case 1:  
@@ -971,7 +971,7 @@ var REGEXP_PRECEDER_PATTERN = '(?:^^\\.?|[+-]|\\!|\\!=|\\!==|\\#|\\%|\\%=|&|&&|&
           break;
       }
     }
-  
+
     
     function breakAfter(lineEndNode) {
       
@@ -981,7 +981,7 @@ var REGEXP_PRECEDER_PATTERN = '(?:^^\\.?|[+-]|\\!|\\!=|\\!==|\\#|\\%|\\%=|&|&&|&
         lineEndNode = lineEndNode.parentNode;
         if (!lineEndNode) { return; }
       }
-  
+
       function breakLeftOf(limit, copy) {
         
         var rightSide = copy ? limit.cloneNode(false) : limit;
@@ -1003,9 +1003,9 @@ var REGEXP_PRECEDER_PATTERN = '(?:^^\\.?|[+-]|\\!|\\!=|\\!==|\\#|\\%|\\%=|&|&&|&
         }
         return rightSide;
       }
-  
+
       var copiedListItem = breakLeftOf(lineEndNode.nextSibling, 0);
-  
+
       
       for (var parent;
            
@@ -1015,19 +1015,19 @@ var REGEXP_PRECEDER_PATTERN = '(?:^^\\.?|[+-]|\\!|\\!=|\\!==|\\#|\\%|\\%=|&|&&|&
       
       listItems.push(copiedListItem);
     }
-  
+
     
     for (var i = 0;  
          i < listItems.length;  
          ++i) {
       walk(listItems[i]);
     }
-  
+
     
     if (opt_startLineNum === (opt_startLineNum|0)) {
       listItems[0].setAttribute('value', opt_startLineNum);
     }
-  
+
     var ol = document.createElement('OL');
     ol.className = 'linenums';
     var offset = Math.max(0, ((opt_startLineNum - 1 )) | 0) || 0;
@@ -1042,7 +1042,7 @@ var REGEXP_PRECEDER_PATTERN = '(?:^^\\.?|[+-]|\\!|\\!=|\\!==|\\#|\\%|\\%=|&|&&|&
       }
       ol.appendChild(li);
     }
-  
+
     node.appendChild(ol);
   }
 
@@ -1062,23 +1062,23 @@ var REGEXP_PRECEDER_PATTERN = '(?:^^\\.?|[+-]|\\!|\\!=|\\!==|\\#|\\%|\\%=|&|&&|&
   function recombineTagsAndDecorations(job) {
     var isIE = /\bMSIE\b/.test(navigator.userAgent);
     var newlineRe = /\n/g;
-  
+
     var source = job.sourceCode;
     var sourceLength = source.length;
     
     var sourceIndex = 0;
-  
+
     var spans = job.spans;
     var nSpans = spans.length;
     
     var spanIndex = 0;
-  
+
     var decorations = job.decorations;
     var nDecorations = decorations.length;
     
     
     var decorationIndex = 0;
-  
+
     
     decorations[nDecorations] = sourceLength;
     var decPos, i;
@@ -1091,7 +1091,7 @@ var REGEXP_PRECEDER_PATTERN = '(?:^^\\.?|[+-]|\\!|\\!=|\\!==|\\#|\\%|\\%=|&|&&|&
       }
     }
     nDecorations = decPos;
-  
+
     
     for (i = decPos = 0; i < nDecorations;) {
       var startPos = decorations[i];
@@ -1105,19 +1105,19 @@ var REGEXP_PRECEDER_PATTERN = '(?:^^\\.?|[+-]|\\!|\\!=|\\!==|\\#|\\%|\\%=|&|&&|&
       decorations[decPos++] = startDec;
       i = end;
     }
-  
+
     nDecorations = decorations.length = decPos;
-  
+
     var decoration = null;
     while (spanIndex < nSpans) {
       var spanStart = spans[spanIndex];
       var spanEnd = spans[spanIndex + 2] || sourceLength;
-  
+
       var decStart = decorations[decorationIndex];
       var decEnd = decorations[decorationIndex + 2] || sourceLength;
-  
+
       end = Math.min(spanEnd, decEnd);
-  
+
       var textNode = spans[spanIndex + 1];
       var styledText;
       if (textNode.nodeType !== 1  
@@ -1143,9 +1143,9 @@ var REGEXP_PRECEDER_PATTERN = '(?:^^\\.?|[+-]|\\!|\\!=|\\!==|\\#|\\%|\\%=|&|&&|&
           parentNode.insertBefore(textNode, span.nextSibling);
         }
       }
-  
+
       sourceIndex = end;
-  
+
       if (sourceIndex >= spanEnd) {
         spanIndex += 2;
       }

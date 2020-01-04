@@ -393,7 +393,7 @@ var Probes = {
 
 function PerformanceMonitor(probes) {
   this._probes = probes;
-  
+
   
   for (let probe of probes) {
     probe.acquire();

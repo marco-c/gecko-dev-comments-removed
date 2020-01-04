@@ -352,7 +352,7 @@ var PlacesCommandHook = {
       var parent = aParent !== undefined ?
                    aParent : PlacesUtils.unfiledBookmarksFolderId;
       var descAnno = { name: PlacesUIUtils.DESCRIPTION_ANNO, value: description };
-      var txn = new PlacesCreateBookmarkTransaction(uri, parent, 
+      var txn = new PlacesCreateBookmarkTransaction(uri, parent,
                                                     PlacesUtils.bookmarks.DEFAULT_INDEX,
                                                     title, null, [descAnno]);
       PlacesUtils.transactionManager.doTransaction(txn);
@@ -615,7 +615,7 @@ var PlacesCommandHook = {
     
     if (!organizer || organizer.closed) {
       
-      openDialog("chrome://browser/content/places/places.xul", 
+      openDialog("chrome://browser/content/places/places.xul",
                  "", "chrome,toolbar=yes,dialog=no,resizable", aLeftPaneRoot);
     }
     else {

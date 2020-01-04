@@ -71,7 +71,7 @@ add_task(function* test_execute()
 
     
     stmt.bindByIndex(3, dm.DOWNLOAD_FINISHED);
-    
+
     stmt.bindByIndex(4, theGUID);
 
     

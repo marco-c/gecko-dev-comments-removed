@@ -128,7 +128,7 @@ function run_test() {
   do_test_pending();
 
   
-  bs.insertBookmark(bs.unfiledBookmarksFolder, uri(TEST_URL),                   
+  bs.insertBookmark(bs.unfiledBookmarksFolder, uri(TEST_URL),
                     bs.DEFAULT_INDEX, "test_book");
   
   for (let type of SUGGEST_TYPES) {

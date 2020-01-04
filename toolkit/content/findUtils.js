@@ -37,7 +37,7 @@ nsFindInstData.prototype =
     var findInFrames = findInst.QueryInterface(Components.interfaces.nsIWebBrowserFindInFrames);
     findInFrames.rootSearchFrame = this.rootSearchWindow;
     findInFrames.currentSearchFrame = this.currentSearchWindow;
-  
+
     
     findInst.searchFrames = true;
   },
@@ -98,7 +98,7 @@ function findAgainInPage(findInstData, reverse)
     }
 
     
-    findInst.findBackwards = findService.findBackwards; 
+    findInst.findBackwards = findService.findBackwards;
   }
 }
 

@@ -49,7 +49,7 @@ function test()
 
     finish();
   }
-  
+
   
   
   var key = navigator.platform.match("Linux") ? "y" : "j";

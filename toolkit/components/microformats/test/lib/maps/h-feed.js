@@ -4,7 +4,7 @@
 
 
 var Modules = (function (modules) {
-	
+
 	modules.maps = (modules.maps)? modules.maps : {};
 
 	modules.maps['h-feed'] = {
@@ -18,7 +18,7 @@ var Modules = (function (modules) {
 			'summary': {
 				'map': 'p-summary'
 			},
-			'author': { 
+			'author': {
 				'uf': ['h-card']
 			},
 			'url': {

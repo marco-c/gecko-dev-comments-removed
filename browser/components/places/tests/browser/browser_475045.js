@@ -38,22 +38,22 @@ add_task(function* test() {
     const uriSpec = "http://www.mozilla.org/D1995729-A152-4e30-8329-469B01F30AA7";
     let uri = makeURI(uriSpec);
     ChromeUtils.synthesizeDrop(placesItems.childNodes[0],
-                              placesItems, 
-                              [[{type: aMimeType, 
-                                data: uriSpec}]], 
+                              placesItems,
+                              [[{type: aMimeType,
+                                data: uriSpec}]],
                               aEffect, window);
 
     
     let bookmarkIds = PlacesUtils.bookmarks
                       .getBookmarkIdsForURI(uri);
     ok(bookmarkIds.length == 1, "There should be exactly one bookmark");
-    
+
     PlacesUtils.bookmarks.removeItem(bookmarkIds[0]);
 
     
     ok(!PlacesUtils.bookmarks.isBookmarked(uri), "URI should be removed");
-  } 
-  
+  }
+
   
   let mimeTypes = ["text/plain", "text/unicode", "text/x-moz-url"];
   let effects = ["move", "copy", "link"];

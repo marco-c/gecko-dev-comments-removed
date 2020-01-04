@@ -1456,7 +1456,7 @@ this.PlacesUtils = {
       yield conn.executeCached(QUERY_STR, { url: spec }, aRow => {
         if (abort)
           throw StopIteration;
-        itemIds.push(aRow.getResultByIndex(0));  
+        itemIds.push(aRow.getResultByIndex(0));
       });
       if (!abort)
         aCallback(itemIds, aURI);
@@ -2732,7 +2732,7 @@ PlacesCreateFolderTransaction.prototype = {
   __proto__: BaseTransaction.prototype,
 
   doTransaction: function CFTXN_doTransaction()
-  { 
+  {
     this.item.id = PlacesUtils.bookmarks.createFolder(this.item.parentId,
                                                       this.item.title,
                                                       this.item.index);
@@ -2827,7 +2827,7 @@ PlacesCreateBookmarkTransaction.prototype = {
     }
     if (this.item.annotations && this.item.annotations.length > 0)
       PlacesUtils.setAnnotationsForItem(this.item.id, this.item.annotations);
- 
+
     if (this.childTransactions && this.childTransactions.length > 0) {
       
       for (let i = 0; i < this.childTransactions.length; ++i) {
@@ -3586,7 +3586,7 @@ PlacesEditItemLastModifiedTransaction.prototype = {
 this.PlacesSortFolderByNameTransaction =
  function PlacesSortFolderByNameTransaction(aFolderId)
 {
-  this.item = new TransactionItemCache();  
+  this.item = new TransactionItemCache();
   this.item.id = aFolderId;
 }
 
@@ -3602,7 +3602,7 @@ PlacesSortFolderByNameTransaction.prototype = {
     let count = contents.childCount;
 
     
-    let newOrder = []; 
+    let newOrder = [];
     let preSep = []; 
     let sortingMethod =
       function (a, b) {

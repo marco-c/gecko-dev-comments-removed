@@ -33,7 +33,7 @@ var gTests = [
    "x", [0]],
   ["3: Match at the beginning of urls",
    "y", [1]],
-  
+
   
   ["4: Sanity check that matching anywhere finds more",
    "a", [0,1],

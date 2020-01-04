@@ -97,7 +97,7 @@ add_task(function* ()
 
     yield BrowserTestUtils.synthesizeMouse("#" + test.elem, 50, 80, { button: 1 },
                                            gBrowser.selectedBrowser);
- 
+
     
     
     yield ContentTask.spawn(gBrowser.selectedBrowser, { }, function* () {
@@ -168,7 +168,7 @@ add_task(function* ()
             msg += "Failed: ";
           }
           msg += 'Window for ' + args.elemid + ' should' + (args.scrollVert ? '' : ' not') + ' have scrolled vertically\n';
-         
+
           if (!((args.scrollHori && content.scrollX > 0) ||
                 (!args.scrollHori && content.scrollX == 0))) {
             msg += "Failed: ";

@@ -10,10 +10,10 @@
 
 
 var Modules = (function (modules) {
-	
+
 	modules.dates = {
 
-		
+
 		
 
 
@@ -24,8 +24,8 @@ var Modules = (function (modules) {
 			text = text.toLowerCase();
 			return(text.indexOf('am') > -1 || text.indexOf('a.m.') > -1);
 		},
-	
-	
+
+
 		
 
 
@@ -36,8 +36,8 @@ var Modules = (function (modules) {
 			text = text.toLowerCase();
 			return(text.indexOf('pm') > -1 || text.indexOf('p.m.') > -1);
 		},
-	
-	
+
+
 		
 
 
@@ -47,8 +47,8 @@ var Modules = (function (modules) {
 		removeAMPM: function( text ) {
 			return text.replace('pm', '').replace('p.m.', '').replace('am', '').replace('a.m.', '');
 		},
-	
-	   
+
+
 	   
 
 
@@ -64,15 +64,15 @@ var Modules = (function (modules) {
 			}
 			return false;
 		},
-	
-	
+
+
 	   
 
 
 
 
 
- 
+
 		isTime: function( text ) {
 			if(modules.utils.isString(text)){
 				text = text.toLowerCase();
@@ -82,7 +82,7 @@ var Modules = (function (modules) {
 					return true;
 				}
 				
-				if( text.match(/^[0-9]/) && 
+				if( text.match(/^[0-9]/) &&
 					( this.hasAM(text) || this.hasPM(text) )) {
 					return true;
 				}
@@ -90,7 +90,7 @@ var Modules = (function (modules) {
 				if( text.match(':') && !text.match(/t|\s/) ) {
 					return true;
 				}
-				
+
 				
 				if(modules.utils.isNumber(text)){
 					if(text.length === 2 || text.length === 4 || text.length === 6){
@@ -100,7 +100,7 @@ var Modules = (function (modules) {
 			}
 			return false;
 		},
-	
+
 
 		
 
@@ -108,18 +108,18 @@ var Modules = (function (modules) {
 
 
 
- 
+
 		parseAmPmTime: function( text ) {
 			var out = text,
 				times = [];
-	
+
 			
 			if(modules.utils.isString(out)) {
 				
 				text = text.replace(/[ ]+/g, '');
-	
+
 				if(text.match(':') || this.hasAM(text) || this.hasPM(text)) {
-	
+
 					if(text.match(':')) {
 						times = text.split(':');
 					} else {
@@ -127,31 +127,31 @@ var Modules = (function (modules) {
 						times[0] = text;
 						times[0] = this.removeAMPM(times[0]);
 					}
-					
+
 					
 					if(this.hasPM(text)) {
 						if(times[0] < 12) {
 							times[0] = parseInt(times[0], 10) + 12;
 						}
 					}
-	
+
 					
 					if(times[0] && times[0].length === 1) {
 						times[0] = '0' + times[0];
 					}
-					
+
 					
 					if(times[0]) {
 						text = times.join(':');
 					}
 				}
 			}
-			
+
 			
 			return this.removeAMPM(text);
 		},
-	
-	
+
+
 	   
 
 
@@ -159,11 +159,11 @@ var Modules = (function (modules) {
 
 
 
- 
+
 		dateTimeUnion: function(date, time, format) {
 			var isodate = new modules.ISODate(date, format),
 				isotime = new modules.ISODate();
-	
+
 			isotime.parseTime(this.parseAmPmTime(time), format);
 			if(isodate.hasFullDate() && isotime.hasTime()) {
 				isodate.tH = isotime.tH;
@@ -178,8 +178,8 @@ var Modules = (function (modules) {
 				return new modules.ISODate();
 			}
 		},
-	
-	
+
+
 	   
 
 
@@ -187,65 +187,65 @@ var Modules = (function (modules) {
 
 
 
- 
+
 		concatFragments: function (arr, format) {
 			var out = new modules.ISODate(),
 				i = 0,
 				value = '';
-			
+
 			
 			if(arr[0].toUpperCase().match('T')) {
 				return new modules.ISODate(arr[0], format);
 			}else{
 				for(i = 0; i < arr.length; i++) {
 				value = arr[i];
-	  
+
 				
 				if( value.charAt(4) === '-' && out.hasFullDate() === false ){
 					out.parseDate(value);
 				}
-				
+
 				
 				if( (value.indexOf(':') > -1 || modules.utils.isNumber( this.parseAmPmTime(value) )) && out.hasTime() === false ) {
 					
 					var items = this.splitTimeAndZone(value);
 					value = items[0];
-					
+
 					
 					value = this.parseAmPmTime(value);
 					out.parseTime(value);
-					
+
 					
 					if(items.length > 1){
 						 out.parseTimeZone(items[1], format);
 					}
 				}
-				
+
 				
 				if(value.charAt(0) === '-' || value.charAt(0) === '+' || value.toUpperCase() === 'Z') {
 					if( out.hasTimeZone() === false ){
 						out.parseTimeZone(value);
 					}
 				}
-	
+
 			}
 			return out;
-				
+
 			}
 		},
-		
-		
+
+
 	   
 
 
 
 
- 
+
 		splitTimeAndZone: function ( text ){
 		   var out = [text],
 			   chars = ['-','+','z','Z'],
 			   i = chars.length;
-			   
+
 			while (i--) {
 			  if(text.indexOf(chars[i]) > -1){
 				  out[0] = text.slice( 0, text.indexOf(chars[i]) );
@@ -255,7 +255,7 @@ var Modules = (function (modules) {
 			}
 		   return out;
 		}
-		
+
 	};
 
 

@@ -20,8 +20,8 @@
 
 
 
- 
- 
+
+
 var nsTransferable = {
   
 
@@ -30,11 +30,11 @@ var nsTransferable = {
 
 
 
- 
+
   set: function (aTransferDataSet)
     {
       var trans = this.createTransferable();
-      for (var i = 0; i < aTransferDataSet.dataList.length; ++i) 
+      for (var i = 0; i < aTransferDataSet.dataList.length; ++i)
         {
           var currData = aTransferDataSet.dataList[i];
           var currFlavour = currData.flavour.contentType;
@@ -49,7 +49,7 @@ var nsTransferable = {
               supports.data = currData.supports;
               length = supports.data.length;
             }
-          else 
+          else
             {
               
               supports = currData.supports;
@@ -59,7 +59,7 @@ var nsTransferable = {
         }
       return trans;
     },
-  
+
   
 
 
@@ -79,13 +79,13 @@ var nsTransferable = {
 
   get: function (aFlavourSet, aRetrievalFunc, aAnyFlag)
     {
-      if (!aRetrievalFunc) 
+      if (!aRetrievalFunc)
         throw "No data retrieval handler provided!";
-      
+
       var supportsArray = aRetrievalFunc(aFlavourSet);
       var dataArray = [];
       var count = supportsArray.Count();
-      
+
       
       
       
@@ -94,19 +94,19 @@ var nsTransferable = {
           var trans = supportsArray.GetElementAt(i);
           if (!trans) continue;
           trans = trans.QueryInterface(Components.interfaces.nsITransferable);
-            
+
           var data = { };
           var length = { };
-          
+
           var currData = null;
           if (aAnyFlag)
-            { 
+            {
               var flavour = { };
               trans.getAnyTransferData(flavour, data, length);
               if (data && flavour)
                 {
                   var selectedFlavour = aFlavourSet.flavourTable[flavour.value];
-                  if (selectedFlavour) 
+                  if (selectedFlavour)
                     dataArray[i] = FlavourToXfer(data.value, length.value, selectedFlavour);
                 }
             }
@@ -125,7 +125,7 @@ var nsTransferable = {
 
 
 
-    
+
   createTransferable: function ()
     {
       const kXferableContractID = "@mozilla.org/widget/transferable;1";
@@ -134,7 +134,7 @@ var nsTransferable = {
       trans.init(null);
       return trans;
     }
-};  
+};
 
 
 
@@ -152,7 +152,7 @@ function FlavourSet(aFlavourList)
   this.flavourTable = { };
 
   this._XferID = "FlavourSet";
-  
+
   for (var i = 0; i < this.flavours.length; ++i)
     this.flavourTable[this.flavours[i].contentType] = this.flavours[i];
 }
@@ -172,7 +172,7 @@ FlavourSet.prototype = {
 
 
 
- 
+
 function Flavour(aContentType, aDataIIDKey)
 {
   this.contentType = aContentType;
@@ -218,10 +218,10 @@ function TransferData(aFlavourDataList)
 }
 TransferData.prototype = {
   __proto__: TransferDataBase.prototype,
-  
+
   addDataForFlavour: function (aFlavourString, aData, aLength, aDataIIDKey)
   {
-    this.dataList.push(new FlavourData(aData, aLength, 
+    this.dataList.push(new FlavourData(aData, aLength,
                        new Flavour(aFlavourString, aDataIIDKey)));
   }
 };
@@ -235,12 +235,12 @@ TransferData.prototype = {
 
 
 
-function FlavourData(aData, aLength, aFlavour) 
+function FlavourData(aData, aLength, aFlavour)
 {
   this.supports = aData;
   this.contentLength = aLength;
   this.flavour = aFlavour || null;
-  
+
   this._XferID = "FlavourData";
 }
 
@@ -249,12 +249,12 @@ FlavourData.prototype = {
   {
     if (this.flavour &&
         this.flavour.dataIIDKey != "nsISupportsString")
-      return this.supports.QueryInterface(Components.interfaces[this.flavour.dataIIDKey]); 
+      return this.supports.QueryInterface(Components.interfaces[this.flavour.dataIIDKey]);
 
     var supports = this.supports;
     if (supports instanceof Components.interfaces.nsISupportsString)
       return supports.data.substring(0, this.contentLength/2);
-     
+
     return supports;
   }
 }
@@ -263,7 +263,7 @@ FlavourData.prototype = {
 
 
 
-function FlavourToXfer(aData, aLength, aFlavour) 
+function FlavourToXfer(aData, aLength, aFlavour)
 {
   return new TransferData([new FlavourData(aData, aLength, aFlavour)]);
 }
@@ -286,7 +286,7 @@ var transferUtils = {
                                    .QueryInterface(Components.interfaces.nsIFileProtocolHandler);
         return fileHandler.getURLSpecFromFile(aData);
     }
-    return null;                                                   
+    return null;
   }
 
 }
@@ -314,14 +314,14 @@ var transferUtils = {
 
 
 
-   
+
 
 var nsDragAndDrop = {
-  
+
   _mDS: null,
   get mDragService()
     {
-      if (!this._mDS) 
+      if (!this._mDS)
         {
           const kDSContractID = "@mozilla.org/widget/dragservice;1";
           const kDSIID = Components.interfaces.nsIDragService;
@@ -340,7 +340,7 @@ var nsDragAndDrop = {
 
 
 
-  
+
   startDrag: function (aEvent, aDragDropObserver)
     {
       if (!("onDragStart" in aDragDropObserver))
@@ -350,11 +350,11 @@ var nsDragAndDrop = {
       var dragAction = { action: kDSIID.DRAGDROP_ACTION_COPY + kDSIID.DRAGDROP_ACTION_MOVE + kDSIID.DRAGDROP_ACTION_LINK };
 
       var transferData = { data: null };
-      try 
+      try
         {
           aDragDropObserver.onDragStart(aEvent, transferData, dragAction);
         }
-      catch (e) 
+      catch (e)
         {
           return;  
         }
@@ -365,10 +365,10 @@ var nsDragAndDrop = {
       var dt = aEvent.dataTransfer;
       var count = 0;
       do {
-        var tds = transferData._XferID == "TransferData" 
-                                         ? transferData 
+        var tds = transferData._XferID == "TransferData"
+                                         ? transferData
                                          : transferData.dataList[count]
-        for (var i = 0; i < tds.dataList.length; ++i) 
+        for (var i = 0; i < tds.dataList.length; ++i)
         {
           var currData = tds.dataList[i];
           var currFlavour = currData.flavour.contentType;
@@ -380,7 +380,7 @@ var nsDragAndDrop = {
 
         count++;
       }
-      while (transferData._XferID == "TransferDataSet" && 
+      while (transferData._XferID == "TransferDataSet" &&
              count < transferData.dataList.length);
 
       dt.effectAllowed = "all";
@@ -403,8 +403,8 @@ var nsDragAndDrop = {
 
 
   dragOver: function (aEvent, aDragDropObserver)
-    { 
-      if (!("onDragOver" in aDragDropObserver)) 
+    {
+      if (!("onDragOver" in aDragDropObserver))
         return;
       if (!this.checkCanDrop(aEvent, aDragDropObserver))
         return;
@@ -413,8 +413,8 @@ var nsDragAndDrop = {
         {
           if (this.mDragSession.isDataFlavorSupported(flavour))
             {
-              aDragDropObserver.onDragOver(aEvent, 
-                                           flavourSet.flavourTable[flavour], 
+              aDragDropObserver.onDragOver(aEvent,
+                                           flavourSet.flavourTable[flavour],
                                            this.mDragSession);
               aEvent.stopPropagation();
               aEvent.preventDefault();
@@ -441,7 +441,7 @@ var nsDragAndDrop = {
       if (!("onDrop" in aDragDropObserver))
         return;
       if (!this.checkCanDrop(aEvent, aDragDropObserver))
-        return;  
+        return;
 
       var flavourSet = aDragDropObserver.getSupportedFlavours();
 
@@ -495,8 +495,8 @@ var nsDragAndDrop = {
         return;
       if ("onDragExit" in aDragDropObserver)
         aDragDropObserver.onDragExit(aEvent, this.mDragSession);
-    },  
-    
+    },
+
   
 
 
@@ -514,7 +514,7 @@ var nsDragAndDrop = {
         return;
       if ("onDragEnter" in aDragDropObserver)
         aDragDropObserver.onDragEnter(aEvent, this.mDragSession);
-    },  
+    },
 
   
 
@@ -530,9 +530,9 @@ var nsDragAndDrop = {
 
   checkCanDrop: function (aEvent, aDragDropObserver)
     {
-      if (!this.mDragSession) 
+      if (!this.mDragSession)
         this.mDragSession = this.mDragService.getCurrentSession();
-      if (!this.mDragSession) 
+      if (!this.mDragSession)
         return false;
       this.mDragSession.canDrop = this.mDragSession.sourceNode != aEvent.target;
       if ("canDrop" in aDragDropObserver)

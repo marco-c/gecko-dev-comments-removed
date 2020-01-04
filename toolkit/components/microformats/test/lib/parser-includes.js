@@ -9,23 +9,23 @@
 
 
 var Modules = (function (modules) {
-	
+
 	
 	if(modules.Parser){
-	
+
+
 		
-		
 
 
 
-	
+
 		modules.Parser.prototype.addIncludes = function(rootNode) {
 			this.addAttributeIncludes(rootNode, 'itemref');
 			this.addAttributeIncludes(rootNode, 'headers');
 			this.addClassIncludes(rootNode);
 		};
-	
-		
+
+
 		
 
 
@@ -39,7 +39,7 @@ var Modules = (function (modules) {
 				x,
 				z,
 				y;
-	
+
 			arr = modules.domUtils.getNodesByAttribute(rootNode, attributeName);
 			x = 0;
 			i = arr.length;
@@ -56,8 +56,8 @@ var Modules = (function (modules) {
 				x++;
 			}
 		};
-	
-		
+
+
 		
 
 
@@ -68,7 +68,7 @@ var Modules = (function (modules) {
 				arr,
 				x = 0,
 				i;
-	
+
 			arr = modules.domUtils.getNodesByAttributeValue(rootNode, 'class', 'include');
 			i = arr.length;
 			while(x < i) {
@@ -80,8 +80,8 @@ var Modules = (function (modules) {
 				x++;
 			}
 		};
-	
-	
+
+
 		
 
 
@@ -91,7 +91,7 @@ var Modules = (function (modules) {
 		modules.Parser.prototype.apppendInclude = function(node, id){
 			var include,
 				clone;
-	
+
 			id = modules.utils.trim(id.replace('#', ''));
 			include = modules.domUtils.getElementById(this.document, id);
 			if(include) {
@@ -100,18 +100,18 @@ var Modules = (function (modules) {
 				modules.domUtils.appendChild(node, clone);
 			}
 		};
-	
+
+
 		
-		
 
 
 
- 
+
 		modules.Parser.prototype.markIncludeChildren = function(rootNode) {
 			var arr,
 				x,
 				i;
-	
+
 			
 			arr = this.findRootNodes(rootNode);
 			x = 0;
@@ -123,17 +123,17 @@ var Modules = (function (modules) {
 				x++;
 			}
 		};
-		
-		
+
+
 		
 
 
 
- 
+
 		modules.Parser.prototype.removeIncludes = function(rootNode){
 			var arr,
 				i;
-	
+
 			
 			arr = modules.domUtils.getNodesByAttribute(rootNode, 'data-include');
 			i = arr.length;
@@ -141,8 +141,8 @@ var Modules = (function (modules) {
 				modules.domUtils.removeChild(rootNode,arr[i]);
 			}
 		};
-	
-		
+
+
 	}
 
 	return modules;

@@ -3,7 +3,7 @@
 
 
 var Modules = (function (modules) {
-	
+
 	modules.maps = (modules.maps)? modules.maps : {};
 
 	modules.maps['h-card'] =  {
@@ -32,7 +32,7 @@ var Modules = (function (modules) {
 				'map': 'u-email'
 			},
 			'geo': {
-				'map': 'p-geo', 
+				'map': 'p-geo',
 				'uf': ['h-geo']
 			},
 			'key': {
@@ -82,4 +82,4 @@ var Modules = (function (modules) {
 	return modules;
 
 } (Modules || {}));
-	
+

@@ -16,12 +16,12 @@ var FontBuilder = {
   },
 
   _allFonts: null,
-  buildFontList: function (aLanguage, aFontType, aMenuList) 
+  buildFontList: function (aLanguage, aFontType, aMenuList)
   {
     
     while (aMenuList.hasChildNodes())
       aMenuList.removeChild(aMenuList.firstChild);
-    
+
     var defaultFont = null;
     
     var fonts = this.enumerator.EnumerateFonts(aLanguage, aFontType, { } );
@@ -32,10 +32,10 @@ var FontBuilder = {
       if (fonts.length > 0)
         defaultFont = this.enumerator.getDefaultFont(aLanguage, "");
     }
-    
+
     if (!this._allFonts)
       this._allFonts = this.enumerator.EnumerateAllFonts({});
-    
+
     
     var popup = document.createElement("menupopup");
     var separator;
@@ -47,11 +47,11 @@ var FontBuilder = {
         menuitem.setAttribute("label", label);
         menuitem.setAttribute("value", ""); 
         popup.appendChild(menuitem);
-        
+
         separator = document.createElement("menuseparator");
         popup.appendChild(separator);
       }
-      
+
       for (var i = 0; i < fonts.length; ++i) {
         menuitem = document.createElement("menuitem");
         menuitem.setAttribute("value", fonts[i]);
@@ -59,7 +59,7 @@ var FontBuilder = {
         popup.appendChild(menuitem);
       }
     }
-    
+
     
     if (this._allFonts.length > fonts.length) {
       
@@ -70,7 +70,7 @@ var FontBuilder = {
 
       separator = document.createElement("menuseparator");
       popup.appendChild(separator);
-      
+
       for (i = 0; i < this._allFonts.length; ++i) {
         if (this._allFonts[i] != builtItemValue) {
           menuitem = document.createElement("menuitem");
@@ -84,7 +84,7 @@ var FontBuilder = {
         }
       }
     }
-    aMenuList.appendChild(popup);    
+    aMenuList.appendChild(popup);
   },
 
   readFontSelection(aElement)

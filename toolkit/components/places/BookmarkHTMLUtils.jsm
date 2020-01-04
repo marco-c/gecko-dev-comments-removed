@@ -346,7 +346,7 @@ BookmarkImporter.prototype = {
     switch (containerType) {
       case Container_Normal:
         
-        containerId = 
+        containerId =
           PlacesUtils.bookmarks.createFolder(frame.containerId,
                                              containerTitle,
                                              PlacesUtils.bookmarks.DEFAULT_INDEX);

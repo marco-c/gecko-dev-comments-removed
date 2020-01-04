@@ -31,7 +31,7 @@ function run_test() {
   do_check_eq(node.itemId, bookmarkId);
 
   
-  do_check_eq(node.tags, null); 
+  do_check_eq(node.tags, null);
 
   
   tagssvc.tagURI(bookmarkURI, ["foo"]);
@@ -43,7 +43,7 @@ function run_test() {
 
   
   tagssvc.untagURI(bookmarkURI, null);
-  do_check_eq(node.tags, null); 
+  do_check_eq(node.tags, null);
 
   toolbarNode.containerOpen = false;
 }

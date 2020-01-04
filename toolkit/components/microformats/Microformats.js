@@ -74,7 +74,7 @@ this.Microformats = {
       if ((microformatNodes.length == 0) && Microformats[name].alternateClassName) {
         var altClass = Microformats.getElementsByClassName(rootElement, Microformats[name].alternateClassName);
         if (altClass.length > 0) {
-          microformatNodes.push(rootElement); 
+          microformatNodes.push(rootElement);
         }
       }
     } else if (Microformats[name].attributeValues) {
@@ -82,9 +82,9 @@ this.Microformats = {
         Microformats.getElementsByAttribute(rootElement,
                                             Microformats[name].attributeName,
                                             Microformats[name].attributeValues);
-      
+
     }
-    
+
 
     function isVisible(node, checkChildren) {
       if (node.getBoundingClientRect) {
@@ -109,7 +109,7 @@ this.Microformats = {
       }
       return true;
     }
-    
+
     
     
     for (let i = 0; i < microformatNodes.length; i++) {
@@ -276,7 +276,7 @@ this.Microformats = {
       }
       var toreturn = "";
       var testArray = [];
-      
+
       for (let i in item)
       {
         if (testArray[i]) {
@@ -354,9 +354,9 @@ this.Microformats = {
         outstring = outstring.replace(/\s+$/, '');
         return outstring;
       }
-      
-      
-      if (((((propnode.localName.toLowerCase() == "abbr") || (propnode.localName.toLowerCase() == "html:abbr")) && !propnode.namespaceURI) || 
+
+
+      if (((((propnode.localName.toLowerCase() == "abbr") || (propnode.localName.toLowerCase() == "html:abbr")) && !propnode.namespaceURI) ||
          ((propnode.localName.toLowerCase() == "abbr") && (propnode.namespaceURI == "http://www.w3.org/1999/xhtml"))) && (propnode.hasAttribute("title"))) {
         return propnode.getAttribute("title");
       } else if ((propnode.nodeName.toLowerCase() == "img") && (propnode.hasAttribute("alt"))) {
@@ -668,11 +668,11 @@ this.Microformats = {
       for (let i in Microformats[microformat].properties) {
         object.__defineGetter__(i, Microformats.parser.getMicroformatPropertyGenerator(node, microformat, i, object));
       }
-      
+
       
       object.node = in_node;
       
-      object.resolvedNode = node; 
+      object.resolvedNode = node;
       object.semanticType = microformat;
       if (validate) {
         Microformats.parser.validate(node, microformat);
@@ -915,7 +915,7 @@ this.Microformats = {
     normalizeISO8601: function normalizeISO8601(string)
     {
       var dateArray = string.match(/(\d\d\d\d)(?:-?(\d\d)(?:-?(\d\d)(?:[T ](\d\d)(?::?(\d\d)(?::?(\d\d)(?:\.(\d+))?)?)?(?:([-+Z])(?:(\d\d)(?::?(\d\d))?)?)?)?)?)?/);
-  
+
       var dateString;
       var tzOffset = 0;
       if (!dateArray) {
@@ -971,7 +971,7 @@ this.Microformats = {
 
   dateFromISO8601: function dateFromISO8601(string) {
     var dateArray = string.match(/(\d\d\d\d)(?:-?(\d\d)(?:-?(\d\d)(?:[T ](\d\d)(?::?(\d\d)(?::?(\d\d)(?:\.(\d+))?)?)?(?:([-+Z])(?:(\d\d)(?::?(\d\d))?)?)?)?)?)?/);
-  
+
     var date = new Date(dateArray[1], 0, 1);
     date.time = false;
 
@@ -1011,9 +1011,9 @@ this.Microformats = {
       if (dateArray[8]) {
         var tzOffset = date.getTimezoneOffset();
         if (tzOffset < 0) {
-          date.setMinutes(date.getMinutes() + tzOffset); 
+          date.setMinutes(date.getMinutes() + tzOffset);
         } else if (tzOffset > 0) {
-          date.setMinutes(date.getMinutes() - tzOffset); 
+          date.setMinutes(date.getMinutes() - tzOffset);
         }
       }
     }
@@ -1142,7 +1142,7 @@ this.Microformats = {
         }
         xpathExpression += "contains(concat(' ', @" + attributeName + ", ' '), ' " + attributeList[i] + " ')";
       }
-      xpathExpression += "]"; 
+      xpathExpression += "]";
 
       var xpathResult = (rootNode.ownerDocument || rootNode).evaluate(xpathExpression, rootNode, null, 0, null);
 
@@ -1314,7 +1314,7 @@ var hCard_definition = {
           virtual: true
         }
       },
-      plural: true   
+      plural: true
     },
     "fn" : {
       required: true

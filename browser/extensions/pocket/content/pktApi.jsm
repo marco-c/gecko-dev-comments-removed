@@ -121,10 +121,10 @@ var pktApi = (function() {
      function getSetting(key) {
      	
      	
-     	
+
 		if (!prefBranch.prefHasUserValue(key))
 			return undefined;
-		
+
 		return prefBranch.getComplexValue(key, Components.interfaces.nsISupportsString).data;
      }
 
@@ -138,7 +138,7 @@ var pktApi = (function() {
     function setSetting(key, value) {
      	
      	
-     	
+
      	if (!value)
      		prefBranch.clearUserPref(key);
      	else
@@ -159,7 +159,7 @@ var pktApi = (function() {
 
 
     function getCookiesFromPocket() {
-    
+
         var cookieManager = Cc["@mozilla.org/cookiemanager;1"].getService(Ci.nsICookieManager2);
         var pocketCookies = cookieManager.getCookiesFromHost(pocketSiteHost);
         var cookies = {};

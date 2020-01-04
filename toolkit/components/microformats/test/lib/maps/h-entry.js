@@ -4,7 +4,7 @@
 
 
 var Modules = (function (modules) {
-	
+
 	modules.maps = (modules.maps)? modules.maps : {};
 
 	modules.maps['h-entry'] = {
@@ -26,7 +26,7 @@ var Modules = (function (modules) {
 			'updated': {
 				'map': 'dt-updated'
 			},
-			'author': { 
+			'author': {
 				'uf': ['h-card']
 			},
 			'category': {
@@ -34,7 +34,7 @@ var Modules = (function (modules) {
 				'relAlt': ['tag']
 			},
 			'geo': {
-				'map': 'p-geo', 
+				'map': 'p-geo',
 				'uf': ['h-geo']
 			},
 			'latitude': {},
@@ -47,6 +47,6 @@ var Modules = (function (modules) {
 	};
 
 	return modules;
-	
+
 } (Modules || {}));
 

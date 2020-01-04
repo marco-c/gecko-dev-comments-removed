@@ -826,7 +826,7 @@ CrashStore.prototype = Object.freeze({
 
           
           
-          if (denormalized.metadata && 
+          if (denormalized.metadata &&
               denormalized.metadata.OOMAllocationSize) {
             let oomKey = key + "-oom";
             actualCounts.set(oomKey, (actualCounts.get(oomKey) || 0) + 1);

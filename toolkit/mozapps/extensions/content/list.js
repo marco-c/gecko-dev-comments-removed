@@ -113,7 +113,7 @@ function init() {
       message.appendChild(document.createTextNode(params[messageEntry]));
     }
   }
-  
+
   document.getElementById("infoIcon").className =
     params["iconClass"] ? "spaced " + params["iconClass"] : "spaced alert-icon";
 

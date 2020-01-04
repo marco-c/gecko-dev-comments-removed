@@ -36,7 +36,7 @@ var DownloadListener = {
   },
 
   observe: function (aSubject, aTopic, aData) {
-    
+
     if (aTopic == "dl-start") {
       
       if (this.set.doPause) {

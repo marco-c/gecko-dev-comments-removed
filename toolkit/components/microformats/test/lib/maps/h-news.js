@@ -4,7 +4,7 @@
 
 
 var Modules = (function (modules) {
-		
+
 	modules.maps = (modules.maps)? modules.maps : {};
 
 		modules.maps['h-news'] = {
@@ -29,7 +29,7 @@ var Modules = (function (modules) {
 					'map': 'u-item-license'
 				},
 				'principles': {
-					'map': 'u-principles', 
+					'map': 'u-principles',
 					'relAlt': ['principles']
 				}
 			}

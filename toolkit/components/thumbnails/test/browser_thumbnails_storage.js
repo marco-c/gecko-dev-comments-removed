@@ -55,7 +55,7 @@ function* runTests() {
 
     info("Attempt to clear file");
     
-    yield promiseClearFile(file, URL);    
+    yield promiseClearFile(file, URL);
 
     info("Done");
   });

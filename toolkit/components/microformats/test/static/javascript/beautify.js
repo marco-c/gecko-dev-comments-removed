@@ -411,7 +411,7 @@ function js_beautify(js_source_text, indent_size, indent_character)
             }
             return [c, 'TK_WORD'];
         }
-        
+
         if (c == '(' || c == '[') {
             return [c, 'TK_START_EXPR'];
         }

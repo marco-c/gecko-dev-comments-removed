@@ -416,7 +416,7 @@ function closeMenus(node)
 }
 
 
-function gatherTextUnder ( root ) 
+function gatherTextUnder ( root )
 {
   var text = "";
   var node = root.firstChild;
@@ -673,7 +673,7 @@ function makeURLAbsolute(aBase, aUrl)
 
 
 
- 
+
 function openNewTabWith(aURL, aDocument, aPostData, aEvent,
                         aAllowThirdPartyFixup, aReferrer, aReferrerPolicy) {
 

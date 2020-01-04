@@ -21,32 +21,32 @@ function AutoCompleteInput(aSearches) {
   this.searches = aSearches;
 }
 AutoCompleteInput.prototype = {
-  constructor: AutoCompleteInput, 
-  
+  constructor: AutoCompleteInput,
+
   
   searches: null,
-  
+
   minResultsForPopup: 0,
   timeout: 10,
   searchParam: "",
   textValue: "",
-  disableAutoComplete: false,  
+  disableAutoComplete: false,
   completeDefaultIndex: false,
-  
+
   get searchCount() {
     return this.searches.length;
   },
-  
+
   getSearchAt: function(aIndex) {
     return this.searches[aIndex];
   },
-  
+
   onSearchBegin: function() {},
   onSearchComplete: function() {},
-  
-  popupOpen: false,  
-  
-  popup: { 
+
+  popupOpen: false,
+
+  popup: {
     setSelectedIndex: function(aIndex) {},
     invalidate: function() {},
 
@@ -57,9 +57,9 @@ AutoCompleteInput.prototype = {
         return this;
 
       throw Components.results.NS_ERROR_NO_INTERFACE;
-    }    
+    }
   },
-    
+
   
   QueryInterface: function(iid) {
     if (iid.equals(Ci.nsISupports) ||
@@ -79,7 +79,7 @@ function AutoCompleteResult(aValues, aComments, aStyles) {
   this._values = aValues;
   this._comments = aComments;
   this._styles = aStyles;
-  
+
   if (this._values.length > 0) {
     this.searchResult = Ci.nsIAutoCompleteResult.RESULT_SUCCESS;
   } else {
@@ -88,15 +88,15 @@ function AutoCompleteResult(aValues, aComments, aStyles) {
 }
 AutoCompleteResult.prototype = {
   constructor: AutoCompleteResult,
-  
+
   
   _values: null,
   _comments: null,
   _styles: null,
-  
+
   searchString: "",
   searchResult: null,
-  
+
   defaultIndex: 0,
 
   get matchCount() {
@@ -106,19 +106,19 @@ AutoCompleteResult.prototype = {
   getValueAt: function(aIndex) {
     return this._values[aIndex];
   },
- 
+
   getLabelAt: function(aIndex) {
     return this.getValueAt(aIndex);
   },
-  
+
   getCommentAt: function(aIndex) {
     return this._comments[aIndex];
   },
-  
+
   getStyleAt: function(aIndex) {
     return this._styles[aIndex];
   },
-  
+
   getImageAt: function(aIndex) {
     return "";
   },
@@ -136,7 +136,7 @@ AutoCompleteResult.prototype = {
       return this;
 
     throw Components.results.NS_ERROR_NO_INTERFACE;
-  }  
+  }
 }
 
 
@@ -151,25 +151,25 @@ function AutoCompleteSearch(aName, aResult) {
 }
 AutoCompleteSearch.prototype = {
   constructor: AutoCompleteSearch,
-  
+
   
   name: null,
 
   
-  _result:null,  
-  
-  
+  _result:null,
+
+
   
 
 
-  startSearch: function(aSearchString, 
-                        aSearchParam, 
-                        aPreviousResult, 
-                        aListener) 
+  startSearch: function(aSearchString,
+                        aSearchParam,
+                        aPreviousResult,
+                        aListener)
   {
     aListener.onSearchResult(this, this._result);
   },
-  
+
   stopSearch: function() {},
 
   
@@ -181,7 +181,7 @@ AutoCompleteSearch.prototype = {
 
     throw Components.results.NS_ERROR_NO_INTERFACE;
   },
-  
+
   
   createInstance: function(outer, iid) {
     return this.QueryInterface(iid);
@@ -202,13 +202,13 @@ function registerAutoCompleteSearch(aSearch) {
   var cid = uuidGenerator.generateUUID();
 
   var desc = "Test AutoCompleteSearch";
-  
+
   var componentManager = Components.manager
                                    .QueryInterface(Ci.nsIComponentRegistrar);
   componentManager.registerFactory(cid, desc, name, aSearch);
 
   
-  aSearch.cid = cid; 
+  aSearch.cid = cid;
 }
 
 
@@ -218,7 +218,7 @@ function registerAutoCompleteSearch(aSearch) {
 
 function unregisterAutoCompleteSearch(aSearch) {
   var componentManager = Components.manager
-                                   .QueryInterface(Ci.nsIComponentRegistrar);  
+                                   .QueryInterface(Ci.nsIComponentRegistrar);
   componentManager.unregisterFactory(aSearch.cid, aSearch);
 }
 
@@ -228,23 +228,23 @@ function unregisterAutoCompleteSearch(aSearch) {
 
 
 function run_test() {
+
   
-  
-  var emptySearch = new AutoCompleteSearch("test-empty-search", 
+  var emptySearch = new AutoCompleteSearch("test-empty-search",
                              new AutoCompleteResult([], [], []));
-  
+
   
   var expectedValues = ["test1", "test2"];
   var regularSearch = new AutoCompleteSearch("test-regular-search",
                              new AutoCompleteResult(expectedValues, [], []));
-  
+
   
   registerAutoCompleteSearch(emptySearch);
   registerAutoCompleteSearch(regularSearch);
-    
+
   var controller = Components.classes["@mozilla.org/autocomplete/controller;1"].
-                   getService(Components.interfaces.nsIAutoCompleteController);  
-  
+                   getService(Components.interfaces.nsIAutoCompleteController);
+
   
   
   var input = new AutoCompleteInput([emptySearch.name, regularSearch.name]);
@@ -259,13 +259,13 @@ function run_test() {
 
     do_check_eq(numSearchesStarted, 1);
 
-    do_check_eq(controller.searchStatus, 
+    do_check_eq(controller.searchStatus,
                 Ci.nsIAutoCompleteController.STATUS_COMPLETE_MATCH);
     do_check_eq(controller.matchCount, 2);
 
     
     for (var i = 0; i < expectedValues.length; i++) {
-      do_check_eq(expectedValues[i], controller.getValueAt(i)); 
+      do_check_eq(expectedValues[i], controller.getValueAt(i));
     }
 
     
@@ -279,7 +279,7 @@ function run_test() {
 
   
   do_test_pending();
-  
+
   controller.startSearch("test");
 }
 

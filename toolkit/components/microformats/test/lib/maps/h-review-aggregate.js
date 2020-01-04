@@ -4,7 +4,7 @@
 
 
 var Modules = (function (modules) {
-	
+
 	modules.maps = (modules.maps)? modules.maps : {};
 
 	modules.maps['h-review-aggregate'] = {
@@ -21,7 +21,7 @@ var Modules = (function (modules) {
 			'rating': {},
 			'average': {},
 			'best': {},
-			'worst': {},       
+			'worst': {},
 			'count': {},
 			'votes': {},
 			'category': {

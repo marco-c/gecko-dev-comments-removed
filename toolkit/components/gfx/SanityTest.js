@@ -228,7 +228,7 @@ var listener = {
 
       this.mm = null;
     }
-  
+
     
     
     annotateCrashReport(false);

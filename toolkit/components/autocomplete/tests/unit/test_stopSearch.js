@@ -27,7 +27,7 @@ AutoCompleteInput.prototype = {
   timeout: 10,
   searchParam: "",
   textValue: "hello",
-  disableAutoComplete: false, 
+  disableAutoComplete: false,
   completeDefaultIndex: false,
   set popupOpen(val) { return val; }, 
   get popupOpen() { return false; },
@@ -94,7 +94,7 @@ function registerAutoCompleteSearch(aSearch)
                                    .QueryInterface(Ci.nsIComponentRegistrar);
   componentManager.registerFactory(cid, desc, name, aSearch);
   
-  aSearch.cid = cid; 
+  aSearch.cid = cid;
 }
 
 
@@ -103,7 +103,7 @@ function registerAutoCompleteSearch(aSearch)
 
 function unregisterAutoCompleteSearch(aSearch) {
   let componentManager = Components.manager
-                                   .QueryInterface(Ci.nsIComponentRegistrar);  
+                                   .QueryInterface(Ci.nsIComponentRegistrar);
   componentManager.unregisterFactory(aSearch.cid, aSearch);
 }
 

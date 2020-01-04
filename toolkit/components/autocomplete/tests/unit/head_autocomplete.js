@@ -16,15 +16,15 @@ function AutoCompleteInputBase(aSearches) {
   this.searches = aSearches;
 }
 AutoCompleteInputBase.prototype = {
- 
+
   
   searches: null,
-  
+
   minResultsForPopup: 0,
   timeout: 10,
   searchParam: "",
   textValue: "",
-  disableAutoComplete: false,  
+  disableAutoComplete: false,
   completeDefaultIndex: false,
 
   
@@ -40,20 +40,20 @@ AutoCompleteInputBase.prototype = {
     this._selStart = aStart;
     this._selEnd = aEnd;
   },
-  
+
   get searchCount() {
     return this.searches.length;
   },
-  
+
   getSearchAt: function(aIndex) {
     return this.searches[aIndex];
   },
-  
+
   onSearchBegin: function() {},
   onSearchComplete: function() {},
-  
-  popupOpen: false,  
-  
+
+  popupOpen: false,
+
   get popup() {
     if (!this._popup) {
       this._popup = new AutocompletePopupBase(this);
@@ -72,7 +72,7 @@ function AutoCompleteResultBase(aValues) {
   this._values = aValues;
 }
 AutoCompleteResultBase.prototype = {
-  
+
   
   _values: null,
   _comments: [],
@@ -81,9 +81,9 @@ AutoCompleteResultBase.prototype = {
 
   searchString: "",
   searchResult: null,
-  
+
   defaultIndex: -1,
-  
+
   _typeAheadResult: false,
   get typeAheadResult() {
     return this._typeAheadResult;
@@ -100,15 +100,15 @@ AutoCompleteResultBase.prototype = {
   getLabelAt: function(aIndex) {
     return this.getValueAt(aIndex);
   },
-  
+
   getCommentAt: function(aIndex) {
     return this._comments[aIndex];
   },
-  
+
   getStyleAt: function(aIndex) {
     return this._styles[aIndex];
   },
-  
+
   getImageAt: function(aIndex) {
     return "";
   },
@@ -132,29 +132,29 @@ function AutoCompleteSearchBase(aName, aResult) {
   this._result = aResult;
 }
 AutoCompleteSearchBase.prototype = {
-  
+
   
   name: null,
 
   
   _result: null,
 
-  startSearch: function(aSearchString, 
-                        aSearchParam, 
-                        aPreviousResult, 
+  startSearch: function(aSearchString,
+                        aSearchParam,
+                        aPreviousResult,
                         aListener) {
     var result = this._result;
 
     result.searchResult = Ci.nsIAutoCompleteResult.RESULT_SUCCESS;
     aListener.onSearchResult(this, result);
   },
-  
+
   stopSearch: function() {},
 
   
   QueryInterface: XPCOMUtils.generateQI([Ci.nsIFactory,
                                          Ci.nsIAutoCompleteSearch]),
-  
+
   
   createInstance: function(outer, iid) {
     return this.QueryInterface(iid);
@@ -196,7 +196,7 @@ function registerAutoCompleteSearch(aSearch) {
   componentManager.registerFactory(cid, desc, name, aSearch);
 
   
-  aSearch.cid = cid; 
+  aSearch.cid = cid;
 }
 
 
@@ -204,7 +204,7 @@ function registerAutoCompleteSearch(aSearch) {
 
 function unregisterAutoCompleteSearch(aSearch) {
   var componentManager = Components.manager
-                                   .QueryInterface(Ci.nsIComponentRegistrar);  
+                                   .QueryInterface(Ci.nsIComponentRegistrar);
   componentManager.unregisterFactory(aSearch.cid, aSearch);
 }
 

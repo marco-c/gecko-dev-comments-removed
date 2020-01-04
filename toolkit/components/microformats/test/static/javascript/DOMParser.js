@@ -53,7 +53,7 @@
 
     
     
-    if (DOMParser.prototype && (htmlElInnerHTML || textXML)) { 
+    if (DOMParser.prototype && (htmlElInnerHTML || textXML)) {
         DOMParser_proto = DOMParser.prototype;
         real_parseFromString = DOMParser_proto.parseFromString;
 
@@ -76,7 +76,7 @@
                     
                     
                     if (!(/^<html.*html>$/i.test(markup))) {
-                        markup = '<html>' + markup + '<\/html>'; 
+                        markup = '<html>' + markup + '<\/html>';
                     }
                     doc = (new DOMParser).parseFromString(markup, 'text/xml');
                     doc_el = doc.documentElement;

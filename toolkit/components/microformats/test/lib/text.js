@@ -11,24 +11,24 @@
 
 
 var Modules = (function (modules) {
-	
-	
+
+
 	modules.text = {
+
 		
-		
-		textFormat: 'whitespacetrimmed', 
-		
+		textFormat: 'whitespacetrimmed',
+
 		
 		blockLevelTags: ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'hr', 'pre', 'table',
-			'address', 'article', 'aside', 'blockquote', 'caption', 'col', 'colgroup', 'dd', 'div', 
-			'dt', 'dir', 'fieldset', 'figcaption', 'figure', 'footer', 'form',  'header', 'hgroup', 'hr', 
-			'li', 'map', 'menu', 'nav', 'optgroup', 'option', 'section', 'tbody', 'testarea', 
+			'address', 'article', 'aside', 'blockquote', 'caption', 'col', 'colgroup', 'dd', 'div',
+			'dt', 'dir', 'fieldset', 'figcaption', 'figure', 'footer', 'form',  'header', 'hgroup', 'hr',
+			'li', 'map', 'menu', 'nav', 'optgroup', 'option', 'section', 'tbody', 'testarea',
 			'tfoot', 'th', 'thead', 'tr', 'td', 'ul', 'ol', 'dl', 'details'],
 
 		
 		excludeTags: ['noframe', 'noscript', 'template', 'script', 'style', 'frames', 'frameset'],
- 
-	
+
+
 		
 
 
@@ -50,54 +50,54 @@ var Modules = (function (modules) {
 			   return this.formatText( doc, modules.domUtils.textContent(node), this.textFormat );
 			}
 		},
+
+
 		
-		
-		
 
 
 
 
 
 
-  
+
 		parseText: function( doc, text, textFormat ){
 		   var node = modules.domUtils.createNodeWithText( 'div', text );
 		   return this.parse( doc, node, textFormat );
 		},
+
+
 		
-		
-		
 
 
 
 
 
-  
+
 		formatText: function( doc, text, textFormat ){
 		   this.textFormat = (textFormat)? textFormat : this.textFormat;
 		   if(text){
 			  var out = '',
 				  regex = /(<([^>]+)>)/ig;
-				
-			  out = text.replace(regex, '');   
-			  if(this.textFormat === 'whitespacetrimmed') {    
+
+			  out = text.replace(regex, '');
+			  if(this.textFormat === 'whitespacetrimmed') {
 				 out = modules.utils.trimWhitespace( out );
 			  }
-			  
+
 			  
 			  return modules.domUtils.decodeEntities( doc, out );
 		   }else{
-			  return ''; 
+			  return '';
 		   }
 		},
+
+
 		
-		
-		
 
 
 
 
- 
+
 		normalise: function( doc, text ){
 			text = text.replace( /&nbsp;/g, ' ') ;    
 			text = modules.utils.collapseWhiteSpace( text );     
@@ -105,27 +105,27 @@ var Modules = (function (modules) {
 			text = text.replace( '–', '-' );          
 			return modules.utils.trim( text );
 		},
+
+
 		
-	 
-		
 
 
 
 
- 
+
 		walkTreeForText: function( node ) {
 			var out = '',
 				j = 0;
-	
+
 			if(node.tagName && this.excludeTags.indexOf( node.tagName.toLowerCase() ) > -1){
 				return out;
 			}
-	
+
 			
 			if(node.nodeType && node.nodeType === 3){
-				out += modules.domUtils.getElementText( node ); 
+				out += modules.domUtils.getElementText( node );
 			}
-	
+
 			
 			if(node.childNodes && node.childNodes.length > 0){
 				for (j = 0; j < node.childNodes.length; j++) {
@@ -135,17 +135,17 @@ var Modules = (function (modules) {
 					}
 				}
 			}
-	
+
 			
 			if(node.tagName && this.blockLevelTags.indexOf( node.tagName.toLowerCase() ) !== -1){
 				out += ' ';
-			} 
-			
+			}
+
 			return (out === '')? undefined : out ;
 		}
-		
+
 	};
-   
+
 	return modules;
 
 } (Modules || {}));

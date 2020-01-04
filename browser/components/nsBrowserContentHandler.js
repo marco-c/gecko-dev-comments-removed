@@ -77,7 +77,7 @@ function resolveURIInternal(aCmdLine, aArgument) {
 
   
   
- 
+
   try {
     uri = urifixup.createFixupURI(aArgument, 0);
   }
@@ -129,7 +129,7 @@ function needHomepageOverride(prefb) {
     
     if (savedmstone)
       prefb.setBoolPref("browser.rights.3.shown", true);
-    
+
     prefb.setCharPref("browser.startup.homepage_override.mstone", mstone);
     prefb.setCharPref("browser.startup.homepage_override.buildID", buildID);
     return (savedmstone ? OVERRIDE_NEW_MSTONE : OVERRIDE_NEW_PROFILE);
@@ -195,7 +195,7 @@ function openWindow(parent, url, target, features, args, noExternalArgs) {
 
     return wwatch.openWindow(parent, url, target, features, argstring);
   }
-  
+
   
   var argArray = Components.classes["@mozilla.org/supports-array;1"]
                     .createInstance(Components.interfaces.nsISupportsArray);

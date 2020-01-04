@@ -283,7 +283,7 @@ function test_nsIDOMXULSelectControlElement_UI(element, testprefix)
 
   synthesizeMouseExpectEvent(seconditem, 2, 2, {}, element, "select", testid + "mouse select 2");
   test_nsIDOMXULSelectControlElement_States(element, testid + "mouse select 2", 2, seconditem, 1, "second");
- 
+
   
   element.selectedIndex = 1;
   element.focus();
@@ -345,7 +345,7 @@ function test_nsIDOMXULSelectControlElement_UI(element, testprefix)
   
   element.selectedIndex = 0;
   seconditem.disabled = true;
-  
+
   var dontSelectDisabled = (behaviourContains(element.localName, "dont-select-disabled"));
 
   

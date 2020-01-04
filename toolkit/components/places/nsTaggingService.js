@@ -308,7 +308,7 @@ TaggingService.prototype = {
     return tags;
   },
 
-  __tagFolders: null, 
+  __tagFolders: null,
   get _tagFolders() {
     if (!this.__tagFolders) {
       this.__tagFolders = [];
@@ -482,7 +482,7 @@ function TagAutoCompleteResult(searchString, searchResult,
 }
 
 TagAutoCompleteResult.prototype = {
-  
+
   
 
 
@@ -595,7 +595,7 @@ function TagAutoCompleteSearch() {
 }
 
 TagAutoCompleteSearch.prototype = {
-  _stopped : false, 
+  _stopped : false,
 
   
 
@@ -613,10 +613,10 @@ TagAutoCompleteSearch.prototype = {
     this._stopped = false;
 
     
-    var index = Math.max(searchString.lastIndexOf(","), 
+    var index = Math.max(searchString.lastIndexOf(","),
       searchString.lastIndexOf(";"));
-    var before = ''; 
-    if (index != -1) {  
+    var before = '';
+    if (index != -1) {
       before = searchString.slice(0, index+1);
       searchString = searchString.slice(index+1);
       
@@ -633,7 +633,7 @@ TagAutoCompleteSearch.prototype = {
       listener.onSearchResult(self, newResult);
       return;
     }
-    
+
     var self = this;
     
     function* doSearch() {
@@ -648,7 +648,7 @@ TagAutoCompleteSearch.prototype = {
           results.push(before + searchResults[i]);
           comments.push(searchResults[i]);
         }
-    
+
         ++i;
 
         
@@ -679,7 +679,7 @@ TagAutoCompleteSearch.prototype = {
       listener.onSearchResult(self, newResult);
       yield false;
     }
-    
+
     
     var gen = doSearch();
     while (gen.next().value);

@@ -1237,7 +1237,7 @@ function prependList(aDownload)
   if (item) {
     
     gDownloadsView.insertBefore(item, gDownloadsView.firstChild);
-    
+
     
     
     updateButtons(item);

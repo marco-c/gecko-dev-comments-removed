@@ -9,88 +9,88 @@
 
 
 
- 
- 
- 
+
+
+
 var Modules = (function (modules) {
+
+
 	
-	
-	
 
 
 
 
 
 
- 
+
 	modules.ISODate = function ( dateString, format ) {
 		this.clear();
-	
+
 		this.format = (format)? format : 'auto'; 
 		this.setFormatSep();
-	
+
 		
 		if(arguments[0]) {
 			this.parse(dateString, format);
 		}
 	};
-	
+
 
 	modules.ISODate.prototype = {
-		
-		
+
+
 		
 
 
- 
+
 		clear: function(){
 			this.clearDate();
 			this.clearTime();
 			this.clearTimeZone();
 			this.setAutoProfileState();
 		},
-		
-		
+
+
 		
 
 
- 
+
 		clearDate: function(){
 			this.dY = -1;
 			this.dM = -1;
 			this.dD = -1;
 			this.dDDD = -1;
 		},
-		
-		
+
+
 		
 
 
- 
+
 		clearTime: function(){
 			this.tH = -1;
 			this.tM = -1;
 			this.tS = -1;
 			this.tD = -1;
 		},
-		
-		
+
+
 		
 
 
- 
+
 		clearTimeZone: function(){
 			this.tzH = -1;
 			this.tzM = -1;
 			this.tzPN = '+';
 			this.z = false;
 		},
-		
-		
+
+
 		
 
 
- 
+
 		setAutoProfileState: function(){
 			this.autoProfile = {
 			   sep: 'T',
@@ -100,31 +100,31 @@ var Modules = (function (modules) {
 			   tzZulu: 'Z'
 			};
 		},
+
+
 		
-	  
-		
 
 
 
 
 
- 
+
 		parse: function( dateString, format ) {
 			this.clear();
-			
+
 			var parts = [],
 				tzArray = [],
 				position = 0,
 				datePart = '',
 				timePart = '',
 				timeZonePart = '';
-				
+
 			if(format){
 				this.format = format;
 			}
-			
-	
-			
+
+
+
 			
 			
 			if(dateString.indexOf('t') > -1) {
@@ -138,47 +138,47 @@ var Modules = (function (modules) {
 			}
 			if(dateString.toUpperCase().indexOf('T') === -1) {
 				this.autoProfile.sep = ' ';
-			}     
-	
-	
+			}
+
+
 			dateString = dateString.toUpperCase().replace(' ','T');
-	
+
 			
 			if(dateString.indexOf('T') > -1) {
 				parts = dateString.split('T');
 				datePart = parts[0];
 				timePart = parts[1];
-	
+
 				
 				if(timePart.indexOf( 'Z' ) > -1) {
 					this.z = true;
 				}
-	
+
 				
 				if(timePart.indexOf( '+' ) > -1 || timePart.indexOf( '-' ) > -1) {
 					tzArray = timePart.split( 'Z' ); 
 					timePart = tzArray[0];
 					timeZonePart = tzArray[1];
-	
+
 					
 					if(timePart.indexOf( '+' ) > -1 || timePart.indexOf( '-' ) > -1) {
 						position = 0;
-	
+
 						if(timePart.indexOf( '+' ) > -1) {
 							position = timePart.indexOf( '+' );
 						} else {
 							position = timePart.indexOf( '-' );
 						}
-	
+
 						timeZonePart = timePart.substring( position, timePart.length );
 						timePart = timePart.substring( 0, position );
 					}
 				}
-	
+
 			} else {
 				datePart = dateString;
 			}
-	
+
 			if(datePart !== '') {
 				this.parseDate( datePart );
 				if(timePart !== '') {
@@ -190,25 +190,25 @@ var Modules = (function (modules) {
 			}
 			return this.toString( format );
 		},
-	
+
+
 		
-		
 
 
 
 
 
- 
+
 		parseDate: function( dateString, format ) {
 			this.clearDate();
-			
+
 			var parts = [];
-				
+
 			
 			if(dateString.indexOf('-') === -1) {
 				this.autoProfile.tsep = '';
-			}  
-	
+			}
+
 			
 			parts = dateString.match( /(\d\d\d\d)-(\d\d\d)/ );
 			if(parts) {
@@ -219,7 +219,7 @@ var Modules = (function (modules) {
 					this.dDDD = parts[2];
 				}
 			}
-	
+
 			if(this.dDDD === -1) {
 				
 				parts = dateString.match( /(\d\d\d\d)?-?(\d\d)?-?(\d\d)?/ );
@@ -235,24 +235,24 @@ var Modules = (function (modules) {
 			}
 			return this.toString(format);
 		},
-	
-	
+
+
 		
 
 
 
 
 
- 
+
 		parseTime: function( timeString, format ) {
 			this.clearTime();
 			var parts = [];
-				
+
 			
 			if(timeString.indexOf(':') === -1) {
 				this.autoProfile.tsep = '';
-			}      
-	
+			}
+
 			
 			parts = timeString.match( /(\d\d)?:?(\d\d)?:?(\d\d)?.?([0-9]+)?/ );
 			if(parts[1]) {
@@ -269,30 +269,30 @@ var Modules = (function (modules) {
 			}
 			return this.toTimeString(format);
 		},
-	
+
+
 		
-		
 
 
 
 
 
- 
+
 		parseTimeZone: function( timeString, format ) {
 			this.clearTimeZone();
 			var parts = [];
-			
+
 			if(timeString.toLowerCase() === 'z'){
 				this.z = true;
 				
 				this.autoProfile.tzZulu = (timeString === 'z')? 'z' : 'Z';
 			}else{
-				
+
 				
 				if(timeString.indexOf(':') === -1) {
 					this.autoProfile.tzsep = '';
-				}   
-			   
+				}
+
 				
 				parts = timeString.match( /([\-\+]{1})?(\d\d)?:?(\d\d)?/ );
 				if(parts[1]) {
@@ -303,29 +303,29 @@ var Modules = (function (modules) {
 				}
 				if(parts[3]) {
 					this.tzM = parts[3];
-				} 
-				
-	  
+				}
+
+
 			}
-			this.tzZulu = 'z';    
+			this.tzZulu = 'z';
 			return this.toTimeString( format );
 		},
+
+
 		
-		
-		
 
 
 
 
- 
+
 		toString: function( format ) {
 			var output = '';
-	
+
 			if(format){
 				this.format = format;
 			}
 			this.setFormatSep();
-	
+
 			if(this.dY  > -1) {
 				output = this.dY;
 				if(this.dM > 0 && this.dM < 13) {
@@ -343,26 +343,26 @@ var Modules = (function (modules) {
 			} else if(this.tH > -1) {
 				output += this.toTimeString( format );
 			}
-	
+
 			return output;
 		},
-	
-	
+
+
 		
 
 
 
 
 
- 
+
 		toTimeString: function( format ) {
 			var out = '';
-	
+
 			if(format){
 				this.format = format;
 			}
 			this.setFormatSep();
-			
+
 			
 			if(this.tH) {
 				if(this.tH > -1 && this.tH < 25) {
@@ -376,9 +376,9 @@ var Modules = (function (modules) {
 							}
 						}
 					}
-					
-					
-			  
+
+
+
 					
 					if(this.z) {
 						out += this.tzZulu;
@@ -394,12 +394,12 @@ var Modules = (function (modules) {
 			}
 			return out;
 		},
-	
-	
+
+
 		
 
 
- 
+
 		setFormatSep: function() {
 			switch( this.format.toLowerCase() ) {
 				case 'rfc3339':
@@ -432,48 +432,48 @@ var Modules = (function (modules) {
 					this.tzZulu = this.autoProfile.tzZulu;
 			}
 		},
-	
-	
+
+
 		
 
 
 
- 
+
 		hasFullDate: function() {
 			return(this.dY !== -1 && this.dM !== -1 && this.dD !== -1);
 		},
-	
-	
+
+
 		
 
 
 
- 
+
 		hasDate: function() {
 			return(this.dY !== -1);
 		},
-	
-	
+
+
 		
 
 
 
-     
+
 		hasTime: function() {
 			return(this.tH !== -1);
 		},
-	
+
 		
 
 
 
-    
+
 		hasTimeZone: function() {
 			return(this.tzH !== -1);
 		}
-	
+
 	};
-	
+
 	modules.ISODate.prototype.constructor = modules.ISODate;
 
 	return modules;

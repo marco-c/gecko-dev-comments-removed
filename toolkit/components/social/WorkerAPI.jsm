@@ -145,7 +145,7 @@ WorkerAPI.prototype = {
                                                     
                                           null,
                                           listener,
-                                          type); 
+                                          type);
     },
   }
 }

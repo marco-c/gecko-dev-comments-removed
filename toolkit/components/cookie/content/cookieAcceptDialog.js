@@ -11,7 +11,7 @@ const nsICookiePromptService = Components.interfaces.nsICookiePromptService;
 
 Components.utils.import("resource://gre/modules/PrivateBrowsingUtils.jsm");
 
-var params; 
+var params;
 var cookieBundle;
 var gDateService = null;
 
@@ -156,7 +156,7 @@ function showhideinfo()
 function cookieAcceptNormal()
 {
   
-  params.SetInt(nsICookieAcceptDialog.ACCEPT_COOKIE, nsICookiePromptService.ACCEPT_COOKIE); 
+  params.SetInt(nsICookieAcceptDialog.ACCEPT_COOKIE, nsICookiePromptService.ACCEPT_COOKIE);
   
   params.SetInt(nsICookieAcceptDialog.REMEMBER_DECISION, document.getElementById('persistDomainAcceptance').checked);
   window.close();
@@ -174,7 +174,7 @@ function cookieAcceptSession()
 function cookieDeny()
 {
   
-  params.SetInt(nsICookieAcceptDialog.ACCEPT_COOKIE, nsICookiePromptService.DENY_COOKIE); 
+  params.SetInt(nsICookieAcceptDialog.ACCEPT_COOKIE, nsICookiePromptService.DENY_COOKIE);
   
   params.SetInt(nsICookieAcceptDialog.REMEMBER_DECISION, document.getElementById('persistDomainAcceptance').checked);
   window.close();
@@ -190,8 +190,8 @@ function GetExpiresString(secondsUntilExpires) {
     var expiry = "";
     try {
       expiry = gDateService.FormatDateTime("", gDateService.dateFormatLong,
-                                           gDateService.timeFormatSeconds, 
-                                           date.getFullYear(), date.getMonth()+1, 
+                                           gDateService.timeFormatSeconds,
+                                           date.getFullYear(), date.getMonth()+1,
                                            date.getDate(), date.getHours(),
                                            date.getMinutes(), date.getSeconds());
     } catch(ex) {

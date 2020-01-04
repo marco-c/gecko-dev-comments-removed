@@ -57,7 +57,7 @@ add_task(function* test_onlyBookmarked()
   var query = PlacesUtils.history.getNewQuery();
   query.setFolders([PlacesUtils.toolbarFolderId], 1);
   query.onlyBookmarked = true;
-  
+
   
   var options = PlacesUtils.history.getNewQueryOptions();
   options.queryType = options.QUERY_TYPE_HISTORY;
@@ -66,7 +66,7 @@ add_task(function* test_onlyBookmarked()
   var result = PlacesUtils.history.executeQuery(query, options);
   var root = result.root;
   root.containerOpen = true;
-  
+
   
   
   
@@ -77,7 +77,7 @@ add_task(function* test_onlyBookmarked()
   
 
 
- 
+
   var liveUpdateTestData = [
     
     { isBookmark: true,
@@ -93,7 +93,7 @@ add_task(function* test_onlyBookmarked()
       index: PlacesUtils.bookmarks.DEFAULT_INDEX,
       isInQuery: false }
   ];
-  
+
   yield task_populateDB(liveUpdateTestData); 
 
   

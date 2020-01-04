@@ -6,14 +6,14 @@ Components.utils.import("resource://gre/modules/AppConstants.jsm");
 
 function AppPicker() {};
 
-AppPicker.prototype = 
+AppPicker.prototype =
 {
     
     _incomingParams:null,
 
     
 
- 
+
     appPickerLoad: function appPickerLoad() {
         const nsILocalHandlerApp = Components.interfaces.nsILocalHandlerApp;
 
@@ -44,9 +44,9 @@ AppPicker.prototype =
           description = filename;
           filename = "";
         }
+
         
-        
-        document.getElementById("content-description").setAttribute("value", 
+        document.getElementById("content-description").setAttribute("value",
           description);
         document.getElementById("suggested-filename").setAttribute("value",
           filename);
@@ -60,13 +60,13 @@ AppPicker.prototype =
         var list = document.getElementById("app-picker-listbox");
 
         var primaryCount = 0;
-        
+
         if (!fileList || fileList.length == 0) {
           
           document.getElementById("app-picker-notfound").removeAttribute("hidden");
           return;
         }
-        
+
         for (var idx = 0; idx < fileList.length; idx++) {
           var file = fileList.queryElementAt(idx, nsILocalHandlerApp);
           try {
@@ -94,7 +94,7 @@ AppPicker.prototype =
 
     
 
- 
+
     getFileIconURL: function getFileIconURL(file) {
       var ios = Components.classes["@mozilla.org/network/io-service;1"].
                 getService(Components.interfaces.nsIIOService);
@@ -113,7 +113,7 @@ AppPicker.prototype =
 
     
 
- 
+
     getFileDisplayName: function getFileDisplayName(file) {
       if (AppConstants.platform == "win") {
         if (file instanceof Components.interfaces.nsILocalFileWin) {
@@ -179,7 +179,7 @@ AppPicker.prototype =
 
       fp.init(window, this._incomingParams.title, nsIFilePicker.modeOpen);
       fp.appendFilters(nsIFilePicker.filterApps);
-      
+
       var fileLoc = Components.classes["@mozilla.org/file/directory_service;1"]
                             .getService(Components.interfaces.nsIProperties);
       var startLocation;
@@ -190,11 +190,11 @@ AppPicker.prototype =
       } else {
         startLocation = "Home";
       }
-      fp.displayDirectory = 
+      fp.displayDirectory =
         fileLoc.get(startLocation, Components.interfaces.nsILocalFile);
-      
+
       if (fp.show() == nsIFilePicker.returnOK && fp.file) {
-          var localHandlerApp = 
+          var localHandlerApp =
             Components.classes["@mozilla.org/uriloader/local-handler-app;1"].
             createInstance(Components.interfaces.nsILocalHandlerApp);
           localHandlerApp.executable = fp.file;

@@ -79,8 +79,8 @@ function doSearch(aSearchString, aResultValue, aFinalCompleteValue,
   registerAutoCompleteSearch(search);
 
   let controller = Cc["@mozilla.org/autocomplete/controller;1"].
-                   getService(Ci.nsIAutoCompleteController);  
-  
+                   getService(Ci.nsIAutoCompleteController);
+
   
   let input = new AutoCompleteInput([ search.name ]);
   for (var p in aInputProps) {

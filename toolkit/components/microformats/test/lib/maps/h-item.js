@@ -4,7 +4,7 @@
 
 
 var Modules = (function (modules) {
-	
+
 	modules.maps = (modules.maps)? modules.maps : {};
 
 	modules.maps['h-item'] = {
@@ -27,4 +27,4 @@ var Modules = (function (modules) {
 	return modules;
 
 } (Modules || {}));
-	
+

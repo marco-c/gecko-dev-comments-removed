@@ -2,7 +2,7 @@
 
 
 
-var PKT_SIGNUP_OVERLAY = function (options) 
+var PKT_SIGNUP_OVERLAY = function (options)
 {
     var myself = this;
     this.inited = false;
@@ -62,7 +62,7 @@ var PKT_SIGNUP_OVERLAY = function (options)
 };
 
 PKT_SIGNUP_OVERLAY.prototype = {
-    create : function() 
+    create : function()
     {
         var myself = this;
 

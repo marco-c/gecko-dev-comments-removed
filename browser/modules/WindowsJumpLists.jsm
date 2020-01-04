@@ -146,7 +146,7 @@ this.WinTaskbarJumpList =
 
   
 
- 
+
 
   startup: function WTBJL_startup() {
     
@@ -253,13 +253,13 @@ this.WinTaskbarJumpList =
 
   
 
- 
+
 
   _startBuild: function WTBJL__startBuild() {
     var removedItems = Cc["@mozilla.org/array;1"].
                        createInstance(Ci.nsIMutableArray);
     this._builder.abortListBuild();
-    if (this._builder.initListBuild(removedItems)) { 
+    if (this._builder.initListBuild(removedItems)) {
       
       this._clearHistory(removedItems);
       return true;
@@ -283,7 +283,7 @@ this.WinTaskbarJumpList =
                                          task.args, task.iconIndex, null);
       items.appendElement(item, false);
     }, this);
-    
+
     if (items.length > 0)
       this._builder.addListToBuild(this._builder.JUMPLIST_CATEGORY_TASKS, items);
   },
@@ -324,7 +324,7 @@ this.WinTaskbarJumpList =
 
         let title = aResult.title || aResult.uri;
         let faviconPageUri = Services.io.newURI(aResult.uri, null, null);
-        let shortcut = this._getHandlerAppItem(title, title, aResult.uri, 1, 
+        let shortcut = this._getHandlerAppItem(title, title, aResult.uri, 1,
                                                faviconPageUri);
         items.appendElement(shortcut, false);
         this._frequentHashList.push(aResult.uri);
@@ -386,8 +386,8 @@ this.WinTaskbarJumpList =
 
 
 
-  _getHandlerAppItem: function WTBJL__getHandlerAppItem(name, description, 
-                                                        args, iconIndex, 
+  _getHandlerAppItem: function WTBJL__getHandlerAppItem(name, description,
+                                                        args, iconIndex,
                                                         faviconPageUri) {
     var file = Services.dirsvc.get("XREExeF", Ci.nsILocalFile);
 
@@ -469,7 +469,7 @@ this.WinTaskbarJumpList =
 
   
 
- 
+
 
   _refreshPrefs: function WTBJL__refreshPrefs() {
     this._enabled = _prefs.getBoolPref(PREF_TASKBAR_ENABLED);
@@ -481,7 +481,7 @@ this.WinTaskbarJumpList =
 
   
 
- 
+
 
   _initTaskbar: function WTBJL__initTaskbar() {
     this._builder = _taskbarService.createJumpListBuilder();
@@ -499,7 +499,7 @@ this.WinTaskbarJumpList =
     Services.obs.addObserver(this, "browser:purge-session-history", false);
     _prefs.addObserver("", this, false);
   },
- 
+
   _freeObs: function WTBJL__freeObs() {
     Services.obs.removeObserver(this, "profile-before-change");
     Services.obs.removeObserver(this, "browser:purge-session-history");

@@ -31,11 +31,11 @@ function run_test() {
   
   var searchNormal = new AutoCompleteSearchBase("search2",
                                                 new AutoCompleteResult(["mozillaTest2"]));
-  
+
   
   registerAutoCompleteSearch(searchNormal);
   registerAutoCompleteSearch(searchTypeAhead);
-  
+
   
   
   var input = new AutoCompleteInputBase([searchTypeAhead.name, searchNormal.name]);
@@ -50,7 +50,7 @@ function run_test() {
   do_check_eq(input.selectionEnd, strLen);
 
   var controller = Cc["@mozilla.org/autocomplete/controller;1"].
-                   getService(Ci.nsIAutoCompleteController);  
+                   getService(Ci.nsIAutoCompleteController);
 
   controller.input = input;
   controller.startSearch(inputStr);

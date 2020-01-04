@@ -18,9 +18,9 @@ var Microformats;
         root.Microformats = factory();
   }
 }(this, function () {
-    
+
     var modules = {};
-    
+
 
 	modules.version = '1.3.3';
 	modules.livingStandard = '2015-09-25T12:26:04Z';
@@ -1463,7 +1463,7 @@ var Microformats;
 
 	
 	if(modules.Parser){
-	
+
 		
 
 
@@ -1475,40 +1475,40 @@ var Microformats;
 
 		 modules.Parser.prototype.impliedRules = function(node, uf, parentClasses) {
 			var typeVersion = (uf.typeVersion)? uf.typeVersion: 'v2';
-			
+
 			
 			if(this.options.impliedPropertiesByVersion === false){
 				typeVersion = 'v2';
 			}
-			
+
 			if(node && uf && uf.properties) {
-				uf = this.impliedBackwardComp( node, uf, parentClasses );  
+				uf = this.impliedBackwardComp( node, uf, parentClasses );
 				if(typeVersion === 'v2'){
 					uf = this.impliedhFeedTitle( uf );
-					uf = this.impliedName( node, uf ); 
-					uf = this.impliedPhoto( node, uf ); 	
+					uf = this.impliedName( node, uf );
+					uf = this.impliedPhoto( node, uf );
 					uf = this.impliedUrl( node, uf );
 				}
 				uf = this.impliedValue( node, uf, parentClasses );
 				uf = this.impliedDate( uf );
-				
+
 				
 				if(this.options.parseLatLonGeo === true){
 					uf = this.impliedGeo( uf );
-				}  
+				}
 			}
 
 			return uf;
 		};
-		
-		
-		
-
-
-
 
 
 		
+
+
+
+
+
+
 		modules.Parser.prototype.impliedName = function(node, uf) {
 			
 			
@@ -1526,7 +1526,7 @@ var Microformats;
 
 			var name,
 				value;
-					
+
 			if(!uf.properties.name) {
 				value = this.getImpliedProperty(node, ['img', 'area', 'abbr'], this.getNameAttr);
 				var textFormat = this.options.textFormat;
@@ -1540,18 +1540,18 @@ var Microformats;
 					uf.properties.name = name;
 				}
 			}
-			
+
 			return uf;
 		};
-		
-		
-		
-
-
-
 
 
 		
+
+
+
+
+
+
 		modules.Parser.prototype.impliedPhoto = function(node, uf) {
 			
 			
@@ -1572,18 +1572,18 @@ var Microformats;
 					}
 					uf.properties.photo = [modules.utils.trim(value)];
 				}
-			}		
+			}
 			return uf;
 		};
-		
-		
-		
-
-
-
 
 
 		
+
+
+
+
+
+
 		modules.Parser.prototype.impliedUrl = function(node, uf) {
 			
 			
@@ -1602,18 +1602,18 @@ var Microformats;
 					}
 					uf.properties.url = [modules.utils.trim(value)];
 				}
-			}	
+			}
 			return uf;
 		};
-		
-		
-		
-
-
-
 
 
 		
+
+
+
+
+
+
 		modules.Parser.prototype.impliedDate = function(uf) {
 			
 			
@@ -1628,8 +1628,8 @@ var Microformats;
 			delete uf.dates;
 			return uf;
 		};
-			
-			
+
+
 		
 
 
@@ -1640,10 +1640,10 @@ var Microformats;
 
 		modules.Parser.prototype.getImpliedProperty = function(node, tagList, getAttrFunction) {
 			
-			var value = getAttrFunction(node), 
+			var value = getAttrFunction(node),
 				descendant,
 				child;
-					
+
 			if(!value) {
 				
 				descendant = modules.domUtils.getSingleDescendantOfType( node, tagList);
@@ -1661,17 +1661,17 @@ var Microformats;
 					}
 				}
 			}
-					
+
 			return value;
 		};
-			
-			
-		
-
-
 
 
 		
+
+
+
+
+
 		modules.Parser.prototype.getNameAttr = function(node) {
 			var value = modules.domUtils.getAttrValFromTagList(node, ['img','area'], 'alt');
 			if(!value) {
@@ -1679,14 +1679,14 @@ var Microformats;
 			}
 			return value;
 		};
-	
-	
+
+
 		
 
 
 
 
-	
+
 		modules.Parser.prototype.getPhotoAttr = function(node) {
 			var value = modules.domUtils.getAttrValFromTagList(node, ['img'], 'src');
 			if(!value && modules.domUtils.hasAttributeValue(node, 'class', 'include') === false) {
@@ -1694,63 +1694,63 @@ var Microformats;
 			}
 			return value;
 		};
-			
-			
-		
-
-
 
 
 		
+
+
+
+
+
 		modules.Parser.prototype.getURLAttr = function(node) {
 			var value = null;
 			if(modules.domUtils.hasAttributeValue(node, 'class', 'include') === false){
-				
+
 				value = modules.domUtils.getAttrValFromTagList(node, ['a'], 'href');
 				if(!value) {
 					value = modules.domUtils.getAttrValFromTagList(node, ['area'], 'href');
 				}
-				
+
 			}
 			return value;
 		};
+
+
 		
-		
-		
 
 
 
 
 
-	
+
 		modules.Parser.prototype.impliedValue = function(node, uf, parentClasses){
+
 			
-			
-			if(uf.properties.name) {	
+			if(uf.properties.name) {
 				if(uf.value && parentClasses.root.length > 0 && parentClasses.properties.length === 1){
 					uf = this.getAltValue(uf, parentClasses.properties[0][0], 'p-name', uf.properties.name[0]);
 				}
 			}
-			
+
 			
 			if(uf.properties.url) {
 				if(parentClasses && parentClasses.root.length === 1 && parentClasses.properties.length === 1){
 					uf = this.getAltValue(uf, parentClasses.properties[0][0], 'u-url', uf.properties.url[0]);
 				}
-			}	
-			
+			}
+
 			
 			if(uf.altValue !== null){
 				uf.value = uf.altValue.value;
 			}
 			delete uf.altValue;
-	
-	
+
+
 			return uf;
 		};
-			
+
+
 		
-		
 
 
 
@@ -1758,7 +1758,7 @@ var Microformats;
 
 
 
-	
+
 		modules.Parser.prototype.getAltValue = function(uf, parentPropertyName, propertyName, value){
 			if(uf.value && !uf.altValue){
 				
@@ -1776,14 +1776,14 @@ var Microformats;
 			}
 			return uf;
 		};
+
+
 		
-		
-		
 
 
 
 
-	
+
 		modules.Parser.prototype.impliedhFeedTitle = function( uf ){
 			if(uf.type && uf.type.indexOf('h-feed') > -1){
 				
@@ -1797,38 +1797,38 @@ var Microformats;
 			}
 			return uf;
 		};
-		
-		
-		
+
+
+
 	    
 
 
 
 
-	
+
 		modules.Parser.prototype.impliedGeo = function( uf ){
 			var geoPair,
 				parts,
 				longitude,
 				latitude,
 				valid = true;
-			
+
 			if(uf.type && uf.type.indexOf('h-geo') > -1){
-				
+
 				
 				if(uf.properties.latitude === undefined || uf.properties.longitude === undefined ){
 
 					geoPair = (uf.properties.name)? uf.properties.name[0] : null;
 					geoPair = (!geoPair && uf.properties.value)? uf.properties.value : geoPair;
-					
+
 					if(geoPair){
 						
 						geoPair = geoPair.replace(';',',');
-						
+
 						
 						if(geoPair.indexOf(',') > -1 ){
 							parts = geoPair.split(',');
-							
+
 							
 							if(parts.length > 1){
 
@@ -1837,40 +1837,40 @@ var Microformats;
 								if(modules.utils.isNumber(latitude) && latitude > 90 || latitude < -90){
 									valid = false;
 								}
-								
+
 								
 								longitude = parseFloat( parts[1] );
 								if(modules.utils.isNumber(longitude) && longitude > 180 || longitude < -180){
 									valid = false;
 								}
-								
+
 								if(valid){
 									uf.properties.latitude = [latitude];
 									uf.properties.longitude  = [longitude];
 								}
 							}
-							
+
 						}
 					}
 				}
 			}
 			return uf;
 		};
+
+
 		
-		
-		
 
 
 
 
-	
+
 		modules.Parser.prototype.impliedBackwardComp = function(node, uf, parentClasses){
-			
+
 			
 			
 			if(parentClasses.root.length === 1 && parentClasses.properties.length === 1) {
 				if(parentClasses.root[0].replace('h-','') === this.removePropPrefix(parentClasses.properties[0][0])) {
-					
+
 					
 					
 					if( modules.utils.hasProperties(uf.properties) === false ){
@@ -1878,31 +1878,31 @@ var Microformats;
 					}
 				}
 			}
-			
+
 			return uf;
 		};
-		
-		
-	
+
+
+
 	}
 
 
 	
 	if(modules.Parser){
-	
+
+
 		
-		
 
 
 
-	
+
 		modules.Parser.prototype.addIncludes = function(rootNode) {
 			this.addAttributeIncludes(rootNode, 'itemref');
 			this.addAttributeIncludes(rootNode, 'headers');
 			this.addClassIncludes(rootNode);
 		};
-	
-		
+
+
 		
 
 
@@ -1916,7 +1916,7 @@ var Microformats;
 				x,
 				z,
 				y;
-	
+
 			arr = modules.domUtils.getNodesByAttribute(rootNode, attributeName);
 			x = 0;
 			i = arr.length;
@@ -1933,8 +1933,8 @@ var Microformats;
 				x++;
 			}
 		};
-	
-		
+
+
 		
 
 
@@ -1945,7 +1945,7 @@ var Microformats;
 				arr,
 				x = 0,
 				i;
-	
+
 			arr = modules.domUtils.getNodesByAttributeValue(rootNode, 'class', 'include');
 			i = arr.length;
 			while(x < i) {
@@ -1957,8 +1957,8 @@ var Microformats;
 				x++;
 			}
 		};
-	
-	
+
+
 		
 
 
@@ -1968,7 +1968,7 @@ var Microformats;
 		modules.Parser.prototype.apppendInclude = function(node, id){
 			var include,
 				clone;
-	
+
 			id = modules.utils.trim(id.replace('#', ''));
 			include = modules.domUtils.getElementById(this.document, id);
 			if(include) {
@@ -1977,18 +1977,18 @@ var Microformats;
 				modules.domUtils.appendChild(node, clone);
 			}
 		};
-	
+
+
 		
-		
 
 
 
- 
+
 		modules.Parser.prototype.markIncludeChildren = function(rootNode) {
 			var arr,
 				x,
 				i;
-	
+
 			
 			arr = this.findRootNodes(rootNode);
 			x = 0;
@@ -2000,17 +2000,17 @@ var Microformats;
 				x++;
 			}
 		};
-		
-		
+
+
 		
 
 
 
- 
+
 		modules.Parser.prototype.removeIncludes = function(rootNode){
 			var arr,
 				i;
-	
+
 			
 			arr = modules.domUtils.getNodesByAttribute(rootNode, 'data-include');
 			i = arr.length;
@@ -2018,14 +2018,14 @@ var Microformats;
 				modules.domUtils.removeChild(rootNode,arr[i]);
 			}
 		};
-	
-		
+
+
 	}
 
 
 	
 	if(modules.Parser){
-	
+
 		
 
 
@@ -2047,36 +2047,36 @@ var Microformats;
 				item,
 				value,
 				arr;
-	
+
 			arr = modules.domUtils.getNodesByAttribute(rootNode, 'rel');
 			x = 0;
 			i = arr.length;
 			while(x < i) {
 				relList = modules.domUtils.getAttribute(arr[x], 'rel');
-	
+
 				if(relList) {
 					items = relList.split(' ');
-					
-					
+
+
 					
 					z = 0;
 					y = items.length;
 					while(z < y) {
 						item = modules.utils.trim(items[z]);
-	
+
 						
 						value = modules.domUtils.getAttrValFromTagList(arr[x], ['a', 'area'], 'href');
 						if(!value) {
 							value = modules.domUtils.getAttrValFromTagList(arr[x], ['link'], 'href');
 						}
-	
+
 						
 						if(!out.rels[item]) {
 							out.rels[item] = [];
 						}
-	
+
 						if(typeof this.options.baseUrl === 'string' && typeof value === 'string') {
-					
+
 							var resolved = modules.url.resolve(value, this.options.baseUrl);
 							
 							if(out.rels[item].indexOf(resolved) === -1){
@@ -2085,8 +2085,8 @@ var Microformats;
 						}
 						z++;
 					}
-					
-					
+
+
 					var url = null;
 					if(modules.domUtils.hasAttribute(arr[x], 'href')){
 						url = modules.domUtils.getAttribute(arr[x], 'href');
@@ -2094,8 +2094,8 @@ var Microformats;
 							url = modules.url.resolve(url, this.options.baseUrl );
 						}
 					}
-	
-					
+
+
 					
 					var relUrl = this.getRelProperties(arr[x]);
 					relUrl.rels = items;
@@ -2103,15 +2103,15 @@ var Microformats;
 					if(url && out['rel-urls'][url] === undefined){
 						out['rel-urls'][url] = relUrl;
 					}
-	
-			
+
+
 				}
 				x++;
 			}
 			return out;
 		};
-		
-		
+
+
 		
 
 
@@ -2120,7 +2120,7 @@ var Microformats;
 
 		modules.Parser.prototype.getRelProperties = function(node){
 			var obj = {};
-			
+
 			if(modules.domUtils.hasAttribute(node, 'media')){
 				obj.media = modules.domUtils.getAttribute(node, 'media');
 			}
@@ -2135,12 +2135,12 @@ var Microformats;
 			}
 			if(modules.utils.trim(this.getPValue(node, false)) !== ''){
 				obj.text = this.getPValue(node, false);
-			}	
-			
+			}
+
 			return obj;
 		};
-		
-		
+
+
 		
 
 
@@ -2152,7 +2152,7 @@ var Microformats;
 			var out,
 				map,
 				i;
-	
+
 			map = this.getMapping(ufName);
 			if(map) {
 				for(var key in map.properties) {
@@ -2160,7 +2160,7 @@ var Microformats;
 						var prop = map.properties[key],
 							propName = (prop.map) ? prop.map : 'p-' + key,
 							relCount = 0;
-		
+
 						
 						if(prop.relAlt && modules.domUtils.hasAttribute(node, 'rel')) {
 							i = prop.relAlt.length;
@@ -2178,8 +2178,8 @@ var Microformats;
 			}
 			return out;
 		};
-		
-		
+
+
 		
 
 
@@ -2189,8 +2189,8 @@ var Microformats;
 		modules.Parser.prototype.hasRel = function(node) {
 			return (this.countRels(node) > 0);
 		};
-		
-		
+
+
 		
 
 
@@ -2203,14 +2203,14 @@ var Microformats;
 			}
 			return 0;
 		};
-	
-	
-		
+
+
+
 	}
 
 
 	modules.utils = {
-		
+
 		
 
 
@@ -2220,7 +2220,7 @@ var Microformats;
 		isString: function( obj ) {
 			return typeof( obj ) === 'string';
 		},
-		
+
 		
 
 
@@ -2230,8 +2230,8 @@ var Microformats;
 		isNumber: function( obj ) {
 			return !isNaN(parseFloat( obj )) && isFinite( obj );
 		},
-		
-		
+
+
 		
 
 
@@ -2241,8 +2241,8 @@ var Microformats;
 		isArray: function( obj ) {
 			return obj && !( obj.propertyIsEnumerable( 'length' ) ) && typeof obj === 'object' && typeof obj.length === 'number';
 		},
-		
-		
+
+
 		
 
 
@@ -2252,8 +2252,8 @@ var Microformats;
 		isFunction: function(obj) {
 			return !!(obj && obj.constructor && obj.call && obj.apply);
 		},
-	
-	
+
+
 		
 
 
@@ -2264,8 +2264,8 @@ var Microformats;
 		startWith: function( text, test ) {
 			return(text.indexOf(test) === 0);
 		},
-	
-		
+
+
 		
 
 
@@ -2279,8 +2279,8 @@ var Microformats;
 				return '';
 			}
 		},
-		
-		
+
+
 		
 
 
@@ -2291,13 +2291,13 @@ var Microformats;
 
 		replaceCharAt: function( text, index, character ) {
 			if(text && text.length > index){
-			   return text.substr(0, index) + character + text.substr(index+character.length); 
+			   return text.substr(0, index) + character + text.substr(index+character.length);
 			}else{
 				return text;
 			}
 		},
-		
-		
+
+
 		
 
 
@@ -2308,7 +2308,7 @@ var Microformats;
 			if(text && text.length){
 				var i = text.length,
 					x = 0;
-				
+
 				
 				while (i--) {
 					if(this.isOnlyWhiteSpace(text[i])){
@@ -2317,7 +2317,7 @@ var Microformats;
 						break;
 					}
 				}
-				
+
 				
 				i = text.length;
 				while (x < i) {
@@ -2331,8 +2331,8 @@ var Microformats;
 			}
 			return this.trim(text);
 		},
-	
-	
+
+
 		
 
 
@@ -2342,8 +2342,8 @@ var Microformats;
 		isOnlyWhiteSpace: function( text ){
 			return !(/[^\t\n\r ]/.test( text ));
 		},
-		
-		
+
+
 		
 
 
@@ -2353,14 +2353,14 @@ var Microformats;
 		collapseWhiteSpace: function( text ){
 			return text.replace(/[\t\n\r ]+/g, ' ');
 		},
-	
-	
+
+
 		
 
 
 
 
- 
+
 		hasProperties: function( obj ) {
 			var key;
 			for(key in obj) {
@@ -2370,15 +2370,15 @@ var Microformats;
 			}
 			return false;
 		},
+
+
 		
-		
-		
 
 
 
 
 
- 
+
 		sortObjects: function(property, reverse) {
 			reverse = (reverse) ? -1 : 1;
 			return function (a, b) {
@@ -2393,7 +2393,7 @@ var Microformats;
 				return 0;
 			};
 		}
-		
+
 	};
 
 
@@ -3058,75 +3058,75 @@ var Microformats;
 
 
 
- 
+
 	modules.ISODate = function ( dateString, format ) {
 		this.clear();
-	
+
 		this.format = (format)? format : 'auto'; 
 		this.setFormatSep();
-	
+
 		
 		if(arguments[0]) {
 			this.parse(dateString, format);
 		}
 	};
-	
+
 
 	modules.ISODate.prototype = {
-		
-		
+
+
 		
 
 
- 
+
 		clear: function(){
 			this.clearDate();
 			this.clearTime();
 			this.clearTimeZone();
 			this.setAutoProfileState();
 		},
-		
-		
+
+
 		
 
 
- 
+
 		clearDate: function(){
 			this.dY = -1;
 			this.dM = -1;
 			this.dD = -1;
 			this.dDDD = -1;
 		},
-		
-		
+
+
 		
 
 
- 
+
 		clearTime: function(){
 			this.tH = -1;
 			this.tM = -1;
 			this.tS = -1;
 			this.tD = -1;
 		},
-		
-		
+
+
 		
 
 
- 
+
 		clearTimeZone: function(){
 			this.tzH = -1;
 			this.tzM = -1;
 			this.tzPN = '+';
 			this.z = false;
 		},
-		
-		
+
+
 		
 
 
- 
+
 		setAutoProfileState: function(){
 			this.autoProfile = {
 			   sep: 'T',
@@ -3136,31 +3136,31 @@ var Microformats;
 			   tzZulu: 'Z'
 			};
 		},
+
+
 		
-	  
-		
 
 
 
 
 
- 
+
 		parse: function( dateString, format ) {
 			this.clear();
-			
+
 			var parts = [],
 				tzArray = [],
 				position = 0,
 				datePart = '',
 				timePart = '',
 				timeZonePart = '';
-				
+
 			if(format){
 				this.format = format;
 			}
-			
-	
-			
+
+
+
 			
 			
 			if(dateString.indexOf('t') > -1) {
@@ -3174,47 +3174,47 @@ var Microformats;
 			}
 			if(dateString.toUpperCase().indexOf('T') === -1) {
 				this.autoProfile.sep = ' ';
-			}     
-	
-	
+			}
+
+
 			dateString = dateString.toUpperCase().replace(' ','T');
-	
+
 			
 			if(dateString.indexOf('T') > -1) {
 				parts = dateString.split('T');
 				datePart = parts[0];
 				timePart = parts[1];
-	
+
 				
 				if(timePart.indexOf( 'Z' ) > -1) {
 					this.z = true;
 				}
-	
+
 				
 				if(timePart.indexOf( '+' ) > -1 || timePart.indexOf( '-' ) > -1) {
 					tzArray = timePart.split( 'Z' ); 
 					timePart = tzArray[0];
 					timeZonePart = tzArray[1];
-	
+
 					
 					if(timePart.indexOf( '+' ) > -1 || timePart.indexOf( '-' ) > -1) {
 						position = 0;
-	
+
 						if(timePart.indexOf( '+' ) > -1) {
 							position = timePart.indexOf( '+' );
 						} else {
 							position = timePart.indexOf( '-' );
 						}
-	
+
 						timeZonePart = timePart.substring( position, timePart.length );
 						timePart = timePart.substring( 0, position );
 					}
 				}
-	
+
 			} else {
 				datePart = dateString;
 			}
-	
+
 			if(datePart !== '') {
 				this.parseDate( datePart );
 				if(timePart !== '') {
@@ -3226,25 +3226,25 @@ var Microformats;
 			}
 			return this.toString( format );
 		},
-	
+
+
 		
-		
 
 
 
 
 
- 
+
 		parseDate: function( dateString, format ) {
 			this.clearDate();
-			
+
 			var parts = [];
-				
+
 			
 			if(dateString.indexOf('-') === -1) {
 				this.autoProfile.tsep = '';
-			}  
-	
+			}
+
 			
 			parts = dateString.match( /(\d\d\d\d)-(\d\d\d)/ );
 			if(parts) {
@@ -3255,7 +3255,7 @@ var Microformats;
 					this.dDDD = parts[2];
 				}
 			}
-	
+
 			if(this.dDDD === -1) {
 				
 				parts = dateString.match( /(\d\d\d\d)?-?(\d\d)?-?(\d\d)?/ );
@@ -3271,24 +3271,24 @@ var Microformats;
 			}
 			return this.toString(format);
 		},
-	
-	
+
+
 		
 
 
 
 
 
- 
+
 		parseTime: function( timeString, format ) {
 			this.clearTime();
 			var parts = [];
-				
+
 			
 			if(timeString.indexOf(':') === -1) {
 				this.autoProfile.tsep = '';
-			}      
-	
+			}
+
 			
 			parts = timeString.match( /(\d\d)?:?(\d\d)?:?(\d\d)?.?([0-9]+)?/ );
 			if(parts[1]) {
@@ -3305,30 +3305,30 @@ var Microformats;
 			}
 			return this.toTimeString(format);
 		},
-	
+
+
 		
-		
 
 
 
 
 
- 
+
 		parseTimeZone: function( timeString, format ) {
 			this.clearTimeZone();
 			var parts = [];
-			
+
 			if(timeString.toLowerCase() === 'z'){
 				this.z = true;
 				
 				this.autoProfile.tzZulu = (timeString === 'z')? 'z' : 'Z';
 			}else{
-				
+
 				
 				if(timeString.indexOf(':') === -1) {
 					this.autoProfile.tzsep = '';
-				}   
-			   
+				}
+
 				
 				parts = timeString.match( /([\-\+]{1})?(\d\d)?:?(\d\d)?/ );
 				if(parts[1]) {
@@ -3339,29 +3339,29 @@ var Microformats;
 				}
 				if(parts[3]) {
 					this.tzM = parts[3];
-				} 
-				
-	  
+				}
+
+
 			}
-			this.tzZulu = 'z';    
+			this.tzZulu = 'z';
 			return this.toTimeString( format );
 		},
+
+
 		
-		
-		
 
 
 
 
- 
+
 		toString: function( format ) {
 			var output = '';
-	
+
 			if(format){
 				this.format = format;
 			}
 			this.setFormatSep();
-	
+
 			if(this.dY  > -1) {
 				output = this.dY;
 				if(this.dM > 0 && this.dM < 13) {
@@ -3379,26 +3379,26 @@ var Microformats;
 			} else if(this.tH > -1) {
 				output += this.toTimeString( format );
 			}
-	
+
 			return output;
 		},
-	
-	
+
+
 		
 
 
 
 
 
- 
+
 		toTimeString: function( format ) {
 			var out = '';
-	
+
 			if(format){
 				this.format = format;
 			}
 			this.setFormatSep();
-			
+
 			
 			if(this.tH) {
 				if(this.tH > -1 && this.tH < 25) {
@@ -3412,9 +3412,9 @@ var Microformats;
 							}
 						}
 					}
-					
-					
-			  
+
+
+
 					
 					if(this.z) {
 						out += this.tzZulu;
@@ -3430,12 +3430,12 @@ var Microformats;
 			}
 			return out;
 		},
-	
-	
+
+
 		
 
 
- 
+
 		setFormatSep: function() {
 			switch( this.format.toLowerCase() ) {
 				case 'rfc3339':
@@ -3468,54 +3468,54 @@ var Microformats;
 					this.tzZulu = this.autoProfile.tzZulu;
 			}
 		},
-	
-	
+
+
 		
 
 
 
- 
+
 		hasFullDate: function() {
 			return(this.dY !== -1 && this.dM !== -1 && this.dD !== -1);
 		},
-	
-	
+
+
 		
 
 
 
- 
+
 		hasDate: function() {
 			return(this.dY !== -1);
 		},
-	
-	
+
+
 		
 
 
 
-     
+
 		hasTime: function() {
 			return(this.tH !== -1);
 		},
-	
+
 		
 
 
 
-    
+
 		hasTimeZone: function() {
 			return(this.tzH !== -1);
 		}
-	
+
 	};
-	
+
 	modules.ISODate.prototype.constructor = modules.ISODate;
 
 
 	modules.dates = {
 
-		
+
 		
 
 
@@ -3526,8 +3526,8 @@ var Microformats;
 			text = text.toLowerCase();
 			return(text.indexOf('am') > -1 || text.indexOf('a.m.') > -1);
 		},
-	
-	
+
+
 		
 
 
@@ -3538,8 +3538,8 @@ var Microformats;
 			text = text.toLowerCase();
 			return(text.indexOf('pm') > -1 || text.indexOf('p.m.') > -1);
 		},
-	
-	
+
+
 		
 
 
@@ -3549,8 +3549,8 @@ var Microformats;
 		removeAMPM: function( text ) {
 			return text.replace('pm', '').replace('p.m.', '').replace('am', '').replace('a.m.', '');
 		},
-	
-	   
+
+
 	   
 
 
@@ -3566,15 +3566,15 @@ var Microformats;
 			}
 			return false;
 		},
-	
-	
+
+
 	   
 
 
 
 
 
- 
+
 		isTime: function( text ) {
 			if(modules.utils.isString(text)){
 				text = text.toLowerCase();
@@ -3584,7 +3584,7 @@ var Microformats;
 					return true;
 				}
 				
-				if( text.match(/^[0-9]/) && 
+				if( text.match(/^[0-9]/) &&
 					( this.hasAM(text) || this.hasPM(text) )) {
 					return true;
 				}
@@ -3592,7 +3592,7 @@ var Microformats;
 				if( text.match(':') && !text.match(/t|\s/) ) {
 					return true;
 				}
-				
+
 				
 				if(modules.utils.isNumber(text)){
 					if(text.length === 2 || text.length === 4 || text.length === 6){
@@ -3602,7 +3602,7 @@ var Microformats;
 			}
 			return false;
 		},
-	
+
 
 		
 
@@ -3610,18 +3610,18 @@ var Microformats;
 
 
 
- 
+
 		parseAmPmTime: function( text ) {
 			var out = text,
 				times = [];
-	
+
 			
 			if(modules.utils.isString(out)) {
 				
 				text = text.replace(/[ ]+/g, '');
-	
+
 				if(text.match(':') || this.hasAM(text) || this.hasPM(text)) {
-	
+
 					if(text.match(':')) {
 						times = text.split(':');
 					} else {
@@ -3629,31 +3629,31 @@ var Microformats;
 						times[0] = text;
 						times[0] = this.removeAMPM(times[0]);
 					}
-					
+
 					
 					if(this.hasPM(text)) {
 						if(times[0] < 12) {
 							times[0] = parseInt(times[0], 10) + 12;
 						}
 					}
-	
+
 					
 					if(times[0] && times[0].length === 1) {
 						times[0] = '0' + times[0];
 					}
-					
+
 					
 					if(times[0]) {
 						text = times.join(':');
 					}
 				}
 			}
-			
+
 			
 			return this.removeAMPM(text);
 		},
-	
-	
+
+
 	   
 
 
@@ -3661,11 +3661,11 @@ var Microformats;
 
 
 
- 
+
 		dateTimeUnion: function(date, time, format) {
 			var isodate = new modules.ISODate(date, format),
 				isotime = new modules.ISODate();
-	
+
 			isotime.parseTime(this.parseAmPmTime(time), format);
 			if(isodate.hasFullDate() && isotime.hasTime()) {
 				isodate.tH = isotime.tH;
@@ -3680,8 +3680,8 @@ var Microformats;
 				return new modules.ISODate();
 			}
 		},
-	
-	
+
+
 	   
 
 
@@ -3689,65 +3689,65 @@ var Microformats;
 
 
 
- 
+
 		concatFragments: function (arr, format) {
 			var out = new modules.ISODate(),
 				i = 0,
 				value = '';
-			
+
 			
 			if(arr[0].toUpperCase().match('T')) {
 				return new modules.ISODate(arr[0], format);
 			}else{
 				for(i = 0; i < arr.length; i++) {
 				value = arr[i];
-	  
+
 				
 				if( value.charAt(4) === '-' && out.hasFullDate() === false ){
 					out.parseDate(value);
 				}
-				
+
 				
 				if( (value.indexOf(':') > -1 || modules.utils.isNumber( this.parseAmPmTime(value) )) && out.hasTime() === false ) {
 					
 					var items = this.splitTimeAndZone(value);
 					value = items[0];
-					
+
 					
 					value = this.parseAmPmTime(value);
 					out.parseTime(value);
-					
+
 					
 					if(items.length > 1){
 						 out.parseTimeZone(items[1], format);
 					}
 				}
-				
+
 				
 				if(value.charAt(0) === '-' || value.charAt(0) === '+' || value.toUpperCase() === 'Z') {
 					if( out.hasTimeZone() === false ){
 						out.parseTimeZone(value);
 					}
 				}
-	
+
 			}
 			return out;
-				
+
 			}
 		},
-		
-		
+
+
 	   
 
 
 
 
- 
+
 		splitTimeAndZone: function ( text ){
 		   var out = [text],
 			   chars = ['-','+','z','Z'],
 			   i = chars.length;
-			   
+
 			while (i--) {
 			  if(text.indexOf(chars[i]) > -1){
 				  out[0] = text.slice( 0, text.indexOf(chars[i]) );
@@ -3757,26 +3757,26 @@ var Microformats;
 			}
 		   return out;
 		}
-		
+
 	};
 
 
 	modules.text = {
+
 		
-		
-		textFormat: 'whitespacetrimmed', 
-		
+		textFormat: 'whitespacetrimmed',
+
 		
 		blockLevelTags: ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'hr', 'pre', 'table',
-			'address', 'article', 'aside', 'blockquote', 'caption', 'col', 'colgroup', 'dd', 'div', 
-			'dt', 'dir', 'fieldset', 'figcaption', 'figure', 'footer', 'form',  'header', 'hgroup', 'hr', 
-			'li', 'map', 'menu', 'nav', 'optgroup', 'option', 'section', 'tbody', 'testarea', 
+			'address', 'article', 'aside', 'blockquote', 'caption', 'col', 'colgroup', 'dd', 'div',
+			'dt', 'dir', 'fieldset', 'figcaption', 'figure', 'footer', 'form',  'header', 'hgroup', 'hr',
+			'li', 'map', 'menu', 'nav', 'optgroup', 'option', 'section', 'tbody', 'testarea',
 			'tfoot', 'th', 'thead', 'tr', 'td', 'ul', 'ol', 'dl', 'details'],
 
 		
 		excludeTags: ['noframe', 'noscript', 'template', 'script', 'style', 'frames', 'frameset'],
- 
-	
+
+
 		
 
 
@@ -3798,54 +3798,54 @@ var Microformats;
 			   return this.formatText( doc, modules.domUtils.textContent(node), this.textFormat );
 			}
 		},
+
+
 		
-		
-		
 
 
 
 
 
 
-  
+
 		parseText: function( doc, text, textFormat ){
 		   var node = modules.domUtils.createNodeWithText( 'div', text );
 		   return this.parse( doc, node, textFormat );
 		},
+
+
 		
-		
-		
 
 
 
 
 
-  
+
 		formatText: function( doc, text, textFormat ){
 		   this.textFormat = (textFormat)? textFormat : this.textFormat;
 		   if(text){
 			  var out = '',
 				  regex = /(<([^>]+)>)/ig;
-				
-			  out = text.replace(regex, '');   
-			  if(this.textFormat === 'whitespacetrimmed') {    
+
+			  out = text.replace(regex, '');
+			  if(this.textFormat === 'whitespacetrimmed') {
 				 out = modules.utils.trimWhitespace( out );
 			  }
-			  
+
 			  
 			  return modules.domUtils.decodeEntities( doc, out );
 		   }else{
-			  return ''; 
+			  return '';
 		   }
 		},
+
+
 		
-		
-		
 
 
 
 
- 
+
 		normalise: function( doc, text ){
 			text = text.replace( /&nbsp;/g, ' ') ;    
 			text = modules.utils.collapseWhiteSpace( text );     
@@ -3853,27 +3853,27 @@ var Microformats;
 			text = text.replace( '–', '-' );          
 			return modules.utils.trim( text );
 		},
+
+
 		
-	 
-		
 
 
 
 
- 
+
 		walkTreeForText: function( node ) {
 			var out = '',
 				j = 0;
-	
+
 			if(node.tagName && this.excludeTags.indexOf( node.tagName.toLowerCase() ) > -1){
 				return out;
 			}
-	
+
 			
 			if(node.nodeType && node.nodeType === 3){
-				out += modules.domUtils.getElementText( node ); 
+				out += modules.domUtils.getElementText( node );
 			}
-	
+
 			
 			if(node.childNodes && node.childNodes.length > 0){
 				for (j = 0; j < node.childNodes.length; j++) {
@@ -3883,34 +3883,34 @@ var Microformats;
 					}
 				}
 			}
-	
+
 			
 			if(node.tagName && this.blockLevelTags.indexOf( node.tagName.toLowerCase() ) !== -1){
 				out += ' ';
-			} 
-			
+			}
+
 			return (out === '')? undefined : out ;
 		}
-		
+
 	};
 
 
 	modules.html = {
-		
+
 		
 		selfClosingElt: ['area', 'base', 'br', 'col', 'hr', 'img', 'input', 'link', 'meta', 'param', 'command', 'keygen', 'source'],
-	
+
 
 		
 
 
 
 
- 
+
 		parse: function( node ){
 			var out = '',
 				j = 0;
-	
+
 			
 			if(node.childNodes && node.childNodes.length > 0){
 				for (j = 0; j < node.childNodes.length; j++) {
@@ -3920,47 +3920,47 @@ var Microformats;
 					}
 				}
 			}
-	
+
 			return out;
 		},
-	
-  
+
+
 		
 
 
 
 
 
- 
+
 		walkTreeForHtml: function( node ) {
 			var out = '',
 				j = 0;
-	
+
 			
 			if(node.nodeType && node.nodeType === 3){
-				out += modules.domUtils.getElementText( node ); 
+				out += modules.domUtils.getElementText( node );
 			}
-	
-		
+
+
 			
 			if(node.nodeType && node.nodeType === 1 && modules.domUtils.hasAttribute(node, 'data-include') === false){
-	
+
 				
-				out += '<' + node.tagName.toLowerCase();  
-	
+				out += '<' + node.tagName.toLowerCase();
+
 				
 				var attrs = modules.domUtils.getOrderedAttributes(node);
 				for (j = 0; j < attrs.length; j++) {
 					out += ' ' + attrs[j].name +  '=' + '"' + attrs[j].value + '"';
 				}
-	
+
 				if(this.selfClosingElt.indexOf(node.tagName.toLowerCase()) === -1){
 					out += '>';
 				}
-	
+
 				
 				if(node.childNodes && node.childNodes.length > 0){
-					
+
 					for (j = 0; j < node.childNodes.length; j++) {
 						var text = this.walkTreeForHtml( node.childNodes[j] );
 						if(text !== undefined){
@@ -3968,19 +3968,19 @@ var Microformats;
 						}
 					}
 				}
-	
+
 				
 				if(this.selfClosingElt.indexOf(node.tagName.toLowerCase()) > -1){
-					out += ' />'; 
+					out += ' />';
 				}else{
-					out += '</' + node.tagName.toLowerCase() + '>'; 
+					out += '</' + node.tagName.toLowerCase() + '>';
 				}
-			} 
-			
+			}
+
 			return (out === '')? undefined : out;
-		}    
-	
-	
+		}
+
+
 	};
 
 
@@ -4025,7 +4025,7 @@ var Microformats;
 				'map': 'u-email'
 			},
 			'geo': {
-				'map': 'p-geo', 
+				'map': 'p-geo',
 				'uf': ['h-geo']
 			},
 			'key': {
@@ -4092,7 +4092,7 @@ var Microformats;
 			'updated': {
 				'map': 'dt-updated'
 			},
-			'author': { 
+			'author': {
 				'uf': ['h-card']
 			},
 			'category': {
@@ -4100,7 +4100,7 @@ var Microformats;
 				'relAlt': ['tag']
 			},
 			'geo': {
-				'map': 'p-geo', 
+				'map': 'p-geo',
 				'uf': ['h-geo']
 			},
 			'latitude': {},
@@ -4113,7 +4113,7 @@ var Microformats;
 	};
 
 
-	modules.maps['h-event'] = {  
+	modules.maps['h-event'] = {
 		root: 'vevent',
 		name: 'h-event',
 		properties: {
@@ -4159,7 +4159,7 @@ var Microformats;
 				'map': 'u-attach'
 			},
 			'status': {},
-			'rdate': {}, 
+			'rdate': {},
 			'rrule': {}
 		}
 	};
@@ -4176,7 +4176,7 @@ var Microformats;
 			'summary': {
 				'map': 'p-summary'
 			},
-			'author': { 
+			'author': {
 				'uf': ['h-card']
 			},
 			'url': {
@@ -4269,7 +4269,7 @@ var Microformats;
 					'map': 'u-item-license'
 				},
 				'principles': {
-					'map': 'u-principles', 
+					'map': 'u-principles',
 					'relAlt': ['principles']
 				}
 			}
@@ -4396,7 +4396,7 @@ var Microformats;
 			'rating': {},
 			'average': {},
 			'best': {},
-			'worst': {},       
+			'worst': {},
 			'count': {},
 			'votes': {},
 			'category': {
@@ -4448,25 +4448,25 @@ var Microformats;
 
 	modules.rels = {
 		
-		'friend': [ 'yes','external'], 
-		'acquaintance': [ 'yes','external'],  
-		'contact': [ 'yes','external'], 
-		'met': [ 'yes','external'], 
-		'co-worker': [ 'yes','external'],  
-		'colleague': [ 'yes','external'], 
-		'co-resident': [ 'yes','external'],  
-		'neighbor': [ 'yes','external'], 
-		'child': [ 'yes','external'],  
-		'parent': [ 'yes','external'],  
-		'sibling': [ 'yes','external'],  
-		'spouse': [ 'yes','external'],  
-		'kin': [ 'yes','external'], 
-		'muse': [ 'yes','external'],  
-		'crush': [ 'yes','external'],  
-		'date': [ 'yes','external'],  
-		'sweetheart': [ 'yes','external'], 
-		'me': [ 'yes','external'], 
-	
+		'friend': [ 'yes','external'],
+		'acquaintance': [ 'yes','external'],
+		'contact': [ 'yes','external'],
+		'met': [ 'yes','external'],
+		'co-worker': [ 'yes','external'],
+		'colleague': [ 'yes','external'],
+		'co-resident': [ 'yes','external'],
+		'neighbor': [ 'yes','external'],
+		'child': [ 'yes','external'],
+		'parent': [ 'yes','external'],
+		'sibling': [ 'yes','external'],
+		'spouse': [ 'yes','external'],
+		'kin': [ 'yes','external'],
+		'muse': [ 'yes','external'],
+		'crush': [ 'yes','external'],
+		'date': [ 'yes','external'],
+		'sweetheart': [ 'yes','external'],
+		'me': [ 'yes','external'],
+
 		
 		'license': [ 'yes','yes'],
 		'nofollow': [ 'no','external'],
@@ -4480,7 +4480,7 @@ var Microformats;
 		'pronunciation': [ 'no','external'],
 		'payment': [ 'no','external'],
 		'principles': [ 'no','external']
-	
+
 	};
 
 
@@ -4489,43 +4489,43 @@ var Microformats;
         version: modules.version,
         livingStandard: modules.livingStandard
     };
-    
-    
+
+
     External.get = function(options){
     	var parser = new modules.Parser();
         addV1(parser, options);
     	return parser.get( options );
     };
-    
-    
+
+
     External.getParent = function(node, options){
     	var parser = new modules.Parser();
         addV1(parser, options);
     	return parser.getParent( node, options );
     };
-    
-    
+
+
     External.count = function(options){
     	var parser = new modules.Parser();
         addV1(parser, options);
     	return parser.count( options );
     };
-    
-    
+
+
     External.isMicroformat = function( node, options ){
     	var parser = new modules.Parser();
         addV1(parser, options);
     	return parser.isMicroformat( node, options );
     };
-    
-    
+
+
     External.hasMicroformats = function( node, options ){
     	var parser = new modules.Parser();
         addV1(parser, options);
     	return parser.hasMicroformats( node, options );
     };
-    
-    
+
+
     function addV1(parser, options){
 		if(options && options.maps){
 			if(Array.isArray(options.maps)){
@@ -4535,11 +4535,11 @@ var Microformats;
 			}
 		}
     }
-    
-    
+
+
     return External;
-    
-    
+
+
 }));
 try {
     

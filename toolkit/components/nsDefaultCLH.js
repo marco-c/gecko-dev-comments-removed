@@ -74,7 +74,7 @@ nsDefaultCLH.prototype = {
       dump(out + "\n");
       Components.utils.reportError(out);
     }
-    
+
     if (cmdLine.handleFlag("silent", false)) {
       cmdLine.preventDefault = true;
     }
