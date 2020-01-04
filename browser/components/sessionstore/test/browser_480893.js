@@ -1,51 +1,47 @@
+"use strict";
 
 
 
 
-function test() {
-  
 
-  waitForExplicitFinish();
+add_task(function*() {
+  yield SpecialPowers.pushPrefEnv({
+    "set": [
+      ["browser.startup.page", 0],
+    ]
+  });
 
-  
-  
-  gPrefService.setIntPref("browser.startup.page", 0);
   let tab = gBrowser.addTab("about:sessionrestore");
   gBrowser.selectedTab = tab;
   let browser = tab.linkedBrowser;
-  promiseBrowserLoaded(browser).then(() => {
-    let doc = browser.contentDocument;
+  yield BrowserTestUtils.browserLoaded(browser, false, "about:sessionrestore");
 
-    
-    doc.getElementById("errorCancel").click();
-    promiseBrowserLoaded(browser).then(() => {
-      let doc = browser.contentDocument;
+  let doc = browser.contentDocument;
 
-      is(doc.URL, "about:blank", "loaded page is about:blank");
+  
+  doc.getElementById("errorCancel").click();
 
-      
-      
-      let homepage = "http://mochi.test:8888/";
-      gPrefService.setCharPref("browser.startup.homepage", homepage);
-      gPrefService.setIntPref("browser.startup.page", 1);
-      gBrowser.loadURI("about:sessionrestore");
-      promiseBrowserLoaded(browser).then(() => {
-        let doc = browser.contentDocument;
+  yield BrowserTestUtils.browserLoaded(browser, false, "about:blank");
 
-        
-        doc.getElementById("errorCancel").click();
-        promiseBrowserLoaded(browser).then(() => {
-          let doc = browser.contentDocument;
-
-          is(doc.URL, homepage, "loaded page is the homepage");
-
-          
-          gBrowser.removeTab(tab);
-          gPrefService.clearUserPref("browser.startup.page");
-          gPrefService.clearUserPref("browser.startup.homepage");
-          finish();
-        });
-      });
-    });
+  
+  
+  let homepage = "http://mochi.test:8888/";
+  yield SpecialPowers.pushPrefEnv({
+    "set": [
+      ["browser.startup.homepage", homepage],
+      ["browser.startup.page", 1],
+    ]
   });
-}
+
+  browser.loadURI("about:sessionrestore");
+  yield BrowserTestUtils.browserLoaded(browser, false, "about:sessionrestore");
+  doc = browser.contentDocument;
+
+  
+  doc.getElementById("errorCancel").click();
+  yield BrowserTestUtils.browserLoaded(browser);
+
+  is(browser.currentURI.spec, homepage, "loaded page is the homepage");
+
+  yield BrowserTestUtils.removeTab(tab);
+});
