@@ -76,6 +76,8 @@ this.TabGroupsMigrator = {
       );
     }
 
+    
+    
     stateAsSupportsString.data = JSON.stringify(state);
   },
 
@@ -99,15 +101,39 @@ this.TabGroupsMigrator = {
         }
 
         let windowGroupData = new Map();
+        let activeGroupID = null;
+        let tabsWithoutGroup = [];
         for (let tab of win.tabs) {
           let group;
           
           try {
-            group = tab.extData && tab.extData["tabview-tab"] &&
-                    (JSON.parse(tab.extData["tabview-tab"]).groupID + "");
+            let tabViewData = tab.extData && tab.extData["tabview-tab"] &&
+                              JSON.parse(tab.extData["tabview-tab"]);
+            if (tabViewData && ("groupID" in tabViewData)) {
+              group = tabViewData.groupID + "";
+            }
           } catch (ex) {
             
-            continue;
+          }
+          if (!group) {
+            
+            
+            if (activeGroupID) {
+              group = activeGroupID;
+            } else {
+              if (!tabsWithoutGroup) {
+                Cu.reportError("ERROR: the list of tabs without groups was " +
+                               "nulled out, but there's no active group ID? " +
+                               "This should never happen!");
+                tabsWithoutGroup = [];
+              }
+              
+              
+              
+              
+              tabsWithoutGroup.push(tab);
+              continue;
+            }
           }
           let groupData = windowGroupData.get(group);
           if (!groupData) {
@@ -119,9 +145,24 @@ this.TabGroupsMigrator = {
             if (!title) {
               groupData.anonGroupID = ++globalAnonGroupID;
             }
+            
+            
+            if (!activeGroupID && !tab.hidden) {
+              activeGroupID = group;
+              groupData.tabs = tabsWithoutGroup;
+              tabsWithoutGroup = null;
+            }
             windowGroupData.set(group, groupData);
           }
           groupData.tabs.push(tab);
+        }
+
+        
+        if (tabsWithoutGroup && tabsWithoutGroup.length) {
+          windowGroupData.set("active group", {
+            tabs: tabsWithoutGroup,
+            anonGroupID: ++globalAnonGroupID,
+          });
         }
 
         allGroupData.set(win, windowGroupData);
