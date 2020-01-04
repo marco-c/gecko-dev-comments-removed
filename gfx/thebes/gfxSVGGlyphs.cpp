@@ -211,21 +211,16 @@ gfxSVGGlyphsDocument::FindGlyphElements(Element *aElem)
 
 
 
-
 bool
 gfxSVGGlyphs::RenderGlyph(gfxContext *aContext, uint32_t aGlyphId,
-                          DrawMode aDrawMode, gfxTextContextPaint *aContextPaint)
+                          gfxTextContextPaint *aContextPaint)
 {
-    if (aDrawMode == DrawMode::GLYPH_PATH) {
-        return false;
-    }
-
     gfxContextAutoSaveRestore aContextRestorer(aContext);
 
     Element *glyph = mGlyphIdMap.Get(aGlyphId);
     NS_ASSERTION(glyph, "No glyph element. Should check with HasSVGGlyph() first!");
 
-    return nsSVGUtils::PaintSVGGlyph(glyph, aContext, aDrawMode, aContextPaint);
+    return nsSVGUtils::PaintSVGGlyph(glyph, aContext, aContextPaint);
 }
 
 bool

@@ -2134,9 +2134,9 @@ protected:
     
     void SanitizeMetrics(Metrics *aMetrics, bool aIsBadUnderlineFont);
 
-    bool RenderSVGGlyph(gfxContext *aContext, gfxPoint aPoint, DrawMode aDrawMode,
+    bool RenderSVGGlyph(gfxContext *aContext, gfxPoint aPoint,
                         uint32_t aGlyphId, gfxTextContextPaint *aContextPaint) const;
-    bool RenderSVGGlyph(gfxContext *aContext, gfxPoint aPoint, DrawMode aDrawMode,
+    bool RenderSVGGlyph(gfxContext *aContext, gfxPoint aPoint,
                         uint32_t aGlyphId, gfxTextContextPaint *aContextPaint,
                         gfxTextRunDrawCallbacks *aCallbacks,
                         bool& aEmittedGlyphs) const;

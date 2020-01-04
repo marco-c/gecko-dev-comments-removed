@@ -9,7 +9,6 @@
 
 #include <math.h>
 
-#include "DrawMode.h"
 #include "gfx2DGlue.h"
 #include "gfxMatrix.h"
 #include "gfxPoint.h"
@@ -549,9 +548,7 @@ public:
 
 
 
-
   static bool PaintSVGGlyph(Element* aElement, gfxContext* aContext,
-                            DrawMode aDrawMode,
                             gfxTextContextPaint* aContextPaint);
   
 

@@ -14,7 +14,6 @@
 #include "gfxPattern.h"
 #include "mozilla/gfx/UserData.h"
 #include "nsRefreshDriver.h"
-#include "DrawMode.h"
 
 class nsIDocument;
 class nsIContentViewer;
@@ -118,8 +117,7 @@ public:
 
 
 
-
-    bool RenderGlyph(gfxContext *aContext, uint32_t aGlyphId, DrawMode aDrawMode,
+    bool RenderGlyph(gfxContext *aContext, uint32_t aGlyphId,
                      gfxTextContextPaint *aContextPaint);
 
     
