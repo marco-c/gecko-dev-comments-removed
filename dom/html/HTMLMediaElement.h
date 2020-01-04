@@ -290,6 +290,9 @@ public:
 
   bool RemoveDecoderPrincipalChangeObserver(DecoderPrincipalChangeObserver* aObserver);
 
+  class CaptureStreamTrackSource;
+  class CaptureStreamTrackSourceGetter;
+
   
   
   void UpdateMediaSize(const nsIntSize& aSize);
