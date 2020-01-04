@@ -357,6 +357,7 @@ protected:
     void DispatchActivateEvent(void);
     void DispatchDeactivateEvent(void);
     void DispatchResized();
+    void MaybeDispatchResized();
 
     
     void ReparentNativeWidgetInternal(nsIWidget* aNewParent,
@@ -377,6 +378,8 @@ protected:
 
     
     bool                mListenForResizes;
+    
+    bool                mNeedsDispatchResized;
     
     bool                mIsShown;
     bool                mNeedsShow;

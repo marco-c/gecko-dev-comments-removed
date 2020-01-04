@@ -415,6 +415,7 @@ nsWindow::nsWindow()
     mIsTopLevel          = false;
     mIsDestroyed         = false;
     mListenForResizes    = false;
+    mNeedsDispatchResized = false;
     mIsShown             = false;
     mNeedsShow           = false;
     mEnabled             = true;
@@ -530,12 +531,21 @@ nsWindow::DispatchDeactivateEvent(void)
 void
 nsWindow::DispatchResized()
 {
+    mNeedsDispatchResized = false;
     if (mWidgetListener) {
         mWidgetListener->WindowResized(this, mBounds.width, mBounds.height);
     }
     if (mAttachedWidgetListener) {
         mAttachedWidgetListener->WindowResized(this,
                                                mBounds.width, mBounds.height);
+    }
+}
+
+void
+nsWindow::MaybeDispatchResized()
+{
+    if (mNeedsDispatchResized && !mIsDestroyed) {
+        DispatchResized();
     }
 }
 
@@ -2093,6 +2103,10 @@ gboolean
 nsWindow::OnExposeEvent(cairo_t *cr)
 #endif
 {
+    
+    
+    MaybeDispatchResized();
+
     if (mIsDestroyed) {
         return FALSE;
     }
@@ -2453,10 +2467,13 @@ nsWindow::OnSizeAllocate(GtkAllocation *aAllocation)
 
     mBounds.SizeTo(size);
 
-    if (!mGdkWindow)
-        return;
-
-    DispatchResized();
+    
+    
+    
+    mNeedsDispatchResized = true;
+    nsCOMPtr<nsIRunnable> r =
+        NS_NewRunnableMethod(this, &nsWindow::MaybeDispatchResized);
+    NS_DispatchToCurrentThread(r.forget());
 }
 
 void
