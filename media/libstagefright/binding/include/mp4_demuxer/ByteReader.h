@@ -57,7 +57,8 @@ public:
   }
 
   
-  void DiscardRemaining() {
+  void DiscardRemaining()
+  {
     mRemaining = 0;
   }
 
@@ -349,6 +350,24 @@ private:
   size_t mRemaining;
   size_t mLength;
 };
-}
+
+
+class MOZ_RAII AutoByteReader : public ByteReader
+{
+public:
+  AutoByteReader(const uint8_t* aData, size_t aSize)
+    : ByteReader(aData, aSize)
+  {
+  }
+  ~AutoByteReader()
+  {
+    ByteReader::DiscardRemaining();
+  }
+
+  
+  void DiscardRemaining() = delete;
+};
+
+} 
 
 #endif
