@@ -1046,6 +1046,24 @@ xpc::CreateSandboxObject(JSContext* cx, MutableHandleValue vp, nsISupports* prin
         
         JS_SetPrivate(sandbox, sbp.forget().take());
 
+        {
+            
+            
+            
+            AutoSkipPropertyMirroring askip(CompartmentPrivate::Get(sandbox));
+
+            
+            
+            
+            if (options.writeToGlobalPrototype) {
+                if (!JS_EnumerateStandardClasses(cx, sandbox))
+                    return NS_ERROR_XPC_UNEXPECTED;
+            } else {
+                if (!JS_GetObjectPrototype(cx, sandbox))
+                    return NS_ERROR_XPC_UNEXPECTED;
+            }
+        }
+
         if (options.proto) {
             bool ok = JS_WrapObject(cx, &options.proto);
             if (!ok)
@@ -1113,10 +1131,6 @@ xpc::CreateSandboxObject(JSContext* cx, MutableHandleValue vp, nsISupports* prin
         
         
         if (!dom::PromiseBinding::GetConstructorObject(cx, sandbox))
-            return NS_ERROR_XPC_UNEXPECTED;
-
-        
-        if (options.writeToGlobalPrototype && !JS_EnumerateStandardClasses(cx, sandbox))
             return NS_ERROR_XPC_UNEXPECTED;
     }
 
