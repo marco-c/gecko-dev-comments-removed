@@ -180,12 +180,12 @@
   }
 
   
-  #main-window[sizemode="maximized"]:not([customizing]) #browser-panel {
+  #main-window:not([sizemode="normal"]):not([customizing]) #browser-panel {
     background: var(--chrome-background-color) !important;
   }
 
   
-  #main-window[sizemode="maximized"] #main-menubar {
+  #main-window:not([sizemode="normal"]) #main-menubar {
     color: var(--chrome-color);
     background-color: transparent;
   }
