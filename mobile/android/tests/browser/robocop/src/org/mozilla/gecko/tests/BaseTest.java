@@ -532,8 +532,16 @@ abstract class BaseTest extends BaseRobocopTest {
        }
     }
 
+    private void waitForAnimationsToFinish() {
+        
+        
+        mSolo.sleep(3500);
+    }
+
     public void addTab() {
         mSolo.clickOnView(mSolo.getView(R.id.tabs));
+        waitForAnimationsToFinish();
+
         
         boolean success = waitForCondition(new Condition() {
             @Override
@@ -548,6 +556,8 @@ abstract class BaseTest extends BaseRobocopTest {
         mAsserter.ok(success, "waiting for add tab view", "add tab view available");
         final Actions.RepeatedEventExpecter pageShowExpecter = mActions.expectGeckoEvent("Content:PageShow");
         mSolo.clickOnView(mSolo.getView(R.id.add_tab));
+        waitForAnimationsToFinish();
+
         
         for(;;) {
             try {
