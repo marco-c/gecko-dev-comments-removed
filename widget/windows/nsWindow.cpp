@@ -55,6 +55,7 @@
 
 
 #include "gfx2DGlue.h"
+#include "gfxEnv.h"
 #include "gfxPlatform.h"
 #include "gfxPrefs.h"
 #include "mozilla/MathAlgorithms.h"
@@ -4984,6 +4985,15 @@ nsWindow::ProcessMessage(UINT msg, WPARAM& wParam, LPARAM& lParam,
 
       if (!mCustomNonClient)
         break;
+
+      
+      if (wParam == TRUE &&
+          !gfxEnv::DisableForcePresent() &&
+          gfxWindowsPlatform::GetPlatform()->DwmCompositionEnabled()) {
+        nsCOMPtr<nsIRunnable> event =
+          NS_NewRunnableMethod(this, &nsWindow::ForcePresent);
+        NS_DispatchToMainThread(event);
+      }
 
       
       
