@@ -620,7 +620,7 @@ loop.OTSdkDriver = (function() {
         this.dispatcher.dispatch(new sharedActions.MediaConnected());
       }
 
-      this._setupDataChannelIfNeeded(sdkSubscriberObject.stream.connection);
+      this._setupDataChannelIfNeeded(sdkSubscriberObject);
     },
 
     
@@ -658,18 +658,50 @@ loop.OTSdkDriver = (function() {
 
 
 
+    _setupDataChannelIfNeeded: function(sdkSubscriberObject) {
+      if (!this._useDataChannels) {
+        return;
+      }
 
-    _setupDataChannelIfNeeded: function(connection) {
-      if (this._useDataChannels) {
-        this.session.signal({
-          type: "readyForDataChannel",
-          to: connection
-        }, function(signalError) {
-          if (signalError) {
-            console.error(signalError);
+      this.session.signal({
+        type: "readyForDataChannel",
+        to: sdkSubscriberObject.stream.connection
+      }, function(signalError) {
+        if (signalError) {
+          console.error(signalError);
+        }
+      });
+
+      sdkSubscriberObject._.getDataChannel("text", {}, function(err, channel) {
+        
+        if (err) {
+          console.error(err);
+          return;
+        }
+
+        channel.on({
+          message: function(ev) {
+            try {
+              var message = JSON.parse(ev.data);
+              
+              message.receivedTimestamp = (new Date()).toISOString();
+
+              this.dispatcher.dispatch(
+                new sharedActions.ReceivedTextChatMessage(message));
+            } catch (ex) {
+              console.error("Failed to process incoming chat message", ex);
+            }
+          }.bind(this),
+
+          close: function(e) {
+            
+            console.log("Subscribed data channel closed!");
           }
         });
-      }
+
+        this._subscriberChannel = channel;
+        this._checkDataChannelsAvailable();
+      }.bind(this));
     },
 
     
@@ -706,37 +738,6 @@ loop.OTSdkDriver = (function() {
           }
         });
 
-        this._checkDataChannelsAvailable();
-      }.bind(this));
-
-      this.subscriber._.getDataChannel("text", {}, function(err, channel) {
-        
-        if (err) {
-          console.error(err);
-          return;
-        }
-
-        channel.on({
-          message: function(ev) {
-            try {
-              var message = JSON.parse(ev.data);
-              
-              message.receivedTimestamp = (new Date()).toISOString();
-
-              this.dispatcher.dispatch(
-                new sharedActions.ReceivedTextChatMessage(message));
-            } catch (ex) {
-              console.error("Failed to process incoming chat message", ex);
-            }
-          }.bind(this),
-
-          close: function(e) {
-            
-            console.log("Subscribed data channel closed!");
-          }
-        });
-
-        this._subscriberChannel = channel;
         this._checkDataChannelsAvailable();
       }.bind(this));
     },
