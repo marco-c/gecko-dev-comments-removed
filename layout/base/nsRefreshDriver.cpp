@@ -1328,7 +1328,7 @@ DispatchAnimationEventsOnSubDocuments(nsIDocument* aDocument,
     return true;
   }
 
-  nsPresContext* context = shell->GetPresContext();
+  nsRefPtr<nsPresContext> context = shell->GetPresContext();
   if (!context || context->RefreshDriver() != aRefreshDriver) {
     return true;
   }
@@ -1341,7 +1341,10 @@ DispatchAnimationEventsOnSubDocuments(nsIDocument* aDocument,
   
   
   context->TransitionManager()->DispatchEvents();
-  context->AnimationManager()->DispatchEvents();
+  
+  if (context->GetPresShell()) {
+    context->AnimationManager()->DispatchEvents();
+  }
 
   aDocument->EnumerateSubDocuments(DispatchAnimationEventsOnSubDocuments,
                                    aRefreshDriver);
