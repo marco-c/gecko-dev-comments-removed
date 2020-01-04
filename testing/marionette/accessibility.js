@@ -124,6 +124,10 @@ Accessibility.prototype = {
         
         
         resolve(acc);
+      } else if (mustHaveAccessible && !this.strict) {
+        
+        
+        reject();
       } else {
         
         
