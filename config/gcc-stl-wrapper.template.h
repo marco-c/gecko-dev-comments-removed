@@ -18,6 +18,10 @@
 #pragma GCC system_header
 
 
+#ifndef moz_dont_include_mozalloc_for_cstdlib
+#  define moz_dont_include_mozalloc_for_cstdlib
+#endif
+#ifndef moz_dont_include_mozalloc_for_${HEADER}
 
 
 
@@ -25,15 +29,18 @@
 
 
 
-#include_next <new>
+
+#  include_next <new>
 
 
 
 
-#if !defined(XPCOM_GLUE) && !defined(NS_NO_XPCOM) && !defined(MOZ_NO_MOZALLOC)
-#  include "mozilla/mozalloc.h"
-#else
-#  error "STL code can only be used with infallible ::operator new()"
+#  if !defined(XPCOM_GLUE) && !defined(NS_NO_XPCOM) && !defined(MOZ_NO_MOZALLOC)
+#    include "mozilla/mozalloc.h"
+#  else
+#    error "STL code can only be used with infallible ::operator new()"
+#  endif
+
 #endif
 
 #if defined(DEBUG) && !defined(_GLIBCXX_DEBUG)
