@@ -296,13 +296,6 @@ public:
 
 
   void UpdateStreamOrder();
-  
-
-
-
-
-
-  void RecomputeBlocking(GraphTime aEndBlockingDecisions);
 
   
 
