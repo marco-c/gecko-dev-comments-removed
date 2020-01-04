@@ -1080,72 +1080,13 @@ ArrayJoinKernel(JSContext* cx, SeparatorOp sepOp, HandleObject obj, uint32_t len
 }
 
 template <bool Locale>
-JSString*
-js::ArrayJoin(JSContext* cx, HandleObject obj, HandleLinearString sepstr, uint32_t length)
-{
-    
-    
-    
-
-    
-
-    
-
-    
-    
-    
-    if (length == 1 && !Locale && GetAnyBoxedOrUnboxedInitializedLength(obj) == 1) {
-        Value elem0 = GetAnyBoxedOrUnboxedDenseElement(obj, 0);
-        if (elem0.isString())
-            return elem0.toString();
-    }
-
-    StringBuffer sb(cx);
-    if (sepstr->hasTwoByteChars() && !sb.ensureTwoByteChars())
-        return nullptr;
-
-    
-    
-    size_t seplen = sepstr->length();
-    CheckedInt<uint32_t> res = CheckedInt<uint32_t>(seplen) * (length - 1);
-    if (length > 0 && !res.isValid()) {
-        ReportAllocationOverflow(cx);
-        return nullptr;
-    }
-
-    if (length > 0 && !sb.reserve(res.value()))
-        return nullptr;
-
-    
-    if (seplen == 0) {
-        EmptySeparatorOp op;
-        if (!ArrayJoinKernel<Locale>(cx, op, obj, length, sb))
-            return nullptr;
-    } else if (seplen == 1) {
-        char16_t c = sepstr->latin1OrTwoByteChar(0);
-        if (c <= JSString::MAX_LATIN1_CHAR) {
-            CharSeparatorOp<Latin1Char> op(c);
-            if (!ArrayJoinKernel<Locale>(cx, op, obj, length, sb))
-                return nullptr;
-        } else {
-            CharSeparatorOp<char16_t> op(c);
-            if (!ArrayJoinKernel<Locale>(cx, op, obj, length, sb))
-                return nullptr;
-        }
-    } else {
-        StringSeparatorOp op(sepstr);
-        if (!ArrayJoinKernel<Locale>(cx, op, obj, length, sb))
-            return nullptr;
-    }
-
-    
-    return sb.finishString();
-}
-
-template <bool Locale>
 bool
 ArrayJoin(JSContext* cx, CallArgs& args)
 {
+    
+    
+    
+
     
     RootedObject obj(cx, ToObject(cx, args.thisv()));
     if (!obj)
@@ -1168,7 +1109,7 @@ ArrayJoin(JSContext* cx, CallArgs& args)
     
     RootedLinearString sepstr(cx);
     if (!Locale && args.hasDefined(0)) {
-        JSString* s = ToString<CanGC>(cx, args[0]);
+        JSString *s = ToString<CanGC>(cx, args[0]);
         if (!s)
             return false;
         sepstr = s->ensureLinear(cx);
@@ -1179,11 +1120,62 @@ ArrayJoin(JSContext* cx, CallArgs& args)
     }
 
     
-    JSString* res = js::ArrayJoin<Locale>(cx, obj, sepstr, length);
-    if (!res)
+
+    
+    
+    
+    if (length == 1 && !Locale && GetAnyBoxedOrUnboxedInitializedLength(obj) == 1) {
+        Value elem0 = GetAnyBoxedOrUnboxedDenseElement(obj, 0);
+        if (elem0.isString()) {
+            args.rval().set(elem0);
+            return true;
+        }
+    }
+
+    StringBuffer sb(cx);
+    if (sepstr->hasTwoByteChars() && !sb.ensureTwoByteChars())
         return false;
 
-    args.rval().setString(res);
+    
+    
+    size_t seplen = sepstr->length();
+    CheckedInt<uint32_t> res = CheckedInt<uint32_t>(seplen) * (length - 1);
+    if (length > 0 && !res.isValid()) {
+        ReportAllocationOverflow(cx);
+        return false;
+    }
+
+    if (length > 0 && !sb.reserve(res.value()))
+        return false;
+
+    
+    if (seplen == 0) {
+        EmptySeparatorOp op;
+        if (!ArrayJoinKernel<Locale>(cx, op, obj, length, sb))
+            return false;
+    } else if (seplen == 1) {
+        char16_t c = sepstr->latin1OrTwoByteChar(0);
+        if (c <= JSString::MAX_LATIN1_CHAR) {
+            CharSeparatorOp<Latin1Char> op(c);
+            if (!ArrayJoinKernel<Locale>(cx, op, obj, length, sb))
+                return false;
+        } else {
+            CharSeparatorOp<char16_t> op(c);
+            if (!ArrayJoinKernel<Locale>(cx, op, obj, length, sb))
+                return false;
+        }
+    } else {
+        StringSeparatorOp op(sepstr);
+        if (!ArrayJoinKernel<Locale>(cx, op, obj, length, sb))
+            return false;
+    }
+
+    
+    JSString *str = sb.finishString();
+    if (!str)
+        return false;
+
+    args.rval().setString(str);
     return true;
 }
 
@@ -3121,7 +3113,7 @@ static const JSFunctionSpec array_methods[] = {
     JS_FN(js_toLocaleString_str,       array_toLocaleString, 0,0),
 
     
-    JS_FN("join",               array_join,         1,JSFUN_GENERIC_NATIVE),
+    JS_INLINABLE_FN("join",     array_join,         1,JSFUN_GENERIC_NATIVE, ArrayJoin),
     JS_FN("reverse",            array_reverse,      0,JSFUN_GENERIC_NATIVE),
     JS_FN("sort",               array_sort,         1,JSFUN_GENERIC_NATIVE),
     JS_INLINABLE_FN("push",     array_push,         1,JSFUN_GENERIC_NATIVE, ArrayPush),

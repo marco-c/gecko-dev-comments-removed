@@ -9523,7 +9523,9 @@ class MArrayJoin
         return true;
     }
     virtual AliasSet getAliasSet() const override {
-        return AliasSet::Load(AliasSet::Element | AliasSet::ObjectFields);
+        
+        
+        return AliasSet::Store(AliasSet::Any);
     }
     MDefinition* foldsTo(TempAllocator& alloc) override;
 };
