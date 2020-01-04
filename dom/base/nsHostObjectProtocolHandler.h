@@ -75,6 +75,8 @@ public:
   
   static void RemoveDataEntries();
 
+  static bool HasDataEntry(const nsACString& aUri);
+
   static nsIPrincipal* GetDataEntryPrincipal(const nsACString& aUri);
   static void Traverse(const nsACString& aUri, nsCycleCollectionTraversalCallback& aCallback);
 
