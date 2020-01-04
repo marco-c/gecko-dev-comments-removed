@@ -464,7 +464,8 @@ protected:
   void UpdatePlaybackPositionInternal(int64_t aTime);
 
   
-  bool CheckFrameValidity(VideoData* aData);
+  
+  void CheckFrameValidity(VideoData* aData);
 
   
   
