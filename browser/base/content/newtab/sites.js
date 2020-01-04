@@ -367,6 +367,12 @@ Site.prototype = {
     else if (button == 0) {
       aEvent.preventDefault();
       if (target.classList.contains("newtab-control-block")) {
+        
+        
+        
+        if (this.link.targetedSite) {
+          DirectoryLinksProvider.handleSuggestedTileBlock();
+        }
         this.block();
         action = "block";
       }

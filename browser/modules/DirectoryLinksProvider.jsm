@@ -106,6 +106,12 @@ const PING_ACTIONS = ["block", "click", "pin", "sponsored", "sponsored_link", "u
 const INADJACENCY_SOURCE = "chrome://browser/content/newtab/newTab.inadjacent.json";
 
 
+const FAKE_SUGGESTED_BLOCK_URL = "ignore://suggested_block";
+
+
+const AFTER_SUGGESTED_BLOCK_DECAY_TIME = 24*60*60*1000;
+
+
 
 
 
@@ -490,6 +496,28 @@ var DirectoryLinksProvider = {
     }
     
     return {use: true};
+  },
+
+  
+
+
+  handleSuggestedTileBlock: function DirectoryLinksProvider_handleSuggestedTileBlock() {
+    this._updateFrequencyCapSettings({url: FAKE_SUGGESTED_BLOCK_URL});
+    this._writeFrequencyCapFile();
+  },
+
+  
+
+
+
+  _isSuggestedTileBlocked: function DirectoryLinksProvider__isSuggestedTileBlocked() {
+    let capObject = this._frequencyCaps[FAKE_SUGGESTED_BLOCK_URL];
+    if (!capObject || !capObject.lastUpdated) {
+      
+      return false;
+    }
+    
+    return (capObject.lastUpdated + AFTER_SUGGESTED_BLOCK_DECAY_TIME) > Date.now();
   },
 
   
@@ -890,7 +918,10 @@ var DirectoryLinksProvider = {
       }
     }
 
-    if (this._topSitesWithSuggestedLinks.size == 0 || !this._shouldUpdateSuggestedTile()) {
+    if (this._topSitesWithSuggestedLinks.size == 0 ||
+        !this._shouldUpdateSuggestedTile() ||
+        this._isSuggestedTileBlocked()) {
+      
       
       
       return;
@@ -1113,7 +1144,8 @@ var DirectoryLinksProvider = {
   _pruneFrequencyCapUrls: function DirectoryLinksProvider_pruneFrequencyCapUrls(timeDelta = DEFAULT_PRUNE_TIME_DELTA) {
     let timeThreshold = Date.now() - timeDelta;
     Object.keys(this._frequencyCaps).forEach(url => {
-      if (this._frequencyCaps[url].lastUpdated <= timeThreshold) {
+      
+      if (!url.startsWith("ignore") && this._frequencyCaps[url].lastUpdated <= timeThreshold) {
         delete this._frequencyCaps[url];
       }
     });
