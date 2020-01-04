@@ -193,13 +193,11 @@ class TabBar(UIBaseLib):
         
         
         handle = marionette.execute_script("""
-          let win = arguments[0].linkedBrowser.contentWindowAsCPOW;
+          let win = arguments[0].linkedBrowser;
           if (!win) {
             return null;
           }
-          return win.QueryInterface(Components.interfaces.nsIInterfaceRequestor)
-                    .getInterface(Components.interfaces.nsIDOMWindowUtils)
-                    .outerWindowID.toString();
+          return win.outerWindowID.toString();
         """, script_args=[tab_element])
 
         return handle
