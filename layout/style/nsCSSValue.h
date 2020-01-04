@@ -332,13 +332,15 @@ enum nsCSSUnit {
   eCSSUnit_RGBAColor           = 82,   
   eCSSUnit_HexColor            = 83,   
   eCSSUnit_ShortHexColor       = 84,   
-  eCSSUnit_PercentageRGBColor  = 85,   
-  eCSSUnit_PercentageRGBAColor = 86,   
-  eCSSUnit_HSLColor            = 87,   
-  eCSSUnit_HSLAColor           = 88,   
+  eCSSUnit_HexColorAlpha       = 85,   
+  eCSSUnit_ShortHexColorAlpha  = 86,   
+  eCSSUnit_PercentageRGBColor  = 87,   
+  eCSSUnit_PercentageRGBAColor = 88,   
+  eCSSUnit_HSLColor            = 89,   
+  eCSSUnit_HSLAColor           = 90,   
 
-  eCSSUnit_Percent      = 90,     
-  eCSSUnit_Number       = 91,     
+  eCSSUnit_Percent      = 100,     
+  eCSSUnit_Number       = 101,     
 
   
   eCSSUnit_PhysicalMillimeter = 200,   
@@ -506,11 +508,13 @@ public:
   
   
   
+  
+  
   bool IsIntegerColorUnit() const { return IsIntegerColorUnit(mUnit); }
   bool IsFloatColorUnit() const { return IsFloatColorUnit(mUnit); }
   bool IsNumericColorUnit() const { return IsNumericColorUnit(mUnit); }
   static bool IsIntegerColorUnit(nsCSSUnit aUnit)
-  { return eCSSUnit_RGBColor <= aUnit && aUnit <= eCSSUnit_ShortHexColor; }
+  { return eCSSUnit_RGBColor <= aUnit && aUnit <= eCSSUnit_ShortHexColorAlpha; }
   static bool IsFloatColorUnit(nsCSSUnit aUnit)
   { return eCSSUnit_PercentageRGBColor <= aUnit &&
            aUnit <= eCSSUnit_HSLAColor; }
