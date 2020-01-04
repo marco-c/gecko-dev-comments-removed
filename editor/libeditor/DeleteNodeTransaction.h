@@ -15,9 +15,10 @@
 #include "nscore.h"
 
 class nsEditor;
-class nsRangeUpdater;
 
 namespace mozilla {
+
+class RangeUpdater;
 
 
 
@@ -30,7 +31,7 @@ public:
 
 
   nsresult Init(nsEditor* aEditor, nsINode* aNode,
-                nsRangeUpdater* aRangeUpdater);
+                RangeUpdater* aRangeUpdater);
 
   DeleteNodeTransaction();
 
@@ -58,7 +59,7 @@ protected:
   nsEditor* mEditor;
 
   
-  nsRangeUpdater* mRangeUpdater;
+  RangeUpdater* mRangeUpdater;
 };
 
 } 

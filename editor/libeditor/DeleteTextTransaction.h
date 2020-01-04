@@ -15,9 +15,10 @@
 #include "nscore.h"
 
 class nsEditor;
-class nsRangeUpdater;
 
 namespace mozilla {
+
+class RangeUpdater;
 
 
 
@@ -37,7 +38,7 @@ public:
                         nsGenericDOMDataNode& aCharData,
                         uint32_t aOffset,
                         uint32_t aNumCharsToDelete,
-                        nsRangeUpdater* aRangeUpdater);
+                        RangeUpdater* aRangeUpdater);
 
   nsresult Init();
 
@@ -68,7 +69,7 @@ protected:
   nsString mDeletedText;
 
   
-  nsRangeUpdater* mRangeUpdater;
+  RangeUpdater* mRangeUpdater;
 };
 
 } 

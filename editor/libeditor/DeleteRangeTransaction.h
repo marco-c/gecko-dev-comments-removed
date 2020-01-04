@@ -16,9 +16,10 @@
 
 class nsEditor;
 class nsINode;
-class nsRangeUpdater;
 
 namespace mozilla {
+
+class RangeUpdater;
 
 
 
@@ -33,7 +34,7 @@ public:
 
   nsresult Init(nsEditor* aEditor,
                 nsRange* aRange,
-                nsRangeUpdater* aRangeUpdater);
+                RangeUpdater* aRangeUpdater);
 
   DeleteRangeTransaction();
 
@@ -69,7 +70,7 @@ protected:
   nsEditor* mEditor;
 
   
-  nsRangeUpdater* mRangeUpdater;
+  RangeUpdater* mRangeUpdater;
 };
 
 } 

@@ -867,7 +867,8 @@ protected:
 
   
   mozilla::SelectionState mSavedSel;
-  nsRangeUpdater    mRangeUpdater;       
+  
+  mozilla::RangeUpdater mRangeUpdater;
 
   uint32_t          mModCount;     
   uint32_t          mFlags;        
@@ -897,7 +898,7 @@ protected:
   friend class mozilla::AutoRules;
   friend class mozilla::AutoSelectionRestorer;
   friend class mozilla::AutoTransactionsConserveSelection;
-  friend class nsRangeUpdater;
+  friend class mozilla::RangeUpdater;
 };
 
 

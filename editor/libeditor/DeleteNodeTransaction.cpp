@@ -35,7 +35,7 @@ NS_INTERFACE_MAP_END_INHERITING(EditTransactionBase)
 nsresult
 DeleteNodeTransaction::Init(nsEditor* aEditor,
                             nsINode* aNode,
-                            nsRangeUpdater* aRangeUpdater)
+                            RangeUpdater* aRangeUpdater)
 {
   NS_ENSURE_TRUE(aEditor && aNode, NS_ERROR_NULL_POINTER);
   mEditor = aEditor;
