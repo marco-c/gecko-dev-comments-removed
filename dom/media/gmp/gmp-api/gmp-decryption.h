@@ -244,7 +244,9 @@ enum GMPSessionType {
   kGMPSessionInvalid = 2 
 };
 
-#define GMP_API_DECRYPTOR "eme-decrypt-v7"
+
+#define GMP_API_DECRYPTOR "eme-decrypt-v8"
+#define GMP_API_DECRYPTOR_BACKWARDS_COMPAT "eme-decrypt-v7"
 
 
 

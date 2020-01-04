@@ -119,7 +119,16 @@ GMPContentChild::RecvPGMPDecryptorConstructor(PGMPDecryptorChild* aActor)
   void* session = nullptr;
   GMPErr err = mGMPChild->GetAPI(GMP_API_DECRYPTOR, host, &session);
   if (err != GMPNoErr || !session) {
-    return false;
+    
+    
+    
+    
+    
+    
+    err = mGMPChild->GetAPI(GMP_API_DECRYPTOR_BACKWARDS_COMPAT, host, &session);
+    if (err != GMPNoErr || !session) {
+      return false;
+    }
   }
 
   child->Init(static_cast<GMPDecryptor*>(session));
