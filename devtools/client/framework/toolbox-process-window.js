@@ -62,6 +62,8 @@ function setPrefDefaults() {
   Services.prefs.setBoolPref("browser.dom.window.dump.enabled", true);
   Services.prefs.setBoolPref("devtools.command-button-noautohide.enabled", true);
   Services.prefs.setBoolPref("devtools.scratchpad.enabled", true);
+  
+  Services.prefs.setBoolPref("devtools.debugger.source-maps-enabled", false);
 }
 
 window.addEventListener("load", function() {
