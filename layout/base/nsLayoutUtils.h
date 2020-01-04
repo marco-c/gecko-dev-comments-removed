@@ -1400,40 +1400,6 @@ public:
   static nscoord ComputeCBDependentValue(nscoord aPercentBasis,
                                          const nsStyleCoord& aCoord);
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  
-  static nscoord ComputeWidthValue(
-                   nsRenderingContext* aRenderingContext,
-                   nsIFrame*            aFrame,
-                   nscoord              aContainingBlockWidth,
-                   nscoord              aContentEdgeToBoxSizing,
-                   nscoord              aBoxSizingToMarginEdge,
-                   const nsStyleCoord&  aCoord)
-  {
-    return ComputeISizeValue(aRenderingContext,
-                             aFrame,
-                             aContainingBlockWidth,
-                             aContentEdgeToBoxSizing,
-                             aBoxSizingToMarginEdge,
-                             aCoord);
-  }
-
   static nscoord ComputeISizeValue(
                    nsRenderingContext* aRenderingContext,
                    nsIFrame*           aFrame,
@@ -1442,34 +1408,9 @@ public:
                    nscoord             aBoxSizingToMarginEdge,
                    const nsStyleCoord& aCoord);
 
-  
-
-
-
-  
-  static nscoord ComputeHeightDependentValue(
-                   nscoord              aContainingBlockHeight,
-                   const nsStyleCoord&  aCoord)
-  {
-    return ComputeBSizeDependentValue(aContainingBlockHeight, aCoord);
-  }
-
   static nscoord ComputeBSizeDependentValue(
                    nscoord              aContainingBlockBSize,
                    const nsStyleCoord&  aCoord);
-
-  
-
-
-  
-  static nscoord ComputeHeightValue(nscoord aContainingBlockHeight,
-                                    nscoord aContentEdgeToBoxSizingBoxEdge,
-                                    const nsStyleCoord& aCoord)
-  {
-    return ComputeBSizeValue(aContainingBlockHeight,
-                             aContentEdgeToBoxSizingBoxEdge,
-                             aCoord);
-  }
 
   static nscoord ComputeBSizeValue(nscoord aContainingBlockBSize,
                                     nscoord aContentEdgeToBoxSizingBoxEdge,
