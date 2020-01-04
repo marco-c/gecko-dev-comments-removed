@@ -69,6 +69,7 @@ HttpBaseChannel::HttpBaseChannel()
   , mPriority(PRIORITY_NORMAL)
   , mRedirectionLimit(gHttpHandler->RedirectionLimit())
   , mApplyConversion(true)
+  , mHaveListenerForTraceableChannel(false)
   , mCanceled(false)
   , mIsPending(false)
   , mWasOpened(false)
@@ -2661,6 +2662,7 @@ HttpBaseChannel::SetNewListener(nsIStreamListener *aListener, nsIStreamListener 
 
   wrapper.forget(_retval);
   mListener = aListener;
+  mHaveListenerForTraceableChannel = true;
   return NS_OK;
 }
 
@@ -3513,6 +3515,16 @@ HttpBaseChannel::SetBlockAuthPrompt(bool aValue)
   ENSURE_CALLED_BEFORE_CONNECT();
 
   mBlockAuthPrompt = aValue;
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+HttpBaseChannel::GetConnectionInfoHashKey(nsACString& aConnectionInfoHashKey)
+{
+  if (!mConnectionInfo) {
+    return NS_ERROR_FAILURE;
+  }
+  aConnectionInfoHashKey.Assign(mConnectionInfo->HashKey());
   return NS_OK;
 }
 
