@@ -2376,25 +2376,36 @@ function URLBarSetURI(aURI) {
 }
 
 function losslessDecodeURI(aURI) {
-  if (aURI.schemeIs("moz-action"))
+  let scheme = aURI.scheme;
+  if (scheme == "moz-action")
     throw new Error("losslessDecodeURI should never get a moz-action URI");
 
   var value = aURI.spec;
 
+  let decodeASCIIOnly = !["https", "http", "file", "ftp"].includes(scheme);
   
-  if (!/%25(?:3B|2F|3F|3A|40|26|3D|2B|24|2C|23)/i.test(value))
-    try {
-      value = decodeURI(value)
-                
-                
-                
-                
-                
-                
-                
-                .replace(/%(?!3B|2F|3F|3A|40|26|3D|2B|24|2C|23)|[\r\n\t]/ig,
-                         encodeURIComponent);
-    } catch (e) {}
+  if (!/%25(?:3B|2F|3F|3A|40|26|3D|2B|24|2C|23)/i.test(value)) {
+    if (decodeASCIIOnly) {
+      
+      
+      
+      
+      value = value.replace(/%(2[0-4]|2[6-9a-f]|[3-6][0-9a-f]|7[0-9a-e])/g, decodeURI);
+    } else {
+      try {
+        value = decodeURI(value)
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+                  .replace(/%(?!3B|2F|3F|3A|40|26|3D|2B|24|2C|23)|[\r\n\t]/ig,
+                           encodeURIComponent);
+      } catch (e) {}
+    }
+  }
 
   
   
