@@ -4,360 +4,114 @@
 
 
 
-import tempfile, os, sys
-import random
-import pexpect
-import subprocess
-import shutil
+def writeSpecification(subject, issuer, extensions, fileBase):
+    with open('%s.pem.certspec' % fileBase, 'w+') as f:
+        f.write('issuer:%s\n' % issuer)
+        f.write('subject:%s\n' % subject)
+        if extensions:
+            f.write('%s\n' % extensions)
 
-libpath = os.path.abspath('../psm_common_py')
+def generateCommonEndEntityCertificates(issuer, issuerFileBase):
+    writeSpecification('www.foo.com', issuer, None, 'cn-www.foo.com-%s' % issuerFileBase)
+    writeSpecification('www.foo.org', issuer, None, 'cn-www.foo.org-%s' % issuerFileBase)
+    writeSpecification('www.foo.com', issuer, 'extension:subjectAlternativeName:*.foo.org',
+        'cn-www.foo.com-alt-foo.org-%s' % issuerFileBase)
+    writeSpecification('www.foo.org', issuer, 'extension:subjectAlternativeName:*.foo.com',
+        'cn-www.foo.org-alt-foo.com-%s' % issuerFileBase)
+    writeSpecification('www.foo.com', issuer, 'extension:subjectAlternativeName:*.foo.com',
+        'cn-www.foo.com-alt-foo.com-%s' % issuerFileBase)
+    writeSpecification('www.foo.org', issuer, 'extension:subjectAlternativeName:*.foo.org',
+        'cn-www.foo.org-alt-foo.org-%s' % issuerFileBase)
+    writeSpecification('www.foo.com', issuer,
+        'extension:subjectAlternativeName:*.foo.com,*.a.a.us,*.b.a.us',
+        'cn-www.foo.com-alt-foo.com-a.a.us-b.a.us-%s' % issuerFileBase)
+    writeSpecification('/C=US/O=bar/CN=www.foo.com', issuer, None,
+        'cn-www.foo.com_o-bar_c-us-%s' % issuerFileBase)
+    writeSpecification('/C=US/O=bar/CN=www.foo.org', issuer, None,
+        'cn-www.foo.org_o-bar_c-us-%s' % issuerFileBase)
+    writeSpecification('/C=US/O=bar/CN=www.foo.com', issuer,
+        'extension:subjectAlternativeName:*.foo.org',
+        'cn-www.foo.com_o-bar_c-us-alt-foo.org-%s' % issuerFileBase)
+    writeSpecification('/C=US/O=bar/CN=www.foo.org', issuer,
+        'extension:subjectAlternativeName:*.foo.com',
+        'cn-www.foo.org_o-bar_c-us-alt-foo.com-%s' % issuerFileBase)
+    writeSpecification('/C=US/O=bar/CN=www.foo.com', issuer,
+        'extension:subjectAlternativeName:*.foo.com',
+        'cn-www.foo.com_o-bar_c-us-alt-foo.com-%s' % issuerFileBase)
+    writeSpecification('/C=US/O=bar/CN=www.foo.org', issuer,
+        'extension:subjectAlternativeName:*.foo.org',
+        'cn-www.foo.org_o-bar_c-us-alt-foo.org-%s' % issuerFileBase)
+    writeSpecification('/C=US/O=bar/CN=www.foo.com', issuer,
+        'extension:subjectAlternativeName:*.foo.com,*.a.a.us,*.b.a.us',
+        'cn-www.foo.com_o-bar_c-us-alt-foo.com-a.a.us-b.a.us-%s' % issuerFileBase)
 
-sys.path.append(libpath)
-
-import CertUtils
-
-srcdir = os.getcwd()
-db = tempfile.mkdtemp()
-
-CA_basic_constraints = "basicConstraints = critical, CA:TRUE\n"
-EE_basic_constraints = "basicConstraints = CA:FALSE\n"
-
-CA_full_ku = ("keyUsage = keyCertSign, cRLSign\n")
-
-authority_key_ident = "authorityKeyIdentifier = keyid, issuer\n"
-subject_key_ident = "subjectKeyIdentifier = hash\n"
-
-def generate_family(db_dir, dst_dir, ca_key, ca_cert, base_name):
-    key_type = 'rsa'
-    ee_ext_base = EE_basic_constraints + authority_key_ident;
+def generateCerts():
     
-    CertUtils.generate_cert_generic(db,
-                                    srcdir,
-                                    10,
-                                    key_type,
-                                    'cn-www.foo.com-'+ base_name,
-                                    ee_ext_base,
-                                    ca_key,
-                                    ca_cert,
-                                    '/CN=www.foo.com')
-    
-    CertUtils.generate_cert_generic(db,
-                                    srcdir,
-                                    11,
-                                    key_type,
-                                    'cn-www.foo.org-'+ base_name,
-                                    ee_ext_base,
-                                    ca_key,
-                                    ca_cert,
-                                    '/CN=www.foo.org')
-    
-    alt_name_ext = 'subjectAltName =DNS:*.foo.org'
-    CertUtils.generate_cert_generic(db,
-                                    srcdir,
-                                    12,
-                                    key_type,
-                                    'cn-www.foo.com-alt-foo.org-'+ base_name,
-                                    ee_ext_base + alt_name_ext,
-                                    ca_key,
-                                    ca_cert,
-                                    '/CN=www.foo.com')
-    
-    alt_name_ext = 'subjectAltName =DNS:*.foo.com'
-    CertUtils.generate_cert_generic(db,
-                                    srcdir,
-                                    13,
-                                    key_type,
-                                    'cn-www.foo.org-alt-foo.com-'+ base_name,
-                                    ee_ext_base + alt_name_ext,
-                                    ca_key,
-                                    ca_cert,
-                                    '/CN=www.foo.org')
-    
-    alt_name_ext = 'subjectAltName =DNS:*.foo.com'
-    CertUtils.generate_cert_generic(db,
-                                    srcdir,
-                                    14,
-                                    key_type,
-                                    'cn-www.foo.com-alt-foo.com-'+ base_name,
-                                    ee_ext_base + alt_name_ext,
-                                    ca_key,
-                                    ca_cert,
-                                    '/CN=www.foo.com')
-    
-    alt_name_ext = 'subjectAltName =DNS:*.foo.org'
-    CertUtils.generate_cert_generic(db,
-                                    srcdir,
-                                    15,
-                                    key_type,
-                                    'cn-www.foo.org-alt-foo.org-'+ base_name,
-                                    ee_ext_base + alt_name_ext,
-                                    ca_key,
-                                    ca_cert,
-                                    '/CN=www.foo.org')
+    caExtensions = 'extension:basicConstraints:cA,\nextension:keyUsage:cRLSign,keyCertSign'
+    writeSpecification('ca-nc', 'ca-nc', caExtensions, 'ca-nc')
 
     
-    alt_name_ext = 'subjectAltName =DNS:*.foo.com,DNS:*.a.a.us,DNS:*.b.a.us'
-    CertUtils.generate_cert_generic(db,
-                                    srcdir,
-                                    16,
-                                    key_type,
-                                    'cn-www.foo.com-alt-foo.com-a.a.us-b.a.us-'+ base_name,
-                                    ee_ext_base + alt_name_ext,
-                                    ca_key,
-                                    ca_cert,
-                                    '/CN=www.foo.com')
-
-
+    writeSpecification('int-nc-perm-foo.com-ca-nc', 'ca-nc',
+        caExtensions + '\nextension:nameConstraints:permitted:foo.com',
+        'int-nc-perm-foo.com-ca-nc')
+    generateCommonEndEntityCertificates('int-nc-perm-foo.com-ca-nc', 'int-nc-perm-foo.com-ca-nc')
 
     
-    CertUtils.generate_cert_generic(db,
-                                    srcdir,
-                                    17,
-                                    key_type,
-                                    'cn-www.foo.com_o-bar_c-us-'+ base_name,
-                                    ee_ext_base,
-                                    ca_key,
-                                    ca_cert,
-                                    '/C=US/O=bar/CN=www.foo.com')
+    writeSpecification('int-nc-excl-foo.com-ca-nc', 'ca-nc',
+        caExtensions + '\nextension:nameConstraints:excluded:foo.com',
+        'int-nc-excl-foo.com-ca-nc')
+    generateCommonEndEntityCertificates('int-nc-excl-foo.com-ca-nc', 'int-nc-excl-foo.com-ca-nc')
 
     
-    CertUtils.generate_cert_generic(db,
-                                    srcdir,
-                                    18,
-                                    key_type,
-                                    'cn-www.foo.org_o-bar_c-us-'+ base_name,
-                                    ee_ext_base,
-                                    ca_key,
-                                    ca_cert,
-                                    '/C=US/O=bar/CN=www.foo.org')
-    
-    alt_name_ext = 'subjectAltName =DNS:*.foo.org'
-    CertUtils.generate_cert_generic(db,
-                                    srcdir,
-                                    19,
-                                    key_type,
-                                    'cn-www.foo.com_o-bar_c-us-alt-foo.org-'+ base_name,
-                                    ee_ext_base + alt_name_ext,
-                                    ca_key,
-                                    ca_cert,
-                                    '/C=US/O=bar/CN=www.foo.com')
-    
-    alt_name_ext = 'subjectAltName =DNS:*.foo.com'
-    CertUtils.generate_cert_generic(db,
-                                    srcdir,
-                                    20,
-                                    key_type,
-                                    'cn-www.foo.org_o-bar_c-us-alt-foo.com-'+ base_name,
-                                    ee_ext_base + alt_name_ext,
-                                    ca_key,
-                                    ca_cert,
-                                    '/C=US/O=bar/CN=www.foo.org')
-    
-    alt_name_ext = 'subjectAltName =DNS:*.foo.com'
-    CertUtils.generate_cert_generic(db,
-                                    srcdir,
-                                    21,
-                                    key_type,
-                                    'cn-www.foo.com_o-bar_c-us-alt-foo.com-'+ base_name,
-                                    ee_ext_base + alt_name_ext,
-                                    ca_key,
-                                    ca_cert,
-                                    '/C=US/O=bar/CN=www.foo.com')
-    
-    alt_name_ext = 'subjectAltName =DNS:*.foo.org'
-    CertUtils.generate_cert_generic(db,
-                                    srcdir,
-                                    22,
-                                    key_type,
-                                    'cn-www.foo.org_o-bar_c-us-alt-foo.org-'+ base_name,
-                                    ee_ext_base + alt_name_ext,
-                                    ca_key,
-                                    ca_cert,
-                                    '/C=US/O=bar/CN=www.foo.org')
+    writeSpecification('int-nc-c-us-ca-nc', 'ca-nc',
+        caExtensions + '\nextension:nameConstraints:permitted:/C=US', 'int-nc-c-us-ca-nc')
+    generateCommonEndEntityCertificates('int-nc-c-us-ca-nc', 'int-nc-c-us-ca-nc')
 
     
-    alt_name_ext = 'subjectAltName =DNS:*.foo.com,DNS:*.a.a.us,DNS:*.b.a.us'
-    CertUtils.generate_cert_generic(db,
-                                    srcdir,
-                                    23,
-                                    key_type,
-                                    'cn-www.foo.com_o-bar_c-us-alt-foo.com-a.a.us-b.a.us-'+ base_name,
-                                    ee_ext_base + alt_name_ext,
-                                    ca_key,
-                                    ca_cert,
-                                    '/C=US/O=bar/CN=www.foo.com')
-
-
-
-
-def self_sign_csr(db_dir, dst_dir, csr_name, key_file, serial_num, ext_text,
-                  out_prefix):
-    extensions_filename = db_dir + "/openssl-exts"
-    f = open(extensions_filename, 'w')
-    f.write(ext_text)
-    f.close()
-    cert_name = dst_dir + "/" + out_prefix + ".der"
-    os.system ("openssl x509 -req -sha256 -days 3650 -in " + csr_name +
-               " -signkey " + key_file +
-               " -set_serial " + str(serial_num) +
-               " -extfile " + extensions_filename +
-               " -outform DER -out " + cert_name)
-
-
-
-def generate_certs():
-    key_type = 'rsa'
-    ca_ext = CA_basic_constraints + CA_full_ku + subject_key_ident;
-    ee_ext_text = (EE_basic_constraints + authority_key_ident)
-    [ca_key, ca_cert] = CertUtils.generate_cert_generic(db,
-                                                        srcdir,
-                                                        1,
-                                                        key_type,
-                                                        'ca-nc',
-                                                         ca_ext)
-    
-    name = 'int-nc-perm-foo.com-ca-nc'
-    name_constraints = "nameConstraints = permitted;DNS:foo.com\n"
-    [int_key, int_cert] = CertUtils.generate_cert_generic(db,
-                                    srcdir,
-                                    101,
-                                    key_type,
-                                    name,
-                                    ca_ext + authority_key_ident + name_constraints,
-                                    ca_key,
-                                    ca_cert)
-    generate_family(db, srcdir, int_key, int_cert, name)
+    writeSpecification('/C=US/CN=int-nc-foo.com-int-nc-c-us-ca-nc', 'int-nc-c-us-ca-nc',
+        caExtensions + '\nextension:nameConstraints:permitted:foo.com',
+        'int-nc-foo.com-int-nc-c-us-ca-nc')
+    generateCommonEndEntityCertificates('/C=US/CN=int-nc-foo.com-int-nc-c-us-ca-nc',
+        'int-nc-foo.com-int-nc-c-us-ca-nc')
 
     
-    name = 'int-nc-excl-foo.com-ca-nc'
-    name_constraints = "nameConstraints = excluded;DNS:foo.com\n"
-    [int_key, int_cert] = CertUtils.generate_cert_generic(db,
-                                    srcdir,
-                                    102,
-                                    key_type,
-                                    name,
-                                    ca_ext + name_constraints + authority_key_ident,
-                                    ca_key,
-                                    ca_cert)
-    generate_family(db, srcdir, int_key, int_cert, name)
+    writeSpecification('int-nc-perm-foo.com_c-us-ca-nc', 'ca-nc',
+        caExtensions + '\nextension:nameConstraints:permitted:foo.com,/C=US',
+        'int-nc-perm-foo.com_c-us-ca-nc')
+    generateCommonEndEntityCertificates('int-nc-perm-foo.com_c-us-ca-nc',
+        'int-nc-perm-foo.com_c-us-ca-nc')
 
     
-    name = 'int-nc-c-us-ca-nc'
-    name_constraints = "nameConstraints = permitted;dirName:dir_sect\n[dir_sect]\nC=US\n\n\n"
-    [int_key, int_cert] = CertUtils.generate_cert_generic(db,
-                                    srcdir,
-                                    103,
-                                    key_type,
-                                    name,
-                                    ca_ext + authority_key_ident + name_constraints,
-                                    ca_key,
-                                    ca_cert)
-    generate_family(db, srcdir, int_key, int_cert, name)
+    writeSpecification('int-nc-perm-c-uk-ca-nc', 'ca-nc',
+        caExtensions + '\nextension:nameConstraints:permitted:/C=UK', 'int-nc-perm-c-uk-ca-nc')
+    generateCommonEndEntityCertificates('int-nc-perm-c-uk-ca-nc', 'int-nc-perm-c-uk-ca-nc')
 
     
-    name = 'int-nc-foo.com-int-nc-c-us-ca-nc'
-    name_constraints = "nameConstraints = permitted;DNS:foo.com\n\n\n"
-    [int_key, int_cert] = CertUtils.generate_cert_generic(db,
-                                    srcdir,
-                                    104,
-                                    key_type,
-                                    name,
-                                    ca_ext + name_constraints + authority_key_ident,
-                                    int_key,
-                                    int_cert,
-                                    '/C=US/CN='+ name)
-    generate_family(db, srcdir, int_key, int_cert, name)
-
+    writeSpecification('/C=US/CN=int-c-us-int-nc-perm-c-uk-ca-nc', 'int-nc-perm-c-uk-ca-nc',
+        caExtensions, 'int-c-us-int-nc-perm-c-uk-ca-nc')
+    generateCommonEndEntityCertificates('/C=US/CN=int-c-us-int-nc-perm-c-uk-ca-nc',
+        'int-c-us-int-nc-perm-c-uk-ca-nc')
 
     
-    name = 'int-nc-perm-foo.com_c-us-ca-nc'
-    name_constraints = "nameConstraints = permitted;DNS:foo.com,permitted;dirName:dir_sect\n[dir_sect]\nC=US\n\n\n"
-    [int_key, int_cert] = CertUtils.generate_cert_generic(db,
-                                    srcdir,
-                                    105,
-                                    key_type,
-                                    name,
-                                    ca_ext + authority_key_ident + name_constraints,
-                                    ca_key,
-                                    ca_cert)
-    generate_family(db, srcdir, int_key, int_cert, name)
+    writeSpecification('int-nc-foo.com_a.us', 'ca-nc',
+        caExtensions + '\nextension:nameConstraints:permitted:foo.com,a.us',
+        'int-nc-foo.com_a.us')
+    generateCommonEndEntityCertificates('int-nc-foo.com_a.us', 'int-nc-foo.com_a.us')
 
     
-    name = 'int-nc-perm-c-uk-ca-nc'
-    name_constraints = "nameConstraints = permitted;dirName:dir_sect\n[dir_sect]\nC=UK\n\n\n"
-    [int_key, int_cert] = CertUtils.generate_cert_generic(db,
-                                    srcdir,
-                                    106,
-                                    key_type,
-                                    name,
-                                    ca_ext + authority_key_ident + name_constraints,
-                                    ca_key,
-                                    ca_cert)
-    generate_family(db, srcdir, int_key, int_cert, name)
+    writeSpecification('int-nc-foo.com-int-nc-foo.com_a.us', 'int-nc-foo.com_a.us',
+        caExtensions + '\nextension:nameConstraints:permitted:foo.com',
+        'int-nc-foo.com-int-nc-foo.com_a.us')
+    generateCommonEndEntityCertificates('int-nc-foo.com-int-nc-foo.com_a.us',
+        'int-nc-foo.com-int-nc-foo.com_a.us')
 
     
-    name = 'int-c-us-int-nc-perm-c-uk-ca-nc'
-    
-    [int_key, int_cert] = CertUtils.generate_cert_generic(db,
-                                    srcdir,
-                                    108,
-                                    key_type,
-                                    name,
-                                    ca_ext + authority_key_ident,
-                                    int_key,
-                                    int_cert,
-                                    '/C=US/CN='+ name)
-    generate_family(db, srcdir, int_key, int_cert, name)
+    writeSpecification('ca-nc-perm-foo.com', 'ca-nc-perm-foo.com',
+        caExtensions + '\nextension:nameConstraints:permitted:foo.com', 'ca-nc-perm-foo.com')
 
     
-    name = 'int-nc-foo.com_a.us'
-    name_constraints = "nameConstraints = permitted;DNS:foo.com,permitted;DNS:a.us\n"
-    [int_key, int_cert] = CertUtils.generate_cert_generic(db,
-                                    srcdir,
-                                    109,
-                                    key_type,
-                                    name,
-                                    ca_ext + authority_key_ident + name_constraints,
-                                    ca_key,
-                                    ca_cert)
-    generate_family(db, srcdir, int_key, int_cert, name)
+    writeSpecification('int-ca-nc-perm-foo.com', 'ca-nc-perm-foo.com', caExtensions,
+        'int-ca-nc-perm-foo.com')
+    generateCommonEndEntityCertificates('int-ca-nc-perm-foo.com', 'int-ca-nc-perm-foo.com')
 
-    
-    name = 'int-nc-foo.com-int-nc-foo.com_a.us'
-    name_constraints = "nameConstraints = permitted;DNS:foo.com\n"
-    [int_key, int_cert] = CertUtils.generate_cert_generic(db,
-                                    srcdir,
-                                    110,
-                                    key_type,
-                                    name,
-                                    ca_ext + authority_key_ident + name_constraints,
-                                    ca_key,
-                                    ca_cert)
-    generate_family(db, srcdir, int_key, int_cert, name)
-
-
-
-    
-    name_constraints = "nameConstraints = permitted;DNS:foo.com\n "
-    [ca_key, ca_cert] = CertUtils.generate_cert_generic(db,
-                                                        srcdir,
-                                                        1,
-                                                        key_type,
-                                                        'ca-nc-perm-foo.com',
-                                                        ca_ext + name_constraints)
-
-    
-    name = 'int-ca-nc-perm-foo.com'
-    name_constraints = "\n"
-    [int_key, int_cert] = CertUtils.generate_cert_generic(db,
-                                    srcdir,
-                                    111,
-                                    key_type,
-                                    name,
-                                    ca_ext + name_constraints + authority_key_ident,
-                                    ca_key,
-                                    ca_cert)
-    generate_family(db, srcdir, int_key, int_cert, name) 
-
-
-generate_certs()
+generateCerts()

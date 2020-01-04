@@ -9,15 +9,13 @@ do_get_profile();
 const certdb = Cc["@mozilla.org/security/x509certdb;1"]
                  .getService(Ci.nsIX509CertDB);
 
-function certFromFile(filename) {
-  let der = readFile(do_get_file("test_name_constraints/" + filename, false));
-  return certdb.constructX509(der, der.length);
+function certFromFile(name) {
+  return constructCertFromFile(`test_name_constraints/${name}.pem`);
 }
 
 function load_cert(cert_name, trust_string) {
-  var cert_filename = cert_name + ".der";
-  addCertFromFile(certdb, "test_name_constraints/" + cert_filename, trust_string);
-  return certFromFile(cert_filename);
+  addCertFromFile(certdb, `test_name_constraints/${cert_name}.pem`, trust_string);
+  return certFromFile(cert_name);
 }
 
 function check_cert_err(cert, expected_error) {
@@ -52,164 +50,164 @@ function run_test() {
   
   check_ok_ca(load_cert('int-nc-perm-foo.com-ca-nc', ',,'));
   
-  check_ok(certFromFile('cn-www.foo.com-int-nc-perm-foo.com-ca-nc.der'));
-  check_fail(certFromFile('cn-www.foo.org-int-nc-perm-foo.com-ca-nc.der'));
-  check_fail(certFromFile('cn-www.foo.com-alt-foo.org-int-nc-perm-foo.com-ca-nc.der'));
-  check_ok(certFromFile('cn-www.foo.org-alt-foo.com-int-nc-perm-foo.com-ca-nc.der'));
-  check_ok(certFromFile('cn-www.foo.com-alt-foo.com-int-nc-perm-foo.com-ca-nc.der'));
-  check_fail(certFromFile('cn-www.foo.org-alt-foo.org-int-nc-perm-foo.com-ca-nc.der'));
+  check_ok(certFromFile('cn-www.foo.com-int-nc-perm-foo.com-ca-nc'));
+  check_fail(certFromFile('cn-www.foo.org-int-nc-perm-foo.com-ca-nc'));
+  check_fail(certFromFile('cn-www.foo.com-alt-foo.org-int-nc-perm-foo.com-ca-nc'));
+  check_ok(certFromFile('cn-www.foo.org-alt-foo.com-int-nc-perm-foo.com-ca-nc'));
+  check_ok(certFromFile('cn-www.foo.com-alt-foo.com-int-nc-perm-foo.com-ca-nc'));
+  check_fail(certFromFile('cn-www.foo.org-alt-foo.org-int-nc-perm-foo.com-ca-nc'));
   
-  check_fail(certFromFile('cn-www.foo.com-alt-foo.com-a.a.us-b.a.us-int-nc-perm-foo.com-ca-nc.der'));
+  check_fail(certFromFile('cn-www.foo.com-alt-foo.com-a.a.us-b.a.us-int-nc-perm-foo.com-ca-nc'));
   
-  check_ok(certFromFile('cn-www.foo.com_o-bar_c-us-int-nc-perm-foo.com-ca-nc.der'));
-  check_fail(certFromFile('cn-www.foo.org_o-bar_c-us-int-nc-perm-foo.com-ca-nc.der'));
-  check_fail(certFromFile('cn-www.foo.com_o-bar_c-us-alt-foo.org-int-nc-perm-foo.com-ca-nc.der'));
-  check_ok(certFromFile('cn-www.foo.org_o-bar_c-us-alt-foo.com-int-nc-perm-foo.com-ca-nc.der'));
-  check_ok(certFromFile('cn-www.foo.com_o-bar_c-us-alt-foo.com-int-nc-perm-foo.com-ca-nc.der'));
-  check_fail(certFromFile('cn-www.foo.org_o-bar_c-us-alt-foo.org-int-nc-perm-foo.com-ca-nc.der'));
+  check_ok(certFromFile('cn-www.foo.com_o-bar_c-us-int-nc-perm-foo.com-ca-nc'));
+  check_fail(certFromFile('cn-www.foo.org_o-bar_c-us-int-nc-perm-foo.com-ca-nc'));
+  check_fail(certFromFile('cn-www.foo.com_o-bar_c-us-alt-foo.org-int-nc-perm-foo.com-ca-nc'));
+  check_ok(certFromFile('cn-www.foo.org_o-bar_c-us-alt-foo.com-int-nc-perm-foo.com-ca-nc'));
+  check_ok(certFromFile('cn-www.foo.com_o-bar_c-us-alt-foo.com-int-nc-perm-foo.com-ca-nc'));
+  check_fail(certFromFile('cn-www.foo.org_o-bar_c-us-alt-foo.org-int-nc-perm-foo.com-ca-nc'));
   
-  check_fail(certFromFile('cn-www.foo.com_o-bar_c-us-alt-foo.com-a.a.us-b.a.us-int-nc-perm-foo.com-ca-nc.der'));
+  check_fail(certFromFile('cn-www.foo.com_o-bar_c-us-alt-foo.com-a.a.us-b.a.us-int-nc-perm-foo.com-ca-nc'));
 
   
   
   
   check_ok_ca(load_cert('int-nc-excl-foo.com-ca-nc', ',,'));
   
-  check_fail(certFromFile('cn-www.foo.com-int-nc-excl-foo.com-ca-nc.der'));
-  check_ok(certFromFile('cn-www.foo.org-int-nc-excl-foo.com-ca-nc.der'));
+  check_fail(certFromFile('cn-www.foo.com-int-nc-excl-foo.com-ca-nc'));
+  check_ok(certFromFile('cn-www.foo.org-int-nc-excl-foo.com-ca-nc'));
   
   
   
-  check_ok(certFromFile('cn-www.foo.com-alt-foo.org-int-nc-excl-foo.com-ca-nc.der'));
-  check_fail(certFromFile('cn-www.foo.org-alt-foo.com-int-nc-excl-foo.com-ca-nc.der'));
-  check_fail(certFromFile('cn-www.foo.com-alt-foo.com-int-nc-excl-foo.com-ca-nc.der'));
-  check_ok(certFromFile('cn-www.foo.org-alt-foo.org-int-nc-excl-foo.com-ca-nc.der'));
+  check_ok(certFromFile('cn-www.foo.com-alt-foo.org-int-nc-excl-foo.com-ca-nc'));
+  check_fail(certFromFile('cn-www.foo.org-alt-foo.com-int-nc-excl-foo.com-ca-nc'));
+  check_fail(certFromFile('cn-www.foo.com-alt-foo.com-int-nc-excl-foo.com-ca-nc'));
+  check_ok(certFromFile('cn-www.foo.org-alt-foo.org-int-nc-excl-foo.com-ca-nc'));
   
-  check_fail(certFromFile('cn-www.foo.com-alt-foo.com-a.a.us-b.a.us-int-nc-excl-foo.com-ca-nc.der'));
+  check_fail(certFromFile('cn-www.foo.com-alt-foo.com-a.a.us-b.a.us-int-nc-excl-foo.com-ca-nc'));
   
-  check_fail(certFromFile('cn-www.foo.com_o-bar_c-us-int-nc-excl-foo.com-ca-nc.der'));
-  check_ok(certFromFile('cn-www.foo.org_o-bar_c-us-int-nc-excl-foo.com-ca-nc.der'));
-  check_ok(certFromFile('cn-www.foo.com_o-bar_c-us-alt-foo.org-int-nc-excl-foo.com-ca-nc.der'));
-  check_fail(certFromFile('cn-www.foo.org_o-bar_c-us-alt-foo.com-int-nc-excl-foo.com-ca-nc.der'));
-  check_fail(certFromFile('cn-www.foo.com_o-bar_c-us-alt-foo.com-int-nc-excl-foo.com-ca-nc.der'));
-  check_ok(certFromFile('cn-www.foo.org_o-bar_c-us-alt-foo.org-int-nc-excl-foo.com-ca-nc.der'));
-  check_fail(certFromFile('cn-www.foo.com_o-bar_c-us-alt-foo.com-a.a.us-b.a.us-int-nc-excl-foo.com-ca-nc.der'));
+  check_fail(certFromFile('cn-www.foo.com_o-bar_c-us-int-nc-excl-foo.com-ca-nc'));
+  check_ok(certFromFile('cn-www.foo.org_o-bar_c-us-int-nc-excl-foo.com-ca-nc'));
+  check_ok(certFromFile('cn-www.foo.com_o-bar_c-us-alt-foo.org-int-nc-excl-foo.com-ca-nc'));
+  check_fail(certFromFile('cn-www.foo.org_o-bar_c-us-alt-foo.com-int-nc-excl-foo.com-ca-nc'));
+  check_fail(certFromFile('cn-www.foo.com_o-bar_c-us-alt-foo.com-int-nc-excl-foo.com-ca-nc'));
+  check_ok(certFromFile('cn-www.foo.org_o-bar_c-us-alt-foo.org-int-nc-excl-foo.com-ca-nc'));
+  check_fail(certFromFile('cn-www.foo.com_o-bar_c-us-alt-foo.com-a.a.us-b.a.us-int-nc-excl-foo.com-ca-nc'));
 
   
   
   
   check_ok_ca(load_cert('int-nc-c-us-ca-nc', ',,'));
-  check_fail(certFromFile('cn-www.foo.com-int-nc-c-us-ca-nc.der'));
-  check_fail(certFromFile('cn-www.foo.org-int-nc-c-us-ca-nc.der'));
-  check_fail(certFromFile('cn-www.foo.com-alt-foo.org-int-nc-c-us-ca-nc.der'));
-  check_fail(certFromFile('cn-www.foo.org-alt-foo.com-int-nc-c-us-ca-nc.der'));
-  check_fail(certFromFile('cn-www.foo.com-alt-foo.com-int-nc-c-us-ca-nc.der'));
-  check_fail(certFromFile('cn-www.foo.org-alt-foo.org-int-nc-c-us-ca-nc.der'));
-  check_fail(certFromFile('cn-www.foo.com-alt-foo.com-a.a.us-b.a.us-int-nc-c-us-ca-nc.der'));
-  check_ok(certFromFile('cn-www.foo.com_o-bar_c-us-int-nc-c-us-ca-nc.der'));
-  check_ok(certFromFile('cn-www.foo.org_o-bar_c-us-int-nc-c-us-ca-nc.der'));
-  check_ok(certFromFile('cn-www.foo.com_o-bar_c-us-alt-foo.org-int-nc-c-us-ca-nc.der'));
-  check_ok(certFromFile('cn-www.foo.org_o-bar_c-us-alt-foo.com-int-nc-c-us-ca-nc.der'));
-  check_ok(certFromFile('cn-www.foo.com_o-bar_c-us-alt-foo.com-int-nc-c-us-ca-nc.der'));
-  check_ok(certFromFile('cn-www.foo.org_o-bar_c-us-alt-foo.org-int-nc-c-us-ca-nc.der'));
-  check_ok(certFromFile('cn-www.foo.com_o-bar_c-us-alt-foo.com-a.a.us-b.a.us-int-nc-c-us-ca-nc.der'));
+  check_fail(certFromFile('cn-www.foo.com-int-nc-c-us-ca-nc'));
+  check_fail(certFromFile('cn-www.foo.org-int-nc-c-us-ca-nc'));
+  check_fail(certFromFile('cn-www.foo.com-alt-foo.org-int-nc-c-us-ca-nc'));
+  check_fail(certFromFile('cn-www.foo.org-alt-foo.com-int-nc-c-us-ca-nc'));
+  check_fail(certFromFile('cn-www.foo.com-alt-foo.com-int-nc-c-us-ca-nc'));
+  check_fail(certFromFile('cn-www.foo.org-alt-foo.org-int-nc-c-us-ca-nc'));
+  check_fail(certFromFile('cn-www.foo.com-alt-foo.com-a.a.us-b.a.us-int-nc-c-us-ca-nc'));
+  check_ok(certFromFile('cn-www.foo.com_o-bar_c-us-int-nc-c-us-ca-nc'));
+  check_ok(certFromFile('cn-www.foo.org_o-bar_c-us-int-nc-c-us-ca-nc'));
+  check_ok(certFromFile('cn-www.foo.com_o-bar_c-us-alt-foo.org-int-nc-c-us-ca-nc'));
+  check_ok(certFromFile('cn-www.foo.org_o-bar_c-us-alt-foo.com-int-nc-c-us-ca-nc'));
+  check_ok(certFromFile('cn-www.foo.com_o-bar_c-us-alt-foo.com-int-nc-c-us-ca-nc'));
+  check_ok(certFromFile('cn-www.foo.org_o-bar_c-us-alt-foo.org-int-nc-c-us-ca-nc'));
+  check_ok(certFromFile('cn-www.foo.com_o-bar_c-us-alt-foo.com-a.a.us-b.a.us-int-nc-c-us-ca-nc'));
 
   
   
   
   
   check_ok_ca(load_cert('int-nc-foo.com-int-nc-c-us-ca-nc', ',,'));
-  check_fail(certFromFile('cn-www.foo.com-int-nc-foo.com-int-nc-c-us-ca-nc.der'));
-  check_fail(certFromFile('cn-www.foo.org-int-nc-foo.com-int-nc-c-us-ca-nc.der'));
-  check_fail(certFromFile('cn-www.foo.com-alt-foo.org-int-nc-foo.com-int-nc-c-us-ca-nc.der'));
-  check_fail(certFromFile('cn-www.foo.org-alt-foo.com-int-nc-foo.com-int-nc-c-us-ca-nc.der'));
-  check_fail(certFromFile('cn-www.foo.com-alt-foo.com-int-nc-foo.com-int-nc-c-us-ca-nc.der'));
-  check_fail(certFromFile('cn-www.foo.org-alt-foo.org-int-nc-foo.com-int-nc-c-us-ca-nc.der'));
-  check_fail(certFromFile('cn-www.foo.com-alt-foo.com-a.a.us-b.a.us-int-nc-foo.com-int-nc-c-us-ca-nc.der'));
-  check_ok(certFromFile('cn-www.foo.com_o-bar_c-us-int-nc-foo.com-int-nc-c-us-ca-nc.der'));
-  check_fail(certFromFile('cn-www.foo.org_o-bar_c-us-int-nc-foo.com-int-nc-c-us-ca-nc.der'));
-  check_fail(certFromFile('cn-www.foo.com_o-bar_c-us-alt-foo.org-int-nc-foo.com-int-nc-c-us-ca-nc.der'));
-  check_ok(certFromFile('cn-www.foo.org_o-bar_c-us-alt-foo.com-int-nc-foo.com-int-nc-c-us-ca-nc.der'));
-  check_ok(certFromFile('cn-www.foo.com_o-bar_c-us-alt-foo.com-int-nc-foo.com-int-nc-c-us-ca-nc.der'));
-  check_fail(certFromFile('cn-www.foo.org_o-bar_c-us-alt-foo.org-int-nc-foo.com-int-nc-c-us-ca-nc.der'));
-  check_fail(certFromFile('cn-www.foo.com_o-bar_c-us-alt-foo.com-a.a.us-b.a.us-int-nc-foo.com-int-nc-c-us-ca-nc.der'));
+  check_fail(certFromFile('cn-www.foo.com-int-nc-foo.com-int-nc-c-us-ca-nc'));
+  check_fail(certFromFile('cn-www.foo.org-int-nc-foo.com-int-nc-c-us-ca-nc'));
+  check_fail(certFromFile('cn-www.foo.com-alt-foo.org-int-nc-foo.com-int-nc-c-us-ca-nc'));
+  check_fail(certFromFile('cn-www.foo.org-alt-foo.com-int-nc-foo.com-int-nc-c-us-ca-nc'));
+  check_fail(certFromFile('cn-www.foo.com-alt-foo.com-int-nc-foo.com-int-nc-c-us-ca-nc'));
+  check_fail(certFromFile('cn-www.foo.org-alt-foo.org-int-nc-foo.com-int-nc-c-us-ca-nc'));
+  check_fail(certFromFile('cn-www.foo.com-alt-foo.com-a.a.us-b.a.us-int-nc-foo.com-int-nc-c-us-ca-nc'));
+  check_ok(certFromFile('cn-www.foo.com_o-bar_c-us-int-nc-foo.com-int-nc-c-us-ca-nc'));
+  check_fail(certFromFile('cn-www.foo.org_o-bar_c-us-int-nc-foo.com-int-nc-c-us-ca-nc'));
+  check_fail(certFromFile('cn-www.foo.com_o-bar_c-us-alt-foo.org-int-nc-foo.com-int-nc-c-us-ca-nc'));
+  check_ok(certFromFile('cn-www.foo.org_o-bar_c-us-alt-foo.com-int-nc-foo.com-int-nc-c-us-ca-nc'));
+  check_ok(certFromFile('cn-www.foo.com_o-bar_c-us-alt-foo.com-int-nc-foo.com-int-nc-c-us-ca-nc'));
+  check_fail(certFromFile('cn-www.foo.org_o-bar_c-us-alt-foo.org-int-nc-foo.com-int-nc-c-us-ca-nc'));
+  check_fail(certFromFile('cn-www.foo.com_o-bar_c-us-alt-foo.com-a.a.us-b.a.us-int-nc-foo.com-int-nc-c-us-ca-nc'));
 
   
   
   
   check_ok_ca(load_cert('int-nc-perm-foo.com_c-us-ca-nc' , ',,'));
-  check_fail(certFromFile('cn-www.foo.com-int-nc-perm-foo.com_c-us-ca-nc.der'));
-  check_fail(certFromFile('cn-www.foo.org-int-nc-perm-foo.com_c-us-ca-nc.der'));
-  check_fail(certFromFile('cn-www.foo.com-alt-foo.org-int-nc-perm-foo.com_c-us-ca-nc.der'));
-  check_fail(certFromFile('cn-www.foo.org-alt-foo.com-int-nc-perm-foo.com_c-us-ca-nc.der'));
-  check_fail(certFromFile('cn-www.foo.com-alt-foo.com-int-nc-perm-foo.com_c-us-ca-nc.der'));
-  check_fail(certFromFile('cn-www.foo.org-alt-foo.org-int-nc-perm-foo.com_c-us-ca-nc.der'));
-  check_fail(certFromFile('cn-www.foo.com-alt-foo.com-a.a.us-b.a.us-int-nc-perm-foo.com_c-us-ca-nc.der'));
-  check_ok(certFromFile('cn-www.foo.com_o-bar_c-us-int-nc-perm-foo.com_c-us-ca-nc.der'));
-  check_fail(certFromFile('cn-www.foo.org_o-bar_c-us-int-nc-perm-foo.com_c-us-ca-nc.der'));
-  check_fail(certFromFile('cn-www.foo.com_o-bar_c-us-alt-foo.org-int-nc-perm-foo.com_c-us-ca-nc.der'));
+  check_fail(certFromFile('cn-www.foo.com-int-nc-perm-foo.com_c-us-ca-nc'));
+  check_fail(certFromFile('cn-www.foo.org-int-nc-perm-foo.com_c-us-ca-nc'));
+  check_fail(certFromFile('cn-www.foo.com-alt-foo.org-int-nc-perm-foo.com_c-us-ca-nc'));
+  check_fail(certFromFile('cn-www.foo.org-alt-foo.com-int-nc-perm-foo.com_c-us-ca-nc'));
+  check_fail(certFromFile('cn-www.foo.com-alt-foo.com-int-nc-perm-foo.com_c-us-ca-nc'));
+  check_fail(certFromFile('cn-www.foo.org-alt-foo.org-int-nc-perm-foo.com_c-us-ca-nc'));
+  check_fail(certFromFile('cn-www.foo.com-alt-foo.com-a.a.us-b.a.us-int-nc-perm-foo.com_c-us-ca-nc'));
+  check_ok(certFromFile('cn-www.foo.com_o-bar_c-us-int-nc-perm-foo.com_c-us-ca-nc'));
+  check_fail(certFromFile('cn-www.foo.org_o-bar_c-us-int-nc-perm-foo.com_c-us-ca-nc'));
+  check_fail(certFromFile('cn-www.foo.com_o-bar_c-us-alt-foo.org-int-nc-perm-foo.com_c-us-ca-nc'));
   
   
-  check_ok(certFromFile('cn-www.foo.org_o-bar_c-us-alt-foo.com-int-nc-perm-foo.com_c-us-ca-nc.der'));
-  check_ok(certFromFile('cn-www.foo.com_o-bar_c-us-alt-foo.com-int-nc-perm-foo.com_c-us-ca-nc.der'));
-  check_fail(certFromFile('cn-www.foo.org_o-bar_c-us-alt-foo.org-int-nc-perm-foo.com_c-us-ca-nc.der'));
-  check_fail(certFromFile('cn-www.foo.com_o-bar_c-us-alt-foo.com-a.a.us-b.a.us-int-nc-perm-foo.com_c-us-ca-nc.der'));
+  check_ok(certFromFile('cn-www.foo.org_o-bar_c-us-alt-foo.com-int-nc-perm-foo.com_c-us-ca-nc'));
+  check_ok(certFromFile('cn-www.foo.com_o-bar_c-us-alt-foo.com-int-nc-perm-foo.com_c-us-ca-nc'));
+  check_fail(certFromFile('cn-www.foo.org_o-bar_c-us-alt-foo.org-int-nc-perm-foo.com_c-us-ca-nc'));
+  check_fail(certFromFile('cn-www.foo.com_o-bar_c-us-alt-foo.com-a.a.us-b.a.us-int-nc-perm-foo.com_c-us-ca-nc'));
 
   
   
   
   check_ok_ca(load_cert('int-nc-perm-c-uk-ca-nc', ',,'));
-  check_fail(certFromFile('cn-www.foo.com-int-nc-perm-c-uk-ca-nc.der'));
-  check_fail(certFromFile('cn-www.foo.org-int-nc-perm-c-uk-ca-nc.der'));
-  check_fail(certFromFile('cn-www.foo.com-alt-foo.org-int-nc-perm-c-uk-ca-nc.der'));
-  check_fail(certFromFile('cn-www.foo.org-alt-foo.com-int-nc-perm-c-uk-ca-nc.der'));
-  check_fail(certFromFile('cn-www.foo.com-alt-foo.com-int-nc-perm-c-uk-ca-nc.der'));
-  check_fail(certFromFile('cn-www.foo.org-alt-foo.org-int-nc-perm-c-uk-ca-nc.der'));
-  check_fail(certFromFile('cn-www.foo.com-alt-foo.com-a.a.us-b.a.us-int-nc-perm-c-uk-ca-nc.der'));
-  check_fail(certFromFile('cn-www.foo.com_o-bar_c-us-int-nc-perm-c-uk-ca-nc.der'));
-  check_fail(certFromFile('cn-www.foo.org_o-bar_c-us-int-nc-perm-c-uk-ca-nc.der'));
-  check_fail(certFromFile('cn-www.foo.com_o-bar_c-us-alt-foo.org-int-nc-perm-c-uk-ca-nc.der'));
-  check_fail(certFromFile('cn-www.foo.org_o-bar_c-us-alt-foo.com-int-nc-perm-c-uk-ca-nc.der'));
-  check_fail(certFromFile('cn-www.foo.com_o-bar_c-us-alt-foo.com-int-nc-perm-c-uk-ca-nc.der'));
-  check_fail(certFromFile('cn-www.foo.org_o-bar_c-us-alt-foo.org-int-nc-perm-c-uk-ca-nc.der'));
-  check_fail(certFromFile('cn-www.foo.com_o-bar_c-us-alt-foo.com-a.a.us-b.a.us-int-nc-perm-c-uk-ca-nc.der'));
+  check_fail(certFromFile('cn-www.foo.com-int-nc-perm-c-uk-ca-nc'));
+  check_fail(certFromFile('cn-www.foo.org-int-nc-perm-c-uk-ca-nc'));
+  check_fail(certFromFile('cn-www.foo.com-alt-foo.org-int-nc-perm-c-uk-ca-nc'));
+  check_fail(certFromFile('cn-www.foo.org-alt-foo.com-int-nc-perm-c-uk-ca-nc'));
+  check_fail(certFromFile('cn-www.foo.com-alt-foo.com-int-nc-perm-c-uk-ca-nc'));
+  check_fail(certFromFile('cn-www.foo.org-alt-foo.org-int-nc-perm-c-uk-ca-nc'));
+  check_fail(certFromFile('cn-www.foo.com-alt-foo.com-a.a.us-b.a.us-int-nc-perm-c-uk-ca-nc'));
+  check_fail(certFromFile('cn-www.foo.com_o-bar_c-us-int-nc-perm-c-uk-ca-nc'));
+  check_fail(certFromFile('cn-www.foo.org_o-bar_c-us-int-nc-perm-c-uk-ca-nc'));
+  check_fail(certFromFile('cn-www.foo.com_o-bar_c-us-alt-foo.org-int-nc-perm-c-uk-ca-nc'));
+  check_fail(certFromFile('cn-www.foo.org_o-bar_c-us-alt-foo.com-int-nc-perm-c-uk-ca-nc'));
+  check_fail(certFromFile('cn-www.foo.com_o-bar_c-us-alt-foo.com-int-nc-perm-c-uk-ca-nc'));
+  check_fail(certFromFile('cn-www.foo.org_o-bar_c-us-alt-foo.org-int-nc-perm-c-uk-ca-nc'));
+  check_fail(certFromFile('cn-www.foo.com_o-bar_c-us-alt-foo.com-a.a.us-b.a.us-int-nc-perm-c-uk-ca-nc'));
 
   
   
   
   check_fail_ca(load_cert('int-c-us-int-nc-perm-c-uk-ca-nc', ',,'));
-  check_fail(certFromFile('cn-www.foo.com-int-c-us-int-nc-perm-c-uk-ca-nc.der'));
-  check_fail(certFromFile('cn-www.foo.org-int-c-us-int-nc-perm-c-uk-ca-nc.der'));
-  check_fail(certFromFile('cn-www.foo.com-alt-foo.org-int-c-us-int-nc-perm-c-uk-ca-nc.der'));
-  check_fail(certFromFile('cn-www.foo.org-alt-foo.com-int-c-us-int-nc-perm-c-uk-ca-nc.der'));
-  check_fail(certFromFile('cn-www.foo.com-alt-foo.com-int-c-us-int-nc-perm-c-uk-ca-nc.der'));
-  check_fail(certFromFile('cn-www.foo.org-alt-foo.org-int-c-us-int-nc-perm-c-uk-ca-nc.der'));
-  check_fail(certFromFile('cn-www.foo.com-alt-foo.com-a.a.us-b.a.us-int-c-us-int-nc-perm-c-uk-ca-nc.der'));
-  check_fail(certFromFile('cn-www.foo.com_o-bar_c-us-int-c-us-int-nc-perm-c-uk-ca-nc.der'));
-  check_fail(certFromFile('cn-www.foo.org_o-bar_c-us-int-c-us-int-nc-perm-c-uk-ca-nc.der'));
-  check_fail(certFromFile('cn-www.foo.com_o-bar_c-us-alt-foo.org-int-c-us-int-nc-perm-c-uk-ca-nc.der'));
-  check_fail(certFromFile('cn-www.foo.org_o-bar_c-us-alt-foo.com-int-c-us-int-nc-perm-c-uk-ca-nc.der'));
-  check_fail(certFromFile('cn-www.foo.com_o-bar_c-us-alt-foo.com-int-c-us-int-nc-perm-c-uk-ca-nc.der'));
-  check_fail(certFromFile('cn-www.foo.org_o-bar_c-us-alt-foo.org-int-c-us-int-nc-perm-c-uk-ca-nc.der'));
-  check_fail(certFromFile('cn-www.foo.com_o-bar_c-us-alt-foo.com-a.a.us-b.a.us-int-c-us-int-nc-perm-c-uk-ca-nc.der'));
+  check_fail(certFromFile('cn-www.foo.com-int-c-us-int-nc-perm-c-uk-ca-nc'));
+  check_fail(certFromFile('cn-www.foo.org-int-c-us-int-nc-perm-c-uk-ca-nc'));
+  check_fail(certFromFile('cn-www.foo.com-alt-foo.org-int-c-us-int-nc-perm-c-uk-ca-nc'));
+  check_fail(certFromFile('cn-www.foo.org-alt-foo.com-int-c-us-int-nc-perm-c-uk-ca-nc'));
+  check_fail(certFromFile('cn-www.foo.com-alt-foo.com-int-c-us-int-nc-perm-c-uk-ca-nc'));
+  check_fail(certFromFile('cn-www.foo.org-alt-foo.org-int-c-us-int-nc-perm-c-uk-ca-nc'));
+  check_fail(certFromFile('cn-www.foo.com-alt-foo.com-a.a.us-b.a.us-int-c-us-int-nc-perm-c-uk-ca-nc'));
+  check_fail(certFromFile('cn-www.foo.com_o-bar_c-us-int-c-us-int-nc-perm-c-uk-ca-nc'));
+  check_fail(certFromFile('cn-www.foo.org_o-bar_c-us-int-c-us-int-nc-perm-c-uk-ca-nc'));
+  check_fail(certFromFile('cn-www.foo.com_o-bar_c-us-alt-foo.org-int-c-us-int-nc-perm-c-uk-ca-nc'));
+  check_fail(certFromFile('cn-www.foo.org_o-bar_c-us-alt-foo.com-int-c-us-int-nc-perm-c-uk-ca-nc'));
+  check_fail(certFromFile('cn-www.foo.com_o-bar_c-us-alt-foo.com-int-c-us-int-nc-perm-c-uk-ca-nc'));
+  check_fail(certFromFile('cn-www.foo.org_o-bar_c-us-alt-foo.org-int-c-us-int-nc-perm-c-uk-ca-nc'));
+  check_fail(certFromFile('cn-www.foo.com_o-bar_c-us-alt-foo.com-a.a.us-b.a.us-int-c-us-int-nc-perm-c-uk-ca-nc'));
 
   
   
   check_ok_ca(load_cert('int-nc-foo.com_a.us', ',,'));
-  check_ok(certFromFile('cn-www.foo.com-int-nc-foo.com_a.us.der'));
-  check_fail(certFromFile('cn-www.foo.org-int-nc-foo.com_a.us.der'));
-  check_fail(certFromFile('cn-www.foo.com-alt-foo.org-int-nc-foo.com_a.us.der'));
-  check_ok(certFromFile('cn-www.foo.org-alt-foo.com-int-nc-foo.com_a.us.der'));
-  check_ok(certFromFile('cn-www.foo.com-alt-foo.com-int-nc-foo.com_a.us.der'));
-  check_fail(certFromFile('cn-www.foo.org-alt-foo.org-int-nc-foo.com_a.us.der'));
-  check_ok(certFromFile('cn-www.foo.com-alt-foo.com-a.a.us-b.a.us-int-nc-foo.com_a.us.der'));
-  check_ok(certFromFile('cn-www.foo.com_o-bar_c-us-int-nc-foo.com_a.us.der'));
-  check_fail(certFromFile('cn-www.foo.org_o-bar_c-us-int-nc-foo.com_a.us.der'));
-  check_fail(certFromFile('cn-www.foo.com_o-bar_c-us-alt-foo.org-int-nc-foo.com_a.us.der'));
-  check_ok(certFromFile('cn-www.foo.org_o-bar_c-us-alt-foo.com-int-nc-foo.com_a.us.der'));
-  check_ok(certFromFile('cn-www.foo.com_o-bar_c-us-alt-foo.com-int-nc-foo.com_a.us.der'));
-  check_fail(certFromFile('cn-www.foo.org_o-bar_c-us-alt-foo.org-int-nc-foo.com_a.us.der'));
-  check_ok(certFromFile('cn-www.foo.com_o-bar_c-us-alt-foo.com-a.a.us-b.a.us-int-nc-foo.com_a.us.der'));
+  check_ok(certFromFile('cn-www.foo.com-int-nc-foo.com_a.us'));
+  check_fail(certFromFile('cn-www.foo.org-int-nc-foo.com_a.us'));
+  check_fail(certFromFile('cn-www.foo.com-alt-foo.org-int-nc-foo.com_a.us'));
+  check_ok(certFromFile('cn-www.foo.org-alt-foo.com-int-nc-foo.com_a.us'));
+  check_ok(certFromFile('cn-www.foo.com-alt-foo.com-int-nc-foo.com_a.us'));
+  check_fail(certFromFile('cn-www.foo.org-alt-foo.org-int-nc-foo.com_a.us'));
+  check_ok(certFromFile('cn-www.foo.com-alt-foo.com-a.a.us-b.a.us-int-nc-foo.com_a.us'));
+  check_ok(certFromFile('cn-www.foo.com_o-bar_c-us-int-nc-foo.com_a.us'));
+  check_fail(certFromFile('cn-www.foo.org_o-bar_c-us-int-nc-foo.com_a.us'));
+  check_fail(certFromFile('cn-www.foo.com_o-bar_c-us-alt-foo.org-int-nc-foo.com_a.us'));
+  check_ok(certFromFile('cn-www.foo.org_o-bar_c-us-alt-foo.com-int-nc-foo.com_a.us'));
+  check_ok(certFromFile('cn-www.foo.com_o-bar_c-us-alt-foo.com-int-nc-foo.com_a.us'));
+  check_fail(certFromFile('cn-www.foo.org_o-bar_c-us-alt-foo.org-int-nc-foo.com_a.us'));
+  check_ok(certFromFile('cn-www.foo.com_o-bar_c-us-alt-foo.com-a.a.us-b.a.us-int-nc-foo.com_a.us'));
 
   
   
@@ -218,45 +216,45 @@ function run_test() {
   
   
   check_ok_ca(load_cert('int-nc-foo.com-int-nc-foo.com_a.us', ',,'));
-  check_ok(certFromFile('cn-www.foo.com-int-nc-foo.com-int-nc-foo.com_a.us.der'));
-  check_fail(certFromFile('cn-www.foo.org-int-nc-foo.com-int-nc-foo.com_a.us.der'));
-  check_fail(certFromFile('cn-www.foo.com-alt-foo.org-int-nc-foo.com-int-nc-foo.com_a.us.der'));
-  check_ok(certFromFile('cn-www.foo.org-alt-foo.com-int-nc-foo.com-int-nc-foo.com_a.us.der'));
-  check_ok(certFromFile('cn-www.foo.com-alt-foo.com-int-nc-foo.com-int-nc-foo.com_a.us.der'));
-  check_fail(certFromFile('cn-www.foo.org-alt-foo.org-int-nc-foo.com-int-nc-foo.com_a.us.der'));
-  check_fail(certFromFile('cn-www.foo.com-alt-foo.com-a.a.us-b.a.us-int-nc-foo.com-int-nc-foo.com_a.us.der'));
-  check_ok(certFromFile('cn-www.foo.com_o-bar_c-us-int-nc-foo.com-int-nc-foo.com_a.us.der'));
-  check_fail(certFromFile('cn-www.foo.org_o-bar_c-us-int-nc-foo.com-int-nc-foo.com_a.us.der'));
-  check_fail(certFromFile('cn-www.foo.com_o-bar_c-us-alt-foo.org-int-nc-foo.com-int-nc-foo.com_a.us.der'));
-  check_ok(certFromFile('cn-www.foo.org_o-bar_c-us-alt-foo.com-int-nc-foo.com-int-nc-foo.com_a.us.der'));
-  check_ok(certFromFile('cn-www.foo.com_o-bar_c-us-alt-foo.com-int-nc-foo.com-int-nc-foo.com_a.us.der'));
-  check_fail(certFromFile('cn-www.foo.org_o-bar_c-us-alt-foo.org-int-nc-foo.com-int-nc-foo.com_a.us.der'));
-  check_fail(certFromFile('cn-www.foo.com_o-bar_c-us-alt-foo.com-a.a.us-b.a.us-int-nc-foo.com-int-nc-foo.com_a.us.der'));
+  check_ok(certFromFile('cn-www.foo.com-int-nc-foo.com-int-nc-foo.com_a.us'));
+  check_fail(certFromFile('cn-www.foo.org-int-nc-foo.com-int-nc-foo.com_a.us'));
+  check_fail(certFromFile('cn-www.foo.com-alt-foo.org-int-nc-foo.com-int-nc-foo.com_a.us'));
+  check_ok(certFromFile('cn-www.foo.org-alt-foo.com-int-nc-foo.com-int-nc-foo.com_a.us'));
+  check_ok(certFromFile('cn-www.foo.com-alt-foo.com-int-nc-foo.com-int-nc-foo.com_a.us'));
+  check_fail(certFromFile('cn-www.foo.org-alt-foo.org-int-nc-foo.com-int-nc-foo.com_a.us'));
+  check_fail(certFromFile('cn-www.foo.com-alt-foo.com-a.a.us-b.a.us-int-nc-foo.com-int-nc-foo.com_a.us'));
+  check_ok(certFromFile('cn-www.foo.com_o-bar_c-us-int-nc-foo.com-int-nc-foo.com_a.us'));
+  check_fail(certFromFile('cn-www.foo.org_o-bar_c-us-int-nc-foo.com-int-nc-foo.com_a.us'));
+  check_fail(certFromFile('cn-www.foo.com_o-bar_c-us-alt-foo.org-int-nc-foo.com-int-nc-foo.com_a.us'));
+  check_ok(certFromFile('cn-www.foo.org_o-bar_c-us-alt-foo.com-int-nc-foo.com-int-nc-foo.com_a.us'));
+  check_ok(certFromFile('cn-www.foo.com_o-bar_c-us-alt-foo.com-int-nc-foo.com-int-nc-foo.com_a.us'));
+  check_fail(certFromFile('cn-www.foo.org_o-bar_c-us-alt-foo.org-int-nc-foo.com-int-nc-foo.com_a.us'));
+  check_fail(certFromFile('cn-www.foo.com_o-bar_c-us-alt-foo.com-a.a.us-b.a.us-int-nc-foo.com-int-nc-foo.com_a.us'));
 
   
   
   
   check_ok_ca(load_cert('int-ca-nc-perm-foo.com', ',,'));
-  check_ok(certFromFile('cn-www.foo.com-int-ca-nc-perm-foo.com.der'));
-  check_fail(certFromFile('cn-www.foo.org-int-ca-nc-perm-foo.com.der'));
-  check_fail(certFromFile('cn-www.foo.com-alt-foo.org-int-ca-nc-perm-foo.com.der'));
-  check_ok(certFromFile('cn-www.foo.org-alt-foo.com-int-ca-nc-perm-foo.com.der'));
-  check_ok(certFromFile('cn-www.foo.com-alt-foo.com-int-ca-nc-perm-foo.com.der'));
-  check_fail(certFromFile('cn-www.foo.org-alt-foo.org-int-ca-nc-perm-foo.com.der'));
-  check_fail(certFromFile('cn-www.foo.com-alt-foo.com-a.a.us-b.a.us-int-ca-nc-perm-foo.com.der'));
-  check_ok(certFromFile('cn-www.foo.com_o-bar_c-us-int-ca-nc-perm-foo.com.der'));
-  check_fail(certFromFile('cn-www.foo.org_o-bar_c-us-int-ca-nc-perm-foo.com.der'));
-  check_fail(certFromFile('cn-www.foo.com_o-bar_c-us-alt-foo.org-int-ca-nc-perm-foo.com.der'));
-  check_ok(certFromFile('cn-www.foo.org_o-bar_c-us-alt-foo.com-int-ca-nc-perm-foo.com.der'));
-  check_ok(certFromFile('cn-www.foo.com_o-bar_c-us-alt-foo.com-int-ca-nc-perm-foo.com.der'));
-  check_fail(certFromFile('cn-www.foo.org_o-bar_c-us-alt-foo.org-int-ca-nc-perm-foo.com.der'));
-  check_fail(certFromFile('cn-www.foo.com_o-bar_c-us-alt-foo.com-a.a.us-b.a.us-int-ca-nc-perm-foo.com.der'));
+  check_ok(certFromFile('cn-www.foo.com-int-ca-nc-perm-foo.com'));
+  check_fail(certFromFile('cn-www.foo.org-int-ca-nc-perm-foo.com'));
+  check_fail(certFromFile('cn-www.foo.com-alt-foo.org-int-ca-nc-perm-foo.com'));
+  check_ok(certFromFile('cn-www.foo.org-alt-foo.com-int-ca-nc-perm-foo.com'));
+  check_ok(certFromFile('cn-www.foo.com-alt-foo.com-int-ca-nc-perm-foo.com'));
+  check_fail(certFromFile('cn-www.foo.org-alt-foo.org-int-ca-nc-perm-foo.com'));
+  check_fail(certFromFile('cn-www.foo.com-alt-foo.com-a.a.us-b.a.us-int-ca-nc-perm-foo.com'));
+  check_ok(certFromFile('cn-www.foo.com_o-bar_c-us-int-ca-nc-perm-foo.com'));
+  check_fail(certFromFile('cn-www.foo.org_o-bar_c-us-int-ca-nc-perm-foo.com'));
+  check_fail(certFromFile('cn-www.foo.com_o-bar_c-us-alt-foo.org-int-ca-nc-perm-foo.com'));
+  check_ok(certFromFile('cn-www.foo.org_o-bar_c-us-alt-foo.com-int-ca-nc-perm-foo.com'));
+  check_ok(certFromFile('cn-www.foo.com_o-bar_c-us-alt-foo.com-int-ca-nc-perm-foo.com'));
+  check_fail(certFromFile('cn-www.foo.org_o-bar_c-us-alt-foo.org-int-ca-nc-perm-foo.com'));
+  check_fail(certFromFile('cn-www.foo.com_o-bar_c-us-alt-foo.com-a.a.us-b.a.us-int-ca-nc-perm-foo.com'));
 
   
   
   
   {
-    let cert = certFromFile('cn-www.foo.org-int-nc-perm-foo.com-ca-nc.der');
+    let cert = certFromFile('cn-www.foo.org-int-nc-perm-foo.com-ca-nc');
     checkCertErrorGeneric(certdb, cert, SEC_ERROR_CERT_NOT_IN_NAME_SPACE,
                           certificateUsageSSLServer);
     checkCertErrorGeneric(certdb, cert, PRErrorCodeSuccess,
@@ -266,7 +264,7 @@ function run_test() {
   
   
   
-  load_cert("dcisscopy", "C,C,C");
-  check_ok(certFromFile('NameConstraints.dcissallowed.cert'));
-  check_fail(certFromFile('NameConstraints.dcissblocked.cert'));
+  load_cert("dciss", "C,C,C");
+  check_ok(certFromFile('NameConstraints.dcissallowed'));
+  check_fail(certFromFile('NameConstraints.dcissblocked'));
 }
