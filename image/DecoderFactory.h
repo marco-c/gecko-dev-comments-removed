@@ -64,10 +64,13 @@ public:
 
 
 
+
+
   static already_AddRefed<IDecodingTask>
   CreateDecoder(DecoderType aType,
                 NotNull<RasterImage*> aImage,
                 NotNull<SourceBuffer*> aSourceBuffer,
+                const gfx::IntSize& aIntrinsicSize,
                 const Maybe<gfx::IntSize>& aTargetSize,
                 DecoderFlags aDecoderFlags,
                 SurfaceFlags aSurfaceFlags,
@@ -86,10 +89,13 @@ public:
 
 
 
+
+
   static already_AddRefed<IDecodingTask>
   CreateAnimationDecoder(DecoderType aType,
                          NotNull<RasterImage*> aImage,
                          NotNull<SourceBuffer*> aSourceBuffer,
+                         const gfx::IntSize& aIntrinsicSize,
                          DecoderFlags aDecoderFlags,
                          SurfaceFlags aSurfaceFlags);
 

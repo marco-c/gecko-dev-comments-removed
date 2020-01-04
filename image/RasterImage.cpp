@@ -1309,28 +1309,17 @@ RasterImage::Decode(const IntSize& aSize, uint32_t aFlags)
   RefPtr<IDecodingTask> task;
   if (mAnim) {
     task = DecoderFactory::CreateAnimationDecoder(mDecoderType, WrapNotNull(this),
-                                                  mSourceBuffer, decoderFlags,
-                                                  surfaceFlags);
+                                                  mSourceBuffer, mSize,
+                                                  decoderFlags, surfaceFlags);
   } else {
     task = DecoderFactory::CreateDecoder(mDecoderType, WrapNotNull(this),
-                                         mSourceBuffer, targetSize, decoderFlags,
-                                         surfaceFlags, mRequestedSampleSize);
+                                         mSourceBuffer, mSize, targetSize,
+                                         decoderFlags, surfaceFlags,
+                                         mRequestedSampleSize);
   }
 
   
   if (!task) {
-    return NS_ERROR_FAILURE;
-  }
-
-  
-  
-  SurfaceKey surfaceKey =
-    RasterSurfaceKey(aSize,
-                     task->GetDecoder()->GetSurfaceFlags(),
-                      0);
-  InsertOutcome outcome =
-    SurfaceCache::InsertPlaceholder(ImageKey(this), surfaceKey);
-  if (outcome != InsertOutcome::SUCCESS) {
     return NS_ERROR_FAILURE;
   }
 
