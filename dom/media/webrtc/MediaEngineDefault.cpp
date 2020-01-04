@@ -6,6 +6,7 @@
 
 #include "nsCOMPtr.h"
 #include "mozilla/dom/File.h"
+#include "mozilla/UniquePtr.h"
 #include "nsILocalFile.h"
 #include "Layers.h"
 #include "ImageContainer.h"
@@ -314,7 +315,7 @@ public:
     
     
     
-    mAudioBuffer = new int16_t[mTotalLength];
+    mAudioBuffer = MakeUnique<int16_t[]>(mTotalLength);
     for (int i = 0; i < mTotalLength; i++) {
       
       mAudioBuffer[i] = (3276.8f * sin(2 * M_PI * i / mTotalLength));
@@ -333,7 +334,7 @@ public:
       } else {
         processSamples = mTotalLength - mReadLength;
       }
-      memcpy(aBuffer, mAudioBuffer + mReadLength, processSamples * bytesPerSample);
+      memcpy(aBuffer, &mAudioBuffer[mReadLength], processSamples * bytesPerSample);
       aBuffer += processSamples;
       mReadLength += processSamples;
       remaining -= processSamples;
@@ -344,7 +345,7 @@ public:
   }
 
 private:
-  nsAutoArrayPtr<int16_t> mAudioBuffer;
+  UniquePtr<int16_t[]> mAudioBuffer;
   int16_t mTotalLength;
   int16_t mReadLength;
 };

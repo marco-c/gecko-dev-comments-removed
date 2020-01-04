@@ -6,6 +6,7 @@
 #include "mozilla/Assertions.h"
 #include "mozilla/Base64.h"
 #include "mozilla/IntegerPrintfMacros.h"
+#include "mozilla/UniquePtr.h"
 #include "nsThreadUtils.h"
 #include "nsIServiceManager.h"
 #include "nsISocketTransport.h"
@@ -263,7 +264,7 @@ ServeResourceEvent::Run() {
   
   
   const int buffer_size = 32768;
-  nsAutoArrayPtr<char> b(new char[buffer_size]);
+  auto b = MakeUnique<char[]>(buffer_size);
 
   
   int64_t contentlength = resource->GetLength() - start;
@@ -271,8 +272,8 @@ ServeResourceEvent::Run() {
     static_assert (buffer_size > 1024,
                    "buffer_size must be large enough "
                    "to hold response headers");
-    snprintf(b, buffer_size, "Content-Length: %" PRId64 "\r\n", contentlength);
-    rv = WriteAll(b, strlen(b));
+    snprintf(b.get(), buffer_size, "Content-Length: %" PRId64 "\r\n", contentlength);
+    rv = WriteAll(b.get(), strlen(b.get()));
     if (NS_FAILED(rv)) { Shutdown(); return NS_OK; }
   }
 
@@ -282,10 +283,10 @@ ServeResourceEvent::Run() {
     static_assert (buffer_size > 1024,
                    "buffer_size must be large enough "
                    "to hold response headers");
-    snprintf(b, buffer_size, "Content-Range: "
+    snprintf(b.get(), buffer_size, "Content-Range: "
              "bytes %" PRId64 "-%" PRId64 "/%" PRId64 "\r\n",
              start, resource->GetLength() - 1, resource->GetLength());
-    rv = WriteAll(b, strlen(b));
+    rv = WriteAll(b.get(), strlen(b.get()));
     if (NS_FAILED(rv)) { Shutdown(); return NS_OK; }
   }
 
@@ -297,7 +298,7 @@ ServeResourceEvent::Run() {
 
   
   uint32_t bytesRead = 0; 
-  rv = resource->ReadAt(start, b, buffer_size, &bytesRead);
+  rv = resource->ReadAt(start, b.get(), buffer_size, &bytesRead);
   while (NS_SUCCEEDED(rv) && bytesRead != 0) {
     
     
@@ -306,10 +307,10 @@ ServeResourceEvent::Run() {
     start += bytesRead;
 
     
-    rv = WriteAll(b, bytesRead);
+    rv = WriteAll(b.get(), bytesRead);
     if (NS_FAILED (rv)) break;
 
-    rv = resource->ReadAt(start, b, 32768, &bytesRead);
+    rv = resource->ReadAt(start, b.get(), 32768, &bytesRead);
   }
 
   Shutdown();

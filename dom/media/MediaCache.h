@@ -12,6 +12,7 @@
 #include "nsHashKeys.h"
 #include "nsTHashtable.h"
 #include "Intervals.h"
+#include "mozilla/UniquePtr.h"
 
 class nsIPrincipal;
 
@@ -510,7 +511,7 @@ private:
   
   
   
-  nsAutoArrayPtr<int64_t> mPartialBlockBuffer;
+  UniquePtr<int64_t[]> mPartialBlockBuffer;
 };
 
 } 

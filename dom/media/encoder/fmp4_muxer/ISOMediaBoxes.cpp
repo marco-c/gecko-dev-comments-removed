@@ -127,7 +127,7 @@ TrackRunBox::fillSampleTable()
     return 0;
   }
   uint32_t len = frames.Length();
-  sample_info_table = new tbl[len];
+  sample_info_table = MakeUnique<tbl[]>(len);
   
   for (uint32_t i = 0; i < len; i++) {
     

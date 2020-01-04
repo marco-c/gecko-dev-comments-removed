@@ -11,6 +11,7 @@
 #include "mozilla/mozalloc.h" 
 #include "mozilla/RefPtr.h"
 #include "mozilla/TaskQueue.h"
+#include "mozilla/UniquePtr.h"
 #include "nsRect.h"
 #include "PlatformDecoderModule.h"
 #include "TimeUnits.h"
@@ -118,12 +119,12 @@ public:
     
     
     
-    nsAutoArrayPtr<uint8_t> frame(new uint8_t[mFrameWidth * mFrameHeight]);
-    memset(frame, 0, mFrameWidth * mFrameHeight);
+    auto frame = MakeUnique<uint8_t[]>(mFrameWidth * mFrameHeight);
+    memset(frame.get(), 0, mFrameWidth * mFrameHeight);
     VideoData::YCbCrBuffer buffer;
 
     
-    buffer.mPlanes[0].mData = frame;
+    buffer.mPlanes[0].mData = frame.get();
     buffer.mPlanes[0].mStride = mFrameWidth;
     buffer.mPlanes[0].mHeight = mFrameHeight;
     buffer.mPlanes[0].mWidth = mFrameWidth;
@@ -131,7 +132,7 @@ public:
     buffer.mPlanes[0].mSkip = 0;
 
     
-    buffer.mPlanes[1].mData = frame;
+    buffer.mPlanes[1].mData = frame.get();
     buffer.mPlanes[1].mStride = mFrameWidth / 2;
     buffer.mPlanes[1].mHeight = mFrameHeight / 2;
     buffer.mPlanes[1].mWidth = mFrameWidth / 2;
@@ -139,7 +140,7 @@ public:
     buffer.mPlanes[1].mSkip = 0;
 
     
-    buffer.mPlanes[2].mData = frame;
+    buffer.mPlanes[2].mData = frame.get();
     buffer.mPlanes[2].mStride = mFrameWidth / 2;
     buffer.mPlanes[2].mHeight = mFrameHeight / 2;
     buffer.mPlanes[2].mWidth = mFrameWidth / 2;

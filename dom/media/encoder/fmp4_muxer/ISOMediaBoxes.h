@@ -11,6 +11,7 @@
 #include "nsTArray.h"
 #include "nsAutoPtr.h"
 #include "MuxerOperation.h"
+#include "mozilla/UniquePtr.h"
 
 #define WRITE_FULLBOX(_compositor, _size)       \
   BoxSizeChecker checker(_compositor, _size);   \
@@ -262,7 +263,7 @@ public:
   
   uint32_t data_offset; 
   uint32_t first_sample_flags;
-  nsAutoArrayPtr<tbl> sample_info_table;
+  UniquePtr<tbl[]> sample_info_table;
 
   
   nsresult Generate(uint32_t* aBoxSize) override;
@@ -404,7 +405,7 @@ public:
   } tbl;
 
   uint32_t entry_count;
-  nsAutoArrayPtr<tbl> sample_tbl;
+  UniquePtr<tbl[]> sample_tbl;
 
   
   nsresult Generate(uint32_t* aBoxSize) override;
@@ -430,7 +431,7 @@ public:
   } tbl;
 
   uint32_t entry_count;
-  nsAutoArrayPtr<tbl> sample_tbl;
+  UniquePtr<tbl[]> sample_tbl;
 
   
   nsresult Generate(uint32_t* aBoxSize) override;
@@ -455,7 +456,7 @@ public:
   } tbl;
 
   uint32_t entry_count;
-  nsAutoArrayPtr<tbl> sample_tbl;
+  UniquePtr<tbl[]> sample_tbl;
 
   
   nsresult Generate(uint32_t* aBoxSize) override;

@@ -21,8 +21,8 @@ void EbmlComposer::GenerateHeader()
   
   EbmlGlobal ebml;
   
-  nsAutoArrayPtr<uint8_t> buffer(new uint8_t[DEFAULT_HEADER_SIZE +
-                                             mCodecPrivateData.Length()]);
+  auto buffer = MakeUnique<uint8_t[]>(DEFAULT_HEADER_SIZE +
+                                             mCodecPrivateData.Length());
   ebml.buf = buffer.get();
   ebml.offset = 0;
   writeHeader(&ebml);
