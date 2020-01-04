@@ -652,6 +652,13 @@ EmulateHeapAccess(EMULATOR_CONTEXT* context, uint8_t* pc, uint8_t* faultingAddre
 
     
     
+    if (!memoryAccess->wrapOffset()) {
+        MOZ_ASSERT(memoryAccess->throwOnOOB());
+        return instance.codeSegment().outOfBoundsCode();
+    }
+
+    
+    
     
     
     

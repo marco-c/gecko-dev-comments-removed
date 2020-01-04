@@ -1088,7 +1088,20 @@ class AssemblerX86Shared : public AssemblerShared
         
         
         
-        X86Encoding::AddInt32(patchAt, heapLength);
+        uint32_t before = reinterpret_cast<uint32_t*>(patchAt)[-1];
+        uint32_t after = before + heapLength;
+
+        
+        
+        
+        
+        
+        
+        if (after > heapLength)
+            after = 0;
+
+        MOZ_ASSERT_IF(after, int32_t(after) >= int32_t(before));
+        reinterpret_cast<uint32_t*>(patchAt)[-1] = after;
     }
 
     void breakpoint() {

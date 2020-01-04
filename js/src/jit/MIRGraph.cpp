@@ -126,12 +126,6 @@ MIRGenerator::needsBoundsCheckBranch(const MWasmMemoryAccess* access) const
 size_t
 MIRGenerator::foldableOffsetRange(const MWasmMemoryAccess* access) const
 {
-    return foldableOffsetRange(access->needsBoundsCheck(), access->isAtomicAccess());
-}
-
-size_t
-MIRGenerator::foldableOffsetRange(bool accessNeedsBoundsCheck, bool atomic) const
-{
     
     
 
@@ -148,14 +142,14 @@ MIRGenerator::foldableOffsetRange(bool accessNeedsBoundsCheck, bool atomic) cons
 
     
     
-    if (usesSignalHandlersForAsmJSOOB_ && !atomic)
+    if (usesSignalHandlersForAsmJSOOB_ && !access->isAtomicAccess())
         return WasmImmediateRange;
 #endif
 
     
     
     
-    if (sizeof(intptr_t) == sizeof(int32_t) && !accessNeedsBoundsCheck)
+    if (sizeof(intptr_t) == sizeof(int32_t) && !access->needsBoundsCheck())
         return WasmImmediateRange;
 
     
