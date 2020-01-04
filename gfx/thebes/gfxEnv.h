@@ -17,12 +17,7 @@
 
 
 
-#define DECL_GFX_ENV_LIVE(Env, Name)  \
-  static bool Name() {                \
-    return IsEnvSet(Env);             \
-  }
-
-#define DECL_GFX_ENV_ONCE(Env, Name)  \
+#define DECL_GFX_ENV(Env, Name)  \
   static bool Name() {                \
     static bool isSet = IsEnvSet(Env);\
     return isSet;                     \
@@ -37,74 +32,74 @@ public:
   
 
   
-  DECL_GFX_ENV_LIVE("DUMP_DEBUG", DumpDebug);
+  DECL_GFX_ENV("DUMP_DEBUG", DumpDebug);
 
   
-  DECL_GFX_ENV_LIVE("MOZ_DEBUG_SHADERS", DebugShaders);
+  DECL_GFX_ENV("MOZ_DEBUG_SHADERS", DebugShaders);
 
   
-  DECL_GFX_ENV_ONCE("MOZ_DISABLE_CONTEXT_SHARING_GLX", DisableContextSharingGlx);
+  DECL_GFX_ENV("MOZ_DISABLE_CONTEXT_SHARING_GLX", DisableContextSharingGlx);
 
   
-  DECL_GFX_ENV_ONCE("MOZ_DISABLE_CRASH_GUARD", DisableCrashGuard);
-  DECL_GFX_ENV_ONCE("MOZ_FORCE_CRASH_GUARD_NIGHTLY", ForceCrashGuardNightly);
-
-  
-  
-  DECL_GFX_ENV_ONCE("MOZ_DISABLE_FORCE_PRESENT", DisableForcePresent);
+  DECL_GFX_ENV("MOZ_DISABLE_CRASH_GUARD", DisableCrashGuard);
+  DECL_GFX_ENV("MOZ_FORCE_CRASH_GUARD_NIGHTLY", ForceCrashGuardNightly);
 
   
   
-  
-  
-  
-  
-  DECL_GFX_ENV_ONCE("MOZ_DUMP_COMPOSITOR_TEXTURES", DumpCompositorTextures);
+  DECL_GFX_ENV("MOZ_DISABLE_FORCE_PRESENT", DisableForcePresent);
 
   
-  DECL_GFX_ENV_ONCE("MOZ_DUMP_LAYER_SORT_LIST", DumpLayerSortList);
+  
+  
+  
+  
+  
+  DECL_GFX_ENV("MOZ_DUMP_COMPOSITOR_TEXTURES", DumpCompositorTextures);
 
   
-  DECL_GFX_ENV_ONCE("MOZ_DUMP_PAINT", DumpPaint);
-  DECL_GFX_ENV_ONCE("MOZ_DUMP_PAINT_INTERMEDIATE", DumpPaintIntermediate);
-  DECL_GFX_ENV_ONCE("MOZ_DUMP_PAINT_ITEMS", DumpPaintItems);
-  DECL_GFX_ENV_ONCE("MOZ_DUMP_PAINT_TO_FILE", DumpPaintToFile);
+  DECL_GFX_ENV("MOZ_DUMP_LAYER_SORT_LIST", DumpLayerSortList);
 
   
-  DECL_GFX_ENV_LIVE("MOZ_FORCE_DOUBLE_BUFFERING", ForceDoubleBuffering);
+  DECL_GFX_ENV("MOZ_DUMP_PAINT", DumpPaint);
+  DECL_GFX_ENV("MOZ_DUMP_PAINT_INTERMEDIATE", DumpPaintIntermediate);
+  DECL_GFX_ENV("MOZ_DUMP_PAINT_ITEMS", DumpPaintItems);
+  DECL_GFX_ENV("MOZ_DUMP_PAINT_TO_FILE", DumpPaintToFile);
 
   
-  DECL_GFX_ENV_ONCE("MOZ_GFX_CRASH_MOZ_CRASH", GfxDevCrashMozCrash);
-  
-  DECL_GFX_ENV_ONCE("MOZ_GFX_CRASH_TELEMETRY", GfxDevCrashTelemetry);
-
-  DECL_GFX_ENV_LIVE("MOZ_GFX_VR_NO_DISTORTION", VRNoDistortion);
+  DECL_GFX_ENV("MOZ_FORCE_DOUBLE_BUFFERING", ForceDoubleBuffering);
 
   
-  DECL_GFX_ENV_LIVE("MOZ_GL_DEBUG", GlDebug);
-  DECL_GFX_ENV_LIVE("MOZ_GL_DEBUG_VERBOSE", GlDebugVerbose);
-  DECL_GFX_ENV_LIVE("MOZ_GL_DEBUG_ABORT_ON_ERROR", GlDebugAbortOnError);
+  DECL_GFX_ENV("MOZ_GFX_CRASH_MOZ_CRASH", GfxDevCrashMozCrash);
+  
+  DECL_GFX_ENV("MOZ_GFX_CRASH_TELEMETRY", GfxDevCrashTelemetry);
+
+  DECL_GFX_ENV("MOZ_GFX_VR_NO_DISTORTION", VRNoDistortion);
 
   
-  DECL_GFX_ENV_ONCE("MOZ_GL_DUMP_EXTS", GlDumpExtensions);
+  DECL_GFX_ENV("MOZ_GL_DEBUG", GlDebug);
+  DECL_GFX_ENV("MOZ_GL_DEBUG_VERBOSE", GlDebugVerbose);
+  DECL_GFX_ENV("MOZ_GL_DEBUG_ABORT_ON_ERROR", GlDebugAbortOnError);
 
   
-  DECL_GFX_ENV_ONCE("MOZ_GL_SPEW", GlSpew);
+  DECL_GFX_ENV("MOZ_GL_DUMP_EXTS", GlDumpExtensions);
 
   
-  DECL_GFX_ENV_LIVE("MOZ_GLX_DEBUG", GlxDebug);
+  DECL_GFX_ENV("MOZ_GL_SPEW", GlSpew);
 
   
-  DECL_GFX_ENV_LIVE("MOZ_LAYERS_ENABLE_XLIB_SURFACES", LayersEnableXlibSurfaces);
+  DECL_GFX_ENV("MOZ_GLX_DEBUG", GlxDebug);
 
   
-  DECL_GFX_ENV_LIVE("MOZ_LAYERS_PREFER_EGL", LayersPreferEGL);
+  DECL_GFX_ENV("MOZ_LAYERS_ENABLE_XLIB_SURFACES", LayersEnableXlibSurfaces);
 
   
-  DECL_GFX_ENV_LIVE("MOZ_LAYERS_PREFER_OFFSCREEN", LayersPreferOffscreen);
+  DECL_GFX_ENV("MOZ_LAYERS_PREFER_EGL", LayersPreferEGL);
 
   
-  DECL_GFX_ENV_LIVE("NO_VR_RENDERING", NoVRRendering);
+  DECL_GFX_ENV("MOZ_LAYERS_PREFER_OFFSCREEN", LayersPreferOffscreen);
+
+  
+  DECL_GFX_ENV("NO_VR_RENDERING", NoVRRendering);
 
   
   
@@ -123,7 +118,6 @@ private:
   gfxEnv& operator=(const gfxEnv&) = delete;
 };
 
-#undef DECL_GFX_ENV_LIVE
-#undef DECL_GFX_ENV_ONCE
+#undef DECL_GFX_ENV
 
 #endif 
