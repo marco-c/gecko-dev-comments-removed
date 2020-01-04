@@ -7,6 +7,7 @@
 
 
 const TEST_URI = "<div class='one'>el 1</div><div class='two'>el 2</div>";
+const XHTML_NS = "http://www.w3.org/1999/xhtml";
 
 add_task(function* () {
   yield addTab("data:text/html;charset=utf-8," + encodeURIComponent(TEST_URI));
@@ -25,7 +26,9 @@ function* testRuleView(ruleView, inspector) {
   info("Showing the tooltip");
 
   let tooltip = ruleView.tooltips.previewTooltip;
-  tooltip.setTextContent({messages: ["rule-view tooltip"]});
+  let tooltipContent = ruleView.styleDocument.createElementNS(XHTML_NS, "div");
+  yield tooltip.setContent(tooltipContent, 100, 30);
+
   
   
   
@@ -48,7 +51,8 @@ function* testComputedView(computedView, inspector) {
   info("Showing the tooltip");
 
   let tooltip = computedView.tooltips.previewTooltip;
-  tooltip.setTextContent({messages: ["computed-view tooltip"]});
+  let tooltipContent = computedView.styleDocument.createElementNS(XHTML_NS, "div");
+  yield tooltip.setContent(tooltipContent, 100, 30);
   
   
   

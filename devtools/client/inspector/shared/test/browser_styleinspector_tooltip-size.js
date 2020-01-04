@@ -39,12 +39,12 @@ function* testImageDimension(ruleView) {
 
   info("Showing the tooltip");
   let onShown = tooltip.once("shown");
-  tooltip.show();
+  tooltip.show(uriSpan);
   yield onShown;
 
   
   
-  let imageRect = panel.querySelector("image").getBoundingClientRect();
+  let imageRect = panel.querySelector("img").getBoundingClientRect();
   let panelRect = panel.getBoundingClientRect();
 
   ok(panelRect.width >= imageRect.width,

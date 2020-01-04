@@ -18,7 +18,6 @@ const Heritage = require("sdk/core/heritage");
 const {Eyedropper} = require("devtools/client/eyedropper/eyedropper");
 const Editor = require("devtools/client/sourceeditor/editor");
 const Services = require("Services");
-const {Task} = require("devtools/shared/task");
 
 loader.lazyRequireGetter(this, "beautify", "devtools/shared/jsbeautify/beautify");
 loader.lazyRequireGetter(this, "setNamedTimeout", "devtools/client/shared/widgets/view-helpers", true);
@@ -523,31 +522,6 @@ Tooltip.prototype = {
   
 
 
-
-
-
-
-  setRelativeImageContent: Task.async(function* (imageUrl, inspectorFront,
-                                                 maxDim) {
-    if (imageUrl.startsWith("data:")) {
-      
-      this.setImageContent(imageUrl, {maxDim: maxDim});
-    } else if (inspectorFront) {
-      try {
-        let {data, size} = yield inspectorFront.getImageDataFromURL(imageUrl,
-                                                                    maxDim);
-        size.maxDim = maxDim;
-        let str = yield data.string();
-        this.setImageContent(str, size);
-      } catch (e) {
-        this.setBrokenImageContent();
-      }
-    }
-  }),
-
-  
-
-
   setBrokenImageContent: function () {
     this.setTextContent({
       messages: [
@@ -767,38 +741,6 @@ Tooltip.prototype = {
       return def.promise;
     }
   },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-  setFontFamilyContent: Task.async(function* (font, nodeFront) {
-    if (!font || !nodeFront) {
-      throw new Error("Missing font");
-    }
-
-    if (typeof nodeFront.getFontFamilyDataURL === "function") {
-      font = font.replace(/"/g, "'");
-      font = font.replace("!important", "");
-      font = font.trim();
-
-      let fillStyle =
-          (Services.prefs.getCharPref("devtools.theme") === "light") ?
-          "black" : "white";
-
-      let {data, size} = yield nodeFront.getFontFamilyDataURL(font, fillStyle);
-      let str = yield data.string();
-      this.setImageContent(str, { hideDimensionLabel: true, maxDim: size });
-    }
-  }),
 
   
 

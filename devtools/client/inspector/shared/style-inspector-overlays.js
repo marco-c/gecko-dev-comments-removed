@@ -12,8 +12,14 @@
 
 
 
+const {getTheme} = require("devtools/client/shared/theme");
+const {HTMLTooltip} = require("devtools/client/shared/widgets/HTMLTooltip");
 const {
-  Tooltip,
+  getImageDimensions,
+  setImageTooltip,
+  setBrokenImageTooltip,
+} = require("devtools/client/shared/widgets/tooltip/ImageTooltipHelper");
+const {
   SwatchColorPickerTooltip,
   SwatchCubicBezierTooltip,
   CssDocsTooltip,
@@ -273,7 +279,9 @@ TooltipsOverlay.prototype = {
     let panelDoc = this.view.inspector.panelDoc;
 
     
-    this.previewTooltip = new Tooltip(panelDoc);
+    this.previewTooltip = new HTMLTooltip(this.view.inspector.toolbox, {
+      type: "arrow"
+    });
     this.previewTooltip.startTogglingOnHover(this.view.element,
       this._onPreviewTooltipTargetHover.bind(this));
 
@@ -395,21 +403,83 @@ TooltipsOverlay.prototype = {
     let inspector = this.view.inspector;
 
     if (type === TOOLTIP_IMAGE_TYPE) {
-      let dim = Services.prefs.getIntPref(PREF_IMAGE_TOOLTIP_SIZE);
-      
-      let uri = nodeInfo.value.url;
-      yield this.previewTooltip.setRelativeImageContent(uri,
-        inspector.inspector, dim);
+      try {
+        yield this._setImagePreviewTooltip(nodeInfo.value.url);
+      } catch (e) {
+        yield setBrokenImageTooltip(this.previewTooltip, this.view.inspector.panelDoc);
+      }
       return true;
     }
 
     if (type === TOOLTIP_FONTFAMILY_TYPE) {
-      yield this.previewTooltip.setFontFamilyContent(nodeInfo.value.value,
-        inspector.selection.nodeFront);
+      let font = nodeInfo.value.value;
+      let nodeFront = inspector.selection.nodeFront;
+      yield this._setFontPreviewTooltip(font, nodeFront);
       return true;
     }
 
     return false;
+  }),
+
+  
+
+
+
+
+
+
+
+
+  _setImagePreviewTooltip: Task.async(function* (imageUrl) {
+    let doc = this.view.inspector.panelDoc;
+    let maxDim = Services.prefs.getIntPref(PREF_IMAGE_TOOLTIP_SIZE);
+
+    let naturalWidth, naturalHeight;
+    if (imageUrl.startsWith("data:")) {
+      
+      let size = yield getImageDimensions(doc, imageUrl);
+      naturalWidth = size.naturalWidth;
+      naturalHeight = size.naturalHeight;
+    } else {
+      let inspectorFront = this.view.inspector.inspector;
+      let {data, size} = yield inspectorFront.getImageDataFromURL(imageUrl, maxDim);
+      imageUrl = yield data.string();
+      naturalWidth = size.naturalWidth;
+      naturalHeight = size.naturalHeight;
+    }
+
+    yield setImageTooltip(this.previewTooltip, doc, imageUrl,
+      {maxDim, naturalWidth, naturalHeight});
+  }),
+
+  
+
+
+
+
+
+
+
+
+
+  _setFontPreviewTooltip: Task.async(function* (font, nodeFront) {
+    if (!font || !nodeFront || typeof nodeFront.getFontFamilyDataURL !== "function") {
+      throw new Error("Unable to create font preview tooltip content.");
+    }
+
+    font = font.replace(/"/g, "'");
+    font = font.replace("!important", "");
+    font = font.trim();
+
+    let fillStyle = getTheme() === "light" ? "black" : "white";
+    let {data, size: maxDim} = yield nodeFront.getFontFamilyDataURL(font, fillStyle);
+
+    let imageUrl = yield data.string();
+    let doc = this.view.inspector.panelDoc;
+    let {naturalWidth, naturalHeight} = yield getImageDimensions(doc, imageUrl);
+
+    yield setImageTooltip(this.previewTooltip, doc, imageUrl,
+      {hideDimensionLabel: true, maxDim, naturalWidth, naturalHeight});
   }),
 
   _onNewSelection: function () {
