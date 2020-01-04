@@ -1990,7 +1990,6 @@ public class BrowserApp extends GeckoApp
         if (!areTabsShown()) {
             mTabsPanel.setVisibility(View.INVISIBLE);
             mTabsPanel.setDescendantFocusability(ViewGroup.FOCUS_BLOCK_DESCENDANTS);
-            mBrowserToolbar.setContextMenuEnabled(true);
         } else {
             
             
