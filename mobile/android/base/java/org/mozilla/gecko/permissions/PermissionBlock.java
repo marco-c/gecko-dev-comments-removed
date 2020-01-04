@@ -17,15 +17,15 @@ import android.support.annotation.NonNull;
 public class PermissionBlock {
     private final PermissionsHelper helper;
 
-    private Activity activity;
+    private Context context;
     private String[] permissions;
     private boolean onUIThread;
     private Runnable onPermissionsGranted;
     private Runnable onPermissionsDenied;
     private boolean doNotPrompt;
 
-     PermissionBlock(Activity activity, PermissionsHelper helper) {
-        this.activity = activity;
+     PermissionBlock(Context context, PermissionsHelper helper) {
+        this.context = context;
         this.helper = helper;
     }
 
@@ -70,18 +70,22 @@ public class PermissionBlock {
 
 
     public void run(@NonNull Runnable onPermissionsGranted) {
+        if (!doNotPrompt && !(context instanceof Activity)) {
+            throw new IllegalStateException("You need to either specify doNotPrompt() or pass in an Activity context");
+        }
+
         this.onPermissionsGranted = onPermissionsGranted;
 
-        if (hasPermissions(activity)) {
+        if (hasPermissions(context)) {
             onPermissionsGranted();
         } else if (doNotPrompt) {
             onPermissionsDenied();
         } else {
-            Permissions.prompt(activity, this);
+            Permissions.prompt((Activity) context, this);
         }
 
         
-        activity = null;
+        context = null;
     }
 
     

@@ -6,6 +6,7 @@
 package org.mozilla.gecko.permissions;
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.pm.PackageManager;
 import android.support.annotation.NonNull;
 
@@ -47,8 +48,11 @@ public class Permissions {
     
 
 
-    public static PermissionBlock from(@NonNull Activity activity) {
-        return new PermissionBlock(activity, permissionHelper);
+
+
+
+    public static PermissionBlock from(@NonNull Context context) {
+        return new PermissionBlock(context, permissionHelper);
     }
 
     
