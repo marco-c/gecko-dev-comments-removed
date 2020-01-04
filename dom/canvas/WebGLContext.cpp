@@ -571,24 +571,6 @@ CreateHeadlessANGLE(CreateContextFlags flags, const nsCOMPtr<nsIGfxInfo>& gfxInf
 {
     nsRefPtr<GLContext> gl;
 
-    
-    flags |= CreateContextFlags::SUPPORT_ALPHA;
-
-    
-    
-    
-    
-    
-    
-
-    
-    if (flags & CreateContextFlags::SUPPORT_DEPTH) {
-        flags |= CreateContextFlags::SUPPORT_STENCIL;
-    } else {
-        flags &= ~CreateContextFlags::SUPPORT_DEPTH;
-        flags &= ~CreateContextFlags::SUPPORT_STENCIL;
-    }
-
 #ifdef XP_WIN
     gl = gl::GLContextProviderEGL::CreateHeadless(flags);
     if (!gl) {
@@ -775,16 +757,6 @@ WebGLContext::CreateOffscreenGL(bool forceEnabled)
 
     CreateContextFlags flags = forceEnabled ? CreateContextFlags::FORCE_ENABLE_HARDWARE :
                                               CreateContextFlags::NONE;
-
-    if (mOptions.alpha)
-        flags |= CreateContextFlags::SUPPORT_ALPHA;
-
-    if (!mOptions.antialias) {
-        if (mOptions.depth)
-            flags |= CreateContextFlags::SUPPORT_DEPTH;
-        if (mOptions.stencil)
-            flags |= CreateContextFlags::SUPPORT_STENCIL;
-    }
 
     gl = CreateHeadlessGL(flags, gfxInfo, this);
 
