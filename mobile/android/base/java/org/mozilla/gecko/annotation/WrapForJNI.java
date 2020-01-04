@@ -34,7 +34,6 @@ public @interface WrapForJNI {
 
 
 
-
     boolean allowMultithread() default false;
 
     
