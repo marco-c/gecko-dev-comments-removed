@@ -484,6 +484,14 @@ class MacroAssembler : public MacroAssemblerSpecific
     inline void call(const CallSiteDesc& desc, const Register reg);
     inline void call(const CallSiteDesc& desc, Label* label);
 
+    
+    
+    
+    void callAndPushReturnAddress(Register reg) DEFINED_ON(mips32, x86_shared);
+    void callAndPushReturnAddress(Label* label) DEFINED_ON(mips32, x86_shared);
+
+    void pushReturnAddress() DEFINED_ON(arm, arm64);
+
   public:
     
     
@@ -572,7 +580,7 @@ class MacroAssembler : public MacroAssemblerSpecific
     
     
     
-    uint32_t callJitNoProfiler(Register callee) PER_SHARED_ARCH;
+    inline uint32_t callJitNoProfiler(Register callee);
     inline uint32_t callJit(Register callee);
     inline uint32_t callJit(JitCode* code);
 

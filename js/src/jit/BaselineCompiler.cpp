@@ -3786,7 +3786,11 @@ BaselineCompiler::emit_JSOP_RESUME()
     
     
     Label genStart, returnTarget;
+#ifdef JS_USE_LINK_REGISTER
+    masm.call(&genStart);
+#else
     masm.callAndPushReturnAddress(&genStart);
+#endif
 
     
     if (!appendICEntry(ICEntry::Kind_Op, masm.currentOffset()))
@@ -3794,6 +3798,9 @@ BaselineCompiler::emit_JSOP_RESUME()
 
     masm.jump(&returnTarget);
     masm.bind(&genStart);
+#ifdef JS_USE_LINK_REGISTER
+    masm.pushReturnAddress();
+#endif
 
     
     

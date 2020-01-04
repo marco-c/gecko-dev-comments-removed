@@ -131,12 +131,6 @@ MacroAssemblerX86Shared::branchNegativeZeroFloat32(FloatRegister reg,
     j(Overflow, label);
 }
 
-void
-MacroAssemblerX86Shared::callAndPushReturnAddress(Label* label)
-{
-    call(label);
-}
-
 MacroAssembler&
 MacroAssemblerX86Shared::asMasm()
 {
@@ -371,15 +365,20 @@ MacroAssembler::call(JitCode* target)
     Assembler::call(target);
 }
 
-
-
-
-uint32_t
-MacroAssembler::callJitNoProfiler(Register callee)
+void
+MacroAssembler::callAndPushReturnAddress(Register reg)
 {
-    call(callee);
-    return currentOffset();
+    call(reg);
 }
+
+void
+MacroAssembler::callAndPushReturnAddress(Label* label)
+{
+    call(label);
+}
+
+
+
 
 uint32_t
 MacroAssembler::pushFakeReturnAddress(Register scratch)

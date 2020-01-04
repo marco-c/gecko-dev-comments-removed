@@ -155,6 +155,18 @@ MacroAssembler::signature() const
 
 
 uint32_t
+MacroAssembler::callJitNoProfiler(Register callee)
+{
+#ifdef JS_USE_LINK_REGISTER
+    
+    call(callee);
+#else
+    callAndPushReturnAddress(callee);
+#endif
+    return currentOffset();
+}
+
+uint32_t
 MacroAssembler::callJit(Register callee)
 {
     AutoProfilerCallInstrumentation profiler(*this);
