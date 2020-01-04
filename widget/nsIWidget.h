@@ -641,16 +641,15 @@ class nsIWidget : public nsISupports
     
 
 
-
-    NS_IMETHOD SetModal(bool aModal) = 0;
+    virtual void SetModal(bool aModal) = 0;
 
     
 
 
 
-    NS_IMETHOD SetFakeModal(bool aModal)
+    virtual void SetFakeModal(bool aModal)
     {
-        return SetModal(aModal);
+        SetModal(aModal);
     }
 
     
