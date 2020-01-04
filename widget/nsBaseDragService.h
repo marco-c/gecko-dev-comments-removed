@@ -156,6 +156,8 @@ protected:
   nsCOMPtr<nsIDOMNode> mSourceNode;
   nsCOMPtr<nsIDOMDocument> mSourceDocument;       
                                                   
+  nsContentPolicyType mContentPolicyType;         
+                                                  
   nsCOMPtr<nsIDOMDataTransfer> mDataTransfer;
 
   
