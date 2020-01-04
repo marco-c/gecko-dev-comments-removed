@@ -35,7 +35,7 @@ import static org.mockito.Mockito.verify;
 @RunWith(TestRunner.class)
 @Ignore("Live test that requires network connection -- remove this line to run this test.")
 public class TestLiveAutopushClient {
-    final String serverURL = "https://updates-autopush-dev.stage.mozaws.net/v1/gcm/829133274407";
+    final String serverURL = "https://updates-autopush.stage.mozaws.net/v1/gcm/829133274407";
 
     protected AutopushClient client;
 
@@ -93,7 +93,7 @@ public class TestLiveAutopushClient {
 
         final AutopushClientException failureException = assertFailure(reunregisterDelegate, Void.class);
         Assert.assertThat(failureException, instanceOf(AutopushClientException.AutopushClientRemoteException.class));
-        Assert.assertTrue(((AutopushClientException.AutopushClientRemoteException) failureException).isNotFound());
+        Assert.assertTrue(((AutopushClientException.AutopushClientRemoteException) failureException).isGone());
     }
 
     @Test
@@ -128,7 +128,7 @@ public class TestLiveAutopushClient {
 
         final AutopushClientException reunsubscribeFailureException = assertFailure(reunsubscribeDelegate, Void.class);
         Assert.assertThat(reunsubscribeFailureException, instanceOf(AutopushClientException.AutopushClientRemoteException.class));
-        Assert.assertTrue(((AutopushClientException.AutopushClientRemoteException) reunsubscribeFailureException).isNotFound());
+        Assert.assertTrue(((AutopushClientException.AutopushClientRemoteException) reunsubscribeFailureException).isGone());
 
         
         final RequestDelegate<Void> badUnsubscribeDelegate = mock(RequestDelegate.class);
