@@ -23,7 +23,7 @@ add_task(function* test_removePages() {
     pages.push(NetUtil.newURI(TEST_URI.spec + i));
   }
 
-  yield PlacesTestUtils.addVisits(pages.map(function (uri) ({ uri: uri })));
+  yield PlacesTestUtils.addVisits(pages.map(uri => ({ uri: uri })));
   
   const ANNO_INDEX = 1;
   const ANNO_NAME = "testAnno";
