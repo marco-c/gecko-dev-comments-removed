@@ -1007,16 +1007,14 @@ FileSystemDataSource::GetFolderList(nsIRDFResource *source, bool allowHidden,
             fullURI.Append('/');
         }
 
-        char    *escLeafStr = nsEscape(NS_ConvertUTF16toUTF8(leafStr).get(), url_Path);
+        nsAutoCString leaf;
+        bool escaped = NS_Escape(NS_ConvertUTF16toUTF8(leafStr), leaf, url_Path);
         leafStr.Truncate();
 
-        if (!escLeafStr)
+        if (!escaped) {
             continue;
+        }
   
-        nsAutoCString           leaf(escLeafStr);
-        free(escLeafStr);
-        escLeafStr = nullptr;
-
         
         int32_t         aOffset;
         while ((aOffset = leaf.FindChar('/')) >= 0)
