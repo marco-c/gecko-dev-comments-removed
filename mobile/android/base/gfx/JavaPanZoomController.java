@@ -950,14 +950,14 @@ class JavaPanZoomController
             synchronized (mTarget.getLock()) {
                 float t = easeOut((float)mBounceDuration / BOUNCE_ANIMATION_DURATION);
                 ImmutableViewportMetrics newMetrics = mBounceStartMetrics.interpolate(mBounceEndMetrics, t);
-                mTarget.setViewportMetrics(newMetrics);
+                mTarget.setViewportMetrics(newMetrics.setPageRectFrom(getMetrics()));
             }
         }
 
         
         private void finishBounce() {
             synchronized (mTarget.getLock()) {
-                mTarget.setViewportMetrics(mBounceEndMetrics);
+                mTarget.setViewportMetrics(mBounceEndMetrics.setPageRectFrom(getMetrics()));
             }
         }
     }
