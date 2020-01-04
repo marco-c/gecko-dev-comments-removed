@@ -688,7 +688,7 @@ BluetoothA2dpManager::NotifyConnectionStatusChanged()
 
   
   DispatchStatusChangedEvent(
-    NS_LITERAL_STRING(A2DP_STATUS_CHANGED_ID), deviceAddressStr, mA2dpConnected);
+    NS_LITERAL_STRING(A2DP_STATUS_CHANGED_ID), mDeviceAddress, mA2dpConnected);
 }
 
 void
