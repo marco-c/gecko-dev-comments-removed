@@ -427,9 +427,9 @@ public:
   nsIFrame* mScrollCornerBox;
   nsIFrame* mResizerBox;
   nsContainerFrame* mOuter;
-  RefPtr<AsyncScroll> mAsyncScroll;
-  RefPtr<AsyncSmoothMSDScroll> mAsyncSmoothMSDScroll;
-  RefPtr<ScrollbarActivity> mScrollbarActivity;
+  nsRefPtr<AsyncScroll> mAsyncScroll;
+  nsRefPtr<AsyncSmoothMSDScroll> mAsyncSmoothMSDScroll;
+  nsRefPtr<ScrollbarActivity> mScrollbarActivity;
   nsTArray<nsIScrollPositionListener*> mListeners;
   nsIAtom* mLastScrollOrigin;
   nsIAtom* mLastSmoothScrollOrigin;
@@ -557,6 +557,14 @@ protected:
                             = nsIScrollbarMediator::DISABLE_SNAP);
 
   void CompleteAsyncScroll(const nsRect &aRange, nsIAtom* aOrigin = nullptr);
+
+  
+
+
+
+  enum AsyncScrollEventType { BEGIN, END };
+  void NotifyPluginFrames(AsyncScrollEventType aEvent);
+  AsyncScrollEventType mAsyncScrollEvent;
 
   static void EnsureImageVisPrefsCached();
   static bool sImageVisPrefsCached;

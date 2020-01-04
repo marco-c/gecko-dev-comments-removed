@@ -45,6 +45,7 @@
 #include "nsSMILKeySpline.h"
 #include "nsSubDocumentFrame.h"
 #include "nsSVGOuterSVGFrame.h"
+#include "nsIObjectLoadingContent.h"
 #include "mozilla/Attributes.h"
 #include "ScrollbarActivity.h"
 #include "nsRefreshDriver.h"
@@ -57,6 +58,7 @@
 #include "gfxPrefs.h"
 #include "AsyncScrollBase.h"
 #include "UnitTransforms.h"
+#include "nsPluginFrame.h"
 #include <mozilla/layers/AxisPhysicsModel.h>
 #include <mozilla/layers/AxisPhysicsMSDModel.h>
 #include <algorithm>
@@ -1852,6 +1854,7 @@ ScrollFrameHelper::ScrollFrameHelper(nsContainerFrame* aOuter,
   , mTransformingByAPZ(false)
   , mZoomableByAPZ(false)
   , mVelocityQueue(aOuter->PresContext())
+  , mAsyncScrollEvent(END)
 {
   if (LookAndFeel::GetInt(LookAndFeel::eIntID_UseOverlayScrollbars) != 0) {
     mScrollbarActivity = new ScrollbarActivity(do_QueryFrame(aOuter));
@@ -1958,6 +1961,8 @@ ScrollFrameHelper::AsyncScrollCallback(ScrollFrameHelper* aInstance,
 void
 ScrollFrameHelper::CompleteAsyncScroll(const nsRect &aRange, nsIAtom* aOrigin)
 {
+  NotifyPluginFrames(END);
+
   
   mAsyncSmoothMSDScroll = nullptr;
   mAsyncScroll = nullptr;
@@ -1969,6 +1974,38 @@ ScrollFrameHelper::CompleteAsyncScroll(const nsRect &aRange, nsIAtom* aOrigin)
   
   
   mDestination = GetScrollPosition();
+}
+
+#if defined(XP_WIN) || defined(MOZ_WIDGET_GTK)
+static void
+NotifyPluginFramesCallback(nsISupports* aSupports, void* aFlag)
+{
+  nsCOMPtr<nsIContent> content = do_QueryInterface(aSupports);
+  if (content) {
+    nsIFrame *frame = content->GetPrimaryFrame();
+    if (frame) {
+      nsPluginFrame* plugin = do_QueryFrame(frame);
+      if (plugin) {
+        plugin->SetScrollVisibility(aFlag != nullptr);
+      }
+    }
+  }
+}
+#endif
+
+void
+ScrollFrameHelper::NotifyPluginFrames(AsyncScrollEventType aEvent)
+{
+#if defined(XP_WIN) || defined(MOZ_WIDGET_GTK)
+  if (XRE_IsContentProcess()) {
+    if (aEvent != mAsyncScrollEvent) {
+      nsPresContext* presContext = mOuter->PresContext();
+      presContext->Document()->EnumerateActivityObservers(NotifyPluginFramesCallback,
+                                                          (void*)(aEvent == BEGIN));
+      mAsyncScrollEvent = aEvent;
+    }
+  }
+#endif
 }
 
 void
@@ -2125,6 +2162,7 @@ ScrollFrameHelper::ScrollToWithOrigin(nsPoint aScrollPosition,
   mAsyncScroll->mIsSmoothScroll = isSmoothScroll;
 
   if (isSmoothScroll) {
+    NotifyPluginFrames(BEGIN);
     mAsyncScroll->InitSmoothScroll(now, mDestination, aOrigin, range, currentVelocity);
   } else {
     mAsyncScroll->Init(range);
@@ -3587,7 +3625,7 @@ ScrollFrameHelper::ScrollSnap(const nsPoint &aDestination,
 nsSize
 ScrollFrameHelper::GetLineScrollAmount() const
 {
-  RefPtr<nsFontMetrics> fm;
+  nsRefPtr<nsFontMetrics> fm;
   nsLayoutUtils::GetFontMetricsForFrame(mOuter, getter_AddRefs(fm),
     nsLayoutUtils::FontSizeInflationFor(mOuter));
   NS_ASSERTION(fm, "FontMetrics is null, assuming fontHeight == 1 appunit");
@@ -3907,14 +3945,14 @@ ScrollFrameHelper::CreateAnonymousContent(
 
   nsNodeInfoManager *nodeInfoManager =
     presContext->Document()->NodeInfoManager();
-  RefPtr<NodeInfo> nodeInfo;
+  nsRefPtr<NodeInfo> nodeInfo;
   nodeInfo = nodeInfoManager->GetNodeInfo(nsGkAtoms::scrollbar, nullptr,
                                           kNameSpaceID_XUL,
                                           nsIDOMNode::ELEMENT_NODE);
   NS_ENSURE_TRUE(nodeInfo, NS_ERROR_OUT_OF_MEMORY);
 
   if (canHaveHorizontal) {
-    RefPtr<NodeInfo> ni = nodeInfo;
+    nsRefPtr<NodeInfo> ni = nodeInfo;
     NS_TrustedNewXULElement(getter_AddRefs(mHScrollbarContent), ni.forget());
 #ifdef DEBUG
     
@@ -3937,7 +3975,7 @@ ScrollFrameHelper::CreateAnonymousContent(
   }
 
   if (canHaveVertical) {
-    RefPtr<NodeInfo> ni = nodeInfo;
+    nsRefPtr<NodeInfo> ni = nodeInfo;
     NS_TrustedNewXULElement(getter_AddRefs(mVScrollbarContent), ni.forget());
 #ifdef DEBUG
     
@@ -3960,7 +3998,7 @@ ScrollFrameHelper::CreateAnonymousContent(
   }
 
   if (isResizable) {
-    RefPtr<NodeInfo> nodeInfo;
+    nsRefPtr<NodeInfo> nodeInfo;
     nodeInfo = nodeInfoManager->GetNodeInfo(nsGkAtoms::resizer, nullptr,
                                             kNameSpaceID_XUL,
                                             nsIDOMNode::ELEMENT_NODE);
@@ -4130,7 +4168,7 @@ void ScrollFrameHelper::CurPosAttributeChanged(nsIContent* aContent)
   }
 
   if (mScrollbarActivity) {
-    RefPtr<ScrollbarActivity> scrollbarActivity(mScrollbarActivity);
+    nsRefPtr<ScrollbarActivity> scrollbarActivity(mScrollbarActivity);
     scrollbarActivity->ActivityOccurred();
   }
 
@@ -5125,7 +5163,7 @@ ScrollFrameHelper::SetCoordAttribute(nsIContent* aContent, nsIAtom* aAtom,
   }
 
   if (mScrollbarActivity) {
-    RefPtr<ScrollbarActivity> scrollbarActivity(mScrollbarActivity);
+    nsRefPtr<ScrollbarActivity> scrollbarActivity(mScrollbarActivity);
     scrollbarActivity->ActivityOccurred();
   }
 }

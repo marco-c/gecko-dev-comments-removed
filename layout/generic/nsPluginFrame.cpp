@@ -157,6 +157,7 @@ nsPluginFrame::nsPluginFrame(nsStyleContext* aContext)
   : nsPluginFrameSuper(aContext)
   , mInstanceOwner(nullptr)
   , mReflowCallbackPosted(false)
+  , mIsHiddenDueToScroll(false)
 {
   MOZ_LOG(GetObjectFrameLog(), LogLevel::Debug,
          ("Created new nsPluginFrame %p\n", this));
@@ -322,7 +323,7 @@ nsPluginFrame::PrepForDrawing(nsIWidget *aWidget)
     configuration->mBounds.height = NSAppUnitsToIntPixels(mRect.height, appUnitsPerDevPixel);
     parentWidget->ConfigureChildren(configurations);
 
-    RefPtr<nsDeviceContext> dx = viewMan->GetDeviceContext();
+    nsRefPtr<nsDeviceContext> dx = viewMan->GetDeviceContext();
     mInnerView->AttachWidgetEventHandler(mWidget);
 
 #ifdef XP_MACOSX
@@ -594,7 +595,7 @@ nsPluginFrame::CallSetWindow(bool aCheckIsHidden)
   NPWindow *win = nullptr;
  
   nsresult rv = NS_ERROR_FAILURE;
-  RefPtr<nsNPAPIPluginInstance> pi;
+  nsRefPtr<nsNPAPIPluginInstance> pi;
   if (!mInstanceOwner ||
       NS_FAILED(rv = mInstanceOwner->GetInstance(getter_AddRefs(pi))) ||
       !pi ||
@@ -611,7 +612,7 @@ nsPluginFrame::CallSetWindow(bool aCheckIsHidden)
   
   
   
-  RefPtr<nsPluginInstanceOwner> instanceOwnerRef(mInstanceOwner);
+  nsRefPtr<nsPluginInstanceOwner> instanceOwnerRef(mInstanceOwner);
 
   
 #ifdef XP_MACOSX
@@ -762,6 +763,23 @@ nsPluginFrame::IsHidden(bool aCheckVisibilityStyle) const
   }
 
   return false;
+}
+
+
+
+void
+nsPluginFrame::SetScrollVisibility(bool aState)
+{
+  
+  if (mWidget) {
+    bool changed = mIsHiddenDueToScroll != aState;
+    mIsHiddenDueToScroll = aState;
+    
+    
+    if (changed) {
+      SchedulePaint();
+    }
+  }
 }
 
 mozilla::LayoutDeviceIntPoint
@@ -1098,6 +1116,11 @@ nsPluginFrame::DidSetWidgetGeometry()
 bool
 nsPluginFrame::IsOpaque() const
 {
+  
+  
+  if (mIsHiddenDueToScroll) {
+    return false;
+  }
 #if defined(XP_MACOSX)
   return false;
 #elif defined(MOZ_WIDGET_ANDROID)
@@ -1127,7 +1150,7 @@ nsPluginFrame::IsTransparentMode() const
     return false;
 
   nsresult rv;
-  RefPtr<nsNPAPIPluginInstance> pi;
+  nsRefPtr<nsNPAPIPluginInstance> pi;
   rv = mInstanceOwner->GetInstance(getter_AddRefs(pi));
   if (NS_FAILED(rv) || !pi)
     return false;
@@ -1143,6 +1166,12 @@ nsPluginFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
                                 const nsRect&           aDirtyRect,
                                 const nsDisplayListSet& aLists)
 {
+  
+  
+  if (mIsHiddenDueToScroll) {
+    return;
+  }
+
   
   if (!IsVisibleOrCollapsedForPainting(aBuilder))
     return;
@@ -1249,7 +1278,7 @@ nsPluginFrame::PrintPlugin(nsRenderingContext& aRenderingContext,
     return;
 
   
-  RefPtr<nsNPAPIPluginInstance> pi;
+  nsRefPtr<nsNPAPIPluginInstance> pi;
   if (NS_FAILED(objectFrame->GetPluginInstance(getter_AddRefs(pi))) || !pi)
     return;
 
@@ -1399,12 +1428,12 @@ nsPluginFrame::BuildLayer(nsDisplayListBuilder* aBuilder,
   gfxRect r = nsLayoutUtils::RectToGfxRect(area, PresContext()->AppUnitsPerDevPixel());
   
   r.Round();
-  RefPtr<Layer> layer =
+  nsRefPtr<Layer> layer =
     (aManager->GetLayerBuilder()->GetLeafLayerFor(aBuilder, aItem));
 
   if (aItem->GetType() == nsDisplayItem::TYPE_PLUGIN) {
     
-    RefPtr<ImageContainer> container = mInstanceOwner->GetImageContainer();
+    nsRefPtr<ImageContainer> container = mInstanceOwner->GetImageContainer();
     if (!container) {
       
       return nullptr;
@@ -1444,7 +1473,7 @@ nsPluginFrame::BuildLayer(nsDisplayListBuilder* aBuilder,
     nsDisplayPluginVideo* videoItem = reinterpret_cast<nsDisplayPluginVideo*>(aItem);
     nsNPAPIPluginInstance::VideoInfo* videoInfo = videoItem->VideoInfo();
 
-    RefPtr<ImageContainer> container = mInstanceOwner->GetImageContainerForVideo(videoInfo);
+    nsRefPtr<ImageContainer> container = mInstanceOwner->GetImageContainerForVideo(videoInfo);
     if (!container)
       return nullptr;
 
@@ -1572,7 +1601,7 @@ nsPluginFrame::PaintPlugin(nsDisplayListBuilder* aBuilder,
         return;
       }
 
-      RefPtr<nsNPAPIPluginInstance> inst;
+      nsRefPtr<nsNPAPIPluginInstance> inst;
       GetPluginInstance(getter_AddRefs(inst));
       if (!inst) {
         NS_WARNING("null plugin instance during PaintPlugin");
@@ -1639,7 +1668,7 @@ nsPluginFrame::PaintPlugin(nsDisplayListBuilder* aBuilder,
     }
   }
 #elif defined(XP_WIN)
-  RefPtr<nsNPAPIPluginInstance> inst;
+  nsRefPtr<nsNPAPIPluginInstance> inst;
   GetPluginInstance(getter_AddRefs(inst));
   if (inst) {
     gfxRect frameGfxRect =
@@ -1837,7 +1866,7 @@ nsPluginFrame::GetCursor(const nsPoint& aPoint, nsIFrame::Cursor& aCursor)
     return NS_ERROR_FAILURE;
   }
 
-  RefPtr<nsNPAPIPluginInstance> inst;
+  nsRefPtr<nsNPAPIPluginInstance> inst;
   mInstanceOwner->GetInstance(getter_AddRefs(inst));
   if (!inst) {
     return NS_ERROR_FAILURE;
@@ -1868,7 +1897,7 @@ nsPluginFrame::GetNextObjectFrame(nsPresContext* aPresContext, nsIFrame* aRoot)
   while (child) {
     nsIObjectFrame* outFrame = do_QueryFrame(child);
     if (outFrame) {
-      RefPtr<nsNPAPIPluginInstance> pi;
+      nsRefPtr<nsNPAPIPluginInstance> pi;
       outFrame->GetPluginInstance(getter_AddRefs(pi));  
       if (pi)
         return outFrame;
