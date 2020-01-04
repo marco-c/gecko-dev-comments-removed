@@ -485,38 +485,50 @@ class AndroidEmulator(object):
     def _find_sdk_exe(self, exe, tools):
         if tools:
             subdir = 'tools'
-            var = 'ANDROID_TOOLS'
         else:
             subdir = 'platform-tools'
-            var = 'ANDROID_PLATFORM_TOOLS'
 
         found = False
-
-        
-        try:
-            android_sdk_root = os.environ['ANDROID_SDK_ROOT']
-            exe_path = os.path.join(
-                android_sdk_root, subdir, exe)
-            if os.path.exists(exe_path):
-                found = True
-            else:
-                _log_debug(
-                    "Unable to find executable at %s" % exe_path)
-        except KeyError:
-            _log_debug("ANDROID_SDK_ROOT not set")
-
         if not found and self.substs:
             
+            
             try:
+                exe_path = self.substs[exe.upper()]
+                if os.path.exists(exe_path):
+                    found = True
+                else:
+                    self._log_debug(
+                        "Unable to find executable at %s" % exe_path)
+            except KeyError:
+                self._log_debug("%s not set" % exe.upper())
+
+        
+        if not found:
+            try:
+                android_sdk_root = os.environ['ANDROID_SDK_ROOT']
                 exe_path = os.path.join(
-                    self.substs[var], exe)
+                    android_sdk_root, subdir, exe)
                 if os.path.exists(exe_path):
                     found = True
                 else:
                     _log_debug(
                         "Unable to find executable at %s" % exe_path)
             except KeyError:
-                _log_debug("%s not set" % var)
+                _log_debug("ANDROID_SDK_ROOT not set")
+
+        if not found:
+            
+            try:
+                android_sdk_root = os.environ['ANDROID_SDK_ROOT']
+                exe_path = os.path.join(
+                    android_sdk_root, subdir, exe)
+                if os.path.exists(exe_path):
+                    found = True
+                else:
+                    _log_debug(
+                        "Unable to find executable at %s" % exe_path)
+            except KeyError:
+                _log_debug("ANDROID_SDK_ROOT not set")
 
         if not found:
             
