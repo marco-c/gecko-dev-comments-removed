@@ -13,9 +13,19 @@
 namespace mozilla {
 namespace gfx {
 
+
+
+
+
+
+
+
+
+
 class gfxConfig
 {
 public:
+  
   
   
   
@@ -33,6 +43,13 @@ public:
   static bool IsDisabledByDefault(Feature aFeature);
 
   
+  
+  
+  
+  
+  
+  
+  
   static FeatureStatus GetValue(Feature aFeature);
 
   
@@ -42,21 +59,54 @@ public:
                          const char* aDisableMessage);
 
   
+  
+  
+  
+  
   static void Disable(Feature aFeature,
                       FeatureStatus aStatus,
                       const char* aMessage);
 
   
-  static bool UpdateIfFailed(Feature aFeature,
+  
+  
+  static void SetFailed(Feature aFeature,
+                        FeatureStatus aStatus,
+                        const char* aMessage);
+
+  
+  
+  static void ForceDisable(Feature aFeature,
+                           FeatureStatus aStatus,
+                           const char* aMessage)
+  {
+    SetFailed(aFeature, aStatus, aMessage);
+  }
+
+  
+  static bool MaybeSetFailed(Feature aFeature,
                              bool aEnable,
                              FeatureStatus aDisableStatus,
                              const char* aDisableMessage)
   {
     if (!aEnable) {
-      Disable(aFeature, aDisableStatus, aDisableMessage);
+      SetFailed(aFeature, aDisableStatus, aDisableMessage);
       return false;
     }
     return true;
+  }
+
+  
+  static bool MaybeSetFailed(Feature aFeature,
+                             FeatureStatus aStatus,
+                             const char* aDisableMessage)
+  {
+    return MaybeSetFailed(
+      aFeature,
+      (aStatus != FeatureStatus::Available &&
+       aStatus != FeatureStatus::ForceEnabled),
+      aStatus,
+      aDisableMessage);
   }
 
   

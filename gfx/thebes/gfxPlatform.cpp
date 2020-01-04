@@ -2160,11 +2160,12 @@ gfxPlatform::InitCompositorAccelerationPrefs()
   }
 
   
-  gfxConfig::UpdateIfFailed(
-    Feature::HW_COMPOSITING,
-    !InSafeMode(),
-    FeatureStatus::Blocked,
-    "Acceleration blocked by safe-mode");
+  if (InSafeMode()) {
+    gfxConfig::ForceDisable(
+      Feature::HW_COMPOSITING,
+      FeatureStatus::Blocked,
+      "Acceleration blocked by safe-mode");
+  }
 }
 
 bool
