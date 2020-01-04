@@ -9,5 +9,9 @@ package org.mozilla.gecko.util;
 
 
 public class Experiments {
+    
     public static final String BOOKMARKS_HISTORY_MENU = "bookmark-history-menu";
+    
+    public static final String SEARCH_TERM = "search-term";
+
 }
