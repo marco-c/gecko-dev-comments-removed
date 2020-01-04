@@ -902,8 +902,15 @@ BluetoothServiceBluedroid::GetConnectedDevicePropertiesInternal(
   }
 
   
+  nsString addressString;
+  profile->GetAddress(addressString);
+
   BluetoothAddress address;
-  profile->GetAddress(address);
+  nsresult rv = StringToAddress(addressString, address);
+  if (NS_FAILED(rv)) {
+    DispatchReplyError(aRunnable, STATUS_PARM_INVALID);
+    return rv;
+  }
 
   
   GetDeviceRequest request(1, aRunnable);
@@ -1098,8 +1105,11 @@ public:
 
     
 
+    nsAutoString addressStr, uuidStr;
+    AddressToString(mDeviceAddress, addressStr);
+    UuidToString(mUuid, uuidStr);
     mGetRemoteServiceRecordArray[i].mManager->OnGetServiceChannel(
-      mDeviceAddress, mUuid, -1);
+      addressStr, uuidStr, -1);
     mGetRemoteServiceRecordArray.RemoveElementAt(i);
   }
 
@@ -1129,16 +1139,25 @@ private:
 
 nsresult
 BluetoothServiceBluedroid::GetServiceChannel(
-  const BluetoothAddress& aDeviceAddress,
-  const BluetoothUuid& aServiceUuid,
+  const nsAString& aDeviceAddress,
+  const nsAString& aServiceUuid,
   BluetoothProfileManagerBase* aManager)
 {
+  BluetoothAddress address;
+  nsresult rv = StringToAddress(aDeviceAddress, address);
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+
+  BluetoothUuid uuid;
+  StringToUuid(aServiceUuid, uuid);
+
   mGetRemoteServiceRecordArray.AppendElement(
-    GetRemoteServiceRecordRequest(aDeviceAddress, aServiceUuid, aManager));
+    GetRemoteServiceRecordRequest(address, uuid, aManager));
 
   RefPtr<BluetoothResultHandler> res =
     new GetRemoteServiceRecordResultHandler(mGetRemoteServiceRecordArray,
-                                            aDeviceAddress, aServiceUuid);
+                                            address, uuid);
 
   
 
@@ -1146,7 +1165,7 @@ BluetoothServiceBluedroid::GetServiceChannel(
   if (mDiscovering) {
     sBtInterface->CancelDiscovery(res);
   } else {
-    sBtInterface->GetRemoteServiceRecord(aDeviceAddress, aServiceUuid, res);
+    sBtInterface->GetRemoteServiceRecord(address, uuid, res);
   }
 
   return NS_OK;
@@ -1194,7 +1213,9 @@ public:
     mGetRemoteServicesArray.RemoveElementAt(i);
 
     
-    mManager->OnUpdateSdpRecords(mDeviceAddress);
+    nsAutoString addressStr;
+    AddressToString(mDeviceAddress, addressStr);
+    mManager->OnUpdateSdpRecords(addressStr);
   }
 
   void CancelDiscovery() override
@@ -1223,15 +1244,21 @@ private:
 
 bool
 BluetoothServiceBluedroid::UpdateSdpRecords(
-  const BluetoothAddress& aDeviceAddress,
+  const nsAString& aDeviceAddress,
   BluetoothProfileManagerBase* aManager)
 {
+  BluetoothAddress address;
+  nsresult rv = StringToAddress(aDeviceAddress, address);
+  if (NS_FAILED(rv)) {
+    return false;
+  }
+
   mGetRemoteServicesArray.AppendElement(
-    GetRemoteServicesRequest(aDeviceAddress, aManager));
+    GetRemoteServicesRequest(address, aManager));
 
   RefPtr<BluetoothResultHandler> res =
     new GetRemoteServicesResultHandler(mGetRemoteServicesArray,
-                                       aDeviceAddress, aManager);
+                                       address, aManager);
 
   
 
@@ -1239,7 +1266,7 @@ BluetoothServiceBluedroid::UpdateSdpRecords(
   if (mDiscovering) {
     sBtInterface->CancelDiscovery(res);
   } else {
-    sBtInterface->GetRemoteServices(aDeviceAddress, res);
+    sBtInterface->GetRemoteServices(address, res);
   }
 
   return true;
@@ -1429,15 +1456,8 @@ BluetoothServiceBluedroid::ConnectDisconnect(
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(aRunnable);
 
-  BluetoothAddress address;
-  nsresult rv = StringToAddress(aDeviceAddress, address);
-  if (NS_FAILED(rv)) {
-    DispatchReplyError(aRunnable, STATUS_PARM_INVALID);
-    return;
-  }
-
   BluetoothProfileController* controller =
-    new BluetoothProfileController(aConnect, address, aRunnable,
+    new BluetoothProfileController(aConnect, aDeviceAddress, aRunnable,
                                    NextBluetoothProfileController,
                                    aServiceUuid, aCod);
   sControllerArray.AppendElement(controller);
@@ -1477,20 +1497,13 @@ BluetoothServiceBluedroid::SendFile(const nsAString& aDeviceAddress,
 {
   MOZ_ASSERT(NS_IsMainThread());
 
-  BluetoothAddress deviceAddress;
-  nsresult rv = StringToAddress(aDeviceAddress, deviceAddress);
-  if (NS_FAILED(rv)) {
-    DispatchReplyError(aRunnable, STATUS_PARM_INVALID);
-    return;
-  }
-
   
   
   
   
 
   BluetoothOppManager* opp = BluetoothOppManager::Get();
-  if (!opp || !opp->SendFile(deviceAddress, aBlobParent)) {
+  if (!opp || !opp->SendFile(aDeviceAddress, aBlobParent)) {
     DispatchReplyError(aRunnable, NS_LITERAL_STRING("SendFile failed"));
     return;
   }
@@ -1505,20 +1518,13 @@ BluetoothServiceBluedroid::SendFile(const nsAString& aDeviceAddress,
 {
   MOZ_ASSERT(NS_IsMainThread());
 
-  BluetoothAddress deviceAddress;
-  nsresult rv = StringToAddress(aDeviceAddress, deviceAddress);
-  if (NS_FAILED(rv)) {
-    DispatchReplyError(aRunnable, STATUS_PARM_INVALID);
-    return;
-  }
-
   
   
   
   
 
   BluetoothOppManager* opp = BluetoothOppManager::Get();
-  if (!opp || !opp->SendFile(deviceAddress, aBlob)) {
+  if (!opp || !opp->SendFile(aDeviceAddress, aBlob)) {
     DispatchReplyError(aRunnable, NS_LITERAL_STRING("SendFile failed"));
     return;
   }
@@ -2250,7 +2256,7 @@ BluetoothServiceBluedroid::RemoteDevicePropertiesNotification(
       }
 
       if (index < mGetRemoteServicesArray.Length()) {
-        mGetRemoteServicesArray[index].mManager->OnUpdateSdpRecords(aBdAddr);
+        mGetRemoteServicesArray[index].mManager->OnUpdateSdpRecords(bdAddrStr);
         mGetRemoteServicesArray.RemoveElementAt(index);
         continue; 
       }
@@ -2285,10 +2291,11 @@ BluetoothServiceBluedroid::RemoteDevicePropertiesNotification(
             (mGetRemoteServiceRecordArray[i].mUuid == p.mServiceRecord.mUuid)) {
 
           
+          nsAutoString uuidStr;
+          UuidToString(mGetRemoteServiceRecordArray[i].mUuid, uuidStr);
+
           mGetRemoteServiceRecordArray[i].mManager->OnGetServiceChannel(
-            aBdAddr,
-            mGetRemoteServiceRecordArray[i].mUuid,
-            p.mServiceRecord.mChannel);
+            bdAddrStr, uuidStr, p.mServiceRecord.mChannel);
 
           mGetRemoteServiceRecordArray.RemoveElementAt(i);
           break;

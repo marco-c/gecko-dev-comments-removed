@@ -46,7 +46,7 @@ private:
   void HandleShutdown();
   void NotifyConnectionStatusChanged();
 
-  BluetoothAddress mDeviceAddress;
+  nsString mDeviceAddress;
   RefPtr<BluetoothProfileController> mController;
 
   

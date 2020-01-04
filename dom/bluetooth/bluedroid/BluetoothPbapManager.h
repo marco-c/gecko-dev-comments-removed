@@ -169,7 +169,7 @@ private:
 
 
   bool mConnected;
-  BluetoothAddress mDeviceAddress;
+  nsString mDeviceAddress;
 
   
 
