@@ -210,7 +210,7 @@ class JavaPanZoomController
     private final static float easeOut(float t) {
         
         
-        t = t-1;
+        t = t - 1;
         return -t * t + 1;
     }
 
