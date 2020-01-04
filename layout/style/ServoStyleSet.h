@@ -129,7 +129,31 @@ public:
   
 
 
-  void RestyleSubtree(nsINode* aNode);
+
+
+
+
+  void StyleDocument(bool aLeaveDirtyBits);
+
+  
+
+
+
+
+
+
+
+
+  void StyleNewSubtree(nsIContent* aContent);
+
+  
+
+
+
+
+
+
+  void StyleNewChildren(nsIContent* aParent);
 
   bool StylingStarted() const { return mStylingStarted; }
 

@@ -4262,7 +4262,7 @@ nsCSSFrameConstructor::GetAnonymousContent(nsIContent* aParent,
   if (ServoStyleSet* styleSet = mPresShell->StyleSet()->GetAsServo()) {
     
     for (auto& info : aContent) {
-      styleSet->RestyleSubtree(info.mContent);
+      styleSet->StyleNewSubtree(info.mContent);
     }
   }
 

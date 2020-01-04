@@ -309,7 +309,7 @@ ServoRestyleManager::ProcessPendingRestyles()
 
     if (root->IsDirtyForServo() || root->HasDirtyDescendantsForServo()) {
       mInStyleRefresh = true;
-      styleSet->RestyleSubtree(root);
+      styleSet->StyleDocument( true);
 
       
       
@@ -329,15 +329,10 @@ ServoRestyleManager::ProcessPendingRestyles()
     }
   }
 
-  mModifiedElements.Clear();
-
-  
-  
-  
-  
-  
   MOZ_ASSERT(!doc->IsDirtyForServo());
-  doc->UnsetFlags(NODE_HAS_DIRTY_DESCENDANTS_FOR_SERVO);
+  MOZ_ASSERT(!doc->HasDirtyDescendantsForServo());
+
+  mModifiedElements.Clear();
 
   IncrementRestyleGeneration();
 }
