@@ -317,6 +317,7 @@ function LocaleData(data) {
   this.defaultLocale = data.defaultLocale;
   this.selectedLocale = data.selectedLocale;
   this.locales = data.locales || new Map();
+  this.warnedMissingKeys = new Set();
 
   
   
@@ -348,8 +349,16 @@ LocaleData.prototype = {
   },
 
   
-  localizeMessage(message, substitutions = [], locale = this.selectedLocale, defaultValue = "??") {
-    let locales = new Set([this.BUILTIN, locale, this.defaultLocale]
+  localizeMessage(message, substitutions = [], options = {}) {
+    let defaultOptions = {
+      locale: this.selectedLocale,
+      defaultValue: "",
+      cloneScope: null,
+    };
+
+    options = Object.assign(defaultOptions, options);
+
+    let locales = new Set([this.BUILTIN, options.locale, this.defaultLocale]
                           .filter(locale => this.messages.has(locale)));
 
     
@@ -398,8 +407,15 @@ LocaleData.prototype = {
       }
     }
 
-    Cu.reportError(`Unknown localization message ${message}`);
-    return defaultValue;
+    if (!this.warnedMissingKeys.has(message)) {
+      let error = `Unknown localization message ${message}`;
+      if (options.cloneScope) {
+        error = new options.cloneScope.Error(error);
+      }
+      Cu.reportError(error);
+      this.warnedMissingKeys.add(message);
+    }
+    return options.defaultValue;
   },
 
   
@@ -414,7 +430,7 @@ LocaleData.prototype = {
     }
 
     return str.replace(/__MSG_([A-Za-z0-9@_]+?)__/g, (matched, message) => {
-      return this.localizeMessage(message, [], locale, matched);
+      return this.localizeMessage(message, [], {locale, defaultValue: matched});
     });
   },
 
