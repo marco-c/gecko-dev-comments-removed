@@ -797,9 +797,11 @@ ConsoleServiceListener.prototype =
 
 
 
-function ConsoleAPIListener(window, owner, consoleID) {
+
+function ConsoleAPIListener(window, owner, {addonId, consoleID} = {}) {
   this.window = window;
   this.owner = owner;
+  this.addonId = addonId;
   this.consoleID = consoleID;
 }
 exports.ConsoleAPIListener = ConsoleAPIListener;
@@ -828,7 +830,7 @@ ConsoleAPIListener.prototype =
 
 
 
-  consoleID: null,
+  addonId: null,
 
   
 
@@ -896,8 +898,31 @@ ConsoleAPIListener.prototype =
       }
     }
 
-    if (this.consoleID && message.consoleID !== this.consoleID) {
-      return false;
+    if (this.consoleID) {
+      
+      
+      if (message.consoleID !== this.consoleID) {
+        return false;
+      }
+    }
+
+    if (this.addonId) {
+      if (!message.consoleID && !message.originAttributes) {
+        return false;
+      }
+
+      
+      
+      if (message.consoleID && message.consoleID !== `addon/${this.addonId}`) {
+        return false;
+      }
+
+      
+      
+      if (message.originAttributes &&
+          message.originAttributes.addonId !== this.addonId) {
+        return false;
+      }
     }
 
     return true;
