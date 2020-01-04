@@ -1570,7 +1570,8 @@ public:
   
   
   virtual void RebuildImageVisibilityDisplayList(const nsDisplayList& aList) = 0;
-  virtual void RebuildImageVisibility(nsRect* aRect = nullptr) = 0;
+  virtual void RebuildImageVisibility(nsRect* aRect = nullptr,
+                                      bool aRemoveOnly = false) = 0;
 
   
   virtual void EnsureImageInVisibleList(nsIImageLoadingContent* aImage) = 0;
