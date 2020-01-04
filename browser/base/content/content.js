@@ -210,10 +210,8 @@ const TLS_ERROR_REPORT_TELEMETRY_FAILURE  = 7;
 var AboutCertErrorListener = {
   init(chromeGlobal) {
     addMessageListener("AboutCertErrorDetails", this);
-    addMessageListener("Browser:SSLErrorReportStatus", this);
     chromeGlobal.addEventListener("AboutCertErrorLoad", this, false, true);
     chromeGlobal.addEventListener("AboutCertErrorSetAutomatic", this, false, true);
-    chromeGlobal.addEventListener("AboutCertErrorSendReport", this, false, true);
   },
 
   get isAboutCertError() {
@@ -232,9 +230,6 @@ var AboutCertErrorListener = {
       case "AboutCertErrorSetAutomatic":
         this.onSetAutomatic(event);
         break;
-      case "AboutCertErrorSendReport":
-        this.onSendReport();
-        break;
     }
   },
 
@@ -247,9 +242,6 @@ var AboutCertErrorListener = {
       case "AboutCertErrorDetails":
         this.onDetails(msg);
         break;
-      case "Browser:SSLErrorReportStatus":
-        this.onReportStatus(msg);
-        break;
     }
   },
 
@@ -258,6 +250,11 @@ var AboutCertErrorListener = {
     let ownerDoc = originalTarget.ownerDocument;
     ClickEventHandler.onAboutCertError(originalTarget, ownerDoc);
 
+    
+    
+    
+    
+    
     let automatic = Services.prefs.getBoolPref("security.ssl.errorReporting.automatic");
     content.dispatchEvent(new content.CustomEvent("AboutCertErrorOptions", {
       detail: JSON.stringify({
@@ -265,10 +262,6 @@ var AboutCertErrorListener = {
         automatic,
       })
     }));
-
-    if (automatic) {
-      this.onSendReport();
-    }
   },
 
   onDetails(msg) {
@@ -277,68 +270,31 @@ var AboutCertErrorListener = {
   },
 
   onSetAutomatic(event) {
-    if (event.detail) {
-      this.onSendReport();
-    }
-
     sendAsyncMessage("Browser:SetSSLErrorReportAuto", {
       automatic: event.detail
     });
-  },
 
-  onSendReport() {
-    let doc = content.document;
-    let location = doc.location.href;
+    
+    if (event.detail) {
+      let doc = content.document;
+      let location = doc.location.href;
 
-    let serhelper = Cc["@mozilla.org/network/serialization-helper;1"]
-                     .getService(Ci.nsISerializationHelper);
+      let serhelper = Cc["@mozilla.org/network/serialization-helper;1"]
+          .getService(Ci.nsISerializationHelper);
 
-    let serializable =  docShell.failedChannel.securityInfo
-                                .QueryInterface(Ci.nsITransportSecurityInfo)
-                                .QueryInterface(Ci.nsISerializable);
+      let serializable =  docShell.failedChannel.securityInfo
+          .QueryInterface(Ci.nsITransportSecurityInfo)
+          .QueryInterface(Ci.nsISerializable);
 
-    let serializedSecurityInfo = serhelper.serializeToString(serializable);
+      let serializedSecurityInfo = serhelper.serializeToString(serializable);
 
-    sendAsyncMessage("Browser:SendSSLErrorReport", {
-      documentURI: doc.documentURI,
-      location: {hostname: doc.location.hostname, port: doc.location.port},
-      securityInfo: serializedSecurityInfo
-    });
-  },
-
-  onReportStatus(msg) {
-    let doc = content.document;
-    if (doc.documentURI != msg.data.documentURI) {
-      return;
+      sendAsyncMessage("Browser:SendSSLErrorReport", {
+        documentURI: doc.documentURI,
+        location: {hostname: doc.location.hostname, port: doc.location.port},
+        securityInfo: serializedSecurityInfo
+      });
     }
-
-    let reportSendingMsg = doc.getElementById("reportSendingMessage");
-    let reportSentMsg = doc.getElementById("reportSentMessage");
-    let retryBtn = doc.getElementById("reportCertificateErrorRetry");
-
-    switch (msg.data.reportStatus) {
-      case "activity":
-        
-        retryBtn.style.removeProperty("display");
-        reportSentMsg.style.removeProperty("display");
-        reportSendingMsg.style.display = "block";
-        break;
-      case "error":
-        
-        retryBtn.style.display = "block";
-        reportSendingMsg.style.removeProperty("display");
-        sendAsyncMessage("Browser:SSLErrorReportTelemetry",
-                         {reportStatus: TLS_ERROR_REPORT_TELEMETRY_FAILURE});
-        break;
-      case "complete":
-        
-        reportSentMsg.style.display = "block";
-        reportSendingMsg.style.removeProperty("display");
-        sendAsyncMessage("Browser:SSLErrorReportTelemetry",
-                         {reportStatus: TLS_ERROR_REPORT_TELEMETRY_SUCCESS});
-        break;
-    }
-  }
+  },
 };
 
 AboutCertErrorListener.init(this);
@@ -348,8 +304,6 @@ var AboutNetErrorListener = {
   init: function(chromeGlobal) {
     chromeGlobal.addEventListener('AboutNetErrorLoad', this, false, true);
     chromeGlobal.addEventListener('AboutNetErrorSetAutomatic', this, false, true);
-    chromeGlobal.addEventListener('AboutNetErrorSendReport', this, false, true);
-    chromeGlobal.addEventListener('AboutNetErrorUIExpanded', this, false, true);
     chromeGlobal.addEventListener('AboutNetErrorOverride', this, false, true);
   },
 
@@ -369,13 +323,6 @@ var AboutNetErrorListener = {
     case "AboutNetErrorSetAutomatic":
       this.onSetAutomatic(aEvent);
       break;
-    case "AboutNetErrorSendReport":
-      this.onSendReport(aEvent);
-      break;
-    case "AboutNetErrorUIExpanded":
-      sendAsyncMessage("Browser:SSLErrorReportTelemetry",
-                       {reportStatus: TLS_ERROR_REPORT_TELEMETRY_EXPANDED});
-      break;
     case "AboutNetErrorOverride":
       this.onOverride(aEvent);
       break;
@@ -385,91 +332,46 @@ var AboutNetErrorListener = {
   onPageLoad: function(evt) {
     let automatic = Services.prefs.getBoolPref("security.ssl.errorReporting.automatic");
     content.dispatchEvent(new content.CustomEvent("AboutNetErrorOptions", {
-            detail: JSON.stringify({
-              enabled: Services.prefs.getBoolPref("security.ssl.errorReporting.enabled"),
-            automatic: automatic
-            })
-          }
-    ));
+      detail: JSON.stringify({
+        enabled: Services.prefs.getBoolPref("security.ssl.errorReporting.enabled"),
+        automatic: automatic
+      })
+    }));
 
     sendAsyncMessage("Browser:SSLErrorReportTelemetry",
                      {reportStatus: TLS_ERROR_REPORT_TELEMETRY_UI_SHOWN});
-
-    if (automatic) {
-      this.onSendReport(evt);
-    }
-    
-    let contentDoc = content.document;
-
-    let reportSendingMsg = contentDoc.getElementById("reportSendingMessage");
-    let reportSentMsg = contentDoc.getElementById("reportSentMessage");
-    let retryBtn = contentDoc.getElementById("reportCertificateErrorRetry");
-    reportSendingMsg.style.display = "none";
-    reportSentMsg.style.display = "none";
-    retryBtn.style.display = "none";
   },
 
   onSetAutomatic: function(evt) {
     sendAsyncMessage("Browser:SetSSLErrorReportAuto", {
-        automatic: evt.detail
+      automatic: evt.detail
+    });
+
+    
+    if (evt.detail) {
+      let contentDoc = content.document;
+
+      let location = contentDoc.location.href;
+
+      let serhelper = Cc["@mozilla.org/network/serialization-helper;1"]
+                        .getService(Ci.nsISerializationHelper);
+
+      let serializable = docShell.failedChannel.securityInfo
+          .QueryInterface(Ci.nsITransportSecurityInfo)
+          .QueryInterface(Ci.nsISerializable);
+
+      let serializedSecurityInfo = serhelper.serializeToString(serializable);
+
+      sendAsyncMessage("Browser:SendSSLErrorReport", {
+        documentURI: contentDoc.documentURI,
+        location: {
+          hostname: contentDoc.location.hostname,
+          port: contentDoc.location.port
+        },
+        securityInfo: serializedSecurityInfo
       });
-  },
 
-  onSendReport: function(evt) {
-    let contentDoc = content.document;
-
-    let reportSendingMsg = contentDoc.getElementById("reportSendingMessage");
-    let reportSentMsg = contentDoc.getElementById("reportSentMessage");
-    let retryBtn = contentDoc.getElementById("reportCertificateErrorRetry");
-
-    addMessageListener("Browser:SSLErrorReportStatus", function(message) {
-      
-      
-      if (contentDoc.documentURI === message.data.documentURI) {
-        switch(message.data.reportStatus) {
-        case "activity":
-          
-          retryBtn.style.display = "none";
-          reportSentMsg.style.display = "none";
-          reportSendingMsg.style.removeProperty("display");
-          break;
-        case "error":
-          
-          retryBtn.style.removeProperty("display");
-          reportSendingMsg.style.display = "none";
-          sendAsyncMessage("Browser:SSLErrorReportTelemetry",
-                           {reportStatus: TLS_ERROR_REPORT_TELEMETRY_FAILURE});
-          break;
-        case "complete":
-          
-          reportSentMsg.style.removeProperty("display");
-          reportSendingMsg.style.display = "none";
-          sendAsyncMessage("Browser:SSLErrorReportTelemetry",
-                           {reportStatus: TLS_ERROR_REPORT_TELEMETRY_SUCCESS});
-          break;
-        }
-      }
-    });
-
-    let location = contentDoc.location.href;
-
-    let serhelper = Cc["@mozilla.org/network/serialization-helper;1"]
-                      .getService(Ci.nsISerializationHelper);
-
-    let serializable = docShell.failedChannel.securityInfo
-                               .QueryInterface(Ci.nsITransportSecurityInfo)
-                               .QueryInterface(Ci.nsISerializable);
-
-    let serializedSecurityInfo = serhelper.serializeToString(serializable);
-
-    sendAsyncMessage("Browser:SendSSLErrorReport", {
-      documentURI: contentDoc.documentURI,
-      location: {
-        hostname: contentDoc.location.hostname,
-        port: contentDoc.location.port
-      },
-      securityInfo: serializedSecurityInfo
-    });
+    }
   },
 
   onOverride: function(evt) {

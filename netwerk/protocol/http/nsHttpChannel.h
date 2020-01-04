@@ -368,6 +368,11 @@ private:
     
 
 
+    void ProcessSecurityReport(nsresult status);
+
+    
+
+
 
 
     nsresult ProcessSingleSecurityHeader(uint32_t aType,

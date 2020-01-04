@@ -857,15 +857,10 @@ function _loadURIWithFlags(browser, uri, params) {
     
     
     
-    
-    if (mustChangeProcess) {
-      Cu.reportError(e);
-      gBrowser.updateBrowserRemotenessByURL(browser, uri);
-      browser.webNavigation.loadURIWithOptions(uri, flags, referrer, referrerPolicy,
-                                               postData, null, null);
-    } else {
-      throw e;
-    }
+    Cu.reportError(e);
+    gBrowser.updateBrowserRemotenessByURL(browser, uri);
+    browser.webNavigation.loadURIWithOptions(uri, flags, referrer, referrerPolicy,
+                                             postData, null, null);
   } finally {
     if (browser.userTypedClear) {
       browser.userTypedClear--;
@@ -2716,100 +2711,23 @@ var BrowserOnClick = {
   },
 
   onSSLErrorReport: function(browser, documentURI, location, securityInfo) {
-    function showReportStatus(reportStatus) {
-      gBrowser.selectedBrowser
-          .messageManager
-          .sendAsyncMessage("Browser:SSLErrorReportStatus",
-                            {
-                              reportStatus: reportStatus,
-                              documentURI: documentURI
-                            });
-    }
-
     if (!Services.prefs.getBoolPref("security.ssl.errorReporting.enabled")) {
-      showReportStatus("error");
       Cu.reportError("User requested certificate error report sending, but certificate error reporting is disabled");
       return;
     }
-
-    let bin = TLS_ERROR_REPORT_TELEMETRY_MANUAL_SEND;
-    if (Services.prefs.getBoolPref("security.ssl.errorReporting.automatic")) {
-      bin = TLS_ERROR_REPORT_TELEMETRY_AUTO_SEND;
-    }
-    Services.telemetry.getHistogramById("TLS_ERROR_REPORT_UI").add(bin);
 
     let serhelper = Cc["@mozilla.org/network/serialization-helper;1"]
                            .getService(Ci.nsISerializationHelper);
     let transportSecurityInfo = serhelper.deserializeObject(securityInfo);
     transportSecurityInfo.QueryInterface(Ci.nsITransportSecurityInfo)
 
-    showReportStatus("activity");
-
-    
-
-
-
-
-
-
-
-
-
-
+    let errorReporter = Cc["@mozilla.org/securityreporter;1"]
+                          .getService(Ci.nsISecurityReporter);
     
     
-    let asciiCertChain = [];
-
-    if (transportSecurityInfo.failedCertChain) {
-      let certs = transportSecurityInfo.failedCertChain.getEnumerator();
-      while (certs.hasMoreElements()) {
-        let cert = certs.getNext();
-        cert.QueryInterface(Ci.nsIX509Cert);
-        asciiCertChain.push(btoa(getDERString(cert)));
-      }
-    }
-
-    let report = {
-      hostname: location.hostname,
-      port: location.port,
-      timestamp: Math.round(Date.now() / 1000),
-      errorCode: transportSecurityInfo.errorCode,
-      failedCertChain: asciiCertChain,
-      userAgent: window.navigator.userAgent,
-      version: 1,
-      build: gAppInfo.appBuildID,
-      product: gAppInfo.name,
-      channel: UpdateUtils.UpdateChannel
-    }
-
-    let reportURL = Services.prefs.getCharPref("security.ssl.errorReporting.url");
-
-    let xhr = Cc["@mozilla.org/xmlextras/xmlhttprequest;1"]
-        .createInstance(Ci.nsIXMLHttpRequest);
-    try {
-      xhr.open("POST", reportURL);
-    } catch (e) {
-      Cu.reportError("xhr.open exception", e);
-      showReportStatus("error");
-    }
-
-    xhr.onerror = function (e) {
-      
-      Cu.reportError("xhr onerror", e);
-      showReportStatus("error");
-    };
-
-    xhr.onload = function (event) {
-      if (xhr.status !== 201 && xhr.status !== 0) {
-        
-        Cu.reportError("xhr returned failure code", xhr.status);
-        showReportStatus("error");
-      } else {
-        showReportStatus("complete");
-      }
-    };
-
-    xhr.send(JSON.stringify(report));
+    let port = location.port === "" ? -1 : location.port;
+    errorReporter.reportTLSError(transportSecurityInfo,
+                                 location.hostname, port);
   },
 
   onAboutCertError: function (browser, elementId, isTopFrame, location, securityInfoAsString) {
