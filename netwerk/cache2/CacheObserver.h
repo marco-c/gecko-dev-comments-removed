@@ -27,49 +27,49 @@ class CacheObserver : public nsIObserver
   static CacheObserver* Self() { return sSelf; }
 
   
-  static bool const UseNewCache();
-  static bool const UseDiskCache()
+  static bool UseNewCache();
+  static bool UseDiskCache()
     { return sUseDiskCache; }
-  static bool const UseMemoryCache()
+  static bool UseMemoryCache()
     { return sUseMemoryCache; }
-  static uint32_t const MetadataMemoryLimit() 
+  static uint32_t MetadataMemoryLimit() 
     { return sMetadataMemoryLimit << 10; }
-  static uint32_t const MemoryCacheCapacity(); 
-  static uint32_t const DiskCacheCapacity() 
+  static uint32_t MemoryCacheCapacity(); 
+  static uint32_t DiskCacheCapacity() 
     { return sDiskCacheCapacity << 10; }
   static void SetDiskCacheCapacity(uint32_t); 
-  static uint32_t const DiskFreeSpaceSoftLimit() 
+  static uint32_t DiskFreeSpaceSoftLimit() 
     { return sDiskFreeSpaceSoftLimit << 10; }
-  static uint32_t const DiskFreeSpaceHardLimit() 
+  static uint32_t DiskFreeSpaceHardLimit() 
     { return sDiskFreeSpaceHardLimit << 10; }
-  static bool const SmartCacheSizeEnabled()
+  static bool SmartCacheSizeEnabled()
     { return sSmartCacheSizeEnabled; }
-  static uint32_t const PreloadChunkCount()
+  static uint32_t PreloadChunkCount()
     { return sPreloadChunkCount; }
-  static uint32_t const MaxMemoryEntrySize() 
+  static uint32_t MaxMemoryEntrySize() 
     { return sMaxMemoryEntrySize << 10; }
-  static uint32_t const MaxDiskEntrySize() 
+  static uint32_t MaxDiskEntrySize() 
     { return sMaxDiskEntrySize << 10; }
-  static uint32_t const MaxDiskChunksMemoryUsage(bool aPriority) 
+  static uint32_t MaxDiskChunksMemoryUsage(bool aPriority) 
     { return aPriority ? sMaxDiskPriorityChunksMemoryUsage << 10
                        : sMaxDiskChunksMemoryUsage << 10; }
-  static uint32_t const CompressionLevel()
+  static uint32_t CompressionLevel()
     { return sCompressionLevel; }
-  static uint32_t const HalfLifeSeconds()
+  static uint32_t HalfLifeSeconds()
     { return sHalfLifeHours * 60.0F * 60.0F; }
-  static int32_t const HalfLifeExperiment()
+  static int32_t HalfLifeExperiment()
     { return sHalfLifeExperiment; }
-  static bool const ClearCacheOnShutdown()
+  static bool ClearCacheOnShutdown()
     { return sSanitizeOnShutdown && sClearCacheOnShutdown; }
-  static bool const CacheFSReported()
+  static bool CacheFSReported()
     { return sCacheFSReported; }
   static void SetCacheFSReported();
-  static bool const HashStatsReported()
+  static bool HashStatsReported()
     { return sHashStatsReported; }
   static void SetHashStatsReported();
   static void ParentDirOverride(nsIFile ** aDir);
 
-  static bool const EntryIsTooBig(int64_t aSize, bool aUsingDisk);
+  static bool EntryIsTooBig(int64_t aSize, bool aUsingDisk);
 
 private:
   static CacheObserver* sSelf;

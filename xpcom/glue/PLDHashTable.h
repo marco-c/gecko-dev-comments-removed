@@ -305,7 +305,7 @@ public:
   ~PLDHashTable();
 
   
-  const PLDHashTableOps* const Ops() { return mOps; }
+  const PLDHashTableOps* Ops() const { return mOps; }
 
   
   

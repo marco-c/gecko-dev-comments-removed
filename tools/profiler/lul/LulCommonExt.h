@@ -85,7 +85,7 @@ using std::map;
 class UniqueString;
 
 
-const char* const FromUniqueString(const UniqueString*);
+const char* FromUniqueString(const UniqueString*);
 
 
 bool IsEmptyUniqueString(const UniqueString*);

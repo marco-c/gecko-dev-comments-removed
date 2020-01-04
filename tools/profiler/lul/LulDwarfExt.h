@@ -1203,13 +1203,13 @@ class DwarfCFIToModule: public CallFrameInfo::Handler {
   class RegisterNames {
    public:
     
-    static const unsigned int I386();
+    static unsigned int I386();
 
     
-    static const unsigned int X86_64();
+    static unsigned int X86_64();
 
     
-    static const unsigned int ARM();
+    static unsigned int ARM();
   };
 
   

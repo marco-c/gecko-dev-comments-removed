@@ -120,7 +120,7 @@ typedef mozilla::null_t DXGISharedSurfaceHandle;
 
 
 #define VARSTR(v_)  case v_: return #v_
-inline const char* const
+inline const char*
 NPPVariableToString(NPPVariable aVar)
 {
     switch (aVar) {

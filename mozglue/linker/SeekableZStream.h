@@ -77,18 +77,18 @@ public:
   bool DecompressChunk(void *where, size_t chunk, size_t length = 0);
  
   
-  const size_t GetUncompressedSize() const
+  size_t GetUncompressedSize() const
   {
     return (offsetTable.numElements() - 1) * chunkSize + lastChunkSize;
   }
 
   
-  const size_t GetChunkSize(size_t chunk = 0) const {
+  size_t GetChunkSize(size_t chunk = 0) const {
     return (chunk == offsetTable.numElements() - 1) ? lastChunkSize : chunkSize;
   }
 
   
-  const size_t GetChunksNum() const {
+  size_t GetChunksNum() const {
     return offsetTable.numElements();
   }
 

@@ -1803,7 +1803,7 @@ void CallFrameInfo::Reporter::ClearingCFARule(uint64 offset,
 }
 
 
-const unsigned int DwarfCFIToModule::RegisterNames::I386() {
+unsigned int DwarfCFIToModule::RegisterNames::I386() {
   
 
 
@@ -1818,7 +1818,7 @@ const unsigned int DwarfCFIToModule::RegisterNames::I386() {
   return 8 + 3 + 8 + 2 + 8 + 8 + 3 + 8 + 2;
 }
 
-const unsigned int DwarfCFIToModule::RegisterNames::X86_64() {
+unsigned int DwarfCFIToModule::RegisterNames::X86_64() {
   
 
 
@@ -1837,7 +1837,7 @@ const unsigned int DwarfCFIToModule::RegisterNames::X86_64() {
 }
 
 
-const unsigned int DwarfCFIToModule::RegisterNames::ARM() {
+unsigned int DwarfCFIToModule::RegisterNames::ARM() {
   
 
 

@@ -240,7 +240,7 @@ CacheObserver::AttachToPreferences()
 }
 
 
-uint32_t const CacheObserver::MemoryCacheCapacity()
+uint32_t CacheObserver::MemoryCacheCapacity()
 {
   if (sMemoryCacheCapacity >= 0)
     return sMemoryCacheCapacity << 10;
@@ -278,7 +278,7 @@ uint32_t const CacheObserver::MemoryCacheCapacity()
 }
 
 
-bool const CacheObserver::UseNewCache()
+bool CacheObserver::UseNewCache()
 {
   uint32_t useNewCache = sUseNewCache;
 
@@ -441,7 +441,7 @@ nsresult Run(NeckoOriginAttributes const &aOa)
 } 
 
 
-bool const CacheObserver::EntryIsTooBig(int64_t aSize, bool aUsingDisk)
+bool CacheObserver::EntryIsTooBig(int64_t aSize, bool aUsingDisk)
 {
   
   int64_t preferredLimit = aUsingDisk ? sMaxDiskEntrySize : sMaxMemoryEntrySize;

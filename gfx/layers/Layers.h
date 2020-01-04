@@ -1354,7 +1354,7 @@ public:
 
 
 
-  const float GetLocalOpacity();
+  float GetLocalOpacity();
 
   
 
@@ -1637,7 +1637,7 @@ public:
 
 
   const nsIntRegion& GetInvalidRegion() { return mInvalidRegion; }
-  const void AddInvalidRegion(const nsIntRegion& aRegion) {
+  void AddInvalidRegion(const nsIntRegion& aRegion) {
     mInvalidRegion.Or(mInvalidRegion, aRegion);
   }
 

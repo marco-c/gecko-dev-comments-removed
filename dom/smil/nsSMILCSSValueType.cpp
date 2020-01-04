@@ -72,7 +72,7 @@ GetZeroValueForUnit(StyleAnimationValue::Unit aUnit)
 
 
 
-static const bool
+static bool
 FinalizeStyleAnimationValues(const StyleAnimationValue*& aValue1,
                              const StyleAnimationValue*& aValue2)
 {
