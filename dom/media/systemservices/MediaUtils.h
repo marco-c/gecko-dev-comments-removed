@@ -10,7 +10,6 @@
 #include "nsThreadUtils.h"
 #include "nsIAsyncShutdown.h"
 #include "mozilla/UniquePtr.h"
-#include "base/task.h"
 
 namespace mozilla {
 namespace media {
@@ -183,7 +182,6 @@ private:
 
 
 
-
 template<typename OnRunType>
 class LambdaRunnable : public Runnable
 {
@@ -203,30 +201,6 @@ already_AddRefed<LambdaRunnable<OnRunType>>
 NewRunnableFrom(OnRunType&& aOnRun)
 {
   typedef LambdaRunnable<OnRunType> LambdaType;
-  RefPtr<LambdaType> lambda = new LambdaType(Forward<OnRunType>(aOnRun));
-  return lambda.forget();
-}
-
-template<typename OnRunType>
-class LambdaTask : public Runnable
-{
-public:
-  explicit LambdaTask(OnRunType&& aOnRun) : mOnRun(Move(aOnRun)) {}
-private:
-  NS_IMETHOD
-  Run() override
-  {
-    mOnRun();
-    return NS_OK;
-  }
-  OnRunType mOnRun;
-};
-
-template<typename OnRunType>
-already_AddRefed<LambdaTask<OnRunType>>
-NewTaskFrom(OnRunType&& aOnRun)
-{
-  typedef LambdaTask<OnRunType> LambdaType;
   RefPtr<LambdaType> lambda = new LambdaType(Forward<OnRunType>(aOnRun));
   return lambda.forget();
 }
