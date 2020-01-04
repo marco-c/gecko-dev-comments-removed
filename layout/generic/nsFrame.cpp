@@ -2782,11 +2782,17 @@ nsIFrame::BuildDisplayListForChild(nsDisplayListBuilder*   aBuilder,
   DisplayListClipState::AutoClipMultiple clipState(aBuilder);
   CheckForApzAwareEventHandlers(aBuilder, child);
 
+  Maybe<nsDisplayListBuilder::AutoCurrentScrollParentIdSetter> idSetter;
   if (savedOutOfFlowData) {
     clipState.SetClipForContainingBlockDescendants(
       &savedOutOfFlowData->mContainingBlockClip);
     clipState.SetScrollClipForContainingBlockDescendants(
       savedOutOfFlowData->mContainingBlockScrollClip);
+
+    
+    
+    
+    idSetter.emplace(aBuilder, savedOutOfFlowData);
   } else if (GetStateBits() & NS_FRAME_FORCE_DISPLAY_LIST_DESCEND_INTO &&
              isPlaceholder) {
     

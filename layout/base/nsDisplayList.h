@@ -371,6 +371,30 @@ public:
   
 
 
+
+  nsIFrame* GetCurrentScrollParent() { return mCurrentScrollParent; }
+  
+
+
+
+
+
+
+
+
+
+
+  nsRect GetDisplayPortConsideringAncestors() { return mDisplayPortConsideringAncestors; }
+  
+
+
+
+
+
+  nsRect GetScrollPortConsideringAncestors() { return mScrollPortConsideringAncestors; }
+  
+
+
   ViewID GetCurrentScrollParentId() const { return mCurrentScrollParentId; }
   
 
@@ -826,49 +850,64 @@ public:
     uint32_t mCachedItemIndex;
   };
 
+  struct OutOfFlowDisplayData;
+
   
+
+
+
+
 
 
   class AutoCurrentScrollParentIdSetter;
   friend class AutoCurrentScrollParentIdSetter;
   class AutoCurrentScrollParentIdSetter {
   public:
-    AutoCurrentScrollParentIdSetter(nsDisplayListBuilder* aBuilder, ViewID aScrollId)
-      : mBuilder(aBuilder)
-      , mOldValue(aBuilder->mCurrentScrollParentId)
-      , mOldForceLayer(aBuilder->mForceLayerForScrollParent) {
-      
-      
-      
-      
-      mCanBeScrollParent = (mOldValue != aScrollId);
-      aBuilder->mCurrentScrollParentId = aScrollId;
-      aBuilder->mForceLayerForScrollParent = false;
-    }
+    
+
+
+
+
+
+
+
+
+
+
+
+
+    AutoCurrentScrollParentIdSetter(nsDisplayListBuilder* aBuilder,
+                                    nsIFrame* aScrollParent);
+
+    
+
+
+
+
+
+
+    AutoCurrentScrollParentIdSetter(nsDisplayListBuilder* aBuilder,
+                                    const OutOfFlowDisplayData* aOutOfFlowData);
+
+    ~AutoCurrentScrollParentIdSetter();
+
     bool ShouldForceLayerForScrollParent() const {
       
       
       return mCanBeScrollParent && mBuilder->mForceLayerForScrollParent;
-    };
-    ~AutoCurrentScrollParentIdSetter() {
-      mBuilder->mCurrentScrollParentId = mOldValue;
-      if (mCanBeScrollParent) {
-        
-        
-        
-        mBuilder->mForceLayerForScrollParent = mOldForceLayer;
-      } else {
-        
-        
-        
-        mBuilder->mForceLayerForScrollParent |= mOldForceLayer;
-      }
     }
+
   private:
+    void Init();
+
     nsDisplayListBuilder* mBuilder;
-    ViewID                mOldValue;
-    bool                  mOldForceLayer;
-    bool                  mCanBeScrollParent;
+    nsIFrame*             mOldScrollParent;
+    nsRect                mOldDisplayPortConsideringAncestors;
+    nsRect                mOldScrollPortConsideringAncestors;
+    ViewID                mOldScrollParentId;
+    bool                  mOldForceLayer : 1;
+    bool                  mCanBeScrollParent : 1;
+    bool                  mChangedSubtrees : 1;
   };
 
   
@@ -989,14 +1028,26 @@ public:
   struct OutOfFlowDisplayData {
     OutOfFlowDisplayData(const DisplayItemClip* aContainingBlockClip,
                          const DisplayItemScrollClip* aContainingBlockScrollClip,
-                         const nsRect &aDirtyRect)
+                         const nsRect& aDirtyRect,
+                         nsIFrame* aCurrentScrollParent,
+                         ViewID aCurrentScrollParentId,
+                         const nsRect& aDisplayPortConsideringAncestors,
+                         const nsRect& aScrollPortConsideringAncestors)
       : mContainingBlockClip(aContainingBlockClip ? *aContainingBlockClip : DisplayItemClip())
       , mContainingBlockScrollClip(aContainingBlockScrollClip)
       , mDirtyRect(aDirtyRect)
+      , mCurrentScrollParent(aCurrentScrollParent)
+      , mCurrentScrollParentId(aCurrentScrollParentId)
+      , mDisplayPortConsideringAncestors(aDisplayPortConsideringAncestors)
+      , mScrollPortConsideringAncestors(aScrollPortConsideringAncestors)
     {}
     DisplayItemClip mContainingBlockClip;
     const DisplayItemScrollClip* mContainingBlockScrollClip;
     nsRect mDirtyRect;
+    nsIFrame* mCurrentScrollParent;
+    ViewID mCurrentScrollParentId;
+    nsRect mDisplayPortConsideringAncestors;
+    nsRect mScrollPortConsideringAncestors;
   };
 
   NS_DECLARE_FRAME_PROPERTY_DELETABLE(OutOfFlowDisplayDataProperty,
@@ -1153,6 +1204,23 @@ private:
 
   nsIFrame* FindAnimatedGeometryRootFrameFor(nsIFrame* aFrame);
 
+  
+
+
+
+
+
+  void UpdateCurrentScrollParent(nsIFrame* aScrollParent);
+
+  
+
+
+
+
+
+
+  void UpdateCurrentScrollParentForOutOfFlow(const OutOfFlowDisplayData* aOutOfFlowData);
+
   friend class nsDisplayCanvasBackgroundImage;
   friend class nsDisplayBackgroundImage;
   friend class nsDisplayFixedPosition;
@@ -1250,7 +1318,10 @@ private:
   nsTArray<DisplayItemScrollClip*> mScrollClipsToDestroy;
   nsTArray<DisplayItemClip*>     mDisplayItemClipsToDestroy;
   nsDisplayListBuilderMode       mMode;
+  nsIFrame*                      mCurrentScrollParent;
   ViewID                         mCurrentScrollParentId;
+  nsRect                         mDisplayPortConsideringAncestors;
+  nsRect                         mScrollPortConsideringAncestors;
   ViewID                         mCurrentScrollbarTarget;
   uint32_t                       mCurrentScrollbarFlags;
   Preserves3DContext             mPreserves3DCtx;
