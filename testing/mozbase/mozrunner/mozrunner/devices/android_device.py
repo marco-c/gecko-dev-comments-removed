@@ -471,26 +471,19 @@ class AndroidEmulator(object):
             var = 'ANDROID_PLATFORM_TOOLS'
 
         found = False
-        
-        exe_path = find_executable(exe)
-        if exe_path:
-            found = True
-        else:
-            self._log_debug("Unable to find executable on PATH")
 
-        if not found:
-            
-            try:
-                android_sdk_root = os.environ['ANDROID_SDK_ROOT']
-                exe_path = os.path.join(
-                    android_sdk_root, subdir, exe)
-                if os.path.exists(exe_path):
-                    found = True
-                else:
-                    self._log_debug(
-                        "Unable to find executable at %s" % exe_path)
-            except KeyError:
-                self._log_debug("ANDROID_SDK_ROOT not set")
+        
+        try:
+            android_sdk_root = os.environ['ANDROID_SDK_ROOT']
+            exe_path = os.path.join(
+                android_sdk_root, subdir, exe)
+            if os.path.exists(exe_path):
+                found = True
+            else:
+                self._log_debug(
+                    "Unable to find executable at %s" % exe_path)
+        except KeyError:
+            self._log_debug("ANDROID_SDK_ROOT not set")
 
         if not found and self.substs:
             
@@ -507,13 +500,23 @@ class AndroidEmulator(object):
 
         if not found:
             
+            mozbuild_path = os.environ.get('MOZBUILD_STATE_PATH',
+                os.path.expanduser(os.path.join('~', '.mozbuild')))
             exe_path = os.path.join(
-                '~', '.mozbuild', 'android-sdk-linux', subdir, exe)
+                mozbuild_path, 'android-sdk-linux', subdir, exe)
             if os.path.exists(exe_path):
                 found = True
             else:
                 self._log_debug(
                     "Unable to find executable at %s" % exe_path)
+
+        if not found:
+            
+            exe_path = find_executable(exe)
+            if exe_path:
+                found = True
+            else:
+                self._log_debug("Unable to find executable on PATH")
 
         if found:
             self._log_debug("%s found at %s" % (exe, exe_path))
