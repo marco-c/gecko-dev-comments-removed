@@ -6,6 +6,8 @@
 package org.mozilla.gecko;
 
 import android.Manifest;
+import android.app.DownloadManager;
+import android.os.Environment;
 import android.support.annotation.NonNull;
 import org.json.JSONArray;
 import org.mozilla.gecko.adjust.AdjustHelperInterface;
@@ -681,6 +683,7 @@ public class BrowserApp extends GeckoApp
         EventDispatcher.getInstance().registerGeckoThreadListener((NativeEventListener)this,
             "CharEncoding:Data",
             "CharEncoding:State",
+            "Download:AndroidDownloadManager",
             "Experiments:GetActive",
             "Favicon:CacheLoad",
             "Feedback:MaybeLater",
@@ -1294,7 +1297,7 @@ public class BrowserApp extends GeckoApp
                 } catch (JSONException e) {
                     Log.e(LOGTAG, "error building json arguments", e);
                 }
-                GeckoAppShell.notifyObservers("Feeds:Subscribe", args.toString());
+                GeckoAppShell.sendEventToGecko(GeckoEvent.createBroadcastEvent("Feeds:Subscribe", args.toString()));
             }
             return true;
         }
@@ -1310,7 +1313,7 @@ public class BrowserApp extends GeckoApp
                     Log.e(LOGTAG, "error building json arguments", e);
                     return true;
                 }
-                GeckoAppShell.notifyObservers("SearchEngines:Add", args.toString());
+                GeckoAppShell.sendEventToGecko(GeckoEvent.createBroadcastEvent("SearchEngines:Add", args.toString()));
             }
             return true;
         }
@@ -1418,6 +1421,7 @@ public class BrowserApp extends GeckoApp
         EventDispatcher.getInstance().unregisterGeckoThreadListener((NativeEventListener) this,
             "CharEncoding:Data",
             "CharEncoding:State",
+            "Download:AndroidDownloadManager",
             "Experiments:GetActive",
             "Favicon:CacheLoad",
             "Feedback:MaybeLater",
@@ -1655,7 +1659,8 @@ public class BrowserApp extends GeckoApp
                     new AlertDialog.OnClickListener() {
                 @Override
                 public void onClick(final DialogInterface dialog, final int which) {
-                    GeckoAppShell.notifyObservers("CharEncoding:Set", codeArray[which]);
+                    GeckoAppShell.sendEventToGecko(
+                        GeckoEvent.createBroadcastEvent("CharEncoding:Set", codeArray[which]));
                     dialog.dismiss();
                 }
             });
@@ -1765,6 +1770,38 @@ public class BrowserApp extends GeckoApp
             }
         } else if ("Updater:Launch".equals(event)) {
             handleUpdaterLaunch();
+        } else if ("Download:AndroidDownloadManager".equals(event)) {
+            
+
+            final String uri = message.getString("uri");
+            final String filename = message.getString("filename");
+            final String mimeType = message.getString("mimeType");
+
+            final DownloadManager.Request request = new DownloadManager.Request(Uri.parse(uri));
+            request.setMimeType(mimeType);
+
+            try {
+                request.setDestinationInExternalFilesDir(this, Environment.DIRECTORY_DOWNLOADS, filename);
+            } catch (IllegalStateException e) {
+                Log.e(LOGTAG, "Cannot create download directory");
+                return;
+            }
+
+            request.allowScanningByMediaScanner();
+            request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
+            request.addRequestHeader("User-Agent", HardwareUtils.isTablet() ?
+                    AppConstants.USER_AGENT_FENNEC_TABLET :
+                    AppConstants.USER_AGENT_FENNEC_MOBILE);
+
+            try {
+                DownloadManager manager = (DownloadManager) getSystemService(Context.DOWNLOAD_SERVICE);
+                manager.enqueue(request);
+
+                Log.d(LOGTAG, "Enqueued download (Download Manager)");
+            } catch (RuntimeException e) {
+                Log.e(LOGTAG, "Download failed: " + e);
+            }
+
         } else {
             super.handleMessage(event, message, callback);
         }
@@ -2914,7 +2951,7 @@ public class BrowserApp extends GeckoApp
         item.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
             @Override
             public boolean onMenuItemClick(MenuItem item) {
-                GeckoAppShell.notifyObservers("Menu:Clicked", Integer.toString(info.id - ADDON_MENU_OFFSET));
+                GeckoAppShell.sendEventToGecko(GeckoEvent.createBroadcastEvent("Menu:Clicked", Integer.toString(info.id - ADDON_MENU_OFFSET)));
                 return true;
             }
         });
@@ -3492,7 +3529,7 @@ public class BrowserApp extends GeckoApp
 
         if (itemId == R.id.save_as_pdf) {
             Telemetry.sendUIEvent(TelemetryContract.Event.SAVE, TelemetryContract.Method.MENU, "pdf");
-            GeckoAppShell.notifyObservers("SaveAs:PDF", null);
+            GeckoAppShell.sendEventToGecko(GeckoEvent.createBroadcastEvent("SaveAs:PDF", null));
             return true;
         }
 
@@ -3537,7 +3574,7 @@ public class BrowserApp extends GeckoApp
         }
 
         if (itemId == R.id.char_encoding) {
-            GeckoAppShell.notifyObservers("CharEncoding:Get", null);
+            GeckoAppShell.sendEventToGecko(GeckoEvent.createBroadcastEvent("CharEncoding:Get", null));
             return true;
         }
 
@@ -3557,7 +3594,7 @@ public class BrowserApp extends GeckoApp
             } catch (JSONException e) {
                 Log.e(LOGTAG, "error building json arguments", e);
             }
-            GeckoAppShell.notifyObservers("DesktopMode:Change", args.toString());
+            GeckoAppShell.sendEventToGecko(GeckoEvent.createBroadcastEvent("DesktopMode:Change", args.toString()));
             return true;
         }
 
@@ -3740,7 +3777,7 @@ public class BrowserApp extends GeckoApp
 
                 
                 if (launchCount == FEEDBACK_LAUNCH_COUNT) {
-                    GeckoAppShell.notifyObservers("Feedback:Show", null);
+                    GeckoAppShell.sendEventToGecko(GeckoEvent.createBroadcastEvent("Feedback:Show", null));
                 }
             }
         } finally {
