@@ -22,7 +22,6 @@ namespace dom {
 
 class Promise;
 class PushManager;
-class WorkerPushManager;
 class WorkerListener;
 
 namespace workers {
@@ -35,21 +34,6 @@ ServiceWorkerRegistrationVisible(JSContext* aCx, JSObject* aObj);
 
 bool
 ServiceWorkerNotificationAPIVisible(JSContext* aCx, JSObject* aObj);
-
-
-
-
-class ServiceWorkerRegistration final
-{
-public:
-  
-  
-  static bool
-  WebPushMethodHider(JSContext* unusedContext, JSObject* unusedObject) {
-    return false;
-  }
-
-};
 
 
 
@@ -139,7 +123,7 @@ public:
   GetActive() override;
 
   already_AddRefed<PushManager>
-  GetPushManager(ErrorResult& aRv);
+  GetPushManager(JSContext* aCx, ErrorResult& aRv);
 
   
   void DisconnectFromOwner() override
@@ -241,7 +225,7 @@ public:
   bool
   Notify(workers::Status aStatus) override;
 
-  already_AddRefed<WorkerPushManager>
+  already_AddRefed<PushManager>
   GetPushManager(ErrorResult& aRv);
 
 private:
@@ -263,7 +247,7 @@ private:
   RefPtr<WorkerListener> mListener;
 
 #ifndef MOZ_SIMPLEPUSH
-  RefPtr<WorkerPushManager> mPushManager;
+  RefPtr<PushManager> mPushManager;
 #endif
 };
 

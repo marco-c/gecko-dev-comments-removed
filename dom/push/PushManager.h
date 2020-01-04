@@ -23,11 +23,6 @@
 
 
 
-
-
-
-
-
 #ifndef mozilla_dom_PushManager_h
 #define mozilla_dom_PushManager_h
 
@@ -40,7 +35,6 @@
 
 #include "nsCOMPtr.h"
 #include "mozilla/RefPtr.h"
-#include "jsapi.h"
 
 class nsIGlobalObject;
 class nsIPrincipal;
@@ -55,8 +49,6 @@ class WorkerPrivate;
 class Promise;
 class PushManagerImpl;
 
-
-
 class PushManager final : public nsISupports
                         , public nsWrapperCache
 {
@@ -64,7 +56,16 @@ public:
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(PushManager)
 
-  explicit PushManager(nsIGlobalObject* aGlobal, const nsAString& aScope);
+  enum SubscriptionAction {
+    SubscribeAction,
+    GetSubscriptionAction,
+  };
+
+  
+  PushManager(nsIGlobalObject* aGlobal, PushManagerImpl* aImpl);
+
+  
+  explicit PushManager(const nsAString& aScope);
 
   nsIGlobalObject*
   GetParentObject() const
@@ -75,6 +76,14 @@ public:
   JSObject*
   WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) override;
 
+  static already_AddRefed<PushManager>
+  Constructor(GlobalObject& aGlobal, const nsAString& aScope,
+              ErrorResult& aRv);
+
+  already_AddRefed<Promise>
+  PerformSubscriptionActionFromWorker(SubscriptionAction aAction,
+                                      ErrorResult& aRv);
+
   already_AddRefed<Promise>
   Subscribe(ErrorResult& aRv);
 
@@ -83,58 +92,16 @@ public:
 
   already_AddRefed<Promise>
   PermissionState(ErrorResult& aRv);
-
-  void
-  SetPushManagerImpl(PushManagerImpl& foo, ErrorResult& aRv);
 
 protected:
   ~PushManager();
 
 private:
+  
   nsCOMPtr<nsIGlobalObject> mGlobal;
   RefPtr<PushManagerImpl> mImpl;
-  nsString mScope;
-};
 
-class WorkerPushManager final : public nsISupports
-                              , public nsWrapperCache
-{
-public:
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
-  NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(WorkerPushManager)
-
-  enum SubscriptionAction {
-    SubscribeAction,
-    GetSubscriptionAction,
-  };
-
-  explicit WorkerPushManager(const nsAString& aScope);
-
-  nsIGlobalObject*
-  GetParentObject() const
-  {
-    return nullptr;
-  }
-
-  JSObject*
-  WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) override;
-
-  already_AddRefed<Promise>
-  PerformSubscriptionAction(SubscriptionAction aAction, ErrorResult& aRv);
-
-  already_AddRefed<Promise>
-  Subscribe(ErrorResult& aRv);
-
-  already_AddRefed<Promise>
-  GetSubscription(ErrorResult& aRv);
-
-  already_AddRefed<Promise>
-  PermissionState(ErrorResult& aRv);
-
-protected:
-  ~WorkerPushManager();
-
-private:
+  
   nsString mScope;
 };
 } 
