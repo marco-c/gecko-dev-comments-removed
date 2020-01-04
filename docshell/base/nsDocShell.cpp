@@ -2521,6 +2521,10 @@ nsDocShell::GetFullscreenAllowed(bool* aFullscreenAllowed)
                                nsGkAtoms::mozallowfullscreen)) {
       return NS_OK;
     }
+    nsIDocument* doc = frameElement->GetUncomposedDoc();
+    if (!doc || !doc->FullscreenEnabledInternal()) {
+      return NS_OK;
+    }
   }
 
   

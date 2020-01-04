@@ -597,7 +597,9 @@ ImportLoader::OnStartRequest(nsIRequest* aRequest, nsISupports* aContext)
   mDocument->SetMasterDocument(master);
 
   
+  
   mDocument->SetSandboxFlags(master->GetSandboxFlags());
+  mDocument->SetFullscreenEnabled(master->FullscreenEnabledInternal());
 
   
   

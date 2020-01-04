@@ -1452,6 +1452,7 @@ nsIDocument::nsIDocument()
     mFontFaceSetDirty(true),
     mGetUserFontSetCalled(false),
     mPostedFlushUserFontSet(false),
+    mFullscreenEnabled(false),
     mPartID(0),
     mDidFireDOMContentLoaded(true),
     mHasScrollLinkedEffect(false),
@@ -2580,12 +2581,14 @@ nsDocument::StartDocumentLoad(const char* aCommand, nsIChannel* aChannel,
 
   
   
+  
   nsCOMPtr<nsIDocShell> docShell = do_QueryInterface(aContainer);
 
   if (docShell) {
     nsresult rv = docShell->GetSandboxFlags(&mSandboxFlags);
     NS_ENSURE_SUCCESS(rv, rv);
     WarnIfSandboxIneffective(docShell, mSandboxFlags, GetChannel());
+    mFullscreenEnabled = docShell->GetFullscreenAllowed();
   }
 
   
@@ -11768,14 +11771,9 @@ GetFullscreenError(nsIDocument* aDoc, bool aCallerIsChrome)
   if (!nsContentUtils::IsFullScreenApiEnabled()) {
     return "FullscreenDeniedDisabled";
   }
-
-  
-  
-  nsCOMPtr<nsIDocShell> docShell(aDoc->GetDocShell());
-  if (!docShell || !docShell->GetFullscreenAllowed()) {
+  if (!aDoc->FullscreenEnabledInternal()) {
     return "FullscreenDeniedContainerNotAllowed";
   }
-
   return nullptr;
 }
 
