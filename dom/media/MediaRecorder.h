@@ -118,6 +118,7 @@ protected:
   bool CheckPrincipal();
   
   void SetMimeType(const nsString &aMimeType);
+  void SetOptions(const MediaRecorderOptions& aInitDict);
 
   MediaRecorder(const MediaRecorder& x) = delete; 
   
@@ -144,6 +145,9 @@ protected:
   
   nsString mMimeType;
 
+  uint32_t mAudioBitsPerSecond;
+  uint32_t mVideoBitsPerSecond;
+  uint32_t mBitsPerSecond;
 private:
   
   void RegisterActivityObserver();
