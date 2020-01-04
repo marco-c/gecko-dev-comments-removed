@@ -6,7 +6,7 @@
 
 "use strict";
 
-const {Ci, Cu} = require("chrome");
+const {Ci} = require("chrome");
 
 const {Utils: WebConsoleUtils} =
   require("devtools/shared/webconsole/utils");
@@ -79,7 +79,7 @@ JSTerm.prototype = {
 
 
 
-  _loadHistory: function() {
+  _loadHistory: function () {
     this.history = [];
     this.historyIndex = this.historyPlaceHolder = 0;
 
@@ -109,7 +109,7 @@ JSTerm.prototype = {
 
 
 
-  clearHistory: function() {
+  clearHistory: function () {
     this.history = [];
     this.historyIndex = this.historyPlaceHolder = 0;
     return this.storeHistory();
@@ -120,7 +120,7 @@ JSTerm.prototype = {
 
 
 
-  storeHistory: function() {
+  storeHistory: function () {
     return asyncStorage.setItem("webConsoleHistory", this.history);
   },
 
@@ -242,7 +242,7 @@ JSTerm.prototype = {
   
 
 
-  init: function() {
+  init: function () {
     let autocompleteOptions = {
       onSelect: this.onAutocompleteSelect.bind(this),
       onClick: this.acceptProposedCompletion.bind(this),
@@ -282,7 +282,7 @@ JSTerm.prototype = {
     this.lastInputValue && this.setInputValue(this.lastInputValue);
   },
 
-  focus: function() {
+  focus: function () {
     if (!this.inputNode.getAttribute("focused")) {
       this.inputNode.focus();
     }
@@ -298,7 +298,7 @@ JSTerm.prototype = {
 
 
 
-  _executeResultCallback: function(callback, response) {
+  _executeResultCallback: function (callback, response) {
     if (!this.hud) {
       return;
     }
@@ -418,9 +418,9 @@ JSTerm.prototype = {
 
 
 
-  execute: function(executeString, callback) {
+  execute: function (executeString, callback) {
     let deferred = promise.defer();
-    let resultCallback = function(msg) {
+    let resultCallback = function (msg) {
       deferred.resolve(msg);
       if (callback) {
         callback(msg);
@@ -494,7 +494,7 @@ JSTerm.prototype = {
 
 
 
-  requestEvaluation: function(str, options = {}) {
+  requestEvaluation: function (str, options = {}) {
     let deferred = promise.defer();
 
     function onResult(response) {
@@ -529,7 +529,7 @@ JSTerm.prototype = {
 
 
 
-  getFrameActor: function(frame) {
+  getFrameActor: function (frame) {
     let state = this.hud.owner.getDebuggerFrames();
     if (!state) {
       return null;
@@ -566,7 +566,7 @@ JSTerm.prototype = {
 
 
 
-  openVariablesView: function(options) {
+  openVariablesView: function (options) {
     let onContainerReady = (window) => {
       let container = window.document.querySelector("#variables");
       let view = this._variablesView;
@@ -625,7 +625,7 @@ JSTerm.prototype = {
 
 
 
-  _createSidebar: function() {
+  _createSidebar: function () {
     let tabbox = this.hud.document.querySelector("#webconsole-sidebar");
     this.sidebar = new ToolSidebar(tabbox, this, "webconsole");
     this.sidebar.show();
@@ -639,7 +639,7 @@ JSTerm.prototype = {
 
 
 
-  _addVariablesViewSidebarTab: function() {
+  _addVariablesViewSidebarTab: function () {
     let deferred = promise.defer();
 
     let onTabReady = () => {
@@ -671,7 +671,7 @@ JSTerm.prototype = {
 
 
 
-  _onKeypressInVariablesView: function(event) {
+  _onKeypressInVariablesView: function (event) {
     let tag = event.target.nodeName;
     if (event.keyCode != Ci.nsIDOMKeyEvent.DOM_VK_ESCAPE || event.shiftKey ||
         event.altKey || event.ctrlKey || event.metaKey ||
@@ -696,7 +696,7 @@ JSTerm.prototype = {
 
 
 
-  _createVariablesView: function(options) {
+  _createVariablesView: function (options) {
     let view = new VariablesView(options.container);
     view.toolbox = gDevTools.getToolbox(this.hud.owner.target);
     view.searchPlaceholder = l10n.getStr("propertiesFilterPlaceholder");
@@ -742,7 +742,7 @@ JSTerm.prototype = {
 
 
 
-  _updateVariablesView: function(options) {
+  _updateVariablesView: function (options) {
     let view = options.view;
     view.empty();
 
@@ -794,7 +794,7 @@ JSTerm.prototype = {
 
 
 
-  _variablesViewEvaluate: function(options, variableObject, value) {
+  _variablesViewEvaluate: function (options, variableObject, value) {
     let updater = this._updateVariablesView.bind(this, options);
     let onEval = this._silentEvalCallback.bind(this, updater);
     let string = variableObject.evaluationMacro(variableObject, value);
@@ -817,7 +817,7 @@ JSTerm.prototype = {
 
 
 
-  _variablesViewDelete: function(options, variableObject) {
+  _variablesViewDelete: function (options, variableObject) {
     let onEval = this._silentEvalCallback.bind(this, null);
 
     let evalOptions = {
@@ -841,7 +841,7 @@ JSTerm.prototype = {
 
 
 
-  _variablesViewSwitch: function(options, variableObject, newName) {
+  _variablesViewSwitch: function (options, variableObject, newName) {
     let updater = this._updateVariablesView.bind(this, options);
     let onEval = this._silentEvalCallback.bind(this, updater);
 
@@ -877,7 +877,7 @@ JSTerm.prototype = {
 
 
 
-  _silentEvalCallback: function(callback, response) {
+  _silentEvalCallback: function (callback, response) {
     if (response.error) {
       console.error("Web Console evaluation failed. " + response.error + ":" +
                     response.message);
@@ -924,7 +924,7 @@ JSTerm.prototype = {
 
 
 
-  clearOutput: function(clearStorage) {
+  clearOutput: function (clearStorage) {
     let hud = this.hud;
     let outputNode = hud.outputNode;
     let node;
@@ -956,7 +956,7 @@ JSTerm.prototype = {
 
 
 
-  clearPrivateMessages: function() {
+  clearPrivateMessages: function () {
     let nodes = this.hud.outputNode.querySelectorAll(".message[private]");
     for (let node of nodes) {
       this.hud.removeOutputMessage(node);
@@ -969,7 +969,7 @@ JSTerm.prototype = {
 
 
 
-  resizeInput: function() {
+  resizeInput: function () {
     let inputNode = this.inputNode;
 
     
@@ -992,7 +992,7 @@ JSTerm.prototype = {
 
 
 
-  setInputValue: function(newValue) {
+  setInputValue: function (newValue) {
     this.inputNode.value = newValue;
     this.lastInputValue = newValue;
     this.completeNode.value = "";
@@ -1005,7 +1005,7 @@ JSTerm.prototype = {
 
 
 
-  getInputValue: function() {
+  getInputValue: function () {
     return this.inputNode.value || "";
   },
 
@@ -1013,7 +1013,7 @@ JSTerm.prototype = {
 
 
 
-  _inputEventHandler: function() {
+  _inputEventHandler: function () {
     if (this.lastInputValue != this.getInputValue()) {
       this.resizeInput();
       this.complete(this.COMPLETE_HINT_ONLY);
@@ -1026,7 +1026,7 @@ JSTerm.prototype = {
 
 
 
-  _blurEventHandler: function() {
+  _blurEventHandler: function () {
     if (this.autocompletePopup) {
       this.clearCompletion();
     }
@@ -1039,7 +1039,7 @@ JSTerm.prototype = {
 
 
 
-  _keyPress: function(event) {
+  _keyPress: function (event) {
     let inputNode = this.inputNode;
     let inputValue = this.getInputValue();
     let inputUpdated = false;
@@ -1264,7 +1264,7 @@ JSTerm.prototype = {
 
 
 
-  _focusEventHandler: function() {
+  _focusEventHandler: function () {
     this._inputChanged = false;
   },
 
@@ -1277,7 +1277,7 @@ JSTerm.prototype = {
 
 
 
-  historyPeruse: function(direction) {
+  historyPeruse: function (direction) {
     if (!this.history.length) {
       return false;
     }
@@ -1319,7 +1319,7 @@ JSTerm.prototype = {
 
 
 
-  hasMultilineInput: function() {
+  hasMultilineInput: function () {
     return /[\r\n]/.test(this.getInputValue());
   },
 
@@ -1332,7 +1332,7 @@ JSTerm.prototype = {
 
 
 
-  canCaretGoPrevious: function() {
+  canCaretGoPrevious: function () {
     let node = this.inputNode;
     if (node.selectionStart != node.selectionEnd) {
       return false;
@@ -1352,7 +1352,7 @@ JSTerm.prototype = {
 
 
 
-  canCaretGoNext: function() {
+  canCaretGoNext: function () {
     let node = this.inputNode;
     if (node.selectionStart != node.selectionEnd) {
       return false;
@@ -1397,7 +1397,7 @@ JSTerm.prototype = {
 
 
 
-  complete: function(type, callback) {
+  complete: function (type, callback) {
     let inputNode = this.inputNode;
     let inputValue = this.getInputValue();
     let frameActor = this.getFrameActor(this.SELECTED_FRAME);
@@ -1456,7 +1456,7 @@ JSTerm.prototype = {
 
 
 
-  _updateCompletionResult: function(type, callback) {
+  _updateCompletionResult: function (type, callback) {
     let frameActor = this.getFrameActor(this.SELECTED_FRAME);
     if (this.lastCompletion.value == this.getInputValue() &&
         frameActor == this._lastFrameActorId) {
@@ -1489,7 +1489,7 @@ JSTerm.prototype = {
         filterBy = input.substring(input.lastIndexOf(lastNonAlpha) + 1);
       }
 
-      let newList = cache.sort().filter(function(l) {
+      let newList = cache.sort().filter(function (l) {
         return l.startsWith(filterBy);
       });
 
@@ -1532,7 +1532,7 @@ JSTerm.prototype = {
 
 
 
-  _receiveAutocompleteProperties: function(requestId, callback, message) {
+  _receiveAutocompleteProperties: function (requestId, callback, message) {
     let inputNode = this.inputNode;
     let inputValue = this.getInputValue();
     if (this.lastCompletion.value == inputValue ||
@@ -1558,7 +1558,7 @@ JSTerm.prototype = {
       return;
     }
 
-    let items = matches.reverse().map(function(match) {
+    let items = matches.reverse().map(function (match) {
       return { preLabel: lastPart, label: match };
     });
 
@@ -1600,7 +1600,7 @@ JSTerm.prototype = {
     this.emit("autocomplete-updated");
   },
 
-  onAutocompleteSelect: function() {
+  onAutocompleteSelect: function () {
     
     if (this.inputNode.selectionStart != this.getInputValue().length) {
       return;
@@ -1620,7 +1620,7 @@ JSTerm.prototype = {
 
 
 
-  clearCompletion: function() {
+  clearCompletion: function () {
     this.autocompletePopup.clearItems();
     this.lastCompletion = { value: null };
     this.updateCompleteNode("");
@@ -1637,7 +1637,7 @@ JSTerm.prototype = {
 
 
 
-  acceptProposedCompletion: function() {
+  acceptProposedCompletion: function () {
     let updated = false;
 
     let currentItem = this.autocompletePopup.selectedItem;
@@ -1664,7 +1664,7 @@ JSTerm.prototype = {
 
 
 
-  updateCompleteNode: function(suffix) {
+  updateCompleteNode: function (suffix) {
     
     let prefix = suffix ? this.getInputValue().replace(/[\S]/g, " ") : "";
     this.completeNode.value = prefix + suffix;
@@ -1674,7 +1674,7 @@ JSTerm.prototype = {
 
 
 
-  _sidebarDestroy: function() {
+  _sidebarDestroy: function () {
     if (this._variablesView) {
       this._variablesView.controller.releaseActors();
       this._variablesView = null;
@@ -1692,7 +1692,7 @@ JSTerm.prototype = {
   
 
 
-  destroy: function() {
+  destroy: function () {
     this._sidebarDestroy();
 
     this.clearCompletion();
