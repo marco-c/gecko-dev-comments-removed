@@ -739,6 +739,9 @@ TouchBlockState::TouchBlockState(const RefPtr<AsyncPanZoomController>& aTargetAp
   , mTouchCounter(aCounter)
 {
   TBS_LOG("Creating %p\n", this);
+  if (!gfxPrefs::TouchActionEnabled()) {
+    mAllowedTouchBehaviorSet = true;
+  }
 }
 
 bool
@@ -778,6 +781,7 @@ bool
 TouchBlockState::HasReceivedAllContentNotifications() const
 {
   return CancelableBlockState::HasReceivedAllContentNotifications()
+      
       && (!gfxPrefs::TouchActionEnabled() || mAllowedTouchBehaviorSet);
 }
 
@@ -789,6 +793,12 @@ TouchBlockState::IsReadyForHandling() const
   }
 
   if (!gfxPrefs::TouchActionEnabled()) {
+    
+    
+    
+    
+    
+    
     return true;
   }
 
