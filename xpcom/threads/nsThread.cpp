@@ -358,9 +358,12 @@ nsThread::ThreadFunc(void* aArg)
 
   
   nsCOMPtr<nsIRunnable> event;
-  if (!self->mEvents->GetEvent(true, getter_AddRefs(event))) {
-    NS_WARNING("failed waiting for thread startup event");
-    return;
+  {
+    MutexAutoLock lock(self->mLock);
+    if (!self->mEvents->GetEvent(true, getter_AddRefs(event), lock)) {
+      NS_WARNING("failed waiting for thread startup event");
+      return;
+    }
   }
   event->Run();  
   event = nullptr;
@@ -396,7 +399,7 @@ nsThread::ThreadFunc(void* aArg)
 
       {
         MutexAutoLock lock(self->mLock);
-        if (!self->mEvents->HasPendingEvent()) {
+        if (!self->mEvents->HasPendingEvent(lock)) {
           
           
           
@@ -508,7 +511,7 @@ nsThread::Init()
   
   {
     MutexAutoLock lock(mLock);
-    mEventsRoot.PutEvent(startup); 
+    mEventsRoot.PutEvent(startup, lock); 
   }
 
   
@@ -554,7 +557,7 @@ nsThread::PutEvent(already_AddRefed<nsIRunnable>&& aEvent, nsNestedEventTarget* 
       nsIRunnable* temp2 = temp.forget().take(); 
       return temp2 ? NS_ERROR_UNEXPECTED : NS_ERROR_UNEXPECTED; 
     }
-    queue->PutEvent(Move(aEvent));
+    queue->PutEvent(Move(aEvent), lock);
 
     
     
@@ -780,7 +783,7 @@ nsThread::HasPendingEvents(bool* aResult)
 
   {
     MutexAutoLock lock(mLock);
-    *aResult = mEvents->HasPendingEvent();
+    *aResult = mEvents->HasPendingEvent(lock);
   }
   return NS_OK;
 }
@@ -939,7 +942,10 @@ nsThread::ProcessNextEvent(bool aMayWait, bool* aResult)
 
     
     nsCOMPtr<nsIRunnable> event;
-    mEvents->GetEvent(reallyWait, getter_AddRefs(event));
+    {
+      MutexAutoLock lock(mLock);
+      mEvents->GetEvent(reallyWait, getter_AddRefs(event), lock);
+    }
 
     *aResult = (event.get() != nullptr);
 
@@ -1137,8 +1143,8 @@ nsThread::PopEventQueue(nsIEventTarget* aInnermostTarget)
     mEvents = mEvents->mNext;
 
     nsCOMPtr<nsIRunnable> event;
-    while (queue->GetEvent(false, getter_AddRefs(event))) {
-      mEvents->PutEvent(event.forget());
+    while (queue->GetEvent(false, getter_AddRefs(event), lock)) {
+      mEvents->PutEvent(event.forget(), lock);
     }
 
     
