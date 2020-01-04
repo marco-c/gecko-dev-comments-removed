@@ -983,7 +983,13 @@ var MozLoopServiceInternal = {
             if (kEventNamesMap[eventName]) {
               eventName = kEventNamesMap[eventName];
 
-              UITour.clearAvailableTargetsCache();
+              
+              
+              if ("clearAvailableTargetsCache" in UITour) {
+                UITour.clearAvailableTargetsCache();
+              } else {
+                UITour.availableTargetsCache.clear();
+              }
               UITour.notify(eventName);
             } else {
               
@@ -1971,6 +1977,7 @@ this.MozLoopService = {
       
       
       xulWin.LoopUI.isSlideshowOpen = false;
+      xulWin.LoopUI.openPanel();
 
       xulWin.removeEventListener("CloseSlideshow", removeSlideshow);
 

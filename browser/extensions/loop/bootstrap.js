@@ -593,7 +593,7 @@ var WindowListener = {
 
 
       addRemoteCursor: function(cursorData) {
-        if (!this._listeningToTabSelect) {
+        if (this._browserSharePaused || !this._listeningToTabSelect) {
           return;
         }
 
@@ -649,9 +649,6 @@ var WindowListener = {
 
 
       _maybeShowBrowserSharingInfoBar: function() {
-        this._hideBrowserSharingInfoBar();
-
-        let box = gBrowser.getNotificationBox();
         
         let pausedStrings = {
           label: this._getString("infobar_button_restart_label2"),
@@ -663,14 +660,18 @@ var WindowListener = {
           accesskey: this._getString("infobar_button_stop_accesskey"),
           message: this._getString("infobar_screenshare_browser_message2")
         };
-        let initStrings = this._browserSharePaused ? pausedStrings : unpausedStrings;
+        let initStrings =
+          this._browserSharePaused ? pausedStrings : unpausedStrings;
+
+        this._hideBrowserSharingInfoBar();
+        let box = gBrowser.getNotificationBox();
         let bar = box.appendNotification(
-          initStrings.message,
-          kBrowserSharingNotificationId,
+          initStrings.message,            
+          kBrowserSharingNotificationId,  
           
-          null,
-          box.PRIORITY_WARNING_LOW,
-          [{
+          null,                           
+          box.PRIORITY_WARNING_LOW,       
+          [{                              
             label: initStrings.label,
             accessKey: initStrings.accessKey,
             isDefault: false,
@@ -684,6 +685,8 @@ var WindowListener = {
               LoopUI.MozLoopService.toggleBrowserSharing(this._browserSharePaused);
               if (this._browserSharePaused) {
                 this._pauseButtonClicked = true;
+                
+                this.removeRemoteCursor();
               } else {
                 this._resumeButtonClicked = true;
               }
@@ -696,6 +699,7 @@ var WindowListener = {
             accessKey: this._getString("infobar_button_disconnect_accesskey"),
             isDefault: true,
             callback: () => {
+              this.removeRemoteCursor();
               this._hideBrowserSharingInfoBar();
               LoopUI.MozLoopService.hangupAllChatWindows();
             },
@@ -781,7 +785,7 @@ var WindowListener = {
 
       handleMousemove: function(event) {
         
-        if (this._browserSharePaused) {
+        if (this._browserSharePaused || !this._listeningToTabSelect) {
           return;
         }
 

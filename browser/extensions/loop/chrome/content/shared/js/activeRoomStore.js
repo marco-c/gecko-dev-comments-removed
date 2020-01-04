@@ -141,6 +141,7 @@ loop.store.ActiveRoomStore = (function(mozL10n) {
         localVideoDimensions: {},
         remoteVideoDimensions: {},
         screenSharingState: SCREEN_SHARE_STATES.INACTIVE,
+        sharingPaused: false,
         receivingScreenShare: false,
         
         roomContextUrls: null,
@@ -264,6 +265,7 @@ loop.store.ActiveRoomStore = (function(mozL10n) {
         "videoDimensionsChanged",
         "startBrowserShare",
         "endScreenShare",
+        "toggleBrowserSharing",
         "updateSocialShareInfo",
         "connectionStatus",
         "mediaConnected"
@@ -925,9 +927,18 @@ loop.store.ActiveRoomStore = (function(mozL10n) {
       }
 
       
+      if (!this.getStoreState().sharingPaused && this._hasParticipants()) {
+        this._checkTabContext();
+      }
+    },
+
+    
+
+
+    _checkTabContext: function() {
       loop.request("GetSelectedTabMetadata").then(function(meta) {
         
-        if (!meta || !meta.url || !this._hasParticipants()) {
+        if (!meta || !meta.url) {
           return;
         }
 
@@ -986,6 +997,22 @@ loop.store.ActiveRoomStore = (function(mozL10n) {
         this.dispatchAction(new sharedActions.ScreenSharingState({
           state: SCREEN_SHARE_STATES.INACTIVE
         }));
+      }
+    },
+
+    
+
+
+
+
+    toggleBrowserSharing: function(actionData) {
+      this.setStoreState({
+        sharingPaused: !actionData.enabled
+      });
+
+      
+      if (actionData.enabled) {
+        this._checkTabContext();
       }
     },
 

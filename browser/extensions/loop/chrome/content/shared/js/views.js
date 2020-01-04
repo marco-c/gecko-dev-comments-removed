@@ -735,8 +735,12 @@ loop.shared.views = function (_, mozL10n) {
 
       var storeState = this.props.cursorStore.getStoreState();
 
-      var deltaX = event.clientX - storeState.videoLetterboxing.left;
-      var deltaY = event.clientY - storeState.videoLetterboxing.top;
+      
+      var video = this.getDOMNode().querySelector("video");
+      var offset = video.getBoundingClientRect();
+
+      var deltaX = event.clientX - storeState.videoLetterboxing.left - offset.left;
+      var deltaY = event.clientY - storeState.videoLetterboxing.top - offset.top;
 
       
       if (deltaX < 0 || deltaX > storeState.streamVideoWidth || deltaY < 0 || deltaY > storeState.streamVideoHeight ||
