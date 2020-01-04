@@ -156,7 +156,7 @@ add_task(function* searchWith() {
 
   
   
-  EventUtils.synthesizeKey("VK_TAB", {})
+  EventUtils.synthesizeKey("VK_DOWN", { altKey: true })
   assertState(0, 0, typedValue);
 
   let engineName = gURLBar.popup.oneOffSearchButtons.selectedButton.engine.name;
@@ -197,7 +197,7 @@ add_task(function* oneOffReturn() {
   assertState(0, -1, typedValue);
 
   
-  EventUtils.synthesizeKey("VK_TAB", {})
+  EventUtils.synthesizeKey("VK_DOWN", { altKey: true })
   assertState(0, 0, typedValue);
 
   let resultsPromise = promiseSearchResultsLoaded();
