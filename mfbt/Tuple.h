@@ -417,10 +417,9 @@ auto Get(Tuple<Elements...>&& aTuple)
 
 
 template<typename... Elements>
-inline Tuple<typename Decay<Elements>::Type...>
-MakeTuple(Elements&&... aElements)
+Tuple<Elements...> MakeTuple(Elements&&... aElements)
 {
-  return Tuple<typename Decay<Elements>::Type...>(Forward<Elements>(aElements)...);
+  return Tuple<Elements...>(Forward<Elements>(aElements)...);
 }
 
 
@@ -437,8 +436,7 @@ MakeTuple(Elements&&... aElements)
 
 
 template<typename... Elements>
-inline Tuple<Elements&...>
-Tie(Elements&... aVariables)
+Tuple<Elements&...> Tie(Elements&... aVariables)
 {
   return Tuple<Elements&...>(aVariables...);
 }

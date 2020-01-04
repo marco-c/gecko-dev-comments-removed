@@ -165,40 +165,6 @@ struct IsArray : detail::IsArrayHelper<typename RemoveCV<T>::Type>
 namespace detail {
 
 template<typename T>
-struct IsFunPtr;
-
-template<typename>
-struct IsFunPtr
-  : public FalseType
-{};
-
-template<typename Result, typename... ArgTypes>
-struct IsFunPtr<Result(*)(ArgTypes...)>
-  : public TrueType
-{};
-
-}; 
-
-
-
-
-
-
-
-
-
-
-
-
-
-template<typename T>
-struct IsFunction
-  : public detail::IsFunPtr<typename RemoveCV<T>::Type *>
-{};
-
-namespace detail {
-
-template<typename T>
 struct IsPointerHelper : FalseType {};
 
 template<typename T>
@@ -1107,22 +1073,6 @@ struct RemovePointer
 
 
 
-template<typename T>
-struct AddPointer
-{
-  typedef typename RemoveReference<T>::Type* Type;
-};
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -1159,51 +1109,6 @@ template<class A, class B>
 struct Conditional<false, A, B>
 {
   typedef B Type;
-};
-
-namespace detail {
-
-template<typename U,
-         bool IsArray = IsArray<U>::value,
-         bool IsFunction = IsFunction<U>::value>
-struct DecaySelector;
-
-template<typename U>
-struct DecaySelector<U, false, false>
-{
-  typedef typename RemoveCV<U>::Type Type;
-};
-
-template<typename U>
-struct DecaySelector<U, true, false>
-{
-  typedef typename RemoveExtent<U>::Type* Type;
-};
-
-template<typename U>
-struct DecaySelector<U, false, true>
-{
-  typedef typename AddPointer<U>::Type Type;
-};
-
-}; 
-
-
-
-
-
-
-
-
-
-
-
-
-
-template<typename T>
-class Decay
-  : public detail::DecaySelector<typename RemoveReference<T>::Type>
-{
 };
 
 } 
