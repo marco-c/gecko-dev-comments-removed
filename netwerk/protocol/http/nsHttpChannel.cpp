@@ -2012,21 +2012,12 @@ nsHttpChannel::StartRedirectChannelToURI(nsIURI *upgradedURI, uint32_t flags)
     
     mRedirectChannel = newChannel;
 
-    if (!(flags & nsIChannelEventSink::REDIRECT_STS_UPGRADE)) {
+    if (!(flags & nsIChannelEventSink::REDIRECT_STS_UPGRADE) &&
+        mInterceptCache == INTERCEPTED) {
         
-        
-        if (mInterceptCache == INTERCEPTED) {
-            nsCOMPtr<nsIHttpChannelInternal> httpRedirect = do_QueryInterface(mRedirectChannel);
-            if (httpRedirect) {
-                httpRedirect->ForceIntercepted(mInterceptionID);
-            }
-        } else {
-            nsLoadFlags loadFlags = nsIRequest::LOAD_NORMAL;
-            rv = mRedirectChannel->GetLoadFlags(&loadFlags);
-            NS_ENSURE_SUCCESS(rv, rv);
-            loadFlags |= nsIChannel::LOAD_BYPASS_SERVICE_WORKER;
-            rv = mRedirectChannel->SetLoadFlags(loadFlags);
-            NS_ENSURE_SUCCESS(rv, rv);
+        nsCOMPtr<nsIHttpChannelInternal> httpRedirect = do_QueryInterface(mRedirectChannel);
+        if (httpRedirect) {
+            httpRedirect->ForceIntercepted(mInterceptionID);
         }
     }
 
@@ -4603,6 +4594,18 @@ nsHttpChannel::SetupReplacementChannel(nsIURI       *newURI,
             return NS_ERROR_NOT_RESUMABLE;
         }
         resumableChannel->ResumeAt(mStartPos, mEntityID);
+    }
+
+    if (!(redirectFlags & nsIChannelEventSink::REDIRECT_STS_UPGRADE) &&
+        mInterceptCache != INTERCEPTED) {
+        
+        
+        nsLoadFlags loadFlags = nsIRequest::LOAD_NORMAL;
+        rv = newChannel->GetLoadFlags(&loadFlags);
+        NS_ENSURE_SUCCESS(rv, rv);
+        loadFlags |= nsIChannel::LOAD_BYPASS_SERVICE_WORKER;
+        rv = newChannel->SetLoadFlags(loadFlags);
+        NS_ENSURE_SUCCESS(rv, rv);
     }
 
     return NS_OK;
