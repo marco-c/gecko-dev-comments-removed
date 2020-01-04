@@ -53,16 +53,10 @@ SoftwareWebMVideoDecoder::Create(WebMReader* aReader)
   return new SoftwareWebMVideoDecoder(aReader);
 }
 
-RefPtr<InitPromise>
+nsresult
 SoftwareWebMVideoDecoder::Init(unsigned int aWidth, unsigned int aHeight)
 {
-  nsresult rv = InitDecoder(aWidth, aHeight);
-
-  if (NS_SUCCEEDED(rv)) {
-    return InitPromise::CreateAndResolve(TrackType::kVideoTrack, __func__);
-  }
-
-  return InitPromise::CreateAndReject(DecoderFailureReason::INIT_ERROR, __func__);
+  return InitDecoder(aWidth, aHeight);
 }
 
 nsresult
@@ -93,7 +87,7 @@ SoftwareWebMVideoDecoder::DecodeVideoFrame(bool &aKeyframeSkip,
   
   AbstractMediaDecoder::AutoNotifyDecoded a(mReader->GetDecoder());
 
-  RefPtr<NesteggPacketHolder> holder(mReader->NextPacket(WebMReader::VIDEO));
+  nsRefPtr<NesteggPacketHolder> holder(mReader->NextPacket(WebMReader::VIDEO));
   if (!holder) {
     return false;
   }
@@ -123,7 +117,7 @@ SoftwareWebMVideoDecoder::DecodeVideoFrame(bool &aKeyframeSkip,
   
   
   int64_t next_tstamp = 0;
-  RefPtr<NesteggPacketHolder> next_holder(mReader->NextPacket(WebMReader::VIDEO));
+  nsRefPtr<NesteggPacketHolder> next_holder(mReader->NextPacket(WebMReader::VIDEO));
   if (next_holder) {
     next_tstamp = next_holder->Timestamp();
     mReader->PushVideoPacket(next_holder);
@@ -214,7 +208,7 @@ SoftwareWebMVideoDecoder::DecodeVideoFrame(bool &aKeyframeSkip,
     }
 
     VideoInfo videoInfo = mReader->GetMediaInfo().mVideo;
-    RefPtr<VideoData> v = VideoData::Create(videoInfo,
+    nsRefPtr<VideoData> v = VideoData::Create(videoInfo,
                                               mReader->GetDecoder()->GetImageContainer(),
                                               holder->Offset(),
                                               tstamp,
