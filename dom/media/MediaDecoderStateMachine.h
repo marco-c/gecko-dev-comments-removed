@@ -278,8 +278,6 @@ private:
 
   void SetAudioCaptured(bool aCaptured);
 
-  void ReadMetadata();
-
   RefPtr<MediaDecoder::SeekPromise> Seek(SeekTarget aTarget);
 
   RefPtr<ShutdownPromise> Shutdown();
@@ -536,10 +534,6 @@ protected:
   
   
   int64_t GetDecodedAudioDuration();
-
-  
-  void OnMetadataRead(MetadataHolder* aMetadata);
-  void OnMetadataNotRead(ReadMetadataFailureReason aReason);
 
   
   
@@ -819,11 +813,6 @@ private:
   
   
   
-  bool mPendingDormant = false;
-
-  
-  
-  
   
   
   
@@ -852,9 +841,6 @@ private:
   
   
   bool mDecodeThreadWaiting;
-
-  
-  MozPromiseRequestHolder<MediaDecoderReader::MetadataPromise> mMetadataRequest;
 
   
   
