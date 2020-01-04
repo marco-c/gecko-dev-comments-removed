@@ -6496,6 +6496,11 @@ nsAutoCopyListener::NotifySelectionChanged(nsIDOMDocument *aDoc,
     fprintf(stderr, "CLIPBOARD: no selection/collapsed selection\n");
 #endif
     
+    
+    if (mCachedClipboard == nsIClipboard::kSelectionCache) {
+      return nsCopySupport::ClearSelectionCache();
+    }
+    
     return NS_OK;
   }
 
