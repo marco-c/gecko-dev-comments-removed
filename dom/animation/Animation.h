@@ -10,6 +10,7 @@
 #include "nsWrapperCache.h"
 #include "nsCycleCollectionParticipant.h"
 #include "mozilla/Attributes.h"
+#include "mozilla/EffectCompositor.h" 
 #include "mozilla/LinkedList.h"
 #include "mozilla/TimeStamp.h" 
 #include "mozilla/dom/AnimationBinding.h" 
@@ -289,13 +290,10 @@ public:
 
 
 
-
-
-
-
-
-
-  virtual bool AppliesToTransitionsLevel() const { return false; }
+  virtual EffectCompositor::CascadeLevel CascadeLevel() const
+  {
+    return EffectCompositor::CascadeLevel::Animations;
+  }
 
   
 

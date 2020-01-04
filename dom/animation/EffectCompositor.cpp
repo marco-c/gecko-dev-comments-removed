@@ -318,7 +318,7 @@ EffectCompositor::UpdateCascadeResults(EffectSet& aEffectSet,
       
       
       if (winsInCascade &&
-          !effect->GetAnimation()->AppliesToTransitionsLevel() &&
+          effect->GetAnimation()->CascadeLevel() == CascadeLevel::Animations &&
           overriddenProperties.HasProperty(prop.mProperty)) {
         winsInCascade = false;
       }
