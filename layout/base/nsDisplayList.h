@@ -16,6 +16,7 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/EnumSet.h"
+#include "mozilla/Maybe.h"
 #include "nsCOMPtr.h"
 #include "nsContainerFrame.h"
 #include "nsPoint.h"
@@ -3148,6 +3149,9 @@ public:
   
   void AddInactiveScrollPort(const nsRect& aRect);
 
+  int32_t ZIndex() const override;
+  void SetOverrideZIndex(int32_t aZIndex);
+
   const nsRegion& HitRegion() { return mHitRegion; }
   const nsRegion& MaybeHitRegion() { return mMaybeHitRegion; }
   const nsRegion& DispatchToContentHitRegion() { return mDispatchToContentHitRegion; }
@@ -3176,6 +3180,11 @@ private:
   
   
   nsRegion mVerticalPanRegion;
+  
+  
+  
+  
+  mozilla::Maybe<int32_t> mOverrideZIndex;
 };
 
 
