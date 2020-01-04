@@ -233,3 +233,37 @@ function isApzEnabled() {
   }
   return enabled;
 }
+
+
+
+
+
+
+
+
+
+
+function runContinuation(testFunction) {
+  
+  
+  
+  
+  
+  return function() {
+    return new Promise(function(resolve, reject) {
+      var testContinuation = null;
+
+      function driveTest() {
+        if (!testContinuation) {
+          testContinuation = testFunction(driveTest);
+        }
+        var ret = testContinuation.next();
+        if (ret.done) {
+          resolve();
+        }
+      }
+
+      driveTest();
+    });
+  };
+}
