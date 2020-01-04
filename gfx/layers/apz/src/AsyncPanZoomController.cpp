@@ -36,6 +36,8 @@
 #include "mozilla/StaticPtr.h"          
 #include "mozilla/Telemetry.h"          
 #include "mozilla/TimeStamp.h"          
+#include "mozilla/dom/CheckerboardReportService.h" 
+             
 #include "mozilla/dom/KeyframeEffect.h" 
 #include "mozilla/dom/Touch.h"          
 #include "mozilla/gfx/BasePoint.h"      
@@ -3136,8 +3138,13 @@ AsyncPanZoomController::ReportCheckerboard(const TimeStamp& aSampleTime)
     if (recordTrace) {
       
       
-      std::stringstream log(mCheckerboardEvent->GetLog());
-      print_stderr(log);
+      
+      uint32_t severity = mCheckerboardEvent->GetSeverity();
+      std::string log = mCheckerboardEvent->GetLog();
+      NS_DispatchToMainThread(NS_NewRunnableFunction([severity, log]() {
+          RefPtr<CheckerboardEventStorage> storage = CheckerboardEventStorage::GetInstance();
+          storage->ReportCheckerboard(severity, log);
+      }));
     }
     mCheckerboardEvent = nullptr;
   }
