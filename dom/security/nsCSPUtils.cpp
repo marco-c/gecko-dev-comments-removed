@@ -609,6 +609,11 @@ nsCSPKeywordSrc::allows(enum CSPKeyword aKeyword, const nsAString& aHashOrNonce)
 void
 nsCSPKeywordSrc::toString(nsAString& outStr) const
 {
+  if (mInvalidated) {
+    MOZ_ASSERT(mKeyword == CSP_UNSAFE_INLINE,
+               "can only ignore 'unsafe-inline' within toString()");
+    return;
+  }
   outStr.AppendASCII(CSP_EnumToKeyword(mKeyword));
 }
 
@@ -616,8 +621,8 @@ void
 nsCSPKeywordSrc::invalidate()
 {
   mInvalidated = true;
-  NS_ASSERTION(mInvalidated == CSP_UNSAFE_INLINE,
-               "invalidate 'unsafe-inline' only within script-src");
+  MOZ_ASSERT(mKeyword == CSP_UNSAFE_INLINE,
+             "invalidate 'unsafe-inline' only within script-src");
 }
 
 
@@ -1047,7 +1052,12 @@ nsCSPPolicy::allows(nsContentPolicyType aContentType,
   }
 
   
+  
+  
   if (aKeyword == CSP_NONCE || aKeyword == CSP_HASH) {
+     if (!defaultDir) {
+       return true;
+     }
     return false;
   }
 
