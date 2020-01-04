@@ -120,7 +120,10 @@ test_description_schema = Schema({
         Required('script'): basestring,
 
         
-        Required('config'): [basestring],
+        Required('config'): Any(
+            [basestring],
+            {'by-test-platform': {basestring: [basestring]}},
+        ),
 
         
         Optional('actions'): [basestring],
