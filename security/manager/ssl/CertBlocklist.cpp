@@ -288,7 +288,6 @@ CertBlocklist::EnsureBackingFileInitialized(MutexAutoLock& lock)
   return NS_OK;
 }
 
-
 NS_IMETHODIMP
 CertBlocklist::RevokeCertBySubjectAndPubKey(const char* aSubject,
                                             const char* aPubKeyHash)
@@ -303,7 +302,6 @@ CertBlocklist::RevokeCertBySubjectAndPubKey(const char* aSubject,
                                 BlockBySubjectAndPubKey,
                                 CertNewFromBlocklist, lock);
 }
-
 
 NS_IMETHODIMP
 CertBlocklist::RevokeCertByIssuerAndSerial(const char* aIssuer,
@@ -507,14 +505,6 @@ CertBlocklist::SaveEntries()
   mModified = false;
   return NS_OK;
 }
-
-
-
-
-
-
-
-
 
 NS_IMETHODIMP
 CertBlocklist::IsCertRevoked(const uint8_t* aIssuer,

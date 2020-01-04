@@ -155,8 +155,7 @@ DOMSVGPathSeg::IndexIsValid()
 
 
 
-#define IMPL_PROP_WITH_TYPE(segName, propName, index, type)
-                                              \
+#define IMPL_PROP_WITH_TYPE(segName, propName, index, type)                   \
   type                                                                        \
   DOMSVGPathSeg##segName::propName()                                          \
   {                                                                           \

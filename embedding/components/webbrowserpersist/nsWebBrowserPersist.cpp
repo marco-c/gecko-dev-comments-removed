@@ -415,9 +415,6 @@ NS_IMETHODIMP nsWebBrowserPersist::SetProgressListener(
     return NS_OK;
 }
 
-
-
-
 NS_IMETHODIMP nsWebBrowserPersist::SaveURI(
     nsIURI *aURI, nsISupports *aCacheKey,
     nsIURI *aReferrer, uint32_t aReferrerPolicy,
@@ -532,7 +529,6 @@ NS_IMETHODIMP nsWebBrowserPersist::SaveDocument(
     }
     return rv;
 }
-
 
 NS_IMETHODIMP nsWebBrowserPersist::Cancel(nsresult aReason)
 {
@@ -1002,8 +998,6 @@ nsWebBrowserPersist::OnDataAvailable(
 
 
 
-
-
 NS_IMETHODIMP nsWebBrowserPersist::OnProgress(
     nsIRequest *request, nsISupports *ctxt, int64_t aProgress,
     int64_t aProgressMax)
@@ -1054,8 +1048,6 @@ NS_IMETHODIMP nsWebBrowserPersist::OnProgress(
 
     return NS_OK;
 }
-
-
 
 NS_IMETHODIMP nsWebBrowserPersist::OnStatus(
     nsIRequest *request, nsISupports *ctxt, nsresult status,

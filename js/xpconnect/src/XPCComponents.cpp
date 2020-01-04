@@ -115,8 +115,6 @@ private:
     nsCOMArray<nsIInterfaceInfo> mInterfaces;
 };
 
-
-
 NS_IMETHODIMP
 nsXPCComponents_Interfaces::GetInterfaces(uint32_t* aCount, nsIID * **aArray)
 {
@@ -340,8 +338,6 @@ private:
 
     nsCOMArray<nsIInterfaceInfo> mInterfaces;
 };
-
-
 
 
 NS_IMETHODIMP
@@ -571,8 +567,6 @@ private:
 };
 
 
-
-
 NS_IMETHODIMP
 nsXPCComponents_Classes::GetInterfaces(uint32_t* aCount, nsIID * **aArray)
 {
@@ -778,8 +772,6 @@ public:
 private:
     virtual ~nsXPCComponents_ClassesByID();
 };
-
-
 
 
 NS_IMETHODIMP
@@ -1012,8 +1004,6 @@ private:
 };
 
 
-
-
 NS_IMETHODIMP
 nsXPCComponents_Results::GetInterfaces(uint32_t* aCount, nsIID * **aArray)
 {
@@ -1202,8 +1192,6 @@ private:
                                     JSContext* cx, HandleObject obj,
                                     const CallArgs& args, bool* _retval);
 };
-
-
 
 
 NS_IMETHODIMP
@@ -1401,8 +1389,6 @@ private:
                                     JSContext* cx, HandleObject obj,
                                     const CallArgs& args, bool* _retval);
 };
-
-
 
 
 NS_IMETHODIMP
@@ -1770,8 +1756,6 @@ private:
 };
 
 
-
-
 NS_IMETHODIMP
 nsXPCConstructor::GetInterfaces(uint32_t* aCount, nsIID * **aArray)
 {
@@ -1995,8 +1979,6 @@ private:
                                     JSContext* cx, HandleObject obj,
                                     const CallArgs& args, bool* _retval);
 };
-
-
 
 
 NS_IMETHODIMP
@@ -2486,9 +2468,6 @@ nsXPCComponents_Utils::SetSandboxMetadata(HandleValue sandboxVal,
     return NS_OK;
 }
 
-
-
-
 NS_IMETHODIMP
 nsXPCComponents_Utils::Import(const nsACString& registryLocation,
                               HandleValue targetObj,
@@ -2503,8 +2482,6 @@ nsXPCComponents_Utils::Import(const nsACString& registryLocation,
     return moduleloader->Import(registryLocation, targetObj, cx, optionalArgc, retval);
 }
 
-
-
 NS_IMETHODIMP
 nsXPCComponents_Utils::IsModuleLoaded(const nsACString& registryLocation, bool* retval)
 {
@@ -2515,8 +2492,6 @@ nsXPCComponents_Utils::IsModuleLoaded(const nsACString& registryLocation, bool* 
     return moduleloader->IsModuleLoaded(registryLocation, retval);
 }
 
-
-
 NS_IMETHODIMP
 nsXPCComponents_Utils::Unload(const nsACString & registryLocation)
 {
@@ -2526,9 +2501,6 @@ nsXPCComponents_Utils::Unload(const nsACString & registryLocation)
         return NS_ERROR_FAILURE;
     return moduleloader->Unload(registryLocation);
 }
-
-
-
 
 NS_IMETHODIMP
 nsXPCComponents_Utils::ImportGlobalProperties(HandleValue aPropertyList,
@@ -2713,8 +2685,6 @@ nsXPCComponents_Utils::GetJSTestingFunctions(JSContext* cx,
     retval.setObject(*obj);
     return NS_OK;
 }
-
-
 
 NS_IMETHODIMP
 nsXPCComponents_Utils::CallFunctionWithAsyncStack(HandleValue function,

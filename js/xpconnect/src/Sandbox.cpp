@@ -1152,13 +1152,6 @@ xpc::CreateSandboxObject(JSContext* cx, MutableHandleValue vp, nsISupports* prin
     return NS_OK;
 }
 
-
-
-
-
-
-
-
 NS_IMETHODIMP
 nsXPCComponents_utils_Sandbox::Call(nsIXPConnectWrappedNative* wrapper, JSContext* cx,
                                     JSObject* objArg, const CallArgs& args, bool* _retval)
@@ -1166,13 +1159,6 @@ nsXPCComponents_utils_Sandbox::Call(nsIXPConnectWrappedNative* wrapper, JSContex
     RootedObject obj(cx, objArg);
     return CallOrConstruct(wrapper, cx, obj, args, _retval);
 }
-
-
-
-
-
-
-
 
 NS_IMETHODIMP
 nsXPCComponents_utils_Sandbox::Construct(nsIXPConnectWrappedNative* wrapper, JSContext* cx,

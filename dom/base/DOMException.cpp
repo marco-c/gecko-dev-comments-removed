@@ -448,9 +448,6 @@ Exception::ToString(nsACString& _retval)
   return NS_OK;
 }
 
-
-
-
 NS_IMETHODIMP
 Exception::Initialize(const nsACString& aMessage, nsresult aResult,
                       const nsACString& aName, nsIStackFrame *aLocation,

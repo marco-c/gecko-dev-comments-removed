@@ -200,9 +200,6 @@ SVGDocumentWrapper::TickRefreshDriver()
 
 
 
-
-
-
 NS_IMETHODIMP
 SVGDocumentWrapper::OnDataAvailable(nsIRequest* aRequest, nsISupports* ctxt,
                                     nsIInputStream* inStr,
@@ -234,8 +231,6 @@ SVGDocumentWrapper::OnStartRequest(nsIRequest* aRequest, nsISupports* ctxt)
   }
   return rv;
 }
-
-
 
 
 NS_IMETHODIMP

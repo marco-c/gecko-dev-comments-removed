@@ -163,7 +163,6 @@ RasterImage::Init(const char* aMimeType,
 }
 
 
-
 NS_IMETHODIMP_(void)
 RasterImage::RequestRefresh(const TimeStamp& aTime)
 {
@@ -541,8 +540,6 @@ RasterImage::CopyFrame(uint32_t aWhichFrame, uint32_t aFlags)
 
   return surf.forget();
 }
-
-
 
 
 NS_IMETHODIMP_(already_AddRefed<SourceSurface>)
@@ -970,7 +967,6 @@ RasterImage::ResetAnimation()
 
   return NS_OK;
 }
-
 
 
 NS_IMETHODIMP_(void)
@@ -1476,15 +1472,6 @@ RasterImage::DrawInternal(DrawableFrameRef&& aFrameRef,
   }
   return DrawResult::SUCCESS;
 }
-
-
-
-
-
-
-
-
-
 
 
 NS_IMETHODIMP_(DrawResult)

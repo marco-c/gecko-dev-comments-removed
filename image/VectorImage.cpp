@@ -683,8 +683,6 @@ VectorImage::IsOpaque()
 }
 
 
-
-
 NS_IMETHODIMP_(already_AddRefed<SourceSurface>)
 VectorImage::GetFrame(uint32_t aWhichFrame, uint32_t aFlags)
 {
@@ -791,13 +789,6 @@ struct SVGDrawingParameters
   uint32_t                      flags;
   gfxFloat                      opacity;
 };
-
-
-
-
-
-
-
 
 
 NS_IMETHODIMP_(DrawResult)
@@ -1134,8 +1125,6 @@ VectorImage::OnStartRequest(nsIRequest* aRequest, nsISupports* aCtxt)
 }
 
 
-
-
 NS_IMETHODIMP
 VectorImage::OnStopRequest(nsIRequest* aRequest, nsISupports* aCtxt,
                            nsresult aStatus)
@@ -1236,9 +1225,6 @@ VectorImage::OnSVGDocumentError()
     mProgressTracker->SyncNotifyProgress(progress);
   }
 }
-
-
-
 
 
 

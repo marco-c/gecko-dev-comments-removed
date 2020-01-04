@@ -303,8 +303,6 @@ NS_IMETHODIMP nsZipWriter::HasEntry(const nsACString & aZipEntry,
     return NS_OK;
 }
 
-
-
 NS_IMETHODIMP nsZipWriter::AddEntryDirectory(const nsACString & aZipEntry,
                                              PRTime aModTime, bool aQueue)
 {
@@ -326,8 +324,6 @@ NS_IMETHODIMP nsZipWriter::AddEntryDirectory(const nsACString & aZipEntry,
         return NS_ERROR_IN_PROGRESS;
     return InternalAddEntryDirectory(aZipEntry, aModTime, PERMISSIONS_DIR);
 }
-
-
 
 NS_IMETHODIMP nsZipWriter::AddEntryFile(const nsACString & aZipEntry,
                                         int32_t aCompression, nsIFile *aFile,
@@ -390,9 +386,6 @@ NS_IMETHODIMP nsZipWriter::AddEntryFile(const nsACString & aZipEntry,
     return inputStream->Close();
 }
 
-
-
-
 NS_IMETHODIMP nsZipWriter::AddEntryChannel(const nsACString & aZipEntry,
                                            PRTime aModTime,
                                            int32_t aCompression,
@@ -439,9 +432,6 @@ NS_IMETHODIMP nsZipWriter::AddEntryChannel(const nsACString & aZipEntry,
     return inputStream->Close();
 }
 
-
-
-
 NS_IMETHODIMP nsZipWriter::AddEntryStream(const nsACString & aZipEntry,
                                           PRTime aModTime,
                                           int32_t aCompression,
@@ -451,9 +441,6 @@ NS_IMETHODIMP nsZipWriter::AddEntryStream(const nsACString & aZipEntry,
     return AddEntryStream(aZipEntry, aModTime, aCompression, aStream, aQueue,
                           PERMISSIONS_FILE);
 }
-
-
-
 
 nsresult nsZipWriter::AddEntryStream(const nsACString & aZipEntry,
                                      PRTime aModTime,
@@ -605,8 +592,6 @@ NS_IMETHODIMP nsZipWriter::RemoveEntry(const nsACString & aZipEntry,
     return NS_ERROR_FILE_NOT_FOUND;
 }
 
-
-
 NS_IMETHODIMP nsZipWriter::ProcessQueue(nsIRequestObserver *aObserver,
                                         nsISupports *aContext)
 {
@@ -709,8 +694,6 @@ NS_IMETHODIMP nsZipWriter::OnStartRequest(nsIRequest *aRequest,
 {
     return NS_OK;
 }
-
-
 
 NS_IMETHODIMP nsZipWriter::OnStopRequest(nsIRequest *aRequest,
                                          nsISupports *aContext,

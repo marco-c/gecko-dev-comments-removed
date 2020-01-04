@@ -59,8 +59,6 @@ NS_IMETHODIMP GamepadServiceTest::RemoveGamepad(uint32_t aIndex)
   return NS_OK;
 }
 
-
-
 NS_IMETHODIMP GamepadServiceTest::NewButtonEvent(uint32_t aIndex,
                                                  uint32_t aButton,
                                                  bool aPressed)
@@ -68,8 +66,6 @@ NS_IMETHODIMP GamepadServiceTest::NewButtonEvent(uint32_t aIndex,
   GamepadFunctions::NewButtonEvent(aIndex, aButton, aPressed);
   return NS_OK;
 }
-
-
 
 NS_IMETHODIMP GamepadServiceTest::NewButtonValueEvent(uint32_t aIndex,
                                                       uint32_t aButton,
@@ -79,8 +75,6 @@ NS_IMETHODIMP GamepadServiceTest::NewButtonValueEvent(uint32_t aIndex,
   GamepadFunctions::NewButtonEvent(aIndex, aButton, aPressed, aValue);
   return NS_OK;
 }
-
-
 
 NS_IMETHODIMP GamepadServiceTest::NewAxisMoveEvent(uint32_t aIndex,
                                                    uint32_t aAxis,

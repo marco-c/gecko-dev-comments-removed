@@ -85,10 +85,6 @@ NS_IMETHODIMP nsTransactionList::ItemIsBatch(int32_t aIndex, bool *aIsBatch)
   return item->GetIsBatch(aIsBatch);
 }
 
-
-
-
-
 NS_IMETHODIMP nsTransactionList::GetData(int32_t aIndex,
                                          uint32_t *aLength,
                                          nsISupports ***aData)

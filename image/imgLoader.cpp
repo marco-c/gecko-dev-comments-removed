@@ -2008,15 +2008,6 @@ imgLoader::LoadImageXPCOM(nsIURI* aURI,
     return rv;
 }
 
-
-
-
-
-
-
-
-
-
 nsresult
 imgLoader::LoadImage(nsIURI* aURI,
                      nsIURI* aInitialDocumentURI,
@@ -2293,11 +2284,6 @@ imgLoader::LoadImage(nsIURI* aURI,
 
   return NS_OK;
 }
-
-
-
-
-
 
 NS_IMETHODIMP
 imgLoader::LoadImageWithChannelXPCOM(nsIChannel* channel,
@@ -2635,8 +2621,6 @@ ProxyListener::OnStartRequest(nsIRequest* aRequest, nsISupports* ctxt)
   return mDestListener->OnStartRequest(aRequest, ctxt);
 }
 
-
-
 NS_IMETHODIMP
 ProxyListener::OnStopRequest(nsIRequest* aRequest,
                              nsISupports* ctxt,
@@ -2648,10 +2632,6 @@ ProxyListener::OnStopRequest(nsIRequest* aRequest,
 
   return mDestListener->OnStopRequest(aRequest, ctxt, status);
 }
-
-
-
-
 
 
 
@@ -2853,8 +2833,6 @@ imgCacheValidator::OnStartRequest(nsIRequest* aRequest, nsISupports* ctxt)
   return mDestListener->OnStartRequest(aRequest, ctxt);
 }
 
-
-
 NS_IMETHODIMP
 imgCacheValidator::OnStopRequest(nsIRequest* aRequest,
                                  nsISupports* ctxt,
@@ -2869,10 +2847,6 @@ imgCacheValidator::OnStopRequest(nsIRequest* aRequest,
 
   return mDestListener->OnStopRequest(aRequest, ctxt, status);
 }
-
-
-
-
 
 
 

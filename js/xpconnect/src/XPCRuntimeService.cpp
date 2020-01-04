@@ -79,8 +79,6 @@ BackstagePass::Enumerate(nsIXPConnectWrappedNative* wrapper, JSContext* cx,
 }
 
 
-
-
 NS_IMETHODIMP
 BackstagePass::GetInterfaces(uint32_t* aCount, nsIID * **aArray)
 {

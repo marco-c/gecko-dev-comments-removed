@@ -1311,9 +1311,6 @@ nsCertTree::PerformActionOnRow(const char16_t *action, int32_t row)
   return NS_OK;
 }
 
-
-
-
 NS_IMETHODIMP 
 nsCertTree::PerformActionOnCell(const char16_t *action, int32_t row, 
                                 nsITreeColumn* col)

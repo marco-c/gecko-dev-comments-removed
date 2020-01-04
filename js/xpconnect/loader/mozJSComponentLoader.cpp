@@ -1059,8 +1059,6 @@ mozJSComponentLoader::Import(const nsACString& registryLocation,
     return rv;
 }
 
-
-
 NS_IMETHODIMP
 mozJSComponentLoader::ImportInto(const nsACString& aLocation,
                                  JSObject* aTargetObj,

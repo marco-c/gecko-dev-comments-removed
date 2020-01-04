@@ -338,7 +338,6 @@ StumblerInfo::DumpStumblerInfo()
   target->Dispatch(event, NS_DISPATCH_NORMAL);
 }
 
-
 NS_IMETHODIMP
 StumblerInfo::NotifyGetCellInfoList(uint32_t count, nsICellInfo** aCellInfos)
 {
@@ -352,7 +351,6 @@ StumblerInfo::NotifyGetCellInfoList(uint32_t count, nsICellInfo** aCellInfos)
   DumpStumblerInfo();
   return NS_OK;
 }
-
 
 NS_IMETHODIMP StumblerInfo::NotifyGetCellInfoListFailed(const nsAString& error)
 {

@@ -60,8 +60,6 @@ nsresult nsDeflateConverter::Init()
     return NS_OK;
 }
 
-
-
 NS_IMETHODIMP nsDeflateConverter::Convert(nsIInputStream *aFromStream,
                                           const char *aFromType,
                                           const char *aToType,
@@ -70,9 +68,6 @@ NS_IMETHODIMP nsDeflateConverter::Convert(nsIInputStream *aFromStream,
 {
     return NS_ERROR_NOT_IMPLEMENTED;
 }
-
-
-
 
 NS_IMETHODIMP nsDeflateConverter::AsyncConvertData(const char *aFromType,
                                                    const char *aToType,
@@ -99,10 +94,6 @@ NS_IMETHODIMP nsDeflateConverter::AsyncConvertData(const char *aFromType,
     mContext = aCtxt;
     return rv;
 }
-
-
-
-
 
 NS_IMETHODIMP nsDeflateConverter::OnDataAvailable(nsIRequest *aRequest,
                                                   nsISupports *aContext,
@@ -147,8 +138,6 @@ NS_IMETHODIMP nsDeflateConverter::OnStartRequest(nsIRequest *aRequest,
 
     return mListener->OnStartRequest(aRequest, mContext);
 }
-
-
 
 NS_IMETHODIMP nsDeflateConverter::OnStopRequest(nsIRequest *aRequest,
                                                 nsISupports *aContext,

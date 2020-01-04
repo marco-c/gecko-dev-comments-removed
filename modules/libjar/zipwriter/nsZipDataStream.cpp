@@ -59,9 +59,6 @@ nsresult nsZipDataStream::Init(nsZipWriter *aWriter,
     return NS_OK;
 }
 
-
-
-
 NS_IMETHODIMP nsZipDataStream::OnDataAvailable(nsIRequest *aRequest,
                                                nsISupports *aContext,
                                                nsIInputStream *aInputStream,
@@ -88,8 +85,6 @@ NS_IMETHODIMP nsZipDataStream::OnStartRequest(nsIRequest *aRequest,
 
     return mOutput->OnStartRequest(aRequest, aContext);
 }
-
-
 
 NS_IMETHODIMP nsZipDataStream::OnStopRequest(nsIRequest *aRequest,
                                              nsISupports *aContext,

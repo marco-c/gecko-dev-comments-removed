@@ -56,14 +56,12 @@ NS_IMETHODIMP LoadContextInfo::GetOriginAttributes(JSContext *aCx,
 
 NS_IMPL_ISUPPORTS(LoadContextInfoFactory, nsILoadContextInfoFactory)
 
-
 NS_IMETHODIMP LoadContextInfoFactory::GetDefault(nsILoadContextInfo * *aDefault)
 {
   nsCOMPtr<nsILoadContextInfo> info = GetLoadContextInfo(false, false, OriginAttributes());
   info.forget(aDefault);
   return NS_OK;
 }
-
 
 NS_IMETHODIMP LoadContextInfoFactory::GetPrivate(nsILoadContextInfo * *aPrivate)
 {
@@ -72,14 +70,12 @@ NS_IMETHODIMP LoadContextInfoFactory::GetPrivate(nsILoadContextInfo * *aPrivate)
   return NS_OK;
 }
 
-
 NS_IMETHODIMP LoadContextInfoFactory::GetAnonymous(nsILoadContextInfo * *aAnonymous)
 {
   nsCOMPtr<nsILoadContextInfo> info = GetLoadContextInfo(false, true, OriginAttributes());
   info.forget(aAnonymous);
   return NS_OK;
 }
-
 
 NS_IMETHODIMP LoadContextInfoFactory::Custom(bool aPrivate, bool aAnonymous,
                                              JS::HandleValue aOriginAttributes, JSContext *cx,
@@ -94,7 +90,6 @@ NS_IMETHODIMP LoadContextInfoFactory::Custom(bool aPrivate, bool aAnonymous,
   return NS_OK;
 }
 
-
 NS_IMETHODIMP LoadContextInfoFactory::FromLoadContext(nsILoadContext *aLoadContext, bool aAnonymous,
                                                       nsILoadContextInfo * *_retval)
 {
@@ -102,7 +97,6 @@ NS_IMETHODIMP LoadContextInfoFactory::FromLoadContext(nsILoadContext *aLoadConte
   info.forget(_retval);
   return NS_OK;
 }
-
 
 NS_IMETHODIMP LoadContextInfoFactory::FromWindow(nsIDOMWindow *aWindow, bool aAnonymous,
                                                  nsILoadContextInfo * *_retval)

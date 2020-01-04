@@ -1373,7 +1373,6 @@ nsCSSFontFaceStyleDecl::GetPropertyValue(nsCSSFontDesc aFontDescID,
 }
 
 
-
 NS_IMETHODIMP
 nsCSSFontFaceStyleDecl::GetCssText(nsAString & aCssText)
 {
@@ -1403,7 +1402,6 @@ nsCSSFontFaceStyleDecl::SetCssText(const nsAString & aCssText)
   return NS_ERROR_NOT_IMPLEMENTED; 
 }
 
-
 NS_IMETHODIMP
 nsCSSFontFaceStyleDecl::GetPropertyValue(const nsAString & propertyName,
                                          nsAString & aResult)
@@ -1420,7 +1418,6 @@ nsCSSFontFaceStyleDecl::GetAuthoredPropertyValue(const nsAString& propertyName,
   return GetPropertyValue(nsCSSProps::LookupFontDesc(propertyName), aResult);
 }
 
-
 already_AddRefed<dom::CSSValue>
 nsCSSFontFaceStyleDecl::GetPropertyCSSValue(const nsAString & propertyName,
                                             ErrorResult& aRv)
@@ -1429,7 +1426,6 @@ nsCSSFontFaceStyleDecl::GetPropertyCSSValue(const nsAString & propertyName,
   aRv.Throw(NS_ERROR_NOT_IMPLEMENTED);
   return nullptr;
 }
-
 
 NS_IMETHODIMP
 nsCSSFontFaceStyleDecl::RemoveProperty(const nsAString & propertyName,
@@ -1450,7 +1446,6 @@ nsCSSFontFaceStyleDecl::RemoveProperty(const nsAString & propertyName,
   return NS_OK;
 }
 
-
 NS_IMETHODIMP
 nsCSSFontFaceStyleDecl::GetPropertyPriority(const nsAString & propertyName,
                                             nsAString & aResult)
@@ -1460,8 +1455,6 @@ nsCSSFontFaceStyleDecl::GetPropertyPriority(const nsAString & propertyName,
   return NS_OK;
 }
 
-
-
 NS_IMETHODIMP
 nsCSSFontFaceStyleDecl::SetProperty(const nsAString & propertyName,
                                     const nsAString & value,
@@ -1469,7 +1462,6 @@ nsCSSFontFaceStyleDecl::SetProperty(const nsAString & propertyName,
 {
   return NS_ERROR_NOT_IMPLEMENTED; 
 }
-
 
 NS_IMETHODIMP
 nsCSSFontFaceStyleDecl::GetLength(uint32_t *aLength)
@@ -1484,7 +1476,6 @@ nsCSSFontFaceStyleDecl::GetLength(uint32_t *aLength)
   *aLength = len;
   return NS_OK;
 }
-
 
 NS_IMETHODIMP
 nsCSSFontFaceStyleDecl::Item(uint32_t aIndex, nsAString& aReturn)
@@ -1515,7 +1506,6 @@ nsCSSFontFaceStyleDecl::IndexedGetter(uint32_t index, bool& aFound, nsAString & 
   }
   aFound = false;
 }
-
 
 NS_IMETHODIMP
 nsCSSFontFaceStyleDecl::GetParentRule(nsIDOMCSSRule** aParentRule)

@@ -437,11 +437,6 @@ nsNSSCertificateDB::handleCACertDownload(nsIArray *x509Certs,
   return ImportValidCACertsInList(certList.get(), ctx, proofOfLock);
 }
 
-
-
-
-
-
 NS_IMETHODIMP 
 nsNSSCertificateDB::ImportCertificates(uint8_t * data, uint32_t length, 
                                        uint32_t type, 
@@ -529,10 +524,6 @@ ImportCertsIntoPermanentStorage(
   PORT_Free(rawArray);
   return srv;
 } 
-
-
-
-
 
 
 NS_IMETHODIMP
@@ -930,9 +921,6 @@ loser:
   return rv;
 }
 
-
-
-
 NS_IMETHODIMP 
 nsNSSCertificateDB::DeleteCertificate(nsIX509Cert *aCert)
 {
@@ -969,11 +957,6 @@ nsNSSCertificateDB::DeleteCertificate(nsIX509Cert *aCert)
   MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("cert deleted: %d", srv));
   return (srv) ? NS_ERROR_FAILURE : NS_OK;
 }
-
-
-
-
-
 
 NS_IMETHODIMP 
 nsNSSCertificateDB::SetCertTrust(nsIX509Cert *cert, 

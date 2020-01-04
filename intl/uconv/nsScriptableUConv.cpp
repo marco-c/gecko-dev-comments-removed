@@ -130,9 +130,6 @@ nsScriptableUnicodeConverter::ConvertToUnicode(const nsACString& aSrc, nsAString
                               _retval);
 }
 
-
-
-
 NS_IMETHODIMP
 nsScriptableUnicodeConverter::ConvertFromByteArray(const uint8_t* aData,
                                                    uint32_t aCount,
@@ -167,10 +164,6 @@ nsScriptableUnicodeConverter::ConvertFromByteArray(const uint8_t* aData,
   return NS_ERROR_FAILURE;
 
 }
-
-
-
-
 
 NS_IMETHODIMP
 nsScriptableUnicodeConverter::ConvertToByteArray(const nsAString& aString,

@@ -231,61 +231,51 @@ public:
 
   NS_DECL_ISUPPORTS
 
-  
   NS_IMETHOD GetName(nsAString& aName) override {
     aName.Assign(nsPerformanceGroupDetails::Name());
     return NS_OK;
   };
 
-  
   NS_IMETHOD GetGroupId(nsAString& aGroupId) override {
     aGroupId.Assign(nsPerformanceGroupDetails::GroupId());
     return NS_OK;
   };
 
-  
   NS_IMETHOD GetAddonId(nsAString& aAddonId) override {
     aAddonId.Assign(nsPerformanceGroupDetails::AddonId());
     return NS_OK;
   };
 
-  
   NS_IMETHOD GetWindowId(uint64_t *aWindowId) override {
     *aWindowId = nsPerformanceGroupDetails::WindowId();
     return NS_OK;
   }
 
-  
   NS_IMETHOD GetIsSystem(bool *_retval) override {
     *_retval = nsPerformanceGroupDetails::IsSystem();
     return NS_OK;
   }
 
-  
   NS_IMETHOD GetTotalUserTime(uint64_t *aTotalUserTime) override {
     *aTotalUserTime = mPerformanceData.mTotalUserTime;
     return NS_OK;
   };
 
-  
   NS_IMETHOD GetTotalSystemTime(uint64_t *aTotalSystemTime) override {
     *aTotalSystemTime = mPerformanceData.mTotalSystemTime;
     return NS_OK;
   };
 
-  
   NS_IMETHOD GetTotalCPOWTime(uint64_t *aCpowTime) override {
     *aCpowTime = mPerformanceData.mTotalCPOWTime;
     return NS_OK;
   };
 
-  
   NS_IMETHOD GetTicks(uint64_t *aTicks) override {
     *aTicks = mPerformanceData.mTicks;
     return NS_OK;
   };
 
-  
   NS_IMETHOD GetDurations(uint32_t *aCount, uint64_t **aNumberOfOccurrences) override {
     const size_t length = mozilla::ArrayLength(mPerformanceData.mDurations);
     if (aCount) {
@@ -297,9 +287,6 @@ public:
     }
     return NS_OK;
   };
-
-  
-
 
   NS_IMETHODIMP GetProcessId(uint64_t* processId) override {
     *processId = nsPerformanceGroupDetails::ProcessId();
@@ -357,7 +344,6 @@ private:
 NS_IMPL_ISUPPORTS(nsPerformanceSnapshot, nsIPerformanceSnapshot)
 
 
-
 NS_IMETHODIMP
 nsPerformanceSnapshot::GetComponentsData(nsIArray * *aComponents)
 {
@@ -371,7 +357,6 @@ nsPerformanceSnapshot::GetComponentsData(nsIArray * *aComponents)
   components.forget(aComponents);
   return NS_OK;
 }
-
 
 NS_IMETHODIMP
 nsPerformanceSnapshot::GetProcessData(nsIPerformanceStats * *aProcess)
@@ -534,7 +519,6 @@ nsPerformanceStatsService::Observe(nsISupports *aSubject, const char *aTopic,
   return NS_OK;
 }
 
-
 NS_IMETHODIMP
 nsPerformanceStatsService::GetIsMonitoringCPOW(JSContext* cx, bool *aIsStopwatchActive)
 {
@@ -552,7 +536,6 @@ nsPerformanceStatsService::SetIsMonitoringCPOW(JSContext* cx, bool aIsStopwatchA
   return NS_OK;
 }
 
-
 NS_IMETHODIMP
 nsPerformanceStatsService::GetIsMonitoringJank(JSContext* cx, bool *aIsStopwatchActive)
 {
@@ -569,7 +552,6 @@ nsPerformanceStatsService::SetIsMonitoringJank(JSContext* cx, bool aIsStopwatchA
   }
   return NS_OK;
 }
-
 
 NS_IMETHODIMP
 nsPerformanceStatsService::GetIsMonitoringPerCompartment(JSContext*, bool *aIsMonitoringPerCompartment)
@@ -638,7 +620,6 @@ nsPerformanceStatsService::GetStatsForGroup(const nsPerformanceGroup* group)
 {
   return new nsPerformanceStats(*group, group->data);
 }
-
 
 NS_IMETHODIMP
 nsPerformanceStatsService::GetSnapshot(JSContext* cx, nsIPerformanceSnapshot * *aSnapshot)
