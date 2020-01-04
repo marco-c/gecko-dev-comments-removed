@@ -1304,8 +1304,6 @@ var gBrowserInit = {
 
     gMenuButtonUpdateBadge.init();
 
-    UserContextStyleManager.init();
-
     window.addEventListener("mousemove", MousePosTracker, false);
     window.addEventListener("dragover", MousePosTracker, false);
 
@@ -3230,7 +3228,6 @@ function getPEMString(cert)
 var PrintPreviewListener = {
   _printPreviewTab: null,
   _tabBeforePrintPreview: null,
-  _simplifyPageTab: null,
 
   getPrintPreviewBrowser: function () {
     if (!this._printPreviewTab) {
@@ -3244,18 +3241,9 @@ var PrintPreviewListener = {
     }
     return gBrowser.getBrowserForTab(this._printPreviewTab);
   },
-  createSimplifiedBrowser: function () {
-    this._simplifyPageTab = gBrowser.loadOneTab("about:blank",
-                                                { inBackground: true });
-    return this.getSimplifiedSourceBrowser();
-  },
   getSourceBrowser: function () {
     return this._tabBeforePrintPreview ?
       this._tabBeforePrintPreview.linkedBrowser : gBrowser.selectedBrowser;
-  },
-  getSimplifiedSourceBrowser: function () {
-    return this._simplifyPageTab ?
-      gBrowser.getBrowserForTab(this._simplifyPageTab) : null;
   },
   getNavToolbox: function () {
     return gNavToolbox;
@@ -3269,10 +3257,6 @@ var PrintPreviewListener = {
     this._tabBeforePrintPreview = null;
     gInPrintPreviewMode = false;
     this._toggleAffectedChrome();
-    if (this._simplifyPageTab) {
-      gBrowser.removeTab(this._simplifyPageTab);
-      this._simplifyPageTab = null;
-    }
     gBrowser.removeTab(this._printPreviewTab);
     this._printPreviewTab = null;
   },
@@ -3368,9 +3352,6 @@ var homeButtonObserver = {
 
   onDragOver: function (aEvent)
     {
-      if (gPrefService.prefIsLocked("browser.startup.homepage")) {
-        return;
-      }
       browserDragAndDrop.dragOver(aEvent);
       aEvent.dropEffect = "link";
     },
@@ -7181,8 +7162,13 @@ var gIdentityHandler = {
 
     let uri = gBrowser.currentURI;
 
-    for (let permission of SitePermissions.getPermissionsByURI(uri)) {
-      let item = this._createPermissionItem(permission);
+    for (let permission of SitePermissions.listPermissions()) {
+      let state = SitePermissions.get(uri, permission);
+
+      if (state == SitePermissions.UNKNOWN)
+        continue;
+
+      let item = this._createPermissionItem(permission, state);
       this._permissionList.appendChild(item);
     }
   },
@@ -7194,26 +7180,26 @@ var gIdentityHandler = {
       SitePermissions.set(gBrowser.currentURI, aPermission, aState);
   },
 
-  _createPermissionItem: function (aPermission) {
+  _createPermissionItem: function (aPermission, aState) {
     let menulist = document.createElement("menulist");
     let menupopup = document.createElement("menupopup");
-    for (let state of aPermission.availableStates) {
+    for (let state of SitePermissions.getAvailableStates(aPermission)) {
       let menuitem = document.createElement("menuitem");
-      menuitem.setAttribute("value", state.id);
-      menuitem.setAttribute("label", state.label);
+      menuitem.setAttribute("value", state);
+      menuitem.setAttribute("label", SitePermissions.getStateLabel(aPermission, state));
       menupopup.appendChild(menuitem);
     }
     menulist.appendChild(menupopup);
-    menulist.setAttribute("value", aPermission.state);
+    menulist.setAttribute("value", aState);
     menulist.setAttribute("oncommand", "gIdentityHandler.setPermission('" +
-                                       aPermission.id + "', this.value)");
-    menulist.setAttribute("id", "identity-popup-permission:" + aPermission.id);
+                                       aPermission + "', this.value)");
+    menulist.setAttribute("id", "identity-popup-permission:" + aPermission);
 
     let label = document.createElement("label");
     label.setAttribute("flex", "1");
     label.setAttribute("class", "identity-popup-permission-label");
     label.setAttribute("control", menulist.getAttribute("id"));
-    label.textContent = aPermission.label;
+    label.textContent = SitePermissions.getPermissionLabel(aPermission);
 
     let container = document.createElement("hbox");
     container.setAttribute("align", "center");
@@ -7953,34 +7939,5 @@ TabModalPromptBox.prototype = {
       throw "Stale promptbox! The associated browser is gone.";
     }
     return browser;
-  },
-};
-
-let UserContextStyleManager = {
-  init() {
-    for (let styleId in document.styleSheets) {
-      let styleSheet = document.styleSheets[styleId];
-      if (styleSheet.href != "chrome://browser/content/usercontext/usercontext.css") {
-        continue;
-      }
-
-      if (ContextualIdentityService.needsCssRule()) {
-        for (let ruleId in styleSheet.cssRules) {
-          let cssRule = styleSheet.cssRules[ruleId];
-          if (cssRule.selectorText != ":root") {
-            continue;
-          }
-
-          ContextualIdentityService.storeCssRule(cssRule.cssText);
-          break;
-        }
-      }
-
-      ContextualIdentityService.cssRules().forEach(rule => {
-        styleSheet.insertRule(rule, styleSheet.cssRules.length);
-      });
-
-      break;
-    }
   },
 };

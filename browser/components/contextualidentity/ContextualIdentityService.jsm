@@ -9,6 +9,8 @@ const {classes: Cc, interfaces: Ci, utils: Cu, results: Cr} = Components;
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/Services.jsm")
 
+const DEFAULT_TAB_COLOR = "#909090"
+
 XPCOMUtils.defineLazyGetter(this, "gBrowserBundle", function() {
   return Services.strings.createBundle("chrome://browser/locale/browser.properties");
 });
@@ -52,33 +54,22 @@ this.ContextualIdentityService = {
     return gBrowserBundle.GetStringFromName(identity.label);
   },
 
-  needsCssRule() {
-    return !this._cssRule;
-  },
-
-  storeCssRule(cssRule) {
-    this._cssRule = cssRule;
-  },
-
-  cssRules() {
-    let rules = [];
-
-    if (this.needsCssRule()) {
-      return rules;
-    }
-
+  setTabStyle(tab) {
     
-
-
-
-
-    for (let identity of this._identities) {
-      rules.push(":root { --usercontext-color-" + identity.userContextId + ": " + identity.color + " }");
-
-      rules.push(this._cssRule.replace(/id/g, identity.userContextId));
-      rules.push(".tabbrowser-tab[usercontextid=\"" + identity.userContextId + "\"] { background-image: var(--usercontext-tab-" + identity.userContextId + ") }");
+    
+    if (!tab.hasAttribute("usercontextid")) {
+      tab.style.removeProperty("background-image");
+      tab.style.removeProperty("background-size");
+      tab.style.removeProperty("background-repeat");
+      return;
     }
 
-    return rules;
+    let userContextId = tab.getAttribute("usercontextid");
+    let identity = this.getIdentityFromId(userContextId);
+
+    let color = identity ? identity.color : DEFAULT_TAB_COLOR;
+    tab.style.backgroundImage = "linear-gradient(to right, transparent 20%, " + color + " 30%, " + color + " 70%, transparent 80%)";
+    tab.style.backgroundSize = "auto 2px";
+    tab.style.backgroundRepeat = "no-repeat";
   },
 }
