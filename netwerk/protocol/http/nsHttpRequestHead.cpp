@@ -6,9 +6,6 @@
 
 #include "HttpLog.h"
 
-#ifdef MOZ_CRASHREPORTER
-#include "nsExceptionHandler.h"
-#endif
 #include "nsHttpRequestHead.h"
 #include "nsIHttpHeaderVisitor.h"
 
@@ -19,34 +16,6 @@
 namespace mozilla {
 namespace net {
 
-#ifdef MOZ_CRASHREPORTER
-
-void nsHttpRequestHead::DbgReentrantMonitorAutoEnter::DbgCheck(bool aIn)
-{
-    nsHttpAtom header;
-    if (!mInstance.mAnnotated && mInstance.mHeaders.Count() &&
-        !mInstance.mHeaders.PeekHeaderAt(0, header)) {
-        nsAutoCString str;
-        str.Append(nsPrintfCString("%s %s", aIn ? "in" : "out", mFunc));
-        
-        const uint8_t* p = reinterpret_cast<uint8_t*>
-            (mInstance.mHeaders.mHeaders.Elements()) - sizeof(nsTArrayHeader);
-        for (int i = 0; i < 28; ++i, ++p) {
-            str.Append(nsPrintfCString(" %02x", *p));
-        }
-        CrashReporter::AnnotateCrashReport(
-            NS_LITERAL_CSTRING("InvalidHttpHeaderArray"), str);
-        
-        
-        mInstance.mAnnotated = true;
-    }
-}
-
-#define ReentrantMonitorAutoEnter DbgReentrantMonitorAutoEnter
-#define mon(x) mon(*this, __func__)
-
-#endif
-
 nsHttpRequestHead::nsHttpRequestHead()
     : mMethod(NS_LITERAL_CSTRING("GET"))
     , mVersion(NS_HTTP_VERSION_1_1)
@@ -54,9 +23,6 @@ nsHttpRequestHead::nsHttpRequestHead()
     , mHTTPS(false)
     , mReentrantMonitor("nsHttpRequestHead.mReentrantMonitor")
     , mInVisitHeaders(false)
-#ifdef MOZ_CRASHREPORTER
-    , mAnnotated(false)
-#endif
 {
     MOZ_COUNT_CTOR(nsHttpRequestHead);
 }
@@ -398,11 +364,6 @@ nsHttpRequestHead::Flatten(nsACString &buf, bool pruneProxyHeaders)
 
     mHeaders.Flatten(buf, pruneProxyHeaders, false);
 }
-
-#ifdef MOZ_CRASHREPORTER
-#undef ReentrantMonitorAutoEnter
-#undef mon
-#endif
 
 } 
 } 
