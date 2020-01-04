@@ -14,15 +14,22 @@ import org.mozilla.gecko.sync.ExtendedJSONObject;
 
 
 
+
+
+
+
 public class TelemetryPing {
     private final String urlPath;
     private final ExtendedJSONObject payload;
+    private final int uniqueID;
 
-    public TelemetryPing(final String urlPath, final ExtendedJSONObject payload) {
+    public TelemetryPing(final String urlPath, final ExtendedJSONObject payload, final int uniqueID) {
         this.urlPath = urlPath;
         this.payload = payload;
+        this.uniqueID = uniqueID;
     }
 
     public String getURLPath() { return urlPath; }
     public ExtendedJSONObject getPayload() { return payload; }
+    public int getUniqueID() { return uniqueID; }
 }

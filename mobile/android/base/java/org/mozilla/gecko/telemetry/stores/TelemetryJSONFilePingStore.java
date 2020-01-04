@@ -15,8 +15,8 @@ import org.json.JSONObject;
 import org.mozilla.gecko.sync.ExtendedJSONObject;
 import org.mozilla.gecko.sync.NonObjectJSONException;
 import org.mozilla.gecko.telemetry.TelemetryPing;
-import org.mozilla.gecko.telemetry.TelemetryPingFromStore;
 import org.mozilla.gecko.util.FileUtils;
+import org.mozilla.gecko.util.StringUtils;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -53,7 +53,8 @@ import java.util.regex.Pattern;
 
 
 public class TelemetryJSONFilePingStore implements TelemetryPingStore {
-    private static final String LOGTAG = "Gecko" + TelemetryJSONFilePingStore.class.getSimpleName();
+    private static final String LOGTAG = StringUtils.safeSubstring(
+            "Gecko" + TelemetryJSONFilePingStore.class.getSimpleName(), 0, 23);
 
     @VisibleForTesting static final int MAX_PING_COUNT = 40; 
 
@@ -88,7 +89,7 @@ public class TelemetryJSONFilePingStore implements TelemetryPingStore {
     }
 
     @Override
-    public void storePing(final long uniqueID, final TelemetryPing ping) throws IOException {
+    public void storePing(final TelemetryPing ping) throws IOException {
         final String output;
         try {
             output = new JSONObject()
@@ -100,7 +101,7 @@ public class TelemetryJSONFilePingStore implements TelemetryPingStore {
             throw new IOException("Unable to create JSON to store to disk");
         }
 
-        final FileOutputStream outputStream = new FileOutputStream(getPingFile(uniqueID), false);
+        final FileOutputStream outputStream = new FileOutputStream(getPingFile(ping.getUniqueID()), false);
         blockForLockAndWriteFileAndCloseStream(outputStream, output);
     }
 
@@ -140,9 +141,9 @@ public class TelemetryJSONFilePingStore implements TelemetryPingStore {
     }
 
     @Override
-    public ArrayList<TelemetryPingFromStore> getAllPings() {
+    public ArrayList<TelemetryPing> getAllPings() {
         final File[] files = storeDir.listFiles(new PingFileFilter());
-        final ArrayList<TelemetryPingFromStore> out = new ArrayList<>(files.length);
+        final ArrayList<TelemetryPing> out = new ArrayList<>(files.length);
         for (final File file : files) {
             final FileInputStream inputStream;
             try {
@@ -175,7 +176,7 @@ public class TelemetryJSONFilePingStore implements TelemetryPingStore {
                     throw new IllegalStateException("These files are already filtered - did not expect to see " +
                             "an invalid ID in these files");
                 }
-                out.add(new TelemetryPingFromStore(url, payload, id));
+                out.add(new TelemetryPing(url, payload, id));
             } catch (final IOException | JSONException | NonObjectJSONException e) {
                 Log.w(LOGTAG, "Bad json in ping. Ignoring.");
                 continue;

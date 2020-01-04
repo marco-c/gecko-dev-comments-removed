@@ -8,11 +8,12 @@ package org.mozilla.gecko.telemetry.stores;
 
 import android.os.Parcelable;
 import org.mozilla.gecko.telemetry.TelemetryPing;
-import org.mozilla.gecko.telemetry.TelemetryPingFromStore;
 
 import java.io.IOException;
-import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
+
+
 
 
 
@@ -24,7 +25,7 @@ public interface TelemetryPingStore extends Parcelable {
     
 
 
-    ArrayList<TelemetryPingFromStore> getAllPings();
+    List<TelemetryPing> getAllPings();
 
     
 
@@ -32,8 +33,7 @@ public interface TelemetryPingStore extends Parcelable {
 
 
 
-
-    void storePing(long uniqueID, TelemetryPing ping) throws IOException;
+    void storePing(TelemetryPing ping) throws IOException;
 
     
 

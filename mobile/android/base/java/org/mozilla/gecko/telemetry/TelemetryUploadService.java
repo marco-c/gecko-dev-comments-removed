@@ -25,8 +25,8 @@ import org.mozilla.gecko.util.StringUtils;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.security.GeneralSecurityException;
-import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 
@@ -79,7 +79,7 @@ public class TelemetryUploadService extends IntentService {
 
 
     private static boolean uploadPendingPingsFromStore(final Context context, final TelemetryPingStore store) {
-        final ArrayList<TelemetryPingFromStore> pingsToUpload = store.getAllPings();
+        final List<TelemetryPing> pingsToUpload = store.getAllPings();
         if (pingsToUpload.isEmpty()) {
             return true;
         }
@@ -87,16 +87,16 @@ public class TelemetryUploadService extends IntentService {
         final String serverSchemeHostPort = getServerSchemeHostPort(context);
         final HashSet<Integer> successfulUploadIDs = new HashSet<>(pingsToUpload.size()); 
         final PingResultDelegate delegate = new PingResultDelegate(successfulUploadIDs);
-        for (final TelemetryPingFromStore ping : pingsToUpload) {
-            
-            if (delegate.hadConnectionError()) {
-                break;
-            }
-
+        for (final TelemetryPing ping : pingsToUpload) {
             
             delegate.setPingID(ping.getUniqueID());
             final String url = serverSchemeHostPort + "/" + ping.getURLPath();
             uploadPayload(url, ping.getPayload(), delegate);
+
+            
+            if (delegate.hadConnectionError()) {
+                break;
+            }
         }
 
         final boolean wereAllUploadsSuccessful = !delegate.hadConnectionError();

@@ -79,8 +79,7 @@ import org.mozilla.gecko.tabs.TabHistoryFragment;
 import org.mozilla.gecko.tabs.TabHistoryPage;
 import org.mozilla.gecko.tabs.TabsPanel;
 import org.mozilla.gecko.telemetry.TelemetryDispatcher;
-import org.mozilla.gecko.telemetry.TelemetryUploadService;
-import org.mozilla.gecko.telemetry.pingbuilders.TelemetryCorePingBuilder;
+import org.mozilla.gecko.telemetry.UploadTelemetryCorePingCallback;
 import org.mozilla.gecko.toolbar.AutocompleteHandler;
 import org.mozilla.gecko.toolbar.BrowserToolbar;
 import org.mozilla.gecko.toolbar.BrowserToolbar.TabEditingState;
@@ -169,7 +168,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -3868,6 +3866,10 @@ public class BrowserApp extends GeckoApp
     @Override
     public int getLayout() { return R.layout.gecko_app; }
 
+    public TelemetryDispatcher getTelemetryDispatcher() {
+        return mTelemetryDispatcher;
+    }
+
     
     @RobocopTarget
     public ReadingListHelper getReadingListHelper() {
@@ -3943,66 +3945,6 @@ public class BrowserApp extends GeckoApp
         
         
         mDynamicToolbar.setTemporarilyVisible(false, VisibilityTransition.IMMEDIATE);
-    }
-
-    private static class UploadTelemetryCorePingCallback implements SearchEngineManager.SearchEngineCallback {
-        private final WeakReference<BrowserApp> activityWeakReference;
-
-        public UploadTelemetryCorePingCallback(final BrowserApp activity) {
-            this.activityWeakReference = new WeakReference<>(activity);
-        }
-
-        
-        @Override
-        public void execute(final org.mozilla.gecko.search.SearchEngine engine) {
-            
-            if (this.activityWeakReference.get() == null) {
-                return;
-            }
-
-            
-            
-            
-            
-            ThreadUtils.postToBackgroundThread(new Runnable() {
-                @WorkerThread
-                @Override
-                public void run() {
-                    final BrowserApp activity = activityWeakReference.get();
-                    if (activity == null) {
-                        return;
-                    }
-
-                    final GeckoProfile profile = activity.getProfile();
-                    if (!TelemetryUploadService.isUploadEnabledByProfileConfig(activity, profile)) {
-                        Log.d(LOGTAG, "Core ping upload disabled by profile config. Returning.");
-                        return;
-                    }
-
-                    final String clientID;
-                    try {
-                        clientID = profile.getClientId();
-                    } catch (final IOException e) {
-                        Log.w(LOGTAG, "Unable to get client ID to generate core ping: " + e);
-                        return;
-                    }
-
-                    
-                    final SharedPreferences sharedPrefs = GeckoSharedPrefs.forProfileName(activity, profile.getName());
-                    final TelemetryCorePingBuilder pingBuilder = new TelemetryCorePingBuilder(activity)
-                            .setClientID(clientID)
-                            .setDefaultSearchEngine(TelemetryCorePingBuilder.getEngineIdentifier(engine))
-                            .setProfileCreationDate(TelemetryCorePingBuilder.getProfileCreationDate(activity, profile))
-                            .setSequenceNumber(TelemetryCorePingBuilder.getAndIncrementSequenceNumberSync(sharedPrefs));
-                    final String distributionId = sharedPrefs.getString(DistributionStoreCallback.PREF_DISTRIBUTION_ID, null);
-                    if (distributionId != null) {
-                        pingBuilder.setOptDistributionID(distributionId);
-                    }
-
-                    activity.mTelemetryDispatcher.queuePingForUpload(activity, pingBuilder);
-                }
-            });
-        }
     }
 
     public static interface TabStripInterface {
