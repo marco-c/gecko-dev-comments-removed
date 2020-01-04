@@ -70,12 +70,6 @@ install npm
 # enough X to run `make check` and do a PGO build
 install Xvfb
 install xvinfo
-
-# required for building OS X tools
-install patch
-install libuuid-devel
-install openssl-static
-install cmake
 run
 EOF
 
@@ -250,7 +244,7 @@ EOF
 peep install -r requirements.txt
 
 # TC-VCS
-npm install -g taskcluster-vcs@2.3.8
+npm install -g taskcluster-vcs@2.3.12
 
 # note that TC will replace workspace with a cache mount; there's no sense
 # creating anything inside there
