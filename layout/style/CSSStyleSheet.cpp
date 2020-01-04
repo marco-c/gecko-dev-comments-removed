@@ -925,7 +925,9 @@ CSSStyleSheet::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const
     
     
     
-    if (s->mInner->mSheets[0] == s) {
+    
+    
+    if (s->mInner->mSheets.LastElement() == s) {
       n += s->mInner->SizeOfIncludingThis(aMallocSizeOf);
     }
 
