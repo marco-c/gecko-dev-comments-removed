@@ -245,20 +245,8 @@ js::MarkWellKnownSymbols(JSTracer* trc)
 void
 JSRuntime::sweepAtoms()
 {
-    if (!atoms_)
-        return;
-
-    for (AtomSet::Enum e(*atoms_); !e.empty(); e.popFront()) {
-        AtomStateEntry entry = e.front();
-        JSAtom* atom = entry.asPtrUnbarriered();
-        bool isDying = IsAboutToBeFinalizedUnbarriered(&atom);
-
-        
-        MOZ_ASSERT_IF(hasContexts() && entry.isPinned(), !isDying);
-
-        if (isDying)
-            e.removeFront();
-    }
+    if (atoms_)
+        atoms_->sweep();
 }
 
 bool

@@ -12,8 +12,10 @@
 #include "jsalloc.h"
 
 #include "gc/Barrier.h"
+#include "gc/Marking.h"
 #include "gc/Rooting.h"
 #include "js/GCAPI.h"
+#include "js/GCHashTable.h"
 #include "vm/CommonPropertyNames.h"
 
 class JSAtom;
@@ -76,6 +78,11 @@ class AtomStateEntry
 
     JSAtom* asPtr() const;
     JSAtom* asPtrUnbarriered() const;
+
+    bool needsSweep() {
+        JSAtom* atom = asPtrUnbarriered();
+        return gc::IsAboutToBeFinalizedUnbarriered(&atom);
+    }
 };
 
 struct AtomHasher
@@ -111,7 +118,7 @@ struct AtomHasher
     static void rekey(AtomStateEntry& k, const AtomStateEntry& newKey) { k = newKey; }
 };
 
-typedef HashSet<AtomStateEntry, AtomHasher, SystemAllocPolicy> AtomSet;
+using AtomSet = js::GCHashSet<AtomStateEntry, AtomHasher, SystemAllocPolicy>;
 
 
 
