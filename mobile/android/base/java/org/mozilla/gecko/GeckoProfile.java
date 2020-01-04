@@ -256,6 +256,9 @@ public final class GeckoProfile {
 
         
         synchronized (sProfileCache) {
+            
+            final boolean init = profileDir != null && profileDir.mkdirs();
+
             GeckoProfile profile = sProfileCache.get(profileName);
             if (profile == null) {
                 try {
@@ -264,33 +267,37 @@ public final class GeckoProfile {
                     
                     throw new RuntimeException(e);
                 }
-
                 sProfileCache.put(profileName, profile);
-                return profile;
-            }
 
-            if (profileDir == null) {
+            } else if (profileDir != null) {
                 
-                return profile;
-            }
-
-            try {
-                if (profile.getDir().getCanonicalPath().equals(profileDir.getCanonicalPath())) {
-                    
-                    return profile;
+                boolean consistent = false;
+                try {
+                    consistent = profile.getDir().getCanonicalPath().equals(
+                            profileDir.getCanonicalPath());
+                } catch (final IOException e) {
                 }
-            } catch (final IOException e) {
-            }
 
-            if (sAcceptDirectoryChanges && profileDir.isDirectory()) {
-                if (AppConstants.RELEASE_BUILD) {
-                    Log.e(LOGTAG, "Release build trying to switch out profile dir. This is an error, but let's do what we can.");
+                if (!consistent) {
+                    if (!sAcceptDirectoryChanges || !profileDir.isDirectory()) {
+                        throw new IllegalStateException(
+                                "Refusing to reuse profile with a different directory.");
+                    }
+
+                    if (AppConstants.RELEASE_BUILD) {
+                        Log.e(LOGTAG, "Release build trying to switch out profile dir. " +
+                                      "This is an error, but let's do what we can.");
+                    }
+                    profile.setDir(profileDir);
                 }
-                profile.setDir(profileDir);
-                return profile;
             }
 
-            throw new IllegalStateException("Refusing to reuse profile with a different directory.");
+            if (init) {
+                
+                profile.enqueueInitialization(profileDir);
+            }
+
+            return profile;
         }
     }
 
