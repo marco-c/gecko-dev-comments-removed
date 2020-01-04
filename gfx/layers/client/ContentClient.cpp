@@ -14,6 +14,7 @@
 #include "gfxUtils.h"                   
 #include "ipc/ShadowLayers.h"           
 #include "mozilla/ArrayUtils.h"         
+#include "mozilla/Maybe.h"
 #include "mozilla/gfx/2D.h"             
 #include "mozilla/gfx/BasePoint.h"      
 #include "mozilla/gfx/BaseSize.h"       
@@ -570,33 +571,30 @@ ContentClientDoubleBuffered::FinalizeFrame(const nsIntRegion& aRegionToDraw)
 
   
   
-  if (!mFrontClient->Lock(OpenMode::OPEN_READ_ONLY)) {
+  TextureClientAutoLock frontLock(mFrontClient, OpenMode::OPEN_READ_ONLY);
+  if (!frontLock.Succeeded()) {
     return;
   }
-  if (mFrontClientOnWhite &&
-      !mFrontClientOnWhite->Lock(OpenMode::OPEN_READ_ONLY)) {
-    mFrontClient->Unlock();
-    return;
-  }
-  {
-    
-    
-    
-    RefPtr<SourceSurface> surf = mFrontClient->BorrowDrawTarget()->Snapshot();
-    RefPtr<SourceSurface> surfOnWhite = mFrontClientOnWhite
-      ? mFrontClientOnWhite->BorrowDrawTarget()->Snapshot()
-      : nullptr;
-    SourceRotatedBuffer frontBuffer(surf,
-                                    surfOnWhite,
-                                    mFrontBufferRect,
-                                    mFrontBufferRotation);
-    UpdateDestinationFrom(frontBuffer, updateRegion);
+  Maybe<TextureClientAutoLock> frontOnWhiteLock;
+  if (mFrontClientOnWhite) {
+    frontOnWhiteLock.emplace(mFrontClientOnWhite, OpenMode::OPEN_READ_ONLY);
+    if (!frontOnWhiteLock->Succeeded()) {
+      return;
+    }
   }
 
-  mFrontClient->Unlock();
-  if (mFrontClientOnWhite) {
-    mFrontClientOnWhite->Unlock();
-  }
+  
+  
+  
+  RefPtr<SourceSurface> surf = mFrontClient->BorrowDrawTarget()->Snapshot();
+  RefPtr<SourceSurface> surfOnWhite = mFrontClientOnWhite
+    ? mFrontClientOnWhite->BorrowDrawTarget()->Snapshot()
+    : nullptr;
+  SourceRotatedBuffer frontBuffer(surf,
+                                  surfOnWhite,
+                                  mFrontBufferRect,
+                                  mFrontBufferRotation);
+  UpdateDestinationFrom(frontBuffer, updateRegion);
 }
 
 void
