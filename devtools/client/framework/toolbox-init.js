@@ -29,44 +29,56 @@ if (url.search.length > 1) {
   
   let tool = url.searchParams.get("tool");
 
-  if (url.searchParams.has("target")) {
-    
-    
-
-    
-    let iframe = host.wrappedJSObject ? host.wrappedJSObject.target
-                                      : host.target;
-    
-    
-    iframe = XPCNativeWrapper(iframe);
-    iframe.QueryInterface(Ci.nsIFrameLoaderOwner);
-
-    if (iframe) {
+  Task.spawn(function* () {
+    let target;
+    if (url.searchParams.has("target")) {
       
       
-      let tab = { linkedBrowser: iframe };
 
-      if (!DebuggerServer.initialized) {
-        DebuggerServer.init();
-        DebuggerServer.addBrowserActors();
-      }
-      let client = new DebuggerClient(DebuggerServer.connectPipe());
-      Task.spawn(function* () {
+      
+      let iframe = host.wrappedJSObject ? host.wrappedJSObject.target
+                                        : host.target;
+      
+      
+      iframe = XPCNativeWrapper(iframe);
+      iframe.QueryInterface(Ci.nsIFrameLoaderOwner);
+
+      if (iframe) {
+        
+        
+        let tab = { linkedBrowser: iframe };
+
+        if (!DebuggerServer.initialized) {
+          DebuggerServer.init();
+          DebuggerServer.addBrowserActors();
+        }
+        let client = new DebuggerClient(DebuggerServer.connectPipe());
+
         yield client.connect();
         
         let response = yield client.getTab({ tab });
         let form = response.tab;
-        let target = yield TargetFactory.forRemoteTab({client, form, chrome: false});
-        let options = { customIframe: host };
-        yield gDevTools.showToolbox(target, tool, Toolbox.HostType.CUSTOM, options);
-      });
+        target = yield TargetFactory.forRemoteTab({client, form, chrome: false});
+      } else {
+        alert("Unable to find the targetted iframe to debug");
+      }
+    } else {
+      target = yield targetFromURL(url);
     }
-  } else {
-    targetFromURL(url).then(target => {
-      let options = { customIframe: host };
-      return gDevTools.showToolbox(target, tool, Toolbox.HostType.CUSTOM, options);
-    }).then(null, e => {
-      window.alert("Unable to start the toolbox:" + e.message);
+    let options = { customIframe: host };
+    let toolbox = yield gDevTools.showToolbox(target, tool, Toolbox.HostType.CUSTOM, options);
+
+    
+    
+    function onUnload() {
+      window.removeEventListener("unload", onUnload);
+      toolbox.destroy();
+    }
+    window.addEventListener("unload", onUnload, true);
+    toolbox.on("destroy", function () {
+      window.removeEventListener("unload", onUnload);
     });
-  }
+  }).catch(error => {
+    console.error("Exception while loading the toolbox", error);
+  });
 }
