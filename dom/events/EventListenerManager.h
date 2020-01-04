@@ -342,7 +342,7 @@ public:
 
     
     if (mNoListenerForEvent == aEvent->mMessage &&
-        (mNoListenerForEvent != NS_USER_DEFINED_EVENT ||
+        (mNoListenerForEvent != eUnidentifiedEvent ||
          mNoListenerForEventAtom == aEvent->userType)) {
       return;
     }

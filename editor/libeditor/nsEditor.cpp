@@ -5155,7 +5155,7 @@ nsEditor::IsAcceptableInputEvent(nsIDOMEvent* aEvent)
   bool needsWidget = false;
   WidgetGUIEvent* widgetGUIEvent = nullptr;
   switch (widgetEvent->mMessage) {
-    case NS_USER_DEFINED_EVENT:
+    case eUnidentifiedEvent:
       
       
       return false;
