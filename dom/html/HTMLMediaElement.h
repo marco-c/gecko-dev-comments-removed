@@ -316,6 +316,7 @@ public:
 
   bool RemoveDecoderPrincipalChangeObserver(DecoderPrincipalChangeObserver* aObserver);
 
+  class StreamCaptureTrackSource;
   class DecoderCaptureTrackSource;
   class CaptureStreamTrackSourceGetter;
 
@@ -658,6 +659,9 @@ public:
     return mAutoplayEnabled;
   }
 
+  already_AddRefed<DOMMediaStream> CaptureAudio(ErrorResult& aRv,
+                                                MediaStreamGraph* aGraph = nullptr);
+
   already_AddRefed<DOMMediaStream> MozCaptureStream(ErrorResult& aRv,
                                                     MediaStreamGraph* aGraph = nullptr);
 
@@ -784,6 +788,23 @@ protected:
     nsCOMPtr<nsITimer> mTimer;
   };
 
+  
+  
+  struct OutputMediaStream {
+    OutputMediaStream();
+    ~OutputMediaStream();
+
+    RefPtr<DOMMediaStream> mStream;
+    bool mFinishWhenEnded;
+    bool mCapturingAudioOnly;
+    bool mCapturingDecoder;
+    bool mCapturingMediaStream;
+
+    
+    TrackID mNextAvailableTrackID;
+    nsTArray<Pair<nsString, RefPtr<MediaInputPort>>> mTrackPorts;
+  };
+
   nsresult PlayInternal(bool aCallerIsChrome);
 
   
@@ -840,13 +861,6 @@ protected:
 
 
 
-
-  void ConstructMediaTracks();
-
-  
-
-
-
   void NotifyMediaStreamTrackAdded(const RefPtr<MediaStreamTrack>& aTrack);
 
   
@@ -862,7 +876,30 @@ protected:
 
 
 
+  void SetCapturedOutputStreamsEnabled(bool aEnabled);
+
+  
+
+
+
+
+  void AddCaptureMediaTrackToOutputStream(MediaTrack* aTrack,
+                                          OutputMediaStream& aOutputStream,
+                                          bool aAsyncAddtrack = true);
+
+  
+
+
+
+
+
+
+
+
+
+
   already_AddRefed<DOMMediaStream> CaptureStreamInternal(bool aFinishWhenEnded,
+                                                         bool aCaptureAudio,
                                                          MediaStreamGraph* aGraph = nullptr);
 
   
@@ -1259,10 +1296,6 @@ protected:
 
   
   
-  struct OutputMediaStream {
-    RefPtr<DOMMediaStream> mStream;
-    bool mFinishWhenEnded;
-  };
   nsTArray<OutputMediaStream> mOutputStreams;
 
   
