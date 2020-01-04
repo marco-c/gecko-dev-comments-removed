@@ -200,6 +200,7 @@ class CompileInfo
                 InlineScriptTree* inlineScriptTree)
       : script_(script), fun_(fun), osrPc_(osrPc), constructing_(constructing),
         analysisMode_(analysisMode), scriptNeedsArgsObj_(scriptNeedsArgsObj),
+        hadOverflowBailout_(script->hadOverflowBailout()),
         inlineScriptTree_(inlineScriptTree)
     {
         MOZ_ASSERT_IF(osrPc, JSOp(*osrPc) == JSOP_LOOPENTRY);
@@ -548,6 +549,12 @@ class CompileInfo
         return true;
     }
 
+    
+    
+    bool hadOverflowBailout() const {
+        return hadOverflowBailout_;
+    }
+
   private:
     unsigned nimplicit_;
     unsigned nargs_;
@@ -567,6 +574,10 @@ class CompileInfo
     
     
     bool scriptNeedsArgsObj_;
+
+    
+    
+    bool hadOverflowBailout_;
 
     InlineScriptTree* inlineScriptTree_;
 };

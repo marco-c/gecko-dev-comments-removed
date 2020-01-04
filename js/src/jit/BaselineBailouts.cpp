@@ -1911,6 +1911,8 @@ jit::FinishBailoutToBaseline(BaselineBailoutInfo* bailoutInfo)
 
       
       case Bailout_OverflowInvalidate:
+        outerScript->setHadOverflowBailout();
+        
       case Bailout_NonStringInputInvalidate:
       case Bailout_DoubleOutput:
       case Bailout_ObjectIdentityOrTypeGuard:

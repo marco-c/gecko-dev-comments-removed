@@ -3013,6 +3013,18 @@ RangeAnalysis::truncate()
                 continue;
 
             
+            
+            
+            
+            
+            
+            
+            
+            
+            if (kind <= MDefinition::TruncateAfterBailouts && block->info().hadOverflowBailout())
+                continue;
+
+            
             if (!iter->needTruncation(kind))
                 continue;
 
