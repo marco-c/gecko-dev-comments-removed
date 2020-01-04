@@ -336,8 +336,8 @@ int EchoCancellationImpl::Initialize() {
 }
 
 void EchoCancellationImpl::SetExtraOptions(const Config& config) {
-  extended_filter_enabled_ = true; 
-  delay_agnostic_enabled_ = true; 
+  extended_filter_enabled_ = config.Get<ExtendedFilter>().enabled;
+  delay_agnostic_enabled_ = config.Get<DelayAgnostic>().enabled;
   Configure();
 }
 
