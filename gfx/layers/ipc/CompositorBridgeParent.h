@@ -17,9 +17,6 @@
 
 #include <stdint.h>                     
 #include "Layers.h"                     
-#include "base/basictypes.h"            
-#include "base/platform_thread.h"       
-#include "base/thread.h"                
 #include "mozilla/Assertions.h"         
 #include "mozilla/Attributes.h"         
 #include "mozilla/Maybe.h"
@@ -68,6 +65,7 @@ class LayerManagerComposite;
 class LayerTransactionParent;
 class PAPZParent;
 class CrossProcessCompositorBridgeParent;
+class CompositorThreadHolder;
 
 struct ScopedLayerTreeRegistration
 {
@@ -79,28 +77,6 @@ struct ScopedLayerTreeRegistration
 
 private:
   uint64_t mLayersId;
-};
-
-class CompositorThreadHolder final
-{
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING_WITH_MAIN_THREAD_DESTRUCTION(CompositorThreadHolder)
-
-public:
-  CompositorThreadHolder();
-
-  base::Thread* GetCompositorThread() const {
-    return mCompositorThread;
-  }
-
-private:
-  ~CompositorThreadHolder();
-
-  base::Thread* const mCompositorThread;
-
-  static base::Thread* CreateCompositorThread();
-  static void DestroyCompositorThread(base::Thread* aCompositorThread);
-
-  friend class CompositorBridgeParent;
 };
 
 
@@ -231,6 +207,7 @@ class CompositorBridgeParent final : public PCompositorBridgeParent,
                                      public ShmemAllocator
 {
   friend class CompositorVsyncScheduler;
+  friend class CompositorThreadHolder;
 
 public:
   explicit CompositorBridgeParent(widget::CompositorWidgetProxy* aWidget,
@@ -406,19 +383,6 @@ public:
   
 
 
-  static void StartUp();
-
-  
-
-
-
-
-
-  static void ShutDown();
-
-  
-
-
 
 
 
@@ -584,7 +548,22 @@ protected:
 
   static CompositorBridgeParent* RemoveCompositor(uint64_t id);
 
-   
+  
+
+
+  static void Initialize();
+
+  
+
+
+  static void Shutdown();
+
+  
+
+
+  static void FinishShutdown();
+
+  
 
 
 

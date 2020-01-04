@@ -38,6 +38,7 @@
 #include "mozilla/layers/Compositor.h"  
 #include "mozilla/layers/CompositorLRU.h"  
 #include "mozilla/layers/CompositorOGL.h"  
+#include "mozilla/layers/CompositorThread.h"
 #include "mozilla/layers/CompositorTypes.h"
 #include "mozilla/layers/FrameUniformityData.h"
 #include "mozilla/layers/ImageBridgeParent.h"
@@ -89,11 +90,6 @@
 #include "LayerScope.h"
 
 namespace mozilla {
-
-namespace gfx {
-
-void ReleaseVRManagerParentSingleton();
-} 
 
 namespace layers {
 
@@ -155,99 +151,30 @@ CompositorBridgeParent::ForEachIndirectLayerTree(const Lambda& aCallback)
 
 
 typedef map<uint64_t,CompositorBridgeParent*> CompositorMap;
-static CompositorMap* sCompositorMap;
+static StaticAutoPtr<CompositorMap> sCompositorMap;
 
-static void CreateCompositorMap()
+void
+CompositorBridgeParent::Initialize()
 {
+  EnsureLayerTreeMapReady();
+
   MOZ_ASSERT(!sCompositorMap);
   sCompositorMap = new CompositorMap;
 }
 
-static void DestroyCompositorMap()
+void
+CompositorBridgeParent::Shutdown()
 {
   MOZ_ASSERT(sCompositorMap);
   MOZ_ASSERT(sCompositorMap->empty());
-  delete sCompositorMap;
   sCompositorMap = nullptr;
 }
 
-
-void ReleaseImageBridgeParentSingleton();
-
-CompositorThreadHolder::CompositorThreadHolder()
-  : mCompositorThread(CreateCompositorThread())
+void
+CompositorBridgeParent::FinishShutdown()
 {
-  MOZ_ASSERT(NS_IsMainThread());
-  MOZ_COUNT_CTOR(CompositorThreadHolder);
-}
-
-CompositorThreadHolder::~CompositorThreadHolder()
-{
-  MOZ_ASSERT(NS_IsMainThread());
-
-  MOZ_COUNT_DTOR(CompositorThreadHolder);
-
-  DestroyCompositorThread(mCompositorThread);
-}
-
-static StaticRefPtr<CompositorThreadHolder> sCompositorThreadHolder;
-static bool sFinishedCompositorShutDown = false;
-
-CompositorThreadHolder* GetCompositorThreadHolder()
-{
-  return sCompositorThreadHolder;
-}
-
- Thread*
-CompositorThreadHolder::CreateCompositorThread()
-{
-  MOZ_ASSERT(NS_IsMainThread());
-
-  MOZ_ASSERT(!sCompositorThreadHolder, "The compositor thread has already been started!");
-
-  Thread* compositorThread = new Thread("Compositor");
-
-  Thread::Options options;
   
-
-
-  options.transient_hang_timeout = 128; 
-  
-
-
-  options.permanent_hang_timeout = 2048; 
-#if defined(_WIN32)
-  
-
-
-  options.message_loop_type = MessageLoop::TYPE_UI;
-#endif
-
-  if (!compositorThread->StartWithOptions(options)) {
-    delete compositorThread;
-    return nullptr;
-  }
-
-  EnsureLayerTreeMapReady();
-  CreateCompositorMap();
-
-  return compositorThread;
-}
-
- void
-CompositorThreadHolder::DestroyCompositorThread(Thread* aCompositorThread)
-{
-  MOZ_ASSERT(NS_IsMainThread());
-
-  MOZ_ASSERT(!sCompositorThreadHolder, "We shouldn't be destroying the compositor thread yet.");
-
-  DestroyCompositorMap();
-  delete aCompositorThread;
-  sFinishedCompositorShutDown = true;
-}
-
-static Thread* CompositorThread() {
-  return sCompositorThreadHolder ? sCompositorThreadHolder->GetCompositorThread() : nullptr;
+  sIndirectLayerTrees.clear();
 }
 
 static void SetThreadPriority()
@@ -625,35 +552,6 @@ CompositorVsyncScheduler::DispatchVREvents(TimeStamp aVsyncTimestamp)
   vm->NotifyVsync(aVsyncTimestamp);
 }
 
-void CompositorBridgeParent::StartUp()
-{
-  MOZ_ASSERT(NS_IsMainThread(), "Should be on the main Thread!");
-  MOZ_ASSERT(!sCompositorThreadHolder, "The compositor thread has already been started!");
-
-  sCompositorThreadHolder = new CompositorThreadHolder();
-}
-
-void CompositorBridgeParent::ShutDown()
-{
-  MOZ_ASSERT(NS_IsMainThread(), "Should be on the main Thread!");
-  MOZ_ASSERT(sCompositorThreadHolder, "The compositor thread has already been shut down!");
-
-  ReleaseImageBridgeParentSingleton();
-  ReleaseVRManagerParentSingleton();
-  MediaSystemResourceService::Shutdown();
-
-  sCompositorThreadHolder = nullptr;
-
-  
-  
-  while (!sFinishedCompositorShutDown) {
-    NS_ProcessNextEvent(nullptr, true);
-  }
-
-  
-  sIndirectLayerTrees.clear();
-}
-
 MessageLoop* CompositorBridgeParent::CompositorLoop()
 {
   return CompositorThread() ? CompositorThread()->message_loop() : nullptr;
@@ -701,7 +599,7 @@ CompositorBridgeParent::CompositorBridgeParent(widget::CompositorWidgetProxy* aW
   , mRootLayerTreeID(AllocateLayerTreeId())
   , mOverrideComposeReadiness(false)
   , mForceCompositionTask(nullptr)
-  , mCompositorThreadHolder(sCompositorThreadHolder)
+  , mCompositorThreadHolder(CompositorThreadHolder::GetSingleton())
   , mCompositorScheduler(nullptr)
 #if defined(XP_WIN) || defined(MOZ_WIDGET_GTK)
   , mLastPluginUpdateLayerTreeId(0)
@@ -1882,7 +1780,7 @@ InsertVsyncProfilerMarker(TimeStamp aVsyncTimestamp)
 CompositorBridgeParent::PostInsertVsyncProfilerMarker(TimeStamp aVsyncTimestamp)
 {
   
-  if (profiler_is_active() && sCompositorThreadHolder) {
+  if (profiler_is_active() && CompositorThreadHolder::IsActive()) {
     CompositorLoop()->PostTask(
       NewRunnableFunction(InsertVsyncProfilerMarker, aVsyncTimestamp));
   }
@@ -2072,7 +1970,9 @@ public:
   virtual void DeallocShmem(mozilla::ipc::Shmem& aShmem) override;
 
 protected:
-  void OnChannelConnected(int32_t pid) override { mCompositorThreadHolder = sCompositorThreadHolder; }
+  void OnChannelConnected(int32_t pid) override {
+    mCompositorThreadHolder = CompositorThreadHolder::GetSingleton();
+  }
 private:
   
   virtual ~CrossProcessCompositorBridgeParent();
