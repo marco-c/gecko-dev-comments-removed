@@ -205,6 +205,10 @@ static DllBlockInfo sWindowsDllBlocklist[] = {
   { "ss2osd.dll", ALL_VERSIONS },
   { "ss2devprops.dll", ALL_VERSIONS },
 
+  
+  { "nhasusstrixosd.dll", ALL_VERSIONS },
+  { "nhasusstrixdevprops.dll", ALL_VERSIONS },
+
   { nullptr, 0 }
 };
 
