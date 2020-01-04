@@ -224,6 +224,14 @@ protected:
     nsTArray<nsTArray<Cell>> mCells;
   };
 
+  struct GridItemInfo {
+    explicit GridItemInfo(const GridArea& aArea) : mArea(aArea) {}
+    GridArea mArea;
+#ifdef DEBUG
+    nsIFrame* mFrame;
+#endif
+  };
+
   enum LineRangeSide {
     eLineRangeSideStart, eLineRangeSideEnd
   };
@@ -432,15 +440,6 @@ protected:
     return areas && areas->Contains(aName);
   }
 
-  NS_DECLARE_FRAME_PROPERTY(GridAreaProperty, DeleteValue<GridArea>)
-
-  
-
-
-  static GridArea* GetGridAreaForChild(nsIFrame* aChild) {
-    return static_cast<GridArea*>(aChild->Properties().Get(GridAreaProperty()));
-  }
-
   
 
 
@@ -472,6 +471,16 @@ protected:
 #endif 
 
 private:
+  
+
+
+  nsTArray<GridItemInfo> mGridItems;
+
+  
+
+
+  nsTArray<GridItemInfo> mAbsPosItems;
+
   
 
 
