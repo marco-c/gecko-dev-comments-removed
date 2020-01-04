@@ -88,6 +88,29 @@ public:
   
 
 
+  static void SetLogFile(const char* aFilename);
+
+  
+
+
+
+
+
+  static uint32_t GetLogFile(char *aBuffer, size_t aLength);
+
+  
+
+
+  static void SetAddTimestamp(bool aAddTimestamp);
+
+  
+
+
+  static void SetIsSync(bool aIsSync);
+
+  
+
+
   bool ShouldLog(LogLevel aLevel) const { return mLevel >= aLevel; }
 
   

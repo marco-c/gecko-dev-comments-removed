@@ -9,8 +9,16 @@
 #include "mozilla/Logging.h"
 #include "mozilla/Preferences.h"
 #include "nsString.h"
+#include "nsXULAppAPI.h"
+#include "base/process_util.h"
 
 static const char kLoggingPrefPrefix[] = "logging.";
+static const char kLoggingConfigPrefPrefix[] = "logging.config";
+static const int  kLoggingConfigPrefixLen = sizeof(kLoggingConfigPrefPrefix) - 1;
+static const char kLoggingPrefClearOnStartup[] = "logging.config.clear_on_startup";
+static const char kLoggingPrefLogFile[] = "logging.config.LOG_FILE";
+static const char kLoggingPrefAddTimestamp[] = "logging.config.add_timestamp";
+static const char kLoggingPrefSync[] = "logging.config.sync";
 
 namespace mozilla {
 
@@ -20,26 +28,77 @@ NS_IMPL_ISUPPORTS(LogModulePrefWatcher, nsIObserver)
 
 
 
-void
+
+
+
+
+void ResetExistingPrefs()
+{
+  uint32_t count;
+  char** names;
+  nsresult rv = Preferences::GetRootBranch()->
+      GetChildList(kLoggingPrefPrefix, &count, &names);
+  if (NS_SUCCEEDED(rv) && count) {
+    for (size_t i = 0; i < count; i++) {
+      
+      Preferences::ClearUser(names[i]);
+    }
+    NS_FREE_XPCOM_ALLOCATED_POINTER_ARRAY(count, names);
+  }
+}
+
+
+
+
+
+static void
 LoadPrefValue(const char* aName)
 {
   LogLevel logLevel = LogLevel::Disabled;
 
+  nsresult rv;
   int32_t prefLevel = 0;
-  nsAutoCString prefStr;
+  nsAutoCString prefValue;
+
+  if (strncmp(aName, kLoggingConfigPrefPrefix, kLoggingConfigPrefixLen) == 0) {
+    nsAutoCString prefName(aName);
+
+    if (prefName.EqualsLiteral(kLoggingPrefLogFile)) {
+      rv = Preferences::GetCString(aName, &prefValue);
+      
+      if (NS_FAILED(rv) || prefValue.IsEmpty()) {
+        LogModule::SetLogFile(nullptr);
+        return;
+      }
+
+      
+      if (!strstr(prefValue.get(), "%PID")) {
+        prefValue.Append("%PID");
+      }
+
+      LogModule::SetLogFile(prefValue.BeginReading());
+    } else if (prefName.EqualsLiteral(kLoggingPrefAddTimestamp)) {
+      bool addTimestamp = Preferences::GetBool(aName, false);
+      LogModule::SetAddTimestamp(addTimestamp);
+    } else if (prefName.EqualsLiteral(kLoggingPrefSync)) {
+      bool sync = Preferences::GetBool(aName, false);
+      LogModule::SetIsSync(sync);
+    }
+    return;
+  }
 
   if (Preferences::GetInt(aName, &prefLevel) == NS_OK) {
     logLevel = ToLogLevel(prefLevel);
-  } else if (Preferences::GetCString(aName, &prefStr) == NS_OK) {
-    if (prefStr.LowerCaseEqualsLiteral("error")) {
+  } else if (Preferences::GetCString(aName, &prefValue) == NS_OK) {
+    if (prefValue.LowerCaseEqualsLiteral("error")) {
       logLevel = LogLevel::Error;
-    } else if (prefStr.LowerCaseEqualsLiteral("warning")) {
+    } else if (prefValue.LowerCaseEqualsLiteral("warning")) {
       logLevel = LogLevel::Warning;
-    } else if (prefStr.LowerCaseEqualsLiteral("info")) {
+    } else if (prefValue.LowerCaseEqualsLiteral("info")) {
       logLevel = LogLevel::Info;
-    } else if (prefStr.LowerCaseEqualsLiteral("debug")) {
+    } else if (prefValue.LowerCaseEqualsLiteral("debug")) {
       logLevel = LogLevel::Debug;
-    } else if (prefStr.LowerCaseEqualsLiteral("verbose")) {
+    } else if (prefValue.LowerCaseEqualsLiteral("verbose")) {
       logLevel = LogLevel::Verbose;
     }
   }
@@ -76,6 +135,13 @@ LogModulePrefWatcher::RegisterPrefWatcher()
 {
   RefPtr<LogModulePrefWatcher> prefWatcher = new LogModulePrefWatcher();
   Preferences::AddStrongObserver(prefWatcher, kLoggingPrefPrefix);
+
+  nsCOMPtr<nsIObserverService> observerService =
+    mozilla::services::GetObserverService();
+  if (observerService && XRE_IsParentProcess()) {
+    observerService->AddObserver(prefWatcher, "browser-delayed-startup-finished", false);
+  }
+
   LoadExistingPrefs();
 }
 
@@ -86,6 +152,16 @@ LogModulePrefWatcher::Observe(nsISupports* aSubject, const char* aTopic,
   if (strcmp(NS_PREFBRANCH_PREFCHANGE_TOPIC_ID, aTopic) == 0) {
     NS_LossyConvertUTF16toASCII prefName(aData);
     LoadPrefValue(prefName.get());
+  } else if (strcmp("browser-delayed-startup-finished", aTopic) == 0) {
+    bool clear = Preferences::GetBool(kLoggingPrefClearOnStartup, true);
+    if (clear) {
+      ResetExistingPrefs();
+    }
+    nsCOMPtr<nsIObserverService> observerService =
+      mozilla::services::GetObserverService();
+    if (observerService) {
+      observerService->RemoveObserver(this, "browser-delayed-startup-finished");
+    }
   }
 
   return NS_OK;

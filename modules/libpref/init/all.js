@@ -1295,6 +1295,11 @@ pref("security.fileuri.strict_origin_policy", true);
 
 
 
+pref("logging.config.clear_on_startup", true);
+
+
+
+
 
 
 
