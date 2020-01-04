@@ -253,9 +253,7 @@ class TestNrSocket : public NrSocketBase {
         nr_transport_addr remote_address_;
 
       private:
-        ~PortMapping() {
-          external_socket_->close();
-        }
+        ~PortMapping(){}
 
         
         
