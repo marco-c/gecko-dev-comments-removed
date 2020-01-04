@@ -72,12 +72,6 @@ ServiceWorkerUnregisterJob2::AsyncExecute()
   
   if (!registration->IsControllingDocuments()) {
     
-    if (!registration->mPendingUninstall) {
-      Finish(NS_OK);
-      return;
-    }
-
-    
     swm->RemoveRegistration(registration);
   }
 
