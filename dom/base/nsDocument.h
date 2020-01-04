@@ -735,7 +735,7 @@ public:
 
   virtual void SetContentType(const nsAString& aContentType) override;
 
-  virtual nsresult SetBaseURI(nsIURI* aURI) override;
+  virtual void SetBaseURI(nsIURI* aURI) override;
 
   
 

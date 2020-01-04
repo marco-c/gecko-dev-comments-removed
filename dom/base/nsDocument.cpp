@@ -3574,11 +3574,11 @@ nsIDocument::GetBaseURI(bool aTryUseXHRDocBaseURI) const
   return uri.forget();
 }
 
-nsresult
+void
 nsDocument::SetBaseURI(nsIURI* aURI)
 {
   if (!aURI && !mDocumentBaseURI) {
-    return NS_OK;
+    return;
   }
 
   
@@ -3586,25 +3586,7 @@ nsDocument::SetBaseURI(nsIURI* aURI)
     bool equalBases = false;
     mDocumentBaseURI->Equals(aURI, &equalBases);
     if (equalBases) {
-      return NS_OK;
-    }
-  }
-
-  
-  nsCOMPtr<nsIContentSecurityPolicy> csp;
-  nsresult rv = NodePrincipal()->GetCsp(getter_AddRefs(csp));
-  NS_ENSURE_SUCCESS(rv, rv);
-  if (csp && aURI) {
-    bool permitsBaseURI = false;
-
-    
-    
-    
-    rv = csp->Permits(aURI, nsIContentSecurityPolicy::BASE_URI_DIRECTIVE,
-                      true, &permitsBaseURI);
-    NS_ENSURE_SUCCESS(rv, rv);
-    if (!permitsBaseURI) {
-      return NS_OK;
+      return;
     }
   }
 
@@ -3614,8 +3596,6 @@ nsDocument::SetBaseURI(nsIURI* aURI)
     mDocumentBaseURI = nullptr;
   }
   RefreshLinkHrefs();
-
-  return NS_OK;
 }
 
 void

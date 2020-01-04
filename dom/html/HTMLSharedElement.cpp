@@ -17,6 +17,7 @@
 #include "nsRuleData.h"
 #include "nsMappedAttributes.h"
 #include "nsContentUtils.h"
+#include "nsIContentSecurityPolicy.h"
 #include "nsIURI.h"
 
 NS_IMPL_NS_NEW_HTML_ELEMENT(Shared)
@@ -177,11 +178,27 @@ SetBaseURIUsingFirstBaseWithHref(nsIDocument* aDocument, nsIContent* aMustMatch)
         aDocument->GetFallbackBaseURI());
 
       
-      nsresult rv = aDocument->SetBaseURI(newBaseURI);
-      aDocument->SetChromeXHRDocBaseURI(nullptr);
+      nsCOMPtr<nsIContentSecurityPolicy> csp;
+      nsresult rv = aDocument->NodePrincipal()->GetCsp(getter_AddRefs(csp));
+      NS_ASSERTION(NS_SUCCEEDED(rv), "Getting CSP Failed");
+      
+      
       if (NS_FAILED(rv)) {
-        aDocument->SetBaseURI(nullptr);
+        newBaseURI = nullptr;
       }
+      if (csp && newBaseURI) {
+        
+        
+        
+        bool cspPermitsBaseURI = true;
+        rv = csp->Permits(newBaseURI, nsIContentSecurityPolicy::BASE_URI_DIRECTIVE,
+                          true, &cspPermitsBaseURI);
+        if (NS_FAILED(rv) || !cspPermitsBaseURI) {
+          newBaseURI = nullptr;
+        }
+      }
+      aDocument->SetBaseURI(newBaseURI);
+      aDocument->SetChromeXHRDocBaseURI(nullptr);
       return;
     }
   }
