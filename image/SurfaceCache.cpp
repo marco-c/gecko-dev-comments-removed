@@ -280,11 +280,11 @@ public:
   }
 
   Pair<already_AddRefed<CachedSurface>, MatchType>
-  LookupBestMatch(const SurfaceKey& aSurfaceKey)
+  LookupBestMatch(const SurfaceKey& aIdealKey)
   {
     
     RefPtr<CachedSurface> exactMatch;
-    mSurfaces.Get(aSurfaceKey, getter_AddRefs(exactMatch));
+    mSurfaces.Get(aIdealKey, getter_AddRefs(exactMatch));
     if (exactMatch && exactMatch->IsDecoded()) {
       return MakePair(exactMatch.forget(), MatchType::EXACT);
     }
@@ -292,26 +292,26 @@ public:
     
     RefPtr<CachedSurface> bestMatch;
     for (auto iter = ConstIter(); !iter.Done(); iter.Next()) {
-      CachedSurface* surface = iter.UserData();
-      const SurfaceKey& idealKey = aSurfaceKey;
+      CachedSurface* current = iter.UserData();
+      const SurfaceKey& currentKey = current->GetSurfaceKey();
 
       
-      if (surface->IsPlaceholder()) {
+      if (current->IsPlaceholder()) {
         continue;
       }
       
-      if (aSurfaceKey.AnimationTime() != idealKey.AnimationTime() ||
-          aSurfaceKey.SVGContext() != idealKey.SVGContext()) {
+      if (currentKey.AnimationTime() != aIdealKey.AnimationTime() ||
+          currentKey.SVGContext() != aIdealKey.SVGContext()) {
         continue;
       }
       
-      if (aSurfaceKey.Flags() != idealKey.Flags()) {
+      if (currentKey.Flags() != aIdealKey.Flags()) {
         continue;
       }
       
       
       if (!bestMatch) {
-        bestMatch = surface;
+        bestMatch = current;
         continue;
       }
 
@@ -319,11 +319,11 @@ public:
 
       
       bool bestMatchIsDecoded = bestMatch->IsDecoded();
-      if (bestMatchIsDecoded && !surface->IsDecoded()) {
+      if (bestMatchIsDecoded && !current->IsDecoded()) {
         continue;
       }
-      if (!bestMatchIsDecoded && surface->IsDecoded()) {
-        bestMatch = surface;
+      if (!bestMatchIsDecoded && current->IsDecoded()) {
+        bestMatch = current;
         continue;
       }
 
@@ -332,20 +332,20 @@ public:
       
       
       
-      int64_t idealArea = AreaOfIntSize(idealKey.Size());
-      int64_t surfaceArea = AreaOfIntSize(aSurfaceKey.Size());
+      int64_t idealArea = AreaOfIntSize(aIdealKey.Size());
+      int64_t currentArea = AreaOfIntSize(currentKey.Size());
       int64_t bestMatchArea = AreaOfIntSize(bestMatchKey.Size());
 
       
       if (bestMatchArea < idealArea) {
-        if (surfaceArea > bestMatchArea) {
-          bestMatch = surface;
+        if (currentArea > bestMatchArea) {
+          bestMatch = current;
         }
         continue;
       }
       
-      if (idealArea <= surfaceArea && surfaceArea < bestMatchArea) {
-        bestMatch = surface;
+      if (idealArea <= currentArea && currentArea < bestMatchArea) {
+        bestMatch = current;
         continue;
       }
       
