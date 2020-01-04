@@ -48,6 +48,8 @@ public:
                     gfx::SurfaceFormat aFormat,
                     gfx::IntSize aSize,
                     TextureFlags aFlags,
+                    uint32_t aShrinkTimeoutMsec,
+                    uint32_t aClearTimeoutMsec,
                     uint32_t aInitialPoolSize,
                     uint32_t aPoolUnusedSize,
                     TextureForwarder* aAllocator);
@@ -115,6 +117,9 @@ private:
   void AllocateTextureClient();
 
   
+  void ResetTimers();
+
+  
   LayersBackend mBackend;
 
   
@@ -125,6 +130,14 @@ private:
 
   
   const TextureFlags mFlags;
+
+  
+  
+  uint32_t mShrinkTimeoutMsec;
+
+  
+  
+  uint32_t mClearTimeoutMsec;
 
   
   
@@ -145,7 +158,8 @@ private:
   std::stack<RefPtr<TextureClient> > mTextureClients;
 
   std::list<RefPtr<TextureClient>> mTextureClientsDeferred;
-  RefPtr<nsITimer> mTimer;
+  RefPtr<nsITimer> mShrinkTimer;
+  RefPtr<nsITimer> mClearTimer;
   
   TextureForwarder* mSurfaceAllocator;
 
