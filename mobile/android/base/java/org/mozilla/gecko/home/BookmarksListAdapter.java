@@ -10,6 +10,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 import org.mozilla.gecko.R;
+import org.mozilla.gecko.db.BrowserContract;
 import org.mozilla.gecko.db.BrowserContract.Bookmarks;
 
 import android.content.Context;
@@ -18,16 +19,19 @@ import android.database.Cursor;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.view.View;
+import android.widget.TextView;
 
 
 
 
 class BookmarksListAdapter extends MultiTypeCursorAdapter {
-    private static final int VIEW_TYPE_ITEM = 0;
+    private static final int VIEW_TYPE_BOOKMARK_ITEM = 0;
     private static final int VIEW_TYPE_FOLDER = 1;
+    private static final int VIEW_TYPE_SCREENSHOT = 2;
 
-    private static final int[] VIEW_TYPES = new int[] { VIEW_TYPE_ITEM, VIEW_TYPE_FOLDER };
-    private static final int[] LAYOUT_TYPES = new int[] { R.layout.bookmark_item_row, R.layout.bookmark_folder_row };
+    private static final int[] VIEW_TYPES = new int[] { VIEW_TYPE_BOOKMARK_ITEM, VIEW_TYPE_FOLDER, VIEW_TYPE_SCREENSHOT };
+    private static final int[] LAYOUT_TYPES =
+            new int[] { R.layout.bookmark_item_row, R.layout.bookmark_folder_row, R.layout.bookmark_screenshot_row };
 
     public enum RefreshType implements Parcelable {
         PARENT,
@@ -105,11 +109,23 @@ class BookmarksListAdapter extends MultiTypeCursorAdapter {
     }
 
     
+
+
+
+
+    public enum FolderType {
+        BOOKMARKS,
+        SCREENSHOTS,
+    }
+
+    
     
     private final LinkedList<FolderInfo> mParentStack;
 
     
     private OnRefreshFolderListener mListener;
+
+    private FolderType openFolderType = FolderType.BOOKMARKS;
 
     public BookmarksListAdapter(Context context, Cursor cursor, List<FolderInfo> parentStack) {
         
@@ -177,6 +193,7 @@ class BookmarksListAdapter extends MultiTypeCursorAdapter {
     }
 
     public void swapCursor(Cursor c, FolderInfo folderInfo, RefreshType refreshType) {
+        updateOpenFolderType(folderInfo);
         switch(refreshType) {
             case PARENT:
                 if (!isCurrentFolder(folderInfo)) {
@@ -197,6 +214,14 @@ class BookmarksListAdapter extends MultiTypeCursorAdapter {
         swapCursor(c);
     }
 
+    private void updateOpenFolderType(final FolderInfo folderInfo) {
+        if (folderInfo.id == Bookmarks.FIXED_SCREENSHOT_FOLDER_ID) {
+            openFolderType = FolderType.SCREENSHOTS;
+        } else {
+            openFolderType = FolderType.BOOKMARKS;
+        }
+    }
+
     @Override
     public int getItemViewType(int position) {
         
@@ -209,13 +234,17 @@ class BookmarksListAdapter extends MultiTypeCursorAdapter {
             position--;
         }
 
+        if (openFolderType == FolderType.SCREENSHOTS) {
+            return VIEW_TYPE_SCREENSHOT;
+        }
+
         final Cursor c = getCursor(position);
         if (c.getInt(c.getColumnIndexOrThrow(Bookmarks.TYPE)) == Bookmarks.TYPE_FOLDER) {
             return VIEW_TYPE_FOLDER;
         }
 
         
-        return VIEW_TYPE_ITEM;
+        return VIEW_TYPE_BOOKMARK_ITEM;
     }
 
     
@@ -244,6 +273,8 @@ class BookmarksListAdapter extends MultiTypeCursorAdapter {
             return res.getString(R.string.bookmarks_folder_toolbar);
         } else if (guid.equals(Bookmarks.UNFILED_FOLDER_GUID)) {
             return res.getString(R.string.bookmarks_folder_unfiled);
+        } else if (guid.equals(Bookmarks.SCREENSHOT_FOLDER_GUID)) {
+            return res.getString(R.string.screenshot_folder_label_in_bookmarks);
         }
 
         
@@ -284,7 +315,11 @@ class BookmarksListAdapter extends MultiTypeCursorAdapter {
             cursor = getCursor(position);
         }
 
-        if (viewType == VIEW_TYPE_ITEM) {
+        if (viewType == VIEW_TYPE_SCREENSHOT) {
+            
+            ((TextView) view.findViewById(R.id.title)).setText(cursor.getString(cursor.getColumnIndexOrThrow(BrowserContract.UrlAnnotations.URL)));
+            ((TextView) view.findViewById(R.id.date)).setText(Long.toString(cursor.getLong(cursor.getColumnIndexOrThrow(BrowserContract.UrlAnnotations.DATE_CREATED))));
+        } else if (viewType == VIEW_TYPE_BOOKMARK_ITEM) {
             final TwoLinePageRow row = (TwoLinePageRow) view;
             row.updateFromCursor(cursor);
         } else {
