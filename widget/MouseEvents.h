@@ -456,7 +456,7 @@ private:
     , mIsMomentum(false)
     , mIsNoLineOrPageDelta(false)
     , mLineOrPageDeltaX(0)
-    , lineOrPageDeltaY(0)
+    , mLineOrPageDeltaY(0)
     , mScrollType(SCROLL_DEFAULT)
     , overflowDeltaX(0.0)
     , overflowDeltaY(0.0)
@@ -480,7 +480,7 @@ public:
     , mIsMomentum(false)
     , mIsNoLineOrPageDelta(false)
     , mLineOrPageDeltaX(0)
-    , lineOrPageDeltaY(0)
+    , mLineOrPageDeltaY(0)
     , mScrollType(SCROLL_DEFAULT)
     , overflowDeltaX(0.0)
     , overflowDeltaY(0.0)
@@ -544,27 +544,27 @@ public:
   
   
   int32_t mLineOrPageDeltaX;
-  int32_t lineOrPageDeltaY;
+  int32_t mLineOrPageDeltaY;
 
   
   
   int32_t GetPreferredIntDelta()
   {
-    if (!mLineOrPageDeltaX && !lineOrPageDeltaY) {
+    if (!mLineOrPageDeltaX && !mLineOrPageDeltaY) {
       return 0;
     }
-    if (lineOrPageDeltaY && !mLineOrPageDeltaX) {
-      return lineOrPageDeltaY;
+    if (mLineOrPageDeltaY && !mLineOrPageDeltaX) {
+      return mLineOrPageDeltaY;
     }
-    if (mLineOrPageDeltaX && !lineOrPageDeltaY) {
+    if (mLineOrPageDeltaX && !mLineOrPageDeltaY) {
       return mLineOrPageDeltaX;
     }
-    if ((mLineOrPageDeltaX < 0 && lineOrPageDeltaY > 0) ||
-        (mLineOrPageDeltaX > 0 && lineOrPageDeltaY < 0)) {
+    if ((mLineOrPageDeltaX < 0 && mLineOrPageDeltaY > 0) ||
+        (mLineOrPageDeltaX > 0 && mLineOrPageDeltaY < 0)) {
       return 0; 
     }
-    return (Abs(mLineOrPageDeltaX) > Abs(lineOrPageDeltaY)) ?
-             mLineOrPageDeltaX : lineOrPageDeltaY;
+    return (Abs(mLineOrPageDeltaX) > Abs(mLineOrPageDeltaY)) ?
+             mLineOrPageDeltaX : mLineOrPageDeltaY;
   }
 
   
@@ -619,7 +619,7 @@ public:
     mIsMomentum = aEvent.mIsMomentum;
     mIsNoLineOrPageDelta = aEvent.mIsNoLineOrPageDelta;
     mLineOrPageDeltaX = aEvent.mLineOrPageDeltaX;
-    lineOrPageDeltaY = aEvent.lineOrPageDeltaY;
+    mLineOrPageDeltaY = aEvent.mLineOrPageDeltaY;
     mScrollType = aEvent.mScrollType;
     overflowDeltaX = aEvent.overflowDeltaX;
     overflowDeltaY = aEvent.overflowDeltaY;
