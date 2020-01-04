@@ -9,6 +9,7 @@
 #include "nsCOMPtr.h"
 #include "nsIURI.h"
 #include "nsHashKeys.h"
+#include "mozilla/Unused.h"
 
 
 
@@ -45,7 +46,9 @@ public:
             return mozilla::HashString(EmptyCString());
         }
         nsAutoCString spec;
-        const_cast<nsIURI*>(aKey)->GetSpec(spec);
+        
+        
+        mozilla::Unused << const_cast<nsIURI*>(aKey)->GetSpec(spec);
         return mozilla::HashString(spec);
     }
 

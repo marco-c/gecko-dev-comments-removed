@@ -2213,14 +2213,11 @@ nsHttpHandler::SpeculativeConnectInternal(nsIURI *aURI,
     nsCOMPtr<nsIObserverService> obsService = services::GetObserverService();
     if (mDebugObservations && obsService) {
         
-        nsAutoCString spec;
-        aURI->GetSpec(spec);
-        spec.Append(anonymous ? NS_LITERAL_CSTRING("[A]") : NS_LITERAL_CSTRING("[.]"));
-        obsService->NotifyObservers(nullptr,
-                                    "speculative-connect-request",
-                                    NS_ConvertUTF8toUTF16(spec).get());
+        
+        obsService->NotifyObservers(nullptr, "speculative-connect-request",
+                                    nullptr);
         if (!IsNeckoChild() && gNeckoParent) {
-            Unused << gNeckoParent->SendSpeculativeConnectRequest(spec);
+            Unused << gNeckoParent->SendSpeculativeConnectRequest();
         }
     }
 

@@ -239,7 +239,10 @@ nsViewSourceChannel::GetURI(nsIURI* *aURI)
     }
 
     nsAutoCString spec;
-    uri->GetSpec(spec);
+    rv = uri->GetSpec(spec);
+    if (NS_FAILED(rv)) {
+      return rv;
+    }
 
     
 
