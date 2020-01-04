@@ -152,3 +152,15 @@ function stepStart(nsteps) {
   }
 }
 
+function waitForAnimationFrames(frameCount) {
+  return new Promise(function(resolve, reject) {
+    function handleFrame() {
+      if (--frameCount <= 0) {
+        resolve();
+      } else {
+        window.requestAnimationFrame(handleFrame); 
+      }
+    }
+    window.requestAnimationFrame(handleFrame);
+  });
+}
