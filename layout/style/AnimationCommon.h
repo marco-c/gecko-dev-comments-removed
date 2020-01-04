@@ -123,17 +123,6 @@ public:
   
   
   
-  
-  
-  
-  
-  AnimationCollection*
-  GetAnimationsForCompositor(const nsIFrame* aFrame,
-                             nsCSSProperty aProperty);
-
-  
-  
-  
   AnimationCollection*
   GetAnimationCollection(const nsIFrame* aFrame);
 
