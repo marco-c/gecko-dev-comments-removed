@@ -579,7 +579,11 @@ pref("media.video_stats.enabled", true);
 pref("layers.amd-switchable-gfx.enabled", true);
 
 
+pref("layers.async-pan-zoom.enabled", false);
+
+#ifdef MOZ_WIDGET_UIKIT
 pref("layers.async-pan-zoom.enabled", true);
+#endif
 
 
 pref("layout.event-regions.enabled", false);
@@ -5272,8 +5276,6 @@ pref("browser.addon-watch.interval", 15000);
 pref("browser.addon-watch.interval", -1);
 #endif
 pref("browser.addon-watch.ignore", "[\"mochikit@mozilla.org\",\"special-powers@mozilla.org\",\"fxdevtools-adapters@mozilla.org\",\"fx-devtools\"]");
-
-pref("browser.addon-watch.percentage-limit", 5);
 
 
 pref("browser.search.log", false);
