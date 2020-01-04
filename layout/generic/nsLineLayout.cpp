@@ -1192,20 +1192,18 @@ nsLineLayout::AllowForStartMargin(PerFrameData* pfd,
     
     
     pfd->mMargin.IStart(lineWM) = 0;
-  } else {
+  } else if (NS_UNCONSTRAINEDSIZE == aReflowState.ComputedISize()) {
     NS_WARN_IF_FALSE(NS_UNCONSTRAINEDSIZE != aReflowState.AvailableISize(),
                      "have unconstrained inline-size; this should only result "
                      "from very large sizes, not attempts at intrinsic "
                      "inline-size calculation");
-    if (NS_UNCONSTRAINEDSIZE == aReflowState.ComputedISize()) {
-      
-      
-      
-      
-      WritingMode wm = aReflowState.GetWritingMode();
-      aReflowState.AvailableISize() -=
-          pfd->mMargin.ConvertTo(wm, lineWM).IStart(wm);
-    }
+    
+    
+    
+    
+    WritingMode wm = aReflowState.GetWritingMode();
+    aReflowState.AvailableISize() -=
+        pfd->mMargin.ConvertTo(wm, lineWM).IStart(wm);
   }
 }
 
