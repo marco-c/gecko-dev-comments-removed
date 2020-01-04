@@ -5120,7 +5120,9 @@ ChooseScaleAndSetTransform(FrameLayerBuilder* aLayerBuilder,
     
     
     
-    if (aTransform) {
+    
+    
+    if (aTransform && !gfxPrefs::LayersTilesEnabled()) {
       RestrictScaleToMaxLayerSize(scale, aVisibleRect, aContainerFrame, aLayer);
     }
   } else {
