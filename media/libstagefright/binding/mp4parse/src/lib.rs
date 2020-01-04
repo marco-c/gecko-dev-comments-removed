@@ -8,7 +8,7 @@
 #[cfg(feature = "fuzz")]
 extern crate afl;
 
-mod byteorder; 
+extern crate byteorder;
 use byteorder::ReadBytesExt;
 use std::io::{Read, Take};
 use std::cmp;
