@@ -6,15 +6,15 @@
 
 const {Cc, Ci} = require("chrome");
 const {angleUtils} = require("devtools/client/shared/css-angle");
-const {colorUtils} = require("devtools/shared/css-color");
-const {getCSSLexer} = require("devtools/shared/css-lexer");
+const {colorUtils} = require("devtools/shared/css/color");
+const {getCSSLexer} = require("devtools/shared/css/lexer");
 const EventEmitter = require("devtools/shared/event-emitter");
 const {
   ANGLE_TAKING_FUNCTIONS,
   BEZIER_KEYWORDS,
   COLOR_TAKING_FUNCTIONS,
   CSS_TYPES
-} = require("devtools/shared/css-properties-db");
+} = require("devtools/shared/css/properties-db");
 
 const HTML_NS = "http://www.w3.org/1999/xhtml";
 
