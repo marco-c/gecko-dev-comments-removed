@@ -94,6 +94,10 @@ WebBrowserPersistDocumentChild::RecvPWebBrowserPersistResourcesConstructor(PWebB
         static_cast<WebBrowserPersistResourcesChild*>(aActor);
     nsresult rv = mDocument->ReadResources(visitor);
     if (NS_FAILED(rv)) {
+        
+        
+        
+        
         visitor->EndVisit(mDocument, rv);
     }
     return true;

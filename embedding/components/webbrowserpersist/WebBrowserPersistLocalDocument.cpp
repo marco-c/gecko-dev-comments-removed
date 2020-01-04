@@ -1318,7 +1318,10 @@ WebBrowserPersistLocalDocument::ReadResources(nsIWebBrowserPersistResourceVisito
         }
     }
     reader->DocumentDone(rv);
-    return rv;
+    
+    
+    
+    return NS_OK;
 }
 
 static uint32_t
