@@ -49,7 +49,7 @@
 
 #define MAX_CACHE_SIZE_KIBIBYTES 2048 // 2 MiB
 
-PRLogModuleInfo* gStorageLog = nullptr;
+mozilla::LazyLogModule gStorageLog("mozStorage");
 
 
 
@@ -691,9 +691,6 @@ Connection::initializeInternal()
 
   
   sharedDBMutex.initWithMutex(sqlite3_db_mutex(mDBConn));
-
-  if (!gStorageLog)
-    gStorageLog = ::PR_NewLogModule("mozStorage");
 
   
   
