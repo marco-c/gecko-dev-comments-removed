@@ -242,6 +242,10 @@ class ICEntry
 
         
         
+        Kind_WarmupCounter,
+
+        
+        
         Kind_StackCheck,
 
         

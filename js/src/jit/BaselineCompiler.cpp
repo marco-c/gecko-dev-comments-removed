@@ -702,6 +702,10 @@ BaselineCompiler::emitInterruptCheck()
     return true;
 }
 
+typedef bool (*IonCompileScriptForBaselineFn)(JSContext*, BaselineFrame*, jsbytecode*);
+static const VMFunction IonCompileScriptForBaselineInfo =
+    FunctionInfo<IonCompileScriptForBaselineFn>(IonCompileScriptForBaseline);
+
 bool
 BaselineCompiler::emitWarmUpCounterIncrement(bool allowOsr)
 {
@@ -710,6 +714,8 @@ BaselineCompiler::emitWarmUpCounterIncrement(bool allowOsr)
 
     if (!ionCompileable_ && !ionOSRCompileable_)
         return true;
+
+    frame.assertSyncedStack();
 
     Register scriptReg = R2.scratchReg();
     Register countReg = R0.scratchReg();
@@ -744,10 +750,27 @@ BaselineCompiler::emitWarmUpCounterIncrement(bool allowOsr)
                    ImmPtr(ION_COMPILING_SCRIPT), &skipCall);
 
     
-    ICWarmUpCounter_Fallback::Compiler stubCompiler(cx);
-    if (!emitNonOpIC(stubCompiler.getStub(&stubSpace_)))
-        return false;
+    if (JSOp(*pc) == JSOP_LOOPENTRY) {
+        
+        
+        ICWarmUpCounter_Fallback::Compiler stubCompiler(cx);
+        if (!emitNonOpIC(stubCompiler.getStub(&stubSpace_)))
+            return false;
+    } else {
+        
+        
+        
+        prepareVMCall();
 
+        masm.Push(ImmPtr(pc));
+        masm.PushBaselineFramePtr(BaselineFrameReg, R0.scratchReg());
+
+        if (!callVM(IonCompileScriptForBaselineInfo))
+            return false;
+
+        
+        icEntries_.back().setFakeKind(ICEntry::Kind_WarmupCounter);
+    }
     masm.bind(&skipCall);
 
     return true;

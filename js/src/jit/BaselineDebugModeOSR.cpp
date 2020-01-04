@@ -101,6 +101,7 @@ struct DebugModeOSREntry
 
     bool needsRecompileInfo() const {
         return frameKind == ICEntry::Kind_CallVM ||
+               frameKind == ICEntry::Kind_WarmupCounter ||
                frameKind == ICEntry::Kind_StackCheck ||
                frameKind == ICEntry::Kind_EarlyStackCheck ||
                frameKind == ICEntry::Kind_DebugTrap ||
@@ -298,6 +299,8 @@ ICEntryKindToString(ICEntry::Kind kind)
         return "non-op IC";
       case ICEntry::Kind_CallVM:
         return "callVM";
+      case ICEntry::Kind_WarmupCounter:
+        return "warmup counter";
       case ICEntry::Kind_StackCheck:
         return "stack check";
       case ICEntry::Kind_EarlyStackCheck:
@@ -347,6 +350,7 @@ PatchBaselineFramesForDebugMode(JSContext* cx, const Debugger::ExecutionObservab
                                 const ActivationIterator& activation,
                                 DebugModeOSREntryVector& entries, size_t* start)
 {
+    
     
     
     
@@ -467,6 +471,7 @@ PatchBaselineFramesForDebugMode(JSContext* cx, const Debugger::ExecutionObservab
                 
                 MOZ_ASSERT_IF(script->baselineScript()->hasDebugInstrumentation(),
                               kind == ICEntry::Kind_CallVM ||
+                              kind == ICEntry::Kind_WarmupCounter ||
                               kind == ICEntry::Kind_StackCheck ||
                               kind == ICEntry::Kind_EarlyStackCheck ||
                               kind == ICEntry::Kind_DebugTrap ||
@@ -475,6 +480,7 @@ PatchBaselineFramesForDebugMode(JSContext* cx, const Debugger::ExecutionObservab
                 
                 MOZ_ASSERT_IF(!script->baselineScript()->hasDebugInstrumentation(),
                               kind == ICEntry::Kind_CallVM ||
+                              kind == ICEntry::Kind_WarmupCounter||
                               kind == ICEntry::Kind_StackCheck ||
                               kind == ICEntry::Kind_EarlyStackCheck);
 
@@ -501,6 +507,18 @@ PatchBaselineFramesForDebugMode(JSContext* cx, const Debugger::ExecutionObservab
                 
                 ICEntry& callVMEntry = bl->callVMEntryFromPCOffset(pcOffset);
                 recompInfo->resumeAddr = bl->returnAddressForIC(callVMEntry);
+                popFrameReg = false;
+                break;
+              }
+
+              case ICEntry::Kind_WarmupCounter: {
+                
+                
+                
+                
+                
+                ICEntry& warmupCountEntry = bl->warmupCountICEntry();
+                recompInfo->resumeAddr = bl->returnAddressForIC(warmupCountEntry);
                 popFrameReg = false;
                 break;
               }
@@ -956,6 +974,7 @@ IsReturningFromCallVM(BaselineDebugModeOSRInfo* info)
     
     
     return info->frameKind == ICEntry::Kind_CallVM ||
+           info->frameKind == ICEntry::Kind_WarmupCounter ||
            info->frameKind == ICEntry::Kind_StackCheck ||
            info->frameKind == ICEntry::Kind_EarlyStackCheck;
 }
@@ -973,6 +992,7 @@ EmitBranchIsReturningFromCallVM(MacroAssembler& masm, Register entry, Label* lab
 {
     
     EmitBranchICEntryKind(masm, entry, ICEntry::Kind_CallVM, label);
+    EmitBranchICEntryKind(masm, entry, ICEntry::Kind_WarmupCounter, label);
     EmitBranchICEntryKind(masm, entry, ICEntry::Kind_StackCheck, label);
     EmitBranchICEntryKind(masm, entry, ICEntry::Kind_EarlyStackCheck, label);
 }
