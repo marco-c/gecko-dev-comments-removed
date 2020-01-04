@@ -232,16 +232,16 @@ function MoveHoles(sparse, sparseLen, dense, denseLen) {
 function MergeSort(array, len, comparefn) {
     
     
-    var denseList = new List();
-    var denseLen = 0;
-
-    
-    
     
     
     if (IsPossiblyWrappedTypedArray(array)) {
         return callFunction(TypedArraySort, array, comparefn);
     }
+
+    
+    
+    var denseList = new List();
+    var denseLen = 0;
 
     for (var i = 0; i < len; i++) {
         if (i in array)
@@ -253,7 +253,7 @@ function MergeSort(array, len, comparefn) {
 
     
     
-    if (len < 24) {
+    if (denseLen < 24) {
         InsertionSort(denseList, 0, denseLen - 1, comparefn);
         MoveHoles(array, len, denseList, denseLen);
         return array;
