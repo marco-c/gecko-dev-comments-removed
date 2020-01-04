@@ -146,10 +146,6 @@ public:
 
   void SetCompositor(Compositor* aCompositor);
 
-  
-  
-  static void RecycleCallback(TextureHost* textureHost, void* aClosure);
-
 protected:
 
   CSSToParentLayerScale2D mFrameResolution;
