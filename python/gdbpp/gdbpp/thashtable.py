@@ -96,16 +96,27 @@ class thashtable_printer(object):
 
     def children(self):
         table = self.value['mTable']
+
+        
         
         entryCount = table['mEntryCount']
+        if entryCount == 0:
+            return
+
+        
+        
+        
+        capacity = 1 << (table['kHashBits'] - table['mHashShift'])
+
         
         
         store = table['mEntryStore']['mEntryStore']
 
         key_field_name = self.key_field_name
 
+        seenCount = 0
         pEntry = store.cast(self.entry_type.pointer())
-        for i in range(0, int(entryCount)):
+        for i in range(0, int(capacity)):
             entry = (pEntry + i).dereference()
             
             
@@ -115,6 +126,11 @@ class thashtable_printer(object):
             yield ('%d' % i, entry[key_field_name])
             if self.is_table:
                 yield ('%d' % i, entry['mData'])
+
+            
+            seenCount += 1
+            if seenCount >= entryCount:
+                break
 
     def to_string(self):
         
