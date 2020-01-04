@@ -19,6 +19,20 @@ const MS_PER_SEC = 1000;
 
 
 
+var TIME_PRECISION = 0.0005; 
+
+
+
+
+
+function assert_times_equal(actual, expected, description) {
+  assert_approx_equals(actual, expected, TIME_PRECISION, description);
+}
+
+
+
+
+
 
 
 
