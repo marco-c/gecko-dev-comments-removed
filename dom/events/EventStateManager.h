@@ -861,6 +861,7 @@ private:
                                bool dispatchedToContentProcess);
 
   int32_t     mLockCursor;
+  bool mLastFrameConsumedSetCursor;
 
   
   
