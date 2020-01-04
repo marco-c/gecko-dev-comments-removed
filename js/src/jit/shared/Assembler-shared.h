@@ -424,8 +424,11 @@ struct AbsoluteLabel : public LabelBase
 
 
 
+
+
 class CodeLabel
 {
+    
     
     AbsoluteLabel dest_;
 
@@ -923,6 +926,8 @@ class AssemblerShared
     Vector<AsmJSAbsoluteLink, 0, SystemAllocPolicy> asmJSAbsoluteLinks_;
 
   protected:
+    Vector<CodeLabel, 0, SystemAllocPolicy> codeLabels_;
+
     bool enoughMemory_;
     bool embedsNurseryPointers_;
 
@@ -968,6 +973,16 @@ class AssemblerShared
     AsmJSAbsoluteLink asmJSAbsoluteLink(size_t i) const { return asmJSAbsoluteLinks_[i]; }
 
     static bool canUseInSingleByteInstruction(Register reg) { return true; }
+
+    void addCodeLabel(CodeLabel label) {
+        propagateOOM(codeLabels_.append(label));
+    }
+    size_t numCodeLabels() const {
+        return codeLabels_.length();
+    }
+    CodeLabel codeLabel(size_t i) {
+        return codeLabels_[i];
+    }
 };
 
 } 

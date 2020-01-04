@@ -1371,12 +1371,6 @@ Assembler::oom() const
            preBarriers_.oom();
 }
 
-void
-Assembler::addCodeLabel(CodeLabel label)
-{
-    propagateOOM(codeLabels_.append(label));
-}
-
 
 
 

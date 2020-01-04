@@ -231,12 +231,6 @@ AssemblerMIPSShared::oom() const
            preBarriers_.oom();
 }
 
-void
-AssemblerMIPSShared::addCodeLabel(CodeLabel label)
-{
-    propagateOOM(codeLabels_.append(label));
-}
-
 
 size_t
 AssemblerMIPSShared::size() const
