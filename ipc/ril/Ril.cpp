@@ -95,7 +95,8 @@ RilConsumer::ConnectWorkerToRIL(JSContext* aCx)
   
   Rooted<Value> val(aCx);
   if (!JS_GetProperty(aCx, workerGlobal, "postRILMessage", &val)) {
-    JS_ReportPendingException(aCx);
+    
+    
     return NS_ERROR_FAILURE;
   }
 
@@ -108,6 +109,8 @@ RilConsumer::ConnectWorkerToRIL(JSContext* aCx)
                                                  "postRILMessage",
                                                  PostRILMessage, 2, 0);
   if (NS_WARN_IF(!postRILMessage)) {
+    
+    
     return NS_ERROR_FAILURE;
   }
   return NS_OK;
@@ -246,6 +249,9 @@ RilConsumer::Receive(JSContext* aCx,
 
   Rooted<JSObject*> array(aCx, JS_NewUint8Array(aCx, aBuffer->GetSize()));
   if (NS_WARN_IF(!array)) {
+    
+    
+    JS_ClearPendingException(aCx);
     return NS_ERROR_FAILURE;
   }
   {
@@ -262,6 +268,9 @@ RilConsumer::Receive(JSContext* aCx,
 
   Rooted<Value> rval(aCx);
   JS_CallFunctionName(aCx, obj, "onRILMessage", args, &rval);
+  
+  
+  JS_ClearPendingException(aCx);
 
   return NS_OK;
 }
