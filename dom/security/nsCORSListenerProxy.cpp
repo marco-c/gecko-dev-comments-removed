@@ -1130,6 +1130,7 @@ nsCORSPreflightListener::AddResultToCache(nsIRequest *aRequest)
 
   
   
+  headerVal.Truncate();
   http->GetResponseHeader(NS_LITERAL_CSTRING("Access-Control-Allow-Methods"),
                           headerVal);
 
@@ -1160,6 +1161,7 @@ nsCORSPreflightListener::AddResultToCache(nsIRequest *aRequest)
 
   
   
+  headerVal.Truncate();
   http->GetResponseHeader(NS_LITERAL_CSTRING("Access-Control-Allow-Headers"),
                           headerVal);
 
