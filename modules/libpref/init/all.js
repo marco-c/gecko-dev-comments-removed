@@ -854,7 +854,7 @@ pref("devtools.debugger.forbid-certified-apps", true);
 pref("devtools.apps.forbidden-permissions", "embed-apps,engineering-mode,embed-widgets");
 
 
-pref("devtools.defaultColorUnit", "authored");
+pref("devtools.defaultColorUnit", "hex");
 
 
 pref("devtools.dump.emit", false);
@@ -1326,7 +1326,7 @@ pref("network.http.redirection-limit", 20);
 
 
 pref("network.http.accept-encoding", "gzip, deflate");
-pref("network.http.accept-encoding.secure", "gzip, deflate, brotli");
+pref("network.http.accept-encoding.secure", "gzip, deflate, br");
 
 pref("network.http.pipelining"      , false);
 pref("network.http.pipelining.ssl"  , false); 
