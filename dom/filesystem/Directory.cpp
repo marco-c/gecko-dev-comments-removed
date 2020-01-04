@@ -158,7 +158,6 @@ Directory::Directory(nsISupports* aParent,
                      DirectoryType aType,
                      FileSystemBase* aFileSystem)
   : mParent(aParent)
-  , mFileSystem(aFileSystem)
   , mFile(aFile)
   , mType(aType)
 {
@@ -166,6 +165,13 @@ Directory::Directory(nsISupports* aParent,
   MOZ_ASSERT(aFile);
 
   
+  if (aFileSystem) {
+    
+    
+    
+    
+    mFileSystem = aFileSystem->Clone();
+  }
 }
 
 Directory::~Directory()
