@@ -1138,11 +1138,6 @@ class MacroAssemblerX86 : public MacroAssemblerX86Shared
     
     void handleFailureWithHandlerTail(void* handler);
 
-    void makeFrameDescriptor(Register frameSizeReg, FrameType type) {
-        shll(Imm32(FRAMESIZE_SHIFT), frameSizeReg);
-        orl(Imm32(type), frameSizeReg);
-    }
-
     void callWithExitFrame(JitCode* target, Register dynStack);
 
     void branchPtrInNurseryRange(Condition cond, Register ptr, Register temp, Label* label);

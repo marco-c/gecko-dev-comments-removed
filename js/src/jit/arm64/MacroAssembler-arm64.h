@@ -2641,12 +2641,6 @@ class MacroAssemblerCompat : public vixl::MacroAssembler
     void handleFailureWithHandlerTail(void* handler);
 
     
-    void makeFrameDescriptor(Register frameSizeReg, FrameType type) {
-        lshiftPtr(Imm32(FRAMESIZE_SHIFT), frameSizeReg);
-        orPtr(Imm32(type), frameSizeReg);
-    }
-
-    
     void patchAsmJSGlobalAccess(CodeOffsetLabel patchAt, uint8_t* code,
                                 uint8_t* globalData, unsigned globalDataOffset)
     {

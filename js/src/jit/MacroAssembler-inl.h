@@ -164,6 +164,17 @@ MacroAssembler::callJit(Register callee)
     return ret;
 }
 
+void
+MacroAssembler::makeFrameDescriptor(Register frameSizeReg, FrameType type)
+{
+    
+
+    lshiftPtr(Imm32(FRAMESIZE_SHIFT), frameSizeReg);
+    
+    orPtr(Imm32(type), frameSizeReg);
+}
+
+
 
 
 

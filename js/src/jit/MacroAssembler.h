@@ -582,6 +582,10 @@ class MacroAssembler : public MacroAssemblerSpecific
     inline uint32_t callJit(Register callee);
 
     
+    
+    inline void makeFrameDescriptor(Register frameSizeReg, FrameType type);
+
+    
   public:
 
     
