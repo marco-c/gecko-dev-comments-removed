@@ -344,12 +344,26 @@ private:
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
 template <typename State, size_t InlineBufferSize = 16>
 class StreamingLexer
 {
 public:
-  explicit StreamingLexer(LexerTransition<State> aStartState)
+  StreamingLexer(LexerTransition<State> aStartState,
+                 LexerTransition<State> aTruncatedState)
     : mTransition(TerminalState::FAILURE)
+    , mTruncatedTransition(aTruncatedState)
   {
     if (!aStartState.NextStateIsTerminal() &&
         aStartState.ControlFlow() == ControlFlowStrategy::YIELD) {
@@ -361,6 +375,18 @@ public:
       
       
       MOZ_ASSERT_UNREACHABLE("Starting in a yield state");
+      return;
+    }
+
+    if (!aTruncatedState.NextStateIsTerminal() &&
+          (aTruncatedState.ControlFlow() == ControlFlowStrategy::YIELD ||
+           aTruncatedState.Buffering() == BufferingStrategy::UNBUFFERED ||
+           aTruncatedState.Size() != 0)) {
+      
+      
+      
+      
+      MOZ_ASSERT_UNREACHABLE("Truncated state makes no sense");
       return;
     }
 
@@ -416,10 +442,7 @@ public:
           
           
           
-          
-          result = SetTransition(NS_SUCCEEDED(aIterator.CompletionStatus())
-                 ? Transition::TerminateSuccess()
-                 : Transition::TerminateFailure());
+          result = Truncated(aIterator, aFunc);
           break;
 
         case SourceBufferIterator::READY:
@@ -629,6 +652,32 @@ private:
     return SetTransition(Transition::TerminateFailure());
   }
 
+  template <typename Func>
+  Maybe<LexerResult> Truncated(SourceBufferIterator& aIterator,
+                               Func aFunc)
+  {
+    
+    
+    LexerTransition<State> transition
+      = mTruncatedTransition.NextStateIsTerminal()
+      ? mTruncatedTransition
+      : aFunc(mTruncatedTransition.NextState(), nullptr, 0);
+
+    if (!transition.NextStateIsTerminal()) {
+      MOZ_ASSERT_UNREACHABLE("Truncated state didn't lead to terminal state?");
+      return SetTransition(Transition::TerminateFailure());
+    }
+
+    
+    
+    
+    if (NS_FAILED(aIterator.CompletionStatus())) {
+      return SetTransition(Transition::TerminateFailure());
+    }
+
+    return SetTransition(transition);
+  }
+
   Maybe<LexerResult> SetTransition(const LexerTransition<State>& aTransition)
   {
     
@@ -690,6 +739,7 @@ private:
 
   Vector<char, InlineBufferSize> mBuffer;
   LexerTransition<State> mTransition;
+  const LexerTransition<State> mTruncatedTransition;
   Maybe<State> mYieldingToState;
   Maybe<UnbufferedState> mUnbufferedState;
 };
