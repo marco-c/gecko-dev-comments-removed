@@ -153,44 +153,44 @@ WMFVideoMFTManager::GetMediaSubtypeGUID()
   };
 }
 
-struct D3D11BlacklistingCache
+struct D3DDLLBlacklistingCache
 {
   
   nsCString mBlacklistPref;
   
   nsCString mBlacklistedDLL;
 };
-StaticAutoPtr<D3D11BlacklistingCache> sD3D11BlacklistingCache;
+StaticAutoPtr<D3DDLLBlacklistingCache> sD3D11BlacklistingCache;
 
 
 static const nsACString&
-FindD3D11BlacklistedDLL()
+FindDXVABlacklistedDLL(StaticAutoPtr<D3DDLLBlacklistingCache>& aDLLBlacklistingCache,
+                       const char* aDLLBlacklistPrefName)
 {
   NS_ASSERTION(NS_IsMainThread(), "Must be on main thread.");
 
-  if (!sD3D11BlacklistingCache) {
+  if (!aDLLBlacklistingCache) {
     
     
-    sD3D11BlacklistingCache = new D3D11BlacklistingCache();
-    ClearOnShutdown(&sD3D11BlacklistingCache);
+    aDLLBlacklistingCache = new D3DDLLBlacklistingCache();
+    ClearOnShutdown(&aDLLBlacklistingCache);
   }
 
-  nsAdoptingCString blacklist =
-    Preferences::GetCString("media.wmf.disable-d3d11-for-dlls");
+  nsAdoptingCString blacklist = Preferences::GetCString(aDLLBlacklistPrefName);
   if (blacklist.IsEmpty()) {
     
-    sD3D11BlacklistingCache->mBlacklistPref.SetLength(0);
-    sD3D11BlacklistingCache->mBlacklistedDLL.SetLength(0);
-    return sD3D11BlacklistingCache->mBlacklistedDLL;
+    aDLLBlacklistingCache->mBlacklistPref.SetLength(0);
+    aDLLBlacklistingCache->mBlacklistedDLL.SetLength(0);
+    return aDLLBlacklistingCache->mBlacklistedDLL;
   }
 
   
-  if (sD3D11BlacklistingCache->mBlacklistPref.Equals(blacklist)) {
+  if (aDLLBlacklistingCache->mBlacklistPref.Equals(blacklist)) {
     
-    return sD3D11BlacklistingCache->mBlacklistedDLL;
+    return aDLLBlacklistingCache->mBlacklistedDLL;
   }
   
-  sD3D11BlacklistingCache->mBlacklistPref = blacklist;
+  aDLLBlacklistingCache->mBlacklistPref = blacklist;
 
   
   
@@ -200,7 +200,8 @@ FindD3D11BlacklistedDLL()
     nsTArray<nsCString> nameAndVersions;
     SplitAt(":", dll, nameAndVersions);
     if (nameAndVersions.Length() != 2) {
-      NS_WARNING("Skipping incorrect 'media.wmf.disable-d3d11-for-dlls' dll:versions format");
+      NS_WARNING(nsPrintfCString("Skipping incorrect '%s' dll:versions format",
+                                 aDLLBlacklistPrefName).get());
       continue;
     }
 
@@ -235,7 +236,8 @@ FindD3D11BlacklistedDLL()
       nsTArray<nsCString> numberStrings;
       SplitAt(".", version, numberStrings);
       if (numberStrings.Length() != 4) {
-        NS_WARNING("Skipping incorrect 'media.wmf.disable-d3d11-for-dlls' a.b.c.d version format");
+        NS_WARNING(nsPrintfCString("Skipping incorrect '%s' a.b.c.d version format",
+                                   aDLLBlacklistPrefName).get());
         continue;
       }
       DWORD numbers[4];
@@ -253,25 +255,32 @@ FindD3D11BlacklistedDLL()
       }
 
       if (NS_FAILED(errorCode)) {
-        NS_WARNING("Skipping incorrect 'media.wmf.disable-d3d11-for-dlls' a.b.c.d version format");
+        NS_WARNING(nsPrintfCString("Skipping incorrect '%s' a.b.c.d version format",
+                                   aDLLBlacklistPrefName).get());
         continue;
       }
 
       if (vInfo->dwFileVersionMS == ((numbers[0] << 16) | numbers[1])
           && vInfo->dwFileVersionLS == ((numbers[2] << 16) | numbers[3])) {
         
-        sD3D11BlacklistingCache->mBlacklistedDLL.SetLength(0);
-        sD3D11BlacklistingCache->mBlacklistedDLL.AppendPrintf(
+        aDLLBlacklistingCache->mBlacklistedDLL.SetLength(0);
+        aDLLBlacklistingCache->mBlacklistedDLL.AppendPrintf(
           "%s (%lu.%lu.%lu.%lu)",
           nameAndVersions[0].get(), numbers[0], numbers[1], numbers[2], numbers[3]);
-        return sD3D11BlacklistingCache->mBlacklistedDLL;
+        return aDLLBlacklistingCache->mBlacklistedDLL;
       }
     }
   }
 
   
-  sD3D11BlacklistingCache->mBlacklistedDLL.SetLength(0);
-  return sD3D11BlacklistingCache->mBlacklistedDLL;
+  aDLLBlacklistingCache->mBlacklistedDLL.SetLength(0);
+  return aDLLBlacklistingCache->mBlacklistedDLL;
+}
+
+static const nsACString&
+FindD3D11BlacklistedDLL() {
+  return FindDXVABlacklistedDLL(sD3D11BlacklistingCache,
+                                "media.wmf.disable-d3d11-for-dlls");
 }
 
 class CreateDXVAManagerEvent : public Runnable {
