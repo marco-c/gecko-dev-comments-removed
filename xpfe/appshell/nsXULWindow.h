@@ -174,7 +174,7 @@ public:
    ~nsContentShellInfo();
 
 public:
-   nsAutoString id; 
+   nsString id; 
    nsWeakPtr child; 
 };
 
