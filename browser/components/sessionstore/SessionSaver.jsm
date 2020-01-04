@@ -21,6 +21,8 @@ XPCOMUtils.defineLazyModuleGetter(this, "console",
   "resource://gre/modules/Console.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "PrivacyFilter",
   "resource:///modules/sessionstore/PrivacyFilter.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "RunState",
+  "resource:///modules/sessionstore/RunState.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "SessionStore",
   "resource:///modules/sessionstore/SessionStore.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "SessionFile",
@@ -206,6 +208,19 @@ var SessionSaverInternal = {
 
         delete state._closedWindows[i]._shouldRestore;
         state.windows.unshift(state._closedWindows.pop());
+      }
+    }
+
+    
+    
+    
+    
+    if (RunState.isClosing &&
+        Services.prefs.getIntPref("network.cookie.lifetimePolicy") ==
+          Services.cookies.ACCEPT_SESSION &&
+        !Services.prefs.getBoolPref("browser.sessionstore.resume_session_once")) {
+      for (let window of state.windows) {
+        delete window.cookies;
       }
     }
 
