@@ -700,10 +700,6 @@ protected:
   
   bool mIgnoreResume;
 
-  
-  
-  bool mIsTransportSeekable;
-
   ChannelSuspendAgent mSuspendAgent;
 };
 
