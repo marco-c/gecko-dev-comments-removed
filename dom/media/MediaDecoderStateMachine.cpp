@@ -1383,10 +1383,16 @@ void MediaDecoderStateMachine::VisibilityChanged()
 
     
     SeekJob seekJob;
+
+    const SeekTarget::Type type = HasAudio()
+                                  ? SeekTarget::Type::Accurate
+                                  : SeekTarget::Type::PrevSyncPoint;
+
     seekJob.mTarget = SeekTarget(GetMediaTime(),
-                                 SeekTarget::Type::Accurate,
+                                 type,
                                  MediaDecoderEventVisibility::Suppressed,
                                  true );
+
     InitiateSeek(Move(seekJob));
   }
 }
