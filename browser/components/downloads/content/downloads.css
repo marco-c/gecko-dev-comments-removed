@@ -24,9 +24,21 @@ richlistitem[type="download"].download-state[state="1"]:not([exists]) .downloadS
 
 #downloadsSummary:not([inprogress]) > vbox > #downloadsSummaryProgress,
 #downloadsSummary:not([inprogress]) > vbox > #downloadsSummaryDetails,
-#downloadsFooter[showingsummary] > #downloadsFooterButtons,
-#downloadsFooter:not([showingsummary]) > #downloadsSummary {
+#downloadsFooter:not([showingsummary]) #downloadsSummary {
   display: none;
+}
+
+#downloadsFooter[showingdropdown] > stack > #downloadsSummary,
+#downloadsFooter[showingsummary] > stack:hover > #downloadsSummary,
+#downloadsFooter[showingsummary]:not([showingdropdown]) > stack:not(:hover) > #downloadsFooterButtons {
+  
+
+
+
+
+
+  opacity: 0;
+  -moz-user-focus: ignore;
 }
 
 
