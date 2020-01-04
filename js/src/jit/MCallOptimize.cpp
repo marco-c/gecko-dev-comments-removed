@@ -3428,10 +3428,13 @@ IonBuilder::inlineConstructSimdObject(CallInfo& callInfo, SimdTypeDescr* descr)
     MIRType laneType = SimdTypeToLaneType(simdType);
     unsigned lanes = SimdTypeToLength(simdType);
     if (lanes != 4 || callInfo.argc() < lanes) {
-        if (laneType == MIRType::Int32) {
+        if (laneType == MIRType::Int32 || laneType == MIRType::Boolean) {
+            
+            
+            
+            
+            
             defVal = constant(Int32Value(0));
-        } else if (laneType == MIRType::Boolean) {
-            defVal = constant(BooleanValue(false));
         } else if (laneType == MIRType::Double) {
             defVal = constant(DoubleNaNValue());
         } else {
