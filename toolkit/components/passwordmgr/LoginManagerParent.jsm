@@ -17,8 +17,6 @@ XPCOMUtils.defineLazyModuleGetter(this, "AutoCompletePopup",
                                   "resource://gre/modules/AutoCompletePopup.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "DeferredTask",
                                   "resource://gre/modules/DeferredTask.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "LoginDoorhangers",
-                                  "resource://gre/modules/LoginDoorhangers.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "LoginHelper",
                                   "resource://gre/modules/LoginHelper.jsm");
 
@@ -48,7 +46,7 @@ var LoginManagerParent = {
     mm.addMessageListener("RemoteLogins:onFormSubmit", this);
     mm.addMessageListener("RemoteLogins:autoCompleteLogins", this);
     mm.addMessageListener("RemoteLogins:removeLogin", this);
-    mm.addMessageListener("RemoteLogins:updateLoginFormPresence", this);
+    mm.addMessageListener("RemoteLogins:insecureLoginFormPresent", this);
 
     XPCOMUtils.defineLazyGetter(this, "recipeParentPromise", () => {
       const { LoginRecipesParent } = Cu.import("resource://gre/modules/LoginRecipes.jsm", {});
@@ -89,8 +87,8 @@ var LoginManagerParent = {
         break;
       }
 
-      case "RemoteLogins:updateLoginFormPresence": {
-        this.updateLoginFormPresence(msg.target, data);
+      case "RemoteLogins:insecureLoginFormPresent": {
+        this.setHasInsecureLoginForms(msg.target, data.hasInsecureLoginForms);
         break;
       }
 
@@ -473,80 +471,15 @@ var LoginManagerParent = {
 
 
 
-
-  updateLoginFormPresence(browser, { loginFormOrigin, loginFormPresent,
-                                     hasInsecureLoginForms }) {
-    const ANCHOR_DELAY_MS = 200;
-
+  setHasInsecureLoginForms(browser, hasInsecureLoginForms) {
     let state = this.stateForBrowser(browser);
 
     
     
-    state.loginFormOrigin = loginFormOrigin;
-    state.loginFormPresent = loginFormPresent;
     state.hasInsecureLoginForms = hasInsecureLoginForms;
 
     
     browser.dispatchEvent(new browser.ownerDocument.defaultView
                                  .CustomEvent("InsecureLoginFormsStateChange"));
-
-    
-    if (!state.anchorDeferredTask) {
-      state.anchorDeferredTask = new DeferredTask(
-        () => this.updateLoginAnchor(browser),
-        ANCHOR_DELAY_MS
-      );
-    }
-    state.anchorDeferredTask.arm();
   },
-
-  updateLoginAnchor: Task.async(function* (browser) {
-    
-    
-    if (!Services.prefs.getBoolPref("signon.ui.experimental")) {
-      return;
-    }
-
-    
-    
-    
-    let { loginFormOrigin, loginFormPresent } = this.stateForBrowser(browser);
-
-    yield Services.logins.initializationPromise;
-
-    
-    let hasLogins = loginFormOrigin &&
-                    LoginHelper.searchLoginsWithObject({
-                      httpRealm: null,
-                      hostname: loginFormOrigin,
-                      schemeUpgrades: LoginHelper.schemeUpgrades,
-                    }).length > 0;
-
-    let showLoginAnchor = loginFormPresent || hasLogins;
-
-    let fillDoorhanger = LoginDoorhangers.FillDoorhanger.find({ browser });
-    if (fillDoorhanger) {
-      if (!showLoginAnchor) {
-        fillDoorhanger.remove();
-        return;
-      }
-      
-      yield fillDoorhanger.promiseHidden;
-      fillDoorhanger.loginFormPresent = loginFormPresent;
-      fillDoorhanger.loginFormOrigin = loginFormOrigin;
-      fillDoorhanger.filterString = hasLogins ? loginFormOrigin : "";
-      fillDoorhanger.detailLogin = null;
-      fillDoorhanger.autoDetailLogin = true;
-      return;
-    }
-    if (showLoginAnchor) {
-      fillDoorhanger = new LoginDoorhangers.FillDoorhanger({
-        browser,
-        loginFormPresent,
-        loginFormOrigin,
-        filterString: hasLogins ? loginFormOrigin : "",
-        autoDetailLogin: true,
-      });
-    }
-  }),
 };
