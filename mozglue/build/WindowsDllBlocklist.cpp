@@ -3,6 +3,7 @@
 
 
 
+#ifdef MOZ_MEMORY
 #define MOZ_MEMORY_IMPL
 #include "mozmemory_wrap.h"
 #define MALLOC_FUNCS MALLOC_FUNCS_MALLOC
@@ -11,6 +12,7 @@
 #define MALLOC_DECL(name, return_type, ...) \
   extern "C" MOZ_MEMORY_API return_type name ## _impl(__VA_ARGS__);
 #include "malloc_decls.h"
+#endif
 
 #include <windows.h>
 #include <winternl.h>
