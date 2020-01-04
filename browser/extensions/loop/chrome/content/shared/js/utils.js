@@ -6,7 +6,19 @@
 
 var loop = loop || {};
 loop.shared = loop.shared || {};
-var inChrome = typeof Components != "undefined" && "utils" in Components;
+var inChrome = typeof Components != "undefined" &&
+  "utils" in Components;
+
+
+
+
+if (inChrome) {
+  if (typeof window != "undefined" &&
+    window.location.href === "chrome://loop/content/panels/slideshow.html") {
+
+    inChrome = false;
+  }
+}
 
 (function() {
   "use strict";
@@ -189,6 +201,13 @@ var inChrome = typeof Components != "undefined" && "utils" in Components;
 
     if (/BlackBerry/i.test(platform)) {
       return "blackberry";
+    }
+
+    
+    
+    
+    if (rootNavigator.userAgent.toLowerCase().indexOf("android") > -1) {
+      return "android";
     }
 
     return null;

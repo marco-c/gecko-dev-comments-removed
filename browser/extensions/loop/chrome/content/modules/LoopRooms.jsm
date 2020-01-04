@@ -22,9 +22,6 @@ XPCOMUtils.defineLazyGetter(this, "eventEmitter", function() {
   const { EventEmitter } = Cu.import("resource://devtools/shared/event-emitter.js", {});
   return new EventEmitter();
 });
-XPCOMUtils.defineLazyGetter(this, "gLoopBundle", function() {
-  return Services.strings.createBundle("chrome://loop/locale/loop.properties");
-});
 
 XPCOMUtils.defineLazyModuleGetter(this, "LoopRoomsCache",
   "chrome://loop/content/modules/LoopRoomsCache.jsm");
@@ -777,14 +774,8 @@ var LoopRoomsInternal = {
 
 
 
-  join: function(roomToken, callback) {
-    let displayName;
-    if (MozLoopService.userProfile && MozLoopService.userProfile.email) {
-      displayName = MozLoopService.userProfile.email;
-    } else {
-      displayName = gLoopBundle.GetStringFromName("display_name_guest");
-    }
 
+  join: function(roomToken, displayName, callback) {
     this._postToRoom(roomToken, {
       action: "join",
       displayName: displayName,
@@ -1067,8 +1058,8 @@ this.LoopRooms = {
     return LoopRoomsInternal.delete(roomToken, callback);
   },
 
-  join: function(roomToken, callback) {
-    return LoopRoomsInternal.join(roomToken, callback);
+  join: function(roomToken, displayName, callback) {
+    return LoopRoomsInternal.join(roomToken, displayName, callback);
   },
 
   refreshMembership: function(roomToken, sessionToken, callback) {

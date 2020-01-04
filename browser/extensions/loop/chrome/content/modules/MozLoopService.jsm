@@ -60,6 +60,30 @@ const ROOM_DELETE = {
 };
 
 
+
+
+
+
+const SHARING_SCREEN = {
+  PAUSED: 0,
+  RESUMED: 1
+};
+
+ 
+
+
+
+
+
+const LOOP_MAU_TYPE = {
+  OPEN_PANEL: 0,
+  OPEN_CONVERSATION: 1,
+  ROOM_OPEN: 2,
+  ROOM_SHARE: 3,
+  ROOM_DELETE: 4
+};
+
+
 const PREF_LOG_LEVEL = "loop.debug.loglevel";
 
 const kChatboxHangupButton = {
@@ -81,14 +105,17 @@ Cu.import("resource://gre/modules/FxAccountsOAuthClient.jsm");
 
 Cu.importGlobalProperties(["URL"]);
 
-this.EXPORTED_SYMBOLS = ["MozLoopService", "LOOP_SESSION_TYPE",
-  "TWO_WAY_MEDIA_CONN_LENGTH", "SHARING_ROOM_URL", "ROOM_CREATE", "ROOM_DELETE"];
+this.EXPORTED_SYMBOLS = ["MozLoopService", "LOOP_SESSION_TYPE", "LOOP_MAU_TYPE",
+  "TWO_WAY_MEDIA_CONN_LENGTH", "SHARING_ROOM_URL", "SHARING_SCREEN",
+  "ROOM_CREATE", "ROOM_DELETE"];
 
 XPCOMUtils.defineConstant(this, "LOOP_SESSION_TYPE", LOOP_SESSION_TYPE);
 XPCOMUtils.defineConstant(this, "TWO_WAY_MEDIA_CONN_LENGTH", TWO_WAY_MEDIA_CONN_LENGTH);
 XPCOMUtils.defineConstant(this, "SHARING_ROOM_URL", SHARING_ROOM_URL);
+XPCOMUtils.defineConstant(this, "SHARING_SCREEN", SHARING_SCREEN);
 XPCOMUtils.defineConstant(this, "ROOM_CREATE", ROOM_CREATE);
 XPCOMUtils.defineConstant(this, "ROOM_DELETE", ROOM_DELETE);
+XPCOMUtils.defineConstant(this, "LOOP_MAU_TYPE", LOOP_MAU_TYPE);
 
 XPCOMUtils.defineLazyModuleGetter(this, "LoopAPI",
   "chrome://loop/content/modules/MozLoopAPI.jsm");
@@ -116,9 +143,6 @@ XPCOMUtils.defineLazyModuleGetter(this, "HawkClient",
 
 XPCOMUtils.defineLazyModuleGetter(this, "deriveHawkCredentials",
                                   "resource://services-common/hawkrequest.js");
-
-XPCOMUtils.defineLazyModuleGetter(this, "hookWindowCloseForPanelClose",
-                                  "resource://gre/modules/MozSocialAPI.jsm");
 
 XPCOMUtils.defineLazyModuleGetter(this, "LoopRooms",
                                   "chrome://loop/content/modules/LoopRooms.jsm");
@@ -171,6 +195,7 @@ var gFxAOAuthClientPromise = null;
 var gFxAOAuthClient = null;
 var gErrors = new Map();
 var gConversationWindowData = new Map();
+var gAddonVersion = "unknown";
 
 
 
@@ -614,7 +639,11 @@ var MozLoopServiceInternal = {
       throw error;
     };
 
-    return gHawkClient.request(path, method, credentials, payloadObj).then(
+    var extraHeaders = {
+      "x-loop-addon-ver": gAddonVersion
+    };
+
+    return gHawkClient.request(path, method, credentials, payloadObj, extraHeaders).then(
       (result) => {
         this.clearError("network");
         return result;
@@ -908,153 +937,170 @@ var MozLoopServiceInternal = {
 
 
   openChatWindow: function(conversationWindowData, windowCloseCallback) {
-    
-    let origin = this.loopServerUri;
-    let windowId = this.getChatWindowID(conversationWindowData);
+    return new Promise(resolve => {
+      
+      let origin = this.loopServerUri;
+      let windowId = this.getChatWindowID(conversationWindowData);
 
-    gConversationWindowData.set(windowId, conversationWindowData);
+      gConversationWindowData.set(windowId, conversationWindowData);
 
-    let url = this.getChatURL(windowId);
+      let url = this.getChatURL(windowId);
 
-    Chat.registerButton(kChatboxHangupButton);
+      Chat.registerButton(kChatboxHangupButton);
 
-    let callback = chatbox => {
-      let mm = chatbox.content.messageManager;
+      let callback = chatbox => {
+        let mm = chatbox.content.messageManager;
 
-      let loaded = () => {
-        mm.removeMessageListener("DOMContentLoaded", loaded);
-        mm.sendAsyncMessage("Social:ListenForEvents", {
-          eventNames: ["LoopChatEnabled", "LoopChatMessageAppended",
-            "LoopChatDisabledMessageAppended", "socialFrameAttached",
-            "socialFrameDetached", "socialFrameHide", "socialFrameShow"]
-        });
+        let loaded = () => {
+          mm.removeMessageListener("DOMContentLoaded", loaded);
+          mm.sendAsyncMessage("Social:ListenForEvents", {
+            eventNames: ["LoopChatEnabled", "LoopChatMessageAppended",
+              "LoopChatDisabledMessageAppended", "socialFrameAttached",
+              "socialFrameDetached", "socialFrameHide", "socialFrameShow"]
+          });
 
-        let chatbar = chatbox.parentNode;
+          const kEventNamesMap = {
+            socialFrameAttached: "Loop:ChatWindowAttached",
+            socialFrameDetached: "Loop:ChatWindowDetached",
+            socialFrameHide: "Loop:ChatWindowHidden",
+            socialFrameShow: "Loop:ChatWindowShown",
+            unload: "Loop:ChatWindowClosed"
+          };
 
-        const kEventNamesMap = {
-          socialFrameAttached: "Loop:ChatWindowAttached",
-          socialFrameDetached: "Loop:ChatWindowDetached",
-          socialFrameHide: "Loop:ChatWindowHidden",
-          socialFrameShow: "Loop:ChatWindowShown",
-          unload: "Loop:ChatWindowClosed"
-        };
+          const kSizeMap = {
+            LoopChatEnabled: "loopChatEnabled",
+            LoopChatDisabledMessageAppended: "loopChatDisabledMessageAppended",
+            LoopChatMessageAppended: "loopChatMessageAppended"
+          };
 
-        const kSizeMap = {
-          LoopChatEnabled: "loopChatEnabled",
-          LoopChatDisabledMessageAppended: "loopChatDisabledMessageAppended",
-          LoopChatMessageAppended: "loopChatMessageAppended"
-        };
+          let listeners = {};
 
-        let listeners = {};
+          let messageName = "Social:CustomEvent";
+          mm.addMessageListener(messageName, listeners[messageName] = message => {
+            let eventName = message.data.name;
+            if (kEventNamesMap[eventName]) {
+              eventName = kEventNamesMap[eventName];
 
-        let messageName = "Social:CustomEvent";
-        mm.addMessageListener(messageName, listeners[messageName] = message => {
-          let eventName = message.data.name;
-          if (kEventNamesMap[eventName]) {
-            eventName = kEventNamesMap[eventName];
-
-            UITour.clearAvailableTargetsCache();
-            UITour.notify(eventName);
-
-            if (eventName == "Loop:ChatWindowDetached" || eventName == "Loop:ChatWindowAttached") {
+              UITour.clearAvailableTargetsCache();
+              UITour.notify(eventName);
+            } else {
               
               
-              let ref = chatbar.chatboxForURL.get(chatbox.src);
-              chatbox = ref && ref.get() || chatbox;
+              let customSize = kSizeMap[eventName];
+              let currSize = chatbox.getAttribute("customSize");
+              
+              
+              if (customSize && currSize != customSize && currSize != "loopChatMessageAppended") {
+                chatbox.setAttribute("customSize", customSize);
+                chatbox.parentNode.setAttribute("customSize", customSize);
+              }
             }
-          } else {
-            
-            
-            let customSize = kSizeMap[eventName];
-            let currSize = chatbox.getAttribute("customSize");
-            
-            
-            if (customSize && currSize != customSize && currSize != "loopChatMessageAppended") {
-              chatbox.setAttribute("customSize", customSize);
-              chatbox.parentNode.setAttribute("customSize", customSize);
-            }
-          }
-        });
+          });
 
-        
-        hookWindowCloseForPanelClose(chatbox.content);
-        messageName = "DOMWindowClose";
-        mm.addMessageListener(messageName, listeners[messageName] = () => {
           
-          for (let name of Object.getOwnPropertyNames(listeners)) {
-            mm.removeMessageListener(name, listeners[name]);
-          }
-          listeners = {};
-
-          windowCloseCallback();
-
-          if (conversationWindowData.type == "room") {
+          mm.sendAsyncMessage("Social:HookWindowCloseForPanelClose");
+          messageName = "DOMWindowClose";
+          mm.addMessageListener(messageName, listeners[messageName] = () => {
             
-            
-            
-            LoopAPI.sendMessageToHandler({
-              name: "HangupNow",
-              data: [conversationWindowData.roomToken, windowId]
-            });
-          }
-        });
+            for (let name of Object.getOwnPropertyNames(listeners)) {
+              mm.removeMessageListener(name, listeners[name]);
+            }
+            listeners = {};
 
-        mm.sendAsyncMessage("Loop:MonitorPeerConnectionLifecycle");
-        messageName = "Loop:PeerConnectionLifecycleChange";
-        mm.addMessageListener(messageName, listeners[messageName] = message => {
+            windowCloseCallback();
+
+            if (conversationWindowData.type == "room") {
+              
+              
+              
+              LoopAPI.sendMessageToHandler({
+                name: "HangupNow",
+                data: [conversationWindowData.roomToken, windowId]
+              });
+            }
+
+            chatbox.close();
+          });
+
+          mm.sendAsyncMessage("Loop:MonitorPeerConnectionLifecycle");
+          messageName = "Loop:PeerConnectionLifecycleChange";
+          mm.addMessageListener(messageName, listeners[messageName] = message => {
+            
+            let chatWindowId = message.data.locationHash.slice(1);
+            var context = this.conversationContexts.get(chatWindowId);
+            var peerConnectionID = message.data.peerConnectionID;
+            var exists = peerConnectionID.match(/session=(\S+)/);
+            if (context && !exists) {
+              
+              
+              
+              var pair = peerConnectionID.split("(");
+              if (pair.length == 2) {
+                peerConnectionID = pair[0] + "(session=" + context.sessionId +
+                    (context.callId ? " call=" + context.callId : "") + " " + pair[1];
+              }
+            }
+
+            if (message.data.type == "iceconnectionstatechange") {
+              switch (message.data.iceConnectionState) {
+                case "failed":
+                case "disconnected":
+                  if (Services.telemetry.canRecordExtended) {
+                    this.stageForTelemetryUpload(chatbox.content, message.data);
+                  }
+                  break;
+              }
+            }
+          });
+
           
-          let chatWindowId = message.data.locationHash.slice(1);
-          var context = this.conversationContexts.get(chatWindowId);
-          var peerConnectionID = message.data.peerConnectionID;
-          var exists = peerConnectionID.match(/session=(\S+)/);
-          if (context && !exists) {
-            
-            
-            
-            var pair = peerConnectionID.split("(");
-            if (pair.length == 2) {
-              peerConnectionID = pair[0] + "(session=" + context.sessionId +
-                  (context.callId ? " call=" + context.callId : "") + " " + pair[1];
-            }
-          }
+          
+          
+          
+          
+          
+          
+          
+          chatbox.content.addEventListener("SwapDocShells", function swapped(ev) {
+            chatbox.content.removeEventListener("SwapDocShells", swapped);
 
-          if (message.data.type == "iceconnectionstatechange") {
-            switch (message.data.iceConnectionState) {
-              case "failed":
-              case "disconnected":
-                if (Services.telemetry.canRecordExtended) {
-                  this.stageForTelemetryUpload(chatbox.content, message.data);
-                }
-                break;
-            }
-          }
-        });
+            let otherBrowser = ev.detail;
+            chatbox = otherBrowser.ownerDocument.getBindingParent(otherBrowser);
+            mm = otherBrowser.messageManager;
+            otherBrowser.addEventListener("SwapDocShells", swapped);
 
-        UITour.notify("Loop:ChatWindowOpened");
+            for (let name of Object.getOwnPropertyNames(listeners)) {
+              mm.addMessageListener(name, listeners[name]);
+            }
+          });
+
+          UITour.notify("Loop:ChatWindowOpened");
+          resolve(windowId);
+        };
+
+        mm.sendAsyncMessage("WaitForDOMContentLoaded");
+        mm.addMessageListener("DOMContentLoaded", loaded);
       };
 
-      mm.sendAsyncMessage("WaitForDOMContentLoaded");
-      mm.addMessageListener("DOMContentLoaded", loaded);
-    };
-
-    LoopAPI.initialize();
-    let chatboxInstance = Chat.open(null, {
-      origin: origin,
-      title: "",
-      url: url,
-      remote: MozLoopService.getLoopPref("remote.autostart")
-    }, callback);
-    if (!chatboxInstance) {
-      return null;
-    
-    } else if (chatboxInstance.setAttribute) {
+      LoopAPI.initialize();
+      let chatboxInstance = Chat.open(null, {
+        origin: origin,
+        title: "",
+        url: url,
+        remote: MozLoopService.getLoopPref("remote.autostart")
+      }, callback);
+      if (!chatboxInstance) {
+        resolve(null);
       
-      
-      chatboxInstance.setAttribute("customSize", "loopDefault");
-      chatboxInstance.parentNode.setAttribute("customSize", "loopDefault");
-      Chat.loadButtonSet(chatboxInstance, "minimize,swap," + kChatboxHangupButton.id);
-    }
-    return windowId;
+      } else if (chatboxInstance.setAttribute) {
+        
+        
+        chatboxInstance.setAttribute("customSize", "loopDefault");
+        chatboxInstance.parentNode.setAttribute("customSize", "loopDefault");
+        Chat.loadButtonSet(chatboxInstance, "minimize,swap," + kChatboxHangupButton.id);
+        resolve(windowId);
+      }
+    });
   },
 
   
@@ -1249,11 +1295,15 @@ this.MozLoopService = {
 
 
 
-  initialize: Task.async(function*() {
+
+
+  initialize: Task.async(function*(addonVersion) {
     
     if (gServiceInitialized) {
       return Promise.resolve();
     }
+
+    gAddonVersion = addonVersion;
 
     gServiceInitialized = true;
 
@@ -1613,6 +1663,19 @@ this.MozLoopService = {
 
 
 
+   get FTU_VERSION()
+   {
+     return 2;
+   },
+
+  
+
+
+
+
+
+
+
 
   setLoopPref: function(prefSuffix, value, prefType) {
     let prefName = "loop." + prefSuffix;
@@ -1869,19 +1932,64 @@ this.MozLoopService = {
   
 
 
+  openGettingStartedTour: Task.async(function() {
+    const kNSXUL = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
 
+    
+    
+    let xulWin = Services.wm.getMostRecentWindow("navigator:browser");
+    let xulDoc = xulWin.document;
 
-  openGettingStartedTour: Task.async(function(aSrc = null) {
-    try {
-      let url = this.getTourURL(aSrc);
-      let win = Services.wm.getMostRecentWindow("navigator:browser");
-      win.switchToTabHavingURI(url, true, {
-        ignoreFragment: true,
-        replaceQueryString: true
-      });
-    } catch (ex) {
-      log.error("Error opening Getting Started tour", ex);
+    let box = xulDoc.createElementNS(kNSXUL, "box");
+    box.setAttribute("id", "loop-slideshow-container");
+
+    let appContent = xulDoc.getElementById("appcontent");
+    let tabBrowser = xulDoc.getElementById("content");
+    appContent.insertBefore(box, tabBrowser);
+
+    var xulBrowser = xulDoc.createElementNS(kNSXUL, "browser");
+    xulBrowser.setAttribute("id", "loop-slideshow-browser");
+    xulBrowser.setAttribute("flex", "1");
+    xulBrowser.setAttribute("type", "content");
+    box.appendChild(xulBrowser);
+
+    
+    
+    xulWin.LoopUI.isSlideshowOpen = true;
+
+    var removeSlideshow = function() {
+      try {
+        appContent.removeChild(box);
+      } catch (ex) {
+        log.error(ex);
+      }
+
+      this.setLoopPref("gettingStarted.latestFTUVersion", this.FTU_VERSION);
+
+      
+      
+      xulWin.LoopUI.isSlideshowOpen = false;
+
+      xulWin.removeEventListener("CloseSlideshow", removeSlideshow);
+
+      log.info("slideshow removed");
+    }.bind(this);
+
+    function xulLoadListener() {
+      xulBrowser.contentWindow.addEventListener("CloseSlideshow",
+        removeSlideshow);
+      log.info("CloseSlideshow handler added");
+
+      xulBrowser.removeEventListener("load", xulLoadListener, true);
     }
+
+    xulBrowser.addEventListener("load", xulLoadListener, true);
+
+    
+    
+    
+    xulBrowser.setAttribute("src",
+      "chrome://loop/content/panels/slideshow.html");
   }),
 
   

@@ -133,6 +133,15 @@ loop.shared.actions = (function() {
     
 
 
+    SendCursorData: Action.define("sendCursorData", {
+      ratioX: Number,
+      ratioY: Number,
+      type: String
+    }),
+
+    
+
+
     ReceivedCursorData: Action.define("receivedCursorData", {
       ratioX: Number,
       ratioY: Number,
@@ -398,9 +407,11 @@ loop.shared.actions = (function() {
 
 
 
+
     FacebookShareRoomUrl: Action.define("facebookShareRoomUrl", {
       from: String,
       roomUrl: String
+      
     }),
 
     

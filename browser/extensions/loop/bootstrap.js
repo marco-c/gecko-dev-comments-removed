@@ -25,10 +25,25 @@ XPCOMUtils.defineLazyModuleGetter(this, "Task",
   "resource://gre/modules/Task.jsm");
 
 
+const PREF_LOG_LEVEL = "loop.debug.loglevel";
+
+XPCOMUtils.defineLazyGetter(this, "log", () => {
+  let ConsoleAPI = Cu.import("resource://gre/modules/Console.jsm", {}).ConsoleAPI;
+  let consoleOptions = {
+    maxLogLevelPref: PREF_LOG_LEVEL,
+    prefix: "Loop"
+  };
+  return new ConsoleAPI(consoleOptions);
+});
+
+
 
 
 
 var WindowListener = {
+  
+  addonVersion: "unknown",
+
   
 
 
@@ -40,6 +55,7 @@ var WindowListener = {
     let xhrClass = Cc["@mozilla.org/xmlextras/xmlhttprequest;1"];
     let FileReader = window.FileReader;
     let menuItem = null;
+    let isSlideshowOpen = false;
 
     
     var LoopUI = {
@@ -72,6 +88,30 @@ var WindowListener = {
           this.browser = browser;
         }
         return browser;
+      },
+
+      get isSlideshowOpen() {
+        return isSlideshowOpen;
+      },
+
+      set isSlideshowOpen(aOpen) {
+        isSlideshowOpen = aOpen;
+        this.updateToolbarState();
+      },
+      
+
+
+      get constants() {
+        if (!this._constants) {
+          
+          this.LoopAPI.sendMessageToHandler({
+            name: "GetAllConstants"
+          }, result => {
+            this._constants = result;
+          });
+        }
+
+        return this._constants;
       },
 
       
@@ -114,6 +154,10 @@ var WindowListener = {
           });
         }
 
+        if (this.isSlideshowOpen) {
+          return Promise.resolve();
+        }
+
         return this.openPanel(event).then(mm => {
           if (mm) {
             mm.sendAsyncMessage("Social:EnsureFocusElement");
@@ -141,6 +185,12 @@ var WindowListener = {
 
             mm.sendAsyncMessage("Social:WaitForDocumentVisible");
             mm.addMessageListener("Social:DocumentVisible", () => resolve(mm));
+
+            let buckets = this.constants.LOOP_MAU_TYPE;
+            this.LoopAPI.sendMessageToHandler({
+              name: "TelemetryAddValue",
+              data: ["LOOP_MAU", buckets.OPEN_PANEL]
+            });
           };
 
           
@@ -169,6 +219,17 @@ var WindowListener = {
               callback);
           });
         });
+      },
+
+      
+
+
+
+
+
+
+      openCallPanel: function(event) {
+        return this.openPanel(event);
       },
 
       
@@ -229,7 +290,7 @@ var WindowListener = {
       init: function() {
         
         
-        this.MozLoopService.initialize().catch(ex => {
+        this.MozLoopService.initialize(WindowListener.addonVersion).catch(ex => {
           if (!ex.message ||
               (!ex.message.contains("not enabled") &&
                !ex.message.contains("not needed"))) {
@@ -313,6 +374,8 @@ var WindowListener = {
         if (this.MozLoopService.errors.size) {
           state = "error";
           mozL10nId += "-error";
+        } else if (this.isSlideshowOpen) {
+          state = "slideshow";
         } else if (this.MozLoopService.screenShareActive) {
           state = "action";
           mozL10nId += "-screensharing";
@@ -481,8 +544,88 @@ var WindowListener = {
         gBrowser.tabContainer.removeEventListener("TabSelect", this);
         gBrowser.removeEventListener("DOMTitleChanged", this);
         gBrowser.removeEventListener("mousemove", this);
+        this.removeRemoteCursor();
         this._listeningToTabSelect = false;
         this._browserSharePaused = false;
+        this._sendTelemetryEventsIfNeeded();
+      },
+
+      
+
+
+      _sendTelemetryEventsIfNeeded: function() {
+        
+        if (!this._pauseButtonClicked) {
+          return;
+        }
+
+        let buckets = this.constants.SHARING_SCREEN;
+        this.LoopAPI.sendMessageToHandler({
+          name: "TelemetryAddValue",
+          data: [
+            "LOOP_INFOBAR_ACTION_BUTTONS",
+            buckets.PAUSED
+          ]
+        });
+
+        if (this._resumeButtonClicked) {
+          this.LoopAPI.sendMessageToHandler({
+            name: "TelemetryAddValue",
+            data: [
+              "LOOP_INFOBAR_ACTION_BUTTONS",
+              buckets.RESUMED
+            ]
+          });
+        }
+
+        this._pauseButtonClicked = false;
+        this._resumeButtonClicked = false;
+      },
+
+      
+
+
+
+
+
+
+
+
+
+      addRemoteCursor: function(cursorData) {
+        if (!this._listeningToTabSelect) {
+          return;
+        }
+
+        let browser = gBrowser.selectedBrowser;
+
+        let cursor = document.getElementById("loop-remote-cursor");
+        if (!cursor) {
+          cursor = document.createElement("image");
+          cursor.setAttribute("id", "loop-remote-cursor");
+        }
+
+        
+        cursor.setAttribute("left",
+                            cursorData.ratioX * browser.boxObject.width);
+        cursor.setAttribute("top",
+                            cursorData.ratioY * browser.boxObject.height);
+
+        
+        browser.parentNode.appendChild(cursor);
+      },
+
+      
+
+
+
+
+      removeRemoteCursor: function() {
+        let cursor = document.getElementById("loop-remote-cursor");
+
+        if (cursor) {
+          cursor.parentNode.removeChild(cursor);
+        }
       },
 
       
@@ -539,6 +682,11 @@ var WindowListener = {
               buttonNode.label = stringObj.label;
               buttonNode.accessKey = stringObj.accesskey;
               LoopUI.MozLoopService.toggleBrowserSharing(this._browserSharePaused);
+              if (this._browserSharePaused) {
+                this._pauseButtonClicked = true;
+              } else {
+                this._resumeButtonClicked = true;
+              }
               return true;
             },
             type: "pause"
@@ -605,7 +753,10 @@ var WindowListener = {
             let wasVisible = false;
             
             if (event.detail.previousTab) {
-              wasVisible = this._hideBrowserSharingInfoBar(event.detail.previousTab.linkedBrowser);
+              wasVisible = this._hideBrowserSharingInfoBar(
+                            event.detail.previousTab.linkedBrowser);
+              
+              this.removeRemoteCursor();
             }
 
             
@@ -713,10 +864,18 @@ var WindowListener = {
     window.LoopUI = LoopUI;
   },
 
-  tearDownBrowserUI: function() {
-    
-    
-    
+  
+
+
+
+
+
+  tearDownBrowserUI: function(window) {
+    if (window.LoopUI) {
+      window.LoopUI.removeMenuItem();
+
+      
+    }
   },
 
   
@@ -815,7 +974,10 @@ function loadDefaultPrefs() {
 
 
 
-function startup() {
+function startup(data) {
+  
+  WindowListener.addonVersion = data.version;
+
   loadDefaultPrefs();
 
   createLoopButton();

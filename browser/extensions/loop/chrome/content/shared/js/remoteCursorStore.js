@@ -5,6 +5,9 @@
 var loop = loop || {};
 loop.store = loop.store || {};
 
+
+
+
 loop.store.RemoteCursorStore = (function() {
   "use strict";
 
@@ -15,6 +18,7 @@ loop.store.RemoteCursorStore = (function() {
 
   var RemoteCursorStore = loop.store.createStore({
     actions: [
+      "sendCursorData",
       "receivedCursorData",
       "videoDimensionsChanged",
       "videoScreenStreamChanged"
@@ -36,7 +40,9 @@ loop.store.RemoteCursorStore = (function() {
       }
 
       this._sdkDriver = options.sdkDriver;
-      loop.subscribe("CursorPositionChange", this._cursorPositionChangeListener.bind(this));
+
+      loop.subscribe("CursorPositionChange",
+                     this._cursorPositionChangeListener.bind(this));
     },
 
     
@@ -58,7 +64,7 @@ loop.store.RemoteCursorStore = (function() {
 
 
     _cursorPositionChangeListener: function(event) {
-      this._sdkDriver.sendCursorMessage({
+      this.sendCursorData({
         ratioX: event.ratioX,
         ratioY: event.ratioY,
         type: CURSOR_MESSAGE_TYPES.POSITION
@@ -70,10 +76,28 @@ loop.store.RemoteCursorStore = (function() {
 
 
 
+
+
+
+
+
+
+    sendCursorData: function(actionData) {
+      switch (actionData.type) {
+        case CURSOR_MESSAGE_TYPES.POSITION:
+          this._sdkDriver.sendCursorMessage(actionData);
+          break;
+      }
+    },
+
+    
+
+
+
+
     receivedCursorData: function(actionData) {
       switch (actionData.type) {
         case CURSOR_MESSAGE_TYPES.POSITION:
-          
           this.setStoreState({
             remoteCursorPosition: {
               ratioX: actionData.ratioX,
@@ -103,6 +127,8 @@ loop.store.RemoteCursorStore = (function() {
     },
 
     
+
+
 
 
 

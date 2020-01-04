@@ -4,7 +4,7 @@
 
 var loop = loop || {};
 loop.shared = loop.shared || {};
-loop.shared.models = (function(l10n) {
+loop.shared.models = (function() {
   "use strict";
 
   
@@ -24,71 +24,11 @@ loop.shared.models = (function(l10n) {
 
 
   var NotificationCollection = Backbone.Collection.extend({
-    model: NotificationModel,
-
-    
-
-
-
-
-    warn: function(message) {
-      this.add({ level: "warning", message: message });
-    },
-
-    
-
-
-
-
-    warnL10n: function(messageId) {
-      this.warn(l10n.get(messageId));
-    },
-
-    
-
-
-
-
-    error: function(message) {
-      this.add({ level: "error", message: message });
-    },
-
-    
-
-
-
-
-
-
-
-    errorL10n: function(messageId, l10nProps) {
-      this.error(l10n.get(messageId, l10nProps));
-    },
-
-    
-
-
-
-
-    success: function(message) {
-      this.add({ level: "success", message: message });
-    },
-
-    
-
-
-
-
-
-
-
-    successL10n: function(messageId, l10nProps) {
-      this.success(l10n.get(messageId, l10nProps));
-    }
+    model: NotificationModel
   });
 
   return {
     NotificationCollection: NotificationCollection,
     NotificationModel: NotificationModel
   };
-})(navigator.mozL10n || document.mozL10n);
+})();
