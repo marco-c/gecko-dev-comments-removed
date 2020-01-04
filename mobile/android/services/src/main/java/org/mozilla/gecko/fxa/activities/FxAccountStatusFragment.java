@@ -167,9 +167,6 @@ public class FxAccountStatusFragment
     accountCategory = (PreferenceCategory) ensureFindPreference("signed_in_as_category");
     profilePreference = ensureFindPreference("profile");
     manageAccountPreference = ensureFindPreference("manage_account");
-    if (AppConstants.MOZ_ANDROID_NATIVE_ACCOUNT_UI) {
-      accountCategory.removePreference(manageAccountPreference);
-    }
     authServerPreference = ensureFindPreference("auth_server");
     removeAccountPreference = ensureFindPreference("remove_account");
 
@@ -231,16 +228,11 @@ public class FxAccountStatusFragment
   @Override
   public boolean onPreferenceClick(Preference preference) {
     if (preference == profilePreference) {
-      if (!AppConstants.MOZ_ANDROID_NATIVE_ACCOUNT_UI) {
-        
-        ActivityUtils.openURLInFennec(getActivity().getApplicationContext(), "about:accounts?action=avatar");
-      }
-      
+      ActivityUtils.openURLInFennec(getActivity().getApplicationContext(), "about:accounts?action=avatar");
       return true;
     }
 
     if (preference == manageAccountPreference) {
-      
       ActivityUtils.openURLInFennec(getActivity().getApplicationContext(), "about:accounts?action=manage");
       return true;
     }
@@ -281,10 +273,6 @@ public class FxAccountStatusFragment
     }
 
     if (preference == needsVerificationPreference) {
-      if (AppConstants.MOZ_ANDROID_NATIVE_ACCOUNT_UI) {
-        FxAccountCodeResender.resendCode(getActivity().getApplicationContext(), fxAccount);
-      }
-
       final Intent intent = new Intent(FxAccountConstants.ACTION_FXA_CONFIRM_ACCOUNT);
       
       
