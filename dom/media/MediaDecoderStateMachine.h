@@ -276,7 +276,7 @@ private:
   
   
   
-  void InitializationTask();
+  void InitializationTask(MediaDecoder* aDecoder);
 
   void SetDormant(bool aDormant);
 
@@ -676,6 +676,10 @@ private:
   
   
   RefPtr<MediaDecoder> mDecoder;
+  void* const mDecoderID;
+  const RefPtr<FrameStatistics> mFrameStats;
+  const RefPtr<VideoFrameContainer> mVideoFrameContainer;
+  const dom::AudioChannel mAudioChannel;
 
   
   RefPtr<TaskQueue> mTaskQueue;

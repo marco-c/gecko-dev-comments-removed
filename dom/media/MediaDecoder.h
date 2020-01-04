@@ -700,7 +700,7 @@ private:
   MediaStatistics GetStatistics();
 
   
-  FrameStatistics& GetFrameStatistics() { return mFrameStats; }
+  FrameStatistics& GetFrameStatistics() { return *mFrameStats; }
 
   
   
@@ -866,7 +866,7 @@ protected:
   MediaDecoderOwner* const mOwner;
 
   
-  FrameStatistics mFrameStats;
+  const RefPtr<FrameStatistics> mFrameStats;
 
   const RefPtr<VideoFrameContainer> mVideoFrameContainer;
 
