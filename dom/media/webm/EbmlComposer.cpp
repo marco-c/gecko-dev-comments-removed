@@ -10,6 +10,7 @@
 #include "libmkv/EbmlWriter.h"
 #include "libmkv/WebMElement.h"
 #include "prtime.h"
+#include "limits.h"
 
 namespace mozilla {
 
@@ -124,33 +125,47 @@ EbmlComposer::WriteSimpleBlock(EncodedFrame* aFrame)
   ebml.offset = 0;
 
   auto frameType = aFrame->GetFrameType();
+  bool flush = false;
   bool isVP8IFrame = (frameType == EncodedFrame::FrameType::VP8_I_FRAME);
   if (isVP8IFrame) {
     FinishCluster();
+    flush = true;
+  } else {
+    
+    int64_t timeCode = (aFrame->GetTimeStamp() / ((int) PR_USEC_PER_MSEC) - mClusterTimecode) +
+                       (mCodecDelay / PR_NSEC_PER_MSEC);
+    if (timeCode < SHRT_MIN || timeCode > SHRT_MAX ) {
+      
+      FinishCluster();
+      flush = true;
+    }
   }
 
   auto block = mClusterBuffs.AppendElement();
   block->SetLength(aFrame->GetFrameData().Length() + DEFAULT_HEADER_SIZE);
   ebml.buf = block->Elements();
 
-  if (isVP8IFrame) {
+  if (flush) {
     EbmlLoc ebmlLoc;
     Ebml_StartSubElement(&ebml, &ebmlLoc, Cluster);
     MOZ_ASSERT(mClusterBuffs.Length() > 0);
     
     mClusterHeaderIndex = mClusterBuffs.Length() - 1;
     mClusterLengthLoc = ebmlLoc.offset;
+    
     mClusterTimecode = aFrame->GetTimeStamp() / PR_USEC_PER_MSEC;
     Ebml_SerializeUnsigned(&ebml, Timecode, mClusterTimecode);
     mFlushState |= FLUSH_CLUSTER;
   }
 
   bool isOpus = (frameType == EncodedFrame::FrameType::OPUS_AUDIO_FRAME);
-  short timeCode = aFrame->GetTimeStamp() / PR_USEC_PER_MSEC - mClusterTimecode;
+  
+  int64_t timeCode = aFrame->GetTimeStamp() / ((int) PR_USEC_PER_MSEC) - mClusterTimecode;
   if (isOpus) {
     timeCode += mCodecDelay / PR_NSEC_PER_MSEC;
   }
-  writeSimpleBlock(&ebml, isOpus ? 0x2 : 0x1, timeCode, isVP8IFrame,
+  MOZ_ASSERT(timeCode >= SHRT_MIN && timeCode <= SHRT_MAX);
+  writeSimpleBlock(&ebml, isOpus ? 0x2 : 0x1, static_cast<short>(timeCode), isVP8IFrame,
                    0, 0, (unsigned char*)aFrame->GetFrameData().Elements(),
                    aFrame->GetFrameData().Length());
   MOZ_ASSERT(ebml.offset <= DEFAULT_HEADER_SIZE +
