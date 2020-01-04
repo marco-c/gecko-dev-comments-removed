@@ -6,7 +6,7 @@
 
 
 
-add_task(function test_valid_file() {
+add_task(function* test_valid_file() {
   
   let data = JSON.stringify({"final-ui-startup": true});
   yield OS.File.writeAtomic(sessionCheckpointsPath, data,

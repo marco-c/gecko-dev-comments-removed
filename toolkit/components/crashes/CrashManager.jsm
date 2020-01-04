@@ -270,19 +270,21 @@ this.CrashManager.prototype = Object.freeze({
                 Cu.reportError("Unhandled crash event file return code. Please " +
                                "file a bug: " + result);
             }
-          } catch (ex if ex instanceof OS.File.Error) {
-            this._log.warn("I/O error reading " + entry.path + ": " +
-                           CommonUtils.exceptionStr(ex));
           } catch (ex) {
-            
-            
-            
-            
-            
-            
-            Cu.reportError("Exception when processing crash event file: " +
-                           CommonUtils.exceptionStr(ex));
-            deletePaths.push(entry.path);
+            if (ex instanceof OS.File.Error) {
+              this._log.warn("I/O error reading " + entry.path + ": " +
+                             CommonUtils.exceptionStr(ex));
+            } else {
+              
+              
+              
+              
+              
+              
+              Cu.reportError("Exception when processing crash event file: " +
+                             CommonUtils.exceptionStr(ex));
+              deletePaths.push(entry.path);
+            }
           }
         }
 
@@ -594,8 +596,11 @@ this.CrashManager.prototype = Object.freeze({
     return Task.spawn(function* () {
       try {
         yield OS.File.stat(path);
-      } catch (ex if ex instanceof OS.File.Error && ex.becauseNoSuchFile) {
-          return [];
+      } catch (ex) {
+        if (!(ex instanceof OS.File.Error) || !ex.becauseNoSuchFile) {
+          throw ex;
+        }
+        return [];
       }
 
       let it = new OS.File.DirectoryIterator(path);
@@ -855,16 +860,17 @@ CrashStore.prototype = Object.freeze({
             this._countsByDay.get(day).set(type, count);
           }
         }
-      } catch (ex if ex instanceof OS.File.Error && ex.becauseNoSuchFile) {
-        
       } catch (ex) {
         
-        
-        
-        
-        
-        
-        this._data.corruptDate = new Date();
+        if (!(ex instanceof OS.File.Error) || !ex.becauseNoSuchFile) {
+          
+          
+          
+          
+          
+          
+          this._data.corruptDate = new Date();
+        }
       }
     }.bind(this));
   },

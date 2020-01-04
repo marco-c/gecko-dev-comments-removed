@@ -6,7 +6,7 @@
 
 
 
-add_task(function test_invalid_file() {
+add_task(function* test_invalid_file() {
   
   let data = "1234";
   yield OS.File.writeAtomic(sessionCheckpointsPath, data,
