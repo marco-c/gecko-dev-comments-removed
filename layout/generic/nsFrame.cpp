@@ -2450,7 +2450,8 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
     
     buildingDisplayList.SetDirtyRect(dirtyRectOutsideSVGEffects);
 
-    if (StyleEffects()->HasFilters()) {
+    
+    if (StyleEffects()->HasFilters() && !aBuilder->IsForGenerateGlyphMask()) {
       
       resultList.AppendNewToTop(
           new (aBuilder) nsDisplayFilter(aBuilder, this, &resultList, useOpacity));
