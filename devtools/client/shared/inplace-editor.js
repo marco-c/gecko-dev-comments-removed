@@ -386,6 +386,8 @@ InplaceEditor.prototype = {
       
       this.input.style.width = "1ch";
     } else {
+      
+      width = width + 2;
       this.input.style.width = width + "px";
     }
   },
