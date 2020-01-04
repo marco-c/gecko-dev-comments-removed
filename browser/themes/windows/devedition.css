@@ -240,6 +240,22 @@
   }
 }
 
+
+
+
+#browser-panel {
+  
+  background-image: none !important;
+  border-top: none !important;
+}
+
+#navigator-toolbox {
+  
+
+  border-left: none !important;
+  border-right: none !important;
+}
+
 @media (-moz-os-version: windows-win10) {
   
   #main-window .tabbrowser-arrowscrollbox > .arrowscrollbox-scrollbox {
