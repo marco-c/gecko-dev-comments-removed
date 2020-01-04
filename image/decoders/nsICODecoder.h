@@ -94,8 +94,6 @@ private:
   
   bool FixBitmapWidth(int8_t* bih);
   
-  uint32_t CalcAlphaRowSize();
-  
   uint16_t GetNumColors();
 
   LexerTransition<ICOState> ReadHeader(const char* aData);
