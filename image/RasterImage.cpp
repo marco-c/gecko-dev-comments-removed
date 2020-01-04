@@ -292,7 +292,8 @@ RasterImage::LookupFrameInternal(uint32_t aFrameNum,
 
   
   
-  if (aFlags & FLAG_SYNC_DECODE) {
+  
+  if ((aFlags & FLAG_SYNC_DECODE) || !(aFlags & FLAG_HIGH_QUALITY_SCALING)) {
     return SurfaceCache::Lookup(ImageKey(this),
                                 RasterSurfaceKey(aSize,
                                                  surfaceFlags,
