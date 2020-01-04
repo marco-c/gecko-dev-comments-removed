@@ -277,14 +277,9 @@ class Descriptor(DescriptorProvider):
     def __init__(self, config, interface, desc):
         DescriptorProvider.__init__(self)
         self.config = config
-        self.workers = desc.get('workers', False)
         self.interface = interface
 
-        if self.workers:
-            assert 'wantsXrays' not in desc
-            self.wantsXrays = False
-        else:
-            self.wantsXrays = desc.get('wantsXrays', True)
+        self.wantsXrays = desc.get('wantsXrays', True)
 
         
         ifaceName = self.interface.identifier.name
@@ -299,15 +294,9 @@ class Descriptor(DescriptorProvider):
             nativeTypeDefault = iteratorNativeType(itrDesc)
 
         elif self.interface.isExternal():
-            assert not self.workers
             nativeTypeDefault = "nsIDOM" + ifaceName
-        elif self.interface.isCallback():
-            nativeTypeDefault = "mozilla::dom::" + ifaceName
         else:
-            if self.workers:
-                nativeTypeDefault = "mozilla::dom::workers::" + ifaceName
-            else:
-                nativeTypeDefault = "mozilla::dom::" + ifaceName
+            nativeTypeDefault = "mozilla::dom::" + ifaceName
 
         self.nativeType = desc.get('nativeType', nativeTypeDefault)
         
@@ -332,9 +321,7 @@ class Descriptor(DescriptorProvider):
             basename = os.path.basename(self.interface.filename())
             headerDefault = basename.replace('.webidl', 'Binding.h')
         else:
-            if self.workers:
-                headerDefault = "mozilla/dom/workers/bindings/%s.h" % ifaceName
-            elif not self.interface.isExternal() and self.interface.getExtendedAttribute("HeaderFile"):
+            if not self.interface.isExternal() and self.interface.getExtendedAttribute("HeaderFile"):
                 headerDefault = self.interface.getExtendedAttribute("HeaderFile")[0]
             elif self.interface.isIteratorInterface():
                 headerDefault = "mozilla/dom/IterableIterator.h"
@@ -478,9 +465,7 @@ class Descriptor(DescriptorProvider):
             
             self.wrapperCache = self.interface.hasInterfaceObject()
 
-        def make_name(name):
-            return name + "_workers" if self.workers else name
-        self.name = make_name(interface.identifier.name)
+        self.name = interface.identifier.name
 
         
         
@@ -619,7 +604,6 @@ class Descriptor(DescriptorProvider):
 
         
         
-        
         if self.interface.isExternal():
             return False
 
@@ -634,17 +618,12 @@ class Descriptor(DescriptorProvider):
 
     def getExtendedAttributes(self, member, getter=False, setter=False):
         def ensureValidThrowsExtendedAttribute(attr):
-            assert(attr is None or attr is True or len(attr) == 1)
-            if (attr is not None and attr is not True and
-                'Workers' not in attr and 'MainThread' not in attr):
+            if (attr is not None and attr is not True):
                 raise TypeError("Unknown value for 'Throws': " + attr[0])
 
         def maybeAppendInfallibleToAttrs(attrs, throws):
             ensureValidThrowsExtendedAttribute(throws)
-            if (throws is None or
-                (throws is not True and
-                 ('Workers' not in throws or not self.workers) and
-                 ('MainThread' not in throws or self.workers))):
+            if throws is None:
                 attrs.append("infallible")
 
         name = member.identifier.name
@@ -759,7 +738,6 @@ class Descriptor(DescriptorProvider):
     def registersGlobalNamesOnWindow(self):
         return (not self.interface.isExternal() and
                 self.interface.hasInterfaceObject() and
-                not self.workers and
                 self.interface.isExposedInWindow() and
                 self.register)
 
