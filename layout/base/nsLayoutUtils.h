@@ -147,6 +147,7 @@ public:
   typedef mozilla::CSSPoint CSSPoint;
   typedef mozilla::CSSSize CSSSize;
   typedef mozilla::CSSIntSize CSSIntSize;
+  typedef mozilla::CSSRect CSSRect;
   typedef mozilla::ScreenMargin ScreenMargin;
   typedef mozilla::LayoutDeviceIntSize LayoutDeviceIntSize;
 
@@ -2769,6 +2770,14 @@ public:
 
 
   static bool IsScrollFrameWithSnapping(nsIFrame* aFrame);
+  
+
+
+
+
+
+  static CSSRect GetBoundingContentRect(const nsIContent* aContent,
+                                        const nsIScrollableFrame* aRootScrollFrame);
 
 private:
   static uint32_t sFontSizeInflationEmPerLine;

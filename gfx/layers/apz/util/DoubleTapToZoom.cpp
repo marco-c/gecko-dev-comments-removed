@@ -70,47 +70,6 @@ ShouldZoomToElement(const nsCOMPtr<dom::Element>& aElement) {
   return true;
 }
 
-
-
-
-
-
-
-
-static CSSRect
-GetBoundingContentRect(const nsCOMPtr<dom::Element>& aElement,
-                       const nsIScrollableFrame* aRootScrollFrame) {
-
-  CSSRect result;
-  if (nsIFrame* frame = aElement->GetPrimaryFrame()) {
-    nsIFrame* relativeTo = aRootScrollFrame->GetScrolledFrame();
-    result = CSSRect::FromAppUnits(
-        nsLayoutUtils::GetAllInFlowRectsUnion(
-            frame,
-            relativeTo,
-            nsLayoutUtils::RECTS_ACCOUNT_FOR_TRANSFORMS));
-
-    
-    
-    
-    nsIScrollableFrame* scrollFrame = nsLayoutUtils::GetNearestScrollableFrame(frame);
-    if (scrollFrame && scrollFrame != aRootScrollFrame) {
-      nsIFrame* subFrame = do_QueryFrame(scrollFrame);
-      MOZ_ASSERT(subFrame);
-      
-      
-      CSSRect subFrameRect = CSSRect::FromAppUnits(
-          nsLayoutUtils::TransformFrameRectToAncestor(
-              subFrame,
-              subFrame->GetRectRelativeToSelf(),
-              relativeTo));
-
-      result = subFrameRect.Intersect(result);
-    }
-  }
-  return result;
-}
-
 static bool
 IsRectZoomedIn(const CSSRect& aRect, const CSSRect& aCompositedArea)
 {
@@ -164,7 +123,7 @@ CalculateRectToZoomTo(const nsCOMPtr<nsIDocument>& aRootContentDocument,
   FrameMetrics metrics = nsLayoutUtils::CalculateBasicFrameMetrics(rootScrollFrame);
   CSSRect compositedArea(metrics.GetScrollOffset(), metrics.CalculateCompositedSizeInCssPixels());
   const CSSCoord margin = 15;
-  CSSRect rect = GetBoundingContentRect(element, rootScrollFrame);
+  CSSRect rect = nsLayoutUtils::GetBoundingContentRect(element, rootScrollFrame);
 
   
   
